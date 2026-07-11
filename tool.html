@@ -110,8 +110,15 @@
         <div class="field"><span>천장고 H (m)</span><input type="number" id="rH" value="2.8" min="2" max="6" step="0.1"></div>
         <div class="field"><span>작업면 (m)</span><input type="number" id="rWP" value="0.75" min="0" max="2" step="0.05"></div>
       </div>
-      <button class="wide ghost" id="btnDraw" style="margin-top:10px">✏ 방 그리기 (자유형)</button>
-      <div class="note" id="drawNote" style="margin-top:5px;display:none">클릭=꼭짓점 · <b>Shift=직각</b> · 시작점 흡착/더블클릭=완료 · 격자 1m·스냅 0.1m · Esc=취소</div>
+      <div class="btnrow" style="margin-top:10px">
+        <button class="ghost" id="btnDraw" style="flex:1">✏ 새 방 그리기</button>
+        <button class="ghost" id="btnDrawAdd" style="flex:1">＋ 이어 그리기</button>
+      </div>
+      <div class="row" style="margin-top:7px"><label>포인트 스냅 (꼭짓점 흡착)</label><span class="pill on" id="pillSnap">ON</span></div>
+      <div class="note" id="drawNote" style="margin-top:4px;display:none">클릭=꼭짓점 · <b>Shift=직각</b> · 우클릭/Backspace=한 점 취소 · 시작점/더블클릭=완료 · Esc=전체취소</div>
+      <div class="row" style="margin-top:9px"><label>수치 입력 (좌표 x,z)</label><button class="ghost" id="btnPolyLoad" style="flex:0 0 62px;padding:4px 6px">현재값</button></div>
+      <textarea id="polyInput" rows="3" placeholder="0,0&#10;4,0&#10;4,3&#10;0,3" style="width:100%;font-family:var(--mono);font-size:10px;padding:5px;border:1px solid var(--line2);border-radius:2px;resize:vertical;background:#fff"></textarea>
+      <button class="wide ghost" id="btnPolyApply" style="margin-top:5px">좌표로 방 만들기</button>
     </div>
 
     <div class="sec">
@@ -233,7 +240,8 @@ const S = {
   Emin:0,Emax:0,Eavg:0,Uni:0,
   view:'3d', heat:true, selected:-1,
   poly:null, mask:[], bb:null,       // 커스텀 방(자유형 폴리곤), 격자 마스크, 바운딩
-  draw:{active:false, pts:[]}        // 방 그리기 모드
+  draw:{active:false, pts:[]},       // 방 그리기 모드
+  snapPt:true                        // 포인트(꼭짓점) 스냅 on/off
 };
 
 // ============ 폴리곤(자유형 방) 기하 ============
@@ -676,7 +684,7 @@ function snapDraw(p, shift){
   const last=S.draw.pts[S.draw.pts.length-1];
   if(shift && last){
     if(Math.abs(x-last.x) >= Math.abs(z-last.z)) z=last.z; else x=last.x;   // 직각 고정
-  } else {
+  } else if(S.snapPt){
     let best=null, bd=0.35;
     for(const v of S.draw.pts){ const d=Math.hypot(x-v.x,z-v.z); if(d<bd){bd=d;best=v;} }
     if(best) return { x:best.x, z:best.z };   // 기존 꼭짓점에 흡착
@@ -700,19 +708,26 @@ function updateDrawTip(e, p){
 }
 function updateDrawPreview(cur){
   if(drawLine){ scene.remove(drawLine); drawLine=null; }
-  const pts=S.draw.pts.map(p=>new THREE.Vector3(p.x,0.02,p.z));
-  if(cur) pts.push(new THREE.Vector3(cur.x,0.02,cur.z));
-  if(!pts.length) return;
-  drawLine=new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts),
-    new THREE.LineBasicMaterial({color:0xe8a838}));
-  scene.add(drawLine);
+  const g=new THREE.Group();
+  const line=S.draw.pts.map(p=>new THREE.Vector3(p.x,0.02,p.z));
+  if(cur) line.push(new THREE.Vector3(cur.x,0.02,cur.z));
+  if(line.length>=1) g.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(line),
+    new THREE.LineBasicMaterial({color:0xe8a838})));
+  // 꼭짓점 점 + 시작점 강조(빨강)
+  S.draw.pts.forEach((p,i)=>{
+    const s=new THREE.Mesh(new THREE.SphereGeometry(i===0?0.13:0.07,10,10),
+      new THREE.MeshBasicMaterial({color:i===0?0xc0524a:0xe8a838}));
+    s.position.set(p.x,0.03,p.z); g.add(s);
+  });
+  drawLine=g; scene.add(g);
 }
 function setViewButtons(){
   document.getElementById('btnViewTop').classList.toggle('ghost',S.view!=='top');
   document.getElementById('btnView3d').classList.toggle('ghost',S.view!=='3d');
 }
-function enterDraw(){
-  S.draw.active=true; S.draw.pts=[]; S.view='top'; setViewButtons();
+function enterDraw(fromExisting){
+  S.draw.active=true; S.view='top'; setViewButtons();
+  S.draw.pts = (fromExisting && S.poly && S.poly.length>=3) ? S.poly.map(v=>({x:v.x,z:v.z})) : [];
   document.getElementById('vpBadge').textContent='방 그리기 · 클릭으로 꼭짓점';
   document.getElementById('btnDraw').textContent='그리는 중 · 시작점/더블클릭=완료 · Esc=취소';
   document.getElementById('drawNote').style.display='block';
@@ -776,7 +791,10 @@ function bindOrbit(){
   cv.addEventListener('wheel',e=>{ e.preventDefault();
     orbit.r*=(1+Math.sign(e.deltaY)*0.08); orbit.r=Math.max(3,Math.min(60,orbit.r)); },{passive:false});
   cv.addEventListener('dblclick',()=>{ if(S.draw.active) exitDraw(true); });
-  window.addEventListener('keydown',e=>{ if(e.key==='Escape'&&S.draw.active) exitDraw(false); });
+  cv.addEventListener('contextmenu',e=>{ if(S.draw.active){ e.preventDefault(); S.draw.pts.pop(); updateDrawPreview(null); } });
+  window.addEventListener('keydown',e=>{ if(!S.draw.active) return;
+    if(e.key==='Escape') exitDraw(false);
+    else if(e.key==='Backspace'){ e.preventDefault(); S.draw.pts.pop(); updateDrawPreview(null); } });
   window.addEventListener('resize',resize);
 }
 
@@ -887,7 +905,23 @@ bind('fShelf',()=>addFurn('shelf'),'click');
 bind('fWardrobe',()=>addFurn('wardrobe'),'click');
 bind('fDemo',demoRoom,'click');
 bind('fClear',()=>{S.furns=[];compute();},'click');
-bind('btnDraw',()=>{ if(S.draw.active) exitDraw(false); else enterDraw(); },'click');
+bind('btnDraw',()=>{ if(S.draw.active) exitDraw(false); else enterDraw(false); },'click');
+bind('btnDrawAdd',()=>{ if(S.draw.active) exitDraw(false); else enterDraw(true); },'click');
+bind('pillSnap',()=>{ S.snapPt=!S.snapPt; const el=document.getElementById('pillSnap');
+  el.className='pill'+(S.snapPt?' on':''); el.textContent=S.snapPt?'ON':'OFF'; },'click');
+bind('btnPolyLoad',()=>{ const P=S.poly||rectPoly();
+  document.getElementById('polyInput').value=P.map(v=>v.x+','+v.z).join('\n'); },'click');
+bind('btnPolyApply',()=>{
+  const raw=document.getElementById('polyInput').value.trim();
+  const pts=raw.split(/[\n;]+/).map(l=>l.trim()).filter(Boolean).map(l=>{
+    const m=l.split(/[, \t]+/).map(Number); return {x:m[0],z:m[1]}; })
+    .filter(p=>Number.isFinite(p.x)&&Number.isFinite(p.z));
+  if(pts.length<3){ alert('꼭짓점 3개 이상 필요 (x,z 한 줄에 하나)'); return; }
+  S.poly=pts; const bb=polyBBox(pts);
+  S.W=+(bb.maxx-bb.minx).toFixed(2); S.D=+(bb.maxz-bb.minz).toFixed(2);
+  document.getElementById('rW').value=S.W; document.getElementById('rD').value=S.D;
+  buildRoom(); compute();
+},'click');
 bind('pillShadow',()=>{S.showShadow=!S.showShadow;
   const el=document.getElementById('pillShadow');
   el.className='pill'+(S.showShadow?' on':''); el.textContent=S.showShadow?'ON':'OFF';
