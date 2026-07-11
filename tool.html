@@ -107,6 +107,8 @@
         <div class="field"><span>천장고 H (m)</span><input type="number" id="rH" value="2.8" min="2" max="6" step="0.1"></div>
         <div class="field"><span>작업면 (m)</span><input type="number" id="rWP" value="0.75" min="0" max="2" step="0.05"></div>
       </div>
+      <button class="wide ghost" id="btnDraw" style="margin-top:10px">✏ 방 그리기 (자유형)</button>
+      <div class="note" id="drawNote" style="margin-top:5px;display:none">클릭=꼭짓점 · 시작점 클릭/더블클릭=완료 · 대각선 자유(0.1m 스냅) · Esc=취소</div>
     </div>
 
     <div class="sec">
@@ -225,8 +227,20 @@ const S = {
   gridN:24,          // 작업면 계산 격자 (한 변)
   E:[],              // 조도 결과 2D [ix][iz]
   Emin:0,Emax:0,Eavg:0,Uni:0,
-  view:'3d', heat:true, selected:-1
+  view:'3d', heat:true, selected:-1,
+  poly:null, mask:[], bb:null,       // 커스텀 방(자유형 폴리곤), 격자 마스크, 바운딩
+  draw:{active:false, pts:[]}        // 방 그리기 모드
 };
+
+// ============ 폴리곤(자유형 방) 기하 ============
+function rectPoly(){ return [{x:0,z:0},{x:S.W,z:0},{x:S.W,z:S.D},{x:0,z:S.D}]; }
+function polyBBox(p){ let a=Infinity,b=Infinity,c=-Infinity,d=-Infinity;
+  for(const v of p){ a=Math.min(a,v.x); c=Math.max(c,v.x); b=Math.min(b,v.z); d=Math.max(d,v.z);} return {minx:a,minz:b,maxx:c,maxz:d}; }
+function polyArea(p){ let a=0; for(let i=0,j=p.length-1;i<p.length;j=i++) a+=(p[j].x+p[i].x)*(p[j].z-p[i].z); return Math.abs(a/2); }
+function polyPerim(p){ let s=0; for(let i=0;i<p.length;i++){ const a=p[i],b=p[(i+1)%p.length]; s+=Math.hypot(b.x-a.x,b.z-a.z);} return s; }
+function pointInPoly(x,z,p){ let inside=false; for(let i=0,j=p.length-1;i<p.length;j=i++){
+  const xi=p[i].x,zi=p[i].z,xj=p[j].x,zj=p[j].z;
+  if(((zi>z)!==(zj>z)) && (x < (xj-xi)*(z-zi)/((zj-zi)||1e-9)+xi)) inside=!inside; } return inside; }
 
 // ============ 배광 함수 (수직 하방 대비 각 θ 의 상대 광도) ============
 function candela(theta, type){
@@ -324,7 +338,8 @@ function isShadowedEx(px,py,pz, lx,ly,lz, selfFurn){
 // 현재 간접광 성분 (공간평균 근사) 계산
 function indirectComponent(){
   if(S.bounces<=0) return 0;
-  const Acei=S.W*S.D, Aflr=S.W*S.D, Awall=2*(S.W+S.D)*S.H, Atot=Acei+Aflr+Awall;
+  const P=S.poly||rectPoly();
+  const Aflr=polyArea(P), Acei=Aflr, Awall=polyPerim(P)*S.H, Atot=Acei+Aflr+Awall;
   const rhoAvg=(S.rho.c*Acei+S.rho.f*Aflr+S.rho.w*Awall)/Atot;
   const totFlux=S.lums.length*S.flux*S.MF;
   let mult=0;
@@ -335,23 +350,27 @@ function indirectComponent(){
 
 // ============ 조도 계산 (직접광 + radiosity 간접광) ============
 function compute(){
+  const P=S.poly||rectPoly();
+  const bb=polyBBox(P); S.bb=bb;
   const N=S.gridN;
-  const dx=S.W/N, dz=S.D/N;
+  const dx=(bb.maxx-bb.minx)/N, dz=(bb.maxz-bb.minz)/N;
   const wpY=S.WP;
   const I0=axialIntensity(S.flux,S.dist)*S.MF;
   const Eindir=indirectComponent();
 
-  // --- 바닥/작업면 (법선 +y) ---
-  const E=[]; let mn=Infinity,mx=-Infinity,sum=0,cnt=0;
-  for(let i=0;i<N;i++){ E[i]=[]; for(let j=0;j<N;j++){
-    const px=(i+0.5)*dx, pz=(j+0.5)*dz;
-    const edir=pointIllum(px,wpY,pz, 0,1,0, I0, null);
-    const v=edir+Eindir;
+  // --- 작업면 (법선 +y). 방(폴리곤) 안쪽 셀만 집계 ---
+  const E=[], mask=[]; let mn=Infinity,mx=-Infinity,sum=0,cnt=0;
+  for(let i=0;i<N;i++){ E[i]=[]; mask[i]=[]; for(let j=0;j<N;j++){
+    const px=bb.minx+(i+0.5)*dx, pz=bb.minz+(j+0.5)*dz;
+    if(!pointInPoly(px,pz,P)){ E[i][j]=0; mask[i][j]=false; continue; }
+    mask[i][j]=true;
+    const v=pointIllum(px,wpY,pz, 0,1,0, I0, null)+Eindir;
     E[i][j]=v; sum+=v; cnt++;
     if(v<mn)mn=v; if(v>mx)mx=v;
   }}
-  S.E=E; S.Emin=mn; S.Emax=mx; S.Eavg=sum/cnt;
-  S.Uni = S.Eavg>0 ? mn/S.Eavg : 0;
+  S.E=E; S.mask=mask;
+  S.Emin=cnt?mn:0; S.Emax=cnt?mx:0; S.Eavg=cnt?sum/cnt:0;
+  S.Uni = S.Eavg>0 ? S.Emin/S.Eavg : 0;
 
   // --- 가구 표면 조도 계산 ---
   computeFurnSurfaces(I0, Eindir);
@@ -446,9 +465,12 @@ function drawHeat(){
   const img=ctx.createImageData(N,N);
   const mx=S.Emax||1;
   for(let i=0;i<N;i++)for(let j=0;j<N;j++){
-    const t=S.E[i][j]/mx;
-    const [r,g,b]=colormap(t);
-    const idx=((N-1-j)*N+i)*4; // j축 뒤집어 위=깊이 앞
+    const idx=(j*N+i)*4;   // flipY=false 로 바닥 UV와 정합
+    if(S.mask && S.mask[i] && S.mask[i][j]===false){
+      img.data[idx]=222;img.data[idx+1]=219;img.data[idx+2]=210;img.data[idx+3]=255; // 방 밖=페이퍼
+      continue;
+    }
+    const [r,g,b]=colormap(S.E[i][j]/mx);
     img.data[idx]=r;img.data[idx+1]=g;img.data[idx+2]=b;img.data[idx+3]=255;
   }
   ctx.putImageData(img,0,0);
@@ -472,6 +494,7 @@ function init3D(){
   furnGroup=new THREE.Group(); scene.add(furnGroup);
   heatTex=new THREE.CanvasTexture(heatCanvas);
   heatTex.magFilter=THREE.LinearFilter;
+  heatTex.flipY=false;   // 폴리곤 바닥 UV와 정합 (drawHeat 인덱싱과 맞춤)
   buildRoom();
   resize();
   bindOrbit();
@@ -480,33 +503,46 @@ function init3D(){
 function buildRoom(){
   if(room) scene.remove(room);
   room=new THREE.Group();
-  const W=S.W,D=S.D,H=S.H;
-  const edgeMat=new THREE.LineBasicMaterial({color:0x1a1f24});
-  // 방 와이어프레임
-  const box=new THREE.BoxGeometry(W,H,D);
-  const edges=new THREE.EdgesGeometry(box);
-  const line=new THREE.LineSegments(edges,edgeMat);
-  line.position.set(W/2,H/2,D/2);
-  room.add(line);
-  // 반투명 벽 (뒤·좌 만)
-  const wallMat=new THREE.MeshBasicMaterial({color:0xf4f2eb,transparent:true,opacity:0.35,side:THREE.DoubleSide});
-  const back=new THREE.Mesh(new THREE.PlaneGeometry(W,H),wallMat);
-  back.position.set(W/2,H/2,0); room.add(back);
-  const left=new THREE.Mesh(new THREE.PlaneGeometry(D,H),wallMat);
-  left.rotation.y=Math.PI/2; left.position.set(0,H/2,D/2); room.add(left);
-  // 작업면 (히트맵 텍스처)
+  const P=S.poly||rectPoly(); const H=S.H;
+  const bb=polyBBox(P);
+  const wbb=(bb.maxx-bb.minx)||1, dbb=(bb.maxz-bb.minz)||1;
+
+  // 바닥/작업면 = 폴리곤 Shape + 히트맵 텍스처 (UV=bbox 정규화)
+  const shape=new THREE.Shape(P.map(v=>new THREE.Vector2(v.x,v.z)));
+  const fgeo=new THREE.ShapeGeometry(shape);
+  const pos=fgeo.attributes.position; const uv=[];
+  for(let i=0;i<pos.count;i++){ uv.push((pos.getX(i)-bb.minx)/wbb, (pos.getY(i)-bb.minz)/dbb); }
+  fgeo.setAttribute('uv', new THREE.Float32BufferAttribute(uv,2));
   const fMat=new THREE.MeshBasicMaterial({map:heatTex,side:THREE.DoubleSide});
-  floorMesh=new THREE.Mesh(new THREE.PlaneGeometry(W,D),fMat);
-  floorMesh.rotation.x=-Math.PI/2;
-  floorMesh.position.set(W/2,S.WP,D/2);
+  floorMesh=new THREE.Mesh(fgeo,fMat);
+  floorMesh.rotation.x=Math.PI/2; floorMesh.position.y=S.WP;
   room.add(floorMesh);
-  // 작업면 테두리
-  const wpEdge=new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.PlaneGeometry(W,D)),
-    new THREE.LineBasicMaterial({color:0xe8a838}));
-  wpEdge.rotation.x=-Math.PI/2; wpEdge.position.set(W/2,S.WP+0.002,D/2); room.add(wpEdge);
+
+  // 작업면 폴리곤 테두리 (앰버)
+  const wp=P.map(v=>new THREE.Vector3(v.x,S.WP+0.002,v.z)); wp.push(wp[0].clone());
+  room.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(wp),
+    new THREE.LineBasicMaterial({color:0xe8a838})));
+
+  // 벽 = 각 변을 H까지 세운 반투명 쿼드
+  const wallMat=new THREE.MeshBasicMaterial({color:0xf4f2eb,transparent:true,opacity:0.30,side:THREE.DoubleSide});
+  for(let i=0;i<P.length;i++){
+    const a=P[i], b=P[(i+1)%P.length];
+    const g=new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.Float32BufferAttribute([
+      a.x,0,a.z,  b.x,0,b.z,  b.x,H,b.z,
+      a.x,0,a.z,  b.x,H,b.z,  a.x,H,a.z ],3));
+    room.add(new THREE.Mesh(g, wallMat));
+  }
+  // 바닥·천장 윤곽선
+  const edgeMat=new THREE.LineBasicMaterial({color:0x1a1f24,transparent:true,opacity:0.55});
+  const base=P.map(v=>new THREE.Vector3(v.x,0,v.z)); base.push(base[0].clone());
+  const top =P.map(v=>new THREE.Vector3(v.x,H,v.z)); top.push(top[0].clone());
+  room.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(base),edgeMat));
+  room.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(top),edgeMat));
+
   scene.add(room);
-  orbit.tx=W/2; orbit.ty=H/2; orbit.tz=D/2;
-  orbit.r=Math.max(W,D,H)*1.9;
+  orbit.tx=(bb.minx+bb.maxx)/2; orbit.ty=H/2; orbit.tz=(bb.minz+bb.maxz)/2;
+  orbit.r=Math.max(wbb,dbb,H)*1.9;
   rebuildLums();
 }
 function rebuildLums(){
@@ -616,11 +652,62 @@ function resize(){
   const w=vp.clientWidth,h=vp.clientHeight;
   renderer.setSize(w,h,false); cam.aspect=w/h; cam.updateProjectionMatrix();
 }
+// ===== 방 그리기 (자유형 폴리곤) =====
+let drawLine=null;
+function drawPlanePoint(e){
+  const cv=document.getElementById('cv'); const rect=cv.getBoundingClientRect();
+  mouse.x=((e.clientX-rect.left)/rect.width)*2-1;
+  mouse.y=-((e.clientY-rect.top)/rect.height)*2+1;
+  raycaster.setFromCamera(mouse,cam);
+  const plane=new THREE.Plane(new THREE.Vector3(0,1,0),0);
+  const pt=new THREE.Vector3();
+  if(!raycaster.ray.intersectPlane(plane,pt)) return null;
+  return { x:Math.round(pt.x*10)/10, z:Math.round(pt.z*10)/10 };  // 0.1m 스냅(대각선 자유)
+}
+function updateDrawPreview(cur){
+  if(drawLine){ scene.remove(drawLine); drawLine=null; }
+  const pts=S.draw.pts.map(p=>new THREE.Vector3(p.x,0.02,p.z));
+  if(cur) pts.push(new THREE.Vector3(cur.x,0.02,cur.z));
+  if(!pts.length) return;
+  drawLine=new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts),
+    new THREE.LineBasicMaterial({color:0xe8a838}));
+  scene.add(drawLine);
+}
+function setViewButtons(){
+  document.getElementById('btnViewTop').classList.toggle('ghost',S.view!=='top');
+  document.getElementById('btnView3d').classList.toggle('ghost',S.view!=='3d');
+}
+function enterDraw(){
+  S.draw.active=true; S.draw.pts=[]; S.view='top'; setViewButtons();
+  document.getElementById('vpBadge').textContent='방 그리기 · 클릭으로 꼭짓점';
+  document.getElementById('btnDraw').textContent='그리는 중 · 시작점/더블클릭=완료 · Esc=취소';
+  document.getElementById('drawNote').style.display='block';
+  updateDrawPreview(null);
+}
+function exitDraw(commit){
+  if(commit && S.draw.pts.length>=3){
+    S.poly=S.draw.pts.slice();
+    const bb=polyBBox(S.poly);
+    S.W=+(bb.maxx-bb.minx).toFixed(2); S.D=+(bb.maxz-bb.minz).toFixed(2);
+    document.getElementById('rW').value=S.W; document.getElementById('rD').value=S.D;
+    buildRoom(); compute();
+  }
+  S.draw.active=false; S.draw.pts=[];
+  if(drawLine){ scene.remove(drawLine); drawLine=null; }
+  document.getElementById('btnDraw').textContent='✏ 방 그리기 (자유형)';
+  document.getElementById('drawNote').style.display='none';
+  document.getElementById('vpBadge').textContent=(S.view==='top')?'평면 (TOP)':'3D 투시';
+}
+
 // 오빗 + 조명 드래그
 function bindOrbit(){
   const cv=document.getElementById('cv');
   let mode=null,px=0,py=0,dragLum=-1;
   cv.addEventListener('mousedown',e=>{
+    if(S.draw.active){ const p=drawPlanePoint(e); if(p){
+      if(S.draw.pts.length>=3){ const s=S.draw.pts[0]; if(Math.hypot(p.x-s.x,p.z-s.z)<0.4){ exitDraw(true); return; } }
+      S.draw.pts.push(p); updateDrawPreview(null);
+    } return; }
     const rect=cv.getBoundingClientRect();
     mouse.x=((e.clientX-rect.left)/rect.width)*2-1;
     mouse.y=-((e.clientY-rect.top)/rect.height)*2+1;
@@ -631,6 +718,7 @@ function bindOrbit(){
     else{ mode='orbit'; px=e.clientX; py=e.clientY; }
   });
   window.addEventListener('mousemove',e=>{
+    if(S.draw.active){ const p=drawPlanePoint(e); if(p) updateDrawPreview(p); return; }
     if(mode==='orbit'){
       orbit.az-=(e.clientX-px)*0.008; orbit.el+=(e.clientY-py)*0.008;
       orbit.el=Math.max(0.05,Math.min(1.5,orbit.el)); px=e.clientX; py=e.clientY;
@@ -652,6 +740,8 @@ function bindOrbit(){
   window.addEventListener('mouseup',()=>{ if(mode==='lum'){compute();} mode=null; dragLum=-1; });
   cv.addEventListener('wheel',e=>{ e.preventDefault();
     orbit.r*=(1+Math.sign(e.deltaY)*0.08); orbit.r=Math.max(3,Math.min(60,orbit.r)); },{passive:false});
+  cv.addEventListener('dblclick',()=>{ if(S.draw.active) exitDraw(true); });
+  window.addEventListener('keydown',e=>{ if(e.key==='Escape'&&S.draw.active) exitDraw(false); });
   window.addEventListener('resize',resize);
 }
 
@@ -674,9 +764,11 @@ function renderLumList(){
 function autoGrid(){
   const cols=+document.getElementById('gCol').value;
   const rows=+document.getElementById('gRow').value;
+  const P=S.poly||rectPoly(); const bb=polyBBox(P);
   S.lums=[];
   for(let r=0;r<rows;r++)for(let c=0;c<cols;c++){
-    S.lums.push({ x:S.W*(c+0.5)/cols, z:S.D*(r+0.5)/rows });
+    const x=bb.minx+(bb.maxx-bb.minx)*(c+0.5)/cols, z=bb.minz+(bb.maxz-bb.minz)*(r+0.5)/rows;
+    if(pointInPoly(x,z,P)) S.lums.push({x,z});
   }
   S.selected=-1; compute();
 }
@@ -687,6 +779,7 @@ function num(id){return +document.getElementById(id).value;}
 
 ['rW','rD','rH','rWP'].forEach(id=>bind(id,()=>{
   S.W=num('rW');S.D=num('rD');S.H=num('rH');S.WP=num('rWP');
+  S.poly=rectPoly();   // 치수 입력 = 사각형으로 (그린 방 해제)
   buildRoom(); compute();
 }));
 bind('reC',()=>{S.rho.c=num('reC');document.getElementById('reCv').textContent=S.rho.c.toFixed(2);compute();});
@@ -759,6 +852,7 @@ bind('fShelf',()=>addFurn('shelf'),'click');
 bind('fWardrobe',()=>addFurn('wardrobe'),'click');
 bind('fDemo',demoRoom,'click');
 bind('fClear',()=>{S.furns=[];compute();},'click');
+bind('btnDraw',()=>{ if(S.draw.active) exitDraw(false); else enterDraw(); },'click');
 bind('pillShadow',()=>{S.showShadow=!S.showShadow;
   const el=document.getElementById('pillShadow');
   el.className='pill'+(S.showShadow?' on':''); el.textContent=S.showShadow?'ON':'OFF';
