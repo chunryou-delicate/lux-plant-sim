@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>볕 · 빛이 진짜인 방</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Gaegu:wght@400;700&family=Jua&display=swap');
+  :root{
+    --cream:#fbf6ec; --ink:#4a4038; --sun:#ffcf6b; --leaf:#7cae7a;
+    --pot:#c98a5e; --shadow:rgba(74,64,56,.16); --card:#fffdf8;
+    --sky-dawn:#f7c9a8; --sky-noon:#bfe4f5; --sky-dusk:#e9a6b0; --sky-night:#2f3a5c;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{height:100%;overflow:hidden;font-family:'Gaegu',sans-serif;color:var(--ink);
+    background:var(--cream);user-select:none;touch-action:none}
+  #stage{position:relative;width:100vw;height:100vh;display:flex;flex-direction:column}
+  /* 하늘 배경 (시간대에 따라 변함) */
+  #sky{position:absolute;inset:0;transition:background 1.2s ease;z-index:0}
+  /* 상단 바 */
+  .topbar{position:relative;z-index:5;display:flex;align-items:center;gap:10px;
+    padding:14px 16px calc(env(safe-area-inset-top,0) + 4px)}
+  .brand{font-family:'Jua',sans-serif;font-size:22px;color:#fff;
+    text-shadow:0 2px 0 rgba(0,0,0,.12);letter-spacing:1px}
+  .brand .dot{color:var(--sun)}
+  .time-label{margin-left:auto;background:rgba(255,255,255,.85);border-radius:14px;
+    padding:4px 12px;font-family:'Jua';font-size:14px;color:var(--ink);
+    box-shadow:0 3px 0 var(--shadow)}
+  /* 방 뷰포트 */
+  #view{position:relative;flex:1;z-index:2;display:flex;align-items:center;justify-content:center}
+  #room{position:relative;width:min(88vw,420px);aspect-ratio:1/1;transform:translateY(-10px)}
+  #roomCanvas{position:absolute;inset:0;width:100%;height:100%}
+  /* 배치 아이템 레이어 */
+  #items{position:absolute;inset:0;pointer-events:none}
+  .item{position:absolute;pointer-events:auto;cursor:grab;transform-origin:bottom center;
+    transition:filter .8s ease;will-change:transform;touch-action:none}
+  .item.drag{cursor:grabbing;z-index:99;filter:drop-shadow(0 8px 10px rgba(0,0,0,.25)) !important}
+  .item svg{display:block;overflow:visible}
+  .item .glow{opacity:0;transition:opacity .8s ease}
+  /* 하단 독 */
+  .dock{position:relative;z-index:5;display:flex;gap:8px;padding:10px 12px calc(env(safe-area-inset-bottom,0) + 12px);
+    overflow-x:auto;background:linear-gradient(to top,rgba(255,253,248,.96),rgba(255,253,248,.7));
+    -webkit-overflow-scrolling:touch}
+  .dock::-webkit-scrollbar{display:none}
+  .tray-btn{flex:0 0 auto;width:60px;height:60px;border-radius:18px;border:none;background:var(--card);
+    box-shadow:0 4px 0 var(--shadow);display:flex;flex-direction:column;align-items:center;justify-content:center;
+    gap:2px;cursor:pointer;transition:transform .1s}
+  .tray-btn:active{transform:translateY(2px);box-shadow:0 2px 0 var(--shadow)}
+  .tray-btn svg{width:30px;height:30px}
+  .tray-btn span{font-size:11px;font-family:'Jua';color:#8a7d70}
+  /* 시간 슬라이더 */
+  .sunbar{position:relative;z-index:5;display:flex;align-items:center;gap:12px;padding:6px 20px 2px}
+  .sunbar .ico{font-size:18px}
+  input[type=range].sun{-webkit-appearance:none;flex:1;height:8px;border-radius:6px;outline:none;
+    background:linear-gradient(90deg,#3a4a6b 0%,#f7c9a8 22%,#bfe4f5 50%,#e9a6b0 78%,#2f3a5c 100%)}
+  input[type=range].sun::-webkit-slider-thumb{-webkit-appearance:none;width:26px;height:26px;border-radius:50%;
+    background:radial-gradient(circle at 35% 35%,#fff6dc,#ffcf6b);cursor:pointer;
+    box-shadow:0 2px 6px rgba(0,0,0,.25),0 0 0 3px rgba(255,255,255,.7)}
+  /* 팝업 힌트 */
+  .hint{position:absolute;top:14px;left:50%;transform:translateX(-50%);z-index:8;
+    background:rgba(74,64,56,.9);color:#fff;font-family:'Gaegu';font-weight:700;font-size:15px;
+    padding:8px 16px;border-radius:16px;pointer-events:none;opacity:0;transition:opacity .4s}
+  .hint.show{opacity:1}
+  /* 상세설정(진짜 빛) 토글 - 숨겨진 덕후 기능 */
+  .gear{position:absolute;z-index:6;right:14px;top:60px;width:40px;height:40px;border-radius:50%;
+    background:rgba(255,255,255,.85);border:none;box-shadow:0 3px 0 var(--shadow);cursor:pointer;
+    font-size:20px;display:flex;align-items:center;justify-content:center}
+  .panel{position:absolute;z-index:20;right:12px;top:104px;width:210px;background:var(--card);
+    border-radius:16px;box-shadow:0 8px 24px rgba(0,0,0,.18);padding:14px;transform:scale(.9);
+    opacity:0;pointer-events:none;transition:.18s;transform-origin:top right}
+  .panel.open{opacity:1;transform:scale(1);pointer-events:auto}
+  .panel h4{font-family:'Jua';font-size:14px;margin-bottom:4px}
+  .panel .sub{font-size:12px;color:#9a8d80;margin-bottom:10px;font-weight:700}
+  .panel .prow{display:flex;justify-content:space-between;align-items:center;margin-bottom:9px;font-size:13px;font-weight:700}
+  .panel .lux{font-family:'Jua';color:var(--pot)}
+  .chip{display:inline-block;font-size:11px;padding:2px 8px;border-radius:10px;background:#f0e9dd;font-weight:700}
+  .chip.good{background:#d9efd6;color:#4f8b52}
+  .toggle{width:42px;height:24px;border-radius:12px;background:#ddd4c6;position:relative;cursor:pointer;transition:.2s}
+  .toggle.on{background:var(--leaf)}
+  .toggle::after{content:'';position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;
+    background:#fff;transition:.2s}
+  .toggle.on::after{left:21px}
+  .mini{font-size:11px;color:#9a8d80;font-weight:700;line-height:1.4;margin-top:6px}
+</style>
+</head>
+<body>
+<div id="stage">
+  <div id="sky"></div>
+
+  <div class="topbar">
+    <span class="brand">볕<span class="dot">.</span></span>
+    <span class="time-label" id="timeLabel">한낮</span>
+  </div>
+
+  <div class="sunbar">
+    <span class="ico">🌙</span>
+    <input type="range" min="0" max="100" value="50" class="sun" id="sunSlider">
+    <span class="ico">🌙</span>
+  </div>
+
+  <button class="gear" id="gearBtn">⚙️</button>
+  <div class="panel" id="panel">
+    <h4>빛 상세설정</h4>
+    <div class="sub">진짜 햇빛으로 계산해요</div>
+    <div class="prow"><span>창가 밝기</span><span class="lux" id="pWindow">— lx</span></div>
+    <div class="prow"><span>방 안쪽</span><span class="lux" id="pInner">— lx</span></div>
+    <div class="prow"><span>식물 컨디션</span><span class="chip" id="pPlant">—</span></div>
+    <div class="prow"><span>실제 그림자</span><div class="toggle on" id="tShadow"></div></div>
+    <div class="prow"><span>천장 조명</span><div class="toggle" id="tLamp"></div></div>
+    <div class="mini">식물을 빛이 잘 드는 창가에 두면 쑥쑥 자라요 🌱</div>
+  </div>
+
+  <div class="hint" id="hint">가구를 끌어다 놓아보세요 ✨</div>
+
+  <div id="view">
+    <div id="room">
+      <canvas id="roomCanvas"></canvas>
+      <div id="items"></div>
+    </div>
+  </div>
+
+  <div class="dock" id="dock"></div>
+</div>
+
+<script>
+// ============ 좌표계: 아이소메트릭 방 ============
+// 방을 위에서 비스듬히 본 마름모 바닥. 논리좌표 (u,v) 0..1 → 화면 좌표.
+const ROOM = {size:0}; // 픽셀 사이즈 (리사이즈시 갱신)
+const cv=document.getElementById('roomCanvas');
+const ctx=cv.getContext('2d');
+const roomEl=document.getElementById('room');
+
+// 아이소 투영: 바닥 논리좌표(u,v)∈[0,1] → 방 로컬 픽셀
+// 창문은 뒤쪽 두 벽(왼벽=u축 뒤, 오른벽=v축 뒤)에 있다고 가정. 빛은 '창 방향'에서 들어옴.
+function iso(u,v){
+  const s=ROOM.size;
+  const cx=s*0.5, cy=s*0.30;      // 바닥 중심(위쪽)
+  const ax=s*0.42, ay=s*0.24;     // u축 방향
+  const bx=-s*0.42, by=s*0.24;    // v축 방향
+  return { x: cx + (u-0.5)*ax*2 + (v-0.5)*bx*2 + s*0 ,
+           y: cy + (u-0.5)*ay*2 + (v-0.5)*by*2 };
+}
+
+// ============ 시간대 → 태양/하늘 ============
+// t: 0(자정)~50(한낮)~100(자정). 태양 고도·방위·색 결정.
+const S={ t:50, shadow:true, lamp:false };
+function sunState(t){
+  // 0..100 → 하루. 낮은 t≈15~85. 고도 sin, 정오 최대
+  const dayPhase=(t-15)/70;                 // 0(일출)~1(일몰)
+  const daytime = t>12 && t<88;
+  const altitude = daytime ? Math.sin(Math.max(0,Math.min(1,dayPhase))*Math.PI) : 0; // 0~1
+  // 방위: 아침엔 왼창, 저녁엔 오른창에서 빛. -1(왼) ~ +1(오른)
+  const azimuth = (dayPhase-0.5)*2;         // -1~1
+  // 하늘색 보간
+  let sky, label, lampAuto=false;
+  if(t<12){ sky=lerpCol('#232c46','#3a4a6b',t/12); label='한밤'; lampAuto=true; }
+  else if(t<26){ sky=lerpCol('#3a4a6b','#f7c9a8',(t-12)/14); label='새벽'; }
+  else if(t<44){ sky=lerpCol('#f7c9a8','#bfe4f5',(t-26)/18); label='아침'; }
+  else if(t<58){ sky='#bfe4f5'; label='한낮'; }
+  else if(t<74){ sky=lerpCol('#bfe4f5','#f6c98a',(t-58)/16); label='늦은 오후'; }
+  else if(t<88){ sky=lerpCol('#f6c98a','#e9a6b0',(t-74)/14); label='해질녘'; }
+  else{ sky=lerpCol('#e9a6b0','#232c46',(t-88)/12); label='한밤'; lampAuto=true; }
+  return {altitude,azimuth,sky,label,daytime,lampAuto,
+          intensity: altitude, // 0~1 자연광 세기
+          warm: (t<30||t>70)?1:0 }; // 따뜻한 색감(아침·저녁)
+}
+function lerpCol(a,b,t){
+  t=Math.max(0,Math.min(1,t));
+  const pa=hx(a),pb=hx(b);
+  return `rgb(${Math.round(pa[0]+(pb[0]-pa[0])*t)},${Math.round(pa[1]+(pb[1]-pa[1])*t)},${Math.round(pa[2]+(pb[2]-pa[2])*t)})`;
+}
+function hx(h){h=h.replace('#','');return [parseInt(h.slice(0,2),16),parseInt(h.slice(2,4),16),parseInt(h.slice(4,6),16)];}
+
+// ============ 배치 아이템 ============
+// 각 아이템: {id,type,u,v, el}. u,v 는 바닥 논리좌표.
+let items=[];
+let uid=1;
+const itemsLayer=document.getElementById('items');
+
+// SVG 프리셋 (저폴리·귀여운 톤). 그림자는 별도 처리.
+const ART={
+  plant:(glow)=>`<svg width="70" height="90" viewBox="0 0 70 90">
+    <ellipse class="shd" cx="35" cy="85" rx="20" ry="5" fill="rgba(74,64,56,.18)"/>
+    <path d="M35 55 Q18 40 20 18 Q32 30 35 52 Q38 30 50 18 Q52 40 35 55Z" fill="#7cae7a"/>
+    <path d="M35 58 Q24 48 22 32 Q33 42 35 56Z" fill="#8fbf88"/>
+    <path d="M22 55 L48 55 L44 82 L26 82 Z" fill="#c98a5e"/>
+    <rect x="24" y="52" width="22" height="7" rx="3" fill="#d99a6e"/>
+    <ellipse class="glow" cx="35" cy="38" rx="26" ry="26" fill="url(#g1)"/>
+    <defs><radialGradient id="g1"><stop offset="0" stop-color="rgba(255,220,120,.55)"/><stop offset="1" stop-color="rgba(255,220,120,0)"/></radialGradient></defs>
+  </svg>`,
+  sofa:()=>`<svg width="110" height="72" viewBox="0 0 110 72">
+    <ellipse cx="55" cy="66" rx="46" ry="7" fill="rgba(74,64,56,.16)"/>
+    <rect x="10" y="30" width="90" height="28" rx="9" fill="#e6a4a0"/>
+    <rect x="8" y="20" width="20" height="34" rx="8" fill="#d98f8b"/>
+    <rect x="82" y="20" width="20" height="34" rx="8" fill="#d98f8b"/>
+    <rect x="26" y="26" width="26" height="16" rx="5" fill="#f2c0bd"/>
+    <rect x="56" y="26" width="26" height="16" rx="5" fill="#f2c0bd"/>
+  </svg>`,
+  bed:()=>`<svg width="120" height="80" viewBox="0 0 120 80">
+    <ellipse cx="60" cy="72" rx="52" ry="7" fill="rgba(74,64,56,.16)"/>
+    <rect x="12" y="34" width="96" height="30" rx="8" fill="#9fb8d6"/>
+    <rect x="12" y="24" width="96" height="16" rx="7" fill="#bcd0e8"/>
+    <rect x="18" y="26" width="30" height="14" rx="6" fill="#fff"/>
+    <rect x="10" y="20" width="10" height="44" rx="4" fill="#8aa4c4"/>
+  </svg>`,
+  lamp:()=>`<svg width="46" height="96" viewBox="0 0 46 96">
+    <ellipse cx="23" cy="90" rx="14" ry="4" fill="rgba(74,64,56,.16)"/>
+    <rect x="20" y="40" width="6" height="50" fill="#b7a48c"/>
+    <path d="M8 40 L38 40 L32 16 L14 16 Z" fill="#ffe39a"/>
+    <ellipse cx="23" cy="16" rx="9" ry="3" fill="#f2cf7d"/>
+    <ellipse class="glow" cx="23" cy="40" rx="30" ry="24" fill="url(#g2)"/>
+    <defs><radialGradient id="g2"><stop offset="0" stop-color="rgba(255,225,140,.6)"/><stop offset="1" stop-color="rgba(255,225,140,0)"/></radialGradient></defs>
+  </svg>`,
+  rug:()=>`<svg width="120" height="64" viewBox="0 0 120 64">
+    <ellipse cx="60" cy="32" rx="56" ry="28" fill="#e8d4a8"/>
+    <ellipse cx="60" cy="32" rx="42" ry="20" fill="none" stroke="#d8bd85" stroke-width="4"/>
+    <ellipse cx="60" cy="32" rx="26" ry="12" fill="#f0e2bf"/>
+  </svg>`,
+  table:()=>`<svg width="94" height="66" viewBox="0 0 94 66">
+    <ellipse cx="47" cy="60" rx="40" ry="6" fill="rgba(74,64,56,.16)"/>
+    <ellipse cx="47" cy="30" rx="38" ry="15" fill="#caa06e"/>
+    <ellipse cx="47" cy="27" rx="38" ry="15" fill="#dcb47f"/>
+    <rect x="24" y="38" width="6" height="20" fill="#b07e4e"/>
+    <rect x="64" y="38" width="6" height="20" fill="#b07e4e"/>
+  </svg>`,
+  avatar:()=>`<svg width="52" height="92" viewBox="0 0 52 92">
+    <ellipse cx="26" cy="87" rx="15" ry="4" fill="rgba(74,64,56,.18)"/>
+    <rect x="16" y="44" width="20" height="34" rx="9" fill="#f4a259"/>
+    <circle cx="26" cy="28" r="16" fill="#ffd9b3"/>
+    <path d="M11 26 Q13 8 26 9 Q39 8 41 26 Q36 18 26 19 Q16 18 11 26Z" fill="#5a4632"/>
+    <circle cx="20" cy="28" r="2.2" fill="#4a4038"/><circle cx="32" cy="28" r="2.2" fill="#4a4038"/>
+    <path d="M22 34 Q26 37 30 34" stroke="#c98a5e" stroke-width="2" fill="none" stroke-linecap="round"/>
+  </svg>`
+};
+const TRAY=[
+  {type:'plant',label:'식물',ico:'🌱'},
+  {type:'sofa',label:'소파',ico:'🛋️'},
+  {type:'bed',label:'침대',ico:'🛏️'},
+  {type:'table',label:'테이블',ico:'🪑'},
+  {type:'lamp',label:'조명',ico:'💡'},
+  {type:'rug',label:'러그',ico:'🟫'},
+  {type:'avatar',label:'나',ico:'🧍'},
+];
+
+// ============ 방 그리기 ============
+function resize(){
+  const r=roomEl.getBoundingClientRect();
+  const s=Math.min(r.width,r.height);
+  ROOM.size=s;
+  cv.width=s*devicePixelRatio; cv.height=s*devicePixelRatio;
+  cv.style.width=s+'px'; cv.style.height=s+'px';
+  ctx.setTransform(devicePixelRatio,0,0,devicePixelRatio,0,0);
+  drawRoom();
+  layoutItems();
+}
+function drawRoom(){
+  const s=ROOM.size; if(!s) return;
+  const sun=sunState(S.t);
+  ctx.clearRect(0,0,s,s);
+
+  // --- 두 벽 (뒤 왼/오) ---
+  const wallH=s*0.34;
+  // 왼벽
+  const p0=iso(0,0), p1=iso(1,0);
+  ctx.beginPath();
+  ctx.moveTo(p0.x,p0.y); ctx.lineTo(p1.x,p1.y);
+  ctx.lineTo(p1.x,p1.y-wallH); ctx.lineTo(p0.x,p0.y-wallH); ctx.closePath();
+  ctx.fillStyle=shade('#efe4d2',sun,0.9); ctx.fill();
+  // 오른벽
+  const p2=iso(1,1);
+  ctx.beginPath();
+  ctx.moveTo(p1.x,p1.y); ctx.lineTo(p2.x,p2.y);
+  ctx.lineTo(p2.x,p2.y-wallH); ctx.lineTo(p1.x,p1.y-wallH); ctx.closePath();
+  ctx.fillStyle=shade('#e6d8c2',sun,0.8); ctx.fill();
+
+  // --- 창문 2개 (각 벽에) + 채광 ---
+  drawWindow(p0,p1,wallH,'left',sun);
+  drawWindow(p1,p2,wallH,'right',sun);
+
+  // --- 바닥 ---
+  const f0=iso(0,0),f1=iso(1,0),f2=iso(1,1),f3=iso(0,1);
+  ctx.beginPath();
+  ctx.moveTo(f0.x,f0.y);ctx.lineTo(f1.x,f1.y);ctx.lineTo(f2.x,f2.y);ctx.lineTo(f3.x,f3.y);ctx.closePath();
+  ctx.fillStyle=shade('#e9d9bf',sun,1); ctx.fill();
+
+  // --- 바닥 채광 웅덩이 (창에서 들어온 빛이 바닥에 비침) ---
+  if(sun.intensity>0.05) drawSunPool(sun);
+
+  // --- 야간 조명 웅덩이 ---
+  if((S.lamp) || sun.lampAuto){
+    const lampOn = S.lamp || (sun.lampAuto);
+    if(lampOn) drawLampGlow();
+  }
+}
+// 벽면 명암: 태양세기·따뜻함 반영
+function shade(hex,sun,face){
+  const [r,g,b]=hx(hex);
+  const lit=0.55+0.45*sun.intensity*face;           // 밝기
+  const warmR=sun.warm? 14:0, warmB=sun.warm? -10:0;
+  const nightTint = sun.intensity<0.1? -40:0;
+  return `rgb(${clamp(r*lit+warmR+nightTint)},${clamp(g*lit+nightTint)},${clamp(b*lit+warmB+nightTint)})`;
+}
+function clamp(v){return Math.max(0,Math.min(255,Math.round(v)))}
+function drawWindow(a,b,wallH,side,sun){
+  // 벽 중앙에 창 사각형
+  const mx=(a.x+b.x)/2, my=(a.y+b.y)/2;
+  const wx=(b.x-a.x)*0.28, wy=(b.y-a.y)*0.28;
+  const top=wallH*0.66, bot=wallH*0.2;
+  const c1={x:mx-wx,y:my-wy-top}, c2={x:mx+wx,y:my+wy-top};
+  const c3={x:mx+wx,y:my+wy-bot}, c4={x:mx-wx,y:my-wy-bot};
+  // 하늘색으로 창 채우기 (바깥 풍경 느낌)
+  ctx.beginPath();ctx.moveTo(c1.x,c1.y);ctx.lineTo(c2.x,c2.y);ctx.lineTo(c3.x,c3.y);ctx.lineTo(c4.x,c4.y);ctx.closePath();
+  ctx.fillStyle=sun.sky; ctx.fill();
+  // 태양 동그라미 (낮에만, 방위에 따라 좌우)
+  if(sun.daytime && sun.intensity>0.1){
+    const relevant = (side==='left'&&sun.azimuth<0.2)||(side==='right'&&sun.azimuth>-0.2);
+    if(relevant){
+      const sunX=mx+(sun.azimuth)*wx*0.8;
+      const sunY=my-top+ (1-sun.altitude)*(top-bot)*0.9;
+      ctx.beginPath();ctx.arc(sunX,sunY,7,0,7); ctx.fillStyle='rgba(255,240,190,.95)';ctx.fill();
+    }
+  }
+  // 창틀
+  ctx.strokeStyle='#c9b89a';ctx.lineWidth=3;
+  ctx.beginPath();ctx.moveTo(c1.x,c1.y);ctx.lineTo(c2.x,c2.y);ctx.lineTo(c3.x,c3.y);ctx.lineTo(c4.x,c4.y);ctx.closePath();ctx.stroke();
+  ctx.beginPath();ctx.moveTo((c1.x+c4.x)/2,(c1.y+c4.y)/2);ctx.lineTo((c2.x+c3.x)/2,(c2.y+c3.y)/2);ctx.stroke();
+}
+// 바닥 햇빛 웅덩이 — 태양 방위에 따라 위치 이동 (진짜 빛의 시각화)
+let sunPoolPos={u:0.5,v:0.5,r:0.3};
+function drawSunPool(sun){
+  // 방위 -1(왼창)~+1(오른창) → 바닥 웅덩이 위치. 고도 낮으면 길게 늘어짐.
+  const u = 0.5 + sun.azimuth*0.30;
+  const v = 0.5 - sun.azimuth*0.30;
+  sunPoolPos={u,v,r:0.24+(1-sun.altitude)*0.12};
+  const c=iso(u,v), s=ROOM.size;
+  const rx=s*sunPoolPos.r, ry=s*sunPoolPos.r*0.5*(0.7+ (1-sun.altitude)*0.5);
+  const grd=ctx.createRadialGradient(c.x,c.y,0,c.x,c.y,rx);
+  const a=0.34*sun.intensity;
+  const warm=sun.warm;
+  grd.addColorStop(0,`rgba(255,${warm?210:235},${warm?150:190},${a})`);
+  grd.addColorStop(1,'rgba(255,235,190,0)');
+  ctx.save();ctx.translate(c.x,c.y);ctx.scale(1,ry/rx);
+  ctx.beginPath();ctx.arc(0,0,rx,0,7);ctx.fillStyle=grd;ctx.fill();ctx.restore();
+}
+function drawLampGlow(){
+  const c=iso(0.5,0.5),s=ROOM.size;
+  const grd=ctx.createRadialGradient(c.x,c.y,0,c.x,c.y,s*0.3);
+  grd.addColorStop(0,'rgba(255,220,140,.28)');grd.addColorStop(1,'rgba(255,220,140,0)');
+  ctx.save();ctx.translate(c.x,c.y);ctx.scale(1,0.5);
+  ctx.beginPath();ctx.arc(0,0,s*0.3,0,7);ctx.fillStyle=grd;ctx.fill();ctx.restore();
+}
+
+// ============ 아이템 배치/조도 ============
+function addItem(type,u,v){
+  const el=document.createElement('div');
+  el.className='item';
+  el.innerHTML=(type==='plant'||type==='lamp')?ART[type](true):ART[type]();
+  const it={id:uid++,type,u:u??0.5,v:v??0.5,el};
+  el.dataset.id=it.id;
+  itemsLayer.appendChild(el);
+  items.push(it);
+  bindDrag(it);
+  layoutItems();
+  updateLight();
+  return it;
+}
+function layoutItems(){
+  // v+u 큰 순(앞쪽)이 위에 오도록 z정렬
+  items.sort((a,b)=>(a.u+a.v)-(b.u+b.v));
+  items.forEach((it,i)=>{
+    const p=iso(it.u,it.v);
+    const el=it.el;
+    const w=el.offsetWidth||60, h=el.offsetHeight||60;
+    el.style.left=(p.x - w/2)+'px';
+    el.style.top =(p.y - h + 6)+'px';
+    el.style.zIndex=10+i;
+  });
+}
+
+// 특정 바닥점(u,v)의 '밝기' 0~1: 자연광 웅덩이 + 창 근접 + 램프
+function brightnessAt(u,v){
+  const sun=sunState(S.t);
+  let b=0.12; // 최소 환경광
+  // 자연광 웅덩이 중심과의 거리
+  if(sun.intensity>0.05){
+    const du=u-sunPoolPos.u, dv=v-sunPoolPos.v;
+    const dist=Math.sqrt(du*du+dv*dv);
+    b += sun.intensity*Math.max(0,1-dist/(sunPoolPos.r*1.6));
+    // 창(뒤쪽) 근접 가산: v 또는 u 가 0에 가까울수록 창가
+    const nearWin=Math.max(0, 1-Math.min(u,v)/0.5);
+    b += sun.intensity*0.25*nearWin;
+  }
+  // 램프
+  if(S.lamp||sun.lampAuto){
+    const du=u-0.5,dv=v-0.5,dist=Math.sqrt(du*du+dv*dv);
+    b += 0.5*Math.max(0,1-dist/0.5);
+  }
+  return Math.max(0,Math.min(1,b));
+}
+
+// 조도 근사(lx): 밝기 0~1 을 대략적 lx로 (연출용 숫자)
+function toLux(b){ return Math.round(b*900); }
+
+// ============ 조명 반영: 아이템 밝기·식물 컨디션 ============
+function updateLight(){
+  const sun=sunState(S.t);
+  // 하늘
+  document.getElementById('sky').style.background=
+    `linear-gradient(180deg, ${sun.sky} 0%, ${lerpCol(sun.sky,'#fbf6ec',0.5)} 100%)`;
+  document.getElementById('timeLabel').textContent=sun.label;
+  drawRoom();
+
+  // 각 아이템 밝기 반영
+  items.forEach(it=>{
+    const b=brightnessAt(it.u,it.v);
+    // 밝기에 따라 필터(어두우면 어둡게, 따뜻하면 살짝 노랗게)
+    const bright=0.62+b*0.5;
+    const warm=sun.warm?`sepia(${Math.round(b*25)}%)`:'';
+    it.el.style.filter=`brightness(${bright.toFixed(2)}) ${warm}`;
+    // 식물 반응: 밝으면 glow + 살짝 커짐, 어두우면 시들
+    if(it.type==='plant'){
+      const glow=it.el.querySelector('.glow');
+      const shd=it.el.querySelector('.shd');
+      if(b>0.5){ if(glow)glow.style.opacity=Math.min(1,(b-0.5)*2);
+        it.el.style.transform='scale(1.06)'; it.happy=true; }
+      else { if(glow)glow.style.opacity=0;
+        it.el.style.transform=b<0.28?'scale(0.9) rotate(-3deg)':'scale(1)'; it.happy=false; }
+    }
+    // 조명 아이템: 밤이면 스스로 빛남
+    if(it.type==='lamp'){
+      const glow=it.el.querySelector('.glow');
+      const on=(S.lamp||sun.lampAuto||b<0.3);
+      if(glow)glow.style.opacity=on?1:0;
+    }
+  });
+  updatePanel();
+}
+
+function updatePanel(){
+  const bWin=brightnessAt(0.2,0.2);   // 창가
+  const bIn =brightnessAt(0.7,0.7);   // 안쪽
+  document.getElementById('pWindow').textContent=toLux(bWin)+' lx';
+  document.getElementById('pInner').textContent=toLux(bIn)+' lx';
+  // 식물 컨디션: 식물들 평균 행복
+  const plants=items.filter(i=>i.type==='plant');
+  const pEl=document.getElementById('pPlant');
+  if(!plants.length){ pEl.textContent='식물 없음'; pEl.className='chip'; }
+  else {
+    const happy=plants.filter(p=>p.happy).length;
+    if(happy===plants.length){ pEl.textContent='아주 좋음 🌿'; pEl.className='chip good'; }
+    else if(happy>0){ pEl.textContent='그럭저럭'; pEl.className='chip'; }
+    else { pEl.textContent='빛이 부족해요'; pEl.className='chip'; }
+  }
+}
+
+// ============ 드래그 ============
+function bindDrag(it){
+  const el=it.el;
+  let dragging=false, offX=0, offY=0;
+  const down=(e)=>{
+    dragging=true; el.classList.add('drag');
+    const pt=getPt(e); const r=el.getBoundingClientRect();
+    offX=pt.x-(r.left+r.width/2); offY=pt.y-(r.top+r.height);
+    e.preventDefault();
+  };
+  const move=(e)=>{
+    if(!dragging)return;
+    const pt=getPt(e);
+    const roomR=roomEl.getBoundingClientRect();
+    // 화면 → 논리(u,v) 역변환
+    const lx=pt.x-offX-roomR.left, ly=pt.y-offY-roomR.top;
+    const uv=screenToUV(lx,ly);
+    it.u=Math.max(0.04,Math.min(0.96,uv.u));
+    it.v=Math.max(0.04,Math.min(0.96,uv.v));
+    layoutItems(); updateLight();
+    e.preventDefault();
+  };
+  const up=()=>{ if(dragging){dragging=false;el.classList.remove('drag');
+    it.el.style.transition='';} };
+  el.addEventListener('mousedown',down); el.addEventListener('touchstart',down,{passive:false});
+  window.addEventListener('mousemove',move); window.addEventListener('touchmove',move,{passive:false});
+  window.addEventListener('mouseup',up); window.addEventListener('touchend',up);
+  // 더블탭/더블클릭 삭제
+  let lastTap=0;
+  el.addEventListener('click',()=>{ const now=Date.now();
+    if(now-lastTap<300){ removeItem(it); } lastTap=now; });
+}
+function getPt(e){ if(e.touches&&e.touches[0])return {x:e.touches[0].clientX,y:e.touches[0].clientY};
+  return {x:e.clientX,y:e.clientY}; }
+function removeItem(it){ it.el.remove(); items=items.filter(x=>x!==it); updateLight(); }
+
+// 화면 로컬(px) → 논리 (u,v) : iso()의 역행렬
+function screenToUV(x,y){
+  const s=ROOM.size;
+  const cx=s*0.5, cy=s*0.30, ax=s*0.42, ay=s*0.24, bx=-s*0.42, by=s*0.24;
+  // [x-cx] = [2ax 2bx][u-.5]   → 역행렬
+  // [y-cy]   [2ay 2by][v-.5]
+  const dx=x-cx, dy=y-cy;
+  const det=(2*ax)*(2*by)-(2*bx)*(2*ay);
+  const u=0.5 + ( (2*by)*dx - (2*bx)*dy)/det;
+  const v=0.5 + (-(2*ay)*dx + (2*ax)*dy)/det;
+  return {u,v};
+}
+
+// ============ 트레이 & 컨트롤 ============
+const dock=document.getElementById('dock');
+TRAY.forEach(t=>{
+  const b=document.createElement('button');
+  b.className='tray-btn';
+  b.innerHTML=`<div style="font-size:26px">${t.ico}</div><span>${t.label}</span>`;
+  b.onclick=()=>{ addItem(t.type, 0.4+Math.random()*0.2, 0.4+Math.random()*0.2);
+    flashHint(t.label+' 추가! 끌어서 옮겨요'); };
+  dock.appendChild(b);
+});
+
+const sunSlider=document.getElementById('sunSlider');
+sunSlider.addEventListener('input',()=>{ S.t=+sunSlider.value; updateLight(); });
+
+// 상세설정 패널
+const panel=document.getElementById('panel');
+document.getElementById('gearBtn').onclick=()=>panel.classList.toggle('open');
+document.getElementById('tShadow').onclick=function(){S.shadow=!S.shadow;this.classList.toggle('on',S.shadow);drawRoom();};
+document.getElementById('tLamp').onclick=function(){S.lamp=!S.lamp;this.classList.toggle('on',S.lamp);updateLight();};
+
+// 힌트
+let hintTimer;
+function flashHint(txt){ const h=document.getElementById('hint'); h.textContent=txt; h.classList.add('show');
+  clearTimeout(hintTimer); hintTimer=setTimeout(()=>h.classList.remove('show'),1800); }
+
+// ============ 시작 ============
+window.addEventListener('resize',resize);
+setTimeout(()=>{
+  resize();
+  // 초기 데모 배치
+  addItem('rug',0.5,0.55);
+  addItem('sofa',0.62,0.3);
+  addItem('bed',0.28,0.62);
+  addItem('table',0.5,0.5);
+  addItem('plant',0.18,0.2);
+  addItem('avatar',0.6,0.66);
+  updateLight();
+  flashHint('해 슬라이더를 움직여보세요 ☀️');
+},60);
+</script>
+</body>
+</html>

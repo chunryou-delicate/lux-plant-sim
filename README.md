@@ -1,3 +1,34 @@
-# lux-plant-sim
-lux simulator house plant game
-lets save example
+# 볕 (가제) — lux-plant-sim
+
+빛이 진짜인 방꾸미기·식물육성 — **조도 시뮬레이터 + 식집사 게임**
+
+## 무엇
+- **본체:** 조명·창문 채광·룩스(조도) 시뮬레이션 — 빛이 주인공
+- **부가:** 방 꾸미기 + 식물 육성 (빛 따라 자람)
+- **유일 후크:** 빛이 진짜다 (물리 조도 → 식물 성장)
+
+## 스택
+- 웹 (HTML / CSS / JavaScript)
+- (배포 예정) Capacitor → 앱 / Electron → exe
+
+## 개발 순서
+1. **엔진(빛·조도) 먼저** — 발전소부터 짓는다
+2. 그 위에 게임(육성·꾸미기) 얹기 (항상 염두)
+
+## 폴더 구조
+```
+lux-plant-sim/
+├─ docs/          기획 문서 (기획 트리·이관 정리)
+├─ prototypes/    검증 완료 프로토타입 (여기서 모듈로 쪼갬)
+└─ src/           (예정) 엔진·렌더·식물 모듈
+   ├─ engine/     조도 계산 (E=I·cosθ/d², 그림자, radiosity)
+   ├─ room/       방 렌더링 (아이소·8방회전·pitch)
+   └─ plants/     식물 성장 로직
+```
+
+## 문서
+- [docs/byeot_plan.md](docs/byeot_plan.md) — 기획 트리 (헌법·로드맵·식물 시스템)
+- [docs/클코_이관정리.md](docs/클코_이관정리.md) — 이관·작업 순서 정리
+
+## 협업
+- 브랜치 나눠 작업 → PR → 병합

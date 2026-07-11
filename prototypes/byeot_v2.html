@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>볕 · 빛이 진짜인 방 v2</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Gaegu:wght@400;700&family=Jua&display=swap');
+  :root{
+    --cream:#fbf6ec; --ink:#4a4038; --sun:#ffcf6b; --card:#fffdf8;
+    --shadow:rgba(74,64,56,.16); --leaf:#7cae7a; --pot:#c98a5e;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{height:100%;overflow:hidden;font-family:'Gaegu',sans-serif;color:var(--ink);
+    background:var(--cream);user-select:none;touch-action:none}
+  #stage{position:relative;width:100vw;height:100vh;display:flex;flex-direction:column}
+  #sky{position:absolute;inset:0;transition:background 1s ease;z-index:0}
+  .topbar{position:relative;z-index:5;display:flex;align-items:center;gap:10px;
+    padding:14px 16px 2px calc(env(safe-area-inset-left,0)+16px)}
+  .brand{font-family:'Jua';font-size:22px;color:#fff;text-shadow:0 2px 0 rgba(0,0,0,.12);letter-spacing:1px}
+  .brand .dot{color:var(--sun)}
+  .time-label{margin-left:auto;background:rgba(255,255,255,.85);border-radius:14px;
+    padding:4px 12px;font-family:'Jua';font-size:14px;box-shadow:0 3px 0 var(--shadow)}
+  .sunbar{position:relative;z-index:5;display:flex;align-items:center;gap:10px;padding:6px 18px 0}
+  .sunbar .ico{font-size:16px}
+  input[type=range].sun{-webkit-appearance:none;flex:1;height:8px;border-radius:6px;outline:none;
+    background:linear-gradient(90deg,#3a4a6b,#f7c9a8 22%,#bfe4f5 50%,#e9a6b0 78%,#2f3a5c)}
+  input[type=range].sun::-webkit-slider-thumb{-webkit-appearance:none;width:24px;height:24px;border-radius:50%;
+    background:radial-gradient(circle at 35% 35%,#fff6dc,#ffcf6b);cursor:pointer;
+    box-shadow:0 2px 6px rgba(0,0,0,.25),0 0 0 3px rgba(255,255,255,.7)}
+  #view{position:relative;flex:1;z-index:2;display:flex;align-items:center;justify-content:center;overflow:hidden}
+  #board{position:relative;width:min(94vw,460px);aspect-ratio:1/1}
+  #boardCanvas{position:absolute;inset:0;width:100%;height:100%}
+  /* 회전/뷰 컨트롤 */
+  .viewctl{position:absolute;z-index:6;left:12px;bottom:8px;display:flex;flex-direction:column;gap:8px}
+  .rbtns{display:flex;gap:8px}
+  .cbtn{width:44px;height:44px;border-radius:14px;border:none;background:rgba(255,255,255,.9);
+    box-shadow:0 3px 0 var(--shadow);cursor:pointer;font-size:20px;display:flex;align-items:center;justify-content:center;
+    font-family:'Jua';color:var(--ink)}
+  .cbtn:active{transform:translateY(2px);box-shadow:0 1px 0 var(--shadow)}
+  .cbtn small{font-size:10px}
+  .gear{position:absolute;z-index:6;right:14px;top:96px;width:40px;height:40px;border-radius:50%;
+    background:rgba(255,255,255,.85);border:none;box-shadow:0 3px 0 var(--shadow);cursor:pointer;font-size:20px}
+  .panel{position:absolute;z-index:20;right:12px;top:140px;width:216px;background:var(--card);
+    border-radius:16px;box-shadow:0 8px 24px rgba(0,0,0,.18);padding:14px;transform:scale(.9);opacity:0;
+    pointer-events:none;transition:.18s;transform-origin:top right}
+  .panel.open{opacity:1;transform:scale(1);pointer-events:auto}
+  .panel h4{font-family:'Jua';font-size:14px;margin-bottom:2px}
+  .panel .sub{font-size:12px;color:#9a8d80;margin-bottom:10px;font-weight:700}
+  .prow{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;font-size:13px;font-weight:700}
+  .lux{font-family:'Jua';color:var(--pot)}
+  .chip{display:inline-block;font-size:11px;padding:2px 8px;border-radius:10px;background:#f0e9dd;font-weight:700}
+  .chip.good{background:#d9efd6;color:#4f8b52}
+  .toggle{width:42px;height:24px;border-radius:12px;background:#ddd4c6;position:relative;cursor:pointer;transition:.2s}
+  .toggle.on{background:var(--leaf)}
+  .toggle::after{content:'';position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#fff;transition:.2s}
+  .toggle.on::after{left:21px}
+  .mini{font-size:11px;color:#9a8d80;font-weight:700;line-height:1.4;margin-top:4px}
+  .heatbtn{font-size:11px;font-family:'Jua';border:none;background:#f0e9dd;border-radius:10px;padding:4px 8px;cursor:pointer;color:var(--ink)}
+  .heatbtn.on{background:var(--sun)}
+  .dock{position:relative;z-index:5;display:flex;gap:8px;padding:10px 12px calc(env(safe-area-inset-bottom,0)+12px);
+    overflow-x:auto;background:linear-gradient(to top,rgba(255,253,248,.96),rgba(255,253,248,.6))}
+  .dock::-webkit-scrollbar{display:none}
+  .tray-btn{flex:0 0 auto;width:58px;height:60px;border-radius:18px;border:none;background:var(--card);
+    box-shadow:0 4px 0 var(--shadow);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;cursor:pointer}
+  .tray-btn:active{transform:translateY(2px);box-shadow:0 2px 0 var(--shadow)}
+  .tray-btn div{font-size:24px}.tray-btn span{font-size:10px;font-family:'Jua';color:#8a7d70}
+  .hint{position:absolute;top:12px;left:50%;transform:translateX(-50%);z-index:8;background:rgba(74,64,56,.9);
+    color:#fff;font-weight:700;font-size:14px;padding:7px 15px;border-radius:16px;pointer-events:none;opacity:0;transition:.4s}
+  .hint.show{opacity:1}
+</style>
+</head>
+<body>
+<div id="stage">
+  <div id="sky"></div>
+  <div class="topbar">
+    <span class="brand">볕<span class="dot">.</span></span>
+    <span class="time-label" id="timeLabel">한낮</span>
+  </div>
+  <div class="sunbar">
+    <span class="ico">🌙</span>
+    <input type="range" min="0" max="100" value="50" class="sun" id="sunSlider">
+    <span class="ico">🌙</span>
+  </div>
+
+  <button class="gear" id="gearBtn">⚙️</button>
+  <div class="panel" id="panel">
+    <h4>빛 상세설정</h4>
+    <div class="sub">진짜 조도로 계산해요 (lx)</div>
+    <div class="prow"><span>창가 평균</span><span class="lux" id="pWindow">— lx</span></div>
+    <div class="prow"><span>방 안쪽</span><span class="lux" id="pInner">— lx</span></div>
+    <div class="prow"><span>가장 밝은 곳</span><span class="lux" id="pMax">— lx</span></div>
+    <div class="prow"><span>식물 컨디션</span><span class="chip" id="pPlant">—</span></div>
+    <div class="prow"><span>천장 조명</span><div class="toggle" id="tLamp"></div></div>
+    <div class="prow"><span>조도 히트맵 보기</span><button class="heatbtn" id="bHeat">OFF</button></div>
+    <div class="mini">창문·조명·식물이 모두 데이터로 정의돼요. 빛 잘 드는 곳에 식물을 두면 자라요 🌱</div>
+  </div>
+
+  <div class="hint" id="hint"></div>
+
+  <div id="view">
+    <div id="board">
+      <canvas id="boardCanvas"></canvas>
+    </div>
+    <div class="viewctl">
+      <div class="rbtns">
+        <button class="cbtn" id="rotL">↺</button>
+        <button class="cbtn" id="rotR">↻</button>
+      </div>
+      <button class="cbtn" id="pitchBtn"><small>시점</small></button>
+    </div>
+  </div>
+
+  <div class="dock" id="dock"></div>
+</div>
+
+<script>
+/* ============================================================
+   볕 v2 — 데이터 주도 + 8방 회전 + pitch 2단계 + 진짜 조도 격자
+   설계 원칙:
+   - 아이템 위치는 방 고정좌표 (u,v)∈[0,1] 로만 저장
+   - 회전(dir 0~7)·pitch(0~1)는 '볼 때만' 적용하는 뷰 변환
+   - 조도는 방 좌표계 격자(GRID×GRID)에서 1회 계산, 렌더는 그 위에 투영
+============================================================ */
+
+// ---------- 뷰 상태 ----------
+const VIEW={ dir:0, pitch:0, size:0 };   // dir: 0~7(45°), pitch: 0=45° 1=60°
+const PITCH_SQUASH=[0.52, 0.36];
+const ROOM_H=1.0;                         // 벽 높이(논리)
+
+// ---------- 데이터: 방 정의 ----------
+// 창문: 방의 어느 '변'에 있나. side 0~3 (0:뒤u축 1:뒤v축 ...), pos 0~1(변 위 위치), 크기, 방위각
+// 조도 계산에선 창을 '그 변에서 들어오는 자연광 입구'로 취급
+const ROOM={
+  windows:[
+    { id:'w1', side:'u0', pos:0.5, width:0.4, sky:1.0 },  // 뒤쪽 벽A 중앙 창
+    { id:'w2', side:'v0', pos:0.5, width:0.4, sky:1.0 },  // 뒤쪽 벽B 중앙 창
+  ],
+  wallColorA:'#efe4d2', wallColorB:'#e6d8c2', floorColor:'#e9d9bf'
+};
+
+// ---------- 데이터: 아이템 카탈로그 ----------
+// 조명(light): 광속 flux(lm 상당), 높이 h. 식물(plant): 필요광량 needLux, 성장단계.
+const CATALOG={
+  plant_basil: {kind:'plant', label:'바질', ico:'🌿', needLux:450, art:'plant', h:0.15},
+  plant_cactus:{kind:'plant', label:'선인장', ico:'🌵', needLux:600, art:'cactus', h:0.2},
+  plant_fern:  {kind:'plant', label:'고사리', ico:'🪴', needLux:250, art:'fern', h:0.15},
+  tomato:      {kind:'plant', label:'토마토', ico:'🍅', needLux:700, art:'plant', h:0.25},
+  sofa:  {kind:'furn', label:'소파', ico:'🛋️', art:'sofa', h:0.28},
+  bed:   {kind:'furn', label:'침대', ico:'🛏️', art:'bed', h:0.24},
+  table: {kind:'furn', label:'테이블', ico:'🪑', art:'table', h:0.22},
+  rug:   {kind:'furn', label:'러그', ico:'🟫', art:'rug', h:0.01},
+  lamp:  {kind:'light', label:'스탠드', ico:'💡', art:'lamp', h:0.6, flux:2600},
+  ceiling:{kind:'light', label:'천장등', ico:'🔆', art:'ceilinglamp', h:0.95, flux:4200},
+  avatar:{kind:'avatar', label:'나', ico:'🧍', art:'avatar', h:0.5},
+};
+const TRAY=['plant_basil','tomato','plant_cactus','plant_fern','sofa','bed','table','rug','lamp','ceiling','avatar'];
+
+// ---------- 상태 ----------
+const S={ t:50, lampManual:false, showHeat:false };
+let items=[]; let uid=1;
+
+// ---------- 시간대 → 태양 ----------
+function sunState(t){
+  const dayPhase=(t-15)/70;
+  const daytime=t>12&&t<88;
+  const altitude=daytime?Math.sin(Math.max(0,Math.min(1,dayPhase))*Math.PI):0;
+  const azimuth=(dayPhase-0.5)*2;            // -1(벽A쪽 아침)~+1(벽B쪽 저녁)
+  let sky,label,lampAuto=false;
+  if(t<12){sky=lerpCol('#232c46','#3a4a6b',t/12);label='한밤';lampAuto=true;}
+  else if(t<26){sky=lerpCol('#3a4a6b','#f7c9a8',(t-12)/14);label='새벽';}
+  else if(t<44){sky=lerpCol('#f7c9a8','#bfe4f5',(t-26)/18);label='아침';}
+  else if(t<58){sky='#bfe4f5';label='한낮';}
+  else if(t<74){sky=lerpCol('#bfe4f5','#f6c98a',(t-58)/16);label='늦은 오후';}
+  else if(t<88){sky=lerpCol('#f6c98a','#e9a6b0',(t-74)/14);label='해질녘';}
+  else{sky=lerpCol('#e9a6b0','#232c46',(t-88)/12);label='한밤';lampAuto=true;}
+  return {altitude,azimuth,sky,label,daytime,lampAuto,intensity:altitude,warm:(t<30||t>70)?1:0};
+}
+function lerpCol(a,b,t){t=Math.max(0,Math.min(1,t));const pa=hx(a),pb=hx(b);
+  return `rgb(${Math.round(pa[0]+(pb[0]-pa[0])*t)},${Math.round(pa[1]+(pb[1]-pa[1])*t)},${Math.round(pa[2]+(pb[2]-pa[2])*t)})`;}
+function hx(h){h=h.replace('#','');return[parseInt(h.slice(0,2),16),parseInt(h.slice(2,4),16),parseInt(h.slice(4,6),16)];}
+function clamp(v){return Math.max(0,Math.min(255,Math.round(v)))}
+
+/* ============================================================
+   진짜 조도 격자 (방 좌표계, 회전과 무관하게 1회 계산)
+   자연광: 각 창에서 들어오는 빛. 창 변에 가까울수록·해 방위와 맞을수록 밝음.
+   인공광: 조명 아이템에서 역제곱·수평거리 감쇠.
+   둘 다 동등하게 합산 → lx.
+============================================================ */
+const GRID=22;
+let luxField=[];     // [i][j] = lx
+let luxMax=1, luxMin=0, luxWindowAvg=0, luxInnerAvg=0;
+
+// 창의 방 좌표상 '입구 중심'과 '안쪽 방향'
+function windowGeom(w){
+  // side: 'u0'=u축 뒤벽(v=0), 'v0'=v축 뒤벽(u=0) — 데모용 2개
+  if(w.side==='u0') return { cx:w.pos, cy:0.0, nx:0, ny:1 };   // 안쪽(+v)으로 빛
+  if(w.side==='v0') return { cx:0.0, cy:w.pos, nx:1, ny:0 };   // 안쪽(+u)으로 빛
+  if(w.side==='u1') return { cx:w.pos, cy:1.0, nx:0, ny:-1 };
+  return { cx:1.0, cy:w.pos, nx:-1, ny:0 };
+}
+function computeLux(){
+  const sun=sunState(S.t);
+  const lampOn = S.lampManual || sun.lampAuto;
+  luxField=[]; luxMax=1; luxMin=1e9;
+  let wSum=0,wCnt=0,iSum=0,iCnt=0;
+  for(let i=0;i<GRID;i++){ luxField[i]=[]; for(let j=0;j<GRID;j++){
+    const u=(i+0.5)/GRID, v=(j+0.5)/GRID;
+    let lx=25; // 최소 환경광
+    // --- 자연광: 각 창 ---
+    if(sun.intensity>0.02){
+      for(const w of ROOM.windows){
+        const g=windowGeom(w);
+        // 창 입구로부터 방 안쪽 거리
+        const du=u-g.cx, dv=v-g.cy;
+        const depth=du*g.nx+dv*g.ny;            // 안쪽으로 들어온 깊이(+)
+        if(depth<0) continue;
+        const lateral=Math.abs(du*g.ny - dv*g.nx); // 창 폭 방향 이탈
+        // 창 폭 안이고 깊이 얕을수록 밝음
+        const widthFall=Math.max(0,1-lateral/(w.width*1.4));
+        const depthFall=1/(1+depth*depth*7);     // 안쪽으로 급감
+        // 해 방위 매칭: 이 창이 지금 해가 비추는 창인가
+        // w1(u0)=아침(azimuth<0)에 강함, w2(v0)=저녁(azimuth>0)에 강함
+        let dirMatch=0.5;
+        if(w.side==='u0') dirMatch=0.5 - sun.azimuth*0.5; // 아침 강
+        if(w.side==='v0') dirMatch=0.5 + sun.azimuth*0.5; // 저녁 강
+        dirMatch=Math.max(0.15,Math.min(1,dirMatch));
+        lx += 950 * sun.intensity * widthFall * depthFall * dirMatch * w.sky;
+      }
+    }
+    // --- 인공광: 조명 아이템 (역제곱·수평) ---
+    for(const it of items){
+      const C=CATALOG[it.type];
+      if(C.kind!=='light') continue;
+      if(C.art==='lamp'){ if(!(it.on!==false)) continue; } // 스탠드는 항상 켬(단순화)
+      if(C.art==='ceilinglamp'){ if(!lampOn) continue; }   // 천장등은 토글/야간
+      const du=u-it.u, dv=v-it.v;
+      const horiz2=du*du+dv*dv;
+      const h=C.h;
+      const dist2=horiz2 + h*h;
+      const cosInc=h/Math.sqrt(dist2);          // 바닥 수평면 입사각
+      const I=(C.flux||2000)/Math.PI;           // 램버시안 축상광도 근사
+      lx += I*cosInc/dist2 * 1.2;
+    }
+    luxField[i][j]=lx;
+    if(lx>luxMax)luxMax=lx; if(lx<luxMin)luxMin=lx;
+    // 창가/안쪽 평균 집계
+    const nearWin=Math.min(u,v)<0.32;
+    if(nearWin){wSum+=lx;wCnt++;} else if(u>0.5&&v>0.5){iSum+=lx;iCnt++;}
+  }}
+  luxWindowAvg=wCnt?wSum/wCnt:0;
+  luxInnerAvg=iCnt?iSum/iCnt:0;
+}
+// 임의 (u,v)의 lx (격자 근접 샘플)
+function luxAt(u,v){
+  const i=Math.max(0,Math.min(GRID-1,Math.floor(u*GRID)));
+  const j=Math.max(0,Math.min(GRID-1,Math.floor(v*GRID)));
+  return luxField[i]&&luxField[i][j]?luxField[i][j]:0;
+}
+
+/* ============================================================
+   뷰 투영: 방 좌표 (u,v,h) + dir/pitch → 화면 픽셀
+============================================================ */
+function project(u,v,h){
+  const s=VIEW.size, cu=u-0.5, cv=v-0.5;
+  const ang=VIEW.dir*Math.PI/4;
+  const ru=cu*Math.cos(ang)-cv*Math.sin(ang);
+  const rv=cu*Math.sin(ang)+cv*Math.cos(ang);
+  const sq=PITCH_SQUASH[VIEW.pitch];
+  const x=s*0.5 + (ru-rv)*s*0.40;
+  const y=s*0.34 + (ru+rv)*s*0.40*sq - h*s*0.30;
+  return {x,y};
+}
+// 화면 → 방좌표 역변환 (h=0 바닥 가정, 드래그용)
+function unproject(px,py){
+  const s=VIEW.size;
+  const X=(px - s*0.5)/(s*0.40);
+  const Y=(py - s*0.34)/(s*0.40*PITCH_SQUASH[VIEW.pitch]);
+  // X=ru-rv, Y=ru+rv → ru=(X+Y)/2, rv=(Y-X)/2
+  const ru=(X+Y)/2, rv=(Y-X)/2;
+  const ang=-VIEW.dir*Math.PI/4;
+  const cu=ru*Math.cos(ang)-rv*Math.sin(ang);
+  const cv=ru*Math.sin(ang)+rv*Math.cos(ang);
+  return {u:cu+0.5, v:cv+0.5};
+}
+
+/* ============================================================
+   렌더링
+============================================================ */
+const cv=document.getElementById('boardCanvas');
+const ctx=cv.getContext('2d');
+const boardEl=document.getElementById('board');
+
+function resize(){
+  const r=boardEl.getBoundingClientRect();
+  const s=Math.min(r.width,r.height);
+  VIEW.size=s;
+  cv.width=s*devicePixelRatio; cv.height=s*devicePixelRatio;
+  cv.style.width=s+'px'; cv.style.height=s+'px';
+  ctx.setTransform(devicePixelRatio,0,0,devicePixelRatio,0,0);
+  redraw();
+}
+function colormap(t){t=Math.max(0,Math.min(1,t));
+  return [Math.round(255*Math.min(1,Math.max(0,1.5-Math.abs(4*t-3)))),
+          Math.round(255*Math.min(1,Math.max(0,1.5-Math.abs(4*t-2)))),
+          Math.round(255*Math.min(1,Math.max(0,1.5-Math.abs(4*t-1))))];}
+
+function redraw(){
+  const s=VIEW.size; if(!s)return;
+  const sun=sunState(S.t);
+  ctx.clearRect(0,0,s,s);
+
+  // 벽 2면 (현재 dir에서 뒤쪽 두 변)
+  drawWalls(sun);
+  // 바닥
+  drawFloor(sun);
+  // 조도 히트맵(옵션)
+  if(S.showHeat) drawHeat();
+  // 창 채광 웅덩이
+  drawSunPools(sun);
+  // 아이템 (깊이 정렬)
+  drawItems(sun);
+
+  // 하늘/라벨
+  document.getElementById('sky').style.background=
+    `linear-gradient(180deg,${sun.sky} 0%,${lerpCol(sun.sky,'#fbf6ec',0.5)} 100%)`;
+  document.getElementById('timeLabel').textContent=sun.label;
+}
+function shade(hex,sun,face){
+  const [r,g,b]=hx(hex);
+  const lit=0.55+0.45*sun.intensity*face;
+  const warmR=sun.warm?14:0, warmB=sun.warm?-10:0, night=sun.intensity<0.1?-38:0;
+  return `rgb(${clamp(r*lit+warmR+night)},${clamp(g*lit+night)},${clamp(b*lit+warmB+night)})`;
+}
+function drawFloor(sun){
+  const c0=project(0,0,0),c1=project(1,0,0),c2=project(1,1,0),c3=project(0,1,0);
+  ctx.beginPath();ctx.moveTo(c0.x,c0.y);ctx.lineTo(c1.x,c1.y);ctx.lineTo(c2.x,c2.y);ctx.lineTo(c3.x,c3.y);ctx.closePath();
+  ctx.fillStyle=shade(ROOM.floorColor,sun,1);ctx.fill();
+  ctx.strokeStyle='rgba(74,64,56,.12)';ctx.lineWidth=1;
+  for(let k=1;k<5;k++){const a=project(k/5,0,0),b=project(k/5,1,0);ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();
+    const e=project(0,k/5,0),f=project(1,k/5,0);ctx.beginPath();ctx.moveTo(e.x,e.y);ctx.lineTo(f.x,f.y);ctx.stroke();}
+}
+function drawWalls(sun){
+  // 뒤쪽 두 변만 그림: 화면상 y가 작은(뒤) 변. 회전에 따라 어떤 변이 뒤인지 판단.
+  const corners=[project(0,0,0),project(1,0,0),project(1,1,0),project(0,1,0)];
+  const edges=[[0,1,ROOM.wallColorA],[1,2,ROOM.wallColorB],[2,3,ROOM.wallColorA],[3,0,ROOM.wallColorB]];
+  // 각 변 중점 y가 위쪽(뒤)인 2개만
+  const withMid=edges.map(e=>({e,my:(corners[e[0]].y+corners[e[1]].y)/2}));
+  withMid.sort((a,b)=>a.my-b.my);
+  const back=withMid.slice(0,2);
+  const wallTop=VIEW.size*0.30;
+  back.forEach(({e})=>{
+    const a=corners[e[0]], b=corners[e[1]];
+    ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);
+    ctx.lineTo(b.x,b.y-wallTop);ctx.lineTo(a.x,a.y-wallTop);ctx.closePath();
+    ctx.fillStyle=shade(e[2],sun,0.85);ctx.fill();
+    ctx.strokeStyle='rgba(74,64,56,.1)';ctx.stroke();
+    // 창 표시 (이 변에 창이 있으면)
+    drawWindowOnEdge(e,a,b,wallTop,sun);
+  });
+}
+function drawWindowOnEdge(edge,a,b,wallTop,sun){
+  // edge 인덱스 → side 문자열 매핑 (0-1:u0, 1-2:v1, 2-3:u1, 3-0:v0)
+  const map={'0,1':'u0','1,2':'v1','2,3':'u1','3,0':'v0'};
+  const key=edge[0]+','+edge[1];
+  const side=map[key]; if(!side)return;
+  const w=ROOM.windows.find(x=>x.side===side); if(!w)return;
+  const t0=w.pos-w.width/2, t1=w.pos+w.width/2;
+  const lerp=(p,q,t)=>({x:p.x+(q.x-p.x)*t,y:p.y+(q.y-p.y)*t});
+  const wa=lerp(a,b,t0), wb=lerp(a,b,t1);
+  const top=wallTop*0.66, bot=wallTop*0.16;
+  ctx.beginPath();
+  ctx.moveTo(wa.x,wa.y-bot);ctx.lineTo(wb.x,wb.y-bot);ctx.lineTo(wb.x,wb.y-top);ctx.lineTo(wa.x,wa.y-top);ctx.closePath();
+  ctx.fillStyle=sun.sky;ctx.fill();
+  // 태양
+  if(sun.daytime&&sun.intensity>0.15){
+    const match=(side==='u0'&&sun.azimuth<0.3)||(side==='v0'&&sun.azimuth>-0.3);
+    if(match){const sx=(wa.x+wb.x)/2,sy=(wa.y+wb.y)/2-top+(1-sun.altitude)*(top-bot);
+      ctx.beginPath();ctx.arc(sx,sy,6,0,7);ctx.fillStyle='rgba(255,242,190,.95)';ctx.fill();}
+  }
+  ctx.strokeStyle='#c9b89a';ctx.lineWidth=2.5;
+  ctx.beginPath();ctx.moveTo(wa.x,wa.y-bot);ctx.lineTo(wb.x,wb.y-bot);ctx.lineTo(wb.x,wb.y-top);ctx.lineTo(wa.x,wa.y-top);ctx.closePath();ctx.stroke();
+}
+function drawHeat(){
+  for(let i=0;i<GRID;i++)for(let j=0;j<GRID;j++){
+    const u0=i/GRID,v0=j/GRID,u1=(i+1)/GRID,v1=(j+1)/GRID;
+    const t=luxField[i][j]/luxMax;
+    const [r,g,b]=colormap(t);
+    const p0=project(u0,v0,0),p1=project(u1,v0,0),p2=project(u1,v1,0),p3=project(u0,v1,0);
+    ctx.beginPath();ctx.moveTo(p0.x,p0.y);ctx.lineTo(p1.x,p1.y);ctx.lineTo(p2.x,p2.y);ctx.lineTo(p3.x,p3.y);ctx.closePath();
+    ctx.fillStyle=`rgba(${r},${g},${b},0.5)`;ctx.fill();
+  }
+}
+function drawSunPools(sun){
+  if(sun.intensity<0.05)return;
+  // 각 창의 채광이 바닥에 만드는 밝은 영역 (격자 lux 기반이라 생략 가능하나 감성용 오버레이)
+}
+// SVG 아트를 canvas에 그리기 위해 간단 도형으로 대체(성능)
+function drawItems(sun){
+  // 깊이 정렬: 화면 y가 큰(앞) 것을 나중에
+  const sorted=items.map(it=>({it,p:project(it.u,it.v,0)})).sort((a,b)=>a.p.y-b.p.y);
+  for(const {it,p} of sorted){
+    const C=CATALOG[it.type];
+    const b=luxAt(it.u,it.v)/Math.max(luxMax,1);   // 0~1 상대밝기
+    drawSprite(it,C,p,b,sun);
+  }
+}
+function drawSprite(it,C,p,b,sun){
+  const s=VIEW.size, sc=s/440;
+  ctx.save();ctx.translate(p.x,p.y);
+  // 그림자
+  ctx.beginPath();ctx.ellipse(0,0,20*sc,7*sc,0,0,7);ctx.fillStyle='rgba(74,64,56,.16)';ctx.fill();
+  const bright=0.55+b*0.6;
+  const tint=(v)=>`rgb(${clamp(hx(v)[0]*bright+(sun.warm?12:0))},${clamp(hx(v)[1]*bright)},${clamp(hx(v)[2]*bright-(sun.warm?6:0))})`;
+  const art=C.art;
+  if(art==='plant'||art==='fern'||art==='cactus'){
+    // 화분
+    ctx.fillStyle=tint('#c98a5e');
+    ctx.beginPath();ctx.moveTo(-11*sc,-2*sc);ctx.lineTo(11*sc,-2*sc);ctx.lineTo(8*sc,-16*sc);ctx.lineTo(-8*sc,-16*sc);ctx.closePath();ctx.fill();
+    // 잎
+    const leaf=tint(art==='cactus'?'#5f9e6a':'#7cae7a');
+    ctx.fillStyle=leaf;
+    const grow=it.growth||0.6;
+    if(art==='cactus'){ctx.beginPath();ctx.ellipse(0,-(24+8*grow)*sc,7*sc,(16+8*grow)*sc,0,0,7);ctx.fill();
+      ctx.beginPath();ctx.ellipse(-8*sc,-24*sc,4*sc,9*sc,0,0,7);ctx.fill();}
+    else{for(let k=-1;k<=1;k++){ctx.beginPath();
+      ctx.ellipse(k*7*sc,-(22+10*grow)*sc,5*sc,(14+8*grow)*sc,k*0.4,0,7);ctx.fill();}}
+    // 행복 glow
+    if(it.happy){ctx.beginPath();ctx.arc(0,-26*sc,26*sc,0,7);
+      const g=ctx.createRadialGradient(0,-26*sc,0,0,-26*sc,26*sc);
+      g.addColorStop(0,'rgba(255,220,120,.5)');g.addColorStop(1,'rgba(255,220,120,0)');ctx.fillStyle=g;ctx.fill();}
+  } else if(art==='sofa'){ctx.fillStyle=tint('#e6a4a0');roundRect(-30*sc,-24*sc,60*sc,20*sc,7*sc);ctx.fill();
+    ctx.fillStyle=tint('#d98f8b');roundRect(-32*sc,-30*sc,12*sc,24*sc,6*sc);ctx.fill();roundRect(20*sc,-30*sc,12*sc,24*sc,6*sc);ctx.fill();
+  } else if(art==='bed'){ctx.fillStyle=tint('#9fb8d6');roundRect(-34*sc,-22*sc,68*sc,20*sc,6*sc);ctx.fill();
+    ctx.fillStyle=tint('#bcd0e8');roundRect(-34*sc,-30*sc,68*sc,12*sc,5*sc);ctx.fill();
+    ctx.fillStyle='#fff';roundRect(-30*sc,-28*sc,22*sc,10*sc,4*sc);ctx.fill();
+  } else if(art==='table'){ctx.fillStyle=tint('#caa06e');ctx.beginPath();ctx.ellipse(0,-16*sc,30*sc,12*sc,0,0,7);ctx.fill();
+    ctx.fillStyle=tint('#b07e4e');ctx.fillRect(-18*sc,-16*sc,4*sc,16*sc);ctx.fillRect(14*sc,-16*sc,4*sc,16*sc);
+  } else if(art==='rug'){ctx.fillStyle=tint('#e8d4a8');ctx.beginPath();ctx.ellipse(0,-2*sc,44*sc,20*sc,0,0,7);ctx.fill();
+    ctx.strokeStyle=tint('#d8bd85');ctx.lineWidth=3*sc;ctx.beginPath();ctx.ellipse(0,-2*sc,32*sc,14*sc,0,0,7);ctx.stroke();
+  } else if(art==='lamp'){ctx.strokeStyle=tint('#b7a48c');ctx.lineWidth=4*sc;ctx.beginPath();ctx.moveTo(0,-2*sc);ctx.lineTo(0,-38*sc);ctx.stroke();
+    const on=true;ctx.fillStyle=on?'#ffe39a':tint('#d9c48a');
+    ctx.beginPath();ctx.moveTo(-13*sc,-38*sc);ctx.lineTo(13*sc,-38*sc);ctx.lineTo(9*sc,-56*sc);ctx.lineTo(-9*sc,-56*sc);ctx.closePath();ctx.fill();
+    if(on){ctx.beginPath();ctx.arc(0,-42*sc,26*sc,0,7);const g=ctx.createRadialGradient(0,-42*sc,0,0,-42*sc,26*sc);
+      g.addColorStop(0,'rgba(255,225,140,.5)');g.addColorStop(1,'rgba(255,225,140,0)');ctx.fillStyle=g;ctx.fill();}
+  } else if(art==='ceilinglamp'){const on=(S.lampManual||sunState(S.t).lampAuto);
+    ctx.strokeStyle=tint('#b7a48c');ctx.lineWidth=3*sc;ctx.beginPath();ctx.moveTo(0,-40*sc);ctx.lineTo(0,-58*sc);ctx.stroke();
+    ctx.fillStyle=on?'#ffe39a':tint('#cbbf9a');ctx.beginPath();ctx.ellipse(0,-38*sc,16*sc,8*sc,0,0,7);ctx.fill();
+    if(on){ctx.beginPath();ctx.arc(0,-34*sc,34*sc,0,7);const g=ctx.createRadialGradient(0,-34*sc,0,0,-34*sc,34*sc);
+      g.addColorStop(0,'rgba(255,225,140,.45)');g.addColorStop(1,'rgba(255,225,140,0)');ctx.fillStyle=g;ctx.fill();}
+  } else if(art==='avatar'){ctx.fillStyle=tint('#f4a259');roundRect(-10*sc,-34*sc,20*sc,32*sc,8*sc);ctx.fill();
+    ctx.fillStyle=tint('#ffd9b3');ctx.beginPath();ctx.arc(0,-44*sc,14*sc,0,7);ctx.fill();
+    ctx.fillStyle=tint('#5a4632');ctx.beginPath();ctx.arc(0,-48*sc,14*sc,Math.PI,0);ctx.fill();
+    ctx.fillStyle='#4a4038';ctx.beginPath();ctx.arc(-5*sc,-44*sc,2*sc,0,7);ctx.arc(5*sc,-44*sc,2*sc,0,7);ctx.fill();}
+  ctx.restore();
+}
+function roundRect(x,y,w,h,r){ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);ctx.arcTo(x+w,y+h,x,y+h,r);
+  ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath();}
+
+/* ============================================================
+   식물 성장 & 조명 반영
+============================================================ */
+function updatePlants(){
+  items.forEach(it=>{
+    const C=CATALOG[it.type];
+    if(C.kind!=='plant')return;
+    const lx=luxAt(it.u,it.v);
+    it.happy = lx>=C.needLux;
+    // 성장(간이): 충분하면 서서히 자람, 부족하면 정체
+    if(it.growth===undefined)it.growth=0.5;
+    if(it.happy)it.growth=Math.min(1,it.growth+0.04);
+    else it.growth=Math.max(0.3,it.growth-0.01);
+  });
+}
+function tickLight(){
+  computeLux();
+  updatePlants();
+  redraw();
+  updatePanel();
+}
+function updatePanel(){
+  document.getElementById('pWindow').textContent=Math.round(luxWindowAvg)+' lx';
+  document.getElementById('pInner').textContent=Math.round(luxInnerAvg)+' lx';
+  document.getElementById('pMax').textContent=Math.round(luxMax)+' lx';
+  const plants=items.filter(i=>CATALOG[i.type].kind==='plant');
+  const el=document.getElementById('pPlant');
+  if(!plants.length){el.textContent='식물 없음';el.className='chip';}
+  else{const h=plants.filter(p=>p.happy).length;
+    if(h===plants.length){el.textContent='아주 좋음 🌿';el.className='chip good';}
+    else if(h>0){el.textContent=`${h}/${plants.length} 좋음`;el.className='chip';}
+    else{el.textContent='빛이 부족해요';el.className='chip';}}
+}
+
+/* ============================================================
+   상호작용: 추가 / 드래그 / 회전 / pitch
+============================================================ */
+function addItem(type){
+  const it={id:uid++,type,u:0.4+Math.random()*0.2,v:0.4+Math.random()*0.2};
+  if(CATALOG[type].kind==='plant')it.growth=0.5;
+  items.push(it); tickLight();
+  flashHint(CATALOG[type].label+' 추가! 끌어서 옮겨요');
+  return it;
+}
+let drag=null;
+function pickItem(px,py){
+  // 화면좌표에서 가장 가까운 아이템 (역투영 u,v 거리)
+  const uv=unproject(px,py);
+  let best=null,bd=0.09;
+  for(const it of items){const du=it.u-uv.u,dv=it.v-uv.v;const d=Math.sqrt(du*du+dv*dv);
+    if(d<bd){bd=d;best=it;}}
+  return best;
+}
+function onDown(e){
+  const pt=getPt(e); const r=cv.getBoundingClientRect();
+  const px=pt.x-r.left, py=pt.y-r.top;
+  const it=pickItem(px,py);
+  if(it){drag={it,moved:false};
+    const now=Date.now();
+    if(it._lastTap&&now-it._lastTap<320){removeItem(it);drag=null;}
+    it._lastTap=now;}
+  e.preventDefault();
+}
+function onMove(e){
+  if(!drag)return;
+  const pt=getPt(e);const r=cv.getBoundingClientRect();
+  const uv=unproject(pt.x-r.left,pt.y-r.top);
+  drag.it.u=Math.max(0.04,Math.min(0.96,uv.u));
+  drag.it.v=Math.max(0.04,Math.min(0.96,uv.v));
+  drag.moved=true; tickLight(); e.preventDefault();
+}
+function onUp(){drag=null;}
+function getPt(e){if(e.touches&&e.touches[0])return{x:e.touches[0].clientX,y:e.touches[0].clientY};return{x:e.clientX,y:e.clientY};}
+function removeItem(it){items=items.filter(x=>x!==it);tickLight();}
+
+cv.addEventListener('mousedown',onDown);cv.addEventListener('touchstart',onDown,{passive:false});
+window.addEventListener('mousemove',onMove);window.addEventListener('touchmove',onMove,{passive:false});
+window.addEventListener('mouseup',onUp);window.addEventListener('touchend',onUp);
+
+document.getElementById('rotL').onclick=()=>{VIEW.dir=(VIEW.dir+7)%8;redraw();flashHint('왼쪽으로 돌림');};
+document.getElementById('rotR').onclick=()=>{VIEW.dir=(VIEW.dir+1)%8;redraw();flashHint('오른쪽으로 돌림');};
+document.getElementById('pitchBtn').onclick=()=>{VIEW.pitch=(VIEW.pitch+1)%2;redraw();
+  flashHint(VIEW.pitch?'높은 시점 (60°)':'기본 시점 (45°)');};
+
+// 트레이
+const dock=document.getElementById('dock');
+TRAY.forEach(type=>{const C=CATALOG[type];const b=document.createElement('button');
+  b.className='tray-btn';b.innerHTML=`<div>${C.ico}</div><span>${C.label}</span>`;
+  b.onclick=()=>addItem(type);dock.appendChild(b);});
+
+// 시간 슬라이더
+document.getElementById('sunSlider').addEventListener('input',function(){S.t=+this.value;tickLight();});
+// 상세설정
+const panel=document.getElementById('panel');
+document.getElementById('gearBtn').onclick=()=>panel.classList.toggle('open');
+document.getElementById('tLamp').onclick=function(){S.lampManual=!S.lampManual;this.classList.toggle('on',S.lampManual);tickLight();};
+document.getElementById('bHeat').onclick=function(){S.showHeat=!S.showHeat;this.classList.toggle('on',S.showHeat);
+  this.textContent=S.showHeat?'ON':'OFF';redraw();};
+
+// 힌트
+let hintTimer;
+function flashHint(txt){const h=document.getElementById('hint');h.textContent=txt;h.classList.add('show');
+  clearTimeout(hintTimer);hintTimer=setTimeout(()=>h.classList.remove('show'),1600);}
+
+// 성장 타이머 (이지 배속: 몇 초마다 성장 갱신)
+setInterval(()=>{ if(items.some(i=>CATALOG[i.type].kind==='plant')){updatePlants();redraw();updatePanel();} },1500);
+
+// ---------- 시작 ----------
+setTimeout(()=>{
+  resize();
+  items=[
+    {id:uid++,type:'rug',u:0.5,v:0.55},
+    {id:uid++,type:'bed',u:0.28,v:0.6},
+    {id:uid++,type:'sofa',u:0.66,v:0.32},
+    {id:uid++,type:'table',u:0.52,v:0.5},
+    {id:uid++,type:'plant_basil',u:0.16,v:0.2,growth:0.5},
+    {id:uid++,type:'tomato',u:0.8,v:0.16,growth:0.5},
+    {id:uid++,type:'avatar',u:0.62,v:0.68},
+  ];
+  tickLight();
+  flashHint('↺↻ 로 방을 8방향 돌려보세요 ☀️');
+},60);
+</script>
+</body>
+</html>
