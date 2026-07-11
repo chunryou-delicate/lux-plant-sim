@@ -18,7 +18,7 @@ export function createScene(canvas){
   renderer.toneMapping=THREE.ACESFilmicToneMapping; renderer.toneMappingExposure=1.1;
 
   const scene=new THREE.Scene();
-  const cam=new THREE.PerspectiveCamera(34,1,0.1,100);
+  const cam=new THREE.PerspectiveCamera(34,1,0.1,200);   // far 넓힘(줌아웃 대응)
 
   const hemi=new THREE.HemisphereLight(0x9ab0d0,0x40342e,0.12); scene.add(hemi);
   const ambient=new THREE.AmbientLight(0xffffff,0.04); scene.add(ambient);
@@ -48,23 +48,24 @@ export function createScene(canvas){
 export function updateLight(ctx, t, ceilingMode){
   const s=daylight(t);
   ctx.scene.background=col(mix(s.sky,hx('#14101c'),0.15));
-  ctx.scene.fog=new THREE.Fog(col(s.sky),20,45);
+  ctx.scene.fog=new THREE.Fog(col(s.sky),30,120);   // 멀리 봐도 방 안 흐리게
 
   const wp=ctx.winPos||new THREE.Vector3(0.6,2.2,-3.4);
   const dist=10, el=0.25+s.alt*0.9;
   ctx.sunLight.position.set(wp.x+Math.sin(s.az)*dist*0.5, wp.y+Math.sin(el)*dist, wp.z-Math.cos(el)*dist*0.6);
   ctx.sunLight.target.position.set(1.2,0.5,1.5);
-  ctx.sunLight.intensity=0.2+s.intensity*1.8;
+  ctx.sunLight.intensity=s.intensity*2.0;   // 밤(intensity 0)엔 태양광 0 = 창밖 빛 없음
   ctx.sunLight.color=col(mix(hx('#fff0d8'),hx('#ff9850'),s.warm));
 
   ctx.winLight1.position.set(wp.x,wp.y+0.3,wp.z+0.3);
   ctx.winLight1.target.position.set(1.5,0,2);
-  ctx.winLight1.intensity=s.intensity*2.2;
+  ctx.winLight1.intensity=s.intensity*2.2;   // 밤엔 창 스팟도 0
   ctx.winLight1.color=col(mix(hx('#fff4e0'),hx('#ffb060'),s.warm));
 
-  ctx.hemi.intensity=0.06+s.intensity*0.12;
+  // 환경광: 밤엔 거의 0 (창 없으면 어두운 게 정상). 낮엔 부드러운 채움.
+  ctx.hemi.intensity=0.02+s.intensity*0.16;
   ctx.hemi.color=col(mix(hx('#9ab0d0'),s.sky,0.3));
-  ctx.ambient.intensity=0.03+s.intensity*0.05;
+  ctx.ambient.intensity=0.012+s.intensity*0.07;
 
   if(ctx.glass) ctx.glass.material.color=col(s.sky);
 

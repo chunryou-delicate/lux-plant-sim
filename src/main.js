@@ -50,18 +50,19 @@ function bindControls(){
     document.getElementById('autorotate').classList.remove('on'); };
   const move=e=>{ if(!drag)return; const p=pt(e);
     orbit.az-=(p.x-px)*0.008; orbit.el+=(p.y-py)*0.006;
-    orbit.el=Math.max(-0.3,Math.min(1.45,orbit.el)); px=p.x; py=p.y; e.preventDefault(); };
+    // 카메라를 바닥 위로만 (하한 0.08). 밑으로 파고들어 방을 뒤집어 보던 문제 제거 → 상/하 일관.
+    orbit.el=Math.max(0.08,Math.min(1.45,orbit.el)); px=p.x; py=p.y; e.preventDefault(); };
   const up=()=>drag=false;
   cv.addEventListener('mousedown',down); cv.addEventListener('touchstart',down,{passive:false});
   window.addEventListener('mousemove',move); window.addEventListener('touchmove',move,{passive:false});
   window.addEventListener('mouseup',up); window.addEventListener('touchend',up);
   cv.addEventListener('wheel',e=>{ e.preventDefault();
-    orbit.r*=(1+Math.sign(e.deltaY)*0.08); orbit.r=Math.max(5,Math.min(22,orbit.r)); },{passive:false});
+    orbit.r*=(1+Math.sign(e.deltaY)*0.08); orbit.r=Math.max(4,Math.min(40,orbit.r)); },{passive:false});   // 줌아웃 40까지
   let pd=0;
   cv.addEventListener('touchmove',e=>{ if(e.touches.length===2){
     const dx=e.touches[0].clientX-e.touches[1].clientX, dy=e.touches[0].clientY-e.touches[1].clientY;
     const dd=Math.hypot(dx,dy); if(pd) orbit.r*=(1-(dd-pd)*0.005);
-    orbit.r=Math.max(5,Math.min(22,orbit.r)); pd=dd; } },{passive:false});
+    orbit.r=Math.max(4,Math.min(40,orbit.r)); pd=dd; } },{passive:false});
   cv.addEventListener('touchend',()=>pd=0);
 
   sunEl.addEventListener('input',applyLight);
