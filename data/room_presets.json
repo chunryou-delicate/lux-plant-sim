@@ -1,0 +1,15 @@
+{
+  "default": "onebox",
+  "presets": {
+    "onebox": {
+      "label": "기본 원룸",
+      "windows": [
+        {"id": "w1", "side": "u0", "pos": 0.5, "width": 0.4, "sky": 1.0},
+        {"id": "w2", "side": "v0", "pos": 0.5, "width": 0.4, "sky": 1.0}
+      ],
+      "wallColorA": "#efe4d2",
+      "wallColorB": "#e6d8c2",
+      "floorColor": "#e9d9bf"
+    }
+  }
+}

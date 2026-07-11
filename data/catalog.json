@@ -1,0 +1,16 @@
+{
+  "plant_basil":  {"kind":"plant", "label":"바질",   "ico":"🌿", "needLux":450, "art":"plant",  "h":0.15},
+  "plant_cactus": {"kind":"plant", "label":"선인장", "ico":"🌵", "needLux":600, "art":"cactus", "h":0.2},
+  "plant_fern":   {"kind":"plant", "label":"고사리", "ico":"🪴", "needLux":250, "art":"fern",   "h":0.15},
+  "tomato":       {"kind":"plant", "label":"토마토", "ico":"🍅", "needLux":700, "art":"plant",  "h":0.25},
+
+  "sofa":  {"kind":"furn", "label":"소파",   "ico":"🛋️", "art":"sofa",  "h":0.28},
+  "bed":   {"kind":"furn", "label":"침대",   "ico":"🛏️", "art":"bed",   "h":0.24},
+  "table": {"kind":"furn", "label":"테이블", "ico":"🪑", "art":"table", "h":0.22},
+  "rug":   {"kind":"furn", "label":"러그",   "ico":"🟫", "art":"rug",   "h":0.01},
+
+  "lamp":    {"kind":"light", "label":"스탠드", "ico":"💡", "art":"lamp",        "h":0.6,  "flux":2600},
+  "ceiling": {"kind":"light", "label":"천장등", "ico":"🔆", "art":"ceilinglamp", "h":0.95, "flux":4200},
+
+  "avatar": {"kind":"avatar", "label":"나", "ico":"🧍", "art":"avatar", "h":0.5}
+}

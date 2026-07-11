@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>볕 · 진짜 방 (빛은 창으로만)</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Jua&family=Gaegu:wght@400;700&display=swap');
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{height:100%;overflow:hidden;font-family:'Gaegu',sans-serif;background:#14101c;
+    user-select:none;touch-action:none}
+  #wrap{position:relative;width:100vw;height:100vh}
+  #cv{position:absolute;inset:0;width:100%;height:100%;display:block}
+  .top{position:absolute;top:0;left:0;right:0;z-index:5;display:flex;align-items:center;gap:10px;
+    padding:16px 18px;pointer-events:none}
+  .brand{font-family:'Jua';font-size:22px;color:#fff;letter-spacing:1px;text-shadow:0 2px 12px rgba(0,0,0,.6)}
+  .brand b{color:#ffb454}
+  .tag{font-family:'Gaegu';font-weight:700;font-size:12px;color:rgba(255,255,255,.5)}
+  .timepill{margin-left:auto;background:rgba(255,255,255,.14);color:#fff;font-family:'Jua';font-size:13px;
+    padding:5px 14px;border-radius:14px;backdrop-filter:blur(8px)}
+  .controls{position:absolute;left:0;right:0;bottom:0;z-index:5;padding:10px 20px calc(env(safe-area-inset-bottom,0)+16px)}
+  .sunrow{display:flex;align-items:center;gap:12px;margin-bottom:10px;
+    background:rgba(20,16,28,.5);backdrop-filter:blur(8px);border-radius:16px;padding:8px 14px}
+  .sunrow .ico{font-size:16px}
+  input[type=range]{-webkit-appearance:none;flex:1;height:8px;border-radius:6px;outline:none;
+    background:linear-gradient(90deg,#2a3556,#f0b688 24%,#bfe0f0 50%,#f0a870 74%,#2a2540)}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:26px;height:26px;border-radius:50%;
+    background:radial-gradient(circle at 35% 32%,#fff7e0,#ffb84a);cursor:pointer;
+    box-shadow:0 3px 12px rgba(255,170,50,.6),0 0 0 4px rgba(255,255,255,.85)}
+  .btns{display:flex;gap:8px;justify-content:center}
+  .cbtn{background:rgba(255,255,255,.92);border:none;border-radius:14px;padding:9px 18px;font-family:'Jua';
+    font-size:14px;color:#3d3548;cursor:pointer;box-shadow:0 4px 0 rgba(0,0,0,.3)}
+  .cbtn:active{transform:translateY(2px);box-shadow:0 2px 0 rgba(0,0,0,.3)}
+  .cbtn.on{background:#ffb454}
+  .hint{position:absolute;top:52px;left:50%;transform:translateX(-50%);z-index:6;
+    background:rgba(0,0,0,.55);color:#fff;font-family:'Gaegu';font-weight:700;font-size:13px;
+    padding:6px 14px;border-radius:14px;backdrop-filter:blur(4px);transition:opacity .8s;white-space:nowrap}
+  .loading{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;z-index:10;
+    color:#ffb454;font-family:'Jua';font-size:16px;background:#14101c}
+</style>
+</head>
+<body>
+<div id="wrap">
+  <canvas id="cv"></canvas>
+  <div class="loading" id="loading">방을 짓는 중…</div>
+  <div class="top">
+    <span class="brand">볕<b>.</b></span>
+    <span class="tag">진짜 방 · 빛은 창으로만</span>
+    <span class="timepill" id="timePill">한낮</span>
+  </div>
+  <div class="hint" id="hint">돌리면 가리는 벽이 사라져요 · 빛은 창으로만 들어와요</div>
+  <div class="controls">
+    <div class="sunrow">
+      <span class="ico">🌙</span>
+      <input type="range" id="sun" min="0" max="100" value="60">
+      <span class="ico">☀️</span>
+    </div>
+    <div class="btns">
+      <button class="cbtn" id="reset">시점 리셋</button>
+      <button class="cbtn" id="autorotate">자동회전</button>
+      <button class="cbtn on" id="ceiling">천장광: 자동</button>
+    </div>
+  </div>
+</div>
+
+<script>
+let scene,cam,renderer,sunLight,hemi,ambient,room;
+let W,H,DPR=Math.min(2,window.devicePixelRatio||1);
+const cv=document.getElementById('cv');
+let orbit={az:0.72,el:0.55,r:12,tx:0,ty:2,tz:0};
+let autoRotate=false, ceilingMode=0;  // 0:자동(야간) 1:상시켜짐 2:끄기
+const shells={};   // 방 껍데기 6면 (숨김 처리 대상)
+let ceilingBulb, winLight1, winLight2;
+
+function hx(h){h=h.replace('#','');return[parseInt(h.slice(0,2),16),parseInt(h.slice(2,4),16),parseInt(h.slice(4,6),16)];}
+function mix(a,b,t){return[a[0]+(b[0]-a[0])*t,a[1]+(b[1]-a[1])*t,a[2]+(b[2]-a[2])*t];}
+function col(c){return Array.isArray(c)?new THREE.Color(c[0]/255,c[1]/255,c[2]/255):new THREE.Color(c);}
+
+// ===== 텍스처 =====
+function brickTexture(){
+  const c=document.createElement('canvas');c.width=256;c.height=256;const x=c.getContext('2d');
+  x.fillStyle='#6b4a3a';x.fillRect(0,0,256,256);
+  const bw=52,bh=22,gap=4;
+  for(let row=0;row*(bh+gap)<256;row++){const off=(row%2)*(bw/2);
+    for(let cx=-bw;cx<256+bw;cx+=bw+gap){const px=cx+off,py=row*(bh+gap);
+      const v=0.85+Math.random()*0.3;const base=hx('#8a5a44');
+      x.fillStyle=`rgb(${base[0]*v|0},${base[1]*v|0},${base[2]*v|0})`;x.fillRect(px,py,bw,bh);
+      x.fillStyle='rgba(255,220,190,0.06)';x.fillRect(px,py,bw,3);
+      x.fillStyle='rgba(0,0,0,0.12)';x.fillRect(px,py+bh-3,bw,3);}}
+  const t=new THREE.CanvasTexture(c);t.wrapS=t.wrapT=THREE.RepeatWrapping;return t;
+}
+function woodTexture(dark){
+  const c=document.createElement('canvas');c.width=256;c.height=256;const x=c.getContext('2d');
+  x.fillStyle=dark?'#6a4630':'#b8895c';x.fillRect(0,0,256,256);
+  for(let i=0;i<40;i++){const y=Math.random()*256;
+    x.strokeStyle=`rgba(${dark?'40,26,18':'120,85,55'},${0.1+Math.random()*0.15})`;
+    x.lineWidth=1+Math.random()*2;x.beginPath();x.moveTo(0,y);
+    for(let px=0;px<256;px+=20)x.lineTo(px,y+Math.sin(px*0.05+i)*3);x.stroke();}
+  const t=new THREE.CanvasTexture(c);t.wrapS=t.wrapT=THREE.RepeatWrapping;return t;
+}
+function fabricTexture(hexColor){
+  const c=document.createElement('canvas');c.width=128;c.height=128;const x=c.getContext('2d');
+  const b=hx(hexColor);x.fillStyle=hexColor;x.fillRect(0,0,128,128);
+  for(let i=0;i<2000;i++){const v=0.9+Math.random()*0.2;
+    x.fillStyle=`rgba(${b[0]*v|0},${b[1]*v|0},${b[2]*v|0},0.3)`;
+    x.fillRect(Math.random()*128,Math.random()*128,2,2);}
+  return new THREE.CanvasTexture(c);
+}
+let TEX={};
+function initTextures(){
+  TEX.brick=brickTexture();TEX.brick.repeat.set(3,2);
+  TEX.woodFloor=woodTexture(false);TEX.woodFloor.repeat.set(4,4);
+  TEX.woodDark=woodTexture(true);
+  TEX.ceiling=null;
+}
+
+function init(){
+  renderer=new THREE.WebGLRenderer({canvas:cv,antialias:true});
+  renderer.setPixelRatio(DPR);
+  renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+  renderer.outputEncoding=THREE.sRGBEncoding;
+  renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.1;
+
+  scene=new THREE.Scene();
+  cam=new THREE.PerspectiveCamera(34,1,0.1,100);
+  initTextures();
+
+  // 조명: 실내라 환경광 약하게. 주 빛은 창으로 들어오는 SpotLight.
+  hemi=new THREE.HemisphereLight(0x9ab0d0,0x40342e,0.12);scene.add(hemi);
+  ambient=new THREE.AmbientLight(0xffffff,0.04);scene.add(ambient);
+
+  // 태양 = 창 밖에서 방향광 (그림자 만듦)
+  sunLight=new THREE.DirectionalLight(0xfff0d8,1.6);
+  sunLight.castShadow=true;sunLight.shadow.mapSize.set(2048,2048);
+  sunLight.shadow.camera.near=0.5;sunLight.shadow.camera.far=50;
+  const d=9;sunLight.shadow.camera.left=-d;sunLight.shadow.camera.right=d;
+  sunLight.shadow.camera.top=d;sunLight.shadow.camera.bottom=-d;
+  sunLight.shadow.bias=-0.0004;sunLight.shadow.radius=6;
+  scene.add(sunLight,sunLight.target);
+
+  // 창으로 들어오는 빛 강조 (SpotLight, 창 위치에서 방 안으로)
+  winLight1=new THREE.SpotLight(0xfff2d8,0,14,Math.PI/3,0.5,1.5);
+  winLight1.castShadow=true;winLight1.shadow.mapSize.set(1024,1024);
+  scene.add(winLight1,winLight1.target);
+
+  // 천장등 (옵션)
+  ceilingBulb=new THREE.PointLight(0xffe4b0,0,14,1.2);
+  ceilingBulb.position.set(0,3.4,0);ceilingBulb.castShadow=true;
+  ceilingBulb.shadow.mapSize.set(1024,1024);scene.add(ceilingBulb);
+
+  buildRoom();
+  bindControls();
+  resize();
+  animate();
+  document.getElementById('loading').style.display='none';
+  setTimeout(()=>{document.getElementById('hint').style.opacity='0';},5500);
+}
+
+function mat(hex,rough=0.85,tex){
+  const o={color:col(hex),roughness:rough,metalness:0.0};
+  if(tex){o.map=tex;o.color=col('#ffffff');}
+  return new THREE.MeshStandardMaterial(o);
+}
+function box(w,h,d,m,x,y,z,shadow=true){
+  const mesh=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),m);
+  mesh.position.set(x,y,z);mesh.castShadow=shadow;mesh.receiveShadow=true;return mesh;
+}
+
+const RW=7, RD=7, RH=4;  // 방 크기
+
+function buildRoom(){
+  room=new THREE.Group();
+
+  const brickMat=mat('#8a5a44',0.95,TEX.brick);
+  const floorMat=mat('#b8895c',0.9,TEX.woodFloor);
+  const ceilMat=mat('#e8e0d4',0.95);
+  const wt=0.2; // 벽 두께
+
+  // ===== 6면 껍데기 (다 존재, 카메라 각도로 숨김) =====
+  // 바닥
+  shells.floor = box(RW,wt,RD,floorMat,0,-wt/2,0);
+  shells.floor.userData={normal:[0,-1,0], center:[0,0,0]};
+  room.add(shells.floor);
+  // 천장
+  shells.ceiling = box(RW,wt,RD,ceilMat,0,RH+wt/2,0);
+  shells.ceiling.userData={normal:[0,1,0], center:[0,RH,0]};
+  room.add(shells.ceiling);
+  // 뒷벽 (-z) — 창 개구부를 뺀 4조각 (진짜 구멍)
+  buildBackWallWithHole(brickMat, wt);
+  // 앞벽 (+z)
+  shells.front = box(RW,RH,wt,brickMat,0,RH/2,RD/2);
+  shells.front.userData={normal:[0,0,1], center:[0,RH/2,RD/2]};
+  room.add(shells.front);
+  // 좌벽 (-x)
+  shells.left = box(wt,RH,RD,brickMat,-RW/2,RH/2,0);
+  shells.left.userData={normal:[-1,0,0], center:[-RW/2,RH/2,0]};
+  room.add(shells.left);
+  // 우벽 (+x)
+  shells.right = box(wt,RH,RD,brickMat,RW/2,RH/2,0);
+  shells.right.userData={normal:[1,0,0], center:[RW/2,RH/2,0]};
+  room.add(shells.right);
+
+  // 걸레받이 (4면 하단)
+  const skirt=mat('#e8ddd0',0.7);
+  room.add(box(RW,0.25,0.1,skirt,0,0.12,-RD/2+0.12,false));
+  room.add(box(0.1,0.25,RD,skirt,-RW/2+0.12,0.12,0,false));
+
+  // ===== 창문 (뒷벽에 뚫린 개구부) =====
+  buildWindow();
+
+  // ===== 가구 =====
+  buildFurniture();
+
+  // 껍데기 6면 모두 그림자 던지고 받게 (숨겨도 빛 막게)
+  for(const key in shells){
+    shells[key].traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;}});
+  }
+
+  scene.add(room);
+}
+
+function buildBackWallWithHole(brickMat, wt){
+  // 창 개구부 파라미터 (buildWindow와 일치시킴)
+  const winCx=0.6, winCy=2.2, winW=2.6, winH=2.4;
+  const wz=-RD/2;
+  const g=new THREE.Group();
+  // 창 좌우 경계
+  const wl=winCx-winW/2, wr=winCx+winW/2;
+  const wb=winCy-winH/2, wtop=winCy+winH/2;
+  // 좌측 조각 (벽 왼쪽 끝 ~ 창 왼쪽)
+  const leftW=(wl)-(-RW/2);
+  g.add(box(leftW,RH,wt,brickMat, -RW/2+leftW/2, RH/2, wz));
+  // 우측 조각 (창 오른쪽 ~ 벽 오른쪽 끝)
+  const rightW=(RW/2)-(wr);
+  g.add(box(rightW,RH,wt,brickMat, wr+rightW/2, RH/2, wz));
+  // 창 위 조각
+  const topH=RH-wtop;
+  g.add(box(winW,topH,wt,brickMat, winCx, wtop+topH/2, wz));
+  // 창 아래 조각
+  const botH=wb;
+  g.add(box(winW,botH,wt,brickMat, winCx, botH/2, wz));
+  g.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;}});
+  g.userData={normal:[0,0,-1], center:[0,RH/2,wz]};
+  shells.back=g;
+  room.add(g);
+}
+function buildWindow(){
+  // 창 = 뒷벽에 뚫린 구멍. 벽은 창 주변만 남기고, 유리+프레임.
+  const g=new THREE.Group();
+  const fw=2.6,fh=2.4,fy=2.2,fz=-RD/2+0.05;
+  window._winPos=new THREE.Vector3(0.6,fy,fz);
+  // 유리 (하늘 발광)
+  const glass=new THREE.Mesh(new THREE.PlaneGeometry(fw,fh),
+    new THREE.MeshBasicMaterial({color:0xcfe8f5,transparent:true,opacity:0.55}));
+  glass.position.set(0.6,fy,fz+0.03);g.add(glass);window._glass=glass;
+  // 프레임
+  const fm=mat('#5a4436',0.7,TEX.woodDark);const t=0.16;
+  g.add(box(fw+0.3,t,0.24,fm,0.6,fy+fh/2,fz));
+  g.add(box(fw+0.3,t,0.24,fm,0.6,fy-fh/2,fz));
+  g.add(box(t,fh,0.24,fm,0.6-fw/2,fy,fz));
+  g.add(box(t,fh,0.24,fm,0.6+fw/2,fy,fz));
+  g.add(box(0.1,fh,0.18,fm,0.6,fy,fz));
+  g.add(box(fw,0.1,0.18,fm,0.6,fy,fz));
+  g.add(box(fw+0.5,0.14,0.44,mat('#c8b89a',0.7),0.6,fy-fh/2-0.07,fz+0.12,false));
+  window._winGroup=g;
+  room.add(g);
+}
+
+function buildFurniture(){
+  // 러그
+  const rug=new THREE.Mesh(new THREE.CircleGeometry(1.7,40),
+    new THREE.MeshStandardMaterial({map:fabricTexture('#c25a4a'),roughness:1}));
+  rug.rotation.x=-Math.PI/2;rug.position.set(0.4,0.02,0.9);rug.receiveShadow=true;room.add(rug);
+
+  // 침대
+  const bed=new THREE.Group();
+  bed.add(box(2,0.5,2.6,mat('#7a5a44',0.8,TEX.woodDark),0,0.25,0));
+  bed.add(box(1.85,0.35,2.4,new THREE.MeshStandardMaterial({map:fabricTexture('#4a5568'),roughness:0.95}),0,0.62,0.05));
+  bed.add(box(1.85,0.28,1.3,new THREE.MeshStandardMaterial({map:fabricTexture('#3a4456'),roughness:0.95}),0,0.72,0.6));
+  bed.add(box(0.8,0.24,0.5,mat('#f0ebe0',0.9),-0.45,0.82,-0.85));
+  bed.add(box(0.8,0.24,0.5,mat('#e8e0d2',0.9),0.45,0.82,-0.85));
+  bed.add(box(2.1,1.2,0.2,mat('#6a4a36',0.8,TEX.woodDark),0,0.9,-1.3));
+  bed.position.set(1.8,0,1.2);room.add(bed);
+
+  // 책상 + 의자 (창 밑)
+  const desk=new THREE.Group();
+  desk.add(box(2,0.1,0.9,mat('#8a6248',0.7,TEX.woodDark),0,1.1,0));
+  desk.add(box(0.1,1.1,0.8,mat('#6a4a36',0.8),-0.9,0.55,0));
+  desk.add(box(0.1,1.1,0.8,mat('#6a4a36',0.8),0.9,0.55,0));
+  desk.add(box(0.9,0.55,0.06,mat('#1a1a22',0.4),0,1.5,-0.25));
+  const screen=new THREE.Mesh(new THREE.PlaneGeometry(0.82,0.47),mat('#1a2a3a',0.3));
+  screen.position.set(0,1.5,-0.21);desk.add(screen);
+  const chair=new THREE.Group();
+  chair.add(box(0.5,0.08,0.5,mat('#2a2a32',0.6),0,0.6,0));
+  chair.add(box(0.5,0.6,0.08,mat('#33333c',0.6),0,0.9,-0.24));
+  chair.position.set(0,0,0.7);desk.add(chair);
+  desk.position.set(-1.5,0,-1.9);room.add(desk);
+
+  // 책장
+  const shelf=new THREE.Group();
+  shelf.add(box(0.4,2.4,1.6,mat('#7a5638',0.8,TEX.woodDark),0,1.2,0));
+  for(let k=0;k<4;k++)shelf.add(box(0.42,0.05,1.5,mat('#5a3e28',0.8),0.01,0.5+k*0.55,0));
+  const bookCols=['#a04638','#3a5a68','#c8964a','#4a6a4a','#8a4a6a'];
+  for(let k=0;k<3;k++)for(let b=0;b<4;b++)
+    shelf.add(box(0.28,0.32+Math.random()*0.1,0.14,mat(bookCols[(k*4+b)%5],0.85),0.05,0.72+k*0.55,-0.5+b*0.28));
+  shelf.position.set(-3.1,0,1.4);room.add(shelf);
+
+  // 테이블 + 몬스테라
+  const table=new THREE.Group();
+  const top=new THREE.Mesh(new THREE.CylinderGeometry(0.75,0.75,0.1,28),mat('#c89a68',0.6,TEX.woodFloor));
+  top.position.y=0.85;top.castShadow=top.receiveShadow=true;table.add(top);
+  const leg=new THREE.Mesh(new THREE.CylinderGeometry(0.07,0.1,0.85,10),mat('#8a6642',0.7));
+  leg.position.y=0.42;leg.castShadow=true;table.add(leg);
+  table.add(new THREE.Mesh(new THREE.CylinderGeometry(0.4,0.45,0.05,16),mat('#8a6642',0.7)));
+  table.position.set(0.5,0,0.9);room.add(table);
+
+  const plant=new THREE.Group();
+  const pot=new THREE.Mesh(new THREE.CylinderGeometry(0.28,0.22,0.4,16),mat('#b87050',0.7));
+  pot.position.y=0.2;pot.castShadow=true;plant.add(pot);
+  // 흙
+  const soil=new THREE.Mesh(new THREE.CylinderGeometry(0.26,0.26,0.05,16),mat('#3a2a1e',1));
+  soil.position.y=0.4;plant.add(soil);
+  // 몬스테라 잎 모양 (Shape: 하트+결각)
+  function monsteraLeafGeo(){
+    const s=new THREE.Shape();
+    s.moveTo(0,0);
+    // 잎 윤곽 (한쪽) — 결각(splits) 표현
+    s.bezierCurveTo(0.15,0.15, 0.35,0.25, 0.42,0.5);
+    s.lineTo(0.30,0.52);              // 결각 파임
+    s.bezierCurveTo(0.34,0.62, 0.36,0.72, 0.28,0.85);
+    s.lineTo(0.20,0.78);             // 결각
+    s.bezierCurveTo(0.22,0.9, 0.16,1.0, 0.0,1.06);  // 끝
+    // 반대쪽 대칭
+    s.bezierCurveTo(-0.16,1.0, -0.22,0.9, -0.20,0.78);
+    s.lineTo(-0.28,0.85);
+    s.bezierCurveTo(-0.36,0.72, -0.34,0.62, -0.30,0.52);
+    s.lineTo(-0.42,0.5);
+    s.bezierCurveTo(-0.35,0.25, -0.15,0.15, 0,0);
+    return new THREE.ShapeGeometry(s);
+  }
+  const leafGeo=monsteraLeafGeo();
+  const leafMat=new THREE.MeshStandardMaterial({color:col('#3d8a4a'),roughness:0.55,side:THREE.DoubleSide});
+  const leafMatL=new THREE.MeshStandardMaterial({color:col('#4fa05a'),roughness:0.55,side:THREE.DoubleSide});
+  const leafMatD=new THREE.MeshStandardMaterial({color:col('#2f6e3a'),roughness:0.55,side:THREE.DoubleSide});
+  const leafMats=[leafMat,leafMatL,leafMatD];
+  // 잎: 방위각, 처짐각(바깥/아래로), 크기, 높이
+  const leaves=[
+    // [az, droop(처짐 0=수평 ~ 1.4=위), size, h]
+    [0.0,  0.55, 0.95, 0.35],
+    [0.9,  0.75, 0.85, 0.5],
+    [1.8,  0.4,  0.9,  0.3],
+    [2.7,  0.9,  0.8,  0.55],
+    [3.5,  0.5,  0.92, 0.4],
+    [4.3,  0.8,  0.82, 0.5],
+    [5.2,  0.35, 0.88, 0.32],
+    [5.9,  1.0,  0.75, 0.6],
+  ];
+  leaves.forEach(([az,droop,sz,h],i)=>{
+    const leaf=new THREE.Mesh(leafGeo, leafMats[i%3]);
+    leaf.scale.set(sz,sz,sz);
+    const px=Math.cos(az)*0.12, pz=Math.sin(az)*0.12;
+    leaf.position.set(px, 0.44+h, pz);
+    // 잎이 바깥을 향하되 끝이 아래로 처지게 (자연스러운 몬스테라)
+    leaf.rotation.y=az;
+    leaf.rotation.x=droop;         // 처짐: 수평~아래로 늘어짐
+    leaf.rotation.z=(Math.random()-0.5)*0.3;
+    leaf.castShadow=true;
+    plant.add(leaf);
+    // 잎자루 (중심→잎)
+    const stemLen=0.25+h*0.2;
+    const stem=new THREE.Mesh(new THREE.CylinderGeometry(0.012,0.018,stemLen,6),mat('#4a7a3a',0.7));
+    stem.position.set(px*0.5,0.44+h*0.6,pz*0.5);
+    stem.rotation.z=Math.cos(az)*0.8;stem.rotation.x=Math.sin(az)*0.8;
+    stem.castShadow=true;plant.add(stem);
+  });
+  plant.position.set(0.5,0.85,0.9);room.add(plant);
+
+  // 바닥 화분
+  const fp=new THREE.Group();
+  fp.add(new THREE.Mesh(new THREE.CylinderGeometry(0.3,0.24,0.5,14),mat('#a86848',0.7)));
+  for(let k=0;k<5;k++){const blade=box(0.06,0.9+Math.random()*0.5,0.12,mat('#5a9a5a',0.7),
+    (Math.random()-0.5)*0.3,0.6,(Math.random()-0.5)*0.3);blade.rotation.z=(Math.random()-0.5)*0.5;fp.add(blade);}
+  fp.position.set(-2.8,0.25,-1.2);fp.traverse(o=>{if(o.isMesh)o.castShadow=true;});room.add(fp);
+
+  // 천장등 (구체 + 갓)
+  const cl=new THREE.Group();
+  cl.add(box(0.06,0.4,0.06,mat('#3a3a42',0.5),0,3.8,0));
+  const clShade=new THREE.Mesh(new THREE.CylinderGeometry(0.35,0.5,0.35,20,1,true),
+    new THREE.MeshStandardMaterial({color:col('#f0e0c0'),roughness:0.6,side:THREE.DoubleSide,
+      emissive:col('#3a2e18'),emissiveIntensity:0.2}));
+  clShade.position.y=3.5;cl.add(clShade);window._clShade=clShade;
+  room.add(cl);
+
+  // 그림자 캐스팅
+  [bed,desk,shelf].forEach(gr=>gr.traverse(o=>{if(o.isMesh)o.castShadow=true;}));
+}
+
+// ===== 면 가시성: 카메라 각도로 가리는 면 숨김 =====
+function updateShellVisibility(){
+  const cp=cam.position;
+  for(const key in shells){
+    const sh=shells[key];const {normal,center}=sh.userData;
+    const toCam=[cp.x-center[0],cp.y-center[1],cp.z-center[2]];
+    const dot=toCam[0]*normal[0]+toCam[1]*normal[1]+toCam[2]*normal[2];
+    // dot>0.3 = 카메라가 면 바깥쪽 = 앞을 가림 → 시각적으로 숨김
+    // ★ 단, 그림자는 계속 막아야 함 → visible=true 유지, 재질만 투명
+    const hide = dot >= 0.3;
+    sh.traverse(o=>{
+      if(o.isMesh){
+        o.visible=true;                    // 항상 렌더 대상(그림자 위해)
+        if(!o.material) return;
+        const setMat=(mm)=>{
+          if(hide){ mm.transparent=true; mm.opacity=0; mm.depthWrite=false; }
+          else    { mm.opacity=1; mm.depthWrite=true;
+                    if(mm._wasOpaque!==false) mm.transparent=false; }
+        };
+        if(Array.isArray(o.material)) o.material.forEach(setMat); else setMat(o.material);
+        // 그림자는 hide여도 계속 던지게
+        o.castShadow=true;
+      }
+    });
+  }
+}
+
+// ===== 태양/창 빛 =====
+function sunState(t){
+  const dayPhase=(t-15)/70,daytime=t>12&&t<88;
+  const alt=daytime?Math.sin(Math.max(0,Math.min(1,dayPhase))*Math.PI):0;
+  const az=(dayPhase-0.5)*Math.PI*0.85;
+  let sky,label,warm;
+  if(t<12){sky=hx('#1a2038');label='한밤';}
+  else if(t<26){sky=mix(hx('#26304e'),hx('#f0b888'),(t-12)/14);label='새벽';}
+  else if(t<44){sky=mix(hx('#f0b888'),hx('#bfe0f0'),(t-26)/18);label='아침';}
+  else if(t<58){sky=hx('#bfe0f0');label='한낮';}
+  else if(t<74){sky=mix(hx('#bfe0f0'),hx('#f0b070'),(t-58)/16);label='오후';}
+  else if(t<88){sky=mix(hx('#f0b070'),hx('#d88a90'),(t-74)/14);label='해질녘';}
+  else{sky=mix(hx('#d88a90'),hx('#1a2038'),(t-88)/12);label='한밤';}
+  warm=(t<32||t>68)?Math.min(1,(t<32?(32-t):(t-68))/20):0;
+  return {alt,az,sky,label,daytime,intensity:alt,warm};
+}
+
+function updateLight(t){
+  const s=sunState(t);
+  scene.background=col(mix(s.sky,hx('#14101c'),0.15));
+  scene.fog=new THREE.Fog(col(s.sky),20,45);
+
+  // 태양: 창 밖(-z 쪽)에서 방 안으로. 창을 통해서만 직사광 유효.
+  const wp=window._winPos||new THREE.Vector3(0.6,2.2,-3.4);
+  const dist=10, el=0.25+s.alt*0.9;
+  sunLight.position.set(wp.x+Math.sin(s.az)*dist*0.5, wp.y+Math.sin(el)*dist, wp.z-Math.cos(el)*dist*0.6);
+  sunLight.target.position.set(1.2,0.5,1.5);  // 창 반대편 바닥 비춤
+  sunLight.intensity=0.2+s.intensity*1.8;
+  sunLight.color=col(mix(hx('#fff0d8'),hx('#ff9850'),s.warm));
+
+  // 창 스팟라이트 (창에서 방 안으로 쏟아지는 빛)
+  winLight1.position.set(wp.x,wp.y+0.3,wp.z+0.3);
+  winLight1.target.position.set(1.5,0,2);
+  winLight1.intensity=s.intensity*2.2;
+  winLight1.color=col(mix(hx('#fff4e0'),hx('#ffb060'),s.warm));
+
+  hemi.intensity=0.06+s.intensity*0.12;
+  hemi.color=col(mix(hx('#9ab0d0'),s.sky,0.3));
+  ambient.intensity=0.03+s.intensity*0.05;
+
+  if(window._glass)window._glass.material.color=col(s.sky);
+
+  // 천장등
+  // 천장등 3모드: 0=자동(야간만) 1=상시 2=끄기
+  let lampActive;
+  if(ceilingMode===0) lampActive = s.intensity<0.35;  // 자동: 어두우면 켜짐
+  else if(ceilingMode===1) lampActive = true;          // 상시
+  else lampActive = false;                              // 끄기
+  ceilingBulb.intensity = lampActive ? 4.5 : 0;
+  // 갓 자체발광: 켜졌을 때만. 꺼지면 완전히 0 (안 그럼 계속 빛남)
+  if(window._clShade)window._clShade.material.emissiveIntensity = lampActive ? 0.9 : 0.0;
+
+  document.getElementById('timePill').textContent=s.label;
+}
+
+function updateCam(){
+  if(autoRotate)orbit.az+=0.003;
+  const {az,el,r,tx,ty,tz}=orbit;
+  cam.position.set(tx+r*Math.cos(el)*Math.sin(az),ty+r*Math.sin(el),tz+r*Math.cos(el)*Math.cos(az));
+  cam.lookAt(tx,ty,tz);
+  updateShellVisibility();
+}
+function resize(){W=innerWidth;H=innerHeight;renderer.setSize(W,H);cam.aspect=W/H;cam.updateProjectionMatrix();}
+function animate(){requestAnimationFrame(animate);updateCam();renderer.render(scene,cam);}
+
+function bindControls(){
+  let drag=false,px=0,py=0;
+  const down=e=>{drag=true;autoRotate=false;const p=pt(e);px=p.x;py=p.y;
+    document.getElementById('autorotate').classList.remove('on');};
+  const move=e=>{if(!drag)return;const p=pt(e);
+    orbit.az-=(p.x-px)*0.008;orbit.el+=(p.y-py)*0.006;
+    orbit.el=Math.max(-0.3,Math.min(1.45,orbit.el));px=p.x;py=p.y;e.preventDefault();};
+  const up=()=>drag=false;
+  cv.addEventListener('mousedown',down);cv.addEventListener('touchstart',down,{passive:false});
+  window.addEventListener('mousemove',move);window.addEventListener('touchmove',move,{passive:false});
+  window.addEventListener('mouseup',up);window.addEventListener('touchend',up);
+  cv.addEventListener('wheel',e=>{e.preventDefault();orbit.r*=(1+Math.sign(e.deltaY)*0.08);
+    orbit.r=Math.max(5,Math.min(22,orbit.r));},{passive:false});
+  let pd=0;
+  cv.addEventListener('touchmove',e=>{if(e.touches.length===2){
+    const d=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);
+    if(pd)orbit.r*=(1-(d-pd)*0.005);orbit.r=Math.max(5,Math.min(22,orbit.r));pd=d;}},{passive:false});
+  cv.addEventListener('touchend',()=>pd=0);
+  document.getElementById('sun').addEventListener('input',function(){updateLight(+this.value);});
+  document.getElementById('reset').onclick=()=>{orbit.az=0.72;orbit.el=0.55;orbit.r=12;};
+  document.getElementById('autorotate').onclick=function(){autoRotate=!autoRotate;this.classList.toggle('on',autoRotate);};
+  document.getElementById('ceiling').onclick=function(){
+    ceilingMode=(ceilingMode+1)%3;
+    const labels=['천장광: 자동','천장광: 상시','천장광: 끄기'];
+    this.textContent=labels[ceilingMode];
+    this.classList.toggle('on',ceilingMode!==2);
+    updateLight(+document.getElementById('sun').value);};
+  window.addEventListener('resize',resize);
+}
+function pt(e){if(e.touches&&e.touches[0])return{x:e.touches[0].clientX,y:e.touches[0].clientY};return{x:e.clientX,y:e.clientY};}
+
+init();
+updateLight(60);
+</script>
+</body>
+</html>
