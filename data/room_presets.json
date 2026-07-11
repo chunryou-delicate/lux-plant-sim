@@ -3,9 +3,9 @@
   "presets": {
     "onebox": {
       "label": "기본 원룸",
+      "note": "창은 3D 뒷벽(-z, world x=0.6, 폭 2.6)과 일치. side u0 = v=0 모서리에서 +v로 채광.",
       "windows": [
-        {"id": "w1", "side": "u0", "pos": 0.5, "width": 0.4, "sky": 1.0},
-        {"id": "w2", "side": "v0", "pos": 0.5, "width": 0.4, "sky": 1.0}
+        {"id": "w1", "side": "u0", "pos": 0.586, "width": 0.371, "sky": 1.0}
       ],
       "wallColorA": "#efe4d2",
       "wallColorB": "#e6d8c2",

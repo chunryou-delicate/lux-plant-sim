@@ -6,11 +6,15 @@
 ============================================================ */
 import { createScene, updateLight } from './render3d/scene.js';
 import { initTextures } from './render3d/textures.js';
-import { buildRoom, updateShellVisibility } from './render3d/room.js';
+import { buildRoom, updateShellVisibility, RW, RD } from './render3d/room.js';
 import { buildFurniture } from './render3d/furniture.js';
+import { sunState, computeLux } from './engine/lighting.js';
+import { buildFloorHeatmap, updateFloorHeatmap } from './render3d/lighting_viz.js';
 
-// STEP1 데이터 (지금은 로드만 — STEP4에서 식물 판정·스폰에 사용)
+// 데이터: 카탈로그 + 엔진 방(창) 모델
 const catalog = await fetch('./data/catalog.json').then(r=>r.json()).catch(()=>({}));
+const roomPresets = await fetch('./data/room_presets.json').then(r=>r.json()).catch(()=>({presets:{},default:''}));
+const roomModel = roomPresets.presets[roomPresets.default];
 
 const cv=document.getElementById('cv');
 const ctx=createScene(cv);
@@ -18,9 +22,17 @@ const TEX=initTextures();
 
 // 방(밀폐+창) → 가구 → 씬에 추가
 const { room, shells, winPos, glass }=buildRoom(TEX);
-const { clShade }=buildFurniture(room, TEX);
+const { clShade, monstera }=buildFurniture(room, TEX);
 ctx.scene.add(room);
 ctx.winPos=winPos; ctx.glass=glass; ctx.clShade=clShade;
+
+// ===== STEP4: 엔진 조도(lx) ↔ 3D 연결 =====
+const heatMesh=buildFloorHeatmap(RW, RD); heatMesh.visible=false; ctx.scene.add(heatMesh);
+let showHeat=false;
+// 몬스테라 잎 발광 준비(세기 0). 조도 충분하면 켜짐 = 식물 반응
+monstera.leafMats.forEach(m=>{ m.emissive=new THREE.Color(0x7ad36a); m.emissiveIntensity=0; });
+// 조도 판정 대상 (3D world 위치 → 방좌표 u,v). RW=RD=7
+const plants=[{ leafMats:monstera.leafMats, u:0.571, v:0.629, needLux:400, label:'몬스테라' }];
 
 // ===== 카메라 궤도 =====
 let orbit={ az:0.72, el:0.55, r:12, tx:0, ty:2, tz:0 };
@@ -41,7 +53,31 @@ function animate(){ requestAnimationFrame(animate); updateCam(); ctx.renderer.re
 
 // ===== 컨트롤 =====
 const sunEl=document.getElementById('sun');
-function applyLight(){ document.getElementById('timePill').textContent=updateLight(ctx, +sunEl.value, ceilingMode); }
+function applyLight(){
+  document.getElementById('timePill').textContent=updateLight(ctx, +sunEl.value, ceilingMode);
+  engineRefresh();   // 엔진 조도(진짜 판정) 갱신
+}
+
+// 엔진 격자 lx 계산 → 히트맵 · 수치 · 식물 반응
+function engineRefresh(){
+  if(!roomModel) return;
+  const t=+sunEl.value;
+  const items=[];
+  if(ceilingMode!==2) items.push({ type:'ceiling', u:0.5, v:0.5 });   // 천장등(끄기면 제외)
+  const field=computeLux({ room:roomModel, catalog, items, sun:sunState(t), lampManual:(ceilingMode===1) });
+
+  if(showHeat){ updateFloorHeatmap(heatMesh, field, RW, RD); heatMesh.visible=true; }
+  else heatMesh.visible=false;
+
+  for(const p of plants){
+    const lx=field.at(p.u,p.v);
+    const glow = lx>=p.needLux ? Math.min(0.7, 0.25+(lx-p.needLux)/p.needLux*0.5) : 0;
+    p.leafMats.forEach(m=>{ m.emissiveIntensity=glow; });
+  }
+
+  const lp=document.getElementById('luxPill');
+  if(lp) lp.textContent=`창가 ${Math.round(field.windowAvg)} · 최대 ${Math.round(field.max)} lx`;
+}
 
 function bindControls(){
   let drag=false, px=0, py=0;
@@ -73,6 +109,10 @@ function bindControls(){
     this.textContent=['천장광: 자동','천장광: 상시','천장광: 끄기'][ceilingMode];
     this.classList.toggle('on',ceilingMode!==2);
     applyLight();
+  };
+  document.getElementById('heat').onclick=function(){
+    showHeat=!showHeat; this.classList.toggle('on',showHeat);
+    engineRefresh();
   };
   window.addEventListener('resize',resize);
 }

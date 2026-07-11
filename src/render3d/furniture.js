@@ -56,7 +56,8 @@ export function buildFurniture(room, TEX){
   table.add(new THREE.Mesh(new THREE.CylinderGeometry(0.4,0.45,0.05,16),mat('#8a6642',0.7)));
   table.position.set(0.5,0,0.9); room.add(table);
 
-  room.add(buildMonstera());
+  const monstera=buildMonstera();   // { group, leafMats } — 조도 반응(발광)용
+  room.add(monstera.group);
 
   // 바닥 화분
   const fp=new THREE.Group();
@@ -77,7 +78,7 @@ export function buildFurniture(room, TEX){
   // 그림자 캐스팅
   [bed,desk,shelf].forEach(gr=>gr.traverse(o=>{ if(o.isMesh)o.castShadow=true; }));
 
-  return { clShade };
+  return { clShade, monstera };   // monstera = { group, leafMats } (STEP4 조도 반응용)
 }
 
 // 몬스테라 (하트+결각 잎 셰이프)
@@ -124,5 +125,5 @@ function buildMonstera(){
     stem.castShadow=true; plant.add(stem);
   });
   plant.position.set(0.5,0.85,0.9);
-  return plant;
+  return { group:plant, leafMats };
 }
