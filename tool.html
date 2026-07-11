@@ -1,0 +1,778 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>조도 예측 시뮬레이터</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<style>
+  :root{
+    --ink:#1a1f24; --paper:#eceae3; --line:#c3bfb2; --line2:#d8d4c7;
+    --amber:#e8a838; --amber-dim:#8a6d2e; --cyan:#3a8fb0; --red:#c0524a;
+    --panel:#f4f2eb; --mono:'IBM Plex Mono','SF Mono',Menlo,monospace;
+    --sans:'IBM Plex Sans','Helvetica Neue',Arial,sans-serif;
+  }
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap');
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{height:100%;background:var(--paper);color:var(--ink);font-family:var(--sans);overflow:hidden}
+  #app{display:grid;grid-template-columns:300px 1fr 260px;grid-template-rows:44px 1fr;height:100vh}
+  header{grid-column:1/-1;display:flex;align-items:center;gap:14px;padding:0 16px;
+    background:var(--ink);color:var(--paper);border-bottom:2px solid var(--amber)}
+  header .logo{font-family:var(--mono);font-weight:600;letter-spacing:2px;font-size:13px}
+  header .logo b{color:var(--amber)}
+  header .tag{font-family:var(--mono);font-size:10px;opacity:.55;letter-spacing:1px}
+  header .spacer{flex:1}
+  header .stat{font-family:var(--mono);font-size:11px;display:flex;gap:6px;align-items:baseline}
+  header .stat .v{color:var(--amber);font-weight:600;font-size:13px}
+  header .stat .u{opacity:.5;font-size:9px}
+  .panel{background:var(--panel);overflow-y:auto;padding:14px}
+  .panel.left{border-right:1px solid var(--line)}
+  .panel.right{border-left:1px solid var(--line)}
+  .sec{margin-bottom:18px}
+  .sec>.h{font-family:var(--mono);font-size:10px;letter-spacing:1.5px;text-transform:uppercase;
+    color:var(--amber-dim);border-bottom:1px solid var(--line2);padding-bottom:5px;margin-bottom:10px;
+    display:flex;justify-content:space-between;align-items:center}
+  .sec>.h .n{color:var(--line);font-weight:400}
+  .row{display:flex;align-items:center;justify-content:space-between;margin-bottom:9px;gap:8px}
+  .row label{font-size:12px;color:#444;flex:1}
+  .row .val{font-family:var(--mono);font-size:11px;color:var(--ink);min-width:52px;text-align:right;
+    background:#fff;border:1px solid var(--line2);padding:2px 6px;border-radius:2px}
+  input[type=range]{-webkit-appearance:none;height:3px;background:var(--line);border-radius:2px;flex:1;outline:none}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;height:13px;border-radius:50%;
+    background:var(--ink);cursor:pointer;border:2px solid var(--paper)}
+  input[type=number]{font-family:var(--mono);font-size:11px;width:56px;padding:3px 5px;border:1px solid var(--line2);
+    border-radius:2px;background:#fff;text-align:right}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px 10px}
+  .field{display:flex;flex-direction:column;gap:3px}
+  .field span{font-size:10px;color:#777;font-family:var(--mono);letter-spacing:.5px}
+  select{font-family:var(--mono);font-size:11px;padding:4px 6px;border:1px solid var(--line2);border-radius:2px;background:#fff;width:100%}
+  button{font-family:var(--mono);font-size:11px;letter-spacing:.5px;border:1px solid var(--ink);
+    background:var(--ink);color:var(--paper);padding:7px 10px;border-radius:2px;cursor:pointer;transition:.12s}
+  button:hover{background:var(--amber);border-color:var(--amber);color:var(--ink)}
+  button.ghost{background:transparent;color:var(--ink)}
+  button.ghost:hover{background:var(--ink);color:var(--paper)}
+  button.wide{width:100%}
+  button:disabled{opacity:.4;cursor:not-allowed}
+  .btnrow{display:flex;gap:7px}
+  #viewport{position:relative;background:#dedbd2}
+  #cv{display:block;width:100%;height:100%}
+  .vp-badge{position:absolute;top:12px;left:12px;font-family:var(--mono);font-size:10px;
+    background:rgba(26,31,36,.82);color:var(--paper);padding:5px 9px;border-radius:2px;letter-spacing:1px;pointer-events:none}
+  .vp-hint{position:absolute;bottom:12px;left:12px;font-family:var(--mono);font-size:10px;color:#5a564b;
+    background:rgba(255,255,255,.6);padding:4px 8px;border-radius:2px}
+  .vp-toggle{position:absolute;top:12px;right:12px;display:flex;gap:6px}
+  .vp-toggle button{padding:5px 9px;font-size:10px}
+  .lum-list{display:flex;flex-direction:column;gap:5px;max-height:180px;overflow-y:auto}
+  .lum-item{display:flex;align-items:center;gap:7px;font-family:var(--mono);font-size:10px;
+    background:#fff;border:1px solid var(--line2);padding:5px 7px;border-radius:2px}
+  .lum-item.sel{border-color:var(--amber);background:#fdf6e7}
+  .lum-item .dot{width:8px;height:8px;border-radius:50%;background:var(--amber)}
+  .lum-item .id{color:#999;width:24px}
+  .lum-item .xy{flex:1;color:#555}
+  .lum-item .x{color:var(--red);cursor:pointer;font-weight:600}
+  .metric{background:#fff;border:1px solid var(--line2);border-radius:2px;padding:9px 10px;margin-bottom:8px}
+  .metric .lbl{font-family:var(--mono);font-size:9px;letter-spacing:1px;color:#888;text-transform:uppercase}
+  .metric .big{font-family:var(--mono);font-size:22px;font-weight:600;line-height:1.1;margin-top:2px}
+  .metric .sub{font-family:var(--mono);font-size:10px;color:#999;margin-top:1px}
+  .metric.ok .big{color:#3d8b52}.metric.warn .big{color:var(--red)}
+  .legend{display:flex;height:14px;border-radius:2px;overflow:hidden;margin:6px 0 3px;border:1px solid var(--line2)}
+  .legend i{flex:1}
+  .legend-lbl{display:flex;justify-content:space-between;font-family:var(--mono);font-size:9px;color:#888}
+  .note{font-size:10px;color:#8a8578;line-height:1.5;font-family:var(--mono)}
+  .divider{height:1px;background:var(--line2);margin:14px 0}
+  .pill{display:inline-block;font-family:var(--mono);font-size:9px;padding:1px 6px;border-radius:8px;
+    background:var(--line2);color:#555;letter-spacing:.5px}
+  .pill.on{background:var(--amber);color:var(--ink)}
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <span class="logo">LUX<b>·</b>CAST</span>
+    <span class="tag">실내 조도 예측 · RADIOSITY</span>
+    <a href="./index.html" style="font-family:var(--mono);font-size:10px;color:var(--amber);text-decoration:none;border:1px solid var(--amber-dim);padding:3px 8px;border-radius:2px;letter-spacing:.5px">← 볕 3D (게임뷰)</a>
+    <span class="spacer"></span>
+    <span class="stat"><span class="l">평균</span><span class="v" id="hAvg">—</span><span class="u">lx</span></span>
+    <span class="stat"><span class="l">균제도</span><span class="v" id="hUni">—</span><span class="u">U₀</span></span>
+    <span class="stat"><span class="l">조명</span><span class="v" id="hN">0</span><span class="u">EA</span></span>
+  </header>
+
+  <!-- LEFT: 공간 & 재료 -->
+  <div class="panel left">
+    <div class="sec">
+      <div class="h">공간 치수 <span class="n">ROOM</span></div>
+      <div class="grid2">
+        <div class="field"><span>가로 W (m)</span><input type="number" id="rW" value="8" min="2" max="30" step="0.1"></div>
+        <div class="field"><span>세로 D (m)</span><input type="number" id="rD" value="6" min="2" max="30" step="0.1"></div>
+        <div class="field"><span>천장고 H (m)</span><input type="number" id="rH" value="2.8" min="2" max="6" step="0.1"></div>
+        <div class="field"><span>작업면 (m)</span><input type="number" id="rWP" value="0.75" min="0" max="2" step="0.05"></div>
+      </div>
+    </div>
+
+    <div class="sec">
+      <div class="h">표면 반사율 <span class="n">ρ</span></div>
+      <div class="row"><label>천장</label><input type="range" id="reC" min="0" max="0.95" step="0.01" value="0.8"><span class="val" id="reCv">0.80</span></div>
+      <div class="row"><label>벽</label><input type="range" id="reW" min="0" max="0.95" step="0.01" value="0.5"><span class="val" id="reWv">0.50</span></div>
+      <div class="row"><label>바닥</label><input type="range" id="reF" min="0" max="0.95" step="0.01" value="0.2"><span class="val" id="reFv">0.20</span></div>
+      <div class="note">반사율↑ → 간접광 성분↑ → 균질도 개선</div>
+    </div>
+
+    <div class="sec">
+      <div class="h">조명 사양 <span class="n">LUMINAIRE</span></div>
+      <div class="row"><label>광속 (lm/개)</label><input type="number" id="lFlux" value="3600" min="200" max="20000" step="100"></div>
+      <div class="row"><label>배광</label>
+        <select id="lDist" style="flex:0 0 130px">
+          <option value="lambert">램버시안 (여현)</option>
+          <option value="narrow">협각 (스팟)</option>
+          <option value="wide">광각 (와이드)</option>
+          <option value="iso">등방 (전방향)</option>
+        </select>
+      </div>
+      <div class="row"><label>유지율 MF</label><input type="range" id="lMF" min="0.5" max="1" step="0.01" value="0.8"><span class="val" id="lMFv">0.80</span></div>
+    </div>
+
+    <div class="sec">
+      <div class="h">자동 배치 <span class="n">AUTO</span></div>
+      <div class="grid2" style="margin-bottom:9px">
+        <div class="field"><span>열 (X)</span><input type="number" id="gCol" value="3" min="1" max="12" step="1"></div>
+        <div class="field"><span>행 (Y)</span><input type="number" id="gRow" value="3" min="1" max="12" step="1"></div>
+      </div>
+      <button class="wide ghost" id="btnGrid">격자 자동배치</button>
+    </div>
+
+    <div class="sec">
+      <div class="h">가구 배치 <span class="n">FURNITURE</span></div>
+      <div class="btnrow" style="margin-bottom:7px">
+        <button class="ghost" id="fBed" style="flex:1">+ 침대</button>
+        <button class="ghost" id="fDesk" style="flex:1">+ 책상</button>
+      </div>
+      <div class="btnrow" style="margin-bottom:9px">
+        <button class="ghost" id="fShelf" style="flex:1">+ 책장</button>
+        <button class="ghost" id="fWardrobe" style="flex:1">+ 옷장</button>
+      </div>
+      <div class="row"><label>예시 세트 배치</label>
+        <button id="fDemo" style="flex:0 0 90px">방 꾸미기</button></div>
+      <div class="row"><label>그림자(차폐) 계산</label>
+        <span class="pill on" id="pillShadow">ON</span></div>
+      <div class="row"><label>표면 조도 히트맵</label>
+        <span class="pill on" id="pillSurf">ON</span></div>
+      <div class="note" style="margin:2px 0 4px">가구 윗면·옆면이 받는 조도를 면 색으로 표시. 라벨에 윗면 평균 lx 표기.</div>
+      <button class="wide ghost" id="fClear" style="margin-top:6px">가구 전체삭제</button>
+      <div class="lum-list" id="furnList" style="margin-top:9px"></div>
+    </div>
+  </div>
+
+  <!-- CENTER: 3D 뷰 -->
+  <div id="viewport">
+    <canvas id="cv"></canvas>
+    <div class="vp-badge" id="vpBadge">3D 투시</div>
+    <div class="vp-toggle">
+      <button id="btnView3d" class="">3D</button>
+      <button id="btnViewTop" class="ghost">평면</button>
+      <button id="btnHeat" class="">히트맵</button>
+    </div>
+    <div class="vp-hint" id="vpHint">드래그: 회전 · 휠: 줌 · 조명 클릭 후 드래그로 이동</div>
+  </div>
+
+  <!-- RIGHT: 결과 & 조명목록 -->
+  <div class="panel right">
+    <div class="sec">
+      <div class="h">목표 & 판정 <span class="n">TARGET</span></div>
+      <div class="row"><label>목표 조도 (lx)</label><input type="number" id="tgt" value="400" min="50" max="2000" step="10"></div>
+      <div class="metric" id="mAvg"><div class="lbl">평균 조도 Eavg</div><div class="big">—</div><div class="sub">목표 대비 —</div></div>
+      <div class="metric" id="mUni"><div class="lbl">균제도 U₀ = Emin/Eavg</div><div class="big">—</div><div class="sub">권장 ≥ 0.60 (사무 KS)</div></div>
+      <div class="grid2">
+        <div class="metric" style="margin:0"><div class="lbl">최소 lx</div><div class="big" id="mMin" style="font-size:16px">—</div></div>
+        <div class="metric" style="margin:0"><div class="lbl">최대 lx</div><div class="big" id="mMax" style="font-size:16px">—</div></div>
+      </div>
+    </div>
+
+    <div class="sec">
+      <div class="h">조도 스케일 <span class="n">SCALE</span></div>
+      <div class="legend" id="legend"></div>
+      <div class="legend-lbl"><span id="legMin">0</span><span id="legMid"></span><span id="legMax">0 lx</span></div>
+      <div class="row" style="margin-top:8px"><label>간접광(반사) 포함</label>
+        <span class="pill on" id="pillBounce">ON</span></div>
+      <div class="row"><label>반사 반복 횟수</label><input type="range" id="bounces" min="0" max="6" step="1" value="3"><span class="val" id="bouncesv">3</span></div>
+    </div>
+
+    <div class="sec">
+      <div class="h">조명 목록 <span class="n" id="lumN">0</span></div>
+      <div class="lum-list" id="lumList"></div>
+      <div class="divider"></div>
+      <div class="btnrow">
+        <button class="ghost" id="btnAdd" style="flex:1">+ 추가</button>
+        <button class="ghost" id="btnClear" style="flex:1">전체삭제</button>
+      </div>
+    </div>
+
+    <div class="note" id="calcNote">격자 해상도에 따라 계산됩니다.</div>
+  </div>
+</div>
+
+<script>
+// ============ 상태 ============
+const S = {
+  W:8, D:6, H:2.8, WP:0.75,
+  rho:{c:0.8,w:0.5,f:0.2},
+  flux:3600, dist:'lambert', MF:0.8,
+  target:400, bounces:3,
+  lums:[],           // {x,z}  (조명은 천장 y=H 에 위치)
+  furns:[],          // {x,z,w,d,h,type,label,color}  가구 (바닥에서 h 높이 박스)
+  showShadow:true,   // 그림자(직접광 차폐) 계산 여부
+  showSurf:true,     // 가구 표면 조도 히트맵 표시 여부
+  surfScaleMax:0,    // 표면 히트맵 스케일(0=바닥과 공유)
+  gridN:24,          // 작업면 계산 격자 (한 변)
+  E:[],              // 조도 결과 2D [ix][iz]
+  Emin:0,Emax:0,Eavg:0,Uni:0,
+  view:'3d', heat:true, selected:-1
+};
+
+// ============ 배광 함수 (수직 하방 대비 각 θ 의 상대 광도) ============
+function candela(theta, type){
+  // theta: 광축(수직하방)에서 벌어진 각 (rad)
+  const c=Math.cos(theta);
+  if(c<=0) return 0;
+  switch(type){
+    case 'iso':    return 1;                    // 등방
+    case 'lambert':return c;                    // 여현 (I = I0·cosθ)
+    case 'narrow': return Math.pow(c,6);        // 협각 집중
+    case 'wide':   return Math.pow(c,0.4);      // 광각 확산
+  }
+  return c;
+}
+// 광도 정규화 계수: 총광속 flux 를 배광에 맞게 분배 → I0(축상 광도, cd)
+function axialIntensity(flux,type){
+  // flux = ∫ I(θ) dΩ = I0 ∫ f(θ) dΩ , 하반구 적분
+  let integ=0, n=90;
+  for(let i=0;i<n;i++){
+    const th=(i+0.5)/n*(Math.PI/2);
+    integ += candela(th,type)*Math.sin(th)*(Math.PI/2/n);
+  }
+  integ*=2*Math.PI;               // 방위각 적분
+  return flux/integ;              // cd
+}
+
+// 광선-박스 차폐 검사: 점 P(작업면) → 조명 L(천장) 광선이 가구 박스를 지나면 true
+function isShadowed(px,py,pz, lx,ly,lz){
+  for(const F of S.furns){
+    const x0=F.x, x1=F.x+F.w, z0=F.z, z1=F.z+F.d, y0=0, y1=F.h;
+    // 광선 P→L 을 파라미터 t(0..1) 로. slab 교차법
+    const dx=lx-px, dy=ly-py, dz=lz-pz;
+    let tmin=0, tmax=1;
+    const slab=(o,d,a,b)=>{
+      if(Math.abs(d)<1e-9){ return (o>=a&&o<=b); }
+      let ta=(a-o)/d, tb=(b-o)/d; if(ta>tb){const s=ta;ta=tb;tb=s;}
+      tmin=Math.max(tmin,ta); tmax=Math.min(tmax,tb); return tmin<=tmax;
+    };
+    if(!slab(px,dx,x0,x1)) continue;
+    if(!slab(py,dy,y0,y1)) continue;
+    if(!slab(pz,dz,z0,z1)) continue;
+    if(tmin<=tmax && tmax>0.001 && tmin<0.999) return true; // 박스 관통
+  }
+  return false;
+}
+
+// ============ 범용 조도: 임의 점 P(px,py,pz) + 표면법선 n(nx,ny,nz) 의 직접조도 ============
+// selfKey: 자기 자신 표면 그림자 자가차폐 방지용 (해당 가구 인덱스), null이면 전체 검사
+function pointIllum(px,py,pz, nx,ny,nz, I0, selfFurn){
+  let e=0;
+  for(const L of S.lums){
+    // 점 → 조명 방향 벡터
+    const wx=L.x-px, wy=S.H-py, wz=L.z-pz;
+    const dist2=wx*wx+wy*wy+wz*wz;
+    const dist=Math.sqrt(dist2);
+    if(dist<1e-4) continue;
+    const ux=wx/dist, uy=wy/dist, uz=wz/dist;   // 점→조명 단위벡터
+    // 표면 입사각: 표면법선 n 과 점→조명 방향의 코사인
+    const cosInc = nx*ux+ny*uy+nz*uz;
+    if(cosInc<=0) continue;                       // 빛이 뒷면 → 조도 0
+    // 조명 배광각 θ: 조명 광축(하방 -y)과 조명→점 방향 사이 각
+    const cosTheta=(S.H-py)/dist;                 // 조명→점 의 하방 성분
+    if(cosTheta<=0) continue;
+    const theta=Math.acos(Math.min(1,cosTheta));
+    const I=I0*candela(theta,S.dist);
+    // 그림자 (가구 차폐). 자기 표면이 속한 가구는 제외
+    if(S.showShadow && S.furns.length){
+      if(isShadowedEx(px,py,pz, L.x,S.H,L.z, selfFurn)) continue;
+    }
+    e += I*cosInc/dist2;                          // E = I·cos(입사각)/d²
+  }
+  return e;
+}
+// selfFurn 인덱스의 가구는 차폐 검사에서 제외 (자기 면이 자기 몸통에 막히는 오류 방지)
+function isShadowedEx(px,py,pz, lx,ly,lz, selfFurn){
+  for(let fi=0; fi<S.furns.length; fi++){
+    if(fi===selfFurn) continue;
+    const F=S.furns[fi];
+    const x0=F.x, x1=F.x+F.w, z0=F.z, z1=F.z+F.d, y0=0, y1=F.h;
+    const dx=lx-px, dy=ly-py, dz=lz-pz;
+    let tmin=0, tmax=1;
+    const slab=(o,d,a,b)=>{
+      if(Math.abs(d)<1e-9){ return (o>=a&&o<=b); }
+      let ta=(a-o)/d, tb=(b-o)/d; if(ta>tb){const s=ta;ta=tb;tb=s;}
+      tmin=Math.max(tmin,ta); tmax=Math.min(tmax,tb); return tmin<=tmax;
+    };
+    if(!slab(px,dx,x0,x1)) continue;
+    if(!slab(py,dy,y0,y1)) continue;
+    if(!slab(pz,dz,z0,z1)) continue;
+    if(tmin<=tmax && tmax>0.001 && tmin<0.999) return true;
+  }
+  return false;
+}
+
+// 현재 간접광 성분 (공간평균 근사) 계산
+function indirectComponent(){
+  if(S.bounces<=0) return 0;
+  const Acei=S.W*S.D, Aflr=S.W*S.D, Awall=2*(S.W+S.D)*S.H, Atot=Acei+Aflr+Awall;
+  const rhoAvg=(S.rho.c*Acei+S.rho.f*Aflr+S.rho.w*Awall)/Atot;
+  const totFlux=S.lums.length*S.flux*S.MF;
+  let mult=0;
+  for(let k=1;k<=S.bounces;k++){ mult+=Math.pow(rhoAvg,k); }
+  const surfaceE=(totFlux*mult)/Atot;
+  return surfaceE*(1-rhoAvg)+surfaceE*rhoAvg*0.6;
+}
+
+// ============ 조도 계산 (직접광 + radiosity 간접광) ============
+function compute(){
+  const N=S.gridN;
+  const dx=S.W/N, dz=S.D/N;
+  const wpY=S.WP;
+  const I0=axialIntensity(S.flux,S.dist)*S.MF;
+  const Eindir=indirectComponent();
+
+  // --- 바닥/작업면 (법선 +y) ---
+  const E=[]; let mn=Infinity,mx=-Infinity,sum=0,cnt=0;
+  for(let i=0;i<N;i++){ E[i]=[]; for(let j=0;j<N;j++){
+    const px=(i+0.5)*dx, pz=(j+0.5)*dz;
+    const edir=pointIllum(px,wpY,pz, 0,1,0, I0, null);
+    const v=edir+Eindir;
+    E[i][j]=v; sum+=v; cnt++;
+    if(v<mn)mn=v; if(v>mx)mx=v;
+  }}
+  S.E=E; S.Emin=mn; S.Emax=mx; S.Eavg=sum/cnt;
+  S.Uni = S.Eavg>0 ? mn/S.Eavg : 0;
+
+  // --- 가구 표면 조도 계산 ---
+  computeFurnSurfaces(I0, Eindir);
+
+  updateMetrics();
+  drawHeat();
+  render3D();
+}
+
+// 가구 각 면(윗면+옆면4)의 조도를 격자로 계산해 S.furns[k].faces 에 저장
+function computeFurnSurfaces(I0, Eindir){
+  const M=8; // 면당 격자 해상도
+  S.furns.forEach((F,fi)=>{
+    const faces={};
+    // 윗면 (법선 +y, y=F.h)
+    faces.top=sampleFace(F, M, (u,v)=>[F.x+u*F.w, F.h, F.z+v*F.d], [0,1,0], I0, Eindir, fi);
+    // +X 면 (법선 +x, x=F.x+F.w)
+    faces.px =sampleFace(F, M, (u,v)=>[F.x+F.w, u*F.h, F.z+v*F.d], [1,0,0], I0, Eindir, fi);
+    // -X 면 (법선 -x)
+    faces.nx =sampleFace(F, M, (u,v)=>[F.x, u*F.h, F.z+v*F.d], [-1,0,0], I0, Eindir, fi);
+    // +Z 면
+    faces.pz =sampleFace(F, M, (u,v)=>[F.x+u*F.w, v*F.h, F.z+F.d], [0,0,1], I0, Eindir, fi);
+    // -Z 면
+    faces.nz =sampleFace(F, M, (u,v)=>[F.x+u*F.w, v*F.h, F.z], [0,0,-1], I0, Eindir, fi);
+    F.faces=faces;
+  });
+}
+// 한 면을 M×M 격자로 샘플, {avg,min,max,grid} 반환. 옆면 간접광은 약하게 반영
+function sampleFace(F, M, posFn, n, I0, Eindir, fi){
+  const grid=[]; let sum=0,mn=Infinity,mx=-Infinity;
+  const isTop=(n[1]>0.5);
+  const indir=isTop?Eindir:Eindir*0.55; // 수직면은 간접광 도달 적음(근사)
+  for(let a=0;a<M;a++){ grid[a]=[]; for(let b=0;b<M;b++){
+    const [x,y,z]=posFn((a+0.5)/M,(b+0.5)/M);
+    const edir=pointIllum(x,y,z, n[0],n[1],n[2], I0, fi);
+    const v=edir+indir;
+    grid[a][b]=v; sum+=v; if(v<mn)mn=v; if(v>mx)mx=v;
+  }}
+  return {avg:sum/(M*M), min:mn, max:mx, grid, M};
+}
+
+// ============ 컬러맵 (turbo 근사) ============
+function colormap(t){ // t 0..1
+  t=Math.min(1,Math.max(0,t));
+  const r=Math.round(255*Math.min(1,Math.max(0, 1.5-Math.abs(4*t-3))));
+  const g=Math.round(255*Math.min(1,Math.max(0, 1.5-Math.abs(4*t-2))));
+  const b=Math.round(255*Math.min(1,Math.max(0, 1.5-Math.abs(4*t-1))));
+  return [r,g,b];
+}
+
+// ============ 지표 UI ============
+function updateMetrics(){
+  const f=x=>x>=1000?(x/1000).toFixed(1)+'k':Math.round(x);
+  document.getElementById('hAvg').textContent=f(S.Eavg);
+  document.getElementById('hUni').textContent=S.Uni.toFixed(2);
+  document.getElementById('hN').textContent=S.lums.length;
+
+  const mAvg=document.getElementById('mAvg');
+  mAvg.querySelector('.big').textContent=Math.round(S.Eavg)+' lx';
+  const pct=S.target>0?Math.round(S.Eavg/S.target*100):0;
+  mAvg.querySelector('.sub').textContent='목표 대비 '+pct+'%';
+  mAvg.className='metric '+(S.Eavg>=S.target*0.9?'ok':'warn');
+
+  const mUni=document.getElementById('mUni');
+  mUni.querySelector('.big').textContent=S.Uni.toFixed(2);
+  mUni.className='metric '+(S.Uni>=0.6?'ok':'warn');
+
+  document.getElementById('mMin').textContent=Math.round(S.Emin);
+  document.getElementById('mMax').textContent=Math.round(S.Emax);
+
+  // 범례
+  document.getElementById('legMin').textContent='0';
+  document.getElementById('legMid').textContent=Math.round(S.Emax/2)+' ';
+  document.getElementById('legMax').textContent=Math.round(S.Emax)+' lx';
+  renderLumList();
+  if(typeof renderFurnList==='function') renderFurnList();
+}
+
+// 범례 그라디언트
+function buildLegend(){
+  const el=document.getElementById('legend'); el.innerHTML='';
+  for(let k=0;k<20;k++){ const i=document.createElement('i');
+    const [r,g,b]=colormap(k/19); i.style.background=`rgb(${r},${g},${b})`; el.appendChild(i);}
+}
+
+// ============ 2D 히트맵 (오프스크린 → 텍스처로도 사용) ============
+const heatCanvas=document.createElement('canvas');
+function drawHeat(){
+  const N=S.gridN;
+  heatCanvas.width=N; heatCanvas.height=N;
+  const ctx=heatCanvas.getContext('2d');
+  const img=ctx.createImageData(N,N);
+  const mx=S.Emax||1;
+  for(let i=0;i<N;i++)for(let j=0;j<N;j++){
+    const t=S.E[i][j]/mx;
+    const [r,g,b]=colormap(t);
+    const idx=((N-1-j)*N+i)*4; // j축 뒤집어 위=깊이 앞
+    img.data[idx]=r;img.data[idx+1]=g;img.data[idx+2]=b;img.data[idx+3]=255;
+  }
+  ctx.putImageData(img,0,0);
+  if(heatTex) heatTex.needsUpdate=true;
+}
+
+// ============ THREE.js 3D ============
+let scene,cam,renderer,room,floorMesh,heatTex,lumGroup,furnGroup,raycaster,mouse;
+let orbit={az:0.7,el:0.6,r:16,tx:0,ty:0,tz:0};
+function init3D(){
+  const cv=document.getElementById('cv');
+  renderer=new THREE.WebGLRenderer({canvas:cv,antialias:true});
+  renderer.setPixelRatio(Math.min(2,devicePixelRatio));
+  scene=new THREE.Scene();
+  scene.background=new THREE.Color(0xdedbd2);
+  cam=new THREE.PerspectiveCamera(45,1,0.1,200);
+  scene.add(new THREE.AmbientLight(0xffffff,0.85));
+  const dl=new THREE.DirectionalLight(0xffffff,0.4); dl.position.set(5,10,7); scene.add(dl);
+  raycaster=new THREE.Raycaster(); mouse=new THREE.Vector2();
+  lumGroup=new THREE.Group(); scene.add(lumGroup);
+  furnGroup=new THREE.Group(); scene.add(furnGroup);
+  heatTex=new THREE.CanvasTexture(heatCanvas);
+  heatTex.magFilter=THREE.LinearFilter;
+  buildRoom();
+  resize();
+  bindOrbit();
+  animate();
+}
+function buildRoom(){
+  if(room) scene.remove(room);
+  room=new THREE.Group();
+  const W=S.W,D=S.D,H=S.H;
+  const edgeMat=new THREE.LineBasicMaterial({color:0x1a1f24});
+  // 방 와이어프레임
+  const box=new THREE.BoxGeometry(W,H,D);
+  const edges=new THREE.EdgesGeometry(box);
+  const line=new THREE.LineSegments(edges,edgeMat);
+  line.position.set(W/2,H/2,D/2);
+  room.add(line);
+  // 반투명 벽 (뒤·좌 만)
+  const wallMat=new THREE.MeshBasicMaterial({color:0xf4f2eb,transparent:true,opacity:0.35,side:THREE.DoubleSide});
+  const back=new THREE.Mesh(new THREE.PlaneGeometry(W,H),wallMat);
+  back.position.set(W/2,H/2,0); room.add(back);
+  const left=new THREE.Mesh(new THREE.PlaneGeometry(D,H),wallMat);
+  left.rotation.y=Math.PI/2; left.position.set(0,H/2,D/2); room.add(left);
+  // 작업면 (히트맵 텍스처)
+  const fMat=new THREE.MeshBasicMaterial({map:heatTex,side:THREE.DoubleSide});
+  floorMesh=new THREE.Mesh(new THREE.PlaneGeometry(W,D),fMat);
+  floorMesh.rotation.x=-Math.PI/2;
+  floorMesh.position.set(W/2,S.WP,D/2);
+  room.add(floorMesh);
+  // 작업면 테두리
+  const wpEdge=new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.PlaneGeometry(W,D)),
+    new THREE.LineBasicMaterial({color:0xe8a838}));
+  wpEdge.rotation.x=-Math.PI/2; wpEdge.position.set(W/2,S.WP+0.002,D/2); room.add(wpEdge);
+  scene.add(room);
+  orbit.tx=W/2; orbit.ty=H/2; orbit.tz=D/2;
+  orbit.r=Math.max(W,D,H)*1.9;
+  rebuildLums();
+}
+function rebuildLums(){
+  while(lumGroup.children.length) lumGroup.remove(lumGroup.children[0]);
+  S.lums.forEach((L,idx)=>{
+    const g=new THREE.Group();
+    const sel=idx===S.selected;
+    const bulb=new THREE.Mesh(new THREE.SphereGeometry(0.13,16,16),
+      new THREE.MeshBasicMaterial({color:sel?0xffffff:0xe8a838}));
+    bulb.position.set(L.x,S.H-0.05,L.z);
+    bulb.userData.lumIndex=idx;
+    g.add(bulb);
+    // 광원 콘 (배광 힌트)
+    const cone=new THREE.Mesh(new THREE.ConeGeometry(0.5,0.5,16,1,true),
+      new THREE.MeshBasicMaterial({color:0xe8a838,transparent:true,opacity:sel?0.35:0.16,side:THREE.DoubleSide}));
+    cone.position.set(L.x,S.H-0.3,L.z);
+    g.add(cone);
+    // 낙하선
+    const lg=new THREE.BufferGeometry().setFromPoints([
+      new THREE.Vector3(L.x,S.H,L.z),new THREE.Vector3(L.x,S.WP,L.z)]);
+    g.add(new THREE.Line(lg,new THREE.LineBasicMaterial({color:0xe8a838,transparent:true,opacity:0.25})));
+    lumGroup.add(g);
+  });
+}
+// 조도격자 → canvas 텍스처 (표면 히트맵). scaleMax 로 정규화
+function faceTexture(face, scaleMax){
+  const M=face.M, px=16;
+  const cv=document.createElement('canvas'); cv.width=M*px; cv.height=M*px;
+  const ctx=cv.getContext('2d');
+  for(let a=0;a<M;a++)for(let b=0;b<M;b++){
+    const t=face.grid[a][b]/(scaleMax||1);
+    const [r,g,bl]=colormap(t);
+    ctx.fillStyle=`rgb(${r},${g},${bl})`;
+    ctx.fillRect(a*px,(M-1-b)*px,px,px);
+  }
+  const tex=new THREE.CanvasTexture(cv);
+  tex.magFilter=THREE.LinearFilter;
+  return tex;
+}
+function rebuildFurns(){
+  if(!furnGroup) return;
+  while(furnGroup.children.length) furnGroup.remove(furnGroup.children[0]);
+  // 표면 히트맵 스케일: 바닥 Emax 와 공유(같은 색기준) 또는 표면 자체 최대
+  const scaleMax = S.surfScaleMax>0 ? S.surfScaleMax : (S.Emax||1);
+  S.furns.forEach(F=>{
+    const geo=new THREE.BoxGeometry(F.w,F.h,F.d);
+    let mats;
+    if(S.showSurf && F.faces){
+      // BoxGeometry material 순서: +X,-X,+Y,-Y,+Z,-Z
+      const mk=face=>new THREE.MeshBasicMaterial({map:faceTexture(face,scaleMax)});
+      const solid=new THREE.MeshLambertMaterial({color:F.color});
+      mats=[
+        mk(F.faces.px),           // +X
+        mk(F.faces.nx),           // -X
+        mk(F.faces.top),          // +Y (윗면)
+        solid,                    // -Y (바닥접촉면, 안보임)
+        mk(F.faces.pz),           // +Z
+        mk(F.faces.nz)            // -Z
+      ];
+    }else{
+      mats=new THREE.MeshLambertMaterial({color:F.color,transparent:true,opacity:0.9});
+    }
+    const m=new THREE.Mesh(geo,mats);
+    m.position.set(F.x+F.w/2, F.h/2, F.z+F.d/2);
+    furnGroup.add(m);
+    // 엣지
+    const eg=new THREE.LineSegments(new THREE.EdgesGeometry(geo),
+      new THREE.LineBasicMaterial({color:0x1a1f24,transparent:true,opacity:0.55}));
+    eg.position.copy(m.position); furnGroup.add(eg);
+    // 라벨 (조도값 포함)
+    const cvs=document.createElement('canvas'); cvs.width=160; cvs.height=44;
+    const cx=cvs.getContext('2d');
+    cx.fillStyle='rgba(26,31,36,0.85)'; cx.fillRect(0,0,160,44);
+    cx.fillStyle='#eceae3'; cx.font='600 18px sans-serif'; cx.textAlign='center';
+    cx.fillText(F.label,80,19);
+    if(F.faces){ cx.fillStyle='#e8a838'; cx.font='500 13px monospace';
+      cx.fillText('윗면 '+Math.round(F.faces.top.avg)+' lx',80,37); }
+    const tex=new THREE.CanvasTexture(cvs);
+    const spr=new THREE.Sprite(new THREE.SpriteMaterial({map:tex,depthTest:false}));
+    spr.position.set(F.x+F.w/2, F.h+0.3, F.z+F.d/2);
+    spr.scale.set(1.0,0.28,1); furnGroup.add(spr);
+  });
+}
+function camPos(){
+  const {az,el,r,tx,ty,tz}=orbit;
+  return new THREE.Vector3(
+    tx+r*Math.cos(el)*Math.sin(az),
+    ty+r*Math.sin(el),
+    tz+r*Math.cos(el)*Math.cos(az));
+}
+function render3D(){ if(renderer){ rebuildLums(); rebuildFurns(); } }
+function animate(){
+  requestAnimationFrame(animate);
+  if(S.view==='top'){
+    const {tx,ty,tz,r}=orbit;
+    cam.position.set(tx,ty+r*1.2,tz+0.001);
+    cam.up.set(0,0,-1);
+  }else{
+    cam.position.copy(camPos());
+    cam.up.set(0,1,0);
+  }
+  cam.lookAt(orbit.tx,orbit.ty,orbit.tz);
+  renderer.render(scene,cam);
+}
+function resize(){
+  const vp=document.getElementById('viewport');
+  const w=vp.clientWidth,h=vp.clientHeight;
+  renderer.setSize(w,h,false); cam.aspect=w/h; cam.updateProjectionMatrix();
+}
+// 오빗 + 조명 드래그
+function bindOrbit(){
+  const cv=document.getElementById('cv');
+  let mode=null,px=0,py=0,dragLum=-1;
+  cv.addEventListener('mousedown',e=>{
+    const rect=cv.getBoundingClientRect();
+    mouse.x=((e.clientX-rect.left)/rect.width)*2-1;
+    mouse.y=-((e.clientY-rect.top)/rect.height)*2+1;
+    raycaster.setFromCamera(mouse,cam);
+    const hits=raycaster.intersectObjects(lumGroup.children,true);
+    const bulb=hits.find(h=>h.object.userData.lumIndex!==undefined);
+    if(bulb){ dragLum=bulb.object.userData.lumIndex; S.selected=dragLum; mode='lum'; rebuildLums(); renderLumList(); }
+    else{ mode='orbit'; px=e.clientX; py=e.clientY; }
+  });
+  window.addEventListener('mousemove',e=>{
+    if(mode==='orbit'){
+      orbit.az-=(e.clientX-px)*0.008; orbit.el+=(e.clientY-py)*0.008;
+      orbit.el=Math.max(0.05,Math.min(1.5,orbit.el)); px=e.clientX; py=e.clientY;
+    }else if(mode==='lum'&&dragLum>=0){
+      const rect=cv.getBoundingClientRect();
+      mouse.x=((e.clientX-rect.left)/rect.width)*2-1;
+      mouse.y=-((e.clientY-rect.top)/rect.height)*2+1;
+      raycaster.setFromCamera(mouse,cam);
+      // 천장 평면(y=H)과 교점
+      const plane=new THREE.Plane(new THREE.Vector3(0,1,0),-S.H);
+      const pt=new THREE.Vector3();
+      if(raycaster.ray.intersectPlane(plane,pt)){
+        S.lums[dragLum].x=Math.max(0,Math.min(S.W,pt.x));
+        S.lums[dragLum].z=Math.max(0,Math.min(S.D,pt.z));
+        rebuildLums();
+      }
+    }
+  });
+  window.addEventListener('mouseup',()=>{ if(mode==='lum'){compute();} mode=null; dragLum=-1; });
+  cv.addEventListener('wheel',e=>{ e.preventDefault();
+    orbit.r*=(1+Math.sign(e.deltaY)*0.08); orbit.r=Math.max(3,Math.min(60,orbit.r)); },{passive:false});
+  window.addEventListener('resize',resize);
+}
+
+// ============ 조명 목록 UI ============
+function renderLumList(){
+  const el=document.getElementById('lumList'); el.innerHTML='';
+  document.getElementById('lumN').textContent=S.lums.length;
+  S.lums.forEach((L,i)=>{
+    const d=document.createElement('div');
+    d.className='lum-item'+(i===S.selected?' sel':'');
+    d.innerHTML=`<span class="dot"></span><span class="id">L${String(i+1).padStart(2,'0')}</span>
+      <span class="xy">x ${L.x.toFixed(1)}  z ${L.z.toFixed(1)}</span><span class="x">×</span>`;
+    d.querySelector('.xy').onclick=()=>{S.selected=i;rebuildLums();renderLumList();};
+    d.querySelector('.x').onclick=()=>{S.lums.splice(i,1);if(S.selected>=i)S.selected--;compute();};
+    el.appendChild(d);
+  });
+}
+
+// ============ 자동 격자배치 ============
+function autoGrid(){
+  const cols=+document.getElementById('gCol').value;
+  const rows=+document.getElementById('gRow').value;
+  S.lums=[];
+  for(let r=0;r<rows;r++)for(let c=0;c<cols;c++){
+    S.lums.push({ x:S.W*(c+0.5)/cols, z:S.D*(r+0.5)/rows });
+  }
+  S.selected=-1; compute();
+}
+
+// ============ 입력 바인딩 ============
+function bind(id,fn,ev='input'){ document.getElementById(id).addEventListener(ev,fn); }
+function num(id){return +document.getElementById(id).value;}
+
+['rW','rD','rH','rWP'].forEach(id=>bind(id,()=>{
+  S.W=num('rW');S.D=num('rD');S.H=num('rH');S.WP=num('rWP');
+  buildRoom(); compute();
+}));
+bind('reC',()=>{S.rho.c=num('reC');document.getElementById('reCv').textContent=S.rho.c.toFixed(2);compute();});
+bind('reW',()=>{S.rho.w=num('reW');document.getElementById('reWv').textContent=S.rho.w.toFixed(2);compute();});
+bind('reF',()=>{S.rho.f=num('reF');document.getElementById('reFv').textContent=S.rho.f.toFixed(2);compute();});
+bind('lFlux',()=>{S.flux=num('lFlux');compute();});
+bind('lDist',()=>{S.dist=document.getElementById('lDist').value;compute();});
+bind('lMF',()=>{S.MF=num('lMF');document.getElementById('lMFv').textContent=S.MF.toFixed(2);compute();});
+bind('tgt',()=>{S.target=num('tgt');updateMetrics();});
+bind('bounces',()=>{S.bounces=num('bounces');document.getElementById('bouncesv').textContent=S.bounces;
+  document.getElementById('pillBounce').className='pill'+(S.bounces>0?' on':'');
+  document.getElementById('pillBounce').textContent=S.bounces>0?'ON':'OFF';compute();});
+bind('gCol',()=>{});bind('gRow',()=>{});
+bind('btnGrid',autoGrid,'click');
+bind('btnAdd',()=>{S.lums.push({x:S.W/2,z:S.D/2});S.selected=S.lums.length-1;compute();},'click');
+bind('btnClear',()=>{S.lums=[];S.selected=-1;compute();},'click');
+
+// 뷰 토글
+bind('btnView3d',()=>{S.view='3d';document.getElementById('vpBadge').textContent='3D 투시';
+  document.getElementById('btnView3d').classList.remove('ghost');
+  document.getElementById('btnViewTop').classList.add('ghost');},'click');
+bind('btnViewTop',()=>{S.view='top';document.getElementById('vpBadge').textContent='평면 (TOP)';
+  document.getElementById('btnViewTop').classList.remove('ghost');
+  document.getElementById('btnView3d').classList.add('ghost');},'click');
+bind('btnHeat',()=>{S.heat=!S.heat;floorMesh.visible=S.heat;
+  document.getElementById('btnHeat').classList.toggle('ghost',!S.heat);},'click');
+
+// ============ 가구 ============
+// 프리셋: w×d = 평면크기(m), h=높이(m)
+const FURN_PRESETS={
+  bed:     {w:1.5, d:2.0, h:0.5,  label:'침대',  color:0x9aa7b0},
+  desk:    {w:1.2, d:0.6, h:0.72, label:'책상',  color:0xb08d57},
+  shelf:   {w:0.8, d:0.3, h:1.8,  label:'책장',  color:0x8a6d4a},
+  wardrobe:{w:1.0, d:0.6, h:2.0,  label:'옷장',  color:0x6b7480}
+};
+function addFurn(type,x,z){
+  const p=FURN_PRESETS[type];
+  // 위치 미지정 시 빈 곳 찾기(간단히 중앙 근처 랜덤 오프셋)
+  if(x===undefined){ x=Math.min(S.W-p.w, Math.max(0, S.W*0.5-p.w/2 + (Math.random()-0.5)*2)); }
+  if(z===undefined){ z=Math.min(S.D-p.d, Math.max(0, S.D*0.5-p.d/2 + (Math.random()-0.5)*2)); }
+  S.furns.push({x,z,w:p.w,d:p.d,h:p.h,type,label:p.label,color:p.color});
+  compute();
+}
+function renderFurnList(){
+  const el=document.getElementById('furnList'); if(!el) return; el.innerHTML='';
+  S.furns.forEach((F,i)=>{
+    const d=document.createElement('div'); d.className='lum-item';
+    d.innerHTML=`<span class="dot" style="background:#${F.color.toString(16).padStart(6,'0')}"></span>
+      <span class="id">${F.label}</span>
+      <span class="xy">x ${F.x.toFixed(1)}  z ${F.z.toFixed(1)}  h${F.h}</span><span class="x">×</span>`;
+    d.querySelector('.x').onclick=()=>{S.furns.splice(i,1);compute();};
+    el.appendChild(d);
+  });
+}
+// 예시 세트: 사무/주거 혼합 방 하나 꾸미기
+function demoRoom(){
+  S.furns=[];
+  const p=FURN_PRESETS;
+  // 좌하단 침대, 우상단 책상, 좌상단 책장, 우측 옷장 (방 크기에 맞춰 배치)
+  S.furns.push({...p.bed,     type:'bed',      x:0.3,          z:S.D-p.bed.d-0.3});
+  S.furns.push({...p.desk,    type:'desk',     x:S.W-p.desk.w-0.3, z:0.3});
+  S.furns.push({...p.shelf,   type:'shelf',    x:0.3,          z:0.3});
+  S.furns.push({...p.wardrobe,type:'wardrobe', x:S.W-p.wardrobe.w-0.3, z:S.D-p.wardrobe.d-0.3});
+  compute();
+}
+
+bind('fBed',()=>addFurn('bed'),'click');
+bind('fDesk',()=>addFurn('desk'),'click');
+bind('fShelf',()=>addFurn('shelf'),'click');
+bind('fWardrobe',()=>addFurn('wardrobe'),'click');
+bind('fDemo',demoRoom,'click');
+bind('fClear',()=>{S.furns=[];compute();},'click');
+bind('pillShadow',()=>{S.showShadow=!S.showShadow;
+  const el=document.getElementById('pillShadow');
+  el.className='pill'+(S.showShadow?' on':''); el.textContent=S.showShadow?'ON':'OFF';
+  compute();},'click');
+bind('pillSurf',()=>{S.showSurf=!S.showSurf;
+  const el=document.getElementById('pillSurf');
+  el.className='pill'+(S.showSurf?' on':''); el.textContent=S.showSurf?'ON':'OFF';
+  render3D();},'click');
+
+// ============ 시작 ============
+buildLegend();
+init3D();
+autoGrid();   // 초기 3x3
+demoRoom();   // 예시 가구 자동 배치
+</script>
+</body>
+</html>
