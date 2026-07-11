@@ -62,6 +62,9 @@
     background:rgba(255,255,255,.6);padding:4px 8px;border-radius:2px}
   .vp-toggle{position:absolute;top:12px;right:12px;display:flex;gap:6px}
   .vp-toggle button{padding:5px 9px;font-size:10px}
+  .draw-tip{position:fixed;z-index:30;font-family:var(--mono);font-size:11px;
+    background:rgba(26,31,36,.92);color:var(--amber);padding:3px 7px;border-radius:3px;
+    pointer-events:none;border:1px solid var(--amber-dim);white-space:nowrap;display:none}
   .lum-list{display:flex;flex-direction:column;gap:5px;max-height:180px;overflow-y:auto}
   .lum-item{display:flex;align-items:center;gap:7px;font-family:var(--mono);font-size:10px;
     background:#fff;border:1px solid var(--line2);padding:5px 7px;border-radius:2px}
@@ -108,7 +111,7 @@
         <div class="field"><span>작업면 (m)</span><input type="number" id="rWP" value="0.75" min="0" max="2" step="0.05"></div>
       </div>
       <button class="wide ghost" id="btnDraw" style="margin-top:10px">✏ 방 그리기 (자유형)</button>
-      <div class="note" id="drawNote" style="margin-top:5px;display:none">클릭=꼭짓점 · 시작점 클릭/더블클릭=완료 · 대각선 자유(0.1m 스냅) · Esc=취소</div>
+      <div class="note" id="drawNote" style="margin-top:5px;display:none">클릭=꼭짓점 · <b>Shift=직각</b> · 시작점 흡착/더블클릭=완료 · 격자 1m·스냅 0.1m · Esc=취소</div>
     </div>
 
     <div class="sec">
@@ -174,6 +177,7 @@
       <button id="btnHeat" class="">히트맵</button>
     </div>
     <div class="vp-hint" id="vpHint">드래그: 회전 · 휠: 줌 · 조명 클릭 후 드래그로 이동</div>
+    <div class="draw-tip" id="drawTip"></div>
   </div>
 
   <!-- RIGHT: 결과 & 조명목록 -->
@@ -489,6 +493,7 @@ function init3D(){
   cam=new THREE.PerspectiveCamera(45,1,0.1,200);
   scene.add(new THREE.AmbientLight(0xffffff,0.85));
   const dl=new THREE.DirectionalLight(0xffffff,0.4); dl.position.set(5,10,7); scene.add(dl);
+  const grid=new THREE.GridHelper(40,40,0xb9b4a5,0xd8d4c7); grid.position.y=0.008; scene.add(grid); // 가이드 격자(1m)
   raycaster=new THREE.Raycaster(); mouse=new THREE.Vector2();
   lumGroup=new THREE.Group(); scene.add(lumGroup);
   furnGroup=new THREE.Group(); scene.add(furnGroup);
@@ -654,7 +659,8 @@ function resize(){
 }
 // ===== 방 그리기 (자유형 폴리곤) =====
 let drawLine=null;
-function drawPlanePoint(e){
+// 화면 → 바닥(y=0) 평면 교점 (스냅 전 원좌표)
+function rawPlanePoint(e){
   const cv=document.getElementById('cv'); const rect=cv.getBoundingClientRect();
   mouse.x=((e.clientX-rect.left)/rect.width)*2-1;
   mouse.y=-((e.clientY-rect.top)/rect.height)*2+1;
@@ -662,7 +668,35 @@ function drawPlanePoint(e){
   const plane=new THREE.Plane(new THREE.Vector3(0,1,0),0);
   const pt=new THREE.Vector3();
   if(!raycaster.ray.intersectPlane(plane,pt)) return null;
-  return { x:Math.round(pt.x*10)/10, z:Math.round(pt.z*10)/10 };  // 0.1m 스냅(대각선 자유)
+  return { x:pt.x, z:pt.z };
+}
+// 스냅: Shift=직각(직전 점 기준 수평/수직) · 근처 꼭짓점=포인트스냅 · 기본 0.1m 격자
+function snapDraw(p, shift){
+  let x=p.x, z=p.z;
+  const last=S.draw.pts[S.draw.pts.length-1];
+  if(shift && last){
+    if(Math.abs(x-last.x) >= Math.abs(z-last.z)) z=last.z; else x=last.x;   // 직각 고정
+  } else {
+    let best=null, bd=0.35;
+    for(const v of S.draw.pts){ const d=Math.hypot(x-v.x,z-v.z); if(d<bd){bd=d;best=v;} }
+    if(best) return { x:best.x, z:best.z };   // 기존 꼭짓점에 흡착
+  }
+  return { x:Math.round(x*10)/10, z:Math.round(z*10)/10 };   // 0.1m 격자
+}
+function drawPlanePoint(e){ const r=rawPlanePoint(e); return r?snapDraw(r, e.shiftKey):null; }
+// 커서 옆 길이 표시 (캐드식)
+function updateDrawTip(e, p){
+  const tip=document.getElementById('drawTip'); if(!tip) return;
+  if(!p){ tip.style.display='none'; return; }
+  tip.style.display='block';
+  tip.style.left=(e.clientX+16)+'px'; tip.style.top=(e.clientY+16)+'px';
+  const last=S.draw.pts[S.draw.pts.length-1];
+  if(last){
+    const len=Math.hypot(p.x-last.x, p.z-last.z);
+    tip.textContent=`${Math.round(len*1000).toLocaleString()} mm${e.shiftKey?'  ⟂':''}`;
+  } else {
+    tip.textContent=`x ${p.x.toFixed(2)}  z ${p.z.toFixed(2)}`;
+  }
 }
 function updateDrawPreview(cur){
   if(drawLine){ scene.remove(drawLine); drawLine=null; }
@@ -696,6 +730,7 @@ function exitDraw(commit){
   if(drawLine){ scene.remove(drawLine); drawLine=null; }
   document.getElementById('btnDraw').textContent='✏ 방 그리기 (자유형)';
   document.getElementById('drawNote').style.display='none';
+  const tip=document.getElementById('drawTip'); if(tip) tip.style.display='none';
   document.getElementById('vpBadge').textContent=(S.view==='top')?'평면 (TOP)':'3D 투시';
 }
 
@@ -718,7 +753,7 @@ function bindOrbit(){
     else{ mode='orbit'; px=e.clientX; py=e.clientY; }
   });
   window.addEventListener('mousemove',e=>{
-    if(S.draw.active){ const p=drawPlanePoint(e); if(p) updateDrawPreview(p); return; }
+    if(S.draw.active){ const p=drawPlanePoint(e); if(p){ updateDrawPreview(p); updateDrawTip(e,p); } return; }
     if(mode==='orbit'){
       orbit.az-=(e.clientX-px)*0.008; orbit.el+=(e.clientY-py)*0.008;
       orbit.el=Math.max(0.05,Math.min(1.5,orbit.el)); px=e.clientX; py=e.clientY;
