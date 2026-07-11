@@ -17,7 +17,9 @@ export function buildRoom(TEX){
   const room=new THREE.Group();
   const shells={};
 
-  const brickMat=mat('#8a5a44',0.95,TEX.brick);
+  // ★ 컷어웨이 핵심: 벽마다 '독립된' 재질이어야 각자 숨길 수 있음.
+  //   하나를 공유하면 한 벽 opacity=0 시 같은 재질 벽 전부 사라짐 → .clone() 필수.
+  const brickMat=mat('#8a5a44',0.95,TEX.brick);   // 템플릿 (각 벽은 아래서 clone)
   const floorMat=mat('#b8895c',0.9,TEX.woodFloor);
   const ceilMat =mat('#e8e0d4',0.95);
   const wt=0.2; // 벽 두께
@@ -31,17 +33,17 @@ export function buildRoom(TEX){
   shells.ceiling.userData={ normal:[0,1,0], center:[0,RH,0] };
   room.add(shells.ceiling);
 
-  buildBackWallWithHole(room, shells, brickMat, wt);   // 뒷벽(-z): 창 구멍 뺀 4조각
+  buildBackWallWithHole(room, shells, brickMat.clone(), wt);   // 뒷벽(-z): 창 구멍 뺀 4조각(한 shell이라 재질 공유 OK)
 
-  shells.front = box(RW,RH,wt,brickMat,0,RH/2,RD/2);
+  shells.front = box(RW,RH,wt,brickMat.clone(),0,RH/2,RD/2);
   shells.front.userData={ normal:[0,0,1], center:[0,RH/2,RD/2] };
   room.add(shells.front);
 
-  shells.left = box(wt,RH,RD,brickMat,-RW/2,RH/2,0);
+  shells.left = box(wt,RH,RD,brickMat.clone(),-RW/2,RH/2,0);
   shells.left.userData={ normal:[-1,0,0], center:[-RW/2,RH/2,0] };
   room.add(shells.left);
 
-  shells.right = box(wt,RH,RD,brickMat,RW/2,RH/2,0);
+  shells.right = box(wt,RH,RD,brickMat.clone(),RW/2,RH/2,0);
   shells.right.userData={ normal:[1,0,0], center:[RW/2,RH/2,0] };
   room.add(shells.right);
 
