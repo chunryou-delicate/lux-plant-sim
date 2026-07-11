@@ -50,8 +50,8 @@ function bindControls(){
     document.getElementById('autorotate').classList.remove('on'); };
   const move=e=>{ if(!drag)return; const p=pt(e);
     orbit.az-=(p.x-px)*0.008; orbit.el+=(p.y-py)*0.006;
-    // 카메라를 바닥 위로만 (하한 0.08). 밑으로 파고들어 방을 뒤집어 보던 문제 제거 → 상/하 일관.
-    orbit.el=Math.max(0.08,Math.min(1.45,orbit.el)); px=p.x; py=p.y; e.preventDefault(); };
+    // 상/하 대칭(±1.45): 위로 내려다보는 만큼 아래로도 올려다봄. 밑으로 가면 바닥이 컷어웨이돼 방을 올려다봄.
+    orbit.el=Math.max(-1.45,Math.min(1.45,orbit.el)); px=p.x; py=p.y; e.preventDefault(); };
   const up=()=>drag=false;
   cv.addEventListener('mousedown',down); cv.addEventListener('touchstart',down,{passive:false});
   window.addEventListener('mousemove',move); window.addEventListener('touchmove',move,{passive:false});
