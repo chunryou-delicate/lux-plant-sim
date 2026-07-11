@@ -35,7 +35,7 @@ monstera.leafMats.forEach(m=>{ m.emissive=new THREE.Color(0x7ad36a); m.emissiveI
 const plants=[{ leafMats:monstera.leafMats, u:0.571, v:0.629, needLux:400, label:'몬스테라' }];
 
 // ===== 카메라 궤도 =====
-let orbit={ az:0.72, el:0.55, r:12, tx:0, ty:2, tz:0 };
+let orbit={ az:0.72, el:0.55, r:15, tx:0, ty:2, tz:0 };   // r 기본 12→15 (방이 덜 크게)
 let autoRotate=false, ceilingMode=0;
 
 function updateCam(){
@@ -102,7 +102,7 @@ function bindControls(){
   cv.addEventListener('touchend',()=>pd=0);
 
   sunEl.addEventListener('input',applyLight);
-  document.getElementById('reset').onclick=()=>{ orbit.az=0.72; orbit.el=0.55; orbit.r=12; };
+  document.getElementById('reset').onclick=()=>{ orbit.az=0.72; orbit.el=0.55; orbit.r=15; };
   document.getElementById('autorotate').onclick=function(){ autoRotate=!autoRotate; this.classList.toggle('on',autoRotate); };
   document.getElementById('ceiling').onclick=function(){
     ceilingMode=(ceilingMode+1)%3;
