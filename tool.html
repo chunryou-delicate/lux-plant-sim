@@ -224,7 +224,7 @@
       <button id="btnViewTop" class="ghost">평면</button>
       <button id="btnHeat" class="">히트맵</button>
     </div>
-    <div class="vp-hint" id="vpHint">드래그: 회전 · 휠: 줌 · 가구 드래그(Shift=직각) · 가구 더블클릭=90° 회전</div>
+    <div class="vp-hint" id="vpHint">드래그: 회전 · 휠: 줌 · 가구 드래그(Shift=직각) · 가구 더블클릭=45° 회전(8방)</div>
     <div class="draw-tip" id="drawTip"></div>
   </div>
 
@@ -452,17 +452,21 @@ function isShadowedEx(px,py,pz, lx,ly,lz, selfFurn){
   for(let fi=0; fi<S.furns.length; fi++){
     if(fi===selfFurn) continue;
     const F=S.furns[fi];
-    const x0=F.x, x1=F.x+F.w, z0=F.z, z1=F.z+F.d, y0=0, y1=F.h;
-    const dx=lx-px, dy=ly-py, dz=lz-pz;
+    // 회전(OBB): 광선 양끝을 가구 로컬(중심·미회전)로 변환 후 축정렬 slab 검사
+    const cx=F.x+F.w/2, cz=F.z+F.d/2, rot=F.rot||0, c=Math.cos(-rot), s=Math.sin(-rot);
+    const toL=(x,z)=>[(x-cx)*c-(z-cz)*s, (x-cx)*s+(z-cz)*c];
+    const P=toL(px,pz), L=toL(lx,lz);
+    const ox=P[0], oz=P[1], dx=L[0]-P[0], dy=ly-py, dz=L[1]-P[1];
+    const hx=F.w/2, hz=F.d/2;
     let tmin=0, tmax=1;
     const slab=(o,d,a,b)=>{
       if(Math.abs(d)<1e-9){ return (o>=a&&o<=b); }
-      let ta=(a-o)/d, tb=(b-o)/d; if(ta>tb){const s=ta;ta=tb;tb=s;}
+      let ta=(a-o)/d, tb=(b-o)/d; if(ta>tb){const t=ta;ta=tb;tb=t;}
       tmin=Math.max(tmin,ta); tmax=Math.min(tmax,tb); return tmin<=tmax;
     };
-    if(!slab(px,dx,x0,x1)) continue;
-    if(!slab(py,dy,y0,y1)) continue;
-    if(!slab(pz,dz,z0,z1)) continue;
+    if(!slab(ox,dx,-hx,hx)) continue;
+    if(!slab(py,dy,0,F.h)) continue;
+    if(!slab(oz,dz,-hz,hz)) continue;
     if(tmin<=tmax && tmax>0.001 && tmin<0.999) return true;
   }
   return false;
@@ -519,17 +523,18 @@ function compute(){
 function computeFurnSurfaces(I0, Eindir){
   const M=8; // 면당 격자 해상도
   S.furns.forEach((F,fi)=>{
+    // 회전(OBB): 로컬(중심 기준) 면을 월드로 변환. c/s = +rot 회전
+    const cx=F.x+F.w/2, cz=F.z+F.d/2, rot=F.rot||0, c=Math.cos(rot), s=Math.sin(rot);
+    const hx=F.w/2, hz=F.d/2;
+    const W=(lx,lz)=>[cx+lx*c-lz*s, cz+lx*s+lz*c];   // 로컬(x,z) → 월드(x,z)
+    const R=(nx,nz)=>[nx*c-nz*s, nx*s+nz*c];          // 법선 회전
+    const px=R(1,0), nx=R(-1,0), pz=R(0,1), nz=R(0,-1);
     const faces={};
-    // 윗면 (법선 +y, y=F.h)
-    faces.top=sampleFace(F, M, (u,v)=>[F.x+u*F.w, F.h, F.z+v*F.d], [0,1,0], I0, Eindir, fi);
-    // +X 면 (법선 +x, x=F.x+F.w)
-    faces.px =sampleFace(F, M, (u,v)=>[F.x+F.w, u*F.h, F.z+v*F.d], [1,0,0], I0, Eindir, fi);
-    // -X 면 (법선 -x)
-    faces.nx =sampleFace(F, M, (u,v)=>[F.x, u*F.h, F.z+v*F.d], [-1,0,0], I0, Eindir, fi);
-    // +Z 면
-    faces.pz =sampleFace(F, M, (u,v)=>[F.x+u*F.w, v*F.h, F.z+F.d], [0,0,1], I0, Eindir, fi);
-    // -Z 면
-    faces.nz =sampleFace(F, M, (u,v)=>[F.x+u*F.w, v*F.h, F.z], [0,0,-1], I0, Eindir, fi);
+    faces.top=sampleFace(F,M,(u,v)=>{const w=W(-hx+u*F.w,-hz+v*F.d);return[w[0],F.h,w[1]];},[0,1,0],I0,Eindir,fi);
+    faces.px =sampleFace(F,M,(u,v)=>{const w=W(hx,-hz+v*F.d);return[w[0],u*F.h,w[1]];},[px[0],0,px[1]],I0,Eindir,fi);
+    faces.nx =sampleFace(F,M,(u,v)=>{const w=W(-hx,-hz+v*F.d);return[w[0],u*F.h,w[1]];},[nx[0],0,nx[1]],I0,Eindir,fi);
+    faces.pz =sampleFace(F,M,(u,v)=>{const w=W(-hx+u*F.w,hz);return[w[0],v*F.h,w[1]];},[pz[0],0,pz[1]],I0,Eindir,fi);
+    faces.nz =sampleFace(F,M,(u,v)=>{const w=W(-hx+u*F.w,-hz);return[w[0],v*F.h,w[1]];},[nz[0],0,nz[1]],I0,Eindir,fi);
     F.faces=faces;
   });
 }
@@ -776,12 +781,13 @@ function rebuildFurns(){
     }
     const m=new THREE.Mesh(geo,mats);
     m.position.set(F.x+F.w/2, F.h/2, F.z+F.d/2);
+    m.rotation.y=F.rot||0;
     m.userData.furnIndex=fi;   // 드래그 픽킹용
     furnGroup.add(m);
     // 엣지
     const eg=new THREE.LineSegments(new THREE.EdgesGeometry(geo),
       new THREE.LineBasicMaterial({color:0x1a1f24,transparent:true,opacity:0.55}));
-    eg.position.copy(m.position); furnGroup.add(eg);
+    eg.position.copy(m.position); eg.rotation.y=F.rot||0; furnGroup.add(eg);
     // 라벨 (조도값 포함)
     const cvs=document.createElement('canvas'); cvs.width=160; cvs.height=44;
     const cx=cvs.getContext('2d');
@@ -997,9 +1003,8 @@ function bindOrbit(){
       const fh=fhits.find(h=>h.object.userData.furnIndex!==undefined);
       if(fh){ dragFurn=fh.object.userData.furnIndex;
         const F=S.furns[dragFurn], now=Date.now();
-        if(dblFurn.idx===dragFurn && now-dblFurn.t<350){   // 직접 더블클릭 감지 → 90° 회전
-          const cx=F.x+F.w/2, cz=F.z+F.d/2, nw=F.d, nd=F.w;
-          F.w=nw; F.d=nd; F.x=cx-nw/2; F.z=cz-nd/2; compute();
+        if(dblFurn.idx===dragFurn && now-dblFurn.t<350){   // 더블클릭 → 45° 회전(8방향). Math.PI/8 이면 16방
+          F.rot=((F.rot||0)+Math.PI/4)%(Math.PI*2); compute();
           mode=null; dragFurn=-1; dblFurn={idx:-1,t:0}; return;
         }
         dblFurn={idx:dragFurn, t:now}; mode='furn';
@@ -1042,7 +1047,7 @@ function bindOrbit(){
       if(raycaster.ray.intersectPlane(plane,pt)){
         const F=S.furns[dragFurn], bb=S.bb||polyBBox(S.poly||rectPoly());
         let nx=pt.x-dragOff.x, nz=pt.z-dragOff.z;
-        if(e.shiftKey){   // Shift=축(직각) 이동 고정 — 시작 위치 기준 한 축만
+        if(e.shiftKey){   // Shift=축(직각) 이동 고정
           if(Math.abs(nx-dragStartFurn.x) >= Math.abs(nz-dragStartFurn.z)) nz=dragStartFurn.z; else nx=dragStartFurn.x;
         }
         // 외피(가구 전체) 기준 제한: footprint가 방 bbox 안에 머물게
