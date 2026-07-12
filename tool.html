@@ -243,6 +243,17 @@
       </div>
     </div>
 
+    <div class="sec">
+      <div class="h">식물 진단 <span class="n">PLANT</span></div>
+      <div class="row"><label>식물</label><select id="plantSel" style="flex:1;font-size:11px;padding:3px"></select></div>
+      <div class="row"><label>조사시간 (h)</label><input type="number" id="litHours" value="10" min="1" max="24" step="1" style="width:56px"></div>
+      <div id="plantVerdict" style="background:#fff;border:1px solid var(--line2);border-radius:2px;padding:9px 10px;margin:6px 0;font-size:13px;font-weight:600;line-height:1.4;color:#444">식물을 선택하세요</div>
+      <div class="row"><label>정밀(PPFD) 보기</label><span class="pill" id="pillPPFD">OFF</span></div>
+      <div class="row"><label>적합맵 (바닥색: 초록=적합)</label><span class="pill" id="pillFit">OFF</span></div>
+      <div class="note" id="ppfdWarn" style="display:none;color:var(--red);margin-top:4px"></div>
+      <div class="note" style="margin-top:4px">데이터 3층: 실측(정밀)·fc만(대략)·unknown(실험). plants.json 읽기전용.</div>
+    </div>
+
     <div class="note" id="calcNote">격자 해상도에 따라 계산됩니다.</div>
   </div>
 </div>
@@ -450,6 +461,43 @@ function pointIllum(px,py,pz, nx,ny,nz, I0, selfFurn){
   }
   return e;
 }
+// ===== ⑤ lux→PPFD (pointIllum 무수정 — 단일조명 조도 공식만 재사용) =====
+function lumIllumAt(L, px,py,pz, nx,ny,nz){
+  const cen=polyCentroid(S.poly||rectPoly());
+  const ly=lumHeight(L), aim=lumAim(L,cen);
+  const wx=px-L.x, wy=py-ly, wz=pz-L.z, dist2=wx*wx+wy*wy+wz*wz, dist=Math.sqrt(dist2);
+  if(dist<1e-4) return 0;
+  const cosBeam=(wx*aim[0]+wy*aim[1]+wz*aim[2])/dist; if(cosBeam<=0) return 0;
+  const cosInc=(-wx*nx-wy*ny-wz*nz)/dist; if(cosInc<=0) return 0;
+  const dtype=lumDist(L); const theta=Math.acos(Math.min(1,cosBeam));
+  const I=(S.axCache?S.axCache[dtype]:0)*candela(theta,dtype);
+  if(S.showShadow && S.furns.length && isShadowedEx(px,py,pz,L.x,ly,L.z,null)) return 0;
+  return I*cosInc/dist2;
+}
+function lightCoef(id){ const m=S.lightCoef||{}; return (id in m)? m[id] : 0.0149; }   // 미등록=백색LED 기본
+function ppfdAt(px,pz){
+  const py=S.WP;
+  let ppfd=(S.showDaylight? daylightAt(px,py,pz,0,1,0,null):0)*0.0185;   // 자연광 sunlight 계수(Apogee)
+  for(const L of S.lums){
+    const coef=lightCoef(L.src||'led_white_cool');
+    if(coef==null){ S.ppfdPurple=true; continue; }   // 퍼플등: 변환불가 → 스킵+경고
+    ppfd += lumIllumAt(L,px,py,pz,0,1,0)*coef;
+  }
+  ppfd += (S.Eindir||0)*0.0149;   // 간접광 근사(백색LED 대표계수)
+  return ppfd;
+}
+function computePPFD(){
+  const P=S.poly||rectPoly(), bb=S.bb||polyBBox(P), N=S.gridN;
+  const dx=(bb.maxx-bb.minx)/N, dz=(bb.maxz-bb.minz)/N;
+  S.ppfdPurple=false;
+  const F=[]; let mn=Infinity,mx=0,sum=0,cnt=0;
+  for(let i=0;i<N;i++){ F[i]=[]; for(let j=0;j<N;j++){
+    const px=bb.minx+(i+0.5)*dx, pz=bb.minz+(j+0.5)*dz;
+    if(!pointInPoly(px,pz,P)){ F[i][j]=null; continue; }
+    const v=ppfdAt(px,pz); F[i][j]=v; sum+=v; cnt++; if(v<mn)mn=v; if(v>mx)mx=v;
+  }}
+  S.ppfdField=F; S.ppfdMax=cnt?mx:0; S.ppfdMin=cnt?mn:0; S.ppfdAvg=cnt?sum/cnt:0;
+}
 // selfFurn 인덱스의 가구는 차폐 검사에서 제외 (자기 면이 자기 몸통에 막히는 오류 방지)
 function isShadowedEx(px,py,pz, lx,ly,lz, selfFurn){
   for(let fi=0; fi<S.furns.length; fi++){
@@ -519,8 +567,10 @@ function compute(){
   computeFurnSurfaces(I0, Eindir);
 
   updateMetrics();
+  computePPFD();
   drawHeat();
   render3D();
+  if(typeof updatePlantDiagnose==='function') updatePlantDiagnose();
 }
 
 // 가구 각 면(윗면+옆면4)의 조도를 격자로 계산해 S.furns[k].faces 에 저장
@@ -603,19 +653,30 @@ function buildLegend(){
 
 // ============ 2D 히트맵 (오프스크린 → 텍스처로도 사용) ============
 const heatCanvas=document.createElement('canvas');
+// 적합맵 대상 식물(선택+PPFD실측 있을 때만)
+function getFitPlant(){ const sel=document.getElementById('plantSel'); if(!sel||!sel.value) return null;
+  const p=(typeof plantById==='function')?plantById(sel.value):null;
+  return (p&&p.ppfd&&(p.ppfd[0]!=null||p.ppfd[2]!=null))?p:null; }
+function fitColor(ppfd,p){ const pmin=p.ppfd[0]!=null?p.ppfd[0]:p.ppfd[1], pmax=p.ppfd[2]!=null?p.ppfd[2]:p.ppfd[1];
+  if(ppfd<pmin) return [60,120,200];   // 부족=파랑
+  if(ppfd>pmax) return [200,70,60];    // 과광=빨강
+  return [70,170,90]; }                // 적합=초록
 function drawHeat(){
   const N=S.gridN;
   heatCanvas.width=N; heatCanvas.height=N;
   const ctx=heatCanvas.getContext('2d');
   const img=ctx.createImageData(N,N);
   const mx=S.Emax||1;
+  const fitP=(S.showFit && S.ppfdField)?getFitPlant():null;   // 적합맵 모드
   for(let i=0;i<N;i++)for(let j=0;j<N;j++){
     const idx=(j*N+i)*4;   // flipY=false 로 바닥 UV와 정합
     if(S.mask && S.mask[i] && S.mask[i][j]===false){
       img.data[idx]=222;img.data[idx+1]=219;img.data[idx+2]=210;img.data[idx+3]=255; // 방 밖=페이퍼
       continue;
     }
-    const [r,g,b]=colormap(S.E[i][j]/mx);
+    let r,g,b;
+    if(fitP && S.ppfdField[i] && S.ppfdField[i][j]!=null){ [r,g,b]=fitColor(S.ppfdField[i][j],fitP); }
+    else { [r,g,b]=colormap(S.E[i][j]/mx); }
     img.data[idx]=r;img.data[idx+1]=g;img.data[idx+2]=b;img.data[idx+3]=255;
   }
   ctx.putImageData(img,0,0);
@@ -1110,6 +1171,51 @@ function renderLumList(){
   });
 }
 
+// ===== ⑤ 식물 진단 UI =====
+function plantById(id){ return (S.plantsDB||[]).find(p=>p.id===id); }
+function populatePlantSelect(){
+  const sel=document.getElementById('plantSel'); if(!sel) return;
+  const cur=sel.value;
+  sel.innerHTML='<option value="">— 선택 —</option>'+
+    (S.plantsDB||[]).map(p=>{ const tier=p.ppfd?'':(p.level?' ·대략':' ·데이터없음'); return `<option value="${p.id}">${p.ko}${tier}</option>`; }).join('');
+  if(cur) sel.value=cur;
+}
+function levelBand(level){
+  if(!level) return null;
+  if(level.indexOf('직사')>=0||level.indexOf('고광')>=0) return [400,9999];
+  if(level.indexOf('밝은간접')>=0) return [200,400];
+  if(level.indexOf('중')>=0) return [100,250];
+  if(level.indexOf('저광')>=0) return [50,150];
+  return null;
+}
+function updatePlantDiagnose(){
+  const sel=document.getElementById('plantSel'), vEl=document.getElementById('plantVerdict'), warn=document.getElementById('ppfdWarn');
+  if(!sel||!vEl) return;
+  if(warn){ if(S.ppfdPurple){ warn.style.display='block'; warn.textContent='⚠ 퍼플(적청) 식물등은 lux→PPFD 변환 불가 → 제품 표기 PPFD 직접 확인'; } else warn.style.display='none'; }
+  const p=plantById(sel.value);
+  if(!p){ vEl.textContent='식물을 선택하세요'; vEl.style.color='#444'; return; }
+  const hours=+(document.getElementById('litHours').value)||10;
+  const maxP=Math.round(S.ppfdMax||0), minP=Math.round(S.ppfdMin||0);
+  const dliMax=((S.ppfdMax||0)*hours*3600/1e6).toFixed(1);
+  let head, color; const pp=p.ppfd;
+  if(pp && (pp[0]!=null||pp[2]!=null)){          // A층 (실측 PPFD)
+    const pmin=pp[0]!=null?pp[0]:pp[1], pmax=pp[2]!=null?pp[2]:pp[1], popt=pp[1];
+    if((S.ppfdMax||0) < pmin){ head=`${p.ko}: 빛이 부족해요 🥶 (더 밝은 창가로)`; color='#c0524a'; }
+    else if((S.ppfdMin||0) > pmax){ head=`${p.ko}: 빛이 너무 세요 ⚠ (잎 탈 수 있어요)`; color='#c0524a'; }
+    else { const optHit = popt && (S.ppfdMax||0)>=popt*0.85 && (S.ppfdMin||0)<=popt*1.15;
+      head = optHit ? `${p.ko}: 딱 좋은 자리 있어요! ⭐` : `${p.ko}: 적합한 자리 있어요 ✅ (밝은 쪽)`; color='#3d8b52'; }
+  } else if(p.level){                            // B층 (level만)
+    const b=levelBand(p.level);
+    if(b && (S.ppfdMax||0)>=b[0]){ head=`${p.ko}: 이 방 밝은 곳이면 대략 OK 👍 (정밀값 미확보)`; color='#3d8b52'; }
+    else { head=`${p.ko}: '${p.level}' 선호 — 대략 판정, 방 최대 ${maxP}µmol (정밀 미확보)`; color='#8a6d2e'; }
+  } else {                                       // C층 (unknown)
+    head=`${p.ko}: 광요구 데이터가 없어요 🌱 (키우며 알아내는 실험 대상)`; color='#8a6d2e';
+  }
+  vEl.style.color=color;
+  const detail = S.showPPFDdetail ? `<div style="font-family:var(--mono);font-size:10px;color:#888;font-weight:400;margin-top:4px">방 PPFD ${minP}~${maxP} · DLI(최대) ${dliMax} · 적정 ${pp?((pp[0]!=null?pp[0]:'?')+'~'+(pp[2]!=null?pp[2]:'?')):(p.level||'?')}</div>` : '';
+  vEl.innerHTML=`<div>${head}</div>${detail}`;
+}
+
 // ============ 자동 격자배치 ============
 function autoGrid(){
   const cols=+document.getElementById('gCol').value;
@@ -1171,6 +1277,11 @@ bind('bounces',()=>{S.bounces=num('bounces');document.getElementById('bouncesv')
 bind('gCol',()=>{});bind('gRow',()=>{});
 bind('btnGrid',autoGrid,'click');
 bind('btnAdd',()=>{ const c=polyCentroid(S.poly||rectPoly()); S.lums.push({x:c.x,z:c.z,type:'ceiling',src:'led_white_cool'}); S.selected=S.lums.length-1; compute(); },'click');
+// ⑤ 식물 진단 바인딩
+bind('plantSel',updatePlantDiagnose,'change');
+bind('litHours',updatePlantDiagnose);
+bind('pillPPFD',()=>{ S.showPPFDdetail=!S.showPPFDdetail; const el=document.getElementById('pillPPFD'); el.className='pill'+(S.showPPFDdetail?' on':''); el.textContent=S.showPPFDdetail?'ON':'OFF'; updatePlantDiagnose(); },'click');
+bind('pillFit',()=>{ S.showFit=!S.showFit; const el=document.getElementById('pillFit'); el.className='pill'+(S.showFit?' on':''); el.textContent=S.showFit?'ON':'OFF'; drawHeat(); if(typeof render3D==='function') render3D(); },'click');
 bind('btnClear',()=>{S.lums=[];S.selected=-1;compute();},'click');
 
 // 뷰 토글
