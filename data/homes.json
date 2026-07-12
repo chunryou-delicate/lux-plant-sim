@@ -1,0 +1,35 @@
+{
+  "_meta": {
+    "purpose": "집 = 빛 환경 + 비용 (게임 이사 시스템). game_design_core.md 기반.",
+    "collected": "2026-07-12",
+    "rule": "빛등급·빛환경·키울수있는것 = 설계문서 확정. rent/price는 반지하만 문서값, 나머지 임시(cost_provisional). windows/presetLayout은 추후 room_presets.json 연동(지금 null).",
+    "fields": {
+      "lightGrade": "빛 등급 1(최악)~6(옥상/최상)",
+      "rent": "월세",
+      "price": "구매가",
+      "windows": "창 배치(빛 계산) — 추후 정의",
+      "presetLayout": "방 구조 프리셋 id (room_presets.json 연동) — 추후",
+      "allowed_plants": "키울 수 있는 광군(정성)"
+    }
+  },
+  "homes": [
+    {"id":"banjiha","name_ko":"반지하","lightGrade":1,"rent":30,"price":500,"cost_provisional":false,
+     "light_env":"빛 최악(식물등 의존)","allowed_plants":"저광 관엽만","windows":null,"presetLayout":null,
+     "notes":"설계값 rent30/price500. 자취자 시작. 식물등 없으면 재배 어려움"},
+    {"id":"wonroom_low","name_ko":"저층 원룸","lightGrade":2,"rent":50,"price":800,"cost_provisional":true,
+     "light_env":"한쪽 창, 제한적 채광","allowed_plants":"저광~중광","windows":null,"presetLayout":null,
+     "notes":"비용 임시(문서에 없음)"},
+    {"id":"floor23","name_ko":"2~3층","lightGrade":3,"rent":70,"price":1200,"cost_provisional":true,
+     "light_env":"채광 보통","allowed_plants":"중광","windows":null,"presetLayout":null,
+     "notes":"비용 임시. 주부·연구자 시작 후보"},
+    {"id":"high_south","name_ko":"남향 고층","lightGrade":4,"rent":110,"price":2000,"cost_provisional":true,
+     "light_env":"빛 좋음, 직사광 O","allowed_plants":"밝은간접·직사","windows":null,"presetLayout":null,
+     "notes":"비용 임시"},
+    {"id":"terrace","name_ko":"장미/테라스","lightGrade":5,"rent":160,"price":3200,"cost_provisional":true,
+     "light_env":"강광","allowed_plants":"다육·허브 천국","windows":null,"presetLayout":null,
+     "notes":"비용 임시"},
+    {"id":"rooftop_house","name_ko":"옥상/주택","lightGrade":6,"rent":220,"price":5000,"cost_provisional":true,
+     "light_env":"최상(전부 가능)","allowed_plants":"모든 식물","windows":null,"presetLayout":null,
+     "notes":"비용 임시. 성공(승리조건) 도달 집"}
+  ]
+}

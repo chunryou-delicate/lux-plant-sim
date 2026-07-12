@@ -1,0 +1,52 @@
+{
+  "_meta": {
+    "purpose": "캐릭터 = 다이얼 설정값 (게임). game_design_core.md 기반 이식 스키마.",
+    "collected": "2026-07-12",
+    "rule": "설계문서에 있는 값만 확정. 문서에 없는 밸런스 수치는 balance_provisional:true + note(임시). 지어낸 게 아니라 뼈대용 placeholder.",
+    "fields": {
+      "startCash": "시작 자금",
+      "monthlyIncome": "월급 (0=압력)",
+      "monthlyExpense": "월세·생활비",
+      "bankruptcy": "파산 존재 여부",
+      "goalType": "money/garden/dex/fame/escape",
+      "goalValue": "목표값(숫자, escape=탈출 좌표금 등)",
+      "systems": "켤 시스템 목록",
+      "startHome": "시작 집 id (homes.json)",
+      "difficulty": "easy/medium/hard/extreme"
+    }
+  },
+  "characters": [
+    {
+      "id":"housewife","name_ko":"주부","name_en":"Housewife",
+      "startCash":300,"monthlyIncome":200,"monthlyExpense":150,
+      "bankruptcy":false,"goalType":"garden","goalValue":null,
+      "systems":["garden","dex"],"startHome":"floor23","difficulty":"easy",
+      "balance_provisional":true,
+      "notes":"설계: 월급이 생활비 커버→압박없음·파산없음. 메인=누림가든·꾸밈. 수치는 임시(문서에 없음)"
+    },
+    {
+      "id":"researcher","name_ko":"연구자","name_en":"Researcher",
+      "startCash":300,"monthlyIncome":220,"monthlyExpense":150,
+      "bankruptcy":false,"goalType":"dex","goalValue":null,
+      "systems":["dex","fame"],"startHome":"floor23","difficulty":"medium",
+      "balance_provisional":true,
+      "notes":"설계: 고정월급 커버→압박없음. 메인=희귀종·신품종·명성. 온실 지향. 수치 임시"
+    },
+    {
+      "id":"breadwinner","name_ko":"가장","name_en":"Breadwinner",
+      "startCash":200,"monthlyIncome":80,"monthlyExpense":120,
+      "bankruptcy":true,"goalType":"money","goalValue":10000,
+      "systems":["economy","dex","garden","fame"],"startHome":"wonroom_low","difficulty":"hard",
+      "balance_provisional":true,
+      "notes":"설계: 식물부업+약간직업→중간압박·파산있음. 목표금액 달성→2단계 온실. 이사 핵심. 수치 임시"
+    },
+    {
+      "id":"jachwi","name_ko":"자취자","name_en":"Solo dweller",
+      "startCash":100,"monthlyIncome":0,"monthlyExpense":50,
+      "bankruptcy":true,"goalType":"escape","goalValue":5000,
+      "systems":["economy","dex","fame"],"startHome":"banjiha","difficulty":"extreme",
+      "balance_provisional":false,
+      "notes":"설계문서 명시값(100/0/50/5000). 오직 식물팔이→높은압박. 반지하 탈출=승리(이사)"
+    }
+  ]
+}
