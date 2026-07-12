@@ -824,6 +824,7 @@ function resize(){
 // ===== 방 그리기 (자유형 폴리곤) =====
 let drawLine=null;
 let winPreview=null;
+let extendMarker=null;
 // 화면 → 바닥(y=0) 평면 교점 (스냅 전 원좌표)
 function rawPlanePoint(e){
   const cv=document.getElementById('cv'); const rect=cv.getBoundingClientRect();
@@ -900,7 +901,7 @@ function enterDraw(fromExisting){
   const has = fromExisting && S.poly && S.poly.length>=3;
   S.draw.pts = has ? S.poly.map(v=>({x:v.x,z:v.z})) : [];
   S.draw.extend = !!has;   // 이어그리기면 첫 클릭으로 '이어갈 꼭짓점' 선택
-  document.getElementById('vpBadge').textContent = has ? '이어그리기 · 이어갈 꼭짓점 클릭' : '방 그리기 · 클릭으로 꼭짓점';
+  document.getElementById('vpBadge').textContent = has ? '이어그리기 · 이어갈 점(꼭짓점/변) 클릭' : '방 그리기 · 클릭으로 꼭짓점';
   document.getElementById('btnDraw').textContent='그리는 중 · 시작점/더블클릭=완료 · Esc=취소';
   document.getElementById('drawNote').style.display='block';
   updateDrawPreview(null);
@@ -910,9 +911,10 @@ function exitDraw(commit){
     S.poly=S.draw.pts.slice();
     buildRoom(); compute();
   }
-  S.draw.active=false; S.draw.pts=[];
+  S.draw.active=false; S.draw.pts=[]; S.draw.extend=false;
   if(drawLine){ scene.remove(drawLine); drawLine=null; }
-  document.getElementById('btnDraw').textContent='✏ 방 그리기 (자유형)';
+  if(extendMarker){ scene.remove(extendMarker); extendMarker=null; }
+  document.getElementById('btnDraw').textContent='✏ 새 방 그리기';
   document.getElementById('drawNote').style.display='none';
   const tip=document.getElementById('drawTip'); if(tip) tip.style.display='none';
   document.getElementById('vpBadge').textContent=(S.view==='top')?'평면 (TOP)':'3D 투시';
@@ -936,6 +938,28 @@ function updateWinPreview(p){
     new THREE.MeshBasicMaterial({color:0x9fd0e8,transparent:true,opacity:0.4,side:THREE.DoubleSide}));
   winPreview.rotation.y=Math.atan2(gw.nx,gw.nz); winPreview.position.set(cx,cy,cz); scene.add(winPreview);
 }
+// 이어그리기 스냅: 가까운 꼭짓점 또는 변 위 점
+function extendSnap(px,pz){
+  const pts=S.draw.pts; if(pts.length<2) return null;
+  let vi=-1,vd=1e9; pts.forEach((v,i)=>{const d=Math.hypot(px-v.x,pz-v.z);if(d<vd){vd=d;vi=i;}});
+  let ei=-1,ed=1e9,ept=null;
+  for(let i=0;i<pts.length;i++){ const a=pts[i],b=pts[(i+1)%pts.length];
+    const ex=b.x-a.x,ez=b.z-a.z,len2=ex*ex+ez*ez||1;
+    let t=((px-a.x)*ex+(pz-a.z)*ez)/len2; t=Math.max(0,Math.min(1,t));
+    const cx=a.x+ex*t,cz=a.z+ez*t,d=Math.hypot(px-cx,pz-cz);
+    if(d<ed){ed=d;ei=i;ept={x:cx,z:cz};} }
+  if(vi>=0 && vd<0.5 && vd<=ed+0.05) return {type:'vertex', idx:vi, x:pts[vi].x, z:pts[vi].z};
+  if(ei>=0 && ed<0.6) return {type:'edge', edge:ei, x:ept.x, z:ept.z};
+  return null;
+}
+// 이어붙일 지점 마커 (꼭짓점=빨강 / 변=파랑)
+function updateExtendMarker(p){
+  if(extendMarker){ scene.remove(extendMarker); extendMarker=null; }
+  if(!p) return; const s=extendSnap(p.x,p.z); if(!s) return;
+  const col=s.type==='vertex'?0xc0524a:0x3a8fb0;
+  const m=new THREE.Mesh(new THREE.SphereGeometry(0.17,14,14), new THREE.MeshBasicMaterial({color:col}));
+  m.position.set(s.x,0.06,s.z); extendMarker=m; scene.add(m);
+}
 
 // 오빗 + 조명 드래그
 function bindOrbit(){
@@ -946,15 +970,20 @@ function bindOrbit(){
     if(S.winPlace){ const p=rawPlanePoint(e); if(p){ const ne=nearestEdge(p.x,p.z);
       if(ne.edge>=0 && ne.dist<1.6){ S.windows.push({edge:ne.edge,t:ne.t,width:1.5,sill:0.9,head:2.1});
         endWinPlace(); buildRoom(); compute(); } } return; }
-    if(S.draw.active){ const p=drawPlanePoint(e); if(p){
-      if(S.draw.extend){   // 이어그리기: 이어갈 꼭짓점 선택 → 그 점을 끝으로 재정렬 후 이어감
-        let bi=-1,bd=0.6; S.draw.pts.forEach((v,i)=>{const d=Math.hypot(p.x-v.x,p.z-v.z);if(d<bd){bd=d;bi=i;}});
-        if(bi>=0) reorderFrom(bi);
-        S.draw.extend=false; updateDrawPreview(null); return;
+    if(S.draw.active){
+      if(S.draw.extend){   // 이어그리기: 꼭짓점 또는 변 위 점 선택 → 그 지점부터 이어감
+        const rp=rawPlanePoint(e); if(rp){ const s=extendSnap(rp.x,rp.z);
+          if(s){ if(s.type==='vertex') reorderFrom(s.idx);
+                 else { S.draw.pts.splice(s.edge+1,0,{x:s.x,z:s.z}); reorderFrom(s.edge+1); } }  // 변에 새 노드 삽입
+          S.draw.extend=false; if(extendMarker){scene.remove(extendMarker);extendMarker=null;} updateDrawPreview(null); }
+        return;
       }
-      if(S.draw.pts.length>=3){ const s=S.draw.pts[0]; if(Math.hypot(p.x-s.x,p.z-s.z)<0.4){ exitDraw(true); return; } }
-      S.draw.pts.push(p); updateDrawPreview(null);
-    } return; }
+      const p=drawPlanePoint(e); if(p){
+        if(S.draw.pts.length>=3){ const s=S.draw.pts[0]; if(Math.hypot(p.x-s.x,p.z-s.z)<0.4){ exitDraw(true); return; } }
+        S.draw.pts.push(p); updateDrawPreview(null);
+      }
+      return;
+    }
     const rect=cv.getBoundingClientRect();
     mouse.x=((e.clientX-rect.left)/rect.width)*2-1;
     mouse.y=-((e.clientY-rect.top)/rect.height)*2+1;
@@ -966,7 +995,10 @@ function bindOrbit(){
   });
   window.addEventListener('mousemove',e=>{
     if(S.winPlace){ const p=rawPlanePoint(e); if(p) updateWinPreview(p); return; }
-    if(S.draw.active){ const p=drawPlanePoint(e); if(p){ updateDrawPreview(p); updateDrawTip(e,p); } return; }
+    if(S.draw.active){
+      if(S.draw.extend){ updateExtendMarker(rawPlanePoint(e)); return; }
+      const p=drawPlanePoint(e); if(p){ updateDrawPreview(p); updateDrawTip(e,p); } return;
+    }
     if(mode==='orbit'){
       orbit.az-=(e.clientX-px)*0.008; orbit.el+=(e.clientY-py)*0.008;
       orbit.el=Math.max(0.05,Math.min(1.5,orbit.el)); px=e.clientX; py=e.clientY;
