@@ -1,0 +1,32 @@
+{
+  "_meta": {
+    "purpose": "광원별 lux→PPFD 변환계수 + 스펙트럼 태그 (볕 프로젝트). 식물 적합성 판정용.",
+    "collected": "2026-07-12",
+    "rule": "실측/공표 계수만 기록. 없으면 null + notes. 지어내지 않음.",
+    "formula": {
+      "ppfd_from_lux": "PPFD(µmol/m²/s) = lux × lux_to_ppfd",
+      "dli_from_ppfd": "DLI(mol/m²/day) = PPFD × 조사시간(h) × 3600 / 1e6"
+    },
+    "sources": {
+      "apogee": "apogeeinstruments.com/conversion-ppfd-to-lux (계측기 제조사 공표 계수)",
+      "growlightmeter": "growlightmeter.com (Photone) — 백색LED/풀스펙트럼",
+      "peer_reviewed": "일반 백색LED 67 lux = 1 µmol (문헌 통용, growlightmeter 인용)"
+    },
+    "warning": "적청(purple) 식물등: lux가 녹색광 위주 가중이라 PPFD 변환 신뢰 불가 → lux_to_ppfd=null, 직접 PPFD 측정 필요.",
+    "spectrum_note": "rb_ratio·far_red는 정성적 태그(측정 SPD 아님, Lv2 근사용). 정밀 스펙트럼은 종료선 밖.",
+    "mount_vs_spectrum": "이 표는 '광원 스펙트럼'. 설치형태(상부/매립/벽/기둥/가구)와는 별개 축 — 조명 아이템은 [설치형태]×[광원종류] 조합."
+  },
+
+  "light_sources": [
+    {"id":"sunlight","ko":"자연광(태양)","lux_to_ppfd":0.0185,"spectrum_tag":"natural","rb_ratio":"균형(적·청 고름)","far_red":"present","src":["apogee"],"notes":"Apogee 0.0185 (30000lux≈540 PPFD). 창 채광의 기준"},
+    {"id":"led_white_cool","ko":"백색LED 주광색(5000K+)","lux_to_ppfd":0.0149,"spectrum_tag":"cool","rb_ratio":"청색↑","far_red":"low","src":["peer_reviewed","growlightmeter"],"notes":"일반 백색LED 67lux=1µmol(문헌). 주광/전구 세부차 미확보 → 동일값 사용"},
+    {"id":"led_white_warm","ko":"백색LED 전구색(2700~3000K)","lux_to_ppfd":0.0149,"spectrum_tag":"warm","rb_ratio":"적색↑ 청색↓","far_red":"low","src":["peer_reviewed"],"notes":"전구색 전용 계수 미확보 → 일반 백색LED값 사용(근사). 세부 확인필요"},
+    {"id":"fluorescent_cool","ko":"형광등(냉백색)","lux_to_ppfd":0.0135,"spectrum_tag":"cool","rb_ratio":"청색↑","far_red":"low","src":["apogee"],"notes":"Apogee cool white fluorescent 0.0135(74 lux/PPFD)"},
+    {"id":"halogen_incandescent","ko":"할로겐·백열","lux_to_ppfd":null,"spectrum_tag":"warm","rb_ratio":"적색↑↑ 청색 매우낮음","far_red":"high","src":[],"notes":"이번 출처에 계수 없음 → unknown. 적외선 많고 PAR 효율 낮음(일반). 리서치 필요"},
+    {"id":"hps","ko":"고압나트륨(HPS)","lux_to_ppfd":0.0122,"spectrum_tag":"growlight","rb_ratio":"적·주황↑↑ 청색↓","far_red":"medium","src":["apogee"],"notes":"Apogee 0.0122(82 lux/PPFD). 온실 산업용, 실내장식엔 드묾"},
+    {"id":"metal_halide","ko":"메탈할라이드","lux_to_ppfd":0.0141,"spectrum_tag":"cool","rb_ratio":"청색↑","far_red":"low","src":["apogee"],"notes":"Apogee 0.0141(71 lux/PPFD)"},
+    {"id":"cmh_agro","ko":"세라믹메탈할라이드(식물용 CMH930-Agro)","lux_to_ppfd":0.0170,"spectrum_tag":"growlight","rb_ratio":"균형(넓은 스펙트럼)","far_red":"present","src":["apogee"],"notes":"Apogee 0.0170(59 lux/PPFD). 광질 우수 식물등"},
+    {"id":"led_fullspectrum_grow","ko":"풀스펙트럼 식물등(LED)","lux_to_ppfd":0.014,"spectrum_tag":"growlight","rb_ratio":"균형+원적색","far_red":"present","src":["growlightmeter"],"notes":"풀스펙트럼 LED 30000lux≈420 PPFD → ≈0.014(근사). 제품별 차이 큼, 직접 PPFD 권장"},
+    {"id":"led_redblue_grow","ko":"적청 식물등(퍼플 LED)","lux_to_ppfd":null,"spectrum_tag":"growlight","rb_ratio":"적+청(녹색 결여)","far_red":"low","src":[],"notes":"★ lux→PPFD 신뢰 불가(녹색 결여로 lux 매우 낮게 읽힘). lux 변환 금지, 제품 표기 PPFD 직접 사용"}
+  ]
+}
