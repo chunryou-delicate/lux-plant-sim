@@ -1033,8 +1033,9 @@ function bindOrbit(){
       const plane=new THREE.Plane(new THREE.Vector3(0,1,0),-S.H);
       const pt=new THREE.Vector3();
       if(raycaster.ray.intersectPlane(plane,pt)){
-        S.lums[dragLum].x=Math.max(0,Math.min(S.W,pt.x));
-        S.lums[dragLum].z=Math.max(0,Math.min(S.D,pt.z));
+        const bb=S.bb||polyBBox(S.poly||rectPoly());   // 그린 방 bbox로 제한(방 밖 이탈 방지)
+        S.lums[dragLum].x=Math.max(bb.minx,Math.min(bb.maxx,pt.x));
+        S.lums[dragLum].z=Math.max(bb.minz,Math.min(bb.maxz,pt.z));
         rebuildLums();
       }
     }else if(mode==='furn'&&dragFurn>=0){
@@ -1050,9 +1051,13 @@ function bindOrbit(){
         if(e.shiftKey){   // Shift=축(직각) 이동 고정
           if(Math.abs(nx-dragStartFurn.x) >= Math.abs(nz-dragStartFurn.z)) nz=dragStartFurn.z; else nx=dragStartFurn.x;
         }
-        // 외피(가구 전체) 기준 제한: footprint가 방 bbox 안에 머물게
-        F.x=Math.max(bb.minx, Math.min(bb.maxx-F.w, nx));
-        F.z=Math.max(bb.minz, Math.min(bb.maxz-F.d, nz));
+        // 회전 반영 외피 제한: 회전된 박스의 월드 AABB 반경으로 중심을 제한
+        const rot=F.rot||0, ac=Math.abs(Math.cos(rot)), as=Math.abs(Math.sin(rot));
+        const halfW=(F.w/2)*ac+(F.d/2)*as, halfD=(F.w/2)*as+(F.d/2)*ac;
+        let cx=nx+F.w/2, cz=nz+F.d/2;
+        cx=Math.max(bb.minx+halfW, Math.min(bb.maxx-halfW, cx));
+        cz=Math.max(bb.minz+halfD, Math.min(bb.maxz-halfD, cz));
+        F.x=cx-F.w/2; F.z=cz-F.d/2;
         rebuildFurns();
       }
     }
