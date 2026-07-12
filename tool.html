@@ -15,7 +15,7 @@
   @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap');
   *{margin:0;padding:0;box-sizing:border-box}
   html,body{height:100%;background:var(--paper);color:var(--ink);font-family:var(--sans);overflow:hidden}
-  #app{display:grid;grid-template-columns:300px 1fr 260px;grid-template-rows:44px 1fr;height:100vh}
+  #app{display:grid;grid-template-columns:300px 1fr 320px;grid-template-rows:44px auto 1fr;height:100vh}
   header{grid-column:1/-1;display:flex;align-items:center;gap:14px;padding:0 16px;
     background:var(--ink);color:var(--paper);border-bottom:2px solid var(--amber)}
   header .logo{font-family:var(--mono);font-weight:600;letter-spacing:2px;font-size:13px}
@@ -28,6 +28,21 @@
   .panel{background:var(--panel);overflow-y:auto;padding:14px}
   .panel.left{border-right:1px solid var(--line)}
   .panel.right{border-left:1px solid var(--line)}
+  /* 상단 가로 결과바 */
+  .resultbar{grid-column:1/-1;background:var(--panel);border-bottom:1px solid var(--line);
+    display:flex;align-items:stretch;overflow-x:auto}
+  .resultbar::-webkit-scrollbar{height:5px}
+  .rb-metric{padding:7px 14px;border-right:1px solid var(--line2);display:flex;flex-direction:column;
+    justify-content:center;min-width:78px;flex:0 0 auto}
+  .rb-metric .lbl{font-family:var(--mono);font-size:9px;letter-spacing:.5px;color:#888;text-transform:uppercase}
+  .rb-metric .big{font-family:var(--mono);font-size:18px;font-weight:600;line-height:1.15}
+  .rb-metric .sub{font-family:var(--mono);font-size:9px;color:#999;margin-top:1px}
+  .rb-metric.ok .big{color:#3d8b52}.rb-metric.warn .big{color:var(--red)}
+  .rb-metric .rbrow{display:flex;align-items:center;gap:5px;margin-top:3px}
+  .rb-metric input[type=number]{width:56px}
+  .rb-scale{padding:7px 14px;border-right:1px solid var(--line2);display:flex;flex-direction:column;
+    justify-content:center;min-width:170px;flex:1}
+  .rb-scale .lbl{font-family:var(--mono);font-size:9px;letter-spacing:.5px;color:#888;text-transform:uppercase;margin-bottom:3px}
   .sec{margin-bottom:18px}
   .sec>.h{font-family:var(--mono);font-size:10px;letter-spacing:1.5px;text-transform:uppercase;
     color:var(--amber-dim);border-bottom:1px solid var(--line2);padding-bottom:5px;margin-bottom:10px;
@@ -99,6 +114,24 @@
     <span class="stat"><span class="l">균제도</span><span class="v" id="hUni">—</span><span class="u">U₀</span></span>
     <span class="stat"><span class="l">조명</span><span class="v" id="hN">0</span><span class="u">EA</span></span>
   </header>
+
+  <!-- 상단 가로 결과바 -->
+  <div class="resultbar">
+    <div class="rb-metric"><div class="lbl">목표 조도</div>
+      <div class="rbrow"><input type="number" id="tgt" value="400" min="50" max="2000" step="10"><span style="font-size:9px;color:#999">lx</span></div></div>
+    <div class="rb-metric" id="mAvg"><div class="lbl">평균 Eavg</div><div class="big">—</div><div class="sub">목표 대비 —</div></div>
+    <div class="rb-metric" id="mUni"><div class="lbl">균제도 U₀</div><div class="big">—</div><div class="sub">권장 ≥0.60 KS</div></div>
+    <div class="rb-metric"><div class="lbl">최소 lx</div><div class="big" id="mMin">—</div></div>
+    <div class="rb-metric"><div class="lbl">최대 lx</div><div class="big" id="mMax">—</div></div>
+    <div class="rb-scale">
+      <div class="lbl">조도 스케일</div>
+      <div class="legend" id="legend"></div>
+      <div class="legend-lbl"><span id="legMin">0</span><span id="legMid"></span><span id="legMax">0 lx</span></div>
+    </div>
+    <div class="rb-metric"><div class="lbl">간접광(반사)</div>
+      <div class="rbrow"><span class="pill on" id="pillBounce">ON</span>
+        <input type="range" id="bounces" min="0" max="6" step="1" value="3" style="width:64px"><span class="val" id="bouncesv" style="min-width:auto">3</span></div></div>
+  </div>
 
   <!-- LEFT: 공간 & 재료 -->
   <div class="panel left">
@@ -185,26 +218,6 @@
 
   <!-- RIGHT: 결과 & 조명목록 -->
   <div class="panel right">
-    <div class="sec">
-      <div class="h">목표 & 판정 <span class="n">TARGET</span></div>
-      <div class="row"><label>목표 조도 (lx)</label><input type="number" id="tgt" value="400" min="50" max="2000" step="10"></div>
-      <div class="metric" id="mAvg"><div class="lbl">평균 조도 Eavg</div><div class="big">—</div><div class="sub">목표 대비 —</div></div>
-      <div class="metric" id="mUni"><div class="lbl">균제도 U₀ = Emin/Eavg</div><div class="big">—</div><div class="sub">권장 ≥ 0.60 (사무 KS)</div></div>
-      <div class="grid2">
-        <div class="metric" style="margin:0"><div class="lbl">최소 lx</div><div class="big" id="mMin" style="font-size:16px">—</div></div>
-        <div class="metric" style="margin:0"><div class="lbl">최대 lx</div><div class="big" id="mMax" style="font-size:16px">—</div></div>
-      </div>
-    </div>
-
-    <div class="sec">
-      <div class="h">조도 스케일 <span class="n">SCALE</span></div>
-      <div class="legend" id="legend"></div>
-      <div class="legend-lbl"><span id="legMin">0</span><span id="legMid"></span><span id="legMax">0 lx</span></div>
-      <div class="row" style="margin-top:8px"><label>간접광(반사) 포함</label>
-        <span class="pill on" id="pillBounce">ON</span></div>
-      <div class="row"><label>반사 반복 횟수</label><input type="range" id="bounces" min="0" max="6" step="1" value="3"><span class="val" id="bouncesv">3</span></div>
-    </div>
-
     <div class="sec">
       <div class="h">조명 목록 <span class="n" id="lumN">0</span></div>
       <div class="lum-list" id="lumList"></div>
@@ -450,11 +463,11 @@ function updateMetrics(){
   mAvg.querySelector('.big').textContent=Math.round(S.Eavg)+' lx';
   const pct=S.target>0?Math.round(S.Eavg/S.target*100):0;
   mAvg.querySelector('.sub').textContent='목표 대비 '+pct+'%';
-  mAvg.className='metric '+(S.Eavg>=S.target*0.9?'ok':'warn');
+  mAvg.className='rb-metric '+(S.Eavg>=S.target*0.9?'ok':'warn');
 
   const mUni=document.getElementById('mUni');
   mUni.querySelector('.big').textContent=S.Uni.toFixed(2);
-  mUni.className='metric '+(S.Uni>=0.6?'ok':'warn');
+  mUni.className='rb-metric '+(S.Uni>=0.6?'ok':'warn');
 
   document.getElementById('mMin').textContent=Math.round(S.Emin);
   document.getElementById('mMax').textContent=Math.round(S.Emax);
