@@ -1192,10 +1192,16 @@ function addFurn(type,x,z){
 function renderFurnList(){
   const el=document.getElementById('furnList'); if(!el) return; el.innerHTML='';
   S.furns.forEach((F,i)=>{
-    const d=document.createElement('div'); d.className='lum-item';
+    const d=document.createElement('div'); d.className='lum-item'; d.style.flexWrap='wrap';
     d.innerHTML=`<span class="dot" style="background:#${F.color.toString(16).padStart(6,'0')}"></span>
       <span class="id">${F.label}</span>
-      <span class="xy">x ${F.x.toFixed(1)}  z ${F.z.toFixed(1)}  h${F.h}</span><span class="x">×</span>`;
+      <span class="x">×</span>
+      <span class="xy" style="width:100%;margin-top:3px">W<input class="fW" type="number" value="${F.w}" step="0.1" min="0.1" max="10" style="width:40px;font-size:10px;padding:1px 3px">
+        D<input class="fD" type="number" value="${F.d}" step="0.1" min="0.1" max="10" style="width:40px;font-size:10px;padding:1px 3px">
+        H<input class="fH" type="number" value="${F.h}" step="0.1" min="0.1" max="4" style="width:40px;font-size:10px;padding:1px 3px"> m</span>`;
+    d.querySelector('.fW').onchange=e=>{ F.w=+e.target.value; compute(); };
+    d.querySelector('.fD').onchange=e=>{ F.d=+e.target.value; compute(); };
+    d.querySelector('.fH').onchange=e=>{ F.h=+e.target.value; compute(); };
     d.querySelector('.x').onclick=()=>{S.furns.splice(i,1);compute();};
     el.appendChild(d);
   });
