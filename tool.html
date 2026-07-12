@@ -175,6 +175,16 @@
     </div>
 
     <div class="sec">
+      <div class="h">자연광 · 창 <span class="n">DAYLIGHT</span></div>
+      <div class="row"><label>자연광 포함</label><span class="pill on" id="pillDay">ON</span></div>
+      <div class="row"><label>천공 조도 Ev (lx)</label><input type="number" id="sky" value="8000" min="0" max="40000" step="500"></div>
+      <button class="wide ghost" id="btnWinAdd" style="margin-top:6px">＋ 창 추가 (벽 클릭)</button>
+      <div class="note" id="winNote" style="margin-top:4px;display:none">벽을 클릭해 창을 놓아요 · Esc 취소</div>
+      <div class="note" style="margin-top:4px">창=면광원(천공). 창가 밝고 안쪽 어두워짐. 방위·시간은 추후.</div>
+      <div class="lum-list" id="winList" style="margin-top:8px"></div>
+    </div>
+
+    <div class="sec">
       <div class="h">자동 배치 <span class="n">AUTO</span></div>
       <div class="grid2" style="margin-bottom:9px">
         <div class="field"><span>열 (X)</span><input type="number" id="gCol" value="3" min="1" max="12" step="1"></div>
@@ -253,7 +263,8 @@ const S = {
   poly:null, mask:[], bb:null,       // 커스텀 방(자유형 폴리곤), 격자 마스크, 바운딩
   draw:{active:false, pts:[]},       // 방 그리기 모드
   snapPt:true,                       // 포인트(꼭짓점) 스냅 on/off
-  cct:4000                           // 색온도(K) — 3D 조명 표시색
+  cct:4000,                          // 색온도(K) — 3D 조명 표시색
+  windows:[], sky:8000, showDaylight:true, winPlace:false  // 자연광(창): 창목록, 천공조도(lx)
 };
 
 // ============ 폴리곤(자유형 방) 기하 ============
@@ -344,6 +355,53 @@ function cctToColor(k){
   const cl=v=>Math.max(0,Math.min(255,v))/255;
   return new THREE.Color(cl(r),cl(g),cl(b));
 }
+
+// ============ 자연광(창) ============
+// 창의 벽 상 기하: 변(edge) 위 구간 s0~s1(m), 실내 방향 법선(nx,nz), sill~head
+function windowRect(w){
+  const P=S.poly||rectPoly();
+  const A=P[w.edge], B=P[(w.edge+1)%P.length];
+  const ex=B.x-A.x, ez=B.z-A.z, len=Math.hypot(ex,ez)||1, dx=ex/len, dz=ez/len;
+  let nx=-dz, nz=dx;                                  // 변에 수직
+  const cen=polyCentroid(P), mx=A.x+dx*(w.t*len), mz=A.z+dz*(w.t*len);
+  if((cen.x-mx)*nx+(cen.z-mz)*nz < 0){ nx=-nx; nz=-nz; }   // 실내(중심) 향하게
+  const c=w.t*len;
+  return { A, dx, dz, nx, nz, len, s0:Math.max(0,c-w.width/2), s1:Math.min(len,c+w.width/2), sill:w.sill, head:w.head };
+}
+// 클릭점에서 가장 가까운 벽(변) + 그 위 위치 t
+function nearestEdge(px,pz){
+  const P=S.poly||rectPoly(); let best=-1, bd=1e9, bt=0;
+  for(let i=0;i<P.length;i++){ const A=P[i], B=P[(i+1)%P.length];
+    const ex=B.x-A.x, ez=B.z-A.z, len2=ex*ex+ez*ez||1;
+    let t=((px-A.x)*ex+(pz-A.z)*ez)/len2; t=Math.max(0,Math.min(1,t));
+    const d=Math.hypot(px-(A.x+ex*t), pz-(A.z+ez*t));
+    if(d<bd){ bd=d; best=i; bt=t; } }
+  return { edge:best, t:bt, dist:bd };
+}
+// 점 P(법선 sn)의 창 채광 조도. 창을 램버시안 면광원(천공)으로 적분.
+function daylightAt(px,py,pz, snx,sny,snz, selfFurn){
+  if(!S.windows.length) return 0;
+  const L=S.sky*0.8/Math.PI;   // 투과율 0.8, 천공 휘도 = Ev·τ/π
+  let e=0; const Mw=4, Mh=3;
+  for(const w of S.windows){
+    const g=windowRect(w); const ww=g.s1-g.s0, wh=g.head-g.sill;
+    if(ww<=0||wh<=0) continue;
+    const dA=(ww/Mw)*(wh/Mh);
+    for(let a=0;a<Mw;a++)for(let b=0;b<Mh;b++){
+      const s=g.s0+(a+0.5)/Mw*ww, yy=g.sill+(b+0.5)/Mh*wh;
+      const wxp=g.A.x+g.dx*s, wzp=g.A.z+g.dz*s;
+      const rx=px-wxp, ry=py-yy, rz=pz-wzp, d2=rx*rx+ry*ry+rz*rz, d=Math.sqrt(d2);
+      if(d<1e-3) continue;
+      const cosWin=(rx*g.nx+rz*g.nz)/d;                 // 창 법선(수평) 대비
+      if(cosWin<=0) continue;                            // 창 뒤쪽 점
+      const cosP=(-rx*snx-ry*sny-rz*snz)/d;              // 점 법선 대비
+      if(cosP<=0) continue;
+      if(S.showShadow && S.furns.length && isShadowedEx(px,py,pz, wxp,yy,wzp, selfFurn)) continue;
+      e += L*cosWin*cosP*dA/d2;
+    }
+  }
+  return e;
+}
 function pointIllum(px,py,pz, nx,ny,nz, I0, selfFurn){
   let e=0;
   const cen=polyCentroid(S.poly||rectPoly());
@@ -417,7 +475,7 @@ function compute(){
     const px=bb.minx+(i+0.5)*dx, pz=bb.minz+(j+0.5)*dz;
     if(!pointInPoly(px,pz,P)){ E[i][j]=0; mask[i][j]=false; continue; }
     mask[i][j]=true;
-    const v=pointIllum(px,wpY,pz, 0,1,0, I0, null)+Eindir;
+    const v=pointIllum(px,wpY,pz, 0,1,0, I0, null)+Eindir+(S.showDaylight?daylightAt(px,wpY,pz,0,1,0,null):0);
     E[i][j]=v; sum+=v; cnt++;
     if(v<mn)mn=v; if(v>mx)mx=v;
   }}
@@ -458,7 +516,7 @@ function sampleFace(F, M, posFn, n, I0, Eindir, fi){
   const indir=isTop?Eindir:Eindir*0.55; // 수직면은 간접광 도달 적음(근사)
   for(let a=0;a<M;a++){ grid[a]=[]; for(let b=0;b<M;b++){
     const [x,y,z]=posFn((a+0.5)/M,(b+0.5)/M);
-    const edir=pointIllum(x,y,z, n[0],n[1],n[2], I0, fi);
+    const edir=pointIllum(x,y,z, n[0],n[1],n[2], I0, fi)+(S.showDaylight?daylightAt(x,y,z,n[0],n[1],n[2],fi):0);
     const v=edir+indir;
     grid[a][b]=v; sum+=v; if(v<mn)mn=v; if(v>mx)mx=v;
   }}
@@ -500,6 +558,7 @@ function updateMetrics(){
   document.getElementById('legMax').textContent=Math.round(S.Emax)+' lx';
   renderLumList();
   if(typeof renderFurnList==='function') renderFurnList();
+  if(typeof renderWinList==='function') renderWinList();
 }
 
 // 범례 그라디언트
@@ -594,6 +653,19 @@ function buildRoom(){
   const top =P.map(v=>new THREE.Vector3(v.x,H,v.z)); top.push(top[0].clone());
   room.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(base),edgeMat));
   room.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(top),edgeMat));
+
+  // 창 (벽 개구부 유리)
+  for(const w of S.windows){
+    const gw=windowRect(w); const ww=gw.s1-gw.s0, wh=gw.head-gw.sill; if(ww<=0||wh<=0) continue;
+    const cs=gw.s0+ww/2, cx=gw.A.x+gw.dx*cs, cz=gw.A.z+gw.dz*cs, cy=(gw.sill+gw.head)/2;
+    const rotY=Math.atan2(gw.nx,gw.nz);
+    const glass=new THREE.Mesh(new THREE.PlaneGeometry(ww,wh),
+      new THREE.MeshBasicMaterial({color:0x9fd0e8,transparent:true,opacity:0.55,side:THREE.DoubleSide}));
+    glass.rotation.y=rotY; glass.position.set(cx,cy,cz); room.add(glass);
+    const fr=new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.PlaneGeometry(ww,wh)),
+      new THREE.LineBasicMaterial({color:0x3a8fb0}));
+    fr.rotation.y=rotY; fr.position.set(cx,cy,cz); room.add(fr);
+  }
 
   scene.add(room);
   orbit.tx=(bb.minx+bb.maxx)/2; orbit.ty=H/2; orbit.tz=(bb.minz+bb.maxz)/2;
@@ -805,12 +877,20 @@ function exitDraw(commit){
   const tip=document.getElementById('drawTip'); if(tip) tip.style.display='none';
   document.getElementById('vpBadge').textContent=(S.view==='top')?'평면 (TOP)':'3D 투시';
 }
+// 창 배치 모드 종료(UI 리셋)
+function endWinPlace(){ S.winPlace=false;
+  const n=document.getElementById('winNote'); if(n) n.style.display='none';
+  const b=document.getElementById('btnWinAdd'); if(b) b.textContent='＋ 창 추가 (벽 클릭)';
+  document.getElementById('vpBadge').textContent=(S.view==='top')?'평면 (TOP)':'3D 투시'; }
 
 // 오빗 + 조명 드래그
 function bindOrbit(){
   const cv=document.getElementById('cv');
   let mode=null,px=0,py=0,dragLum=-1;
   cv.addEventListener('mousedown',e=>{
+    if(S.winPlace){ const p=rawPlanePoint(e); if(p){ const ne=nearestEdge(p.x,p.z);
+      if(ne.edge>=0 && ne.dist<1.6){ S.windows.push({edge:ne.edge,t:ne.t,width:1.5,sill:0.9,head:2.1});
+        endWinPlace(); buildRoom(); compute(); } } return; }
     if(S.draw.active){ const p=drawPlanePoint(e); if(p){
       if(S.draw.pts.length>=3){ const s=S.draw.pts[0]; if(Math.hypot(p.x-s.x,p.z-s.z)<0.4){ exitDraw(true); return; } }
       S.draw.pts.push(p); updateDrawPreview(null);
@@ -849,7 +929,9 @@ function bindOrbit(){
     orbit.r*=(1+Math.sign(e.deltaY)*0.08); orbit.r=Math.max(3,Math.min(60,orbit.r)); },{passive:false});
   cv.addEventListener('dblclick',()=>{ if(S.draw.active) exitDraw(true); });
   cv.addEventListener('contextmenu',e=>{ if(S.draw.active){ e.preventDefault(); S.draw.pts.pop(); updateDrawPreview(null); } });
-  window.addEventListener('keydown',e=>{ if(!S.draw.active) return;
+  window.addEventListener('keydown',e=>{
+    if(S.winPlace && e.key==='Escape'){ endWinPlace(); return; }
+    if(!S.draw.active) return;
     if(e.key==='Escape') exitDraw(false);
     else if(e.key==='Backspace'){ e.preventDefault(); S.draw.pts.pop(); updateDrawPreview(null); } });
   window.addEventListener('resize',resize);
@@ -908,6 +990,32 @@ bind('lFlux',()=>{S.flux=num('lFlux');compute();});
 bind('lDist',()=>{S.dist=document.getElementById('lDist').value;compute();});
 bind('lMF',()=>{S.MF=num('lMF');document.getElementById('lMFv').textContent=S.MF.toFixed(2);compute();});
 bind('lCCT',()=>{S.cct=num('lCCT');document.getElementById('lCCTv').textContent=S.cct;if(typeof renderer!=='undefined'&&renderer)rebuildLums();});
+bind('sky',()=>{S.sky=num('sky');compute();});
+bind('pillDay',()=>{S.showDaylight=!S.showDaylight;const el=document.getElementById('pillDay');
+  el.className='pill'+(S.showDaylight?' on':'');el.textContent=S.showDaylight?'ON':'OFF';compute();},'click');
+bind('btnWinAdd',()=>{ if(S.winPlace){ endWinPlace(); return; }
+  S.winPlace=true; S.view='top'; setViewButtons();
+  document.getElementById('winNote').style.display='block';
+  document.getElementById('btnWinAdd').textContent='벽 클릭… (다시 누르면 취소)';
+  document.getElementById('vpBadge').textContent='창 배치 · 벽 클릭';
+},'click');
+// 창 목록
+function renderWinList(){
+  const el=document.getElementById('winList'); if(!el) return; el.innerHTML='';
+  S.windows.forEach((w,i)=>{
+    const d=document.createElement('div'); d.className='lum-item'; d.style.flexWrap='wrap';
+    d.innerHTML=`<span class="dot" style="background:#9fd0e8"></span><span class="id">창${i+1}</span>
+      <span class="xy">벽${w.edge+1} · 폭 <input class="winW" type="number" value="${w.width}" step="0.1" min="0.2" max="12" style="width:44px;font-size:10px;padding:1px 3px">m</span>
+      <span class="x">×</span>
+      <span class="xy" style="width:100%;margin-top:3px">하단 <input class="winS" type="number" value="${w.sill}" step="0.1" min="0" max="3" style="width:42px;font-size:10px;padding:1px 3px">
+        상단 <input class="winH" type="number" value="${w.head}" step="0.1" min="0.3" max="4" style="width:42px;font-size:10px;padding:1px 3px"> m</span>`;
+    d.querySelector('.winW').onchange=e=>{ w.width=+e.target.value; buildRoom(); compute(); };
+    d.querySelector('.winS').onchange=e=>{ w.sill=+e.target.value; buildRoom(); compute(); };
+    d.querySelector('.winH').onchange=e=>{ w.head=+e.target.value; buildRoom(); compute(); };
+    d.querySelector('.x').onclick=()=>{ S.windows.splice(i,1); buildRoom(); compute(); };
+    el.appendChild(d);
+  });
+}
 bind('tgt',()=>{S.target=num('tgt');updateMetrics();});
 bind('bounces',()=>{S.bounces=num('bounces');document.getElementById('bouncesv').textContent=S.bounces;
   document.getElementById('pillBounce').className='pill'+(S.bounces>0?' on':'');
