@@ -499,7 +499,7 @@ function compute(){
   const wpY=S.WP;
   const I0=axialIntensity(S.flux,S.dist)*S.MF;
   S.axCache={}; for(const d of ['lambert','narrow','down','wide','iso']) S.axCache[d]=axialIntensity(S.flux,d)*S.MF;  // 배광별 축상광도
-  const Eindir=indirectComponent();
+  const Eindir=indirectComponent(); S.Eindir=Eindir;   // PPFD 변환용 저장
 
   // --- 작업면 (법선 +y). 방(폴리곤) 안쪽 셀만 집계 ---
   const E=[], mask=[]; let mn=Infinity,mx=-Infinity,sum=0,cnt=0;
@@ -1090,16 +1090,22 @@ function renderLumList(){
     const d=document.createElement('div');
     d.className='lum-item'+(i===S.selected?' sel':''); d.style.flexWrap='wrap';
     const opts=LUM_TYPES.map(([v,t])=>`<option value="${v}"${v===L.type?' selected':''}>${t}</option>`).join('');
+    const srcList=(S.lightSourcesDB&&S.lightSourcesDB.length)?S.lightSourcesDB:[{id:'led_white_cool',ko:'백색LED'}];
+    const cur=L.src||'led_white_cool';
+    const srcOpts=srcList.map(s=>`<option value="${s.id}"${cur===s.id?' selected':''}>${s.ko}</option>`).join('');
     d.innerHTML=`<span class="dot"></span><span class="id">L${String(i+1).padStart(2,'0')}</span>
       <select class="lumType" style="flex:1;font-size:9px;padding:1px 2px">${opts}</select>
       <span class="x">×</span>
       <span class="xy" style="width:100%;margin-top:4px;display:flex;align-items:center;gap:4px">x ${L.x.toFixed(1)} z ${L.z.toFixed(1)} · 높이
-        <input class="lumH" type="number" value="${lumHeight(L).toFixed(2)}" step="0.1" min="0" max="6" style="width:48px;font-size:10px;padding:1px 3px"> m</span>`;
+        <input class="lumH" type="number" value="${lumHeight(L).toFixed(2)}" step="0.1" min="0" max="6" style="width:48px;font-size:10px;padding:1px 3px"> m</span>
+      <span class="xy" style="width:100%;margin-top:3px;display:flex;align-items:center;gap:4px">광원
+        <select class="lumSrc" style="flex:1;font-size:9px;padding:1px 2px">${srcOpts}</select></span>`;
     d.querySelector('.id').onclick=()=>{S.selected=i;rebuildLums();renderLumList();};
     d.querySelector('.x').onclick=()=>{S.lums.splice(i,1);if(S.selected>=i)S.selected--;compute();};
     d.querySelector('.lumType').onchange=e=>{ const t=e.target.value; L.type=t;
       L.h=(t==='ceiling'||t==='recessed')?null:lumHeightDefault(t); compute(); };  // 상부/매립은 천장고 추종
     d.querySelector('.lumH').onchange=e=>{ L.h=+e.target.value; compute(); };
+    d.querySelector('.lumSrc').onchange=e=>{ L.src=e.target.value; compute(); };   // 광원종류(PPFD 변환용)
     el.appendChild(d);
   });
 }
@@ -1112,7 +1118,7 @@ function autoGrid(){
   S.lums=[];
   for(let r=0;r<rows;r++)for(let c=0;c<cols;c++){
     const x=bb.minx+(bb.maxx-bb.minx)*(c+0.5)/cols, z=bb.minz+(bb.maxz-bb.minz)*(r+0.5)/rows;
-    if(pointInPoly(x,z,P)) S.lums.push({x,z,type:'ceiling'});
+    if(pointInPoly(x,z,P)) S.lums.push({x,z,type:'ceiling',src:'led_white_cool'});
   }
   S.selected=-1; compute();
 }
@@ -1164,7 +1170,7 @@ bind('bounces',()=>{S.bounces=num('bounces');document.getElementById('bouncesv')
   document.getElementById('pillBounce').textContent=S.bounces>0?'ON':'OFF';compute();});
 bind('gCol',()=>{});bind('gRow',()=>{});
 bind('btnGrid',autoGrid,'click');
-bind('btnAdd',()=>{ const c=polyCentroid(S.poly||rectPoly()); S.lums.push({x:c.x,z:c.z,type:'ceiling'}); S.selected=S.lums.length-1; compute(); },'click');
+bind('btnAdd',()=>{ const c=polyCentroid(S.poly||rectPoly()); S.lums.push({x:c.x,z:c.z,type:'ceiling',src:'led_white_cool'}); S.selected=S.lums.length-1; compute(); },'click');
 bind('btnClear',()=>{S.lums=[];S.selected=-1;compute();},'click');
 
 // 뷰 토글
@@ -1252,6 +1258,21 @@ buildLegend();
 init3D();
 autoGrid();   // 초기 3x3
 demoRoom();   // 예시 가구 자동 배치
+
+// ===== ⑤ 데이터 로드 (plants / light_sources) — 읽기 전용 =====
+S.lightSourcesDB=[]; S.plantsDB=[]; S.lightCoef={};
+Promise.all([
+  fetch('./data/light_sources.json').then(r=>r.json()).catch(()=>({light_sources:[]})),
+  fetch('./data/plants.json').then(r=>r.json()).catch(()=>({plants:[]}))
+]).then(([ls,pl])=>{
+  S.lightSourcesDB=ls.light_sources||[];
+  S.plantsDB=pl.plants||[];
+  S.lightSourcesDB.forEach(s=>{ S.lightCoef[s.id]=s.lux_to_ppfd; });   // null 유지(퍼플등)
+  if(typeof populatePlantSelect==='function') populatePlantSelect();
+  renderLumList();   // 광원 드롭다운 반영
+  compute();         // PPFD 재계산
+  console.log('[볕] DB 로드: 광원', S.lightSourcesDB.length, '· 식물', S.plantsDB.length);
+}).catch(e=>console.warn('[볕] DB 로드 실패', e));
 </script>
 </body>
 </html>
