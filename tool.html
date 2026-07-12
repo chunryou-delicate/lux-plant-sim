@@ -258,6 +258,14 @@
       <div class="note" style="margin-top:4px">데이터 3층: 실측(정밀)·fc만(대략)·unknown(실험). plants.json 읽기전용.</div>
     </div>
 
+    <div class="sec">
+      <div class="h">게임 · 성장 <span class="n">GROW</span></div>
+      <div class="row"><span id="gameDay" style="font-family:var(--mono);font-weight:600;flex:1">Day 0</span>
+        <button id="btnNextDay" style="flex:0 0 108px">하루 넘기기 ▶</button></div>
+      <div id="growStatus" class="note" style="margin-top:6px">식물을 놓고 ‹하루 넘기기›</div>
+      <div class="note" style="margin-top:4px">적합=성장·건강↑ / 부족·과광=건강↓ (놓은 자리 빛으로 판정)</div>
+    </div>
+
     <div class="note" id="calcNote">격자 해상도에 따라 계산됩니다.</div>
   </div>
 </div>
@@ -283,7 +291,8 @@ const S = {
   snapPt:true,                       // 포인트(꼭짓점) 스냅 on/off
   cct:4000,                          // 색온도(K) — 3D 조명 표시색
   windows:[], sky:8000, showDaylight:true, winPlace:false,  // 자연광(창): 창목록, 천공조도(lx)
-  plants:[], plantPlace:false, activePlant:-1               // ⑤-2 식물 마커(위치 가진 객체)
+  plants:[], plantPlace:false, activePlant:-1,              // ⑤-2 식물 마커(위치 가진 객체)
+  day:0                                                    // 게임 첫 루프: 날짜
 };
 
 // ===== 방 데이터 구조 (나중 문·통로·다중방 대비, 지금은 방 1개만 사용) =====
@@ -899,8 +908,11 @@ function rebuildPlants(){
     const g=new THREE.Group(), sel=(i===S.activePlant);
     const pot=new THREE.Mesh(new THREE.CylinderGeometry(0.11,0.08,0.16,12), new THREE.MeshLambertMaterial({color:0xb87050}));
     pot.position.y=0.08; g.add(pot);
-    const leaf=new THREE.Mesh(new THREE.SphereGeometry(0.15,10,8), new THREE.MeshLambertMaterial({color:sel?0x6fd36a:0x4f9a4f}));
-    leaf.position.y=0.28; leaf.scale.y=1.3; g.add(leaf);
+    const grow=(pl.growth==null?0:pl.growth)/100, hp=(pl.health==null?100:pl.health);   // 게임: 성장도·건강
+    const sc=0.55+grow*0.9;                                                             // 성장할수록 커짐
+    const col=hp<35 ? 0xc2b25a : (sel?0x6fd36a:0x4f9a4f);                                // 건강 낮으면 누런색(시듦)
+    const leaf=new THREE.Mesh(new THREE.SphereGeometry(0.15,10,8), new THREE.MeshLambertMaterial({color:col}));
+    leaf.position.y=0.12+sc*0.18; leaf.scale.set(sc,sc*1.3,sc); g.add(leaf);
     if(sel){ const ring=new THREE.Mesh(new THREE.TorusGeometry(0.2,0.02,8,20), new THREE.MeshBasicMaterial({color:0xe8a838}));
       ring.rotation.x=Math.PI/2; ring.position.y=0.02; g.add(ring); }
     g.position.set(pl.x, pl.y||0, pl.z);
@@ -1099,7 +1111,7 @@ function bindOrbit(){
     // ⑤-2 식물 놓기 모드 (선반 위면 그 높이로)
     if(S.plantPlace){ const plane=new THREE.Plane(new THREE.Vector3(0,1,0),0), pt=new THREE.Vector3();
       if(raycaster.ray.intersectPlane(plane,pt)){ const y=shelfTopAt(pt.x,pt.z);
-        S.plants.push({id:S.plantPlace, x:pt.x, z:pt.z, y}); S.activePlant=S.plants.length-1;
+        S.plants.push({id:S.plantPlace, x:pt.x, z:pt.z, y, growth:0, health:100}); S.activePlant=S.plants.length-1;
         endPlantPlace(); rebuildPlants(); updatePlantDiagnose(); } return; }
     // 식물 마커 픽킹(드래그)
     const phits = plantGroup? raycaster.intersectObjects(plantGroup.children,true):[];
@@ -1280,6 +1292,42 @@ function updatePlantDiagnose(){
   const dli=((active?spotP:(S.ppfdMax||0))*hours*3600/1e6).toFixed(1);
   const detail = S.showPPFDdetail ? `<div style="font-family:var(--mono);font-size:10px;color:#888;font-weight:400;margin-top:4px">${where} PPFD ${ppfdTxt} · DLI ${dli} · 적정 ${pp?((pp[0]!=null?pp[0]:'?')+'~'+(pp[2]!=null?pp[2]:'?')):(p.level||'?')}</div>` : '';
   vEl.innerHTML=`<div>${head}</div>${detail}`;
+  if(typeof updateGameUI==='function') updateGameUI();
+}
+// ===== 게임 첫 루프 (A) : 시간·성장 =====
+function judgePlant(p, ppfd){
+  const pp=p.ppfd;
+  if(pp && (pp[0]!=null||pp[2]!=null)){
+    const pmin=pp[0]!=null?pp[0]:pp[1], pmax=pp[2]!=null?pp[2]:pp[1], popt=pp[1];
+    if(ppfd<pmin) return 'low'; if(ppfd>pmax) return 'high';
+    if(popt && Math.abs(ppfd-popt)<=popt*0.3) return 'opt'; return 'ok';
+  }
+  if(p.level){ const b=levelBand(p.level); if(b){ if(ppfd<b[0]*0.6) return 'low'; if(ppfd>b[1]*1.6) return 'high'; return 'ok'; } }
+  return 'unknown';
+}
+function advanceDay(){
+  S.day=(S.day||0)+1;
+  (S.plants||[]).forEach(pl=>{
+    const p=plantById(pl.id); if(!p) return;
+    if(pl.growth==null) pl.growth=0; if(pl.health==null) pl.health=100;
+    const ppfd=ppfdAt(pl.x,pl.z,plantEvalY(pl)), v=judgePlant(p,ppfd);
+    if(v==='opt'){ pl.growth=Math.min(100,pl.growth+8); pl.health=Math.min(100,pl.health+5); }
+    else if(v==='ok'){ pl.growth=Math.min(100,pl.growth+5); pl.health=Math.min(100,pl.health+2); }
+    else if(v==='low'){ pl.growth=Math.min(100,pl.growth+1); pl.health=Math.max(0,pl.health-8); }
+    else if(v==='high'){ pl.growth=Math.min(100,pl.growth+2); pl.health=Math.max(0,pl.health-6); }
+    else { pl.growth=Math.min(100,pl.growth+3); }   // unknown: 실험, 완만
+    pl.ppfd=ppfd; pl.verdict=v;
+  });
+  rebuildPlants(); updateGameUI();
+}
+function growMsg(v){ return v==='opt'?'무럭무럭 자라요! 🌿⭐':v==='ok'?'잘 자라는 중 🌿':v==='low'?'빛이 부족해 시들해요 🥶':v==='high'?'빛이 너무 세서 힘들어요 ⚠':v==='unknown'?'천천히 커요 (미지의 종 🌱)':'아직 하루 안 지났어요'; }
+function updateGameUI(){
+  const d=document.getElementById('gameDay'); if(d) d.textContent='Day '+(S.day||0);
+  const el=document.getElementById('growStatus'); if(!el) return;
+  const a=(S.activePlant>=0 && S.plants[S.activePlant])?S.plants[S.activePlant]:null;
+  if(!a){ el.textContent=(S.plants&&S.plants.length)?'식물 마커를 클릭해 선택하세요':'식물을 놓고 ‹하루 넘기기›'; return; }
+  const p=plantById(a.id), g=Math.round(a.growth||0), h=Math.round(a.health==null?100:a.health);
+  el.innerHTML=`<b>${p?p.ko:''}</b> — ${growMsg(a.verdict)}<br>성장 ${g}/100 · 건강 ${h}/100`;
 }
 
 // ============ 자동 격자배치 ============
@@ -1351,7 +1399,8 @@ bind('btnPlantPlace',()=>{ if(S.plantPlace){ endPlantPlace(); return; }
   S.plantPlace=sel.value; S.view='top'; setViewButtons();
   document.getElementById('btnPlantPlace').textContent='바닥/선반 클릭 (다시=취소)';
   document.getElementById('vpBadge').textContent='식물 놓기 · 바닥/선반 클릭'; },'click');
-bind('btnPlantClear',()=>{ S.plants=[]; S.activePlant=-1; rebuildPlants(); updatePlantDiagnose(); },'click');
+bind('btnPlantClear',()=>{ S.plants=[]; S.activePlant=-1; S.day=0; rebuildPlants(); updatePlantDiagnose(); },'click');
+bind('btnNextDay',advanceDay,'click');
 bind('pillPPFD',()=>{ S.showPPFDdetail=!S.showPPFDdetail; const el=document.getElementById('pillPPFD'); el.className='pill'+(S.showPPFDdetail?' on':''); el.textContent=S.showPPFDdetail?'ON':'OFF'; updatePlantDiagnose(); },'click');
 bind('pillFit',()=>{ S.showFit=!S.showFit; const el=document.getElementById('pillFit'); el.className='pill'+(S.showFit?' on':''); el.textContent=S.showFit?'ON':'OFF'; drawHeat(); if(typeof render3D==='function') render3D(); },'click');
 bind('btnClear',()=>{S.lums=[];S.selected=-1;compute();},'click');
