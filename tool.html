@@ -224,7 +224,7 @@
       <button id="btnViewTop" class="ghost">평면</button>
       <button id="btnHeat" class="">히트맵</button>
     </div>
-    <div class="vp-hint" id="vpHint">드래그: 회전 · 휠: 줌 · 조명/가구 드래그 이동 · 가구 더블클릭=90° 회전</div>
+    <div class="vp-hint" id="vpHint">드래그: 회전 · 휠: 줌 · 가구 드래그(Shift=직각) · 가구 더블클릭=90° 회전</div>
     <div class="draw-tip" id="drawTip"></div>
   </div>
 
@@ -965,7 +965,7 @@ function updateExtendMarker(p){
 // 오빗 + 조명 드래그
 function bindOrbit(){
   const cv=document.getElementById('cv');
-  let mode=null,px=0,py=0,dragLum=-1,dragFurn=-1,dragOff={x:0,z:0};
+  let mode=null,px=0,py=0,dragLum=-1,dragFurn=-1,dragOff={x:0,z:0},dragStartFurn={x:0,z:0},dblFurn={idx:-1,t:0};
   cv.addEventListener('mousedown',e=>{
     if(e.button===2) return;   // 우클릭은 contextmenu(뒤로가기)에 맡김 — 점 추가 금지
     if(S.winPlace){ const p=rawPlanePoint(e); if(p){ const ne=nearestEdge(p.x,p.z);
@@ -995,9 +995,17 @@ function bindOrbit(){
     else{
       const fhits=raycaster.intersectObjects(furnGroup.children,true);
       const fh=fhits.find(h=>h.object.userData.furnIndex!==undefined);
-      if(fh){ dragFurn=fh.object.userData.furnIndex; mode='furn';
-        const F=S.furns[dragFurn], plane=new THREE.Plane(new THREE.Vector3(0,1,0),0), pt=new THREE.Vector3();
+      if(fh){ dragFurn=fh.object.userData.furnIndex;
+        const F=S.furns[dragFurn], now=Date.now();
+        if(dblFurn.idx===dragFurn && now-dblFurn.t<350){   // 직접 더블클릭 감지 → 90° 회전
+          const cx=F.x+F.w/2, cz=F.z+F.d/2, nw=F.d, nd=F.w;
+          F.w=nw; F.d=nd; F.x=cx-nw/2; F.z=cz-nd/2; compute();
+          mode=null; dragFurn=-1; dblFurn={idx:-1,t:0}; return;
+        }
+        dblFurn={idx:dragFurn, t:now}; mode='furn';
+        const plane=new THREE.Plane(new THREE.Vector3(0,1,0),0), pt=new THREE.Vector3();
         dragOff = raycaster.ray.intersectPlane(plane,pt) ? {x:pt.x-F.x, z:pt.z-F.z} : {x:F.w/2, z:F.d/2};  // 잡은 지점 유지
+        dragStartFurn={x:F.x, z:F.z};
       }
       else{ mode='orbit'; px=e.clientX; py=e.clientY; }
     }
@@ -1033,9 +1041,13 @@ function bindOrbit(){
       const pt=new THREE.Vector3();
       if(raycaster.ray.intersectPlane(plane,pt)){
         const F=S.furns[dragFurn], bb=S.bb||polyBBox(S.poly||rectPoly());
+        let nx=pt.x-dragOff.x, nz=pt.z-dragOff.z;
+        if(e.shiftKey){   // Shift=축(직각) 이동 고정 — 시작 위치 기준 한 축만
+          if(Math.abs(nx-dragStartFurn.x) >= Math.abs(nz-dragStartFurn.z)) nz=dragStartFurn.z; else nx=dragStartFurn.x;
+        }
         // 외피(가구 전체) 기준 제한: footprint가 방 bbox 안에 머물게
-        F.x=Math.max(bb.minx, Math.min(bb.maxx-F.w, pt.x-dragOff.x));
-        F.z=Math.max(bb.minz, Math.min(bb.maxz-F.d, pt.z-dragOff.z));
+        F.x=Math.max(bb.minx, Math.min(bb.maxx-F.w, nx));
+        F.z=Math.max(bb.minz, Math.min(bb.maxz-F.d, nz));
         rebuildFurns();
       }
     }
@@ -1043,18 +1055,7 @@ function bindOrbit(){
   window.addEventListener('mouseup',()=>{ if(mode==='lum'||mode==='furn'){compute();} mode=null; dragLum=-1; dragFurn=-1; });
   cv.addEventListener('wheel',e=>{ e.preventDefault();
     orbit.r*=(1+Math.sign(e.deltaY)*0.08); orbit.r=Math.max(3,Math.min(60,orbit.r)); },{passive:false});
-  cv.addEventListener('dblclick',e=>{
-    if(S.draw.active){ exitDraw(true); return; }
-    if(S.winPlace) return;
-    const rect=cv.getBoundingClientRect();
-    mouse.x=((e.clientX-rect.left)/rect.width)*2-1;
-    mouse.y=-((e.clientY-rect.top)/rect.height)*2+1;
-    raycaster.setFromCamera(mouse,cam);
-    const fh=raycaster.intersectObjects(furnGroup.children,true).find(h=>h.object.userData.furnIndex!==undefined);
-    if(fh){ const F=S.furns[fh.object.userData.furnIndex];   // 가구 더블클릭 = 90° 회전(폭·깊이 교환, 중심 유지)
-      const cx=F.x+F.w/2, cz=F.z+F.d/2, nw=F.d, nd=F.w;
-      F.w=nw; F.d=nd; F.x=cx-nw/2; F.z=cz-nd/2; compute(); }
-  });
+  cv.addEventListener('dblclick',()=>{ if(S.draw.active) exitDraw(true); });
   cv.addEventListener('contextmenu',e=>{ if(S.draw.active){ e.preventDefault(); S.draw.pts.pop(); updateDrawPreview(null); } });
   window.addEventListener('keydown',e=>{
     if(S.winPlace && e.key==='Escape'){ endWinPlace(); return; }
