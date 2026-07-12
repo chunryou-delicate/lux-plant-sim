@@ -1278,8 +1278,8 @@ bind('gCol',()=>{});bind('gRow',()=>{});
 bind('btnGrid',autoGrid,'click');
 bind('btnAdd',()=>{ const c=polyCentroid(S.poly||rectPoly()); S.lums.push({x:c.x,z:c.z,type:'ceiling',src:'led_white_cool'}); S.selected=S.lums.length-1; compute(); },'click');
 // ⑤ 식물 진단 바인딩
-bind('plantSel',updatePlantDiagnose,'change');
-bind('litHours',updatePlantDiagnose);
+bind('plantSel',()=>{ updatePlantDiagnose(); if(S.showFit){ drawHeat(); if(heatTex)heatTex.needsUpdate=true; } },'change');
+bind('litHours',()=>{ updatePlantDiagnose(); if(S.showFit){ drawHeat(); if(heatTex)heatTex.needsUpdate=true; } });
 bind('pillPPFD',()=>{ S.showPPFDdetail=!S.showPPFDdetail; const el=document.getElementById('pillPPFD'); el.className='pill'+(S.showPPFDdetail?' on':''); el.textContent=S.showPPFDdetail?'ON':'OFF'; updatePlantDiagnose(); },'click');
 bind('pillFit',()=>{ S.showFit=!S.showFit; const el=document.getElementById('pillFit'); el.className='pill'+(S.showFit?' on':''); el.textContent=S.showFit?'ON':'OFF'; drawHeat(); if(typeof render3D==='function') render3D(); },'click');
 bind('btnClear',()=>{S.lums=[];S.selected=-1;compute();},'click');
