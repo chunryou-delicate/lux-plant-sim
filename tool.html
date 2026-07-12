@@ -203,6 +203,9 @@
         <button class="ghost" id="fShelf" style="flex:1">+ 책장</button>
         <button class="ghost" id="fWardrobe" style="flex:1">+ 옷장</button>
       </div>
+      <div class="btnrow" style="margin-bottom:9px">
+        <button class="ghost" id="fRack" style="flex:1">+ 선반(높이 조절, 위 조도)</button>
+      </div>
       <div class="row"><label>예시 세트 배치</label>
         <button id="fDemo" style="flex:0 0 90px">방 꾸미기</button></div>
       <div class="row"><label>그림자(차폐) 계산</label>
@@ -464,8 +467,9 @@ function isShadowedEx(px,py,pz, lx,ly,lz, selfFurn){
       let ta=(a-o)/d, tb=(b-o)/d; if(ta>tb){const t=ta;ta=tb;tb=t;}
       tmin=Math.max(tmin,ta); tmax=Math.min(tmax,tb); return tmin<=tmax;
     };
+    const y0=F.y0||0;
     if(!slab(ox,dx,-hx,hx)) continue;
-    if(!slab(py,dy,0,F.h)) continue;
+    if(!slab(py,dy,y0,y0+F.h)) continue;   // 바닥높이 y0 대응(선반=떠있는 판)
     if(!slab(oz,dz,-hz,hz)) continue;
     if(tmin<=tmax && tmax>0.001 && tmin<0.999) return true;
   }
@@ -525,16 +529,16 @@ function computeFurnSurfaces(I0, Eindir){
   S.furns.forEach((F,fi)=>{
     // 회전(OBB): 로컬(중심 기준) 면을 월드로 변환. c/s = +rot 회전
     const cx=F.x+F.w/2, cz=F.z+F.d/2, rot=F.rot||0, c=Math.cos(rot), s=Math.sin(rot);
-    const hx=F.w/2, hz=F.d/2;
+    const hx=F.w/2, hz=F.d/2, y0=F.y0||0;
     const W=(lx,lz)=>[cx+lx*c-lz*s, cz+lx*s+lz*c];   // 로컬(x,z) → 월드(x,z)
     const R=(nx,nz)=>[nx*c-nz*s, nx*s+nz*c];          // 법선 회전
     const px=R(1,0), nx=R(-1,0), pz=R(0,1), nz=R(0,-1);
     const faces={};
-    faces.top=sampleFace(F,M,(u,v)=>{const w=W(-hx+u*F.w,-hz+v*F.d);return[w[0],F.h,w[1]];},[0,1,0],I0,Eindir,fi);
-    faces.px =sampleFace(F,M,(u,v)=>{const w=W(hx,-hz+v*F.d);return[w[0],u*F.h,w[1]];},[px[0],0,px[1]],I0,Eindir,fi);
-    faces.nx =sampleFace(F,M,(u,v)=>{const w=W(-hx,-hz+v*F.d);return[w[0],u*F.h,w[1]];},[nx[0],0,nx[1]],I0,Eindir,fi);
-    faces.pz =sampleFace(F,M,(u,v)=>{const w=W(-hx+u*F.w,hz);return[w[0],v*F.h,w[1]];},[pz[0],0,pz[1]],I0,Eindir,fi);
-    faces.nz =sampleFace(F,M,(u,v)=>{const w=W(-hx+u*F.w,-hz);return[w[0],v*F.h,w[1]];},[nz[0],0,nz[1]],I0,Eindir,fi);
+    faces.top=sampleFace(F,M,(u,v)=>{const w=W(-hx+u*F.w,-hz+v*F.d);return[w[0],y0+F.h,w[1]];},[0,1,0],I0,Eindir,fi);
+    faces.px =sampleFace(F,M,(u,v)=>{const w=W(hx,-hz+v*F.d);return[w[0],y0+u*F.h,w[1]];},[px[0],0,px[1]],I0,Eindir,fi);
+    faces.nx =sampleFace(F,M,(u,v)=>{const w=W(-hx,-hz+v*F.d);return[w[0],y0+u*F.h,w[1]];},[nx[0],0,nx[1]],I0,Eindir,fi);
+    faces.pz =sampleFace(F,M,(u,v)=>{const w=W(-hx+u*F.w,hz);return[w[0],y0+v*F.h,w[1]];},[pz[0],0,pz[1]],I0,Eindir,fi);
+    faces.nz =sampleFace(F,M,(u,v)=>{const w=W(-hx+u*F.w,-hz);return[w[0],y0+v*F.h,w[1]];},[nz[0],0,nz[1]],I0,Eindir,fi);
     F.faces=faces;
   });
 }
@@ -780,7 +784,7 @@ function rebuildFurns(){
       mats=new THREE.MeshLambertMaterial({color:F.color,transparent:true,opacity:0.9});
     }
     const m=new THREE.Mesh(geo,mats);
-    m.position.set(F.x+F.w/2, F.h/2, F.z+F.d/2);
+    m.position.set(F.x+F.w/2, (F.y0||0)+F.h/2, F.z+F.d/2);   // 바닥높이 y0(선반=떠있음)
     m.rotation.y=F.rot||0;
     m.userData.furnIndex=fi;   // 드래그 픽킹용
     furnGroup.add(m);
@@ -798,7 +802,7 @@ function rebuildFurns(){
       cx.fillText('윗면 '+Math.round(F.faces.top.avg)+' lx',80,37); }
     const tex=new THREE.CanvasTexture(cvs);
     const spr=new THREE.Sprite(new THREE.SpriteMaterial({map:tex,depthTest:false}));
-    spr.position.set(F.x+F.w/2, F.h+0.3, F.z+F.d/2);
+    spr.position.set(F.x+F.w/2, (F.y0||0)+F.h+0.3, F.z+F.d/2);
     spr.scale.set(1.0,0.28,1); furnGroup.add(spr);
   });
 }
@@ -1179,29 +1183,34 @@ const FURN_PRESETS={
   bed:     {w:1.5, d:2.0, h:0.5,  label:'침대',  color:0x9aa7b0},
   desk:    {w:1.2, d:0.6, h:0.72, label:'책상',  color:0xb08d57},
   shelf:   {w:0.8, d:0.3, h:1.8,  label:'책장',  color:0x8a6d4a},
-  wardrobe:{w:1.0, d:0.6, h:2.0,  label:'옷장',  color:0x6b7480}
+  wardrobe:{w:1.0, d:0.6, h:2.0,  label:'옷장',  color:0x6b7480},
+  rack:    {w:1.2, d:0.4, h:0.04, label:'선반',  color:0xc8a060, y0:1.46}   // 떠있는 판(설치높이 top≈1.5)
 };
 function addFurn(type,x,z){
   const p=FURN_PRESETS[type];
   // 위치 미지정 시 빈 곳 찾기(간단히 중앙 근처 랜덤 오프셋)
   if(x===undefined){ x=Math.min(S.W-p.w, Math.max(0, S.W*0.5-p.w/2 + (Math.random()-0.5)*2)); }
   if(z===undefined){ z=Math.min(S.D-p.d, Math.max(0, S.D*0.5-p.d/2 + (Math.random()-0.5)*2)); }
-  S.furns.push({x,z,w:p.w,d:p.d,h:p.h,type,label:p.label,color:p.color});
+  S.furns.push({x,z,w:p.w,d:p.d,h:p.h,type,label:p.label,color:p.color, y0:(p.y0||0), isShelf:(type==='rack'), rot:0});
   compute();
 }
 function renderFurnList(){
   const el=document.getElementById('furnList'); if(!el) return; el.innerHTML='';
   S.furns.forEach((F,i)=>{
     const d=document.createElement('div'); d.className='lum-item'; d.style.flexWrap='wrap';
+    const hf = F.isShelf
+      ? `설치<input class="fMount" type="number" value="${(F.y0+F.h).toFixed(2)}" step="0.1" min="0.1" max="3" style="width:44px;font-size:10px;padding:1px 3px">`
+      : `H<input class="fH" type="number" value="${F.h}" step="0.1" min="0.1" max="4" style="width:40px;font-size:10px;padding:1px 3px">`;
     d.innerHTML=`<span class="dot" style="background:#${F.color.toString(16).padStart(6,'0')}"></span>
       <span class="id">${F.label}</span>
       <span class="x">×</span>
       <span class="xy" style="width:100%;margin-top:3px">W<input class="fW" type="number" value="${F.w}" step="0.1" min="0.1" max="10" style="width:40px;font-size:10px;padding:1px 3px">
         D<input class="fD" type="number" value="${F.d}" step="0.1" min="0.1" max="10" style="width:40px;font-size:10px;padding:1px 3px">
-        H<input class="fH" type="number" value="${F.h}" step="0.1" min="0.1" max="4" style="width:40px;font-size:10px;padding:1px 3px"> m</span>`;
+        ${hf} m</span>`;
     d.querySelector('.fW').onchange=e=>{ F.w=+e.target.value; compute(); };
     d.querySelector('.fD').onchange=e=>{ F.d=+e.target.value; compute(); };
-    d.querySelector('.fH').onchange=e=>{ F.h=+e.target.value; compute(); };
+    const fh=d.querySelector('.fH'); if(fh) fh.onchange=e=>{ F.h=+e.target.value; compute(); };
+    const fm=d.querySelector('.fMount'); if(fm) fm.onchange=e=>{ F.y0=Math.max(0,(+e.target.value)-F.h); compute(); };  // 설치높이(윗면)→y0
     d.querySelector('.x').onclick=()=>{S.furns.splice(i,1);compute();};
     el.appendChild(d);
   });
@@ -1222,6 +1231,7 @@ bind('fBed',()=>addFurn('bed'),'click');
 bind('fDesk',()=>addFurn('desk'),'click');
 bind('fShelf',()=>addFurn('shelf'),'click');
 bind('fWardrobe',()=>addFurn('wardrobe'),'click');
+bind('fRack',()=>addFurn('rack'),'click');
 bind('fDemo',demoRoom,'click');
 bind('fClear',()=>{S.furns=[];compute();},'click');
 bind('btnDraw',()=>{ if(S.draw.active) exitDraw(false); else enterDraw(false); },'click');
