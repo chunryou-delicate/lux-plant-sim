@@ -261,7 +261,7 @@ const S = {
   Emin:0,Emax:0,Eavg:0,Uni:0,
   view:'3d', heat:true, selected:-1,
   poly:null, mask:[], bb:null,       // 커스텀 방(자유형 폴리곤), 격자 마스크, 바운딩
-  draw:{active:false, pts:[]},       // 방 그리기 모드
+  draw:{active:false, pts:[], extend:false},   // 방 그리기 모드 (extend=이어그리기 시작점 선택 중)
   snapPt:true,                       // 포인트(꼭짓점) 스냅 on/off
   cct:4000,                          // 색온도(K) — 3D 조명 표시색
   windows:[], sky:8000, showDaylight:true, winPlace:false  // 자연광(창): 창목록, 천공조도(lx)
@@ -823,6 +823,7 @@ function resize(){
 }
 // ===== 방 그리기 (자유형 폴리곤) =====
 let drawLine=null;
+let winPreview=null;
 // 화면 → 바닥(y=0) 평면 교점 (스냅 전 원좌표)
 function rawPlanePoint(e){
   const cv=document.getElementById('cv'); const rect=cv.getBoundingClientRect();
@@ -896,8 +897,10 @@ function setViewButtons(){
 }
 function enterDraw(fromExisting){
   S.draw.active=true; S.view='top'; setViewButtons();
-  S.draw.pts = (fromExisting && S.poly && S.poly.length>=3) ? S.poly.map(v=>({x:v.x,z:v.z})) : [];
-  document.getElementById('vpBadge').textContent='방 그리기 · 클릭으로 꼭짓점';
+  const has = fromExisting && S.poly && S.poly.length>=3;
+  S.draw.pts = has ? S.poly.map(v=>({x:v.x,z:v.z})) : [];
+  S.draw.extend = !!has;   // 이어그리기면 첫 클릭으로 '이어갈 꼭짓점' 선택
+  document.getElementById('vpBadge').textContent = has ? '이어그리기 · 이어갈 꼭짓점 클릭' : '방 그리기 · 클릭으로 꼭짓점';
   document.getElementById('btnDraw').textContent='그리는 중 · 시작점/더블클릭=완료 · Esc=취소';
   document.getElementById('drawNote').style.display='block';
   updateDrawPreview(null);
@@ -916,19 +919,39 @@ function exitDraw(commit){
 }
 // 창 배치 모드 종료(UI 리셋)
 function endWinPlace(){ S.winPlace=false;
+  if(winPreview){ scene.remove(winPreview); winPreview=null; }
   const n=document.getElementById('winNote'); if(n) n.style.display='none';
   const b=document.getElementById('btnWinAdd'); if(b) b.textContent='＋ 창 추가 (벽 클릭)';
   document.getElementById('vpBadge').textContent=(S.view==='top')?'평면 (TOP)':'3D 투시'; }
+// 이어그리기: 선택 꼭짓점을 체인 끝으로 재정렬 (거기서부터 이어감)
+function reorderFrom(idx){ const p=S.draw.pts; S.draw.pts=p.slice(idx+1).concat(p.slice(0,idx+1)); }
+// 창 배치 미리보기 (마우스 올린 벽에 고스트 창)
+function updateWinPreview(p){
+  if(winPreview){ scene.remove(winPreview); winPreview=null; }
+  const ne=nearestEdge(p.x,p.z); if(ne.edge<0||ne.dist>=1.6) return;
+  const gw=windowRect({edge:ne.edge,t:ne.t,width:1.5,sill:0.9,head:2.1});
+  const ww=gw.s1-gw.s0, wh=gw.head-gw.sill; if(ww<=0||wh<=0) return;
+  const cs=gw.s0+ww/2, cx=gw.A.x+gw.dx*cs, cz=gw.A.z+gw.dz*cs, cy=(gw.sill+gw.head)/2;
+  winPreview=new THREE.Mesh(new THREE.PlaneGeometry(ww,wh),
+    new THREE.MeshBasicMaterial({color:0x9fd0e8,transparent:true,opacity:0.4,side:THREE.DoubleSide}));
+  winPreview.rotation.y=Math.atan2(gw.nx,gw.nz); winPreview.position.set(cx,cy,cz); scene.add(winPreview);
+}
 
 // 오빗 + 조명 드래그
 function bindOrbit(){
   const cv=document.getElementById('cv');
   let mode=null,px=0,py=0,dragLum=-1;
   cv.addEventListener('mousedown',e=>{
+    if(e.button===2) return;   // 우클릭은 contextmenu(뒤로가기)에 맡김 — 점 추가 금지
     if(S.winPlace){ const p=rawPlanePoint(e); if(p){ const ne=nearestEdge(p.x,p.z);
       if(ne.edge>=0 && ne.dist<1.6){ S.windows.push({edge:ne.edge,t:ne.t,width:1.5,sill:0.9,head:2.1});
         endWinPlace(); buildRoom(); compute(); } } return; }
     if(S.draw.active){ const p=drawPlanePoint(e); if(p){
+      if(S.draw.extend){   // 이어그리기: 이어갈 꼭짓점 선택 → 그 점을 끝으로 재정렬 후 이어감
+        let bi=-1,bd=0.6; S.draw.pts.forEach((v,i)=>{const d=Math.hypot(p.x-v.x,p.z-v.z);if(d<bd){bd=d;bi=i;}});
+        if(bi>=0) reorderFrom(bi);
+        S.draw.extend=false; updateDrawPreview(null); return;
+      }
       if(S.draw.pts.length>=3){ const s=S.draw.pts[0]; if(Math.hypot(p.x-s.x,p.z-s.z)<0.4){ exitDraw(true); return; } }
       S.draw.pts.push(p); updateDrawPreview(null);
     } return; }
@@ -942,6 +965,7 @@ function bindOrbit(){
     else{ mode='orbit'; px=e.clientX; py=e.clientY; }
   });
   window.addEventListener('mousemove',e=>{
+    if(S.winPlace){ const p=rawPlanePoint(e); if(p) updateWinPreview(p); return; }
     if(S.draw.active){ const p=drawPlanePoint(e); if(p){ updateDrawPreview(p); updateDrawTip(e,p); } return; }
     if(mode==='orbit'){
       orbit.az-=(e.clientX-px)*0.008; orbit.el+=(e.clientY-py)*0.008;
