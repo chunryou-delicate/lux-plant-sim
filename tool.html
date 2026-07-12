@@ -838,15 +838,28 @@ function updateDrawTip(e, p){
     tip.textContent=`x ${p.x.toFixed(2)}  z ${p.z.toFixed(2)}`;
   }
 }
+// 그리기 미리보기용 반투명 벽 한 장 (a→b, 높이 H)
+function drawWallQuad(a,b,H,opacity){
+  const geo=new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.Float32BufferAttribute([
+    a.x,0,a.z,  b.x,0,b.z,  b.x,H,b.z,
+    a.x,0,a.z,  b.x,H,b.z,  a.x,H,a.z ],3));
+  return new THREE.Mesh(geo, new THREE.MeshBasicMaterial({color:0xf4f2eb,transparent:true,opacity,side:THREE.DoubleSide}));
+}
 function updateDrawPreview(cur){
   if(drawLine){ scene.remove(drawLine); drawLine=null; }
-  const g=new THREE.Group();
-  const line=S.draw.pts.map(p=>new THREE.Vector3(p.x,0.02,p.z));
+  const g=new THREE.Group(); const pts=S.draw.pts, H=S.H;
+  // 확정 벽 (찍은 점들 사이) — 실시간으로 서 있게
+  for(let i=0;i+1<pts.length;i++) g.add(drawWallQuad(pts[i],pts[i+1],H,0.28));
+  // 미확정 벽 (마지막 점 → 커서) — 더 옅게
+  if(cur && pts.length>=1) g.add(drawWallQuad(pts[pts.length-1],cur,H,0.13));
+  // 바닥 라인
+  const line=pts.map(p=>new THREE.Vector3(p.x,0.02,p.z));
   if(cur) line.push(new THREE.Vector3(cur.x,0.02,cur.z));
   if(line.length>=1) g.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(line),
     new THREE.LineBasicMaterial({color:0xe8a838})));
   // 꼭짓점 점 + 시작점 강조(빨강)
-  S.draw.pts.forEach((p,i)=>{
+  pts.forEach((p,i)=>{
     const s=new THREE.Mesh(new THREE.SphereGeometry(i===0?0.13:0.07,10,10),
       new THREE.MeshBasicMaterial({color:i===0?0xc0524a:0xe8a838}));
     s.position.set(p.x,0.03,p.z); g.add(s);
