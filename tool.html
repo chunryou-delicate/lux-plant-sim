@@ -267,6 +267,29 @@ const S = {
   windows:[], sky:8000, showDaylight:true, winPlace:false  // 자연광(창): 창목록, 천공조도(lx)
 };
 
+// ===== 방 데이터 구조 (나중 문·통로·다중방 대비, 지금은 방 1개만 사용) =====
+// S.rooms = 소스오브트루스. 각 방 = {poly, walls[{a,b,openings[]}]}.
+// S.poly 는 S.rooms[0].poly 의 '별칭' → 기존 엔진(pointIllum/daylightAt)이
+// S.poly 를 그대로 읽어도 새 구조를 가리킴 (엔진 로직 무수정).
+S.rooms=[{ poly:null, walls:[] }];
+Object.defineProperty(S,'poly',{ configurable:true,
+  get(){ return S.rooms[0].poly; },
+  set(v){ S.rooms[0].poly=v; } });
+// 폴리곤 외곽선 → 벽 배열(변마다 openings 빈 리스트). 창은 openings 로 흡수(미러).
+function buildWalls(poly, windows){
+  if(!poly) return [];
+  const walls=poly.map((a,i)=>{
+    const b=poly[(i+1)%poly.length];
+    return { a:{x:a.x,z:a.z}, b:{x:b.x,z:b.z}, openings:[] };
+  });
+  for(const w of (windows||[])){
+    if(walls[w.edge]) walls[w.edge].openings.push({type:'window', t:w.t, width:w.width, sill:w.sill, head:w.head, ref:w});
+  }
+  return walls;
+}
+// 방 구조 동기화: poly/windows → S.rooms[0].walls(+openings). (지금은 방 1개)
+function syncRooms(){ S.rooms[0].walls = buildWalls(S.rooms[0].poly, S.windows); }
+
 // ============ 폴리곤(자유형 방) 기하 ============
 function rectPoly(){ return [{x:0,z:0},{x:S.W,z:0},{x:S.W,z:S.D},{x:0,z:S.D}]; }
 function polyBBox(p){ let a=Infinity,b=Infinity,c=-Infinity,d=-Infinity;
@@ -462,6 +485,7 @@ function indirectComponent(){
 function compute(){
   const P=S.poly||rectPoly();
   const bb=polyBBox(P); S.bb=bb;
+  syncRooms();   // 방 구조(S.rooms) 동기화 — 벽·openings 갱신 (엔진은 S.poly 별칭 사용)
   const N=S.gridN;
   const dx=(bb.maxx-bb.minx)/N, dz=(bb.maxz-bb.minz)/N;
   const wpY=S.WP;
