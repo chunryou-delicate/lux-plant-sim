@@ -170,6 +170,8 @@
         </select>
       </div>
       <div class="row"><label>유지율 MF</label><input type="range" id="lMF" min="0.5" max="1" step="0.01" value="0.8"><span class="val" id="lMFv">0.80</span></div>
+      <div class="row"><label>색온도 (K)</label><input type="range" id="lCCT" min="2700" max="6500" step="100" value="4000"><span class="val" id="lCCTv">4000</span></div>
+      <div class="note" style="margin-top:2px">따뜻함(2700) ↔ 시원함(6500). 표시색만 바뀜(조도값 무관)</div>
     </div>
 
     <div class="sec">
@@ -250,7 +252,8 @@ const S = {
   view:'3d', heat:true, selected:-1,
   poly:null, mask:[], bb:null,       // 커스텀 방(자유형 폴리곤), 격자 마스크, 바운딩
   draw:{active:false, pts:[]},       // 방 그리기 모드
-  snapPt:true                        // 포인트(꼭짓점) 스냅 on/off
+  snapPt:true,                       // 포인트(꼭짓점) 스냅 on/off
+  cct:4000                           // 색온도(K) — 3D 조명 표시색
 };
 
 // ============ 폴리곤(자유형 방) 기하 ============
@@ -324,6 +327,22 @@ function lumAim(L, cen){
   let dx=cen.x-L.x, dz=cen.z-L.z; const h=Math.hypot(dx,dz)||1; dx/=h; dz/=h;
   const a=[dx,-0.35,dz], al=Math.hypot(a[0],a[1],a[2])||1; return [a[0]/al,a[1]/al,a[2]/al];
 }
+// 조명 종류별 배광(candela 분포). 매립=협각 다운라이트, 상부/펜던트=전역 배광.
+function lumDist(L){
+  const t=L.type||'ceiling';
+  if(t==='recessed') return 'narrow';       // 매립 = 집중 다운라이트
+  if(t==='wall'||t==='pillar') return 'wide';
+  if(t==='furniture') return 'lambert';
+  return S.dist;                             // 상부/펜던트 = 배광 설정 따름
+}
+// 색온도(K) → RGB 근사 (Tanner Helland). 3D 표시색용.
+function cctToColor(k){
+  k=Math.max(1000,Math.min(40000,k))/100; let r,g,b;
+  if(k<=66){ r=255; g=99.4708*Math.log(k)-161.12; } else { r=329.698*Math.pow(k-60,-0.1332); g=288.122*Math.pow(k-60,-0.0755); }
+  if(k>=66) b=255; else if(k<=19) b=0; else b=138.518*Math.log(k-10)-305.045;
+  const cl=v=>Math.max(0,Math.min(255,v))/255;
+  return new THREE.Color(cl(r),cl(g),cl(b));
+}
 function pointIllum(px,py,pz, nx,ny,nz, I0, selfFurn){
   let e=0;
   const cen=polyCentroid(S.poly||rectPoly());
@@ -336,8 +355,9 @@ function pointIllum(px,py,pz, nx,ny,nz, I0, selfFurn){
     if(cosBeam<=0) continue;                       // 점이 빔 뒤쪽
     const cosInc=(-wx*nx - wy*ny - wz*nz)/dist;    // 점→조명 vs 표면법선(입사각)
     if(cosInc<=0) continue;                        // 빛이 뒷면
+    const dtype=lumDist(L);
     const theta=Math.acos(Math.min(1,cosBeam));
-    const I=I0*candela(theta,S.dist);
+    const I=(S.axCache?S.axCache[dtype]:I0)*candela(theta,dtype);   // 종류별 배광
     if(S.showShadow && S.furns.length){
       if(isShadowedEx(px,py,pz, L.x,ly,L.z, selfFurn)) continue;
     }
@@ -387,6 +407,7 @@ function compute(){
   const dx=(bb.maxx-bb.minx)/N, dz=(bb.maxz-bb.minz)/N;
   const wpY=S.WP;
   const I0=axialIntensity(S.flux,S.dist)*S.MF;
+  S.axCache={}; for(const d of ['lambert','narrow','wide','iso']) S.axCache[d]=axialIntensity(S.flux,d)*S.MF;  // 배광별 축상광도
   const Eindir=indirectComponent();
 
   // --- 작업면 (법선 +y). 방(폴리곤) 안쪽 셀만 집계 ---
@@ -580,24 +601,41 @@ function buildRoom(){
 }
 function rebuildLums(){
   while(lumGroup.children.length) lumGroup.remove(lumGroup.children[0]);
+  const cctCol=cctToColor(S.cct);
+  const cen=polyCentroid(S.poly||rectPoly());
+  const supMat=new THREE.MeshBasicMaterial({color:0x555049});
   S.lums.forEach((L,idx)=>{
+    const t=L.type||'ceiling', ly=lumHeight(L), sel=idx===S.selected;
     const g=new THREE.Group();
-    const sel=idx===S.selected;
-    const ly=lumHeight(L);
-    const bulb=new THREE.Mesh(new THREE.SphereGeometry(0.13,16,16),
-      new THREE.MeshBasicMaterial({color:sel?0xffffff:0xe8a838}));
-    bulb.position.set(L.x,ly-0.05,L.z);
-    bulb.userData.lumIndex=idx;
-    g.add(bulb);
-    // 광원 콘 (배광 힌트)
-    const cone=new THREE.Mesh(new THREE.ConeGeometry(0.5,0.5,16,1,true),
-      new THREE.MeshBasicMaterial({color:0xe8a838,transparent:true,opacity:sel?0.35:0.16,side:THREE.DoubleSide}));
-    cone.position.set(L.x,ly-0.3,L.z);
-    g.add(cone);
-    // 낙하선 (조명 높이 → 작업면)
-    const lg=new THREE.BufferGeometry().setFromPoints([
-      new THREE.Vector3(L.x,ly,L.z),new THREE.Vector3(L.x,S.WP,L.z)]);
-    g.add(new THREE.Line(lg,new THREE.LineBasicMaterial({color:0xe8a838,transparent:true,opacity:0.25})));
+    // 종류별 지지구조 (안 떠있게)
+    if(t==='pillar'){                                   // 바닥에서 올라오는 기둥 + 베이스
+      const pole=new THREE.Mesh(new THREE.CylinderGeometry(0.03,0.03,Math.max(0.05,ly),8),supMat);
+      pole.position.set(L.x,ly/2,L.z); g.add(pole);
+      const base=new THREE.Mesh(new THREE.CylinderGeometry(0.18,0.22,0.05,16),supMat);
+      base.position.set(L.x,0.03,L.z); g.add(base);
+    } else if(t==='ceiling' && ly<S.H-0.05){            // 펜던트 매달림 봉 (천장→조명)
+      const rod=new THREE.Mesh(new THREE.CylinderGeometry(0.015,0.015,Math.max(0.05,S.H-ly),6),supMat);
+      rod.position.set(L.x,(S.H+ly)/2,L.z); g.add(rod);
+      const canopy=new THREE.Mesh(new THREE.CylinderGeometry(0.05,0.05,0.03,10),supMat);
+      canopy.position.set(L.x,S.H-0.015,L.z); g.add(canopy);
+    } else if(t==='recessed'){                          // 천장 매립 링
+      const ring=new THREE.Mesh(new THREE.CylinderGeometry(0.17,0.17,0.03,18),
+        new THREE.MeshBasicMaterial({color:0xcfc8ba}));
+      ring.position.set(L.x,S.H-0.015,L.z); g.add(ring);
+    } else if(t==='wall'){                              // 벽 브래킷(벽쪽으로)
+      let dx=L.x-cen.x, dz=L.z-cen.z; const hl=Math.hypot(dx,dz)||1; dx/=hl; dz/=hl;
+      const plate=new THREE.Mesh(new THREE.BoxGeometry(0.16,0.26,0.05),supMat);
+      plate.position.set(L.x+dx*0.12, ly, L.z+dz*0.12); g.add(plate);
+    }
+    // 전구
+    const bulb=new THREE.Mesh(new THREE.SphereGeometry(t==='recessed'?0.1:0.12,16,16),
+      new THREE.MeshBasicMaterial({color:sel?0xffffff:cctCol.getHex()}));
+    bulb.position.set(L.x,ly-(t==='recessed'?0.02:0.05),L.z);
+    bulb.userData.lumIndex=idx; g.add(bulb);
+    // 빔 콘 (배광 힌트, 색온도 반영). 매립은 좁게.
+    const cone=new THREE.Mesh(new THREE.ConeGeometry(t==='recessed'?0.3:0.48,0.5,16,1,true),
+      new THREE.MeshBasicMaterial({color:cctCol.getHex(),transparent:true,opacity:sel?0.4:0.18,side:THREE.DoubleSide}));
+    cone.position.set(L.x,ly-0.28,L.z); g.add(cone);
     lumGroup.add(g);
   });
 }
@@ -868,6 +906,7 @@ bind('reF',()=>{S.rho.f=num('reF');document.getElementById('reFv').textContent=S
 bind('lFlux',()=>{S.flux=num('lFlux');compute();});
 bind('lDist',()=>{S.dist=document.getElementById('lDist').value;compute();});
 bind('lMF',()=>{S.MF=num('lMF');document.getElementById('lMFv').textContent=S.MF.toFixed(2);compute();});
+bind('lCCT',()=>{S.cct=num('lCCT');document.getElementById('lCCTv').textContent=S.cct;if(typeof renderer!=='undefined'&&renderer)rebuildLums();});
 bind('tgt',()=>{S.target=num('tgt');updateMetrics();});
 bind('bounces',()=>{S.bounces=num('bounces');document.getElementById('bouncesv').textContent=S.bounces;
   document.getElementById('pillBounce').className='pill'+(S.bounces>0?' on':'');
