@@ -103,10 +103,8 @@
   <!-- LEFT: 공간 & 재료 -->
   <div class="panel left">
     <div class="sec">
-      <div class="h">공간 치수 <span class="n">ROOM</span></div>
+      <div class="h">공간 · 방 <span class="n">ROOM</span></div>
       <div class="grid2">
-        <div class="field"><span>가로 W (m)</span><input type="number" id="rW" value="8" min="2" max="30" step="0.1"></div>
-        <div class="field"><span>세로 D (m)</span><input type="number" id="rD" value="6" min="2" max="30" step="0.1"></div>
         <div class="field"><span>천장고 H (m)</span><input type="number" id="rH" value="2.8" min="2" max="6" step="0.1"></div>
         <div class="field"><span>작업면 (m)</span><input type="number" id="rWP" value="0.75" min="0" max="2" step="0.05"></div>
       </div>
@@ -116,9 +114,7 @@
       </div>
       <div class="row" style="margin-top:7px"><label>포인트 스냅 (꼭짓점 흡착)</label><span class="pill on" id="pillSnap">ON</span></div>
       <div class="note" id="drawNote" style="margin-top:4px;display:none">클릭=꼭짓점 · <b>Shift=직각</b> · 우클릭/Backspace=한 점 취소 · 시작점/더블클릭=완료 · Esc=전체취소</div>
-      <div class="row" style="margin-top:9px"><label>수치 입력 (좌표 x,z)</label><button class="ghost" id="btnPolyLoad" style="flex:0 0 62px;padding:4px 6px">현재값</button></div>
-      <textarea id="polyInput" rows="3" placeholder="0,0&#10;4,0&#10;4,3&#10;0,3" style="width:100%;font-family:var(--mono);font-size:10px;padding:5px;border:1px solid var(--line2);border-radius:2px;resize:vertical;background:#fff"></textarea>
-      <button class="wide ghost" id="btnPolyApply" style="margin-top:5px">좌표로 방 만들기</button>
+      <div class="note" style="margin-top:5px">방 모양은 <b>그리기</b>로 정의해요 (사각형만이 아님).</div>
     </div>
 
     <div class="sec">
@@ -253,6 +249,7 @@ function polyPerim(p){ let s=0; for(let i=0;i<p.length;i++){ const a=p[i],b=p[(i
 function pointInPoly(x,z,p){ let inside=false; for(let i=0,j=p.length-1;i<p.length;j=i++){
   const xi=p[i].x,zi=p[i].z,xj=p[j].x,zj=p[j].z;
   if(((zi>z)!==(zj>z)) && (x < (xj-xi)*(z-zi)/((zj-zi)||1e-9)+xi)) inside=!inside; } return inside; }
+function polyCentroid(p){ let x=0,z=0; for(const v of p){ x+=v.x; z+=v.z; } return {x:x/p.length, z:z/p.length}; }
 
 // ============ 배광 함수 (수직 하방 대비 각 θ 의 상대 광도) ============
 function candela(theta, type){
@@ -301,28 +298,37 @@ function isShadowed(px,py,pz, lx,ly,lz){
 
 // ============ 범용 조도: 임의 점 P(px,py,pz) + 표면법선 n(nx,ny,nz) 의 직접조도 ============
 // selfKey: 자기 자신 표면 그림자 자가차폐 방지용 (해당 가구 인덱스), null이면 전체 검사
+// 조명 종류별 설치 높이(y). L.h 있으면 그 값.
+function lumHeight(L){
+  if(L.h!=null) return L.h;
+  const t=L.type||'ceiling';
+  return t==='wall'?1.8 : t==='pillar'?1.5 : t==='furniture'?0.5 : S.H;  // 상부/매립=천장고
+}
+// 조명 종류별 조사(빔) 축. 벽조명만 방 중심 향해 수평+약간 하향.
+function lumAim(L, cen){
+  const t=L.type||'ceiling';
+  if(t!=='wall') return [0,-1,0];   // 상부·매립·기둥·가구 = 하방
+  let dx=cen.x-L.x, dz=cen.z-L.z; const h=Math.hypot(dx,dz)||1; dx/=h; dz/=h;
+  const a=[dx,-0.35,dz], al=Math.hypot(a[0],a[1],a[2])||1; return [a[0]/al,a[1]/al,a[2]/al];
+}
 function pointIllum(px,py,pz, nx,ny,nz, I0, selfFurn){
   let e=0;
+  const cen=polyCentroid(S.poly||rectPoly());
   for(const L of S.lums){
-    // 점 → 조명 방향 벡터
-    const wx=L.x-px, wy=S.H-py, wz=L.z-pz;
-    const dist2=wx*wx+wy*wy+wz*wz;
-    const dist=Math.sqrt(dist2);
+    const ly=lumHeight(L), aim=lumAim(L,cen);
+    const wx=px-L.x, wy=py-ly, wz=pz-L.z;         // 조명 → 점
+    const dist2=wx*wx+wy*wy+wz*wz, dist=Math.sqrt(dist2);
     if(dist<1e-4) continue;
-    const ux=wx/dist, uy=wy/dist, uz=wz/dist;   // 점→조명 단위벡터
-    // 표면 입사각: 표면법선 n 과 점→조명 방향의 코사인
-    const cosInc = nx*ux+ny*uy+nz*uz;
-    if(cosInc<=0) continue;                       // 빛이 뒷면 → 조도 0
-    // 조명 배광각 θ: 조명 광축(하방 -y)과 조명→점 방향 사이 각
-    const cosTheta=(S.H-py)/dist;                 // 조명→점 의 하방 성분
-    if(cosTheta<=0) continue;
-    const theta=Math.acos(Math.min(1,cosTheta));
+    const cosBeam=(wx*aim[0]+wy*aim[1]+wz*aim[2])/dist;   // 빔축 대비(배광각)
+    if(cosBeam<=0) continue;                       // 점이 빔 뒤쪽
+    const cosInc=(-wx*nx - wy*ny - wz*nz)/dist;    // 점→조명 vs 표면법선(입사각)
+    if(cosInc<=0) continue;                        // 빛이 뒷면
+    const theta=Math.acos(Math.min(1,cosBeam));
     const I=I0*candela(theta,S.dist);
-    // 그림자 (가구 차폐). 자기 표면이 속한 가구는 제외
     if(S.showShadow && S.furns.length){
-      if(isShadowedEx(px,py,pz, L.x,S.H,L.z, selfFurn)) continue;
+      if(isShadowedEx(px,py,pz, L.x,ly,L.z, selfFurn)) continue;
     }
-    e += I*cosInc/dist2;                          // E = I·cos(입사각)/d²
+    e += I*cosInc/dist2;                           // E = I·cos(입사각)/d²
   }
   return e;
 }
@@ -519,6 +525,7 @@ function buildRoom(){
   const P=S.poly||rectPoly(); const H=S.H;
   const bb=polyBBox(P);
   const wbb=(bb.maxx-bb.minx)||1, dbb=(bb.maxz-bb.minz)||1;
+  S.W=+wbb.toFixed(2); S.D=+dbb.toFixed(2);   // 바운딩 크기 동기화(가구 기본배치 등 참조)
 
   // 바닥/작업면 = 폴리곤 Shape + 히트맵 텍스처 (UV=bbox 정규화)
   const shape=new THREE.Shape(P.map(v=>new THREE.Vector2(v.x,v.z)));
@@ -563,19 +570,20 @@ function rebuildLums(){
   S.lums.forEach((L,idx)=>{
     const g=new THREE.Group();
     const sel=idx===S.selected;
+    const ly=lumHeight(L);
     const bulb=new THREE.Mesh(new THREE.SphereGeometry(0.13,16,16),
       new THREE.MeshBasicMaterial({color:sel?0xffffff:0xe8a838}));
-    bulb.position.set(L.x,S.H-0.05,L.z);
+    bulb.position.set(L.x,ly-0.05,L.z);
     bulb.userData.lumIndex=idx;
     g.add(bulb);
     // 광원 콘 (배광 힌트)
     const cone=new THREE.Mesh(new THREE.ConeGeometry(0.5,0.5,16,1,true),
       new THREE.MeshBasicMaterial({color:0xe8a838,transparent:true,opacity:sel?0.35:0.16,side:THREE.DoubleSide}));
-    cone.position.set(L.x,S.H-0.3,L.z);
+    cone.position.set(L.x,ly-0.3,L.z);
     g.add(cone);
-    // 낙하선
+    // 낙하선 (조명 높이 → 작업면)
     const lg=new THREE.BufferGeometry().setFromPoints([
-      new THREE.Vector3(L.x,S.H,L.z),new THREE.Vector3(L.x,S.WP,L.z)]);
+      new THREE.Vector3(L.x,ly,L.z),new THREE.Vector3(L.x,S.WP,L.z)]);
     g.add(new THREE.Line(lg,new THREE.LineBasicMaterial({color:0xe8a838,transparent:true,opacity:0.25})));
     lumGroup.add(g);
   });
@@ -736,9 +744,6 @@ function enterDraw(fromExisting){
 function exitDraw(commit){
   if(commit && S.draw.pts.length>=3){
     S.poly=S.draw.pts.slice();
-    const bb=polyBBox(S.poly);
-    S.W=+(bb.maxx-bb.minx).toFixed(2); S.D=+(bb.maxz-bb.minz).toFixed(2);
-    document.getElementById('rW').value=S.W; document.getElementById('rD').value=S.D;
     buildRoom(); compute();
   }
   S.draw.active=false; S.draw.pts=[];
@@ -799,16 +804,26 @@ function bindOrbit(){
 }
 
 // ============ 조명 목록 UI ============
+function lumHeightDefault(t){ return t==='wall'?1.8:t==='pillar'?1.5:t==='furniture'?0.5:S.H; }
+const LUM_TYPES=[['ceiling','상부/펜던트'],['recessed','매립'],['wall','벽'],['pillar','기둥/플로어'],['furniture','가구']];
 function renderLumList(){
   const el=document.getElementById('lumList'); el.innerHTML='';
   document.getElementById('lumN').textContent=S.lums.length;
   S.lums.forEach((L,i)=>{
+    if(!L.type) L.type='ceiling';
     const d=document.createElement('div');
-    d.className='lum-item'+(i===S.selected?' sel':'');
+    d.className='lum-item'+(i===S.selected?' sel':''); d.style.flexWrap='wrap';
+    const opts=LUM_TYPES.map(([v,t])=>`<option value="${v}"${v===L.type?' selected':''}>${t}</option>`).join('');
     d.innerHTML=`<span class="dot"></span><span class="id">L${String(i+1).padStart(2,'0')}</span>
-      <span class="xy">x ${L.x.toFixed(1)}  z ${L.z.toFixed(1)}</span><span class="x">×</span>`;
-    d.querySelector('.xy').onclick=()=>{S.selected=i;rebuildLums();renderLumList();};
+      <select class="lumType" style="flex:1;font-size:9px;padding:1px 2px">${opts}</select>
+      <span class="x">×</span>
+      <span class="xy" style="width:100%;margin-top:4px;display:flex;align-items:center;gap:4px">x ${L.x.toFixed(1)} z ${L.z.toFixed(1)} · 높이
+        <input class="lumH" type="number" value="${lumHeight(L).toFixed(2)}" step="0.1" min="0" max="6" style="width:48px;font-size:10px;padding:1px 3px"> m</span>`;
+    d.querySelector('.id').onclick=()=>{S.selected=i;rebuildLums();renderLumList();};
     d.querySelector('.x').onclick=()=>{S.lums.splice(i,1);if(S.selected>=i)S.selected--;compute();};
+    d.querySelector('.lumType').onchange=e=>{ const t=e.target.value; L.type=t;
+      L.h=(t==='ceiling'||t==='recessed')?null:lumHeightDefault(t); compute(); };  // 상부/매립은 천장고 추종
+    d.querySelector('.lumH').onchange=e=>{ L.h=+e.target.value; compute(); };
     el.appendChild(d);
   });
 }
@@ -821,7 +836,7 @@ function autoGrid(){
   S.lums=[];
   for(let r=0;r<rows;r++)for(let c=0;c<cols;c++){
     const x=bb.minx+(bb.maxx-bb.minx)*(c+0.5)/cols, z=bb.minz+(bb.maxz-bb.minz)*(r+0.5)/rows;
-    if(pointInPoly(x,z,P)) S.lums.push({x,z});
+    if(pointInPoly(x,z,P)) S.lums.push({x,z,type:'ceiling'});
   }
   S.selected=-1; compute();
 }
@@ -830,9 +845,8 @@ function autoGrid(){
 function bind(id,fn,ev='input'){ document.getElementById(id).addEventListener(ev,fn); }
 function num(id){return +document.getElementById(id).value;}
 
-['rW','rD','rH','rWP'].forEach(id=>bind(id,()=>{
-  S.W=num('rW');S.D=num('rD');S.H=num('rH');S.WP=num('rWP');
-  S.poly=rectPoly();   // 치수 입력 = 사각형으로 (그린 방 해제)
+['rH','rWP'].forEach(id=>bind(id,()=>{
+  S.H=num('rH'); S.WP=num('rWP');   // 방 모양(poly)은 유지, 높이/작업면만 갱신
   buildRoom(); compute();
 }));
 bind('reC',()=>{S.rho.c=num('reC');document.getElementById('reCv').textContent=S.rho.c.toFixed(2);compute();});
@@ -847,7 +861,7 @@ bind('bounces',()=>{S.bounces=num('bounces');document.getElementById('bouncesv')
   document.getElementById('pillBounce').textContent=S.bounces>0?'ON':'OFF';compute();});
 bind('gCol',()=>{});bind('gRow',()=>{});
 bind('btnGrid',autoGrid,'click');
-bind('btnAdd',()=>{S.lums.push({x:S.W/2,z:S.D/2});S.selected=S.lums.length-1;compute();},'click');
+bind('btnAdd',()=>{ const c=polyCentroid(S.poly||rectPoly()); S.lums.push({x:c.x,z:c.z,type:'ceiling'}); S.selected=S.lums.length-1; compute(); },'click');
 bind('btnClear',()=>{S.lums=[];S.selected=-1;compute();},'click');
 
 // 뷰 토글
@@ -909,19 +923,6 @@ bind('btnDraw',()=>{ if(S.draw.active) exitDraw(false); else enterDraw(false); }
 bind('btnDrawAdd',()=>{ if(S.draw.active) exitDraw(false); else enterDraw(true); },'click');
 bind('pillSnap',()=>{ S.snapPt=!S.snapPt; const el=document.getElementById('pillSnap');
   el.className='pill'+(S.snapPt?' on':''); el.textContent=S.snapPt?'ON':'OFF'; },'click');
-bind('btnPolyLoad',()=>{ const P=S.poly||rectPoly();
-  document.getElementById('polyInput').value=P.map(v=>v.x+','+v.z).join('\n'); },'click');
-bind('btnPolyApply',()=>{
-  const raw=document.getElementById('polyInput').value.trim();
-  const pts=raw.split(/[\n;]+/).map(l=>l.trim()).filter(Boolean).map(l=>{
-    const m=l.split(/[, \t]+/).map(Number); return {x:m[0],z:m[1]}; })
-    .filter(p=>Number.isFinite(p.x)&&Number.isFinite(p.z));
-  if(pts.length<3){ alert('꼭짓점 3개 이상 필요 (x,z 한 줄에 하나)'); return; }
-  S.poly=pts; const bb=polyBBox(pts);
-  S.W=+(bb.maxx-bb.minx).toFixed(2); S.D=+(bb.maxz-bb.minz).toFixed(2);
-  document.getElementById('rW').value=S.W; document.getElementById('rD').value=S.D;
-  buildRoom(); compute();
-},'click');
 bind('pillShadow',()=>{S.showShadow=!S.showShadow;
   const el=document.getElementById('pillShadow');
   el.className='pill'+(S.showShadow?' on':''); el.textContent=S.showShadow?'ON':'OFF';
