@@ -247,6 +247,10 @@
       <div class="h">식물 진단 <span class="n">PLANT</span></div>
       <div class="row"><label>식물</label><select id="plantSel" style="flex:1;font-size:11px;padding:3px"></select></div>
       <div class="row"><label>조사시간 (h)</label><input type="number" id="litHours" value="10" min="1" max="24" step="1" style="width:56px"></div>
+      <div class="btnrow" style="margin-top:6px">
+        <button class="ghost" id="btnPlantPlace" style="flex:1">＋ 여기 놓기 (바닥 클릭)</button>
+        <button class="ghost" id="btnPlantClear" style="flex:0 0 56px">치우기</button>
+      </div>
       <div id="plantVerdict" style="background:#fff;border:1px solid var(--line2);border-radius:2px;padding:9px 10px;margin:6px 0;font-size:13px;font-weight:600;line-height:1.4;color:#444">식물을 선택하세요</div>
       <div class="row"><label>정밀(PPFD) 보기</label><span class="pill" id="pillPPFD">OFF</span></div>
       <div class="row"><label>적합맵 (바닥색: 초록=적합)</label><span class="pill" id="pillFit">OFF</span></div>
@@ -278,7 +282,8 @@ const S = {
   draw:{active:false, pts:[], extend:false},   // 방 그리기 모드 (extend=이어그리기 시작점 선택 중)
   snapPt:true,                       // 포인트(꼭짓점) 스냅 on/off
   cct:4000,                          // 색온도(K) — 3D 조명 표시색
-  windows:[], sky:8000, showDaylight:true, winPlace:false  // 자연광(창): 창목록, 천공조도(lx)
+  windows:[], sky:8000, showDaylight:true, winPlace:false,  // 자연광(창): 창목록, 천공조도(lx)
+  plants:[], plantPlace:false, activePlant:-1               // ⑤-2 식물 마커(위치 가진 객체)
 };
 
 // ===== 방 데이터 구조 (나중 문·통로·다중방 대비, 지금은 방 1개만 사용) =====
@@ -475,8 +480,8 @@ function lumIllumAt(L, px,py,pz, nx,ny,nz){
   return I*cosInc/dist2;
 }
 function lightCoef(id){ const m=S.lightCoef||{}; return (id in m)? m[id] : 0.0149; }   // 미등록=백색LED 기본
-function ppfdAt(px,pz){
-  const py=S.WP;
+function ppfdAt(px,pz,py){
+  py=(py==null)?S.WP:py;   // 평가 높이(선반 위면 그 높이)
   let ppfd=(S.showDaylight? daylightAt(px,py,pz,0,1,0,null):0)*0.0185;   // 자연광 sunlight 계수(Apogee)
   for(const L of S.lums){
     const coef=lightCoef(L.src||'led_white_cool');
@@ -498,6 +503,17 @@ function computePPFD(){
   }}
   S.ppfdField=F; S.ppfdMax=cnt?mx:0; S.ppfdMin=cnt?mn:0; S.ppfdAvg=cnt?sum/cnt:0;
 }
+// (x,z) 위 선반(rack) 윗면 높이 (없으면 0=바닥)
+function shelfTopAt(x,z){
+  let top=0;
+  for(const F of S.furns){ if(!F.isShelf) continue;
+    const cx=F.x+F.w/2, cz=F.z+F.d/2, rot=F.rot||0, c=Math.cos(-rot), s=Math.sin(-rot);
+    const lx=(x-cx)*c-(z-cz)*s, lz=(x-cx)*s+(z-cz)*c;
+    if(Math.abs(lx)<=F.w/2 && Math.abs(lz)<=F.d/2){ const t=(F.y0||0)+F.h; if(t>top) top=t; }
+  }
+  return top;
+}
+function plantEvalY(pl){ return (pl.y&&pl.y>0.05)? pl.y+0.05 : S.WP; }   // 선반=그 높이, 바닥=작업면
 // selfFurn 인덱스의 가구는 차폐 검사에서 제외 (자기 면이 자기 몸통에 막히는 오류 방지)
 function isShadowedEx(px,py,pz, lx,ly,lz, selfFurn){
   for(let fi=0; fi<S.furns.length; fi++){
@@ -684,7 +700,7 @@ function drawHeat(){
 }
 
 // ============ THREE.js 3D ============
-let scene,cam,renderer,room,floorMesh,heatTex,lumGroup,furnGroup,raycaster,mouse;
+let scene,cam,renderer,room,floorMesh,heatTex,lumGroup,furnGroup,plantGroup,raycaster,mouse;
 let orbit={az:0.7,el:0.6,r:16,tx:0,ty:0,tz:0};
 function init3D(){
   const cv=document.getElementById('cv');
@@ -874,7 +890,27 @@ function camPos(){
     ty+r*Math.sin(el),
     tz+r*Math.cos(el)*Math.cos(az));
 }
-function render3D(){ if(renderer){ rebuildLums(); rebuildFurns(); } }
+function render3D(){ if(renderer){ rebuildLums(); rebuildFurns(); rebuildPlants(); } }
+// ⑤-2 식물 마커 렌더 (화분+잎)
+function rebuildPlants(){
+  if(!plantGroup){ plantGroup=new THREE.Group(); scene.add(plantGroup); }
+  while(plantGroup.children.length) plantGroup.remove(plantGroup.children[0]);
+  (S.plants||[]).forEach((pl,i)=>{
+    const g=new THREE.Group(), sel=(i===S.activePlant);
+    const pot=new THREE.Mesh(new THREE.CylinderGeometry(0.11,0.08,0.16,12), new THREE.MeshLambertMaterial({color:0xb87050}));
+    pot.position.y=0.08; g.add(pot);
+    const leaf=new THREE.Mesh(new THREE.SphereGeometry(0.15,10,8), new THREE.MeshLambertMaterial({color:sel?0x6fd36a:0x4f9a4f}));
+    leaf.position.y=0.28; leaf.scale.y=1.3; g.add(leaf);
+    if(sel){ const ring=new THREE.Mesh(new THREE.TorusGeometry(0.2,0.02,8,20), new THREE.MeshBasicMaterial({color:0xe8a838}));
+      ring.rotation.x=Math.PI/2; ring.position.y=0.02; g.add(ring); }
+    g.position.set(pl.x, pl.y||0, pl.z);
+    g.traverse(o=>{ if(o.isMesh) o.userData.plantIndex=i; });
+    plantGroup.add(g);
+  });
+}
+function endPlantPlace(){ S.plantPlace=false;
+  const b=document.getElementById('btnPlantPlace'); if(b) b.textContent='＋ 여기 놓기 (바닥 클릭)';
+  document.getElementById('vpBadge').textContent=(S.view==='top')?'평면 (TOP)':'3D 투시'; }
 function animate(){
   requestAnimationFrame(animate);
   if(S.view==='top'){
@@ -1036,7 +1072,7 @@ function updateExtendMarker(p){
 // 오빗 + 조명 드래그
 function bindOrbit(){
   const cv=document.getElementById('cv');
-  let mode=null,px=0,py=0,dragLum=-1,dragFurn=-1,dragOff={x:0,z:0},dragStartFurn={x:0,z:0},dblFurn={idx:-1,t:0};
+  let mode=null,px=0,py=0,dragLum=-1,dragFurn=-1,dragPlant=-1,dragOff={x:0,z:0},dragStartFurn={x:0,z:0},dblFurn={idx:-1,t:0};
   cv.addEventListener('mousedown',e=>{
     if(e.button===2) return;   // 우클릭은 contextmenu(뒤로가기)에 맡김 — 점 추가 금지
     if(S.winPlace){ const p=rawPlanePoint(e); if(p){ const ne=nearestEdge(p.x,p.z);
@@ -1060,6 +1096,15 @@ function bindOrbit(){
     mouse.x=((e.clientX-rect.left)/rect.width)*2-1;
     mouse.y=-((e.clientY-rect.top)/rect.height)*2+1;
     raycaster.setFromCamera(mouse,cam);
+    // ⑤-2 식물 놓기 모드 (선반 위면 그 높이로)
+    if(S.plantPlace){ const plane=new THREE.Plane(new THREE.Vector3(0,1,0),0), pt=new THREE.Vector3();
+      if(raycaster.ray.intersectPlane(plane,pt)){ const y=shelfTopAt(pt.x,pt.z);
+        S.plants.push({id:S.plantPlace, x:pt.x, z:pt.z, y}); S.activePlant=S.plants.length-1;
+        endPlantPlace(); rebuildPlants(); updatePlantDiagnose(); } return; }
+    // 식물 마커 픽킹(드래그)
+    const phits = plantGroup? raycaster.intersectObjects(plantGroup.children,true):[];
+    const ph=phits.find(h=>h.object.userData.plantIndex!==undefined);
+    if(ph){ dragPlant=ph.object.userData.plantIndex; S.activePlant=dragPlant; mode='plant'; rebuildPlants(); updatePlantDiagnose(); return; }
     const hits=raycaster.intersectObjects(lumGroup.children,true);
     const bulb=hits.find(h=>h.object.userData.lumIndex!==undefined);
     if(bulb){ dragLum=bulb.object.userData.lumIndex; S.selected=dragLum; mode='lum'; rebuildLums(); renderLumList(); }
@@ -1125,14 +1170,28 @@ function bindOrbit(){
         F.x=cx-F.w/2; F.z=cz-F.d/2;
         rebuildFurns();
       }
+    }else if(mode==='plant'&&dragPlant>=0){
+      const rect=cv.getBoundingClientRect();
+      mouse.x=((e.clientX-rect.left)/rect.width)*2-1;
+      mouse.y=-((e.clientY-rect.top)/rect.height)*2+1;
+      raycaster.setFromCamera(mouse,cam);
+      const plane=new THREE.Plane(new THREE.Vector3(0,1,0),0), pt=new THREE.Vector3();
+      if(raycaster.ray.intersectPlane(plane,pt)){
+        const bb=S.bb||polyBBox(S.poly||rectPoly()), pl=S.plants[dragPlant];
+        pl.x=Math.max(bb.minx,Math.min(bb.maxx,pt.x));
+        pl.z=Math.max(bb.minz,Math.min(bb.maxz,pt.z));
+        pl.y=shelfTopAt(pl.x,pl.z);   // 선반 위면 그 높이
+        rebuildPlants();
+      }
     }
   });
-  window.addEventListener('mouseup',()=>{ if(mode==='lum'||mode==='furn'){compute();} mode=null; dragLum=-1; dragFurn=-1; });
+  window.addEventListener('mouseup',()=>{ if(mode==='lum'||mode==='furn'){compute();} else if(mode==='plant'){updatePlantDiagnose();} mode=null; dragLum=-1; dragFurn=-1; dragPlant=-1; });
   cv.addEventListener('wheel',e=>{ e.preventDefault();
     orbit.r*=(1+Math.sign(e.deltaY)*0.08); orbit.r=Math.max(3,Math.min(60,orbit.r)); },{passive:false});
   cv.addEventListener('dblclick',()=>{ if(S.draw.active) exitDraw(true); });
   cv.addEventListener('contextmenu',e=>{ if(S.draw.active){ e.preventDefault(); S.draw.pts.pop(); updateDrawPreview(null); } });
   window.addEventListener('keydown',e=>{
+    if(S.plantPlace && e.key==='Escape'){ endPlantPlace(); return; }
     if(S.winPlace && e.key==='Escape'){ endWinPlace(); return; }
     if(!S.draw.active) return;
     if(e.key==='Escape') exitDraw(false);
@@ -1192,27 +1251,34 @@ function updatePlantDiagnose(){
   const sel=document.getElementById('plantSel'), vEl=document.getElementById('plantVerdict'), warn=document.getElementById('ppfdWarn');
   if(!sel||!vEl) return;
   if(warn){ if(S.ppfdPurple){ warn.style.display='block'; warn.textContent='⚠ 퍼플(적청) 식물등은 lux→PPFD 변환 불가 → 제품 표기 PPFD 직접 확인'; } else warn.style.display='none'; }
-  const p=plantById(sel.value);
-  if(!p){ vEl.textContent='식물을 선택하세요'; vEl.style.color='#444'; return; }
+  const active=(S.activePlant>=0 && S.plants[S.activePlant])? S.plants[S.activePlant] : null;
+  const p=active? plantById(active.id) : plantById(sel.value);
+  if(!p){ vEl.style.color='#444'; vEl.textContent=(S.plants&&S.plants.length)?'식물을 선택하세요':'식물 선택 후 ‹여기 놓기›로 자리에 놓아보세요'; return; }
   const hours=+(document.getElementById('litHours').value)||10;
-  const maxP=Math.round(S.ppfdMax||0), minP=Math.round(S.ppfdMin||0);
-  const dliMax=((S.ppfdMax||0)*hours*3600/1e6).toFixed(1);
-  let head, color; const pp=p.ppfd;
+  const spotP=active? ppfdAt(active.x,active.z,plantEvalY(active)) : null;
+  const where=active?'이 자리':'방';
+  const pp=p.ppfd; const pre=active?'이 자리, ':''; let head, color, ppfdTxt;
   if(pp && (pp[0]!=null||pp[2]!=null)){          // A층 (실측 PPFD)
     const pmin=pp[0]!=null?pp[0]:pp[1], pmax=pp[2]!=null?pp[2]:pp[1], popt=pp[1];
-    if((S.ppfdMax||0) < pmin){ head=`${p.ko}: 빛이 부족해요 🥶 (더 밝은 창가로)`; color='#c0524a'; }
-    else if((S.ppfdMin||0) > pmax){ head=`${p.ko}: 빛이 너무 세요 ⚠ (잎 탈 수 있어요)`; color='#c0524a'; }
-    else { const optHit = popt && (S.ppfdMax||0)>=popt*0.85 && (S.ppfdMin||0)<=popt*1.15;
-      head = optHit ? `${p.ko}: 딱 좋은 자리 있어요! ⭐` : `${p.ko}: 적합한 자리 있어요 ✅ (밝은 쪽)`; color='#3d8b52'; }
+    const hi=active?spotP:(S.ppfdMax||0), lo=active?spotP:(S.ppfdMin||0);
+    ppfdTxt=active?String(Math.round(spotP)):`${Math.round(S.ppfdMin||0)}~${Math.round(S.ppfdMax||0)}`;
+    if(hi<pmin){ head=pre+p.ko+' 빛이 부족해요 🥶'; color='#c0524a'; }
+    else if(lo>pmax){ head=pre+p.ko+' 빛이 너무 세요 ⚠ (잎 탐)'; color='#c0524a'; }
+    else { const optHit=popt && hi>=popt*0.85 && lo<=popt*1.15;
+      head = active ? ('이 자리, '+p.ko+(optHit?' 딱 좋아요! ⭐':' 적합 ✅'))
+                    : (p.ko+(optHit?' 딱 좋은 자리 있어요! ⭐':' 적합한 자리 있어요 ✅ (밝은 쪽)')); color='#3d8b52'; }
   } else if(p.level){                            // B층 (level만)
-    const b=levelBand(p.level);
-    if(b && (S.ppfdMax||0)>=b[0]){ head=`${p.ko}: 이 방 밝은 곳이면 대략 OK 👍 (정밀값 미확보)`; color='#3d8b52'; }
-    else { head=`${p.ko}: '${p.level}' 선호 — 대략 판정, 방 최대 ${maxP}µmol (정밀 미확보)`; color='#8a6d2e'; }
+    const b=levelBand(p.level), hi=active?spotP:(S.ppfdMax||0);
+    ppfdTxt=active?String(Math.round(spotP)):`~${Math.round(S.ppfdMax||0)}`;
+    if(b && hi>=b[0]){ head=pre+p.ko+' 대략 OK 👍 (정밀 미확보)'; color='#3d8b52'; }
+    else { head=p.ko+" '"+p.level+"' 선호 — 대략 판정 (정밀 미확보)"; color='#8a6d2e'; }
   } else {                                       // C층 (unknown)
-    head=`${p.ko}: 광요구 데이터가 없어요 🌱 (키우며 알아내는 실험 대상)`; color='#8a6d2e';
+    head=p.ko+': 광요구 데이터 없음 🌱 (실험 대상)'; color='#8a6d2e';
+    ppfdTxt=active?String(Math.round(spotP)):(S.ppfdMax?`~${Math.round(S.ppfdMax)}`:'?');
   }
   vEl.style.color=color;
-  const detail = S.showPPFDdetail ? `<div style="font-family:var(--mono);font-size:10px;color:#888;font-weight:400;margin-top:4px">방 PPFD ${minP}~${maxP} · DLI(최대) ${dliMax} · 적정 ${pp?((pp[0]!=null?pp[0]:'?')+'~'+(pp[2]!=null?pp[2]:'?')):(p.level||'?')}</div>` : '';
+  const dli=((active?spotP:(S.ppfdMax||0))*hours*3600/1e6).toFixed(1);
+  const detail = S.showPPFDdetail ? `<div style="font-family:var(--mono);font-size:10px;color:#888;font-weight:400;margin-top:4px">${where} PPFD ${ppfdTxt} · DLI ${dli} · 적정 ${pp?((pp[0]!=null?pp[0]:'?')+'~'+(pp[2]!=null?pp[2]:'?')):(p.level||'?')}</div>` : '';
   vEl.innerHTML=`<div>${head}</div>${detail}`;
 }
 
@@ -1280,6 +1346,12 @@ bind('btnAdd',()=>{ const c=polyCentroid(S.poly||rectPoly()); S.lums.push({x:c.x
 // ⑤ 식물 진단 바인딩
 bind('plantSel',()=>{ updatePlantDiagnose(); if(S.showFit){ drawHeat(); if(heatTex)heatTex.needsUpdate=true; } },'change');
 bind('litHours',()=>{ updatePlantDiagnose(); if(S.showFit){ drawHeat(); if(heatTex)heatTex.needsUpdate=true; } });
+bind('btnPlantPlace',()=>{ if(S.plantPlace){ endPlantPlace(); return; }
+  const sel=document.getElementById('plantSel'); if(!sel||!sel.value){ alert('먼저 식물을 선택하세요'); return; }
+  S.plantPlace=sel.value; S.view='top'; setViewButtons();
+  document.getElementById('btnPlantPlace').textContent='바닥/선반 클릭 (다시=취소)';
+  document.getElementById('vpBadge').textContent='식물 놓기 · 바닥/선반 클릭'; },'click');
+bind('btnPlantClear',()=>{ S.plants=[]; S.activePlant=-1; rebuildPlants(); updatePlantDiagnose(); },'click');
 bind('pillPPFD',()=>{ S.showPPFDdetail=!S.showPPFDdetail; const el=document.getElementById('pillPPFD'); el.className='pill'+(S.showPPFDdetail?' on':''); el.textContent=S.showPPFDdetail?'ON':'OFF'; updatePlantDiagnose(); },'click');
 bind('pillFit',()=>{ S.showFit=!S.showFit; const el=document.getElementById('pillFit'); el.className='pill'+(S.showFit?' on':''); el.textContent=S.showFit?'ON':'OFF'; drawHeat(); if(typeof render3D==='function') render3D(); },'click');
 bind('btnClear',()=>{S.lums=[];S.selected=-1;compute();},'click');
