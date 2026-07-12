@@ -224,7 +224,7 @@
       <button id="btnViewTop" class="ghost">평면</button>
       <button id="btnHeat" class="">히트맵</button>
     </div>
-    <div class="vp-hint" id="vpHint">드래그: 회전 · 휠: 줌 · 조명 클릭 후 드래그로 이동</div>
+    <div class="vp-hint" id="vpHint">드래그: 회전 · 휠: 줌 · 조명/가구 클릭 후 드래그로 이동</div>
     <div class="draw-tip" id="drawTip"></div>
   </div>
 
@@ -756,7 +756,7 @@ function rebuildFurns(){
   while(furnGroup.children.length) furnGroup.remove(furnGroup.children[0]);
   // 표면 히트맵 스케일: 바닥 Emax 와 공유(같은 색기준) 또는 표면 자체 최대
   const scaleMax = S.surfScaleMax>0 ? S.surfScaleMax : (S.Emax||1);
-  S.furns.forEach(F=>{
+  S.furns.forEach((F,fi)=>{
     const geo=new THREE.BoxGeometry(F.w,F.h,F.d);
     let mats;
     if(S.showSurf && F.faces){
@@ -776,6 +776,7 @@ function rebuildFurns(){
     }
     const m=new THREE.Mesh(geo,mats);
     m.position.set(F.x+F.w/2, F.h/2, F.z+F.d/2);
+    m.userData.furnIndex=fi;   // 드래그 픽킹용
     furnGroup.add(m);
     // 엣지
     const eg=new THREE.LineSegments(new THREE.EdgesGeometry(geo),
@@ -964,7 +965,7 @@ function updateExtendMarker(p){
 // 오빗 + 조명 드래그
 function bindOrbit(){
   const cv=document.getElementById('cv');
-  let mode=null,px=0,py=0,dragLum=-1;
+  let mode=null,px=0,py=0,dragLum=-1,dragFurn=-1;
   cv.addEventListener('mousedown',e=>{
     if(e.button===2) return;   // 우클릭은 contextmenu(뒤로가기)에 맡김 — 점 추가 금지
     if(S.winPlace){ const p=rawPlanePoint(e); if(p){ const ne=nearestEdge(p.x,p.z);
@@ -991,7 +992,12 @@ function bindOrbit(){
     const hits=raycaster.intersectObjects(lumGroup.children,true);
     const bulb=hits.find(h=>h.object.userData.lumIndex!==undefined);
     if(bulb){ dragLum=bulb.object.userData.lumIndex; S.selected=dragLum; mode='lum'; rebuildLums(); renderLumList(); }
-    else{ mode='orbit'; px=e.clientX; py=e.clientY; }
+    else{
+      const fhits=raycaster.intersectObjects(furnGroup.children,true);
+      const fh=fhits.find(h=>h.object.userData.furnIndex!==undefined);
+      if(fh){ dragFurn=fh.object.userData.furnIndex; mode='furn'; }
+      else{ mode='orbit'; px=e.clientX; py=e.clientY; }
+    }
   });
   window.addEventListener('mousemove',e=>{
     if(S.winPlace){ const p=rawPlanePoint(e); if(p) updateWinPreview(p); return; }
@@ -1015,9 +1021,21 @@ function bindOrbit(){
         S.lums[dragLum].z=Math.max(0,Math.min(S.D,pt.z));
         rebuildLums();
       }
+    }else if(mode==='furn'&&dragFurn>=0){
+      const rect=cv.getBoundingClientRect();
+      mouse.x=((e.clientX-rect.left)/rect.width)*2-1;
+      mouse.y=-((e.clientY-rect.top)/rect.height)*2+1;
+      raycaster.setFromCamera(mouse,cam);
+      const plane=new THREE.Plane(new THREE.Vector3(0,1,0),0);  // 바닥(y=0)에서 이동
+      const pt=new THREE.Vector3();
+      if(raycaster.ray.intersectPlane(plane,pt)){
+        const F=S.furns[dragFurn], bb=S.bb||polyBBox(S.poly||rectPoly());
+        const cx=Math.max(bb.minx,Math.min(bb.maxx,pt.x)), cz=Math.max(bb.minz,Math.min(bb.maxz,pt.z));
+        F.x=cx-F.w/2; F.z=cz-F.d/2; rebuildFurns();
+      }
     }
   });
-  window.addEventListener('mouseup',()=>{ if(mode==='lum'){compute();} mode=null; dragLum=-1; });
+  window.addEventListener('mouseup',()=>{ if(mode==='lum'||mode==='furn'){compute();} mode=null; dragLum=-1; dragFurn=-1; });
   cv.addEventListener('wheel',e=>{ e.preventDefault();
     orbit.r*=(1+Math.sign(e.deltaY)*0.08); orbit.r=Math.max(3,Math.min(60,orbit.r)); },{passive:false});
   cv.addEventListener('dblclick',()=>{ if(S.draw.active) exitDraw(true); });
