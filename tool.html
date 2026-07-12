@@ -275,7 +275,8 @@ function candela(theta, type){
   switch(type){
     case 'iso':    return 1;                    // 등방
     case 'lambert':return c;                    // 여현 (I = I0·cosθ)
-    case 'narrow': return Math.pow(c,6);        // 협각 집중
+    case 'narrow': return Math.pow(c,6);        // 협각 집중(스포트)
+    case 'down':   return Math.pow(c,3);        // 다운라이트(중간 집중) — 매립용
     case 'wide':   return Math.pow(c,0.4);      // 광각 확산
   }
   return c;
@@ -330,7 +331,7 @@ function lumAim(L, cen){
 // 조명 종류별 배광(candela 분포). 매립=협각 다운라이트, 상부/펜던트=전역 배광.
 function lumDist(L){
   const t=L.type||'ceiling';
-  if(t==='recessed') return 'narrow';       // 매립 = 집중 다운라이트
+  if(t==='recessed') return 'down';         // 매립 = 다운라이트(중간 집중, 스포트 아님)
   if(t==='wall'||t==='pillar') return 'wide';
   if(t==='furniture') return 'lambert';
   return S.dist;                             // 상부/펜던트 = 배광 설정 따름
@@ -407,7 +408,7 @@ function compute(){
   const dx=(bb.maxx-bb.minx)/N, dz=(bb.maxz-bb.minz)/N;
   const wpY=S.WP;
   const I0=axialIntensity(S.flux,S.dist)*S.MF;
-  S.axCache={}; for(const d of ['lambert','narrow','wide','iso']) S.axCache[d]=axialIntensity(S.flux,d)*S.MF;  // 배광별 축상광도
+  S.axCache={}; for(const d of ['lambert','narrow','down','wide','iso']) S.axCache[d]=axialIntensity(S.flux,d)*S.MF;  // 배광별 축상광도
   const Eindir=indirectComponent();
 
   // --- 작업면 (법선 +y). 방(폴리곤) 안쪽 셀만 집계 ---
