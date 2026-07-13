@@ -207,10 +207,17 @@ function buildPlant(){
       const np=par.pos.clone().addScaledVector(dv, inLen);
       all.push({pos:np, parent:par, order:k, az:Math.atan2(dv.x,dv.z)});
     }
+    // 서브트리 크기(이 마디 위로 달린 잎 수) → 줄기 굵기·우디색 (오래된 트렁크=굵음)
+    const kids={}; all.forEach(n=>kids[n.order]=[]);
+    all.forEach(n=>{ if(n.parent) kids[n.parent.order].push(n); });
+    const sub={};
+    for(let i=all.length-1;i>=0;i--){ const n=all[i]; let s=1; kids[n.order].forEach(c=>s+=sub[c.order]); sub[n.order]=s; }
     // 그리기: 각 마디 = 부모→자식 줄기 + 잎 하나
     for(const n of all){
       if(!n.parent) continue;
-      addStemSeg(n.parent.pos, n.pos, 0.05, 0);   // 굵기는 Step2(서브트리)에서
+      const st=sub[n.order];                              // 이 마디 위로 달린 잎 수
+      const r=0.036+0.02*Math.sqrt(Math.max(0,st-1));     // 많이 달릴수록 굵음
+      addStemSeg(n.parent.pos, n.pos, r, Math.min(1,(st-1)/8));
       const ageNorm=nLeaves>1?(nLeaves-n.order)/(nLeaves-1):1;   // 먼저 난 잎=오래됨(큼·성숙)
       const maturity=ageNorm*(0.35+0.65*gf);
       let emerge=1;
