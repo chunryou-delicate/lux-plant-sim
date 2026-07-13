@@ -1274,7 +1274,10 @@ function updatePlantDiagnose(){
     const pmin=pp[0]!=null?pp[0]:pp[1], pmax=pp[2]!=null?pp[2]:pp[1], popt=pp[1];
     const hi=active?spotP:(S.ppfdMax||0), lo=active?spotP:(S.ppfdMin||0);
     ppfdTxt=active?String(Math.round(spotP)):`${Math.round(S.ppfdMin||0)}~${Math.round(S.ppfdMax||0)}`;
-    if(hi<pmin){ head=pre+p.ko+' 빛이 부족해요 🥶'; color='#c0524a'; }
+    if(hi<pmin){
+      if(p.low_light_tol && hi>=pmin*0.5){ head=pre+p.ko+' 조금 아쉽지만 버텨요 🌱 (저광 내성·유지)'; color='#8a6d2e'; }
+      else { head=pre+p.ko+' 빛이 부족해요 🥶'; color='#c0524a'; }
+    }
     else if(lo>pmax){ head=pre+p.ko+' 빛이 너무 세요 ⚠ (잎 탐)'; color='#c0524a'; }
     else { const optHit=popt && hi>=popt*0.85 && lo<=popt*1.15;
       head = active ? ('이 자리, '+p.ko+(optHit?' 딱 좋아요! ⭐':' 적합 ✅'))
@@ -1299,10 +1302,13 @@ function judgePlant(p, ppfd){
   const pp=p.ppfd;
   if(pp && (pp[0]!=null||pp[2]!=null)){
     const pmin=pp[0]!=null?pp[0]:pp[1], pmax=pp[2]!=null?pp[2]:pp[1], popt=pp[1];
-    if(ppfd<pmin) return 'low'; if(ppfd>pmax) return 'high';
-    if(popt && Math.abs(ppfd-popt)<=popt*0.3) return 'opt'; return 'ok';
+    if(ppfd>pmax) return 'high';
+    if(ppfd>=pmin){ if(popt && Math.abs(ppfd-popt)<=popt*0.3) return 'opt'; return 'ok'; }
+    if(p.low_light_tol && ppfd>=pmin*0.5) return 'lowtol';   // 저광 내성: 유지·저성장(안 시듦)
+    return 'low';
   }
-  if(p.level){ const b=levelBand(p.level); if(b){ if(ppfd<b[0]*0.6) return 'low'; if(ppfd>b[1]*1.6) return 'high'; return 'ok'; } }
+  if(p.level){ const b=levelBand(p.level); if(b){ if(ppfd>b[1]*1.6) return 'high';
+    if(ppfd>=b[0]) return 'ok'; if(p.low_light_tol && ppfd>=b[0]*0.5) return 'lowtol'; return 'low'; } }
   return 'unknown';
 }
 function advanceDay(){
@@ -1313,6 +1319,7 @@ function advanceDay(){
     const ppfd=ppfdAt(pl.x,pl.z,plantEvalY(pl)), v=judgePlant(p,ppfd);
     if(v==='opt'){ pl.growth=Math.min(100,pl.growth+8); pl.health=Math.min(100,pl.health+5); }
     else if(v==='ok'){ pl.growth=Math.min(100,pl.growth+5); pl.health=Math.min(100,pl.health+2); }
+    else if(v==='lowtol'){ pl.growth=Math.min(100,pl.growth+2); }   // 저광 내성: 유지·저성장(건강 안 깎임)
     else if(v==='low'){ pl.growth=Math.min(100,pl.growth+1); pl.health=Math.max(0,pl.health-8); }
     else if(v==='high'){ pl.growth=Math.min(100,pl.growth+2); pl.health=Math.max(0,pl.health-6); }
     else { pl.growth=Math.min(100,pl.growth+3); }   // unknown: 실험, 완만
@@ -1320,7 +1327,7 @@ function advanceDay(){
   });
   rebuildPlants(); updateGameUI();
 }
-function growMsg(v){ return v==='opt'?'무럭무럭 자라요! 🌿⭐':v==='ok'?'잘 자라는 중 🌿':v==='low'?'빛이 부족해 시들해요 🥶':v==='high'?'빛이 너무 세서 힘들어요 ⚠':v==='unknown'?'천천히 커요 (미지의 종 🌱)':'아직 하루 안 지났어요'; }
+function growMsg(v){ return v==='opt'?'무럭무럭 자라요! 🌿⭐':v==='ok'?'잘 자라는 중 🌿':v==='lowtol'?'빛이 조금 아쉽지만 잘 버텨요 · 천천히 자라요 🌱':v==='low'?'빛이 부족해 시들해요 🥶':v==='high'?'빛이 너무 세서 힘들어요 ⚠':v==='unknown'?'천천히 커요 (미지의 종 🌱)':'아직 하루 안 지났어요'; }
 function updateGameUI(){
   const d=document.getElementById('gameDay'); if(d) d.textContent='Day '+(S.day||0);
   const el=document.getElementById('growStatus'); if(!el) return;
