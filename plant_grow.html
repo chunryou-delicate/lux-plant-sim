@@ -141,15 +141,25 @@ function addPot(){
 }
 const SOIL_Y=0.48;
 
-// 줄기모듈: 두 마디점 사이를 이어 그림 → 빛 쪽으로 휠 수 있음
-function addStemSeg(p0, p1, type){
+// 줄기모듈: 두 마디점 사이를 이어 그림. radius=굵기, woodT=0(초록)~1(우디)
+function addStemSeg(p0, p1, radius, woodT){
   const dir=new THREE.Vector3().subVectors(p1,p0), len=dir.length();
-  const geo = type===1 ? new THREE.CylinderGeometry(0.042,0.052,len,6)   // 모듈 B: 가늘게
-                       : new THREE.CylinderGeometry(0.055,0.068,len,8);   // 모듈 A: 굵게
-  const m=new THREE.Mesh(geo, type===1?MAT.stem2:MAT.stem);
+  if(len<1e-5) return;
+  const geo=new THREE.CylinderGeometry(radius*0.85, radius*1.12, len, 7);
+  const col=new THREE.Color(0x5e8a44).lerp(new THREE.Color(0x6b4a30), (woodT||0)*0.6);
+  const m=new THREE.Mesh(geo, new THREE.MeshStandardMaterial({color:col, roughness:0.75}));
   m.position.copy(p0).addScaledVector(dir,0.5);
   m.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0), dir.clone().normalize());
   m.castShadow=true; plantGroup.add(m);
+}
+// 성장 후보 마디 중 하나 선택: 거의 균등 랜덤 + 빛 받는 쪽 약간↑ (굴광성)
+function pickCandidate(list, ld){
+  let tot=0; const w=[];
+  for(const n of list){ const proj=n.pos.x*ld.x+n.pos.z*ld.z; const al=Math.max(0,Math.min(1.5,proj));
+    const ww=1+PHOTO*0.5*al; w.push(ww); tot+=ww; }
+  let r=rng()*tot;
+  for(let i=0;i<list.length;i++){ r-=w[i]; if(r<=0) return list[i]; }
+  return list[list.length-1];
 }
 function addLeaf(p, az, maturity, emerge, type, sizeBonus, leanBonus){
   const scale=(0.4 + maturity*0.9)*emerge*(sizeBonus||1);
@@ -182,30 +192,35 @@ function buildPlant(){
     nub.position.set(0,SOIL_Y+0.05,0); nub.castShadow=true; plantGroup.add(nub);
     stage='혹(새싹 트임) 🌱';
   } else {
-    const nodeCount=1+Math.floor((g-14)/10);
+    const nLeaves=1+Math.floor((g-14)/6);
     const L=LIGHT_AZ, ld=new THREE.Vector3(Math.sin(L),0,Math.cos(L));   // 빛 방향(수평)
-    let pos=new THREE.Vector3(0,SOIL_Y,0), az=rng()*Math.PI*2;
-    for(let i=0;i<nodeCount;i++){
-      const internode=0.26*(0.6+0.5*gf)*(0.85+rng()*0.3);
-      const drift=PHOTO*0.18*internode;           // 마디마다 빛쪽으로 휨(굴광성)
-      const next=new THREE.Vector3(pos.x+ld.x*drift, pos.y+internode, pos.z+ld.z*drift);
-      const stemType=rng()<0.5?0:1;               // 줄기모듈 2종 랜덤
-      addStemSeg(pos, next, stemType);
-      const ageNorm=nodeCount>1?(nodeCount-1-i)/(nodeCount-1):1;   // 아래=오래됨(성숙)
+    // ★ 모든 마디를 "성장 후보"로 관리. 새 잎마다 후보 중 랜덤 1곳에서 남(위·아래·오래된 줄기 어디서든)
+    const base={pos:new THREE.Vector3(0,SOIL_Y,0), parent:null, order:0, az:rng()*Math.PI*2};
+    const all=[base];
+    for(let k=1;k<=nLeaves;k++){
+      const par=pickCandidate(all, ld);           // 거의 균등 + 빛쪽 약간↑
+      const azth=rng()*Math.PI*2, horiz=0.35+rng()*0.6;   // 성장 방향: 위 + 랜덤 수평 + 빛
+      const dv=new THREE.Vector3(Math.sin(azth)*horiz + ld.x*PHOTO*0.55,
+                                 0.70+rng()*0.18,
+                                 Math.cos(azth)*horiz + ld.z*PHOTO*0.55).normalize();
+      const inLen=0.30*(0.7+0.45*gf);
+      const np=par.pos.clone().addScaledVector(dv, inLen);
+      all.push({pos:np, parent:par, order:k, az:Math.atan2(dv.x,dv.z)});
+    }
+    // 그리기: 각 마디 = 부모→자식 줄기 + 잎 하나
+    for(const n of all){
+      if(!n.parent) continue;
+      addStemSeg(n.parent.pos, n.pos, 0.05, 0);   // 굵기는 Step2(서브트리)에서
+      const ageNorm=nLeaves>1?(nLeaves-n.order)/(nLeaves-1):1;   // 먼저 난 잎=오래됨(큼·성숙)
       const maturity=ageNorm*(0.35+0.65*gf);
       let emerge=1;
-      if(i===nodeCount-1) emerge=Math.min(1, ((g-14)%10)/10 + 0.2);  // 맨 위 새 잎은 스르륵
-      az += GOLDEN + (rng()-0.5)*(Math.PI/3);     // 황금각 + 지터(개체성)
-      const azf = az + PHOTO*0.6*Math.atan2(Math.sin(L-az),Math.cos(L-az));  // 빛쪽으로 방위 당김
-      const align=Math.max(0,Math.cos(azf-L));    // 빛과 정렬도 0~1
+      if(n.order===nLeaves) emerge=Math.min(1, ((g-14)%6)/6 + 0.25);  // 맨 마지막 잎 스르륵
+      const azf=n.az + PHOTO*0.5*Math.atan2(Math.sin(L-n.az),Math.cos(L-n.az));  // 빛쪽 방위 당김
+      const align=Math.max(0,Math.cos(azf-L));
       const leafType = maturity<0.3?0 : maturity<0.6?1 : 2;   // 성숙도별 잎 형태
-      addLeaf(next, azf, maturity, emerge, leafType, 1+PHOTO*0.4*align, align*PHOTO);
-      leaves++; pos=next;
+      addLeaf(n.pos, azf, maturity, emerge, leafType, 1+PHOTO*0.35*align, align*PHOTO);
     }
-    // 생장점(맨 끝 작은 순)
-    const tip=new THREE.Mesh(new THREE.ConeGeometry(0.04,0.12,6), MAT.stem);
-    tip.position.set(pos.x, pos.y+0.06, pos.z); plantGroup.add(tip);
-    nodes=nodeCount; stage='줄기마디 '+nodeCount+'개';
+    nodes=nLeaves; leaves=nLeaves; stage='분기 마디 '+nLeaves+'개';
   }
   const el=document.getElementById('stat');
   el.innerHTML=`<span class="k">단계</span> ${stage}<br><span class="k">마디</span> ${nodes} · <span class="k">잎</span> ${leaves} · <span class="k">시드</span> ${SEED}`;
