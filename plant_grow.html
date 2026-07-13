@@ -55,6 +55,14 @@
       <label>성장도 growth <b id="growthV">30</b></label>
       <input type="range" id="growth" min="0" max="100" value="30">
     </div>
+    <div class="field">
+      <label>☀️ 빛 방위 <b id="lightV">90°</b></label>
+      <input type="range" id="light" min="0" max="360" value="90">
+    </div>
+    <div class="field">
+      <label>굴광성(빛 쫓기) <b id="photoV">50%</b></label>
+      <input type="range" id="photo" min="0" max="100" value="50">
+    </div>
     <button class="cbtn" id="btnSeed" style="width:100%;margin-bottom:10px">🎲 랜덤 시드 (다른 개체)</button>
     <div id="stat"><span class="k">슬라이더를 움직여 자라는 걸 보세요.</span></div>
   </div>
@@ -70,7 +78,7 @@
 </div>
 
 <script>
-let scene, cam, renderer, grid, ground;
+let scene, cam, renderer, grid, ground, sunMarker;
 let W, H, DPR=Math.min(2, window.devicePixelRatio||1);
 const cv=document.getElementById('cv');
 let orbit={ az:Math.PI*0.22, el:0.42, r:14, zoom:1, tx:0, ty:1.1, tz:0 };
@@ -83,6 +91,7 @@ let SEED=12345, rng=mulberry32(SEED);
 const GOLDEN=Math.PI*(3-Math.sqrt(5));   // 137.5° 황금각(자연스러운 잎차례)
 
 let GROWTH=30;
+let LIGHT_AZ=Math.PI*0.5, PHOTO=0.5;   // 빛 방위(rad) · 굴광성 세기(0~1)
 
 // ===== 재료 =====
 const MAT={
@@ -132,19 +141,23 @@ function addPot(){
 }
 const SOIL_Y=0.48;
 
-function addStem(y, len, type){
+// 줄기모듈: 두 마디점 사이를 이어 그림 → 빛 쪽으로 휠 수 있음
+function addStemSeg(p0, p1, type){
+  const dir=new THREE.Vector3().subVectors(p1,p0), len=dir.length();
   const geo = type===1 ? new THREE.CylinderGeometry(0.042,0.052,len,6)   // 모듈 B: 가늘게
                        : new THREE.CylinderGeometry(0.055,0.068,len,8);   // 모듈 A: 굵게
   const m=new THREE.Mesh(geo, type===1?MAT.stem2:MAT.stem);
-  m.position.set(0, y+len/2, 0); m.castShadow=true; plantGroup.add(m);
+  m.position.copy(p0).addScaledVector(dir,0.5);
+  m.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0), dir.clone().normalize());
+  m.castShadow=true; plantGroup.add(m);
 }
-function addLeaf(y, az, maturity, emerge, type){
-  const scale=(0.4 + maturity*0.9)*emerge;
+function addLeaf(p, az, maturity, emerge, type, sizeBonus, leanBonus){
+  const scale=(0.4 + maturity*0.9)*emerge*(sizeBonus||1);
   const pivot=new THREE.Group();
-  pivot.position.set(0,y,0);
+  pivot.position.copy(p);
   pivot.rotation.y=az;
   const leaf=makeLeaf(type);
-  const lean=0.5 + maturity*0.7;   // 성숙할수록 바깥+아래로 눕음, 어릴수록 곧추
+  const lean=0.5 + maturity*0.7 - (leanBonus||0)*0.5;   // 빛쪽 잎은 덜 눕고 위로 더 뻗음
   leaf.rotation.x=lean;
   leaf.position.set(0,0,0.10*scale);   // 잎자루만큼 바깥으로
   leaf.scale.setScalar(scale);
@@ -170,24 +183,28 @@ function buildPlant(){
     stage='혹(새싹 트임) 🌱';
   } else {
     const nodeCount=1+Math.floor((g-14)/10);
-    let y=SOIL_Y, az=rng()*Math.PI*2;
+    const L=LIGHT_AZ, ld=new THREE.Vector3(Math.sin(L),0,Math.cos(L));   // 빛 방향(수평)
+    let pos=new THREE.Vector3(0,SOIL_Y,0), az=rng()*Math.PI*2;
     for(let i=0;i<nodeCount;i++){
       const internode=0.26*(0.6+0.5*gf)*(0.85+rng()*0.3);
+      const drift=PHOTO*0.18*internode;           // 마디마다 빛쪽으로 휨(굴광성)
+      const next=new THREE.Vector3(pos.x+ld.x*drift, pos.y+internode, pos.z+ld.z*drift);
       const stemType=rng()<0.5?0:1;               // 줄기모듈 2종 랜덤
-      addStem(y, internode, stemType);
-      const nodeY=y+internode;
+      addStemSeg(pos, next, stemType);
       const ageNorm=nodeCount>1?(nodeCount-1-i)/(nodeCount-1):1;   // 아래=오래됨(성숙)
       const maturity=ageNorm*(0.35+0.65*gf);
       let emerge=1;
       if(i===nodeCount-1) emerge=Math.min(1, ((g-14)%10)/10 + 0.2);  // 맨 위 새 잎은 스르륵
-      az += GOLDEN + (rng()-0.5)*(Math.PI/3);   // 황금각 + 지터
+      az += GOLDEN + (rng()-0.5)*(Math.PI/3);     // 황금각 + 지터(개체성)
+      const azf = az + PHOTO*0.6*Math.atan2(Math.sin(L-az),Math.cos(L-az));  // 빛쪽으로 방위 당김
+      const align=Math.max(0,Math.cos(azf-L));    // 빛과 정렬도 0~1
       const leafType = maturity<0.3?0 : maturity<0.6?1 : 2;   // 성숙도별 잎 형태
-      addLeaf(nodeY, az, maturity, emerge, leafType);
-      leaves++; y=nodeY;
+      addLeaf(next, azf, maturity, emerge, leafType, 1+PHOTO*0.4*align, align*PHOTO);
+      leaves++; pos=next;
     }
     // 생장점(맨 끝 작은 순)
     const tip=new THREE.Mesh(new THREE.ConeGeometry(0.04,0.12,6), MAT.stem);
-    tip.position.set(0,y+0.06,0); plantGroup.add(tip);
+    tip.position.set(pos.x, pos.y+0.06, pos.z); plantGroup.add(tip);
     nodes=nodeCount; stage='줄기마디 '+nodeCount+'개';
   }
   const el=document.getElementById('stat');
@@ -220,6 +237,11 @@ function init(){
   grid.material.transparent=true; grid.material.opacity=0.5; scene.add(grid);
 
   plantGroup=new THREE.Group(); scene.add(plantGroup);
+
+  // 빛 방향 마커(작은 해)
+  sunMarker=new THREE.Mesh(new THREE.SphereGeometry(0.14,14,12),
+    new THREE.MeshBasicMaterial({color:0xffd24a}));
+  scene.add(sunMarker); updateSun();
 
   // 화분 GLB 있으면 로드(없으면 임시 도형)
   new THREE.GLTFLoader().load('./assets/planter.glb',
@@ -270,7 +292,12 @@ function bindControls(){
   const gs=document.getElementById('growth');
   gs.addEventListener('input',()=>{ GROWTH=+gs.value; document.getElementById('growthV').textContent=GROWTH; buildPlant(); });
   document.getElementById('btnSeed').onclick=()=>{ SEED=Math.floor(Math.random()*99999); buildPlant(); };
+  const ls=document.getElementById('light');
+  ls.addEventListener('input',()=>{ LIGHT_AZ=(+ls.value)*Math.PI/180; document.getElementById('lightV').textContent=ls.value+'°'; updateSun(); buildPlant(); });
+  const ps=document.getElementById('photo');
+  ps.addEventListener('input',()=>{ PHOTO=(+ps.value)/100; document.getElementById('photoV').textContent=ps.value+'%'; buildPlant(); });
 }
+function updateSun(){ if(!sunMarker) return; const R=2.3; sunMarker.position.set(Math.sin(LIGHT_AZ)*R, 1.5, Math.cos(LIGHT_AZ)*R); }
 function animate(){ requestAnimationFrame(animate); if(autoRotate){ orbit.az+=0.004; updateCam(); } renderer.render(scene,cam); }
 
 init(); updateCam();
