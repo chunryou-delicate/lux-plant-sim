@@ -55,6 +55,7 @@
       <label>성장도 growth <b id="growthV">30</b></label>
       <input type="range" id="growth" min="0" max="100" value="30">
     </div>
+    <button class="cbtn" id="btnSeed" style="width:100%;margin-bottom:10px">🎲 랜덤 시드 (다른 개체)</button>
     <div id="stat"><span class="k">슬라이더를 움직여 자라는 걸 보세요.</span></div>
   </div>
 
@@ -87,18 +88,33 @@ let GROWTH=30;
 const MAT={
   pot:  new THREE.MeshStandardMaterial({color:0xb87050, roughness:0.85}),
   soil: new THREE.MeshStandardMaterial({color:0x4a3826, roughness:1.0}),
-  stem: new THREE.MeshStandardMaterial({color:0x4c7a3a, roughness:0.7}),
+  stem:  new THREE.MeshStandardMaterial({color:0x4c7a3a, roughness:0.7}),   // 줄기모듈 A(굵음)
+  stem2: new THREE.MeshStandardMaterial({color:0x5e8a44, roughness:0.65}),  // 줄기모듈 B(가늘고 밝음)
   seed: new THREE.MeshStandardMaterial({color:0x8a6a4a, roughness:0.8}),
-  leaf: new THREE.MeshStandardMaterial({color:0x6fbf55, roughness:0.7, side:THREE.DoubleSide}),
+  // 잎 3종(성숙도별): 0 통잎(연두) · 1 살짝갈라짐 · 2 많이갈라짐(진초록)
+  leaf:[ new THREE.MeshStandardMaterial({color:0x8fd06a, roughness:0.72, side:THREE.DoubleSide}),
+         new THREE.MeshStandardMaterial({color:0x5fae4a, roughness:0.72, side:THREE.DoubleSide}),
+         new THREE.MeshStandardMaterial({color:0x3d8a37, roughness:0.72, side:THREE.DoubleSide}) ],
 };
 
-// 잎 프로토(임시): 원뿔을 납작하게(블레이드) → 밑면 원점, +Y 방향
-function makeLeaf(){
-  const geo=new THREE.ConeGeometry(0.26,0.5,12);
-  geo.translate(0,0.25,0);       // 밑면(자루)이 원점
-  geo.scale(1,1,0.30);           // 앞뒤로 납작 = 잎사귀
-  const m=new THREE.Mesh(geo, MAT.leaf);
-  m.castShadow=true; return m;
+// 잎 프로토(임시 도형). 밑면(자루)=원점, +Y 방향. GLB 나오면 여기만 교체.
+//  type0 통잎  type1 살짝갈라진(각진)  type2 많이갈라진(손가락 팬=몬스테라 천공잎)
+function makeLeaf(type){
+  if(type===2){
+    const g=new THREE.Group(), n=5;
+    for(let k=0;k<n;k++){
+      const fg=new THREE.ConeGeometry(0.075,0.52,6); fg.translate(0,0.26,0); fg.scale(1,1,0.4);
+      const f=new THREE.Mesh(fg, MAT.leaf[2]); f.castShadow=true;
+      const s=(k/(n-1))-0.5;                 // -0.5~0.5 손가락 벌림
+      f.position.x=s*0.30; f.rotation.z=s*0.95; f.rotation.x=-0.05;
+      g.add(f);
+    }
+    return g;
+  }
+  const geo = type===1 ? new THREE.ConeGeometry(0.30,0.56,6) : new THREE.ConeGeometry(0.25,0.48,12);
+  geo.translate(0,type===1?0.28:0.24,0);
+  geo.scale(1,1,0.30);
+  const m=new THREE.Mesh(geo, MAT.leaf[type]); m.castShadow=true; return m;
 }
 
 let POT_GLB=null;   // ./assets/planter.glb 있으면 사용
@@ -116,17 +132,18 @@ function addPot(){
 }
 const SOIL_Y=0.48;
 
-function addStem(y, len){
-  const geo=new THREE.CylinderGeometry(0.055,0.065,len,8);
-  const m=new THREE.Mesh(geo, MAT.stem);
+function addStem(y, len, type){
+  const geo = type===1 ? new THREE.CylinderGeometry(0.042,0.052,len,6)   // 모듈 B: 가늘게
+                       : new THREE.CylinderGeometry(0.055,0.068,len,8);   // 모듈 A: 굵게
+  const m=new THREE.Mesh(geo, type===1?MAT.stem2:MAT.stem);
   m.position.set(0, y+len/2, 0); m.castShadow=true; plantGroup.add(m);
 }
-function addLeaf(y, az, maturity, emerge){
+function addLeaf(y, az, maturity, emerge, type){
   const scale=(0.4 + maturity*0.9)*emerge;
   const pivot=new THREE.Group();
   pivot.position.set(0,y,0);
   pivot.rotation.y=az;
-  const leaf=makeLeaf();
+  const leaf=makeLeaf(type);
   const lean=0.5 + maturity*0.7;   // 성숙할수록 바깥+아래로 눕음, 어릴수록 곧추
   leaf.rotation.x=lean;
   leaf.position.set(0,0,0.10*scale);   // 잎자루만큼 바깥으로
@@ -156,14 +173,16 @@ function buildPlant(){
     let y=SOIL_Y, az=rng()*Math.PI*2;
     for(let i=0;i<nodeCount;i++){
       const internode=0.26*(0.6+0.5*gf)*(0.85+rng()*0.3);
-      addStem(y, internode);
+      const stemType=rng()<0.5?0:1;               // 줄기모듈 2종 랜덤
+      addStem(y, internode, stemType);
       const nodeY=y+internode;
       const ageNorm=nodeCount>1?(nodeCount-1-i)/(nodeCount-1):1;   // 아래=오래됨(성숙)
       const maturity=ageNorm*(0.35+0.65*gf);
       let emerge=1;
       if(i===nodeCount-1) emerge=Math.min(1, ((g-14)%10)/10 + 0.2);  // 맨 위 새 잎은 스르륵
       az += GOLDEN + (rng()-0.5)*(Math.PI/3);   // 황금각 + 지터
-      addLeaf(nodeY, az, maturity, emerge);
+      const leafType = maturity<0.3?0 : maturity<0.6?1 : 2;   // 성숙도별 잎 형태
+      addLeaf(nodeY, az, maturity, emerge, leafType);
       leaves++; y=nodeY;
     }
     // 생장점(맨 끝 작은 순)
@@ -250,6 +269,7 @@ function bindControls(){
 
   const gs=document.getElementById('growth');
   gs.addEventListener('input',()=>{ GROWTH=+gs.value; document.getElementById('growthV').textContent=GROWTH; buildPlant(); });
+  document.getElementById('btnSeed').onclick=()=>{ SEED=Math.floor(Math.random()*99999); buildPlant(); };
 }
 function animate(){ requestAnimationFrame(animate); if(autoRotate){ orbit.az+=0.004; updateCam(); } renderer.render(scene,cam); }
 
