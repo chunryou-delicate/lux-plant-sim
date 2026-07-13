@@ -263,7 +263,8 @@
       <div class="row"><span id="gameDay" style="font-family:var(--mono);font-weight:600;flex:1">Day 0</span>
         <button id="btnNextDay" style="flex:0 0 108px">하루 넘기기 ▶</button></div>
       <div id="growStatus" class="note" style="margin-top:6px">식물을 놓고 ‹하루 넘기기›</div>
-      <div class="note" style="margin-top:4px">적합=성장·건강↑ / 부족·과광=건강↓ (놓은 자리 빛으로 판정)</div>
+      <div class="row" style="margin-top:6px"><button id="btnGrowLight" style="flex:1">🔦 식물등 켜기 (이 식물 위 0.5m)</button></div>
+      <div class="note" style="margin-top:4px">빛 부족? 맞는 스펙트럼(풀스펙트럼 식물등)을 쐬주면 그 자리 PPFD가 올라 적합해져요.</div>
     </div>
 
     <div class="note" id="calcNote">격자 해상도에 따라 계산됩니다.</div>
@@ -1336,6 +1337,15 @@ function updateGameUI(){
   const p=plantById(a.id), g=Math.round(a.growth||0), h=Math.round(a.health==null?100:a.health);
   el.innerHTML=`<b>${p?p.ko:''}</b> — ${growMsg(a.verdict)}<br>성장 ${g}/100 · 건강 ${h}/100`;
 }
+// 식물등 켜기: 활성 식물 바로 위 0.5m에 풀스펙트럼 식물등 설치(엔진 재사용) → 그 자리 PPFD↑
+function addGrowLight(){
+  const i=S.activePlant, a=(i>=0 && S.plants[i])? S.plants[i] : null;
+  const el=document.getElementById('growStatus');
+  if(!a){ if(el) el.textContent='먼저 식물을 놓고 마커를 선택하세요 🌱'; return; }
+  S.lums.push({x:a.x, z:a.z, h:(a.y||0)+0.5, type:'furniture', src:'led_fullspectrum_grow', grow:true});
+  S.selected=S.lums.length-1;
+  compute();
+}
 
 // ============ 자동 격자배치 ============
 function autoGrid(){
@@ -1408,6 +1418,7 @@ bind('btnPlantPlace',()=>{ if(S.plantPlace){ endPlantPlace(); return; }
   document.getElementById('vpBadge').textContent='식물 놓기 · 바닥/선반 클릭'; },'click');
 bind('btnPlantClear',()=>{ S.plants=[]; S.activePlant=-1; S.day=0; rebuildPlants(); updatePlantDiagnose(); },'click');
 bind('btnNextDay',advanceDay,'click');
+bind('btnGrowLight',addGrowLight,'click');
 bind('pillPPFD',()=>{ S.showPPFDdetail=!S.showPPFDdetail; const el=document.getElementById('pillPPFD'); el.className='pill'+(S.showPPFDdetail?' on':''); el.textContent=S.showPPFDdetail?'ON':'OFF'; updatePlantDiagnose(); },'click');
 bind('pillFit',()=>{ S.showFit=!S.showFit; const el=document.getElementById('pillFit'); el.className='pill'+(S.showFit?' on':''); el.textContent=S.showFit?'ON':'OFF'; drawHeat(); if(typeof render3D==='function') render3D(); },'click');
 bind('btnClear',()=>{S.lums=[];S.selected=-1;compute();},'click');
