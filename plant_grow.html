@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>볕 · 모듈 식물 생장 프로토타입 (몬스테라)</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Jua&family=Gaegu:wght@400;700&display=swap');
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{height:100%;overflow:hidden;font-family:'Gaegu',sans-serif;background:#14101c;
+    user-select:none;color:#eceae3}
+  #wrap{position:relative;width:100vw;height:100vh}
+  #cv{position:absolute;inset:0;display:block}
+  .top{position:absolute;top:0;left:0;right:0;z-index:5;display:flex;align-items:center;gap:10px;
+    padding:14px 18px;pointer-events:none}
+  .brand{font-family:'Jua';font-size:20px;color:#fff;letter-spacing:1px;text-shadow:0 2px 12px rgba(0,0,0,.6)}
+  .brand b{color:#7ad06a}
+  .tag{font-family:'Gaegu';font-weight:700;font-size:12px;color:rgba(255,255,255,.5)}
+  .views{position:absolute;left:16px;bottom:16px;z-index:6;display:flex;flex-wrap:wrap;gap:6px;max-width:200px}
+  .cbtn{background:rgba(255,255,255,.92);border:none;border-radius:12px;padding:8px 13px;font-family:'Jua';
+    font-size:13px;color:#3d3548;cursor:pointer;box-shadow:0 3px 0 rgba(0,0,0,.3)}
+  .cbtn:active{transform:translateY(2px);box-shadow:0 1px 0 rgba(0,0,0,.3)}
+  .cbtn.on{background:#7ad06a}
+  .panel{position:absolute;top:52px;right:16px;z-index:6;width:250px;
+    background:rgba(20,16,28,.72);backdrop-filter:blur(10px);border-radius:16px;padding:14px;
+    border:1px solid rgba(255,255,255,.1)}
+  .panel h3{font-family:'Jua';font-size:14px;color:#7ad06a;margin-bottom:10px}
+  .field{margin-bottom:12px}
+  .field label{display:flex;justify-content:space-between;font-family:'Gaegu';font-weight:700;font-size:12px;
+    color:rgba(255,255,255,.7);margin-bottom:5px}
+  .field label b{color:#7ad06a;font-family:'Jua'}
+  input[type=range]{-webkit-appearance:none;width:100%;height:7px;border-radius:6px;outline:none;
+    background:linear-gradient(90deg,#2a3a2a,#7ad06a);cursor:pointer}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;height:20px;border-radius:50%;
+    background:radial-gradient(circle at 35% 32%,#e8ffe0,#7ad06a);
+    box-shadow:0 2px 8px rgba(0,0,0,.5),0 0 0 3px rgba(255,255,255,.8)}
+  #stat{font-family:'Gaegu';font-weight:700;font-size:12px;line-height:1.7;color:#cfe8d0;
+    padding-top:8px;border-top:1px solid rgba(255,255,255,.12)}
+  #stat .k{color:rgba(255,255,255,.5);font-weight:400}
+</style>
+</head>
+<body>
+<div id="wrap">
+  <canvas id="cv"></canvas>
+  <div class="top">
+    <span class="brand">볕<b>.</b></span>
+    <span class="tag">모듈 식물 생장 · 몬스테라 프로토 (임시 도형)</span>
+  </div>
+
+  <div class="panel">
+    <h3>🌱 생장 파라미터</h3>
+    <div class="field">
+      <label>성장도 growth <b id="growthV">30</b></label>
+      <input type="range" id="growth" min="0" max="100" value="30">
+    </div>
+    <div id="stat"><span class="k">슬라이더를 움직여 자라는 걸 보세요.</span></div>
+  </div>
+
+  <div class="views">
+    <button class="cbtn" data-dir="front">앞</button>
+    <button class="cbtn" data-dir="left">좌</button>
+    <button class="cbtn" data-dir="right">우</button>
+    <button class="cbtn" data-dir="top">위</button>
+    <button class="cbtn" id="btnAuto">자동회전</button>
+    <button class="cbtn on" id="btnGrid">바닥격자</button>
+  </div>
+</div>
+
+<script>
+let scene, cam, renderer, grid, ground;
+let W, H, DPR=Math.min(2, window.devicePixelRatio||1);
+const cv=document.getElementById('cv');
+let orbit={ az:Math.PI*0.22, el:0.42, r:14, zoom:1, tx:0, ty:1.1, tz:0 };
+let autoRotate=false;
+let FRUSTUM=2.2;
+
+// ===== 시드 난수(개체성): 같은 시드→같은 그루. mulberry32 =====
+function mulberry32(a){ return function(){ a|=0; a=a+0x6D2B79F5|0; let t=Math.imul(a^a>>>15,1|a); t=t+Math.imul(t^t>>>7,61|t)^t; return((t^t>>>14)>>>0)/4294967296; }; }
+let SEED=12345, rng=mulberry32(SEED);
+const GOLDEN=Math.PI*(3-Math.sqrt(5));   // 137.5° 황금각(자연스러운 잎차례)
+
+let GROWTH=30;
+
+// ===== 재료 =====
+const MAT={
+  pot:  new THREE.MeshStandardMaterial({color:0xb87050, roughness:0.85}),
+  soil: new THREE.MeshStandardMaterial({color:0x4a3826, roughness:1.0}),
+  stem: new THREE.MeshStandardMaterial({color:0x4c7a3a, roughness:0.7}),
+  seed: new THREE.MeshStandardMaterial({color:0x8a6a4a, roughness:0.8}),
+  leaf: new THREE.MeshStandardMaterial({color:0x6fbf55, roughness:0.7, side:THREE.DoubleSide}),
+};
+
+// 잎 프로토(임시): 원뿔을 납작하게(블레이드) → 밑면 원점, +Y 방향
+function makeLeaf(){
+  const geo=new THREE.ConeGeometry(0.26,0.5,12);
+  geo.translate(0,0.25,0);       // 밑면(자루)이 원점
+  geo.scale(1,1,0.30);           // 앞뒤로 납작 = 잎사귀
+  const m=new THREE.Mesh(geo, MAT.leaf);
+  m.castShadow=true; return m;
+}
+
+let POT_GLB=null;   // ./assets/planter.glb 있으면 사용
+let plantGroup;
+
+function addPot(){
+  if(POT_GLB){ const g=POT_GLB.clone(); g.position.y=0; plantGroup.add(g); return; }
+  // 임시 화분: 원뿔대 + 흙
+  const pot=new THREE.Mesh(new THREE.CylinderGeometry(0.5,0.38,0.5,20), MAT.pot);
+  pot.position.y=0.25; pot.castShadow=true; pot.receiveShadow=true; plantGroup.add(pot);
+  const rim=new THREE.Mesh(new THREE.TorusGeometry(0.5,0.04,10,24), MAT.pot);
+  rim.rotation.x=Math.PI/2; rim.position.y=0.5; plantGroup.add(rim);
+  const soil=new THREE.Mesh(new THREE.CylinderGeometry(0.47,0.47,0.06,20), MAT.soil);
+  soil.position.y=0.47; soil.receiveShadow=true; plantGroup.add(soil);
+}
+const SOIL_Y=0.48;
+
+function addStem(y, len){
+  const geo=new THREE.CylinderGeometry(0.055,0.065,len,8);
+  const m=new THREE.Mesh(geo, MAT.stem);
+  m.position.set(0, y+len/2, 0); m.castShadow=true; plantGroup.add(m);
+}
+function addLeaf(y, az, maturity, emerge){
+  const scale=(0.4 + maturity*0.9)*emerge;
+  const pivot=new THREE.Group();
+  pivot.position.set(0,y,0);
+  pivot.rotation.y=az;
+  const leaf=makeLeaf();
+  const lean=0.5 + maturity*0.7;   // 성숙할수록 바깥+아래로 눕음, 어릴수록 곧추
+  leaf.rotation.x=lean;
+  leaf.position.set(0,0,0.10*scale);   // 잎자루만큼 바깥으로
+  leaf.scale.setScalar(scale);
+  pivot.add(leaf); plantGroup.add(pivot);
+}
+
+function clearGroup(g){ while(g.children.length){ const c=g.children[0]; g.remove(c); c.traverse&&c.traverse(o=>{ if(o.isMesh&&o.geometry) o.geometry.dispose(); }); } }
+
+function buildPlant(){
+  rng=mulberry32(SEED);            // 매 빌드 동일 시드 → 안정적(슬라이더 드래그해도 안 흔들림)
+  clearGroup(plantGroup);
+  addPot();
+  const g=GROWTH, gf=g/100;
+  let stage='', nodes=0, leaves=0;
+
+  if(g<6){
+    const seed=new THREE.Mesh(new THREE.SphereGeometry(0.07,10,8), MAT.seed);
+    seed.position.set(0,SOIL_Y+0.03,0); seed.scale.y=0.7; seed.castShadow=true; plantGroup.add(seed);
+    stage='씨앗 🌰';
+  } else if(g<14){
+    const nub=new THREE.Mesh(new THREE.SphereGeometry(0.06+0.04*((g-6)/8),8,8), MAT.stem);
+    nub.position.set(0,SOIL_Y+0.05,0); nub.castShadow=true; plantGroup.add(nub);
+    stage='혹(새싹 트임) 🌱';
+  } else {
+    const nodeCount=1+Math.floor((g-14)/10);
+    let y=SOIL_Y, az=rng()*Math.PI*2;
+    for(let i=0;i<nodeCount;i++){
+      const internode=0.26*(0.6+0.5*gf)*(0.85+rng()*0.3);
+      addStem(y, internode);
+      const nodeY=y+internode;
+      const ageNorm=nodeCount>1?(nodeCount-1-i)/(nodeCount-1):1;   // 아래=오래됨(성숙)
+      const maturity=ageNorm*(0.35+0.65*gf);
+      let emerge=1;
+      if(i===nodeCount-1) emerge=Math.min(1, ((g-14)%10)/10 + 0.2);  // 맨 위 새 잎은 스르륵
+      az += GOLDEN + (rng()-0.5)*(Math.PI/3);   // 황금각 + 지터
+      addLeaf(nodeY, az, maturity, emerge);
+      leaves++; y=nodeY;
+    }
+    // 생장점(맨 끝 작은 순)
+    const tip=new THREE.Mesh(new THREE.ConeGeometry(0.04,0.12,6), MAT.stem);
+    tip.position.set(0,y+0.06,0); plantGroup.add(tip);
+    nodes=nodeCount; stage='줄기마디 '+nodeCount+'개';
+  }
+  const el=document.getElementById('stat');
+  el.innerHTML=`<span class="k">단계</span> ${stage}<br><span class="k">마디</span> ${nodes} · <span class="k">잎</span> ${leaves} · <span class="k">시드</span> ${SEED}`;
+}
+
+// ===== 씬/카메라 (loader_glb.html 직교 4방위 방식) =====
+function init(){
+  renderer=new THREE.WebGLRenderer({canvas:cv, antialias:true});
+  renderer.setPixelRatio(DPR);
+  renderer.outputEncoding=THREE.sRGBEncoding;
+  renderer.shadowMap.enabled=true; renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+  renderer.toneMapping=THREE.ACESFilmicToneMapping; renderer.toneMappingExposure=1.05;
+
+  scene=new THREE.Scene(); scene.background=new THREE.Color(0x1a1526);
+  cam=new THREE.OrthographicCamera(-1,1,1,-1,0.01,1000);
+
+  scene.add(new THREE.HemisphereLight(0xbcd0ff,0x30281f,0.75));
+  const dir=new THREE.DirectionalLight(0xfff2dc,1.4);
+  dir.position.set(5,11,6); dir.castShadow=true;
+  dir.shadow.mapSize.set(2048,2048); dir.shadow.bias=-0.0004; dir.shadow.radius=5;
+  const ds=8; dir.shadow.camera.near=0.5; dir.shadow.camera.far=40;
+  dir.shadow.camera.left=-ds; dir.shadow.camera.right=ds; dir.shadow.camera.top=ds; dir.shadow.camera.bottom=-ds;
+  scene.add(dir, dir.target);
+  scene.add(new THREE.DirectionalLight(0x88aaff,0.3).translateX(-6));
+
+  ground=new THREE.Mesh(new THREE.PlaneGeometry(40,40), new THREE.ShadowMaterial({opacity:0.28}));
+  ground.rotation.x=-Math.PI/2; ground.receiveShadow=true; scene.add(ground);
+  grid=new THREE.GridHelper(12,12,0x555070,0x33304a);
+  grid.material.transparent=true; grid.material.opacity=0.5; scene.add(grid);
+
+  plantGroup=new THREE.Group(); scene.add(plantGroup);
+
+  // 화분 GLB 있으면 로드(없으면 임시 도형)
+  new THREE.GLTFLoader().load('./assets/planter.glb',
+    g=>{ POT_GLB=g.scene; buildPlant(); },
+    undefined,
+    ()=>{ /* 없음 → 임시 도형 유지 */ });
+
+  bindControls(); resize(); buildPlant(); animate();
+}
+function resize(){
+  W=innerWidth; H=innerHeight; renderer.setSize(W,H);
+  const a=W/H; cam.left=-FRUSTUM*a; cam.right=FRUSTUM*a; cam.top=FRUSTUM; cam.bottom=-FRUSTUM; cam.updateProjectionMatrix();
+}
+function updateCam(){
+  const {az,el,r,tx,ty,tz}=orbit, ce=Math.cos(el);
+  cam.position.set(tx+r*ce*Math.sin(az), ty+r*Math.sin(el), tz+r*ce*Math.cos(az));
+  cam.up.set(0,1,0); cam.lookAt(tx,ty,tz); cam.zoom=orbit.zoom; cam.updateProjectionMatrix();
+}
+function snapView(dir){
+  const flat=0.32;
+  if(dir==='front'){ orbit.az=0; orbit.el=flat; }
+  else if(dir==='left'){ orbit.az=-Math.PI/2; orbit.el=flat; }
+  else if(dir==='right'){ orbit.az=Math.PI/2; orbit.el=flat; }
+  else if(dir==='top'){ orbit.az=Math.PI*0.22; orbit.el=1.45; }
+  updateCam();
+}
+function bindControls(){
+  addEventListener('resize',()=>{ resize(); updateCam(); });
+  let drag=false,px=0,py=0,pan=false;
+  cv.addEventListener('pointerdown',e=>{ drag=true; pan=(e.button===2||e.shiftKey); px=e.clientX; py=e.clientY; cv.setPointerCapture(e.pointerId); });
+  cv.addEventListener('pointermove',e=>{ if(!drag)return; const dx=e.clientX-px,dy=e.clientY-py; px=e.clientX; py=e.clientY;
+    if(pan){ const sx=(cam.right-cam.left)/W/orbit.zoom, sy=(cam.top-cam.bottom)/H/orbit.zoom;
+      const fwd=new THREE.Vector3(); cam.getWorldDirection(fwd);
+      const right=new THREE.Vector3().crossVectors(fwd,cam.up).normalize();
+      const up=new THREE.Vector3().crossVectors(right,fwd).normalize();
+      const mx=-dx*sx,my=dy*sy;
+      orbit.tx+=mx*right.x+my*up.x; orbit.ty+=mx*right.y+my*up.y; orbit.tz+=mx*right.z+my*up.z;
+    } else { orbit.az+=dx*0.008; orbit.el=Math.max(0.05,Math.min(1.52,orbit.el+dy*0.006)); }
+    updateCam(); });
+  cv.addEventListener('pointerup',()=>drag=false);
+  cv.addEventListener('contextmenu',e=>e.preventDefault());
+  cv.addEventListener('wheel',e=>{ e.preventDefault(); orbit.zoom=Math.max(0.2,Math.min(8,orbit.zoom*(e.deltaY<0?1.1:0.9))); updateCam(); },{passive:false});
+
+  document.querySelectorAll('.views [data-dir]').forEach(b=>b.onclick=()=>snapView(b.dataset.dir));
+  document.getElementById('btnAuto').onclick=e=>{ autoRotate=!autoRotate; e.target.classList.toggle('on',autoRotate); };
+  document.getElementById('btnGrid').onclick=e=>{ grid.visible=!grid.visible; e.target.classList.toggle('on',grid.visible); };
+
+  const gs=document.getElementById('growth');
+  gs.addEventListener('input',()=>{ GROWTH=+gs.value; document.getElementById('growthV').textContent=GROWTH; buildPlant(); });
+}
+function animate(){ requestAnimationFrame(animate); if(autoRotate){ orbit.az+=0.004; updateCam(); } renderer.render(scene,cam); }
+
+init(); updateCam();
+</script>
+</body>
+</html>
