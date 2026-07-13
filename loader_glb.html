@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>볕 · GLB 로더 테스트 (직교 4방위)</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Jua&family=Gaegu:wght@400;700&display=swap');
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{height:100%;overflow:hidden;font-family:'Gaegu',sans-serif;background:#14101c;
+    user-select:none;color:#eceae3}
+  #wrap{position:relative;width:100vw;height:100vh}
+  #cv{position:absolute;inset:0;display:block}
+  .top{position:absolute;top:0;left:0;right:0;z-index:5;display:flex;align-items:center;gap:10px;
+    padding:14px 18px;pointer-events:none}
+  .brand{font-family:'Jua';font-size:20px;color:#fff;letter-spacing:1px;text-shadow:0 2px 12px rgba(0,0,0,.6)}
+  .brand b{color:#ffb454}
+  .tag{font-family:'Gaegu';font-weight:700;font-size:12px;color:rgba(255,255,255,.5)}
+  /* 좌하단: 방위/시점 */
+  .views{position:absolute;left:16px;bottom:16px;z-index:6;display:flex;flex-wrap:wrap;gap:6px;max-width:230px}
+  .cbtn{background:rgba(255,255,255,.92);border:none;border-radius:12px;padding:8px 13px;font-family:'Jua';
+    font-size:13px;color:#3d3548;cursor:pointer;box-shadow:0 3px 0 rgba(0,0,0,.3)}
+  .cbtn:active{transform:translateY(2px);box-shadow:0 1px 0 rgba(0,0,0,.3)}
+  .cbtn.on{background:#ffb454}
+  /* 우상단: 로드 패널 */
+  .panel{position:absolute;top:52px;right:16px;z-index:6;width:250px;
+    background:rgba(20,16,28,.72);backdrop-filter:blur(10px);border-radius:16px;padding:14px;
+    border:1px solid rgba(255,255,255,.1)}
+  .panel h3{font-family:'Jua';font-size:14px;color:#ffb454;margin-bottom:8px}
+  .panel .urlrow{display:flex;gap:6px;margin-bottom:8px}
+  .panel input[type=text]{flex:1;min-width:0;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);
+    border-radius:9px;padding:7px 9px;color:#eceae3;font-family:'Gaegu';font-size:12px}
+  .panel .mini{font-family:'Gaegu';font-size:11px;color:rgba(255,255,255,.5);line-height:1.5;margin-top:6px}
+  #info{margin-top:10px;padding-top:10px;border-top:1px solid rgba(255,255,255,.12);
+    font-family:'Gaegu';font-weight:700;font-size:12px;line-height:1.7;color:#cfe8d0}
+  #info .k{color:rgba(255,255,255,.5);font-weight:400}
+  #info.err{color:#ff9a8a}
+  /* 드롭 오버레이 */
+  #drop{position:absolute;inset:0;z-index:20;display:none;align-items:center;justify-content:center;
+    background:rgba(20,16,28,.85);border:4px dashed #ffb454;color:#ffb454;
+    font-family:'Jua';font-size:24px;pointer-events:none}
+  #drop.show{display:flex}
+  .loading{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:10;
+    color:#ffb454;font-family:'Jua';font-size:15px;display:none}
+  .loading.show{display:block}
+</style>
+</head>
+<body>
+<div id="wrap">
+  <canvas id="cv"></canvas>
+  <div class="top">
+    <span class="brand">볕<b>.</b></span>
+    <span class="tag">GLB 로더 · 직교 4방위 · Tripo 에셋 테스트</span>
+  </div>
+
+  <div class="panel">
+    <h3>모델 불러오기</h3>
+    <div class="urlrow">
+      <input type="text" id="urlIn" placeholder="GLB/GLTF 경로 또는 URL">
+      <button class="cbtn" id="btnUrl">로드</button>
+    </div>
+    <div style="display:flex;gap:6px">
+      <button class="cbtn" id="btnFile" style="flex:1">파일 선택</button>
+      <button class="cbtn" id="btnSample" style="flex:1">샘플</button>
+    </div>
+    <input type="file" id="fileIn" accept=".glb,.gltf" style="display:none">
+    <div class="mini">화면에 <b>GLB 파일을 드래그&드롭</b> 하거나 위에서 선택하세요.</div>
+    <div id="info"><span class="k">모델 없음 — 파일을 드롭하거나 ‹샘플›을 눌러보세요.</span></div>
+  </div>
+
+  <div class="views">
+    <button class="cbtn" data-dir="front">앞</button>
+    <button class="cbtn" data-dir="back">뒤</button>
+    <button class="cbtn" data-dir="left">좌</button>
+    <button class="cbtn" data-dir="right">우</button>
+    <button class="cbtn" data-dir="top">위</button>
+    <button class="cbtn" id="btnAuto">자동회전</button>
+    <button class="cbtn on" id="btnGrid">바닥격자</button>
+    <button class="cbtn" id="btnWire">와이어</button>
+  </div>
+
+  <div id="drop">여기에 GLB 놓기</div>
+  <div class="loading" id="loading">불러오는 중…</div>
+</div>
+
+<script>
+let scene, cam, renderer, grid, ground, model=null, mixer=null;
+let W, H, DPR=Math.min(2, window.devicePixelRatio||1);
+const cv=document.getElementById('cv');
+
+// 직교 카메라: 방위(az) + 고도(el) 구면좌표. r 은 near/far 및 방향용, 크기는 zoom 으로.
+let orbit={ az:Math.PI*0.25, el:0.62, r:20, zoom:1, tx:0, ty:0, tz:0 };
+let autoRotate=false, wireframe=false;
+let FRUSTUM=6;   // 직교 뷰 기본 반높이(월드 단위) — 모델 크기에 맞춰 조정됨
+const clock=new THREE.Clock();
+
+function init(){
+  renderer=new THREE.WebGLRenderer({canvas:cv, antialias:true, alpha:false});
+  renderer.setPixelRatio(DPR);
+  renderer.outputEncoding=THREE.sRGBEncoding;
+  renderer.shadowMap.enabled=true; renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+  renderer.toneMapping=THREE.ACESFilmicToneMapping; renderer.toneMappingExposure=1.05;
+
+  scene=new THREE.Scene();
+  scene.background=new THREE.Color(0x1a1526);
+
+  cam=new THREE.OrthographicCamera(-1,1,1,-1,0.01,1000);
+
+  // 조명: 에셋이 잘 보이게 (반구 + 방향광 그림자)
+  const hemi=new THREE.HemisphereLight(0xbcd0ff, 0x30281f, 0.7); scene.add(hemi);
+  const dir=new THREE.DirectionalLight(0xfff2dc, 1.5);
+  dir.position.set(6,12,7); dir.castShadow=true;
+  dir.shadow.mapSize.set(2048,2048); dir.shadow.bias=-0.0004; dir.shadow.radius=5;
+  const ds=14; dir.shadow.camera.near=0.5; dir.shadow.camera.far=60;
+  dir.shadow.camera.left=-ds; dir.shadow.camera.right=ds; dir.shadow.camera.top=ds; dir.shadow.camera.bottom=-ds;
+  scene.add(dir, dir.target);
+  const fill=new THREE.DirectionalLight(0x88aaff, 0.35); fill.position.set(-8,4,-6); scene.add(fill);
+
+  // 바닥 그림자면 + 격자
+  ground=new THREE.Mesh(new THREE.PlaneGeometry(60,60),
+    new THREE.ShadowMaterial({opacity:0.28}));
+  ground.rotation.x=-Math.PI/2; ground.position.y=0; ground.receiveShadow=true; scene.add(ground);
+  grid=new THREE.GridHelper(20,20, 0x555070, 0x33304a);
+  grid.material.transparent=true; grid.material.opacity=0.55; scene.add(grid);
+
+  bindControls();
+  resize();
+  animate();
+}
+
+function resize(){
+  W=window.innerWidth; H=window.innerHeight;
+  renderer.setSize(W,H);
+  const asp=W/H;
+  cam.left=-FRUSTUM*asp; cam.right=FRUSTUM*asp; cam.top=FRUSTUM; cam.bottom=-FRUSTUM;
+  cam.updateProjectionMatrix();
+}
+
+function updateCam(){
+  const {az,el,r,tx,ty,tz}=orbit;
+  const ce=Math.cos(el);
+  cam.position.set(tx + r*ce*Math.sin(az), ty + r*Math.sin(el), tz + r*ce*Math.cos(az));
+  cam.up.set(0,1,0);
+  cam.lookAt(tx,ty,tz);
+  cam.zoom=orbit.zoom; cam.updateProjectionMatrix();
+}
+
+// ===== 로드 =====
+const gltfLoader=new THREE.GLTFLoader();
+function showLoading(on){ document.getElementById('loading').classList.toggle('show',!!on); }
+function setInfo(html, isErr){ const el=document.getElementById('info'); el.className=isErr?'err':''; el.innerHTML=html; }
+
+function clearModel(){
+  if(model){ scene.remove(model); model.traverse(o=>{ if(o.isMesh){ o.geometry&&o.geometry.dispose(); }}); model=null; }
+  mixer=null;
+}
+
+function onLoaded(gltf, srcLabel){
+  clearModel();
+  model=gltf.scene || gltf.scenes[0];
+  // 재질 그림자·인코딩
+  let tris=0, verts=0, meshes=0, mats=new Set();
+  model.traverse(o=>{
+    if(o.isMesh){
+      o.castShadow=true; o.receiveShadow=true; meshes++;
+      if(o.material){ (Array.isArray(o.material)?o.material:[o.material]).forEach(m=>mats.add(m)); }
+      const g=o.geometry;
+      if(g){ const pos=g.attributes.position; if(pos) verts+=pos.count;
+        tris += g.index? g.index.count/3 : (pos? pos.count/3 : 0); }
+    }
+  });
+  // 바운딩박스 → 중심 원점 정렬 + 바닥 y=0 안착 + 뷰에 맞게 프러스텀 조정
+  const box=new THREE.Box3().setFromObject(model);
+  const size=new THREE.Vector3(), center=new THREE.Vector3();
+  box.getSize(size); box.getCenter(center);
+  model.position.x -= center.x; model.position.z -= center.z;
+  model.position.y -= box.min.y;                 // 바닥에 앉힘
+  scene.add(model);
+
+  const maxDim=Math.max(size.x,size.y,size.z)||1;
+  FRUSTUM=maxDim*0.85; if(FRUSTUM<0.5) FRUSTUM=0.5;
+  orbit.ty=size.y*0.5; orbit.r=maxDim*3+5; orbit.zoom=1;
+  resize(); updateCam();
+  applyWire();
+
+  // 격자·바닥 스케일도 모델 크기에 맞춤
+  const gsz=Math.max(6, Math.ceil(maxDim*2));
+  grid.geometry.dispose(); grid.geometry=new THREE.GridHelper(gsz,gsz).geometry;
+
+  // 애니메이션
+  let anim='없음';
+  if(gltf.animations && gltf.animations.length){
+    mixer=new THREE.AnimationMixer(model);
+    gltf.animations.forEach(c=>mixer.clipAction(c).play());
+    anim=gltf.animations.length+'개 재생중';
+  }
+  setInfo(
+    `<span class="k">출처</span> ${srcLabel}<br>`+
+    `<span class="k">크기(m)</span> ${size.x.toFixed(2)} × ${size.y.toFixed(2)} × ${size.z.toFixed(2)}<br>`+
+    `<span class="k">삼각형</span> ${Math.round(tris).toLocaleString()} · <span class="k">정점</span> ${verts.toLocaleString()}<br>`+
+    `<span class="k">메시</span> ${meshes} · <span class="k">재질</span> ${mats.size} · <span class="k">애니</span> ${anim}`
+  );
+  showLoading(false);
+}
+
+function loadFromURL(url, label){
+  showLoading(true); setInfo('<span class="k">불러오는 중…</span>');
+  gltfLoader.load(url,
+    g=>onLoaded(g, label||url),
+    undefined,
+    e=>{ showLoading(false); setInfo('로드 실패: '+(e&&e.message?e.message:url)+'<br><span class="k">경로/CORS/파일형식을 확인하세요.</span>', true); }
+  );
+}
+function loadFromFile(file){
+  const name=file.name.toLowerCase();
+  showLoading(true); setInfo('<span class="k">'+file.name+' 읽는 중…</span>');
+  const rd=new FileReader();
+  rd.onload=()=>{
+    try{
+      if(name.endsWith('.glb')){
+        gltfLoader.parse(rd.result, '', g=>onLoaded(g, file.name),
+          e=>{ showLoading(false); setInfo('파싱 실패: '+file.name, true); });
+      }else{
+        // .gltf(JSON) — 외부 리소스는 못 붙이지만 자체포함이면 로드 시도
+        const url=URL.createObjectURL(new Blob([rd.result]));
+        gltfLoader.load(url, g=>{ URL.revokeObjectURL(url); onLoaded(g, file.name); },
+          undefined, e=>{ showLoading(false); setInfo('.gltf 외부리소스 로드 실패(.glb 권장): '+file.name, true); });
+      }
+    }catch(err){ showLoading(false); setInfo('오류: '+err.message, true); }
+  };
+  if(name.endsWith('.glb')) rd.readAsArrayBuffer(file); else rd.readAsText(file);
+}
+
+// ===== 컨트롤 =====
+function snapView(dir){
+  const iso=0.62, flat=0.28;
+  if(dir==='front'){ orbit.az=0; orbit.el=flat; }
+  else if(dir==='back'){ orbit.az=Math.PI; orbit.el=flat; }
+  else if(dir==='left'){ orbit.az=-Math.PI/2; orbit.el=flat; }
+  else if(dir==='right'){ orbit.az=Math.PI/2; orbit.el=flat; }
+  else if(dir==='top'){ orbit.az=Math.PI*0.25; orbit.el=1.45; }
+  updateCam();
+}
+function applyWire(){
+  if(!model) return;
+  model.traverse(o=>{ if(o.isMesh&&o.material){ (Array.isArray(o.material)?o.material:[o.material]).forEach(m=>{ m.wireframe=wireframe; }); }});
+}
+function bindControls(){
+  window.addEventListener('resize', ()=>{ resize(); updateCam(); });
+
+  // 드래그 회전
+  let dragging=false, px=0, py=0, panning=false;
+  cv.addEventListener('pointerdown', e=>{ dragging=true; panning=(e.button===2||e.shiftKey); px=e.clientX; py=e.clientY; cv.setPointerCapture(e.pointerId); });
+  cv.addEventListener('pointermove', e=>{
+    if(!dragging) return;
+    const dx=e.clientX-px, dy=e.clientY-py; px=e.clientX; py=e.clientY;
+    if(panning){
+      // 화면 드래그 → 타겟을 카메라 우/상 벡터 기준으로 이동(장면이 커서 따라옴)
+      const sx=(cam.right-cam.left)/W/orbit.zoom, sy=(cam.top-cam.bottom)/H/orbit.zoom;
+      const fwd=new THREE.Vector3(); cam.getWorldDirection(fwd);
+      const right=new THREE.Vector3().crossVectors(fwd, cam.up).normalize();
+      const up=new THREE.Vector3().crossVectors(right, fwd).normalize();
+      const mx=-dx*sx, my=dy*sy;
+      orbit.tx += mx*right.x + my*up.x;
+      orbit.ty += mx*right.y + my*up.y;
+      orbit.tz += mx*right.z + my*up.z;
+    }else{
+      orbit.az += dx*0.008;
+      orbit.el = Math.max(0.05, Math.min(1.52, orbit.el + dy*0.006));
+    }
+    updateCam();
+  });
+  cv.addEventListener('pointerup', e=>{ dragging=false; });
+  cv.addEventListener('contextmenu', e=>e.preventDefault());
+  cv.addEventListener('wheel', e=>{ e.preventDefault();
+    orbit.zoom = Math.max(0.1, Math.min(12, orbit.zoom * (e.deltaY<0?1.1:0.9)));
+    updateCam();
+  }, {passive:false});
+
+  document.querySelectorAll('.views [data-dir]').forEach(b=> b.onclick=()=>snapView(b.dataset.dir));
+  document.getElementById('btnAuto').onclick=e=>{ autoRotate=!autoRotate; e.target.classList.toggle('on',autoRotate); };
+  document.getElementById('btnGrid').onclick=e=>{ grid.visible=!grid.visible; e.target.classList.toggle('on',grid.visible); };
+  document.getElementById('btnWire').onclick=e=>{ wireframe=!wireframe; e.target.classList.toggle('on',wireframe); applyWire(); };
+
+  document.getElementById('btnUrl').onclick=()=>{ const u=document.getElementById('urlIn').value.trim(); if(u) loadFromURL(u); };
+  document.getElementById('urlIn').addEventListener('keydown',e=>{ if(e.key==='Enter') document.getElementById('btnUrl').click(); });
+  document.getElementById('btnFile').onclick=()=>document.getElementById('fileIn').click();
+  document.getElementById('fileIn').addEventListener('change',e=>{ if(e.target.files[0]) loadFromFile(e.target.files[0]); });
+  document.getElementById('btnSample').onclick=()=>loadFromURL('./assets/sample.glb','샘플 (CC0)');
+
+  // 드래그 & 드롭
+  const drop=document.getElementById('drop');
+  ['dragenter','dragover'].forEach(ev=> window.addEventListener(ev, e=>{ e.preventDefault(); drop.classList.add('show'); }));
+  ['dragleave','drop'].forEach(ev=> window.addEventListener(ev, e=>{ e.preventDefault(); if(ev==='drop'||e.relatedTarget===null) drop.classList.remove('show'); }));
+  window.addEventListener('drop', e=>{ e.preventDefault(); drop.classList.remove('show');
+    const f=e.dataTransfer.files[0]; if(f) loadFromFile(f); });
+}
+
+function animate(){
+  requestAnimationFrame(animate);
+  if(autoRotate){ orbit.az+=0.004; updateCam(); }
+  if(mixer) mixer.update(clock.getDelta()); else clock.getDelta();
+  renderer.render(scene,cam);
+}
+
+init();
+updateCam();
+</script>
+</body>
+</html>
