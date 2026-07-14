@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>볕 · 몬스테라 에셋 갤러리</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Jua&family=Gaegu:wght@400;700&display=swap');
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{min-height:100%;font-family:'Gaegu',sans-serif;background:#e9e7df;color:#2c2a24}
+  .top{position:sticky;top:0;z-index:10;display:flex;align-items:center;gap:14px;flex-wrap:wrap;
+    padding:14px 20px;background:rgba(255,255,255,.85);backdrop-filter:blur(8px);
+    border-bottom:1px solid rgba(0,0,0,.08)}
+  .brand{font-family:'Jua';font-size:20px;color:#2c2a24}
+  .brand b{color:#3d8a37}
+  .tag{font-family:'Gaegu';font-weight:700;font-size:12px;color:#8a8578}
+  .top .sp{margin-left:auto}
+  .ctl{font-family:'Gaegu';font-weight:700;font-size:13px;display:flex;align-items:center;gap:6px;cursor:pointer}
+  #count{font-family:'Jua';font-size:13px;color:#3d8a37}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px;padding:18px 20px 60px}
+  .card{background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 3px 14px rgba(0,0,0,.08);
+    border:1px solid rgba(0,0,0,.06);display:flex;flex-direction:column}
+  .card canvas{width:100%;display:block;background:#f3f1ea;cursor:grab;aspect-ratio:1.18/1;touch-action:none}
+  .card canvas:active{cursor:grabbing}
+  .meta{padding:9px 12px 11px}
+  .meta .nm{font-family:'Jua';font-size:12.5px;line-height:1.3;word-break:break-word;color:#2c2a24}
+  .meta .in{font-family:'Gaegu';font-weight:700;font-size:11px;color:#7d7869;margin-top:3px}
+  .meta .in b{color:#3d8a37}
+  .card .hint{font-family:'Gaegu';font-size:10px;color:#a8a293;padding:0 12px 8px}
+  /* 모달 */
+  #modal{position:fixed;inset:0;z-index:50;display:none;background:rgba(30,28,24,.82);
+    align-items:center;justify-content:center;flex-direction:column;padding:20px}
+  #modal.show{display:flex}
+  #mCanvas{background:#f3f1ea;border-radius:14px;box-shadow:0 10px 40px rgba(0,0,0,.5);cursor:grab;touch-action:none;max-width:92vw;max-height:74vh}
+  #mCanvas:active{cursor:grabbing}
+  .mbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:14px}
+  .cbtn{background:#fff;border:none;border-radius:12px;padding:8px 14px;font-family:'Jua';font-size:13px;
+    color:#3d3548;cursor:pointer;box-shadow:0 3px 0 rgba(0,0,0,.3)}
+  .cbtn:active{transform:translateY(2px);box-shadow:0 1px 0 rgba(0,0,0,.3)}
+  .cbtn.on{background:#7ad06a}
+  #mName{position:fixed;top:18px;left:0;right:0;text-align:center;color:#fff;font-family:'Jua';font-size:16px;pointer-events:none}
+  #mInfo{color:#e8e5dd;font-family:'Gaegu';font-weight:700;font-size:13px;margin-top:8px}
+  #mClose{position:fixed;top:14px;right:18px;font-family:'Jua';font-size:15px}
+  #loading{padding:40px;text-align:center;font-family:'Jua';color:#3d8a37;font-size:15px}
+</style>
+</head>
+<body>
+  <div class="top">
+    <span class="brand">볕<b>.</b></span>
+    <span class="tag">몬스테라 에셋 갤러리 · assets/monstera/</span>
+    <span id="count"></span>
+    <span class="sp"></span>
+    <label class="ctl"><input type="checkbox" id="gridToggle"> 격자 바닥</label>
+    <label class="ctl"><input type="checkbox" id="spinToggle"> 자동회전</label>
+  </div>
+
+  <div id="loading">에셋 스캔 중…</div>
+  <div class="grid" id="grid"></div>
+
+  <div id="modal">
+    <div id="mName"></div>
+    <button class="cbtn" id="mClose">✕ 닫기</button>
+    <canvas id="mCanvas"></canvas>
+    <div class="mbar">
+      <button class="cbtn" data-dir="front">앞</button>
+      <button class="cbtn" data-dir="back">뒤</button>
+      <button class="cbtn" data-dir="left">좌</button>
+      <button class="cbtn" data-dir="right">우</button>
+      <button class="cbtn" data-dir="top">위</button>
+      <button class="cbtn" id="mGrid">격자</button>
+    </div>
+    <div id="mInfo"></div>
+  </div>
+
+<script>
+const BG=0xf3f1ea, TW=400, TH=340;
+let RS;               // 공유 썸네일 렌더러(1 컨텍스트)
+const cards=[];
+let showGrid=false, autoSpin=false;
+
+// ===== 공통 =====
+function addLights(scene){
+  scene.add(new THREE.HemisphereLight(0xffffff,0x9a8f7a,0.95));
+  const d=new THREE.DirectionalLight(0xfff4e0,1.25); d.position.set(5,9,6); scene.add(d);
+  const f=new THREE.DirectionalLight(0xbfd0e8,0.45); f.position.set(-6,3,-4); scene.add(f);
+}
+function processModel(gltf){
+  const obj=gltf.scene||gltf.scenes[0];
+  let tris=0;
+  obj.traverse(o=>{ if(o.isMesh){ const g=o.geometry; if(g){ const p=g.attributes.position; tris += g.index? g.index.count/3 : (p?p.count/3:0); } }});
+  const box=new THREE.Box3().setFromObject(obj), size=new THREE.Vector3(), c=new THREE.Vector3();
+  box.getSize(size); box.getCenter(c);
+  obj.position.x-=c.x; obj.position.z-=c.z; obj.position.y-=box.min.y;   // 중심+바닥 안착
+  return {obj,size,tris:Math.round(tris)};
+}
+function makeGrid(size){
+  const s=Math.max(1,Math.ceil(Math.max(size.x,size.z)*1.6));
+  const g=new THREE.GridHelper(s*2,s*2,0xbdb8a8,0xd8d3c4);
+  g.visible=showGrid; return g;
+}
+function orbCam(cam,orbit,size,asp){
+  const F=Math.max(size.x,size.y,size.z)*0.62 || 1;
+  cam.left=-F*asp; cam.right=F*asp; cam.top=F; cam.bottom=-F; cam.zoom=orbit.zoom;
+  const r=F*6, ce=Math.cos(orbit.el), ty=size.y*0.5;
+  cam.position.set(r*ce*Math.sin(orbit.az), ty+r*Math.sin(orbit.el), r*ce*Math.cos(orbit.az));
+  cam.up.set(0,1,0); cam.lookAt(0,ty,0); cam.updateProjectionMatrix();
+}
+
+// ===== 썸네일 카드 =====
+function renderCard(c){
+  RS.setSize(TW,TH,false);
+  orbCam(c.cam,c.orbit,c.size,TW/TH);
+  RS.render(c.scene,c.cam);
+  c.ctx.clearRect(0,0,TW,TH);
+  c.ctx.drawImage(RS.domElement,0,0,TW,TH);
+  c.dirty=false;
+}
+function buildCard(item, gltf){
+  const {obj,size,tris}=processModel(gltf);
+  const scene=new THREE.Scene(); scene.background=new THREE.Color(BG);
+  addLights(scene); const grid=makeGrid(size); scene.add(grid); scene.add(obj);
+  const cam=new THREE.OrthographicCamera(-1,1,1,-1,0.01,1000);
+
+  const el=document.createElement('div'); el.className='card';
+  const cv=document.createElement('canvas'); cv.width=TW; cv.height=TH;
+  const meta=document.createElement('div'); meta.className='meta';
+  const nice=item.name.replace(/\.glb$/i,'').replace(/\+/g,' ');
+  meta.innerHTML=`<div class="nm">${nice}</div>`+
+    `<div class="in">△ <b>${tris.toLocaleString()}</b> · ${size.x.toFixed(2)}×${size.y.toFixed(2)}×${size.z.toFixed(2)}</div>`;
+  const hint=document.createElement('div'); hint.className='hint'; hint.textContent='드래그 회전 · 휠 줌 · 클릭 크게';
+  el.appendChild(cv); el.appendChild(meta); el.appendChild(hint);
+  document.getElementById('grid').appendChild(el);
+
+  const c={item,name:item.name,scene,cam,obj,size,tris,grid,
+    ctx:cv.getContext('2d'), orbit:{az:0.5,el:0.42,zoom:1}, dirty:true};
+  cards.push(c);
+  bindCard(c,cv);
+  return c;
+}
+function bindCard(c,cv){
+  let drag=false,px=0,py=0,moved=0;
+  cv.addEventListener('pointerdown',e=>{ drag=true;moved=0;px=e.clientX;py=e.clientY;cv.setPointerCapture(e.pointerId); });
+  cv.addEventListener('pointermove',e=>{ if(!drag)return; const dx=e.clientX-px,dy=e.clientY-py; px=e.clientX;py=e.clientY;
+    moved+=Math.abs(dx)+Math.abs(dy);
+    c.orbit.az+=dx*0.01; c.orbit.el=Math.max(0.05,Math.min(1.5,c.orbit.el+dy*0.008)); c.dirty=true; });
+  cv.addEventListener('pointerup',e=>{ drag=false; if(moved<5) openModal(c); });
+  cv.addEventListener('wheel',e=>{ e.preventDefault(); c.orbit.zoom=Math.max(0.3,Math.min(6,c.orbit.zoom*(e.deltaY<0?1.12:0.89))); c.dirty=true; },{passive:false});
+}
+
+// ===== 모달(크게 보기) =====
+const modal={open:false, card:null, scene:null, cam:null, RM:null, grid:null, orbit:{az:0.5,el:0.42,zoom:1}};
+function initModal(){
+  const mc=document.getElementById('mCanvas');
+  modal.RM=new THREE.WebGLRenderer({canvas:mc,antialias:true});
+  modal.RM.setPixelRatio(Math.min(2,devicePixelRatio||1));
+  modal.RM.outputEncoding=THREE.sRGBEncoding;
+  modal.scene=new THREE.Scene(); modal.scene.background=new THREE.Color(BG);
+  addLights(modal.scene);
+  modal.cam=new THREE.OrthographicCamera(-1,1,1,-1,0.01,1000);
+
+  document.querySelectorAll('#modal [data-dir]').forEach(b=>b.onclick=()=>{
+    const d=b.dataset.dir, flat=0.3;
+    if(d==='front'){modal.orbit.az=0;modal.orbit.el=flat;}
+    else if(d==='back'){modal.orbit.az=Math.PI;modal.orbit.el=flat;}
+    else if(d==='left'){modal.orbit.az=-Math.PI/2;modal.orbit.el=flat;}
+    else if(d==='right'){modal.orbit.az=Math.PI/2;modal.orbit.el=flat;}
+    else if(d==='top'){modal.orbit.az=0.5;modal.orbit.el=1.45;}
+  });
+  document.getElementById('mGrid').onclick=e=>{ if(modal.grid){ modal.grid.visible=!modal.grid.visible; e.target.classList.toggle('on',modal.grid.visible);} };
+  document.getElementById('mClose').onclick=closeModal;
+  document.getElementById('modal').addEventListener('pointerdown',e=>{ if(e.target.id==='modal') closeModal(); });
+
+  let drag=false,px=0,py=0;
+  mc.addEventListener('pointerdown',e=>{ drag=true;px=e.clientX;py=e.clientY;mc.setPointerCapture(e.pointerId); });
+  mc.addEventListener('pointermove',e=>{ if(!drag)return; const dx=e.clientX-px,dy=e.clientY-py;px=e.clientX;py=e.clientY;
+    modal.orbit.az+=dx*0.008; modal.orbit.el=Math.max(0.05,Math.min(1.5,modal.orbit.el+dy*0.006)); });
+  mc.addEventListener('pointerup',()=>drag=false);
+  mc.addEventListener('wheel',e=>{ e.preventDefault(); modal.orbit.zoom=Math.max(0.3,Math.min(8,modal.orbit.zoom*(e.deltaY<0?1.1:0.9))); },{passive:false});
+  addEventListener('resize',resizeModal);
+  addEventListener('keydown',e=>{ if(e.key==='Escape'&&modal.open) closeModal(); });
+}
+function resizeModal(){
+  const mc=document.getElementById('mCanvas');
+  const w=Math.min(innerWidth*0.9, 900), h=Math.min(innerHeight*0.7, 640);
+  mc.style.width=w+'px'; mc.style.height=h+'px';
+  modal.RM.setSize(w,h,false);
+}
+function openModal(c){
+  modal.card=c;
+  c.scene.remove(c.obj); modal.scene.add(c.obj);          // 모델을 모달 씬으로 이동
+  if(modal.grid) modal.scene.remove(modal.grid);
+  modal.grid=makeGrid(c.size); modal.grid.visible=false; modal.scene.add(modal.grid);
+  document.getElementById('mGrid').classList.remove('on');
+  modal.orbit={az:0.5,el:0.42,zoom:1};
+  const nice=c.name.replace(/\.glb$/i,'').replace(/\+/g,' ');
+  document.getElementById('mName').textContent=nice;
+  document.getElementById('mInfo').innerHTML=`△ ${c.tris.toLocaleString()} 삼각형 · 치수 ${c.size.x.toFixed(2)}×${c.size.y.toFixed(2)}×${c.size.z.toFixed(2)} m · ${c.name}`;
+  document.getElementById('modal').classList.add('show');
+  modal.open=true; resizeModal();
+}
+function closeModal(){
+  if(!modal.open) return;
+  const c=modal.card;
+  modal.scene.remove(c.obj); c.scene.add(c.obj); c.dirty=true;   // 카드로 되돌림
+  document.getElementById('modal').classList.remove('show');
+  modal.open=false;
+}
+
+// ===== 루프 =====
+function loop(){
+  requestAnimationFrame(loop);
+  if(autoSpin){ for(const c of cards){ c.orbit.az+=0.006; c.dirty=true; } }
+  for(const c of cards){ if(c.dirty && !(modal.open&&modal.card===c)) renderCard(c); }
+  if(modal.open){
+    const mc=document.getElementById('mCanvas');
+    if(autoSpin) modal.orbit.az+=0.006;
+    orbCam(modal.cam,modal.orbit,modal.card.size, mc.clientWidth/mc.clientHeight||1);
+    modal.RM.render(modal.scene,modal.cam);
+  }
+}
+
+// ===== 스캔 & 로드 =====
+async function listGLBs(){
+  // 1) 서버 디렉터리 인덱스 파싱(자동)
+  try{ const r=await fetch('./assets/monstera/'); if(r.ok){ const t=await r.text();
+    const hrefs=[...t.matchAll(/href="([^"?]+\.glb)"/gi)].map(m=>m[1]).filter(h=>!/^https?:/i.test(h));
+    if(hrefs.length) return hrefs.map(h=>({url:'./assets/monstera/'+h, name:decodeURIComponent(h.split('/').pop())})); } }catch(e){}
+  // 2) manifest.json 폴백
+  try{ const r=await fetch('./assets/monstera/manifest.json'); if(r.ok){ const l=await r.json();
+    return l.map(n=>({url:'./assets/monstera/'+encodeURIComponent(n), name:n})); } }catch(e){}
+  return [];
+}
+async function init(){
+  RS=new THREE.WebGLRenderer({antialias:true, preserveDrawingBuffer:true});
+  RS.setPixelRatio(1); RS.setSize(TW,TH,false); RS.outputEncoding=THREE.sRGBEncoding;
+  initModal(); loop();
+
+  const items=await listGLBs();
+  document.getElementById('loading').style.display=items.length?'none':'block';
+  if(!items.length){ document.getElementById('loading').textContent='GLB를 찾지 못했어요 (assets/monstera/ 확인).'; return; }
+  document.getElementById('count').textContent=items.length+'개';
+
+  const loader=new THREE.GLTFLoader();
+  let done=0;
+  items.forEach(item=>{
+    loader.load(item.url, g=>{ buildCard(item,g); },
+      undefined,
+      e=>{ console.warn('로드 실패',item.name,e); done++; });
+  });
+
+  document.getElementById('gridToggle').onchange=e=>{ showGrid=e.target.checked; cards.forEach(c=>{ c.grid.visible=showGrid; c.dirty=true; }); };
+  document.getElementById('spinToggle').onchange=e=>{ autoSpin=e.target.checked; };
+}
+init();
+</script>
+</body>
+</html>
