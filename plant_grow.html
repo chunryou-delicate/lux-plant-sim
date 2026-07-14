@@ -185,21 +185,21 @@ function addPot(){
   SOIL_Y=0.48;
 }
 
-// 줄기모듈: 두 마디점 사이를 GLB로 이어 그림. radius(굵기)로 thick/main/med/thin 선택.
 function stemKey(radius){ return radius>0.085?'stem_thick' : radius>0.062?'stem_main' : radius>0.046?'stem_med' : 'stem_thin'; }
+// GLB(밑면 y=0·긴축 Y)를 p0→p1 사이로 늘여 배치. 굵기 radius. → 두 점을 물리적으로 연결.
+function stretchGLB(key, p0, p1, radius){
+  const proto=ASSETS[key]; if(!proto) return false;
+  const dir=new THREE.Vector3().subVectors(p1,p0), len=dir.length(); if(len<1e-5) return true;
+  const g=proto.clone(true);
+  const hx=(proto.userData.sx||0.2)/2, hz=(proto.userData.sz||0.2)/2;
+  g.scale.set(radius/hx, len, radius/hz);                 // X/Z=굵기, Y=두 점 거리
+  g.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0), dir.clone().normalize());
+  g.position.copy(p0); plantGroup.add(g); return true;
+}
 function addStemSeg(p0, p1, radius, woodT){
-  const dir=new THREE.Vector3().subVectors(p1,p0), len=dir.length();
-  if(len<1e-5) return;
-  const proto=ASSETS[stemKey(radius)]||ASSETS.stem_main||ASSETS.stem_thin;
-  if(proto){
-    const g=proto.clone(true);
-    const hx=(proto.userData.sx||0.2)/2, hz=(proto.userData.sz||0.2)/2;
-    g.scale.set(radius/hx, len, radius/hz);   // X/Z=지름 맞춤, Y=마디 길이(단위높이1)
-    g.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0), dir.clone().normalize());
-    g.position.copy(p0);                       // 밑면(y=0)이 부모 마디에
-    plantGroup.add(g); return;
-  }
+  if(stretchGLB(stemKey(radius), p0, p1, radius)) return;
   // 폴백: 원기둥
+  const dir=new THREE.Vector3().subVectors(p1,p0), len=dir.length(); if(len<1e-5) return;
   const geo=new THREE.CylinderGeometry(radius*0.85, radius*1.12, len, 7);
   const col=new THREE.Color(0x5e8a44).lerp(new THREE.Color(0x6b4a30), (woodT||0)*0.6);
   const m=new THREE.Mesh(geo, new THREE.MeshStandardMaterial({color:col, roughness:0.75}));
@@ -207,18 +207,13 @@ function addStemSeg(p0, p1, radius, woodT){
   m.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0), dir.clone().normalize());
   m.castShadow=true; plantGroup.add(m);
 }
-// 잎자루: 마디→잎 사이를 잇는 짧은 GLB. 반환=잎 부착점(잎자루 끝).
-function addPetiole(nodePos, d, size, maturity){
-  const embed=0.03*size;
-  if(!(USE_PETIOLE && ASSETS.petiole)) return nodePos.clone().addScaledVector(d,-0.04*size);
-  const petLen=0.14*size+0.05, pr=0.018+0.014*maturity;
-  const pet=assetInst('petiole');
-  const hx=(ASSETS.petiole.userData.sx||0.2)/2, hz=(ASSETS.petiole.userData.sz||0.2)/2;
-  pet.scale.set(pr/hx, petLen, pr/hz);
-  pet.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0), d.clone().normalize());
-  pet.position.copy(nodePos.clone().addScaledVector(d,-embed));   // 마디에 살짝 파고듦
-  plantGroup.add(pet);
-  return nodePos.clone().addScaledVector(d, petLen-embed);        // 잎은 잎자루 끝
+// 잎자루(연결 줄기): 마디에서 잎 부착점까지 실제로 이어줌(길게) + 잎 속으로 넉넉히 파고듦 → 안 뜸.
+function addPetiole(nodePos, d, size, maturity, leafBase){
+  if(!(USE_PETIOLE && ASSETS.petiole)) return;
+  const embed=0.05*size, over=0.14*size;                 // 마디에 조금, 잎 안쪽으로 넉넉히
+  const p0=nodePos.clone().addScaledVector(d,-embed);
+  const p1=leafBase.clone().addScaledVector(d, over);
+  stretchGLB('petiole', p0, p1, 0.022+0.015*maturity);
 }
 // 성장 후보 마디 중 하나 선택: 거의 균등 랜덤 + 빛 받는 쪽 약간↑ (굴광성)
 function pickCandidate(list, ld){
@@ -247,9 +242,11 @@ function placeAlong(obj, base, dir, worldLen){
 // 잎: 마디에서 방위 az + 성숙도별 처짐 방향으로. 잎자루 끝이 마디에 살짝 파고들게.
 function addLeaf(nodePos, az, maturity, kind){
   const size=0.30 + maturity*0.85;                    // 먼저 난(성숙) 잎일수록 큼
-  const elev=0.95 - maturity*0.62;                    // 어릴수록 위로, 성숙할수록 처짐
+  const elev=0.85 - maturity*0.55;                    // 어릴수록 위로, 성숙할수록 처짐
   const d=new THREE.Vector3(Math.cos(elev)*Math.sin(az), Math.sin(elev), Math.cos(elev)*Math.cos(az)).normalize();
-  const base=addPetiole(nodePos, d, size, maturity);   // 잎자루로 연결 → 잎 부착점
+  const reach=0.06 + 0.10*size;                        // 마디→잎 부착점 거리(잎자루 길이)
+  const base=nodePos.clone().addScaledVector(d, reach);
+  addPetiole(nodePos, d, size, maturity, base);        // 연결 줄기가 마디~잎을 실제로 이어줌
   const proto=assetInst(leafKindKey(kind));
   if(proto){ placeAlong(proto, base, d, size); plantGroup.add(proto); return; }
   // 폴백: 임시 원뿔
