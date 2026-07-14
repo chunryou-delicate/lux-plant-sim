@@ -126,20 +126,63 @@ function makeLeaf(type){
   const m=new THREE.Mesh(geo, MAT.leaf[type]); m.castShadow=true; return m;
 }
 
-let POT_GLB=null;   // ./assets/planter.glb 있으면 사용
 let plantGroup;
 
+// ===== 몬스테라 GLB 에셋 (assets/monstera/) =====
+const ASSET_FILES={
+  pot:'pot.glb',
+  leaf_young:'monstera_leaf_young.glb', leaf_mid1:'monstera_leaf_mid1.glb',
+  leaf_mid2:'monstera_leaf_mid2.glb', leaf_mature:'monstera_leaf_mature.glb',
+  bud_furled:'monstera_bud_furled.glb', bud_opening:'monstera_bud_opening.glb', bud_opening2:'monstera_bud_opening2.glb',
+  stem_thick:'monstera_stem_thick.glb', stem_main:'monstera_stem_main.glb',
+  stem_med:'monstera_stem_med.glb', stem_thin:'monstera_stem_thin.glb',
+  petiole:'monstera_petiole.glb'
+};
+const LONGY={stem_thick:1,stem_main:1,stem_med:1,stem_thin:1,petiole:1};  // 긴축→Y 정렬(줄기/잎자루)
+const ASSETS={}; let ASSETS_READY=false;
+let SOIL_Y=0.5;
+const POT_H=0.6;   // 화분 높이(월드)
+
+// GLB 정규화: 중심 x/z, 밑면 y=0, 높이 1.0. forceLongY면 가장 긴 축을 Y로 회전.
+// 반환 outer(단위,항등) → clone 후 scale/quaternion/position로 배치.
+function normalizeAsset(root, forceLongY){
+  root.updateMatrixWorld(true);
+  let box=new THREE.Box3().setFromObject(root), size=new THREE.Vector3(); box.getSize(size);
+  if(forceLongY){
+    const mx=Math.max(size.x,size.y,size.z);
+    if(mx===size.x) root.rotation.z=-Math.PI/2;
+    else if(mx===size.z) root.rotation.x=Math.PI/2;
+    root.updateMatrixWorld(true);
+    box=new THREE.Box3().setFromObject(root); box.getSize(size);
+  }
+  const c=new THREE.Vector3(); box.getCenter(c);
+  const inner=new THREE.Group(); inner.add(root); inner.position.set(-c.x,-box.min.y,-c.z);
+  const g=new THREE.Group(); g.add(inner); g.scale.setScalar(1/(size.y||1));
+  const outer=new THREE.Group(); outer.add(g);
+  outer.traverse(o=>{ if(o.isMesh){ o.castShadow=true; o.receiveShadow=true; } });
+  const nb=new THREE.Box3().setFromObject(outer), ns=new THREE.Vector3(); nb.getSize(ns);
+  outer.userData={sx:ns.x, sy:ns.y, sz:ns.z};   // 단위 크기(sy≈1)
+  return outer;
+}
+function loadAssets(cb){
+  const loader=new THREE.GLTFLoader(), keys=Object.keys(ASSET_FILES); let n=0;
+  const done=()=>{ if(++n===keys.length){ ASSETS_READY=true; cb&&cb(); } };
+  keys.forEach(k=> loader.load('./assets/monstera/'+encodeURIComponent(ASSET_FILES[k]),
+    g=>{ try{ ASSETS[k]=normalizeAsset(g.scene, !!LONGY[k]); }catch(e){ console.warn('norm fail',k,e); } done(); },
+    undefined, ()=>{ console.warn('load fail',k,ASSET_FILES[k]); done(); }));
+}
+function assetInst(key){ const p=ASSETS[key]; return p? p.clone(true):null; }
+
 function addPot(){
-  if(POT_GLB){ const g=POT_GLB.clone(); g.position.y=0; plantGroup.add(g); return; }
-  // 임시 화분: 원뿔대 + 흙
+  const p=ASSETS.pot;
+  if(p){ const g=p.clone(true); g.scale.setScalar(POT_H); plantGroup.add(g); SOIL_Y=POT_H*0.82; return; }
+  // 임시 화분(폴백)
   const pot=new THREE.Mesh(new THREE.CylinderGeometry(0.5,0.38,0.5,20), MAT.pot);
   pot.position.y=0.25; pot.castShadow=true; pot.receiveShadow=true; plantGroup.add(pot);
-  const rim=new THREE.Mesh(new THREE.TorusGeometry(0.5,0.04,10,24), MAT.pot);
-  rim.rotation.x=Math.PI/2; rim.position.y=0.5; plantGroup.add(rim);
   const soil=new THREE.Mesh(new THREE.CylinderGeometry(0.47,0.47,0.06,20), MAT.soil);
   soil.position.y=0.47; soil.receiveShadow=true; plantGroup.add(soil);
+  SOIL_Y=0.48;
 }
-const SOIL_Y=0.48;
 
 // 줄기모듈: 두 마디점 사이를 이어 그림. radius=굵기, woodT=0(초록)~1(우디)
 function addStemSeg(p0, p1, radius, woodT){
@@ -161,17 +204,39 @@ function pickCandidate(list, ld){
   for(let i=0;i<list.length;i++){ r-=w[i]; if(r<=0) return list[i]; }
   return list[list.length-1];
 }
-function addLeaf(p, az, maturity, emerge, type, sizeBonus, leanBonus){
-  const scale=(0.4 + maturity*0.9)*emerge*(sizeBonus||1);
-  const pivot=new THREE.Group();
-  pivot.position.copy(p);
-  pivot.rotation.y=az;
-  const leaf=makeLeaf(type);
-  const lean=0.5 + maturity*0.7 - (leanBonus||0)*0.5;   // 빛쪽 잎은 덜 눕고 위로 더 뻗음
-  leaf.rotation.x=lean;
-  leaf.position.set(0,0,0.10*scale);   // 잎자루만큼 바깥으로
-  leaf.scale.setScalar(scale);
-  pivot.add(leaf); plantGroup.add(pivot);
+// 성숙도/새순 종류 → GLB 키 (mid·opening은 랜덤 2종=개체 다양성)
+function leafKindKey(kind){
+  if(kind==='mid')     return rng()<0.5?'leaf_mid1':'leaf_mid2';
+  if(kind==='opening') return rng()<0.5?'bud_opening':'bud_opening2';
+  if(kind==='young')   return 'leaf_young';
+  if(kind==='mature')  return 'leaf_mature';
+  if(kind==='furled')  return 'bud_furled';
+  return 'leaf_young';
+}
+// obj(높이1·밑면0·긴축Y)를 base에서 dir 방향으로 세워 놓기(높이=worldLen)
+function placeAlong(obj, base, dir, worldLen){
+  obj.scale.setScalar(worldLen);
+  obj.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0), dir.clone().normalize());
+  obj.position.copy(base);
+}
+// 잎: 마디에서 방위 az + 성숙도별 처짐 방향으로. 잎자루 끝이 마디에 살짝 파고들게.
+function addLeaf(nodePos, az, maturity, kind){
+  const size=0.30 + maturity*0.85;                    // 먼저 난(성숙) 잎일수록 큼
+  const elev=0.95 - maturity*0.62;                    // 어릴수록 위로, 성숙할수록 처짐
+  const d=new THREE.Vector3(Math.cos(elev)*Math.sin(az), Math.sin(elev), Math.cos(elev)*Math.cos(az)).normalize();
+  const proto=assetInst(leafKindKey(kind));
+  if(proto){ placeAlong(proto, nodePos.clone().addScaledVector(d,-0.04*size), d, size); plantGroup.add(proto); return; }
+  // 폴백: 임시 원뿔
+  const type=kind==='mature'?2:kind==='mid'?1:0;
+  const m=makeLeaf(type), pivot=new THREE.Group(); pivot.position.copy(nodePos); pivot.rotation.y=az;
+  m.rotation.x=0.5+maturity*0.7; m.scale.setScalar(size); pivot.add(m); plantGroup.add(pivot);
+}
+// 새순: 갓 난 성장점(거의 위로). furled → opening → (young 잎)
+function addBud(nodePos, az, kind, size){
+  const d=new THREE.Vector3(Math.sin(az)*0.22, 0.975, Math.cos(az)*0.22).normalize();
+  const proto=assetInst(leafKindKey(kind));
+  if(proto){ placeAlong(proto, nodePos.clone().addScaledVector(d,-0.02*size), d, size); plantGroup.add(proto); return; }
+  const m=new THREE.Mesh(new THREE.ConeGeometry(0.05,0.14,8), MAT.stem); m.position.copy(nodePos); m.position.y+=size*0.5; plantGroup.add(m);
 }
 
 function clearGroup(g){ while(g.children.length){ const c=g.children[0]; g.remove(c); c.traverse&&c.traverse(o=>{ if(o.isMesh&&o.geometry) o.geometry.dispose(); }); } }
@@ -220,12 +285,16 @@ function buildPlant(){
       addStemSeg(n.parent.pos, n.pos, r, Math.min(1,(st-1)/8));
       const ageNorm=nLeaves>1?(nLeaves-n.order)/(nLeaves-1):1;   // 먼저 난 잎=오래됨(큼·성숙)
       const maturity=ageNorm*(0.35+0.65*gf);
-      let emerge=1;
-      if(n.order===nLeaves) emerge=Math.min(1, ((g-14)%6)/6 + 0.25);  // 맨 마지막 잎 스르륵
       const azf=n.az + PHOTO*0.5*Math.atan2(Math.sin(L-n.az),Math.cos(L-n.az));  // 빛쪽 방위 당김
-      const align=Math.max(0,Math.cos(azf-L));
-      const leafType = maturity<0.3?0 : maturity<0.6?1 : 2;   // 성숙도별 잎 형태
-      addLeaf(n.pos, azf, maturity, emerge, leafType, 1+PHOTO*0.35*align, align*PHOTO);
+      if(n.order===nLeaves && nLeaves>1){
+        const em=Math.min(1, ((g-14)%6)/6 + 0.15);   // 새순 진행도: furled→opening→young
+        if(em<0.45)      addBud(n.pos, azf, 'furled',  0.16+em*0.18);
+        else if(em<0.80) addBud(n.pos, azf, 'opening', 0.20+em*0.22);
+        else             addLeaf(n.pos, azf, maturity*0.45, 'young');
+      } else {
+        const kind = maturity<0.3?'young' : maturity<0.62?'mid' : 'mature';   // 성숙도별 잎 자동선택
+        addLeaf(n.pos, azf, maturity, kind);
+      }
     }
     nodes=nLeaves; leaves=nLeaves; stage='분기 마디 '+nLeaves+'개';
   }
@@ -265,11 +334,8 @@ function init(){
     new THREE.MeshBasicMaterial({color:0xffd24a}));
   scene.add(sunMarker); updateSun();
 
-  // 화분 GLB 있으면 로드(없으면 임시 도형)
-  new THREE.GLTFLoader().load('./assets/planter.glb',
-    g=>{ POT_GLB=g.scene; buildPlant(); },
-    undefined,
-    ()=>{ /* 없음 → 임시 도형 유지 */ });
+  // 몬스테라 GLB 에셋 로드 → 준비되면 재빌드(그 전엔 임시 도형 폴백)
+  loadAssets(()=>buildPlant());
 
   bindControls(); resize(); buildPlant(); animate();
 }
