@@ -39,6 +39,7 @@
   .note2{font-family:'Gaegu';font-weight:700;font-size:12px;color:rgba(255,255,255,.5);padding:14px 4px}
   #assetSel{width:100%;margin-bottom:8px;background:#241d30;color:#eceae3;border:1px solid rgba(255,255,255,.18);border-radius:9px;padding:8px;font-family:'Gaegu';font-weight:700;font-size:13px}
   #assetSel option{background:#241d30;color:#eceae3}
+  #assetPrev{width:100%;height:auto;aspect-ratio:248/150;background:radial-gradient(circle at 50% 40%,rgba(255,255,255,.12),rgba(255,255,255,.03));border-radius:10px;margin-bottom:8px;display:block}
   .panel h3{font-family:'Jua';font-size:14px;color:#7ad06a;margin-bottom:10px}
   .field{margin-bottom:10px}
   .field label{display:flex;justify-content:space-between;font-family:'Gaegu';font-weight:700;font-size:12px;
@@ -81,6 +82,7 @@
         <div class="col">
           <div class="colhead">에셋 B · 개별 조정</div>
           <select id="assetSel"></select>
+          <canvas id="assetPrev" width="248" height="150"></canvas>
           <div id="assetSliders"></div>
         </div>
       </div>
@@ -489,9 +491,9 @@ function init(){
   scene.add(sunMarker); updateSun();
 
   // 몬스테라 GLB 에셋 로드 → 준비되면 재빌드(그 전엔 임시 도형 폴백)
-  loadAssets(()=>buildPlant());
+  loadAssets(()=>{ buildPlant(); const s=document.getElementById('assetSel'); if(s) showPreview(s.value); });
 
-  bindControls(); resize(); buildPlant(); animate();
+  bindControls(); initPreview(); resize(); buildPlant(); animate();
 }
 function resize(){
   W=innerWidth; H=innerHeight; renderer.setSize(W,H);
@@ -559,8 +561,31 @@ const ADJ_FIELDS_LEAF=[{k:'omin',t:'사용 order 최소',min:0,max:12,step:1},{k
 function buildAssetSelect(){
   const sel=document.getElementById('assetSel'); if(!sel) return;
   sel.innerHTML=ADJ_KEYS.map(k=>`<option value="${k}">${k.replace(/_/g,' ')}</option>`).join('');
-  sel.onchange=()=>buildAssetSliders(sel.value);
-  buildAssetSliders(sel.value);
+  sel.onchange=()=>{ buildAssetSliders(sel.value); showPreview(sel.value); };
+  buildAssetSliders(sel.value); showPreview(sel.value);
+}
+// ===== 선택 에셋 3D 미리보기(원본 색 그대로, 회전) =====
+let prevR, prevScene, prevCam, prevObj;
+function initPreview(){
+  const c=document.getElementById('assetPrev'); if(!c||typeof THREE==='undefined') return;
+  prevR=new THREE.WebGLRenderer({canvas:c, antialias:true, alpha:true});
+  prevR.setPixelRatio(Math.min(2,devicePixelRatio||1)); prevR.setSize(c.width,c.height,false);
+  prevR.outputEncoding=THREE.sRGBEncoding;
+  prevScene=new THREE.Scene();
+  prevScene.add(new THREE.HemisphereLight(0xffffff,0x777777,1.05));
+  const d=new THREE.DirectionalLight(0xffffff,1.0); d.position.set(3,5,4); prevScene.add(d);
+  const asp=c.width/c.height, F=0.6;
+  prevCam=new THREE.OrthographicCamera(-F*asp,F*asp,F,-F,0.01,100);
+  prevCam.position.set(1.3,0.85,1.9); prevCam.lookAt(0,0.4,0);
+}
+function showPreview(key){
+  if(!prevScene) return;
+  if(prevObj){ prevScene.remove(prevObj); prevObj=null; }
+  const p=ASSETS[key]; if(!p) return;
+  prevObj=p.clone(true);                                  // 원본 재질(구분용)
+  const u=p.userData||{}, md=Math.max(u.sx||1,u.sy||1,u.sz||1)||1;
+  prevObj.scale.setScalar(1/md);
+  prevScene.add(prevObj);
 }
 function buildAssetSliders(key){
   const box=document.getElementById('assetSliders'); if(!box) return; box.innerHTML='';
@@ -635,7 +660,8 @@ function buildGlobalPanel(){
   });
 }
 function updateSun(){ if(!sunMarker) return; const R=2.3; sunMarker.position.set(Math.sin(LIGHT_AZ)*R, 1.5, Math.cos(LIGHT_AZ)*R); }
-function animate(){ requestAnimationFrame(animate); if(autoRotate){ orbit.az+=0.004; updateCam(); } renderer.render(scene,cam); }
+function animate(){ requestAnimationFrame(animate); if(autoRotate){ orbit.az+=0.004; updateCam(); } renderer.render(scene,cam);
+  if(prevObj&&prevR){ prevObj.rotation.y+=0.012; prevR.render(prevScene,prevCam); } }
 
 init(); updateCam();
 </script>
