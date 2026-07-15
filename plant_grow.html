@@ -37,6 +37,7 @@
   .prow{display:flex;gap:6px;margin-top:12px;padding-top:10px;border-top:1px solid rgba(255,255,255,.12)}
   .prow .cbtn{flex:1;font-size:12px;padding:8px}
   .note2{font-family:'Gaegu';font-weight:700;font-size:12px;color:rgba(255,255,255,.5);padding:14px 4px}
+  #assetSel{width:100%;margin-bottom:8px;background:rgba(255,255,255,.1);color:#eceae3;border:1px solid rgba(255,255,255,.18);border-radius:9px;padding:8px;font-family:'Gaegu';font-weight:700;font-size:13px}
   .panel h3{font-family:'Jua';font-size:14px;color:#7ad06a;margin-bottom:10px}
   .field{margin-bottom:10px}
   .field label{display:flex;justify-content:space-between;font-family:'Gaegu';font-weight:700;font-size:12px;
@@ -76,7 +77,10 @@
         <div id="stat" style="margin-top:8px"><span class="k">슬라이더를 움직여 자라는 걸 보세요.</span></div>
       </div>
       <div class="tabpane" id="tab-global" style="display:none"></div>
-      <div class="tabpane" id="tab-asset" style="display:none"><div class="note2">에셋별 개별 조정은 2단계에서 추가됩니다.</div></div>
+      <div class="tabpane" id="tab-asset" style="display:none">
+        <select id="assetSel"></select>
+        <div id="assetSliders"></div>
+      </div>
       <div class="prow">
         <button class="cbtn" id="btnCopy">📋 설정 복사</button>
         <button class="cbtn" id="btnReset">↺ 리셋</button>
@@ -116,6 +120,12 @@ const DEF={
   leafLight:0.63, leafDark:0.24, hueBase:0.20, hueRange:0.18,   // 색
 };
 let P=Object.assign({}, DEF);
+
+// ===== 튜닝 파라미터(B: 에셋별 개별 조정) =====
+const ADJ_KEYS=['leaf_young','leaf_mid1','leaf_mid2','leaf_mature','bud_furled','bud_opening','bud_opening2','stem_thick','stem_main','stem_med','stem_thin','petiole'];
+function defAdj(key){ const d={scale:1, rx:0,ry:0,rz:0, ox:0,oy:0,oz:0}; if(/^leaf_/.test(key)){ d.omin=0; d.omax=99; } return d; }  // omin/omax=사용 order 범위(잎만)
+const DEF_ADJ={}; ADJ_KEYS.forEach(k=>DEF_ADJ[k]=defAdj(k));
+let ADJ=JSON.parse(JSON.stringify(DEF_ADJ));
 
 let GROWTH=30;
 let LIGHT_AZ=Math.PI*0.5, PHOTO=0.5;   // 빛 방위(rad) · 굴광성 세기(0~1)
@@ -212,7 +222,17 @@ function loadAssets(cb){
     g=>{ try{ ASSETS[k]=normalizeAsset(g.scene, !!LONGY[k], !!ANCHORB[k]); }catch(e){ console.warn('norm fail',k,e); } done(); },
     undefined, ()=>{ console.warn('load fail',k,ASSET_FILES[k]); done(); }));
 }
-function assetInst(key){ const p=ASSETS[key]; return p? p.clone(true):null; }
+// 에셋 인스턴스 = GLB 클론 + 에셋별 조정(스케일·회전·오프셋)을 안쪽에 베이크. 바깥은 placeAlong용.
+function assetInst(key){
+  const p=ASSETS[key]; if(!p) return null;
+  const a=ADJ[key]||{};
+  const inner=p.clone(true);
+  inner.scale.multiplyScalar(a.scale||1);
+  inner.rotation.set(a.rx||0, a.ry||0, a.rz||0);
+  inner.position.set(a.ox||0, a.oy||0, a.oz||0);
+  const w=new THREE.Group(); w.add(inner); w.userData=p.userData;
+  return w;
+}
 
 function addPot(){
   const p=ASSETS.pot;
@@ -230,6 +250,7 @@ function stemKey(radius){ return radius>0.085?'stem_thick' : radius>0.062?'stem_
 function stretchGLB(key, p0, p1, radius, color){
   const proto=ASSETS[key]; if(!proto) return false;
   const dir=new THREE.Vector3().subVectors(p1,p0), len=dir.length(); if(len<1e-5) return true;
+  const a=ADJ[key]||{}; radius*=(a.scale||1);            // 에셋별 굵기 배율(B)
   const g=proto.clone(true);
   const hx=(proto.userData.sx||0.2)/2, hz=(proto.userData.sz||0.2)/2;
   g.scale.set(radius/hx, len, radius/hz);                 // X/Z=굵기, Y=두 점 거리
@@ -292,18 +313,26 @@ function tintObj(obj, color){
 function leafTint(maturity){ return new THREE.Color().setHSL(PLANT_HUE+0.03*(1-maturity), 0.48+0.12*maturity, P.leafLight-maturity*P.leafDark); }  // 새잎=연한→성숙=진함
 function budTint(){ return new THREE.Color().setHSL(PLANT_HUE+0.05, 0.55, 0.70); }
 function stemTint(woodT){ return new THREE.Color().setHSL(PLANT_HUE,0.40,0.40).lerp(new THREE.Color().setHSL(0.09,0.45,0.30),(woodT||0)*0.65); }
-// 잎: 마디에서 방위 az + 성숙도별 처짐 방향으로. 잎자루 끝이 마디에 살짝 파고들게.
-function addLeaf(nodePos, az, maturity, kind){
+// 나이(age)+에셋별 order범위(B) → 이 마디에 쓸 잎 GLB 키
+function leafKeyForOrder(order, age){
+  const inR=k=>{ const a=ADJ[k]||{}; return order>=(a.omin==null?0:a.omin) && order<=(a.omax==null?99:a.omax); };
+  const desired = age>=0.64?['leaf_mature'] : age>=0.32?['leaf_mid1','leaf_mid2'] : ['leaf_young'];
+  let cands=desired.filter(inR);
+  if(!cands.length){ const all=['leaf_mature','leaf_mid1','leaf_mid2','leaf_young'].filter(inR); cands=all.length?all:desired; }
+  return cands[Math.floor(rng()*cands.length)];
+}
+// 잎: 마디에서 방위 az + 성숙도별 처짐 방향으로. key=쓸 GLB. 잎자루 끝이 마디에 살짝 파고들게.
+function addLeaf(nodePos, az, maturity, key){
   const size=P.leafStart + maturity*(P.leafFull-P.leafStart);   // ★ 떡잎에서 시작해 서서히 큼
   const elev=P.leafElev - maturity*P.elevDrop;                  // 위로 받쳐지게(처짐 완화)
   const d=new THREE.Vector3(Math.cos(elev)*Math.sin(az), Math.sin(elev), Math.cos(elev)*Math.cos(az)).normalize();
   const reach=(0.03 + 0.05*size)*P.petioleLen;                  // 잎자루 길이(잎↔마디 거리)
   const base=nodePos.clone().addScaledVector(d, reach);
   addPetiole(nodePos, d, size, maturity, base);        // 연결 줄기가 마디~잎을 실제로 이어줌
-  const proto=assetInst(leafKindKey(kind));
+  const proto=assetInst(key);
   if(proto){ placeAlong(proto, base, d, size); tintObj(proto, leafTint(maturity)); plantGroup.add(proto); return; }
   // 폴백: 임시 원뿔
-  const type=kind==='mature'?2:kind==='mid'?1:0;
+  const type=/mature/.test(key)?2:/mid/.test(key)?1:0;
   const m=makeLeaf(type), pivot=new THREE.Group(); pivot.position.copy(base); pivot.rotation.y=az;
   m.rotation.x=0.5+maturity*0.7; m.scale.setScalar(size); pivot.add(m); plantGroup.add(pivot);
 }
@@ -384,8 +413,7 @@ function buildPlant(){
         if(age<P.budSpan*0.41) addBud(n.pos, azf, 'furled',  0.10+age*0.5);
         else                   addBud(n.pos, azf, 'opening', 0.14+age*0.7);
       } else {
-        const kind = age<0.32?'young' : age<0.64?'mid' : 'mature';   // 나이별 잎 형태
-        addLeaf(n.pos, azf, age, kind);
+        addLeaf(n.pos, azf, age, leafKeyForOrder(n.order, age));   // 나이+order범위(B)로 잎 선택
       }
     }
     nodes=nTotal; leaves=nTotal; stage='척추 마디 '+nTotal+'개';
@@ -476,7 +504,7 @@ function bindControls(){
   ls.addEventListener('input',()=>{ LIGHT_AZ=(+ls.value)*Math.PI/180; document.getElementById('lightV').textContent=ls.value+'°'; updateSun(); buildPlant(); });
   const ps=document.getElementById('photo');
   ps.addEventListener('input',()=>{ PHOTO=(+ps.value)/100; document.getElementById('photoV').textContent=ps.value+'%'; buildPlant(); });
-  buildGlobalPanel();
+  buildGlobalPanel(); buildAssetSelect();
   // 탭 전환
   document.querySelectorAll('.tabs button').forEach(b=> b.onclick=()=>{
     document.querySelectorAll('.tabs button').forEach(x=>x.classList.remove('on')); b.classList.add('on');
@@ -484,9 +512,38 @@ function bindControls(){
   });
   // 패널 접기
   document.getElementById('panelToggle').onclick=e=>{ const bd=document.getElementById('panelBody'); const hid=bd.style.display==='none'; bd.style.display=hid?'block':'none'; e.target.textContent=hid?'▾':'▸'; };
-  // 설정 복사 / 리셋
-  document.getElementById('btnCopy').onclick=()=>{ const j=JSON.stringify(P,null,1); if(navigator.clipboard) navigator.clipboard.writeText(j); prompt('설정 JSON (복사해서 코드 기본값으로):', j); };
-  document.getElementById('btnReset').onclick=()=>{ P=Object.assign({},DEF); buildGlobalPanel(); buildPlant(); };
+  // 설정 복사 / 리셋 (전체 A + 에셋별 B)
+  document.getElementById('btnCopy').onclick=()=>{ const j=JSON.stringify({P, ADJ},null,1); if(navigator.clipboard) navigator.clipboard.writeText(j); prompt('설정 JSON (전체+에셋별 — 복사해서 코드 기본값으로):', j); };
+  document.getElementById('btnReset').onclick=()=>{ P=Object.assign({},DEF); ADJ=JSON.parse(JSON.stringify(DEF_ADJ)); buildGlobalPanel(); buildAssetSliders(document.getElementById('assetSel').value); buildPlant(); };
+}
+// ===== B 에셋별 조정 슬라이더 =====
+const ADJ_FIELDS=[
+  {k:'scale',t:'크기 배율',min:0.2,max:3,step:0.05},
+  {k:'rx',t:'회전 X',min:-3.2,max:3.2,step:0.05},
+  {k:'ry',t:'회전 Y',min:-3.2,max:3.2,step:0.05},
+  {k:'rz',t:'회전 Z',min:-3.2,max:3.2,step:0.05},
+  {k:'ox',t:'오프셋 X',min:-0.6,max:0.6,step:0.01},
+  {k:'oy',t:'오프셋 Y(자루↔마디)',min:-0.6,max:0.6,step:0.01},
+  {k:'oz',t:'오프셋 Z',min:-0.6,max:0.6,step:0.01},
+];
+const ADJ_FIELDS_LEAF=[{k:'omin',t:'사용 order 최소',min:0,max:12,step:1},{k:'omax',t:'사용 order 최대',min:0,max:99,step:1}];
+function buildAssetSelect(){
+  const sel=document.getElementById('assetSel'); if(!sel) return;
+  sel.innerHTML=ADJ_KEYS.map(k=>`<option value="${k}">${k.replace(/_/g,' ')}</option>`).join('');
+  sel.onchange=()=>buildAssetSliders(sel.value);
+  buildAssetSliders(sel.value);
+}
+function buildAssetSliders(key){
+  const box=document.getElementById('assetSliders'); if(!box) return; box.innerHTML='';
+  const a=ADJ[key]; let fields=ADJ_FIELDS.slice();
+  if(/^leaf_/.test(key)) fields=fields.concat(ADJ_FIELDS_LEAF);
+  fields.forEach(it=>{
+    const f=document.createElement('div'); f.className='field';
+    const lab=document.createElement('label'); lab.innerHTML=`${it.t} <b>${fmtVal(a[it.k])}</b>`;
+    const inp=document.createElement('input'); inp.type='range'; inp.min=it.min; inp.max=it.max; inp.step=it.step; inp.value=a[it.k];
+    inp.addEventListener('input',()=>{ a[it.k]=+inp.value; lab.querySelector('b').textContent=fmtVal(a[it.k]); buildPlant(); });
+    f.appendChild(lab); f.appendChild(inp); box.appendChild(f);
+  });
 }
 // ===== A 전체 파라미터 슬라이더 생성 =====
 const PARAM_DEFS=[
