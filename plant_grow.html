@@ -139,6 +139,7 @@ const ASSET_FILES={
   petiole:'monstera_petiole.glb'
 };
 const LONGY={stem_thick:1,stem_main:1,stem_med:1,stem_thin:1,petiole:1};  // 긴축→Y 정렬(줄기/잎자루)
+const ANCHORB={leaf_young:1,leaf_mid1:1,leaf_mid2:1,leaf_mature:1,bud_furled:1,bud_opening:1,bud_opening2:1}; // 잎/새순: 밑동(자루끝)에 원점 스냅
 const ASSETS={}; let ASSETS_READY=false;
 let SOIL_Y=0.5;
 const POT_H=0.6;          // 화분 높이(월드)
@@ -148,7 +149,17 @@ const MAT_SPAN=30;        // 잎이 떡잎→완전히 크는 데 걸리는 grow
 
 // GLB 정규화: 중심 x/z, 밑면 y=0, 높이 1.0. forceLongY면 가장 긴 축을 Y로 회전.
 // 반환 outer(단위,항등) → clone 후 scale/quaternion/position로 배치.
-function normalizeAsset(root, forceLongY){
+// 밑동 밴드(최저 y 근처) 정점들의 XZ 무게중심 = 잎자루 끝 위치
+function anchorXZ(root, minY, band){
+  const v=new THREE.Vector3(); let sx=0,sz=0,n=0;
+  root.traverse(o=>{ if(o.isMesh&&o.geometry&&o.geometry.attributes.position){
+    const p=o.geometry.attributes.position;
+    for(let i=0;i<p.count;i++){ v.fromBufferAttribute(p,i).applyMatrix4(o.matrixWorld);
+      if(v.y<=minY+band){ sx+=v.x; sz+=v.z; n++; } }
+  }});
+  return n?{x:sx/n, z:sz/n}:null;
+}
+function normalizeAsset(root, forceLongY, anchorBottom){
   root.updateMatrixWorld(true);
   let box=new THREE.Box3().setFromObject(root), size=new THREE.Vector3(); box.getSize(size);
   if(forceLongY){
@@ -159,7 +170,9 @@ function normalizeAsset(root, forceLongY){
     box=new THREE.Box3().setFromObject(root); box.getSize(size);
   }
   const c=new THREE.Vector3(); box.getCenter(c);
-  const inner=new THREE.Group(); inner.add(root); inner.position.set(-c.x,-box.min.y,-c.z);
+  let ax=c.x, az=c.z;
+  if(anchorBottom){ const a=anchorXZ(root, box.min.y, size.y*0.08); if(a){ ax=a.x; az=a.z; } }  // 잎: 자루끝 XZ에 정렬
+  const inner=new THREE.Group(); inner.add(root); inner.position.set(-ax,-box.min.y,-az);
   const g=new THREE.Group(); g.add(inner); g.scale.setScalar(1/(size.y||1));
   const outer=new THREE.Group(); outer.add(g);
   outer.traverse(o=>{ if(o.isMesh){ o.castShadow=true; o.receiveShadow=true; } });
@@ -171,7 +184,7 @@ function loadAssets(cb){
   const loader=new THREE.GLTFLoader(), keys=Object.keys(ASSET_FILES); let n=0;
   const done=()=>{ if(++n===keys.length){ ASSETS_READY=true; cb&&cb(); } };
   keys.forEach(k=> loader.load('./assets/monstera/'+encodeURIComponent(ASSET_FILES[k]),
-    g=>{ try{ ASSETS[k]=normalizeAsset(g.scene, !!LONGY[k]); }catch(e){ console.warn('norm fail',k,e); } done(); },
+    g=>{ try{ ASSETS[k]=normalizeAsset(g.scene, !!LONGY[k], !!ANCHORB[k]); }catch(e){ console.warn('norm fail',k,e); } done(); },
     undefined, ()=>{ console.warn('load fail',k,ASSET_FILES[k]); done(); }));
 }
 function assetInst(key){ const p=ASSETS[key]; return p? p.clone(true):null; }
