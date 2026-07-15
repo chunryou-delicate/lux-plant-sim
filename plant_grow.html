@@ -254,7 +254,7 @@ function addPot(){
   SOIL_Y=0.48;
 }
 
-function stemKey(radius){ return radius>0.085?'stem_thick' : radius>0.062?'stem_main' : radius>0.046?'stem_med' : 'stem_thin'; }
+function stemKey(radius){ return radius>0.085?'stem_thick' : radius>0.05?'stem_med' : 'stem_thin'; }   // 1혹 세트(일반). stem_main(2혹)은 보너스 마디에만.
 // GLB(밑면 y=0·긴축 Y)를 p0→p1 사이로 늘여 배치. 굵기 radius, color로 통일 틴트. → 두 점을 물리 연결.
 function stretchGLB(key, p0, p1, radius, color, flatAz){
   const proto=ASSETS[key]; if(!proto) return false;
@@ -278,8 +278,8 @@ function stretchGLB(key, p0, p1, radius, color, flatAz){
   }
   g.position.copy(p0); if(color) tintObj(g,color); plantGroup.add(g); return true;
 }
-function addStemSeg(p0, p1, radius, woodT, flatAz){
-  if(stretchGLB(stemKey(radius), p0, p1, radius, stemTint(woodT), flatAz)) return;
+function addStemSeg(p0, p1, radius, woodT, flatAz, keyOverride){
+  if(stretchGLB(keyOverride||stemKey(radius), p0, p1, radius, stemTint(woodT), flatAz)) return;
   // 폴백: 원기둥
   const dir=new THREE.Vector3().subVectors(p1,p0), len=dir.length(); if(len<1e-5) return;
   const geo=new THREE.CylinderGeometry(radius*0.85, radius*1.12, len, 7);
@@ -408,9 +408,10 @@ function buildPlant(){
     //    대부분 트렁크를 연장(세로) → 몸통이 보임. 가끔 가지(branch)로 개체성.
     const base={pos:new THREE.Vector3(0,SOIL_Y,0), parent:null, order:0, laz:0};
     const nodes2=[base];
+    const bump2=new Set();   // 2혹(양쪽 분기 보너스) 마디
     const tips=[{node:base, dir:new THREE.Vector3((rng()-0.5)*0.2, 1, (rng()-0.5)*0.2).normalize(), trunk:true}];
     for(let k=1;k<=nTotal;k++){
-      let ti=0;                                    // 기본: 중심 줄기 연장
+      let ti=0;                                    // 기본: 중심 줄기 연장(1혹 생장점에서 이어짐)
       if(tips.length>1 && rng()<0.35) ti=1+Math.floor(rng()*(tips.length-1));
       const tip=tips[ti], trunk=tip.trunk;
       const upB=trunk?0.95:0.62, spread=trunk?P.spread:P.branchSpread;   // 트렁크는 곧추, 가지는 벌어짐
@@ -424,8 +425,13 @@ function buildPlant(){
       const jit=(rng()-0.5)*0.7;
       const node={pos:np, parent:tip.node, order:k, laz:k*GOLDEN+jit};   // 잎 방위=척추 둘레 나선
       nodes2.push(node); tip.node=node; tip.dir=nd;
-      if(k>=3 && tips.length<3 && rng()<P.branchProb)      // 가끔 새 가지
-        tips.push({node:node, dir:new THREE.Vector3((rng()-0.5)*1.2, 0.75, (rng()-0.5)*1.2).normalize(), trunk:false});
+      // ★ 랜덤 보너스: 2혹 스템(stem_main) 마디 → 양쪽으로 가지 2개
+      if(k>=2 && tips.length<=2 && rng()<P.branchProb){
+        bump2.add(node.order);
+        const a=rng()*Math.PI*2;
+        for(const s of [a, a+Math.PI])
+          tips.push({node:node, dir:new THREE.Vector3(Math.sin(s)*1.1, 0.7, Math.cos(s)*1.1).normalize(), trunk:false});
+      }
     }
     // 서브트리 크기(이 마디 위로 달린 잎 수) → 줄기 굵기 (base=제일 굵음)
     const kids={}; nodes2.forEach(n=>kids[n.order]=[]);
@@ -453,7 +459,7 @@ function buildPlant(){
       if(!n.parent) continue;
       const st=sub[n.order], r=rad[n.order], age=ageOf[n.order], sa=segAgeOf[n.order];
       const azf=n.laz + PHOTO*0.5*Math.atan2(Math.sin(L-n.laz),Math.cos(L-n.laz));  // 잎 방위 + 빛쪽 당김
-      addStemSeg(n.parent.pos, n.pos, r, Math.min(1, sa*(st-1)/8), azf);  // 잎 방향으로 납작
+      addStemSeg(n.parent.pos, n.pos, r, Math.min(1, sa*(st-1)/8), azf, bump2.has(n.order)?'stem_main':null);  // 2혹 마디는 stem_main
       if(n.order===nTotal && nTotal>1 && age<P.budSpan){
         // 맨 새 마디 = 새순: 말림(furled)→펴짐(opening), 작게 나서 커짐
         if(age<P.budSpan*P.furlFrac) addBud(n.pos, azf, 'furled',  P.budSize*(0.7+age));
