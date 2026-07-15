@@ -370,9 +370,10 @@ function addLeaf(nodePos, az, maturity, key){
 }
 // 새순: 갓 난 성장점(거의 위로). furled → opening → (young 잎)
 function addBud(nodePos, az, kind, size){
-  const d=new THREE.Vector3(Math.sin(az)*0.22, 0.975, Math.cos(az)*0.22).normalize();
+  const d=new THREE.Vector3(Math.sin(az)*0.16, 0.985, Math.cos(az)*0.16).normalize();   // 거의 곧게 위(송곳처럼)
   const proto=assetInst(leafKindKey(kind));
-  if(proto){ placeAlong(proto, nodePos.clone().addScaledVector(d,-0.02*size), d, size); tintObj(proto, budTint()); plantGroup.add(proto); return; }
+  const embed = kind==='furled'? 0.24*size : 0.12*size;   // 말린 새순은 줄기에 깊이 박히게(안 뜨고 자연스럽게 올라옴)
+  if(proto){ placeAlong(proto, nodePos.clone().addScaledVector(d,-embed), d, size); tintObj(proto, budTint()); plantGroup.add(proto); return; }
   const m=new THREE.Mesh(new THREE.ConeGeometry(0.05,0.14,8), MAT.stem); m.position.copy(nodePos); m.position.y+=size*0.5; plantGroup.add(m);
 }
 
@@ -395,10 +396,10 @@ function buildPlant(){
   } else if(g<P.sproutEnd){
     // 새싹: 자그만 줄기가 먼저 나오고, 그 끝에 말린 송곳잎(furled bud)
     const t=(g-P.seedEnd)/Math.max(1,P.sproutEnd-P.seedEnd);   // 0..1
-    const h=0.06+0.20*t, top=new THREE.Vector3(0,SOIL_Y+h,0);
-    addStemSeg(new THREE.Vector3(0,SOIL_Y,0), top, 0.03, 0);   // 자그만 줄기
-    addBud(top, rng()*Math.PI*2, 'furled', P.budSize*(0.6+0.7*t));  // 말린 잎
-    stage='새싹(줄기+말린잎) 🌱';
+    const h=0.05+0.18*t, top=new THREE.Vector3(0,SOIL_Y+h,0);
+    addStemSeg(new THREE.Vector3(0,SOIL_Y,0), top, 0.028, 0);  // 얇은 줄기(stem_thin)
+    addBud(top, rng()*Math.PI*2, t<0.6?'furled':'opening', P.budSize*(0.55+0.7*t));  // 말림→반쯤 펴짐
+    stage='새싹 🌱';
   } else {
     const nTotal=Math.min(P.maxLeaves, 1+Math.floor((g-P.sproutEnd)/P.spawnStep));
     const L=LIGHT_AZ, ld=new THREE.Vector3(Math.sin(L),0,Math.cos(L));   // 빛 방향(수평)
