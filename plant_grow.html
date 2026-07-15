@@ -23,16 +23,16 @@
     font-size:13px;color:#3d3548;cursor:pointer;box-shadow:0 3px 0 rgba(0,0,0,.3)}
   .cbtn:active{transform:translateY(2px);box-shadow:0 1px 0 rgba(0,0,0,.3)}
   .cbtn.on{background:#7ad06a}
-  .panel{position:absolute;top:12px;right:16px;z-index:6;width:284px;max-height:calc(100vh - 24px);overflow-y:auto;
-    background:rgba(20,16,28,.78);backdrop-filter:blur(10px);border-radius:16px;padding:12px 14px;
+  .panel{position:absolute;top:12px;right:12px;z-index:6;width:min(790px,76vw);
+    background:rgba(20,16,28,.8);backdrop-filter:blur(10px);border-radius:16px;padding:12px 14px;
     border:1px solid rgba(255,255,255,.1)}
-  .panel::-webkit-scrollbar{width:7px} .panel::-webkit-scrollbar-thumb{background:rgba(122,208,106,.4);border-radius:4px}
   .phead{display:flex;justify-content:space-between;align-items:center;font-family:'Jua';font-size:15px;color:#7ad06a;margin-bottom:8px}
   .phead button{background:none;border:none;color:#7ad06a;font-family:'Jua';font-size:15px;cursor:pointer}
-  .tabs{display:flex;gap:5px;margin-bottom:10px}
-  .tabs button{flex:1;background:rgba(255,255,255,.08);border:none;border-radius:9px;padding:6px 4px;
-    font-family:'Jua';font-size:11px;color:rgba(255,255,255,.6);cursor:pointer}
-  .tabs button.on{background:#7ad06a;color:#1a1526}
+  .cols{display:flex;gap:12px;align-items:flex-start}
+  .col{flex:1 1 0;min-width:0;max-height:calc(100vh - 150px);overflow-y:auto;padding-right:4px}
+  .col::-webkit-scrollbar{width:6px} .col::-webkit-scrollbar-thumb{background:rgba(122,208,106,.4);border-radius:4px}
+  .colhead{position:sticky;top:0;background:rgba(24,19,32,.97);font-family:'Jua';font-size:12px;color:#7ad06a;
+    padding:3px 0 7px;margin-bottom:4px;z-index:2;border-bottom:1px solid rgba(255,255,255,.12)}
   .psec{font-family:'Jua';font-size:11px;color:#e8a838;margin:10px 0 6px;padding-bottom:3px;border-bottom:1px solid rgba(255,255,255,.1)}
   .prow{display:flex;gap:6px;margin-top:12px;padding-top:10px;border-top:1px solid rgba(255,255,255,.12)}
   .prow .cbtn{flex:1;font-size:12px;padding:8px}
@@ -65,22 +65,24 @@
   <div class="panel" id="panel">
     <div class="phead"><span>🌱 몬스테라 튜닝</span><button id="panelToggle">▾</button></div>
     <div id="panelBody">
-      <div class="tabs">
-        <button data-tab="play" class="on">플레이</button>
-        <button data-tab="global">전체 A</button>
-        <button data-tab="asset">에셋 B</button>
-      </div>
-      <div class="tabpane" id="tab-play">
-        <div class="field"><label>성장도 growth <b id="growthV">30</b></label><input type="range" id="growth" min="0" max="100" value="30"></div>
-        <div class="field"><label>☀️ 빛 방위 <b id="lightV">90°</b></label><input type="range" id="light" min="0" max="360" value="90"></div>
-        <div class="field"><label>굴광성(빛 쫓기) <b id="photoV">50%</b></label><input type="range" id="photo" min="0" max="100" value="50"></div>
-        <button class="cbtn" id="btnSeed" style="width:100%">🎲 랜덤 시드 (다른 개체)</button>
-        <div id="stat" style="margin-top:8px"><span class="k">슬라이더를 움직여 자라는 걸 보세요.</span></div>
-      </div>
-      <div class="tabpane" id="tab-global" style="display:none"></div>
-      <div class="tabpane" id="tab-asset" style="display:none">
-        <select id="assetSel"></select>
-        <div id="assetSliders"></div>
+      <div class="cols">
+        <div class="col">
+          <div class="colhead">▶ 플레이</div>
+          <div class="field"><label>성장도 growth <b id="growthV">30</b></label><input type="range" id="growth" min="0" max="100" value="30"></div>
+          <div class="field"><label>☀️ 빛 방위 <b id="lightV">90°</b></label><input type="range" id="light" min="0" max="360" value="90"></div>
+          <div class="field"><label>굴광성(빛 쫓기) <b id="photoV">50%</b></label><input type="range" id="photo" min="0" max="100" value="50"></div>
+          <button class="cbtn" id="btnSeed" style="width:100%">🎲 랜덤 시드</button>
+          <div id="stat" style="margin-top:8px"><span class="k">슬라이더를 움직여 자라는 걸 보세요.</span></div>
+        </div>
+        <div class="col">
+          <div class="colhead">전체 A · 생장 규칙</div>
+          <div id="tab-global"></div>
+        </div>
+        <div class="col">
+          <div class="colhead">에셋 B · 개별 조정</div>
+          <select id="assetSel"></select>
+          <div id="assetSliders"></div>
+        </div>
       </div>
       <div class="prow">
         <button class="cbtn" id="btnCopy">📋 설정 복사</button>
@@ -523,11 +525,6 @@ function bindControls(){
   const ps=document.getElementById('photo');
   ps.addEventListener('input',()=>{ PHOTO=(+ps.value)/100; document.getElementById('photoV').textContent=ps.value+'%'; buildPlant(); });
   buildGlobalPanel(); buildAssetSelect();
-  // 탭 전환
-  document.querySelectorAll('.tabs button').forEach(b=> b.onclick=()=>{
-    document.querySelectorAll('.tabs button').forEach(x=>x.classList.remove('on')); b.classList.add('on');
-    ['play','global','asset'].forEach(t=> document.getElementById('tab-'+t).style.display=(t===b.dataset.tab)?'block':'none');
-  });
   // 패널 접기
   document.getElementById('panelToggle').onclick=e=>{ const bd=document.getElementById('panelBody'); const hid=bd.style.display==='none'; bd.style.display=hid?'block':'none'; e.target.textContent=hid?'▾':'▸'; };
   // 설정 복사 / 리셋 (전체 A + 에셋별 B)
