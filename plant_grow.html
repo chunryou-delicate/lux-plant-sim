@@ -121,7 +121,7 @@ const DEF={
   budSpan:0.22, furlFrac:0.5, budSize:0.16,                // 새순: 말림(furled)→펴짐(opening) 비율·크기
   stageYoung:0.38, stageMid:0.66,                          // 잎 형태 전환 시점(어린→중간→성인)
   sizeYoung:0.20, sizeMid:0.45, sizeMature:0.78, sizeFull:1.25,  // 각 시점 크기(작게 나서 커짐)
-  internode:0.24, thickSpan:50, thickScale:0.022,          // 줄기
+  internode:0.24, thickSpan:50, thickScale:0.022, matureStemR:0.085, stemFlat:1.25,   // 줄기 (matureStemR=성인잎 최소굵기=thick, stemFlat=잎방향으로 납작)
   petioleLen:1.0, leafElev:1.02, elevDrop:0.34, spread:0.16, branchSpread:0.55, branchProb:0.14,  // 배치
   leafLight:0.58, leafDark:0.30, leafSat:0.55, satRange:0.22, hueBase:0.16, hueRange:0.26,   // 색(밝기/진함/채도/개체범위)
 };
@@ -253,18 +253,30 @@ function addPot(){
 
 function stemKey(radius){ return radius>0.085?'stem_thick' : radius>0.062?'stem_main' : radius>0.046?'stem_med' : 'stem_thin'; }
 // GLB(밑면 y=0·긴축 Y)를 p0→p1 사이로 늘여 배치. 굵기 radius, color로 통일 틴트. → 두 점을 물리 연결.
-function stretchGLB(key, p0, p1, radius, color){
+function stretchGLB(key, p0, p1, radius, color, flatAz){
   const proto=ASSETS[key]; if(!proto) return false;
   const dir=new THREE.Vector3().subVectors(p1,p0), len=dir.length(); if(len<1e-5) return true;
   const a=ADJ[key]||{}; radius*=(a.scale||1);            // 에셋별 굵기 배율(B)
   const g=proto.clone(true);
   const hx=(proto.userData.sx||0.2)/2, hz=(proto.userData.sz||0.2)/2;
-  g.scale.set(radius/hx, len, radius/hz);                 // X/Z=굵기, Y=두 점 거리
-  g.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0), dir.clone().normalize());
+  const up=dir.clone().normalize();
+  let sxw=radius/hx, szw=radius/hz;
+  if(flatAz!=null && P.stemFlat>1.001){
+    // 굵을수록 잎 방향(수평)으로 납작하게 → 넓은 면이 잎을 받쳐 자연스럽게 연결
+    const flat=1+(P.stemFlat-1)*Math.max(0,Math.min(1,(radius-0.04)/0.06));
+    const ld=new THREE.Vector3(Math.sin(flatAz),0,Math.cos(flatAz));
+    let x=ld.clone().addScaledVector(up,-ld.dot(up)); if(x.lengthSq()<1e-4) x.set(1,0,0); x.normalize();
+    const z=new THREE.Vector3().crossVectors(x,up).normalize();
+    g.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(x,up,z));
+    g.scale.set(sxw*flat, len, szw/flat);
+  } else {
+    g.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0), up);
+    g.scale.set(sxw, len, szw);
+  }
   g.position.copy(p0); if(color) tintObj(g,color); plantGroup.add(g); return true;
 }
-function addStemSeg(p0, p1, radius, woodT){
-  if(stretchGLB(stemKey(radius), p0, p1, radius, stemTint(woodT))) return;
+function addStemSeg(p0, p1, radius, woodT, flatAz){
+  if(stretchGLB(stemKey(radius), p0, p1, radius, stemTint(woodT), flatAz)) return;
   // 폴백: 원기둥
   const dir=new THREE.Vector3().subVectors(p1,p0), len=dir.length(); if(len<1e-5) return;
   const geo=new THREE.CylinderGeometry(radius*0.85, radius*1.12, len, 7);
@@ -330,9 +342,11 @@ function leafSize(age){
   return P.sizeFull;
 }
 // 나이(age)+에셋별 order범위(B) → 이 마디에 쓸 잎 GLB 키
-function leafKeyForOrder(order, age){
+function leafKeyForOrder(order, age, stemR){
   const inR=k=>{ const a=ADJ[k]||{}; return order>=(a.omin==null?0:a.omin) && order<=(a.omax==null?99:a.omax); };
-  const desired = age>=P.stageMid?['leaf_mature'] : age>=P.stageYoung?['leaf_mid1','leaf_mid2'] : ['leaf_young'];
+  // ★ 성인(갈라진) 잎은 받침 줄기가 충분히 굵어졌을 때만(=thick). 그전엔 성인 나이여도 중간잎 유지.
+  const matureOK = age>=P.stageMid && (stemR||0)>=P.matureStemR;
+  const desired = matureOK?['leaf_mature'] : age>=P.stageYoung?['leaf_mid1','leaf_mid2'] : ['leaf_young'];
   let cands=desired.filter(inR);
   if(!cands.length){ const all=['leaf_mature','leaf_mid1','leaf_mid2','leaf_young'].filter(inR); cands=all.length?all:desired; }
   return cands[Math.floor(rng()*cands.length)];
@@ -423,17 +437,17 @@ function buildPlant(){
       const gB=P.sproutEnd+(n.order-1)*P.spawnStep;
       const segAge=Math.max(0, Math.min(1, (g-gB)/P.thickSpan));   // 줄기가 굵어지는 시간(느리게)
       const r=(0.026+P.thickScale*Math.sqrt(Math.max(0,st-1)))*(0.5+0.5*segAge);
-      addStemSeg(n.parent.pos, n.pos, r, Math.min(1, segAge*(st-1)/8));
+      const azf=n.laz + PHOTO*0.5*Math.atan2(Math.sin(L-n.laz),Math.cos(L-n.laz));  // 잎 방위 + 빛쪽 당김
+      addStemSeg(n.parent.pos, n.pos, r, Math.min(1, segAge*(st-1)/8), azf);  // 잎 방향으로 납작
       // ★ 각 잎의 개별 생장 나이(0=갓 남, 1=다 큼) → 작게 나서 서서히 커짐/성숙
       const gBirth=P.sproutEnd+(n.order-1)*P.spawnStep;
       const age=Math.max(0, Math.min(1, (g-gBirth)/P.matSpan));
-      const azf=n.laz + PHOTO*0.5*Math.atan2(Math.sin(L-n.laz),Math.cos(L-n.laz));  // 잎 방위 + 빛쪽 당김
       if(n.order===nTotal && nTotal>1 && age<P.budSpan){
         // 맨 새 마디 = 새순: 말림(furled)→펴짐(opening), 작게 나서 커짐
         if(age<P.budSpan*P.furlFrac) addBud(n.pos, azf, 'furled',  P.budSize*(0.7+age));
         else                         addBud(n.pos, azf, 'opening', P.budSize*(1.0+age*1.3));
       } else {
-        addLeaf(n.pos, azf, age, leafKeyForOrder(n.order, age));   // 나이+order범위(B)로 잎 선택
+        addLeaf(n.pos, azf, age, leafKeyForOrder(n.order, age, r));   // 나이+order범위(B)+줄기굵기(성인잎 게이트)
       }
     }
     nodes=nTotal; leaves=nTotal; stage='척추 마디 '+nTotal+'개';
@@ -586,6 +600,8 @@ const PARAM_DEFS=[
     {k:'internode',t:'마디 간격',min:0.1,max:0.5,step:0.01},
     {k:'thickSpan',t:'굵어지는 시간(느림↑)',min:15,max:100,step:5},
     {k:'thickScale',t:'굵기 배율',min:0.008,max:0.05,step:0.002},
+    {k:'matureStemR',t:'성인잎 최소 줄기굵기',min:0.03,max:0.14,step:0.005},
+    {k:'stemFlat',t:'줄기 납작(잎 연결)',min:1.0,max:1.8,step:0.05},
   ]},
   {sec:'🍃 배치', items:[
     {k:'petioleLen',t:'잎자루 길이',min:0.3,max:2.5,step:0.05},
