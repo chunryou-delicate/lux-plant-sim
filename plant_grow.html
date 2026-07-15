@@ -131,7 +131,7 @@ const DEF={
 let P=Object.assign({}, DEF);
 
 // ===== 튜닝 파라미터(B: 에셋별 개별 조정) =====
-const ADJ_KEYS=['leaf_young','leaf_mid1','leaf_mid2','leaf_mature','bud_furled','bud_opening','bud_opening2','stem_thick','stem_main','stem_med','stem_thin','petiole'];
+const ADJ_KEYS=['leaf_young','leaf_mid1','leaf_mid2','leaf_mature','bud_furled','bud_opening2','stem_thick','stem_main','stem_med','stem_thin','petiole'];
 function defAdj(key){ const d={scale:1, rx:0,ry:0,rz:0, ox:0,oy:0,oz:0}; if(/^leaf_/.test(key)){ d.omin=0; d.omax=99; } return d; }  // omin/omax=사용 order 범위(잎만)
 const DEF_ADJ={}; ADJ_KEYS.forEach(k=>DEF_ADJ[k]=defAdj(k));
 let ADJ=JSON.parse(JSON.stringify(DEF_ADJ));
@@ -179,13 +179,13 @@ const ASSET_FILES={
   pot:'pot.glb',
   leaf_young:'monstera_leaf_young.glb', leaf_mid1:'monstera_leaf_mid1.glb',
   leaf_mid2:'monstera_leaf_mid2.glb', leaf_mature:'monstera_leaf_mature.glb',
-  bud_furled:'monstera_bud_furled.glb', bud_opening:'monstera_bud_opening.glb', bud_opening2:'monstera_bud_opening2.glb',
+  bud_furled:'monstera_bud_furled.glb', bud_opening2:'monstera_bud_opening2.glb',
   stem_thick:'monstera_stem_thick.glb', stem_main:'monstera_stem_main.glb',
   stem_med:'monstera_stem_med.glb', stem_thin:'monstera_stem_thin.glb',
   petiole:'monstera_petiole.glb'
 };
 const LONGY={stem_thick:1,stem_main:1,stem_med:1,stem_thin:1,petiole:1};  // 긴축→Y 정렬(줄기/잎자루)
-const ANCHORB={leaf_young:1,leaf_mid1:1,leaf_mid2:1,leaf_mature:1,bud_furled:1,bud_opening:1,bud_opening2:1}; // 잎/새순: 밑동(자루끝)에 원점 스냅
+const ANCHORB={leaf_young:1,leaf_mid1:1,leaf_mid2:1,leaf_mature:1,bud_furled:1,bud_opening2:1}; // 잎/새순: 밑동(자루끝)에 원점 스냅
 const ASSETS={}; let ASSETS_READY=false;
 let SOIL_Y=0.5;
 const POT_H=0.6;          // 화분 높이(월드)
@@ -309,7 +309,7 @@ function pickCandidate(list, ld){
 // 성숙도/새순 종류 → GLB 키 (mid·opening은 랜덤 2종=개체 다양성)
 function leafKindKey(kind){
   if(kind==='mid')     return rng()<0.5?'leaf_mid1':'leaf_mid2';
-  if(kind==='opening') return rng()<0.5?'bud_opening':'bud_opening2';
+  if(kind==='opening') return 'bud_opening2';
   if(kind==='young')   return 'leaf_young';
   if(kind==='mature')  return 'leaf_mature';
   if(kind==='furled')  return 'bud_furled';
