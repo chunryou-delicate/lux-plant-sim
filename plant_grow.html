@@ -186,22 +186,22 @@ function addPot(){
 }
 
 function stemKey(radius){ return radius>0.085?'stem_thick' : radius>0.062?'stem_main' : radius>0.046?'stem_med' : 'stem_thin'; }
-// GLB(밑면 y=0·긴축 Y)를 p0→p1 사이로 늘여 배치. 굵기 radius. → 두 점을 물리적으로 연결.
-function stretchGLB(key, p0, p1, radius){
+// GLB(밑면 y=0·긴축 Y)를 p0→p1 사이로 늘여 배치. 굵기 radius, color로 통일 틴트. → 두 점을 물리 연결.
+function stretchGLB(key, p0, p1, radius, color){
   const proto=ASSETS[key]; if(!proto) return false;
   const dir=new THREE.Vector3().subVectors(p1,p0), len=dir.length(); if(len<1e-5) return true;
   const g=proto.clone(true);
   const hx=(proto.userData.sx||0.2)/2, hz=(proto.userData.sz||0.2)/2;
   g.scale.set(radius/hx, len, radius/hz);                 // X/Z=굵기, Y=두 점 거리
   g.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0), dir.clone().normalize());
-  g.position.copy(p0); plantGroup.add(g); return true;
+  g.position.copy(p0); if(color) tintObj(g,color); plantGroup.add(g); return true;
 }
 function addStemSeg(p0, p1, radius, woodT){
-  if(stretchGLB(stemKey(radius), p0, p1, radius)) return;
+  if(stretchGLB(stemKey(radius), p0, p1, radius, stemTint(woodT))) return;
   // 폴백: 원기둥
   const dir=new THREE.Vector3().subVectors(p1,p0), len=dir.length(); if(len<1e-5) return;
   const geo=new THREE.CylinderGeometry(radius*0.85, radius*1.12, len, 7);
-  const col=new THREE.Color(0x5e8a44).lerp(new THREE.Color(0x6b4a30), (woodT||0)*0.6);
+  const col=stemTint(woodT);
   const m=new THREE.Mesh(geo, new THREE.MeshStandardMaterial({color:col, roughness:0.75}));
   m.position.copy(p0).addScaledVector(dir,0.5);
   m.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0), dir.clone().normalize());
@@ -213,7 +213,7 @@ function addPetiole(nodePos, d, size, maturity, leafBase){
   const embed=0.05*size, over=0.20*size;                 // 마디에 조금, 잎 안쪽으로 넉넉히(겹침↑ → 안 뜸)
   const p0=nodePos.clone().addScaledVector(d,-embed);
   const p1=leafBase.clone().addScaledVector(d, over);
-  stretchGLB('petiole', p0, p1, 0.022+0.015*maturity);
+  stretchGLB('petiole', p0, p1, 0.022+0.015*maturity, stemTint(0.06));
 }
 // 성장 후보 마디 중 하나 선택: 거의 균등 랜덤 + 빛 받는 쪽 약간↑ (굴광성)
 function pickCandidate(list, ld){
@@ -239,6 +239,19 @@ function placeAlong(obj, base, dir, worldLen){
   obj.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0), dir.clone().normalize());
   obj.position.copy(base);
 }
+// ===== 개체 통일 색 (시드로 고정 → 나중에 나는 잎도 같은 색으로 통일) =====
+let PLANT_HUE=0.30;
+function seedHue(){ const cs=mulberry32((SEED*40503+12345)>>>0); return 0.20+cs()*0.18; }   // 연두~초록
+function tintObj(obj, color){
+  obj.traverse(o=>{ if(o.isMesh&&o.material){
+    const ms=Array.isArray(o.material)?o.material:[o.material];
+    const nm=ms.map(m=>{ const c=m.clone(); c.color=color.clone(); if('map' in c) c.map=null; if('vertexColors' in c) c.vertexColors=false; c.userData={cloned:true}; return c; });
+    o.material=Array.isArray(o.material)?nm:nm[0];
+  }});
+}
+function leafTint(maturity){ return new THREE.Color().setHSL(PLANT_HUE+0.03*(1-maturity), 0.48+0.12*maturity, 0.63-maturity*0.24); }  // 새잎=연한 연두→성숙=진초록
+function budTint(){ return new THREE.Color().setHSL(PLANT_HUE+0.05, 0.55, 0.70); }
+function stemTint(woodT){ return new THREE.Color().setHSL(PLANT_HUE,0.40,0.40).lerp(new THREE.Color().setHSL(0.09,0.45,0.30),(woodT||0)*0.65); }
 // 잎: 마디에서 방위 az + 성숙도별 처짐 방향으로. 잎자루 끝이 마디에 살짝 파고들게.
 function addLeaf(nodePos, az, maturity, kind){
   const size=0.30 + maturity*0.85;                    // 먼저 난(성숙) 잎일수록 큼
@@ -248,7 +261,7 @@ function addLeaf(nodePos, az, maturity, kind){
   const base=nodePos.clone().addScaledVector(d, reach);
   addPetiole(nodePos, d, size, maturity, base);        // 연결 줄기가 마디~잎을 실제로 이어줌
   const proto=assetInst(leafKindKey(kind));
-  if(proto){ placeAlong(proto, base, d, size); plantGroup.add(proto); return; }
+  if(proto){ placeAlong(proto, base, d, size); tintObj(proto, leafTint(maturity)); plantGroup.add(proto); return; }
   // 폴백: 임시 원뿔
   const type=kind==='mature'?2:kind==='mid'?1:0;
   const m=makeLeaf(type), pivot=new THREE.Group(); pivot.position.copy(base); pivot.rotation.y=az;
@@ -258,14 +271,16 @@ function addLeaf(nodePos, az, maturity, kind){
 function addBud(nodePos, az, kind, size){
   const d=new THREE.Vector3(Math.sin(az)*0.22, 0.975, Math.cos(az)*0.22).normalize();
   const proto=assetInst(leafKindKey(kind));
-  if(proto){ placeAlong(proto, nodePos.clone().addScaledVector(d,-0.02*size), d, size); plantGroup.add(proto); return; }
+  if(proto){ placeAlong(proto, nodePos.clone().addScaledVector(d,-0.02*size), d, size); tintObj(proto, budTint()); plantGroup.add(proto); return; }
   const m=new THREE.Mesh(new THREE.ConeGeometry(0.05,0.14,8), MAT.stem); m.position.copy(nodePos); m.position.y+=size*0.5; plantGroup.add(m);
 }
 
-function clearGroup(g){ while(g.children.length){ const c=g.children[0]; g.remove(c); c.traverse&&c.traverse(o=>{ if(o.isMesh&&o.geometry) o.geometry.dispose(); }); } }
+function clearGroup(g){ while(g.children.length){ const c=g.children[0]; g.remove(c); c.traverse&&c.traverse(o=>{ if(o.isMesh){ if(o.geometry) o.geometry.dispose();
+  const ms=Array.isArray(o.material)?o.material:[o.material]; ms.forEach(m=>{ if(m&&m.userData&&m.userData.cloned) m.dispose(); }); } }); } }
 
 function buildPlant(){
   rng=mulberry32(SEED);            // 매 빌드 동일 시드 → 안정적(슬라이더 드래그해도 안 흔들림)
+  PLANT_HUE=seedHue();             // 개체 통일 기준색(시드 고정)
   clearGroup(plantGroup);
   addPot();
   const g=GROWTH, gf=g/100;
