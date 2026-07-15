@@ -308,7 +308,7 @@ function pickCandidate(list, ld){
 }
 // 성숙도/새순 종류 → GLB 키 (mid·opening은 랜덤 2종=개체 다양성)
 function leafKindKey(kind){
-  if(kind==='mid')     return rng()<0.5?'leaf_mid1':'leaf_mid2';
+  if(kind==='mid')     return PLANT_MID;
   if(kind==='opening') return 'bud_opening2';
   if(kind==='young')   return 'leaf_young';
   if(kind==='mature')  return 'leaf_mature';
@@ -322,10 +322,11 @@ function placeAlong(obj, base, dir, worldLen){
   obj.position.copy(base);
 }
 // ===== 개체 통일 색 (시드로 고정 → 나중에 나는 잎도 같은 색으로 통일) =====
-let PLANT_HUE=0.30, PLANT_SAT=0.55;
+let PLANT_HUE=0.30, PLANT_SAT=0.55, PLANT_MID='leaf_mid1';
 function seedColor(){ const cs=mulberry32((SEED*40503+12345)>>>0);
   PLANT_HUE=P.hueBase+cs()*P.hueRange;                                   // 개체 색조(연두~초록~진초록)
   PLANT_SAT=Math.max(0.15,Math.min(1, P.leafSat+(cs()-0.5)*P.satRange)); // 개체 채도(찐한 정도도 랜덤)
+  PLANT_MID=cs()<0.5?'leaf_mid1':'leaf_mid2';                            // 개체마다 미드리프 1종 고정
 }
 function tintObj(obj, color){
   obj.traverse(o=>{ if(o.isMesh&&o.material){
@@ -336,7 +337,7 @@ function tintObj(obj, color){
 }
 function leafTint(maturity){ return new THREE.Color().setHSL(PLANT_HUE+0.03*(1-maturity), Math.min(1,PLANT_SAT+0.12*maturity), P.leafLight-maturity*P.leafDark); }  // 새잎=연한→성숙=진함
 function budTint(){ return new THREE.Color().setHSL(PLANT_HUE+0.05, Math.min(1,PLANT_SAT+0.05), P.leafLight+0.08); }
-function stemTint(woodT){ return new THREE.Color().setHSL(PLANT_HUE,PLANT_SAT*0.75,0.40).lerp(new THREE.Color().setHSL(0.09,0.45,0.30),(woodT||0)*0.65); }
+function stemTint(woodT){ return new THREE.Color().setHSL(PLANT_HUE, PLANT_SAT, P.leafLight-0.05).lerp(new THREE.Color().setHSL(0.09,0.42,0.30),(woodT||0)*0.55); }  // 잎과 같은 초록 계열로 통일(우디는 아주 굵을 때만)
 // 잎 크기: 나이(age 0..1)에 따른 단계별 곡선. 각 전환 시점·시작크기를 P로 지정 → 작게 나서 커지다 형태 전환.
 function leafSize(age){
   const pts=[[0,P.sizeYoung],[P.stageYoung,P.sizeMid],[P.stageMid,P.sizeMature],[1,P.sizeFull]];
@@ -349,7 +350,7 @@ function leafKeyForOrder(order, age, stemR){
   const inR=k=>{ const a=ADJ[k]||{}; return order>=(a.omin==null?0:a.omin) && order<=(a.omax==null?99:a.omax); };
   // ★ 성인(갈라진) 잎은 받침 줄기가 충분히 굵어졌을 때만(=thick). 그전엔 성인 나이여도 중간잎 유지.
   const matureOK = age>=P.stageMid && (stemR||0)>=P.matureStemR;
-  const desired = matureOK?['leaf_mature'] : age>=P.stageYoung?['leaf_mid1','leaf_mid2'] : ['leaf_young'];
+  const desired = matureOK?['leaf_mature'] : age>=P.stageYoung?[PLANT_MID] : ['leaf_young'];
   let cands=desired.filter(inR);
   if(!cands.length){ const all=['leaf_mature','leaf_mid1','leaf_mid2','leaf_young'].filter(inR); cands=all.length?all:desired; }
   return cands[Math.floor(rng()*cands.length)];
@@ -409,7 +410,7 @@ function buildPlant(){
     const base={pos:new THREE.Vector3(0,SOIL_Y,0), parent:null, order:0, laz:0};
     const nodes2=[base];
     const bump2=new Set();   // 2혹(양쪽 분기 보너스) 마디
-    const tips=[{node:base, dir:new THREE.Vector3((rng()-0.5)*0.2, 1, (rng()-0.5)*0.2).normalize(), trunk:true}];
+    const tips=[{node:base, dir:new THREE.Vector3((rng()-0.5)*0.2, 1, (rng()-0.5)*0.2).normalize(), trunk:true, lead:0}];
     for(let k=1;k<=nTotal;k++){
       let ti=0;                                    // 기본: 중심 줄기 연장(1혹 생장점에서 이어짐)
       if(tips.length>1 && rng()<0.35) ti=1+Math.floor(rng()*(tips.length-1));
@@ -423,14 +424,15 @@ function buildPlant(){
       const inLen=(trunk?P.internode:P.internode*0.83)*(0.75+0.4*gf);
       const np=tip.node.pos.clone().addScaledVector(nd, inLen);
       const jit=(rng()-0.5)*0.7;
-      const node={pos:np, parent:tip.node, order:k, laz:k*GOLDEN+jit};   // 잎 방위=척추 둘레 나선
+      const node={pos:np, parent:tip.node, order:k, laz:k*GOLDEN+jit, branch:!trunk};   // 잎 방위=척추 둘레 나선
+      if(tip.lead>0){ node.bare=true; tip.lead--; }   // 가지 밑동 얇은 줄기(잎 없이) 2개
       nodes2.push(node); tip.node=node; tip.dir=nd;
-      // ★ 랜덤 보너스: 2혹 스템(stem_main) 마디 → 양쪽으로 가지 2개
+      // ★ 랜덤 보너스: 2혹 스템(stem_main) 마디 → 양쪽으로 가지 2개(각 가지는 얇은 줄기 2개 뒤 새순)
       if(k>=2 && tips.length<=2 && rng()<P.branchProb){
         bump2.add(node.order);
         const a=rng()*Math.PI*2;
         for(const s of [a, a+Math.PI])
-          tips.push({node:node, dir:new THREE.Vector3(Math.sin(s)*1.1, 0.7, Math.cos(s)*1.1).normalize(), trunk:false});
+          tips.push({node:node, dir:new THREE.Vector3(Math.sin(s)*1.1, 0.7, Math.cos(s)*1.1).normalize(), trunk:false, lead:2});
       }
     }
     // 서브트리 크기(이 마디 위로 달린 잎 수) → 줄기 굵기 (base=제일 굵음)
@@ -447,11 +449,11 @@ function buildPlant(){
       const sa=Math.max(0, Math.min(1, (g-gB)/P.thickSpan)); segAgeOf[n.order]=sa;
       let r=(0.026+P.thickScale*Math.sqrt(Math.max(0,st-1)))*(0.5+0.5*sa) + P.ageThick*sa*sa;  // 오래되면(가지도) 굵어짐
       r=Math.min(P.stemMaxR, r);                                      // 최대굵기 상한(무한정 X)
-      if(n.parent.parent){ const pr=rad[n.parent.order]; if(pr!=null){ r=Math.min(r,pr); r=Math.max(r,pr*0.68); } } // 부모보다 얇되 급변 X
+      if(n.parent.parent){ const pr=rad[n.parent.order]; if(pr!=null){ r=Math.min(r,pr); if(!n.branch) r=Math.max(r,pr*0.68); } } // 트렁크는 급변X, 가지는 얇게 허용
       rad[n.order]=r;
       const ag=Math.max(0, Math.min(1, (g-gB)/P.matSpan)); ageOf[n.order]=ag;
       let s=leafSize(ag);
-      if(n.parent.parent){ const ps=lsz[n.parent.order]; if(ps!=null){ s=Math.min(s,ps); s=Math.max(s,ps*0.62); } } // 직전 잎과 연결(급변 X)
+      if(n.parent.parent){ const ps=lsz[n.parent.order]; if(ps!=null){ s=Math.min(s,ps); if(!n.branch) s=Math.max(s,ps*0.62); } } // 트렁크 잎은 연결, 가지 잎은 작게 허용
       lsz[n.order]=s;
     }
     // 그리기: 척추(부모→자식 줄기) + 각 마디에서 잎
@@ -460,6 +462,7 @@ function buildPlant(){
       const st=sub[n.order], r=rad[n.order], age=ageOf[n.order], sa=segAgeOf[n.order];
       const azf=n.laz + PHOTO*0.5*Math.atan2(Math.sin(L-n.laz),Math.cos(L-n.laz));  // 잎 방위 + 빛쪽 당김
       addStemSeg(n.parent.pos, n.pos, r, Math.min(1, sa*(st-1)/8), azf, bump2.has(n.order)?'stem_main':null);  // 2혹 마디는 stem_main
+      if(n.bare) continue;   // 가지 밑동 얇은 줄기: 잎/새순 없이 줄기만
       if(n.order===nTotal && nTotal>1 && age<P.budSpan){
         // 맨 새 마디 = 새순: 말림(furled)→펴짐(opening), 작게 나서 커짐
         if(age<P.budSpan*P.furlFrac) addBud(n.pos, azf, 'furled',  P.budSize*(0.7+age));
