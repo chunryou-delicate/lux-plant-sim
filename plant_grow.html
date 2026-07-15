@@ -143,6 +143,8 @@ const ASSETS={}; let ASSETS_READY=false;
 let SOIL_Y=0.5;
 const POT_H=0.6;          // 화분 높이(월드)
 const USE_PETIOLE=true;   // 잎자루 GLB로 줄기-잎 연결(잎에 잎자루 포함돼 보이면 false)
+const SPAWN_STEP=10;      // 잎 하나 나는 데 필요한 growth (클수록 천천히·적게)
+const MAT_SPAN=30;        // 잎이 떡잎→완전히 크는 데 걸리는 growth (작게 나서 서서히)
 
 // GLB 정규화: 중심 x/z, 밑면 y=0, 높이 1.0. forceLongY면 가장 긴 축을 Y로 회전.
 // 반환 outer(단위,항등) → clone 후 scale/quaternion/position로 배치.
@@ -254,7 +256,7 @@ function budTint(){ return new THREE.Color().setHSL(PLANT_HUE+0.05, 0.55, 0.70);
 function stemTint(woodT){ return new THREE.Color().setHSL(PLANT_HUE,0.40,0.40).lerp(new THREE.Color().setHSL(0.09,0.45,0.30),(woodT||0)*0.65); }
 // 잎: 마디에서 방위 az + 성숙도별 처짐 방향으로. 잎자루 끝이 마디에 살짝 파고들게.
 function addLeaf(nodePos, az, maturity, kind){
-  const size=0.30 + maturity*0.85;                    // 먼저 난(성숙) 잎일수록 큼
+  const size=0.20 + maturity*1.05;                    // ★ 떡잎(0.20)에서 시작해 다 크면 1.25
   const elev=1.02 - maturity*0.34;                    // 위로 받쳐지게(처짐 완화). 어릴수록 더 곧추
   const d=new THREE.Vector3(Math.cos(elev)*Math.sin(az), Math.sin(elev), Math.cos(elev)*Math.cos(az)).normalize();
   const reach=0.03 + 0.05*size;                        // 잎을 마디에 더 가깝게(잎자루 짧게+겹침↑)
@@ -295,7 +297,7 @@ function buildPlant(){
     nub.position.set(0,SOIL_Y+0.05,0); nub.castShadow=true; plantGroup.add(nub);
     stage='혹(새싹 트임) 🌱';
   } else {
-    const nTotal=1+Math.floor((g-14)/6);
+    const nTotal=1+Math.floor((g-14)/SPAWN_STEP);
     const L=LIGHT_AZ, ld=new THREE.Vector3(Math.sin(L),0,Math.cos(L));   // 빛 방향(수평)
     // ★ 중심 줄기(척추): 화분에서 위로 마디를 이어 쌓아 몸통을 만들고, 각 마디에서 잎이 남.
     //    대부분 트렁크를 연장(세로) → 몸통이 보임. 가끔 가지(branch)로 개체성.
@@ -332,17 +334,17 @@ function buildPlant(){
       // 처음엔 가늘게, 위로 달린 잎이 많고(=아래) 개체가 클수록 서서히 굵게. 완전 굵은건 큰개체 밑동에서만.
       const r=(0.026+0.017*Math.sqrt(Math.max(0,st-1)))*(0.78+0.22*gf);
       addStemSeg(n.parent.pos, n.pos, r, Math.min(1,(st-1)/10));
-      const ageNorm=nTotal>1?(nTotal-n.order)/(nTotal-1):1;   // 먼저 난 잎=오래됨(큼·성숙)
-      const maturity=ageNorm*(0.35+0.65*gf);
+      // ★ 각 잎의 개별 생장 나이(0=갓 남, 1=다 큼) → 작게 나서 서서히 커짐/성숙
+      const gBirth=14+(n.order-1)*SPAWN_STEP;
+      const age=Math.max(0, Math.min(1, (g-gBirth)/MAT_SPAN));
       const azf=n.laz + PHOTO*0.5*Math.atan2(Math.sin(L-n.laz),Math.cos(L-n.laz));  // 잎 방위 + 빛쪽 당김
-      if(n.order===nTotal && nTotal>1){
-        const em=Math.min(1, ((g-14)%6)/6 + 0.15);   // 새순 진행도: furled→opening→young
-        if(em<0.45)      addBud(n.pos, azf, 'furled',  0.16+em*0.18);
-        else if(em<0.80) addBud(n.pos, azf, 'opening', 0.20+em*0.22);
-        else             addLeaf(n.pos, azf, maturity*0.45, 'young');
+      if(n.order===nTotal && nTotal>1 && age<0.34){
+        // 맨 새 마디 = 새순: 아주 작게 나서 펴짐(furled→opening)
+        if(age<0.14) addBud(n.pos, azf, 'furled',  0.10+age*0.5);
+        else         addBud(n.pos, azf, 'opening', 0.14+age*0.7);
       } else {
-        const kind = maturity<0.3?'young' : maturity<0.62?'mid' : 'mature';   // 성숙도별 잎 자동선택
-        addLeaf(n.pos, azf, maturity, kind);
+        const kind = age<0.32?'young' : age<0.64?'mid' : 'mature';   // 나이별 잎 형태
+        addLeaf(n.pos, azf, age, kind);
       }
     }
     nodes=nTotal; leaves=nTotal; stage='척추 마디 '+nTotal+'개';
