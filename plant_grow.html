@@ -69,7 +69,7 @@
       <div class="cols">
         <div class="col">
           <div class="colhead">▶ 플레이</div>
-          <div class="field"><label>성장도 growth <b id="growthV">30</b></label><input type="range" id="growth" min="0" max="100" value="30"></div>
+          <div class="field"><label>성장도(일) <b id="growthV">120</b></label><input type="range" id="growth" min="0" max="365" value="120"></div>
           <div class="field"><label>☀️ 빛 방위 <b id="lightV">90°</b></label><input type="range" id="light" min="0" max="360" value="90"></div>
           <div class="field"><label>굴광성(빛 쫓기) <b id="photoV">50%</b></label><input type="range" id="photo" min="0" max="100" value="50"></div>
           <button class="cbtn" id="btnSeed" style="width:100%">🎲 랜덤 시드</button>
@@ -117,13 +117,14 @@ let SEED=12345, rng=mulberry32(SEED);
 const GOLDEN=Math.PI*(3-Math.sqrt(5));   // 137.5° 황금각(자연스러운 잎차례)
 
 // ===== 튜닝 파라미터(A: 전체 규칙) — 슬라이더로 실시간 조절 =====
+const GMAX=365;   // 성장도 최대 = 1년(일)
 const DEF={
-  spawnStep:10, maxLeaves:9, matSpan:30,                   // 성장 타이밍(잎 간격/최대/생애 길이)
-  seedEnd:6, sproutEnd:14,                                 // 씨앗·새싹(줄기+말린잎) 시기
+  spawnStep:30, maxLeaves:12, matSpan:100,                 // 성장 타이밍(잎 간격/최대/생애 길이) — 1년 기준
+  seedEnd:20, sproutEnd:45,                                // 씨앗·새싹(줄기+말린잎) 시기
   budSpan:0.22, furlFrac:0.5, budSize:0.16,                // 새순: 말림(furled)→펴짐(opening) 비율·크기
   stageYoung:0.38, stageMid:0.66,                          // 잎 형태 전환 시점(어린→중간→성인)
   sizeYoung:0.20, sizeMid:0.45, sizeMature:0.78, sizeFull:1.25,  // 각 시점 크기(작게 나서 커짐)
-  internode:0.24, thickSpan:50, thickScale:0.022, matureStemR:0.085, stemFlat:1.25,   // 줄기 (matureStemR=성인잎 최소굵기=thick, stemFlat=잎방향으로 납작)
+  internode:0.24, thickSpan:150, thickScale:0.022, ageThick:0.06, matureStemR:0.085, stemFlat:1.25,   // 줄기 (ageThick=오래된 가지도 아주 나중에 굵어짐, matureStemR=성인잎 최소굵기=thick)
   petioleLen:1.0, leafElev:1.02, elevDrop:0.34, spread:0.16, branchSpread:0.55, branchProb:0.14,  // 배치
   leafLight:0.58, leafDark:0.30, leafSat:0.55, satRange:0.22, hueBase:0.16, hueRange:0.26,   // 색(밝기/진함/채도/개체범위)
 };
@@ -135,7 +136,7 @@ function defAdj(key){ const d={scale:1, rx:0,ry:0,rz:0, ox:0,oy:0,oz:0}; if(/^le
 const DEF_ADJ={}; ADJ_KEYS.forEach(k=>DEF_ADJ[k]=defAdj(k));
 let ADJ=JSON.parse(JSON.stringify(DEF_ADJ));
 
-let GROWTH=30;
+let GROWTH=120;
 let LIGHT_AZ=Math.PI*0.5, PHOTO=0.5;   // 빛 방위(rad) · 굴광성 세기(0~1)
 
 // ===== 재료 =====
@@ -385,7 +386,7 @@ function buildPlant(){
   seedColor();                     // 개체 통일 색(시드 고정: 색조+채도)
   clearGroup(plantGroup);
   addPot();
-  const g=GROWTH, gf=g/100;
+  const g=GROWTH, gf=Math.min(1, g/GMAX);   // 정규화(0..1, 1년 기준)
   let stage='', nodes=0, leaves=0;
 
   if(g<P.seedEnd){
@@ -439,7 +440,7 @@ function buildPlant(){
       //   완전 굵은 thick은 큰 개체의 맨 아래 + 아주 오래된 마디에서만.
       const gB=P.sproutEnd+(n.order-1)*P.spawnStep;
       const segAge=Math.max(0, Math.min(1, (g-gB)/P.thickSpan));   // 줄기가 굵어지는 시간(느리게)
-      const r=(0.026+P.thickScale*Math.sqrt(Math.max(0,st-1)))*(0.5+0.5*segAge);
+      const r=(0.026+P.thickScale*Math.sqrt(Math.max(0,st-1)))*(0.5+0.5*segAge) + P.ageThick*segAge*segAge;  // 오래되면(가지도) 서서히 굵어짐
       const azf=n.laz + PHOTO*0.5*Math.atan2(Math.sin(L-n.laz),Math.cos(L-n.laz));  // 잎 방위 + 빛쪽 당김
       addStemSeg(n.parent.pos, n.pos, r, Math.min(1, segAge*(st-1)/8), azf);  // 잎 방향으로 납작
       // ★ 각 잎의 개별 생장 나이(0=갓 남, 1=다 큼) → 작게 나서 서서히 커짐/성숙
@@ -603,13 +604,13 @@ function buildAssetSliders(key){
 // ===== A 전체 파라미터 슬라이더 생성 =====
 const PARAM_DEFS=[
   {sec:'⏱ 성장 타이밍', items:[
-    {k:'spawnStep',t:'잎 나는 간격(느림↑)',min:4,max:20,step:1},
-    {k:'maxLeaves',t:'잎 최대 개수',min:3,max:16,step:1},
-    {k:'matSpan',t:'잎 생애 길이(느림↑)',min:8,max:60,step:1},
+    {k:'spawnStep',t:'잎 나는 간격(일, 느림↑)',min:6,max:70,step:1},
+    {k:'maxLeaves',t:'잎 최대 개수',min:3,max:20,step:1},
+    {k:'matSpan',t:'잎 생애 길이(일, 느림↑)',min:20,max:200,step:5},
   ]},
   {sec:'🌱 씨앗·새싹·새순', items:[
-    {k:'seedEnd',t:'씨앗 시기(끝 growth)',min:2,max:20,step:1},
-    {k:'sproutEnd',t:'새싹(줄기+말린잎) 끝',min:6,max:30,step:1},
+    {k:'seedEnd',t:'씨앗 시기(끝 일)',min:2,max:60,step:1},
+    {k:'sproutEnd',t:'새싹(줄기+말린잎) 끝(일)',min:6,max:90,step:1},
     {k:'budSpan',t:'새순(말림→잎) 기간',min:0.05,max:0.6,step:0.02},
     {k:'furlFrac',t:'말림 비율(→펴짐)',min:0.1,max:0.9,step:0.05},
     {k:'budSize',t:'새순 크기',min:0.06,max:0.5,step:0.02},
@@ -624,9 +625,10 @@ const PARAM_DEFS=[
   ]},
   {sec:'🌿 줄기', items:[
     {k:'internode',t:'마디 간격',min:0.1,max:0.5,step:0.01},
-    {k:'thickSpan',t:'굵어지는 시간(느림↑)',min:15,max:100,step:5},
+    {k:'thickSpan',t:'굵어지는 시간(일, 느림↑)',min:30,max:300,step:5},
     {k:'thickScale',t:'굵기 배율',min:0.008,max:0.05,step:0.002},
-    {k:'matureStemR',t:'성인잎 최소 줄기굵기',min:0.03,max:0.14,step:0.005},
+    {k:'ageThick',t:'가지 굵어짐(아주 나중)',min:0.0,max:0.15,step:0.005},
+    {k:'matureStemR',t:'성인잎 최소 줄기굵기',min:0.03,max:0.16,step:0.005},
     {k:'stemFlat',t:'줄기 납작(잎 연결)',min:1.0,max:1.8,step:0.05},
   ]},
   {sec:'🍃 배치', items:[
