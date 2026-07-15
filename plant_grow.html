@@ -23,11 +23,22 @@
     font-size:13px;color:#3d3548;cursor:pointer;box-shadow:0 3px 0 rgba(0,0,0,.3)}
   .cbtn:active{transform:translateY(2px);box-shadow:0 1px 0 rgba(0,0,0,.3)}
   .cbtn.on{background:#7ad06a}
-  .panel{position:absolute;top:52px;right:16px;z-index:6;width:250px;
-    background:rgba(20,16,28,.72);backdrop-filter:blur(10px);border-radius:16px;padding:14px;
+  .panel{position:absolute;top:12px;right:16px;z-index:6;width:284px;max-height:calc(100vh - 24px);overflow-y:auto;
+    background:rgba(20,16,28,.78);backdrop-filter:blur(10px);border-radius:16px;padding:12px 14px;
     border:1px solid rgba(255,255,255,.1)}
+  .panel::-webkit-scrollbar{width:7px} .panel::-webkit-scrollbar-thumb{background:rgba(122,208,106,.4);border-radius:4px}
+  .phead{display:flex;justify-content:space-between;align-items:center;font-family:'Jua';font-size:15px;color:#7ad06a;margin-bottom:8px}
+  .phead button{background:none;border:none;color:#7ad06a;font-family:'Jua';font-size:15px;cursor:pointer}
+  .tabs{display:flex;gap:5px;margin-bottom:10px}
+  .tabs button{flex:1;background:rgba(255,255,255,.08);border:none;border-radius:9px;padding:6px 4px;
+    font-family:'Jua';font-size:11px;color:rgba(255,255,255,.6);cursor:pointer}
+  .tabs button.on{background:#7ad06a;color:#1a1526}
+  .psec{font-family:'Jua';font-size:11px;color:#e8a838;margin:10px 0 6px;padding-bottom:3px;border-bottom:1px solid rgba(255,255,255,.1)}
+  .prow{display:flex;gap:6px;margin-top:12px;padding-top:10px;border-top:1px solid rgba(255,255,255,.12)}
+  .prow .cbtn{flex:1;font-size:12px;padding:8px}
+  .note2{font-family:'Gaegu';font-weight:700;font-size:12px;color:rgba(255,255,255,.5);padding:14px 4px}
   .panel h3{font-family:'Jua';font-size:14px;color:#7ad06a;margin-bottom:10px}
-  .field{margin-bottom:12px}
+  .field{margin-bottom:10px}
   .field label{display:flex;justify-content:space-between;font-family:'Gaegu';font-weight:700;font-size:12px;
     color:rgba(255,255,255,.7);margin-bottom:5px}
   .field label b{color:#7ad06a;font-family:'Jua'}
@@ -49,22 +60,28 @@
     <span class="tag">모듈 식물 생장 · 몬스테라 프로토 (임시 도형)</span>
   </div>
 
-  <div class="panel">
-    <h3>🌱 생장 파라미터</h3>
-    <div class="field">
-      <label>성장도 growth <b id="growthV">30</b></label>
-      <input type="range" id="growth" min="0" max="100" value="30">
+  <div class="panel" id="panel">
+    <div class="phead"><span>🌱 몬스테라 튜닝</span><button id="panelToggle">▾</button></div>
+    <div id="panelBody">
+      <div class="tabs">
+        <button data-tab="play" class="on">플레이</button>
+        <button data-tab="global">전체 A</button>
+        <button data-tab="asset">에셋 B</button>
+      </div>
+      <div class="tabpane" id="tab-play">
+        <div class="field"><label>성장도 growth <b id="growthV">30</b></label><input type="range" id="growth" min="0" max="100" value="30"></div>
+        <div class="field"><label>☀️ 빛 방위 <b id="lightV">90°</b></label><input type="range" id="light" min="0" max="360" value="90"></div>
+        <div class="field"><label>굴광성(빛 쫓기) <b id="photoV">50%</b></label><input type="range" id="photo" min="0" max="100" value="50"></div>
+        <button class="cbtn" id="btnSeed" style="width:100%">🎲 랜덤 시드 (다른 개체)</button>
+        <div id="stat" style="margin-top:8px"><span class="k">슬라이더를 움직여 자라는 걸 보세요.</span></div>
+      </div>
+      <div class="tabpane" id="tab-global" style="display:none"></div>
+      <div class="tabpane" id="tab-asset" style="display:none"><div class="note2">에셋별 개별 조정은 2단계에서 추가됩니다.</div></div>
+      <div class="prow">
+        <button class="cbtn" id="btnCopy">📋 설정 복사</button>
+        <button class="cbtn" id="btnReset">↺ 리셋</button>
+      </div>
     </div>
-    <div class="field">
-      <label>☀️ 빛 방위 <b id="lightV">90°</b></label>
-      <input type="range" id="light" min="0" max="360" value="90">
-    </div>
-    <div class="field">
-      <label>굴광성(빛 쫓기) <b id="photoV">50%</b></label>
-      <input type="range" id="photo" min="0" max="100" value="50">
-    </div>
-    <button class="cbtn" id="btnSeed" style="width:100%;margin-bottom:10px">🎲 랜덤 시드 (다른 개체)</button>
-    <div id="stat"><span class="k">슬라이더를 움직여 자라는 걸 보세요.</span></div>
   </div>
 
   <div class="views">
@@ -89,6 +106,16 @@ let FRUSTUM=2.2;
 function mulberry32(a){ return function(){ a|=0; a=a+0x6D2B79F5|0; let t=Math.imul(a^a>>>15,1|a); t=t+Math.imul(t^t>>>7,61|t)^t; return((t^t>>>14)>>>0)/4294967296; }; }
 let SEED=12345, rng=mulberry32(SEED);
 const GOLDEN=Math.PI*(3-Math.sqrt(5));   // 137.5° 황금각(자연스러운 잎차례)
+
+// ===== 튜닝 파라미터(A: 전체 규칙) — 슬라이더로 실시간 조절 =====
+const DEF={
+  spawnStep:10, maxLeaves:9, budSpan:0.34,                 // 성장 타이밍
+  leafStart:0.20, leafFull:1.25, matSpan:30,               // 크기
+  internode:0.24, thickSpan:50, thickScale:0.022,          // 줄기
+  petioleLen:1.0, leafElev:1.02, elevDrop:0.34, spread:0.16, branchSpread:0.55, branchProb:0.14,  // 배치
+  leafLight:0.63, leafDark:0.24, hueBase:0.20, hueRange:0.18,   // 색
+};
+let P=Object.assign({}, DEF);
 
 let GROWTH=30;
 let LIGHT_AZ=Math.PI*0.5, PHOTO=0.5;   // 빛 방위(rad) · 굴광성 세기(0~1)
@@ -144,8 +171,6 @@ const ASSETS={}; let ASSETS_READY=false;
 let SOIL_Y=0.5;
 const POT_H=0.6;          // 화분 높이(월드)
 const USE_PETIOLE=true;   // 잎자루 GLB로 줄기-잎 연결(잎에 잎자루 포함돼 보이면 false)
-const SPAWN_STEP=10;      // 잎 하나 나는 데 필요한 growth (클수록 천천히·적게)
-const MAT_SPAN=30;        // 잎이 떡잎→완전히 크는 데 걸리는 growth (작게 나서 서서히)
 
 // GLB 정규화: 중심 x/z, 밑면 y=0, 높이 1.0. forceLongY면 가장 긴 축을 Y로 회전.
 // 반환 outer(단위,항등) → clone 후 scale/quaternion/position로 배치.
@@ -228,7 +253,7 @@ function addPetiole(nodePos, d, size, maturity, leafBase){
   const embed=0.05*size, over=0.20*size;                 // 마디에 조금, 잎 안쪽으로 넉넉히(겹침↑ → 안 뜸)
   const p0=nodePos.clone().addScaledVector(d,-embed);
   const p1=leafBase.clone().addScaledVector(d, over);
-  stretchGLB('petiole', p0, p1, 0.022+0.015*maturity, stemTint(0.06));
+  stretchGLB('petiole', p0, p1, (0.022+0.015*maturity), stemTint(0.06));
 }
 // 성장 후보 마디 중 하나 선택: 거의 균등 랜덤 + 빛 받는 쪽 약간↑ (굴광성)
 function pickCandidate(list, ld){
@@ -256,7 +281,7 @@ function placeAlong(obj, base, dir, worldLen){
 }
 // ===== 개체 통일 색 (시드로 고정 → 나중에 나는 잎도 같은 색으로 통일) =====
 let PLANT_HUE=0.30;
-function seedHue(){ const cs=mulberry32((SEED*40503+12345)>>>0); return 0.20+cs()*0.18; }   // 연두~초록
+function seedHue(){ const cs=mulberry32((SEED*40503+12345)>>>0); return P.hueBase+cs()*P.hueRange; }   // 연두~초록
 function tintObj(obj, color){
   obj.traverse(o=>{ if(o.isMesh&&o.material){
     const ms=Array.isArray(o.material)?o.material:[o.material];
@@ -264,15 +289,15 @@ function tintObj(obj, color){
     o.material=Array.isArray(o.material)?nm:nm[0];
   }});
 }
-function leafTint(maturity){ return new THREE.Color().setHSL(PLANT_HUE+0.03*(1-maturity), 0.48+0.12*maturity, 0.63-maturity*0.24); }  // 새잎=연한 연두→성숙=진초록
+function leafTint(maturity){ return new THREE.Color().setHSL(PLANT_HUE+0.03*(1-maturity), 0.48+0.12*maturity, P.leafLight-maturity*P.leafDark); }  // 새잎=연한→성숙=진함
 function budTint(){ return new THREE.Color().setHSL(PLANT_HUE+0.05, 0.55, 0.70); }
 function stemTint(woodT){ return new THREE.Color().setHSL(PLANT_HUE,0.40,0.40).lerp(new THREE.Color().setHSL(0.09,0.45,0.30),(woodT||0)*0.65); }
 // 잎: 마디에서 방위 az + 성숙도별 처짐 방향으로. 잎자루 끝이 마디에 살짝 파고들게.
 function addLeaf(nodePos, az, maturity, kind){
-  const size=0.20 + maturity*1.05;                    // ★ 떡잎(0.20)에서 시작해 다 크면 1.25
-  const elev=1.02 - maturity*0.34;                    // 위로 받쳐지게(처짐 완화). 어릴수록 더 곧추
+  const size=P.leafStart + maturity*(P.leafFull-P.leafStart);   // ★ 떡잎에서 시작해 서서히 큼
+  const elev=P.leafElev - maturity*P.elevDrop;                  // 위로 받쳐지게(처짐 완화)
   const d=new THREE.Vector3(Math.cos(elev)*Math.sin(az), Math.sin(elev), Math.cos(elev)*Math.cos(az)).normalize();
-  const reach=0.03 + 0.05*size;                        // 잎을 마디에 더 가깝게(잎자루 짧게+겹침↑)
+  const reach=(0.03 + 0.05*size)*P.petioleLen;                  // 잎자루 길이(잎↔마디 거리)
   const base=nodePos.clone().addScaledVector(d, reach);
   addPetiole(nodePos, d, size, maturity, base);        // 연결 줄기가 마디~잎을 실제로 이어줌
   const proto=assetInst(leafKindKey(kind));
@@ -310,7 +335,7 @@ function buildPlant(){
     nub.position.set(0,SOIL_Y+0.05,0); nub.castShadow=true; plantGroup.add(nub);
     stage='혹(새싹 트임) 🌱';
   } else {
-    const nTotal=1+Math.floor((g-14)/SPAWN_STEP);
+    const nTotal=Math.min(P.maxLeaves, 1+Math.floor((g-14)/P.spawnStep));
     const L=LIGHT_AZ, ld=new THREE.Vector3(Math.sin(L),0,Math.cos(L));   // 빛 방향(수평)
     // ★ 중심 줄기(척추): 화분에서 위로 마디를 이어 쌓아 몸통을 만들고, 각 마디에서 잎이 남.
     //    대부분 트렁크를 연장(세로) → 몸통이 보임. 가끔 가지(branch)로 개체성.
@@ -321,18 +346,18 @@ function buildPlant(){
       let ti=0;                                    // 기본: 중심 줄기 연장
       if(tips.length>1 && rng()<0.35) ti=1+Math.floor(rng()*(tips.length-1));
       const tip=tips[ti], trunk=tip.trunk;
-      const upB=trunk?0.95:0.62, spread=trunk?0.16:0.55;   // 트렁크는 곧추, 가지는 벌어짐
+      const upB=trunk?0.95:0.62, spread=trunk?P.spread:P.branchSpread;   // 트렁크는 곧추, 가지는 벌어짐
       const nd=new THREE.Vector3(
         tip.dir.x*0.55 + (rng()-0.5)*spread + ld.x*PHOTO*0.3,
         upB + rng()*0.08,
         tip.dir.z*0.55 + (rng()-0.5)*spread + ld.z*PHOTO*0.3
       ).normalize();
-      const inLen=(trunk?0.24:0.20)*(0.75+0.4*gf);
+      const inLen=(trunk?P.internode:P.internode*0.83)*(0.75+0.4*gf);
       const np=tip.node.pos.clone().addScaledVector(nd, inLen);
       const jit=(rng()-0.5)*0.7;
       const node={pos:np, parent:tip.node, order:k, laz:k*GOLDEN+jit};   // 잎 방위=척추 둘레 나선
       nodes2.push(node); tip.node=node; tip.dir=nd;
-      if(k>=3 && tips.length<3 && rng()<0.14)      // 가끔 새 가지
+      if(k>=3 && tips.length<3 && rng()<P.branchProb)      // 가끔 새 가지
         tips.push({node:node, dir:new THREE.Vector3((rng()-0.5)*1.2, 0.75, (rng()-0.5)*1.2).normalize(), trunk:false});
     }
     // 서브트리 크기(이 마디 위로 달린 잎 수) → 줄기 굵기 (base=제일 굵음)
@@ -346,18 +371,18 @@ function buildPlant(){
       const st=sub[n.order];
       // ★ 줄기 굵기=나이순: 갓 난 줄기 가늘게(thin) → 오래될수록·아래일수록 med→main.
       //   완전 굵은 thick은 큰 개체의 맨 아래 + 아주 오래된 마디에서만.
-      const gB=14+(n.order-1)*SPAWN_STEP;
-      const segAge=Math.max(0, Math.min(1, (g-gB)/50));         // 줄기가 굵어지는 시간(느리게)
-      const r=(0.026+0.022*Math.sqrt(Math.max(0,st-1)))*(0.5+0.5*segAge);
+      const gB=14+(n.order-1)*P.spawnStep;
+      const segAge=Math.max(0, Math.min(1, (g-gB)/P.thickSpan));   // 줄기가 굵어지는 시간(느리게)
+      const r=(0.026+P.thickScale*Math.sqrt(Math.max(0,st-1)))*(0.5+0.5*segAge);
       addStemSeg(n.parent.pos, n.pos, r, Math.min(1, segAge*(st-1)/8));
       // ★ 각 잎의 개별 생장 나이(0=갓 남, 1=다 큼) → 작게 나서 서서히 커짐/성숙
-      const gBirth=14+(n.order-1)*SPAWN_STEP;
-      const age=Math.max(0, Math.min(1, (g-gBirth)/MAT_SPAN));
+      const gBirth=14+(n.order-1)*P.spawnStep;
+      const age=Math.max(0, Math.min(1, (g-gBirth)/P.matSpan));
       const azf=n.laz + PHOTO*0.5*Math.atan2(Math.sin(L-n.laz),Math.cos(L-n.laz));  // 잎 방위 + 빛쪽 당김
-      if(n.order===nTotal && nTotal>1 && age<0.34){
+      if(n.order===nTotal && nTotal>1 && age<P.budSpan){
         // 맨 새 마디 = 새순: 아주 작게 나서 펴짐(furled→opening)
-        if(age<0.14) addBud(n.pos, azf, 'furled',  0.10+age*0.5);
-        else         addBud(n.pos, azf, 'opening', 0.14+age*0.7);
+        if(age<P.budSpan*0.41) addBud(n.pos, azf, 'furled',  0.10+age*0.5);
+        else                   addBud(n.pos, azf, 'opening', 0.14+age*0.7);
       } else {
         const kind = age<0.32?'young' : age<0.64?'mid' : 'mature';   // 나이별 잎 형태
         addLeaf(n.pos, azf, age, kind);
@@ -451,6 +476,63 @@ function bindControls(){
   ls.addEventListener('input',()=>{ LIGHT_AZ=(+ls.value)*Math.PI/180; document.getElementById('lightV').textContent=ls.value+'°'; updateSun(); buildPlant(); });
   const ps=document.getElementById('photo');
   ps.addEventListener('input',()=>{ PHOTO=(+ps.value)/100; document.getElementById('photoV').textContent=ps.value+'%'; buildPlant(); });
+  buildGlobalPanel();
+  // 탭 전환
+  document.querySelectorAll('.tabs button').forEach(b=> b.onclick=()=>{
+    document.querySelectorAll('.tabs button').forEach(x=>x.classList.remove('on')); b.classList.add('on');
+    ['play','global','asset'].forEach(t=> document.getElementById('tab-'+t).style.display=(t===b.dataset.tab)?'block':'none');
+  });
+  // 패널 접기
+  document.getElementById('panelToggle').onclick=e=>{ const bd=document.getElementById('panelBody'); const hid=bd.style.display==='none'; bd.style.display=hid?'block':'none'; e.target.textContent=hid?'▾':'▸'; };
+  // 설정 복사 / 리셋
+  document.getElementById('btnCopy').onclick=()=>{ const j=JSON.stringify(P,null,1); if(navigator.clipboard) navigator.clipboard.writeText(j); prompt('설정 JSON (복사해서 코드 기본값으로):', j); };
+  document.getElementById('btnReset').onclick=()=>{ P=Object.assign({},DEF); buildGlobalPanel(); buildPlant(); };
+}
+// ===== A 전체 파라미터 슬라이더 생성 =====
+const PARAM_DEFS=[
+  {sec:'⏱ 성장 타이밍', items:[
+    {k:'spawnStep',t:'잎 나는 간격(느림↑)',min:4,max:20,step:1},
+    {k:'maxLeaves',t:'잎 최대 개수',min:3,max:16,step:1},
+    {k:'budSpan',t:'새순 전환까지',min:0.1,max:0.6,step:0.02},
+  ]},
+  {sec:'📏 크기', items:[
+    {k:'leafStart',t:'새 잎 시작 크기',min:0.08,max:0.6,step:0.02},
+    {k:'leafFull',t:'다 자란 잎 크기',min:0.6,max:2.0,step:0.05},
+    {k:'matSpan',t:'잎 크는 시간(느림↑)',min:8,max:60,step:1},
+  ]},
+  {sec:'🌿 줄기', items:[
+    {k:'internode',t:'마디 간격',min:0.1,max:0.5,step:0.01},
+    {k:'thickSpan',t:'굵어지는 시간(느림↑)',min:15,max:100,step:5},
+    {k:'thickScale',t:'굵기 배율',min:0.008,max:0.05,step:0.002},
+  ]},
+  {sec:'🍃 배치', items:[
+    {k:'petioleLen',t:'잎자루 길이',min:0.3,max:2.5,step:0.05},
+    {k:'leafElev',t:'잎 각도(위↑)',min:0.4,max:1.4,step:0.03},
+    {k:'elevDrop',t:'성숙시 처짐',min:0.0,max:0.8,step:0.03},
+    {k:'spread',t:'트렁크 흔들림',min:0.0,max:0.6,step:0.02},
+    {k:'branchSpread',t:'가지 퍼짐',min:0.2,max:1.0,step:0.03},
+    {k:'branchProb',t:'가지 확률',min:0.0,max:0.4,step:0.02},
+  ]},
+  {sec:'🎨 색', items:[
+    {k:'leafLight',t:'새잎 밝기',min:0.4,max:0.85,step:0.02},
+    {k:'leafDark',t:'성숙잎 진함',min:0.0,max:0.45,step:0.02},
+    {k:'hueBase',t:'색 기준(연두→초록)',min:0.08,max:0.45,step:0.01},
+    {k:'hueRange',t:'개체 색 범위',min:0.0,max:0.4,step:0.02},
+  ]},
+];
+function fmtVal(v){ return Math.round(v*1000)/1000; }
+function buildGlobalPanel(){
+  const box=document.getElementById('tab-global'); if(!box) return; box.innerHTML='';
+  PARAM_DEFS.forEach(sec=>{
+    const h=document.createElement('div'); h.className='psec'; h.textContent=sec.sec; box.appendChild(h);
+    sec.items.forEach(it=>{
+      const f=document.createElement('div'); f.className='field';
+      const lab=document.createElement('label'); lab.innerHTML=`${it.t} <b>${fmtVal(P[it.k])}</b>`;
+      const inp=document.createElement('input'); inp.type='range'; inp.min=it.min; inp.max=it.max; inp.step=it.step; inp.value=P[it.k];
+      inp.addEventListener('input',()=>{ P[it.k]=+inp.value; lab.querySelector('b').textContent=fmtVal(P[it.k]); buildPlant(); });
+      f.appendChild(lab); f.appendChild(inp); box.appendChild(f);
+    });
+  });
 }
 function updateSun(){ if(!sunMarker) return; const R=2.3; sunMarker.position.set(Math.sin(LIGHT_AZ)*R, 1.5, Math.cos(LIGHT_AZ)*R); }
 function animate(){ requestAnimationFrame(animate); if(autoRotate){ orbit.az+=0.004; updateCam(); } renderer.render(scene,cam); }
