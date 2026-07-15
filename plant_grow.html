@@ -344,9 +344,12 @@ function buildPlant(){
     for(const n of nodes2){
       if(!n.parent) continue;
       const st=sub[n.order];
-      // 처음엔 가늘게, 위로 달린 잎이 많고(=아래) 개체가 클수록 서서히 굵게. 완전 굵은건 큰개체 밑동에서만.
-      const r=(0.026+0.017*Math.sqrt(Math.max(0,st-1)))*(0.78+0.22*gf);
-      addStemSeg(n.parent.pos, n.pos, r, Math.min(1,(st-1)/10));
+      // ★ 줄기 굵기=나이순: 갓 난 줄기 가늘게(thin) → 오래될수록·아래일수록 med→main.
+      //   완전 굵은 thick은 큰 개체의 맨 아래 + 아주 오래된 마디에서만.
+      const gB=14+(n.order-1)*SPAWN_STEP;
+      const segAge=Math.max(0, Math.min(1, (g-gB)/50));         // 줄기가 굵어지는 시간(느리게)
+      const r=(0.026+0.022*Math.sqrt(Math.max(0,st-1)))*(0.5+0.5*segAge);
+      addStemSeg(n.parent.pos, n.pos, r, Math.min(1, segAge*(st-1)/8));
       // ★ 각 잎의 개별 생장 나이(0=갓 남, 1=다 큼) → 작게 나서 서서히 커짐/성숙
       const gBirth=14+(n.order-1)*SPAWN_STEP;
       const age=Math.max(0, Math.min(1, (g-gBirth)/MAT_SPAN));
