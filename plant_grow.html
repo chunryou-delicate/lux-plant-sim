@@ -337,7 +337,7 @@ function tintObj(obj, color){
 }
 function leafTint(maturity){ return new THREE.Color().setHSL(PLANT_HUE+0.03*(1-maturity), Math.min(1,PLANT_SAT+0.12*maturity), P.leafLight-maturity*P.leafDark); }  // 새잎=연한→성숙=진함
 function budTint(){ return new THREE.Color().setHSL(PLANT_HUE+0.05, Math.min(1,PLANT_SAT+0.05), P.leafLight+0.08); }
-function stemTint(woodT){ return new THREE.Color().setHSL(PLANT_HUE, PLANT_SAT, P.leafLight-0.05).lerp(new THREE.Color().setHSL(0.09,0.42,0.30),(woodT||0)*0.55); }  // 잎과 같은 초록 계열로 통일(우디는 아주 굵을 때만)
+function stemTint(woodT){ return new THREE.Color().setHSL(PLANT_HUE, PLANT_SAT, P.leafLight-0.05).lerp(new THREE.Color().setHSL(0.11,0.32,0.36),(woodT||0)*0.28); }  // 잎과 같은 초록 계열로 통일(우디 갈색은 아주 살짝만)
 // 잎 크기: 나이(age 0..1)에 따른 단계별 곡선. 각 전환 시점·시작크기를 P로 지정 → 작게 나서 커지다 형태 전환.
 function leafSize(age){
   const pts=[[0,P.sizeYoung],[P.stageYoung,P.sizeMid],[P.stageMid,P.sizeMature],[1,P.sizeFull]];
@@ -421,7 +421,9 @@ function buildPlant(){
         upB + rng()*0.08,
         tip.dir.z*0.55 + (rng()-0.5)*spread + ld.z*PHOTO*0.3
       ).normalize();
-      const inLen=(trunk?P.internode:P.internode*0.83)*(0.75+0.4*gf);
+      const gBk=P.sproutEnd+(k-1)*P.spawnStep;
+      const emK=Math.max(0, Math.min(1, (g-gBk)/(P.matSpan*0.45)));   // ★ 새 마디: 짧게 나서 자람(혹에서 얇은 줄기가 작았다가 늘어남)
+      const inLen=(trunk?P.internode:P.internode*0.83)*(0.75+0.4*gf)*(0.12+0.88*emK);
       const np=tip.node.pos.clone().addScaledVector(nd, inLen);
       const jit=(rng()-0.5)*0.7;
       const node={pos:np, parent:tip.node, order:k, laz:k*GOLDEN+jit, branch:!trunk};   // 잎 방위=척추 둘레 나선
@@ -461,7 +463,7 @@ function buildPlant(){
       if(!n.parent) continue;
       const st=sub[n.order], r=rad[n.order], age=ageOf[n.order], sa=segAgeOf[n.order];
       const azf=n.laz + PHOTO*0.5*Math.atan2(Math.sin(L-n.laz),Math.cos(L-n.laz));  // 잎 방위 + 빛쪽 당김
-      addStemSeg(n.parent.pos, n.pos, r, Math.min(1, sa*(st-1)/8), azf, bump2.has(n.order)?'stem_main':null);  // 2혹 마디는 stem_main
+      addStemSeg(n.parent.pos, n.pos, r, Math.min(1, sa*(st-1)/16), azf, bump2.has(n.order)?'stem_main':null);  // 2혹 마디는 stem_main
       if(n.bare) continue;   // 가지 밑동 얇은 줄기: 잎/새순 없이 줄기만
       if(n.order===nTotal && nTotal>1 && age<P.budSpan){
         // 맨 새 마디 = 새순: 말림(furled)→펴짐(opening), 작게 나서 커짐
