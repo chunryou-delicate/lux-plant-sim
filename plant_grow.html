@@ -210,7 +210,7 @@ function addStemSeg(p0, p1, radius, woodT){
 // 잎자루(연결 줄기): 마디에서 잎 부착점까지 실제로 이어줌(길게) + 잎 속으로 넉넉히 파고듦 → 안 뜸.
 function addPetiole(nodePos, d, size, maturity, leafBase){
   if(!(USE_PETIOLE && ASSETS.petiole)) return;
-  const embed=0.05*size, over=0.14*size;                 // 마디에 조금, 잎 안쪽으로 넉넉히
+  const embed=0.05*size, over=0.20*size;                 // 마디에 조금, 잎 안쪽으로 넉넉히(겹침↑ → 안 뜸)
   const p0=nodePos.clone().addScaledVector(d,-embed);
   const p1=leafBase.clone().addScaledVector(d, over);
   stretchGLB('petiole', p0, p1, 0.022+0.015*maturity);
@@ -242,9 +242,9 @@ function placeAlong(obj, base, dir, worldLen){
 // 잎: 마디에서 방위 az + 성숙도별 처짐 방향으로. 잎자루 끝이 마디에 살짝 파고들게.
 function addLeaf(nodePos, az, maturity, kind){
   const size=0.30 + maturity*0.85;                    // 먼저 난(성숙) 잎일수록 큼
-  const elev=0.85 - maturity*0.55;                    // 어릴수록 위로, 성숙할수록 처짐
+  const elev=1.02 - maturity*0.34;                    // 위로 받쳐지게(처짐 완화). 어릴수록 더 곧추
   const d=new THREE.Vector3(Math.cos(elev)*Math.sin(az), Math.sin(elev), Math.cos(elev)*Math.cos(az)).normalize();
-  const reach=0.06 + 0.10*size;                        // 마디→잎 부착점 거리(잎자루 길이)
+  const reach=0.03 + 0.05*size;                        // 잎을 마디에 더 가깝게(잎자루 짧게+겹침↑)
   const base=nodePos.clone().addScaledVector(d, reach);
   addPetiole(nodePos, d, size, maturity, base);        // 연결 줄기가 마디~잎을 실제로 이어줌
   const proto=assetInst(leafKindKey(kind));
@@ -280,36 +280,46 @@ function buildPlant(){
     nub.position.set(0,SOIL_Y+0.05,0); nub.castShadow=true; plantGroup.add(nub);
     stage='혹(새싹 트임) 🌱';
   } else {
-    const nLeaves=1+Math.floor((g-14)/6);
+    const nTotal=1+Math.floor((g-14)/6);
     const L=LIGHT_AZ, ld=new THREE.Vector3(Math.sin(L),0,Math.cos(L));   // 빛 방향(수평)
-    // ★ 모든 마디를 "성장 후보"로 관리. 새 잎마다 후보 중 랜덤 1곳에서 남(위·아래·오래된 줄기 어디서든)
-    const base={pos:new THREE.Vector3(0,SOIL_Y,0), parent:null, order:0, az:rng()*Math.PI*2};
-    const all=[base];
-    for(let k=1;k<=nLeaves;k++){
-      const par=pickCandidate(all, ld);           // 거의 균등 + 빛쪽 약간↑
-      const azth=rng()*Math.PI*2, horiz=0.35+rng()*0.6;   // 성장 방향: 위 + 랜덤 수평 + 빛
-      const dv=new THREE.Vector3(Math.sin(azth)*horiz + ld.x*PHOTO*0.55,
-                                 0.70+rng()*0.18,
-                                 Math.cos(azth)*horiz + ld.z*PHOTO*0.55).normalize();
-      const inLen=0.30*(0.7+0.45*gf);
-      const np=par.pos.clone().addScaledVector(dv, inLen);
-      all.push({pos:np, parent:par, order:k, az:Math.atan2(dv.x,dv.z)});
+    // ★ 중심 줄기(척추): 화분에서 위로 마디를 이어 쌓아 몸통을 만들고, 각 마디에서 잎이 남.
+    //    대부분 트렁크를 연장(세로) → 몸통이 보임. 가끔 가지(branch)로 개체성.
+    const base={pos:new THREE.Vector3(0,SOIL_Y,0), parent:null, order:0, laz:0};
+    const nodes2=[base];
+    const tips=[{node:base, dir:new THREE.Vector3((rng()-0.5)*0.2, 1, (rng()-0.5)*0.2).normalize(), trunk:true}];
+    for(let k=1;k<=nTotal;k++){
+      let ti=0;                                    // 기본: 중심 줄기 연장
+      if(tips.length>1 && rng()<0.35) ti=1+Math.floor(rng()*(tips.length-1));
+      const tip=tips[ti], trunk=tip.trunk;
+      const upB=trunk?0.95:0.62, spread=trunk?0.16:0.55;   // 트렁크는 곧추, 가지는 벌어짐
+      const nd=new THREE.Vector3(
+        tip.dir.x*0.55 + (rng()-0.5)*spread + ld.x*PHOTO*0.3,
+        upB + rng()*0.08,
+        tip.dir.z*0.55 + (rng()-0.5)*spread + ld.z*PHOTO*0.3
+      ).normalize();
+      const inLen=(trunk?0.24:0.20)*(0.75+0.4*gf);
+      const np=tip.node.pos.clone().addScaledVector(nd, inLen);
+      const jit=(rng()-0.5)*0.7;
+      const node={pos:np, parent:tip.node, order:k, laz:k*GOLDEN+jit};   // 잎 방위=척추 둘레 나선
+      nodes2.push(node); tip.node=node; tip.dir=nd;
+      if(k>=3 && tips.length<3 && rng()<0.14)      // 가끔 새 가지
+        tips.push({node:node, dir:new THREE.Vector3((rng()-0.5)*1.2, 0.75, (rng()-0.5)*1.2).normalize(), trunk:false});
     }
-    // 서브트리 크기(이 마디 위로 달린 잎 수) → 줄기 굵기·우디색 (오래된 트렁크=굵음)
-    const kids={}; all.forEach(n=>kids[n.order]=[]);
-    all.forEach(n=>{ if(n.parent) kids[n.parent.order].push(n); });
+    // 서브트리 크기(이 마디 위로 달린 잎 수) → 줄기 굵기 (base=제일 굵음)
+    const kids={}; nodes2.forEach(n=>kids[n.order]=[]);
+    nodes2.forEach(n=>{ if(n.parent) kids[n.parent.order].push(n); });
     const sub={};
-    for(let i=all.length-1;i>=0;i--){ const n=all[i]; let s=1; kids[n.order].forEach(c=>s+=sub[c.order]); sub[n.order]=s; }
-    // 그리기: 각 마디 = 부모→자식 줄기 + 잎 하나
-    for(const n of all){
+    for(let i=nodes2.length-1;i>=0;i--){ const n=nodes2[i]; let s=1; kids[n.order].forEach(c=>s+=sub[c.order]); sub[n.order]=s; }
+    // 그리기: 척추(부모→자식 줄기) + 각 마디에서 잎
+    for(const n of nodes2){
       if(!n.parent) continue;
-      const st=sub[n.order];                              // 이 마디 위로 달린 잎 수
-      const r=0.036+0.02*Math.sqrt(Math.max(0,st-1));     // 많이 달릴수록 굵음
+      const st=sub[n.order];
+      const r=0.036+0.02*Math.sqrt(Math.max(0,st-1));
       addStemSeg(n.parent.pos, n.pos, r, Math.min(1,(st-1)/8));
-      const ageNorm=nLeaves>1?(nLeaves-n.order)/(nLeaves-1):1;   // 먼저 난 잎=오래됨(큼·성숙)
+      const ageNorm=nTotal>1?(nTotal-n.order)/(nTotal-1):1;   // 먼저 난 잎=오래됨(큼·성숙)
       const maturity=ageNorm*(0.35+0.65*gf);
-      const azf=n.az + PHOTO*0.5*Math.atan2(Math.sin(L-n.az),Math.cos(L-n.az));  // 빛쪽 방위 당김
-      if(n.order===nLeaves && nLeaves>1){
+      const azf=n.laz + PHOTO*0.5*Math.atan2(Math.sin(L-n.laz),Math.cos(L-n.laz));  // 잎 방위 + 빛쪽 당김
+      if(n.order===nTotal && nTotal>1){
         const em=Math.min(1, ((g-14)%6)/6 + 0.15);   // 새순 진행도: furled→opening→young
         if(em<0.45)      addBud(n.pos, azf, 'furled',  0.16+em*0.18);
         else if(em<0.80) addBud(n.pos, azf, 'opening', 0.20+em*0.22);
@@ -319,7 +329,7 @@ function buildPlant(){
         addLeaf(n.pos, azf, maturity, kind);
       }
     }
-    nodes=nLeaves; leaves=nLeaves; stage='분기 마디 '+nLeaves+'개';
+    nodes=nTotal; leaves=nTotal; stage='척추 마디 '+nTotal+'개';
   }
   const el=document.getElementById('stat');
   el.innerHTML=`<span class="k">단계</span> ${stage}<br><span class="k">마디</span> ${nodes} · <span class="k">잎</span> ${leaves} · <span class="k">시드</span> ${SEED}`;
