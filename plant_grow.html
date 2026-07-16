@@ -87,7 +87,9 @@
         </div>
       </div>
       <div class="prow">
-        <button class="cbtn" id="btnCopy">📋 설정 복사</button>
+        <button class="cbtn" id="btnPersist">⭐ 영구저장</button>
+        <button class="cbtn" id="btnLoad">📂 불러오기</button>
+        <button class="cbtn" id="btnCopy">📋 복사</button>
         <button class="cbtn" id="btnReset">↺ 리셋</button>
       </div>
     </div>
@@ -255,7 +257,7 @@ function addPot(){
   SOIL_Y=0.48;
 }
 
-function stemKey(radius){ return radius>0.085?'stem_thick' : radius>0.05?'stem_med' : 'stem_thin'; }   // 1혹 세트(일반). stem_main(2혹)은 보너스 마디에만.
+function stemKey(radius){ return radius>0.072?'stem_thick' : radius>0.044?'stem_med' : radius>0.024?'stem_thin' : 'petiole'; }   // 얇은 시작=petiole → 굵어지며 thin→med→thick
 // GLB(밑면 y=0·긴축 Y)를 p0→p1 사이로 늘여 배치. 굵기 radius, color로 통일 틴트. → 두 점을 물리 연결.
 function stretchGLB(key, p0, p1, radius, color, flatAz){
   const proto=ASSETS[key]; if(!proto) return false;
@@ -457,6 +459,7 @@ function buildPlant(){
       let r=(0.026+P.thickScale*Math.sqrt(Math.max(0,st-1)))*(0.5+0.5*sa) + P.ageThick*sa*sa;  // 오래되면(가지도) 굵어짐
       r=Math.min(P.stemMaxR, r);                                      // 최대굵기 상한(무한정 X)
       if(n.parent.parent){ const pr=rad[n.parent.order]; if(pr!=null){ r=Math.min(r,pr); if(!n.branch) r=Math.max(r,pr*0.68); } } // 트렁크는 급변X, 가지는 얇게 허용
+      if(bump2.has(n.order)) r=Math.min(P.stemMaxR, Math.max(r, 0.08));   // 분기(thick) 마디는 굵게(랜덤 thin→thick)
       rad[n.order]=r;
       const ag=Math.max(0, Math.min(1, (g-gB)/P.matSpan)); ageOf[n.order]=ag;
       let s=leafSize(ag);
@@ -468,9 +471,9 @@ function buildPlant(){
       if(!n.parent) continue;
       const st=sub[n.order], r=rad[n.order], age=ageOf[n.order], sa=segAgeOf[n.order];
       const azf=n.laz + PHOTO*0.5*Math.atan2(Math.sin(L-n.laz),Math.cos(L-n.laz));  // 잎 방위 + 빛쪽 당김
-      addStemSeg(n.parent.pos, n.pos, r, Math.min(1, sa*(st-1)/16), azf, bump2.has(n.order)?'stem_main':null);  // 2혹 마디는 stem_main
-      if(n.bare) continue;   // 가지 밑동 얇은 줄기: 잎/새순 없이 줄기만
-      if(n.order===nTotal && nTotal>1 && age<P.budSpan){
+      addStemSeg(n.parent.pos, n.pos, r, Math.min(1, sa*(st-1)/16), azf, bump2.has(n.order)?'stem_thick':null);  // 분기 마디는 stem_thick(갈색 혹)
+      if(n.bare) continue;   // 가지 밑동 얇은 줄기(petiole): 잎/새순 없이 줄기만
+      if(age<P.budSpan){   // 갓 난 마디(트렁크·가지 어디든) = 말린 새순(furled→opening)
         // 맨 새 마디 = 새순: 말림(furled)→펴짐(opening), 작게 나서 커짐
         if(age<P.budSpan*P.furlFrac) addBud(n.pos, azf, 'furled',  P.budSize*(0.7+age));
         else                         addBud(n.pos, azf, 'opening', P.budSize*(1.0+age*1.3));
@@ -570,8 +573,23 @@ function bindControls(){
   // 패널 접기
   document.getElementById('panelToggle').onclick=e=>{ const bd=document.getElementById('panelBody'); const hid=bd.style.display==='none'; bd.style.display=hid?'block':'none'; e.target.textContent=hid?'▾':'▸'; };
   // 설정 복사 / 리셋 (전체 A + 에셋별 B)
-  document.getElementById('btnCopy').onclick=()=>{ const j=JSON.stringify({P, ADJ},null,1); if(navigator.clipboard) navigator.clipboard.writeText(j); prompt('설정 JSON (전체+에셋별 — 복사해서 코드 기본값으로):', j); };
-  document.getElementById('btnReset').onclick=()=>{ P=Object.assign({},DEF); ADJ=JSON.parse(JSON.stringify(DEF_ADJ)); buildGlobalPanel(); buildAssetSliders(document.getElementById('assetSel').value); buildPlant(); };
+  document.getElementById('btnCopy').onclick=()=>{ const j=JSON.stringify({P, ADJ, SEED},null,1); if(navigator.clipboard) navigator.clipboard.writeText(j); prompt('설정 JSON (전체+에셋별 — 복사해서 코드 기본값으로):', j); };
+  document.getElementById('btnReset').onclick=()=>{ P=Object.assign({},DEF); ADJ=JSON.parse(JSON.stringify(DEF_ADJ)); try{localStorage.removeItem('mcfg_default');}catch(e){} buildGlobalPanel(); buildAssetSliders(document.getElementById('assetSel').value); buildPlant(); };
+  document.getElementById('btnPersist').onclick=()=>{ try{ localStorage.setItem('mcfg_default', JSON.stringify({P,ADJ,SEED})); flashBtn('btnPersist','✅ 저장됨'); }catch(e){ flashBtn('btnPersist','실패'); } };
+  document.getElementById('btnLoad').onclick=()=>applyCfg(true);
+  applyCfg(false);   // 시작 시 영구저장 있으면 자동 적용(새로고침해도 유지)
+}
+function flashBtn(id,msg){ const b=document.getElementById(id); if(!b)return; if(!b.dataset.t) b.dataset.t=b.textContent; b.textContent=msg; setTimeout(()=>{ b.textContent=b.dataset.t; b.dataset.t=''; }, 1000); }
+function applyCfg(verbose){
+  let s=null; try{ s=localStorage.getItem('mcfg_default'); }catch(e){}
+  if(!s){ if(verbose) flashBtn('btnLoad','없음'); return; }
+  try{ const o=JSON.parse(s);
+    if(o.P) P=Object.assign({}, DEF, o.P);
+    if(o.ADJ){ ADJ=JSON.parse(JSON.stringify(DEF_ADJ)); for(const k in ADJ) if(o.ADJ[k]) Object.assign(ADJ[k], o.ADJ[k]); }
+    if(o.SEED!=null){ SEED=o.SEED; }
+    buildGlobalPanel(); const sel=document.getElementById('assetSel'); if(sel) buildAssetSliders(sel.value); buildPlant();
+    if(verbose) flashBtn('btnLoad','✅ 불러옴');
+  }catch(e){ if(verbose) flashBtn('btnLoad','오류'); }
 }
 // ===== B 에셋별 조정 슬라이더 =====
 const ADJ_FIELDS=[
