@@ -126,7 +126,8 @@ const DEF={
   sizeYoung:0.20, sizeMid:0.45, sizeMature:0.78, sizeFull:1.25,  // 각 시점 크기(작게 나서 커짐)
   internode:0.24, thickSpan:150, thickScale:0.022, ageThick:0.06, stemMaxR:0.13, matureStemR:0.085, stemFlat:1.25,   // 줄기 (stemMaxR=최대굵기 상한, ageThick=오래된 가지도 나중에 굵어짐, matureStemR=성인잎 최소굵기)
   petioleLen:1.0, leafElev:1.02, elevDrop:0.34, spread:0.16, branchSpread:0.55, branchProb:0.14,  // 배치
-  leafLight:0.58, leafDark:0.30, leafSat:0.55, satRange:0.22, hueBase:0.16, hueRange:0.26,   // 색(밝기/진함/채도/개체범위)
+  leafLight:0.62, leafDark:0.22, leafSat:0.5, satRange:0.22, hueBase:0.16, hueRange:0.26,   // 색(밝기/진함/채도/개체범위)
+  ageDark:0.16, ageSat:0.26,   // 시간(나이) 따라 짙어짐·선명해짐(전역, 줄기·잎 함께)
 };
 let P=Object.assign({}, DEF);
 
@@ -322,7 +323,7 @@ function placeAlong(obj, base, dir, worldLen){
   obj.position.copy(base);
 }
 // ===== 개체 통일 색 (시드로 고정 → 나중에 나는 잎도 같은 색으로 통일) =====
-let PLANT_HUE=0.30, PLANT_SAT=0.55, PLANT_MID='leaf_mid1';
+let PLANT_HUE=0.30, PLANT_SAT=0.55, PLANT_MID='leaf_mid1', PLANT_AGE=0.3;
 function seedColor(){ const cs=mulberry32((SEED*40503+12345)>>>0);
   PLANT_HUE=P.hueBase+cs()*P.hueRange;                                   // 개체 색조(연두~초록~진초록)
   PLANT_SAT=Math.max(0.15,Math.min(1, P.leafSat+(cs()-0.5)*P.satRange)); // 개체 채도(찐한 정도도 랜덤)
@@ -335,9 +336,12 @@ function tintObj(obj, color){
     o.material=Array.isArray(o.material)?nm:nm[0];
   }});
 }
-function leafTint(maturity){ return new THREE.Color().setHSL(PLANT_HUE+0.03*(1-maturity), Math.min(1,PLANT_SAT+0.12*maturity), P.leafLight-maturity*P.leafDark); }  // 새잎=연한→성숙=진함
-function budTint(){ return new THREE.Color().setHSL(PLANT_HUE+0.05, Math.min(1,PLANT_SAT+0.05), P.leafLight+0.08); }
-function stemTint(woodT){ return new THREE.Color().setHSL(PLANT_HUE, PLANT_SAT, P.leafLight-0.05).lerp(new THREE.Color().setHSL(0.11,0.32,0.36),(woodT||0)*0.28); }  // 잎과 같은 초록 계열로 통일(우디 갈색은 아주 살짝만)
+// 공통 기준: 개체 나이(PLANT_AGE)에 따라 전체가 짙고(밝기↓) 선명해짐(채도↑) → 줄기·잎 통일
+function baseL(){ return Math.max(0.12, P.leafLight - PLANT_AGE*P.ageDark); }
+function baseS(){ return Math.min(1, PLANT_SAT + PLANT_AGE*P.ageSat); }
+function leafTint(maturity){ return new THREE.Color().setHSL(PLANT_HUE+0.03*(1-maturity), Math.min(1,baseS()+0.1*maturity), Math.max(0.12, baseL()-maturity*P.leafDark)); }  // 새잎=연한→성숙=진함, 시간따라 전체 짙어짐
+function budTint(){ return new THREE.Color().setHSL(PLANT_HUE+0.05, Math.min(1,baseS()+0.05), baseL()+0.08); }
+function stemTint(woodT){ return new THREE.Color().setHSL(PLANT_HUE, baseS(), baseL()-0.04).lerp(new THREE.Color().setHSL(0.11,0.32,0.34),(woodT||0)*0.28); }  // 잎과 같은 기준색(약간만 어둡게) → 통일
 // 잎 크기: 나이(age 0..1)에 따른 단계별 곡선. 각 전환 시점·시작크기를 P로 지정 → 작게 나서 커지다 형태 전환.
 function leafSize(age){
   const pts=[[0,P.sizeYoung],[P.stageYoung,P.sizeMid],[P.stageMid,P.sizeMature],[1,P.sizeFull]];
@@ -388,6 +392,7 @@ function buildPlant(){
   clearGroup(plantGroup);
   addPot();
   const g=GROWTH, gf=Math.min(1, g/GMAX);   // 정규화(0..1, 1년 기준)
+  PLANT_AGE=gf;                             // 개체 나이(색 짙어짐·선명해짐 기준)
   let stage='', nodes=0, leaves=0;
 
   if(g<P.seedEnd){
@@ -666,6 +671,8 @@ const PARAM_DEFS=[
     {k:'satRange',t:'개체 채도 범위',min:0.0,max:0.5,step:0.03},
     {k:'hueBase',t:'색 기준(연두→초록)',min:0.05,max:0.45,step:0.01},
     {k:'hueRange',t:'개체 색조 범위',min:0.0,max:0.5,step:0.02},
+    {k:'ageDark',t:'시간따라 짙어짐',min:0.0,max:0.35,step:0.01},
+    {k:'ageSat',t:'시간따라 선명해짐',min:0.0,max:0.45,step:0.02},
   ]},
 ];
 function fmtVal(v){ return Math.round(v*1000)/1000; }
