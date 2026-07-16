@@ -398,9 +398,9 @@ function buildPlant(){
   } else if(g<P.sproutEnd){
     // 새싹: 자그만 줄기가 먼저 나오고, 그 끝에 말린 송곳잎(furled bud)
     const t=(g-P.seedEnd)/Math.max(1,P.sproutEnd-P.seedEnd);   // 0..1
-    const h=0.05+0.18*t, top=new THREE.Vector3(0,SOIL_Y+h,0);
-    addStemSeg(new THREE.Vector3(0,SOIL_Y,0), top, 0.028, 0);  // 얇은 줄기(stem_thin)
-    addBud(top, rng()*Math.PI*2, t<0.6?'furled':'opening', P.budSize*(0.55+0.7*t));  // 말림→반쯤 펴짐
+    const h=0.025+0.16*t, top=new THREE.Vector3(0,SOIL_Y+h,0);
+    addStemSeg(new THREE.Vector3(0,SOIL_Y,0), top, 0.011+0.013*t, 0);  // ★ 아주 얇게 시작해 조금씩 굵어짐
+    addBud(top, rng()*Math.PI*2, t<0.6?'furled':'opening', P.budSize*(0.4+0.7*t));  // 말림→반쯤 펴짐, 작게 시작
     stage='새싹 🌱';
   } else {
     const nTotal=Math.min(P.maxLeaves, 1+Math.floor((g-P.sproutEnd)/P.spawnStep));
