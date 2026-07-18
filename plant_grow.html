@@ -127,7 +127,7 @@ const DEF={
   stageYoung:0.38, stageMid:0.66,                          // 잎 형태 전환 시점(어린→중간→성인)
   sizeYoung:0.20, sizeMid:0.45, sizeMature:0.78, sizeFull:1.25,  // 각 시점 크기(작게 나서 커짐)
   internode:0.24, stemFlat:1.25,   // 줄기 마디 길이·잎방향 납작
-  petGrow:22, rareProb:0.12, rThin:0.028, rMed:0.045, rThick:0.075,   // 정밀생장: petiole 성장시간·희귀(하늘)확률·종류별 고정 굵기
+  petGrow:22, rareProb:0.12, rThin:0.03, rMed:0.052, rThick:0.088, matureProb:0.22,   // 정밀생장: petiole 성장시간·희귀(하늘)확률·종류별 고정굵기·성숙잎(갈라짐) 확률
   petioleLen:1.0, leafElev:1.02, elevDrop:0.34, spread:0.16, branchSpread:0.55, branchProb:0.14,  // 배치
   leafLight:0.62, leafDark:0.22, leafSat:0.5, satRange:0.22, hueBase:0.16, hueRange:0.26,   // 색(밝기/진함/채도/개체범위)
   ageDark:0.16, ageSat:0.26,   // 시간(나이) 따라 짙어짐·선명해짐(전역, 줄기·잎 함께)
@@ -386,10 +386,13 @@ function addBud(nodePos, az, kind, size){
   const m=new THREE.Mesh(new THREE.ConeGeometry(0.05,0.14,8), MAT.stem); m.position.copy(nodePos); m.position.y+=size*0.5; plantGroup.add(m);
 }
 // 잎 병렬 성숙: furled → opening2 → young → mid(1|2) → mature (m=0..1)
-function drawLeafStage(pos, az, m, midType){
+function drawLeafStage(pos, az, m, midType, canMature){
   if(m<0.10){ addBud(pos, az, 'furled',  P.budSize*(0.6+m*3)); return; }
   if(m<0.22){ addBud(pos, az, 'opening', P.budSize*(1.0+m)); return; }
-  const key = m<P.stageYoung?'leaf_young' : m<P.stageMid? (midType||'leaf_mid1') : 'leaf_mature';
+  let key;
+  if(m<P.stageYoung) key='leaf_young';                      // 어린 통잎
+  else if(m<P.stageMid || !canMature) key=(midType||'leaf_mid1');   // 보통은 중간잎(파랑)에서 정착
+  else key='leaf_mature';                                   // ★ 성숙(갈라진)잎은 canMature일 때만(랜덤 확률)
   addLeaf(pos, az, m, key);
 }
 
@@ -426,7 +429,7 @@ function buildPlant(){
     const petFull=P.petioleLen*0.55;
     const lenOf=ty=> (ty==='thick'||ty==='main')?P.internode*1.1 : ty==='med'?P.internode : P.internode*0.82;
     const radOf=ty=> (ty==='thick'||ty==='main')?P.rThick : ty==='med'?P.rMed : P.rThin;
-    const mkWait=(base,dir,birth,parent)=>{ const wt=rng()<0.5?'thin':'med';
+    const mkWait=(base,dir,birth,parent)=>{ const wt=rng()<0.4?'thin':'med';   // 중간(med) 비중 높게
       return {base, dir, len:lenOf(wt), wt, birth, parent, activated:false, children:[], tip:base.clone().addScaledVector(dir,lenOf(wt))}; };
     const all=[ mkWait(new THREE.Vector3(0,SOIL_Y,0), new THREE.Vector3((rng()-0.5)*0.15,1,(rng()-0.5)*0.15).normalize(), t0, null) ];
     let acts=0;
@@ -438,6 +441,7 @@ function buildPlant(){
       const paz=rng()*Math.PI*2;
       pick.petDir=new THREE.Vector3(Math.sin(paz)*0.42+ld.x*PHOTO*0.3, 0.85, Math.cos(paz)*0.42+ld.z*PHOTO*0.3).normalize();
       pick.leafAz=rng()*Math.PI*2; pick.midType=rng()<0.5?'leaf_mid1':'leaf_mid2';   // 파란잎 mid1/2 랜덤(개체 고정)
+      pick.canMature=rng()<P.matureProb;   // ★ 이 잎이 성숙(갈라진)잎까지 갈지 = 랜덤 확률(아니면 중간잎에서 정착)
       const splitT=T+petGrow, petTip=pick.tip.clone().addScaledVector(pick.petDir, petFull);
       const ca=rng()*Math.PI*2;                                       // petiole가 길어지다 2개로 분화 → 자식 대기마디 2
       for(const s of [ca, ca+Math.PI]){
@@ -456,7 +460,7 @@ function buildPlant(){
         const petProg=Math.min(1,(g-n.actT)/petGrow);
         const petTipCur=n.tip.clone().addScaledVector(n.petDir, petFull*petProg);
         stretchGLB('petiole', n.tip, petTipCur, P.rThin*0.85, stemTint(0));         // 혹에서 petiole가 자람
-        drawLeafStage(n.tip, n.leafAz, Math.min(1,(g-n.actT)/P.matSpan), n.midType); nleaf++;   // 잎 병렬 성숙
+        drawLeafStage(n.tip, n.leafAz, Math.min(1,(g-n.actT)/P.matSpan), n.midType, n.canMature); nleaf++;   // 잎 병렬 성숙
       }
     }
     nodes=all.length; leaves=nleaf; stage='마디 '+all.length+' · 잎 '+nleaf;
@@ -632,6 +636,7 @@ const PARAM_DEFS=[
     {k:'matSpan',t:'잎 생애 길이(일)',min:20,max:200,step:5},
     {k:'petGrow',t:'petiole 자람 시간(일)',min:5,max:60,step:1},
     {k:'rareProb',t:'희귀(하늘) 확률',min:0.0,max:0.5,step:0.02},
+    {k:'matureProb',t:'성숙(갈라진)잎 확률',min:0.0,max:1.0,step:0.05},
   ]},
   {sec:'🌱 씨앗·새싹·새순', items:[
     {k:'seedEnd',t:'씨앗 시기(끝 일)',min:2,max:60,step:1},
