@@ -1,0 +1,3694 @@
+{
+  "version": 1,
+  "species": "monstera",
+  "tree": {
+    "nodes": {
+      "s0": {
+        "id": "s0",
+        "parent": null,
+        "children": [
+          "t276"
+        ],
+        "plant": {
+          "nodes": {
+            "seed": {
+              "id": "seed",
+              "up": null,
+              "buds": [],
+              "stem": "petiole",
+              "isTip": true,
+              "isSeed": true
+            }
+          },
+          "root": "seed"
+        },
+        "col": 0,
+        "row": 0
+      },
+      "t276": {
+        "id": "t276",
+        "parent": "s0",
+        "children": [
+          "t3je"
+        ],
+        "plant": {
+          "nodes": {
+            "seed": {
+              "id": "seed",
+              "up": "m176",
+              "buds": [],
+              "stem": "petiole",
+              "isTip": false,
+              "isSeed": true
+            },
+            "m176": {
+              "id": "m176",
+              "up": null,
+              "buds": [],
+              "stem": "petiole",
+              "isTip": true
+            }
+          },
+          "root": "seed"
+        },
+        "col": 1,
+        "row": 0
+      },
+      "t3je": {
+        "id": "t3je",
+        "parent": "t276",
+        "children": [
+          "t5lz"
+        ],
+        "plant": {
+          "nodes": {
+            "seed": {
+              "id": "seed",
+              "up": "m176",
+              "buds": [],
+              "stem": "petiole",
+              "isTip": false,
+              "isSeed": true
+            },
+            "m176": {
+              "id": "m176",
+              "up": null,
+              "buds": [
+                {
+                  "stage": 0,
+                  "side": 1,
+                  "special": "none",
+                  "childNode": null
+                }
+              ],
+              "stem": "petiole",
+              "isTip": true
+            }
+          },
+          "root": "seed"
+        },
+        "col": 2,
+        "row": 0
+      },
+      "t5lz": {
+        "id": "t5lz",
+        "parent": "t3je",
+        "children": [
+          "t6y3"
+        ],
+        "plant": {
+          "nodes": {
+            "seed": {
+              "id": "seed",
+              "up": "m4lz",
+              "buds": [],
+              "stem": "petiole",
+              "isTip": false,
+              "isSeed": true
+            },
+            "m176": {
+              "id": "m176",
+              "up": null,
+              "buds": [
+                {
+                  "stage": 0,
+                  "side": 1,
+                  "special": "none",
+                  "childNode": null
+                }
+              ],
+              "stem": "petiole",
+              "isTip": true
+            },
+            "m4lz": {
+              "id": "m4lz",
+              "up": "m176",
+              "buds": [],
+              "stem": "petiole"
+            }
+          },
+          "root": "seed"
+        },
+        "col": 3,
+        "row": 0
+      },
+      "t6y3": {
+        "id": "t6y3",
+        "parent": "t5lz",
+        "children": [
+          "t8se"
+        ],
+        "plant": {
+          "nodes": {
+            "seed": {
+              "id": "seed",
+              "up": "m4lz",
+              "buds": [],
+              "stem": "petiole",
+              "isTip": false,
+              "isSeed": true
+            },
+            "m176": {
+              "id": "m176",
+              "up": null,
+              "buds": [
+                {
+                  "stage": 1,
+                  "side": 1,
+                  "special": "none",
+                  "childNode": null
+                }
+              ],
+              "stem": "petiole",
+              "isTip": true
+            },
+            "m4lz": {
+              "id": "m4lz",
+              "up": "m176",
+              "buds": [],
+              "stem": "petiole"
+            }
+          },
+          "root": "seed"
+        },
+        "col": 4,
+        "row": 0
+      },
+      "t8se": {
+        "id": "t8se",
+        "parent": "t6y3",
+        "children": [
+          "t9go"
+        ],
+        "plant": {
+          "nodes": {
+            "seed": {
+              "id": "seed",
+              "up": "m4lz",
+              "buds": [],
+              "stem": "petiole",
+              "isTip": false,
+              "isSeed": true
+            },
+            "m176": {
+              "id": "m176",
+              "up": null,
+              "buds": [
+                {
+                  "stage": 1,
+                  "side": 1,
+                  "special": "none",
+                  "childNode": null
+                }
+              ],
+              "stem": "petiole",
+              "isTip": true
+            },
+            "m4lz": {
+              "id": "m4lz",
+              "up": "m7se",
+              "buds": [],
+              "stem": "petiole"
+            },
+            "m7se": {
+              "id": "m7se",
+              "up": "m176",
+              "buds": [],
+              "stem": "petiole"
+            }
+          },
+          "root": "seed"
+        },
+        "col": 5,
+        "row": 0
+      },
+      "t9go": {
+        "id": "t9go",
+        "parent": "t8se",
+        "children": [
+          "ta61"
+        ],
+        "plant": {
+          "nodes": {
+            "seed": {
+              "id": "seed",
+              "up": "m4lz",
+              "buds": [],
+              "stem": "petiole",
+              "isTip": false,
+              "isSeed": true
+            },
+            "m176": {
+              "id": "m176",
+              "up": null,
+              "buds": [
+                {
+                  "stage": 2,
+                  "side": 1,
+                  "special": "none",
+                  "childNode": null
+                }
+              ],
+              "stem": "petiole",
+              "isTip": true
+            },
+            "m4lz": {
+              "id": "m4lz",
+              "up": "m7se",
+              "buds": [],
+              "stem": "petiole"
+            },
+            "m7se": {
+              "id": "m7se",
+              "up": "m176",
+              "buds": [],
+              "stem": "petiole"
+            }
+          },
+          "root": "seed"
+        },
+        "col": 6,
+        "row": 0
+      },
+      "ta61": {
+        "id": "ta61",
+        "parent": "t9go",
+        "children": [
+          "tbxv"
+        ],
+        "plant": {
+          "nodes": {
+            "seed": {
+              "id": "seed",
+              "up": "m4lz",
+              "buds": [],
+              "stem": "pink",
+              "isTip": false,
+              "isSeed": true
+            },
+            "m176": {
+              "id": "m176",
+              "up": null,
+              "buds": [
+                {
+                  "stage": 2,
+                  "side": 1,
+                  "special": "none",
+                  "childNode": null
+                }
+              ],
+              "stem": "petiole",
+              "isTip": true
+            },
+            "m4lz": {
+              "id": "m4lz",
+              "up": "m7se",
+              "buds": [],
+              "stem": "petiole"
+            },
+            "m7se": {
+              "id": "m7se",
+              "up": "m176",
+              "buds": [],
+              "stem": "petiole"
+            }
+          },
+          "root": "seed"
+        },
+        "col": 7,
+        "row": 0
+      },
+      "tbxv": {
+        "id": "tbxv",
+        "parent": "ta61",
+        "children": [
+          "titb"
+        ],
+        "plant": {
+          "nodes": {
+            "seed": {
+              "id": "seed",
+              "up": "m4lz",
+              "buds": [],
+              "stem": "pink",
+              "isTip": false,
+              "isSeed": true
+            },
+            "m176": {
+              "id": "m176",
+              "up": null,
+              "buds": [
+                {
+                  "stage": 2,
+                  "side": 1,
+                  "special": "none",
+                  "childNode": null
+                }
+              ],
+              "stem": "petiole",
+              "isTip": true
+            },
+            "m4lz": {
+              "id": "m4lz",
+              "up": "m7se",
+              "buds": [],
+              "stem": "pink"
+            },
+            "m7se": {
+              "id": "m7se",
+              "up": "m176",
+              "buds": [],
+              "stem": "petiole"
+            }
+          },
+          "root": "seed"
+        },
+        "col": 8,
+        "row": 0
+      },
+      "titb": {
+        "id": "titb",
+        "parent": "tbxv",
+        "children": [
+          "t2ke"
+        ],
+        "plant": {
+          "nodes": {
+            "seed": {
+              "id": "seed",
+              "up": "m4lz",
+              "buds": [],
+              "stem": "pink",
+              "isTip": false,
+              "isSeed": true
+            },
+            "m176": {
+              "id": "m176",
+              "up": null,
+              "buds": [
+                {
+                  "stage": 3,
+                  "side": 1,
+                  "special": "none",
+                  "childNode": null
+                }
+              ],
+              "stem": "petiole",
+              "isTip": true
+            },
+            "m4lz": {
+              "id": "m4lz",
+              "up": "m7se",
+              "buds": [],
+              "stem": "pink"
+            },
+            "m7se": {
+              "id": "m7se",
+              "up": "m176",
+              "buds": [],
+              "stem": "petiole"
+            }
+          },
+          "root": "seed"
+        },
+        "col": 9,
+        "row": 0
+      },
+      "t2ke": {
+        "id": "t2ke",
+        "parent": "titb",
+        "children": [
+          "b33g",
+          "t5a6"
+        ],
+        "plant": {
+          "nodes": {
+            "seed": {
+              "id": "seed",
+              "up": "m4lz",
+              "buds": [],
+              "stem": "pink",
+              "isTip": false,
+              "isSeed": true
+            },
+            "m176": {
+              "id": "m176",
+              "up": null,
+              "buds": [
+                {
+                  "stage": 3,
+                  "side": 1,
+                  "special": "none",
+                  "childNode": null
+                }
+              ],
+              "stem": "petiole",
+              "isTip": true
+            },
+            "m4lz": {
+              "id": "m4lz",
+              "up": "m7se",
+              "buds": [],
+              "stem": "pink"
+            },
+            "m7se": {
+              "id": "m7se",
+              "up": "m176",
+              "buds": [],
+              "stem": "pink"
+            }
+          },
+          "root": "seed"
+        },
+        "col": 10,
+        "row": 0
+      },
+      "b33g": {
+        "id": "b33g",
+        "parent": "t2ke",
+        "children": [
+          "t4is"
+        ],
+        "plant": {
+          "nodes": {
+            "seed": {
+              "id": "seed",
+              "up": "m4lz",
+              "buds": [],
+              "stem": "pink",
+              "isTip": false,
+              "isSeed": true
+            },
+            "m176": {
+              "id": "m176",
+              "up": null,
+              "buds": [
+                {
+                  "stage": 3,
+                  "side": 1,
+                  "special": "none",
+                  "childNode": null
+                }
+              ],
+              "stem": "petiole",
+              "isTip": true
+            },
+            "m4lz": {
+              "id": "m4lz",
+              "up": "m7se",
+              "buds": [],
+              "stem": "pink"
+            },
+            "m7se": {
+              "id": "m7se",
+              "up": "m176",
+              "buds": [],
+              "stem": "pink"
+            }
+          },
+          "root": "seed"
+        },
+        "col": 10,
+        "row": 1
+      },
+      "t4is": {
+        "id": "t4is",
+        "parent": "b33g",
+        "children": [
+          "t978"
+        ],
+        "plant": {
+          "nodes": {
+            "seed": {
+              "id": "seed",
+              "up": "m4lz",
+              "buds": [],
+              "stem": "pink",
+              "isTip": false,
+              "isSeed": true
+            },
+            "m176": {
+              "id": "m176",
+              "up": null,
+              "buds": [
+                {
+                  "stage": 3,
+                  "side": 1,
+                  "special": "none",
+                  "childNode": null
+                }
+              ],
+              "stem": "petiole",
+              "isTip": true
+            },
+            "m4lz": {
+              "id": "m4lz",
+              "up": "m7se",
+              "buds": [],
+              "stem": "thick"
+            },
+            "m7se": {
+              "id": "m7se",
+              "up": "m176",
+              "buds": [],
+              "stem": "pink"
+            }
+          },
+          "root": "seed"
+        },
+        "col": 11,
+        "row": 1
+      },
+      "t5a6": {
+        "id": "t5a6",
+        "parent": "t2ke",
+        "children": [
+          "t7n3"
+        ],
+        "plant": {
+          "nodes": {
+            "seed": {
+              "id": "seed",
+              "up": "m4lz",
+              "buds": [],
+              "stem": "pink",
+              "isTip": false,
+              "isSeed": true
+            },
+            "m176": {
+              "id": "m176",
+              "up": null,
+              "buds": [
+                {
+                  "stage": 3,
+                  "side": 1,
+                  "special": "none",
+                  "childNode": null
+                }
+              ],
+              "stem": "petiole",
+              "isTip": true
+            },
+            "m4lz": {
+              "id": "m4lz",
+              "up": "m7se",
+              "buds": [],
+              "stem": "pink"
+            },
+            "m7se": {
+              "id": "m7se",
+              "up": "m176",
+              "buds": [],
+              "stem": "thick"
+            }
+          },
+          "root": "seed"
+        },
+        "col": 11,
+        "row": 0
+      },
+      "t7n3": {
+        "id": "t7n3",
+        "parent": "t5a6",
+        "children": [
+          "t42w"
+        ],
+        "plant": {
+          "nodes": {
+            "seed": {
+              "id": "seed",
+              "up": "m4lz",
+              "buds": [],
+              "stem": "pink",
+              "isTip": false,
+              "isSeed": true
+            },
+            "m176": {
+              "id": "m176",
+              "up": null,
+              "buds": [
+                {
+                  "stage": 3,
+                  "side": 1,
+                  "special": "none",
+                  "childNode": null
+                }
+              ],
+              "stem": "petiole",
+              "isTip": true
+            },
+            "m4lz": {
+              "id": "m4lz",
+              "up": "m7se",
+              "buds": [],
+              "stem": "pink"
+            },
+            "m7se": {
+              "id": "m7se",
+              "up": "m6n3",
+              "buds": [],
+              "stem": "thick"
+            },
+            "m6n3": {
+              "id": "m6n3",
+              "up": "m176",
+              "buds": [],
+              "stem": "petiole"
+            }
+          },
+          "root": "seed"
+        },
+        "col": 12,
+        "row": 0
+      },
+      "t978": {
+        "id": "t978",
+        "parent": "t4is",
+        "children": [
+          "t2k7"
+        ],
+        "plant": {
+          "nodes": {
+            "seed": {
+              "id": "seed",
+              "up": "m4lz",
+              "buds": [],
+              "stem": "pink",
+              "isTip": false,
+              "isSeed": true
+            },
+            "m176": {
+              "id": "m176",
+              "up": null,
+              "buds": [
+                {
+                  "stage": 3,
+                  "side": 1,
+                  "special": "none",
+                  "childNode": null
+                }
+              ],
+              "stem": "petiole",
+              "isTip": true
+            },
+            "m4lz": {
+              "id": "m4lz",
+              "up": "m7se",
+              "buds": [],
+              "stem": "thick"
+            },
+            "m7se": {
+              "id": "m7se",
+              "up": "m878",
+              "buds": [],
+              "stem": "pink"
+            },
+            "m878": {
+              "id": "m878",
+              "up": "m176",
+              "buds": [],
+              "stem": "petiole"
+            }
+          },
+          "root": "seed"
+        },
+        "col": 12,
+        "row": 1
+      },
+      "t2k7": {
+        "id": "t2k7",
+        "parent": "t978",
+        "children": [
+          "tagj"
+        ],
+        "plant": {
+          "nodes": {
+            "seed": {
+              "id": "seed",
+              "up": "m4lz",
+              "buds": [],
+              "stem": "pink",
+              "isTip": false,
+              "isSeed": true
+            },
+            "m176": {
+              "id": "m176",
+              "up": null,
+              "buds": [
+                {
+                  "stage": 3,
+                  "side": 1,
+                  "special": "none",
+                  "childNode": null
+                }
+              ],
+              "stem": "petiole",
+              "isTip": true
+            },
+            "m4lz": {
+              "id": "m4lz",
+              "up": "m7se",
+              "buds": [
+                {
+                  "stage": 0,
+                  "side": 1,
+                  "special": "none",
+                  "childNode": "m1k7"
+                }
+              ],
+              "stem": "thick",
+              "isTip": false
+            },
+            "m7se": {
+              "id": "m7se",
+              "up": "m878",
+              "buds": [],
+              "stem": "pink"
+            },
+            "m878": {
+              "id": "m878",
+              "up": "m176",
+              "buds": [],
+              "stem": "petiole"
+            },
+            "m1k7": {
+              "id": "m1k7",
+              "up": null,
+              "buds": [],
+              "stem": "petiole",
+              "isTip": true
+            }
+          },
+          "root": "seed"
+        },
+        "col": 13,
+        "row": 1
+      },
+      "t42w": {
+        "id": "t42w",
+        "parent": "t7n3",
+        "children": [
+          "t92f"
+        ],
+        "plant": {
+          "nodes": {
+            "seed": {
+              "id": "seed",
+              "up": "m4lz",
+              "buds": [],
+              "stem": "pink",
+              "isTip": false,
+              "isSeed": true
+            },
+            "m176": {
+              "id": "m176",
+              "up": null,
+              "buds": [
+                {
+                  "stage": 3,
+                  "side": 1,
+                  "special": "none",
+                  "childNode": null
+                }
+              ],
+              "stem": "petiole",
+              "isTip": true
+            },
+            "m4lz": {
+              "id": "m4lz",
+              "up": "m7se",
+              "buds": [],
+              "stem": "pink"
+            },
+            "m7se": {
+              "id": "m7se",
+              "up": "m6n3",
+              "buds": [
+                {
+                  "stage": 0,
+                  "side": 1,
+                  "special": "none",
+                  "childNode": "m32w"
+                }
+              ],
+              "stem": "thick",
+              "isTip": false
+            },
+            "m6n3": {
+              "id": "m6n3",
+              "up": "m176",
+              "buds": [],
+              "stem": "petiole"
+            },
+            "m32w": {
+              "id": "m32w",
+              "up": null,
+              "buds": [],
+              "stem": "petiole",
+              "isTip": true
+            }
+          },
+          "root": "seed"
+        },
+        "col": 13,
+        "row": 0
+      },
+      "t92f": {
+        "id": "t92f",
+        "parent": "t42w",
+        "children": [
+          "tb83"
+        ],
+        "plant": {
+          "nodes": {
+            "seed": {
+              "id": "seed",
+              "up": "m4lz",
+              "buds": [],
+              "stem": "pink",
+              "isTip": false,
+              "isSeed": true
+            },
+            "m176": {
+              "id": "m176",
+              "up": null,
+              "buds": [
+                {
+                  "stage": 3,
+                  "side": 1,
+                  "special": "none",
+                  "childNode": null
+                }
+              ],
+              "stem": "petiole",
+              "isTip": true
+            },
+            "m4lz": {
+              "id": "m4lz",
+              "up": "m7se",
+              "buds": [],
+              "stem": "pink"
+            },
+            "m7se": {
+              "id": "m7se",
+              "up": "m6n3",
+              "buds": [
+                {
+                  "stage": 0,
+                  "side": 1,
+                  "special": "none",
+                  "childNode": "m32w"
+                }
+              ],
+              "stem": "thick",
+              "isTip": false
+            },
+            "m6n3": {
+              "id": "m6n3",
+              "up": "m176",
+              "buds": [],
+              "stem": "petiole"
+            },
+            "m32w": {
+              "id": "m32w",
+              "up": null,
+              "buds": [
+                {
+                  "stage": 0,
+                  "side": 1,
+                  "special": "none",
+                  "childNode": null
+                }
+              ],
+              "stem": "petiole",
+              "isTip": true
+            }
+          },
+          "root": "seed"
+        },
+        "col": 14,
+        "row": 0
+      },
+      "tagj": {
+        "id": "tagj",
+        "parent": "t2k7",
+        "children": [
+          "tc2o"
+        ],
+        "plant": {
+          "nodes": {
+            "seed": {
+              "id": "seed",
+              "up": "m4lz",
+              "buds": [],
+              "stem": "pink",
+              "isTip": false,
+              "isSeed": true
+            },
+            "m176": {
+              "id": "m176",
+              "up": null,
+              "buds": [
+                {
+                  "stage": 3,
+                  "side": 1,
+                  "special": "none",
+                  "childNode": null
+                }
+              ],
+              "stem": "petiole",
+              "isTip": true
+            },
+            "m4lz": {
+              "id": "m4lz",
+              "up": "m7se",
+              "buds": [
+                {
+                  "stage": 0,
+                  "side": 1,
+                  "special": "none",
+                  "childNode": "m1k7"
+                }
+              ],
+              "stem": "thick",
+              "isTip": false
+            },
+            "m7se": {
+              "id": "m7se",
+              "up": "m878",
+              "buds": [],
+              "stem": "pink"
+            },
+            "m878": {
+              "id": "m878",
+              "up": "m176",
+              "buds": [],
+              "stem": "petiole"
+            },
+            "m1k7": {
+              "id": "m1k7",
+              "up": null,
+              "buds": [
+                {
+                  "stage": 0,
+                  "side": 1,
+                  "special": "none",
+                  "childNode": null
+                }
+              ],
+              "stem": "petiole",
+              "isTip": true
+            }
+          },
+          "root": "seed"
+        },
+        "col": 14,
+        "row": 1
+      },
+      "tb83": {
+        "id": "tb83",
+        "parent": "t92f",
+        "children": [
+          "te0e"
+        ],
+        "plant": {
+          "nodes": {
+            "seed": {
+              "id": "seed",
+              "up": "m4lz",
+              "buds": [],
+              "stem": "pink",
+              "isTip": false,
+              "isSeed": true
+            },
+            "m176": {
+              "id": "m176",
+              "up": null,
+              "buds": [
+                {
+                  "stage": 3,
+                  "side": 1,
+                  "special": "none",
+                  "childNode": null
+                }
+              ],
+              "stem": "petiole",
+              "isTip": true
+            },
+            "m4lz": {
+              "id": "m4lz",
+              "up": "m7se",
+              "buds": [],
+              "stem": "pink"
+            },
+            "m7se": {
+              "id": "m7se",
+              "up": "m6n3",
+              "buds": [
+                {
+                  "stage": 0,
+                  "side": 1,
+                  "special": "none",
+                  "childNode": "m32w"
+                }
+              ],
+              "stem": "thick",
+              "isTip": false
+            },
+            "m6n3": {
+              "id": "m6n3",
+              "up": "m176",
+              "buds": [],
+              "stem": "pink"
+            },
+            "m32w": {
+              "id": "m32w",
+              "up": null,
+              "buds": [
+                {
+                  "stage": 0,
+                  "side": 1,
+                  "special": "none",
+                  "childNode": null
+                }
+              ],
+              "stem": "petiole",
+              "isTip": true
+            }
+          },
+          "root": "seed"
+        },
+        "col": 15,
+        "row": 0
+      },
+      "tc2o": {
+        "id": "tc2o",
+        "parent": "tagj",
+        "children": [
+          "tg92"
+        ],
+        "plant": {
+          "nodes": {
+            "seed": {
+              "id": "seed",
+              "up": "m4lz",
+              "buds": [],
+              "stem": "pink",
+              "isTip": false,
+              "isSeed": true
+            },
+            "m176": {
+              "id": "m176",
+              "up": null,
+              "buds": [
+                {
+                  "stage": 3,
+                  "side": 1,
+                  "special": "none",
+                  "childNode": null
+                }
+              ],
+              "stem": "petiole",
+              "isTip": true
+            },
+            "m4lz": {
+              "id": "m4lz",
+              "up": "m7se",
+              "buds": [
+                {
+                  "stage": 0,
+                  "side": 1,
+                  "special": "none",
+                  "childNode": "m1k7"
+                }
+              ],
+              "stem": "thick",
+              "isTip": false
+            },
+            "m7se": {
+              "id": "m7se",
+              "up": "m878",
+              "buds": [],
+              "stem": "pink"
+            },
+            "m878": {
+              "id": "m878",
+              "up": "m176",
+              "buds": [],
+              "stem": "pink"
+            },
+            "m1k7": {
+              "id": "m1k7",
+              "up": null,
+              "buds": [
+                {
+                  "stage": 0,
+                  "side": 1,
+                  "special": "none",
+                  "childNode": null
+                }
+              ],
+              "stem": "petiole",
+              "isTip": true
+            }
+          },
+          "root": "seed"
+        },
+        "col": 15,
+        "row": 1
+      },
+      "te0e": {
+        "id": "te0e",
+        "parent": "tb83",
+        "children": [
+          "th7a"
+        ],
+        "plant": {
+          "nodes": {
+            "seed": {
+              "id": "seed",
+              "up": "m4lz",
+              "buds": [],
+              "stem": "pink",
+              "isTip": false,
+              "isSeed": true
+            },
+            "m176": {
+              "id": "m176",
+              "up": null,
+              "buds": [
+                {
+                  "stage": 3,
+                  "side": 1,
+                  "special": "none",
+                  "childNode": null
+                }
+              ],
+              "stem": "petiole",
+              "isTip": true
+            },
+            "m4lz": {
+              "id": "m4lz",
+              "up": "m7se",
+              "buds": [],
+              "stem": "pink"
+            },
+            "m7se": {
+              "id": "m7se",
+              "up": "m6n3",
+              "buds": [
+                {
+                  "stage": 0,
+                  "side": 1,
+                  "special": "none",
+                  "childNode": "md0e"
+                }
+              ],
+              "stem": "thick",
+              "isTip": false
+            },
+            "m6n3": {
+              "id": "m6n3",
+              "up": "m176",
+              "buds": [],
+              "stem": "pink"
+            },
+            "m32w": {
+              "id": "m32w",
+              "up": null,
+              "buds": [
+                {
+                  "stage": 0,
+                  "side": 1,
+                  "special": "none",
+                  "childNode": null
+                }
+              ],
+              "stem": "petiole",
+              "isTip": true
+            },
+            "md0e": {
+              "id": "md0e",
+              "up": "m32w",
+              "buds": [],
+              "stem": "petiole"
+            }
+          },
+          "root": "seed"
+        },
+        "col": 16,
+        "row": 0
+      },
+      "tg92": {
+        "id": "tg92",
+        "parent": "tc2o",
+        "children": [
+          "ti6o"
+        ],
+        "plant": {
+          "nodes": {
+            "seed": {
+              "id": "seed",
+              "up": "m4lz",
+              "buds": [],
+              "stem": "pink",
+              "isTip": false,
+              "isSeed": true
+            },
+            "m176": {
+              "id": "m176",
+              "up": null,
+              "buds": [
+                {
+                  "stage": 3,
+                  "side": 1,
+                  "special": "none",
+                  "childNode": null
+                }
+              ],
+              "stem": "petiole",
+              "isTip": true
+            },
+            "m4lz": {
+              "id": "m4lz",
+              "up": "m7se",
+              "buds": [
+                {
+                  "stage": 0,
+                  "side": 1,
+                  "special": "none",
+                  "childNode": "mf92"
+                }
+              ],
+              "stem": "thick",
+              "isTip": false
+            },
+            "m7se": {
+              "id": "m7se",
+              "up": "m878",
+              "buds": [],
+              "stem": "pink"
+            },
+            "m878": {
+              "id": "m878",
+              "up": "m176",
+              "buds": [],
+              "stem": "pink"
+            },
+            "m1k7": {
+              "id": "m1k7",
+              "up": null,
+              "buds": [
+                {
+                  "stage": 0,
+                  "side": 1,
+                  "special": "none",
+                  "childNode": null
+                }
+              ],
+              "stem": "petiole",
+              "isTip": true
+            },
+            "mf92": {
+              "id": "mf92",
+              "up": "m1k7",
+              "buds": [],
+              "stem": "petiole"
+            }
+          },
+          "root": "seed"
+        },
+        "col": 16,
+        "row": 1
+      },
+      "th7a": {
+        "id": "th7a",
+        "parent": "te0e",
+        "children": [
+          "tk6d"
+        ],
+        "plant": {
+          "nodes": {
+            "seed": {
+              "id": "seed",
+              "up": "m4lz",
+              "buds": [],
+              "stem": "pink",
+              "isTip": false,
+              "isSeed": true
+            },
+            "m176": {
+              "id": "m176",
+              "up": null,
+              "buds": [
+                {
+                  "stage": 3,
+                  "side": 1,
+                  "special": "none",
+                  "childNode": null
+                }
+              ],
+              "stem": "petiole",
+              "isTip": true
+            },
+            "m4lz": {
+              "id": "m4lz",
+              "up": "m7se",
+              "buds": [],
+              "stem": "pink"
+            },
+            "m7se": {
+              "id": "m7se",
+              "up": "m6n3",
+              "buds": [
+                {
+                  "stage": 0,
+                  "side": 1,
+                  "special": "none",
+                  "childNode": "md0e"
+                }
+              ],
+              "stem": "thick",
+              "isTip": false
+            },
+            "m6n3": {
+              "id": "m6n3",
+              "up": "m176",
+              "buds": [],
+              "stem": "pink"
+            },
+            "m32w": {
+              "id": "m32w",
+              "up": null,
+              "buds": [
+                {
+                  "stage": 1,
+                  "side": 1,
+                  "special": "none",
+                  "childNode": null
+                }
+              ],
+              "stem": "petiole",
+              "isTip": true
+            },
+            "md0e": {
+              "id": "md0e",
+              "up": "m32w",
+              "buds": [],
+              "stem": "petiole"
+            }
+          },
+          "root": "seed"
+        },
+        "col": 17,
+        "row": 0
+      },
+      "ti6o": {
+        "id": "ti6o",
+        "parent": "tg92",
+        "children": [
+          "tmuu"
+        ],
+        "plant": {
+          "nodes": {
+            "seed": {
+              "id": "seed",
+              "up": "m4lz",
+              "buds": [],
+              "stem": "pink",
+              "isTip": false,
+              "isSeed": true
+            },
+            "m176": {
+              "id": "m176",
+              "up": null,
+              "buds": [
+                {
+                  "stage": 3,
+                  "side": 1,
+                  "special": "none",
+                  "childNode": null
+                }
+              ],
+              "stem": "petiole",
+              "isTip": true
+            },
+            "m4lz": {
+              "id": "m4lz",
+              "up": "m7se",
+              "buds": [
+                {
+                  "stage": 0,
+                  "side": 1,
+                  "special": "none",
+                  "childNode": "mf92"
+                }
+              ],
+              "stem": "thick",
+              "isTip": false
+            },
+            "m7se": {
+              "id": "m7se",
+              "up": "m878",
+              "buds": [],
+              "stem": "pink"
+            },
+            "m878": {
+              "id": "m878",
+              "up": "m176",
+              "buds": [],
+              "stem": "pink"
+            },
+            "m1k7": {
+              "id": "m1k7",
+              "up": null,
+              "buds": [
+                {
+                  "stage": 1,
+                  "side": 1,
+                  "special": "none",
+                  "childNode": null
+                }
+              ],
+              "stem": "petiole",
+              "isTip": true
+            },
+            "mf92": {
+              "id": "mf92",
+              "up": "m1k7",
+              "buds": [],
+              "stem": "petiole"
+            }
+          },
+          "root": "seed"
+        },
+        "col": 17,
+        "row": 1
+      },
+      "tk6d": {
+        "id": "tk6d",
+        "parent": "th7a",
+        "children": [
+          "to9q"
+        ],
+        "plant": {
+          "nodes": {
+            "seed": {
+              "id": "seed",
+              "up": "m4lz",
+              "buds": [],
+              "stem": "pink",
+              "isTip": false,
+              "isSeed": true
+            },
+            "m176": {
+              "id": "m176",
+              "up": null,
+              "buds": [
+                {
+                  "stage": 3,
+                  "side": 1,
+                  "special": "none",
+                  "childNode": null
+                }
+              ],
+              "stem": "petiole",
+              "isTip": true
+            },
+            "m4lz": {
+              "id": "m4lz",
+              "up": "m7se",
+              "buds": [],
+              "stem": "pink"
+            },
+            "m7se": {
+              "id": "m7se",
+              "up": "m6n3",
+              "buds": [
+                {
+                  "stage": 0,
+                  "side": 1,
+                  "special": "none",
+                  "childNode": "md0e"
+                }
+              ],
+              "stem": "thick",
+              "isTip": false
+            },
+            "m6n3": {
+              "id": "m6n3",
+              "up": "mj6d",
+              "buds": [],
+              "stem": "pink"
+            },
+            "m32w": {
+              "id": "m32w",
+              "up": null,
+              "buds": [
+                {
+                  "stage": 1,
+                  "side": 1,
+                  "special": "none",
+                  "childNode": null
+                }
+              ],
+              "stem": "petiole",
+              "isTip": true
+            },
+            "md0e": {
+              "id": "md0e",
+              "up": "m32w",
+              "buds": [],
+              "stem": "petiole"
+            },
+            "mj6d": {
+              "id": "mj6d",
+              "up": "m176",
+              "buds": [],
+              "stem": "petiole"
+            }
+          },
+          "root": "seed"
+        },
+        "col": 18,
+        "row": 0
+      },
+      "tmuu": {
+        "id": "tmuu",
+        "parent": "ti6o",
+        "children": [
+          "tn8f"
+        ],
+        "plant": {
+          "nodes": {
+            "seed": {
+              "id": "seed",
+              "up": "m4lz",
+              "buds": [],
+              "stem": "pink",
+              "isTip": false,
+              "isSeed": true
+            },
+            "m176": {
+              "id": "m176",
+              "up": null,
+              "buds": [
+                {
+                  "stage": 3,
+                  "side": 1,
+                  "special": "none",
+                  "childNode": null
+                }
+              ],
+              "stem": "petiole",
+              "isTip": true
+            },
+            "m4lz": {
+              "id": "m4lz",
+              "up": "m7se",
+              "buds": [
+                {
+                  "stage": 0,
+                  "side": 1,
+                  "special": "none",
+                  "childNode": "mf92"
+                }
+              ],
+              "stem": "thick",
+              "isTip": false
+            },
+            "m7se": {
+              "id": "m7se",
+              "up": "m878",
+              "buds": [],
+              "stem": "pink"
+            },
+            "m878": {
+              "id": "m878",
+              "up": "mluu",
+              "buds": [],
+              "stem": "pink"
+            },
+            "m1k7": {
+              "id": "m1k7",
+              "up": null,
+              "buds": [
+                {
+                  "stage": 1,
+                  "side": 1,
+                  "special": "none",
+                  "childNode": null
+                }
+              ],
+              "stem": "petiole",
+              "isTip": true
+            },
+            "mf92": {
+              "id": "mf92",
+              "up": "m1k7",
+              "buds": [],
+              "stem": "petiole"
+            },
+            "mluu": {
+              "id": "mluu",
+              "up": "m176",
+              "buds": [],
+              "stem": "petiole"
+            }
+          },
+          "root": "seed"
+        },
+        "col": 18,
+        "row": 1
+      },
+      "tn8f": {
+        "id": "tn8f",
+        "parent": "tmuu",
+        "children": [
+          "tqsx"
+        ],
+        "plant": {
+          "nodes": {
+            "seed": {
+              "id": "seed",
+              "up": "m4lz",
+              "buds": [],
+              "stem": "pink",
+              "isTip": false,
+              "isSeed": true
+            },
+            "m176": {
+              "id": "m176",
+              "up": null,
+              "buds": [
+                {
+                  "stage": 3,
+                  "side": 1,
+                  "special": "none",
+                  "childNode": null
+                }
+              ],
+              "stem": "petiole",
+              "isTip": true
+            },
+            "m4lz": {
+              "id": "m4lz",
+              "up": "m7se",
+              "buds": [
+                {
+                  "stage": 0,
+                  "side": 1,
+                  "special": "none",
+                  "childNode": "mf92"
+                }
+              ],
+              "stem": "thick",
+              "isTip": false
+            },
+            "m7se": {
+              "id": "m7se",
+              "up": "m878",
+              "buds": [],
+              "stem": "pink"
+            },
+            "m878": {
+              "id": "m878",
+              "up": "mluu",
+              "buds": [],
+              "stem": "pink"
+            },
+            "m1k7": {
+              "id": "m1k7",
+              "up": null,
+              "buds": [
+                {
+                  "stage": 1,
+                  "side": 1,
+                  "special": "none",
+                  "childNode": null
+                }
+              ],
+              "stem": "petiole",
+              "isTip": true
+            },
+            "mf92": {
+              "id": "mf92",
+              "up": "m1k7",
+              "buds": [],
+              "stem": "pink"
+            },
+            "mluu": {
+              "id": "mluu",
+              "up": "m176",
+              "buds": [],
+              "stem": "petiole"
+            }
+          },
+          "root": "seed"
+        },
+        "col": 19,
+        "row": 1
+      },
+      "to9q": {
+        "id": "to9q",
+        "parent": "tk6d",
+        "children": [
+          "tp19"
+        ],
+        "plant": {
+          "nodes": {
+            "seed": {
+              "id": "seed",
+              "up": "m4lz",
+              "buds": [],
+              "stem": "pink",
+              "isTip": false,
+              "isSeed": true
+            },
+            "m176": {
+              "id": "m176",
+              "up": null,
+              "buds": [
+                {
+                  "stage": 3,
+                  "side": 1,
+                  "special": "none",
+                  "childNode": null
+                }
+              ],
+              "stem": "petiole",
+              "isTip": true
+            },
+            "m4lz": {
+              "id": "m4lz",
+              "up": "m7se",
+              "buds": [],
+              "stem": "pink"
+            },
+            "m7se": {
+              "id": "m7se",
+              "up": "m6n3",
+              "buds": [
+                {
+                  "stage": 0,
+                  "side": 1,
+                  "special": "none",
+                  "childNode": "md0e"
+                }
+              ],
+              "stem": "thick",
+              "isTip": false
+            },
+            "m6n3": {
+              "id": "m6n3",
+              "up": "mj6d",
+              "buds": [],
+              "stem": "pink"
+            },
+            "m32w": {
+              "id": "m32w",
+              "up": null,
+              "buds": [
+                {
+                  "stage": 1,
+                  "side": 1,
+                  "special": "none",
+                  "childNode": null
+                }
+              ],
+              "stem": "petiole",
+              "isTip": true
+            },
+            "md0e": {
+              "id": "md0e",
+              "up": "m32w",
+              "buds": [],
+              "stem": "pink"
+            },
+            "mj6d": {
+              "id": "mj6d",
+              "up": "m176",
+              "buds": [],
+              "stem": "petiole"
+            }
+          },
+          "root": "seed"
+        },
+        "col": 19,
+        "row": 0
+      },
+      "tp19": {
+        "id": "tp19",
+        "parent": "to9q",
+        "children": [
+          "tr13"
+        ],
+        "plant": {
+          "nodes": {
+            "seed": {
+              "id": "seed",
+              "up": "m4lz",
+              "buds": [],
+              "stem": "pink",
+              "isTip": false,
+              "isSeed": true
+            },
+            "m176": {
+              "id": "m176",
+              "up": null,
+              "buds": [
+                {
+                  "stage": 3,
+                  "side": 1,
+                  "special": "none",
+                  "childNode": null
+                }
+              ],
+              "stem": "petiole",
+              "isTip": true
+            },
+            "m4lz": {
+              "id": "m4lz",
+              "up": "m7se",
+              "buds": [],
+              "stem": "pink"
+            },
+            "m7se": {
+              "id": "m7se",
+              "up": "m6n3",
+              "buds": [
+                {
+                  "stage": 0,
+                  "side": 1,
+                  "special": "none",
+                  "childNode": "md0e"
+                }
+              ],
+              "stem": "thick",
+              "isTip": false
+            },
+            "m6n3": {
+              "id": "m6n3",
+              "up": "mj6d",
+              "buds": [],
+              "stem": "pink"
+            },
+            "m32w": {
+              "id": "m32w",
+              "up": null,
+              "buds": [
+                {
+                  "stage": 2,
+                  "side": 1,
+                  "special": "none",
+                  "childNode": null
+                }
+              ],
+              "stem": "petiole",
+              "isTip": true
+            },
+            "md0e": {
+              "id": "md0e",
+              "up": "m32w",
+              "buds": [],
+              "stem": "pink"
+            },
+            "mj6d": {
+              "id": "mj6d",
+              "up": "m176",
+              "buds": [],
+              "stem": "petiole"
+            }
+          },
+          "root": "seed"
+        },
+        "col": 20,
+        "row": 0
+      },
+      "tqsx": {
+        "id": "tqsx",
+        "parent": "tn8f",
+        "children": [
+          "tszi"
+        ],
+        "plant": {
+          "nodes": {
+            "seed": {
+              "id": "seed",
+              "up": "m4lz",
+              "buds": [],
+              "stem": "pink",
+              "isTip": false,
+              "isSeed": true
+            },
+            "m176": {
+              "id": "m176",
+              "up": null,
+              "buds": [
+                {
+                  "stage": 3,
+                  "side": 1,
+                  "special": "none",
+                  "childNode": null
+                }
+              ],
+              "stem": "petiole",
+              "isTip": true
+            },
+            "m4lz": {
+              "id": "m4lz",
+              "up": "m7se",
+              "buds": [
+                {
+                  "stage": 0,
+                  "side": 1,
+                  "special": "none",
+                  "childNode": "mf92"
+                }
+              ],
+              "stem": "thick",
+              "isTip": false
+            },
+            "m7se": {
+              "id": "m7se",
+              "up": "m878",
+              "buds": [],
+              "stem": "pink"
+            },
+            "m878": {
+              "id": "m878",
+              "up": "mluu",
+              "buds": [],
+              "stem": "pink"
+            },
+            "m1k7": {
+              "id": "m1k7",
+              "up": null,
+              "buds": [
+                {
+                  "stage": 2,
+                  "side": 1,
+                  "special": "none",
+                  "childNode": null
+                }
+              ],
+              "stem": "petiole",
+              "isTip": true
+            },
+            "mf92": {
+              "id": "mf92",
+              "up": "m1k7",
+              "buds": [],
+              "stem": "pink"
+            },
+            "mluu": {
+              "id": "mluu",
+              "up": "m176",
+              "buds": [],
+              "stem": "petiole"
+            }
+          },
+          "root": "seed"
+        },
+        "col": 20,
+        "row": 1
+      },
+      "tr13": {
+        "id": "tr13",
+        "parent": "tp19",
+        "children": [
+          "tuo6"
+        ],
+        "plant": {
+          "nodes": {
+            "seed": {
+              "id": "seed",
+              "up": "m4lz",
+              "buds": [],
+              "stem": "pink",
+              "isTip": false,
+              "isSeed": true
+            },
+            "m176": {
+              "id": "m176",
+              "up": null,
+              "buds": [
+                {
+                  "stage": 3,
+                  "side": 1,
+                  "special": "none",
+                  "childNode": null
+                }
+              ],
+              "stem": "petiole",
+              "isTip": true
+            },
+            "m4lz": {
+              "id": "m4lz",
+              "up": "m7se",
+              "buds": [],
+              "stem": "pink"
+            },
+            "m7se": {
+              "id": "m7se",
+              "up": "m6n3",
+              "buds": [
+                {
+                  "stage": 0,
+                  "side": 1,
+                  "special": "none",
+                  "childNode": "md0e"
+                }
+              ],
+              "stem": "thick",
+              "isTip": false
+            },
+            "m6n3": {
+              "id": "m6n3",
+              "up": "mj6d",
+              "buds": [],
+              "stem": "pink"
+            },
+            "m32w": {
+              "id": "m32w",
+              "up": null,
+              "buds": [
+                {
+                  "stage": 2,
+                  "side": 1,
+                  "special": "none",
+                  "childNode": null
+                }
+              ],
+              "stem": "petiole",
+              "isTip": true
+            },
+            "md0e": {
+              "id": "md0e",
+              "up": "m32w",
+              "buds": [],
+              "stem": "pink"
+            },
+            "mj6d": {
+              "id": "mj6d",
+              "up": "m176",
+              "buds": [],
+              "stem": "pink"
+            }
+          },
+          "root": "seed"
+        },
+        "col": 21,
+        "row": 0
+      },
+      "tszi": {
+        "id": "tszi",
+        "parent": "tqsx",
+        "children": [
+          "twzh"
+        ],
+        "plant": {
+          "nodes": {
+            "seed": {
+              "id": "seed",
+              "up": "m4lz",
+              "buds": [],
+              "stem": "pink",
+              "isTip": false,
+              "isSeed": true
+            },
+            "m176": {
+              "id": "m176",
+              "up": null,
+              "buds": [
+                {
+                  "stage": 3,
+                  "side": 1,
+                  "special": "none",
+                  "childNode": null
+                }
+              ],
+              "stem": "petiole",
+              "isTip": true
+            },
+            "m4lz": {
+              "id": "m4lz",
+              "up": "m7se",
+              "buds": [
+                {
+                  "stage": 0,
+                  "side": 1,
+                  "special": "none",
+                  "childNode": "mf92"
+                }
+              ],
+              "stem": "thick",
+              "isTip": false
+            },
+            "m7se": {
+              "id": "m7se",
+              "up": "m878",
+              "buds": [],
+              "stem": "pink"
+            },
+            "m878": {
+              "id": "m878",
+              "up": "mluu",
+              "buds": [],
+              "stem": "pink"
+            },
+            "m1k7": {
+              "id": "m1k7",
+              "up": null,
+              "buds": [
+                {
+                  "stage": 2,
+                  "side": 1,
+                  "special": "none",
+                  "childNode": null
+                }
+              ],
+              "stem": "petiole",
+              "isTip": true
+            },
+            "mf92": {
+              "id": "mf92",
+              "up": "m1k7",
+              "buds": [],
+              "stem": "pink"
+            },
+            "mluu": {
+              "id": "mluu",
+              "up": "m176",
+              "buds": [],
+              "stem": "pink"
+            }
+          },
+          "root": "seed"
+        },
+        "col": 21,
+        "row": 1
+      },
+      "tuo6": {
+        "id": "tuo6",
+        "parent": "tr13",
+        "children": [
+          "tx9w"
+        ],
+        "plant": {
+          "nodes": {
+            "seed": {
+              "id": "seed",
+              "up": "m4lz",
+              "buds": [],
+              "stem": "pink",
+              "isTip": false,
+              "isSeed": true
+            },
+            "m176": {
+              "id": "m176",
+              "up": null,
+              "buds": [
+                {
+                  "stage": 3,
+                  "side": 1,
+                  "special": "none",
+                  "childNode": null
+                }
+              ],
+              "stem": "petiole",
+              "isTip": true
+            },
+            "m4lz": {
+              "id": "m4lz",
+              "up": "m7se",
+              "buds": [],
+              "stem": "pink"
+            },
+            "m7se": {
+              "id": "m7se",
+              "up": "m6n3",
+              "buds": [
+                {
+                  "stage": 0,
+                  "side": 1,
+                  "special": "none",
+                  "childNode": "md0e"
+                }
+              ],
+              "stem": "thick",
+              "isTip": false
+            },
+            "m6n3": {
+              "id": "m6n3",
+              "up": "mj6d",
+              "buds": [],
+              "stem": "pink"
+            },
+            "m32w": {
+              "id": "m32w",
+              "up": null,
+              "buds": [
+                {
+                  "stage": 2,
+                  "side": 1,
+                  "special": "none",
+                  "childNode": null
+                }
+              ],
+              "stem": "petiole",
+              "isTip": true
+            },
+            "md0e": {
+              "id": "md0e",
+              "up": "mto6",
+              "buds": [],
+              "stem": "pink"
+            },
+            "mj6d": {
+              "id": "mj6d",
+              "up": "m176",
+              "buds": [],
+              "stem": "pink"
+            },
+            "mto6": {
+              "id": "mto6",
+              "up": "m32w",
+              "buds": [],
+              "stem": "petiole"
+            }
+          },
+          "root": "seed"
+        },
+        "col": 22,
+        "row": 0
+      },
+      "twzh": {
+        "id": "twzh",
+        "parent": "tszi",
+        "children": [
+          "tyjc"
+        ],
+        "plant": {
+          "nodes": {
+            "seed": {
+              "id": "seed",
+              "up": "m4lz",
+              "buds": [],
+              "stem": "pink",
+              "isTip": false,
+              "isSeed": true
+            },
+            "m176": {
+              "id": "m176",
+              "up": null,
+              "buds": [
+                {
+                  "stage": 3,
+                  "side": 1,
+                  "special": "none",
+                  "childNode": null
+                }
+              ],
+              "stem": "petiole",
+              "isTip": true
+            },
+            "m4lz": {
+              "id": "m4lz",
+              "up": "m7se",
+              "buds": [
+                {
+                  "stage": 0,
+                  "side": 1,
+                  "special": "none",
+                  "childNode": "mf92"
+                }
+              ],
+              "stem": "thick",
+              "isTip": false
+            },
+            "m7se": {
+              "id": "m7se",
+              "up": "m878",
+              "buds": [],
+              "stem": "pink"
+            },
+            "m878": {
+              "id": "m878",
+              "up": "mluu",
+              "buds": [],
+              "stem": "pink"
+            },
+            "m1k7": {
+              "id": "m1k7",
+              "up": null,
+              "buds": [
+                {
+                  "stage": 2,
+                  "side": 1,
+                  "special": "none",
+                  "childNode": null
+                }
+              ],
+              "stem": "petiole",
+              "isTip": true
+            },
+            "mf92": {
+              "id": "mf92",
+              "up": "mvzh",
+              "buds": [],
+              "stem": "pink"
+            },
+            "mluu": {
+              "id": "mluu",
+              "up": "m176",
+              "buds": [],
+              "stem": "pink"
+            },
+            "mvzh": {
+              "id": "mvzh",
+              "up": "m1k7",
+              "buds": [],
+              "stem": "petiole"
+            }
+          },
+          "root": "seed"
+        },
+        "col": 22,
+        "row": 1
+      },
+      "tx9w": {
+        "id": "tx9w",
+        "parent": "tuo6",
+        "children": [
+          "tzo9"
+        ],
+        "plant": {
+          "nodes": {
+            "seed": {
+              "id": "seed",
+              "up": "m4lz",
+              "buds": [],
+              "stem": "pink",
+              "isTip": false,
+              "isSeed": true
+            },
+            "m176": {
+              "id": "m176",
+              "up": null,
+              "buds": [
+                {
+                  "stage": 3,
+                  "side": 1,
+                  "special": "none",
+                  "childNode": null
+                }
+              ],
+              "stem": "petiole",
+              "isTip": true
+            },
+            "m4lz": {
+              "id": "m4lz",
+              "up": "m7se",
+              "buds": [],
+              "stem": "pink"
+            },
+            "m7se": {
+              "id": "m7se",
+              "up": "m6n3",
+              "buds": [
+                {
+                  "stage": 0,
+                  "side": 1,
+                  "special": "none",
+                  "childNode": "md0e"
+                }
+              ],
+              "stem": "thick",
+              "isTip": false
+            },
+            "m6n3": {
+              "id": "m6n3",
+              "up": "mj6d",
+              "buds": [],
+              "stem": "pink"
+            },
+            "m32w": {
+              "id": "m32w",
+              "up": null,
+              "buds": [
+                {
+                  "stage": 2,
+                  "side": 1,
+                  "special": "none",
+                  "childNode": null
+                }
+              ],
+              "stem": "petiole",
+              "isTip": true
+            },
+            "md0e": {
+              "id": "md0e",
+              "up": "mto6",
+              "buds": [],
+              "stem": "pink"
+            },
+            "mj6d": {
+              "id": "mj6d",
+              "up": "m176",
+              "buds": [],
+              "stem": "pink"
+            },
+            "mto6": {
+              "id": "mto6",
+              "up": "m32w",
+              "buds": [],
+              "stem": "pink"
+            }
+          },
+          "root": "seed"
+        },
+        "col": 23,
+        "row": 0
+      },
+      "tyjc": {
+        "id": "tyjc",
+        "parent": "twzh",
+        "children": [
+          "t10ci"
+        ],
+        "plant": {
+          "nodes": {
+            "seed": {
+              "id": "seed",
+              "up": "m4lz",
+              "buds": [],
+              "stem": "pink",
+              "isTip": false,
+              "isSeed": true
+            },
+            "m176": {
+              "id": "m176",
+              "up": null,
+              "buds": [
+                {
+                  "stage": 3,
+                  "side": 1,
+                  "special": "none",
+                  "childNode": null
+                }
+              ],
+              "stem": "petiole",
+              "isTip": true
+            },
+            "m4lz": {
+              "id": "m4lz",
+              "up": "m7se",
+              "buds": [
+                {
+                  "stage": 0,
+                  "side": 1,
+                  "special": "none",
+                  "childNode": "mf92"
+                }
+              ],
+              "stem": "thick",
+              "isTip": false
+            },
+            "m7se": {
+              "id": "m7se",
+              "up": "m878",
+              "buds": [],
+              "stem": "pink"
+            },
+            "m878": {
+              "id": "m878",
+              "up": "mluu",
+              "buds": [],
+              "stem": "pink"
+            },
+            "m1k7": {
+              "id": "m1k7",
+              "up": null,
+              "buds": [
+                {
+                  "stage": 2,
+                  "side": 1,
+                  "special": "none",
+                  "childNode": null
+                }
+              ],
+              "stem": "petiole",
+              "isTip": true
+            },
+            "mf92": {
+              "id": "mf92",
+              "up": "mvzh",
+              "buds": [],
+              "stem": "pink"
+            },
+            "mluu": {
+              "id": "mluu",
+              "up": "m176",
+              "buds": [],
+              "stem": "pink"
+            },
+            "mvzh": {
+              "id": "mvzh",
+              "up": "m1k7",
+              "buds": [],
+              "stem": "pink"
+            }
+          },
+          "root": "seed"
+        },
+        "col": 23,
+        "row": 1
+      },
+      "tzo9": {
+        "id": "tzo9",
+        "parent": "tx9w",
+        "children": [
+          "ewivc",
+          "enzpi",
+          "eo9w3",
+          "eaigu",
+          "e1lva"
+        ],
+        "plant": {
+          "nodes": {
+            "seed": {
+              "id": "seed",
+              "up": "m4lz",
+              "buds": [],
+              "stem": "pink",
+              "isTip": false,
+              "isSeed": true
+            },
+            "m176": {
+              "id": "m176",
+              "up": null,
+              "buds": [
+                {
+                  "stage": 3,
+                  "side": 1,
+                  "special": "none",
+                  "childNode": null
+                }
+              ],
+              "stem": "petiole",
+              "isTip": true
+            },
+            "m4lz": {
+              "id": "m4lz",
+              "up": "m7se",
+              "buds": [],
+              "stem": "pink"
+            },
+            "m7se": {
+              "id": "m7se",
+              "up": "m6n3",
+              "buds": [
+                {
+                  "stage": 0,
+                  "side": 1,
+                  "special": "none",
+                  "childNode": "md0e"
+                }
+              ],
+              "stem": "thick",
+              "isTip": false
+            },
+            "m6n3": {
+              "id": "m6n3",
+              "up": "mj6d",
+              "buds": [],
+              "stem": "pink"
+            },
+            "m32w": {
+              "id": "m32w",
+              "up": null,
+              "buds": [
+                {
+                  "stage": 3,
+                  "side": 1,
+                  "special": "none",
+                  "childNode": null
+                }
+              ],
+              "stem": "petiole",
+              "isTip": true
+            },
+            "md0e": {
+              "id": "md0e",
+              "up": "mto6",
+              "buds": [],
+              "stem": "pink"
+            },
+            "mj6d": {
+              "id": "mj6d",
+              "up": "m176",
+              "buds": [],
+              "stem": "pink"
+            },
+            "mto6": {
+              "id": "mto6",
+              "up": "m32w",
+              "buds": [],
+              "stem": "pink"
+            }
+          },
+          "root": "seed"
+        },
+        "col": 24,
+        "row": 0
+      },
+      "t10ci": {
+        "id": "t10ci",
+        "parent": "tyjc",
+        "children": [
+          "efvb5",
+          "eq0tb",
+          "etjxe",
+          "elvlg",
+          "elv6f"
+        ],
+        "plant": {
+          "nodes": {
+            "seed": {
+              "id": "seed",
+              "up": "m4lz",
+              "buds": [],
+              "stem": "pink",
+              "isTip": false,
+              "isSeed": true
+            },
+            "m176": {
+              "id": "m176",
+              "up": null,
+              "buds": [
+                {
+                  "stage": 3,
+                  "side": 1,
+                  "special": "none",
+                  "childNode": null
+                }
+              ],
+              "stem": "petiole",
+              "isTip": true
+            },
+            "m4lz": {
+              "id": "m4lz",
+              "up": "m7se",
+              "buds": [
+                {
+                  "stage": 0,
+                  "side": 1,
+                  "special": "none",
+                  "childNode": "mf92"
+                }
+              ],
+              "stem": "thick",
+              "isTip": false
+            },
+            "m7se": {
+              "id": "m7se",
+              "up": "m878",
+              "buds": [],
+              "stem": "pink"
+            },
+            "m878": {
+              "id": "m878",
+              "up": "mluu",
+              "buds": [],
+              "stem": "pink"
+            },
+            "m1k7": {
+              "id": "m1k7",
+              "up": null,
+              "buds": [
+                {
+                  "stage": 3,
+                  "side": 1,
+                  "special": "none",
+                  "childNode": null
+                }
+              ],
+              "stem": "petiole",
+              "isTip": true
+            },
+            "mf92": {
+              "id": "mf92",
+              "up": "mvzh",
+              "buds": [],
+              "stem": "pink"
+            },
+            "mluu": {
+              "id": "mluu",
+              "up": "m176",
+              "buds": [],
+              "stem": "pink"
+            },
+            "mvzh": {
+              "id": "mvzh",
+              "up": "m1k7",
+              "buds": [],
+              "stem": "pink"
+            }
+          },
+          "root": "seed"
+        },
+        "col": 24,
+        "row": 1
+      },
+      "ewivc": {
+        "id": "ewivc",
+        "parent": "tzo9",
+        "children": [],
+        "plant": {
+          "nodes": {
+            "seed": {
+              "id": "seed",
+              "up": "m4lz",
+              "buds": [],
+              "stem": "pink",
+              "isTip": false,
+              "isSeed": true
+            },
+            "m176": {
+              "id": "m176",
+              "up": null,
+              "buds": [
+                {
+                  "stage": 3,
+                  "side": 1,
+                  "special": "none",
+                  "childNode": null
+                }
+              ],
+              "stem": "petiole",
+              "isTip": true
+            },
+            "m4lz": {
+              "id": "m4lz",
+              "up": "m7se",
+              "buds": [],
+              "stem": "thick"
+            },
+            "m7se": {
+              "id": "m7se",
+              "up": "m6n3",
+              "buds": [
+                {
+                  "stage": 0,
+                  "side": 1,
+                  "special": "none",
+                  "childNode": "md0e"
+                }
+              ],
+              "stem": "thick",
+              "isTip": false
+            },
+            "m6n3": {
+              "id": "m6n3",
+              "up": "mj6d",
+              "buds": [],
+              "stem": "pink"
+            },
+            "m32w": {
+              "id": "m32w",
+              "up": null,
+              "buds": [
+                {
+                  "stage": 3,
+                  "side": 1,
+                  "special": "none",
+                  "childNode": null
+                }
+              ],
+              "stem": "petiole",
+              "isTip": true
+            },
+            "md0e": {
+              "id": "md0e",
+              "up": "mto6",
+              "buds": [],
+              "stem": "pink"
+            },
+            "mj6d": {
+              "id": "mj6d",
+              "up": "m176",
+              "buds": [],
+              "stem": "pink"
+            },
+            "mto6": {
+              "id": "mto6",
+              "up": "m32w",
+              "buds": [],
+              "stem": "pink"
+            }
+          },
+          "root": "seed"
+        },
+        "col": 25,
+        "row": 0
+      },
+      "enzpi": {
+        "id": "enzpi",
+        "parent": "tzo9",
+        "children": [],
+        "plant": {
+          "nodes": {
+            "seed": {
+              "id": "seed",
+              "up": "m4lz",
+              "buds": [],
+              "stem": "pink",
+              "isTip": false,
+              "isSeed": true
+            },
+            "m176": {
+              "id": "m176",
+              "up": null,
+              "buds": [
+                {
+                  "stage": 3,
+                  "side": 1,
+                  "special": "none",
+                  "childNode": null
+                }
+              ],
+              "stem": "petiole",
+              "isTip": true
+            },
+            "m4lz": {
+              "id": "m4lz",
+              "up": "m7se",
+              "buds": [],
+              "stem": "pink"
+            },
+            "m7se": {
+              "id": "m7se",
+              "up": "m6n3",
+              "buds": [
+                {
+                  "stage": 0,
+                  "side": 1,
+                  "special": "none",
+                  "childNode": "md0e"
+                }
+              ],
+              "stem": "thick",
+              "isTip": false
+            },
+            "m6n3": {
+              "id": "m6n3",
+              "up": "mj6d",
+              "buds": [],
+              "stem": "thick"
+            },
+            "m32w": {
+              "id": "m32w",
+              "up": null,
+              "buds": [
+                {
+                  "stage": 3,
+                  "side": 1,
+                  "special": "none",
+                  "childNode": null
+                }
+              ],
+              "stem": "petiole",
+              "isTip": true
+            },
+            "md0e": {
+              "id": "md0e",
+              "up": "mto6",
+              "buds": [],
+              "stem": "pink"
+            },
+            "mj6d": {
+              "id": "mj6d",
+              "up": "m176",
+              "buds": [],
+              "stem": "pink"
+            },
+            "mto6": {
+              "id": "mto6",
+              "up": "m32w",
+              "buds": [],
+              "stem": "pink"
+            }
+          },
+          "root": "seed"
+        },
+        "col": 25,
+        "row": 1
+      },
+      "eo9w3": {
+        "id": "eo9w3",
+        "parent": "tzo9",
+        "children": [],
+        "plant": {
+          "nodes": {
+            "seed": {
+              "id": "seed",
+              "up": "m4lz",
+              "buds": [],
+              "stem": "pink",
+              "isTip": false,
+              "isSeed": true
+            },
+            "m176": {
+              "id": "m176",
+              "up": null,
+              "buds": [
+                {
+                  "stage": 3,
+                  "side": 1,
+                  "special": "none",
+                  "childNode": null
+                }
+              ],
+              "stem": "petiole",
+              "isTip": true
+            },
+            "m4lz": {
+              "id": "m4lz",
+              "up": "m7se",
+              "buds": [],
+              "stem": "pink"
+            },
+            "m7se": {
+              "id": "m7se",
+              "up": "m6n3",
+              "buds": [
+                {
+                  "stage": 0,
+                  "side": 1,
+                  "special": "none",
+                  "childNode": "md0e"
+                }
+              ],
+              "stem": "thick",
+              "isTip": false
+            },
+            "m6n3": {
+              "id": "m6n3",
+              "up": "mj6d",
+              "buds": [],
+              "stem": "pink"
+            },
+            "m32w": {
+              "id": "m32w",
+              "up": null,
+              "buds": [
+                {
+                  "stage": 3,
+                  "side": 1,
+                  "special": "none",
+                  "childNode": null
+                }
+              ],
+              "stem": "petiole",
+              "isTip": true
+            },
+            "md0e": {
+              "id": "md0e",
+              "up": "mto6",
+              "buds": [],
+              "stem": "thick"
+            },
+            "mj6d": {
+              "id": "mj6d",
+              "up": "m176",
+              "buds": [],
+              "stem": "pink"
+            },
+            "mto6": {
+              "id": "mto6",
+              "up": "m32w",
+              "buds": [],
+              "stem": "pink"
+            }
+          },
+          "root": "seed"
+        },
+        "col": 25,
+        "row": 2
+      },
+      "eaigu": {
+        "id": "eaigu",
+        "parent": "tzo9",
+        "children": [],
+        "plant": {
+          "nodes": {
+            "seed": {
+              "id": "seed",
+              "up": "m4lz",
+              "buds": [],
+              "stem": "pink",
+              "isTip": false,
+              "isSeed": true
+            },
+            "m176": {
+              "id": "m176",
+              "up": null,
+              "buds": [
+                {
+                  "stage": 3,
+                  "side": 1,
+                  "special": "none",
+                  "childNode": null
+                }
+              ],
+              "stem": "petiole",
+              "isTip": true
+            },
+            "m4lz": {
+              "id": "m4lz",
+              "up": "m7se",
+              "buds": [],
+              "stem": "pink"
+            },
+            "m7se": {
+              "id": "m7se",
+              "up": "m6n3",
+              "buds": [
+                {
+                  "stage": 0,
+                  "side": 1,
+                  "special": "none",
+                  "childNode": "md0e"
+                }
+              ],
+              "stem": "thick",
+              "isTip": false
+            },
+            "m6n3": {
+              "id": "m6n3",
+              "up": "mj6d",
+              "buds": [],
+              "stem": "pink"
+            },
+            "m32w": {
+              "id": "m32w",
+              "up": null,
+              "buds": [
+                {
+                  "stage": 3,
+                  "side": 1,
+                  "special": "none",
+                  "childNode": null
+                }
+              ],
+              "stem": "petiole",
+              "isTip": true
+            },
+            "md0e": {
+              "id": "md0e",
+              "up": "mto6",
+              "buds": [],
+              "stem": "pink"
+            },
+            "mj6d": {
+              "id": "mj6d",
+              "up": "m176",
+              "buds": [],
+              "stem": "thick"
+            },
+            "mto6": {
+              "id": "mto6",
+              "up": "m32w",
+              "buds": [],
+              "stem": "pink"
+            }
+          },
+          "root": "seed"
+        },
+        "col": 25,
+        "row": 3
+      },
+      "e1lva": {
+        "id": "e1lva",
+        "parent": "tzo9",
+        "children": [],
+        "plant": {
+          "nodes": {
+            "seed": {
+              "id": "seed",
+              "up": "m4lz",
+              "buds": [],
+              "stem": "pink",
+              "isTip": false,
+              "isSeed": true
+            },
+            "m176": {
+              "id": "m176",
+              "up": null,
+              "buds": [
+                {
+                  "stage": 3,
+                  "side": 1,
+                  "special": "none",
+                  "childNode": null
+                }
+              ],
+              "stem": "petiole",
+              "isTip": true
+            },
+            "m4lz": {
+              "id": "m4lz",
+              "up": "m7se",
+              "buds": [],
+              "stem": "pink"
+            },
+            "m7se": {
+              "id": "m7se",
+              "up": "m6n3",
+              "buds": [
+                {
+                  "stage": 0,
+                  "side": 1,
+                  "special": "none",
+                  "childNode": "md0e"
+                }
+              ],
+              "stem": "thick",
+              "isTip": false
+            },
+            "m6n3": {
+              "id": "m6n3",
+              "up": "mj6d",
+              "buds": [],
+              "stem": "pink"
+            },
+            "m32w": {
+              "id": "m32w",
+              "up": null,
+              "buds": [
+                {
+                  "stage": 3,
+                  "side": 1,
+                  "special": "none",
+                  "childNode": null
+                }
+              ],
+              "stem": "petiole",
+              "isTip": true
+            },
+            "md0e": {
+              "id": "md0e",
+              "up": "mto6",
+              "buds": [],
+              "stem": "pink"
+            },
+            "mj6d": {
+              "id": "mj6d",
+              "up": "m176",
+              "buds": [],
+              "stem": "pink"
+            },
+            "mto6": {
+              "id": "mto6",
+              "up": "m32w",
+              "buds": [],
+              "stem": "thick"
+            }
+          },
+          "root": "seed"
+        },
+        "col": 25,
+        "row": 4
+      },
+      "efvb5": {
+        "id": "efvb5",
+        "parent": "t10ci",
+        "children": [],
+        "plant": {
+          "nodes": {
+            "seed": {
+              "id": "seed",
+              "up": "m4lz",
+              "buds": [],
+              "stem": "pink",
+              "isTip": false,
+              "isSeed": true
+            },
+            "m176": {
+              "id": "m176",
+              "up": null,
+              "buds": [
+                {
+                  "stage": 3,
+                  "side": 1,
+                  "special": "none",
+                  "childNode": null
+                }
+              ],
+              "stem": "petiole",
+              "isTip": true
+            },
+            "m4lz": {
+              "id": "m4lz",
+              "up": "m7se",
+              "buds": [
+                {
+                  "stage": 0,
+                  "side": 1,
+                  "special": "none",
+                  "childNode": "mf92"
+                }
+              ],
+              "stem": "thick",
+              "isTip": false
+            },
+            "m7se": {
+              "id": "m7se",
+              "up": "m878",
+              "buds": [],
+              "stem": "thick"
+            },
+            "m878": {
+              "id": "m878",
+              "up": "mluu",
+              "buds": [],
+              "stem": "pink"
+            },
+            "m1k7": {
+              "id": "m1k7",
+              "up": null,
+              "buds": [
+                {
+                  "stage": 3,
+                  "side": 1,
+                  "special": "none",
+                  "childNode": null
+                }
+              ],
+              "stem": "petiole",
+              "isTip": true
+            },
+            "mf92": {
+              "id": "mf92",
+              "up": "mvzh",
+              "buds": [],
+              "stem": "pink"
+            },
+            "mluu": {
+              "id": "mluu",
+              "up": "m176",
+              "buds": [],
+              "stem": "pink"
+            },
+            "mvzh": {
+              "id": "mvzh",
+              "up": "m1k7",
+              "buds": [],
+              "stem": "pink"
+            }
+          },
+          "root": "seed"
+        },
+        "col": 25,
+        "row": 5
+      },
+      "eq0tb": {
+        "id": "eq0tb",
+        "parent": "t10ci",
+        "children": [],
+        "plant": {
+          "nodes": {
+            "seed": {
+              "id": "seed",
+              "up": "m4lz",
+              "buds": [],
+              "stem": "pink",
+              "isTip": false,
+              "isSeed": true
+            },
+            "m176": {
+              "id": "m176",
+              "up": null,
+              "buds": [
+                {
+                  "stage": 3,
+                  "side": 1,
+                  "special": "none",
+                  "childNode": null
+                }
+              ],
+              "stem": "petiole",
+              "isTip": true
+            },
+            "m4lz": {
+              "id": "m4lz",
+              "up": "m7se",
+              "buds": [
+                {
+                  "stage": 0,
+                  "side": 1,
+                  "special": "none",
+                  "childNode": "mf92"
+                }
+              ],
+              "stem": "thick",
+              "isTip": false
+            },
+            "m7se": {
+              "id": "m7se",
+              "up": "m878",
+              "buds": [],
+              "stem": "pink"
+            },
+            "m878": {
+              "id": "m878",
+              "up": "mluu",
+              "buds": [],
+              "stem": "pink"
+            },
+            "m1k7": {
+              "id": "m1k7",
+              "up": null,
+              "buds": [
+                {
+                  "stage": 3,
+                  "side": 1,
+                  "special": "none",
+                  "childNode": null
+                }
+              ],
+              "stem": "petiole",
+              "isTip": true
+            },
+            "mf92": {
+              "id": "mf92",
+              "up": "mvzh",
+              "buds": [],
+              "stem": "thick"
+            },
+            "mluu": {
+              "id": "mluu",
+              "up": "m176",
+              "buds": [],
+              "stem": "pink"
+            },
+            "mvzh": {
+              "id": "mvzh",
+              "up": "m1k7",
+              "buds": [],
+              "stem": "pink"
+            }
+          },
+          "root": "seed"
+        },
+        "col": 25,
+        "row": 6
+      },
+      "etjxe": {
+        "id": "etjxe",
+        "parent": "t10ci",
+        "children": [],
+        "plant": {
+          "nodes": {
+            "seed": {
+              "id": "seed",
+              "up": "m4lz",
+              "buds": [],
+              "stem": "pink",
+              "isTip": false,
+              "isSeed": true
+            },
+            "m176": {
+              "id": "m176",
+              "up": null,
+              "buds": [
+                {
+                  "stage": 3,
+                  "side": 1,
+                  "special": "none",
+                  "childNode": null
+                }
+              ],
+              "stem": "petiole",
+              "isTip": true
+            },
+            "m4lz": {
+              "id": "m4lz",
+              "up": "m7se",
+              "buds": [
+                {
+                  "stage": 0,
+                  "side": 1,
+                  "special": "none",
+                  "childNode": "mf92"
+                }
+              ],
+              "stem": "thick",
+              "isTip": false
+            },
+            "m7se": {
+              "id": "m7se",
+              "up": "m878",
+              "buds": [],
+              "stem": "pink"
+            },
+            "m878": {
+              "id": "m878",
+              "up": "mluu",
+              "buds": [],
+              "stem": "thick"
+            },
+            "m1k7": {
+              "id": "m1k7",
+              "up": null,
+              "buds": [
+                {
+                  "stage": 3,
+                  "side": 1,
+                  "special": "none",
+                  "childNode": null
+                }
+              ],
+              "stem": "petiole",
+              "isTip": true
+            },
+            "mf92": {
+              "id": "mf92",
+              "up": "mvzh",
+              "buds": [],
+              "stem": "pink"
+            },
+            "mluu": {
+              "id": "mluu",
+              "up": "m176",
+              "buds": [],
+              "stem": "pink"
+            },
+            "mvzh": {
+              "id": "mvzh",
+              "up": "m1k7",
+              "buds": [],
+              "stem": "pink"
+            }
+          },
+          "root": "seed"
+        },
+        "col": 25,
+        "row": 7
+      },
+      "elvlg": {
+        "id": "elvlg",
+        "parent": "t10ci",
+        "children": [],
+        "plant": {
+          "nodes": {
+            "seed": {
+              "id": "seed",
+              "up": "m4lz",
+              "buds": [],
+              "stem": "pink",
+              "isTip": false,
+              "isSeed": true
+            },
+            "m176": {
+              "id": "m176",
+              "up": null,
+              "buds": [
+                {
+                  "stage": 3,
+                  "side": 1,
+                  "special": "none",
+                  "childNode": null
+                }
+              ],
+              "stem": "petiole",
+              "isTip": true
+            },
+            "m4lz": {
+              "id": "m4lz",
+              "up": "m7se",
+              "buds": [
+                {
+                  "stage": 0,
+                  "side": 1,
+                  "special": "none",
+                  "childNode": "mf92"
+                }
+              ],
+              "stem": "thick",
+              "isTip": false
+            },
+            "m7se": {
+              "id": "m7se",
+              "up": "m878",
+              "buds": [],
+              "stem": "pink"
+            },
+            "m878": {
+              "id": "m878",
+              "up": "mluu",
+              "buds": [],
+              "stem": "pink"
+            },
+            "m1k7": {
+              "id": "m1k7",
+              "up": null,
+              "buds": [
+                {
+                  "stage": 3,
+                  "side": 1,
+                  "special": "none",
+                  "childNode": null
+                }
+              ],
+              "stem": "petiole",
+              "isTip": true
+            },
+            "mf92": {
+              "id": "mf92",
+              "up": "mvzh",
+              "buds": [],
+              "stem": "pink"
+            },
+            "mluu": {
+              "id": "mluu",
+              "up": "m176",
+              "buds": [],
+              "stem": "pink"
+            },
+            "mvzh": {
+              "id": "mvzh",
+              "up": "m1k7",
+              "buds": [],
+              "stem": "thick"
+            }
+          },
+          "root": "seed"
+        },
+        "col": 25,
+        "row": 8
+      },
+      "elv6f": {
+        "id": "elv6f",
+        "parent": "t10ci",
+        "children": [],
+        "plant": {
+          "nodes": {
+            "seed": {
+              "id": "seed",
+              "up": "m4lz",
+              "buds": [],
+              "stem": "pink",
+              "isTip": false,
+              "isSeed": true
+            },
+            "m176": {
+              "id": "m176",
+              "up": null,
+              "buds": [
+                {
+                  "stage": 3,
+                  "side": 1,
+                  "special": "none",
+                  "childNode": null
+                }
+              ],
+              "stem": "petiole",
+              "isTip": true
+            },
+            "m4lz": {
+              "id": "m4lz",
+              "up": "m7se",
+              "buds": [
+                {
+                  "stage": 0,
+                  "side": 1,
+                  "special": "none",
+                  "childNode": "mf92"
+                }
+              ],
+              "stem": "thick",
+              "isTip": false
+            },
+            "m7se": {
+              "id": "m7se",
+              "up": "m878",
+              "buds": [],
+              "stem": "pink"
+            },
+            "m878": {
+              "id": "m878",
+              "up": "mluu",
+              "buds": [],
+              "stem": "pink"
+            },
+            "m1k7": {
+              "id": "m1k7",
+              "up": null,
+              "buds": [
+                {
+                  "stage": 3,
+                  "side": 1,
+                  "special": "none",
+                  "childNode": null
+                }
+              ],
+              "stem": "petiole",
+              "isTip": true
+            },
+            "mf92": {
+              "id": "mf92",
+              "up": "mvzh",
+              "buds": [],
+              "stem": "pink"
+            },
+            "mluu": {
+              "id": "mluu",
+              "up": "m176",
+              "buds": [],
+              "stem": "thick"
+            },
+            "mvzh": {
+              "id": "mvzh",
+              "up": "m1k7",
+              "buds": [],
+              "stem": "pink"
+            }
+          },
+          "root": "seed"
+        },
+        "col": 25,
+        "row": 9
+      }
+    },
+    "root": "s0"
+  },
+  "prob": {
+    "mid1": 60,
+    "mature": 20,
+    "special": 8,
+    "matureSpecial": 25,
+    "doubleBud": 15
+  }
+}
