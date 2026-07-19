@@ -4,9 +4,10 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>볕 · 몬스테라 성장 순서도</title>
-<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script>window.addEventListener("error",function(e){var r=document.getElementById("root");if(r&&/불러오는/.test(r.textContent||""))r.innerHTML='<pre style="color:#c0392b;padding:16px;white-space:pre-wrap;font:13px monospace">로드/실행 오류:\n'+((e&&e.message)||e)+'\n'+((e&&e.filename)||"")+' : '+((e&&e.lineno)||"")+'\n\n(대개 CDN 차단/네트워크. 콘솔 F12 확인)</pre>';});</script>
+<script src="https://cdn.jsdelivr.net/npm/react@18/umd/react.production.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@babel/standalone@7/babel.min.js"></script>
 <style>*{box-sizing:border-box} html,body{margin:0;background:#F4F2EB;min-height:100%} #root{min-height:100vh}</style>
 </head>
 <body>
@@ -654,7 +655,8 @@ function Legend({ G, SUB }) {
 }
 
 
-ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+try { ReactDOM.createRoot(document.getElementById("root")).render(<App/>); }
+catch(err){ document.getElementById("root").innerHTML = "<pre style='color:#c0392b;padding:16px;white-space:pre-wrap;font:13px monospace'>렌더 오류:\n"+(err&&err.stack||err)+"</pre>"; }
 </script>
 </body>
 </html>
