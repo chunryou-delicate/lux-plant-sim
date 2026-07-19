@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>볕 · 플레이어 캐릭터 8종 (남녀×4직업)</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<style>
+  body{margin:0;font-family:"Segoe UI",system-ui,sans-serif;background:#eef3ee;color:#2f3a30}
+  h1{font-size:19px;margin:14px 16px 2px}.sub{margin:0 16px 12px;color:#6b7a6b;font-size:13px}
+  .grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;padding:0 12px 16px}
+  @media(max-width:1100px){.grid{grid-template-columns:repeat(2,1fr)}}
+  .cell{background:#fff;border:1px solid #dde7dd;border-radius:12px;overflow:hidden;box-shadow:0 2px 8px rgba(80,100,80,.07)}
+  .cvs{width:100%;height:300px;display:block;background:linear-gradient(#f7fbf7,#e7efe7);cursor:grab}
+  .lab{padding:7px 11px}.lab b{font-size:13px;color:#3a6b4e}.lab span{display:block;font-size:11px;color:#8a988a;margin-top:2px}
+</style>
+</head>
+<body>
+  <h1>볕 · 플레이어 캐릭터 8종 (남녀 × 4직업) — 3D+리깅 완성</h1>
+  <p class="sub">드래그 회전 · 스크롤 확대. 툰·파스텔. 여캐=슬림 통일 · A포즈 리깅(24본).</p>
+  <div class="grid" id="g"></div>
+<script>
+const CH=[
+ ["3d/char_jachwi_f_rigged.glb","여 · 자취생","긴생머리 · 크림티+데님"],
+ ["3d/char_yeoja_jubu_rigged.glb","여 · 주부","단발 · 세이지 원피스"],
+ ["3d/char_yeoja_gajang_rigged.glb","여 · 가장","단발 · 회색 치마정장+검스"],
+ ["3d/char_yeoja_researcher_rigged.glb","여 · 연구자","긴생머리 · 연구가운"],
+ ["3d/char_namja_jachwi_rigged.glb","남 · 자취생","덴디컷 · 크림티+데님"],
+ ["3d/char_namja_jubu_rigged.glb","남 · 주부","스포츠컷 · 카라티+팬츠"],
+ ["3d/char_namja_gajang_rigged.glb","남 · 가장","스포츠컷 · 와이셔츠+슬랙스"],
+ ["3d/char_namja_researcher_rigged.glb","남 · 연구자","덴디컷 · 연구가운"],
+];
+function toonGrad(){const c=document.createElement('canvas');c.width=4;c.height=1;const x=c.getContext('2d');
+ ['#6a776e','#9fb0a4','#ccd6cd','#ffffff'].forEach((s,i)=>{x.fillStyle=s;x.fillRect(i,0,1,1)});
+ const t=new THREE.CanvasTexture(c);t.minFilter=THREE.NearestFilter;t.magFilter=THREE.NearestFilter;t.generateMipmaps=false;return t;}
+const GRAD=toonGrad();
+function pastelize(tex){try{if(!tex||!tex.image)return tex;const im=tex.image,w=im.width||512,h=im.height||512;if(!w)return tex;
+ const c=document.createElement('canvas');c.width=w;c.height=h;const x=c.getContext('2d');x.drawImage(im,0,0,w,h);
+ const d=x.getImageData(0,0,w,h),p=d.data,S=0.7;for(let i=0;i<p.length;i+=4){const r=p[i],g=p[i+1],b=p[i+2],gy=0.299*r+0.587*g+0.114*b;
+ p[i]=gy+(r-gy)*S;p[i+1]=gy+(g-gy)*S;p[i+2]=gy+(b-gy)*S;}x.putImageData(d,0,0);
+ const nt=new THREE.CanvasTexture(c);nt.flipY=tex.flipY;nt.encoding=THREE.sRGBEncoding;nt.needsUpdate=true;return nt;}catch(e){return tex;}}
+function toonify(root){root.traverse(o=>{if(!o.isMesh||!o.material)return;try{const src=Array.isArray(o.material)?o.material:[o.material];
+ const out=src.map(mm=>new THREE.MeshToonMaterial({map:mm.map?pastelize(mm.map):null,color:mm.map?0xffffff:(mm.color?mm.color.getHex():0xffffff),
+ gradientMap:GRAD,skinning:!!mm.skinning,morphTargets:!!mm.morphTargets}));o.material=Array.isArray(o.material)?out:out[0];}catch(e){}});}
+const g=document.getElementById('g');
+CH.forEach(([src,title,desc])=>{
+ const cell=document.createElement('div');cell.className='cell';
+ const cv=document.createElement('canvas');cv.className='cvs';cell.appendChild(cv);
+ const lab=document.createElement('div');lab.className='lab';lab.innerHTML=`<b>${title}</b><span>${desc}</span>`;cell.appendChild(lab);g.appendChild(cell);
+ const r=new THREE.WebGLRenderer({canvas:cv,antialias:true,alpha:true});r.setSize(cv.clientWidth,cv.clientHeight,false);
+ r.setPixelRatio(Math.min(devicePixelRatio,2));r.outputEncoding=THREE.sRGBEncoding;
+ const sc=new THREE.Scene();const cam=new THREE.PerspectiveCamera(35,cv.clientWidth/cv.clientHeight,0.01,100);
+ const ctr=new THREE.OrbitControls(cam,cv);ctr.enableDamping=true;
+ sc.add(new THREE.AmbientLight(0xffffff,0.55));sc.add(new THREE.HemisphereLight(0xffffff,0xdfe6df,0.18));
+ const d=new THREE.DirectionalLight(0xffffff,0.6);d.position.set(2.5,4,2.5);sc.add(d);
+ new THREE.GLTFLoader().load(src,gl=>{const m=gl.scene;toonify(m);sc.add(m);
+  const box=new THREE.Box3().setFromObject(m),c=box.getCenter(new THREE.Vector3()),sz=box.getSize(new THREE.Vector3());
+  const hh=Math.max(sz.y,.001),md=Math.max(sz.x,sz.y,sz.z,.001);m.position.sub(c);m.position.y+=hh/2;ctr.target.set(0,hh*.5,0);
+  cam.position.set(0,hh*.55,md*2.1+hh*.3);},undefined,e=>{cv.style.background='#fdeaea';});
+ (function loop(){requestAnimationFrame(loop);ctr.update();r.render(sc,cam);})();
+});
+</script>
+</body>
+</html>

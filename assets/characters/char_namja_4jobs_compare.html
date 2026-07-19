@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>볕 · 남자 캐릭터 4직업</title>
+<style>
+  :root { --mint:#bfe3d0; }
+  * { box-sizing: border-box; }
+  body { margin:0; font-family:"Pretendard","Segoe UI",system-ui,sans-serif;
+         background:#f7f9f6; color:#2f3a30; padding:32px; }
+  h1 { font-size:22px; margin:0 0 4px; }
+  .sub { color:#6b7a6b; font-size:14px; margin:0 0 24px; }
+  .grid { display:grid; grid-template-columns:repeat(4,1fr); gap:20px; }
+  @media (max-width:900px){ .grid{ grid-template-columns:repeat(2,1fr);} }
+  .card { background:#fff; border-radius:16px; overflow:hidden;
+          box-shadow:0 2px 10px rgba(80,100,80,.08); border:1px solid #e6ede6; }
+  .card img { width:100%; display:block; background:#fbfdfb; aspect-ratio:1/1; object-fit:cover; }
+  .meta { padding:12px 14px 16px; }
+  .tag { display:inline-block; font-size:13px; font-weight:800; color:#3a6b4e;
+         background:var(--mint); border-radius:999px; padding:3px 11px; margin-bottom:8px; }
+  .diff { font-size:11px; color:#8a988a; margin-left:6px; }
+  .row { font-size:13px; line-height:1.5; }
+  .row b { color:#4a5a4a; }
+  .fn { margin-top:8px; font-size:11px; color:#9aa89a; font-family:ui-monospace,monospace; }
+</style>
+</head>
+<body>
+  <h1>볕 · 남자 캐릭터 4직업 (얼굴 통일: D얼굴+B몸통 앵커)</h1>
+  <p class="sub">20대 청년 · 저폴리 카툰 3D · 3.5등신 치비 · 파스텔 · nano_banana_2 · 여자와 완전 통일</p>
+  <div class="grid">
+    <div class="card">
+      <img src="char_namja_jachwi.png" alt="자취생">
+      <div class="meta">
+        <span class="tag">자취생</span><span class="diff">난이도 최고</span>
+        <div class="row"><b>머리</b> 덴디컷</div>
+        <div class="row"><b>옷</b> 크림티 + 데님 (여캐 동일)</div>
+        <div class="fn">char_namja_jachwi.png</div>
+      </div>
+    </div>
+    <div class="card">
+      <img src="char_namja_gajang.png" alt="가장">
+      <div class="meta">
+        <span class="tag">가장</span><span class="diff">난이도 중 · 학원강사</span>
+        <div class="row"><b>머리</b> 스포츠컷</div>
+        <div class="row"><b>옷</b> 정장 슬랙스 + 와이셔츠만</div>
+        <div class="fn">char_namja_gajang.png</div>
+      </div>
+    </div>
+    <div class="card">
+      <img src="char_namja_jubu.png" alt="주부">
+      <div class="meta">
+        <span class="tag">주부</span><span class="diff">난이도 최저</span>
+        <div class="row"><b>머리</b> 스포츠컷</div>
+        <div class="row"><b>옷</b> 카라티 + 편한 팬츠</div>
+        <div class="fn">char_namja_jubu.png</div>
+      </div>
+    </div>
+    <div class="card">
+      <img src="char_namja_researcher.png" alt="연구자">
+      <div class="meta">
+        <span class="tag">연구자</span><span class="diff">난이도 중하</span>
+        <div class="row"><b>머리</b> 덴디컷</div>
+        <div class="row"><b>옷</b> 연구가운 + 셔츠</div>
+        <div class="fn">char_namja_researcher.png</div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
