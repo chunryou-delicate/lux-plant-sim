@@ -4534,6 +4534,36 @@ function App() {
       colX[c] = ax;
       ax += colW[c] + GX;
     }
+    // ── 트리 세로 배치(tidy): 잎(최종 분기)은 순차 행, 부모는 자식들 가운데로 → 분기가 아래로 자동 캐스케이드 ──
+    const childrenOf = {};
+    all.forEach(n => {
+      childrenOf[n.id] = [];
+    });
+    all.forEach(n => {
+      if (n.parent && childrenOf[n.parent]) childrenOf[n.parent].push(n.id);
+    });
+    Object.keys(childrenOf).forEach(pid => childrenOf[pid].sort((a, b) => {
+      const na = tree.nodes[a],
+        nb = tree.nodes[b];
+      return (na.row || 0) - (nb.row || 0) || (na.col || 0) - (nb.col || 0); // 첫 분기(#_-1)가 위, 다음(#_-2)이 아래
+    }));
+    const rowY = {};
+    let leafRow = 0;
+    const seenRow = new Set();
+    const assignRow = id => {
+      if (rowY[id] != null) return rowY[id];
+      if (seenRow.has(id)) return rowY[id] = leafRow++;
+      seenRow.add(id);
+      const kids = childrenOf[id] || [];
+      if (!kids.length) return rowY[id] = leafRow++;
+      const rs = kids.map(assignRow);
+      return rowY[id] = (Math.min(...rs) + Math.max(...rs)) / 2; // 부모 = 자식 범위의 중앙
+    };
+    assignRow(tree.root);
+    all.forEach(n => {
+      if (rowY[n.id] == null) rowY[n.id] = leafRow++;
+    }); // 혹시 누락 방지
+    const maxRowY = Math.max(0, ...Object.values(rowY));
     const place = {};
     // 스텝 번호: col=시간. 팬아웃(부모가 다음칸에 자식 여럿)이면 #col-부모분기-자식(계보). 그 외 같은 col 여럿이면 -행순번.
     const byId = tree.nodes;
@@ -4568,7 +4598,7 @@ function App() {
       all.filter(n => (n.col || 0) === c).forEach(n => {
         place[n.id] = {
           x: colX[c],
-          y: TOP + (n.row || 0) * (ROW_H + GY),
+          y: TOP + rowY[n.id] * (ROW_H + GY),
           w: colW[c],
           info: info[n.id],
           label: compLabel(n)
@@ -4578,7 +4608,7 @@ function App() {
     return {
       place,
       w: Math.max(ax, 500),
-      h: TOP + (maxRow + 1) * (ROW_H + GY),
+      h: TOP + (maxRowY + 1) * (ROW_H + GY),
       maxCol,
       maxRow
     };
