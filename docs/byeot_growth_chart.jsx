@@ -397,24 +397,31 @@ export default function App() {
     }
     const colX = {}; let ax = 20;
     for (let c = 0; c <= maxCol; c++) { colX[c] = ax; ax += colW[c] + GX; }
-    // ── 트리 세로 배치(tidy): 잎(최종 분기)은 순차 행, 부모는 자식들 가운데로 → 분기가 아래로 자동 캐스케이드 ──
-    const childrenOf = {}; all.forEach((n) => { childrenOf[n.id] = []; });
-    all.forEach((n) => { if (n.parent && childrenOf[n.parent]) childrenOf[n.parent].push(n.id); });
-    Object.keys(childrenOf).forEach((pid) => childrenOf[pid].sort((a, b) => {
+    // ── 레이아웃 트리(형제 승격): 같은 칸 분기(#11-2)를 #11-1 밑이 아니라 그 부모(#10) 밑 형제로 → 대칭 배치 ──
+    const layoutChildren = {}; all.forEach((n) => { layoutChildren[n.id] = []; });
+    all.forEach((n) => {
+      if (!n.parent) return;
+      const p = tree.nodes[n.parent];
+      let host = n.parent;
+      if (p && (n.col || 0) === (p.col || 0)) host = (p.parent && tree.nodes[p.parent]) ? p.parent : n.parent;   // 같은 칸=분기 → 조부모 밑 형제로
+      (layoutChildren[host] || (layoutChildren[host] = [])).push(n.id);
+    });
+    Object.keys(layoutChildren).forEach((pid) => layoutChildren[pid].sort((a, b) => {
       const na = tree.nodes[a], nb = tree.nodes[b];
-      return ((na.row || 0) - (nb.row || 0)) || ((na.col || 0) - (nb.col || 0));   // 첫 분기(#_-1)가 위, 다음(#_-2)이 아래
+      return ((na.row || 0) - (nb.row || 0)) || ((na.col || 0) - (nb.col || 0));   // 첫 분기(#_-1) 위, 다음(#_-2) 아래
     }));
+    // tidy 세로: 잎은 순차 행, 부모는 자식 범위의 정확한 가운데 → 형제 분기가 위아래 대칭으로 균등하게 퍼짐
     const rowY = {}; let leafRow = 0; const seenRow = new Set();
     const assignRow = (id) => {
       if (rowY[id] != null) return rowY[id];
       if (seenRow.has(id)) return (rowY[id] = leafRow++); seenRow.add(id);
-      const kids = childrenOf[id] || [];
+      const kids = layoutChildren[id] || [];
       if (!kids.length) return (rowY[id] = leafRow++);
       const rs = kids.map(assignRow);
-      return (rowY[id] = (Math.min(...rs) + Math.max(...rs)) / 2);   // 부모 = 자식 범위의 중앙
+      return (rowY[id] = (Math.min(...rs) + Math.max(...rs)) / 2);
     };
     assignRow(tree.root);
-    all.forEach((n) => { if (rowY[n.id] == null) rowY[n.id] = leafRow++; });   // 혹시 누락 방지
+    all.forEach((n) => { if (rowY[n.id] == null) rowY[n.id] = leafRow++; });
     const maxRowY = Math.max(0, ...Object.values(rowY));
     const place = {};
     // 스텝 번호: col=시간. 팬아웃(부모가 다음칸에 자식 여럿)이면 #col-부모분기-자식(계보). 그 외 같은 col 여럿이면 -행순번.
@@ -446,7 +453,7 @@ export default function App() {
         place[n.id] = { x: colX[c], y: TOP + rowY[n.id] * (ROW_H + GY), w: colW[c], info: info[n.id], label: compLabel(n) };
       });
     }
-    return { place, w: Math.max(ax, 500), h: TOP + (maxRowY + 1) * (ROW_H + GY), maxCol, maxRow };
+    return { place, w: Math.max(ax, 500), h: TOP + (maxRowY + 1) * (ROW_H + GY), maxCol, maxRow, layoutChildren };
   }, [tree]);
 
   if (!loaded) return <div style={{ padding: 20, color: "#888", fontFamily: "system-ui" }}>불러오는 중…</div>;
@@ -511,14 +518,22 @@ export default function App() {
         <svg viewBox={`0 0 ${cells.w} ${Math.max(cells.h, ROW_H + 40)}`} style={{ width: cells.w < 1000 ? "100%" : cells.w, height: Math.max(cells.h, ROW_H + 40), display: "block" }}>
           <defs><pattern id="g" width="22" height="22" patternUnits="userSpaceOnUse"><circle cx="1" cy="1" r="1" fill={G} /></pattern></defs>
           <rect x="0" y="0" width={cells.w} height={Math.max(cells.h, ROW_H + 40)} fill="url(#g)" />
-          {/* 연결선 */}
-          {Object.values(tree.nodes).map((s) => (s.children || []).map((cid) => {
-            const a = cells.place[s.id], b = cells.place[cid]; if (!a || !b) return null;
-            const horiz = (tree.nodes[cid].col || 0) > (s.col || 0);
-            return horiz
-              ? <line key={s.id + cid} x1={a.x + a.w} y1={a.y + ROW_H / 2} x2={b.x} y2={b.y + ROW_H / 2} stroke="#9BC48A" strokeWidth={2} />
-              : <line key={s.id + cid} x1={a.x + a.w / 2} y1={a.y + ROW_H} x2={b.x + b.w / 2} y2={b.y} stroke="#C9A6D8" strokeWidth={1.5} strokeDasharray="4 3" />;
-          }))}
+          {/* 연결선 — 계통수식 직각(부모→세로버스→각 자식, N갈래면 'E') */}
+          {Object.keys(cells.layoutChildren || {}).map((pid) => {
+            const a = cells.place[pid]; const kids = (cells.layoutChildren[pid] || []).map((cid) => cells.place[cid]).filter(Boolean);
+            if (!a || !kids.length) return null;
+            const px = a.x + a.w, py = a.y + ROW_H / 2;                 // 부모 오른쪽 중앙
+            const busX = Math.min(...kids.map((k) => k.x)) - GX / 2;    // 자식들 바로 왼쪽 세로 버스
+            const kys = kids.map((k) => k.y + ROW_H / 2);
+            const y0 = Math.min(py, ...kys), y1 = Math.max(py, ...kys);
+            return (
+              <g key={"cx" + pid} stroke="#9BC48A" strokeWidth={2.5} fill="none" strokeLinecap="round" strokeLinejoin="round">
+                <path d={`M${px} ${py} H${busX}`} />
+                {kids.length > 1 && <path d={`M${busX} ${y0} V${y1}`} />}
+                {kids.map((k, i) => <path key={i} d={`M${busX} ${k.y + ROW_H / 2} H${k.x}`} />)}
+              </g>
+            );
+          })}
           {/* 스텝 셀 */}
           {Object.keys(cells.place).map((sid) => {
             const cp = cells.place[sid], isCur = sid === cur;
