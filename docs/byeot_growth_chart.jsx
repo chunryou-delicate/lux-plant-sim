@@ -398,12 +398,33 @@ export default function App() {
     const colX = {}; let ax = 20;
     for (let c = 0; c <= maxCol; c++) { colX[c] = ax; ax += colW[c] + GX; }
     const place = {};
-    // 스텝 번호: col=시간(1,2,3), 같은 col에 여러개면 -분기순번
+    // 스텝 번호: col=시간. 팬아웃(부모가 다음칸에 자식 여럿)이면 #col-부모분기-자식(계보). 그 외 같은 col 여럿이면 -행순번.
+    const byId = tree.nodes;
+    const growChildren = (pid) => all.filter((x) => x.parent === pid && (x.col || 0) === (byId[pid].col || 0) + 1).sort((a, b) => (a.row || 0) - (b.row || 0));
+    const sufOf = (lb) => { const m = /^#\d+(?:-(.+))?$/.exec(lb || ""); return m && m[1] ? m[1] : ""; };
+    const labelOf = {};
+    const compLabel = (n) => {
+      if (labelOf[n.id]) return labelOf[n.id];
+      labelOf[n.id] = "#" + ((n.col || 0) + 1); // 순환 방지 임시값
+      const p = n.parent ? byId[n.parent] : null;
+      let lb = null;
+      if (p && (n.col || 0) === (p.col || 0) + 1) {
+        const gs = growChildren(p.id);
+        if (gs.length > 1) {                       // 팬아웃: 부모가 다음 칸에 여러 자식을 냄
+          const ci = gs.findIndex((x) => x.id === n.id) + 1;
+          const ps = sufOf(compLabel(p));          // 부모의 분기 접미사(#25-1 → "1")
+          lb = "#" + ((n.col || 0) + 1) + (ps ? "-" + ps : "") + "-" + ci;
+        }
+      }
+      if (!lb) {
+        const inC = all.filter((x) => (x.col || 0) === (n.col || 0)).sort((a, b) => (a.row || 0) - (b.row || 0));
+        lb = inC.length > 1 ? "#" + ((n.col || 0) + 1) + "-" + (inC.findIndex((x) => x.id === n.id) + 1) : "#" + ((n.col || 0) + 1);
+      }
+      labelOf[n.id] = lb; return lb;
+    };
     for (let c = 0; c <= maxCol; c++) {
-      const inC = all.filter((n) => (n.col || 0) === c).sort((a, b) => (a.row || 0) - (b.row || 0));
-      inC.forEach((n, i) => {
-        const label = inC.length > 1 ? `#${c + 1}-${i + 1}` : `#${c + 1}`;
-        place[n.id] = { x: colX[c], y: TOP + (n.row || 0) * (ROW_H + GY), w: colW[c], info: info[n.id], label };
+      all.filter((n) => (n.col || 0) === c).forEach((n) => {
+        place[n.id] = { x: colX[c], y: TOP + (n.row || 0) * (ROW_H + GY), w: colW[c], info: info[n.id], label: compLabel(n) };
       });
     }
     return { place, w: Math.max(ax, 500), h: TOP + (maxRow + 1) * (ROW_H + GY), maxCol, maxRow };
