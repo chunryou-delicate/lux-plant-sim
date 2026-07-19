@@ -127,7 +127,7 @@ const DEF={
   stageYoung:0.38, stageMid:0.66,                          // 잎 형태 전환 시점(어린→중간→성인)
   sizeYoung:0.20, sizeMid:0.45, sizeMature:0.78, sizeFull:1.25,  // 각 시점 크기(작게 나서 커짐)
   internode:0.24, stemFlat:1.25,   // 줄기 마디 길이·잎방향 납작
-  petGrow:22, rareProb:0.12, rThin:0.03, rMed:0.052, rThick:0.088, matureProb:0.22,   // 정밀생장: petiole 성장시간·희귀(하늘)확률·종류별 고정굵기·성숙잎(갈라짐) 확률
+  petGrow:22, rareProb:0.12, rThin:0.03, rMed:0.052, rThick:0.088, matureProb:0.22, doubleBud:0.15,   // 정밀생장: petiole 성장시간·희귀(하늘)확률·종류별 고정굵기·성숙잎 확률·더블혹(가지2) 확률
   petioleLen:1.0, leafElev:1.02, elevDrop:0.34, spread:0.16, branchSpread:0.55, branchProb:0.14,  // 배치
   leafLight:0.62, leafDark:0.22, leafSat:0.5, satRange:0.22, hueBase:0.16, hueRange:0.26,   // 색(밝기/진함/채도/개체범위)
   ageDark:0.16, ageSat:0.26,   // 시간(나이) 따라 짙어짐·선명해짐(전역, 줄기·잎 함께)
@@ -421,49 +421,41 @@ function buildPlant(){
     addBud(top, rng()*Math.PI*2, t<0.6?'furled':'opening', P.budSize*(0.4+0.7*t));  // 말림→반쯤 펴짐, 작게 시작
     stage='새싹 🌱';
   } else {
-    // ===== 정밀 생장 시뮬레이션 (몬스테라_생장로직_정밀.md) =====
-    // 마디 상태전이: 분홍(대기,thin/med) → 랜덤 활성 → 초록(thick)/드물게 하늘(main).
-    // 활성 마디의 혹에서 petiole가 자라 2개로 분화(자식 대기마디 2). 잎은 병렬 성숙.
+    // ===== 정밀 생장 (캐논: docs/byeot_growth_chart) =====
+    // 대기 마디(thin/med = petiole/pink 예비혹) → 랜덤 1개가 진짜 눈(thick)/희귀(main)로 활성.
+    // 눈에서 가지(petiole 자식) 1개(드물게 2=더블혹). 잎은 "각 마디 끝에서 furled→성숙"(프랙탈, 눈→잎자루→잎).
     const L=LIGHT_AZ, ld=new THREE.Vector3(Math.sin(L),0,Math.cos(L));   // 빛 방향(수평)
-    const t0=P.sproutEnd, actInt=P.spawnStep, petGrow=P.petGrow, maxAct=P.maxLeaves;
-    const petFull=P.petioleLen*0.55;
+    const t0=P.sproutEnd, actInt=P.spawnStep, maxAct=P.maxLeaves;
     const lenOf=ty=> (ty==='thick'||ty==='main')?P.internode*1.1 : ty==='med'?P.internode : P.internode*0.82;
     const radOf=ty=> (ty==='thick'||ty==='main')?P.rThick : ty==='med'?P.rMed : P.rThin;
-    const mkWait=(base,dir,birth,parent)=>{ const wt=rng()<0.4?'thin':'med';   // 중간(med) 비중 높게
-      return {base, dir, len:lenOf(wt), wt, birth, parent, activated:false, children:[], tip:base.clone().addScaledVector(dir,lenOf(wt))}; };
-    const all=[ mkWait(new THREE.Vector3(0,SOIL_Y,0), new THREE.Vector3((rng()-0.5)*0.15,1,(rng()-0.5)*0.15).normalize(), t0, null) ];
+    const mkNode=(base,dir,birth,parent)=>{ const wt=rng()<0.4?'thin':'med';   // 대기=petiole/pink(중간 비중↑)
+      return {base, dir, len:lenOf(wt), wt, birth, parent, activated:false, children:[],
+        tip:base.clone().addScaledVector(dir,lenOf(wt)),
+        leafAz:rng()*Math.PI*2, midType:rng()<0.5?'leaf_mid1':'leaf_mid2', canMature:rng()<P.matureProb }; };
+    const all=[ mkNode(new THREE.Vector3(0,SOIL_Y,0), new THREE.Vector3((rng()-0.5)*0.15,1,(rng()-0.5)*0.15).normalize(), t0, null) ];
     let acts=0;
     for(let k=0;;k++){
       const T=t0+k*actInt; if(T>g || acts>=maxAct) break;
       const cand=all.filter(n=>!n.activated && n.birth<=T); if(!cand.length) break;
-      const pick=cand[Math.floor(rng()*cand.length)];                // 대기 마디 중 랜덤 1개 활성
+      const pick=cand[Math.floor(rng()*cand.length)];              // 대기 예비혹 중 랜덤 1개가 진짜 눈이 됨
       pick.activated=true; pick.actT=T; pick.actType=rng()<P.rareProb?'main':'thick'; acts++;
-      const paz=rng()*Math.PI*2;
-      pick.petDir=new THREE.Vector3(Math.sin(paz)*0.42+ld.x*PHOTO*0.3, 0.85, Math.cos(paz)*0.42+ld.z*PHOTO*0.3).normalize();
-      pick.leafAz=rng()*Math.PI*2; pick.midType=rng()<0.5?'leaf_mid1':'leaf_mid2';   // 파란잎 mid1/2 랜덤(개체 고정)
-      pick.canMature=rng()<P.matureProb;   // ★ 이 잎이 성숙(갈라진)잎까지 갈지 = 랜덤 확률(아니면 중간잎에서 정착)
-      const splitT=T+petGrow, petTip=pick.tip.clone().addScaledVector(pick.petDir, petFull);
-      const ca=rng()*Math.PI*2;                                       // petiole가 길어지다 2개로 분화 → 자식 대기마디 2
-      for(const s of [ca, ca+Math.PI]){
-        const cdir=new THREE.Vector3(Math.sin(s)*0.55+pick.petDir.x*0.5, 0.72, Math.cos(s)*0.55+pick.petDir.z*0.5).normalize();
-        const child=mkWait(petTip.clone(), cdir, splitT, pick); pick.children.push(child); all.push(child);
+      const nb=rng()<P.doubleBud?2:1;                              // 눈에서 가지: 보통 1개, 드물게 2개(더블혹)
+      const a0=rng()*Math.PI*2, splitT=T+P.petGrow;
+      for(let i=0;i<nb;i++){
+        const s=a0 + (nb===2? i*Math.PI : 0);                      // 가지=우상향(petiole 자식). 자식 끝에서 새순→성숙
+        const cdir=new THREE.Vector3(Math.sin(s)*0.6+ld.x*PHOTO*0.3, 0.72, Math.cos(s)*0.6+ld.z*PHOTO*0.3).normalize();
+        const child=mkNode(pick.tip.clone(), cdir, splitT, pick); pick.children.push(child); all.push(child);
       }
     }
-    // 렌더: 각 마디 줄기(고정 굵기) + 활성마디 petiole(자람) + 잎(단계 성숙)
-    let nleaf=0;
+    // 렌더: 각 마디 줄기(종류별 고정 굵기) + 각 마디 끝에 잎(furled→성숙)
     for(const n of all){
       if(n.birth>g) continue;
       const type=n.activated?n.actType:n.wt;
       const key=type==='thick'?'stem_thick':type==='main'?'stem_main':type==='med'?'stem_med':'stem_thin';
-      addStemSeg(n.base, n.tip, radOf(type), 0, n.activated?n.leafAz:null, key);   // 종류별 고정 굵기(안 자람)
-      if(n.activated){
-        const petProg=Math.min(1,(g-n.actT)/petGrow);
-        const petTipCur=n.tip.clone().addScaledVector(n.petDir, petFull*petProg);
-        stretchGLB('petiole', n.tip, petTipCur, P.rThin*0.85, stemTint(0));         // 혹에서 petiole가 자람
-        drawLeafStage(n.tip, n.leafAz, Math.min(1,(g-n.actT)/P.matSpan), n.midType, n.canMature); nleaf++;   // 잎 병렬 성숙
-      }
+      addStemSeg(n.base, n.tip, radOf(type), 0, n.leafAz, key);    // 종류별 고정 굵기(안 자람)
+      drawLeafStage(n.tip, n.leafAz, Math.min(1,(g-n.birth)/P.matSpan), n.midType, n.canMature);   // 마디 끝 잎: furled→성숙
     }
-    nodes=all.length; leaves=nleaf; stage='마디 '+all.length+' · 잎 '+nleaf;
+    nodes=all.length; leaves=all.length; stage='마디 '+all.length;
   }
   const el=document.getElementById('stat');
   el.innerHTML=`<span class="k">단계</span> ${stage}<br><span class="k">마디</span> ${nodes} · <span class="k">잎</span> ${leaves} · <span class="k">시드</span> ${SEED}`;
@@ -637,6 +629,7 @@ const PARAM_DEFS=[
     {k:'petGrow',t:'petiole 자람 시간(일)',min:5,max:60,step:1},
     {k:'rareProb',t:'희귀(하늘) 확률',min:0.0,max:0.5,step:0.02},
     {k:'matureProb',t:'성숙(갈라진)잎 확률',min:0.0,max:1.0,step:0.05},
+    {k:'doubleBud',t:'더블혹(가지2) 확률',min:0.0,max:0.6,step:0.02},
   ]},
   {sec:'🌱 씨앗·새싹·새순', items:[
     {k:'seedEnd',t:'씨앗 시기(끝 일)',min:2,max:60,step:1},
