@@ -189,9 +189,9 @@ const ASSET_FILES={
   leaf_young:'monstera_leaf_young.glb', leaf_mid1:'monstera_leaf_mid1.glb',
   leaf_mid2:'monstera_leaf_mid2.glb', leaf_mature:'monstera_leaf_mature.glb',
   bud_furled:'monstera_bud_furled.glb', bud_opening2:'monstera_bud_opening2.glb',
-  stem_thick:'monstera_stem_thick.glb', stem_main:'monstera_stem_main.glb',
-  stem_med:'monstera_stem_med.glb', stem_thin:'monstera_stem_thin.glb',
-  petiole:'monstera_petiole.glb'
+  stem_thick:'stem_late_bump.glb', stem_main:'stem_late_double.glb',   // 후기_혹 / 후기_쌍혹
+  stem_med:'stem_mid_1.glb', stem_thin:'stem_mid_2.glb',               // 중기_1 / 중기_2
+  petiole:'stem_early.glb'                                             // 줄기_초기
 };
 const LONGY={stem_thick:1,stem_main:1,stem_med:1,stem_thin:1,petiole:1};  // 긴축→Y 정렬(줄기/잎자루)
 const ANCHORB={leaf_young:1,leaf_mid1:1,leaf_mid2:1,leaf_mature:1,bud_furled:1,bud_opening2:1}; // 잎/새순: 밑동(자루끝)에 원점 스냅
@@ -631,20 +631,23 @@ function initPreview(){
 function showPreview(key){                                 // 라이브: 현재 조정값(ADJ) 반영해 미리보기
   if(!prevScene) return;
   if(prevObj){ prevScene.remove(prevObj); prevObj=null; }
-  const p=ASSETS[key]; if(!p) return;
-  const a=ADJ[key]||{}, sc=a.scale||1, sxz=a.sxz||1, sy=a.sy||1;
-  const inner=p.clone(true);
-  inner.scale.set(sc*sxz, sc*sy, sc*sxz);
-  inner.rotation.set(a.rx||0, a.ry||0, a.rz||0);
-  inner.position.set(a.ox||0, a.oy||0, a.oz||0);
-  const wrap=new THREE.Group(); wrap.add(inner);
-  // 실제 바운딩박스로 원점 중심 + 최대치수 1로 자동 맞춤(얇은 줄기도 항상 화면에)
-  const box=new THREE.Box3().setFromObject(wrap), size=new THREE.Vector3(), ctr=new THREE.Vector3();
-  box.getSize(size); box.getCenter(ctr);
-  const md=Math.max(size.x,size.y,size.z)||1;
-  wrap.position.sub(ctr);                                  // 중심을 원점으로
-  const holder=new THREE.Group(); holder.add(wrap); holder.scale.setScalar(0.9/md);
-  prevObj=holder; prevScene.add(prevObj);
+  const p=ASSETS[key];
+  if(!p){ console.warn('[preview] 에셋 로드 안됨:', key, ASSET_FILES[key]); return; }   // GLB 404 등
+  try{
+    const a=ADJ[key]||{}, sc=a.scale||1, sxz=a.sxz||1, sy=a.sy||1;
+    const inner=p.clone(true);
+    inner.scale.set(sc*sxz, sc*sy, sc*sxz);
+    inner.rotation.set(a.rx||0, a.ry||0, a.rz||0);
+    inner.position.set(a.ox||0, a.oy||0, a.oz||0);
+    const wrap=new THREE.Group(); wrap.add(inner);
+    // 실제 바운딩박스로 원점 중심 + 최대치수 1로 자동 맞춤(얇은 줄기도 항상 화면에)
+    const box=new THREE.Box3().setFromObject(wrap), size=new THREE.Vector3(), ctr=new THREE.Vector3();
+    box.getSize(size); box.getCenter(ctr);
+    const md=Math.max(size.x,size.y,size.z)||1;
+    wrap.position.sub(ctr);                                // 중심을 원점으로
+    const holder=new THREE.Group(); holder.add(wrap); holder.scale.setScalar(0.9/md);
+    prevObj=holder; prevScene.add(prevObj);
+  }catch(e){ console.warn('[preview] 렌더 실패:', key, e); }
 }
 function buildAssetSliders(key){
   const box=document.getElementById('assetSliders'); if(!box) return; box.innerHTML='';
@@ -653,7 +656,7 @@ function buildAssetSliders(key){
     const f=document.createElement('div'); f.className='field';
     const lab=document.createElement('label'); lab.innerHTML=`${it.t} <b>${fmtVal(a[it.k])}</b>`;
     const inp=document.createElement('input'); inp.type='range'; inp.min=it.min; inp.max=it.max; inp.step=it.step; inp.value=a[it.k];
-    inp.addEventListener('input',()=>{ a[it.k]=+inp.value; lab.querySelector('b').textContent=fmtVal(a[it.k]); showPreview(key); buildPlant(); });
+    inp.addEventListener('input',()=>{ a[it.k]=+inp.value; lab.querySelector('b').textContent=fmtVal(a[it.k]); buildPlant(); showPreview(key); });   // buildPlant 먼저 → 미리보기 실패해도 조절은 항상 동작
     f.appendChild(lab); f.appendChild(inp); box.appendChild(f);
   });
 }
