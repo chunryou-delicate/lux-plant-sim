@@ -504,7 +504,7 @@ function init(){
   // 몬스테라 GLB 에셋 로드 → 준비되면 재빌드(그 전엔 임시 도형 폴백)
   loadAssets(()=>{ buildPlant(); const s=document.getElementById('assetSel'); if(s) showPreview(s.value); });
 
-  bindControls(); initPreview(); resize(); buildPlant(); animate();
+  initPreview(); bindControls(); resize(); buildPlant(); animate();
 }
 function resize(){
   W=innerWidth; H=innerHeight; renderer.setSize(W,H);
@@ -621,11 +621,12 @@ function initPreview(){
   prevR.setPixelRatio(Math.min(2,devicePixelRatio||1)); prevR.setSize(c.width,c.height,false);
   prevR.outputEncoding=THREE.sRGBEncoding;
   prevScene=new THREE.Scene();
-  prevScene.add(new THREE.HemisphereLight(0xffffff,0x777777,1.05));
-  const d=new THREE.DirectionalLight(0xffffff,1.0); d.position.set(3,5,4); prevScene.add(d);
-  const asp=c.width/c.height, F=0.6;
+  prevScene.add(new THREE.HemisphereLight(0xffffff,0x888888,1.25));
+  const d=new THREE.DirectionalLight(0xffffff,1.15); d.position.set(3,5,4); prevScene.add(d);
+  const d2=new THREE.DirectionalLight(0xffffff,0.5); d2.position.set(-3,2,-2); prevScene.add(d2);
+  const asp=c.width/c.height, F=0.62;
   prevCam=new THREE.OrthographicCamera(-F*asp,F*asp,F,-F,0.01,100);
-  prevCam.position.set(1.3,0.85,1.9); prevCam.lookAt(0,0.4,0);
+  prevCam.position.set(1.3,0.85,1.9); prevCam.lookAt(0,0,0);   // 오브젝트를 원점 중심으로 맞추므로 원점 응시
 }
 function showPreview(key){                                 // 라이브: 현재 조정값(ADJ) 반영해 미리보기
   if(!prevScene) return;
@@ -636,9 +637,14 @@ function showPreview(key){                                 // 라이브: 현재 
   inner.scale.set(sc*sxz, sc*sy, sc*sxz);
   inner.rotation.set(a.rx||0, a.ry||0, a.rz||0);
   inner.position.set(a.ox||0, a.oy||0, a.oz||0);
-  const u=p.userData||{}, md=Math.max(u.sx||1,u.sy||1,u.sz||1)||1;
-  const wrap=new THREE.Group(); wrap.add(inner); wrap.scale.setScalar(1/md);
-  prevObj=wrap; prevScene.add(prevObj);
+  const wrap=new THREE.Group(); wrap.add(inner);
+  // 실제 바운딩박스로 원점 중심 + 최대치수 1로 자동 맞춤(얇은 줄기도 항상 화면에)
+  const box=new THREE.Box3().setFromObject(wrap), size=new THREE.Vector3(), ctr=new THREE.Vector3();
+  box.getSize(size); box.getCenter(ctr);
+  const md=Math.max(size.x,size.y,size.z)||1;
+  wrap.position.sub(ctr);                                  // 중심을 원점으로
+  const holder=new THREE.Group(); holder.add(wrap); holder.scale.setScalar(0.9/md);
+  prevObj=holder; prevScene.add(prevObj);
 }
 function buildAssetSliders(key){
   const box=document.getElementById('assetSliders'); if(!box) return; box.innerHTML='';
