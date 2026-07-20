@@ -127,7 +127,7 @@ const DEF={
   stageYoung:0.38, stageMid:0.66,                          // 잎 형태 전환 시점(어린→중간→성인)
   sizeYoung:0.20, sizeMid:0.45, sizeMature:0.78, sizeFull:1.25,  // 각 시점 크기(작게 나서 커짐)
   internode:0.24, stemFlat:1.25,   // 줄기 마디 길이·잎방향 납작
-  petGrow:22, rareProb:0.12, rThin:0.03, rMed:0.052, rThick:0.088, matureProb:0.22, doubleBud:0.15,   // 정밀생장: petiole 성장시간·희귀(하늘)확률·종류별 고정굵기·성숙잎 확률·더블혹(가지2) 확률
+  petGrow:22, rThin:0.03, rMed:0.052, rThick:0.088, matureProb:0.22, doubleBud:0.15,   // 정밀생장: petiole성장시간·종류별 고정굵기·성숙잎 확률·더블혹(쌍혹=가지2 동시) 확률
   petioleLen:1.0, leafElev:1.02, elevDrop:0.34, spread:0.16, branchSpread:0.55, branchProb:0.14,  // 배치
   leafLight:0.62, leafDark:0.22, leafSat:0.5, satRange:0.22, hueBase:0.16, hueRange:0.26,   // 색(밝기/진함/채도/개체범위)
   ageDark:0.16, ageSat:0.26,   // 시간(나이) 따라 짙어짐·선명해짐(전역, 줄기·잎 함께)
@@ -136,6 +136,9 @@ let P=Object.assign({}, DEF);
 
 // ===== 튜닝 파라미터(B: 에셋별 개별 조정) =====
 const ADJ_KEYS=['leaf_young','leaf_mid1','leaf_mid2','leaf_mature','bud_furled','bud_opening2','stem_thick','stem_main','stem_med','stem_thin','petiole'];
+// 에셋 표시명 = name_ko (모든 소통은 name_ko 기준). 파일명은 나중에 일체화.
+const ADJ_KO={ petiole:'줄기_초기', stem_thin:'줄기_중기_2', stem_med:'줄기_중기_1', stem_thick:'줄기_후기_혹', stem_main:'줄기_후기_쌍혹',
+  bud_furled:'기본-초기-새순1', bud_opening2:'기본-초기-반잎1', leaf_young:'기본-어린-잎1', leaf_mid1:'기본-중간-잎1', leaf_mid2:'기본-중간-잎2', leaf_mature:'기본-성숙-잎1' };
 function defAdj(key){ const d={scale:1, rx:0,ry:0,rz:0, ox:0,oy:0,oz:0}; if(/^leaf_/.test(key)){ d.omin=0; d.omax=99; } return d; }  // omin/omax=사용 order 범위(잎만)
 const DEF_ADJ={}; ADJ_KEYS.forEach(k=>DEF_ADJ[k]=defAdj(k));
 let ADJ=JSON.parse(JSON.stringify(DEF_ADJ));
@@ -417,29 +420,31 @@ function buildPlant(){
     // 새싹: 자그만 줄기가 먼저 나오고, 그 끝에 말린 송곳잎(furled bud)
     const t=(g-P.seedEnd)/Math.max(1,P.sproutEnd-P.seedEnd);   // 0..1
     const h=0.025+0.16*t, top=new THREE.Vector3(0,SOIL_Y+h,0);
-    addStemSeg(new THREE.Vector3(0,SOIL_Y,0), top, 0.011+0.013*t, 0);  // ★ 아주 얇게 시작해 조금씩 굵어짐
-    addBud(top, rng()*Math.PI*2, t<0.6?'furled':'opening', P.budSize*(0.4+0.7*t));  // 말림→반쯤 펴짐, 작게 시작
+    addStemSeg(new THREE.Vector3(0,SOIL_Y,0), top, 0.011+0.013*t, 0);  // 줄기_초기: 얇게 시작해 자람(★잎 없이 먼저)
+    if(t>=0.3) addBud(top, rng()*Math.PI*2, t<0.7?'furled':'opening', P.budSize*(0.4+0.7*t));  // 줄기_초기 끝에 기본-초기-새순 → 반잎(펴짐)
     stage='새싹 🌱';
   } else {
     // ===== 정밀 생장 (캐논: docs/byeot_growth_chart) =====
-    // 대기 마디(thin/med = petiole/pink 예비혹) → 랜덤 1개가 진짜 눈(thick)/희귀(main)로 활성.
-    // 눈에서 가지(petiole 자식) 1개(드물게 2=더블혹). 잎은 "각 마디 끝에서 furled→성숙"(프랙탈, 눈→잎자루→잎).
+    // 대기 마디(줄기_중기_1/2) → 랜덤 1개가 진짜 눈으로 활성 → 줄기_후기_혹(가지1) 또는 확률로 줄기_후기_쌍혹(가지2 동시).
+    // 잎은 "각 마디 끝에서 furled→성숙"(프랙탈, 눈→잎자루→잎).
     const L=LIGHT_AZ, ld=new THREE.Vector3(Math.sin(L),0,Math.cos(L));   // 빛 방향(수평)
     const t0=P.sproutEnd, actInt=P.spawnStep, maxAct=P.maxLeaves;
     const lenOf=ty=> (ty==='thick'||ty==='main')?P.internode*1.1 : ty==='med'?P.internode : P.internode*0.82;
     const radOf=ty=> (ty==='thick'||ty==='main')?P.rThick : ty==='med'?P.rMed : P.rThin;
-    const mkNode=(base,dir,birth,parent)=>{ const wt=rng()<0.4?'thin':'med';   // 대기=petiole/pink(중간 비중↑)
+    const mkNode=(base,dir,birth,parent)=>{ const wt=rng()<0.5?'thin':'med';   // 대기 = 줄기_중기_1 / 줄기_중기_2 (50:50)
       return {base, dir, len:lenOf(wt), wt, birth, parent, activated:false, children:[],
         tip:base.clone().addScaledVector(dir,lenOf(wt)),
-        leafAz:rng()*Math.PI*2, midType:rng()<0.5?'leaf_mid1':'leaf_mid2', canMature:rng()<P.matureProb }; };
+        leafAz:rng()*Math.PI*2, midType:PLANT_MID, canMature:rng()<P.matureProb }; };   // 중간잎=개체 고정(PLANT_MID, 동등확률)
     const all=[ mkNode(new THREE.Vector3(0,SOIL_Y,0), new THREE.Vector3((rng()-0.5)*0.15,1,(rng()-0.5)*0.15).normalize(), t0, null) ];
     let acts=0;
     for(let k=0;;k++){
       const T=t0+k*actInt; if(T>g || acts>=maxAct) break;
       const cand=all.filter(n=>!n.activated && n.birth<=T); if(!cand.length) break;
       const pick=cand[Math.floor(rng()*cand.length)];              // 대기 예비혹 중 랜덤 1개가 진짜 눈이 됨
-      pick.activated=true; pick.actT=T; pick.actType=rng()<P.rareProb?'main':'thick'; acts++;
-      const nb=rng()<P.doubleBud?2:1;                              // 눈에서 가지: 보통 1개, 드물게 2개(더블혹)
+      pick.activated=true; pick.actT=T; acts++;
+      const dbl=rng()<P.doubleBud;                                 // ★ 더블혹(쌍혹) 확률 → 가지 2 동시, 아니면 단혹 가지 1
+      pick.actType=dbl?'main':'thick';                             // main=줄기_후기_쌍혹(가지2), thick=줄기_후기_혹(가지1)
+      const nb=dbl?2:1;
       const a0=rng()*Math.PI*2, splitT=T+P.petGrow;
       for(let i=0;i<nb;i++){
         const s=a0 + (nb===2? i*Math.PI : 0);                      // 가지=우상향(petiole 자식). 자식 끝에서 새순→성숙
@@ -581,7 +586,7 @@ const ADJ_FIELDS=[
 const ADJ_FIELDS_LEAF=[{k:'omin',t:'사용 order 최소',min:0,max:12,step:1},{k:'omax',t:'사용 order 최대',min:0,max:99,step:1}];
 function buildAssetSelect(){
   const sel=document.getElementById('assetSel'); if(!sel) return;
-  sel.innerHTML=ADJ_KEYS.map(k=>`<option value="${k}">${k.replace(/_/g,' ')}</option>`).join('');
+  sel.innerHTML=ADJ_KEYS.map(k=>`<option value="${k}">${ADJ_KO[k]||k.replace(/_/g,' ')}</option>`).join('');
   sel.onchange=()=>{ buildAssetSliders(sel.value); showPreview(sel.value); };
   buildAssetSliders(sel.value); showPreview(sel.value);
 }
@@ -627,7 +632,6 @@ const PARAM_DEFS=[
     {k:'maxLeaves',t:'최대 마디 수',min:3,max:24,step:1},
     {k:'matSpan',t:'잎 생애 길이(일)',min:20,max:200,step:5},
     {k:'petGrow',t:'petiole 자람 시간(일)',min:5,max:60,step:1},
-    {k:'rareProb',t:'희귀(하늘) 확률',min:0.0,max:0.5,step:0.02},
     {k:'matureProb',t:'성숙(갈라진)잎 확률',min:0.0,max:1.0,step:0.05},
     {k:'doubleBud',t:'더블혹(가지2) 확률',min:0.0,max:0.6,step:0.02},
   ]},
