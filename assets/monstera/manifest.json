@@ -1,6 +1,5 @@
 [
  "monstera_bud_furled.glb",
- "monstera_bud_opening.glb",
  "monstera_bud_opening2.glb",
  "monstera_leaf_mature.glb",
  "monstera_leaf_mid1.glb",
@@ -11,5 +10,6 @@
  "monstera_stem_med.glb",
  "monstera_stem_thick.glb",
  "monstera_stem_thin.glb",
- "pot.glb"
+ "pot.glb",
+ "skins/monstera_leaf_young_albo.glb"
 ]

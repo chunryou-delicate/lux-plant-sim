@@ -28,7 +28,7 @@ export function createScene(canvas){
   sunLight.shadow.camera.near=0.5; sunLight.shadow.camera.far=50;
   const d=9; sunLight.shadow.camera.left=-d; sunLight.shadow.camera.right=d;
   sunLight.shadow.camera.top=d; sunLight.shadow.camera.bottom=-d;
-  sunLight.shadow.bias=-0.0004; sunLight.shadow.radius=6;
+  sunLight.shadow.bias=-0.0004; sunLight.shadow.radius=11;   // 그림자 더 부드럽게(A미니멀)
   scene.add(sunLight,sunLight.target);
 
   const winLight1=new THREE.SpotLight(0xfff2d8,0,14,Math.PI/3,0.5,1.5);
@@ -41,7 +41,7 @@ export function createScene(canvas){
 
   // ctx: 렌더 상태 묶음 (room 빌드 후 winPos/glass/clShade 주입됨)
   return { renderer, scene, cam, hemi, ambient, sunLight, winLight1, ceilingBulb,
-           winPos:null, glass:null, clShade:null };
+           winPos:null, glass:null, glassMeshes:null, clShade:null };
 }
 
 /* 시간(t) + 천장등 모드(0자동/1상시/2끄기) → 조명 갱신. 라벨 반환. */
@@ -54,20 +54,25 @@ export function updateLight(ctx, t, ceilingMode){
   const dist=10, el=0.25+s.alt*0.9;
   ctx.sunLight.position.set(wp.x+Math.sin(s.az)*dist*0.5, wp.y+Math.sin(el)*dist, wp.z-Math.cos(el)*dist*0.6);
   ctx.sunLight.target.position.set(1.2,0.5,1.5);
-  ctx.sunLight.intensity=s.intensity*2.0;   // 밤(intensity 0)엔 태양광 0 = 창밖 빛 없음
-  ctx.sunLight.color=col(mix(hx('#fff0d8'),hx('#ff9850'),s.warm));
+  ctx.sunLight.intensity=s.intensity*1.55;   // 살짝 낮춰 그림자 대비↓(무겁지 않게). 밤엔 0
+  ctx.sunLight.color=col(mix(hx('#fff3e2'),hx('#ff9d5c'),s.warm));
 
   ctx.winLight1.position.set(wp.x,wp.y+0.3,wp.z+0.3);
   ctx.winLight1.target.position.set(1.5,0,2);
-  ctx.winLight1.intensity=s.intensity*2.2;   // 밤엔 창 스팟도 0
-  ctx.winLight1.color=col(mix(hx('#fff4e0'),hx('#ffb060'),s.warm));
+  ctx.winLight1.intensity=s.intensity*2.0;   // 밤엔 창 스팟도 0
+  ctx.winLight1.color=col(mix(hx('#fff6e6'),hx('#ffb874'),s.warm));
 
-  // 환경광: 밤엔 거의 0 (창 없으면 어두운 게 정상). 낮엔 부드러운 채움.
-  ctx.hemi.intensity=0.02+s.intensity*0.16;
-  ctx.hemi.color=col(mix(hx('#9ab0d0'),s.sky,0.3));
-  ctx.ambient.intensity=0.012+s.intensity*0.07;
+  // 환경광(채움): 낮엔 넉넉히 올려 그림자 바닥을 밝게 → 부드럽고 밝은 파스텔.
+  // 밤엔 낮되 완전 0은 아님(칙칙함 방지). 온기는 sunLight.warm으로만.
+  ctx.hemi.intensity=0.16+s.intensity*0.48;
+  ctx.hemi.color=col(mix(hx('#bcd0e6'),s.sky,0.35));
+  ctx.ambient.intensity=0.07+s.intensity*0.22;
 
-  if(ctx.glass) ctx.glass.material.color=col(s.sky);
+  // 유리(창·유리벽) 하늘색 틴트 갱신 — clear 유리만(skyTint). 색조/간유리는 자기 색 유지.
+  const glasses = ctx.glassMeshes || (ctx.glass?[ctx.glass]:[]);
+  for(const gm of glasses){
+    if(gm&&gm.material && gm.material.userData.skyTint!==false) gm.material.color=col(s.sky);
+  }
 
   // 천장등 3모드: 0=자동(어두우면) 1=상시 2=끄기
   let lampActive;

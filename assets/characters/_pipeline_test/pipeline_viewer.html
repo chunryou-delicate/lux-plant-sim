@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>볕 · 자취생(여) 3D+리깅 파이프라인 검증</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<style>
+  body{margin:0;font-family:"Segoe UI",system-ui,sans-serif;background:#eef3ee;color:#2f3a30}
+  h1{font-size:18px;margin:14px 16px 2px}
+  p.sub{margin:0 16px 12px;color:#6b7a6b;font-size:13px}
+  .grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;padding:0 12px 16px}
+  @media(max-width:1000px){.grid{grid-template-columns:repeat(2,1fr)}}
+  .cell{background:#fff;border:1px solid #dde7dd;border-radius:12px;overflow:hidden;box-shadow:0 2px 8px rgba(80,100,80,.07)}
+  .cvs{width:100%;height:340px;display:block;background:linear-gradient(#f7fbf7,#e7efe7);cursor:grab}
+  .lab{padding:8px 12px}
+  .lab b{font-size:13px;color:#3a6b4e}
+  .lab span{display:block;font-size:11px;color:#8a988a;margin-top:2px}
+</style>
+</head>
+<body>
+  <h1>볕 · 자취생(여) — 3D + 리깅 파이프라인 검증</h1>
+  <p class="sub">드래그로 회전 · 스크롤로 확대. 걷기/달리기는 자동 재생. (Meshy-6 · t-pose · 4뷰 multi-image)</p>
+  <div class="grid">
+    <div class="cell"><canvas class="cvs" data-src="v2_multi.glb"></canvas>
+      <div class="lab"><b>① Multi-image 3D (4뷰)</b><span>정면+후면+좌+우 → 뒷결 정확</span></div></div>
+    <div class="cell"><canvas class="cvs" data-src="v2_single.glb"></canvas>
+      <div class="lab"><b>② Single-image 3D (앞만)</b><span>뒤통수 매끈하게 추정(밋밋)</span></div></div>
+    <div class="cell"><canvas class="cvs" data-src="v2_walking.glb" data-anim="1"></canvas>
+      <div class="lab"><b>③ 리깅 + 걷기</b><span>24본 스켈레톤 · 자동 애니</span></div></div>
+    <div class="cell"><canvas class="cvs" data-src="v2_running.glb" data-anim="1"></canvas>
+      <div class="lab"><b>④ 리깅 + 달리기</b><span>24본 스켈레톤 · 자동 애니</span></div></div>
+  </div>
+<script>
+// ── 3단계 툰 그라디언트 맵(셀셰이딩용) ──
+function toonGradient(){
+  const c=document.createElement('canvas'); c.width=4; c.height=1;
+  const x=c.getContext('2d');
+  const stops=['#6a776e','#9fb0a4','#ccd6cd','#ffffff']; // 어두움→밝음, 대비 살림
+  stops.forEach((s,i)=>{x.fillStyle=s;x.fillRect(i,0,1,1);});
+  const t=new THREE.CanvasTexture(c); t.minFilter=THREE.NearestFilter; t.magFilter=THREE.NearestFilter;
+  t.generateMipmaps=false; return t;
+}
+const GRAD=toonGradient();
+
+// ── 텍스처 채도 낮춰 파스텔로(런타임 캔버스 처리, 실패 시 원본 반환) ──
+function pastelize(tex){
+  try{
+    if(!tex||!tex.image) return tex;
+    const img=tex.image, w=img.width||img.videoWidth||512, h=img.height||img.videoHeight||512;
+    if(!w||!h) return tex;
+    const c=document.createElement('canvas'); c.width=w; c.height=h;
+    const x=c.getContext('2d'); x.drawImage(img,0,0,w,h);
+    const d=x.getImageData(0,0,w,h), p=d.data;
+    const SAT=0.7, LIFT=0.0;
+    for(let i=0;i<p.length;i+=4){
+      const r=p[i],g=p[i+1],b=p[i+2];
+      const gray=0.299*r+0.587*g+0.114*b;
+      p[i]  =Math.min(255,(gray+(r-gray)*SAT)*(1-LIFT)+255*LIFT);
+      p[i+1]=Math.min(255,(gray+(g-gray)*SAT)*(1-LIFT)+255*LIFT);
+      p[i+2]=Math.min(255,(gray+(b-gray)*SAT)*(1-LIFT)+255*LIFT);
+    }
+    x.putImageData(d,0,0);
+    const nt=new THREE.CanvasTexture(c); nt.flipY=tex.flipY; nt.encoding=THREE.sRGBEncoding;
+    nt.wrapS=tex.wrapS; nt.wrapT=tex.wrapT; nt.needsUpdate=true; return nt;
+  }catch(e){ console.warn('pastelize skip',e); return tex; }
+}
+
+// ── StandardMaterial → 무광 툰 셰이더로 교체(메시별 안전 처리) ──
+function toonify(root){
+  root.traverse(o=>{
+    if(!o.isMesh||!o.material) return;
+    try{
+      const src=Array.isArray(o.material)?o.material:[o.material];
+      const out=src.map(mm=>{
+        const map=mm.map?pastelize(mm.map):null;
+        return new THREE.MeshToonMaterial({map:map,color:map?0xffffff:(mm.color?mm.color.getHex():0xffffff),
+          gradientMap:GRAD, skinning:!!mm.skinning, morphTargets:!!mm.morphTargets});
+      });
+      o.material=Array.isArray(o.material)?out:out[0];
+    }catch(e){ console.warn('toonify skip mesh',e); }
+  });
+}
+
+document.querySelectorAll('.cvs').forEach(cv=>{
+  const clock=new THREE.Clock();   // 캔버스마다 독립 clock (애니 정지 버그 수정)
+  const r=new THREE.WebGLRenderer({canvas:cv,antialias:true,alpha:true});
+  r.setSize(cv.clientWidth,cv.clientHeight,false);
+  r.setPixelRatio(Math.min(devicePixelRatio,2));
+  r.outputEncoding=THREE.sRGBEncoding;
+  const sc=new THREE.Scene();
+  const cam=new THREE.PerspectiveCamera(35,cv.clientWidth/cv.clientHeight,0.01,100);
+  cam.position.set(0,1.0,3.2);
+  const ctr=new THREE.OrbitControls(cam,cv); ctr.target.set(0,0.9,0); ctr.enableDamping=true;
+  // 부드러운 파스텔 조명: 은은하게 (과노출 방지)
+  sc.add(new THREE.AmbientLight(0xffffff,0.5));
+  sc.add(new THREE.HemisphereLight(0xffffff,0xdfe6df,0.18));
+  const d=new THREE.DirectionalLight(0xffffff,0.6); d.position.set(2.5,4,2.5); sc.add(d);
+  let mixer=null;
+  new THREE.GLTFLoader().load(cv.dataset.src,g=>{
+    const m=g.scene; toonify(m); sc.add(m);
+    const box=new THREE.Box3().setFromObject(m); const c=box.getCenter(new THREE.Vector3());
+    const size=box.getSize(new THREE.Vector3());
+    const h=Math.max(size.y,0.001);
+    const maxDim=Math.max(size.x,size.y,size.z,0.001);
+    m.position.sub(c); m.position.y+=h/2; ctr.target.set(0,h/2,0);
+    // 카메라 거리: 최대치수 기준 + 애니(3·4)는 더 여유있게 뒤로
+    const pull = cv.dataset.anim ? 2.4 : 1.9;
+    cam.position.set(0,h*0.55,maxDim*pull + h*0.4);
+    if(cv.dataset.anim && g.animations.length){ mixer=new THREE.AnimationMixer(m); mixer.clipAction(g.animations[0]).play(); }
+  });
+  (function loop(){requestAnimationFrame(loop); const dt=clock.getDelta(); if(mixer)mixer.update(dt); ctr.update(); r.render(sc,cam);})();
+});
+</script>
+</body>
+</html>

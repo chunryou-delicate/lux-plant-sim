@@ -56,9 +56,14 @@ CH.forEach(([src,title,desc])=>{
  sc.add(new THREE.AmbientLight(0xffffff,0.55));sc.add(new THREE.HemisphereLight(0xffffff,0xdfe6df,0.18));
  const d=new THREE.DirectionalLight(0xffffff,0.6);d.position.set(2.5,4,2.5);sc.add(d);
  new THREE.GLTFLoader().load(src,gl=>{const m=gl.scene;toonify(m);sc.add(m);
-  const box=new THREE.Box3().setFromObject(m),c=box.getCenter(new THREE.Vector3()),sz=box.getSize(new THREE.Vector3());
-  const hh=Math.max(sz.y,.001),md=Math.max(sz.x,sz.y,sz.z,.001);m.position.sub(c);m.position.y+=hh/2;ctr.target.set(0,hh*.5,0);
-  cam.position.set(0,hh*.55,md*2.1+hh*.3);},undefined,e=>{cv.style.background='#fdeaea';});
+  const box=new THREE.Box3().setFromObject(m);
+  const c=box.getCenter(new THREE.Vector3());
+  const sph=box.getBoundingSphere(new THREE.Sphere());const r=Math.max(sph.radius,0.1);
+  ctr.target.copy(c);
+  const dist=r/Math.sin((35*Math.PI/180)/2)*1.1;
+  cam.near=Math.max(dist/200,0.001);cam.far=dist*200;
+  cam.position.set(c.x,c.y+r*0.12,c.z+dist);cam.updateProjectionMatrix();ctr.update();
+ },undefined,e=>{cv.style.background='#fdeaea';});
  (function loop(){requestAnimationFrame(loop);ctr.update();r.render(sc,cam);})();
 });
 </script>

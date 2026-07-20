@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>볕 · 창틀 프리셋 컨택시트</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Jua&family=Gaegu:wght@400;700&display=swap');
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{background:#eee7db;font-family:'Gaegu',sans-serif;color:#3d3548}
+  /* 렌더러 캔버스: 화면 고정, 셀은 이 위에 스크롤 오버레이 */
+  #c{position:fixed;inset:0;width:100%;height:100%;z-index:0;display:block}
+  header{position:relative;z-index:2;padding:18px 22px 6px}
+  header h1{font-family:'Jua';font-size:22px;color:#3d3548}
+  header h1 b{color:#e08a2c}
+  header .sub{font-weight:700;font-size:13px;color:#7a7080;margin-top:2px}
+  .legend{margin-top:8px;font-size:12px;color:#7a7080;display:flex;gap:14px;flex-wrap:wrap}
+  .legend .rev{color:#c8722a;font-weight:700}
+  .grid{position:relative;z-index:2;display:grid;gap:16px;padding:14px 22px 60px;
+    grid-template-columns:repeat(auto-fill,minmax(340px,1fr))}
+  .cell{background:rgba(255,255,255,.5);border-radius:14px;border:1px solid rgba(0,0,0,.06);
+    overflow:hidden;backdrop-filter:blur(2px)}
+  .cell.review{border:2px solid #e0a35c;box-shadow:0 0 0 3px rgba(224,163,92,.15)}
+  .view{width:100%;height:240px}          /* 3D 뷰포트 자리 */
+  .meta{padding:9px 12px 11px}
+  .meta .id{font-family:'Jua';font-size:14px;color:#3d3548;display:flex;align-items:center;gap:7px}
+  .sw{width:14px;height:14px;border-radius:4px;border:1px solid rgba(0,0,0,.15);flex:none}
+  .meta .row{font-weight:700;font-size:12px;color:#6a6070;margin-top:3px;line-height:1.5}
+  .tag{display:inline-block;background:rgba(0,0,0,.06);border-radius:6px;padding:1px 7px;margin:2px 4px 0 0;font-size:11px}
+  .tag.g{background:#d5e8dc;color:#356} .tag.f{background:#e9e2d2;color:#764}
+  .status{float:right;font-size:11px;font-weight:700}
+  .status.ok{color:#3a9a5a} .status.draft{color:#c8722a}
+  #err{position:fixed;z-index:9;left:12px;bottom:12px;background:#c0392b;color:#fff;
+    padding:8px 12px;border-radius:8px;font-size:13px;display:none;max-width:80%}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<header>
+  <h1>볕<b>.</b> 창틀 프리셋 컨택시트</h1>
+  <div class="sub">코드 창틀 라인업 · 한 판에 비교 · 낙점용</div>
+  <div class="legend">
+    <span><b>확정</b> = 방 확정(반지하·원룸)</span>
+    <span class="rev">주황 테두리 = needs_review(초안, 미낙점)</span>
+    <span>드래그로 전체 회전</span>
+  </div>
+</header>
+<div class="grid" id="grid"></div>
+<div id="err"></div>
+
+<script type="module">
+import { buildWindowFrame, glassMaterial, glassGeometry, FRAME_DEFAULTS } from '../../src/render3d/window_frame.js?v=6';
+
+const showErr=m=>{ const e=document.getElementById('err'); e.textContent=m; e.style.display='block'; };
+window.addEventListener('error',e=>showErr('오류: '+e.message));
+
+// ---- 프리셋 로드 ----
+let data;
+try{ data=await fetch('../../data/window_presets.json').then(r=>r.json()); }
+catch(e){ showErr('window_presets.json 로드 실패: '+e.message); throw e; }
+const presets=data.presets||data;
+const ids=Object.keys(presets);
+
+// ---- 단일 렌더러 (셀마다 scissor 뷰포트) ----
+const canvas=document.getElementById('c');
+const renderer=new THREE.WebGLRenderer({canvas, antialias:true, alpha:true});
+renderer.setPixelRatio(Math.min(2,devicePixelRatio||1));
+renderer.shadowMap.enabled=true; renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+renderer.outputEncoding=THREE.sRGBEncoding;
+renderer.toneMapping=THREE.NoToneMapping;   // 톤매핑 끔 → 회색 벽이 안 날아가고 프레임 대비 유지
+renderer.setScissorTest(true);
+
+// 유리 뒤에 둘 배경 카드(투과 차이 확인용: clear=선명, frosted/block=뿌옇게)
+function backingTexture(){
+  const cv=document.createElement('canvas'); cv.width=cv.height=128; const x=cv.getContext('2d');
+  x.fillStyle='#f3ede2'; x.fillRect(0,0,128,128);
+  x.fillStyle='#e0894a'; x.fillRect(16,20,44,44);
+  x.fillStyle='#5aa0c8'; x.fillRect(70,50,40,58);
+  x.strokeStyle='#3d3548'; x.lineWidth=4; x.beginPath(); x.moveTo(10,110); x.lineTo(118,90); x.stroke();
+  const t=new THREE.CanvasTexture(cv); t.encoding=THREE.sRGBEncoding; return t;
+}
+const BACK_TEX=backingTexture();
+
+// 패턴/형태별 데모 크기(비율이 살게). big=벽체·통창은 크게.
+function demoSize(P){
+  if(P.big)                  return P.pattern==='none'?[2.4,1.7]:[2.4,1.9];
+  if(P.shape==='circle')     return [1.5,1.5];
+  const p=P.pattern;
+  if(p==='letterbox')   return [1.9,0.75];
+  if(p==='slim')        return [0.9,1.6];
+  if(p==='curtainwall') return [1.9,1.55];
+  return [1.5,1.5];
+}
+
+// ---- 셀 = {el(view div), scene, camera} ----
+const items=[];
+const grid=document.getElementById('grid');
+
+for(const id of ids){
+  const P=presets[id];
+  const cell=document.createElement('div');
+  cell.className='cell'+(P.final?'':' review');
+  const view=document.createElement('div'); view.className='view'; cell.appendChild(view);
+
+  const g=P.glass||{};
+  const meta=document.createElement('div'); meta.className='meta';
+  meta.innerHTML=
+    `<div class="id"><span class="sw" style="background:${P.frameColor}"></span>${id}`+
+      `<span class="status ${P.status==='확정'?'ok':'draft'}">${P.status||''}</span></div>`+
+    `<div class="row">${P.room||''}</div>`+
+    `<div class="row">${P.shape==='circle'?'<span class="tag">◯ 원형</span>':''}<span class="tag">${P.pattern} ${P.cols}×${P.rows}</span>`+
+      `<span class="tag g">${g.type}</span><span class="tag">${P.gloss}</span>`+
+      `${P.corner==='round'?'<span class="tag">round</span>':''}${P.sill?'<span class="tag">sill</span>':''}</div>`+
+    `<div class="row">빛 ×${(P.light&&P.light.illumMul)??'-'}${(P.light&&P.light.diffuse)?' · 확산':''} · 투과 ${g.transmittance??'-'}</div>`;
+  cell.appendChild(meta);
+  grid.appendChild(cell);
+
+  // --- mini scene ---
+  const scene=new THREE.Scene();
+  scene.add(new THREE.HemisphereLight(0xffffff,0x5c6376,0.5));
+  const dir=new THREE.DirectionalLight(0xfff6ea,1.05);
+  dir.position.set(2.5,4,4); dir.castShadow=true;
+  dir.shadow.mapSize.set(1024,1024); dir.shadow.radius=4; dir.shadow.bias=-0.0005;
+  scene.add(dir);
+  const rim=new THREE.DirectionalLight(0xaec4ff,0.4);   // 뒤-옆 림라이트: 프레임 윤곽
+  rim.position.set(-3,2,-2); scene.add(rim);
+
+  // 진한 슬레이트 벽(뒤 배경) — 톤매핑 오프라 이 색 그대로 → 흰/크림 프레임이 확 뜬다
+  const wall=new THREE.Mesh(new THREE.PlaneGeometry(6,6),
+    new THREE.MeshStandardMaterial({color:0x767f92, roughness:1.0}));
+  wall.position.z=-0.6; wall.receiveShadow=true; scene.add(wall);
+
+  const [w,h]=demoSize(P);
+  const FT=P.FT??FRAME_DEFAULTS.FT;
+
+  // 유리 뒤 배경 카드(투과 확인) — 형태 맞춤
+  const card=new THREE.Mesh(glassGeometry(P.shape, w-2*FT, h-2*FT),
+    new THREE.MeshBasicMaterial({map:BACK_TEX}));
+  card.position.z=-0.14; scene.add(card);
+
+  // 창틀
+  const frame=buildWindowFrame(w,h,{...P}); scene.add(frame);
+
+  // 유리(type별). none이면 없음.
+  const gm=glassMaterial(P.glass);
+  if(gm){ const glass=new THREE.Mesh(glassGeometry(P.shape, w-2*FT, h-2*FT), gm.clone());
+    scene.add(glass); }
+
+  const camera=new THREE.PerspectiveCamera(30,1,0.1,50);
+  camera.position.set(1.15,0.55,3.0);
+  camera.lookAt(0,0,0);
+  const camR=2.4+Math.max(w,h)*0.55;   // 프레임 클수록 카메라 뒤로(다 담기게)
+
+  items.push({view, scene, camera, camR});
+}
+
+// ---- 렌더 루프 (보이는 셀만 scissor로) ----
+let az=0, dragging=false, px=0;
+canvas.addEventListener('pointerdown',e=>{dragging=true;px=e.clientX;});
+addEventListener('pointermove',e=>{ if(dragging){ az+=(e.clientX-px)*0.01; px=e.clientX; }});
+addEventListener('pointerup',()=>dragging=false);
+
+function resize(){ renderer.setSize(innerWidth,innerHeight,false); }
+addEventListener('resize',resize); resize();
+
+function render(){
+  requestAnimationFrame(render);
+  const cw=canvas.clientWidth, ch=canvas.clientHeight;
+  for(const it of items){
+    const r=it.view.getBoundingClientRect();
+    if(r.bottom<0||r.top>ch||r.right<0||r.left>cw) continue;   // 화면 밖 스킵
+    const w=r.width, h=r.height;
+    const l=r.left, b=ch-r.bottom;                              // 좌하단 원점
+    renderer.setViewport(l,b,w,h); renderer.setScissor(l,b,w,h);
+    it.camera.aspect=w/h; it.camera.updateProjectionMatrix();
+    // 살짝 회전(드래그로 조절). 프레임 크기에 맞춰 카메라 거리 조절.
+    const rad=0.5+az, R=it.camR;
+    it.camera.position.set(Math.sin(rad)*R, 0.55, Math.cos(rad)*R);
+    it.camera.lookAt(0,0,0);
+    renderer.render(it.scene, it.camera);
+  }
+}
+render();
+</script>
+</body>
+</html>

@@ -141,3 +141,7 @@ dist
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 .vite/
+
+# scratch/analysis temp files (에셋 창)
+/_*.txt
+/assets/_*.txt

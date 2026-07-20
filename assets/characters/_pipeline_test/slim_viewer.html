@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>볕 · 자취생(여) 슬림 확정본 — 3D+걷기</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<style>
+  body{margin:0;font-family:"Segoe UI",system-ui,sans-serif;background:#eef3ee;color:#2f3a30}
+  h1{font-size:18px;margin:14px 16px 2px}
+  p.sub{margin:0 16px 12px;color:#6b7a6b;font-size:13px}
+  .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;padding:0 12px 16px;max-width:900px}
+  @media(max-width:700px){.grid{grid-template-columns:1fr}}
+  .cell{background:#fff;border:1px solid #dde7dd;border-radius:12px;overflow:hidden;box-shadow:0 2px 8px rgba(80,100,80,.07)}
+  .cvs{width:100%;height:420px;display:block;background:linear-gradient(#f7fbf7,#e7efe7);cursor:grab}
+  .lab{padding:8px 12px}
+  .lab b{font-size:13px;color:#3a6b4e}
+  .lab span{display:block;font-size:11px;color:#8a988a;margin-top:2px}
+</style>
+</head>
+<body>
+  <h1>볕 · 자취생(여) 슬림 확정본 — 툰·파스텔 (A포즈 리깅)</h1>
+  <p class="sub">드래그 회전 · 스크롤 확대. 배 납작 · 슬림 · 4등신 · 걷기만(뛰기 제외).</p>
+  <div class="grid">
+    <div class="cell"><canvas class="cvs" data-src="slimG2.glb"></canvas>
+      <div class="lab"><b>① 자취생(여) 최종본 3D (재롤)</b><span>다리 붙고 팔 자연 A포즈 · 툰파스텔</span></div></div>
+    <div class="cell"><canvas class="cvs" data-src="slimG2_walking.glb" data-anim="1"></canvas>
+      <div class="lab"><b>② 리깅 + 걷기 (스톡 미리보기)</b><span>실걷기·얼굴고정은 엔진 마감</span></div></div>
+  </div>
+<script>
+function toonGradient(){
+  const c=document.createElement('canvas');c.width=4;c.height=1;const x=c.getContext('2d');
+  ['#6a776e','#9fb0a4','#ccd6cd','#ffffff'].forEach((s,i)=>{x.fillStyle=s;x.fillRect(i,0,1,1);});
+  const t=new THREE.CanvasTexture(c);t.minFilter=THREE.NearestFilter;t.magFilter=THREE.NearestFilter;t.generateMipmaps=false;return t;
+}
+const GRAD=toonGradient();
+function pastelize(tex){
+  try{
+    if(!tex||!tex.image)return tex;const img=tex.image,w=img.width||512,h=img.height||512;if(!w||!h)return tex;
+    const c=document.createElement('canvas');c.width=w;c.height=h;const x=c.getContext('2d');x.drawImage(img,0,0,w,h);
+    const d=x.getImageData(0,0,w,h),p=d.data,SAT=0.7;
+    for(let i=0;i<p.length;i+=4){const r=p[i],g=p[i+1],b=p[i+2],gy=0.299*r+0.587*g+0.114*b;
+      p[i]=gy+(r-gy)*SAT;p[i+1]=gy+(g-gy)*SAT;p[i+2]=gy+(b-gy)*SAT;}
+    x.putImageData(d,0,0);const nt=new THREE.CanvasTexture(c);nt.flipY=tex.flipY;nt.encoding=THREE.sRGBEncoding;
+    nt.wrapS=tex.wrapS;nt.wrapT=tex.wrapT;nt.needsUpdate=true;return nt;
+  }catch(e){return tex;}
+}
+function toonify(root){root.traverse(o=>{if(!o.isMesh||!o.material)return;try{
+  const src=Array.isArray(o.material)?o.material:[o.material];
+  const out=src.map(mm=>new THREE.MeshToonMaterial({map:mm.map?pastelize(mm.map):null,
+    color:mm.map?0xffffff:(mm.color?mm.color.getHex():0xffffff),gradientMap:GRAD,
+    skinning:!!mm.skinning,morphTargets:!!mm.morphTargets}));
+  o.material=Array.isArray(o.material)?out:out[0];}catch(e){}});}
+
+document.querySelectorAll('.cvs').forEach(cv=>{
+  const clock=new THREE.Clock();
+  const r=new THREE.WebGLRenderer({canvas:cv,antialias:true,alpha:true});
+  r.setSize(cv.clientWidth,cv.clientHeight,false);r.setPixelRatio(Math.min(devicePixelRatio,2));
+  r.outputEncoding=THREE.sRGBEncoding;
+  const sc=new THREE.Scene();
+  const cam=new THREE.PerspectiveCamera(35,cv.clientWidth/cv.clientHeight,0.01,100);
+  const ctr=new THREE.OrbitControls(cam,cv);ctr.enableDamping=true;
+  sc.add(new THREE.AmbientLight(0xffffff,0.55));
+  sc.add(new THREE.HemisphereLight(0xffffff,0xdfe6df,0.18));
+  const d=new THREE.DirectionalLight(0xffffff,0.6);d.position.set(2.5,4,2.5);sc.add(d);
+  let mixer=null;
+  new THREE.GLTFLoader().load(cv.dataset.src,g=>{
+    const m=g.scene;toonify(m);sc.add(m);
+    const box=new THREE.Box3().setFromObject(m),c=box.getCenter(new THREE.Vector3()),size=box.getSize(new THREE.Vector3());
+    const h=Math.max(size.y,0.001),maxDim=Math.max(size.x,size.y,size.z,0.001);
+    m.position.sub(c);m.position.y+=h/2;ctr.target.set(0,h*0.5,0);
+    cam.position.set(0,h*0.55,maxDim*2.2+h*0.3);
+    if(cv.dataset.anim&&g.animations.length){mixer=new THREE.AnimationMixer(m);mixer.clipAction(g.animations[0]).play();}
+  });
+  (function loop(){requestAnimationFrame(loop);const dt=clock.getDelta();if(mixer)mixer.update(dt);ctr.update();r.render(sc,cam);})();
+});
+</script>
+</body>
+</html>

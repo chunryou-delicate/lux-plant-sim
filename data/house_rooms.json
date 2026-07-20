@@ -1,0 +1,55 @@
+{
+  "_note": "집 5종 모듈 프리셋 (house_asset_direction.md §6, A미니멀). 발판 7×7×4 고정 → 엔진·가구 호환. 벽/바닥은 '매끈 파스텔 단색면'(color+옅은 결). 온기는 굽지 않고 런타임 빛으로.",
+  "_coords": "벽 local u: back/front=x[-3.5..3.5], left/right=z[-3.5..3.5]. v=y[0..4]. cu=창 중심(u), cy=창 중심 높이, w/h=개구부 크기(m). glassWalls=유리벽 목록(온실).",
+  "default": "oneroom",
+  "size": { "w": 7, "d": 7, "h": 4, "wallThickness": 0.2 },
+  "rooms": {
+    "banjiha": {
+      "label": "반지하", "light": "최악",
+      "wallColor": "#cdd0d6", "floorColor": "#c3c4c6", "ceilColor": "#d5d7db",
+      "wallRough": 0.85, "floorRough": 0.8,
+      "glassWalls": [], "ceiling": "solid",
+      "windows": [ { "module": "window_banjiha", "wall": "back", "cu": 0.0, "cy": 3.35, "w": 2.8, "h": 0.85, "preset": "win_semi_letterbox" } ],
+      "doors": [ { "wall": "front", "cu": -2.0, "w": 1.0, "h": 2.05 } ]
+    },
+    "oneroom": {
+      "label": "원룸", "light": "보통",
+      "wallColor": "#f4efe5", "floorColor": "#ecd9bd", "ceilColor": "#f8f4ec",
+      "wallRough": 0.9, "floorRough": 0.78,
+      "glassWalls": [], "ceiling": "solid",
+      "windows": [ { "module": "window_normal", "wall": "back", "cu": 0.6, "cy": 2.2, "w": 2.6, "h": 2.4, "preset": "win_studio_cross" } ],
+      "doors": [ { "wall": "front", "cu": -2.1, "w": 1.0, "h": 2.05 } ]
+    },
+    "apartment": {
+      "label": "아파트", "light": "좋음",
+      "wallColor": "#e2f0e6", "floorColor": "#ead9c0", "ceilColor": "#f4f7f3",
+      "wallRough": 0.9, "floorRough": 0.78,
+      "glassWalls": [], "ceiling": "solid",
+      "windows": [
+        { "module": "window_normal", "wall": "back", "cu": -0.4, "cy": 2.15, "w": 4.0, "h": 2.9, "cols": 3, "rows": 2 },
+        { "module": "window_normal", "wall": "right", "cu": 1.4, "cy": 2.1, "w": 2.2, "h": 2.6, "cols": 2, "rows": 2 }
+      ],
+      "doors": [ { "wall": "front", "cu": -2.1, "w": 1.0, "h": 2.05 } ]
+    },
+    "classroom": {
+      "label": "학원교실", "light": "좋음",
+      "wallColor": "#eef0ea", "floorColor": "#e6ebea", "ceilColor": "#f6f7f3",
+      "wallRough": 0.9, "floorRough": 0.7,
+      "glassWalls": [], "ceiling": "solid",
+      "windows": [
+        { "module": "window_normal", "wall": "back", "cu": -2.2, "cy": 2.2, "w": 1.7, "h": 2.4, "cols": 1, "rows": 2 },
+        { "module": "window_normal", "wall": "back", "cu": 0.0,  "cy": 2.2, "w": 1.7, "h": 2.4, "cols": 1, "rows": 2 },
+        { "module": "window_normal", "wall": "back", "cu": 2.2,  "cy": 2.2, "w": 1.7, "h": 2.4, "cols": 1, "rows": 2 }
+      ],
+      "doors": [ { "wall": "front", "cu": -2.4, "w": 1.0, "h": 2.05 } ]
+    },
+    "greenhouse": {
+      "label": "온실", "light": "최상",
+      "wallColor": "#eef0ea", "floorColor": "#e6ebea", "ceilColor": "#f4f7f3",
+      "wallRough": 0.9, "floorRough": 0.7,
+      "glassWalls": [ "back", "left", "right" ], "ceiling": "glass",
+      "windows": [],
+      "doors": [ { "wall": "front", "cu": 0.0, "w": 1.0, "h": 2.05 } ]
+    }
+  }
+}

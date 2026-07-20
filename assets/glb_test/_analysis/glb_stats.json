@@ -1,0 +1,76 @@
+{
+  "T1": {
+    "file": "T1_sanse_meshy5_base.glb",
+    "faces": 6434,
+    "vertices": 4225,
+    "bbox_XYZ": [
+      0.6841,
+      2.0,
+      0.3652
+    ],
+    "thin_axis": "Z",
+    "watertight": false,
+    "volume": null,
+    "has_visual": "TextureVisuals",
+    "pivot": {
+      "bbox_min": [
+        -0.342,
+        -1.0,
+        -0.1826
+      ],
+      "bbox_max": [
+        0.342,
+        1.0,
+        0.1826
+      ],
+      "origin_in_bbox": [
+        true,
+        true,
+        true
+      ]
+    },
+    "emboss": {
+      "thin_axis": "Z",
+      "thickness": 0.3652,
+      "resid_std_after_curve": 0.05385,
+      "resid_p95_p5": 0.18248
+    }
+  },
+  "T2": {
+    "file": "T2_monstera_meshy5_base.glb",
+    "faces": 6009,
+    "vertices": 5246,
+    "bbox_XYZ": [
+      1.7759,
+      2.0,
+      1.4311
+    ],
+    "thin_axis": "Z",
+    "watertight": false,
+    "volume": null,
+    "has_visual": "TextureVisuals",
+    "pivot": {
+      "bbox_min": [
+        -0.8879,
+        -1.0,
+        -0.7155
+      ],
+      "bbox_max": [
+        0.8879,
+        1.0,
+        0.7155
+      ],
+      "origin_in_bbox": [
+        true,
+        true,
+        true
+      ]
+    },
+    "emboss": {
+      "thin_axis": "Z",
+      "thickness": 1.4311,
+      "resid_std_after_curve": 0.22572,
+      "resid_p95_p5": 0.89587
+    }
+  }
+}

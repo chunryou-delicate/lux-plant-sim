@@ -43,3 +43,48 @@ export function initTextures(){
   TEX.woodDark=woodTexture(true);
   return TEX;
 }
+
+/* ============================================================
+   실제 집 텍스처 (assets/house/textures/house_tex_*.png)
+   ------------------------------------------------------------
+   - 6종 전부 seamless 후처리 완료 → RepeatWrapping.
+   - 벽/바닥은 1m 모듈 패널마다 '한 타일'을 입히므로 repeat=1(기본).
+   - 베이스컬러만 sRGB. 노멀/러프니스는 재질 균일값(house.js).
+   key = house_asset_direction.md의 텍스처 이름과 1:1.
+============================================================ */
+const HOUSE_TEX_FILES={
+  wall_white : 'house_tex_wall_white.png',
+  wall_pastel: 'house_tex_wall_pastel.png',
+  wall_cement: 'house_tex_wall_cement.png',
+  floor_wood : 'house_tex_floor_wood.png',
+  floor_tile : 'house_tex_floor_tile.png',
+  floor_cement:'house_tex_floor_cement.png',
+};
+
+/* ★ A 미니멀 표면 결: 거의 단색인데 아주 옅은 매트지(paper) 질감만.
+   near-white(245~255) 저대비 노이즈 → 재질 color(파스텔)에 곱해져 '매끈 파스텔'.
+   거친 리얼 텍스처(시멘트/타일) 대신 이걸 벽·바닥·천장 공용으로 쓴다. */
+export function faintGrainTexture(){
+  const c=document.createElement('canvas'); c.width=c.height=128; const x=c.getContext('2d');
+  x.fillStyle='#ffffff'; x.fillRect(0,0,128,128);
+  // 2px 블록 단위 옅은 얼룩 → 정적(static)보다 종이결 느낌
+  for(let py=0; py<128; py+=2) for(let px=0; px<128; px+=2){
+    const n=247+Math.random()*8;                 // 247~255 (거의 흰색)
+    x.fillStyle=`rgb(${n|0},${n|0},${n|0})`; x.fillRect(px,py,2,2);
+  }
+  const t=new THREE.CanvasTexture(c); t.wrapS=t.wrapT=THREE.RepeatWrapping;
+  t.anisotropy=4; return t;
+}
+
+export function loadHouseTextures(base='./assets/house/textures/'){
+  const L=new THREE.TextureLoader();
+  const HT={};
+  for(const [key,file] of Object.entries(HOUSE_TEX_FILES)){
+    const t=L.load(base+file);
+    t.wrapS=t.wrapT=THREE.RepeatWrapping;
+    t.encoding=THREE.sRGBEncoding;
+    t.anisotropy=4;
+    HT[key]=t;
+  }
+  return HT;   // { wall_white, wall_pastel, ..., floor_cement }
+}
