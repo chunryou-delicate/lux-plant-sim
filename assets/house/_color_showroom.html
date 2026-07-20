@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>볕 · 창틀 컬러 쇼룸 (3D)</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Jua&family=Gaegu:wght@400;700&display=swap');
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{background:#dfe6ec;font-family:'Gaegu',sans-serif;color:#2e2e38}
+  #c{position:fixed;inset:0;width:100%;height:100%;z-index:0;display:block}
+  header{position:relative;z-index:2;padding:16px 24px 4px}
+  header h1{font-family:'Jua';font-size:23px}
+  header h1 b{color:#e08a2c}
+  header .sub{font-weight:700;font-size:13px;color:#6a6f7a;margin-top:2px}
+  .rows{position:relative;z-index:2;padding:6px 20px 60px}
+  .row{margin-bottom:2px}
+  .row .head{font-family:'Jua';font-size:15px;color:#3a3548;padding:8px 4px 2px}
+  .row .head small{font-family:'Gaegu';font-weight:700;font-size:12px;color:#7a808a;margin-left:8px}
+  .view{width:100%;height:250px}
+  #err{position:fixed;z-index:9;left:12px;bottom:12px;background:#c0392b;color:#fff;padding:8px 12px;border-radius:8px;display:none}
+  #hint{position:fixed;z-index:3;bottom:14px;left:50%;transform:translateX(-50%);background:rgba(30,30,40,.6);color:#fff;font-weight:700;font-size:13px;padding:6px 14px;border-radius:14px;transition:opacity .8s}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<header>
+  <h1>볕<b>.</b> 창틀 컬러 쇼룸 — 종류 × 색상</h1>
+  <div class="sub">각 줄 = 창 종류 하나 · 가로로 13색 · 게임 재질/조명</div>
+</header>
+<div class="rows" id="rows"></div>
+<div id="hint">드래그로 각도 회전 · 각 줄이 한 종류의 색 변형</div>
+<div id="err"></div>
+
+<script type="module">
+import { buildWindowFrame, glassMaterial } from '../../src/render3d/window_frame.js?v=col1';
+
+const showErr=m=>{const e=document.getElementById('err');e.textContent=m;e.style.display='block';};
+window.addEventListener('error',e=>showErr('오류: '+e.message));
+
+// 색 곱할 대표 종류(아키타입)
+const BASE_TYPES=[
+  'win_studio_cross','win_apt_big','win_office_grid','win_plant_sill',
+  'win_semi_letterbox','win_academy_slim','win_block_retro',
+  'win_greenhouse_wall','win_bay_plant','win_apt_picture',
+  'win_cafe_clean','win_cafe_porthole'
+];
+
+const WALL_H=3.2, GAP=0.55;
+function realSize(P){
+  if(P.shape==='circle')      return [1.15,1.15];
+  if(P.pattern==='letterbox') return [2.2,0.75];
+  if(P.pattern==='slim')      return [0.85,1.5];
+  if(P.big)                   return [2.4,1.7];
+  if(P.pattern==='curtainwall')return [2.1,1.6];
+  if(P.pattern==='none')      return [1.5,1.7];
+  return [Math.min(2.0,0.9+P.cols*0.34), Math.min(1.9,0.9+P.rows*0.34)];
+}
+
+const canvas=document.getElementById('c');
+const renderer=new THREE.WebGLRenderer({canvas,antialias:true});
+renderer.setPixelRatio(Math.min(2,window.devicePixelRatio||1));
+renderer.shadowMap.enabled=true; renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+renderer.outputEncoding=THREE.sRGBEncoding;
+renderer.toneMapping=THREE.ACESFilmicToneMapping; renderer.toneMappingExposure=1.08;
+renderer.setScissorTest(true);
+// 환경맵(유리 반짝임)
+function envTex(){const c=document.createElement('canvas');c.width=32;c.height=96;const x=c.getContext('2d');
+  const g=x.createLinearGradient(0,0,0,96);g.addColorStop(0,'#f2f8ff');g.addColorStop(.5,'#d3e2f0');g.addColorStop(1,'#b2b8bf');
+  x.fillStyle=g;x.fillRect(0,0,32,96);x.fillStyle='rgba(255,255,255,.9)';x.fillRect(0,6,32,9);
+  const t=new THREE.CanvasTexture(c);t.mapping=THREE.EquirectangularReflectionMapping;return t;}
+let ENV=null; try{const p=new THREE.PMREMGenerator(renderer);ENV=p.fromEquirectangular(envTex()).texture;}catch(e){}
+
+const FT=0.09;
+// 색 이름 라벨(색id당 1개 캐시)
+const _labelTex={};
+function labelTex(name,hex){
+  if(_labelTex[name]) return _labelTex[name];
+  const s=2,W=150,H=54;const c=document.createElement('canvas');c.width=W*s;c.height=H*s;const x=c.getContext('2d');x.scale(s,s);
+  x.fillStyle='rgba(255,255,255,.95)';x.strokeStyle='#cfd4da';x.lineWidth=2;
+  const r=10;x.beginPath();x.moveTo(r,0);x.arcTo(W,0,W,H,r);x.arcTo(W,H,0,H,r);x.arcTo(0,H,0,0,r);x.arcTo(0,0,W,0,r);x.closePath();x.fill();x.stroke();
+  x.fillStyle=hex;x.strokeStyle='#0002';x.beginPath();x.arc(20,27,11,0,7);x.fill();x.stroke();
+  x.fillStyle='#2e2e38';x.font='700 19px Gaegu, sans-serif';x.fillText(name,38,26);
+  x.fillStyle='#8a909a';x.font='700 13px Gaegu, sans-serif';x.fillText(hex,38,44);
+  const t=new THREE.CanvasTexture(c);t.anisotropy=4;t.encoding=THREE.sRGBEncoding;_labelTex[name]=t;return t;
+}
+function labelMesh(name,hex){const w=1.4,h=w*54/150;
+  return new THREE.Mesh(new THREE.PlaneGeometry(w,h),new THREE.MeshBasicMaterial({map:labelTex(name,hex),transparent:true}));}
+
+function makeWindow(P,w,h){
+  const grp=new THREE.Group();
+  const inner=(P.shape==='circle')?new THREE.CircleGeometry(Math.min(w,h)/2-FT,44):new THREE.PlaneGeometry(w-2*FT,h-2*FT);
+  const sky=new THREE.Mesh(inner,new THREE.MeshStandardMaterial({color:0xcbe6f5,emissive:0xbfe0f2,emissiveIntensity:0.5,roughness:1}));
+  sky.position.z=0.012;grp.add(sky);
+  const gm=glassMaterial(P.glass);
+  if(gm){const gmm=gm.clone();gmm.envMapIntensity=1.6;const gl=new THREE.Mesh(inner.clone(),gmm);gl.position.z=0.075;grp.add(gl);}
+  const frame=buildWindowFrame(w,h,{...P});frame.position.z=0.06;grp.add(frame);
+  grp.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;}});
+  return grp;
+}
+
+function buildRow(baseP, colors){
+  const scene=new THREE.Scene();
+  if(ENV) scene.environment=ENV;
+  scene.add(new THREE.HemisphereLight(0xdce8f5,0x8a8172,0.75));
+  const sun=new THREE.DirectionalLight(0xfff2d8,1.3);sun.position.set(6,10,9);sun.castShadow=true;
+  sun.shadow.mapSize.set(1024,1024);sun.shadow.radius=5;sun.shadow.bias=-0.0004;
+  const sd=14;sun.shadow.camera.left=-sd;sun.shadow.camera.right=sd;sun.shadow.camera.top=sd;sun.shadow.camera.bottom=-sd;sun.shadow.camera.far=45;
+  const [w,h]=realSize(baseP);
+  let x=0.7; const spots=[];
+  for(const col of colors){ spots.push({x:x+w/2, col}); x+=w+GAP; }
+  const rowW=x+0.7;
+  sun.target.position.set(rowW*0.4,1.4,0); scene.add(sun,sun.target);
+  const wall=new THREE.Mesh(new THREE.BoxGeometry(rowW,WALL_H,0.2),new THREE.MeshStandardMaterial({color:0xefe7db,roughness:0.95}));
+  wall.position.set(rowW/2,WALL_H/2,-0.1);wall.receiveShadow=true;scene.add(wall);
+  const floor=new THREE.Mesh(new THREE.BoxGeometry(rowW+4,0.1,4),new THREE.MeshStandardMaterial({color:0xe5ddce,roughness:1}));
+  floor.position.set(rowW/2,-0.05,1.8);floor.receiveShadow=true;scene.add(floor);
+  const cy=Math.max(h/2+0.35, 1.5);
+  for(const sp of spots){
+    const variant={...baseP, frameColor:sp.col.hex, gloss:sp.col.gloss||baseP.gloss};
+    const win=makeWindow(variant,w,h); win.position.set(sp.x, cy, 0); scene.add(win);
+    const lab=labelMesh(sp.col.name_ko, sp.col.hex); lab.position.set(sp.x, 0.5, 0.6); scene.add(lab);
+  }
+  const cam=new THREE.PerspectiveCamera(34,3,0.1,200);
+  return {scene,cam,rowW};
+}
+
+(async ()=>{
+  const [wp,fc]=await Promise.all([
+    fetch('../../data/window_presets.json?v=8').then(r=>r.json()),
+    fetch('../../data/frame_colors.json?v=8').then(r=>r.json())
+  ]).catch(e=>{showErr('데이터 로드 실패: '+e.message);throw e;});
+  const P=wp.presets||wp, colors=fc.colors;
+  const host=document.getElementById('rows');
+  const built=[];
+  for(const id of BASE_TYPES){
+    const baseP=P[id]; if(!baseP) continue;
+    const div=document.createElement('div'); div.className='row';
+    const g=baseP.glass||{};
+    div.innerHTML=`<div class="head">${id.replace('win_','')} <small>${baseP.shape==='circle'?'◯ ':''}${baseP.pattern} ${baseP.cols}×${baseP.rows} · ${g.type}</small></div>`;
+    const view=document.createElement('div'); view.className='view'; div.appendChild(view); host.appendChild(div);
+    built.push({view, ...buildRow(baseP, colors)});
+  }
+
+  let az=0, drag=false, px=0, py=0, pitch=0.14;
+  canvas.addEventListener('pointerdown',e=>{drag=true;px=e.clientX;py=e.clientY;const h=document.getElementById('hint');if(h)h.style.opacity='0';});
+  addEventListener('pointermove',e=>{if(!drag)return;az+=(e.clientX-px)*0.006;pitch+=(e.clientY-py)*0.004;px=e.clientX;py=e.clientY;az=Math.max(-0.7,Math.min(0.7,az));pitch=Math.max(-0.05,Math.min(0.6,pitch));});
+  addEventListener('pointerup',()=>drag=false);
+  function resize(){renderer.setSize(innerWidth,innerHeight,false);}
+  addEventListener('resize',resize);resize();
+
+  function render(){
+    requestAnimationFrame(render);
+    const ch=canvas.clientHeight;
+    for(const b of built){
+      const r=b.view.getBoundingClientRect();
+      if(r.bottom<0||r.top>ch) continue;
+      const w=r.width,h=r.height,l=r.left,bot=ch-r.bottom;
+      renderer.setViewport(l,bot,w,h);renderer.setScissor(l,bot,w,h);
+      const cam=b.cam,W=b.rowW;cam.aspect=w/h;cam.updateProjectionMatrix();
+      const dist=W*0.52+2.5,cp=Math.cos(pitch);
+      cam.position.set(W/2+Math.sin(az)*cp*dist, 1.5+Math.sin(pitch)*dist, Math.cos(az)*cp*dist);
+      cam.lookAt(W/2,1.4,0);
+      renderer.render(b.scene,cam);
+    }
+  }
+  render();
+  document.title=`볕 · 컬러 쇼룸 (${BASE_TYPES.length}종 × ${colors.length}색)`;
+})();
+</script>
+</body>
+</html>

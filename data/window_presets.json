@@ -148,78 +148,6 @@
       },
       "note": "원룸 표준. 정중앙 십자, 맑은 유리."
     },
-    "win_studio_wood": {
-      "room": "원룸(우드)",
-      "status": "확정",
-      "final": false,
-      "shape": "rect",
-      "cols": 2,
-      "rows": 2,
-      "pattern": "cross",
-      "corner": "sharp",
-      "sill": false,
-      "frameColor": "#c9a36a",
-      "gloss": "satin",
-      "glass": {
-        "type": "clear",
-        "transmittance": 0.92,
-        "tintColor": null,
-        "glossy": 0.35
-      },
-      "light": {
-        "illumMul": 1,
-        "diffuse": false
-      },
-      "note": "우드톤 십자 변형."
-    },
-    "win_studio_grid": {
-      "room": "원룸(격자)",
-      "status": "초안",
-      "final": false,
-      "shape": "rect",
-      "cols": 2,
-      "rows": 2,
-      "pattern": "grid",
-      "corner": "sharp",
-      "sill": false,
-      "frameColor": "#ffffff",
-      "gloss": "matte",
-      "glass": {
-        "type": "clear",
-        "transmittance": 0.92,
-        "tintColor": null,
-        "glossy": 0.35
-      },
-      "light": {
-        "illumMul": 1,
-        "diffuse": false
-      },
-      "note": "화이트 2×2 규칙격자."
-    },
-    "win_studio_mint": {
-      "room": "원룸(민트)",
-      "status": "초안",
-      "final": false,
-      "shape": "rect",
-      "cols": 2,
-      "rows": 2,
-      "pattern": "cross",
-      "corner": "sharp",
-      "sill": false,
-      "frameColor": "#bfe3d0",
-      "gloss": "satin",
-      "glass": {
-        "type": "clear",
-        "transmittance": 0.92,
-        "tintColor": null,
-        "glossy": 0.35
-      },
-      "light": {
-        "illumMul": 1,
-        "diffuse": false
-      },
-      "note": "민트 파스텔 십자."
-    },
     "win_apt_big": {
       "room": "아파트 거실",
       "status": "초안",
@@ -460,30 +388,6 @@
       },
       "note": "카페 통유리, 우드 라운드."
     },
-    "win_cafe_black": {
-      "room": "카페 모던",
-      "status": "초안",
-      "final": false,
-      "shape": "rect",
-      "cols": 2,
-      "rows": 2,
-      "pattern": "grid",
-      "corner": "sharp",
-      "sill": false,
-      "frameColor": "#3a3a3a",
-      "gloss": "satin",
-      "glass": {
-        "type": "clear",
-        "transmittance": 0.92,
-        "tintColor": null,
-        "glossy": 0.35
-      },
-      "light": {
-        "illumMul": 1,
-        "diffuse": false
-      },
-      "note": "모던 카페 블랙 격자."
-    },
     "win_kids_round": {
       "room": "아기자기",
       "status": "초안",
@@ -507,30 +411,6 @@
         "diffuse": false
       },
       "note": "민트 라운드 격자(파스텔)."
-    },
-    "win_hygge_wood": {
-      "room": "휘게",
-      "status": "초안",
-      "final": false,
-      "shape": "rect",
-      "cols": 2,
-      "rows": 2,
-      "pattern": "grid",
-      "corner": "sharp",
-      "sill": true,
-      "frameColor": "#c9a36a",
-      "gloss": "matte",
-      "glass": {
-        "type": "clear",
-        "transmittance": 0.92,
-        "tintColor": null,
-        "glossy": 0.35
-      },
-      "light": {
-        "illumMul": 1,
-        "diffuse": false
-      },
-      "note": "우드 무광 격자, 창턱."
     },
     "win_greenhouse_wall": {
       "room": "온실",
@@ -848,6 +728,238 @@
         "diffuse": false
       },
       "note": "로프트 벽체 스틸창(차콜, 대형)."
+    },
+    "win_plant_sill": {
+      "room": "식물창(선반)",
+      "status": "초안",
+      "final": false,
+      "big": false,
+      "shape": "rect",
+      "cols": 2,
+      "rows": 2,
+      "pattern": "grid",
+      "corner": "sharp",
+      "sill": true,
+      "sillDepth": 0.4,
+      "frameColor": "#f4efe4",
+      "gloss": "matte",
+      "glass": {
+        "type": "clear",
+        "transmittance": 0.92,
+        "tintColor": null,
+        "glossy": 0.35
+      },
+      "light": {
+        "illumMul": 1,
+        "diffuse": false
+      },
+      "note": "깊은 창턱(인방) — 작은 화분 올리는 자리."
+    },
+    "win_bay_plant": {
+      "room": "베이 식물창",
+      "status": "초안",
+      "final": false,
+      "big": false,
+      "shape": "rect",
+      "cols": 2,
+      "rows": 2,
+      "pattern": "cross",
+      "corner": "sharp",
+      "sill": true,
+      "sillDepth": 0.46,
+      "frameColor": "#c9a36a",
+      "gloss": "satin",
+      "glass": {
+        "type": "clear",
+        "transmittance": 0.92,
+        "tintColor": null,
+        "glossy": 0.35
+      },
+      "light": {
+        "illumMul": 1,
+        "diffuse": false
+      },
+      "note": "우드 베이창, 깊은 인방에 화분 배치."
+    },
+    "win_arch_garden": {
+      "room": "아치 정원창",
+      "status": "초안",
+      "final": false,
+      "big": false,
+      "shape": "arch",
+      "cols": 2,
+      "rows": 2,
+      "pattern": "grid",
+      "corner": "sharp",
+      "sill": false,
+      "frameColor": "#f4efe4",
+      "gloss": "matte",
+      "glass": {
+        "type": "clear",
+        "transmittance": 0.92,
+        "tintColor": null,
+        "glossy": 0.35
+      },
+      "light": {
+        "illumMul": 1,
+        "diffuse": false
+      },
+      "note": "상단 아치 + 격자, 정원/온실st."
+    },
+    "win_arch_tall": {
+      "room": "아치 세로창",
+      "status": "초안",
+      "final": false,
+      "big": false,
+      "shape": "arch",
+      "cols": 1,
+      "rows": 2,
+      "pattern": "grid",
+      "corner": "sharp",
+      "sill": false,
+      "frameColor": "#ffffff",
+      "gloss": "satin",
+      "glass": {
+        "type": "clear",
+        "transmittance": 0.92,
+        "tintColor": null,
+        "glossy": 0.35
+      },
+      "light": {
+        "illumMul": 1.05,
+        "diffuse": false
+      },
+      "note": "세로 긴 아치창(성당/클래식st)."
+    },
+    "win_conservatory": {
+      "room": "온실 아치",
+      "status": "초안",
+      "final": false,
+      "big": true,
+      "shape": "arch",
+      "cols": 3,
+      "rows": 2,
+      "pattern": "curtainwall",
+      "corner": "sharp",
+      "sill": false,
+      "frameColor": "#bfe3d0",
+      "gloss": "satin",
+      "glass": {
+        "type": "clear",
+        "transmittance": 0.92,
+        "tintColor": null,
+        "glossy": 0.35
+      },
+      "light": {
+        "illumMul": 1.15,
+        "diffuse": false
+      },
+      "note": "온실 대형 아치 커튼월."
+    },
+    "win_bay_bench": {
+      "room": "깊은 인방(벤치)",
+      "status": "초안",
+      "final": false,
+      "big": false,
+      "full": false,
+      "shape": "rect",
+      "cols": 2,
+      "rows": 2,
+      "pattern": "grid",
+      "corner": "sharp",
+      "sill": true,
+      "sillDepth": 0.72,
+      "frameColor": "#f4efe4",
+      "gloss": "matte",
+      "glass": {
+        "type": "clear",
+        "transmittance": 0.92,
+        "tintColor": null,
+        "glossy": 0.35
+      },
+      "light": {
+        "illumMul": 1,
+        "diffuse": false
+      },
+      "note": "아주 깊은 창턱 — 화분 여러 개/앉는 자리."
+    },
+    "win_euro_arch": {
+      "room": "유럽 아치창",
+      "status": "초안",
+      "final": false,
+      "big": false,
+      "full": false,
+      "shape": "arch",
+      "cols": 2,
+      "rows": 3,
+      "pattern": "grid",
+      "corner": "sharp",
+      "sill": false,
+      "frameColor": "#ffffff",
+      "gloss": "satin",
+      "glass": {
+        "type": "clear",
+        "transmittance": 0.92,
+        "tintColor": null,
+        "glossy": 0.35
+      },
+      "light": {
+        "illumMul": 1.05,
+        "diffuse": false
+      },
+      "note": "반원 상단 + 네모 격자 하단(유럽 클래식)."
+    },
+    "win_curtainwall_full": {
+      "room": "전면 커튼월",
+      "status": "초안",
+      "final": false,
+      "big": true,
+      "full": true,
+      "shape": "rect",
+      "cols": 4,
+      "rows": 3,
+      "pattern": "curtainwall",
+      "corner": "sharp",
+      "sill": false,
+      "frameColor": "#ffffff",
+      "gloss": "satin",
+      "glass": {
+        "type": "clear",
+        "transmittance": 0.92,
+        "tintColor": null,
+        "glossy": 0.35
+      },
+      "light": {
+        "illumMul": 1.2,
+        "diffuse": false
+      },
+      "note": "벽 끝까지 가는 층고 커튼월."
+    },
+    "win_greenhouse_full": {
+      "room": "온실 벽체",
+      "status": "초안",
+      "final": false,
+      "big": true,
+      "full": true,
+      "shape": "rect",
+      "cols": 5,
+      "rows": 3,
+      "pattern": "curtainwall",
+      "corner": "sharp",
+      "sill": false,
+      "frameColor": "#bfe3d0",
+      "gloss": "satin",
+      "glass": {
+        "type": "clear",
+        "transmittance": 0.92,
+        "tintColor": null,
+        "glossy": 0.35
+      },
+      "light": {
+        "illumMul": 1.25,
+        "diffuse": false
+      },
+      "note": "온실 전면 유리벽(민트 멀리언)."
     }
   }
 }

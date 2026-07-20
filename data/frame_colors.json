@@ -1,0 +1,18 @@
+{
+  "_note": "창틀 프레임 색상 팔레트. 창 종류(window_presets)에 곱해서 색 변형 생성. gloss=기본 광택(matte/satin/gloss).",
+  "colors": [
+    { "id": "white",    "name_ko": "흰색",       "hex": "#ffffff", "gloss": "satin" },
+    { "id": "cream",    "name_ko": "크림",       "hex": "#f4efe4", "gloss": "matte" },
+    { "id": "beige",    "name_ko": "베이지",     "hex": "#e3d5bd", "gloss": "matte" },
+    { "id": "gray",     "name_ko": "회색",       "hex": "#cbd0d6", "gloss": "matte" },
+    { "id": "charcoal", "name_ko": "차콜",       "hex": "#4a4e57", "gloss": "satin" },
+    { "id": "black",    "name_ko": "블랙",       "hex": "#2f2f34", "gloss": "satin" },
+    { "id": "jet",      "name_ko": "흑색",       "hex": "#1a1a1e", "gloss": "gloss" },
+    { "id": "mint",     "name_ko": "민트",       "hex": "#bfe3d0", "gloss": "satin" },
+    { "id": "sage",     "name_ko": "세이지",     "hex": "#c3ccb4", "gloss": "matte" },
+    { "id": "skyblue",  "name_ko": "파스텔블루", "hex": "#bcd3e6", "gloss": "satin" },
+    { "id": "blush",    "name_ko": "파스텔핑크", "hex": "#ecd3d6", "gloss": "satin" },
+    { "id": "wood",     "name_ko": "우드",       "hex": "#c9a36a", "gloss": "satin" },
+    { "id": "darkwood", "name_ko": "찐우드",     "hex": "#8a5a34", "gloss": "satin" }
+  ]
+}

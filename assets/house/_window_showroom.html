@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>볕 · 창틀 쇼룸 (밀폐방 + 태양광)</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Jua&family=Gaegu:wght@400;700&display=swap');
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{height:100%;overflow:hidden;font-family:'Gaegu',sans-serif;background:#c9d2db;user-select:none;touch-action:none}
+  #c{position:fixed;inset:0;width:100%;height:100%;display:block}
+  .top{position:fixed;top:0;left:0;right:0;z-index:5;padding:12px 20px 12px 300px;pointer-events:none}
+  .brand{font-family:'Jua';font-size:19px;color:#3a3548;text-shadow:0 1px 6px rgba(255,255,255,.5)}
+  .brand b{color:#e08a2c}
+  .tag{font-weight:700;font-size:12px;color:#4a5058;margin-left:8px}
+  #panel{position:fixed;top:0;left:0;bottom:0;width:280px;z-index:6;overflow-y:auto;
+    background:rgba(250,250,252,.93);backdrop-filter:blur(8px);border-right:1px solid rgba(0,0,0,.08);padding:14px 14px 40px}
+  #panel h2{font-family:'Jua';font-size:16px;color:#3a3548;margin:2px 0 4px}
+  #panel .grp{margin-top:13px;border-top:1px solid rgba(0,0,0,.08);padding-top:9px}
+  #panel .grp h3{font-family:'Jua';font-size:13px;color:#e08a2c;margin-bottom:6px}
+  .row{display:flex;align-items:center;gap:8px}
+  .row input[type=range]{flex:1}
+  .rlab{font-weight:700;font-size:11.5px;color:#4a5058;min-width:44px;text-align:right}
+  .opt{display:block;font-weight:700;font-size:12.5px;color:#3a3548;padding:3px 2px;cursor:pointer;border-radius:6px}
+  .opt:hover{background:rgba(0,0,0,.04)}
+  .opt input{margin-right:7px;vertical-align:middle}
+  .sw{display:inline-block;width:13px;height:13px;border-radius:3px;border:1px solid rgba(0,0,0,.2);vertical-align:middle;margin-right:6px}
+  .scroll{max-height:210px;overflow-y:auto;padding-right:4px}
+  #count{font-weight:700;font-size:11.5px;color:#7a808a;margin-top:6px}
+  #hint{position:fixed;bottom:14px;left:calc(50% + 140px);transform:translateX(-50%);z-index:5;background:rgba(30,30,40,.6);color:#fff;font-weight:700;font-size:13px;padding:6px 14px;border-radius:14px;transition:opacity .8s;pointer-events:none}
+  #err{position:fixed;z-index:9;left:290px;bottom:12px;background:#c0392b;color:#fff;padding:8px 12px;border-radius:8px;display:none;max-width:60%}
+  .loading{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;z-index:8;color:#e08a2c;font-family:'Jua';font-size:16px}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div class="top"><span class="brand">볕<b>.</b></span><span class="tag">밀폐 쇼룸 · 창으로만 빛 · 시점따라 벽 투명 · 드래그=각도 · Shift드래그=이동 · 휠=줌</span></div>
+
+<div id="panel">
+  <h2>🎛 필터</h2>
+  <div class="grp">
+    <h3>☀ 태양 시간</h3>
+    <div class="row"><span>🌅</span><input type="range" id="sun" min="0" max="100" value="55"><span>🌇</span></div>
+    <div class="rlab" id="sunlab" style="text-align:center;min-width:0">한낮</div>
+  </div>
+  <div class="grp">
+    <h3>🔆 밝기 (노출)</h3>
+    <div class="row"><span>🌑</span><input type="range" id="expo" min="30" max="130" value="82"><span>🌕</span><span class="rlab" id="expolab">0.82</span></div>
+  </div>
+  <div class="grp"><h3>🪴 창턱(인방)</h3><div id="sillList"></div></div>
+  <div class="grp"><h3>색상 (하나)</h3><div id="colorList"></div></div>
+  <div class="grp"><h3>창 종류 (하나)</h3><div class="scroll" id="typeList"></div></div>
+  <div class="grp"><h3>유리 (복수)</h3><div id="glassList"></div></div>
+  <div id="count"></div>
+</div>
+
+<div class="loading" id="loading">방 짓는 중…</div>
+<div id="hint">전체×전체 = 종류당 대표색 1개 · 색/종류 하나 고르면 펼쳐짐 · 빛은 창으로만</div>
+<div id="err"></div>
+
+<script type="module">
+import { buildWindowFrame, glassMaterial, drawArch } from '../../src/render3d/window_frame.js?v=sill2';
+
+const showErr=m=>{const e=document.getElementById('err');e.textContent=m;e.style.display='block';};
+window.addEventListener('error',e=>showErr('오류: '+e.message));
+
+const RH=3.6, RD=6, WT=0.2, GAP=1.1, EDGE=1.6;
+function realSize(P){
+  if(P.full)                  return [Math.min(6,1.0+P.cols*0.95), RH-0.25];   // 바닥~천장 전면
+  if(P.shape==='circle')      return [1.15,1.15];
+  if(P.shape==='arch')        return P.big?[2.8,3.2]:[1.5,2.2];
+  if(P.pattern==='letterbox') return P.cols>=3?[2.6,0.82]:[1.8,0.78];
+  if(P.pattern==='slim')      return [0.85,1.6];
+  if(P.big)                   return P.pattern==='none'?[3.4,2.0]:(P.frameColor==='#6b7280'?[3.6,2.75]:[3.8,2.7]);
+  if(P.pattern==='curtainwall')return [2.6,2.25];
+  if(P.pattern==='none')      return [1.8,2.05];
+  return [Math.min(2.5,0.95+P.cols*0.42), Math.min(2.35,0.95+P.rows*0.42)];
+}
+function sillH(P,h){
+  if(P.full)                   return 0.12;
+  if(P.shape==='circle')       return 1.75-h/2;
+  if(P.pattern==='letterbox')  return RH-h-0.3;
+  if(P.big||P.pattern==='none'||P.pattern==='curtainwall') return 0.12;
+  return 0.95;
+}
+// 바닥에서 떠 있는 허리창(인방 붙일 수 있는 것). 통창·바닥창·포트홀·레터박스 제외.
+function isWaist(P){
+  return !(P.full||P.big||P.shape==='circle'||P.pattern==='none'||P.pattern==='curtainwall'||P.pattern==='letterbox');
+}
+
+// ===== 렌더러 =====
+const canvas=document.getElementById('c');
+const renderer=new THREE.WebGLRenderer({canvas,antialias:true});
+renderer.setPixelRatio(Math.min(2,window.devicePixelRatio||1));
+renderer.shadowMap.enabled=true; renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+renderer.outputEncoding=THREE.sRGBEncoding;
+renderer.toneMapping=THREE.ACESFilmicToneMapping; renderer.toneMappingExposure=0.82;
+
+const scene=new THREE.Scene();
+const hemi=new THREE.HemisphereLight(0xcdddf0,0x6a6458,0.35); scene.add(hemi);
+const amb=new THREE.AmbientLight(0xffffff,0.05); scene.add(amb);
+const sun=new THREE.DirectionalLight(0xfff2d8,2.4); sun.castShadow=true;
+sun.shadow.mapSize.set(2048,2048); sun.shadow.radius=5; sun.shadow.bias=-0.0004;
+const sd=18; sun.shadow.camera.left=-sd;sun.shadow.camera.right=sd;sun.shadow.camera.top=sd;sun.shadow.camera.bottom=-sd;sun.shadow.camera.near=0.5;sun.shadow.camera.far=90;
+scene.add(sun, sun.target);
+function envTex(){const c=document.createElement('canvas');c.width=32;c.height=96;const x=c.getContext('2d');
+  const g=x.createLinearGradient(0,0,0,96);g.addColorStop(0,'#eef6ff');g.addColorStop(.5,'#cfe0f0');g.addColorStop(1,'#aeb5bd');
+  x.fillStyle=g;x.fillRect(0,0,32,96);x.fillStyle='rgba(255,255,255,.85)';x.fillRect(0,7,32,8);
+  const t=new THREE.CanvasTexture(c);t.mapping=THREE.EquirectangularReflectionMapping;return t;}
+try{const p=new THREE.PMREMGenerator(renderer);scene.environment=p.fromEquirectangular(envTex()).texture;}catch(e){}
+
+const cam=new THREE.PerspectiveCamera(40, innerWidth/innerHeight, 0.1, 400);
+
+// ===== 사각형 빼기(벽 구멍) =====
+function rectMinus(a,holes){
+  let rects=[a];
+  for(const hh of holes){ const nx=[];
+    for(const r of rects){
+      if(hh.x1<=r.x0||hh.x0>=r.x1||hh.y1<=r.y0||hh.y0>=r.y1){nx.push(r);continue;}
+      const ox0=Math.max(r.x0,hh.x0),oy0=Math.max(r.y0,hh.y0),ox1=Math.min(r.x1,hh.x1),oy1=Math.min(r.y1,hh.y1);
+      if(oy1<r.y1)nx.push({x0:r.x0,y0:oy1,x1:r.x1,y1:r.y1});
+      if(oy0>r.y0)nx.push({x0:r.x0,y0:r.y0,x1:r.x1,y1:oy0});
+      if(ox0>r.x0)nx.push({x0:r.x0,y0:oy0,x1:ox0,y1:oy1});
+      if(ox1<r.x1)nx.push({x0:ox1,y0:oy0,x1:r.x1,y1:oy1});
+    } rects=nx;
+  } return rects;
+}
+
+// 창 형태별 벽 구멍 path (원형=원, 라운드=둥근사각, 그 외=사각)
+function holePath(it,cx,cy){
+  const w=it.w,h=it.h, ins=FT*0.4;   // 프레임보다 안쪽으로(프레임이 벽 가장자리 덮어 z-fight 방지)
+  if(it.P.shape==='circle'){ const p=new THREE.Path(); p.absarc(cx,cy,Math.min(w,h)/2-FT*0.55,0,Math.PI*2,true); return p; }
+  if(it.P.shape==='arch'){ const p=new THREE.Path(); drawArch(p, w-FT*1.1, h-FT*1.1, cx, cy); return p; }
+  const x0=cx-w/2+ins,x1=cx+w/2-ins,y0=cy-h/2+ins,y1=cy+h/2-ins,p=new THREE.Path();
+  if(it.P.corner==='round'){ const r=Math.min(w,h)*0.1;
+    p.moveTo(x0+r,y0);p.lineTo(x1-r,y0);p.quadraticCurveTo(x1,y0,x1,y0+r);p.lineTo(x1,y1-r);p.quadraticCurveTo(x1,y1,x1-r,y1);
+    p.lineTo(x0+r,y1);p.quadraticCurveTo(x0,y1,x0,y1-r);p.lineTo(x0,y0+r);p.quadraticCurveTo(x0,y0,x0+r,y0);p.closePath();
+  }else{ p.moveTo(x0,y0);p.lineTo(x1,y0);p.lineTo(x1,y1);p.lineTo(x0,y1);p.closePath(); }
+  return p;
+}
+
+// ===== 라벨 =====
+function makeLabel(item){
+  const P=item.P,g=P.glass||{},s=2,W=360,H=138;
+  const c=document.createElement('canvas');c.width=W*s;c.height=H*s;const x=c.getContext('2d');x.scale(s,s);
+  x.fillStyle='rgba(255,255,255,.95)';x.strokeStyle=P.status==='확정'?'#2f9a55':'#e0a35c';x.lineWidth=3;
+  const r=13;x.beginPath();x.moveTo(r,0);x.arcTo(W,0,W,H,r);x.arcTo(W,H,0,H,r);x.arcTo(0,H,0,0,r);x.arcTo(0,0,W,0,r);x.closePath();x.fill();x.stroke();
+  x.fillStyle='#2e2e38';x.font='700 21px Gaegu';x.fillText((P.status==='확정'?'● ':'')+item.id.replace('win_',''),14,29);
+  x.fillStyle=item.color.hex;x.strokeStyle='#0003';x.beginPath();x.arc(24,52,9,0,7);x.fill();x.stroke();
+  x.fillStyle='#5a6069';x.font='700 15px Gaegu';x.fillText(`${item.color.name_ko} · ${P.shape==='circle'?'◯':''}${P.pattern} ${P.cols}×${P.rows}`,40,57);
+  x.fillText(`${g.type} · 빛 ×${(P.light&&P.light.illumMul)??'-'}${(P.light&&P.light.diffuse)?' 확산':''}`,14,84);
+  x.fillStyle=P.status==='확정'?'#2f9a55':'#c8722a';x.font='700 14px Gaegu';x.fillText(P.status||'',14,107);
+  const tex=new THREE.CanvasTexture(c);tex.anisotropy=4;tex.encoding=THREE.sRGBEncoding;
+  const w=1.7,h=w*H/W;
+  return new THREE.Mesh(new THREE.PlaneGeometry(w,h),new THREE.MeshBasicMaterial({map:tex,transparent:true,depthWrite:false}));
+}
+
+// ===== 창 (프레임+유리). 유리종류로 그림자 유무 → 바닥 빛 다르게 =====
+const FT=0.09;
+function makeWindow(item){
+  const P=item.P,[w,h]=realSize(P),grp=new THREE.Group();
+  const gm=glassMaterial(P.glass);
+  if(gm){
+    const inner=(P.shape==='circle')?new THREE.CircleGeometry(Math.min(w,h)/2-FT,44):new THREE.PlaneGeometry(w-2*FT,h-2*FT);
+    const gmm=gm.clone();gmm.envMapIntensity=1.6;gmm.opacity=Math.min(0.9,(gmm.opacity||0.15)+0.05);
+    const gl=new THREE.Mesh(inner,gmm);gl.position.z=0.10;   // 벽 앞면 근처(개구부 안, 벽 없음)
+    // frosted/glassblock = 빛 막아 은은(프라이버시) / clear·green·none = 빛 통과
+    gl.castShadow=(P.glass.type==='frosted'||P.glass.type==='glassblock');
+    grp.add(gl);
+  }
+  const fopts={...P,frameColor:item.color.hex,gloss:item.color.gloss||P.gloss};
+  if(fSill!=='orig' && isWaist(P)){ fopts.sill=true; fopts.sillDepth=(fSill==='p2'?0.5:0.3); }  // 인방 축
+  const frame=buildWindowFrame(w,h,fopts);
+  frame.position.z=0.15;   // 벽 앞면(z=0.1)보다 확실히 앞 → 프레임/벽 동일깊이 z-fight 제거
+  frame.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;}});
+  grp.add(frame);
+  grp.userData={w,h};
+  return grp;
+}
+
+// ===== 상태 =====
+let P={},COLORS=[],TYPE_IDS=[];
+let fColor='all',fType='all',fSill='orig',fGlass={clear:true,'green-tint':true,frosted:true,glassblock:true,none:true};
+let dyn=new THREE.Group(); scene.add(dyn);
+let shells={}, roomW=12;
+
+function computeSet(){
+  const set=[],types=(fType==='all')?TYPE_IDS:[fType],colById=Object.fromEntries(COLORS.map(c=>[c.id,c]));
+  for(const tid of types){ const bp=P[tid]; if(!bp||!fGlass[bp.glass.type])continue;
+    if(fColor==='all'){
+      if(fType==='all') set.push({id:tid,P:bp,color:{hex:bp.frameColor,gloss:bp.gloss,name_ko:'기본'}});
+      else for(const c of COLORS) set.push({id:tid,P:bp,color:c});
+    } else set.push({id:tid,P:bp,color:colById[fColor]});
+  } return set;
+}
+function clearDyn(){
+  dyn.traverse(o=>{if(o.isMesh){o.geometry&&o.geometry.dispose();if(o.material&&o.material.map&&o.material.map.isCanvasTexture)o.material.map.dispose();}});
+  while(dyn.children.length)dyn.remove(dyn.children[0]); shells={};
+}
+
+function buildRoom(){
+  clearDyn();
+  const set=computeSet();
+  document.getElementById('count').textContent=`표시 ${set.length}개 · 창으로만 채광`;
+  let x=EDGE; const placed=[];
+  for(const it of set){const[w,h]=realSize(it.P);placed.push({...it,w,h,cx:x+w/2});x+=w+GAP;}
+  roomW=Math.max(8,x-GAP+EDGE);
+
+  const wallMat=()=>new THREE.MeshStandardMaterial({color:0xefe7db,roughness:0.96});
+  const floorMat=new THREE.MeshStandardMaterial({color:0xe6ddcd,roughness:1});
+  const ceilMat=new THREE.MeshStandardMaterial({color:0xf3efe6,roughness:1});
+  const box=(w,h,d,m,px,py,pz)=>{const b=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),m);b.position.set(px,py,pz);b.castShadow=true;b.receiveShadow=true;return b;};
+
+  // 바닥/천장
+  shells.floor=box(roomW,WT,RD,floorMat, roomW/2,-WT/2,RD/2-0.1);
+  shells.floor.userData={normal:[0,-1,0],center:[roomW/2,0,RD/2]};
+  shells.ceiling=box(roomW,WT,RD,ceilMat, roomW/2,RH+WT/2,RD/2-0.1);
+  shells.ceiling.userData={normal:[0,1,0],center:[roomW/2,RH,RD/2]};
+  // 앞벽(관찰자쪽, z=RD) · 옆벽
+  shells.front=box(roomW,RH,WT,wallMat(), roomW/2,RH/2,RD-0.1);
+  shells.front.userData={normal:[0,0,1],center:[roomW/2,RH/2,RD]};
+  shells.left=box(WT,RH,RD,wallMat(), 0,RH/2,RD/2-0.1);
+  shells.left.userData={normal:[-1,0,0],center:[0,RH/2,RD/2]};
+  shells.right=box(WT,RH,RD,wallMat(), roomW,RH/2,RD/2-0.1);
+  shells.right.userData={normal:[1,0,0],center:[roomW,RH/2,RD/2]};
+  // 뒷벽(z=0) = 창 형태대로 구멍 뚫기 (원형창=원형 hole)
+  const bmat=wallMat();
+  const wshape=new THREE.Shape();
+  wshape.moveTo(0,0);wshape.lineTo(roomW,0);wshape.lineTo(roomW,RH);wshape.lineTo(0,RH);wshape.closePath();
+  for(const it of placed){ const cy=sillH(it.P,it.h)+it.h/2; wshape.holes.push(holePath(it,it.cx,cy)); }
+  const bgeo=new THREE.ExtrudeGeometry(wshape,{depth:WT,bevelEnabled:false,curveSegments:28});
+  bgeo.translate(0,0,-WT/2);
+  const back=new THREE.Mesh(bgeo,bmat); back.castShadow=true; back.receiveShadow=true;
+  back.userData={normal:[0,0,-1],center:[roomW/2,RH/2,0]};
+  shells.back=back;
+  for(const k in shells) dyn.add(shells[k]);
+
+  // 창 + 라벨
+  for(const it of placed){
+    const win=makeWindow(it); win.position.set(it.cx, sillH(it.P,it.h)+it.h/2, 0); dyn.add(win);
+    const lab=makeLabel(it); lab.position.set(it.cx,0.5,RD*0.5); lab.userData.faceCam=true; dyn.add(lab);
+  }
+  // 카메라/태양 세트 폭에 맞춤
+  focusX=Math.min(Math.max(EDGE+3,roomW/2),Math.max(EDGE+3,roomW-EDGE-1));
+  dist=Math.min(30,Math.max(8,roomW*0.3+6));
+  updateSun(+document.getElementById('sun').value); updateCam();
+}
+
+// ===== 태양(시간) : 방 밖(-z 뒤쪽)에서 창으로 =====
+function mix(a,b,t){return new THREE.Color(a).lerp(new THREE.Color(b),t);}
+function updateSun(t){
+  const day=t/100, noon=1-Math.abs(day-0.5)*2, el=0.14+noon*1.1, az=(day-0.5)*1.7, warm=1-noon;
+  const D=26, ce=Math.cos(el);
+  sun.position.set(focusX+Math.sin(az)*ce*D, Math.sin(el)*D+2, -(ce*D*0.55+3));  // 뒷벽 밖
+  sun.target.position.set(focusX-Math.sin(az)*4, 0.2, RD*0.45); sun.target.updateMatrixWorld();
+  sun.color.copy(mix('#fff3e0','#ff9540',warm*0.85));
+  sun.intensity=1.3+noon*1.7;
+  hemi.intensity=0.18+noon*0.4; hemi.color.copy(mix('#c6d8ec','#e6c49c',warm*0.5));
+  amb.intensity=0.03+noon*0.06;
+  const bg=mix('#cdd9e6', mix('#e7c7a2','#4e4a5c',day>0.5?0.5:0), warm*0.55);
+  scene.background=bg; scene.fog=scene.fog||new THREE.Fog(0xffffff,40,140); scene.fog.color.copy(bg);
+  document.getElementById('sunlab').textContent=day<0.28?'아침':day<0.42?'오전':day<0.58?'한낮':day<0.75?'오후':'저녁';
+}
+
+// ===== 컷어웨이(시점따라 벽 투명, 그림자 유지) =====
+function updateShells(){
+  const cp=cam.position;
+  for(const k in shells){ const sh=shells[k],{normal,center}=sh.userData;
+    const dot=(cp.x-center[0])*normal[0]+(cp.y-center[1])*normal[1]+(cp.z-center[2])*normal[2];
+    const hide=dot>=0.3;
+    sh.traverse(o=>{ if(!o.isMesh||!o.material)return; o.visible=true;
+      if(hide){o.material.transparent=true;o.material.opacity=0;o.material.depthWrite=false;}
+      else{o.material.opacity=1;o.material.depthWrite=true;o.material.transparent=false;}
+      o.castShadow=true;   // 숨겨도 빛은 막음
+    });
+  }
+}
+
+// ===== 카메라 =====
+let focusX=EDGE+3,dist=10,yaw=0.42,pitch=0.2;
+function updateCam(){
+  focusX=Math.max(EDGE+1,Math.min(roomW-EDGE-1,focusX));
+  dist=Math.max(3.5,Math.min(34,dist)); pitch=Math.max(-0.1,Math.min(0.95,pitch)); yaw=Math.max(-1.2,Math.min(1.2,yaw));
+  const cp=Math.cos(pitch);
+  cam.position.set(focusX+Math.sin(yaw)*cp*dist, 1.6+Math.sin(pitch)*dist, RD*0.5+Math.cos(yaw)*cp*dist);
+  cam.lookAt(focusX,1.5,RD*0.15);
+  updateSun(+document.getElementById('sun').value);
+  updateShells();
+  // 라벨 카메라 바라보기
+  dyn.children.forEach(o=>{ if(o.userData&&o.userData.faceCam) o.lookAt(cam.position.x,o.position.y,cam.position.z); });
+}
+let drag=false,pan=false,px=0,py=0;
+canvas.addEventListener('pointerdown',e=>{drag=true;pan=(e.button===2||e.shiftKey);px=e.clientX;py=e.clientY;const h=document.getElementById('hint');if(h)h.style.opacity='0';});
+addEventListener('pointermove',e=>{if(!drag)return;const dx=e.clientX-px,dy=e.clientY-py;px=e.clientX;py=e.clientY;
+  if(pan)focusX-=dx*dist*0.0016; else{yaw+=dx*0.006;pitch+=dy*0.005;} updateCam();});
+addEventListener('pointerup',()=>drag=false);
+canvas.addEventListener('contextmenu',e=>e.preventDefault());
+canvas.addEventListener('wheel',e=>{e.preventDefault();dist*=(1+Math.sign(e.deltaY)*0.1);updateCam();},{passive:false});
+addEventListener('keydown',e=>{if(e.key==='ArrowLeft')focusX-=1.4;else if(e.key==='ArrowRight')focusX+=1.4;else return;updateCam();});
+function resize(){renderer.setSize(innerWidth,innerHeight);cam.aspect=innerWidth/innerHeight;cam.updateProjectionMatrix();}
+addEventListener('resize',resize);
+
+// ===== 패널 =====
+function buildPanel(){
+  const sl=document.getElementById('sillList');
+  sl.innerHTML=[['orig','원본(설계값)'],['p1','화분 1개'],['p2','화분 2개(깊게)']]
+    .map(([v,t],i)=>`<label class="opt"><input type="radio" name="sill" value="${v}" ${i===0?'checked':''}>${t}</label>`).join('');
+  sl.addEventListener('change',e=>{fSill=e.target.value;buildRoom();});
+  const cl=document.getElementById('colorList');
+  cl.innerHTML=`<label class="opt"><input type="radio" name="col" value="all" checked>전체</label>`+
+    COLORS.map(c=>`<label class="opt"><input type="radio" name="col" value="${c.id}"><span class="sw" style="background:${c.hex}"></span>${c.name_ko}</label>`).join('');
+  cl.addEventListener('change',e=>{fColor=e.target.value;buildRoom();});
+  const tl=document.getElementById('typeList');
+  tl.innerHTML=`<label class="opt"><input type="radio" name="typ" value="all" checked>전체</label>`+
+    TYPE_IDS.map(id=>`<label class="opt"><input type="radio" name="typ" value="${id}">${id.replace('win_','')}</label>`).join('');
+  tl.addEventListener('change',e=>{fType=e.target.value;buildRoom();});
+  const gl=document.getElementById('glassList');
+  gl.innerHTML=['clear','frosted','green-tint','glassblock','none'].map(g=>`<label class="opt"><input type="checkbox" value="${g}" checked>${g}</label>`).join('');
+  gl.addEventListener('change',e=>{fGlass[e.target.value]=e.target.checked;buildRoom();});
+  document.getElementById('sun').addEventListener('input',e=>updateSun(+e.target.value));
+  const ex=document.getElementById('expo');
+  ex.addEventListener('input',e=>{const v=+e.target.value/100;renderer.toneMappingExposure=v;document.getElementById('expolab').textContent=v.toFixed(2);});
+}
+
+(async ()=>{
+  const [wp,fc]=await Promise.all([
+    fetch('../../data/window_presets.json?v=8').then(r=>r.json()),   // 캐시버스터(삭제/추가 즉시 반영)
+    fetch('../../data/frame_colors.json?v=8').then(r=>r.json())
+  ]).catch(e=>{showErr('데이터 로드 실패: '+e.message);throw e;});
+  P=wp.presets||wp; COLORS=fc.colors; TYPE_IDS=Object.keys(P);
+  buildPanel(); resize(); buildRoom();
+  function loop(){requestAnimationFrame(loop);renderer.render(scene,cam);}
+  loop();
+  document.getElementById('loading').style.display='none';
+  document.title=`볕 · 밀폐 쇼룸 (${TYPE_IDS.length}종 × ${COLORS.length}색)`;
+  setTimeout(()=>{const h=document.getElementById('hint');if(h)h.style.opacity='0';},8000);
+})();
+</script>
+</body>
+</html>

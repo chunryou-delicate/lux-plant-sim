@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>볕 · 창틀 샘플 벽</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Jua&family=Gaegu:wght@400;700&display=swap');
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{background:#f1ece3;font-family:'Gaegu',sans-serif;color:#2e2e38}
+  header{padding:20px 24px 6px}
+  header h1{font-family:'Jua';font-size:24px}
+  header h1 b{color:#e08a2c}
+  header .sub{font-weight:700;font-size:13px;color:#6a6f7a;margin-top:3px}
+  header .legend{margin-top:7px;font-size:12.5px;color:#5a6069;display:flex;gap:16px;flex-wrap:wrap;align-items:center}
+  header .legend i{width:15px;height:11px;border-radius:2px;display:inline-block;border:1px solid #b9c0c9;vertical-align:middle;margin-right:4px}
+  .rows{padding:8px 18px 60px}
+  .wallrow{overflow-x:auto;margin-bottom:6px}
+  .wallrow svg{display:block}
+  #err{position:fixed;left:12px;bottom:12px;background:#c0392b;color:#fff;padding:8px 12px;border-radius:8px;display:none}
+</style>
+</head>
+<body>
+<header>
+  <h1>볕<b>.</b> 창틀 샘플 벽 — 실제 크기 비율</h1>
+  <div class="sub">한 벽에 쭈루룩 · 크기·높이 비교 · 낙점용</div>
+  <div class="legend">
+    <span><i style="background:#e9f3f8"></i>clear</span>
+    <span><i style="background:#dfe6ea"></i>frosted</span>
+    <span><i style="background:#d9e6ee"></i>glassblock</span>
+    <span><i style="background:#cfe6d8"></i>green-tint</span>
+    <span><i style="background:#dfeef5;border-style:dashed;border-color:#b9a06a"></i>none(뚫림)</span>
+    <span style="color:#c8722a;font-weight:700">이름 옆 ● = 확정</span>
+  </div>
+</header>
+<div class="rows" id="rows"></div>
+<div id="err"></div>
+
+<script>
+const showErr=m=>{const e=document.getElementById('err');e.textContent=m;e.style.display='block';};
+window.addEventListener('error',e=>showErr('오류: '+e.message));
+
+const PXM=70, WALL_H=3.6, GAP=0.7, MARGIN=0.55, MAXW=19;   // meters
+const GLASS_FILL={clear:'#e9f3f8','green-tint':'#cfe6d8',frosted:'#dfe6ea',glassblock:'#d9e6ee',none:null};
+const SKY='#dfeef6';
+const STROKE='rgba(52,54,64,.42)';
+const WALL_COL='#efe7db', SKIRT='#e4ddcf', FLOORLINE='rgba(90,80,64,.35)';
+const R=n=>Math.round(n*100)/100;
+
+// 대표 실제 크기(m) — 벽에서 상대 크기 비교용
+function realSize(P){
+  if(P.shape==='circle')      return [1.15,1.15];
+  if(P.pattern==='letterbox') return P.cols>=3?[2.6,0.82]:[1.8,0.78];
+  if(P.pattern==='slim')      return [0.85,1.6];
+  if(P.big)                   return P.pattern==='none'?[3.4,2.0]:(P.frameColor==='#6b7280'?[3.6,2.75]:[3.8,2.7]);
+  if(P.pattern==='curtainwall')return [2.6,2.25];
+  if(P.pattern==='none')      return [1.8,2.05];
+  return [Math.min(2.5,0.95+P.cols*0.42), Math.min(2.35,0.95+P.rows*0.42)];
+}
+// 바닥에서 창턱 높이(m)
+function sillH(P){
+  const [,h]=realSize(P);
+  if(P.shape==='circle')       return 1.65-h/2;
+  if(P.pattern==='letterbox')  return WALL_H-h-0.25;   // 반지하 높은 창(천장 근처)
+  if(P.big||P.pattern==='none'||P.pattern==='curtainwall') return 0.12;  // 바닥까지
+  return 0.9;                                          // 일반 허리창
+}
+
+function bar(x,y,w,h,fc){ return `<rect x="${R(x)}" y="${R(y)}" width="${R(w)}" height="${R(h)}" fill="${fc}" stroke="${STROKE}" stroke-width="0.7"/>`; }
+
+// 창 하나를 (ox,oy,W,H)에 그림
+function drawWindow(ox,oy,W,H,P){
+  const ft=Math.max(4,0.05*Math.min(W,H));
+  let bt=Math.max(2.2,0.028*Math.min(W,H)); if(P.pattern==='curtainwall') bt*=1.7;
+  const fc=P.frameColor, g=P.glass||{}, gf=GLASS_FILL[g.type];
+  const p=[];
+
+  if(P.shape==='circle'){
+    const rad=Math.min(W,H)/2, cx=ox+W/2, cy=oy+H/2, ir=rad-ft;
+    p.push(`<circle cx="${R(cx)}" cy="${R(cy)}" r="${R(ir)}" fill="${SKY}"/>`);
+    if(gf) p.push(`<circle cx="${R(cx)}" cy="${R(cy)}" r="${R(ir)}" fill="${gf}"/>`);
+    if(P.pattern!=='none'){
+      if(P.cols>1) p.push(bar(cx-bt/2,cy-ir,bt,2*ir,fc));
+      if(P.rows>1) p.push(bar(cx-ir,cy-bt/2,2*ir,bt,fc));
+    }
+    p.push(`<circle cx="${R(cx)}" cy="${R(cy)}" r="${R(rad-ft/2)}" fill="none" stroke="${fc}" stroke-width="${R(ft)}"/>`);
+    p.push(`<circle cx="${R(cx)}" cy="${R(cy)}" r="${R(rad)}" fill="none" stroke="${STROKE}" stroke-width="1"/>`);
+    return p.join('');
+  }
+
+  const rx=P.corner==='round'?Math.min(W,H)*0.1:0;
+  const ix=ox+ft, iy=oy+ft, iw=W-2*ft, ih=H-2*ft;
+  // 개구부(바깥 하늘) + 유리
+  p.push(`<rect x="${R(ix)}" y="${R(iy)}" width="${R(iw)}" height="${R(ih)}" rx="${R(Math.max(0,rx-ft))}" fill="${SKY}"/>`);
+  if(gf) p.push(`<rect x="${R(ix)}" y="${R(iy)}" width="${R(iw)}" height="${R(ih)}" rx="${R(Math.max(0,rx-ft))}" fill="${gf}"/>`);
+  else   p.push(`<rect x="${R(ix)}" y="${R(iy)}" width="${R(iw)}" height="${R(ih)}" fill="none" stroke="#b9a06a" stroke-width="1.4" stroke-dasharray="6 4"/>`);
+  if(g.type==='glassblock'){
+    for(let i=1;i<3;i++) p.push(`<line x1="${R(ix+iw*i/3)}" y1="${R(iy)}" x2="${R(ix+iw*i/3)}" y2="${R(iy+ih)}" stroke="#c2d2dd" stroke-width="2"/>`);
+    for(let j=1;j<3;j++) p.push(`<line x1="${R(ix)}" y1="${R(iy+ih*j/3)}" x2="${R(ix+iw)}" y2="${R(iy+ih*j/3)}" stroke="#c2d2dd" stroke-width="2"/>`);
+  }
+  if(g.type==='frosted'){
+    for(let d=-ih; d<iw; d+=9){
+      const x1=ix+Math.max(0,d), y1=iy+Math.max(0,-d);
+      const x2=ix+Math.min(iw,d+ih), y2=iy+(d+ih<=iw?ih:iw-d);
+      p.push(`<line x1="${R(x1)}" y1="${R(y1)}" x2="${R(x2)}" y2="${R(y2)}" stroke="#cdd6dc" stroke-width="1.3"/>`);
+    }
+  }
+  const addV=n=>{ for(let i=1;i<n;i++){ const x=ix+iw*i/n; p.push(bar(x-bt/2,iy,bt,ih,fc)); } };
+  const addH=n=>{ for(let j=1;j<n;j++){ const y=iy+ih*j/n; p.push(bar(ix,y-bt/2,iw,bt,fc)); } };
+  switch(P.pattern){
+    case 'none': break; case 'letterbox': addV(P.cols); break; case 'slim': addH(P.rows); break;
+    case 'cross': addV(2); addH(2); break; default: addV(P.cols); addH(P.rows);
+  }
+  p.push(`<rect x="${R(ox+ft/2)}" y="${R(oy+ft/2)}" width="${R(W-ft)}" height="${R(H-ft)}" rx="${R(rx)}" fill="none" stroke="${fc}" stroke-width="${R(ft)}"/>`);
+  p.push(`<rect x="${R(ox)}" y="${R(oy)}" width="${R(W)}" height="${R(H)}" rx="${R(rx)}" fill="none" stroke="${STROKE}" stroke-width="1"/>`);
+  if(P.sill) p.push(`<rect x="${R(ox-ft*0.7)}" y="${R(oy+H)}" width="${R(W+ft*1.4)}" height="${R(ft*0.8)}" fill="${fc}" stroke="${STROKE}" stroke-width="0.8"/>`);
+  return p.join('');
+}
+
+(async ()=>{
+  let data;
+  try{ data=await fetch('../../data/window_presets.json').then(r=>r.json()); }
+  catch(e){ showErr('window_presets.json 로드 실패: '+e.message); return; }
+  const P=data.presets||data;
+  const items=Object.keys(P).map(id=>{ const [w,h]=realSize(P[id]); return {id,P:P[id],w,h}; });
+
+  // 행(벽)으로 나누기
+  const rows=[]; let cur=[], x=MARGIN;
+  for(const it of items){
+    if(x+it.w+GAP > MAXW && cur.length){ rows.push(cur); cur=[]; x=MARGIN; }
+    it.x=x; cur.push(it); x+=it.w+GAP;
+  }
+  if(cur.length) rows.push(cur);
+
+  const host=document.getElementById('rows');
+  const labelH=96;
+  for(const row of rows){
+    const rowW=(row[row.length-1].x + row[row.length-1].w + MARGIN);
+    const Wpx=rowW*PXM, Hpx=WALL_H*PXM, floorY=Hpx;
+    const svgH=Hpx+labelH;
+    const parts=[];
+    // 벽 + 바닥
+    parts.push(`<rect x="0" y="0" width="${R(Wpx)}" height="${R(Hpx)}" fill="${WALL_COL}"/>`);
+    parts.push(`<rect x="0" y="${R(Hpx-14)}" width="${R(Wpx)}" height="14" fill="${SKIRT}"/>`);
+    parts.push(`<line x1="0" y1="${R(Hpx)}" x2="${R(Wpx)}" y2="${R(Hpx)}" stroke="${FLOORLINE}" stroke-width="2"/>`);
+    for(const it of row){
+      const wx=it.x*PXM, ww=it.w*PXM, wh=it.h*PXM;
+      const sill=sillH(it.P);
+      const wy=(WALL_H-(sill+it.h))*PXM;
+      parts.push(drawWindow(wx,wy,ww,wh,it.P));
+      const cx=wx+ww/2;
+      const conf=it.P.status==='확정';
+      // 세로 라벨(겹침 방지)
+      parts.push(`<text x="${R(cx)}" y="${R(floorY+8)}" transform="rotate(90 ${R(cx)} ${R(floorY+8)})" font-family="Gaegu,sans-serif" font-weight="700" font-size="12" fill="${conf?'#2f9a55':'#4a5058'}">${conf?'● ':''}${it.id.replace('win_','')}</text>`);
+    }
+    const div=document.createElement('div'); div.className='wallrow';
+    div.innerHTML=`<svg width="${R(Wpx)}" height="${R(svgH)}" viewBox="0 0 ${R(Wpx)} ${R(svgH)}">${parts.join('')}</svg>`;
+    host.appendChild(div);
+  }
+  document.title=`볕 · 창틀 샘플 벽 (${items.length})`;
+})();
+</script>
+</body>
+</html>

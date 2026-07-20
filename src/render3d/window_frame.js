@@ -20,14 +20,29 @@ export const FRAME_DEFAULTS={
   corner:'sharp',   // 'sharp' | 'round' (rect 전용)
   pattern:'grid',   // grid | cross | letterbox | slim | curtainwall | none
   sill:false,       // 창턱(선반)
+  sillDepth:0.12,   // 창턱 깊이(m). 크게 하면 식물 올리는 인방
   frameColor:'#f8f4ec',
   gloss:'matte',    // matte | satin | gloss
   glass:{ type:'clear', transmittance:0.92, tintColor:null, glossy:0.3 },
 };
+// shape: 'rect' | 'circle'(포트홀) | 'arch'(아치 상단, 온실/정원창)
+
+/* 아치 외곽선(반원 상단 + 직사각 하단)을 path/shape에 그린다. 중심(cx,cy). */
+export function drawArch(p, w, h, cx=0, cy=0){
+  const R=w/2, rectH=Math.max(0.05, h-R), x=cx-w/2, yb=cy-h/2, springY=yb+rectH;
+  p.moveTo(x, yb);
+  p.lineTo(x, springY);
+  p.absarc(cx, springY, R, Math.PI, 0, true);   // 좌 스프링 → 상단 반원 → 우 스프링
+  p.lineTo(cx+w/2, yb);
+  p.lineTo(x, yb);
+  p.closePath?.();
+  return p;
+}
 
 /* 유리 quad 지오메트리(형태별). 안쪽 크기 gw×gh. */
 export function glassGeometry(shape, gw, gh){
   if(shape==='circle') return new THREE.CircleGeometry(Math.min(gw,gh)/2, 40);
+  if(shape==='arch'){ const s=new THREE.Shape(); drawArch(s, gw, gh); return new THREE.ShapeGeometry(s); }
   return new THREE.PlaneGeometry(gw, gh);
 }
 
@@ -119,6 +134,7 @@ export function buildWindowFrame(w, h, opts={}){
   const o={ ...FRAME_DEFAULTS, ...opts };
   const m=opts.material || frameMaterial(o.frameColor, o.gloss);
   if(o.shape==='circle') return buildCircleFrame(w, h, o, m);   // ★ 원형 포트홀
+  if(o.shape==='arch')   return buildArchFrame(w, h, o, m);     // ★ 아치(온실/정원창)
   const g=new THREE.Group();
   const FT=o.FT, d=o.depth;
 
@@ -147,12 +163,38 @@ export function buildWindowFrame(w, h, opts={}){
     default:            addV(o.cols); addH(o.rows); break;
   }
 
-  // ---- 창턱(선반): 식물 올려두는 자리 ----
+  // ---- 창턱(선반): 식물 올려두는 자리. sillDepth 크면 인방(깊은 선반) ----
   if(o.sill){
-    const st=0.04, sd=0.12;
-    g.add(box(w, st, d+sd, m, 0, -h/2-st/2, sd/2));   // 벽 안쪽으로 튀어나오게
+    const st=0.05, sd=o.sillDepth||0.12;
+    g.add(box(w+FT, st, d+sd, m, 0, -h/2-st/2, sd/2));            // 상판(벽 안쪽으로 튀어나옴)
+    if(sd>0.22){                                                 // 깊은 인방 = 앞턱 마감(fascia)만, 밑 매달림 X
+      g.add(box(w+FT, 0.09, 0.04, m, 0, -h/2-st-0.045, sd+d/2-0.02));  // 앞면 마감 보드(살짝만 내려옴)
+    }
   }
 
+  g.traverse(x=>{ if(x.isMesh){ x.castShadow=true; x.receiveShadow=true; } });
+  return g;
+}
+
+/* ---- ★ 아치 프레임: 아치 링(Extrude) + 직선부 세로살 ---- */
+function buildArchFrame(w, h, o, m){
+  const g=new THREE.Group();
+  const FT=o.FT, d=o.depth;
+  const shape=new THREE.Shape(); drawArch(shape, w, h);
+  const hole=new THREE.Path();   drawArch(hole, w-2*FT, h-2*FT);
+  shape.holes.push(hole);
+  const geo=new THREE.ExtrudeGeometry(shape,{ depth:d, bevelEnabled:false, curveSegments:26 });
+  geo.translate(0,0,-d/2);
+  g.add(new THREE.Mesh(geo, m));
+  // 살: 직선부(스프링라인 아래)에 세로 + 스프링라인 가로
+  const R=w/2, rectH=Math.max(0.05, h-R), springY=-h/2+rectH;
+  const innerW=w-2*FT, bt=(o.pattern==='curtainwall')?o.BT*1.4:o.BT, bd=d*0.85;
+  if(o.pattern!=='none' && rectH>0.2){
+    const y0=-h/2+FT, y1=springY, bh=Math.max(0.05,y1-y0);
+    for(let i=1;i<o.cols;i++){ const x=-innerW/2+innerW*i/o.cols; g.add(box(bt,bh,bd,m,x,(y0+y1)/2,0)); }
+    for(let j=1;j<o.rows;j++){ const y=y0+bh*j/o.rows; g.add(box(innerW,bt,bd,m,0,y,0)); }
+    g.add(box(innerW,bt,bd,m,0,springY,0));   // 스프링라인 가로살
+  }
   g.traverse(x=>{ if(x.isMesh){ x.castShadow=true; x.receiveShadow=true; } });
   return g;
 }
