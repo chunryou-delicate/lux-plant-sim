@@ -4,7 +4,8 @@
 
 Meshy는 모든 모델을 같은 높이로 정규화해 내보내므로 남녀 구분이 없고,
 집·가구 데이터(문 2.0m, 옷장 1.9m, 스툴 0.355m)와 대조하면 190cm로 너무 크다.
-  여캐 -> 1.50m,  남캐 -> 1.70m,  마스코트 -> 여캐의 0.25배
+  여캐 -> 1.40m,  남캐 -> 1.50m,  마스코트 -> 0.375m (고정)
+  (실사람 키보다 작게 잡는다 - 머리가 큰 치비라 실키로 두면 방이 좁아 보인다)
 
 방식
   정점을 건드리지 않고 씬 최상단에 래퍼 노드('__scale_root')를 끼워
@@ -33,9 +34,11 @@ CJ = 0x4E4F534A
 CB = 0x004E4942
 WRAP = "__scale_root"
 
-FEMALE_H = 1.50
-MALE_H = 1.70
-MASCOT_RATIO = 0.25
+FEMALE_H = 1.40
+MALE_H = 1.50
+# 마스코트는 캐릭터 키에 연동하지 않고 고정한다. 0.375 로 확정된 크기라
+# 캐릭터를 줄여도 그대로 둔다(2026-07-26).
+MASCOT_H = 0.375
 FEMALE_KEYS = ("jachwi_f", "yeoja")
 
 
@@ -179,7 +182,7 @@ def rescale(path, target_h):
 
 def target_for(name):
     if "mascot" in name:
-        return FEMALE_H * MASCOT_RATIO
+        return MASCOT_H
     if any(k in name for k in FEMALE_KEYS):
         return FEMALE_H
     return MALE_H
