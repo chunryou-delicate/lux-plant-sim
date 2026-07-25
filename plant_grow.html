@@ -132,7 +132,7 @@ let FRUSTUM=2.2;
 
 // ===== 시드 난수(개체성): 같은 시드→같은 그루. mulberry32 =====
 function mulberry32(a){ return function(){ a|=0; a=a+0x6D2B79F5|0; let t=Math.imul(a^a>>>15,1|a); t=t+Math.imul(t^t>>>7,61|t)^t; return((t^t>>>14)>>>0)/4294967296; }; }
-let SEED=73710, rng=mulberry32(SEED);
+let SEED=87765, rng=mulberry32(SEED);
 const GOLDEN=Math.PI*(3-Math.sqrt(5));   // 137.5° 황금각(자연스러운 잎차례)
 
 // ===== 튜닝 파라미터(A: 전체 규칙) — 슬라이더로 실시간 조절 =====
@@ -145,7 +145,7 @@ const DEF={
   sizeYoung:0.20, sizeMid:0.34, sizeMature:0.46, sizeFull:0.58,  // 각 시점 크기(마디 간격 대비 자연스럽게)
   internode:0.20, stemFlat:1.25,   // 줄기 마디 길이·잎방향 납작
   petGrow:16, rEarly:0.022, rThin:0.028, rMed:0.025, rThick:0.031, matureProb:0.22, doubleBud:0.15,  // 종류별 굵기(몸통 폭 기준)·성숙잎 확률·쌍혹 확률
-  growAmt:0.6, growSpan:730,        // ★전체 성장: 최대 +60% 까지, 730일(2년)에 걸쳐. 비율은 그대로 유지
+  growAmt:0.5, growSpan:720,        // ★전체 성장: 최대 +60% 까지, 730일(2년)에 걸쳐. 비율은 그대로 유지
   varieProb:0.20, midMix:0.5, alboMidPick:0,   // alboMidPick: 0=랜덤, 1~7=그 종류로 고정(위치 세팅용)
   // varieProb = 잎(생장점)마다 독립 판정. 그루 단위가 아니라 '중간에 발현'하는 방식이 맞음(확정).
   //   난이도별로 달라질 예정. 또 가지를 잘라 수경재배로 번식시킬 때, 모주가 무늬면
@@ -162,7 +162,7 @@ const DEF={
 };
 let P=Object.assign({}, DEF);
 // 저장본 버전. 생장 로직/기본값이 바뀌면 올림 → 옛 저장값이 새 기본값을 덮어쓰지 않게.
-const CFG_VER='2026-07-20-albo4';
+const CFG_VER='2026-07-20-albo5';
 
 // ===== 튜닝 파라미터(B: 에셋별 개별 조정) =====
 const ADJ_KEYS=['pot','leaf_young','leaf_mid1','leaf_mid2','leaf_mature','bud_furled','bud_opening2',
@@ -189,10 +189,13 @@ const ADJ_TUNED={
   stem_main:   {scale:0.95, sxz:0.75, sy:0.9, rx:0.05, ry:0.1},
   // ── 변이(알보). albo1/4/6 이 그룹 대표 — -쨍/-차분이 자동으로 같은 값을 쓴다.
   leaf_young_albo:   {scale:0.5, sy:0.8, ry:-1.65, ox:0.03, oy:0.18, bladeR:0.71},   // 두께 1.4배→1배
-  leaf_mid_albo1:    {scale:0.55, sxz:0.75, sy:0.95, rz:0.15, bladeR:0.14},  // 전체흰중기(1,2,3) 두께 7.4배→1배
-  leaf_mid_albo4:    {petR:0.35},                                 // 흰연두 그룹(4,5) — 잎자루 20%→7% 수준
-  leaf_mid_albo6:    {petR:0.38, bladeR:0.76},                    // 크림민트(6,7) 잎자루 19%→7%, 두께 1.3배→1배
+  leaf_mid_albo1:    {scale:0.75, sxz:0.75, sy:0.95, rz:0.15, bladeR:0.14},        // 전체흰중기(1,2,3)
+  leaf_mid_albo4:    {scale:0.75, sxz:0.65, sy:0.9, rx:0.55, ry:0.15, rz:0.2,
+                      ox:0.07, oy:0.09, oz:-0.01, bladeR:0.28, petR:0.25},            // 흰연두(4,5)
+  leaf_mid_albo6:    {bladeR:0.76, petR:0.38},                                        // 크림민트(6,7)
   sheath_young_albo: {rx:0.1, ry:0.3, rz:-0.15, ox:0.12, oy:0.14, oz:-0.05, len:0.155, fit:1.48},
+  sheath_leaf_mid_albo4: {sxz:1.55, sy:1.05, rx:0.25, ry:-0.7, rz:0.35,
+                          ox:0.37, oy:-0.15, oz:-0.07, len:0.215, fit:1.36, top:0.91},
   // ── 엽초(잎 단계별)
   sheath_furled: {len:0},                             // 새순: OFF
   sheath_open:   {scale:1.3, rx:0.2, ry:-1, rz:0.2, ox:0.06, oy:0.15,
@@ -537,7 +540,8 @@ function reshapeLeaf(obj, bladeR, petR, petTop){
       v.set(src[i],src[i+1],src[i+2]).applyMatrix4(m); ys[k]=v.y;
       if(v.y<mnY)mnY=v.y; if(v.y>mxY)mxY=v.y;
     }
-    meshes.push({o,g,src,ys,sc});
+    let myTop=-Infinity; for(let k=0;k<ys.length;k++) if(ys[k]>myTop) myTop=ys[k];
+    meshes.push({o,g,src,ys,sc,myTop});
   });
   const h=(mxY-mnY)||1, yTop=mnY+h*petTop, yBlade=mnY+h*0.15, yFull=mnY+h*0.30;
   let cx=0, cz=0, n=0;                                   // 잎자루 축(잎 전체 하단대 XZ 중심)
@@ -546,14 +550,17 @@ function reshapeLeaf(obj, bladeR, petR, petTop){
       v.set(M.src[i],M.src[i+1],M.src[i+2]).applyMatrix4(m); cx+=v.x; cz+=v.z; n++; } }
   if(n){ cx/=n; cz/=n; }
   for(const M of meshes){
-    const {o,g,src,ys,sc}=M, pa=g.attributes.position, arr=pa.array, nor=g.userData.origNor;
+    const {o,g,src,ys,sc,myTop}=M, pa=g.attributes.position, arr=pa.array, nor=g.userData.origNor;
+    // ★이 메시가 통째로 잎자루면(꼭대기가 잎 높이의 55% 아래) 법선 밀기를 아예 걸지 않는다.
+    //   일부만 깎으면 안 깎인 아래쪽이 곤봉처럼 남는다(=꼬랑지). 굵기는 petR로만 조절.
+    const petOnly = myTop <= mnY + h*0.55;
     const m=new THREE.Matrix4().multiplyMatrices(inv, o.matrixWorld);
     const minv=new THREE.Matrix4().copy(m).invert();
     const push=Math.max(0, g.userData.thick*(1-bladeR)/2);   // 메시 로컬 단위
     for(let i=0,k=0;i<src.length;i+=3,k++){
       let x=src[i], y=src[i+1], z=src[i+2];
       const gy=ys[k];                                        // 잎 전체 기준 높이
-      if(push>1e-9 && nor && gy>=yBlade){                    // ① 잎몸을 얇게(잎자루 구간 제외)
+      if(push>1e-9 && nor && !petOnly && gy>=yBlade){        // ① 잎몸을 얇게(잎자루 메시는 제외)
         const t=Math.min(1,(gy-yBlade)/((yFull-yBlade)||1)), w=t*t*(3-2*t);
         x-=nor[i]*push*w; y-=nor[i+1]*push*w; z-=nor[i+2]*push*w;
       }
@@ -753,7 +760,10 @@ function leafBladeCenter(nodePos, stemDir, az, tilt, size, key){
   const sc=N(a.scale,1), sxz=N(a.sxz,1), sy=N(a.sy,1);
   const c=new THREE.Vector3((u.cx||0)*sc*sxz, (u.cy==null?0.5:u.cy)*sc*sy, (u.cz||0)*sc*sxz);
   c.applyEuler(new THREE.Euler(N(a.rx,0), N(a.ry,0), N(a.rz,0)));        // ADJ 회전
-  c.add(new THREE.Vector3(N(a.ox,0), N(a.oy,0), N(a.oz,0)));             // ADJ 오프셋
+  // ★ADJ 오프셋은 일부러 빼둔다. 오프셋을 조금만 움직여도 잎몸 예상 위치가 바뀌어
+  //   freeAim의 방위 순위가 뒤집히고, 결과적으로 잎이 통째로 회전해 버린다.
+  //   (오프셋 기여는 잎 크기의 몇 %라 충돌 정확도 손실은 작다. 회전에 큰 영향을 주는
+  //    ADJ 회전은 위에서 그대로 반영한다.)
   c.multiplyScalar(size);
   const ld=new THREE.Vector3(Math.sin(tilt), Math.cos(tilt), 0);
   c.applyQuaternion(new THREE.Quaternion().setFromUnitVectors(_UP, ld)); // 잎자루 방향 정렬
