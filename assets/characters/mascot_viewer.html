@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>볕 · 마스코트 새싹 정령 3D</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/utils/BufferGeometryUtils.js"></script>
+<style>
+  body{margin:0;font-family:"Segoe UI",system-ui,sans-serif;background:#eef3ee;color:#2f3a30}
+  h1{font-size:19px;margin:14px 16px 2px}.sub{margin:0 16px 12px;color:#6b7a6b;font-size:13px}
+  .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;padding:0 12px 16px;max-width:1000px}
+  @media(max-width:760px){.grid{grid-template-columns:1fr}}
+  .cell{background:#fff;border:1px solid #dde7dd;border-radius:12px;overflow:hidden;box-shadow:0 2px 8px rgba(80,100,80,.07)}
+  .cvs{width:100%;height:420px;display:block;background:linear-gradient(#f7fbf7,#e7efe7);cursor:grab}
+  .lab{padding:8px 12px}.lab b{font-size:13px;color:#3a6b4e}.lab span{display:block;font-size:11px;color:#8a988a;margin-top:2px}
+  .ref{padding:10px}.ref img{width:100%;display:block;border-radius:8px}
+</style>
+</head>
+<body>
+  <h1>볕 · 도우미 마스코트 «새싹 정령» — 3D (캐릭터 1/2 크기)</h1>
+  <p class="sub">드래그 회전 · 스크롤 확대. 좌: 마스코트 단독 / 우: 자취생(여)와 크기 비교 — 같은 바닥면 기준.</p>
+  <div class="grid" id="g">
+    <div class="cell"><canvas class="cvs" id="c1"></canvas>
+      <div class="lab"><b>마스코트 3D (meshy-6, 4뷰)</b><span>몬스테라 잎 팔 · 테라코타 화분 · 리깅 없음(A형태)</span></div></div>
+    <div class="cell"><canvas class="cvs" id="c2"></canvas>
+      <div class="lab"><b>크기 비교</b><span>캐릭터 H=1.90 / 마스코트 H=0.95 (정확히 절반)</span></div></div>
+  </div>
+  <div class="grid">
+    <div class="cell"><div class="ref"><img src="mascot/3d_wip/mascot_3dstyle_front.png"></div>
+      <div class="lab"><b>원화(3D룩 변환본)</b><span>무광 클레이 · 파스텔 — 캐릭터 8종과 통일</span></div></div>
+  </div>
+<script>
+function toonGrad(){const c=document.createElement('canvas');c.width=64;c.height=1;const x=c.getContext('2d');
+ const grd=x.createLinearGradient(0,0,64,0);
+ grd.addColorStop(0.00,'#7c877f'); grd.addColorStop(0.45,'#aab8ac');
+ grd.addColorStop(0.75,'#d2dbd2'); grd.addColorStop(1.00,'#ffffff');
+ x.fillStyle=grd; x.fillRect(0,0,64,1);
+ const t=new THREE.CanvasTexture(c);t.minFilter=THREE.LinearFilter;t.magFilter=THREE.LinearFilter;t.generateMipmaps=false;return t;}
+const GRAD=toonGrad();
+function pastelize(tex){try{if(!tex||!tex.image)return tex;const im=tex.image,w=im.width||512,h=im.height||512;if(!w)return tex;
+ const c=document.createElement('canvas');c.width=w;c.height=h;const x=c.getContext('2d');x.drawImage(im,0,0,w,h);
+ const d=x.getImageData(0,0,w,h),p=d.data,S=0.7;for(let i=0;i<p.length;i+=4){const r=p[i],g=p[i+1],b=p[i+2],gy=0.299*r+0.587*g+0.114*b;
+ p[i]=gy+(r-gy)*S;p[i+1]=gy+(g-gy)*S;p[i+2]=gy+(b-gy)*S;}x.putImageData(d,0,0);
+ const nt=new THREE.CanvasTexture(c);nt.flipY=tex.flipY;nt.encoding=THREE.sRGBEncoding;nt.needsUpdate=true;return nt;}catch(e){return tex;}}
+function smoothNormals(o){try{
+ let geo=o.geometry; if(!geo||!geo.attributes||!geo.attributes.position) return;
+ geo.deleteAttribute('normal');
+ if(THREE.BufferGeometryUtils&&THREE.BufferGeometryUtils.mergeVertices){
+   const merged=THREE.BufferGeometryUtils.mergeVertices(geo); merged.computeVertexNormals(); o.geometry=merged;
+ } else { geo.computeVertexNormals(); }
+}catch(e){}}
+function toonify(root){root.traverse(o=>{if(!o.isMesh||!o.material)return;smoothNormals(o);try{const src=Array.isArray(o.material)?o.material:[o.material];
+ const out=src.map(mm=>new THREE.MeshToonMaterial({map:mm.map?pastelize(mm.map):null,color:mm.map?0xffffff:(mm.color?mm.color.getHex():0xffffff),
+ gradientMap:GRAD,skinning:!!mm.skinning,morphTargets:!!mm.morphTargets}));o.material=Array.isArray(o.material)?out:out[0];}catch(e){}});}
+
+// 캔버스 하나에 GLB 여러 개를 로드하고 전체를 한 번에 프레이밍
+function makeView(canvasId, srcs, spread){
+  const cv=document.getElementById(canvasId);
+  const r=new THREE.WebGLRenderer({canvas:cv,antialias:true,alpha:true});
+  r.setSize(cv.clientWidth,cv.clientHeight,false);r.setPixelRatio(Math.min(devicePixelRatio,2));r.outputEncoding=THREE.sRGBEncoding;
+  const sc=new THREE.Scene();const cam=new THREE.PerspectiveCamera(35,cv.clientWidth/cv.clientHeight,0.01,100);
+  const ctr=new THREE.OrbitControls(cam,cv);ctr.enableDamping=true;
+  sc.add(new THREE.AmbientLight(0xffffff,0.68));sc.add(new THREE.HemisphereLight(0xffffff,0xdfe6df,0.20));
+  const d=new THREE.DirectionalLight(0xffffff,0.48);d.position.set(2.5,4,2.5);sc.add(d);
+  const group=new THREE.Group(); sc.add(group);
+  let loaded=0;
+  srcs.forEach((src,i)=>{
+    new THREE.GLTFLoader().load(src,gl=>{
+      const m=gl.scene;toonify(m);
+      if(spread) m.position.x = (i - (srcs.length-1)/2) * spread;
+      group.add(m); loaded++;
+      if(loaded===srcs.length) frame();
+    },undefined,e=>{cv.style.background='#fdeaea';});
+  });
+  function frame(){
+    const box=new THREE.Box3().setFromObject(group);
+    const c=box.getCenter(new THREE.Vector3());
+    const sph=box.getBoundingSphere(new THREE.Sphere());const rad=Math.max(sph.radius,0.1);
+    ctr.target.copy(c);
+    const dist=rad/Math.sin((35*Math.PI/180)/2)*1.15;
+    cam.near=Math.max(dist/200,0.001);cam.far=dist*200;
+    cam.position.set(c.x,c.y+rad*0.10,c.z+dist);cam.updateProjectionMatrix();ctr.update();
+  }
+  (function loop(){requestAnimationFrame(loop);ctr.update();r.render(sc,cam);})();
+}
+makeView('c1',['3d/char_mascot_sprout.glb'],0);
+makeView('c2',['3d/char_jachwi_f_base.glb','3d/char_mascot_sprout.glb'],1.5);
+</script>
+</body>
+</html>

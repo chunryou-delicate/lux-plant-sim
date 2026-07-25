@@ -182,7 +182,26 @@
     "name_ko": "새싹정령 마스코트 (몬스테라 잎 팔)",
     "role": "게임 도우미/안내 마스코트 (튜토리얼·감정표현·팁·UI 등장, 동숲 너굴 포지션)",
     "local": "assets/characters/mascot/char_mascot_sprout.png",
-    "status": "후보(원화). 이름·성격·표정세트·3D는 추후 별도 설계",
+    "art_3d_look": {
+      "front": "assets/characters/mascot/3d_wip/mascot_3dstyle_front.png",
+      "back": "assets/characters/mascot/3d_wip/mascot_3dstyle_back.png",
+      "left": "assets/characters/mascot/3d_wip/mascot_3dstyle_left.png",
+      "right": "assets/characters/mascot/3d_wip/mascot_3dstyle_right.png",
+      "note": "원본 2D 벡터(검은 외곽선)를 캐릭터 8종과 같은 무광 클레이 저폴리 3D 룩으로 변환한 4뷰."
+    },
+    "meshy": {"multi3d_task": "019f969f-ada6-74c1-a3b5-0ff85fde39ba", "model": "meshy-6", "pose": "없음(화분 착석)", "rig": "미실시(A형태 확정)"},
+    "glb": {"base": "assets/characters/3d/char_mascot_sprout.glb"},
+    "viewer": "assets/characters/mascot_viewer.html",
+    "scale_spec": {
+      "rule": "캐릭터 신장의 정확히 1/2",
+      "char_height": 1.8995,
+      "mascot_height": 0.9497,
+      "applied_scale": 0.70275,
+      "floor_y": -0.9507,
+      "note": "GLB에 스케일을 이미 적용해 저장함(엔진에서 추가 스케일 불필요). 캐릭터 8종과 동일한 바닥면(y=-0.9507)에 서도록 정렬 — 같은 위치에 배치하면 같은 바닥에 놓임."
+    },
+    "animation_plan": "A형태 확정: 본 리깅 없음. 엔진에서 둥둥 뜨기/통통 튀기 + 잎 흔들림(셰이더 또는 단순 트랜스폼)으로 처리.",
+    "status": "3D 완료(리깅 없음·크기 확정). 이름·성격·표정세트 미정",
     "note": "화분에 앉은 초록 새싹정령, 몬스테라 잎을 팔처럼 사용. 플레이어 8종과 별개."
   },
   "face_anchor_f": "char_jachwi_f_v2 (media_id 30ab30ee-f5af-42c4-adec-1f30798f23d7) — 여자 얼굴 고정 참조",
