@@ -33,6 +33,8 @@
   #hint{position:fixed;bottom:14px;left:calc(50% + 128px);transform:translateX(-50%);z-index:5;
     background:rgba(0,0,0,.55);color:#fff;font-weight:700;font-size:12.5px;padding:6px 14px;border-radius:14px;transition:opacity .8s;pointer-events:none}
   #err{position:fixed;z-index:9;left:266px;bottom:12px;background:#c0392b;color:#fff;padding:8px 12px;border-radius:8px;display:none;max-width:60%}
+  #perf{position:fixed;z-index:8;right:12px;top:62px;background:rgba(0,0,0,.6);color:#cfe8d0;
+    font-family:ui-monospace,monospace;font-size:11.5px;line-height:1.6;padding:8px 11px;border-radius:9px;white-space:pre}
 </style>
 </head>
 <body>
@@ -56,6 +58,7 @@
 </div>
 <div id="hint">한 바닥에 실제 크기로 세워둡니다 — 비율 이상한 게 바로 보입니다</div>
 <div id="err"></div>
+<div id="perf">측정 중…</div>
 
 <script type="module">
 const V='?v='+Date.now();
@@ -259,7 +262,28 @@ document.getElementById('expo').oninput=e=>{const v=+e.target.value/100;
 function resize(){renderer.setSize(innerWidth,innerHeight);cam.aspect=innerWidth/innerHeight;cam.updateProjectionMatrix();}
 addEventListener('resize',resize); resize();
 layout();
-function loop(){requestAnimationFrame(loop);renderer.render(scene,cam);}
+/* ===== 성능 계측 (렉 확인용) ===== */
+const perfEl=document.getElementById('perf');
+let frames=0, tPrev=performance.now(), fpsMin=999, fpsAvg=0, samples=0;
+function loop(){
+  requestAnimationFrame(loop);
+  renderer.render(scene,cam);
+  frames++;
+  const now=performance.now(), dt=now-tPrev;
+  if(dt>=500){
+    const fps=frames*1000/dt;
+    if(samples>1) fpsMin=Math.min(fpsMin,fps);      // 첫 프레임(로딩) 제외
+    fpsAvg=(fpsAvg*samples+fps)/(samples+1); samples++;
+    const info=renderer.info;
+    perfEl.textContent=
+      'FPS  '+fps.toFixed(0).padStart(3)+'  (평균 '+fpsAvg.toFixed(0)+' / 최저 '+(samples>2?fpsMin.toFixed(0):'—')+')\n'+
+      '드로우콜 '+info.render.calls+'\n'+
+      '삼각형   '+(info.render.triangles/1000).toFixed(1)+'k\n'+
+      '지오메트리 '+info.memory.geometries+' · 텍스처 '+info.memory.textures+'\n'+
+      '표시 가구 '+picks.length;
+    frames=0; tPrev=now;
+  }
+}
 loop();
 setTimeout(()=>{const h=document.getElementById('hint');if(h)h.style.opacity='0';},8000);
 document.title=`볕 · 가구 홀 (${Object.keys(P).length}종)`;

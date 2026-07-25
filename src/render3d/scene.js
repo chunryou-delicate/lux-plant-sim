@@ -25,6 +25,7 @@ export function createScene(canvas){
 
   const sunLight=new THREE.DirectionalLight(0xfff0d8,1.6);
   sunLight.castShadow=true; sunLight.shadow.mapSize.set(2048,2048);
+  sunLight.shadow.autoUpdate=false;   // 성능: 매 프레임 재생성 금지(updateLight에서 1회 갱신)
   sunLight.shadow.camera.near=0.5; sunLight.shadow.camera.far=50;
   const d=9; sunLight.shadow.camera.left=-d; sunLight.shadow.camera.right=d;
   sunLight.shadow.camera.top=d; sunLight.shadow.camera.bottom=-d;
@@ -33,11 +34,13 @@ export function createScene(canvas){
 
   const winLight1=new THREE.SpotLight(0xfff2d8,0,14,Math.PI/3,0.5,1.5);
   winLight1.castShadow=true; winLight1.shadow.mapSize.set(1024,1024);
+  winLight1.shadow.autoUpdate=false;
   scene.add(winLight1,winLight1.target);
 
   const ceilingBulb=new THREE.PointLight(0xffe4b0,0,14,1.2);
   ceilingBulb.position.set(0,3.4,0); ceilingBulb.castShadow=true;
-  ceilingBulb.shadow.mapSize.set(1024,1024); scene.add(ceilingBulb);
+  ceilingBulb.shadow.mapSize.set(1024,1024);
+  ceilingBulb.shadow.autoUpdate=false; scene.add(ceilingBulb);
 
   // ctx: 렌더 상태 묶음 (room 빌드 후 winPos/glass/clShade 주입됨)
   return { renderer, scene, cam, hemi, ambient, sunLight, winLight1, ceilingBulb,
@@ -81,6 +84,11 @@ export function updateLight(ctx, t, ceilingMode){
   else lampActive = false;
   ctx.ceilingBulb.intensity = lampActive ? 4.5 : 0;
   if(ctx.clShade) ctx.clShade.material.emissiveIntensity = lampActive ? 0.9 : 0.0;
+
+  // 조명이 바뀐 프레임에만 그림자맵 재생성 (autoUpdate=false 이므로 수동)
+  ctx.sunLight.shadow.needsUpdate=true;
+  ctx.winLight1.shadow.needsUpdate=true;
+  ctx.ceilingBulb.shadow.needsUpdate=true;
 
   return s.label;
 }

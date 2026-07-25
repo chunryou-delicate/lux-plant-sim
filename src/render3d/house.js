@@ -507,15 +507,23 @@ export function updateShellVisibility(shells, cam){
     const dot=(cp.x-center[0])*normal[0]+(cp.y-center[1])*normal[1]+(cp.z-center[2])*normal[2];
     // 내벽(칸막이)은 방 안쪽이라 숨기지 않는다 — 공간 분획이 보여야 함
     const hide = partition ? false : (dot >= 0.3);
+
+    // ★ 성능: 상태가 바뀔 때만 재질을 건드린다.
+    //   material.transparent 를 매 프레임 토글하면 three가 셰이더 프로그램을
+    //   다시 고르게 되어(재컴파일) 카메라를 돌릴 때 눈에 띄게 버벅인다.
+    if(sh.userData._hidden === hide) continue;
+    sh.userData._hidden = hide;
+
     sh.traverse(o=>{
       if(!o.isMesh || !o.material) return;
       o.visible=true;
       const set=mm=>{
         if(hide){ mm.transparent=true; mm.opacity=0; mm.depthWrite=false; }
         else    { mm.opacity=1; mm.depthWrite=true; mm.transparent=false; }
+        mm.needsUpdate=true;
       };
       Array.isArray(o.material)?o.material.forEach(set):set(o.material);
-      o.castShadow=true;
+      o.castShadow=true;      // 숨겨도 그림자는 계속 던져 빛을 막는다
     });
   }
 }

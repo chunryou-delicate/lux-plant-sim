@@ -32,6 +32,7 @@
   .btn.alt{background:#e08a2c}
   #out{width:100%;height:150px;margin-top:7px;font-family:ui-monospace,monospace;font-size:10.5px;border:1px solid #d8dce2;border-radius:9px;padding:7px;display:none;background:#fff}
   #hint{position:fixed;bottom:14px;left:calc(50% + 143px);transform:translateX(-50%);z-index:5;background:rgba(30,30,40,.6);color:#fff;font-weight:700;font-size:13px;padding:6px 14px;border-radius:14px;transition:opacity .8s;pointer-events:none}
+  #perf{position:fixed;z-index:8;right:12px;top:12px;background:rgba(0,0,0,.62);color:#cfe8d0;font-family:ui-monospace,monospace;font-size:11.5px;line-height:1.6;padding:8px 11px;border-radius:9px;white-space:pre}
   #err{position:fixed;z-index:9;left:296px;bottom:12px;background:#c0392b;color:#fff;padding:8px 12px;border-radius:8px;display:none;max-width:60%}
 </style>
 </head>
@@ -101,6 +102,7 @@
 </div>
 <div id="hint">벽지·바닥·창·문을 고르면 즉시 반영됩니다</div>
 <div id="err"></div>
+<div id="perf">측정 중…</div>
 
 <script type="module">
 /* ★ 개발용 페이지: 모듈을 매번 새로 받게(캐시된 옛 버전 때문에 화면이 비는 것 방지) */
@@ -120,7 +122,7 @@ try{
 
 const canvas=document.getElementById('c');
 const renderer=new THREE.WebGLRenderer({canvas,antialias:true});
-renderer.setPixelRatio(Math.min(2,window.devicePixelRatio||1));
+renderer.setPixelRatio(Math.min(1.5,window.devicePixelRatio||1));   // 성능: 2.0은 픽셀 4배
 renderer.shadowMap.enabled=true; renderer.shadowMap.type=THREE.PCFSoftShadowMap;
 renderer.outputEncoding=THREE.sRGBEncoding;
 renderer.toneMapping=THREE.ACESFilmicToneMapping; renderer.toneMappingExposure=0.85;
@@ -129,7 +131,11 @@ const scene=new THREE.Scene();
 const hemi=new THREE.HemisphereLight(0xcdddf0,0x6a6458,0.35); scene.add(hemi);
 const amb=new THREE.AmbientLight(0xffffff,0.05); scene.add(amb);
 const sun=new THREE.DirectionalLight(0xfff2d8,2.2); sun.castShadow=true;
-sun.shadow.mapSize.set(2048,2048); sun.shadow.radius=5; sun.shadow.bias=-0.0004;
+sun.shadow.mapSize.set(1536,1536); sun.shadow.radius=5; sun.shadow.bias=-0.0004;
+// ★ 성능: 그림자맵을 매 프레임 다시 굽지 않는다(가구 700메시면 프레임마다 추가 렌더패스).
+//   방을 다시 짓거나 해가 움직일 때만 1회 갱신.
+sun.shadow.autoUpdate=false;
+const bakeShadow=()=>{ sun.shadow.needsUpdate=true; };
 const sd=12; sun.shadow.camera.left=-sd;sun.shadow.camera.right=sd;sun.shadow.camera.top=sd;sun.shadow.camera.bottom=-sd;sun.shadow.camera.far=60;
 scene.add(sun,sun.target);
 function envTex(){const c=document.createElement('canvas');c.width=32;c.height=96;const x=c.getContext('2d');
@@ -321,6 +327,7 @@ function rebuild(){
   shells=built.shells; holder.add(built.room); SZ=built.size;
   dist=Math.max(4.5, Math.max(SZ.w,SZ.d)*1.55);      // 방 크기에 맞춰 카메라 거리
   buildRefs();
+  bakeShadow();            // 방 구성이 바뀌었으니 그림자맵 1회 재생성
   updateCam();
   if(typeof lightInfo==='function') lightInfo();
 }
@@ -337,6 +344,7 @@ function updateSun(t){
   amb.intensity=0.02+noon*0.04;
   const bg=mix('#cdd9e6',mix('#e7c7a2','#4e4a5c',day>0.5?0.5:0),warm*0.55);
   scene.background=bg;
+  bakeShadow();
   document.getElementById('sunlab').textContent=day<0.28?'아침':day<0.42?'오전':day<0.58?'한낮':day<0.75?'오후':'저녁';
 }
 
@@ -463,11 +471,42 @@ let COLORS=[];
   document.getElementById('save').onclick=()=>{const o=document.getElementById('out');o.style.display='block';o.value=dump();};
   document.getElementById('copy').onclick=async()=>{try{await navigator.clipboard.writeText(dump());
     const b=document.getElementById('copy');b.textContent='복사됨 ✓';setTimeout(()=>b.textContent='이 설정 JSON 복사',1500);}catch(e){showErr('복사 실패 — 아래 버튼으로 보기');}};
-  function loop(){requestAnimationFrame(loop);
+  /* ===== 렌더 루프 + 성능 계측 =====
+     그림자맵은 autoUpdate=false. 캐릭터 애니가 돌 때만 3프레임에 1번 갱신해
+     매 프레임 전체 씬을 그림자맵에 다시 굽는 비용(가장 큰 렉 원인)을 줄인다. */
+  const perfEl=document.getElementById('perf');
+  /* ★ 실제 GPU를 쓰는지 확인 — SwiftShader/llvmpipe면 CPU 소프트렌더라 FPS가 바닥난다 */
+  let GPUNAME='?', SOFT=false;
+  try{
+    const gl=renderer.getContext();
+    const dbg=gl.getExtension('WEBGL_debug_renderer_info');
+    GPUNAME=dbg? gl.getParameter(dbg.UNMASKED_RENDERER_WEBGL) : gl.getParameter(gl.RENDERER);
+    SOFT=/swiftshader|llvmpipe|software|basic render/i.test(GPUNAME);
+  }catch(e){}
+  let _f=0,_t=performance.now(),_min=999,_avg=0,_n=0,_tick=0;
+  function loop(){
+    requestAnimationFrame(loop);
     const dt=refClock.getDelta();
     if(refMixer){ refMixer.update(dt);
-      if(refHips){ refHips.position.x=refHipsXZ[0]; refHips.position.z=refHipsXZ[1]; } }
-    renderer.render(scene,cam);}
+      if(refHips){ refHips.position.x=refHipsXZ[0]; refHips.position.z=refHipsXZ[1]; }
+      if((++_tick%3)===0) sun.shadow.needsUpdate=true;    // 애니 중: 3프레임마다
+    }
+    renderer.render(scene,cam);
+    _f++; const now=performance.now(), d2=now-_t;
+    if(d2>=500){
+      const fps=_f*1000/d2; if(_n>1) _min=Math.min(_min,fps);
+      _avg=(_avg*_n+fps)/(_n+1); _n++;
+      const i=renderer.info;
+      const px=Math.round(renderer.domElement.width*renderer.domElement.height/10000)/100;
+      perfEl.textContent='FPS  '+fps.toFixed(0).padStart(3)+'  (평균 '+_avg.toFixed(0)+
+        ' / 최저 '+(_n>2?_min.toFixed(0):'—')+')\n'+
+        '드로우콜 '+i.render.calls+'  삼각형 '+(i.render.triangles/1000).toFixed(1)+'k\n'+
+        '해상도 '+renderer.domElement.width+'×'+renderer.domElement.height+' ('+px+'M px)\n'+
+        (SOFT?'⚠ 소프트웨어 렌더링(CPU)\n':'GPU ')+GPUNAME.slice(0,38);
+      perfEl.style.color = SOFT ? '#ffb0a0' : (fps<25?'#ffd98a':'#cfe8d0');
+      _f=0; _t=now;
+    }
+  }
   loop();
   setTimeout(()=>{const h=document.getElementById('hint');if(h)h.style.opacity='0';},7000);
 })();
