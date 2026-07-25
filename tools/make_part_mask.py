@@ -228,19 +228,18 @@ def build(char, vis=False, size=None):
         eye = np.zeros_like(sclera)
         iris = np.zeros_like(sclera)
     else:
-        # 흰자 덩어리 크기에서 눈 반경을 추정하고 그만큼만 주변을 본다
-        r_eye = max(8, int(round(np.sqrt(sclera.sum() / 2 / np.pi) * 0.95)))
-        yy, xx = np.mgrid[-r_eye:r_eye + 1, -r_eye:r_eye + 1]
-        near = (xx * xx + yy * yy) <= r_eye * r_eye
+        # 눈 주변을 원으로 넓히면 바로 위의 눈썹이 걸리고, 좁히면 눈매·속눈썹이
+        # 빠져 머리색이 들어간다. 눈은 가로로 길고 눈썹은 바로 위에 있으므로
+        # 가로로 넓고 세로로 납작한 타원으로 넓힌다.
+        r_eye = max(8, int(round(np.sqrt(sclera.sum() / 2 / np.pi) * 1.15)))
+        rv = max(4, int(round(r_eye * 0.45)))
+        yy, xx = np.mgrid[-rv:rv + 1, -r_eye:r_eye + 1]
+        near = (xx / r_eye) ** 2 + (yy / rv) ** 2 <= 1.0
         region = binary_dilation(sclera, near) & covered
-        # 높이로 자르면 속눈썹·눈꺼풀이 눈에서 빠지고, 진갈색이라 머리로
-        # 흡수돼 눈꺼풀에 머리색이 들어간다. 대신 흰자에서 '연결된' 덩어리만
-        # 가져온다(형태학적 재구성). 눈썹은 사이에 피부가 있어 끊겨 있으므로
-        # 딸려오지 않는다.
-        eyeish = binary_closing(region & ((lum > 224) | (d_hair < 110)),
-                                np.ones((3, 3)))
-        eye = binary_propagation(sclera, mask=eyeish) & eyeish
-        eye = binary_closing(eye, np.ones((5, 5))) & region
+        # 눈 주변에서 피부가 아닌 것은 전부 눈이다(흰자·하이라이트·홍채·동공·
+        # 속눈썹·눈매선). 색으로 고르면 중간톤인 눈꺼풀 주름이 빠져 머리로 간다.
+        eye = region & ~is_skin
+        eye = binary_closing(eye, np.ones((3, 3))) & region
 
         # 홍채: 눈 영역은 밝기가 둘로만 갈린다(흰자·하이라이트 / 진갈색). 진갈색
         # 덩어리에 홍채·동공과 속눈썹·눈매 테두리가 같이 있어 색으로는 못 가른다.
@@ -252,6 +251,10 @@ def build(char, vis=False, size=None):
         disk = (xx * xx + yy * yy) <= r * r
         iris = binary_opening(dark_eye, disk)
         iris = binary_closing(iris, np.ones((5, 5)))
+    # 얼굴 피부는 색으로 잡으면 볼터치·옆턱 음영·입술이 계속 빠져 얼룩이 남는다.
+    # 머리 영역에서 머리카락도 눈도 아니면 전부 피부다. 색 판정이 필요 없다.
+    code[head & ~hairish & ~eye] = CODE["skin"]
+
     code[eye] = CODE["eye"]
     code[iris] = CODE["iris"]
     # 원피스·가운처럼 한 벌로 이어진 옷은 허리에서 갈리면 안 된다.

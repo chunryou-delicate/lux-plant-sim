@@ -1039,6 +1039,80 @@ B.low_table=(o)=>{
   g.userData.size={w,h,d}; return addSlots(g, tierSlots(w,h,2), [h], [d]);
 };
 
+
+/* ============================================================
+   학원교실 — 칠판·교탁·학생책상·사물함·게시판
+   벽걸이(mount:'wall')는 XY평면에 정면(+z)으로 만든다. house.js가 rot로 돌린다.
+============================================================ */
+
+/* 칠판 (화이트보드도 같은 빌더 — color만 바꾸면 됨). 하단 분필받이 포함 */
+B.blackboard=(o)=>{
+  const w=o.w??3.0, h=o.h??1.2, fr=0.05;
+  const g=new THREE.Group();
+  const frame=furnMat(o.accent??'#c8b9a4','satin');
+  const board=furnMat(o.color??'#4a6152','matte');       // 진초록 (화이트보드는 #f2f4f2)
+  g.add(panel(w,h,0.05,frame,0,0,0,0.015));             // 테두리
+  g.add(panel(w-fr*2,h-fr*2,0.03,board,0,0,0.028,0.01)); // 판면
+  // 분필받이 — 판 아래로 살짝 튀어나옴
+  g.add(bx(w-fr*2, 0.035, 0.09, frame, 0, -h/2+0.05, 0.06));
+  g.userData.size={w,h,d:0.09}; g.userData.mount='wall'; return g;
+};
+
+/* 게시판 (코르크). 압정 몇 개로 질감만 */
+B.bulletin_board=(o)=>{
+  const w=o.w??1.1, h=o.h??0.8;
+  const g=new THREE.Group();
+  g.add(panel(w,h,0.04,furnMat(o.accent??'#b9a88c','satin'),0,0,0,0.015));
+  g.add(panel(w-0.08,h-0.08,0.02,furnMat(o.color??'#d8c3a0','matte'),0,0,0.025,0.01));
+  const pin=furnMat('#e8e4dc','satin');
+  for(const [px,py] of [[-0.25,0.18],[0.2,0.1],[0.05,-0.2]])
+    g.add(bx(0.16,0.2,0.006,pin, px*w, py*h, 0.037));   // 붙여둔 종이
+  g.userData.size={w,h,d:0.04}; g.userData.mount='wall'; return g;
+};
+
+/* 교탁 — 상판이 살짝 기운 연단 */
+B.lectern=(o)=>{
+  const w=o.w??0.8, d=o.d??0.45, h=o.h??1.05;
+  const g=new THREE.Group();
+  const m=furnMat(o.color??'#ded0b8','matte');
+  g.add(panel(w,h-0.06,d*0.8,m,0,(h-0.06)/2,0,0.02));   // 몸통
+  const top=panel(w+0.06,0.04,d,furnMat(o.accent??'#cbbba2','satin'),0,h-0.02,0,0.015);
+  top.rotation.x=-0.14; g.add(top);                      // 기운 상판
+  g.userData.size={w,h,d};
+  return addSlots(g, tierSlots(w,h,1,0), [h], [d]);      // 교탁 위 화분 1자리
+};
+
+/* 학생 책상 — 상판 + 하부 책 선반(가방칸). 2인용/1인용은 w로 */
+B.desk_student=(o)=>{
+  const w=o.w??1.2, d=o.d??0.5, h=o.h??0.72, t=0.035;
+  const g=new THREE.Group();
+  const m=furnMat(o.color??'#e6dcc8','matte');
+  const leg=furnMat(o.accent??'#9aa3a8','satin');
+  g.add(panel(w,t,d,m,0,h-t/2,0,0.015));                // 상판
+  g.add(panel(w-0.12,0.02,d-0.1,furnMat(o.accent??'#9aa3a8','matte'),0,h-0.22,0,0.01)); // 책 선반
+  legs4(g,w,d,h-t,leg,0.018,0.05);
+  g.userData.size={w,h,d};
+  return addSlots(g, tierSlots(w,h,w>1.0?2:1,d*0.18), [h], [d]);
+};
+
+/* 사물함 — n칸 격자. 윗면은 화분 자리 */
+B.locker=(o)=>{
+  const w=o.w??1.2, d=o.d??0.4, h=o.h??1.1;
+  const cols=o.cols??3, rows=o.rows??2;
+  const g=new THREE.Group();
+  const m=furnMat(o.color??'#dfe4e6','matte');
+  const dr=furnMat(o.accent??'#c3ccd0','satin');
+  g.add(panel(w,h,d,m,0,h/2,0,0.02));                   // 몸체
+  const cw=(w-0.06)/cols, ch=(h-0.06)/rows;
+  for(let i=0;i<cols;i++) for(let j=0;j<rows;j++){
+    const x=-w/2+0.03+cw*(i+0.5), y=0.03+ch*(j+0.5);
+    g.add(panel(cw-0.03, ch-0.03, 0.02, dr, x, y, d/2+0.005, 0.01));  // 문짝
+    g.add(cyl(0.012,0.012,0.02, furnMat('#8f979c','satin'), x+cw*0.3, y, d/2+0.03, 8));
+  }
+  g.userData.size={w,h,d};
+  return addSlots(g, tierSlots(w,h,cols>2?3:2,0), [h], [d]);
+};
+
 export const FURNITURE_TYPES=Object.keys(B);
 
 /* ============================================================

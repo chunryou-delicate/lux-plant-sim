@@ -385,7 +385,121 @@
         "w": 8,
         "d": 6,
         "h": 2.8
-      }
+      },
+      "furniture": [
+        {
+          "preset": "blackboard",
+          "x": 0.8,
+          "z": 2.93,
+          "y": 1.55,
+          "rot": 180
+        },
+        {
+          "preset": "bulletin_board",
+          "x": -3.93,
+          "z": -0.4,
+          "y": 1.5,
+          "rot": 90
+        },
+        {
+          "preset": "lectern",
+          "x": 1.9,
+          "z": 2.05,
+          "rot": 180
+        },
+        {
+          "preset": "desk_student_2",
+          "x": -2.4,
+          "z": 0.6
+        },
+        {
+          "preset": "desk_student_2",
+          "x": 0,
+          "z": 0.6
+        },
+        {
+          "preset": "desk_student_2",
+          "x": 2.4,
+          "z": 0.6
+        },
+        {
+          "preset": "desk_student_2",
+          "x": -2.4,
+          "z": -0.5
+        },
+        {
+          "preset": "desk_student_2",
+          "x": 0,
+          "z": -0.5
+        },
+        {
+          "preset": "desk_student_2",
+          "x": 2.4,
+          "z": -0.5
+        },
+        {
+          "preset": "chair_student",
+          "x": -2.4,
+          "z": 0.04999999999999993,
+          "rot": 180
+        },
+        {
+          "preset": "chair_student",
+          "x": 0,
+          "z": 0.04999999999999993,
+          "rot": 180
+        },
+        {
+          "preset": "chair_student",
+          "x": 2.4,
+          "z": 0.04999999999999993,
+          "rot": 180
+        },
+        {
+          "preset": "chair_student",
+          "x": -2.4,
+          "z": -1.05,
+          "rot": 180
+        },
+        {
+          "preset": "chair_student",
+          "x": 0,
+          "z": -1.05,
+          "rot": 180
+        },
+        {
+          "preset": "chair_student",
+          "x": 2.4,
+          "z": -1.05,
+          "rot": 180
+        },
+        {
+          "preset": "locker_12",
+          "x": -3.72,
+          "z": 1.6,
+          "rot": 90
+        },
+        {
+          "preset": "plant_step_3",
+          "x": -2.2,
+          "z": -2.78
+        },
+        {
+          "preset": "plant_step_3",
+          "x": 0,
+          "z": -2.78
+        },
+        {
+          "preset": "shelf_etagere_3tier",
+          "x": 2.9,
+          "z": -2.8
+        },
+        {
+          "preset": "plant_pedestal",
+          "x": 3.6,
+          "z": -2.2
+        }
+      ]
     },
     "greenhouse": {
       "label": "온실",

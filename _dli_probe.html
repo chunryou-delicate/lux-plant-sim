@@ -33,33 +33,36 @@ for (const key of Object.keys(NAMES)) {
   const wins = (built.luxWins||[]).map(w=>winFromHouse(w.wall,w.cu,w.cy,w.w,w.h,size,w.tau)).filter(Boolean);
   const slots = built.plantSlots||[];
   if (!wins.length || !slots.length) { L.push('· '+NAMES[key]+': 창 '+wins.length+' 슬롯 '+slots.length+' → 건너뜀'); continue; }
-  let best=null;
+  let best=null, worst=null;
   for (const s of slots) {
     const p = s.point || {x:s.x,y:s.y,z:s.z};
     const r = daylightRatio(p, {x:0,y:1,z:0}, wins, { occluders: built.occluders, selfIdx: s.occIdx });
-    if (!best || r > best.r) best = { r, p, s };
+    if (!best  || r > best.r)  best  = { r, p, s };
+    if (!worst || r < worst.r) worst = { r, p, s };
   }
   // 창까지 수평 거리
   const d = Math.min(...wins.map(w=>Math.hypot(best.p.x-w.cx, best.p.z-w.cz)));
-  rooms[key] = { best, wins, slots:slots.length, occ:(built.occluders||[]).length, dist:d, size };
+  rooms[key] = { best, worst, wins, slots:slots.length, occ:(built.occluders||[]).length, dist:d, size };
 }
 
 L.push('## 방 조립 결과');
-L.push('| 방 | 크기 | 슬롯 | 차폐체 | 최고슬롯 높이 | 창거리 |');
-L.push('|---|---|---|---|---|---|');
+L.push('| 방 | 크기 | 슬롯 | 차폐체 | 최고슬롯 높이 | 창거리 | 최고↔최저 격차 |');
+L.push('|---|---|---|---|---|---|---|');
 for (const k of Object.keys(rooms)) { const r=rooms[k];
-  L.push(`| ${NAMES[k]} | ${r.size.w}×${r.size.d}m | ${r.slots} | ${r.occ} | ${r.best.p.y.toFixed(2)}m | ${r.dist.toFixed(2)}m |`); }
+  const gap = r.worst.r>0 ? (r.best.r/r.worst.r).toFixed(0)+'배' : '∞ (최저 0)';
+  L.push(`| ${NAMES[k]} | ${r.size.w}×${r.size.d}m | ${r.slots} | ${r.occ} | ${r.best.p.y.toFixed(2)}m | ${r.dist.toFixed(2)}m | ${gap} |`); }
 
 for (const [w,s] of CASES) {
   L.push('');
   L.push(`## ${WEATHER[w].ko} · ${SEASON[s].ko} — 천공 ${Math.round(skyEvMax({weather:w,season:s}))} lx · 낮 ${dayLengthHours(s)}h`);
-  L.push('| 방 | 한낮 lx | DLI | 몬스테라 | 산세 |');
-  L.push('|---|---|---|---|---|');
+  L.push('| 방 | 한낮 lx | 최고 DLI | 최저 DLI | 몬스테라(최고) | 산세(최고) |');
+  L.push('|---|---|---|---|---|---|');
   for (const k of Object.keys(rooms)) { const r=rooms[k];
     const dli = daylightDLI(r.best.r, {weather:w, season:s});
     const lx = Math.round(r.best.r * skyEvMax({weather:w,season:s}));
     const m = judgeDLI(dli, TH.plants.monstera_deliciosa), sa = judgeDLI(dli, TH.plants.sansevieria);
-    L.push(`| ${NAMES[k]} | ${lx} | **${dli.toFixed(2)}** | ${m.ko}${m.fenestrating?'·갈라짐':''} | ${sa.ko} |`);
+    const wd = daylightDLI(r.worst.r, {weather:w, season:s});
+    L.push(`| ${NAMES[k]} | ${lx} | **${dli.toFixed(2)}** | ${wd.toFixed(2)} | ${m.ko}${m.fenestrating?'·갈라짐':''} | ${sa.ko} |`);
   }
 }
 document.getElementById('out').textContent = L.join('\n');

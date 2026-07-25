@@ -950,6 +950,119 @@
       "accent": "#43474d",
       "colorway": "charcoal",
       "room": "공통"
+    },
+    "blackboard": {
+      "type": "blackboard",
+      "name_ko": "칠판",
+      "w": 3,
+      "h": 1.2,
+      "color": "#4a6152",
+      "accent": "#c8b9a4",
+      "room": "학원교실",
+      "mount": "wall"
+    },
+    "blackboard_small": {
+      "type": "blackboard",
+      "name_ko": "칠판-소형",
+      "w": 1.8,
+      "h": 1,
+      "color": "#4a6152",
+      "accent": "#c8b9a4",
+      "room": "학원교실",
+      "mount": "wall"
+    },
+    "whiteboard": {
+      "type": "blackboard",
+      "name_ko": "화이트보드",
+      "w": 2.4,
+      "h": 1.2,
+      "color": "#f2f4f2",
+      "accent": "#b8bfc4",
+      "room": "학원교실",
+      "mount": "wall"
+    },
+    "bulletin_board": {
+      "type": "bulletin_board",
+      "name_ko": "게시판",
+      "w": 1.1,
+      "h": 0.8,
+      "color": "#d8c3a0",
+      "accent": "#b9a88c",
+      "room": "학원교실",
+      "mount": "wall"
+    },
+    "lectern": {
+      "type": "lectern",
+      "name_ko": "교탁",
+      "w": 0.8,
+      "d": 0.45,
+      "h": 1.05,
+      "color": "#ded0b8",
+      "accent": "#cbbba2",
+      "room": "학원교실"
+    },
+    "desk_student_2": {
+      "type": "desk_student",
+      "name_ko": "학생책상-2인",
+      "w": 1.2,
+      "d": 0.5,
+      "h": 0.72,
+      "color": "#e6dcc8",
+      "accent": "#9aa3a8",
+      "room": "학원교실"
+    },
+    "desk_student_1": {
+      "type": "desk_student",
+      "name_ko": "학생책상-1인",
+      "w": 0.7,
+      "d": 0.5,
+      "h": 0.72,
+      "color": "#e6dcc8",
+      "accent": "#9aa3a8",
+      "room": "학원교실"
+    },
+    "desk_student_mint": {
+      "type": "desk_student",
+      "name_ko": "학생책상-민트",
+      "w": 1.2,
+      "d": 0.5,
+      "h": 0.72,
+      "color": "#dbe8e2",
+      "accent": "#9aa3a8",
+      "room": "학원교실"
+    },
+    "locker_6": {
+      "type": "locker",
+      "name_ko": "사물함-6칸",
+      "w": 1.2,
+      "d": 0.4,
+      "h": 1.1,
+      "cols": 3,
+      "rows": 2,
+      "color": "#dfe4e6",
+      "accent": "#c3ccd0",
+      "room": "학원교실"
+    },
+    "locker_12": {
+      "type": "locker",
+      "name_ko": "사물함-12칸",
+      "w": 1.6,
+      "d": 0.4,
+      "h": 1.6,
+      "cols": 4,
+      "rows": 3,
+      "color": "#dfe4e6",
+      "accent": "#c3ccd0",
+      "room": "학원교실"
+    },
+    "chair_student": {
+      "type": "chair",
+      "name_ko": "학생의자",
+      "w": 0.42,
+      "d": 0.42,
+      "color": "#c9d6da",
+      "accent": "#aab6bb",
+      "room": "학원교실"
     }
   },
   "_slots": "가구 userData.slots=[{x,y,z}](로컬 m, y=화분 밑면), tier_heights=[y..], size_m={w,d,h}. 에셋창 GLB 선반과 동일 스키마.",
