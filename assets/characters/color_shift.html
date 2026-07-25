@@ -56,6 +56,9 @@
     <h2>머리색 프리셋</h2>
     <div class="presets" id="hairPre"></div>
 
+    <h2>눈동자 프리셋</h2>
+    <div class="presets" id="irisPre"></div>
+
     <h2>부위별 색</h2>
     <div id="parts"></div>
 
@@ -68,11 +71,13 @@
     <div class="chk"><b>마스크 검수 포인트</b>
       <ul>
         <li>머리 ↔ 눈썹 경계</li>
-        <li>눈 홍채 ↔ 흰자</li>
+        <li><b>홍채 ↔ 흰자 ↔ 속눈썹</b> — 얼굴 시점에서</li>
         <li>목 · 손목 (피부 ↔ 옷)</li>
         <li>머리카락이 옷에 닿는 부분</li>
       </ul>
-      머리색을 형광색으로 바꾸면 잘못 칠해진 곳이 바로 드러납니다.
+      형광색으로 바꾸면 잘못 칠해진 곳이 바로 드러납니다.
+      홍채와 속눈썹은 <b>같은 진갈색</b>이라 색이 아니라 모양(둥근 덩어리 vs 얇은 호)으로
+      갈랐습니다. 캐릭터마다 다를 수 있어 여기가 제일 확인이 필요합니다.
     </div>
     <div class="note" id="note"></div>
   </div>
@@ -96,16 +101,19 @@ const CHARS=[['char_namja_jachwi','자취남'],['char_namja_gajang','남가장']
              캐릭터 구분이 깨진다.
    눈썹은 머리카락에 포함했다. 머리색 바꾸면 같이 바뀌는 게 자연스럽다. */
 const PARTS=[
-  {key:'hair', name:'머리 + 눈썹', code:32,  on:true,  color:'#d8b46c'},
-  {key:'skin', name:'피부',        code:128, on:false, color:'#f0c090'},
-  {key:'top',  name:'상의',        code:160, on:false, color:'#e8e8d8'},
-  {key:'bot',  name:'하의',        code:192, on:false, color:'#486090'},
-  {key:'shoe', name:'신발',        code:224, on:false, color:'#d8d0c4'},
+  {key:'hair', name:'머리 + 눈썹', code:24,  on:true,  color:'#d8b46c'},
+  {key:'iris', name:'홍채 (눈동자)', code:48, on:false, color:'#3f7fb8'},
+  {key:'skin', name:'피부',        code:120, on:false, color:'#f0c090'},
+  {key:'top',  name:'상의',        code:144, on:false, color:'#e8e8d8'},
+  {key:'bot',  name:'하의',        code:168, on:false, color:'#486090'},
+  {key:'shoe', name:'신발',        code:192, on:false, color:'#d8d0c4'},
 ];
 const LOCKED=[
-  {name:'눈 (홍채·흰자)', code:64,  why:'텍셀 단위가 미세함 · 표정 작업에서 처리'},
-  {name:'직업 상징물',    code:96,  why:'가운 로고·명찰·앞치마 무늬 · 직업 정체성'},
+  {name:'흰자 · 하이라이트 · 속눈썹', code:72, why:'홍채만 바뀌고 눈매와 반짝임은 유지됩니다'},
+  {name:'직업 상징물',              code:96, why:'가운 로고·명찰·앞치마 무늬 · 직업 정체성'},
 ];
+const IRIS_PRESETS=['#3a2a20','#6b4226','#a9743c','#3f7fb8','#2f7f6a',
+                    '#6a4a8a','#8a3b4b','#4a5a68','#1c1a1e','#b06a2a'];
 const HAIR_PRESETS=['#3a2a20','#6b4226','#a9743c','#d8b46c','#e8dcc0',
                     '#8a3b3b','#6a4a7a','#2f4f4f','#9aa0a8','#1c1a1e'];
 
@@ -235,23 +243,26 @@ PARTS.forEach(p=>{
   const [chk,,col]=row.children;
   chk.onchange=e=>{p.on=e.target.checked;recolor();};
   col.oninput=e=>{p.color=e.target.value;if(p.on)recolor();};
-  p._col=col;
+  p._col=col; p._chk=chk;
   partsEl.appendChild(row);
 });
-const pre=document.getElementById('hairPre');
-HAIR_PRESETS.forEach(c=>{
-  const s=document.createElement('div');s.className='sw';s.style.background=c;
-  s.title=c; s.onclick=()=>{const p=PARTS[0];p.color=c;p.on=true;p._col.value=c;
-    partsEl.querySelector('input[type=checkbox]').checked=true;recolor();};
-  pre.appendChild(s);
-});
+function presetRow(elId,list,partKey){
+  const el=document.getElementById(elId);
+  const p=PARTS.find(x=>x.key===partKey);
+  list.forEach(c=>{
+    const s=document.createElement('div');s.className='sw';s.style.background=c;s.title=c;
+    s.onclick=()=>{ p.color=c; p.on=true; p._col.value=c; p._chk.checked=true; recolor(); };
+    el.appendChild(s);
+  });
+}
+presetRow('hairPre',HAIR_PRESETS,'hair');
+presetRow('irisPre',IRIS_PRESETS,'iris');
 document.getElementById('locked').innerHTML=LOCKED.map(l=>
   `<div style="padding:5px 0;border-bottom:1px solid #f0f4f1">
      <div style="font-size:12.5px;font-weight:600">🔒 ${l.name}</div>
      <div style="font-size:11px;color:#6d7d72;line-height:1.5">${l.why}</div></div>`).join('');
 document.querySelectorAll('.views button').forEach(b=>b.onclick=()=>setView(b.dataset.v));
-document.getElementById('reset').onclick=()=>{PARTS.forEach(p=>p.on=false);
-  partsEl.querySelectorAll('input[type=checkbox]').forEach(c=>c.checked=false);recolor();};
+document.getElementById('reset').onclick=()=>{PARTS.forEach(p=>{p.on=false;p._chk.checked=false;});recolor();};
 
 load();
 function resize(){const w=cv.clientWidth,h=cv.clientHeight;

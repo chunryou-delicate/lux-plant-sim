@@ -50,22 +50,24 @@ from rescale_char_glb import load  # noqa: E402
 SRC = os.path.join(ROOT, "assets", "characters", "3d")
 OUT = os.path.join(ROOT, "assets", "characters", "masks")
 
-# 부위 코드 (R 채널). 간격 32 - 보간이 섞여도 최근접으로 복구 가능.
+# 부위 코드 (R 채널). 간격 24 - 보간이 섞여도 최근접으로 복구 가능(허용오차 ±10).
 CODE = {
     "none":  0,
-    "hair":  32,    # 머리카락 + 눈썹
-    "eye":   64,    # 보호 (색 안 바꿈)
-    "emblem": 96,   # 보호 (직업 상징물)
-    "skin":  128,
-    "top":   160,
-    "bottom": 192,
-    "shoe":  224,
+    "hair":  24,    # 머리카락 + 눈썹
+    "iris":  48,    # 홍채 + 동공 (색 변경 대상)
+    "eye":   72,    # 흰자·하이라이트·속눈썹 (보호)
+    "emblem": 96,   # 직업 상징물 (보호)
+    "skin":  120,
+    "top":   144,
+    "bottom": 168,
+    "shoe":  192,
 }
 VIS = {
     CODE["none"]: (30, 30, 30), CODE["hair"]: (220, 60, 60),
-    CODE["eye"]: (255, 210, 0), CODE["emblem"]: (255, 130, 220),
-    CODE["skin"]: (60, 200, 120), CODE["top"]: (80, 140, 230),
-    CODE["bottom"]: (150, 80, 220), CODE["shoe"]: (240, 150, 60),
+    CODE["iris"]: (0, 190, 255), CODE["eye"]: (255, 210, 0),
+    CODE["emblem"]: (255, 130, 220), CODE["skin"]: (60, 200, 120),
+    CODE["top"]: (80, 140, 230), CODE["bottom"]: (150, 80, 220),
+    CODE["shoe"]: (240, 150, 60),
 }
 
 # 몸 높이 비율 구간 (발바닥 0 ~ 정수리 1)
@@ -195,6 +197,18 @@ def build(char, vis=False, size=None):
     eye = binary_closing(eye, np.ones((7, 7)))
     eye = binary_dilation(eye, np.ones((3, 3)))              # 속눈썹 테두리까지
     code[eye] = CODE["eye"]
+
+    # 홍채: 눈 영역은 밝기가 둘로만 갈린다(흰자·하이라이트 / 진갈색). 진갈색
+    # 덩어리에 홍채·동공과 속눈썹·눈매 테두리가 같이 들어 있어 색으로는 못 가른다.
+    # 모양으로 가른다 - 홍채는 둥근 덩어리, 속눈썹은 얇은 호(弧)라서
+    # 원반 커널로 열림 연산을 하면 홍채만 살아남는다.
+    dark_eye = eye & (lum < 140)
+    r = max(5, int(round(np.sqrt(max(dark_eye.sum(), 1) / 2 / np.pi) * 0.30)))
+    yy, xx = np.mgrid[-r:r + 1, -r:r + 1]
+    disk = (xx * xx + yy * yy) <= r * r
+    iris = binary_opening(dark_eye, disk)
+    iris = binary_closing(iris, np.ones((5, 5)))
+    code[iris] = CODE["iris"]
     # 눈썹은 머리카락에 포함 - 머리색 바꾸면 같이 바뀌는 게 자연스럽다
     code[browband & (d_hair < 90)] = CODE["hair"]
 
@@ -219,9 +233,9 @@ def build(char, vis=False, size=None):
 
     cov = covered.sum()
     inv = {v: k for k, v in CODE.items()}
-    NAME = {"none": "미분류", "hair": "머리+눈썹", "eye": "눈(보호)",
-            "emblem": "상징물(보호)", "skin": "피부", "top": "상의",
-            "bottom": "하의", "shoe": "신발"}
+    NAME = {"none": "미분류", "hair": "머리+눈썹", "iris": "홍채",
+            "eye": "흰자·속눈썹(보호)", "emblem": "상징물(보호)", "skin": "피부",
+            "top": "상의", "bottom": "하의", "shoe": "신발"}
     # 아틀라스 여백(UV 미사용)은 빼고 실제 표면 기준으로만 센다
     print("  %-22s UV 실사용 %.1f%%" % (char, cov / (S * S) * 100))
     for v in sorted(set(code[covered].ravel().tolist())):
