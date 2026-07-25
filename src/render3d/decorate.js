@@ -6,11 +6,19 @@
      → 사용자가 배치해서 저장한 걸 그대로 data/house_rooms.json에 붙여넣으면
        그게 기본 배치가 된다. (별도 포맷을 만들지 않는 게 핵심)
 
-   ※ 배치를 바꾸면 조도가 크게 달라진다(발코니 선반 0.04m에 DLI 7.55↔9.25).
+   ※ 배치를 바꾸면 조도가 달라진다(발코니 창가에서 한 칸 0.25m에 DLI 약 25%).
      그래서 놓을 때마다 onChange로 조도를 다시 계산하게 콜백을 준다.
 ============================================================ */
 
-const SNAP = 0.05;                       // 5cm 격자
+/* ★ 이산 그리드 — 플레이어가 만지는 건 이산화한다.
+   물리(조도)는 연속 그대로 두고, '놓을 수 있는 자리'만 칸으로 끊는다.
+   그러지 않으면 20cm를 미세조정해 DLI를 올리는 픽셀 최적화 게임이 된다.
+
+   0.25m로 정한 근거(수정된 물리 기준, 발코니 창가 실측):
+     인접 칸 사이 DLI 변화 ≈ 25%  — "옮기면 눈에 띄게 달라진다"는 되고,
+     "1cm씩 밀어 최적점을 찾는다"는 안 된다.
+   ※ 1m 모듈(창·문 스냅 단위)의 1/4이라 벽·창과도 격자가 맞는다. */
+const SNAP = 0.25;
 const ROT_STEP = 15;                     // 회전 15°
 
 export function createDecorator(ctx, opts) {
@@ -107,14 +115,28 @@ export function createDecorator(ctx, opts) {
     e.preventDefault(); e.stopPropagation();
   }
 
+  /* 선택된 가구의 실제 발자국(회전 반영) — 벽을 뚫지 않게 가두는 데 쓴다 */
+  function footprint(i) {
+    const grp = getFurnitureGroup();
+    let w = 0.4, d = 0.4;
+    if (grp) for (const o of grp.children)
+      if (o.userData.furnIdx === i && o.userData.size) { w = o.userData.size.w; d = o.userData.size.d; }
+    const f = getRoomDef().furniture[i];
+    const rot = ((((f.rot || 0) % 180) + 180) % 180);
+    return (rot > 45 && rot < 135) ? { w: d, d: w } : { w, d };
+  }
+
   function onMove(e) {
     if (!enabled || !dragging || selIdx < 0) return;
     const p = floorAt(e);
     if (!p) return;
     const S = getSize();
     const f = getRoomDef().furniture[selIdx];
-    f.x = Math.max(-S.w / 2, Math.min(S.w / 2, snap(p.x + dragOff.x)));
-    f.z = Math.max(-S.d / 2, Math.min(S.d / 2, snap(p.z + dragOff.z)));
+    const fp = footprint(selIdx);
+    // 발자국 절반만큼 안쪽으로 — 가구가 벽을 뚫고 나가지 않게
+    const mx = Math.max(0, S.w / 2 - fp.w / 2), mz = Math.max(0, S.d / 2 - fp.d / 2);
+    f.x = Math.max(-mx, Math.min(mx, snap(p.x + dragOff.x)));
+    f.z = Math.max(-mz, Math.min(mz, snap(p.z + dragOff.z)));
     marker.position.set(f.x, 0.02, f.z);
     e.preventDefault(); e.stopPropagation();
   }

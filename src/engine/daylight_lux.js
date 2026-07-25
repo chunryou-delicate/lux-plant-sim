@@ -91,24 +91,31 @@ export function rectPoly(size) {
 /* 창 하나를 몇 조각으로 쪼갤지 — 거리에 따라 자동으로.
 
    각 조각은 '점광원'으로 취급되므로(E = L·cosWin·cosP·dA/d²) 조각이 거리에 비해
-   크면 근사가 깨진다. 작은 창을 1m 밖에서 볼 땐 4×3으로 충분하지만,
-   온실 유리벽(4.9×2.7m)을 0.6m 앞에서 보면 조각 하나가 1.2×0.9m인데 거리는 0.6m —
-   물리 상한(반구 전체가 유리여도 E ≤ π·L)의 5배가 나왔다.
+   크면 근사가 깨진다. 조각 한 변이 거리의 1/4을 넘지 않게 잡는다.
 
-   조각 한 변이 거리의 1/4을 넘지 않게 잡는다.
+   ★ 거리는 '창 중심'이 아니라 '창면 위에서 가장 가까운 점'까지 재야 한다.
+     창 가장자리 앞 0.3m에 있는 화분은 창 중심까지는 3m라, 중심 거리로 재면
+     성기게 쪼개고 → 큰 조각 하나가 화분 코앞에 놓여 1/d²가 폭발한다.
+     실측: 그 경우 참값의 +286%까지 나왔다(발코니 선반). 중심거리 기준의 함정.
 
    파라미터는 고밀도 기준([128,128] 수렴값)과 대조해 정했다.
-   창 3종(1.2×1.4 / 2.4×2.0 / 4.9×2.7) × 거리 6종(0.3~5.0m) 전 조합에서:
-     고정 [4,3]        최대 −56.7% (근거리에서 붕괴)
-     최소2·d/3         최대  −9.6% (원거리에서 너무 성김)
-     ★ 최소4·d/4      최대  ±2.5%  ← 채택. 평균 182샘플
-   ※ 분할수는 짝수로 맞춘다. 홀수면 창 정중앙에 샘플이 놓여 계통 편향이 생긴다
-     (최소3은 최소2보다 오히려 나빴다 — 10.8%). */
+   ※ 분할수는 짝수. 홀수면 창 정중앙에 샘플이 놓여 계통 편향이 생긴다. */
 function autoSamples(w, p) {
-  const d = Math.max(0.15, Math.hypot(p.x - w.cx, p.y - w.cy, p.z - w.cz));
+  // 창면 좌표계로 투영 → 사각형 안으로 클램프 → 그 점까지의 거리
+  const dx = p.x - w.cx, dy = p.y - w.cy, dz = p.z - w.cz;
+  const vy = (w.vy === undefined ? 1 : w.vy);
+  let su = dx * w.ux + dy * (w.uy || 0) + dz * w.uz;
+  let sv = dx * (w.vx || 0) + dy * vy + dz * (w.vz || 0);
+  su = Math.max(-w.width / 2,  Math.min(w.width / 2,  su));
+  sv = Math.max(-w.height / 2, Math.min(w.height / 2, sv));
+  const qx = w.cx + w.ux * su + (w.vx || 0) * sv;
+  const qy = w.cy + (w.uy || 0) * su + vy * sv;
+  const qz = w.cz + w.uz * su + (w.vz || 0) * sv;
+  const d = Math.max(0.05, Math.hypot(p.x - qx, p.y - qy, p.z - qz));
+
   const patch = d / 4;
   const clamp = v => {
-    const n = Math.max(4, Math.min(24, Math.ceil(v)));
+    const n = Math.max(4, Math.min(64, Math.ceil(v)));
     return n % 2 ? n + 1 : n;
   };
   return [clamp(w.width / patch), clamp(w.height / patch)];

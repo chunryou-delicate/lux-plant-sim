@@ -99,7 +99,9 @@
           "spectrum": "full",
           "schedule": "photo16"
         }
-      ]
+      ],
+      "facing": "south",
+      "facing_note": "남향이지만 창이 작고(레터박스) 반투명(τ0.55)이라 어둡다. 향 탓이 아니다."
     },
     "oneroom": {
       "label": "원룸",
@@ -193,7 +195,9 @@
           "spectrum": "warm",
           "schedule": "night"
         }
-      ]
+      ],
+      "facing": "south",
+      "facing_note": "남향 단창."
     },
     "apartment": {
       "label": "아파트",
@@ -332,37 +336,37 @@
         {
           "preset": "shelf_ladder_4tier",
           "x": -4.85,
-          "z": -3.72
+          "z": -3.77
         },
         {
           "preset": "shelf_etagere_3tier",
           "x": -3.95,
-          "z": -3.72
+          "z": -3.84
         },
         {
           "preset": "plant_step_3",
           "x": -2.9,
-          "z": -3.72
+          "z": -3.84
         },
         {
           "preset": "shelf_etagere_3tier",
           "x": -1.9,
-          "z": -3.72
+          "z": -3.84
         },
         {
           "preset": "shelf_growrack_2tier",
           "x": -0.9,
-          "z": -3.72
+          "z": -3.805
         },
         {
           "preset": "plant_step_3",
           "x": 0.25,
-          "z": -3.72
+          "z": -3.84
         },
         {
           "preset": "shelf_etagere_3tier",
           "x": 1.15,
-          "z": -3.72
+          "z": -3.84
         },
         {
           "preset": "bed_double",
@@ -425,12 +429,12 @@
         {
           "preset": "shelf_etagere_3tier",
           "x": 3.55,
-          "z": -3.7
+          "z": -3.84
         },
         {
           "preset": "plant_pedestal",
           "x": 4.8,
-          "z": -3.7
+          "z": -3.85
         },
         {
           "preset": "fridge",
@@ -648,7 +652,9 @@
           "x": 3.6,
           "z": -2.2
         }
-      ]
+      ],
+      "facing": "south",
+      "facing_note": "남향 한 벽에 창 3개 — 창가/뒤편 격차가 이 방의 성격."
     },
     "greenhouse": {
       "label": "온실",
@@ -659,69 +665,126 @@
       "wallRough": 0.9,
       "floorRough": 0.7,
       "glassWalls": [
-        "back",
-        "left",
-        "right"
+        "left"
       ],
       "ceiling": "glass",
-      "windows": [],
+      "windows": [
+        {
+          "wall": "back",
+          "cu": -1.5,
+          "cy": 1.35,
+          "w": 6.0,
+          "h": 2.2,
+          "tau": 0.85,
+          "note": "재배동 남향 전창"
+        },
+        {
+          "wall": "back",
+          "cu": 3.1,
+          "cy": 1.3,
+          "w": 1.2,
+          "h": 1.1,
+          "tau": 0.85,
+          "note": "숙소 남향 소창 — 여기가 온실 안의 어두운 자리"
+        }
+      ],
       "doors": [
         {
           "wall": "front",
-          "cu": 0,
+          "cu": -2.0,
           "w": 1.15,
           "h": 2.45
         }
       ],
       "size": {
-        "w": 5,
-        "d": 5,
+        "w": 8.0,
+        "d": 5.0,
         "h": 2.8
       },
       "furniture": [
         {
-          "preset": "shelf_etagere_3tier",
-          "x": -1.5,
-          "z": -2.25
+          "preset": "shelf_ladder_4tier",
+          "x": -3.55,
+          "z": -2.27
         },
         {
           "preset": "shelf_etagere_3tier",
-          "x": 1.5,
-          "z": -2.25
+          "x": -2.6,
+          "z": -2.34
+        },
+        {
+          "preset": "plant_step_3",
+          "x": -1.55,
+          "z": -2.34
         },
         {
           "preset": "shelf_growrack_2tier",
-          "x": -2.25,
-          "z": -0.6,
-          "rot": 90
+          "x": -0.45,
+          "z": -2.305
         },
         {
-          "preset": "plant_step_3",
-          "x": -2.28,
-          "z": 0.95,
-          "rot": 90
-        },
-        {
-          "preset": "shelf_ladder_4tier",
-          "x": 2.24,
-          "z": -0.6,
-          "rot": -90
-        },
-        {
-          "preset": "plant_step_3",
-          "x": 2.3,
-          "z": 0.95,
-          "rot": -90
-        },
-        {
-          "preset": "table",
-          "x": 0,
-          "z": 0.2
+          "preset": "shelf_etagere_3tier",
+          "x": -3.58,
+          "z": 1.9
         },
         {
           "preset": "shelf_cart_3tier",
-          "x": 0,
-          "z": -1.2
+          "x": -2.8,
+          "z": 1.85
+        },
+        {
+          "preset": "table",
+          "x": -2.0,
+          "z": 0.1
+        },
+        {
+          "preset": "plant_step_3",
+          "x": 0.35,
+          "z": 1.9
+        },
+        {
+          "preset": "bed_single",
+          "x": 1.75,
+          "z": -1.3
+        },
+        {
+          "preset": "desk",
+          "x": 3.68,
+          "z": -1.15,
+          "rot": -90
+        },
+        {
+          "preset": "chair",
+          "x": 3.05,
+          "z": -1.15
+        },
+        {
+          "preset": "shelf",
+          "x": 3.7,
+          "z": 1.6,
+          "rot": -90
+        },
+        {
+          "preset": "shelf_etagere_3tier",
+          "x": 3.1,
+          "z": -2.34
+        }
+      ],
+      "facing": "south",
+      "note": "재배동(좌 5m) + 숙소·연구실(우 3m). 숙소쪽 벽이 막혀 있어 온실 안에서도 밝기 격차가 생긴다. 천창은 재배동에만.",
+      "partitions": [
+        {
+          "id": "lodge",
+          "axis": "x",
+          "at": 1.0,
+          "from": -2.5,
+          "to": 2.5,
+          "door": {
+            "at": -0.6,
+            "w": 0.95,
+            "h": 2.1
+          },
+          "note": "★ 재배동 / 숙소·연구실. 이 벽이 막혀 있어 온실에도 자리 고민이 생긴다"
         }
       ]
     },
@@ -762,7 +825,8 @@
           "preset": "win_studio_cross",
           "color": "#f8f4ec",
           "gloss": "matte",
-          "note": "침실 창"
+          "note": "침실 창",
+          "orient": "south"
         },
         {
           "wall": "back",
@@ -773,7 +837,8 @@
           "preset": "win_apt_wide",
           "color": "#f8f4ec",
           "gloss": "satin",
-          "note": "거실 창"
+          "note": "거실 창",
+          "orient": "east"
         }
       ],
       "doors": [
@@ -848,7 +913,9 @@
           "rot": 0,
           "note": "거실 창가 계단식"
         }
-      ]
+      ],
+      "facing": "south",
+      "facing_note": "거실 남향 / 침실 동향 — 방 두 개의 밝기가 다르다."
     }
   },
   "_partitions": "partitions=[{axis:x|z, at, from,to(선택), door:{at,w,h}}] — 내벽으로 공간 분획. 컷어웨이에서 안 숨김.",
