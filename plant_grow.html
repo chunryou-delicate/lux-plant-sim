@@ -146,6 +146,8 @@ const DEF={
   internode:0.17, stemFlat:1.25,   // 줄기 마디 길이·잎방향 납작
   petGrow:16, rEarly:0.022, rThin:0.028, rMed:0.025, rThick:0.031, matureProb:0.22, doubleBud:0.15,  // 종류별 굵기(몸통 폭 기준)·성숙잎 확률·쌍혹 확률
   growAmt:0.8, growSpan:300,        // ★전체 성장: 최대 +60% 까지, 730일(2년)에 걸쳐. 비율은 그대로 유지
+  timeCurve:0.72,   // ★시간 곡선: 실제 일수 → '생장 나이'. 1=등속, <1이면 초반이 빠르고 뒤로 갈수록 느려진다.
+                    //   0.72는 "예전 83일치 모습이 30일에 나오게" 맞춘 값. 끝(1095일) 도달점은 그대로.
   varieProb:0.20, midMix:0.5, alboMidPick:0,   // alboMidPick: 0=랜덤, 1~7=그 종류로 고정(위치 세팅용)
   // varieProb = 잎(생장점)마다 독립 판정. 그루 단위가 아니라 '중간에 발현'하는 방식이 맞음(확정).
   //   난이도별로 달라질 예정. 또 가지를 잘라 수경재배로 번식시킬 때, 모주가 무늬면
@@ -162,7 +164,7 @@ const DEF={
 };
 let P=Object.assign({}, DEF);
 // 저장본 버전. 생장 로직/기본값이 바뀌면 올림 → 옛 저장값이 새 기본값을 덮어쓰지 않게.
-const CFG_VER='2026-07-25-varie2';
+const CFG_VER='2026-07-25-timecurve';
 
 // ===== 튜닝 파라미터(B: 에셋별 개별 조정) =====
 const ADJ_KEYS=[
@@ -981,6 +983,9 @@ function drawLeafStage(pos, az, m, midType, canMature, stemDir, stemRad, varie, 
   addLeaf(pos, az, m, key, null, stemDir, stemRad, ownAx);
 }
 
+// 실제 일수 → 생장 나이. 끝점(GMAX)은 고정이므로 3년 뒤 최종 모습은 곡선과 무관하게 같다.
+function ageOf(d){ const k=P.timeCurve||1; if(k===1||d<=0) return d;
+  return GMAX*Math.pow(Math.min(1,d/GMAX), k); }
 function clearGroup(g){ while(g.children.length){ const c=g.children[0]; g.remove(c); c.traverse&&c.traverse(o=>{ if(o.isMesh){ if(o.geometry) o.geometry.dispose();
   const ms=Array.isArray(o.material)?o.material:[o.material]; ms.forEach(m=>{ if(m&&m.userData&&m.userData.cloned) m.dispose(); }); } }); } }
 
@@ -991,7 +996,9 @@ function buildPlant(){
   ensureLeafShape();                          // 잎자루 지름 변경 반영
   clearGroup(plantGroup); clearPlaced();      // 겹침 회피용 자리 기록 초기화
   addPot();
-  const g=GROWTH, gf=Math.min(1, g/GMAX);   // 정규화(0..1, 전체 기간 기준)
+  // ★실제 경과일(gReal)을 '생장 나이'(g)로 변환한다. 어린 개체가 빨리 자리잡고
+  //   덩치가 커질수록 더디게 자라는 실제 생장 곡선. timeCurve=1이면 예전과 동일(등속).
+  const gReal=GROWTH, g=ageOf(gReal), gf=Math.min(1, g/GMAX);
   PLANT_AGE=gf;                             // 개체 나이(색 짙어짐·선명해짐 기준)
   // ★한 게이지로 줄기·엽초·잎이 '지금 비율 그대로' 함께 커진다. growAmt가 한계치(최대 배율-1).
   PLANT_GROW=1 + P.growAmt*Math.min(1, g/Math.max(1,P.growSpan));
@@ -1154,7 +1161,7 @@ function buildPlant(){
   updateAssetUse();   // 선택한 에셋이 지금 화면에 몇 개 있는지
   fitCam();     // 자라는 만큼 카메라가 따라 담기(항상 화면 안에)
   const el=document.getElementById('stat');
-  el.innerHTML=`<span class="k">단계</span> ${stage}<br><span class="k">마디</span> ${nodes} · <span class="k">잎</span> ${leaves} · <span class="k">시드</span> ${SEED}`;
+  el.innerHTML=`<span class="k">단계</span> ${stage}<br><span class="k">마디</span> ${nodes} · <span class="k">잎</span> ${leaves} · <span class="k">시드</span> ${SEED}<br><span class="k">생장나이</span> ${Math.round(ageOf(GROWTH))}일`;
 }
 // 식물 전체가 화면에 담기도록 직교 프러스텀·시선높이 자동 조절
 function fitCam(){
@@ -1452,6 +1459,7 @@ const SHAPE_GROUPS=[
   {t:'🌱 전체 성장', open:true, items:[
     {k:'growAmt',     t:'다 크면 몇 배',     min:0,    max:2,    step:0.05},
     {k:'growSpan',    t:'다 크는 데 걸리는 일', min:120, max:1095, step:30},
+    {k:'timeCurve',   t:'초반 빠르기(1=등속)', min:0.4, max:1.2, step:0.02},
     {k:'varieProb',   t:'변이(알보) 확률',   min:0,    max:1,    step:0.05},
     {k:'alboMidPick', t:'변이 중기 고정(0=랜덤)', min:0, max:28,  step:1},
     {k:'midMix',      t:'중간잎 섞기(0=1종)', min:0,   max:1,    step:0.05},
