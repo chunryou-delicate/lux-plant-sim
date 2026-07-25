@@ -130,7 +130,7 @@ const DEF={
   sizeYoung:0.16, sizeMid:0.30, sizeMature:0.46, sizeFull:0.62,  // 각 시점 크기(마디 간격 대비 자연스럽게)
   internode:0.22, stemFlat:1.25,   // 줄기 마디 길이·잎방향 납작
   petGrow:16, rThin:0.026, rMed:0.036, rThick:0.052, matureProb:0.22, doubleBud:0.15,   // 마디 자람시간·종류별 고정굵기·성숙잎 확률·더블혹(쌍혹=가지2 동시) 확률
-  petioleLen:1.0, leafElev:1.0, elevDrop:0.36, spread:0.10, branchSpread:0.55, branchProb:0.35,  // 배치(spread=줄기 흔들림, 혹 활성 확률 — "중간잎이 된 순간"에만 굴림)
+  petioleLen:1.0, leafElev:1.0, elevDrop:0.36, spread:0.10, branchSpread:0.55, branchProb:0.5,   // 배치(spread=줄기 흔들림, 혹 활성 확률 — "중간잎이 된 순간"에만 굴림)
   leafLight:0.62, leafDark:0.22, leafSat:0.5, satRange:0.22, hueBase:0.16, hueRange:0.26,   // 색(밝기/진함/채도/개체범위)
   ageDark:0.16, ageSat:0.26,   // 시간(나이) 따라 짙어짐·선명해짐(전역, 줄기·잎 함께)
 };
@@ -460,12 +460,9 @@ function buildPlant(){
       // ③ ★이번 구간에 "중간잎"이 된 잎이 있을 때만 혹 활성 — 그것도 딱 1개
       const midEvent=allNodes.some(n=>mOf(n,T-STEP)<M_MID && mOf(n,T)>=M_MID);   // 방금 중간잎이 된 잎이 있나
       if(midEvent && rng()<P.branchProb){
-        const cand=allNodes.filter(n=>!n.activated && mOf(n,T)>=M_YOUNG && n.idx<n.ax.nodes.length-1);   // 예비혹(중기)만 후보
+        const cand=allNodes.filter(n=>!n.activated && mOf(n,T)>=M_YOUNG);   // 후보 = 줄기_중기(분홍 예비혹) 전부
         if(cand.length){
-          let tot=0; const w=cand.map(n=>{ const al=Math.max(0,Math.min(1.5,n.tip.x*ld.x+n.tip.z*ld.z));
-            const ww=1+PHOTO*0.5*al; tot+=ww; return ww; });
-          let r=rng()*tot, pick=cand[cand.length-1];
-          for(let i=0;i<cand.length;i++){ r-=w[i]; if(r<=0){ pick=cand[i]; break; } }
+          const pick=cand[Math.floor(rng()*cand.length)];                  // ★순서도 규칙: 후보 중 순수 랜덤 1개
           pick.activated=true; pick.actT=T;
           const dbl=rng()<P.doubleBud;                                  // 쌍혹(가지2 동시) / 단혹(가지1)
           pick.actType=dbl?'main':'thick';
@@ -496,7 +493,8 @@ function buildPlant(){
         tip=n.base.clone().addScaledVector(n.dir, n.len*gr);
       }
       addStemSeg(n.base, tip, rad, 0, n.az, key);
-      if(gr>=1){ drawLeafStage(tip, n.az, m, n.midType, n.canMature); nLeaf++; }   // 자라는 동안은 잎 없이 줄기만
+      // ★새순은 항상 맨 위(생장점). 캐논의 "줄기 먼저·새순 없이"는 축의 첫 마디(발아·혹에서 난 가지)에만 적용.
+      if(gr>=1 || n.idx>0){ drawLeafStage(tip, n.az, m, n.midType, n.canMature); nLeaf++; }
     }
     nodes=allNodes.filter(n=>n.birth<=g).length; leaves=nLeaf;
     stage = nodes<=1 ? '새싹 🌱' : ((axes.length>1?'가지 '+(axes.length-1)+' · ':'')+(acts?'혹 '+acts+' · ':'')+'마디 '+nodes);
