@@ -149,6 +149,7 @@ const DEF={
   timeCurve:0.72,   // ★시간 곡선: 실제 일수 → '생장 나이'. 1=등속, <1이면 초반이 빠르고 뒤로 갈수록 느려진다.
                     //   0.72는 "예전 83일치 모습이 30일에 나오게" 맞춘 값. 끝(1095일) 도달점은 그대로.
   varieProb:0.20, midMix:0.5, alboMidPick:0, matAlboPick:0,   // alboMidPick: 0=랜덤, 1~7=그 종류로 고정(위치 세팅용)
+  matRare:0.10, matSub:0.30,   // 성숙 무늬: 희귀 10% / 부 30% / 나머지가 주(60%)
   // varieProb = 잎(생장점)마다 독립 판정. 그루 단위가 아니라 '중간에 발현'하는 방식이 맞음(확정).
   //   난이도별로 달라질 예정. 또 가지를 잘라 수경재배로 번식시킬 때, 모주가 무늬면
   //   그 삽수는 훨씬 높은 확률(80% 수준)을 물려받는 구조로 갈 것.
@@ -164,7 +165,7 @@ const DEF={
 };
 let P=Object.assign({}, DEF);
 // 저장본 버전. 생장 로직/기본값이 바뀌면 올림 → 옛 저장값이 새 기본값을 덮어쓰지 않게.
-const CFG_VER='2026-07-26-base11';
+const CFG_VER='2026-07-26-tree';
 
 // ===== 튜닝 파라미터(B: 에셋별 개별 조정) =====
 const ADJ_KEYS=[
@@ -275,7 +276,7 @@ const ADJ_TUNED={
   sheath_leaf_mid_albo18: {rz:0.25, ox:0.3, oy:0.04, oz:-0.05, len:0.19, fit:1.66},   // 엽초·변이-마블-그린옐로우-쨍
   sheath_leaf_mid_albo20: {sxz:1.55, sy:1.05, rx:0.25, ry:-0.7, rz:0.35, ox:0.37, oy:-0.15, oz:-0.07, len:0.215, fit:1.36, top:0.91},   // 엽초·변이-마블-흰그린-쨍
   sheath_leaf_mid_albo22: {scale:1.1, rx:-0.05, ry:0.2, rz:0.3, ox:0.25, oy:0.22, oz:0.01, len:0.245, fit:1.9, top:0.83},   // 엽초·변이-스페클-민트흰점-쨍
-  sheath_leaf_mid_albo27: {scale:1.1, rx:-0.05, ry:0.2, rz:0.3, ox:0.25, oy:0.22, oz:0.01, len:0.185, fit:1.7, top:0.83},   // 엽초·변이-실버-물방울-쨍
+  sheath_leaf_mid_albo27: {scale:1.1, rx:-0.05, ry:0.2, rz:0.3, ox:0.15, oy:0.22, oz:0.01, len:0.185, fit:1.8, top:0.83},   // 엽초·변이-실버-물방울-쨍
   sheath_leaf_mid_albo29: {scale:1.15, rx:-0.05, rz:0.2, ox:0.24, oy:-0.12, oz:-0.01, len:0.265, fit:2, bot:1.18, top:0.49},   // 엽초·변이-하프문-크림민트
 };
 function defAdj(key){
@@ -779,6 +780,38 @@ function ensureLeafShape(){                                // 값이 바뀐 잎�
 //   1 전체흰중기  2 -쨍  3 -차분 | 4 흰연두-쨍  5 -차분 | 6 크림민트-쨍  7 -차분
 // 2026-07-20: 1~3의 잎자루 교체 완료(실측 40%, 잎몸 78% — 기준 35~45% 충족) → 전체 복귀.
 // 14,15(마블-크림그린) 24,25,26(스페클-민트흰점2) 제외 — 잎자루 미검출·폭 비정상(에셋 정렬 필요)
+// ===== 변이 트리 (승인 2026-07-26) =====
+// 중기 무늬가 성숙에서 어떤 무늬로 정착하는지. 색·무늬 계열로 이었고 겹치는 배치를 허용한다.
+// 키=중기 고정번호(대표), 값=[주, 부]. 파생본(-쨍/-차분/기본)은 대표로 접어서 조회한다.
+const MAT_TREE={
+  1:[55,34],   // 알보-전체흰중기 → 알보-전체흰 / 하프문-그린흰
+  4:[46,55],   // 알보-흰연두     → 별무늬-그린흰 / 알보-전체흰
+  6:[52,13],   // 알보-크림민트   → 하프문-그린크림 / 스페클-그린크림
+  8:[28,25],   // 라임-형광       → 네온-라임 / 라임-레몬패치
+  10:[31,4],   // 마블-실버       → 제브라-그린흰 / 별무늬-페일그린
+  12:[19,4],   // 스페클-실버점   → 갤럭시-다크틸 / 별무늬-페일그린
+  16:[16,40],  // 잎맥-크림       → 오로레아-골드 / 별무늬-그린옐로우
+  18:[22,40],  // 마블-그린옐로우 → 오로레아-그린옐로우 / 별무늬-그린옐로우
+  20:[46,13],  // 마블-흰그린     → 별무늬-그린흰 / 스페클-그린크림
+  22:[7,13],   // 스페클-민트흰점 → 별무늬-핑크민트 / 스페클-그린크림
+  27:[10,19],  // 실버-물방울     → 갤럭시-틸골드 / 갤럭시-다크틸
+  29:[52,34],  // 하프문-크림민트 → 하프문-그린크림 / 하프문-그린흰
+};
+// 희귀: 중기에 대응 색이 없어 성숙에서만 나오는 넷. 어느 계열에서든 낮은 확률로 나온다.
+const MAT_RARE=[1,43,37,49];   // 핑크-로즈핑크 / 핑크-로즈 / 모브-라벤더그레이 / 차콜-다크그린
+// 중기 파생본(기본·차분)을 대표 번호로 접는다. 트리는 대표에만 걸려 있다.
+function midRepNum(n){
+  const k=ADJ_ALIAS['leaf_mid_albo'+n]||('leaf_mid_albo'+n);
+  return +k.replace('leaf_mid_albo','');
+}
+// 이 잎이 쓸 성숙 무늬. r은 축마다 미리 뽑아둔 0~1 난수(시드 고정이라 흔들리지 않는다).
+function matFromMid(midNum, r){
+  const pair=MAT_TREE[midRepNum(midNum)];
+  if(!pair) return 0;                                    // 트리에 없는 중기 → 기본 성숙잎
+  if(r<P.matRare) return MAT_RARE[Math.min(MAT_RARE.length-1, Math.floor(r/P.matRare*MAT_RARE.length))];
+  if(r<P.matRare+P.matSub) return pair[1];
+  return pair[0];
+}
 // 성숙 변이 추첨 풀. 대표(1,4,7…)만 넣는다 — -쨍/-차분은 별칭이라 대표와 똑같이 그려진다.
 const MAT_ALBO_MAX=Math.max(0, ...Object.keys(ASSET_FILES)
   .map(k=>{ const m=/^leaf_mat(\d+)$/.exec(k); return m? +m[1] : 0; }));
@@ -1119,7 +1152,7 @@ function addBud(nodePos, az, kind, size, stemDir, stemRad){
   plantGroup.add(holder);
 }
 // 잎 병렬 성숙: furled → opening2 → young → mid(1|2) → mature (m=0..1)
-function drawLeafStage(pos, az, m, midType, canMature, stemDir, stemRad, varie, ownAx, alboMid, matAlbo){
+function drawLeafStage(pos, az, m, midType, canMature, stemDir, stemRad, varie, ownAx, alboMid, matRoll){
   if(m<0.10){ addBud(pos, az, 'furled',  P.budSize*(0.6+m*3), stemDir, stemRad); return; }
   if(m<0.22){ addBud(pos, az, 'opening', P.budSize*(1.0+m), stemDir, stemRad); return; }
   let key;
@@ -1135,7 +1168,7 @@ function drawLeafStage(pos, az, m, midType, canMature, stemDir, stemRad, varie, 
     // ★캐논: 변이로 정해진 잎은 성숙까지 변이 루트를 유지한다(중기와 같은 규칙).
     //   어느 무늬가 나올지는 축마다 미리 뽑아둔 matAlbo. 중기 무늬와의 대응 규칙은 아직 미정.
     key='leaf_mature';
-    if(varie){ const n=P.matAlboPick>0? Math.round(P.matAlboPick) : (matAlbo||0);
+    if(varie){ const n=P.matAlboPick>0? Math.round(P.matAlboPick) : matFromMid(alboMid, matRoll);
       if(n>0){ const k2='leaf_mat'+Math.max(1,Math.min(MAT_ALBO_MAX,n)); if(ASSETS[k2]) key=k2; } }
   }
   addLeaf(pos, az, m, key, null, stemDir, stemRad, ownAx);
@@ -1193,6 +1226,7 @@ function buildPlant(){
                 triggered:false, grew:false,
                 varie:rng()<P.varieProb,                   // ★캐논: 변이는 어린잎 단계에서 확률로 결정
                 alboMid:ALBO_MID_POOL[Math.floor(rng()*ALBO_MID_POOL.length)],   // 이 잎이 쓸 알보 중기 종류
+                matRoll:rng(),                             // 성숙 무늬 추첨값(트리에서 주/부/희귀를 가른다)
                 matAlbo:MAT_ALBO_POOL.length? MAT_ALBO_POOL[Math.floor(rng()*MAT_ALBO_POOL.length)] : 0,   // 성숙까지 갔을 때 쓸 변이 종류
                 midPick:(rng()<0.5?'leaf_mid1':'leaf_mid2'),  // 잎마다 랜덤(midMix로 개체고정과 섞음)
                 curveDir, curveAmt:0.55+rng()*0.9};        // 개체마다 휘는 정도가 조금씩 다르게
@@ -1312,7 +1346,7 @@ function buildPlant(){
       }
       const ax=e.ax, last=ax.segs.length?ax.segs[ax.segs.length-1]:null;
       const tipAz=last?last.az:ax.az, tipDir=last?last.dir:ax.dir;
-      if(g>=ax.leafBirth){ drawLeafStage(e.tip, tipAz, leafM(ax,g), ax.midType, ax.canMature, tipDir, P.rEarly*P.tipTaper*PLANT_GROW, ax.varie, ax, ax.alboMid, ax.matAlbo); nLeaf++; }
+      if(g>=ax.leafBirth){ drawLeafStage(e.tip, tipAz, leafM(ax,g), ax.midType, ax.canMature, tipDir, P.rEarly*P.tipTaper*PLANT_GROW, ax.varie, ax, ax.alboMid, ax.matRoll); nLeaf++; }
     }
     nodes=nSeg; leaves=nLeaf;
     stage = nSeg<=1 ? '새싹 🌱' : ((axes.length>1?'가지 '+(axes.length-1)+' · ':'')+(acts?'혹 '+acts+' · ':'')+'마디 '+nSeg);
@@ -1662,6 +1696,8 @@ const SHAPE_GROUPS=[
     {k:'varieProb',   t:'변이(알보) 확률',   min:0,    max:1,    step:0.05},
     {k:'alboMidPick', t:'변이 중기 고정(0=랜덤)', min:0, max:42,  step:1},
     {k:'matAlboPick', t:'변이 성숙 고정(0=랜덤)', min:0, max:57,  step:1},
+    {k:'matRare',     t:'성숙 희귀 비율',    min:0, max:0.5, step:0.01},
+    {k:'matSub',      t:'성숙 부 갈래 비율', min:0, max:0.7, step:0.01},
     {k:'midMix',      t:'중간잎 섞기(0=1종)', min:0,   max:1,    step:0.05},
   ]},
   {t:'🍃 잎 겹침 회피', open:true, items:[
