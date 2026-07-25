@@ -79,6 +79,8 @@
           <div class="field"><label>굴광성(빛 쫓기) <b id="photoV">50%</b></label><input type="range" id="photo" min="0" max="100" value="50"></div>
           <button class="cbtn" id="btnSeed" style="width:100%">🎲 랜덤 시드</button>
           <div id="stat" style="margin-top:8px"><span class="k">슬라이더를 움직여 자라는 걸 보세요.</span></div>
+          <div class="psec">🌿 줄기 모양 미세조정</div>
+          <div id="shapeSliders"></div>
         </div>
         <div class="col">
           <div class="colhead">🎯 에셋 개별 조정 <span style="color:rgba(255,255,255,.4);font-size:10px">(name_ko)</span></div>
@@ -130,7 +132,8 @@ const DEF={
   sizeYoung:0.16, sizeMid:0.30, sizeMature:0.46, sizeFull:0.62,  // 각 시점 크기(마디 간격 대비 자연스럽게)
   internode:0.22, stemFlat:1.25,   // 줄기 마디 길이·잎방향 납작
   petGrow:16, rEarly:0.022, rThin:0.028, rMed:0.025, rThick:0.040, matureProb:0.22, doubleBud:0.15,  // 종류별 굵기(몸통 폭 기준, 왜곡 최소)·성숙잎 확률·쌍혹 확률
-  leafEmbed:0.10,                  // 잎자루 끝을 줄기 속으로 박는 깊이(0이면 뜸)
+  leafEmbed:0.13, leafLean:0.30, leafClear:0.40,   // 잎자루를 줄기 속으로 박는 깊이 · 잎이 줄기 끝 방향을 따라가는 정도 · 잎이 차지하는 반경(겹침 회피)
+  photoLean:0.13, stemStraight:0.30,   // 빛 쪽으로 기우는 세기(굴광성 슬라이더와 곱해짐) · 축 기본방향으로 돌아오는 힘(작을수록 더 휨)
   stemTrans:40, bumpGrow:20, bumpAt:0.3, stemOverlap:0.015,   // 초기→중기_2 전이(일) · 혹 돋는 기간(중기_1 단계) · 돌기 위치(마디 비율=가지 나는 지점) · 이음새 겹침
   petioleLen:1.0, leafElev:1.0, elevDrop:0.36, spread:0.10, branchSpread:0.55,   // 배치(spread=줄기 흔들림)
   leafLight:0.62, leafDark:0.22, leafSat:0.5, satRange:0.22, hueBase:0.16, hueRange:0.26,   // 색(밝기/진함/채도/개체범위)
@@ -138,7 +141,7 @@ const DEF={
 };
 let P=Object.assign({}, DEF);
 // 저장본 버전. 생장 로직/기본값이 바뀌면 올림 → 옛 저장값이 새 기본값을 덮어쓰지 않게.
-const CFG_VER='2026-07-20-canon';
+const CFG_VER='2026-07-20-canon3';
 
 // ===== 튜닝 파라미터(B: 에셋별 개별 조정) =====
 const ADJ_KEYS=['leaf_young','leaf_mid1','leaf_mid2','leaf_mature','bud_furled','bud_opening2','stem_thick','stem_main','stem_med','stem_thin','petiole'];
@@ -378,11 +381,41 @@ function leafKeyForOrder(order, age, stemR){
   if(!cands.length){ const all=['leaf_mature','leaf_mid1','leaf_mid2','leaf_young'].filter(inR); cands=all.length?all:desired; }
   return cands[Math.floor(rng()*cands.length)];
 }
+// ===== 고체처럼 거동: 이미 놓인 잎/새순의 자리를 기억해 서로 파고들지 않게 =====
+let PLACED=[];                                   // {c:잎몸 중심, r:반경}
+function clearPlaced(){ PLACED=[]; }
+// 잎이 뻗을 방향: ★줄기 끝 방향을 이어받아(leafLean) 바깥으로 기울임 → 이음새가 꺾이지 않고 이어짐
+function leafDir(stemDir, az, elev){
+  const out=new THREE.Vector3(Math.cos(elev)*Math.sin(az), Math.sin(elev), Math.cos(elev)*Math.cos(az)).normalize();
+  if(!stemDir) return out;
+  return out.lerp(stemDir, Math.max(0,Math.min(1,P.leafLean))).normalize();
+}
+// 방위(좌우) + 앙각(상하)을 함께 훑어 기존 잎과 안 겹치는 쪽을 고름(안 되면 가장 여유로운 쪽).
+// 실제 식물도 이렇게 서로 빈자리를 찾아 잎을 편다.
+const AIM_AZ=[0,30,-30,60,-60,90,-90,120,-120,150,-150,180].map(a=>a*Math.PI/180);
+const AIM_EL=[0,-0.25,0.25,-0.5,0.5];
+function freeAim(nodePos, stemDir, az0, elev0, size){
+  const R=size*P.leafClear;                                      // 잎이 차지하는 반경
+  let best=null, bestScore=-1e9;
+  for(const de of AIM_EL) for(const da of AIM_AZ){
+    const d=leafDir(stemDir, az0+da, Math.max(0.12, Math.min(1.45, elev0+de)));
+    const c=nodePos.clone().addScaledVector(d, size*0.72);       // 잎몸 대략 중심
+    let gap=1e9;
+    for(const p of PLACED) gap=Math.min(gap, c.distanceTo(p.c)-(p.r+R));
+    if(gap>1e8) return {d, c, r:R};                              // 첫 잎: 원래 방향 그대로
+    // 전체 후보를 점수화(간격 최대화 + 원래 방향에서 크게 안 벗어나게) → 뒤에 날 잎 자리도 남음
+    const score=Math.min(gap,0.25) - 0.10*Math.abs(da)/Math.PI - 0.08*Math.abs(de);
+    if(score>bestScore){ bestScore=score; best={d, c, r:R}; }
+  }
+  return best;
+}
 // 잎: 마디에서 방위 az + 성숙도별 처짐 방향으로. key=쓸 GLB. 잎자루 끝이 마디에 살짝 파고들게.
-function addLeaf(nodePos, az, maturity, key, sizeOverride){
+function addLeaf(nodePos, az, maturity, key, sizeOverride, stemDir){
   const size=(sizeOverride!=null)?sizeOverride:leafSize(maturity);   // ★ 단계별 곡선(작게 나서 커짐), 스무딩값 있으면 사용
   const elev=P.leafElev - maturity*P.elevDrop;                  // 위로 받쳐지게(처짐 완화)
-  const d=new THREE.Vector3(Math.cos(elev)*Math.sin(az), Math.sin(elev), Math.cos(elev)*Math.cos(az)).normalize();
+  const aim=freeAim(nodePos, stemDir, az, elev, size);
+  const d=aim.d;
+  PLACED.push({c:aim.c, r:aim.r});                              // 자리 점유 등록(다음 잎이 피해감)
   // ★음수 = 잎자루 끝을 줄기 속으로 박아 붙임(잎 GLB에 잎자루가 포함돼 있으므로 틈이 생기면 안 됨)
   const reach=-P.leafEmbed*(0.4+size)*P.petioleLen;
   const base=nodePos.clone().addScaledVector(d, reach);
@@ -394,23 +427,25 @@ function addLeaf(nodePos, az, maturity, key, sizeOverride){
   const m=makeLeaf(type), pivot=new THREE.Group(); pivot.position.copy(base); pivot.rotation.y=az;
   m.rotation.x=0.5+maturity*0.7; m.scale.setScalar(size); pivot.add(m); plantGroup.add(pivot);
 }
-// 새순: 갓 난 성장점(거의 위로). furled → opening → (young 잎)
-function addBud(nodePos, az, kind, size){
-  const d=new THREE.Vector3(Math.sin(az)*0.16, 0.985, Math.cos(az)*0.16).normalize();   // 거의 곧게 위(송곳처럼)
+// 새순: 갓 난 성장점(줄기 끝을 이어 거의 곧게 위). furled → opening → (young 잎)
+function addBud(nodePos, az, kind, size, stemDir){
+  let d=new THREE.Vector3(Math.sin(az)*0.16, 0.985, Math.cos(az)*0.16).normalize();
+  if(stemDir) d=d.lerp(stemDir, 0.55).normalize();       // 줄기 끝 방향을 이어받아 꺾이지 않게
   const proto=assetInst(leafKindKey(kind));
   const embed = kind==='furled'? 0.24*size : 0.12*size;   // 말린 새순은 줄기에 깊이 박히게(안 뜨고 자연스럽게 올라옴)
+  PLACED.push({c:nodePos.clone().addScaledVector(d,size*0.5), r:size*0.4});
   if(proto){ placeAlong(proto, nodePos.clone().addScaledVector(d,-embed), d, size); tintObj(proto, budTint()); plantGroup.add(proto); return; }
   const m=new THREE.Mesh(new THREE.ConeGeometry(0.05,0.14,8), MAT.stem); m.position.copy(nodePos); m.position.y+=size*0.5; plantGroup.add(m);
 }
 // 잎 병렬 성숙: furled → opening2 → young → mid(1|2) → mature (m=0..1)
-function drawLeafStage(pos, az, m, midType, canMature){
-  if(m<0.10){ addBud(pos, az, 'furled',  P.budSize*(0.6+m*3)); return; }
-  if(m<0.22){ addBud(pos, az, 'opening', P.budSize*(1.0+m)); return; }
+function drawLeafStage(pos, az, m, midType, canMature, stemDir){
+  if(m<0.10){ addBud(pos, az, 'furled',  P.budSize*(0.6+m*3), stemDir); return; }
+  if(m<0.22){ addBud(pos, az, 'opening', P.budSize*(1.0+m), stemDir); return; }
   let key;
   if(m<P.stageYoung) key='leaf_young';                      // 어린 통잎
   else if(m<P.stageMid || !canMature) key=(midType||'leaf_mid1');   // 보통은 중간잎(파랑)에서 정착
   else key='leaf_mature';                                   // ★ 성숙(갈라진)잎은 canMature일 때만(랜덤 확률)
-  addLeaf(pos, az, m, key);
+  addLeaf(pos, az, m, key, null, stemDir);
 }
 
 function clearGroup(g){ while(g.children.length){ const c=g.children[0]; g.remove(c); c.traverse&&c.traverse(o=>{ if(o.isMesh){ if(o.geometry) o.geometry.dispose();
@@ -419,7 +454,7 @@ function clearGroup(g){ while(g.children.length){ const c=g.children[0]; g.remov
 function buildPlant(){
   rng=mulberry32(SEED);            // 매 빌드 동일 시드 → 안정적(슬라이더 드래그해도 안 흔들림)
   seedColor();                     // 개체 통일 색(시드 고정: 색조+채도)
-  clearGroup(plantGroup);
+  clearGroup(plantGroup); clearPlaced();      // 겹침 회피용 자리 기록 초기화
   addPot();
   const g=GROWTH, gf=Math.min(1, g/GMAX);   // 정규화(0..1, 1년 기준)
   PLANT_AGE=gf;                             // 개체 나이(색 짙어짐·선명해짐 기준)
@@ -450,7 +485,8 @@ function buildPlant(){
     const addSeg=(ax,T)=>{                                               // ② TIP 아래에 마디 삽입 → 생장점이 위로
       // ★앞 마디 방향을 이어받아 조금씩만 틀기 → 마디 경계가 꺾여 어긋나 보이지 않음
       const prev=ax.segs.length? ax.segs[ax.segs.length-1].dir : ax.dir;
-      const dir=prev.clone().lerp(ax.dir, 0.3).addScaledVector(ld, PHOTO*0.10)   // 굴광성: 빛 쪽으로 살짝
+      // 굴광성: 빛 쪽으로 "살짝" 기울되 앞 마디를 이어받아 누적 → 극단적이지 않게 완만히 휨
+      const dir=prev.clone().lerp(ax.dir, P.stemStraight).addScaledVector(ld, PHOTO*P.photoLean)
         .add(new THREE.Vector3((rng()-0.5)*P.spread,0,(rng()-0.5)*P.spread)).normalize();
       ax.segs.push({dir, len:P.internode*(0.92+rng()*0.16), birth:T, activated:false,
                     az:ax.az+ax.segs.length*GOLDEN}); };                 // 마디마다 방위(황금각) → 혹·가지가 각기 다른 쪽
@@ -517,8 +553,9 @@ function buildPlant(){
         cur=nxt; nSeg++;
       }
       // ① 생장점의 잎 1개 — 줄기_초기가 다 자란 뒤 새순으로 나서 그 자리에서 성숙
-      const tipAz=ax.segs.length?ax.segs[ax.segs.length-1].az:ax.az;
-      if(g>=ax.leafBirth){ drawLeafStage(cur, tipAz, leafM(ax,g), ax.midType, ax.canMature); nLeaf++; }
+      const last=ax.segs.length?ax.segs[ax.segs.length-1]:null;
+      const tipAz=last?last.az:ax.az, tipDir=last?last.dir:ax.dir;
+      if(g>=ax.leafBirth){ drawLeafStage(cur, tipAz, leafM(ax,g), ax.midType, ax.canMature, tipDir); nLeaf++; }
     }
     nodes=nSeg; leaves=nLeaf;
     stage = nSeg<=1 ? '새싹 🌱' : ((axes.length>1?'가지 '+(axes.length-1)+' · ':'')+(acts?'혹 '+acts+' · ':'')+'마디 '+nSeg);
@@ -627,7 +664,7 @@ function bindControls(){
   const ps=document.getElementById('photo');
   ps.addEventListener('input',()=>{ PHOTO=(+ps.value)/100; document.getElementById('photoV').textContent=ps.value+'%'; buildPlant(); });
   document.getElementById('btnResetAsset').onclick=()=>{ const sel=document.getElementById('assetSel'); const k=sel.value; ADJ[k]=defAdj(k); buildAssetSliders(k); showPreview(k); buildPlant(); };
-  buildAssetSelect();
+  buildAssetSelect(); buildShapePanel();
   // 패널 접기
   document.getElementById('panelToggle').onclick=e=>{ const bd=document.getElementById('panelBody'); const hid=bd.style.display==='none'; bd.style.display=hid?'block':'none'; e.target.textContent=hid?'▾':'▸'; };
   // 설정 복사 / 리셋 (전체 A + 에셋별 B)
@@ -635,7 +672,7 @@ function bindControls(){
     if(navigator.clipboard) navigator.clipboard.writeText(j);
     try{ const blob=new Blob([j],{type:'application/json'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download='monstera_config.json'; a.click(); URL.revokeObjectURL(url); }catch(e){}
     flashBtn('btnCopy','✅ 복사+파일'); };
-  document.getElementById('btnReset').onclick=()=>{ P=Object.assign({},DEF); ADJ=JSON.parse(JSON.stringify(DEF_ADJ)); try{localStorage.removeItem('mcfg_default');}catch(e){} const sel=document.getElementById('assetSel'); buildAssetSliders(sel.value); showPreview(sel.value); buildPlant(); };
+  document.getElementById('btnReset').onclick=()=>{ P=Object.assign({},DEF); ADJ=JSON.parse(JSON.stringify(DEF_ADJ)); try{localStorage.removeItem('mcfg_default');}catch(e){} const sel=document.getElementById('assetSel'); buildAssetSliders(sel.value); showPreview(sel.value); buildShapePanel(); buildPlant(); };
   document.getElementById('btnPersist').onclick=()=>{ try{ localStorage.setItem('mcfg_default', JSON.stringify({v:CFG_VER,P,ADJ,SEED})); flashBtn('btnPersist','✅ 저장됨'); }catch(e){ flashBtn('btnPersist','실패'); } };
   document.getElementById('btnLoad').onclick=()=>applyCfg(true);
   applyCfg(false);   // 시작 시 영구저장 있으면 자동 적용(새로고침해도 유지)
@@ -661,7 +698,7 @@ function applyCfg(verbose){
     if(o.P) P=Object.assign({}, DEF, o.P);
     if(o.ADJ){ ADJ=JSON.parse(JSON.stringify(DEF_ADJ)); for(const k in ADJ) if(o.ADJ[k]) Object.assign(ADJ[k], o.ADJ[k]); }
     if(o.SEED!=null){ SEED=o.SEED; }
-    const sel=document.getElementById('assetSel'); if(sel){ buildAssetSliders(sel.value); showPreview(sel.value); } buildPlant();
+    const sel=document.getElementById('assetSel'); if(sel){ buildAssetSliders(sel.value); showPreview(sel.value); } buildShapePanel(); buildPlant();
     if(verbose) flashBtn('btnLoad','✅ 불러옴');
   }catch(e){ if(verbose) flashBtn('btnLoad','오류'); }
 }
@@ -786,6 +823,28 @@ const PARAM_DEFS=[
     {k:'ageSat',t:'시간따라 선명해짐',min:0.0,max:0.45,step:0.02},
   ]},
 ];
+// ===== 줄기 모양 미세조정 슬라이더(플레이 패널) =====
+const SHAPE_DEFS=[
+  {k:'photoLean',   t:'빛 쪽으로 휨',      min:0,    max:0.35, step:0.01},
+  {k:'stemStraight',t:'곧게 서려는 힘',    min:0.05, max:0.9,  step:0.05},
+  {k:'spread',      t:'흔들림(불규칙)',    min:0,    max:0.3,  step:0.01},
+  {k:'internode',   t:'마디 길이',         min:0.12, max:0.4,  step:0.01},
+  {k:'branchSpread',t:'가지 벌어짐',       min:0.15, max:1.2,  step:0.05},
+  {k:'leafLean',    t:'잎이 줄기 따라가기', min:0,    max:0.9,  step:0.05},
+  {k:'leafElev',    t:'잎 각도(위↑)',      min:0.3,  max:1.4,  step:0.03},
+  {k:'leafEmbed',   t:'잎 박히는 깊이',    min:0,    max:0.3,  step:0.01},
+  {k:'leafClear',   t:'잎 서로 비켜서기',  min:0,    max:0.7,  step:0.02},
+];
+function buildShapePanel(){
+  const box=document.getElementById('shapeSliders'); if(!box) return; box.innerHTML='';
+  SHAPE_DEFS.forEach(it=>{
+    const f=document.createElement('div'); f.className='field';
+    const lab=document.createElement('label'); lab.innerHTML=`${it.t} <b>${fmtVal(P[it.k])}</b>`;
+    const inp=document.createElement('input'); inp.type='range'; inp.min=it.min; inp.max=it.max; inp.step=it.step; inp.value=P[it.k];
+    inp.addEventListener('input',()=>{ P[it.k]=+inp.value; lab.querySelector('b').textContent=fmtVal(P[it.k]); buildPlant(); });
+    f.appendChild(lab); f.appendChild(inp); box.appendChild(f);
+  });
+}
 function fmtVal(v){ return Math.round(v*1000)/1000; }
 function buildGlobalPanel(){
   const box=document.getElementById('tab-global'); if(!box) return; box.innerHTML='';
