@@ -101,14 +101,12 @@ const CHARS=[['char_namja_jachwi','자취남'],['char_namja_gajang','남가장']
              캐릭터 구분이 깨진다.
    눈썹은 머리카락에 포함했다. 머리색 바꾸면 같이 바뀌는 게 자연스럽다. */
 const PARTS=[
-  {key:'hair', name:'머리 + 눈썹', code:24,  on:true,  color:'#d8b46c'},
-  {key:'iris', name:'홍채 (눈동자)', code:48, on:false, color:'#3f7fb8'},
-  {key:'skin', name:'피부',        code:120, on:false, color:'#f0c090'},
-  {key:'top',  name:'상의',        code:144, on:false, color:'#e8e8d8'},
-  {key:'bot',  name:'하의',        code:168, on:false, color:'#486090'},
-  {key:'shoe', name:'신발',        code:192, on:false, color:'#d8d0c4'},
+  {key:'hair', name:'머리 + 눈썹',   code:24,  on:true,  color:'#d8b46c'},
+  {key:'iris', name:'홍채 (눈동자)', code:48,  on:false, color:'#3f7fb8'},
+  {key:'skin', name:'피부',          code:120, on:false, color:'#f0c090'},
 ];
 const LOCKED=[
+  {name:'상의 · 하의 · 신발', code:144, why:'직업별 복장이라 고정 · 옷 교체는 별도 시스템으로'},
   {name:'흰자 · 하이라이트 · 속눈썹', code:72, why:'홍채만 바뀌고 눈매와 반짝임은 유지됩니다'},
   {name:'직업 상징물',              code:96, why:'가운 로고·명찰·앞치마 무늬 · 직업 정체성'},
 ];

@@ -40,7 +40,8 @@ import sys
 
 import numpy as np
 from PIL import Image, ImageDraw
-from scipy.ndimage import binary_closing, binary_opening, binary_dilation
+from scipy.ndimage import (binary_closing, binary_opening, binary_dilation,
+                          distance_transform_edt)
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
@@ -251,9 +252,21 @@ def build(char, vis=False, size=None):
         if emb.sum() < m.sum() * 0.12:        # 옷의 12% 넘게 잡히면 무늬가 아니라 옷 자체
             code[emb] = CODE["emblem"]
 
+    # 여백 채우기: 아틀라스는 UV 섬이 수백 개고 섬 바깥에는 필터링용 패딩이
+    # 깔려 있다. 삼각형 안쪽만 칠하면 렌더 시 텍스처 필터링이 라벨 없는 패딩을
+    # 물어와 섬 경계마다 원래 색이 실선처럼 남는다(프랑켄슈타인 자국).
+    # 라벨 없는 텍셀을 가장 가까운 라벨로 전부 메운다. 실제 표면이 아니므로
+    # 분류 정확도에는 영향이 없고 이음매만 사라진다.
+    labeled = code > 0
+    if labeled.any():
+        _, ind = distance_transform_edt(~labeled, return_indices=True)
+        code_filled = code[ind[0], ind[1]]
+    else:
+        code_filled = code
+
     os.makedirs(OUT, exist_ok=True)
     m = np.zeros((S, S, 4), np.uint8)
-    m[..., 0] = code
+    m[..., 0] = code_filled
     m[..., 3] = 255
     Image.fromarray(m, "RGBA").save(os.path.join(OUT, f"{char}_mask.png"))
 
