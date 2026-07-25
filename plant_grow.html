@@ -126,7 +126,7 @@ let FRUSTUM=2.2;
 
 // ===== 시드 난수(개체성): 같은 시드→같은 그루. mulberry32 =====
 function mulberry32(a){ return function(){ a|=0; a=a+0x6D2B79F5|0; let t=Math.imul(a^a>>>15,1|a); t=t+Math.imul(t^t>>>7,61|t)^t; return((t^t>>>14)>>>0)/4294967296; }; }
-let SEED=61106, rng=mulberry32(SEED);
+let SEED=73710, rng=mulberry32(SEED);
 const GOLDEN=Math.PI*(3-Math.sqrt(5));   // 137.5° 황금각(자연스러운 잎차례)
 
 // ===== 튜닝 파라미터(A: 전체 규칙) — 슬라이더로 실시간 조절 =====
@@ -140,7 +140,7 @@ const DEF={
   internode:0.20, stemFlat:1.25,   // 줄기 마디 길이·잎방향 납작
   petGrow:16, rEarly:0.022, rThin:0.028, rMed:0.025, rThick:0.031, matureProb:0.22, doubleBud:0.15,  // 종류별 굵기(몸통 폭 기준)·성숙잎 확률·쌍혹 확률
   growAmt:0.6, growSpan:730,        // ★전체 성장: 최대 +60% 까지, 730일(2년)에 걸쳐. 비율은 그대로 유지
-  varieProb:0.20, midMix:0, alboMidPick:0,   // alboMidPick: 0=랜덤, 1~7=그 종류로 고정(위치 세팅용)
+  varieProb:0.20, midMix:0.5, alboMidPick:0,   // alboMidPick: 0=랜덤, 1~7=그 종류로 고정(위치 세팅용)
   // varieProb = 잎(생장점)마다 독립 판정. 그루 단위가 아니라 '중간에 발현'하는 방식이 맞음(확정).
   //   난이도별로 달라질 예정. 또 가지를 잘라 수경재배로 번식시킬 때, 모주가 무늬면
   //   그 삽수는 훨씬 높은 확률(80% 수준)을 물려받는 구조로 갈 것.
@@ -156,7 +156,7 @@ const DEF={
 };
 let P=Object.assign({}, DEF);
 // 저장본 버전. 생장 로직/기본값이 바뀌면 올림 → 옛 저장값이 새 기본값을 덮어쓰지 않게.
-const CFG_VER='2026-07-20-albo3';
+const CFG_VER='2026-07-20-albo4';
 
 // ===== 튜닝 파라미터(B: 에셋별 개별 조정) =====
 const ADJ_KEYS=['pot','leaf_young','leaf_mid1','leaf_mid2','leaf_mature','bud_furled','bud_opening2',
@@ -181,25 +181,29 @@ const ADJ_TUNED={
   // ── 줄기(혹/쌍혹)
   stem_thick:  {scale:0.85, ry:0.3, rz:-0.1, ox:-0.04},
   stem_main:   {scale:0.95, sxz:0.75, sy:0.9, rx:0.05, ry:0.1},
-  // ── 변이(알보)
+  // ── 변이(알보). albo1/4/6 이 그룹 대표 — -쨍/-차분이 자동으로 같은 값을 쓴다.
   leaf_young_albo:   {scale:0.5, sy:0.8, ry:-1.65, ox:0.03, oy:0.18},
+  leaf_mid_albo1:    {scale:0.55, sxz:0.75, sy:0.95, rz:0.15},   // 전체흰중기 그룹(1,2,3)
+  leaf_mid_albo4:    {petR:0.35},                                 // 흰연두 그룹(4,5) — 잎자루 20%→7% 수준
+  leaf_mid_albo6:    {petR:0.38},                                 // 크림민트 그룹(6,7) — 잎자루 19%→7% 수준
   sheath_young_albo: {rx:0.1, ry:0.3, rz:-0.15, ox:0.12, oy:0.14, oz:-0.05, len:0.155, fit:1.48},
-  // ── 엽초(잎 단계별 7종) — 모양(len/fit/bot/top)도 각각
-  sheath_furled: {len:0},                             // 새순: OFF(처음엔 새순만, 줄기가 뒤이어 자람)
+  // ── 엽초(잎 단계별)
+  sheath_furled: {len:0},                             // 새순: OFF
   sheath_open:   {scale:1.3, rx:0.2, ry:-1, rz:0.2, ox:0.06, oy:0.15,
                   len:0.19, fit:0.78, top:0.43},
   sheath_young:  {scale:1.4, sy:0.65, rx:0.2, ry:-0.4, rz:0.4, ox:0.15, oy:0.04, oz:-0.02,
                   bot:1.32, top:0.53},
   sheath_mid1:   {scale:1.05, rx:-0.05, ry:-0.15, rz:0.4, ox:0.16, oy:0.32, oz:-0.06,
                   len:0.175, fit:1.38, top:0.87},
-  sheath_mid2:   {scale:1.3, sxz:0.85, sy:1.1, rx:-0.15, ry:0.2, rz:0.4, ox:0.54, oy:0.07,
-                  len:0.235, fit:1.5, top:0.69},
+  sheath_mid2:   {scale:1.3, sxz:0.85, sy:1.1, rx:-0.15, ry:0.2, rz:0.3, ox:0.45, oy:-0.01, oz:0.02,
+                  len:0.235, fit:1.74, top:0.69},
   sheath_mature: {scale:1.45, sxz:1.3, sy:1.3, rx:-0.5, ry:-2.2, rz:-0.55, ox:0.46, oy:0.03, oz:0.1,
-                  len:0.205, fit:1.1, bot:1.1, top:0.75},
+                  len:0.205, fit:1.22, bot:1.1, top:0.75},
 };
 function defAdj(key){
   const b={scale:1, sxz:1, sy:1, rx:0,ry:0,rz:0, ox:0,oy:0,oz:0};
   if(/^sheath/.test(key)) Object.assign(b, {len:0.22, fit:1.12, bot:1.309, top:0.575});   // 엽초 모양(에셋별)
+  if(/^leaf_/.test(key))  Object.assign(b, {petR:1, petTop:0.45});                       // 잎자루 지름(정점 단위)
   return Object.assign(b, ADJ_TUNED[key]||{});
 }  // scale=전체·sxz=굵기(폭)·sy=길이(높이)
 const DEF_ADJ={}; ADJ_KEYS.forEach(k=>DEF_ADJ[k]=defAdj(k));
@@ -380,7 +384,7 @@ function loadAssets(cb){
 function assetInst(key){
   const p=ASSETS[key]; if(!p) return null;
   USE_COUNT[key]=(USE_COUNT[key]||0)+1;
-  const a=ADJ[key]||{};
+  const a=adjOf(key);
   const inner=p.clone(true);
   const N=(v,d)=>v==null?d:v;                       // ★0을 유효값으로(||1 이면 0이 1로 바뀌어 끌 수 없음)
   const sc=N(a.scale,1), sxz=N(a.sxz,1), sy=N(a.sy,1);
@@ -411,7 +415,7 @@ const STEM_CORE={petiole:0.083, stem_thin:0.186, stem_med:0.158, stem_thick:0.42
 function stretchGLB(key, p0, p1, radius, color, flatAz){
   const proto=ASSETS[key]; if(!proto) return false;
   const dir=new THREE.Vector3().subVectors(p1,p0); let len=dir.length(); if(len<1e-5) return true;
-  const a=ADJ[key]||{}, N=(v,d)=>v==null?d:v;             // ★0도 유효값(끄기 가능)
+  const a=adjOf(key), N=(v,d)=>v==null?d:v;               // ★0도 유효값(끄기 가능)
   radius*=N(a.scale,1)*N(a.sxz,1);                         // 에셋별 굵기(B): 크기(전체)×굵기(폭)
   len*=N(a.sy,1); if(len<1e-5||radius<1e-6) return true;   // 길이 배율(B). 0이면 안 그림
   // ★바운딩박스가 아니라 "줄기 몸통 폭"(정점 측정값) 기준으로 굵기 환산.
@@ -483,11 +487,54 @@ function seedColor(){ const cs=mulberry32((SEED*40503+12345)>>>0);
   PLANT_SAT=Math.max(0.15,Math.min(1, P.leafSat+(cs()-0.5)*P.satRange)); // 개체 채도(찐한 정도도 랜덤)
   PLANT_MID=cs()<0.5?'leaf_mid1':'leaf_mid2';                            // 개체마다 미드리프 1종 고정
 }
+// 잎 GLB의 '잎자루 지름'을 정점 단위로 조절. 잎몸은 그대로 두고 아래 구간만 반경 방향으로 줄인다.
+// (알보 흰연두·크림민트가 잎자루 20% 지름으로 기준잎 6.5%의 3배라 굵어 보였다)
+function thinPetiole(obj, factor, topFrac){
+  obj.traverse(o=>{
+    if(!(o.isMesh && o.geometry && o.geometry.attributes.position)) return;
+    const g=o.geometry, pa=g.attributes.position;
+    if(!g.userData.origPos) g.userData.origPos=Float32Array.from(pa.array);
+    const src=g.userData.origPos, arr=pa.array;
+    let mnY=Infinity, mxY=-Infinity;
+    for(let i=1;i<src.length;i+=3){ if(src[i]<mnY)mnY=src[i]; if(src[i]>mxY)mxY=src[i]; }
+    const h=(mxY-mnY)||1, yTop=mnY+h*topFrac;
+    let cx=0, cz=0, n=0;                                   // 잎자루 축(하단대 XZ 중심)
+    for(let i=0;i<src.length;i+=3) if(src[i+1]<=mnY+h*0.12){ cx+=src[i]; cz+=src[i+2]; n++; }
+    if(n){ cx/=n; cz/=n; }
+    for(let i=0;i<src.length;i+=3){
+      const y=src[i+1];
+      let f=1;
+      if(y<yTop){ const t=(y-mnY)/((yTop-mnY)||1), sm=t*t*(3-2*t); f=factor+(1-factor)*sm; }  // 부드럽게 잎몸으로 이어짐
+      arr[i]=cx+(src[i]-cx)*f; arr[i+1]=y; arr[i+2]=cz+(src[i+2]-cz)*f;
+    }
+    pa.needsUpdate=true; g.computeVertexNormals(); g.computeBoundingSphere();
+  });
+}
+let PET_CACHE={};
+function ensureLeafShape(){                                // 값이 바뀐 잎만 다시 계산
+  for(const k in ASSET_FILES){
+    if(!/^leaf_/.test(k) || !ASSETS[k]) continue;
+    const a=adjOf(k), pr=(a.petR==null?1:a.petR), tf=(a.petTop==null?0.45:a.petTop);
+    const sig=pr+'/'+tf;
+    if(PET_CACHE[k]===sig) continue;
+    thinPetiole(ASSETS[k], pr, tf); PET_CACHE[k]=sig;
+  }
+}
 // 무늬종(알보 등)은 텍스처가 무늬 그 자체라 단색으로 덮으면 안 된다.
 // 랜덤으로 뽑는 알보 중기 종류.
 //   1 전체흰중기  2 -쨍  3 -차분 | 4 흰연두-쨍  5 -차분 | 6 크림민트-쨍  7 -차분
 // 2026-07-20: 1~3의 잎자루 교체 완료(실측 40%, 잎몸 78% — 기준 35~45% 충족) → 전체 복귀.
 const ALBO_MID_POOL=[1,2,3,4,5,6,7];
+// 형상이 완전히 동일하고 텍스처만 다른 변형들(정점수·좌표 해시 일치 확인).
+// 조정값을 대표 하나로 묶어, 한 번 맞추면 -쨍/-차분에 함께 적용된다.
+const ADJ_ALIAS={
+  leaf_mid_albo2:'leaf_mid_albo1', leaf_mid_albo3:'leaf_mid_albo1',   // 전체흰중기 = -쨍 = -차분
+  leaf_mid_albo5:'leaf_mid_albo4',                                     // 흰연두-쨍 = -차분
+  leaf_mid_albo7:'leaf_mid_albo6',                                     // 크림민트-쨍 = -차분
+  sheath_leaf_mid_albo2:'sheath_leaf_mid_albo1', sheath_leaf_mid_albo3:'sheath_leaf_mid_albo1',
+  sheath_leaf_mid_albo5:'sheath_leaf_mid_albo4', sheath_leaf_mid_albo7:'sheath_leaf_mid_albo6',
+};
+const adjOf=k=>ADJ[ADJ_ALIAS[k]||k]||{};      // ★ADJ 조회는 항상 이걸로(그룹 대표로 해석)
 const KEEP_TEX=new Set(['leaf_young_albo','leaf_mid_albo1','leaf_mid_albo2','leaf_mid_albo3','leaf_mid_albo4','leaf_mid_albo5','leaf_mid_albo6','leaf_mid_albo7']);
 function tintObj(obj, color){
   obj.traverse(o=>{ if(o.isMesh&&o.material){
@@ -587,7 +634,7 @@ function addStemTube(pts, rBase, rTip, nodeTs, color){
 function addSheathLocal(parent, ld, stemRad, size, leafKey){
   const key=SHEATH_OF[leafKey]||'sheath_young';
   const proto=ASSETS[key]; if(!proto) return;
-  const a=ADJ[key]||{}, N=(v,d)=>v==null?d:v;
+  const a=adjOf(key), N=(v,d)=>v==null?d:v;
   const L=N(a.len,P.sheathLen), F=N(a.fit,P.sheathFit);
   if(L<=0.001) return;
   let len=L*size*N(a.sy,1);
@@ -634,7 +681,7 @@ function segDist(p, a, b){
 }
 // 잎몸의 실제 반폭(높이1 정규화 폭 x 크기 x 에셋별 조정) — 선이 아니라 '판'으로 보기 위함
 function leafHalfW(key, size){
-  const u=(ASSETS[key]&&ASSETS[key].userData)||{}, a=ADJ[key]||{}, N=(v,d)=>v==null?d:v;
+  const u=(ASSETS[key]&&ASSETS[key].userData)||{}, a=adjOf(key), N=(v,d)=>v==null?d:v;
   const w=Math.max(u.sx||0.9, u.sz||0.9)/2;
   return size*w*N(a.scale,1)*N(a.sxz,1);
 }
@@ -642,7 +689,7 @@ function leafHalfW(key, size){
 //   그대로 재현한다. 예전엔 d/side로 어림잡아, 조절기로 준 큰 회전(최대 22도)만큼 어긋난 자리를 검사했다.
 const _UP=new THREE.Vector3(0,1,0);
 function leafBladeCenter(nodePos, stemDir, az, tilt, size, key){
-  const a=ADJ[key]||{}, N=(v,d)=>v==null?d:v;
+  const a=adjOf(key), N=(v,d)=>v==null?d:v;
   const u=(ASSETS[key]&&ASSETS[key].userData)||{};
   const sc=N(a.scale,1), sxz=N(a.sxz,1), sy=N(a.sy,1);
   const c=new THREE.Vector3((u.cx||0)*sc*sxz, (u.cy==null?0.5:u.cy)*sc*sy, (u.cz||0)*sc*sxz);
@@ -787,6 +834,7 @@ function buildPlant(){
   rng=mulberry32(SEED);            // 매 빌드 동일 시드 → 안정적(슬라이더 드래그해도 안 흔들림)
   seedColor();                     // 개체 통일 색(시드 고정: 색조+채도)
   ensureSheath();                             // 엽초 구멍 크기 변경 반영
+  ensureLeafShape();                          // 잎자루 지름 변경 반영
   clearGroup(plantGroup); clearPlaced();      // 겹침 회피용 자리 기록 초기화
   addPot();
   const g=GROWTH, gf=Math.min(1, g/GMAX);   // 정규화(0..1, 전체 기간 기준)
@@ -1117,17 +1165,22 @@ const ADJ_GROUPS=[
   {label:'💤 현재 미사용(튜브가 대체)', keys:['petiole','stem_med','stem_thin','knob']},
 ];
 const ADJ_UNUSED=new Set(['petiole','stem_med','stem_thin','knob']);   // 화면에 안 그려지는 에셋
+const ADJ_FIELDS_LEAF2=[
+  {k:'petR',   t:'잎자루 지름',      min:0.25, max:1.6, step:0.05},
+  {k:'petTop', t:'가늘어지는 범위',  min:0.1,  max:0.8, step:0.05},
+];
 const ADJ_FIELDS_SHEATH=[
   {k:'len', t:'엽초 길이(잎 대비)', min:0,    max:0.6,  step:0.005},
   {k:'fit', t:'감싸는 굵기',       min:0.5,  max:2.6,  step:0.02},
   {k:'bot', t:'아래 구멍 지름',    min:0.3,  max:2.8,  step:0.02},
   {k:'top', t:'위 구멍 지름',      min:0.05, max:1.8,  step:0.02},
 ];
-function fieldsFor(key){ return /^sheath/.test(key)? ADJ_FIELDS_SHEATH.concat(ADJ_FIELDS) : ADJ_FIELDS; }
+function fieldsFor(key){ return /^sheath/.test(key)? ADJ_FIELDS_SHEATH.concat(ADJ_FIELDS)
+                        : (/^leaf_/.test(key)? ADJ_FIELDS.concat(ADJ_FIELDS_LEAF2) : ADJ_FIELDS); }
 function buildAssetSelect(){
   const sel=document.getElementById('assetSel'); if(!sel) return;
   sel.innerHTML=ADJ_GROUPS.map(g=>`<optgroup label="${g.label}">`+
-    g.keys.filter(k=>ADJ_KEYS.includes(k)).map(k=>`<option value="${k}">${ADJ_KO[k]||k.replace(/_/g,' ')}${ADJ_UNUSED.has(k)?' (미사용)':''}</option>`).join('')+
+    g.keys.filter(k=>ADJ_KEYS.includes(k) && !ADJ_ALIAS[k]).map(k=>`<option value="${k}">${ADJ_KO[k]||k.replace(/_/g,' ')}${ADJ_UNUSED.has(k)?' (미사용)':''}</option>`).join('')+
     `</optgroup>`).join('');
   sel.onchange=()=>{ buildAssetSliders(sel.value); showPreview(sel.value); updateAssetUse(); };
   buildAssetSliders(sel.value); showPreview(sel.value); updateAssetUse();
@@ -1153,7 +1206,7 @@ function showPreview(key){                                 // 라이브: 현재 
   const p=ASSETS[key];
   if(!p){ console.warn('[preview] 에셋 로드 안됨:', key, ASSET_FILES[key]); return; }   // GLB 404 등
   try{
-    const a=ADJ[key]||{}, N=(v,d)=>v==null?d:v, sc=N(a.scale,1), sxz=N(a.sxz,1), sy=N(a.sy,1);
+    const a=adjOf(key), N=(v,d)=>v==null?d:v, sc=N(a.scale,1), sxz=N(a.sxz,1), sy=N(a.sy,1);
     const inner=p.clone(true);
     inner.scale.set(sc*sxz, sc*sy, sc*sxz);
     inner.rotation.set(a.rx||0, a.ry||0, a.rz||0);
