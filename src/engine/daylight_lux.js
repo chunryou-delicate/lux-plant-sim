@@ -80,15 +80,33 @@ export function rectPoly(size) {
    wins: 창 배열
    opt : { sky:천공조도 Ev[lx], samples:[가로,세로] 분할, occluders, selfIdx }
 ============================================================ */
+/* 창 하나를 몇 조각으로 쪼갤지 — 거리에 따라 자동으로.
+
+   각 조각은 '점광원'으로 취급되므로(E = L·cosWin·cosP·dA/d²) 조각이 거리에 비해
+   크면 근사가 깨진다. 작은 창을 1m 밖에서 볼 땐 4×3으로 충분하지만,
+   온실 유리벽(4.9×2.7m)을 0.6m 앞에서 보면 조각 하나가 1.2×0.9m인데 거리는 0.6m —
+   물리 상한(반구 전체가 유리여도 E ≤ π·L)의 5배가 나왔다.
+
+   조각 한 변이 거리의 ~1/3을 넘지 않게 잡는다. */
+function autoSamples(w, p) {
+  const d = Math.max(0.15, Math.hypot(p.x - w.cx, p.y - w.cy, p.z - w.cz));
+  const patch = d / 3;
+  const clamp = v => Math.max(2, Math.min(24, Math.ceil(v)));
+  return [clamp(w.width / patch), clamp(w.height / patch)];
+}
+
 export function daylightAt(p, n, wins, opt = {}) {
   if (!wins || !wins.length) return 0;
   const Ev = opt.sky ?? 8000;
-  const [Mw, Mh] = opt.samples || [4, 3];
+  /* samples: [가로,세로] 고정 | 'auto' 거리 적응.
+     기본이 [4,3]인 건 tool.html이 그 값으로 검증돼 있기 때문. 벽만 한 창을 쓰면 'auto'. */
+  const fixed = (opt.samples && opt.samples !== 'auto') ? opt.samples : null;
   const occ = opt.occluders || null;
   let E = 0;
 
   for (const w of wins) {
     if (!w || w.width <= 0 || w.height <= 0) continue;
+    const [Mw, Mh] = fixed || (opt.samples === 'auto' ? autoSamples(w, p) : [4, 3]);
     const L = Ev * (w.tau ?? 0.8) / Math.PI;          // 천공 휘도 [cd/m²]
     const dA = (w.width / Mw) * (w.height / Mh);
     for (let a = 0; a < Mw; a++) {
@@ -246,11 +264,14 @@ export function luxGrid(wins, size, opt = {}) {
       t: 0~100 (기존 sunState와 같은 축)
 ============================================================ */
 /* 맑은 날 창면(연직) 천공 조도 기준값 [lx].
-   실측: 맑은 날 확산광만 20,000~30,000 / 흐린 날 3,000~8,000 / 직사광 유입 시 50,000+.
-   이 모델은 확산 천공광만 다루므로(직사 빔 없음) 25,000이 '맑은 날' 상당.
-   ※ 12,000이던 값은 흐린 날 수준이라 모든 방이 재배 불가로 나왔음(DLI 실측으로 확인).
-   ※ tool.html은 이 함수를 쓰지 않는다 — 자기 UI 입력(S.sky, 기본 8000)을 직접 넘긴다. */
-export const CLEAR_SKY_MAX = 25000;
+
+   ★ 이건 캘리브레이션값이지 이론 물리값이 아니다.
+     문헌의 '밝은 실내 창가 DLI 3~8'에 실내 결과가 맞도록 역산해서 고른 값이다.
+     이론적으로는 맑은 날 수직면 확산광 대역(10,000~25,000)의 상단이라 낙관적인 편.
+     (12,000이던 시절엔 최고 DLI가 2.8로 문헌 대역 아래여서 모든 방이 재배 불가였다)
+   ★ 재조정하면 방별 DLI 실측표 전체를 다시 검증해야 한다 — _dli_probe.html 사용.
+   ※ tool.html은 이 함수를 쓰지 않는다. 자기 UI 입력(S.sky, 기본 8000)을 직접 넘긴다. */
+export const CLEAR_SKY_MAX = 25000;   // 캘리브레이션값. 문헌 실내 창가 DLI 3~8에 맞춤.
 
 /* 날씨 계수 — 맑은 날 대비 창면 천공 조도 배율 */
 export const WEATHER = {

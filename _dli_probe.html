@@ -30,7 +30,7 @@ for (const key of Object.keys(NAMES)) {
   try { built = buildHouse(null, def, wp, dp, finishes, fp, lightPresets); }
   catch(e){ L.push('· 조립 실패 '+key+': '+e.message); continue; }
   const size = built.size;
-  const wins = (def.windows||[]).map(w=>winFromHouse(w.wall,w.cu,w.cy,w.w,w.h,size,0.8)).filter(Boolean);
+  const wins = (built.luxWins||[]).map(w=>winFromHouse(w.wall,w.cu,w.cy,w.w,w.h,size,w.tau)).filter(Boolean);
   const slots = built.plantSlots||[];
   if (!wins.length || !slots.length) { L.push('· '+NAMES[key]+': 창 '+wins.length+' 슬롯 '+slots.length+' → 건너뜀'); continue; }
   let best=null;

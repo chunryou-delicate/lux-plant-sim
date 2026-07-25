@@ -467,7 +467,7 @@ export function buildHouse(GRAIN, roomDefIn, winPresets, doorPresets={}, finishe
   const winPos = winWorld[0] || new THREE.Vector3(0.6,2.2,-CD/2+0.05);
 
   return { room, shells, windows:winWorld, glassMeshes, winPos, size:{ w:CW, d:CD, h:CH },
-           furniture:furnGroup, lightRigs, plantSlots, occluders };
+           furniture:furnGroup, lightRigs, plantSlots, occluders, luxWins };
 }
 
 /* ---- 원점 중심 그룹을 벽에 앉힌다 (위치 + Y회전) ---- */

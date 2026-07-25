@@ -414,7 +414,53 @@
         "w": 5,
         "d": 5,
         "h": 2.8
-      }
+      },
+      "furniture": [
+        {
+          "preset": "shelf_etagere_3tier",
+          "x": -1.5,
+          "z": -2.25
+        },
+        {
+          "preset": "shelf_etagere_3tier",
+          "x": 1.5,
+          "z": -2.25
+        },
+        {
+          "preset": "shelf_growrack_2tier",
+          "x": -2.25,
+          "z": -0.6,
+          "rot": 90
+        },
+        {
+          "preset": "plant_step_3",
+          "x": -2.28,
+          "z": 0.95,
+          "rot": 90
+        },
+        {
+          "preset": "shelf_ladder_4tier",
+          "x": 2.24,
+          "z": -0.6,
+          "rot": -90
+        },
+        {
+          "preset": "plant_step_3",
+          "x": 2.3,
+          "z": 0.95,
+          "rot": -90
+        },
+        {
+          "preset": "table",
+          "x": 0,
+          "z": 0.2
+        },
+        {
+          "preset": "shelf_cart_3tier",
+          "x": 0,
+          "z": -1.2
+        }
+      ]
     },
     "tworoom": {
       "label": "투룸",

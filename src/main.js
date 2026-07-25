@@ -45,11 +45,9 @@ async function buildRoomPreset(name){
   heatMesh=buildFloorHeatmap(RSIZE.w, RSIZE.d); heatMesh.visible=showHeat; ctx.scene.add(heatMesh);
   ctx.winPos=built.winPos; ctx.glassMeshes=built.glassMeshes;
   // ★ 조도용: 방 창을 3D 사각 개구부로, 화분 슬롯을 월드좌표로
-  curWins=(roomDef.windows||[]).map(w=>{
-    const p=winPresets[w.preset]||{};
-    const tau=(p.glass&&p.glass.transmittance)!=null?p.glass.transmittance:0.85;
-    return winFromHouse(w.wall, w.cu, w.cy, w.w, w.h, built.size, tau);
-  }).filter(Boolean);
+  // ★ house.js가 진짜 창 + 유리벽(온실)을 합쳐 준다. 여기서 roomDef를 다시 읽지 않는다.
+  curWins=(built.luxWins||[]).map(w=>
+    winFromHouse(w.wall, w.cu, w.cy, w.w, w.h, built.size, w.tau)).filter(Boolean);
   curSlots=built.plantSlots||[];
   curOcc=built.occluders||[];
 
@@ -115,7 +113,7 @@ function engineRefresh(){
     if(lampOn) lums.push({ x:0, y:RSIZE.h-0.35, z:0, flux:2400, dist:'wide' });
   }
 
-  const field=luxGrid(curWins, RSIZE, { sky:Ev, lums, grid:22, y:0.75, samples:[4,3], occluders:curOcc });
+  const field=luxGrid(curWins, RSIZE, { sky:Ev, lums, grid:22, y:0.75, samples:'auto', occluders:curOcc });
 
   if(showHeat){ updateFloorHeatmap(heatMesh, field, RSIZE.w, RSIZE.d); heatMesh.visible=true; }
   else heatMesh.visible=false;
@@ -130,7 +128,7 @@ function engineRefresh(){
   let slotBest=0, slotName='';
   const up={x:0,y:1,z:0};
   for(const s of curSlots){
-    const o={ sky:Ev, occluders:curOcc, selfIdx:s.occIdx };
+    const o={ sky:Ev, samples:'auto', occluders:curOcc, selfIdx:s.occIdx };
     const lx=daylightAt({x:s.x,y:s.y,z:s.z}, up, curWins, o)
            + (lums.length? pointIllum({x:s.x,y:s.y,z:s.z}, up, lums, o) : 0);
     if(lx>slotBest){ slotBest=lx; slotName=s.owner||''; }

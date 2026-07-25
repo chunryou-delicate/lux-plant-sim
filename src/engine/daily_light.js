@@ -26,7 +26,8 @@ export const LX_TO_PPFD = 0.0185;          // 태양광. 식물등은 기구별 
 /* 천공 조도 1 lx당 그 지점이 받는 조도 비율. 하루 종일 변하지 않는(기하학적) 값. */
 export function daylightRatio(p, n, wins, opt = {}) {
   const probe = 10000;
-  return daylightAt(p, n, wins, { ...opt, sky: probe }) / probe;
+  // 벽만 한 창(온실 유리벽)도 정확하려면 거리 적응 샘플링이 필요하다.
+  return daylightAt(p, n, wins, { samples: 'auto', ...opt, sky: probe }) / probe;
 }
 
 /* 자연광 DLI. ratio는 위 daylightRatio 결과(재사용하면 적분이 공짜다).
@@ -81,6 +82,9 @@ export function judgeDLI(dli, th) {
   return {
     band,
     fenestrating: th.fenestrate != null && dli >= th.fenestrate,
+    /* ★ 광량 초과. 원인이 '빛이 너무 많다'라서 해법은 차광·거리 띄우기.
+       연속광 장해(continuous_injury)와는 원인도 해법도 다르다 — 절대 합치지 말 것. */
+    overlight: dli > th.max,
     ko: BAND_KO[band]
   };
 }
@@ -115,12 +119,15 @@ export function photoperiod(hours, PH) {
     band: name,
     dark_hours: +(24 - h).toFixed(1),
     growth_mult: mult,
-    /* ★ continuous_penalty — 생장 창이 이걸 보고 판정한다. 걸리지 않으면 null. */
-    continuous_penalty: continuous ? {
+    /* ★ 연속광 장해 — 암기(暗期)가 없어서 생기는 손상. 광량 초과가 아니다.
+       광량은 적정이어도 24h 켜면 걸린다. 해법은 차광이 아니라 타이머.
+       걸리지 않으면 null. */
+    continuous_injury: continuous ? {
       growth_mult: cfg.growth_mult ?? 0.65,
       chlorosis_per_day: cfg.chlorosis_per_day ?? 0.04,
       energy_mult: cfg.energy_mult_vs_12h ?? 2.0,
-      reason: '연속점등 — 암기 부족(당 전류·호흡·조직 복구 저해, 일주기 교란)'
+      reason: '연속점등 — 암기 부족(당 전류·호흡·조직 복구 저해, 일주기 교란)',
+      fix: '타이머로 점등시간 12~16h로'
     } : null
   };
 }
@@ -182,7 +189,7 @@ export function buildDailyLight(day, slots, wins, ctx = {}) {
     weatherPattern: null,     // ← 실전(지역 날씨 패턴)
     /* ── 광주기 ── */
     photoperiod: photo,
-    continuous_penalty: photo.continuous_penalty,   // 최상위에도 노출(계약 필드)
+    continuous_injury: photo.continuous_injury,     // 최상위에도 노출(계약 필드)
     /* ── 비용 ── */
     energy: { watts: lampWatts, hours: litHours, kwh: +kwh.toFixed(3),
               won: Math.round(kwh * tariffWonPerKwh) },
