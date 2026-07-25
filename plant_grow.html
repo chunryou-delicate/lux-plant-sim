@@ -129,8 +129,8 @@ const DEF={
   stageYoung:0.38, stageMid:0.66,                          // 잎 형태 전환 시점(어린→중간→성인)
   sizeYoung:0.16, sizeMid:0.30, sizeMature:0.46, sizeFull:0.62,  // 각 시점 크기(마디 간격 대비 자연스럽게)
   internode:0.22, stemFlat:1.25,   // 줄기 마디 길이·잎방향 납작
-  petGrow:16, rThin:0.026, rMed:0.036, rThick:0.052, matureProb:0.22, doubleBud:0.15,   // 마디 자람시간·종류별 고정굵기·성숙잎 확률·더블혹(쌍혹=가지2 동시) 확률
-  stemTrans:40, bumpAt:0.5,        // 초기→중기 전이 시간(일, 아래 마디부터 순서대로) · 혹 돌기 위치(마디 길이의 비율=가지가 나는 지점)
+  petGrow:16, rThin:0.028, rMed:0.033, rThick:0.038, matureProb:0.22, doubleBud:0.15,   // 마디 자람시간·종류별 굵기(위아래 비슷하게)·성숙잎 확률·쌍혹 확률
+  stemTrans:40, bumpGrow:20, bumpAt:0.3, stemOverlap:0.025,   // 초기→중기_2 전이(일) · 혹 돋는 기간(중기_1 단계) · 돌기 위치(마디 비율=가지 나는 지점) · 이음새 겹침
   petioleLen:1.0, leafElev:1.0, elevDrop:0.36, spread:0.10, branchSpread:0.55,   // 배치(spread=줄기 흔들림)
   leafLight:0.62, leafDark:0.22, leafSat:0.5, satRange:0.22, hueBase:0.16, hueRange:0.26,   // 색(밝기/진함/채도/개체범위)
   ageDark:0.16, ageSat:0.26,   // 시간(나이) 따라 짙어짐·선명해짐(전역, 줄기·잎 함께)
@@ -201,7 +201,7 @@ const ANCHORB={leaf_young:1,leaf_mid1:1,leaf_mid2:1,leaf_mature:1,bud_furled:1,b
 const ASSETS={}; let ASSETS_READY=false;
 let SOIL_Y=0.5;
 const POT_H=0.6;          // 화분 높이(월드)
-const USE_PETIOLE=true;   // 잎자루 GLB로 줄기-잎 연결(잎에 잎자루 포함돼 보이면 false)
+const USE_PETIOLE=false;  // ★false: 잎 GLB에 잎자루가 이미 포함돼 있음. true면 줄기_초기를 짧게 뭉개 끼워넣어 이상해짐
 
 // GLB 정규화: 중심 x/z, 밑면 y=0, 높이 1.0. forceLongY면 가장 긴 축을 Y로 회전.
 // 반환 outer(단위,항등) → clone 후 scale/quaternion/position로 배치.
@@ -440,10 +440,9 @@ function buildPlant(){
                 triggered:false, grew:false};                            // grew = 이번 사이클에 이미 1마디 자랐나
       axes.push(ax); return ax; };
     const addSeg=(ax,T)=>{                                               // ② TIP 아래에 마디 삽입 → 생장점이 위로
-      const wt=rng()<0.5?'thin':'med';                                   // 나중에 전환될 중기 종류(50:50)
       const dir=ax.dir.clone().addScaledVector(ld, PHOTO*0.14)           // 굴광성: 빛 쪽으로 살짝
         .add(new THREE.Vector3((rng()-0.5)*P.spread,0,(rng()-0.5)*P.spread)).normalize();
-      ax.segs.push({dir, len:(wt==='med'?P.internode:P.internode*0.86), wt, birth:T, activated:false,
+      ax.segs.push({dir, len:P.internode*(0.92+rng()*0.16), birth:T, activated:false,
                     az:ax.az+ax.segs.length*GOLDEN}); };                 // 마디마다 방위(황금각) → 혹·가지가 각기 다른 쪽
     const leafM=(ax,T)=>Math.max(0, Math.min(1,(T-ax.leafBirth)/P.matSpan));   // 그 축의 잎 성숙도
     // 축 시작점 — ★가지는 부모 "혹 마디의 돌기 위치"(마디 끝이 아니라 중간)에서 남
@@ -476,11 +475,13 @@ function buildPlant(){
           const c=cand[Math.floor(rng()*cand.length)];                   // 순서도: 어디서 날지는 순수 랜덤
           c.s.activated=true; c.s.actT=T;
           const dbl=rng()<P.doubleBud; c.s.actType=dbl?'main':'thick';   // 쌍혹(가지2) / 단혹(가지1)
-          const a0=c.s.az, nb=dbl?2:1;                                   // ★가지 방향 = 그 혹 마디의 방위(돌기가 향한 쪽)
+          // ★혹이 붙는 방위는 줄기 둘레 360° 어디든. 굴광성이 높을수록 해 쪽으로 몰림(0=완전 랜덤, 1=정확히 해 쪽)
+          c.s.az = LIGHT_AZ + (rng()-0.5)*Math.PI*2*(1-PHOTO*0.85);
+          const a0=c.s.az, nb=dbl?2:1;                                   // 가지 방향 = 그 혹의 방위(돌기가 향한 쪽)
           for(let i=0;i<nb;i++){                                         // 혹에서 줄기_초기가 나와 자람
             const s2=a0+(nb===2? i*Math.PI : 0);
             const bd=new THREE.Vector3(Math.sin(s2)*P.branchSpread, 1, Math.cos(s2)*P.branchSpread).normalize();
-            mkAxis({ax:c.ax, idx:c.i}, bd, T);
+            mkAxis({ax:c.ax, idx:c.i}, bd, T+P.bumpGrow);                // 혹이 다 돋은 뒤에 가지가 남(순서도 #12→#14)
           }
         }
       }
@@ -494,13 +495,15 @@ function buildPlant(){
         if(s.birth>g) continue;
         const gr=Math.min(1,(g-s.birth)/Math.max(1,P.petGrow));          // ★줄기_초기만 길이·굵기가 자람
         const nxt=cur.clone().addScaledVector(s.dir, s.len*gr);
+        // 줄기_초기 → 줄기_중기_2(대기) → [선택되면] 줄기_중기_1(혹 돋는 중) → 줄기_후기_혹/쌍혹
         let key, rad;
-        if(s.activated){ key=s.actType==='main'?'stem_main':'stem_thick';        // 줄기_후기_혹 / 쌍혹
-          rad=s.actType==='main'?P.rThick*1.12:P.rThick; acts++; }
-        else if(g-s.birth>=P.stemTrans){ key=s.wt==='med'?'stem_med':'stem_thin'; // 줄기_중기_1 / 중기_2
-          rad=s.wt==='med'?P.rMed:P.rThin; }
-        else { key='petiole'; rad=P.rThin*0.62*(0.45+0.55*gr); }                  // 줄기_초기(자라는 중)
-        addStemSeg(cur, nxt, rad, 0, s.az, key);
+        if(s.activated && g>=s.actT+P.bumpGrow){ key=s.actType==='main'?'stem_main':'stem_thick';
+          rad=s.actType==='main'?P.rThick*1.06:P.rThick; acts++; }
+        else if(s.activated){ key='stem_med'; rad=P.rMed; }                       // 줄기_중기_1 = 혹 직전(혹 돋기 시작)
+        else if(g-s.birth>=P.stemTrans){ key='stem_thin'; rad=P.rThin; }          // 줄기_중기_2 = 분홍 대기(예비혹)
+        else { key='petiole'; rad=P.rThin*(0.72+0.28*gr); }                       // 줄기_초기(자라는 중)
+        // 이음새를 아래로 살짝 늘려 겹침 → 마디 경계가 툭툭 끊겨 보이지 않게
+        addStemSeg(cur.clone().addScaledVector(s.dir,-P.stemOverlap), nxt, rad, 0, s.az, key);
         cur=nxt; nSeg++;
       }
       // ① 생장점의 잎 1개 — 줄기_초기가 다 자란 뒤 새순으로 나서 그 자리에서 성숙
