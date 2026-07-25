@@ -39,7 +39,9 @@
    "category": "화분",
    "to_3d": false,
    "glb_matched": "pot_nursery_black.glb",
-   "name_ko": "화분-검정-육묘(실사)"
+   "name_ko": "화분-검정-육묘(실사)",
+   "real_max_m": 0.13,
+   "scale_to_real": 0.065
   },
   {
    "id": 3,
@@ -54,7 +56,9 @@
    "is_glb": false,
    "category": "포토스",
    "to_3d": false,
-   "glb_matched": "pothos_mint_simple.glb"
+   "glb_matched": "pothos_mint_simple.glb",
+   "real_max_m": 0.18,
+   "scale_to_real": 0.09
   },
   {
    "id": 4,
@@ -69,7 +73,9 @@
    "is_glb": false,
    "category": "포토스",
    "to_3d": false,
-   "glb_matched": "pothos_marble_greenyellow.glb"
+   "glb_matched": "pothos_marble_greenyellow.glb",
+   "real_max_m": 0.4,
+   "scale_to_real": 0.2
   },
   {
    "id": 5,
@@ -111,7 +117,9 @@
    "category": "화분",
    "to_3d": false,
    "glb_matched": "pot_concrete_square.glb",
-   "name_ko": "화분-콘크리트-사각(실사)"
+   "name_ko": "화분-콘크리트-사각(실사)",
+   "real_max_m": 0.2,
+   "scale_to_real": 0.1
   },
   {
    "id": 9,
@@ -126,7 +134,9 @@
    "is_glb": false,
    "category": "포토스",
    "to_3d": false,
-   "glb_matched": "pothos_cream_marble.glb"
+   "glb_matched": "pothos_cream_marble.glb",
+   "real_max_m": 0.4,
+   "scale_to_real": 0.2
   },
   {
    "id": 10,
@@ -141,7 +151,9 @@
    "is_glb": false,
    "category": "화분",
    "glb_matched": "pot_terracotta_wood.glb",
-   "name_ko": "화분-테라코타-나무받침"
+   "name_ko": "화분-테라코타-나무받침",
+   "real_max_m": 0.2,
+   "scale_to_real": 0.1
   },
   {
    "id": 357,
@@ -155,7 +167,9 @@
    "status": "glb완료",
    "source": "recolor_variant",
    "type": "prop",
-   "variant_of": 10
+   "variant_of": 10,
+   "real_max_m": 0.2,
+   "scale_to_real": 0.1
   },
   {
    "id": 359,
@@ -169,7 +183,9 @@
    "status": "glb완료",
    "source": "recolor_variant",
    "type": "prop",
-   "variant_of": 10
+   "variant_of": 10,
+   "real_max_m": 0.2,
+   "scale_to_real": 0.1
   },
   {
    "id": 12,
@@ -184,7 +200,9 @@
    "is_glb": false,
    "category": "포토스",
    "to_3d": false,
-   "glb_matched": "pothos_cream_vein.glb"
+   "glb_matched": "pothos_cream_vein.glb",
+   "real_max_m": 0.4,
+   "scale_to_real": 0.2
   },
   {
    "id": 13,
@@ -199,7 +217,9 @@
    "is_glb": false,
    "category": "조명",
    "glb_matched": "lamp_desk_mint.glb",
-   "name_ko": "조명-데스크램프-민트"
+   "name_ko": "조명-데스크램프-민트",
+   "real_max_m": 0.38,
+   "scale_to_real": 0.19
   },
   {
    "id": 373,
@@ -213,7 +233,9 @@
    "status": "glb완료",
    "source": "recolor_variant",
    "type": "prop",
-   "variant_of": 13
+   "variant_of": 13,
+   "real_max_m": 0.38,
+   "scale_to_real": 0.19
   },
   {
    "id": 375,
@@ -227,7 +249,9 @@
    "status": "glb완료",
    "source": "recolor_variant",
    "type": "prop",
-   "variant_of": 13
+   "variant_of": 13,
+   "real_max_m": 0.38,
+   "scale_to_real": 0.19
   },
   {
    "id": 14,
@@ -242,7 +266,9 @@
    "is_glb": false,
    "category": "포토스",
    "to_3d": false,
-   "glb_matched": "pothos_marble_whitegreen.glb"
+   "glb_matched": "pothos_marble_whitegreen.glb",
+   "real_max_m": 0.4,
+   "scale_to_real": 0.2
   },
   {
    "id": 15,
@@ -339,7 +365,9 @@
    "is_glb": false,
    "category": "포토스",
    "glb_matched": "heart_marble_2652.glb",
-   "to_3d": false
+   "to_3d": false,
+   "real_max_m": 0.4,
+   "scale_to_real": 0.2
   },
   {
    "id": 23,
@@ -354,7 +382,9 @@
    "is_glb": false,
    "category": "포토스",
    "glb_matched": "heart_speckle_2657.glb",
-   "to_3d": false
+   "to_3d": false,
+   "real_max_m": 0.4,
+   "scale_to_real": 0.2
   },
   {
    "id": 24,
@@ -369,7 +399,9 @@
    "is_glb": false,
    "category": "포토스",
    "to_3d": false,
-   "glb_matched": "pothos_silver_droplet.glb"
+   "glb_matched": "pothos_silver_droplet.glb",
+   "real_max_m": 0.4,
+   "scale_to_real": 0.2
   },
   {
    "id": 25,
@@ -384,7 +416,9 @@
    "is_glb": false,
    "category": "포토스",
    "to_3d": false,
-   "glb_matched": "pothos_mint_dot.glb"
+   "glb_matched": "pothos_mint_dot.glb",
+   "real_max_m": 0.4,
+   "scale_to_real": 0.2
   },
   {
    "id": 26,
@@ -399,7 +433,9 @@
    "is_glb": false,
    "category": "포토스",
    "glb_matched": "heart_lime_2672_0.glb",
-   "to_3d": false
+   "to_3d": false,
+   "real_max_m": 0.4,
+   "scale_to_real": 0.2
   },
   {
    "id": 29,
@@ -414,7 +450,9 @@
    "is_glb": false,
    "category": "포토스",
    "to_3d": false,
-   "glb_matched": "pothos_whitegreen_29.glb"
+   "glb_matched": "pothos_whitegreen_29.glb",
+   "real_max_m": 0.4,
+   "scale_to_real": 0.2
   },
   {
    "id": 31,
@@ -429,7 +467,9 @@
    "is_glb": false,
    "category": "포토스",
    "glb_matched": "heart_albo_2672_3.glb",
-   "to_3d": false
+   "to_3d": false,
+   "real_max_m": 0.4,
+   "scale_to_real": 0.2
   },
   {
    "id": 32,
@@ -445,7 +485,9 @@
    "category": "잎·몬스테라·성숙",
    "to_3d": false,
    "glb_matched": "mon_star_palegreen.glb",
-   "name_ko": "변이-별무늬-페일그린"
+   "name_ko": "변이-별무늬-페일그린",
+   "real_max_m": 0.65,
+   "scale_to_real": 0.325
   },
   {
    "id": 210,
@@ -459,7 +501,9 @@
    "status": "glb완료",
    "source": "recolor_variant",
    "type": "leaf",
-   "variant_of": 32
+   "variant_of": 32,
+   "real_max_m": 0.65,
+   "scale_to_real": 0.325
   },
   {
    "id": 212,
@@ -473,7 +517,9 @@
    "status": "glb완료",
    "source": "recolor_variant",
    "type": "leaf",
-   "variant_of": 32
+   "variant_of": 32,
+   "real_max_m": 0.65,
+   "scale_to_real": 0.325
   },
   {
    "id": 33,
@@ -489,7 +535,9 @@
    "category": "잎·몬스테라·성숙",
    "to_3d": false,
    "glb_matched": "mon_galaxy_tealgold.glb",
-   "name_ko": "변이-갤럭시-틸골드"
+   "name_ko": "변이-갤럭시-틸골드",
+   "real_max_m": 0.65,
+   "scale_to_real": 0.325
   },
   {
    "id": 214,
@@ -503,7 +551,9 @@
    "status": "glb완료",
    "source": "recolor_variant",
    "type": "leaf",
-   "variant_of": 33
+   "variant_of": 33,
+   "real_max_m": 0.65,
+   "scale_to_real": 0.325
   },
   {
    "id": 216,
@@ -517,7 +567,9 @@
    "status": "glb완료",
    "source": "recolor_variant",
    "type": "leaf",
-   "variant_of": 33
+   "variant_of": 33,
+   "real_max_m": 0.65,
+   "scale_to_real": 0.325
   },
   {
    "id": 34,
@@ -533,7 +585,9 @@
    "category": "잎·몬스테라·성숙",
    "to_3d": false,
    "glb_matched": "mon_galaxy_darkteal.glb",
-   "name_ko": "변이-갤럭시-다크틸"
+   "name_ko": "변이-갤럭시-다크틸",
+   "real_max_m": 0.65,
+   "scale_to_real": 0.325
   },
   {
    "id": 218,
@@ -547,7 +601,9 @@
    "status": "glb완료",
    "source": "recolor_variant",
    "type": "leaf",
-   "variant_of": 34
+   "variant_of": 34,
+   "real_max_m": 0.65,
+   "scale_to_real": 0.325
   },
   {
    "id": 220,
@@ -561,7 +617,9 @@
    "status": "glb완료",
    "source": "recolor_variant",
    "type": "leaf",
-   "variant_of": 34
+   "variant_of": 34,
+   "real_max_m": 0.65,
+   "scale_to_real": 0.325
   },
   {
    "id": 37,
@@ -577,7 +635,9 @@
    "category": "잎·몬스테라·성숙",
    "to_3d": false,
    "glb_matched": "mon_green_yellow.glb",
-   "name_ko": "변이-오로레아-그린옐로우"
+   "name_ko": "변이-오로레아-그린옐로우",
+   "real_max_m": 0.65,
+   "scale_to_real": 0.325
   },
   {
    "id": 222,
@@ -591,7 +651,9 @@
    "status": "glb완료",
    "source": "recolor_variant",
    "type": "leaf",
-   "variant_of": 37
+   "variant_of": 37,
+   "real_max_m": 0.65,
+   "scale_to_real": 0.325
   },
   {
    "id": 224,
@@ -605,7 +667,9 @@
    "status": "glb완료",
    "source": "recolor_variant",
    "type": "leaf",
-   "variant_of": 37
+   "variant_of": 37,
+   "real_max_m": 0.65,
+   "scale_to_real": 0.325
   },
   {
    "id": 38,
@@ -621,7 +685,9 @@
    "category": "잎·몬스테라·성숙",
    "to_3d": false,
    "glb_matched": "mon_green_lemonpatch.glb",
-   "name_ko": "변이-라임-레몬패치"
+   "name_ko": "변이-라임-레몬패치",
+   "real_max_m": 0.65,
+   "scale_to_real": 0.325
   },
   {
    "id": 226,
@@ -635,7 +701,9 @@
    "status": "glb완료",
    "source": "recolor_variant",
    "type": "leaf",
-   "variant_of": 38
+   "variant_of": 38,
+   "real_max_m": 0.65,
+   "scale_to_real": 0.325
   },
   {
    "id": 228,
@@ -649,7 +717,9 @@
    "status": "glb완료",
    "source": "recolor_variant",
    "type": "leaf",
-   "variant_of": 38
+   "variant_of": 38,
+   "real_max_m": 0.65,
+   "scale_to_real": 0.325
   },
   {
    "id": 39,
@@ -665,7 +735,9 @@
    "category": "잎·몬스테라·성숙",
    "to_3d": false,
    "glb_matched": "mon_neon_lime.glb",
-   "name_ko": "변이-네온-라임"
+   "name_ko": "변이-네온-라임",
+   "real_max_m": 0.65,
+   "scale_to_real": 0.325
   },
   {
    "id": 230,
@@ -679,7 +751,9 @@
    "status": "glb완료",
    "source": "recolor_variant",
    "type": "leaf",
-   "variant_of": 39
+   "variant_of": 39,
+   "real_max_m": 0.65,
+   "scale_to_real": 0.325
   },
   {
    "id": 232,
@@ -693,7 +767,9 @@
    "status": "glb완료",
    "source": "recolor_variant",
    "type": "leaf",
-   "variant_of": 39
+   "variant_of": 39,
+   "real_max_m": 0.65,
+   "scale_to_real": 0.325
   },
   {
    "id": 40,
@@ -709,7 +785,9 @@
    "category": "잎·몬스테라·성숙",
    "to_3d": false,
    "glb_matched": "mon_variegata_pink.glb",
-   "name_ko": "변이-핑크-로즈핑크"
+   "name_ko": "변이-핑크-로즈핑크",
+   "real_max_m": 0.65,
+   "scale_to_real": 0.325
   },
   {
    "id": 234,
@@ -723,7 +801,9 @@
    "status": "glb완료",
    "source": "recolor_variant",
    "type": "leaf",
-   "variant_of": 40
+   "variant_of": 40,
+   "real_max_m": 0.65,
+   "scale_to_real": 0.325
   },
   {
    "id": 236,
@@ -737,7 +817,9 @@
    "status": "glb완료",
    "source": "recolor_variant",
    "type": "leaf",
-   "variant_of": 40
+   "variant_of": 40,
+   "real_max_m": 0.65,
+   "scale_to_real": 0.325
   },
   {
    "id": 41,
@@ -753,7 +835,9 @@
    "category": "잎·몬스테라·성숙",
    "to_3d": false,
    "glb_matched": "mon_zebra.glb",
-   "name_ko": "변이-제브라-그린흰"
+   "name_ko": "변이-제브라-그린흰",
+   "real_max_m": 0.65,
+   "scale_to_real": 0.325
   },
   {
    "id": 238,
@@ -767,7 +851,9 @@
    "status": "glb완료",
    "source": "recolor_variant",
    "type": "leaf",
-   "variant_of": 41
+   "variant_of": 41,
+   "real_max_m": 0.65,
+   "scale_to_real": 0.325
   },
   {
    "id": 240,
@@ -781,7 +867,9 @@
    "status": "glb완료",
    "source": "recolor_variant",
    "type": "leaf",
-   "variant_of": 41
+   "variant_of": 41,
+   "real_max_m": 0.65,
+   "scale_to_real": 0.325
   },
   {
    "id": 42,
@@ -797,7 +885,9 @@
    "category": "잎·몬스테라·성숙",
    "to_3d": false,
    "glb_matched": "mon_charcoal.glb",
-   "name_ko": "변이-차콜-다크그린"
+   "name_ko": "변이-차콜-다크그린",
+   "real_max_m": 0.65,
+   "scale_to_real": 0.325
   },
   {
    "id": 242,
@@ -811,7 +901,9 @@
    "status": "glb완료",
    "source": "recolor_variant",
    "type": "leaf",
-   "variant_of": 42
+   "variant_of": 42,
+   "real_max_m": 0.65,
+   "scale_to_real": 0.325
   },
   {
    "id": 244,
@@ -825,7 +917,9 @@
    "status": "glb완료",
    "source": "recolor_variant",
    "type": "leaf",
-   "variant_of": 42
+   "variant_of": 42,
+   "real_max_m": 0.65,
+   "scale_to_real": 0.325
   },
   {
    "id": 43,
@@ -841,7 +935,9 @@
    "category": "잎·몬스테라·성숙",
    "to_3d": false,
    "glb_matched": "mon_halfmoon_greenwhite.glb",
-   "name_ko": "변이-하프문-그린흰"
+   "name_ko": "변이-하프문-그린흰",
+   "real_max_m": 0.65,
+   "scale_to_real": 0.325
   },
   {
    "id": 246,
@@ -855,7 +951,9 @@
    "status": "glb완료",
    "source": "recolor_variant",
    "type": "leaf",
-   "variant_of": 43
+   "variant_of": 43,
+   "real_max_m": 0.65,
+   "scale_to_real": 0.325
   },
   {
    "id": 248,
@@ -869,7 +967,9 @@
    "status": "glb완료",
    "source": "recolor_variant",
    "type": "leaf",
-   "variant_of": 43
+   "variant_of": 43,
+   "real_max_m": 0.65,
+   "scale_to_real": 0.325
   },
   {
    "id": 44,
@@ -885,7 +985,9 @@
    "category": "잎·몬스테라·성숙",
    "to_3d": false,
    "glb_matched": "mon_mauve.glb",
-   "name_ko": "변이-모브-라벤더그레이"
+   "name_ko": "변이-모브-라벤더그레이",
+   "real_max_m": 0.65,
+   "scale_to_real": 0.325
   },
   {
    "id": 250,
@@ -899,7 +1001,9 @@
    "status": "glb완료",
    "source": "recolor_variant",
    "type": "leaf",
-   "variant_of": 44
+   "variant_of": 44,
+   "real_max_m": 0.65,
+   "scale_to_real": 0.325
   },
   {
    "id": 252,
@@ -913,7 +1017,9 @@
    "status": "glb완료",
    "source": "recolor_variant",
    "type": "leaf",
-   "variant_of": 44
+   "variant_of": 44,
+   "real_max_m": 0.65,
+   "scale_to_real": 0.325
   },
   {
    "id": 46,
@@ -929,7 +1035,9 @@
    "category": "잎·몬스테라·성숙",
    "to_3d": false,
    "glb_matched": "mon_star_pinkmint.glb",
-   "name_ko": "변이-별무늬-핑크민트"
+   "name_ko": "변이-별무늬-핑크민트",
+   "real_max_m": 0.65,
+   "scale_to_real": 0.325
   },
   {
    "id": 254,
@@ -943,7 +1051,9 @@
    "status": "glb완료",
    "source": "recolor_variant",
    "type": "leaf",
-   "variant_of": 46
+   "variant_of": 46,
+   "real_max_m": 0.65,
+   "scale_to_real": 0.325
   },
   {
    "id": 256,
@@ -957,7 +1067,9 @@
    "status": "glb완료",
    "source": "recolor_variant",
    "type": "leaf",
-   "variant_of": 46
+   "variant_of": 46,
+   "real_max_m": 0.65,
+   "scale_to_real": 0.325
   },
   {
    "id": 47,
@@ -973,7 +1085,9 @@
    "category": "잎·몬스테라·성숙",
    "to_3d": false,
    "glb_matched": "mon_variegata_gold.glb",
-   "name_ko": "변이-오로레아-골드"
+   "name_ko": "변이-오로레아-골드",
+   "real_max_m": 0.65,
+   "scale_to_real": 0.325
   },
   {
    "id": 258,
@@ -987,7 +1101,9 @@
    "status": "glb완료",
    "source": "recolor_variant",
    "type": "leaf",
-   "variant_of": 47
+   "variant_of": 47,
+   "real_max_m": 0.65,
+   "scale_to_real": 0.325
   },
   {
    "id": 260,
@@ -1001,7 +1117,9 @@
    "status": "glb완료",
    "source": "recolor_variant",
    "type": "leaf",
-   "variant_of": 47
+   "variant_of": 47,
+   "real_max_m": 0.65,
+   "scale_to_real": 0.325
   },
   {
    "id": 48,
@@ -1017,7 +1135,9 @@
    "category": "잎·몬스테라·성숙",
    "to_3d": false,
    "glb_matched": "mon_star_greenyellow.glb",
-   "name_ko": "변이-별무늬-그린옐로우"
+   "name_ko": "변이-별무늬-그린옐로우",
+   "real_max_m": 0.65,
+   "scale_to_real": 0.325
   },
   {
    "id": 262,
@@ -1031,7 +1151,9 @@
    "status": "glb완료",
    "source": "recolor_variant",
    "type": "leaf",
-   "variant_of": 48
+   "variant_of": 48,
+   "real_max_m": 0.65,
+   "scale_to_real": 0.325
   },
   {
    "id": 264,
@@ -1045,7 +1167,9 @@
    "status": "glb완료",
    "source": "recolor_variant",
    "type": "leaf",
-   "variant_of": 48
+   "variant_of": 48,
+   "real_max_m": 0.65,
+   "scale_to_real": 0.325
   },
   {
    "id": 49,
@@ -1061,7 +1185,9 @@
    "category": "잎·몬스테라·성숙",
    "to_3d": false,
    "glb_matched": "mon_rose_pink.glb",
-   "name_ko": "변이-핑크-로즈"
+   "name_ko": "변이-핑크-로즈",
+   "real_max_m": 0.65,
+   "scale_to_real": 0.325
   },
   {
    "id": 266,
@@ -1075,7 +1201,9 @@
    "status": "glb완료",
    "source": "recolor_variant",
    "type": "leaf",
-   "variant_of": 49
+   "variant_of": 49,
+   "real_max_m": 0.65,
+   "scale_to_real": 0.325
   },
   {
    "id": 268,
@@ -1089,7 +1217,9 @@
    "status": "glb완료",
    "source": "recolor_variant",
    "type": "leaf",
-   "variant_of": 49
+   "variant_of": 49,
+   "real_max_m": 0.65,
+   "scale_to_real": 0.325
   },
   {
    "id": 50,
@@ -1105,7 +1235,9 @@
    "category": "잎·몬스테라·성숙",
    "to_3d": false,
    "glb_matched": "mon_speckle_greencream.glb",
-   "name_ko": "변이-스페클-그린크림"
+   "name_ko": "변이-스페클-그린크림",
+   "real_max_m": 0.65,
+   "scale_to_real": 0.325
   },
   {
    "id": 270,
@@ -1119,7 +1251,9 @@
    "status": "glb완료",
    "source": "recolor_variant",
    "type": "leaf",
-   "variant_of": 50
+   "variant_of": 50,
+   "real_max_m": 0.65,
+   "scale_to_real": 0.325
   },
   {
    "id": 272,
@@ -1133,7 +1267,9 @@
    "status": "glb완료",
    "source": "recolor_variant",
    "type": "leaf",
-   "variant_of": 50
+   "variant_of": 50,
+   "real_max_m": 0.65,
+   "scale_to_real": 0.325
   },
   {
    "id": 51,
@@ -1149,7 +1285,9 @@
    "category": "잎·몬스테라·성숙",
    "to_3d": false,
    "glb_matched": "mon_star_greenwhite.glb",
-   "name_ko": "변이-별무늬-그린흰"
+   "name_ko": "변이-별무늬-그린흰",
+   "real_max_m": 0.65,
+   "scale_to_real": 0.325
   },
   {
    "id": 274,
@@ -1163,7 +1301,9 @@
    "status": "glb완료",
    "source": "recolor_variant",
    "type": "leaf",
-   "variant_of": 51
+   "variant_of": 51,
+   "real_max_m": 0.65,
+   "scale_to_real": 0.325
   },
   {
    "id": 276,
@@ -1177,7 +1317,9 @@
    "status": "glb완료",
    "source": "recolor_variant",
    "type": "leaf",
-   "variant_of": 51
+   "variant_of": 51,
+   "real_max_m": 0.65,
+   "scale_to_real": 0.325
   },
   {
    "id": 52,
@@ -1191,7 +1333,11 @@
    "is_glb": true,
    "category": "잎·몬스테라·초기",
    "bytes": 1124420,
-   "source_2d": "Gemini_Generated_Image_1ti3tt1ti3tt1ti3.jfif"
+   "source_2d": "Gemini_Generated_Image_1ti3tt1ti3tt1ti3.jfif",
+   "real_max_m": 0.18,
+   "scale_to_real": 0.18103,
+   "glb_raw_max": 0.9943,
+   "size_basis_cat": "잎·몬스테라·초기"
   },
   {
    "id": 53,
@@ -1205,7 +1351,11 @@
    "is_glb": true,
    "category": "3D-잎",
    "bytes": 986068,
-   "source_2d": "Gemini_Generated_Image_x419dpx419dpx419.jfif"
+   "source_2d": "Gemini_Generated_Image_x419dpx419dpx419.jfif",
+   "real_max_m": 0.4,
+   "scale_to_real": 0.40194,
+   "glb_raw_max": 0.9952,
+   "size_basis_cat": "잎·몬스테라·중간"
   },
   {
    "id": 54,
@@ -1219,7 +1369,11 @@
    "is_glb": true,
    "category": "3D-잎",
    "bytes": 1185684,
-   "source_2d": "Gemini_Generated_Image_urd97hurd97hurd9.jfif"
+   "source_2d": "Gemini_Generated_Image_urd97hurd97hurd9.jfif",
+   "real_max_m": 0.4,
+   "scale_to_real": 0.40198,
+   "glb_raw_max": 0.9951,
+   "size_basis_cat": "잎·몬스테라·중간"
   },
   {
    "id": 55,
@@ -1233,7 +1387,11 @@
    "is_glb": true,
    "category": "3D-잎",
    "bytes": 1562128,
-   "source_2d": "Gemini_Generated_Image_hc1lc4hc1lc4hc1l.jfif"
+   "source_2d": "Gemini_Generated_Image_hc1lc4hc1lc4hc1l.jfif",
+   "real_max_m": 0.65,
+   "scale_to_real": 0.325,
+   "glb_raw_max": 2.0,
+   "size_basis_cat": "잎·몬스테라·성숙"
   },
   {
    "id": 56,
@@ -1247,7 +1405,11 @@
    "is_glb": true,
    "category": "잎·몬스테라·초기",
    "bytes": 1011508,
-   "source_2d": "Gemini_Generated_Image_annf45annf45annf.jfif"
+   "source_2d": "Gemini_Generated_Image_annf45annf45annf.jfif",
+   "real_max_m": 0.14,
+   "scale_to_real": 0.14064,
+   "glb_raw_max": 0.9955,
+   "size_basis_cat": "잎·몬스테라·초기"
   },
   {
    "id": 58,
@@ -1261,7 +1423,11 @@
    "is_glb": true,
    "category": "잎·몬스테라·초기",
    "bytes": 1111488,
-   "source_2d": "Gemini_Generated_Image_os56jfos56jfos56.jfif"
+   "source_2d": "Gemini_Generated_Image_os56jfos56jfos56.jfif",
+   "real_max_m": 0.16,
+   "scale_to_real": 0.16085,
+   "glb_raw_max": 0.9947,
+   "size_basis_cat": "잎·몬스테라·초기"
   },
   {
    "id": 59,
@@ -1276,7 +1442,11 @@
    "category": "3D-줄기",
    "bytes": 1104360,
    "source_2d": "stem_main_from3D.png",
-   "name_ko": "줄기_후기_쌍혹"
+   "name_ko": "줄기_후기_쌍혹",
+   "real_max_m": 0.45,
+   "scale_to_real": 0.45215,
+   "glb_raw_max": 0.9953,
+   "size_basis_cat": "줄기·부품"
   },
   {
    "id": 60,
@@ -1291,7 +1461,11 @@
    "category": "3D-줄기",
    "bytes": 1168216,
    "source_2d": "Gemini_Generated_Image_p1fridp1fridp1fr.jfif",
-   "name_ko": "줄기_후기_혹"
+   "name_ko": "줄기_후기_혹",
+   "real_max_m": 0.45,
+   "scale_to_real": 0.4515,
+   "glb_raw_max": 0.9967,
+   "size_basis_cat": "줄기·부품"
   },
   {
    "id": 61,
@@ -1306,7 +1480,11 @@
    "category": "3D-줄기",
    "bytes": 783996,
    "source_2d": "Gemini_Generated_Image_w3zndkw3zndkw3zn.jfif",
-   "name_ko": "줄기_중기_2"
+   "name_ko": "줄기_중기_2",
+   "real_max_m": 0.3,
+   "scale_to_real": 0.3004,
+   "glb_raw_max": 0.9987,
+   "size_basis_cat": "줄기·부품"
   },
   {
    "id": 62,
@@ -1321,7 +1499,11 @@
    "category": "3D-줄기",
    "bytes": 878728,
    "source_2d": "Gemini_Generated_Image_pxgxiypxgxiypxgx.jfif",
-   "name_ko": "줄기_중기_1"
+   "name_ko": "줄기_중기_1",
+   "real_max_m": 0.3,
+   "scale_to_real": 0.30032,
+   "glb_raw_max": 0.9989,
+   "size_basis_cat": "줄기·부품"
   },
   {
    "id": 63,
@@ -1336,7 +1518,11 @@
    "category": "3D-잎자루",
    "bytes": 951280,
    "source_2d": "Gemini_Generated_Image_yhddmxyhddmxyhdd.jfif",
-   "name_ko": "줄기_초기"
+   "name_ko": "줄기_초기",
+   "real_max_m": 0.15,
+   "scale_to_real": 0.15025,
+   "glb_raw_max": 0.9983,
+   "size_basis_cat": "줄기·부품"
   },
   {
    "id": 64,
@@ -1350,7 +1536,11 @@
    "is_glb": true,
    "category": "3D-화분",
    "bytes": 1813660,
-   "source_2d": "Gemini_Generated_Image_ournm5ournm5ourn.jfif"
+   "source_2d": "Gemini_Generated_Image_ournm5ournm5ourn.jfif",
+   "real_max_m": 0.2,
+   "scale_to_real": 0.2038,
+   "glb_raw_max": 0.9813,
+   "size_basis_cat": "화분"
   },
   {
    "id": 66,
@@ -1366,7 +1556,9 @@
    "bytes": 1372434,
    "glb_matched": "monstera_leaf_young.glb",
    "to_3d": false,
-   "name_ko": "기본-어린-잎1"
+   "name_ko": "기본-어린-잎1",
+   "real_max_m": 0.18,
+   "scale_to_real": 0.18103
   },
   {
    "id": 68,
@@ -1382,7 +1574,9 @@
    "bytes": 1367957,
    "glb_matched": "monstera_bud_opening2.glb",
    "to_3d": false,
-   "name_ko": "기본-초기-반잎1"
+   "name_ko": "기본-초기-반잎1",
+   "real_max_m": 0.16,
+   "scale_to_real": 0.16085
   },
   {
    "id": 69,
@@ -1397,7 +1591,9 @@
    "category": "잎-포토스",
    "bytes": 1304097,
    "glb_matched": "monstera_leaf_mid2.glb",
-   "to_3d": false
+   "to_3d": false,
+   "real_max_m": 0.4,
+   "scale_to_real": 0.40198
   },
   {
    "id": 70,
@@ -1412,7 +1608,9 @@
    "category": "잎-포토스",
    "bytes": 1337919,
    "glb_matched": "monstera_leaf_mid1.glb",
-   "to_3d": false
+   "to_3d": false,
+   "real_max_m": 0.4,
+   "scale_to_real": 0.40194
   },
   {
    "id": 73,
@@ -1428,7 +1626,9 @@
    "bytes": 1458645,
    "glb_matched": "stem_late_bump.glb",
    "to_3d": false,
-   "name_ko": "줄기_후기_혹"
+   "name_ko": "줄기_후기_혹",
+   "real_max_m": 0.45,
+   "scale_to_real": 0.4515
   },
   {
    "id": 74,
@@ -1444,7 +1644,9 @@
    "bytes": 1030688,
    "glb_matched": "stem_mid_1.glb",
    "to_3d": false,
-   "name_ko": "줄기_중기_1"
+   "name_ko": "줄기_중기_1",
+   "real_max_m": 0.3,
+   "scale_to_real": 0.30032
   },
   {
    "id": 75,
@@ -1460,7 +1662,9 @@
    "bytes": 881550,
    "glb_matched": "stem_mid_2.glb",
    "to_3d": false,
-   "name_ko": "줄기_중기_2"
+   "name_ko": "줄기_중기_2",
+   "real_max_m": 0.3,
+   "scale_to_real": 0.3004
   },
   {
    "id": 76,
@@ -1476,7 +1680,9 @@
    "bytes": 1386269,
    "glb_matched": "stem_early.glb",
    "to_3d": false,
-   "name_ko": "줄기_초기"
+   "name_ko": "줄기_초기",
+   "real_max_m": 0.15,
+   "scale_to_real": 0.15025
   },
   {
    "id": 77,
@@ -1518,7 +1724,9 @@
    "bytes": 1358518,
    "glb_matched": "monstera_bud_furled.glb",
    "to_3d": false,
-   "name_ko": "기본-초기-새순1"
+   "name_ko": "기본-초기-새순1",
+   "real_max_m": 0.14,
+   "scale_to_real": 0.14064
   },
   {
    "id": 80,
@@ -1534,7 +1742,9 @@
    "bytes": 1514794,
    "glb_matched": "monstera_leaf_mature.glb",
    "to_3d": false,
-   "name_ko": "기본-성숙-잎1"
+   "name_ko": "기본-성숙-잎1",
+   "real_max_m": 0.65,
+   "scale_to_real": 0.325
   },
   {
    "id": 278,
@@ -1548,7 +1758,9 @@
    "status": "glb완료",
    "source": "recolor_variant",
    "type": "leaf",
-   "variant_of": 80
+   "variant_of": 80,
+   "real_max_m": 0.65,
+   "scale_to_real": 0.325
   },
   {
    "id": 280,
@@ -1562,7 +1774,9 @@
    "status": "glb완료",
    "source": "recolor_variant",
    "type": "leaf",
-   "variant_of": 80
+   "variant_of": 80,
+   "real_max_m": 0.65,
+   "scale_to_real": 0.325
   },
   {
    "id": 81,
@@ -1578,7 +1792,9 @@
    "bytes": 1522375,
    "glb_matched": "pot.glb",
    "to_3d": false,
-   "name_ko": "화분-크림도자기-나무받침"
+   "name_ko": "화분-크림도자기-나무받침",
+   "real_max_m": 0.2,
+   "scale_to_real": 0.2038
   },
   {
    "id": 361,
@@ -1592,7 +1808,9 @@
    "status": "glb완료",
    "source": "recolor_variant",
    "type": "prop",
-   "variant_of": 81
+   "variant_of": 81,
+   "real_max_m": 0.2,
+   "scale_to_real": 0.2038
   },
   {
    "id": 363,
@@ -1606,7 +1824,9 @@
    "status": "glb완료",
    "source": "recolor_variant",
    "type": "prop",
-   "variant_of": 81
+   "variant_of": 81,
+   "real_max_m": 0.2,
+   "scale_to_real": 0.2038
   },
   {
    "id": 82,
@@ -1653,7 +1873,9 @@
    "credits_spent": 1.0,
    "bytes": 1958714,
    "to_3d": false,
-   "glb_matched": "item_spraybottle.glb"
+   "glb_matched": "item_spraybottle.glb",
+   "real_max_m": 0.28,
+   "scale_to_real": 0.14
   },
   {
    "id": 84,
@@ -1687,7 +1909,9 @@
    "credits_spent": 1.0,
    "bytes": 1700284,
    "to_3d": false,
-   "glb_matched": "item_trowel.glb"
+   "glb_matched": "item_trowel.glb",
+   "real_max_m": 0.3,
+   "scale_to_real": 0.15
   },
   {
    "id": 85,
@@ -1721,7 +1945,9 @@
    "credits_spent": 1.0,
    "bytes": 2064186,
    "to_3d": false,
-   "glb_matched": "item_fertilizerbag.glb"
+   "glb_matched": "item_fertilizerbag.glb",
+   "real_max_m": 0.32,
+   "scale_to_real": 0.16
   },
   {
    "id": 86,
@@ -1763,7 +1989,9 @@
    "credits_spent": 2.0,
    "bytes": 2203886,
    "to_3d": false,
-   "glb_matched": "item_pruningshears.glb"
+   "glb_matched": "item_pruningshears.glb",
+   "real_max_m": 0.28,
+   "scale_to_real": 0.14
   },
   {
    "id": 87,
@@ -1813,7 +2041,9 @@
    "credits_spent": 3.0,
    "bytes": 1326915,
    "to_3d": false,
-   "glb_matched": "lamp_clip.glb"
+   "glb_matched": "lamp_clip.glb",
+   "real_max_m": 0.24,
+   "scale_to_real": 0.12
   },
   {
    "id": 377,
@@ -1827,7 +2057,9 @@
    "status": "glb완료",
    "source": "recolor_variant",
    "type": "prop",
-   "variant_of": 87
+   "variant_of": 87,
+   "real_max_m": 0.24,
+   "scale_to_real": 0.12
   },
   {
    "id": 379,
@@ -1841,7 +2073,9 @@
    "status": "glb완료",
    "source": "recolor_variant",
    "type": "prop",
-   "variant_of": 87
+   "variant_of": 87,
+   "real_max_m": 0.24,
+   "scale_to_real": 0.12
   },
   {
    "id": 88,
@@ -1875,7 +2109,9 @@
    "credits_spent": 1.0,
    "bytes": 1968381,
    "to_3d": false,
-   "glb_matched": "pot_concrete_round.glb"
+   "glb_matched": "pot_concrete_round.glb",
+   "real_max_m": 0.18,
+   "scale_to_real": 0.09
   },
   {
    "id": 365,
@@ -1889,7 +2125,9 @@
    "status": "glb완료",
    "source": "recolor_variant",
    "type": "prop",
-   "variant_of": 88
+   "variant_of": 88,
+   "real_max_m": 0.18,
+   "scale_to_real": 0.09
   },
   {
    "id": 367,
@@ -1903,7 +2141,9 @@
    "status": "glb완료",
    "source": "recolor_variant",
    "type": "prop",
-   "variant_of": 88
+   "variant_of": 88,
+   "real_max_m": 0.18,
+   "scale_to_real": 0.09
   },
   {
    "id": 89,
@@ -1937,7 +2177,9 @@
    "credits_spent": 1.0,
    "bytes": 1919416,
    "to_3d": false,
-   "glb_matched": "pot_glassjar.glb"
+   "glb_matched": "pot_glassjar.glb",
+   "real_max_m": 0.13,
+   "scale_to_real": 0.10656
   },
   {
    "id": 90,
@@ -1971,7 +2213,9 @@
    "credits_spent": 1.0,
    "bytes": 1685755,
    "to_3d": true,
-   "glb_matched": "pot_macrame_hanging.glb"
+   "glb_matched": "pot_macrame_hanging.glb",
+   "real_max_m": 0.55,
+   "scale_to_real": 0.275
   },
   {
    "id": 369,
@@ -1985,7 +2229,9 @@
    "status": "glb완료",
    "source": "recolor_variant",
    "type": "prop",
-   "variant_of": 90
+   "variant_of": 90,
+   "real_max_m": 0.55,
+   "scale_to_real": 0.275
   },
   {
    "id": 371,
@@ -1999,7 +2245,9 @@
    "status": "glb완료",
    "source": "recolor_variant",
    "type": "prop",
-   "variant_of": 90
+   "variant_of": 90,
+   "real_max_m": 0.55,
+   "scale_to_real": 0.275
   },
   {
    "id": 91,
@@ -2074,7 +2322,9 @@
    "credits_spent": 1.0,
    "bytes": 3229514,
    "to_3d": false,
-   "glb_matched": "pothos_variegated.glb"
+   "glb_matched": "pothos_variegated.glb",
+   "real_max_m": 0.2,
+   "scale_to_real": 0.1
   },
   {
    "id": 94,
@@ -2089,7 +2339,9 @@
    "is_glb": false,
    "glb_matched": "stem_late_double.glb",
    "to_3d": false,
-   "name_ko": "줄기_후기_쌍혹"
+   "name_ko": "줄기_후기_쌍혹",
+   "real_max_m": 0.45,
+   "scale_to_real": 0.45215
   },
   {
    "id": 95,
@@ -2104,7 +2356,11 @@
    "is_glb": true,
    "source_2d": "monstera_leaf_young_albo_2d.png",
    "retexture_of": "monstera_leaf_young.glb",
-   "skin": true
+   "skin": true,
+   "real_max_m": 0.18,
+   "scale_to_real": 0.09,
+   "glb_raw_max": 2.0,
+   "size_basis_cat": "잎·몬스테라·초기"
   },
   {
    "id": 96,
@@ -2119,7 +2375,9 @@
    "is_glb": false,
    "glb_matched": "monstera_leaf_young_albo.glb",
    "to_3d": false,
-   "name_ko": "변이-어린-잎1"
+   "name_ko": "변이-어린-잎1",
+   "real_max_m": 0.18,
+   "scale_to_real": 0.09
   },
   {
    "id": 97,
@@ -2134,7 +2392,11 @@
    "is_glb": true,
    "skin": true,
    "source_2d": "kling_20260718_IMAGE_파스텔_저폴리_3D_2652_0.png",
-   "bytes": 2597168
+   "bytes": 2597168,
+   "real_max_m": 0.4,
+   "scale_to_real": 0.2,
+   "glb_raw_max": 2.0,
+   "size_basis_cat": "잎·몬스테라·중간"
   },
   {
    "id": 98,
@@ -2149,7 +2411,11 @@
    "is_glb": true,
    "skin": true,
    "source_2d": "kling_20260718_IMAGE_파스텔_저폴리_3D_2657_0.png",
-   "bytes": 2533568
+   "bytes": 2533568,
+   "real_max_m": 0.4,
+   "scale_to_real": 0.2,
+   "glb_raw_max": 2.0,
+   "size_basis_cat": "잎·몬스테라·중간"
   },
   {
    "id": 99,
@@ -2164,7 +2430,11 @@
    "is_glb": true,
    "skin": true,
    "source_2d": "kling_20260718_IMAGE_파스텔_저폴리_3D_2672_0.png",
-   "bytes": 2142508
+   "bytes": 2142508,
+   "real_max_m": 0.4,
+   "scale_to_real": 0.2,
+   "glb_raw_max": 2.0,
+   "size_basis_cat": "잎·몬스테라·중간"
   },
   {
    "id": 100,
@@ -2179,7 +2449,11 @@
    "is_glb": true,
    "skin": true,
    "source_2d": "kling_20260718_IMAGE_파스텔_저폴리_3D_2672_3.png",
-   "bytes": 2338356
+   "bytes": 2338356,
+   "real_max_m": 0.4,
+   "scale_to_real": 0.2,
+   "glb_raw_max": 2.0,
+   "size_basis_cat": "잎·몬스테라·중간"
   },
   {
    "id": 101,
@@ -2195,7 +2469,11 @@
    "skin": true,
    "source_2d": "monstera_halfmoon_flat_src.png",
    "bytes": 980028,
-   "name_ko": "변이-하프문-크림민트"
+   "name_ko": "변이-하프문-크림민트",
+   "real_max_m": 0.4,
+   "scale_to_real": 0.20322,
+   "glb_raw_max": 1.9683,
+   "size_basis_cat": "잎·몬스테라·중간"
   },
   {
    "id": 102,
@@ -2211,7 +2489,11 @@
    "skin": true,
    "source_2d": "monstera_mid_halfmoon_src.png",
    "bytes": 2010620,
-   "name_ko": "변이-알보-전체흰중기"
+   "name_ko": "변이-알보-전체흰중기",
+   "real_max_m": 0.4,
+   "scale_to_real": 0.2,
+   "glb_raw_max": 2.0,
+   "size_basis_cat": "잎·몬스테라·중간"
   },
   {
    "id": 104,
@@ -2225,7 +2507,11 @@
    "note": "화분: 검정 플라스틱 육묘분",
    "is_glb": true,
    "source_2d": "Gemini_Generated_Image_3s63wv3s63wv3s63.jfif",
-   "bytes": 2158368
+   "bytes": 2158368,
+   "real_max_m": 0.13,
+   "scale_to_real": 0.065,
+   "glb_raw_max": 2.0,
+   "size_basis_cat": "화분"
   },
   {
    "id": 105,
@@ -2239,7 +2525,11 @@
    "note": "화분: 회색 콘크리트 각분+받침",
    "is_glb": true,
    "source_2d": "Gemini_Generated_Image_eh016neh016neh01.jfif",
-   "bytes": 2198380
+   "bytes": 2198380,
+   "real_max_m": 0.2,
+   "scale_to_real": 0.1,
+   "glb_raw_max": 2.0,
+   "size_basis_cat": "화분"
   },
   {
    "id": 106,
@@ -2253,7 +2543,11 @@
    "note": "화분: 콘크리트 원통분",
    "is_glb": true,
    "source_2d": "pot_concrete_v1.png",
-   "bytes": 2107940
+   "bytes": 2107940,
+   "real_max_m": 0.18,
+   "scale_to_real": 0.09,
+   "glb_raw_max": 2.0,
+   "size_basis_cat": "화분"
   },
   {
    "id": 107,
@@ -2267,7 +2561,11 @@
    "note": "아이템: 비료봉투",
    "is_glb": true,
    "source_2d": "fertilizerbag_v1.png",
-   "bytes": 2207236
+   "bytes": 2207236,
+   "real_max_m": 0.32,
+   "scale_to_real": 0.16,
+   "glb_raw_max": 2.0,
+   "size_basis_cat": "아이템"
   },
   {
    "id": 108,
@@ -2281,7 +2579,11 @@
    "note": "아이템: 전정가위",
    "is_glb": true,
    "source_2d": "pruningshears_v2.png",
-   "bytes": 2593448
+   "bytes": 2593448,
+   "real_max_m": 0.28,
+   "scale_to_real": 0.14,
+   "glb_raw_max": 2.0,
+   "size_basis_cat": "아이템"
   },
   {
    "id": 109,
@@ -2295,7 +2597,11 @@
    "note": "아이템: 분무기",
    "is_glb": true,
    "source_2d": "spraybottle_v1.png",
-   "bytes": 2419184
+   "bytes": 2419184,
+   "real_max_m": 0.28,
+   "scale_to_real": 0.14,
+   "glb_raw_max": 2.0,
+   "size_basis_cat": "아이템"
   },
   {
    "id": 110,
@@ -2309,7 +2615,11 @@
    "note": "아이템: 모종삽",
    "is_glb": true,
    "source_2d": "trowel_v1.png",
-   "bytes": 2402660
+   "bytes": 2402660,
+   "real_max_m": 0.3,
+   "scale_to_real": 0.15,
+   "glb_raw_max": 2.0,
+   "size_basis_cat": "아이템"
   },
   {
    "id": 111,
@@ -2323,7 +2633,11 @@
    "note": "조명: 클립등",
    "is_glb": true,
    "source_2d": "cliplight_v3.png",
-   "bytes": 2581164
+   "bytes": 2581164,
+   "real_max_m": 0.24,
+   "scale_to_real": 0.12,
+   "glb_raw_max": 2.0,
+   "size_basis_cat": "조명"
   },
   {
    "id": 112,
@@ -2338,7 +2652,11 @@
    "is_glb": true,
    "source_2d": "pothos_variegated_v1.png",
    "bytes": 2261024,
-   "skin": true
+   "skin": true,
+   "real_max_m": 0.2,
+   "scale_to_real": 0.1,
+   "glb_raw_max": 2.0,
+   "size_basis_cat": "잎-포토스"
   },
   {
    "id": 113,
@@ -2353,7 +2671,11 @@
    "is_glb": true,
    "source_2d": "kling_20260718_IMAGE_같은_스타일_모양__2758_2.png",
    "bytes": 2310512,
-   "skin": true
+   "skin": true,
+   "real_max_m": 0.65,
+   "scale_to_real": 0.325,
+   "glb_raw_max": 2.0,
+   "size_basis_cat": "잎·몬스테라·성숙"
   },
   {
    "id": 114,
@@ -2369,7 +2691,11 @@
    "source_2d": "kling_20260718_IMAGE_같은_스타일_모양__2732_0.png",
    "bytes": 2995644,
    "skin": true,
-   "name_ko": "몬스: 별무늬 페일그린"
+   "name_ko": "몬스: 별무늬 페일그린",
+   "real_max_m": 0.65,
+   "scale_to_real": 0.325,
+   "glb_raw_max": 2.0,
+   "size_basis_cat": "잎·몬스테라·성숙"
   },
   {
    "id": 115,
@@ -2385,7 +2711,11 @@
    "source_2d": "kling_20260718_IMAGE_같은_스타일_모양__2761_0.png",
    "bytes": 2813584,
    "skin": true,
-   "name_ko": "몬스: 별무늬 핑크+민트"
+   "name_ko": "몬스: 별무늬 핑크+민트",
+   "real_max_m": 0.65,
+   "scale_to_real": 0.325,
+   "glb_raw_max": 2.0,
+   "size_basis_cat": "잎·몬스테라·성숙"
   },
   {
    "id": 116,
@@ -2399,7 +2729,11 @@
    "note": "투명 유리병+물(물꽂이 propagation); 컷팅은 별도 모듈 삽입",
    "is_glb": true,
    "source_2d": "pot_glassjar_v1.png",
-   "bytes": 11288
+   "bytes": 11288,
+   "real_max_m": 0.13,
+   "scale_to_real": 0.10656,
+   "glb_raw_max": 1.22,
+   "size_basis_cat": "화분"
   },
   {
    "id": 117,
@@ -2414,7 +2748,9 @@
    "is_glb": false,
    "glb_matched": "lamp_table.glb",
    "to_3d": false,
-   "name_ko": "조명-버섯테이블램프"
+   "name_ko": "조명-버섯테이블램프",
+   "real_max_m": 0.22,
+   "scale_to_real": 0.11
   },
   {
    "id": 381,
@@ -2428,7 +2764,9 @@
    "status": "glb완료",
    "source": "recolor_variant",
    "type": "prop",
-   "variant_of": 117
+   "variant_of": 117,
+   "real_max_m": 0.22,
+   "scale_to_real": 0.11
   },
   {
    "id": 383,
@@ -2442,7 +2780,9 @@
    "status": "glb완료",
    "source": "recolor_variant",
    "type": "prop",
-   "variant_of": 117
+   "variant_of": 117,
+   "real_max_m": 0.22,
+   "scale_to_real": 0.11
   },
   {
    "id": 118,
@@ -2456,7 +2796,11 @@
    "note": "버섯 테이블램프(구 스탠드램프 대체)",
    "is_glb": true,
    "source_2d": "lamp_table_v1.png",
-   "bytes": 2046268
+   "bytes": 2046268,
+   "real_max_m": 0.22,
+   "scale_to_real": 0.11,
+   "glb_raw_max": 2.0,
+   "size_basis_cat": "조명"
   },
   {
    "id": 121,
@@ -2472,7 +2816,9 @@
    "skin": true,
    "glb_matched": "heart_halfmoon_v2_stem.glb",
    "to_3d": false,
-   "name_ko": "변이-하프문-크림민트"
+   "name_ko": "변이-하프문-크림민트",
+   "real_max_m": 0.4,
+   "scale_to_real": 0.20322
   },
   {
    "id": 282,
@@ -2486,7 +2832,9 @@
    "status": "glb완료",
    "source": "recolor_variant",
    "type": "leaf",
-   "variant_of": 121
+   "variant_of": 121,
+   "real_max_m": 0.4,
+   "scale_to_real": 0.20322
   },
   {
    "id": 284,
@@ -2500,7 +2848,9 @@
    "status": "glb완료",
    "source": "recolor_variant",
    "type": "leaf",
-   "variant_of": 121
+   "variant_of": 121,
+   "real_max_m": 0.4,
+   "scale_to_real": 0.20322
   },
   {
    "id": 122,
@@ -2516,7 +2866,9 @@
    "skin": true,
    "glb_matched": "monstera_leaf_fullalbo.glb",
    "to_3d": false,
-   "name_ko": "변이-알보-전체흰중기"
+   "name_ko": "변이-알보-전체흰중기",
+   "real_max_m": 0.4,
+   "scale_to_real": 0.2
   },
   {
    "id": 286,
@@ -2530,7 +2882,9 @@
    "status": "glb완료",
    "source": "recolor_variant",
    "type": "leaf",
-   "variant_of": 122
+   "variant_of": 122,
+   "real_max_m": 0.4,
+   "scale_to_real": 0.2
   },
   {
    "id": 288,
@@ -2544,7 +2898,9 @@
    "status": "glb완료",
    "source": "recolor_variant",
    "type": "leaf",
-   "variant_of": 122
+   "variant_of": 122,
+   "real_max_m": 0.4,
+   "scale_to_real": 0.2
   },
   {
    "id": 123,
@@ -2560,7 +2916,11 @@
    "skin": true,
    "source_2d": "kling_20260718_IMAGE_같은_스타일_모양__2732_2.png",
    "bytes": 2521504,
-   "name_ko": "몬스: 갤럭시 틸+골드"
+   "name_ko": "몬스: 갤럭시 틸+골드",
+   "real_max_m": 0.65,
+   "scale_to_real": 0.325,
+   "glb_raw_max": 2.0,
+   "size_basis_cat": "잎·몬스테라·성숙"
   },
   {
    "id": 124,
@@ -2576,7 +2936,11 @@
    "skin": true,
    "source_2d": "kling_20260718_IMAGE_같은_스타일_모양__2766_2.png",
    "bytes": 2847500,
-   "name_ko": "몬스: 그린+크림 스페클"
+   "name_ko": "몬스: 그린+크림 스페클",
+   "real_max_m": 0.65,
+   "scale_to_real": 0.325,
+   "glb_raw_max": 2.0,
+   "size_basis_cat": "잎·몬스테라·성숙"
   },
   {
    "id": 125,
@@ -2592,7 +2956,11 @@
    "skin": true,
    "source_2d": "kling_20260718_IMAGE_같은_스타일_모양__2761_1.png",
    "bytes": 2831204,
-   "name_ko": "몬스: 골드 variegata"
+   "name_ko": "몬스: 골드 variegata",
+   "real_max_m": 0.65,
+   "scale_to_real": 0.325,
+   "glb_raw_max": 2.0,
+   "size_basis_cat": "잎·몬스테라·성숙"
   },
   {
    "id": 126,
@@ -2607,7 +2975,11 @@
    "is_glb": true,
    "skin": true,
    "source_2d": "Gemini_Generated_Image_46snqk46snqk46sn.png",
-   "bytes": 1716924
+   "bytes": 1716924,
+   "real_max_m": 0.18,
+   "scale_to_real": 0.09,
+   "glb_raw_max": 2.0,
+   "size_basis_cat": "잎·몬스테라·초기"
   },
   {
    "id": 127,
@@ -2622,7 +2994,11 @@
    "is_glb": true,
    "skin": true,
    "source_2d": "Gemini_Generated_Image_hst80bhst80bhst8.png",
-   "bytes": 2472340
+   "bytes": 2472340,
+   "real_max_m": 0.4,
+   "scale_to_real": 0.2,
+   "glb_raw_max": 2.0,
+   "size_basis_cat": "잎·몬스테라·중간"
   },
   {
    "id": 128,
@@ -2637,7 +3013,11 @@
    "is_glb": true,
    "skin": true,
    "source_2d": "Gemini_Generated_Image_enmlecenmlecenml.png",
-   "bytes": 2862184
+   "bytes": 2862184,
+   "real_max_m": 0.4,
+   "scale_to_real": 0.2,
+   "glb_raw_max": 2.0,
+   "size_basis_cat": "잎·몬스테라·중간"
   },
   {
    "id": 131,
@@ -2652,7 +3032,11 @@
    "is_glb": true,
    "skin": true,
    "source_2d": "kling_20260718_IMAGE_파스텔_저폴리_3D_2670_1.png",
-   "bytes": 2216836
+   "bytes": 2216836,
+   "real_max_m": 0.4,
+   "scale_to_real": 0.2,
+   "glb_raw_max": 2.0,
+   "size_basis_cat": "잎·몬스테라·중간"
   },
   {
    "id": 131,
@@ -2667,7 +3051,11 @@
    "is_glb": true,
    "skin": true,
    "source_2d": "Gemini_Generated_Image_5gbos15gbos15gbo.png",
-   "bytes": 2659348
+   "bytes": 2659348,
+   "real_max_m": 0.4,
+   "scale_to_real": 0.2,
+   "glb_raw_max": 2.0,
+   "size_basis_cat": "잎·몬스테라·중간"
   },
   {
    "id": 133,
@@ -2682,7 +3070,11 @@
    "is_glb": true,
    "skin": true,
    "source_2d": "Gemini_Generated_Image_jr0b3gjr0b3gjr0b.png",
-   "bytes": 2890600
+   "bytes": 2890600,
+   "real_max_m": 0.4,
+   "scale_to_real": 0.2,
+   "glb_raw_max": 2.0,
+   "size_basis_cat": "잎·몬스테라·중간"
   },
   {
    "id": 134,
@@ -2697,7 +3089,11 @@
    "is_glb": true,
    "skin": true,
    "source_2d": "kling_20260718_IMAGE_파스텔_저폴리_3D_2663_0.png",
-   "bytes": 2266760
+   "bytes": 2266760,
+   "real_max_m": 0.4,
+   "scale_to_real": 0.2,
+   "glb_raw_max": 2.0,
+   "size_basis_cat": "잎·몬스테라·중간"
   },
   {
    "id": 135,
@@ -2713,7 +3109,11 @@
    "skin": true,
    "source_2d": "kling_20260718_IMAGE_같은_스타일_모양__2732_3.png",
    "bytes": 2628824,
-   "name_ko": "몬스: 갤럭시 다크틸"
+   "name_ko": "몬스: 갤럭시 다크틸",
+   "real_max_m": 0.65,
+   "scale_to_real": 0.325,
+   "glb_raw_max": 2.0,
+   "size_basis_cat": "잎·몬스테라·성숙"
   },
   {
    "id": 137,
@@ -2728,7 +3128,11 @@
    "is_glb": true,
    "skin": true,
    "source_2d": "kling_20260718_IMAGE_같은_스타일_모양__2749_1.png",
-   "bytes": 3014172
+   "bytes": 3014172,
+   "real_max_m": 0.65,
+   "scale_to_real": 0.325,
+   "glb_raw_max": 2.0,
+   "size_basis_cat": "잎·몬스테라·성숙"
   },
   {
    "id": 138,
@@ -2744,7 +3148,11 @@
    "skin": true,
    "source_2d": "kling_20260718_IMAGE_같은_스타일_모양__2749_2.png",
    "bytes": 2865812,
-   "name_ko": "몬스: 그린+레몬패치"
+   "name_ko": "몬스: 그린+레몬패치",
+   "real_max_m": 0.65,
+   "scale_to_real": 0.325,
+   "glb_raw_max": 2.0,
+   "size_basis_cat": "잎·몬스테라·성숙"
   },
   {
    "id": 139,
@@ -2759,7 +3167,11 @@
    "is_glb": true,
    "skin": true,
    "source_2d": "kling_20260718_IMAGE_같은_스타일_모양__2749_3.png",
-   "bytes": 2842008
+   "bytes": 2842008,
+   "real_max_m": 0.65,
+   "scale_to_real": 0.325,
+   "glb_raw_max": 2.0,
+   "size_basis_cat": "잎·몬스테라·성숙"
   },
   {
    "id": 140,
@@ -2774,7 +3186,11 @@
    "is_glb": true,
    "skin": true,
    "source_2d": "kling_20260718_IMAGE_같은_스타일_모양__2758_3.png",
-   "bytes": 3617072
+   "bytes": 3617072,
+   "real_max_m": 0.65,
+   "scale_to_real": 0.325,
+   "glb_raw_max": 2.0,
+   "size_basis_cat": "잎·몬스테라·성숙"
   },
   {
    "id": 142,
@@ -2790,7 +3206,11 @@
    "skin": true,
    "source_2d": "kling_20260718_IMAGE_같은_스타일_모양__2759_1.png",
    "bytes": 2149560,
-   "name_ko": "몬스: 하프문 그린/흰"
+   "name_ko": "몬스: 하프문 그린/흰",
+   "real_max_m": 0.65,
+   "scale_to_real": 0.325,
+   "glb_raw_max": 2.0,
+   "size_basis_cat": "잎·몬스테라·성숙"
   },
   {
    "id": 143,
@@ -2805,7 +3225,11 @@
    "is_glb": true,
    "skin": true,
    "source_2d": "kling_20260718_IMAGE_같은_스타일_모양__2759_2.png",
-   "bytes": 2480452
+   "bytes": 2480452,
+   "real_max_m": 0.65,
+   "scale_to_real": 0.325,
+   "glb_raw_max": 2.0,
+   "size_basis_cat": "잎·몬스테라·성숙"
   },
   {
    "id": 144,
@@ -2821,7 +3245,11 @@
    "skin": true,
    "source_2d": "kling_20260718_IMAGE_같은_스타일_모양__2766_0.png",
    "bytes": 2960020,
-   "name_ko": "몬스: 별무늬 그린+옐로우"
+   "name_ko": "몬스: 별무늬 그린+옐로우",
+   "real_max_m": 0.65,
+   "scale_to_real": 0.325,
+   "glb_raw_max": 2.0,
+   "size_basis_cat": "잎·몬스테라·성숙"
   },
   {
    "id": 145,
@@ -2837,7 +3265,11 @@
    "skin": true,
    "source_2d": "kling_20260718_IMAGE_같은_스타일_모양__2766_1.png",
    "bytes": 2821236,
-   "name_ko": "몬스: 로즈핑크"
+   "name_ko": "몬스: 로즈핑크",
+   "real_max_m": 0.65,
+   "scale_to_real": 0.325,
+   "glb_raw_max": 2.0,
+   "size_basis_cat": "잎·몬스테라·성숙"
   },
   {
    "id": 146,
@@ -2853,7 +3285,11 @@
    "skin": true,
    "source_2d": "kling_20260718_IMAGE_같은_스타일_모양__2766_3.png",
    "bytes": 2735772,
-   "name_ko": "몬스: 별무늬 그린+흰"
+   "name_ko": "몬스: 별무늬 그린+흰",
+   "real_max_m": 0.65,
+   "scale_to_real": 0.325,
+   "glb_raw_max": 2.0,
+   "size_basis_cat": "잎·몬스테라·성숙"
   },
   {
    "id": 148,
@@ -2869,7 +3305,9 @@
    "skin": true,
    "glb_matched": "pothos_mint_dot_34.glb",
    "to_3d": false,
-   "name_ko": "변이-스페클-민트흰점2"
+   "name_ko": "변이-스페클-민트흰점2",
+   "real_max_m": 0.4,
+   "scale_to_real": 0.2
   },
   {
    "id": 290,
@@ -2883,7 +3321,9 @@
    "status": "glb완료",
    "source": "recolor_variant",
    "type": "leaf",
-   "variant_of": 148
+   "variant_of": 148,
+   "real_max_m": 0.4,
+   "scale_to_real": 0.2
   },
   {
    "id": 292,
@@ -2897,7 +3337,9 @@
    "status": "glb완료",
    "source": "recolor_variant",
    "type": "leaf",
-   "variant_of": 148
+   "variant_of": 148,
+   "real_max_m": 0.4,
+   "scale_to_real": 0.2
   },
   {
    "id": 149,
@@ -2913,7 +3355,11 @@
    "skin": true,
    "source_2d": "pothos_mint_dot_34_src.png",
    "bytes": 2540800,
-   "name_ko": "변이-스페클-민트흰점2"
+   "name_ko": "변이-스페클-민트흰점2",
+   "real_max_m": 0.4,
+   "scale_to_real": 0.2,
+   "glb_raw_max": 2.0,
+   "size_basis_cat": "잎·몬스테라·중간"
   },
   {
    "id": 150,
@@ -2928,7 +3374,11 @@
    "is_glb": true,
    "skin": true,
    "source_2d": "kling_20260718_IMAGE_파스텔_저폴리_3D_2672_1 (1).png",
-   "bytes": 2184724
+   "bytes": 2184724,
+   "real_max_m": 0.4,
+   "scale_to_real": 0.2,
+   "glb_raw_max": 2.0,
+   "size_basis_cat": "잎·몬스테라·중간"
   },
   {
    "id": 151,
@@ -2943,7 +3393,11 @@
    "is_glb": true,
    "skin": true,
    "source_2d": "kling_20260718_IMAGE_같은_스타일_모양__2759_0.png",
-   "bytes": 2481236
+   "bytes": 2481236,
+   "real_max_m": 0.65,
+   "scale_to_real": 0.325,
+   "glb_raw_max": 2.0,
+   "size_basis_cat": "잎·몬스테라·성숙"
   },
   {
    "id": 45,
@@ -2959,7 +3413,9 @@
    "skin": true,
    "glb_matched": "mon_halfmoon_greencream.glb",
    "to_3d": false,
-   "name_ko": "변이-하프문-그린크림"
+   "name_ko": "변이-하프문-그린크림",
+   "real_max_m": 0.65,
+   "scale_to_real": 0.325
   },
   {
    "id": 294,
@@ -2973,7 +3429,9 @@
    "status": "glb완료",
    "source": "recolor_variant",
    "type": "leaf",
-   "variant_of": 45
+   "variant_of": 45,
+   "real_max_m": 0.65,
+   "scale_to_real": 0.325
   },
   {
    "id": 296,
@@ -2987,7 +3445,9 @@
    "status": "glb완료",
    "source": "recolor_variant",
    "type": "leaf",
-   "variant_of": 45
+   "variant_of": 45,
+   "real_max_m": 0.65,
+   "scale_to_real": 0.325
   },
   {
    "id": 152,
@@ -3003,7 +3463,11 @@
    "skin": true,
    "source_2d": "mon_halfmoon_dg_cream34_src.png",
    "bytes": 2743696,
-   "name_ko": "변이-하프문-그린크림"
+   "name_ko": "변이-하프문-그린크림",
+   "real_max_m": 0.65,
+   "scale_to_real": 0.325,
+   "glb_raw_max": 2.0,
+   "size_basis_cat": "잎·몬스테라·성숙"
   },
   {
    "id": 153,
@@ -3019,7 +3483,9 @@
    "skin": true,
    "glb_matched": "mon_fullalbo.glb",
    "to_3d": false,
-   "name_ko": "변이-알보-전체흰"
+   "name_ko": "변이-알보-전체흰",
+   "real_max_m": 0.65,
+   "scale_to_real": 0.325
   },
   {
    "id": 298,
@@ -3033,7 +3499,9 @@
    "status": "glb완료",
    "source": "recolor_variant",
    "type": "leaf",
-   "variant_of": 153
+   "variant_of": 153,
+   "real_max_m": 0.65,
+   "scale_to_real": 0.325
   },
   {
    "id": 300,
@@ -3047,7 +3515,9 @@
    "status": "glb완료",
    "source": "recolor_variant",
    "type": "leaf",
-   "variant_of": 153
+   "variant_of": 153,
+   "real_max_m": 0.65,
+   "scale_to_real": 0.325
   },
   {
    "id": 154,
@@ -3063,7 +3533,11 @@
    "skin": true,
    "source_2d": "mon_fullalbo34_src.png",
    "bytes": 2512880,
-   "name_ko": "변이-알보-전체흰"
+   "name_ko": "변이-알보-전체흰",
+   "real_max_m": 0.65,
+   "scale_to_real": 0.325,
+   "glb_raw_max": 2.0,
+   "size_basis_cat": "잎·몬스테라·성숙"
   },
   {
    "id": 155,
@@ -3080,7 +3554,9 @@
    "to_3d": false,
    "glb_matched": "pothos_mint_simple.glb",
    "copied_from": 3,
-   "name_ko": "기본-어린-잎2"
+   "name_ko": "기본-어린-잎2",
+   "real_max_m": 0.18,
+   "scale_to_real": 0.09
   },
   {
    "id": 156,
@@ -3097,7 +3573,9 @@
    "to_3d": false,
    "glb_matched": "pothos_marble_greenyellow.glb",
    "copied_from": 4,
-   "name_ko": "변이-마블-그린옐로우"
+   "name_ko": "변이-마블-그린옐로우",
+   "real_max_m": 0.4,
+   "scale_to_real": 0.2
   },
   {
    "id": 302,
@@ -3111,7 +3589,9 @@
    "status": "glb완료",
    "source": "recolor_variant",
    "type": "leaf",
-   "variant_of": 156
+   "variant_of": 156,
+   "real_max_m": 0.4,
+   "scale_to_real": 0.2
   },
   {
    "id": 304,
@@ -3125,7 +3605,9 @@
    "status": "glb완료",
    "source": "recolor_variant",
    "type": "leaf",
-   "variant_of": 156
+   "variant_of": 156,
+   "real_max_m": 0.4,
+   "scale_to_real": 0.2
   },
   {
    "id": 157,
@@ -3142,7 +3624,9 @@
    "to_3d": false,
    "glb_matched": "pothos_cream_marble.glb",
    "copied_from": 9,
-   "name_ko": "변이-마블-크림그린"
+   "name_ko": "변이-마블-크림그린",
+   "real_max_m": 0.4,
+   "scale_to_real": 0.2
   },
   {
    "id": 306,
@@ -3156,7 +3640,9 @@
    "status": "glb완료",
    "source": "recolor_variant",
    "type": "leaf",
-   "variant_of": 157
+   "variant_of": 157,
+   "real_max_m": 0.4,
+   "scale_to_real": 0.2
   },
   {
    "id": 308,
@@ -3170,7 +3656,9 @@
    "status": "glb완료",
    "source": "recolor_variant",
    "type": "leaf",
-   "variant_of": 157
+   "variant_of": 157,
+   "real_max_m": 0.4,
+   "scale_to_real": 0.2
   },
   {
    "id": 158,
@@ -3187,7 +3675,9 @@
    "to_3d": false,
    "glb_matched": "pothos_cream_vein.glb",
    "copied_from": 12,
-   "name_ko": "변이-잎맥-크림"
+   "name_ko": "변이-잎맥-크림",
+   "real_max_m": 0.4,
+   "scale_to_real": 0.2
   },
   {
    "id": 310,
@@ -3201,7 +3691,9 @@
    "status": "glb완료",
    "source": "recolor_variant",
    "type": "leaf",
-   "variant_of": 158
+   "variant_of": 158,
+   "real_max_m": 0.4,
+   "scale_to_real": 0.2
   },
   {
    "id": 312,
@@ -3215,7 +3707,9 @@
    "status": "glb완료",
    "source": "recolor_variant",
    "type": "leaf",
-   "variant_of": 158
+   "variant_of": 158,
+   "real_max_m": 0.4,
+   "scale_to_real": 0.2
   },
   {
    "id": 159,
@@ -3232,7 +3726,9 @@
    "to_3d": false,
    "glb_matched": "pothos_marble_whitegreen.glb",
    "copied_from": 14,
-   "name_ko": "변이-마블-흰그린"
+   "name_ko": "변이-마블-흰그린",
+   "real_max_m": 0.4,
+   "scale_to_real": 0.2
   },
   {
    "id": 314,
@@ -3246,7 +3742,9 @@
    "status": "glb완료",
    "source": "recolor_variant",
    "type": "leaf",
-   "variant_of": 159
+   "variant_of": 159,
+   "real_max_m": 0.4,
+   "scale_to_real": 0.2
   },
   {
    "id": 316,
@@ -3260,7 +3758,9 @@
    "status": "glb완료",
    "source": "recolor_variant",
    "type": "leaf",
-   "variant_of": 159
+   "variant_of": 159,
+   "real_max_m": 0.4,
+   "scale_to_real": 0.2
   },
   {
    "id": 160,
@@ -3277,7 +3777,9 @@
    "glb_matched": "monstera_leaf_mid2.glb",
    "to_3d": false,
    "copied_from": 69,
-   "name_ko": "기본-중간-잎1"
+   "name_ko": "기본-중간-잎1",
+   "real_max_m": 0.4,
+   "scale_to_real": 0.40198
   },
   {
    "id": 318,
@@ -3291,7 +3793,9 @@
    "status": "glb완료",
    "source": "recolor_variant",
    "type": "leaf",
-   "variant_of": 160
+   "variant_of": 160,
+   "real_max_m": 0.4,
+   "scale_to_real": 0.40198
   },
   {
    "id": 320,
@@ -3305,7 +3809,9 @@
    "status": "glb완료",
    "source": "recolor_variant",
    "type": "leaf",
-   "variant_of": 160
+   "variant_of": 160,
+   "real_max_m": 0.4,
+   "scale_to_real": 0.40198
   },
   {
    "id": 161,
@@ -3322,7 +3828,9 @@
    "glb_matched": "monstera_leaf_mid1.glb",
    "to_3d": false,
    "copied_from": 70,
-   "name_ko": "기본-중간-잎2"
+   "name_ko": "기본-중간-잎2",
+   "real_max_m": 0.4,
+   "scale_to_real": 0.40194
   },
   {
    "id": 322,
@@ -3336,7 +3844,9 @@
    "status": "glb완료",
    "source": "recolor_variant",
    "type": "leaf",
-   "variant_of": 161
+   "variant_of": 161,
+   "real_max_m": 0.4,
+   "scale_to_real": 0.40194
   },
   {
    "id": 324,
@@ -3350,7 +3860,9 @@
    "status": "glb완료",
    "source": "recolor_variant",
    "type": "leaf",
-   "variant_of": 161
+   "variant_of": 161,
+   "real_max_m": 0.4,
+   "scale_to_real": 0.40194
   },
   {
    "id": 162,
@@ -3367,7 +3879,9 @@
    "glb_matched": "heart_marble_2652.glb",
    "to_3d": false,
    "copied_from": 22,
-   "name_ko": "변이-마블-실버"
+   "name_ko": "변이-마블-실버",
+   "real_max_m": 0.4,
+   "scale_to_real": 0.2
   },
   {
    "id": 326,
@@ -3381,7 +3895,9 @@
    "status": "glb완료",
    "source": "recolor_variant",
    "type": "leaf",
-   "variant_of": 162
+   "variant_of": 162,
+   "real_max_m": 0.4,
+   "scale_to_real": 0.2
   },
   {
    "id": 328,
@@ -3395,7 +3911,9 @@
    "status": "glb완료",
    "source": "recolor_variant",
    "type": "leaf",
-   "variant_of": 162
+   "variant_of": 162,
+   "real_max_m": 0.4,
+   "scale_to_real": 0.2
   },
   {
    "id": 163,
@@ -3412,7 +3930,9 @@
    "glb_matched": "heart_speckle_2657.glb",
    "to_3d": false,
    "copied_from": 23,
-   "name_ko": "변이-스페클-실버점"
+   "name_ko": "변이-스페클-실버점",
+   "real_max_m": 0.4,
+   "scale_to_real": 0.2
   },
   {
    "id": 330,
@@ -3426,7 +3946,9 @@
    "status": "glb완료",
    "source": "recolor_variant",
    "type": "leaf",
-   "variant_of": 163
+   "variant_of": 163,
+   "real_max_m": 0.4,
+   "scale_to_real": 0.2
   },
   {
    "id": 332,
@@ -3440,7 +3962,9 @@
    "status": "glb완료",
    "source": "recolor_variant",
    "type": "leaf",
-   "variant_of": 163
+   "variant_of": 163,
+   "real_max_m": 0.4,
+   "scale_to_real": 0.2
   },
   {
    "id": 164,
@@ -3457,7 +3981,9 @@
    "to_3d": false,
    "glb_matched": "pothos_silver_droplet.glb",
    "copied_from": 24,
-   "name_ko": "변이-실버-물방울"
+   "name_ko": "변이-실버-물방울",
+   "real_max_m": 0.4,
+   "scale_to_real": 0.2
   },
   {
    "id": 334,
@@ -3471,7 +3997,9 @@
    "status": "glb완료",
    "source": "recolor_variant",
    "type": "leaf",
-   "variant_of": 164
+   "variant_of": 164,
+   "real_max_m": 0.4,
+   "scale_to_real": 0.2
   },
   {
    "id": 336,
@@ -3485,7 +4013,9 @@
    "status": "glb완료",
    "source": "recolor_variant",
    "type": "leaf",
-   "variant_of": 164
+   "variant_of": 164,
+   "real_max_m": 0.4,
+   "scale_to_real": 0.2
   },
   {
    "id": 165,
@@ -3502,7 +4032,9 @@
    "to_3d": false,
    "glb_matched": "pothos_mint_dot.glb",
    "copied_from": 25,
-   "name_ko": "변이-스페클-민트흰점"
+   "name_ko": "변이-스페클-민트흰점",
+   "real_max_m": 0.4,
+   "scale_to_real": 0.2
   },
   {
    "id": 338,
@@ -3516,7 +4048,9 @@
    "status": "glb완료",
    "source": "recolor_variant",
    "type": "leaf",
-   "variant_of": 165
+   "variant_of": 165,
+   "real_max_m": 0.4,
+   "scale_to_real": 0.2
   },
   {
    "id": 340,
@@ -3530,7 +4064,9 @@
    "status": "glb완료",
    "source": "recolor_variant",
    "type": "leaf",
-   "variant_of": 165
+   "variant_of": 165,
+   "real_max_m": 0.4,
+   "scale_to_real": 0.2
   },
   {
    "id": 166,
@@ -3547,7 +4083,9 @@
    "glb_matched": "heart_lime_2672_0.glb",
    "to_3d": false,
    "copied_from": 26,
-   "name_ko": "변이-라임-형광"
+   "name_ko": "변이-라임-형광",
+   "real_max_m": 0.4,
+   "scale_to_real": 0.2
   },
   {
    "id": 342,
@@ -3561,7 +4099,9 @@
    "status": "glb완료",
    "source": "recolor_variant",
    "type": "leaf",
-   "variant_of": 166
+   "variant_of": 166,
+   "real_max_m": 0.4,
+   "scale_to_real": 0.2
   },
   {
    "id": 344,
@@ -3575,7 +4115,9 @@
    "status": "glb완료",
    "source": "recolor_variant",
    "type": "leaf",
-   "variant_of": 166
+   "variant_of": 166,
+   "real_max_m": 0.4,
+   "scale_to_real": 0.2
   },
   {
    "id": 167,
@@ -3592,7 +4134,9 @@
    "to_3d": false,
    "glb_matched": "pothos_whitegreen_29.glb",
    "copied_from": 29,
-   "name_ko": "변이-알보-흰연두"
+   "name_ko": "변이-알보-흰연두",
+   "real_max_m": 0.4,
+   "scale_to_real": 0.2
   },
   {
    "id": 346,
@@ -3606,7 +4150,9 @@
    "status": "glb완료",
    "source": "recolor_variant",
    "type": "leaf",
-   "variant_of": 167
+   "variant_of": 167,
+   "real_max_m": 0.4,
+   "scale_to_real": 0.2
   },
   {
    "id": 348,
@@ -3620,7 +4166,9 @@
    "status": "glb완료",
    "source": "recolor_variant",
    "type": "leaf",
-   "variant_of": 167
+   "variant_of": 167,
+   "real_max_m": 0.4,
+   "scale_to_real": 0.2
   },
   {
    "id": 168,
@@ -3637,7 +4185,9 @@
    "glb_matched": "heart_albo_2672_3.glb",
    "to_3d": false,
    "copied_from": 31,
-   "name_ko": "변이-알보-크림민트"
+   "name_ko": "변이-알보-크림민트",
+   "real_max_m": 0.4,
+   "scale_to_real": 0.2
   },
   {
    "id": 350,
@@ -3651,7 +4201,9 @@
    "status": "glb완료",
    "source": "recolor_variant",
    "type": "leaf",
-   "variant_of": 168
+   "variant_of": 168,
+   "real_max_m": 0.4,
+   "scale_to_real": 0.2
   },
   {
    "id": 352,
@@ -3665,7 +4217,9 @@
    "status": "glb완료",
    "source": "recolor_variant",
    "type": "leaf",
-   "variant_of": 168
+   "variant_of": 168,
+   "real_max_m": 0.4,
+   "scale_to_real": 0.2
   },
   {
    "id": 169,
@@ -4120,7 +4674,7 @@
   {
    "id": 199,
    "file": "house_mod_window_normal.glb",
-   "path": "house/",
+   "path": "house/house_mod_window_normal.glb",
    "source": "Meshy5_i23d",
    "type": "집·모듈",
    "category": "집·모듈",
@@ -4130,12 +4684,16 @@
    "is_glb": true,
    "source_2d": "house/src/house_mod_window_normal_frame_src.png",
    "bytes": 2617444,
-   "name_ko": "창-일반-프레임"
+   "name_ko": "창-일반-프레임",
+   "real_max_m": 1.2,
+   "scale_to_real": 0.6,
+   "glb_raw_max": 2.0,
+   "size_basis_cat": "집·모듈"
   },
   {
    "id": 200,
    "file": "house_mod_glass_panel.glb",
-   "path": "house/",
+   "path": "house/house_mod_glass_panel.glb",
    "source": "Meshy5_i23d",
    "type": "집·모듈",
    "category": "집·모듈",
@@ -4145,12 +4703,16 @@
    "is_glb": true,
    "source_2d": "house/src/house_mod_glass_panel_frame_src.png",
    "bytes": 2140216,
-   "name_ko": "유리패널-프레임"
+   "name_ko": "유리패널-프레임",
+   "real_max_m": 1.6,
+   "scale_to_real": 0.8,
+   "glb_raw_max": 2.0,
+   "size_basis_cat": "집·모듈"
   },
   {
    "id": 201,
    "file": "house_mod_door.glb",
-   "path": "house/",
+   "path": "house/house_mod_door.glb",
    "source": "Meshy5_i23d",
    "type": "집·모듈",
    "category": "집·모듈",
@@ -4160,7 +4722,11 @@
    "is_glb": true,
    "source_2d": "house/src/house_mod_door_src.png",
    "bytes": 2382356,
-   "name_ko": "문-기본"
+   "name_ko": "문-기본",
+   "real_max_m": 2.0,
+   "scale_to_real": 1.0,
+   "glb_raw_max": 2.0,
+   "size_basis_cat": "집·모듈"
   },
   {
    "id": 202,
@@ -4249,7 +4815,7 @@
   {
    "id": 208,
    "file": "house_mod_window_banjiha.glb",
-   "path": "house/",
+   "path": "house/house_mod_window_banjiha.glb",
    "source": "Meshy5_i23d",
    "type": "집·모듈",
    "category": "집·모듈",
@@ -4259,7 +4825,11 @@
    "is_glb": true,
    "source_2d": "house/src/house_mod_window_banjiha_frame_src.png",
    "bytes": 2450496,
-   "name_ko": "창-반지하-프레임"
+   "name_ko": "창-반지하-프레임",
+   "real_max_m": 2.2,
+   "scale_to_real": 1.1,
+   "glb_raw_max": 2.0,
+   "size_basis_cat": "집·모듈"
   },
   {
    "id": 209,
@@ -4273,7 +4843,11 @@
    "note": "채도변형(A/HSV) 쨍·vivid/warm. 원본 변이-별무늬-페일그린에서 색만 이동, 모양·무늬 동일.",
    "status": "glb완료",
    "source": "recolor_variant",
-   "type": "leaf"
+   "type": "leaf",
+   "real_max_m": 0.65,
+   "scale_to_real": 0.325,
+   "glb_raw_max": 2.0,
+   "size_basis_cat": "잎·몬스테라·성숙"
   },
   {
    "id": 211,
@@ -4287,7 +4861,11 @@
    "note": "채도변형(A/HSV) 차분·calm/cool. 원본 변이-별무늬-페일그린에서 색만 이동, 모양·무늬 동일.",
    "status": "glb완료",
    "source": "recolor_variant",
-   "type": "leaf"
+   "type": "leaf",
+   "real_max_m": 0.65,
+   "scale_to_real": 0.325,
+   "glb_raw_max": 2.0,
+   "size_basis_cat": "잎·몬스테라·성숙"
   },
   {
    "id": 213,
@@ -4301,7 +4879,11 @@
    "note": "채도변형(A/HSV) 쨍·vivid/warm. 원본 변이-갤럭시-틸골드에서 색만 이동, 모양·무늬 동일.",
    "status": "glb완료",
    "source": "recolor_variant",
-   "type": "leaf"
+   "type": "leaf",
+   "real_max_m": 0.65,
+   "scale_to_real": 0.325,
+   "glb_raw_max": 2.0,
+   "size_basis_cat": "잎·몬스테라·성숙"
   },
   {
    "id": 215,
@@ -4315,7 +4897,11 @@
    "note": "채도변형(A/HSV) 차분·calm/cool. 원본 변이-갤럭시-틸골드에서 색만 이동, 모양·무늬 동일.",
    "status": "glb완료",
    "source": "recolor_variant",
-   "type": "leaf"
+   "type": "leaf",
+   "real_max_m": 0.65,
+   "scale_to_real": 0.325,
+   "glb_raw_max": 2.0,
+   "size_basis_cat": "잎·몬스테라·성숙"
   },
   {
    "id": 217,
@@ -4329,7 +4915,11 @@
    "note": "채도변형(A/HSV) 쨍·vivid/warm. 원본 변이-갤럭시-다크틸에서 색만 이동, 모양·무늬 동일.",
    "status": "glb완료",
    "source": "recolor_variant",
-   "type": "leaf"
+   "type": "leaf",
+   "real_max_m": 0.65,
+   "scale_to_real": 0.325,
+   "glb_raw_max": 2.0,
+   "size_basis_cat": "잎·몬스테라·성숙"
   },
   {
    "id": 219,
@@ -4343,7 +4933,11 @@
    "note": "채도변형(A/HSV) 차분·calm/cool. 원본 변이-갤럭시-다크틸에서 색만 이동, 모양·무늬 동일.",
    "status": "glb완료",
    "source": "recolor_variant",
-   "type": "leaf"
+   "type": "leaf",
+   "real_max_m": 0.65,
+   "scale_to_real": 0.325,
+   "glb_raw_max": 2.0,
+   "size_basis_cat": "잎·몬스테라·성숙"
   },
   {
    "id": 221,
@@ -4357,7 +4951,11 @@
    "note": "채도변형(A/HSV) 쨍·vivid/warm. 원본 변이-오로레아-그린옐로우에서 색만 이동, 모양·무늬 동일.",
    "status": "glb완료",
    "source": "recolor_variant",
-   "type": "leaf"
+   "type": "leaf",
+   "real_max_m": 0.65,
+   "scale_to_real": 0.325,
+   "glb_raw_max": 2.0,
+   "size_basis_cat": "잎·몬스테라·성숙"
   },
   {
    "id": 223,
@@ -4371,7 +4969,11 @@
    "note": "채도변형(A/HSV) 차분·calm/cool. 원본 변이-오로레아-그린옐로우에서 색만 이동, 모양·무늬 동일.",
    "status": "glb완료",
    "source": "recolor_variant",
-   "type": "leaf"
+   "type": "leaf",
+   "real_max_m": 0.65,
+   "scale_to_real": 0.325,
+   "glb_raw_max": 2.0,
+   "size_basis_cat": "잎·몬스테라·성숙"
   },
   {
    "id": 225,
@@ -4385,7 +4987,11 @@
    "note": "채도변형(A/HSV) 쨍·vivid/warm. 원본 변이-라임-레몬패치에서 색만 이동, 모양·무늬 동일.",
    "status": "glb완료",
    "source": "recolor_variant",
-   "type": "leaf"
+   "type": "leaf",
+   "real_max_m": 0.65,
+   "scale_to_real": 0.325,
+   "glb_raw_max": 2.0,
+   "size_basis_cat": "잎·몬스테라·성숙"
   },
   {
    "id": 227,
@@ -4399,7 +5005,11 @@
    "note": "채도변형(A/HSV) 차분·calm/cool. 원본 변이-라임-레몬패치에서 색만 이동, 모양·무늬 동일.",
    "status": "glb완료",
    "source": "recolor_variant",
-   "type": "leaf"
+   "type": "leaf",
+   "real_max_m": 0.65,
+   "scale_to_real": 0.325,
+   "glb_raw_max": 2.0,
+   "size_basis_cat": "잎·몬스테라·성숙"
   },
   {
    "id": 229,
@@ -4413,7 +5023,11 @@
    "note": "채도변형(A/HSV) 쨍·vivid/warm. 원본 변이-네온-라임에서 색만 이동, 모양·무늬 동일.",
    "status": "glb완료",
    "source": "recolor_variant",
-   "type": "leaf"
+   "type": "leaf",
+   "real_max_m": 0.65,
+   "scale_to_real": 0.325,
+   "glb_raw_max": 2.0,
+   "size_basis_cat": "잎·몬스테라·성숙"
   },
   {
    "id": 231,
@@ -4427,7 +5041,11 @@
    "note": "채도변형(A/HSV) 차분·calm/cool. 원본 변이-네온-라임에서 색만 이동, 모양·무늬 동일.",
    "status": "glb완료",
    "source": "recolor_variant",
-   "type": "leaf"
+   "type": "leaf",
+   "real_max_m": 0.65,
+   "scale_to_real": 0.325,
+   "glb_raw_max": 2.0,
+   "size_basis_cat": "잎·몬스테라·성숙"
   },
   {
    "id": 233,
@@ -4441,7 +5059,11 @@
    "note": "채도변형(A/HSV) 쨍·vivid/warm. 원본 변이-핑크-로즈핑크에서 색만 이동, 모양·무늬 동일.",
    "status": "glb완료",
    "source": "recolor_variant",
-   "type": "leaf"
+   "type": "leaf",
+   "real_max_m": 0.65,
+   "scale_to_real": 0.325,
+   "glb_raw_max": 2.0,
+   "size_basis_cat": "잎·몬스테라·성숙"
   },
   {
    "id": 235,
@@ -4455,7 +5077,11 @@
    "note": "채도변형(A/HSV) 차분·calm/cool. 원본 변이-핑크-로즈핑크에서 색만 이동, 모양·무늬 동일.",
    "status": "glb완료",
    "source": "recolor_variant",
-   "type": "leaf"
+   "type": "leaf",
+   "real_max_m": 0.65,
+   "scale_to_real": 0.325,
+   "glb_raw_max": 2.0,
+   "size_basis_cat": "잎·몬스테라·성숙"
   },
   {
    "id": 237,
@@ -4469,7 +5095,11 @@
    "note": "채도변형(A/HSV) 쨍·vivid/warm. 원본 변이-제브라-그린흰에서 색만 이동, 모양·무늬 동일.",
    "status": "glb완료",
    "source": "recolor_variant",
-   "type": "leaf"
+   "type": "leaf",
+   "real_max_m": 0.65,
+   "scale_to_real": 0.325,
+   "glb_raw_max": 2.0,
+   "size_basis_cat": "잎·몬스테라·성숙"
   },
   {
    "id": 239,
@@ -4483,7 +5113,11 @@
    "note": "채도변형(A/HSV) 차분·calm/cool. 원본 변이-제브라-그린흰에서 색만 이동, 모양·무늬 동일.",
    "status": "glb완료",
    "source": "recolor_variant",
-   "type": "leaf"
+   "type": "leaf",
+   "real_max_m": 0.65,
+   "scale_to_real": 0.325,
+   "glb_raw_max": 2.0,
+   "size_basis_cat": "잎·몬스테라·성숙"
   },
   {
    "id": 241,
@@ -4497,7 +5131,11 @@
    "note": "채도변형(A/HSV) 쨍·vivid/warm. 원본 변이-차콜-다크그린에서 색만 이동, 모양·무늬 동일.",
    "status": "glb완료",
    "source": "recolor_variant",
-   "type": "leaf"
+   "type": "leaf",
+   "real_max_m": 0.65,
+   "scale_to_real": 0.325,
+   "glb_raw_max": 2.0,
+   "size_basis_cat": "잎·몬스테라·성숙"
   },
   {
    "id": 243,
@@ -4511,7 +5149,11 @@
    "note": "채도변형(A/HSV) 차분·calm/cool. 원본 변이-차콜-다크그린에서 색만 이동, 모양·무늬 동일.",
    "status": "glb완료",
    "source": "recolor_variant",
-   "type": "leaf"
+   "type": "leaf",
+   "real_max_m": 0.65,
+   "scale_to_real": 0.325,
+   "glb_raw_max": 2.0,
+   "size_basis_cat": "잎·몬스테라·성숙"
   },
   {
    "id": 245,
@@ -4525,7 +5167,11 @@
    "note": "채도변형(A/HSV) 쨍·vivid/warm. 원본 변이-하프문-그린흰에서 색만 이동, 모양·무늬 동일.",
    "status": "glb완료",
    "source": "recolor_variant",
-   "type": "leaf"
+   "type": "leaf",
+   "real_max_m": 0.65,
+   "scale_to_real": 0.325,
+   "glb_raw_max": 2.0,
+   "size_basis_cat": "잎·몬스테라·성숙"
   },
   {
    "id": 247,
@@ -4539,7 +5185,11 @@
    "note": "채도변형(A/HSV) 차분·calm/cool. 원본 변이-하프문-그린흰에서 색만 이동, 모양·무늬 동일.",
    "status": "glb완료",
    "source": "recolor_variant",
-   "type": "leaf"
+   "type": "leaf",
+   "real_max_m": 0.65,
+   "scale_to_real": 0.325,
+   "glb_raw_max": 2.0,
+   "size_basis_cat": "잎·몬스테라·성숙"
   },
   {
    "id": 249,
@@ -4553,7 +5203,11 @@
    "note": "채도변형(A/HSV) 쨍·vivid/warm. 원본 변이-모브-라벤더그레이에서 색만 이동, 모양·무늬 동일.",
    "status": "glb완료",
    "source": "recolor_variant",
-   "type": "leaf"
+   "type": "leaf",
+   "real_max_m": 0.65,
+   "scale_to_real": 0.325,
+   "glb_raw_max": 2.0,
+   "size_basis_cat": "잎·몬스테라·성숙"
   },
   {
    "id": 251,
@@ -4567,7 +5221,11 @@
    "note": "채도변형(A/HSV) 차분·calm/cool. 원본 변이-모브-라벤더그레이에서 색만 이동, 모양·무늬 동일.",
    "status": "glb완료",
    "source": "recolor_variant",
-   "type": "leaf"
+   "type": "leaf",
+   "real_max_m": 0.65,
+   "scale_to_real": 0.325,
+   "glb_raw_max": 2.0,
+   "size_basis_cat": "잎·몬스테라·성숙"
   },
   {
    "id": 253,
@@ -4581,7 +5239,11 @@
    "note": "채도변형(A/HSV) 쨍·vivid/warm. 원본 변이-별무늬-핑크민트에서 색만 이동, 모양·무늬 동일.",
    "status": "glb완료",
    "source": "recolor_variant",
-   "type": "leaf"
+   "type": "leaf",
+   "real_max_m": 0.65,
+   "scale_to_real": 0.325,
+   "glb_raw_max": 2.0,
+   "size_basis_cat": "잎·몬스테라·성숙"
   },
   {
    "id": 255,
@@ -4595,7 +5257,11 @@
    "note": "채도변형(A/HSV) 차분·calm/cool. 원본 변이-별무늬-핑크민트에서 색만 이동, 모양·무늬 동일.",
    "status": "glb완료",
    "source": "recolor_variant",
-   "type": "leaf"
+   "type": "leaf",
+   "real_max_m": 0.65,
+   "scale_to_real": 0.325,
+   "glb_raw_max": 2.0,
+   "size_basis_cat": "잎·몬스테라·성숙"
   },
   {
    "id": 257,
@@ -4609,7 +5275,11 @@
    "note": "채도변형(A/HSV) 쨍·vivid/warm. 원본 변이-오로레아-골드에서 색만 이동, 모양·무늬 동일.",
    "status": "glb완료",
    "source": "recolor_variant",
-   "type": "leaf"
+   "type": "leaf",
+   "real_max_m": 0.65,
+   "scale_to_real": 0.325,
+   "glb_raw_max": 2.0,
+   "size_basis_cat": "잎·몬스테라·성숙"
   },
   {
    "id": 259,
@@ -4623,7 +5293,11 @@
    "note": "채도변형(A/HSV) 차분·calm/cool. 원본 변이-오로레아-골드에서 색만 이동, 모양·무늬 동일.",
    "status": "glb완료",
    "source": "recolor_variant",
-   "type": "leaf"
+   "type": "leaf",
+   "real_max_m": 0.65,
+   "scale_to_real": 0.325,
+   "glb_raw_max": 2.0,
+   "size_basis_cat": "잎·몬스테라·성숙"
   },
   {
    "id": 261,
@@ -4637,7 +5311,11 @@
    "note": "채도변형(A/HSV) 쨍·vivid/warm. 원본 변이-별무늬-그린옐로우에서 색만 이동, 모양·무늬 동일.",
    "status": "glb완료",
    "source": "recolor_variant",
-   "type": "leaf"
+   "type": "leaf",
+   "real_max_m": 0.65,
+   "scale_to_real": 0.325,
+   "glb_raw_max": 2.0,
+   "size_basis_cat": "잎·몬스테라·성숙"
   },
   {
    "id": 263,
@@ -4651,7 +5329,11 @@
    "note": "채도변형(A/HSV) 차분·calm/cool. 원본 변이-별무늬-그린옐로우에서 색만 이동, 모양·무늬 동일.",
    "status": "glb완료",
    "source": "recolor_variant",
-   "type": "leaf"
+   "type": "leaf",
+   "real_max_m": 0.65,
+   "scale_to_real": 0.325,
+   "glb_raw_max": 2.0,
+   "size_basis_cat": "잎·몬스테라·성숙"
   },
   {
    "id": 265,
@@ -4665,7 +5347,11 @@
    "note": "채도변형(A/HSV) 쨍·vivid/warm. 원본 변이-핑크-로즈에서 색만 이동, 모양·무늬 동일.",
    "status": "glb완료",
    "source": "recolor_variant",
-   "type": "leaf"
+   "type": "leaf",
+   "real_max_m": 0.65,
+   "scale_to_real": 0.325,
+   "glb_raw_max": 2.0,
+   "size_basis_cat": "잎·몬스테라·성숙"
   },
   {
    "id": 267,
@@ -4679,7 +5365,11 @@
    "note": "채도변형(A/HSV) 차분·calm/cool. 원본 변이-핑크-로즈에서 색만 이동, 모양·무늬 동일.",
    "status": "glb완료",
    "source": "recolor_variant",
-   "type": "leaf"
+   "type": "leaf",
+   "real_max_m": 0.65,
+   "scale_to_real": 0.325,
+   "glb_raw_max": 2.0,
+   "size_basis_cat": "잎·몬스테라·성숙"
   },
   {
    "id": 269,
@@ -4693,7 +5383,11 @@
    "note": "채도변형(A/HSV) 쨍·vivid/warm. 원본 변이-스페클-그린크림에서 색만 이동, 모양·무늬 동일.",
    "status": "glb완료",
    "source": "recolor_variant",
-   "type": "leaf"
+   "type": "leaf",
+   "real_max_m": 0.65,
+   "scale_to_real": 0.325,
+   "glb_raw_max": 2.0,
+   "size_basis_cat": "잎·몬스테라·성숙"
   },
   {
    "id": 271,
@@ -4707,7 +5401,11 @@
    "note": "채도변형(A/HSV) 차분·calm/cool. 원본 변이-스페클-그린크림에서 색만 이동, 모양·무늬 동일.",
    "status": "glb완료",
    "source": "recolor_variant",
-   "type": "leaf"
+   "type": "leaf",
+   "real_max_m": 0.65,
+   "scale_to_real": 0.325,
+   "glb_raw_max": 2.0,
+   "size_basis_cat": "잎·몬스테라·성숙"
   },
   {
    "id": 273,
@@ -4721,7 +5419,11 @@
    "note": "채도변형(A/HSV) 쨍·vivid/warm. 원본 변이-별무늬-그린흰에서 색만 이동, 모양·무늬 동일.",
    "status": "glb완료",
    "source": "recolor_variant",
-   "type": "leaf"
+   "type": "leaf",
+   "real_max_m": 0.65,
+   "scale_to_real": 0.325,
+   "glb_raw_max": 2.0,
+   "size_basis_cat": "잎·몬스테라·성숙"
   },
   {
    "id": 275,
@@ -4735,7 +5437,11 @@
    "note": "채도변형(A/HSV) 차분·calm/cool. 원본 변이-별무늬-그린흰에서 색만 이동, 모양·무늬 동일.",
    "status": "glb완료",
    "source": "recolor_variant",
-   "type": "leaf"
+   "type": "leaf",
+   "real_max_m": 0.65,
+   "scale_to_real": 0.325,
+   "glb_raw_max": 2.0,
+   "size_basis_cat": "잎·몬스테라·성숙"
   },
   {
    "id": 277,
@@ -4749,7 +5455,11 @@
    "note": "채도변형(A/HSV) 쨍·vivid/warm. 원본 기본-성숙-잎1에서 색만 이동, 모양·무늬 동일.",
    "status": "glb완료",
    "source": "recolor_variant",
-   "type": "leaf"
+   "type": "leaf",
+   "real_max_m": 0.65,
+   "scale_to_real": 0.325,
+   "glb_raw_max": 2.0,
+   "size_basis_cat": "잎·몬스테라·성숙"
   },
   {
    "id": 279,
@@ -4763,7 +5473,11 @@
    "note": "채도변형(A/HSV) 차분·calm/cool. 원본 기본-성숙-잎1에서 색만 이동, 모양·무늬 동일.",
    "status": "glb완료",
    "source": "recolor_variant",
-   "type": "leaf"
+   "type": "leaf",
+   "real_max_m": 0.65,
+   "scale_to_real": 0.325,
+   "glb_raw_max": 2.0,
+   "size_basis_cat": "잎·몬스테라·성숙"
   },
   {
    "id": 281,
@@ -4777,7 +5491,11 @@
    "note": "채도변형(A/HSV) 쨍·vivid/warm. 원본 변이-하프문-크림민트에서 색만 이동, 모양·무늬 동일.",
    "status": "glb완료",
    "source": "recolor_variant",
-   "type": "leaf"
+   "type": "leaf",
+   "real_max_m": 0.4,
+   "scale_to_real": 0.20322,
+   "glb_raw_max": 1.9683,
+   "size_basis_cat": "잎·몬스테라·중간"
   },
   {
    "id": 283,
@@ -4791,7 +5509,11 @@
    "note": "채도변형(A/HSV) 차분·calm/cool. 원본 변이-하프문-크림민트에서 색만 이동, 모양·무늬 동일.",
    "status": "glb완료",
    "source": "recolor_variant",
-   "type": "leaf"
+   "type": "leaf",
+   "real_max_m": 0.4,
+   "scale_to_real": 0.20322,
+   "glb_raw_max": 1.9683,
+   "size_basis_cat": "잎·몬스테라·중간"
   },
   {
    "id": 285,
@@ -4805,7 +5527,11 @@
    "note": "채도변형(A/HSV) 쨍·vivid/warm. 원본 변이-알보-전체흰중기에서 색만 이동, 모양·무늬 동일.",
    "status": "glb완료",
    "source": "recolor_variant",
-   "type": "leaf"
+   "type": "leaf",
+   "real_max_m": 0.4,
+   "scale_to_real": 0.2,
+   "glb_raw_max": 2.0,
+   "size_basis_cat": "잎·몬스테라·중간"
   },
   {
    "id": 287,
@@ -4819,7 +5545,11 @@
    "note": "채도변형(A/HSV) 차분·calm/cool. 원본 변이-알보-전체흰중기에서 색만 이동, 모양·무늬 동일.",
    "status": "glb완료",
    "source": "recolor_variant",
-   "type": "leaf"
+   "type": "leaf",
+   "real_max_m": 0.4,
+   "scale_to_real": 0.2,
+   "glb_raw_max": 2.0,
+   "size_basis_cat": "잎·몬스테라·중간"
   },
   {
    "id": 289,
@@ -4833,7 +5563,11 @@
    "note": "채도변형(A/HSV) 쨍·vivid/warm. 원본 변이-스페클-민트흰점2에서 색만 이동, 모양·무늬 동일.",
    "status": "glb완료",
    "source": "recolor_variant",
-   "type": "leaf"
+   "type": "leaf",
+   "real_max_m": 0.4,
+   "scale_to_real": 0.2,
+   "glb_raw_max": 2.0,
+   "size_basis_cat": "잎·몬스테라·중간"
   },
   {
    "id": 291,
@@ -4847,7 +5581,11 @@
    "note": "채도변형(A/HSV) 차분·calm/cool. 원본 변이-스페클-민트흰점2에서 색만 이동, 모양·무늬 동일.",
    "status": "glb완료",
    "source": "recolor_variant",
-   "type": "leaf"
+   "type": "leaf",
+   "real_max_m": 0.4,
+   "scale_to_real": 0.2,
+   "glb_raw_max": 2.0,
+   "size_basis_cat": "잎·몬스테라·중간"
   },
   {
    "id": 293,
@@ -4861,7 +5599,11 @@
    "note": "채도변형(A/HSV) 쨍·vivid/warm. 원본 변이-하프문-그린크림에서 색만 이동, 모양·무늬 동일.",
    "status": "glb완료",
    "source": "recolor_variant",
-   "type": "leaf"
+   "type": "leaf",
+   "real_max_m": 0.65,
+   "scale_to_real": 0.325,
+   "glb_raw_max": 2.0,
+   "size_basis_cat": "잎·몬스테라·성숙"
   },
   {
    "id": 295,
@@ -4875,7 +5617,11 @@
    "note": "채도변형(A/HSV) 차분·calm/cool. 원본 변이-하프문-그린크림에서 색만 이동, 모양·무늬 동일.",
    "status": "glb완료",
    "source": "recolor_variant",
-   "type": "leaf"
+   "type": "leaf",
+   "real_max_m": 0.65,
+   "scale_to_real": 0.325,
+   "glb_raw_max": 2.0,
+   "size_basis_cat": "잎·몬스테라·성숙"
   },
   {
    "id": 297,
@@ -4889,7 +5635,11 @@
    "note": "채도변형(A/HSV) 쨍·vivid/warm. 원본 변이-알보-전체흰에서 색만 이동, 모양·무늬 동일.",
    "status": "glb완료",
    "source": "recolor_variant",
-   "type": "leaf"
+   "type": "leaf",
+   "real_max_m": 0.65,
+   "scale_to_real": 0.325,
+   "glb_raw_max": 2.0,
+   "size_basis_cat": "잎·몬스테라·성숙"
   },
   {
    "id": 299,
@@ -4903,7 +5653,11 @@
    "note": "채도변형(A/HSV) 차분·calm/cool. 원본 변이-알보-전체흰에서 색만 이동, 모양·무늬 동일.",
    "status": "glb완료",
    "source": "recolor_variant",
-   "type": "leaf"
+   "type": "leaf",
+   "real_max_m": 0.65,
+   "scale_to_real": 0.325,
+   "glb_raw_max": 2.0,
+   "size_basis_cat": "잎·몬스테라·성숙"
   },
   {
    "id": 301,
@@ -4917,7 +5671,11 @@
    "note": "채도변형(A/HSV) 쨍·vivid/warm. 원본 변이-마블-그린옐로우에서 색만 이동, 모양·무늬 동일.",
    "status": "glb완료",
    "source": "recolor_variant",
-   "type": "leaf"
+   "type": "leaf",
+   "real_max_m": 0.4,
+   "scale_to_real": 0.2,
+   "glb_raw_max": 2.0,
+   "size_basis_cat": "잎·몬스테라·중간"
   },
   {
    "id": 303,
@@ -4931,7 +5689,11 @@
    "note": "채도변형(A/HSV) 차분·calm/cool. 원본 변이-마블-그린옐로우에서 색만 이동, 모양·무늬 동일.",
    "status": "glb완료",
    "source": "recolor_variant",
-   "type": "leaf"
+   "type": "leaf",
+   "real_max_m": 0.4,
+   "scale_to_real": 0.2,
+   "glb_raw_max": 2.0,
+   "size_basis_cat": "잎·몬스테라·중간"
   },
   {
    "id": 305,
@@ -4945,7 +5707,11 @@
    "note": "채도변형(A/HSV) 쨍·vivid/warm. 원본 변이-마블-크림그린에서 색만 이동, 모양·무늬 동일.",
    "status": "glb완료",
    "source": "recolor_variant",
-   "type": "leaf"
+   "type": "leaf",
+   "real_max_m": 0.4,
+   "scale_to_real": 0.2,
+   "glb_raw_max": 2.0,
+   "size_basis_cat": "잎·몬스테라·중간"
   },
   {
    "id": 307,
@@ -4959,7 +5725,11 @@
    "note": "채도변형(A/HSV) 차분·calm/cool. 원본 변이-마블-크림그린에서 색만 이동, 모양·무늬 동일.",
    "status": "glb완료",
    "source": "recolor_variant",
-   "type": "leaf"
+   "type": "leaf",
+   "real_max_m": 0.4,
+   "scale_to_real": 0.2,
+   "glb_raw_max": 2.0,
+   "size_basis_cat": "잎·몬스테라·중간"
   },
   {
    "id": 309,
@@ -4973,7 +5743,11 @@
    "note": "채도변형(A/HSV) 쨍·vivid/warm. 원본 변이-잎맥-크림에서 색만 이동, 모양·무늬 동일.",
    "status": "glb완료",
    "source": "recolor_variant",
-   "type": "leaf"
+   "type": "leaf",
+   "real_max_m": 0.4,
+   "scale_to_real": 0.2,
+   "glb_raw_max": 2.0,
+   "size_basis_cat": "잎·몬스테라·중간"
   },
   {
    "id": 311,
@@ -4987,7 +5761,11 @@
    "note": "채도변형(A/HSV) 차분·calm/cool. 원본 변이-잎맥-크림에서 색만 이동, 모양·무늬 동일.",
    "status": "glb완료",
    "source": "recolor_variant",
-   "type": "leaf"
+   "type": "leaf",
+   "real_max_m": 0.4,
+   "scale_to_real": 0.2,
+   "glb_raw_max": 2.0,
+   "size_basis_cat": "잎·몬스테라·중간"
   },
   {
    "id": 313,
@@ -5001,7 +5779,11 @@
    "note": "채도변형(A/HSV) 쨍·vivid/warm. 원본 변이-마블-흰그린에서 색만 이동, 모양·무늬 동일.",
    "status": "glb완료",
    "source": "recolor_variant",
-   "type": "leaf"
+   "type": "leaf",
+   "real_max_m": 0.4,
+   "scale_to_real": 0.2,
+   "glb_raw_max": 2.0,
+   "size_basis_cat": "잎·몬스테라·중간"
   },
   {
    "id": 315,
@@ -5015,7 +5797,11 @@
    "note": "채도변형(A/HSV) 차분·calm/cool. 원본 변이-마블-흰그린에서 색만 이동, 모양·무늬 동일.",
    "status": "glb완료",
    "source": "recolor_variant",
-   "type": "leaf"
+   "type": "leaf",
+   "real_max_m": 0.4,
+   "scale_to_real": 0.2,
+   "glb_raw_max": 2.0,
+   "size_basis_cat": "잎·몬스테라·중간"
   },
   {
    "id": 317,
@@ -5029,7 +5815,11 @@
    "note": "채도변형(A/HSV) 쨍·vivid/warm. 원본 기본-중간-잎1에서 색만 이동, 모양·무늬 동일.",
    "status": "glb완료",
    "source": "recolor_variant",
-   "type": "leaf"
+   "type": "leaf",
+   "real_max_m": 0.4,
+   "scale_to_real": 0.40198,
+   "glb_raw_max": 0.9951,
+   "size_basis_cat": "잎·몬스테라·중간"
   },
   {
    "id": 319,
@@ -5043,7 +5833,11 @@
    "note": "채도변형(A/HSV) 차분·calm/cool. 원본 기본-중간-잎1에서 색만 이동, 모양·무늬 동일.",
    "status": "glb완료",
    "source": "recolor_variant",
-   "type": "leaf"
+   "type": "leaf",
+   "real_max_m": 0.4,
+   "scale_to_real": 0.40198,
+   "glb_raw_max": 0.9951,
+   "size_basis_cat": "잎·몬스테라·중간"
   },
   {
    "id": 321,
@@ -5057,7 +5851,11 @@
    "note": "채도변형(A/HSV) 쨍·vivid/warm. 원본 기본-중간-잎2에서 색만 이동, 모양·무늬 동일.",
    "status": "glb완료",
    "source": "recolor_variant",
-   "type": "leaf"
+   "type": "leaf",
+   "real_max_m": 0.4,
+   "scale_to_real": 0.40194,
+   "glb_raw_max": 0.9952,
+   "size_basis_cat": "잎·몬스테라·중간"
   },
   {
    "id": 323,
@@ -5071,7 +5869,11 @@
    "note": "채도변형(A/HSV) 차분·calm/cool. 원본 기본-중간-잎2에서 색만 이동, 모양·무늬 동일.",
    "status": "glb완료",
    "source": "recolor_variant",
-   "type": "leaf"
+   "type": "leaf",
+   "real_max_m": 0.4,
+   "scale_to_real": 0.40194,
+   "glb_raw_max": 0.9952,
+   "size_basis_cat": "잎·몬스테라·중간"
   },
   {
    "id": 325,
@@ -5085,7 +5887,11 @@
    "note": "채도변형(A/HSV) 쨍·vivid/warm. 원본 변이-마블-실버에서 색만 이동, 모양·무늬 동일.",
    "status": "glb완료",
    "source": "recolor_variant",
-   "type": "leaf"
+   "type": "leaf",
+   "real_max_m": 0.4,
+   "scale_to_real": 0.2,
+   "glb_raw_max": 2.0,
+   "size_basis_cat": "잎·몬스테라·중간"
   },
   {
    "id": 327,
@@ -5099,7 +5905,11 @@
    "note": "채도변형(A/HSV) 차분·calm/cool. 원본 변이-마블-실버에서 색만 이동, 모양·무늬 동일.",
    "status": "glb완료",
    "source": "recolor_variant",
-   "type": "leaf"
+   "type": "leaf",
+   "real_max_m": 0.4,
+   "scale_to_real": 0.2,
+   "glb_raw_max": 2.0,
+   "size_basis_cat": "잎·몬스테라·중간"
   },
   {
    "id": 329,
@@ -5113,7 +5923,11 @@
    "note": "채도변형(A/HSV) 쨍·vivid/warm. 원본 변이-스페클-실버점에서 색만 이동, 모양·무늬 동일.",
    "status": "glb완료",
    "source": "recolor_variant",
-   "type": "leaf"
+   "type": "leaf",
+   "real_max_m": 0.4,
+   "scale_to_real": 0.2,
+   "glb_raw_max": 2.0,
+   "size_basis_cat": "잎·몬스테라·중간"
   },
   {
    "id": 331,
@@ -5127,7 +5941,11 @@
    "note": "채도변형(A/HSV) 차분·calm/cool. 원본 변이-스페클-실버점에서 색만 이동, 모양·무늬 동일.",
    "status": "glb완료",
    "source": "recolor_variant",
-   "type": "leaf"
+   "type": "leaf",
+   "real_max_m": 0.4,
+   "scale_to_real": 0.2,
+   "glb_raw_max": 2.0,
+   "size_basis_cat": "잎·몬스테라·중간"
   },
   {
    "id": 333,
@@ -5141,7 +5959,11 @@
    "note": "채도변형(A/HSV) 쨍·vivid/warm. 원본 변이-실버-물방울에서 색만 이동, 모양·무늬 동일.",
    "status": "glb완료",
    "source": "recolor_variant",
-   "type": "leaf"
+   "type": "leaf",
+   "real_max_m": 0.4,
+   "scale_to_real": 0.2,
+   "glb_raw_max": 2.0,
+   "size_basis_cat": "잎·몬스테라·중간"
   },
   {
    "id": 335,
@@ -5155,7 +5977,11 @@
    "note": "채도변형(A/HSV) 차분·calm/cool. 원본 변이-실버-물방울에서 색만 이동, 모양·무늬 동일.",
    "status": "glb완료",
    "source": "recolor_variant",
-   "type": "leaf"
+   "type": "leaf",
+   "real_max_m": 0.4,
+   "scale_to_real": 0.2,
+   "glb_raw_max": 2.0,
+   "size_basis_cat": "잎·몬스테라·중간"
   },
   {
    "id": 337,
@@ -5169,7 +5995,11 @@
    "note": "채도변형(A/HSV) 쨍·vivid/warm. 원본 변이-스페클-민트흰점에서 색만 이동, 모양·무늬 동일.",
    "status": "glb완료",
    "source": "recolor_variant",
-   "type": "leaf"
+   "type": "leaf",
+   "real_max_m": 0.4,
+   "scale_to_real": 0.2,
+   "glb_raw_max": 2.0,
+   "size_basis_cat": "잎·몬스테라·중간"
   },
   {
    "id": 339,
@@ -5183,7 +6013,11 @@
    "note": "채도변형(A/HSV) 차분·calm/cool. 원본 변이-스페클-민트흰점에서 색만 이동, 모양·무늬 동일.",
    "status": "glb완료",
    "source": "recolor_variant",
-   "type": "leaf"
+   "type": "leaf",
+   "real_max_m": 0.4,
+   "scale_to_real": 0.2,
+   "glb_raw_max": 2.0,
+   "size_basis_cat": "잎·몬스테라·중간"
   },
   {
    "id": 341,
@@ -5197,7 +6031,11 @@
    "note": "채도변형(A/HSV) 쨍·vivid/warm. 원본 변이-라임-형광에서 색만 이동, 모양·무늬 동일.",
    "status": "glb완료",
    "source": "recolor_variant",
-   "type": "leaf"
+   "type": "leaf",
+   "real_max_m": 0.4,
+   "scale_to_real": 0.2,
+   "glb_raw_max": 2.0,
+   "size_basis_cat": "잎·몬스테라·중간"
   },
   {
    "id": 343,
@@ -5211,7 +6049,11 @@
    "note": "채도변형(A/HSV) 차분·calm/cool. 원본 변이-라임-형광에서 색만 이동, 모양·무늬 동일.",
    "status": "glb완료",
    "source": "recolor_variant",
-   "type": "leaf"
+   "type": "leaf",
+   "real_max_m": 0.4,
+   "scale_to_real": 0.2,
+   "glb_raw_max": 2.0,
+   "size_basis_cat": "잎·몬스테라·중간"
   },
   {
    "id": 345,
@@ -5225,7 +6067,11 @@
    "note": "채도변형(A/HSV) 쨍·vivid/warm. 원본 변이-알보-흰연두에서 색만 이동, 모양·무늬 동일.",
    "status": "glb완료",
    "source": "recolor_variant",
-   "type": "leaf"
+   "type": "leaf",
+   "real_max_m": 0.4,
+   "scale_to_real": 0.2,
+   "glb_raw_max": 2.0,
+   "size_basis_cat": "잎·몬스테라·중간"
   },
   {
    "id": 347,
@@ -5239,7 +6085,11 @@
    "note": "채도변형(A/HSV) 차분·calm/cool. 원본 변이-알보-흰연두에서 색만 이동, 모양·무늬 동일.",
    "status": "glb완료",
    "source": "recolor_variant",
-   "type": "leaf"
+   "type": "leaf",
+   "real_max_m": 0.4,
+   "scale_to_real": 0.2,
+   "glb_raw_max": 2.0,
+   "size_basis_cat": "잎·몬스테라·중간"
   },
   {
    "id": 349,
@@ -5253,7 +6103,11 @@
    "note": "채도변형(A/HSV) 쨍·vivid/warm. 원본 변이-알보-크림민트에서 색만 이동, 모양·무늬 동일.",
    "status": "glb완료",
    "source": "recolor_variant",
-   "type": "leaf"
+   "type": "leaf",
+   "real_max_m": 0.4,
+   "scale_to_real": 0.2,
+   "glb_raw_max": 2.0,
+   "size_basis_cat": "잎·몬스테라·중간"
   },
   {
    "id": 351,
@@ -5267,7 +6121,11 @@
    "note": "채도변형(A/HSV) 차분·calm/cool. 원본 변이-알보-크림민트에서 색만 이동, 모양·무늬 동일.",
    "status": "glb완료",
    "source": "recolor_variant",
-   "type": "leaf"
+   "type": "leaf",
+   "real_max_m": 0.4,
+   "scale_to_real": 0.2,
+   "glb_raw_max": 2.0,
+   "size_basis_cat": "잎·몬스테라·중간"
   },
   {
    "id": 353,
@@ -5281,7 +6139,11 @@
    "note": "테라코타 저폴리 화분+나무받침. 스타일 기준 화분.",
    "status": "glb완료",
    "source": "meshy-5",
-   "type": "prop"
+   "type": "prop",
+   "real_max_m": 0.2,
+   "scale_to_real": 0.1,
+   "glb_raw_max": 2.0,
+   "size_basis_cat": "화분"
   },
   {
    "id": 354,
@@ -5295,7 +6157,11 @@
    "note": "민트 파스텔 데스크램프. 얇은 폴 성공, 전구 노란빛.",
    "status": "glb완료",
    "source": "meshy-5",
-   "type": "prop"
+   "type": "prop",
+   "real_max_m": 0.38,
+   "scale_to_real": 0.19,
+   "glb_raw_max": 2.0,
+   "size_basis_cat": "조명"
   },
   {
    "id": 355,
@@ -5309,7 +6175,11 @@
    "note": "마크라메 행잉 화분. 로프·매듭·술 재현(화분부 크림톤).",
    "status": "glb완료",
    "source": "meshy-5",
-   "type": "prop"
+   "type": "prop",
+   "real_max_m": 0.55,
+   "scale_to_real": 0.275,
+   "glb_raw_max": 2.0,
+   "size_basis_cat": "화분"
   },
   {
    "id": 356,
@@ -5323,7 +6193,11 @@
    "note": "파스텔 컬러웨이 변형(민트). 원본 화분-테라코타-나무받침 형상 동일, 색만 이동. 원본 보존.",
    "status": "glb완료",
    "source": "recolor_variant",
-   "type": "prop"
+   "type": "prop",
+   "real_max_m": 0.2,
+   "scale_to_real": 0.1,
+   "glb_raw_max": 2.0,
+   "size_basis_cat": "화분"
   },
   {
    "id": 358,
@@ -5337,7 +6211,11 @@
    "note": "파스텔 컬러웨이 변형(핑크). 원본 화분-테라코타-나무받침 형상 동일, 색만 이동. 원본 보존.",
    "status": "glb완료",
    "source": "recolor_variant",
-   "type": "prop"
+   "type": "prop",
+   "real_max_m": 0.2,
+   "scale_to_real": 0.1,
+   "glb_raw_max": 2.0,
+   "size_basis_cat": "화분"
   },
   {
    "id": 360,
@@ -5351,7 +6229,11 @@
    "note": "파스텔 컬러웨이 변형(민트). 원본 화분-크림도자기-나무받침 형상 동일, 색만 이동. 원본 보존.",
    "status": "glb완료",
    "source": "recolor_variant",
-   "type": "prop"
+   "type": "prop",
+   "real_max_m": 0.2,
+   "scale_to_real": 0.2038,
+   "glb_raw_max": 0.9813,
+   "size_basis_cat": "화분"
   },
   {
    "id": 362,
@@ -5365,7 +6247,11 @@
    "note": "파스텔 컬러웨이 변형(핑크). 원본 화분-크림도자기-나무받침 형상 동일, 색만 이동. 원본 보존.",
    "status": "glb완료",
    "source": "recolor_variant",
-   "type": "prop"
+   "type": "prop",
+   "real_max_m": 0.2,
+   "scale_to_real": 0.2038,
+   "glb_raw_max": 0.9813,
+   "size_basis_cat": "화분"
   },
   {
    "id": 364,
@@ -5379,7 +6265,11 @@
    "note": "파스텔 컬러웨이 변형(민트). 원본 회색 콘크리트 화분 형상 동일, 색만 이동. 원본 보존.",
    "status": "glb완료",
    "source": "recolor_variant",
-   "type": "prop"
+   "type": "prop",
+   "real_max_m": 0.18,
+   "scale_to_real": 0.09,
+   "glb_raw_max": 2.0,
+   "size_basis_cat": "화분"
   },
   {
    "id": 366,
@@ -5393,7 +6283,11 @@
    "note": "파스텔 컬러웨이 변형(핑크). 원본 회색 콘크리트 화분 형상 동일, 색만 이동. 원본 보존.",
    "status": "glb완료",
    "source": "recolor_variant",
-   "type": "prop"
+   "type": "prop",
+   "real_max_m": 0.18,
+   "scale_to_real": 0.09,
+   "glb_raw_max": 2.0,
+   "size_basis_cat": "화분"
   },
   {
    "id": 368,
@@ -5407,7 +6301,11 @@
    "note": "파스텔 컬러웨이 변형(민트). 원본 화분-마크라메-행잉 형상 동일, 색만 이동. 원본 보존.",
    "status": "glb완료",
    "source": "recolor_variant",
-   "type": "prop"
+   "type": "prop",
+   "real_max_m": 0.55,
+   "scale_to_real": 0.275,
+   "glb_raw_max": 2.0,
+   "size_basis_cat": "화분"
   },
   {
    "id": 370,
@@ -5421,7 +6319,11 @@
    "note": "파스텔 컬러웨이 변형(핑크). 원본 화분-마크라메-행잉 형상 동일, 색만 이동. 원본 보존.",
    "status": "glb완료",
    "source": "recolor_variant",
-   "type": "prop"
+   "type": "prop",
+   "real_max_m": 0.55,
+   "scale_to_real": 0.275,
+   "glb_raw_max": 2.0,
+   "size_basis_cat": "화분"
   },
   {
    "id": 372,
@@ -5435,7 +6337,11 @@
    "note": "파스텔 컬러웨이 변형(버터크림). 원본 조명-데스크램프-민트 형상 동일, 색만 이동. 원본 보존.",
    "status": "glb완료",
    "source": "recolor_variant",
-   "type": "prop"
+   "type": "prop",
+   "real_max_m": 0.38,
+   "scale_to_real": 0.19,
+   "glb_raw_max": 2.0,
+   "size_basis_cat": "조명"
   },
   {
    "id": 374,
@@ -5449,7 +6355,11 @@
    "note": "파스텔 컬러웨이 변형(코랄). 원본 조명-데스크램프-민트 형상 동일, 색만 이동. 원본 보존.",
    "status": "glb완료",
    "source": "recolor_variant",
-   "type": "prop"
+   "type": "prop",
+   "real_max_m": 0.38,
+   "scale_to_real": 0.19,
+   "glb_raw_max": 2.0,
+   "size_basis_cat": "조명"
   },
   {
    "id": 376,
@@ -5463,7 +6373,11 @@
    "note": "파스텔 컬러웨이 변형(버터크림). 원본 클립형 식물등 형상 동일, 색만 이동. 원본 보존.",
    "status": "glb완료",
    "source": "recolor_variant",
-   "type": "prop"
+   "type": "prop",
+   "real_max_m": 0.24,
+   "scale_to_real": 0.12,
+   "glb_raw_max": 2.0,
+   "size_basis_cat": "조명"
   },
   {
    "id": 378,
@@ -5477,7 +6391,11 @@
    "note": "파스텔 컬러웨이 변형(코랄). 원본 클립형 식물등 형상 동일, 색만 이동. 원본 보존.",
    "status": "glb완료",
    "source": "recolor_variant",
-   "type": "prop"
+   "type": "prop",
+   "real_max_m": 0.24,
+   "scale_to_real": 0.12,
+   "glb_raw_max": 2.0,
+   "size_basis_cat": "조명"
   },
   {
    "id": 380,
@@ -5491,7 +6409,11 @@
    "note": "파스텔 컬러웨이 변형(버터크림). 원본 조명-버섯테이블램프 형상 동일, 색만 이동. 원본 보존.",
    "status": "glb완료",
    "source": "recolor_variant",
-   "type": "prop"
+   "type": "prop",
+   "real_max_m": 0.22,
+   "scale_to_real": 0.11,
+   "glb_raw_max": 2.0,
+   "size_basis_cat": "조명"
   },
   {
    "id": 382,
@@ -5505,7 +6427,842 @@
    "note": "파스텔 컬러웨이 변형(코랄). 원본 조명-버섯테이블램프 형상 동일, 색만 이동. 원본 보존.",
    "status": "glb완료",
    "source": "recolor_variant",
-   "type": "prop"
+   "type": "prop",
+   "real_max_m": 0.22,
+   "scale_to_real": 0.11,
+   "glb_raw_max": 2.0,
+   "size_basis_cat": "조명"
+  },
+  {
+   "id": 384,
+   "file": "shelf_wall_1tier.png",
+   "path": "furniture/thumbs/shelf_wall_1tier.png",
+   "is_glb": false,
+   "glb_matched": "shelf_wall_1tier.glb",
+   "category": "가구·선반",
+   "name_ko": "선반-벽걸이-1단",
+   "note": "벽걸이 1단(크림오크+세이지 브래킷). 창가 높이에 달면 조도 유리. 위 개방.",
+   "status": "glb완료",
+   "source": "procedural",
+   "type": "furniture",
+   "kind": "wall",
+   "tiers": 1,
+   "mount": "wall",
+   "size_m": {
+    "w": 0.8,
+    "d": 0.22,
+    "h": 0.035
+   },
+   "slots": [
+    {
+     "x": -0.31,
+     "y": 0.0175,
+     "z": 0.0
+    },
+    {
+     "x": 0.0,
+     "y": 0.0175,
+     "z": 0.0
+    },
+    {
+     "x": 0.31,
+     "y": 0.0175,
+     "z": 0.0
+    }
+   ],
+   "slot_count": 3,
+   "scale_to_real": 1.0
+  },
+  {
+   "id": 385,
+   "file": "shelf_wall_1tier.glb",
+   "path": "furniture/shelf_wall_1tier.glb",
+   "is_glb": true,
+   "glb_matched": null,
+   "source_2d": "shelf_wall_1tier.png",
+   "category": "가구·선반",
+   "name_ko": "선반-벽걸이-1단",
+   "note": "벽걸이 1단(크림오크+세이지 브래킷). 창가 높이에 달면 조도 유리. 위 개방.",
+   "status": "glb완료",
+   "source": "procedural",
+   "type": "furniture",
+   "kind": "wall",
+   "tiers": 1,
+   "mount": "wall",
+   "size_m": {
+    "w": 0.8,
+    "d": 0.22,
+    "h": 0.035
+   },
+   "slots": [
+    {
+     "x": -0.31,
+     "y": 0.0175,
+     "z": 0.0
+    },
+    {
+     "x": 0.0,
+     "y": 0.0175,
+     "z": 0.0
+    },
+    {
+     "x": 0.31,
+     "y": 0.0175,
+     "z": 0.0
+    }
+   ],
+   "slot_count": 3,
+   "scale_to_real": 1.0,
+   "real_max_m": 0.8
+  },
+  {
+   "id": 386,
+   "file": "shelf_etagere_3tier.png",
+   "path": "furniture/thumbs/shelf_etagere_3tier.png",
+   "is_glb": false,
+   "glb_matched": "shelf_etagere_3tier.glb",
+   "category": "가구·선반",
+   "name_ko": "선반-다단-3단",
+   "note": "3단 오픈 선반. 맨 위 개방(식물 헤드룸), 단 간격 36cm. 단별 높이차=조도차.",
+   "status": "glb완료",
+   "source": "procedural",
+   "type": "furniture",
+   "kind": "etagere",
+   "tiers": 3,
+   "mount": "floor",
+   "size_m": {
+    "w": 0.72,
+    "d": 0.28,
+    "h": 0.794
+   },
+   "slots": [
+    {
+     "x": -0.24,
+     "y": 0.074,
+     "z": 0.0
+    },
+    {
+     "x": 0.0,
+     "y": 0.074,
+     "z": 0.0
+    },
+    {
+     "x": 0.24,
+     "y": 0.074,
+     "z": 0.0
+    },
+    {
+     "x": -0.24,
+     "y": 0.434,
+     "z": 0.0
+    },
+    {
+     "x": 0.0,
+     "y": 0.434,
+     "z": 0.0
+    },
+    {
+     "x": 0.24,
+     "y": 0.434,
+     "z": 0.0
+    },
+    {
+     "x": -0.24,
+     "y": 0.794,
+     "z": 0.0
+    },
+    {
+     "x": 0.0,
+     "y": 0.794,
+     "z": 0.0
+    },
+    {
+     "x": 0.24,
+     "y": 0.794,
+     "z": 0.0
+    }
+   ],
+   "slot_count": 9,
+   "tier_heights": [
+    0.074,
+    0.434,
+    0.794
+   ],
+   "scale_to_real": 1.0
+  },
+  {
+   "id": 387,
+   "file": "shelf_etagere_3tier.glb",
+   "path": "furniture/shelf_etagere_3tier.glb",
+   "is_glb": true,
+   "glb_matched": null,
+   "source_2d": "shelf_etagere_3tier.png",
+   "category": "가구·선반",
+   "name_ko": "선반-다단-3단",
+   "note": "3단 오픈 선반. 맨 위 개방(식물 헤드룸), 단 간격 36cm. 단별 높이차=조도차.",
+   "status": "glb완료",
+   "source": "procedural",
+   "type": "furniture",
+   "kind": "etagere",
+   "tiers": 3,
+   "mount": "floor",
+   "size_m": {
+    "w": 0.72,
+    "d": 0.28,
+    "h": 0.794
+   },
+   "slots": [
+    {
+     "x": -0.24,
+     "y": 0.074,
+     "z": 0.0
+    },
+    {
+     "x": 0.0,
+     "y": 0.074,
+     "z": 0.0
+    },
+    {
+     "x": 0.24,
+     "y": 0.074,
+     "z": 0.0
+    },
+    {
+     "x": -0.24,
+     "y": 0.434,
+     "z": 0.0
+    },
+    {
+     "x": 0.0,
+     "y": 0.434,
+     "z": 0.0
+    },
+    {
+     "x": 0.24,
+     "y": 0.434,
+     "z": 0.0
+    },
+    {
+     "x": -0.24,
+     "y": 0.794,
+     "z": 0.0
+    },
+    {
+     "x": 0.0,
+     "y": 0.794,
+     "z": 0.0
+    },
+    {
+     "x": 0.24,
+     "y": 0.794,
+     "z": 0.0
+    }
+   ],
+   "slot_count": 9,
+   "tier_heights": [
+    0.074,
+    0.434,
+    0.794
+   ],
+   "scale_to_real": 1.0,
+   "real_max_m": 0.794
+  },
+  {
+   "id": 388,
+   "file": "shelf_stool_1.png",
+   "path": "furniture/thumbs/shelf_stool_1.png",
+   "is_glb": false,
+   "glb_matched": "shelf_stool_1.glb",
+   "category": "가구·선반",
+   "name_ko": "선반-스툴-1단",
+   "note": "화분 1개용 낮은 받침대. 바닥 다음 첫 단계.",
+   "status": "glb완료",
+   "source": "procedural",
+   "type": "furniture",
+   "kind": "stool",
+   "tiers": 1,
+   "mount": "floor",
+   "size_m": {
+    "w": 0.28,
+    "d": 0.28,
+    "h": 0.35500000000000004
+   },
+   "slots": [
+    {
+     "x": 0.0,
+     "y": 0.355,
+     "z": 0.0
+    }
+   ],
+   "slot_count": 1,
+   "scale_to_real": 1.0
+  },
+  {
+   "id": 389,
+   "file": "shelf_stool_1.glb",
+   "path": "furniture/shelf_stool_1.glb",
+   "is_glb": true,
+   "glb_matched": null,
+   "source_2d": "shelf_stool_1.png",
+   "category": "가구·선반",
+   "name_ko": "선반-스툴-1단",
+   "note": "화분 1개용 낮은 받침대. 바닥 다음 첫 단계.",
+   "status": "glb완료",
+   "source": "procedural",
+   "type": "furniture",
+   "kind": "stool",
+   "tiers": 1,
+   "mount": "floor",
+   "size_m": {
+    "w": 0.28,
+    "d": 0.28,
+    "h": 0.35500000000000004
+   },
+   "slots": [
+    {
+     "x": 0.0,
+     "y": 0.355,
+     "z": 0.0
+    }
+   ],
+   "slot_count": 1,
+   "scale_to_real": 1.0,
+   "real_max_m": 0.355
+  },
+  {
+   "id": 390,
+   "file": "shelf_ladder_4tier.png",
+   "path": "furniture/thumbs/shelf_ladder_4tier.png",
+   "is_glb": false,
+   "glb_matched": "shelf_ladder_4tier.glb",
+   "category": "가구·선반",
+   "name_ko": "선반-사다리-4단",
+   "note": "기대는 사다리 선반. 위로 갈수록 얕음(빛 가림 적음), 아래일수록 어두움.",
+   "status": "glb완료",
+   "source": "procedural",
+   "type": "furniture",
+   "kind": "ladder",
+   "tiers": 4,
+   "mount": "lean-wall",
+   "size_m": {
+    "w": 0.66,
+    "d": 0.42,
+    "h": 1.3
+   },
+   "slots": [
+    {
+     "x": -0.2,
+     "y": 0.193,
+     "z": 0.0595
+    },
+    {
+     "x": 0.2,
+     "y": 0.193,
+     "z": 0.0595
+    },
+    {
+     "x": -0.2,
+     "y": 0.533,
+     "z": -0.023
+    },
+    {
+     "x": 0.2,
+     "y": 0.533,
+     "z": -0.023
+    },
+    {
+     "x": -0.2,
+     "y": 0.873,
+     "z": -0.1055
+    },
+    {
+     "x": 0.2,
+     "y": 0.873,
+     "z": -0.1055
+    },
+    {
+     "x": -0.2,
+     "y": 1.213,
+     "z": -0.1881
+    },
+    {
+     "x": 0.2,
+     "y": 1.213,
+     "z": -0.1881
+    }
+   ],
+   "slot_count": 8,
+   "tier_heights": [
+    0.193,
+    0.533,
+    0.873,
+    1.213
+   ],
+   "scale_to_real": 1.0
+  },
+  {
+   "id": 391,
+   "file": "shelf_ladder_4tier.glb",
+   "path": "furniture/shelf_ladder_4tier.glb",
+   "is_glb": true,
+   "glb_matched": null,
+   "source_2d": "shelf_ladder_4tier.png",
+   "category": "가구·선반",
+   "name_ko": "선반-사다리-4단",
+   "note": "기대는 사다리 선반. 위로 갈수록 얕음(빛 가림 적음), 아래일수록 어두움.",
+   "status": "glb완료",
+   "source": "procedural",
+   "type": "furniture",
+   "kind": "ladder",
+   "tiers": 4,
+   "mount": "lean-wall",
+   "size_m": {
+    "w": 0.66,
+    "d": 0.42,
+    "h": 1.3
+   },
+   "slots": [
+    {
+     "x": -0.2,
+     "y": 0.193,
+     "z": 0.0595
+    },
+    {
+     "x": 0.2,
+     "y": 0.193,
+     "z": 0.0595
+    },
+    {
+     "x": -0.2,
+     "y": 0.533,
+     "z": -0.023
+    },
+    {
+     "x": 0.2,
+     "y": 0.533,
+     "z": -0.023
+    },
+    {
+     "x": -0.2,
+     "y": 0.873,
+     "z": -0.1055
+    },
+    {
+     "x": 0.2,
+     "y": 0.873,
+     "z": -0.1055
+    },
+    {
+     "x": -0.2,
+     "y": 1.213,
+     "z": -0.1881
+    },
+    {
+     "x": 0.2,
+     "y": 1.213,
+     "z": -0.1881
+    }
+   ],
+   "slot_count": 8,
+   "tier_heights": [
+    0.193,
+    0.533,
+    0.873,
+    1.213
+   ],
+   "scale_to_real": 1.0,
+   "real_max_m": 1.3
+  },
+  {
+   "id": 392,
+   "file": "shelf_cart_3tier.png",
+   "path": "furniture/thumbs/shelf_cart_3tier.png",
+   "is_glb": false,
+   "glb_matched": "shelf_cart_3tier.glb",
+   "category": "가구·선반",
+   "name_ko": "선반-카트-3단",
+   "note": "바퀴 달린 3단 카트. 햇빛 따라 이동 가능(조도 최적화 플레이).",
+   "status": "glb완료",
+   "source": "procedural",
+   "type": "furniture",
+   "kind": "cart",
+   "tiers": 3,
+   "mount": "floor-mobile",
+   "size_m": {
+    "w": 0.46,
+    "d": 0.34,
+    "h": 0.8200000000000001
+   },
+   "slots": [
+    {
+     "x": -0.15,
+     "y": 0.172,
+     "z": 0.0
+    },
+    {
+     "x": 0.15,
+     "y": 0.172,
+     "z": 0.0
+    },
+    {
+     "x": -0.15,
+     "y": 0.472,
+     "z": 0.0
+    },
+    {
+     "x": 0.15,
+     "y": 0.472,
+     "z": 0.0
+    },
+    {
+     "x": -0.15,
+     "y": 0.772,
+     "z": 0.0
+    },
+    {
+     "x": 0.15,
+     "y": 0.772,
+     "z": 0.0
+    }
+   ],
+   "slot_count": 6,
+   "tier_heights": [
+    0.172,
+    0.472,
+    0.772
+   ],
+   "movable": true,
+   "scale_to_real": 1.0
+  },
+  {
+   "id": 393,
+   "file": "shelf_cart_3tier.glb",
+   "path": "furniture/shelf_cart_3tier.glb",
+   "is_glb": true,
+   "glb_matched": null,
+   "source_2d": "shelf_cart_3tier.png",
+   "category": "가구·선반",
+   "name_ko": "선반-카트-3단",
+   "note": "바퀴 달린 3단 카트. 햇빛 따라 이동 가능(조도 최적화 플레이).",
+   "status": "glb완료",
+   "source": "procedural",
+   "type": "furniture",
+   "kind": "cart",
+   "tiers": 3,
+   "mount": "floor-mobile",
+   "size_m": {
+    "w": 0.46,
+    "d": 0.34,
+    "h": 0.8200000000000001
+   },
+   "slots": [
+    {
+     "x": -0.15,
+     "y": 0.172,
+     "z": 0.0
+    },
+    {
+     "x": 0.15,
+     "y": 0.172,
+     "z": 0.0
+    },
+    {
+     "x": -0.15,
+     "y": 0.472,
+     "z": 0.0
+    },
+    {
+     "x": 0.15,
+     "y": 0.472,
+     "z": 0.0
+    },
+    {
+     "x": -0.15,
+     "y": 0.772,
+     "z": 0.0
+    },
+    {
+     "x": 0.15,
+     "y": 0.772,
+     "z": 0.0
+    }
+   ],
+   "slot_count": 6,
+   "tier_heights": [
+    0.172,
+    0.472,
+    0.772
+   ],
+   "movable": true,
+   "scale_to_real": 1.0,
+   "real_max_m": 0.82
+  },
+  {
+   "id": 394,
+   "file": "shelf_windowsill.png",
+   "path": "furniture/thumbs/shelf_windowsill.png",
+   "is_glb": false,
+   "glb_matched": "shelf_windowsill.glb",
+   "category": "가구·선반",
+   "name_ko": "선반-창턱-확장",
+   "note": "창턱 확장 선반(얕고 김). 조도 최상 자리. 깊이 16cm=작은 화분 전용.",
+   "status": "glb완료",
+   "source": "procedural",
+   "type": "furniture",
+   "kind": "sill",
+   "tiers": 1,
+   "mount": "window",
+   "size_m": {
+    "w": 1.0,
+    "d": 0.16,
+    "h": 0.03
+   },
+   "slots": [
+    {
+     "x": -0.4,
+     "y": 0.015,
+     "z": 0.0
+    },
+    {
+     "x": -0.1333,
+     "y": 0.015,
+     "z": 0.0
+    },
+    {
+     "x": 0.1333,
+     "y": 0.015,
+     "z": 0.0
+    },
+    {
+     "x": 0.4,
+     "y": 0.015,
+     "z": 0.0
+    }
+   ],
+   "slot_count": 4,
+   "scale_to_real": 1.0
+  },
+  {
+   "id": 395,
+   "file": "shelf_windowsill.glb",
+   "path": "furniture/shelf_windowsill.glb",
+   "is_glb": true,
+   "glb_matched": null,
+   "source_2d": "shelf_windowsill.png",
+   "category": "가구·선반",
+   "name_ko": "선반-창턱-확장",
+   "note": "창턱 확장 선반(얕고 김). 조도 최상 자리. 깊이 16cm=작은 화분 전용.",
+   "status": "glb완료",
+   "source": "procedural",
+   "type": "furniture",
+   "kind": "sill",
+   "tiers": 1,
+   "mount": "window",
+   "size_m": {
+    "w": 1.0,
+    "d": 0.16,
+    "h": 0.03
+   },
+   "slots": [
+    {
+     "x": -0.4,
+     "y": 0.015,
+     "z": 0.0
+    },
+    {
+     "x": -0.1333,
+     "y": 0.015,
+     "z": 0.0
+    },
+    {
+     "x": 0.1333,
+     "y": 0.015,
+     "z": 0.0
+    },
+    {
+     "x": 0.4,
+     "y": 0.015,
+     "z": 0.0
+    }
+   ],
+   "slot_count": 4,
+   "scale_to_real": 1.0,
+   "real_max_m": 1.0
+  },
+  {
+   "id": 396,
+   "file": "shelf_growrack_2tier.png",
+   "path": "furniture/thumbs/shelf_growrack_2tier.png",
+   "is_glb": false,
+   "glb_matched": "shelf_growrack_2tier.glb",
+   "category": "가구·선반",
+   "name_ko": "선반-그로우랙-2단",
+   "note": "식물등 내장 2단 랙. 빛 부족한 방(반지하)의 해결책 — 조도를 자체 공급.",
+   "status": "glb완료",
+   "source": "procedural",
+   "type": "furniture",
+   "kind": "growrack",
+   "tiers": 2,
+   "mount": "floor",
+   "size_m": {
+    "w": 0.8,
+    "d": 0.35,
+    "h": 1.16
+   },
+   "slots": [
+    {
+     "x": -0.3,
+     "y": 0.293,
+     "z": 0.0
+    },
+    {
+     "x": 0.0,
+     "y": 0.293,
+     "z": 0.0
+    },
+    {
+     "x": 0.3,
+     "y": 0.293,
+     "z": 0.0
+    },
+    {
+     "x": -0.3,
+     "y": 0.753,
+     "z": 0.0
+    },
+    {
+     "x": 0.0,
+     "y": 0.753,
+     "z": 0.0
+    },
+    {
+     "x": 0.3,
+     "y": 0.753,
+     "z": 0.0
+    }
+   ],
+   "slot_count": 6,
+   "tier_heights": [
+    0.293,
+    0.753
+   ],
+   "light_bars": [
+    {
+     "y": 0.64
+    },
+    {
+     "y": 1.1
+    }
+   ],
+   "has_light": true,
+   "scale_to_real": 1.0
+  },
+  {
+   "id": 397,
+   "file": "shelf_growrack_2tier.glb",
+   "path": "furniture/shelf_growrack_2tier.glb",
+   "is_glb": true,
+   "glb_matched": null,
+   "source_2d": "shelf_growrack_2tier.png",
+   "category": "가구·선반",
+   "name_ko": "선반-그로우랙-2단",
+   "note": "식물등 내장 2단 랙. 빛 부족한 방(반지하)의 해결책 — 조도를 자체 공급.",
+   "status": "glb완료",
+   "source": "procedural",
+   "type": "furniture",
+   "kind": "growrack",
+   "tiers": 2,
+   "mount": "floor",
+   "size_m": {
+    "w": 0.8,
+    "d": 0.35,
+    "h": 1.16
+   },
+   "slots": [
+    {
+     "x": -0.3,
+     "y": 0.293,
+     "z": 0.0
+    },
+    {
+     "x": 0.0,
+     "y": 0.293,
+     "z": 0.0
+    },
+    {
+     "x": 0.3,
+     "y": 0.293,
+     "z": 0.0
+    },
+    {
+     "x": -0.3,
+     "y": 0.753,
+     "z": 0.0
+    },
+    {
+     "x": 0.0,
+     "y": 0.753,
+     "z": 0.0
+    },
+    {
+     "x": 0.3,
+     "y": 0.753,
+     "z": 0.0
+    }
+   ],
+   "slot_count": 6,
+   "tier_heights": [
+    0.293,
+    0.753
+   ],
+   "light_bars": [
+    {
+     "y": 0.64
+    },
+    {
+     "y": 1.1
+    }
+   ],
+   "has_light": true,
+   "scale_to_real": 1.0,
+   "real_max_m": 1.16
+  },
+  {
+   "id": "stem_knob",
+   "file": "stem_knob.glb",
+   "name_ko": "줄기_혹_돌기",
+   "note": "튜브 줄기 표면에 붙는 혹(눈) 돌기만. 쌍혹은 2개 배치. meshy 생성 2026-07-20",
+   "category": "줄기·부품",
+   "is_glb": true,
+   "status": "ok"
+  },
+  {
+   "id": "leaf_sheath",
+   "file": "leaf_sheath.glb",
+   "name_ko": "줄기_잎_엽초",
+   "note": "줄기↔잎자루 이음부를 감싸는 짧은 슬리브. meshy 생성 2026-07-20",
+   "category": "줄기·부품",
+   "is_glb": true,
+   "status": "ok"
+  },
+  {
+   "id": "stem_surface_tex",
+   "file": "textures/stem_surface_tile.png",
+   "name_ko": "줄기_표면_텍스처",
+   "note": "줄기 튜브용 회색조 타일 텍스처(세로 결). 색은 코드가 결정. meshy 생성 2026-07-20",
+   "category": "텍스처",
+   "is_glb": false,
+   "status": "ok"
   }
- ]
+ ],
+ "_scale_convention": {
+  "unit": "meter",
+  "rule": "GLB 지오메트리는 원본 그대로. 로드 후 scale_to_real 을 균등 곱하면 실제 크기가 된다.",
+  "fields": {
+   "real_max_m": "실제 세계 최대축 길이(m)",
+   "scale_to_real": "곱할 배율",
+   "glb_raw_max": "원본 GLB 최대축"
+  },
+  "note": "가구·선반(source=procedural)은 이미 실제 미터라 scale_to_real=1.0. 방/집은 data/house_rooms.json 과 동일한 미터계."
+ }
 }
