@@ -1,0 +1,149 @@
+<!doctype html><meta charset="utf-8"><body style="background:#111;color:#ddd;font:12px monospace"><pre id=o>…</pre>
+<script src="https://unpkg.com/three@0.128.0/build/three.min.js"></script>
+<script type="module">
+/* character.js 안의 격자·BFS와 같은 알고리즘으로 '집이 실제로 통행 가능한가'만 본다.
+   (GLB 로딩 없이 돌려서 헤드리스에서도 끝까지 간다) */
+import { buildHouse } from './src/render3d/house.js';
+const O = document.getElementById('o'), L = [], NL = String.fromCharCode(10);
+const say = m => { L.push(m); O.textContent = L.join(NL); };
+window.onerror = (m,f,l) => say('ERR ' + m + ' @' + l);
+
+const J = p => fetch(p + '?v=' + Date.now()).then(r => r.json());
+const [HR,WP,DP,FIN,FPf,LP,SH] = await Promise.all([
+  './data/house_rooms.json','./data/window_presets.json','./data/door_presets.json',
+  './data/room_finishes.json','./data/furniture_presets.json','./data/lighting_presets.json',
+  './data/shading_presets.json'].map(J));
+
+const R = 0.26, CELL = 0.25;
+
+function makeGrid(C, size) {
+  const x0 = -size.w/2, z0 = -size.d/2;
+  const n = Math.ceil(size.w/CELL), m = Math.ceil(size.d/CELL);
+  const free = new Uint8Array(n*m);
+  const blocked = (x,z) => {
+    for (const c of C) {
+      const rot = c.rot||0, co = Math.cos(-rot), si = Math.sin(-rot);
+      const lx = (x-c.x)*co - (z-c.z)*si, lz = (x-c.x)*si + (z-c.z)*co;
+      if (Math.abs(lx) < c.w/2+R && Math.abs(lz) < c.d/2+R) return true;
+    }
+    return false;
+  };
+  for (let i=0;i<n;i++) for (let j=0;j<m;j++)
+    free[j*n+i] = blocked(x0+(i+0.5)*CELL, z0+(j+0.5)*CELL) ? 0 : 1;
+  return { n, m, x0, z0, free };
+}
+function cellOf(g,x,z){ return [Math.max(0,Math.min(g.n-1,Math.floor((x-g.x0)/CELL))),
+                                Math.max(0,Math.min(g.m-1,Math.floor((z-g.z0)/CELL)))]; }
+function nearestFree(g,i,j){
+  if (g.free[j*g.n+i]) return [i,j];
+  for (let r=1;r<24;r++) for (let di=-r;di<=r;di++) for (let dj=-r;dj<=r;dj++){
+    if (Math.max(Math.abs(di),Math.abs(dj))!==r) continue;
+    const a=i+di, b=j+dj;
+    if (a<0||b<0||a>=g.n||b>=g.m) continue;
+    if (g.free[b*g.n+a]) return [a,b];
+  }
+  return [i,j];
+}
+function bfs(g, s, t) {
+  const [si,sj] = nearestFree(g, ...cellOf(g,s.x,s.z));
+  const [ti,tj] = nearestFree(g, ...cellOf(g,t.x,t.z));
+  const N=g.n, M=g.m, F=g.free;
+  const prev = new Int32Array(N*M).fill(-1), seen = new Uint8Array(N*M);
+  const q=[sj*N+si]; seen[sj*N+si]=1;
+  const goal = tj*N+ti;
+  const D=[[1,0],[-1,0],[0,1],[0,-1],[1,1],[1,-1],[-1,1],[-1,-1]];
+  let head=0;
+  while (head<q.length) {
+    const cur=q[head++];
+    if (cur===goal) return { ok:true, len:q.length };
+    const ci=cur%N, cj=(cur-ci)/N;
+    for (const d of D) {
+      const a=ci+d[0], b=cj+d[1];
+      if (a<0||b<0||a>=N||b>=M) continue;
+      const k=b*N+a;
+      if (seen[k]||!F[k]) continue;
+      if (d[0]&&d[1]&&(!F[cj*N+a]||!F[b*N+ci])) continue;
+      seen[k]=1; prev[k]=cur; q.push(k);
+    }
+  }
+  return { ok:false, len:q.length };
+}
+
+const TESTS = {
+  apartment: [
+    ['거실 → 베란다',      {x:0.5,z:-1.5}, {x:-1.93,z:-4.3}, true],
+    ['거실 → 안방',        {x:0.5,z:-1.5}, {x:-4.6,z:-0.5},  true],
+    ['거실 → 방1',         {x:0.5,z:-1.5}, {x:3.0,z:-1.0},   true],
+    ['거실 → 부엌',        {x:0.5,z:-1.5}, {x:-1.0,z:3.6},   true],
+    ['거실 → 복도',        {x:0.5,z:-1.5}, {x:-3.0,z:1.4},   true],
+    ['거실 → 집 밖(막힘)', {x:0.5,z:-1.5}, {x:-4.0,z:3.9},   false],
+    ['거실 → 베란다 끝',   {x:0.5,z:-1.5}, {x:5.2,z:-4.5},   true],
+  ],
+  greenhouse: [
+    ['재배동 → 숙소',      {x:-2.0,z:0.0}, {x:2.6,z:-1.0},   true],
+  ],
+  oneroom: [
+    ['방 안 이동',         {x:0.0,z:0.0},  {x:-2.0,z:-1.5},  true],
+  ]
+};
+
+/* ★ 모든 방의 모든 문·통로 앞뒤가 뚫려 있는지 — 가구가 문을 막으면 여기서 잡힌다 */
+say('=== 문 막힘 검사 (모든 방) ===');
+for (const key of Object.keys(HR.rooms)) {
+  const def = HR.rooms[key];
+  const b = buildHouse(null, def, WP.presets||WP, DP.presets||DP, FIN, FPf.presets||FPf, LP, SH);
+  const blocked = (x,z) => {
+    for (const c of b.colliders) {
+      const rot=c.rot||0, co=Math.cos(-rot), si=Math.sin(-rot);
+      const lx=(x-c.x)*co-(z-c.z)*si, lz=(x-c.x)*si+(z-c.z)*co;
+      if (Math.abs(lx)<c.w/2+R && Math.abs(lz)<c.d/2+R) return true;
+    }
+    return false;
+  };
+  const gates = [];
+  for (const d of (def.doors||[])) {
+    const S2=b.size;
+    if (d.wall==='back')  gates.push(['현관/문 '+d.wall, d.cu, -S2.d/2, 0, 1]);
+    if (d.wall==='front') gates.push(['현관/문 '+d.wall, d.cu,  S2.d/2, 0, 1]);
+    if (d.wall==='left')  gates.push(['현관/문 '+d.wall, -S2.w/2, d.cu, 1, 0]);
+    if (d.wall==='right') gates.push(['현관/문 '+d.wall,  S2.w/2, d.cu, 1, 0]);
+  }
+  for (const pt of (def.partitions||[])) {
+    const list = [];
+    if (pt.door && !pt.door.exit) list.push(['통로 '+pt.id, pt.door.at??0]);   // exit=밖으로 나가는 문(막힘이 정상)
+    for (const op of (pt.openings||[])) list.push(['미닫이 '+pt.id, op.at??0]);
+    for (const it of list) {
+      if (pt.axis==='x') gates.push([it[0], pt.at, it[1], 1, 0]);
+      else               gates.push([it[0], it[1], pt.at, 0, 1]);
+    }
+  }
+  const bad = [];
+  for (const g2 of gates) {
+    const nm=g2[0], x=g2[1], z=g2[2], nx=g2[3], nz=g2[4];
+    const a = blocked(x - nx*0.45, z - nz*0.45);
+    const c2 = blocked(x + nx*0.45, z + nz*0.45);
+    const mid = blocked(x, z);
+    if (a || c2 || mid) bad.push(nm + (mid?'(문자리)':'') + (a?'(앞)':'') + (c2?'(뒤)':''));
+  }
+  say('  ' + (def.label||key).padEnd(6) + ' 문·통로 ' + String(gates.length).padStart(2) +
+      (bad.length ? '  ★막힘: ' + bad.join(', ') : '  전부 통행 가능'));
+}
+say('');
+
+for (const key of Object.keys(TESTS)) {
+  const def = HR.rooms[key];
+  const b = buildHouse(null, def, WP.presets||WP, DP.presets||DP, FIN, FPf.presets||FPf, LP, SH);
+  const g = makeGrid(b.colliders, b.size);
+  let freeN = 0; for (const v of g.free) freeN += v;
+  say((def.label||key) + '  충돌체 ' + b.colliders.length + ' · 여닫이 ' + b.doorways.length +
+      ' · 격자 ' + g.n + 'x' + g.m + ' 빈칸 ' + freeN + '/' + (g.n*g.m) +
+      ' (' + Math.round(freeN/(g.n*g.m)*100) + '%)');
+  for (const t of TESTS[key]) {
+    const r = bfs(g, t[1], t[2]);
+    say('   ' + t[0].padEnd(18) + ' 통행=' + (r.ok?'O':'X') + ' 기대=' + (t[3]?'O':'X') +
+        '  ' + (r.ok===t[3] ? 'OK' : '★FAIL') + '  (탐색 ' + r.len + '칸)');
+  }
+  say('');
+}
+document.title = 'DONE';
+</script>

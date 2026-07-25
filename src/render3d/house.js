@@ -85,6 +85,14 @@ function panelToBox(wall, r, m){
   if(wall==='right') return box(WT,dv,du, m,  CW/2, cv, cu);
 }
 
+/* 벽 위 문의 월드 중심 + 통과 방향(법선) */
+function doorCenter(wall, cu){
+  if(wall==='back')  return { x:cu, z:-CD/2, nx:0, nz:1 };
+  if(wall==='front') return { x:cu, z: CD/2, nx:0, nz:1 };
+  if(wall==='left')  return { x:-CW/2, z:cu, nx:1, nz:0 };
+  return { x: CW/2, z:cu, nx:1, nz:0 };
+}
+
 /* 벽 좌표계 범위 (u축 길이·범위) */
 function wallURange(wall){
   return (wall==='back'||wall==='front') ? [-CW/2, CW/2] : [-CD/2, CD/2];
@@ -240,6 +248,34 @@ export function buildHouse(GRAIN, roomDefIn, winPresets, doorPresets={}, finishe
   const shells={};              // 컷어웨이 대상(벽·바닥·천장). 유리벽/프레임 제외.
   const glassMeshes=[];         // 하늘색 틴트 갱신 대상
   const glazedPanes=[];         // ★ 실내 반투과 유리(베란다 거실창) — 조도 감쇠용
+  /* ★ 캐릭터 충돌 — 벽·칸막이 '조각'과 가구를 그대로 담는다.
+     조각은 이미 개구부(문·창·전창)를 뺀 결과라, 문 자리는 저절로 비어 있다.
+     조도용 occluders와는 목적이 다르다(저건 빛, 이건 몸). */
+  const colliders=[];
+  /* ★ 여닫이 자리 — 캐릭터가 가까이 오면 열린다.
+     { x,z, nx,nz(통과 방향), half(반폭), node, kind:'swing'|'slide', ... } */
+  const doorways=[];
+  const pushCol=(x,z,w,d,h,rot=0)=>colliders.push({x,z,w,d,h,rot});
+
+  /* 한 선분(axis 방향 벽)을 '지날 수 있는 구멍'만 빼고 막는다.
+     axis:'x' → x=at 인 세로벽, u는 z / axis:'z' → z=at 인 가로벽, u는 x
+     gaps = [[u0,u1], ...]  사람이 지나는 자리(문·통로·미닫이 짝) */
+  function blockLine(axis, at, uMin, uMax, gaps, thick=WT){
+    const cuts=[...gaps].sort((a,b)=>a[0]-b[0]);
+    let u=uMin;
+    for(const [a,b] of cuts){
+      if(b<=uMin||a>=uMax) continue;
+      if(a>u) seg(u, Math.min(a,uMax));
+      u=Math.max(u, Math.min(b,uMax));
+    }
+    if(u<uMax) seg(u, uMax);
+    function seg(a,b){
+      if(b-a<0.02) return;
+      const c=(a+b)/2, len=b-a;
+      if(axis==='x') pushCol(at, c, thick, len, CH);
+      else           pushCol(c, at, len, thick, CH);
+    }
+  }
   const winWorld=[];            // 창 월드 위치(엔진 winPos 계산)
 
   const glassWalls = roomDef.glassWalls || [];
@@ -404,6 +440,18 @@ export function buildHouse(GRAIN, roomDefIn, winPresets, doorPresets={}, finishe
         const door=buildDoor(spec.w, spec.h, { frameColor:dp.frameColor||'#f4efe4', gloss:dp.gloss||'satin' });
         placeInWall(door, wall, spec.cu, spec.h/2);
         g.add(door);                                // 문은 벽과 함께 컷어웨이
+        {   // ★ 여닫이 — 경첩을 문짝 한쪽 끝에 두고 그 축으로 돌린다
+          const piv=new THREE.Group();
+          const hingeU = spec.cu - spec.w/2;        // 왼쪽 경첩
+          placeInWall(piv, wall, hingeU, 0);
+          g.remove(door);
+          door.position.sub(piv.position);
+          door.rotation.y -= piv.rotation.y;
+          piv.add(door); g.add(piv);
+          const c=doorCenter(wall, spec.cu);
+          doorways.push({ x:c.x, z:c.z, nx:c.nx, nz:c.nz, half:spec.w/2+0.25,
+                          kind:'swing', node:piv, openRot:Math.PI*0.62, t:0 });
+        }
         if(dp.glass && dp.glass.type && dp.glass.type!=='none'){
           const gm=glassMaterial(dp.glass);
           if(gm){ const gl=makeGlassPane(wall, spec.cu, spec.h*0.62, spec.w*0.55, spec.h*0.45, gm, 'rect');
@@ -489,6 +537,33 @@ export function buildHouse(GRAIN, roomDefIn, winPresets, doorPresets={}, finishe
         if(pt.axis==='x'){ gl.rotation.y=Math.PI/2; gl.position.set(pt.at, cy, mid); }
         else             { gl.position.set(mid, cy, pt.at); }
         glassMeshes.push(gl); g.add(gl);
+        /* ★ 미닫이 짝 — openings 하나당 유리 한 짝을 따로 만들어 옆으로 민다.
+           통유리(위 gl)는 고정창이고, 이 짝이 그 앞에서 미끄러진다. */
+        if(pt.glazing.full) for(const op of (pt.openings||[])){
+          const oa=op.at??0, ow=op.w??1.5;
+          if(oa<a0-0.01||oa>a1+0.01) continue;
+          const leaf=new THREE.Group();
+          const pane=new THREE.Mesh(new THREE.PlaneGeometry(ow-0.06, ht-0.10), makeGlassMaterial());
+          const fm2=frameMaterial(pt.glazing.frameColor||'#e6ecee','satin');
+          const fr=[[ow, 0.05, 0, (ht-0.10)/2],[ow, 0.05, 0,-(ht-0.10)/2],
+                    [0.05, ht, -(ow-0.05)/2, 0],[0.05, ht, (ow-0.05)/2, 0]];
+          if(pt.axis==='x'){
+            pane.rotation.y=Math.PI/2; leaf.add(pane);
+            for(const [fw,fh,ou,ov] of fr) leaf.add(box(0.05,fh,fw,fm2,0,ov,ou));
+            leaf.position.set(pt.at+0.075, cy, oa);
+          }else{
+            leaf.add(pane);
+            for(const [fw,fh,ou,ov] of fr) leaf.add(box(fw,fh,0.05,fm2,ou,ov,0));
+            leaf.position.set(oa, cy, pt.at+0.075);
+          }
+          glassMeshes.push(pane); g.add(leaf);
+          doorways.push({ x: pt.axis==='x'? pt.at : oa,
+                          z: pt.axis==='x'? oa : pt.at,
+                          nx: pt.axis==='x'?1:0, nz: pt.axis==='x'?0:1,
+                          half: ow/2+0.25, kind:'slide', node:leaf,
+                          axis: pt.axis, home: pt.axis==='x'? leaf.position.z : leaf.position.x,
+                          travel: ow*0.92, t:0 });
+        }
         /* 조도: 이 판을 지나는 광선만 tau만큼 약해진다(차폐가 아니라 감쇠). */
         glazedPanes.push({ axis:pt.axis, at:pt.at, tau, u0:a0, u1:a1, y0:GY0, y1:GY1 });
 
@@ -543,6 +618,9 @@ export function buildHouse(GRAIN, roomDefIn, winPresets, doorPresets={}, finishe
     furnGroup.add(g);
     // ★ 조도 차폐체로 등록 (러그·조명처럼 빛을 막지 않는 것은 제외)
     const fsz=g.userData.size;
+    // 충돌: 낮은 것(러그)·벽걸이·천장등 빼고 전부. 조도 차폐보다 기준이 넓다.
+    if(fsz && fsz.h>0.20 && !hang && g.userData.mount!=='wall' && !/^rug/.test(type))
+      pushCol(f.x??0, f.z??0, fsz.w, fsz.d, fsz.h, (f.rot||0)*Math.PI/180);
     if(fsz && fsz.h>0.25 && !/^rug|^lamp|light|^picture|^wall_clock|^mirror/.test(type)){
       g.userData.occIdx = occluders.length;   // 자기 자신은 자기 슬롯을 가리지 않게(자가차폐 방지)
       occluders.push({ x:(f.x??0)-fsz.w/2, z:(f.z??0)-fsz.d/2,
@@ -590,8 +668,57 @@ export function buildHouse(GRAIN, roomDefIn, winPresets, doorPresets={}, finishe
   // 엔진 winPos = 첫 창(없으면 뒷벽 기본)
   const winPos = winWorld[0] || new THREE.Vector3(0.6,2.2,-CD/2+0.05);
 
+  /* ============================================================
+     ★ 충돌체 — 사람이 지날 수 있는 구멍만 빼고 막는다.
+       지남: 문 · 칸막이 통로 · 미닫이 짝
+       못지남: 창(유리) · 고정 유리 · 벽 · 도려낸 자리 경계
+  ============================================================ */
+  {
+    // 1) 바깥 경계 4변 — 문만 빼고 막는다(창은 유리라 못 지난다)
+    for(const wall of ['back','front','left','right']){
+      const [uMin,uMax]=wallURange(wall);
+      const gaps=(roomDef.doors||[]).filter(d=>d.wall===wall)
+                  .map(d=>[d.cu-d.w/2, d.cu+d.w/2]);
+      const at = (wall==='back')? -CD/2 : (wall==='front')? CD/2
+               : (wall==='left')? -CW/2 : CW/2;
+      const ax = (wall==='left'||wall==='right') ? 'x' : 'z';
+      blockLine(ax, at, uMin, uMax, gaps);
+    }
+    // 2) 도려낸 자리(집 밖) 경계 — 안쪽에서 못 나가게
+    //    ※ 같은 선에 칸막이(문 달린)가 이미 있으면 건너뛴다 — 안 그러면 문이 막힌다
+    /* 같은 선에 '그 구간까지 덮는' 칸막이가 있을 때만 건너뛴다.
+       선만 같고 구간이 다르면(예: 안방벽은 z -3.3~0.6, 도려내기는 z 2.26~5.0)
+       건너뛰면 안 된다 — 그러면 집 밖으로 걸어 나간다. */
+    const hasPart=(ax,at,u0,u1)=>(roomDef.partitions||[]).some(pt=>{
+      if(pt.axis!==ax || Math.abs(pt.at-at)>=0.05) return false;
+      const along=(pt.axis==='x')?CD:CW;
+      const a=(pt.from!=null)?pt.from:-along/2, b=(pt.to!=null)?pt.to:along/2;
+      return a<=u0+0.05 && b>=u1-0.05;
+    });
+    for(const c of cutouts){
+      if(c.x0 > -CW/2+1e-6 && !hasPart('x',c.x0,c.z0,c.z1)) blockLine('x', c.x0, c.z0, c.z1, []);
+      if(c.x1 <  CW/2-1e-6 && !hasPart('x',c.x1,c.z0,c.z1)) blockLine('x', c.x1, c.z0, c.z1, []);
+      if(c.z0 > -CD/2+1e-6 && !hasPart('z',c.z0,c.x0,c.x1)) blockLine('z', c.z0, c.x0, c.x1, []);
+      if(c.z1 <  CD/2-1e-6 && !hasPart('z',c.z1,c.x0,c.x1)) blockLine('z', c.z1, c.x0, c.x1, []);
+    }
+    // 3) 칸막이 — 통로(door)와 미닫이 짝(openings)만 지난다.
+    //    전창이어도 고정 유리는 못 지나므로 openings 자리만 뚫린다.
+    for(const pt of (roomDef.partitions||[])){
+      const along=(pt.axis==='x') ? CD : CW;
+      let uMin=(pt.from!=null)?Math.max(pt.from,-along/2):-along/2;
+      let uMax=(pt.to  !=null)?Math.min(pt.to,  along/2): along/2;
+      if(uMin> -along/2 && uMin < -along/2+0.3) uMin=-along/2;
+      if(uMax<  along/2 && uMax >  along/2-0.3) uMax= along/2;
+      const gaps=[];
+      // door.exit = 집 밖으로 나가는 문. 문짝은 보이되 통과는 막는다(밖엔 바닥이 없다).
+      if(pt.door && !pt.door.exit){ const dw=pt.door.w??0.95, da=pt.door.at??0; gaps.push([da-dw/2, da+dw/2]); }
+      for(const op of (pt.openings||[])){ const ow=op.w??1.5, oa=op.at??0; gaps.push([oa-ow/2, oa+ow/2]); }
+      blockLine(pt.axis, pt.at, uMin, uMax, gaps, WT*0.7);
+    }
+  }
+
   return { room, shells, windows:winWorld, glassMeshes, winPos, size:{ w:CW, d:CD, h:CH },
-           furniture:furnGroup, lightRigs, plantSlots, occluders, luxWins, glazedPanes, facing };
+           furniture:furnGroup, lightRigs, plantSlots, occluders, colliders, doorways, luxWins, glazedPanes, facing };
 }
 
 /* ---- 원점 중심 그룹을 벽에 앉힌다 (위치 + Y회전) ---- */

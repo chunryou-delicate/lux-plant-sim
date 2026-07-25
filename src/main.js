@@ -85,7 +85,10 @@ async function buildRoomPreset(name){
   ctx.clShade=null; plants=[];
   built.furniture.traverse(o=>{ if(o.parent&&o.parent.userData&&o.parent.userData.lampShade===o) ctx.clShade=o; });
 
-  if(hero) hero.setPosition(0, Math.min(built.size.d/2-0.8, 1.0));   // 새 방 안쪽으로
+  if(hero){
+    hero.setWorld({ colliders:built.colliders, doorways:built.doorways, size:built.size });  // 벽·가구·문 물려주기
+    hero.setPosition(0, Math.min(built.size.d/2-0.8, 1.0));                 // 새 방 안쪽으로
+  }
   if(sample){ sample.parent&&sample.parent.remove(sample); sample=null; }   // 방이 바뀌면 샘플은 치운다
 
   applyLight();
@@ -330,6 +333,7 @@ function bindControls(){
     this.textContent='불러오는 중…'; this.disabled=true;
     try{
       hero=await createCharacter(ctx.scene, charPick.value);
+      hero.setWorld({ colliders:builtRef&&builtRef.colliders, doorways:builtRef&&builtRef.doorways, size:RSIZE });
       hero.setPosition(0, Math.min(RSIZE.d/2-0.8, 1.0));
       this.textContent='치우기'; this.classList.add('on'); setEmotesEnabled(true);
     }catch(err){
