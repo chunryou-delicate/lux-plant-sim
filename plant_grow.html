@@ -136,7 +136,8 @@ const DEF={
   photoLean:0.13, stemStraight:0.30,   // 빛 쪽으로 기우는 세기(굴광성 슬라이더와 곱해짐) · 축 기본방향으로 돌아오는 힘(작을수록 더 휨)
   stemTrans:40, bumpGrow:20, bumpAt:0.3, stemOverlap:0.015,
   tipTaper:0.72, nodeBulge:0.16, nodeWidth:0.045, bumpFit:1.02,
-  knobWide:1.4, knobSink:0.45, knobOut:0.30, sheathLen:0.06, sheathFit:1.30, stemTex:1.0, texRepeat:3.0,   // 혹돌기 크기/돌출 · 엽초 길이/감싸는 여유 · 줄기 텍스처 세기/반복   // 튜브 줄기: 끝 가늘어짐 · 마디 볼록 세기/폭 · 혹 GLB가 튜브를 감싸는 여유   // 초기→중기_2 전이(일) · 혹 돋는 기간(중기_1 단계) · 돌기 위치(마디 비율=가지 나는 지점) · 이음새 겹침
+  sheathLen:0.22, sheathFit:1.12,   // 엽초: 길이(잎 크기 x 이 값) · 줄기를 감싸는 굵기 배수
+  stemTex:1.0, texRepeat:3.0,       // 줄기 표면 결: 세기 · 세로 반복 횟수
   petioleLen:1.0, leafElev:1.0, elevDrop:0.36, spread:0.10, branchSpread:0.55,   // 배치(spread=줄기 흔들림)
   leafLight:0.62, leafDark:0.13, leafSat:0.5, satRange:0.22, hueBase:0.16, hueRange:0.26,   // 색(밝기/진함/채도/개체범위)
   ageDark:0.10, ageSat:0.18,   // 시간(나이) 따라 짙어짐·선명해짐(전역, 줄기·잎 함께)
@@ -202,7 +203,7 @@ const ASSET_FILES={
   stem_thick:'stem_late_bump.glb', stem_main:'stem_late_double.glb',   // 후기_혹 / 후기_쌍혹
   stem_med:'stem_mid_1.glb', stem_thin:'stem_mid_2.glb',               // 중기_1 / 중기_2
   petiole:'stem_early.glb',                                            // 줄기_초기
-  knob:'stem_knob.glb',                                                // 줄기_혹_돌기 (튜브 표면에 붙는 혹만)
+  knob:'stem_knob.glb',                                                // 줄기_혹_돌기 (현재 미사용 — 혹 있는 줄기 GLB 방식 사용 중)
   sheath:'leaf_sheath.glb'                                             // 줄기_잎_엽초 (줄기↔잎자루 이음)
 };
 // forceLongY: 가장 긴 축을 Y로 회전. 줄기류는 길쭉해서 필요하지만
@@ -429,28 +430,11 @@ function addStemTube(pts, rBase, rTip, nodeTs, color){
   const m=new THREE.Mesh(geo, mat); m.castShadow=true; m.receiveShadow=true;
   plantGroup.add(m);
 }
-// 혹 돌기: 줄기 표면(방위 az)에 파묻듯 붙임. 줄기 굵기는 그대로 두고 혹만 볼록하게.
-// dbl(쌍혹)이면 반대편에도 하나 더.
-function addKnob(at, stemDir, az, tubeRad, dbl){
-  const p0=ASSETS.knob; if(!p0) return;
-  // ★크기는 "줄기 지름 대비 돌기 지름"(knobWide)으로 지정하고, 에셋의 폭/높이 비로 환산.
-  //   에셋이 바뀌어도(폭이 바뀌어도) 화면 크기가 안 튀도록.
-  const wRatio=Math.max(0.05, p0.userData.sx||1);           // 높이1 기준 가로폭
-  const size=(tubeRad*2*P.knobWide)/wRatio;                 // 원하는 지름 → 높이 배율
-  const n=dbl?2:1;
-  for(let i=0;i<n;i++){
-    const f=stemFrame(stemDir, az + (n===2? i*Math.PI : 0));
-    const out=f.side.clone().addScaledVector(f.up, P.knobOut).normalize();   // 옆+살짝 위
-    const proto=assetInst('knob'); if(!proto) return;
-    const base=at.clone().addScaledVector(out, tubeRad*P.knobSink);          // 밑면이 줄기에 살짝 묻히게
-    placeAlong(proto, base, out, size);
-    tintObj(proto, stemTint(0.05)); plantGroup.add(proto);
-  }
-}
+// (제거됨) addKnob — 혹 돌기 단독 에셋 방식. '혹 있는 줄기 GLB' 방식으로 복귀하여 미사용
 // 엽초: 줄기 끝 ↔ 잎자루 이음부를 감싸는 짧은 슬리브(줄기_잎_엽초 에셋)
 function addSheath(nodePos, d, stemRad, size){
   if(!(P.sheathLen>0.001 && ASSETS.sheath)) return;
-  const len=P.sheathLen*(0.55+size);
+  const len=P.sheathLen*size;        // ★잎 크기에 비례(고정분을 빼야 작은 잎에서 갓등처럼 안 됨)
   const p0=nodePos.clone().addScaledVector(d, -len*0.35);    // 줄기 속으로 물려 시작
   const p1=nodePos.clone().addScaledVector(d,  len*0.65);
   stretchGLB('sheath', p0, p1, stemRad*P.sheathFit, stemTint(0.03));
@@ -638,13 +622,11 @@ function buildPlant(){
         const matured=Math.min(1, (g-ax.birth)/Math.max(1,P.stemTrans*2));
         const rBase=P.rEarly+(P.rThin-P.rEarly)*matured, rTip=P.rEarly*P.tipTaper;
         addStemTube(pts, rBase, rTip, nodeTs, stemTint(0));
-        // ② 혹: 줄기_혹_돌기 에셋을 튜브 "표면"에 붙임 → 줄기 굵기를 안 건드림
+        // ② 혹: 줄기_후기_혹 / 쌍혹 GLB를 해당 마디 구간에 얹음(튜브를 감싸도록 조금 크게)
         for(const b of bumps){
-          const p0=pts[b.i], p1=pts[b.i+1];
-          const sd=p1.clone().sub(p0).normalize();
-          const at=p0.clone().lerp(p1, P.bumpAt);                    // 마디 안에서 돌기 위치
-          const tRad=rBase+(rTip-rBase)*((b.i+P.bumpAt)/Math.max(1,pts.length-1));
-          addKnob(at, sd, b.s.az, tRad, b.s.actType==='main');       // 쌍혹이면 2개
+          const key=b.s.actType==='main'?'stem_main':'stem_thick';
+          const rad=(b.s.actType==='main'?P.rThick*1.05:P.rThick)*P.bumpFit;
+          stretchGLB(key, pts[b.i], pts[b.i+1], rad, stemTint(0.04), b.s.az);
         }
       }
       const tipRad=P.rEarly*P.tipTaper;
@@ -927,10 +909,7 @@ const SHAPE_DEFS=[
   {k:'internode',   t:'마디 길이',         min:0.12, max:0.4,  step:0.01},
   {k:'tipTaper',    t:'끝 가늘어짐',       min:0.35, max:1.2,  step:0.02},
   {k:'nodeBulge',   t:'마디 볼록',         min:0,    max:0.5,  step:0.02},
-  {k:'knobWide',    t:'혹 지름(줄기대비)', min:0,    max:3.5,  step:0.05},
-  {k:'knobSink',    t:'혹 파묻힘',         min:-0.5, max:1.2,  step:0.05},
-  {k:'knobOut',     t:'혹 돌기 각도(위)',  min:-0.5, max:1.2,  step:0.05},
-  {k:'sheathLen',   t:'엽초 길이',         min:0,    max:0.2,  step:0.005},
+  {k:'sheathLen',   t:'엽초 길이',         min:0,    max:0.4,  step:0.01},
   {k:'sheathFit',   t:'엽초 감싸는 굵기',  min:0.8,  max:2.2,  step:0.05},
   {k:'stemTex',     t:'줄기 결 세기',      min:0,    max:1,    step:0.05},
   {k:'texRepeat',   t:'줄기 결 반복',      min:0.5,  max:10,   step:0.5},
