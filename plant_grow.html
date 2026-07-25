@@ -133,7 +133,7 @@ const DEF={
   sizeYoung:0.20, sizeMid:0.34, sizeMature:0.46, sizeFull:0.58,  // 각 시점 크기(마디 간격 대비 자연스럽게)
   internode:0.20, stemFlat:1.25,   // 줄기 마디 길이·잎방향 납작
   petGrow:16, rEarly:0.022, rThin:0.028, rMed:0.025, rThick:0.031, matureProb:0.22, doubleBud:0.15,  // 종류별 굵기(몸통 폭 기준, 왜곡 최소)·성숙잎 확률·쌍혹 확률
-  leafEmbed:0.13, leafTilt:0.30, leafClear:0.40, leafTiltVary:0,   // leafTiltVary=0 → 잎 각도 고정(조절값 그대로), >0 이면 겹침 회피가 각도도 흔듦   // 잎자루를 줄기 속으로 박는 깊이 · 잎이 줄기 끝 방향을 따라가는 정도 · 잎이 차지하는 반경(겹침 회피)
+  leafEmbed:0.13, leafTilt:0.30, leafClear:0.40, leafTiltVary:0, leafStemClear:2.5,   // leafTiltVary=0 → 잎 각도 고정(조절값 그대로), >0 이면 겹침 회피가 각도도 흔듦   // 잎자루를 줄기 속으로 박는 깊이 · 잎이 줄기 끝 방향을 따라가는 정도 · 잎이 차지하는 반경(겹침 회피)
   photoLean:0.13, stemStraight:0.30,   // 빛 쪽으로 기우는 세기(굴광성 슬라이더와 곱해짐) · 축 기본방향으로 돌아오는 힘(작을수록 더 휨)
   stemTrans:40, bumpGrow:20, bumpAt:0.2, bumpAzOff:0, stemOverlap:0.015,   // bumpAzOff=가지가 나는 방위를 혹 돌기 쪽으로 미세 회전
   tipTaper:0.55, nodeBulge:0.16, nodeWidth:0.045, bumpFit:1.02,
@@ -480,7 +480,8 @@ function leafSize(age){
 // ===== 고체처럼 거동: 이미 놓인 잎/새순의 자리를 기억해 서로 파고들지 않게 =====
 let PLACED=[];                                   // {c:잎몸 중심, r:반경}
 let USE_COUNT={};                                // 이번 빌드에서 각 에셋이 몇 개 그려졌나(패널 표시용)
-function clearPlaced(){ PLACED=[]; USE_COUNT={}; }
+let STEMS=[];                                    // 잎이 피해야 할 줄기(선분+굵기) 목록
+function clearPlaced(){ PLACED=[]; USE_COUNT={}; STEMS=[]; }
 // ===== 줄기를 "이음새 없는 한 줄기 튜브"로 생성 =====
 // 마디 점들을 CatmullRom 곡선으로 잇고, 굵기를 t에 따라 변화(위로 갈수록 가늘게 + 마디마다 살짝 부풀림).
 // GLB를 마디마다 이어 붙이던 방식은 경계 링이 필연적이라 이렇게 바꿈. 혹은 이 위에 얹는다.
@@ -591,19 +592,45 @@ const AIM_AZ=[0,30,-30,60,-60,90,-90,120,-120,150,-150,180].map(a=>a*Math.PI/180
 // 겹침 회피가 방위(az)뿐 아니라 '벌어짐 각(tilt)'까지 바꾸면, 조절기로 맞춘 잎 각도가
 // 줄기마다 달라 보인다. leafTiltVary=0 이면 각도를 완전히 고정하고 방위만으로 피한다.
 const AIM_TILT_BASE=[0,0.16,-0.12,0.32,-0.22];
+// 점 ↔ 선분 최단거리(줄기를 캡슐로 보고 검사)
+function segDist(p, a, b){
+  const ab=b.clone().sub(a), L2=ab.lengthSq();
+  const t=L2<1e-12?0:Math.max(0,Math.min(1, p.clone().sub(a).dot(ab)/L2));
+  return p.distanceTo(a.clone().addScaledVector(ab,t));
+}
 function freeAim(nodePos, stemDir, az0, tilt0, size){
   const R=size*P.leafClear;                                      // 잎이 차지하는 반경
+  // ★자기 줄기 주변은 제외하고, 잎이 뻗는 범위 안에 있는 줄기만 후보로(성능)
+  const reach=size*1.25, near=[];
+  if(P.leafStemClear>0.001){
+    for(const st of STEMS){
+      const mid=st.a.clone().add(st.b).multiplyScalar(0.5);
+      if(mid.distanceTo(nodePos) < reach+st.r+0.25) near.push(st);
+    }
+  }
+  const selfR=size*0.30;                                         // 이 거리 안쪽은 '자기가 붙은 자리'라 무시
+  const stemGap=(d)=>{                                           // 잎 몸통을 3점으로 샘플링해 줄기와의 여유 계산
+    if(!near.length) return 1e9;
+    let mn=1e9;
+    for(const f of [0.45,0.75,1.0]){
+      const q=nodePos.clone().addScaledVector(d, size*f);
+      if(q.distanceTo(nodePos)<selfR) continue;
+      for(const st of near) mn=Math.min(mn, segDist(q, st.a, st.b) - st.r - size*0.10);
+    }
+    return mn;
+  };
   let best=null, bestScore=-1e9;
   const AIM_TILT=(P.leafTiltVary>0.001)? AIM_TILT_BASE.map(v=>v*P.leafTiltVary) : [0];
   for(const dt of AIM_TILT) for(const da of AIM_AZ){
     const az=az0+da, tilt=Math.max(0, Math.min(1.2, tilt0+dt));
     const d=leafDir(stemDir, az, tilt), f=stemFrame(stemDir, az);
-    // 잎몸은 줄기축을 따라 올라가며 az 쪽으로 벌어짐(잎 GLB 곡선 반영한 근사)
     const c=nodePos.clone().addScaledVector(d, size*0.55).addScaledVector(f.side, size*0.40);
     let gap=1e9;
     for(const p of PLACED) gap=Math.min(gap, c.distanceTo(p.c)-(p.r+R));
-    if(gap>1e8) return {d, c, r:R, az, tilt};                    // 첫 잎: 원래 방향 그대로
-    const score=Math.min(gap,0.25) - 0.10*Math.abs(da)/Math.PI - 0.10*Math.abs(dt);
+    const sg=stemGap(d);                                         // 줄기와의 여유
+    if(gap>1e8 && sg>1e8) return {d, c, r:R, az, tilt};           // 첫 잎이고 줄기도 없음
+    const score=Math.min(gap,0.25) + P.leafStemClear*Math.min(sg,0.12)
+                - 0.10*Math.abs(da)/Math.PI - 0.10*Math.abs(dt);
     if(score>bestScore){ bestScore=score; best={d, c, r:R, az, tilt}; }
   }
   return best;
@@ -762,43 +789,45 @@ function buildPlant(){
         addSeg(ax,T); ax.grew=true;
       }
     }
-    // ===== 렌더: 축마다 마디를 밑동→위로 쌓고, 맨 위 생장점에 잎 1개 =====
+    // ===== 렌더 =====
+    // ★2단계로 나눈다: 잎이 "다른 줄기"를 피하려면 잎을 놓기 전에 모든 줄기를 알아야 하기 때문.
+    //   1단계에서 전 축의 마디 점·굵기를 계산해 장애물(STEMS)로 등록하고, 2단계에서 그린다.
     let nLeaf=0, acts=0, nSeg=0;
+    const built=[];
     for(const ax of axes){
       if(ax.birth>g) continue;
-      // ① 마디 경계 점들을 모아 한 줄기 튜브로(이음새 없음). 혹은 그 위에 얹는다.
       let cur=axBase(ax,g);
       const pts=[cur.clone()], bumps=[];
-      for(const s of ax.segs){
-        if(s.birth>g) continue;
-        const gr=Math.min(1,(g-s.birth)/Math.max(1,P.petGrow));          // ★줄기_초기만 길이가 자람
-        cur=cur.clone().addScaledVector(s.dir, s.len*gr);
+      for(const sg of ax.segs){
+        if(sg.birth>g) continue;
+        const gr=Math.min(1,(g-sg.birth)/Math.max(1,P.petGrow));        // ★줄기_초기만 길이가 자람
+        cur=cur.clone().addScaledVector(sg.dir, sg.len*gr);
         pts.push(cur.clone());
-        if(s.activated && g>=s.actT+P.bumpGrow){                         // 혹/쌍혹은 GLB로 얹을 자리 기록
-          bumps.push({s, i:pts.length-2, gr}); acts++;
-        }
+        if(sg.activated && g>=sg.actT+P.bumpGrow){ bumps.push({s:sg, i:pts.length-2, gr}); acts++; }
         nSeg++;
       }
-      if(pts.length>=2){
-        // 마디 경계의 t값(누적 길이 기준) → 그 지점만 살짝 볼록하게
-        const L=[0]; for(let i=1;i<pts.length;i++) L.push(L[i-1]+pts[i].distanceTo(pts[i-1]));
+      const matured=Math.min(1,(g-ax.birth)/Math.max(1,P.stemTrans*2));
+      const rBase=P.rEarly+(P.rThin-P.rEarly)*matured, rTip=P.rEarly*P.tipTaper;
+      built.push({ax, pts, bumps, rBase, rTip, tip:cur.clone()});
+      for(let i=0;i<pts.length-1;i++){                                   // 줄기 마디를 장애물로 등록
+        const t=(i+0.5)/Math.max(1,pts.length-1);
+        STEMS.push({a:pts[i], b:pts[i+1], r:rBase+(rTip-rBase)*t});
+      }
+    }
+    for(const e of built){
+      if(e.pts.length>=2){
+        const L=[0]; for(let i=1;i<e.pts.length;i++) L.push(L[i-1]+e.pts[i].distanceTo(e.pts[i-1]));
         const tot=L[L.length-1]||1, nodeTs=L.slice(1,-1).map(l=>l/tot);
-        // 굵기: 밑동은 성숙한 줄기, 끝은 갓 난 줄기_초기 → 자연스러운 테이퍼
-        const matured=Math.min(1, (g-ax.birth)/Math.max(1,P.stemTrans*2));
-        const rBase=P.rEarly+(P.rThin-P.rEarly)*matured, rTip=P.rEarly*P.tipTaper;
-        addStemTube(pts, rBase, rTip, nodeTs, stemTint(0));
-        // ② 혹: 줄기_후기_혹 / 쌍혹 GLB를 해당 마디 구간에 얹음(튜브를 감싸도록 조금 크게)
-        for(const b of bumps){
+        addStemTube(e.pts, e.rBase, e.rTip, nodeTs, stemTint(0));
+        for(const b of e.bumps){                                         // 혹/쌍혹 GLB를 마디 구간에 얹음
           const key=b.s.actType==='main'?'stem_main':'stem_thick';
           const rad=(b.s.actType==='main'?P.rThick*1.05:P.rThick)*P.bumpFit;
-          stretchGLB(key, pts[b.i], pts[b.i+1], rad, stemTint(0.04), b.s.az);
+          stretchGLB(key, e.pts[b.i], e.pts[b.i+1], rad, stemTint(0.04), b.s.az);
         }
       }
-      const tipRad=P.rEarly*P.tipTaper;
-      // ① 생장점의 잎 1개 — 줄기_초기가 다 자란 뒤 새순으로 나서 그 자리에서 성숙
-      const last=ax.segs.length?ax.segs[ax.segs.length-1]:null;
+      const ax=e.ax, last=ax.segs.length?ax.segs[ax.segs.length-1]:null;
       const tipAz=last?last.az:ax.az, tipDir=last?last.dir:ax.dir;
-      if(g>=ax.leafBirth){ drawLeafStage(cur, tipAz, leafM(ax,g), ax.midType, ax.canMature, tipDir, tipRad); nLeaf++; }
+      if(g>=ax.leafBirth){ drawLeafStage(e.tip, tipAz, leafM(ax,g), ax.midType, ax.canMature, tipDir, P.rEarly*P.tipTaper); nLeaf++; }
     }
     nodes=nSeg; leaves=nLeaf;
     stage = nSeg<=1 ? '새싹 🌱' : ((axes.length>1?'가지 '+(axes.length-1)+' · ':'')+(acts?'혹 '+acts+' · ':'')+'마디 '+nSeg);
@@ -1106,6 +1135,7 @@ const SHAPE_DEFS=[
   {k:'leafTiltVary',t:'잎 각도 흔들림(0=고정)', min:0, max:1.5, step:0.05},
   {k:'leafEmbed',   t:'잎 박히는 깊이',    min:0,    max:0.3,  step:0.01},
   {k:'leafClear',   t:'잎 서로 비켜서기',  min:0,    max:0.7,  step:0.02},
+  {k:'leafStemClear',t:'잎이 줄기 피하기', min:0,   max:4,    step:0.1},
 ];
 function buildShapePanel(){
   const box=document.getElementById('shapeSliders'); if(!box) return; box.innerHTML='';
