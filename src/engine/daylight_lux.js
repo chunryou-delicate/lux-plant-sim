@@ -27,13 +27,13 @@
 ============================================================ */
 
 /* house_rooms.json 방식(wall/cu/cy/w/h) → 창 사각형 */
-export function winFromHouse(wall, cu, cy, w, h, size, tau = 0.8) {
+export function winFromHouse(wall, cu, cy, w, h, size, tau = 0.8, evScale = 1) {
   const W = size.w, D = size.d;
   switch (wall) {
-    case 'back':  return { cx: cu,    cy, cz: -D / 2, ux: 1, uz: 0, nx: 0,  nz: 1,  width: w, height: h, tau };
-    case 'front': return { cx: cu,    cy, cz:  D / 2, ux: 1, uz: 0, nx: 0,  nz: -1, width: w, height: h, tau };
-    case 'left':  return { cx: -W / 2, cy, cz: cu,    ux: 0, uz: 1, nx: 1,  nz: 0,  width: w, height: h, tau };
-    case 'right': return { cx:  W / 2, cy, cz: cu,    ux: 0, uz: 1, nx: -1, nz: 0,  width: w, height: h, tau };
+    case 'back':  return { cx: cu,    cy, cz: -D / 2, ux: 1, uz: 0, nx: 0,  nz: 1,  width: w, height: h, tau, evScale };
+    case 'front': return { cx: cu,    cy, cz:  D / 2, ux: 1, uz: 0, nx: 0,  nz: -1, width: w, height: h, tau, evScale };
+    case 'left':  return { cx: -W / 2, cy, cz: cu,    ux: 0, uz: 1, nx: 1,  nz: 0,  width: w, height: h, tau, evScale };
+    case 'right': return { cx:  W / 2, cy, cz: cu,    ux: 0, uz: 1, nx: -1, nz: 0,  width: w, height: h, tau, evScale };
   }
   return null;
 }
@@ -106,6 +106,28 @@ function autoSamples(w, p) {
   return [clamp(w.width / patch), clamp(w.height / patch)];
 }
 
+/* ★ 반투과 유리판(베란다 거실창 같은 실내 유리) 통과 감쇠.
+   차폐체(occluder)는 빛을 100% 막지만 이건 tau만큼 통과시킨다.
+   중요한 건 '슬롯당'이 아니라 '(창, 지점) 광선당'이라는 점이다 —
+   같은 거실 화분이라도 베란다 창에서 오는 빛은 2겹, 자기 방 창에서 오는 빛은 1겹이다.
+   pane = { axis:'x'|'z', at, u0, u1, y0, y1, tau }  (u = 판이 뻗는 방향 좌표) */
+function paneAtten(A, B, panes) {
+  let att = 1;
+  for (const g of panes) {
+    const az = g.axis === 'x' ? A.x : A.z;
+    const bz = g.axis === 'x' ? B.x : B.z;
+    const da = az - g.at, db = bz - g.at;
+    if (da === 0 || (da > 0) === (db > 0)) continue;      // 판을 가로지르지 않음
+    const t = da / (da - db);
+    const y = A.y + (B.y - A.y) * t;
+    if (y < g.y0 || y > g.y1) continue;
+    const u = g.axis === 'x' ? (A.z + (B.z - A.z) * t) : (A.x + (B.x - A.x) * t);
+    if (u < g.u0 || u > g.u1) continue;                    // 개구부 밖 = 벽(차폐체가 이미 처리)
+    att *= g.tau;
+  }
+  return att;
+}
+
 export function daylightAt(p, n, wins, opt = {}) {
   if (!wins || !wins.length) return 0;
   const Ev = opt.sky ?? 8000;
@@ -113,12 +135,14 @@ export function daylightAt(p, n, wins, opt = {}) {
      기본이 [4,3]인 건 tool.html이 그 값으로 검증돼 있기 때문. 벽만 한 창을 쓰면 'auto'. */
   const fixed = (opt.samples && opt.samples !== 'auto') ? opt.samples : null;
   const occ = opt.occluders || null;
+  const panes = opt.glazed || null;
   let E = 0;
 
   for (const w of wins) {
     if (!w || w.width <= 0 || w.height <= 0) continue;
     const [Mw, Mh] = fixed || (opt.samples === 'auto' ? autoSamples(w, p) : [4, 3]);
-    const L = Ev * (w.tau ?? 0.8) / Math.PI;          // 천공 휘도 [cd/m²]
+    // 창별 evScale = 향 계수(남향 1.0 / 북향 0.38) × 차광막 등. 없으면 1.
+    const L = Ev * (w.tau ?? 0.8) * (w.evScale ?? 1) / Math.PI;   // 천공 휘도 [cd/m²]
     const dA = (w.width / Mw) * (w.height / Mh);
     for (let a = 0; a < Mw; a++) {
       for (let b = 0; b < Mh; b++) {
@@ -139,7 +163,11 @@ export function daylightAt(p, n, wins, opt = {}) {
 
         if (occ && isShadowed(p, { x: wx, y: wy, z: wz }, occ, opt.selfIdx)) continue;
 
-        E += L * cosWin * cosP * dA / d2;
+        // 실내 유리판(베란다 거실창)을 지나면 그 광선만 tau만큼 약해진다
+        const att = panes ? paneAtten({ x: wx, y: wy, z: wz }, p, panes) : 1;
+        if (att <= 0) continue;
+
+        E += L * cosWin * cosP * dA / d2 * att;
       }
     }
   }
@@ -177,6 +205,7 @@ export function axialIntensity(flux, type) {
 /* lum = { x,y,z, flux, dist:'lambert'|..., aim:{x,y,z}(기본 하방) } */
 export function pointIllum(p, n, lums, opt = {}) {
   const occ = opt.occluders || null;
+  const panes = opt.glazed || null;
   let E = 0;
   for (const L of lums) {
     if (L.on === false) continue;
@@ -301,6 +330,33 @@ export const SEASON = {
   autumn: { k: 0.80, hours: 11.8, ko: '가을' },
   winter: { k: 0.55, hours:  9.8, ko: '겨울' }
 };
+
+/* ★ 창 향(方位) 계수 — 연직면이 받는 하루 채광량의 남향 대비 비율.
+   이 모델의 천공은 방향과 무관한 균일 휘도라, 향을 안 넣으면 북향창과 남향창이
+   똑같이 밝다. 실제로는 직사·주변광 때문에 수 배 차이가 난다.
+   창별 evScale로 곱해 근사한다 — 창 하나하나가 자기 향의 천공을 본다고 보는 것.
+   서울 기준 연직면 일사/채광 자료의 대략적 비율. */
+export const ORIENT = {
+  south:     { k: 1.00, ko: '남향' },
+  southeast: { k: 0.85, ko: '남동향' },
+  southwest: { k: 0.85, ko: '남서향' },
+  east:      { k: 0.62, ko: '동향' },
+  west:      { k: 0.62, ko: '서향' },
+  northeast: { k: 0.45, ko: '북동향' },
+  northwest: { k: 0.45, ko: '북서향' },
+  north:     { k: 0.38, ko: '북향' }
+};
+export const COMPASS = ['north','northeast','east','southeast','south','southwest','west','northwest'];
+
+/* 방의 facing(= back 벽 바깥이 향하는 방위) + 벽 이름 → 그 벽의 방위.
+   back에서 시계방향으로 right(+90°) front(+180°) left(+270°). */
+export function wallOrient(facing, wall) {
+  const i = COMPASS.indexOf(facing || 'south');
+  if (i < 0) return 'south';
+  const turn = { back: 0, right: 2, front: 4, left: 6 }[wall] || 0;
+  return COMPASS[(i + turn) % 8];
+}
+export function orientK(orient) { return (ORIENT[orient] || ORIENT.south).k; }
 
 /* 지역 계수 — 지금은 전부 1.0(자리만). 국내 연간 일조시간 차는 최대 37%,
    서울 기준 ±5%라 계절(45%)·날씨(75%)보다 작아 우선순위 낮음. */

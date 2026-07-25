@@ -202,41 +202,57 @@
       "ceiling": "solid",
       "windows": [
         {
-          "wall": "back",
-          "cu": -1.6,
-          "cy": 1.3,
-          "w": 3.2,
-          "h": 1.9,
           "preset": "win_apt_big",
-          "color": "#ffffff",
-          "gloss": "satin",
-          "note": "거실 큰창"
+          "wall": "back",
+          "cu": -2.0,
+          "cy": 1.3,
+          "w": 5.6,
+          "h": 2.0,
+          "tau": 0.92,
+          "note": "베란다 새시(바깥 1겹)"
         },
         {
+          "preset": "win_apt_wide",
           "wall": "back",
-          "cu": 2.9,
+          "cu": 3.0,
+          "cy": 1.3,
+          "w": 2.4,
+          "h": 1.8,
+          "tau": 0.92,
+          "note": "안방 남향창"
+        },
+        {
+          "preset": "win_apt_wide",
+          "wall": "front",
+          "cu": -2.6,
           "cy": 1.3,
           "w": 1.6,
-          "h": 1.9,
+          "h": 1.4,
+          "note": "작은방 북향창"
+        },
+        {
           "preset": "win_apt_wide",
-          "color": "#ffffff",
-          "gloss": "satin",
-          "note": "안방 창"
+          "wall": "left",
+          "cu": 2.3,
+          "cy": 1.3,
+          "w": 1.6,
+          "h": 1.4,
+          "note": "작은방 동향창"
         }
       ],
       "doors": [
         {
           "wall": "front",
-          "cu": -2.8,
-          "w": 1,
+          "cu": 3.4,
+          "w": 1.0,
           "h": 2.15,
           "preset": "door_plain_white",
-          "note": "현관 — 거실쪽"
+          "note": "현관"
         }
       ],
       "size": {
-        "w": 8,
-        "d": 6,
+        "w": 10,
+        "d": 7,
         "h": 2.6
       },
       "wall": "w_pure",
@@ -244,92 +260,156 @@
       "ceil": "c_white",
       "partitions": [
         {
+          "id": "balcony",
+          "axis": "z",
+          "at": -2.4,
+          "from": -5,
+          "to": 1.0,
+          "glazing": {
+            "tau": 0.92
+          },
+          "openings": [
+            {
+              "at": -2.0,
+              "w": 3.4,
+              "y0": 0.05,
+              "y1": 2.3
+            }
+          ],
+          "note": "★ 거실창(안쪽 1겹). 베란다 화분=1겹, 거실 화분=2겹(합 0.85)"
+        },
+        {
           "id": "bed",
           "axis": "x",
-          "at": 1.7,
+          "at": 1.0,
+          "from": -3.5,
+          "to": 1.2,
           "door": {
-            "at": 1.1,
+            "at": 0.3,
             "w": 0.95,
             "h": 2.1
           },
-          "note": "거실(좌) / 안방(우) 분획. 벽~벽 전체 + 통로."
+          "note": "거실 / 안방"
+        },
+        {
+          "id": "small",
+          "axis": "z",
+          "at": 1.2,
+          "from": -5,
+          "to": 0.2,
+          "door": {
+            "at": -1.6,
+            "w": 0.95,
+            "h": 2.1
+          },
+          "note": "거실 / 작은방"
         }
       ],
       "furniture": [
         {
+          "preset": "shelf_ladder_4tier",
+          "x": -4.15,
+          "z": -3.24
+        },
+        {
+          "preset": "shelf_etagere_3tier",
+          "x": -3.25,
+          "z": -3.24
+        },
+        {
+          "preset": "plant_step_3",
+          "x": -2.3,
+          "z": -3.24
+        },
+        {
+          "preset": "shelf_etagere_3tier",
+          "x": -1.35,
+          "z": -3.24
+        },
+        {
+          "preset": "plant_step_3",
+          "x": -0.4,
+          "z": -3.24
+        },
+        {
+          "preset": "shelf_etagere_3tier",
+          "x": 0.55,
+          "z": -3.24
+        },
+        {
           "preset": "sofa_blush",
-          "x": -1.6,
-          "z": 1.4,
+          "x": -2.6,
+          "z": 0.55,
           "rot": 180
         },
         {
           "preset": "table_round",
-          "x": -1.6,
-          "z": 0.15
+          "x": -2.6,
+          "z": -0.6
         },
         {
           "preset": "tv",
-          "x": -1.6,
-          "z": -2.5
-        },
-        {
-          "preset": "shelf",
-          "x": -3.5,
+          "x": -4.55,
           "z": -0.6,
           "rot": 90
         },
         {
-          "preset": "rug",
-          "x": -1.6,
-          "z": 0.7
-        },
-        {
-          "preset": "kitchen",
-          "x": -2.6,
-          "z": 2.3,
-          "rot": 0
-        },
-        {
-          "preset": "fridge",
-          "x": -3.6,
-          "z": 2.35,
-          "rot": 0
-        },
-        {
-          "preset": "bed_double",
-          "x": 2.9,
-          "z": -1.2
-        },
-        {
-          "preset": "nightstand",
-          "x": 2.9,
-          "z": 0.45
-        },
-        {
-          "preset": "lamp_ceiling",
-          "x": -1.6,
-          "z": 0
+          "preset": "shelf",
+          "x": 0.35,
+          "z": -1.3,
+          "rot": -90
         },
         {
           "preset": "lamp_floor",
-          "x": -3.3,
-          "z": -1.8
+          "x": -0.9,
+          "z": 0.7
+        },
+        {
+          "preset": "bed_double",
+          "x": 3.3,
+          "z": -1.55
+        },
+        {
+          "preset": "nightstand",
+          "x": 1.65,
+          "z": -2.3
+        },
+        {
+          "preset": "wardrobe",
+          "x": 4.55,
+          "z": 0.45,
+          "rot": -90
+        },
+        {
+          "preset": "desk",
+          "x": -3.6,
+          "z": 3.1
+        },
+        {
+          "preset": "chair",
+          "x": -3.6,
+          "z": 2.5
         },
         {
           "preset": "shelf_etagere_3tier",
-          "x": -0.4,
-          "z": -2.65,
-          "rot": 0,
-          "note": "거실 창가 식물선반"
+          "x": -2.6,
+          "z": 3.22
         },
         {
-          "preset": "plant_pedestal",
-          "x": -2.7,
-          "z": -2.6,
-          "rot": 0,
-          "note": "창가 화분 받침"
+          "preset": "plant_step_3",
+          "x": -4.72,
+          "z": 2.3,
+          "rot": 90
+        },
+        {
+          "preset": "shelf_low",
+          "x": 4.55,
+          "z": 2.9,
+          "rot": -90
         }
-      ]
+      ],
+      "facing": "south",
+      "note": "베란다(1겹·남향 명당) / 거실(2겹) / 안방(남향 직접창) / 작은방(북+동향, 어두움). 방마다 향이 달라 자리 선택이 생긴다."
     },
     "classroom": {
       "label": "학원교실",

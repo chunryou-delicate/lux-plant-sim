@@ -20,6 +20,7 @@ import { mat, box, col } from './util.js';
 import { buildFurniture } from './furniture_pastel.js';
 import { buildWindowFrame, buildDoor, glassMaterial, glassGeometry, frameMaterial,
          resolveWindowPreset, FRAME_DEFAULTS, drawArch } from './window_frame.js';
+import { wallOrient, orientK } from '../engine/daylight_lux.js';
 
 export const RW=7, RD=7, RH=4;           // 기본 치수(방에 size 없으면 이 값)
 // ★ 현재 조립 중인 방의 실제 치수. buildHouse 시작 시 roomDef.size로 세팅된다.
@@ -238,6 +239,7 @@ export function buildHouse(GRAIN, roomDefIn, winPresets, doorPresets={}, finishe
   const room=new THREE.Group();
   const shells={};              // 컷어웨이 대상(벽·바닥·천장). 유리벽/프레임 제외.
   const glassMeshes=[];         // 하늘색 틴트 갱신 대상
+  const glazedPanes=[];         // ★ 실내 반투과 유리(베란다 거실창) — 조도 감쇠용
   const winWorld=[];            // 창 월드 위치(엔진 winPos 계산)
 
   const glassWalls = roomDef.glassWalls || [];
@@ -246,11 +248,15 @@ export function buildHouse(GRAIN, roomDefIn, winPresets, doorPresets={}, finishe
      유리벽을 여기 안 넣으면 온실처럼 '화면엔 유리인데 조도 0'인 방이 생긴다.
      ※ 지붕 유리(ceiling:'glass')는 아직 못 넣는다 — 엔진 창 법선에 y성분이 없다.
         docs/greenhouse_plan.md의 C단계에서 해결. */
+  const facing = roomDef.facing || 'south';       // back 벽 바깥이 향하는 방위
   const luxWins=[];
   for(const w of (roomDef.windows||[])){
     const p=winPresets[w.preset]||{};
-    const tau=(p.glass&&p.glass.transmittance)!=null?p.glass.transmittance:0.85;
-    luxWins.push({ wall:w.wall, cu:w.cu, cy:w.cy, w:w.w, h:w.h, tau, from:'window' });
+    // 창 스펙의 tau가 프리셋보다 우선(베란다 새시처럼 유리만 다른 경우)
+    const tau = w.tau ?? ((p.glass&&p.glass.transmittance)!=null ? p.glass.transmittance : 0.85);
+    const orient=w.orient||wallOrient(facing, w.wall);
+    luxWins.push({ wall:w.wall, cu:w.cu, cy:w.cy, w:w.w, h:w.h, tau,
+                   orient, evScale:orientK(orient), from:'window' });
   }
 
   // ---------- 바닥: 통판 1장 (조각 이음새 z-fighting 방지). 결/칸은 텍스처로 ----------
@@ -288,8 +294,11 @@ export function buildHouse(GRAIN, roomDefIn, winPresets, doorPresets={}, finishe
     const [uMin,uMax]=wallURange(wall);
     // ★ 유리벽도 조도 엔진엔 '창'이다. buildGlassWall이 실제로 만드는 유리판과
     //   같은 치수(-0.1)를 쓴다 — 겉(유리판)과 속(조도)이 어긋나지 않게.
-    if(kind==='glass') luxWins.push({ wall, cu:(uMin+uMax)/2, cy:CH/2,
-      w:(uMax-uMin)-0.1, h:CH-0.1, tau:0.85, from:'glassWall' });
+    if(kind==='glass'){
+      const go=wallOrient(facing, wall);
+      luxWins.push({ wall, cu:(uMin+uMax)/2, cy:CH/2, w:(uMax-uMin)-0.1, h:CH-0.1,
+                     tau:0.85, orient:go, evScale:orientK(go), from:'glassWall' });
+    }
     const g=new THREE.Group();
     g.userData={ normal:wallNormals[wall], center:wallCenters[wall] };
 
@@ -370,6 +379,12 @@ export function buildHouse(GRAIN, roomDefIn, winPresets, doorPresets={}, finishe
       const dw=pt.door.w??0.95, dh=pt.door.h??Math.min(2.05, CH-0.35), da=pt.door.at??0;
       holes.push({ x0:da-dw/2, y0:0, x1:da+dw/2, y1:dh });
     }
+    /* ★ 큰 개구부 — 베란다 거실창처럼 칸막이에 통유리를 끼우는 자리.
+       구멍이라 차폐체로 안 들어가고(빛이 지나감), glazing이 있으면 유리 한 겹을
+       더 통과한 것으로 쳐서 안쪽 슬롯에 tauExtra를 곱한다(§ 아래). */
+    for(const op of (pt.openings||[]))
+      holes.push({ x0:(op.at??0)-(op.w??2)/2, y0:op.y0??0.05,
+                   x1:(op.at??0)+(op.w??2)/2, y1:op.y1??Math.min(2.3, CH-0.2) });
     for(const r of rectMinus({x0:uMin,y0:0,x1:uMax,y1:CH}, holes)){
       const cu=(r.x0+r.x1)/2, cv=(r.y0+r.y1)/2, du=r.x1-r.x0, dv=r.y1-r.y0;
       if(du<0.001||dv<0.001) continue;
@@ -389,6 +404,20 @@ export function buildHouse(GRAIN, roomDefIn, winPresets, doorPresets={}, finishe
     if(uMax <  along/2-0.001)
       g.add( pt.axis==='x' ? box(CAP,CH,CAP, pw, pt.at, CH/2, uMax-CAP/2)
                            : box(CAP,CH,CAP, pw, uMax-CAP/2, CH/2, pt.at) );
+
+    // ★ 개구부에 유리 끼우기 (베란다 거실창) + 조도용 반투과 판 등록
+    if(pt.glazing) for(const op of (pt.openings||[])){
+      const y0=op.y0??0.05, y1=op.y1??Math.min(2.3, CH-0.2), at=op.at??0;
+      const gm=makeGlassMaterial();
+      const gl=new THREE.Mesh(new THREE.PlaneGeometry((op.w??2)-0.06, (y1-y0)-0.06), gm);
+      if(pt.axis==='x'){ gl.rotation.y=Math.PI/2; gl.position.set(pt.at, (y0+y1)/2, at); }
+      else             { gl.position.set(at, (y0+y1)/2, pt.at); }
+      glassMeshes.push(gl); g.add(gl);
+      /* 조도: 이 개구부를 지나는 광선만 tau만큼 약해진다(차폐가 아니라 감쇠).
+         개구부 '밖'은 칸막이 조각이 이미 차폐체로 들어가 있으므로 여기선 다루지 않는다. */
+      glazedPanes.push({ axis:pt.axis, at:pt.at, tau:pt.glazing.tau ?? 0.92,
+                         u0:at-(op.w??2)/2, u1:at+(op.w??2)/2, y0, y1 });
+    }
 
     // 통로 문틀(케이싱) — 있으면 개구부 가장자리 마감
     if(pt.door && pt.door.frame!==false){
@@ -467,7 +496,7 @@ export function buildHouse(GRAIN, roomDefIn, winPresets, doorPresets={}, finishe
   const winPos = winWorld[0] || new THREE.Vector3(0.6,2.2,-CD/2+0.05);
 
   return { room, shells, windows:winWorld, glassMeshes, winPos, size:{ w:CW, d:CD, h:CH },
-           furniture:furnGroup, lightRigs, plantSlots, occluders, luxWins };
+           furniture:furnGroup, lightRigs, plantSlots, occluders, luxWins, glazedPanes, facing };
 }
 
 /* ---- 원점 중심 그룹을 벽에 앉힌다 (위치 + Y회전) ---- */

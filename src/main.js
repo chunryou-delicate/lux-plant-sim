@@ -50,6 +50,7 @@ async function buildRoomPreset(name){
     winFromHouse(w.wall, w.cu, w.cy, w.w, w.h, built.size, w.tau)).filter(Boolean);
   curSlots=built.plantSlots||[];
   curOcc=built.occluders||[];
+  curGlazed=built.glazedPanes||[];
 
   // 천장등 갓 = 밤에 발광시킬 대상(가구 중 lamp_ceiling)
   ctx.clShade=null; plants=[];
@@ -101,6 +102,7 @@ function applyLight(){
 let curWins=[];     // 현재 방의 창 사각형(월드 m) — buildRoomPreset에서 갱신
 let curSlots=[];    // 화분 슬롯(월드 m) — 높이별 조도 판정에 사용
 let curOcc=[];      // ★ 차폐체(가구·칸막이) — 화면 그림자와 조도 계산을 일치시킨다
+let curGlazed=[];   // ★ 실내 반투과 유리(베란다 거실창) — 지나는 광선만 tau만큼 약해짐
 
 function engineRefresh(){
   const t=+sunEl.value;
@@ -113,7 +115,7 @@ function engineRefresh(){
     if(lampOn) lums.push({ x:0, y:RSIZE.h-0.35, z:0, flux:2400, dist:'wide' });
   }
 
-  const field=luxGrid(curWins, RSIZE, { sky:Ev, lums, grid:22, y:0.75, samples:'auto', occluders:curOcc });
+  const field=luxGrid(curWins, RSIZE, { sky:Ev, lums, grid:22, y:0.75, samples:'auto', occluders:curOcc, glazed:curGlazed });
 
   if(showHeat){ updateFloorHeatmap(heatMesh, field, RSIZE.w, RSIZE.d); heatMesh.visible=true; }
   else heatMesh.visible=false;
@@ -128,7 +130,7 @@ function engineRefresh(){
   let slotBest=0, slotName='';
   const up={x:0,y:1,z:0};
   for(const s of curSlots){
-    const o={ sky:Ev, samples:'auto', occluders:curOcc, selfIdx:s.occIdx };
+    const o={ sky:Ev, samples:'auto', occluders:curOcc, glazed:curGlazed, selfIdx:s.occIdx };
     const lx=daylightAt({x:s.x,y:s.y,z:s.z}, up, curWins, o)
            + (lums.length? pointIllum({x:s.x,y:s.y,z:s.z}, up, lums, o) : 0);
     if(lx>slotBest){ slotBest=lx; slotName=s.owner||''; }
