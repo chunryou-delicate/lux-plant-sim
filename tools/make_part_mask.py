@@ -182,7 +182,9 @@ def build(char, vis=False, size=None):
     # 머리·목, 바깥쪽(A포즈에서 팔·손), 다리. 몸통 한가운데는 옷이다.
     xr = pos[:, 0].max() - pos[:, 0].min()
     xn = np.abs(posmap[:, :, 0] - (pos[:, 0].min() + pos[:, 0].max()) / 2) / (xr / 2)
-    skin_zone = (t > 0.68) | (xn > 0.42) | (t < 0.40)   # 허리(0.40~0.46)는 옷이다
+    # t>0.64 는 목까지 포함하기 위한 값(0.68 이면 목이 빠진다).
+    # 신발(t<0.085)은 크림색이 피부 색조에 걸리므로 제외한다.
+    skin_zone = (t > 0.64) | (xn > 0.42) | ((t < 0.40) & (t > 0.085))
     is_skin = (d_skin < 44) & (warm_rg > 20) & covered & skin_zone
 
     code[band("shoe")] = CODE["shoe"]                       # 신발: 흰 티셔츠와 색이 같아 위치로만 갈림
@@ -195,7 +197,14 @@ def build(char, vis=False, size=None):
     # 반대로 검은 재킷·검은 바지는 진갈색과 명도가 겹친다. 따뜻한 색인지로 가른다
     # (진갈색 72,24,24 은 R-B=48, 검정 30,30,30 은 0).
     head = band("head")
-    hairish = covered & (d_hair < 64) & (warm_rb > 14) & (t > 0.46)
+    # 긴 생머리는 등 아래(t 0.3 근처)까지 내려온다. 하한을 낮추되, 그 아래에서는
+    # 갈색 바지·신발과 섞이지 않게 '몸통보다 뒤에 있는 것'만 머리로 본다.
+    zt = np.percentile(posmap[:, :, 2][covered], 45)
+    dark_warm = covered & (d_hair < 68) & (warm_rb > 14)
+    # 신발·발목(t<0.12)은 갈색이라도 머리가 아니다
+    hairish = dark_warm & ((t > 0.46) | ((z < zt) & (t > 0.12)))
+    # 경계 텍셀이 색 임계를 넘어 삐죽삐죽 남는 것을 메운다
+    hairish = binary_closing(hairish, np.ones((5, 5))) & covered & (d_hair < 96)
     code[head & is_skin] = CODE["skin"]
     code[hairish] = CODE["hair"]
 
@@ -211,12 +220,20 @@ def build(char, vis=False, size=None):
         iris = np.zeros_like(sclera)
     else:
         # 흰자 덩어리 크기에서 눈 반경을 추정하고 그만큼만 주변을 본다
-        r_eye = max(8, int(round(np.sqrt(sclera.sum() / 2 / np.pi) * 0.95)))
+        r_eye = max(6, int(round(np.sqrt(sclera.sum() / 2 / np.pi) * 0.55)))
         yy, xx = np.mgrid[-r_eye:r_eye + 1, -r_eye:r_eye + 1]
         near = (xx * xx + yy * yy) <= r_eye * r_eye
         region = binary_dilation(sclera, near) & covered
         eye = region & ((lum > 224) | (d_hair < 110))         # 흰자·하이라이트 + 진갈색
         eye = binary_closing(eye, np.ones((5, 5)))
+        # 눈썹은 눈보다 위에 있다. 흰자 위쪽 경계보다 더 위는 눈에서 뺀다 -
+        # 안 그러면 눈썹이 보호 영역에 들어가 머리색을 따라가지 않는다.
+        # 눈 영역을 흰자 위아래로 아주 조금만 넘어가게 자른다. 넉넉히 잡으면
+        # 눈썹과 앞머리 끝이 보호 영역에 들어가 머리색을 따라가지 않는다.
+        t_sc = t[sclera]
+        hi_sc, lo_sc = np.percentile(t_sc, 96), np.percentile(t_sc, 4)
+        margin = (hi_sc - lo_sc) * 0.18
+        eye &= (t <= hi_sc + margin) & (t >= lo_sc - margin)
 
         # 홍채: 눈 영역은 밝기가 둘로만 갈린다(흰자·하이라이트 / 진갈색). 진갈색
         # 덩어리에 홍채·동공과 속눈썹·눈매 테두리가 같이 있어 색으로는 못 가른다.
