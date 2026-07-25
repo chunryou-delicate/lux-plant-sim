@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8">
+<title>색시프트 검증 — 머리/피부/옷 색 바꾸기</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<style>
+ *{box-sizing:border-box}
+ body{margin:0;font-family:'Pretendard','Malgun Gothic',sans-serif;background:#f3f6f3;color:#2b3830;overflow:hidden}
+ .wrap{display:flex;height:100vh}
+ #cv{flex:1;display:block;background:#eef3ef}
+ .panel{width:280px;background:#fff;border-left:1px solid #dde5de;padding:16px;overflow:auto;font-size:13px}
+ h1{font-size:14px;margin:0 0 3px}
+ .sub{font-size:11.5px;color:#6d7d72;line-height:1.6;margin-bottom:14px}
+ h2{font-size:11px;margin:16px 0 7px;color:#6d7d72;letter-spacing:.4px;text-transform:uppercase}
+ h2:first-of-type{margin-top:0}
+ select,button{width:100%;padding:7px 9px;border:1px solid #cfdbd2;border-radius:7px;background:#fff;font:inherit;font-size:12.5px}
+ button{cursor:pointer;margin-top:6px}button:hover{background:#f2f7f3}
+ .part{display:flex;align-items:center;gap:9px;padding:6px 0;border-bottom:1px solid #f0f4f1}
+ .part label{flex:1;font-size:12.5px}
+ .part input[type=color]{width:38px;height:26px;padding:0;border:1px solid #cfdbd2;border-radius:5px;background:none;cursor:pointer}
+ .part input[type=checkbox]{cursor:pointer}
+ .presets{display:flex;flex-wrap:wrap;gap:5px;margin-top:7px}
+ .sw{width:26px;height:26px;border-radius:6px;border:1px solid rgba(0,0,0,.18);cursor:pointer}
+ .sw:hover{outline:2px solid #4a7a5c;outline-offset:1px}
+ .note{margin-top:14px;font-size:11px;line-height:1.65;color:#6d7d72;background:#f6faf7;padding:9px 10px;border-radius:7px}
+ .bad{color:#b4483a}
+</style></head><body>
+<div class="wrap">
+  <canvas id="cv"></canvas>
+  <div class="panel">
+    <h1>색시프트 검증</h1>
+    <div class="sub">머티리얼이 하나뿐이라 부위별 머티리얼 교체는 불가능합니다.
+      대신 같은 UV의 <b>마스크 텍스처</b>로 텍셀을 골라 색을 갈아끼웁니다.
+      명도는 원본을 유지해 음영이 살아 있습니다.</div>
+
+    <h2>캐릭터</h2>
+    <select id="char"></select>
+
+    <h2>머리색 프리셋</h2>
+    <div class="presets" id="hairPre"></div>
+
+    <h2>부위별 색</h2>
+    <div id="parts"></div>
+
+    <button id="reset">원본 색으로</button>
+    <div class="note" id="note"></div>
+  </div>
+</div>
+<script>
+const CB='?t='+Date.now();
+const CHARS=[['char_namja_jachwi','자취남'],['char_namja_gajang','남가장'],
+ ['char_namja_jubu','남주부'],['char_namja_researcher','남연구원'],
+ ['char_jachwi_f','자취녀'],['char_yeoja_gajang','여가장'],
+ ['char_yeoja_jubu','여주부'],['char_yeoja_researcher','여연구원']];
+
+/* 마스크 채널 규약 (tools/make_part_mask.py 와 일치)
+   R=255 머리카락 / R=128 눈·눈썹 / G 피부 / B 상의 / A 하의 */
+const PARTS=[
+  {key:'hair', name:'머리카락', ch:0, val:255, on:true,  color:'#d8b46c'},
+  {key:'eyes', name:'눈·눈썹',  ch:0, val:128, on:false, color:'#3a2a20'},
+  {key:'skin', name:'피부',     ch:1, val:255, on:false, color:'#f0c090'},
+  {key:'top',  name:'상의',     ch:2, val:255, on:false, color:'#e8e8d8'},
+  {key:'bot',  name:'하의',     ch:3, val:255, on:false, color:'#486090'},
+];
+const HAIR_PRESETS=['#3a2a20','#6b4226','#a9743c','#d8b46c','#e8dcc0',
+                    '#8a3b3b','#6a4a7a','#2f4f4f','#9aa0a8','#1c1a1e'];
+
+const cv=document.getElementById('cv');
+const renderer=new THREE.WebGLRenderer({canvas:cv,antialias:true});
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+renderer.outputEncoding=THREE.sRGBEncoding;
+const scene=new THREE.Scene();scene.background=new THREE.Color(0xeef3ef);
+const camera=new THREE.PerspectiveCamera(30,1,0.01,60);
+const controls=new THREE.OrbitControls(camera,cv);controls.enableDamping=true;
+scene.add(new THREE.AmbientLight(0xffffff,0.75));
+scene.add(new THREE.HemisphereLight(0xffffff,0xdfe6df,0.25));
+const dl=new THREE.DirectionalLight(0xffffff,0.5);dl.position.set(2,4,3);scene.add(dl);
+scene.add(new THREE.GridHelper(4,8,0xbccfc2,0xdae6dd));
+
+const loader=new THREE.GLTFLoader();
+let model=null, baseImg=null, maskImg=null, mat=null, texCanvas=null;
+
+function loadImage(src){return new Promise((res,rej)=>{const i=new Image();
+  i.onload=()=>res(i);i.onerror=rej;i.src=src;});}
+
+/** 마스크로 부위를 골라 색을 갈아끼운다.
+    명도(원본 밝기 / 그 부위 평균 밝기)를 곱해 음영·주름을 보존한다. */
+function recolor(){
+  if(!baseImg||!maskImg) return;
+  const w=baseImg.width,h=baseImg.height;
+  const c=texCanvas,x=c.getContext('2d',{willReadFrequently:true});
+  x.drawImage(baseImg,0,0,w,h);
+  const img=x.getImageData(0,0,w,h), d=img.data;
+
+  const mc=document.createElement('canvas');mc.width=w;mc.height=h;
+  const mx=mc.getContext('2d',{willReadFrequently:true});
+  mx.imageSmoothingEnabled=false;
+  mx.drawImage(maskImg,0,0,w,h);            // 마스크 해상도가 달라도 맞춰 늘린다
+  const md=mx.getImageData(0,0,w,h).data;
+
+  for(const p of PARTS){
+    if(!p.on) continue;
+    const tgt=hexToRgb(p.color);
+    // 1차: 해당 부위 평균 밝기
+    let sum=0,n=0;
+    for(let i=0;i<d.length;i+=4){
+      const mv=md[i+p.ch];
+      if(p.val===128 ? (mv>64&&mv<192) : mv>192){ sum+=(d[i]+d[i+1]+d[i+2])/3; n++; }
+    }
+    if(!n) continue;
+    const avg=Math.max(sum/n,1);
+    // 2차: 밝기비를 목표색에 곱한다
+    for(let i=0;i<d.length;i+=4){
+      const mv=md[i+p.ch];
+      const hit = p.val===128 ? (mv>64&&mv<192) : mv>192;
+      if(!hit) continue;
+      const lum=(d[i]+d[i+1]+d[i+2])/3, k=lum/avg;
+      d[i]  =Math.min(255,tgt[0]*k);
+      d[i+1]=Math.min(255,tgt[1]*k);
+      d[i+2]=Math.min(255,tgt[2]*k);
+    }
+  }
+  x.putImageData(img,0,0);
+  if(mat&&mat.map){ mat.map.needsUpdate=true; }
+}
+function hexToRgb(s){const v=parseInt(s.replace('#',''),16);
+  return [(v>>16)&255,(v>>8)&255,v&255];}
+
+async function load(){
+  const key=document.getElementById('char').value;
+  const note=document.getElementById('note');
+  if(model){scene.remove(model);model=null;}
+  note.textContent='불러오는 중…';
+  const g=await new Promise((res,rej)=>loader.load(`3d/${key}_base.glb`+CB,res,undefined,rej));
+  model=g.scene;scene.add(model);
+  model.traverse(o=>{if(o.isMesh)o.frustumCulled=false;});
+
+  let src=null;
+  model.traverse(o=>{ if(o.isMesh&&o.material&&o.material.map&&!src){ mat=o.material; src=o.material.map.image; }});
+  if(!src){note.innerHTML='<span class="bad">텍스처를 찾지 못했습니다</span>';return;}
+  baseImg=src;
+  texCanvas=document.createElement('canvas');
+  texCanvas.width=src.width;texCanvas.height=src.height;
+
+  try{ maskImg=await loadImage(`masks/${key}_mask.png`+CB); }
+  catch(e){ maskImg=null; note.innerHTML='<span class="bad">마스크 없음 — tools/make_part_mask.py 를 먼저 돌리세요</span>'; return; }
+
+  const t=new THREE.CanvasTexture(texCanvas);
+  t.flipY=mat.map.flipY; t.encoding=THREE.sRGBEncoding; t.wrapS=t.wrapT=THREE.ClampToEdgeWrapping;
+  mat.map=t; mat.needsUpdate=true;
+  recolor();
+
+  // 카메라: 발바닥 y=0, 상반신이 보이게
+  const H=/(jachwi_f|yeoja)/.test(key)?1.50:1.70;
+  camera.position.set(H*0.30,H*0.88,H*0.62);
+  controls.target.set(0,H*0.80,0);controls.update();
+  note.innerHTML=`텍스처 ${src.width}×${src.height} · 마스크 ${maskImg.width}×${maskImg.height}<br>`+
+    `색 교체는 로딩 시 한 번만 계산합니다(프레임마다 아님). 게임에선 캐릭터 생성·변경 시점에 실행하면 됩니다.`;
+}
+
+// ── 패널 ──
+const charSel=document.getElementById('char');
+CHARS.forEach(([k,n])=>charSel.add(new Option(n,k)));
+charSel.onchange=load;
+
+const partsEl=document.getElementById('parts');
+PARTS.forEach(p=>{
+  const row=document.createElement('div');row.className='part';
+  row.innerHTML=`<input type="checkbox" ${p.on?'checked':''}>
+    <label>${p.name}</label><input type="color" value="${p.color}">`;
+  const [chk,,col]=row.children;
+  chk.onchange=e=>{p.on=e.target.checked;recolor();};
+  col.oninput=e=>{p.color=e.target.value;if(p.on)recolor();};
+  p._col=col;
+  partsEl.appendChild(row);
+});
+const pre=document.getElementById('hairPre');
+HAIR_PRESETS.forEach(c=>{
+  const s=document.createElement('div');s.className='sw';s.style.background=c;
+  s.title=c; s.onclick=()=>{const p=PARTS[0];p.color=c;p.on=true;p._col.value=c;
+    partsEl.querySelector('input[type=checkbox]').checked=true;recolor();};
+  pre.appendChild(s);
+});
+document.getElementById('reset').onclick=()=>{PARTS.forEach(p=>p.on=false);
+  partsEl.querySelectorAll('input[type=checkbox]').forEach(c=>c.checked=false);recolor();};
+
+load();
+function resize(){const w=cv.clientWidth,h=cv.clientHeight;
+  if(cv.width!==w||cv.height!==h){renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix();}}
+(function loop(){requestAnimationFrame(loop);resize();controls.update();renderer.render(scene,camera);})();
+</script></body></html>
