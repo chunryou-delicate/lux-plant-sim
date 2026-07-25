@@ -171,8 +171,46 @@
       "status": "확정(3D)"
     }
   ],
+  "motion_library": {
+    "note": "Meshy 애니메이션 라이브러리(678종)에서 선별해 8캐릭터에 적용. 2026-07-25, 128건 384cr.",
+    "structure": {
+      "mesh": "assets/characters/3d/char_{name}_rigged.glb — 스킨드 메시(애니 없음). 캐릭터당 1개.",
+      "clips": "assets/characters/3d/anim/char_{name}_{clip}.glb — 뼈대+트랙만(평균 70KB). 위 메시에 얹어 재생.",
+      "why": "Meshy는 애니마다 스킨드 메시를 통째로 재출력(≈15MB). tools/strip_anim_glb.py로 메시·텍스처를 벗겨 99.5% 절감(1.9GB→16MB). 본 이름 26개가 완전히 일치해 그대로 바인딩됨.",
+      "engine": "AnimationMixer(riggedScene).clipAction(clipGltf.animations[0]).play() 형태로 사용."
+    },
+    "viewer": "assets/characters/motion_library.html (캐릭터×클립 전환, 정면/측면 동시, 보유 여부 표시)",
+    "tools": {
+      "strip": "tools/strip_anim_glb.py — 애니 GLB에서 메시 제거",
+      "normalize": "tools/normalize_anim_scale.py — 본 스케일 1.0 정규화",
+      "check": "tools/check_anim.py — 척추 비틀림/스케일/루트이동 점검",
+      "serve": "tools/serve.py — 스레딩 + no-cache 정적 서버(대용량 GLB 동시 로드용)"
+    },
+    "known_issue": "Meshy 애니 라이브러리는 idle·Walking_Woman의 Hips에 균일 스케일 1.1765를 넣는다(클립마다 몸 크기가 튐). 전량 1.0으로 정규화 완료 — 새 클립 추가 시 normalize_anim_scale.py를 반드시 돌릴 것.",
+    "clips": [
+      {"key": "idle",           "action_id": 0,   "path": "3d/",      "name_ko": "유휴",              "use": "평상시 기본"},
+      {"key": "walking",        "action_id": null, "path": "3d/",     "name_ko": "걷기(기본)",         "use": "리깅 기본 제공(walking_man)"},
+      {"key": "walking_w",      "action_id": 1,   "path": "3d/",      "name_ko": "걷기(여성)",         "use": "여캐 4종 전용", "chars": "female"},
+      {"key": "inspect",        "action_id": 281, "path": "3d/anim/", "name_ko": "굽혀 살펴보기",      "use": "★식물 상태 관찰"},
+      {"key": "repot",          "action_id": 274, "path": "3d/anim/", "name_ko": "쭈그려 옮겨놓기",    "use": "★분갈이·화분 옮기기"},
+      {"key": "pickup",         "action_id": 276, "path": "3d/anim/", "name_ko": "허리 굽혀 집기",     "use": "물뿌리개·도구"},
+      {"key": "harvest",        "action_id": 278, "path": "3d/anim/", "name_ko": "서서 따기",          "use": "잎·열매 수확"},
+      {"key": "harvest_crouch", "action_id": 277, "path": "3d/anim/", "name_ko": "쭈그려 따고 일어서기","use": "낮은 화분"},
+      {"key": "opendoor",       "action_id": 285, "path": "3d/anim/", "name_ko": "문 열기",            "use": "방 이동"},
+      {"key": "sleep",          "action_id": 267, "path": "3d/anim/", "name_ko": "취침",               "use": "밤 사이클"},
+      {"key": "doze",           "action_id": 268, "path": "3d/anim/", "name_ko": "앉아서 졸기",        "use": "휴식"},
+      {"key": "sit",            "action_id": "32(F)/33(M)", "path": "3d/anim/", "name_ko": "의자에 앉기", "use": "★가구 상호작용. 남녀 다른 클립"},
+      {"key": "happyjump",      "action_id": 44,  "path": "3d/anim/", "name_ko": "기뻐서 폴짝",        "use": "★성장 단계 달성"},
+      {"key": "heart",          "action_id": 27,  "path": "3d/anim/", "name_ko": "하트",               "use": "★식물 애정 표현"},
+      {"key": "cheer",          "action_id": 49,  "path": "3d/anim/", "name_ko": "응원·환호",          "use": "업적 달성"},
+      {"key": "wave",           "action_id": 28,  "path": "3d/anim/", "name_ko": "손 흔들기",          "use": "접속·인사"},
+      {"key": "nod",            "action_id": 25,  "path": "3d/anim/", "name_ko": "끄덕임",             "use": "몬이와 대화 리액션"},
+      {"key": "listen",         "action_id": 47,  "path": "3d/anim/", "name_ko": "듣는 자세",          "use": "대화 기본 포즈"},
+      {"key": "scratch",        "action_id": 36,  "path": "3d/anim/", "name_ko": "머리 긁적",          "use": "실패·시듦 반응"}
+    ]
+  },
   "pipeline_3d": {
-    "flow": "확정 원화 4뷰(정면+후면+좌+우) → Meshy multi_image_to_3d(meshy-6, a-pose) → Meshy rig(24본, 걷기·달리기 포함)",
+    "flow": "확정 원화 4뷰(정면+후면+좌+우) → Meshy multi_image_to_3d(meshy-6, a-pose) → Meshy rig(24본, 걷기·달리기 포함) → meshy_animate로 라이브러리 모션 추가",
     "female_proportion": "슬림 기준(자취생 여). 큰머리 3.5~4등신 치비 + 짧은팔(상완통통/전완슬림) + 넓은어깨 + 볼륨가슴 + 배납작 + 슬림하체",
     "note": "걷기 스톡애니의 크라우치·팔·얼굴출렁·머리찰랑은 실게임 애니/리그 마감 단계에서 처리(엔진에서 머리→머리본 고정, 치비용 걷기 클립).",
     "glb_dir": "assets/characters/3d/"

@@ -91,8 +91,23 @@ function fillClips(charKey){
   const isF=/jachwi_f|yeoja/.test(charKey), cur=clipSel.value;
   clipSel.innerHTML='';
   CLIPS.filter(c=>c[0]!=='walking_w'||isF).forEach(([k,n])=>{
-    const o=document.createElement('option');o.value=k;o.textContent=n;clipSel.appendChild(o);});
+    const o=document.createElement('option');o.value=k;o.textContent='… '+n;
+    o.dataset.label=n; clipSel.appendChild(o);});
   if([...clipSel.options].some(o=>o.value===cur)) clipSel.value=cur; else clipSel.value='idle';
+  probeClips(charKey);
+}
+
+// 파일이 실제로 있는지 HEAD로 확인해 드롭다운에 표시한다.
+//  ●  = 보유(재생 가능)   ✕ 미다운로드 = 파일 없음(선택 불가)
+// "안 받아진 것"과 "받았는데 오류난 것"을 구분하기 위한 표시.
+function probeClips(charKey){
+  [...clipSel.options].forEach(o=>{
+    const url=clipPath(charKey,o.value);
+    fetch(url,{method:'HEAD'}).then(r=>{
+      if(r.ok){ o.textContent='● '+o.dataset.label; o.disabled=false; }
+      else    { o.textContent='✕ '+o.dataset.label+' (미다운로드)'; o.disabled=true; }
+    }).catch(()=>{ o.textContent='✕ '+o.dataset.label+' (미다운로드)'; o.disabled=true; });
+  });
 }
 function clipPath(charKey,clipKey){
   const c=CLIPS.find(x=>x[0]===clipKey);
