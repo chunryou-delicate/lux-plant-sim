@@ -179,8 +179,31 @@
   },
   "mascot": {
     "name": "char_mascot_sprout",
-    "name_ko": "새싹정령 마스코트 (몬스테라 잎 팔)",
+    "name_ko": "몬이 (새싹정령 마스코트, 몬스테라 잎 팔)",
+    "nickname": "몬이",
+    "naming_origin": "몬스테라(Monstera)에서 따옴. 잎 팔 정체성과 직결되고 부르기 짧음.",
     "role": "게임 도우미/안내 마스코트 (튜토리얼·감정표현·팁·UI 등장, 동숲 너굴 포지션)",
+    "personality": {
+      "type": "푸근한 응원자",
+      "core": "실패해도 다그치지 않고 다독임. 작은 성장에도 같이 기뻐함.",
+      "tone": "느긋하고 다정한 반말. 문장 짧게. '괜찮아', '~네', '~하자' 계열.",
+      "expression_rule": "잎(팔)이 감정 표현의 핵심 — 들어올림=기쁨, 축 늘어짐=걱정, 쫑긋=놀람.",
+      "forbidden": "재촉·비난·과한 텐션 금지. 플레이어를 몰아붙이지 않음."
+    },
+    "expressions": {
+      "dir": "assets/characters/mascot/expressions/",
+      "sheet": "assets/characters/mascot_expressions.html",
+      "format": "2D 스프라이트(1024², 무광 클레이 3D 룩). 3D 모델은 리깅이 없어 얼굴 표정 불가 → UI·대사용은 2D로 운용.",
+      "set": [
+        {"key": "default",  "file": "mon_default.png",  "use": "평상시·UI 상주",              "line": "오늘도 잘 지냈어?"},
+        {"key": "happy",    "file": "mon_happy.png",    "use": "새 잎·성장 단계 달성",         "line": "우와, 잎이 났어! 봐봐!"},
+        {"key": "proud",    "file": "mon_proud.png",    "use": "관리 잘한 날·연속 출석",       "line": "잘 챙겼네. 기특하다."},
+        {"key": "cheer",    "file": "mon_cheer.png",    "use": "실패·시듦 이후 위로",          "line": "괜찮아. 다시 키우면 되지."},
+        {"key": "worry",    "file": "mon_worry.png",    "use": "빛 부족·물 부족 경고",         "line": "얘가 좀 힘들어 보이는데…"},
+        {"key": "surprise", "file": "mon_surprise.png", "use": "이벤트·돌발 상황",             "line": "어? 이거 처음 보는 건데!"},
+        {"key": "sleepy",   "file": "mon_sleepy.png",   "use": "밤·장시간 미접속 복귀",        "line": "으암… 벌써 밤이네."}
+      ]
+    },
     "local": "assets/characters/mascot/char_mascot_sprout.png",
     "art_3d_look": {
       "front": "assets/characters/mascot/3d_wip/mascot_3dstyle_front.png",
