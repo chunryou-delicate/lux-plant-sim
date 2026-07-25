@@ -6,9 +6,9 @@
 ============================================================ */
 import { createScene, updateLight } from './render3d/scene.js';
 import { initTextures, faintGrainTexture } from './render3d/textures.js';
-import { buildHouse, updateShellVisibility, RW, RD } from './render3d/house.js';
+import { buildHouse, updateShellVisibility, RW, RD, RH } from './render3d/house.js';
 // 가구는 이제 house.js가 방 데이터(roomDef.furniture)로 배치한다 — 옛 furniture.js(임시 박스)는 미사용.
-import { sunState, computeLux } from './engine/lighting.js';
+import { luxGrid, daylightAt, pointIllum, winFromHouse, skyEv } from './engine/daylight_lux.js';
 import { buildFloorHeatmap, updateFloorHeatmap } from './render3d/lighting_viz.js';
 
 // 데이터: 카탈로그 + 엔진 방(창) 모델 + 집 모듈 프리셋
@@ -44,6 +44,13 @@ async function buildRoomPreset(name){
   ctx.scene.remove(heatMesh);
   heatMesh=buildFloorHeatmap(RSIZE.w, RSIZE.d); heatMesh.visible=showHeat; ctx.scene.add(heatMesh);
   ctx.winPos=built.winPos; ctx.glassMeshes=built.glassMeshes;
+  // ★ 조도용: 방 창을 3D 사각 개구부로, 화분 슬롯을 월드좌표로
+  curWins=(roomDef.windows||[]).map(w=>{
+    const p=winPresets[w.preset]||{};
+    const tau=(p.glass&&p.glass.transmittance)!=null?p.glass.transmittance:0.85;
+    return winFromHouse(w.wall, w.cu, w.cy, w.w, w.h, built.size, tau);
+  }).filter(Boolean);
+  curSlots=built.plantSlots||[];
 
   // 천장등 갓 = 밤에 발광시킬 대상(가구 중 lamp_ceiling)
   ctx.clShade=null; plants=[];
@@ -57,7 +64,7 @@ async function buildRoomPreset(name){
 
 // ===== STEP4: 엔진 조도(lx) ↔ 3D 연결 =====
 let heatMesh=buildFloorHeatmap(RW, RD); heatMesh.visible=false; ctx.scene.add(heatMesh);
-let RSIZE={ w:RW, d:RD };   // 현재 방 실제 치수(방마다 다름) — 히트맵·조도 격자에 사용
+let RSIZE={ w:RW, d:RD, h:RH };   // 현재 방 실제 치수(방마다 다름) — 히트맵·조도 격자에 사용
 let showHeat=false;
 // 조도 판정 대상 — buildRoomPreset()에서 방마다 재바인딩. RW=RD=7
 let plants=[];
@@ -86,13 +93,27 @@ function applyLight(){
   engineRefresh();   // 엔진 조도(진짜 판정) 갱신
 }
 
-// 엔진 격자 lx 계산 → 히트맵 · 수치 · 식물 반응
+/* ============================================================
+   엔진 격자 lx → 히트맵 · 수치 · 식물 반응
+   ★ 조도는 engine/daylight_lux.js(정밀 물리식) 하나만 쓴다.
+     tool.html(정밀 조도툴)과 같은 함수라 두 화면의 값이 어긋나지 않는다.
+     (기존 engine/lighting.js 간이식은 같은 조건에서 4배까지 낮게 나왔음)
+============================================================ */
+let curWins=[];     // 현재 방의 창 사각형(월드 m) — buildRoomPreset에서 갱신
+let curSlots=[];    // 화분 슬롯(월드 m) — 높이별 조도 판정에 사용
+
 function engineRefresh(){
-  if(!roomModel) return;
   const t=+sunEl.value;
-  const items=[];
-  if(ceilingMode!==2) items.push({ type:'ceiling', u:0.5, v:0.5 });   // 천장등(끄기면 제외)
-  const field=computeLux({ room:roomModel, catalog, items, sun:sunState(t), lampManual:(ceilingMode===1) });
+  const Ev=skyEv(t);                                   // 시간 → 천공 조도(lx)
+
+  // 천장등(있으면) — 인공광도 같은 물리식으로
+  const lums=[];
+  if(ceilingMode!==2){
+    const lampOn = (ceilingMode===1) || Ev<1500;        // 자동: 어두우면 켜짐
+    if(lampOn) lums.push({ x:0, y:RSIZE.h-0.35, z:0, flux:2400, dist:'wide' });
+  }
+
+  const field=luxGrid(curWins, RSIZE, { sky:Ev, lums, grid:22, y:0.75, samples:[4,3] });
 
   if(showHeat){ updateFloorHeatmap(heatMesh, field, RSIZE.w, RSIZE.d); heatMesh.visible=true; }
   else heatMesh.visible=false;
@@ -103,8 +124,19 @@ function engineRefresh(){
     p.leafMats.forEach(m=>{ m.emissiveIntensity=glow; });
   }
 
+  // ★ 선반 높이별 조도 — 2D 격자로는 못 하던 것(슬롯마다 실제 3D 위치로 계산)
+  let slotBest=0, slotName='';
+  const up={x:0,y:1,z:0};
+  for(const s of curSlots){
+    const lx=daylightAt({x:s.x,y:s.y,z:s.z}, up, curWins, { sky:Ev })
+           + (lums.length? pointIllum({x:s.x,y:s.y,z:s.z}, up, lums) : 0);
+    if(lx>slotBest){ slotBest=lx; slotName=s.owner||''; }
+  }
+
   const lp=document.getElementById('luxPill');
-  if(lp) lp.textContent=`창가 ${Math.round(field.windowAvg)} · 최대 ${Math.round(field.max)} lx`;
+  if(lp) lp.textContent = curSlots.length
+    ? `창가 ${Math.round(field.windowAvg)} · 최대 ${Math.round(field.max)} lx · 선반최고 ${Math.round(slotBest)}`
+    : `창가 ${Math.round(field.windowAvg)} · 최대 ${Math.round(field.max)} lx`;
 }
 
 function bindControls(){
