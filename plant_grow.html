@@ -86,6 +86,7 @@
           <div class="colhead">🎯 에셋 개별 조정 <span style="color:rgba(255,255,255,.4);font-size:10px">(name_ko)</span></div>
           <select id="assetSel"></select>
           <canvas id="assetPrev" width="248" height="150"></canvas>
+          <div id="assetUse" class="note2" style="padding:0 0 6px;font-size:11px"></div>
           <div id="assetSliders"></div>
           <button class="cbtn" id="btnResetAsset" style="width:100%;margin-top:8px">↺ 이 에셋만 리셋</button>
         </div>
@@ -265,6 +266,7 @@ function loadAssets(cb){
 // 에셋 인스턴스 = GLB 클론 + 에셋별 조정(스케일·회전·오프셋)을 안쪽에 베이크. 바깥은 placeAlong용.
 function assetInst(key){
   const p=ASSETS[key]; if(!p) return null;
+  USE_COUNT[key]=(USE_COUNT[key]||0)+1;
   const a=ADJ[key]||{};
   const inner=p.clone(true);
   const sc=a.scale||1, sxz=a.sxz||1, sy=a.sy||1;
@@ -324,7 +326,8 @@ function stretchGLB(key, p0, p1, radius, color, flatAz){
     g.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0), up);
     g.scale.set(sxw, len, szw);
   }
-  g.position.copy(p0); if(color) tintObj(g,color); plantGroup.add(g); return true;
+  g.position.copy(p0); if(color) tintObj(g,color); plantGroup.add(g);
+  USE_COUNT[key]=(USE_COUNT[key]||0)+1; return true;
 }
 // (제거됨) addStemSeg — 마디별 GLB 이어붙이기. 줄기를 튜브로 생성하면서 호출부 0개가 됨
 // 잎자루(연결 줄기): 마디에서 잎 부착점까지 실제로 이어줌(길게) + 잎 속으로 넉넉히 파고듦 → 안 뜸.
@@ -389,7 +392,8 @@ function leafSize(age){
 // (제거됨) leafKeyForOrder — order 범위로 잎을 고르던 함수. 호출부 0개
 // ===== 고체처럼 거동: 이미 놓인 잎/새순의 자리를 기억해 서로 파고들지 않게 =====
 let PLACED=[];                                   // {c:잎몸 중심, r:반경}
-function clearPlaced(){ PLACED=[]; }
+let USE_COUNT={};                                // 이번 빌드에서 각 에셋이 몇 개 그려졌나(패널 표시용)
+function clearPlaced(){ PLACED=[]; USE_COUNT={}; }
 // ===== 줄기를 "이음새 없는 한 줄기 튜브"로 생성 =====
 // 마디 점들을 CatmullRom 곡선으로 잇고, 굵기를 t에 따라 변화(위로 갈수록 가늘게 + 마디마다 살짝 부풀림).
 // GLB를 마디마다 이어 붙이던 방식은 경계 링이 필연적이라 이렇게 바꿈. 혹은 이 위에 얹는다.
@@ -648,6 +652,7 @@ function buildPlant(){
     nodes=nSeg; leaves=nLeaf;
     stage = nSeg<=1 ? '새싹 🌱' : ((axes.length>1?'가지 '+(axes.length-1)+' · ':'')+(acts?'혹 '+acts+' · ':'')+'마디 '+nSeg);
   }
+  updateAssetUse();   // 선택한 에셋이 지금 화면에 몇 개 있는지
   fitCam();     // 자라는 만큼 카메라가 따라 담기(항상 화면 안에)
   const el=document.getElementById('stat');
   el.innerHTML=`<span class="k">단계</span> ${stage}<br><span class="k">마디</span> ${nodes} · <span class="k">잎</span> ${leaves} · <span class="k">시드</span> ${SEED}`;
@@ -816,8 +821,8 @@ function buildAssetSelect(){
   sel.innerHTML=ADJ_GROUPS.map(g=>`<optgroup label="${g.label}">`+
     g.keys.filter(k=>ADJ_KEYS.includes(k)).map(k=>`<option value="${k}">${ADJ_KO[k]||k.replace(/_/g,' ')}${ADJ_UNUSED.has(k)?' (미사용)':''}</option>`).join('')+
     `</optgroup>`).join('');
-  sel.onchange=()=>{ buildAssetSliders(sel.value); showPreview(sel.value); };
-  buildAssetSliders(sel.value); showPreview(sel.value);
+  sel.onchange=()=>{ buildAssetSliders(sel.value); showPreview(sel.value); updateAssetUse(); };
+  buildAssetSliders(sel.value); showPreview(sel.value); updateAssetUse();
 }
 // ===== 선택 에셋 3D 미리보기(원본 색 그대로, 회전) =====
 let prevR, prevScene, prevCam, prevObj;
@@ -854,6 +859,15 @@ function showPreview(key){                                 // 라이브: 현재 
     const holder=new THREE.Group(); holder.add(wrap); holder.scale.setScalar(0.9/md);
     prevObj=holder; prevScene.add(prevObj);
   }catch(e){ console.warn('[preview] 렌더 실패:', key, e); }
+}
+function updateAssetUse(){
+  const el=document.getElementById('assetUse'), sel=document.getElementById('assetSel');
+  if(!el||!sel) return;
+  const k=sel.value, n=USE_COUNT[k]||0;
+  if(!ASSETS[k]) el.innerHTML='<span style="color:#e07a5f">GLB 로드 실패 — 파일명 확인 필요</span>';
+  else if(n>0)   el.innerHTML='<span style="color:#7ad06a">화면에 '+n+'개 그려짐 · 조절하면 즉시 반영</span>';
+  else if(ADJ_UNUSED.has(k)) el.innerHTML='<span style="color:rgba(255,255,255,.45)">미사용 에셋 — 튜브 줄기가 대신 그림</span>';
+  else el.innerHTML='<span style="color:#e8a838">지금 화면에 0개 — 성장도를 올리거나 다른 시드를 뽑아보세요</span>';
 }
 function buildAssetSliders(key){
   const box=document.getElementById('assetSliders'); if(!box) return; box.innerHTML='';
