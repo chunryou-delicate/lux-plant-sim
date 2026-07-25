@@ -39,7 +39,7 @@
 <div class="wrap">
   <div class="cvbox"><canvas id="cv"></canvas></div>
   <div class="panel">
-    <h1>색시프트 검증</h1>
+    <h1>색시프트 검증 <span style="font-weight:400;color:#b4483a;font-size:11px">· 보류</span></h1>
     <div class="sub">머티리얼이 하나뿐이라 부위별 머티리얼 교체는 불가능합니다.
       대신 같은 UV의 <b>마스크 텍스처</b>로 텍셀을 골라 색을 갈아끼웁니다.
       명도는 원본을 유지해 음영이 살아 있습니다.</div>
@@ -96,8 +96,10 @@ const CHARS=[['char_namja_jachwi','자취남'],['char_namja_gajang','남가장']
      상징물 - 연구가운 로고·명찰·앞치마 무늬. 직업 정체성이라 색이 바뀌면
              캐릭터 구분이 깨진다.
    눈썹은 머리카락에 포함했다. 머리색 바꾸면 같이 바뀌는 게 자연스럽다. */
+/* 색시프트는 보류 상태다. 기본은 원본 색이고, 체크를 켜야 바뀐다.
+   마스크 자체는 남겨두므로 나중에 필요하면 그대로 쓸 수 있다. */
 const PARTS=[
-  {key:'hair', name:'머리 + 눈썹', code:24,  on:true,  color:'#d8b46c'},
+  {key:'hair', name:'머리 + 눈썹', code:24,  on:false, color:'#d8b46c'},
   {key:'skin', name:'피부',        code:120, on:false, color:'#f0c090'},
 ];
 const LOCKED=[
