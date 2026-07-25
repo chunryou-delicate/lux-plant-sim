@@ -12,6 +12,8 @@ import { luxGrid, daylightAt, pointIllum, winFromHouse, skyEv } from './engine/d
 import { buildFloorHeatmap, updateFloorHeatmap } from './render3d/lighting_viz.js';
 import { createCharacter, CHARACTERS, EMOTES } from './render3d/character.js';
 import { createDecorator } from './render3d/decorate.js';
+import { createPlantSample, applyBand } from './render3d/plant_sample.js';
+import { daylightRatio, daylightDLI, judgeDLI, thresholdsFor } from './engine/daily_light.js';
 
 // 데이터: 카탈로그 + 엔진 방(창) 모델 + 집 모듈 프리셋
 const catalog = await fetch('./data/catalog.json').then(r=>r.json()).catch(()=>({}));
@@ -23,6 +25,7 @@ const doorPresets = await fetch('./data/door_presets.json').then(r=>r.json()).th
 const finishes   = await fetch('./data/room_finishes.json').then(r=>r.json()).catch(()=>null);
 const furnPresets= await fetch('./data/furniture_presets.json').then(r=>r.json()).then(d=>d.presets||d).catch(()=>({}));
 const lightPresets=await fetch('./data/lighting_presets.json').then(r=>r.json()).catch(()=>({}));
+const lightTh   = await fetch('./data/light_thresholds.json').then(r=>r.json()).catch(()=>null);
 
 // 기본 배치 원본 — 집꾸미기 '기본으로' 버튼이 여기로 되돌린다
 const DEFAULT_FURN=Object.fromEntries(
@@ -42,6 +45,8 @@ let hero=null;      // 캐릭터 컨트롤러 (안 불러왔으면 null)
 let deco=null;      // 집꾸미기 컨트롤러
 let curDef=null;    // 현재 방 정의 — 집꾸미기가 이 객체의 furniture를 직접 고친다
 let builtRef=null;  // 마지막 buildHouse 결과 (가구 그룹 픽킹용)
+let sample=null;    // 식물 샘플(임시) — 자라지 않고 밴드에 따라 색·처짐만 바뀐다
+let sampleRank=0;   // 몇 번째로 밝은 자리에 놓을지
 
 async function buildRoomPreset(name){
   // 이전 방 정리
@@ -69,6 +74,7 @@ async function buildRoomPreset(name){
   built.furniture.traverse(o=>{ if(o.parent&&o.parent.userData&&o.parent.userData.lampShade===o) ctx.clShade=o; });
 
   if(hero) hero.setPosition(0, Math.min(built.size.d/2-0.8, 1.0));   // 새 방 안쪽으로
+  if(sample){ sample.parent&&sample.parent.remove(sample); sample=null; }   // 방이 바뀌면 샘플은 치운다
 
   applyLight();
   // 방 라벨 표시
@@ -154,6 +160,18 @@ function engineRefresh(){
     const lx=daylightAt({x:s.x,y:s.y,z:s.z}, up, curWins, o)
            + (lums.length? pointIllum({x:s.x,y:s.y,z:s.z}, up, lums, o) : 0);
     if(lx>slotBest){ slotBest=lx; slotName=s.owner||''; }
+  }
+
+  // 식물 샘플이 있으면 그 자리 DLI로 밴드만 갱신한다(성장 아님)
+  if(sample && sample.userData.slot && lightTh){
+    const s0=sample.userData.slot;
+    const ratio=daylightRatio({x:s0.x,y:s0.y,z:s0.z},{x:0,y:1,z:0},curWins,
+      {occluders:curOcc, glazed:curGlazed, selfIdx:s0.occIdx});
+    const dli=daylightDLI(ratio,{weather:'clear',season:'summer'});
+    const j=judgeDLI(dli, thresholdsFor(lightTh,'monstera_deliciosa'));
+    if(j.band!==sample.userData.band) applyBand(sample, j.band);
+    const pm=document.getElementById('plantMsg');
+    if(pm) pm.textContent=`DLI ${dli.toFixed(2)} · ${j.ko}${j.fenestrating?' · 갈라짐':''}${j.overlight?' · 광량초과':''}`;
   }
 
   const lp=document.getElementById('luxPill');
@@ -312,6 +330,39 @@ function bindControls(){
   charPick.onchange=async ()=>{ if(!hero) return;
     hero.dispose(); hero=null;
     document.getElementById('charToggle').onclick.call(document.getElementById('charToggle'));
+  };
+
+  /* ── 식물 샘플 (임시) ──
+     밝기 순으로 정렬한 슬롯에 놓는다. '다음 밝은 자리'로 옮겨가며
+     같은 방 안에서도 자리에 따라 상태가 달라지는 걸 눈으로 보게 한다. */
+  const plantBtn=document.getElementById('plantBtn');
+  const plantMsg=document.getElementById('plantMsg');
+  async function placeSample(rank){
+    if(!curSlots.length){ plantMsg.textContent='이 방엔 화분 자리가 없습니다'; return; }
+    const ranked=curSlots.map(s=>({ s, r:daylightRatio({x:s.x,y:s.y,z:s.z},{x:0,y:1,z:0},curWins,
+        {occluders:curOcc, glazed:curGlazed, selfIdx:s.occIdx}) }))
+      .sort((a,b)=>b.r-a.r);
+    sampleRank=((rank%ranked.length)+ranked.length)%ranked.length;
+    const slot=ranked[sampleRank].s;
+    if(sample){ sample.parent&&sample.parent.remove(sample); sample=null; }
+    plantBtn.disabled=true; plantMsg.textContent='몬스테라 불러오는 중…';
+    try{
+      const potD=Math.min(0.22, Math.max(0.12, slot.maxPotD||0.18));
+      sample=await createPlantSample({ potD });
+      sample.position.set(slot.x, slot.y, slot.z);
+      sample.userData.slot=slot;
+      houseGroup.add(sample);
+      engineRefresh();
+    }catch(e){ console.error('[볕] 식물 샘플 실패',e); plantMsg.textContent='불러오기 실패: '+e.message; }
+    plantBtn.disabled=false;
+  }
+  plantBtn.onclick=()=>{
+    if(sample){ sample.parent&&sample.parent.remove(sample); sample=null;
+      plantBtn.textContent='놓기'; plantMsg.textContent='제일 밝은 자리에 몬스테라를 놓습니다'; return; }
+    plantBtn.textContent='치우기'; placeSample(0);
+  };
+  document.getElementById('plantNext').onclick=()=>{
+    if(!sample) return; plantBtn.textContent='치우기'; placeSample(sampleRank+1);
   };
 
   // 바닥 클릭 → 캐릭터 이동 (집꾸미기 중엔 배치가 우선)

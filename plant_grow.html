@@ -164,7 +164,7 @@ const DEF={
 };
 let P=Object.assign({}, DEF);
 // 저장본 버전. 생장 로직/기본값이 바뀌면 올림 → 옛 저장값이 새 기본값을 덮어쓰지 않게.
-const CFG_VER='2026-07-26-mature2';
+const CFG_VER='2026-07-26-base11';
 
 // ===== 튜닝 파라미터(B: 에셋별 개별 조정) =====
 const ADJ_KEYS=[
@@ -174,7 +174,8 @@ const ADJ_KEYS=[
   'leaf_mid_albo9', 'leaf_mid_albo10', 'leaf_mid_albo11', 'leaf_mid_albo12', 'leaf_mid_albo13', 'leaf_mid_albo14',
   'leaf_mid_albo15', 'leaf_mid_albo16', 'leaf_mid_albo17', 'leaf_mid_albo18', 'leaf_mid_albo19', 'leaf_mid_albo20',
   'leaf_mid_albo21', 'leaf_mid_albo22', 'leaf_mid_albo23', 'leaf_mid_albo24', 'leaf_mid_albo25', 'leaf_mid_albo26',
-  'leaf_mid_albo27', 'leaf_mid_albo28', 'leaf_mid_albo29', 'leaf_mid_albo30', 'leaf_mid_albo31', 'leaf_mat1',
+  'leaf_mid_albo27', 'leaf_mid_albo28', 'leaf_mid_albo29', 'leaf_mid_albo30', 'leaf_mid_albo31','leaf_mid_albo32','leaf_mid_albo33','leaf_mid_albo34','leaf_mid_albo35','leaf_mid_albo36','leaf_mid_albo37','leaf_mid_albo38','leaf_mid_albo39','leaf_mid_albo40','leaf_mid_albo41','leaf_mid_albo42',
+  'leaf_mid_albo32', 'leaf_mid_albo33', 'leaf_mid_albo34', 'leaf_mid_albo35', 'leaf_mid_albo36', 'leaf_mid_albo37', 'leaf_mid_albo38', 'leaf_mid_albo39', 'leaf_mid_albo40', 'leaf_mid_albo41', 'leaf_mid_albo42', 'leaf_mat1',
   'leaf_mat2', 'leaf_mat3', 'leaf_mat4', 'leaf_mat5', 'leaf_mat6', 'leaf_mat7',
   'leaf_mat8', 'leaf_mat9', 'leaf_mat10', 'leaf_mat11', 'leaf_mat12', 'leaf_mat13',
   'leaf_mat14', 'leaf_mat15', 'leaf_mat16', 'leaf_mat17', 'leaf_mat18', 'leaf_mat19',
@@ -197,6 +198,7 @@ const ADJ_KEYS=[
 const ADJ_KO={ pot:'화분',
   leaf_mid_albo8:'변이-라임-형광-쨍', leaf_mid_albo9:'변이-라임-형광-차분', leaf_mid_albo10:'변이-마블-실버-쨍', leaf_mid_albo11:'변이-마블-실버-차분', leaf_mid_albo12:'변이-스페클-실버점-쨍', leaf_mid_albo13:'변이-스페클-실버점-차분', leaf_mid_albo14:'변이-마블-크림그린-쨍', leaf_mid_albo15:'변이-마블-크림그린-차분', leaf_mid_albo16:'변이-잎맥-크림-쨍', leaf_mid_albo17:'변이-잎맥-크림-차분', leaf_mid_albo18:'변이-마블-그린옐로우-쨍', leaf_mid_albo19:'변이-마블-그린옐로우-차분', leaf_mid_albo20:'변이-마블-흰그린-쨍', leaf_mid_albo21:'변이-마블-흰그린-차분', leaf_mid_albo22:'변이-스페클-민트흰점-쨍', leaf_mid_albo23:'변이-스페클-민트흰점-차분', leaf_mid_albo24:'변이-스페클-민트흰점2', leaf_mid_albo25:'변이-스페클-민트흰점2-쨍', leaf_mid_albo26:'변이-스페클-민트흰점2-차분', leaf_mid_albo27:'변이-실버-물방울-쨍', leaf_mid_albo28:'변이-실버-물방울-차분',
   leaf_mid_albo29:'변이-하프문-크림민트', leaf_mid_albo30:'변이-하프문-크림민트-쨍', leaf_mid_albo31:'변이-하프문-크림민트-차분',
+  leaf_mid_albo32:'변이-마블-실버', leaf_mid_albo33:'변이-스페클-실버점', leaf_mid_albo34:'변이-라임-형광', leaf_mid_albo35:'변이-알보-크림민트', leaf_mid_albo36:'변이-잎맥-크림', leaf_mid_albo37:'변이-마블-크림그린', leaf_mid_albo38:'변이-스페클-민트흰점', leaf_mid_albo39:'변이-마블-그린옐로우', leaf_mid_albo40:'변이-마블-흰그린', leaf_mid_albo41:'변이-실버-물방울', leaf_mid_albo42:'변이-알보-흰연두',
   leaf_mat1:'변이-핑크-로즈핑크', leaf_mat2:'변이-핑크-로즈핑크-쨍', leaf_mat3:'변이-핑크-로즈핑크-차분', leaf_mat4:'변이-별무늬-페일그린', leaf_mat5:'변이-별무늬-페일그린-쨍', leaf_mat6:'변이-별무늬-페일그린-차분', leaf_mat7:'변이-별무늬-핑크민트', leaf_mat8:'변이-별무늬-핑크민트-쨍', leaf_mat9:'변이-별무늬-핑크민트-차분', leaf_mat10:'변이-갤럭시-틸골드', leaf_mat11:'변이-갤럭시-틸골드-쨍', leaf_mat12:'변이-갤럭시-틸골드-차분', leaf_mat13:'변이-스페클-그린크림', leaf_mat14:'변이-스페클-그린크림-쨍', leaf_mat15:'변이-스페클-그린크림-차분', leaf_mat16:'변이-오로레아-골드', leaf_mat17:'변이-오로레아-골드-쨍', leaf_mat18:'변이-오로레아-골드-차분', leaf_mat19:'변이-갤럭시-다크틸', leaf_mat20:'변이-갤럭시-다크틸-쨍', leaf_mat21:'변이-갤럭시-다크틸-차분', leaf_mat22:'변이-오로레아-그린옐로우', leaf_mat23:'변이-오로레아-그린옐로우-쨍', leaf_mat24:'변이-오로레아-그린옐로우-차분', leaf_mat25:'변이-라임-레몬패치', leaf_mat26:'변이-라임-레몬패치-쨍', leaf_mat27:'변이-라임-레몬패치-차분', leaf_mat28:'변이-네온-라임', leaf_mat29:'변이-네온-라임-쨍', leaf_mat30:'변이-네온-라임-차분', leaf_mat31:'변이-제브라-그린흰', leaf_mat32:'변이-제브라-그린흰-쨍', leaf_mat33:'변이-제브라-그린흰-차분', leaf_mat34:'변이-하프문-그린흰', leaf_mat35:'변이-하프문-그린흰-쨍', leaf_mat36:'변이-하프문-그린흰-차분', leaf_mat37:'변이-모브-라벤더그레이', leaf_mat38:'변이-모브-라벤더그레이-쨍', leaf_mat39:'변이-모브-라벤더그레이-차분', leaf_mat40:'변이-별무늬-그린옐로우', leaf_mat41:'변이-별무늬-그린옐로우-쨍', leaf_mat42:'변이-별무늬-그린옐로우-차분', leaf_mat43:'변이-핑크-로즈', leaf_mat44:'변이-핑크-로즈-쨍', leaf_mat45:'변이-핑크-로즈-차분', leaf_mat46:'변이-별무늬-그린흰', leaf_mat47:'변이-별무늬-그린흰-쨍', leaf_mat48:'변이-별무늬-그린흰-차분', leaf_mat49:'변이-차콜-다크그린', leaf_mat50:'변이-차콜-다크그린-쨍', leaf_mat51:'변이-차콜-다크그린-차분', leaf_mat52:'변이-하프문-그린크림', leaf_mat53:'변이-하프문-그린크림-쨍', leaf_mat54:'변이-하프문-그린크림-차분', leaf_mat55:'변이-알보-전체흰', leaf_mat56:'변이-알보-전체흰-쨍', leaf_mat57:'변이-알보-전체흰-차분',
   leaf_mid_albo1:'변이-알보-전체흰중기', leaf_mid_albo2:'변이-알보-전체흰중기-쨍', leaf_mid_albo3:'변이-알보-전체흰중기-차분', leaf_mid_albo4:'변이-알보-흰연두-쨍', leaf_mid_albo5:'변이-알보-흰연두-차분', leaf_mid_albo6:'변이-알보-크림민트-쨍', leaf_mid_albo7:'변이-알보-크림민트-차분',
   sheath_leaf_mid_albo1:'엽초·알보 전체흰중기', sheath_leaf_mid_albo2:'엽초·알보 전체흰중기-쨍', sheath_leaf_mid_albo3:'엽초·알보 전체흰중기-차분', sheath_leaf_mid_albo4:'엽초·알보 흰연두-쨍', sheath_leaf_mid_albo5:'엽초·알보 흰연두-차분', sheath_leaf_mid_albo6:'엽초·알보 크림민트-쨍', sheath_leaf_mid_albo7:'엽초·알보 크림민트-차분',
@@ -237,7 +239,9 @@ const ADJ_TUNED={
   leaf_mat1: {sxz:1.06, rx:0.25, ry:-0.7, rz:0.35, ox:0.04, oy:0.1, bladeR:1.34, petR:1.44},   // 변이-핑크-로즈핑크
   leaf_mat4: {sxz:1.28, rx:0.3, ry:-0.9, rz:0.45, ox:0.04, oy:0.1, bladeR:0.8, petR:1.31},   // 변이-별무늬-페일그린
   leaf_mat7: {sxz:1.08, rx:0.25, ry:-0.95, rz:0.4, ox:0.04, oy:0.1, bladeR:0.84, petR:1.03},   // 변이-별무늬-핑크민트
-  leaf_mat10: {sxz:0.82, rx:0.35, ry:-0.8, rz:0.5, ox:0.04, oy:0.1, bladeR:0.57, petR:1.04},   // 변이-갤럭시-틸골드
+  // 갤럭시-틸골드는 자루가 짧고(28%) 잎몸이 가장 넓어(반폭 0.67), 기준잎에서 복사한
+  //   오프셋(ox .04 / oy .1)이 과했다. 축을 따라 당겨 붙이고 옆으로 밀던 값은 뺐다.
+  leaf_mat10: {sxz:0.82, rx:0.35, ry:-0.8, rz:0.5, oy:0.02, bladeR:0.57, petR:1.04},   // 변이-갤럭시-틸골드
   leaf_mat13: {sxz:0.99, rx:0.45, ry:-1, rz:0.5, ox:0.04, oy:0.1, bladeR:0.81, petR:1.31},   // 변이-스페클-그린크림
   leaf_mat16: {sxz:1.26, rx:0.2, ry:-0.95, rz:0.4, ox:0.04, oy:0.1, bladeR:0.85, petR:1.4},   // 변이-오로레아-골드
   leaf_mat19: {sxz:1.09, rx:0.15, ry:-0.8, rz:0.3, ox:0.04, oy:0.1, bladeR:0.76, petR:0.93},   // 변이-갤럭시-다크틸
@@ -358,6 +362,18 @@ const ASSET_FILES={
   leaf_mid_albo29:'skins/heart_halfmoon_v2_stem.glb',   // 변이-하프문-크림민트
   leaf_mid_albo30:'skins/heart_halfmoon_v2_stem_v1.glb',   // 변이-하프문-크림민트-쨍
   leaf_mid_albo31:'skins/heart_halfmoon_v2_stem_v2.glb',   // 변이-하프문-크림민트-차분
+  // 중기 변이의 '기본'(채도 원본). 쨍/차분과 같은 메시라 대표에 별칭으로 묶인다.
+  leaf_mid_albo32:'skins/heart_marble_2652.glb',   // 변이-마블-실버
+  leaf_mid_albo33:'skins/heart_speckle_2657.glb',   // 변이-스페클-실버점
+  leaf_mid_albo34:'skins/heart_lime_2672_0.glb',   // 변이-라임-형광
+  leaf_mid_albo35:'skins/heart_albo_2672_3.glb',   // 변이-알보-크림민트
+  leaf_mid_albo36:'skins/pothos_cream_vein.glb',   // 변이-잎맥-크림
+  leaf_mid_albo37:'skins/pothos_cream_marble.glb',   // 변이-마블-크림그린
+  leaf_mid_albo38:'skins/pothos_mint_dot.glb',   // 변이-스페클-민트흰점
+  leaf_mid_albo39:'skins/pothos_marble_greenyellow.glb',   // 변이-마블-그린옐로우
+  leaf_mid_albo40:'skins/pothos_marble_whitegreen.glb',   // 변이-마블-흰그린
+  leaf_mid_albo41:'skins/pothos_silver_droplet.glb',   // 변이-실버-물방울
+  leaf_mid_albo42:'skins/pothos_whitegreen_29.glb',   // 변이-알보-흰연두
   // ── 성숙 변이(19종 × 쨍/차분). -쨍/-차분은 같은 메시의 리텍스처본이라 별칭으로 묶인다.
   leaf_mat1:'skins/mon_variegata_pink.glb',   // 변이-핑크-로즈핑크
   leaf_mat2:'skins/mon_variegata_pink_v1.glb',   // 변이-핑크-로즈핑크-쨍
@@ -431,7 +447,7 @@ const LONGY={stem_thick:1,stem_main:1,stem_med:1,stem_thin:1,petiole:1};  // 긴
 // 등록된 변이 중기의 최대 번호. 하드코딩하면 에셋을 늘릴 때마다 어긋난다.
 const ALBO_MID_MAX=Math.max(...Object.keys(ASSET_FILES)
   .map(k=>{ const m=/^leaf_mid_albo(\d+)$/.exec(k); return m? +m[1] : 0; }));
-const ANCHORB={leaf_young:1,leaf_young_albo:1,leaf_mid_albo1:1,leaf_mid_albo2:1,leaf_mid_albo3:1,leaf_mid_albo4:1,leaf_mid_albo5:1,leaf_mid_albo6:1,leaf_mid_albo7:1,leaf_mid_albo8:1,leaf_mid_albo9:1,leaf_mid_albo10:1,leaf_mid_albo11:1,leaf_mid_albo12:1,leaf_mid_albo13:1,leaf_mid_albo14:1,leaf_mid_albo15:1,leaf_mid_albo16:1,leaf_mid_albo17:1,leaf_mid_albo18:1,leaf_mid_albo19:1,leaf_mid_albo20:1,leaf_mid_albo21:1,leaf_mid_albo22:1,leaf_mid_albo23:1,leaf_mid_albo24:1,leaf_mid_albo25:1,leaf_mid_albo26:1,leaf_mid_albo27:1,leaf_mid_albo28:1,leaf_mid_albo29:1,leaf_mid_albo30:1,leaf_mid_albo31:1,leaf_mat1:1,leaf_mat2:1,leaf_mat3:1,leaf_mat4:1,leaf_mat5:1,leaf_mat6:1,leaf_mat7:1,leaf_mat8:1,leaf_mat9:1,leaf_mat10:1,leaf_mat11:1,leaf_mat12:1,leaf_mat13:1,leaf_mat14:1,leaf_mat15:1,leaf_mat16:1,leaf_mat17:1,leaf_mat18:1,leaf_mat19:1,leaf_mat20:1,leaf_mat21:1,leaf_mat22:1,leaf_mat23:1,leaf_mat24:1,leaf_mat25:1,leaf_mat26:1,leaf_mat27:1,leaf_mat28:1,leaf_mat29:1,leaf_mat30:1,leaf_mat31:1,leaf_mat32:1,leaf_mat33:1,leaf_mat34:1,leaf_mat35:1,leaf_mat36:1,leaf_mat37:1,leaf_mat38:1,leaf_mat39:1,leaf_mat40:1,leaf_mat41:1,leaf_mat42:1,leaf_mat43:1,leaf_mat44:1,leaf_mat45:1,leaf_mat46:1,leaf_mat47:1,leaf_mat48:1,leaf_mat49:1,leaf_mat50:1,leaf_mat51:1,leaf_mat52:1,leaf_mat53:1,leaf_mat54:1,leaf_mat55:1,leaf_mat56:1,leaf_mat57:1,leaf_mid1:1,leaf_mid2:1,leaf_mature:1,bud_furled:1,bud_opening2:1}; // 잎/새순: 밑동(자루끝)에 원점 스냅
+const ANCHORB={leaf_young:1,leaf_young_albo:1,leaf_mid_albo1:1,leaf_mid_albo2:1,leaf_mid_albo3:1,leaf_mid_albo4:1,leaf_mid_albo5:1,leaf_mid_albo6:1,leaf_mid_albo7:1,leaf_mid_albo8:1,leaf_mid_albo9:1,leaf_mid_albo10:1,leaf_mid_albo11:1,leaf_mid_albo12:1,leaf_mid_albo13:1,leaf_mid_albo14:1,leaf_mid_albo15:1,leaf_mid_albo16:1,leaf_mid_albo17:1,leaf_mid_albo18:1,leaf_mid_albo19:1,leaf_mid_albo20:1,leaf_mid_albo21:1,leaf_mid_albo22:1,leaf_mid_albo23:1,leaf_mid_albo24:1,leaf_mid_albo25:1,leaf_mid_albo26:1,leaf_mid_albo27:1,leaf_mid_albo28:1,leaf_mid_albo29:1,leaf_mid_albo30:1,leaf_mid_albo31:1,leaf_mid_albo32:1,leaf_mid_albo33:1,leaf_mid_albo34:1,leaf_mid_albo35:1,leaf_mid_albo36:1,leaf_mid_albo37:1,leaf_mid_albo38:1,leaf_mid_albo39:1,leaf_mid_albo40:1,leaf_mid_albo41:1,leaf_mid_albo42:1,leaf_mat1:1,leaf_mat2:1,leaf_mat3:1,leaf_mat4:1,leaf_mat5:1,leaf_mat6:1,leaf_mat7:1,leaf_mat8:1,leaf_mat9:1,leaf_mat10:1,leaf_mat11:1,leaf_mat12:1,leaf_mat13:1,leaf_mat14:1,leaf_mat15:1,leaf_mat16:1,leaf_mat17:1,leaf_mat18:1,leaf_mat19:1,leaf_mat20:1,leaf_mat21:1,leaf_mat22:1,leaf_mat23:1,leaf_mat24:1,leaf_mat25:1,leaf_mat26:1,leaf_mat27:1,leaf_mat28:1,leaf_mat29:1,leaf_mat30:1,leaf_mat31:1,leaf_mat32:1,leaf_mat33:1,leaf_mat34:1,leaf_mat35:1,leaf_mat36:1,leaf_mat37:1,leaf_mat38:1,leaf_mat39:1,leaf_mat40:1,leaf_mat41:1,leaf_mat42:1,leaf_mat43:1,leaf_mat44:1,leaf_mat45:1,leaf_mat46:1,leaf_mat47:1,leaf_mat48:1,leaf_mat49:1,leaf_mat50:1,leaf_mat51:1,leaf_mat52:1,leaf_mat53:1,leaf_mat54:1,leaf_mat55:1,leaf_mat56:1,leaf_mat57:1,leaf_mid1:1,leaf_mid2:1,leaf_mature:1,bud_furled:1,bud_opening2:1}; // 잎/새순: 밑동(자루끝)에 원점 스냅
 const ASSETS={}; let ASSETS_READY=false;
 // 줄기 표면 텍스처(회색조) — 색은 stemTint가 정하고 이 맵은 밝기 디테일만 곱함
 let STEM_TEX=null;
@@ -516,6 +532,7 @@ function makeSheathAsset(botDia, topDia){
 const SHEATH_OF={ bud_furled:'sheath_furled', bud_opening2:'sheath_open',
   leaf_young:'sheath_young', leaf_young_albo:'sheath_young_albo',leaf_mid_albo1:'sheath_leaf_mid_albo1',leaf_mid_albo2:'sheath_leaf_mid_albo2',leaf_mid_albo3:'sheath_leaf_mid_albo3',leaf_mid_albo4:'sheath_leaf_mid_albo4',leaf_mid_albo5:'sheath_leaf_mid_albo5',leaf_mid_albo6:'sheath_leaf_mid_albo6',leaf_mid_albo7:'sheath_leaf_mid_albo7',leaf_mid_albo8:'sheath_leaf_mid_albo8',leaf_mid_albo9:'sheath_leaf_mid_albo9',leaf_mid_albo10:'sheath_leaf_mid_albo10',leaf_mid_albo11:'sheath_leaf_mid_albo11',leaf_mid_albo12:'sheath_leaf_mid_albo12',leaf_mid_albo13:'sheath_leaf_mid_albo13',leaf_mid_albo14:'sheath_leaf_mid_albo14',leaf_mid_albo15:'sheath_leaf_mid_albo15',leaf_mid_albo16:'sheath_leaf_mid_albo16',leaf_mid_albo17:'sheath_leaf_mid_albo17',leaf_mid_albo18:'sheath_leaf_mid_albo18',leaf_mid_albo19:'sheath_leaf_mid_albo19',leaf_mid_albo20:'sheath_leaf_mid_albo20',leaf_mid_albo21:'sheath_leaf_mid_albo21',leaf_mid_albo22:'sheath_leaf_mid_albo22',leaf_mid_albo23:'sheath_leaf_mid_albo23',leaf_mid_albo24:'sheath_leaf_mid_albo24',leaf_mid_albo25:'sheath_leaf_mid_albo25',leaf_mid_albo26:'sheath_leaf_mid_albo26',leaf_mid_albo27:'sheath_leaf_mid_albo27',leaf_mid_albo28:'sheath_leaf_mid_albo28',
   leaf_mid_albo29:'sheath_leaf_mid_albo29', leaf_mid_albo30:'sheath_leaf_mid_albo30', leaf_mid_albo31:'sheath_leaf_mid_albo31',
+  leaf_mid_albo32:'sheath_leaf_mid_albo10', leaf_mid_albo33:'sheath_leaf_mid_albo12', leaf_mid_albo34:'sheath_leaf_mid_albo8', leaf_mid_albo35:'sheath_leaf_mid_albo6', leaf_mid_albo36:'sheath_leaf_mid_albo16', leaf_mid_albo37:'sheath_leaf_mid_albo14', leaf_mid_albo38:'sheath_leaf_mid_albo22', leaf_mid_albo39:'sheath_leaf_mid_albo18', leaf_mid_albo40:'sheath_leaf_mid_albo20', leaf_mid_albo41:'sheath_leaf_mid_albo27', leaf_mid_albo42:'sheath_leaf_mid_albo4',
   leaf_mat1:'sheath_mature', leaf_mat2:'sheath_mature', leaf_mat3:'sheath_mature', leaf_mat4:'sheath_mature', leaf_mat5:'sheath_mature', leaf_mat6:'sheath_mature', leaf_mat7:'sheath_mature', leaf_mat8:'sheath_mature', leaf_mat9:'sheath_mature', leaf_mat10:'sheath_mature', leaf_mat11:'sheath_mature', leaf_mat12:'sheath_mature', leaf_mat13:'sheath_mature', leaf_mat14:'sheath_mature', leaf_mat15:'sheath_mature', leaf_mat16:'sheath_mature', leaf_mat17:'sheath_mature', leaf_mat18:'sheath_mature', leaf_mat19:'sheath_mature', leaf_mat20:'sheath_mature', leaf_mat21:'sheath_mature', leaf_mat22:'sheath_mature', leaf_mat23:'sheath_mature', leaf_mat24:'sheath_mature', leaf_mat25:'sheath_mature', leaf_mat26:'sheath_mature', leaf_mat27:'sheath_mature', leaf_mat28:'sheath_mature', leaf_mat29:'sheath_mature', leaf_mat30:'sheath_mature', leaf_mat31:'sheath_mature', leaf_mat32:'sheath_mature', leaf_mat33:'sheath_mature', leaf_mat34:'sheath_mature', leaf_mat35:'sheath_mature', leaf_mat36:'sheath_mature', leaf_mat37:'sheath_mature', leaf_mat38:'sheath_mature', leaf_mat39:'sheath_mature', leaf_mat40:'sheath_mature', leaf_mat41:'sheath_mature', leaf_mat42:'sheath_mature', leaf_mat43:'sheath_mature', leaf_mat44:'sheath_mature', leaf_mat45:'sheath_mature', leaf_mat46:'sheath_mature', leaf_mat47:'sheath_mature', leaf_mat48:'sheath_mature', leaf_mat49:'sheath_mature', leaf_mat50:'sheath_mature', leaf_mat51:'sheath_mature', leaf_mat52:'sheath_mature', leaf_mat53:'sheath_mature', leaf_mat54:'sheath_mature', leaf_mat55:'sheath_mature', leaf_mat56:'sheath_mature', leaf_mat57:'sheath_mature', leaf_mid1:'sheath_mid1', leaf_mid2:'sheath_mid2', leaf_mature:'sheath_mature' };
 const SHEATH_KEYS=['sheath_leaf_mid_albo8','sheath_leaf_mid_albo9','sheath_leaf_mid_albo10','sheath_leaf_mid_albo11','sheath_leaf_mid_albo12','sheath_leaf_mid_albo13','sheath_leaf_mid_albo14','sheath_leaf_mid_albo15','sheath_leaf_mid_albo16','sheath_leaf_mid_albo17','sheath_leaf_mid_albo18','sheath_leaf_mid_albo19','sheath_leaf_mid_albo20','sheath_leaf_mid_albo21','sheath_leaf_mid_albo22','sheath_leaf_mid_albo23','sheath_leaf_mid_albo24','sheath_leaf_mid_albo25','sheath_leaf_mid_albo26','sheath_leaf_mid_albo27','sheath_leaf_mid_albo28','sheath_leaf_mid_albo29','sheath_leaf_mid_albo30','sheath_leaf_mid_albo31','sheath_furled','sheath_open','sheath_young','sheath_young_albo','sheath_leaf_mid_albo1','sheath_leaf_mid_albo2','sheath_leaf_mid_albo3','sheath_leaf_mid_albo4','sheath_leaf_mid_albo5','sheath_leaf_mid_albo6','sheath_leaf_mid_albo7','sheath_mid1','sheath_mid2','sheath_mature'];
 // 엽초 표시명은 연결된 잎 이름을 따라간다. 직접 지어둔 이름이 있으면 그대로 둔다.
@@ -766,7 +783,7 @@ function ensureLeafShape(){                                // 값이 바뀐 잎�
 const MAT_ALBO_MAX=Math.max(0, ...Object.keys(ASSET_FILES)
   .map(k=>{ const m=/^leaf_mat(\d+)$/.exec(k); return m? +m[1] : 0; }));
 const MAT_ALBO_POOL=[]; for(let i=1;i<=MAT_ALBO_MAX;i+=3) MAT_ALBO_POOL.push(i);
-const ALBO_MID_POOL=[1,2,3,4,5,6,7,8,9,10,11,12,13,16,17,18,19,20,21,22,23,27,28,29,30,31];
+const ALBO_MID_POOL=[1,2,3,4,5,6,7,8,9,10,11,12,13,16,17,18,19,20,21,22,23,27,28,29,30,31,32,33,34,35,36,38,39,40,41,42];
 // 형상이 완전히 동일하고 텍스처만 다른 변형들(정점수·좌표 해시 일치 확인).
 // 조정값을 대표 하나로 묶어, 한 번 맞추면 -쨍/-차분에 함께 적용된다.
 const ADJ_ALIAS={
@@ -788,6 +805,17 @@ const ADJ_ALIAS={
   leaf_mid_albo28:'leaf_mid_albo27', sheath_leaf_mid_albo28:'sheath_leaf_mid_albo27',
   leaf_mid_albo30:'leaf_mid_albo29', sheath_leaf_mid_albo30:'sheath_leaf_mid_albo29',
   leaf_mid_albo31:'leaf_mid_albo29', sheath_leaf_mid_albo31:'sheath_leaf_mid_albo29',
+  leaf_mid_albo32:'leaf_mid_albo10',
+  leaf_mid_albo33:'leaf_mid_albo12',
+  leaf_mid_albo34:'leaf_mid_albo8',
+  leaf_mid_albo35:'leaf_mid_albo6',
+  leaf_mid_albo36:'leaf_mid_albo16',
+  leaf_mid_albo37:'leaf_mid_albo14',
+  leaf_mid_albo38:'leaf_mid_albo22',
+  leaf_mid_albo39:'leaf_mid_albo18',
+  leaf_mid_albo40:'leaf_mid_albo20',
+  leaf_mid_albo41:'leaf_mid_albo27',
+  leaf_mid_albo42:'leaf_mid_albo4',
   leaf_mat2:'leaf_mat1', leaf_mat3:'leaf_mat1',
   leaf_mat5:'leaf_mat4', leaf_mat6:'leaf_mat4',
   leaf_mat8:'leaf_mat7', leaf_mat9:'leaf_mat7',
@@ -1632,7 +1660,7 @@ const SHAPE_GROUPS=[
     {k:'growSpan',    t:'다 크는 데 걸리는 일', min:120, max:1095, step:30},
     {k:'timeCurve',   t:'초반 빠르기(1=등속)', min:0.4, max:1.2, step:0.02},
     {k:'varieProb',   t:'변이(알보) 확률',   min:0,    max:1,    step:0.05},
-    {k:'alboMidPick', t:'변이 중기 고정(0=랜덤)', min:0, max:31,  step:1},
+    {k:'alboMidPick', t:'변이 중기 고정(0=랜덤)', min:0, max:42,  step:1},
     {k:'matAlboPick', t:'변이 성숙 고정(0=랜덤)', min:0, max:57,  step:1},
     {k:'midMix',      t:'중간잎 섞기(0=1종)', min:0,   max:1,    step:0.05},
   ]},
