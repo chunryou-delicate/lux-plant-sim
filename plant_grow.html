@@ -120,7 +120,7 @@ let FRUSTUM=2.2;
 
 // ===== 시드 난수(개체성): 같은 시드→같은 그루. mulberry32 =====
 function mulberry32(a){ return function(){ a|=0; a=a+0x6D2B79F5|0; let t=Math.imul(a^a>>>15,1|a); t=t+Math.imul(t^t>>>7,61|t)^t; return((t^t>>>14)>>>0)/4294967296; }; }
-let SEED=25990, rng=mulberry32(SEED);
+let SEED=69184, rng=mulberry32(SEED);
 const GOLDEN=Math.PI*(3-Math.sqrt(5));   // 137.5° 황금각(자연스러운 잎차례)
 
 // ===== 튜닝 파라미터(A: 전체 규칙) — 슬라이더로 실시간 조절 =====
@@ -145,7 +145,7 @@ const DEF={
 };
 let P=Object.assign({}, DEF);
 // 저장본 버전. 생장 로직/기본값이 바뀌면 올림 → 옛 저장값이 새 기본값을 덮어쓰지 않게.
-const CFG_VER='2026-07-20-sheath6';
+const CFG_VER='2026-07-20-sheath7';
 
 // ===== 튜닝 파라미터(B: 에셋별 개별 조정) =====
 const ADJ_KEYS=['pot','leaf_young','leaf_mid1','leaf_mid2','leaf_mature','bud_furled','bud_opening2',
@@ -163,18 +163,22 @@ const ADJ_TUNED={
   // ── 잎
   leaf_mid1:   {scale:0.8,  rx:-0.15, ry:0.65, rz:0.05, ox:0.01, oy:0.16,  oz:0.04},
   leaf_mid2:   {scale:0.85, sxz:0.85, sy:1.15, rx:-0.45,         ox:0.01, oy:-0.07, oz:0.12},
-  leaf_mature: {rx:-0.4, oy:0.14, oz:0.04},
+  leaf_mature: {rx:0.05, ry:-0.6, rz:0.3, ox:0.04, oy:0.1},
   // ── 줄기(혹/쌍혹)
   stem_thick:  {scale:0.85, ry:0.3, rz:-0.1},
   stem_main:   {scale:0.95, sxz:0.75, sy:0.9, rx:0.05, ry:0.1},
-  // ── 엽초(잎 단계별)
-  sheath_bud:    {sy:0},                              // OFF — 처음엔 새순만 나오고 줄기가 뒤이어 자람
+  // ── 엽초(잎 단계별) — 모양(len/fit/bot/top)도 여기서 각각
+  sheath_bud:    {len:0},                             // OFF — 처음엔 새순만, 줄기가 뒤이어 자람
   sheath_young:  {scale:1.3,  rx:-0.15, ry:-0.85, rz:0.35, ox:0.11,  oy:0.03, oz:0.26},
   sheath_mid1:   {scale:1.05, rx:-0.2,  ry:-0.15, rz:0.4,  ox:-0.09, oy:0.19, oz:-0.06},
-  sheath_mid2:   {scale:1.3,  sxz:0.85, sy:1.1, rx:-0.1,  ry:0.4, rz:-0.7, ox:0.12, oy:0.06, oz:-0.18},
-  sheath_mature: {scale:1.45, sxz:1.15, sy:1.3, rx:-0.15, ry:-1,  rz:-0.5, ox:0.1,  oy:0.2,  oz:0.32},
+  sheath_mid2:   {scale:1.3,  sxz:0.85, sy:1.1, rx:-0.1, ry:0.4, rz:-0.7, ox:0.12, oy:0.06, oz:-0.18},
+  sheath_mature: {scale:1.45, sxz:1.3,  sy:1.3, rx:-0.4, ry:-1,  rz:-0.5, ox:0.01, oy:0.16, oz:0.03},
 };
-function defAdj(key){ return Object.assign({scale:1, sxz:1, sy:1, rx:0,ry:0,rz:0, ox:0,oy:0,oz:0}, ADJ_TUNED[key]||{}); }  // scale=전체·sxz=굵기(폭)·sy=길이(높이)
+function defAdj(key){
+  const b={scale:1, sxz:1, sy:1, rx:0,ry:0,rz:0, ox:0,oy:0,oz:0};
+  if(/^sheath/.test(key)) Object.assign(b, {len:0.22, fit:1.12, bot:1.309, top:0.575});   // 엽초 모양(에셋별)
+  return Object.assign(b, ADJ_TUNED[key]||{});
+}  // scale=전체·sxz=굵기(폭)·sy=길이(높이)
 const DEF_ADJ={}; ADJ_KEYS.forEach(k=>DEF_ADJ[k]=defAdj(k));
 let ADJ=JSON.parse(JSON.stringify(DEF_ADJ));
 
@@ -316,15 +320,21 @@ function makeSheathAsset(botDia, topDia){
 const SHEATH_OF={ bud_furled:'sheath_bud', bud_opening2:'sheath_bud',
   leaf_young:'sheath_young', leaf_mid1:'sheath_mid1', leaf_mid2:'sheath_mid2', leaf_mature:'sheath_mature' };
 const SHEATH_KEYS=['sheath_bud','sheath_young','sheath_mid1','sheath_mid2','sheath_mature'];
-const SHEATH_SET={};                       // 엽초 굵기 환산 기준(아래 구멍 지름). 슬라이더로 바뀜
-let SHEATH_CACHE=null;
-function ensureSheath(){                   // 구멍 크기가 바뀌었으면 메시 재생성
-  const sig=P.sheathBot+'/'+P.sheathTop;
-  if(SHEATH_CACHE===sig || typeof THREE==='undefined') return;
-  ASSETS.sheath=makeSheathAsset(P.sheathBot, P.sheathTop);
-  SHEATH_KEYS.forEach(v=>{ ASSETS[v]=ASSETS.sheath; SHEATH_SET[v]=P.sheathBot; });
-  SHEATH_SET.sheath=P.sheathBot;
-  SHEATH_CACHE=sig;
+const SHEATH_SET={};                       // 엽초 굵기 환산 기준(아래 구멍 지름)
+const SHEATH_MESH={};                      // 변형별 메시 캐시 — 구멍 크기가 각각 다르므로 따로 만든다
+function ensureSheath(){
+  if(typeof THREE==='undefined') return;
+  for(const k of SHEATH_KEYS){
+    const a=ADJ[k]||{};
+    const bot=(a.bot==null?P.sheathBot:a.bot), top=(a.top==null?P.sheathTop:a.top);
+    const sig=bot+'/'+top;
+    if(!SHEATH_MESH[k] || SHEATH_MESH[k].sig!==sig){
+      SHEATH_MESH[k]={sig, obj:makeSheathAsset(bot, top)};
+      ASSETS[k]=SHEATH_MESH[k].obj;
+    }
+    SHEATH_SET[k]=bot;                     // stretchGLB의 굵기 환산 기준
+  }
+  ASSETS.sheath=ASSETS[SHEATH_KEYS[1]];    // 미리보기 폴백
 }
 function loadAssets(cb){
   const loader=new THREE.GLTFLoader(), keys=Object.keys(ASSET_FILES); let n=0;
@@ -532,11 +542,13 @@ function addStemTube(pts, rBase, rTip, nodeTs, color){
 // 엽초: 줄기 끝 ↔ 잎자루 이음부를 감싸는 짧은 슬리브(줄기_잎_엽초 에셋)
 function addSheath(nodePos, d, stemRad, size, leafKey){
   const key=SHEATH_OF[leafKey]||'sheath_young';             // 잎 단계별 엽초(조정값 독립)
-  if(!(P.sheathLen>0.001 && ASSETS[key])) return;
-  const len=P.sheathLen*size;        // ★잎 크기에 비례(고정분을 빼야 작은 잎에서 갓등처럼 안 됨)
+  const a=ADJ[key]||{};
+  const L=(a.len==null?P.sheathLen:a.len), F=(a.fit==null?P.sheathFit:a.fit);   // ★엽초 모양은 에셋별로
+  if(!(L>0.001 && ASSETS[key])) return;
+  const len=L*size;                  // ★잎 크기에 비례(고정분을 빼야 작은 잎에서 갓등처럼 안 됨)
   const p0=nodePos.clone().addScaledVector(d, -len*0.35);    // 줄기 속으로 물려 시작
   const p1=nodePos.clone().addScaledVector(d,  len*0.65);
-  stretchGLB(key, p0, p1, stemRad*P.sheathFit, stemTint(0.03));
+  stretchGLB(key, p0, p1, stemRad*F, stemTint(0.03));
 }
 // 줄기 방향 기준 직교 기저 → az 방향의 "옆으로" 벡터
 function stemFrame(stemDir, az){
@@ -923,7 +935,13 @@ const ADJ_GROUPS=[
   {label:'💤 현재 미사용(튜브가 대체)', keys:['petiole','stem_med','stem_thin','knob']},
 ];
 const ADJ_UNUSED=new Set(['petiole','stem_med','stem_thin','knob']);   // 화면에 안 그려지는 에셋
-function fieldsFor(key){ return ADJ_FIELDS; }   // 이제 stretchGLB도 길이(sy)·회전·오프셋을 반영하므로 전부 노출
+const ADJ_FIELDS_SHEATH=[
+  {k:'len', t:'엽초 길이(잎 대비)', min:0,    max:0.6,  step:0.005},
+  {k:'fit', t:'감싸는 굵기',       min:0.5,  max:2.6,  step:0.02},
+  {k:'bot', t:'아래 구멍 지름',    min:0.3,  max:2.8,  step:0.02},
+  {k:'top', t:'위 구멍 지름',      min:0.05, max:1.8,  step:0.02},
+];
+function fieldsFor(key){ return /^sheath/.test(key)? ADJ_FIELDS_SHEATH.concat(ADJ_FIELDS) : ADJ_FIELDS; }
 function buildAssetSelect(){
   const sel=document.getElementById('assetSel'); if(!sel) return;
   sel.innerHTML=ADJ_GROUPS.map(g=>`<optgroup label="${g.label}">`+
@@ -1044,10 +1062,6 @@ const SHAPE_DEFS=[
   {k:'internode',   t:'마디 길이',         min:0.12, max:0.4,  step:0.01},
   {k:'tipTaper',    t:'줄기 끝 굵기',      min:0.10, max:1.2,  step:0.01},
   {k:'nodeBulge',   t:'마디 볼록',         min:0,    max:0.5,  step:0.02},
-  {k:'sheathLen',   t:'엽초 길이',         min:0,    max:0.4,  step:0.01},
-  {k:'sheathFit',   t:'엽초 감싸는 굵기',  min:0.8,  max:2.2,  step:0.05},
-  {k:'sheathBot',   t:'엽초 아래 구멍',    min:0.4,  max:2.6,  step:0.02},
-  {k:'sheathTop',   t:'엽초 위 구멍',      min:0.05, max:1.6,  step:0.02},
   {k:'stemTex',     t:'줄기 결 세기',      min:0,    max:1,    step:0.05},
   {k:'texRepeat',   t:'줄기 결 반복',      min:0.5,  max:10,   step:0.5},
   {k:'branchSpread',t:'가지 벌어짐',       min:0.15, max:1.2,  step:0.05},
