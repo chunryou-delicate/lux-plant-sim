@@ -120,7 +120,7 @@ let FRUSTUM=2.2;
 
 // ===== 시드 난수(개체성): 같은 시드→같은 그루. mulberry32 =====
 function mulberry32(a){ return function(){ a|=0; a=a+0x6D2B79F5|0; let t=Math.imul(a^a>>>15,1|a); t=t+Math.imul(t^t>>>7,61|t)^t; return((t^t>>>14)>>>0)/4294967296; }; }
-let SEED=12345, rng=mulberry32(SEED);
+let SEED=7554, rng=mulberry32(SEED);
 const GOLDEN=Math.PI*(3-Math.sqrt(5));   // 137.5° 황금각(자연스러운 잎차례)
 
 // ===== 튜닝 파라미터(A: 전체 규칙) — 슬라이더로 실시간 조절 =====
@@ -145,15 +145,30 @@ const DEF={
 };
 let P=Object.assign({}, DEF);
 // 저장본 버전. 생장 로직/기본값이 바뀌면 올림 → 옛 저장값이 새 기본값을 덮어쓰지 않게.
-const CFG_VER='2026-07-20-tube1';
+const CFG_VER='2026-07-20-sheath5';
 
 // ===== 튜닝 파라미터(B: 에셋별 개별 조정) =====
-const ADJ_KEYS=['pot','leaf_young','leaf_mid1','leaf_mid2','leaf_mature','bud_furled','bud_opening2','stem_thick','stem_main','sheath','stem_med','stem_thin','petiole','knob'];
+const ADJ_KEYS=['pot','leaf_young','leaf_mid1','leaf_mid2','leaf_mature','bud_furled','bud_opening2',
+  'stem_thick','stem_main','sheath_bud','sheath_young','sheath_mid1','sheath_mid2','sheath_mature',
+  'stem_med','stem_thin','petiole','knob'];
 // 에셋 표시명 = name_ko (모든 소통은 name_ko 기준). 파일명은 나중에 일체화.
-const ADJ_KO={ pot:'화분', petiole:'줄기_초기', stem_thin:'줄기_중기_2', stem_med:'줄기_중기_1', stem_thick:'줄기_후기_혹', stem_main:'줄기_후기_쌍혹',
+const ADJ_KO={ pot:'화분',
+  sheath_bud:'엽초·초기(새순/반잎)', sheath_young:'엽초·어린잎', sheath_mid1:'엽초·중간잎1',
+  sheath_mid2:'엽초·중간잎2', sheath_mature:'엽초·성숙잎',
+  petiole:'줄기_초기', stem_thin:'줄기_중기_2', stem_med:'줄기_중기_1', stem_thick:'줄기_후기_혹', stem_main:'줄기_후기_쌍혹',
   knob:'줄기_혹_돌기', sheath:'줄기_잎_엽초',
   bud_furled:'기본-초기-새순1', bud_opening2:'기본-초기-반잎1', leaf_young:'기본-어린-잎1', leaf_mid1:'기본-중간-잎1', leaf_mid2:'기본-중간-잎2', leaf_mature:'기본-성숙-잎1' };
-function defAdj(key){ return {scale:1, sxz:1, sy:1, rx:0,ry:0,rz:0, ox:0,oy:0,oz:0}; }  // scale=전체·sxz=굵기(폭)·sy=길이(높이)
+// 박사님이 조절기로 맞춘 값을 기본값으로 고정(2026-07-20). 여기 없는 에셋은 전부 1/0.
+const ADJ_TUNED={
+  stem_thick: {scale:0.85, ry:0.3, rz:-0.1},          // 줄기_후기_혹
+  stem_main:  {sxz:0.8, sy:0.9},                      // 줄기_후기_쌍혹
+  sheath_bud:    {scale:1.3, rx:-0.15, ry:-0.85, rz:0.35, ox:0.11, oy:0.03, oz:0.26},
+  sheath_young:  {scale:1.3, rx:-0.15, ry:-0.85, rz:0.35, ox:0.11, oy:0.03, oz:0.26},
+  sheath_mid1:   {scale:1.3, rx:-0.15, ry:-0.85, rz:0.35, ox:0.11, oy:0.03, oz:0.26},
+  sheath_mid2:   {scale:1.3, rx:-0.15, ry:-0.85, rz:0.35, ox:0.11, oy:0.03, oz:0.26},
+  sheath_mature: {scale:1.3, rx:-0.15, ry:-0.85, rz:0.35, ox:0.11, oy:0.03, oz:0.26},
+};
+function defAdj(key){ return Object.assign({scale:1, sxz:1, sy:1, rx:0,ry:0,rz:0, ox:0,oy:0,oz:0}, ADJ_TUNED[key]||{}); }  // scale=전체·sxz=굵기(폭)·sy=길이(높이)
 const DEF_ADJ={}; ADJ_KEYS.forEach(k=>DEF_ADJ[k]=defAdj(k));
 let ADJ=JSON.parse(JSON.stringify(DEF_ADJ));
 
@@ -256,11 +271,18 @@ function normalizeAsset(root, forceLongY, anchorBottom){
   outer.userData={sx:ns.x, sy:ns.y, sz:ns.z};   // 단위 크기(sy≈1)
   return outer;
 }
+// 엽초는 잎 단계마다 따로 세팅하고 싶다 → 같은 GLB를 공유하되 ADJ(조정값)만 분리한 변형 키.
+// 어느 잎에 붙느냐로 결정된다.
+const SHEATH_OF={ bud_furled:'sheath_bud', bud_opening2:'sheath_bud',
+  leaf_young:'sheath_young', leaf_mid1:'sheath_mid1', leaf_mid2:'sheath_mid2', leaf_mature:'sheath_mature' };
+const SHEATH_KEYS=['sheath_bud','sheath_young','sheath_mid1','sheath_mid2','sheath_mature'];
 function loadAssets(cb){
   const loader=new THREE.GLTFLoader(), keys=Object.keys(ASSET_FILES); let n=0;
   const done=()=>{ if(++n===keys.length){ ASSETS_READY=true; cb&&cb(); } };
   keys.forEach(k=> loader.load('./assets/monstera/'+encodeURIComponent(ASSET_FILES[k]),
-    g=>{ try{ ASSETS[k]=normalizeAsset(g.scene, !!LONGY[k], !!ANCHORB[k]); }catch(e){ console.warn('norm fail',k,e); } done(); },
+    g=>{ try{ ASSETS[k]=normalizeAsset(g.scene, !!LONGY[k], !!ANCHORB[k]);
+      if(k==='sheath') SHEATH_KEYS.forEach(v=>ASSETS[v]=ASSETS[k]);   // 변형들은 같은 메시를 공유(다운로드 1회)
+    }catch(e){ console.warn('norm fail',k,e); } done(); },
     undefined, ()=>{ console.warn('load fail',k,ASSET_FILES[k]); done(); }));
 }
 // 에셋 인스턴스 = GLB 클론 + 에셋별 조정(스케일·회전·오프셋)을 안쪽에 베이크. 바깥은 placeAlong용.
@@ -291,7 +313,7 @@ function addPot(){
 
 // 줄기 GLB의 실제 "몸통 폭"(높이=1 정규화 기준, 정점 하단대 90퍼센타일로 측정).
 // 혹 에셋은 돌기 때문에 bbox(0.56)가 몸통(0.42)보다 훨씬 넓어 이 값이 꼭 필요함.
-const STEM_CORE={petiole:0.083, stem_thin:0.186, stem_med:0.158, stem_thick:0.420, stem_main:0.443, sheath:1.309, knob:2.518};   // 절차생성본 실측(하단 폭, 높이1 정규화 기준)
+const STEM_CORE={petiole:0.083, stem_thin:0.186, stem_med:0.158, stem_thick:0.420, stem_main:0.443, sheath:1.309, sheath_bud:1.309, sheath_young:1.309, sheath_mid1:1.309, sheath_mid2:1.309, sheath_mature:1.309, knob:2.518};   // 절차생성본 실측(하단 폭, 높이1 정규화 기준)
 // (제거됨) stemKey — 굵기로 줄기 GLB를 고르던 함수. addStemSeg와 함께 불필요
 // GLB(밑면 y=0·긴축 Y)를 p0→p1 사이로 늘여 배치. 굵기 radius, color로 통일 틴트. → 두 점을 물리 연결.
 function stretchGLB(key, p0, p1, radius, color, flatAz){
@@ -446,12 +468,13 @@ function addStemTube(pts, rBase, rTip, nodeTs, color){
 }
 // (제거됨) addKnob — 혹 돌기 단독 에셋 방식. '혹 있는 줄기 GLB' 방식으로 복귀하여 미사용
 // 엽초: 줄기 끝 ↔ 잎자루 이음부를 감싸는 짧은 슬리브(줄기_잎_엽초 에셋)
-function addSheath(nodePos, d, stemRad, size){
-  if(!(P.sheathLen>0.001 && ASSETS.sheath)) return;
+function addSheath(nodePos, d, stemRad, size, leafKey){
+  const key=SHEATH_OF[leafKey]||'sheath_young';             // 잎 단계별 엽초(조정값 독립)
+  if(!(P.sheathLen>0.001 && ASSETS[key])) return;
   const len=P.sheathLen*size;        // ★잎 크기에 비례(고정분을 빼야 작은 잎에서 갓등처럼 안 됨)
   const p0=nodePos.clone().addScaledVector(d, -len*0.35);    // 줄기 속으로 물려 시작
   const p1=nodePos.clone().addScaledVector(d,  len*0.65);
-  stretchGLB('sheath', p0, p1, stemRad*P.sheathFit, stemTint(0.03));
+  stretchGLB(key, p0, p1, stemRad*P.sheathFit, stemTint(0.03));
 }
 // 줄기 방향 기준 직교 기저 → az 방향의 "옆으로" 벡터
 function stemFrame(stemDir, az){
@@ -497,7 +520,7 @@ function addLeaf(nodePos, az, maturity, key, sizeOverride, stemDir, stemRad){
   // ★음수 = 잎자루 끝을 줄기 속으로 박아 붙임(잎 GLB에 잎자루가 포함돼 있으므로 틈이 생기면 안 됨)
   const reach=-P.leafEmbed*(0.4+size)*P.petioleLen;
   const base=nodePos.clone().addScaledVector(d, reach);
-  if(stemRad) addSheath(nodePos, d, stemRad, size);     // ★줄기↔잎자루 이음부 엽초
+  if(stemRad) addSheath(nodePos, d, stemRad, size, key);   // ★줄기↔잎자루 이음부 엽초(잎 단계별)
   addPetiole(nodePos, d, size, maturity, base);        // (기본 off) GLB 잎자루 연결
   const proto=assetInst(key);
   if(proto){ placeAlong(proto, base, d, size); proto.rotateY(aim.az);   // 줄기축 둘레로 돌려 잎을 az 쪽으로
@@ -508,9 +531,10 @@ function addLeaf(nodePos, az, maturity, key, sizeOverride, stemDir, stemRad){
   m.rotation.x=0.5+maturity*0.7; m.scale.setScalar(size); pivot.add(m); plantGroup.add(pivot);
 }
 // 새순: 갓 난 성장점(줄기 끝을 이어 거의 곧게 위). furled → opening → (young 잎)
-function addBud(nodePos, az, kind, size, stemDir){
+function addBud(nodePos, az, kind, size, stemDir, stemRad){
   const d=leafDir(stemDir, az, P.leafTilt*0.4);          // ★줄기와 거의 같은 축 = 딱 꽂힘(새순은 더 곧게)
   const proto=assetInst(leafKindKey(kind));
+  if(stemRad) addSheath(nodePos, d, stemRad, size, leafKindKey(kind));   // 초기(새순·반잎)용 엽초
   const embed = kind==='furled'? 0.24*size : 0.12*size;   // 말린 새순은 줄기에 깊이 박히게(안 뜨고 자연스럽게 올라옴)
   PLACED.push({c:nodePos.clone().addScaledVector(d,size*0.5), r:size*0.4});
   if(proto){ placeAlong(proto, nodePos.clone().addScaledVector(d,-embed), d, size); tintObj(proto, budTint()); plantGroup.add(proto); return; }
@@ -518,8 +542,8 @@ function addBud(nodePos, az, kind, size, stemDir){
 }
 // 잎 병렬 성숙: furled → opening2 → young → mid(1|2) → mature (m=0..1)
 function drawLeafStage(pos, az, m, midType, canMature, stemDir, stemRad){
-  if(m<0.10){ addBud(pos, az, 'furled',  P.budSize*(0.6+m*3), stemDir); return; }
-  if(m<0.22){ addBud(pos, az, 'opening', P.budSize*(1.0+m), stemDir); return; }
+  if(m<0.10){ addBud(pos, az, 'furled',  P.budSize*(0.6+m*3), stemDir, stemRad); return; }
+  if(m<0.22){ addBud(pos, az, 'opening', P.budSize*(1.0+m), stemDir, stemRad); return; }
   let key;
   if(m<P.stageYoung) key='leaf_young';                      // 어린 통잎
   else if(m<P.stageMid || !canMature) key=(midType||'leaf_mid1');   // 보통은 중간잎(파랑)에서 정착
@@ -810,7 +834,8 @@ const ADJ_FIELDS=[
 // 카테고리 그룹 드롭다운(name_ko). 줄기는 길이=마디 고정이라 '길이(sy)' 슬라이더 숨김.
 const ADJ_GROUPS=[
   {label:'🍃 잎·새순', keys:['bud_furled','bud_opening2','leaf_young','leaf_mid1','leaf_mid2','leaf_mature']},
-  {label:'🌿 줄기·부품', keys:['stem_thick','stem_main','sheath']},
+  {label:'🌿 줄기·부품', keys:['stem_thick','stem_main']},
+  {label:'🍶 엽초(잎 단계별)', keys:['sheath_bud','sheath_young','sheath_mid1','sheath_mid2','sheath_mature']},
   {label:'🪴 화분', keys:['pot']},
   {label:'💤 현재 미사용(튜브가 대체)', keys:['petiole','stem_med','stem_thin','knob']},
 ];
