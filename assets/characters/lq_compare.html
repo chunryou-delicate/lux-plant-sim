@@ -117,7 +117,7 @@ POSES.forEach(([k,n])=>poseSel.add(new Option(n,k)));
 async function load(){
   const c=charSel.value, p=poseSel.value;
   const isMon=c==='char_mascot_sprout';
-  const specH = isMon?0.375 : (/(jachwi_f|yeoja)/.test(c)?1.50:1.70);
+  const specH = isMon?0.375 : (/(jachwi_f|yeoja)/.test(c)?1.40:1.50);
   const file = isMon ? 'char_mascot_sprout.glb' : `${c}_${p}.glb`;
   document.getElementById('bar').textContent='불러오는 중…';
   const [ta,tb]=await Promise.all([

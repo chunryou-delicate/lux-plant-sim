@@ -34,12 +34,12 @@
     <div class="panel">
       <h2>부유 · 추적 파라미터</h2>
 
-      <div class="row"><label>몬이 크기 (캐릭터 대비) <b id="v-z">0.25</b></label>
-        <input type="range" id="s-z" min="0.12" max="0.45" step="0.01" value="0.25">
-        <div class="hint">확정값 0.25로 GLB에 이미 구워짐(엔진에서 추가 스케일 불필요)</div></div>
+      <div class="row"><label>몬이 크기 (캐릭터 대비) <b id="v-z">0.268</b></label>
+        <input type="range" id="s-z" min="0.12" max="0.45" step="0.001" value="0.268">
+        <div class="hint">몬이는 0.375m 고정. 캐릭터(1.40m) 대비 0.268배 — GLB에 이미 구워짐</div></div>
 
-      <div class="row"><label>부유 높이 <b id="v-h">0.237</b></label>
-        <input type="range" id="s-h" min="0" max="0.7" step="0.005" value="0.237">
+      <div class="row"><label>부유 높이 <b id="v-h">0.221</b></label>
+        <input type="range" id="s-h" min="0" max="0.7" step="0.005" value="0.221">
         <div class="hint">바닥에서 몬이 밑면까지(m). 캐릭 무릎~허리 사이가 화면에 같이 잡힘</div></div>
 
       <div class="row"><label>둥둥 진폭 <b id="v-a">0.103</b></label>
@@ -49,8 +49,8 @@
         <input type="range" id="s-p" min="0.8" max="5" step="0.1" value="2.5">
         <div class="hint">느릴수록 푸근함. 빠르면 촐랑대는 성격이 됨</div></div>
 
-      <div class="row"><label>따라오는 거리 <b id="v-d">0.829</b></label>
-        <input type="range" id="s-d" min="0.2" max="2.0" step="0.01" value="0.829"></div>
+      <div class="row"><label>따라오는 거리 <b id="v-d">0.774</b></label>
+        <input type="range" id="s-d" min="0.2" max="2.0" step="0.01" value="0.774"></div>
 
       <div class="row"><label>추적 부드러움 <b id="v-k">4.10</b></label>
         <input type="range" id="s-k" min="0.4" max="10" step="0.1" value="4.1">
@@ -70,7 +70,7 @@
 <script>
 // ── 캐릭터/마스코트 GLB 공통 규약: 실스케일(1유닛=1m), 발바닥 y=0, XZ 중심 ──
 const FLOOR_OFFSET = 0;        // GLB 자체가 발바닥 정렬이라 보정 불필요
-const CHAR_H = 1.50;           // 자취녀 기준 실키(여캐 150cm)
+const CHAR_H = 1.40;           // 자취녀 기준(여캐 140cm)
 
 // ── 툰·파스텔 (다른 뷰어와 동일) ──
 function toonGrad(){const c=document.createElement('canvas');c.width=64;c.height=1;const x=c.getContext('2d');
@@ -138,9 +138,10 @@ new THREE.GLTFLoader().load('3d/char_mascot_sprout.glb',g=>{
   const m=g.scene;toonify(m);m.position.y=FLOOR_OFFSET;monPivot.add(m);monReady=true;});
 
 // ── 파라미터 ──
-const BAKED_RATIO=0.25;   // 현재 GLB에 구워진 크기(캐릭터 대비) — 확정
-// 아래 h/a/d 는 캐릭터 1.8995 시절 확정값을 실스케일(x0.7897)로 환산한 값
-const P={z:0.25,h:0.237,a:0.103,p:2.5,d:0.829,k:4.1,t:4.0,s:1.0};
+const BAKED_RATIO=0.268;  // 몬이 0.375m 고정 / 여캐 1.40m = 0.268
+// h·d 는 캐릭터 크기에 연동(1.50->1.40 이므로 x0.9333). a(둥둥 진폭)는
+// 몬이 자체 크기에 붙는 값이라 몬이가 안 바뀌었으니 그대로 둔다.
+const P={z:0.268,h:0.221,a:0.103,p:2.5,d:0.774,k:4.1,t:4.0,s:1.0};
 const ids={z:'s-z',h:'s-h',a:'s-a',p:'s-p',d:'s-d',k:'s-k',t:'s-t',s:'s-s'};
 const fmt={z:2,h:2,a:3,p:2,d:2,k:2,t:1,s:2};
 function syncOut(){

@@ -92,7 +92,7 @@
     </div>
     <div class="row" style="margin-top:6px"><span class="rlab">실루엣 키</span><input type="range" id="refH" min="130" max="195" value="170"><span class="rlab" id="refHlab">1.70m</span></div>
     <label class="opt" style="margin-top:4px"><input type="checkbox" id="refPots" checked>화분 크기 비교(소·중·대)</label>
-    <div style="font-size:11px;color:#7a808a;margin-top:3px">캐릭터 GLB는 실스케일(여 1.50 / 남 1.70m, 발바닥 y=0)이라 키 슬라이더 영향을 받지 않습니다</div>
+    <div style="font-size:11px;color:#7a808a;margin-top:3px">캐릭터 GLB는 확정 크기(여 1.40 / 남 1.50m, 발바닥 y=0)라 키 슬라이더 영향을 받지 않습니다</div>
   </div>
   <div class="grp">
     <button class="btn" id="copy">이 설정 JSON 복사</button>
@@ -185,16 +185,16 @@ function lightInfo(){
 
 /* ===== 스케일 기준: 사람 실루엣 / 캐릭터 GLB / 화분 소·중·대 ===== */
 const refGroup=new THREE.Group(); scene.add(refGroup);
-let refMode='glb', refH=1.70, refPots=true, showFurn=true;
+let refMode='glb', refH=1.60, refPots=true, showFurn=true;
 
 /* 캐릭터 8종 + 몬이 — GLB에 실스케일이 구워져 있음(발바닥 y=0, 1유닛=1m).
    자세: base=A포즈(정지), 나머지는 리깅본 + 클립을 얹어 재생.
    ref: assets/characters/manifest.json 의 scale 블록 */
 const REF_CHARS=[
-  ['char_namja_jachwi','자취남',1.70],['char_namja_gajang','남가장',1.70],
-  ['char_namja_jubu','남주부',1.70],['char_namja_researcher','남연구원',1.70],
-  ['char_jachwi_f','자취녀',1.50],['char_yeoja_gajang','여가장',1.50],
-  ['char_yeoja_jubu','여주부',1.50],['char_yeoja_researcher','여연구원',1.50],
+  ['char_namja_jachwi','자취남',1.50],['char_namja_gajang','남가장',1.50],
+  ['char_namja_jubu','남주부',1.50],['char_namja_researcher','남연구원',1.50],
+  ['char_jachwi_f','자취녀',1.40],['char_yeoja_gajang','여가장',1.40],
+  ['char_yeoja_jubu','여주부',1.40],['char_yeoja_researcher','여연구원',1.40],
 ];
 // [키, 라벨, 경로종류]  root = 3d/{c}_{k}.glb, anim = 3d/anim/{c}_{k}.glb
 const REF_POSES=[

@@ -124,7 +124,7 @@ scene.add(new THREE.GridHelper(4,8,0xbccfc2,0xdae6dd));
 
 const loader=new THREE.GLTFLoader();
 let model=null, baseImg=null, maskImg=null, mat=null, texCanvas=null;
-let curH=1.70, curView='upper';
+let curH=1.50, curView='upper';
 
 /* 발바닥 y=0 기준. 캐릭터는 카메라 쪽(+Z)을 보도록 180도 돌려놨다. */
 function setView(v){
@@ -217,7 +217,7 @@ async function load(){
   mat.map=t; mat.needsUpdate=true;
   recolor();
 
-  curH=/(jachwi_f|yeoja)/.test(key)?1.50:1.70;
+  curH=/(jachwi_f|yeoja)/.test(key)?1.40:1.50;
   setView(curView);
   note.innerHTML=`텍스처 ${src.width}×${src.height} · 마스크 ${maskImg.width}×${maskImg.height}<br>`+
     `색 교체는 로딩 시 한 번만 계산합니다(프레임마다 아님). 게임에선 캐릭터 생성·변경 시점에 실행하면 됩니다.`;
