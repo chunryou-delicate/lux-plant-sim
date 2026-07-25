@@ -130,7 +130,7 @@ const DEF={
   sizeYoung:0.16, sizeMid:0.30, sizeMature:0.46, sizeFull:0.62,  // 각 시점 크기(마디 간격 대비 자연스럽게)
   internode:0.22, stemFlat:1.25,   // 줄기 마디 길이·잎방향 납작
   petGrow:16, rThin:0.026, rMed:0.036, rThick:0.052, matureProb:0.22, doubleBud:0.15,   // 마디 자람시간·종류별 고정굵기·성숙잎 확률·더블혹(쌍혹=가지2 동시) 확률
-  stemTrans:40,                    // 마디가 줄기_초기 → 줄기_중기(분홍 예비혹)로 전이하는 시간(일). 아래(오래된) 마디부터 순서대로 됨
+  stemTrans:40, bumpAt:0.5,        // 초기→중기 전이 시간(일, 아래 마디부터 순서대로) · 혹 돌기 위치(마디 길이의 비율=가지가 나는 지점)
   petioleLen:1.0, leafElev:1.0, elevDrop:0.36, spread:0.10, branchSpread:0.55,   // 배치(spread=줄기 흔들림)
   leafLight:0.62, leafDark:0.22, leafSat:0.5, satRange:0.22, hueBase:0.16, hueRange:0.26,   // 색(밝기/진함/채도/개체범위)
   ageDark:0.16, ageSat:0.26,   // 시간(나이) 따라 짙어짐·선명해짐(전역, 줄기·잎 함께)
@@ -436,28 +436,39 @@ function buildPlant(){
     // 축 = 생장점 하나. 잎 1개(leafBirth부터 성숙) + 그 아래로 쌓이는 마디들(segs)
     const mkAxis=(from,dir,birth)=>{
       const ax={from, dir:dir.clone().normalize(), birth, leafBirth:birth+P.petGrow, segs:[],
-                az:rng()*Math.PI*2, midType:PLANT_MID, canMature:rng()<P.matureProb, triggered:false};
+                az:rng()*Math.PI*2, midType:PLANT_MID, canMature:rng()<P.matureProb,
+                triggered:false, grew:false};                            // grew = 이번 사이클에 이미 1마디 자랐나
       axes.push(ax); return ax; };
     const addSeg=(ax,T)=>{                                               // ② TIP 아래에 마디 삽입 → 생장점이 위로
       const wt=rng()<0.5?'thin':'med';                                   // 나중에 전환될 중기 종류(50:50)
       const dir=ax.dir.clone().addScaledVector(ld, PHOTO*0.14)           // 굴광성: 빛 쪽으로 살짝
         .add(new THREE.Vector3((rng()-0.5)*P.spread,0,(rng()-0.5)*P.spread)).normalize();
-      ax.segs.push({dir, len:(wt==='med'?P.internode:P.internode*0.86), wt, birth:T, activated:false}); };
+      ax.segs.push({dir, len:(wt==='med'?P.internode:P.internode*0.86), wt, birth:T, activated:false,
+                    az:ax.az+ax.segs.length*GOLDEN}); };                 // 마디마다 방위(황금각) → 혹·가지가 각기 다른 쪽
     const leafM=(ax,T)=>Math.max(0, Math.min(1,(T-ax.leafBirth)/P.matSpan));   // 그 축의 잎 성숙도
-    // 축 시작점(가지는 부모 혹 마디의 끝) — 부모가 자라면 같이 밀려 올라감
+    // 축 시작점 — ★가지는 부모 "혹 마디의 돌기 위치"(마디 끝이 아니라 중간)에서 남
     const axBase=(ax,T)=>{
       if(!ax.from) return new THREE.Vector3(0,SOIL_Y,0);
       const p=axBase(ax.from.ax,T), pa=ax.from.ax;
-      for(let i=0;i<=ax.from.idx && i<pa.segs.length;i++){ const s=pa.segs[i]; if(s.birth>T) break;
+      for(let i=0;i<ax.from.idx && i<pa.segs.length;i++){ const s=pa.segs[i]; if(s.birth>T) break;
         p.addScaledVector(s.dir, s.len*Math.min(1,(T-s.birth)/Math.max(1,P.petGrow))); }
+      const b=pa.segs[ax.from.idx];                                      // 혹 마디: 돌기(bumpAt) 지점까지만
+      if(b && b.birth<=T) p.addScaledVector(b.dir, b.len*Math.min(1,(T-b.birth)/Math.max(1,P.petGrow))*P.bumpAt);
       return p; };
     mkAxis(null, new THREE.Vector3((rng()-0.5)*0.10,1,(rng()-0.5)*0.10).normalize(), t0);
     for(let T=t0; T<=g+1e-6; T+=STEP){
-      for(const ax of axes){ if(ax.birth<=T && ax.segs.length<P.maxLeaves) addSeg(ax,T); }
+      // ★첫 중간잎까지는 마디가 쭉 자라고(순서도 #0~#9 = 4마디), 그 뒤부터는
+      //   "중간잎 → 다음 중간잎" 사이에 딱 1마디씩만 (한없이 길어지지 않게)
+      for(const ax of axes){
+        if(ax.birth>T || ax.segs.length>=P.maxLeaves) continue;
+        if(ax.triggered && ax.grew) continue;                            // 중간잎 지난 축은 사이클당 1마디
+        addSeg(ax,T); ax.grew=true;
+      }
       // ④ ★잎이 중간잎이 된 생장점이 있으면 → 그때 딱 하나의 마디만 혹으로
       const trig=axes.find(ax=>!ax.triggered && leafM(ax,T)>=M_MID);
       if(trig){
         trig.triggered=true;                                             // 이 잎의 트리거는 1회만
+        axes.forEach(a=>a.grew=false);                                   // 새 사이클 시작 → 각 줄기가 1마디씩 더
         const cand=[];                                                   // 후보 = 모든 줄기_중기(분홍 예비혹) 마디
         for(const ax of axes) ax.segs.forEach((s,i)=>{
           if(!s.activated && T-s.birth>=P.stemTrans) cand.push({ax,s,i}); });
@@ -465,7 +476,7 @@ function buildPlant(){
           const c=cand[Math.floor(rng()*cand.length)];                   // 순서도: 어디서 날지는 순수 랜덤
           c.s.activated=true; c.s.actT=T;
           const dbl=rng()<P.doubleBud; c.s.actType=dbl?'main':'thick';   // 쌍혹(가지2) / 단혹(가지1)
-          const a0=rng()*Math.PI*2, nb=dbl?2:1;
+          const a0=c.s.az, nb=dbl?2:1;                                   // ★가지 방향 = 그 혹 마디의 방위(돌기가 향한 쪽)
           for(let i=0;i<nb;i++){                                         // 혹에서 줄기_초기가 나와 자람
             const s2=a0+(nb===2? i*Math.PI : 0);
             const bd=new THREE.Vector3(Math.sin(s2)*P.branchSpread, 1, Math.cos(s2)*P.branchSpread).normalize();
@@ -489,11 +500,12 @@ function buildPlant(){
         else if(g-s.birth>=P.stemTrans){ key=s.wt==='med'?'stem_med':'stem_thin'; // 줄기_중기_1 / 중기_2
           rad=s.wt==='med'?P.rMed:P.rThin; }
         else { key='petiole'; rad=P.rThin*0.62*(0.45+0.55*gr); }                  // 줄기_초기(자라는 중)
-        addStemSeg(cur, nxt, rad, 0, ax.az, key);
+        addStemSeg(cur, nxt, rad, 0, s.az, key);
         cur=nxt; nSeg++;
       }
       // ① 생장점의 잎 1개 — 줄기_초기가 다 자란 뒤 새순으로 나서 그 자리에서 성숙
-      if(g>=ax.leafBirth){ drawLeafStage(cur, ax.az, leafM(ax,g), ax.midType, ax.canMature); nLeaf++; }
+      const tipAz=ax.segs.length?ax.segs[ax.segs.length-1].az:ax.az;
+      if(g>=ax.leafBirth){ drawLeafStage(cur, tipAz, leafM(ax,g), ax.midType, ax.canMature); nLeaf++; }
     }
     nodes=nSeg; leaves=nLeaf;
     stage = nSeg<=1 ? '새싹 🌱' : ((axes.length>1?'가지 '+(axes.length-1)+' · ':'')+(acts?'혹 '+acts+' · ':'')+'마디 '+nSeg);
