@@ -129,15 +129,16 @@ const DEF={
   seedEnd:20, sproutEnd:45,                                // 씨앗·새싹(줄기_초기+새순) 시기
   budSpan:0.22, furlFrac:0.5, budSize:0.13,                // 새순: 말림(furled)→펴짐(opening) 비율·크기
   stageYoung:0.38, stageMid:0.66,                          // 잎 형태 전환 시점(어린→중간→성인)
-  sizeYoung:0.16, sizeMid:0.30, sizeMature:0.46, sizeFull:0.62,  // 각 시점 크기(마디 간격 대비 자연스럽게)
-  internode:0.22, stemFlat:1.25,   // 줄기 마디 길이·잎방향 납작
+  sizeYoung:0.20, sizeMid:0.34, sizeMature:0.46, sizeFull:0.58,  // 각 시점 크기(마디 간격 대비 자연스럽게)
+  internode:0.20, stemFlat:1.25,   // 줄기 마디 길이·잎방향 납작
   petGrow:16, rEarly:0.022, rThin:0.028, rMed:0.025, rThick:0.036, matureProb:0.22, doubleBud:0.15,  // 종류별 굵기(몸통 폭 기준, 왜곡 최소)·성숙잎 확률·쌍혹 확률
   leafEmbed:0.13, leafTilt:0.30, leafClear:0.40,   // 잎자루를 줄기 속으로 박는 깊이 · 잎이 줄기 끝 방향을 따라가는 정도 · 잎이 차지하는 반경(겹침 회피)
   photoLean:0.13, stemStraight:0.30,   // 빛 쪽으로 기우는 세기(굴광성 슬라이더와 곱해짐) · 축 기본방향으로 돌아오는 힘(작을수록 더 휨)
-  stemTrans:40, bumpGrow:20, bumpAt:0.3, stemOverlap:0.015,   // 초기→중기_2 전이(일) · 혹 돋는 기간(중기_1 단계) · 돌기 위치(마디 비율=가지 나는 지점) · 이음새 겹침
+  stemTrans:40, bumpGrow:20, bumpAt:0.3, stemOverlap:0.015,
+  tipTaper:0.72, nodeBulge:0.16, nodeWidth:0.045, bumpFit:1.06,   // 튜브 줄기: 끝 가늘어짐 · 마디 볼록 세기/폭 · 혹 GLB가 튜브를 감싸는 여유   // 초기→중기_2 전이(일) · 혹 돋는 기간(중기_1 단계) · 돌기 위치(마디 비율=가지 나는 지점) · 이음새 겹침
   petioleLen:1.0, leafElev:1.0, elevDrop:0.36, spread:0.10, branchSpread:0.55,   // 배치(spread=줄기 흔들림)
-  leafLight:0.62, leafDark:0.22, leafSat:0.5, satRange:0.22, hueBase:0.16, hueRange:0.26,   // 색(밝기/진함/채도/개체범위)
-  ageDark:0.16, ageSat:0.26,   // 시간(나이) 따라 짙어짐·선명해짐(전역, 줄기·잎 함께)
+  leafLight:0.62, leafDark:0.13, leafSat:0.5, satRange:0.22, hueBase:0.16, hueRange:0.26,   // 색(밝기/진함/채도/개체범위)
+  ageDark:0.10, ageSat:0.18,   // 시간(나이) 따라 짙어짐·선명해짐(전역, 줄기·잎 함께)
 };
 let P=Object.assign({}, DEF);
 // 저장본 버전. 생장 로직/기본값이 바뀌면 올림 → 옛 저장값이 새 기본값을 덮어쓰지 않게.
@@ -384,6 +385,51 @@ function leafKeyForOrder(order, age, stemR){
 // ===== 고체처럼 거동: 이미 놓인 잎/새순의 자리를 기억해 서로 파고들지 않게 =====
 let PLACED=[];                                   // {c:잎몸 중심, r:반경}
 function clearPlaced(){ PLACED=[]; }
+// ===== 줄기를 "이음새 없는 한 줄기 튜브"로 생성 =====
+// 마디 점들을 CatmullRom 곡선으로 잇고, 굵기를 t에 따라 변화(위로 갈수록 가늘게 + 마디마다 살짝 부풀림).
+// GLB를 마디마다 이어 붙이던 방식은 경계 링이 필연적이라 이렇게 바꿈. 혹은 이 위에 얹는다.
+function makeStemTube(pts, radAt, tubSeg, radSeg){
+  if(pts.length<2) return null;
+  const curve=new THREE.CatmullRomCurve3(pts, false, 'catmullrom', 0.4);
+  const frames=curve.computeFrenetFrames(tubSeg, false);
+  const pos=[], nor=[], uv=[], idx=[], P0=new THREE.Vector3();
+  for(let i=0;i<=tubSeg;i++){
+    const t=i/tubSeg; curve.getPointAt(t, P0);
+    const N=frames.normals[i]||frames.normals[tubSeg-1], B=frames.binormals[i]||frames.binormals[tubSeg-1];
+    const r=radAt(t);
+    for(let j=0;j<=radSeg;j++){
+      const v=j/radSeg*Math.PI*2, si=Math.sin(v), co=-Math.cos(v);
+      const nx=co*N.x+si*B.x, ny=co*N.y+si*B.y, nz=co*N.z+si*B.z;
+      nor.push(nx,ny,nz); pos.push(P0.x+r*nx, P0.y+r*ny, P0.z+r*nz); uv.push(j/radSeg, t);
+    }
+  }
+  for(let i=1;i<=tubSeg;i++) for(let j=1;j<=radSeg;j++){
+    const a=(radSeg+1)*(i-1)+(j-1), b=(radSeg+1)*i+(j-1), c=(radSeg+1)*i+j, d=(radSeg+1)*(i-1)+j;
+    idx.push(a,b,d, b,c,d);
+  }
+  const geo=new THREE.BufferGeometry();
+  geo.setIndex(idx);
+  geo.setAttribute('position', new THREE.Float32BufferAttribute(pos,3));
+  geo.setAttribute('normal',   new THREE.Float32BufferAttribute(nor,3));
+  geo.setAttribute('uv',       new THREE.Float32BufferAttribute(uv,2));
+  return geo;
+}
+// 한 축(생장점)의 줄기 전체를 튜브 하나로 그림. nodeTs=마디 경계의 t값(부풀림 위치)
+function addStemTube(pts, rBase, rTip, nodeTs, color){
+  const geo=makeStemTube(pts, t=>{
+    let r=rBase+(rTip-rBase)*t;                                  // 위로 갈수록 가늘게(테이퍼)
+    for(const nt of nodeTs){                                     // 마디마다 살짝 볼록 → 마디감
+      const d=Math.abs(t-nt);
+      if(d<P.nodeWidth) r*= 1 + P.nodeBulge*(1-d/P.nodeWidth);
+    }
+    return r;
+  }, Math.max(12, pts.length*10), 10);
+  if(!geo) return;
+  const mat=new THREE.MeshStandardMaterial({color, roughness:0.62});
+  mat.userData={cloned:true};
+  const m=new THREE.Mesh(geo, mat); m.castShadow=true; m.receiveShadow=true;
+  plantGroup.add(m);
+}
 // 줄기 방향 기준 직교 기저 → az 방향의 "옆으로" 벡터
 function stemFrame(stemDir, az){
   const up=(stemDir?stemDir.clone():new THREE.Vector3(0,1,0)).normalize();
@@ -545,23 +591,36 @@ function buildPlant(){
     let nLeaf=0, acts=0, nSeg=0;
     for(const ax of axes){
       if(ax.birth>g) continue;
-      let cur=axBase(ax,g), tipRad=P.rThin;
+      // ① 마디 경계 점들을 모아 한 줄기 튜브로(이음새 없음). 혹은 그 위에 얹는다.
+      let cur=axBase(ax,g);
+      const pts=[cur.clone()], bumps=[];
       for(const s of ax.segs){
         if(s.birth>g) continue;
-        const gr=Math.min(1,(g-s.birth)/Math.max(1,P.petGrow));          // ★줄기_초기만 길이·굵기가 자람
-        const nxt=cur.clone().addScaledVector(s.dir, s.len*gr);
-        // 줄기_초기 → 줄기_중기_2(대기) → [선택되면] 줄기_중기_1(혹 돋는 중) → 줄기_후기_혹/쌍혹
-        let key, rad;
-        if(s.activated && g>=s.actT+P.bumpGrow){ key=s.actType==='main'?'stem_main':'stem_thick';
-          rad=s.actType==='main'?P.rThick*1.05:P.rThick; acts++; }
-        else if(s.activated){ key='stem_med'; rad=P.rMed; }                       // 줄기_중기_1 = 혹 직전(혹 돋기 시작)
-        else if(g-s.birth>=P.stemTrans){ key='stem_thin'; rad=P.rThin; }          // 줄기_중기_2 = 분홍 대기(예비혹)
-        else { key='petiole'; rad=P.rEarly*(0.72+0.28*gr); }                      // 줄기_초기(자라는 중)
-        // 이음새를 아래로 살짝 늘려 겹침 → 마디 경계가 툭툭 끊겨 보이지 않게
-        addStemSeg(cur.clone().addScaledVector(s.dir,-P.stemOverlap), nxt, rad, 0, s.az, key);
-        tipRad=rad;
-        cur=nxt; nSeg++;
+        const gr=Math.min(1,(g-s.birth)/Math.max(1,P.petGrow));          // ★줄기_초기만 길이가 자람
+        cur=cur.clone().addScaledVector(s.dir, s.len*gr);
+        pts.push(cur.clone());
+        if(s.activated && g>=s.actT+P.bumpGrow){                         // 혹/쌍혹은 GLB로 얹을 자리 기록
+          bumps.push({s, i:pts.length-2, gr}); acts++;
+        }
+        nSeg++;
       }
+      if(pts.length>=2){
+        // 마디 경계의 t값(누적 길이 기준) → 그 지점만 살짝 볼록하게
+        const L=[0]; for(let i=1;i<pts.length;i++) L.push(L[i-1]+pts[i].distanceTo(pts[i-1]));
+        const tot=L[L.length-1]||1, nodeTs=L.slice(1,-1).map(l=>l/tot);
+        // 굵기: 밑동은 성숙한 줄기, 끝은 갓 난 줄기_초기 → 자연스러운 테이퍼
+        const matured=Math.min(1, (g-ax.birth)/Math.max(1,P.stemTrans*2));
+        const rBase=P.rEarly+(P.rThin-P.rEarly)*matured, rTip=P.rEarly*P.tipTaper;
+        addStemTube(pts, rBase, rTip, nodeTs, stemTint(0));
+        // ② 혹/쌍혹 GLB를 해당 마디 위치에 얹음(튜브를 감싸도록 조금 크게)
+        for(const b of bumps){
+          const p0=pts[b.i], p1=pts[b.i+1];
+          const key=b.s.actType==='main'?'stem_main':'stem_thick';
+          const rad=(b.s.actType==='main'?P.rThick*1.05:P.rThick)*P.bumpFit;
+          stretchGLB(key, p0, p1, rad, stemTint(0.04), b.s.az);
+        }
+      }
+      const tipRad=P.rEarly*P.tipTaper;
       // ① 생장점의 잎 1개 — 줄기_초기가 다 자란 뒤 새순으로 나서 그 자리에서 성숙
       const last=ax.segs.length?ax.segs[ax.segs.length-1]:null;
       const tipAz=last?last.az:ax.az, tipDir=last?last.dir:ax.dir;
@@ -839,6 +898,8 @@ const SHAPE_DEFS=[
   {k:'stemStraight',t:'곧게 서려는 힘',    min:0.05, max:0.9,  step:0.05},
   {k:'spread',      t:'흔들림(불규칙)',    min:0,    max:0.3,  step:0.01},
   {k:'internode',   t:'마디 길이',         min:0.12, max:0.4,  step:0.01},
+  {k:'tipTaper',    t:'끝 가늘어짐',       min:0.35, max:1.2,  step:0.02},
+  {k:'nodeBulge',   t:'마디 볼록',         min:0,    max:0.5,  step:0.02},
   {k:'branchSpread',t:'가지 벌어짐',       min:0.15, max:1.2,  step:0.05},
   {k:'leafTilt',    t:'잎 벌어짐(0=딱 꽂힘)', min:0,  max:1.0,  step:0.02},
   {k:'leafEmbed',   t:'잎 박히는 깊이',    min:0,    max:0.3,  step:0.01},
