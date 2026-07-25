@@ -1,0 +1,156 @@
+<!doctype html><html lang="ko"><head><meta charset="utf-8">
+<title>볕 · 방 도면</title>
+<style>
+  :root{color-scheme:dark}
+  body{margin:0;background:#23262a;color:#dfe4e8;
+       font:13px/1.5 -apple-system,"Segoe UI","Malgun Gothic",sans-serif}
+  header{padding:12px 16px;border-bottom:1px solid rgba(255,255,255,.08);
+         display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+  h1{font-size:15px;margin:0;font-weight:650}
+  .sub{font-size:11px;color:#8d949b}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(430px,1fr));gap:14px;padding:14px}
+  .card{background:#2a2e33;border:1px solid rgba(255,255,255,.07);border-radius:12px;overflow:hidden}
+  .cap{padding:9px 12px;display:flex;align-items:baseline;gap:9px;flex-wrap:wrap;
+       border-bottom:1px solid rgba(255,255,255,.06)}
+  .cap b{font-size:13px}
+  .cap span{font-size:11px;color:#8d949b}
+  .pill{font-size:10px;padding:2px 7px;border-radius:99px;background:rgba(255,255,255,.09)}
+  canvas{display:block;width:100%;background:#1c1f22}
+  .note{padding:8px 12px;font-size:11px;color:#8d949b;border-top:1px solid rgba(255,255,255,.06)}
+  .legend{display:flex;gap:14px;font-size:11px;color:#9aa1a8;flex-wrap:wrap}
+  .sw{display:inline-block;width:14px;height:8px;border-radius:2px;vertical-align:middle;margin-right:4px}
+</style></head><body>
+<header>
+  <h1>방 도면</h1>
+  <span class="sub">data/house_rooms.json 을 그대로 그린 것 — 실제 게임이 쓰는 값</span>
+  <span class="legend">
+    <span><i class="sw" style="background:#e8a56a"></i>미닫이 투명문 · 유리 개구부</span>
+    <span><i class="sw" style="background:#6aa9e8"></i>문</span>
+    <span><i class="sw" style="background:#9fd8c8"></i>창</span>
+    <span><i class="sw" style="background:#c6a86a"></i>화분 자리 가구</span>
+  </span>
+</header>
+<div class="grid" id="grid"></div>
+<script type="module">
+const J = p => fetch(p + '?v=' + Date.now()).then(r => r.json());
+const [HR, FPf] = await Promise.all([J('../../data/house_rooms.json'), J('../../data/furniture_presets.json')]);
+const FP = FPf.presets || FPf;
+const grid = document.getElementById('grid');
+
+const KO = { south:'남', north:'북', east:'동', west:'서',
+             southeast:'남동', southwest:'남서', northeast:'북동', northwest:'북서' };
+const COMPASS = ['north','northeast','east','southeast','south','southwest','west','northwest'];
+const TURN = { back:0, right:2, front:4, left:6 };
+const orientOf = (facing, wall) =>
+  wall === 'ceiling' ? '천창'
+  : KO[COMPASS[(COMPASS.indexOf(facing || 'south') + (TURN[wall] || 0)) % 8]] + '향';
+
+for (const [key, R] of Object.entries(HR.rooms || {})) {
+  const S = R.size || { w:7, d:7, h:2.8 };
+  const PAD = 40, SC = Math.min(760 / S.w, 520 / S.d);   // m → px
+  const Wpx = S.w * SC + PAD * 2, Hpx = S.d * SC + PAD * 2;
+
+  const card = document.createElement('div'); card.className = 'card';
+  const wins = (R.windows || []).length + (R.glassWalls || []).length + (R.ceiling === 'glass' ? 1 : 0);
+  const slots = (R.furniture || []).filter(f => (FP[f.preset] || {}).tiers).length;
+  card.innerHTML = `<div class="cap"><b>${R.label || key}</b>
+      <span>${S.w}×${S.d}m · 천장 ${S.h}m</span>
+      <span class="pill">향 ${KO[R.facing || 'south']}</span>
+      <span class="pill">창 ${wins}</span>
+      <span class="pill">가구 ${(R.furniture || []).length}</span>
+      <span class="pill">화분단 ${slots}</span></div>`;
+  const cv = document.createElement('canvas');
+  cv.width = Wpx; cv.height = Hpx; card.appendChild(cv);
+  if (R.note) card.insertAdjacentHTML('beforeend', `<div class="note">${R.note}</div>`);
+  grid.appendChild(card);
+
+  const g = cv.getContext('2d');
+  // 좌표: x → 오른쪽, z → 아래 (도면과 같은 방향. back=위=남)
+  const X = x => PAD + (x + S.w / 2) * SC;
+  const Z = z => PAD + (z + S.d / 2) * SC;
+
+  g.fillStyle = '#1c1f22'; g.fillRect(0, 0, Wpx, Hpx);
+  g.fillStyle = '#2f343a'; g.fillRect(X(-S.w/2), Z(-S.d/2), S.w*SC, S.d*SC);
+
+  // 외벽
+  g.strokeStyle = '#7d868e'; g.lineWidth = 3;
+  g.strokeRect(X(-S.w/2), Z(-S.d/2), S.w*SC, S.d*SC);
+
+  // 유리벽 표시
+  for (const w of (R.glassWalls || [])) {
+    g.strokeStyle = '#9fd8c8'; g.lineWidth = 5; g.beginPath();
+    if (w === 'back')  { g.moveTo(X(-S.w/2), Z(-S.d/2)); g.lineTo(X(S.w/2), Z(-S.d/2)); }
+    if (w === 'front') { g.moveTo(X(-S.w/2), Z( S.d/2)); g.lineTo(X(S.w/2), Z( S.d/2)); }
+    if (w === 'left')  { g.moveTo(X(-S.w/2), Z(-S.d/2)); g.lineTo(X(-S.w/2), Z(S.d/2)); }
+    if (w === 'right') { g.moveTo(X( S.w/2), Z(-S.d/2)); g.lineTo(X( S.w/2), Z(S.d/2)); }
+    g.stroke();
+  }
+
+  // 칸막이 + 개구부
+  for (const pt of (R.partitions || [])) {
+    const a = pt.at, from = pt.from ?? (pt.axis === 'x' ? -S.d/2 : -S.w/2),
+          to = pt.to ?? (pt.axis === 'x' ? S.d/2 : S.w/2);
+    g.strokeStyle = '#7d868e'; g.lineWidth = 2.5; g.beginPath();
+    if (pt.axis === 'x') { g.moveTo(X(a), Z(from)); g.lineTo(X(a), Z(to)); }
+    else                 { g.moveTo(X(from), Z(a)); g.lineTo(X(to), Z(a)); }
+    g.stroke();
+    const marks = [];
+    if (pt.door) marks.push([pt.door.at ?? 0, pt.door.w ?? 0.95, '#6aa9e8']);
+    for (const op of (pt.openings || [])) marks.push([op.at ?? 0, op.w ?? 2, pt.glazing ? '#e8a56a' : '#6aa9e8']);
+    for (const [at, w, col] of marks) {
+      g.strokeStyle = col; g.lineWidth = 6; g.beginPath();
+      if (pt.axis === 'x') { g.moveTo(X(a), Z(at - w/2)); g.lineTo(X(a), Z(at + w/2)); }
+      else                 { g.moveTo(X(at - w/2), Z(a)); g.lineTo(X(at + w/2), Z(a)); }
+      g.stroke();
+    }
+  }
+
+  // 창 (외벽) — 향 라벨 포함
+  for (const w of (R.windows || [])) {
+    const or = w.orient ? KO[w.orient] + '향' : orientOf(R.facing, w.wall);
+    g.strokeStyle = '#9fd8c8'; g.lineWidth = 6; g.beginPath();
+    if (w.wall === 'back')  { g.moveTo(X(w.cu - w.w/2), Z(-S.d/2)); g.lineTo(X(w.cu + w.w/2), Z(-S.d/2)); }
+    if (w.wall === 'front') { g.moveTo(X(w.cu - w.w/2), Z( S.d/2)); g.lineTo(X(w.cu + w.w/2), Z( S.d/2)); }
+    if (w.wall === 'left')  { g.moveTo(X(-S.w/2), Z(w.cu - w.w/2)); g.lineTo(X(-S.w/2), Z(w.cu + w.w/2)); }
+    if (w.wall === 'right') { g.moveTo(X( S.w/2), Z(w.cu - w.w/2)); g.lineTo(X( S.w/2), Z(w.cu + w.w/2)); }
+    g.stroke();
+    g.fillStyle = '#9fd8c8'; g.font = '10px sans-serif'; g.textAlign = 'center';
+    if (w.wall === 'back')  g.fillText(or, X(w.cu), Z(-S.d/2) + 13);
+    if (w.wall === 'front') g.fillText(or, X(w.cu), Z( S.d/2) - 5);
+    if (w.wall === 'left')  { g.textAlign='left';  g.fillText(or, X(-S.w/2)+5, Z(w.cu)); }
+    if (w.wall === 'right') { g.textAlign='right'; g.fillText(or, X( S.w/2)-5, Z(w.cu)); }
+  }
+
+  // 현관문 (외벽)
+  for (const d of (R.doors || [])) {
+    g.strokeStyle = '#6aa9e8'; g.lineWidth = 6; g.beginPath();
+    if (d.wall === 'back')  { g.moveTo(X(d.cu - d.w/2), Z(-S.d/2)); g.lineTo(X(d.cu + d.w/2), Z(-S.d/2)); }
+    if (d.wall === 'front') { g.moveTo(X(d.cu - d.w/2), Z( S.d/2)); g.lineTo(X(d.cu + d.w/2), Z( S.d/2)); }
+    if (d.wall === 'left')  { g.moveTo(X(-S.w/2), Z(d.cu - d.w/2)); g.lineTo(X(-S.w/2), Z(d.cu + d.w/2)); }
+    if (d.wall === 'right') { g.moveTo(X( S.w/2), Z(d.cu - d.w/2)); g.lineTo(X( S.w/2), Z(d.cu + d.w/2)); }
+    g.stroke();
+  }
+
+  // 가구 — 화분 놓는 것(tiers)은 다른 색
+  g.textAlign = 'center'; g.font = '9px sans-serif';
+  for (const f of (R.furniture || [])) {
+    const p = FP[f.preset] || {};
+    if (p.mount === 'wall') continue;
+    let w = p.w || 0.5, d = p.d || 0.5;
+    const rot = ((((f.rot || 0) % 180) + 180) % 180);
+    if (rot > 45 && rot < 135) { const t = w; w = d; d = t; }
+    const potty = !!p.tiers;
+    g.fillStyle   = potty ? 'rgba(198,168,106,.55)' : 'rgba(255,255,255,.14)';
+    g.strokeStyle = potty ? '#c6a86a' : 'rgba(255,255,255,.30)';
+    g.lineWidth = 1;
+    g.fillRect(X(f.x - w/2), Z(f.z - d/2), w*SC, d*SC);
+    g.strokeRect(X(f.x - w/2), Z(f.z - d/2), w*SC, d*SC);
+  }
+
+  // 남/북 표시
+  g.fillStyle = '#8d949b'; g.font = '11px sans-serif'; g.textAlign = 'center';
+  g.fillText('▲ ' + KO[R.facing || 'south'], X(0), Z(-S.d/2) - 14);
+  g.fillText(KO[COMPASS[(COMPASS.indexOf(R.facing || 'south') + 4) % 8]], X(0), Z(S.d/2) + 24);
+}
+</script>
+</body></html>
