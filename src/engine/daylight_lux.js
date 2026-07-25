@@ -246,7 +246,12 @@ export function luxGrid(wins, size, opt = {}) {
       t: 0~100 (기존 sunState와 같은 축)
 ============================================================ */
 export function skyEv(t, opt = {}) {
-  const clear = opt.clearSkyMax ?? 12000;   // 맑은 날 창면 천공조도 상한(lx)
+  /* 맑은 날 창면(연직) 천공 조도 상한 [lx].
+     실측: 맑은 날 확산광만 20,000~30,000 / 흐린 날 3,000~8,000 / 직사광 유입 시 50,000+.
+     이 모델은 확산 천공광만 다루므로(직사 빔 없음) 25,000이 '맑은 날' 상당.
+     ※ 12,000이던 값은 흐린 날 수준이라 모든 방이 재배 불가로 나왔음(DLI 실측으로 확인).
+     ※ 날씨·계절은 이 값에 계수를 곱해 구현하면 된다 — opt.clearSkyMax로 이미 열려 있음. */
+  const clear = opt.clearSkyMax ?? 25000;
   const night = opt.nightEv ?? 0;
   const dayPhase = (t - 15) / 70;
   const daytime = t > 12 && t < 88;

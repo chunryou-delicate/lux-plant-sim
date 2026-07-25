@@ -234,6 +234,7 @@ export function buildHouse(GRAIN, roomDefIn, winPresets, doorPresets={}, finishe
   const sz=roomDef.size||{};
   CW=sz.w||RW; CD=sz.d||RD; CH=sz.h||RH;
   let shellPartIdx=0;                     // 내벽 shell 키 자동번호
+  const occluders=[];                     // ★ 조도 차폐체(OBB) — 칸막이 조각 + 가구
   const room=new THREE.Group();
   const shells={};              // 컷어웨이 대상(벽·바닥·천장). 유리벽/프레임 제외.
   const glassMeshes=[];         // 하늘색 틴트 갱신 대상
@@ -359,6 +360,11 @@ export function buildHouse(GRAIN, roomDefIn, winPresets, doorPresets={}, finishe
       if(du<0.001||dv<0.001) continue;
       g.add( pt.axis==='x' ? box(WT*0.7,dv,du, pw, pt.at, cv, cu)
                            : box(du,dv,WT*0.7, pw, cu, cv, pt.at) );
+      // ★ 조도 차폐체: 문 구멍을 뺀 '조각'만 넣으므로 통로로는 빛이 지난다.
+      //   (외벽은 창 개구부가 있어 통짜 박스로 넣으면 창빛까지 막히므로 제외)
+      occluders.push(pt.axis==='x'
+        ? { x:pt.at-WT*0.35, z:cu-du/2, w:WT*0.7, d:du, h:r.y1, y0:r.y0, rot:0 }
+        : { x:cu-du/2, z:pt.at-WT*0.35, w:du, d:WT*0.7, h:r.y1, y0:r.y0, rot:0 });
     }
     // 열린 끝단(외벽에 안 닿는 쪽)엔 기둥 마감 — 벽이 잘려 떠 있는 것처럼 안 보이게
     const CAP=WT*1.15;
@@ -396,6 +402,13 @@ export function buildHouse(GRAIN, roomDefIn, winPresets, doorPresets={}, finishe
     g.position.set(f.x??0, yBase, f.z??0);
     if(f.rot) g.rotation.y=f.rot*Math.PI/180;
     furnGroup.add(g);
+    // ★ 조도 차폐체로 등록 (러그·조명처럼 빛을 막지 않는 것은 제외)
+    const fsz=g.userData.size;
+    if(fsz && fsz.h>0.25 && !/^rug|^lamp|light|^picture|^wall_clock|^mirror/.test(type)){
+      g.userData.occIdx = occluders.length;   // 자기 자신은 자기 슬롯을 가리지 않게(자가차폐 방지)
+      occluders.push({ x:(f.x??0)-fsz.w/2, z:(f.z??0)-fsz.d/2,
+                       w:fsz.w, d:fsz.d, h:fsz.h, y0:yBase, rot:(f.rot||0)*Math.PI/180 });
+    }
 
     // ★ 조명 기구면 실제 광원 생성 (밤 연출·거리감쇠 시각화)
     const fxSpec=(lightPresets.fixtures||{})[f.preset];
@@ -426,7 +439,8 @@ export function buildHouse(GRAIN, roomDefIn, winPresets, doorPresets={}, finishe
         x:+(base.x + sl.x*c + sl.z*s).toFixed(3),
         y:+(base.y + sl.y).toFixed(3),
         z:+(base.z - sl.x*s + sl.z*c).toFixed(3),
-        maxPotD:(o.userData.tier_max_pot_d||[])[Math.min(i,(o.userData.tier_max_pot_d||[]).length-1)]
+        maxPotD:(o.userData.tier_max_pot_d||[])[Math.min(i,(o.userData.tier_max_pot_d||[]).length-1)],
+        occIdx:o.userData.occIdx
       });
     });
   });
@@ -438,7 +452,7 @@ export function buildHouse(GRAIN, roomDefIn, winPresets, doorPresets={}, finishe
   const winPos = winWorld[0] || new THREE.Vector3(0.6,2.2,-CD/2+0.05);
 
   return { room, shells, windows:winWorld, glassMeshes, winPos, size:{ w:CW, d:CD, h:CH },
-           furniture:furnGroup, lightRigs, plantSlots };
+           furniture:furnGroup, lightRigs, plantSlots, occluders };
 }
 
 /* ---- 원점 중심 그룹을 벽에 앉힌다 (위치 + Y회전) ---- */
