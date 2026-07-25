@@ -8,8 +8,11 @@
  *{box-sizing:border-box}
  body{margin:0;font-family:'Pretendard','Malgun Gothic',sans-serif;background:#f3f6f3;color:#2b3830;overflow:hidden}
  .wrap{display:flex;height:100vh}
- #cv{flex:1;display:block;background:#eef3ef}
- .panel{width:280px;background:#fff;border-left:1px solid #dde5de;padding:16px;overflow:auto;font-size:13px}
+ /* min-width:0 + width/height 100% 가 없으면 캔버스가 자기 attribute 크기를 키우는
+    되먹임이 생겨 패널을 화면 밖으로 밀어낸다 */
+ .cvbox{flex:1;min-width:0;position:relative}
+ #cv{display:block;width:100%;height:100%;background:#eef3ef}
+ .panel{width:280px;flex:none;background:#fff;border-left:1px solid #dde5de;padding:16px;overflow:auto;font-size:13px}
  h1{font-size:14px;margin:0 0 3px}
  .sub{font-size:11.5px;color:#6d7d72;line-height:1.6;margin-bottom:14px}
  h2{font-size:11px;margin:16px 0 7px;color:#6d7d72;letter-spacing:.4px;text-transform:uppercase}
@@ -20,6 +23,13 @@
  .part label{flex:1;font-size:12.5px}
  .part input[type=color]{width:38px;height:26px;padding:0;border:1px solid #cfdbd2;border-radius:5px;background:none;cursor:pointer}
  .part input[type=checkbox]{cursor:pointer}
+ .views{display:grid;grid-template-columns:1fr 1fr;gap:5px}
+ .views button{margin:0;padding:6px}
+ .views button.on{background:#3a5c47;color:#fff;border-color:#3a5c47}
+ .chk{margin-top:12px;font-size:11.5px;line-height:1.7;color:#4a5a50;background:#fbf7ee;
+      border:1px solid #ecdfc8;border-radius:7px;padding:9px 11px}
+ .chk b{display:block;color:#8a6320;margin-bottom:3px;font-size:11px}
+ .chk ul{margin:0;padding-left:15px}
  .presets{display:flex;flex-wrap:wrap;gap:5px;margin-top:7px}
  .sw{width:26px;height:26px;border-radius:6px;border:1px solid rgba(0,0,0,.18);cursor:pointer}
  .sw:hover{outline:2px solid #4a7a5c;outline-offset:1px}
@@ -27,7 +37,7 @@
  .bad{color:#b4483a}
 </style></head><body>
 <div class="wrap">
-  <canvas id="cv"></canvas>
+  <div class="cvbox"><canvas id="cv"></canvas></div>
   <div class="panel">
     <h1>색시프트 검증</h1>
     <div class="sub">머티리얼이 하나뿐이라 부위별 머티리얼 교체는 불가능합니다.
@@ -37,6 +47,12 @@
     <h2>캐릭터</h2>
     <select id="char"></select>
 
+    <h2>시점</h2>
+    <div class="views">
+      <button data-v="face">얼굴</button><button data-v="upper">상반신</button>
+      <button data-v="hand">손목</button><button data-v="full">전신</button>
+    </div>
+
     <h2>머리색 프리셋</h2>
     <div class="presets" id="hairPre"></div>
 
@@ -44,6 +60,15 @@
     <div id="parts"></div>
 
     <button id="reset">원본 색으로</button>
+    <div class="chk"><b>마스크 검수 포인트</b>
+      <ul>
+        <li>머리 ↔ 눈썹 경계</li>
+        <li>눈 홍채 ↔ 흰자</li>
+        <li>목 · 손목 (피부 ↔ 옷)</li>
+        <li>머리카락이 옷에 닿는 부분</li>
+      </ul>
+      머리색을 형광색으로 바꾸면 잘못 칠해진 곳이 바로 드러납니다.
+    </div>
     <div class="note" id="note"></div>
   </div>
 </div>
@@ -80,6 +105,21 @@ scene.add(new THREE.GridHelper(4,8,0xbccfc2,0xdae6dd));
 
 const loader=new THREE.GLTFLoader();
 let model=null, baseImg=null, maskImg=null, mat=null, texCanvas=null;
+let curH=1.70, curView='upper';
+
+/* 발바닥 y=0 기준. 캐릭터는 카메라 쪽(+Z)을 보도록 180도 돌려놨다. */
+function setView(v){
+  curView=v; const H=curH;
+  const VIEWS={
+    face : [[H*0.05,H*0.90,H*0.30],[0,H*0.88,0]],
+    upper: [[H*0.22,H*0.82,H*0.70],[0,H*0.72,0]],
+    hand : [[H*0.36,H*0.50,H*0.42],[H*0.28,H*0.48,0]],
+    full : [[H*0.45,H*0.60,H*1.45],[0,H*0.45,0]],
+  };
+  const P=VIEWS[v]||VIEWS.full;
+  camera.position.set(...P[0]); controls.target.set(...P[1]); controls.update();
+  document.querySelectorAll('.views button').forEach(b=>b.classList.toggle('on',b.dataset.v===v));
+}
 
 function loadImage(src){return new Promise((res,rej)=>{const i=new Image();
   i.onload=()=>res(i);i.onerror=rej;i.src=src;});}
@@ -134,6 +174,7 @@ async function load(){
   note.textContent='불러오는 중…';
   const g=await new Promise((res,rej)=>loader.load(`3d/${key}_base.glb`+CB,res,undefined,rej));
   model=g.scene;scene.add(model);
+  model.rotation.y=Math.PI;                       // 기본 방향이 뒷모습이라 정면으로 돌린다
   model.traverse(o=>{if(o.isMesh)o.frustumCulled=false;});
 
   let src=null;
@@ -151,10 +192,8 @@ async function load(){
   mat.map=t; mat.needsUpdate=true;
   recolor();
 
-  // 카메라: 발바닥 y=0, 상반신이 보이게
-  const H=/(jachwi_f|yeoja)/.test(key)?1.50:1.70;
-  camera.position.set(H*0.30,H*0.88,H*0.62);
-  controls.target.set(0,H*0.80,0);controls.update();
+  curH=/(jachwi_f|yeoja)/.test(key)?1.50:1.70;
+  setView(curView);
   note.innerHTML=`텍스처 ${src.width}×${src.height} · 마스크 ${maskImg.width}×${maskImg.height}<br>`+
     `색 교체는 로딩 시 한 번만 계산합니다(프레임마다 아님). 게임에선 캐릭터 생성·변경 시점에 실행하면 됩니다.`;
 }
@@ -182,6 +221,7 @@ HAIR_PRESETS.forEach(c=>{
     partsEl.querySelector('input[type=checkbox]').checked=true;recolor();};
   pre.appendChild(s);
 });
+document.querySelectorAll('.views button').forEach(b=>b.onclick=()=>setView(b.dataset.v));
 document.getElementById('reset').onclick=()=>{PARTS.forEach(p=>p.on=false);
   partsEl.querySelectorAll('input[type=checkbox]').forEach(c=>c.checked=false);recolor();};
 

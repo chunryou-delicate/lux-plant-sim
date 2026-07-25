@@ -664,5 +664,26 @@
     "caution": "trimesh 계열 감축은 스킨 웨이트를 파괴하므로 쓰면 안 됨. meshoptimizer(gltf-transform)만 사용.",
     "viewer": "assets/characters/lq_compare.html (원본 vs lq 좌우 비교, 카메라 동기화·와이어프레임·얼굴/손 줌)",
     "used_by": "assets/house/_room_tuner.html (좌측 '경량본 사용' 체크박스로 원본과 즉시 비교 가능)"
+  },
+  "material_constraint": {
+    "summary": "Meshy multi_image_to_3d 는 머리·눈·옷·피부를 2048 아틀라스 한 장에 구워 단일 머티리얼로 내보낸다. 부위별 mesh/material 분리 없음, 모프타겟 0.",
+    "verified": "2026-07-25. 원본 8종+몬이, 경량본 전부 mesh=1 primitive=1 material=1 morph=0. 경량화가 병합한 게 아니라 처음부터 하나.",
+    "blocks": [
+      "부위별 머티리얼 교체",
+      "블렌드셰이프 표정",
+      "3D 얼굴 애니메이션(얼굴 본 없음, 몸통 24본뿐)"
+    ],
+    "workaround": "같은 UV의 마스크 텍스처로 텍셀 단위 부위 선택. tools/make_part_mask.py -> assets/characters/masks/",
+    "mask_channels": "R=255 머리카락 / R=128 눈·눈썹 / G 피부 / B 상의 / A 하의",
+    "mask_method": "색(클레이 팔레트 기준색 거리) + 3D 위치(머리카락과 눈·눈썹이 같은 진갈색이라 색만으로는 못 가름). 둘 다 필요.",
+    "apply": "로딩 시 캔버스에서 1회 계산. 셰이더 매 프레임 아님. 명도 유지로 음영 보존. assets/characters/color_shift.html",
+    "pitfall": "아틀라스 여백 비중이 커서 마스크의 부위별 텍셀 퍼센트는 실제 표면적 비율이 아님. 3D에 올려서 확인해야 함.",
+    "mask_depends_on": "텍스처 UV. 캐릭터 재생성 시 마스크도 재생성 필요(도구 재실행).",
+    "doc": "docs/character_material_constraint.md"
+  },
+  "rig_portability": {
+    "fact": "Meshy 리깅 8종의 본 이름·순서와 전체 노드 이름 집합이 동일(표준 24본). 클립은 노드 이름으로 바인딩되므로 어느 캐릭터에나 붙는다.",
+    "implication": "캐릭터를 재생성하고 다시 리깅해도 3d/anim/ 클립 128개는 그대로 재사용. 재작업 비용에서 모션 생성비 384cr 제외.",
+    "rework_cost": "원화(Higgsfield) + 3D 30cr x8=240 + 리깅 5cr x8=40. 모션 0. 실스케일·경량화·마스크는 스크립트 재실행이라 0."
   }
 }
