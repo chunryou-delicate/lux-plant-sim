@@ -13,10 +13,12 @@
      (움직일 때마다 격자를 다시 계산해야 해서 비싸고, 게임상 의미도 작다).
 ============================================================ */
 
-const BASE = './assets/characters/3d';
-/* idle·walking 원본은 메시를 통째로 다시 담고 있어 14MB씩이다.
-   tools/strip_anim_glb.js 로 클립만 뽑아 70KB/35KB로 줄인 파생본을 쓴다.
-   (원본 assets/characters 는 다른 작업창 담당이라 건드리지 않는다) */
+/* 메시는 경량본(lq)을 쓴다 — 원본 14.3MB / 경량 2.26MB. 게임뷰엔 경량본으로 충분하다. */
+const BASE  = './assets/characters/3d';
+const MESH  = BASE + '/lq';
+/* idle·walking 원본은 메시를 통째로 다시 담고 있어 14MB씩이라
+   tools/strip_anim_glb.py 로 클립만 뽑아 70KB/35KB로 줄인 파생본을 쓴다.
+   (원본 assets/characters 는 캐릭 작업창 담당이라 읽기만 한다) */
 const CLIPS = './assets/derived/char_clips';
 
 /* 감정·동작 — anim/ 에 있는 16종 중 UI에 낼 것들 */
@@ -32,6 +34,8 @@ export const EMOTES = [
   { id: 'pickup',    ko: '줍기',   loop: false },
   { id: 'scratch',   ko: '갸웃',   loop: false },
   { id: 'listen',    ko: '귀기울임', loop: false },
+  { id: 'opendoor',  ko: '문열기', loop: false },
+  { id: 'harvest_crouch', ko: '쪼그려수확', loop: false },
   { id: 'sit',       ko: '앉기',   loop: true  },
   { id: 'doze',      ko: '졸기',   loop: true  },
   { id: 'sleep',     ko: '자기',   loop: true  }
@@ -73,26 +77,26 @@ async function loadClip(charId, emote) {
 ============================================================ */
 export async function createCharacter(scene, charId = 'jachwi_f', opt = {}) {
   const root = new THREE.Group();
-  const g = await load(`${BASE}/char_${charId}_rigged.glb`);
+  const g = await load(`${MESH}/char_${charId}_rigged.glb`);
   const model = g.scene;
 
-  /* 크기 정규화 — 키 1.65m로 맞춘다.
-     ★ Box3.setFromObject 를 쓰면 안 된다. 스킨드 메시는 정점이 뼈 행렬로 움직이는데
-       Box3는 메시 노드의 월드 행렬만 보므로 0.01m 같은 엉뚱한 값이 나온다(실측 확인).
-       바인드 포즈가 들어 있는 geometry.boundingBox 가 실제 크기다(이 에셋은 1.70m). */
-  let bindH = 0, bindMinY = 0;
-  model.traverse(o => {
-    if (o.isSkinnedMesh && !bindH) {
-      if (!o.geometry.boundingBox) o.geometry.computeBoundingBox();
-      const bb = o.geometry.boundingBox;
-      bindH = bb.max.y - bb.min.y;
-      bindMinY = bb.min.y;
-    }
-  });
-  const targetH = opt.height ?? 1.65;
-  const k = bindH > 0.05 ? targetH / bindH : 1;
-  model.scale.setScalar(k);
-  model.position.y = -bindMinY * k;          // 발바닥을 y=0에
+  /* ★ 크기는 건드리지 않는다.
+     GLB에 이미 실치수가 들어 있다 — 캐릭 작업창이 tools/rescale_char_glb.py 로
+     씬 최상단 래퍼에 스케일을 얹어 여캐 1.40m / 남캐 1.50m / 마스코트 0.375m 로 맞춰뒀다.
+     (bbox 1.70m × 래퍼 0.8235 = 1.40m)
+     여기서 또 정규화하면 그 위에 곱해져 1.36m 같은 값이 된다 — 실제로 그랬다.
+     opt.height 를 명시적으로 준 경우에만 덮어쓴다. */
+  if (opt.height) {
+    const bb = new THREE.Box3().setFromObject(model);
+    let bindH = 0;
+    model.traverse(o => {                       // 스킨드 메시는 Box3가 못 재므로 바인드 bbox 사용
+      if (o.isSkinnedMesh && !bindH) {
+        if (!o.geometry.boundingBox) o.geometry.computeBoundingBox();
+        bindH = (o.geometry.boundingBox.max.y - o.geometry.boundingBox.min.y) * model.scale.y;
+      }
+    });
+    if (bindH > 0.05) model.scale.multiplyScalar(opt.height / bindH);
+  }
 
   model.traverse(o => {
     if (o.isMesh) {

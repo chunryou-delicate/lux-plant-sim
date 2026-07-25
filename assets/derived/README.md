@@ -11,9 +11,16 @@
 캐릭터 하나 띄우는 데 rigged + idle + walking = 40MB+ 를 받게 된다.
 클립만 남기면 **70KB / 35KB** — 총 227MB 절약.
 
+```bash
+# 다시 만들기 — 캐릭 창의 기존 도구를 그대로 쓴다
+for f in assets/characters/3d/char_*_idle.glb assets/characters/3d/char_*_walking.glb; do
+  python tools/strip_anim_glb.py "$f" "assets/derived/char_clips/$(basename $f)"
+done
 ```
-node tools/strip_anim_glb.js      # 다시 만들기
-```
+
+캐릭 창이 `tools/rescale_char_glb.py` 로 키를 다시 맞추면(래퍼 스케일만 바뀜)
+클립은 뼈 트랙이라 영향이 없다. 다만 **노드 구성이 바뀌면 다시 만들어야 한다** —
+`rigged`와 클립의 노드 개수·이름이 같은지 확인할 것.
 
 `anim/` 폴더의 동작 GLB(wave·heart 등)는 원래부터 클립만 들어 있어 0.1MB라 그대로 쓴다.
 
