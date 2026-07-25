@@ -136,14 +136,14 @@ const DEF={
   photoLean:0.13, stemStraight:0.30,   // 빛 쪽으로 기우는 세기(굴광성 슬라이더와 곱해짐) · 축 기본방향으로 돌아오는 힘(작을수록 더 휨)
   stemTrans:40, bumpGrow:20, bumpAt:0.3, stemOverlap:0.015,
   tipTaper:0.72, nodeBulge:0.16, nodeWidth:0.045, bumpFit:1.02,
-  knobSize:0.16, knobOut:0.30, sheathLen:0.10, sheathFit:1.20, stemTex:1.0, texRepeat:3.0,   // 혹돌기 크기/돌출 · 엽초 길이/감싸는 여유 · 줄기 텍스처 세기/반복   // 튜브 줄기: 끝 가늘어짐 · 마디 볼록 세기/폭 · 혹 GLB가 튜브를 감싸는 여유   // 초기→중기_2 전이(일) · 혹 돋는 기간(중기_1 단계) · 돌기 위치(마디 비율=가지 나는 지점) · 이음새 겹침
+  knobWide:1.4, knobSink:0.45, knobOut:0.30, sheathLen:0.06, sheathFit:1.30, stemTex:1.0, texRepeat:3.0,   // 혹돌기 크기/돌출 · 엽초 길이/감싸는 여유 · 줄기 텍스처 세기/반복   // 튜브 줄기: 끝 가늘어짐 · 마디 볼록 세기/폭 · 혹 GLB가 튜브를 감싸는 여유   // 초기→중기_2 전이(일) · 혹 돋는 기간(중기_1 단계) · 돌기 위치(마디 비율=가지 나는 지점) · 이음새 겹침
   petioleLen:1.0, leafElev:1.0, elevDrop:0.36, spread:0.10, branchSpread:0.55,   // 배치(spread=줄기 흔들림)
   leafLight:0.62, leafDark:0.13, leafSat:0.5, satRange:0.22, hueBase:0.16, hueRange:0.26,   // 색(밝기/진함/채도/개체범위)
   ageDark:0.10, ageSat:0.18,   // 시간(나이) 따라 짙어짐·선명해짐(전역, 줄기·잎 함께)
 };
 let P=Object.assign({}, DEF);
 // 저장본 버전. 생장 로직/기본값이 바뀌면 올림 → 옛 저장값이 새 기본값을 덮어쓰지 않게.
-const CFG_VER='2026-07-20-canon3';
+const CFG_VER='2026-07-20-tube1';
 
 // ===== 튜닝 파라미터(B: 에셋별 개별 조정) =====
 const ADJ_KEYS=['leaf_young','leaf_mid1','leaf_mid2','leaf_mature','bud_furled','bud_opening2','stem_thick','stem_main','stem_med','stem_thin','petiole','knob','sheath'];
@@ -288,7 +288,7 @@ function addPot(){
 // 줄기 GLB의 실제 "몸통 폭"(높이=1 정규화 기준, 정점 하단대 90퍼센타일로 측정).
 // 혹 에셋은 돌기 때문에 bbox(0.56)가 몸통(0.42)보다 훨씬 넓어 이 값이 꼭 필요함.
 const STEM_CORE={petiole:0.083, stem_thin:0.186, stem_med:0.158, stem_thick:0.420, stem_main:0.443, sheath:1.309, knob:2.518};   // 절차생성본 실측(하단 폭, 높이1 정규화 기준)
-function stemKey(radius){ return radius>0.072?'stem_thick' : radius>0.044?'stem_med' : radius>0.024?'stem_thin' : 'petiole'; }   // 얇은 시작=petiole → 굵어지며 thin→med→thick
+// (제거됨) stemKey — 굵기로 줄기 GLB를 고르던 함수. addStemSeg와 함께 불필요
 // GLB(밑면 y=0·긴축 Y)를 p0→p1 사이로 늘여 배치. 굵기 radius, color로 통일 틴트. → 두 점을 물리 연결.
 function stretchGLB(key, p0, p1, radius, color, flatAz){
   const proto=ASSETS[key]; if(!proto) return false;
@@ -315,17 +315,7 @@ function stretchGLB(key, p0, p1, radius, color, flatAz){
   }
   g.position.copy(p0); if(color) tintObj(g,color); plantGroup.add(g); return true;
 }
-function addStemSeg(p0, p1, radius, woodT, flatAz, keyOverride){
-  if(stretchGLB(keyOverride||stemKey(radius), p0, p1, radius, stemTint(woodT), flatAz)) return;
-  // 폴백: 원기둥
-  const dir=new THREE.Vector3().subVectors(p1,p0), len=dir.length(); if(len<1e-5) return;
-  const geo=new THREE.CylinderGeometry(radius*0.85, radius*1.12, len, 7);
-  const col=stemTint(woodT);
-  const m=new THREE.Mesh(geo, new THREE.MeshStandardMaterial({color:col, roughness:0.75}));
-  m.position.copy(p0).addScaledVector(dir,0.5);
-  m.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0), dir.clone().normalize());
-  m.castShadow=true; plantGroup.add(m);
-}
+// (제거됨) addStemSeg — 마디별 GLB 이어붙이기. 줄기를 튜브로 생성하면서 호출부 0개가 됨
 // 잎자루(연결 줄기): 마디에서 잎 부착점까지 실제로 이어줌(길게) + 잎 속으로 넉넉히 파고듦 → 안 뜸.
 function addPetiole(nodePos, d, size, maturity, leafBase){
   if(!(USE_PETIOLE && ASSETS.petiole)) return;
@@ -385,16 +375,7 @@ function leafSize(age){
     if(age<=a1){ const t=(age-a0)/Math.max(1e-4,a1-a0); return s0+(s1-s0)*Math.max(0,Math.min(1,t)); } }
   return P.sizeFull;
 }
-// 나이(age)+에셋별 order범위(B) → 이 마디에 쓸 잎 GLB 키
-function leafKeyForOrder(order, age, stemR){
-  const inR=k=>{ const a=ADJ[k]||{}; return order>=(a.omin==null?0:a.omin) && order<=(a.omax==null?99:a.omax); };
-  // ★ 성인(갈라진) 잎은 받침 줄기가 충분히 굵어졌을 때만(=thick). 그전엔 성인 나이여도 중간잎 유지.
-  const matureOK = age>=P.stageMid && (stemR||0)>=P.matureStemR;
-  const desired = matureOK?['leaf_mature'] : age>=P.stageYoung?[PLANT_MID] : ['leaf_young'];
-  let cands=desired.filter(inR);
-  if(!cands.length){ const all=['leaf_mature','leaf_mid1','leaf_mid2','leaf_young'].filter(inR); cands=all.length?all:desired; }
-  return cands[Math.floor(rng()*cands.length)];
-}
+// (제거됨) leafKeyForOrder — order 범위로 잎을 고르던 함수. 호출부 0개
 // ===== 고체처럼 거동: 이미 놓인 잎/새순의 자리를 기억해 서로 파고들지 않게 =====
 let PLACED=[];                                   // {c:잎몸 중심, r:반경}
 function clearPlaced(){ PLACED=[]; }
@@ -946,9 +927,10 @@ const SHAPE_DEFS=[
   {k:'internode',   t:'마디 길이',         min:0.12, max:0.4,  step:0.01},
   {k:'tipTaper',    t:'끝 가늘어짐',       min:0.35, max:1.2,  step:0.02},
   {k:'nodeBulge',   t:'마디 볼록',         min:0,    max:0.5,  step:0.02},
-  {k:'knobSize',    t:'혹 돌기 크기',      min:0,    max:0.4,  step:0.01},
+  {k:'knobWide',    t:'혹 지름(줄기대비)', min:0,    max:3.5,  step:0.05},
+  {k:'knobSink',    t:'혹 파묻힘',         min:-0.5, max:1.2,  step:0.05},
   {k:'knobOut',     t:'혹 돌기 각도(위)',  min:-0.5, max:1.2,  step:0.05},
-  {k:'sheathLen',   t:'엽초 길이',         min:0,    max:0.35, step:0.01},
+  {k:'sheathLen',   t:'엽초 길이',         min:0,    max:0.2,  step:0.005},
   {k:'sheathFit',   t:'엽초 감싸는 굵기',  min:0.8,  max:2.2,  step:0.05},
   {k:'stemTex',     t:'줄기 결 세기',      min:0,    max:1,    step:0.05},
   {k:'texRepeat',   t:'줄기 결 반복',      min:0.5,  max:10,   step:0.5},
