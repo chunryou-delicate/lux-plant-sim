@@ -77,8 +77,7 @@ BAND = {
     "torso": (0.420, 0.760),
     "head":  (0.740, 1.000),
 }
-EYE_BAND = (0.800, 0.895)      # 눈 높이
-BROW_BAND = (0.870, 0.925)     # 눈썹 높이
+EYE_BAND = (0.700, 0.880)      # 눈이 있을 수 있는 높이 (넉넉하게 - 실제 위치는 흰자로 찾는다)
 
 SKIN = [(240, 192, 144), (240, 192, 168), (240, 216, 192), (240, 168, 144),
         (240, 216, 216), (216, 168, 120), (232, 180, 150)]
@@ -122,8 +121,11 @@ def rasterize_faces(uv, idx, size):
     """
     img = Image.new("I", (size, size), 0)
     d = ImageDraw.Draw(img)
+    # glTF UV 원점은 좌상단이고 v 는 아래로 증가한다. 이미지 행 = v * size 그대로다.
+    # 1-v 로 뒤집으면 위치 정보가 통째로 어긋나 색과 위치가 맞지 않는다
+    # (2026-07-25 실제로 그렇게 틀렸고, 색-위치 교차 검증으로 잡았다).
     px = np.clip(uv[:, 0] * size, 0, size - 1)
-    py = np.clip((1.0 - uv[:, 1]) * size, 0, size - 1)   # glTF UV는 위가 0
+    py = np.clip(uv[:, 1] * size, 0, size - 1)
     for f in range(len(idx)):
         a, b, c = idx[f]
         d.polygon([(px[a], py[a]), (px[b], py[b]), (px[c], py[c])], fill=int(f) + 1)
@@ -173,12 +175,19 @@ def build(char, vis=False, size=None):
 
     # --- 위치로 큰 덩어리부터 ---
     band = lambda k: (t >= BAND[k][0]) & (t < BAND[k][1]) & covered
-    is_skin = (d_skin < 44) & (warm_rg > 20) & covered   # 크림색 옷 제외
+
+    # 피부: 색만으로 잡으면 베이지 앞치마·크림 티셔츠가 통째로 피부가 된다
+    # (2026-07-25 남주부가 그랬다). 맨살이 나올 수 있는 자리로 제한한다 -
+    # 머리·목, 바깥쪽(A포즈에서 팔·손), 다리. 몸통 한가운데는 옷이다.
+    xr = pos[:, 0].max() - pos[:, 0].min()
+    xn = np.abs(posmap[:, :, 0] - (pos[:, 0].min() + pos[:, 0].max()) / 2) / (xr / 2)
+    skin_zone = (t > 0.68) | (xn > 0.42) | (t < 0.40)   # 허리(0.40~0.46)는 옷이다
+    is_skin = (d_skin < 44) & (warm_rg > 20) & covered & skin_zone
 
     code[band("shoe")] = CODE["shoe"]                       # 신발: 흰 티셔츠와 색이 같아 위치로만 갈림
     code[band("leg") & ~is_skin] = CODE["bottom"]
     code[band("torso") & ~is_skin] = CODE["top"]
-    code[is_skin] = CODE["skin"]                            # 피부는 위치 무관
+    code[is_skin] = CODE["skin"]
 
     # --- 머리카락 ---
     # 긴 생머리는 등까지 내려와 머리 밴드 밖이라 높이로만 자르면 놓친다.
@@ -189,40 +198,57 @@ def build(char, vis=False, size=None):
     code[head & is_skin] = CODE["skin"]
     code[hairish] = CODE["hair"]
 
-    # 눈: 얼굴 앞면 + 눈 높이 + 주변보다 어둡거나 매우 밝은 곳(홍채/흰자)
-    eyeband = covered & front & (t >= EYE_BAND[0]) & (t < EYE_BAND[1])
-    browband = covered & front & (t >= BROW_BAND[0]) & (t < BROW_BAND[1])
-    eye = eyeband & ((d_hair < 90) | (lum > 225)) & ~browband
-    eye = binary_opening(eye, np.ones((3, 3)))
-    eye = binary_closing(eye, np.ones((7, 7)))
-    eye = binary_dilation(eye, np.ones((3, 3)))              # 속눈썹 테두리까지
-    code[eye] = CODE["eye"]
+    # 눈: 높이 밴드로 잡으면 안 된다. 앞머리가 같은 높이에 같은 진갈색이라
+    # 통째로 눈으로 분류된다(2026-07-25 실제로 그랬다).
+    # 흰자를 기준점으로 삼는다 - 얼굴에서 아주 밝은 덩어리는 흰자뿐이고
+    # 앞머리에는 흰자가 없다. 흰자를 찾아 그 주변만 눈으로 본다.
+    faceband = covered & front & (t >= EYE_BAND[0]) & (t < EYE_BAND[1])
+    sclera = faceband & (lum > 224)
+    sclera = binary_opening(sclera, np.ones((3, 3)))          # 점 노이즈 제거
+    if sclera.sum() < 200:                                    # 흰자를 못 찾으면 눈 처리 생략
+        eye = np.zeros_like(sclera)
+        iris = np.zeros_like(sclera)
+    else:
+        # 흰자 덩어리 크기에서 눈 반경을 추정하고 그만큼만 주변을 본다
+        r_eye = max(8, int(round(np.sqrt(sclera.sum() / 2 / np.pi) * 0.95)))
+        yy, xx = np.mgrid[-r_eye:r_eye + 1, -r_eye:r_eye + 1]
+        near = (xx * xx + yy * yy) <= r_eye * r_eye
+        region = binary_dilation(sclera, near) & covered
+        eye = region & ((lum > 224) | (d_hair < 110))         # 흰자·하이라이트 + 진갈색
+        eye = binary_closing(eye, np.ones((5, 5)))
 
-    # 홍채: 눈 영역은 밝기가 둘로만 갈린다(흰자·하이라이트 / 진갈색). 진갈색
-    # 덩어리에 홍채·동공과 속눈썹·눈매 테두리가 같이 들어 있어 색으로는 못 가른다.
-    # 모양으로 가른다 - 홍채는 둥근 덩어리, 속눈썹은 얇은 호(弧)라서
-    # 원반 커널로 열림 연산을 하면 홍채만 살아남는다.
-    dark_eye = eye & (lum < 140)
-    r = max(5, int(round(np.sqrt(max(dark_eye.sum(), 1) / 2 / np.pi) * 0.30)))
-    yy, xx = np.mgrid[-r:r + 1, -r:r + 1]
-    disk = (xx * xx + yy * yy) <= r * r
-    iris = binary_opening(dark_eye, disk)
-    iris = binary_closing(iris, np.ones((5, 5)))
+        # 홍채: 눈 영역은 밝기가 둘로만 갈린다(흰자·하이라이트 / 진갈색). 진갈색
+        # 덩어리에 홍채·동공과 속눈썹·눈매 테두리가 같이 있어 색으로는 못 가른다.
+        # 모양으로 가른다 - 홍채는 둥근 덩어리, 속눈썹은 얇은 호(弧)라서
+        # 원반 커널로 열림 연산을 하면 홍채만 살아남는다.
+        dark_eye = eye & (lum < 150)
+        r = max(4, int(round(r_eye * 0.42)))
+        yy, xx = np.mgrid[-r:r + 1, -r:r + 1]
+        disk = (xx * xx + yy * yy) <= r * r
+        iris = binary_opening(dark_eye, disk)
+        iris = binary_closing(iris, np.ones((5, 5)))
+    code[eye] = CODE["eye"]
     code[iris] = CODE["iris"]
-    # 눈썹은 머리카락에 포함 - 머리색 바꾸면 같이 바뀌는 게 자연스럽다
-    code[browband & (d_hair < 90)] = CODE["hair"]
+    # 원피스·가운처럼 한 벌로 이어진 옷은 허리에서 갈리면 안 된다.
+    # 상·하의 대표색이 거의 같으면 한 벌로 보고 상의로 합친다.
+    # 임계가 관대하면 흰 가운과 다른 색 바지까지 합쳐진다.
+    mt, mb = code == CODE["top"], code == CODE["bottom"]
+    if mt.sum() > 2000 and mb.sum() > 2000:
+        if np.linalg.norm(np.median(a[mt], axis=0) - np.median(a[mb], axis=0)) < 14:
+            code[mb] = CODE["top"]
 
     # --- 직업 상징물: 옷 위에 있는데 옷 색에서 크게 벗어난 텍셀 ---
+    # 벨트·밑단처럼 옷의 일부일 뿐인 것까지 잡히면 안 되므로 면적을 좁게 제한한다.
     for part in ("top", "bottom"):
         m = code == CODE[part]
         if m.sum() < 500:
             continue
         med = np.median(a[m], axis=0)
         dev = np.linalg.norm(a - med, axis=2)
-        emb = m & (dev > 78)
-        emb = binary_opening(emb, np.ones((3, 3)))
+        emb = m & (dev > 96)
+        emb = binary_opening(emb, np.ones((5, 5)))
         emb = binary_closing(emb, np.ones((5, 5)))
-        if emb.sum() < m.sum() * 0.35:        # 옷 전체가 무늬로 잡히면 무시
+        if emb.sum() < m.sum() * 0.12:        # 옷의 12% 넘게 잡히면 무늬가 아니라 옷 자체
             code[emb] = CODE["emblem"]
 
     os.makedirs(OUT, exist_ok=True)
