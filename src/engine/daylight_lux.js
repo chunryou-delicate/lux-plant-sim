@@ -87,11 +87,22 @@ export function rectPoly(size) {
    온실 유리벽(4.9×2.7m)을 0.6m 앞에서 보면 조각 하나가 1.2×0.9m인데 거리는 0.6m —
    물리 상한(반구 전체가 유리여도 E ≤ π·L)의 5배가 나왔다.
 
-   조각 한 변이 거리의 ~1/3을 넘지 않게 잡는다. */
+   조각 한 변이 거리의 1/4을 넘지 않게 잡는다.
+
+   파라미터는 고밀도 기준([128,128] 수렴값)과 대조해 정했다.
+   창 3종(1.2×1.4 / 2.4×2.0 / 4.9×2.7) × 거리 6종(0.3~5.0m) 전 조합에서:
+     고정 [4,3]        최대 −56.7% (근거리에서 붕괴)
+     최소2·d/3         최대  −9.6% (원거리에서 너무 성김)
+     ★ 최소4·d/4      최대  ±2.5%  ← 채택. 평균 182샘플
+   ※ 분할수는 짝수로 맞춘다. 홀수면 창 정중앙에 샘플이 놓여 계통 편향이 생긴다
+     (최소3은 최소2보다 오히려 나빴다 — 10.8%). */
 function autoSamples(w, p) {
   const d = Math.max(0.15, Math.hypot(p.x - w.cx, p.y - w.cy, p.z - w.cz));
-  const patch = d / 3;
-  const clamp = v => Math.max(2, Math.min(24, Math.ceil(v)));
+  const patch = d / 4;
+  const clamp = v => {
+    const n = Math.max(4, Math.min(24, Math.ceil(v)));
+    return n % 2 ? n + 1 : n;
+  };
   return [clamp(w.width / patch), clamp(w.height / patch)];
 }
 

@@ -427,7 +427,7 @@ function nearestEdge(px,pz){
 function daylightAt(px,py,pz, snx,sny,snz, selfFurn){
   if(!LUXENG || !S.windows.length) return 0;
   return LUXENG.daylightAt({x:px,y:py,z:pz}, {x:snx,y:sny,z:snz}, luxWindows(),
-    { sky:S.sky, samples:[4,3], occluders:luxOccluders(), selfIdx:selfFurn });
+    { sky:S.sky, samples:'auto', occluders:luxOccluders(), selfIdx:selfFurn });
 }
 function pointIllum(px,py,pz, nx,ny,nz, I0, selfFurn){
   if(!LUXENG) return 0;

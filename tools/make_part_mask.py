@@ -221,7 +221,11 @@ def build(char, vis=False, size=None):
     # 통째로 눈으로 분류된다(2026-07-25 실제로 그랬다).
     # 흰자를 기준점으로 삼는다 - 얼굴에서 아주 밝은 덩어리는 흰자뿐이고
     # 앞머리에는 흰자가 없다. 흰자를 찾아 그 주변만 눈으로 본다.
-    faceband = covered & front & (t >= EYE_BAND[0]) & (t < EYE_BAND[1])
+    # 흰자 후보는 반드시 얼굴 안이어야 한다. 범위를 넓게 잡으면 흰 가운·흰 셔츠가
+    # 흰자로 검출돼 그 주변이 통째로 눈 영역이 되고, 볼·턱까지 보호돼 피부색이
+    # 안 바뀐다(2026-07-25 여연구원·남연구원이 그랬다. 눈 라벨이 t 0.50 까지 퍼졌다).
+    faceband = (covered & front & (t >= EYE_BAND[0]) & (t < EYE_BAND[1])
+                & (xn < 0.30))
     sclera = faceband & (lum > 224)
     sclera = binary_opening(sclera, np.ones((3, 3)))          # 점 노이즈 제거
     if sclera.sum() < 200:                                    # 흰자를 못 찾으면 눈 처리 생략
@@ -232,14 +236,16 @@ def build(char, vis=False, size=None):
         # 빠져 머리색이 들어간다. 눈은 가로로 길고 눈썹은 바로 위에 있으므로
         # 가로로 넓고 세로로 납작한 타원으로 넓힌다.
         r_eye = max(8, int(round(np.sqrt(sclera.sum() / 2 / np.pi) * 1.15)))
-        rv = max(4, int(round(r_eye * 0.45)))
+        rv = max(6, int(round(r_eye * 0.75)))
         yy, xx = np.mgrid[-rv:rv + 1, -r_eye:r_eye + 1]
         near = (xx / r_eye) ** 2 + (yy / rv) ** 2 <= 1.0
         region = binary_dilation(sclera, near) & covered
-        # 눈 주변에서 피부가 아닌 것은 전부 눈이다(흰자·하이라이트·홍채·동공·
+        # 눈 주변에서 피부가 아닌 것은 전부 눈 재료다(흰자·하이라이트·홍채·동공·
         # 속눈썹·눈매선). 색으로 고르면 중간톤인 눈꺼풀 주름이 빠져 머리로 간다.
-        eye = region & ~is_skin
-        eye = binary_closing(eye, np.ones((3, 3))) & region
+        # 그중 흰자에 '이어진' 것만 눈으로 본다. 눈썹은 사이에 피부가 있어
+        # 끊겨 있으므로 딸려오지 않고 머리색을 따라간다.
+        eyeish = binary_closing(region & ~is_skin, np.ones((3, 3)))
+        eye = binary_propagation(sclera, mask=eyeish) & eyeish & region
 
         # 홍채: 눈 영역은 밝기가 둘로만 갈린다(흰자·하이라이트 / 진갈색). 진갈색
         # 덩어리에 홍채·동공과 속눈썹·눈매 테두리가 같이 있어 색으로는 못 가른다.
