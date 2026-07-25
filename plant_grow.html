@@ -540,6 +540,30 @@ function addStemTube(pts, rBase, rTip, nodeTs, color){
 }
 // (제거됨) addKnob — 혹 돌기 단독 에셋 방식. '혹 있는 줄기 GLB' 방식으로 복귀하여 미사용
 // 엽초: 줄기 끝 ↔ 잎자루 이음부를 감싸는 짧은 슬리브(줄기_잎_엽초 에셋)
+// ★엽초를 잎과 같은 부모(holder) 안에, 같은 로컬 프레임으로 그린다 → 잎과 완전 일체.
+//   월드 기준으로 그리면 setFromUnitVectors의 roll이 줄기 방향마다 달라져(정의되지 않음)
+//   시드를 바꿀 때마다 맞춰둔 각도가 틀어졌다.
+function addSheathLocal(parent, ld, stemRad, size, leafKey){
+  const key=SHEATH_OF[leafKey]||'sheath_young';
+  const proto=ASSETS[key]; if(!proto) return;
+  const a=ADJ[key]||{}, N=(v,d)=>v==null?d:v;
+  const L=N(a.len,P.sheathLen), F=N(a.fit,P.sheathFit);
+  if(L<=0.001) return;
+  let len=L*size*N(a.sy,1);
+  const radius=stemRad*F*N(a.scale,1)*N(a.sxz,1);
+  if(len<1e-5||radius<1e-6) return;
+  const cw=SHEATH_SET[key]||P.sheathBot, sxw=radius/(cw/2);
+  const UP=new THREE.Vector3(0,1,0);
+  const mesh=proto.clone(true); mesh.scale.set(sxw, len, sxw);   // 비균등 스케일은 가장 안쪽
+  const rot=new THREE.Group(); rot.add(mesh);
+  rot.rotation.set(N(a.rx,0), N(a.ry,0), N(a.rz,0));             // 강체 회전(전단 없음)
+  rot.position.set(N(a.ox,0)*sxw, N(a.oy,0)*len, N(a.oz,0)*sxw);
+  const g=new THREE.Group(); g.add(rot);
+  g.quaternion.setFromUnitVectors(UP, ld);                       // 로컬 프레임 안에서만 회전 → roll 결정적
+  g.position.copy(ld).multiplyScalar(-len*0.35);                 // 줄기 속으로 물려 시작
+  tintObj(g, stemTint(0.03)); parent.add(g);
+  USE_COUNT[key]=(USE_COUNT[key]||0)+1;
+}
 function addSheath(nodePos, d, stemRad, size, leafKey){
   const key=SHEATH_OF[leafKey]||'sheath_young';             // 잎 단계별 엽초(조정값 독립)
   const a=ADJ[key]||{};
@@ -597,25 +621,23 @@ function addLeaf(nodePos, az, maturity, key, sizeOverride, stemDir, stemRad){
   // ★음수 = 잎자루 끝을 줄기 속으로 박아 붙임(잎 GLB에 잎자루가 포함돼 있으므로 틈이 생기면 안 됨)
   const reach=-P.leafEmbed*(0.4+size)*P.petioleLen;
   const base=nodePos.clone().addScaledVector(d, reach);
-  if(stemRad) addSheath(nodePos, d, stemRad, size, key);   // ★줄기↔잎자루 이음부 엽초(잎 단계별)
-  addPetiole(nodePos, d, size, maturity, base);        // (기본 off) GLB 잎자루 연결
+  // ★잎 + 엽초를 하나의 holder에 담아 "세트"로 취급 → 같이 회전·이동하며 절대 어긋나지 않음
+  const UP=new THREE.Vector3(0,1,0);
+  const holder=new THREE.Group();
+  holder.position.copy(nodePos);
+  holder.quaternion.setFromUnitVectors(UP, (stemDir||UP).clone().normalize());   // 로컬 +Y = 줄기축(관통선)
+  holder.rotateY(aim.az);                                      // ← 관통선 기준 회전
+  const ld=new THREE.Vector3(Math.sin(aim.tilt), Math.cos(aim.tilt), 0);   // 로컬 잎자루 방향
+  if(stemRad) addSheathLocal(holder, ld, stemRad, size, key);  // 엽초도 같은 프레임 안에
+  addPetiole(nodePos, d, size, maturity, base);                // (기본 off)
   const proto=assetInst(key);
   if(proto){
-    // ★회전축 = 줄기를 관통하는 선. 잎 GLB에 잎자루가 붙어 있으므로, 잎 전체(자루+잎몸+조정회전)를
-    //   하나의 강체로 보고 "줄기축" 둘레로만 돌린다. 예전엔 기울어진 잎자루 방향(d)을 축으로 돌아
-    //   줄기마다 박히는 각도가 달라 보였다.
-    const UP=new THREE.Vector3(0,1,0);
-    const holder=new THREE.Group();
-    holder.position.copy(nodePos);
-    holder.quaternion.setFromUnitVectors(UP, (stemDir||UP).clone().normalize());   // 로컬 +Y = 줄기축(관통선)
-    holder.rotateY(aim.az);                                    // ← 관통선 기준 회전
-    // 로컬 프레임에서 잎자루를 tilt만큼 +X쪽으로 기울여 꽂는다(tilt=0이면 줄기와 완전 동축)
-    const ld=new THREE.Vector3(Math.sin(aim.tilt), Math.cos(aim.tilt), 0);
     proto.scale.multiplyScalar(size);
     proto.quaternion.setFromUnitVectors(UP, ld);
     proto.position.copy(ld).multiplyScalar(reach);
-    holder.add(proto);
-    tintObj(holder, leafTint(maturity)); plantGroup.add(holder); return; }
+    tintObj(proto, leafTint(maturity));                        // 잎만 잎색(엽초는 줄기색 유지)
+    holder.add(proto); plantGroup.add(holder); return; }
+  plantGroup.add(holder);
   // 폴백: 임시 원뿔
   const type=/mature/.test(key)?2:/mid/.test(key)?1:0;
   const m=makeLeaf(type), pivot=new THREE.Group(); pivot.position.copy(base); pivot.rotation.y=az;
