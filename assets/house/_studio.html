@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>볕 · 에셋 스튜디오</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Jua&family=Gaegu:wght@400;700&display=swap');
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{height:100%;overflow:hidden;font-family:'Gaegu',sans-serif;background:#1c1f23;color:#e8eaec}
+  #bar{height:52px;display:flex;align-items:center;gap:8px;padding:0 16px;
+    background:#191c20;border-bottom:1px solid rgba(255,255,255,.09);position:relative;z-index:10}
+  .brand{font-family:'Jua';font-size:19px;color:#f2f0ec;margin-right:6px;white-space:nowrap}
+  .brand b{color:#ffb454}
+  .tabs{display:flex;gap:6px;flex-wrap:wrap;overflow-x:auto}
+  .tab{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.10);color:#dfe4e8;
+    border-radius:20px;padding:6px 15px;font-family:'Jua';font-size:13px;cursor:pointer;white-space:nowrap}
+  .tab:hover{background:rgba(255,255,255,.13)}
+  .tab.on{background:#ffb454;border-color:#ffb454;color:#2a2118}
+  .spacer{flex:1}
+  .note{font-weight:700;font-size:11.5px;color:#8b939b;white-space:nowrap}
+  #stage{position:absolute;inset:52px 0 0 0}
+  iframe{position:absolute;inset:0;width:100%;height:100%;border:0;display:none;background:#23262a}
+  iframe.on{display:block}
+  #boot{position:absolute;inset:52px 0 0 0;display:flex;align-items:center;justify-content:center;
+    color:#ffb454;font-family:'Jua';font-size:15px;pointer-events:none;transition:opacity .4s}
+</style>
+</head>
+<body>
+<div id="bar">
+  <span class="brand">볕<b>.</b> 에셋 스튜디오</span>
+  <div class="tabs" id="tabs"></div>
+  <span class="spacer"></span>
+  <span class="note">탭은 처음 열 때만 로드되고 상태가 유지됩니다</span>
+</div>
+<div id="stage"></div>
+<div id="boot">불러오는 중…</div>
+
+<script>
+/* 각 탭 = 기존 도구 페이지. iframe으로 감싸 상태를 각자 유지한다.
+   (합치면서 코드를 섞지 않으므로 검증된 도구들이 그대로 동작) */
+const TABS=[
+  { id:'win',   name:'🪟 창호',      src:'_window_showroom.html' },
+  { id:'furn',  name:'🛋 가구 홀',   src:'_furniture_hall.html' },
+  { id:'fcat',  name:'🗂 가구 카탈로그', src:'_furniture_showroom.html' },
+  { id:'color', name:'🎨 창 컬러',   src:'_color_showroom.html' },
+  { id:'sheet', name:'📐 창 도면',   src:'_window_sheet.html' },
+  { id:'room',  name:'🏠 방 꾸미기', src:'_room_tuner.html' },
+  { id:'game',  name:'▶ 게임 방',    src:'../../index.html' },
+];
+const stage=document.getElementById('stage'), tabsEl=document.getElementById('tabs');
+const frames={};
+function show(id){
+  for(const t of TABS){
+    const on=(t.id===id);
+    document.querySelector(`.tab[data-id="${t.id}"]`).classList.toggle('on',on);
+    if(on && !frames[t.id]){                       // 지연 로드
+      const f=document.createElement('iframe');
+      f.src=t.src; f.loading='eager'; frames[t.id]=f; stage.appendChild(f);
+      f.addEventListener('load',()=>{ const b=document.getElementById('boot'); if(b) b.style.opacity='0'; });
+    }
+    if(frames[t.id]) frames[t.id].classList.toggle('on',on);
+  }
+  location.hash=id;
+}
+tabsEl.innerHTML=TABS.map(t=>`<button class="tab" data-id="${t.id}">${t.name}</button>`).join('');
+tabsEl.querySelectorAll('.tab').forEach(b=>b.onclick=()=>show(b.dataset.id));
+const start=(location.hash||'').replace('#','');
+show(TABS.some(t=>t.id===start)?start:'win');
+addEventListener('hashchange',()=>{const h=location.hash.replace('#','');if(frames[h]!==undefined||TABS.some(t=>t.id===h))show(h);});
+setTimeout(()=>{const b=document.getElementById('boot'); if(b) b.style.opacity='0';},4000);
+</script>
+</body>
+</html>

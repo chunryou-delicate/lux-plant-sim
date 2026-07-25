@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>볕 · 가구 홀 (실제 크기 비교)</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Jua&family=Gaegu:wght@400;700&display=swap');
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{height:100%;overflow:hidden;font-family:'Gaegu',sans-serif;background:#23262a;color:#e8eaec;user-select:none;touch-action:none}
+  #c{position:fixed;inset:0;width:100%;height:100%;display:block}
+  .top{position:fixed;top:0;left:270px;right:0;z-index:5;padding:12px 20px;pointer-events:none}
+  .brand{font-family:'Jua';font-size:19px;color:#f2f0ec;text-shadow:0 2px 10px rgba(0,0,0,.6)}
+  .brand b{color:#ffb454}
+  .tag{font-weight:700;font-size:12px;color:#aab2ba;margin-left:8px}
+  #panel{position:fixed;top:0;left:0;bottom:0;width:256px;z-index:6;overflow-y:auto;
+    background:rgba(28,31,35,.94);backdrop-filter:blur(8px);border-right:1px solid rgba(255,255,255,.08);padding:13px 13px 40px}
+  h2{font-family:'Jua';font-size:16px;color:#f2f0ec}
+  .grp{margin-top:12px;border-top:1px solid rgba(255,255,255,.09);padding-top:9px}
+  .grp h3{font-family:'Jua';font-size:12.5px;color:#ffb454;margin-bottom:6px}
+  .opt{display:block;font-weight:700;font-size:12px;color:#dfe4e8;padding:3px 2px;cursor:pointer;border-radius:6px}
+  .opt:hover{background:rgba(255,255,255,.06)}
+  .opt input{margin-right:7px;vertical-align:middle}
+  select{width:100%;font-family:'Gaegu';font-weight:700;font-size:12.5px;padding:6px 8px;
+    border:1px solid rgba(255,255,255,.14);border-radius:9px;background:#2c3036;color:#e8eaec}
+  .row{display:flex;align-items:center;gap:8px;margin-top:5px}
+  .row input[type=range]{flex:1}
+  .rlab{font-weight:700;font-size:11.5px;color:#b6bec5;min-width:44px;text-align:right}
+  #count{font-weight:700;font-size:11.5px;color:#8f98a0;margin-top:7px}
+  #sel{margin-top:8px;font-size:11.5px;color:#cfd6dc;font-weight:700;line-height:1.6;
+    background:rgba(255,255,255,.05);border-radius:9px;padding:8px;display:none}
+  #hint{position:fixed;bottom:14px;left:calc(50% + 128px);transform:translateX(-50%);z-index:5;
+    background:rgba(0,0,0,.55);color:#fff;font-weight:700;font-size:12.5px;padding:6px 14px;border-radius:14px;transition:opacity .8s;pointer-events:none}
+  #err{position:fixed;z-index:9;left:266px;bottom:12px;background:#c0392b;color:#fff;padding:8px 12px;border-radius:8px;display:none;max-width:60%}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div class="top"><span class="brand">볕<b>.</b></span><span class="tag">가구 홀 · 전부 실제 크기 · 드래그=회전 · Shift드래그=이동 · 휠=줌 · 클릭=정보</span></div>
+
+<div id="panel">
+  <h2>🛋 가구 홀</h2>
+  <div class="grp"><h3>분류</h3><select id="cat"></select></div>
+  <div class="grp"><h3>색상</h3><select id="cw"></select></div>
+  <div class="grp">
+    <h3>보기</h3>
+    <label class="opt"><input type="checkbox" id="human" checked>사람(1.7m) 세우기</label>
+    <label class="opt"><input type="checkbox" id="grid" checked>1m 바닥 격자</label>
+    <label class="opt"><input type="checkbox" id="labels" checked>이름표</label>
+    <label class="opt"><input type="checkbox" id="slots">화분 슬롯 표시</label>
+    <div class="row"><span class="rlab">밝기</span><input type="range" id="expo" min="40" max="160" value="105"><span class="rlab" id="expolab">1.05</span></div>
+  </div>
+  <div id="count"></div>
+  <div id="sel"></div>
+</div>
+<div id="hint">한 바닥에 실제 크기로 세워둡니다 — 비율 이상한 게 바로 보입니다</div>
+<div id="err"></div>
+
+<script type="module">
+const V='?v='+Date.now();
+const showErr=m=>{const e=document.getElementById('err');e.textContent=m;e.style.display='block';};
+window.addEventListener('error',e=>showErr('오류: '+e.message));
+window.addEventListener('unhandledrejection',e=>showErr('로드 오류: '+(e.reason&&e.reason.message||e.reason)));
+
+let buildFurniture;
+try{ ({ buildFurniture }=await import('../../src/render3d/furniture_pastel.js'+V)); }
+catch(e){ showErr('모듈 로드 실패: '+e.message); throw e; }
+const FP=await fetch('../../data/furniture_presets.json'+V).then(r=>r.json())
+  .catch(e=>{showErr('프리셋 로드 실패: '+e.message);throw e;});
+const P=FP.presets, CW=FP.colorways||[];
+
+/* ===== 렌더러 ===== */
+const canvas=document.getElementById('c');
+const renderer=new THREE.WebGLRenderer({canvas,antialias:true});
+renderer.setPixelRatio(Math.min(2,devicePixelRatio||1));
+renderer.shadowMap.enabled=true; renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+renderer.outputEncoding=THREE.sRGBEncoding;
+renderer.toneMapping=THREE.NoToneMapping;          // 카탈로그: 색 충실
+const scene=new THREE.Scene();
+scene.background=new THREE.Color(0x23262a);
+scene.fog=new THREE.Fog(0x23262a, 22, 60);
+scene.add(new THREE.HemisphereLight(0xc4d2de,0x3a3f45,0.42));
+const sun=new THREE.DirectionalLight(0xfff4e6,0.78);
+sun.position.set(6,12,8); sun.castShadow=true;
+sun.shadow.mapSize.set(2048,2048); sun.shadow.radius=4; sun.shadow.bias=-0.0004;
+const sd=26; sun.shadow.camera.left=-sd;sun.shadow.camera.right=sd;sun.shadow.camera.top=sd;sun.shadow.camera.bottom=-sd;sun.shadow.camera.far=70;
+scene.add(sun,sun.target);
+function envTex(){const c=document.createElement('canvas');c.width=32;c.height=96;const x=c.getContext('2d');
+  const g=x.createLinearGradient(0,0,0,96);g.addColorStop(0,'#aab8c6');g.addColorStop(.5,'#6c757e');g.addColorStop(1,'#41464b');
+  x.fillStyle=g;x.fillRect(0,0,32,96);const t=new THREE.CanvasTexture(c);
+  t.mapping=THREE.EquirectangularReflectionMapping;return t;}
+try{const pm=new THREE.PMREMGenerator(renderer);scene.environment=pm.fromEquirectangular(envTex()).texture;}catch(e){}
+const cam=new THREE.PerspectiveCamera(36, innerWidth/innerHeight, 0.1, 300);
+
+/* ===== 바닥 + 1m 격자 ===== */
+const HALL_W=90, HALL_D=26;
+const floor=new THREE.Mesh(new THREE.PlaneGeometry(HALL_W,HALL_D),
+  new THREE.MeshStandardMaterial({color:0x50565c, roughness:0.97}));
+floor.rotation.x=-Math.PI/2; floor.receiveShadow=true; scene.add(floor);
+const gridHelper=new THREE.GridHelper(HALL_W, HALL_W, 0x6f7880, 0x5a6167);
+gridHelper.position.y=0.004; gridHelper.material.transparent=true; gridHelper.material.opacity=0.5;
+scene.add(gridHelper);
+
+/* ===== 이름표(캔버스 텍스처) ===== */
+function labelSprite(text, sub){
+  const s=2, W=300, H=64, c=document.createElement('canvas');
+  c.width=W*s; c.height=H*s; const x=c.getContext('2d'); x.scale(s,s);
+  x.fillStyle='rgba(20,22,26,.82)';
+  const r=10; x.beginPath(); x.moveTo(r,0); x.arcTo(W,0,W,H,r); x.arcTo(W,H,0,H,r); x.arcTo(0,H,0,0,r); x.arcTo(0,0,W,0,r); x.closePath(); x.fill();
+  x.fillStyle='#f2f4f6'; x.font='700 24px Gaegu'; x.fillText(text, 12, 27);
+  x.fillStyle='#9fb0bd'; x.font='700 17px Gaegu'; x.fillText(sub, 12, 50);
+  const t=new THREE.CanvasTexture(c); t.encoding=THREE.sRGBEncoding;
+  const sp=new THREE.Sprite(new THREE.SpriteMaterial({map:t, transparent:true, depthTest:false}));
+  sp.scale.set(1.5, 1.5*H/W, 1); return sp;
+}
+
+/* ===== 사람 1.7m (스케일 기준) ===== */
+function human(){
+  const h=1.7, g=new THREE.Group();
+  const m=new THREE.MeshStandardMaterial({color:0x7d8894, roughness:0.9, transparent:true, opacity:0.55});
+  const legH=h*0.47, torsoH=h*0.30, headR=h*0.0725;
+  const legs=new THREE.Mesh(new THREE.CylinderGeometry(h*0.055,h*0.045,legH,10),m); legs.position.y=legH/2; g.add(legs);
+  const torso=new THREE.Mesh(new THREE.CylinderGeometry(h*0.092,h*0.082,torsoH,12),m); torso.position.y=legH+torsoH/2; g.add(torso);
+  const head=new THREE.Mesh(new THREE.SphereGeometry(headR,14,12),m); head.position.y=legH+torsoH+headR*0.95; g.add(head);
+  g.traverse(o=>{if(o.isMesh)o.castShadow=true;});
+  return g;
+}
+
+/* ===== 분류 ===== */
+const CATS=[
+  ['all','전체', ()=>true],
+  ['bed','침대', t=>/^bed|mattress/.test(t)],
+  ['seat','의자·소파', t=>/^chair|sofa|stool|bench|floor_cushion/.test(t)],
+  ['table','책상·테이블', t=>/^desk|table|low_table|coffee_table|vanity/.test(t)],
+  ['storage','수납', t=>/wardrobe|dresser|cube_storage|shoe_cabinet|storage_box|nightstand|tv_stand|kitchen|fridge/.test(t)],
+  ['plant','식물 선반', t=>/^shelf|^plant_|greenhouse_cabinet/.test(t)],
+  ['light','조명', t=>/lamp|light/.test(t)],
+  ['etc','기타', t=>/rug|mirror|picture_frame|wall_clock|clothes_rack|drying_rack|room_divider|laundry_basket|tv$/.test(t)]
+];
+let curCat='all', curCW='all';
+document.getElementById('cat').innerHTML=CATS.map(c=>`<option value="${c[0]}">${c[1]}</option>`).join('');
+document.getElementById('cw').innerHTML='<option value="all">전체 색</option>'+
+  '<option value="base">기본색만(변형 제외)</option>'+
+  CW.map(c=>`<option value="${c.id}">${c.name_ko}</option>`).join('');
+
+/* ===== 배치 ===== */
+const hall=new THREE.Group(); scene.add(hall);
+const picks=[];        // {group,id,p,box}
+function layout(){
+  while(hall.children.length) hall.remove(hall.children[0]);
+  picks.length=0;
+  const cat=CATS.find(c=>c[0]===curCat);
+  const ids=Object.keys(P).filter(id=>{
+    const p=P[id], t=p.type||id;
+    if(!cat[2](t)) return false;
+    if(curCW==='base') return !p.colorway;
+    if(curCW!=='all')  return p.colorway===curCW;
+    return true;
+  });
+  const showLabel=document.getElementById('labels').checked;
+  const showSlot=document.getElementById('slots').checked;
+  const showHuman=document.getElementById('human').checked;
+
+  // 행으로 나눠 배치 (실제 폭만큼 간격)
+  const GAP=0.55, ROW_GAP=3.2, MAXW=26;
+  let x=0, row=0, rowMaxD=0;
+  let humanEvery=0;
+  for(const id of ids){
+    const p=P[id];
+    let g; try{ g=buildFurniture(p.type||id, p); }catch(e){ console.warn(id,e); continue; }
+    const sz=g.userData.size||{w:0.5,h:0.5,d:0.5};
+    if(x+sz.w > MAXW){ x=0; row++; rowMaxD=0; humanEvery=0; }
+    const z=row*ROW_GAP;
+    const hang=g.userData.hangFromCeiling;
+    g.position.set(x+sz.w/2, hang?2.4:(g.userData.mount==='wall'?1.3:0), z);
+    hall.add(g);
+    picks.push({group:g,id,p,sz});
+    if(showLabel){
+      const sp=labelSprite(p.name_ko||id, `${id} · ${sz.w.toFixed(2)}×${sz.h.toFixed(2)}×${sz.d.toFixed(2)}m`);
+      sp.position.set(x+sz.w/2, (hang?2.4:sz.h)+0.34, z);
+      hall.add(sp);
+    }
+    if(showSlot && g.userData.slots){
+      for(const sl of g.userData.slots){
+        const dot=new THREE.Mesh(new THREE.SphereGeometry(0.035,10,8),
+          new THREE.MeshBasicMaterial({color:0x5fd08a}));
+        dot.position.set(x+sz.w/2+sl.x, sl.y+0.03, z+sl.z); hall.add(dot);
+      }
+    }
+    // 3개 걸러 사람 하나
+    if(showHuman && ++humanEvery%4===0){
+      const hm=human(); hm.position.set(x+sz.w+GAP*0.5, 0, z+1.1); hall.add(hm);
+    }
+    x += sz.w+GAP; rowMaxD=Math.max(rowMaxD, sz.d);
+  }
+  document.getElementById('count').textContent=`${ids.length}종 표시 · ${row+1}줄`;
+  // 카메라를 세트에 맞춤
+  focusX=Math.min(MAXW/2, x/2); focusZ=row*ROW_GAP/2;
+  dist=Math.max(9, Math.min(34, MAXW*0.75));
+  updateCam();
+}
+
+/* ===== 카메라 ===== */
+let focusX=6, focusZ=0, dist=14, yaw=0.42, pitch=0.30;
+function updateCam(){
+  pitch=Math.max(0.06,Math.min(1.15,pitch)); dist=Math.max(3,Math.min(60,dist));
+  const cp=Math.cos(pitch);
+  cam.position.set(focusX+Math.sin(yaw)*cp*dist, 1.5+Math.sin(pitch)*dist, focusZ+Math.cos(yaw)*cp*dist);
+  cam.lookAt(focusX,1.0,focusZ);
+  sun.target.position.set(focusX,0,focusZ); sun.target.updateMatrixWorld();
+  sun.position.set(focusX+7,14,focusZ+9);
+}
+let drag=false,pan=false,px=0,py=0,moved=0;
+canvas.addEventListener('pointerdown',e=>{drag=true;pan=(e.button===2||e.shiftKey);px=e.clientX;py=e.clientY;moved=0;
+  const h=document.getElementById('hint'); if(h)h.style.opacity='0';});
+addEventListener('pointermove',e=>{if(!drag)return;const dx=e.clientX-px,dy=e.clientY-py;px=e.clientX;py=e.clientY;
+  moved+=Math.abs(dx)+Math.abs(dy);
+  if(pan){ focusX-=dx*dist*0.0018; focusZ-=dy*dist*0.0012; }
+  else{ yaw+=dx*0.006; pitch+=dy*0.005; } updateCam();});
+addEventListener('pointerup',()=>drag=false);
+canvas.addEventListener('contextmenu',e=>e.preventDefault());
+canvas.addEventListener('wheel',e=>{e.preventDefault();dist*=(1+Math.sign(e.deltaY)*0.1);updateCam();},{passive:false});
+addEventListener('keydown',e=>{const s=1.2;
+  if(e.key==='ArrowLeft')focusX-=s; else if(e.key==='ArrowRight')focusX+=s;
+  else if(e.key==='ArrowUp')focusZ-=s; else if(e.key==='ArrowDown')focusZ+=s; else return; updateCam();});
+
+/* ===== 클릭 → 정보 ===== */
+const ray=new THREE.Raycaster(), ndc=new THREE.Vector2();
+canvas.addEventListener('click',e=>{
+  if(moved>6) return;
+  ndc.x=(e.clientX/innerWidth)*2-1; ndc.y=-(e.clientY/innerHeight)*2+1;
+  ray.setFromCamera(ndc,cam);
+  const hits=ray.intersectObjects(hall.children,true);
+  const el=document.getElementById('sel');
+  if(!hits.length){ el.style.display='none'; return; }
+  let o=hits[0].object; while(o.parent && !picks.find(k=>k.group===o)) o=o.parent;
+  const it=picks.find(k=>k.group===o);
+  if(!it){ el.style.display='none'; return; }
+  const u=it.group.userData, p=it.p;
+  el.style.display='block';
+  el.innerHTML=`<b style="font-family:Jua;font-size:13px">${p.name_ko}</b><br>`+
+    `<span style="color:#9fb0bd">${it.id}</span> · ${p.type||it.id}<br>`+
+    `크기 ${it.sz.w.toFixed(2)} × ${it.sz.h.toFixed(2)} × ${it.sz.d.toFixed(2)} m<br>`+
+    (u.slots?`화분 슬롯 ${u.slots.length}개${u.tier_max_pot_d?` · 최대 지름 ${u.tier_max_pot_d.join('/')}m`:''}<br>`:'')+
+    (u.grow?`🌱 식물등 PPFD ${p.ppfd} · 반경 ${p.coverage}m<br>`:'')+
+    (u.mount?`설치 ${u.mount}<br>`:'')+
+    `색 <span style="display:inline-block;width:11px;height:11px;background:${p.color};border-radius:3px;vertical-align:middle"></span> ${p.color}`;
+});
+
+/* ===== UI ===== */
+document.getElementById('cat').onchange=e=>{curCat=e.target.value; layout();};
+document.getElementById('cw').onchange=e=>{curCW=e.target.value; layout();};
+for(const id of ['human','grid','labels','slots'])
+  document.getElementById(id).onchange=()=>{ if(id==='grid') gridHelper.visible=document.getElementById('grid').checked; else layout(); };
+document.getElementById('expo').oninput=e=>{const v=+e.target.value/100;
+  renderer.toneMappingExposure=v; document.getElementById('expolab').textContent=v.toFixed(2);};
+
+function resize(){renderer.setSize(innerWidth,innerHeight);cam.aspect=innerWidth/innerHeight;cam.updateProjectionMatrix();}
+addEventListener('resize',resize); resize();
+layout();
+function loop(){requestAnimationFrame(loop);renderer.render(scene,cam);}
+loop();
+setTimeout(()=>{const h=document.getElementById('hint');if(h)h.style.opacity='0';},8000);
+document.title=`볕 · 가구 홀 (${Object.keys(P).length}종)`;
+</script>
+</body>
+</html>
