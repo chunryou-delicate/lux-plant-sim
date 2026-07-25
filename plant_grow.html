@@ -842,7 +842,7 @@ function buildPlant(){
       // ★①생장 시 조향: 앞으로 갈 자리에 다른 줄기가 있으면 그 반대쪽으로 조금 튼다(접촉굴성)
       const away=new THREE.Vector3();
       if(P.avoidLean>0.001 && SIM_SEGS.length){
-        const probe=ax.simTip.clone().addScaledVector(prev, len0*1.6);
+        const probe=ax.simTip.clone().addScaledVector(prev, len0*1.6*PLANT_GROW);
         const RAD=P.avoidRange;
         for(const sg of SIM_SEGS){
           if(sg.ax===ax || sg.ax===(ax.from&&ax.from.ax)) continue;   // 자기 축·부모 축은 제외
@@ -860,17 +860,19 @@ function buildPlant(){
         .add(new THREE.Vector3((rng()-0.5)*P.spread,0,(rng()-0.5)*P.spread)).normalize();
       ax.segs.push({dir, len:len0, birth:T, activated:false,
                     az:ax.az+k*GOLDEN});
-      ax.simTip=ax.simTip.clone().addScaledVector(dir, len0);
+      ax.simTip=ax.simTip.clone().addScaledVector(dir, len0*PLANT_GROW);
       SIM_SEGS.push({ax, p:ax.simTip.clone()}); };                 // 마디마다 방위(황금각) → 혹·가지가 각기 다른 쪽
     const leafM=(ax,T)=>Math.max(0, Math.min(1,(T-ax.leafBirth)/P.matSpan));   // 그 축의 잎 성숙도
     // 축 시작점 — ★가지는 부모 "혹 마디의 돌기 위치"(마디 끝이 아니라 중간)에서 남
     const axBase=(ax,T)=>{
       if(!ax.from) return new THREE.Vector3(0,SOIL_Y,0);
       const p=axBase(ax.from.ax,T), pa=ax.from.ax;
+      // ★PLANT_GROW를 반드시 함께 곱할 것. 줄기는 배율만큼 길어지는데 여기서 빠뜨리면
+      //   가지가 부모 줄기의 '혹'이 아니라 훨씬 아래에서 나와 잎이 줄기 중간에 박힌 것처럼 보인다.
       for(let i=0;i<ax.from.idx && i<pa.segs.length;i++){ const s=pa.segs[i]; if(s.birth>T) break;
-        p.addScaledVector(s.dir, s.len*Math.min(1,(T-s.birth)/Math.max(1,P.petGrow))); }
+        p.addScaledVector(s.dir, s.len*Math.min(1,(T-s.birth)/Math.max(1,P.petGrow))*PLANT_GROW); }
       const b=pa.segs[ax.from.idx];                                      // 혹 마디: 돌기(bumpAt) 지점까지만
-      if(b && b.birth<=T) p.addScaledVector(b.dir, b.len*Math.min(1,(T-b.birth)/Math.max(1,P.petGrow))*P.bumpAt);
+      if(b && b.birth<=T) p.addScaledVector(b.dir, b.len*Math.min(1,(T-b.birth)/Math.max(1,P.petGrow))*PLANT_GROW*P.bumpAt);
       return p; };
     mkAxis(null, new THREE.Vector3((rng()-0.5)*0.10,1,(rng()-0.5)*0.10).normalize(), t0);
     for(let T=t0; T<=g+1e-6; T+=STEP){
