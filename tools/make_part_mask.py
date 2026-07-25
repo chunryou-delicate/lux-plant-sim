@@ -184,7 +184,16 @@ def build(char, vis=False, size=None):
     xn = np.abs(posmap[:, :, 0] - (pos[:, 0].min() + pos[:, 0].max()) / 2) / (xr / 2)
     # t>0.64 는 목까지 포함하기 위한 값(0.68 이면 목이 빠진다).
     # 신발(t<0.085)은 크림색이 피부 색조에 걸리므로 제외한다.
-    skin_zone = (t > 0.64) | (xn > 0.42) | ((t < 0.40) & (t > 0.085))
+    # 목은 좁고 몸 한가운데 있다. t 하한만 낮추면 베이지 셔츠 등판까지 피부가
+    # 되므로(남주부) 목 구간은 폭으로 제한한다.
+    skin_zone = ((t > 0.72)                       # 머리(얼굴·귀)
+                 | ((t > 0.62) & (xn < 0.20))     # 목
+                 | (xn > 0.52)                    # 팔뚝·손 (소매 안쪽은 제외)
+                 | ((t < 0.40) & (t > 0.085)))    # 다리 (신발 제외)
+    # 베이지 셔츠와 살구색 피부는 어떤 색공간으로도 갈리지 않는다. 측정 결과
+    # 남주부의 셔츠는 그의 얼굴과 색도 거리 0.0247 로, 남연구원의 손(0.0374)보다
+    # 얼굴에 더 가깝다. 그래서 색은 전역 기준으로 두고 위치로 처리한다 -
+    # 팔 허용 범위를 소매가 끝나는 지점 바깥(xn>0.52)으로 좁힌다.
     is_skin = (d_skin < 44) & (warm_rg > 20) & covered & skin_zone
 
     code[band("shoe")] = CODE["shoe"]                       # 신발: 흰 티셔츠와 색이 같아 위치로만 갈림
@@ -220,7 +229,7 @@ def build(char, vis=False, size=None):
         iris = np.zeros_like(sclera)
     else:
         # 흰자 덩어리 크기에서 눈 반경을 추정하고 그만큼만 주변을 본다
-        r_eye = max(6, int(round(np.sqrt(sclera.sum() / 2 / np.pi) * 0.55)))
+        r_eye = max(8, int(round(np.sqrt(sclera.sum() / 2 / np.pi) * 0.95)))
         yy, xx = np.mgrid[-r_eye:r_eye + 1, -r_eye:r_eye + 1]
         near = (xx * xx + yy * yy) <= r_eye * r_eye
         region = binary_dilation(sclera, near) & covered

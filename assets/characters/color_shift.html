@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="ko"><head><meta charset="utf-8">
-<title>색시프트 검증 — 머리/피부/옷 색 바꾸기</title>
+<title>색시프트 검증 — 머리·눈썹 / 피부</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
@@ -56,9 +56,6 @@
     <h2>머리색 프리셋</h2>
     <div class="presets" id="hairPre"></div>
 
-    <h2>눈동자 프리셋</h2>
-    <div class="presets" id="irisPre"></div>
-
     <h2>부위별 색</h2>
     <div id="parts"></div>
 
@@ -71,13 +68,10 @@
     <div class="chk"><b>마스크 검수 포인트</b>
       <ul>
         <li>머리 ↔ 눈썹 경계</li>
-        <li><b>홍채 ↔ 흰자 ↔ 속눈썹</b> — 얼굴 시점에서</li>
         <li>목 · 손목 (피부 ↔ 옷)</li>
         <li>머리카락이 옷에 닿는 부분</li>
       </ul>
       형광색으로 바꾸면 잘못 칠해진 곳이 바로 드러납니다.
-      홍채와 속눈썹은 <b>같은 진갈색</b>이라 색이 아니라 모양(둥근 덩어리 vs 얇은 호)으로
-      갈랐습니다. 캐릭터마다 다를 수 있어 여기가 제일 확인이 필요합니다.
     </div>
     <div class="note" id="note"></div>
   </div>
@@ -89,29 +83,28 @@ const CHARS=[['char_namja_jachwi','자취남'],['char_namja_gajang','남가장']
  ['char_jachwi_f','자취녀'],['char_yeoja_gajang','여가장'],
  ['char_yeoja_jubu','여주부'],['char_yeoja_researcher','여연구원']];
 
-/* 마스크는 R 채널 인덱스 맵 (tools/make_part_mask.py 와 일치)
-   32 머리+눈썹 / 64 눈(보호) / 96 상징물(보호) / 128 피부 / 160 상의 / 192 하의 / 224 신발
+/* 마스크는 R 채널 인덱스 맵 (tools/make_part_mask.py 와 일치, 허용오차 ±12)
+   24 머리+눈썹 / 48 홍채 / 72 흰자·속눈썹 / 96 상징물 / 120 피부 /
+   144 상의 / 168 하의 / 192 신발
    알파를 데이터로 쓰면 캔버스 프리멀티플라이드 알파 때문에 A=0 텍셀의 RGB가
    0 으로 뭉개져 A 채널 부위만 살아남는다. 그래서 A 는 항상 255.
 
    보호 부위는 색을 바꾸지 않는다.
-     눈    - 홍채·흰자·하이라이트가 텍셀 몇 개 단위라 경계가 미세하다.
-             눈 색은 표정 작업(얼굴 텍스처 교체)에서 통째로 다루는 게 맞다.
+     눈    - 홍채까지 포함해 통째로 유지한다. 눈 색은 표정 작업(얼굴 텍스처
+             교체)에서 눈매·깜빡임과 함께 다루는 게 맞다.
+     옷    - 직업별 복장이라 고정. 옷 교체는 별도 시스템으로.
      상징물 - 연구가운 로고·명찰·앞치마 무늬. 직업 정체성이라 색이 바뀌면
              캐릭터 구분이 깨진다.
    눈썹은 머리카락에 포함했다. 머리색 바꾸면 같이 바뀌는 게 자연스럽다. */
 const PARTS=[
-  {key:'hair', name:'머리 + 눈썹',   code:24,  on:true,  color:'#d8b46c'},
-  {key:'iris', name:'홍채 (눈동자)', code:48,  on:false, color:'#3f7fb8'},
-  {key:'skin', name:'피부',          code:120, on:false, color:'#f0c090'},
+  {key:'hair', name:'머리 + 눈썹', code:24,  on:true,  color:'#d8b46c'},
+  {key:'skin', name:'피부',        code:120, on:false, color:'#f0c090'},
 ];
 const LOCKED=[
+  {name:'눈 전체 (홍채·흰자·속눈썹)', code:48, why:'표정 작업에서 얼굴 텍스처째로 다룰 예정'},
   {name:'상의 · 하의 · 신발', code:144, why:'직업별 복장이라 고정 · 옷 교체는 별도 시스템으로'},
-  {name:'흰자 · 하이라이트 · 속눈썹', code:72, why:'홍채만 바뀌고 눈매와 반짝임은 유지됩니다'},
-  {name:'직업 상징물',              code:96, why:'가운 로고·명찰·앞치마 무늬 · 직업 정체성'},
+  {name:'직업 상징물',        code:96,  why:'가운 로고·명찰·앞치마 무늬 · 직업 정체성'},
 ];
-const IRIS_PRESETS=['#3a2a20','#6b4226','#a9743c','#3f7fb8','#2f7f6a',
-                    '#6a4a8a','#8a3b4b','#4a5a68','#1c1a1e','#b06a2a'];
 const HAIR_PRESETS=['#3a2a20','#6b4226','#a9743c','#d8b46c','#e8dcc0',
                     '#8a3b3b','#6a4a7a','#2f4f4f','#9aa0a8','#1c1a1e'];
 
@@ -254,7 +247,6 @@ function presetRow(elId,list,partKey){
   });
 }
 presetRow('hairPre',HAIR_PRESETS,'hair');
-presetRow('irisPre',IRIS_PRESETS,'iris');
 document.getElementById('locked').innerHTML=LOCKED.map(l=>
   `<div style="padding:5px 0;border-bottom:1px solid #f0f4f1">
      <div style="font-size:12.5px;font-weight:600">🔒 ${l.name}</div>
