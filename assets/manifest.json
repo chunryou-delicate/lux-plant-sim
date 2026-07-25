@@ -7340,7 +7340,8 @@
    "note": "튜브 줄기 표면에 붙는 혹(눈) 돌기만. 쌍혹은 2개 배치. meshy 생성 2026-07-20",
    "category": "줄기·부품",
    "is_glb": true,
-   "status": "ok"
+   "status": "ok",
+   "path": "monstera/stem_knob.glb"
   },
   {
    "id": "leaf_sheath",
@@ -7349,7 +7350,8 @@
    "note": "줄기↔잎자루 이음부를 감싸는 짧은 슬리브. meshy 생성 2026-07-20",
    "category": "줄기·부품",
    "is_glb": true,
-   "status": "ok"
+   "status": "ok",
+   "path": "monstera/leaf_sheath.glb"
   },
   {
    "id": "stem_surface_tex",
@@ -7358,7 +7360,8 @@
    "note": "줄기 튜브용 회색조 타일 텍스처(세로 결). 색은 코드가 결정. meshy 생성 2026-07-20",
    "category": "텍스처",
    "is_glb": false,
-   "status": "ok"
+   "status": "ok",
+   "path": "textures/stem_surface_tile.png"
   }
  ],
  "_scale_convention": {
