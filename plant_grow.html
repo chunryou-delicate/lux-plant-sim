@@ -123,15 +123,15 @@ const GOLDEN=Math.PI*(3-Math.sqrt(5));   // 137.5° 황금각(자연스러운 �
 // ===== 튜닝 파라미터(A: 전체 규칙) — 슬라이더로 실시간 조절 =====
 const GMAX=365;   // 성장도 최대 = 1년(일)
 const DEF={
-  spawnStep:26, maxLeaves:12, matSpan:120,                 // 마디 나는 간격(일) · 축당 최대 마디 · 잎 성숙까지 걸리는 일
+  spawnStep:40, maxLeaves:12, matSpan:120,                 // 마디 나는 간격(일, 느릴수록 덜 길어짐) · 축당 최대 마디 · 잎 성숙 기간
   seedEnd:20, sproutEnd:45,                                // 씨앗·새싹(줄기_초기+새순) 시기
   budSpan:0.22, furlFrac:0.5, budSize:0.13,                // 새순: 말림(furled)→펴짐(opening) 비율·크기
   stageYoung:0.38, stageMid:0.66,                          // 잎 형태 전환 시점(어린→중간→성인)
   sizeYoung:0.16, sizeMid:0.30, sizeMature:0.46, sizeFull:0.62,  // 각 시점 크기(마디 간격 대비 자연스럽게)
   internode:0.22, stemFlat:1.25,   // 줄기 마디 길이·잎방향 납작
-  petGrow:16, rThin:0.028, rMed:0.032, rThick:0.034, matureProb:0.22, doubleBud:0.15,   // 마디 자람시간·종류별 굵기(위아래 비슷하게)·성숙잎 확률·쌍혹 확률
+  petGrow:16, rEarly:0.022, rThin:0.028, rMed:0.025, rThick:0.040, matureProb:0.22, doubleBud:0.15,  // 종류별 굵기(몸통 폭 기준, 왜곡 최소)·성숙잎 확률·쌍혹 확률
   leafEmbed:0.10,                  // 잎자루 끝을 줄기 속으로 박는 깊이(0이면 뜸)
-  stemTrans:40, bumpGrow:20, bumpAt:0.3, stemOverlap:0.025,   // 초기→중기_2 전이(일) · 혹 돋는 기간(중기_1 단계) · 돌기 위치(마디 비율=가지 나는 지점) · 이음새 겹침
+  stemTrans:40, bumpGrow:20, bumpAt:0.3, stemOverlap:0.015,   // 초기→중기_2 전이(일) · 혹 돋는 기간(중기_1 단계) · 돌기 위치(마디 비율=가지 나는 지점) · 이음새 겹침
   petioleLen:1.0, leafElev:1.0, elevDrop:0.36, spread:0.10, branchSpread:0.55,   // 배치(spread=줄기 흔들림)
   leafLight:0.62, leafDark:0.22, leafSat:0.5, satRange:0.22, hueBase:0.16, hueRange:0.26,   // 색(밝기/진함/채도/개체범위)
   ageDark:0.16, ageSat:0.26,   // 시간(나이) 따라 짙어짐·선명해짐(전역, 줄기·잎 함께)
@@ -268,6 +268,9 @@ function addPot(){
   SOIL_Y=0.48;
 }
 
+// 줄기 GLB의 실제 "몸통 폭"(높이=1 정규화 기준, 정점 하단대 90퍼센타일로 측정).
+// 혹 에셋은 돌기 때문에 bbox(0.56)가 몸통(0.42)보다 훨씬 넓어 이 값이 꼭 필요함.
+const STEM_CORE={petiole:0.083, stem_thin:0.186, stem_med:0.158, stem_thick:0.420, stem_main:0.443};
 function stemKey(radius){ return radius>0.072?'stem_thick' : radius>0.044?'stem_med' : radius>0.024?'stem_thin' : 'petiole'; }   // 얇은 시작=petiole → 굵어지며 thin→med→thick
 // GLB(밑면 y=0·긴축 Y)를 p0→p1 사이로 늘여 배치. 굵기 radius, color로 통일 틴트. → 두 점을 물리 연결.
 function stretchGLB(key, p0, p1, radius, color, flatAz){
@@ -275,7 +278,10 @@ function stretchGLB(key, p0, p1, radius, color, flatAz){
   const dir=new THREE.Vector3().subVectors(p1,p0), len=dir.length(); if(len<1e-5) return true;
   const a=ADJ[key]||{}; radius*=(a.scale||1)*(a.sxz||1);   // 에셋별 굵기(B): 크기(전체)×굵기(폭). 줄기 길이는 마디로 고정(sy 미적용)
   const g=proto.clone(true);
-  const hx=(proto.userData.sx||0.2)/2, hz=(proto.userData.sz||0.2)/2;
+  // ★바운딩박스가 아니라 "줄기 몸통 폭"(정점 측정값) 기준으로 굵기 환산.
+  //   혹 에셋은 돌기가 bbox를 부풀려(0.42→0.56) XZ가 과하게 눌리고 돌기가 납작한 판때기로 뭉개졌음.
+  const cw=STEM_CORE[key] || proto.userData.sx || 0.2;
+  const hx=cw/2, hz=cw/2;                                  // XZ 동일 → 단면이 찌그러지지 않음
   const up=dir.clone().normalize();
   let sxw=radius/hx, szw=radius/hz;
   if(flatAz!=null && P.stemFlat>1.001){
@@ -442,7 +448,9 @@ function buildPlant(){
                 triggered:false, grew:false};                            // grew = 이번 사이클에 이미 1마디 자랐나
       axes.push(ax); return ax; };
     const addSeg=(ax,T)=>{                                               // ② TIP 아래에 마디 삽입 → 생장점이 위로
-      const dir=ax.dir.clone().addScaledVector(ld, PHOTO*0.14)           // 굴광성: 빛 쪽으로 살짝
+      // ★앞 마디 방향을 이어받아 조금씩만 틀기 → 마디 경계가 꺾여 어긋나 보이지 않음
+      const prev=ax.segs.length? ax.segs[ax.segs.length-1].dir : ax.dir;
+      const dir=prev.clone().lerp(ax.dir, 0.3).addScaledVector(ld, PHOTO*0.10)   // 굴광성: 빛 쪽으로 살짝
         .add(new THREE.Vector3((rng()-0.5)*P.spread,0,(rng()-0.5)*P.spread)).normalize();
       ax.segs.push({dir, len:P.internode*(0.92+rng()*0.16), birth:T, activated:false,
                     az:ax.az+ax.segs.length*GOLDEN}); };                 // 마디마다 방위(황금각) → 혹·가지가 각기 다른 쪽
@@ -458,14 +466,8 @@ function buildPlant(){
       return p; };
     mkAxis(null, new THREE.Vector3((rng()-0.5)*0.10,1,(rng()-0.5)*0.10).normalize(), t0);
     for(let T=t0; T<=g+1e-6; T+=STEP){
-      // ★첫 중간잎까지는 마디가 쭉 자라고(순서도 #0~#9 = 4마디), 그 뒤부터는
-      //   "중간잎 → 다음 중간잎" 사이에 딱 1마디씩만 (한없이 길어지지 않게)
-      for(const ax of axes){
-        if(ax.birth>T || ax.segs.length>=P.maxLeaves) continue;
-        if(ax.triggered && ax.grew) continue;                            // 중간잎 지난 축은 사이클당 1마디
-        addSeg(ax,T); ax.grew=true;
-      }
       // ④ ★잎이 중간잎이 된 생장점이 있으면 → 그때 딱 하나의 마디만 혹으로
+      //    (마디 추가보다 먼저 판정해야 "줄기 2개일 때 중간잎" 상태에서 혹이 생김)
       const trig=axes.find(ax=>!ax.triggered && leafM(ax,T)>=M_MID);
       if(trig){
         trig.triggered=true;                                             // 이 잎의 트리거는 1회만
@@ -487,6 +489,12 @@ function buildPlant(){
           }
         }
       }
+      // ★첫 중간잎까지는 마디가 쭉 자라고, 그 뒤부터는 "중간잎 → 다음 중간잎" 사이에 딱 1마디씩만
+      for(const ax of axes){
+        if(ax.birth>T || ax.segs.length>=P.maxLeaves) continue;
+        if(ax.triggered && ax.grew) continue;                            // 중간잎 지난 축은 사이클당 1마디
+        addSeg(ax,T); ax.grew=true;
+      }
     }
     // ===== 렌더: 축마다 마디를 밑동→위로 쌓고, 맨 위 생장점에 잎 1개 =====
     let nLeaf=0, acts=0, nSeg=0;
@@ -500,10 +508,10 @@ function buildPlant(){
         // 줄기_초기 → 줄기_중기_2(대기) → [선택되면] 줄기_중기_1(혹 돋는 중) → 줄기_후기_혹/쌍혹
         let key, rad;
         if(s.activated && g>=s.actT+P.bumpGrow){ key=s.actType==='main'?'stem_main':'stem_thick';
-          rad=s.actType==='main'?P.rThick*1.04:P.rThick; acts++; }
+          rad=s.actType==='main'?P.rThick*1.05:P.rThick; acts++; }
         else if(s.activated){ key='stem_med'; rad=P.rMed; }                       // 줄기_중기_1 = 혹 직전(혹 돋기 시작)
         else if(g-s.birth>=P.stemTrans){ key='stem_thin'; rad=P.rThin; }          // 줄기_중기_2 = 분홍 대기(예비혹)
-        else { key='petiole'; rad=P.rThin*(0.72+0.28*gr); }                       // 줄기_초기(자라는 중)
+        else { key='petiole'; rad=P.rEarly*(0.72+0.28*gr); }                      // 줄기_초기(자라는 중)
         // 이음새를 아래로 살짝 늘려 겹침 → 마디 경계가 툭툭 끊겨 보이지 않게
         addStemSeg(cur.clone().addScaledVector(s.dir,-P.stemOverlap), nxt, rad, 0, s.az, key);
         cur=nxt; nSeg++;
