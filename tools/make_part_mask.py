@@ -141,6 +141,31 @@ def face_position_map(pos, idx, faceid, size):
     return cent[faceid], covered
 
 
+def chin_height(pos, lo_t=0.55, hi_t=0.88):
+    """가로폭 프로파일에서 턱 높이(t)를 찾는다.
+
+    목은 몸에서 가장 잘록한 곳이고, 턱은 거기서 위로 가며 폭이 확 넓어지는
+    지점이다. 고정 밴드로 자르면 캐릭터마다 턱 밑이 남거나 옷깃까지 먹는다.
+    """
+    y = pos[:, 1]
+    lo, hi = y.min(), y.max()
+    t = (y - lo) / (hi - lo)
+    edges = np.linspace(lo_t, hi_t, 45)
+    w = []
+    for i in range(len(edges) - 1):
+        s = pos[(t >= edges[i]) & (t < edges[i + 1]), 0]
+        w.append(np.percentile(s, 98) - np.percentile(s, 2) if len(s) > 40 else np.nan)
+    w = np.array(w)
+    if np.all(np.isnan(w)):
+        return 0.72
+    ni = int(np.nanargmin(w))                    # 목 = 가장 잘록한 곳
+    neck_w = w[ni]
+    for i in range(ni + 1, len(w)):              # 위로 가며 폭이 1.55배 되는 곳 = 턱
+        if not np.isnan(w[i]) and w[i] > neck_w * 1.55:
+            return float(edges[i])
+    return float(edges[ni])
+
+
 def nearest_color(a, cols):
     d = np.full(a.shape[:2], 1e9, np.float32)
     for c in cols:
@@ -186,8 +211,10 @@ def build(char, vis=False, size=None):
     # 신발(t<0.085)은 크림색이 피부 색조에 걸리므로 제외한다.
     # 목은 좁고 몸 한가운데 있다. t 하한만 낮추면 베이지 셔츠 등판까지 피부가
     # 되므로(남주부) 목 구간은 폭으로 제한한다.
+    # 목·턱 밑은 폭을 넓게 열되 색 판정을 유지한다. 옷깃은 흰색·회색이라
+    # 피부 색조에 안 걸리므로 안전하고, 턱선 바깥쪽 살구색 조각도 잡힌다.
     skin_zone = ((t > 0.72)                       # 머리(얼굴·귀)
-                 | ((t > 0.62) & (xn < 0.20))     # 목
+                 | ((t > 0.62) & (xn < 0.34))     # 목 · 턱 밑
                  | (xn > 0.42)                    # 팔·손 (A포즈에서 바깥쪽)
                  | ((t < 0.40) & (t > 0.085)))    # 다리 (신발 제외)
     # 베이지 셔츠와 살구색 피부는 어떤 색공간으로도 갈리지 않는다. 측정 결과
@@ -268,10 +295,10 @@ def build(char, vis=False, size=None):
     # 머리 영역에서 머리카락도 눈도 아니면 전부 피부다. 색 판정이 필요 없다.
     # 턱 아래와 목도 같은 규칙으로 채우되, 목은 좁으므로 폭으로 제한한다
     # (넓히면 셔츠 깃·등판까지 피부가 된다).
-    face_fill = (head                                        # 얼굴·귀
-                 | (covered & (t > 0.70) & (xn < 0.38))      # 턱선 바깥쪽
-                 | (covered & (t > 0.63) & (xn < 0.24))      # 목 (좁게)
-                 ) & ~hairish & ~eye
+    # 색 판정 없이 채우는 건 머리 영역뿐이다. 그 아래(목·턱 밑)까지 색 없이
+    # 채우면 옷깃을 먹는다 - 캐릭터마다 턱·어깨 높이가 달라 고정 밴드로는
+    # 어느 쪽이든 틀린다. 목은 위의 is_skin(색 판정)에 맡긴다.
+    face_fill = head & ~hairish & ~eye
     code[face_fill] = CODE["skin"]
 
     code[eye] = CODE["eye"]

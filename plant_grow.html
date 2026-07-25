@@ -164,7 +164,7 @@ const DEF={
 };
 let P=Object.assign({}, DEF);
 // 저장본 버전. 생장 로직/기본값이 바뀌면 올림 → 옛 저장값이 새 기본값을 덮어쓰지 않게.
-const CFG_VER='2026-07-25-clamp';
+const CFG_VER='2026-07-26-pick';
 
 // ===== 튜닝 파라미터(B: 에셋별 개별 조정) =====
 const ADJ_KEYS=[
@@ -195,62 +195,47 @@ const ADJ_KO={ pot:'화분',
   bud_furled:'기본-초기-새순1', bud_opening2:'기본-초기-반잎1', leaf_young:'기본-어린-잎1', leaf_mid1:'기본-중간-잎1', leaf_mid2:'기본-중간-잎2', leaf_mature:'기본-성숙-잎1' };
 // 박사님이 조절기로 맞춘 값을 기본값으로 고정(2026-07-20). 여기 없는 에셋은 전부 1/0.
 const ADJ_TUNED={
-  // ── 잎
-  leaf_young:  {scale:0.5, rx:-0.25, ry:0.4, rz:0.4, ox:0.06, oy:0.12, oz:0.01},
-  leaf_mid1:   {scale:0.8, rx:0.25, ry:2.05, rz:-0.3, ox:0.05, oy:0.09},
-  leaf_mid2:   {scale:0.6, sxz:0.65, sy:1.25, rx:0.2, ry:2.5, rz:-0.45, ox:0.02, oy:0.13, oz:0.01},
-  leaf_mature: {rx:0.05, ry:-0.6, rz:0.3, ox:0.04, oy:0.1},
-  // ── 줄기(혹/쌍혹)
-  stem_thick:  {scale:0.85, ry:0.3, rz:-0.1, ox:-0.04},
-  stem_main:   {scale:0.95, sxz:0.75, sy:0.9, rx:0.05, ry:0.1},
-  // ── 변이(알보). albo1/4/6 이 그룹 대표 — -쨍/-차분이 자동으로 같은 값을 쓴다.
-  leaf_young_albo:   {scale:0.5, sy:0.8, ry:-1.65, ox:0.03, oy:0.18, bladeR:0.71},   // 두께 1.4배→1배
-  leaf_mid_albo1:    {scale:0.75, sxz:0.75, sy:0.95, rx:0.35, rz:0.2, ox:0.03, oy:0.08,
-                      bladeR:0.14, trimR:0, trimTop:0.31},                              // 전체흰중기(1,2,3)
-  leaf_mid_albo4:    {sxz:0.65, sy:0.9, rx:0.55, ry:0.15, rz:0.2, ox:0.02, oy:0.07, oz:-0.04,
-                      bladeR:0.28, petR:0.25},                                          // 흰연두(4,5)
-  leaf_mid_albo6:    {scale:1.1, sxz:0.55, sy:0.8, ry:1.45, ox:0.03, oy:0.1, oz:0.01,
-                      bladeR:0.76, petR:0.65, petTop:0.8, trimR:0.44},                  // 크림민트(6,7)
-  sheath_young_albo: {rx:0.1, ry:0.3, rz:-0.15, ox:0.12, oy:0.14, oz:-0.05, len:0.155, fit:1.48},
-  sheath_leaf_mid_albo1: {sxz:1.1, rx:-0.05, ry:-0.05, rz:0.25, ox:0.11, oy:0.12, oz:-0.07,
-                          len:0.155, fit:1.34},
-  sheath_leaf_mid_albo4: {sxz:1.55, sy:1.05, rx:0.25, ry:-0.7, rz:0.35,
-                          ox:0.37, oy:-0.15, oz:-0.07, len:0.215, fit:1.36, top:0.91},
-  sheath_leaf_mid_albo6: {scale:1.1, rx:-0.05, ry:0.2, rz:0.3, ox:0.25, oy:0.22, oz:0.01,
-                          fit:1.52, top:0.83},
-  // ── 그 밖의 변이 중기. 크기류(굵기·두께·잎자루)는 전부 실측에서 산출했고,
-  //    회전·오프셋은 형상이 닮은 알보에서 복사했다(닮음 판정된 것만).
-  //    ※ 마블-크림그린(14,15) / 스페클-민트흰점2(24,25,26) 는 잎자루가 감지되지 않고
-  //      폭이 비정상(3.48배 / 자루지름 447%) — 눕혀졌거나 잎자루가 없다. 풀에서 제외.
-  leaf_mid_albo8 :  {sxz:0.63, bladeR:0.25, petR:0.4, ry:1.45, ox:0.03, oy:0.1, oz:0.01, petTop:0.8, trimR:0.44},   // 라임 형광 ← 크림민트 복사
-  leaf_mid_albo10:  {sxz:0.68, bladeR:0.34, petR:0.31, rx:0.55, ry:0.15, rz:0.2, ox:0.02, oy:0.07, oz:-0.04},   // 마블 실버 ← 흰연두 복사
-  leaf_mid_albo12:  {sxz:0.65, bladeR:0.21, petR:0.39},   // 스페클 실버점 ← 회전·오프셋은 직접 조정 필요
-  leaf_mid_albo16:  {sxz:0.58, bladeR:0.2, petR:0.3},   // 잎맥 크림 ← 회전·오프셋은 직접 조정 필요
-  leaf_mid_albo18:  {sxz:0.73, bladeR:0.15, petR:0.49},   // 마블 그린옐로우 ← 회전·오프셋은 직접 조정 필요
-  leaf_mid_albo20:  {sxz:0.58, bladeR:0.44, petR:0.3, rx:0.55, ry:0.15, rz:0.2, ox:0.02, oy:0.07, oz:-0.04},   // 마블 흰그린 ← 흰연두 복사
-  leaf_mid_albo22:  {sxz:0.7, bladeR:0.62, petR:0.48, ry:1.45, ox:0.03, oy:0.1, oz:0.01, petTop:0.8, trimR:0.44},   // 스페클 민트흰점 ← 크림민트 복사
-  leaf_mid_albo27:  {sxz:0.84, bladeR:0.2, petR:0.38, ry:1.45, ox:0.03, oy:0.1, oz:0.01, petTop:0.8, trimR:0.44},   // 실버 물방울 ← 크림민트 복사
-  // 하프문-크림민트: 에셋창에서 정렬 재작업(2026-07-25) 후 등록. 원시=월드 일치, 잎자루 아래 확인.
-  //   원본 두께가 기준의 9배라 bladeR이 유독 낮다. 회전·오프셋은 직접 조정 필요.
-  leaf_mid_albo29:  {sxz:0.67, bladeR:0.11, petR:0.67},   // 변이-하프문-크림민트
+  // 구워둔 조정값. 화면에서 맞춘 뒤 '설정 복사'로 받은 값을 여기에 옮긴다.
+  // 기본값과 같은 항목은 적지 않는다(defAdj가 채운다). 파생본은 ADJ_ALIAS로 대표를 따라간다.
+  // ── 기본 잎·새순·줄기
+  leaf_mature: {rx:0.05, ry:-0.6, rz:0.3, ox:0.04, oy:0.1},   // 기본-성숙-잎1
+  leaf_young: {scale:0.5, rx:-0.25, ry:0.4, rz:0.4, ox:0.06, oy:0.12, oz:0.01},   // 기본-어린-잎1
+  stem_main: {scale:0.95, sxz:0.75, sy:0.9, rx:0.05, ry:0.1},   // 줄기_후기_쌍혹
+  stem_thick: {scale:0.85, ry:0.3, rz:-0.1, ox:-0.04},   // 줄기_후기_혹
+  leaf_mid1: {scale:0.8, rx:0.25, ry:2.05, rz:-0.3, ox:0.05, oy:0.09},   // 기본-중간-잎1
+  leaf_mid2: {scale:0.6, sxz:0.65, sy:1.25, rx:0.2, ry:2.5, rz:-0.45, ox:0.02, oy:0.13, oz:0.01},   // 기본-중간-잎2
+  // ── 변이 잎
+  leaf_young_albo: {scale:0.5, sy:0.8, ry:-1.65, ox:0.03, oy:0.18, bladeR:0.71},   // 변이-어린-잎1(알보)
+  leaf_mid_albo1: {scale:0.75, sxz:0.75, sy:0.95, rx:0.35, rz:0.2, ox:0.03, oy:0.08, bladeR:0.14, trimR:0, trimTop:0.31},   // 변이-알보-전체흰중기
+  leaf_mid_albo4: {sxz:0.65, sy:0.9, rx:0.55, ry:0.15, rz:0.2, ox:0.02, oy:0.07, oz:-0.04, bladeR:0.28, petR:0.25},   // 변이-알보-흰연두-쨍
+  leaf_mid_albo6: {scale:1.1, sxz:0.55, sy:0.8, ry:1.45, ox:0.03, oy:0.1, oz:0.01, bladeR:0.76, trimR:0.44, petR:0.65, petTop:0.8},   // 변이-알보-크림민트-쨍
+  leaf_mid_albo8: {sxz:0.63, ry:1.45, ox:0.03, oy:0.1, oz:0.01, bladeR:0.25, trimR:0.44, petR:0.4, petTop:0.8},   // 변이-라임-형광-쨍
+  leaf_mid_albo10: {sxz:0.68, rx:0.55, ry:0.15, rz:0.2, ox:0.02, oy:0.07, oz:-0.04, bladeR:0.34, petR:0.31},   // 변이-마블-실버-쨍
+  leaf_mid_albo12: {sxz:0.65, sy:0.6, rx:0.45, ry:0.5, rz:-0.15, ox:0.01, oy:0.04, oz:-0.01, bladeR:0.21, trimR:0, trimTop:0.69, petR:0.25, petTop:0.3},   // 변이-스페클-실버점-쨍
+  leaf_mid_albo14: {scale:1.05},   // 변이-마블-크림그린-쨍
+  leaf_mid_albo16: {sxz:0.58, bladeR:0.2, petR:0.3},   // 변이-잎맥-크림-쨍
+  leaf_mid_albo18: {sxz:0.73, bladeR:0.15, petR:0.49},   // 변이-마블-그린옐로우-쨍
+  leaf_mid_albo20: {sxz:0.58, rx:0.55, ry:0.15, rz:0.2, ox:0.02, oy:0.07, oz:-0.04, bladeR:0.44, petR:0.3},   // 변이-마블-흰그린-쨍
+  leaf_mid_albo22: {sxz:0.7, sy:0.9, ry:1.45, ox:0.08, oy:-0.13, oz:0.02, bladeR:0.62, trimR:0.52, trimTop:0.49, petR:0.25, petTop:0.8},   // 변이-스페클-민트흰점-쨍
+  leaf_mid_albo27: {scale:0.95, sxz:1.1, ry:1.45, rz:0.05, ox:0.15, oy:-0.25, bladeR:0.2, trimR:0.54, trimTop:0.61, petR:0.25, petTop:0.8},   // 변이-실버-물방울-쨍
+  leaf_mid_albo29: {sxz:0.67, bladeR:0.11, petR:0.67},   // 변이-하프문-크림민트
   // ── 엽초(잎 단계별)
-  sheath_furled: {len:0},                             // 새순: OFF
-  sheath_open:   {scale:1.3, rx:0.2, ry:-1, rz:0.2, ox:0.06, oy:0.15,
-                  len:0.19, fit:0.78, top:0.43},
-  sheath_young:  {scale:1.4, sy:0.65, rx:0.2, ry:-0.4, rz:0.4, ox:0.15, oy:0.04, oz:-0.02,
-                  bot:1.32, top:0.53},
-  // 엽초는 잎과 한 세트이므로 닮음 판정된 것만 같이 복사(파생본은 별칭으로 따라온다)
-  sheath_leaf_mid_albo8 : {scale:1.1, rx:-0.05, ry:0.2, rz:0.3, ox:0.25, oy:0.22, oz:0.01, fit:1.52, top:0.83},   // 라임 형광 ← 6번 엽초
-  sheath_leaf_mid_albo10: {sxz:1.55, sy:1.05, rx:0.25, ry:-0.7, rz:0.35, ox:0.37, oy:-0.15, oz:-0.07, len:0.215, fit:1.36, top:0.91},   // 마블 실버 ← 4번 엽초
-  sheath_leaf_mid_albo20: {sxz:1.55, sy:1.05, rx:0.25, ry:-0.7, rz:0.35, ox:0.37, oy:-0.15, oz:-0.07, len:0.215, fit:1.36, top:0.91},   // 마블 흰그린 ← 4번 엽초
-  sheath_leaf_mid_albo22: {scale:1.1, rx:-0.05, ry:0.2, rz:0.3, ox:0.25, oy:0.22, oz:0.01, fit:1.52, top:0.83},   // 스페클 민트흰점 ← 6번 엽초
-  sheath_leaf_mid_albo27: {scale:1.1, rx:-0.05, ry:0.2, rz:0.3, ox:0.25, oy:0.22, oz:0.01, fit:1.52, top:0.83},   // 실버 물방울 ← 6번 엽초
-  sheath_mid1:   {scale:1.05, rx:-0.05, ry:-0.15, rz:0.4, ox:0.16, oy:0.32, oz:-0.06,
-                  len:0.175, fit:1.38, top:0.87},
-  sheath_mid2:   {scale:1.3, sxz:0.85, sy:1.1, rx:-0.15, ry:0.2, rz:0.3, ox:0.45, oy:-0.01, oz:0.02,
-                  len:0.235, fit:1.74, top:0.69},
-  sheath_mature: {scale:1.45, sxz:1.3, sy:1.3, rx:-0.5, ry:-2.2, rz:-0.55, ox:0.46, oy:0.03, oz:0.1,
-                  len:0.205, fit:1.22, bot:1.1, top:0.75},
+  sheath_furled: {len:0},   // 엽초·새순
+  sheath_mature: {scale:1.45, sxz:1.3, sy:1.3, rx:-0.5, ry:-2.2, rz:-0.55, ox:0.46, oy:0.03, oz:0.1, len:0.205, fit:1.22, bot:1.1, top:0.75},   // 엽초·성숙잎
+  sheath_open: {scale:1.3, rx:0.2, ry:-1, rz:0.2, ox:0.06, oy:0.15, len:0.19, fit:0.78, top:0.43},   // 엽초·반잎
+  sheath_young: {scale:1.4, sy:0.65, rx:0.2, ry:-0.4, rz:0.4, ox:0.15, oy:0.04, oz:-0.02, bot:1.32, top:0.53},   // 엽초·어린잎
+  sheath_young_albo: {rx:0.1, ry:0.3, rz:-0.15, ox:0.12, oy:0.14, oz:-0.05, len:0.155, fit:1.48},   // 엽초·어린잎(알보)
+  sheath_leaf_mid_albo1: {sxz:1.1, rx:-0.05, ry:-0.05, rz:0.25, ox:0.11, oy:0.12, oz:-0.07, len:0.155, fit:1.34},   // 엽초·알보 전체흰중기
+  sheath_mid1: {scale:1.05, rx:-0.05, ry:-0.15, rz:0.4, ox:0.16, oy:0.32, oz:-0.06, len:0.175, fit:1.38, top:0.87},   // 엽초·중간잎1
+  sheath_mid2: {scale:1.3, sxz:0.85, sy:1.1, rx:-0.15, ry:0.2, rz:0.3, ox:0.45, oy:-0.01, oz:0.02, len:0.235, fit:1.74, top:0.69},   // 엽초·중간잎2
+  sheath_leaf_mid_albo4: {sxz:1.55, sy:1.05, rx:0.25, ry:-0.7, rz:0.35, ox:0.37, oy:-0.15, oz:-0.07, len:0.215, fit:1.36, top:0.91},   // 엽초·알보 흰연두-쨍
+  sheath_leaf_mid_albo6: {scale:1.1, rx:-0.05, ry:0.2, rz:0.3, ox:0.25, oy:0.22, oz:0.01, fit:1.52, top:0.83},   // 엽초·알보 크림민트-쨍
+  sheath_leaf_mid_albo8: {scale:1.1, rx:-0.05, ry:0.2, rz:0.3, ox:0.25, oy:0.22, oz:0.01, fit:1.52, top:0.83},
+  sheath_leaf_mid_albo10: {sxz:1.55, sy:1.05, rx:0.25, ry:-0.7, rz:0.35, ox:0.37, oy:-0.15, oz:-0.07, len:0.215, fit:1.36, top:0.91},
+  sheath_leaf_mid_albo12: {rz:0.15, ox:0.17, oy:0.11, oz:-0.13, fit:1.4},
+  sheath_leaf_mid_albo20: {sxz:1.55, sy:1.05, rx:0.25, ry:-0.7, rz:0.35, ox:0.37, oy:-0.15, oz:-0.07, len:0.215, fit:1.36, top:0.91},
+  sheath_leaf_mid_albo22: {scale:1.1, rx:-0.05, ry:0.2, rz:0.3, ox:0.25, oy:0.22, oz:0.01, len:0.245, fit:1.62, top:0.83},
+  sheath_leaf_mid_albo27: {scale:1.1, rx:-0.05, ry:0.2, rz:0.3, ox:0.25, oy:0.22, oz:0.01, len:0.185, fit:1.7, top:0.83},
 };
 function defAdj(key){
   const b={scale:1, sxz:1, sy:1, rx:0,ry:0,rz:0, ox:0,oy:0,oz:0};
@@ -494,7 +479,7 @@ function addPot(){
 
 // 줄기 GLB의 실제 "몸통 폭"(높이=1 정규화 기준, 정점 하단대 90퍼센타일로 측정).
 // 혹 에셋은 돌기 때문에 bbox(0.56)가 몸통(0.42)보다 훨씬 넓어 이 값이 꼭 필요함.
-const STEM_CORE={petiole:0.083, stem_thin:0.186, stem_med:0.158, stem_thick:0.420, stem_main:0.443, sheath:1.309, sheath_furled:1.309, sheath_open:1.309, sheath_young:1.309, sheath_young_albo:1.309,sheath_leaf_mid_albo1:1.309,sheath_leaf_mid_albo2:1.309,sheath_leaf_mid_albo3:1.309,sheath_leaf_mid_albo4:1.309,sheath_leaf_mid_albo5:1.309,sheath_leaf_mid_albo6:1.309,sheath_leaf_mid_albo7:1.309,sheath_leaf_mid_albo8:1.309,sheath_leaf_mid_albo9:1.309,sheath_leaf_mid_albo10:1.309,sheath_leaf_mid_albo11:1.309,sheath_leaf_mid_albo12:1.309,sheath_leaf_mid_albo13:1.309,sheath_leaf_mid_albo14:1.309,sheath_leaf_mid_albo15:1.309,sheath_leaf_mid_albo16:1.309,sheath_leaf_mid_albo17:1.309,sheath_leaf_mid_albo18:1.309,sheath_leaf_mid_albo19:1.309,sheath_leaf_mid_albo20:1.309,sheath_leaf_mid_albo21:1.309,sheath_leaf_mid_albo22:1.309,sheath_leaf_mid_albo23:1.309,sheath_leaf_mid_albo24:1.309,sheath_leaf_mid_albo25:1.309,sheath_leaf_mid_albo26:1.309,sheath_leaf_mid_albo27:1.309,sheath_leaf_mid_albo28:1.309, sheath_mid1:1.309, sheath_mid2:1.309, sheath_mature:1.309, knob:2.518};   // 절차생성본 실측(하단 폭, 높이1 정규화 기준)
+const STEM_CORE={petiole:0.083, stem_thin:0.186, stem_med:0.158, stem_thick:0.420, stem_main:0.443, sheath:1.309, sheath_furled:1.309, sheath_open:1.309, sheath_young:1.309, sheath_young_albo:1.309,sheath_leaf_mid_albo1:1.309,sheath_leaf_mid_albo2:1.309,sheath_leaf_mid_albo3:1.309,sheath_leaf_mid_albo4:1.309,sheath_leaf_mid_albo5:1.309,sheath_leaf_mid_albo6:1.309,sheath_leaf_mid_albo7:1.309,sheath_leaf_mid_albo8:1.309,sheath_leaf_mid_albo9:1.309,sheath_leaf_mid_albo10:1.309,sheath_leaf_mid_albo11:1.309,sheath_leaf_mid_albo12:1.309,sheath_leaf_mid_albo13:1.309,sheath_leaf_mid_albo14:1.309,sheath_leaf_mid_albo15:1.309,sheath_leaf_mid_albo16:1.309,sheath_leaf_mid_albo17:1.309,sheath_leaf_mid_albo18:1.309,sheath_leaf_mid_albo19:1.309,sheath_leaf_mid_albo20:1.309,sheath_leaf_mid_albo21:1.309,sheath_leaf_mid_albo22:1.309,sheath_leaf_mid_albo23:1.309,sheath_leaf_mid_albo24:1.309,sheath_leaf_mid_albo25:1.309,sheath_leaf_mid_albo26:1.309,sheath_leaf_mid_albo27:1.309,sheath_leaf_mid_albo28:1.309,sheath_leaf_mid_albo29:1.309,sheath_leaf_mid_albo30:1.309,sheath_leaf_mid_albo31:1.309, sheath_mid1:1.309, sheath_mid2:1.309, sheath_mature:1.309, knob:2.518};   // 절차생성본 실측(하단 폭, 높이1 정규화 기준)
 // (제거됨) stemKey — 굵기로 줄기 GLB를 고르던 함수. addStemSeg와 함께 불필요
 // GLB(밑면 y=0·긴축 Y)를 p0→p1 사이로 늘여 배치. 굵기 radius, color로 통일 틴트. → 두 점을 물리 연결.
 function stretchGLB(key, p0, p1, radius, color, flatAz){
@@ -940,6 +925,7 @@ function addLeaf(nodePos, az, maturity, key, sizeOverride, stemDir, stemRad, own
   holder.position.copy(nodePos);
   holder.quaternion.setFromUnitVectors(UP, (stemDir||UP).clone().normalize());   // 로컬 +Y = 줄기축(관통선)
   holder.rotateY(aim.az);                                      // ← 관통선 기준 회전
+  holder.userData.assetKey=key;                               // 클릭해서 이름을 알아보려고 남긴다
   const ld=new THREE.Vector3(Math.sin(aim.tilt), Math.cos(aim.tilt), 0);   // 로컬 잎자루 방향
   if(stemRad) addSheathLocal(holder, ld, stemRad, size, key);  // 엽초도 같은 프레임 안에
   addPetiole(nodePos, d, size, maturity, base);                // (기본 off)
@@ -972,6 +958,7 @@ function addBud(nodePos, az, kind, size, stemDir, stemRad){
   const wd=ld.clone().applyQuaternion(holder.quaternion);
   PLACED.push({c:nodePos.clone().addScaledVector(wd, size*0.5), r:size*0.4});
   const proto=assetInst(key);
+  holder.userData.assetKey=key;
   if(proto){
     proto.scale.multiplyScalar(size);
     proto.quaternion.setFromUnitVectors(UP, ld);
@@ -1253,7 +1240,8 @@ function snapView(dir){
 function bindControls(){
   addEventListener('resize',()=>{ resize(); updateCam(); });
   let drag=false,px=0,py=0,pan=false;
-  cv.addEventListener('pointerdown',e=>{ drag=true; pan=(e.button===2||e.shiftKey); px=e.clientX; py=e.clientY; cv.setPointerCapture(e.pointerId); });
+  cv.addEventListener('pointerdown',e=>{ drag=true; pan=(e.button===2||e.shiftKey); px=e.clientX; py=e.clientY;
+    downX=e.clientX; downY=e.clientY; cv.setPointerCapture(e.pointerId); });
   cv.addEventListener('pointermove',e=>{ if(!drag)return; const dx=e.clientX-px,dy=e.clientY-py; px=e.clientX; py=e.clientY;
     if(pan){ const sx=(cam.right-cam.left)/W/orbit.zoom, sy=(cam.top-cam.bottom)/H/orbit.zoom;
       const fwd=new THREE.Vector3(); cam.getWorldDirection(fwd);
@@ -1263,7 +1251,9 @@ function bindControls(){
       orbit.tx+=mx*right.x+my*up.x; orbit.ty+=mx*right.y+my*up.y; orbit.tz+=mx*right.z+my*up.z;
     } else { orbit.az+=dx*0.008; orbit.el=Math.max(0.05,Math.min(1.52,orbit.el+dy*0.006)); }
     updateCam(); });
-  cv.addEventListener('pointerup',()=>drag=false);
+  cv.addEventListener('pointerup',e=>{ drag=false;
+    if(Math.hypot(e.clientX-downX, e.clientY-downY)<5) pickAt(e);   // 거의 안 움직였으면 클릭
+  });
   cv.addEventListener('contextmenu',e=>e.preventDefault());
   cv.addEventListener('wheel',e=>{ e.preventDefault(); orbit.zoom=Math.max(0.2,Math.min(8,orbit.zoom*(e.deltaY<0?1.1:0.9))); updateCam(); },{passive:false});
 
@@ -1298,6 +1288,42 @@ function bindControls(){
 }
 // ===== 성장 재생(애니메이션) =====
 let playing=false, playTimer=null;
+// ===== 잎 클릭 = 이름 확인 + 그 에셋으로 조정 전환 =====
+// 화면에서 "이게 뭐지?" 싶을 때 바로 짚을 수 있어야 튜닝이 굴러간다.
+let downX=0, downY=0;
+const RAY=new THREE.Raycaster();
+function pickAt(e){
+  const r=cv.getBoundingClientRect();
+  RAY.setFromCamera(new THREE.Vector2(((e.clientX-r.left)/r.width)*2-1,
+                                      -((e.clientY-r.top)/r.height)*2+1), cam);
+  const hit=RAY.intersectObjects(plantGroup.children, true);
+  for(const h of hit){
+    let o=h.object, key=null;
+    while(o && !key){ if(o.userData && o.userData.assetKey) key=o.userData.assetKey; o=o.parent; }
+    if(!key) continue;
+    const rep=ADJ_ALIAS[key]||key;            // 파생본은 대표로 (조정은 대표에만 걸린다)
+    const sel=document.getElementById('assetSel');
+    if(sel && [...sel.options].some(op=>op.value===rep)){
+      sel.value=rep; buildAssetSliders(rep); showPreview(rep);
+    }
+    const nm=ADJ_KO[key]||key;
+    showPick(nm + (rep!==key? '  (조정은 '+(ADJ_KO[rep]||rep)+')' : ''));
+    return;
+  }
+  showPick('');
+}
+function showPick(txt){
+  let el=document.getElementById('pickTag');
+  if(!el){ el=document.createElement('div'); el.id='pickTag';
+    el.style.cssText='position:fixed;left:50%;bottom:26px;transform:translateX(-50%);z-index:50;'
+      +'padding:9px 16px;border-radius:9px;background:rgba(20,16,32,.93);color:#eafbe4;'
+      +'border:1px solid #4c7a46;font-size:13.5px;font-weight:600;letter-spacing:.2px;'
+      +'pointer-events:none;transition:opacity .25s;box-shadow:0 4px 18px rgba(0,0,0,.5)';
+    document.body.appendChild(el); }
+  if(!txt){ el.style.opacity='0'; return; }
+  el.textContent='🍃 '+txt; el.style.opacity='1';
+  clearTimeout(showPick._t); showPick._t=setTimeout(()=>{ el.style.opacity='0'; }, 4000);
+}
 function setGrowth(v){ GROWTH=Math.max(0,Math.min(GMAX,Math.round(v))); const g=document.getElementById('growth'); if(g) g.value=GROWTH; const t=document.getElementById('growthV'); if(t) t.textContent=GROWTH; buildPlant(); }
 function startPlay(){ playing=true; const b=document.getElementById('btnPlay'); if(b){ b.textContent='⏸ 정지'; b.classList.add('on'); } if(GROWTH>=GMAX) setGrowth(0);
   playTimer=setInterval(()=>{ if(GROWTH>=GMAX){ stopPlay(); return; } setGrowth(GROWTH+Math.max(3,Math.round(GMAX/120))); }, 110); }
