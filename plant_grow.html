@@ -139,7 +139,7 @@ const DEF={
   tipTaper:0.55, nodeBulge:0.16, nodeWidth:0.045, bumpFit:1.02,
   sheathLen:0.22, sheathFit:1.12, sheathBot:1.309, sheathTop:0.575,   // 엽초: 길이(잎 크기 x 이 값) · 감싸는 굵기 · 아래/위 구멍 지름
   stemTex:1.0, texRepeat:3.0,       // 줄기 표면 결: 세기 · 세로 반복 횟수
-  petioleLen:1.0, leafElev:1.0, elevDrop:0.36, spread:0.10, branchSpread:0.55,   // 배치(spread=줄기 흔들림)
+  petioleLen:1.0, leafElev:1.0, elevDrop:0, spread:0.10, branchSpread:0.55,   // 배치(spread=줄기 흔들림)
   leafLight:0.62, leafDark:0.13, leafSat:0.5, satRange:0.22, hueBase:0.16, hueRange:0.26,   // 색(밝기/진함/채도/개체범위)
   ageDark:0.10, ageSat:0.18,   // 시간(나이) 따라 짙어짐·선명해짐(전역, 줄기·잎 함께)
 };
@@ -569,9 +569,9 @@ function freeAim(nodePos, stemDir, az0, tilt0, size){
     const c=nodePos.clone().addScaledVector(d, size*0.55).addScaledVector(f.side, size*0.40);
     let gap=1e9;
     for(const p of PLACED) gap=Math.min(gap, c.distanceTo(p.c)-(p.r+R));
-    if(gap>1e8) return {d, c, r:R, az};                          // 첫 잎: 원래 방향 그대로
+    if(gap>1e8) return {d, c, r:R, az, tilt};                    // 첫 잎: 원래 방향 그대로
     const score=Math.min(gap,0.25) - 0.10*Math.abs(da)/Math.PI - 0.10*Math.abs(dt);
-    if(score>bestScore){ bestScore=score; best={d, c, r:R, az}; }
+    if(score>bestScore){ bestScore=score; best={d, c, r:R, az, tilt}; }
   }
   return best;
 }
@@ -588,8 +588,22 @@ function addLeaf(nodePos, az, maturity, key, sizeOverride, stemDir, stemRad){
   if(stemRad) addSheath(nodePos, d, stemRad, size, key);   // ★줄기↔잎자루 이음부 엽초(잎 단계별)
   addPetiole(nodePos, d, size, maturity, base);        // (기본 off) GLB 잎자루 연결
   const proto=assetInst(key);
-  if(proto){ placeAlong(proto, base, d, size); proto.rotateY(aim.az);   // 줄기축 둘레로 돌려 잎을 az 쪽으로
-    tintObj(proto, leafTint(maturity)); plantGroup.add(proto); return; }
+  if(proto){
+    // ★회전축 = 줄기를 관통하는 선. 잎 GLB에 잎자루가 붙어 있으므로, 잎 전체(자루+잎몸+조정회전)를
+    //   하나의 강체로 보고 "줄기축" 둘레로만 돌린다. 예전엔 기울어진 잎자루 방향(d)을 축으로 돌아
+    //   줄기마다 박히는 각도가 달라 보였다.
+    const UP=new THREE.Vector3(0,1,0);
+    const holder=new THREE.Group();
+    holder.position.copy(nodePos);
+    holder.quaternion.setFromUnitVectors(UP, (stemDir||UP).clone().normalize());   // 로컬 +Y = 줄기축(관통선)
+    holder.rotateY(aim.az);                                    // ← 관통선 기준 회전
+    // 로컬 프레임에서 잎자루를 tilt만큼 +X쪽으로 기울여 꽂는다(tilt=0이면 줄기와 완전 동축)
+    const ld=new THREE.Vector3(Math.sin(aim.tilt), Math.cos(aim.tilt), 0);
+    proto.scale.multiplyScalar(size);
+    proto.quaternion.setFromUnitVectors(UP, ld);
+    proto.position.copy(ld).multiplyScalar(reach);
+    holder.add(proto);
+    tintObj(holder, leafTint(maturity)); plantGroup.add(holder); return; }
   // 폴백: 임시 원뿔
   const type=/mature/.test(key)?2:/mid/.test(key)?1:0;
   const m=makeLeaf(type), pivot=new THREE.Group(); pivot.position.copy(base); pivot.rotation.y=az;
