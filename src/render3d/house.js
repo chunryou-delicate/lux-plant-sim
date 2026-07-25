@@ -244,6 +244,40 @@ export function buildHouse(GRAIN, roomDefIn, winPresets, doorPresets={}, finishe
 
   const glassWalls = roomDef.glassWalls || [];
 
+  /* ★ 윤곽 — 직사각 껍데기에서 도려낼 구역들.
+     T자·L자 평면을 만들려고 쓴다. 도려낸 자리는 '집 밖'이라
+     바닥·천장을 안 깔고, 그 자리에 닿는 외벽 구간도 없앤다.
+     cut = { x0,z0,x1,z1 } (m, 방 중심 원점) */
+  const cutouts = (roomDef.cutouts || []).map(c => ({
+    x0: Math.min(c.x0, c.x1), x1: Math.max(c.x0, c.x1),
+    z0: Math.min(c.z0, c.z1), z1: Math.max(c.z0, c.z1)
+  }));
+  /* 외벽 안쪽면 기준 사각형. 마감(ㄱ자)을 위해 벽 두께 절반만큼 밖으로 넓힌다. */
+  const HW = CW/2 + WT/2, HD = CD/2 + WT/2;
+  /* 도려낼 구역도 방 경계에 닿으면 같이 넓혀야 바깥에 띠가 안 남는다 */
+  const cutSlab = cutouts.map(c => ({
+    x0: c.x0 <= -CW/2 + 1e-6 ? -HW : c.x0,
+    x1: c.x1 >=  CW/2 - 1e-6 ?  HW : c.x1,
+    y0: c.z0 <= -CD/2 + 1e-6 ? -HD : c.z0,
+    y1: c.z1 >=  CD/2 - 1e-6 ?  HD : c.z1
+  }));
+  /* 슬래브 조각들 — 1m 타일로 쪼개면 z-fighting 점선이 생기므로 '큰 조각'만 만든다 */
+  const slabPieces = cutouts.length
+    ? rectMinus({ x0:-HW, y0:-HD, x1:HW, y1:HD }, cutSlab)
+    : [{ x0:-HW, y0:-HD, x1:HW, y1:HD }];
+
+  /* 어떤 외벽의 어느 u구간이 도려내졌는지 — 그 구간엔 벽을 안 세운다 */
+  function cutSpansOn(wall){
+    const out=[];
+    for(const c of cutouts){
+      if(wall==='back'  && c.z0 <= -CD/2 + 1e-6) out.push([c.x0, c.x1]);
+      if(wall==='front' && c.z1 >=  CD/2 - 1e-6) out.push([c.x0, c.x1]);
+      if(wall==='left'  && c.x0 <= -CW/2 + 1e-6) out.push([c.z0, c.z1]);
+      if(wall==='right' && c.x1 >=  CW/2 - 1e-6) out.push([c.z0, c.z1]);
+    }
+    return out;
+  }
+
   /* ★ 조도 엔진이 볼 창 목록. roomDef.windows(진짜 창) + glassWalls(유리벽)를 합친다.
      유리벽을 여기 안 넣으면 온실처럼 '화면엔 유리인데 조도 0'인 방이 생긴다.
      ※ 지붕 유리(ceiling:'glass')는 아직 못 넣는다 — 엔진 창 법선에 y성분이 없다.
@@ -284,10 +318,10 @@ export function buildHouse(GRAIN, roomDefIn, winPresets, doorPresets={}, finishe
     const ftex=finishTexture(roomDef.floorPattern, CW) || GRAIN;
     const floorMat=surfaceMat(roomDef.floorColor, roomDef.floorRough??0.8, ftex);
     const g=new THREE.Group();
-    // ★ 벽 바깥면까지 늘려 ㄱ자로 마감. 벽은 ±CW/2에 두께 WT로 서 있으므로
-    //   바깥면이 ±(CW/2+WT/2) → 슬래브를 CW+WT로 깔면 딱 맞물린다.
-    //   (예전엔 CW라서 벽 두께 절반이 허공에 떠 보였다)
-    g.add(box(CW+WT, WT, CD+WT, floorMat, 0,-WT/2,0, false));
+    // ★ 벽 바깥면까지 늘려 ㄱ자로 마감(±(CW/2+WT/2)).
+    //   cutouts가 있으면 그 자리는 빼고 큰 조각으로만 깐다(타일로 쪼개면 점선 이음새가 생김).
+    for(const r of slabPieces)
+      g.add(box(r.x1-r.x0, WT, r.y1-r.y0, floorMat, (r.x0+r.x1)/2, -WT/2, (r.y0+r.y1)/2, false));
     g.userData={ normal:[0,-1,0], center:[0,0,0] };
     shells.floor=g; room.add(g);
   }
@@ -303,7 +337,8 @@ export function buildHouse(GRAIN, roomDefIn, winPresets, doorPresets={}, finishe
   }else{
     const ceilMat=surfaceMat(roomDef.ceilColor||'#f6f2ea',0.95, GRAIN);
     const g=new THREE.Group();
-    g.add(box(CW+WT, WT, CD+WT, ceilMat, 0, CH+WT/2, 0, false));   // 통판 + 벽 바깥면까지(ㄱ자 마감)
+    for(const r of slabPieces)                                     // 통판 + ㄱ자 마감 - 도려낸 자리
+      g.add(box(r.x1-r.x0, WT, r.y1-r.y0, ceilMat, (r.x0+r.x1)/2, CH+WT/2, (r.y0+r.y1)/2, false));
     g.userData={ normal:[0,1,0], center:[0,CH,0] };
     shells.ceiling=g; room.add(g);
   }
@@ -333,6 +368,10 @@ export function buildHouse(GRAIN, roomDefIn, winPresets, doorPresets={}, finishe
       openings.push({ x0:w.cu-w.w/2, y0:w.cy-w.h/2, x1:w.cu+w.w/2, y1:w.cy+w.h/2, spec:w });
     for(const d of (roomDef.doors||[])) if(d.wall===wall)
       openings.push({ x0:d.cu-d.w/2, y0:0, x1:d.cu+d.w/2, y1:d.h, spec:{...d, module:'door'} });
+    /* ★ 윤곽에서 도려낸 구간 — 천장까지 통으로 빼서 벽을 안 세운다(집 밖이므로).
+       spec이 없으니 아래 프레임/걸레받이 루프에서도 자동으로 건너뛴다. */
+    const cutSpans = cutSpansOn(wall);
+    for(const [a,b] of cutSpans) openings.push({ x0:a, y0:0, x1:b, y1:CH });
 
     if(kind==='glass'){
       // 유리벽: 솔리드 패널 없이 큰 유리 + 코드 격자 살(문서: 온실 유리벽)
@@ -346,7 +385,7 @@ export function buildHouse(GRAIN, roomDefIn, winPresets, doorPresets={}, finishe
       }
       // ★ 원형·아치·라운드 창은 bbox 자리에 '형태대로 뚫린' 벽조각을 끼움
       for(const op of openings){
-        const spec=op.spec; if(spec.module==='door') continue;
+        const spec=op.spec; if(!spec || spec.module==='door') continue;
         const p=resolveWindowPreset(spec, winPresets);
         if(isShaped(p)) g.add(shapedFiller(wall, spec, p, wmat));
       }
@@ -358,6 +397,7 @@ export function buildHouse(GRAIN, roomDefIn, winPresets, doorPresets={}, finishe
     // 개구부에 코드 프레임 + 유리 끼우기 (문/창 공통). 프리셋 룩 적용.
     for(const op of openings){
       const spec=op.spec;
+      if(!spec) continue;                       // 윤곽 도려내기 구간 — 창틀 없음
       if(spec.module==='door'){
         // 문 프리셋(doorPresets) + 인라인 병합. 유리문이면 유리 quad도 끼움.
         const dp={ ...(doorPresets[spec.preset]||{}), ...spec };
@@ -404,12 +444,19 @@ export function buildHouse(GRAIN, roomDefIn, winPresets, doorPresets={}, finishe
       const dw=pt.door.w??0.95, dh=pt.door.h??Math.min(2.05, CH-0.35), da=pt.door.at??0;
       holes.push({ x0:da-dw/2, y0:0, x1:da+dw/2, y1:dh });
     }
-    /* ★ 큰 개구부 — 베란다 거실창처럼 칸막이에 통유리를 끼우는 자리.
-       구멍이라 차폐체로 안 들어가고(빛이 지나감), glazing이 있으면 유리 한 겹을
-       더 통과한 것으로 쳐서 안쪽 슬롯에 tauExtra를 곱한다(§ 아래). */
-    for(const op of (pt.openings||[]))
-      holes.push({ x0:(op.at??0)-(op.w??2)/2, y0:op.y0??0.05,
-                   x1:(op.at??0)+(op.w??2)/2, y1:op.y1??Math.min(2.3, CH-0.2) });
+    /* ★ 개구부.
+       glazing.full 이면 '벽에 창 몇 개'가 아니라 **전면이 유리**다.
+       실제 아파트 거실↔베란다가 그렇다 — 전창이고 그중 좌우 몇 짝만 미닫이로 열린다.
+       빛은 유리 전면으로 들어오므로 벽 조각(차폐체)을 두면 안 된다. */
+    const GY0 = (pt.glazing && pt.glazing.y0) ?? 0.05;
+    const GY1 = (pt.glazing && pt.glazing.y1) ?? Math.min(2.30, CH - 0.25);
+    if(pt.glazing && pt.glazing.full){
+      holes.push({ x0:uMin, y0:GY0, x1:uMax, y1:GY1 });     // 전폭이 통유리
+    }else{
+      for(const op of (pt.openings||[]))
+        holes.push({ x0:(op.at??0)-(op.w??2)/2, y0:op.y0??GY0,
+                     x1:(op.at??0)+(op.w??2)/2, y1:op.y1??GY1 });
+    }
     for(const r of rectMinus({x0:uMin,y0:0,x1:uMax,y1:CH}, holes)){
       const cu=(r.x0+r.x1)/2, cv=(r.y0+r.y1)/2, du=r.x1-r.x0, dv=r.y1-r.y0;
       if(du<0.001||dv<0.001) continue;
@@ -430,18 +477,40 @@ export function buildHouse(GRAIN, roomDefIn, winPresets, doorPresets={}, finishe
       g.add( pt.axis==='x' ? box(CAP,CH,CAP, pw, pt.at, CH/2, uMax-CAP/2)
                            : box(CAP,CH,CAP, pw, uMax-CAP/2, CH/2, pt.at) );
 
-    // ★ 개구부에 유리 끼우기 (베란다 거실창) + 조도용 반투과 판 등록
-    if(pt.glazing) for(const op of (pt.openings||[])){
-      const y0=op.y0??0.05, y1=op.y1??Math.min(2.3, CH-0.2), at=op.at??0;
-      const gm=makeGlassMaterial();
-      const gl=new THREE.Mesh(new THREE.PlaneGeometry((op.w??2)-0.06, (y1-y0)-0.06), gm);
-      if(pt.axis==='x'){ gl.rotation.y=Math.PI/2; gl.position.set(pt.at, (y0+y1)/2, at); }
-      else             { gl.position.set(at, (y0+y1)/2, pt.at); }
-      glassMeshes.push(gl); g.add(gl);
-      /* 조도: 이 개구부를 지나는 광선만 tau만큼 약해진다(차폐가 아니라 감쇠).
-         개구부 '밖'은 칸막이 조각이 이미 차폐체로 들어가 있으므로 여기선 다루지 않는다. */
-      glazedPanes.push({ axis:pt.axis, at:pt.at, tau:pt.glazing.tau ?? 0.92,
-                         u0:at-(op.w??2)/2, u1:at+(op.w??2)/2, y0, y1 });
+    // ★ 유리 끼우기 + 조도용 반투과 판 등록
+    if(pt.glazing){
+      const tau = pt.glazing.tau ?? 0.92;
+      const bands = pt.glazing.full
+        ? [[uMin, uMax]]                                        // 전창
+        : (pt.openings||[]).map(op=>[(op.at??0)-(op.w??2)/2, (op.at??0)+(op.w??2)/2]);
+      for(const [a0,a1] of bands){
+        const wid=a1-a0, mid=(a0+a1)/2, cy=(GY0+GY1)/2, ht=GY1-GY0;
+        const gl=new THREE.Mesh(new THREE.PlaneGeometry(wid-0.04, ht-0.04), makeGlassMaterial());
+        if(pt.axis==='x'){ gl.rotation.y=Math.PI/2; gl.position.set(pt.at, cy, mid); }
+        else             { gl.position.set(mid, cy, pt.at); }
+        glassMeshes.push(gl); g.add(gl);
+        /* 조도: 이 판을 지나는 광선만 tau만큼 약해진다(차폐가 아니라 감쇠). */
+        glazedPanes.push({ axis:pt.axis, at:pt.at, tau, u0:a0, u1:a1, y0:GY0, y1:GY1 });
+
+        /* 미닫이 짝을 나누는 중간 프레임(멀리언). 유리 전면이라 이게 없으면
+           그냥 뻥 뚫린 것처럼 보인다. openings 위치를 짝 경계로 쓴다. */
+        if(pt.glazing.full){
+          const fm=frameMaterial(pt.glazing.frameColor||'#e9eef0','satin');
+          const cuts=[a0, ...(pt.openings||[]).flatMap(op=>{
+            const w=(op.w??1.5)/2; return [(op.at??0)-w, (op.at??0)+w];
+          }).filter(v=>v>a0+0.05&&v<a1-0.05).sort((x,y)=>x-y), a1];
+          for(const c of cuts){
+            const t=0.055;
+            g.add( pt.axis==='x' ? box(WT*0.8, ht, t, fm, pt.at, cy, c)
+                                 : box(t, ht, WT*0.8, fm, c, cy, pt.at) );
+          }
+          // 상·하 프레임
+          for(const yy of [GY0, GY1]){
+            g.add( pt.axis==='x' ? box(WT*0.8, 0.06, wid, fm, pt.at, yy, mid)
+                                 : box(wid, 0.06, WT*0.8, fm, mid, yy, pt.at) );
+          }
+        }
+      }
     }
 
     // 통로 문틀(케이싱) — 있으면 개구부 가장자리 마감
@@ -569,7 +638,8 @@ function tileGlassFrames(room, wall, uMin, uMax){
 /* ---- 걸레받이: 벽 하단, 개구부(문) 자리는 비움 ---- */
 function addSkirting(g, wall, uMin, uMax, openings){
   const skirt=mat('#efeae1',0.7);   // 연한 크림 걸레받이
-  const doorHoles=openings.filter(o=>o.spec.module==='door');
+  // spec 없는 항목 = 윤곽 도려내기 구간. 거기도 걸레받이를 비운다.
+  const doorHoles=openings.filter(o=>!o.spec || o.spec.module==='door');
   for(const r of rectMinus({x0:uMin,y0:0,x1:uMax,y1:0.22},
       doorHoles.map(o=>({x0:o.x0,y0:0,x1:o.x1,y1:0.22})))){
     const cu=(r.x0+r.x1)/2, du=r.x1-r.x0;
