@@ -212,7 +212,7 @@ const ADJ_TUNED={
 function defAdj(key){
   const b={scale:1, sxz:1, sy:1, rx:0,ry:0,rz:0, ox:0,oy:0,oz:0};
   if(/^sheath/.test(key)) Object.assign(b, {len:0.22, fit:1.12, bot:1.309, top:0.575});   // 엽초 모양(에셋별)
-  if(/^leaf_/.test(key))  Object.assign(b, {bladeR:1, petR:1, petTop:0.45});                       // 잎자루 지름(정점 단위)
+  if(/^leaf_/.test(key))  Object.assign(b, {bladeR:1, petR:1, petTop:0.45, trimR:1, trimTop:0.5});                       // 잎자루 지름(정점 단위)
   return Object.assign(b, ADJ_TUNED[key]||{});
 }  // scale=전체·sxz=굵기(폭)·sy=길이(높이)
 const DEF_ADJ={}; ADJ_KEYS.forEach(k=>DEF_ADJ[k]=defAdj(k));
@@ -519,7 +519,7 @@ function meshThickness(g){
   }
   return A>1e-9? 2*Math.abs(V)/A : 0;
 }
-function reshapeLeaf(obj, bladeR, petR, petTop){
+function reshapeLeaf(obj, bladeR, petR, petTop, trimR, trimTop){
   // ★기준(높이·잎자루 축)은 반드시 '잎 전체'에서 잡는다. 메시마다 제 bbox로 잡으면,
   //   잎몸/잎자루가 별개 메시인 에셋(전체흰중기: 1806 + 85정점)에서 잎자루 메시의
   //   아래 15%가 안 깎여 끝에 두꺼운 혹처럼 남는다.
@@ -544,6 +544,13 @@ function reshapeLeaf(obj, bladeR, petR, petTop){
     meshes.push({o,g,src,ys,sc,myTop});
   });
   const h=(mxY-mnY)||1, yTop=mnY+h*petTop, yBlade=mnY+h*0.15, yFull=mnY+h*0.30;
+  // 잎몸(잎자루 전용 메시를 뺀 것)이 어디서 시작하는지 — 다듬기는 여기를 기준으로 해야
+  // 효과가 잎몸 아래 가장자리에 집중된다. 잎 전체 밑동을 기준으로 하면 잎자루만 줄어든다.
+  let bladeMin=Infinity;
+  for(const M of meshes){ let t=-Infinity; for(let k=0;k<M.ys.length;k++) if(M.ys[k]>t) t=M.ys[k];
+    if(t>mnY+h*0.55) for(let k=0;k<M.ys.length;k++) if(M.ys[k]<bladeMin) bladeMin=M.ys[k]; }
+  if(!isFinite(bladeMin)) bladeMin=mnY;
+  const yTrim=bladeMin+(mxY-bladeMin)*trimTop;            // 잎몸 밑동에서 위로 trimTop 만큼
   let cx=0, cz=0, n=0;                                   // 잎자루 축(잎 전체 하단대 XZ 중심)
   for(const M of meshes){ const m=new THREE.Matrix4().multiplyMatrices(inv, M.o.matrixWorld);
     for(let i=0,k=0;i<M.src.length;i+=3,k++) if(M.ys[k]<=mnY+h*0.12){
@@ -564,7 +571,13 @@ function reshapeLeaf(obj, bladeR, petR, petTop){
         const t=Math.min(1,(gy-yBlade)/((yFull-yBlade)||1)), w=t*t*(3-2*t);
         x-=nor[i]*push*w; y-=nor[i+1]*push*w; z-=nor[i+2]*push*w;
       }
-      if(gy<yTop && petR!==1){                               // ② 잎자루를 가늘게(전체 좌표에서 반경 축소)
+      if(!petOnly && trimR<1 && gy<yTrim){                   // ② 잎몸 밑동(하트 갈래 등)을 축 쪽으로 오므려 없앰
+        const t=Math.max(0,(gy-bladeMin)/((yTrim-bladeMin)||1)), sm=t*t*(3-2*t), f=trimR+(1-trimR)*sm;
+        v.set(x,y,z).applyMatrix4(m);
+        v.x=cx+(v.x-cx)*f; v.z=cz+(v.z-cz)*f;
+        v.applyMatrix4(minv); x=v.x; y=v.y; z=v.z;
+      }
+      if(gy<yTop && petR!==1){                               // ③ 잎자루를 가늘게(전체 좌표에서 반경 축소)
         const t=(gy-mnY)/((yTop-mnY)||1), sm=t*t*(3-2*t), f=petR+(1-petR)*sm;
         v.set(x,y,z).applyMatrix4(m);
         v.x=cx+(v.x-cx)*f; v.z=cz+(v.z-cz)*f;
@@ -581,9 +594,10 @@ function ensureLeafShape(){                                // 값이 바뀐 잎�
     if(!/^leaf_/.test(k) || !ASSETS[k]) continue;
     const a=adjOf(k);
     const br=(a.bladeR==null?1:a.bladeR), pr=(a.petR==null?1:a.petR), tf=(a.petTop==null?0.45:a.petTop);
-    const sig=br+'/'+pr+'/'+tf;
+    const tr=(a.trimR==null?1:a.trimR), tt=(a.trimTop==null?0.5:a.trimTop);
+    const sig=br+'/'+pr+'/'+tf+'/'+tr+'/'+tt;
     if(PET_CACHE[k]===sig) continue;
-    reshapeLeaf(ASSETS[k], br, pr, tf); PET_CACHE[k]=sig;
+    reshapeLeaf(ASSETS[k], br, pr, tf, tr, tt); PET_CACHE[k]=sig;
   }
 }
 // 무늬종(알보 등)은 텍스처가 무늬 그 자체라 단색으로 덮으면 안 된다.
@@ -1236,6 +1250,8 @@ const ADJ_GROUPS=[
 const ADJ_UNUSED=new Set(['petiole','stem_med','stem_thin','knob']);   // 화면에 안 그려지는 에셋
 const ADJ_FIELDS_LEAF2=[
   {k:'bladeR', t:'잎 두께',          min:0.08, max:1.5, step:0.02},
+  {k:'trimR',  t:'잎 밑동 다듬기',   min:0,    max:1,   step:0.02},
+  {k:'trimTop',t:'다듬는 범위',      min:0.05, max:0.7, step:0.02},
   {k:'petR',   t:'잎자루 지름',      min:0.25, max:1.6, step:0.05},
   {k:'petTop', t:'가늘어지는 범위',  min:0.1,  max:0.8, step:0.05},
 ];
