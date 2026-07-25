@@ -182,10 +182,10 @@ const ADJ_TUNED={
   stem_thick:  {scale:0.85, ry:0.3, rz:-0.1, ox:-0.04},
   stem_main:   {scale:0.95, sxz:0.75, sy:0.9, rx:0.05, ry:0.1},
   // ── 변이(알보). albo1/4/6 이 그룹 대표 — -쨍/-차분이 자동으로 같은 값을 쓴다.
-  leaf_young_albo:   {scale:0.5, sy:0.8, ry:-1.65, ox:0.03, oy:0.18},
-  leaf_mid_albo1:    {scale:0.55, sxz:0.75, sy:0.95, rz:0.15},   // 전체흰중기 그룹(1,2,3)
+  leaf_young_albo:   {scale:0.5, sy:0.8, ry:-1.65, ox:0.03, oy:0.18, bladeR:0.71},   // 두께 1.4배→1배
+  leaf_mid_albo1:    {scale:0.55, sxz:0.75, sy:0.95, rz:0.15, bladeR:0.14},  // 전체흰중기(1,2,3) 두께 7.4배→1배
   leaf_mid_albo4:    {petR:0.35},                                 // 흰연두 그룹(4,5) — 잎자루 20%→7% 수준
-  leaf_mid_albo6:    {petR:0.38},                                 // 크림민트 그룹(6,7) — 잎자루 19%→7% 수준
+  leaf_mid_albo6:    {petR:0.38, bladeR:0.76},                    // 크림민트(6,7) 잎자루 19%→7%, 두께 1.3배→1배
   sheath_young_albo: {rx:0.1, ry:0.3, rz:-0.15, ox:0.12, oy:0.14, oz:-0.05, len:0.155, fit:1.48},
   // ── 엽초(잎 단계별)
   sheath_furled: {len:0},                             // 새순: OFF
@@ -203,7 +203,7 @@ const ADJ_TUNED={
 function defAdj(key){
   const b={scale:1, sxz:1, sy:1, rx:0,ry:0,rz:0, ox:0,oy:0,oz:0};
   if(/^sheath/.test(key)) Object.assign(b, {len:0.22, fit:1.12, bot:1.309, top:0.575});   // 엽초 모양(에셋별)
-  if(/^leaf_/.test(key))  Object.assign(b, {petR:1, petTop:0.45});                       // 잎자루 지름(정점 단위)
+  if(/^leaf_/.test(key))  Object.assign(b, {bladeR:1, petR:1, petTop:0.45});                       // 잎자루 지름(정점 단위)
   return Object.assign(b, ADJ_TUNED[key]||{});
 }  // scale=전체·sxz=굵기(폭)·sy=길이(높이)
 const DEF_ADJ={}; ADJ_KEYS.forEach(k=>DEF_ADJ[k]=defAdj(k));
@@ -487,25 +487,55 @@ function seedColor(){ const cs=mulberry32((SEED*40503+12345)>>>0);
   PLANT_SAT=Math.max(0.15,Math.min(1, P.leafSat+(cs()-0.5)*P.satRange)); // 개체 채도(찐한 정도도 랜덤)
   PLANT_MID=cs()<0.5?'leaf_mid1':'leaf_mid2';                            // 개체마다 미드리프 1종 고정
 }
-// 잎 GLB의 '잎자루 지름'을 정점 단위로 조절. 잎몸은 그대로 두고 아래 구간만 반경 방향으로 줄인다.
-// (알보 흰연두·크림민트가 잎자루 20% 지름으로 기준잎 6.5%의 3배라 굵어 보였다)
-function thinPetiole(obj, factor, topFrac){
+// 잎 형상 정점 단위 조절 — 두 가지를 원본에서 함께 적용한다.
+//  ① 잎면 두께: 부피/표면적으로 실두께(2V/A)를 재고, 각 정점을 법선 반대로 밀어 얇게 깎는다.
+//     (알보 전체흰중기가 높이 대비 28%로 기본잎 3.8%의 7.4배라 베개처럼 두꺼웠다)
+//  ② 잎자루 지름: 잎몸은 두고 아래 구간만 반경 방향으로 줄인다.
+//     (흰연두·크림민트가 잎자루 20% 지름으로 기본잎 6.5%의 3배)
+function meshThickness(g){
+  const pa=g.attributes.position, idx=g.index;
+  const N=idx? idx.count : pa.count;
+  const gi=i=>idx? idx.getX(i) : i;
+  let V=0, A=0;
+  const ax=[0,0,0], bx=[0,0,0], cx=[0,0,0];
+  for(let i=0;i+2<N;i+=3){
+    const a=gi(i), b=gi(i+1), c=gi(i+2);
+    ax[0]=pa.getX(a); ax[1]=pa.getY(a); ax[2]=pa.getZ(a);
+    bx[0]=pa.getX(b); bx[1]=pa.getY(b); bx[2]=pa.getZ(b);
+    cx[0]=pa.getX(c); cx[1]=pa.getY(c); cx[2]=pa.getZ(c);
+    V += (ax[0]*(bx[1]*cx[2]-bx[2]*cx[1]) - ax[1]*(bx[0]*cx[2]-bx[2]*cx[0]) + ax[2]*(bx[0]*cx[1]-bx[1]*cx[0]))/6;
+    const u0=bx[0]-ax[0],u1=bx[1]-ax[1],u2=bx[2]-ax[2];
+    const v0=cx[0]-ax[0],v1=cx[1]-ax[1],v2=cx[2]-ax[2];
+    A += Math.hypot(u1*v2-u2*v1, u2*v0-u0*v2, u0*v1-u1*v0)/2;
+  }
+  return A>1e-9? 2*Math.abs(V)/A : 0;
+}
+function reshapeLeaf(obj, bladeR, petR, petTop){
   obj.traverse(o=>{
     if(!(o.isMesh && o.geometry && o.geometry.attributes.position)) return;
-    const g=o.geometry, pa=g.attributes.position;
-    if(!g.userData.origPos) g.userData.origPos=Float32Array.from(pa.array);
-    const src=g.userData.origPos, arr=pa.array;
+    const g=o.geometry, pa=g.attributes.position, na=g.attributes.normal;
+    if(!g.userData.origPos){ g.userData.origPos=Float32Array.from(pa.array);
+      if(na) g.userData.origNor=Float32Array.from(na.array);
+      g.userData.thick=meshThickness(g); }
+    const src=g.userData.origPos, nor=g.userData.origNor, arr=pa.array;
     let mnY=Infinity, mxY=-Infinity;
     for(let i=1;i<src.length;i+=3){ if(src[i]<mnY)mnY=src[i]; if(src[i]>mxY)mxY=src[i]; }
-    const h=(mxY-mnY)||1, yTop=mnY+h*topFrac;
+    const h=(mxY-mnY)||1, yTop=mnY+h*petTop;
     let cx=0, cz=0, n=0;                                   // 잎자루 축(하단대 XZ 중심)
     for(let i=0;i<src.length;i+=3) if(src[i+1]<=mnY+h*0.12){ cx+=src[i]; cz+=src[i+2]; n++; }
     if(n){ cx/=n; cz/=n; }
+    const push=Math.max(0, g.userData.thick*(1-bladeR)/2);  // 법선 반대로 밀 거리
     for(let i=0;i<src.length;i+=3){
-      const y=src[i+1];
-      let f=1;
-      if(y<yTop){ const t=(y-mnY)/((yTop-mnY)||1), sm=t*t*(3-2*t); f=factor+(1-factor)*sm; }  // 부드럽게 잎몸으로 이어짐
-      arr[i]=cx+(src[i]-cx)*f; arr[i+1]=y; arr[i+2]=cz+(src[i+2]-cz)*f;
+      let x=src[i], y=src[i+1], z=src[i+2];
+      if(push>1e-9 && nor && y>=mnY+h*0.15){                // ① 잎몸만 얇게(잎자루는 건드리지 않음)
+        const t=Math.min(1,(y-(mnY+h*0.15))/(h*0.15)), w=t*t*(3-2*t);
+        x-=nor[i]*push*w; y-=nor[i+1]*push*w; z-=nor[i+2]*push*w;
+      }
+      if(y<yTop && petR!==1){                               // ② 잎자루 가늘게
+        const t=(y-mnY)/((yTop-mnY)||1), sm=t*t*(3-2*t), f=petR+(1-petR)*sm;
+        x=cx+(x-cx)*f; z=cz+(z-cz)*f;
+      }
+      arr[i]=x; arr[i+1]=y; arr[i+2]=z;
     }
     pa.needsUpdate=true; g.computeVertexNormals(); g.computeBoundingSphere();
   });
@@ -514,10 +544,11 @@ let PET_CACHE={};
 function ensureLeafShape(){                                // 값이 바뀐 잎만 다시 계산
   for(const k in ASSET_FILES){
     if(!/^leaf_/.test(k) || !ASSETS[k]) continue;
-    const a=adjOf(k), pr=(a.petR==null?1:a.petR), tf=(a.petTop==null?0.45:a.petTop);
-    const sig=pr+'/'+tf;
+    const a=adjOf(k);
+    const br=(a.bladeR==null?1:a.bladeR), pr=(a.petR==null?1:a.petR), tf=(a.petTop==null?0.45:a.petTop);
+    const sig=br+'/'+pr+'/'+tf;
     if(PET_CACHE[k]===sig) continue;
-    thinPetiole(ASSETS[k], pr, tf); PET_CACHE[k]=sig;
+    reshapeLeaf(ASSETS[k], br, pr, tf); PET_CACHE[k]=sig;
   }
 }
 // 무늬종(알보 등)은 텍스처가 무늬 그 자체라 단색으로 덮으면 안 된다.
@@ -1166,6 +1197,7 @@ const ADJ_GROUPS=[
 ];
 const ADJ_UNUSED=new Set(['petiole','stem_med','stem_thin','knob']);   // 화면에 안 그려지는 에셋
 const ADJ_FIELDS_LEAF2=[
+  {k:'bladeR', t:'잎 두께',          min:0.08, max:1.5, step:0.02},
   {k:'petR',   t:'잎자루 지름',      min:0.25, max:1.6, step:0.05},
   {k:'petTop', t:'가늘어지는 범위',  min:0.1,  max:0.8, step:0.05},
 ];
