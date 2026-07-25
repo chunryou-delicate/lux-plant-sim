@@ -1,0 +1,243 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>볕 · 몬이 졸졸 따라다니기 프리뷰</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/utils/BufferGeometryUtils.js"></script>
+<style>
+  body{margin:0;font-family:"Segoe UI",system-ui,sans-serif;background:#eef3ee;color:#2f3a30}
+  h1{font-size:19px;margin:14px 16px 2px}.sub{margin:0 16px 10px;color:#6b7a6b;font-size:13px}
+  .wrap{display:grid;grid-template-columns:1fr 300px;gap:12px;padding:0 12px 16px}
+  @media(max-width:900px){.wrap{grid-template-columns:1fr}}
+  #cv{width:100%;height:520px;display:block;border-radius:12px;background:linear-gradient(#f7fbf7,#e3ece4);cursor:grab;border:1px solid #dde7dd}
+  .panel{background:#fff;border:1px solid #dde7dd;border-radius:12px;padding:14px;font-size:12px;box-shadow:0 2px 8px rgba(80,100,80,.07)}
+  .panel h2{font-size:13px;margin:0 0 10px;color:#3a6b4e}
+  .row{margin-bottom:11px}
+  .row label{display:flex;justify-content:space-between;color:#5c6b5f;margin-bottom:3px}
+  .row label b{color:#3a6b4e;font-variant-numeric:tabular-nums}
+  .row input[type=range]{width:100%}
+  .hint{color:#8a988a;font-size:11px;line-height:1.5;margin-top:2px}
+  .out{background:#f2f8f3;border-radius:8px;padding:9px;margin-top:12px;font-family:ui-monospace,Consolas,monospace;font-size:11px;color:#3f5a46;white-space:pre-wrap;line-height:1.6}
+  .btn{margin-top:8px;width:100%;padding:8px;border:1px solid #cfe0d3;background:#f7fbf8;border-radius:8px;color:#3a6b4e;cursor:pointer;font-size:12px}
+  .btn:hover{background:#eef6f0}
+</style>
+</head>
+<body>
+  <h1>볕 · «몬이» 캐릭터 뒤 졸졸 따라다니기 — 부유/추적 튜닝</h1>
+  <p class="sub">캐릭터가 8자로 걸어다니고 몬이가 뒤를 따라옵니다. 슬라이더로 감을 맞춘 뒤 하단 값을 확정하면 됩니다. (드래그 회전 · 스크롤 확대)</p>
+  <div class="wrap">
+    <canvas id="cv"></canvas>
+    <div class="panel">
+      <h2>부유 · 추적 파라미터</h2>
+
+      <div class="row"><label>몬이 크기 (캐릭터 대비) <b id="v-z">0.28</b></label>
+        <input type="range" id="s-z" min="0.15" max="0.50" step="0.01" value="0.28">
+        <div class="hint">확정값 0.28로 GLB에 이미 구워짐(엔진에서 추가 스케일 불필요)</div></div>
+
+      <div class="row"><label>부유 높이 <b id="v-h">0.30</b></label>
+        <input type="range" id="s-h" min="0" max="0.9" step="0.01" value="0.30">
+        <div class="hint">바닥에서 몬이 밑면까지. 캐릭 무릎~허리 사이가 화면에 같이 잡힘</div></div>
+
+      <div class="row"><label>둥둥 진폭 <b id="v-a">0.130</b></label>
+        <input type="range" id="s-a" min="0" max="0.25" step="0.005" value="0.130"></div>
+
+      <div class="row"><label>둥둥 주기(초) <b id="v-p">2.50</b></label>
+        <input type="range" id="s-p" min="0.8" max="5" step="0.1" value="2.5">
+        <div class="hint">느릴수록 푸근함. 빠르면 촐랑대는 성격이 됨</div></div>
+
+      <div class="row"><label>따라오는 거리 <b id="v-d">1.05</b></label>
+        <input type="range" id="s-d" min="0.2" max="2.5" step="0.05" value="1.05"></div>
+
+      <div class="row"><label>추적 부드러움 <b id="v-k">4.10</b></label>
+        <input type="range" id="s-k" min="0.4" max="10" step="0.1" value="4.1">
+        <div class="hint">낮을수록 느긋하게 뒤처짐(졸졸). 높으면 딱 붙어다님</div></div>
+
+      <div class="row"><label>이동 기울기(도) <b id="v-t">4.0</b></label>
+        <input type="range" id="s-t" min="0" max="15" step="0.5" value="4"></div>
+
+      <div class="row"><label>캐릭터 걷는 속도 <b id="v-s">1.00</b></label>
+        <input type="range" id="s-s" min="0" max="2.5" step="0.05" value="1.0">
+        <div class="hint">0으로 두면 정지 상태의 둥둥만 확인</div></div>
+
+      <div class="out" id="out"></div>
+      <button class="btn" id="copy">값 복사</button>
+    </div>
+  </div>
+<script>
+// ── 캐릭터/마스코트 GLB 공통 규약: 원점 중심, 밑면 y = -0.9507 ──
+const FLOOR_OFFSET = 0.9507;   // 이만큼 올리면 밑면이 y=0 (바닥)
+
+// ── 툰·파스텔 (다른 뷰어와 동일) ──
+function toonGrad(){const c=document.createElement('canvas');c.width=64;c.height=1;const x=c.getContext('2d');
+ const g=x.createLinearGradient(0,0,64,0);
+ g.addColorStop(0,'#7c877f');g.addColorStop(.45,'#aab8ac');g.addColorStop(.75,'#d2dbd2');g.addColorStop(1,'#ffffff');
+ x.fillStyle=g;x.fillRect(0,0,64,1);
+ const t=new THREE.CanvasTexture(c);t.minFilter=THREE.LinearFilter;t.magFilter=THREE.LinearFilter;t.generateMipmaps=false;return t;}
+const GRAD=toonGrad();
+function pastelize(tex){try{if(!tex||!tex.image)return tex;const im=tex.image,w=im.width||512,h=im.height||512;if(!w)return tex;
+ const c=document.createElement('canvas');c.width=w;c.height=h;const x=c.getContext('2d');x.drawImage(im,0,0,w,h);
+ const d=x.getImageData(0,0,w,h),p=d.data,S=.7;
+ for(let i=0;i<p.length;i+=4){const r=p[i],g=p[i+1],b=p[i+2],y=.299*r+.587*g+.114*b;
+  p[i]=y+(r-y)*S;p[i+1]=y+(g-y)*S;p[i+2]=y+(b-y)*S;}
+ x.putImageData(d,0,0);const nt=new THREE.CanvasTexture(c);nt.flipY=tex.flipY;nt.encoding=THREE.sRGBEncoding;nt.needsUpdate=true;return nt;}catch(e){return tex;}}
+function smoothNormals(o){try{const g=o.geometry;if(!g||!g.attributes||!g.attributes.position)return;
+ g.deleteAttribute('normal');
+ if(THREE.BufferGeometryUtils&&THREE.BufferGeometryUtils.mergeVertices){
+   const m=THREE.BufferGeometryUtils.mergeVertices(g);m.computeVertexNormals();o.geometry=m;
+ }else g.computeVertexNormals();}catch(e){}}
+function toonify(root){root.traverse(o=>{if(!o.isMesh||!o.material)return;smoothNormals(o);try{
+ const src=Array.isArray(o.material)?o.material:[o.material];
+ const out=src.map(m=>new THREE.MeshToonMaterial({map:m.map?pastelize(m.map):null,
+   color:m.map?0xffffff:(m.color?m.color.getHex():0xffffff),gradientMap:GRAD}));
+ o.material=Array.isArray(o.material)?out:out[0];}catch(e){}});}
+
+// ── 씬 ──
+const cv=document.getElementById('cv');
+const renderer=new THREE.WebGLRenderer({canvas:cv,antialias:true,alpha:true});
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+renderer.outputEncoding=THREE.sRGBEncoding;
+const scene=new THREE.Scene();
+const camera=new THREE.PerspectiveCamera(38,1,0.01,200);
+const controls=new THREE.OrbitControls(camera,cv);controls.enableDamping=true;
+camera.position.set(4.2,3.0,5.4);controls.target.set(0,0.8,0);controls.update();
+scene.add(new THREE.AmbientLight(0xffffff,0.70));
+scene.add(new THREE.HemisphereLight(0xffffff,0xdfe6df,0.22));
+const dir=new THREE.DirectionalLight(0xffffff,0.45);dir.position.set(3,5,3);scene.add(dir);
+
+// 바닥
+const floor=new THREE.Mesh(new THREE.CircleGeometry(6,64),
+  new THREE.MeshBasicMaterial({color:0xe9f1ea}));
+floor.rotation.x=-Math.PI/2;scene.add(floor);
+const grid=new THREE.GridHelper(12,24,0xd2e0d5,0xdfe9e0);grid.position.y=0.002;scene.add(grid);
+
+// 블롭 그림자
+function blob(r){
+  const c=document.createElement('canvas');c.width=c.height=128;
+  const x=c.getContext('2d');const g=x.createRadialGradient(64,64,0,64,64,64);
+  g.addColorStop(0,'rgba(70,95,75,0.42)');g.addColorStop(1,'rgba(70,95,75,0)');
+  x.fillStyle=g;x.fillRect(0,0,128,128);
+  const m=new THREE.Mesh(new THREE.PlaneGeometry(r*2,r*2),
+    new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(c),transparent:true,depthWrite:false}));
+  m.rotation.x=-Math.PI/2;m.position.y=0.01;scene.add(m);return m;
+}
+const charShadow=blob(0.55), monShadow=blob(0.42);
+
+// 모델 컨테이너 (그룹 원점 = 발밑)
+const charPivot=new THREE.Group(); scene.add(charPivot);
+const monPivot =new THREE.Group(); scene.add(monPivot);
+let charReady=false, monReady=false;
+
+new THREE.GLTFLoader().load('3d/char_jachwi_f_base.glb',g=>{
+  const m=g.scene;toonify(m);m.position.y=FLOOR_OFFSET;charPivot.add(m);charReady=true;});
+new THREE.GLTFLoader().load('3d/char_mascot_sprout.glb',g=>{
+  const m=g.scene;toonify(m);m.position.y=FLOOR_OFFSET;monPivot.add(m);monReady=true;});
+
+// ── 파라미터 ──
+const BAKED_RATIO=0.28;   // 현재 GLB에 구워진 크기(캐릭터 대비) — 확정
+const P={z:0.28,h:0.30,a:0.130,p:2.5,d:1.05,k:4.1,t:4.0,s:1.0};
+const ids={z:'s-z',h:'s-h',a:'s-a',p:'s-p',d:'s-d',k:'s-k',t:'s-t',s:'s-s'};
+const fmt={z:2,h:2,a:3,p:2,d:2,k:2,t:1,s:2};
+function syncOut(){
+  document.getElementById('out').textContent =
+`sizeRatio   : ${P.z.toFixed(2)}  (H ${(1.8995*P.z).toFixed(3)})
+floatHeight : ${P.h.toFixed(2)}
+bobAmplitude: ${P.a.toFixed(3)}
+bobPeriod   : ${P.p.toFixed(2)} s
+followDist  : ${P.d.toFixed(2)}
+followDamp  : ${P.k.toFixed(2)}
+tiltDeg     : ${P.t.toFixed(1)}`;
+}
+Object.keys(ids).forEach(key=>{
+  const el=document.getElementById(ids[key]);
+  el.addEventListener('input',()=>{
+    P[key]=parseFloat(el.value);
+    document.getElementById('v-'+key).textContent=P[key].toFixed(fmt[key]);
+    syncOut();
+  });
+});
+syncOut();
+document.getElementById('copy').onclick=()=>{
+  navigator.clipboard.writeText(document.getElementById('out').textContent);
+  const b=document.getElementById('copy');b.textContent='복사됨!';setTimeout(()=>b.textContent='값 복사',1200);
+};
+
+// ── 경로: 8자(리사주) — 방향 전환이 많아 추적감 확인에 좋음 ──
+function pathAt(t){
+  const R=2.3;
+  return new THREE.Vector3(R*Math.sin(t), 0, R*Math.sin(t)*Math.cos(t));
+}
+
+const monPos=new THREE.Vector3(0,0,-1);   // 몬이 현재 위치(수평)
+let monY=P.h, prevMon=new THREE.Vector3();
+let pathT=0, clockTime=0;
+const clock=new THREE.Clock();
+
+function resize(){
+  const w=cv.clientWidth,h=cv.clientHeight;
+  if(cv.width!==w||cv.height!==h){renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix();}
+}
+
+(function loop(){
+  requestAnimationFrame(loop);
+  const dt=Math.min(clock.getDelta(),0.05);
+  clockTime+=dt;
+  resize();
+
+  if(charReady&&monReady){
+    // 캐릭터: 경로 따라 이동 + 진행방향 바라보기 + 걷는 상하 바운스
+    pathT += dt*0.55*P.s;
+    const cur=pathAt(pathT), nxt=pathAt(pathT+0.01);
+    charPivot.position.set(cur.x,0,cur.z);
+    const fwd=nxt.clone().sub(cur);
+    if(fwd.lengthSq()>1e-8){
+      charPivot.rotation.y=Math.atan2(fwd.x,fwd.z);
+      // 걷기 대용 바운스(실제 걷기 클립은 엔진에서)
+      charPivot.position.y=Math.abs(Math.sin(clockTime*5.0*P.s))*0.035*P.s;
+    }
+
+    // 몬이 목표: 캐릭터 '뒤쪽'
+    const back=fwd.clone().setY(0);
+    if(back.lengthSq()>1e-8) back.normalize().multiplyScalar(-P.d);
+    const target=new THREE.Vector3(cur.x+back.x,0,cur.z+back.z);
+
+    // 프레임레이트 무관 감쇠 보간
+    const lerp=1-Math.exp(-P.k*dt);
+    prevMon.copy(monPos);
+    monPos.lerp(target,lerp);
+
+    // 크기(캐릭터 대비) — 그룹 원점이 밑면이라 스케일해도 바닥 기준 유지
+    monPivot.scale.setScalar(P.z/BAKED_RATIO);
+
+    // 부유 + 둥둥
+    const bob=Math.sin(clockTime*2*Math.PI/P.p)*P.a;
+    monY=P.h+bob;
+    monPivot.position.set(monPos.x,monY,monPos.z);
+
+    // 이동 방향 바라보기 + 관성 기울기
+    const vel=monPos.clone().sub(prevMon);
+    const speed=vel.length()/Math.max(dt,1e-4);
+    if(vel.lengthSq()>1e-9){
+      monPivot.rotation.y=Math.atan2(vel.x,vel.z);
+      const tilt=THREE.MathUtils.degToRad(P.t)*Math.min(speed/1.5,1);
+      monPivot.rotation.x=tilt;
+    }
+
+    // 그림자: 높을수록 크고 옅게
+    charShadow.position.set(cur.x,0.01,cur.z);
+    monShadow.position.set(monPos.x,0.012,monPos.z);
+    const k=(1+monY*0.55)*(P.z/BAKED_RATIO);   // 크기에 비례
+    monShadow.scale.set(k,k,k);
+    monShadow.material.opacity=Math.max(0.25,1-monY*0.7);
+
+    controls.target.lerp(new THREE.Vector3(cur.x,0.8,cur.z),0.03);
+  }
+  controls.update();
+  renderer.render(scene,camera);
+})();
+</script>
+</body>
+</html>

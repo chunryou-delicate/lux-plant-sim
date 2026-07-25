@@ -216,14 +216,34 @@
     "glb": {"base": "assets/characters/3d/char_mascot_sprout.glb"},
     "viewer": "assets/characters/mascot_viewer.html",
     "scale_spec": {
-      "rule": "캐릭터 신장의 정확히 1/2",
+      "rule": "캐릭터 신장의 0.28배 (작은 동반자 사이즈 — 캐릭 무릎 높이)",
+      "size_ratio": 0.28,
       "char_height": 1.8995,
-      "mascot_height": 0.9497,
-      "applied_scale": 0.70275,
+      "mascot_height": 0.5319,
       "floor_y": -0.9507,
-      "note": "GLB에 스케일을 이미 적용해 저장함(엔진에서 추가 스케일 불필요). 캐릭터 8종과 동일한 바닥면(y=-0.9507)에 서도록 정렬 — 같은 위치에 배치하면 같은 바닥에 놓임."
+      "note": "GLB에 스케일을 이미 적용해 저장함(엔진에서 추가 스케일 불필요). 캐릭터 8종과 동일한 바닥면(y=-0.9507) 기준 정렬."
     },
-    "animation_plan": "A형태 확정: 본 리깅 없음. 엔진에서 둥둥 뜨기/통통 튀기 + 잎 흔들림(셰이더 또는 단순 트랜스폼)으로 처리.",
+    "follow_motion": {
+      "concept": "캐릭터 뒤를 공중에 살짝 떠서 졸졸 따라다님. 본 리깅 없이 트랜스폼만으로 구현.",
+      "params": {
+        "floatHeight": 0.30,
+        "bobAmplitude": 0.130,
+        "bobPeriod_sec": 2.5,
+        "followDistance": 1.05,
+        "followDamping": 4.1,
+        "tiltDegrees": 4.0
+      },
+      "impl": [
+        "수평 추적: pos.lerp(target, 1 - exp(-followDamping * dt)) — 프레임레이트 무관",
+        "target = 캐릭터 위치 - 캐릭터 정면벡터 * followDistance (즉 '뒤쪽')",
+        "부유: y = floatHeight + sin(t * 2PI / bobPeriod) * bobAmplitude",
+        "회전: 이동 방향(atan2(vel.x, vel.z))을 바라보고, 속도에 비례해 tiltDegrees만큼 앞으로 기울임",
+        "블롭 그림자 필수 — 높이에 따라 크기↑/불투명도↓ 해야 떠 있는 높이가 읽힘"
+      ],
+      "preview": "assets/characters/mascot_follow_preview.html (슬라이더로 재조정 가능)",
+      "rationale": "화분이 몸과 일체형이라 걷기 리깅이 부적합. 정령 설정과도 맞고, 부유 시 지형 맞춤(foot IK)·계단 처리가 불필요해짐."
+    },
+    "animation_plan": "A형태 확정: 본 리깅 없음. 위 follow_motion 파라미터로 부유·추적 처리. 잎 흔들림은 셰이더 또는 단순 트랜스폼으로 추가 가능.",
     "status": "3D 완료(리깅 없음·크기 확정). 이름·성격·표정세트 미정",
     "note": "화분에 앉은 초록 새싹정령, 몬스테라 잎을 팔처럼 사용. 플레이어 8종과 별개."
   },
