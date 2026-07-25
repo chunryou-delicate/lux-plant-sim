@@ -34,9 +34,9 @@
     <div class="panel">
       <h2>부유 · 추적 파라미터</h2>
 
-      <div class="row"><label>몬이 크기 (캐릭터 대비) <b id="v-z">0.28</b></label>
-        <input type="range" id="s-z" min="0.15" max="0.50" step="0.01" value="0.28">
-        <div class="hint">확정값 0.28로 GLB에 이미 구워짐(엔진에서 추가 스케일 불필요)</div></div>
+      <div class="row"><label>몬이 크기 (캐릭터 대비) <b id="v-z">0.25</b></label>
+        <input type="range" id="s-z" min="0.12" max="0.45" step="0.01" value="0.25">
+        <div class="hint">확정값 0.25로 GLB에 이미 구워짐(엔진에서 추가 스케일 불필요)</div></div>
 
       <div class="row"><label>부유 높이 <b id="v-h">0.30</b></label>
         <input type="range" id="s-h" min="0" max="0.9" step="0.01" value="0.30">
@@ -137,8 +137,8 @@ new THREE.GLTFLoader().load('3d/char_mascot_sprout.glb',g=>{
   const m=g.scene;toonify(m);m.position.y=FLOOR_OFFSET;monPivot.add(m);monReady=true;});
 
 // ── 파라미터 ──
-const BAKED_RATIO=0.28;   // 현재 GLB에 구워진 크기(캐릭터 대비) — 확정
-const P={z:0.28,h:0.30,a:0.130,p:2.5,d:1.05,k:4.1,t:4.0,s:1.0};
+const BAKED_RATIO=0.25;   // 현재 GLB에 구워진 크기(캐릭터 대비) — 확정
+const P={z:0.25,h:0.30,a:0.130,p:2.5,d:1.05,k:4.1,t:4.0,s:1.0};
 const ids={z:'s-z',h:'s-h',a:'s-a',p:'s-p',d:'s-d',k:'s-k',t:'s-t',s:'s-s'};
 const fmt={z:2,h:2,a:3,p:2,d:2,k:2,t:1,s:2};
 function syncOut(){

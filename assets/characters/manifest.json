@@ -216,10 +216,10 @@
     "glb": {"base": "assets/characters/3d/char_mascot_sprout.glb"},
     "viewer": "assets/characters/mascot_viewer.html",
     "scale_spec": {
-      "rule": "캐릭터 신장의 0.28배 (작은 동반자 사이즈 — 캐릭 무릎 높이)",
-      "size_ratio": 0.28,
+      "rule": "캐릭터 신장의 0.25배 (작은 동반자 사이즈 — 캐릭 무릎 아래 높이)",
+      "size_ratio": 0.25,
       "char_height": 1.8995,
-      "mascot_height": 0.5319,
+      "mascot_height": 0.4749,
       "floor_y": -0.9507,
       "note": "GLB에 스케일을 이미 적용해 저장함(엔진에서 추가 스케일 불필요). 캐릭터 8종과 동일한 바닥면(y=-0.9507) 기준 정렬."
     },
