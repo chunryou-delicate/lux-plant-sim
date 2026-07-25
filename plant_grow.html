@@ -133,7 +133,10 @@ const DEF={
   sizeYoung:0.20, sizeMid:0.34, sizeMature:0.46, sizeFull:0.58,  // 각 시점 크기(마디 간격 대비 자연스럽게)
   internode:0.20, stemFlat:1.25,   // 줄기 마디 길이·잎방향 납작
   petGrow:16, rEarly:0.022, rThin:0.028, rMed:0.025, rThick:0.031, matureProb:0.22, doubleBud:0.15,  // 종류별 굵기(몸통 폭 기준)·성숙잎 확률·쌍혹 확률
-  varieProb:0.30, varieKeep:0.55, midMix:0,   // 변이(알보) 확률 · 무늬 살리는 정도 · 중간잎 섞기(0=개체당 1종 고정)
+  varieProb:0.20, varieKeep:0.55, midMix:0,
+  // varieProb = 잎(생장점)마다 독립 판정. 그루 단위가 아니라 '중간에 발현'하는 방식이 맞음(확정).
+  //   난이도별로 달라질 예정. 또 가지를 잘라 수경재배로 번식시킬 때, 모주가 무늬면
+  //   그 삽수는 훨씬 높은 확률(80% 수준)을 물려받는 구조로 갈 것.
   leafEmbed:0.13, leafTilt:0.30, leafClear:0.52, leafTiltVary:0, leafStemClear:3.4,   // leafTiltVary=0 → 잎 각도 고정(조절값 그대로), >0 이면 겹침 회피가 각도도 흔듦   // 잎자루를 줄기 속으로 박는 깊이 · 잎이 줄기 끝 방향을 따라가는 정도 · 잎이 차지하는 반경(겹침 회피)
   photoLean:0.13, stemStraight:0.12, stemCurve:0.11, stemDroop:0.04, avoidLean:0.55, avoidRange:0.30,   // 빛 쪽으로 기우는 세기(굴광성 슬라이더와 곱해짐) · 축 기본방향으로 돌아오는 힘(작을수록 더 휨)
   stemTrans:40, bumpGrow:20, bumpAt:0.2, bumpAzOff:0, stemOverlap:0.015,   // bumpAzOff=가지가 나는 방위를 혹 돌기 쪽으로 미세 회전
