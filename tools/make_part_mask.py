@@ -41,7 +41,7 @@ import sys
 import numpy as np
 from PIL import Image, ImageDraw
 from scipy.ndimage import (binary_closing, binary_opening, binary_dilation,
-                          distance_transform_edt)
+                          binary_propagation, distance_transform_edt)
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
@@ -188,13 +188,13 @@ def build(char, vis=False, size=None):
     # 되므로(남주부) 목 구간은 폭으로 제한한다.
     skin_zone = ((t > 0.72)                       # 머리(얼굴·귀)
                  | ((t > 0.62) & (xn < 0.20))     # 목
-                 | (xn > 0.52)                    # 팔뚝·손 (소매 안쪽은 제외)
+                 | (xn > 0.42)                    # 팔·손 (A포즈에서 바깥쪽)
                  | ((t < 0.40) & (t > 0.085)))    # 다리 (신발 제외)
     # 베이지 셔츠와 살구색 피부는 어떤 색공간으로도 갈리지 않는다. 측정 결과
     # 남주부의 셔츠는 그의 얼굴과 색도 거리 0.0247 로, 남연구원의 손(0.0374)보다
-    # 얼굴에 더 가깝다. 그래서 색은 전역 기준으로 두고 위치로 처리한다 -
-    # 팔 허용 범위를 소매가 끝나는 지점 바깥(xn>0.52)으로 좁힌다.
-    is_skin = (d_skin < 44) & (warm_rg > 20) & covered & skin_zone
+    # 얼굴에 더 가깝다. 그래서 색은 전역 기준으로 두고 위치로 처리한다.
+    # 임계 44 는 음영진 피부와 볼터치를 놓쳐 얼굴에 얼룩이 남는다.
+    is_skin = (d_skin < 58) & (warm_rg > 20) & covered & skin_zone
 
     code[band("shoe")] = CODE["shoe"]                       # 신발: 흰 티셔츠와 색이 같아 위치로만 갈림
     code[band("leg") & ~is_skin] = CODE["bottom"]
@@ -233,16 +233,14 @@ def build(char, vis=False, size=None):
         yy, xx = np.mgrid[-r_eye:r_eye + 1, -r_eye:r_eye + 1]
         near = (xx * xx + yy * yy) <= r_eye * r_eye
         region = binary_dilation(sclera, near) & covered
-        eye = region & ((lum > 224) | (d_hair < 110))         # 흰자·하이라이트 + 진갈색
-        eye = binary_closing(eye, np.ones((5, 5)))
-        # 눈썹은 눈보다 위에 있다. 흰자 위쪽 경계보다 더 위는 눈에서 뺀다 -
-        # 안 그러면 눈썹이 보호 영역에 들어가 머리색을 따라가지 않는다.
-        # 눈 영역을 흰자 위아래로 아주 조금만 넘어가게 자른다. 넉넉히 잡으면
-        # 눈썹과 앞머리 끝이 보호 영역에 들어가 머리색을 따라가지 않는다.
-        t_sc = t[sclera]
-        hi_sc, lo_sc = np.percentile(t_sc, 96), np.percentile(t_sc, 4)
-        margin = (hi_sc - lo_sc) * 0.18
-        eye &= (t <= hi_sc + margin) & (t >= lo_sc - margin)
+        # 높이로 자르면 속눈썹·눈꺼풀이 눈에서 빠지고, 진갈색이라 머리로
+        # 흡수돼 눈꺼풀에 머리색이 들어간다. 대신 흰자에서 '연결된' 덩어리만
+        # 가져온다(형태학적 재구성). 눈썹은 사이에 피부가 있어 끊겨 있으므로
+        # 딸려오지 않는다.
+        eyeish = binary_closing(region & ((lum > 224) | (d_hair < 110)),
+                                np.ones((3, 3)))
+        eye = binary_propagation(sclera, mask=eyeish) & eyeish
+        eye = binary_closing(eye, np.ones((5, 5))) & region
 
         # 홍채: 눈 영역은 밝기가 둘로만 갈린다(흰자·하이라이트 / 진갈색). 진갈색
         # 덩어리에 홍채·동공과 속눈썹·눈매 테두리가 같이 있어 색으로는 못 가른다.

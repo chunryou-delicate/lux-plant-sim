@@ -242,6 +242,17 @@ export function buildHouse(GRAIN, roomDefIn, winPresets, doorPresets={}, finishe
 
   const glassWalls = roomDef.glassWalls || [];
 
+  /* ★ 조도 엔진이 볼 창 목록. roomDef.windows(진짜 창) + glassWalls(유리벽)를 합친다.
+     유리벽을 여기 안 넣으면 온실처럼 '화면엔 유리인데 조도 0'인 방이 생긴다.
+     ※ 지붕 유리(ceiling:'glass')는 아직 못 넣는다 — 엔진 창 법선에 y성분이 없다.
+        docs/greenhouse_plan.md의 C단계에서 해결. */
+  const luxWins=[];
+  for(const w of (roomDef.windows||[])){
+    const p=winPresets[w.preset]||{};
+    const tau=(p.glass&&p.glass.transmittance)!=null?p.glass.transmittance:0.85;
+    luxWins.push({ wall:w.wall, cu:w.cu, cy:w.cy, w:w.w, h:w.h, tau, from:'window' });
+  }
+
   // ---------- 바닥: 통판 1장 (조각 이음새 z-fighting 방지). 결/칸은 텍스처로 ----------
   {
     const ftex=finishTexture(roomDef.floorPattern, CW) || GRAIN;
@@ -275,6 +286,10 @@ export function buildHouse(GRAIN, roomDefIn, winPresets, doorPresets={}, finishe
   for(const wall of ['back','front','left','right']){
     const kind=glassWalls.includes(wall)?'glass':'solid';
     const [uMin,uMax]=wallURange(wall);
+    // ★ 유리벽도 조도 엔진엔 '창'이다. buildGlassWall이 실제로 만드는 유리판과
+    //   같은 치수(-0.1)를 쓴다 — 겉(유리판)과 속(조도)이 어긋나지 않게.
+    if(kind==='glass') luxWins.push({ wall, cu:(uMin+uMax)/2, cy:CH/2,
+      w:(uMax-uMin)-0.1, h:CH-0.1, tau:0.85, from:'glassWall' });
     const g=new THREE.Group();
     g.userData={ normal:wallNormals[wall], center:wallCenters[wall] };
 
