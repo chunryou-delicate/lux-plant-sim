@@ -147,9 +147,9 @@ let P=Object.assign({}, DEF);
 const CFG_VER='2026-07-20-tube1';
 
 // ===== 튜닝 파라미터(B: 에셋별 개별 조정) =====
-const ADJ_KEYS=['leaf_young','leaf_mid1','leaf_mid2','leaf_mature','bud_furled','bud_opening2','stem_thick','stem_main','stem_med','stem_thin','petiole','knob','sheath'];
+const ADJ_KEYS=['pot','leaf_young','leaf_mid1','leaf_mid2','leaf_mature','bud_furled','bud_opening2','stem_thick','stem_main','sheath','stem_med','stem_thin','petiole','knob'];
 // 에셋 표시명 = name_ko (모든 소통은 name_ko 기준). 파일명은 나중에 일체화.
-const ADJ_KO={ petiole:'줄기_초기', stem_thin:'줄기_중기_2', stem_med:'줄기_중기_1', stem_thick:'줄기_후기_혹', stem_main:'줄기_후기_쌍혹',
+const ADJ_KO={ pot:'화분', petiole:'줄기_초기', stem_thin:'줄기_중기_2', stem_med:'줄기_중기_1', stem_thick:'줄기_후기_혹', stem_main:'줄기_후기_쌍혹',
   knob:'줄기_혹_돌기', sheath:'줄기_잎_엽초',
   bud_furled:'기본-초기-새순1', bud_opening2:'기본-초기-반잎1', leaf_young:'기본-어린-잎1', leaf_mid1:'기본-중간-잎1', leaf_mid2:'기본-중간-잎2', leaf_mature:'기본-성숙-잎1' };
 function defAdj(key){ return {scale:1, sxz:1, sy:1, rx:0,ry:0,rz:0, ox:0,oy:0,oz:0}; }  // scale=전체·sxz=굵기(폭)·sy=길이(높이)
@@ -277,7 +277,8 @@ function assetInst(key){
 
 function addPot(){
   const p=ASSETS.pot;
-  if(p){ const g=p.clone(true); g.scale.setScalar(POT_H); plantGroup.add(g); SOIL_Y=POT_H*0.82; return; }
+  if(p){ const g=assetInst('pot')||p.clone(true);      // ★에셋별 조정(B) 반영
+    g.scale.multiplyScalar(POT_H); plantGroup.add(g); const ap=ADJ.pot||{}; SOIL_Y=POT_H*(0.82*(ap.scale||1)*(ap.sy||1)+(ap.oy||0)); return; }
   // 임시 화분(폴백)
   const pot=new THREE.Mesh(new THREE.CylinderGeometry(0.5,0.38,0.5,20), MAT.pot);
   pot.position.y=0.25; pot.castShadow=true; pot.receiveShadow=true; plantGroup.add(pot);
@@ -293,9 +294,18 @@ const STEM_CORE={petiole:0.083, stem_thin:0.186, stem_med:0.158, stem_thick:0.42
 // GLB(밑면 y=0·긴축 Y)를 p0→p1 사이로 늘여 배치. 굵기 radius, color로 통일 틴트. → 두 점을 물리 연결.
 function stretchGLB(key, p0, p1, radius, color, flatAz){
   const proto=ASSETS[key]; if(!proto) return false;
-  const dir=new THREE.Vector3().subVectors(p1,p0), len=dir.length(); if(len<1e-5) return true;
-  const a=ADJ[key]||{}; radius*=(a.scale||1)*(a.sxz||1);   // 에셋별 굵기(B): 크기(전체)×굵기(폭). 줄기 길이는 마디로 고정(sy 미적용)
-  const g=proto.clone(true);
+  const dir=new THREE.Vector3().subVectors(p1,p0); let len=dir.length(); if(len<1e-5) return true;
+  const a=ADJ[key]||{}; radius*=(a.scale||1)*(a.sxz||1);   // 에셋별 굵기(B): 크기(전체)×굵기(폭)
+  len*= (a.sy||1);                                         // 길이 배율(B)
+  // ★회전/오프셋(B)은 안쪽 그룹에 적용 → 바깥 그룹이 p0→p1로 늘이는 변환을 그대로 유지
+  const inner=proto.clone(true);
+  const hasAdj=(a.rx||a.ry||a.rz||a.ox||a.oy||a.oz);
+  let g;
+  if(hasAdj){
+    inner.rotation.set(a.rx||0, a.ry||0, a.rz||0);
+    inner.position.set(a.ox||0, a.oy||0, a.oz||0);
+    g=new THREE.Group(); g.add(inner); g.userData=proto.userData;
+  } else g=inner;
   // ★바운딩박스가 아니라 "줄기 몸통 폭"(정점 측정값) 기준으로 굵기 환산.
   //   혹 에셋은 돌기가 bbox를 부풀려(0.42→0.56) XZ가 과하게 눌리고 돌기가 납작한 판때기로 뭉개졌음.
   const cw=STEM_CORE[key] || proto.userData.sx || 0.2;
@@ -794,14 +804,17 @@ const ADJ_FIELDS=[
 ];
 // 카테고리 그룹 드롭다운(name_ko). 줄기는 길이=마디 고정이라 '길이(sy)' 슬라이더 숨김.
 const ADJ_GROUPS=[
-  {label:'🌿 줄기', keys:['petiole','stem_med','stem_thin','stem_thick','stem_main','knob','sheath']},
   {label:'🍃 잎·새순', keys:['bud_furled','bud_opening2','leaf_young','leaf_mid1','leaf_mid2','leaf_mature']},
+  {label:'🌿 줄기·부품', keys:['stem_thick','stem_main','sheath']},
+  {label:'🪴 화분', keys:['pot']},
+  {label:'💤 현재 미사용(튜브가 대체)', keys:['petiole','stem_med','stem_thin','knob']},
 ];
-function fieldsFor(key){ const isStem=/^stem_|^petiole/.test(key); return isStem?ADJ_FIELDS.filter(f=>f.k!=='sy'):ADJ_FIELDS; }
+const ADJ_UNUSED=new Set(['petiole','stem_med','stem_thin','knob']);   // 화면에 안 그려지는 에셋
+function fieldsFor(key){ return ADJ_FIELDS; }   // 이제 stretchGLB도 길이(sy)·회전·오프셋을 반영하므로 전부 노출
 function buildAssetSelect(){
   const sel=document.getElementById('assetSel'); if(!sel) return;
   sel.innerHTML=ADJ_GROUPS.map(g=>`<optgroup label="${g.label}">`+
-    g.keys.filter(k=>ADJ_KEYS.includes(k)).map(k=>`<option value="${k}">${ADJ_KO[k]||k.replace(/_/g,' ')}</option>`).join('')+
+    g.keys.filter(k=>ADJ_KEYS.includes(k)).map(k=>`<option value="${k}">${ADJ_KO[k]||k.replace(/_/g,' ')}${ADJ_UNUSED.has(k)?' (미사용)':''}</option>`).join('')+
     `</optgroup>`).join('');
   sel.onchange=()=>{ buildAssetSliders(sel.value); showPreview(sel.value); };
   buildAssetSliders(sel.value); showPreview(sel.value);
