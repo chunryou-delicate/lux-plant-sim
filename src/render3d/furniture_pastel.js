@@ -66,11 +66,17 @@ function legs4(g,w,d,lh,m,r=0.028,inset=0.07){
    userData.size_m       = {w,d,h}
    화분 놓는 법: 화분 바운딩박스 y_min 을 슬롯 y에 정렬, x·z는 그대로.
 ============================================================ */
-function addSlots(g, slots, tiers){
+function addSlots(g, slots, tiers, tierDepths){
   g.userData.slots=slots;
   if(tiers) g.userData.tier_heights=tiers;
   const s=g.userData.size||{};
   g.userData.size_m={ w:s.w, d:s.d, h:s.h };
+  // ★ 단별 판 깊이 + 올릴 수 있는 최대 화분 지름 (에셋창 규격: 깊이-0.03)
+  const depths = tierDepths || (tiers||[]).map(()=>s.d);
+  if(depths.length){
+    g.userData.tier_depths_m  = depths.map(d=>+(+d).toFixed(3));
+    g.userData.tier_max_pot_d = depths.map(d=>+(d-0.03).toFixed(2));
+  }
   return g;
 }
 /* 한 단(y)에 n개 슬롯을 폭 w 안에 균등 배치 */
@@ -389,29 +395,36 @@ B.shelf_etagere=(o)=>{
   const postZ = y => z0 + (z1-z0)*(y/h);                     // 높이 y에서 기둥의 z
   const postX = w/2-0.03;
 
+  const depths=[];
   for(let i=0;i<n;i++){
     const y=t/2+(h-t)*(n===1?0:i/(n-1));
     const sw=ladder ? w*(1-0.10*i) : w;                      // 위로 갈수록 살짝 좁게
-    const sd=ladder ? d*(1-0.10*i) : d;
+    // 사다리 단 깊이 0.30→0.15 (에셋창 규격). 최상단이 얕아 큰 화분은 못 올림.
+    const sd=ladder ? Math.max(0.15, 0.30-0.05*i) : d;
+    depths.push(sd);
     // 선반 뒤 모서리를 기둥에 붙임 → 중심 z = 기둥z + 깊이/2
     const cz = ladder ? postZ(y)+sd/2-0.012 : 0;
     g.add(panel(sw,t,sd,m,0,y,cz,0.014));
     tiers.push(+y.toFixed(3));
-    sl.push(...tierSlots(sw, y+t/2, ladder?Math.max(1,3-Math.floor(i/2)):3, +cz.toFixed(3)));
+    // 사다리 슬롯: 3/2/1/1 = 총 7 (에셋창과 합의된 수)
+    const nslot = ladder ? [3,2,1,1][Math.min(i,3)] : 3;
+    sl.push(...tierSlots(sw, y+t/2, nslot, +cz.toFixed(3)));
   }
   // 기둥 — 기울기만큼 길게 + 각도 맞춰 회전(선반 옆면에 딱 닿음)
   const dz=z1-z0, plen=Math.hypot(h,dz), ang=Math.atan2(dz,h);
   for(const sx of [-1,1]){
     if(ladder){
       const post=cyl(0.016,0.016,plen,side, sx*postX, h/2, (z0+z1)/2, 8);
-      post.rotation.x=-ang;                                   // 기둥을 기울여 선반 끝단과 접합
+      // ★ rotation.x가 양수면 위쪽이 +Z로 감. 기둥 꼭대기는 z1(뒤, -Z)이어야 하므로
+      //   부호를 뒤집지 않고 ang 그대로 써야 선반 기울기와 방향이 맞는다.
+      post.rotation.x=ang;
       g.add(post);
     }else{
       for(const sz of [-1,1]) g.add(cyl(0.017,0.017,h,side, sx*postX, h/2, sz*(d/2-0.03), 8));
     }
   }
   g.userData.size={w,h,d}; if(ladder) g.userData.mount='lean-wall';
-  return addSlots(g, sl, tiers);
+  return addSlots(g, sl, tiers, depths);
 };
 
 /* 이동식 카트 (바퀴) */
@@ -541,7 +554,10 @@ B.bed_bunk=(o)=>{
   deck(0.36); deck(h-0.34);
   for(const sx of [-1,1]) for(const sz of [-1,1])
     g.add(bx(0.07,h,0.07,fr, sx*(w/2-0.04), h/2, sz*(d/2-0.04)));
-  for(let i=0;i<4;i++) g.add(bx(0.05,0.05,0.5,fr, w/2-0.04, 0.62+i*0.24, d*0.2));   // 사다리
+  // 사다리: 세로 기둥 2개 + 가로 발판
+  const lz0=d*0.2-0.22, lz1=d*0.2+0.22, ltop=h-0.34;
+  for(const lz of [lz0,lz1]) g.add(cyl(0.022,0.022,ltop,fr, w/2-0.04, ltop/2, lz, 8));
+  for(let i=0;i<4;i++) g.add(bx(0.05,0.04,0.44,fr, w/2-0.04, 0.42+i*0.28, d*0.2));  // 발판
   g.add(bx(0.05,0.7,0.05,fr,-w/2+0.04,h-0.02,d*0.05));                              // 상단 난간
   g.userData.size={w,h,d}; return g;
 };
@@ -558,7 +574,10 @@ B.bed_loft=(o)=>{
   for(const sx of [-1,1]) for(const sz of [-1,1])
     g.add(bx(0.07,h,0.07,fr, sx*(w/2-0.04), h/2, sz*(d/2-0.04)));
   g.add(bx(w,0.05,0.05,fr,0,h-0.02,-d/2+0.04));
-  for(let i=0;i<4;i++) g.add(bx(0.05,0.05,0.5,fr, w/2-0.04, 0.5+i*0.28, d*0.2));
+  // 사다리: 세로 기둥 2개 + 가로 발판
+  const lz0=d*0.2-0.22, lz1=d*0.2+0.22, ltop=h-0.28;
+  for(const lz of [lz0,lz1]) g.add(cyl(0.022,0.022,ltop,fr, w/2-0.04, ltop/2, lz, 8));
+  for(let i=0;i<4;i++) g.add(bx(0.05,0.04,0.44,fr, w/2-0.04, 0.42+i*0.28, d*0.2));
   g.userData.size={w,h,d}; return g;
 };
 
@@ -656,6 +675,352 @@ B.desk_lamp=(o)=>{
       side:THREE.DoubleSide, emissive:col('#3a2f18'), emissiveIntensity:0.22 }));
   shade.position.set(0.125,h*0.8,0); shade.rotation.z=0.5; g.add(shade);
   g.userData.size={w:0.3,h,d:0.2}; g.userData.lampShade=shade; return g;
+};
+
+/* ============================================================
+   식물 전용 선반 확장 — 창가·벽·코너·매달기
+============================================================ */
+
+/* 창가 물받이 트레이 (창턱 위에 얹음) */
+B.plant_tray=(o)=>{
+  const w=o.w??0.9, d=o.d??0.18, h=0.05;
+  const g=new THREE.Group();
+  const m=furnMat(o.color??'#dfe4e0','satin');
+  g.add(panel(w,0.012,d,m,0,0.006,0,0.01));
+  for(const s of [-1,1]) g.add(bx(w,h,0.012,m,0,h/2,s*(d/2-0.006)));
+  for(const s of [-1,1]) g.add(bx(0.012,h,d,m,s*(w/2-0.006),h/2,0));
+  g.userData.size={w,h,d}; g.userData.mount='window';
+  return addSlots(g, tierSlots(w,0.012,4,0,0.1), [0.012], [d]);
+};
+
+/* 코너 3단 선반 (90° 모서리) */
+B.shelf_corner=(o)=>{
+  const w=o.w??0.5, h=o.h??1.05, n=o.tiers??3, t=0.03;
+  const g=new THREE.Group();
+  const m=furnMat(o.color??'#e8dfd2','matte');
+  const side=furnMat(o.accent??'#cbbfae','satin');
+  const tiers=[], sl=[], dep=[];
+  for(let i=0;i<n;i++){
+    const y=t/2+(h-t)*(i/(n-1));
+    const sh=new THREE.Shape();                       // 부채꼴(4분원)
+    sh.moveTo(0,0); sh.lineTo(w,0); sh.absarc(0,0,w,0,Math.PI/2,false); sh.lineTo(0,0);
+    const geo=new THREE.ExtrudeGeometry(sh,{depth:t,bevelEnabled:false,curveSegments:10});
+    geo.rotateX(-Math.PI/2); geo.translate(-w/2,y,-w/2);
+    const mesh=new THREE.Mesh(geo,m); mesh.castShadow=mesh.receiveShadow=true; g.add(mesh);
+    tiers.push(+y.toFixed(3)); dep.push(w*0.7);
+    sl.push({x:+(-w*0.16).toFixed(3),y:+(y+t/2).toFixed(3),z:+(-w*0.16).toFixed(3)},
+            {x:+(w*0.12).toFixed(3), y:+(y+t/2).toFixed(3),z:+(w*0.12).toFixed(3)});
+  }
+  g.add(cyl(0.016,0.016,h,side,-w/2+0.02,h/2,-w/2+0.02,8));
+  g.add(cyl(0.016,0.016,h,side, w/2-0.03,h/2,-w/2+0.02,8));
+  g.add(cyl(0.016,0.016,h,side,-w/2+0.02,h/2, w/2-0.03,8));
+  g.userData.size={w,h,d:w}; g.userData.mount='corner';
+  return addSlots(g, sl, tiers, dep);
+};
+
+/* 계단식 플랜트 스탠드 */
+B.plant_step=(o)=>{
+  const w=o.w??0.9, d=o.d??0.28, n=o.tiers??3, t=0.03;
+  const g=new THREE.Group();
+  const m=furnMat(o.color??'#e0d5c2','matte');
+  const side=furnMat(o.accent??'#c3b49c','satin');
+  const tiers=[], sl=[], dep=[];
+  const sw=w/n;
+  for(let i=0;i<n;i++){
+    const y=0.18+i*0.20, x=-w/2+sw*(i+0.5);
+    g.add(panel(sw,t,d,m,x,y,0,0.012));
+    for(const sz of [-1,1]) g.add(cyl(0.014,0.014,y,side,x,y/2,sz*(d/2-0.03),8));
+    tiers.push(+y.toFixed(3)); dep.push(d);
+    sl.push({x:+x.toFixed(3),y:+(y+t/2).toFixed(3),z:0});
+  }
+  g.userData.size={w,h:0.18+(n-1)*0.20+t,d};
+  return addSlots(g, sl, tiers, dep);
+};
+
+/* 높은 화분 받침(원형 스탠드) */
+B.plant_pedestal=(o)=>{
+  const w=o.w??0.26, h=o.h??0.62;
+  const g=new THREE.Group();
+  const m=furnMat(o.color??'#e0d5c2','matte');
+  g.add(cyl(w/2,w/2,0.035,m,0,h-0.018,0,20));
+  g.add(cyl(0.035,0.045,h-0.06,furnMat(o.accent??'#c3b49c','satin'),0,(h-0.06)/2+0.02,0,12));
+  g.add(cyl(w*0.42,w*0.46,0.03,furnMat(o.accent??'#c3b49c','satin'),0,0.015,0,18));
+  g.userData.size={w,h,d:w};
+  return addSlots(g, [{x:0,y:+h.toFixed(3),z:0}], [h], [w]);
+};
+
+/* 벽 그리드(메쉬 판) + 걸이 화분 자리 */
+B.plant_grid=(o)=>{
+  const w=o.w??0.9, h=o.h??0.9, t=0.012;
+  const g=new THREE.Group();
+  const m=furnMat(o.color??'#cfc7bb','satin');
+  for(let i=0;i<=6;i++) g.add(bx(t,h,t,m,-w/2+w*i/6,h/2,0));
+  for(let j=0;j<=6;j++) g.add(bx(w,t,t,m,0,h*j/6,0));
+  const sl=[], hooks=[0.72,0.45];                          // 걸이 높이 2단
+  for(const hy of hooks) for(const hx of [-w*0.28,0,w*0.28]){
+    g.add(cyl(0.006,0.006,0.05,m,hx,h*hy,0.03,6));
+    sl.push({x:+hx.toFixed(3), y:+(h*hy-0.02).toFixed(3), z:0.06});
+  }
+  g.userData.size={w,h,d:0.08}; g.userData.mount='wall';
+  return addSlots(g, sl, hooks.map(v=>+(h*v).toFixed(3)), hooks.map(()=>0.18));
+};
+
+/* 천장 행잉 플랜터 (매달림) */
+B.plant_hanger=(o)=>{
+  const drop=o.h??0.75, r=o.w?o.w/2:0.13;
+  const g=new THREE.Group();
+  const rope=furnMat(o.accent??'#cbbfae','matte');
+  g.add(cyl(0.04,0.04,0.02,rope,0,-0.01,0,10));
+  for(let i=0;i<3;i++){                                    // 로프 3가닥
+    const a=i/3*Math.PI*2;
+    const rp=cyl(0.005,0.005,drop*0.62,rope, Math.cos(a)*r*0.7, -drop*0.34, Math.sin(a)*r*0.7, 6);
+    rp.rotation.z=Math.cos(a)*0.12; rp.rotation.x=-Math.sin(a)*0.12; g.add(rp);
+  }
+  const bowl=cyl(r,r*0.7,r*1.1,furnMat(o.color??'#d9a88b','matte'),0,-drop+r*0.55,0,18);
+  g.add(bowl);
+  g.userData.size={w:r*2,h:drop,d:r*2}; g.userData.hangFromCeiling=true;
+  return addSlots(g, [{x:0,y:+(-drop+r*1.1).toFixed(3),z:0}], [-drop+r*1.1], [r*1.8]);
+};
+
+/* 미니 온실장 (유리문 캐비닛 — 습도·보온) */
+B.greenhouse_cabinet=(o)=>{
+  const w=o.w??0.7, d=o.d??0.4, h=o.h??1.5, n=o.tiers??3;
+  const g=new THREE.Group();
+  const fr=furnMat(o.color??'#cfd8dc','satin');
+  const glass=new THREE.MeshPhysicalMaterial({ transmission:0.9, roughness:0.06, thickness:0.3,
+    transparent:true, opacity:0.16, ior:1.5, color:col('#e8f1f6'), side:THREE.DoubleSide, depthWrite:false });
+  for(const sx of [-1,1]) for(const sz of [-1,1]) g.add(cyl(0.02,0.02,h,fr,sx*(w/2-0.02),h/2,sz*(d/2-0.02),8));
+  g.add(panel(w,0.03,d,fr,0,0.015,0,0.01)); g.add(panel(w,0.03,d,fr,0,h-0.015,0,0.01));
+  const tiers=[], sl=[], dep=[];
+  for(let i=1;i<=n;i++){
+    const y=h*i/(n+1);
+    g.add(panel(w-0.06,0.02,d-0.06,fr,0,y,0,0.01));
+    tiers.push(+y.toFixed(3)); dep.push(d-0.06); sl.push(...tierSlots(w-0.06,y+0.01,2));
+  }
+  const door=new THREE.Mesh(new THREE.PlaneGeometry(w-0.06,h-0.08), glass);
+  door.position.set(0,h/2,d/2); g.add(door);
+  for(const sx of [-1,1]){                                  // 옆유리
+    const sg=new THREE.Mesh(new THREE.PlaneGeometry(d-0.06,h-0.08), glass);
+    sg.rotation.y=Math.PI/2; sg.position.set(sx*w/2,h/2,0); g.add(sg);
+  }
+  g.userData.size={w,h,d}; g.userData.humid=true;
+  return addSlots(g, sl, tiers, dep);
+};
+
+/* ============================================================
+   ★ 조명 — 일반등 + 식물등(grow light)
+   식물등은 userData.grow=true, ppfd(광량), coverage(비추는 반경 m)를
+   보존해 나중에 조도 계산이 읽는다.
+============================================================ */
+
+/* 펜던트 등 (천장 매달림, 갓 모양 선택) */
+B.lamp_pendant=(o)=>{
+  const drop=o.h??0.55, r=o.w?o.w/2:0.16;
+  const g=new THREE.Group();
+  const m=furnMat(o.color??'#cfc7bb','satin');
+  g.add(cyl(0.05,0.05,0.02,m,0,-0.01,0,12));
+  g.add(cyl(0.006,0.006,drop,m,0,-drop/2,0,6));
+  const shade=new THREE.Mesh(
+    o.dome!==false ? new THREE.SphereGeometry(r,20,10,0,Math.PI*2,0,Math.PI/2)
+                   : new THREE.ConeGeometry(r,r*1.1,20,1,true),
+    new THREE.MeshStandardMaterial({ color:col(o.accent??'#f6efdc'), roughness:0.55,
+      side:THREE.DoubleSide, emissive:col('#3a2f18'), emissiveIntensity:0.2 }));
+  shade.rotation.x=Math.PI; shade.position.y=-drop-r*0.1; g.add(shade);
+  g.userData.size={w:r*2,h:drop+r,d:r*2}; g.userData.hangFromCeiling=true; g.userData.lampShade=shade;
+  return g;
+};
+
+/* 벽등(브라켓) */
+B.lamp_wall=(o)=>{
+  const g=new THREE.Group();
+  const m=furnMat(o.color??'#cfc7bb','satin');
+  g.add(panel(0.10,0.16,0.04,m,0,0,0,0.02));
+  const arm=cyl(0.012,0.012,0.16,m,0,0.02,0.08,8); arm.rotation.x=Math.PI/2; g.add(arm);
+  const shade=new THREE.Mesh(new THREE.CylinderGeometry(0.075,0.09,0.11,16,1,true),
+    new THREE.MeshStandardMaterial({ color:col(o.accent??'#f6efdc'), roughness:0.55,
+      side:THREE.DoubleSide, emissive:col('#3a2f18'), emissiveIntensity:0.25 }));
+  shade.position.set(0,0.06,0.16); g.add(shade);
+  g.userData.size={w:0.19,h:0.22,d:0.22}; g.userData.mount='wall'; g.userData.lampShade=shade;
+  return g;
+};
+
+/* 스트링 라이트 (전구줄 — 벽/창가 장식) */
+B.string_light=(o)=>{
+  const w=o.w??1.6, n=o.bulbs??7, sag=o.sag??0.14;
+  const g=new THREE.Group();
+  const wire=furnMat(o.color??'#b9b2a6','matte');
+  const bulbMat=new THREE.MeshStandardMaterial({ color:col(o.accent??'#f8ecc9'), roughness:0.3,
+    emissive:col('#7a6432'), emissiveIntensity:0.7 });
+  let prev=null;
+  for(let i=0;i<=n;i++){
+    const t=i/n, x=-w/2+w*t, y=-Math.sin(Math.PI*t)*sag;
+    if(prev){                                              // 줄 세그먼트
+      const dx=x-prev.x, dy=y-prev.y, len=Math.hypot(dx,dy);
+      const seg=cyl(0.004,0.004,len,wire,(x+prev.x)/2,(y+prev.y)/2,0,5);
+      seg.rotation.z=Math.atan2(dx,-dy); g.add(seg);
+    }
+    if(i<n){
+      const b=new THREE.Mesh(new THREE.SphereGeometry(0.032,10,8),bulbMat);
+      b.position.set(x,y-0.045,0); g.add(b);
+    }
+    prev={x,y};
+  }
+  g.userData.size={w,h:sag+0.1,d:0.08}; g.userData.mount='wall'; g.userData.decorLight=true;
+  return g;
+};
+
+/* ★ 식물등 — 클립형 */
+B.growlight_clip=(o)=>{
+  const g=new THREE.Group();
+  const m=furnMat(o.color??'#dfe3e6','satin');
+  g.add(panel(0.10,0.05,0.07,m,0,0.02,0,0.02));           // 집게
+  const neck=cyl(0.012,0.012,0.34,m,0,0.20,0.03,8); neck.rotation.x=0.35; g.add(neck);
+  const head=new THREE.Mesh(new THREE.CylinderGeometry(0.075,0.09,0.06,18,1,true),
+    new THREE.MeshStandardMaterial({ color:col('#e9edef'), roughness:0.4, side:THREE.DoubleSide }));
+  head.position.set(0,0.38,0.14); head.rotation.x=Math.PI*0.86; g.add(head);
+  const led=new THREE.Mesh(new THREE.CircleGeometry(0.072,18),
+    new THREE.MeshStandardMaterial({ color:col(o.accent??'#f2e6ff'), emissive:col(o.accent??'#c9a8e8'),
+      emissiveIntensity:0.9, roughness:0.2 }));
+  led.position.set(0,0.352,0.145); led.rotation.x=-Math.PI/2+0.25; g.add(led);
+  g.userData.size={w:0.2,h:0.42,d:0.24};
+  g.userData.grow=true; g.userData.ppfd=o.ppfd??120; g.userData.coverage=o.coverage??0.35;
+  g.userData.lampShade=led;
+  return g;
+};
+
+/* ★ 식물등 — 바(선반 밑 부착) */
+B.growlight_bar=(o)=>{
+  const w=o.w??0.7;
+  const g=new THREE.Group();
+  const m=furnMat(o.color??'#dfe3e6','satin');
+  g.add(bx(w,0.035,0.06,m,0,0.018,0));
+  const led=new THREE.Mesh(new THREE.BoxGeometry(w-0.06,0.012,0.045),
+    new THREE.MeshStandardMaterial({ color:col(o.accent??'#f4ecff'), emissive:col(o.accent??'#cbb0ea'),
+      emissiveIntensity:0.95, roughness:0.25 }));
+  led.position.y=-0.004; g.add(led);
+  g.userData.size={w,h:0.05,d:0.06}; g.userData.mount='under-shelf';
+  g.userData.grow=true; g.userData.ppfd=o.ppfd??180; g.userData.coverage=o.coverage??0.5;
+  g.userData.lampShade=led;
+  return g;
+};
+
+/* ★ 식물등 — 스탠드형(키 큰 식물용) */
+B.growlight_stand=(o)=>{
+  const h=o.h??1.5;
+  const g=new THREE.Group();
+  const m=furnMat(o.color??'#cfd4d8','satin');
+  g.add(cyl(0.17,0.19,0.03,m,0,0.015,0,20));
+  g.add(cyl(0.018,0.018,h-0.1,m,0,(h-0.1)/2,0,10));
+  const arm=bx(0.34,0.03,0.05,m,0.15,h-0.09,0); g.add(arm);
+  const panelL=new THREE.Mesh(new THREE.BoxGeometry(0.30,0.03,0.16),
+    new THREE.MeshStandardMaterial({ color:col('#e6eaee'), roughness:0.4 }));
+  panelL.position.set(0.28,h-0.12,0); g.add(panelL);
+  const led=new THREE.Mesh(new THREE.PlaneGeometry(0.27,0.13),
+    new THREE.MeshStandardMaterial({ color:col(o.accent??'#f4ecff'), emissive:col(o.accent??'#c9a8e8'),
+      emissiveIntensity:0.9, roughness:0.2, side:THREE.DoubleSide }));
+  led.rotation.x=Math.PI/2; led.position.set(0.28,h-0.137,0); g.add(led);
+  g.userData.size={w:0.45,h,d:0.38};
+  g.userData.grow=true; g.userData.ppfd=o.ppfd??250; g.userData.coverage=o.coverage??0.7;
+  g.userData.lampShade=led;
+  return g;
+};
+
+/* ============================================================
+   생활 가구 확장
+============================================================ */
+B.shoe_cabinet=(o)=>{
+  const w=o.w??0.8, d=o.d??0.34, h=o.h??0.9;
+  const g=new THREE.Group(); const m=furnMat(o.color??'#e6dccd','matte');
+  g.add(panel(w,h,d,m,0,h/2,0,0.03));
+  for(let i=0;i<3;i++) g.add(bx(w-0.06,0.012,0.008,furnMat('#cdbfab','satin'),0,h*(i+0.5)/3,d/2+0.005));
+  g.userData.size={w,h,d}; return addSlots(g, tierSlots(w,h,2), [h], [d]);
+};
+B.tv_stand=(o)=>{
+  const w=o.w??1.4, d=o.d??0.38, h=o.h??0.45;
+  const g=new THREE.Group(); const m=furnMat(o.color??'#e3d3bd','matte');
+  g.add(panel(w,h*0.72,d,m,0,h*0.64,0,0.025));
+  g.add(bx(w*0.46,0.014,0.008,furnMat('#cdbfab','satin'),-w*0.24,h*0.64,d/2+0.005));
+  g.add(bx(w*0.46,0.014,0.008,furnMat('#cdbfab','satin'), w*0.24,h*0.64,d/2+0.005));
+  legs4(g,w-0.1,d,h*0.28,furnMat(o.accent??'#c3b49c','satin'),0.02,0.05);
+  g.userData.size={w,h,d}; return addSlots(g, tierSlots(w,h,3), [h], [d]);
+};
+B.cube_storage=(o)=>{
+  const w=o.w??0.78, d=o.d??0.32, h=o.h??0.78, t=0.03;
+  const g=new THREE.Group(); const m=furnMat(o.color??'#eae2d6','matte');
+  g.add(bx(t,h,d,m,-w/2+t/2,h/2,0)); g.add(bx(t,h,d,m,w/2-t/2,h/2,0));
+  g.add(bx(w,t,d,m,0,t/2,0)); g.add(bx(w,t,d,m,0,h-t/2,0));
+  g.add(bx(w-2*t,t,d,m,0,h/2,0)); g.add(bx(t,h-2*t,d,m,0,h/2,0));
+  g.add(bx(w-2*t,h/2-t,t*0.6,m,0,h*0.75,-d/2+t/2));
+  const boxCol=['#dfd6c7','#d8e0e4','#e2ddd2','#d9e2da'];
+  for(const [bxp,byp] of [[-1,0],[1,1]]){
+    const bxm=furnMat(boxCol[(bxp+2+byp)%4],'matte');
+    g.add(panel(w/2-t*2, h/2-t*2, d-0.06, bxm, bxp*(w/4), byp?h*0.75:h*0.25, 0.01, 0.025));
+  }
+  g.userData.size={w,h,d}; return addSlots(g, tierSlots(w,h,2), [h], [d]);
+};
+B.drying_rack=(o)=>{
+  const w=o.w??0.9, d=o.d??0.55, h=o.h??1.0;
+  const g=new THREE.Group(); const m=furnMat(o.color??'#cfd4d8','satin');
+  for(const sz of [-1,1]) for(const sx of [-1,1]){
+    const leg=cyl(0.012,0.012,h,m, sx*(w/2-0.02), h/2, sz*(d/2-0.05), 6);
+    leg.rotation.x=sz*0.16; g.add(leg);
+  }
+  for(let i=0;i<5;i++){
+    const bar=cyl(0.008,0.008,w-0.04,m,0,h-0.03,-d/2+0.09+i*((d-0.18)/4),6);
+    bar.rotation.z=Math.PI/2; g.add(bar);
+  }
+  g.userData.size={w,h,d}; g.userData.movable=true; return g;
+};
+B.room_divider=(o)=>{
+  const w=o.w??1.35, h=o.h??1.6, panels=3;
+  const g=new THREE.Group(); const m=furnMat(o.color??'#e8dfd2','matte');
+  const pw=w/panels;
+  for(let i=0;i<panels;i++){
+    const p=panel(pw-0.02,h,0.035,m,-w/2+pw*(i+0.5),h/2,(i%2?0.06:-0.06),0.02);
+    p.rotation.y=(i%2?1:-1)*0.22; g.add(p);
+  }
+  g.userData.size={w,h,d:0.3}; g.userData.movable=true; return g;
+};
+B.laundry_basket=(o)=>{
+  const w=o.w??0.42, h=o.h??0.5;
+  const g=new THREE.Group(); const m=furnMat(o.color??'#e0d9c9','matte');
+  g.add(cyl(w/2,w/2*0.82,h,m,0,h/2,0,18));
+  g.add(cyl(w/2*1.02,w/2*1.02,0.03,furnMat(o.accent??'#cbbfae','satin'),0,h,0,18));
+  g.userData.size={w,h,d:w}; return g;
+};
+B.picture_frame=(o)=>{
+  const w=o.w??0.42, h=o.h??0.54;
+  const g=new THREE.Group(); const m=furnMat(o.color??'#cbbfae','satin');
+  g.add(panel(w,h,0.03,m,0,0,0,0.015));
+  const art=new THREE.Mesh(new THREE.PlaneGeometry(w-0.07,h-0.07),
+    new THREE.MeshStandardMaterial({ color:col(o.accent??'#dfe6ea'), roughness:0.8 }));
+  art.position.z=0.017; g.add(art);
+  g.userData.size={w,h,d:0.03}; g.userData.mount='wall'; return g;
+};
+B.wall_clock=(o)=>{
+  const r=(o.w??0.3)/2;
+  const g=new THREE.Group(); const m=furnMat(o.color??'#e8dfd2','matte');
+  const body=cyl(r,r,0.04,m,0,0,0,26); body.rotation.x=Math.PI/2; g.add(body);
+  const face=new THREE.Mesh(new THREE.CircleGeometry(r*0.88,26),
+    new THREE.MeshStandardMaterial({ color:col('#faf8f4'), roughness:0.85 }));
+  face.position.z=0.021; g.add(face);
+  const hand=furnMat(o.accent??'#6a6f78','satin');
+  const hh=bx(r*0.5,0.012,0.006,hand,r*0.2,0,0.026); g.add(hh);
+  const mh=bx(0.012,r*0.72,0.006,hand,0,r*0.3,0.026); g.add(mh);
+  g.userData.size={w:r*2,h:r*2,d:0.04}; g.userData.mount='wall'; return g;
+};
+B.floor_cushion=(o)=>{
+  const w=o.w??0.6, h=o.h??0.16;
+  const g=new THREE.Group();
+  g.add(panel(w,h,w,furnMat(o.color??'#dfe0d4','matte'),0,h/2,0,0.06));
+  g.userData.size={w,h,d:w}; return g;
+};
+B.low_table=(o)=>{
+  const w=o.w??0.9, d=o.d??0.55, h=o.h??0.32;
+  const g=new THREE.Group(); const m=furnMat(o.color??'#e5d3b8','matte');
+  g.add(panel(w,0.04,d,m,0,h-0.02,0,0.02));
+  legs4(g,w,d,h-0.04,furnMat(o.accent??'#cbbba2','satin'),0.02,0.05);
+  g.userData.size={w,h,d}; return addSlots(g, tierSlots(w,h,2), [h], [d]);
 };
 
 export const FURNITURE_TYPES=Object.keys(B);

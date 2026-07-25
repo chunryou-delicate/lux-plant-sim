@@ -20,6 +20,7 @@ const winPresets = await fetch('./data/window_presets.json').then(r=>r.json()).t
 const doorPresets = await fetch('./data/door_presets.json').then(r=>r.json()).then(d=>d.presets||d).catch(()=>({}));
 const finishes   = await fetch('./data/room_finishes.json').then(r=>r.json()).catch(()=>null);
 const furnPresets= await fetch('./data/furniture_presets.json').then(r=>r.json()).then(d=>d.presets||d).catch(()=>({}));
+const lightPresets=await fetch('./data/lighting_presets.json').then(r=>r.json()).catch(()=>({}));
 
 const cv=document.getElementById('cv');
 const ctx=createScene(cv);
@@ -35,7 +36,7 @@ async function buildRoomPreset(name){
   while(houseGroup.children.length) houseGroup.remove(houseGroup.children[0]);
   curRoom=name;
   const roomDef=houseRooms.rooms[name];
-  const built=buildHouse(GRAIN, roomDef, winPresets, doorPresets, finishes, furnPresets);
+  const built=buildHouse(GRAIN, roomDef, winPresets, doorPresets, finishes, furnPresets, lightPresets);
   shells=built.shells;
   houseGroup.add(built.room);
   // 방 크기가 바뀌면 바닥 히트맵도 그 크기로 다시 (방마다 5×4, 3×4 등)

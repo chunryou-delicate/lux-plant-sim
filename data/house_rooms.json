@@ -78,9 +78,26 @@
           "z": -0.6
         },
         {
-          "preset": "pot_small",
-          "x": 0,
-          "z": -1.75
+          "preset": "shelf_etagere_3tier",
+          "x": -1.6,
+          "z": -1.5,
+          "rot": 0
+        },
+        {
+          "preset": "growlight_bar",
+          "x": -1.6,
+          "z": -1.5,
+          "y": 1.02,
+          "spectrum": "redblue",
+          "schedule": "photo12"
+        },
+        {
+          "preset": "growlight_clip",
+          "x": 1.35,
+          "z": -1.5,
+          "y": 0.75,
+          "spectrum": "full",
+          "schedule": "photo16"
         }
       ]
     },
@@ -170,14 +187,11 @@
           "z": 0
         },
         {
-          "preset": "pot_mid",
-          "x": 0.5,
-          "z": -2
-        },
-        {
-          "preset": "pot_small",
-          "x": 2.15,
-          "z": -2.05
+          "preset": "lamp_pendant",
+          "x": 0.4,
+          "z": 0.6,
+          "spectrum": "warm",
+          "schedule": "night"
         }
       ]
     },
@@ -300,16 +314,6 @@
           "preset": "lamp_floor",
           "x": -3.3,
           "z": -1.8
-        },
-        {
-          "preset": "pot_large",
-          "x": 0.9,
-          "z": -2.4
-        },
-        {
-          "preset": "pot_mid",
-          "x": 3.6,
-          "z": -2.4
         }
       ]
     },
@@ -506,16 +510,6 @@
           "preset": "lamp_ceiling",
           "x": 1.4,
           "z": 0
-        },
-        {
-          "preset": "pot_large",
-          "x": 2.8,
-          "z": -1.8
-        },
-        {
-          "preset": "pot_mid",
-          "x": 0.2,
-          "z": -2
         }
       ]
     }

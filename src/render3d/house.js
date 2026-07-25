@@ -227,7 +227,7 @@ function shapedFiller(wall, spec, p, m){
    메인: 방 조립. async (GLB 로드 대기).
    반환: { room, shells, windows, glassMeshes, winPos }
 ============================================================ */
-export function buildHouse(GRAIN, roomDefIn, winPresets, doorPresets={}, finishes=null, furnPresets={}){
+export function buildHouse(GRAIN, roomDefIn, winPresets, doorPresets={}, finishes=null, furnPresets={}, lightPresets={}){
   // 마감재 id(wall/floor/ceil) → 색·거칠기로 확장 (id 없으면 기존 wallColor 등 그대로)
   const roomDef=applyFinishes(roomDefIn, finishes);
   // ★ 이 방의 치수 적용 (없으면 기본 7×7×4)
@@ -384,18 +384,52 @@ export function buildHouse(GRAIN, roomDefIn, winPresets, doorPresets={}, finishe
   }
 
   // ---------- 가구 배치 (roomDef.furniture) ----------
-  // [{ preset, x, z, rot(도), color, accent, w,h,d }] — x,z는 방 중심 기준(m)
+  // [{ preset, x, z, y(선택: 벽걸이/조명 높이), rot(도), color, spectrum, schedule }]
   const furnGroup=new THREE.Group();
+  const lightRigs=[];      // 조명 기구 목록 — 요금·PPFD·스케줄 계산에 사용
   for(const f of (roomDef.furniture||[])){
     const p={ ...(furnPresets[f.preset]||{}), ...f };
     const type=p.type||f.preset;
     const g=buildFurniture(type, p);
-    const yBase=g.userData.hangFromCeiling ? CH : 0;      // 천장등은 천장에서 매달림
+    const hang=g.userData.hangFromCeiling;
+    const yBase = f.y!=null ? f.y : (hang ? CH : 0);       // 천장 매달림/벽걸이 높이
     g.position.set(f.x??0, yBase, f.z??0);
     if(f.rot) g.rotation.y=f.rot*Math.PI/180;
     furnGroup.add(g);
+
+    // ★ 조명 기구면 실제 광원 생성 (밤 연출·거리감쇠 시각화)
+    const fxSpec=(lightPresets.fixtures||{})[f.preset];
+    if(fxSpec){
+      const specId=f.spectrum||fxSpec.spectrum||'full';
+      const sp=(lightPresets.spectra||{})[specId]||{color:'#fff4e2'};
+      const emitY = yBase + (hang ? -(g.userData.size?.h||0.4)*0.8 : (g.userData.size?.h||0.4)*0.92);
+      const L=new THREE.PointLight(col(sp.color), 0, (fxSpec.coverage_r||0.5)*6, 2);
+      L.position.set(f.x??0, emitY, f.z??0);
+      L.castShadow=false;                                  // 보조광 — 그림자맵 절약
+      furnGroup.add(L);
+      lightRigs.push({ id:f.preset, fx:fxSpec, spec:sp, specId,
+        schedule:f.schedule||fxSpec.default_schedule||'off',
+        light:L, shade:g.userData.lampShade||null,
+        pos:{x:f.x??0,y:emitY,z:f.z??0}, grow:!!fxSpec.grow });
+    }
   }
   if(furnGroup.children.length) room.add(furnGroup);
+
+  // 가구 위 화분 슬롯을 월드좌표로 수집 (조도 계산·배치용)
+  const plantSlots=[];
+  furnGroup.traverse(o=>{
+    if(!o.userData||!o.userData.slots) return;
+    const base=o.position, rot=o.rotation.y||0, c=Math.cos(rot), s=Math.sin(rot);
+    o.userData.slots.forEach((sl,i)=>{
+      plantSlots.push({
+        owner:o.userData.type, idx:i,
+        x:+(base.x + sl.x*c + sl.z*s).toFixed(3),
+        y:+(base.y + sl.y).toFixed(3),
+        z:+(base.z - sl.x*s + sl.z*c).toFixed(3),
+        maxPotD:(o.userData.tier_max_pot_d||[])[Math.min(i,(o.userData.tier_max_pot_d||[]).length-1)]
+      });
+    });
+  });
 
   // 그림자: 껍데기 6면 모두 던지고/받게 (숨겨도 빛 막게)
   for(const k in shells) shells[k].traverse(o=>{ if(o.isMesh){ o.castShadow=true; o.receiveShadow=true; } });
@@ -403,7 +437,8 @@ export function buildHouse(GRAIN, roomDefIn, winPresets, doorPresets={}, finishe
   // 엔진 winPos = 첫 창(없으면 뒷벽 기본)
   const winPos = winWorld[0] || new THREE.Vector3(0.6,2.2,-CD/2+0.05);
 
-  return { room, shells, windows:winWorld, glassMeshes, winPos, size:{ w:CW, d:CD, h:CH }, furniture:furnGroup };
+  return { room, shells, windows:winWorld, glassMeshes, winPos, size:{ w:CW, d:CD, h:CH },
+           furniture:furnGroup, lightRigs, plantSlots };
 }
 
 /* ---- 원점 중심 그룹을 벽에 앉힌다 (위치 + Y회전) ---- */

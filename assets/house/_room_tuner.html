@@ -61,6 +61,19 @@
   <div class="grp"><h3>🚪 방문</h3><select id="door"></select></div>
   <div class="grp"><h3>🛋 가구</h3><label class="opt"><input type="checkbox" id="furnOn" checked>가구 표시</label></div>
   <div class="grp">
+    <h3>💡 조명 · 식물등</h3>
+    <label class="opt" style="font-size:11.5px">추가할 기구</label>
+    <select id="lightFx"></select>
+    <label class="opt" style="margin-top:6px;font-size:11.5px">스펙트럼</label>
+    <select id="lightSpec"></select>
+    <label class="opt" style="margin-top:6px;font-size:11.5px">광주기(타이머)</label>
+    <select id="lightSch"></select>
+    <div class="row" style="margin-top:6px"><span class="rlab">높이</span><input type="range" id="lightY" min="20" max="240" value="120"><span class="rlab" id="lightYlab">1.20m</span></div>
+    <button class="btn" id="addLight" style="margin-top:7px">이 조명 놓기(방 가운데)</button>
+    <button class="btn" id="clrLight" style="background:#8a8f98;margin-top:5px">조명 모두 치우기</button>
+    <div id="lightInfo" style="font-size:11.5px;color:#4a5058;font-weight:700;margin-top:8px;line-height:1.6"></div>
+  </div>
+  <div class="grp">
     <h3>🧍 스케일 기준</h3>
     <select id="ref">
       <option value="none">없음</option>
@@ -87,12 +100,13 @@ const showErr=m=>{const e=document.getElementById('err');e.textContent=m;e.style
 window.addEventListener('error',e=>showErr('오류: '+e.message));
 window.addEventListener('unhandledrejection',e=>showErr('로드 오류: '+(e.reason&&e.reason.message||e.reason)));
 
-let buildHouse, updateShellVisibility, faintGrainTexture, RW, RD, RH;
+let buildHouse, updateShellVisibility, faintGrainTexture, RW, RD, RH, LSIM;
 try{
   const H=await import('../../src/render3d/house.js'+V);
   const T=await import('../../src/render3d/textures.js'+V);
   ({ buildHouse, updateShellVisibility, RW, RD, RH }=H);
   ({ faintGrainTexture }=T);
+  LSIM=await import('../../src/render3d/lighting_sim.js'+V);
 }catch(e){ showErr('모듈 로드 실패: '+e.message); throw e; }
 
 const canvas=document.getElementById('c');
@@ -116,11 +130,43 @@ try{const p=new THREE.PMREMGenerator(renderer);scene.environment=p.fromEquirecta
 
 const cam=new THREE.PerspectiveCamera(38,innerWidth/innerHeight,0.1,200);
 const GRAIN=faintGrainTexture();
-let ROOMS,FIN,WP,DP,FU={}, roomKey, shells=null;
+let ROOMS,FIN,WP,DP,FU={},LP={}, roomKey, shells=null;
 const holder=new THREE.Group(); scene.add(holder);
 let cur=null;   // 현재 편집중 roomDef(복제본)
 
 function opt(list,val,fmt){ return list.map(o=>`<option value="${o.id}" ${o.id===val?'selected':''}>${fmt(o)}</option>`).join(''); }
+
+/* ===== 💡 조명 반영: 스케줄로 on/off, 밝기·색은 스펙트럼, 요금·PPFD 표시 =====
+   태양 슬라이더(0~100)를 하루 0~24시로 환산해 광주기와 맞춘다. */
+function sunHour(){ return (+document.getElementById('sun').value)/100*24; }
+function lightInfo(){
+  const hour=sunHour();
+  const items=[];
+  for(const r of RIGS){
+    const sch=(LP.schedules||{})[r.schedule]||{hours:0};
+    const on=LSIM.isOn(sch, hour);
+    r.light.intensity = on ? (r.fx.watts||10)*(r.fx.grow?0.10:0.06) : 0;
+    r.light.color.set(r.spec.color||'#fff4e2');
+    if(r.shade&&r.shade.material) r.shade.material.emissiveIntensity = on?0.9:0.12;
+    items.push({ fx:r.fx, spec:r.spec, on, hours:sch.hours||0, pos:r.pos });
+  }
+  const el=document.getElementById('lightInfo'); if(!el) return;
+  if(!items.length){ el.innerHTML='<span style="color:#8a9098">조명 없음 — 위에서 골라 놓아보세요</span>'; return; }
+  const maxHours=Math.max(...items.map(i=>i.hours));
+  const sum=LSIM.summarize(items, LP.tariff, maxHours, (LP.photoperiod_need||{}).monstera);
+  // 화분 슬롯 중 가장 밝은 곳의 PPFD (거리 감쇠 반영)
+  let best=0, bestName='-';
+  for(const s of (SLOTS.length?SLOTS:[{x:0,y:0.8,z:0,owner:'바닥'}])){
+    const v=LSIM.ppfdSum(items, s); if(v>best){ best=v; bestName=s.owner||'슬롯'; }
+  }
+  const onNow=items.filter(i=>i.on).length;
+  el.innerHTML=
+    `켜짐 <b>${onNow}/${items.length}</b> · 총 ${sum.totalWatts}W (${Math.round(hour)}시)<br>`+
+    `① 전기 <b>${sum.krwDay}원/일</b> · ${sum.krwMonth}원/월 (${sum.kwh}kWh)<br>`+
+    `② 광주기 ${maxHours}h · 적정도 <b>${(sum.photoScore*100)|0}%</b>${sum.photoScore<0.7?' ⚠':''}<br>`+
+    `③ 분위기 <b>${(sum.mood*100)|0}%</b>${sum.mood<0.6?' (보라빛 강함)':''}<br>`+
+    `④ 최대 PPFD <b>${best.toFixed(0)}</b> @${bestName} ≈ ${LSIM.ppfdToLux(best).toLocaleString()}lx`;
+}
 
 /* ===== 스케일 기준: 사람 실루엣 / 캐릭터 GLB / 화분 소·중·대 ===== */
 const refGroup=new THREE.Group(); scene.add(refGroup);
@@ -190,14 +236,17 @@ async function buildRefs(){
   if(refPots){ const p=potSet(); p.position.set(Math.min(1.1,SZ.w/2-1.2),0,SZ.d/2-1.5); refGroup.add(p); }
 }
 
+let RIGS=[], SLOTS=[];          // 조명 기구 / 화분 슬롯(월드좌표)
 let SZ={w:RW,d:RD,h:RH};        // 현재 방 실제 치수
 function rebuild(){
   while(holder.children.length) holder.remove(holder.children[0]);
-  const built=buildHouse(GRAIN, showFurn?cur:{...cur,furniture:[]}, WP, DP, FIN, FU);
+  const built=buildHouse(GRAIN, showFurn?cur:{...cur,furniture:[]}, WP, DP, FIN, FU, LP);
+  RIGS=built.lightRigs||[]; SLOTS=built.plantSlots||[];
   shells=built.shells; holder.add(built.room); SZ=built.size;
   dist=Math.max(4.5, Math.max(SZ.w,SZ.d)*1.55);      // 방 크기에 맞춰 카메라 거리
   buildRefs();
   updateCam();
+  if(typeof lightInfo==='function') lightInfo();
 }
 
 // ---- 태양 ----
@@ -279,18 +328,19 @@ function loadRoom(){
 
 let COLORS=[];
 (async()=>{
-  const [rooms,fin,wp,dp,fc,fu]=await Promise.all([
+  const [rooms,fin,wp,dp,fc,fu,lp]=await Promise.all([
     fetch('../../data/house_rooms.json'+V).then(r=>r.json()),
     fetch('../../data/room_finishes.json'+V).then(r=>r.json()),
     fetch('../../data/window_presets.json'+V).then(r=>r.json()).then(d=>d.presets||d),
     fetch('../../data/door_presets.json'+V).then(r=>r.json()).then(d=>d.presets||d),
     fetch('../../data/frame_colors.json'+V).then(r=>r.json()),
-    fetch('../../data/furniture_presets.json'+V).then(r=>r.json()).then(d=>d.presets||d)
+    fetch('../../data/furniture_presets.json'+V).then(r=>r.json()).then(d=>d.presets||d),
+    fetch('../../data/lighting_presets.json'+V).then(r=>r.json())
   ]).catch(e=>{showErr('데이터 로드 실패: '+e.message);throw e;});
-  ROOMS=rooms;FIN=fin;WP=wp;DP=dp;COLORS=fc.colors;FU=fu;
+  ROOMS=rooms;FIN=fin;WP=wp;DP=dp;COLORS=fc.colors;FU=fu;LP=lp;
   const qRoom=new URLSearchParams(location.search).get('room');   // ?room=tworoom 으로 바로 열기
   roomKey=(qRoom&&ROOMS.rooms[qRoom])?qRoom:(ROOMS.default||Object.keys(ROOMS.rooms)[0]);
-  loadRoom(); resize(); updateSun(55);
+  loadRoom(); resize(); updateSun(55); lightInfo();
   // 스케일 기준(사람·화분)
   document.getElementById('furnOn').onchange=e=>{ showFurn=e.target.checked; rebuild(); };
   document.getElementById('ref').onchange=e=>{ refMode=e.target.value; buildRefs(); };
@@ -298,7 +348,31 @@ let COLORS=[];
   rh.oninput=e=>{ refH=+e.target.value/100; document.getElementById('refHlab').textContent=refH.toFixed(2)+'m'; buildRefs(); };
   document.getElementById('refPots').onchange=e=>{ refPots=e.target.checked; buildRefs(); };
 
-  document.getElementById('sun').oninput=e=>updateSun(+e.target.value);
+  // ===== 💡 조명 패널 =====
+  const fxSel=document.getElementById('lightFx'), spSel=document.getElementById('lightSpec'),
+        schSel=document.getElementById('lightSch'), ySl=document.getElementById('lightY');
+  fxSel.innerHTML=Object.entries(LP.fixtures||{})
+    .map(([k,v])=>`<option value="${k}" ${v.grow?'':''}>${v.grow?'🌱 ':'💡 '}${v.name_ko} · ${v.watts}W</option>`).join('');
+  spSel.innerHTML=Object.entries(LP.spectra||{}).map(([k,v])=>`<option value="${k}">${v.name_ko} (효율 ×${v.par_eff}, 예쁨 ${v.beauty})</option>`).join('');
+  schSel.innerHTML=Object.entries(LP.schedules||{}).map(([k,v])=>`<option value="${k}" ${k==='photo12'?'selected':''}>${v.name_ko}</option>`).join('');
+  const syncSpec=()=>{ const f=(LP.fixtures||{})[fxSel.value]; if(f&&f.spectrum) spSel.value=f.spectrum; };
+  syncSpec(); fxSel.onchange=()=>{syncSpec(); lightInfo();};
+  spSel.onchange=schSel.onchange=()=>lightInfo();
+  ySl.oninput=()=>{ document.getElementById('lightYlab').textContent=(+ySl.value/100).toFixed(2)+'m'; };
+
+  document.getElementById('addLight').onclick=()=>{
+    cur.furniture=cur.furniture||[];
+    cur.furniture.push({ preset:fxSel.value, x:0, z:0, y:+ySl.value/100,
+      spectrum:spSel.value, schedule:schSel.value });
+    rebuild(); lightInfo();
+  };
+  document.getElementById('clrLight').onclick=()=>{
+    if(!cur.furniture) return;
+    cur.furniture=cur.furniture.filter(f=>!(LP.fixtures||{})[f.preset]);
+    rebuild(); lightInfo();
+  };
+
+  document.getElementById('sun').oninput=e=>{ updateSun(+e.target.value); lightInfo(); };
   const ex=document.getElementById('expo');
   ex.oninput=e=>{const v=+e.target.value/100;renderer.toneMappingExposure=v;document.getElementById('expolab').textContent=v.toFixed(2);};
   const dump=()=>JSON.stringify({[roomKey]:cur},null,2);

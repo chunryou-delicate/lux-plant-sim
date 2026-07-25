@@ -156,30 +156,6 @@
       "color": "#d6e2dc",
       "room": "공통"
     },
-    "pot_small": {
-      "type": "pot",
-      "name_ko": "화분(소)",
-      "h": 0.15,
-      "color": "#d9a88b",
-      "accent": "#7fae74",
-      "room": "창턱·선반"
-    },
-    "pot_mid": {
-      "type": "pot",
-      "name_ko": "화분(중)",
-      "h": 0.3,
-      "color": "#d9a88b",
-      "accent": "#7fae74",
-      "room": "바닥·창가"
-    },
-    "pot_large": {
-      "type": "pot",
-      "name_ko": "화분(대)",
-      "h": 0.5,
-      "color": "#c9967c",
-      "accent": "#6da165",
-      "room": "바닥"
-    },
     "lamp_floor": {
       "type": "lamp_floor",
       "name_ko": "플로어 스탠드",
@@ -540,6 +516,440 @@
       "color": "#cfc7bb",
       "accent": "#f6efdc",
       "room": "책상 위"
+    },
+    "plant_tray_window": {
+      "type": "plant_tray",
+      "name_ko": "창가 물받이 트레이",
+      "w": 0.9,
+      "d": 0.18,
+      "color": "#dfe4e0",
+      "room": "창턱",
+      "mount": "window",
+      "note": "물 흘림 방지 트레이, 작은 화분 4"
+    },
+    "shelf_corner_3tier": {
+      "type": "shelf_corner",
+      "name_ko": "코너 선반-3단",
+      "w": 0.5,
+      "h": 1.05,
+      "tiers": 3,
+      "color": "#e8dfd2",
+      "accent": "#cbbfae",
+      "room": "모서리",
+      "mount": "corner"
+    },
+    "plant_step_3": {
+      "type": "plant_step",
+      "name_ko": "계단식 플랜트대-3단",
+      "w": 0.9,
+      "d": 0.28,
+      "tiers": 3,
+      "color": "#e0d5c2",
+      "accent": "#c3b49c",
+      "room": "창가"
+    },
+    "plant_pedestal": {
+      "type": "plant_pedestal",
+      "name_ko": "화분 받침대(높은)",
+      "w": 0.26,
+      "h": 0.62,
+      "color": "#e0d5c2",
+      "accent": "#c3b49c",
+      "room": "바닥"
+    },
+    "plant_grid_wall": {
+      "type": "plant_grid",
+      "name_ko": "벽 그리드(걸이)",
+      "w": 0.9,
+      "h": 0.9,
+      "color": "#cfc7bb",
+      "room": "벽",
+      "mount": "wall",
+      "note": "걸이 화분 6"
+    },
+    "plant_hanger": {
+      "type": "plant_hanger",
+      "name_ko": "행잉 플랜터",
+      "w": 0.26,
+      "h": 0.75,
+      "color": "#d9a88b",
+      "accent": "#cbbfae",
+      "room": "천장",
+      "note": "창가에 매달기"
+    },
+    "greenhouse_cabinet": {
+      "type": "greenhouse_cabinet",
+      "name_ko": "미니 온실장",
+      "w": 0.7,
+      "d": 0.4,
+      "h": 1.5,
+      "tiers": 3,
+      "color": "#cfd8dc",
+      "room": "바닥",
+      "note": "유리문·보온"
+    },
+    "lamp_pendant": {
+      "type": "lamp_pendant",
+      "name_ko": "펜던트 등(돔)",
+      "w": 0.32,
+      "h": 0.55,
+      "color": "#cfc7bb",
+      "accent": "#f6efdc",
+      "room": "천장"
+    },
+    "lamp_pendant_cone": {
+      "type": "lamp_pendant",
+      "name_ko": "펜던트 등(콘)",
+      "w": 0.3,
+      "h": 0.6,
+      "dome": false,
+      "color": "#cfc7bb",
+      "accent": "#f6efdc",
+      "room": "천장"
+    },
+    "lamp_wall": {
+      "type": "lamp_wall",
+      "name_ko": "벽등",
+      "color": "#cfc7bb",
+      "accent": "#f6efdc",
+      "room": "벽",
+      "mount": "wall"
+    },
+    "string_light": {
+      "type": "string_light",
+      "name_ko": "스트링 라이트",
+      "w": 1.6,
+      "bulbs": 7,
+      "color": "#b9b2a6",
+      "accent": "#f8ecc9",
+      "room": "벽·창가",
+      "note": "장식광"
+    },
+    "growlight_clip": {
+      "type": "growlight_clip",
+      "name_ko": "식물등-클립형",
+      "color": "#dfe3e6",
+      "accent": "#f2e6ff",
+      "room": "선반·책상",
+      "grow": true,
+      "ppfd": 120,
+      "coverage": 0.35
+    },
+    "growlight_bar": {
+      "type": "growlight_bar",
+      "name_ko": "식물등-바(선반밑)",
+      "w": 0.7,
+      "color": "#dfe3e6",
+      "accent": "#f4ecff",
+      "room": "선반 밑",
+      "mount": "under-shelf",
+      "grow": true,
+      "ppfd": 180,
+      "coverage": 0.5
+    },
+    "growlight_stand": {
+      "type": "growlight_stand",
+      "name_ko": "식물등-스탠드",
+      "h": 1.5,
+      "color": "#cfd4d8",
+      "accent": "#f4ecff",
+      "room": "바닥",
+      "grow": true,
+      "ppfd": 250,
+      "coverage": 0.7
+    },
+    "shoe_cabinet": {
+      "type": "shoe_cabinet",
+      "name_ko": "신발장",
+      "w": 0.8,
+      "h": 0.9,
+      "color": "#e6dccd",
+      "room": "현관"
+    },
+    "tv_stand": {
+      "type": "tv_stand",
+      "name_ko": "TV장",
+      "w": 1.4,
+      "color": "#e3d3bd",
+      "accent": "#c3b49c",
+      "room": "거실"
+    },
+    "cube_storage": {
+      "type": "cube_storage",
+      "name_ko": "큐브 수납장",
+      "w": 0.78,
+      "h": 0.78,
+      "color": "#eae2d6",
+      "room": "공통"
+    },
+    "drying_rack": {
+      "type": "drying_rack",
+      "name_ko": "빨래 건조대",
+      "w": 0.9,
+      "color": "#cfd4d8",
+      "room": "원룸",
+      "movable": true
+    },
+    "room_divider": {
+      "type": "room_divider",
+      "name_ko": "파티션 가림막",
+      "w": 1.35,
+      "h": 1.6,
+      "color": "#e8dfd2",
+      "room": "공간분리",
+      "movable": true
+    },
+    "laundry_basket": {
+      "type": "laundry_basket",
+      "name_ko": "빨래 바구니",
+      "w": 0.42,
+      "h": 0.5,
+      "color": "#e0d9c9",
+      "accent": "#cbbfae",
+      "room": "공통"
+    },
+    "picture_frame": {
+      "type": "picture_frame",
+      "name_ko": "액자",
+      "w": 0.42,
+      "h": 0.54,
+      "color": "#cbbfae",
+      "accent": "#dfe6ea",
+      "room": "벽",
+      "mount": "wall"
+    },
+    "wall_clock": {
+      "type": "wall_clock",
+      "name_ko": "벽시계",
+      "w": 0.3,
+      "color": "#e8dfd2",
+      "accent": "#6a6f78",
+      "room": "벽",
+      "mount": "wall"
+    },
+    "floor_cushion": {
+      "type": "floor_cushion",
+      "name_ko": "바닥 쿠션",
+      "w": 0.6,
+      "color": "#dfe0d4",
+      "room": "공통"
+    },
+    "low_table": {
+      "type": "low_table",
+      "name_ko": "좌식 테이블",
+      "w": 0.9,
+      "d": 0.55,
+      "color": "#e5d3b8",
+      "accent": "#cbbba2",
+      "room": "공통"
+    },
+    "chair_arm_sage": {
+      "type": "chair_arm",
+      "name_ko": "암체어(세이지)",
+      "color": "#d3d9c6",
+      "accent": "#b2bba2",
+      "colorway": "sage",
+      "room": "거실"
+    },
+    "chair_arm_sky": {
+      "type": "chair_arm",
+      "name_ko": "암체어(파스텔블루)",
+      "color": "#cddbe6",
+      "accent": "#a9becd",
+      "colorway": "sky",
+      "room": "거실"
+    },
+    "chair_arm_lilac": {
+      "type": "chair_arm",
+      "name_ko": "암체어(라일락)",
+      "color": "#ddd4e6",
+      "accent": "#bcb0cc",
+      "colorway": "lilac",
+      "room": "거실"
+    },
+    "nightstand_white": {
+      "type": "nightstand",
+      "name_ko": "협탁(화이트)",
+      "color": "#f2f0ec",
+      "accent": "#d6d3cd",
+      "colorway": "white",
+      "room": "침실"
+    },
+    "nightstand_mint": {
+      "type": "nightstand",
+      "name_ko": "협탁(민트)",
+      "color": "#c9d6d2",
+      "accent": "#a6bcb5",
+      "colorway": "mint",
+      "room": "침실"
+    },
+    "desk_white": {
+      "type": "desk",
+      "name_ko": "책상(화이트)",
+      "w": 1.2,
+      "d": 0.6,
+      "color": "#f2f0ec",
+      "accent": "#d6d3cd",
+      "colorway": "white",
+      "room": "공통"
+    },
+    "desk_walnut": {
+      "type": "desk",
+      "name_ko": "책상(월넛)",
+      "w": 1.2,
+      "d": 0.6,
+      "color": "#b08a63",
+      "accent": "#8f6a46",
+      "colorway": "walnut",
+      "room": "공통"
+    },
+    "desk_mint": {
+      "type": "desk",
+      "name_ko": "책상(민트)",
+      "w": 1.2,
+      "d": 0.6,
+      "color": "#c9d6d2",
+      "accent": "#a6bcb5",
+      "colorway": "mint",
+      "room": "공통"
+    },
+    "dresser_white": {
+      "type": "dresser",
+      "name_ko": "서랍장(화이트)",
+      "w": 0.9,
+      "h": 0.8,
+      "color": "#f2f0ec",
+      "accent": "#d6d3cd",
+      "colorway": "white",
+      "room": "공통"
+    },
+    "dresser_sky": {
+      "type": "dresser",
+      "name_ko": "서랍장(파스텔블루)",
+      "w": 0.9,
+      "h": 0.8,
+      "color": "#cddbe6",
+      "accent": "#a9becd",
+      "colorway": "sky",
+      "room": "공통"
+    },
+    "coffee_table_walnut": {
+      "type": "coffee_table",
+      "name_ko": "커피 테이블(월넛)",
+      "w": 0.95,
+      "color": "#b08a63",
+      "accent": "#8f6a46",
+      "colorway": "walnut",
+      "room": "거실"
+    },
+    "coffee_table_white": {
+      "type": "coffee_table",
+      "name_ko": "커피 테이블(화이트)",
+      "w": 0.95,
+      "color": "#f2f0ec",
+      "accent": "#d6d3cd",
+      "colorway": "white",
+      "room": "거실"
+    },
+    "shelf_etagere_3tier_white": {
+      "type": "shelf_etagere",
+      "name_ko": "다단 선반(화이트)",
+      "w": 0.72,
+      "d": 0.28,
+      "h": 0.794,
+      "tiers": 3,
+      "color": "#f2f0ec",
+      "accent": "#d6d3cd",
+      "colorway": "white",
+      "room": "바닥"
+    },
+    "shelf_etagere_3tier_walnut": {
+      "type": "shelf_etagere",
+      "name_ko": "다단 선반(월넛)",
+      "w": 0.72,
+      "d": 0.28,
+      "h": 0.794,
+      "tiers": 3,
+      "color": "#b08a63",
+      "accent": "#8f6a46",
+      "colorway": "walnut",
+      "room": "바닥"
+    },
+    "shelf_etagere_3tier_mint": {
+      "type": "shelf_etagere",
+      "name_ko": "다단 선반(민트)",
+      "w": 0.72,
+      "d": 0.28,
+      "h": 0.794,
+      "tiers": 3,
+      "color": "#c9d6d2",
+      "accent": "#a6bcb5",
+      "colorway": "mint",
+      "room": "바닥"
+    },
+    "cube_storage_mint": {
+      "type": "cube_storage",
+      "name_ko": "큐브 수납장(민트)",
+      "w": 0.78,
+      "h": 0.78,
+      "color": "#c9d6d2",
+      "accent": "#a6bcb5",
+      "colorway": "mint",
+      "room": "공통"
+    },
+    "cube_storage_sky": {
+      "type": "cube_storage",
+      "name_ko": "큐브 수납장(파스텔블루)",
+      "w": 0.78,
+      "h": 0.78,
+      "color": "#cddbe6",
+      "accent": "#a9becd",
+      "colorway": "sky",
+      "room": "공통"
+    },
+    "low_table_white": {
+      "type": "low_table",
+      "name_ko": "좌식 테이블(화이트)",
+      "w": 0.9,
+      "d": 0.55,
+      "color": "#f2f0ec",
+      "accent": "#d6d3cd",
+      "colorway": "white",
+      "room": "공통"
+    },
+    "low_table_walnut": {
+      "type": "low_table",
+      "name_ko": "좌식 테이블(월넛)",
+      "w": 0.9,
+      "d": 0.55,
+      "color": "#b08a63",
+      "accent": "#8f6a46",
+      "colorway": "walnut",
+      "room": "공통"
+    },
+    "stool_mint": {
+      "type": "stool",
+      "name_ko": "스툴(민트)",
+      "color": "#c9d6d2",
+      "accent": "#a6bcb5",
+      "colorway": "mint",
+      "room": "공통"
+    },
+    "stool_blush": {
+      "type": "stool",
+      "name_ko": "스툴(블러시)",
+      "color": "#e6d3d0",
+      "accent": "#c9aca8",
+      "colorway": "blush",
+      "room": "공통"
+    },
+    "stool_charcoal": {
+      "type": "stool",
+      "name_ko": "스툴(차콜)",
+      "color": "#5b6067",
+      "accent": "#43474d",
+      "colorway": "charcoal",
+      "room": "공통"
     }
   },
   "_slots": "가구 userData.slots=[{x,y,z}](로컬 m, y=화분 밑면), tier_heights=[y..], size_m={w,d,h}. 에셋창 GLB 선반과 동일 스키마.",
@@ -629,5 +1039,7 @@
       "accent": "#bcb0cc"
     }
   ],
-  "_colorways": "colorways = 가구 공용 색상표. 프리셋의 color/accent를 이 값으로 바꾸면 같은 형태의 색 변형이 됨."
+  "_colorways": "colorways = 가구 공용 색상표. 프리셋의 color/accent를 이 값으로 바꾸면 같은 형태의 색 변형이 됨.",
+  "_pots": "화분은 가구 카탈로그에서 제외 — 식물/화분은 식물 에셋 시스템(assets/monstera 등)에서 슬롯에 올림.",
+  "_lighting": "조명: userData.grow=true면 식물등(ppfd·coverage 보존 → 조도 계산 입력). decorLight=장식광. lampShade=밤에 발광 갱신 대상."
 }

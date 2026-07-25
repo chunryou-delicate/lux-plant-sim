@@ -1,0 +1,68 @@
+{
+  "_note": "조명 기구 스펙. 식물등은 grow=true. PPFD는 기준거리(ref_dist_m)에서의 값이고, 실제 값은 거리²로 감쇠(lighting_sim.ppfdAt).",
+  "_spectrum": "full=풀스펙트럼(백색, 비쌈·예쁨) / redblue=적청LED(보라빛, 싸고 효율↑·분위기↓) / warm=따뜻한 백색(관상용, 식물효율 낮음)",
+  "_use": "house_rooms furniture 항목에 조명 프리셋을 넣고, lighting.schedule로 광주기 지정.",
+
+  "tariff": {
+    "krw_per_kwh": 160,
+    "note": "가정용 평균 단가(원/kWh). 요금 = 소비전력(W) × 시간(h) ÷ 1000 × 단가"
+  },
+
+  "spectra": {
+    "full":    { "name_ko": "풀스펙트럼", "color": "#fff4e2", "par_eff": 1.00, "beauty": 1.00,
+                 "note": "백색광. 방이 예쁘게 보이고 식물도 잘 자람. 비쌈." },
+    "redblue": { "name_ko": "적청 LED",   "color": "#d9a8ff", "par_eff": 1.25, "beauty": 0.35,
+                 "note": "보라빛. 광합성 효율 최고지만 방 분위기를 해침." },
+    "warm":    { "name_ko": "웜 화이트",  "color": "#ffe0b8", "par_eff": 0.55, "beauty": 1.10,
+                 "note": "관상용. 분위기는 최고지만 식물 효율은 절반." }
+  },
+
+  "fixtures": {
+    "growlight_clip": {
+      "name_ko": "식물등-클립형", "grow": true, "watts": 12, "ppfd_ref": 120, "ref_dist_m": 0.3,
+      "coverage_r": 0.35, "spectrum": "redblue", "price": 18000, "adjustable_height": true,
+      "note": "싸고 좁게. 화분 1개용. 기본 적청이라 보라빛." },
+    "growlight_bar": {
+      "name_ko": "식물등-바(선반밑)", "grow": true, "watts": 20, "ppfd_ref": 180, "ref_dist_m": 0.3,
+      "coverage_r": 0.5, "spectrum": "full", "price": 34000, "adjustable_height": false,
+      "note": "선반 단마다 부착 → 다층 재배. 거리 고정(단 높이)." },
+    "growlight_stand": {
+      "name_ko": "식물등-스탠드", "grow": true, "watts": 36, "ppfd_ref": 250, "ref_dist_m": 0.4,
+      "coverage_r": 0.7, "spectrum": "full", "price": 72000, "adjustable_height": true,
+      "note": "넓고 강함. 큰 식물·여러 화분." },
+    "lamp_ceiling": {
+      "name_ko": "천장등", "grow": false, "watts": 30, "ppfd_ref": 12, "ref_dist_m": 1.5,
+      "coverage_r": 2.2, "spectrum": "warm", "price": 25000, "note": "생활 조명. 식물엔 거의 도움 안 됨." },
+    "lamp_floor": {
+      "name_ko": "플로어 스탠드", "grow": false, "watts": 15, "ppfd_ref": 8, "ref_dist_m": 1.0,
+      "coverage_r": 1.2, "spectrum": "warm", "price": 39000, "note": "분위기용." },
+    "lamp_pendant": {
+      "name_ko": "펜던트 등", "grow": false, "watts": 24, "ppfd_ref": 10, "ref_dist_m": 1.2,
+      "coverage_r": 1.6, "spectrum": "warm", "price": 45000, "note": "식탁·거실." },
+    "lamp_wall": {
+      "name_ko": "벽등", "grow": false, "watts": 10, "ppfd_ref": 5, "ref_dist_m": 0.8,
+      "coverage_r": 1.0, "spectrum": "warm", "price": 22000, "note": "보조광." },
+    "string_light": {
+      "name_ko": "스트링 라이트", "grow": false, "watts": 6, "ppfd_ref": 2, "ref_dist_m": 0.6,
+      "coverage_r": 1.4, "spectrum": "warm", "price": 12000, "note": "장식광. 식물 효과 없음." },
+    "desk_lamp": {
+      "name_ko": "책상 조명", "grow": false, "watts": 8, "ppfd_ref": 15, "ref_dist_m": 0.4,
+      "coverage_r": 0.5, "spectrum": "warm", "price": 19000, "note": "책상 위 국소." }
+  },
+
+  "schedules": {
+    "off":      { "name_ko": "끄기",        "on_hour": 0,  "hours": 0 },
+    "night":    { "name_ko": "밤에만(18–24)", "on_hour": 18, "hours": 6 },
+    "morning":  { "name_ko": "아침 보충(6–10)", "on_hour": 6,  "hours": 4 },
+    "photo12":  { "name_ko": "광주기 12h(7–19)", "on_hour": 7,  "hours": 12 },
+    "photo16":  { "name_ko": "광주기 16h(6–22)", "on_hour": 6,  "hours": 16 },
+    "always":   { "name_ko": "상시(24h)",   "on_hour": 0,  "hours": 24 }
+  },
+
+  "photoperiod_need": {
+    "_note": "식물별 하루 필요 광주기(시간). 부족하면 성장 정체, 과하면 스트레스.",
+    "monstera": { "min": 10, "best": 12, "max": 16 },
+    "pothos":   { "min": 8,  "best": 12, "max": 16 },
+    "sansevieria": { "min": 6, "best": 10, "max": 14 }
+  }
+}

@@ -8,20 +8,20 @@
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Jua&family=Gaegu:wght@400;700&display=swap');
   *{margin:0;padding:0;box-sizing:border-box}
-  html,body{background:#eceef0;font-family:'Gaegu',sans-serif;color:#2e2e38}
+  html,body{background:#2f3338;font-family:'Gaegu',sans-serif;color:#e8eaec}
   #c{position:fixed;inset:0;width:100%;height:100%;z-index:0;display:block}
   header{position:relative;z-index:2;padding:16px 22px 4px}
-  h1{font-family:'Jua';font-size:22px}h1 b{color:#e08a2c}
-  .sub{font-weight:700;font-size:12.5px;color:#6a6f7a;margin-top:2px}
+  h1{font-family:'Jua';font-size:22px;color:#f2f0ec}h1 b{color:#ffb454}
+  .sub{font-weight:700;font-size:12.5px;color:#a8b0b8;margin-top:2px}
   .grid{position:relative;z-index:2;display:grid;gap:14px;padding:12px 22px 60px;
     grid-template-columns:repeat(auto-fill,minmax(240px,1fr))}
-  .cell{background:rgba(255,255,255,.55);border-radius:13px;border:1px solid #dfe3e7;overflow:hidden}
+  .cell{background:rgba(255,255,255,.06);border-radius:13px;border:1px solid rgba(255,255,255,.10);overflow:hidden}
   .view{width:100%;height:210px}
   .meta{padding:8px 11px 10px}
-  .nm{font-family:'Jua';font-size:14px;display:flex;align-items:center;gap:7px}
+  .nm{font-family:'Jua';font-size:14px;display:flex;align-items:center;gap:7px;color:#f0f2f4}
   .sw{width:14px;height:14px;border-radius:4px;border:1px solid rgba(0,0,0,.18)}
-  .row{font-weight:700;font-size:11.5px;color:#6a7078;margin-top:3px}
-  .tg{display:inline-block;background:#eef1f4;border-radius:6px;padding:1px 7px;margin:2px 4px 0 0;font-size:11px;color:#5a6069}
+  .row{font-weight:700;font-size:11.5px;color:#a9b2ba;margin-top:3px}
+  .tg{display:inline-block;background:rgba(255,255,255,.12);border-radius:6px;padding:1px 7px;margin:2px 4px 0 0;font-size:11px;color:#cdd4da}
   #err{position:fixed;z-index:9;left:12px;bottom:12px;background:#c0392b;color:#fff;padding:8px 12px;border-radius:8px;display:none}
   #hint{position:fixed;z-index:3;bottom:14px;left:50%;transform:translateX(-50%);background:rgba(30,30,40,.55);color:#fff;font-weight:700;font-size:12.5px;padding:5px 13px;border-radius:13px;transition:opacity .8s}
 </style>
@@ -55,7 +55,7 @@ renderer.toneMapping=THREE.NoToneMapping;   // 카탈로그: 지정한 색 그�
 renderer.setScissorTest(true);
 
 function envTex(){const c=document.createElement('canvas');c.width=32;c.height=96;const x=c.getContext('2d');
-  const g=x.createLinearGradient(0,0,0,96);g.addColorStop(0,'#f2f7ff');g.addColorStop(.55,'#d8e2ec');g.addColorStop(1,'#b6bcc3');
+  const g=x.createLinearGradient(0,0,0,96);g.addColorStop(0,'#b9c4cf');g.addColorStop(.55,'#7b848d');g.addColorStop(1,'#565c62');
   x.fillStyle=g;x.fillRect(0,0,32,96);const t=new THREE.CanvasTexture(c);
   t.mapping=THREE.EquirectangularReflectionMapping;return t;}
 let ENV=null; try{const p=new THREE.PMREMGenerator(renderer);ENV=p.fromEquirectangular(envTex()).texture;}catch(e){}
@@ -85,7 +85,7 @@ for(const [id,p] of Object.entries(P)){
   const sd=4; dir.shadow.camera.left=-sd;dir.shadow.camera.right=sd;dir.shadow.camera.top=sd;dir.shadow.camera.bottom=-sd;
   scene.add(dir);
   const floor=new THREE.Mesh(new THREE.PlaneGeometry(9,9),
-    new THREE.MeshStandardMaterial({color:0xe6e0d5, roughness:0.98}));
+    new THREE.MeshStandardMaterial({color:0x4a5056, roughness:0.98}));   // 찐회색 바닥
   floor.rotation.x=-Math.PI/2; floor.receiveShadow=true; scene.add(floor);
 
   let obj;
