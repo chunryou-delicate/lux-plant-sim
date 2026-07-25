@@ -76,15 +76,23 @@ export async function createCharacter(scene, charId = 'jachwi_f', opt = {}) {
   const g = await load(`${BASE}/char_${charId}_rigged.glb`);
   const model = g.scene;
 
-  /* 크기 정규화 — GLB마다 스케일이 달라서 키 1.65m로 맞춘다 */
-  const box = new THREE.Box3().setFromObject(model);
-  const size = box.getSize(new THREE.Vector3());
+  /* 크기 정규화 — 키 1.65m로 맞춘다.
+     ★ Box3.setFromObject 를 쓰면 안 된다. 스킨드 메시는 정점이 뼈 행렬로 움직이는데
+       Box3는 메시 노드의 월드 행렬만 보므로 0.01m 같은 엉뚱한 값이 나온다(실측 확인).
+       바인드 포즈가 들어 있는 geometry.boundingBox 가 실제 크기다(이 에셋은 1.70m). */
+  let bindH = 0, bindMinY = 0;
+  model.traverse(o => {
+    if (o.isSkinnedMesh && !bindH) {
+      if (!o.geometry.boundingBox) o.geometry.computeBoundingBox();
+      const bb = o.geometry.boundingBox;
+      bindH = bb.max.y - bb.min.y;
+      bindMinY = bb.min.y;
+    }
+  });
   const targetH = opt.height ?? 1.65;
-  const k = size.y > 0.001 ? targetH / size.y : 1;
+  const k = bindH > 0.05 ? targetH / bindH : 1;
   model.scale.setScalar(k);
-  // 발바닥이 y=0에 오도록
-  const box2 = new THREE.Box3().setFromObject(model);
-  model.position.y -= box2.min.y;
+  model.position.y = -bindMinY * k;          // 발바닥을 y=0에
 
   model.traverse(o => {
     if (o.isMesh) {
