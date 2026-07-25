@@ -129,7 +129,8 @@ const DEF={
   stageYoung:0.38, stageMid:0.66,                          // 잎 형태 전환 시점(어린→중간→성인)
   sizeYoung:0.16, sizeMid:0.30, sizeMature:0.46, sizeFull:0.62,  // 각 시점 크기(마디 간격 대비 자연스럽게)
   internode:0.22, stemFlat:1.25,   // 줄기 마디 길이·잎방향 납작
-  petGrow:16, rThin:0.028, rMed:0.033, rThick:0.038, matureProb:0.22, doubleBud:0.15,   // 마디 자람시간·종류별 굵기(위아래 비슷하게)·성숙잎 확률·쌍혹 확률
+  petGrow:16, rThin:0.028, rMed:0.032, rThick:0.034, matureProb:0.22, doubleBud:0.15,   // 마디 자람시간·종류별 굵기(위아래 비슷하게)·성숙잎 확률·쌍혹 확률
+  leafEmbed:0.10,                  // 잎자루 끝을 줄기 속으로 박는 깊이(0이면 뜸)
   stemTrans:40, bumpGrow:20, bumpAt:0.3, stemOverlap:0.025,   // 초기→중기_2 전이(일) · 혹 돋는 기간(중기_1 단계) · 돌기 위치(마디 비율=가지 나는 지점) · 이음새 겹침
   petioleLen:1.0, leafElev:1.0, elevDrop:0.36, spread:0.10, branchSpread:0.55,   // 배치(spread=줄기 흔들림)
   leafLight:0.62, leafDark:0.22, leafSat:0.5, satRange:0.22, hueBase:0.16, hueRange:0.26,   // 색(밝기/진함/채도/개체범위)
@@ -376,7 +377,8 @@ function addLeaf(nodePos, az, maturity, key, sizeOverride){
   const size=(sizeOverride!=null)?sizeOverride:leafSize(maturity);   // ★ 단계별 곡선(작게 나서 커짐), 스무딩값 있으면 사용
   const elev=P.leafElev - maturity*P.elevDrop;                  // 위로 받쳐지게(처짐 완화)
   const d=new THREE.Vector3(Math.cos(elev)*Math.sin(az), Math.sin(elev), Math.cos(elev)*Math.cos(az)).normalize();
-  const reach=(0.03 + 0.05*size)*P.petioleLen;                  // 잎자루 길이(잎↔마디 거리)
+  // ★음수 = 잎자루 끝을 줄기 속으로 박아 붙임(잎 GLB에 잎자루가 포함돼 있으므로 틈이 생기면 안 됨)
+  const reach=-P.leafEmbed*(0.4+size)*P.petioleLen;
   const base=nodePos.clone().addScaledVector(d, reach);
   addPetiole(nodePos, d, size, maturity, base);        // 연결 줄기가 마디~잎을 실제로 이어줌
   const proto=assetInst(key);
@@ -498,7 +500,7 @@ function buildPlant(){
         // 줄기_초기 → 줄기_중기_2(대기) → [선택되면] 줄기_중기_1(혹 돋는 중) → 줄기_후기_혹/쌍혹
         let key, rad;
         if(s.activated && g>=s.actT+P.bumpGrow){ key=s.actType==='main'?'stem_main':'stem_thick';
-          rad=s.actType==='main'?P.rThick*1.06:P.rThick; acts++; }
+          rad=s.actType==='main'?P.rThick*1.04:P.rThick; acts++; }
         else if(s.activated){ key='stem_med'; rad=P.rMed; }                       // 줄기_중기_1 = 혹 직전(혹 돋기 시작)
         else if(g-s.birth>=P.stemTrans){ key='stem_thin'; rad=P.rThin; }          // 줄기_중기_2 = 분홍 대기(예비혹)
         else { key='petiole'; rad=P.rThin*(0.72+0.28*gr); }                       // 줄기_초기(자라는 중)
