@@ -120,7 +120,7 @@ let FRUSTUM=2.2;
 
 // ===== 시드 난수(개체성): 같은 시드→같은 그루. mulberry32 =====
 function mulberry32(a){ return function(){ a|=0; a=a+0x6D2B79F5|0; let t=Math.imul(a^a>>>15,1|a); t=t+Math.imul(t^t>>>7,61|t)^t; return((t^t>>>14)>>>0)/4294967296; }; }
-let SEED=84486, rng=mulberry32(SEED);
+let SEED=35255, rng=mulberry32(SEED);
 const GOLDEN=Math.PI*(3-Math.sqrt(5));   // 137.5° 황금각(자연스러운 잎차례)
 
 // ===== 튜닝 파라미터(A: 전체 규칙) — 슬라이더로 실시간 조절 =====
@@ -133,7 +133,7 @@ const DEF={
   sizeYoung:0.20, sizeMid:0.34, sizeMature:0.46, sizeFull:0.58,  // 각 시점 크기(마디 간격 대비 자연스럽게)
   internode:0.20, stemFlat:1.25,   // 줄기 마디 길이·잎방향 납작
   petGrow:16, rEarly:0.022, rThin:0.028, rMed:0.025, rThick:0.031, matureProb:0.22, doubleBud:0.15,  // 종류별 굵기(몸통 폭 기준, 왜곡 최소)·성숙잎 확률·쌍혹 확률
-  leafEmbed:0.13, leafTilt:0.30, leafClear:0.40, leafTiltVary:0, leafStemClear:2.5,   // leafTiltVary=0 → 잎 각도 고정(조절값 그대로), >0 이면 겹침 회피가 각도도 흔듦   // 잎자루를 줄기 속으로 박는 깊이 · 잎이 줄기 끝 방향을 따라가는 정도 · 잎이 차지하는 반경(겹침 회피)
+  leafEmbed:0.13, leafTilt:0.30, leafClear:0.52, leafTiltVary:0, leafStemClear:3.4,   // leafTiltVary=0 → 잎 각도 고정(조절값 그대로), >0 이면 겹침 회피가 각도도 흔듦   // 잎자루를 줄기 속으로 박는 깊이 · 잎이 줄기 끝 방향을 따라가는 정도 · 잎이 차지하는 반경(겹침 회피)
   photoLean:0.13, stemStraight:0.30,   // 빛 쪽으로 기우는 세기(굴광성 슬라이더와 곱해짐) · 축 기본방향으로 돌아오는 힘(작을수록 더 휨)
   stemTrans:40, bumpGrow:20, bumpAt:0.2, bumpAzOff:0, stemOverlap:0.015,   // bumpAzOff=가지가 나는 방위를 혹 돌기 쪽으로 미세 회전
   tipTaper:0.55, nodeBulge:0.16, nodeWidth:0.045, bumpFit:1.02,
@@ -145,7 +145,7 @@ const DEF={
 };
 let P=Object.assign({}, DEF);
 // 저장본 버전. 생장 로직/기본값이 바뀌면 올림 → 옛 저장값이 새 기본값을 덮어쓰지 않게.
-const CFG_VER='2026-07-20-sheath10';
+const CFG_VER='2026-07-20-sheath11';
 
 // ===== 튜닝 파라미터(B: 에셋별 개별 조정) =====
 const ADJ_KEYS=['pot','leaf_young','leaf_mid1','leaf_mid2','leaf_mature','bud_furled','bud_opening2',
@@ -163,7 +163,7 @@ const ADJ_TUNED={
   // ── 잎
   leaf_young:  {scale:0.8, rx:-0.25, ry:0.4, rz:0.4, ox:0.06, oy:0.12, oz:0.01},
   leaf_mid1:   {scale:0.8, rx:0.25, ry:2.05, rz:-0.3, ox:0.05, oy:0.09},
-  leaf_mid2:   {scale:0.6, sxz:0.65, sy:1.55, rx:0.25, ry:2.6, rz:-0.45, ox:0.09, oy:-0.04, oz:-0.01},
+  leaf_mid2:   {scale:0.6, sxz:0.65, sy:1.25, rx:0.2, ry:2.5, rz:-0.45, ox:0.02, oy:0.13, oz:0.01},
   leaf_mature: {rx:0.05, ry:-0.6, rz:0.3, ox:0.04, oy:0.1},
   // ── 줄기(혹/쌍혹)
   stem_thick:  {scale:0.85, ry:0.3, rz:-0.1, ox:-0.04},
