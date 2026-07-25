@@ -54,8 +54,9 @@
   </div>
 
 <script>
-// 캐시 무효화는 서버(tools/serve.py)가 no-store 헤더로 처리한다.
-// URL에 쿼리를 붙이지 않는다 — 아래 forEach 의 루프 변수 V 와 이름이 겹쳐 사고가 났었다.
+// 캐시 무효화 쿼리. 이름을 CB로 둔다 —
+// 예전에 V로 뒀다가 아래 [VF,VS].forEach(V=>...) 의 루프 변수와 겹쳐 URL이 깨졌었다.
+const CB='?t='+Date.now();
 const CH=[
  ["char_jachwi_f","여 · 자취생"],["char_yeoja_jubu","여 · 주부"],
  ["char_yeoja_gajang","여 · 가장"],["char_yeoja_researcher","여 · 연구자"],
@@ -168,12 +169,12 @@ function load(charKey){
         errEl.textContent='메시 로드 실패: '+sources.join(' , ');
         return;
       }
-      new THREE.GLTFLoader().load(sources[i], rg=>{
+      new THREE.GLTFLoader().load(sources[i]+CB, rg=>{
         V.cv.style.background='';
         if(i>0) errEl.textContent='주의: _rigged 실패 → _walking으로 대체 로드됨';
         const m=rg.scene; toonify(m); V.sc.add(m); V.root=m;
         m.traverse(o=>{if(o.isBone&&!V.hips&&/hips/i.test(o.name)){V.hips=o;V.hips0=o.position.clone();}});
-        new THREE.GLTFLoader().load(cpath, ag=>{
+        new THREE.GLTFLoader().load(cpath+CB, ag=>{
           if(!ag.animations||!ag.animations.length){errEl.textContent='클립에 애니 없음: '+cpath; frame(V,m); return;}
           V.mixer=new THREE.AnimationMixer(m);
           V.mixer.clipAction(ag.animations[0]).play();

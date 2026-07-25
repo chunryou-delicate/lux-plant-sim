@@ -60,6 +60,27 @@ function legs4(g,w,d,lh,m,r=0.028,inset=0.07){
 }
 
 /* ============================================================
+   ★ 화분 슬롯 규격 (에셋창 GLB 선반과 동일 스키마)
+   userData.slots        = [{x,y,z}]  가구 로컬 좌표(m). y = 화분 밑면이 놓일 높이
+   userData.tier_heights = [y,...]    단 높이 → 조도 계산 입력
+   userData.size_m       = {w,d,h}
+   화분 놓는 법: 화분 바운딩박스 y_min 을 슬롯 y에 정렬, x·z는 그대로.
+============================================================ */
+function addSlots(g, slots, tiers){
+  g.userData.slots=slots;
+  if(tiers) g.userData.tier_heights=tiers;
+  const s=g.userData.size||{};
+  g.userData.size_m={ w:s.w, d:s.d, h:s.h };
+  return g;
+}
+/* 한 단(y)에 n개 슬롯을 폭 w 안에 균등 배치 */
+function tierSlots(w, y, n, z=0, margin=0.09){
+  const out=[], usable=w-margin*2;
+  for(let i=0;i<n;i++) out.push({ x:+(-usable/2+usable*(n===1?0.5:i/(n-1))).toFixed(3), y:+y.toFixed(3), z });
+  return out;
+}
+
+/* ============================================================
    가구 빌더 — 각 함수는 바닥 기준 Group 반환
    o = { color, accent, gloss, w,h,d (선택 오버라이드) }
 ============================================================ */
@@ -90,7 +111,8 @@ B.desk=(o)=>{
   const m=furnMat(o.color??'#e3d3bd','matte');
   g.add(panel(w,t,d,m,0,h-t/2,0,0.02));
   legs4(g,w,d,h-t,furnMat(o.accent??'#cbbfae','satin'),0.026,0.06);
-  g.userData.size={w,h,d}; return g;
+  g.userData.size={w,h,d};
+  return addSlots(g, tierSlots(w, h, w>1.4?3:2, d*0.15), [h]);   // 책상 위 화분 자리
 };
 
 /* 의자 */
@@ -132,7 +154,8 @@ B.dresser=(o)=>{
     knob.rotation.x=Math.PI/2;                       // 원판 손잡이(문짝을 향하게)
     g.add(knob);
   }
-  g.userData.size={w,h,d}; return g;
+  g.userData.size={w,h,d};
+  return addSlots(g, tierSlots(w, h, 2), [h]);
 };
 
 /* 책장 (오픈 선반) */
@@ -154,7 +177,10 @@ B.shelf=(o)=>{
       x+=bw+0.006;
     }
   }
-  g.userData.size={w,h,d}; return g;
+  g.userData.size={w,h,d};
+  const tiers=[], sl=[];
+  for(let i=0;i<n;i++){ const y=h*i/n+t/2; tiers.push(+y.toFixed(3)); sl.push(...tierSlots(w-2*t, y, w>0.9?3:2)); }
+  return addSlots(g, sl, tiers);
 };
 
 /* 소파 (2인) */
@@ -180,7 +206,8 @@ B.table_round=(o)=>{
   g.add(cyl(r,r,0.05,m,0,h-0.025,0,24));
   g.add(cyl(0.05,0.06,h-0.05,furnMat(o.accent??'#cbbba2','satin'),0,(h-0.05)/2,0,12));
   g.add(cyl(0.22,0.24,0.03,furnMat(o.accent??'#cbbba2','satin'),0,0.015,0,16));
-  g.userData.size={w:r*2,h,d:r*2}; return g;
+  g.userData.size={w:r*2,h,d:r*2};
+  return addSlots(g, [{x:0,y:+h.toFixed(3),z:0}], [h]);
 };
 
 /* 사각 테이블/식탁 */
@@ -190,7 +217,8 @@ B.table=(o)=>{
   const m=furnMat(o.color??'#e5d3b8','matte');
   g.add(panel(w,0.05,d,m,0,h-0.025,0,0.02));
   legs4(g,w,d,h-0.05,furnMat(o.accent??'#cbbba2','satin'),0.028,0.07);
-  g.userData.size={w,h,d}; return g;
+  g.userData.size={w,h,d};
+  return addSlots(g, tierSlots(w, h, 2), [h]);
 };
 
 /* 협탁 */
@@ -202,7 +230,8 @@ B.nightstand=(o)=>{
   const kn=cyl(0.035,0.035,0.018,furnMat(o.accent??'#c8b18a','gloss'),0,h*0.64,d/2+0.012,10);
   kn.rotation.x=Math.PI/2; g.add(kn);
   legs4(g,w,d,h*0.28,furnMat('#cbbba2','satin'),0.018,0.045);
-  g.userData.size={w,h,d}; return g;
+  g.userData.size={w,h,d};
+  return addSlots(g, tierSlots(w, h, 1), [h]);
 };
 
 /* 러그 */
@@ -211,10 +240,10 @@ B.rug=(o)=>{
   const g=new THREE.Group();
   const m=furnMat(o.color??'#e7ddd0','matte');
   const r=soft(w,d,0.012,m,0.12); r.rotation.x=-Math.PI/2; r.position.y=0.006;
-  r.castShadow=false; r.receiveShadow=true; g.add(r);
+  r.userData.noShadow=true; r.receiveShadow=true; g.add(r);   // 바닥 깔개 → 그림자 제외
   if(o.accent){                                        // 테두리 라인
     const b=soft(w-0.16,d-0.16,0.014,furnMat(o.accent,'matte'),0.1);
-    b.rotation.x=-Math.PI/2; b.position.y=0.009; b.castShadow=false; g.add(b);
+    b.rotation.x=-Math.PI/2; b.position.y=0.009; b.userData.noShadow=true; g.add(b);
   }
   g.userData.size={w,h:0.012,d}; return g;
 };
@@ -303,6 +332,332 @@ B.tv=(o)=>{
   g.userData.size={w,h:h+0.1,d:0.2}; return g;
 };
 
+/* ============================================================
+   ★ 식물용 선반 5종 (에셋창 GLB 규격을 코드로 이식 — 슬롯·단높이 포함)
+============================================================ */
+
+/* 창턱 확장 선반 (창 아래 벽에 붙임. mount:'window') */
+B.shelf_windowsill=(o)=>{
+  const w=o.w??1.0, d=o.d??0.16, t=0.03;
+  const g=new THREE.Group();
+  const m=furnMat(o.color??'#eae2d6','matte');
+  g.add(panel(w,t,d,m,0,t/2,0,0.012));
+  for(const s of [-1,1]) g.add(bx(0.03,0.10,0.03,m,s*(w/2-0.09),-0.05,d*0.2));  // 브래킷
+  g.userData.size={w,h:t,d}; g.userData.mount='window';
+  return addSlots(g, tierSlots(w, t, 4, 0, 0.11), [t]);
+};
+
+/* 벽걸이 1단 선반 (mount:'wall' — 높이는 배치 시 y로) */
+B.shelf_wall=(o)=>{
+  const w=o.w??0.8, d=o.d??0.22, t=0.035;
+  const g=new THREE.Group();
+  const m=furnMat(o.color??'#e8dfd2','matte');
+  g.add(panel(w,t,d,m,0,t/2,0,0.014));
+  for(const s of [-1,1]){                                   // 삼각 브래킷
+    const br=bx(0.028,0.11,d*0.8,furnMat(o.accent??'#cbbfae','satin'),s*(w/2-0.1),-0.055,-d*0.05);
+    g.add(br);
+  }
+  g.userData.size={w,h:t,d}; g.userData.mount='wall';
+  return addSlots(g, tierSlots(w, t, 3), [t]);
+};
+
+/* 스툴 1단 (작은 화분 받침) */
+B.shelf_stool=(o)=>{
+  const w=o.w??0.28, d=o.d??0.28, h=o.h??0.355, t=0.03;
+  const g=new THREE.Group();
+  const m=furnMat(o.color??'#e3d3bd','matte');
+  g.add(panel(w,t,d,m,0,h-t/2,0,0.02));
+  legs4(g,w,d,h-t,furnMat(o.accent??'#cbbfae','satin'),0.018,0.04);
+  g.userData.size={w,h,d};
+  return addSlots(g, [{x:0,y:+h.toFixed(3),z:0}], [h]);
+};
+
+/* 다단 선반 / 사다리형
+   ★ 사다리는 기둥이 뒤로 기울므로, 각 단의 z를 기둥 선을 따라가게 계산해
+     선반과 지지대가 정확히 붙게 한다(떠 보이지 않게). */
+B.shelf_etagere=(o)=>{
+  const w=o.w??0.72, d=o.d??0.28, h=o.h??0.794, n=o.tiers??3, t=0.03;
+  const ladder=!!o.ladder;
+  const g=new THREE.Group();
+  const m=furnMat(o.color??'#e8dfd2','matte');
+  const side=furnMat(o.accent??'#cbbfae','satin');
+  const tiers=[], sl=[];
+
+  // 기둥 기하: 바닥 z0(앞) → 꼭대기 z1(뒤). 사다리면 뒤로 기울어짐.
+  const z0 = ladder ?  d*0.42 : 0;
+  const z1 = ladder ? -d*0.42 : 0;
+  const postZ = y => z0 + (z1-z0)*(y/h);                     // 높이 y에서 기둥의 z
+  const postX = w/2-0.03;
+
+  for(let i=0;i<n;i++){
+    const y=t/2+(h-t)*(n===1?0:i/(n-1));
+    const sw=ladder ? w*(1-0.10*i) : w;                      // 위로 갈수록 살짝 좁게
+    const sd=ladder ? d*(1-0.10*i) : d;
+    // 선반 뒤 모서리를 기둥에 붙임 → 중심 z = 기둥z + 깊이/2
+    const cz = ladder ? postZ(y)+sd/2-0.012 : 0;
+    g.add(panel(sw,t,sd,m,0,y,cz,0.014));
+    tiers.push(+y.toFixed(3));
+    sl.push(...tierSlots(sw, y+t/2, ladder?Math.max(1,3-Math.floor(i/2)):3, +cz.toFixed(3)));
+  }
+  // 기둥 — 기울기만큼 길게 + 각도 맞춰 회전(선반 옆면에 딱 닿음)
+  const dz=z1-z0, plen=Math.hypot(h,dz), ang=Math.atan2(dz,h);
+  for(const sx of [-1,1]){
+    if(ladder){
+      const post=cyl(0.016,0.016,plen,side, sx*postX, h/2, (z0+z1)/2, 8);
+      post.rotation.x=-ang;                                   // 기둥을 기울여 선반 끝단과 접합
+      g.add(post);
+    }else{
+      for(const sz of [-1,1]) g.add(cyl(0.017,0.017,h,side, sx*postX, h/2, sz*(d/2-0.03), 8));
+    }
+  }
+  g.userData.size={w,h,d}; if(ladder) g.userData.mount='lean-wall';
+  return addSlots(g, sl, tiers);
+};
+
+/* 이동식 카트 (바퀴) */
+B.shelf_cart=(o)=>{
+  const w=o.w??0.46, d=o.d??0.34, h=o.h??0.82, n=o.tiers??3, t=0.026;
+  const g=new THREE.Group();
+  const m=furnMat(o.color??'#dfe6e4','satin');
+  const side=furnMat(o.accent??'#b9c2c7','satin');
+  const tiers=[], sl=[];
+  for(let i=0;i<n;i++){
+    const y=0.10+(h-0.16)*(i/(n-1));
+    g.add(panel(w,t,d,m,0,y,0,0.012));
+    for(const s of [-1,1]) g.add(bx(w,0.022,0.014,side,0,y+0.03,s*(d/2-0.007)));   // 난간
+    tiers.push(+y.toFixed(3)); sl.push(...tierSlots(w,y+t/2,2));
+  }
+  for(const sx of [-1,1]) for(const sz of [-1,1]){
+    g.add(cyl(0.012,0.012,h-0.08,side, sx*(w/2-0.025), (h-0.08)/2+0.06, sz*(d/2-0.025), 8));
+    const wheel=cyl(0.028,0.028,0.016,furnMat('#8f959b','gloss'), sx*(w/2-0.025), 0.028, sz*(d/2-0.025), 10);
+    wheel.rotation.z=Math.PI/2; g.add(wheel);
+  }
+  // 손잡이: 양쪽 기둥에서 올라와 수평봉으로 연결(한쪽만 떠 있지 않게)
+  for(const sz of [-1,1]) g.add(cyl(0.012,0.012,0.14,side, w/2-0.025, h+0.05, sz*(d/2-0.025), 8));
+  const grip=cyl(0.012,0.012,d-0.05,side, w/2-0.025, h+0.12, 0, 8);
+  grip.rotation.x=Math.PI/2; g.add(grip);
+  g.userData.size={w,h,d}; g.userData.movable=true;
+  return addSlots(g, sl, tiers);
+};
+
+/* 그로우랙 — 자체 조명 바 포함 (has_light) */
+B.shelf_growrack=(o)=>{
+  const w=o.w??0.8, d=o.d??0.35, h=o.h??1.16, n=o.tiers??2, t=0.03;
+  const g=new THREE.Group();
+  const m=furnMat(o.color??'#dfe3e6','satin');
+  const post=furnMat(o.accent??'#aeb6bc','satin');
+  const tiers=[], sl=[], bars=[];
+  for(let i=0;i<n;i++){
+    const y=0.06+(h-0.18)*(i/(n-1||1));
+    g.add(panel(w,t,d,m,0,y,0,0.012));
+    tiers.push(+y.toFixed(3)); sl.push(...tierSlots(w,y+t/2,3));
+    // 그 단 위 조명 바(다음 단 밑면에 매달림)
+    const by=y+(h-0.18)/(n-1||1)-0.075;
+    if(i<n-1||n===1){
+      const bar=new THREE.Mesh(new THREE.BoxGeometry(w*0.86,0.035,0.05),
+        new THREE.MeshStandardMaterial({ color:col('#f2ead2'), roughness:0.5,
+          emissive:col('#b9a86a'), emissiveIntensity:0.55 }));
+      bar.position.set(0,by,0); g.add(bar); bars.push({ y:+by.toFixed(3) });
+    }
+  }
+  for(const sx of [-1,1]) for(const sz of [-1,1])
+    g.add(cyl(0.016,0.016,h,post, sx*(w/2-0.025), h/2, sz*(d/2-0.025), 8));
+  g.userData.size={w,h,d}; g.userData.has_light=true; g.userData.light_bars=bars;
+  return addSlots(g, sl, tiers);
+};
+
+/* ============================================================
+   확장 — 의자류 / 침대류 / 생활 가구
+============================================================ */
+
+/* 팔걸이 의자(암체어) */
+B.chair_arm=(o)=>{
+  const w=o.w??0.62, d=o.d??0.66, sh=0.38;
+  const g=new THREE.Group();
+  const m=furnMat(o.color??'#cdd9d5','matte');
+  g.add(panel(w,0.18,d,m,0,sh,0,0.05));                                  // 좌판
+  g.add(panel(w,0.46,0.16,m,0,sh+0.20,-d/2+0.08,0.05));                  // 등받이
+  for(const s of [-1,1]) g.add(panel(0.13,0.26,d*0.8,m,s*(w/2-0.065),sh+0.06,0.02,0.05)); // 팔걸이
+  const cu=furnMat(o.accent??'#eef2f0','matte');
+  g.add(panel(w-0.2,0.08,d-0.22,cu,0,sh+0.12,0.02,0.04));                // 쿠션
+  legs4(g,w-0.16,d-0.18,sh-0.18,furnMat('#c3b49c','satin'),0.021,0.04);
+  g.userData.size={w,h:sh+0.66,d}; return g;
+};
+
+/* 사무용 의자 (5발 바퀴 + 가스리프트) */
+B.chair_office=(o)=>{
+  const w=o.w??0.52, d=o.d??0.52, sh=0.46;
+  const g=new THREE.Group();
+  const m=furnMat(o.color??'#cfd8dc','matte');
+  const dark=furnMat(o.accent??'#8f959b','satin');
+  g.add(panel(w,0.07,d,m,0,sh,0,0.03));
+  const back=panel(w-0.06,0.46,0.06,m,0,sh+0.27,-d/2+0.05,0.04);
+  back.rotation.x=-0.10; g.add(back);
+  for(const s of [-1,1]) g.add(bx(0.04,0.16,d*0.5,dark,s*(w/2-0.02),sh+0.09,0.02));  // 팔걸이
+  g.add(cyl(0.028,0.028,sh-0.10,dark,0,(sh-0.10)/2+0.06,0,10));                      // 기둥
+  for(let i=0;i<5;i++){                                                              // 5발
+    const a=i/5*Math.PI*2;
+    const leg=bx(0.22,0.022,0.035,dark,Math.cos(a)*0.12,0.055,Math.sin(a)*0.12);
+    leg.rotation.y=-a; g.add(leg);
+    const wh=cyl(0.024,0.024,0.014,furnMat('#6f757b','gloss'),Math.cos(a)*0.22,0.026,Math.sin(a)*0.22,10);
+    wh.rotation.z=Math.PI/2; g.add(wh);
+  }
+  g.userData.size={w,h:sh+0.52,d}; return g;
+};
+
+/* 스툴 (등받이 없는 앉는 의자) */
+B.stool=(o)=>{
+  const w=o.w??0.36, h=o.h??0.45;
+  const g=new THREE.Group();
+  const m=furnMat(o.color??'#e0d5c2','matte');
+  g.add(cyl(w/2,w/2,0.05,m,0,h-0.025,0,20));
+  legs4(g,w*0.82,w*0.82,h-0.05,furnMat(o.accent??'#c3b49c','satin'),0.019,0.03);
+  g.userData.size={w,h,d:w}; return g;
+};
+
+/* 벤치 */
+B.bench=(o)=>{
+  const w=o.w??1.2, d=o.d??0.38, h=o.h??0.44;
+  const g=new THREE.Group();
+  const m=furnMat(o.color??'#e0d5c2','matte');
+  g.add(panel(w,0.06,d,m,0,h-0.03,0,0.025));
+  for(const s of [-1,1]) g.add(bx(0.05,h-0.06,d-0.06,furnMat(o.accent??'#c3b49c','satin'),s*(w/2-0.09),(h-0.06)/2,0));
+  g.userData.size={w,h,d};
+  return addSlots(g, tierSlots(w,h,2), [h]);
+};
+
+/* 이층 침대 */
+B.bed_bunk=(o)=>{
+  const w=o.w??1.05, d=o.d??2.0, h=o.h??1.68;
+  const g=new THREE.Group();
+  const fr=furnMat(o.color??'#d9c3a9','matte');
+  const sh=furnMat(o.accent??'#dce6ea','matte');
+  const deck=(y)=>{
+    g.add(panel(w,0.10,d,fr,0,y,0,0.03));
+    g.add(panel(w-0.1,0.14,d-0.1,furnMat('#f6f5f2'),0,y+0.12,0,0.05));
+    g.add(panel(w-0.08,0.08,d*0.55,sh,0,y+0.22,d*0.17,0.05));
+    g.add(panel(w*0.6,0.09,0.32,furnMat('#ffffff'),0,y+0.23,-d*0.36,0.05));
+  };
+  deck(0.36); deck(h-0.34);
+  for(const sx of [-1,1]) for(const sz of [-1,1])
+    g.add(bx(0.07,h,0.07,fr, sx*(w/2-0.04), h/2, sz*(d/2-0.04)));
+  for(let i=0;i<4;i++) g.add(bx(0.05,0.05,0.5,fr, w/2-0.04, 0.62+i*0.24, d*0.2));   // 사다리
+  g.add(bx(0.05,0.7,0.05,fr,-w/2+0.04,h-0.02,d*0.05));                              // 상단 난간
+  g.userData.size={w,h,d}; return g;
+};
+
+/* 로프트 침대 (아래 책상 공간) */
+B.bed_loft=(o)=>{
+  const w=o.w??1.05, d=o.d??2.0, h=o.h??1.6;
+  const g=new THREE.Group();
+  const fr=furnMat(o.color??'#d9c3a9','matte');
+  const sh=furnMat(o.accent??'#dce6ea','matte');
+  g.add(panel(w,0.10,d,fr,0,h-0.3,0,0.03));
+  g.add(panel(w-0.1,0.14,d-0.1,furnMat('#f6f5f2'),0,h-0.18,0,0.05));
+  g.add(panel(w-0.08,0.08,d*0.55,sh,0,h-0.08,d*0.17,0.05));
+  for(const sx of [-1,1]) for(const sz of [-1,1])
+    g.add(bx(0.07,h,0.07,fr, sx*(w/2-0.04), h/2, sz*(d/2-0.04)));
+  g.add(bx(w,0.05,0.05,fr,0,h-0.02,-d/2+0.04));
+  for(let i=0;i<4;i++) g.add(bx(0.05,0.05,0.5,fr, w/2-0.04, 0.5+i*0.28, d*0.2));
+  g.userData.size={w,h,d}; return g;
+};
+
+/* 바닥 매트리스 (원룸 미니멀) */
+B.mattress=(o)=>{
+  const w=o.w??1.05, d=o.d??1.95;
+  const g=new THREE.Group();
+  g.add(panel(w,0.16,d,furnMat(o.color??'#f2efe9','matte'),0,0.08,0,0.06));
+  g.add(panel(w-0.05,0.09,d*0.58,furnMat(o.accent??'#dce6ea','matte'),0,0.19,d*0.16,0.05));
+  g.add(panel(w*0.6,0.10,0.32,furnMat('#ffffff'),0,0.20,-d*0.35,0.05));
+  g.userData.size={w,h:0.28,d}; return g;
+};
+
+/* 화장대 (거울 포함) */
+B.vanity=(o)=>{
+  const w=o.w??0.95, d=o.d??0.42, h=o.h??0.76;
+  const g=new THREE.Group();
+  const m=furnMat(o.color??'#eae2d6','matte');
+  g.add(panel(w,0.05,d,m,0,h-0.025,0,0.02));
+  g.add(panel(w*0.45,h-0.1,d-0.04,m,-w*0.24,(h-0.1)/2,0,0.02));                    // 서랍통
+  legs4(g,w,d,h-0.05,furnMat(o.accent??'#cbbfae','satin'),0.022,0.06);
+  const mir=new THREE.Mesh(new THREE.CircleGeometry(0.21,28),
+    new THREE.MeshStandardMaterial({ color:col('#dbe6ec'), roughness:0.08, metalness:0.15 }));
+  mir.position.set(w*0.2,h+0.30,-d/2+0.03); g.add(mir);
+  const ring=cyl(0.225,0.225,0.02,m,w*0.2,h+0.30,-d/2+0.02,28); ring.rotation.x=Math.PI/2; g.add(ring);
+  g.userData.size={w,h:h+0.55,d};
+  return addSlots(g, tierSlots(w*0.5,h,1,0), [h]);
+};
+
+/* 옷걸이 행거 */
+B.clothes_rack=(o)=>{
+  const w=o.w??1.0, d=o.d??0.45, h=o.h??1.62;
+  const g=new THREE.Group();
+  const m=furnMat(o.color??'#cbbfae','satin');
+  for(const s of [-1,1]){
+    g.add(cyl(0.016,0.016,h,m, s*(w/2-0.03), h/2, 0, 8));
+    const foot=bx(0.05,0.025,d,m, s*(w/2-0.03), 0.012, 0); g.add(foot);
+  }
+  const bar=cyl(0.014,0.014,w-0.06,m,0,h-0.06,0,8); bar.rotation.z=Math.PI/2; g.add(bar);
+  const cl=['#dbe3ea','#e8dcd6','#d9e2d6','#e6dced'];
+  for(let i=0;i<5;i++){                                                            // 걸린 옷
+    const x=-w*0.3+i*w*0.15;
+    g.add(panel(0.14,0.52,0.07,furnMat(cl[i%4],'matte'),x,h-0.36,0,0.03));
+    g.add(cyl(0.005,0.005,0.10,m,x,h-0.11,0,6));
+  }
+  g.userData.size={w,h,d}; return g;
+};
+
+/* 커피 테이블 (낮은) */
+B.coffee_table=(o)=>{
+  const w=o.w??0.95, d=o.d??0.52, h=o.h??0.38;
+  const g=new THREE.Group();
+  const m=furnMat(o.color??'#e5d3b8','matte');
+  g.add(panel(w,0.045,d,m,0,h-0.022,0,0.02));
+  g.add(panel(w-0.16,0.03,d-0.12,m,0,h*0.42,0,0.02));                              // 하단 선반
+  legs4(g,w,d,h-0.045,furnMat(o.accent??'#cbbba2','satin'),0.022,0.06);
+  g.userData.size={w,h,d};
+  return addSlots(g, [...tierSlots(w,h,2), ...tierSlots(w-0.16,h*0.42+0.015,1)], [h*0.42+0.015,h]);
+};
+
+/* 수납 박스 */
+B.storage_box=(o)=>{
+  const w=o.w??0.42, d=o.d??0.34, h=o.h??0.3;
+  const g=new THREE.Group();
+  const m=furnMat(o.color??'#dfd6c7','matte');
+  g.add(panel(w,h,d,m,0,h/2,0,0.035));
+  g.add(bx(w-0.06,0.02,0.008,furnMat(o.accent??'#c3b49c','satin'),0,h*0.62,d/2+0.004));
+  g.userData.size={w,h,d};
+  return addSlots(g, [{x:0,y:+h.toFixed(3),z:0}], [h]);
+};
+
+/* 전신 거울 */
+B.mirror=(o)=>{
+  const w=o.w??0.45, h=o.h??1.55, d=0.06;
+  const g=new THREE.Group();
+  const m=furnMat(o.color??'#cbbfae','satin');
+  g.add(panel(w,h,d,m,0,h/2,0,0.03));
+  const face=new THREE.Mesh(new THREE.PlaneGeometry(w-0.07,h-0.09),
+    new THREE.MeshStandardMaterial({ color:col('#dde8ee'), roughness:0.06, metalness:0.2 }));
+  face.position.set(0,h/2,d/2+0.005); g.add(face);
+  const leg=bx(0.05,0.5,0.3,m,0,0.25,-0.14); leg.rotation.x=0.22; g.add(leg);       // 뒷받침
+  g.userData.size={w,h,d:0.3}; return g;
+};
+
+/* 책상 조명 */
+B.desk_lamp=(o)=>{
+  const h=o.h??0.42;
+  const g=new THREE.Group();
+  const m=furnMat(o.color??'#cfc7bb','satin');
+  g.add(cyl(0.09,0.10,0.02,m,0,0.01,0,16));
+  g.add(cyl(0.011,0.011,h*0.72,m,0,h*0.36,0,8));
+  const arm=cyl(0.010,0.010,0.17,m,0.06,h*0.74,0,8); arm.rotation.z=-0.9; g.add(arm);
+  const shade=new THREE.Mesh(new THREE.ConeGeometry(0.075,0.09,16,1,true),
+    new THREE.MeshStandardMaterial({ color:col(o.accent??'#f6efdc'), roughness:0.55,
+      side:THREE.DoubleSide, emissive:col('#3a2f18'), emissiveIntensity:0.22 }));
+  shade.position.set(0.125,h*0.8,0); shade.rotation.z=0.5; g.add(shade);
+  g.userData.size={w:0.3,h,d:0.2}; g.userData.lampShade=shade; return g;
+};
+
 export const FURNITURE_TYPES=Object.keys(B);
 
 /* ============================================================
@@ -313,6 +668,8 @@ export function buildFurniture(type, opts={}){
   if(!fn){ console.warn('[furniture] 알 수 없는 종류:', type); return new THREE.Group(); }
   const g=fn(opts||{});
   g.userData.type=type;
-  g.traverse(o=>{ if(o.isMesh){ o.castShadow=o.castShadow!==false; o.receiveShadow=true; } });
+  // ★ 모든 메시가 빛을 막고(castShadow) 받도록. Mesh 기본값이 false라
+  //   "명시적으로 켠 것만 켜짐"이 되면 안 된다 → 러그처럼 뺄 것만 noShadow로 표시.
+  g.traverse(o=>{ if(o.isMesh){ o.castShadow=!o.userData.noShadow; o.receiveShadow=true; } });
   return g;
 }

@@ -6471,7 +6471,13 @@
     }
    ],
    "slot_count": 3,
-   "scale_to_real": 1.0
+   "scale_to_real": 1.0,
+   "tier_depths_m": [
+    0.22
+   ],
+   "tier_max_pot_d": [
+    0.19
+   ]
   },
   {
    "id": 385,
@@ -6513,7 +6519,13 @@
    ],
    "slot_count": 3,
    "scale_to_real": 1.0,
-   "real_max_m": 0.8
+   "real_max_m": 0.8,
+   "tier_depths_m": [
+    0.22
+   ],
+   "tier_max_pot_d": [
+    0.19
+   ]
   },
   {
    "id": 386,
@@ -6588,7 +6600,17 @@
     0.434,
     0.794
    ],
-   "scale_to_real": 1.0
+   "scale_to_real": 1.0,
+   "tier_depths_m": [
+    0.26,
+    0.26,
+    0.26
+   ],
+   "tier_max_pot_d": [
+    0.23,
+    0.23,
+    0.23
+   ]
   },
   {
    "id": 387,
@@ -6665,7 +6687,17 @@
     0.794
    ],
    "scale_to_real": 1.0,
-   "real_max_m": 0.794
+   "real_max_m": 0.794,
+   "tier_depths_m": [
+    0.26,
+    0.26,
+    0.26
+   ],
+   "tier_max_pot_d": [
+    0.23,
+    0.23,
+    0.23
+   ]
   },
   {
    "id": 388,
@@ -6695,7 +6727,13 @@
     }
    ],
    "slot_count": 1,
-   "scale_to_real": 1.0
+   "scale_to_real": 1.0,
+   "tier_depths_m": [
+    0.28
+   ],
+   "tier_max_pot_d": [
+    0.25
+   ]
   },
   {
    "id": 389,
@@ -6727,7 +6765,13 @@
    ],
    "slot_count": 1,
    "scale_to_real": 1.0,
-   "real_max_m": 0.355
+   "real_max_m": 0.355,
+   "tier_depths_m": [
+    0.28
+   ],
+   "tier_max_pot_d": [
+    0.25
+   ]
   },
   {
    "id": 390,
@@ -6781,24 +6825,31 @@
      "z": -0.1055
     },
     {
-     "x": -0.2,
-     "y": 1.213,
-     "z": -0.1881
-    },
-    {
-     "x": 0.2,
+     "x": 0.0,
      "y": 1.213,
      "z": -0.1881
     }
    ],
-   "slot_count": 8,
+   "slot_count": 7,
    "tier_heights": [
     0.193,
     0.533,
     0.873,
     1.213
    ],
-   "scale_to_real": 1.0
+   "scale_to_real": 1.0,
+   "tier_depths_m": [
+    0.3,
+    0.25,
+    0.2,
+    0.15
+   ],
+   "tier_max_pot_d": [
+    0.27,
+    0.22,
+    0.17,
+    0.12
+   ]
   },
   {
    "id": 391,
@@ -6853,17 +6904,12 @@
      "z": -0.1055
     },
     {
-     "x": -0.2,
-     "y": 1.213,
-     "z": -0.1881
-    },
-    {
-     "x": 0.2,
+     "x": 0.0,
      "y": 1.213,
      "z": -0.1881
     }
    ],
-   "slot_count": 8,
+   "slot_count": 7,
    "tier_heights": [
     0.193,
     0.533,
@@ -6871,7 +6917,19 @@
     1.213
    ],
    "scale_to_real": 1.0,
-   "real_max_m": 1.3
+   "real_max_m": 1.3,
+   "tier_depths_m": [
+    0.3,
+    0.25,
+    0.2,
+    0.15
+   ],
+   "tier_max_pot_d": [
+    0.27,
+    0.22,
+    0.17,
+    0.12
+   ]
   },
   {
    "id": 392,
@@ -6932,7 +6990,17 @@
     0.772
    ],
    "movable": true,
-   "scale_to_real": 1.0
+   "scale_to_real": 1.0,
+   "tier_depths_m": [
+    0.32,
+    0.32,
+    0.32
+   ],
+   "tier_max_pot_d": [
+    0.29,
+    0.29,
+    0.29
+   ]
   },
   {
    "id": 393,
@@ -6995,7 +7063,17 @@
    ],
    "movable": true,
    "scale_to_real": 1.0,
-   "real_max_m": 0.82
+   "real_max_m": 0.82,
+   "tier_depths_m": [
+    0.32,
+    0.32,
+    0.32
+   ],
+   "tier_max_pot_d": [
+    0.29,
+    0.29,
+    0.29
+   ]
   },
   {
    "id": 394,
@@ -7040,7 +7118,13 @@
     }
    ],
    "slot_count": 4,
-   "scale_to_real": 1.0
+   "scale_to_real": 1.0,
+   "tier_depths_m": [
+    0.16
+   ],
+   "tier_max_pot_d": [
+    0.13
+   ]
   },
   {
    "id": 395,
@@ -7087,7 +7171,13 @@
    ],
    "slot_count": 4,
    "scale_to_real": 1.0,
-   "real_max_m": 1.0
+   "real_max_m": 1.0,
+   "tier_depths_m": [
+    0.16
+   ],
+   "tier_max_pot_d": [
+    0.13
+   ]
   },
   {
    "id": 396,
@@ -7155,7 +7245,15 @@
     }
    ],
    "has_light": true,
-   "scale_to_real": 1.0
+   "scale_to_real": 1.0,
+   "tier_depths_m": [
+    0.31,
+    0.31
+   ],
+   "tier_max_pot_d": [
+    0.28,
+    0.28
+   ]
   },
   {
    "id": 397,
@@ -7225,7 +7323,15 @@
    ],
    "has_light": true,
    "scale_to_real": 1.0,
-   "real_max_m": 1.16
+   "real_max_m": 1.16,
+   "tier_depths_m": [
+    0.31,
+    0.31
+   ],
+   "tier_max_pot_d": [
+    0.28,
+    0.28
+   ]
   },
   {
    "id": "stem_knob",
