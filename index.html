@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>볕 · 빛이 진짜인 방 (3D)</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Jua&family=Gaegu:wght@400;700&display=swap');
   *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -38,6 +39,12 @@
     padding:6px 14px;border-radius:14px;backdrop-filter:blur(4px);transition:opacity .8s;white-space:nowrap}
   .loading{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;z-index:10;
     color:#ffb454;font-family:'Jua';font-size:16px;background:#14101c}
+  .panel{margin-top:10px;padding:10px;border-radius:12px;background:rgba(255,255,255,.55);
+         backdrop-filter:blur(6px);border:1px solid rgba(0,0,0,.06)}
+  .prow{display:flex;align-items:baseline;gap:8px;margin-bottom:8px;font-size:13px}
+  .prow .sub{font-size:11px;color:#7b7f86;font-weight:400}
+  .csel{font:inherit;font-size:12px;padding:5px 8px;border-radius:9px;
+        border:1px solid rgba(0,0,0,.12);background:rgba(255,255,255,.85);max-width:150px}
 </style>
 </head>
 <body>
@@ -71,7 +78,40 @@
       <button class="cbtn" id="autorotate">자동회전</button>
       <button class="cbtn on" id="ceiling">천장광: 자동</button>
       <button class="cbtn" id="heat">조도맵</button>
+      <button class="cbtn" id="decoBtn">집꾸미기</button>
       <a class="cbtn" href="./tool.html" style="text-decoration:none;display:inline-flex;align-items:center">정밀조도툴 →</a>
+    </div>
+
+    <!-- ── 집꾸미기 패널 (집꾸미기 켤 때만 보임) ── -->
+    <div class="panel" id="decoPanel" style="display:none">
+      <div class="prow"><b>집꾸미기</b>
+        <span class="sub" id="decoSel">가구를 클릭해 고르고 끌어서 옮기세요</span></div>
+      <div class="btns">
+        <select id="decoAdd" class="csel"><option value="">+ 가구 추가…</option></select>
+        <button class="cbtn" id="decoRotL">↺</button>
+        <button class="cbtn" id="decoRotR">↻</button>
+        <button class="cbtn" id="decoDel">삭제</button>
+        <button class="cbtn" id="decoUndo">되돌리기</button>
+      </div>
+      <div class="btns">
+        <button class="cbtn" id="decoSave">브라우저 저장</button>
+        <button class="cbtn" id="decoLoad">불러오기</button>
+        <button class="cbtn" id="decoReset">기본으로</button>
+        <button class="cbtn on" id="decoDown">JSON 내려받기</button>
+        <label class="cbtn" style="cursor:pointer">JSON 열기
+          <input type="file" id="decoFile" accept="application/json" style="display:none"></label>
+      </div>
+    </div>
+
+    <!-- ── 캐릭터 ── -->
+    <div class="panel" id="charPanel">
+      <div class="prow"><b>캐릭터</b>
+        <span class="sub">바닥을 클릭하면 걸어갑니다</span></div>
+      <div class="btns">
+        <select id="charPick" class="csel"></select>
+        <button class="cbtn" id="charToggle">불러오기</button>
+      </div>
+      <div class="btns" id="emoteRow"></div>
     </div>
   </div>
 </div>

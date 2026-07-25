@@ -264,7 +264,10 @@ export function buildHouse(GRAIN, roomDefIn, winPresets, doorPresets={}, finishe
     const ftex=finishTexture(roomDef.floorPattern, CW) || GRAIN;
     const floorMat=surfaceMat(roomDef.floorColor, roomDef.floorRough??0.8, ftex);
     const g=new THREE.Group();
-    g.add(box(CW,WT,CD, floorMat, 0,-WT/2,0, false));
+    // ★ 벽 바깥면까지 늘려 ㄱ자로 마감. 벽은 ±CW/2에 두께 WT로 서 있으므로
+    //   바깥면이 ±(CW/2+WT/2) → 슬래브를 CW+WT로 깔면 딱 맞물린다.
+    //   (예전엔 CW라서 벽 두께 절반이 허공에 떠 보였다)
+    g.add(box(CW+WT, WT, CD+WT, floorMat, 0,-WT/2,0, false));
     g.userData={ normal:[0,-1,0], center:[0,0,0] };
     shells.floor=g; room.add(g);
   }
@@ -280,7 +283,7 @@ export function buildHouse(GRAIN, roomDefIn, winPresets, doorPresets={}, finishe
   }else{
     const ceilMat=surfaceMat(roomDef.ceilColor||'#f6f2ea',0.95, GRAIN);
     const g=new THREE.Group();
-    g.add(box(CW,WT,CD, ceilMat, 0, CH+WT/2, 0, false));   // 통판(이음새 없음)
+    g.add(box(CW+WT, WT, CD+WT, ceilMat, 0, CH+WT/2, 0, false));   // 통판 + 벽 바깥면까지(ㄱ자 마감)
     g.userData={ normal:[0,1,0], center:[0,CH,0] };
     shells.ceiling=g; room.add(g);
   }
@@ -437,10 +440,11 @@ export function buildHouse(GRAIN, roomDefIn, winPresets, doorPresets={}, finishe
   // [{ preset, x, z, y(선택: 벽걸이/조명 높이), rot(도), color, spectrum, schedule }]
   const furnGroup=new THREE.Group();
   const lightRigs=[];      // 조명 기구 목록 — 요금·PPFD·스케줄 계산에 사용
-  for(const f of (roomDef.furniture||[])){
+  for(const [furnIdx, f] of (roomDef.furniture||[]).entries()){
     const p={ ...(furnPresets[f.preset]||{}), ...f };
     const type=p.type||f.preset;
     const g=buildFurniture(type, p);
+    g.userData.furnIdx=furnIdx;      // ★ 집꾸미기: 클릭한 메시 → 원본 배열 인덱스 역추적용
     const hang=g.userData.hangFromCeiling;
     const yBase = f.y!=null ? f.y : (hang ? CH : 0);       // 천장 매달림/벽걸이 높이
     g.position.set(f.x??0, yBase, f.z??0);

@@ -1,0 +1,45 @@
+<!doctype html><meta charset="utf-8"><body style="margin:0;background:#cfd8dc">
+<canvas id=cv width=900 height=560></canvas>
+<pre id=o style="position:fixed;top:0;left:0;font:12px monospace;color:#111;background:#fff9;padding:6px"></pre>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+<script type="module">
+const o=document.getElementById('o'); const L=[]; const say=m=>{L.push(m);o.textContent=L.join('\n');};
+const ld=new THREE.GLTFLoader();
+const P=(u)=>new Promise((r,j)=>ld.load(u,r,undefined,j));
+const g=await P('./assets/characters/3d/char_jachwi_f_rigged.glb');
+const root=g.scene;
+say('scene 자식: '+root.children.length);
+root.traverse(n=>{ if(n.isSkinnedMesh) say('SkinnedMesh: '+n.name+' 뼈 '+n.skeleton.bones.length+
+   ' geo.bbox='+(n.geometry.boundingBox?JSON.stringify(n.geometry.boundingBox.max).slice(0,60):'null')); });
+// 월드 행렬 갱신 후 뼈 위치로 실제 키 재기
+root.updateWorldMatrix(true,true);
+let minY=1e9,maxY=-1e9,minX=1e9,maxX=-1e9;
+root.traverse(n=>{ if(n.isBone){ const p=new THREE.Vector3().setFromMatrixPosition(n.matrixWorld);
+  minY=Math.min(minY,p.y); maxY=Math.max(maxY,p.y); minX=Math.min(minX,p.x); maxX=Math.max(maxX,p.x); } });
+say('뼈 기준 키: '+(maxY-minY).toFixed(3)+'m  (y '+minY.toFixed(3)+'~'+maxY.toFixed(3)+')');
+const bb=new THREE.Box3().setFromObject(root);
+say('Box3(스킨무시): '+bb.getSize(new THREE.Vector3()).toArray().map(v=>v.toFixed(3)).join(' × '));
+// 클립 물리고 한 프레임 돌린 뒤 다시
+const c=await P('./assets/derived/char_clips/char_jachwi_f_idle.glb');
+const mx=new THREE.AnimationMixer(root); mx.clipAction(c.animations[0]).play(); mx.update(0.1);
+root.updateWorldMatrix(true,true);
+let m2=1e9,M2=-1e9;
+root.traverse(n=>{ if(n.isBone){ const p=new THREE.Vector3().setFromMatrixPosition(n.matrixWorld); m2=Math.min(m2,p.y); M2=Math.max(M2,p.y);} });
+say('포즈 후 뼈 키: '+(M2-m2).toFixed(3)+'m');
+// 뼈 기준으로 스케일 맞춰 렌더
+const H=M2-m2, k=H>0.001?1.65/H:1;
+root.scale.setScalar(k); root.updateWorldMatrix(true,true);
+let m3=1e9; root.traverse(n=>{ if(n.isBone){ m3=Math.min(m3,new THREE.Vector3().setFromMatrixPosition(n.matrixWorld).y);} });
+root.position.y-=m3;
+say('적용 스케일 ×'+k.toFixed(1));
+root.traverse(n=>{ if(n.isMesh){ n.frustumCulled=false; if(n.material&&n.material.map)n.material.map.encoding=THREE.sRGBEncoding; } });
+const S=new THREE.Scene(); S.background=new THREE.Color('#cfd8dc');
+S.add(new THREE.HemisphereLight(0xffffff,0x999999,1.3));
+const dl=new THREE.DirectionalLight(0xffffff,.8); dl.position.set(2,5,3); S.add(dl);
+const fl=new THREE.Mesh(new THREE.PlaneGeometry(20,20), new THREE.MeshStandardMaterial({color:0xe8e2d8}));
+fl.rotation.x=-Math.PI/2; S.add(fl); S.add(root);
+const R=new THREE.WebGLRenderer({canvas:cv,antialias:true}); R.outputEncoding=THREE.sRGBEncoding;
+const cam=new THREE.PerspectiveCamera(38,900/560,.1,100); cam.position.set(1.5,1.5,2.8); cam.lookAt(0,0.85,0);
+R.render(S,cam); say('렌더 완료'); document.title='DONE';
+</script>

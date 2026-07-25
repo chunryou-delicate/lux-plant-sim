@@ -164,7 +164,7 @@ const DEF={
 };
 let P=Object.assign({}, DEF);
 // 저장본 버전. 생장 로직/기본값이 바뀌면 올림 → 옛 저장값이 새 기본값을 덮어쓰지 않게.
-const CFG_VER='2026-07-26-mature';
+const CFG_VER='2026-07-26-mature2';
 
 // ===== 튜닝 파라미터(B: 에셋별 개별 조정) =====
 const ADJ_KEYS=[
@@ -231,27 +231,28 @@ const ADJ_TUNED={
   leaf_mid_albo22: {sxz:0.7, sy:0.9, ry:1.45, ox:0.08, oy:-0.13, oz:0.02, bladeR:0.62, trimR:0.52, trimTop:0.49, petR:0.25, petTop:0.8},   // 변이-스페클-민트흰점-쨍
   leaf_mid_albo27: {scale:0.95, sxz:1.1, ry:1.45, rz:0.05, ox:0.15, oy:-0.25, bladeR:0.2, trimR:0.54, trimTop:0.61, petR:0.25, petTop:0.8},   // 변이-실버-물방울-쨍
   leaf_mid_albo29: {sxz:0.6, ry:1.9, ox:0.01, oy:0.06, bladeR:0.08, trimTop:0.49, petR:0.3},   // 변이-하프문-크림민트
-  // ── 성숙 변이. 회전은 [잎자루축+잎몸법선]을 기준잎에 맞추는 값을 계산해서 넣었고,
+  // ── 성숙 변이. 회전은 [붙는점→잎몸 방향 + 잎몸 법선]을 기준잎에 맞추는 값을 계산해 넣었다.
+  //    (잎자루 축으로 맞췄더니 자루가 짧은 잎에서 측정이 빗나가 잎몸이 옆으로 누웠다)
   //    크기는 기준잎의 폭·두께·잎자루에 맞췄다. 오프셋은 기준잎 값 그대로.
-  leaf_mat1: {sxz:1.06, rx:0.8, ry:-0.8, rz:0.75, ox:0.04, oy:0.1, bladeR:1.34, petR:1.44},   // 변이-핑크-로즈핑크
-  leaf_mat4: {sxz:1.28, rx:0.4, ry:-1.2, rz:0.4, ox:0.04, oy:0.1, bladeR:0.8, petR:1.31},   // 변이-별무늬-페일그린
-  leaf_mat7: {sxz:1.08, rx:0.4, ry:-0.8, rz:0.75, ox:0.04, oy:0.1, bladeR:0.84, petR:1.03},   // 변이-별무늬-핑크민트
-  leaf_mat10: {sxz:0.82, rx:-1.35, ry:-0.6, rz:-1.1, ox:0.04, oy:0.1, bladeR:0.57, petR:1.04},   // 변이-갤럭시-틸골드  ← 기준과 70° 틀어져 있던 것, 눈으로 확인 권장
-  leaf_mat13: {sxz:0.99, rx:-0.85, ry:-1, rz:-0.65, ox:0.04, oy:0.1, bladeR:0.81, petR:1.31},   // 변이-스페클-그린크림
-  leaf_mat16: {sxz:1.26, rx:0.45, ry:-1.2, rz:0.45, ox:0.04, oy:0.1, bladeR:0.85, petR:1.4},   // 변이-오로레아-골드
-  leaf_mat19: {sxz:1.09, rx:-0.75, ry:0.15, rz:0.85, ox:0.04, oy:0.1, bladeR:0.76, petR:0.93},   // 변이-갤럭시-다크틸  ← 기준과 72° 틀어져 있던 것, 눈으로 확인 권장
-  leaf_mat22: {sxz:0.98, rx:0.1, ry:-1.15, rz:0.2, ox:0.04, oy:0.1, bladeR:0.93, petR:1.1},   // 변이-오로레아-그린옐로우
-  leaf_mat25: {sxz:1.15, rx:0.3, ry:-0.75, rz:0.6, ox:0.04, oy:0.1, bladeR:1.5, petR:0.9},   // 변이-라임-레몬패치
-  leaf_mat28: {sxz:1.24, ry:-1.2, rz:0.05, ox:0.04, oy:0.1, bladeR:0.81, petR:1.07},   // 변이-네온-라임
-  leaf_mat31: {sxz:1.16, rx:-1.7, ry:-0.7, rz:-1.6, ox:0.04, oy:0.1, bladeR:0.83, petR:1.12},   // 변이-제브라-그린흰  ← 기준과 83° 틀어져 있던 것, 눈으로 확인 권장
-  leaf_mat34: {sxz:0.99, rx:0.25, ry:-1.2, rz:0.3, ox:0.04, oy:0.1, bladeR:0.81, petR:1.09},   // 변이-하프문-그린흰
-  leaf_mat37: {sxz:1.34, rx:0.35, ry:-0.85, rz:0.7, ox:0.04, oy:0.1, bladeR:0.79, petR:0.99},   // 변이-모브-라벤더그레이
-  leaf_mat40: {sxz:1.06, ry:-1.2, rz:0.1, ox:0.04, oy:0.1, bladeR:0.81, petR:1.08},   // 변이-별무늬-그린옐로우
-  leaf_mat43: {sxz:1.1, rx:-0.1, ry:-1.2, rz:-0.05, ox:0.04, oy:0.1, bladeR:0.85, petR:0.85},   // 변이-핑크-로즈
-  leaf_mat46: {sxz:0.97, rx:0.1, ry:-1.25, rz:0.15, ox:0.04, oy:0.1, bladeR:0.8, petR:1.06},   // 변이-별무늬-그린흰
-  leaf_mat49: {sxz:1.19, ry:-1.3, rz:0.05, ox:0.04, oy:0.1, bladeR:0.82, petR:1.18},   // 변이-차콜-다크그린
-  leaf_mat52: {sxz:1.21, rx:-0.95, ry:0.1, rz:0.9, ox:0.04, oy:0.1, bladeR:0.97, petR:1.08},   // 변이-하프문-그린크림  ← 기준과 83° 틀어져 있던 것, 눈으로 확인 권장
-  leaf_mat55: {sxz:1.34, rx:0.7, ry:-1.15, rz:0.7, ox:0.04, oy:0.1, bladeR:0.89, petR:1.41},   // 변이-알보-전체흰
+  leaf_mat1: {sxz:1.06, rx:0.25, ry:-0.7, rz:0.35, ox:0.04, oy:0.1, bladeR:1.34, petR:1.44},   // 변이-핑크-로즈핑크
+  leaf_mat4: {sxz:1.28, rx:0.3, ry:-0.9, rz:0.45, ox:0.04, oy:0.1, bladeR:0.8, petR:1.31},   // 변이-별무늬-페일그린
+  leaf_mat7: {sxz:1.08, rx:0.25, ry:-0.95, rz:0.4, ox:0.04, oy:0.1, bladeR:0.84, petR:1.03},   // 변이-별무늬-핑크민트
+  leaf_mat10: {sxz:0.82, rx:0.35, ry:-0.8, rz:0.5, ox:0.04, oy:0.1, bladeR:0.57, petR:1.04},   // 변이-갤럭시-틸골드
+  leaf_mat13: {sxz:0.99, rx:0.45, ry:-1, rz:0.5, ox:0.04, oy:0.1, bladeR:0.81, petR:1.31},   // 변이-스페클-그린크림
+  leaf_mat16: {sxz:1.26, rx:0.2, ry:-0.95, rz:0.4, ox:0.04, oy:0.1, bladeR:0.85, petR:1.4},   // 변이-오로레아-골드
+  leaf_mat19: {sxz:1.09, rx:0.15, ry:-0.8, rz:0.3, ox:0.04, oy:0.1, bladeR:0.76, petR:0.93},   // 변이-갤럭시-다크틸
+  leaf_mat22: {sxz:0.98, rx:0.1, ry:-0.9, rz:0.3, ox:0.04, oy:0.1, bladeR:0.93, petR:1.1},   // 변이-오로레아-그린옐로우
+  leaf_mat25: {sxz:1.15, rx:0.15, ry:-0.7, rz:0.35, ox:0.04, oy:0.1, bladeR:1.5, petR:0.9},   // 변이-라임-레몬패치
+  leaf_mat28: {sxz:1.24, rx:0.3, ry:-0.9, rz:0.4, ox:0.04, oy:0.1, bladeR:0.81, petR:1.07},   // 변이-네온-라임
+  leaf_mat31: {sxz:1.16, rx:0.25, ry:-0.75, rz:0.45, ox:0.04, oy:0.1, bladeR:0.83, petR:1.12},   // 변이-제브라-그린흰
+  leaf_mat34: {sxz:0.99, rx:0.2, ry:-1, rz:0.35, ox:0.04, oy:0.1, bladeR:0.81, petR:1.09},   // 변이-하프문-그린흰
+  leaf_mat37: {sxz:1.34, rx:0.25, ry:-0.85, rz:0.45, ox:0.04, oy:0.1, bladeR:0.79, petR:0.99},   // 변이-모브-라벤더그레이
+  leaf_mat40: {sxz:1.06, rx:0.25, ry:-0.95, rz:0.4, ox:0.04, oy:0.1, bladeR:0.81, petR:1.08},   // 변이-별무늬-그린옐로우
+  leaf_mat43: {sxz:1.1, rx:0.3, ry:-0.9, rz:0.45, ox:0.04, oy:0.1, bladeR:0.85, petR:0.85},   // 변이-핑크-로즈
+  leaf_mat46: {sxz:0.97, rx:0.2, ry:-0.85, rz:0.4, ox:0.04, oy:0.1, bladeR:0.8, petR:1.06},   // 변이-별무늬-그린흰
+  leaf_mat49: {sxz:1.19, rx:0.2, ry:-1, rz:0.35, ox:0.04, oy:0.1, bladeR:0.82, petR:1.18},   // 변이-차콜-다크그린
+  leaf_mat52: {sxz:1.21, rx:0.15, ry:-0.85, rz:0.35, ox:0.04, oy:0.1, bladeR:0.97, petR:1.08},   // 변이-하프문-그린크림
+  leaf_mat55: {sxz:1.34, rx:0.2, ry:-0.9, rz:0.35, ox:0.04, oy:0.1, bladeR:0.89, petR:1.41},   // 변이-알보-전체흰
   // ── 엽초(잎 단계별)
   sheath_furled: {len:0},   // 엽초·새순
   sheath_mature: {scale:1.45, sxz:1.3, sy:1.3, rx:-0.5, ry:-2.2, rz:-0.55, ox:0.46, oy:0.03, oz:0.1, len:0.205, fit:1.22, bot:1.1, top:0.75},   // 엽초·성숙잎
