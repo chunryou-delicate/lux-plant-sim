@@ -60,6 +60,10 @@
     <div id="parts"></div>
 
     <div id="hit" style="font-size:11px;color:#4a7a5c;margin-top:7px;line-height:1.6"></div>
+
+    <h2>유지 (색 안 바뀜)</h2>
+    <div id="locked"></div>
+
     <button id="reset">원본 색으로</button>
     <div class="chk"><b>마스크 검수 포인트</b>
       <ul>
@@ -81,15 +85,26 @@ const CHARS=[['char_namja_jachwi','자취남'],['char_namja_gajang','남가장']
  ['char_yeoja_jubu','여주부'],['char_yeoja_researcher','여연구원']];
 
 /* 마스크는 R 채널 인덱스 맵 (tools/make_part_mask.py 와 일치)
-   40 머리카락 / 80 눈·눈썹 / 120 피부 / 160 상의 / 200 하의
+   32 머리+눈썹 / 64 눈(보호) / 96 상징물(보호) / 128 피부 / 160 상의 / 192 하의 / 224 신발
    알파를 데이터로 쓰면 캔버스 프리멀티플라이드 알파 때문에 A=0 텍셀의 RGB가
-   0 으로 뭉개져 A 채널 부위만 살아남는다. 그래서 A 는 항상 255. */
+   0 으로 뭉개져 A 채널 부위만 살아남는다. 그래서 A 는 항상 255.
+
+   보호 부위는 색을 바꾸지 않는다.
+     눈    - 홍채·흰자·하이라이트가 텍셀 몇 개 단위라 경계가 미세하다.
+             눈 색은 표정 작업(얼굴 텍스처 교체)에서 통째로 다루는 게 맞다.
+     상징물 - 연구가운 로고·명찰·앞치마 무늬. 직업 정체성이라 색이 바뀌면
+             캐릭터 구분이 깨진다.
+   눈썹은 머리카락에 포함했다. 머리색 바꾸면 같이 바뀌는 게 자연스럽다. */
 const PARTS=[
-  {key:'hair', name:'머리카락', code:40,  on:true,  color:'#d8b46c'},
-  {key:'eyes', name:'눈·눈썹',  code:80,  on:false, color:'#3a2a20'},
-  {key:'skin', name:'피부',     code:120, on:false, color:'#f0c090'},
-  {key:'top',  name:'상의',     code:160, on:false, color:'#e8e8d8'},
-  {key:'bot',  name:'하의',     code:200, on:false, color:'#486090'},
+  {key:'hair', name:'머리 + 눈썹', code:32,  on:true,  color:'#d8b46c'},
+  {key:'skin', name:'피부',        code:128, on:false, color:'#f0c090'},
+  {key:'top',  name:'상의',        code:160, on:false, color:'#e8e8d8'},
+  {key:'bot',  name:'하의',        code:192, on:false, color:'#486090'},
+  {key:'shoe', name:'신발',        code:224, on:false, color:'#d8d0c4'},
+];
+const LOCKED=[
+  {name:'눈 (홍채·흰자)', code:64,  why:'텍셀 단위가 미세함 · 표정 작업에서 처리'},
+  {name:'직업 상징물',    code:96,  why:'가운 로고·명찰·앞치마 무늬 · 직업 정체성'},
 ];
 const HAIR_PRESETS=['#3a2a20','#6b4226','#a9743c','#d8b46c','#e8dcc0',
                     '#8a3b3b','#6a4a7a','#2f4f4f','#9aa0a8','#1c1a1e'];
@@ -149,14 +164,14 @@ function recolor(){
     // 1차: 해당 부위 평균 밝기
     let sum=0,n=0;
     for(let i=0;i<d.length;i+=4){
-      if(Math.abs(md[i]-p.code)<=20){ sum+=(d[i]+d[i+1]+d[i+2])/3; n++; }
+      if(Math.abs(md[i]-p.code)<=12){ sum+=(d[i]+d[i+1]+d[i+2])/3; n++; }
     }
     hits[p.key]=n;
     if(!n) continue;
     const avg=Math.max(sum/n,1);
     // 2차: 밝기비를 목표색에 곱한다 (음영·주름 보존)
     for(let i=0;i<d.length;i+=4){
-      if(Math.abs(md[i]-p.code)>20) continue;
+      if(Math.abs(md[i]-p.code)>12) continue;
       const lum=(d[i]+d[i+1]+d[i+2])/3, k=lum/avg;
       d[i]  =Math.min(255,tgt[0]*k);
       d[i+1]=Math.min(255,tgt[1]*k);
@@ -230,6 +245,10 @@ HAIR_PRESETS.forEach(c=>{
     partsEl.querySelector('input[type=checkbox]').checked=true;recolor();};
   pre.appendChild(s);
 });
+document.getElementById('locked').innerHTML=LOCKED.map(l=>
+  `<div style="padding:5px 0;border-bottom:1px solid #f0f4f1">
+     <div style="font-size:12.5px;font-weight:600">🔒 ${l.name}</div>
+     <div style="font-size:11px;color:#6d7d72;line-height:1.5">${l.why}</div></div>`).join('');
 document.querySelectorAll('.views button').forEach(b=>b.onclick=()=>setView(b.dataset.v));
 document.getElementById('reset').onclick=()=>{PARTS.forEach(p=>p.on=false);
   partsEl.querySelectorAll('input[type=checkbox]').forEach(c=>c.checked=false);recolor();};
