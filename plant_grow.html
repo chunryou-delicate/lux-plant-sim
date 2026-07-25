@@ -484,6 +484,10 @@ function seedColor(){ const cs=mulberry32((SEED*40503+12345)>>>0);
   PLANT_MID=cs()<0.5?'leaf_mid1':'leaf_mid2';                            // 개체마다 미드리프 1종 고정
 }
 // 무늬종(알보 등)은 텍스처가 무늬 그 자체라 단색으로 덮으면 안 된다.
+// 랜덤으로 뽑아도 되는 알보 중기 종류. 에셋 검수 결과 1~3(전체흰중기)은 잎자루가 짧고 굵어
+// 마디에 파묻혀 보이므로 제외 — 에셋창에서 잎자루 교체가 끝나면 [1,2,3]을 다시 넣을 것.
+//   1 전체흰중기  2 -쨍  3 -차분 | 4 흰연두-쨍  5 -차분 | 6 크림민트-쨍  7 -차분
+const ALBO_MID_POOL=[4,5,6,7];
 const KEEP_TEX=new Set(['leaf_young_albo','leaf_mid_albo1','leaf_mid_albo2','leaf_mid_albo3','leaf_mid_albo4','leaf_mid_albo5','leaf_mid_albo6','leaf_mid_albo7']);
 function tintObj(obj, color){
   obj.traverse(o=>{ if(o.isMesh&&o.material){
@@ -821,7 +825,7 @@ function buildPlant(){
                 az:rng()*Math.PI*2, canMature:rng()<P.matureProb,
                 triggered:false, grew:false,
                 varie:rng()<P.varieProb,                   // ★캐논: 변이는 어린잎 단계에서 확률로 결정
-                alboMid:1+Math.floor(rng()*7),             // 이 잎이 쓸 알보 중기 종류(1~7)
+                alboMid:ALBO_MID_POOL[Math.floor(rng()*ALBO_MID_POOL.length)],   // 이 잎이 쓸 알보 중기 종류
                 midPick:(rng()<0.5?'leaf_mid1':'leaf_mid2'),  // 잎마다 랜덤(midMix로 개체고정과 섞음)
                 curveDir, curveAmt:0.55+rng()*0.9};        // 개체마다 휘는 정도가 조금씩 다르게
       ax.midType=(rng()<P.midMix)? ax.midPick : PLANT_MID;   // midMix=0 개체 1종 고정 / 1 잎마다 랜덤
