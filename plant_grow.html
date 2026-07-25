@@ -120,7 +120,7 @@ let FRUSTUM=2.2;
 
 // ===== 시드 난수(개체성): 같은 시드→같은 그루. mulberry32 =====
 function mulberry32(a){ return function(){ a|=0; a=a+0x6D2B79F5|0; let t=Math.imul(a^a>>>15,1|a); t=t+Math.imul(t^t>>>7,61|t)^t; return((t^t>>>14)>>>0)/4294967296; }; }
-let SEED=7554, rng=mulberry32(SEED);
+let SEED=25990, rng=mulberry32(SEED);
 const GOLDEN=Math.PI*(3-Math.sqrt(5));   // 137.5° 황금각(자연스러운 잎차례)
 
 // ===== 튜닝 파라미터(A: 전체 규칙) — 슬라이더로 실시간 조절 =====
@@ -133,11 +133,11 @@ const DEF={
   sizeYoung:0.20, sizeMid:0.34, sizeMature:0.46, sizeFull:0.58,  // 각 시점 크기(마디 간격 대비 자연스럽게)
   internode:0.20, stemFlat:1.25,   // 줄기 마디 길이·잎방향 납작
   petGrow:16, rEarly:0.022, rThin:0.028, rMed:0.025, rThick:0.031, matureProb:0.22, doubleBud:0.15,  // 종류별 굵기(몸통 폭 기준, 왜곡 최소)·성숙잎 확률·쌍혹 확률
-  leafEmbed:0.13, leafTilt:0.30, leafClear:0.40,   // 잎자루를 줄기 속으로 박는 깊이 · 잎이 줄기 끝 방향을 따라가는 정도 · 잎이 차지하는 반경(겹침 회피)
+  leafEmbed:0.13, leafTilt:0.30, leafClear:0.40, leafTiltVary:0,   // leafTiltVary=0 → 잎 각도 고정(조절값 그대로), >0 이면 겹침 회피가 각도도 흔듦   // 잎자루를 줄기 속으로 박는 깊이 · 잎이 줄기 끝 방향을 따라가는 정도 · 잎이 차지하는 반경(겹침 회피)
   photoLean:0.13, stemStraight:0.30,   // 빛 쪽으로 기우는 세기(굴광성 슬라이더와 곱해짐) · 축 기본방향으로 돌아오는 힘(작을수록 더 휨)
   stemTrans:40, bumpGrow:20, bumpAt:0.3, stemOverlap:0.015,
-  tipTaper:0.72, nodeBulge:0.16, nodeWidth:0.045, bumpFit:1.02,
-  sheathLen:0.22, sheathFit:1.12,   // 엽초: 길이(잎 크기 x 이 값) · 줄기를 감싸는 굵기 배수
+  tipTaper:0.55, nodeBulge:0.16, nodeWidth:0.045, bumpFit:1.02,
+  sheathLen:0.22, sheathFit:1.12, sheathBot:1.309, sheathTop:0.575,   // 엽초: 길이(잎 크기 x 이 값) · 감싸는 굵기 · 아래/위 구멍 지름
   stemTex:1.0, texRepeat:3.0,       // 줄기 표면 결: 세기 · 세로 반복 횟수
   petioleLen:1.0, leafElev:1.0, elevDrop:0.36, spread:0.10, branchSpread:0.55,   // 배치(spread=줄기 흔들림)
   leafLight:0.62, leafDark:0.13, leafSat:0.5, satRange:0.22, hueBase:0.16, hueRange:0.26,   // 색(밝기/진함/채도/개체범위)
@@ -145,7 +145,7 @@ const DEF={
 };
 let P=Object.assign({}, DEF);
 // 저장본 버전. 생장 로직/기본값이 바뀌면 올림 → 옛 저장값이 새 기본값을 덮어쓰지 않게.
-const CFG_VER='2026-07-20-sheath5';
+const CFG_VER='2026-07-20-sheath6';
 
 // ===== 튜닝 파라미터(B: 에셋별 개별 조정) =====
 const ADJ_KEYS=['pot','leaf_young','leaf_mid1','leaf_mid2','leaf_mature','bud_furled','bud_opening2',
@@ -160,14 +160,19 @@ const ADJ_KO={ pot:'화분',
   bud_furled:'기본-초기-새순1', bud_opening2:'기본-초기-반잎1', leaf_young:'기본-어린-잎1', leaf_mid1:'기본-중간-잎1', leaf_mid2:'기본-중간-잎2', leaf_mature:'기본-성숙-잎1' };
 // 박사님이 조절기로 맞춘 값을 기본값으로 고정(2026-07-20). 여기 없는 에셋은 전부 1/0.
 const ADJ_TUNED={
-  stem_thick: {scale:0.85, ry:0.3, rz:-0.1},          // 줄기_후기_혹
-  stem_main:  {sxz:0.8, sy:0.9},                      // 줄기_후기_쌍혹
-  sheath_bud:    {sy:0},                              // ★기본 OFF — 처음엔 새순만 나오고, 줄기가 뒤이어 자람
-                                                      //   (켜려면 패널에서 '엽초·초기'의 길이를 올리세요)
-  sheath_young:  {scale:1.3, rx:-0.15, ry:-0.85, rz:0.35, ox:0.11, oy:0.03, oz:0.26},
-  sheath_mid1:   {scale:1.3, rx:-0.15, ry:-0.85, rz:0.35, ox:0.11, oy:0.03, oz:0.26},
-  sheath_mid2:   {scale:1.3, rx:-0.15, ry:-0.85, rz:0.35, ox:0.11, oy:0.03, oz:0.26},
-  sheath_mature: {scale:1.3, rx:-0.15, ry:-0.85, rz:0.35, ox:0.11, oy:0.03, oz:0.26},
+  // ── 잎
+  leaf_mid1:   {scale:0.8,  rx:-0.15, ry:0.65, rz:0.05, ox:0.01, oy:0.16,  oz:0.04},
+  leaf_mid2:   {scale:0.85, sxz:0.85, sy:1.15, rx:-0.45,         ox:0.01, oy:-0.07, oz:0.12},
+  leaf_mature: {rx:-0.4, oy:0.14, oz:0.04},
+  // ── 줄기(혹/쌍혹)
+  stem_thick:  {scale:0.85, ry:0.3, rz:-0.1},
+  stem_main:   {scale:0.95, sxz:0.75, sy:0.9, rx:0.05, ry:0.1},
+  // ── 엽초(잎 단계별)
+  sheath_bud:    {sy:0},                              // OFF — 처음엔 새순만 나오고 줄기가 뒤이어 자람
+  sheath_young:  {scale:1.3,  rx:-0.15, ry:-0.85, rz:0.35, ox:0.11,  oy:0.03, oz:0.26},
+  sheath_mid1:   {scale:1.05, rx:-0.2,  ry:-0.15, rz:0.4,  ox:-0.09, oy:0.19, oz:-0.06},
+  sheath_mid2:   {scale:1.3,  sxz:0.85, sy:1.1, rx:-0.1,  ry:0.4, rz:-0.7, ox:0.12, oy:0.06, oz:-0.18},
+  sheath_mature: {scale:1.45, sxz:1.15, sy:1.3, rx:-0.15, ry:-1,  rz:-0.5, ox:0.1,  oy:0.2,  oz:0.32},
 };
 function defAdj(key){ return Object.assign({scale:1, sxz:1, sy:1, rx:0,ry:0,rz:0, ox:0,oy:0,oz:0}, ADJ_TUNED[key]||{}); }  // scale=전체·sxz=굵기(폭)·sy=길이(높이)
 const DEF_ADJ={}; ADJ_KEYS.forEach(k=>DEF_ADJ[k]=defAdj(k));
@@ -275,8 +280,8 @@ function normalizeAsset(root, forceLongY, anchorBottom){
 }
 // 엽초(닫힌 360° 테이퍼 튜브). 원본 GLB는 한쪽이 트여 옆구리가 비어 보여서 코드로 생성한다.
 // 비율은 원본 실측과 동일(하단 지름 1.309 / 상단 0.575 / 높이 1) → 기존 조정값이 그대로 유효.
-function makeSheathAsset(){
-  const RB=1.309/2, RT=0.575/2, SEG=28, RINGS=8;
+function makeSheathAsset(botDia, topDia){
+  const RB=botDia/2, RT=topDia/2, SEG=28, RINGS=8;
   const pos=[], nor=[], uv=[], idx=[];
   for(let i=0;i<=RINGS;i++){
     const t=i/RINGS;
@@ -303,6 +308,7 @@ function makeSheathAsset(){
   mesh.castShadow=true; mesh.receiveShadow=true;
   const outer=new THREE.Group(); outer.add(mesh);
   outer.userData={sx:2*RB, sy:1, sz:2*RB};            // 이미 정규화 상태(높이 1, 밑면 y=0, XZ 중심)
+  outer.userData.botDia=2*RB;
   return outer;
 }
 // 엽초는 잎 단계마다 따로 세팅하고 싶다 → 같은 GLB를 공유하되 ADJ(조정값)만 분리한 변형 키.
@@ -310,6 +316,16 @@ function makeSheathAsset(){
 const SHEATH_OF={ bud_furled:'sheath_bud', bud_opening2:'sheath_bud',
   leaf_young:'sheath_young', leaf_mid1:'sheath_mid1', leaf_mid2:'sheath_mid2', leaf_mature:'sheath_mature' };
 const SHEATH_KEYS=['sheath_bud','sheath_young','sheath_mid1','sheath_mid2','sheath_mature'];
+const SHEATH_SET={};                       // 엽초 굵기 환산 기준(아래 구멍 지름). 슬라이더로 바뀜
+let SHEATH_CACHE=null;
+function ensureSheath(){                   // 구멍 크기가 바뀌었으면 메시 재생성
+  const sig=P.sheathBot+'/'+P.sheathTop;
+  if(SHEATH_CACHE===sig || typeof THREE==='undefined') return;
+  ASSETS.sheath=makeSheathAsset(P.sheathBot, P.sheathTop);
+  SHEATH_KEYS.forEach(v=>{ ASSETS[v]=ASSETS.sheath; SHEATH_SET[v]=P.sheathBot; });
+  SHEATH_SET.sheath=P.sheathBot;
+  SHEATH_CACHE=sig;
+}
 function loadAssets(cb){
   const loader=new THREE.GLTFLoader(), keys=Object.keys(ASSET_FILES); let n=0;
   const done=()=>{ if(++n===keys.length){ ASSETS_READY=true; cb&&cb(); } };
@@ -356,33 +372,31 @@ function stretchGLB(key, p0, p1, radius, color, flatAz){
   const a=ADJ[key]||{}, N=(v,d)=>v==null?d:v;             // ★0도 유효값(끄기 가능)
   radius*=N(a.scale,1)*N(a.sxz,1);                         // 에셋별 굵기(B): 크기(전체)×굵기(폭)
   len*=N(a.sy,1); if(len<1e-5||radius<1e-6) return true;   // 길이 배율(B). 0이면 안 그림
-  // ★회전/오프셋(B)은 안쪽 그룹에 적용 → 바깥 그룹이 p0→p1로 늘이는 변환을 그대로 유지
-  const inner=proto.clone(true);
-  const hasAdj=(a.rx||a.ry||a.rz||a.ox||a.oy||a.oz);
-  let g;
-  if(hasAdj){
-    inner.rotation.set(a.rx||0, a.ry||0, a.rz||0);
-    inner.position.set(a.ox||0, a.oy||0, a.oz||0);
-    g=new THREE.Group(); g.add(inner); g.userData=proto.userData;
-  } else g=inner;
   // ★바운딩박스가 아니라 "줄기 몸통 폭"(정점 측정값) 기준으로 굵기 환산.
-  //   혹 에셋은 돌기가 bbox를 부풀려(0.42→0.56) XZ가 과하게 눌리고 돌기가 납작한 판때기로 뭉개졌음.
-  const cw=STEM_CORE[key] || proto.userData.sx || 0.2;
+  const cw=(SHEATH_SET[key]!=null?SHEATH_SET[key]:STEM_CORE[key]) || proto.userData.sx || 0.2;
   const hx=cw/2, hz=cw/2;                                  // XZ 동일 → 단면이 찌그러지지 않음
   const up=dir.clone().normalize();
-  let sxw=radius/hx, szw=radius/hz;
+  const sxw=radius/hx, szw=radius/hz;
+  let fx=sxw, fz=szw;
+  // ★★중요: 비균등 스케일(XZ와 Y가 크게 다름)을 "회전된 노드의 부모"에 걸면 전단(shear)이 생겨
+  //   특히 Z회전 시 형상이 어그러진다. 그래서 계층을 [방향] > [ADJ회전] > [비균등스케일] 순으로 둔다.
+  const mesh=proto.clone(true);
+  const rot=new THREE.Group(); rot.add(mesh);
+  const g=new THREE.Group(); g.add(rot); g.userData=proto.userData;
   if(flatAz!=null && P.stemFlat>1.001){
     // 굵을수록 잎 방향(수평)으로 납작하게 → 넓은 면이 잎을 받쳐 자연스럽게 연결
     const flat=1+(P.stemFlat-1)*Math.max(0,Math.min(1,(radius-0.04)/0.06));
+    fx=sxw*flat; fz=szw/flat;
     const ld=new THREE.Vector3(Math.sin(flatAz),0,Math.cos(flatAz));
     let x=ld.clone().addScaledVector(up,-ld.dot(up)); if(x.lengthSq()<1e-4) x.set(1,0,0); x.normalize();
     const z=new THREE.Vector3().crossVectors(x,up).normalize();
     g.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(x,up,z));
-    g.scale.set(sxw*flat, len, szw/flat);
   } else {
     g.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0), up);
-    g.scale.set(sxw, len, szw);
   }
+  mesh.scale.set(fx, len, fz);                             // 비균등 스케일 = 가장 안쪽(회전 영향 없음)
+  rot.rotation.set(N(a.rx,0), N(a.ry,0), N(a.rz,0));       // 강체 회전 = 스케일 바깥 → 안 찌그러짐
+  rot.position.set(N(a.ox,0)*fx, N(a.oy,0)*len, N(a.oz,0)*fz);   // 오프셋은 이전과 같은 체감 크기 유지
   g.position.copy(p0); if(color) tintObj(g,color); plantGroup.add(g);
   USE_COUNT[key]=(USE_COUNT[key]||0)+1; return true;
 }
@@ -473,6 +487,19 @@ function makeStemTube(pts, radAt, tubSeg, radSeg){
     const a=(radSeg+1)*(i-1)+(j-1), b=(radSeg+1)*i+(j-1), c=(radSeg+1)*i+j, d=(radSeg+1)*(i-1)+j;
     idx.push(a,b,d, b,c,d);
   }
+  // ★양 끝 뚜껑 — 열린 원기둥이면 속이 들여다보여 이상함
+  const T0=curve.getTangentAt(0), T1=curve.getTangentAt(1);
+  const capAt=(ringStart, P0, nrm, flip)=>{
+    const ci=pos.length/3;
+    pos.push(P0.x,P0.y,P0.z); nor.push(nrm.x,nrm.y,nrm.z); uv.push(0.5,0.5);
+    for(let j=0;j<radSeg;j++){
+      const a=ringStart+j, b=ringStart+j+1;
+      if(flip) idx.push(ci,b,a); else idx.push(ci,a,b);
+    }
+  };
+  const pStart=curve.getPointAt(0), pEnd=curve.getPointAt(1);
+  capAt(0, pStart, T0.clone().negate(), false);
+  capAt((radSeg+1)*tubSeg, pEnd, T1.clone(), true);
   const geo=new THREE.BufferGeometry();
   geo.setIndex(idx);
   geo.setAttribute('position', new THREE.Float32BufferAttribute(pos,3));
@@ -528,10 +555,13 @@ function leafDir(stemDir, az, tilt){
 }
 // 줄기축 둘레 방위(az) + 벌어짐(tilt)을 훑어 기존 잎과 안 겹치는 쪽을 고름.
 const AIM_AZ=[0,30,-30,60,-60,90,-90,120,-120,150,-150,180].map(a=>a*Math.PI/180);
-const AIM_TILT=[0,0.16,-0.12,0.32,-0.22];
+// 겹침 회피가 방위(az)뿐 아니라 '벌어짐 각(tilt)'까지 바꾸면, 조절기로 맞춘 잎 각도가
+// 줄기마다 달라 보인다. leafTiltVary=0 이면 각도를 완전히 고정하고 방위만으로 피한다.
+const AIM_TILT_BASE=[0,0.16,-0.12,0.32,-0.22];
 function freeAim(nodePos, stemDir, az0, tilt0, size){
   const R=size*P.leafClear;                                      // 잎이 차지하는 반경
   let best=null, bestScore=-1e9;
+  const AIM_TILT=(P.leafTiltVary>0.001)? AIM_TILT_BASE.map(v=>v*P.leafTiltVary) : [0];
   for(const dt of AIM_TILT) for(const da of AIM_AZ){
     const az=az0+da, tilt=Math.max(0, Math.min(1.2, tilt0+dt));
     const d=leafDir(stemDir, az, tilt), f=stemFrame(stemDir, az);
@@ -592,6 +622,7 @@ function clearGroup(g){ while(g.children.length){ const c=g.children[0]; g.remov
 function buildPlant(){
   rng=mulberry32(SEED);            // 매 빌드 동일 시드 → 안정적(슬라이더 드래그해도 안 흔들림)
   seedColor();                     // 개체 통일 색(시드 고정: 색조+채도)
+  ensureSheath();                             // 엽초 구멍 크기 변경 반영
   clearGroup(plantGroup); clearPlaced();      // 겹침 회피용 자리 기록 초기화
   addPot();
   const g=GROWTH, gf=Math.min(1, g/GMAX);   // 정규화(0..1, 1년 기준)
@@ -762,7 +793,7 @@ function init(){
   scene.add(sunMarker); updateSun();
 
   // 엽초는 GLB 대신 코드로 생성(닫힌 단면) → 변형 5종이 같은 메시 공유
-  ASSETS.sheath=makeSheathAsset(); SHEATH_KEYS.forEach(v=>ASSETS[v]=ASSETS.sheath);
+  ensureSheath();
 
   // 몬스테라 GLB 에셋 로드 → 준비되면 재빌드(그 전엔 임시 도형 폴백)
   loadAssets(()=>{ buildPlant(); const s=document.getElementById('assetSel'); if(s) showPreview(s.value); });
@@ -997,14 +1028,17 @@ const SHAPE_DEFS=[
   {k:'stemStraight',t:'곧게 서려는 힘',    min:0.05, max:0.9,  step:0.05},
   {k:'spread',      t:'흔들림(불규칙)',    min:0,    max:0.3,  step:0.01},
   {k:'internode',   t:'마디 길이',         min:0.12, max:0.4,  step:0.01},
-  {k:'tipTaper',    t:'끝 가늘어짐',       min:0.35, max:1.2,  step:0.02},
+  {k:'tipTaper',    t:'줄기 끝 굵기',      min:0.10, max:1.2,  step:0.01},
   {k:'nodeBulge',   t:'마디 볼록',         min:0,    max:0.5,  step:0.02},
   {k:'sheathLen',   t:'엽초 길이',         min:0,    max:0.4,  step:0.01},
   {k:'sheathFit',   t:'엽초 감싸는 굵기',  min:0.8,  max:2.2,  step:0.05},
+  {k:'sheathBot',   t:'엽초 아래 구멍',    min:0.4,  max:2.6,  step:0.02},
+  {k:'sheathTop',   t:'엽초 위 구멍',      min:0.05, max:1.6,  step:0.02},
   {k:'stemTex',     t:'줄기 결 세기',      min:0,    max:1,    step:0.05},
   {k:'texRepeat',   t:'줄기 결 반복',      min:0.5,  max:10,   step:0.5},
   {k:'branchSpread',t:'가지 벌어짐',       min:0.15, max:1.2,  step:0.05},
   {k:'leafTilt',    t:'잎 벌어짐(0=딱 꽂힘)', min:0,  max:1.0,  step:0.02},
+  {k:'leafTiltVary',t:'잎 각도 흔들림(0=고정)', min:0, max:1.5, step:0.05},
   {k:'leafEmbed',   t:'잎 박히는 깊이',    min:0,    max:0.3,  step:0.01},
   {k:'leafClear',   t:'잎 서로 비켜서기',  min:0,    max:0.7,  step:0.02},
 ];
