@@ -253,7 +253,10 @@ def build(char, vis=False, size=None):
         iris = binary_closing(iris, np.ones((5, 5)))
     # 얼굴 피부는 색으로 잡으면 볼터치·옆턱 음영·입술이 계속 빠져 얼룩이 남는다.
     # 머리 영역에서 머리카락도 눈도 아니면 전부 피부다. 색 판정이 필요 없다.
-    code[head & ~hairish & ~eye] = CODE["skin"]
+    # 턱 아래와 목도 같은 규칙으로 채우되, 목은 좁으므로 폭으로 제한한다
+    # (넓히면 셔츠 깃·등판까지 피부가 된다).
+    face_fill = (head | (covered & (t > 0.63) & (xn < 0.28))) & ~hairish & ~eye
+    code[face_fill] = CODE["skin"]
 
     code[eye] = CODE["eye"]
     code[iris] = CODE["iris"]
