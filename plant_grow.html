@@ -123,18 +123,20 @@ const GOLDEN=Math.PI*(3-Math.sqrt(5));   // 137.5° 황금각(자연스러운 �
 // ===== 튜닝 파라미터(A: 전체 규칙) — 슬라이더로 실시간 조절 =====
 const GMAX=365;   // 성장도 최대 = 1년(일)
 const DEF={
-  spawnStep:30, maxLeaves:12, matSpan:100,                 // 성장 타이밍(잎 간격/최대/생애 길이) — 1년 기준
-  seedEnd:20, sproutEnd:45,                                // 씨앗·새싹(줄기+말린잎) 시기
-  budSpan:0.22, furlFrac:0.5, budSize:0.16,                // 새순: 말림(furled)→펴짐(opening) 비율·크기
+  spawnStep:26, maxLeaves:12, matSpan:120,                 // 마디 나는 간격(일) · 축당 최대 마디 · 잎 성숙까지 걸리는 일
+  seedEnd:20, sproutEnd:45,                                // 씨앗·새싹(줄기_초기+새순) 시기
+  budSpan:0.22, furlFrac:0.5, budSize:0.13,                // 새순: 말림(furled)→펴짐(opening) 비율·크기
   stageYoung:0.38, stageMid:0.66,                          // 잎 형태 전환 시점(어린→중간→성인)
-  sizeYoung:0.20, sizeMid:0.45, sizeMature:0.78, sizeFull:1.25,  // 각 시점 크기(작게 나서 커짐)
-  internode:0.24, stemFlat:1.25,   // 줄기 마디 길이·잎방향 납작
-  petGrow:22, rThin:0.03, rMed:0.052, rThick:0.088, matureProb:0.22, doubleBud:0.15,   // 정밀생장: petiole성장시간·종류별 고정굵기·성숙잎 확률·더블혹(쌍혹=가지2 동시) 확률
-  petioleLen:1.0, leafElev:1.02, elevDrop:0.34, spread:0.16, branchSpread:0.55, branchProb:0.14,  // 배치
+  sizeYoung:0.16, sizeMid:0.30, sizeMature:0.46, sizeFull:0.62,  // 각 시점 크기(마디 간격 대비 자연스럽게)
+  internode:0.22, stemFlat:1.25,   // 줄기 마디 길이·잎방향 납작
+  petGrow:16, rThin:0.026, rMed:0.036, rThick:0.052, matureProb:0.22, doubleBud:0.15,   // 마디 자람시간·종류별 고정굵기·성숙잎 확률·더블혹(쌍혹=가지2 동시) 확률
+  petioleLen:1.0, leafElev:1.0, elevDrop:0.36, spread:0.10, branchSpread:0.55, branchProb:0.20,  // 배치(spread=줄기 흔들림, 곁가지 확률)
   leafLight:0.62, leafDark:0.22, leafSat:0.5, satRange:0.22, hueBase:0.16, hueRange:0.26,   // 색(밝기/진함/채도/개체범위)
   ageDark:0.16, ageSat:0.26,   // 시간(나이) 따라 짙어짐·선명해짐(전역, 줄기·잎 함께)
 };
 let P=Object.assign({}, DEF);
+// 저장본 버전. 생장 로직/기본값이 바뀌면 올림 → 옛 저장값이 새 기본값을 덮어쓰지 않게.
+const CFG_VER='2026-07-20-canon';
 
 // ===== 튜닝 파라미터(B: 에셋별 개별 조정) =====
 const ADJ_KEYS=['leaf_young','leaf_mid1','leaf_mid2','leaf_mature','bud_furled','bud_opening2','stem_thick','stem_main','stem_med','stem_thin','petiole'];
@@ -428,45 +430,100 @@ function buildPlant(){
     stage='새싹 🌱';
   } else {
     // ===== 정밀 생장 (캐논: docs/byeot_growth_chart) =====
-    // 대기 마디(줄기_중기_1/2) → 랜덤 1개가 진짜 눈으로 활성 → 줄기_후기_혹(가지1) 또는 확률로 줄기_후기_쌍혹(가지2 동시).
-    // 잎은 "각 마디 끝에서 furled→성숙"(프랙탈, 눈→잎자루→잎).
+    // ① 생장점 1개가 위로 마디를 쌓음 = 줄기_중기_1/줄기_중기_2 (50:50). 마디마다 잎 1개(황금각 137.5°).
+    //    새싹의 줄기_초기는 여기서 줄기_중기로 전환된다.
+    // ② 잎은 마디 나이대로 furled→반잎→어린→중간→(확률)성숙. 아래=오래된 잎(성숙), 위=새순.
+    // ③ 곁가지는 드물게: 대기 마디 중 랜덤 1개가 진짜 눈 → 줄기_후기_혹(가지1) / 확률로 줄기_후기_쌍혹(가지2 동시).
+    //    눈에서는 줄기_초기가 먼저 나오고(잎 없이) 그 끝에서 자체 생장점이 다시 마디를 쌓음(프랙탈).
     const L=LIGHT_AZ, ld=new THREE.Vector3(Math.sin(L),0,Math.cos(L));   // 빛 방향(수평)
-    const t0=P.sproutEnd, actInt=P.spawnStep, maxAct=P.maxLeaves;
-    const lenOf=ty=> (ty==='thick'||ty==='main')?P.internode*1.1 : ty==='med'?P.internode : P.internode*0.82;
-    const radOf=ty=> (ty==='thick'||ty==='main')?P.rThick : ty==='med'?P.rMed : P.rThin;
-    const mkNode=(base,dir,birth,parent)=>{ const wt=rng()<0.5?'thin':'med';   // 대기 = 줄기_중기_1 / 줄기_중기_2 (50:50)
-      return {base, dir, len:lenOf(wt), wt, birth, parent, activated:false, children:[],
-        tip:base.clone().addScaledVector(dir,lenOf(wt)),
-        leafAz:rng()*Math.PI*2, midType:PLANT_MID, canMature:rng()<P.matureProb }; };   // 중간잎=개체 고정(PLANT_MID, 동등확률)
-    const all=[ mkNode(new THREE.Vector3(0,SOIL_Y,0), new THREE.Vector3((rng()-0.5)*0.15,1,(rng()-0.5)*0.15).normalize(), t0, null) ];
-    let acts=0;
-    for(let k=0;;k++){
-      const T=t0+k*actInt; if(T>g || acts>=maxAct) break;
-      const cand=all.filter(n=>!n.activated && n.birth<=T); if(!cand.length) break;
-      const pick=cand[Math.floor(rng()*cand.length)];              // 대기 예비혹 중 랜덤 1개가 진짜 눈이 됨
-      pick.activated=true; pick.actT=T; acts++;
-      const dbl=rng()<P.doubleBud;                                 // ★ 더블혹(쌍혹) 확률 → 가지 2 동시, 아니면 단혹 가지 1
-      pick.actType=dbl?'main':'thick';                             // main=줄기_후기_쌍혹(가지2), thick=줄기_후기_혹(가지1)
-      const nb=dbl?2:1;
-      const a0=rng()*Math.PI*2, splitT=T+P.petGrow;
-      for(let i=0;i<nb;i++){
-        const s=a0 + (nb===2? i*Math.PI : 0);                      // 가지=우상향(petiole 자식). 자식 끝에서 새순→성숙
-        const cdir=new THREE.Vector3(Math.sin(s)*0.6+ld.x*PHOTO*0.3, 0.72, Math.cos(s)*0.6+ld.z*PHOTO*0.3).normalize();
-        const child=mkNode(pick.tip.clone(), cdir, splitT, pick); pick.children.push(child); all.push(child);
+    const t0=P.sproutEnd, STEP=Math.max(1,P.spawnStep);
+    const lenOf=ty=> ty==='med'?P.internode : P.internode*0.86;          // 중기_1(med) / 중기_2(thin)
+    const radOf=ty=> ty==='thick'?P.rThick : ty==='main'?P.rThick*1.12 : ty==='med'?P.rMed : P.rThin;
+    const allNodes=[], axes=[];
+    // 생장 축(주줄기 or 곁가지). 곁가지는 stalk(줄기_초기)에서 시작.
+    const mkAxis=(base,dir,birth,isMain,stalkFrom)=>{
+      const ax={base:base.clone(), dir:dir.clone().normalize(), birth, isMain, nodes:[],
+                az0:rng()*Math.PI*2, stalkFrom:stalkFrom||null};
+      axes.push(ax); return ax; };
+    const addNode=(ax,T)=>{
+      const k=ax.nodes.length, prev=k?ax.nodes[k-1]:null;
+      const base=prev?prev.tip.clone():ax.base.clone();
+      const wt=rng()<0.5?'thin':'med';                                   // 중기_2 / 중기_1 (50:50)
+      const len=lenOf(wt);
+      const dir=ax.dir.clone().addScaledVector(ld, PHOTO*0.14)           // 굴광성: 빛 쪽으로 살짝
+        .add(new THREE.Vector3((rng()-0.5)*P.spread,0,(rng()-0.5)*P.spread)).normalize();
+      const n={ax, idx:k, base, dir, wt, len, birth:T, tip:base.clone().addScaledVector(dir,len),
+                az:ax.az0+k*GOLDEN, activated:false, midType:PLANT_MID, canMature:rng()<P.matureProb};
+      ax.nodes.push(n); allNodes.push(n); return n; };
+    // 주줄기: 새싹 줄기_초기 자리에서 이어서 위로
+    mkAxis(new THREE.Vector3(0,SOIL_Y,0), new THREE.Vector3((rng()-0.5)*0.10,1,(rng()-0.5)*0.10).normalize(), t0, true, null);
+    for(let T=t0; T<=g+1e-6; T+=STEP){
+      for(const ax of axes){                                            // ① 각 생장점이 마디 1개씩 쌓음
+        if(ax.birth>T || ax.nodes.length>=P.maxLeaves) continue;
+        addNode(ax,T);
+      }
+      // ③ 곁가지(드물게): 생장점 바로 아래는 제외한 대기 마디 중 하나가 진짜 눈이 됨
+      if(rng()<P.branchProb){
+        const cand=allNodes.filter(n=>!n.activated && n.idx<n.ax.nodes.length-1 && T-n.birth>=P.petGrow);
+        if(cand.length){
+          let tot=0; const w=cand.map(n=>{ const al=Math.max(0,Math.min(1.5,n.tip.x*ld.x+n.tip.z*ld.z));
+            const ww=1+PHOTO*0.5*al; tot+=ww; return ww; });
+          let r=rng()*tot, pick=cand[cand.length-1];
+          for(let i=0;i<cand.length;i++){ r-=w[i]; if(r<=0){ pick=cand[i]; break; } }
+          pick.activated=true; pick.actT=T;
+          const dbl=rng()<P.doubleBud;                                  // ★ 쌍혹(가지2 동시) / 단혹(가지1)
+          pick.actType=dbl?'main':'thick';
+          const a0=pick.az+Math.PI*0.5, nb=dbl?2:1;
+          for(let i=0;i<nb;i++){
+            const s=a0+(nb===2? i*Math.PI : 0);
+            const bd=new THREE.Vector3(Math.sin(s)*P.branchSpread, 1, Math.cos(s)*P.branchSpread).normalize();
+            const stalkEnd=pick.tip.clone().addScaledVector(bd, P.internode*0.9);
+            mkAxis(stalkEnd, bd, T+P.petGrow, false, {from:pick.tip.clone(), dir:bd, birth:T});   // 줄기_초기 먼저(잎 없이)
+          }
+        }
       }
     }
-    // 렌더: 각 마디 줄기(종류별 고정 굵기) + 각 마디 끝에 잎(furled→성숙)
-    for(const n of all){
-      if(n.birth>g) continue;
-      const type=n.activated?n.actType:n.wt;
-      const key=type==='thick'?'stem_thick':type==='main'?'stem_main':type==='med'?'stem_med':'stem_thin';
-      addStemSeg(n.base, n.tip, radOf(type), 0, n.leafAz, key);    // 종류별 고정 굵기(안 자람)
-      drawLeafStage(n.tip, n.leafAz, Math.min(1,(g-n.birth)/P.matSpan), n.midType, n.canMature);   // 마디 끝 잎: furled→성숙
+    // ===== 렌더 =====
+    let nLeaf=0;
+    for(const ax of axes){
+      // 곁가지의 줄기_초기(stalk): 아직 마디 없으면 초기, 마디가 생기면 중기로 전환
+      if(ax.stalkFrom){
+        const sg=Math.min(1,(g-ax.stalkFrom.birth)/Math.max(1,P.petGrow));
+        if(sg>0){
+          const end=ax.stalkFrom.from.clone().addScaledVector(ax.stalkFrom.dir, P.internode*0.9*sg);
+          const grown=ax.nodes.length>0;                                  // 초기 → 중기 전환
+          addStemSeg(ax.stalkFrom.from, end, grown?P.rMed:P.rThin*0.85, 0, null, grown?'stem_med':'petiole');
+        }
+      }
+      for(const n of ax.nodes){
+        if(n.birth>g) continue;
+        const gr=Math.min(1,(g-n.birth)/Math.max(1,P.petGrow));           // 마디 자람 0..1
+        const tip=n.base.clone().addScaledVector(n.dir, n.len*gr);
+        const type=n.activated?n.actType:n.wt;                            // 활성=후기_혹/쌍혹, 대기=중기_1/2
+        const key=type==='thick'?'stem_thick':type==='main'?'stem_main':type==='med'?'stem_med':'stem_thin';
+        addStemSeg(n.base, tip, radOf(type), 0, n.az, key);
+        drawLeafStage(tip, n.az, Math.min(1,(g-n.birth)/P.matSpan), n.midType, n.canMature);
+        nLeaf++;
+      }
     }
-    nodes=all.length; leaves=all.length; stage='마디 '+all.length;
+    nodes=allNodes.length; leaves=nLeaf;
+    stage=(axes.length>1? '가지 '+(axes.length-1)+' · ' : '')+'마디 '+nodes;
   }
+  fitCam();     // 자라는 만큼 카메라가 따라 담기(항상 화면 안에)
   const el=document.getElementById('stat');
   el.innerHTML=`<span class="k">단계</span> ${stage}<br><span class="k">마디</span> ${nodes} · <span class="k">잎</span> ${leaves} · <span class="k">시드</span> ${SEED}`;
+}
+// 식물 전체가 화면에 담기도록 직교 프러스텀·시선높이 자동 조절
+function fitCam(){
+  if(!plantGroup||!cam) return;
+  const b=new THREE.Box3().setFromObject(plantGroup);
+  if(!isFinite(b.max.y)||b.isEmpty()) return;
+  const topY=b.max.y, halfW=Math.max(Math.abs(b.min.x),Math.abs(b.max.x),Math.abs(b.min.z),Math.abs(b.max.z));
+  FRUSTUM=Math.max(1.5, Math.min(4.2, Math.max(topY*0.62+0.32, halfW*1.15+0.5)));
+  orbit.ty=topY*0.5+0.15;                       // 밑동~꼭대기 중간을 봄
+  const a=(W||innerWidth)/(H||innerHeight);     // 투영만 갱신(렌더러 크기는 resize가 담당)
+  cam.left=-FRUSTUM*a; cam.right=FRUSTUM*a; cam.top=FRUSTUM; cam.bottom=-FRUSTUM;
+  updateCam();
 }
 
 // ===== 씬/카메라 (loader_glb.html 직교 4방위 방식) =====
@@ -560,12 +617,12 @@ function bindControls(){
   // 패널 접기
   document.getElementById('panelToggle').onclick=e=>{ const bd=document.getElementById('panelBody'); const hid=bd.style.display==='none'; bd.style.display=hid?'block':'none'; e.target.textContent=hid?'▾':'▸'; };
   // 설정 복사 / 리셋 (전체 A + 에셋별 B)
-  document.getElementById('btnCopy').onclick=()=>{ const j=JSON.stringify({P, ADJ, SEED},null,1);
+  document.getElementById('btnCopy').onclick=()=>{ const j=JSON.stringify({v:CFG_VER, P, ADJ, SEED},null,1);
     if(navigator.clipboard) navigator.clipboard.writeText(j);
     try{ const blob=new Blob([j],{type:'application/json'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download='monstera_config.json'; a.click(); URL.revokeObjectURL(url); }catch(e){}
     flashBtn('btnCopy','✅ 복사+파일'); };
   document.getElementById('btnReset').onclick=()=>{ P=Object.assign({},DEF); ADJ=JSON.parse(JSON.stringify(DEF_ADJ)); try{localStorage.removeItem('mcfg_default');}catch(e){} const sel=document.getElementById('assetSel'); buildAssetSliders(sel.value); showPreview(sel.value); buildPlant(); };
-  document.getElementById('btnPersist').onclick=()=>{ try{ localStorage.setItem('mcfg_default', JSON.stringify({P,ADJ,SEED})); flashBtn('btnPersist','✅ 저장됨'); }catch(e){ flashBtn('btnPersist','실패'); } };
+  document.getElementById('btnPersist').onclick=()=>{ try{ localStorage.setItem('mcfg_default', JSON.stringify({v:CFG_VER,P,ADJ,SEED})); flashBtn('btnPersist','✅ 저장됨'); }catch(e){ flashBtn('btnPersist','실패'); } };
   document.getElementById('btnLoad').onclick=()=>applyCfg(true);
   applyCfg(false);   // 시작 시 영구저장 있으면 자동 적용(새로고침해도 유지)
 }
@@ -580,6 +637,13 @@ function applyCfg(verbose){
   let s=null; try{ s=localStorage.getItem('mcfg_default'); }catch(e){}
   if(!s){ if(verbose) flashBtn('btnLoad','없음'); return; }
   try{ const o=JSON.parse(s);
+    if(o.v!==CFG_VER){                       // 옛 버전 저장본: 시드만 살리고 값은 새 기본값 사용
+      if(o.SEED!=null) SEED=o.SEED;
+      console.info('[cfg] 옛 저장본('+(o.v||'무버전')+') → 새 기본값 사용. 다시 튜닝 후 ⭐영구저장 하세요.');
+      if(verbose) flashBtn('btnLoad','옛 버전·기본값');
+      const sel0=document.getElementById('assetSel'); if(sel0){ buildAssetSliders(sel0.value); showPreview(sel0.value); }
+      buildPlant(); return;
+    }
     if(o.P) P=Object.assign({}, DEF, o.P);
     if(o.ADJ){ ADJ=JSON.parse(JSON.stringify(DEF_ADJ)); for(const k in ADJ) if(o.ADJ[k]) Object.assign(ADJ[k], o.ADJ[k]); }
     if(o.SEED!=null){ SEED=o.SEED; }
