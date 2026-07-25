@@ -266,8 +266,8 @@ def build(char, vis=False, size=None):
         # 눈 주변을 원으로 넓히면 바로 위의 눈썹이 걸리고, 좁히면 눈매·속눈썹이
         # 빠져 머리색이 들어간다. 눈은 가로로 길고 눈썹은 바로 위에 있으므로
         # 가로로 넓고 세로로 납작한 타원으로 넓힌다.
-        r_eye = max(8, int(round(np.sqrt(sclera.sum() / 2 / np.pi) * 1.15)))
-        rv = max(6, int(round(r_eye * 0.75)))
+        r_eye = max(8, int(round(np.sqrt(sclera.sum() / 2 / np.pi) * 1.20)))
+        rv = max(6, int(round(r_eye * 1.00)))
         yy, xx = np.mgrid[-rv:rv + 1, -r_eye:r_eye + 1]
         near = (xx / r_eye) ** 2 + (yy / rv) ** 2 <= 1.0
         # UV 공간 팽창은 섬 경계를 넘어 엉뚱한 부위로 건너뛴다. 아틀라스는 섬이
@@ -278,8 +278,13 @@ def build(char, vis=False, size=None):
         # 속눈썹·눈매선). 색으로 고르면 중간톤인 눈꺼풀 주름이 빠져 머리로 간다.
         # 그중 흰자에 '이어진' 것만 눈으로 본다. 눈썹은 사이에 피부가 있어
         # 끊겨 있으므로 딸려오지 않고 머리색을 따라간다.
-        eyeish = binary_closing(region & ~is_skin, np.ones((3, 3)))
-        eye = binary_propagation(sclera, mask=eyeish) & eyeish & region
+        # 눈 주변에서 피부가 아닌 것은 전부 눈으로 본다 - 눈썹까지 포함해서.
+        #
+        # 눈썹만 머리색을 따라가게 해봤지만(연결성 재구성) 눈썹과 눈매가 너무
+        # 가까워서 그 경계가 눈매 위 가장자리와 눈꼬리를 침범한다. 이 체형은
+        # 눈이 크고 눈썹이 바짝 붙어 있어 둘을 안정적으로 못 가른다.
+        # 눈썹이 머리색을 안 따라가는 것보다 눈매에 색이 튀는 쪽이 나쁘다.
+        eye = binary_closing(region & ~is_skin, np.ones((3, 3))) & region
 
         # 홍채: 눈 영역은 밝기가 둘로만 갈린다(흰자·하이라이트 / 진갈색). 진갈색
         # 덩어리에 홍채·동공과 속눈썹·눈매 테두리가 같이 있어 색으로는 못 가른다.

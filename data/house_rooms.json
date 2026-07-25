@@ -204,46 +204,37 @@
         {
           "preset": "win_apt_big",
           "wall": "back",
-          "cu": -2.0,
+          "cu": -1.95,
           "cy": 1.3,
-          "w": 5.6,
+          "w": 6.8,
           "h": 2.0,
           "tau": 0.92,
-          "note": "베란다 새시(바깥 1겹)"
+          "note": "발코니 새시(바깥)"
         },
         {
           "preset": "win_apt_wide",
           "wall": "back",
-          "cu": 3.0,
+          "cu": 3.55,
           "cy": 1.3,
           "w": 2.4,
           "h": 1.8,
           "tau": 0.92,
-          "note": "안방 남향창"
+          "note": "침실1 남향창"
         },
         {
           "preset": "win_apt_wide",
           "wall": "front",
-          "cu": -2.6,
+          "cu": -3.2,
           "cy": 1.3,
-          "w": 1.6,
-          "h": 1.4,
-          "note": "작은방 북향창"
-        },
-        {
-          "preset": "win_apt_wide",
-          "wall": "left",
-          "cu": 2.3,
-          "cy": 1.3,
-          "w": 1.6,
-          "h": 1.4,
-          "note": "작은방 동향창"
+          "w": 1.8,
+          "h": 1.3,
+          "note": "주방 북향창"
         }
       ],
       "doors": [
         {
           "wall": "front",
-          "cu": 3.4,
+          "cu": 4.3,
           "w": 1.0,
           "h": 2.15,
           "preset": "door_plain_white",
@@ -251,8 +242,8 @@
         }
       ],
       "size": {
-        "w": 10,
-        "d": 7,
+        "w": 11.0,
+        "d": 8.0,
         "h": 2.6
       },
       "wall": "w_pure",
@@ -262,154 +253,232 @@
         {
           "id": "balcony",
           "axis": "z",
-          "at": -2.4,
-          "from": -5,
-          "to": 1.0,
+          "at": -2.9,
+          "from": -5.5,
+          "to": 1.6,
           "glazing": {
             "tau": 0.92
           },
           "openings": [
             {
-              "at": -2.0,
-              "w": 3.4,
+              "at": -3.6,
+              "w": 2.4,
+              "y0": 0.05,
+              "y1": 2.3
+            },
+            {
+              "at": 0.1,
+              "w": 2.8,
               "y0": 0.05,
               "y1": 2.3
             }
           ],
-          "note": "★ 거실창(안쪽 1겹). 베란다 화분=1겹, 거실 화분=2겹(합 0.85)"
+          "note": "★ 비확장 발코니. 발코니 화분=1겹(명당) / 실내 화분=2겹(τ합 0.85)"
         },
         {
-          "id": "bed",
+          "id": "master",
           "axis": "x",
-          "at": 1.0,
-          "from": -3.5,
-          "to": 1.2,
+          "at": -1.6,
+          "from": -2.9,
+          "to": 1.7,
           "door": {
-            "at": 0.3,
+            "at": 1.15,
             "w": 0.95,
             "h": 2.1
           },
-          "note": "거실 / 안방"
+          "note": "안방 / 거실"
         },
         {
-          "id": "small",
-          "axis": "z",
-          "at": 1.2,
-          "from": -5,
-          "to": 0.2,
+          "id": "room1",
+          "axis": "x",
+          "at": 1.6,
+          "from": -4.0,
+          "to": 1.7,
           "door": {
-            "at": -1.6,
+            "at": 1.1,
             "w": 0.95,
             "h": 2.1
           },
-          "note": "거실 / 작은방"
+          "note": "거실 / 침실1"
+        },
+        {
+          "id": "kitchen",
+          "axis": "z",
+          "at": 1.7,
+          "from": -5.5,
+          "to": 1.6,
+          "door": {
+            "at": -0.3,
+            "w": 2.2,
+            "h": 2.2
+          },
+          "note": "거실 / 주방·식당 (개방형)"
+        },
+        {
+          "id": "entry",
+          "axis": "x",
+          "at": 1.6,
+          "from": 1.7,
+          "to": 4.0,
+          "door": {
+            "at": 2.6,
+            "w": 0.95,
+            "h": 2.1
+          },
+          "note": "주방 / 현관"
         }
       ],
       "furniture": [
         {
           "preset": "shelf_ladder_4tier",
-          "x": -4.15,
-          "z": -3.24
+          "x": -4.85,
+          "z": -3.72
         },
         {
           "preset": "shelf_etagere_3tier",
-          "x": -3.25,
-          "z": -3.24
+          "x": -3.95,
+          "z": -3.72
         },
         {
           "preset": "plant_step_3",
-          "x": -2.3,
-          "z": -3.24
+          "x": -2.9,
+          "z": -3.72
         },
         {
           "preset": "shelf_etagere_3tier",
-          "x": -1.35,
-          "z": -3.24
+          "x": -1.9,
+          "z": -3.72
+        },
+        {
+          "preset": "shelf_growrack_2tier",
+          "x": -0.9,
+          "z": -3.72
         },
         {
           "preset": "plant_step_3",
-          "x": -0.4,
-          "z": -3.24
+          "x": 0.25,
+          "z": -3.72
         },
         {
           "preset": "shelf_etagere_3tier",
-          "x": 0.55,
-          "z": -3.24
+          "x": 1.15,
+          "z": -3.72
+        },
+        {
+          "preset": "bed_double",
+          "x": -4.2,
+          "z": -1.5
+        },
+        {
+          "preset": "nightstand",
+          "x": -2.9,
+          "z": -2.5
+        },
+        {
+          "preset": "wardrobe",
+          "x": -2.2,
+          "z": 1.05,
+          "rot": -90
+        },
+        {
+          "preset": "dresser",
+          "x": -4.9,
+          "z": 1.15
         },
         {
           "preset": "sofa_blush",
-          "x": -2.6,
-          "z": 0.55,
+          "x": 0.0,
+          "z": 0.95,
           "rot": 180
         },
         {
           "preset": "table_round",
-          "x": -2.6,
-          "z": -0.6
+          "x": 0.0,
+          "z": -0.3
         },
         {
           "preset": "tv",
-          "x": -4.55,
-          "z": -0.6,
-          "rot": 90
-        },
-        {
-          "preset": "shelf",
-          "x": 0.35,
-          "z": -1.3,
-          "rot": -90
+          "x": 0.0,
+          "z": -2.65
         },
         {
           "preset": "lamp_floor",
-          "x": -0.9,
-          "z": 0.7
+          "x": -1.25,
+          "z": 1.15
         },
         {
-          "preset": "bed_double",
-          "x": 3.3,
-          "z": -1.55
-        },
-        {
-          "preset": "nightstand",
-          "x": 1.65,
-          "z": -2.3
-        },
-        {
-          "preset": "wardrobe",
-          "x": 4.55,
-          "z": 0.45,
-          "rot": -90
+          "preset": "bed_single",
+          "x": 2.35,
+          "z": -1.6
         },
         {
           "preset": "desk",
-          "x": -3.6,
-          "z": 3.1
+          "x": 4.9,
+          "z": -1.6,
+          "rot": -90
         },
         {
           "preset": "chair",
-          "x": -3.6,
-          "z": 2.5
+          "x": 4.2,
+          "z": -1.6
         },
         {
           "preset": "shelf_etagere_3tier",
-          "x": -2.6,
-          "z": 3.22
+          "x": 3.55,
+          "z": -3.7
         },
         {
-          "preset": "plant_step_3",
-          "x": -4.72,
-          "z": 2.3,
+          "preset": "plant_pedestal",
+          "x": 4.8,
+          "z": -3.7
+        },
+        {
+          "preset": "fridge",
+          "x": -5.15,
+          "z": 3.62,
+          "rot": 180
+        },
+        {
+          "preset": "kitchen",
+          "x": -4.05,
+          "z": 3.63,
+          "rot": 180
+        },
+        {
+          "preset": "table",
+          "x": -1.2,
+          "z": 2.75
+        },
+        {
+          "preset": "chair",
+          "x": -1.2,
+          "z": 2.15
+        },
+        {
+          "preset": "shelf_etagere_3tier",
+          "x": -2.8,
+          "z": 3.72
+        },
+        {
+          "preset": "shoe_cabinet",
+          "x": 2.05,
+          "z": 3.2,
           "rot": 90
         },
         {
           "preset": "shelf_low",
-          "x": 4.55,
-          "z": 2.9,
+          "x": 4.95,
+          "z": 2.6,
           "rot": -90
+        },
+        {
+          "preset": "plant_pedestal",
+          "x": 2.05,
+          "z": 2.4
         }
       ],
       "facing": "south",
-      "note": "베란다(1겹·남향 명당) / 거실(2겹) / 안방(남향 직접창) / 작은방(북+동향, 어두움). 방마다 향이 달라 자리 선택이 생긴다."
+      "note": "판상형 비확장 발췌 — 전면(남) 안방·거실·침실1 일렬, 전면 발코니 띠(안방앞+거실앞), 후면(북) 주방/식당·현관."
     },
     "classroom": {
       "label": "학원교실",
