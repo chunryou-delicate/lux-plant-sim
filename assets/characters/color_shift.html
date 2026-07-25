@@ -59,6 +59,7 @@
     <h2>부위별 색</h2>
     <div id="parts"></div>
 
+    <div id="hit" style="font-size:11px;color:#4a7a5c;margin-top:7px;line-height:1.6"></div>
     <button id="reset">원본 색으로</button>
     <div class="chk"><b>마스크 검수 포인트</b>
       <ul>
@@ -79,14 +80,16 @@ const CHARS=[['char_namja_jachwi','자취남'],['char_namja_gajang','남가장']
  ['char_jachwi_f','자취녀'],['char_yeoja_gajang','여가장'],
  ['char_yeoja_jubu','여주부'],['char_yeoja_researcher','여연구원']];
 
-/* 마스크 채널 규약 (tools/make_part_mask.py 와 일치)
-   R=255 머리카락 / R=128 눈·눈썹 / G 피부 / B 상의 / A 하의 */
+/* 마스크는 R 채널 인덱스 맵 (tools/make_part_mask.py 와 일치)
+   40 머리카락 / 80 눈·눈썹 / 120 피부 / 160 상의 / 200 하의
+   알파를 데이터로 쓰면 캔버스 프리멀티플라이드 알파 때문에 A=0 텍셀의 RGB가
+   0 으로 뭉개져 A 채널 부위만 살아남는다. 그래서 A 는 항상 255. */
 const PARTS=[
-  {key:'hair', name:'머리카락', ch:0, val:255, on:true,  color:'#d8b46c'},
-  {key:'eyes', name:'눈·눈썹',  ch:0, val:128, on:false, color:'#3a2a20'},
-  {key:'skin', name:'피부',     ch:1, val:255, on:false, color:'#f0c090'},
-  {key:'top',  name:'상의',     ch:2, val:255, on:false, color:'#e8e8d8'},
-  {key:'bot',  name:'하의',     ch:3, val:255, on:false, color:'#486090'},
+  {key:'hair', name:'머리카락', code:40,  on:true,  color:'#d8b46c'},
+  {key:'eyes', name:'눈·눈썹',  code:80,  on:false, color:'#3a2a20'},
+  {key:'skin', name:'피부',     code:120, on:false, color:'#f0c090'},
+  {key:'top',  name:'상의',     code:160, on:false, color:'#e8e8d8'},
+  {key:'bot',  name:'하의',     code:200, on:false, color:'#486090'},
 ];
 const HAIR_PRESETS=['#3a2a20','#6b4226','#a9743c','#d8b46c','#e8dcc0',
                     '#8a3b3b','#6a4a7a','#2f4f4f','#9aa0a8','#1c1a1e'];
@@ -139,22 +142,21 @@ function recolor(){
   mx.drawImage(maskImg,0,0,w,h);            // 마스크 해상도가 달라도 맞춰 늘린다
   const md=mx.getImageData(0,0,w,h).data;
 
+  const hits={};
   for(const p of PARTS){
     if(!p.on) continue;
     const tgt=hexToRgb(p.color);
     // 1차: 해당 부위 평균 밝기
     let sum=0,n=0;
     for(let i=0;i<d.length;i+=4){
-      const mv=md[i+p.ch];
-      if(p.val===128 ? (mv>64&&mv<192) : mv>192){ sum+=(d[i]+d[i+1]+d[i+2])/3; n++; }
+      if(Math.abs(md[i]-p.code)<=20){ sum+=(d[i]+d[i+1]+d[i+2])/3; n++; }
     }
+    hits[p.key]=n;
     if(!n) continue;
     const avg=Math.max(sum/n,1);
-    // 2차: 밝기비를 목표색에 곱한다
+    // 2차: 밝기비를 목표색에 곱한다 (음영·주름 보존)
     for(let i=0;i<d.length;i+=4){
-      const mv=md[i+p.ch];
-      const hit = p.val===128 ? (mv>64&&mv<192) : mv>192;
-      if(!hit) continue;
+      if(Math.abs(md[i]-p.code)>20) continue;
       const lum=(d[i]+d[i+1]+d[i+2])/3, k=lum/avg;
       d[i]  =Math.min(255,tgt[0]*k);
       d[i+1]=Math.min(255,tgt[1]*k);
@@ -163,6 +165,13 @@ function recolor(){
   }
   x.putImageData(img,0,0);
   if(mat&&mat.map){ mat.map.needsUpdate=true; }
+  const on=PARTS.filter(p=>p.on);
+  if(on.length){
+    const bad=on.filter(p=>!hits[p.key]);
+    document.getElementById('hit').innerHTML = bad.length
+      ? `<span class="bad">마스크에 없는 부위: ${bad.map(p=>p.name).join(', ')}</span>`
+      : on.map(p=>`${p.name} ${(hits[p.key]/(d.length/4)*100).toFixed(1)}%`).join(' · ');
+  } else document.getElementById('hit').textContent='';
 }
 function hexToRgb(s){const v=parseInt(s.replace('#',''),16);
   return [(v>>16)&255,(v>>8)&255,v&255];}

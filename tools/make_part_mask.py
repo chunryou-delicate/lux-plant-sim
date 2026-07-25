@@ -14,8 +14,15 @@ Meshy는 머리·눈·옷·피부를 하나의 아틀라스에 구워 단일 머
            머리 높이 + 얼굴 앞면인지로 눈·눈썹을 갈라낸다.
 
 출력
-  {char}_mask.png  R=머리카락 G=피부 B=상의, A=하의  (눈·눈썹은 R채널 0.5)
-  index 채널이 아니라 분리 채널이라 셰이더에서 곱셈 한 번으로 섞을 수 있다.
+  {char}_mask.png  R 채널에 부위 코드, G=B=0, A=255 인 인덱스 맵.
+
+  코드  0 기타 / 40 머리카락 / 80 눈·눈썹 / 120 피부 / 160 상의 / 200 하의
+
+  알파를 데이터 채널로 쓰면 안 된다. 캔버스는 픽셀을 프리멀티플라이드 알파로
+  저장하므로 A=0 인 텍셀은 RGB가 통째로 0 으로 뭉개진다. 부위를 RGBA 채널에
+  나눠 담으면 읽어올 때 A 채널 부위만 살아남는다. 그래서 A 는 항상 255 로 두고
+  R 하나에 코드를 넣는다. 코드 간격을 40 으로 벌려 확대·축소 시 보간이 섞여도
+  가장 가까운 코드로 복구된다(뷰어는 최근접 보간을 쓴다).
 
 사용법
   python make_part_mask.py char_namja_jachwi [--preview]
@@ -38,6 +45,9 @@ SRC = os.path.join(ROOT, "assets", "characters", "3d")
 OUT = os.path.join(ROOT, "assets", "characters", "masks")
 
 # 기준색 (저폴리 클레이 팔레트에서 관측된 대표값)
+# 부위 코드 (R 채널). 간격 40 — 보간이 섞여도 최근접으로 복구 가능.
+CODE = {"none": 0, "hair": 40, "eyes": 80, "skin": 120, "top": 160, "bottom": 200}
+
 REF = {
     "hair":  [(72, 24, 24), (48, 24, 24), (72, 48, 24), (96, 48, 24)],
     "skin":  [(240, 192, 144), (240, 192, 168), (240, 216, 192),
@@ -132,11 +142,13 @@ def build(char, preview=False):
     bot = lab == names.index("bottom")
 
     os.makedirs(OUT, exist_ok=True)
+    code = np.zeros((size, size), np.uint8)
+    for c, mk in ((CODE["hair"], hair), (CODE["eyes"], eyes), (CODE["skin"], skin),
+                  (CODE["top"], top), (CODE["bottom"], bot)):
+        code[mk] = c
     m = np.zeros((size, size, 4), np.uint8)
-    m[..., 0] = np.where(hair, 255, np.where(eyes, 128, 0))   # R: 255=머리 128=눈·눈썹
-    m[..., 1] = skin * 255
-    m[..., 2] = top * 255
-    m[..., 3] = bot * 255
+    m[..., 0] = code
+    m[..., 3] = 255            # A 는 데이터가 아니다 - 항상 불투명
     Image.fromarray(m, "RGBA").save(os.path.join(OUT, f"{char}_mask.png"))
 
     tot = size * size

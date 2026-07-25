@@ -674,12 +674,13 @@
       "3D 얼굴 애니메이션(얼굴 본 없음, 몸통 24본뿐)"
     ],
     "workaround": "같은 UV의 마스크 텍스처로 텍셀 단위 부위 선택. tools/make_part_mask.py -> assets/characters/masks/",
-    "mask_channels": "R=255 머리카락 / R=128 눈·눈썹 / G 피부 / B 상의 / A 하의",
+    "mask_channels": "R 채널 인덱스 맵: 0 기타 / 40 머리카락 / 80 눈·눈썹 / 120 피부 / 160 상의 / 200 하의. G=B=0, A=255.",
     "mask_method": "색(클레이 팔레트 기준색 거리) + 3D 위치(머리카락과 눈·눈썹이 같은 진갈색이라 색만으로는 못 가름). 둘 다 필요.",
     "apply": "로딩 시 캔버스에서 1회 계산. 셰이더 매 프레임 아님. 명도 유지로 음영 보존. assets/characters/color_shift.html",
     "pitfall": "아틀라스 여백 비중이 커서 마스크의 부위별 텍셀 퍼센트는 실제 표면적 비율이 아님. 3D에 올려서 확인해야 함.",
     "mask_depends_on": "텍스처 UV. 캐릭터 재생성 시 마스크도 재생성 필요(도구 재실행).",
-    "doc": "docs/character_material_constraint.md"
+    "doc": "docs/character_material_constraint.md",
+    "alpha_trap": "알파를 데이터 채널로 쓰면 안 된다. 캔버스는 프리멀티플라이드 알파로 저장하므로 A=0 텍셀의 RGB가 0으로 뭉개지고, RGBA에 부위를 나눠 담으면 A 채널 부위만 살아남는다(2026-07-25 실제로 겪음: 하의만 색이 바뀜)."
   },
   "rig_portability": {
     "fact": "Meshy 리깅 8종의 본 이름·순서와 전체 노드 이름 집합이 동일(표준 24본). 클립은 노드 이름으로 바인딩되므로 어느 캐릭터에나 붙는다.",
