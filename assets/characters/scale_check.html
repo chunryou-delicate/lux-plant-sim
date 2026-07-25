@@ -1,0 +1,211 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8">
+<title>실스케일 검증 — 캐릭터 vs 실제 치수</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<style>
+ *{box-sizing:border-box}
+ body{margin:0;font-family:'Pretendard','Malgun Gothic',sans-serif;background:#f3f6f3;color:#2b3830}
+ header{padding:14px 20px;background:#fff;border-bottom:1px solid #dde5de}
+ h1{margin:0;font-size:16px;letter-spacing:-.3px}
+ .sub{margin-top:4px;font-size:12px;color:#6d7d72}
+ .wrap{display:flex;height:calc(100vh - 62px)}
+ #cv{flex:1;display:block;background:#eef3ef}
+ .panel{width:290px;background:#fff;border-left:1px solid #dde5de;padding:16px;overflow:auto;font-size:13px}
+ .panel h2{font-size:12px;margin:16px 0 8px;color:#6d7d72;letter-spacing:.4px;text-transform:uppercase}
+ .panel h2:first-child{margin-top:0}
+ select,button{width:100%;padding:7px 9px;border:1px solid #cfdbd2;border-radius:7px;background:#fff;font:inherit;color:inherit}
+ button{margin-top:6px;cursor:pointer}
+ button:hover{background:#f2f7f3}
+ label{display:flex;align-items:center;gap:7px;padding:3px 0;cursor:pointer}
+ table{width:100%;border-collapse:collapse;font-size:12px}
+ td{padding:3px 0;border-bottom:1px solid #eef2ef}
+ td:last-child{text-align:right;font-variant-numeric:tabular-nums;color:#4a7a5c;font-weight:600}
+ .note{margin-top:12px;font-size:11.5px;line-height:1.65;color:#6d7d72;background:#f6faf7;padding:9px 10px;border-radius:7px}
+ .bad{color:#b4483a}
+</style></head><body>
+<header>
+  <h1>실스케일 검증 — 1 유닛 = 1 미터, 발바닥 y=0</h1>
+  <div class="sub">실제 치수의 생활 가구 옆에 세워 크기를 눈으로 확인합니다. 애니메이션이 붙은 상태에서도 크기가 유지되는지 함께 봅니다.</div>
+</header>
+<div class="wrap">
+  <canvas id="cv"></canvas>
+  <div class="panel">
+    <h2>캐릭터</h2>
+    <select id="char"></select>
+    <h2>모션</h2>
+    <select id="clip"></select>
+    <h2>기준물</h2>
+    <div id="refs"></div>
+    <h2>측정값</h2>
+    <table id="meas"></table>
+    <button id="reset">카메라 리셋</button>
+    <div class="note" id="note"></div>
+  </div>
+</div>
+<script>
+const CB='?t='+Date.now();
+
+const CHARS=[
+ ['char_jachwi_f','자취녀',1.50],['char_yeoja_gajang','여가장',1.50],
+ ['char_yeoja_jubu','여주부',1.50],['char_yeoja_researcher','여연구원',1.50],
+ ['char_namja_jachwi','자취남',1.70],['char_namja_gajang','남가장',1.70],
+ ['char_namja_jubu','남주부',1.70],['char_namja_researcher','남연구원',1.70],
+];
+// pathType: root = 3d/{char}_{key}.glb, anim = 3d/anim/{char}_{key}.glb
+const CLIPS=[
+ ['','A 포즈 (정지)',''],
+ ['idle','유휴','root'],['walking','걷기','root'],['walking_w','걷기(여성)','root'],
+ ['inspect','굽혀 살펴보기','anim'],['repot','쭈그려 옮겨놓기','anim'],
+ ['sit','의자에 앉기','anim'],['sleep','취침','anim'],
+ ['happyjump','기뻐서 폴짝','anim'],['wave','손 흔들기','anim'],
+];
+// 실제 생활 치수 (m) — 우리 집 에셋 규격과 동일 기준
+const REFS=[
+ {id:'door',  on:true,  name:'현관문 2.0m',  w:0.9, h:2.0, d:0.06, x:-1.35, z:-0.9, c:0xd8c9b0},
+ {id:'ward',  on:true,  name:'옷장 1.9m',    w:0.9, h:1.9, d:0.55, x: 1.45, z:-0.7, c:0xcbd7c9},
+ {id:'desk',  on:true,  name:'책상 0.75m',   w:1.2, h:0.75,d:0.6,  x: 0.0,  z:-1.5, c:0xe0d3bd},
+ {id:'stool', on:true,  name:'스툴 0.355m',  w:0.34,h:0.355,d:0.34,x:-0.75, z: 0.55,c:0xd6c4a8},
+ {id:'pot',   on:true,  name:'화분 0.28m',   w:0.24,h:0.28,d:0.24, x: 0.8,  z: 0.6, c:0xc2a98c},
+];
+
+const cv=document.getElementById('cv');
+const renderer=new THREE.WebGLRenderer({canvas:cv,antialias:true});
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+renderer.outputEncoding=THREE.sRGBEncoding;
+const scene=new THREE.Scene();scene.background=new THREE.Color(0xeef3ef);
+const camera=new THREE.PerspectiveCamera(35,1,0.02,80);
+const controls=new THREE.OrbitControls(camera,cv);controls.enableDamping=true;
+function resetCam(){camera.position.set(3.4,1.75,4.2);controls.target.set(0,0.85,0);controls.update();}
+resetCam();
+document.getElementById('reset').onclick=resetCam;
+scene.add(new THREE.AmbientLight(0xffffff,0.72));
+scene.add(new THREE.HemisphereLight(0xffffff,0xdfe6df,0.25));
+const dl=new THREE.DirectionalLight(0xffffff,0.5);dl.position.set(3,6,4);scene.add(dl);
+
+// 1m 격자 바닥 — 한 칸이 정확히 1m
+const grid=new THREE.GridHelper(16,16,0x9db6a4,0xd6e2d9);scene.add(grid);
+const floor=new THREE.Mesh(new THREE.PlaneGeometry(16,16),new THREE.MeshBasicMaterial({color:0xf4f8f5}));
+floor.rotation.x=-Math.PI/2;floor.position.y=-0.002;scene.add(floor);
+
+// 10cm 눈금자 (캐릭터 바로 옆 수직 기둥)
+const ruler=new THREE.Group();ruler.position.set(-0.55,0,0.05);scene.add(ruler);
+for(let i=0;i<=20;i++){
+  const major=(i%5===0);
+  const g=new THREE.Mesh(new THREE.BoxGeometry(major?0.16:0.08,0.006,0.006),
+    new THREE.MeshBasicMaterial({color:major?0x4a7a5c:0xa8bfae}));
+  g.position.set(major?-0.06:-0.02,i*0.1,0);ruler.add(g);
+}
+const post=new THREE.Mesh(new THREE.BoxGeometry(0.012,2.0,0.012),new THREE.MeshBasicMaterial({color:0xbfd0c4}));
+post.position.y=1.0;ruler.add(post);
+
+// 기준 가구 (반투명 박스 = 정확한 치수)
+const refGroup=new THREE.Group();scene.add(refGroup);
+const refMeshes={};
+REFS.forEach(r=>{
+  const g=new THREE.Group();
+  const box=new THREE.Mesh(new THREE.BoxGeometry(r.w,r.h,r.d),
+    new THREE.MeshLambertMaterial({color:r.c,transparent:true,opacity:0.72}));
+  box.position.y=r.h/2;g.add(box);
+  const edge=new THREE.LineSegments(new THREE.EdgesGeometry(box.geometry),
+    new THREE.LineBasicMaterial({color:0x6d8a76}));
+  edge.position.y=r.h/2;g.add(edge);
+  g.position.set(r.x,0,r.z);refGroup.add(g);refMeshes[r.id]=g;
+});
+
+// 기준물 체크박스
+const refsEl=document.getElementById('refs');
+REFS.forEach(r=>{
+  const l=document.createElement('label');
+  l.innerHTML=`<input type="checkbox" ${r.on?'checked':''}> ${r.name}`;
+  l.querySelector('input').onchange=e=>{refMeshes[r.id].visible=e.target.checked;};
+  refsEl.appendChild(l);
+});
+
+// ── 캐릭터 로딩 ──
+const charSel=document.getElementById('char'), clipSel=document.getElementById('clip');
+CHARS.forEach(([k,n,h])=>charSel.add(new Option(`${n} (${(h*100)|0}cm)`,k)));
+CLIPS.forEach(([k,n])=>clipSel.add(new Option(n,k)));
+const clipPath=(c,k)=>{const e=CLIPS.find(x=>x[0]===k);
+  return e[2]==='root'?`3d/${c}_${k}.glb`:`3d/anim/${c}_${k}.glb`;};
+
+const loader=new THREE.GLTFLoader();
+const clock=new THREE.Clock();
+let model=null, mixer=null;
+
+/** 스킨드 메시는 본 월드좌표로 재야 정확 — 지오메트리 bbox는 신뢰 불가 */
+function measure(root){
+  root.updateMatrixWorld(true);
+  const b=new THREE.Box3();let any=false;const v=new THREE.Vector3();
+  root.traverse(o=>{
+    if(o.isSkinnedMesh&&o.skeleton){o.skeleton.bones.forEach(bo=>{bo.getWorldPosition(v);b.expandByPoint(v);any=true;});}
+    else if(o.isMesh){const g=o.geometry;if(!g)return;g.computeBoundingBox();
+      const bb=g.boundingBox.clone().applyMatrix4(o.matrixWorld);b.union(bb);any=true;}
+  });
+  return any?b:null;
+}
+/** 본 bbox는 머리 정수리·발끝을 못 잡으므로, 정지 상태 실측은 정점으로 따로 */
+function measureVerts(root){
+  root.updateMatrixWorld(true);
+  const b=new THREE.Box3();const v=new THREE.Vector3();
+  root.traverse(o=>{
+    if(!o.isMesh||!o.geometry||!o.geometry.attributes.position)return;
+    const p=o.geometry.attributes.position;
+    // 스킨드는 원본 노드 변환이 invBind에 baked 되어 상쇄됨(glTF 규약).
+    // 나중에 얹은 리스케일 래퍼(__scale_root)의 변환만 실제로 적용된다.
+    let m=o.matrixWorld;
+    if(o.isSkinnedMesh){m=new THREE.Matrix4();
+      for(let a=o;a;a=a.parent){if(a.name==='__scale_root'){m=a.matrixWorld;break;}}}
+    for(let i=0;i<p.count;i++){v.fromBufferAttribute(p,i).applyMatrix4(m);b.expandByPoint(v);}
+  });
+  return b;
+}
+
+function report(name,expect){
+  if(!model){document.getElementById('meas').innerHTML='';return;}
+  const b=measureVerts(model);
+  const h=b.max.y-b.min.y, foot=b.min.y;
+  const rows=[
+    ['목표 키',expect.toFixed(3)+' m'],
+    ['실측 키',h.toFixed(3)+' m'],
+    ['발바닥 y',foot.toFixed(4)],
+    ['폭 / 깊이',(b.max.x-b.min.x).toFixed(2)+' / '+(b.max.z-b.min.z).toFixed(2)],
+    ['문(2.0m) 대비',((h/2.0)*100).toFixed(0)+' %'],
+    ['옷장(1.9m) 대비',((h/1.9)*100).toFixed(0)+' %'],
+  ];
+  const okH=Math.abs(h-expect)<0.01, okF=Math.abs(foot)<0.01;
+  document.getElementById('meas').innerHTML=rows.map(([a,c])=>`<tr><td>${a}</td><td>${c}</td></tr>`).join('');
+  document.getElementById('note').innerHTML = (okH&&okF)
+    ? `<b>${name}</b> — 키·바닥 정렬 정상.<br>격자 한 칸 = 1m, 눈금 한 칸 = 10cm.`
+    : `<b class="bad">${name} — 불일치</b><br>키 ${okH?'OK':'차이 '+(h-expect).toFixed(3)+'m'} / 발바닥 ${okF?'OK':foot.toFixed(3)}`;
+}
+
+function clearModel(){
+  if(model){scene.remove(model);model.traverse(o=>{if(o.geometry)o.geometry.dispose();});}
+  model=null;mixer=null;
+}
+function load(){
+  const key=charSel.value, clip=clipSel.value;
+  const meta=CHARS.find(c=>c[0]===key);
+  clearModel();
+  loader.load(`3d/${key}_rigged.glb`+CB,g=>{
+    model=g.scene;scene.add(model);
+    report(meta[1],meta[2]);
+    if(!clip)return;
+    loader.load(clipPath(key,clip)+CB,cg=>{
+      if(!cg.animations||!cg.animations.length)return;
+      mixer=new THREE.AnimationMixer(model);
+      mixer.clipAction(cg.animations[0]).play();
+    },undefined,()=>{ document.getElementById('note').innerHTML+='<br><span class="bad">이 모션 클립 없음</span>'; });
+  },undefined,e=>{document.getElementById('note').innerHTML='<span class="bad">로드 실패: '+e+'</span>';});
+}
+charSel.onchange=clipSel.onchange=load;
+load();
+
+function resize(){const w=cv.clientWidth,h=cv.clientHeight;
+  if(cv.width!==w||cv.height!==h){renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix();}}
+(function loop(){requestAnimationFrame(loop);resize();
+  const d=clock.getDelta();if(mixer)mixer.update(d);
+  controls.update();renderer.render(scene,camera);})();
+</script></body></html>

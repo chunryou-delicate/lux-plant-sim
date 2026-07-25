@@ -38,19 +38,19 @@
         <input type="range" id="s-z" min="0.12" max="0.45" step="0.01" value="0.25">
         <div class="hint">확정값 0.25로 GLB에 이미 구워짐(엔진에서 추가 스케일 불필요)</div></div>
 
-      <div class="row"><label>부유 높이 <b id="v-h">0.30</b></label>
-        <input type="range" id="s-h" min="0" max="0.9" step="0.01" value="0.30">
-        <div class="hint">바닥에서 몬이 밑면까지. 캐릭 무릎~허리 사이가 화면에 같이 잡힘</div></div>
+      <div class="row"><label>부유 높이 <b id="v-h">0.237</b></label>
+        <input type="range" id="s-h" min="0" max="0.7" step="0.005" value="0.237">
+        <div class="hint">바닥에서 몬이 밑면까지(m). 캐릭 무릎~허리 사이가 화면에 같이 잡힘</div></div>
 
-      <div class="row"><label>둥둥 진폭 <b id="v-a">0.130</b></label>
-        <input type="range" id="s-a" min="0" max="0.25" step="0.005" value="0.130"></div>
+      <div class="row"><label>둥둥 진폭 <b id="v-a">0.103</b></label>
+        <input type="range" id="s-a" min="0" max="0.2" step="0.005" value="0.103"></div>
 
       <div class="row"><label>둥둥 주기(초) <b id="v-p">2.50</b></label>
         <input type="range" id="s-p" min="0.8" max="5" step="0.1" value="2.5">
         <div class="hint">느릴수록 푸근함. 빠르면 촐랑대는 성격이 됨</div></div>
 
-      <div class="row"><label>따라오는 거리 <b id="v-d">1.05</b></label>
-        <input type="range" id="s-d" min="0.2" max="2.5" step="0.05" value="1.05"></div>
+      <div class="row"><label>따라오는 거리 <b id="v-d">0.829</b></label>
+        <input type="range" id="s-d" min="0.2" max="2.0" step="0.01" value="0.829"></div>
 
       <div class="row"><label>추적 부드러움 <b id="v-k">4.10</b></label>
         <input type="range" id="s-k" min="0.4" max="10" step="0.1" value="4.1">
@@ -68,8 +68,9 @@
     </div>
   </div>
 <script>
-// ── 캐릭터/마스코트 GLB 공통 규약: 원점 중심, 밑면 y = -0.9507 ──
-const FLOOR_OFFSET = 0.9507;   // 이만큼 올리면 밑면이 y=0 (바닥)
+// ── 캐릭터/마스코트 GLB 공통 규약: 실스케일(1유닛=1m), 발바닥 y=0, XZ 중심 ──
+const FLOOR_OFFSET = 0;        // GLB 자체가 발바닥 정렬이라 보정 불필요
+const CHAR_H = 1.50;           // 자취녀 기준 실키(여캐 150cm)
 
 // ── 툰·파스텔 (다른 뷰어와 동일) ──
 function toonGrad(){const c=document.createElement('canvas');c.width=64;c.height=1;const x=c.getContext('2d');
@@ -138,12 +139,13 @@ new THREE.GLTFLoader().load('3d/char_mascot_sprout.glb',g=>{
 
 // ── 파라미터 ──
 const BAKED_RATIO=0.25;   // 현재 GLB에 구워진 크기(캐릭터 대비) — 확정
-const P={z:0.25,h:0.30,a:0.130,p:2.5,d:1.05,k:4.1,t:4.0,s:1.0};
+// 아래 h/a/d 는 캐릭터 1.8995 시절 확정값을 실스케일(x0.7897)로 환산한 값
+const P={z:0.25,h:0.237,a:0.103,p:2.5,d:0.829,k:4.1,t:4.0,s:1.0};
 const ids={z:'s-z',h:'s-h',a:'s-a',p:'s-p',d:'s-d',k:'s-k',t:'s-t',s:'s-s'};
 const fmt={z:2,h:2,a:3,p:2,d:2,k:2,t:1,s:2};
 function syncOut(){
   document.getElementById('out').textContent =
-`sizeRatio   : ${P.z.toFixed(2)}  (H ${(1.8995*P.z).toFixed(3)})
+`sizeRatio   : ${P.z.toFixed(2)}  (H ${(CHAR_H*P.z).toFixed(3)})
 floatHeight : ${P.h.toFixed(2)}
 bobAmplitude: ${P.a.toFixed(3)}
 bobPeriod   : ${P.p.toFixed(2)} s
