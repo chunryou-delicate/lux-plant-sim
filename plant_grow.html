@@ -134,7 +134,7 @@ const DEF={
   internode:0.20, stemFlat:1.25,   // 줄기 마디 길이·잎방향 납작
   petGrow:16, rEarly:0.022, rThin:0.028, rMed:0.025, rThick:0.031, matureProb:0.22, doubleBud:0.15,  // 종류별 굵기(몸통 폭 기준, 왜곡 최소)·성숙잎 확률·쌍혹 확률
   leafEmbed:0.13, leafTilt:0.30, leafClear:0.52, leafTiltVary:0, leafStemClear:3.4,   // leafTiltVary=0 → 잎 각도 고정(조절값 그대로), >0 이면 겹침 회피가 각도도 흔듦   // 잎자루를 줄기 속으로 박는 깊이 · 잎이 줄기 끝 방향을 따라가는 정도 · 잎이 차지하는 반경(겹침 회피)
-  photoLean:0.13, stemStraight:0.30,   // 빛 쪽으로 기우는 세기(굴광성 슬라이더와 곱해짐) · 축 기본방향으로 돌아오는 힘(작을수록 더 휨)
+  photoLean:0.13, stemStraight:0.12, stemCurve:0.11, stemDroop:0.04, avoidLean:0.55, avoidRange:0.30,   // 빛 쪽으로 기우는 세기(굴광성 슬라이더와 곱해짐) · 축 기본방향으로 돌아오는 힘(작을수록 더 휨)
   stemTrans:40, bumpGrow:20, bumpAt:0.2, bumpAzOff:0, stemOverlap:0.015,   // bumpAzOff=가지가 나는 방위를 혹 돌기 쪽으로 미세 회전
   tipTaper:0.55, nodeBulge:0.16, nodeWidth:0.045, bumpFit:1.02,
   sheathLen:0.22, sheathFit:1.12, sheathBot:1.309, sheathTop:0.575,   // 엽초: 길이(잎 크기 x 이 값) · 감싸는 굵기 · 아래/위 구멍 지름
@@ -145,7 +145,7 @@ const DEF={
 };
 let P=Object.assign({}, DEF);
 // 저장본 버전. 생장 로직/기본값이 바뀌면 올림 → 옛 저장값이 새 기본값을 덮어쓰지 않게.
-const CFG_VER='2026-07-20-sheath11';
+const CFG_VER='2026-07-20-curve1';
 
 // ===== 튜닝 파라미터(B: 에셋별 개별 조정) =====
 const ADJ_KEYS=['pot','leaf_young','leaf_mid1','leaf_mid2','leaf_mature','bud_furled','bud_opening2',
@@ -598,24 +598,37 @@ function segDist(p, a, b){
   const t=L2<1e-12?0:Math.max(0,Math.min(1, p.clone().sub(a).dot(ab)/L2));
   return p.distanceTo(a.clone().addScaledVector(ab,t));
 }
-function freeAim(nodePos, stemDir, az0, tilt0, size){
-  const R=size*P.leafClear;                                      // 잎이 차지하는 반경
-  // ★자기 줄기 주변은 제외하고, 잎이 뻗는 범위 안에 있는 줄기만 후보로(성능)
-  const reach=size*1.25, near=[];
+// 잎몸의 실제 반폭(높이1 정규화 폭 x 크기 x 에셋별 조정) — 선이 아니라 '판'으로 보기 위함
+function leafHalfW(key, size){
+  const u=(ASSETS[key]&&ASSETS[key].userData)||{}, a=ADJ[key]||{}, N=(v,d)=>v==null?d:v;
+  const w=Math.max(u.sx||0.9, u.sz||0.9)/2;
+  return size*w*N(a.scale,1)*N(a.sxz,1);
+}
+function freeAim(nodePos, stemDir, az0, tilt0, size, leafKey){
+  const R=size*P.leafClear;                                      // 잎끼리 비켜서는 반경
+  // ★A1: 잎몸을 '구'(반지름=실제 반폭)로, 잎자루를 '캡슐'로 보고 줄기와 판정.
+  //   기존엔 잎을 축 위 3점으로만 봐서 실제 폭의 1/4~1/5만 검사했다(잎몸이 줄기를 덮어버림).
+  const bladeR=leafKey? leafHalfW(leafKey,size) : size*0.45;
+  const reach=size*1.3+bladeR, near=[];
   if(P.leafStemClear>0.001){
     for(const st of STEMS){
       const mid=st.a.clone().add(st.b).multiplyScalar(0.5);
-      if(mid.distanceTo(nodePos) < reach+st.r+0.25) near.push(st);
+      if(mid.distanceTo(nodePos) < reach+st.r+0.2) near.push(st);
     }
   }
-  const selfR=size*0.30;                                         // 이 거리 안쪽은 '자기가 붙은 자리'라 무시
-  const stemGap=(d)=>{                                           // 잎 몸통을 3점으로 샘플링해 줄기와의 여유 계산
+  const selfR=size*0.28;                                         // 자기가 붙은 자리는 무시
+  const clearOf=(d,c)=>{
     if(!near.length) return 1e9;
     let mn=1e9;
-    for(const f of [0.45,0.75,1.0]){
-      const q=nodePos.clone().addScaledVector(d, size*f);
-      if(q.distanceTo(nodePos)<selfR) continue;
-      for(const st of near) mn=Math.min(mn, segDist(q, st.a, st.b) - st.r - size*0.10);
+    for(const st of near){
+      const dBlade=segDist(c, st.a, st.b) - st.r - bladeR;        // 잎몸(구) ↔ 줄기(캡슐)
+      if(dBlade<mn) mn=dBlade;
+      for(const f of [0.5,0.8]){                                  // 잎자루(캡슐) 몇 점
+        const q=nodePos.clone().addScaledVector(d, size*f);
+        if(q.distanceTo(nodePos)<selfR) continue;
+        const dp=segDist(q, st.a, st.b) - st.r - size*0.05;
+        if(dp<mn) mn=dp;
+      }
     }
     return mn;
   };
@@ -626,9 +639,9 @@ function freeAim(nodePos, stemDir, az0, tilt0, size){
     const d=leafDir(stemDir, az, tilt), f=stemFrame(stemDir, az);
     const c=nodePos.clone().addScaledVector(d, size*0.55).addScaledVector(f.side, size*0.40);
     let gap=1e9;
-    for(const p of PLACED) gap=Math.min(gap, c.distanceTo(p.c)-(p.r+R));
-    const sg=stemGap(d);                                         // 줄기와의 여유
-    if(gap>1e8 && sg>1e8) return {d, c, r:R, az, tilt};           // 첫 잎이고 줄기도 없음
+    for(const pl of PLACED) gap=Math.min(gap, c.distanceTo(pl.c)-(pl.r+R));
+    const sg=clearOf(d,c);
+    if(gap>1e8 && sg>1e8) return {d, c, r:R, az, tilt};
     const score=Math.min(gap,0.25) + P.leafStemClear*Math.min(sg,0.12)
                 - 0.10*Math.abs(da)/Math.PI - 0.10*Math.abs(dt);
     if(score>bestScore){ bestScore=score; best={d, c, r:R, az, tilt}; }
@@ -639,7 +652,7 @@ function freeAim(nodePos, stemDir, az0, tilt0, size){
 function addLeaf(nodePos, az, maturity, key, sizeOverride, stemDir, stemRad){
   const size=(sizeOverride!=null)?sizeOverride:leafSize(maturity);   // ★ 단계별 곡선(작게 나서 커짐), 스무딩값 있으면 사용
   const tilt=P.leafTilt + maturity*P.elevDrop*0.5;              // 줄기축에서 벌어지는 각(성숙할수록 조금 더)
-  const aim=freeAim(nodePos, stemDir, az, tilt, size);
+  const aim=freeAim(nodePos, stemDir, az, tilt, size, key);
   const d=aim.d;
   PLACED.push({c:aim.c, r:aim.r});                              // 자리 점유 등록(다음 잎이 피해감)
   // ★음수 = 잎자루 끝을 줄기 속으로 박아 붙임(잎 GLB에 잎자루가 포함돼 있으므로 틈이 생기면 안 됨)
@@ -735,18 +748,51 @@ function buildPlant(){
     const axes=[];
     // 축 = 생장점 하나. 잎 1개(leafBirth부터 성숙) + 그 아래로 쌓이는 마디들(segs)
     const mkAxis=(from,dir,birth)=>{
-      const ax={from, dir:dir.clone().normalize(), birth, leafBirth:birth+P.petGrow, segs:[],
+      const d0=dir.clone().normalize();
+      // ★축마다 "일정한 방향으로 휘는 아치"를 하나 정해 둔다. 매 마디 랜덤(백색잡음)은 서로 상쇄돼
+      //   곡선이 안 생기고 떨리기만 하므로, 방향을 고정해야 자연스러운 곡선이 누적된다.
+      const ref=Math.abs(d0.y)>0.9? new THREE.Vector3(1,0,0) : new THREE.Vector3(0,1,0);
+      const cx=new THREE.Vector3().crossVectors(ref,d0).normalize();
+      const cz=new THREE.Vector3().crossVectors(d0,cx).normalize();
+      const ca=rng()*Math.PI*2;
+      const curveDir=cx.multiplyScalar(Math.cos(ca)).addScaledVector(cz, Math.sin(ca)).normalize();
+      const ax={from, dir:d0, birth, leafBirth:birth+P.petGrow, segs:[], simTip:null,
                 az:rng()*Math.PI*2, midType:PLANT_MID, canMature:rng()<P.matureProb,
-                triggered:false, grew:false};                            // grew = 이번 사이클에 이미 1마디 자랐나
+                triggered:false, grew:false,
+                curveDir, curveAmt:0.55+rng()*0.9};        // 개체마다 휘는 정도가 조금씩 다르게
+      ax.simTip=from? null : new THREE.Vector3(0,SOIL_Y,0);   // 곁가지는 첫 마디 때 부모 위치에서 계산
       axes.push(ax); return ax; };
-    const addSeg=(ax,T)=>{                                               // ② TIP 아래에 마디 삽입 → 생장점이 위로
+    const SIM_SEGS=[];                                          // 시뮬 중 생긴 줄기(조향 판단용)
+    const addSeg=(ax,T)=>{
       // ★앞 마디 방향을 이어받아 조금씩만 틀기 → 마디 경계가 꺾여 어긋나 보이지 않음
       const prev=ax.segs.length? ax.segs[ax.segs.length-1].dir : ax.dir;
-      // 굴광성: 빛 쪽으로 "살짝" 기울되 앞 마디를 이어받아 누적 → 극단적이지 않게 완만히 휨
-      const dir=prev.clone().lerp(ax.dir, P.stemStraight).addScaledVector(ld, PHOTO*P.photoLean)
+      const k=ax.segs.length;
+      if(!ax.simTip) ax.simTip=axBase(ax, 1e9).clone();          // 곁가지: 부모의 혹 위치(다 자란 기준)
+      const len0=P.internode*(0.92+rng()*0.16);
+      const droop=P.stemDroop*Math.min(1, k/Math.max(1,P.maxLeaves*0.7));   // 길어질수록 무게로 아래로
+      // ★①생장 시 조향: 앞으로 갈 자리에 다른 줄기가 있으면 그 반대쪽으로 조금 튼다(접촉굴성)
+      const away=new THREE.Vector3();
+      if(P.avoidLean>0.001 && SIM_SEGS.length){
+        const probe=ax.simTip.clone().addScaledVector(prev, len0*1.6);
+        const RAD=P.avoidRange;
+        for(const sg of SIM_SEGS){
+          if(sg.ax===ax || sg.ax===(ax.from&&ax.from.ax)) continue;   // 자기 축·부모 축은 제외
+          const v=probe.clone().sub(sg.p); const dd=v.length();
+          if(dd<1e-4 || dd>RAD) continue;
+          away.addScaledVector(v.multiplyScalar(1/dd), (RAD-dd)/RAD);
+        }
+        if(away.lengthSq()>1e-9){ away.y*=0.35; away.normalize(); }      // 옆으로 피하되 위로는 덜
+      }
+      const dir=prev.clone().lerp(ax.dir, P.stemStraight)                   // 곧게 서려는 힘
+        .addScaledVector(ld, PHOTO*P.photoLean)                             // 빛 쪽
+        .addScaledVector(ax.curveDir, P.stemCurve*ax.curveAmt)              // 일정 방향 아치(누적)
+        .addScaledVector(away, P.avoidLean)                                 // ★다른 줄기 피하기
+        .addScaledVector(new THREE.Vector3(0,-1,0), droop)                  // 무게 처짐
         .add(new THREE.Vector3((rng()-0.5)*P.spread,0,(rng()-0.5)*P.spread)).normalize();
-      ax.segs.push({dir, len:P.internode*(0.92+rng()*0.16), birth:T, activated:false,
-                    az:ax.az+ax.segs.length*GOLDEN}); };                 // 마디마다 방위(황금각) → 혹·가지가 각기 다른 쪽
+      ax.segs.push({dir, len:len0, birth:T, activated:false,
+                    az:ax.az+k*GOLDEN});
+      ax.simTip=ax.simTip.clone().addScaledVector(dir, len0);
+      SIM_SEGS.push({ax, p:ax.simTip.clone()}); };                 // 마디마다 방위(황금각) → 혹·가지가 각기 다른 쪽
     const leafM=(ax,T)=>Math.max(0, Math.min(1,(T-ax.leafBirth)/P.matSpan));   // 그 축의 잎 성숙도
     // 축 시작점 — ★가지는 부모 "혹 마디의 돌기 위치"(마디 끝이 아니라 중간)에서 남
     const axBase=(ax,T)=>{
@@ -1121,7 +1167,11 @@ const PARAM_DEFS=[
 // ===== 줄기 모양 미세조정 슬라이더(플레이 패널) =====
 const SHAPE_DEFS=[
   {k:'photoLean',   t:'빛 쪽으로 휨',      min:0,    max:0.35, step:0.01},
-  {k:'stemStraight',t:'곧게 서려는 힘',    min:0.05, max:0.9,  step:0.05},
+  {k:'stemStraight',t:'곧게 서려는 힘',    min:0,    max:0.9,  step:0.01},
+  {k:'stemCurve',   t:'줄기 휘어짐(아치)', min:0,  max:0.4,  step:0.01},
+  {k:'stemDroop',   t:'끝으로 갈수록 처짐', min:0, max:0.4,  step:0.01},
+  {k:'avoidLean',   t:'줄기가 서로 피하기', min:0, max:1.5,  step:0.05},
+  {k:'avoidRange',  t:'피하는 거리',       min:0.05, max:0.8, step:0.05},
   {k:'spread',      t:'흔들림(불규칙)',    min:0,    max:0.3,  step:0.01},
   {k:'internode',   t:'마디 길이',         min:0.12, max:0.4,  step:0.01},
   {k:'tipTaper',    t:'줄기 끝 굵기',      min:0.10, max:1.2,  step:0.01},
