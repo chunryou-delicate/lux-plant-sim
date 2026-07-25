@@ -214,6 +214,10 @@ def build(char, vis=False, size=None):
     hairish = dark_warm & ((t > 0.46) | ((z < zt) & (t > 0.12)))
     # 경계 텍셀이 색 임계를 넘어 삐죽삐죽 남는 것을 메운다
     hairish = binary_closing(hairish, np.ones((5, 5))) & covered & (d_hair < 96)
+    # 얼굴 앞면 아래쪽(눈보다 아래)에는 머리카락이 오지 않는다. 입술·콧구멍
+    # 그늘이 진갈색이라 머리로 잡혀 머리색을 따라가던 것을 막는다.
+    lower_face = covered & front & (xn < 0.28) & (t > 0.66) & (t < 0.775)
+    hairish &= ~lower_face
     code[head & is_skin] = CODE["skin"]
     code[hairish] = CODE["hair"]
 
@@ -239,7 +243,10 @@ def build(char, vis=False, size=None):
         rv = max(6, int(round(r_eye * 0.75)))
         yy, xx = np.mgrid[-rv:rv + 1, -r_eye:r_eye + 1]
         near = (xx / r_eye) ** 2 + (yy / rv) ** 2 <= 1.0
-        region = binary_dilation(sclera, near) & covered
+        # UV 공간 팽창은 섬 경계를 넘어 엉뚱한 부위로 건너뛴다. 아틀라스는 섬이
+        # 빽빽하게 붙어 있어 30텍셀만 번져도 허리 쪽 섬에 닿는다(눈 라벨이
+        # t 0.50 에 나타났다). 3D 위치로 얼굴 안에 가둔다.
+        region = binary_dilation(sclera, near) & faceband
         # 눈 주변에서 피부가 아닌 것은 전부 눈 재료다(흰자·하이라이트·홍채·동공·
         # 속눈썹·눈매선). 색으로 고르면 중간톤인 눈꺼풀 주름이 빠져 머리로 간다.
         # 그중 흰자에 '이어진' 것만 눈으로 본다. 눈썹은 사이에 피부가 있어
@@ -261,7 +268,10 @@ def build(char, vis=False, size=None):
     # 머리 영역에서 머리카락도 눈도 아니면 전부 피부다. 색 판정이 필요 없다.
     # 턱 아래와 목도 같은 규칙으로 채우되, 목은 좁으므로 폭으로 제한한다
     # (넓히면 셔츠 깃·등판까지 피부가 된다).
-    face_fill = (head | (covered & (t > 0.63) & (xn < 0.28))) & ~hairish & ~eye
+    face_fill = (head                                        # 얼굴·귀
+                 | (covered & (t > 0.70) & (xn < 0.38))      # 턱선 바깥쪽
+                 | (covered & (t > 0.63) & (xn < 0.24))      # 목 (좁게)
+                 ) & ~hairish & ~eye
     code[face_fill] = CODE["skin"]
 
     code[eye] = CODE["eye"]
