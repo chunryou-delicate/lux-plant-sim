@@ -1,0 +1,165 @@
+{
+  "_note": "방 마감재 팔레트 (A미니멀 파스텔). 벽지/바닥재/천장재를 id로 골라 house_rooms.json에 기록. 색은 surfaceMat(color+옅은 결)로 렌더 — 거친 리얼 텍스처 안 씀.",
+  "_use": "house_rooms.rooms.<room>.wall/floor/ceil 에 id를 넣으면 buildHouse가 hex/rough로 변환.",
+  "wall": [
+    {
+      "id": "w_cream",
+      "name_ko": "크림 화이트",
+      "hex": "#f4efe4",
+      "rough": 0.92,
+      "note": "기본. 따뜻한 화이트"
+    },
+    {
+      "id": "w_pure",
+      "name_ko": "퓨어 화이트",
+      "hex": "#f8f8f6",
+      "rough": 0.9,
+      "note": "깔끔·모던"
+    },
+    {
+      "id": "w_mint",
+      "name_ko": "민트",
+      "hex": "#dcece2",
+      "rough": 0.9,
+      "note": "파스텔 민트 벽지"
+    },
+    {
+      "id": "w_sky",
+      "name_ko": "파스텔 블루",
+      "hex": "#dde7f0",
+      "rough": 0.9,
+      "note": "서늘한 파스텔"
+    },
+    {
+      "id": "w_blush",
+      "name_ko": "파스텔 핑크",
+      "hex": "#f0e2e2",
+      "rough": 0.9,
+      "note": "따뜻한 파스텔"
+    },
+    {
+      "id": "w_butter",
+      "name_ko": "버터 옐로",
+      "hex": "#f4ecd8",
+      "rough": 0.9,
+      "note": "햇살 느낌"
+    },
+    {
+      "id": "w_sage",
+      "name_ko": "세이지",
+      "hex": "#e2e6d8",
+      "rough": 0.92,
+      "note": "차분한 그린그레이"
+    },
+    {
+      "id": "w_gray",
+      "name_ko": "연회색",
+      "hex": "#e2e4e6",
+      "rough": 0.92,
+      "note": "중성"
+    },
+    {
+      "id": "w_concrete",
+      "name_ko": "시멘트(반지하)",
+      "hex": "#cdd0d4",
+      "rough": 0.96,
+      "note": "반지하 톤다운(칙칙하지 않게)"
+    },
+    {
+      "id": "w_beige",
+      "name_ko": "베이지",
+      "hex": "#eae0cf",
+      "rough": 0.92,
+      "note": "내추럴"
+    }
+  ],
+  "floor": [
+    {
+      "id": "f_oak",
+      "name_ko": "오크 (원목)",
+      "hex": "#c9974f",
+      "rough": 0.75,
+      "pattern": "plank",
+      "note": "밝은 원목마루. 기본"
+    },
+    {
+      "id": "f_walnut",
+      "name_ko": "월넛 (원목)",
+      "hex": "#8f5c33",
+      "rough": 0.72,
+      "pattern": "plank",
+      "note": "진한 원목마루"
+    },
+    {
+      "id": "f_maple",
+      "name_ko": "메이플 (원목)",
+      "hex": "#ddb87c",
+      "rough": 0.75,
+      "pattern": "plank",
+      "note": "아주 밝은 원목마루"
+    },
+    {
+      "id": "f_ash",
+      "name_ko": "애쉬 그레이 (원목)",
+      "hex": "#b9afa2",
+      "rough": 0.76,
+      "pattern": "plank",
+      "note": "회톤 원목마루"
+    },
+    {
+      "id": "f_tile_w",
+      "name_ko": "화이트 (타일)",
+      "hex": "#eef0ef",
+      "rough": 0.6,
+      "pattern": "tile",
+      "note": "온실·욕실"
+    },
+    {
+      "id": "f_tile_gr",
+      "name_ko": "그레이 (타일)",
+      "hex": "#d3d8da",
+      "rough": 0.62,
+      "pattern": "tile",
+      "note": "모던"
+    },
+    {
+      "id": "f_t2_wood",
+      "name_ko": "우드 (타일2)",
+      "hex": "#d2ad74",
+      "rough": 0.72,
+      "pattern": "tile2",
+      "note": "엇갈린 정사각 블록(우드톤)"
+    },
+    {
+      "id": "f_t2_beige",
+      "name_ko": "베이지 (타일2)",
+      "hex": "#ddcdb0",
+      "rough": 0.7,
+      "pattern": "tile2",
+      "note": "엇갈린 정사각 블록"
+    },
+    {
+      "id": "f_t2_gray",
+      "name_ko": "그레이 (타일2)",
+      "hex": "#cfd3d6",
+      "rough": 0.66,
+      "pattern": "tile2",
+      "note": "엇갈린 정사각 블록(회색)"
+    },
+    {
+      "id": "f_cement",
+      "name_ko": "시멘트(반지하)",
+      "hex": "#c6c7c8",
+      "rough": 0.9,
+      "note": "반지하 바닥(민무늬)"
+    },
+    {
+      "id": "f_carpet",
+      "name_ko": "카펫 베이지",
+      "hex": "#d6c6ae",
+      "rough": 1,
+      "note": "포근(민무늬)"
+    },
+    {
+      "id": "f_pink",
+      "name_ko": "파스텔 핑크"

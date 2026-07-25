@@ -17,6 +17,8 @@ const roomPresets = await fetch('./data/room_presets.json').then(r=>r.json()).ca
 const roomModel = roomPresets.presets[roomPresets.default];
 const houseRooms = await fetch('./data/house_rooms.json').then(r=>r.json()).catch(()=>({rooms:{},default:''}));
 const winPresets = await fetch('./data/window_presets.json').then(r=>r.json()).then(d=>d.presets||d).catch(()=>({}));
+const doorPresets = await fetch('./data/door_presets.json').then(r=>r.json()).then(d=>d.presets||d).catch(()=>({}));
+const finishes   = await fetch('./data/room_finishes.json').then(r=>r.json()).catch(()=>null);
 
 const cv=document.getElementById('cv');
 const ctx=createScene(cv);
@@ -36,7 +38,7 @@ async function buildRoomPreset(name){
   while(houseGroup.children.length) houseGroup.remove(houseGroup.children[0]);
   curRoom=name;
   const roomDef=houseRooms.rooms[name];
-  const built=buildHouse(GRAIN, roomDef, winPresets);
+  const built=buildHouse(GRAIN, roomDef, winPresets, doorPresets, finishes);
   shells=built.shells;
   houseGroup.add(built.room);
   ctx.winPos=built.winPos; ctx.glassMeshes=built.glassMeshes;

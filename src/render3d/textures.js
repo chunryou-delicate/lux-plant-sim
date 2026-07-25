@@ -73,7 +73,7 @@ export function faintGrainTexture(){
     x.fillStyle=`rgb(${n|0},${n|0},${n|0})`; x.fillRect(px,py,2,2);
   }
   const t=new THREE.CanvasTexture(c); t.wrapS=t.wrapT=THREE.RepeatWrapping;
-  t.anisotropy=4; return t;
+  t.anisotropy=4; t.encoding=THREE.sRGBEncoding; return t;
 }
 
 export function loadHouseTextures(base='./assets/house/textures/'){

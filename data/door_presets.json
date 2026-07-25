@@ -1,0 +1,33 @@
+{
+  "_note": "방문 프리셋. 코드 생성(buildDoor) 기준. glass.type이 none이 아니면 문에 유리창이 끼워짐.",
+  "_use": "house_rooms.rooms.<room>.doors[].preset 에 id 지정. w/h·위치(cu)는 방에서 지정.",
+  "presets": {
+    "door_plain_cream": {
+      "name_ko": "기본 문 (크림)", "frameColor": "#f4efe4", "gloss": "satin",
+      "glass": { "type": "none" }, "note": "무광 크림 패널문. 기본." },
+    "door_plain_white": {
+      "name_ko": "기본 문 (화이트)", "frameColor": "#ffffff", "gloss": "satin",
+      "glass": { "type": "none" }, "note": "깔끔한 화이트 문." },
+    "door_wood": {
+      "name_ko": "우드 문", "frameColor": "#c9a36a", "gloss": "satin",
+      "glass": { "type": "none" }, "note": "따뜻한 우드 톤." },
+    "door_darkwood": {
+      "name_ko": "찐우드 문", "frameColor": "#8a5a34", "gloss": "satin",
+      "glass": { "type": "none" }, "note": "진한 원목(현관st)." },
+    "door_mint": {
+      "name_ko": "민트 문", "frameColor": "#bfe3d0", "gloss": "satin",
+      "glass": { "type": "none" }, "note": "파스텔 포인트 문." },
+    "door_glass_frost": {
+      "name_ko": "간유리 문", "frameColor": "#f4efe4", "gloss": "satin",
+      "glass": { "type": "frosted", "transmittance": 0.55, "tintColor": null, "glossy": 0.2 },
+      "note": "상단 간유리 — 복도 빛 살짝 통과." },
+    "door_glass_clear": {
+      "name_ko": "유리 문", "frameColor": "#ffffff", "gloss": "satin",
+      "glass": { "type": "clear", "transmittance": 0.92, "tintColor": null, "glossy": 0.35 },
+      "note": "맑은 유리창 문(베란다·온실)." },
+    "door_steel_charcoal": {
+      "name_ko": "차콜 스틸 문", "frameColor": "#4a4e57", "gloss": "satin",
+      "glass": { "type": "clear", "transmittance": 0.9, "tintColor": null, "glossy": 0.4 },
+      "note": "모던 스틸+유리(로프트st)." }
+  }
+}

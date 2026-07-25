@@ -18,11 +18,11 @@
 ============================================================ */
 import { mat, box, col } from './util.js';
 import { buildWindowFrame, buildDoor, glassMaterial, glassGeometry, frameMaterial,
-         resolveWindowPreset, FRAME_DEFAULTS } from './window_frame.js';
+         resolveWindowPreset, FRAME_DEFAULTS, drawArch } from './window_frame.js';
 
 export const RW=7, RD=7, RH=4;           // 발판 폭·깊이·높이 (프리셋 공통, 엔진 호환)
 const WT=0.2;                            // 벽 두께
-const GRID=1;                            // ★ 1m 모듈 단위
+export const GRID=1;                     // ★ 1m 모듈 단위 (창·문 위치/크기 스냅 기준)
 
 /* ---- A 미니멀 표면 재질: 파스텔 단색 + 옅은 결(grain). 매끈·밝게. ---- */
 function surfaceMat(hex, rough=0.9, grain){
@@ -64,19 +64,11 @@ function rectMinus(a, holes){
   return rects;
 }
 
-/* 벽면을 1m 격자로 쪼갠 뒤 각 셀에서 개구부를 빼 조각 리스트 반환.
-   → 진짜 '1m 모듈' 벽. u:[uMin,uMax], v:[vMin,vMax], openings in (u,v). */
+/* 벽면에서 개구부(창·문)만 도려낸 조각 리스트.
+   ※ 1m 격자로 쪼개면 조각끼리 맞닿은 면에서 z-fighting(점선 이음새)이 생겨서
+      벽은 통면으로 만들고 '1m 모듈'은 개구부 위치·크기 기준으로만 유지한다. */
 function panelRects(uMin,uMax,vMin,vMax, openings){
-  const out=[];
-  for(let u=uMin; u<uMax-1e-6; u+=GRID){
-    const cx1=Math.min(u+GRID,uMax);
-    for(let v=vMin; v<vMax-1e-6; v+=GRID){
-      const cy1=Math.min(v+GRID,vMax);
-      const cell={ x0:u, y0:v, x1:cx1, y1:cy1 };
-      for(const r of rectMinus(cell, openings)) out.push(r);
-    }
-  }
-  return out;
+  return rectMinus({ x0:uMin, y0:vMin, x1:uMax, y1:vMax }, openings);
 }
 
 /* 벽-local (u,v) 조각 → 월드 박스. 벽마다 축 매핑이 다르다. */
@@ -102,10 +94,138 @@ function wallPlacement(wall, cu, cy){
 }
 
 /* ============================================================
+   바닥 마감 텍스처 (원목마루 판/타일 줄눈). 자체 구현 — 외부 모듈 의존 없음.
+   near-white 로 그려서 재질 color(오크·월넛 등)에 곱해짐 = 색은 팔레트가, 결은 여기가.
+============================================================ */
+/* ★ 원목마루: 길쭉한 직사각 판(가로로 긴 널). 2m×2m 기준 = 널폭 0.2m × 길이 1m.
+   결(그레인)이 판 길이 방향으로 흐르고, 행마다 이음새를 엇갈리게(스태거) 배치. */
+function plankTex(){
+  const S=1024, ROWS=10, BH=S/ROWS, PL=S/2;   // BH=널 폭(0.2m), PL=널 길이(1m)
+  const c=document.createElement('canvas'); c.width=c.height=S;
+  const x=c.getContext('2d'); x.fillStyle='#ffffff'; x.fillRect(0,0,S,S);
+  for(let r=0; r<ROWS; r++){
+    const Y=r*BH, off=-(r*PL*0.37)%PL;          // 행마다 다르게 밀어 이음새 엇갈림
+    for(let px=-PL; px<S+PL; px+=PL){
+      const X=px+off, v=234+Math.random()*21;   // 널마다 색 편차
+      x.save(); x.beginPath(); x.rect(X,Y,PL,BH); x.clip();
+      x.fillStyle=`rgb(${v|0},${v|0},${v|0})`; x.fillRect(X,Y,PL,BH);
+      // 나뭇결 — 길이 방향(가로)으로 길게 흐르는 선
+      for(let i=0;i<14;i++){
+        const gy=Y+2+Math.random()*(BH-4);
+        x.strokeStyle=`rgba(172,150,120,${0.10+Math.random()*0.2})`;
+        x.lineWidth=0.7+Math.random()*1.3;
+        x.beginPath(); x.moveTo(X,gy);
+        for(let sx=X; sx<X+PL; sx+=18) x.lineTo(sx, gy+Math.sin(sx*0.012+i*1.7)*1.6);
+        x.stroke();
+      }
+      // 옹이/무늬결 살짝
+      if(Math.random()<0.35){
+        const kx=X+PL*(0.2+Math.random()*0.6), ky=Y+BH*0.5;
+        x.strokeStyle='rgba(165,142,110,.28)'; x.lineWidth=1.1;
+        for(let k=1;k<=3;k++){ x.beginPath(); x.ellipse(kx,ky,k*7,k*3.2,0,0,Math.PI*2); x.stroke(); }
+      }
+      x.restore();
+      // 널 세로 이음새(끝단)
+      x.strokeStyle='rgba(132,112,86,.55)'; x.lineWidth=2;
+      x.beginPath(); x.moveTo(X,Y); x.lineTo(X,Y+BH); x.stroke();
+    }
+    // 널 가로 이음새(행 경계)
+    x.strokeStyle='rgba(132,112,86,.45)'; x.lineWidth=1.8;
+    x.beginPath(); x.moveTo(0,Y); x.lineTo(S,Y); x.stroke();
+  }
+  const t=new THREE.CanvasTexture(c);
+  t.wrapS=t.wrapT=THREE.RepeatWrapping; t.anisotropy=8; t.encoding=THREE.sRGBEncoding; return t;
+}
+
+/* 타일2 = 엇갈린 정사각 블록(예전 '원목'이던 패턴을 타일로 승격) */
+function tile2Tex(){
+  const S=512, PW=S/4, c=document.createElement('canvas'); c.width=c.height=S;
+  const x=c.getContext('2d'); x.fillStyle='#ffffff'; x.fillRect(0,0,S,S);
+  for(let row=0; row<4; row++){
+    const off=(row%2)*(PW/2);                          // 엇갈린 블록 배열
+    for(let px=-PW; px<S+PW; px+=PW){
+      const X=px+off, Y=row*PW, v=236+Math.random()*19;
+      x.fillStyle=`rgb(${v|0},${v|0},${v|0})`; x.fillRect(X,Y,PW,PW);
+      x.strokeStyle='rgba(150,136,116,.55)'; x.lineWidth=2.2;
+      x.strokeRect(X+1,Y+1,PW-2,PW-2);
+    }
+  }
+  const t=new THREE.CanvasTexture(c);
+  t.wrapS=t.wrapT=THREE.RepeatWrapping; t.anisotropy=8; t.encoding=THREE.sRGBEncoding; return t;
+}
+function tileTex(){
+  const S=512, T=S/4, c=document.createElement('canvas'); c.width=c.height=S;
+  const x=c.getContext('2d'); x.fillStyle='#ffffff'; x.fillRect(0,0,S,S);
+  for(let i=0;i<4;i++) for(let j=0;j<4;j++){
+    const v=248+Math.random()*7; x.fillStyle=`rgb(${v|0},${v|0},${v|0})`;
+    x.fillRect(i*T,j*T,T,T);
+    x.strokeStyle='rgba(170,175,180,.55)'; x.lineWidth=2.2; x.strokeRect(i*T+1,j*T+1,T-2,T-2);
+  }
+  const t=new THREE.CanvasTexture(c);
+  t.wrapS=t.wrapT=THREE.RepeatWrapping; t.anisotropy=8; t.encoding=THREE.sRGBEncoding; return t;
+}
+const _finCache={};
+function finishTexture(pattern, meters=7){
+  if(!pattern || pattern==='plain') return null;
+  const key=pattern+'@'+meters;
+  if(_finCache[key]) return _finCache[key];
+  let t=null;
+  if(pattern==='plank'){ t=plankTex(); t.repeat.set(meters/2, meters/2); }        // 널 0.2m×1m (2m 타일)
+  else if(pattern==='tile'){ t=tileTex(); t.repeat.set(meters/1.6, meters/1.6); } // 타일 0.4m
+  else if(pattern==='tile2'){ t=tile2Tex(); t.repeat.set(meters/2, meters/2); }   // 엇갈린 블록 0.5m
+  if(t) _finCache[key]=t;
+  return t;
+}
+
+/* ---- 마감재 id → 색/거칠기 (room_finishes.json). id 없으면 원본 유지 ---- */
+export function applyFinishes(roomDef, finishes){
+  if(!finishes) return roomDef;
+  const pick=(list,id)=>(list||[]).find(x=>x.id===id);
+  const r={ ...roomDef };
+  const w=pick(finishes.wall, roomDef.wall);
+  const f=pick(finishes.floor, roomDef.floor);
+  const c=pick(finishes.ceil, roomDef.ceil);
+  if(w){ r.wallColor=w.hex;  r.wallRough=w.rough; }
+  if(f){ r.floorColor=f.hex; r.floorRough=f.rough; r.floorPattern=f.pattern; }
+  if(c){ r.ceilColor=c.hex; }
+  return r;
+}
+
+/* 창 형태가 사각이 아닌가? (원형·아치·라운드모서리) */
+function isShaped(p){ return p.shape==='circle' || p.shape==='arch' || p.corner==='round'; }
+
+/* ---- ★ 형태 구멍 벽조각(filler) ----
+   1m 모듈 벽은 창 bbox를 통째로 비운다. 그 bbox 자리에 '형태대로 뚫린' 벽조각을 끼워
+   원형/아치 창도 벽이 그 모양으로 뚫리게 한다. (사각 창은 filler 불필요)      */
+function shapedFiller(wall, spec, p, m){
+  const w=spec.w, h=spec.h, ins=(p.FT??0.09)*0.4;   // 프레임이 벽 가장자리를 덮게 살짝 안쪽
+  const outer=new THREE.Shape();
+  outer.moveTo(-w/2,-h/2); outer.lineTo(w/2,-h/2); outer.lineTo(w/2,h/2); outer.lineTo(-w/2,h/2); outer.closePath();
+  const hole=new THREE.Path();
+  if(p.shape==='circle')      hole.absarc(0,0, Math.min(w,h)/2-(p.FT??0.09)*0.55, 0, Math.PI*2, true);
+  else if(p.shape==='arch')   drawArch(hole, w-ins*2, h-ins*2, 0, 0);
+  else {                                            // 라운드 모서리 사각
+    const r=Math.min(w,h)*0.1, x0=-w/2+ins, x1=w/2-ins, y0=-h/2+ins, y1=h/2-ins;
+    hole.moveTo(x0+r,y0); hole.lineTo(x1-r,y0); hole.quadraticCurveTo(x1,y0,x1,y0+r);
+    hole.lineTo(x1,y1-r); hole.quadraticCurveTo(x1,y1,x1-r,y1);
+    hole.lineTo(x0+r,y1); hole.quadraticCurveTo(x0,y1,x0,y1-r);
+    hole.lineTo(x0,y0+r); hole.quadraticCurveTo(x0,y0,x0+r,y0); hole.closePath();
+  }
+  outer.holes.push(hole);
+  const geo=new THREE.ExtrudeGeometry(outer,{ depth:WT, bevelEnabled:false, curveSegments:28 });
+  geo.translate(0,0,-WT/2);
+  const mesh=new THREE.Mesh(geo,m); mesh.castShadow=true; mesh.receiveShadow=true;
+  placeInWall(mesh, wall, spec.cu, spec.cy);
+  return mesh;
+}
+
+/* ============================================================
    메인: 방 조립. async (GLB 로드 대기).
    반환: { room, shells, windows, glassMeshes, winPos }
 ============================================================ */
-export function buildHouse(GRAIN, roomDef, winPresets){
+export function buildHouse(GRAIN, roomDefIn, winPresets, doorPresets={}, finishes=null){
+  // 마감재 id(wall/floor/ceil) → 색·거칠기로 확장 (id 없으면 기존 wallColor 등 그대로)
+  const roomDef=applyFinishes(roomDefIn, finishes);
   const room=new THREE.Group();
   const shells={};              // 컷어웨이 대상(벽·바닥·천장). 유리벽/프레임 제외.
   const glassMeshes=[];         // 하늘색 틴트 갱신 대상
@@ -113,14 +233,12 @@ export function buildHouse(GRAIN, roomDef, winPresets){
 
   const glassWalls = roomDef.glassWalls || [];
 
-  // ---------- 바닥: 1m 타일 격자 ----------
+  // ---------- 바닥: 통판 1장 (조각 이음새 z-fighting 방지). 결/칸은 텍스처로 ----------
   {
-    const floorMat=surfaceMat(roomDef.floorColor, roomDef.floorRough??0.8, GRAIN);
+    const ftex=finishTexture(roomDef.floorPattern, RW) || GRAIN;
+    const floorMat=surfaceMat(roomDef.floorColor, roomDef.floorRough??0.8, ftex);
     const g=new THREE.Group();
-    for(let x=-RW/2; x<RW/2-1e-6; x+=GRID){ const w=Math.min(GRID,RW/2-x);
-      for(let z=-RD/2; z<RD/2-1e-6; z+=GRID){ const d=Math.min(GRID,RD/2-z);
-        g.add(box(w,WT,d, floorMat, x+w/2, -WT/2, z+d/2, false));
-      }}
+    g.add(box(RW,WT,RD, floorMat, 0,-WT/2,0, false));
     g.userData={ normal:[0,-1,0], center:[0,0,0] };
     shells.floor=g; room.add(g);
   }
@@ -136,10 +254,7 @@ export function buildHouse(GRAIN, roomDef, winPresets){
   }else{
     const ceilMat=surfaceMat(roomDef.ceilColor||'#f6f2ea',0.95, GRAIN);
     const g=new THREE.Group();
-    for(let x=-RW/2; x<RW/2-1e-6; x+=GRID){ const w=Math.min(GRID,RW/2-x);
-      for(let z=-RD/2; z<RD/2-1e-6; z+=GRID){ const d=Math.min(GRID,RD/2-z);
-        g.add(box(w,WT,d, ceilMat, x+w/2, RH+WT/2, z+d/2, false));
-      }}
+    g.add(box(RW,WT,RD, ceilMat, 0, RH+WT/2, 0, false));   // 통판(이음새 없음)
     g.userData={ normal:[0,1,0], center:[0,RH,0] };
     shells.ceiling=g; room.add(g);
   }
@@ -171,6 +286,12 @@ export function buildHouse(GRAIN, roomDef, winPresets){
       for(const r of panelRects(uMin,uMax, 0,RH, openings)){
         g.add(panelToBox(wall, r, wmat));
       }
+      // ★ 원형·아치·라운드 창은 bbox 자리에 '형태대로 뚫린' 벽조각을 끼움
+      for(const op of openings){
+        const spec=op.spec; if(spec.module==='door') continue;
+        const p=resolveWindowPreset(spec, winPresets);
+        if(isShaped(p)) g.add(shapedFiller(wall, spec, p, wmat));
+      }
       // 걸레받이(개구부 아닌 바닥 라인만)
       addSkirting(g, wall, uMin, uMax, openings);
     }
@@ -180,11 +301,20 @@ export function buildHouse(GRAIN, roomDef, winPresets){
     for(const op of openings){
       const spec=op.spec;
       if(spec.module==='door'){
-        const door=buildDoor(spec.w, spec.h, {});   // 재질 자체 clone → 컷어웨이 격리
+        // 문 프리셋(doorPresets) + 인라인 병합. 유리문이면 유리 quad도 끼움.
+        const dp={ ...(doorPresets[spec.preset]||{}), ...spec };
+        const door=buildDoor(spec.w, spec.h, { frameColor:dp.frameColor||'#f4efe4', gloss:dp.gloss||'satin' });
         placeInWall(door, wall, spec.cu, spec.h/2);
         g.add(door);                                // 문은 벽과 함께 컷어웨이
+        if(dp.glass && dp.glass.type && dp.glass.type!=='none'){
+          const gm=glassMaterial(dp.glass);
+          if(gm){ const gl=makeGlassPane(wall, spec.cu, spec.h*0.62, spec.w*0.55, spec.h*0.45, gm, 'rect');
+            glassMeshes.push(gl.mesh); g.add(gl.mesh); }
+        }
       }else{
         const p=resolveWindowPreset(spec, winPresets);   // 프리셋 id + 인라인 룩 병합
+        if(spec.color) p.frameColor=spec.color;          // 방에서 프레임 색 오버라이드
+        if(spec.gloss) p.gloss=spec.gloss;
         const frame=buildWindowFrame(spec.w, spec.h, p);
         placeInWall(frame, wall, spec.cu, spec.cy);
         room.add(frame);                            // 창틀은 항상 보이게

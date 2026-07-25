@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>볕 · 방 꾸미기 (마감재·창·문)</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Jua&family=Gaegu:wght@400;700&display=swap');
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{height:100%;overflow:hidden;font-family:'Gaegu',sans-serif;background:#cdd6de;user-select:none;touch-action:none}
+  #c{position:fixed;inset:0;width:100%;height:100%;display:block}
+  .top{position:fixed;top:0;left:300px;right:0;z-index:5;padding:12px 20px;pointer-events:none}
+  .brand{font-family:'Jua';font-size:19px;color:#3a3548;text-shadow:0 1px 6px rgba(255,255,255,.5)}
+  .brand b{color:#e08a2c}
+  .tag{font-weight:700;font-size:12px;color:#4a5058;margin-left:8px}
+  #panel{position:fixed;top:0;left:0;bottom:0;width:286px;z-index:6;overflow-y:auto;
+    background:rgba(250,250,252,.94);backdrop-filter:blur(8px);border-right:1px solid rgba(0,0,0,.08);padding:13px 13px 40px}
+  h2{font-family:'Jua';font-size:16px;color:#3a3548}
+  .grp{margin-top:12px;border-top:1px solid rgba(0,0,0,.08);padding-top:9px}
+  .grp h3{font-family:'Jua';font-size:13px;color:#e08a2c;margin-bottom:6px}
+  .row{display:flex;align-items:center;gap:8px}
+  .row input[type=range]{flex:1}
+  .rlab{font-weight:700;font-size:11.5px;color:#4a5058;min-width:46px;text-align:right}
+  select{width:100%;font-family:'Gaegu';font-weight:700;font-size:12.5px;padding:6px 8px;border:1px solid #d8dce2;border-radius:9px;background:#fff}
+  .sw{display:inline-block;width:13px;height:13px;border-radius:3px;border:1px solid rgba(0,0,0,.2);vertical-align:middle;margin-right:5px}
+  .chips{display:flex;flex-wrap:wrap;gap:5px;margin-top:5px}
+  .chip{border:1px solid #d8dce2;background:#fff;border-radius:8px;padding:3px 7px;font-weight:700;font-size:11px;cursor:pointer;display:flex;align-items:center}
+  .chip.on{border-color:#3a3548;background:#3a3548;color:#fff}
+  .btn{width:100%;margin-top:8px;background:#3a3548;color:#fff;border:none;border-radius:10px;padding:9px;font-family:'Jua';font-size:13px;cursor:pointer}
+  .btn.alt{background:#e08a2c}
+  #out{width:100%;height:150px;margin-top:7px;font-family:ui-monospace,monospace;font-size:10.5px;border:1px solid #d8dce2;border-radius:9px;padding:7px;display:none;background:#fff}
+  #hint{position:fixed;bottom:14px;left:calc(50% + 143px);transform:translateX(-50%);z-index:5;background:rgba(30,30,40,.6);color:#fff;font-weight:700;font-size:13px;padding:6px 14px;border-radius:14px;transition:opacity .8s;pointer-events:none}
+  #err{position:fixed;z-index:9;left:296px;bottom:12px;background:#c0392b;color:#fff;padding:8px 12px;border-radius:8px;display:none;max-width:60%}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div class="top"><span class="brand">볕<b>.</b></span><span class="tag">방 꾸미기 · 드래그=회전 · 휠=줌 · 시점따라 벽 투명(빛은 막힘)</span></div>
+
+<div id="panel">
+  <h2>🏠 방 꾸미기</h2>
+  <div class="grp"><h3>방</h3><select id="room"></select></div>
+  <div class="grp">
+    <h3>☀ 태양 시간</h3>
+    <div class="row"><span>🌅</span><input type="range" id="sun" min="0" max="100" value="55"><span>🌇</span><span class="rlab" id="sunlab">한낮</span></div>
+    <h3 style="margin-top:8px">🔆 밝기</h3>
+    <div class="row"><span>🌑</span><input type="range" id="expo" min="30" max="130" value="85"><span>🌕</span><span class="rlab" id="expolab">0.85</span></div>
+  </div>
+  <div class="grp"><h3>🧱 벽지</h3><select id="fWall"></select></div>
+  <div class="grp"><h3>🪵 바닥재</h3><select id="fFloor"></select></div>
+  <div class="grp"><h3>☁ 천장재</h3><select id="fCeil"></select></div>
+  <div class="grp">
+    <h3>🪟 창 종류</h3><select id="win"></select>
+    <h3 style="margin-top:8px">창틀 색</h3><div class="chips" id="winCols"></div>
+    <div class="row" style="margin-top:7px"><span class="rlab">폭</span><input type="range" id="winW" min="80" max="500" value="260"><span class="rlab" id="winWlab">2.6m</span></div>
+    <div class="row"><span class="rlab">높이</span><input type="range" id="winH" min="60" max="330" value="240"><span class="rlab" id="winHlab">2.4m</span></div>
+    <div class="row"><span class="rlab">중심높이</span><input type="range" id="winY" min="60" max="360" value="220"><span class="rlab" id="winYlab">2.2m</span></div>
+  </div>
+  <div class="grp"><h3>🚪 방문</h3><select id="door"></select></div>
+  <div class="grp">
+    <button class="btn" id="copy">이 설정 JSON 복사</button>
+    <button class="btn alt" id="save">house_rooms.json용 보기</button>
+    <textarea id="out" readonly></textarea>
+  </div>
+</div>
+<div id="hint">벽지·바닥·창·문을 고르면 즉시 반영됩니다</div>
+<div id="err"></div>
+
+<script type="module">
+/* ★ 개발용 페이지: 모듈을 매번 새로 받게(캐시된 옛 버전 때문에 화면이 비는 것 방지) */
+const V='?v='+Date.now();
+const showErr=m=>{const e=document.getElementById('err');e.textContent=m;e.style.display='block';};
+window.addEventListener('error',e=>showErr('오류: '+e.message));
+window.addEventListener('unhandledrejection',e=>showErr('로드 오류: '+(e.reason&&e.reason.message||e.reason)));
+
+let buildHouse, updateShellVisibility, faintGrainTexture, RW, RD, RH;
+try{
+  const H=await import('../../src/render3d/house.js'+V);
+  const T=await import('../../src/render3d/textures.js'+V);
+  ({ buildHouse, updateShellVisibility, RW, RD, RH }=H);
+  ({ faintGrainTexture }=T);
+}catch(e){ showErr('모듈 로드 실패: '+e.message); throw e; }
+
+const canvas=document.getElementById('c');
+const renderer=new THREE.WebGLRenderer({canvas,antialias:true});
+renderer.setPixelRatio(Math.min(2,window.devicePixelRatio||1));
+renderer.shadowMap.enabled=true; renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+renderer.outputEncoding=THREE.sRGBEncoding;
+renderer.toneMapping=THREE.ACESFilmicToneMapping; renderer.toneMappingExposure=0.85;
+
+const scene=new THREE.Scene();
+const hemi=new THREE.HemisphereLight(0xcdddf0,0x6a6458,0.35); scene.add(hemi);
+const amb=new THREE.AmbientLight(0xffffff,0.05); scene.add(amb);
+const sun=new THREE.DirectionalLight(0xfff2d8,2.2); sun.castShadow=true;
+sun.shadow.mapSize.set(2048,2048); sun.shadow.radius=5; sun.shadow.bias=-0.0004;
+const sd=12; sun.shadow.camera.left=-sd;sun.shadow.camera.right=sd;sun.shadow.camera.top=sd;sun.shadow.camera.bottom=-sd;sun.shadow.camera.far=60;
+scene.add(sun,sun.target);
+function envTex(){const c=document.createElement('canvas');c.width=32;c.height=96;const x=c.getContext('2d');
+  const g=x.createLinearGradient(0,0,0,96);g.addColorStop(0,'#eef6ff');g.addColorStop(.5,'#cfe0f0');g.addColorStop(1,'#aeb5bd');
+  x.fillStyle=g;x.fillRect(0,0,32,96);const t=new THREE.CanvasTexture(c);t.mapping=THREE.EquirectangularReflectionMapping;return t;}
+try{const p=new THREE.PMREMGenerator(renderer);scene.environment=p.fromEquirectangular(envTex()).texture;}catch(e){}
+
+const cam=new THREE.PerspectiveCamera(38,innerWidth/innerHeight,0.1,200);
+const GRAIN=faintGrainTexture();
+let ROOMS,FIN,WP,DP, roomKey, shells=null;
+const holder=new THREE.Group(); scene.add(holder);
+let cur=null;   // 현재 편집중 roomDef(복제본)
+
+function opt(list,val,fmt){ return list.map(o=>`<option value="${o.id}" ${o.id===val?'selected':''}>${fmt(o)}</option>`).join(''); }
+
+function rebuild(){
+  while(holder.children.length) holder.remove(holder.children[0]);
+  const built=buildHouse(GRAIN, cur, WP, DP, FIN);
+  shells=built.shells; holder.add(built.room);
+  updateCam();
+}
+
+// ---- 태양 ----
+function mix(a,b,t){return new THREE.Color(a).lerp(new THREE.Color(b),t);}
+function updateSun(t){
+  const day=t/100,noon=1-Math.abs(day-0.5)*2,el=0.14+noon*1.1,az=(day-0.5)*1.7,warm=1-noon,D=24,ce=Math.cos(el);
+  sun.position.set(Math.sin(az)*ce*D, Math.sin(el)*D+2, -(ce*D*0.5+RD*0.6));
+  sun.target.position.set(0,0.2,RD*0.2); sun.target.updateMatrixWorld();
+  // 마감재 '색'을 제대로 보려면 과노출 금지 — 합산 조도가 1을 크게 넘지 않게
+  sun.color.copy(mix('#fff3e0','#ff9540',warm*0.85)); sun.intensity=0.45+noon*0.62;
+  hemi.intensity=0.10+noon*0.18; hemi.color.copy(mix('#c6d8ec','#e6c49c',warm*0.5));
+  amb.intensity=0.02+noon*0.04;
+  const bg=mix('#cdd9e6',mix('#e7c7a2','#4e4a5c',day>0.5?0.5:0),warm*0.55);
+  scene.background=bg;
+  document.getElementById('sunlab').textContent=day<0.28?'아침':day<0.42?'오전':day<0.58?'한낮':day<0.75?'오후':'저녁';
+}
+
+// ---- 카메라 ----
+let yaw=0.62,pitch=0.34,dist=13;
+function updateCam(){
+  pitch=Math.max(-0.2,Math.min(1.1,pitch)); dist=Math.max(5,Math.min(28,dist));
+  const cp=Math.cos(pitch);
+  cam.position.set(Math.sin(yaw)*cp*dist, 1.7+Math.sin(pitch)*dist, Math.cos(yaw)*cp*dist);
+  cam.lookAt(0,1.5,0);
+  if(shells) updateShellVisibility(shells,cam);
+}
+let drag=false,px=0,py=0;
+canvas.addEventListener('pointerdown',e=>{drag=true;px=e.clientX;py=e.clientY;const h=document.getElementById('hint');if(h)h.style.opacity='0';});
+addEventListener('pointermove',e=>{if(!drag)return;yaw+=(e.clientX-px)*0.006;pitch+=(e.clientY-py)*0.005;px=e.clientX;py=e.clientY;updateCam();});
+addEventListener('pointerup',()=>drag=false);
+canvas.addEventListener('wheel',e=>{e.preventDefault();dist*=(1+Math.sign(e.deltaY)*0.1);updateCam();},{passive:false});
+function resize(){renderer.setSize(innerWidth,innerHeight);cam.aspect=innerWidth/innerHeight;cam.updateProjectionMatrix();}
+addEventListener('resize',resize);
+
+// ---- 패널 ----
+function fillPanel(){
+  const r=document.getElementById('room');
+  r.innerHTML=Object.entries(ROOMS.rooms).map(([k,v])=>`<option value="${k}" ${k===roomKey?'selected':''}>${v.label}${v.done?' ✅':''}</option>`).join('');
+  r.onchange=()=>{ roomKey=r.value; loadRoom(); };
+  const nm=o=>`${o.name_ko}`;
+  document.getElementById('fWall').innerHTML=opt(FIN.wall,cur.wall,nm);
+  document.getElementById('fFloor').innerHTML=opt(FIN.floor,cur.floor,nm);
+  document.getElementById('fCeil').innerHTML=opt(FIN.ceil,cur.ceil,nm);
+  document.getElementById('fWall').onchange=e=>{cur.wall=e.target.value;rebuild();};
+  document.getElementById('fFloor').onchange=e=>{cur.floor=e.target.value;rebuild();};
+  document.getElementById('fCeil').onchange=e=>{cur.ceil=e.target.value;rebuild();};
+  // 창
+  const w0=cur.windows&&cur.windows[0];
+  const ws=document.getElementById('win');
+  ws.innerHTML=Object.entries(WP).filter(([k])=>!k.startsWith('_'))
+    .map(([k,v])=>`<option value="${k}" ${w0&&k===w0.preset?'selected':''}>${v.room||k} · ${k.replace('win_','')}</option>`).join('');
+  ws.onchange=e=>{ if(w0){w0.preset=e.target.value; rebuild();} };
+  // 창틀 색
+  const cw=document.getElementById('winCols');
+  cw.innerHTML=COLORS.map(c=>`<span class="chip${w0&&w0.color===c.hex?' on':''}" data-h="${c.hex}" data-g="${c.gloss}"><span class="sw" style="background:${c.hex}"></span>${c.name_ko}</span>`).join('');
+  cw.querySelectorAll('.chip').forEach(ch=>ch.onclick=()=>{
+    if(!w0)return; w0.color=ch.dataset.h; w0.gloss=ch.dataset.g;
+    cw.querySelectorAll('.chip').forEach(x=>x.classList.toggle('on',x===ch)); rebuild(); });
+  // 창 크기
+  const bind=(id,lab,get,set,fmt)=>{const el=document.getElementById(id);el.value=get()*100;
+    document.getElementById(lab).textContent=fmt(get());
+    el.oninput=()=>{set(+el.value/100);document.getElementById(lab).textContent=fmt(+el.value/100);rebuild();};};
+  if(w0){
+    bind('winW','winWlab',()=>w0.w,v=>w0.w=v,v=>v.toFixed(2)+'m');
+    bind('winH','winHlab',()=>w0.h,v=>w0.h=v,v=>v.toFixed(2)+'m');
+    bind('winY','winYlab',()=>w0.cy,v=>w0.cy=v,v=>v.toFixed(2)+'m');
+  }
+  // 문
+  const d0=cur.doors&&cur.doors[0];
+  const ds=document.getElementById('door');
+  ds.innerHTML=Object.entries(DP).filter(([k])=>!k.startsWith('_'))
+    .map(([k,v])=>`<option value="${k}" ${d0&&k===d0.preset?'selected':''}>${v.name_ko||k}</option>`).join('');
+  ds.onchange=e=>{ if(d0){d0.preset=e.target.value; rebuild();} };
+}
+function loadRoom(){
+  cur=JSON.parse(JSON.stringify(ROOMS.rooms[roomKey]));
+  fillPanel(); rebuild();
+}
+
+let COLORS=[];
+(async()=>{
+  const [rooms,fin,wp,dp,fc]=await Promise.all([
+    fetch('../../data/house_rooms.json'+V).then(r=>r.json()),
+    fetch('../../data/room_finishes.json'+V).then(r=>r.json()),
+    fetch('../../data/window_presets.json'+V).then(r=>r.json()).then(d=>d.presets||d),
+    fetch('../../data/door_presets.json'+V).then(r=>r.json()).then(d=>d.presets||d),
+    fetch('../../data/frame_colors.json'+V).then(r=>r.json())
+  ]).catch(e=>{showErr('데이터 로드 실패: '+e.message);throw e;});
+  ROOMS=rooms;FIN=fin;WP=wp;DP=dp;COLORS=fc.colors;
+  roomKey=ROOMS.default||Object.keys(ROOMS.rooms)[0];
+  loadRoom(); resize(); updateSun(55);
+  document.getElementById('sun').oninput=e=>updateSun(+e.target.value);
+  const ex=document.getElementById('expo');
+  ex.oninput=e=>{const v=+e.target.value/100;renderer.toneMappingExposure=v;document.getElementById('expolab').textContent=v.toFixed(2);};
+  const dump=()=>JSON.stringify({[roomKey]:cur},null,2);
+  document.getElementById('save').onclick=()=>{const o=document.getElementById('out');o.style.display='block';o.value=dump();};
+  document.getElementById('copy').onclick=async()=>{try{await navigator.clipboard.writeText(dump());
+    const b=document.getElementById('copy');b.textContent='복사됨 ✓';setTimeout(()=>b.textContent='이 설정 JSON 복사',1500);}catch(e){showErr('복사 실패 — 아래 버튼으로 보기');}};
+  function loop(){requestAnimationFrame(loop);renderer.render(scene,cam);}
+  loop();
+  setTimeout(()=>{const h=document.getElementById('hint');if(h)h.style.opacity='0';},7000);
+})();
+</script>
+</body>
+</html>
