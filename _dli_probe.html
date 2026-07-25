@@ -1,0 +1,67 @@
+<!doctype html><meta charset="utf-8"><title>DLI 실측</title>
+<body style="background:#111;color:#ddd;font:12px/1.6 monospace;padding:16px">
+<pre id="out">측정 중…</pre>
+<script src="https://unpkg.com/three@0.128.0/build/three.min.js"></script>
+<script type="module">
+/* 게임과 똑같은 경로로 방을 조립해 '실제 슬롯 좌표 + 실제 차폐체'로 DLI를 잰다.
+   자유공간 탐색이 아니라 진짜 화분 놓을 자리 기준. 결과는 <pre>에 마크다운으로. */
+import { buildHouse } from './src/render3d/house.js';
+import { winFromHouse, WEATHER, SEASON, skyEvMax } from './src/engine/daylight_lux.js';
+import { daylightRatio, daylightDLI, judgeDLI, dayLengthHours } from './src/engine/daily_light.js';
+
+const J = p => fetch(p).then(r=>r.json());
+const [houseRooms, winPresets, doorPresets, finishes, furnPresets, lightPresets, TH] = await Promise.all([
+  J('./data/house_rooms.json'), J('./data/window_presets.json'), J('./data/door_presets.json'),
+  J('./data/room_finishes.json'), J('./data/furniture_presets.json'), J('./data/lighting_presets.json'),
+  J('./data/light_thresholds.json')
+]);
+const wp = winPresets.presets||winPresets, dp = doorPresets.presets||doorPresets, fp = furnPresets.presets||furnPresets;
+
+const NAMES = { banjiha:'반지하', oneroom:'원룸', tworoom:'투룸', apartment:'아파트', greenhouse:'온실', classroom:'학원교실' };
+const CASES = [['clear','summer'],['cloudy','summer'],['rain','summer'],['clear','winter'],['cloudy','winter']];
+const L = [];
+
+// 방마다 최고 슬롯 1개를 고른다(차폐 ON, 자기 가구는 자가차폐 제외)
+const rooms = {};
+for (const key of Object.keys(NAMES)) {
+  const def = houseRooms.rooms[key];
+  if (!def) { L.push('· 방 없음: '+key); continue; }
+  let built;
+  try { built = buildHouse(null, def, wp, dp, finishes, fp, lightPresets); }
+  catch(e){ L.push('· 조립 실패 '+key+': '+e.message); continue; }
+  const size = built.size;
+  const wins = (def.windows||[]).map(w=>winFromHouse(w.wall,w.cu,w.cy,w.w,w.h,size,0.8)).filter(Boolean);
+  const slots = built.plantSlots||[];
+  if (!wins.length || !slots.length) { L.push('· '+NAMES[key]+': 창 '+wins.length+' 슬롯 '+slots.length+' → 건너뜀'); continue; }
+  let best=null;
+  for (const s of slots) {
+    const p = s.point || {x:s.x,y:s.y,z:s.z};
+    const r = daylightRatio(p, {x:0,y:1,z:0}, wins, { occluders: built.occluders, selfIdx: s.occIdx });
+    if (!best || r > best.r) best = { r, p, s };
+  }
+  // 창까지 수평 거리
+  const d = Math.min(...wins.map(w=>Math.hypot(best.p.x-w.cx, best.p.z-w.cz)));
+  rooms[key] = { best, wins, slots:slots.length, occ:(built.occluders||[]).length, dist:d, size };
+}
+
+L.push('## 방 조립 결과');
+L.push('| 방 | 크기 | 슬롯 | 차폐체 | 최고슬롯 높이 | 창거리 |');
+L.push('|---|---|---|---|---|---|');
+for (const k of Object.keys(rooms)) { const r=rooms[k];
+  L.push(`| ${NAMES[k]} | ${r.size.w}×${r.size.d}m | ${r.slots} | ${r.occ} | ${r.best.p.y.toFixed(2)}m | ${r.dist.toFixed(2)}m |`); }
+
+for (const [w,s] of CASES) {
+  L.push('');
+  L.push(`## ${WEATHER[w].ko} · ${SEASON[s].ko} — 천공 ${Math.round(skyEvMax({weather:w,season:s}))} lx · 낮 ${dayLengthHours(s)}h`);
+  L.push('| 방 | 한낮 lx | DLI | 몬스테라 | 산세 |');
+  L.push('|---|---|---|---|---|');
+  for (const k of Object.keys(rooms)) { const r=rooms[k];
+    const dli = daylightDLI(r.best.r, {weather:w, season:s});
+    const lx = Math.round(r.best.r * skyEvMax({weather:w,season:s}));
+    const m = judgeDLI(dli, TH.plants.monstera_deliciosa), sa = judgeDLI(dli, TH.plants.sansevieria);
+    L.push(`| ${NAMES[k]} | ${lx} | **${dli.toFixed(2)}** | ${m.ko}${m.fenestrating?'·갈라짐':''} | ${sa.ko} |`);
+  }
+}
+document.getElementById('out').textContent = L.join('\n');
+document.title = 'DONE';
+</script>

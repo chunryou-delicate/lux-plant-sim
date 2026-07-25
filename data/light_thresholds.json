@@ -1,0 +1,64 @@
+{
+  "_doc": [
+    "게임 판정 구간(DLI 밴드). data/plants.json은 출처 기반 식물 DB라 건드리지 않고,",
+    "그 위에 얹는 '게임 규칙' 레이어다. plants.json의 dli:[min,max]와 충돌하면",
+    "여기 값이 아니라 plants.json이 사실이고, 여기는 그걸 놀이로 번역한 것.",
+    "단위 DLI = mol/m2/day.",
+    "임계값은 전부 '이 값 이상이어야 그 상태'인 하한이다.",
+    "  die 미만      : 고사",
+    "  die~survive   : 쇠약 (버티지만 서서히 상함)",
+    "  survive~min   : 정체 (죽진 않는데 새 잎이 안 남)  ← 반지하 산세",
+    "  min~best_lo   : 느린 성장",
+    "  best_lo~hi    : 최적",
+    "  best_hi~max   : 성장",
+    "  max 초과      : 과광 (잎 탐·황변)",
+    "  fenestrate    : 이 이상이어야 잎 갈라짐 시작 (몬스테라 전용, 없으면 null)"
+  ],
+  "version": 1,
+  "default": {
+    "die": 0.5, "survive": 1.0, "min": 2.0,
+    "fenestrate": null, "best_lo": 4.0, "best_hi": 10.0, "max": 18.0
+  },
+  "plants": {
+    "sansevieria": {
+      "ko": "산세베리아",
+      "die": 0.3, "survive": 0.5, "min": 1.5,
+      "fenestrate": null, "best_lo": 3.0, "best_hi": 6.0, "max": 12.0,
+      "note": "저광 내성종. 어두운 곳에서 '죽진 않는데 안 자라는' 상태가 실제로 길게 유지된다. 반지하(0.6대)가 survive~min 사이 = 정체 구간."
+    },
+    "monstera_deliciosa": {
+      "ko": "몬스테라 델리시오사",
+      "die": 0.5, "survive": 1.2, "min": 3.0,
+      "fenestrate": 6.0, "best_lo": 5.0, "best_hi": 11.0, "max": 16.0,
+      "note": "plants.json dli [5,10.8]을 best 대역으로 채택. 갈라짐은 best 안쪽 6.0부터 — 잘 크는 것과 갈라지는 건 별개. 반지하(맑음여름 0.80)는 쇠약 구간이라 즉사가 아니라 서서히 상한다."
+    },
+    "monstera_adansonii": {
+      "ko": "몬스테라 아단소니",
+      "die": 0.6, "survive": 1.2, "min": 2.5,
+      "fenestrate": 5.0, "best_lo": 4.0, "best_hi": 9.0, "max": 14.0,
+      "note": "plants.json dli [4,9]."
+    }
+  },
+  "photoperiod": {
+    "_doc": [
+      "광주기 판정. 24시간 연속 점등은 DLI만 보면 유리해 보이지만 실제로는 해롭다.",
+      "암기에 당 전류·호흡·조직 복구가 일어나고, 일주기가 깨지면 성장률이 떨어진다.",
+      "('암반응'은 어둠에서 도는 게 아니라 낮에도 돈다 — 밤에 켜두면 더 자란다는 건 오해)"
+    ],
+    "bands": {
+      "photo12": { "hours_lo": 10, "hours_hi": 14, "growth_mult": 1.00, "ko": "정상" },
+      "photo16": { "hours_lo": 14, "hours_hi": 18, "growth_mult": 0.92, "ko": "수확체감" },
+      "photo20": { "hours_lo": 18, "hours_hi": 22, "growth_mult": 0.80, "ko": "과다" },
+      "always":  { "hours_lo": 22, "hours_hi": 24, "growth_mult": 0.65, "ko": "연속점등" }
+    },
+    "continuous": {
+      "trigger_hours": 22,
+      "growth_mult": 0.65,
+      "chlorosis_per_day": 0.04,
+      "energy_mult_vs_12h": 2.0,
+      "ko": "연속점등 페널티",
+      "note": "chlorosis_per_day = 하루당 누적되는 잎 황변 진행도(0~1). 생장 창이 누적·판정한다."
+    },
+    "dark_min_hours": 2
+  }
+}

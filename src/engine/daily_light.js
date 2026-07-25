@@ -1,0 +1,193 @@
+/* ============================================================
+   engine/daily_light.js — 하루치 빛 → 생장 창으로 넘기는 계약 객체
+   ------------------------------------------------------------
+   책임 경계 (중요)
+     이 창(집·방/조도) : 그날 하루의 '물리량'까지만 만든다. 상태를 갖지 않는다.
+     생장 창           : 이 객체를 하루 1회 받아 누적 판정한다.
+                         (며칠 연속 부족 → 시듦/고사, 황변 누적, 세이브/로드)
+     → 여기서 '식물이 어떻게 됐는지'는 절대 결정하지 않는다. 밴드 이름만 붙여 넘긴다.
+
+   단위
+     lx  조도            PPFD µmol/m2/s          DLI mol/m2/day
+     lx → PPFD 는 태양광 기준 0.0185 (Apogee). tool.html과 같은 계수.
+
+   THREE·DOM 없음. 전부 인자로 받는다.
+============================================================ */
+import { skyEvMax, daylightAt, pointIllum,
+         WEATHER, SEASON, REGION } from './daylight_lux.js';
+
+export const LX_TO_PPFD = 0.0185;          // 태양광. 식물등은 기구별 스펙을 쓴다.
+
+/* ============================================================
+   1. DLI 적분
+      조도 비율(기하학적, 시간 무관) × 그날 천공 정점 × 낮 길이.
+============================================================ */
+
+/* 천공 조도 1 lx당 그 지점이 받는 조도 비율. 하루 종일 변하지 않는(기하학적) 값. */
+export function daylightRatio(p, n, wins, opt = {}) {
+  const probe = 10000;
+  return daylightAt(p, n, wins, { ...opt, sky: probe }) / probe;
+}
+
+/* 자연광 DLI. ratio는 위 daylightRatio 결과(재사용하면 적분이 공짜다).
+
+   렌더용 sun 슬라이더(skyEv의 t=12~88 = 18.2h)는 '보기 좋은 하루'라 실제 낮보다 길다.
+   DLI는 물리량이므로 슬라이더가 아니라 계절별 실제 낮 길이로 적분한다.
+   하루 밝기를 sin 반주기로 보면 평균/정점 = 2/π 이므로 적분이 닫힌 형태로 떨어진다. */
+export function daylightDLI(ratio, opt = {}) {
+  const hours = opt.dayHours ?? dayLengthHours(opt.season);
+  const peakPPFD = skyEvMax(opt) * ratio * LX_TO_PPFD;   // 한낮 정점 µmol/m2/s
+  return peakPPFD * (2 / Math.PI) * hours * 3600 / 1e6;
+}
+
+/* 식물등 DLI. ppfd는 그 지점의 기구 합산 PPFD, hours는 점등 시간. */
+export function lampDLI(ppfd, hours) {
+  return (ppfd || 0) * (hours || 0) * 3600 / 1e6;
+}
+
+/* 계절별 낮 길이 [h]. 서울 기준(하지 14.5 / 동지 9.8). */
+export function dayLengthHours(season) {
+  return (SEASON[season] || SEASON.summer).hours;
+}
+
+/* ============================================================
+   2. 밴드 판정 — 이름만 붙인다. 결과(죽음/성장)는 생장 창이 정한다.
+============================================================ */
+/* 임계값은 전부 '이 값 이상이어야 그 상태' 라는 하한이다.
+     die     미만 : 고사
+     die~survive : 쇠약 — 버티지만 서서히 상함(계속되면 죽음)
+     survive~min : 정체 — 죽진 않는데 새 잎이 안 남   ← 반지하 산세가 여기
+     min~best_lo : 느린 성장
+     best_lo~hi  : 최적
+     best_hi~max : 성장(최적보단 못함)
+     max 초과    : 과광 — 잎 탐·황변 */
+export const BANDS = ['die', 'weak', 'survive', 'slow', 'best', 'good', 'over'];
+
+export const BAND_KO = {
+  die: '고사', weak: '쇠약', survive: '정체', slow: '느림',
+  best: '최적', good: '성장', over: '과광', unknown: '미정'
+};
+
+export function judgeDLI(dli, th) {
+  if (!th) return { band: 'unknown', ko: '미정', fenestrating: false };
+  let band;
+  if      (dli <  th.die)      band = 'die';
+  else if (dli <  th.survive)  band = 'weak';
+  else if (dli <  th.min)      band = 'survive';
+  else if (dli <  th.best_lo)  band = 'slow';
+  else if (dli <= th.best_hi)  band = 'best';
+  else if (dli <= th.max)      band = 'good';
+  else                         band = 'over';
+  return {
+    band,
+    fenestrating: th.fenestrate != null && dli >= th.fenestrate,
+    ko: BAND_KO[band]
+  };
+}
+
+export function thresholdsFor(TH, plantId) {
+  if (!TH) return null;
+  const p = TH.plants || {};
+  if (p[plantId]) return p[plantId];
+  // sansevieria_rare 처럼 접미사가 붙은 id → 접두 일치 허용
+  for (const k of Object.keys(p)) if (plantId && plantId.startsWith(k)) return p[k];
+  return TH.default || null;
+}
+
+/* ============================================================
+   3. 광주기 — 연속점등 페널티
+      24h 점등은 DLI만 보면 유리하지만 성장률이 떨어지고 잎이 황변한다.
+      여기서는 '판정 재료'만 만든다. 누적은 생장 창 몫.
+============================================================ */
+export function photoperiod(hours, PH) {
+  const h = Math.max(0, Math.min(24, hours || 0));
+  const cfg = (PH && PH.continuous) || {};
+  const bands = (PH && PH.bands) || {};
+  let name = 'photo12', mult = 1;
+  for (const [k, b] of Object.entries(bands)) {
+    if (h >= b.hours_lo && h < b.hours_hi) { name = k; mult = b.growth_mult; }
+  }
+  if (h >= (bands.always ? bands.always.hours_lo : 22)) { name = 'always'; mult = bands.always ? bands.always.growth_mult : 0.65; }
+
+  const continuous = h >= (cfg.trigger_hours ?? 22);
+  return {
+    hours: +h.toFixed(1),
+    band: name,
+    dark_hours: +(24 - h).toFixed(1),
+    growth_mult: mult,
+    /* ★ continuous_penalty — 생장 창이 이걸 보고 판정한다. 걸리지 않으면 null. */
+    continuous_penalty: continuous ? {
+      growth_mult: cfg.growth_mult ?? 0.65,
+      chlorosis_per_day: cfg.chlorosis_per_day ?? 0.04,
+      energy_mult: cfg.energy_mult_vs_12h ?? 2.0,
+      reason: '연속점등 — 암기 부족(당 전류·호흡·조직 복구 저해, 일주기 교란)'
+    } : null
+  };
+}
+
+/* ============================================================
+   4. ★ 계약 객체 — 하루 1회 생성해서 생장 창으로 넘긴다
+      slots: [{ id, plantId, ppfd(식물등), point:{x,y,z}, normal, occIdx }]
+============================================================ */
+export function buildDailyLight(day, slots, wins, ctx = {}) {
+  const {
+    weather = 'clear', season = 'summer', region = 'default',
+    clearSkyMax, occluders = null, lums = null,
+    litHours = 12, tariffWonPerKwh = 0, lampWatts = 0,
+    thresholds = null
+  } = ctx;
+
+  const skyOpt = { weather, season, region, clearSkyMax, occluders };
+  const evMax = skyEvMax(skyOpt);
+  const PH = thresholds && thresholds.photoperiod;
+  const photo = photoperiod(litHours, PH);
+
+  const up = { x: 0, y: 1, z: 0 };
+  const out = (slots || []).map(s => {
+    const p = s.point || { x: s.x || 0, y: s.y || 0, z: s.z || 0 };
+    const n = s.normal || up;
+    const o = { ...skyOpt, selfIdx: s.occIdx };
+    const ratio = daylightRatio(p, n, wins, o);
+    const dliDay = daylightDLI(ratio, { ...skyOpt, selfIdx: s.occIdx });
+    const ppfdLamp = s.ppfd != null ? s.ppfd
+                   : (lums && lums.length ? pointIllum(p, n, lums, o) * LX_TO_PPFD : 0);
+    const dliLamp = lampDLI(ppfdLamp, litHours);
+    const dli = dliDay + dliLamp;
+    const th = thresholdsFor(thresholds, s.plantId);
+    return {
+      id: s.id, plantId: s.plantId || null,
+      point: p,
+      peak_lx: Math.round(ratio * evMax),
+      dli: +dli.toFixed(2),
+      dli_daylight: +dliDay.toFixed(2),
+      dli_lamp: +dliLamp.toFixed(2),
+      ...judgeDLI(dli, th)
+    };
+  });
+
+  const kwh = lampWatts / 1000 * litHours;
+  return {
+    schema: 'daily_light/1',
+    day: day ?? null,
+    /* ── 환경. 지금 값이 있는 건 sky뿐. 나머지는 자리만(B-1 확장 축) ── */
+    sky: {
+      evMax: Math.round(evMax),
+      weather, weather_ko: (WEATHER[weather] || {}).ko || weather,
+      season,  season_ko:  (SEASON [season ] || {}).ko || season,
+      region,  region_k:   (REGION [region ] || REGION.default).k,
+      day_hours: dayLengthHours(season)
+    },
+    temp: null,               // ← 표준 난이도에서 채움
+    humidity: null,           // ← 심화
+    weatherPattern: null,     // ← 실전(지역 날씨 패턴)
+    /* ── 광주기 ── */
+    photoperiod: photo,
+    continuous_penalty: photo.continuous_penalty,   // 최상위에도 노출(계약 필드)
+    /* ── 비용 ── */
+    energy: { watts: lampWatts, hours: litHours, kwh: +kwh.toFixed(3),
+              won: Math.round(kwh * tariffWonPerKwh) },
+    /* ── 슬롯별 결과 ── */
+    slots: out,
+    best: out.reduce((a, b) => (!a || b.dli > a.dli) ? b : a, null)
+  };
+}

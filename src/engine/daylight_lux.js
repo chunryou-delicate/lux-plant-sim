@@ -245,13 +245,47 @@ export function luxGrid(wins, size, opt = {}) {
       태양 고도에 따른 대략적 실외 천공 조도. 밤엔 0.
       t: 0~100 (기존 sunState와 같은 축)
 ============================================================ */
+/* 맑은 날 창면(연직) 천공 조도 기준값 [lx].
+   실측: 맑은 날 확산광만 20,000~30,000 / 흐린 날 3,000~8,000 / 직사광 유입 시 50,000+.
+   이 모델은 확산 천공광만 다루므로(직사 빔 없음) 25,000이 '맑은 날' 상당.
+   ※ 12,000이던 값은 흐린 날 수준이라 모든 방이 재배 불가로 나왔음(DLI 실측으로 확인).
+   ※ tool.html은 이 함수를 쓰지 않는다 — 자기 UI 입력(S.sky, 기본 8000)을 직접 넘긴다. */
+export const CLEAR_SKY_MAX = 25000;
+
+/* 날씨 계수 — 맑은 날 대비 창면 천공 조도 배율 */
+export const WEATHER = {
+  clear:    { k: 1.00, ko: '맑음' },
+  cloudy:   { k: 0.25, ko: '흐림' },
+  rain:     { k: 0.12, ko: '비' }
+};
+
+/* 계절 — 두 가지가 따로 작용한다. 둘을 곱해야 실제 겨울이 나온다.
+     k     세기: 태양 고도·대기 경로 차이 (한낮 밝기)
+     hours 낮 길이 [h]: 서울 기준 하지 14.5 / 동지 9.8
+   → 겨울 총량은 0.55 × 9.8/14.5 = 여름의 약 37%. */
+export const SEASON = {
+  summer: { k: 1.00, hours: 14.5, ko: '여름' },
+  spring: { k: 0.85, hours: 12.7, ko: '봄'   },
+  autumn: { k: 0.80, hours: 11.8, ko: '가을' },
+  winter: { k: 0.55, hours:  9.8, ko: '겨울' }
+};
+
+/* 지역 계수 — 지금은 전부 1.0(자리만). 국내 연간 일조시간 차는 최대 37%,
+   서울 기준 ±5%라 계절(45%)·날씨(75%)보다 작아 우선순위 낮음. */
+export const REGION = { default: { k: 1.00, ko: '기본' } };
+
+/* 그날의 천공 조도 상한 = 맑은날 × 날씨 × 계절 × 지역 */
+export function skyEvMax(opt = {}) {
+  const base   = opt.clearSkyMax ?? CLEAR_SKY_MAX;
+  const kW = (WEATHER[opt.weather] || WEATHER.clear).k;
+  const kS = (SEASON [opt.season ] || SEASON .summer).k;
+  const kR = (REGION [opt.region ] || REGION .default).k;
+  return base * kW * kS * kR;
+}
+
+/* 시각 t(0~100)의 천공 조도. opt에 weather/season/region을 주면 계수가 적용된다. */
 export function skyEv(t, opt = {}) {
-  /* 맑은 날 창면(연직) 천공 조도 상한 [lx].
-     실측: 맑은 날 확산광만 20,000~30,000 / 흐린 날 3,000~8,000 / 직사광 유입 시 50,000+.
-     이 모델은 확산 천공광만 다루므로(직사 빔 없음) 25,000이 '맑은 날' 상당.
-     ※ 12,000이던 값은 흐린 날 수준이라 모든 방이 재배 불가로 나왔음(DLI 실측으로 확인).
-     ※ 날씨·계절은 이 값에 계수를 곱해 구현하면 된다 — opt.clearSkyMax로 이미 열려 있음. */
-  const clear = opt.clearSkyMax ?? 25000;
+  const clear = skyEvMax(opt);
   const night = opt.nightEv ?? 0;
   const dayPhase = (t - 15) / 70;
   const daytime = t > 12 && t < 88;
@@ -259,3 +293,6 @@ export function skyEv(t, opt = {}) {
   const alt = Math.sin(Math.max(0, Math.min(1, dayPhase)) * Math.PI);   // 0~1
   return clear * alt;
 }
+
+/* 낮 구간(t) — daily_light.js의 적분과 skyEv가 같은 창을 쓰도록 한곳에 둔다. */
+export const DAY_T0 = 12, DAY_T1 = 88, DAY_HOURS = 24;

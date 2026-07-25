@@ -214,7 +214,7 @@ opts = { shape: rect|circle|arch,  pattern: grid|cross|letterbox|slim|curtainwal
 ## 5. 소스 파일
 | 파일 | 내용 |
 |---|---|
-| `src/render3d/furniture_pastel.js` | 가구 빌더(36종) |
+| `src/render3d/furniture_pastel.js` | 가구 빌더(59종) |
 | `src/render3d/window_frame.js` | 창틀·문 빌더 |
 | `src/render3d/house.js` | 방 조립(벽·바닥·천장·칸막이·개구부·가구·조명 배치) |
 | `src/render3d/lighting_sim.js` | 조명 계산(순수함수) |
