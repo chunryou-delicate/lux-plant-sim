@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8">
+<title>GLB 로드 진단</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+<style>
+ body{font-family:ui-monospace,Consolas,monospace;background:#111;color:#ddd;padding:20px;font-size:13px;line-height:1.7}
+ h1{font-size:15px;color:#8fd}
+ .ok{color:#6d6}.bad{color:#f77}.wait{color:#dd6}
+ pre{background:#1c1c1c;padding:10px;border-radius:6px;white-space:pre-wrap;word-break:break-all}
+</style></head><body>
+<h1>GLB 로드 진단</h1>
+<div id="out"></div>
+<script>
+const out=document.getElementById('out');
+function line(txt,cls){const d=document.createElement('div');d.className=cls||'';d.textContent=txt;out.appendChild(d);}
+line('three.js r'+THREE.REVISION+'  /  GLTFLoader: '+(typeof THREE.GLTFLoader));
+
+const TESTS=[
+  ['fetch만  rigged (쿼리없음)','3d/char_jachwi_f_rigged.glb','fetch'],
+  ['fetch만  rigged (쿼리있음)','3d/char_jachwi_f_rigged.glb?v=1','fetch'],
+  ['GLTF     rigged (쿼리없음)','3d/char_jachwi_f_rigged.glb','gltf'],
+  ['GLTF     rigged (쿼리있음)','3d/char_jachwi_f_rigged.glb?v=1','gltf'],
+  ['GLTF     walking (대조군)','3d/char_jachwi_f_walking.glb','gltf'],
+  ['GLTF     clip inspect','3d/anim/char_jachwi_f_inspect.glb','gltf'],
+  ['GLTF     base (대조군)','3d/char_jachwi_f_base.glb','gltf'],
+];
+
+async function runFetch(name,url){
+  try{
+    const r=await fetch(url);
+    const b=await r.arrayBuffer();
+    const dv=new DataView(b);
+    const magic=dv.getUint32(0,true), ver=dv.getUint32(4,true), len=dv.getUint32(8,true);
+    const okMagic = magic===0x46546C67;
+    line(`${name}: HTTP ${r.status}, ${b.byteLength} bytes, magic=${okMagic?'glTF OK':'0x'+magic.toString(16)}, ver=${ver}, 선언길이=${len} ${len===b.byteLength?'(일치)':'(불일치!)'}`, okMagic&&len===b.byteLength?'ok':'bad');
+  }catch(e){ line(`${name}: fetch 실패 — ${e}`,'bad'); }
+}
+function runGltf(name,url){
+  return new Promise(res=>{
+    let done=false;
+    const t=setTimeout(()=>{if(!done){done=true;line(`${name}: 20초 타임아웃`,'bad');res();}},20000);
+    new THREE.GLTFLoader().load(url,
+      g=>{ if(done)return; done=true; clearTimeout(t);
+        let meshes=0,bones=0,skinned=0;
+        g.scene.traverse(o=>{if(o.isMesh)meshes++;if(o.isBone)bones++;if(o.isSkinnedMesh)skinned++;});
+        line(`${name}: 성공 — mesh=${meshes} skinned=${skinned} bone=${bones} anim=${g.animations.length}`,'ok'); res();},
+      undefined,
+      e=>{ if(done)return; done=true; clearTimeout(t);
+        line(`${name}: 실패 — ${e&&(e.message||e.type||e)}`,'bad');
+        try{ const pre=document.createElement('pre'); pre.textContent=(e&&e.stack)||JSON.stringify(e); out.appendChild(pre);}catch(_){}
+        res();});
+  });
+}
+(async()=>{
+  for(const [name,url,kind] of TESTS){
+    line('▶ '+name+'  ('+url+')','wait');
+    if(kind==='fetch') await runFetch(name,url); else await runGltf(name,url);
+  }
+  line('— 진단 완료 —');
+})();
+</script></body></html>

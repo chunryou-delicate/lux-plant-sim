@@ -205,7 +205,9 @@ const ASSET_FILES={
   knob:'stem_knob.glb',                                                // 줄기_혹_돌기 (튜브 표면에 붙는 혹만)
   sheath:'leaf_sheath.glb'                                             // 줄기_잎_엽초 (줄기↔잎자루 이음)
 };
-const LONGY={stem_thick:1,stem_main:1,stem_med:1,stem_thin:1,petiole:1,knob:1,sheath:1};  // 긴축→Y 정렬(줄기/잎자루)
+// forceLongY: 가장 긴 축을 Y로 회전. 줄기류는 길쭉해서 필요하지만
+// knob(돔: 폭>높이)·sheath(나팔: 폭>높이)는 이미 Y가 높이축이라 넣으면 옆으로 눕는다.
+const LONGY={stem_thick:1,stem_main:1,stem_med:1,stem_thin:1,petiole:1};  // 긴축→Y 정렬(줄기/잎자루)
 const ANCHORB={leaf_young:1,leaf_mid1:1,leaf_mid2:1,leaf_mature:1,bud_furled:1,bud_opening2:1}; // 잎/새순: 밑동(자루끝)에 원점 스냅
 const ASSETS={}; let ASSETS_READY=false;
 // 줄기 표면 텍스처(회색조) — 색은 stemTint가 정하고 이 맵은 밝기 디테일만 곱함
@@ -285,7 +287,7 @@ function addPot(){
 
 // 줄기 GLB의 실제 "몸통 폭"(높이=1 정규화 기준, 정점 하단대 90퍼센타일로 측정).
 // 혹 에셋은 돌기 때문에 bbox(0.56)가 몸통(0.42)보다 훨씬 넓어 이 값이 꼭 필요함.
-const STEM_CORE={petiole:0.083, stem_thin:0.186, stem_med:0.158, stem_thick:0.420, stem_main:0.443, sheath:0.232, knob:0.395};
+const STEM_CORE={petiole:0.083, stem_thin:0.186, stem_med:0.158, stem_thick:0.420, stem_main:0.443, sheath:1.309, knob:2.518};   // 절차생성본 실측(하단 폭, 높이1 정규화 기준)
 function stemKey(radius){ return radius>0.072?'stem_thick' : radius>0.044?'stem_med' : radius>0.024?'stem_thin' : 'petiole'; }   // 얇은 시작=petiole → 굵어지며 thin→med→thick
 // GLB(밑면 y=0·긴축 Y)를 p0→p1 사이로 늘여 배치. 굵기 radius, color로 통일 틴트. → 두 점을 물리 연결.
 function stretchGLB(key, p0, p1, radius, color, flatAz){
@@ -449,14 +451,17 @@ function addStemTube(pts, rBase, rTip, nodeTs, color){
 // 혹 돌기: 줄기 표면(방위 az)에 파묻듯 붙임. 줄기 굵기는 그대로 두고 혹만 볼록하게.
 // dbl(쌍혹)이면 반대편에도 하나 더.
 function addKnob(at, stemDir, az, tubeRad, dbl){
+  const p0=ASSETS.knob; if(!p0) return;
+  // ★크기는 "줄기 지름 대비 돌기 지름"(knobWide)으로 지정하고, 에셋의 폭/높이 비로 환산.
+  //   에셋이 바뀌어도(폭이 바뀌어도) 화면 크기가 안 튀도록.
+  const wRatio=Math.max(0.05, p0.userData.sx||1);           // 높이1 기준 가로폭
+  const size=(tubeRad*2*P.knobWide)/wRatio;                 // 원하는 지름 → 높이 배율
   const n=dbl?2:1;
   for(let i=0;i<n;i++){
     const f=stemFrame(stemDir, az + (n===2? i*Math.PI : 0));
     const out=f.side.clone().addScaledVector(f.up, P.knobOut).normalize();   // 옆+살짝 위
-    const size=P.knobSize;
     const proto=assetInst('knob'); if(!proto) return;
-    // 아래쪽 절반이 줄기 속에 묻히도록 안쪽에서 시작
-    const base=at.clone().addScaledVector(out, tubeRad*0.55 - size*0.5);
+    const base=at.clone().addScaledVector(out, tubeRad*P.knobSink);          // 밑면이 줄기에 살짝 묻히게
     placeAlong(proto, base, out, size);
     tintObj(proto, stemTint(0.05)); plantGroup.add(proto);
   }
