@@ -765,21 +765,37 @@ B.plant_grid=(o)=>{
   return addSlots(g, sl, hooks.map(v=>+(h*v).toFixed(3)), hooks.map(()=>0.18));
 };
 
-/* 천장 행잉 플랜터 (매달림) */
+/* 천장 행잉 플랜터 (매달림)
+   ★ 로프가 천장 마운트에서 화분 '테두리'까지 정확히 이어지도록 방향벡터로 배치.
+     (길이를 어림잡으면 줄과 화분이 떨어져 보임) */
 B.plant_hanger=(o)=>{
   const drop=o.h??0.75, r=o.w?o.w/2:0.13;
   const g=new THREE.Group();
   const rope=furnMat(o.accent??'#cbbfae','matte');
-  g.add(cyl(0.04,0.04,0.02,rope,0,-0.01,0,10));
-  for(let i=0;i<3;i++){                                    // 로프 3가닥
+  g.add(cyl(0.035,0.035,0.02,rope,0,-0.01,0,10));          // 천장 마운트
+
+  const bowlH=r*1.1;
+  const rimY=-drop+bowlH;                                   // 화분 테두리 높이
+  const rimR=r*0.92;                                        // 로프가 걸리는 테두리 반경
+  const topY=-0.02;
+  for(let i=0;i<3;i++){
     const a=i/3*Math.PI*2;
-    const rp=cyl(0.005,0.005,drop*0.62,rope, Math.cos(a)*r*0.7, -drop*0.34, Math.sin(a)*r*0.7, 6);
-    rp.rotation.z=Math.cos(a)*0.12; rp.rotation.x=-Math.sin(a)*0.12; g.add(rp);
+    const from=new THREE.Vector3(0, topY, 0);
+    const to  =new THREE.Vector3(Math.cos(a)*rimR, rimY, Math.sin(a)*rimR);
+    const dir=to.clone().sub(from);
+    const len=dir.length();
+    const rp=cyl(0.005,0.005,len,rope,0,0,0,6);
+    rp.position.copy(from).addScaledVector(dir,0.5);         // 중점에 놓고
+    rp.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0), dir.clone().normalize()); // 방향 정렬
+    g.add(rp);
   }
-  const bowl=cyl(r,r*0.7,r*1.1,furnMat(o.color??'#d9a88b','matte'),0,-drop+r*0.55,0,18);
-  g.add(bowl);
+  // 화분 (바닥이 y=-drop)
+  g.add(cyl(r, r*0.72, bowlH, furnMat(o.color??'#d9a88b','matte'), 0, -drop+bowlH/2, 0, 18));
+  // 테두리 링 — 로프 끝을 물어 접합이 자연스럽게
+  const ring=cyl(r*1.02, r*1.02, 0.018, rope, 0, rimY, 0, 20); g.add(ring);
+
   g.userData.size={w:r*2,h:drop,d:r*2}; g.userData.hangFromCeiling=true;
-  return addSlots(g, [{x:0,y:+(-drop+r*1.1).toFixed(3),z:0}], [-drop+r*1.1], [r*1.8]);
+  return addSlots(g, [{x:0,y:+rimY.toFixed(3),z:0}], [+rimY.toFixed(3)], [r*1.8]);
 };
 
 /* 미니 온실장 (유리문 캐비닛 — 습도·보온) */
