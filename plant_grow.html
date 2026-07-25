@@ -133,7 +133,7 @@ const DEF={
   sizeYoung:0.20, sizeMid:0.34, sizeMature:0.46, sizeFull:0.58,  // 각 시점 크기(마디 간격 대비 자연스럽게)
   internode:0.20, stemFlat:1.25,   // 줄기 마디 길이·잎방향 납작
   petGrow:16, rEarly:0.022, rThin:0.028, rMed:0.025, rThick:0.031, matureProb:0.22, doubleBud:0.15,  // 종류별 굵기(몸통 폭 기준)·성숙잎 확률·쌍혹 확률
-  varieProb:0.20, varieKeep:0.55, midMix:0,
+  varieProb:0.20, midMix:0,
   // varieProb = 잎(생장점)마다 독립 판정. 그루 단위가 아니라 '중간에 발현'하는 방식이 맞음(확정).
   //   난이도별로 달라질 예정. 또 가지를 잘라 수경재배로 번식시킬 때, 모주가 무늬면
   //   그 삽수는 훨씬 높은 확률(80% 수준)을 물려받는 구조로 갈 것.
@@ -469,7 +469,7 @@ const KEEP_TEX=new Set(['leaf_young_albo']);
 function tintObj(obj, color){
   obj.traverse(o=>{ if(o.isMesh&&o.material){
     const ms=Array.isArray(o.material)?o.material:[o.material];
-    const nm=ms.map(m=>{ const c=m.clone(); c.color=color.clone(); if('map' in c && !obj.userData.keepTex) c.map=null; if('vertexColors' in c) c.vertexColors=false; c.userData={cloned:true}; return c; });
+    const nm=ms.map(m=>{ const c=m.clone(); c.color=color.clone(); if('map' in c) c.map=null; if('vertexColors' in c) c.vertexColors=false; c.userData={cloned:true}; return c; });
     o.material=Array.isArray(o.material)?nm:nm[0];
   }});
 }
@@ -704,9 +704,8 @@ function addLeaf(nodePos, az, maturity, key, sizeOverride, stemDir, stemRad, own
     proto.scale.multiplyScalar(size);
     proto.quaternion.setFromUnitVectors(UP, ld);
     proto.position.copy(ld).multiplyScalar(reach);
-    if(KEEP_TEX.has(key)){ proto.userData.keepTex=true;                // 무늬 유지: 맵은 두고 밝기만 살짝
-      tintObj(proto, leafTint(maturity).lerp(new THREE.Color(0xffffff), P.varieKeep)); }
-    else tintObj(proto, leafTint(maturity));                             // 잎만 잎색(엽초는 줄기색 유지)
+    if(!KEEP_TEX.has(key)) tintObj(proto, leafTint(maturity));           // 잎만 잎색(엽초는 줄기색 유지)
+    // ★무늬종(알보 등)은 텍스처가 무늬 그 자체 → 아예 틴트하지 않고 원본 그대로 쓴다
     holder.add(proto); plantGroup.add(holder); return; }
   plantGroup.add(holder);
   // 폴백: 임시 원뿔
@@ -1222,7 +1221,6 @@ const SHAPE_DEFS=[
   {k:'leafTiltVary',t:'잎 각도 흔들림(0=고정)', min:0, max:1.5, step:0.05},
   {k:'leafEmbed',   t:'잎 박히는 깊이',    min:0,    max:0.3,  step:0.01},
   {k:'varieProb',   t:'변이(알보) 확률',   min:0,    max:1,    step:0.05},
-  {k:'varieKeep',   t:'무늬 살리기',       min:0,    max:1,    step:0.05},
   {k:'midMix',      t:'중간잎 섞기(0=1종)', min:0,   max:1,    step:0.05},
   {k:'leafClear',   t:'잎 서로 비켜서기',  min:0,    max:0.7,  step:0.02},
   {k:'leafStemClear',t:'잎이 줄기 피하기', min:0,   max:4,    step:0.1},
