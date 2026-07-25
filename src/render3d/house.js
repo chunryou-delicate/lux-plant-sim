@@ -228,7 +228,7 @@ function shapedFiller(wall, spec, p, m){
    메인: 방 조립. async (GLB 로드 대기).
    반환: { room, shells, windows, glassMeshes, winPos }
 ============================================================ */
-export function buildHouse(GRAIN, roomDefIn, winPresets, doorPresets={}, finishes=null, furnPresets={}, lightPresets={}){
+export function buildHouse(GRAIN, roomDefIn, winPresets, doorPresets={}, finishes=null, furnPresets={}, lightPresets={}, shadePresets={}){
   // 마감재 id(wall/floor/ceil) → 색·거칠기로 확장 (id 없으면 기존 wallColor 등 그대로)
   const roomDef=applyFinishes(roomDefIn, finishes);
   // ★ 이 방의 치수 적용 (없으면 기본 7×7×4)
@@ -249,14 +249,34 @@ export function buildHouse(GRAIN, roomDefIn, winPresets, doorPresets={}, finishe
      ※ 지붕 유리(ceiling:'glass')는 아직 못 넣는다 — 엔진 창 법선에 y성분이 없다.
         docs/greenhouse_plan.md의 C단계에서 해결. */
   const facing = roomDef.facing || 'south';       // back 벽 바깥이 향하는 방위
+  /* 차광 — 창유리(τ0.92 = -8%)와 자릿수가 다르다(0.30~0.55 = -45~70%).
+     창별로 따로 걸 수 있어야 "동쪽만 가리고 서쪽은 열어둔다"가 된다. */
+  const shadeMult = id => {
+    if(!id || id==='none') return 1;
+    const sp=(shadePresets.presets||shadePresets)[id];
+    if(!sp) return 1;
+    return sp.mult!=null ? sp.mult : 1;           // 자동 블라인드(mult:null)는 런타임에서 정한다
+  };
   const luxWins=[];
   for(const w of (roomDef.windows||[])){
     const p=winPresets[w.preset]||{};
     // 창 스펙의 tau가 프리셋보다 우선(베란다 새시처럼 유리만 다른 경우)
     const tau = w.tau ?? ((p.glass&&p.glass.transmittance)!=null ? p.glass.transmittance : 0.85);
     const orient=w.orient||wallOrient(facing, w.wall);
+    const sh=shadeMult(w.shade);
     luxWins.push({ wall:w.wall, cu:w.cu, cy:w.cy, w:w.w, h:w.h, tau,
-                   orient, evScale:orientK(orient), from:'window' });
+                   orient, shade:w.shade||'none', shadeMult:sh,
+                   evScale:orientK(orient)*sh, from:'window' });
+  }
+  /* ★ 천창 — ceiling:'glass' 인 방은 지붕 전체가 개구부다.
+     수평면은 하늘 반구를 통째로 봐서 벽 유리보다 훨씬 세다. */
+  if(roomDef.ceiling==='glass'){
+    const go=wallOrient(facing,'ceiling');
+    const sh=shadeMult(roomDef.ceilingShade);
+    luxWins.push({ wall:'ceiling', cu:0, cy:CH, w:CW-0.1, h:CD-0.1,
+                   tau:roomDef.ceilingTau ?? 0.85,
+                   orient:go, shade:roomDef.ceilingShade||'none', shadeMult:sh,
+                   evScale:orientK(go)*sh, from:'skylight' });
   }
 
   // ---------- 바닥: 통판 1장 (조각 이음새 z-fighting 방지). 결/칸은 텍스처로 ----------
@@ -299,8 +319,10 @@ export function buildHouse(GRAIN, roomDefIn, winPresets, doorPresets={}, finishe
     //   같은 치수(-0.1)를 쓴다 — 겉(유리판)과 속(조도)이 어긋나지 않게.
     if(kind==='glass'){
       const go=wallOrient(facing, wall);
+      const sh=shadeMult((roomDef.glassWallShade||{})[wall] || roomDef.glassWallShade);
       luxWins.push({ wall, cu:(uMin+uMax)/2, cy:CH/2, w:(uMax-uMin)-0.1, h:CH-0.1,
-                     tau:0.85, orient:go, evScale:orientK(go), from:'glassWall' });
+                     tau:0.85, orient:go, shade:'none', shadeMult:sh,
+                     evScale:orientK(go)*sh, from:'glassWall' });
     }
     const g=new THREE.Group();
     g.userData={ normal:wallNormals[wall], center:wallCenters[wall] };

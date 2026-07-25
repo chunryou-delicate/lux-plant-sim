@@ -26,6 +26,7 @@ const finishes   = await fetch('./data/room_finishes.json').then(r=>r.json()).ca
 const furnPresets= await fetch('./data/furniture_presets.json').then(r=>r.json()).then(d=>d.presets||d).catch(()=>({}));
 const lightPresets=await fetch('./data/lighting_presets.json').then(r=>r.json()).catch(()=>({}));
 const lightTh   = await fetch('./data/light_thresholds.json').then(r=>r.json()).catch(()=>null);
+const shadePresets=await fetch('./data/shading_presets.json').then(r=>r.json()).catch(()=>({presets:{}}));
 
 // 기본 배치 원본 — 집꾸미기 '기본으로' 버튼이 여기로 되돌린다
 const DEFAULT_FURN=Object.fromEntries(
@@ -47,13 +48,24 @@ let curDef=null;    // 현재 방 정의 — 집꾸미기가 이 객체의 furni
 let builtRef=null;  // 마지막 buildHouse 결과 (가구 그룹 픽킹용)
 let sample=null;    // 식물 샘플(임시) — 자라지 않고 밴드에 따라 색·처짐만 바뀐다
 let sampleRank=0;   // 몇 번째로 밝은 자리에 놓을지
+let curShade='none';    // 이 방 창에 건 차광 (창별 개별 지정은 방 데이터의 window.shade)
+let curSeason='summer'; // 계절 — 세기와 낮 길이가 같이 바뀐다
 
 async function buildRoomPreset(name){
   // 이전 방 정리
   while(houseGroup.children.length) houseGroup.remove(houseGroup.children[0]);
   curRoom=name;
   const roomDef=curDef=houseRooms.rooms[name];
-  const built=builtRef=buildHouse(GRAIN, roomDef, winPresets, doorPresets, finishes, furnPresets, lightPresets);
+  // 차광은 방 데이터를 덮어쓰지 않고 조립 직전에만 얹는다(원본 보존)
+  if(curShade!=='none'){
+    roomDef.__shadeAll=curShade;
+    (roomDef.windows||[]).forEach(w=>w.shade=curShade);
+    roomDef.ceilingShade=curShade; roomDef.glassWallShade=curShade;
+  }else{
+    (roomDef.windows||[]).forEach(w=>delete w.shade);
+    delete roomDef.ceilingShade; delete roomDef.glassWallShade; delete roomDef.__shadeAll;
+  }
+  const built=builtRef=buildHouse(GRAIN, roomDef, winPresets, doorPresets, finishes, furnPresets, lightPresets, shadePresets);
   shells=built.shells;
   houseGroup.add(built.room);
   // 방 크기가 바뀌면 바닥 히트맵도 그 크기로 다시 (방마다 5×4, 3×4 등)
@@ -64,7 +76,7 @@ async function buildRoomPreset(name){
   // ★ 조도용: 방 창을 3D 사각 개구부로, 화분 슬롯을 월드좌표로
   // ★ house.js가 진짜 창 + 유리벽(온실)을 합쳐 준다. 여기서 roomDef를 다시 읽지 않는다.
   curWins=(built.luxWins||[]).map(w=>
-    winFromHouse(w.wall, w.cu, w.cy, w.w, w.h, built.size, w.tau)).filter(Boolean);
+    winFromHouse(w.wall, w.cu, w.cy, w.w, w.h, built.size, w.tau, w.evScale)).filter(Boolean);
   curSlots=built.plantSlots||[];
   curOcc=built.occluders||[];
   curGlazed=built.glazedPanes||[];
@@ -167,7 +179,7 @@ function engineRefresh(){
     const s0=sample.userData.slot;
     const ratio=daylightRatio({x:s0.x,y:s0.y,z:s0.z},{x:0,y:1,z:0},curWins,
       {occluders:curOcc, glazed:curGlazed, selfIdx:s0.occIdx});
-    const dli=daylightDLI(ratio,{weather:'clear',season:'summer'});
+    const dli=daylightDLI(ratio,{weather:'clear',season:curSeason});
     const j=judgeDLI(dli, thresholdsFor(lightTh,'monstera_deliciosa'));
     if(j.band!==sample.userData.band) applyBand(sample, j.band);
     const pm=document.getElementById('plantMsg');
@@ -330,6 +342,23 @@ function bindControls(){
   charPick.onchange=async ()=>{ if(!hero) return;
     hero.dispose(); hero=null;
     document.getElementById('charToggle').onclick.call(document.getElementById('charToggle'));
+  };
+
+  /* ── 차광 ── */
+  const shadePick=document.getElementById('shadePick');
+  Object.entries(shadePresets.presets||{}).forEach(([k,v])=>{
+    const o=document.createElement('option'); o.value=k;
+    o.textContent=v.ko+(v.mult!=null?` (×${v.mult})`:' (가변)');
+    shadePick.appendChild(o);
+  });
+  shadePick.value='none';
+  shadePick.onchange=async ()=>{ curShade=shadePick.value; await buildRoomPreset(curRoom); };
+  document.getElementById('seasonPick').onchange=function(){
+    curSeason=this.value; engineRefresh();
+    const sm=document.getElementById('shadeMsg');
+    if(sm) sm.textContent = (curSeason==='winter'&&curShade!=='none')
+      ? '⚠ 겨울인데 차광이 걸려 있습니다 — 빛이 모자랍니다'
+      : '여름엔 걸고 겨울엔 떼야 합니다';
   };
 
   /* ── 식물 샘플 (임시) ──

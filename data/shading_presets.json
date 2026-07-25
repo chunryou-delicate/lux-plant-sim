@@ -1,0 +1,36 @@
+{
+  "_doc": [
+    "차광 장치 — 창의 투과율 tau에 곱해지는 계수(mult).",
+    "창유리 한 겹은 tau 0.92 = -8%라 겹쳐도 거의 안 어두워진다.",
+    "차광막은 0.30~0.55 = -45~70%로 자릿수가 다르다. 헷갈리지 말 것.",
+    "",
+    "적용 위치(where)가 선택이 된다 — 발코니처럼 유리가 2겹인 곳에서:",
+    "  outer(바깥 새시)  : 발코니 화분 + 실내 화분 둘 다 어두워짐",
+    "  inner(안쪽 거실창): 실내만. 발코니 화분은 그대로 밝음",
+    "",
+    "★ 계절 교체가 핵심이다. 여름에 걸고 겨울에 떼야 한다.",
+    "  안 떼면 온실 겨울 3.62 x 0.5 = 1.81 로 몬스테라 min 3.0 아래로 떨어진다."
+  ],
+  "version": 1,
+  "presets": {
+    "none":        { "ko": "없음",          "mult": 1.00, "cost": 0,     "auto": false },
+    "blind_bamboo":{ "ko": "대나무 발",     "mult": 0.55, "cost": 8000,  "auto": false,
+                     "note": "싸다. 여름 한철용" },
+    "net30":       { "ko": "차광막 30%",    "mult": 0.70, "cost": 15000, "auto": false },
+    "net50":       { "ko": "차광막 50%",    "mult": 0.50, "cost": 22000, "auto": false },
+    "net70":       { "ko": "차광막 70%",    "mult": 0.30, "cost": 30000, "auto": false,
+                     "note": "한여름 온실용. 겨울에 안 떼면 치명적" },
+    "curtain_sheer":{ "ko": "속커튼",        "mult": 0.75, "cost": 12000, "auto": false },
+    "curtain_black":{ "ko": "암막커튼",      "mult": 0.08, "cost": 35000, "auto": false,
+                     "note": "사실상 차단. 식물 자리엔 쓰면 안 된다" },
+    "blind_auto":  { "ko": "자동 블라인드", "mult": null, "cost": 180000, "auto": true,
+                     "range": [0.25, 1.00],
+                     "note": "목표 DLI를 맞춰 스스로 여닫는다. 계절 교체가 필요 없다 = 돈으로 관리 부담을 사는 것" }
+  },
+  "auto_target_dli": {
+    "_doc": "자동 블라인드가 맞추려는 목표. 식물의 best 대역 한가운데.",
+    "default": 8.0,
+    "monstera_deliciosa": 8.0,
+    "sansevieria": 4.5
+  }
+}

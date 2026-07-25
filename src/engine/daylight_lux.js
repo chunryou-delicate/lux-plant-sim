@@ -34,6 +34,14 @@ export function winFromHouse(wall, cu, cy, w, h, size, tau = 0.8, evScale = 1) {
     case 'front': return { cx: cu,    cy, cz:  D / 2, ux: 1, uz: 0, nx: 0,  nz: -1, width: w, height: h, tau, evScale };
     case 'left':  return { cx: -W / 2, cy, cz: cu,    ux: 0, uz: 1, nx: 1,  nz: 0,  width: w, height: h, tau, evScale };
     case 'right': return { cx:  W / 2, cy, cz: cu,    ux: 0, uz: 1, nx: -1, nz: 0,  width: w, height: h, tau, evScale };
+    /* ★ 천창 — 수평 개구부. 법선이 아래(실내)를 향한다.
+       u축=x, v축=z 로 눕히고 ny=-1. cy는 천장 높이를 넣는다.
+       수평면은 하늘 반구를 통째로 보므로 같은 면적이어도 수직창보다 훨씬 세다. */
+    case 'ceiling': return { cx: cu, cy, cz: 0,
+                             ux: 1, uy: 0, uz: 0,
+                             vx: 0, vy: 0, vz: 1,
+                             nx: 0, ny: -1, nz: 0,
+                             width: w, height: h, tau, evScale };
   }
   return null;
 }
@@ -146,17 +154,21 @@ export function daylightAt(p, n, wins, opt = {}) {
     const dA = (w.width / Mw) * (w.height / Mh);
     for (let a = 0; a < Mw; a++) {
       for (let b = 0; b < Mh; b++) {
-        // 창면 위 샘플점
+        // 창면 위 샘플점.
+        // u축=(ux,uy,uz) 가로, v축=(vx,vy,vz) 세로. 수직창은 v=(0,1,0)이라 예전과 같다.
         const su = (-w.width / 2) + (a + 0.5) / Mw * w.width;
         const sv = (-w.height / 2) + (b + 0.5) / Mh * w.height;
-        const wx = w.cx + w.ux * su, wy = w.cy + sv, wz = w.cz + w.uz * su;
+        const wx = w.cx + w.ux * su + (w.vx || 0) * sv;
+        const wy = w.cy + (w.uy || 0) * su + (w.vy === undefined ? 1 : w.vy) * sv;
+        const wz = w.cz + w.uz * su + (w.vz || 0) * sv;
 
         const rx = p.x - wx, ry = p.y - wy, rz = p.z - wz;
         const d2 = rx * rx + ry * ry + rz * rz;
         if (d2 < 1e-6) continue;
         const d = Math.sqrt(d2);
 
-        const cosWin = (rx * w.nx + rz * w.nz) / d;   // 창 법선 대비 (실내쪽만)
+        // 창 법선 대비 (실내쪽만). ny가 있어야 천창(수평 개구부)을 표현할 수 있다.
+        const cosWin = (rx * w.nx + ry * (w.ny || 0) + rz * w.nz) / d;
         if (cosWin <= 0) continue;
         const cosP = (-rx * n.x - ry * n.y - rz * n.z) / d;   // 점 법선 대비
         if (cosP <= 0) continue;
@@ -348,15 +360,23 @@ export const ORIENT = {
 };
 export const COMPASS = ['north','northeast','east','southeast','south','southwest','west','northwest'];
 
+/* 천창(수평면)은 방위가 없다. 천정 방향 천공이 지평 부근보다 밝으므로 남향 수직창보다 조금 세게 본다.
+   '하늘을 얼마나 보느냐'는 기하 적분이 이미 처리하므로, 여기선 밝기 비율만 담당한다. */
+export const ORIENT_ZENITH = 1.20;
+
 /* 방의 facing(= back 벽 바깥이 향하는 방위) + 벽 이름 → 그 벽의 방위.
    back에서 시계방향으로 right(+90°) front(+180°) left(+270°). */
 export function wallOrient(facing, wall) {
+  if (wall === 'ceiling') return 'zenith';
   const i = COMPASS.indexOf(facing || 'south');
   if (i < 0) return 'south';
   const turn = { back: 0, right: 2, front: 4, left: 6 }[wall] || 0;
   return COMPASS[(i + turn) % 8];
 }
-export function orientK(orient) { return (ORIENT[orient] || ORIENT.south).k; }
+export function orientK(orient) {
+  if (orient === 'zenith') return ORIENT_ZENITH;
+  return (ORIENT[orient] || ORIENT.south).k;
+}
 
 /* 지역 계수 — 지금은 전부 1.0(자리만). 국내 연간 일조시간 차는 최대 37%,
    서울 기준 ±5%라 계절(45%)·날씨(75%)보다 작아 우선순위 낮음. */

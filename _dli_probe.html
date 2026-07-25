@@ -10,10 +10,10 @@ import { winFromHouse, WEATHER, SEASON, skyEvMax } from './src/engine/daylight_l
 import { daylightRatio, daylightDLI, judgeDLI, dayLengthHours } from './src/engine/daily_light.js';
 
 const J = p => fetch(p).then(r=>r.json());
-const [houseRooms, winPresets, doorPresets, finishes, furnPresets, lightPresets, TH] = await Promise.all([
+const [houseRooms, winPresets, doorPresets, finishes, furnPresets, lightPresets, TH, SH] = await Promise.all([
   J('./data/house_rooms.json'), J('./data/window_presets.json'), J('./data/door_presets.json'),
   J('./data/room_finishes.json'), J('./data/furniture_presets.json'), J('./data/lighting_presets.json'),
-  J('./data/light_thresholds.json')
+  J('./data/light_thresholds.json'), J('./data/shading_presets.json')
 ]);
 const wp = winPresets.presets||winPresets, dp = doorPresets.presets||doorPresets, fp = furnPresets.presets||furnPresets;
 
@@ -27,7 +27,7 @@ for (const key of Object.keys(NAMES)) {
   const def = houseRooms.rooms[key];
   if (!def) { L.push('· 방 없음: '+key); continue; }
   let built;
-  try { built = buildHouse(null, def, wp, dp, finishes, fp, lightPresets); }
+  try { built = buildHouse(null, def, wp, dp, finishes, fp, lightPresets, SH); }
   catch(e){ L.push('· 조립 실패 '+key+': '+e.message); continue; }
   const size = built.size;
   const wins = (built.luxWins||[]).map(w=>winFromHouse(w.wall,w.cu,w.cy,w.w,w.h,size,w.tau)).filter(Boolean);
