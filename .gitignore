@@ -145,3 +145,7 @@ vite.config.ts.timestamp-*
 # scratch/analysis temp files (에셋 창)
 /_*.txt
 /assets/_*.txt
+
+# python cache
+__pycache__/
+*.pyc

@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>볕 · 방 꾸미기 (마감재·창·문)</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Jua&family=Gaegu:wght@400;700&display=swap');
   *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -58,6 +59,18 @@
     <div class="row"><span class="rlab">중심높이</span><input type="range" id="winY" min="60" max="360" value="220"><span class="rlab" id="winYlab">2.2m</span></div>
   </div>
   <div class="grp"><h3>🚪 방문</h3><select id="door"></select></div>
+  <div class="grp"><h3>🛋 가구</h3><label class="opt"><input type="checkbox" id="furnOn" checked>가구 표시</label></div>
+  <div class="grp">
+    <h3>🧍 스케일 기준</h3>
+    <select id="ref">
+      <option value="none">없음</option>
+      <option value="silh" selected>사람 실루엣</option>
+      <option value="glb">캐릭터 GLB(치비)</option>
+    </select>
+    <div class="row" style="margin-top:6px"><span class="rlab">키</span><input type="range" id="refH" min="130" max="195" value="170"><span class="rlab" id="refHlab">1.70m</span></div>
+    <label class="opt" style="margin-top:4px"><input type="checkbox" id="refPots" checked>화분 크기 비교(소·중·대)</label>
+    <div style="font-size:11px;color:#7a808a;margin-top:3px">문 앞·창가에 세워 문/창/화분 크기를 눈으로 비교</div>
+  </div>
   <div class="grp">
     <button class="btn" id="copy">이 설정 JSON 복사</button>
     <button class="btn alt" id="save">house_rooms.json용 보기</button>
@@ -103,16 +116,87 @@ try{const p=new THREE.PMREMGenerator(renderer);scene.environment=p.fromEquirecta
 
 const cam=new THREE.PerspectiveCamera(38,innerWidth/innerHeight,0.1,200);
 const GRAIN=faintGrainTexture();
-let ROOMS,FIN,WP,DP, roomKey, shells=null;
+let ROOMS,FIN,WP,DP,FU={}, roomKey, shells=null;
 const holder=new THREE.Group(); scene.add(holder);
 let cur=null;   // 현재 편집중 roomDef(복제본)
 
 function opt(list,val,fmt){ return list.map(o=>`<option value="${o.id}" ${o.id===val?'selected':''}>${fmt(o)}</option>`).join(''); }
 
+/* ===== 스케일 기준: 사람 실루엣 / 캐릭터 GLB / 화분 소·중·대 ===== */
+const refGroup=new THREE.Group(); scene.add(refGroup);
+let refMode='silh', refH=1.70, refPots=true, _charGLB=null, showFurn=true;
+
+function silhouette(h){                       // 정확히 h(m) 키의 단순 인체 프록시
+  const g=new THREE.Group();
+  const m=new THREE.MeshStandardMaterial({color:0x8d93a6, roughness:0.85});
+  const headR=h*0.0725, legH=h*0.47, torsoH=h*0.30;
+  const legs=new THREE.Mesh(new THREE.CylinderGeometry(h*0.055,h*0.045,legH,12),m);
+  legs.position.y=legH/2; g.add(legs);
+  const torso=new THREE.Mesh(new THREE.CylinderGeometry(h*0.092,h*0.082,torsoH,14),m);  // r128엔 CapsuleGeometry 없음
+  torso.position.y=legH+torsoH*0.5; g.add(torso);
+  const shoulder=new THREE.Mesh(new THREE.SphereGeometry(h*0.095,14,10),m);
+  shoulder.scale.set(1.25,0.55,0.8); shoulder.position.y=legH+torsoH*0.92; g.add(shoulder);
+  const head=new THREE.Mesh(new THREE.SphereGeometry(headR,16,14),m);
+  head.position.y=legH+torsoH+headR*0.95; g.add(head);
+  for(const s of [-1,1]){                      // 팔
+    const arm=new THREE.Mesh(new THREE.CylinderGeometry(h*0.032,h*0.028,h*0.30,10),m);
+    arm.position.set(s*h*0.115, legH+torsoH*0.62, 0); g.add(arm);
+  }
+  g.traverse(o=>{ if(o.isMesh){ o.castShadow=true; o.receiveShadow=true; } });
+  return g;
+}
+function potSet(){                             // 화분 소(0.15)·중(0.3)·대(0.5) — 높이 기준
+  const g=new THREE.Group();
+  const sizes=[[0.15,'소'],[0.30,'중'],[0.50,'대']];
+  sizes.forEach(([hh],i)=>{
+    const m=new THREE.MeshStandardMaterial({color:0xc98a63, roughness:0.8});
+    const pot=new THREE.Mesh(new THREE.CylinderGeometry(hh*0.42,hh*0.33,hh,18),m);
+    pot.position.set(i*0.75, hh/2, 0); pot.castShadow=pot.receiveShadow=true; g.add(pot);
+    const soil=new THREE.Mesh(new THREE.CylinderGeometry(hh*0.40,hh*0.40,hh*0.06,18),
+      new THREE.MeshStandardMaterial({color:0x4a3a2c,roughness:1}));
+    soil.position.set(i*0.75, hh*1.0, 0); g.add(soil);
+    const leaf=new THREE.Mesh(new THREE.SphereGeometry(hh*0.55,12,10),
+      new THREE.MeshStandardMaterial({color:0x5d9a5f,roughness:0.7}));
+    leaf.scale.y=0.8; leaf.position.set(i*0.75, hh*1.5, 0); leaf.castShadow=true; g.add(leaf);
+  });
+  return g;
+}
+async function loadCharGLB(){
+  if(_charGLB) return _charGLB.clone(true);
+  const url='../characters/3d/char_namja_jachwi_base.glb';
+  const gltf=await new Promise((res,rej)=>new THREE.GLTFLoader().load(url,res,undefined,rej));
+  _charGLB=gltf.scene||gltf.scenes[0];
+  return _charGLB.clone(true);
+}
+async function buildRefs(){
+  while(refGroup.children.length) refGroup.remove(refGroup.children[0]);
+  const doorSpec=(cur.doors&&cur.doors[0])||null;
+  const px=doorSpec?doorSpec.cu+0.85:-1.0;             // 문 옆에 세움
+  if(refMode==='silh'){
+    const s=silhouette(refH); s.position.set(px,0,SZ.d/2-0.8); refGroup.add(s);
+    const s2=silhouette(refH); s2.position.set(0.4,0,-SZ.d/2+0.9); refGroup.add(s2);   // 창가에도
+  }else if(refMode==='glb'){
+    try{
+      const g=await loadCharGLB();
+      const bb=new THREE.Box3().setFromObject(g), sz=new THREE.Vector3(); bb.getSize(sz);
+      const k=refH/(sz.y||2);                            // 원본 2유닛 → 실제 키로
+      g.scale.setScalar(k);
+      const bb2=new THREE.Box3().setFromObject(g);
+      g.position.set(px, -bb2.min.y, SZ.d/2-0.8);
+      g.traverse(o=>{ if(o.isMesh){o.castShadow=true;o.receiveShadow=true;} });
+      refGroup.add(g);
+    }catch(e){ showErr('캐릭터 GLB 로드 실패: '+e.message); }
+  }
+  if(refPots){ const p=potSet(); p.position.set(Math.min(1.1,SZ.w/2-1.2),0,SZ.d/2-1.5); refGroup.add(p); }
+}
+
+let SZ={w:RW,d:RD,h:RH};        // 현재 방 실제 치수
 function rebuild(){
   while(holder.children.length) holder.remove(holder.children[0]);
-  const built=buildHouse(GRAIN, cur, WP, DP, FIN);
-  shells=built.shells; holder.add(built.room);
+  const built=buildHouse(GRAIN, showFurn?cur:{...cur,furniture:[]}, WP, DP, FIN, FU);
+  shells=built.shells; holder.add(built.room); SZ=built.size;
+  dist=Math.max(4.5, Math.max(SZ.w,SZ.d)*1.55);      // 방 크기에 맞춰 카메라 거리
+  buildRefs();
   updateCam();
 }
 
@@ -136,8 +220,8 @@ let yaw=0.62,pitch=0.34,dist=13;
 function updateCam(){
   pitch=Math.max(-0.2,Math.min(1.1,pitch)); dist=Math.max(5,Math.min(28,dist));
   const cp=Math.cos(pitch);
-  cam.position.set(Math.sin(yaw)*cp*dist, 1.7+Math.sin(pitch)*dist, Math.cos(yaw)*cp*dist);
-  cam.lookAt(0,1.5,0);
+  cam.position.set(Math.sin(yaw)*cp*dist, SZ.h*0.5+Math.sin(pitch)*dist, Math.cos(yaw)*cp*dist);
+  cam.lookAt(0,SZ.h*0.45,0);
   if(shells) updateShellVisibility(shells,cam);
 }
 let drag=false,px=0,py=0;
@@ -195,16 +279,25 @@ function loadRoom(){
 
 let COLORS=[];
 (async()=>{
-  const [rooms,fin,wp,dp,fc]=await Promise.all([
+  const [rooms,fin,wp,dp,fc,fu]=await Promise.all([
     fetch('../../data/house_rooms.json'+V).then(r=>r.json()),
     fetch('../../data/room_finishes.json'+V).then(r=>r.json()),
     fetch('../../data/window_presets.json'+V).then(r=>r.json()).then(d=>d.presets||d),
     fetch('../../data/door_presets.json'+V).then(r=>r.json()).then(d=>d.presets||d),
-    fetch('../../data/frame_colors.json'+V).then(r=>r.json())
+    fetch('../../data/frame_colors.json'+V).then(r=>r.json()),
+    fetch('../../data/furniture_presets.json'+V).then(r=>r.json()).then(d=>d.presets||d)
   ]).catch(e=>{showErr('데이터 로드 실패: '+e.message);throw e;});
-  ROOMS=rooms;FIN=fin;WP=wp;DP=dp;COLORS=fc.colors;
-  roomKey=ROOMS.default||Object.keys(ROOMS.rooms)[0];
+  ROOMS=rooms;FIN=fin;WP=wp;DP=dp;COLORS=fc.colors;FU=fu;
+  const qRoom=new URLSearchParams(location.search).get('room');   // ?room=tworoom 으로 바로 열기
+  roomKey=(qRoom&&ROOMS.rooms[qRoom])?qRoom:(ROOMS.default||Object.keys(ROOMS.rooms)[0]);
   loadRoom(); resize(); updateSun(55);
+  // 스케일 기준(사람·화분)
+  document.getElementById('furnOn').onchange=e=>{ showFurn=e.target.checked; rebuild(); };
+  document.getElementById('ref').onchange=e=>{ refMode=e.target.value; buildRefs(); };
+  const rh=document.getElementById('refH');
+  rh.oninput=e=>{ refH=+e.target.value/100; document.getElementById('refHlab').textContent=refH.toFixed(2)+'m'; buildRefs(); };
+  document.getElementById('refPots').onchange=e=>{ refPots=e.target.checked; buildRefs(); };
+
   document.getElementById('sun').oninput=e=>updateSun(+e.target.value);
   const ex=document.getElementById('expo');
   ex.oninput=e=>{const v=+e.target.value/100;renderer.toneMappingExposure=v;document.getElementById('expolab').textContent=v.toFixed(2);};

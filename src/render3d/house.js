@@ -13,14 +13,18 @@
      → 선 반듯·두께 균일·격자수 파라메트릭(cols×rows). 벽과 같은 파스텔 재질.
    - ★ 유리 = 프레임 안쪽에 코드로 quad 생성 + 투명 셰이더(§3).
 
-   좌표: 방을 원점 중심에 둔다. 바닥 y=0, 천장 y=RH.
+   좌표: 방을 원점 중심에 둔다. 바닥 y=0, 천장 y=CH.
    벽 바깥법선(outward)으로 컷어웨이 판정.
 ============================================================ */
 import { mat, box, col } from './util.js';
+import { buildFurniture } from './furniture_pastel.js';
 import { buildWindowFrame, buildDoor, glassMaterial, glassGeometry, frameMaterial,
          resolveWindowPreset, FRAME_DEFAULTS, drawArch } from './window_frame.js';
 
-export const RW=7, RD=7, RH=4;           // 발판 폭·깊이·높이 (프리셋 공통, 엔진 호환)
+export const RW=7, RD=7, RH=4;           // 기본 치수(방에 size 없으면 이 값)
+// ★ 현재 조립 중인 방의 실제 치수. buildHouse 시작 시 roomDef.size로 세팅된다.
+let CW=RW, CD=RD, CH=RH;
+export function roomSize(){ return { w:CW, d:CD, h:CH }; }
 const WT=0.2;                            // 벽 두께
 export const GRID=1;                     // ★ 1m 모듈 단위 (창·문 위치/크기 스냅 기준)
 
@@ -74,23 +78,23 @@ function panelRects(uMin,uMax,vMin,vMax, openings){
 /* 벽-local (u,v) 조각 → 월드 박스. 벽마다 축 매핑이 다르다. */
 function panelToBox(wall, r, m){
   const cu=(r.x0+r.x1)/2, cv=(r.y0+r.y1)/2, du=r.x1-r.x0, dv=r.y1-r.y0;
-  if(wall==='back')  return box(du,dv,WT, m, cu, cv, -RD/2);
-  if(wall==='front') return box(du,dv,WT, m, cu, cv,  RD/2);
-  if(wall==='left')  return box(WT,dv,du, m, -RW/2, cv, cu);
-  if(wall==='right') return box(WT,dv,du, m,  RW/2, cv, cu);
+  if(wall==='back')  return box(du,dv,WT, m, cu, cv, -CD/2);
+  if(wall==='front') return box(du,dv,WT, m, cu, cv,  CD/2);
+  if(wall==='left')  return box(WT,dv,du, m, -CW/2, cv, cu);
+  if(wall==='right') return box(WT,dv,du, m,  CW/2, cv, cu);
 }
 
 /* 벽 좌표계 범위 (u축 길이·범위) */
 function wallURange(wall){
-  return (wall==='back'||wall==='front') ? [-RW/2, RW/2] : [-RD/2, RD/2];
+  return (wall==='back'||wall==='front') ? [-CW/2, CW/2] : [-CD/2, CD/2];
 }
 
 /* 프레임/유리를 벽에 앉히는 변환 (위치 + Y회전). cu=벽 local u중심 */
 function wallPlacement(wall, cu, cy){
-  if(wall==='back')  return { pos:[cu, cy, -RD/2],  roty:0 };
-  if(wall==='front') return { pos:[cu, cy,  RD/2],  roty:Math.PI };
-  if(wall==='left')  return { pos:[-RW/2, cy, cu],  roty:Math.PI/2 };
-  if(wall==='right') return { pos:[ RW/2, cy, cu],  roty:-Math.PI/2 };
+  if(wall==='back')  return { pos:[cu, cy, -CD/2],  roty:0 };
+  if(wall==='front') return { pos:[cu, cy,  CD/2],  roty:Math.PI };
+  if(wall==='left')  return { pos:[-CW/2, cy, cu],  roty:Math.PI/2 };
+  if(wall==='right') return { pos:[ CW/2, cy, cu],  roty:-Math.PI/2 };
 }
 
 /* ============================================================
@@ -223,9 +227,13 @@ function shapedFiller(wall, spec, p, m){
    메인: 방 조립. async (GLB 로드 대기).
    반환: { room, shells, windows, glassMeshes, winPos }
 ============================================================ */
-export function buildHouse(GRAIN, roomDefIn, winPresets, doorPresets={}, finishes=null){
+export function buildHouse(GRAIN, roomDefIn, winPresets, doorPresets={}, finishes=null, furnPresets={}){
   // 마감재 id(wall/floor/ceil) → 색·거칠기로 확장 (id 없으면 기존 wallColor 등 그대로)
   const roomDef=applyFinishes(roomDefIn, finishes);
+  // ★ 이 방의 치수 적용 (없으면 기본 7×7×4)
+  const sz=roomDef.size||{};
+  CW=sz.w||RW; CD=sz.d||RD; CH=sz.h||RH;
+  let shellPartIdx=0;                     // 내벽 shell 키 자동번호
   const room=new THREE.Group();
   const shells={};              // 컷어웨이 대상(벽·바닥·천장). 유리벽/프레임 제외.
   const glassMeshes=[];         // 하늘색 틴트 갱신 대상
@@ -235,10 +243,10 @@ export function buildHouse(GRAIN, roomDefIn, winPresets, doorPresets={}, finishe
 
   // ---------- 바닥: 통판 1장 (조각 이음새 z-fighting 방지). 결/칸은 텍스처로 ----------
   {
-    const ftex=finishTexture(roomDef.floorPattern, RW) || GRAIN;
+    const ftex=finishTexture(roomDef.floorPattern, CW) || GRAIN;
     const floorMat=surfaceMat(roomDef.floorColor, roomDef.floorRough??0.8, ftex);
     const g=new THREE.Group();
-    g.add(box(RW,WT,RD, floorMat, 0,-WT/2,0, false));
+    g.add(box(CW,WT,CD, floorMat, 0,-WT/2,0, false));
     g.userData={ normal:[0,-1,0], center:[0,0,0] };
     shells.floor=g; room.add(g);
   }
@@ -246,22 +254,22 @@ export function buildHouse(GRAIN, roomDefIn, winPresets, doorPresets={}, finishe
   // ---------- 천장: 유리 or 1m 솔리드 타일 ----------
   if(roomDef.ceiling==='glass'){
     const gm=makeGlassMaterial();
-    const glass=new THREE.Mesh(new THREE.PlaneGeometry(RW-0.1,RD-0.1), gm);
-    glass.rotation.x=Math.PI/2; glass.position.set(0,RH,0);
+    const glass=new THREE.Mesh(new THREE.PlaneGeometry(CW-0.1,CD-0.1), gm);
+    glass.rotation.x=Math.PI/2; glass.position.set(0,CH,0);
     glassMeshes.push(glass); room.add(glass);
     // 지붕 뼈대(코드 격자 살) 얹기
     tileGlassFrames(room, 'ceiling');
   }else{
     const ceilMat=surfaceMat(roomDef.ceilColor||'#f6f2ea',0.95, GRAIN);
     const g=new THREE.Group();
-    g.add(box(RW,WT,RD, ceilMat, 0, RH+WT/2, 0, false));   // 통판(이음새 없음)
-    g.userData={ normal:[0,1,0], center:[0,RH,0] };
+    g.add(box(CW,WT,CD, ceilMat, 0, CH+WT/2, 0, false));   // 통판(이음새 없음)
+    g.userData={ normal:[0,1,0], center:[0,CH,0] };
     shells.ceiling=g; room.add(g);
   }
 
   // ---------- 벽 4면 ----------
   const wallNormals={ back:[0,0,-1], front:[0,0,1], left:[-1,0,0], right:[1,0,0] };
-  const wallCenters={ back:[0,RH/2,-RD/2], front:[0,RH/2,RD/2], left:[-RW/2,RH/2,0], right:[RW/2,RH/2,0] };
+  const wallCenters={ back:[0,CH/2,-CD/2], front:[0,CH/2,CD/2], left:[-CW/2,CH/2,0], right:[CW/2,CH/2,0] };
 
   for(const wall of ['back','front','left','right']){
     const kind=glassWalls.includes(wall)?'glass':'solid';
@@ -283,7 +291,7 @@ export function buildHouse(GRAIN, roomDefIn, winPresets, doorPresets={}, finishe
     }else{
       // 솔리드 벽: 1m 모듈 파스텔 패널 - 개구부
       const wmat=surfaceMat(roomDef.wallColor, roomDef.wallRough??0.9, GRAIN);
-      for(const r of panelRects(uMin,uMax, 0,RH, openings)){
+      for(const r of panelRects(uMin,uMax, 0,CH, openings)){
         g.add(panelToBox(wall, r, wmat));
       }
       // ★ 원형·아치·라운드 창은 bbox 자리에 '형태대로 뚫린' 벽조각을 끼움
@@ -328,13 +336,74 @@ export function buildHouse(GRAIN, roomDefIn, winPresets, doorPresets={}, finishe
     }
   }
 
+  // ---------- ★ 내벽(칸막이) = 공간 분획 (투룸·아파트) ----------
+  // partitions: [{ axis:'x'|'z', at:위치, from,to:구간, door:{at,w,h}, arch:bool }]
+  // axis 'x' = x=at 에 세워지는 세로벽(z방향으로 뻗음), 'z' = z=at 가로벽(x방향)
+  for(const pt of (roomDef.partitions||[])){
+    const g=new THREE.Group();
+    const pw=surfaceMat(roomDef.wallColor, roomDef.wallRough??0.9, GRAIN);
+    const along=(pt.axis==='x') ? CD : CW;                 // 벽이 뻗는 축 길이
+    // from/to 생략 = 벽~벽 전체. 지정 시에도 방 밖으로 나가지 않게 클램프하고,
+    // 끝이 외벽에 거의 닿으면(0.3m 이내) 딱 붙여 '떠 있는 벽' 틈을 없앤다.
+    let uMin=(pt.from!=null)?Math.max(pt.from,-along/2):-along/2;
+    let uMax=(pt.to  !=null)?Math.min(pt.to,  along/2): along/2;
+    if(uMin> -along/2 && uMin < -along/2+0.3) uMin=-along/2;
+    if(uMax<  along/2 && uMax >  along/2-0.3) uMax= along/2;
+    const holes=[];
+    if(pt.door){                                          // 통로(문틀) 뚫기
+      const dw=pt.door.w??0.95, dh=pt.door.h??Math.min(2.05, CH-0.35), da=pt.door.at??0;
+      holes.push({ x0:da-dw/2, y0:0, x1:da+dw/2, y1:dh });
+    }
+    for(const r of rectMinus({x0:uMin,y0:0,x1:uMax,y1:CH}, holes)){
+      const cu=(r.x0+r.x1)/2, cv=(r.y0+r.y1)/2, du=r.x1-r.x0, dv=r.y1-r.y0;
+      if(du<0.001||dv<0.001) continue;
+      g.add( pt.axis==='x' ? box(WT*0.7,dv,du, pw, pt.at, cv, cu)
+                           : box(du,dv,WT*0.7, pw, cu, cv, pt.at) );
+    }
+    // 열린 끝단(외벽에 안 닿는 쪽)엔 기둥 마감 — 벽이 잘려 떠 있는 것처럼 안 보이게
+    const CAP=WT*1.15;
+    if(uMin > -along/2+0.001)
+      g.add( pt.axis==='x' ? box(CAP,CH,CAP, pw, pt.at, CH/2, uMin+CAP/2)
+                           : box(CAP,CH,CAP, pw, uMin+CAP/2, CH/2, pt.at) );
+    if(uMax <  along/2-0.001)
+      g.add( pt.axis==='x' ? box(CAP,CH,CAP, pw, pt.at, CH/2, uMax-CAP/2)
+                           : box(CAP,CH,CAP, pw, uMax-CAP/2, CH/2, pt.at) );
+
+    // 통로 문틀(케이싱) — 있으면 개구부 가장자리 마감
+    if(pt.door && pt.door.frame!==false){
+      const dw=pt.door.w??0.95, dh=pt.door.h??Math.min(2.05, CH-0.35), da=pt.door.at??0, ft=0.07;
+      const cas=frameMaterial(pt.door.color||'#f4efe4', 'satin');
+      const put=(du,dv,cu,cv)=> g.add( pt.axis==='x' ? box(WT*0.75,dv,du, cas, pt.at, cv, cu)
+                                                     : box(du,dv,WT*0.75, cas, cu, cv, pt.at) );
+      put(ft, dh, da-dw/2+ft/2, dh/2);
+      put(ft, dh, da+dw/2-ft/2, dh/2);
+      put(dw, ft, da, dh-ft/2);
+    }
+    g.userData={ normal:pt.axis==='x'?[1,0,0]:[0,0,1], center:pt.axis==='x'?[pt.at,CH/2,0]:[0,CH/2,pt.at], partition:true };
+    shells['part_'+(pt.id||shellPartIdx++)]=g; room.add(g);
+  }
+
+  // ---------- 가구 배치 (roomDef.furniture) ----------
+  // [{ preset, x, z, rot(도), color, accent, w,h,d }] — x,z는 방 중심 기준(m)
+  const furnGroup=new THREE.Group();
+  for(const f of (roomDef.furniture||[])){
+    const p={ ...(furnPresets[f.preset]||{}), ...f };
+    const type=p.type||f.preset;
+    const g=buildFurniture(type, p);
+    const yBase=g.userData.hangFromCeiling ? CH : 0;      // 천장등은 천장에서 매달림
+    g.position.set(f.x??0, yBase, f.z??0);
+    if(f.rot) g.rotation.y=f.rot*Math.PI/180;
+    furnGroup.add(g);
+  }
+  if(furnGroup.children.length) room.add(furnGroup);
+
   // 그림자: 껍데기 6면 모두 던지고/받게 (숨겨도 빛 막게)
   for(const k in shells) shells[k].traverse(o=>{ if(o.isMesh){ o.castShadow=true; o.receiveShadow=true; } });
 
   // 엔진 winPos = 첫 창(없으면 뒷벽 기본)
-  const winPos = winWorld[0] || new THREE.Vector3(0.6,2.2,-RD/2+0.05);
+  const winPos = winWorld[0] || new THREE.Vector3(0.6,2.2,-CD/2+0.05);
 
-  return { room, shells, windows:winWorld, glassMeshes, winPos };
+  return { room, shells, windows:winWorld, glassMeshes, winPos, size:{ w:CW, d:CD, h:CH }, furniture:furnGroup };
 }
 
 /* ---- 원점 중심 그룹을 벽에 앉힌다 (위치 + Y회전) ---- */
@@ -355,8 +424,8 @@ function makeGlassPane(wall, cu, cy, gw, gh, gm, shape){
 function buildGlassWall(room, glassMeshes, wall, uMin, uMax){
   const width=uMax-uMin;
   const gm=makeGlassMaterial();
-  const glass=new THREE.Mesh(new THREE.PlaneGeometry(width-0.1, RH-0.1), gm);
-  const p=wallPlacement(wall, (uMin+uMax)/2, RH/2);
+  const glass=new THREE.Mesh(new THREE.PlaneGeometry(width-0.1, CH-0.1), gm);
+  const p=wallPlacement(wall, (uMin+uMax)/2, CH/2);
   glass.position.set(...p.pos); glass.rotation.y=p.roty;
   glassMeshes.push(glass); room.add(glass);
 }
@@ -367,14 +436,14 @@ function tileGlassFrames(room, wall, uMin, uMax){
   const opts={ cols:3, rows:2, pattern:'curtainwall', material:fmat };
   if(wall==='ceiling'){
     // 천장 유리 격자: XY평면 프레임을 눕힌다.
-    const frame=buildWindowFrame(RW-0.1, RD-0.1, opts);
-    frame.rotation.x=Math.PI/2; frame.position.set(0, RH-0.01, 0);
+    const frame=buildWindowFrame(CW-0.1, CD-0.1, opts);
+    frame.rotation.x=Math.PI/2; frame.position.set(0, CH-0.01, 0);
     room.add(frame); return;
   }
   // 수직 유리벽: 벽 전체 크기 프레임
   const width=uMax-uMin;
-  const frame=buildWindowFrame(width-0.02, RH-0.02, opts);
-  placeInWall(frame, wall, (uMin+uMax)/2, RH/2);
+  const frame=buildWindowFrame(width-0.02, CH-0.02, opts);
+  placeInWall(frame, wall, (uMin+uMax)/2, CH/2);
   room.add(frame);
 }
 
@@ -385,10 +454,10 @@ function addSkirting(g, wall, uMin, uMax, openings){
   for(const r of rectMinus({x0:uMin,y0:0,x1:uMax,y1:0.22},
       doorHoles.map(o=>({x0:o.x0,y0:0,x1:o.x1,y1:0.22})))){
     const cu=(r.x0+r.x1)/2, du=r.x1-r.x0;
-    if(wall==='back')  g.add(box(du,0.22,0.06,skirt,cu,0.11,-RD/2+0.13,false));
-    if(wall==='front') g.add(box(du,0.22,0.06,skirt,cu,0.11, RD/2-0.13,false));
-    if(wall==='left')  g.add(box(0.06,0.22,du,skirt,-RW/2+0.13,0.11,cu,false));
-    if(wall==='right') g.add(box(0.06,0.22,du,skirt, RW/2-0.13,0.11,cu,false));
+    if(wall==='back')  g.add(box(du,0.22,0.06,skirt,cu,0.11,-CD/2+0.13,false));
+    if(wall==='front') g.add(box(du,0.22,0.06,skirt,cu,0.11, CD/2-0.13,false));
+    if(wall==='left')  g.add(box(0.06,0.22,du,skirt,-CW/2+0.13,0.11,cu,false));
+    if(wall==='right') g.add(box(0.06,0.22,du,skirt, CW/2-0.13,0.11,cu,false));
   }
 }
 
@@ -399,9 +468,10 @@ function addSkirting(g, wall, uMin, uMax, openings){
 export function updateShellVisibility(shells, cam){
   const cp=cam.position;
   for(const key in shells){
-    const sh=shells[key]; const { normal, center }=sh.userData;
+    const sh=shells[key]; const { normal, center, partition }=sh.userData;
     const dot=(cp.x-center[0])*normal[0]+(cp.y-center[1])*normal[1]+(cp.z-center[2])*normal[2];
-    const hide = dot >= 0.3;
+    // 내벽(칸막이)은 방 안쪽이라 숨기지 않는다 — 공간 분획이 보여야 함
+    const hide = partition ? false : (dot >= 0.3);
     sh.traverse(o=>{
       if(!o.isMesh || !o.material) return;
       o.visible=true;

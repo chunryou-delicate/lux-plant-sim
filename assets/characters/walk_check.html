@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>볕 · 캐릭터 모션 점검</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<style>
+  body{margin:0;font-family:"Segoe UI",system-ui,sans-serif;background:#eef3ee;color:#2f3a30}
+  h1{font-size:19px;margin:14px 16px 2px}.sub{margin:0 16px 10px;color:#6b7a6b;font-size:13px}
+  .bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;padding:0 16px 12px;font-size:12px}
+  .bar select,.bar button{padding:6px 10px;border:1px solid #cfe0d3;background:#fff;border-radius:8px;color:#3a6b4e;font-size:12px;cursor:pointer}
+  .bar button.on{background:#3a6b4e;color:#fff;border-color:#3a6b4e}
+  .bar label{display:flex;align-items:center;gap:6px;color:#5c6b5f}
+  .bar input[type=range]{width:120px}
+  .bar b{color:#3a6b4e;font-variant-numeric:tabular-nums;min-width:32px;display:inline-block}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:0 12px 16px}
+  @media(max-width:900px){.grid{grid-template-columns:1fr}}
+  .cell{background:#fff;border:1px solid #dde7dd;border-radius:12px;overflow:hidden;box-shadow:0 2px 8px rgba(80,100,80,.07)}
+  .cvs{width:100%;height:520px;display:block;background:linear-gradient(#f7fbf7,#e7efe7);cursor:grab}
+  .lab{padding:8px 12px}.lab b{font-size:13px;color:#3a6b4e}.lab span{display:block;font-size:11px;color:#8a988a;margin-top:2px}
+  .note{margin:0 16px 18px;padding:12px 14px;background:#fff;border:1px solid #dde7dd;border-radius:10px;font-size:12px;line-height:1.7;color:#5c6b5f;max-width:1000px}
+  .note b{color:#3a6b4e}
+</style>
+</head>
+<body>
+  <h1>볕 · 캐릭터 모션 점검 (정면 · 측면 동시)</h1>
+  <p class="sub">같은 캐릭터를 정면/측면에서 동시에 재생합니다. 드래그 회전 · 스크롤 확대.</p>
+
+  <div class="bar">
+    <select id="pick"></select>
+    <select id="clip"></select>
+    <label>속도 <input type="range" id="spd" min="0" max="2" step="0.05" value="1"><b id="spdv">1.00</b></label>
+    <button id="pause">일시정지</button>
+    <button id="lock" class="on">제자리 고정</button>
+    <button id="step">한 프레임</button>
+    <label>프레임 <b id="tv">0.00</b>s</label>
+  </div>
+
+  <div class="grid">
+    <div class="cell"><canvas class="cvs" id="cf"></canvas>
+      <div class="lab"><b>정면</b><span>얼굴 출렁임 · 어깨 흔들림 · 팔 벌어짐 확인</span></div></div>
+    <div class="cell"><canvas class="cvs" id="cs"></canvas>
+      <div class="lab"><b>측면</b><span>웅크림(크라우치) · 팔 길이 · 보폭 · 하체 두께 확인</span></div></div>
+  </div>
+
+  <div class="note">
+    <b>확인 포인트</b><br>
+    · <b>유휴(Idle)</b> 8종 + <b>Walking_Woman</b> 4종(여캐)을 추가했습니다. 드롭다운으로 전환하세요.<br>· 기본 걷기는 <code>walking_man</code>이라 여캐엔 Walking_Woman 쪽이 자연스럽습니다.<br>
+    · 스켈레톤이 cm 스케일(Hips y≈73)이라 일반 Box3 프레이밍이 깨집니다 → 본 월드좌표로 프레이밍했습니다.<br>
+    · <b>제자리 고정</b>을 끄면 루트모션(전진)이 보입니다. 켜면 Hips의 XZ를 잠가 제자리에서 걷습니다.
+  </div>
+
+<script>
+const CH=[
+ ["char_jachwi_f","여 · 자취생"],
+ ["char_yeoja_jubu","여 · 주부"],
+ ["char_yeoja_gajang","여 · 가장"],
+ ["char_yeoja_researcher","여 · 연구자"],
+ ["char_namja_jachwi","남 · 자취생"],
+ ["char_namja_jubu","남 · 주부"],
+ ["char_namja_gajang","남 · 가장"],
+ ["char_namja_researcher","남 · 연구자"],
+];
+const pick=document.getElementById('pick');
+CH.forEach(([k,n])=>{const o=document.createElement('option');o.value=k;o.textContent=n;pick.appendChild(o);});
+
+// 모션 클립: [파일접미사, 표시명, 여캐전용여부]
+const CLIPS=[
+  ["idle","유휴 (Idle)",false],
+  ["walking","걷기 (walking_man / 기본)",false],
+  ["walking_w","걷기 (Walking_Woman / 여캐)",true],
+];
+const clip=document.getElementById('clip');
+function fillClips(charKey){
+  const isF = /jachwi_f|yeoja/.test(charKey);
+  const cur = clip.value;
+  clip.innerHTML='';
+  CLIPS.filter(c=>!c[2]||isF).forEach(([k,n])=>{
+    const o=document.createElement('option');o.value=k;o.textContent=n;clip.appendChild(o);});
+  if([...clip.options].some(o=>o.value===cur)) clip.value=cur; else clip.value='idle';
+}
+
+// ── 툰·파스텔 (스키닝 유지) ──
+function toonGrad(){const c=document.createElement('canvas');c.width=64;c.height=1;const x=c.getContext('2d');
+ const g=x.createLinearGradient(0,0,64,0);
+ g.addColorStop(0,'#7c877f');g.addColorStop(.45,'#aab8ac');g.addColorStop(.75,'#d2dbd2');g.addColorStop(1,'#ffffff');
+ x.fillStyle=g;x.fillRect(0,0,64,1);
+ const t=new THREE.CanvasTexture(c);t.minFilter=THREE.LinearFilter;t.magFilter=THREE.LinearFilter;t.generateMipmaps=false;return t;}
+const GRAD=toonGrad();
+function pastelize(tex){try{if(!tex||!tex.image)return tex;const im=tex.image,w=im.width||512,h=im.height||512;if(!w)return tex;
+ const c=document.createElement('canvas');c.width=w;c.height=h;const x=c.getContext('2d');x.drawImage(im,0,0,w,h);
+ const d=x.getImageData(0,0,w,h),p=d.data,S=.7;
+ for(let i=0;i<p.length;i+=4){const r=p[i],g=p[i+1],b=p[i+2],y=.299*r+.587*g+.114*b;
+  p[i]=y+(r-y)*S;p[i+1]=y+(g-y)*S;p[i+2]=y+(b-y)*S;}
+ x.putImageData(d,0,0);const nt=new THREE.CanvasTexture(c);nt.flipY=tex.flipY;nt.encoding=THREE.sRGBEncoding;nt.needsUpdate=true;return nt;}catch(e){return tex;}}
+// 스킨드 메시는 mergeVertices 금지(스킨 속성 깨짐) → 노멀만 재계산하지 않고 원본 유지
+function toonify(root){root.traverse(o=>{if(!o.isMesh||!o.material)return;try{
+ const src=Array.isArray(o.material)?o.material:[o.material];
+ const out=src.map(m=>{
+   const mat=new THREE.MeshToonMaterial({map:m.map?pastelize(m.map):null,
+     color:m.map?0xffffff:(m.color?m.color.getHex():0xffffff),gradientMap:GRAD});
+   mat.skinning=!!o.isSkinnedMesh; mat.morphTargets=!!m.morphTargets;
+   return mat;});
+ o.material=Array.isArray(o.material)?out:out[0];}catch(e){}});}
+
+// ── 본 월드좌표 기반 프레이밍 (cm스케일/스킨드 대응) ──
+function boneBox(root){
+  root.updateMatrixWorld(true);
+  const pts=[];
+  root.traverse(o=>{if(o.isBone) pts.push(o.getWorldPosition(new THREE.Vector3()));});
+  if(pts.length<3) return new THREE.Box3().setFromObject(root);
+  const box=new THREE.Box3().setFromPoints(pts);
+  const s=box.getSize(new THREE.Vector3());
+  // 본은 표면을 포함하지 않으므로 머리/발 여유분 확보
+  box.expandByVector(new THREE.Vector3(s.x*0.35, s.y*0.16, s.z*0.35));
+  return box;
+}
+
+function makeView(canvasId, mode){
+  const cv=document.getElementById(canvasId);
+  const r=new THREE.WebGLRenderer({canvas:cv,antialias:true,alpha:true});
+  r.setPixelRatio(Math.min(devicePixelRatio,2));r.outputEncoding=THREE.sRGBEncoding;
+  const sc=new THREE.Scene();
+  const cam=new THREE.PerspectiveCamera(32,1,0.01,5000);
+  const ctr=new THREE.OrbitControls(cam,cv);ctr.enableDamping=true;
+  sc.add(new THREE.AmbientLight(0xffffff,0.70));
+  sc.add(new THREE.HemisphereLight(0xffffff,0xdfe6df,0.22));
+  const d=new THREE.DirectionalLight(0xffffff,0.45);d.position.set(2,4,3);sc.add(d);
+  const clock=new THREE.Clock();          // 캔버스마다 독립 clock
+  const V={sc,cam,ctr,r,clock,mixer:null,action:null,root:null,hips:null,hips0:null,cv,mode};
+  (function loop(){
+    requestAnimationFrame(loop);
+    const w=cv.clientWidth,h=cv.clientHeight;
+    if(cv.width!==w||cv.height!==h){r.setSize(w,h,false);cam.aspect=w/h;cam.updateProjectionMatrix();}
+    const dt=clock.getDelta();
+    if(V.mixer && !ST.paused) V.mixer.update(dt*ST.speed);
+    if(V.hips && ST.lock){ V.hips.position.x=V.hips0.x; V.hips.position.z=V.hips0.z; }
+    ctr.update(); r.render(sc,cam);
+  })();
+  return V;
+}
+
+const ST={speed:1,paused:false,lock:true};
+const VF=makeView('cf','front'), VS=makeView('cs','side');
+
+function load(key){
+  [VF,VS].forEach(V=>{
+    if(V.root){V.sc.remove(V.root);V.root=null;V.mixer=null;V.hips=null;}
+    new THREE.GLTFLoader().load(`3d/${key}_${clip.value}.glb`,gl=>{
+      const m=gl.scene; toonify(m); V.sc.add(m); V.root=m;
+      if(gl.animations && gl.animations.length){
+        V.mixer=new THREE.AnimationMixer(m);
+        V.action=V.mixer.clipAction(gl.animations[0]);
+        V.action.play();
+        V.mixer.update(0.001);          // 한 프레임 적용해 포즈 확정
+      }
+      m.traverse(o=>{ if(o.isBone && !V.hips && /hips/i.test(o.name)){ V.hips=o; V.hips0=o.position.clone(); } });
+
+      const box=boneBox(m);
+      const c=box.getCenter(new THREE.Vector3());
+      const sph=box.getBoundingSphere(new THREE.Sphere());
+      const rad=Math.max(sph.radius,0.001);
+      V.ctr.target.copy(c);
+      const dist=rad/Math.sin((32*Math.PI/180)/2)*1.05;
+      V.cam.near=Math.max(dist/500,0.001); V.cam.far=dist*500;
+      if(V.mode==='front') V.cam.position.set(c.x, c.y+rad*0.05, c.z+dist);
+      else                 V.cam.position.set(c.x+dist, c.y+rad*0.05, c.z);
+      V.cam.updateProjectionMatrix(); V.ctr.update();
+    },undefined,e=>{V.cv.style.background='#fdeaea';console.warn(e);});
+  });
+}
+fillClips(CH[0][0]);
+load(CH[0][0]);
+pick.onchange=()=>{fillClips(pick.value);load(pick.value);};
+clip.onchange=()=>load(pick.value);
+
+const spd=document.getElementById('spd'), spdv=document.getElementById('spdv'), tv=document.getElementById('tv');
+spd.oninput=()=>{ST.speed=parseFloat(spd.value);spdv.textContent=ST.speed.toFixed(2);};
+const pauseBtn=document.getElementById('pause');
+pauseBtn.onclick=()=>{ST.paused=!ST.paused;pauseBtn.textContent=ST.paused?'재생':'일시정지';pauseBtn.classList.toggle('on',ST.paused);};
+const lockBtn=document.getElementById('lock');
+lockBtn.onclick=()=>{ST.lock=!ST.lock;lockBtn.classList.toggle('on',ST.lock);};
+document.getElementById('step').onclick=()=>{
+  ST.paused=true;pauseBtn.textContent='재생';pauseBtn.classList.add('on');
+  [VF,VS].forEach(V=>{if(V.mixer)V.mixer.update(1/30);});
+};
+setInterval(()=>{ if(VF.action) tv.textContent=(VF.action.time||0).toFixed(2); },100);
+</script>
+</body>
+</html>

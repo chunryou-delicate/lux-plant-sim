@@ -7,7 +7,7 @@
 import { createScene, updateLight } from './render3d/scene.js';
 import { initTextures, faintGrainTexture } from './render3d/textures.js';
 import { buildHouse, updateShellVisibility, RW, RD } from './render3d/house.js';
-import { buildFurniture } from './render3d/furniture.js';
+// 가구는 이제 house.js가 방 데이터(roomDef.furniture)로 배치한다 — 옛 furniture.js(임시 박스)는 미사용.
 import { sunState, computeLux } from './engine/lighting.js';
 import { buildFloorHeatmap, updateFloorHeatmap } from './render3d/lighting_viz.js';
 
@@ -19,14 +19,11 @@ const houseRooms = await fetch('./data/house_rooms.json').then(r=>r.json()).catc
 const winPresets = await fetch('./data/window_presets.json').then(r=>r.json()).then(d=>d.presets||d).catch(()=>({}));
 const doorPresets = await fetch('./data/door_presets.json').then(r=>r.json()).then(d=>d.presets||d).catch(()=>({}));
 const finishes   = await fetch('./data/room_finishes.json').then(r=>r.json()).catch(()=>null);
+const furnPresets= await fetch('./data/furniture_presets.json').then(r=>r.json()).then(d=>d.presets||d).catch(()=>({}));
 
 const cv=document.getElementById('cv');
 const ctx=createScene(cv);
-const TEX=initTextures();                 // 절차적(가구용, 지금은 대기)
 const GRAIN=faintGrainTexture();          // A미니멀 표면 결(벽·바닥·천장 공용)
-// 임시 플레이스홀더 가구(furniture.js: 침대·책상 등)는 우리 파스텔 저폴리 스타일이 아님.
-// → 빈 방으로 뼈대 스타일부터 맞춘다. 우리 가구 만들면 true로.
-const SHOW_FURNITURE=false;
 
 // ===== 집(모듈 조립) — 프리셋 전환 가능 =====
 let shells;
@@ -38,19 +35,18 @@ async function buildRoomPreset(name){
   while(houseGroup.children.length) houseGroup.remove(houseGroup.children[0]);
   curRoom=name;
   const roomDef=houseRooms.rooms[name];
-  const built=buildHouse(GRAIN, roomDef, winPresets, doorPresets, finishes);
+  const built=buildHouse(GRAIN, roomDef, winPresets, doorPresets, finishes, furnPresets);
   shells=built.shells;
   houseGroup.add(built.room);
+  // 방 크기가 바뀌면 바닥 히트맵도 그 크기로 다시 (방마다 5×4, 3×4 등)
+  RSIZE=built.size;
+  ctx.scene.remove(heatMesh);
+  heatMesh=buildFloorHeatmap(RSIZE.w, RSIZE.d); heatMesh.visible=showHeat; ctx.scene.add(heatMesh);
   ctx.winPos=built.winPos; ctx.glassMeshes=built.glassMeshes;
 
-  if(SHOW_FURNITURE){
-    const fur=buildFurniture(built.room, TEX);
-    ctx.clShade=fur.clShade;
-    fur.monstera.leafMats.forEach(m=>{ m.emissive=new THREE.Color(0x7ad36a); m.emissiveIntensity=0; });
-    plants=[{ leafMats:fur.monstera.leafMats, u:0.571, v:0.629, needLux:400, label:'몬스테라' }];
-  }else{
-    ctx.clShade=null; plants=[];             // 빈 방(스타일 우선)
-  }
+  // 천장등 갓 = 밤에 발광시킬 대상(가구 중 lamp_ceiling)
+  ctx.clShade=null; plants=[];
+  built.furniture.traverse(o=>{ if(o.parent&&o.parent.userData&&o.parent.userData.lampShade===o) ctx.clShade=o; });
 
   applyLight();
   // 방 라벨 표시
@@ -59,7 +55,8 @@ async function buildRoomPreset(name){
 }
 
 // ===== STEP4: 엔진 조도(lx) ↔ 3D 연결 =====
-const heatMesh=buildFloorHeatmap(RW, RD); heatMesh.visible=false; ctx.scene.add(heatMesh);
+let heatMesh=buildFloorHeatmap(RW, RD); heatMesh.visible=false; ctx.scene.add(heatMesh);
+let RSIZE={ w:RW, d:RD };   // 현재 방 실제 치수(방마다 다름) — 히트맵·조도 격자에 사용
 let showHeat=false;
 // 조도 판정 대상 — buildRoomPreset()에서 방마다 재바인딩. RW=RD=7
 let plants=[];
@@ -96,7 +93,7 @@ function engineRefresh(){
   if(ceilingMode!==2) items.push({ type:'ceiling', u:0.5, v:0.5 });   // 천장등(끄기면 제외)
   const field=computeLux({ room:roomModel, catalog, items, sun:sunState(t), lampManual:(ceilingMode===1) });
 
-  if(showHeat){ updateFloorHeatmap(heatMesh, field, RW, RD); heatMesh.visible=true; }
+  if(showHeat){ updateFloorHeatmap(heatMesh, field, RSIZE.w, RSIZE.d); heatMesh.visible=true; }
   else heatMesh.visible=false;
 
   for(const p of plants){

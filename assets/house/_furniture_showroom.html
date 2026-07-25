@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>볕 · 파스텔 저폴리 가구 쇼룸</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Jua&family=Gaegu:wght@400;700&display=swap');
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{background:#eceef0;font-family:'Gaegu',sans-serif;color:#2e2e38}
+  #c{position:fixed;inset:0;width:100%;height:100%;z-index:0;display:block}
+  header{position:relative;z-index:2;padding:16px 22px 4px}
+  h1{font-family:'Jua';font-size:22px}h1 b{color:#e08a2c}
+  .sub{font-weight:700;font-size:12.5px;color:#6a6f7a;margin-top:2px}
+  .grid{position:relative;z-index:2;display:grid;gap:14px;padding:12px 22px 60px;
+    grid-template-columns:repeat(auto-fill,minmax(240px,1fr))}
+  .cell{background:rgba(255,255,255,.55);border-radius:13px;border:1px solid #dfe3e7;overflow:hidden}
+  .view{width:100%;height:210px}
+  .meta{padding:8px 11px 10px}
+  .nm{font-family:'Jua';font-size:14px;display:flex;align-items:center;gap:7px}
+  .sw{width:14px;height:14px;border-radius:4px;border:1px solid rgba(0,0,0,.18)}
+  .row{font-weight:700;font-size:11.5px;color:#6a7078;margin-top:3px}
+  .tg{display:inline-block;background:#eef1f4;border-radius:6px;padding:1px 7px;margin:2px 4px 0 0;font-size:11px;color:#5a6069}
+  #err{position:fixed;z-index:9;left:12px;bottom:12px;background:#c0392b;color:#fff;padding:8px 12px;border-radius:8px;display:none}
+  #hint{position:fixed;z-index:3;bottom:14px;left:50%;transform:translateX(-50%);background:rgba(30,30,40,.55);color:#fff;font-weight:700;font-size:12.5px;padding:5px 13px;border-radius:13px;transition:opacity .8s}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<header>
+  <h1>볕<b>.</b> 파스텔 저폴리 가구</h1>
+  <div class="sub">코드 생성 · 게임과 같은 재질/조명 · 드래그로 전체 회전</div>
+</header>
+<div class="grid" id="grid"></div>
+<div id="hint">드래그하면 모든 가구가 같이 돌아갑니다</div>
+<div id="err"></div>
+
+<script type="module">
+const V='?v='+Date.now();
+const showErr=m=>{const e=document.getElementById('err');e.textContent=m;e.style.display='block';};
+window.addEventListener('error',e=>showErr('오류: '+e.message));
+window.addEventListener('unhandledrejection',e=>showErr('로드 오류: '+(e.reason&&e.reason.message||e.reason)));
+
+let buildFurniture;
+try{ ({ buildFurniture }=await import('../../src/render3d/furniture_pastel.js'+V)); }
+catch(e){ showErr('모듈 로드 실패: '+e.message); throw e; }
+
+const canvas=document.getElementById('c');
+const renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:true});
+renderer.setPixelRatio(Math.min(2,devicePixelRatio||1));
+renderer.shadowMap.enabled=true; renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+renderer.outputEncoding=THREE.sRGBEncoding;
+renderer.toneMapping=THREE.NoToneMapping;   // 카탈로그: 지정한 색 그대로 보이게(ACES는 밝은 색을 탈색시킴)
+renderer.setScissorTest(true);
+
+function envTex(){const c=document.createElement('canvas');c.width=32;c.height=96;const x=c.getContext('2d');
+  const g=x.createLinearGradient(0,0,0,96);g.addColorStop(0,'#f2f7ff');g.addColorStop(.55,'#d8e2ec');g.addColorStop(1,'#b6bcc3');
+  x.fillStyle=g;x.fillRect(0,0,32,96);const t=new THREE.CanvasTexture(c);
+  t.mapping=THREE.EquirectangularReflectionMapping;return t;}
+let ENV=null; try{const p=new THREE.PMREMGenerator(renderer);ENV=p.fromEquirectangular(envTex()).texture;}catch(e){}
+
+const presets=await fetch('../../data/furniture_presets.json'+V).then(r=>r.json())
+  .catch(e=>{showErr('프리셋 로드 실패: '+e.message);throw e;});
+const P=presets.presets;
+
+const items=[];
+const grid=document.getElementById('grid');
+for(const [id,p] of Object.entries(P)){
+  const cell=document.createElement('div'); cell.className='cell';
+  const view=document.createElement('div'); view.className='view'; cell.appendChild(view);
+  cell.innerHTML+=`<div class="meta">
+    <div class="nm"><span class="sw" style="background:${p.color||'#ddd'}"></span>${p.name_ko}</div>
+    <div class="row">${id}</div>
+    <div class="row"><span class="tg">${p.type}</span>${p.room?`<span class="tg">${p.room}</span>`:''}</div></div>`;
+  grid.appendChild(cell);
+  const v=cell.querySelector('.view');
+
+  const scene=new THREE.Scene();
+  if(ENV) scene.environment=ENV;
+  scene.add(new THREE.HemisphereLight(0xc8d6e4,0x8a8172,0.28));
+  const dir=new THREE.DirectionalLight(0xfff3e2,0.72);
+  dir.position.set(2.6,4.2,3.4); dir.castShadow=true;
+  dir.shadow.mapSize.set(1024,1024); dir.shadow.radius=4; dir.shadow.bias=-0.0005;
+  const sd=4; dir.shadow.camera.left=-sd;dir.shadow.camera.right=sd;dir.shadow.camera.top=sd;dir.shadow.camera.bottom=-sd;
+  scene.add(dir);
+  const floor=new THREE.Mesh(new THREE.PlaneGeometry(9,9),
+    new THREE.MeshStandardMaterial({color:0xe6e0d5, roughness:0.98}));
+  floor.rotation.x=-Math.PI/2; floor.receiveShadow=true; scene.add(floor);
+
+  let obj;
+  try{ obj=buildFurniture(p.type, p); }catch(e){ showErr(id+' 생성 실패: '+e.message); continue; }
+  if(obj.userData.hangFromCeiling) obj.position.y=1.9;      // 천장등은 띄워서
+  scene.add(obj);
+  const sz=obj.userData.size||{w:1,h:1,d:1};
+  const span=Math.max(sz.w,sz.h,sz.d)||1;
+  const cam=new THREE.PerspectiveCamera(32,1,0.05,60);
+  items.push({view:v, scene, cam, span, cy:(obj.userData.hangFromCeiling?1.75:sz.h*0.5)});
+}
+
+let az=0.65, drag=false, px=0, py=0, pitch=0.24;
+canvas.addEventListener('pointerdown',e=>{drag=true;px=e.clientX;py=e.clientY;
+  const h=document.getElementById('hint'); if(h)h.style.opacity='0';});
+addEventListener('pointermove',e=>{if(!drag)return;az+=(e.clientX-px)*0.007;
+  pitch=Math.max(0.02,Math.min(0.9,pitch+(e.clientY-py)*0.004));px=e.clientX;py=e.clientY;});
+addEventListener('pointerup',()=>drag=false);
+function resize(){renderer.setSize(innerWidth,innerHeight,false);}
+addEventListener('resize',resize); resize();
+
+function render(){
+  requestAnimationFrame(render);
+  const ch=canvas.clientHeight;
+  for(const it of items){
+    const r=it.view.getBoundingClientRect();
+    if(r.bottom<0||r.top>ch) continue;
+    const w=r.width,h=r.height,l=r.left,b=ch-r.bottom;
+    renderer.setViewport(l,b,w,h); renderer.setScissor(l,b,w,h);
+    it.cam.aspect=w/h; it.cam.updateProjectionMatrix();
+    const dist=it.span*2.5+0.9, cp=Math.cos(pitch);
+    it.cam.position.set(Math.sin(az)*cp*dist, it.cy+Math.sin(pitch)*dist, Math.cos(az)*cp*dist);
+    it.cam.lookAt(0,it.cy,0);
+    renderer.render(it.scene,it.cam);
+  }
+}
+render();
+document.title=`볕 · 가구 쇼룸 (${items.length})`;
+</script>
+</body>
+</html>

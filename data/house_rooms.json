@@ -22,9 +22,9 @@
         {
           "wall": "back",
           "cu": 0,
-          "cy": 3.35,
-          "w": 2.8,
-          "h": 0.85,
+          "cy": 1.77,
+          "w": 2.2,
+          "h": 0.55,
           "preset": "win_semi_letterbox",
           "color": "#e2e4e6",
           "gloss": "matte"
@@ -33,10 +33,54 @@
       "doors": [
         {
           "wall": "front",
-          "cu": -2,
-          "w": 1.15,
-          "h": 2.45,
+          "cu": -1.6,
+          "w": 0.9,
+          "h": 2,
           "preset": "door_plain_cream"
+        }
+      ],
+      "size": {
+        "w": 5,
+        "d": 4,
+        "h": 2.3
+      },
+      "furniture": [
+        {
+          "preset": "bed_single",
+          "x": -1.55,
+          "z": -0.5
+        },
+        {
+          "preset": "desk",
+          "x": 1.3,
+          "z": -1.5
+        },
+        {
+          "preset": "chair",
+          "x": 1.3,
+          "z": -0.85,
+          "rot": 180
+        },
+        {
+          "preset": "dresser",
+          "x": 1.7,
+          "z": 1.3,
+          "rot": -90
+        },
+        {
+          "preset": "lamp_ceiling",
+          "x": 0,
+          "z": 0
+        },
+        {
+          "preset": "lamp_floor",
+          "x": 2.15,
+          "z": -0.6
+        },
+        {
+          "preset": "pot_small",
+          "x": 0,
+          "z": -1.75
         }
       ]
     },
@@ -52,10 +96,10 @@
       "windows": [
         {
           "wall": "back",
-          "cu": 0.6,
-          "cy": 2.2,
-          "w": 2.6,
-          "h": 2.4,
+          "cu": 0.5,
+          "cy": 1.5,
+          "w": 2.4,
+          "h": 1.45,
           "preset": "win_studio_cross",
           "color": "#f8f4ec",
           "gloss": "matte"
@@ -64,51 +108,208 @@
       "doors": [
         {
           "wall": "front",
-          "cu": -2.1,
-          "w": 1.15,
-          "h": 2.45,
+          "cu": -2,
+          "w": 0.95,
+          "h": 2.05,
           "preset": "door_wood"
+        }
+      ],
+      "size": {
+        "w": 6,
+        "d": 5,
+        "h": 2.5
+      },
+      "furniture": [
+        {
+          "preset": "bed_single",
+          "x": -2,
+          "z": -0.9,
+          "rot": 0
+        },
+        {
+          "preset": "nightstand",
+          "x": -2,
+          "z": 0.45
+        },
+        {
+          "preset": "desk",
+          "x": 1.4,
+          "z": -1.95,
+          "rot": 0
+        },
+        {
+          "preset": "chair",
+          "x": 1.4,
+          "z": -1.25,
+          "rot": 180
+        },
+        {
+          "preset": "wardrobe",
+          "x": 2.4,
+          "z": 1.4,
+          "rot": -90
+        },
+        {
+          "preset": "shelf",
+          "x": -0.4,
+          "z": -2.15
+        },
+        {
+          "preset": "rug",
+          "x": 0.6,
+          "z": 0.8
+        },
+        {
+          "preset": "lamp_floor",
+          "x": 2.5,
+          "z": -1.9
+        },
+        {
+          "preset": "lamp_ceiling",
+          "x": 0,
+          "z": 0
+        },
+        {
+          "preset": "pot_mid",
+          "x": 0.5,
+          "z": -2
+        },
+        {
+          "preset": "pot_small",
+          "x": 2.15,
+          "z": -2.05
         }
       ]
     },
     "apartment": {
       "label": "아파트",
       "light": "좋음",
-      "wallColor": "#e2f0e6",
-      "floorColor": "#ead9c0",
-      "ceilColor": "#f4f7f3",
-      "wallRough": 0.9,
-      "floorRough": 0.78,
       "glassWalls": [],
       "ceiling": "solid",
       "windows": [
         {
-          "module": "window_normal",
           "wall": "back",
-          "cu": -0.4,
-          "cy": 2.15,
-          "w": 4,
-          "h": 2.9,
-          "cols": 3,
-          "rows": 2
+          "cu": -1.6,
+          "cy": 1.3,
+          "w": 3.2,
+          "h": 1.9,
+          "preset": "win_apt_big",
+          "color": "#ffffff",
+          "gloss": "satin",
+          "note": "거실 큰창"
         },
         {
-          "module": "window_normal",
-          "wall": "right",
-          "cu": 1.4,
-          "cy": 2.1,
-          "w": 2.2,
-          "h": 2.6,
-          "cols": 2,
-          "rows": 2
+          "wall": "back",
+          "cu": 2.9,
+          "cy": 1.3,
+          "w": 1.6,
+          "h": 1.9,
+          "preset": "win_apt_wide",
+          "color": "#ffffff",
+          "gloss": "satin",
+          "note": "안방 창"
         }
       ],
       "doors": [
         {
           "wall": "front",
-          "cu": -2.1,
-          "w": 1.15,
-          "h": 2.45
+          "cu": -2.8,
+          "w": 1,
+          "h": 2.15,
+          "preset": "door_plain_white",
+          "note": "현관 — 거실쪽"
+        }
+      ],
+      "size": {
+        "w": 8,
+        "d": 6,
+        "h": 2.6
+      },
+      "wall": "w_pure",
+      "floor": "f_oak",
+      "ceil": "c_white",
+      "partitions": [
+        {
+          "id": "bed",
+          "axis": "x",
+          "at": 1.7,
+          "door": {
+            "at": 1.1,
+            "w": 0.95,
+            "h": 2.1
+          },
+          "note": "거실(좌) / 안방(우) 분획. 벽~벽 전체 + 통로."
+        }
+      ],
+      "furniture": [
+        {
+          "preset": "sofa_blush",
+          "x": -1.6,
+          "z": 1.4,
+          "rot": 180
+        },
+        {
+          "preset": "table_round",
+          "x": -1.6,
+          "z": 0.15
+        },
+        {
+          "preset": "tv",
+          "x": -1.6,
+          "z": -2.5
+        },
+        {
+          "preset": "shelf",
+          "x": -3.5,
+          "z": -0.6,
+          "rot": 90
+        },
+        {
+          "preset": "rug",
+          "x": -1.6,
+          "z": 0.7
+        },
+        {
+          "preset": "kitchen",
+          "x": -2.6,
+          "z": 2.3,
+          "rot": 0
+        },
+        {
+          "preset": "fridge",
+          "x": -3.6,
+          "z": 2.35,
+          "rot": 0
+        },
+        {
+          "preset": "bed_double",
+          "x": 2.9,
+          "z": -1.2
+        },
+        {
+          "preset": "nightstand",
+          "x": 2.9,
+          "z": 0.45
+        },
+        {
+          "preset": "lamp_ceiling",
+          "x": -1.6,
+          "z": 0
+        },
+        {
+          "preset": "lamp_floor",
+          "x": -3.3,
+          "z": -1.8
+        },
+        {
+          "preset": "pot_large",
+          "x": 0.9,
+          "z": -2.4
+        },
+        {
+          "preset": "pot_mid",
+          "x": 3.6,
+          "z": -2.4
         }
       ]
     },
@@ -127,9 +328,9 @@
           "module": "window_normal",
           "wall": "back",
           "cu": -2.2,
-          "cy": 2.2,
+          "cy": 1.38,
           "w": 1.7,
-          "h": 2.4,
+          "h": 2.05,
           "cols": 1,
           "rows": 2
         },
@@ -137,9 +338,9 @@
           "module": "window_normal",
           "wall": "back",
           "cu": 0,
-          "cy": 2.2,
+          "cy": 1.38,
           "w": 1.7,
-          "h": 2.4,
+          "h": 2.05,
           "cols": 1,
           "rows": 2
         },
@@ -147,9 +348,9 @@
           "module": "window_normal",
           "wall": "back",
           "cu": 2.2,
-          "cy": 2.2,
+          "cy": 1.38,
           "w": 1.7,
-          "h": 2.4,
+          "h": 2.05,
           "cols": 1,
           "rows": 2
         }
@@ -161,7 +362,12 @@
           "w": 1.15,
           "h": 2.45
         }
-      ]
+      ],
+      "size": {
+        "w": 8,
+        "d": 6,
+        "h": 2.8
+      }
     },
     "greenhouse": {
       "label": "온실",
@@ -185,7 +391,135 @@
           "w": 1.15,
           "h": 2.45
         }
+      ],
+      "size": {
+        "w": 5,
+        "d": 5,
+        "h": 2.8
+      }
+    },
+    "tworoom": {
+      "label": "투룸",
+      "light": "보통",
+      "done": false,
+      "size": {
+        "w": 7,
+        "d": 5,
+        "h": 2.5
+      },
+      "wall": "w_cream",
+      "floor": "f_oak",
+      "ceil": "c_white",
+      "glassWalls": [],
+      "ceiling": "solid",
+      "partitions": [
+        {
+          "id": "mid",
+          "axis": "x",
+          "at": -0.6,
+          "door": {
+            "at": 1.4,
+            "w": 0.95,
+            "h": 2.05
+          },
+          "note": "침실(좌)/거실(우), 벽~벽 전체"
+        }
+      ],
+      "windows": [
+        {
+          "wall": "back",
+          "cu": -2.2,
+          "cy": 1.5,
+          "w": 1.6,
+          "h": 1.45,
+          "preset": "win_studio_cross",
+          "color": "#f8f4ec",
+          "gloss": "matte",
+          "note": "침실 창"
+        },
+        {
+          "wall": "back",
+          "cu": 1.6,
+          "cy": 1.5,
+          "w": 2.2,
+          "h": 1.45,
+          "preset": "win_apt_wide",
+          "color": "#f8f4ec",
+          "gloss": "satin",
+          "note": "거실 창"
+        }
+      ],
+      "doors": [
+        {
+          "wall": "front",
+          "cu": 2.4,
+          "w": 0.95,
+          "h": 2.05,
+          "preset": "door_wood"
+        }
+      ],
+      "furniture": [
+        {
+          "preset": "bed_double",
+          "x": -2.2,
+          "z": -1
+        },
+        {
+          "preset": "nightstand",
+          "x": -2.2,
+          "z": 0.55
+        },
+        {
+          "preset": "wardrobe",
+          "x": -3,
+          "z": 1.5,
+          "rot": 90
+        },
+        {
+          "preset": "sofa",
+          "x": 1.4,
+          "z": 1.1,
+          "rot": 180
+        },
+        {
+          "preset": "table_round",
+          "x": 1.4,
+          "z": -0.1
+        },
+        {
+          "preset": "tv",
+          "x": 1.4,
+          "z": -2.1
+        },
+        {
+          "preset": "shelf_low",
+          "x": 2.9,
+          "z": 0.2,
+          "rot": -90
+        },
+        {
+          "preset": "rug",
+          "x": 1.4,
+          "z": 0.4
+        },
+        {
+          "preset": "lamp_ceiling",
+          "x": 1.4,
+          "z": 0
+        },
+        {
+          "preset": "pot_large",
+          "x": 2.8,
+          "z": -1.8
+        },
+        {
+          "preset": "pot_mid",
+          "x": 0.2,
+          "z": -2
+        }
       ]
     }
-  }
+  },
+  "_partitions": "partitions=[{axis:x|z, at, from,to(선택), door:{at,w,h}}] — 내벽으로 공간 분획. 컷어웨이에서 안 숨김.",
+  "_furniture": "furniture=[{preset,x,z,rot(도),color,...}] — data/furniture_presets.json 참조. x,z=방 중심 기준 m."
 }

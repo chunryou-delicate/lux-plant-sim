@@ -1,0 +1,198 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>볕 · 캐릭터 모션 라이브러리</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<style>
+  body{margin:0;font-family:"Segoe UI",system-ui,sans-serif;background:#eef3ee;color:#2f3a30}
+  h1{font-size:19px;margin:14px 16px 2px}.sub{margin:0 16px 10px;color:#6b7a6b;font-size:13px}
+  .bar{display:flex;flex-wrap:wrap;gap:9px;align-items:center;padding:0 16px 12px;font-size:12px}
+  .bar select,.bar button{padding:6px 10px;border:1px solid #cfe0d3;background:#fff;border-radius:8px;color:#3a6b4e;font-size:12px;cursor:pointer}
+  .bar button.on{background:#3a6b4e;color:#fff;border-color:#3a6b4e}
+  .bar label{display:flex;align-items:center;gap:6px;color:#5c6b5f}
+  .bar input[type=range]{width:110px}
+  .bar b{color:#3a6b4e;font-variant-numeric:tabular-nums;min-width:30px;display:inline-block}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:0 12px 16px}
+  @media(max-width:900px){.grid{grid-template-columns:1fr}}
+  .cell{background:#fff;border:1px solid #dde7dd;border-radius:12px;overflow:hidden;box-shadow:0 2px 8px rgba(80,100,80,.07)}
+  .cvs{width:100%;height:500px;display:block;background:linear-gradient(#f7fbf7,#e7efe7);cursor:grab}
+  .lab{padding:8px 12px}.lab b{font-size:13px;color:#3a6b4e}.lab span{display:block;font-size:11px;color:#8a988a;margin-top:2px}
+  .note{margin:0 16px 18px;padding:12px 14px;background:#fff;border:1px solid #dde7dd;border-radius:10px;font-size:12px;line-height:1.7;color:#5c6b5f;max-width:1000px}
+  .note b{color:#3a6b4e} .note code{background:#f2f8f3;padding:1px 5px;border-radius:4px}
+  #err{color:#b4544c}
+</style>
+</head>
+<body>
+  <h1>볕 · 캐릭터 모션 라이브러리 (정면 · 측면)</h1>
+  <p class="sub">리깅 메시 1개 + 애니 클립(뼈대 전용)을 조합해 재생합니다. 드래그 회전 · 스크롤 확대.</p>
+
+  <div class="bar">
+    <select id="pick"></select>
+    <select id="clip"></select>
+    <label>속도 <input type="range" id="spd" min="0" max="2" step="0.05" value="1"><b id="spdv">1.00</b></label>
+    <button id="pause">일시정지</button>
+    <button id="lock" class="on">제자리 고정</button>
+    <span id="err"></span>
+  </div>
+
+  <div class="grid">
+    <div class="cell"><canvas class="cvs" id="cf"></canvas>
+      <div class="lab"><b>정면</b><span>얼굴·어깨·팔 확인</span></div></div>
+    <div class="cell"><canvas class="cvs" id="cs"></canvas>
+      <div class="lab"><b>측면</b><span>웅크림·보폭·자세 확인</span></div></div>
+  </div>
+
+  <div class="note">
+    <b>구조</b> — Meshy는 애니메이션마다 스킨드 메시(≈15MB)를 통째로 재출력하지만,
+    실제 애니 데이터는 68KB뿐입니다. 그래서 클립은 <code>3d/anim/</code>에 뼈대+트랙만 남겨
+    저장하고(<code>tools/strip_anim_glb.py</code>), 여기서 <code>char_*_rigged.glb</code>에 얹어 재생합니다.
+    본 이름 26개가 완전히 일치해 그대로 바인딩됩니다. 엔진에서도 같은 방식으로 쓰면 됩니다.
+  </div>
+
+<script>
+const V='?v='+Date.now();   // 브라우저 캐시 무효화 (GLB 교체분이 반영되도록)
+const CH=[
+ ["char_jachwi_f","여 · 자취생"],["char_yeoja_jubu","여 · 주부"],
+ ["char_yeoja_gajang","여 · 가장"],["char_yeoja_researcher","여 · 연구자"],
+ ["char_namja_jachwi","남 · 자취생"],["char_namja_jubu","남 · 주부"],
+ ["char_namja_gajang","남 · 가장"],["char_namja_researcher","남 · 연구자"],
+];
+// [파일접미사, 표시명, 경로타입]  path: 'anim' = 3d/anim/, 'root' = 3d/
+const CLIPS=[
+ ["idle","유휴 (Idle)","root"],
+ ["walking","걷기 (기본)","root"],
+ ["walking_w","걷기 (여성)","root"],
+ ["inspect","★ 굽혀 살펴보기","anim"],
+ ["repot","★ 쭈그려 옮겨놓기","anim"],
+ ["pickup","허리 굽혀 집기","anim"],
+ ["harvest","서서 따기","anim"],
+ ["harvest_crouch","쭈그려 따고 일어서기","anim"],
+ ["opendoor","문 열기","anim"],
+ ["sleep","취침","anim"],
+ ["doze","앉아서 졸기","anim"],
+ ["sit","의자에 앉기","anim"],
+ ["happyjump","★ 기뻐서 폴짝","anim"],
+ ["heart","★ 하트","anim"],
+ ["cheer","응원·환호","anim"],
+ ["wave","손 흔들기","anim"],
+ ["nod","끄덕임","anim"],
+ ["listen","듣는 자세","anim"],
+ ["scratch","머리 긁적","anim"],
+];
+const pick=document.getElementById('pick'), clipSel=document.getElementById('clip');
+CH.forEach(([k,n])=>{const o=document.createElement('option');o.value=k;o.textContent=n;pick.appendChild(o);});
+function fillClips(charKey){
+  const isF=/jachwi_f|yeoja/.test(charKey), cur=clipSel.value;
+  clipSel.innerHTML='';
+  CLIPS.filter(c=>c[0]!=='walking_w'||isF).forEach(([k,n])=>{
+    const o=document.createElement('option');o.value=k;o.textContent=n;clipSel.appendChild(o);});
+  if([...clipSel.options].some(o=>o.value===cur)) clipSel.value=cur; else clipSel.value='idle';
+}
+function clipPath(charKey,clipKey){
+  const c=CLIPS.find(x=>x[0]===clipKey);
+  return c && c[2]==='anim' ? `3d/anim/${charKey}_${clipKey}.glb` : `3d/${charKey}_${clipKey}.glb`;
+}
+
+function toonGrad(){const c=document.createElement('canvas');c.width=64;c.height=1;const x=c.getContext('2d');
+ const g=x.createLinearGradient(0,0,64,0);
+ g.addColorStop(0,'#7c877f');g.addColorStop(.45,'#aab8ac');g.addColorStop(.75,'#d2dbd2');g.addColorStop(1,'#ffffff');
+ x.fillStyle=g;x.fillRect(0,0,64,1);
+ const t=new THREE.CanvasTexture(c);t.minFilter=THREE.LinearFilter;t.magFilter=THREE.LinearFilter;t.generateMipmaps=false;return t;}
+const GRAD=toonGrad();
+function pastelize(tex){try{if(!tex||!tex.image)return tex;const im=tex.image,w=im.width||512,h=im.height||512;if(!w)return tex;
+ const c=document.createElement('canvas');c.width=w;c.height=h;const x=c.getContext('2d');x.drawImage(im,0,0,w,h);
+ const d=x.getImageData(0,0,w,h),p=d.data,S=.7;
+ for(let i=0;i<p.length;i+=4){const r=p[i],g=p[i+1],b=p[i+2],y=.299*r+.587*g+.114*b;
+  p[i]=y+(r-y)*S;p[i+1]=y+(g-y)*S;p[i+2]=y+(b-y)*S;}
+ x.putImageData(d,0,0);const nt=new THREE.CanvasTexture(c);nt.flipY=tex.flipY;nt.encoding=THREE.sRGBEncoding;nt.needsUpdate=true;return nt;}catch(e){return tex;}}
+function toonify(root){root.traverse(o=>{if(!o.isMesh||!o.material)return;try{
+ const src=Array.isArray(o.material)?o.material:[o.material];
+ const out=src.map(m=>{const mat=new THREE.MeshToonMaterial({map:m.map?pastelize(m.map):null,
+   color:m.map?0xffffff:(m.color?m.color.getHex():0xffffff),gradientMap:GRAD});
+  mat.skinning=!!o.isSkinnedMesh; return mat;});
+ o.material=Array.isArray(o.material)?out:out[0];}catch(e){}});}
+
+function boneBox(root){
+  root.updateMatrixWorld(true);
+  const pts=[];
+  root.traverse(o=>{if(o.isBone) pts.push(o.getWorldPosition(new THREE.Vector3()));});
+  if(pts.length<3) return new THREE.Box3().setFromObject(root);
+  const box=new THREE.Box3().setFromPoints(pts);
+  const s=box.getSize(new THREE.Vector3());
+  box.expandByVector(new THREE.Vector3(s.x*0.35,s.y*0.16,s.z*0.35));
+  return box;
+}
+
+const ST={speed:1,paused:false,lock:true};
+function makeView(id,mode){
+  const cv=document.getElementById(id);
+  const r=new THREE.WebGLRenderer({canvas:cv,antialias:true,alpha:true});
+  r.setPixelRatio(Math.min(devicePixelRatio,2));r.outputEncoding=THREE.sRGBEncoding;
+  const sc=new THREE.Scene();
+  const cam=new THREE.PerspectiveCamera(32,1,0.01,5000);
+  const ctr=new THREE.OrbitControls(cam,cv);ctr.enableDamping=true;
+  sc.add(new THREE.AmbientLight(0xffffff,0.70));
+  sc.add(new THREE.HemisphereLight(0xffffff,0xdfe6df,0.22));
+  const d=new THREE.DirectionalLight(0xffffff,0.45);d.position.set(2,4,3);sc.add(d);
+  const clock=new THREE.Clock();
+  const V={sc,cam,ctr,r,clock,cv,mode,mixer:null,root:null,hips:null,hips0:null};
+  (function loop(){
+    requestAnimationFrame(loop);
+    const w=cv.clientWidth,h=cv.clientHeight;
+    if(cv.width!==w||cv.height!==h){r.setSize(w,h,false);cam.aspect=w/h;cam.updateProjectionMatrix();}
+    const dt=clock.getDelta();
+    if(V.mixer&&!ST.paused) V.mixer.update(dt*ST.speed);
+    if(V.hips&&ST.lock){V.hips.position.x=V.hips0.x;V.hips.position.z=V.hips0.z;}
+    ctr.update();r.render(sc,cam);
+  })();
+  return V;
+}
+const VF=makeView('cf','front'), VS=makeView('cs','side');
+const errEl=document.getElementById('err');
+
+function load(charKey){
+  errEl.textContent='';
+  const cpath=clipPath(charKey,clipSel.value);
+  [VF,VS].forEach(V=>{
+    if(V.root){V.sc.remove(V.root);V.root=null;V.mixer=null;V.hips=null;}
+    // 1) 리깅 메시  2) 클립(뼈대 전용) → 메시에 얹기
+    new THREE.GLTFLoader().load(`3d/${charKey}_rigged.glb`+V,rg=>{
+      const m=rg.scene; toonify(m); V.sc.add(m); V.root=m;
+      m.traverse(o=>{if(o.isBone&&!V.hips&&/hips/i.test(o.name)){V.hips=o;V.hips0=o.position.clone();}});
+      new THREE.GLTFLoader().load(cpath+V,ag=>{
+        if(!ag.animations||!ag.animations.length){errEl.textContent='클립에 애니 없음: '+cpath;return;}
+        V.mixer=new THREE.AnimationMixer(m);
+        V.mixer.clipAction(ag.animations[0]).play();
+        V.mixer.update(0.001);
+        frame(V,m);
+      },undefined,()=>{errEl.textContent='클립 로드 실패: '+cpath; frame(V,m);});
+    },undefined,()=>{V.cv.style.background='#fdeaea';});
+  });
+}
+function frame(V,m){
+  const box=boneBox(m), c=box.getCenter(new THREE.Vector3());
+  const rad=Math.max(box.getBoundingSphere(new THREE.Sphere()).radius,0.001);
+  V.ctr.target.copy(c);
+  const dist=rad/Math.sin((32*Math.PI/180)/2)*1.05;
+  V.cam.near=Math.max(dist/500,0.001);V.cam.far=dist*500;
+  if(V.mode==='front') V.cam.position.set(c.x,c.y+rad*0.05,c.z+dist);
+  else V.cam.position.set(c.x+dist,c.y+rad*0.05,c.z);
+  V.cam.updateProjectionMatrix();V.ctr.update();
+}
+
+fillClips(CH[0][0]); clipSel.value='inspect'; load(CH[0][0]);
+pick.onchange=()=>{fillClips(pick.value);load(pick.value);};
+clipSel.onchange=()=>load(pick.value);
+const spd=document.getElementById('spd'),spdv=document.getElementById('spdv');
+spd.oninput=()=>{ST.speed=parseFloat(spd.value);spdv.textContent=ST.speed.toFixed(2);};
+const pb=document.getElementById('pause');
+pb.onclick=()=>{ST.paused=!ST.paused;pb.textContent=ST.paused?'재생':'일시정지';pb.classList.toggle('on',ST.paused);};
+const lb=document.getElementById('lock');
+lb.onclick=()=>{ST.lock=!ST.lock;lb.classList.toggle('on',ST.lock);};
+</script>
+</body>
+</html>

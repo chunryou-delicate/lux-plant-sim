@@ -162,4 +162,47 @@
     },
     {
       "id": "f_pink",
-      "name_ko": "파스텔 핑크"
+      "name_ko": "파스텔 핑크",
+      "hex": "#eddcda",
+      "rough": 0.8,
+      "note": "아기자기(민무늬)"
+    }
+  ],
+  "ceil": [
+    {
+      "id": "c_white",
+      "name_ko": "화이트",
+      "hex": "#f8f5ef",
+      "rough": 0.95,
+      "note": "기본"
+    },
+    {
+      "id": "c_cream",
+      "name_ko": "크림",
+      "hex": "#f2ece0",
+      "rough": 0.95,
+      "note": "따뜻"
+    },
+    {
+      "id": "c_gray",
+      "name_ko": "연회색",
+      "hex": "#e6e8ea",
+      "rough": 0.95,
+      "note": "중성"
+    },
+    {
+      "id": "c_concrete",
+      "name_ko": "시멘트(반지하)",
+      "hex": "#d3d5d8",
+      "rough": 0.97,
+      "note": "반지하"
+    },
+    {
+      "id": "c_wood",
+      "name_ko": "우드 서까래",
+      "hex": "#e6d3b4",
+      "rough": 0.85,
+      "note": "다락·온실"
+    }
+  ]
+}
