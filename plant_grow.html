@@ -69,7 +69,7 @@
       <div class="cols">
         <div class="col">
           <div class="colhead">▶ 플레이 · 성장 탐색</div>
-          <div class="field"><label>성장도(일) <b id="growthV">120</b></label><input type="range" id="growth" min="0" max="365" value="120"></div>
+          <div class="field"><label>성장도(일 / 최대 1095=3년) <b id="growthV">120</b></label><input type="range" id="growth" min="0" max="1095" value="120"></div>
           <div class="prow" id="playRow" style="margin-top:2px;padding-top:0;border-top:none">
             <button class="cbtn" id="btnFirst">↺ 처음</button>
             <button class="cbtn" id="btnPlay">▶ 재생</button>
@@ -124,7 +124,7 @@ let SEED=84486, rng=mulberry32(SEED);
 const GOLDEN=Math.PI*(3-Math.sqrt(5));   // 137.5° 황금각(자연스러운 잎차례)
 
 // ===== 튜닝 파라미터(A: 전체 규칙) — 슬라이더로 실시간 조절 =====
-const GMAX=365;   // 성장도 최대 = 1년(일)
+const GMAX=1095;  // 성장도 최대 = 3년(일). 슬라이더·재생·정규화가 모두 이 값을 따름
 const DEF={
   spawnStep:40, maxLeaves:12, matSpan:120,                 // 마디 나는 간격(일, 느릴수록 덜 길어짐) · 축당 최대 마디 · 잎 성숙 기간
   seedEnd:20, sproutEnd:45,                                // 씨앗·새싹(줄기_초기+새순) 시기
@@ -135,7 +135,7 @@ const DEF={
   petGrow:16, rEarly:0.022, rThin:0.028, rMed:0.025, rThick:0.031, matureProb:0.22, doubleBud:0.15,  // 종류별 굵기(몸통 폭 기준, 왜곡 최소)·성숙잎 확률·쌍혹 확률
   leafEmbed:0.13, leafTilt:0.30, leafClear:0.40, leafTiltVary:0,   // leafTiltVary=0 → 잎 각도 고정(조절값 그대로), >0 이면 겹침 회피가 각도도 흔듦   // 잎자루를 줄기 속으로 박는 깊이 · 잎이 줄기 끝 방향을 따라가는 정도 · 잎이 차지하는 반경(겹침 회피)
   photoLean:0.13, stemStraight:0.30,   // 빛 쪽으로 기우는 세기(굴광성 슬라이더와 곱해짐) · 축 기본방향으로 돌아오는 힘(작을수록 더 휨)
-  stemTrans:40, bumpGrow:20, bumpAt:0.2, stemOverlap:0.015,
+  stemTrans:40, bumpGrow:20, bumpAt:0.2, bumpAzOff:0, stemOverlap:0.015,   // bumpAzOff=가지가 나는 방위를 혹 돌기 쪽으로 미세 회전
   tipTaper:0.55, nodeBulge:0.16, nodeWidth:0.045, bumpFit:1.02,
   sheathLen:0.22, sheathFit:1.12, sheathBot:1.309, sheathTop:0.575,   // 엽초: 길이(잎 크기 x 이 값) · 감싸는 굵기 · 아래/위 구멍 지름
   stemTex:1.0, texRepeat:3.0,       // 줄기 표면 결: 세기 · 세로 반복 횟수
@@ -686,7 +686,7 @@ function buildPlant(){
   ensureSheath();                             // 엽초 구멍 크기 변경 반영
   clearGroup(plantGroup); clearPlaced();      // 겹침 회피용 자리 기록 초기화
   addPot();
-  const g=GROWTH, gf=Math.min(1, g/GMAX);   // 정규화(0..1, 1년 기준)
+  const g=GROWTH, gf=Math.min(1, g/GMAX);   // 정규화(0..1, 전체 기간 기준)
   PLANT_AGE=gf;                             // 개체 나이(색 짙어짐·선명해짐 기준)
   let stage='', nodes=0, leaves=0;
 
@@ -747,7 +747,7 @@ function buildPlant(){
           const dbl=rng()<P.doubleBud; c.s.actType=dbl?'main':'thick';   // 쌍혹(가지2) / 단혹(가지1)
           // ★혹이 붙는 방위는 줄기 둘레 360° 어디든. 굴광성이 높을수록 해 쪽으로 몰림(0=완전 랜덤, 1=정확히 해 쪽)
           c.s.az = LIGHT_AZ + (rng()-0.5)*Math.PI*2*(1-PHOTO*0.85);
-          const a0=c.s.az, nb=dbl?2:1;                                   // 가지 방향 = 그 혹의 방위(돌기가 향한 쪽)
+          const a0=c.s.az+P.bumpAzOff, nb=dbl?2:1;                       // 가지 방향 = 혹의 방위(+오프셋으로 돌기에 맞춤)
           for(let i=0;i<nb;i++){                                         // 혹에서 줄기_초기가 나와 자람
             const s2=a0+(nb===2? i*Math.PI : 0);
             const bd=new THREE.Vector3(Math.sin(s2)*P.branchSpread, 1, Math.cos(s2)*P.branchSpread).normalize();
@@ -903,7 +903,7 @@ function bindControls(){
   gs.addEventListener('input',()=>{ stopPlay(); GROWTH=+gs.value; document.getElementById('growthV').textContent=GROWTH; buildPlant(); });
   // ▶ 재생 · 처음 · 끝 (성장 애니메이션)
   document.getElementById('btnFirst').onclick=()=>{ stopPlay(); setGrowth(0); };
-  document.getElementById('btnLast').onclick=()=>{ stopPlay(); setGrowth(365); };
+  document.getElementById('btnLast').onclick=()=>{ stopPlay(); setGrowth(GMAX); };
   document.getElementById('btnPlay').onclick=()=>{ playing?stopPlay():startPlay(); };
   document.getElementById('btnSeed').onclick=()=>{ SEED=Math.floor(Math.random()*99999); buildPlant(); };
   const ls=document.getElementById('light');
@@ -926,9 +926,9 @@ function bindControls(){
 }
 // ===== 성장 재생(애니메이션) =====
 let playing=false, playTimer=null;
-function setGrowth(v){ GROWTH=Math.max(0,Math.min(365,Math.round(v))); const g=document.getElementById('growth'); if(g) g.value=GROWTH; const t=document.getElementById('growthV'); if(t) t.textContent=GROWTH; buildPlant(); }
-function startPlay(){ playing=true; const b=document.getElementById('btnPlay'); if(b){ b.textContent='⏸ 정지'; b.classList.add('on'); } if(GROWTH>=365) setGrowth(0);
-  playTimer=setInterval(()=>{ if(GROWTH>=365){ stopPlay(); return; } setGrowth(GROWTH+3); }, 110); }
+function setGrowth(v){ GROWTH=Math.max(0,Math.min(GMAX,Math.round(v))); const g=document.getElementById('growth'); if(g) g.value=GROWTH; const t=document.getElementById('growthV'); if(t) t.textContent=GROWTH; buildPlant(); }
+function startPlay(){ playing=true; const b=document.getElementById('btnPlay'); if(b){ b.textContent='⏸ 정지'; b.classList.add('on'); } if(GROWTH>=GMAX) setGrowth(0);
+  playTimer=setInterval(()=>{ if(GROWTH>=GMAX){ stopPlay(); return; } setGrowth(GROWTH+Math.max(3,Math.round(GMAX/120))); }, 110); }
 function stopPlay(){ playing=false; if(playTimer){ clearInterval(playTimer); playTimer=null; } const b=document.getElementById('btnPlay'); if(b){ b.textContent='▶ 재생'; b.classList.remove('on'); } }
 function flashBtn(id,msg){ const b=document.getElementById(id); if(!b)return; if(!b.dataset.t) b.dataset.t=b.textContent; b.textContent=msg; setTimeout(()=>{ b.textContent=b.dataset.t; b.dataset.t=''; }, 1000); }
 function applyCfg(verbose){
@@ -1098,6 +1098,7 @@ const SHAPE_DEFS=[
   {k:'tipTaper',    t:'줄기 끝 굵기',      min:0.10, max:1.2,  step:0.01},
   {k:'nodeBulge',   t:'마디 볼록',         min:0,    max:0.5,  step:0.02},
   {k:'bumpAt',      t:'가지 나는 높이(혹)', min:0,  max:1,    step:0.01},
+  {k:'bumpAzOff',   t:'가지 나는 방위(혹)', min:-3.2, max:3.2, step:0.05},
   {k:'stemTex',     t:'줄기 결 세기',      min:0,    max:1,    step:0.05},
   {k:'texRepeat',   t:'줄기 결 반복',      min:0.5,  max:10,   step:0.5},
   {k:'branchSpread',t:'가지 벌어짐',       min:0.15, max:1.2,  step:0.05},
