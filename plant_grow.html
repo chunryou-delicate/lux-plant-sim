@@ -517,34 +517,56 @@ function meshThickness(g){
   return A>1e-9? 2*Math.abs(V)/A : 0;
 }
 function reshapeLeaf(obj, bladeR, petR, petTop){
+  // ★기준(높이·잎자루 축)은 반드시 '잎 전체'에서 잡는다. 메시마다 제 bbox로 잡으면,
+  //   잎몸/잎자루가 별개 메시인 에셋(전체흰중기: 1806 + 85정점)에서 잎자루 메시의
+  //   아래 15%가 안 깎여 끝에 두꺼운 혹처럼 남는다.
+  obj.updateMatrixWorld(true);
+  const inv=new THREE.Matrix4().copy(obj.matrixWorld).invert();
+  const meshes=[], v=new THREE.Vector3();
+  let mnY=Infinity, mxY=-Infinity;
   obj.traverse(o=>{
     if(!(o.isMesh && o.geometry && o.geometry.attributes.position)) return;
-    const g=o.geometry, pa=g.attributes.position, na=g.attributes.normal;
+    const g=o.geometry, pa=g.attributes.position;
     if(!g.userData.origPos){ g.userData.origPos=Float32Array.from(pa.array);
-      if(na) g.userData.origNor=Float32Array.from(na.array);
+      if(g.attributes.normal) g.userData.origNor=Float32Array.from(g.attributes.normal.array);
       g.userData.thick=meshThickness(g); }
-    const src=g.userData.origPos, nor=g.userData.origNor, arr=pa.array;
-    let mnY=Infinity, mxY=-Infinity;
-    for(let i=1;i<src.length;i+=3){ if(src[i]<mnY)mnY=src[i]; if(src[i]>mxY)mxY=src[i]; }
-    const h=(mxY-mnY)||1, yTop=mnY+h*petTop;
-    let cx=0, cz=0, n=0;                                   // 잎자루 축(하단대 XZ 중심)
-    for(let i=0;i<src.length;i+=3) if(src[i+1]<=mnY+h*0.12){ cx+=src[i]; cz+=src[i+2]; n++; }
-    if(n){ cx/=n; cz/=n; }
-    const push=Math.max(0, g.userData.thick*(1-bladeR)/2);  // 법선 반대로 밀 거리
-    for(let i=0;i<src.length;i+=3){
+    const m=new THREE.Matrix4().multiplyMatrices(inv, o.matrixWorld);   // 메시 로컬 → 잎 전체 좌표
+    const sc=Math.cbrt(Math.abs(m.determinant()))||1;                    // 길이 환산 배율
+    const src=g.userData.origPos, ys=new Float32Array(src.length/3);
+    for(let i=0,k=0;i<src.length;i+=3,k++){
+      v.set(src[i],src[i+1],src[i+2]).applyMatrix4(m); ys[k]=v.y;
+      if(v.y<mnY)mnY=v.y; if(v.y>mxY)mxY=v.y;
+    }
+    meshes.push({o,g,src,ys,sc});
+  });
+  const h=(mxY-mnY)||1, yTop=mnY+h*petTop, yBlade=mnY+h*0.15, yFull=mnY+h*0.30;
+  let cx=0, cz=0, n=0;                                   // 잎자루 축(잎 전체 하단대 XZ 중심)
+  for(const M of meshes){ const m=new THREE.Matrix4().multiplyMatrices(inv, M.o.matrixWorld);
+    for(let i=0,k=0;i<M.src.length;i+=3,k++) if(M.ys[k]<=mnY+h*0.12){
+      v.set(M.src[i],M.src[i+1],M.src[i+2]).applyMatrix4(m); cx+=v.x; cz+=v.z; n++; } }
+  if(n){ cx/=n; cz/=n; }
+  for(const M of meshes){
+    const {o,g,src,ys,sc}=M, pa=g.attributes.position, arr=pa.array, nor=g.userData.origNor;
+    const m=new THREE.Matrix4().multiplyMatrices(inv, o.matrixWorld);
+    const minv=new THREE.Matrix4().copy(m).invert();
+    const push=Math.max(0, g.userData.thick*(1-bladeR)/2);   // 메시 로컬 단위
+    for(let i=0,k=0;i<src.length;i+=3,k++){
       let x=src[i], y=src[i+1], z=src[i+2];
-      if(push>1e-9 && nor && y>=mnY+h*0.15){                // ① 잎몸만 얇게(잎자루는 건드리지 않음)
-        const t=Math.min(1,(y-(mnY+h*0.15))/(h*0.15)), w=t*t*(3-2*t);
+      const gy=ys[k];                                        // 잎 전체 기준 높이
+      if(push>1e-9 && nor && gy>=yBlade){                    // ① 잎몸을 얇게(잎자루 구간 제외)
+        const t=Math.min(1,(gy-yBlade)/((yFull-yBlade)||1)), w=t*t*(3-2*t);
         x-=nor[i]*push*w; y-=nor[i+1]*push*w; z-=nor[i+2]*push*w;
       }
-      if(y<yTop && petR!==1){                               // ② 잎자루 가늘게
-        const t=(y-mnY)/((yTop-mnY)||1), sm=t*t*(3-2*t), f=petR+(1-petR)*sm;
-        x=cx+(x-cx)*f; z=cz+(z-cz)*f;
+      if(gy<yTop && petR!==1){                               // ② 잎자루를 가늘게(전체 좌표에서 반경 축소)
+        const t=(gy-mnY)/((yTop-mnY)||1), sm=t*t*(3-2*t), f=petR+(1-petR)*sm;
+        v.set(x,y,z).applyMatrix4(m);
+        v.x=cx+(v.x-cx)*f; v.z=cz+(v.z-cz)*f;
+        v.applyMatrix4(minv); x=v.x; y=v.y; z=v.z;
       }
       arr[i]=x; arr[i+1]=y; arr[i+2]=z;
     }
     pa.needsUpdate=true; g.computeVertexNormals(); g.computeBoundingSphere();
-  });
+  }
 }
 let PET_CACHE={};
 function ensureLeafShape(){                                // 값이 바뀐 잎만 다시 계산
