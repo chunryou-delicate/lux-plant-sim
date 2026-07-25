@@ -5,7 +5,11 @@
   "style_locked": {
     "form": "low-poly cartoon 3D, chibi 3~4 heads",
     "face": "early-20s baby face, big sparkly eyes, button nose",
-    "palette": ["mint", "sage", "cream"],
+    "palette": [
+      "mint",
+      "sage",
+      "cream"
+    ],
     "hair_color": "찐 초콜릿 브라운(머리·눈썹·눈 전 캐릭터 통일). 2026-07-20 전량 갈색 재생성(형광 민트 폐기). 각 항목 hair 필드의 'mint' 표기는 구표기이며 실제는 딥브라운.",
     "mood": "Animal Crossing + Guardian Tales, kawaii, wholesome",
     "filter_hint": "prompt에 wholesome/family-friendly/youthful 필수 (seedream NSFW 오탐 회피)"
@@ -14,9 +18,13 @@
     {
       "name": "char_jachwi_f_v1",
       "name_ko": "자취생 여자 v1 (후드티·양갈래)",
-      "job": "자취생", "gender": "f", "variant": "v1",
-      "outfit": "파스텔 민트 후드티 + 조거팬츠", "hair": "twin buns",
-      "model": "nano_banana_2", "aspect": "1:1",
+      "job": "자취생",
+      "gender": "f",
+      "variant": "v1",
+      "outfit": "파스텔 민트 후드티 + 조거팬츠",
+      "hair": "twin buns",
+      "model": "nano_banana_2",
+      "aspect": "1:1",
       "job_id": "9f5126e9-a7e9-4d21-9b48-c15bc4b2de1f",
       "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20260719_121429_9f5126e9-a7e9-4d21-9b48-c15bc4b2de1f.png",
       "local": "assets/characters/char_jachwi_f_v1.png",
@@ -25,40 +33,82 @@
     {
       "name": "char_jachwi_f_v2",
       "name_ko": "자취생 여자 v2 (티셔츠·긴생머리)",
-      "job": "자취생", "gender": "f", "variant": "v2",
-      "outfit": "크림 티셔츠 + 회색 슬림팬츠", "hair": "long straight, deep brown, 앞머리 유지+뺨 잔머리 제거",
-      "model": "nano_banana_2", "aspect": "1:1",
+      "job": "자취생",
+      "gender": "f",
+      "variant": "v2",
+      "outfit": "크림 티셔츠 + 회색 슬림팬츠",
+      "hair": "long straight, deep brown, 앞머리 유지+뺨 잔머리 제거",
+      "model": "nano_banana_2",
+      "aspect": "1:1",
       "job_id": "6dbe497a-160a-4ec4-b786-ff2b5853dc1c",
       "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20260720_135538_6dbe497a-160a-4ec4-b786-ff2b5853dc1c.png",
       "note": "★확정 슬림 최종본(자취생 여). 슬림 기준 캐릭터. 갈색머리·앞머리 유지·볼 옆 잔머리만 제거(v3). 4뷰+A포즈 3D+리깅 완료. 하의=회색 슬림팬츠(데님 아님).",
-      "views": {"front": "char_jachwi_f_front.png", "back": "char_jachwi_f_back.png", "left": "char_jachwi_f_left.png", "right": "char_jachwi_f_right.png"},
-      "meshy": {"multi3d_task": "019f7fd2-18fb-7c82-a100-20537b513b3f", "rig_task": "019f7fd6-65c9-71b3-9371-ec0bd3966609", "pose": "a-pose", "model": "meshy-6", "regen": "brown-2026-07-20"},
-      "glb": {"base": "assets/characters/3d/char_jachwi_f_base.glb", "rigged": "assets/characters/3d/char_jachwi_f_rigged.glb", "walking": "assets/characters/3d/char_jachwi_f_walking.glb"},
+      "views": {
+        "front": "char_jachwi_f_front.png",
+        "back": "char_jachwi_f_back.png",
+        "left": "char_jachwi_f_left.png",
+        "right": "char_jachwi_f_right.png"
+      },
+      "meshy": {
+        "multi3d_task": "019f7fd2-18fb-7c82-a100-20537b513b3f",
+        "rig_task": "019f7fd6-65c9-71b3-9371-ec0bd3966609",
+        "pose": "a-pose",
+        "model": "meshy-6",
+        "regen": "brown-2026-07-20"
+      },
+      "glb": {
+        "base": "assets/characters/3d/char_jachwi_f_base.glb",
+        "rigged": "assets/characters/3d/char_jachwi_f_rigged.glb",
+        "walking": "assets/characters/3d/char_jachwi_f_walking.glb"
+      },
       "local": "assets/characters/char_jachwi_f_v2.png",
       "status": "확정(슬림기준)"
     },
     {
       "name": "char_jachwi_f_v3",
       "name_ko": "자취생 여자 v3 (원피스홈웨어·단발)",
-      "job": "자취생", "gender": "f", "variant": "v3",
-      "outfit": "세이지 롱셔츠 원피스 홈웨어", "hair": "bob cut",
-      "model": "nano_banana_2", "aspect": "1:1",
+      "job": "자취생",
+      "gender": "f",
+      "variant": "v3",
+      "outfit": "세이지 원피스 홈웨어",
+      "hair": "bob mint",
+      "model": "nano_banana_2",
+      "aspect": "1:1",
       "job_id": "09a487d6-f16e-47ca-88f4-dcee16fd12d3",
       "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20260719_160451_09a487d6-f16e-47ca-88f4-dcee16fd12d3.png",
       "note": "★슬림 통일본(여자 주부). 단발+세이지 원피스, 빈손. 슬림 자취생 바디 참조.",
-      "hair": "bob mint", "outfit": "세이지 원피스 홈웨어",
-      "views": {"front": "char_yeoja_jubu_front.png", "back": "char_yeoja_jubu_back.png", "left": "char_yeoja_jubu_left.png", "right": "char_yeoja_jubu_right.png"},
-      "meshy": {"multi3d_task": "019f7fb1-664d-7099-86d9-42b2452ef5a1", "rig_task": "019f7fb9-0fa3-7613-b0b9-92e56af963f8", "pose": "a-pose", "model": "meshy-6", "regen": "brown-2026-07-20"},
-      "glb": {"base": "assets/characters/3d/char_yeoja_jubu_base.glb", "rigged": "assets/characters/3d/char_yeoja_jubu_rigged.glb", "walking": "assets/characters/3d/char_yeoja_jubu_walking.glb"},
+      "views": {
+        "front": "char_yeoja_jubu_front.png",
+        "back": "char_yeoja_jubu_back.png",
+        "left": "char_yeoja_jubu_left.png",
+        "right": "char_yeoja_jubu_right.png"
+      },
+      "meshy": {
+        "multi3d_task": "019f7fb1-664d-7099-86d9-42b2452ef5a1",
+        "rig_task": "019f7fb9-0fa3-7613-b0b9-92e56af963f8",
+        "pose": "a-pose",
+        "model": "meshy-6",
+        "regen": "brown-2026-07-20"
+      },
+      "glb": {
+        "base": "assets/characters/3d/char_yeoja_jubu_base.glb",
+        "rigged": "assets/characters/3d/char_yeoja_jubu_rigged.glb",
+        "walking": "assets/characters/3d/char_yeoja_jubu_walking.glb"
+      },
       "local": "assets/characters/char_jachwi_f_v3.png",
-      "ref_from": "char_jachwi_f_v2", "status": "확정(슬림)"
+      "ref_from": "char_jachwi_f_v2",
+      "status": "확정(슬림)"
     },
     {
       "name": "char_jachwi_f_v4",
       "name_ko": "자취생 여자 v4 (가디건·포니테일)",
-      "job": "자취생", "gender": "f", "variant": "v4",
-      "outfit": "크림 니트 가디건 + 이너 + 레깅스", "hair": "ponytail",
-      "model": "nano_banana_2", "aspect": "1:1",
+      "job": "자취생",
+      "gender": "f",
+      "variant": "v4",
+      "outfit": "크림 니트 가디건 + 이너 + 레깅스",
+      "hair": "ponytail",
+      "model": "nano_banana_2",
+      "aspect": "1:1",
       "job_id": "4f39e590-b490-4d9b-9c28-ec4f077603e0",
       "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20260719_121439_4f39e590-b490-4d9b-9c28-ec4f077603e0.png",
       "local": "assets/characters/char_jachwi_f_v4.png",
@@ -67,15 +117,34 @@
     {
       "name": "char_yeoja_researcher",
       "name_ko": "여자 연구자 (긴생머리·연구가운)",
-      "job": "연구자", "gender": "f", "variant": "final",
-      "outfit": "크림 식물연구소 가운 + 하늘색 셔츠 + 브라운 팬츠", "hair": "long straight mint",
-      "model": "nano_banana_2", "aspect": "1:1",
+      "job": "연구자",
+      "gender": "f",
+      "variant": "final",
+      "outfit": "크림 식물연구소 가운 + 하늘색 셔츠 + 브라운 팬츠",
+      "hair": "long straight mint",
+      "model": "nano_banana_2",
+      "aspect": "1:1",
       "job_id": "e7c0c384-7bd8-4462-b1e0-f8ddd525549d",
       "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20260719_160256_e7c0c384-7bd8-4462-b1e0-f8ddd525549d.png",
       "note": "★슬림 통일본(여자 연구자). 긴머리+크림 연구가운+하늘셔츠+브라운팬츠, 빈손.",
-      "views": {"front": "char_yeoja_researcher_front.png", "back": "char_yeoja_researcher_back.png", "left": "char_yeoja_researcher_left.png", "right": "char_yeoja_researcher_right.png"},
-      "meshy": {"multi3d_task": "019f7fb1-8af3-7969-b536-6d31318cb52d", "rig_task": "019f7fb9-5b7c-7b5d-9569-6c299eca19af", "pose": "a-pose", "model": "meshy-6", "regen": "brown-2026-07-20"},
-      "glb": {"base": "assets/characters/3d/char_yeoja_researcher_base.glb", "rigged": "assets/characters/3d/char_yeoja_researcher_rigged.glb", "walking": "assets/characters/3d/char_yeoja_researcher_walking.glb"},
+      "views": {
+        "front": "char_yeoja_researcher_front.png",
+        "back": "char_yeoja_researcher_back.png",
+        "left": "char_yeoja_researcher_left.png",
+        "right": "char_yeoja_researcher_right.png"
+      },
+      "meshy": {
+        "multi3d_task": "019f7fb1-8af3-7969-b536-6d31318cb52d",
+        "rig_task": "019f7fb9-5b7c-7b5d-9569-6c299eca19af",
+        "pose": "a-pose",
+        "model": "meshy-6",
+        "regen": "brown-2026-07-20"
+      },
+      "glb": {
+        "base": "assets/characters/3d/char_yeoja_researcher_base.glb",
+        "rigged": "assets/characters/3d/char_yeoja_researcher_rigged.glb",
+        "walking": "assets/characters/3d/char_yeoja_researcher_walking.glb"
+      },
       "local": "assets/characters/char_yeoja_researcher.png",
       "ref_from": "char_jachwi_f_v2",
       "status": "확정(슬림)"
@@ -83,15 +152,34 @@
     {
       "name": "char_yeoja_gajang",
       "name_ko": "여자 가장 (단발·가디건)",
-      "job": "가장", "gender": "f", "variant": "final",
-      "outfit": "회색 치마정장(블레이저+펜슬스커트) + 흰 와이셔츠 + 검은 스타킹(검스) + 검정 구두 — 학원강사/커리어우먼", "hair": "bob mint",
-      "model": "nano_banana_2", "aspect": "1:1",
+      "job": "가장",
+      "gender": "f",
+      "variant": "final",
+      "outfit": "회색 치마정장(블레이저+펜슬스커트) + 흰 와이셔츠 + 검은 스타킹(검스) + 검정 구두 — 학원강사/커리어우먼",
+      "hair": "bob mint",
+      "model": "nano_banana_2",
+      "aspect": "1:1",
       "job_id": "9c92b084-1e0f-48c4-966c-2862af6a294b",
       "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20260719_160252_9c92b084-1e0f-48c4-966c-2862af6a294b.png",
       "note": "★슬림 통일본(여자 가장). 단발+회색 치마정장+블레이저+와이셔츠+검스. 커리어우먼.",
-      "views": {"front": "char_yeoja_gajang_front.png", "back": "char_yeoja_gajang_back.png", "left": "char_yeoja_gajang_left.png", "right": "char_yeoja_gajang_right.png"},
-      "meshy": {"multi3d_task": "019f7fb1-78b3-795e-b06c-610c9b735280", "rig_task": "019f7fb9-33ea-7620-84d6-d6b896108b1b", "pose": "a-pose", "model": "meshy-6", "regen": "brown-2026-07-20"},
-      "glb": {"base": "assets/characters/3d/char_yeoja_gajang_base.glb", "rigged": "assets/characters/3d/char_yeoja_gajang_rigged.glb", "walking": "assets/characters/3d/char_yeoja_gajang_walking.glb"},
+      "views": {
+        "front": "char_yeoja_gajang_front.png",
+        "back": "char_yeoja_gajang_back.png",
+        "left": "char_yeoja_gajang_left.png",
+        "right": "char_yeoja_gajang_right.png"
+      },
+      "meshy": {
+        "multi3d_task": "019f7fb1-78b3-795e-b06c-610c9b735280",
+        "rig_task": "019f7fb9-33ea-7620-84d6-d6b896108b1b",
+        "pose": "a-pose",
+        "model": "meshy-6",
+        "regen": "brown-2026-07-20"
+      },
+      "glb": {
+        "base": "assets/characters/3d/char_yeoja_gajang_base.glb",
+        "rigged": "assets/characters/3d/char_yeoja_gajang_rigged.glb",
+        "walking": "assets/characters/3d/char_yeoja_gajang_walking.glb"
+      },
       "local": "assets/characters/char_yeoja_gajang.png",
       "ref_from": "char_jachwi_f_v2",
       "status": "확정(슬림)"
@@ -99,9 +187,13 @@
     {
       "name": "char_namja_anchor",
       "name_ko": "남자 기준 앵커 (D얼굴+B몸통)",
-      "job": "base", "gender": "m", "variant": "anchor",
-      "outfit": "크림 티셔츠 + 팬츠(기본)", "hair": "dandy cut mint",
-      "model": "nano_banana_2", "aspect": "1:1",
+      "job": "base",
+      "gender": "m",
+      "variant": "anchor",
+      "outfit": "크림 티셔츠 + 팬츠(기본)",
+      "hair": "dandy cut mint",
+      "model": "nano_banana_2",
+      "aspect": "1:1",
       "job_id": "d2763649-2b3d-4ccb-9c7f-5381efc2bb16",
       "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20260719_132617_d2763649-2b3d-4ccb-9c7f-5381efc2bb16.png",
       "note": "char_namja_face_d 얼굴 + char_namja_face_b 몸통/포즈 조합. 남자 4직업 공통 앵커.",
@@ -111,63 +203,139 @@
     {
       "name": "char_namja_jachwi",
       "name_ko": "남자 자취생 (덴디컷·후드)",
-      "job": "자취생", "gender": "m", "variant": "final",
-      "outfit": "크림 티셔츠 + 블루 데님 (여캐 자취생과 동일 옷)", "hair": "dandy cut mint",
-      "model": "nano_banana_2", "aspect": "1:1",
+      "job": "자취생",
+      "gender": "m",
+      "variant": "final",
+      "outfit": "크림 티셔츠 + 블루 데님 (여캐 자취생과 동일 옷)",
+      "hair": "dandy cut mint",
+      "model": "nano_banana_2",
+      "aspect": "1:1",
       "job_id": "6cd76444-e5b1-494b-8419-699672e55835",
       "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20260719_133302_6cd76444-e5b1-494b-8419-699672e55835.png",
       "local": "assets/characters/char_namja_jachwi.png",
       "ref_from": "char_namja_anchor",
-      "views": {"front": "char_namja_jachwi.png", "back": "char_namja_jachwi_back.png", "left": "char_namja_jachwi_left.png", "right": "char_namja_jachwi_right.png"},
-      "meshy": {"multi3d_task": "019f7fb1-9a9e-73d4-817b-b73e7eb050e9", "rig_task": "019f7fb9-7fbf-71ea-bde4-d4d318536911", "pose": "a-pose", "model": "meshy-6", "regen": "brown-2026-07-20"},
-      "glb": {"base": "assets/characters/3d/char_namja_jachwi_base.glb", "rigged": "assets/characters/3d/char_namja_jachwi_rigged.glb", "walking": "assets/characters/3d/char_namja_jachwi_walking.glb"},
+      "views": {
+        "front": "char_namja_jachwi.png",
+        "back": "char_namja_jachwi_back.png",
+        "left": "char_namja_jachwi_left.png",
+        "right": "char_namja_jachwi_right.png"
+      },
+      "meshy": {
+        "multi3d_task": "019f7fb1-9a9e-73d4-817b-b73e7eb050e9",
+        "rig_task": "019f7fb9-7fbf-71ea-bde4-d4d318536911",
+        "pose": "a-pose",
+        "model": "meshy-6",
+        "regen": "brown-2026-07-20"
+      },
+      "glb": {
+        "base": "assets/characters/3d/char_namja_jachwi_base.glb",
+        "rigged": "assets/characters/3d/char_namja_jachwi_rigged.glb",
+        "walking": "assets/characters/3d/char_namja_jachwi_walking.glb"
+      },
       "status": "확정(3D)"
     },
     {
       "name": "char_namja_researcher",
       "name_ko": "남자 연구자 (덴디컷·연구가운)",
-      "job": "연구자", "gender": "m", "variant": "final",
-      "outfit": "크림 식물연구소 가운 + 잎무늬 셔츠 + 올리브 팬츠 (소품 제거)", "hair": "dandy cut mint",
-      "model": "nano_banana_2", "aspect": "1:1",
+      "job": "연구자",
+      "gender": "m",
+      "variant": "final",
+      "outfit": "크림 식물연구소 가운 + 잎무늬 셔츠 + 올리브 팬츠 (소품 제거)",
+      "hair": "dandy cut mint",
+      "model": "nano_banana_2",
+      "aspect": "1:1",
       "job_id": "1dbe2d17-81fb-40b1-8985-1e75e9656357",
       "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20260719_134005_1dbe2d17-81fb-40b1-8985-1e75e9656357.png",
       "note": "리깅 대비: 손에 든 화분·주머니 도구 제거, 양손 비우고 팔 내린 자세.",
       "local": "assets/characters/char_namja_researcher.png",
       "ref_from": "char_namja_anchor",
-      "views": {"front": "char_namja_researcher.png", "back": "char_namja_researcher_back.png", "left": "char_namja_researcher_left.png", "right": "char_namja_researcher_right.png"},
-      "meshy": {"multi3d_task": "019f7fb1-e189-7431-8545-510cbd8c8d1f", "rig_task": "019f7fb9-ea91-7200-be8b-8d312753c9a6", "pose": "a-pose", "model": "meshy-6", "regen": "brown-2026-07-20"},
-      "glb": {"base": "assets/characters/3d/char_namja_researcher_base.glb", "rigged": "assets/characters/3d/char_namja_researcher_rigged.glb", "walking": "assets/characters/3d/char_namja_researcher_walking.glb"},
+      "views": {
+        "front": "char_namja_researcher.png",
+        "back": "char_namja_researcher_back.png",
+        "left": "char_namja_researcher_left.png",
+        "right": "char_namja_researcher_right.png"
+      },
+      "meshy": {
+        "multi3d_task": "019f7fb1-e189-7431-8545-510cbd8c8d1f",
+        "rig_task": "019f7fb9-ea91-7200-be8b-8d312753c9a6",
+        "pose": "a-pose",
+        "model": "meshy-6",
+        "regen": "brown-2026-07-20"
+      },
+      "glb": {
+        "base": "assets/characters/3d/char_namja_researcher_base.glb",
+        "rigged": "assets/characters/3d/char_namja_researcher_rigged.glb",
+        "walking": "assets/characters/3d/char_namja_researcher_walking.glb"
+      },
       "status": "확정(3D)"
     },
     {
       "name": "char_namja_jubu",
       "name_ko": "남자 주부 (스포츠컷·앞치마)",
-      "job": "주부", "gender": "m", "variant": "final",
-      "outfit": "베이지 카라티 + 올리브 팬츠 (편한 홈웨어)", "hair": "sports cut mint",
-      "model": "nano_banana_2", "aspect": "1:1",
+      "job": "주부",
+      "gender": "m",
+      "variant": "final",
+      "outfit": "베이지 카라티 + 올리브 팬츠 (편한 홈웨어)",
+      "hair": "sports cut mint",
+      "model": "nano_banana_2",
+      "aspect": "1:1",
       "job_id": "3276e347-790b-486f-a5ea-2aa6ea0b9862",
       "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20260719_132735_3276e347-790b-486f-a5ea-2aa6ea0b9862.png",
       "local": "assets/characters/char_namja_jubu.png",
       "ref_from": "char_namja_anchor",
       "note": "기존 가장 디자인(카라티+팬츠)을 주부로 이동. 이전 앞치마 주부(a59ea5bf) 폐기.",
-      "views": {"front": "char_namja_jubu.png", "back": "char_namja_jubu_back.png", "left": "char_namja_jubu_left.png", "right": "char_namja_jubu_right.png"},
-      "meshy": {"multi3d_task": "019f7fb1-b205-73dd-9057-a599eddf2e20", "rig_task": "019f7fb9-a2e4-763c-8eba-174964bccd54", "pose": "a-pose", "model": "meshy-6", "regen": "brown-2026-07-20"},
-      "glb": {"base": "assets/characters/3d/char_namja_jubu_base.glb", "rigged": "assets/characters/3d/char_namja_jubu_rigged.glb", "walking": "assets/characters/3d/char_namja_jubu_walking.glb"},
+      "views": {
+        "front": "char_namja_jubu.png",
+        "back": "char_namja_jubu_back.png",
+        "left": "char_namja_jubu_left.png",
+        "right": "char_namja_jubu_right.png"
+      },
+      "meshy": {
+        "multi3d_task": "019f7fb1-b205-73dd-9057-a599eddf2e20",
+        "rig_task": "019f7fb9-a2e4-763c-8eba-174964bccd54",
+        "pose": "a-pose",
+        "model": "meshy-6",
+        "regen": "brown-2026-07-20"
+      },
+      "glb": {
+        "base": "assets/characters/3d/char_namja_jubu_base.glb",
+        "rigged": "assets/characters/3d/char_namja_jubu_rigged.glb",
+        "walking": "assets/characters/3d/char_namja_jubu_walking.glb"
+      },
       "status": "확정(3D)"
     },
     {
       "name": "char_namja_gajang",
       "name_ko": "남자 가장 (스포츠컷·단정캐주얼)",
-      "job": "가장", "gender": "m", "variant": "final",
-      "outfit": "회색 정장 슬랙스 + 흰 와이셔츠만(재킷X) + 벨트 + 갈색 구두 — 학원강사/커리어", "hair": "sports cut mint",
-      "model": "nano_banana_2", "aspect": "1:1",
+      "job": "가장",
+      "gender": "m",
+      "variant": "final",
+      "outfit": "회색 정장 슬랙스 + 흰 와이셔츠만(재킷X) + 벨트 + 갈색 구두 — 학원강사/커리어",
+      "hair": "sports cut mint",
+      "model": "nano_banana_2",
+      "aspect": "1:1",
       "job_id": "a09aff74-c744-4629-a51d-0880eb6f1a84",
       "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20260719_133306_a09aff74-c744-4629-a51d-0880eb6f1a84.png",
       "local": "assets/characters/char_namja_gajang.png",
       "ref_from": "char_namja_anchor",
-      "views": {"front": "char_namja_gajang.png", "back": "char_namja_gajang_back.png", "left": "char_namja_gajang_left.png", "right": "char_namja_gajang_right.png"},
-      "meshy": {"multi3d_task": "019f7fb1-d03c-73e4-af6c-1d24b461fa7f", "rig_task": "019f7fb9-c6f0-7615-90bd-92e2e851f78a", "pose": "a-pose", "model": "meshy-6", "regen": "brown-2026-07-20"},
-      "glb": {"base": "assets/characters/3d/char_namja_gajang_base.glb", "rigged": "assets/characters/3d/char_namja_gajang_rigged.glb", "walking": "assets/characters/3d/char_namja_gajang_walking.glb"},
+      "views": {
+        "front": "char_namja_gajang.png",
+        "back": "char_namja_gajang_back.png",
+        "left": "char_namja_gajang_left.png",
+        "right": "char_namja_gajang_right.png"
+      },
+      "meshy": {
+        "multi3d_task": "019f7fb1-d03c-73e4-af6c-1d24b461fa7f",
+        "rig_task": "019f7fb9-c6f0-7615-90bd-92e2e851f78a",
+        "pose": "a-pose",
+        "model": "meshy-6",
+        "regen": "brown-2026-07-20"
+      },
+      "glb": {
+        "base": "assets/characters/3d/char_namja_gajang_base.glb",
+        "rigged": "assets/characters/3d/char_namja_gajang_rigged.glb",
+        "walking": "assets/characters/3d/char_namja_gajang_walking.glb"
+      },
       "status": "확정(3D)"
     }
   ],
@@ -188,25 +356,140 @@
     },
     "known_issue": "Meshy 애니 라이브러리는 idle·Walking_Woman의 Hips에 균일 스케일 1.1765를 넣는다(클립마다 몸 크기가 튐). 전량 1.0으로 정규화 완료 — 새 클립 추가 시 normalize_anim_scale.py를 반드시 돌릴 것.",
     "clips": [
-      {"key": "idle",           "action_id": 0,   "path": "3d/",      "name_ko": "유휴",              "use": "평상시 기본"},
-      {"key": "walking",        "action_id": null, "path": "3d/",     "name_ko": "걷기(기본)",         "use": "리깅 기본 제공(walking_man)"},
-      {"key": "walking_w",      "action_id": 1,   "path": "3d/",      "name_ko": "걷기(여성)",         "use": "여캐 4종 전용", "chars": "female"},
-      {"key": "inspect",        "action_id": 281, "path": "3d/anim/", "name_ko": "굽혀 살펴보기",      "use": "★식물 상태 관찰"},
-      {"key": "repot",          "action_id": 274, "path": "3d/anim/", "name_ko": "쭈그려 옮겨놓기",    "use": "★분갈이·화분 옮기기"},
-      {"key": "pickup",         "action_id": 276, "path": "3d/anim/", "name_ko": "허리 굽혀 집기",     "use": "물뿌리개·도구"},
-      {"key": "harvest",        "action_id": 278, "path": "3d/anim/", "name_ko": "서서 따기",          "use": "잎·열매 수확"},
-      {"key": "harvest_crouch", "action_id": 277, "path": "3d/anim/", "name_ko": "쭈그려 따고 일어서기","use": "낮은 화분"},
-      {"key": "opendoor",       "action_id": 285, "path": "3d/anim/", "name_ko": "문 열기",            "use": "방 이동"},
-      {"key": "sleep",          "action_id": 267, "path": "3d/anim/", "name_ko": "취침",               "use": "밤 사이클"},
-      {"key": "doze",           "action_id": 268, "path": "3d/anim/", "name_ko": "앉아서 졸기",        "use": "휴식"},
-      {"key": "sit",            "action_id": "32(F)/33(M)", "path": "3d/anim/", "name_ko": "의자에 앉기", "use": "★가구 상호작용. 남녀 다른 클립"},
-      {"key": "happyjump",      "action_id": 44,  "path": "3d/anim/", "name_ko": "기뻐서 폴짝",        "use": "★성장 단계 달성"},
-      {"key": "heart",          "action_id": 27,  "path": "3d/anim/", "name_ko": "하트",               "use": "★식물 애정 표현"},
-      {"key": "cheer",          "action_id": 49,  "path": "3d/anim/", "name_ko": "응원·환호",          "use": "업적 달성"},
-      {"key": "wave",           "action_id": 28,  "path": "3d/anim/", "name_ko": "손 흔들기",          "use": "접속·인사"},
-      {"key": "nod",            "action_id": 25,  "path": "3d/anim/", "name_ko": "끄덕임",             "use": "몬이와 대화 리액션"},
-      {"key": "listen",         "action_id": 47,  "path": "3d/anim/", "name_ko": "듣는 자세",          "use": "대화 기본 포즈"},
-      {"key": "scratch",        "action_id": 36,  "path": "3d/anim/", "name_ko": "머리 긁적",          "use": "실패·시듦 반응"}
+      {
+        "key": "idle",
+        "action_id": 0,
+        "path": "3d/",
+        "name_ko": "유휴",
+        "use": "평상시 기본"
+      },
+      {
+        "key": "walking",
+        "action_id": null,
+        "path": "3d/",
+        "name_ko": "걷기(기본)",
+        "use": "리깅 기본 제공(walking_man)"
+      },
+      {
+        "key": "walking_w",
+        "action_id": 1,
+        "path": "3d/",
+        "name_ko": "걷기(여성)",
+        "use": "여캐 4종 전용",
+        "chars": "female"
+      },
+      {
+        "key": "inspect",
+        "action_id": 281,
+        "path": "3d/anim/",
+        "name_ko": "굽혀 살펴보기",
+        "use": "★식물 상태 관찰"
+      },
+      {
+        "key": "repot",
+        "action_id": 274,
+        "path": "3d/anim/",
+        "name_ko": "쭈그려 옮겨놓기",
+        "use": "★분갈이·화분 옮기기"
+      },
+      {
+        "key": "pickup",
+        "action_id": 276,
+        "path": "3d/anim/",
+        "name_ko": "허리 굽혀 집기",
+        "use": "물뿌리개·도구"
+      },
+      {
+        "key": "harvest",
+        "action_id": 278,
+        "path": "3d/anim/",
+        "name_ko": "서서 따기",
+        "use": "잎·열매 수확"
+      },
+      {
+        "key": "harvest_crouch",
+        "action_id": 277,
+        "path": "3d/anim/",
+        "name_ko": "쭈그려 따고 일어서기",
+        "use": "낮은 화분"
+      },
+      {
+        "key": "opendoor",
+        "action_id": 285,
+        "path": "3d/anim/",
+        "name_ko": "문 열기",
+        "use": "방 이동"
+      },
+      {
+        "key": "sleep",
+        "action_id": 267,
+        "path": "3d/anim/",
+        "name_ko": "취침",
+        "use": "밤 사이클"
+      },
+      {
+        "key": "doze",
+        "action_id": 268,
+        "path": "3d/anim/",
+        "name_ko": "앉아서 졸기",
+        "use": "휴식"
+      },
+      {
+        "key": "sit",
+        "action_id": "32(F)/33(M)",
+        "path": "3d/anim/",
+        "name_ko": "의자에 앉기",
+        "use": "★가구 상호작용. 남녀 다른 클립"
+      },
+      {
+        "key": "happyjump",
+        "action_id": 44,
+        "path": "3d/anim/",
+        "name_ko": "기뻐서 폴짝",
+        "use": "★성장 단계 달성"
+      },
+      {
+        "key": "heart",
+        "action_id": 27,
+        "path": "3d/anim/",
+        "name_ko": "하트",
+        "use": "★식물 애정 표현"
+      },
+      {
+        "key": "cheer",
+        "action_id": 49,
+        "path": "3d/anim/",
+        "name_ko": "응원·환호",
+        "use": "업적 달성"
+      },
+      {
+        "key": "wave",
+        "action_id": 28,
+        "path": "3d/anim/",
+        "name_ko": "손 흔들기",
+        "use": "접속·인사"
+      },
+      {
+        "key": "nod",
+        "action_id": 25,
+        "path": "3d/anim/",
+        "name_ko": "끄덕임",
+        "use": "몬이와 대화 리액션"
+      },
+      {
+        "key": "listen",
+        "action_id": 47,
+        "path": "3d/anim/",
+        "name_ko": "듣는 자세",
+        "use": "대화 기본 포즈"
+      },
+      {
+        "key": "scratch",
+        "action_id": 36,
+        "path": "3d/anim/",
+        "name_ko": "머리 긁적",
+        "use": "실패·시듦 반응"
+      }
     ]
   },
   "pipeline_3d": {
@@ -233,13 +516,48 @@
       "sheet": "assets/characters/mascot_expressions.html",
       "format": "2D 스프라이트(1024², 무광 클레이 3D 룩). 3D 모델은 리깅이 없어 얼굴 표정 불가 → UI·대사용은 2D로 운용.",
       "set": [
-        {"key": "default",  "file": "mon_default.png",  "use": "평상시·UI 상주",              "line": "오늘도 잘 지냈어?"},
-        {"key": "happy",    "file": "mon_happy.png",    "use": "새 잎·성장 단계 달성",         "line": "우와, 잎이 났어! 봐봐!"},
-        {"key": "proud",    "file": "mon_proud.png",    "use": "관리 잘한 날·연속 출석",       "line": "잘 챙겼네. 기특하다."},
-        {"key": "cheer",    "file": "mon_cheer.png",    "use": "실패·시듦 이후 위로",          "line": "괜찮아. 다시 키우면 되지."},
-        {"key": "worry",    "file": "mon_worry.png",    "use": "빛 부족·물 부족 경고",         "line": "얘가 좀 힘들어 보이는데…"},
-        {"key": "surprise", "file": "mon_surprise.png", "use": "이벤트·돌발 상황",             "line": "어? 이거 처음 보는 건데!"},
-        {"key": "sleepy",   "file": "mon_sleepy.png",   "use": "밤·장시간 미접속 복귀",        "line": "으암… 벌써 밤이네."}
+        {
+          "key": "default",
+          "file": "mon_default.png",
+          "use": "평상시·UI 상주",
+          "line": "오늘도 잘 지냈어?"
+        },
+        {
+          "key": "happy",
+          "file": "mon_happy.png",
+          "use": "새 잎·성장 단계 달성",
+          "line": "우와, 잎이 났어! 봐봐!"
+        },
+        {
+          "key": "proud",
+          "file": "mon_proud.png",
+          "use": "관리 잘한 날·연속 출석",
+          "line": "잘 챙겼네. 기특하다."
+        },
+        {
+          "key": "cheer",
+          "file": "mon_cheer.png",
+          "use": "실패·시듦 이후 위로",
+          "line": "괜찮아. 다시 키우면 되지."
+        },
+        {
+          "key": "worry",
+          "file": "mon_worry.png",
+          "use": "빛 부족·물 부족 경고",
+          "line": "얘가 좀 힘들어 보이는데…"
+        },
+        {
+          "key": "surprise",
+          "file": "mon_surprise.png",
+          "use": "이벤트·돌발 상황",
+          "line": "어? 이거 처음 보는 건데!"
+        },
+        {
+          "key": "sleepy",
+          "file": "mon_sleepy.png",
+          "use": "밤·장시간 미접속 복귀",
+          "line": "으암… 벌써 밤이네."
+        }
       ]
     },
     "local": "assets/characters/mascot/char_mascot_sprout.png",
@@ -250,24 +568,31 @@
       "right": "assets/characters/mascot/3d_wip/mascot_3dstyle_right.png",
       "note": "원본 2D 벡터(검은 외곽선)를 캐릭터 8종과 같은 무광 클레이 저폴리 3D 룩으로 변환한 4뷰."
     },
-    "meshy": {"multi3d_task": "019f969f-ada6-74c1-a3b5-0ff85fde39ba", "model": "meshy-6", "pose": "없음(화분 착석)", "rig": "미실시(A형태 확정)"},
-    "glb": {"base": "assets/characters/3d/char_mascot_sprout.glb"},
+    "meshy": {
+      "multi3d_task": "019f969f-ada6-74c1-a3b5-0ff85fde39ba",
+      "model": "meshy-6",
+      "pose": "없음(화분 착석)",
+      "rig": "미실시(A형태 확정)"
+    },
+    "glb": {
+      "base": "assets/characters/3d/char_mascot_sprout.glb"
+    },
     "viewer": "assets/characters/mascot_viewer.html",
     "scale_spec": {
-      "rule": "캐릭터 신장의 0.25배 (작은 동반자 사이즈 — 캐릭 무릎 아래 높이)",
+      "rule": "여캐 신장의 0.25배 (작은 동반자 사이즈 - 캐릭 무릎 아래 높이)",
       "size_ratio": 0.25,
-      "char_height": 1.8995,
-      "mascot_height": 0.4749,
-      "floor_y": -0.9507,
-      "note": "GLB에 스케일을 이미 적용해 저장함(엔진에서 추가 스케일 불필요). 캐릭터 8종과 동일한 바닥면(y=-0.9507) 기준 정렬."
+      "char_height_female": 1.5,
+      "mascot_height": 0.375,
+      "floor_y": 0.0,
+      "note": "GLB에 실스케일이 구워져 있음(엔진에서 추가 스케일 불필요). 전 캐릭터 공통으로 발바닥이 y=0."
     },
     "follow_motion": {
       "concept": "캐릭터 뒤를 공중에 살짝 떠서 졸졸 따라다님. 본 리깅 없이 트랜스폼만으로 구현.",
       "params": {
-        "floatHeight": 0.30,
-        "bobAmplitude": 0.130,
+        "floatHeight": 0.237,
+        "bobAmplitude": 0.103,
         "bobPeriod_sec": 2.5,
-        "followDistance": 1.05,
+        "followDistance": 0.829,
         "followDamping": 4.1,
         "tiltDegrees": 4.0
       },
@@ -279,7 +604,8 @@
         "블롭 그림자 필수 — 높이에 따라 크기↑/불투명도↓ 해야 떠 있는 높이가 읽힘"
       ],
       "preview": "assets/characters/mascot_follow_preview.html (슬라이더로 재조정 가능)",
-      "rationale": "화분이 몸과 일체형이라 걷기 리깅이 부적합. 정령 설정과도 맞고, 부유 시 지형 맞춤(foot IK)·계단 처리가 불필요해짐."
+      "rationale": "화분이 몸과 일체형이라 걷기 리깅이 부적합. 정령 설정과도 맞고, 부유 시 지형 맞춤(foot IK)·계단 처리가 불필요해짐.",
+      "params_note": "길이 단위는 미터. 캐릭터 1.8995 시절 확정값을 실스케일로 x0.7897 환산."
     },
     "animation_plan": "A형태 확정: 본 리깅 없음. 위 follow_motion 파라미터로 부유·추적 처리. 잎 흔들림은 셰이더 또는 단순 트랜스폼으로 추가 가능.",
     "status": "3D 완료(리깅 없음·크기 확정). 이름·성격·표정세트 미정",
@@ -298,5 +624,45 @@
     "주부": "char_namja_jubu",
     "가장": "char_namja_gajang",
     "연구자": "char_namja_researcher"
+  },
+  "scale": {
+    "unit": "1 GLB 유닛 = 1 미터 (실스케일)",
+    "origin": "발바닥 y=0, XZ는 바운딩 중심",
+    "female_height_m": 1.5,
+    "male_height_m": 1.7,
+    "mascot_height_m": 0.375,
+    "applied_to": "assets/characters/3d/char_*.glb 37개 (base/rigged/walking/walking_w/idle/mascot)",
+    "tool": "tools/rescale_char_glb.py",
+    "method": "정점은 그대로 두고 씬 최상단에 __scale_root 래퍼 노드를 끼워 scale/translation 적용. 스킨드 메시는 관절이 래퍼 아래로 들어가 스키닝 결과가 함께 스케일되고, 클립은 관절 로컬 변환만 구동하므로 3d/anim/ 128개 클립은 수정 불필요.",
+    "idempotent": "래퍼가 이미 있으면 벗기고 재계산하므로 재실행 안전",
+    "was": "Meshy 출력은 남녀 구분 없이 base 1.8995 / rigged 1.7000 으로 정규화되어 있었음. 문 2.0m 기준 190cm는 과대.",
+    "verify": "assets/characters/scale_check.html - 실치수 가구(문2.0/옷장1.9/책상0.75/스툴0.355/화분0.28) 옆에서 확인"
+  },
+  "lq": {
+    "what": "게임 화면용 경량본. 원본(3d/)은 초상화·클로즈업·재리깅용으로 그대로 보존.",
+    "dir": "assets/characters/3d/lq/",
+    "count": 37,
+    "tool": "tools/make_lq_glb.py (gltf-transform simplify + resize, npx로 실행)",
+    "why": "Meshy 원본은 쿼드 토폴로지라 캐릭터 19만·몬이 31만 삼각형. 게임 카메라에서 캐릭터는 화면 110~340px, 얼굴 24~48px이라 과잉.",
+    "character": {
+      "ratio": 0.1,
+      "texture": 1024,
+      "tri_avg": 22479,
+      "tri_before_avg": 224820
+    },
+    "mascot": {
+      "ratio": 0.016,
+      "texture": 512,
+      "tri": 6916,
+      "tri_before": 312538
+    },
+    "size_mb": {
+      "before": 500.4,
+      "after": 74.5
+    },
+    "preserved": "JOINTS_0/WEIGHTS_0 스킨 웨이트, 본 24개, 애니메이션 채널, 실스케일, __scale_root 래퍼, 노드 이름 전부 원본과 대조 검증. 노드 이름이 같으므로 3d/anim/ 클립 128개가 경량본에도 그대로 바인딩됨.",
+    "caution": "trimesh 계열 감축은 스킨 웨이트를 파괴하므로 쓰면 안 됨. meshoptimizer(gltf-transform)만 사용.",
+    "viewer": "assets/characters/lq_compare.html (원본 vs lq 좌우 비교, 카메라 동기화·와이어프레임·얼굴/손 줌)",
+    "used_by": "assets/house/_room_tuner.html (좌측 '경량본 사용' 체크박스로 원본과 즉시 비교 가능)"
   }
 }

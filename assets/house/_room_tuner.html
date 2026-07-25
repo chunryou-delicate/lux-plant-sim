@@ -77,12 +77,21 @@
     <h3>🧍 스케일 기준</h3>
     <select id="ref">
       <option value="none">없음</option>
-      <option value="silh" selected>사람 실루엣</option>
-      <option value="glb">캐릭터 GLB(치비)</option>
+      <option value="silh">사람 실루엣</option>
+      <option value="glb" selected>실제 캐릭터</option>
     </select>
-    <div class="row" style="margin-top:6px"><span class="rlab">키</span><input type="range" id="refH" min="130" max="195" value="170"><span class="rlab" id="refHlab">1.70m</span></div>
+    <div id="glbOpts">
+      <label class="opt" style="margin-top:6px;font-size:11.5px">캐릭터</label>
+      <select id="refChar"></select>
+      <label class="opt" style="margin-top:6px;font-size:11.5px">자세</label>
+      <select id="refPose"></select>
+      <label class="opt" style="margin-top:5px"><input type="checkbox" id="refMon" checked>몬이 동반(0.375m)</label>
+      <label class="opt"><input type="checkbox" id="refLQ" checked>경량본 사용(폴리곤 1/10)</label>
+      <div id="refInfo" style="font-size:11px;color:#4a5058;font-weight:700;margin-top:5px;line-height:1.55"></div>
+    </div>
+    <div class="row" style="margin-top:6px"><span class="rlab">실루엣 키</span><input type="range" id="refH" min="130" max="195" value="170"><span class="rlab" id="refHlab">1.70m</span></div>
     <label class="opt" style="margin-top:4px"><input type="checkbox" id="refPots" checked>화분 크기 비교(소·중·대)</label>
-    <div style="font-size:11px;color:#7a808a;margin-top:3px">문 앞·창가에 세워 문/창/화분 크기를 눈으로 비교</div>
+    <div style="font-size:11px;color:#7a808a;margin-top:3px">캐릭터 GLB는 실스케일(여 1.50 / 남 1.70m, 발바닥 y=0)이라 키 슬라이더 영향을 받지 않습니다</div>
   </div>
   <div class="grp">
     <button class="btn" id="copy">이 설정 JSON 복사</button>
@@ -170,7 +179,39 @@ function lightInfo(){
 
 /* ===== 스케일 기준: 사람 실루엣 / 캐릭터 GLB / 화분 소·중·대 ===== */
 const refGroup=new THREE.Group(); scene.add(refGroup);
-let refMode='silh', refH=1.70, refPots=true, _charGLB=null, showFurn=true;
+let refMode='glb', refH=1.70, refPots=true, showFurn=true;
+
+/* 캐릭터 8종 + 몬이 — GLB에 실스케일이 구워져 있음(발바닥 y=0, 1유닛=1m).
+   자세: base=A포즈(정지), 나머지는 리깅본 + 클립을 얹어 재생.
+   ref: assets/characters/manifest.json 의 scale 블록 */
+const REF_CHARS=[
+  ['char_namja_jachwi','자취남',1.70],['char_namja_gajang','남가장',1.70],
+  ['char_namja_jubu','남주부',1.70],['char_namja_researcher','남연구원',1.70],
+  ['char_jachwi_f','자취녀',1.50],['char_yeoja_gajang','여가장',1.50],
+  ['char_yeoja_jubu','여주부',1.50],['char_yeoja_researcher','여연구원',1.50],
+];
+// [키, 라벨, 경로종류]  root = 3d/{c}_{k}.glb, anim = 3d/anim/{c}_{k}.glb
+const REF_POSES=[
+  ['idle','유휴(서 있기)','root'],['walking','걷기','root'],
+  ['inspect','굽혀 살펴보기','anim'],['repot','쭈그려 옮겨놓기','anim'],
+  ['sit','의자에 앉기','anim'],['sleep','취침','anim'],
+  ['','A 포즈(정지)','base'],
+];
+let refChar='char_namja_jachwi', refPose='idle', refMon=true, refLQ=true;
+/* 원본(3d/)은 19만 삼각형이라 방 전체와 같이 돌리면 무겁다. 경량본(3d/lq/)은
+   약 1.9만으로 줄이고 텍스처를 1024로 낮춘 것 — 이 거리에선 차이가 안 보인다.
+   클립(3d/anim/)은 메시가 없어 경량본이 따로 없다. */
+const CBASE='../characters/3d/';
+const cdir=()=>refLQ?CBASE+'lq/':CBASE;
+const _glbCache=new Map();
+let refMixer=null, refHips=null, refHipsXZ=[0,0];
+const refClock=new THREE.Clock();
+
+function loadGLB(url){
+  if(!_glbCache.has(url))
+    _glbCache.set(url,new Promise((res,rej)=>new THREE.GLTFLoader().load(url,res,undefined,rej)));
+  return _glbCache.get(url);
+}
 
 function silhouette(h){                       // 정확히 h(m) 키의 단순 인체 프록시
   const g=new THREE.Group();
@@ -207,32 +248,65 @@ function potSet(){                             // 화분 소(0.15)·중(0.3)·�
   });
   return g;
 }
-async function loadCharGLB(){
-  if(_charGLB) return _charGLB.clone(true);
-  const url='../characters/3d/char_namja_jachwi_base.glb';
-  const gltf=await new Promise((res,rej)=>new THREE.GLTFLoader().load(url,res,undefined,rej));
-  _charGLB=gltf.scene||gltf.scenes[0];
-  return _charGLB.clone(true);
+/* 실제 캐릭터를 방에 세운다. 스케일 보정 없음 — GLB가 이미 실측이다. */
+async function buildChar(px,pz){
+  const pose=REF_POSES.find(p=>p[0]===refPose)||REF_POSES[0];
+  // root 자세(idle/walking)는 파일 자체에 메시+애니메이션이 다 들어 있어 한 번만 받으면 된다.
+  // anim 자세는 리깅 메시(_rigged) + 스트립된 클립(68KB)을 합성한다.
+  const src = pose[2]==='base' ? `${cdir()}${refChar}_base.glb`
+            : pose[2]==='root' ? `${cdir()}${refChar}_${pose[0]}.glb`
+            :                    `${cdir()}${refChar}_rigged.glb`;
+  const gltf=await loadGLB(src);
+  // 이 페이지는 캐릭터를 하나만 세우므로, 캐시된 씬을 복제하지 않고 붙였다 뗀다.
+  const g=gltf.scene;
+  if(g.parent) g.parent.remove(g);
+  g.position.set(px,0,pz);                    // 발바닥이 y=0이라 바닥 보정 불필요
+  g.rotation.y=Math.PI;                        // 방 안쪽(카메라) 보게
+  g.traverse(o=>{ if(o.isMesh){o.castShadow=true;o.receiveShadow=true;} });
+  refGroup.add(g);
+
+  refMixer=null;
+  let clips=(pose[2]==='root') ? gltf.animations : null;
+  if(pose[2]==='anim'){
+    try{ clips=(await loadGLB(`${CBASE}anim/${refChar}_${pose[0]}.glb`)).animations; }
+    catch(e){ /* 해당 모션 없음 — 바인드 포즈로 둔다 */ }
+  }
+  if(clips&&clips.length){
+    refMixer=new THREE.AnimationMixer(g);
+    refMixer.clipAction(clips[0]).play();
+    // 걷기 클립은 앞으로 전진해 방 밖으로 나가버린다 — 제자리 걸음으로 고정
+    refHips=null;
+    g.traverse(o=>{ if(o.isBone&&/hips/i.test(o.name)&&!refHips){ refHips=o; refHipsXZ=[o.position.x,o.position.z]; } });
+  }
+  return g;
 }
 async function buildRefs(){
+  refMixer=null;
   while(refGroup.children.length) refGroup.remove(refGroup.children[0]);
   const doorSpec=(cur.doors&&cur.doors[0])||null;
   const px=doorSpec?doorSpec.cu+0.85:-1.0;             // 문 옆에 세움
+  const pz=SZ.d/2-0.8;
   if(refMode==='silh'){
-    const s=silhouette(refH); s.position.set(px,0,SZ.d/2-0.8); refGroup.add(s);
+    const s=silhouette(refH); s.position.set(px,0,pz); refGroup.add(s);
     const s2=silhouette(refH); s2.position.set(0.4,0,-SZ.d/2+0.9); refGroup.add(s2);   // 창가에도
   }else if(refMode==='glb'){
+    const meta=REF_CHARS.find(c=>c[0]===refChar);
     try{
-      const g=await loadCharGLB();
-      const bb=new THREE.Box3().setFromObject(g), sz=new THREE.Vector3(); bb.getSize(sz);
-      const k=refH/(sz.y||2);                            // 원본 2유닛 → 실제 키로
-      g.scale.setScalar(k);
-      const bb2=new THREE.Box3().setFromObject(g);
-      g.position.set(px, -bb2.min.y, SZ.d/2-0.8);
-      g.traverse(o=>{ if(o.isMesh){o.castShadow=true;o.receiveShadow=true;} });
-      refGroup.add(g);
+      await buildChar(px,pz);
+      if(refMon){
+        const m=(await loadGLB(cdir()+'char_mascot_sprout.glb')).scene;
+        if(m.parent) m.parent.remove(m);
+        m.position.set(px-0.55,0.237,pz+0.45);        // 부유 높이 0.237m (매니페스트 follow_motion)
+        m.traverse(o=>{ if(o.isMesh){o.castShadow=true;} });
+        refGroup.add(m);
+      }
+      const info=document.getElementById('refInfo');
+      if(info) info.innerHTML=
+        `${meta[1]} <b>${(meta[2]*100)|0}cm</b> · 문(2.0m) 대비 <b>${((meta[2]/2.0)*100)|0}%</b><br>`+
+        `천장 ${SZ.h.toFixed(2)}m · 머리 위 여유 <b>${(SZ.h-meta[2]).toFixed(2)}m</b>`;
     }catch(e){ showErr('캐릭터 GLB 로드 실패: '+e.message); }
   }
+  document.getElementById('glbOpts').style.display = refMode==='glb'?'':'none';
   if(refPots){ const p=potSet(); p.position.set(Math.min(1.1,SZ.w/2-1.2),0,SZ.d/2-1.5); refGroup.add(p); }
 }
 
@@ -347,6 +421,14 @@ let COLORS=[];
   const rh=document.getElementById('refH');
   rh.oninput=e=>{ refH=+e.target.value/100; document.getElementById('refHlab').textContent=refH.toFixed(2)+'m'; buildRefs(); };
   document.getElementById('refPots').onchange=e=>{ refPots=e.target.checked; buildRefs(); };
+  // 캐릭터 · 자세 · 몬이
+  const cSel=document.getElementById('refChar'), pSel=document.getElementById('refPose');
+  cSel.innerHTML=REF_CHARS.map(([k,n,h])=>`<option value="${k}" ${k===refChar?'selected':''}>${n} · ${(h*100)|0}cm</option>`).join('');
+  pSel.innerHTML=REF_POSES.map(([k,n])=>`<option value="${k}" ${k===refPose?'selected':''}>${n}</option>`).join('');
+  cSel.onchange=e=>{ refChar=e.target.value; buildRefs(); };
+  pSel.onchange=e=>{ refPose=e.target.value; buildRefs(); };
+  document.getElementById('refMon').onchange=e=>{ refMon=e.target.checked; buildRefs(); };
+  document.getElementById('refLQ').onchange=e=>{ refLQ=e.target.checked; buildRefs(); };
 
   // ===== 💡 조명 패널 =====
   const fxSel=document.getElementById('lightFx'), spSel=document.getElementById('lightSpec'),
@@ -379,7 +461,11 @@ let COLORS=[];
   document.getElementById('save').onclick=()=>{const o=document.getElementById('out');o.style.display='block';o.value=dump();};
   document.getElementById('copy').onclick=async()=>{try{await navigator.clipboard.writeText(dump());
     const b=document.getElementById('copy');b.textContent='복사됨 ✓';setTimeout(()=>b.textContent='이 설정 JSON 복사',1500);}catch(e){showErr('복사 실패 — 아래 버튼으로 보기');}};
-  function loop(){requestAnimationFrame(loop);renderer.render(scene,cam);}
+  function loop(){requestAnimationFrame(loop);
+    const dt=refClock.getDelta();
+    if(refMixer){ refMixer.update(dt);
+      if(refHips){ refHips.position.x=refHipsXZ[0]; refHips.position.z=refHipsXZ[1]; } }
+    renderer.render(scene,cam);}
   loop();
   setTimeout(()=>{const h=document.getElementById('hint');if(h)h.style.opacity='0';},7000);
 })();

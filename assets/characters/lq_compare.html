@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8">
+<title>경량본 검수 — 원본 vs lq</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<style>
+ *{box-sizing:border-box}
+ body{margin:0;font-family:'Pretendard','Malgun Gothic',sans-serif;background:#f3f6f3;color:#2b3830}
+ header{padding:12px 18px;background:#fff;border-bottom:1px solid #dde5de;display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+ h1{margin:0;font-size:15px;letter-spacing:-.3px}
+ select,button{padding:6px 9px;border:1px solid #cfdbd2;border-radius:7px;background:#fff;font:inherit;font-size:13px}
+ button{cursor:pointer}button.on{background:#3a5c47;color:#fff;border-color:#3a5c47}
+ .pair{display:grid;grid-template-columns:1fr 1fr;height:calc(100vh - 108px)}
+ .cell{position:relative;border-right:1px solid #dde5de}
+ .cell canvas{width:100%;height:100%;display:block}
+ .tag{position:absolute;top:10px;left:12px;background:rgba(255,255,255,.9);border-radius:7px;
+      padding:5px 9px;font-size:12px;font-weight:700;line-height:1.5}
+ .tag em{font-style:normal;color:#4a7a5c}
+ .bar{height:46px;display:flex;align-items:center;gap:16px;padding:0 18px;background:#fff;border-top:1px solid #dde5de;font-size:12.5px}
+ .bar b{color:#3a5c47}
+ .warn{color:#b4483a}
+</style></head><body>
+<header>
+  <h1>경량본 검수</h1>
+  <select id="char"></select>
+  <select id="pose"></select>
+  <button id="wire">와이어프레임</button>
+  <button id="sync" class="on">카메라 동기화</button>
+  <button id="face">얼굴로 줌</button>
+  <button id="hand">손으로 줌</button>
+  <button id="full">전신</button>
+</header>
+<div class="pair">
+  <div class="cell"><canvas id="cA"></canvas><div class="tag" id="tA">원본</div></div>
+  <div class="cell"><canvas id="cB"></canvas><div class="tag" id="tB">경량본 lq</div></div>
+</div>
+<div class="bar" id="bar">불러오는 중…</div>
+<script>
+const CB='?t='+Date.now();
+const CHARS=[['char_namja_jachwi','자취남'],['char_namja_gajang','남가장'],
+ ['char_namja_jubu','남주부'],['char_namja_researcher','남연구원'],
+ ['char_jachwi_f','자취녀'],['char_yeoja_gajang','여가장'],
+ ['char_yeoja_jubu','여주부'],['char_yeoja_researcher','여연구원'],
+ ['char_mascot_sprout','몬이']];
+const POSES=[['base','A 포즈'],['idle','유휴'],['walking','걷기'],['rigged','리깅(바인드)']];
+
+function makeView(canvas){
+  const r=new THREE.WebGLRenderer({canvas,antialias:true});
+  r.setPixelRatio(Math.min(devicePixelRatio,2));r.outputEncoding=THREE.sRGBEncoding;
+  const s=new THREE.Scene();s.background=new THREE.Color(0xeef3ef);
+  const c=new THREE.PerspectiveCamera(32,1,0.01,60);
+  const ct=new THREE.OrbitControls(c,canvas);ct.enableDamping=true;
+  s.add(new THREE.AmbientLight(0xffffff,0.7));
+  s.add(new THREE.HemisphereLight(0xffffff,0xdfe6df,0.25));
+  const d=new THREE.DirectionalLight(0xffffff,0.55);d.position.set(2,4,3);s.add(d);
+  const g=new THREE.GridHelper(4,8,0xbccfc2,0xdae6dd);s.add(g);
+  return {r,s,c,ct,clock:new THREE.Clock(),model:null,mixer:null};
+}
+const A=makeView(document.getElementById('cA')), B=makeView(document.getElementById('cB'));
+const loader=new THREE.GLTFLoader();
+let wire=false, sync=true;
+
+function setCam(v,mode,h){
+  // h = 캐릭터 키(m). 발바닥 y=0 기준으로 부위별 위치 계산
+  if(mode==='face'){ v.c.position.set(0.10,h*0.90,0.42); v.ct.target.set(0,h*0.88,0); }
+  else if(mode==='hand'){ v.c.position.set(h*0.30,h*0.52,0.40); v.ct.target.set(h*0.26,h*0.50,0); }
+  else { v.c.position.set(h*0.55,h*0.62,h*1.35); v.ct.target.set(0,h*0.45,0); }
+  v.ct.update();
+}
+let curH=1.7, curMode='full';
+function applyCam(m){ curMode=m; setCam(A,m,curH); setCam(B,m,curH); }
+
+function clear(v){ if(v.model){v.s.remove(v.model);} v.model=null;v.mixer=null; }
+function tris(root){let t=0;root.traverse(o=>{if(o.isMesh&&o.geometry&&o.geometry.index)t+=o.geometry.index.count/3;
+  else if(o.isMesh&&o.geometry)t+=o.geometry.attributes.position.count/3;});return t;}
+function setWire(v){ if(!v.model)return; v.model.traverse(o=>{if(o.isMesh){
+  const ms=Array.isArray(o.material)?o.material:[o.material]; ms.forEach(m=>{if(m)m.wireframe=wire;});}}); }
+
+function loadInto(v,url,tagEl,label){
+  clear(v);
+  return new Promise(res=>{
+    loader.load(url+CB,g=>{
+      v.model=g.scene;v.s.add(v.model);
+      if(g.animations&&g.animations.length){
+        v.mixer=new THREE.AnimationMixer(v.model);
+        v.mixer.clipAction(g.animations[0]).play();
+      }
+      setWire(v);
+      const t=Math.round(tris(v.model));
+      tagEl.innerHTML=`${label}<br><em>${t.toLocaleString()} 삼각형</em>`;
+      res(t);
+    },undefined,()=>{ tagEl.innerHTML=`${label}<br><em class="warn">파일 없음</em>`; res(0); });
+  });
+}
+
+const charSel=document.getElementById('char'), poseSel=document.getElementById('pose');
+CHARS.forEach(([k,n])=>charSel.add(new Option(n,k)));
+POSES.forEach(([k,n])=>poseSel.add(new Option(n,k)));
+
+async function load(){
+  const c=charSel.value, p=poseSel.value;
+  const isMon=c==='char_mascot_sprout';
+  curH = isMon?0.375 : (/(jachwi_f|yeoja)/.test(c)?1.50:1.70);
+  const file = isMon ? 'char_mascot_sprout.glb' : `${c}_${p}.glb`;
+  document.getElementById('bar').textContent='불러오는 중…';
+  const [ta,tb]=await Promise.all([
+    loadInto(A,'3d/'+file,document.getElementById('tA'),'원본'),
+    loadInto(B,'3d/lq/'+file,document.getElementById('tB'),'경량본 lq'),
+  ]);
+  applyCam(curMode);
+  const bar=document.getElementById('bar');
+  bar.innerHTML = tb
+    ? `삼각형 <b>${ta.toLocaleString()} → ${tb.toLocaleString()}</b> (${(tb/ta*100).toFixed(1)}%) · `+
+      `키 ${curH}m 기준 · <span style="color:#6d7d72">확인 포인트: 손가락 / 머리카락 가닥 / 옷 주름 / 얼굴 실루엣</span>`
+    : `<span class="warn">경량본이 아직 없습니다 — 배치가 끝나면 새로고침하세요</span>`;
+}
+charSel.onchange=poseSel.onchange=load;
+document.getElementById('wire').onclick=e=>{wire=!wire;e.target.classList.toggle('on',wire);setWire(A);setWire(B);};
+document.getElementById('sync').onclick=e=>{sync=!sync;e.target.classList.toggle('on',sync);};
+document.getElementById('face').onclick=()=>applyCam('face');
+document.getElementById('hand').onclick=()=>applyCam('hand');
+document.getElementById('full').onclick=()=>applyCam('full');
+load();
+
+// 한쪽을 돌리면 반대쪽도 같은 각도로 — 차이를 보려면 시점이 같아야 한다
+A.ct.addEventListener('change',()=>{if(sync){B.c.position.copy(A.c.position);B.ct.target.copy(A.ct.target);B.ct.update();}});
+B.ct.addEventListener('change',()=>{if(sync){A.c.position.copy(B.c.position);A.ct.target.copy(B.ct.target);A.ct.update();}});
+
+function step(v){const cv=v.r.domElement,w=cv.clientWidth,h=cv.clientHeight;
+  if(cv.width!==w||cv.height!==h){v.r.setSize(w,h,false);v.c.aspect=w/h;v.c.updateProjectionMatrix();}
+  const d=v.clock.getDelta(); if(v.mixer)v.mixer.update(d);
+  v.ct.update();v.r.render(v.s,v.c);}
+(function loop(){requestAnimationFrame(loop);step(A);step(B);})();
+</script></body></html>
