@@ -262,7 +262,9 @@ async function buildChar(px,pz){
   if(g.parent) g.parent.remove(g);
   g.position.set(px,0,pz);                    // 발바닥이 y=0이라 바닥 보정 불필요
   g.rotation.y=Math.PI;                        // 방 안쪽(카메라) 보게
-  g.traverse(o=>{ if(o.isMesh){o.castShadow=true;o.receiveShadow=true;} });
+  // frustumCulled: 스킨드 메시는 지오메트리 바운딩(0.017m, 원점 부근)이 실제 렌더 크기와
+  // 어긋나 있어, 카메라를 캐릭터에 붙이면 three.js가 화면 밖으로 판정해 통째로 잘라낸다.
+  g.traverse(o=>{ if(o.isMesh){o.castShadow=true;o.receiveShadow=true;o.frustumCulled=false;} });
   refGroup.add(g);
 
   refMixer=null;

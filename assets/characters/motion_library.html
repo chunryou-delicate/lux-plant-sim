@@ -188,6 +188,9 @@ function load(charKey){
         V.cv.style.background='';
         if(i>0) errEl.textContent='주의: _rigged 실패 → _walking으로 대체 로드됨';
         const m=rg.scene; toonify(m); V.sc.add(m); V.root=m;
+        // 스킨드 메시는 지오메트리 바운딩(0.017m, 원점 부근)이 실제 렌더 크기와 어긋나 있어
+        // 카메라가 가까우면 three.js가 화면 밖으로 판정해 통째로 잘라낸다.
+        m.traverse(o=>{if(o.isMesh)o.frustumCulled=false;});
         m.traverse(o=>{if(o.isBone&&!V.hips&&/hips/i.test(o.name)){V.hips=o;V.hips0=o.position.clone();}});
         new THREE.GLTFLoader().load(cpath+CB, ag=>{
           if(!ag.animations||!ag.animations.length){errEl.textContent='클립에 애니 없음: '+cpath; frame(V,m); return;}

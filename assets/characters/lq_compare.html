@@ -61,10 +61,23 @@ const A=makeView(document.getElementById('cA')), B=makeView(document.getElementB
 const loader=new THREE.GLTFLoader();
 let wire=false, sync=true;
 
+/* 실제로 그려지는 높이를 잰다.
+   스킨드 메시는 지오메트리 bbox가 렌더 위치와 어긋나므로 본 월드좌표로 재야 한다.
+   본은 정수리·발끝까지 못 닿아서 머리 본 높이를 키의 약 0.87로 보고 환산한다. */
+function measureH(root){
+  if(!root) return 0;
+  root.updateMatrixWorld(true);
+  const b=new THREE.Box3(), v=new THREE.Vector3(); let skinned=false;
+  root.traverse(o=>{ if(o.isSkinnedMesh&&o.skeleton){ skinned=true;
+    o.skeleton.bones.forEach(bo=>{ bo.getWorldPosition(v); b.expandByPoint(v); }); }});
+  if(skinned && b.max.y>b.min.y) return (b.max.y-b.min.y)/0.87;
+  const gb=new THREE.Box3().setFromObject(root);
+  return Math.max(0,gb.max.y-gb.min.y);
+}
 function setCam(v,mode,h){
   // h = 캐릭터 키(m). 발바닥 y=0 기준으로 부위별 위치 계산
-  if(mode==='face'){ v.c.position.set(0.10,h*0.90,0.42); v.ct.target.set(0,h*0.88,0); }
-  else if(mode==='hand'){ v.c.position.set(h*0.30,h*0.52,0.40); v.ct.target.set(h*0.26,h*0.50,0); }
+  if(mode==='face'){ v.c.position.set(h*0.06,h*0.90,h*0.25); v.ct.target.set(0,h*0.88,0); }
+  else if(mode==='hand'){ v.c.position.set(h*0.30,h*0.52,h*0.24); v.ct.target.set(h*0.26,h*0.50,0); }
   else { v.c.position.set(h*0.55,h*0.62,h*1.35); v.ct.target.set(0,h*0.45,0); }
   v.ct.update();
 }
@@ -82,6 +95,9 @@ function loadInto(v,url,tagEl,label){
   return new Promise(res=>{
     loader.load(url+CB,g=>{
       v.model=g.scene;v.s.add(v.model);
+      // 스킨드 메시는 지오메트리 바운딩(0.017m, 원점 부근)이 실제 렌더 크기(1.7m, y=0.85)와
+      // 어긋나 있어, 카메라가 캐릭터에 붙으면 three.js가 화면 밖으로 판정해 통째로 잘라낸다.
+      v.model.traverse(o=>{ if(o.isMesh) o.frustumCulled=false; });
       if(g.animations&&g.animations.length){
         v.mixer=new THREE.AnimationMixer(v.model);
         v.mixer.clipAction(g.animations[0]).play();
@@ -101,18 +117,23 @@ POSES.forEach(([k,n])=>poseSel.add(new Option(n,k)));
 async function load(){
   const c=charSel.value, p=poseSel.value;
   const isMon=c==='char_mascot_sprout';
-  curH = isMon?0.375 : (/(jachwi_f|yeoja)/.test(c)?1.50:1.70);
+  const specH = isMon?0.375 : (/(jachwi_f|yeoja)/.test(c)?1.50:1.70);
   const file = isMon ? 'char_mascot_sprout.glb' : `${c}_${p}.glb`;
   document.getElementById('bar').textContent='불러오는 중…';
   const [ta,tb]=await Promise.all([
     loadInto(A,'3d/'+file,document.getElementById('tA'),'원본'),
     loadInto(B,'3d/lq/'+file,document.getElementById('tB'),'경량본 lq'),
   ]);
+  // 가정값이 아니라 실측값으로 카메라를 잡는다 — 어긋나면 화면 밖으로 나간다
+  const mh=measureH(A.model)||specH;
+  curH = mh;
   applyCam(curMode);
   const bar=document.getElementById('bar');
+  const off=Math.abs(mh-specH)>specH*0.08;
   bar.innerHTML = tb
     ? `삼각형 <b>${ta.toLocaleString()} → ${tb.toLocaleString()}</b> (${(tb/ta*100).toFixed(1)}%) · `+
-      `키 ${curH}m 기준 · <span style="color:#6d7d72">확인 포인트: 손가락 / 머리카락 가닥 / 옷 주름 / 얼굴 실루엣</span>`
+      `실측 키 <b>${mh.toFixed(2)}m</b> (규격 ${specH}m)${off?' <span class="warn">불일치</span>':''} · `+
+      `<span style="color:#6d7d72">확인 포인트: 손가락 / 머리카락 가닥 / 옷 주름 / 얼굴 실루엣</span>`
     : `<span class="warn">경량본이 아직 없습니다 — 배치가 끝나면 새로고침하세요</span>`;
 }
 charSel.onchange=poseSel.onchange=load;

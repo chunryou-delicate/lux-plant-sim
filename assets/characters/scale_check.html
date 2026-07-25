@@ -191,6 +191,9 @@ function load(){
   clearModel();
   loader.load(`3d/${key}_rigged.glb`+CB,g=>{
     model=g.scene;scene.add(model);
+    // 스킨드 메시는 지오메트리 바운딩(0.017m, 원점 부근)이 실제 렌더 크기와 어긋나 있어
+    // 카메라가 가까우면 three.js가 화면 밖으로 판정해 통째로 잘라낸다.
+    model.traverse(o=>{ if(o.isMesh) o.frustumCulled=false; });
     report(meta[1],meta[2]);
     if(!clip)return;
     loader.load(clipPath(key,clip)+CB,cg=>{
