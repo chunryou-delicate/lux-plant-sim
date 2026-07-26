@@ -330,13 +330,24 @@ export function buildHouse(GRAIN, roomDefIn, winPresets, doorPresets={}, finishe
     const gz=pt.glazing;
     if(!(gz && gz.full && gz.autoSlide!==false)) return pt.openings||[];
     const y0=gz.y0 ?? 0.05, y1=gz.y1 ?? Math.min(2.30, CH-0.25);
-    const wantW=gz.slideW ?? 1.6;
-    return partSegments(pt).map(([a,b])=>{
-      const seg=b-a, w=Math.min(wantW, seg*0.48), at=(a+b)/2, room=(seg-w)/2;
-      return { at:+at.toFixed(3), w:+w.toFixed(3), y0, y1,
-               travel:+Math.min(w*0.92, room-0.03).toFixed(3), dir:-1,
-               seg:[+a.toFixed(3), +b.toFixed(3)] };
-    });
+    const out=[];
+    for(const [a,b] of partSegments(pt)){
+      const seg=b-a, mid=(a+b)/2;
+      /* ★ 한 구간에 미닫이 두 짝. 닫히면 양 끝에 붙어 있고,
+         열리면 둘 다 가운데로 모여 양 옆이 사람 지나는 통로가 된다.
+         짝 폭은 구간의 30%(최대 slideW) — 그래야 열렸을 때 통로가 사람 폭을 넘는다. */
+      const w=Math.min(gz.slideW ?? 1.5, seg*0.30);
+      const gap=seg/2 - w;                        // 열렸을 때 한쪽 통로 폭
+      out.push({ at:+(a+w/2).toFixed(3), w:+w.toFixed(3), y0, y1,
+                 travel:+gap.toFixed(3),  leaf:'L', seg:[+a.toFixed(3),+b.toFixed(3)] });
+      out.push({ at:+(b-w/2).toFixed(3), w:+w.toFixed(3), y0, y1,
+                 travel:+(-gap).toFixed(3), leaf:'R', seg:[+a.toFixed(3),+b.toFixed(3)] });
+      /* 사람이 지나는 자리는 '열렸을 때 비는 양 끝'이다.
+         통행 판정용으로만 쓰이므로 문짝과 별개로 표시해 둔다. */
+      out.push({ at:+((a+a+gap)/2).toFixed(3), w:+gap.toFixed(3), y0, y1, passOnly:true });
+      out.push({ at:+((b-gap+b)/2).toFixed(3), w:+gap.toFixed(3), y0, y1, passOnly:true });
+    }
+    return out;
   }
 
   /* 어떤 외벽의 어느 u구간이 도려내졌는지 — 그 구간엔 벽을 안 세운다 */
@@ -580,6 +591,7 @@ export function buildHouse(GRAIN, roomDefIn, winPresets, doorPresets={}, finishe
         /* ★ 미닫이 짝 — openings 하나당 유리 한 짝을 따로 만들어 옆으로 민다.
            통유리(위 gl)는 고정창이고, 이 짝이 그 앞에서 미끄러진다. */
         if(pt.glazing.full) for(const op of (pt.openings||[])){
+          if(op.passOnly) continue;               // 통행 표시용 — 문짝 없음
           const oa=op.at??0, ow=op.w??1.5;
           if(oa<a0-0.01||oa>a1+0.01) continue;
           const leaf=new THREE.Group();
@@ -597,7 +609,7 @@ export function buildHouse(GRAIN, roomDefIn, winPresets, doorPresets={}, finishe
             leaf.position.set(oa, cy, pt.at+0.075);
           }
           glassMeshes.push(pane); g.add(leaf);
-          const tv=(op.travel!=null? op.travel : ow*0.92) * (op.dir!=null? op.dir : 1);
+          const tv=(op.travel!=null? op.travel : ow*0.92) * (op.dir!=null? op.dir : 1);   // leaf L/R 은 travel 부호에 들어있다
           doorways.push({ x: pt.axis==='x'? pt.at : oa,
                           z: pt.axis==='x'? oa : pt.at,
                           nx: pt.axis==='x'?1:0, nz: pt.axis==='x'?0:1,
@@ -612,7 +624,7 @@ export function buildHouse(GRAIN, roomDefIn, winPresets, doorPresets={}, finishe
            그냥 뻥 뚫린 것처럼 보인다. openings 위치를 짝 경계로 쓴다. */
         if(pt.glazing.full){
           const fm=frameMaterial(pt.glazing.frameColor||'#e9eef0','satin');
-          const cuts=[a0, ...(pt.openings||[]).flatMap(op=>{
+          const cuts=[a0, ...(pt.openings||[]).filter(op=>!op.passOnly).flatMap(op=>{
             const w=(op.w??1.5)/2; return [(op.at??0)-w, (op.at??0)+w];
           }).filter(v=>v>a0+0.05&&v<a1-0.05).sort((x,y)=>x-y), a1];
           for(const c of cuts){
@@ -778,7 +790,14 @@ export function buildHouse(GRAIN, roomDefIn, winPresets, doorPresets={}, finishe
       if(pt.door && !pt.door.exit){ const dw=pt.door.w??0.95, da=pt.door.at??0; gaps.push([da-dw/2, da+dw/2]); }
       // ★ 렌더와 같은 개구부를 써야 한다. 자동 미닫이를 여기서 다시 계산하지 않으면
       //   베란다 칸막이가 통째로 막혀 밖으로 못 나간다(실제로 그랬다).
-      for(const op of effectiveOpenings(pt)){ const ow=op.w??1.5, oa=op.at??0; gaps.push([oa-ow/2, oa+ow/2]); }
+      /* 전창은 '열렸을 때 비는 자리'(passOnly)만 통로다. 문짝 자리는 유리라 못 지난다.
+         일반 칸막이는 openings 자체가 통로. */
+      const eff=effectiveOpenings(pt);
+      const hasPass=eff.some(o=>o.passOnly);
+      for(const op of eff){
+        if(hasPass && !op.passOnly) continue;
+        const ow=op.w??1.5, oa=op.at??0; gaps.push([oa-ow/2, oa+ow/2]);
+      }
       blockLine(pt.axis, pt.at, uMin, uMax, gaps, WT*0.7);
     }
   }

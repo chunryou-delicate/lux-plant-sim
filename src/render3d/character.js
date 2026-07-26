@@ -197,22 +197,29 @@ export async function createCharacter(scene, charId = 'jachwi_f', opt = {}) {
     return [i, j];
   }
 
-  /* BFS — 대각선 포함(모서리 끼임 방지로 양옆이 뚫린 경우만) */
+  /* BFS — 대각선 포함(모서리 끼임 방지로 양옆이 뚫린 경우만).
+
+     ★ 목표 칸이 '빈칸이지만 갇힌 주머니'일 수 있다(옷장과 서랍장 사이 2칸 같은).
+       그래서 목표를 먼저 정하지 않고, 출발점에서 갈 수 있는 곳을 전부 훑은 뒤
+       그중 목표에 가장 가까운 칸으로 간다. 못 가는 곳을 찍어도 최대한 다가간다. */
   function findPath(sx, sz, tx, tz) {
     if (!grid) return [];
     const [si, sj] = nearestFree(...cellOf(sx, sz));
-    const [ti, tj] = nearestFree(...cellOf(tx, tz));
+    const [ti, tj] = cellOf(tx, tz);
     const N = grid.n, M = grid.m, F = grid.free;
     const prev = new Int32Array(N * M).fill(-1);
     const seen = new Uint8Array(N * M);
-    const q = [sj * N + si]; seen[sj * N + si] = 1;
-    const goal = tj * N + ti;
+    const start = sj * N + si;
+    const q = [start]; seen[start] = 1;
     const D = [[1,0],[-1,0],[0,1],[0,-1],[1,1],[1,-1],[-1,1],[-1,-1]];
-    let head = 0, found = false;
+    let head = 0;
+    let best = start, bestD = (si - ti) ** 2 + (sj - tj) ** 2;
     while (head < q.length) {
       const cur = q[head++];
-      if (cur === goal) { found = true; break; }
       const ci = cur % N, cj = (cur - ci) / N;
+      const d2 = (ci - ti) ** 2 + (cj - tj) ** 2;
+      if (d2 < bestD) { bestD = d2; best = cur; }
+      if (d2 === 0) break;
       for (const [di, dj] of D) {
         const a = ci + di, b = cj + dj;
         if (a < 0 || b < 0 || a >= N || b >= M) continue;
@@ -222,12 +229,12 @@ export async function createCharacter(scene, charId = 'jachwi_f', opt = {}) {
         seen[k] = 1; prev[k] = cur; q.push(k);
       }
     }
-    if (!found) return [];
+    if (best === start) return [];
     const out = [];
-    for (let k = goal; k !== -1; k = prev[k]) {
+    for (let k = best; k !== -1; k = prev[k]) {
       const i = k % N, j = (k - i) / N;
       out.push(cellPos(i, j));
-      if (k === sj * N + si) break;
+      if (k === start) break;
     }
     out.reverse();
     return simplify(out);
@@ -297,9 +304,31 @@ export async function createCharacter(scene, charId = 'jachwi_f', opt = {}) {
   /* 문이 열려 있으면 그 자리는 통과 가능 — 애초에 colliders에 없으므로 따로 처리 안 함.
      (미닫이 짝은 유리라 충돌체로 넣지 않았다) */
 
+  /* 선택 표시 — 발밑 주황 링 */
+  const ring = new THREE.Mesh(
+    new THREE.RingGeometry(0.26, 0.34, 26),
+    new THREE.MeshBasicMaterial({ color: 0xffb454, transparent: true, opacity: 0.9,
+                                  side: THREE.DoubleSide, depthTest: false })
+  );
+  ring.rotation.x = -Math.PI / 2; ring.position.y = 0.02;
+  ring.renderOrder = 998; ring.visible = false;
+  root.add(ring);
+
+  /* 걸어간 뒤 할 일 — 가구 상호작용에 쓴다 */
+  let arriveCb = null;
+
   const ctl = {
     root, model, mixer, actions,
     get position() { return root.position; },
+    get selected() { return ring.visible; },
+    setSelected(v) { ring.visible = !!v; },
+
+    /* 가구 앞으로 걸어가서 모션 하나 — main.js가 좌표와 동작을 준다 */
+    goAndDo(x, z, emoteId) {
+      arriveCb = emoteId ? () => this.emote(emoteId) : null;
+      this.moveTo(x, z);
+      if (!moving && arriveCb) { const f = arriveCb; arriveCb = null; f(); }
+    },
 
     setPosition(x, z, y = 0) { root.position.set(x, y, z); },
 
@@ -314,7 +343,7 @@ export async function createCharacter(scene, charId = 'jachwi_f', opt = {}) {
 
     /* 바닥의 (x,z)로 걸어가기 */
     moveTo(x, z) {
-      if (emoteBusy) return;
+      if (emoteBusy) { emoteBusy = false; }      // 모션 중이어도 새 명령이 우선
       path = findPath(root.position.x, root.position.z, x, z);
       pathI = 0;
       if (!path.length) { moving = false; return; }      // 갈 수 없는 곳
@@ -368,7 +397,10 @@ export async function createCharacter(scene, charId = 'jachwi_f', opt = {}) {
           target.set(path[pathI].x, root.position.y, path[pathI].z);
           return;
         }
-        moving = false; if (!emoteBusy) play('idle'); return;
+        moving = false;
+        if (arriveCb) { const f = arriveCb; arriveCb = null; f(); return; }
+        if (!emoteBusy) play('idle');
+        return;
       }
       d.normalize();
       const step = Math.min(SPEED * dt, dist);

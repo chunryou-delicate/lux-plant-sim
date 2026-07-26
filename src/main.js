@@ -335,6 +335,7 @@ function bindControls(){
       hero=await createCharacter(ctx.scene, charPick.value);
       hero.setWorld({ colliders:builtRef&&builtRef.colliders, doorways:builtRef&&builtRef.doorways, size:RSIZE });
       hero.setPosition(0, Math.min(RSIZE.d/2-0.8, 1.0));
+      hero.setSelected(true);
       this.textContent='치우기'; this.classList.add('on'); setEmotesEnabled(true);
     }catch(err){
       console.error('[볕] 캐릭터 로드 실패', err);
@@ -398,17 +399,71 @@ function bindControls(){
     if(!sample) return; plantBtn.textContent='치우기'; placeSample(sampleRank+1);
   };
 
-  // 바닥 클릭 → 캐릭터 이동 (집꾸미기 중엔 배치가 우선)
-  cv.addEventListener('click', e=>{
-    if(!hero || deco.enabled) return;
-    const r=cv.getBoundingClientRect();
-    const nd=new THREE.Vector2(((e.clientX-r.left)/r.width)*2-1, -((e.clientY-r.top)/r.height)*2+1);
-    const rc=new THREE.Raycaster(); rc.setFromCamera(nd, ctx.cam);
+  /* ============================================================
+     선택 & 상호작용
+       가구 클릭   → 집꾸미기 모드면 선택/이동, 아니면 캐릭터가 가서 모션
+       캐릭터 클릭 → 선택(주황 링). 그 뒤 바닥 클릭하면 걸어간다
+       우클릭      → 전부 해제
+  ============================================================ */
+  /* 가구 종류 → 어울리는 동작. 없으면 살펴보기. */
+  const ACT = [
+    [/^bed/,                       'sleep',  '눕는다'],
+    [/^sofa|^chair|^stool|^bench/, 'sit',    '앉는다'],
+    [/^shelf|^plant_|growrack|etagere|ladder|windowsill/, 'repot', '화분을 손본다'],
+    [/^kitchen|^fridge|^table/,    'harvest','뭔가 챙긴다'],
+    [/^desk/,                      'listen', '책상 앞에 앉는다'],
+    [/^tv|picture|clock|mirror/,   'inspect','들여다본다'],
+    [/growlight|lamp/,             'nod',    '불을 확인한다'],
+  ];
+  const actionFor = preset => (ACT.find(a=>a[0].test(preset)) || [null,'inspect','살펴본다']);
+
+  const floorPlane=new THREE.Plane(new THREE.Vector3(0,1,0),0);
+  function ndcOf(e){ const r=cv.getBoundingClientRect();
+    return new THREE.Vector2(((e.clientX-r.left)/r.width)*2-1, -((e.clientY-r.top)/r.height)*2+1); }
+  function floorAt(e){
+    const rc=new THREE.Raycaster(); rc.setFromCamera(ndcOf(e), ctx.cam);
     const hit=new THREE.Vector3();
-    if(rc.ray.intersectPlane(new THREE.Plane(new THREE.Vector3(0,1,0),0), hit)){
+    return rc.ray.intersectPlane(floorPlane, hit) ? {x:hit.x, z:hit.z} : null;
+  }
+  function hitsHero(e){
+    if(!hero) return false;
+    const rc=new THREE.Raycaster(); rc.setFromCamera(ndcOf(e), ctx.cam);
+    return rc.intersectObject(hero.root, true).length > 0;
+  }
+
+  cv.addEventListener('contextmenu', e=>{        // 우클릭 = 해제
+    e.preventDefault();
+    deco.deselect();
+    if(hero) hero.setSelected(false);
+    const pm=document.getElementById('plantMsg');
+    if(pm && sample) pm.textContent='선택 해제';
+  });
+
+  cv.addEventListener('click', e=>{
+    if(deco.enabled) return;                     // 집꾸미기 중엔 decorate가 처리
+    // 1) 캐릭터를 클릭했나
+    if(hitsHero(e)){ hero.setSelected(!hero.selected); return; }
+    // 2) 가구를 클릭했나 → 캐릭터가 그 앞으로 가서 모션
+    const fi=deco.pickAt(e);
+    if(fi>=0 && hero){
+      const f=(curDef.furniture||[])[fi]; if(!f) return;
+      const [, emote, ko]=actionFor(f.preset);
+      // 가구 앞(캐릭터 쪽) 0.7m 지점으로
+      const p=hero.position;
+      const dx=p.x-(f.x||0), dz=p.z-(f.z||0), dd=Math.hypot(dx,dz)||1;
+      hero.setSelected(true);
+      hero.goAndDo((f.x||0)+dx/dd*0.7, (f.z||0)+dz/dd*0.7, emote);
+      const h=document.getElementById('hint');
+      if(h){ h.textContent=((furnPresets[f.preset]||{}).name_ko||f.preset)+' — '+ko; h.style.opacity='1';
+             clearTimeout(h._t); h._t=setTimeout(()=>h.style.opacity='0', 2200); }
+      return;
+    }
+    // 3) 빈 바닥 → 선택된 캐릭터가 걸어감
+    if(hero && hero.selected){
+      const g=floorAt(e); if(!g) return;
       const m=0.35;
-      hero.moveTo(Math.max(-RSIZE.w/2+m, Math.min(RSIZE.w/2-m, hit.x)),
-                  Math.max(-RSIZE.d/2+m, Math.min(RSIZE.d/2-m, hit.z)));
+      hero.goAndDo(Math.max(-RSIZE.w/2+m, Math.min(RSIZE.w/2-m, g.x)),
+                   Math.max(-RSIZE.d/2+m, Math.min(RSIZE.d/2-m, g.z)), null);
     }
   });
 }

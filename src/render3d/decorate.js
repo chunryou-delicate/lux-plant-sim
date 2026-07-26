@@ -101,6 +101,7 @@ export function createDecorator(ctx, opts) {
 
   /* ---------- 입력 ---------- */
   function onDown(e) {
+    if (e.button === 2) return;          // 우클릭은 해제(바깥에서 처리)
     if (!enabled) return;
     const i = pickFurniture(e);
     if (i < 0) { selIdx = -1; marker.visible = false; api.onSelect && api.onSelect(-1, null); return; }
@@ -160,6 +161,11 @@ export function createDecorator(ctx, opts) {
       return enabled;
     },
     get selected() { return selIdx; },
+
+    /* 바깥(main.js)에서 쓰는 것들 — 선택 해제 · 클릭 판정 재사용 */
+    deselect() { selIdx = -1; dragging = false; marker.visible = false;
+                 api.onSelect && api.onSelect(-1, null); },
+    pickAt(e) { return pickFurniture(e); },
 
     async rotate(deg = ROT_STEP) {
       if (selIdx < 0) return;
