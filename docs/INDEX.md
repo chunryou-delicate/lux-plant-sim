@@ -113,7 +113,8 @@ https://raw.githubusercontent.com/chunryou-delicate/lux-plant-sim/main/docs/hand
 |---|---|
 | **GAME_PLAN.md** | ★ **정본** |
 | `handoff/README.md` | 창 규칙·파일 소유표 |
-| `balance_decisions.md` | **왜 그 숫자인지.** 값 바꾸기 전 필독 (아파트 유지 규칙 포함) |
+| **`game_flow.md`** | ★ **한 판이 어떻게 흘러가나** — 캐릭터×모드×초·중·후반 · 지루한 구간 |
+| `balance_decisions.md` | **왜 그 숫자인지.** 값 바꾸기 전 필독 (모드별 판정 단위 §②′) |
 | `env_difficulty_axis.md` | 시뮬 깊이 난이도축(빛→물→온도→습도) |
 | `food_economy.md` · `sale_economy.md` | 지출(식비·콩나물) / 수입(삽수·실생·상점) |
 | `researcher_track.md` · `time_modes.md` | 연구자 논문=재현성 / 시간 3모드 |
