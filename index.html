@@ -13,38 +13,51 @@
     user-select:none;touch-action:none}
   #wrap{position:relative;width:100vw;height:100vh}
   #cv{position:absolute;inset:0;width:100%;height:100%;display:block}
-  .top{position:absolute;top:0;left:0;right:0;z-index:5;display:flex;align-items:center;gap:10px;
-    padding:16px 18px;pointer-events:none}
+  .top{position:absolute;top:0;left:0;right:0;z-index:6;display:flex;align-items:center;gap:10px;
+    padding:12px 16px;pointer-events:none;background:linear-gradient(rgba(20,16,28,.55),transparent)}
   .brand{font-family:'Jua';font-size:22px;color:#fff;letter-spacing:1px;text-shadow:0 2px 12px rgba(0,0,0,.6)}
   .brand b{color:#ffb454}
   .tag{font-family:'Gaegu';font-weight:700;font-size:12px;color:rgba(255,255,255,.5)}
   .timepill{margin-left:auto;background:rgba(255,255,255,.14);color:#fff;font-family:'Jua';font-size:13px;
     padding:5px 14px;border-radius:14px;backdrop-filter:blur(8px)}
-  .controls{position:absolute;left:0;right:0;bottom:0;z-index:5;padding:10px 20px calc(env(safe-area-inset-bottom,0)+16px)}
-  .sunrow{display:flex;align-items:center;gap:12px;margin-bottom:10px;
-    background:rgba(20,16,28,.5);backdrop-filter:blur(8px);border-radius:16px;padding:8px 14px}
+    /* ★ 좌측 사이드바 — 예전엔 화면 아래에 쌓여서 3D를 반이나 가렸다.
+     방 꾸미기 도구(_room_tuner)와 같은 배치로 맞춘다. */
+  .controls{position:absolute;left:0;top:0;bottom:0;width:268px;z-index:5;overflow-y:auto;
+    padding:56px 12px 16px;background:rgba(20,16,28,.55);backdrop-filter:blur(10px);
+    border-right:1px solid rgba(255,255,255,.08);scrollbar-width:thin}
+  .controls::-webkit-scrollbar{width:7px}
+  .controls::-webkit-scrollbar-thumb{background:rgba(255,255,255,.18);border-radius:4px}
+  .controls.hide{transform:translateX(-100%)}
+  .controls{transition:transform .25s ease}
+  #sideToggle{position:absolute;left:268px;top:50%;transform:translateY(-50%);z-index:7;
+    background:rgba(20,16,28,.75);color:#fff;border:none;border-radius:0 10px 10px 0;
+    width:20px;height:56px;cursor:pointer;font-size:13px;transition:left .25s ease}
+  .controls.hide + #sideToggle{left:0}
+  .grp{font-family:'Jua';font-size:11px;color:rgba(255,255,255,.45);margin:12px 2px 6px;letter-spacing:.5px}
+  .sunrow{display:flex;align-items:center;gap:8px;margin-bottom:8px;
+    background:rgba(255,255,255,.10);border-radius:14px;padding:7px 10px}
   .sunrow .ico{font-size:16px}
   input[type=range]{-webkit-appearance:none;flex:1;height:8px;border-radius:6px;outline:none;
     background:linear-gradient(90deg,#2a3556,#f0b688 24%,#bfe0f0 50%,#f0a870 74%,#2a2540)}
   input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:26px;height:26px;border-radius:50%;
     background:radial-gradient(circle at 35% 32%,#fff7e0,#ffb84a);cursor:pointer;
     box-shadow:0 3px 12px rgba(255,170,50,.6),0 0 0 4px rgba(255,255,255,.85)}
-  .btns{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
-  .cbtn{background:rgba(255,255,255,.92);border:none;border-radius:14px;padding:9px 18px;font-family:'Jua';
-    font-size:14px;color:#3d3548;cursor:pointer;box-shadow:0 4px 0 rgba(0,0,0,.3)}
+  .btns{display:flex;gap:6px;flex-wrap:wrap}
+  .cbtn{background:rgba(255,255,255,.92);border:none;border-radius:11px;padding:6px 11px;font-family:'Jua';
+    font-size:12px;color:#3d3548;cursor:pointer;box-shadow:0 3px 0 rgba(0,0,0,.28)}
   .cbtn:active{transform:translateY(2px);box-shadow:0 2px 0 rgba(0,0,0,.3)}
   .cbtn.on{background:#ffb454}
-  .hint{position:absolute;top:52px;left:50%;transform:translateX(-50%);z-index:6;
+  .hint{position:absolute;top:52px;left:calc(268px + 50%);transform:translateX(-50%);z-index:6;
     background:rgba(0,0,0,.55);color:#fff;font-family:'Gaegu';font-weight:700;font-size:13px;
     padding:6px 14px;border-radius:14px;backdrop-filter:blur(4px);transition:opacity .8s;white-space:nowrap}
   .loading{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;z-index:10;
     color:#ffb454;font-family:'Jua';font-size:16px;background:#14101c}
-  .panel{margin-top:10px;padding:10px;border-radius:12px;background:rgba(255,255,255,.55);
-         backdrop-filter:blur(6px);border:1px solid rgba(0,0,0,.06)}
+  .panel{margin-top:8px;padding:9px;border-radius:11px;background:rgba(255,255,255,.90);
+         border:1px solid rgba(0,0,0,.06)}
   .prow{display:flex;align-items:baseline;gap:8px;margin-bottom:8px;font-size:13px}
   .prow .sub{font-size:11px;color:#7b7f86;font-weight:400}
-  .csel{font:inherit;font-size:12px;padding:5px 8px;border-radius:9px;
-        border:1px solid rgba(0,0,0,.12);background:rgba(255,255,255,.85);max-width:150px}
+  .csel{font:inherit;font-size:12px;padding:5px 7px;border-radius:8px;
+        border:1px solid rgba(0,0,0,.12);background:#fff;max-width:100%;width:100%}
 </style>
 </head>
 <body>
@@ -59,8 +72,9 @@
     <span class="timepill" id="roomPill" style="margin-left:8px">원룸</span>
   </div>
   <div class="hint" id="hint">돌리면 가리는 벽이 사라져요 · 빛은 창으로만 들어와요</div>
-  <div class="controls">
-    <div class="btns" style="margin-bottom:10px">
+  <div class="controls" id="sidebar">
+    <div class="grp">방</div>
+    <div class="btns" style="margin-bottom:6px">
       <button class="cbtn roombtn" data-room="banjiha">반지하</button>
       <button class="cbtn roombtn" data-room="oneroom">원룸</button>
       <button class="cbtn roombtn" data-room="tworoom">투룸</button>
@@ -68,11 +82,13 @@
       <button class="cbtn roombtn" data-room="classroom">학원교실</button>
       <button class="cbtn roombtn" data-room="greenhouse">온실</button>
     </div>
+    <div class="grp">태양 시간</div>
     <div class="sunrow">
       <span class="ico">🌙</span>
       <input type="range" id="sun" min="0" max="100" value="60">
       <span class="ico">☀️</span>
     </div>
+    <div class="grp">보기</div>
     <div class="btns">
       <button class="cbtn" id="reset">시점 리셋</button>
       <button class="cbtn" id="autorotate">자동회전</button>
@@ -137,8 +153,16 @@
       </div>
     </div>
   </div>
+  <button id="sideToggle" title="패널 접기">◀</button>
 </div>
 
+<script>
+  // 사이드바 접기 — 3D를 넓게 보고 싶을 때
+  (function(){
+    const sb=document.getElementById('sidebar'), tg=document.getElementById('sideToggle');
+    tg.onclick=()=>{ const hid=sb.classList.toggle('hide'); tg.textContent=hid?'▶':'◀'; };
+  })();
+</script>
 <script type="module" src="./src/main.js"></script>
 </body>
 </html>
