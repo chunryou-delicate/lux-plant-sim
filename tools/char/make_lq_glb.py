@@ -24,8 +24,8 @@ import sys
 import glob
 import shutil
 
-HERE = os.path.dirname(os.path.abspath(__file__))
-ROOT = os.path.dirname(HERE)
+HERE = os.path.dirname(os.path.abspath(__file__))          # tools/char
+ROOT = os.path.dirname(os.path.dirname(HERE))              # 저장소 루트
 SRC = os.path.join(ROOT, "assets", "characters", "3d")
 DST = os.path.join(SRC, "lq")
 

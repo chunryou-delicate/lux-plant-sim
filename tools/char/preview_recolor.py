@@ -15,8 +15,8 @@ import sys
 import numpy as np
 from PIL import Image, ImageDraw
 
-HERE = os.path.dirname(os.path.abspath(__file__))
-ROOT = os.path.dirname(HERE)
+HERE = os.path.dirname(os.path.abspath(__file__))          # tools/char
+ROOT = os.path.dirname(os.path.dirname(HERE))              # 저장소 루트
 sys.path.insert(0, HERE)
 from make_part_mask import read_glb, CODE, CHARS  # noqa: E402
 

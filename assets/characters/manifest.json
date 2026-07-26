@@ -344,14 +344,14 @@
     "structure": {
       "mesh": "assets/characters/3d/char_{name}_rigged.glb — 스킨드 메시(애니 없음). 캐릭터당 1개.",
       "clips": "assets/characters/3d/anim/char_{name}_{clip}.glb — 뼈대+트랙만(평균 70KB). 위 메시에 얹어 재생.",
-      "why": "Meshy는 애니마다 스킨드 메시를 통째로 재출력(≈15MB). tools/strip_anim_glb.py로 메시·텍스처를 벗겨 99.5% 절감(1.9GB→16MB). 본 이름 26개가 완전히 일치해 그대로 바인딩됨.",
+      "why": "Meshy는 애니마다 스킨드 메시를 통째로 재출력(≈15MB). tools/char/strip_anim_glb.py로 메시·텍스처를 벗겨 99.5% 절감(1.9GB→16MB). 본 이름 26개가 완전히 일치해 그대로 바인딩됨.",
       "engine": "AnimationMixer(riggedScene).clipAction(clipGltf.animations[0]).play() 형태로 사용."
     },
     "viewer": "assets/characters/motion_library.html (캐릭터×클립 전환, 정면/측면 동시, 보유 여부 표시)",
     "tools": {
-      "strip": "tools/strip_anim_glb.py — 애니 GLB에서 메시 제거",
-      "normalize": "tools/normalize_anim_scale.py — 본 스케일 1.0 정규화",
-      "check": "tools/check_anim.py — 척추 비틀림/스케일/루트이동 점검",
+      "strip": "tools/char/strip_anim_glb.py — 애니 GLB에서 메시 제거",
+      "normalize": "tools/char/normalize_anim_scale.py — 본 스케일 1.0 정규화",
+      "check": "tools/char/check_anim.py — 척추 비틀림/스케일/루트이동 점검",
       "serve": "tools/serve.py — 스레딩 + no-cache 정적 서버(대용량 GLB 동시 로드용)"
     },
     "known_issue": "Meshy 애니 라이브러리는 idle·Walking_Woman의 Hips에 균일 스케일 1.1765를 넣는다(클립마다 몸 크기가 튐). 전량 1.0으로 정규화 완료 — 새 클립 추가 시 normalize_anim_scale.py를 반드시 돌릴 것.",
@@ -633,7 +633,7 @@
     "mascot_height_m": 0.375,
     "why": "실사람 키(여150/남170)로 두면 머리가 큰 치비라 방이 좁아 보인다. 2026-07-26 여140/남150 으로 낮춤. 마스코트는 0.375 고정(캐릭터 키에 연동하지 않음).",
     "applied_to": "assets/characters/3d/ 37개 + 3d/lq/ 37개",
-    "tool": "tools/rescale_char_glb.py (재실행 안전 - 래퍼를 벗기고 재계산)",
+    "tool": "tools/char/rescale_char_glb.py (재실행 안전 - 래퍼를 벗기고 재계산)",
     "method": "정점은 그대로 두고 씬 최상단 __scale_root 래퍼에 scale/translation. 클립(3d/anim/ 128개)은 관절 로컬 변환만 구동하므로 수정 불필요.",
     "verify": "assets/characters/scale_check.html - 실치수 가구 옆에서 확인"
   },
@@ -641,7 +641,7 @@
     "what": "게임 화면용 경량본. 원본(3d/)은 초상화·클로즈업·재리깅용으로 그대로 보존.",
     "dir": "assets/characters/3d/lq/",
     "count": 37,
-    "tool": "tools/make_lq_glb.py (gltf-transform simplify + resize, npx로 실행)",
+    "tool": "tools/char/make_lq_glb.py (gltf-transform simplify + resize, npx로 실행)",
     "why": "Meshy 원본은 쿼드 토폴로지라 캐릭터 19만·몬이 31만 삼각형. 게임 카메라에서 캐릭터는 화면 110~340px, 얼굴 24~48px이라 과잉.",
     "character": {
       "ratio": 0.1,
@@ -672,7 +672,7 @@
       "블렌드셰이프 표정",
       "3D 얼굴 애니메이션(얼굴 본 없음, 몸통 24본뿐)"
     ],
-    "workaround": "같은 UV의 마스크 텍스처로 텍셀 단위 부위 선택. tools/make_part_mask.py -> assets/characters/masks/",
+    "workaround": "같은 UV의 마스크 텍스처로 텍셀 단위 부위 선택. tools/char/make_part_mask.py -> assets/characters/masks/",
     "mask_channels": "R 채널 인덱스 맵(허용오차 ±12): 24 머리+눈썹 / 48 홍채 / 72 흰자·하이라이트·속눈썹 / 96 상징물 / 120 피부 / 144 상의 / 168 하의 / 192 신발. G=B=0, A=255.",
     "mask_method": "위치 우선, 색 보조. UV 공간에 삼각형을 래스터화해 텍셀마다 3D 위치를 구하고 몸 높이로 큰 덩어리를 나눈 뒤 색으로 세분한다.",
     "apply": "로딩 시 캔버스에서 1회 계산. 셰이더 매 프레임 아님. 명도 유지로 음영 보존. assets/characters/color_shift.html",
@@ -696,11 +696,11 @@
       "정점을 점으로 뿌리고 최근접 채우기를 하면 UV 섬 경계를 넘어 번진다. 삼각형 래스터화가 필요하다.",
       "알파를 데이터 채널로 쓰면 캔버스 프리멀티플라이드 알파 때문에 A=0 텍셀의 RGB가 0으로 뭉개진다."
     ],
-    "verification": "tools/preview_mask.py - 모델을 정사영으로 직접 렌더해 부위색/텍스처색으로 확인한다. 아틀라스 이미지만 봐서는 UV 배치가 뒤섞여 있어 판단이 불가능하다. 라벨을 만든 기준으로 라벨을 검증하면 동어반복이 되므로(높이로 나누고 높이를 확인) 렌더로 봐야 한다.",
+    "verification": "tools/char/preview_mask.py - 모델을 정사영으로 직접 렌더해 부위색/텍스처색으로 확인한다. 아틀라스 이미지만 봐서는 UV 배치가 뒤섞여 있어 판단이 불가능하다. 라벨을 만든 기준으로 라벨을 검증하면 동어반복이 되므로(높이로 나누고 높이를 확인) 렌더로 봐야 한다.",
     "status": {
       "state": "보류 (2026-07-26). 게임은 원본 색 그대로 간다.",
       "why": "머리·눈썹·피부 마스크가 대부분 맞지만 눈 주변에서 완전히 안정되지 않았다. 여성 3종(자취녀·여주부·여연구원)은 눈꼬리가 눈썹 쪽으로 올라간 형태라 눈 상자 모서리에 색 조각이 남는다.",
-      "kept": "마스크 8종과 도구는 그대로 둔다. 나중에 색시프트가 필요하면 재사용하거나, 캐릭터를 재작업할 때 tools/make_part_mask.py 를 다시 돌리면 된다.",
+      "kept": "마스크 8종과 도구는 그대로 둔다. 나중에 색시프트가 필요하면 재사용하거나, 캐릭터를 재작업할 때 tools/char/make_part_mask.py 를 다시 돌리면 된다.",
       "viewer": "assets/characters/color_shift.html - 기본은 원본 색. 체크를 켜야 바뀐다.",
       "lesson": "파라미터를 감으로 조정하지 말 것. 눈/눈썹 경계는 흰자 반높이 대비 속눈썹 1.0~1.94배, 눈썹 3.98~6.31배로 실측해서 정해야 안정된다. UV 공간 팽창은 섬 경계를 넘거나 못 넘으므로 3D 좌표로 판정할 것."
     },

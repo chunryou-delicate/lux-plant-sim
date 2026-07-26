@@ -83,7 +83,7 @@ const CHARS=[['char_namja_jachwi','자취남'],['char_namja_gajang','남가장']
  ['char_jachwi_f','자취녀'],['char_yeoja_gajang','여가장'],
  ['char_yeoja_jubu','여주부'],['char_yeoja_researcher','여연구원']];
 
-/* 마스크는 R 채널 인덱스 맵 (tools/make_part_mask.py 와 일치, 허용오차 ±12)
+/* 마스크는 R 채널 인덱스 맵 (tools/char/make_part_mask.py 와 일치, 허용오차 ±12)
    24 머리+눈썹 / 48 홍채 / 72 흰자·속눈썹 / 96 상징물 / 120 피부 /
    144 상의 / 168 하의 / 192 신발
    알파를 데이터로 쓰면 캔버스 프리멀티플라이드 알파 때문에 A=0 텍셀의 RGB가
@@ -210,7 +210,7 @@ async function load(){
   texCanvas.width=src.width;texCanvas.height=src.height;
 
   try{ maskImg=await loadImage(`masks/${key}_mask.png`+CB); }
-  catch(e){ maskImg=null; note.innerHTML='<span class="bad">마스크 없음 — tools/make_part_mask.py 를 먼저 돌리세요</span>'; return; }
+  catch(e){ maskImg=null; note.innerHTML='<span class="bad">마스크 없음 — tools/char/make_part_mask.py 를 먼저 돌리세요</span>'; return; }
 
   const t=new THREE.CanvasTexture(texCanvas);
   t.flipY=mat.map.flipY; t.encoding=THREE.sRGBEncoding; t.wrapS=t.wrapT=THREE.ClampToEdgeWrapping;

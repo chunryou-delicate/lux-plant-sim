@@ -43,8 +43,8 @@ from PIL import Image, ImageDraw
 from scipy.ndimage import (binary_closing, binary_opening, binary_dilation,
                           binary_propagation, distance_transform_edt)
 
-HERE = os.path.dirname(os.path.abspath(__file__))
-ROOT = os.path.dirname(HERE)
+HERE = os.path.dirname(os.path.abspath(__file__))          # tools/char
+ROOT = os.path.dirname(os.path.dirname(HERE))              # 저장소 루트
 sys.path.insert(0, HERE)
 from rescale_char_glb import load  # noqa: E402
 

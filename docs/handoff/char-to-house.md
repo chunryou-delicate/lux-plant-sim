@@ -131,14 +131,41 @@ pos.lerp(target, 1 - Math.exp(-MON.followDamping * dt));
 
 ---
 
+## 추가 (2026-07-26) · `tools/` 분할에 따른 경로 변경 요청
+
+박사님 지시로 `tools/` 를 하위 폴더로 쪼갰습니다. **제 도구 8개가
+`tools/char/` 로 옮겨졌습니다.**
+
+```
+tools/char/    char 소유   rescale_char_glb · make_lq_glb · make_part_mask ·
+                          preview_mask · preview_recolor · strip_anim_glb ·
+                          normalize_anim_scale · check_anim
+tools/house/   house 소유  _dli_probe · _slotlist 등
+tools/         공용        serve.py   (고치기 전 알리기 · 급하면 사후 보고)
+```
+
+`src/render3d/character.js` 의 **주석 3곳**이 옛 경로를 가리킵니다. house 소유라
+직접 안 고쳤습니다. 실행에는 지장 없고 주석뿐이지만, 나중에 그 경로를 찾다
+헤매지 않으시게 바꿔 두시길 권합니다.
+
+| 줄 | 지금 | 바꿀 것 |
+|---|---|---|
+| 20 | `tools/strip_anim_glb.py 로 클립만 뽑아` | `tools/char/strip_anim_glb.py 로 클립만 뽑아` |
+| 84 | `캐릭 작업창이 tools/rescale_char_glb.py 로` | `캐릭 작업창이 tools/char/rescale_char_glb.py 로` |
+| 125 | `'— tools/strip_anim_glb.js 를 돌렸나?'` | `'— tools/char/strip_anim_glb.py 를 돌렸나?'` |
+
+> 125행은 확장자도 `.js` 로 잘못 적혀 있습니다. 실제 파일은 `.py` 입니다.
+
+---
+
 ## 미해결 / 요청
 
 - [ ] `_room_tuner.html` 의 제 변경분을 **유지할지 되돌릴지** house 창에서 판단해 주세요.
       유지하신다면 `frustumCulled=false` 만은 남겨주시길 요청드립니다 — 없으면 줌인 시 캐릭터가 사라집니다.
-- [ ] `tools/*` 소유가 소유표에 없습니다. 제가 만든 캐릭터 전용 도구
-      (`rescale_char_glb.py` `make_lq_glb.py` `make_part_mask.py` `preview_mask.py`
-      `preview_recolor.py` `strip_anim_glb.py` `normalize_anim_scale.py` `check_anim.py`)
-      는 계속 제가 관리하면 되는지 확인 부탁드립니다. `serve.py` 는 공용입니다.
-- [ ] 방 크기 대비 캐릭터 키가 아직 어색하면 알려주세요. `tools/rescale_char_glb.py`
+      (박사님이 "되돌리면 안 되는 것"으로 확인해 주셨고 house 창에 별도 전달하신다고 하셨습니다.)
+- [ ] `src/render3d/character.js` 주석 3곳 경로 갱신 (위 표).
+- [x] `tools/*` 소유 — **해결됨.** `tools/char/` = char, `tools/house/` = house,
+      `tools/serve.py` = 공용으로 확정됐습니다.
+- [ ] 방 크기 대비 캐릭터 키가 아직 어색하면 알려주세요. `tools/char/rescale_char_glb.py`
       의 상수 두 개만 바꿔 다시 돌리면 되고, **모션 클립 128개는 손대지 않아도 됩니다**
       (씬 최상단 래퍼에 스케일만 얹는 방식이라 관절 로컬 변환은 그대로).
