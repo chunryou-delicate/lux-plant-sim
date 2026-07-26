@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>볕 · 게임 루프 v0</title>
+
+<!-- house.js·textures.js 가 전역 THREE 를 쓴다(index.html 과 같은 r128).
+     v0는 방을 그리지 않고 조도 계산에만 쓴다 — 렌더러를 만들지 않는다. -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Jua&family=Gaegu:wght@400;700&display=swap');
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{height:100%;font-family:'Gaegu',sans-serif;background:#14101c;color:#f2eef8;overflow:hidden}
+  #app{display:flex;height:100%}
+  /* ★ HUD는 iframe 위에 겹치지 않는다. plant_grow 자체 표시와 나란히 놓고 대조한다. */
+  #side{width:420px;flex:0 0 420px;height:100%;overflow-y:auto;padding:14px;
+        background:#1b1626;border-right:1px solid rgba(255,255,255,.09)}
+  #stage{flex:1;position:relative;background:#0f0c16}
+  #growth{position:absolute;inset:0;width:100%;height:100%;border:0}
+  h1{font-family:'Jua';font-size:19px;margin-bottom:2px}
+  h1 b{color:#ffb454}
+  .sub{font-size:12px;color:rgba(255,255,255,.45);margin-bottom:12px}
+  .box{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.07);
+       border-radius:12px;padding:11px;margin-bottom:10px}
+  .box>h3{font-family:'Jua';font-size:12px;color:#ffb454;margin-bottom:8px;letter-spacing:.5px}
+  label{display:flex;align-items:center;gap:8px;font-size:13px;margin-bottom:7px}
+  label>span{width:78px;color:rgba(255,255,255,.55);flex:0 0 78px}
+  select,input[type=number]{flex:1;min-width:0;font:inherit;font-size:12px;padding:5px 7px;border-radius:8px;
+       border:1px solid rgba(255,255,255,.14);background:#241d33;color:#f2eef8}
+  .btns{display:flex;gap:6px;flex-wrap:wrap;margin-top:4px}
+  button{font-family:'Jua';font-size:13px;padding:8px 13px;border:0;border-radius:11px;cursor:pointer;
+         background:#ffb454;color:#3a2c12;box-shadow:0 3px 0 rgba(0,0,0,.35)}
+  button.ghost{background:rgba(255,255,255,.14);color:#f2eef8}
+  button:active{transform:translateY(2px);box-shadow:0 1px 0 rgba(0,0,0,.35)}
+  button:disabled{opacity:.45;cursor:default}
+  .row{display:flex;align-items:baseline;gap:6px;flex-wrap:wrap}
+  .row.big{font-size:15px;margin-bottom:9px}
+  .row .k{color:rgba(255,255,255,.45);font-size:12px}
+  .row b{font-family:'Jua';color:#fff}
+  .sep{width:1px;height:12px;background:rgba(255,255,255,.18);margin:0 3px}
+  .mode{margin-left:auto;font-size:11px;color:#9ad9a0;background:rgba(154,217,160,.12);
+        padding:2px 8px;border-radius:9px}
+  .grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px;margin-bottom:7px}
+  .cell{background:rgba(0,0,0,.22);border-radius:9px;padding:7px 8px;min-width:0}
+  .cell span{display:block;font-size:10px;color:rgba(255,255,255,.42)}
+  .cell b{font-family:'Jua';font-size:17px;color:#fff;display:block;line-height:1.25}
+  .cell i{font-style:normal;font-size:10px;color:rgba(255,255,255,.42);display:block;
+          overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .cell i.warn{color:#ff9a8a}
+  .slotline{font-size:11px;color:rgba(255,255,255,.45);margin-top:2px}
+  code{font-family:ui-monospace,monospace;font-size:10px;color:#c8b6ff}
+  .bad{margin-top:8px;padding:8px;border-radius:9px;background:rgba(255,90,70,.14);
+       border:1px solid rgba(255,90,70,.35);color:#ffb3a7;font-size:11px;line-height:1.5}
+  .ph{color:rgba(255,255,255,.35);font-size:13px;padding:14px 2px}
+  .li{font-size:12px;color:rgba(255,255,255,.62);padding:3px 0;border-bottom:1px solid rgba(255,255,255,.05)}
+  .li span{display:inline-block;width:38px;color:rgba(255,255,255,.32);font-size:10px}
+  #log{max-height:150px;overflow-y:auto}
+  table{width:100%;border-collapse:collapse;font-size:11.5px}
+  td{padding:4px 3px;border-bottom:1px solid rgba(255,255,255,.06);vertical-align:top}
+  td:first-child{color:rgba(255,255,255,.5);width:38%}
+  tr.hl td{background:rgba(255,180,84,.10)}
+  td b{font-family:'Jua';font-size:14px;color:#fff}
+  td i{font-style:normal;color:rgba(255,255,255,.35)}
+  #report h4{font-family:'Jua';font-size:12px;margin-bottom:6px;color:#fff}
+  .note{font-size:10.5px;color:rgba(255,255,255,.38);margin-top:7px;line-height:1.5}
+  .err{padding:12px;background:rgba(255,90,70,.15);border-radius:10px;font-size:12px;line-height:1.6}
+</style>
+</head>
+<body>
+<div id="app">
+  <aside id="side">
+    <h1>볕 · <b>게임 루프 v0</b></h1>
+    <div class="sub">날씨 → DLI(house) → 생장 1틱(growth). 고사·경제·수확은 없습니다.</div>
+
+    <div class="box" id="ctl">
+      <h3>설정</h3>
+      <label><span>방</span><select id="room"></select></label>
+      <label><span>자리</span><select id="slot"></select></label>
+      <label><span>식물등</span><select id="lamps"></select></label>
+      <label><span>점등시간</span><input id="lit" type="number" min="0" max="24" step="1" value="12"></label>
+      <label><span>모드</span><select id="mode"></select></label>
+      <div class="btns">
+        <button id="next">다음 날 ▸</button>
+        <button id="run30" class="ghost">30일 자동</button>
+        <button id="reset" class="ghost">초기화</button>
+      </div>
+    </div>
+
+    <div class="box"><h3>오늘</h3><div id="hud"></div></div>
+    <div class="box"><h3>검수 리포트</h3><div id="report"><div class="ph">30일을 돌리면 나옵니다</div></div></div>
+    <div class="box"><h3>기록</h3><div id="log"></div></div>
+  </aside>
+
+  <main id="stage">
+    <!-- growth 창 소유. 자체 UI(슬라이더·[다음 날])를 그대로 둔다 —
+         코어를 안 거치고 직접 넣었을 때와 대조할 수 있어야 한다. -->
+    <iframe id="growth" src="./plant_grow.html"></iframe>
+  </main>
+</div>
+
+<script type="module">
+import { newState, SIM_MODES, pot0, pushLog } from './src/game/state.js';
+import { createLightEngine } from './src/game/light_adapter.js';
+import { createGrowthAdapter } from './src/game/growth_adapter.js';
+import { nextDay, runDays } from './src/game/loop.js';
+import { renderHUD, renderLog, renderReport } from './src/game/ui.js';
+
+const $ = (id) => document.getElementById(id);
+const side = $('side');
+
+/* ---- 데이터 (house = 구조·에셋 / balance = plan 소유 튜닝값) ---- */
+const j = (p, fb) => fetch(p).then(r => r.json()).catch(() => fb);
+const [houseRooms, winPresets, doorPresets, finishes, furnPresets, lightPresets, shadePresets,
+       lightTh, weatherBalance] = await Promise.all([
+  j('./data/house_rooms.json', { rooms: {} }),
+  j('./data/window_presets.json', {}).then(d => d.presets || d),
+  j('./data/door_presets.json', {}).then(d => d.presets || d),
+  j('./data/room_finishes.json', null),
+  j('./data/furniture_presets.json', {}).then(d => d.presets || d),
+  j('./data/lighting_presets.json', {}),
+  j('./data/shading_presets.json', { presets: {} }),
+  j('./data/balance/light_thresholds.json', null),
+  j('./data/balance/weather.json', null)
+]);
+
+const io = {
+  light: createLightEngine({ houseRooms, winPresets, doorPresets, finishes, furnPresets,
+                             lightPresets, shadePresets, lightTh, weatherBalance }),
+  growth: createGrowthAdapter($('growth'))
+};
+
+let S = newState({ room: 'banjiha' });
+let lastTurn = null;
+
+/* ---- 셀렉트 채우기 ---- */
+$('room').innerHTML = io.light.rooms()
+  .map(r => `<option value="${r.id}">${r.label} (${r.light})</option>`).join('');
+$('mode').innerHTML = Object.entries(SIM_MODES)
+  .map(([k, m]) => `<option value="${k}">${m.ko}</option>`).join('');
+
+function fillLamps() {
+  const n = io.light.growLampCount();
+  $('lamps').innerHTML = Array.from({ length: n + 1 }, (_, i) =>
+    `<option value="${i}">${i}개${i === 0 ? ' (자연광만)' : ''}</option>`).join('');
+  $('lamps').value = String(Math.min(S.lamps.count, n));
+  S.lamps.count = +$('lamps').value;
+}
+
+/* 자리 목록 — 오늘 조건에서 밝은 순. 계약을 미리 한 번 돌려 보는 것이라 이력에 쌓이지 않는다. */
+/* 자리 목록 — 오늘 조건에서 밝은 순.
+   ★ 등을 켜면 순위가 바뀐다(자연광 최고 자리 ≠ 등 밑 자리). 화분은 자동으로 안 옮긴다 —
+     옮기는 건 플레이어의 선택이어야 하고, 그 차이가 이 게임의 핵심이다.
+   pick=true 일 때만(방을 새로 조립할 때) 가장 밝은 자리로 놓는다. */
+function fillSlots(pick) {
+  const preview = io.light.daily(S.day + 1, S).report;
+  const list = [...preview.slots].sort((a, b) => b.dli - a.dli);
+  $('slot').innerHTML = list.map(s => {
+    const [uid, tier] = (s.slotId || '').split(':');
+    const name = uid.split('-').slice(1, -1).join('-') || uid;
+    return `<option value="${s.slotId}">${name} ${tier}단 — DLI ${s.dli.toFixed(2)}</option>`;
+  }).join('');
+  if (pick || !list.some(s => s.slotId === pot0(S).slotId))
+    pot0(S).slotId = list[0] ? list[0].slotId : null;
+  $('slot').value = pot0(S).slotId || '';
+}
+
+function buildRoom(id) {
+  io.light.build(id);
+  io.light.clearCache();
+  S.home.room = id;
+  pot0(S).slotId = null;
+  fillLamps();
+  fillSlots(true);          // 새 방에서는 가장 밝은 자리에 놓고 시작한다
+  draw();
+}
+
+function draw() {
+  renderHUD($('hud'), S, lastTurn, io);
+  renderLog($('log'), S);
+}
+
+/* ---- 배선 ---- */
+$('room').onchange = e => buildRoom(e.target.value);
+$('slot').onchange = e => { pot0(S).slotId = e.target.value; draw(); };
+$('lamps').onchange = e => { S.lamps.count = +e.target.value; io.light.clearCache(); fillSlots(); draw(); };
+$('lit').onchange = e => { S.lamps.litHours = Math.max(0, Math.min(24, +e.target.value || 0)); io.light.clearCache(); draw(); };
+$('mode').onchange = e => { S.sim.mode = e.target.value; io.light.clearCache(); draw(); };
+
+$('next').onclick = () => { lastTurn = nextDay(S, io); draw(); };
+
+$('run30').onclick = () => {
+  const turns = runDays(S, io, 30);
+  lastTurn = turns[turns.length - 1];
+  draw();
+  renderReport($('report'), S, io, turns);
+};
+
+$('reset').onclick = () => {
+  const keep = { room: S.home.room, mode: S.sim.mode, lamps: { ...S.lamps } };
+  S = newState({ room: keep.room, mode: keep.mode });
+  S.lamps = keep.lamps;
+  lastTurn = null;
+  io.growth.reset();
+  io.growth.setGrowth(0);
+  $('report').innerHTML = '<div class="ph">30일을 돌리면 나옵니다</div>';
+  buildRoom(keep.room);
+};
+
+/* ---- 시작 ---- */
+try {
+  await io.growth.ready();
+  $('room').value = S.home.room;
+  buildRoom(S.home.room);
+  pushLog(S, '준비됐습니다. [다음 날]을 눌러 보세요');
+  draw();
+} catch (err) {
+  side.insertAdjacentHTML('afterbegin', `<div class="err">⚠ ${err.message}</div>`);
+  console.error(err);
+}
+</script>
+</body>
+</html>
