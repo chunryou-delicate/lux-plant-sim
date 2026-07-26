@@ -5,7 +5,7 @@
 
 
 > 이 문서는 **기록만** 한 것이다. 여기 적힌 것 중 구현된 건 **빛**뿐이다.
-> 계약 객체(`docs/light_contract.md`)에 `temp`/`humidity`/`weatherPattern` **자리만** 잡혀 있다.
+> 계약 객체(`docs/engine/light_contract.md`)에 `temp`/`humidity`/`weatherPattern` **자리만** 잡혀 있다.
 
 ---
 

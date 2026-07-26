@@ -229,4 +229,4 @@ varieProb 7% → 희귀 0.007/일 → 84일에 **0.6개**. **탈출 실패.**
 - `docs/food_economy.md` — 지출·콩나물·데드라인
 - `docs/researcher_track.md` — varieProb·fStable 확률식, 재현 규칙
 - `docs/game_loop_spec.md` — 이 수치들을 실제로 도는 루프 명세
-- `docs/greenhouse_plan.md` — 온실 차광 실측
+- `docs/engine/greenhouse_plan.md` — 온실 차광 실측

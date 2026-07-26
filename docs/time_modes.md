@@ -259,6 +259,6 @@ plant: {
 
 ## 관련
 - `plant_grow.html:1466` — `ageOf()` 시간 곡선
-- `docs/light_contract.md` — 하루 1회 계약 객체 · 광주기 밴드
+- `docs/engine/light_contract.md` — 하루 1회 계약 객체 · 광주기 밴드
 - `docs/researcher_track.md` §5 — `dliCV()` 안정 계수
 - `docs/food_economy.md` §6 — 1턴=1일 스케일

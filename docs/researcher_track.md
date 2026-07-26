@@ -348,8 +348,8 @@ best_hi ~ max           →  1.0
 - 명예 점수의 실제 쓰임 (졸업 요건? 상점 해금? 그냥 점수?)
 
 ## 관련
-- `docs/greenhouse_plan.md` — 온실 실측·차광·"성격이 다른 방"
+- `docs/engine/greenhouse_plan.md` — 온실 실측·차광·"성격이 다른 방"
 - `docs/food_economy.md` — 식비·지출 루프(전기 면제가 얹히는 자리)
-- `docs/light_contract.md` — DLI 밴드·이동평균 원칙
+- `docs/engine/light_contract.md` — DLI 밴드·이동평균 원칙
 - `docs/game_design_core.md` — 캐릭터 다이얼 (연구자 항목은 이 문서가 갱신)
 - `plant_grow.html:159-160, 895` — `varieProb`/`matRare`/`MAT_TREE`

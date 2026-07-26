@@ -219,7 +219,7 @@ const ROOMS={                                   // 맑음·여름 최고 슬롯 
   classroom:{ko:'학원교실',peak:5.49}, tworoom:{ko:'투룸',peak:5.64},
   apartment:{ko:'아파트',peak:6.26}, greenhouse:{ko:'온실',peak:13.01}
 };
-// 계수는 docs/light_contract.md §2 와 같은 값
+// 계수는 docs/engine/light_contract.md §2 와 같은 값
 const WEATHER_K={ clear:{k:1.00,ko:'☀️ 맑음',p:0.55}, cloudy:{k:0.25,ko:'☁️ 흐림',p:0.30}, rain:{k:0.12,ko:'🌧️ 비',p:0.15} };
 const SEASON_K ={ spring:{k:0.85,h:12.5,ko:'봄'}, summer:{k:1.00,h:14.5,ko:'여름'},
                   autumn:{k:0.80,h:12.0,ko:'가을'}, winter:{k:0.55,h:9.8,ko:'겨울'} };

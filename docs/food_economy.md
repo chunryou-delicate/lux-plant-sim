@@ -255,6 +255,6 @@
 
 ## 관련
 - `docs/crop_asset_direction.md` — 작물 10종·에셋 구조
-- `docs/light_contract.md` — `energy.won`(전기요금이 이미 하루치 계약에 실려 온다)
+- `docs/engine/light_contract.md` — `energy.won`(전기요금이 이미 하루치 계약에 실려 온다)
 - `docs/balance_decisions.md` — 방별 DLI 실측
 - `docs/researcher_track.md` — 연구자 경제(조교 월급·전기 면제)

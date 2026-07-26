@@ -7,8 +7,8 @@
 > `time_modes.md` · `env_difficulty_axis.md` · `game_first_loop_start.md` ·
 > `sale_economy.md` · `game_loop_spec.md`
 > 기술 레퍼런스로 **남겨두는 것**(게임 기획이 아니라 엔진 문서라 통합하지 않음):
-> `light_contract.md`(계약 객체 전문) · `greenhouse_plan.md`(온실 실측) ·
-> `balance_decisions.md`(방별 DLI 실측) · `rooms_progression.md`
+> `engine/light_contract.md`(계약 객체 전문) · `engine/greenhouse_plan.md`(온실 실측) ·
+> `balance_decisions.md`(방별 DLI 실측) · `engine/rooms_progression.md`
 > 목록에 있었으나 **레포에 없는 파일**: `growth_conditions_map.md` · `세션요약_20260713.md`
 > — 내용은 v3가 인용한 범위로만 반영했다.
 
@@ -193,7 +193,7 @@ A1 시간(하루 넘기기) → A2 성장상태 → A3 시각 피드백
 
 # 6. 빛 — 이미 있는 것 (엔진)
 
-상세는 `light_contract.md`·`balance_decisions.md`. 기획에 필요한 결론만:
+상세는 `engine/light_contract.md`·`balance_decisions.md`. 기획에 필요한 결론만:
 
 ## 방별 슬롯 분포 (맑음·여름 · 차광 없음 · 2026-07-26 실측)
 
@@ -537,9 +537,9 @@ v3의 원칙대로 **"며칠치 생활비"로 환산해 잡는다.**
 | **기획 정본** | **이 문서** |
 | **밸런싱 값 (여기만 고친다)** | **`data/balance/`** — `characters` · `homes`(경제 필드) · `light_thresholds`* · `growth_tuning`* (*이동 대기) |
 | 창 소유·인계 규칙 | `handoff/README.md` |
-| 계약 객체 `daily_light/1` 전문 | `light_contract.md` |
-| 방별 DLI 실측·밸런싱 근거 | `balance_decisions.md` · `rooms_progression.md` |
-| 온실 실측·차광 | `greenhouse_plan.md` |
+| 계약 객체 `daily_light/1` 전문 | `engine/light_contract.md` |
+| 방별 DLI 실측·밸런싱 근거 | `balance_decisions.md` · `engine/rooms_progression.md` |
+| 온실 실측·차광 | `engine/greenhouse_plan.md` |
 | 생장 알고리즘 캐논 | `몬스테라_생장로직_정밀.md` · `모듈형_식물성장.md` |
 | 작물 에셋 구조 | `crop_asset_direction.md` |
 | 게임 루프 구현 명세 | `game_loop_spec.md` |

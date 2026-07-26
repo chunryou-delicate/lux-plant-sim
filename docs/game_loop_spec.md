@@ -193,7 +193,7 @@ game.html               [다음 날] 버튼 + 최소 화면
 **2번까지가 이 프로젝트에서 제일 중요한 한 걸음이다.** 그 뒤는 얹기다.
 
 ## 관련
-- `docs/light_contract.md` — 계약 객체 `daily_light/1` 전문
+- `docs/engine/light_contract.md` — 계약 객체 `daily_light/1` 전문
 - `docs/food_economy.md` — 지출 항목·1인당 식비 상한
 - `docs/sale_economy.md` — 수입·삽수·상점 가격
 - `docs/time_modes.md` — `minutesPerGameDay`
