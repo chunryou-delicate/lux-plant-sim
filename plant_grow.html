@@ -173,7 +173,7 @@ const DEF={
 };
 let P=Object.assign({}, DEF);
 // 저장본 버전. 생장 로직/기본값이 바뀌면 올림 → 옛 저장값이 새 기본값을 덮어쓰지 않게.
-const CFG_VER='2026-07-26-help';
+const CFG_VER='2026-07-26-normals';
 
 // ===== 튜닝 파라미터(B: 에셋별 개별 조정) =====
 const ADJ_KEYS=[
@@ -229,7 +229,9 @@ const ADJ_TUNED={
   leaf_mid2: {scale:0.6, sxz:0.65, sy:1.25, rx:0.2, ry:2.5, rz:-0.45, ox:0.02, oy:0.13, oz:0.01},   // 기본-중간-잎2
   // ── 변이 잎
   leaf_young_albo: {scale:0.5, sy:0.8, ry:-1.65, ox:0.03, oy:0.18, bladeR:0.71},   // 변이-어린-잎1(알보)
-  leaf_mid_albo1: {scale:0.75, sxz:0.75, sy:0.95, rx:0.35, rz:0.2, ox:0.03, oy:0.08, bladeR:0.14, trimR:0, trimTop:0.31},   // 변이-알보-전체흰중기
+  // 이 에셋은 잎자루가 잎몸에서 0.07 떨어져 있어 혼자 떠 보인다(에셋창에 수정 요청함).
+  //   자루는 0~0.33, 잎몸은 0.40부터라 0.36에서 자르면 자루만 없어진다.
+  leaf_mid_albo1: {scale:0.75, sxz:0.75, sy:0.95, rx:0.35, rz:0.2, ox:0.03, oy:0.08, bladeR:0.14, trimR:0, trimTop:0.31, petCut:0.36},   // 변이-알보-전체흰중기
   leaf_mid_albo4: {sxz:0.65, sy:0.9, rx:0.55, ry:0.15, rz:0.2, ox:0.02, oy:0.07, oz:-0.04, bladeR:0.28, petR:0.25},   // 변이-알보-흰연두-쨍
   leaf_mid_albo6: {scale:1.1, sxz:0.55, sy:0.8, ry:1.45, ox:0.03, oy:0.1, oz:0.01, bladeR:0.76, trimR:0.44, petR:0.65, petTop:0.8},   // 변이-알보-크림민트-쨍
   leaf_mid_albo8: {sxz:0.63, ry:1.45, ox:0.03, oy:0.01, oz:0.01, bladeR:0.25, trimR:0.44, petR:0.4, petTop:0.8},   // 변이-라임-형광-쨍
@@ -290,7 +292,7 @@ const ADJ_TUNED={
 function defAdj(key){
   const b={scale:1, sxz:1, sy:1, rx:0,ry:0,rz:0, ox:0,oy:0,oz:0};
   if(/^sheath/.test(key)) Object.assign(b, {len:0.22, fit:1.12, bot:1.309, top:0.575});   // 엽초 모양(에셋별)
-  if(/^leaf_/.test(key))  Object.assign(b, {bladeR:1, petR:1, petTop:0.45, trimR:1, trimTop:0.5});                       // 잎자루 지름(정점 단위)
+  if(/^leaf_/.test(key))  Object.assign(b, {bladeR:1, petR:1, petTop:0.45, trimR:1, trimTop:0.5, petCut:0});                       // 잎자루 지름(정점 단위)
   return Object.assign(b, ADJ_TUNED[key]||{});
 }  // scale=전체·sxz=굵기(폭)·sy=길이(높이)
 const DEF_ADJ={}; ADJ_KEYS.forEach(k=>DEF_ADJ[k]=defAdj(k));
@@ -702,7 +704,7 @@ function meshThickness(g){
   }
   return A>1e-9? 2*Math.abs(V)/A : 0;
 }
-function reshapeLeaf(obj, bladeR, petR, petTop, trimR, trimTop){
+function reshapeLeaf(obj, bladeR, petR, petTop, trimR, trimTop, petCut){
   // ★기준(높이·잎자루 축)은 반드시 '잎 전체'에서 잡는다. 메시마다 제 bbox로 잡으면,
   //   잎몸/잎자루가 별개 메시인 에셋(전체흰중기: 1806 + 85정점)에서 잎자루 메시의
   //   아래 15%가 안 깎여 끝에 두꺼운 혹처럼 남는다.
@@ -714,6 +716,10 @@ function reshapeLeaf(obj, bladeR, petR, petTop, trimR, trimTop){
     if(!(o.isMesh && o.geometry && o.geometry.attributes.position)) return;
     const g=o.geometry, pa=g.attributes.position;
     if(!g.userData.origPos){ g.userData.origPos=Float32Array.from(pa.array);
+      // ★법선이 없는 GLB가 있다(하프문 계열). three.js는 이때 법선을 만들어주지 않고
+      //   flat shading만 켜므로, 법선을 따라 미는 두께 조절이 통째로 건너뛰어졌다.
+      //   여기서 직접 만들어 둔다 — 겉모습은 그대로고 두께 조절만 살아난다.
+      if(!g.attributes.normal) g.computeVertexNormals();
       if(g.attributes.normal) g.userData.origNor=Float32Array.from(g.attributes.normal.array);
       g.userData.thick=meshThickness(g); }
     const m=new THREE.Matrix4().multiplyMatrices(inv, o.matrixWorld);   // 메시 로컬 → 잎 전체 좌표
@@ -727,6 +733,7 @@ function reshapeLeaf(obj, bladeR, petR, petTop, trimR, trimTop){
     meshes.push({o,g,src,ys,sc,myTop});
   });
   const h=(mxY-mnY)||1, yTop=mnY+h*petTop, yBlade=mnY+h*0.15, yFull=mnY+h*0.30;
+  const yCut=(petCut>0)? mnY+h*petCut : -Infinity;   // 이 높이 아래는 한 점으로 접어 없앤다
   // 잎몸(잎자루 전용 메시를 뺀 것)이 어디서 시작하는지 — 다듬기는 여기를 기준으로 해야
   // 효과가 잎몸 아래 가장자리에 집중된다. 잎 전체 밑동을 기준으로 하면 잎자루만 줄어든다.
   let bladeMin=Infinity;
@@ -750,6 +757,10 @@ function reshapeLeaf(obj, bladeR, petR, petTop, trimR, trimTop){
     for(let i=0,k=0;i<src.length;i+=3,k++){
       let x=src[i], y=src[i+1], z=src[i+2];
       const gy=ys[k];                                        // 잎 전체 기준 높이
+      if(gy<yCut){                                           // ⓪ 잎자루 잘라내기: 축 위 한 점으로 모아 면적을 0으로
+        v.set(cx,mnY,cz).applyMatrix4(minv);
+        arr[i]=v.x; arr[i+1]=v.y; arr[i+2]=v.z; continue;
+      }
       if(push>1e-9 && nor && !petOnly && gy>=yBlade){        // ① 잎몸을 얇게(잎자루 메시는 제외)
         const t=Math.min(1,(gy-yBlade)/((yFull-yBlade)||1)), w=t*t*(3-2*t);
         x-=nor[i]*push*w; y-=nor[i+1]*push*w; z-=nor[i+2]*push*w;
@@ -778,9 +789,10 @@ function ensureLeafShape(){                                // 값이 바뀐 잎�
     const a=adjOf(k);
     const br=(a.bladeR==null?1:a.bladeR), pr=(a.petR==null?1:a.petR), tf=(a.petTop==null?0.45:a.petTop);
     const tr=(a.trimR==null?1:a.trimR), tt=(a.trimTop==null?0.5:a.trimTop);
-    const sig=br+'/'+pr+'/'+tf+'/'+tr+'/'+tt;
+    const pc=(a.petCut==null?0:a.petCut);
+    const sig=br+'/'+pr+'/'+tf+'/'+tr+'/'+tt+'/'+pc;
     if(PET_CACHE[k]===sig) continue;
-    reshapeLeaf(ASSETS[k], br, pr, tf, tr, tt); PET_CACHE[k]=sig;
+    reshapeLeaf(ASSETS[k], br, pr, tf, tr, tt, pc); PET_CACHE[k]=sig;
   }
 }
 // 무늬종(알보 등)은 텍스처가 무늬 그 자체라 단색으로 덮으면 안 된다.
@@ -1574,6 +1586,7 @@ const ADJ_FIELDS_LEAF2=[
   {k:'trimTop',t:'다듬는 범위',      min:0.05, max:0.7, step:0.02},
   {k:'petR',   t:'잎자루 지름',      min:0.25, max:1.6, step:0.05},
   {k:'petTop', t:'가늘어지는 범위',  min:0.1,  max:0.8, step:0.05},
+  {k:'petCut', t:'잎자루 잘라내기',  min:0,    max:0.6, step:0.02},
 ];
 const ADJ_FIELDS_SHEATH=[
   {k:'len', t:'엽초 길이(잎 대비)', min:0,    max:0.6,  step:0.005},
@@ -1794,6 +1807,7 @@ const HELP={
   trimR:'잎 밑동을 반경 방향으로 얼마나 줄일지. 0이면 밑동이 완전히 모아져 뾰족해진다.',
   trimTop:'위 다듬기가 적용되는 높이 범위. 잎몸이 시작되는 지점부터 이 비율까지.',
   petR:'잎자루 지름 배율. 잎몸은 그대로 두고 아래 구간만 반경을 줄인다.',
+  petCut:'잎 아래쪽을 이 높이 비율만큼 잘라 없앤다. 0이면 안 자른다.\n에셋에 따라 잎자루가 잎몸에서 떨어져 있어 혼자 떠 보이는 경우가 있는데, 그때 쓴다.\n잎몸이 시작되는 높이보다 크게 잡으면 잎몸까지 잘리니 주의.',
   petTop:'잎자루 지름 조정이 걸리는 높이 범위. 잎 전체 높이 기준이라, 이 값이 잎몸까지 넘어가면 잎몸 아래쪽도 같이 줄어든다.',
   // ── 엽초 전용
   len:'엽초 길이. 잎 크기에 이 값을 곱한 만큼. 0이면 엽초를 안 그린다.',
