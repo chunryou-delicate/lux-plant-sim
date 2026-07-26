@@ -801,7 +801,30 @@
         }
       ],
       "ceiling": "glass",
-      "windows": [],
+      "windows": [
+        {
+          "wall": "left",
+          "cu": 3.5,
+          "cy": 1.5,
+          "w": 1.8,
+          "h": 1.2,
+          "preset": "win_apt_wide",
+          "color": "#eef1f2",
+          "gloss": "matte",
+          "note": "연구실 서향 창(환기·채광 최소)"
+        },
+        {
+          "wall": "right",
+          "cu": 3.5,
+          "cy": 1.5,
+          "w": 1.8,
+          "h": 1.2,
+          "preset": "win_apt_wide",
+          "color": "#eef1f2",
+          "gloss": "matte",
+          "note": "연구실 동향 창"
+        }
+      ],
       "doors": [
         {
           "wall": "front",

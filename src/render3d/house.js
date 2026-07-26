@@ -442,7 +442,7 @@ export function buildHouse(GRAIN, roomDefIn, winPresets, doorPresets={}, finishe
     glass.rotation.x=Math.PI/2; glass.position.set(0,CH,(cgZ0+cgZ1)/2);
     glassMeshes.push(glass); room.add(glass);
     // 지붕 뼈대(코드 격자 살) 얹기
-    tileGlassFrames(room, 'ceiling');
+    tileGlassFrames(room, 'ceiling', cgZ0, cgZ1);
     /* 유리 구간 밖 지붕은 솔리드로 덮는다 — 안 덮으면 연구실 천장이 뚫린다 */
     if(cg){
       const cm=surfaceMat(roomDef.ceilColor||'#f6f2ea',0.95, GRAIN);
@@ -833,8 +833,18 @@ export function buildHouse(GRAIN, roomDefIn, winPresets, doorPresets={}, finishe
     });
   });
 
-  // 그림자: 껍데기 6면 모두 던지고/받게 (숨겨도 빛 막게)
-  for(const k in shells) shells[k].traverse(o=>{ if(o.isMesh){ o.castShadow=true; o.receiveShadow=true; } });
+  /* ★ 유리는 그림자를 던지면 안 된다.
+     칸막이 유리(베란다 전창)가 셸 그룹 안에 들어 있어서 아래 강제 루프에 걸렸다.
+     그 결과 베란다 통유리가 불투명 그림자를 던져 거실·안방이 캄캄했다.
+     창틀은 이 이유로 이미 trims 로 빼놨는데, 칸막이 유리는 빠져 있었다. */
+  for(const m of glassMeshes) m.userData.isGlass = true;
+
+  // 그림자: 껍데기 6면 모두 던지고/받게 (숨겨도 빛 막게). 유리만 뺀다.
+  for(const k in shells) shells[k].traverse(o=>{
+    if(!o.isMesh) return;
+    o.receiveShadow=true;
+    o.castShadow = !o.userData.isGlass;
+  });
 
   // 엔진 winPos = 첫 창(없으면 뒷벽 기본)
   const winPos = winWorld[0] || new THREE.Vector3(0.6,2.2,-CD/2+0.05);
@@ -965,9 +975,11 @@ function tileGlassFrames(room, wall, uMin, uMax){
   const fmat=frameMaterial(FRAME_DEFAULTS.frameColor, 'satin');
   const opts={ cols:3, rows:2, pattern:'curtainwall', material:fmat };
   if(wall==='ceiling'){
-    // 천장 유리 격자: XY평면 프레임을 눕힌다.
-    const frame=buildWindowFrame(CW-0.1, CD-0.1, opts);
-    frame.rotation.x=Math.PI/2; frame.position.set(0, CH-0.01, 0);
+    /* 천장 유리 격자: XY평면 프레임을 눕힌다.
+       ★ uMin/uMax 는 유리 구간(z)이다 — 안 받으면 연구실 위까지 커튼월이 깔린다. */
+    const z0 = uMin!==undefined ? uMin : -CD/2, z1 = uMax!==undefined ? uMax : CD/2;
+    const frame=buildWindowFrame(CW-0.1, (z1-z0)-0.1, opts);
+    frame.rotation.x=Math.PI/2; frame.position.set(0, CH-0.01, (z0+z1)/2);
     room.add(frame); return;
   }
   // 수직 유리벽: 벽 전체 크기 프레임
@@ -1054,7 +1066,7 @@ export function updateShellVisibility(shells, cam, mode='auto', trims=null){
       if(!o.isMesh || !o.material || o.userData.isStub) return;
       const clr=mm=>{ if(mm.clippingPlanes){ mm.clippingPlanes=null; mm.needsUpdate=true; } };
       Array.isArray(o.material) ? o.material.forEach(clr) : clr(o.material);
-      o.castShadow = true;
+      o.castShadow = !o.userData.isGlass;       // 유리는 계속 그림자를 안 던진다
     });
     setShadowOnly(sh, stub);                    // 벽 본체: 밑동 모드에선 안 보이게(그림자는 유지)
     if(sh.userData.stub) sh.userData.stub.visible = stub;
@@ -1070,7 +1082,7 @@ export function updateShellVisibility(shells, cam, mode='auto', trims=null){
 function setShadowOnly(root, on){
   root.traverse(o=>{
     if(!o.isMesh || !o.material || o.userData.isStub) return;
-    o.castShadow = true;
+    o.castShadow = !o.userData.isGlass;
     const set=mm=>{ if(mm.colorWrite===!on && mm.depthWrite===!on) return;
                     mm.colorWrite = !on; mm.depthWrite = !on; mm.needsUpdate = true; };
     Array.isArray(o.material) ? o.material.forEach(set) : set(o.material);
