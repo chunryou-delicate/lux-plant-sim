@@ -173,7 +173,7 @@ const DEF={
 };
 let P=Object.assign({}, DEF);
 // 저장본 버전. 생장 로직/기본값이 바뀌면 올림 → 옛 저장값이 새 기본값을 덮어쓰지 않게.
-const CFG_VER='2026-07-26-mat43b';
+const CFG_VER='2026-07-26-pethide';
 
 // ===== 튜닝 파라미터(B: 에셋별 개별 조정) =====
 const ADJ_KEYS=[
@@ -230,8 +230,9 @@ const ADJ_TUNED={
   // ── 변이 잎
   leaf_young_albo: {scale:0.5, sy:0.8, ry:-1.65, ox:0.03, oy:0.18, bladeR:0.71},   // 변이-어린-잎1(알보)
   // 이 에셋은 잎자루가 잎몸에서 0.07 떨어져 있어 혼자 떠 보인다(에셋창에 수정 요청함).
-  //   자루는 0~0.33, 잎몸은 0.40부터라 0.36에서 자르면 자루만 없어진다.
-  leaf_mid_albo1: {scale:0.75, sxz:0.75, sy:0.95, rx:0.35, rz:0.2, ox:0.03, oy:0.08, bladeR:0.14, trimR:0, trimTop:0.31, petCut:0.36},   // 변이-알보-전체흰중기
+  //   자루가 아치를 그려 잎몸 옆까지 올라오는 탓에 높이로 자르면 아랫동강만 없어진다.
+  //   자루가 별개 메시(85정점)라 통째로 숨기는 쪽이 확실하다.
+  leaf_mid_albo1: {scale:0.75, sxz:0.75, sy:0.95, rx:0.35, rz:0.2, ox:0.03, oy:0.08, bladeR:0.14, trimR:0, trimTop:0.31, petHide:1},   // 변이-알보-전체흰중기
   leaf_mid_albo4: {sxz:0.65, sy:0.9, rx:0.55, ry:0.15, rz:0.2, ox:0.02, oy:0.07, oz:-0.04, bladeR:0.28, petR:0.25},   // 변이-알보-흰연두-쨍
   leaf_mid_albo6: {scale:1.1, sxz:0.55, sy:0.8, ry:1.45, ox:0.03, oy:0.1, oz:0.01, bladeR:0.76, trimR:0.44, petR:0.65, petTop:0.8},   // 변이-알보-크림민트-쨍
   leaf_mid_albo8: {sxz:0.63, ry:1.45, ox:0.03, oy:0.01, oz:0.01, bladeR:0.25, trimR:0.44, petR:0.4, petTop:0.8},   // 변이-라임-형광-쨍
@@ -292,7 +293,7 @@ const ADJ_TUNED={
 function defAdj(key){
   const b={scale:1, sxz:1, sy:1, rx:0,ry:0,rz:0, ox:0,oy:0,oz:0};
   if(/^sheath/.test(key)) Object.assign(b, {len:0.22, fit:1.12, bot:1.309, top:0.575});   // 엽초 모양(에셋별)
-  if(/^leaf_/.test(key))  Object.assign(b, {bladeR:1, petR:1, petTop:0.45, trimR:1, trimTop:0.5, petCut:0});                       // 잎자루 지름(정점 단위)
+  if(/^leaf_/.test(key))  Object.assign(b, {bladeR:1, petR:1, petTop:0.45, trimR:1, trimTop:0.5, petCut:0, petHide:0});                       // 잎자루 지름(정점 단위)
   return Object.assign(b, ADJ_TUNED[key]||{});
 }  // scale=전체·sxz=굵기(폭)·sy=길이(높이)
 const DEF_ADJ={}; ADJ_KEYS.forEach(k=>DEF_ADJ[k]=defAdj(k));
@@ -704,7 +705,7 @@ function meshThickness(g){
   }
   return A>1e-9? 2*Math.abs(V)/A : 0;
 }
-function reshapeLeaf(obj, bladeR, petR, petTop, trimR, trimTop, petCut){
+function reshapeLeaf(obj, bladeR, petR, petTop, trimR, trimTop, petCut, petHide){
   // ★기준(높이·잎자루 축)은 반드시 '잎 전체'에서 잡는다. 메시마다 제 bbox로 잡으면,
   //   잎몸/잎자루가 별개 메시인 에셋(전체흰중기: 1806 + 85정점)에서 잎자루 메시의
   //   아래 15%가 안 깎여 끝에 두꺼운 혹처럼 남는다.
@@ -734,6 +735,23 @@ function reshapeLeaf(obj, bladeR, petR, petTop, trimR, trimTop, petCut){
   });
   const h=(mxY-mnY)||1, yTop=mnY+h*petTop, yBlade=mnY+h*0.15, yFull=mnY+h*0.30;
   const yCut=(petCut>0)? mnY+h*petCut : -Infinity;   // 이 높이 아래는 한 점으로 접어 없앤다
+  // ★잎자루 숨기기 — 메시별 굵기를 재서 가는 쪽(잎몸의 25% 미만)을 통째로 끈다.
+  //   자루가 아치를 그려도 확실히 사라지고, 끄면 바로 되살아난다.
+  if(meshes.length>1){
+    const rad=[];
+    for(const M of meshes){
+      const m=new THREE.Matrix4().multiplyMatrices(inv, M.o.matrixWorld);
+      let cx0=0, cz0=0, n0=0;
+      for(let i=0;i<M.src.length;i+=3){ v.set(M.src[i],M.src[i+1],M.src[i+2]).applyMatrix4(m); cx0+=v.x; cz0+=v.z; n0++; }
+      cx0/=(n0||1); cz0/=(n0||1);
+      let r=0;
+      for(let i=0;i<M.src.length;i+=3){ v.set(M.src[i],M.src[i+1],M.src[i+2]).applyMatrix4(m);
+        const d=Math.hypot(v.x-cx0, v.z-cz0); if(d>r) r=d; }
+      rad.push(r);
+    }
+    const rMax=Math.max(...rad)||1;
+    meshes.forEach((M,i)=>{ M.o.visible = !(petHide && rad[i] < rMax*0.25); });
+  }
   // 잎몸(잎자루 전용 메시를 뺀 것)이 어디서 시작하는지 — 다듬기는 여기를 기준으로 해야
   // 효과가 잎몸 아래 가장자리에 집중된다. 잎 전체 밑동을 기준으로 하면 잎자루만 줄어든다.
   let bladeMin=Infinity;
@@ -789,10 +807,10 @@ function ensureLeafShape(){                                // 값이 바뀐 잎�
     const a=adjOf(k);
     const br=(a.bladeR==null?1:a.bladeR), pr=(a.petR==null?1:a.petR), tf=(a.petTop==null?0.45:a.petTop);
     const tr=(a.trimR==null?1:a.trimR), tt=(a.trimTop==null?0.5:a.trimTop);
-    const pc=(a.petCut==null?0:a.petCut);
-    const sig=br+'/'+pr+'/'+tf+'/'+tr+'/'+tt+'/'+pc;
+    const pc=(a.petCut==null?0:a.petCut), ph=(a.petHide?1:0);
+    const sig=br+'/'+pr+'/'+tf+'/'+tr+'/'+tt+'/'+pc+'/'+ph;
     if(PET_CACHE[k]===sig) continue;
-    reshapeLeaf(ASSETS[k], br, pr, tf, tr, tt, pc); PET_CACHE[k]=sig;
+    reshapeLeaf(ASSETS[k], br, pr, tf, tr, tt, pc, ph); PET_CACHE[k]=sig;
   }
 }
 // 무늬종(알보 등)은 텍스처가 무늬 그 자체라 단색으로 덮으면 안 된다.
@@ -1589,6 +1607,7 @@ const ADJ_FIELDS_LEAF2=[
   {k:'petR',   t:'잎자루 지름',      min:0.25, max:1.6, step:0.05},
   {k:'petTop', t:'가늘어지는 범위',  min:0.1,  max:0.8, step:0.05},
   {k:'petCut', t:'잎자루 잘라내기',  min:0,    max:0.6, step:0.02},
+  {k:'petHide',t:'잎자루 숨기기(0/1)', min:0,  max:1,   step:1},
 ];
 const ADJ_FIELDS_SHEATH=[
   {k:'len', t:'엽초 길이(잎 대비)', min:0,    max:0.6,  step:0.005},
@@ -1809,6 +1828,7 @@ const HELP={
   trimR:'잎 밑동을 반경 방향으로 얼마나 줄일지. 0이면 밑동이 완전히 모아져 뾰족해진다.',
   trimTop:'위 다듬기가 적용되는 높이 범위. 잎몸이 시작되는 지점부터 이 비율까지.',
   petR:'잎자루 지름 배율. 잎몸은 그대로 두고 아래 구간만 반경을 줄인다.',
+  petHide:'잎자루가 별개 메시로 된 에셋에서, 그 메시를 통째로 안 보이게 한다. 1이면 숨김.\n자루가 아치를 그려 잎몸 옆까지 올라오면 잘라내기(높이 기준)로는 아랫동강만 없어지는데, 이건 확실히 사라진다.\n잎몸 굵기의 25% 미만인 메시를 자루로 본다. 한 덩어리로 된 잎에는 효과가 없다.',
   petCut:'잎 아래쪽을 이 높이 비율만큼 잘라 없앤다. 0이면 안 자른다.\n에셋에 따라 잎자루가 잎몸에서 떨어져 있어 혼자 떠 보이는 경우가 있는데, 그때 쓴다.\n잎몸이 시작되는 높이보다 크게 잡으면 잎몸까지 잘리니 주의.',
   petTop:'잎자루 지름 조정이 걸리는 높이 범위. 잎 전체 높이 기준이라, 이 값이 잎몸까지 넘어가면 잎몸 아래쪽도 같이 줄어든다.',
   // ── 엽초 전용
