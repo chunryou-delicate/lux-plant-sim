@@ -1,5 +1,9 @@
 # 하루치 빛 계약 — 조도 창 → 생장 창
 
+> ℹ 게임 기획 결론은 **[GAME_PLAN.md](GAME_PLAN.md)** 에 있다.
+> 이 문서는 **엔진 레퍼런스로 계속 유지**한다(통합 대상 아님).
+
+
 `src/engine/daily_light.js` · `data/light_thresholds.json`
 
 ---

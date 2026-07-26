@@ -44,7 +44,14 @@
 
 ## 문서 (필요시 열기)
 
-### ★ 방향·기획 (먼저 읽기)
+### ★★ 기획 정본 — 여기부터
+- **GAME_PLAN.md** — 게임 기획 **정본**. 캐릭터·시간·확률·경제·번식·연구자를 한 문서로 통합(2026-07-26).
+  **기획 논의는 이 문서를 고친다.** 아래 문서들은 근거 보관용.
+  https://raw.githubusercontent.com/chunryou-delicate/lux-plant-sim/main/docs/GAME_PLAN.md
+- **handoff/README.md** — 창 간 인계 규칙(파일로 넘긴다 · 파일 소유표)
+  https://raw.githubusercontent.com/chunryou-delicate/lux-plant-sim/main/docs/handoff/README.md
+
+### ★ 방향·기획 (근거 보관 — GAME_PLAN.md로 통합됨)
 - **전체 마스터플랜/헌법/로드맵** — byeot_plan.md
   https://raw.githubusercontent.com/chunryou-delicate/lux-plant-sim/main/docs/byeot_plan.md
 - **게임 코어 설계**(캐릭터 다이얼·경제·이사·2단계 목표) — game_design_core.md
