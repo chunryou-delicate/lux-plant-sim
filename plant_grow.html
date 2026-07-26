@@ -173,7 +173,7 @@ const DEF={
 };
 let P=Object.assign({}, DEF);
 // 저장본 버전. 생장 로직/기본값이 바뀌면 올림 → 옛 저장값이 새 기본값을 덮어쓰지 않게.
-const CFG_VER='2026-07-26-blend2';
+const CFG_VER='2026-07-26-sheathfollow';
 
 // ===== 튜닝 파라미터(B: 에셋별 개별 조정) =====
 const ADJ_KEYS=[
@@ -547,6 +547,10 @@ const SHEATH_OF={ bud_furled:'sheath_furled', bud_opening2:'sheath_open',
   leaf_mid_albo32:'sheath_leaf_mid_albo10', leaf_mid_albo33:'sheath_leaf_mid_albo12', leaf_mid_albo34:'sheath_leaf_mid_albo8', leaf_mid_albo35:'sheath_leaf_mid_albo6', leaf_mid_albo36:'sheath_leaf_mid_albo16', leaf_mid_albo37:'sheath_leaf_mid_albo14', leaf_mid_albo38:'sheath_leaf_mid_albo22', leaf_mid_albo39:'sheath_leaf_mid_albo18', leaf_mid_albo40:'sheath_leaf_mid_albo20', leaf_mid_albo41:'sheath_leaf_mid_albo27', leaf_mid_albo42:'sheath_leaf_mid_albo4',
   leaf_mat1:'sheath_mature', leaf_mat2:'sheath_mature', leaf_mat3:'sheath_mature', leaf_mat4:'sheath_mature', leaf_mat5:'sheath_mature', leaf_mat6:'sheath_mature', leaf_mat7:'sheath_mature', leaf_mat8:'sheath_mature', leaf_mat9:'sheath_mature', leaf_mat10:'sheath_mature', leaf_mat11:'sheath_mature', leaf_mat12:'sheath_mature', leaf_mat13:'sheath_mature', leaf_mat14:'sheath_mature', leaf_mat15:'sheath_mature', leaf_mat16:'sheath_mature', leaf_mat17:'sheath_mature', leaf_mat18:'sheath_mature', leaf_mat19:'sheath_mature', leaf_mat20:'sheath_mature', leaf_mat21:'sheath_mature', leaf_mat22:'sheath_mature', leaf_mat23:'sheath_mature', leaf_mat24:'sheath_mature', leaf_mat25:'sheath_mature', leaf_mat26:'sheath_mature', leaf_mat27:'sheath_mature', leaf_mat28:'sheath_mature', leaf_mat29:'sheath_mature', leaf_mat30:'sheath_mature', leaf_mat31:'sheath_mature', leaf_mat32:'sheath_mature', leaf_mat33:'sheath_mature', leaf_mat34:'sheath_mature', leaf_mat35:'sheath_mature', leaf_mat36:'sheath_mature', leaf_mat37:'sheath_mature', leaf_mat38:'sheath_mature', leaf_mat39:'sheath_mature', leaf_mat40:'sheath_mature', leaf_mat41:'sheath_mature', leaf_mat42:'sheath_mature', leaf_mat43:'sheath_mature', leaf_mat44:'sheath_mature', leaf_mat45:'sheath_mature', leaf_mat46:'sheath_mature', leaf_mat47:'sheath_mature', leaf_mat48:'sheath_mature', leaf_mat49:'sheath_mature', leaf_mat50:'sheath_mature', leaf_mat51:'sheath_mature', leaf_mat52:'sheath_mature', leaf_mat53:'sheath_mature', leaf_mat54:'sheath_mature', leaf_mat55:'sheath_mature', leaf_mat56:'sheath_mature', leaf_mat57:'sheath_mature', leaf_mid1:'sheath_mid1', leaf_mid2:'sheath_mid2', leaf_mature:'sheath_mature' };
 const SHEATH_KEYS=['sheath_leaf_mid_albo8','sheath_leaf_mid_albo9','sheath_leaf_mid_albo10','sheath_leaf_mid_albo11','sheath_leaf_mid_albo12','sheath_leaf_mid_albo13','sheath_leaf_mid_albo14','sheath_leaf_mid_albo15','sheath_leaf_mid_albo16','sheath_leaf_mid_albo17','sheath_leaf_mid_albo18','sheath_leaf_mid_albo19','sheath_leaf_mid_albo20','sheath_leaf_mid_albo21','sheath_leaf_mid_albo22','sheath_leaf_mid_albo23','sheath_leaf_mid_albo24','sheath_leaf_mid_albo25','sheath_leaf_mid_albo26','sheath_leaf_mid_albo27','sheath_leaf_mid_albo28','sheath_leaf_mid_albo29','sheath_leaf_mid_albo30','sheath_leaf_mid_albo31','sheath_furled','sheath_open','sheath_young','sheath_young_albo','sheath_leaf_mid_albo1','sheath_leaf_mid_albo2','sheath_leaf_mid_albo3','sheath_leaf_mid_albo4','sheath_leaf_mid_albo5','sheath_leaf_mid_albo6','sheath_leaf_mid_albo7','sheath_mid1','sheath_mid2','sheath_mature'];
+// 한 엽초를 여러 잎이 공유할 때(성숙 변이 19종 ↔ sheath_mature), 그 엽초의 위치·각도는
+// '기준 잎' 하나에 맞춰 잡혀 있다. 변이는 회전이 달라서 그대로 두면 엽초가 잎자루를 벗어난다.
+const SHEATH_OWNER={};
+for(const lk in SHEATH_OF) if(!/^leaf_mat\d+$/.test(lk)) SHEATH_OWNER[SHEATH_OF[lk]]=lk;
 // 엽초 표시명은 연결된 잎 이름을 따라간다. 직접 지어둔 이름이 있으면 그대로 둔다.
 for(const [leafKey, shKey] of Object.entries(SHEATH_OF))
   if(!ADJ_KO[shKey]) ADJ_KO[shKey]='엽초·'+(ADJ_KO[leafKey]||leafKey);
@@ -1042,7 +1046,16 @@ function addSheathLocal(parent, ld, stemRad, size, leafKey){
   const rot=new THREE.Group(); rot.add(mesh);
   rot.rotation.set(N(a.rx,0), N(a.ry,0), N(a.rz,0));             // 강체 회전(전단 없음)
   rot.position.set(N(a.ox,0)*sxw, N(a.oy,0)*len, N(a.oz,0)*sxw);
-  const g=new THREE.Group(); g.add(rot);
+  // 기준 잎과 회전이 다르면 그 차이만큼 엽초도 돌려, 잎자루를 계속 감싸게 한다.
+  const owner=SHEATH_OWNER[key];
+  let node=rot;
+  if(owner && owner!==leafKey){
+    const a1=adjOf(leafKey), a0=adjOf(owner);
+    const q1=new THREE.Quaternion().setFromEuler(new THREE.Euler(a1.rx||0, a1.ry||0, a1.rz||0));
+    const q0=new THREE.Quaternion().setFromEuler(new THREE.Euler(a0.rx||0, a0.ry||0, a0.rz||0));
+    const d=new THREE.Group(); d.quaternion.copy(q1.multiply(q0.invert())); d.add(rot); node=d;
+  }
+  const g=new THREE.Group(); g.add(node);
   g.quaternion.setFromUnitVectors(UP, ld);                       // 로컬 프레임 안에서만 회전 → roll 결정적
   g.position.copy(ld).multiplyScalar(-len*0.35);                 // 줄기 속으로 물려 시작
   // 엽초는 그 잎의 잎자루와 같은 색으로 — 이어진 하나처럼 보이게. 못 뽑으면 줄기색.
