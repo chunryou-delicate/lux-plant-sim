@@ -173,7 +173,7 @@ const DEF={
 };
 let P=Object.assign({}, DEF);
 // 저장본 버전. 생장 로직/기본값이 바뀌면 올림 → 옛 저장값이 새 기본값을 덮어쓰지 않게.
-const CFG_VER='2026-07-26-mat49';
+const CFG_VER='2026-07-26-nohalf';
 
 // ===== 튜닝 파라미터(B: 에셋별 개별 조정) =====
 const ADJ_KEYS=[
@@ -836,7 +836,9 @@ function matFromMid(midNum, r){
 const MAT_ALBO_MAX=Math.max(0, ...Object.keys(ASSET_FILES)
   .map(k=>{ const m=/^leaf_mat(\d+)$/.exec(k); return m? +m[1] : 0; }));
 const MAT_ALBO_POOL=[]; for(let i=1;i<=MAT_ALBO_MAX;i+=3) MAT_ALBO_POOL.push(i);
-const ALBO_MID_POOL=[1,2,3,4,5,6,7,8,9,10,11,12,13,16,17,18,19,20,21,22,23,27,28,29,30,31,32,33,34,35,36,38,39,40,41,42];
+// 29~31(하프문-크림민트) 제외 — 원본이 기준잎의 2.4배로 두꺼운데,
+//   두께를 줄이면 정점이 반대면을 뚫고 나가 구멍이 뚫린다. 에셋 정리 후 되돌리면 된다.
+const ALBO_MID_POOL=[1,2,3,4,5,6,7,8,9,10,11,12,13,16,17,18,19,20,21,22,23,27,28,32,33,34,35,36,38,39,40,41,42];
 // 형상이 완전히 동일하고 텍스처만 다른 변형들(정점수·좌표 해시 일치 확인).
 // 조정값을 대표 하나로 묶어, 한 번 맞추면 -쨍/-차분에 함께 적용된다.
 const ADJ_ALIAS={
