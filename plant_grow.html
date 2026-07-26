@@ -98,6 +98,8 @@
           <div class="field"><label>☀️ 빛 방위 <b id="lightV">90°</b></label><input type="range" id="light" min="0" max="360" value="90"></div>
           <div class="field"><label>굴광성(빛 쫓기) <b id="photoV">50%</b></label><input type="range" id="photo" min="0" max="100" value="50"></div>
           <div class="field"><label>🔆 DLI(조도엔진 연동 테스트) <b id="dliV">끔 · 상수</b></label><input type="range" id="dliTest" min="-1" max="20" step="0.5" value="-1"></div>
+          <button class="cbtn" id="btnNextDay" style="width:100%;margin-bottom:6px">🌤 다음 날 (1턴 = 1일)</button>
+          <div id="dayStat" class="note2" style="padding:0 0 6px;font-size:11.5px;line-height:1.75"></div>
           <button class="cbtn" id="btnSeed" style="width:100%">🎲 랜덤 시드</button>
           <div id="stat" style="margin-top:8px"><span class="k">슬라이더를 움직여 자라는 걸 보세요.</span></div>
           <div class="psec">🌿 줄기 모양 미세조정</div>
@@ -174,7 +176,7 @@ const DEF={
 };
 let P=Object.assign({}, DEF);
 // 저장본 버전. 생장 로직/기본값이 바뀌면 올림 → 옛 저장값이 새 기본값을 덮어쓰지 않게.
-const CFG_VER='2026-07-26-dli2';
+const CFG_VER='2026-07-26-loopv0';
 
 // ===== 튜닝 파라미터(B: 에셋별 개별 조정) =====
 const ADJ_KEYS=[
@@ -939,16 +941,84 @@ function dliAvg(days){
   return s/n;
 }
 function dliHistory(){ return DLI_HIST.slice(); }
-function resetDailyLight(){ DLI_HIST.length=0; PLANT_DLI=null; }
+function resetDailyLight(){ DLI_HIST.length=0; PLANT_DLI=null; PLANT_SLOT=null; }
+function dli7(){ return dliAvg(7); }
+// 최근 14일 변동계수(표준편차/평균). 기록이 7일 미만이면 '모른다' → null.
+// ⚠ 1:1 모드에선 7일 = 168 실시간 시간이다. "관찰 기록 n/7일"을 UI로 보여줄 것
+//    (time_modes.md §7) — 안 그러면 "왜 아무 일도 안 일어나지"가 된다.
+function dliCV(){
+  if(DLI_HIST.length<7) return null;
+  const a=DLI_HIST.slice(-14), m=a.reduce((s,v)=>s+v,0)/a.length;
+  if(m<=0) return null;
+  return Math.sqrt(a.reduce((s,v)=>s+(v-m)*(v-m),0)/a.length)/m;
+}
+// 테스트·미리보기용: "이 DLI를 계속 유지했다면"으로 이력을 통째로 채운다.
+function setDailyLightSteady(v){ DLI_HIST.length=0; for(let i=0;i<DLI_KEEP;i++) DLI_HIST.push(v); PLANT_DLI=v; }
 
-function calcVarieProb(dli){                     // 무늬종으로 태어날 확률
+// ★ 빛 계수(무늬 발현). 최적 대역이 일반 best(5~11)가 아니라 그 ×1.4(7.0~15.4)다.
+//   흰 부분이 광합성을 안 하니 더 밝아야 무늬가 나오고 유지된다.
+//   ⚠ 임시값이다. 실플레이로 정밀화할 것 — docs/researcher_track.md §5
+function fLight(d){
+  if(d==null) return 1;
+  const T=TH_MONSTERA;
+  if(d <  T.min)                return 0;    // 정체 — 새 잎이 안 나므로 발현 기회 자체가 없다
+  if(d <  T.best_lo*VARIE_MULT) return 0.5;  // 자라긴 하는데 무늬는 잘 안 나옴
+  if(d <= T.best_hi*VARIE_MULT) return 1.5;  // ★무늬 최적 대역 7.0 ~ 15.4
+  if(d <= T.max)                return 1.0;
+  return 0.3;                                // 과광 — 흰 부분이 먼저 탄다
+}
+// ★ 안정 계수. 재현성의 심장 — "같은 조건을 정확히 유지하는 것" 자체를 확률로 보상한다.
+//   자연광 방은 날씨·계절로 CV가 0.8까지 뛴다. 반지하+식물등이 CV 0.03으로 가장 안정적이다
+//   — 어두운 방이 '빛을 100% 통제할 수 있는 방'이 된다(docs/sale_economy.md §2).
+//   ⚠ 임시값.
+function fStable(){
+  const cv=dliCV();
+  if(cv==null) return 1;      // 기록 부족 = 모름 → 중립. 공짜 보너스를 주지 않는다
+  if(cv<=0.15) return 1.3;    // 안정
+  if(cv<=0.30) return 1.0;
+  return 0.7;                 // 들쭉날쭉
+}
+
+// 번식 방식. 기획상 하나씩 따로 번식시키면 무늬 확률이 오른다(개별 처리 보너스).
+// 지금은 1을 돌려주므로 값이 바뀌지 않는다 — 자리만 잡아둔 것.
+let PROP_MODE='batch';                                  // 'batch' | 'individual'
+function setPropagationMode(m){ PROP_MODE=(m==='individual')?'individual':'batch'; }
+function fPropagation(ctx){ return 1; }                 // ⚠ 자리만. 실플레이에서 채운다
+
+// 확률 함수에 넘길 상황. 인자를 하나씩 늘리지 않으려고 객체로 모은다.
+function lightCtx(extra){
+  return Object.assign({ dli:PLANT_DLI, dli7:dli7(), cv:dliCV(), propagationMode:PROP_MODE }, extra||{});
+}
+// DLI 밴드 — 화면에 "지금 이 빛이 어느 구간인가"를 보여주려고. 기준은 TH_MONSTERA.
+const BAND_KO={die:'고사',weak:'쇠약',survive:'정체',slow:'느린 성장',best:'최적',good:'성장',over:'과광'};
+function bandOf(dli, varie){
+  if(dli==null) return null;
+  const T=TH_MONSTERA, m=varie? VARIE_MULT : 1;
+  // ★무늬종은 요구 광량이 VARIE_MULT배. max(과광)에는 곱하지 않는다 —
+  //   흰 조직은 보호 색소가 없어 오히려 먼저 탄다.
+  let band;
+  if      (dli <  T.die*m)      band='die';
+  else if (dli <  T.survive*m)  band='weak';
+  else if (dli <  T.min*m)      band='survive';
+  else if (dli <  T.best_lo*m)  band='slow';
+  else if (dli <= T.best_hi*m)  band='best';
+  else if (dli <= T.max)        band='good';
+  else                          band='over';
+  return { band, ko:BAND_KO[band],
+           fenestrating: T.fenestrate!=null && dli >= T.fenestrate*m,
+           overlight: dli > T.max };
+}
+
+function calcVarieProb(ctx){                     // 무늬종으로 태어날 확률
+  const dli=ctx&&ctx.dli;
   if(dli==null) return P.varieProb;
-  return Math.min(1, P.varieProb*fLight(dli7())*fStable());
+  return Math.min(1, P.varieProb*fLight(dli7())*fStable()*fPropagation(ctx));
 }
 // ★ 갈라짐(성숙잎). fenestrate 6.0 미만이면 0 —
 //   "자연광만으로는 아파트에 가야 갈라진 잎을 본다"(balance_decisions.md §②)가
 //   지금까지 문서에만 있고 코드엔 없었다. 이 한 줄이 그 설계를 실제로 성립시킨다.
-function calcMatureProb(dli){
+function calcMatureProb(ctx){
+  const dli=ctx&&ctx.dli;
   if(dli==null) return P.matureProb;
   const d=dli7(), T=TH_MONSTERA;
   if(d==null)           return P.matureProb;
@@ -963,8 +1033,8 @@ function calcMatureProb(dli){
 //   계보(MAT_TREE)가 결정한다. 같은 배율을 두 번 곱하면 관리 보상이 5.6배가 아니라
 //   30배가 되어 다른 캐릭터의 플레이를 무의미하게 만든다.
 //   → 잎당 희귀 무늬 확률: 최적 관리 3.9% vs 방치 0.7% (researcher_track.md §5)
-function calcMatRare(dli){    return P.matRare;    }   // 성숙 무늬가 희귀 갈래로 갈 확률
-function calcMatSub(dli){     return P.matSub;     }   // 성숙 무늬가 부 갈래로 갈 확률
+function calcMatRare(ctx){    return P.matRare;    }   // 성숙 무늬가 희귀 갈래로 갈 확률
+function calcMatSub(ctx){     return P.matSub;     }   // 성숙 무늬가 부 갈래로 갈 확률
 
 // ===== 변이 트리 (승인 2026-07-26) =====
 // 중기 무늬가 성숙에서 어떤 무늬로 정착하는지. 색·무늬 계열로 이었고 겹치는 배치를 허용한다.
@@ -994,8 +1064,8 @@ function midRepNum(n){
 function matFromMid(midNum, r){
   const pair=MAT_TREE[midRepNum(midNum)];
   if(!pair) return 0;                                    // 트리에 없는 중기 → 기본 성숙잎
-  if(r<calcMatRare(PLANT_DLI)) return MAT_RARE[Math.min(MAT_RARE.length-1, Math.floor(r/calcMatRare(PLANT_DLI)*MAT_RARE.length))];
-  if(r<calcMatRare(PLANT_DLI)+calcMatSub(PLANT_DLI)) return pair[1];
+  if(r<calcMatRare(lightCtx())) return MAT_RARE[Math.min(MAT_RARE.length-1, Math.floor(r/calcMatRare(lightCtx())*MAT_RARE.length))];
+  if(r<calcMatRare(lightCtx())+calcMatSub(lightCtx())) return pair[1];
   return pair[0];
 }
 // 성숙 변이 추첨 풀. 대표(1,4,7…)만 넣는다 — -쨍/-차분은 별칭이라 대표와 똑같이 그려진다.
@@ -1510,9 +1580,9 @@ function buildPlant(){
       const ca=rng()*Math.PI*2;
       const curveDir=cx.multiplyScalar(Math.cos(ca)).addScaledVector(cz, Math.sin(ca)).normalize();
       const ax={from, dir:d0, birth, leafBirth:birth+P.petGrow, segs:[], simTip:null, midType:null,
-                az:rng()*Math.PI*2, canMature:rng()<calcMatureProb(PLANT_DLI),
+                az:rng()*Math.PI*2, canMature:rng()<calcMatureProb(lightCtx()),
                 triggered:false, grew:false,
-                varie:rng()<calcVarieProb(PLANT_DLI),                   // ★캐논: 변이는 어린잎 단계에서 확률로 결정
+                varie:rng()<calcVarieProb(lightCtx()),                   // ★캐논: 변이는 어린잎 단계에서 확률로 결정
                 alboMid:ALBO_MID_POOL[Math.floor(rng()*ALBO_MID_POOL.length)],   // 이 잎이 쓸 알보 중기 종류
                 matRoll:rng(),                             // 성숙 무늬 추첨값(트리에서 주/부/희귀를 가른다)
                 matAlbo:MAT_ALBO_POOL.length? MAT_ALBO_POOL[Math.floor(rng()*MAT_ALBO_POOL.length)] : 0,   // 성숙까지 갔을 때 쓸 변이 종류
@@ -1771,7 +1841,13 @@ function bindControls(){
       out.textContent=v.toFixed(1)+' · '+fen+' · '+vk;
     }
     buildPlant();
+    if(typeof refreshDayHUD==='function') refreshDayHUD();
   });
+  {  // 최소 루프 v0
+    const nb=document.getElementById('btnNextDay');
+    if(nb) nb.onclick=()=>{ stopPlay(); nextDay(); };
+    refreshDayHUD();
+  }
   document.getElementById('btnResetAsset').onclick=()=>{ const sel=document.getElementById('assetSel'); const k=sel.value; ADJ[k]=defAdj(k); buildAssetSliders(k); showPreview(k); buildPlant(); };
   buildAssetSelect(); buildShapePanel();
   // 패널 접기
@@ -1824,7 +1900,34 @@ function showPick(txt){
   el.textContent='🍃 '+txt; el.style.opacity='1';
   clearTimeout(showPick._t); showPick._t=setTimeout(()=>{ el.style.opacity='0'; }, 4000);
 }
-function setGrowth(v){ GROWTH=Math.max(0,Math.min(GMAX,Math.round(v))); const g=document.getElementById('growth'); if(g) g.value=GROWTH; const t=document.getElementById('growthV'); if(t) t.textContent=GROWTH; buildPlant(); }
+// ===== 최소 루프 v0 =====
+// 한 턴 = 하루. 오늘 빛을 이력에 넣고 생장을 하루 진행한다.
+// 아직 이 파일 안에서만 돈다 — 게임 루프가 붙으면 오늘치 DLI를 슬라이더 대신
+// setDailyLight(계약객체, slotId)로 받으면 되고 아래는 그대로 쓸 수 있다.
+function nextDay(){
+  const s=document.getElementById('dliTest');
+  const v=s? +s.value : null;
+  if(v!=null && v>=0) setDailyLight(v);          // 오늘 빛 한 칸 기록(이동평균에 쌓인다)
+  setGrowth(Math.min(GMAX, GROWTH+1));           // 생장 1틱 — setGrowth가 다시 그린다
+}
+// 경과일 · 생장나이 · 오늘 DLI · 7일 평균 · 밴드
+function refreshDayHUD(){
+  const el=document.getElementById('dayStat'); if(!el) return;
+  const d=PLANT_DLI, a=dli7();
+  const col={die:'#e58080',weak:'#e0a86a',survive:'#dcd47a',slow:'#b6d879',
+             best:'#7ce69a',good:'#8fd6e6',over:'#e59ad6'};
+  const cell=b=> b? '<b style="color:'+(col[b.band]||'#cfe6c8')+'">'+b.ko+'</b>' : '<span class="k">—</span>';
+  const bNow=bandOf(d,false), bAvg=bandOf(a,false), bVar=bandOf(a,true);
+  el.innerHTML=
+     '<span class="k">경과</span> '+GROWTH+'일 · <span class="k">생장나이</span> '+Math.round(ageOf(GROWTH))+'일<br>'
+   + '<span class="k">오늘</span> '+(d==null?'끔':d.toFixed(1))+' '+cell(bNow)
+   + ' · <span class="k">7일</span> '+(a==null?'—':a.toFixed(2))+' '+cell(bAvg)+'<br>'
+   + '<span class="k">무늬종 기준</span> '+cell(bVar)+' <span class="k">(요구 ×'+VARIE_MULT+')</span>'
+   + (bAvg&&bAvg.fenestrating? ' · <b style="color:#7ce69a">갈라짐○</b>' : '')
+   + (bNow&&bNow.overlight?   ' · <b style="color:#e59ad6">과광</b>' : '');
+}
+
+function setGrowth(v){ GROWTH=Math.max(0,Math.min(GMAX,Math.round(v))); const g=document.getElementById('growth'); if(g) g.value=GROWTH; const t=document.getElementById('growthV'); if(t) t.textContent=GROWTH; buildPlant(); if(typeof refreshDayHUD==='function') refreshDayHUD(); }
 function startPlay(){ playing=true; const b=document.getElementById('btnPlay'); if(b){ b.textContent='⏸ 정지'; b.classList.add('on'); } if(GROWTH>=GMAX) setGrowth(0);
   playTimer=setInterval(()=>{ if(GROWTH>=GMAX){ stopPlay(); return; } setGrowth(GROWTH+Math.max(3,Math.round(GMAX/120))); }, 110); }
 function stopPlay(){ playing=false; if(playTimer){ clearInterval(playTimer); playTimer=null; } const b=document.getElementById('btnPlay'); if(b){ b.textContent='▶ 재생'; b.classList.remove('on'); } }
