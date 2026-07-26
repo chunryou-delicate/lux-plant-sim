@@ -25,7 +25,7 @@ const doorPresets = await fetch('./data/door_presets.json').then(r=>r.json()).th
 const finishes   = await fetch('./data/room_finishes.json').then(r=>r.json()).catch(()=>null);
 const furnPresets= await fetch('./data/furniture_presets.json').then(r=>r.json()).then(d=>d.presets||d).catch(()=>({}));
 const lightPresets=await fetch('./data/lighting_presets.json').then(r=>r.json()).catch(()=>({}));
-const lightTh   = await fetch('./data/light_thresholds.json').then(r=>r.json()).catch(()=>null);
+const lightTh   = await fetch('./data/balance/light_thresholds.json').then(r=>r.json()).catch(()=>null);
 const shadePresets=await fetch('./data/shading_presets.json').then(r=>r.json()).catch(()=>({presets:{}}));
 
 /* ★ 가구마다 안정 uid — 슬롯 ID의 뿌리다.

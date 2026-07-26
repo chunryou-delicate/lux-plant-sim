@@ -13,7 +13,7 @@ const J = p => fetch(p).then(r=>r.json());
 const [houseRooms, winPresets, doorPresets, finishes, furnPresets, lightPresets, TH, SH] = await Promise.all([
   J('./data/house_rooms.json'), J('./data/window_presets.json'), J('./data/door_presets.json'),
   J('./data/room_finishes.json'), J('./data/furniture_presets.json'), J('./data/lighting_presets.json'),
-  J('./data/light_thresholds.json'), J('./data/shading_presets.json')
+  J('./data/balance/light_thresholds.json'), J('./data/shading_presets.json')
 ]);
 const wp = winPresets.presets||winPresets, dp = doorPresets.presets||doorPresets, fp = furnPresets.presets||furnPresets;
 

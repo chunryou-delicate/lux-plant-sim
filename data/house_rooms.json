@@ -101,7 +101,16 @@
         }
       ],
       "facing": "south",
-      "facing_note": "남향이지만 창이 작고(레터박스) 반투명(τ0.55)이라 어둡다. 향 탓이 아니다."
+      "facing_note": "남향이지만 창이 작고(레터박스) 반투명(τ0.55)이라 어둡다. 향 탓이 아니다.",
+      "measured": {
+        "peakDLI": 0.55,
+        "minDLI": 0.04,
+        "slots": 13,
+        "n3": 0,
+        "n6": 0,
+        "dark": 9,
+        "winterPeak": 0.2
+      }
     },
     "oneroom": {
       "label": "원룸",
@@ -197,7 +206,16 @@
         }
       ],
       "facing": "south",
-      "facing_note": "남향 단창."
+      "facing_note": "남향 단창.",
+      "measured": {
+        "peakDLI": 4.77,
+        "minDLI": 0.0,
+        "slots": 11,
+        "n3": 3,
+        "n6": 0,
+        "dark": 1,
+        "winterPeak": 1.77
+      }
     },
     "apartment": {
       "label": "아파트",
@@ -485,7 +503,16 @@
           "z1": 5.0,
           "note": "집 밖"
         }
-      ]
+      ],
+      "measured": {
+        "peakDLI": 6.02,
+        "minDLI": 0.0,
+        "slots": 83,
+        "n3": 48,
+        "n6": 1,
+        "dark": 20,
+        "winterPeak": 2.24
+      }
     },
     "classroom": {
       "label": "학원교실",
@@ -657,7 +684,16 @@
         }
       ],
       "facing": "south",
-      "facing_note": "남향 한 벽에 창 3개 — 창가/뒤편 격차가 이 방의 성격."
+      "facing_note": "남향 한 벽에 창 3개 — 창가/뒤편 격차가 이 방의 성격.",
+      "measured": {
+        "peakDLI": 5.49,
+        "minDLI": 0.02,
+        "slots": 32,
+        "n3": 10,
+        "n6": 0,
+        "dark": 10,
+        "winterPeak": 2.04
+      }
     },
     "greenhouse": {
       "label": "온실",
@@ -789,7 +825,16 @@
           },
           "note": "★ 재배동 / 숙소·연구실. 이 벽이 막혀 있어 온실에도 자리 고민이 생긴다"
         }
-      ]
+      ],
+      "measured": {
+        "peakDLI": 13.01,
+        "minDLI": 0.0,
+        "slots": 64,
+        "n3": 49,
+        "n6": 32,
+        "dark": 9,
+        "winterPeak": 4.84
+      }
     },
     "tworoom": {
       "label": "투룸",
@@ -918,9 +963,31 @@
         }
       ],
       "facing": "south",
-      "facing_note": "거실 남향 / 침실 동향 — 방 두 개의 밝기가 다르다."
+      "facing_note": "거실 남향 / 침실 동향 — 방 두 개의 밝기가 다르다.",
+      "measured": {
+        "peakDLI": 5.64,
+        "minDLI": 0.0,
+        "slots": 20,
+        "n3": 3,
+        "n6": 0,
+        "dark": 2,
+        "winterPeak": 2.1
+      }
     }
   },
   "_partitions": "partitions=[{axis:x|z, at, from,to(선택), door:{at,w,h}}] — 내벽으로 공간 분획. 컷어웨이에서 안 숨김.",
-  "_furniture": "furniture=[{preset,x,z,rot(도),color,...}] — data/furniture_presets.json 참조. x,z=방 중심 기준 m."
+  "_furniture": "furniture=[{preset,x,z,rot(도),color,...}] — data/furniture_presets.json 참조. x,z=방 중심 기준 m.",
+  "_measured": {
+    "note": "★ house 소유. _dli_probe.html 실측(맑음·여름, 차광 없음). 방 구조를 고치면 여기도 갱신한다.",
+    "date": "2026-07-26",
+    "fields": {
+      "peakDLI": "최고 슬롯 DLI",
+      "minDLI": "최저",
+      "slots": "화분 자리 수",
+      "n3": "DLI>=3 자리 수",
+      "n6": "DLI>=6 자리 수(몬스테라 갈라짐)",
+      "dark": "DLI<0.3 자리 수(무광 작물용)",
+      "winterPeak": "맑음·겨울 최고"
+    }
+  }
 }
