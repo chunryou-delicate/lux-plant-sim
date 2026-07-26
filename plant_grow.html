@@ -176,7 +176,7 @@ const DEF={
 };
 let P=Object.assign({}, DEF);
 // 저장본 버전. 생장 로직/기본값이 바뀌면 올림 → 옛 저장값이 새 기본값을 덮어쓰지 않게.
-const CFG_VER='2026-07-26-tuningjson';
+const CFG_VER='2026-07-26-bands';
 
 // ===== 튜닝 파라미터(B: 에셋별 개별 조정) =====
 const ADJ_KEYS=[
@@ -1017,16 +1017,19 @@ function lightCtx(extra){
   return Object.assign({ dli:PLANT_DLI, dli7:dli7(), cv:dliCV(), propagationMode:PROP_MODE }, extra||{});
 }
 // DLI 밴드 — 화면에 "지금 이 빛이 어느 구간인가"를 보여주려고. 기준은 TH_MONSTERA.
-const BAND_KO={die:'고사',weak:'쇠약',survive:'정체',slow:'느린 성장',best:'최적',good:'성장',over:'과광'};
+// 밴드 키는 house(daily_light.js)와 같아야 한다 — 계약 객체의 slots[].band 가 이 키로 온다.
+// 'die'는 "죽는다"로 오해를 불러 개칭했다. 실제 의미는 "오늘 빛이 고사 수준으로 부족"이고,
+// 하루 그렇다고 죽지 않는다(고사는 체력 모델이 판정한다).
+const BAND_KO={critical:'고사',poor:'쇠약',stagnant:'정체',slow:'느린 성장',best:'최적',good:'성장',over:'과광'};
 function bandOf(dli, varie){
   if(dli==null) return null;
   const T=TH_MONSTERA, m=varie? VARIE_MULT : 1;
   // ★무늬종은 요구 광량이 VARIE_MULT배. max(과광)에는 곱하지 않는다 —
   //   흰 조직은 보호 색소가 없어 오히려 먼저 탄다.
   let band;
-  if      (dli <  T.die*m)      band='die';
-  else if (dli <  T.survive*m)  band='weak';
-  else if (dli <  T.min*m)      band='survive';
+  if      (dli <  T.die*m)      band='critical';
+  else if (dli <  T.survive*m)  band='poor';
+  else if (dli <  T.min*m)      band='stagnant';
   else if (dli <  T.best_lo*m)  band='slow';
   else if (dli <= T.best_hi*m)  band='best';
   else if (dli <= T.max)        band='good';
@@ -1942,7 +1945,7 @@ function nextDay(){
 function refreshDayHUD(){
   const el=document.getElementById('dayStat'); if(!el) return;
   const d=PLANT_DLI, a=dli7();
-  const col={die:'#e58080',weak:'#e0a86a',survive:'#dcd47a',slow:'#b6d879',
+  const col={critical:'#e58080',poor:'#e0a86a',stagnant:'#dcd47a',slow:'#b6d879',
              best:'#7ce69a',good:'#8fd6e6',over:'#e59ad6'};
   const cell=b=> b? '<b style="color:'+(col[b.band]||'#cfe6c8')+'">'+b.ko+'</b>' : '<span class="k">—</span>';
   const bNow=bandOf(d,false), bAvg=bandOf(a,false), bVar=bandOf(a,true);
