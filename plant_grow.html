@@ -176,7 +176,7 @@ const DEF={
 };
 let P=Object.assign({}, DEF);
 // 저장본 버전. 생장 로직/기본값이 바뀌면 올림 → 옛 저장값이 새 기본값을 덮어쓰지 않게.
-const CFG_VER='2026-07-26-loopv0';
+const CFG_VER='2026-07-26-tuningjson';
 
 // ===== 튜닝 파라미터(B: 에셋별 개별 조정) =====
 const ADJ_KEYS=[
@@ -891,11 +891,32 @@ function ensureLeafShape(){                                // 값이 바뀐 잎�
 
 // 몬스테라 임계값. data/light_thresholds.json 의 monstera_deliciosa 와 같은 값이다.
 // (이 파일은 fetch 없이 단독 실행돼야 해서 복사해 둔다. 저기를 고치면 여기도 고칠 것)
-const TH_MONSTERA={die:0.5, survive:1.2, min:3.0, fenestrate:6.0, best_lo:5.0, best_hi:11.0, max:16.0};
+let TH_MONSTERA={die:0.5, survive:1.2, min:3.0, fenestrate:6.0, best_lo:5.0, best_hi:11.0, max:16.0};
 // ★ 무늬종 광량 계수. 흰 조직은 광합성을 안 하므로 요구 광량이 전 구간 1.4배다.
 //   max(과광 한계)에는 곱하지 않는다 — 흰 조직이 오히려 더 잘 타므로 위쪽 여유는
 //   늘어나면 안 된다. daily_light.js·light_thresholds.json 의 variegated.need_mult 와 같은 값.
-const VARIE_MULT=1.4;
+let VARIE_MULT=1.4;
+// ★ 튜닝값은 data/growth_tuning.json 이 정본이다. 위 코드값은 file:// 로 직접 열었을 때의 폴백.
+//   밸런싱은 JSON만 고치면 되고 이 파일은 열지 않아도 된다(창 충돌을 줄이려는 것).
+let GT={
+  fLight:{ below_min:0, below_best:0.5, best:1.5, below_max:1.0, over:0.3 },
+  fStable:{ cv_stable:0.15, mult_stable:1.3, cv_mid:0.30, mult_mid:1.0, mult_unstable:0.7,
+            min_days:7, window_days:14 },
+  fProp:{ batch:1.0, individual:1.0 },
+  mature:{ threshold_floor:0.5, over_max_mult:0.6 }
+};
+fetch('./data/growth_tuning.json').then(r=>r.json()).then(j=>{
+  if(j.thresholds) TH_MONSTERA=Object.assign({}, TH_MONSTERA, num(j.thresholds));
+  if(j.variegated && j.variegated.need_mult!=null) VARIE_MULT=j.variegated.need_mult;
+  if(j.f_light)       GT.fLight =Object.assign({}, GT.fLight,  num(j.f_light));
+  if(j.f_stable)      GT.fStable=Object.assign({}, GT.fStable, num(j.f_stable));
+  if(j.f_propagation) GT.fProp  =Object.assign({}, GT.fProp,   num(j.f_propagation));
+  if(j.mature_prob)   GT.mature =Object.assign({}, GT.mature,  num(j.mature_prob));
+  if(typeof buildPlant==='function') buildPlant();
+  if(typeof refreshDayHUD==='function') refreshDayHUD();
+}).catch(()=>{ /* file:// 로 열면 fetch가 막힌다 — 코드값 그대로 쓴다 */ });
+// _doc 같은 설명 필드가 계산에 섞이지 않게 숫자만 걸러 온다
+function num(o){ const r={}; for(const k in o) if(typeof o[k]==='number') r[k]=o[k]; return r; }
 
 // 이 그루가 놓인 자리(계약 객체 slots[].id)와 그 자리의 하루 광량.
 // ※ 지금 이 파일은 '한 그루 전용' 튜닝 창이다 — 개체 상태(SEED·GROWTH·PLANT_*)가 전부 전역이라
@@ -926,6 +947,12 @@ function setDailyLight(c, slotId){
     d = s ? s.dli
           : (c.best && c.best.dli!=null ? c.best.dli
           : (slots[0] && slots[0].dli!=null ? slots[0].dli : null));
+  }
+  // ★ 들어온 값이 쓸 수 있는 수인지 먼저 본다. NaN·음수·문자열이 이력에 들어가면
+  //   이동평균까지 오염되고, 확률이 NaN이 되어도 rng()<NaN 은 조용히 false라 티가 안 난다.
+  if(d!=null && (typeof d!=='number' || !isFinite(d) || d<0)){
+    console.warn('[빛] 쓸 수 없는 DLI 값 '+d+' → 무시하고 끔으로 둡니다');
+    d=null;
   }
   PLANT_DLI=d;
   if(d!=null){ DLI_HIST.push(d); if(DLI_HIST.length>DLI_KEEP) DLI_HIST.shift(); }
@@ -959,31 +986,31 @@ function setDailyLightSteady(v){ DLI_HIST.length=0; for(let i=0;i<DLI_KEEP;i++) 
 //   흰 부분이 광합성을 안 하니 더 밝아야 무늬가 나오고 유지된다.
 //   ⚠ 임시값이다. 실플레이로 정밀화할 것 — docs/researcher_track.md §5
 function fLight(d){
-  if(d==null) return 1;
-  const T=TH_MONSTERA;
-  if(d <  T.min)                return 0;    // 정체 — 새 잎이 안 나므로 발현 기회 자체가 없다
-  if(d <  T.best_lo*VARIE_MULT) return 0.5;  // 자라긴 하는데 무늬는 잘 안 나옴
-  if(d <= T.best_hi*VARIE_MULT) return 1.5;  // ★무늬 최적 대역 7.0 ~ 15.4
-  if(d <= T.max)                return 1.0;
-  return 0.3;                                // 과광 — 흰 부분이 먼저 탄다
+  if(d==null || !isFinite(d)) return 1;
+  const T=TH_MONSTERA, F=GT.fLight;
+  if(d <  T.min)                return F.below_min;    // 정체 — 새 잎이 안 나므로 발현 기회가 없다
+  if(d <  T.best_lo*VARIE_MULT) return F.below_best;   // 자라긴 하는데 무늬는 잘 안 나옴
+  if(d <= T.best_hi*VARIE_MULT) return F.best;         // ★무늬 최적 대역
+  if(d <= T.max)                return F.below_max;
+  return F.over;                                       // 과광 — 흰 부분이 먼저 탄다
 }
 // ★ 안정 계수. 재현성의 심장 — "같은 조건을 정확히 유지하는 것" 자체를 확률로 보상한다.
 //   자연광 방은 날씨·계절로 CV가 0.8까지 뛴다. 반지하+식물등이 CV 0.03으로 가장 안정적이다
 //   — 어두운 방이 '빛을 100% 통제할 수 있는 방'이 된다(docs/sale_economy.md §2).
 //   ⚠ 임시값.
 function fStable(){
-  const cv=dliCV();
-  if(cv==null) return 1;      // 기록 부족 = 모름 → 중립. 공짜 보너스를 주지 않는다
-  if(cv<=0.15) return 1.3;    // 안정
-  if(cv<=0.30) return 1.0;
-  return 0.7;                 // 들쭉날쭉
+  const cv=dliCV(), F=GT.fStable;
+  if(cv==null) return 1;              // 기록 부족 = 모름 → 중립. 공짜 보너스를 주지 않는다
+  if(cv<=F.cv_stable) return F.mult_stable;
+  if(cv<=F.cv_mid)    return F.mult_mid;
+  return F.mult_unstable;
 }
 
 // 번식 방식. 기획상 하나씩 따로 번식시키면 무늬 확률이 오른다(개별 처리 보너스).
 // 지금은 1을 돌려주므로 값이 바뀌지 않는다 — 자리만 잡아둔 것.
 let PROP_MODE='batch';                                  // 'batch' | 'individual'
 function setPropagationMode(m){ PROP_MODE=(m==='individual')?'individual':'batch'; }
-function fPropagation(ctx){ return 1; }                 // ⚠ 자리만. 실플레이에서 채운다
+function fPropagation(ctx){ const m=(ctx&&ctx.propagationMode)||PROP_MODE; return GT.fProp[m]!=null? GT.fProp[m] : 1; }
 
 // 확률 함수에 넘길 상황. 인자를 하나씩 늘리지 않으려고 객체로 모은다.
 function lightCtx(extra){
@@ -1011,7 +1038,7 @@ function bandOf(dli, varie){
 
 function calcVarieProb(ctx){                     // 무늬종으로 태어날 확률
   const dli=ctx&&ctx.dli;
-  if(dli==null) return P.varieProb;
+  if(dli==null || !isFinite(dli)) return P.varieProb;
   return Math.min(1, P.varieProb*fLight(dli7())*fStable()*fPropagation(ctx));
 }
 // ★ 갈라짐(성숙잎). fenestrate 6.0 미만이면 0 —
@@ -1019,14 +1046,15 @@ function calcVarieProb(ctx){                     // 무늬종으로 태어날 �
 //   지금까지 문서에만 있고 코드엔 없었다. 이 한 줄이 그 설계를 실제로 성립시킨다.
 function calcMatureProb(ctx){
   const dli=ctx&&ctx.dli;
-  if(dli==null) return P.matureProb;
+  if(dli==null || !isFinite(dli)) return P.matureProb;
   const d=dli7(), T=TH_MONSTERA;
-  if(d==null)           return P.matureProb;
+  if(d==null || !isFinite(d)) return P.matureProb;
   if(d <  T.fenestrate) return 0;                  // 못 본다. 식물등을 사거나 이사해야 한다
-  if(d >  T.max)        return P.matureProb*0.6;   // 과광 — 잎이 상해 성숙이 더디다
+  if(d >  T.max)        return P.matureProb*GT.mature.over_max_mult;   // 과광 — 잎이 상해 성숙이 더디다
   if(d >= T.best_hi)    return P.matureProb;
   // 문턱을 막 넘으면 절반, best_hi(11)에서 최대. 6.0을 넘는 순간 갈라짐이 '켜진다'
-  return P.matureProb*(0.5+0.5*(d-T.fenestrate)/(T.best_hi-T.fenestrate));
+  const fl=GT.mature.threshold_floor;
+  return P.matureProb*(fl+(1-fl)*(d-T.fenestrate)/(T.best_hi-T.fenestrate));
 }
 // ★ 갈래 비율에는 빛 배율을 태우지 않는다.
 //   빛은 "무늬가 나오느냐"(varieProb)를 결정하고, 나온 무늬가 어느 갈래로 정착하는지는
