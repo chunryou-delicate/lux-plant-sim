@@ -176,7 +176,7 @@ const DEF={
 };
 let P=Object.assign({}, DEF);
 // 저장본 버전. 생장 로직/기본값이 바뀌면 올림 → 옛 저장값이 새 기본값을 덮어쓰지 않게.
-const CFG_VER='2026-07-26-bands';
+const CFG_VER='2026-07-26-plantctx';
 
 // ===== 튜닝 파라미터(B: 에셋별 개별 조정) =====
 const ADJ_KEYS=[
@@ -1010,12 +1010,45 @@ function fStable(){
 // 지금은 1을 돌려주므로 값이 바뀌지 않는다 — 자리만 잡아둔 것.
 let PROP_MODE='batch';                                  // 'batch' | 'individual'
 function setPropagationMode(m){ PROP_MODE=(m==='individual')?'individual':'batch'; }
-function fPropagation(ctx){ const m=(ctx&&ctx.propagationMode)||PROP_MODE; return GT.fProp[m]!=null? GT.fProp[m] : 1; }
+function fPropagation(ctx){ const m=(ctx&&ctx.propagationMode)||PROP_MODE; return GT.fProp[m]!=null? GT.fProp[m] : 1; }   // 문자열 축이라 fCoef 대신 표에서 직접
 
 // 확률 함수에 넘길 상황. 인자를 하나씩 늘리지 않으려고 객체로 모은다.
-function lightCtx(extra){
-  return Object.assign({ dli:PLANT_DLI, dli7:dli7(), cv:dliCV(), propagationMode:PROP_MODE }, extra||{});
+// 확률 함수에 넘길 '지금 이 그루의 상황'. 인자를 하나씩 늘리지 않으려고 객체로 모은다.
+// 아직 값이 없는 축은 null로 둔다 — 조건을 지금 확정하지 않고 그릇만 넓혀두는 것이다.
+//
+// ★★ 규칙: null 인 축은 계수 1.0으로 무시한다. 절대 0이나 NaN으로 취급하지 않는다.
+//   NaN 사고와 같은 유형이다 — rng()<NaN 은 항상 false라 오류 없이 조용히 죽는다.
+//   fCoef(v, fn) 를 반드시 거쳐서, 값이 없으면 1.0이 나오게 한다.
+function fCoef(v, fn){
+  if(v==null) return 1;                       // 아직 안 재는 축 → 영향 없음
+  if(typeof v!=='number' || !isFinite(v)) return 1;   // 망가진 값도 무시(경고는 넣는 쪽에서)
+  const r=fn(v);
+  return (typeof r==='number' && isFinite(r) && r>=0) ? r : 1;
 }
+function lightCtx(extra){
+  return Object.assign({
+    // ── 순간값 (오늘)
+    dli:PLANT_DLI, temp:null, humidity:null, water:null,
+    // ── 누적값
+    dli7:dli7(), cumDli:null, daysInBand:null,
+    // ── 안정성
+    cv:dliCV(),
+    // ── 스펙트럼 (식물등 종류·색온도)
+    spectrum:null,
+    // ── 패턴 (광주기·물주기)
+    photoperiod:null, waterCycle:null,
+    // ── 스트레스 (누적 결핍·과잉)
+    waterDeficitDays:null, overlightDays:null,
+    // ── 번식
+    propagationMode:PROP_MODE, generation:null, parentVarie:null,
+    // ── 개체
+    vigor:null, species:'monstera_deliciosa'
+  }, extra||{});
+}
+// 무늬 '종류'를 고르는 자리. 지금은 언제나 알보다.
+// 조건이 정해지면(스펙트럼·온도차·번식 세대 등) 여기서 갈래를 나눈다 —
+// 호출부는 안 바뀌므로 이 함수 안만 고치면 된다.
+function calcVarieType(ctx){ return 'albo'; }
 // DLI 밴드 — 화면에 "지금 이 빛이 어느 구간인가"를 보여주려고. 기준은 TH_MONSTERA.
 // 밴드 키는 house(daily_light.js)와 같아야 한다 — 계약 객체의 slots[].band 가 이 키로 온다.
 // 'die'는 "죽는다"로 오해를 불러 개칭했다. 실제 의미는 "오늘 빛이 고사 수준으로 부족"이고,
