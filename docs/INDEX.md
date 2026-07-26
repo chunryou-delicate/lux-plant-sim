@@ -25,7 +25,11 @@
 | **`house`** | 집·방·조도 엔진 | `src/engine/*` · `src/render3d/*` · `data/*`(구조·에셋 정의) · `_dli_probe.html` · **`docs/engine/*`** |
 | **`char`** | 캐릭터 | `assets/characters/*` |
 | **`leaf`** | 잎·줄기·작물 에셋 | `assets/monstera/*` · 작물 에셋 |
-| **`core`** | 게임 루프 | `src/game/*` · `game.html` *(아직 없음)* |
+| **`core`** ★신설 | **게임 루프** | `src/game/*` · `game.html` — **둘 다 아직 없다. 지금 착수 대상** |
+
+> `index.html`은 **house 소유**다(3D 방 뷰어 = `src/main.js` 껍데기).
+> core는 거기 얹지 말고 **`game.html`을 새로 만든다** — 한 파일 두 주인이 이번 충돌의 원인이었다.
+> 착수 지시: **`handoff/plan-to-core.md`**
 
 ## 데이터가 둘로 갈린다
 
@@ -34,8 +38,13 @@ data/           house — 구조·에셋 정의 (house_rooms · 창틀/가구/�
 data/balance/   plan  — 튜닝값 (characters · homes(경제) · light_thresholds* · growth_tuning*)
 ```
 `*` = 코드가 경로로 읽고 있어 **소유 창이 "이동+경로수정"을 한 커밋으로** 처리 대기.
-`homes.json`은 **한 파일을 둘이 나눠 쓴다** — plan은 `rent`/`deposit`/`moveCost`,
-house는 `peakDLI`/`slots`(실측으로 덮어씀).
+
+**빛 실측과 경제는 완전히 분리됐다**(2026-07-26) — 한 파일을 나눠 쓰지 않는다.
+
+| | 어디 |
+|---|---|
+| 빛 실측 `peakDLI`·`slots`·`dark`·`avg7` | `data/house_rooms.json` → `rooms.{id}.measured` (house) |
+| 경제 `rent`·`deposit`·`moveCost`·`utility` | `data/balance/homes.json` (plan) |
 
 ## 인계는 대화가 아니라 파일로
 

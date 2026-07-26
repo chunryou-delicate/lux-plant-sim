@@ -9,13 +9,21 @@
 | `light_thresholds.json` | DLI 밴드 임계값 · 무늬종 계수 · 광주기 밴드 *(이동 대기 — 아래)* |
 | `growth_tuning.json` | 생장 확률 곡선 *(이동 대기 — 아래)* |
 
-## 경계
+## 경계 — **완전 분리됐다** (2026-07-26)
 
 - `data/` (상위) = **house 소유**. 구조·에셋 정의(`house_rooms.json`·프리셋류)
 - `data/balance/` = **plan 소유**. 기획이 정하는 숫자
-- `homes.json`은 **한 파일을 둘이 나눠 쓴다**
-  - plan: `rent` · `deposit` · `moveCost` · `utility` · `notes`
-  - house: `peakDLI` · `slots` ← **실측으로 덮어씀. plan은 건드리지 않는다**
+
+`homes.json`을 둘이 나눠 쓰던 구조는 **끝났다.** 빛 실측은 house 쪽 한 곳뿐이다.
+
+| | 어디 | 소유 |
+|---|---|---|
+| **빛 실측** (`peakDLI`·`slots`·`dark`·`avg7`…) | `data/house_rooms.json` → `rooms.{id}.measured` | house |
+| **경제** (`rent`·`deposit`·`moveCost`·`utility`) | `data/balance/homes.json` | plan |
+
+`homes.json`이 갖고 있던 `peakDLI`·`slots`·`lightGrade`는 **삭제했다** — 방을 고칠 때마다
+낡아서 실제로 한 번 어긋났다. 빛 값이 필요하면 `homes.json`의 `room` 필드로
+`house_rooms.json`을 찾아 `measured`를 읽는다.
 
 ## 아직 안 옮긴 것
 

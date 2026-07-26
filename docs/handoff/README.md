@@ -50,7 +50,13 @@ docs/handoff/{내창}-to-{상대창}.md
 | `house` | `src/engine/*` · `src/render3d/*` · `data/*`(구조·에셋 정의) · `_dli_probe.html` · **`docs/engine/*`** |
 | `char` | `assets/characters/*` |
 | `leaf` | `assets/monstera/*` · 잎·작물 에셋 |
+| **`core`** ★ | **`src/game/*` · `game.html`** (신설 — 게임 루프) |
 | **`plan`** | **`docs/*`**(`docs/engine/` 제외) · **`data/balance/*`**. 그 외 코드 파일 0개. |
+
+> **`index.html`은 house 소유다** — `src/main.js`(3D 방 뷰어)의 껍데기다.
+> core는 거기 얹지 않고 **`game.html`을 새로 만든다.**
+> 한 파일에 주인이 둘이면 이번처럼 작업이 날아간다.
+> 나중에 게임 뷰가 본체가 되면 그때 `index.html`을 런처로 돌릴지 다시 정한다.
 
 ### docs 분할 (2026-07-26)
 
