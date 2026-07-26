@@ -262,7 +262,9 @@ function bindControls(){
     getFurnitureGroup: ()=>builtRef&&builtRef.furniture,
     getSize: ()=>RSIZE,
     rebuild: async ()=>{ await buildRoomPreset(curRoom); },
-    onChange: ()=>engineRefresh()
+    onChange: ()=>engineRefresh(),
+    getWorld: ()=>({ colliders: builtRef&&builtRef.colliders, doorways: builtRef&&builtRef.doorways }),
+    getPreset: id=>furnPresets[id]||{}
   });
   deco.setEnabled(false);
   deco.onSelect=(i,f)=>{
@@ -292,8 +294,10 @@ function bindControls(){
       : '돌리면 가리는 벽이 사라져요 · 빛은 창으로만 들어와요';
     document.getElementById('hint').style.opacity='1';
   };
-  document.getElementById('decoRotL').onclick=()=>deco.rotate(-15);
-  document.getElementById('decoRotR').onclick=()=>deco.rotate(+15);
+  const rotTry=async d=>{ const ok=await deco.rotate(d);
+    if(ok===false) decoSel.textContent='그 각도로는 자리가 안 나옵니다'; };
+  document.getElementById('decoRotL').onclick=()=>rotTry(-15);
+  document.getElementById('decoRotR').onclick=()=>rotTry(+15);
   document.getElementById('decoDel').onclick=()=>deco.remove();
   document.getElementById('decoUndo').onclick=()=>deco.undo();
   document.getElementById('decoDown').onclick=()=>deco.download(curRoom);

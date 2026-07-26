@@ -256,7 +256,7 @@ export function buildHouse(GRAIN, roomDefIn, winPresets, doorPresets={}, finishe
   /* ★ 여닫이 자리 — 캐릭터가 가까이 오면 열린다.
      { x,z, nx,nz(통과 방향), half(반폭), node, kind:'swing'|'slide', ... } */
   const doorways=[];
-  const pushCol=(x,z,w,d,h,rot=0)=>colliders.push({x,z,w,d,h,rot});
+  const pushCol=(x,z,w,d,h,rot=0,kind='wall')=>colliders.push({x,z,w,d,h,rot,kind});
 
   /* 한 선분(axis 방향 벽)을 '지날 수 있는 구멍'만 빼고 막는다.
      axis:'x' → x=at 인 세로벽, u는 z / axis:'z' → z=at 인 가로벽, u는 x
@@ -678,7 +678,7 @@ export function buildHouse(GRAIN, roomDefIn, winPresets, doorPresets={}, finishe
     const fsz=g.userData.size;
     // 충돌: 낮은 것(러그)·벽걸이·천장등 빼고 전부. 조도 차폐보다 기준이 넓다.
     if(fsz && fsz.h>0.20 && !hang && g.userData.mount!=='wall' && !/^rug/.test(type))
-      pushCol(f.x??0, f.z??0, fsz.w, fsz.d, fsz.h, (f.rot||0)*Math.PI/180);
+      pushCol(f.x??0, f.z??0, fsz.w, fsz.d, fsz.h, (f.rot||0)*Math.PI/180, 'furn');
     if(fsz && fsz.h>0.25 && !/^rug|^lamp|light|^picture|^wall_clock|^mirror/.test(type)){
       g.userData.occIdx = occluders.length;   // 자기 자신은 자기 슬롯을 가리지 않게(자가차폐 방지)
       occluders.push({ x:(f.x??0)-fsz.w/2, z:(f.z??0)-fsz.d/2,
