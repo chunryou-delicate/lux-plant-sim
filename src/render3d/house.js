@@ -502,6 +502,7 @@ export function buildHouse(GRAIN, roomDefIn, winPresets, doorPresets={}, finishe
         // 문 프리셋(doorPresets) + 인라인 병합. 유리문이면 유리 quad도 끼움.
         const dp={ ...(doorPresets[spec.preset]||{}), ...spec };
         const door=buildDoor(spec.w, spec.h, { frameColor:dp.frameColor||'#f4efe4', gloss:dp.gloss||'satin' });
+        door.userData.isDoor = true;              // 밑동을 만들지 않는다(문 자리는 비어 있어야 한다)
         placeInWall(door, wall, spec.cu, spec.h/2);
         g.add(door);                                // 문은 벽과 함께 컷어웨이
         {   // ★ 여닫이 — 경첩을 문짝 한쪽 끝에 두고 그 축으로 돌린다
@@ -509,7 +510,13 @@ export function buildHouse(GRAIN, roomDefIn, winPresets, doorPresets={}, finishe
           const hingeU = spec.cu - spec.w/2;        // 왼쪽 경첩
           placeInWall(piv, wall, hingeU, 0);
           g.remove(door);
-          door.position.sub(piv.position);
+          /* ★ 경첩 기준 오프셋은 '피벗의 로컬 좌표'로 바꿔야 한다.
+             그냥 빼기만 하면 회전된 벽(front=180°, left/right=±90°)에서 문이
+             문폭만큼 옆으로 밀려 벽에 박히거나 튀어나온다.
+             back 벽(회전 0)만 우연히 맞아서 문이 back 에 있는 방에선 안 보였다. */
+          const off = door.position.clone().sub(piv.position);
+          off.applyAxisAngle(new THREE.Vector3(0,1,0), -piv.rotation.y);
+          door.position.copy(off);
           door.rotation.y -= piv.rotation.y;
           piv.add(door); g.add(piv);
           const c=doorCenter(wall, spec.cu);
@@ -895,6 +902,9 @@ export function buildHouse(GRAIN, roomDefIn, winPresets, doorPresets={}, finishe
 
   for(const k in trims) room.add(trims[k]);
 
+  /* 벽 밑동 박스를 미리 만들어 둔다(감춰둔 채). 컷어웨이가 켜지면 이걸 보여준다. */
+  buildWallStubs(shells);
+
   return { room, shells, trims, windows:winWorld, glassMeshes, winPos, size:{ w:CW, d:CD, h:CH },
            furniture:furnGroup, lightRigs, plantSlots, occluders, colliders, doorways, luxWins, glazedPanes, facing };
 }
@@ -982,10 +992,13 @@ export function updateShellVisibility(shells, cam, mode='auto', trims=null){
     if(key==='floor'){ sh.visible=true; sh.scale.y=1; continue; }
 
     if(key==='ceiling'){
-      /* 천장은 눌러도 의미가 없다(위에 떠 있는 판) → 보이거나 안 보이거나.
-         내림·벽있음에선 항상 감추고, 자동에선 카메라가 위에 있을 때 감춘다. */
+      /* ★ 천장을 visible=false 로 감추면 three.js 가 그림자 패스에서도 빼버린다.
+         그래서 해가 천장을 뚫고 바로 내리쬐어 "천장이 없는 것처럼" 보였다.
+         감추되 그림자는 남겨야 한다 → 안 보이게만 하고 객체는 살려둔다. */
       const above = (cp.y - center[1]) * normal[1] > 0.3;
-      sh.visible = (mode==='auto') ? !above : false;
+      const hide = (mode==='auto') ? above : true;
+      sh.visible = true;
+      setShadowOnly(sh, hide);
       continue;
     }
 
@@ -1006,19 +1019,76 @@ export function updateShellVisibility(shells, cam, mode='auto', trims=null){
     sh.userData._stub = stub;
     sh.visible = true;
     sh.scale.y = 1;                             // 기하는 건드리지 않는다
-    /* ★ 잘라서 보여준다(누르지 않는다).
-       기하를 누르면 그림자까지 눌려 벽이 빛을 못 막는다 — 실제로 거실·안방에
-       해가 그냥 들어왔다. 클리핑은 렌더만 자르고 그림자는 전체 높이로 남는다. */
+    /* ★ 자르지 않고 '밑동 박스'를 따로 보여준다.
+       클리핑으로 자르면 상자가 열려서 속이 빈 것처럼 보였다(윗면·단면이 없다).
+       밑동은 실제 10cm 짜리 온전한 상자라 네모지게 보인다.
+       원래 벽은 안 보이게만 하고 살려둬서 그림자는 전체 높이로 계속 던진다. */
     sh.traverse(o=>{
-      if(!o.isMesh || !o.material) return;
-      const set=mm=>{ mm.clippingPlanes = stub ? [STUB_PLANE] : null;
-                      mm.clipShadows = false;      // 그림자는 자르지 않는다 = 빛을 계속 막는다
-                      mm.needsUpdate = true; };
-      Array.isArray(o.material) ? o.material.forEach(set) : set(o.material);
-      o.castShadow = true;                          // 밑동만 보여도 그림자는 던진다
+      if(!o.isMesh || !o.material || o.userData.isStub) return;
+      const clr=mm=>{ if(mm.clippingPlanes){ mm.clippingPlanes=null; mm.needsUpdate=true; } };
+      Array.isArray(o.material) ? o.material.forEach(clr) : clr(o.material);
+      o.castShadow = true;
     });
+    setShadowOnly(sh, stub);                    // 벽 본체: 밑동 모드에선 안 보이게(그림자는 유지)
+    if(sh.userData.stub) sh.userData.stub.visible = stub;
     const t = trims && trims[key];
-    if(t){ t.scale.y = 1; t.visible = !stub; }   // 창틀은 잘리면 어차피 안 보이니 감춘다
+    if(t){ t.scale.y = 1; t.visible = !stub; }   // 창틀은 감추면 어차피 안 보이니 같이 감춘다
+  }
+}
+
+/* ★ '안 보이지만 빛은 막는다'
+   visible=false 로 감추면 three.js 가 그림자 패스에서도 빼버려 빛이 그냥 통과한다.
+   colorWrite/depthWrite 만 끄면 화면엔 안 그려지고 그림자 패스는 그대로 돈다.
+   밑동 박스(isStub)는 실제로 보여야 하므로 건드리지 않는다. */
+function setShadowOnly(root, on){
+  root.traverse(o=>{
+    if(!o.isMesh || !o.material || o.userData.isStub) return;
+    o.castShadow = true;
+    const set=mm=>{ if(mm.colorWrite===!on && mm.depthWrite===!on) return;
+                    mm.colorWrite = !on; mm.depthWrite = !on; mm.needsUpdate = true; };
+    Array.isArray(o.material) ? o.material.forEach(set) : set(o.material);
+  });
+}
+
+/* ★ 벽 밑동 박스를 만든다 — 바닥에 닿는 조각만 10cm 높이로 복제한다.
+   바닥에 닿지 않는 조각(창 위/아래 인방)은 제외되고, 문 구멍 자리는 애초에
+   조각이 없으므로 자연히 비어 있다 — "문 있는 곳은 밑동도 없게"가 그냥 된다. */
+function buildWallStubs(shells, lowH = LOW_H){
+  for(const key in shells){
+    const sh = shells[key];
+    if(key==='floor' || key==='ceiling' || sh.userData.stub) continue;
+    const made = [];
+    /* traverse 가 아니라 직접 내려간다 — 문(isDoor) 아래로는 들어가지 않는다.
+       문짝까지 밑동을 만들면 '문 자리는 비어 있다'가 깨진다. */
+    const walk = o => {
+      if(o.userData && o.userData.isDoor) return;
+      visit(o);
+      for(const c of o.children) walk(c);
+    };
+    const visit = o=>{
+      if(!o.isMesh || !o.geometry || o.userData.isStub) return;
+      const pr = o.geometry.parameters;
+      if(!pr || pr.width===undefined) return;              // BoxGeometry 만
+      const p = o.position;
+      if(p.y - pr.height/2 > 0.02) return;                 // 바닥에 안 닿는 조각은 밑동이 아니다
+      const mat = (Array.isArray(o.material) ? o.material[0] : o.material).clone();
+      mat.clippingPlanes = null; mat.colorWrite = true; mat.depthWrite = true;
+      const m = new THREE.Mesh(new THREE.BoxGeometry(pr.width, lowH, pr.depth), mat);
+      /* ★ 조각과 '같은 부모'에 붙인다 — 칸막이는 자체 Group 안에 들어 있어서
+         셸 기준 좌표를 쓰면 어긋난다. 같은 부모면 로컬 좌표를 그대로 쓸 수 있다. */
+      m.position.set(p.x, lowH/2, p.z);
+      m.rotation.copy(o.rotation);
+      m.castShadow = false; m.receiveShadow = true;        // 그림자는 본체가 던진다
+      m.userData.isStub = true;
+      m.visible = false;
+      made.push([o.parent, m]);
+    };
+    walk(sh);
+    for(const [parent, m] of made) parent.add(m);
+    /* Group 하나로 못 묶으므로(부모가 제각각) 토글용 목록을 들고 있는다 */
+    sh.userData.stub = { list: made.map(x=>x[1]),
+                         set visible(v){ this.list.forEach(m=>m.visible=v); },
+                         get visible(){ return this.list.length ? this.list[0].visible : false; } };
   }
 }
 
