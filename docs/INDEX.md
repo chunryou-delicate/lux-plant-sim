@@ -119,6 +119,7 @@ https://raw.githubusercontent.com/chunryou-delicate/lux-plant-sim/main/docs/hand
 | `food_economy.md` · `sale_economy.md` | 지출(식비·콩나물) / 수입(삽수·실생·상점) |
 | `researcher_track.md` · `time_modes.md` | 연구자 논문=재현성 / 시간 3모드 |
 | `game_loop_spec.md` | 게임 루프 구현 명세(코어 인계용) |
+| **`house_building.md`** | ⏸ 집짓기(엔딩 이후) — 창값=면적² · 향은 땅이 결정 |
 | `crop_asset_direction.md` | 작물 10종 에셋 구조 |
 | `게임기획_해야할것_v3.md` | 통합 전 원본 |
 

@@ -799,6 +799,7 @@ v3의 원칙대로 **"며칠치 생활비"로 환산해 잡는다.**
 |---|---|
 | **기획 정본** | **이 문서** |
 | **밸런싱 값 (여기만 고친다)** | **`data/balance/`** — `characters` · `homes`(경제 필드) · `light_thresholds`* · `growth_tuning`* (*이동 대기) |
+| ⏸ 집짓기 (엔딩 이후 콘텐츠) | `house_building.md` |
 | 창 소유·인계 규칙 | `handoff/README.md` |
 | 계약 객체 `daily_light/1` 전문 | `engine/light_contract.md` |
 | 방별 DLI 실측·밸런싱 근거 | `balance_decisions.md` · `engine/rooms_progression.md` |
