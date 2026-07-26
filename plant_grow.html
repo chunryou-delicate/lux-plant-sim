@@ -173,7 +173,7 @@ const DEF={
 };
 let P=Object.assign({}, DEF);
 // 저장본 버전. 생장 로직/기본값이 바뀌면 올림 → 옛 저장값이 새 기본값을 덮어쓰지 않게.
-const CFG_VER='2026-07-26-petcolor2';
+const CFG_VER='2026-07-26-petcolor3';
 
 // ===== 튜닝 파라미터(B: 에셋별 개별 조정) =====
 const ADJ_KEYS=[
@@ -532,17 +532,6 @@ function makeSheathAsset(botDia, topDia){
   geo.setAttribute('position', new THREE.Float32BufferAttribute(pos,3));
   geo.setAttribute('normal',   new THREE.Float32BufferAttribute(nor,3));
   geo.setAttribute('uv',       new THREE.Float32BufferAttribute(uv,2));
-  if(colAt){                                          // 끝으로 갈수록 색이 번지게(정점색)
-    const col=new Float32Array(pos.length), cnt=pos.length/3;
-    const ringN=(radSeg+1)*(tubSeg+1), c=new THREE.Color();
-    for(let k=0;k<cnt;k++){
-      const t = (k<ringN) ? Math.floor(k/(radSeg+1))/tubSeg      // 옆면: 링 번호가 곧 t
-                          : ((k===ringN) ? 0 : 1);               // 뚜껑 두 개(아래/위)
-      colAt(t, c);
-      col[k*3]=c.r; col[k*3+1]=c.g; col[k*3+2]=c.b;
-    }
-    geo.setAttribute('color', new THREE.Float32BufferAttribute(col,3));
-  }
   const mesh=new THREE.Mesh(geo, new THREE.MeshStandardMaterial({color:0xffffff, roughness:0.68, side:THREE.DoubleSide}));
   mesh.castShadow=true; mesh.receiveShadow=true;
   const outer=new THREE.Group(); outer.add(mesh);
@@ -991,6 +980,17 @@ function makeStemTube(pts, radAt, tubSeg, radSeg, colAt){
   geo.setAttribute('position', new THREE.Float32BufferAttribute(pos,3));
   geo.setAttribute('normal',   new THREE.Float32BufferAttribute(nor,3));
   geo.setAttribute('uv',       new THREE.Float32BufferAttribute(uv,2));
+  if(colAt){                                          // 끝으로 갈수록 색이 번지게(정점색)
+    const col=new Float32Array(pos.length), cnt=pos.length/3;
+    const ringN=(radSeg+1)*(tubSeg+1), c=new THREE.Color();
+    for(let k=0;k<cnt;k++){
+      const t = (k<ringN) ? Math.floor(k/(radSeg+1))/tubSeg      // 옆면: 링 번호가 곧 t
+                          : ((k===ringN) ? 0 : 1);               // 뚜껑 두 개(아래/위)
+      colAt(t, c);
+      col[k*3]=c.r; col[k*3+1]=c.g; col[k*3+2]=c.b;
+    }
+    geo.setAttribute('color', new THREE.Float32BufferAttribute(col,3));
+  }
   return geo;
 }
 // 한 축(생장점)의 줄기 전체를 튜브 하나로 그림. nodeTs=마디 경계의 t값(부풀림 위치)
