@@ -173,7 +173,7 @@ const DEF={
 };
 let P=Object.assign({}, DEF);
 // 저장본 버전. 생장 로직/기본값이 바뀌면 올림 → 옛 저장값이 새 기본값을 덮어쓰지 않게.
-const CFG_VER='2026-07-26-pairlist';
+const CFG_VER='2026-07-26-pickall';
 
 // ===== 튜닝 파라미터(B: 에셋별 개별 조정) =====
 const ADJ_KEYS=[
@@ -658,7 +658,7 @@ function assetInst(key){
 function addPot(){
   const p=ASSETS.pot;
   if(p){ const g=assetInst('pot')||p.clone(true);      // ★에셋별 조정(B) 반영
-    g.scale.multiplyScalar(POT_H); plantGroup.add(g); const ap=ADJ.pot||{}; SOIL_Y=POT_H*(0.82*(ap.scale||1)*(ap.sy||1)+(ap.oy||0)); return; }
+    g.scale.multiplyScalar(POT_H); g.userData.assetKey='pot'; plantGroup.add(g); const ap=ADJ.pot||{}; SOIL_Y=POT_H*(0.82*(ap.scale||1)*(ap.sy||1)+(ap.oy||0)); return; }
   // 임시 화분(폴백)
   const pot=new THREE.Mesh(new THREE.CylinderGeometry(0.5,0.38,0.5,20), MAT.pot);
   pot.position.y=0.25; pot.castShadow=true; pot.receiveShadow=true; plantGroup.add(pot);
@@ -703,7 +703,7 @@ function stretchGLB(key, p0, p1, radius, color, flatAz){
   mesh.scale.set(fx, len, fz);                             // 비균등 스케일 = 가장 안쪽(회전 영향 없음)
   rot.rotation.set(N(a.rx,0), N(a.ry,0), N(a.rz,0));       // 강체 회전 = 스케일 바깥 → 안 찌그러짐
   rot.position.set(N(a.ox,0)*fx, N(a.oy,0)*len, N(a.oz,0)*fz);   // 오프셋은 이전과 같은 체감 크기 유지
-  g.position.copy(p0); if(color) tintObj(g,color); plantGroup.add(g);
+  g.position.copy(p0); g.userData.assetKey=key; if(color) tintObj(g,color); plantGroup.add(g);
   USE_COUNT[key]=(USE_COUNT[key]||0)+1; return true;
 }
 // (제거됨) addStemSeg — 마디별 GLB 이어붙이기. 줄기를 튜브로 생성하면서 호출부 0개가 됨
@@ -1085,6 +1085,7 @@ function addStemTube(pts, rBase, rTip, nodeTs, color, tipColor){
   }
   mat.userData={cloned:true};
   const m=new THREE.Mesh(geo, mat); m.castShadow=true; m.receiveShadow=true;
+  m.userData.assetKey='__stem';   // 클릭해서 뭔지 알아보려고
   plantGroup.add(m);
 }
 // (제거됨) addKnob — 혹 돌기 단독 에셋 방식. '혹 있는 줄기 GLB' 방식으로 복귀하여 미사용
@@ -1120,6 +1121,7 @@ function addSheathLocal(parent, ld, stemRad, size, leafKey){
   g.quaternion.setFromUnitVectors(UP, ld);                       // 로컬 프레임 안에서만 회전 → roll 결정적
   g.position.copy(ld).multiplyScalar(-len*0.35);                 // 줄기 속으로 물려 시작
   // 엽초는 그 잎의 잎자루와 같은 색으로 — 이어진 하나처럼 보이게. 못 뽑으면 줄기색.
+  g.userData.assetKey=key;   // 클릭 식별용(엽초)
   tintObj(g, petColorOf(leafKey) || stemTint(0.03)); parent.add(g);
   USE_COUNT[key]=(USE_COUNT[key]||0)+1;
 }
@@ -1706,7 +1708,7 @@ function pickAt(e){
     if(sel && [...sel.options].some(op=>op.value===rep)){
       sel.value=rep; buildAssetSliders(rep); showPreview(rep);
     }
-    const nm=ADJ_KO[key]||key;
+    const nm=(key==='__stem')? '줄기(절차생성 튜브)' : (ADJ_KO[key]||key);
     showPick(nm + (rep!==key? '  (조정은 '+(ADJ_KO[rep]||rep)+')' : ''));
     return;
   }
