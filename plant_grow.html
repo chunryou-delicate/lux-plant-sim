@@ -173,7 +173,7 @@ const DEF={
 };
 let P=Object.assign({}, DEF);
 // 저장본 버전. 생장 로직/기본값이 바뀌면 올림 → 옛 저장값이 새 기본값을 덮어쓰지 않게.
-const CFG_VER='2026-07-26-nohalf';
+const CFG_VER='2026-07-26-mat43';
 
 // ===== 튜닝 파라미터(B: 에셋별 개별 조정) =====
 const ADJ_KEYS=[
@@ -263,7 +263,7 @@ const ADJ_TUNED={
   leaf_mat34: {sxz:0.99, rx:0.2, ry:-1, rz:0.35, ox:0.04, oy:0.1, bladeR:0.81, petR:1.09},   // 변이-하프문-그린흰
   leaf_mat37: {sxz:1.34, rx:0.25, ry:-0.85, rz:0.45, ox:0.04, oy:0.1, bladeR:0.79, petR:0.99},   // 변이-모브-라벤더그레이
   leaf_mat40: {sxz:1.06, rx:0.25, ry:-0.95, rz:0.4, ox:0.04, oy:0.1, bladeR:0.81, petR:1.08},   // 변이-별무늬-그린옐로우
-  leaf_mat43: {sxz:1.1, rx:0.3, ry:-0.9, rz:0.45, ox:0.04, oy:0.1, bladeR:0.85, petR:0.85},   // 변이-핑크-로즈
+  leaf_mat43: {sxz:1.1, rx:0.3, ry:-0.9, rz:0.45, ox:0.1, oy:0.1, oz:-0.03, bladeR:0.85, trimR:0.82, petR:0.85},   // 변이-핑크-로즈
   leaf_mat46: {scale:1.2, sxz:0.7, rx:0.2, ry:-0.85, rz:0.4, ox:0.04, oy:0.14, oz:0.01, bladeR:0.8, petR:1.06},   // 변이-별무늬-그린흰
   leaf_mat49: {sxz:1.19, rx:0.2, ry:-1, rz:0.35, ox:0.1, oy:0.06, oz:0.01, bladeR:0.82, trimR:0.78, petR:0.25},   // 변이-차콜-다크그린
   leaf_mat52: {sxz:1.21, rx:0.15, ry:-0.85, rz:0.35, ox:0.04, oy:0.1, bladeR:0.97, petR:1.08},   // 변이-하프문-그린크림
