@@ -17,7 +17,7 @@
 const BASE  = './assets/characters/3d';
 const MESH  = BASE + '/lq';
 /* idle·walking 원본은 메시를 통째로 다시 담고 있어 14MB씩이라
-   tools/strip_anim_glb.py 로 클립만 뽑아 70KB/35KB로 줄인 파생본을 쓴다.
+   tools/char/strip_anim_glb.py 로 클립만 뽑아 70KB/35KB로 줄인 파생본을 쓴다.
    (원본 assets/characters 는 캐릭 작업창 담당이라 읽기만 한다) */
 const CLIPS = './assets/derived/char_clips';
 
@@ -81,7 +81,7 @@ export async function createCharacter(scene, charId = 'jachwi_f', opt = {}) {
   const model = g.scene;
 
   /* ★ 크기는 건드리지 않는다.
-     GLB에 이미 실치수가 들어 있다 — 캐릭 작업창이 tools/rescale_char_glb.py 로
+     GLB에 이미 실치수가 들어 있다 — 캐릭 작업창이 tools/char/rescale_char_glb.py 로
      씬 최상단 래퍼에 스케일을 얹어 여캐 1.40m / 남캐 1.50m / 마스코트 0.375m 로 맞춰뒀다.
      (bbox 1.70m × 래퍼 0.8235 = 1.40m)
      여기서 또 정규화하면 그 위에 곱해져 1.36m 같은 값이 된다 — 실제로 그랬다.
@@ -122,7 +122,7 @@ export async function createCharacter(scene, charId = 'jachwi_f', opt = {}) {
     const c = await load(`${CLIPS}/char_${charId}_${file}.glb`)
       .then(x => x.animations && x.animations[0]).catch(() => null);
     if (c) { c.name = name; addClip(c); }
-    else console.warn('[볕] 클립 없음:', charId, name, '— tools/strip_anim_glb.js 를 돌렸나?');
+    else console.warn('[볕] 클립 없음:', charId, name, '— tools/char/strip_anim_glb.py 를 돌렸나?');
   }
 
   let cur = null;

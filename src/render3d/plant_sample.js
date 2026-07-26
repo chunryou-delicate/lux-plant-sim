@@ -35,9 +35,11 @@ async function part(name) {
 
 /* 밴드별 잎 표현 — 색조와 처짐. 자라는 게 아니라 '상태가 보이는' 정도. */
 export const BAND_LOOK = {
-  die:     { tint: 0x9a8f5a, droop: 0.55, scale: 0.85 },   // 누렇게 · 축 처짐
-  weak:    { tint: 0xa8a862, droop: 0.40, scale: 0.90 },
-  survive: { tint: 0xa9b878, droop: 0.22, scale: 0.95 },   // 옅은 초록 · 살짝 처짐
+  /* 키는 daily_light.js 의 BANDS 와 같아야 한다. 어긋나면 조용히 unknown(흰색·꼿꼿)이
+     되어 "빛이 부족한데 멀쩡해 보이는" 상태가 된다 — 티가 안 나는 종류의 버그다. */
+  critical: { tint: 0x9a8f5a, droop: 0.55, scale: 0.85 },  // 누렇게 · 축 처짐
+  poor:     { tint: 0xa8a862, droop: 0.40, scale: 0.90 },
+  stagnant: { tint: 0xa9b878, droop: 0.22, scale: 0.95 },  // 옅은 초록 · 살짝 처짐
   slow:    { tint: 0xbcd39a, droop: 0.10, scale: 1.00 },
   good:    { tint: 0xffffff, droop: 0.00, scale: 1.00 },   // 원래 색
   best:    { tint: 0xffffff, droop: -0.05, scale: 1.05 },  // 살짝 치켜듦

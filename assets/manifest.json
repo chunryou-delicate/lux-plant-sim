@@ -4688,7 +4688,9 @@
    "real_max_m": 1.2,
    "scale_to_real": 0.6,
    "glb_raw_max": 2.0,
-   "size_basis_cat": "집·모듈"
+   "size_basis_cat": "집·모듈",
+   "deprecated": true,
+   "deprecated_note": "코드 창틀 프리셋(data/window_presets.json·door_presets.json) 30종으로 대체됨. 런타임 참조 0곳. 보관용."
   },
   {
    "id": 200,
@@ -4707,7 +4709,9 @@
    "real_max_m": 1.6,
    "scale_to_real": 0.8,
    "glb_raw_max": 2.0,
-   "size_basis_cat": "집·모듈"
+   "size_basis_cat": "집·모듈",
+   "deprecated": true,
+   "deprecated_note": "코드 창틀 프리셋(data/window_presets.json·door_presets.json) 30종으로 대체됨. 런타임 참조 0곳. 보관용."
   },
   {
    "id": 201,
@@ -4726,7 +4730,9 @@
    "real_max_m": 2.0,
    "scale_to_real": 1.0,
    "glb_raw_max": 2.0,
-   "size_basis_cat": "집·모듈"
+   "size_basis_cat": "집·모듈",
+   "deprecated": true,
+   "deprecated_note": "코드 창틀 프리셋(data/window_presets.json·door_presets.json) 30종으로 대체됨. 런타임 참조 0곳. 보관용."
   },
   {
    "id": 202,
@@ -4829,7 +4835,9 @@
    "real_max_m": 2.2,
    "scale_to_real": 1.1,
    "glb_raw_max": 2.0,
-   "size_basis_cat": "집·모듈"
+   "size_basis_cat": "집·모듈",
+   "deprecated": true,
+   "deprecated_note": "코드 창틀 프리셋(data/window_presets.json·door_presets.json) 30종으로 대체됨. 런타임 참조 0곳. 보관용."
   },
   {
    "id": 209,

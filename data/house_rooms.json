@@ -109,7 +109,12 @@
         "n3": 0,
         "n6": 0,
         "dark": 9,
-        "winterPeak": 0.2
+        "winterPeak": 0.2,
+        "avg7Summer": 0.35,
+        "weekMin": 0.10,
+        "weekP50": 0.36,
+        "avg7Winter": 0.13,
+        "fenWeekPct": 0.0
       }
     },
     "oneroom": {
@@ -214,7 +219,12 @@
         "n3": 3,
         "n6": 0,
         "dark": 1,
-        "winterPeak": 1.77
+        "winterPeak": 1.77,
+        "avg7Summer": 3.07,
+        "weekMin": 0.84,
+        "weekP50": 3.15,
+        "avg7Winter": 1.14,
+        "fenWeekPct": 0.0
       }
     },
     "apartment": {
@@ -511,7 +521,12 @@
         "n3": 48,
         "n6": 1,
         "dark": 20,
-        "winterPeak": 2.24
+        "winterPeak": 2.24,
+        "avg7Summer": 3.87,
+        "weekMin": 1.06,
+        "weekP50": 3.97,
+        "avg7Winter": 1.44,
+        "fenWeekPct": 0.8
       }
     },
     "classroom": {
@@ -692,7 +707,12 @@
         "n3": 10,
         "n6": 0,
         "dark": 10,
-        "winterPeak": 2.04
+        "winterPeak": 2.04,
+        "avg7Summer": 3.53,
+        "weekMin": 0.97,
+        "weekP50": 3.63,
+        "avg7Winter": 1.31,
+        "fenWeekPct": 0.0
       }
     },
     "greenhouse": {
@@ -833,7 +853,12 @@
         "n3": 49,
         "n6": 32,
         "dark": 9,
-        "winterPeak": 4.84
+        "winterPeak": 4.84,
+        "avg7Summer": 8.36,
+        "weekMin": 2.29,
+        "weekP50": 8.58,
+        "avg7Winter": 3.11,
+        "fenWeekPct": 85.3
       }
     },
     "tworoom": {
@@ -971,7 +996,12 @@
         "n3": 3,
         "n6": 0,
         "dark": 2,
-        "winterPeak": 2.1
+        "winterPeak": 2.1,
+        "avg7Summer": 3.63,
+        "weekMin": 0.99,
+        "weekP50": 3.72,
+        "avg7Winter": 1.35,
+        "fenWeekPct": 0.0
       }
     }
   },
@@ -987,7 +1017,12 @@
       "n3": "DLI>=3 자리 수",
       "n6": "DLI>=6 자리 수(몬스테라 갈라짐)",
       "dark": "DLI<0.3 자리 수(무광 작물용)",
-      "winterPeak": "맑음·겨울 최고"
-    }
+      "winterPeak": "맑음·겨울 최고",
+      "avg7Summer": "★ 판정 기준값. 날씨를 굴린 7일 이동평균의 기댓값(여름). peak의 46%",
+      "avg7SummerMin": "가장 나빴던 주",
+      "avg7SummerMax": "가장 좋았던 주 — 갈라짐처럼 '한 번 넘으면 남는' 판정은 이 값이 결정한다",
+      "avg7Winter": "7일 이동평균 기댓값(겨울). peak의 23%"
+    },
+    "why_avg7": "peak는 1년에 며칠 있는 최고 조건이라 밸런싱 근거가 못 된다. 생장 창은 고사·갈라짐을 7일 이동평균으로 판정한다(하루 값으로 죽이면 운으로 죽는다). 날씨 확률은 src/engine/weather.js 가 단일 소스다."
   }
 }

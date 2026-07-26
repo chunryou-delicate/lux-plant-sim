@@ -62,19 +62,24 @@ export function dayLengthHours(season) {
      best_lo~hi  : 최적
      best_hi~max : 성장(최적보단 못함)
      max 초과    : 과광 — 잎 탐·황변 */
-export const BANDS = ['die', 'weak', 'survive', 'slow', 'best', 'good', 'over'];
+/* ★ 밴드 키는 '오늘 빛이 어느 수준인가'일 뿐, 생사 판정이 아니다.
+   고사는 체력(vigor) 모델이 7일 이동평균으로 정한다 — 하루 이 밴드라고 죽지 않는다.
+   그래서 die/weak/survive 를 critical/poor/stagnant 로 고쳤다(생장 창 요청).
+   임계값 필드명(th.die·th.survive·th.min)은 그대로다 — 그건 '이 값 이상이어야 그 상태'인
+   경계 이름이라 밴드 키와 별개고, 바꾸면 growth_tuning.json까지 번진다. */
+export const BANDS = ['critical', 'poor', 'stagnant', 'slow', 'best', 'good', 'over'];
 
 export const BAND_KO = {
-  die: '고사', weak: '쇠약', survive: '정체', slow: '느림',
+  critical: '고사', poor: '쇠약', stagnant: '정체', slow: '느림',
   best: '최적', good: '성장', over: '과광', unknown: '미정'
 };
 
 export function judgeDLI(dli, th) {
   if (!th) return { band: 'unknown', ko: '미정', fenestrating: false };
   let band;
-  if      (dli <  th.die)      band = 'die';
-  else if (dli <  th.survive)  band = 'weak';
-  else if (dli <  th.min)      band = 'survive';
+  if      (dli <  th.die)      band = 'critical';
+  else if (dli <  th.survive)  band = 'poor';
+  else if (dli <  th.min)      band = 'stagnant';
   else if (dli <  th.best_lo)  band = 'slow';
   else if (dli <= th.best_hi)  band = 'best';
   else if (dli <= th.max)      band = 'good';
