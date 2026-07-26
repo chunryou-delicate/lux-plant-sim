@@ -161,7 +161,7 @@ const DEF={
   // varieProb = 잎(생장점)마다 독립 판정. 그루 단위가 아니라 '중간에 발현'하는 방식이 맞음(확정).
   //   난이도별로 달라질 예정. 또 가지를 잘라 수경재배로 번식시킬 때, 모주가 무늬면
   //   그 삽수는 훨씬 높은 확률(80% 수준)을 물려받는 구조로 갈 것.
-  leafEmbed:0.13, leafTilt:0.30, leafClear:0.7, leafTiltVary:0, leafStemClear:3,   // leafTiltVary=0 → 잎 각도 고정(조절값 그대로), >0 이면 겹침 회피가 각도도 흔듦   // 잎자루를 줄기 속으로 박는 깊이 · 잎이 줄기 끝 방향을 따라가는 정도 · 잎이 차지하는 반경(겹침 회피)
+  tipBlendNodes:2, leafEmbed:0.13, leafTilt:0.30, leafClear:0.7, leafTiltVary:0, leafStemClear:3,   // leafTiltVary=0 → 잎 각도 고정(조절값 그대로), >0 이면 겹침 회피가 각도도 흔듦   // 잎자루를 줄기 속으로 박는 깊이 · 잎이 줄기 끝 방향을 따라가는 정도 · 잎이 차지하는 반경(겹침 회피)
   photoLean:0.10, stemStraight:0.22, stemCurve:0.11, stemDroop:0.03, avoidLean:0.85, avoidRange:0.30,   // 빛 쪽으로 기우는 세기(굴광성 슬라이더와 곱해짐) · 축 기본방향으로 돌아오는 힘(작을수록 더 휨)
   stemTrans:40, bumpGrow:20, bumpAt:0.2, bumpAzOff:0, stemOverlap:0.015,   // bumpAzOff=가지가 나는 방위를 혹 돌기 쪽으로 미세 회전
   tipTaper:0.8, nodeBulge:0.16, nodeWidth:0.045, bumpFit:1.02,
@@ -173,7 +173,7 @@ const DEF={
 };
 let P=Object.assign({}, DEF);
 // 저장본 버전. 생장 로직/기본값이 바뀌면 올림 → 옛 저장값이 새 기본값을 덮어쓰지 않게.
-const CFG_VER='2026-07-26-mat13';
+const CFG_VER='2026-07-26-blend2';
 
 // ===== 튜닝 파라미터(B: 에셋별 개별 조정) =====
 const ADJ_KEYS=[
@@ -1003,8 +1003,10 @@ function addStemTube(pts, rBase, rTip, nodeTs, color, tipColor){
     }
     return r;
   }, Math.max(12, pts.length*10), 10, tipColor? (t,out)=>{
-    // 끝 한 마디만 잎자루 색으로 물든다. 마디 경계가 있으면 거기서부터, 없으면 끝 20%부터.
-    const from=(nodeTs&&nodeTs.length)? nodeTs[nodeTs.length-1] : 0.8;
+    // 끝 몇 마디가 잎자루 색으로 물든다 — 잎 → 엽초 → 줄기가 이어져 보이게.
+    // 끝에서 이만큼의 마디가 물든다. 엽초가 첫 마디를 가려서 기본 2마디.
+    const nb=Math.max(1, Math.round(P.tipBlendNodes||2));
+    const from=(nodeTs&&nodeTs.length)? nodeTs[Math.max(0, nodeTs.length-nb)] : Math.max(0, 1-0.2*nb);
     const w=Math.max(0, Math.min(1, (t-from)/Math.max(1e-3, 1-from)));
     out.copy(color).lerp(tipColor, w*w*(3-2*w));
   } : null);
@@ -1859,6 +1861,7 @@ const SHAPE_GROUPS=[
     {k:'leafTilt',    t:'잎 벌어짐(0=딱 꽂힘)', min:0,  max:1.0,  step:0.02},
     {k:'leafTiltVary',t:'잎 각도 흔들림(0=고정)', min:0, max:1.5, step:0.05},
     {k:'leafEmbed',   t:'잎 박히는 깊이',    min:0,    max:0.3,  step:0.01},
+    {k:'tipBlendNodes', t:'줄기 물드는 마디 수', min:1, max:5, step:1},
   ]},
   {t:'⚙️ 혹·표면 (거의 확정)', open:false, items:[
     {k:'bumpAt',      t:'가지 나는 높이(혹)', min:0,  max:1,    step:0.01},
@@ -1901,6 +1904,7 @@ const HELP={
   // ── 잎·엽초 부착
   leafTilt:'잎자루가 줄기축에서 벌어지는 각. 0이면 줄기와 나란히 꽂힌다.',
   leafTiltVary:'겹침 회피가 잎 각도까지 흔들 수 있는 폭.\n0이면 조정값 그대로 고정된다 — 위치를 잡는 동안에는 0으로 둬야 시드를 바꿔도 각도가 안 틀어진다.',
+  tipBlendNodes:'줄기 끝이 잎자루 색으로 물드는 구간을 마디 수로 정한다.\n잎 → 엽초 → 줄기가 하나로 이어져 보이게 하는 장치인데, 엽초가 첫 마디를 가리기 때문에 기본은 2마디다.\n무늬종에만 걸린다 — 기본잎은 코드가 그루 색으로 칠하므로 물들일 색이 따로 없다.',
   leafEmbed:'잎자루 끝을 줄기 속으로 박는 깊이. 얕으면 틈이 보이고, 깊으면 잎이 줄기에 파묻힌다.',
   // ── 혹·표면
   bumpAt:'혹에서 가지가 나는 높이.',
