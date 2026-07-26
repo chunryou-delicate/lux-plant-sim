@@ -173,7 +173,7 @@ const DEF={
 };
 let P=Object.assign({}, DEF);
 // 저장본 버전. 생장 로직/기본값이 바뀌면 올림 → 옛 저장값이 새 기본값을 덮어쓰지 않게.
-const CFG_VER='2026-07-26-petcolor3';
+const CFG_VER='2026-07-26-albo1';
 
 // ===== 튜닝 파라미터(B: 에셋별 개별 조정) =====
 const ADJ_KEYS=[
@@ -232,7 +232,7 @@ const ADJ_TUNED={
   // 이 에셋은 잎자루가 잎몸에서 0.07 떨어져 있어 혼자 떠 보인다(에셋창에 수정 요청함).
   //   자루가 아치를 그려 잎몸 옆까지 올라오는 탓에 높이로 자르면 아랫동강만 없어진다.
   //   자루가 별개 메시(85정점)라 통째로 숨기는 쪽이 확실하다.
-  leaf_mid_albo1: {scale:0.75, sxz:0.75, sy:0.95, rx:0.35, rz:0.2, ox:0.03, oy:0.08, bladeR:0.14, trimR:0, trimTop:0.31, petHide:1},   // 변이-알보-전체흰중기
+  leaf_mid_albo1: {scale:0.75, sxz:0.75, sy:0.95, rx:0.35, rz:0.2, ox:0.03, oy:-0.09, oz:0.14, bladeR:0.14, trimTop:0.31, petHide:1},   // 변이-알보-전체흰중기
   leaf_mid_albo4: {sxz:0.65, sy:0.9, rx:0.55, ry:0.15, rz:0.2, ox:0.02, oy:0.07, oz:-0.04, bladeR:0.28, petR:0.25},   // 변이-알보-흰연두-쨍
   leaf_mid_albo6: {scale:1.1, sxz:0.55, sy:0.8, ry:1.45, ox:0.03, oy:0.1, oz:0.01, bladeR:0.76, trimR:0.44, petR:0.65, petTop:0.8},   // 변이-알보-크림민트-쨍
   leaf_mid_albo8: {sxz:0.63, ry:1.45, ox:0.03, oy:0.01, oz:0.01, bladeR:0.25, trimR:0.44, petR:0.4, petTop:0.8},   // 변이-라임-형광-쨍
