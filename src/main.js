@@ -114,7 +114,7 @@ function updateCam(){
   const { az,el,r,tx,ty,tz }=orbit;
   ctx.cam.position.set(tx+r*Math.cos(el)*Math.sin(az), ty+r*Math.sin(el), tz+r*Math.cos(el)*Math.cos(az));
   ctx.cam.lookAt(tx,ty,tz);
-  if(shells) updateShellVisibility(shells, ctx.cam, wallMode, builtRef&&builtRef.trim);
+  if(shells) updateShellVisibility(shells, ctx.cam, wallMode, builtRef&&builtRef.trims);
 }
 function resize(){
   const w=innerWidth, h=innerHeight;
