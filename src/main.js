@@ -6,7 +6,7 @@
 ============================================================ */
 import { createScene, updateLight } from './render3d/scene.js';
 import { initTextures, faintGrainTexture } from './render3d/textures.js';
-import { buildHouse, updateShellVisibility, RW, RD, RH } from './render3d/house.js';
+import { buildHouse, updateShellVisibility, WALL_MODES, WALL_MODE_KO, RW, RD, RH } from './render3d/house.js';
 // 가구는 이제 house.js가 방 데이터(roomDef.furniture)로 배치한다 — 옛 furniture.js(임시 박스)는 미사용.
 import { luxGrid, daylightAt, pointIllum, winFromHouse, skyEv } from './engine/daylight_lux.js';
 import { buildFloorHeatmap, updateFloorHeatmap } from './render3d/lighting_viz.js';
@@ -107,13 +107,14 @@ let plants=[];
 // ===== 카메라 궤도 =====
 let orbit={ az:0.72, el:0.55, r:15, tx:0, ty:2, tz:0 };   // r 기본 12→15 (방이 덜 크게)
 let autoRotate=false, ceilingMode=0;
+let wallMode='auto';   // 'auto' 시야자동 / 'low' 밑동만 / 'on' 벽있음
 
 function updateCam(){
   if(autoRotate) orbit.az+=0.003;
   const { az,el,r,tx,ty,tz }=orbit;
   ctx.cam.position.set(tx+r*Math.cos(el)*Math.sin(az), ty+r*Math.sin(el), tz+r*Math.cos(el)*Math.cos(az));
   ctx.cam.lookAt(tx,ty,tz);
-  if(shells) updateShellVisibility(shells, ctx.cam);   // 심즈2 컷어웨이
+  if(shells) updateShellVisibility(shells, ctx.cam, wallMode, builtRef&&builtRef.trim);
 }
 function resize(){
   const w=innerWidth, h=innerHeight;
@@ -225,6 +226,11 @@ function bindControls(){
     this.textContent=['천장광: 자동','천장광: 상시','천장광: 끄기'][ceilingMode];
     this.classList.toggle('on',ceilingMode!==2);
     applyLight();
+  };
+  document.getElementById('wallmode').onclick=function(){
+    wallMode = WALL_MODES[(WALL_MODES.indexOf(wallMode)+1) % WALL_MODES.length];
+    this.textContent = WALL_MODE_KO[wallMode];
+    this.classList.toggle('on', wallMode!=='on');
   };
   document.getElementById('heat').onclick=function(){
     showHeat=!showHeat; this.classList.toggle('on',showHeat);

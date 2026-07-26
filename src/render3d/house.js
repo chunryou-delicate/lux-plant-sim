@@ -244,6 +244,9 @@ export function buildHouse(GRAIN, roomDefIn, winPresets, doorPresets={}, finishe
   const occluders=[];                     // ★ 조도 차폐체(OBB) — 칸막이 조각 + 가구
   const room=new THREE.Group();
   const shells={};              // 컷어웨이 대상(벽·바닥·천장). 유리벽/프레임 제외.
+  /* 창틀·유리 — 벽에 붙어 있으므로 '벽내림'일 때 같이 사라져야 한다.
+     벽 그룹 안에 넣으면 컷어웨이로 같이 투명해져 창이 안 보이므로 따로 둔다. */
+  const trim=new THREE.Group(); 
   const glassMeshes=[];         // 하늘색 틴트 갱신 대상
   const glazedPanes=[];         // ★ 실내 반투과 유리(베란다 거실창) — 조도 감쇠용
   /* ★ 캐릭터 충돌 — 벽·칸막이 '조각'과 가구를 그대로 담는다.
@@ -476,7 +479,7 @@ export function buildHouse(GRAIN, roomDefIn, winPresets, doorPresets={}, finishe
       // 걸레받이(개구부 아닌 바닥 라인만)
       addSkirting(g, wall, uMin, uMax, openings);
     }
-    shells[wall]=g; room.add(g);
+    g.userData._h=CH; shells[wall]=g; room.add(g);
 
     // 개구부에 코드 프레임 + 유리 끼우기 (문/창 공통). 프리셋 룩 적용.
     for(const op of openings){
@@ -511,11 +514,11 @@ export function buildHouse(GRAIN, roomDefIn, winPresets, doorPresets={}, finishe
         if(spec.gloss) p.gloss=spec.gloss;
         const frame=buildWindowFrame(spec.w, spec.h, p);
         placeInWall(frame, wall, spec.cu, spec.cy);
-        room.add(frame);                            // 창틀은 항상 보이게
+        trim.add(frame);                            // 창틀 — 벽내림일 때만 같이 사라진다
         const gmat=glassMaterial(p.glass);          // type별 유리(none이면 null=뻥 뚫림)
         if(gmat){
           const gl=makeGlassPane(wall, spec.cu, spec.cy, spec.w-2*p.FT, spec.h-2*p.FT, gmat, p.shape);
-          glassMeshes.push(gl.mesh); room.add(gl.mesh);
+          glassMeshes.push(gl.mesh); trim.add(gl.mesh);
         }
         winWorld.push(new THREE.Vector3(...wallPlacement(wall, spec.cu, spec.cy).pos));
       }
@@ -654,7 +657,7 @@ export function buildHouse(GRAIN, roomDefIn, winPresets, doorPresets={}, finishe
     g.userData={ normal:pt.axis==='x'?[1,0,0]:[0,0,1],
                  center:pt.axis==='x'?[pt.at,CH/2,0]:[0,CH/2,pt.at],
                  partition:true, plane:{ axis:pt.axis, at:pt.at } };   // ★ 컷어웨이용
-    shells['part_'+(pt.id||shellPartIdx++)]=g; room.add(g);
+    g.userData._h=CH; shells['part_'+(pt.id||shellPartIdx++)]=g; room.add(g);
   }
 
   // ---------- 가구 배치 (roomDef.furniture) ----------
@@ -746,7 +749,7 @@ export function buildHouse(GRAIN, roomDefIn, winPresets, doorPresets={}, finishe
       g.userData={ normal: ax==='x'?[1,0,0]:[0,0,1],
                    center: ax==='x'?[at,CH/2,c]:[c,CH/2,at],
                    partition:true, plane:{ axis:ax, at } };
-      shells['cut_'+(ci++)]=g; room.add(g);
+      g.userData._h=CH; shells['cut_'+(ci++)]=g; room.add(g);
     };
     for(const c of cutouts){
       if(c.x0 > -CW/2+1e-6) face('x', c.x0, c.z0, c.z1);
@@ -810,7 +813,9 @@ export function buildHouse(GRAIN, roomDefIn, winPresets, doorPresets={}, finishe
     }
   }
 
-  return { room, shells, windows:winWorld, glassMeshes, winPos, size:{ w:CW, d:CD, h:CH },
+  room.add(trim);
+
+  return { room, shells, trim, windows:winWorld, glassMeshes, winPos, size:{ w:CW, d:CD, h:CH },
            furniture:furnGroup, lightRigs, plantSlots, occluders, colliders, doorways, luxWins, glazedPanes, facing };
 }
 
@@ -874,10 +879,47 @@ function addSkirting(g, wall, uMin, uMax, openings){
    컷어웨이(심즈2): 카메라가 가리는 면만 투명화. 그림자는 유지.
    room.js와 동일 규약. 유리벽/창프레임은 shells에 없으므로 안 가림.
 ============================================================ */
-export function updateShellVisibility(shells, cam){
+/* 벽 표시 모드
+     'on'   벽있음      — 전부 그대로. 도면처럼 보고 싶을 때
+     'low'  벽내림      — 밑동 10cm만 남긴다. 위에서 내려다보며 배치할 때
+     'auto' 시야자동내림 — 카메라를 가리는 벽만 사라진다(기본)
+   trim = 창틀·유리. 'low'에서는 같이 감춘다(벽이 없는데 창만 떠 있으면 이상하다). */
+function showShell(sh){
+  sh.visible=true;
+  sh.traverse(o=>{ if(!o.isMesh||!o.material) return;
+    const set=mm=>{ mm.opacity=1; mm.depthWrite=true; mm.transparent=false; mm.needsUpdate=true; };
+    Array.isArray(o.material)?o.material.forEach(set):set(o.material);
+  });
+}
+export const WALL_MODES = ['auto','low','on'];
+export const WALL_MODE_KO = { auto:'벽: 시야자동', low:'벽: 내림', on:'벽: 있음' };
+const LOW_H = 0.10;                       // 남길 밑동 높이 [m]
+
+export function updateShellVisibility(shells, cam, mode='auto', trim=null){
   const cp=cam.position;
+  if(trim) trim.visible = (mode!=='low');
   for(const key in shells){
     const sh=shells[key]; const { normal, center, plane }=sh.userData;
+
+    /* ── 벽내림 ── 바닥은 그대로, 천장은 감추고, 벽은 밑동만 남긴다.
+       벽 조각은 바닥(y=0)에서 올라오므로 그룹을 y로 눌러주면 밑동이 된다. */
+    if(mode==='low' || sh.userData._lowH!=null){
+      const wantLow = (mode==='low') && key!=='floor';
+      if(sh.userData._lowH !== wantLow){
+        sh.userData._lowH = wantLow;
+        if(key==='ceiling'){ sh.visible = !wantLow; }
+        else sh.scale.y = wantLow ? LOW_H/ (sh.userData._h || 2.6) : 1;
+      }
+      if(mode==='low'){ if(sh.userData._hidden){ showShell(sh); sh.userData._hidden=false; } continue; }
+    }
+    if(mode==='on'){
+      /* 벽있음 — 벽은 전부 제 높이로. 다만 천장은 덮으면 안이 아예 안 보이므로 뺀다.
+         (닫힌 상자를 보고 싶은 게 아니라 '벽이 안 사라지는 상태'를 보고 싶은 것) */
+      if(sh.userData._hidden){ showShell(sh); sh.userData._hidden=false; }
+      sh.visible = (key!=='ceiling');
+      continue;
+    }
+
     let hide;
     if(plane){
       /* ★ 내벽(칸막이)·도려낸 자리 벽 — 카메라와 방 가운데 사이를 막고 있으면 숨긴다.
