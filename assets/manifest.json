@@ -8,7 +8,7 @@
   "게임로드": "Three.js (loader_glb.html, 직교 4방위)"
  },
  "summary": {
-  "total": 378,
+  "total": 396,
   "glb_done": 61
  },
  "items": [
@@ -7370,6 +7370,739 @@
    "is_glb": false,
    "status": "ok",
    "path": "textures/stem_surface_tile.png"
+  },
+  {
+   "id": 398,
+   "file": "seed_dicot.png",
+   "path": "crops/thumbs/seed_dicot.png",
+   "is_glb": false,
+   "glb_matched": "seed_dicot.glb",
+   "name_ko": "씨앗-쌍떡잎",
+   "category": "작물·공용",
+   "kind": "seed",
+   "note": "쌍떡잎용 공용 씨앗(콩류 베이지). 전 작물 공용 — 작물별로 만들지 않음.",
+   "size_m": {
+    "w": 0.0084,
+    "h": 0.0064,
+    "d": 0.006
+   },
+   "status": "glb완료",
+   "source": "procedural",
+   "type": "crop",
+   "scale_to_real": 1.0,
+   "real_max_m": 0.008
+  },
+  {
+   "id": 399,
+   "file": "seed_dicot.glb",
+   "path": "crops/seed_dicot.glb",
+   "is_glb": true,
+   "glb_matched": null,
+   "source_2d": "seed_dicot.png",
+   "name_ko": "씨앗-쌍떡잎",
+   "category": "작물·공용",
+   "kind": "seed",
+   "note": "쌍떡잎용 공용 씨앗(콩류 베이지). 전 작물 공용 — 작물별로 만들지 않음.",
+   "size_m": {
+    "w": 0.0084,
+    "h": 0.0064,
+    "d": 0.006
+   },
+   "status": "glb완료",
+   "source": "procedural",
+   "type": "crop",
+   "scale_to_real": 1.0,
+   "real_max_m": 0.008
+  },
+  {
+   "id": 400,
+   "file": "seed_monocot.png",
+   "path": "crops/thumbs/seed_monocot.png",
+   "is_glb": false,
+   "glb_matched": "seed_monocot.glb",
+   "name_ko": "씨앗-외떡잎",
+   "category": "작물·공용",
+   "kind": "seed",
+   "note": "외떡잎용 공용 씨앗(곡물 밀색). 전 작물 공용.",
+   "size_m": {
+    "w": 0.0044,
+    "h": 0.0036,
+    "d": 0.0096
+   },
+   "status": "glb완료",
+   "source": "procedural",
+   "type": "crop",
+   "scale_to_real": 1.0,
+   "real_max_m": 0.01
+  },
+  {
+   "id": 401,
+   "file": "seed_monocot.glb",
+   "path": "crops/seed_monocot.glb",
+   "is_glb": true,
+   "glb_matched": null,
+   "source_2d": "seed_monocot.png",
+   "name_ko": "씨앗-외떡잎",
+   "category": "작물·공용",
+   "kind": "seed",
+   "note": "외떡잎용 공용 씨앗(곡물 밀색). 전 작물 공용.",
+   "size_m": {
+    "w": 0.0044,
+    "h": 0.0036,
+    "d": 0.0096
+   },
+   "status": "glb완료",
+   "source": "procedural",
+   "type": "crop",
+   "scale_to_real": 1.0,
+   "real_max_m": 0.01
+  },
+  {
+   "id": 402,
+   "file": "sprout_dicot.png",
+   "path": "crops/thumbs/sprout_dicot.png",
+   "is_glb": false,
+   "glb_matched": "sprout_dicot.glb",
+   "name_ko": "새순-쌍떡잎",
+   "category": "작물·공용",
+   "kind": "sprout",
+   "note": "떡잎 2장 새순. 전 작물 공용 — 작물별 차이는 소형 단계부터.",
+   "size_m": {
+    "w": 0.031,
+    "h": 0.0337,
+    "d": 0.011
+   },
+   "status": "glb완료",
+   "source": "procedural",
+   "type": "crop",
+   "scale_to_real": 1.0,
+   "real_max_m": 0.034
+  },
+  {
+   "id": 403,
+   "file": "sprout_dicot.glb",
+   "path": "crops/sprout_dicot.glb",
+   "is_glb": true,
+   "glb_matched": null,
+   "source_2d": "sprout_dicot.png",
+   "name_ko": "새순-쌍떡잎",
+   "category": "작물·공용",
+   "kind": "sprout",
+   "note": "떡잎 2장 새순. 전 작물 공용 — 작물별 차이는 소형 단계부터.",
+   "size_m": {
+    "w": 0.031,
+    "h": 0.0337,
+    "d": 0.011
+   },
+   "status": "glb완료",
+   "source": "procedural",
+   "type": "crop",
+   "scale_to_real": 1.0,
+   "real_max_m": 0.034
+  },
+  {
+   "id": 404,
+   "file": "sprout_monocot.png",
+   "path": "crops/thumbs/sprout_monocot.png",
+   "is_glb": false,
+   "glb_matched": "sprout_monocot.glb",
+   "name_ko": "새순-외떡잎",
+   "category": "작물·공용",
+   "kind": "sprout",
+   "note": "외떡잎 새순(가늘고 곧은 잎 1장). 전 작물 공용.",
+   "size_m": {
+    "w": 0.0036,
+    "h": 0.0343,
+    "d": 0.0056
+   },
+   "status": "glb완료",
+   "source": "procedural",
+   "type": "crop",
+   "scale_to_real": 1.0,
+   "real_max_m": 0.034
+  },
+  {
+   "id": 405,
+   "file": "sprout_monocot.glb",
+   "path": "crops/sprout_monocot.glb",
+   "is_glb": true,
+   "glb_matched": null,
+   "source_2d": "sprout_monocot.png",
+   "name_ko": "새순-외떡잎",
+   "category": "작물·공용",
+   "kind": "sprout",
+   "note": "외떡잎 새순(가늘고 곧은 잎 1장). 전 작물 공용.",
+   "size_m": {
+    "w": 0.0036,
+    "h": 0.0343,
+    "d": 0.0056
+   },
+   "status": "glb완료",
+   "source": "procedural",
+   "type": "crop",
+   "scale_to_real": 1.0,
+   "real_max_m": 0.034
+  },
+  {
+   "id": 406,
+   "file": "beansprout_s.png",
+   "path": "crops/thumbs/beansprout_s.png",
+   "is_glb": false,
+   "glb_matched": "beansprout_s.glb",
+   "name_ko": "콩나물-소",
+   "category": "작물·콩나물",
+   "kind": "crop_body",
+   "crop": "beansprout",
+   "stage": "소",
+   "light": "무광(어두울수록 좋음)",
+   "note": "콩나물 소단계. 크림빛 줄기+연노랑 머리. 품질(초록화)은 3D 별도 없이 머리 색시프트로 처리.",
+   "size_m": {
+    "w": 0.0114,
+    "h": 0.0494,
+    "d": 0.0086
+   },
+   "status": "glb완료",
+   "source": "procedural",
+   "type": "crop",
+   "scale_to_real": 1.0,
+   "real_max_m": 0.049
+  },
+  {
+   "id": 407,
+   "file": "beansprout_s.glb",
+   "path": "crops/beansprout_s.glb",
+   "is_glb": true,
+   "glb_matched": null,
+   "source_2d": "beansprout_s.png",
+   "name_ko": "콩나물-소",
+   "category": "작물·콩나물",
+   "kind": "crop_body",
+   "crop": "beansprout",
+   "stage": "소",
+   "light": "무광(어두울수록 좋음)",
+   "note": "콩나물 소단계. 크림빛 줄기+연노랑 머리. 품질(초록화)은 3D 별도 없이 머리 색시프트로 처리.",
+   "size_m": {
+    "w": 0.0114,
+    "h": 0.0494,
+    "d": 0.0086
+   },
+   "status": "glb완료",
+   "source": "procedural",
+   "type": "crop",
+   "scale_to_real": 1.0,
+   "real_max_m": 0.049
+  },
+  {
+   "id": 408,
+   "file": "beansprout_m.png",
+   "path": "crops/thumbs/beansprout_m.png",
+   "is_glb": false,
+   "glb_matched": "beansprout_m.glb",
+   "name_ko": "콩나물-중",
+   "category": "작물·콩나물",
+   "kind": "crop_body",
+   "crop": "beansprout",
+   "stage": "중",
+   "light": "무광(어두울수록 좋음)",
+   "note": "콩나물 중단계. 크림빛 줄기+연노랑 머리. 품질(초록화)은 3D 별도 없이 머리 색시프트로 처리.",
+   "size_m": {
+    "w": 0.0225,
+    "h": 0.0856,
+    "d": 0.0107
+   },
+   "status": "glb완료",
+   "source": "procedural",
+   "type": "crop",
+   "scale_to_real": 1.0,
+   "real_max_m": 0.086
+  },
+  {
+   "id": 409,
+   "file": "beansprout_m.glb",
+   "path": "crops/beansprout_m.glb",
+   "is_glb": true,
+   "glb_matched": null,
+   "source_2d": "beansprout_m.png",
+   "name_ko": "콩나물-중",
+   "category": "작물·콩나물",
+   "kind": "crop_body",
+   "crop": "beansprout",
+   "stage": "중",
+   "light": "무광(어두울수록 좋음)",
+   "note": "콩나물 중단계. 크림빛 줄기+연노랑 머리. 품질(초록화)은 3D 별도 없이 머리 색시프트로 처리.",
+   "size_m": {
+    "w": 0.0225,
+    "h": 0.0856,
+    "d": 0.0107
+   },
+   "status": "glb완료",
+   "source": "procedural",
+   "type": "crop",
+   "scale_to_real": 1.0,
+   "real_max_m": 0.086
+  },
+  {
+   "id": 410,
+   "file": "beansprout_l.png",
+   "path": "crops/thumbs/beansprout_l.png",
+   "is_glb": false,
+   "glb_matched": "beansprout_l.glb",
+   "name_ko": "콩나물-대",
+   "category": "작물·콩나물",
+   "kind": "crop_body",
+   "crop": "beansprout",
+   "stage": "대",
+   "light": "무광(어두울수록 좋음)",
+   "note": "콩나물 대단계. 크림빛 줄기+연노랑 머리, 머리 벌어짐. 품질(초록화)은 3D 별도 없이 머리 색시프트로 처리.",
+   "size_m": {
+    "w": 0.0417,
+    "h": 0.1281,
+    "d": 0.018
+   },
+   "status": "glb완료",
+   "source": "procedural",
+   "type": "crop",
+   "scale_to_real": 1.0,
+   "real_max_m": 0.128
+  },
+  {
+   "id": 411,
+   "file": "beansprout_l.glb",
+   "path": "crops/beansprout_l.glb",
+   "is_glb": true,
+   "glb_matched": null,
+   "source_2d": "beansprout_l.png",
+   "name_ko": "콩나물-대",
+   "category": "작물·콩나물",
+   "kind": "crop_body",
+   "crop": "beansprout",
+   "stage": "대",
+   "light": "무광(어두울수록 좋음)",
+   "note": "콩나물 대단계. 크림빛 줄기+연노랑 머리, 머리 벌어짐. 품질(초록화)은 3D 별도 없이 머리 색시프트로 처리.",
+   "size_m": {
+    "w": 0.0417,
+    "h": 0.1281,
+    "d": 0.018
+   },
+   "status": "glb완료",
+   "source": "procedural",
+   "type": "crop",
+   "scale_to_real": 1.0,
+   "real_max_m": 0.128
+  },
+  {
+   "id": 412,
+   "file": "container_siru_open.png",
+   "path": "crops/thumbs/container_siru_open.png",
+   "is_glb": false,
+   "glb_matched": "container_siru_open.glb",
+   "name_ko": "용기-콩나물시루-열림",
+   "lid_state": "open",
+   "category": "작물·용기",
+   "kind": "siru",
+   "crop": "beansprout",
+   "mount": "floor",
+   "slots": [
+    {
+     "x": 0.0,
+     "y": 0.016,
+     "z": 0.0
+    },
+    {
+     "x": 0.045,
+     "y": 0.016,
+     "z": 0.0
+    },
+    {
+     "x": 0.0139,
+     "y": 0.016,
+     "z": 0.0428
+    },
+    {
+     "x": -0.0364,
+     "y": 0.016,
+     "z": 0.0265
+    },
+    {
+     "x": -0.0364,
+     "y": 0.016,
+     "z": -0.0265
+    },
+    {
+     "x": 0.0139,
+     "y": 0.016,
+     "z": -0.0428
+    },
+    {
+     "x": 0.0783,
+     "y": 0.016,
+     "z": 0.0242
+    },
+    {
+     "x": 0.0444,
+     "y": 0.016,
+     "z": 0.0689
+    },
+    {
+     "x": -0.0103,
+     "y": 0.016,
+     "z": 0.0814
+    },
+    {
+     "x": -0.0602,
+     "y": 0.016,
+     "z": 0.0557
+    },
+    {
+     "x": -0.0819,
+     "y": 0.016,
+     "z": 0.004
+    },
+    {
+     "x": -0.0653,
+     "y": 0.016,
+     "z": -0.0496
+    },
+    {
+     "x": -0.0182,
+     "y": 0.016,
+     "z": -0.08
+    },
+    {
+     "x": 0.0375,
+     "y": 0.016,
+     "z": -0.0729
+    },
+    {
+     "x": 0.0756,
+     "y": 0.016,
+     "z": -0.0318
+    }
+   ],
+   "slot_count": 15,
+   "blocks_light": true,
+   "note": "콩나물 시루. 뚜껑 닫으면 차광(DLI 0). 슬롯 15칸(중앙1+안5+바깥9), 관엽 선반과 동일 규격.",
+   "size_m": {
+    "w": 0.24,
+    "h": 0.109,
+    "d": 0.24
+   },
+   "status": "glb완료",
+   "source": "procedural",
+   "type": "crop",
+   "scale_to_real": 1.0,
+   "real_max_m": 0.24
+  },
+  {
+   "id": 413,
+   "file": "container_siru_open.glb",
+   "path": "crops/container_siru_open.glb",
+   "is_glb": true,
+   "glb_matched": null,
+   "source_2d": "container_siru_open.png",
+   "name_ko": "용기-콩나물시루-열림",
+   "lid_state": "open",
+   "category": "작물·용기",
+   "kind": "siru",
+   "crop": "beansprout",
+   "mount": "floor",
+   "slots": [
+    {
+     "x": 0.0,
+     "y": 0.016,
+     "z": 0.0
+    },
+    {
+     "x": 0.045,
+     "y": 0.016,
+     "z": 0.0
+    },
+    {
+     "x": 0.0139,
+     "y": 0.016,
+     "z": 0.0428
+    },
+    {
+     "x": -0.0364,
+     "y": 0.016,
+     "z": 0.0265
+    },
+    {
+     "x": -0.0364,
+     "y": 0.016,
+     "z": -0.0265
+    },
+    {
+     "x": 0.0139,
+     "y": 0.016,
+     "z": -0.0428
+    },
+    {
+     "x": 0.0783,
+     "y": 0.016,
+     "z": 0.0242
+    },
+    {
+     "x": 0.0444,
+     "y": 0.016,
+     "z": 0.0689
+    },
+    {
+     "x": -0.0103,
+     "y": 0.016,
+     "z": 0.0814
+    },
+    {
+     "x": -0.0602,
+     "y": 0.016,
+     "z": 0.0557
+    },
+    {
+     "x": -0.0819,
+     "y": 0.016,
+     "z": 0.004
+    },
+    {
+     "x": -0.0653,
+     "y": 0.016,
+     "z": -0.0496
+    },
+    {
+     "x": -0.0182,
+     "y": 0.016,
+     "z": -0.08
+    },
+    {
+     "x": 0.0375,
+     "y": 0.016,
+     "z": -0.0729
+    },
+    {
+     "x": 0.0756,
+     "y": 0.016,
+     "z": -0.0318
+    }
+   ],
+   "slot_count": 15,
+   "blocks_light": true,
+   "note": "콩나물 시루. 뚜껑 닫으면 차광(DLI 0). 슬롯 15칸(중앙1+안5+바깥9), 관엽 선반과 동일 규격.",
+   "size_m": {
+    "w": 0.24,
+    "h": 0.109,
+    "d": 0.24
+   },
+   "status": "glb완료",
+   "source": "procedural",
+   "type": "crop",
+   "scale_to_real": 1.0,
+   "real_max_m": 0.24
+  },
+  {
+   "id": 414,
+   "file": "container_siru_closed.png",
+   "path": "crops/thumbs/container_siru_closed.png",
+   "is_glb": false,
+   "glb_matched": "container_siru_closed.glb",
+   "name_ko": "용기-콩나물시루-닫힘",
+   "lid_state": "closed",
+   "category": "작물·용기",
+   "kind": "siru",
+   "crop": "beansprout",
+   "mount": "floor",
+   "slots": [
+    {
+     "x": 0.0,
+     "y": 0.016,
+     "z": 0.0
+    },
+    {
+     "x": 0.045,
+     "y": 0.016,
+     "z": 0.0
+    },
+    {
+     "x": 0.0139,
+     "y": 0.016,
+     "z": 0.0428
+    },
+    {
+     "x": -0.0364,
+     "y": 0.016,
+     "z": 0.0265
+    },
+    {
+     "x": -0.0364,
+     "y": 0.016,
+     "z": -0.0265
+    },
+    {
+     "x": 0.0139,
+     "y": 0.016,
+     "z": -0.0428
+    },
+    {
+     "x": 0.0783,
+     "y": 0.016,
+     "z": 0.0242
+    },
+    {
+     "x": 0.0444,
+     "y": 0.016,
+     "z": 0.0689
+    },
+    {
+     "x": -0.0103,
+     "y": 0.016,
+     "z": 0.0814
+    },
+    {
+     "x": -0.0602,
+     "y": 0.016,
+     "z": 0.0557
+    },
+    {
+     "x": -0.0819,
+     "y": 0.016,
+     "z": 0.004
+    },
+    {
+     "x": -0.0653,
+     "y": 0.016,
+     "z": -0.0496
+    },
+    {
+     "x": -0.0182,
+     "y": 0.016,
+     "z": -0.08
+    },
+    {
+     "x": 0.0375,
+     "y": 0.016,
+     "z": -0.0729
+    },
+    {
+     "x": 0.0756,
+     "y": 0.016,
+     "z": -0.0318
+    }
+   ],
+   "slot_count": 15,
+   "blocks_light": true,
+   "note": "콩나물 시루. 뚜껑 닫으면 차광(DLI 0). 슬롯 15칸(중앙1+안5+바깥9), 관엽 선반과 동일 규격.",
+   "size_m": {
+    "w": 0.2424,
+    "h": 0.163,
+    "d": 0.2424
+   },
+   "status": "glb완료",
+   "source": "procedural",
+   "type": "crop",
+   "scale_to_real": 1.0,
+   "real_max_m": 0.242
+  },
+  {
+   "id": 415,
+   "file": "container_siru_closed.glb",
+   "path": "crops/container_siru_closed.glb",
+   "is_glb": true,
+   "glb_matched": null,
+   "source_2d": "container_siru_closed.png",
+   "name_ko": "용기-콩나물시루-닫힘",
+   "lid_state": "closed",
+   "category": "작물·용기",
+   "kind": "siru",
+   "crop": "beansprout",
+   "mount": "floor",
+   "slots": [
+    {
+     "x": 0.0,
+     "y": 0.016,
+     "z": 0.0
+    },
+    {
+     "x": 0.045,
+     "y": 0.016,
+     "z": 0.0
+    },
+    {
+     "x": 0.0139,
+     "y": 0.016,
+     "z": 0.0428
+    },
+    {
+     "x": -0.0364,
+     "y": 0.016,
+     "z": 0.0265
+    },
+    {
+     "x": -0.0364,
+     "y": 0.016,
+     "z": -0.0265
+    },
+    {
+     "x": 0.0139,
+     "y": 0.016,
+     "z": -0.0428
+    },
+    {
+     "x": 0.0783,
+     "y": 0.016,
+     "z": 0.0242
+    },
+    {
+     "x": 0.0444,
+     "y": 0.016,
+     "z": 0.0689
+    },
+    {
+     "x": -0.0103,
+     "y": 0.016,
+     "z": 0.0814
+    },
+    {
+     "x": -0.0602,
+     "y": 0.016,
+     "z": 0.0557
+    },
+    {
+     "x": -0.0819,
+     "y": 0.016,
+     "z": 0.004
+    },
+    {
+     "x": -0.0653,
+     "y": 0.016,
+     "z": -0.0496
+    },
+    {
+     "x": -0.0182,
+     "y": 0.016,
+     "z": -0.08
+    },
+    {
+     "x": 0.0375,
+     "y": 0.016,
+     "z": -0.0729
+    },
+    {
+     "x": 0.0756,
+     "y": 0.016,
+     "z": -0.0318
+    }
+   ],
+   "slot_count": 15,
+   "blocks_light": true,
+   "note": "콩나물 시루. 뚜껑 닫으면 차광(DLI 0). 슬롯 15칸(중앙1+안5+바깥9), 관엽 선반과 동일 규격.",
+   "size_m": {
+    "w": 0.2424,
+    "h": 0.163,
+    "d": 0.2424
+   },
+   "status": "glb완료",
+   "source": "procedural",
+   "type": "crop",
+   "scale_to_real": 1.0,
+   "real_max_m": 0.242
   }
  ],
  "_scale_convention": {
