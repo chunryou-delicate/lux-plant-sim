@@ -59,6 +59,8 @@
   https://raw.githubusercontent.com/chunryou-delicate/lux-plant-sim/main/docs/food_economy.md
 - **연구자 트랙**(대학원생·논문=재현성·U자 곡선·전기 면제) — researcher_track.md
   https://raw.githubusercontent.com/chunryou-delicate/lux-plant-sim/main/docs/researcher_track.md
+- **시간 모드 3층**(배속·실시간 30분·1:1 사육 / 켜둔 시간만 감) — time_modes.md
+  https://raw.githubusercontent.com/chunryou-delicate/lux-plant-sim/main/docs/time_modes.md
 
 ### ★ 몬스테라 생장 로직 (plant_grow.html 근거)
 - **성장 상태전이 정밀 스펙**(분홍→초록/하늘, petiole 분화, 잎 병렬성숙) — 몬스테라_생장로직_정밀.md
