@@ -140,7 +140,7 @@ let FRUSTUM=2.2;
 
 // ===== 시드 난수(개체성): 같은 시드→같은 그루. mulberry32 =====
 function mulberry32(a){ return function(){ a|=0; a=a+0x6D2B79F5|0; let t=Math.imul(a^a>>>15,1|a); t=t+Math.imul(t^t>>>7,61|t)^t; return((t^t>>>14)>>>0)/4294967296; }; }
-let SEED=94863, rng=mulberry32(SEED);
+let SEED=92158, rng=mulberry32(SEED);
 const GOLDEN=Math.PI*(3-Math.sqrt(5));   // 137.5° 황금각(자연스러운 잎차례)
 
 // ===== 튜닝 파라미터(A: 전체 규칙) — 슬라이더로 실시간 조절 =====
@@ -161,8 +161,8 @@ const DEF={
   // varieProb = 잎(생장점)마다 독립 판정. 그루 단위가 아니라 '중간에 발현'하는 방식이 맞음(확정).
   //   난이도별로 달라질 예정. 또 가지를 잘라 수경재배로 번식시킬 때, 모주가 무늬면
   //   그 삽수는 훨씬 높은 확률(80% 수준)을 물려받는 구조로 갈 것.
-  tipBlendNodes:2, leafEmbed:0.13, leafTilt:0.30, leafClear:0.7, leafTiltVary:0, leafStemClear:3,   // leafTiltVary=0 → 잎 각도 고정(조절값 그대로), >0 이면 겹침 회피가 각도도 흔듦   // 잎자루를 줄기 속으로 박는 깊이 · 잎이 줄기 끝 방향을 따라가는 정도 · 잎이 차지하는 반경(겹침 회피)
-  photoLean:0.10, stemStraight:0.22, stemCurve:0.11, stemDroop:0.03, avoidLean:0.85, avoidRange:0.30,   // 빛 쪽으로 기우는 세기(굴광성 슬라이더와 곱해짐) · 축 기본방향으로 돌아오는 힘(작을수록 더 휨)
+  tipBlendNodes:2, leafEmbed:0.13, leafTilt:0.30, leafClear:0.7, leafTiltVary:0, leafStemClear:2.9,   // leafTiltVary=0 → 잎 각도 고정(조절값 그대로), >0 이면 겹침 회피가 각도도 흔듦   // 잎자루를 줄기 속으로 박는 깊이 · 잎이 줄기 끝 방향을 따라가는 정도 · 잎이 차지하는 반경(겹침 회피)
+  photoLean:0.10, stemStraight:0.22, stemCurve:0.11, stemDroop:0.03, avoidLean:0.95, avoidRange:0.30,   // 빛 쪽으로 기우는 세기(굴광성 슬라이더와 곱해짐) · 축 기본방향으로 돌아오는 힘(작을수록 더 휨)
   stemTrans:40, bumpGrow:20, bumpAt:0.2, bumpAzOff:0, stemOverlap:0.015,   // bumpAzOff=가지가 나는 방위를 혹 돌기 쪽으로 미세 회전
   tipTaper:0.8, nodeBulge:0.16, nodeWidth:0.045, bumpFit:1.02,
   sheathLen:0.22, sheathFit:1.12, sheathBot:1.309, sheathTop:0.575,   // 엽초: 길이(잎 크기 x 이 값) · 감싸는 굵기 · 아래/위 구멍 지름
@@ -173,7 +173,7 @@ const DEF={
 };
 let P=Object.assign({}, DEF);
 // 저장본 버전. 생장 로직/기본값이 바뀌면 올림 → 옛 저장값이 새 기본값을 덮어쓰지 않게.
-const CFG_VER='2026-07-26-pickall';
+const CFG_VER='2026-07-26-bake3';
 
 // ===== 튜닝 파라미터(B: 에셋별 개별 조정) =====
 const ADJ_KEYS=[
@@ -228,11 +228,8 @@ const ADJ_TUNED={
   stem_thick: {scale:0.85, ry:0.3, rz:-0.1, ox:-0.04},   // 줄기_후기_혹
   leaf_mid1: {scale:0.8, rx:0.25, ry:2.05, rz:-0.3, ox:0.05, oy:0.09},   // 기본-중간-잎1
   leaf_mid2: {scale:0.6, sxz:0.65, sy:1.25, rx:0.2, ry:2.5, rz:-0.45, ox:0.02, oy:0.13, oz:0.01},   // 기본-중간-잎2
-  // ── 변이 잎
+  // ── 중기 변이
   leaf_young_albo: {scale:0.5, sy:0.8, ry:-1.65, ox:0.03, oy:0.18, bladeR:0.71},   // 변이-어린-잎1(알보)
-  // 이 에셋은 잎자루가 잎몸에서 0.07 떨어져 있어 혼자 떠 보인다(에셋창에 수정 요청함).
-  //   자루가 아치를 그려 잎몸 옆까지 올라오는 탓에 높이로 자르면 아랫동강만 없어진다.
-  //   자루가 별개 메시(85정점)라 통째로 숨기는 쪽이 확실하다.
   leaf_mid_albo1: {scale:0.75, sxz:0.75, sy:0.95, rx:0.35, rz:0.2, ox:0.03, oy:-0.09, oz:0.14, bladeR:0.14, trimTop:0.31, petHide:1},   // 변이-알보-전체흰중기
   leaf_mid_albo4: {sxz:0.65, sy:0.9, rx:0.55, ry:0.15, rz:0.2, ox:0.02, oy:0.07, oz:-0.04, bladeR:0.28, petR:0.25},   // 변이-알보-흰연두-쨍
   leaf_mid_albo6: {scale:1.1, sxz:0.55, sy:0.8, ry:1.45, ox:0.03, oy:0.1, oz:0.01, bladeR:0.76, trimR:0.44, petR:0.65, petTop:0.8},   // 변이-알보-크림민트-쨍
@@ -246,15 +243,11 @@ const ADJ_TUNED={
   leaf_mid_albo22: {sxz:0.7, sy:0.9, ry:1.45, ox:0.08, oy:-0.13, oz:0.02, bladeR:0.62, trimR:0.52, trimTop:0.49, petR:0.25, petTop:0.8},   // 변이-스페클-민트흰점-쨍
   leaf_mid_albo27: {scale:0.95, sxz:1.1, ry:1.45, rz:0.05, ox:0.15, oy:-0.25, bladeR:0.2, trimR:0.54, trimTop:0.61, petR:0.25, petTop:0.8},   // 변이-실버-물방울-쨍
   leaf_mid_albo29: {sxz:0.6, ry:1.9, ox:0.01, oy:0.06, bladeR:0.08, trimTop:0.49, petR:0.3},   // 변이-하프문-크림민트
-  // ── 성숙 변이. 회전은 [붙는점→잎몸 방향 + 잎몸 법선]을 기준잎에 맞추는 값을 계산해 넣었다.
-  //    (잎자루 축으로 맞췄더니 자루가 짧은 잎에서 측정이 빗나가 잎몸이 옆으로 누웠다)
-  //    크기는 기준잎의 폭·두께·잎자루에 맞췄다. 오프셋은 기준잎 값 그대로.
+  // ── 성숙 변이
   leaf_mat1: {sxz:1.15, rx:0.25, ry:-0.7, rz:0.35, ox:0.03, oy:0.1, oz:0.04, bladeR:1.34, trimR:0.54, petR:0.95},   // 변이-핑크-로즈핑크
   leaf_mat4: {sxz:1.28, rx:0.3, ry:-0.9, rz:0.45, ox:0.04, oy:0.1, bladeR:0.8, petR:1.31},   // 변이-별무늬-페일그린
   leaf_mat7: {sxz:1.08, rx:0.25, ry:-0.95, rz:0.4, ox:0.04, oy:0.1, bladeR:0.84, petR:1.03},   // 변이-별무늬-핑크민트
-  // 갤럭시-틸골드는 자루가 짧고(28%) 잎몸이 가장 넓어(반폭 0.67), 기준잎에서 복사한
-  //   오프셋(ox .04 / oy .1)이 과했다. 축을 따라 당겨 붙이고 옆으로 밀던 값은 뺐다.
-  leaf_mat10: {sxz:0.82, rx:0.35, ry:-0.8, rz:0.5, oy:0.02, bladeR:0.57, petR:1.04},   // 변이-갤럭시-틸골드
+  leaf_mat10: {sxz:0.82, rx:0.35, ry:-0.8, rz:0.5, ox:-0.6, oy:0.02, bladeR:0.57, petR:1.04},   // 변이-갤럭시-틸골드
   leaf_mat13: {sxz:0.99, rx:0.45, ry:-1, rz:0.5, ox:0.05, oy:0.09, bladeR:0.81, petR:1.15},   // 변이-스페클-그린크림
   leaf_mat16: {sxz:1.26, rx:0.2, ry:-0.95, rz:0.4, ox:0.04, oy:0.15, bladeR:0.85, petR:1.4},   // 변이-오로레아-골드
   leaf_mat19: {sxz:1.09, rx:0.15, ry:-0.8, rz:0.3, ox:0.04, oy:0.1, bladeR:0.76, petR:0.93},   // 변이-갤럭시-다크틸
@@ -265,52 +258,50 @@ const ADJ_TUNED={
   leaf_mat34: {sxz:0.99, rx:0.2, ry:-1, rz:0.35, ox:0.04, oy:0.1, bladeR:0.81, petR:1.09},   // 변이-하프문-그린흰
   leaf_mat37: {sxz:1.34, rx:0.25, ry:-0.85, rz:0.45, ox:0.04, oy:0.1, bladeR:0.79, petR:0.99},   // 변이-모브-라벤더그레이
   leaf_mat40: {sxz:1.06, rx:0.25, ry:-0.95, rz:0.4, ox:0.04, oy:0.1, bladeR:0.81, petR:1.08},   // 변이-별무늬-그린옐로우
-  leaf_mat43: {scale:0.9, sxz:1.1, rx:0.3, ry:-0.9, rz:0.45, ox:0.1, oy:0.1, oz:-0.03, bladeR:0.85, trimR:0.82, petR:0.85},   // 변이-핑크-로즈
+  leaf_mat43: {scale:0.9, sxz:1.1, rx:0.3, ry:-1.3, rz:0.45, ox:0.08, oy:-0.01, oz:0.01, bladeR:0.85, trimR:0.56, petR:0.85},   // 변이-핑크-로즈
   leaf_mat46: {scale:1.2, sxz:0.7, rx:0.2, ry:-0.85, rz:0.4, ox:0.04, oy:0.14, oz:0.01, bladeR:0.8, petR:1.06},   // 변이-별무늬-그린흰
   leaf_mat49: {sxz:1.19, rx:0.2, ry:-1, rz:0.35, ox:0.1, oy:0.06, oz:0.01, bladeR:0.82, trimR:0.78, petR:0.25},   // 변이-차콜-다크그린
   leaf_mat52: {sxz:1.21, rx:0.15, ry:-0.85, rz:0.35, ox:0.04, oy:0.1, bladeR:0.97, petR:1.08},   // 변이-하프문-그린크림
   leaf_mat55: {sxz:1.34, rx:0.2, ry:-0.9, rz:0.35, ox:0.04, oy:0.1, bladeR:0.89, petR:1.41},   // 변이-알보-전체흰
-  // ── 성숙 변이 엽초. 시작값은 기준잎 것과 같고, 잎자루 방향은 자동으로 맞춰진다.
-  //    화면 보고 개별로 고치면 그 잎에만 걸린다.
-  sheath_mat1: {scale:1.45, sxz:1.3, sy:1.3, rx:-0.5, ry:-2.2, rz:-0.55, ox:0.46, oy:0.03, oz:0.1, len:0.205, fit:1.22, bot:1.1, top:0.75},   // 엽초·변이-핑크-로즈핑크
-  sheath_mat4: {scale:1.45, sxz:1.3, sy:1.3, rx:-0.5, ry:-2.2, rz:-0.55, ox:0.46, oy:0.03, oz:0.1, len:0.205, fit:1.22, bot:1.1, top:0.75},   // 엽초·변이-별무늬-페일그린
-  sheath_mat7: {scale:1.45, sxz:1.3, sy:1.3, rx:-0.5, ry:-2.2, rz:-0.55, ox:0.46, oy:0.03, oz:0.1, len:0.205, fit:1.22, bot:1.1, top:0.75},   // 엽초·변이-별무늬-핑크민트
-  sheath_mat10: {scale:1.45, sxz:1.3, sy:1.3, rx:-0.5, ry:-2.2, rz:-0.55, ox:0.46, oy:0.03, oz:0.1, len:0.205, fit:1.22, bot:1.1, top:0.75},   // 엽초·변이-갤럭시-틸골드
-  sheath_mat13: {scale:1.45, sxz:1.3, sy:1.3, rx:-0.5, ry:-2.2, rz:-0.55, ox:0.46, oy:0.03, oz:0.1, len:0.205, fit:1.22, bot:1.1, top:0.75},   // 엽초·변이-스페클-그린크림
-  sheath_mat16: {scale:1.45, sxz:1.3, sy:1.3, rx:-0.5, ry:-2.2, rz:-0.55, ox:0.46, oy:0.03, oz:0.1, len:0.205, fit:1.22, bot:1.1, top:0.75},   // 엽초·변이-오로레아-골드
-  sheath_mat19: {scale:1.45, sxz:1.3, sy:1.3, rx:-0.5, ry:-2.2, rz:-0.55, ox:0.46, oy:0.03, oz:0.1, len:0.205, fit:1.22, bot:1.1, top:0.75},   // 엽초·변이-갤럭시-다크틸
-  sheath_mat22: {scale:1.45, sxz:1.3, sy:1.3, rx:-0.5, ry:-2.2, rz:-0.55, ox:0.46, oy:0.03, oz:0.1, len:0.205, fit:1.22, bot:1.1, top:0.75},   // 엽초·변이-오로레아-그린옐로우
-  sheath_mat25: {scale:1.45, sxz:1.3, sy:1.3, rx:-0.5, ry:-2.2, rz:-0.55, ox:0.46, oy:0.03, oz:0.1, len:0.205, fit:1.22, bot:1.1, top:0.75},   // 엽초·변이-라임-레몬패치
-  sheath_mat28: {scale:1.45, sxz:1.3, sy:1.3, rx:-0.5, ry:-2.2, rz:-0.55, ox:0.46, oy:0.03, oz:0.1, len:0.205, fit:1.22, bot:1.1, top:0.75},   // 엽초·변이-네온-라임
-  sheath_mat31: {scale:1.45, sxz:1.3, sy:1.3, rx:-0.5, ry:-2.2, rz:-0.55, ox:0.46, oy:0.03, oz:0.1, len:0.205, fit:1.22, bot:1.1, top:0.75},   // 엽초·변이-제브라-그린흰
-  sheath_mat34: {scale:1.45, sxz:1.3, sy:1.3, rx:-0.5, ry:-2.2, rz:-0.55, ox:0.46, oy:0.03, oz:0.1, len:0.205, fit:1.22, bot:1.1, top:0.75},   // 엽초·변이-하프문-그린흰
-  sheath_mat37: {scale:1.45, sxz:1.3, sy:1.3, rx:-0.5, ry:-2.2, rz:-0.55, ox:0.46, oy:0.03, oz:0.1, len:0.205, fit:1.22, bot:1.1, top:0.75},   // 엽초·변이-모브-라벤더그레이
-  sheath_mat40: {scale:1.45, sxz:1.3, sy:1.3, rx:-0.5, ry:-2.2, rz:-0.55, ox:0.46, oy:0.03, oz:0.1, len:0.205, fit:1.22, bot:1.1, top:0.75},   // 엽초·변이-별무늬-그린옐로우
-  sheath_mat43: {scale:1.45, sxz:1.3, sy:1.3, rx:-0.5, ry:-2.2, rz:-0.55, ox:0.46, oy:0.03, oz:0.1, len:0.205, fit:1.22, bot:1.1, top:0.75},   // 엽초·변이-핑크-로즈
-  sheath_mat46: {scale:1.45, sxz:1.3, sy:1.3, rx:-0.5, ry:-2.2, rz:-0.55, ox:0.46, oy:0.03, oz:0.1, len:0.205, fit:1.22, bot:1.1, top:0.75},   // 엽초·변이-별무늬-그린흰
-  sheath_mat49: {scale:1.45, sxz:1.3, sy:1.3, rx:-0.5, ry:-2.2, rz:-0.55, ox:0.46, oy:0.03, oz:0.1, len:0.205, fit:1.22, bot:1.1, top:0.75},   // 엽초·변이-차콜-다크그린
-  sheath_mat52: {scale:1.45, sxz:1.3, sy:1.3, rx:-0.5, ry:-2.2, rz:-0.55, ox:0.46, oy:0.03, oz:0.1, len:0.205, fit:1.22, bot:1.1, top:0.75},   // 엽초·변이-하프문-그린크림
-  sheath_mat55: {scale:1.45, sxz:1.3, sy:1.3, rx:-0.5, ry:-2.2, rz:-0.55, ox:0.46, oy:0.03, oz:0.1, len:0.205, fit:1.22, bot:1.1, top:0.75},   // 엽초·변이-알보-전체흰
-  // ── 엽초(잎 단계별)
+  // ── 엽초
   sheath_furled: {len:0},   // 엽초·새순
   sheath_mature: {scale:1.45, sxz:1.3, sy:1.3, rx:-0.5, ry:-2.2, rz:-0.55, ox:0.46, oy:0.03, oz:0.1, len:0.205, fit:1.22, bot:1.1, top:0.75},   // 엽초·성숙잎
   sheath_open: {scale:1.3, rx:0.2, ry:-1, rz:0.2, ox:0.06, oy:0.15, len:0.19, fit:0.78, top:0.43},   // 엽초·반잎
   sheath_young: {scale:1.4, sy:0.65, rx:0.2, ry:-0.4, rz:0.4, ox:0.15, oy:0.04, oz:-0.02, bot:1.32, top:0.53},   // 엽초·어린잎
   sheath_young_albo: {rx:0.1, ry:0.3, rz:-0.15, ox:0.12, oy:0.14, oz:-0.05, len:0.155, fit:1.48},   // 엽초·어린잎(알보)
   sheath_leaf_mid_albo1: {sxz:1.1, rx:-0.05, ry:-0.05, rz:0.25, ox:0.11, oy:0.12, oz:-0.07, len:0.155, fit:2},   // 엽초·알보 전체흰중기
+  sheath_mat1: {scale:1.45, sxz:1.3, sy:1.3, rx:-0.5, ry:-2.2, rz:-0.55, ox:0.46, oy:0.03, oz:0.1, len:0.205, fit:1.22, bot:1.1, top:0.75},   // 엽초·변이-핑크-로즈핑크
   sheath_mid1: {scale:1.05, rx:-0.05, ry:-0.15, rz:0.4, ox:0.16, oy:0.32, oz:-0.06, len:0.175, fit:1.38, top:0.87},   // 엽초·중간잎1
   sheath_mid2: {scale:1.3, sxz:0.85, sy:1.1, rx:-0.15, ry:0.2, rz:0.3, ox:0.45, oy:-0.01, oz:0.02, len:0.235, fit:1.74, top:0.69},   // 엽초·중간잎2
   sheath_leaf_mid_albo4: {sxz:1.55, sy:1.05, rx:0.25, ry:-0.7, rz:0.35, ox:0.37, oy:-0.15, oz:-0.07, len:0.215, fit:1.36, top:0.91},   // 엽초·알보 흰연두-쨍
+  sheath_mat4: {scale:1.45, sxz:1.3, sy:1.3, rx:-0.6, ry:-1.9, rz:-0.55, ox:0.23, oy:0.03, oz:0.1, len:0.205, fit:1.22, bot:1.1, top:0.75},   // 엽초·변이-별무늬-페일그린
   sheath_leaf_mid_albo6: {scale:1.1, rx:-0.05, ry:0.2, rz:0.3, ox:0.25, oy:0.22, oz:0.01, fit:1.52, top:0.83},   // 엽초·알보 크림민트-쨍
+  sheath_mat7: {scale:1.45, sxz:1.3, sy:1.3, rx:-0.5, ry:-2.2, rz:-0.55, ox:0.46, oy:0.03, oz:0.1, len:0.205, fit:1.22, bot:1.1, top:0.75},   // 엽초·변이-별무늬-핑크민트
   sheath_leaf_mid_albo8: {scale:1.1, rx:-0.05, ry:0.2, rz:0.3, ox:0.25, oy:0.22, oz:0.01, fit:1.52, top:0.83},   // 엽초·변이-라임-형광-쨍
   sheath_leaf_mid_albo10: {sxz:1.55, sy:1.05, rx:0.25, ry:-0.7, rz:0.35, ox:0.37, oy:-0.15, oz:-0.07, len:0.215, fit:1.36, top:0.91},   // 엽초·변이-마블-실버-쨍
+  sheath_mat10: {scale:1.45, sxz:1.3, sy:1.3, rx:-0.5, ry:-2.2, rz:-0.55, ox:0.46, oy:0.03, oz:0.1, len:0.205, fit:1.22, bot:1.1, top:0.75},   // 엽초·변이-갤럭시-틸골드
   sheath_leaf_mid_albo12: {rz:0.15, ox:0.17, oy:0.11, oz:-0.13, fit:1.4},   // 엽초·변이-스페클-실버점-쨍
+  sheath_mat13: {scale:1.45, sxz:1.3, sy:1.3, rx:-0.75, ry:-1.45, rz:-0.5, ox:0.46, oy:0.03, oz:0.1, len:0.205, fit:1.22, bot:1.1, top:0.75},   // 엽초·변이-스페클-그린크림
   sheath_leaf_mid_albo16: {rx:0.05, ry:0.55, rz:0.25, ox:0.1, oy:0.14, oz:-0.28, len:0.175, fit:1.94, bot:1.34, top:0.75},   // 엽초·변이-잎맥-크림-쨍
+  sheath_mat16: {scale:1.45, sxz:1.3, sy:1.3, rx:-0.5, ry:-2.2, rz:-0.55, ox:0.46, oy:0.03, oz:0.1, len:0.205, fit:1.22, bot:1.1, top:0.75},   // 엽초·변이-오로레아-골드
   sheath_leaf_mid_albo18: {rz:0.25, ox:0.3, oy:0.04, oz:-0.05, len:0.19, fit:1.66},   // 엽초·변이-마블-그린옐로우-쨍
+  sheath_mat19: {scale:1.45, sxz:1.3, sy:1.3, rx:-1.1, ry:-1.75, rz:-0.55, ox:0.46, oy:0.03, oz:0.1, len:0.205, fit:1.36, bot:1.1, top:0.75},   // 엽초·변이-갤럭시-다크틸
   sheath_leaf_mid_albo20: {sxz:1.55, sy:1.05, rx:0.25, ry:-0.7, rz:0.35, ox:0.37, oy:-0.15, oz:-0.07, len:0.215, fit:1.36, top:0.91},   // 엽초·변이-마블-흰그린-쨍
   sheath_leaf_mid_albo22: {scale:1.1, rx:-0.05, ry:0.2, rz:0.3, ox:0.25, oy:0.22, oz:0.01, len:0.245, fit:1.9, top:0.83},   // 엽초·변이-스페클-민트흰점-쨍
+  sheath_mat22: {scale:1.45, sxz:1.3, sy:1.3, rx:-0.5, ry:-2.2, rz:-0.55, ox:0.46, oy:0.03, oz:0.1, len:0.205, fit:1.22, bot:1.1, top:0.75},   // 엽초·변이-오로레아-그린옐로우
+  sheath_mat25: {scale:1.45, sxz:1.3, sy:1.3, rx:-0.4, ry:-2.2, rz:-0.55, ox:0.31, oy:0.03, oz:0.1, len:0.205, fit:1.22, bot:1.1, top:0.75},   // 엽초·변이-라임-레몬패치
   sheath_leaf_mid_albo27: {scale:1.1, rx:-0.05, ry:0.2, rz:0.3, ox:0.15, oy:0.22, oz:0.01, len:0.185, fit:1.8, top:0.83},   // 엽초·변이-실버-물방울-쨍
+  sheath_mat28: {scale:1.45, sxz:1.3, sy:1.3, rx:-0.5, ry:-2.2, rz:-0.55, ox:0.46, oy:0.03, oz:0.1, len:0.205, fit:1.22, bot:1.1, top:0.75},   // 엽초·변이-네온-라임
   sheath_leaf_mid_albo29: {scale:1.15, rx:-0.05, rz:0.2, ox:0.24, oy:-0.12, oz:-0.01, len:0.265, fit:2, bot:1.18, top:0.49},   // 엽초·변이-하프문-크림민트
+  sheath_mat31: {scale:1.45, sxz:1.3, sy:1.3, rx:-0.5, ry:-2.2, rz:-0.55, ox:0.46, oy:0.03, oz:0.1, len:0.205, fit:1.22, bot:1.1, top:0.75},   // 엽초·변이-제브라-그린흰
+  sheath_mat34: {scale:1.45, sxz:1.3, sy:1.3, rx:-0.5, ry:-2.2, rz:-0.55, ox:0.46, oy:0.03, oz:0.1, len:0.205, fit:1.22, bot:1.1, top:0.75},   // 엽초·변이-하프문-그린흰
+  sheath_mat37: {scale:1.45, sxz:1.3, sy:1.3, rx:-0.5, ry:-2.2, rz:-0.55, ox:0.46, oy:0.03, oz:0.1, len:0.205, fit:1.22, bot:1.1, top:0.75},   // 엽초·변이-모브-라벤더그레이
+  sheath_mat40: {scale:1.45, sxz:1.3, sy:1.3, rx:-0.5, ry:-2.2, rz:-0.55, ox:0.46, oy:0.03, oz:0.1, len:0.205, fit:1.22, bot:1.1, top:0.75},   // 엽초·변이-별무늬-그린옐로우
+  sheath_mat43: {scale:1.45, sxz:1.3, sy:1.3, rx:-0.5, ry:-2.2, rz:-0.55, ox:0.46, oy:0.03, oz:0.1, len:0.205, fit:1.22, bot:1.1, top:0.75},   // 엽초·변이-핑크-로즈
+  sheath_mat46: {scale:1.45, sxz:1.3, sy:1.3, rx:-0.6, ry:-2, rz:-0.55, ox:0.46, oy:0.03, oz:0.1, len:0.205, fit:1.22, bot:1.1, top:0.75},   // 엽초·변이-별무늬-그린흰
+  sheath_mat49: {scale:1.45, sxz:1.3, sy:1.3, rx:-0.5, ry:-2.2, rz:-0.55, ox:0.46, oy:0.03, oz:0.1, len:0.205, fit:1.22, bot:1.1, top:0.75},   // 엽초·변이-차콜-다크그린
+  sheath_mat52: {scale:1.45, sxz:1.3, sy:1.3, rx:-0.5, ry:-2.2, rz:-0.55, ox:0.46, oy:0.03, oz:0.1, len:0.205, fit:1.22, bot:1.1, top:0.75},   // 엽초·변이-하프문-그린크림
+  sheath_mat55: {scale:1.45, sxz:1.3, sy:1.3, rx:-0.5, ry:-2.2, rz:-0.55, ox:0.46, oy:0.03, oz:0.1, len:0.205, fit:1.22, bot:1.1, top:0.75},   // 엽초·변이-알보-전체흰
 };
 function defAdj(key){
   const b={scale:1, sxz:1, sy:1, rx:0,ry:0,rz:0, ox:0,oy:0,oz:0};
