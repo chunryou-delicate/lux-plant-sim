@@ -1,5 +1,109 @@
 # 2026-07-26 · plan → growth
 
+---
+
+# ■ 2026-07-26 (2차) · ★ 요청 — 임계값·계수를 `data/*.json`으로 빼주세요
+
+박사님 제안이고, **이번 동시 편집 충돌의 근본 해결**입니다.
+
+지금 `plant_grow.html` 안에 **기획이 정해야 할 숫자**가 하드코딩돼 있습니다.
+그래서 제가 밸런싱하려면 그쪽 파일을 열 수밖에 없었고, 실제로 작업이 한 번 날아갔습니다.
+
+| 지금 코드 안에 있는 것 | 성격 |
+|---|---|
+| `TH_MONSTERA` | **`data/light_thresholds.json`의 복사본** — 이중 관리 |
+| `VARIE_MULT = 1.4` | 밸런싱 값 |
+| `fLight()`의 0 / 0.5 / 1.5 / 1.0 / 0.3 | 밸런싱 값 |
+| `fStable()`의 0.15·0.30 경계, 1.3 / 1.0 / 0.7 | 밸런싱 값 |
+| `calcMatureProb()`의 0.5 시작·0.6 과광 | 밸런싱 값 |
+| `DLI_KEEP` · `dliAvg(7)` · `dliCV` 14일·최소 7샘플 | 밸런싱 값 |
+
+**빼고 나면 제가 코드 파일을 열 이유가 0이 됩니다.** 앞으로 확률 튜닝은 JSON만 고칩니다.
+
+## 제안 — `data/growth_tuning.json` (plan 소유)
+
+파서가 필요 없게 **이름 있는 필드**로만 만들었습니다. 경계값은 코드가 계산합니다
+(`varieBest_lo = best_lo × need_mult`).
+
+```jsonc
+{
+  "schema": "growth_tuning/1",
+  "_doc": [
+    "생장 확률 = 빛의 함수. 계수는 전부 임시값이며 실플레이로 정밀화한다.",
+    "근거: docs/GAME_PLAN.md §7",
+    "임계값(die/survive/min/fenestrate/best/max)은 여기 두지 않는다 —",
+    "data/light_thresholds.json 이 단일 진실 소스다."
+  ],
+
+  "variegation": {
+    "base": 0.20,                      // P.varieProb — 잎마다 독립 판정
+    "need_mult": 1.4,                  // ★ light_thresholds.json variegated.need_mult 와 같은 값
+    "light_mult": {
+      "below_min":        0.0,         // 정체 — 새 잎이 안 나므로 발현 기회 없음
+      "min_to_varieBest": 0.5,
+      "varieBest":        1.5,         // ★ 최적 대역 = best_lo~best_hi × need_mult (7.0~15.4)
+      "varieBest_to_max": 1.0,
+      "over_max":         0.3          // 흰 부분이 먼저 탄다
+    },
+    "stability_mult": {
+      "cv_le_0_15": 1.3,               // 안정 — 재현성 보상
+      "cv_le_0_30": 1.0,
+      "else":       0.7,
+      "unknown":    1.0                // 기록 부족 = 모름 → 중립. 공짜 보너스 금지
+    }
+  },
+
+  "fenestration": {
+    "base": 0.22,                      // P.matureProb
+    "below_fenestrate": 0.0,           // 못 본다 — 등을 사거나 이사해야 한다
+    "at_fenestrate":    0.5,           // 문턱을 넘는 순간 '켜진다'
+    "full_at":          "best_hi",     // 여기서 base 그대로
+    "over_max":         0.6            // 과광 — 잎이 상해 성숙이 더디다
+  },
+
+  "branch_ratio_follows_light": false, // matRare/matSub에는 배율을 태우지 않는다.
+                                       // 두 번 곱하면 관리 보상이 5.6배가 아니라 30배가 된다
+
+  "history": {
+    "keep_days": 30,
+    "avg_days": 7,                     // 하루 값으로 판정하지 않는다 (light_contract.md §3)
+    "cv_days": 14,
+    "cv_min_samples": 7
+  }
+}
+```
+
+## 부탁 — 두 가지만 지켜주시면 됩니다
+
+**① 로드 실패해도 돌아가야 합니다.** `plant_grow.html`은 단독 실행되는 튜닝 창이라
+JSON을 못 읽어도 지금 상수로 떨어져야 합니다.
+
+```js
+let GT = GROWTH_TUNING_DEFAULT;                    // 지금 상수들을 그대로 담은 폴백
+fetch('data/growth_tuning.json').then(r=>r.json())
+  .then(j=>{ GT=j; buildPlant(); })
+  .catch(()=>console.warn('[growth_tuning] 기본값 사용'));
+```
+
+**② `TH_MONSTERA`는 `data/light_thresholds.json`에서 읽어주세요.**
+지금 복사본이라 한쪽만 고치면 조용히 어긋납니다. 실제로 제가 코드 주석에
+*"저기를 고치면 여기도 고칠 것"* 이라고 적어뒀는데, 그건 **버그를 예약해 둔 것**입니다.
+
+## 슬라이더는 그대로 두셔도 됩니다
+
+JSON이 **기본값**이고 슬라이더가 **일시 조정**이면 충분합니다.
+튜닝하다 좋은 값이 나오면 알려주세요 — 제가 JSON에 반영하겠습니다.
+
+## 2차 미해결
+
+- [ ] `growth_tuning.json` 외부화
+- [ ] `TH_MONSTERA` → `light_thresholds.json` 참조로 전환
+
+---
+---
+
+# ■ 2026-07-26 (1차)
+
 ## 0. 먼저 — 사고 보고 (확인 부탁)
 
 `plant_grow.html` 리팩터(`setDailyLight(c, slotId)` · `dliAvg` · `dliHistory` ·
