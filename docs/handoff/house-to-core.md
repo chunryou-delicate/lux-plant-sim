@@ -265,6 +265,61 @@ import { createDecorator }            from './render3d/decorate.js';
 
 ---
 
+## ★ 미해결 — 코어가 붙기 전에 house가 고칠 것
+
+### 1. `buildDailyLight` 가 `ctx.glazed` 를 버린다 — **버그. 계약대로 안 돈다**
+
+이 문서 §인터페이스에 `glazed: built.glazedPanes` 를 넘기라고 적어 뒀는데,
+`daily_light.js:174~181` 이 그걸 구조분해에서 빠뜨려 `skyOpt` 에 안 싣는다.
+
+```js
+const { weather, season, region, clearSkyMax, occluders = null, lums = null, ... } = ctx;
+//                                                    ↑ glazed 가 없다
+const skyOpt = { weather, season, region, clearSkyMax, occluders };
+//                                                     ↑ 여기도 없다
+```
+
+**결과**: 아파트 베란다 실내 유리(τ0.92)가 계약 경로에서는 **없는 것으로 계산된다.**
+거실·안방 슬롯 DLI가 실제보다 약 8% 높게 나온다.
+
+**실측표는 영향 없다** — `_dli_probe.html` 은 `daylightRatio` 를 직접 부르며
+`glazed` 를 제대로 넘긴다(`_dli_probe.html:41`). 즉 **문서의 숫자는 맞고, 계약 함수만 틀렸다.**
+`src/main.js` 도 직접 호출이라 화면은 정상이다.
+
+**코어가 `buildDailyLight` 를 붙이기 전에 house가 고친다.** 고치면 이 파일에 적는다.
+
+> 또 "오류 없이 조용히 잘못 도는" 유형이다 — 인자를 안 받으면 `null` 로 떨어지고
+> 유리가 없는 것과 구별이 안 된다. `docs/engine/band_keys.md` §0 참고.
+
+### 2. `weekStats().mean` 은 **선형 가정**에 기대고 있다
+
+`mean` 은 굴림 평균이 아니라 `dliOf('clear') × weatherE(season)` 이다.
+**`dliOf` 가 날씨 계수에 선형일 때만 맞다.**
+
+자연광만이면 정확하다(DLI ∝ 천공 조도). 그런데 **식물등을 섞으면 틀린다** —
+등 DLI는 날씨와 무관한데 맑음 값에 0.643을 곱해 버린다.
+
+```js
+// ✗ 이렇게 부르면 mean 이 틀린다
+weekStats((w,s) => daylightDLI(r,{weather:w,season:s}) + lampDLI(ppfd, 12), ...)
+// ✓ 자연광만 넘기고 등은 밖에서 더한다
+weekStats((w,s) => daylightDLI(r,{weather:w,season:s}), ...).mean + lampDLI(ppfd,12)
+```
+
+지금 호출자는 `_dli_probe.html` 하나뿐이라 문제가 없다. **코어가 쓰기 전에 방어를 넣는다.**
+
+> `movingAvgStats` 는 `weekStats` 의 옛 이름 별칭인데 **반환 모양이 바뀌었다**
+> (`dailyMean`·`bias` 없어지고 `p10`/`p50`/`p90`/`weeks` 생김). 옛 필드를 읽으면
+> 조용히 `undefined` 다. 쓰는 곳이 없어 지금은 무해하지만 별칭째 지우는 게 나을 수 있다.
+
+### 3. `measured.avg7*` 이 여름·겨울만 있다
+
+`data/house_rooms.json` 의 `avg7Summer` / `avg7Winter` 만 있고 **봄·가을이 없다.**
+현재 확률표가 사계절 동일(0.55/0.30/0.15)이라 E는 같지만 **낮 길이가 달라 값이 다르다.**
+플레이가 1년을 돌면 봄·가을이 절반이므로 채워야 한다.
+
+---
+
 ## 미해결
 
 - [ ] `temp` / `humidity` / `weatherPattern` 은 자리만 있습니다.
