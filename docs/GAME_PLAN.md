@@ -110,7 +110,7 @@ A1 시간(하루 넘기기) → A2 성장상태 → A3 시각 피드백
 
 **엔딩**: 자취생=반지하 탈출 / 가장=목표금액→온실 / 연구자=논문 3편 졸업 / 주부=드림가든
 
-캐릭터 = `data/characters.json` 설정값. 코드 분기 없음.
+캐릭터 = `data/balance/characters.json` 설정값. 코드 분기 없음.
 
 ## ★ 시작 형태 = 시간과 돈의 교환
 
@@ -535,6 +535,8 @@ v3의 원칙대로 **"며칠치 생활비"로 환산해 잡는다.**
 | 목적 | 파일 |
 |---|---|
 | **기획 정본** | **이 문서** |
+| **밸런싱 값 (여기만 고친다)** | **`data/balance/`** — `characters` · `homes`(경제 필드) · `light_thresholds`* · `growth_tuning`* (*이동 대기) |
+| 창 소유·인계 규칙 | `handoff/README.md` |
 | 계약 객체 `daily_light/1` 전문 | `light_contract.md` |
 | 방별 DLI 실측·밸런싱 근거 | `balance_decisions.md` · `rooms_progression.md` |
 | 온실 실측·차광 | `greenhouse_plan.md` |

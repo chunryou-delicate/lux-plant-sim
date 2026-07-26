@@ -1,5 +1,55 @@
 # 2026-07-26 · plan → house
 
+> 응답 규칙(박사님 2026-07-26): **받은 인계 파일은 손대지 않는다.**
+> house의 처리 보고는 `house-to-plan.md`에 쓰고, plan이 그걸 읽어 **이 파일에** 표시한다.
+> 1·2차의 `[처리됨]` 표시는 그 규칙에 맞게 plan이 정리했습니다.
+
+---
+
+# ■ 2026-07-26 (3차) · 파일 이동 2건
+
+## 1. ★ `light_thresholds.json` → `data/balance/` 로 옮겨주세요
+
+박사님이 `data/balance/` 를 plan 소유로 정했습니다(튜닝값). `light_thresholds.json`은
+제가 밸런싱하는 파일이라 거기로 가야 하는데, **읽는 코드가 house 것**이라
+제가 혼자 옮기면 그 사이가 깨집니다.
+
+```
+data/light_thresholds.json  →  data/balance/light_thresholds.json
+```
+
+같은 커밋에서 두 줄만 바꾸면 됩니다(**무중단**):
+
+```js
+// src/main.js:28
+- const lightTh = await fetch('./data/light_thresholds.json').then(r=>r.json()).catch(()=>null);
++ const lightTh = await fetch('./data/balance/light_thresholds.json').then(r=>r.json()).catch(()=>null);
+
+// _dli_probe.html:16
+- J('./data/light_thresholds.json'), J('./data/shading_presets.json')
++ J('./data/balance/light_thresholds.json'), J('./data/shading_presets.json')
+```
+
+> `shading_presets.json`은 **그대로 둡니다** — 차광 장치 스펙(τ·가격)은 구조 데이터라
+> house 소유가 맞습니다.
+
+**이미 옮긴 것**: `homes.json` · `characters.json` → `data/balance/`.
+이 둘은 코드 로더가 하나도 없어서 제가 바로 옮겼습니다(참조 0건 확인).
+`data/balance/README.md`에 경계와 남은 이동 대상을 적어뒀습니다.
+
+## 2. `docs/engine/` 이동이 끝나면 알려주세요
+
+`light_contract` · `lux_sampling` · `greenhouse_plan` · `rooms_progression` 이
+`docs/engine/` 으로 간다고 들었습니다. **`GAME_PLAN.md`와 다른 docs가 이 넷을 참조**하는데,
+그 파일들은 제 소유라 **경로 갱신은 제가 하겠습니다.**
+
+→ 옮기신 뒤 `house-to-plan.md`에 한 줄만 남겨주세요. 링크가 깨진 채로 두지 않겠습니다.
+(아직 안 옮기신 상태라 지금은 갱신하지 않았습니다)
+
+> `balance_decisions.md` · `env_difficulty_axis.md`는 plan에 남는다고 확인했습니다.
+> 요청드렸던 **아파트 유지 규칙 2줄은 제가 직접 `balance_decisions.md`에 넣었습니다** —
+> 그 건은 잊어주세요.
+
 ---
 
 # ■ 2026-07-26 (2차) · 답변 + ★긴급 1건
@@ -170,13 +220,9 @@ export function thresholdsFor(TH, plantId, explicitVarie)  // ← 인자 하나 
 
 ---
 
-## 미해결
+## 미해결 → 전부 처리됨 (plan이 `house-to-plan.md` 확인 후 표시, 2026-07-26)
 
-- [x] **[처리됨]** `data/homes.json` — 제가 실측값으로 갱신했습니다(아파트 6.26→6.02/82→83, 온실 13.01→12.42). 앞으로 방을 고치면 제가 같이 갱신합니다.
-- [ ] ~~`data/homes.json`을 `house_rooms.json`의 실제 방 id에 맞췄습니다~~
-      (`banjiha` 말고는 전부 없는 방을 가리키고 있었습니다).
-      `peakDLI`·`slots`는 `balance_decisions.md` 실측표에서 옮겼습니다 —
-      **방을 고치면 이 값도 같이 갱신해야 합니다.** 갱신 시 알려주세요
-- [x] **[처리됨]** 온실 슬롯 64개 DLI 분포 → `house-to-plan.md` §4. ±20% 최대 그룹 **25칸**(기준 10.52).
-- [ ] ~~온실 슬롯 64개의 DLI 분포.~~ 연구자 재현 판정이 "같은 조건(7일평균 ±20%)"이라
-      **비슷한 DLI 슬롯끼리 묶어 심는 것**이 플레이가 됩니다. 슬롯별 DLI 목록이 필요합니다
+- [처리됨] `homes.json` 실측 갱신 — 아파트 6.26→6.02 / 82→83, 온실 13.01→12.42.
+  앞으로 방을 고치면 house가 같이 갱신. `peakDLI`·`slots`는 plan이 안 건드립니다
+- [처리됨] 온실 64슬롯 DLI 분포 — ±20% 최대 그룹 **25칸**(기준 10.52).
+  숙소 쪽 11칸(0~1)은 "빛 없음" 대조군으로 씁니다. 슬롯별 전체 목록은 아직 불필요
