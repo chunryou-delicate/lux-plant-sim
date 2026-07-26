@@ -65,6 +65,14 @@
   #stat{font-family:var(--ui);font-weight:500;font-size:12px;line-height:1.75;color:#d6ecd7;
     padding-top:8px;border-top:1px solid rgba(255,255,255,.12)}
   #stat .k{color:rgba(255,255,255,.5);font-weight:400}
+
+    /* 설명이 있는 제목: 점선 밑줄 + 물음표 커서 */
+    .field label.hashelp{ cursor:help; }
+    .field label.hashelp:hover{ color:#d8f5cf; }
+    #helpTip{ position:fixed; display:none; z-index:200; max-width:320px;
+      padding:10px 13px; border-radius:9px; background:rgba(18,15,28,.97); color:#e8f3e2;
+      border:1px solid #4c7a46; font-size:12.5px; line-height:1.6; letter-spacing:.1px;
+      white-space:pre-line; pointer-events:none; box-shadow:0 6px 22px rgba(0,0,0,.55); }
 </style>
 </head>
 <body>
@@ -165,7 +173,7 @@ const DEF={
 };
 let P=Object.assign({}, DEF);
 // 저장본 버전. 생장 로직/기본값이 바뀌면 올림 → 옛 저장값이 새 기본값을 덮어쓰지 않게.
-const CFG_VER='2026-07-26-tree2';
+const CFG_VER='2026-07-26-help';
 
 // ===== 튜닝 파라미터(B: 에셋별 개별 조정) =====
 const ADJ_KEYS=[
@@ -247,7 +255,7 @@ const ADJ_TUNED={
   leaf_mat16: {sxz:1.26, rx:0.2, ry:-0.95, rz:0.4, ox:0.04, oy:0.15, bladeR:0.85, petR:1.4},   // 변이-오로레아-골드
   leaf_mat19: {sxz:1.09, rx:0.15, ry:-0.8, rz:0.3, ox:0.04, oy:0.1, bladeR:0.76, petR:0.93},   // 변이-갤럭시-다크틸
   leaf_mat22: {sxz:0.98, rx:0.1, ry:-0.9, rz:0.3, ox:0.04, oy:0.1, bladeR:0.93, petR:1.1},   // 변이-오로레아-그린옐로우
-  leaf_mat25: {sxz:1.15, rx:0.15, ry:-0.7, rz:0.35, ox:0.04, oy:0.1, bladeR:1.5, petR:0.9},   // 변이-라임-레몬패치
+  leaf_mat25: {sxz:1.15, rx:0.15, ry:-0.7, rz:0.35, ox:0.04, oy:0.1, bladeR:1.5, petR:0.35},   // 변이-라임-레몬패치
   leaf_mat28: {sxz:1.24, rx:0.3, ry:-0.9, rz:0.4, ox:0.04, oy:0.1, bladeR:0.81, petR:1.07},   // 변이-네온-라임
   leaf_mat31: {sxz:1.16, rx:0.25, ry:-0.75, rz:0.45, ox:0.04, oy:0.1, bladeR:0.83, petR:1.12},   // 변이-제브라-그린흰
   leaf_mat34: {sxz:0.99, rx:0.2, ry:-1, rz:0.35, ox:0.04, oy:0.1, bladeR:0.81, petR:1.09},   // 변이-하프문-그린흰
@@ -871,6 +879,7 @@ const ADJ_ALIAS={
 };
 const adjOf=k=>ADJ[ADJ_ALIAS[k]||k]||{};      // ★ADJ 조회는 항상 이걸로(그룹 대표로 해석)
 const KEEP_TEX=new Set(['leaf_young_albo','leaf_mid_albo1','leaf_mid_albo2','leaf_mid_albo3','leaf_mid_albo4','leaf_mid_albo5','leaf_mid_albo6','leaf_mid_albo7','leaf_mid_albo8','leaf_mid_albo9','leaf_mid_albo10','leaf_mid_albo11','leaf_mid_albo12','leaf_mid_albo13','leaf_mid_albo14','leaf_mid_albo15','leaf_mid_albo16','leaf_mid_albo17','leaf_mid_albo18','leaf_mid_albo19','leaf_mid_albo20','leaf_mid_albo21','leaf_mid_albo22','leaf_mid_albo23','leaf_mid_albo24','leaf_mid_albo25','leaf_mid_albo26','leaf_mid_albo27','leaf_mid_albo28','leaf_mid_albo29','leaf_mid_albo30','leaf_mid_albo31',
+  'leaf_mid_albo32','leaf_mid_albo33','leaf_mid_albo34','leaf_mid_albo35','leaf_mid_albo36','leaf_mid_albo37','leaf_mid_albo38','leaf_mid_albo39','leaf_mid_albo40','leaf_mid_albo41','leaf_mid_albo42',
   'leaf_mat1','leaf_mat2','leaf_mat3','leaf_mat4','leaf_mat5','leaf_mat6','leaf_mat7','leaf_mat8','leaf_mat9','leaf_mat10','leaf_mat11','leaf_mat12','leaf_mat13','leaf_mat14','leaf_mat15','leaf_mat16','leaf_mat17','leaf_mat18','leaf_mat19','leaf_mat20','leaf_mat21','leaf_mat22','leaf_mat23','leaf_mat24','leaf_mat25','leaf_mat26','leaf_mat27','leaf_mat28','leaf_mat29','leaf_mat30','leaf_mat31','leaf_mat32','leaf_mat33','leaf_mat34','leaf_mat35','leaf_mat36','leaf_mat37','leaf_mat38','leaf_mat39','leaf_mat40','leaf_mat41','leaf_mat42','leaf_mat43','leaf_mat44','leaf_mat45','leaf_mat46','leaf_mat47','leaf_mat48','leaf_mat49','leaf_mat50','leaf_mat51','leaf_mat52','leaf_mat53','leaf_mat54','leaf_mat55','leaf_mat56','leaf_mat57']);
 function tintObj(obj, color){
   obj.traverse(o=>{ if(o.isMesh&&o.material){
@@ -1633,6 +1642,7 @@ function buildAssetSliders(key){
   fieldsFor(key).forEach(it=>{
     const f=document.createElement('div'); f.className='field';
     const lab=document.createElement('label'); lab.innerHTML=`${it.t} <b>${fmtVal(a[it.k])}</b>`;
+    attachHelp(lab, it.k);
     const inp=document.createElement('input'); inp.type='range'; inp.min=it.min; inp.max=it.max; inp.step=it.step; inp.value=a[it.k];
     inp.addEventListener('input',()=>{ a[it.k]=+inp.value; lab.querySelector('b').textContent=fmtVal(a[it.k]); buildPlant(); showPreview(key); });   // buildPlant 먼저 → 미리보기 실패해도 조절은 항상 동작
     f.appendChild(lab); f.appendChild(inp); box.appendChild(f);
@@ -1731,6 +1741,89 @@ const SHAPE_GROUPS=[
 ];
 const SHAPE_DEFS=SHAPE_GROUPS.flatMap(g=>g.items);   // 리셋/불러오기용 평면 목록
 
+
+// ===== 슬라이더 설명 (제목에 마우스를 올리면 뜬다) =====
+// 값이 뭘 뜻하는지, 올리고 내리면 뭐가 달라지는지, 걸리는 함정이 있으면 그것까지.
+const HELP={
+  // ── 전체 성장
+  growAmt:'다 자랐을 때 첫날 대비 몇 배가 되는지. 줄기 굵기·마디 길이·잎 크기·엽초에 같은 배율이 걸려서 맞춰둔 비율이 그대로 유지된다.\n0.8이면 최대 1.8배.',
+  growSpan:'위 배율에 도달하기까지 걸리는 생장 나이(일). 이 날짜를 넘으면 더 커지지 않는다.\n실제 경과일이 아니라 나이 기준이라, 초반 빠르기를 낮추면 더 이른 날짜에 도달한다.',
+  timeCurve:'실제 경과일을 생장 나이로 바꾸는 곡선.\n1이면 등속. 낮출수록 초반이 빠르고 뒤로 갈수록 느려진다.\n0.72면 예전 83일치 모습이 30일에 나온다. 3년(1095일) 도달점은 곡선과 무관하게 같다.',
+  varieProb:'잎 하나가 무늬종이 될 확률. 어린잎 단계에서 잎마다 따로 판정하고, 한번 정해지면 중기·성숙까지 그 루트를 유지한다.\n확정값은 0.20이고 1.0은 튜닝용(모든 잎을 무늬로 만들어 보기 편하게).',
+  alboMidPick:'0이면 중기 무늬를 랜덤으로 뽑는다. 1 이상이면 그 번호로 고정 — 한 종류만 띄워놓고 위치를 잡을 때 쓴다.\n번호는 우측 조정 목록의 고정번호와 같다.',
+  matAlboPick:'성숙 무늬를 번호로 고정. 0이면 변이 트리대로(중기 무늬에 따라 결정).',
+  matRare:'성숙 무늬를 정할 때 희귀 갈래로 갈 확률.\n희귀는 분홍·로즈·라벤더·차콜 넷으로, 중기 단계에 대응하는 색이 없어 성숙에서만 나온다.\n0.1이면 잎 하나가 희귀 성숙 변이가 될 확률은 변이 20% × 성숙 22% × 10% ≒ 0.44% — 열 그루에 한 장꼴이다.',
+  matSub:'희귀가 아닐 때 부 갈래로 갈 확률. 나머지가 주 갈래다.\n희귀 0.1 · 부 0.3이면 주가 0.6. 계열마다 주·부 성숙종이 하나씩 정해져 있다.',
+  midMix:'0이면 그루 전체가 중간잎 한 종류로 통일되고, 1이면 잎마다 랜덤으로 섞인다. 0.5면 반반.',
+  // ── 잎 겹침 회피
+  leafClear:'잎이 서로 겹치지 않게 비켜서는 세기. 잎이 차지하는 반경으로 쓰인다.\n키우면 덜 겹치지만 방향이 부자연스러워진다.',
+  leafStemClear:'잎이 다른 줄기를 피하는 정도. 잎몸을 구, 잎자루를 캡슐로 보고 판정한다.\n자기 축의 끝 두 마디는 검사에서 뺀다 — 안 그러면 모든 방향이 똑같이 나빠져 변별력이 사라진다.',
+  avoidLean:'줄기가 자랄 때 앞에 다른 줄기가 있으면 반대쪽으로 트는 세기(접촉굴성).',
+  avoidRange:'위 회피가 작동하는 거리. 이 반경 안에 다른 줄기가 있어야 피한다.',
+  // ── 줄기 모양
+  stemCurve:'줄기가 한 방향으로 휘는 아치의 세기.\n축마다 휘는 방향이 하나로 고정돼 있어 곡선이 누적된다 — 매 마디 랜덤이면 서로 상쇄돼 떨리기만 하고 곡선이 안 생긴다.',
+  stemDroop:'줄기가 길어질수록 무게로 아래로 처지는 정도. 끝쪽 마디일수록 크게 걸린다.',
+  stemStraight:'매 마디 축의 기본 방향으로 되돌아오려는 힘.\n키우면 곧게 서지만 휘어짐이 사라진다 — 휘어짐을 키웠는데 직선이면 이 값이 범인이다.',
+  photoLean:'빛 방위 쪽으로 기우는 세기. 위쪽 굴광성 슬라이더와 곱해진다.',
+  spread:'마디마다 방향에 섞는 불규칙. 곡선을 만들지는 않고 떨림만 준다.',
+  internode:'마디 하나의 길이. 전체 성장 배율이 곱해진다.',
+  tipTaper:'줄기 끝의 굵기 비율. 1이면 끝까지 같은 굵기, 낮추면 끝이 가늘어진다.',
+  nodeBulge:'마디 경계가 볼록해지는 정도. 줄기를 튜브 하나로 뽑기 때문에 이 값으로 마디를 표현한다.',
+  branchSpread:'혹에서 난 가지가 본줄기에서 벌어지는 각도.',
+  // ── 잎·엽초 부착
+  leafTilt:'잎자루가 줄기축에서 벌어지는 각. 0이면 줄기와 나란히 꽂힌다.',
+  leafTiltVary:'겹침 회피가 잎 각도까지 흔들 수 있는 폭.\n0이면 조정값 그대로 고정된다 — 위치를 잡는 동안에는 0으로 둬야 시드를 바꿔도 각도가 안 틀어진다.',
+  leafEmbed:'잎자루 끝을 줄기 속으로 박는 깊이. 얕으면 틈이 보이고, 깊으면 잎이 줄기에 파묻힌다.',
+  // ── 혹·표면
+  bumpAt:'혹에서 가지가 나는 높이.',
+  bumpAzOff:'가지가 나는 방위를 혹 돌기 쪽으로 미세 회전.',
+  stemTex:'줄기 표면 결 텍스처의 세기.',
+  texRepeat:'줄기 결이 세로로 반복되는 횟수.',
+  // ── 에셋 공통
+  scale:'이 에셋 전체의 크기 배율. 아래 굵기·길이에 함께 곱해진다.',
+  sxz:'가로(XZ) 방향만 늘리고 줄인다. 잎이면 폭, 줄기면 굵기.',
+  sy:'세로(Y) 방향만 늘리고 줄인다. 잎이면 길이. 줄기는 마디 길이가 정해져 있어 이 항목이 안 나온다.',
+  rx:'붙는 점을 중심으로 한 회전(라디안). 순서는 X→Y→Z.',
+  ry:'붙는 점을 중심으로 한 회전(라디안). 잎에서는 이게 줄기 관통선 둘레의 회전에 가깝다 — 잎을 돌려 세울 때 먼저 만질 값.',
+  rz:'붙는 점을 중심으로 한 회전(라디안). 순서는 X→Y→Z.',
+  ox:'붙는 점에서 옆으로 미는 양. 에셋 크기에 비례해 적용된다.',
+  oy:'잎자루 방향(줄기에서 바깥)으로 미는 양.\n키우면 줄기에서 떨어지고, 줄이면 줄기 속으로 들어간다. 잎이 떠 보일 때 먼저 볼 값.',
+  oz:'붙는 점에서 앞뒤로 미는 양.',
+  // ── 잎 전용
+  bladeR:'잎몸 두께 배율. 정점을 법선 방향으로 밀어 실제 두께를 바꾼다.\n1보다 작으면 얇아진다. 잎자루만으로 된 메시에는 걸리지 않는다(끝이 곤봉처럼 부풀지 않게).',
+  trimR:'잎 밑동을 반경 방향으로 얼마나 줄일지. 0이면 밑동이 완전히 모아져 뾰족해진다.',
+  trimTop:'위 다듬기가 적용되는 높이 범위. 잎몸이 시작되는 지점부터 이 비율까지.',
+  petR:'잎자루 지름 배율. 잎몸은 그대로 두고 아래 구간만 반경을 줄인다.',
+  petTop:'잎자루 지름 조정이 걸리는 높이 범위. 잎 전체 높이 기준이라, 이 값이 잎몸까지 넘어가면 잎몸 아래쪽도 같이 줄어든다.',
+  // ── 엽초 전용
+  len:'엽초 길이. 잎 크기에 이 값을 곱한 만큼. 0이면 엽초를 안 그린다.',
+  fit:'엽초가 잎자루를 감싸는 굵기. 작으면 잎자루가 삐져나오고 크면 헐렁해진다.',
+  bot:'엽초 아래쪽 구멍 지름.',
+  top:'엽초 위쪽 구멍 지름. 아래보다 작아야 자연스럽다.',
+};
+// 설명 말풍선 — 제목에 마우스를 올리면 커서 옆에 뜬다.
+function attachHelp(el, key){
+  const txt=HELP[key]; if(!txt) return;
+  el.classList.add('hashelp');
+  el.addEventListener('mouseenter', e=>showHelp(txt, e));
+  el.addEventListener('mousemove', e=>moveHelp(e));
+  el.addEventListener('mouseleave', hideHelp);
+}
+let helpEl=null;
+function showHelp(txt, e){
+  if(!helpEl){ helpEl=document.createElement('div'); helpEl.id='helpTip'; document.body.appendChild(helpEl); }
+  helpEl.textContent=txt; helpEl.style.display='block'; moveHelp(e);
+}
+function moveHelp(e){
+  if(!helpEl) return;
+  const w=helpEl.offsetWidth, hh=helpEl.offsetHeight;
+  let x=e.clientX-w-16, y=e.clientY+14;              // 패널이 오른쪽이라 왼쪽에 띄운다
+  if(x<8) x=e.clientX+16;
+  if(y+hh>window.innerHeight-8) y=e.clientY-hh-12;
+  helpEl.style.left=x+'px'; helpEl.style.top=y+'px';
+}
+function hideHelp(){ if(helpEl) helpEl.style.display='none'; }
+
 function buildShapePanel(){
   const box=document.getElementById('shapeSliders'); if(!box) return; box.innerHTML='';
   SHAPE_GROUPS.forEach(gr=>{
@@ -1739,6 +1832,7 @@ function buildShapePanel(){
     gr.items.forEach(it=>{
       const f=document.createElement('div'); f.className='field';
       const lab=document.createElement('label'); lab.innerHTML=`${it.t} <b>${fmtVal(P[it.k])}</b>`;
+      attachHelp(lab, it.k);
       const inp=document.createElement('input'); inp.type='range'; inp.min=it.min; inp.max=it.max; inp.step=it.step; inp.value=P[it.k];
       inp.addEventListener('input',()=>{ P[it.k]=+inp.value; lab.querySelector('b').textContent=fmtVal(P[it.k]); buildPlant(); });
       f.appendChild(lab); f.appendChild(inp); d.appendChild(f);
