@@ -305,7 +305,8 @@ export function createDecorator(ctx, opts) {
       snapshot();
       const S = getSize();
       const list = getRoomDef().furniture || (getRoomDef().furniture = []);
-      list.push({ preset, x: 0, z: Math.min(S.d / 2 - 0.6, 0.8) });
+      list.push({ preset, uid: 'new-' + preset + '-' + Date.now().toString(36),
+                   x: 0, z: Math.min(S.d / 2 - 0.6, 0.8) });
       selIdx = list.length - 1;
       await apply();
       api.onSelect && api.onSelect(selIdx, list[selIdx]);
@@ -327,6 +328,7 @@ export function createDecorator(ctx, opts) {
         room: roomKey,
         furniture: (getRoomDef().furniture || []).map(f => {
           const o = { preset: f.preset, x: +(f.x || 0).toFixed(2), z: +(f.z || 0).toFixed(2) };
+          if (f.uid) o.uid = f.uid;          // 슬롯 ID가 유지되도록 같이 내보낸다
           if (f.rot) o.rot = f.rot;
           if (f.y != null) o.y = f.y;
           return o;

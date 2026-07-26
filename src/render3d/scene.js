@@ -14,6 +14,9 @@ export function createScene(canvas){
   const renderer=new THREE.WebGLRenderer({ canvas, antialias:true });
   renderer.setPixelRatio(DPR);
   renderer.shadowMap.enabled=true; renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+  /* 벽 '밑동만 보이기'에 쓴다. 클리핑은 렌더만 자르고 그림자는 전체 높이로 남으므로
+     벽을 낮춰 보여도 빛은 그대로 막힌다(기하를 줄이면 그림자까지 줄어 해가 새 들어온다). */
+  renderer.localClippingEnabled=true;
   renderer.outputEncoding=THREE.sRGBEncoding;
   renderer.toneMapping=THREE.ACESFilmicToneMapping; renderer.toneMappingExposure=1.1;
 

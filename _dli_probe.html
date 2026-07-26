@@ -55,6 +55,19 @@ for (const k of Object.keys(rooms)) { const r=rooms[k];
   const ors = [...new Set(r.orients)].join('·');
   L.push(`| ${NAMES[k]} | ${r.size.w}×${r.size.d}m | ${ors} | ${r.wins.length} | ${r.slots} | ${r.occ} | ${gap} |`); }
 
+/* ★ 슬롯 분포 — '어두운 칸이 몇 개인지'가 난이도 근거다.
+   최고값 하나만 보면 방 안에서 몇 자리를 실제로 쓸 수 있는지 모른다. */
+L.push('');
+L.push('## 슬롯 DLI 분포 (맑음·여름) — 밴드별 칸 수');
+L.push('| 방 | 슬롯 | <0.3 고사권 | 0.3~1.5 정체 | 1.5~3 느림 | 3~6 성장 | ≥6 갈라짐 |');
+L.push('|---|---|---|---|---|---|---|');
+for (const k of Object.keys(rooms)) { const r=rooms[k];
+  const ds=r.ratios.map(x=>daylightDLI(x,{weather:'clear',season:'summer'}));
+  const c=[0,0,0,0,0];
+  for(const d of ds){ c[ d<0.3?0 : d<1.5?1 : d<3?2 : d<6?3 : 4 ]++; }
+  L.push(`| ${NAMES[k]} | ${ds.length} | **${c[0]}** | ${c[1]} | ${c[2]} | ${c[3]} | ${c[4]} |`);
+}
+
 for (const [w,s] of CASES) {
   L.push('');
   L.push(`## ${WEATHER[w].ko} · ${SEASON[s].ko} — 천공 ${Math.round(skyEvMax({weather:w,season:s}))} lx · 낮 ${dayLengthHours(s)}h`);

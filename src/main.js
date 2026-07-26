@@ -28,6 +28,12 @@ const lightPresets=await fetch('./data/lighting_presets.json').then(r=>r.json())
 const lightTh   = await fetch('./data/light_thresholds.json').then(r=>r.json()).catch(()=>null);
 const shadePresets=await fetch('./data/shading_presets.json').then(r=>r.json()).catch(()=>({presets:{}}));
 
+/* ★ 가구마다 안정 uid — 슬롯 ID의 뿌리다.
+   없으면 여기서 붙인다. 집꾸미기 내보내기에 같이 나가므로 다음에도 같은 id가 유지된다. */
+let _uidSeq=0;
+for(const [rk,rv] of Object.entries(houseRooms.rooms||{}))
+  for(const f of (rv.furniture||[])) if(!f.uid) f.uid = rk+'-'+(f.preset||'x')+'-'+(++_uidSeq);
+
 // 기본 배치 원본 — 집꾸미기 '기본으로' 버튼이 여기로 되돌린다
 const DEFAULT_FURN=Object.fromEntries(
   Object.entries(houseRooms.rooms||{}).map(([k,v])=>[k, JSON.parse(JSON.stringify(v.furniture||[]))]));

@@ -682,6 +682,7 @@ export function buildHouse(GRAIN, roomDefIn, winPresets, doorPresets={}, finishe
     const type=p.type||f.preset;
     const g=buildFurniture(type, p);
     g.userData.furnIdx=furnIdx;      // ★ 집꾸미기: 클릭한 메시 → 원본 배열 인덱스 역추적용
+    g.userData.uid = f.uid || (f.preset+'#'+furnIdx);   // ★ 슬롯 ID의 뿌리 (아래 plantSlots)
     const hang=g.userData.hangFromCeiling;
     const yBase = f.y!=null ? f.y : (hang ? CH : 0);       // 천장 매달림/벽걸이 높이
     g.position.set(f.x??0, yBase, f.z??0);
@@ -723,6 +724,10 @@ export function buildHouse(GRAIN, roomDefIn, winPresets, doorPresets={}, finishe
     const base=o.position, rot=o.rotation.y||0, c=Math.cos(rot), s=Math.sin(rot);
     o.userData.slots.forEach((sl,i)=>{
       plantSlots.push({
+        /* ★ 안정 ID — 생장 창이 "어느 화분이 어느 자리인지" 기억하는 열쇠.
+           가구를 옮겨도 그대로고, 배열 인덱스가 밀려도 안 바뀐다.
+           uid는 방 데이터에 저장되므로 세이브/로드에도 유지된다. */
+        slotId: (o.userData.uid || 'x') + ':' + i,
         owner:o.userData.type, idx:i,
         x:+(base.x + sl.x*c + sl.z*s).toFixed(3),
         y:+(base.y + sl.y).toFixed(3),
@@ -743,7 +748,7 @@ export function buildHouse(GRAIN, roomDefIn, winPresets, doorPresets={}, finishe
      외벽 span은 지웠지만 안쪽 경계엔 아무것도 없어서 뻥 뚫려 보였다.
      같은 선에 칸막이가 이미 그 구간을 덮고 있으면 건너뛴다(벽 두 겹 방지). */
   if(cutouts.length){
-    const cw=surfaceMat(roomDef.wallColor, roomDef.wallRough??0.9, GRAIN);
+    /* 면마다 재질을 새로 만든다 — 클리핑을 벽 하나씩 따로 걸어야 해서 공유하면 안 된다 */
     const covered=(ax,at,u0,u1)=>(roomDef.partitions||[]).some(pt=>{
       if(pt.axis!==ax || Math.abs(pt.at-at)>=0.05) return false;
       const along=(pt.axis==='x')?CD:CW;
@@ -757,6 +762,7 @@ export function buildHouse(GRAIN, roomDefIn, winPresets, doorPresets={}, finishe
       if(covered(ax,at,u0,u1) || u1-u0<0.02) return;
       const c=(u0+u1)/2, len=u1-u0;
       const g=new THREE.Group();
+      const cw=surfaceMat(roomDef.wallColor, roomDef.wallRough??0.9, GRAIN);
       g.add( ax==='x' ? box(WT, CH, len, cw, at, CH/2, c)
                       : box(len, CH, WT, cw, c, CH/2, at) );
       g.userData={ normal: ax==='x'?[1,0,0]:[0,0,1],
@@ -903,6 +909,8 @@ function addSkirting(g, wall, uMin, uMax, openings){
 export const WALL_MODES = ['auto','low','on'];
 export const WALL_MODE_KO = { auto:'벽: 시야자동', low:'벽: 내림', on:'벽: 있음' };
 const LOW_H = 0.10;                       // 남길 밑동 높이 [m]
+/* y <= LOW_H 만 그린다. normal·p + constant >= 0 → -y + 0.10 >= 0 */
+const STUB_PLANE = new THREE.Plane(new THREE.Vector3(0,-1,0), LOW_H);
 
 export function updateShellVisibility(shells, cam, mode='auto', trims=null){
   const cp=cam.position;
@@ -935,11 +943,21 @@ export function updateShellVisibility(shells, cam, mode='auto', trims=null){
 
     if(sh.userData._stub === stub) continue;     // 바뀔 때만 손댄다
     sh.userData._stub = stub;
-    const k = stub ? LOW_H / (_h || 2.6) : 1;
     sh.visible = true;
-    sh.scale.y = k;
+    sh.scale.y = 1;                             // 기하는 건드리지 않는다
+    /* ★ 잘라서 보여준다(누르지 않는다).
+       기하를 누르면 그림자까지 눌려 벽이 빛을 못 막는다 — 실제로 거실·안방에
+       해가 그냥 들어왔다. 클리핑은 렌더만 자르고 그림자는 전체 높이로 남는다. */
+    sh.traverse(o=>{
+      if(!o.isMesh || !o.material) return;
+      const set=mm=>{ mm.clippingPlanes = stub ? [STUB_PLANE] : null;
+                      mm.clipShadows = false;      // 그림자는 자르지 않는다 = 빛을 계속 막는다
+                      mm.needsUpdate = true; };
+      Array.isArray(o.material) ? o.material.forEach(set) : set(o.material);
+      o.castShadow = true;                          // 밑동만 보여도 그림자는 던진다
+    });
     const t = trims && trims[key];
-    if(t){ t.scale.y = k; t.visible = !stub; }   // 창틀은 눌리면 어차피 안 보이니 감춘다
+    if(t){ t.scale.y = 1; t.visible = !stub; }   // 창틀은 잘리면 어차피 안 보이니 감춘다
   }
 }
 

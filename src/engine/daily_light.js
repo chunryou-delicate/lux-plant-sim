@@ -194,7 +194,10 @@ export function buildDailyLight(day, slots, wins, ctx = {}) {
     const varie = isVariegated(thresholds, s.plantId, s.variegated);
     const th = thresholdsFor(thresholds, s.plantId, varie);
     return {
-      id: s.id, plantId: s.plantId || null,
+      /* slotId = house.js가 준 안정 ID. 생장 창이 이걸로 화분을 기억한다.
+         (예전엔 s.id 만 봐서 전부 undefined 였다) */
+      slotId: s.slotId || s.id || null,
+      plantId: s.plantId || null,
       point: p,
       variegated: varie,
       peak_lx: Math.round(ratio * evMax),
