@@ -579,9 +579,11 @@ export function buildHouse(GRAIN, roomDefIn, winPresets, doorPresets={}, finishe
                            : box(du,dv,WT*0.7, pw, cu, cv, pt.at) );
       // ★ 조도 차폐체: 문 구멍을 뺀 '조각'만 넣으므로 통로로는 빛이 지난다.
       //   (외벽은 창 개구부가 있어 통짜 박스로 넣으면 창빛까지 막히므로 제외)
+      /* src: 방 등급을 '공간'으로 잴 때 가구만 빼기 위한 표시.
+         가구에서 나온 슬롯으로 방을 재면 '내가 대충 놓은 배치'가 방 등급이 된다. */
       occluders.push(pt.axis==='x'
-        ? { x:pt.at-WT*0.35, z:cu-du/2, w:WT*0.7, d:du, h:r.y1, y0:r.y0, rot:0 }
-        : { x:cu-du/2, z:pt.at-WT*0.35, w:du, d:WT*0.7, h:r.y1, y0:r.y0, rot:0 });
+        ? { x:pt.at-WT*0.35, z:cu-du/2, w:WT*0.7, d:du, h:r.y1, y0:r.y0, rot:0, src:'partition' }
+        : { x:cu-du/2, z:pt.at-WT*0.35, w:du, d:WT*0.7, h:r.y1, y0:r.y0, rot:0, src:'partition' });
     }
     // 열린 끝단(외벽에 안 닿는 쪽)엔 기둥 마감 — 벽이 잘려 떠 있는 것처럼 안 보이게
     const CAP=WT*1.15;
@@ -696,7 +698,8 @@ export function buildHouse(GRAIN, roomDefIn, winPresets, doorPresets={}, finishe
     if(fsz && fsz.h>0.25 && !/^rug|^lamp|light|^picture|^wall_clock|^mirror/.test(type)){
       g.userData.occIdx = occluders.length;   // 자기 자신은 자기 슬롯을 가리지 않게(자가차폐 방지)
       occluders.push({ x:(f.x??0)-fsz.w/2, z:(f.z??0)-fsz.d/2,
-                       w:fsz.w, d:fsz.d, h:fsz.h, y0:yBase, rot:(f.rot||0)*Math.PI/180 });
+                       w:fsz.w, d:fsz.d, h:fsz.h, y0:yBase, rot:(f.rot||0)*Math.PI/180,
+                       src:'furniture' });
     }
 
     // ★ 조명 기구면 실제 광원 생성 (밤 연출·거리감쇠 시각화)
