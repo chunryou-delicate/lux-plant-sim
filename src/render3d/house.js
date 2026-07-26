@@ -38,11 +38,14 @@ function surfaceMat(hex, rough=0.9, grain){
 
 /* ---- 유리 셰이더 재질 (문서 §3) ---- */
 export function makeGlassMaterial(){
+  /* r128의 MeshPhysicalMaterial은 transmission을 제대로 못 그리고 thickness는
+     아예 없는 속성이다("'thickness' is not a property of this material" 경고).
+     그래서 뿌연 흰 판처럼 보였다. 단순 투명 + 클리어코트로 바꿔 확실히 비치게 한다. */
   return new THREE.MeshPhysicalMaterial({
-    transmission:1.0, roughness:0.0, thickness:0.5,
-    transparent:true, ior:1.5, opacity:0.18, metalness:0.0,
-    color:0xcfe8ff, side:THREE.DoubleSide,
-    depthWrite:false,
+    color:0xdff0f7, transparent:true, opacity:0.14,
+    roughness:0.04, metalness:0.0,
+    clearcoat:1.0, clearcoatRoughness:0.04,
+    side:THREE.DoubleSide, depthWrite:false,
   });
 }
 
@@ -302,6 +305,45 @@ export function buildHouse(GRAIN, roomDefIn, winPresets, doorPresets={}, finishe
     ? rectMinus({ x0:-HW, y0:-HD, x1:HW, y1:HD }, cutSlab)
     : [{ x0:-HW, y0:-HD, x1:HW, y1:HD }];
 
+  /* ★ 칸막이의 u범위 (from/to를 방 크기로 클램프 + 끝단 스냅) — 렌더/충돌 공용 */
+  function partURange(pt){
+    const along=(pt.axis==='x') ? CD : CW;
+    let a=(pt.from!=null)?Math.max(pt.from,-along/2):-along/2;
+    let b=(pt.to  !=null)?Math.min(pt.to,  along/2): along/2;
+    if(a> -along/2 && a < -along/2+0.3) a=-along/2;
+    if(b<  along/2 && b >  along/2-0.3) b= along/2;
+    return [a,b];
+  }
+  /* ★ 이 칸막이가 지나는 '방 구간' — 직각으로 만나는 칸막이가 경계다. */
+  function partSegments(pt){
+    const [uMin,uMax]=partURange(pt);
+    const cuts=[uMin,uMax];
+    for(const o of (roomDef.partitions||[])){
+      if(o===pt || o.axis===pt.axis) continue;
+      const along=(o.axis==='x')?CD:CW;
+      const a=(o.from!=null)?o.from:-along/2, b=(o.to!=null)?o.to:along/2;
+      if(pt.at>=a-0.05 && pt.at<=b+0.05 && o.at>uMin+0.05 && o.at<uMax-0.05) cuts.push(o.at);
+    }
+    cuts.sort((x,y)=>x-y);
+    const out=[];
+    for(let i=0;i<cuts.length-1;i++) if(cuts[i+1]-cuts[i]>0.6) out.push([cuts[i],cuts[i+1]]);
+    return out;
+  }
+  /* ★ 실제로 쓸 개구부 — 전창이면 방 구간마다 미닫이 한 짝을 자동 배치.
+     폭은 glazing.slideW 하나로 전부 조절된다. 위치·열림거리는 구간에서 자동. */
+  function effectiveOpenings(pt){
+    const gz=pt.glazing;
+    if(!(gz && gz.full && gz.autoSlide!==false)) return pt.openings||[];
+    const y0=gz.y0 ?? 0.05, y1=gz.y1 ?? Math.min(2.30, CH-0.25);
+    const wantW=gz.slideW ?? 1.6;
+    return partSegments(pt).map(([a,b])=>{
+      const seg=b-a, w=Math.min(wantW, seg*0.48), at=(a+b)/2, room=(seg-w)/2;
+      return { at:+at.toFixed(3), w:+w.toFixed(3), y0, y1,
+               travel:+Math.min(w*0.92, room-0.03).toFixed(3), dir:-1,
+               seg:[+a.toFixed(3), +b.toFixed(3)] };
+    });
+  }
+
   /* 어떤 외벽의 어느 u구간이 도려내졌는지 — 그 구간엔 벽을 안 세운다 */
   function cutSpansOn(wall){
     const out=[];
@@ -477,7 +519,7 @@ export function buildHouse(GRAIN, roomDefIn, winPresets, doorPresets={}, finishe
   // ---------- ★ 내벽(칸막이) = 공간 분획 (투룸·아파트) ----------
   // partitions: [{ axis:'x'|'z', at:위치, from,to:구간, door:{at,w,h}, arch:bool }]
   // axis 'x' = x=at 에 세워지는 세로벽(z방향으로 뻗음), 'z' = z=at 가로벽(x방향)
-  for(const pt of (roomDef.partitions||[])){
+  for(let pt of (roomDef.partitions||[])){
     const g=new THREE.Group();
     const pw=surfaceMat(roomDef.wallColor, roomDef.wallRough??0.9, GRAIN);
     const along=(pt.axis==='x') ? CD : CW;                 // 벽이 뻗는 축 길이
@@ -498,6 +540,9 @@ export function buildHouse(GRAIN, roomDefIn, winPresets, doorPresets={}, finishe
        빛은 유리 전면으로 들어오므로 벽 조각(차폐체)을 두면 안 된다. */
     const GY0 = (pt.glazing && pt.glazing.y0) ?? 0.05;
     const GY1 = (pt.glazing && pt.glazing.y1) ?? Math.min(2.30, CH - 0.25);
+
+    pt = { ...pt, openings: effectiveOpenings(pt) };
+
     if(pt.glazing && pt.glazing.full){
       holes.push({ x0:uMin, y0:GY0, x1:uMax, y1:GY1 });     // 전폭이 통유리
     }else{
@@ -557,12 +602,13 @@ export function buildHouse(GRAIN, roomDefIn, winPresets, doorPresets={}, finishe
             leaf.position.set(oa, cy, pt.at+0.075);
           }
           glassMeshes.push(pane); g.add(leaf);
+          const tv=(op.travel!=null? op.travel : ow*0.92) * (op.dir!=null? op.dir : 1);
           doorways.push({ x: pt.axis==='x'? pt.at : oa,
                           z: pt.axis==='x'? oa : pt.at,
                           nx: pt.axis==='x'?1:0, nz: pt.axis==='x'?0:1,
                           half: ow/2+0.25, kind:'slide', node:leaf,
                           axis: pt.axis, home: pt.axis==='x'? leaf.position.z : leaf.position.x,
-                          travel: ow*0.92, t:0 });
+                          travel: tv, t:0 });
         }
         /* 조도: 이 판을 지나는 광선만 tau만큼 약해진다(차폐가 아니라 감쇠). */
         glazedPanes.push({ axis:pt.axis, at:pt.at, tau, u0:a0, u1:a1, y0:GY0, y1:GY1 });
@@ -668,6 +714,33 @@ export function buildHouse(GRAIN, roomDefIn, winPresets, doorPresets={}, finishe
   // 엔진 winPos = 첫 창(없으면 뒷벽 기본)
   const winPos = winWorld[0] || new THREE.Vector3(0.6,2.2,-CD/2+0.05);
 
+  /* ★ 도려낸 자리(집 밖) 경계에 벽을 세운다.
+     외벽 span은 지웠지만 안쪽 경계엔 아무것도 없어서 뻥 뚫려 보였다.
+     같은 선에 칸막이가 이미 그 구간을 덮고 있으면 건너뛴다(벽 두 겹 방지). */
+  if(cutouts.length){
+    const cw=surfaceMat(roomDef.wallColor, roomDef.wallRough??0.9, GRAIN);
+    const covered=(ax,at,u0,u1)=>(roomDef.partitions||[]).some(pt=>{
+      if(pt.axis!==ax || Math.abs(pt.at-at)>=0.05) return false;
+      const along=(pt.axis==='x')?CD:CW;
+      const a=(pt.from!=null)?pt.from:-along/2, b=(pt.to!=null)?pt.to:along/2;
+      return a<=u0+0.05 && b>=u1-0.05;
+    });
+    const g=new THREE.Group();
+    const face=(ax,at,u0,u1)=>{
+      if(covered(ax,at,u0,u1) || u1-u0<0.02) return;
+      const c=(u0+u1)/2, len=u1-u0;
+      g.add( ax==='x' ? box(WT, CH, len, cw, at, CH/2, c)
+                      : box(len, CH, WT, cw, c, CH/2, at) );
+    };
+    for(const c of cutouts){
+      if(c.x0 > -CW/2+1e-6) face('x', c.x0, c.z0, c.z1);
+      if(c.x1 <  CW/2-1e-6) face('x', c.x1, c.z0, c.z1);
+      if(c.z0 > -CD/2+1e-6) face('z', c.z0, c.x0, c.x1);
+      if(c.z1 <  CD/2-1e-6) face('z', c.z1, c.x0, c.x1);
+    }
+    if(g.children.length) room.add(g);
+  }
+
   /* ============================================================
      ★ 충돌체 — 사람이 지날 수 있는 구멍만 빼고 막는다.
        지남: 문 · 칸막이 통로 · 미닫이 짝
@@ -704,15 +777,13 @@ export function buildHouse(GRAIN, roomDefIn, winPresets, doorPresets={}, finishe
     // 3) 칸막이 — 통로(door)와 미닫이 짝(openings)만 지난다.
     //    전창이어도 고정 유리는 못 지나므로 openings 자리만 뚫린다.
     for(const pt of (roomDef.partitions||[])){
-      const along=(pt.axis==='x') ? CD : CW;
-      let uMin=(pt.from!=null)?Math.max(pt.from,-along/2):-along/2;
-      let uMax=(pt.to  !=null)?Math.min(pt.to,  along/2): along/2;
-      if(uMin> -along/2 && uMin < -along/2+0.3) uMin=-along/2;
-      if(uMax<  along/2 && uMax >  along/2-0.3) uMax= along/2;
+      const [uMin,uMax]=partURange(pt);
       const gaps=[];
       // door.exit = 집 밖으로 나가는 문. 문짝은 보이되 통과는 막는다(밖엔 바닥이 없다).
       if(pt.door && !pt.door.exit){ const dw=pt.door.w??0.95, da=pt.door.at??0; gaps.push([da-dw/2, da+dw/2]); }
-      for(const op of (pt.openings||[])){ const ow=op.w??1.5, oa=op.at??0; gaps.push([oa-ow/2, oa+ow/2]); }
+      // ★ 렌더와 같은 개구부를 써야 한다. 자동 미닫이를 여기서 다시 계산하지 않으면
+      //   베란다 칸막이가 통째로 막혀 밖으로 못 나간다(실제로 그랬다).
+      for(const op of effectiveOpenings(pt)){ const ow=op.w??1.5, oa=op.at??0; gaps.push([oa-ow/2, oa+ow/2]); }
       blockLine(pt.axis, pt.at, uMin, uMax, gaps, WT*0.7);
     }
   }
