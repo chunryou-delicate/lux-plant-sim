@@ -173,7 +173,7 @@ const DEF={
 };
 let P=Object.assign({}, DEF);
 // 저장본 버전. 생장 로직/기본값이 바뀌면 올림 → 옛 저장값이 새 기본값을 덮어쓰지 않게.
-const CFG_VER='2026-07-26-petcolor';
+const CFG_VER='2026-07-26-petcolor2';
 
 // ===== 튜닝 파라미터(B: 에셋별 개별 조정) =====
 const ADJ_KEYS=[
@@ -1466,8 +1466,10 @@ function buildPlant(){
         const tot=L[L.length-1]||1, nodeTs=L.slice(1,-1).map(l=>l/tot);
         // 이 축 끝에 달릴 잎을 미리 알아내 줄기 끝 색을 맞춘다(잎 → 엽초 → 줄기가 이어져 보이게)
         let tipCol=null;
-        if(g>=ax.leafBirth){
-          const lk=pickLeafKey(leafM(ax,g), ax.midType, ax.canMature, ax.varie, ax.alboMid, ax.matRoll);
+        // ※ 이 블록 아래에서 const ax=e.ax 를 선언하므로 여기서 ax를 쓰면 TDZ 오류가 난다. e.ax로 쓴다.
+        if(g>=e.ax.leafBirth){
+          const A=e.ax;
+          const lk=pickLeafKey(leafM(A,g), A.midType, A.canMature, A.varie, A.alboMid, A.matRoll);
           if(lk) tipCol=petColorOf(lk);
         }
         addStemTube(e.pts, e.rBase, e.rTip, nodeTs, stemTint(0), tipCol);
