@@ -718,6 +718,64 @@ export function buildHouse(GRAIN, roomDefIn, winPresets, doorPresets={}, finishe
         pos:{x:f.x??0,y:emitY,z:f.z??0}, grow:!!fxSpec.grow });
     }
   }
+  /* ★ 창턱(sill) — 가구가 아니라 건축 구조다.
+     두꺼운 벽 건물의 깊은 창턱을 그대로 만든다. 벽 하단이 불투명하고
+     그 위가 방 안쪽으로 튀어나온 턱이며, 턱 위부터 천장까지가 창이다.
+
+     왜 가구가 아니라 구조인가
+       가구로 만들면 플레이어가 옮기거나 팔 수 있다. 그러면 "학원교실은 창턱이 자산"이
+       성립하지 않는다. 남의 공간이라 못 건드린다는 게 가장(家長)의 제약과도 맞는다.
+     왜 깊게(1m) 만드나
+       앞줄·뒷줄이 생겨 줄마다 조도가 달라진다. 같은 턱 안에서도 자리 선택이 생긴다.
+
+     furnGroup 에 넣는 이유는 슬롯 수집을 그대로 쓰기 위해서다. 다만 furnIdx 를
+     안 붙이므로 집꾸미기에서 선택되지 않는다(decorate 는 furnIdx 로 역추적한다). */
+  const SILL_GRID = 0.25;                       // 가구 이동 그리드와 같게
+  (roomDef.sills || []).forEach((sl, si) => {
+    const w = sl.w, dep = sl.depth ?? 0.30, top = sl.y ?? 1.0;
+    const horiz = (sl.wall === 'back' || sl.wall === 'front');
+    const inner = horiz ? (CD/2 - WT/2) : (CW/2 - WT/2);   // 벽 안쪽면
+    /* ★ back·left 는 좌표가 음수다(winFromHouse: back→cz=-D/2, left→cx=-W/2).
+       여기를 +1로 놨다가 턱이 반대편 벽에 붙어 창턱 조도가 5.4가 아니라 0.20으로 나왔다. */
+    const sign  = (sl.wall === 'back' || sl.wall === 'left') ? -1 : 1;
+    const at    = sign * (inner - dep/2);       // 턱 중심(벽에서 방 안쪽으로)
+    const cu    = sl.cu ?? 0;
+
+    const g = new THREE.Group();
+    const mat = surfaceMat(sl.color || roomDef.wallColor, roomDef.wallRough ?? 0.9, GRAIN);
+    g.add(horiz ? box(w, top, dep, mat, cu, top/2, at)
+                : box(dep, top, w, mat, at, top/2, cu));
+    g.userData.type = 'sill';
+    g.userData.uid  = sl.uid || ('sill_' + sl.wall + (si ? '_'+si : ''));
+    g.userData.fixed = true;                    // 건축 구조 — 못 옮기고 못 판다
+    g.userData.size = horiz ? {w, d:dep, h:top} : {w:dep, d:w, h:top};
+
+    /* 턱 위 슬롯 — 0.25m 격자로 폭×깊이를 채운다.
+       앞줄(창에 가까운 쪽)이 밝고 뒷줄로 갈수록 어둡다. 그게 자리 선택이 된다. */
+    const nU = Math.max(1, Math.floor(w   / SILL_GRID));
+    const nV = Math.max(1, Math.floor(dep / SILL_GRID));
+    const slots = [];
+    for (let v = 0; v < nV; v++) for (let u = 0; u < nU; u++) {
+      const du = (u - (nU-1)/2) * SILL_GRID;
+      /* v=0 이 벽(창) 쪽 = 제일 밝은 줄. 뒤로 갈수록 어두워진다 — 그게 자리 선택이다. */
+      const dv = inner - SILL_GRID*(v + 0.5);
+      slots.push(horiz ? { x: cu + du, y: top, z: sign * dv, d: SILL_GRID - 0.03 }
+                       : { x: sign * dv, y: top, z: cu + du, d: SILL_GRID - 0.03 });
+    }
+    g.userData.slots = slots;
+    g.userData.tier_max_pot_d = slots.map(() => +(SILL_GRID - 0.03).toFixed(2));
+    /* 자기 턱이 자기 슬롯을 가리지 않게 — 슬롯은 턱 '위'(y=top)라 경계에 걸린다 */
+    g.userData.occIdx = occluders.length;
+    furnGroup.add(g);
+
+    // 빛을 막는다 — 턱 아래 바닥은 이 턱에 가려 비스듬한 빛만 받는다
+    occluders.push(horiz
+      ? { x: cu - w/2, z: at - dep/2, w, d: dep, h: top, y0: 0, rot: 0, src: 'sill' }
+      : { x: at - dep/2, z: cu - w/2, w: dep, d: w, h: top, y0: 0, rot: 0, src: 'sill' });
+    if (horiz) pushCol(cu, at, w, dep, top, 0, 'sill');
+    else       pushCol(at, cu, dep, w, top, 0, 'sill');
+  });
+
   if(furnGroup.children.length) room.add(furnGroup);
 
   // 가구 위 화분 슬롯을 월드좌표로 수집 (조도 계산·배치용)

@@ -1,0 +1,84 @@
+<!doctype html><meta charset="utf-8"><title>창턱·온실 확인</title>
+<body style="background:#111;color:#ddd;font:12px/1.6 monospace;padding:16px">
+<pre id="out">…</pre>
+<script src="https://unpkg.com/three@0.128.0/build/three.min.js"></script>
+<script type="module">
+/* 학원교실 깊은 창턱 + 온실 3면 유리를 조립해 확인한다.
+   묻는 것: 슬롯이 몇 개 나오나 · 앞줄과 뒷줄이 얼마나 다른가 · 턱 위아래가 얼마나 갈리나 */
+import { buildHouse } from './src/render3d/house.js';
+import { winFromHouse } from './src/engine/daylight_lux.js';
+import { daylightRatio, daylightDLI } from './src/engine/daily_light.js';
+
+const J = p => fetch(p).then(r=>r.json());
+const [HR,WP,DP,FIN,FP,LP,TH,SH] = await Promise.all([
+  J('./data/house_rooms.json'),J('./data/window_presets.json'),J('./data/door_presets.json'),
+  J('./data/room_finishes.json'),J('./data/furniture_presets.json'),J('./data/lighting_presets.json'),
+  J('./data/balance/light_thresholds.json'),J('./data/shading_presets.json')]);
+const wp=WP.presets||WP, dp=DP.presets||DP, fp=FP.presets||FP;
+const L=[];
+const DLI = (r) => daylightDLI(r,{weather:'clear',season:'summer'});
+
+function build(key){
+  const built = buildHouse(null, HR.rooms[key], wp, dp, FIN, fp, LP, SH);
+  const wins = (built.luxWins||[]).map(w=>winFromHouse(w.wall,w.cu,w.cy,w.w,w.h,built.size,w.tau,w.evScale)).filter(Boolean);
+  return {built, wins};
+}
+const at = (b,w,p,selfIdx) => DLI(daylightRatio(p,{x:0,y:1,z:0},w,
+  {occluders:b.occluders, glazed:b.glazedPanes, selfIdx}));
+
+/* ── 학원교실 ───────────────────────────────── */
+let R = build('classroom');
+L.push('# 학원교실 — 반전창 + 깊은 창턱');
+L.push('');
+L.push(`방 ${R.built.size.w}×${R.built.size.d}×${R.built.size.h}m · 창 ${R.wins.length}개 · 슬롯 ${R.built.plantSlots.length}개`);
+const sill = R.built.plantSlots.filter(s=>String(s.slotId).startsWith('classroom-sill'));
+L.push(`**창턱 슬롯 ${sill.length}개** (그 외 가구 슬롯 ${R.built.plantSlots.length-sill.length}개)`);
+L.push('');
+/* 앞줄/뒷줄 — z 가 작을수록(음수 큼) 창에 가깝다(back 벽) */
+const rows = {};
+for(const s of sill){ const k=s.z.toFixed(2); (rows[k]=rows[k]||[]).push(s); }
+const keys = Object.keys(rows).sort((a,b)=>a-b);
+L.push('## 창턱 앞줄 ↔ 뒷줄 (창턱 깊이 1.0m · 0.25m 격자)');
+L.push('');
+L.push('| 줄 | z | 칸 수 | DLI 최고 | DLI 평균 | 앞줄 대비 |');
+L.push('|---|---|---|---|---|---|');
+let head=null;
+for(const k of keys){
+  const ds = rows[k].map(s=>at(R.built,R.wins,{x:s.x,y:s.y,z:s.z},s.occIdx));
+  const mx = Math.max(...ds), av = ds.reduce((a,b)=>a+b,0)/ds.length;
+  if(head===null) head=av;
+  L.push(`| ${keys.indexOf(k)+1}${keys.indexOf(k)===0?' (창쪽)':''} | ${(+k).toFixed(2)} | ${rows[k].length} | ${mx.toFixed(2)} | **${av.toFixed(2)}** | ${(av/head*100).toFixed(0)}% |`);
+}
+L.push('');
+L.push('## 창턱 높이(1.0m) 위아래 — 같은 x,z 에서 높이만 바꿔서');
+L.push('');
+L.push('| 창에서 거리 | y0.3 (턱 아래) | y0.8 (턱 아래) | **y1.05 (턱 위)** | y1.5 | y1.8 |');
+L.push('|---|---|---|---|---|---|');
+const D = R.built.size.d;
+for(const zz of [-D/2+0.35, -D/2+0.9, -D/2+1.6, -D/2+2.6, 0]){
+  const cells=[0.3,0.8,1.05,1.5,1.8].map(y=>at(R.built,R.wins,{x:0,y,z:zz}).toFixed(2));
+  const dist=(zz+D/2).toFixed(2);
+  L.push(`| ${dist}m | ${cells[0]} | ${cells[1]} | **${cells[2]}** | ${cells[3]} | ${cells[4]} |`);
+}
+
+/* ── 온실 ───────────────────────────────────── */
+R = build('greenhouse');
+L.push('');
+L.push('# 온실 — 3면 유리 + 천창 (북쪽 벽만 불투명)');
+L.push('');
+L.push(`방 ${R.built.size.w}×${R.built.size.d}×${R.built.size.h}m · 유리면 ${(HR.rooms.greenhouse.glassWalls||[]).join('·')} + 천장`);
+L.push(`조도 엔진 창 ${R.wins.length}개 — ${R.built.luxWins.map(w=>w.orient+'/'+(w.from||'?')).join(' · ')}`);
+L.push(`슬롯 ${R.built.plantSlots.length}개 · 차폐체 ${R.built.occluders.length}개`);
+L.push('');
+let ds = R.built.plantSlots.map(s=>at(R.built,R.wins,{x:s.x,y:s.y,z:s.z},s.occIdx));
+ds.sort((a,b)=>b-a);
+const n=(t)=>ds.filter(x=>x>=t).length;
+L.push(`| 최고 DLI | 중앙 | ≥6 자리 | ≥3 자리 | <0.3 자리 |`);
+L.push('|---|---|---|---|---|');
+L.push(`| **${ds[0].toFixed(2)}** | ${ds[Math.floor(ds.length/2)].toFixed(2)} | **${n(6)}** | ${n(3)} | ${ds.filter(x=>x<0.3).length} |`);
+L.push('');
+L.push('> 연구자 대량 실생은 **DLI≥6 병렬 그루 수**가 속도를 정한다.');
+
+document.getElementById('out').textContent=L.join('\n');
+document.title='DONE';
+</script>

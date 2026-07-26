@@ -436,6 +436,30 @@
       },
       "note": "온실 통창. 굵은 멀리언 커튼월."
     },
+    "win_classroom_band": {
+      "room": "학원교실",
+      "status": "초안",
+      "final": false,
+      "shape": "rect",
+      "cols": 6,
+      "rows": 1,
+      "pattern": "curtainwall",
+      "corner": "sharp",
+      "sill": false,
+      "frameColor": "#e8edef",
+      "gloss": "satin",
+      "glass": {
+        "type": "clear",
+        "transmittance": 0.9,
+        "tintColor": null,
+        "glossy": 0.3
+      },
+      "light": {
+        "illumMul": 1.0,
+        "diffuse": false
+      },
+      "note": "★ 반전창 — 창턱(1.0m) 위부터 천장까지 벽 폭 전체. 창턱은 house_rooms.json 의 sills 로 따로 만든다(건축 구조라 못 옮긴다)."
+    },
     "win_sunroom_wide": {
       "room": "선룸",
       "status": "초안",
