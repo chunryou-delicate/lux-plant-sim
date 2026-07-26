@@ -85,9 +85,11 @@ export function glassMaterial(glass){
       m=new THREE.MeshPhysicalMaterial({ ...base, transmission:0.35, roughness:0.8, opacity:0.85, ior:1.4,
         color:col(gz.tintColor||'#dfeaf0') }); break;
     case 'clear':
-    default:              // 맑고 투명 — 뿌연 필름 안 끼게 opacity 낮게, 틴트 옅게
-      m=new THREE.MeshPhysicalMaterial({ ...base, transmission:0.95, roughness:0.03, opacity:0.12, ior:1.5,
-        color:col(gz.tintColor||'#e8f1f6') }); break;
+    default:              /* 맑고 투명. r128은 transmission을 거의 못 그리므로 결국 opacity가 보인다.
+                             0.12는 밝은 배경 위에서 뿌연 막처럼 보여서 0.06까지 내렸다.
+                             테두리 반사(clearcoat)는 넣지 않는다 — 그게 흰 판처럼 보이게 만든다. */
+      m=new THREE.MeshPhysicalMaterial({ ...base, transmission:0.98, roughness:0.02, opacity:0.06, ior:1.5,
+        color:col(gz.tintColor||'#eef6fa') }); break;
   }
   m.userData.transmittance=gz.transmittance;                       // 조도 계수(값만 보존)
   m.userData.diffuse=(gz.type==='frosted'||gz.type==='glassblock'); // 확산광 플래그

@@ -38,15 +38,10 @@ function surfaceMat(hex, rough=0.9, grain){
 
 /* ---- 유리 셰이더 재질 (문서 §3) ---- */
 export function makeGlassMaterial(){
-  /* r128의 MeshPhysicalMaterial은 transmission을 제대로 못 그리고 thickness는
-     아예 없는 속성이다("'thickness' is not a property of this material" 경고).
-     그래서 뿌연 흰 판처럼 보였다. 단순 투명 + 클리어코트로 바꿔 확실히 비치게 한다. */
-  return new THREE.MeshPhysicalMaterial({
-    color:0xdff0f7, transparent:true, opacity:0.14,
-    roughness:0.04, metalness:0.0,
-    clearcoat:1.0, clearcoatRoughness:0.04,
-    side:THREE.DoubleSide, depthWrite:false,
-  });
+  /* ★ 외부 창과 똑같은 유리를 쓴다. 예전엔 여기만 따로 만들어서
+     클리어코트 반사 때문에 뿌연 흰 판처럼 보였다.
+     window_frame.js의 'clear'가 유일한 맑은 유리 정의다 — 한 곳만 고치면 전부 바뀐다. */
+  return glassMaterial({ type:'clear' });
 }
 
 /* ============================================================
