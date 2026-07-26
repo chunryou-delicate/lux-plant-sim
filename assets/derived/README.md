@@ -14,11 +14,11 @@
 ```bash
 # 다시 만들기 — 캐릭 창의 기존 도구를 그대로 쓴다
 for f in assets/characters/3d/char_*_idle.glb assets/characters/3d/char_*_walking.glb; do
-  python tools/strip_anim_glb.py "$f" "assets/derived/char_clips/$(basename $f)"
+  python tools/char/strip_anim_glb.py "$f" "assets/derived/char_clips/$(basename $f)"
 done
 ```
 
-캐릭 창이 `tools/rescale_char_glb.py` 로 키를 다시 맞추면(래퍼 스케일만 바뀜)
+캐릭 창이 `tools/char/rescale_char_glb.py` 로 키를 다시 맞추면(래퍼 스케일만 바뀜)
 클립은 뼈 트랙이라 영향이 없다. 다만 **노드 구성이 바뀌면 다시 만들어야 한다** —
 `rigged`와 클립의 노드 개수·이름이 같은지 확인할 것.
 

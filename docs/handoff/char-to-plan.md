@@ -18,9 +18,14 @@
 
 ```markdown
 | `house` | `src/engine/*` · `src/render3d/*` · `data/*`(구조·에셋 정의) · `_dli_probe.html` · **`docs/engine/*`** · **`tools/house/*`** |
-| `char` | `assets/characters/*` · **`tools/char/*`** |
+| `char` | `assets/characters/*` · **`assets/derived/*`** · **`tools/char/*`** |
 | (공용) | `tools/serve.py` |
 ```
+
+> `assets/derived/` 도 char 소유로 확정됐습니다(박사님 2026-07-26).
+> 제 도구(`make_lq_glb` · `strip_anim_glb`)의 산출물이고 원본이 `assets/characters/`
+> 라 파생물도 같은 창이 관리하는 게 자연스럽다는 판단입니다.
+> 그 안의 옛 경로 2곳은 **제가 직접 고쳤습니다**(더는 남의 파일이 아니므로).
 
 ## 붙을 것 ② `tools/` 분할 규칙 (소유표 아래 새 절)
 
@@ -85,6 +90,8 @@ sed -i 's|tools/make_part_mask.py|tools/char/make_part_mask.py|g;
 ## 미해결
 
 - [ ] 위 ①②③ 반영 부탁드립니다.
-- [ ] `assets/derived/README.md` 에도 옛 경로가 2곳 있습니다(17·21행).
-      `assets/derived/` 는 소유표에 없는데 누구 것인지 확인 부탁드립니다.
-      제 것이면 제가 고치겠습니다.
+- [x] `assets/derived/` 소유 — **char 로 확정됨**(박사님 2026-07-26).
+      옛 경로 2곳은 제가 직접 고쳤습니다. 소유표 ① 에 반영해 주세요.
+- [ ] 캐릭터 창 산출물을 한 문서로 모아 `assets/characters/README.md` 에 뒀습니다
+      (제 소유라 직접 관리). `docs/` 에 중복 문서를 만들지 않았습니다.
+      기획 쪽에서 캐릭터 규격이 필요하면 그 파일을 보시면 됩니다.
