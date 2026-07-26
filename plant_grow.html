@@ -173,7 +173,7 @@ const DEF={
 };
 let P=Object.assign({}, DEF);
 // 저장본 버전. 생장 로직/기본값이 바뀌면 올림 → 옛 저장값이 새 기본값을 덮어쓰지 않게.
-const CFG_VER='2026-07-26-sheathfollow';
+const CFG_VER='2026-07-26-matsheath';
 
 // ===== 튜닝 파라미터(B: 에셋별 개별 조정) =====
 const ADJ_KEYS=[
@@ -200,7 +200,8 @@ const ADJ_KEYS=[
   'sheath_leaf_mid_albo13', 'sheath_leaf_mid_albo14', 'sheath_leaf_mid_albo15', 'sheath_leaf_mid_albo16', 'sheath_leaf_mid_albo17', 'sheath_leaf_mid_albo18',
   'sheath_leaf_mid_albo19', 'sheath_leaf_mid_albo20', 'sheath_leaf_mid_albo21', 'sheath_leaf_mid_albo22', 'sheath_leaf_mid_albo23', 'sheath_leaf_mid_albo24',
   'sheath_leaf_mid_albo25', 'sheath_leaf_mid_albo26', 'sheath_leaf_mid_albo27', 'sheath_leaf_mid_albo28', 'sheath_leaf_mid_albo29', 'sheath_leaf_mid_albo30',
-  'sheath_leaf_mid_albo31', 'sheath_mid1', 'sheath_mid2', 'sheath_mature', 'stem_med', 'stem_thin',
+  'sheath_leaf_mid_albo31', 'sheath_mid1',
+  'sheath_mat1', 'sheath_mat4', 'sheath_mat7', 'sheath_mat10', 'sheath_mat13', 'sheath_mat16', 'sheath_mat19', 'sheath_mat22', 'sheath_mat25', 'sheath_mat28', 'sheath_mat31', 'sheath_mat34', 'sheath_mat37', 'sheath_mat40', 'sheath_mat43', 'sheath_mat46', 'sheath_mat49', 'sheath_mat52', 'sheath_mat55', 'sheath_mid2', 'sheath_mature', 'stem_med', 'stem_thin',
   'petiole', 'knob'
 ];
 // 에셋 표시명 = name_ko (모든 소통은 name_ko 기준). 파일명은 나중에 일체화.
@@ -269,6 +270,27 @@ const ADJ_TUNED={
   leaf_mat49: {sxz:1.19, rx:0.2, ry:-1, rz:0.35, ox:0.1, oy:0.06, oz:0.01, bladeR:0.82, trimR:0.78, petR:0.25},   // 변이-차콜-다크그린
   leaf_mat52: {sxz:1.21, rx:0.15, ry:-0.85, rz:0.35, ox:0.04, oy:0.1, bladeR:0.97, petR:1.08},   // 변이-하프문-그린크림
   leaf_mat55: {sxz:1.34, rx:0.2, ry:-0.9, rz:0.35, ox:0.04, oy:0.1, bladeR:0.89, petR:1.41},   // 변이-알보-전체흰
+  // ── 성숙 변이 엽초. 시작값은 기준잎 것과 같고, 잎자루 방향은 자동으로 맞춰진다.
+  //    화면 보고 개별로 고치면 그 잎에만 걸린다.
+  sheath_mat1: {scale:1.45, sxz:1.3, sy:1.3, rx:-0.5, ry:-2.2, rz:-0.55, ox:0.46, oy:0.03, oz:0.1, len:0.205, fit:1.22, bot:1.1, top:0.75},   // 엽초·변이-핑크-로즈핑크
+  sheath_mat4: {scale:1.45, sxz:1.3, sy:1.3, rx:-0.5, ry:-2.2, rz:-0.55, ox:0.46, oy:0.03, oz:0.1, len:0.205, fit:1.22, bot:1.1, top:0.75},   // 엽초·변이-별무늬-페일그린
+  sheath_mat7: {scale:1.45, sxz:1.3, sy:1.3, rx:-0.5, ry:-2.2, rz:-0.55, ox:0.46, oy:0.03, oz:0.1, len:0.205, fit:1.22, bot:1.1, top:0.75},   // 엽초·변이-별무늬-핑크민트
+  sheath_mat10: {scale:1.45, sxz:1.3, sy:1.3, rx:-0.5, ry:-2.2, rz:-0.55, ox:0.46, oy:0.03, oz:0.1, len:0.205, fit:1.22, bot:1.1, top:0.75},   // 엽초·변이-갤럭시-틸골드
+  sheath_mat13: {scale:1.45, sxz:1.3, sy:1.3, rx:-0.5, ry:-2.2, rz:-0.55, ox:0.46, oy:0.03, oz:0.1, len:0.205, fit:1.22, bot:1.1, top:0.75},   // 엽초·변이-스페클-그린크림
+  sheath_mat16: {scale:1.45, sxz:1.3, sy:1.3, rx:-0.5, ry:-2.2, rz:-0.55, ox:0.46, oy:0.03, oz:0.1, len:0.205, fit:1.22, bot:1.1, top:0.75},   // 엽초·변이-오로레아-골드
+  sheath_mat19: {scale:1.45, sxz:1.3, sy:1.3, rx:-0.5, ry:-2.2, rz:-0.55, ox:0.46, oy:0.03, oz:0.1, len:0.205, fit:1.22, bot:1.1, top:0.75},   // 엽초·변이-갤럭시-다크틸
+  sheath_mat22: {scale:1.45, sxz:1.3, sy:1.3, rx:-0.5, ry:-2.2, rz:-0.55, ox:0.46, oy:0.03, oz:0.1, len:0.205, fit:1.22, bot:1.1, top:0.75},   // 엽초·변이-오로레아-그린옐로우
+  sheath_mat25: {scale:1.45, sxz:1.3, sy:1.3, rx:-0.5, ry:-2.2, rz:-0.55, ox:0.46, oy:0.03, oz:0.1, len:0.205, fit:1.22, bot:1.1, top:0.75},   // 엽초·변이-라임-레몬패치
+  sheath_mat28: {scale:1.45, sxz:1.3, sy:1.3, rx:-0.5, ry:-2.2, rz:-0.55, ox:0.46, oy:0.03, oz:0.1, len:0.205, fit:1.22, bot:1.1, top:0.75},   // 엽초·변이-네온-라임
+  sheath_mat31: {scale:1.45, sxz:1.3, sy:1.3, rx:-0.5, ry:-2.2, rz:-0.55, ox:0.46, oy:0.03, oz:0.1, len:0.205, fit:1.22, bot:1.1, top:0.75},   // 엽초·변이-제브라-그린흰
+  sheath_mat34: {scale:1.45, sxz:1.3, sy:1.3, rx:-0.5, ry:-2.2, rz:-0.55, ox:0.46, oy:0.03, oz:0.1, len:0.205, fit:1.22, bot:1.1, top:0.75},   // 엽초·변이-하프문-그린흰
+  sheath_mat37: {scale:1.45, sxz:1.3, sy:1.3, rx:-0.5, ry:-2.2, rz:-0.55, ox:0.46, oy:0.03, oz:0.1, len:0.205, fit:1.22, bot:1.1, top:0.75},   // 엽초·변이-모브-라벤더그레이
+  sheath_mat40: {scale:1.45, sxz:1.3, sy:1.3, rx:-0.5, ry:-2.2, rz:-0.55, ox:0.46, oy:0.03, oz:0.1, len:0.205, fit:1.22, bot:1.1, top:0.75},   // 엽초·변이-별무늬-그린옐로우
+  sheath_mat43: {scale:1.45, sxz:1.3, sy:1.3, rx:-0.5, ry:-2.2, rz:-0.55, ox:0.46, oy:0.03, oz:0.1, len:0.205, fit:1.22, bot:1.1, top:0.75},   // 엽초·변이-핑크-로즈
+  sheath_mat46: {scale:1.45, sxz:1.3, sy:1.3, rx:-0.5, ry:-2.2, rz:-0.55, ox:0.46, oy:0.03, oz:0.1, len:0.205, fit:1.22, bot:1.1, top:0.75},   // 엽초·변이-별무늬-그린흰
+  sheath_mat49: {scale:1.45, sxz:1.3, sy:1.3, rx:-0.5, ry:-2.2, rz:-0.55, ox:0.46, oy:0.03, oz:0.1, len:0.205, fit:1.22, bot:1.1, top:0.75},   // 엽초·변이-차콜-다크그린
+  sheath_mat52: {scale:1.45, sxz:1.3, sy:1.3, rx:-0.5, ry:-2.2, rz:-0.55, ox:0.46, oy:0.03, oz:0.1, len:0.205, fit:1.22, bot:1.1, top:0.75},   // 엽초·변이-하프문-그린크림
+  sheath_mat55: {scale:1.45, sxz:1.3, sy:1.3, rx:-0.5, ry:-2.2, rz:-0.55, ox:0.46, oy:0.03, oz:0.1, len:0.205, fit:1.22, bot:1.1, top:0.75},   // 엽초·변이-알보-전체흰
   // ── 엽초(잎 단계별)
   sheath_furled: {len:0},   // 엽초·새순
   sheath_mature: {scale:1.45, sxz:1.3, sy:1.3, rx:-0.5, ry:-2.2, rz:-0.55, ox:0.46, oy:0.03, oz:0.1, len:0.205, fit:1.22, bot:1.1, top:0.75},   // 엽초·성숙잎
@@ -545,12 +567,51 @@ const SHEATH_OF={ bud_furled:'sheath_furled', bud_opening2:'sheath_open',
   leaf_young:'sheath_young', leaf_young_albo:'sheath_young_albo',leaf_mid_albo1:'sheath_leaf_mid_albo1',leaf_mid_albo2:'sheath_leaf_mid_albo2',leaf_mid_albo3:'sheath_leaf_mid_albo3',leaf_mid_albo4:'sheath_leaf_mid_albo4',leaf_mid_albo5:'sheath_leaf_mid_albo5',leaf_mid_albo6:'sheath_leaf_mid_albo6',leaf_mid_albo7:'sheath_leaf_mid_albo7',leaf_mid_albo8:'sheath_leaf_mid_albo8',leaf_mid_albo9:'sheath_leaf_mid_albo9',leaf_mid_albo10:'sheath_leaf_mid_albo10',leaf_mid_albo11:'sheath_leaf_mid_albo11',leaf_mid_albo12:'sheath_leaf_mid_albo12',leaf_mid_albo13:'sheath_leaf_mid_albo13',leaf_mid_albo14:'sheath_leaf_mid_albo14',leaf_mid_albo15:'sheath_leaf_mid_albo15',leaf_mid_albo16:'sheath_leaf_mid_albo16',leaf_mid_albo17:'sheath_leaf_mid_albo17',leaf_mid_albo18:'sheath_leaf_mid_albo18',leaf_mid_albo19:'sheath_leaf_mid_albo19',leaf_mid_albo20:'sheath_leaf_mid_albo20',leaf_mid_albo21:'sheath_leaf_mid_albo21',leaf_mid_albo22:'sheath_leaf_mid_albo22',leaf_mid_albo23:'sheath_leaf_mid_albo23',leaf_mid_albo24:'sheath_leaf_mid_albo24',leaf_mid_albo25:'sheath_leaf_mid_albo25',leaf_mid_albo26:'sheath_leaf_mid_albo26',leaf_mid_albo27:'sheath_leaf_mid_albo27',leaf_mid_albo28:'sheath_leaf_mid_albo28',
   leaf_mid_albo29:'sheath_leaf_mid_albo29', leaf_mid_albo30:'sheath_leaf_mid_albo30', leaf_mid_albo31:'sheath_leaf_mid_albo31',
   leaf_mid_albo32:'sheath_leaf_mid_albo10', leaf_mid_albo33:'sheath_leaf_mid_albo12', leaf_mid_albo34:'sheath_leaf_mid_albo8', leaf_mid_albo35:'sheath_leaf_mid_albo6', leaf_mid_albo36:'sheath_leaf_mid_albo16', leaf_mid_albo37:'sheath_leaf_mid_albo14', leaf_mid_albo38:'sheath_leaf_mid_albo22', leaf_mid_albo39:'sheath_leaf_mid_albo18', leaf_mid_albo40:'sheath_leaf_mid_albo20', leaf_mid_albo41:'sheath_leaf_mid_albo27', leaf_mid_albo42:'sheath_leaf_mid_albo4',
-  leaf_mat1:'sheath_mature', leaf_mat2:'sheath_mature', leaf_mat3:'sheath_mature', leaf_mat4:'sheath_mature', leaf_mat5:'sheath_mature', leaf_mat6:'sheath_mature', leaf_mat7:'sheath_mature', leaf_mat8:'sheath_mature', leaf_mat9:'sheath_mature', leaf_mat10:'sheath_mature', leaf_mat11:'sheath_mature', leaf_mat12:'sheath_mature', leaf_mat13:'sheath_mature', leaf_mat14:'sheath_mature', leaf_mat15:'sheath_mature', leaf_mat16:'sheath_mature', leaf_mat17:'sheath_mature', leaf_mat18:'sheath_mature', leaf_mat19:'sheath_mature', leaf_mat20:'sheath_mature', leaf_mat21:'sheath_mature', leaf_mat22:'sheath_mature', leaf_mat23:'sheath_mature', leaf_mat24:'sheath_mature', leaf_mat25:'sheath_mature', leaf_mat26:'sheath_mature', leaf_mat27:'sheath_mature', leaf_mat28:'sheath_mature', leaf_mat29:'sheath_mature', leaf_mat30:'sheath_mature', leaf_mat31:'sheath_mature', leaf_mat32:'sheath_mature', leaf_mat33:'sheath_mature', leaf_mat34:'sheath_mature', leaf_mat35:'sheath_mature', leaf_mat36:'sheath_mature', leaf_mat37:'sheath_mature', leaf_mat38:'sheath_mature', leaf_mat39:'sheath_mature', leaf_mat40:'sheath_mature', leaf_mat41:'sheath_mature', leaf_mat42:'sheath_mature', leaf_mat43:'sheath_mature', leaf_mat44:'sheath_mature', leaf_mat45:'sheath_mature', leaf_mat46:'sheath_mature', leaf_mat47:'sheath_mature', leaf_mat48:'sheath_mature', leaf_mat49:'sheath_mature', leaf_mat50:'sheath_mature', leaf_mat51:'sheath_mature', leaf_mat52:'sheath_mature', leaf_mat53:'sheath_mature', leaf_mat54:'sheath_mature', leaf_mat55:'sheath_mature', leaf_mat56:'sheath_mature', leaf_mat57:'sheath_mature', leaf_mid1:'sheath_mid1', leaf_mid2:'sheath_mid2', leaf_mature:'sheath_mature' };
-const SHEATH_KEYS=['sheath_leaf_mid_albo8','sheath_leaf_mid_albo9','sheath_leaf_mid_albo10','sheath_leaf_mid_albo11','sheath_leaf_mid_albo12','sheath_leaf_mid_albo13','sheath_leaf_mid_albo14','sheath_leaf_mid_albo15','sheath_leaf_mid_albo16','sheath_leaf_mid_albo17','sheath_leaf_mid_albo18','sheath_leaf_mid_albo19','sheath_leaf_mid_albo20','sheath_leaf_mid_albo21','sheath_leaf_mid_albo22','sheath_leaf_mid_albo23','sheath_leaf_mid_albo24','sheath_leaf_mid_albo25','sheath_leaf_mid_albo26','sheath_leaf_mid_albo27','sheath_leaf_mid_albo28','sheath_leaf_mid_albo29','sheath_leaf_mid_albo30','sheath_leaf_mid_albo31','sheath_furled','sheath_open','sheath_young','sheath_young_albo','sheath_leaf_mid_albo1','sheath_leaf_mid_albo2','sheath_leaf_mid_albo3','sheath_leaf_mid_albo4','sheath_leaf_mid_albo5','sheath_leaf_mid_albo6','sheath_leaf_mid_albo7','sheath_mid1','sheath_mid2','sheath_mature'];
+  // 성숙 변이는 각자 엽초를 갖는다(기본/쨍/차분 셋은 대표 것을 함께 쓴다)
+  leaf_mat1:'sheath_mat1', leaf_mat2:'sheath_mat1', leaf_mat3:'sheath_mat1', leaf_mat4:'sheath_mat4', leaf_mat5:'sheath_mat4', leaf_mat6:'sheath_mat4', leaf_mat7:'sheath_mat7', leaf_mat8:'sheath_mat7', leaf_mat9:'sheath_mat7', leaf_mat10:'sheath_mat10', leaf_mat11:'sheath_mat10', leaf_mat12:'sheath_mat10', leaf_mat13:'sheath_mat13', leaf_mat14:'sheath_mat13', leaf_mat15:'sheath_mat13', leaf_mat16:'sheath_mat16', leaf_mat17:'sheath_mat16', leaf_mat18:'sheath_mat16', leaf_mat19:'sheath_mat19', leaf_mat20:'sheath_mat19', leaf_mat21:'sheath_mat19', leaf_mat22:'sheath_mat22', leaf_mat23:'sheath_mat22', leaf_mat24:'sheath_mat22', leaf_mat25:'sheath_mat25', leaf_mat26:'sheath_mat25', leaf_mat27:'sheath_mat25', leaf_mat28:'sheath_mat28', leaf_mat29:'sheath_mat28', leaf_mat30:'sheath_mat28', leaf_mat31:'sheath_mat31', leaf_mat32:'sheath_mat31', leaf_mat33:'sheath_mat31', leaf_mat34:'sheath_mat34', leaf_mat35:'sheath_mat34', leaf_mat36:'sheath_mat34', leaf_mat37:'sheath_mat37', leaf_mat38:'sheath_mat37', leaf_mat39:'sheath_mat37', leaf_mat40:'sheath_mat40', leaf_mat41:'sheath_mat40', leaf_mat42:'sheath_mat40', leaf_mat43:'sheath_mat43', leaf_mat44:'sheath_mat43', leaf_mat45:'sheath_mat43', leaf_mat46:'sheath_mat46', leaf_mat47:'sheath_mat46', leaf_mat48:'sheath_mat46', leaf_mat49:'sheath_mat49', leaf_mat50:'sheath_mat49', leaf_mat51:'sheath_mat49', leaf_mat52:'sheath_mat52', leaf_mat53:'sheath_mat52', leaf_mat54:'sheath_mat52', leaf_mat55:'sheath_mat55', leaf_mat56:'sheath_mat55', leaf_mat57:'sheath_mat55', leaf_mid1:'sheath_mid1', leaf_mid2:'sheath_mid2', leaf_mature:'sheath_mature' };
+const SHEATH_KEYS=['sheath_leaf_mid_albo8','sheath_mat1','sheath_mat4','sheath_mat7','sheath_mat10','sheath_mat13','sheath_mat16','sheath_mat19','sheath_mat22','sheath_mat25','sheath_mat28','sheath_mat31','sheath_mat34','sheath_mat37','sheath_mat40','sheath_mat43','sheath_mat46','sheath_mat49','sheath_mat52','sheath_mat55','sheath_leaf_mid_albo9','sheath_leaf_mid_albo10','sheath_leaf_mid_albo11','sheath_leaf_mid_albo12','sheath_leaf_mid_albo13','sheath_leaf_mid_albo14','sheath_leaf_mid_albo15','sheath_leaf_mid_albo16','sheath_leaf_mid_albo17','sheath_leaf_mid_albo18','sheath_leaf_mid_albo19','sheath_leaf_mid_albo20','sheath_leaf_mid_albo21','sheath_leaf_mid_albo22','sheath_leaf_mid_albo23','sheath_leaf_mid_albo24','sheath_leaf_mid_albo25','sheath_leaf_mid_albo26','sheath_leaf_mid_albo27','sheath_leaf_mid_albo28','sheath_leaf_mid_albo29','sheath_leaf_mid_albo30','sheath_leaf_mid_albo31','sheath_furled','sheath_open','sheath_young','sheath_young_albo','sheath_leaf_mid_albo1','sheath_leaf_mid_albo2','sheath_leaf_mid_albo3','sheath_leaf_mid_albo4','sheath_leaf_mid_albo5','sheath_leaf_mid_albo6','sheath_leaf_mid_albo7','sheath_mid1','sheath_mid2','sheath_mature'];
 // 한 엽초를 여러 잎이 공유할 때(성숙 변이 19종 ↔ sheath_mature), 그 엽초의 위치·각도는
 // '기준 잎' 하나에 맞춰 잡혀 있다. 변이는 회전이 달라서 그대로 두면 엽초가 잎자루를 벗어난다.
 const SHEATH_OWNER={};
 for(const lk in SHEATH_OF) if(!/^leaf_mat\d+$/.test(lk)) SHEATH_OWNER[SHEATH_OF[lk]]=lk;
+// 성숙 변이 엽초는 전부 기준잎(성숙-잎1) 자세를 바탕으로 시작한다 → 그 잎을 기준으로 정렬한다.
+for(const k in SHEATH_OF) if(/^leaf_mat\d+$/.test(k)) SHEATH_OWNER[SHEATH_OF[k]]='leaf_mature';
+// 잎 메시에서 잎자루가 뻗은 방향을 잰다(정규화 좌표, ADJ 적용 전). 에셋당 한 번만.
+const PET_AXIS={};
+function leafPetAxis(key){
+  if(key in PET_AXIS) return PET_AXIS[key];
+  PET_AXIS[key]=null;
+  const proto=ASSETS[key]; if(!proto) return null;
+  try{
+    proto.updateMatrixWorld(true);
+    const inv=new THREE.Matrix4().copy(proto.matrixWorld).invert();
+    const v=new THREE.Vector3(), all=[];
+    let mn=Infinity, mx=-Infinity;
+    proto.traverse(o=>{
+      if(!(o.isMesh&&o.geometry&&o.geometry.attributes.position)) return;
+      const m=new THREE.Matrix4().multiplyMatrices(inv, o.matrixWorld), pa=o.geometry.attributes.position;
+      for(let k=0;k<pa.count;k++){
+        v.set(pa.getX(k),pa.getY(k),pa.getZ(k)).applyMatrix4(m);
+        all.push(v.clone()); if(v.y<mn)mn=v.y; if(v.y>mx)mx=v.y;
+      }
+    });
+    const hh=(mx-mn)||1;
+    const mid=(a,b)=>{ const s=new THREE.Vector3(); let n=0;
+      for(const p of all) if(p.y>=mn+hh*a && p.y<mn+hh*b){ s.add(p); n++; }
+      return n? s.multiplyScalar(1/n) : null; };
+    const lo=mid(0,0.08), hi=mid(0.15,0.30);
+    if(!lo||!hi) return null;
+    const d=hi.sub(lo);
+    if(d.lengthSq()<1e-9) return null;
+    PET_AXIS[key]=d.normalize(); return PET_AXIS[key];
+  }catch(e){ return null; }
+}
+// ADJ 회전까지 반영한 '화면에서의 잎자루 방향'
+function petDirOf(key){
+  const u=leafPetAxis(key); if(!u) return null;
+  const a=adjOf(key);
+  return u.clone().applyEuler(new THREE.Euler(a.rx||0, a.ry||0, a.rz||0));
+}
 // 엽초 표시명은 연결된 잎 이름을 따라간다. 직접 지어둔 이름이 있으면 그대로 둔다.
 for(const [leafKey, shKey] of Object.entries(SHEATH_OF))
   if(!ADJ_KO[shKey]) ADJ_KO[shKey]='엽초·'+(ADJ_KO[leafKey]||leafKey);
@@ -608,7 +669,7 @@ function addPot(){
 
 // 줄기 GLB의 실제 "몸통 폭"(높이=1 정규화 기준, 정점 하단대 90퍼센타일로 측정).
 // 혹 에셋은 돌기 때문에 bbox(0.56)가 몸통(0.42)보다 훨씬 넓어 이 값이 꼭 필요함.
-const STEM_CORE={petiole:0.083, stem_thin:0.186, stem_med:0.158, stem_thick:0.420, stem_main:0.443, sheath:1.309, sheath_furled:1.309, sheath_open:1.309, sheath_young:1.309, sheath_young_albo:1.309,sheath_leaf_mid_albo1:1.309,sheath_leaf_mid_albo2:1.309,sheath_leaf_mid_albo3:1.309,sheath_leaf_mid_albo4:1.309,sheath_leaf_mid_albo5:1.309,sheath_leaf_mid_albo6:1.309,sheath_leaf_mid_albo7:1.309,sheath_leaf_mid_albo8:1.309,sheath_leaf_mid_albo9:1.309,sheath_leaf_mid_albo10:1.309,sheath_leaf_mid_albo11:1.309,sheath_leaf_mid_albo12:1.309,sheath_leaf_mid_albo13:1.309,sheath_leaf_mid_albo14:1.309,sheath_leaf_mid_albo15:1.309,sheath_leaf_mid_albo16:1.309,sheath_leaf_mid_albo17:1.309,sheath_leaf_mid_albo18:1.309,sheath_leaf_mid_albo19:1.309,sheath_leaf_mid_albo20:1.309,sheath_leaf_mid_albo21:1.309,sheath_leaf_mid_albo22:1.309,sheath_leaf_mid_albo23:1.309,sheath_leaf_mid_albo24:1.309,sheath_leaf_mid_albo25:1.309,sheath_leaf_mid_albo26:1.309,sheath_leaf_mid_albo27:1.309,sheath_leaf_mid_albo28:1.309,sheath_leaf_mid_albo29:1.309,sheath_leaf_mid_albo30:1.309,sheath_leaf_mid_albo31:1.309, sheath_mid1:1.309, sheath_mid2:1.309, sheath_mature:1.309, knob:2.518};   // 절차생성본 실측(하단 폭, 높이1 정규화 기준)
+const STEM_CORE={petiole:0.083, stem_thin:0.186, stem_med:0.158, stem_thick:0.420, stem_main:0.443, sheath:1.309, sheath_furled:1.309, sheath_open:1.309, sheath_young:1.309, sheath_young_albo:1.309,sheath_leaf_mid_albo1:1.309,sheath_leaf_mid_albo2:1.309,sheath_leaf_mid_albo3:1.309,sheath_leaf_mid_albo4:1.309,sheath_leaf_mid_albo5:1.309,sheath_leaf_mid_albo6:1.309,sheath_leaf_mid_albo7:1.309,sheath_leaf_mid_albo8:1.309,sheath_leaf_mid_albo9:1.309,sheath_leaf_mid_albo10:1.309,sheath_leaf_mid_albo11:1.309,sheath_leaf_mid_albo12:1.309,sheath_leaf_mid_albo13:1.309,sheath_leaf_mid_albo14:1.309,sheath_leaf_mid_albo15:1.309,sheath_leaf_mid_albo16:1.309,sheath_leaf_mid_albo17:1.309,sheath_leaf_mid_albo18:1.309,sheath_leaf_mid_albo19:1.309,sheath_leaf_mid_albo20:1.309,sheath_leaf_mid_albo21:1.309,sheath_leaf_mid_albo22:1.309,sheath_leaf_mid_albo23:1.309,sheath_leaf_mid_albo24:1.309,sheath_leaf_mid_albo25:1.309,sheath_leaf_mid_albo26:1.309,sheath_leaf_mid_albo27:1.309,sheath_leaf_mid_albo28:1.309,sheath_leaf_mid_albo29:1.309,sheath_leaf_mid_albo30:1.309,sheath_leaf_mid_albo31:1.309, sheath_mid1:1.309, sheath_mid2:1.309, sheath_mature:1.309,sheath_mat1:1.309,sheath_mat4:1.309,sheath_mat7:1.309,sheath_mat10:1.309,sheath_mat13:1.309,sheath_mat16:1.309,sheath_mat19:1.309,sheath_mat22:1.309,sheath_mat25:1.309,sheath_mat28:1.309,sheath_mat31:1.309,sheath_mat34:1.309,sheath_mat37:1.309,sheath_mat40:1.309,sheath_mat43:1.309,sheath_mat46:1.309,sheath_mat49:1.309,sheath_mat52:1.309,sheath_mat55:1.309, knob:2.518};   // 절차생성본 실측(하단 폭, 높이1 정규화 기준)
 // (제거됨) stemKey — 굵기로 줄기 GLB를 고르던 함수. addStemSeg와 함께 불필요
 // GLB(밑면 y=0·긴축 Y)를 p0→p1 사이로 늘여 배치. 굵기 radius, color로 통일 틴트. → 두 점을 물리 연결.
 function stretchGLB(key, p0, p1, radius, color, flatAz){
@@ -1050,10 +1111,10 @@ function addSheathLocal(parent, ld, stemRad, size, leafKey){
   const owner=SHEATH_OWNER[key];
   let node=rot;
   if(owner && owner!==leafKey){
-    const a1=adjOf(leafKey), a0=adjOf(owner);
-    const q1=new THREE.Quaternion().setFromEuler(new THREE.Euler(a1.rx||0, a1.ry||0, a1.rz||0));
-    const q0=new THREE.Quaternion().setFromEuler(new THREE.Euler(a0.rx||0, a0.ry||0, a0.rz||0));
-    const d=new THREE.Group(); d.quaternion.copy(q1.multiply(q0.invert())); d.add(rot); node=d;
+    const v1=petDirOf(leafKey), v0=petDirOf(owner);
+    if(v1&&v0){ const d=new THREE.Group();
+      d.quaternion.setFromUnitVectors(v0, v1);   // 기준 잎의 자루 방향 → 이 잎의 자루 방향
+      d.add(rot); node=d; }
   }
   const g=new THREE.Group(); g.add(node);
   g.quaternion.setFromUnitVectors(UP, ld);                       // 로컬 프레임 안에서만 회전 → roll 결정적
@@ -1704,7 +1765,7 @@ const ADJ_GROUPS=[
   {label:'🌸 변이(알보)', keys:['leaf_young_albo','leaf_mid_albo1','leaf_mid_albo2','leaf_mid_albo3','leaf_mid_albo4','leaf_mid_albo5','leaf_mid_albo6','leaf_mid_albo7','leaf_mid_albo8','leaf_mid_albo9','leaf_mid_albo10','leaf_mid_albo11','leaf_mid_albo12','leaf_mid_albo13','leaf_mid_albo14','leaf_mid_albo15','leaf_mid_albo16','leaf_mid_albo17','leaf_mid_albo18','leaf_mid_albo19','leaf_mid_albo20','leaf_mid_albo21','leaf_mid_albo22','leaf_mid_albo23','leaf_mid_albo24','leaf_mid_albo25','leaf_mid_albo26','leaf_mid_albo27','leaf_mid_albo28','leaf_mid_albo29','leaf_mid_albo30','leaf_mid_albo31']},
   {label:'🌟 성숙 변이', keys:['leaf_mat1','leaf_mat4','leaf_mat7','leaf_mat10','leaf_mat13','leaf_mat16','leaf_mat19','leaf_mat22','leaf_mat25','leaf_mat28','leaf_mat31','leaf_mat34','leaf_mat37','leaf_mat40','leaf_mat43','leaf_mat46','leaf_mat49','leaf_mat52','leaf_mat55']},
   {label:'🌿 줄기·부품', keys:['stem_thick','stem_main']},
-  {label:'🍶 엽초(잎 단계별)', keys:['sheath_furled','sheath_open','sheath_young','sheath_young_albo','sheath_leaf_mid_albo1','sheath_leaf_mid_albo2','sheath_leaf_mid_albo3','sheath_leaf_mid_albo4','sheath_leaf_mid_albo5','sheath_leaf_mid_albo6','sheath_leaf_mid_albo7','sheath_leaf_mid_albo8','sheath_leaf_mid_albo9','sheath_leaf_mid_albo10','sheath_leaf_mid_albo11','sheath_leaf_mid_albo12','sheath_leaf_mid_albo13','sheath_leaf_mid_albo14','sheath_leaf_mid_albo15','sheath_leaf_mid_albo16','sheath_leaf_mid_albo17','sheath_leaf_mid_albo18','sheath_leaf_mid_albo19','sheath_leaf_mid_albo20','sheath_leaf_mid_albo21','sheath_leaf_mid_albo22','sheath_leaf_mid_albo23','sheath_leaf_mid_albo24','sheath_leaf_mid_albo25','sheath_leaf_mid_albo26','sheath_leaf_mid_albo27','sheath_leaf_mid_albo28','sheath_leaf_mid_albo29','sheath_leaf_mid_albo30','sheath_leaf_mid_albo31','sheath_mid1','sheath_mid2','sheath_mature']},
+  {label:'🍶 엽초(잎 단계별)', keys:['sheath_furled','sheath_mat1','sheath_mat4','sheath_mat7','sheath_mat10','sheath_mat13','sheath_mat16','sheath_mat19','sheath_mat22','sheath_mat25','sheath_mat28','sheath_mat31','sheath_mat34','sheath_mat37','sheath_mat40','sheath_mat43','sheath_mat46','sheath_mat49','sheath_mat52','sheath_mat55','sheath_open','sheath_young','sheath_young_albo','sheath_leaf_mid_albo1','sheath_leaf_mid_albo2','sheath_leaf_mid_albo3','sheath_leaf_mid_albo4','sheath_leaf_mid_albo5','sheath_leaf_mid_albo6','sheath_leaf_mid_albo7','sheath_leaf_mid_albo8','sheath_leaf_mid_albo9','sheath_leaf_mid_albo10','sheath_leaf_mid_albo11','sheath_leaf_mid_albo12','sheath_leaf_mid_albo13','sheath_leaf_mid_albo14','sheath_leaf_mid_albo15','sheath_leaf_mid_albo16','sheath_leaf_mid_albo17','sheath_leaf_mid_albo18','sheath_leaf_mid_albo19','sheath_leaf_mid_albo20','sheath_leaf_mid_albo21','sheath_leaf_mid_albo22','sheath_leaf_mid_albo23','sheath_leaf_mid_albo24','sheath_leaf_mid_albo25','sheath_leaf_mid_albo26','sheath_leaf_mid_albo27','sheath_leaf_mid_albo28','sheath_leaf_mid_albo29','sheath_leaf_mid_albo30','sheath_leaf_mid_albo31','sheath_mid1','sheath_mid2','sheath_mature']},
   {label:'🪴 화분', keys:['pot']},
   {label:'💤 현재 미사용(튜브가 대체)', keys:['petiole','stem_med','stem_thin','knob']},
 ];
