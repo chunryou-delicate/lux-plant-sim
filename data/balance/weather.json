@@ -1,0 +1,77 @@
+{
+  "schema": "weather_balance/1",
+  "_doc": [
+    "★ 날씨 굴림 확률과 판정 단위 규약. plan 소유(data/balance/).",
+    "",
+    "왜 이 파일이 생겼나 (2026-07-26):",
+    "  날씨 확률이 코드 어디에도 정의돼 있지 않았다. plan이 인계 문서 예제에 0.55/0.30/0.15를",
+    "  적어 놓았고 house·growth가 각자 자기 값을 썼다. 그 결과 같은 방을 두고",
+    "  서로 다른 평균이 나와 '아파트에서 잎이 갈라지나'가 창마다 다르게 결론났다.",
+    "  → 확률은 밸런싱 값이므로 plan이 한 곳에 못박는다. 세 창 모두 이 파일을 읽는다.",
+    "",
+    "★★ 단위 규약이 이 파일의 진짜 내용이다. 이번에 같은 사고가 두 번 났다:",
+    "  1차 — house는 peak로 재고 growth는 7일 평균으로 판정했다 (1.5~3배 차)",
+    "  2차 — plan은 여름값으로 쓰고 house는 연평균으로 쟀다 (1.44배 차)",
+    "  둘 다 '숫자가 틀린' 게 아니라 '자른 창이 다른' 것이었다. 그래서 규약을 값 옆에 둔다."
+  ],
+
+  "weather": {
+    "_doc": "k = 천공 조도 배율(engine/daylight_lux.js WEATHER와 같은 값. 여길 고치면 거기도). p = 하루 굴림 확률.",
+    "clear":  { "k": 1.00, "p": 0.55, "ko": "맑음" },
+    "cloudy": { "k": 0.25, "p": 0.30, "ko": "흐림" },
+    "rain":   { "k": 0.12, "p": 0.15, "ko": "비" },
+    "expected_k": 0.643,
+    "_note": "E[k] = 0.55×1.00 + 0.30×0.25 + 0.15×0.12 = 0.643. peak의 64%가 '맑은 계절의 기대 평균'이다.",
+    "_robustness": "맑음 확률을 40~60% 어디로 잡아도 온실 여름은 6.5~8.5라 '자연광 갈라짐은 온실뿐'이라는 결론은 안 바뀐다. p는 안심하고 조정해도 된다."
+  },
+
+  "season_factor": {
+    "_doc": [
+      "계절계수 = SEASON.k × (SEASON.hours / 14.5). 겨울은 어둡고(k) 짧다(hours) — 둘을 곱해야 실제다.",
+      "값은 engine/daylight_lux.js SEASON에서 유도한 것이다. 저기가 바뀌면 여기도 바꾼다."
+    ],
+    "summer": 1.000,
+    "spring": 0.744,
+    "autumn": 0.651,
+    "winter": 0.372,
+    "annual_mean": 0.692
+  },
+
+  "judgement_unit": {
+    "_doc": [
+      "★ 밸런싱·판정에 쓰는 단위. 어긴 사례가 이미 두 번이라 규약으로 못박는다.",
+      "",
+      "판정 단위 = 계절별 기대 7일 이동평균.",
+      "  기대7일평균(계절) = peak × 0.643 × season_factor[계절]",
+      "",
+      "쓰면 안 되는 것:",
+      "  peak    — '1년에 며칠'이다. 여름에도 7일 내리 맑을 확률은 0.55^7 = 1.5%",
+      "  연평균  — 계절이 흐르는 게임에서 '1년 내내 아무 일도 안 남'이 된다.",
+      "            게다가 문턱 근처(온실 5.99 vs fenestrate 6.0)에서 결론이 뒤집힌다."
+    ],
+    "unit": "seasonal_avg7",
+    "peak_to_seasonal_avg7": 0.643,
+    "peak_to_annual_mean": 0.445,
+    "forbidden_for_judgement": ["peak", "annual_mean"]
+  },
+
+  "expected_avg7": {
+    "_doc": "peak × 0.643 × season_factor. house measured.avg7 과 대조용 검산값. peak는 2026-07-26 실측.",
+    "banjiha":    { "peak": 0.55,  "summer": 0.35, "spring": 0.26, "autumn": 0.23, "winter": 0.13 },
+    "oneroom":    { "peak": 4.77,  "summer": 3.07, "spring": 2.28, "autumn": 2.00, "winter": 1.14 },
+    "classroom":  { "peak": 5.49,  "summer": 3.53, "spring": 2.63, "autumn": 2.30, "winter": 1.31 },
+    "tworoom":    { "peak": 5.64,  "summer": 3.63, "spring": 2.70, "autumn": 2.36, "winter": 1.35 },
+    "apartment":  { "peak": 6.02,  "summer": 3.87, "spring": 2.88, "autumn": 2.52, "winter": 1.44 },
+    "greenhouse": { "peak": 12.42, "summer": 7.99, "spring": 5.95, "autumn": 5.20, "winter": 2.97 }
+  },
+
+  "invariants": {
+    "_doc": "새 방을 만들거나 가구를 옮기면 peak가 아니라 이 두 줄을 확인한다. docs/balance_decisions.md §②′",
+    "greenhouse_summer_avg7_min": 6.5,
+    "apartment_summer_avg7_range": [3.5, 4.5],
+    "why": [
+      "온실 여름이 6.5 미만 → 자연광으로 갈라지는 방이 하나도 없어져 온실의 정체성이 사라진다",
+      "아파트 여름이 6.0을 넘으면 → '아파트도 등이 필요하다'가 깨져 설계를 다시 써야 한다"
+    ]
+  }
+}
