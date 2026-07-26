@@ -173,7 +173,7 @@ const DEF={
 };
 let P=Object.assign({}, DEF);
 // 저장본 버전. 생장 로직/기본값이 바뀌면 올림 → 옛 저장값이 새 기본값을 덮어쓰지 않게.
-const CFG_VER='2026-07-26-bake3';
+const CFG_VER='2026-07-26-dlihook';
 
 // ===== 튜닝 파라미터(B: 에셋별 개별 조정) =====
 const ADJ_KEYS=[
@@ -874,6 +874,26 @@ function ensureLeafShape(){                                // 값이 바뀐 잎�
 //   1 전체흰중기  2 -쨍  3 -차분 | 4 흰연두-쨍  5 -차분 | 6 크림민트-쨍  7 -차분
 // 2026-07-20: 1~3의 잎자루 교체 완료(실측 40%, 잎몸 78% — 기준 35~45% 충족) → 전체 복귀.
 // 14,15(마블-크림그린) 24,25,26(스페클-민트흰점2) 제외 — 잎자루 미검출·폭 비정상(에셋 정렬 필요)
+// ===== 확률 = 빛의 함수 =====
+// 생장 로직은 확률을 직접 읽지 않고 반드시 이 함수들을 거친다.
+// 지금은 전부 상수를 그대로 돌려준다. 실플레이에서 튜닝할 때 이 함수 안만 고치면 되고,
+// 호출하는 쪽(mkAxis·matFromMid)은 손대지 않는다.
+//
+// dli — 계약 객체 daily_light/1 의 slots[].dli (그 화분 자리의 하루 광량, mol/m²/day).
+//        아직 조도 엔진이 안 붙어 있어 null이 들어온다. null이면 지금처럼 상수를 쓴다.
+let PLANT_DLI=null;
+// 게임 루프가 하루치 빛을 넘길 때 부른다. 계약 객체를 통째로 줘도 되고 숫자만 줘도 된다.
+function setDailyLight(c){
+  if(c==null){ PLANT_DLI=null; return; }
+  if(typeof c==='number'){ PLANT_DLI=c; return; }
+  const s=(c.slots&&c.slots.length)? c.slots[0] : null;
+  PLANT_DLI = (c.best&&c.best.dli!=null)? c.best.dli : (s&&s.dli!=null? s.dli : null);
+}
+function calcVarieProb(dli){  return P.varieProb;  }   // 무늬종으로 태어날 확률
+function calcMatureProb(dli){ return P.matureProb; }   // 중간잎 → 성숙잎으로 갈 확률
+function calcMatRare(dli){    return P.matRare;    }   // 성숙 무늬가 희귀 갈래로 갈 확률
+function calcMatSub(dli){     return P.matSub;     }   // 성숙 무늬가 부 갈래로 갈 확률
+
 // ===== 변이 트리 (승인 2026-07-26) =====
 // 중기 무늬가 성숙에서 어떤 무늬로 정착하는지. 색·무늬 계열로 이었고 겹치는 배치를 허용한다.
 // 키=중기 고정번호(대표), 값=[주, 부]. 파생본(-쨍/-차분/기본)은 대표로 접어서 조회한다.
@@ -902,8 +922,8 @@ function midRepNum(n){
 function matFromMid(midNum, r){
   const pair=MAT_TREE[midRepNum(midNum)];
   if(!pair) return 0;                                    // 트리에 없는 중기 → 기본 성숙잎
-  if(r<P.matRare) return MAT_RARE[Math.min(MAT_RARE.length-1, Math.floor(r/P.matRare*MAT_RARE.length))];
-  if(r<P.matRare+P.matSub) return pair[1];
+  if(r<calcMatRare(PLANT_DLI)) return MAT_RARE[Math.min(MAT_RARE.length-1, Math.floor(r/calcMatRare(PLANT_DLI)*MAT_RARE.length))];
+  if(r<calcMatRare(PLANT_DLI)+calcMatSub(PLANT_DLI)) return pair[1];
   return pair[0];
 }
 // 성숙 변이 추첨 풀. 대표(1,4,7…)만 넣는다 — -쨍/-차분은 별칭이라 대표와 똑같이 그려진다.
@@ -1418,9 +1438,9 @@ function buildPlant(){
       const ca=rng()*Math.PI*2;
       const curveDir=cx.multiplyScalar(Math.cos(ca)).addScaledVector(cz, Math.sin(ca)).normalize();
       const ax={from, dir:d0, birth, leafBirth:birth+P.petGrow, segs:[], simTip:null, midType:null,
-                az:rng()*Math.PI*2, canMature:rng()<P.matureProb,
+                az:rng()*Math.PI*2, canMature:rng()<calcMatureProb(PLANT_DLI),
                 triggered:false, grew:false,
-                varie:rng()<P.varieProb,                   // ★캐논: 변이는 어린잎 단계에서 확률로 결정
+                varie:rng()<calcVarieProb(PLANT_DLI),                   // ★캐논: 변이는 어린잎 단계에서 확률로 결정
                 alboMid:ALBO_MID_POOL[Math.floor(rng()*ALBO_MID_POOL.length)],   // 이 잎이 쓸 알보 중기 종류
                 matRoll:rng(),                             // 성숙 무늬 추첨값(트리에서 주/부/희귀를 가른다)
                 matAlbo:MAT_ALBO_POOL.length? MAT_ALBO_POOL[Math.floor(rng()*MAT_ALBO_POOL.length)] : 0,   // 성숙까지 갔을 때 쓸 변이 종류
