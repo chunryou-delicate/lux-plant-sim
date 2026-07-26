@@ -39,20 +39,80 @@
 
   "judgement_unit": {
     "_doc": [
-      "★ 밸런싱·판정에 쓰는 단위. 어긴 사례가 이미 두 번이라 규약으로 못박는다.",
+      "★★ 판정 단위는 '하나의 진실'이 아니라 시뮬 깊이 모드에 따라 다르다.",
+      "    날씨·계절은 env_difficulty_axis의 켜고 끄는 항목이므로, 꺼지면 계수가 1.0이 되고",
+      "    그 순간 peak가 곧 실제값이 된다. 이걸 명시 안 하면 초보 모드를 붙일 때",
+      "    peak-vs-평균 사고가 세 번째로 난다.",
       "",
-      "판정 단위 = 계절별 기대 7일 이동평균.",
-      "  기대7일평균(계절) = peak × 0.643 × season_factor[계절]",
+      "    같은 사고가 이미 두 번 났다:",
+      "      1차 — house는 peak로 재고 growth는 7일 평균으로 판정 (1.5~3배 차)",
+      "      2차 — plan은 여름값, house는 연평균 (1.44배 차)",
+      "    둘 다 숫자가 아니라 '자른 창'이 달랐다. 그래서 규약을 값 옆에 둔다.",
       "",
-      "쓰면 안 되는 것:",
-      "  peak    — '1년에 며칠'이다. 여름에도 7일 내리 맑을 확률은 0.55^7 = 1.5%",
-      "  연평균  — 계절이 흐르는 게임에서 '1년 내내 아무 일도 안 남'이 된다.",
-      "            게다가 문턱 근처(온실 5.99 vs fenestrate 6.0)에서 결론이 뒤집힌다."
+      "    ⚠ forbidden_for_judgement 는 모드마다 다르다. modes[].forbidden 을 볼 것.",
+      "      전에 적어둔 [peak, annual_mean] 금지는 '실전 기준'이었다. 조건부다.",
+      "",
+      "    annual_mean 은 어느 모드에서도 판정에 쓰지 않는다 —",
+      "    계절이 켜져 있으면 '1년 내내 아무 일도 안 남'이 되고,",
+      "    꺼져 있으면 애초에 계절 평균이라는 개념이 없다."
     ],
-    "unit": "seasonal_avg7",
-    "peak_to_seasonal_avg7": 0.643,
+    "depends_on_mode": true,
+    "peak_to_avg7": 0.643,
     "peak_to_annual_mean": 0.445,
-    "forbidden_for_judgement": ["peak", "annual_mean"]
+    "always_forbidden": ["annual_mean"]
+  },
+
+  "modes": {
+    "_doc": [
+      "★ 시뮬 깊이 모드 = 날씨·계절을 켜고 끄는 스위치. docs/env_difficulty_axis.md 의 축 그대로다.",
+      "  weather_k / season_k 를 1.0으로 고정하면 그 항목이 꺼진다.",
+      "  → 모드 파라미터가 계수를 1.0으로 만들 수 있게 자리를 만들어 둔 것이고,",
+      "    실제 모드 구현은 나중이다. 지금은 구조만.",
+      "",
+      "★ 이게 밸런스를 뒤집는다 — 난이도가 오를수록 갈라짐이 귀해진다:",
+      "    초보  아파트·온실이 갈라진다  → '이사했더니 잎이 갈라졌다' (보상)",
+      "    표준  온실만                 → '등을 사야 한다'",
+      "    심화  온실도 여름에만         → '계절을 넘겨야 한다' (압박)",
+      "  balance_decisions §②가 원래 노리던 '이사의 보상'이 초보 모드에서 살아난다."
+    ],
+    "beginner": {
+      "ko": "초보", "weather": "always_clear", "season": false,
+      "weather_k": 1.0, "season_k": 1.0,
+      "judgement": "peak",
+      "forbidden": ["annual_mean"],
+      "note": "날씨·계절 계수가 1.0이라 peak = 실제값. 기존 peak 실측표가 그대로 이 모드의 기준표다.",
+      "under_review": "박사님 검토 중 — '계절감 없이 좋은 날만 유지'. 확정되면 peak 표가 초보 모드 정식 기준이 된다."
+    },
+    "standard": {
+      "ko": "표준", "weather": "roll", "season": false,
+      "weather_k": 0.643, "season_k": 1.0,
+      "judgement": "avg7",
+      "forbidden": ["peak", "annual_mean"],
+      "note": "날씨만 굴린다. 판정값 = peak × 0.643."
+    },
+    "advanced": {
+      "ko": "심화", "weather": "roll", "season": true,
+      "weather_k": 0.643, "season_k": "season_factor[계절]",
+      "judgement": "seasonal_avg7",
+      "forbidden": ["peak", "annual_mean"],
+      "note": "판정값 = peak × 0.643 × season_factor. 지금까지 문서가 쓰던 기준."
+    },
+    "expert": {
+      "ko": "실전", "weather": "region_pattern", "season": true,
+      "weather_k": "region_pattern", "season_k": "season_factor[계절]",
+      "judgement": "seasonal_avg7",
+      "forbidden": ["peak", "annual_mean"],
+      "note": "지역 날씨 패턴. REGION 계수가 전부 1.0이라 지금은 advanced와 같다.",
+      "prereq": "예보 UI가 같이 있어야 한다 — 대비할 수 없는 변동은 난이도가 아니라 소음이다(env_difficulty_axis §3)."
+    }
+  },
+
+  "fenestration_by_mode": {
+    "_doc": "몬스테라 fenestrate 6.0 기준. 모드마다 '자연광으로 갈라지는 방'이 달라진다.",
+    "beginner": { "rooms": ["apartment", "greenhouse"], "note": "아파트 6.02 — 문턱 6.0 대비 +0.3%. ⚠ 우연 구간이라 마진 확보 필요" },
+    "standard": { "rooms": ["greenhouse"], "note": "온실 7.99" },
+    "advanced": { "rooms": ["greenhouse(summer)"], "note": "온실 여름 7.99 / 겨울 2.97" },
+    "expert":   { "rooms": ["greenhouse(summer)"] }
   },
 
   "expected_avg7": {
@@ -66,12 +126,29 @@
   },
 
   "invariants": {
-    "_doc": "새 방을 만들거나 가구를 옮기면 peak가 아니라 이 두 줄을 확인한다. docs/balance_decisions.md §②′",
-    "greenhouse_summer_avg7_min": 6.5,
-    "apartment_summer_avg7_range": [3.5, 4.5],
-    "why": [
-      "온실 여름이 6.5 미만 → 자연광으로 갈라지는 방이 하나도 없어져 온실의 정체성이 사라진다",
-      "아파트 여름이 6.0을 넘으면 → '아파트도 등이 필요하다'가 깨져 설계를 다시 써야 한다"
-    ]
+    "_doc": [
+      "새 방을 만들거나 가구를 옮기면 확인한다. docs/balance_decisions.md §②′",
+      "★ 모드마다 봐야 할 줄이 다르다 — 초보 모드는 peak를, 심화 이상은 계절별 avg7을 본다."
+    ],
+    "advanced": {
+      "greenhouse_summer_avg7_min": 6.5,
+      "apartment_summer_avg7_range": [3.5, 4.5],
+      "why": [
+        "온실 여름이 6.5 미만 → 자연광으로 갈라지는 방이 하나도 없어져 온실의 정체성이 사라진다",
+        "아파트 여름이 6.0을 넘으면 → '아파트도 등이 필요하다'가 깨져 설계를 다시 써야 한다"
+      ]
+    },
+    "beginner": {
+      "apartment_peak_min": 6.5,
+      "apartment_peak_ge6_slots": [8, 15],
+      "why": [
+        "★ 초보 모드에서는 peak가 곧 판정값이라 '아파트 = 갈라짐의 문턱'이 성립한다.",
+        "  그런데 지금 아파트 peak 6.02는 문턱 6.0 대비 +0.3%이고 ≥6 자리가 83칸 중 1칸뿐이다.",
+        "  초보 플레이어가 그 1칸을 찾을 리 없고, 가구를 2cm만 옮겨도 보상이 통째로 사라진다.",
+        "  → 심화 기준으로는 무의미했던 'peak 마진'이 초보 모드에서는 다시 필수가 된다.",
+        "  2자리면 우연으로 보이고 8~15자리면 '발코니가 명당'이 배치로 읽힌다(§② 원문)."
+      ],
+      "status": "초보 모드 구현 전까지는 급하지 않다. house에 조건부로 재요청함(plan-to-house 6차)."
+    }
   }
 }
