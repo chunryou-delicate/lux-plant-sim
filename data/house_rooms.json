@@ -111,10 +111,13 @@
         "dark": 9,
         "winterPeak": 0.2,
         "avg7Summer": 0.35,
-        "weekMin": 0.10,
+        "weekMin": 0.1,
         "weekP50": 0.36,
         "avg7Winter": 0.13,
-        "fenWeekPct": 0.0
+        "fenWeekPct": 0.0,
+        "measuredAt": "2026-07-26",
+        "roomRev": "379f9dc 2026-07-25",
+        "status": "확정"
       }
     },
     "oneroom": {
@@ -224,7 +227,10 @@
         "weekMin": 0.84,
         "weekP50": 3.15,
         "avg7Winter": 1.14,
-        "fenWeekPct": 0.0
+        "fenWeekPct": 0.0,
+        "measuredAt": "2026-07-26",
+        "roomRev": "379f9dc 2026-07-25",
+        "status": "확정"
       }
     },
     "apartment": {
@@ -518,15 +524,18 @@
         "peakDLI": 6.02,
         "minDLI": 0.0,
         "slots": 83,
-        "n3": 48,
+        "n3": 46,
         "n6": 1,
-        "dark": 20,
+        "dark": 23,
         "winterPeak": 2.24,
         "avg7Summer": 3.87,
         "weekMin": 1.06,
         "weekP50": 3.97,
         "avg7Winter": 1.44,
-        "fenWeekPct": 0.8
+        "fenWeekPct": 0.8,
+        "measuredAt": "2026-07-26",
+        "roomRev": "b8da780 2026-07-26",
+        "status": "미확정"
       }
     },
     "classroom": {
@@ -712,7 +721,10 @@
         "weekMin": 0.97,
         "weekP50": 3.63,
         "avg7Winter": 1.31,
-        "fenWeekPct": 0.0
+        "fenWeekPct": 0.0,
+        "measuredAt": "2026-07-26",
+        "roomRev": "379f9dc 2026-07-25",
+        "status": "확정"
       }
     },
     "greenhouse": {
@@ -847,18 +859,21 @@
         }
       ],
       "measured": {
-        "peakDLI": 13.01,
+        "peakDLI": 12.42,
         "minDLI": 0.0,
         "slots": 64,
-        "n3": 49,
-        "n6": 32,
+        "n3": 50,
+        "n6": 36,
         "dark": 9,
-        "winterPeak": 4.84,
-        "avg7Summer": 8.36,
-        "weekMin": 2.29,
-        "weekP50": 8.58,
-        "avg7Winter": 3.11,
-        "fenWeekPct": 85.3
+        "winterPeak": 4.62,
+        "avg7Summer": 7.99,
+        "weekMin": 2.18,
+        "weekP50": 8.2,
+        "avg7Winter": 2.97,
+        "fenWeekPct": 83.0,
+        "measuredAt": "2026-07-26",
+        "roomRev": "1fdc9ff 2026-07-26",
+        "status": "잠정"
       }
     },
     "tworoom": {
@@ -995,13 +1010,16 @@
         "slots": 20,
         "n3": 3,
         "n6": 0,
-        "dark": 2,
+        "dark": 6,
         "winterPeak": 2.1,
         "avg7Summer": 3.63,
         "weekMin": 0.99,
         "weekP50": 3.72,
         "avg7Winter": 1.35,
-        "fenWeekPct": 0.0
+        "fenWeekPct": 0.0,
+        "measuredAt": "2026-07-26",
+        "roomRev": "1fdc9ff 2026-07-26",
+        "status": "잠정"
       }
     }
   },
@@ -1021,8 +1039,14 @@
       "avg7Summer": "★ 판정 기준값. 날씨를 굴린 7일 이동평균의 기댓값(여름). peak의 46%",
       "avg7SummerMin": "가장 나빴던 주",
       "avg7SummerMax": "가장 좋았던 주 — 갈라짐처럼 '한 번 넘으면 남는' 판정은 이 값이 결정한다",
-      "avg7Winter": "7일 이동평균 기댓값(겨울). peak의 23%"
+      "avg7Winter": "7일 이동평균 기댓값(겨울). peak의 23.9%",
+      "fenWeekPct": "몬스테라 갈라짐(6.0)을 넘는 주의 비율 [%]. 20년치 굴림",
+      "measuredAt": "★ 이 숫자를 잰 날",
+      "roomRev": "★ 잴 당시 이 방의 '빛 관련 마지막 구조 변경' 커밋. 지금의 마지막 변경과 다르면 이 숫자는 낡은 것이다",
+      "status": "확정 = 구조 안 바뀜 · 잠정 = 바뀔 수 있음 · 미확정 = 바뀔 예정"
     },
+    "rule": "★ 방 구조(windows·size·partitions·cutouts·glassWalls·furniture)를 고치면 _dli_probe.html 을 다시 돌리고 measuredAt·roomRev 를 같이 갱신한다. 안 하면 밸런싱이 조용히 깨진다 — 아파트 >=6 자리가 18개에서 1개가 된 적이 있다.",
+    "check": "git log --format='%h %ad' --date=short -1 -- data/house_rooms.json 로 마지막 변경을 보고 roomRev 와 대조한다. 방별 대조는 docs/engine/rooms_progression.md 참고.",
     "why_avg7": "peak는 1년에 며칠 있는 최고 조건이라 밸런싱 근거가 못 된다. 생장 창은 고사·갈라짐을 7일 이동평균으로 판정한다(하루 값으로 죽이면 운으로 죽는다). 날씨 확률은 src/engine/weather.js 가 단일 소스다."
   }
 }

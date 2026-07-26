@@ -31,21 +31,27 @@ for (const key of Object.keys(NAMES)) {
   try { built = buildHouse(null, def, wp, dp, finishes, fp, lightPresets, SH); }
   catch(e){ L.push('· 조립 실패 '+key+': '+e.message); continue; }
   const size = built.size;
-  const wins = (built.luxWins||[]).map(w=>winFromHouse(w.wall,w.cu,w.cy,w.w,w.h,size,w.tau)).filter(Boolean);
+  /* ★ evScale(향 계수 × 차광 배율)을 반드시 넘긴다.
+     이걸 빠뜨리면 게임(main.js)·계약(buildDailyLight)과 다른 값이 나온다 —
+     실제로 온실이 12.42(계약) vs 13.01(여기)로 갈렸다. 남향은 1.0이라 티가 안 나고
+     동/북향·천창이 있는 방에서만 어긋나서 더 늦게 발견됐다. */
+  const wins  = (built.luxWins||[]).map(w=>winFromHouse(w.wall,w.cu,w.cy,w.w,w.h,size,w.tau,w.evScale)).filter(Boolean);
+  const winsNoEv = (built.luxWins||[]).map(w=>winFromHouse(w.wall,w.cu,w.cy,w.w,w.h,size,w.tau)).filter(Boolean);
   const slots = built.plantSlots||[];
   if (!wins.length || !slots.length) { L.push('· '+NAMES[key]+': 창 '+wins.length+' 슬롯 '+slots.length+' → 건너뜀'); continue; }
-  let best=null, worst=null; const ratios=[];
+  let best=null, worst=null; const ratios=[]; let bestNoEv=0;
   for (const s of slots) {
     const p = s.point || {x:s.x,y:s.y,z:s.z};
-    const r = daylightRatio(p, {x:0,y:1,z:0}, wins,
-      { occluders: built.occluders, glazed: built.glazedPanes, selfIdx: s.occIdx });
+    const o = { occluders: built.occluders, glazed: built.glazedPanes, selfIdx: s.occIdx };
+    const r = daylightRatio(p, {x:0,y:1,z:0}, wins, o);
     ratios.push(r);
+    bestNoEv = Math.max(bestNoEv, daylightRatio(p, {x:0,y:1,z:0}, winsNoEv, o));
     if (!best  || r > best.r)  best  = { r, p, s };
     if (!worst || r < worst.r) worst = { r, p, s };
   }
   // 창까지 수평 거리
   const d = Math.min(...wins.map(w=>Math.hypot(best.p.x-w.cx, best.p.z-w.cz)));
-  rooms[key] = { best, worst, ratios, orients:(built.luxWins||[]).map(w=>w.orient), wins, slots:slots.length, occ:(built.occluders||[]).length, dist:d, size };
+  rooms[key] = { best, worst, ratios, bestNoEv, evNames:[...new Set((built.luxWins||[]).map(w=>w.orient+':'+(w.evScale??1).toFixed(2)))], orients:(built.luxWins||[]).map(w=>w.orient), wins, slots:slots.length, occ:(built.occluders||[]).length, dist:d, size };
 }
 
 L.push('## 방 조립 결과');
@@ -55,6 +61,21 @@ for (const k of Object.keys(rooms)) { const r=rooms[k];
   const gap = r.worst.r>0 ? (r.best.r/r.worst.r).toFixed(0)+'배' : '∞ (최저 0)';
   const ors = [...new Set(r.orients)].join('·');
   L.push(`| ${NAMES[k]} | ${r.size.w}×${r.size.d}m | ${ors} | ${r.wins.length} | ${r.slots} | ${r.occ} | ${gap} |`); }
+
+L.push('');
+L.push('## ★ evScale(향×차광) 적용 여부 — 계약 경로와 같은가');
+L.push('');
+L.push('`winFromHouse(..., w.tau, w.evScale)` 로 넘겨야 게임·계약과 같은 값이 나온다.');
+L.push('예전 probe는 evScale을 빠뜨려 향 계수가 빠진 값을 냈다.');
+L.push('');
+L.push('| 방 | 창 향:evScale | peak(evScale 적용) | peak(빠뜨림) | 차이 |');
+L.push('|---|---|---|---|---|');
+for (const k of Object.keys(rooms)) { const r=rooms[k];
+  const a = daylightDLI(r.best.r,   {weather:'clear',season:'summer'});
+  const b = daylightDLI(r.bestNoEv, {weather:'clear',season:'summer'});
+  const d = b>0 ? ((b/a-1)*100).toFixed(1)+'%' : '—';
+  L.push(`| ${NAMES[k]} | ${r.evNames.join(' · ')} | **${a.toFixed(2)}** | ${b.toFixed(2)} | ${Math.abs(b-a)<0.005?'같음':'★ +'+d} |`);
+}
 
 /* ★ 슬롯 분포 — '어두운 칸이 몇 개인지'가 난이도 근거다.
    최고값 하나만 보면 방 안에서 몇 자리를 실제로 쓸 수 있는지 모른다. */
