@@ -173,7 +173,7 @@ const DEF={
 };
 let P=Object.assign({}, DEF);
 // 저장본 버전. 생장 로직/기본값이 바뀌면 올림 → 옛 저장값이 새 기본값을 덮어쓰지 않게.
-const CFG_VER='2026-07-26-pethide';
+const CFG_VER='2026-07-26-petcolor';
 
 // ===== 튜닝 파라미터(B: 에셋별 개별 조정) =====
 const ADJ_KEYS=[
@@ -532,6 +532,17 @@ function makeSheathAsset(botDia, topDia){
   geo.setAttribute('position', new THREE.Float32BufferAttribute(pos,3));
   geo.setAttribute('normal',   new THREE.Float32BufferAttribute(nor,3));
   geo.setAttribute('uv',       new THREE.Float32BufferAttribute(uv,2));
+  if(colAt){                                          // 끝으로 갈수록 색이 번지게(정점색)
+    const col=new Float32Array(pos.length), cnt=pos.length/3;
+    const ringN=(radSeg+1)*(tubSeg+1), c=new THREE.Color();
+    for(let k=0;k<cnt;k++){
+      const t = (k<ringN) ? Math.floor(k/(radSeg+1))/tubSeg      // 옆면: 링 번호가 곧 t
+                          : ((k===ringN) ? 0 : 1);               // 뚜껑 두 개(아래/위)
+      colAt(t, c);
+      col[k*3]=c.r; col[k*3+1]=c.g; col[k*3+2]=c.b;
+    }
+    geo.setAttribute('color', new THREE.Float32BufferAttribute(col,3));
+  }
   const mesh=new THREE.Mesh(geo, new THREE.MeshStandardMaterial({color:0xffffff, roughness:0.68, side:THREE.DoubleSide}));
   mesh.castShadow=true; mesh.receiveShadow=true;
   const outer=new THREE.Group(); outer.add(mesh);
@@ -943,7 +954,7 @@ function clearPlaced(){ PLACED=[]; USE_COUNT={}; STEMS=[]; }
 // ===== 줄기를 "이음새 없는 한 줄기 튜브"로 생성 =====
 // 마디 점들을 CatmullRom 곡선으로 잇고, 굵기를 t에 따라 변화(위로 갈수록 가늘게 + 마디마다 살짝 부풀림).
 // GLB를 마디마다 이어 붙이던 방식은 경계 링이 필연적이라 이렇게 바꿈. 혹은 이 위에 얹는다.
-function makeStemTube(pts, radAt, tubSeg, radSeg){
+function makeStemTube(pts, radAt, tubSeg, radSeg, colAt){
   if(pts.length<2) return null;
   const curve=new THREE.CatmullRomCurve3(pts, false, 'catmullrom', 0.4);
   const frames=curve.computeFrenetFrames(tubSeg, false);
@@ -983,7 +994,7 @@ function makeStemTube(pts, radAt, tubSeg, radSeg){
   return geo;
 }
 // 한 축(생장점)의 줄기 전체를 튜브 하나로 그림. nodeTs=마디 경계의 t값(부풀림 위치)
-function addStemTube(pts, rBase, rTip, nodeTs, color){
+function addStemTube(pts, rBase, rTip, nodeTs, color, tipColor){
   const geo=makeStemTube(pts, t=>{
     let r=rBase+(rTip-rBase)*t;                                  // 위로 갈수록 가늘게(테이퍼)
     for(const nt of nodeTs){                                     // 마디마다 살짝 볼록 → 마디감
@@ -991,9 +1002,15 @@ function addStemTube(pts, rBase, rTip, nodeTs, color){
       if(d<P.nodeWidth) r*= 1 + P.nodeBulge*(1-d/P.nodeWidth);
     }
     return r;
-  }, Math.max(12, pts.length*10), 10);
+  }, Math.max(12, pts.length*10), 10, tipColor? (t,out)=>{
+    // 끝 한 마디만 잎자루 색으로 물든다. 마디 경계가 있으면 거기서부터, 없으면 끝 20%부터.
+    const from=(nodeTs&&nodeTs.length)? nodeTs[nodeTs.length-1] : 0.8;
+    const w=Math.max(0, Math.min(1, (t-from)/Math.max(1e-3, 1-from)));
+    out.copy(color).lerp(tipColor, w*w*(3-2*w));
+  } : null);
   if(!geo) return;
-  const mat=new THREE.MeshStandardMaterial({color, roughness:0.62});
+  const mat=new THREE.MeshStandardMaterial({color: tipColor? 0xffffff : color, roughness:0.62});
+  if(tipColor) mat.vertexColors=true;   // 정점색을 쓸 땐 재질색을 흰색으로 둬야 색이 안 곱해진다
   if(STEM_TEX && P.stemTex>0.01){                       // 세로 결·은은한 디테일(회색조라 색은 유지)
     const t=STEM_TEX.clone(); t.needsUpdate=true;
     t.wrapS=t.wrapT=THREE.RepeatWrapping; t.repeat.set(1, Math.max(0.2,P.texRepeat));
@@ -1026,7 +1043,8 @@ function addSheathLocal(parent, ld, stemRad, size, leafKey){
   const g=new THREE.Group(); g.add(rot);
   g.quaternion.setFromUnitVectors(UP, ld);                       // 로컬 프레임 안에서만 회전 → roll 결정적
   g.position.copy(ld).multiplyScalar(-len*0.35);                 // 줄기 속으로 물려 시작
-  tintObj(g, stemTint(0.03)); parent.add(g);
+  // 엽초는 그 잎의 잎자루와 같은 색으로 — 이어진 하나처럼 보이게. 못 뽑으면 줄기색.
+  tintObj(g, petColorOf(leafKey) || stemTint(0.03)); parent.add(g);
   USE_COUNT[key]=(USE_COUNT[key]||0)+1;
 }
 // (제거됨) addSheath — 월드 기준 배치라 줄기 방향마다 roll이 달라졌다. addSheathLocal로 대체
@@ -1191,6 +1209,74 @@ function addBud(nodePos, az, kind, size, stemDir, stemRad){
     m.position.y+=size*0.5; holder.add(m);
   }
   plantGroup.add(holder);
+}
+// ===== 잎자루 색 =====
+// 엽초를 그 잎과 같은 색으로 칠하려고, 잎 텍스처에서 잎자루 부분의 평균색을 뽑는다.
+// 무늬종은 텍스처가 곧 무늬라 건드리면 안 되므로 '읽기만' 한다. 결과는 캐시.
+const PET_COLOR={};
+function leafPetColor(key){
+  if(key in PET_COLOR) return PET_COLOR[key];
+  PET_COLOR[key]=null;                                  // 실패해도 매 프레임 다시 시도하지 않게 먼저 박아둔다
+  const proto=ASSETS[key]; if(!proto) return null;
+  try{
+    proto.updateMatrixWorld(true);
+    const inv=new THREE.Matrix4().copy(proto.matrixWorld).invert();
+    const v=new THREE.Vector3(), parts=[];
+    let mnY=Infinity, mxY=-Infinity;
+    proto.traverse(o=>{
+      if(!(o.isMesh && o.geometry && o.geometry.attributes.position && o.geometry.attributes.uv)) return;
+      const m=new THREE.Matrix4().multiplyMatrices(inv, o.matrixWorld);
+      const pa=o.geometry.attributes.position, ua=o.geometry.attributes.uv;
+      const ys=new Float32Array(pa.count);
+      for(let i=0;i<pa.count;i++){
+        v.set(pa.getX(i),pa.getY(i),pa.getZ(i)).applyMatrix4(m); ys[i]=v.y;
+        if(v.y<mnY)mnY=v.y; if(v.y>mxY)mxY=v.y;
+      }
+      const tex=(o.material&&o.material.map)||null;
+      if(tex&&tex.image) parts.push({ys,ua,img:tex.image});
+    });
+    if(!parts.length) return null;
+    const hgt=(mxY-mnY)||1, yCut=mnY+hgt*0.25;            // 아래 25% = 잎자루 구간
+    const cv=document.createElement('canvas'), ctx=cv.getContext('2d');
+    let r=0,g=0,b=0,n=0,drawn=null;
+    for(const pt of parts){
+      const im=pt.img, W=im.width||0, H=im.height||0;
+      if(!W||!H) continue;
+      if(drawn!==im){ cv.width=W; cv.height=H; ctx.drawImage(im,0,0); drawn=im; }
+      const step=Math.max(1, Math.floor(pt.ys.length/240));   // 표본 240점이면 충분
+      for(let i=0;i<pt.ys.length;i+=step){
+        if(pt.ys[i]>yCut) continue;
+        let u=pt.ua.getX(i), w=pt.ua.getY(i);
+        u-=Math.floor(u); w-=Math.floor(w);
+        const px=Math.min(W-1, Math.max(0, Math.round(u*(W-1))));
+        const py=Math.min(H-1, Math.max(0, Math.round((1-w)*(H-1))));
+        const d=ctx.getImageData(px,py,1,1).data;
+        if(d[3]<128) continue;
+        r+=d[0]; g+=d[1]; b+=d[2]; n++;
+      }
+    }
+    if(!n) return null;
+    // 캔버스 값은 sRGB, 재질 색은 선형이라 변환해 준다
+    PET_COLOR[key]=new THREE.Color(r/n/255, g/n/255, b/n/255).convertSRGBToLinear();
+    return PET_COLOR[key];
+  }catch(e){ console.warn('잎자루 색 추출 실패', key, e); return null; }
+}
+// 무늬종만 텍스처 색을 쓴다. 기본잎은 코드가 그루 색으로 덧칠하므로,
+// 텍스처에서 뽑은 색을 쓰면 화면에 보이는 잎 색과 어긋난다.
+function petColorOf(key){ return KEEP_TEX.has(key)? leafPetColor(key) : null; }
+// 잎 단계별로 어떤 에셋을 쓸지 — 줄기 끝 색을 맞추려면 잎을 그리기 전에 알아야 한다.
+function pickLeafKey(m, midType, canMature, varie, alboMid, matRoll){
+  if(m<0.22) return null;                                          // 새순 단계는 잎 에셋이 아니다
+  if(m<P.stageYoung) return (varie&&ASSETS.leaf_young_albo)?'leaf_young_albo':'leaf_young';
+  if(m<P.stageMid || !canMature){
+    if(varie){ const n=P.alboMidPick>0? Math.round(P.alboMidPick) : (alboMid||1);
+      const k='leaf_mid_albo'+Math.max(1,Math.min(ALBO_MID_MAX,n));
+      if(ASSETS[k]) return k; }
+    return (midType||'leaf_mid1');
+  }
+  if(varie){ const n=P.matAlboPick>0? Math.round(P.matAlboPick) : matFromMid(alboMid, matRoll);
+    if(n>0){ const k='leaf_mat'+Math.max(1,Math.min(MAT_ALBO_MAX,n)); if(ASSETS[k]) return k; } }
+  return 'leaf_mature';
 }
 // 잎 병렬 성숙: furled → opening2 → young → mid(1|2) → mature (m=0..1)
 function drawLeafStage(pos, az, m, midType, canMature, stemDir, stemRad, varie, ownAx, alboMid, matRoll){
@@ -1378,7 +1464,13 @@ function buildPlant(){
       if(e.pts.length>=2){
         const L=[0]; for(let i=1;i<e.pts.length;i++) L.push(L[i-1]+e.pts[i].distanceTo(e.pts[i-1]));
         const tot=L[L.length-1]||1, nodeTs=L.slice(1,-1).map(l=>l/tot);
-        addStemTube(e.pts, e.rBase, e.rTip, nodeTs, stemTint(0));
+        // 이 축 끝에 달릴 잎을 미리 알아내 줄기 끝 색을 맞춘다(잎 → 엽초 → 줄기가 이어져 보이게)
+        let tipCol=null;
+        if(g>=ax.leafBirth){
+          const lk=pickLeafKey(leafM(ax,g), ax.midType, ax.canMature, ax.varie, ax.alboMid, ax.matRoll);
+          if(lk) tipCol=petColorOf(lk);
+        }
+        addStemTube(e.pts, e.rBase, e.rTip, nodeTs, stemTint(0), tipCol);
         for(const b of e.bumps){                                         // 혹/쌍혹 GLB를 마디 구간에 얹음
           const key=b.s.actType==='main'?'stem_main':'stem_thick';
           const rad=(b.s.actType==='main'?P.rThick*1.05:P.rThick)*P.bumpFit*PLANT_GROW;
