@@ -35,7 +35,7 @@ for (const key of Object.keys(NAMES)) {
      이걸 빠뜨리면 게임(main.js)·계약(buildDailyLight)과 다른 값이 나온다 —
      실제로 온실이 12.42(계약) vs 13.01(여기)로 갈렸다. 남향은 1.0이라 티가 안 나고
      동/북향·천창이 있는 방에서만 어긋나서 더 늦게 발견됐다. */
-  const wins  = (built.luxWins||[]).map(w=>winFromHouse(w.wall,w.cu,w.cy,w.w,w.h,size,w.tau,w.evScale)).filter(Boolean);
+  const wins  = (built.luxWins||[]).map(w=>winFromHouse(w.wall,w.cu,w.cy,w.w,w.h,size,w.tau,w.evScale,w.cz)).filter(Boolean);
   const winsNoEv = (built.luxWins||[]).map(w=>winFromHouse(w.wall,w.cu,w.cy,w.w,w.h,size,w.tau)).filter(Boolean);
   const slots = built.plantSlots||[];
   if (!wins.length || !slots.length) { L.push('· '+NAMES[key]+': 창 '+wins.length+' 슬롯 '+slots.length+' → 건너뜀'); continue; }

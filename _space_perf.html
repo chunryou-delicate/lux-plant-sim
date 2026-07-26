@@ -21,7 +21,7 @@ const L = [];
 
 const built = buildHouse(null, HR.rooms.apartment, wp, dp, FIN, fp, LP, SH);
 const size = built.size;
-const wins = (built.luxWins||[]).map(w=>winFromHouse(w.wall,w.cu,w.cy,w.w,w.h,size,w.tau,w.evScale)).filter(Boolean);
+const wins = (built.luxWins||[]).map(w=>winFromHouse(w.wall,w.cu,w.cy,w.w,w.h,size,w.tau,w.evScale,w.cz)).filter(Boolean);
 
 const all  = built.occluders||[];
 const noFurn = all.filter(o=>o.src!=='furniture');

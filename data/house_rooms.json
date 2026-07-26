@@ -103,18 +103,31 @@
       "facing": "south",
       "facing_note": "남향이지만 창이 작고(레터박스) 반투명(τ0.55)이라 어둡다. 향 탓이 아니다.",
       "measured": {
-        "peakDLI": 0.55,
-        "minDLI": 0.04,
-        "slots": 13,
-        "n3": 0,
-        "n6": 0,
-        "dark": 9,
-        "winterPeak": 0.2,
-        "avg7Summer": 0.35,
-        "weekMin": 0.1,
-        "weekP50": 0.36,
-        "avg7Winter": 0.13,
-        "fenWeekPct": 0.0,
+        "_label": "★ 라벨 없는 숫자는 쓰지 않는다. space=가구 없는 공간 / slots=지금 가구 배치. peak_summer=맑음·여름 하루 최고. avg7_summer=7일 이동평균 기댓값(=peak×0.643).",
+        "space": {
+          "peak_summer": 3.74,
+          "avg7_summer": 2.4,
+          "vol6_m3": 0.0,
+          "vol3_m3": 0.1,
+          "vol_dark_m3": 30.3,
+          "_method": "0.25m 격자·높이 0.10~1.80m. 벽·칸막이·창턱은 남기고 가구만 제외."
+        },
+        "slots": {
+          "peak_summer": 0.55,
+          "avg7_summer": 0.35,
+          "count": 13,
+          "utilization_pct": 15,
+          "_method": "지금 house_rooms.json 의 furniture 배치 기준. 차폐에 가구 포함."
+        },
+        "area": {
+          "floor_m2": 20.0,
+          "lamp_max_pots": {
+            "clip": 40,
+            "bar": 20,
+            "stand": 10
+          },
+          "_method": "바닥 면적(cutouts 제외). 등 상한 = 면적÷(2×coverage_r)². 통로 미반영 이론값."
+        },
         "measuredAt": "2026-07-26",
         "roomRev": "379f9dc 2026-07-25",
         "status": "확정"
@@ -216,18 +229,31 @@
       "facing": "south",
       "facing_note": "남향 단창.",
       "measured": {
-        "peakDLI": 4.77,
-        "minDLI": 0.0,
-        "slots": 11,
-        "n3": 3,
-        "n6": 0,
-        "dark": 1,
-        "winterPeak": 1.77,
-        "avg7Summer": 3.07,
-        "weekMin": 0.84,
-        "weekP50": 3.15,
-        "avg7Winter": 1.14,
-        "fenWeekPct": 0.0,
+        "_label": "★ 라벨 없는 숫자는 쓰지 않는다. space=가구 없는 공간 / slots=지금 가구 배치. peak_summer=맑음·여름 하루 최고. avg7_summer=7일 이동평균 기댓값(=peak×0.643).",
+        "space": {
+          "peak_summer": 6.76,
+          "avg7_summer": 4.35,
+          "vol6_m3": 0.5,
+          "vol3_m3": 1.8,
+          "vol_dark_m3": 33.4,
+          "_method": "0.25m 격자·높이 0.10~1.80m. 벽·칸막이·창턱은 남기고 가구만 제외."
+        },
+        "slots": {
+          "peak_summer": 4.77,
+          "avg7_summer": 3.07,
+          "count": 11,
+          "utilization_pct": 71,
+          "_method": "지금 house_rooms.json 의 furniture 배치 기준. 차폐에 가구 포함."
+        },
+        "area": {
+          "floor_m2": 30.0,
+          "lamp_max_pots": {
+            "clip": 61,
+            "bar": 30,
+            "stand": 15
+          },
+          "_method": "바닥 면적(cutouts 제외). 등 상한 = 면적÷(2×coverage_r)². 통로 미반영 이론값."
+        },
         "measuredAt": "2026-07-26",
         "roomRev": "379f9dc 2026-07-25",
         "status": "확정"
@@ -521,18 +547,31 @@
         }
       ],
       "measured": {
-        "peakDLI": 6.02,
-        "minDLI": 0.0,
-        "slots": 83,
-        "n3": 46,
-        "n6": 1,
-        "dark": 23,
-        "winterPeak": 2.24,
-        "avg7Summer": 3.87,
-        "weekMin": 1.06,
-        "weekP50": 3.97,
-        "avg7Winter": 1.44,
-        "fenWeekPct": 0.8,
+        "_label": "★ 라벨 없는 숫자는 쓰지 않는다. space=가구 없는 공간 / slots=지금 가구 배치. peak_summer=맑음·여름 하루 최고. avg7_summer=7일 이동평균 기댓값(=peak×0.643).",
+        "space": {
+          "peak_summer": 9.01,
+          "avg7_summer": 5.79,
+          "vol6_m3": 2.3,
+          "vol3_m3": 18.8,
+          "vol_dark_m3": 95.1,
+          "_method": "0.25m 격자·높이 0.10~1.80m. 벽·칸막이·창턱은 남기고 가구만 제외."
+        },
+        "slots": {
+          "peak_summer": 6.02,
+          "avg7_summer": 3.87,
+          "count": 83,
+          "utilization_pct": 67,
+          "_method": "지금 house_rooms.json 의 furniture 배치 기준. 차폐에 가구 포함."
+        },
+        "area": {
+          "floor_m2": 99.4,
+          "lamp_max_pots": {
+            "clip": 202,
+            "bar": 99,
+            "stand": 50
+          },
+          "_method": "바닥 면적(cutouts 제외). 등 상한 = 면적÷(2×coverage_r)². 통로 미반영 이론값."
+        },
         "measuredAt": "2026-07-26",
         "roomRev": "b8da780 2026-07-26",
         "status": "미확정"
@@ -551,14 +590,25 @@
       "windows": [
         {
           "wall": "back",
-          "cu": 0,
+          "cu": -1.5,
           "cy": 1.85,
           "w": 7.2,
           "h": 1.7,
           "preset": "win_classroom_band",
           "color": "#eef1f2",
           "gloss": "matte",
-          "note": "★ 창턱(1.0m) 위 ~ 천장 0.1m 아래까지. 벽 폭 8m 중 7.2m(양쪽 0.4m 여백)."
+          "note": "교실 반전창 — 창턱(1.0m) 위 ~ 천장 0.1m 아래"
+        },
+        {
+          "wall": "back",
+          "cu": 4.0,
+          "cy": 1.85,
+          "w": 2.2,
+          "h": 1.7,
+          "preset": "win_classroom_band",
+          "color": "#eef1f2",
+          "gloss": "matte",
+          "note": "교사방 창 — 같은 높이대"
         }
       ],
       "doors": [
@@ -570,17 +620,17 @@
         }
       ],
       "size": {
-        "w": 8,
-        "d": 6,
+        "w": 11.0,
+        "d": 6.0,
         "h": 2.8
       },
       "furniture": [
         {
           "preset": "blackboard",
-          "x": 0.8,
-          "z": 2.93,
+          "x": -5.38,
+          "z": 0.0,
           "y": 1.55,
-          "rot": 180
+          "rot": 90
         },
         {
           "preset": "bulletin_board",
@@ -591,9 +641,9 @@
         },
         {
           "preset": "lectern",
-          "x": 1.9,
-          "z": 2.05,
-          "rot": 180
+          "x": -3.6,
+          "z": 1.6,
+          "rot": -90
         },
         {
           "preset": "desk_student_2",
@@ -607,7 +657,7 @@
         },
         {
           "preset": "desk_student_2",
-          "x": 2.4,
+          "x": 1.3,
           "z": 0.6
         },
         {
@@ -622,7 +672,7 @@
         },
         {
           "preset": "desk_student_2",
-          "x": 2.4,
+          "x": 1.3,
           "z": -0.5
         },
         {
@@ -639,7 +689,7 @@
         },
         {
           "preset": "chair_student",
-          "x": 2.4,
+          "x": 1.3,
           "z": 0.04999999999999993,
           "rot": 180
         },
@@ -657,7 +707,7 @@
         },
         {
           "preset": "chair_student",
-          "x": 2.4,
+          "x": 1.3,
           "z": -1.05,
           "rot": 180
         },
@@ -671,32 +721,59 @@
       "facing": "south",
       "facing_note": "남향 한 벽에 창 3개 — 창가/뒤편 격차가 이 방의 성격.",
       "measured": {
-        "peakDLI": 5.49,
-        "minDLI": 0.02,
-        "slots": 32,
-        "n3": 10,
-        "n6": 0,
-        "dark": 10,
-        "winterPeak": 2.04,
-        "avg7Summer": 3.53,
-        "weekMin": 0.97,
-        "weekP50": 3.63,
-        "avg7Winter": 1.31,
-        "fenWeekPct": 0.0,
+        "_label": "★ 라벨 없는 숫자는 쓰지 않는다. space=가구 없는 공간 / slots=지금 가구 배치. peak_summer=맑음·여름 하루 최고. avg7_summer=7일 이동평균 기댓값(=peak×0.643).",
+        "space": {
+          "peak_summer": 7.58,
+          "avg7_summer": 4.87,
+          "vol6_m3": 1.4,
+          "vol3_m3": 6.3,
+          "vol_dark_m3": 48.4,
+          "_method": "0.25m 격자·높이 0.10~1.80m. 벽·칸막이·창턱은 남기고 가구만 제외."
+        },
+        "slots": {
+          "peak_summer": 6.01,
+          "avg7_summer": 3.86,
+          "count": 128,
+          "utilization_pct": 79,
+          "_method": "지금 house_rooms.json 의 furniture 배치 기준. 차폐에 가구 포함."
+        },
+        "area": {
+          "floor_m2": 66.0,
+          "lamp_max_pots": {
+            "clip": 134,
+            "bar": 66,
+            "stand": 33
+          },
+          "_method": "바닥 면적(cutouts 제외). 등 상한 = 면적÷(2×coverage_r)². 통로 미반영 이론값."
+        },
         "measuredAt": "2026-07-26",
-        "roomRev": "379f9dc 2026-07-25",
-        "status": "재측정필요",
-        "note": "구조 변경(반전창+깊은 창턱) — 아래 숫자는 변경 전 값이다"
+        "roomRev": "2026-07-26 도면 반영(교사방/연구실)",
+        "status": "잠정"
       },
       "sills": [
         {
           "wall": "back",
-          "cu": 0,
+          "cu": -1.5,
           "w": 7.2,
           "y": 1.0,
           "depth": 1.0,
           "uid": "classroom-sill",
-          "note": "★ 건축 구조다. 가구가 아니라 못 옮기고 못 판다 — '학원교실은 창턱이 자산'. 깊이 1m라 앞뒤 4줄이 나오고 줄마다 조도가 다르다."
+          "note": "★ 건축 구조. 교실 구간에만 있고 교사방엔 없다."
+        }
+      ],
+      "partitions": [
+        {
+          "id": "teacher",
+          "axis": "x",
+          "at": 2.5,
+          "from": -3.0,
+          "to": 3.0,
+          "door": {
+            "at": 1.4,
+            "w": 0.95,
+            "h": 2.1
+          },
+          "note": "교실 | 교사방. 문은 도면대로 아래쪽(front 쪽)."
         }
       ]
     },
@@ -709,9 +786,19 @@
       "wallRough": 0.9,
       "floorRough": 0.7,
       "glassWalls": [
-        "back",
-        "left",
-        "right"
+        {
+          "wall": "back"
+        },
+        {
+          "wall": "left",
+          "from": -6.0,
+          "to": 1.0
+        },
+        {
+          "wall": "right",
+          "from": -6.0,
+          "to": 1.0
+        }
       ],
       "ceiling": "glass",
       "windows": [],
@@ -722,13 +809,12 @@
           "w": 1.15,
           "h": 2.45,
           "preset": "door_plain_cream",
-          "exit": "lab",
-          "note": "★ 북쪽 불투명 벽의 문 — 연구실로 이어진다. 유리면엔 문을 내지 않는다."
+          "note": "연구실 바깥 출입문(북쪽). 유리면엔 문을 내지 않는다."
         }
       ],
       "size": {
         "w": 10.0,
-        "d": 7.0,
+        "d": 12.0,
         "h": 2.8
       },
       "furniture": [
@@ -755,12 +841,12 @@
         {
           "preset": "shelf_etagere_3tier",
           "x": -4.475,
-          "z": 2.66
+          "z": 0.4
         },
         {
           "preset": "shelf_cart_3tier",
           "x": -4.5,
-          "z": 2.59
+          "z": 0.4
         },
         {
           "preset": "table",
@@ -770,7 +856,7 @@
         {
           "preset": "plant_step_3",
           "x": 0.438,
-          "z": 2.66
+          "z": 0.4
         },
         {
           "preset": "bed_single",
@@ -791,7 +877,7 @@
         {
           "preset": "shelf",
           "x": 4.625,
-          "z": 2.24,
+          "z": 0.4,
           "rot": -90
         },
         {
@@ -804,38 +890,57 @@
       "note": "재배동(좌 5m) + 숙소·연구실(우 3m). 숙소쪽 벽이 막혀 있어 온실 안에서도 밝기 격차가 생긴다. 천창은 재배동에만.",
       "partitions": [
         {
-          "id": "lodge",
-          "axis": "x",
+          "id": "lab",
+          "axis": "z",
           "at": 1.0,
-          "from": -2.5,
-          "to": 2.5,
+          "from": -5.0,
+          "to": 5.0,
           "door": {
-            "at": -0.6,
-            "w": 0.95,
+            "at": -3.4,
+            "w": 1.05,
             "h": 2.1
           },
-          "note": "★ 재배동 / 숙소·연구실. 이 벽이 막혀 있어 온실에도 자리 고민이 생긴다"
+          "note": "온실 | 연구실. 문은 도면대로 왼쪽."
         }
       ],
       "measured": {
-        "peakDLI": 12.42,
-        "minDLI": 0.0,
-        "slots": 64,
-        "n3": 50,
-        "n6": 36,
-        "dark": 9,
-        "winterPeak": 4.62,
-        "avg7Summer": 7.99,
-        "weekMin": 2.18,
-        "weekP50": 8.2,
-        "avg7Winter": 2.97,
-        "fenWeekPct": 83.0,
+        "_label": "★ 라벨 없는 숫자는 쓰지 않는다. space=가구 없는 공간 / slots=지금 가구 배치. peak_summer=맑음·여름 하루 최고. avg7_summer=7일 이동평균 기댓값(=peak×0.643).",
+        "space": {
+          "peak_summer": 16.16,
+          "avg7_summer": 10.39,
+          "vol6_m3": 122.6,
+          "vol3_m3": 123.3,
+          "vol_dark_m3": 80.4,
+          "_method": "0.25m 격자·높이 0.10~1.80m. 벽·칸막이·창턱은 남기고 가구만 제외."
+        },
+        "slots": {
+          "peak_summer": 14.55,
+          "avg7_summer": 9.36,
+          "count": 64,
+          "utilization_pct": 90,
+          "_method": "지금 house_rooms.json 의 furniture 배치 기준. 차폐에 가구 포함."
+        },
+        "area": {
+          "floor_m2": 120.0,
+          "lamp_max_pots": {
+            "clip": 244,
+            "bar": 120,
+            "stand": 61
+          },
+          "_method": "바닥 면적(cutouts 제외). 등 상한 = 면적÷(2×coverage_r)². 통로 미반영 이론값.",
+          "floor_m2_greenhouse_only": 70.0,
+          "floor_m2_lab_only": 50.0,
+          "_split": "온실(z<1.0) 70㎡ + 연구실 50㎡. 등 상한은 전체 120㎡ 기준이라 온실만 쓰려면 70/120 을 곱한다."
+        },
         "measuredAt": "2026-07-26",
-        "roomRev": "1fdc9ff 2026-07-26",
-        "status": "재측정필요",
-        "note": "구조 변경(10x7 · 3면 유리 · 창 제거) — 아래 숫자는 변경 전 값이다"
+        "roomRev": "2026-07-26 도면 반영(교사방/연구실)",
+        "status": "잠정"
       },
-      "facing_note": "back=남. 북쪽(front) 벽만 불투명이고 나머지 3면 + 천장이 유리다."
+      "facing_note": "back=남. 온실(z<1)은 3면+천장 유리, 연구실(z>1)은 사방 벽·솔리드 천장.",
+      "ceilingGlass": {
+        "z0": -6.0,
+        "z1": 1.0
+      }
     },
     "tworoom": {
       "label": "투룸",
@@ -966,18 +1071,31 @@
       "facing": "south",
       "facing_note": "거실 남향 / 침실 동향 — 방 두 개의 밝기가 다르다.",
       "measured": {
-        "peakDLI": 5.64,
-        "minDLI": 0.0,
-        "slots": 20,
-        "n3": 3,
-        "n6": 0,
-        "dark": 6,
-        "winterPeak": 2.1,
-        "avg7Summer": 3.63,
-        "weekMin": 0.99,
-        "weekP50": 3.72,
-        "avg7Winter": 1.35,
-        "fenWeekPct": 0.0,
+        "_label": "★ 라벨 없는 숫자는 쓰지 않는다. space=가구 없는 공간 / slots=지금 가구 배치. peak_summer=맑음·여름 하루 최고. avg7_summer=7일 이동평균 기댓값(=peak×0.643).",
+        "space": {
+          "peak_summer": 6.69,
+          "avg7_summer": 4.3,
+          "vol6_m3": 0.3,
+          "vol3_m3": 1.7,
+          "vol_dark_m3": 37.5,
+          "_method": "0.25m 격자·높이 0.10~1.80m. 벽·칸막이·창턱은 남기고 가구만 제외."
+        },
+        "slots": {
+          "peak_summer": 5.64,
+          "avg7_summer": 3.63,
+          "count": 20,
+          "utilization_pct": 84,
+          "_method": "지금 house_rooms.json 의 furniture 배치 기준. 차폐에 가구 포함."
+        },
+        "area": {
+          "floor_m2": 35.0,
+          "lamp_max_pots": {
+            "clip": 71,
+            "bar": 35,
+            "stand": 17
+          },
+          "_method": "바닥 면적(cutouts 제외). 등 상한 = 면적÷(2×coverage_r)². 통로 미반영 이론값."
+        },
         "measuredAt": "2026-07-26",
         "roomRev": "1fdc9ff 2026-07-26",
         "status": "잠정"

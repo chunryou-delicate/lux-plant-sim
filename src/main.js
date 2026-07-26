@@ -82,7 +82,7 @@ async function buildRoomPreset(name){
   // ★ 조도용: 방 창을 3D 사각 개구부로, 화분 슬롯을 월드좌표로
   // ★ house.js가 진짜 창 + 유리벽(온실)을 합쳐 준다. 여기서 roomDef를 다시 읽지 않는다.
   curWins=(built.luxWins||[]).map(w=>
-    winFromHouse(w.wall, w.cu, w.cy, w.w, w.h, built.size, w.tau, w.evScale)).filter(Boolean);
+    winFromHouse(w.wall, w.cu, w.cy, w.w, w.h, built.size, w.tau, w.evScale, w.cz)).filter(Boolean);
   curSlots=built.plantSlots||[];
   curOcc=built.occluders||[];
   curGlazed=built.glazedPanes||[];

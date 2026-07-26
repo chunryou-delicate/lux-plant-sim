@@ -20,7 +20,7 @@ const DLI = (r) => daylightDLI(r,{weather:'clear',season:'summer'});
 
 function build(key){
   const built = buildHouse(null, HR.rooms[key], wp, dp, FIN, fp, LP, SH);
-  const wins = (built.luxWins||[]).map(w=>winFromHouse(w.wall,w.cu,w.cy,w.w,w.h,built.size,w.tau,w.evScale)).filter(Boolean);
+  const wins = (built.luxWins||[]).map(w=>winFromHouse(w.wall,w.cu,w.cy,w.w,w.h,built.size,w.tau,w.evScale,w.cz)).filter(Boolean);
   return {built, wins};
 }
 const at = (b,w,p,selfIdx) => DLI(daylightRatio(p,{x:0,y:1,z:0},w,

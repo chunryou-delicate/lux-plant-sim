@@ -27,7 +27,9 @@
 ============================================================ */
 
 /* house_rooms.json 방식(wall/cu/cy/w/h) → 창 사각형 */
-export function winFromHouse(wall, cu, cy, w, h, size, tau = 0.8, evScale = 1) {
+/* cv: 천창 전용 — 지붕 유리가 방 일부만 덮을 때 그 구간의 z 중심.
+   벽창은 cu 하나로 위치가 정해지지만 천창은 수평면이라 축이 둘이다. */
+export function winFromHouse(wall, cu, cy, w, h, size, tau = 0.8, evScale = 1, cv = 0) {
   const W = size.w, D = size.d;
   switch (wall) {
     case 'back':  return { cx: cu,    cy, cz: -D / 2, ux: 1, uz: 0, nx: 0,  nz: 1,  width: w, height: h, tau, evScale };
@@ -37,7 +39,7 @@ export function winFromHouse(wall, cu, cy, w, h, size, tau = 0.8, evScale = 1) {
     /* ★ 천창 — 수평 개구부. 법선이 아래(실내)를 향한다.
        u축=x, v축=z 로 눕히고 ny=-1. cy는 천장 높이를 넣는다.
        수평면은 하늘 반구를 통째로 보므로 같은 면적이어도 수직창보다 훨씬 세다. */
-    case 'ceiling': return { cx: cu, cy, cz: 0,
+    case 'ceiling': return { cx: cu, cy, cz: cv,
                              ux: 1, uy: 0, uz: 0,
                              vx: 0, vy: 0, vz: 1,
                              nx: 0, ny: -1, nz: 0,

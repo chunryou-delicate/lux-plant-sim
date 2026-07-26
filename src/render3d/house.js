@@ -292,7 +292,11 @@ export function buildHouse(GRAIN, roomDefIn, winPresets, doorPresets={}, finishe
   }
   const winWorld=[];            // 창 월드 위치(엔진 winPos 계산)
 
-  const glassWalls = roomDef.glassWalls || [];
+  /* glassWalls: ["left"] (벽 전체) 또는 [{wall:"left", from:-6, to:1}] (구간만).
+     구간을 받는 이유 — 온실+연구실처럼 한 벽이 두 방에 걸치면
+     온실 쪽만 유리고 연구실 쪽은 벽이어야 한다. */
+  const glassSpecs = (roomDef.glassWalls || []).map(g => typeof g === 'string' ? { wall:g } : g);
+  const glassOn = wall => glassSpecs.find(g => g.wall === wall) || null;
 
   /* ★ 윤곽 — 직사각 껍데기에서 도려낼 구역들.
      T자·L자 평면을 만들려고 쓴다. 도려낸 자리는 '집 밖'이라
@@ -404,10 +408,15 @@ export function buildHouse(GRAIN, roomDefIn, winPresets, doorPresets={}, finishe
   }
   /* ★ 천창 — ceiling:'glass' 인 방은 지붕 전체가 개구부다.
      수평면은 하늘 반구를 통째로 봐서 벽 유리보다 훨씬 세다. */
+  /* ceilingGlass:{z0,z1} 로 구간만 유리로 할 수 있다 — 온실+연구실처럼
+     한 지붕이 두 방에 걸치면 온실 쪽만 유리여야 한다. */
+  const cg = roomDef.ceilingGlass || null;
+  const cgZ0 = cg ? Math.max(-CD/2, cg.z0) : -CD/2;
+  const cgZ1 = cg ? Math.min( CD/2, cg.z1) :  CD/2;
   if(roomDef.ceiling==='glass'){
     const go=wallOrient(facing,'ceiling');
     const sh=shadeMult(roomDef.ceilingShade);
-    luxWins.push({ wall:'ceiling', cu:0, cy:CH, w:CW-0.1, h:CD-0.1,
+    luxWins.push({ wall:'ceiling', cu:0, cy:CH, w:CW-0.1, h:(cgZ1-cgZ0)-0.1, cz:(cgZ0+cgZ1)/2,
                    tau:roomDef.ceilingTau ?? 0.85,
                    orient:go, shade:roomDef.ceilingShade||'none', shadeMult:sh,
                    evScale:orientK(go)*sh, from:'skylight' });
@@ -429,11 +438,21 @@ export function buildHouse(GRAIN, roomDefIn, winPresets, doorPresets={}, finishe
   // ---------- 천장: 유리 or 1m 솔리드 타일 ----------
   if(roomDef.ceiling==='glass'){
     const gm=makeGlassMaterial();
-    const glass=new THREE.Mesh(new THREE.PlaneGeometry(CW-0.1,CD-0.1), gm);
-    glass.rotation.x=Math.PI/2; glass.position.set(0,CH,0);
+    const glass=new THREE.Mesh(new THREE.PlaneGeometry(CW-0.1,(cgZ1-cgZ0)-0.1), gm);
+    glass.rotation.x=Math.PI/2; glass.position.set(0,CH,(cgZ0+cgZ1)/2);
     glassMeshes.push(glass); room.add(glass);
     // 지붕 뼈대(코드 격자 살) 얹기
     tileGlassFrames(room, 'ceiling');
+    /* 유리 구간 밖 지붕은 솔리드로 덮는다 — 안 덮으면 연구실 천장이 뚫린다 */
+    if(cg){
+      const cm=surfaceMat(roomDef.ceilColor||'#f6f2ea',0.95, GRAIN);
+      const gg=new THREE.Group();
+      const hw=CW/2+WT/2;
+      for(const [z0,z1] of [[-CD/2-WT/2, cgZ0],[cgZ1, CD/2+WT/2]])
+        if(z1-z0 > 0.01) gg.add(box(hw*2, WT, z1-z0, cm, 0, CH+WT/2, (z0+z1)/2, false));
+      gg.userData={ normal:[0,1,0], center:[0,CH,0] };
+      shells.ceiling=gg; room.add(gg);
+    }
   }else{
     const ceilMat=surfaceMat(roomDef.ceilColor||'#f6f2ea',0.95, GRAIN);
     const g=new THREE.Group();
@@ -448,14 +467,18 @@ export function buildHouse(GRAIN, roomDefIn, winPresets, doorPresets={}, finishe
   const wallCenters={ back:[0,CH/2,-CD/2], front:[0,CH/2,CD/2], left:[-CW/2,CH/2,0], right:[CW/2,CH/2,0] };
 
   for(const wall of ['back','front','left','right']){
-    const kind=glassWalls.includes(wall)?'glass':'solid';
+    const gspec=glassOn(wall);
+    const kind=gspec?'glass':'solid';
     const [uMin,uMax]=wallURange(wall);
+    /* 유리 구간 — from/to 가 없으면 벽 전체 */
+    const gMin=gspec ? Math.max(uMin, gspec.from ?? uMin) : 0;
+    const gMax=gspec ? Math.min(uMax, gspec.to   ?? uMax) : 0;
     // ★ 유리벽도 조도 엔진엔 '창'이다. buildGlassWall이 실제로 만드는 유리판과
     //   같은 치수(-0.1)를 쓴다 — 겉(유리판)과 속(조도)이 어긋나지 않게.
     if(kind==='glass'){
       const go=wallOrient(facing, wall);
       const sh=shadeMult((roomDef.glassWallShade||{})[wall] || roomDef.glassWallShade);
-      luxWins.push({ wall, cu:(uMin+uMax)/2, cy:CH/2, w:(uMax-uMin)-0.1, h:CH-0.1,
+      luxWins.push({ wall, cu:(gMin+gMax)/2, cy:CH/2, w:(gMax-gMin)-0.1, h:CH-0.1,
                      tau:0.85, orient:go, shade:'none', shadeMult:sh,
                      evScale:orientK(go)*sh, from:'glassWall' });
     }
@@ -475,8 +498,12 @@ export function buildHouse(GRAIN, roomDefIn, winPresets, doorPresets={}, finishe
 
     if(kind==='glass'){
       // 유리벽: 솔리드 패널 없이 큰 유리 + 코드 격자 살(문서: 온실 유리벽)
-      buildGlassWall(room, glassMeshes, wall, uMin, uMax);
-      tileGlassFrames(room, wall, uMin, uMax);
+      buildGlassWall(room, glassMeshes, wall, gMin, gMax);
+      tileGlassFrames(room, wall, gMin, gMax);
+      /* 유리 구간 밖은 그냥 벽이다 — 안 세우면 방이 뚫린다 */
+      const wmat2=surfaceMat(roomDef.wallColor, roomDef.wallRough??0.9, GRAIN);
+      if(gMin-uMin > 0.01) for(const r of panelRects(uMin, gMin, 0, CH, openings)) g.add(panelToBox(wall, r, wmat2));
+      if(uMax-gMax > 0.01) for(const r of panelRects(gMax, uMax, 0, CH, openings)) g.add(panelToBox(wall, r, wmat2));
     }else{
       // 솔리드 벽: 1m 모듈 파스텔 패널 - 개구부
       const wmat=surfaceMat(roomDef.wallColor, roomDef.wallRough??0.9, GRAIN);

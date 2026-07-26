@@ -1,0 +1,130 @@
+<!doctype html><meta charset="utf-8"><title>공간 조도</title>
+<body style="background:#111;color:#ddd;font:12px/1.6 monospace;padding:16px">
+<pre id="out">…</pre>
+<script src="https://unpkg.com/three@0.128.0/build/three.min.js"></script>
+<script type="module">
+/* ★ 방 등급은 '공간'으로 잰다. 슬롯으로 재면 내가 대충 놓은 가구 배치가 방 등급이 된다.
+   벽·칸막이·창턱(건축 구조)만 남기고 가구는 전부 뺀다.
+
+   ★★ 모든 숫자에 라벨을 붙인다 — {방}.{기준}.{조건}
+      space = 가구 없는 공간 / slots = 지금 가구 배치
+      숫자가 peak/7일평균 × 공간/슬롯 으로 네 갈래라 라벨이 없으면 반드시 섞인다.
+      실제로 세 번 섞였다. */
+import { buildHouse } from './src/render3d/house.js';
+import { winFromHouse } from './src/engine/daylight_lux.js';
+import { daylightRatio, daylightDLI } from './src/engine/daily_light.js';
+import { weatherE } from './src/engine/weather.js';
+
+const J=p=>fetch(p).then(r=>r.json());
+const [HR,WP,DP,FIN,FP,LP,TH,SH]=await Promise.all([
+ J('./data/house_rooms.json'),J('./data/window_presets.json'),J('./data/door_presets.json'),
+ J('./data/room_finishes.json'),J('./data/furniture_presets.json'),J('./data/lighting_presets.json'),
+ J('./data/balance/light_thresholds.json'),J('./data/shading_presets.json')]);
+const wp=WP.presets||WP, dp=DP.presets||DP, fp=FP.presets||FP;
+const FX=LP.fixtures||LP;
+
+const STEP=0.25, CELL=STEP**3, AREA=STEP**2;
+const YS=[]; for(let y=0.10;y<=1.8001;y+=STEP) YS.push(+y.toFixed(2));
+const E=weatherE('summer');                        // 7일평균 = peak × E
+const NA={banjiha:'반지하',oneroom:'원룸',tworoom:'투룸',classroom:'학원교실',greenhouse:'온실',apartment:'아파트'};
+const L=[];
+
+function scan(key){
+  const def=HR.rooms[key];
+  const b=buildHouse(null,def,wp,dp,FIN,fp,LP,SH);
+  const size=b.size;
+  const wins=(b.luxWins||[]).map(w=>winFromHouse(w.wall,w.cu,w.cy,w.w,w.h,size,w.tau,w.evScale,w.cz)).filter(Boolean);
+  const archOcc=(b.occluders||[]).filter(o=>o.src!=='furniture');   // 가구만 뺀다
+
+  /* 바닥 면적 — cutouts 로 도려낸 자리는 집 밖이라 뺀다 */
+  const cuts=(def.cutouts||[]).map(c=>({x0:Math.min(c.x0,c.x1),x1:Math.max(c.x0,c.x1),
+                                        z0:Math.min(c.z0,c.z1),z1:Math.max(c.z0,c.z1)}));
+  const inCut=(x,z)=>cuts.some(c=>x>c.x0&&x<c.x1&&z>c.z0&&z<c.z1);
+
+  const pts=[]; let cells=0;
+  for(let x=-size.w/2+0.05; x<=size.w/2-0.05; x+=STEP)
+    for(let z=-size.d/2+0.05; z<=size.d/2-0.05; z+=STEP){
+      if(inCut(x,z)) continue;
+      cells++;
+      for(const y of YS)
+        pts.push({x,y,z,dli:daylightDLI(daylightRatio({x,y,z},{x:0,y:1,z:0},wins,
+                 {occluders:archOcc, glazed:b.glazedPanes}),{weather:'clear',season:'summer'})});
+    }
+  /* 슬롯 기준(지금 가구 배치) — 이건 차폐에 가구를 포함한다 */
+  const sd=(b.plantSlots||[]).map(s=>daylightDLI(daylightRatio({x:s.x,y:s.y,z:s.z},{x:0,y:1,z:0},wins,
+            {occluders:b.occluders, glazed:b.glazedPanes, selfIdx:s.occIdx}),{weather:'clear',season:'summer'}));
+  return {def,b,size,pts,sd,area:cells*AREA};
+}
+
+const KEYS=Object.keys(NA);
+const R={}; for(const k of KEYS) R[k]=scan(k);
+
+const v=(pts,t)=>pts.filter(p=>p.dli>=t).length*CELL;
+const mx=pts=>Math.max(...pts.map(p=>p.dli));
+
+L.push('# 방 등급 — **공간 기준** 실측 (2026-07-26)');
+L.push('');
+L.push('> ★ 라벨 규칙: `{방}.space.*` = 가구 없는 공간 · `{방}.slots.*` = 지금 가구 배치');
+L.push('> `peak_summer` = 맑음·여름 하루 최고 · `avg7_summer` = 7일 이동평균 기댓값(= peak × '+E.toFixed(3)+')');
+L.push('> **라벨 없는 숫자는 쓰지 않는다.** peak/7일평균 × 공간/슬롯 으로 네 갈래라 반드시 섞인다.');
+L.push('');
+L.push('측정: 0.25m 격자 · 높이 0.10~1.80m · 벽·칸막이·창턱은 남기고 **가구만 제외**');
+L.push('');
+L.push('## 1. 자연광 — space 기준');
+L.push('');
+L.push('| 방 | space.peak_summer | space.avg7_summer | ≥6 부피 | ≥3 부피 | <0.3 부피 |');
+L.push('|---|---|---|---|---|---|');
+const ord=KEYS.slice().sort((a,b)=>mx(R[a].pts)-mx(R[b].pts));
+for(const k of ord){ const r=R[k], m=mx(r.pts);
+  L.push(`| ${NA[k]} | **${m.toFixed(2)}** | ${(m*E).toFixed(2)} | ${v(r.pts,6).toFixed(1)}㎥ | ${v(r.pts,3).toFixed(1)}㎥ | ${(r.pts.filter(p=>p.dli<0.3).length*CELL).toFixed(1)}㎥ |`);
+}
+L.push('');
+L.push('```');
+L.push('space.peak_summer 순서:  ' + ord.map(k=>NA[k]+' '+mx(R[k].pts).toFixed(2)).join('  <  '));
+L.push('```');
+
+L.push('');
+L.push('## 2. ★ 면적 — 조명등 상한 (자연광과 다른 축)');
+L.push('');
+L.push('창은 공짜지만 한계가 있고, 등은 돈만 있으면 **면적만큼** 늘어난다.');
+L.push('등 1개가 화분 1개를 맡는다고 보면 상한은 `면적 ÷ (2×coverage_r)²` 이다.');
+L.push('');
+const LAMPS=[['growlight_clip','클립'],['growlight_bar','바'],['growlight_stand','스탠드']];
+L.push('| 방 | 바닥 면적 | ' + LAMPS.map(([id,n])=>`등 상한(${n} r=${FX[id].coverage_r}m)`).join(' | ') + ' |');
+L.push('|---|---|' + LAMPS.map(()=>'---').join('|') + '|');
+const areaOrd=KEYS.slice().sort((a,b)=>R[a].area-R[b].area);
+for(const k of areaOrd){ const r=R[k];
+  const cols=LAMPS.map(([id])=>{ const sp=2*FX[id].coverage_r; return Math.floor(r.area/(sp*sp)); });
+  L.push(`| ${NA[k]} | **${r.area.toFixed(1)}㎡** | ${cols.join(' | ')} |`);
+}
+L.push('');
+L.push('```');
+L.push('면적 순서:  ' + areaOrd.map(k=>NA[k]+' '+R[k].area.toFixed(0)+'㎡').join('  <  '));
+L.push('```');
+L.push('');
+L.push('> 통로를 빼지 않은 **이론 상한**이다. 실제로는 60~70% 정도로 봐야 한다.');
+
+L.push('');
+L.push('## 3. 지금 가구 배치가 잠재력의 몇 %를 쓰나');
+L.push('');
+L.push('| 방 | space.peak_summer | slots.peak_summer | **활용률** | 슬롯 수 |');
+L.push('|---|---|---|---|---|');
+for(const k of ord){ const r=R[k], m=mx(r.pts), sp=r.sd.length?Math.max(...r.sd):0;
+  L.push(`| ${NA[k]} | ${m.toFixed(2)} | ${sp.toFixed(2)} | **${m>0?(sp/m*100).toFixed(0):'—'}%** | ${r.sd.length} |`);
+}
+
+L.push('');
+L.push('## 4. 높이별 — 화분을 어느 높이에 놓아야 하나');
+L.push('');
+L.push('| 방 | ' + YS.map(y=>y.toFixed(2)).join(' | ') + ' |');
+L.push('|---|' + YS.map(()=>'---').join('|') + '|');
+for(const k of ord){ const r=R[k];
+  const row=YS.map(y=>{ const lay=r.pts.filter(p=>p.y===y); return lay.length?mx(lay).toFixed(1):'—'; });
+  L.push(`| ${NA[k]} | ${row.join(' | ')} |`);
+}
+L.push('');
+L.push('(각 높이의 최고 DLI. 창 아래끝보다 낮으면 뚝 떨어진다)');
+
+document.getElementById('out').textContent=L.join('\n');
+document.title='DONE';
+</script>
