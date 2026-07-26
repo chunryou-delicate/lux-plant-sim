@@ -55,6 +55,10 @@
   https://raw.githubusercontent.com/chunryou-delicate/lux-plant-sim/main/docs/game_assets_first.md
 - **로드맵 최신화** — roadmap_update.md
   https://raw.githubusercontent.com/chunryou-delicate/lux-plant-sim/main/docs/roadmap_update.md
+- **식비·끼니 경제 + 콩나물**(화폐단위 통일·지출 루프·2끼 상한) — food_economy.md
+  https://raw.githubusercontent.com/chunryou-delicate/lux-plant-sim/main/docs/food_economy.md
+- **연구자 트랙**(대학원생·논문=재현성·U자 곡선·전기 면제) — researcher_track.md
+  https://raw.githubusercontent.com/chunryou-delicate/lux-plant-sim/main/docs/researcher_track.md
 
 ### ★ 몬스테라 생장 로직 (plant_grow.html 근거)
 - **성장 상태전이 정밀 스펙**(분홍→초록/하늘, petiole 분화, 잎 병렬성숙) — 몬스테라_생장로직_정밀.md

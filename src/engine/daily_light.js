@@ -89,13 +89,42 @@ export function judgeDLI(dli, th) {
   };
 }
 
-export function thresholdsFor(TH, plantId) {
+/* explicitVarie를 주면 그게 id 패턴보다 우선한다(슬롯이 직접 아는 경우). */
+export function thresholdsFor(TH, plantId, explicitVarie) {
   if (!TH) return null;
   const p = TH.plants || {};
-  if (p[plantId]) return p[plantId];
-  // sansevieria_rare 처럼 접미사가 붙은 id → 접두 일치 허용
-  for (const k of Object.keys(p)) if (plantId && plantId.startsWith(k)) return p[k];
-  return TH.default || null;
+  let th = p[plantId] || null;
+  if (!th) {
+    // sansevieria_rare 처럼 접미사가 붙은 id → 접두 일치 허용
+    for (const k of Object.keys(p)) if (plantId && plantId.startsWith(k)) { th = p[k]; break; }
+  }
+  if (!th) th = TH.default || null;
+  return isVariegated(TH, plantId, explicitVarie) ? variegatedThresholds(th, TH) : th;
+}
+
+/* ★ 무늬종 판별. 슬롯이 variegated를 명시하면 그게 우선하고, 없으면 id로 본다. */
+export function isVariegated(TH, plantId, explicit) {
+  if (explicit != null) return !!explicit;
+  const pat = TH && TH.variegated && TH.variegated.id_pattern;
+  return !!(pat && plantId && new RegExp(pat).test(plantId));
+}
+
+/* ★ 무늬종 임계값 — 흰 조직은 광합성을 하지 않으므로 요구 광량이 전 구간 need_mult배다.
+   max(과광 한계)는 곱하지 않는다(max_mult 1.0): 흰 조직은 보호 색소가 없어 오히려
+   더 잘 탄다. 위쪽 여유가 늘어나면 안 된다.
+     몬스테라 5~11 / max 16  →  무늬종 7.0~15.4 / max 16
+   창이 위로 밀리면서 상단이 과광선에 거의 붙는다 = 밝게 두되 아슬아슬한 관리가 된다.
+   ⚠ need_mult 1.4는 임시값이다. plant_grow.html 의 VARIE_MULT 와 같은 값을 유지할 것. */
+export function variegatedThresholds(th, TH) {
+  const cfg = (TH && TH.variegated) || {};
+  const m = cfg.need_mult ?? 1.4;
+  const fields = cfg.apply_to || ['die', 'survive', 'min', 'fenestrate', 'best_lo', 'best_hi'];
+  const out = { ...th, variegated: true };
+  for (const f of fields) if (out[f] != null) out[f] = +(out[f] * m).toFixed(2);
+  if (out.max != null) out.max = +(out.max * (cfg.max_mult ?? 1)).toFixed(2);
+  // 계수를 바꿨을 때 best_hi가 max를 넘어 밴드가 뒤집히는 걸 막는다.
+  if (out.max != null && out.best_hi != null && out.best_hi > out.max) out.best_hi = out.max;
+  return out;
 }
 
 /* ============================================================
@@ -160,10 +189,14 @@ export function buildDailyLight(day, slots, wins, ctx = {}) {
                    : (lums && lums.length ? pointIllum(p, n, lums, o) * LX_TO_PPFD : 0);
     const dliLamp = lampDLI(ppfdLamp, litHours);
     const dli = dliDay + dliLamp;
-    const th = thresholdsFor(thresholds, s.plantId);
+    /* ★ 무늬종이면 임계값이 통째로 위로 밀린다(need_mult 1.4). 같은 자리·같은 DLI라도
+       무늬종은 '정체'인데 일반종은 '최적'일 수 있다 — 연구자가 온실을 필요로 하는 이유. */
+    const varie = isVariegated(thresholds, s.plantId, s.variegated);
+    const th = thresholdsFor(thresholds, s.plantId, varie);
     return {
       id: s.id, plantId: s.plantId || null,
       point: p,
+      variegated: varie,
       peak_lx: Math.round(ratio * evMax),
       dli: +dli.toFixed(2),
       dli_daylight: +dliDay.toFixed(2),

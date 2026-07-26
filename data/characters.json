@@ -1,15 +1,28 @@
 {
   "_meta": {
-    "purpose": "캐릭터 = 다이얼 설정값 (게임). game_design_core.md 기반 이식 스키마.",
+    "purpose": "캐릭터 = 다이얼 설정값 (게임). game_design_core.md 기반 + 2026-07-26 개정.",
     "collected": "2026-07-12",
-    "rule": "설계문서에 있는 값만 확정. 문서에 없는 밸런스 수치는 balance_provisional:true + note(임시). 지어낸 게 아니라 뼈대용 placeholder.",
+    "revised": "2026-07-26",
+    "currency": "원 (KRW). ★화폐 통일 — 이전 추상값(startCash:100 등)을 ×10,000 해서 원으로 옮겼다. 차광막 8,000원·전기 160원/kWh과 같은 축. docs/food_economy.md §0.",
+    "economy_rule": [
+      "★ monthlyExpense(월 뭉텅이)를 없앴다. 지출은 항목으로 쪼개 매일 계산한다:",
+      "   하루 지출 = 월세/30 + utility/30 + (dailyFoodPerPerson × household) + 식물등 전기(dailyEnergy 실계산)",
+      "   월세·utility는 homes.json에서 온다. 캐릭터에 중복해 두지 않는다.",
+      "★ 작물 끼니 상한은 1인당이다: household × cropMealCapPerPerson.",
+      "   자취생 2끼 / 가장 8끼(4인) / 주부 8끼 / 연구자 2끼.",
+      "   1인당으로 하지 않으면 가장(12끼/일 필요)에게 2끼 상한이 17%라 작물이 무의미해진다."
+    ],
+    "dailyFoodPerPerson": 7500,
+    "cropMealCapPerPerson": 2,
+    "mealsPerDayPerPerson": 3,
     "fields": {
-      "startCash": "시작 자금",
-      "monthlyIncome": "월급 (0=압력)",
-      "monthlyExpense": "월세·생활비",
+      "startCash": "시작 자금 [원]",
+      "monthlyIncome": "고정 수입 [원/월] (0 = 식물팔이가 전부)",
+      "household": "★식구 수. 식비와 작물 끼니 상한이 여기에 비례한다",
+      "electricityWaived": "true = 전기요금 면제(기관이 냄). 지출 루프에서 energy.won을 빼지 않는다",
       "bankruptcy": "파산 존재 여부",
-      "goalType": "money/garden/dex/fame/escape",
-      "goalValue": "목표값(숫자, escape=탈출 좌표금 등)",
+      "goalType": "money/garden/dex/fame/escape/papers",
+      "goalValue": "목표값 [원] 또는 편수",
       "systems": "켤 시스템 목록",
       "startHome": "시작 집 id (homes.json)",
       "difficulty": "easy/medium/hard/extreme"
@@ -18,35 +31,40 @@
   "characters": [
     {
       "id":"housewife","name_ko":"주부","name_en":"Housewife",
-      "startCash":300,"monthlyIncome":200,"monthlyExpense":150,
+      "startCash":3000000,"monthlyIncome":2000000,
+      "household":4,"electricityWaived":false,
       "bankruptcy":false,"goalType":"garden","goalValue":null,
-      "systems":["garden","dex"],"startHome":"floor23","difficulty":"easy",
+      "systems":["garden","dex"],"startHome":"apartment","difficulty":"easy",
       "balance_provisional":true,
-      "notes":"설계: 월급이 생활비 커버→압박없음·파산없음. 메인=누림가든·꾸밈. 수치는 임시(문서에 없음)"
+      "notes":"월급이 생활비(식비 90만 + 월세 90만)를 덮어 압박 없음. 메인=누림가든·꾸밈. 아파트 82슬롯이라 '여러 개를 키우는' 방."
     },
     {
       "id":"researcher","name_ko":"연구자","name_en":"Researcher",
-      "startCash":300,"monthlyIncome":220,"monthlyExpense":150,
-      "bankruptcy":false,"goalType":"dex","goalValue":null,
-      "systems":["dex","fame"],"startHome":"floor23","difficulty":"medium",
+      "stage":"grad",
+      "startCash":500000,"monthlyIncome":600000,
+      "household":1,"electricityWaived":true,
+      "bankruptcy":false,"goalType":"papers","goalValue":3,
+      "systems":["dex","fame","papers"],"startHome":"greenhouse","difficulty":"medium",
       "balance_provisional":true,
-      "notes":"설계: 고정월급 커버→압박없음. 메인=희귀종·신품종·명성. 온실 지향. 수치 임시"
+      "notes":"★2026-07-26 재정의: 고정월급 있는 쉬운 캐릭터 → 대학원생. 월세 0·전기 0이라 식비 22.5만은 덮지만, 남는 37.5만으로는 희귀 씨앗을 못 산다 = '빛은 풍족한데 나머지가 빈곤'. 온실은 보상이 아니라 신분에 딸려 온 것. 졸업(논문 3편)하면 잃는다 — researcher_track.md."
     },
     {
       "id":"breadwinner","name_ko":"가장","name_en":"Breadwinner",
-      "startCash":200,"monthlyIncome":80,"monthlyExpense":120,
-      "bankruptcy":true,"goalType":"money","goalValue":10000,
-      "systems":["economy","dex","garden","fame"],"startHome":"wonroom_low","difficulty":"hard",
+      "startCash":2000000,"monthlyIncome":800000,
+      "household":4,"electricityWaived":false,
+      "bankruptcy":true,"goalType":"money","goalValue":100000000,
+      "systems":["economy","dex","garden","fame"],"startHome":"classroom","difficulty":"hard",
       "balance_provisional":true,
-      "notes":"설계: 식물부업+약간직업→중간압박·파산있음. 목표금액 달성→2단계 온실. 이사 핵심. 수치 임시"
+      "notes":"식비가 4인분 = 하루 30,000원 = 월 90만원으로 수입 80만을 이미 넘는다 → 작물이 필수가 된다. 콩나물 상한 8끼/일 = 시루 11개 필요 → 학원교실 32슬롯의 죽은 자리(뒤편 0.02)가 그제야 의미를 갖는다. 목표=1억 → 2단계 자기 온실."
     },
     {
       "id":"jachwi","name_ko":"자취자","name_en":"Solo dweller",
-      "startCash":100,"monthlyIncome":0,"monthlyExpense":50,
-      "bankruptcy":true,"goalType":"escape","goalValue":5000,
+      "startCash":1000000,"monthlyIncome":0,
+      "household":1,"electricityWaived":false,
+      "bankruptcy":true,"goalType":"escape","goalValue":1500000,
       "systems":["economy","dex","fame"],"startHome":"banjiha","difficulty":"extreme",
       "balance_provisional":false,
-      "notes":"설계문서 명시값(100/0/50/5000). 오직 식물팔이→높은압박. 반지하 탈출=승리(이사)"
+      "notes":"★goalValue를 5000(→5천만원)에서 150만원으로 내렸다. 원룸 이사 실비(보증금 차액 100만 + 이사·복비 50만)에 맞춘 것이고, 5천만원이면 1단계가 수십 개월이 된다. 하루 고정지출 20,000원 · 콩나물 풀가동 절감 3,875원(−19.4%) · 절감만으론 387일 → 판매가 반드시 필요하다(food_economy.md §5)."
     }
   ]
 }

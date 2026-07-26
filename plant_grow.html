@@ -97,6 +97,7 @@
           </div>
           <div class="field"><label>☀️ 빛 방위 <b id="lightV">90°</b></label><input type="range" id="light" min="0" max="360" value="90"></div>
           <div class="field"><label>굴광성(빛 쫓기) <b id="photoV">50%</b></label><input type="range" id="photo" min="0" max="100" value="50"></div>
+          <div class="field"><label>🔆 DLI(조도엔진 연동 테스트) <b id="dliV">끔 · 상수</b></label><input type="range" id="dliTest" min="-1" max="20" step="0.5" value="-1"></div>
           <button class="cbtn" id="btnSeed" style="width:100%">🎲 랜덤 시드</button>
           <div id="stat" style="margin-top:8px"><span class="k">슬라이더를 움직여 자라는 걸 보세요.</span></div>
           <div class="psec">🌿 줄기 모양 미세조정</div>
@@ -874,23 +875,94 @@ function ensureLeafShape(){                                // 값이 바뀐 잎�
 //   1 전체흰중기  2 -쨍  3 -차분 | 4 흰연두-쨍  5 -차분 | 6 크림민트-쨍  7 -차분
 // 2026-07-20: 1~3의 잎자루 교체 완료(실측 40%, 잎몸 78% — 기준 35~45% 충족) → 전체 복귀.
 // 14,15(마블-크림그린) 24,25,26(스페클-민트흰점2) 제외 — 잎자루 미검출·폭 비정상(에셋 정렬 필요)
-// ===== 확률 = 빛의 함수 =====
+// ===== 확률 = 빛의 함수 ===== (뼈대 2026-07-20 · ★내용 구현 2026-07-26)
 // 생장 로직은 확률을 직접 읽지 않고 반드시 이 함수들을 거친다.
-// 지금은 전부 상수를 그대로 돌려준다. 실플레이에서 튜닝할 때 이 함수 안만 고치면 되고,
 // 호출하는 쪽(mkAxis·matFromMid)은 손대지 않는다.
 //
+// ★ 여기가 조도 엔진과 생장이 만나는 유일한 지점이다.
+//   2026-07-26까지 이 함수들은 전부 상수를 그대로 돌려주고 있었다 = DLI를 계산해
+//   계약 객체까지 만들어 놓고 받는 쪽이 없었다는 뜻이다. 조도 작업 전체가 장식이었다.
+//
 // dli — 계약 객체 daily_light/1 의 slots[].dli (그 화분 자리의 하루 광량, mol/m²/day).
-//        아직 조도 엔진이 안 붙어 있어 null이 들어온다. null이면 지금처럼 상수를 쓴다.
-let PLANT_DLI=null;
-// 게임 루프가 하루치 빛을 넘길 때 부른다. 계약 객체를 통째로 줘도 되고 숫자만 줘도 된다.
-function setDailyLight(c){
-  if(c==null){ PLANT_DLI=null; return; }
-  if(typeof c==='number'){ PLANT_DLI=c; return; }
-  const s=(c.slots&&c.slots.length)? c.slots[0] : null;
-  PLANT_DLI = (c.best&&c.best.dli!=null)? c.best.dli : (s&&s.dli!=null? s.dli : null);
+//       null이면 조도 엔진이 안 붙은 것 → 상수를 쓴다(= 이 파일 단독 튜닝 모드).
+//       튜닝 슬라이더가 계속 먹혀야 하므로 이 폴백은 없애지 말 것.
+
+// 몬스테라 임계값. data/light_thresholds.json 의 monstera_deliciosa 와 같은 값이다.
+// (이 파일은 fetch 없이 단독 실행돼야 해서 복사해 둔다. 저기를 고치면 여기도 고칠 것)
+const TH_MONSTERA={die:0.5, survive:1.2, min:3.0, fenestrate:6.0, best_lo:5.0, best_hi:11.0, max:16.0};
+// ★ 무늬종 광량 계수. 흰 조직은 광합성을 안 하므로 요구 광량이 전 구간 1.4배다.
+//   max(과광 한계)에는 곱하지 않는다 — 흰 조직이 오히려 더 잘 타므로 위쪽 여유는
+//   늘어나면 안 된다. daily_light.js·light_thresholds.json 의 variegated.need_mult 와 같은 값.
+const VARIE_MULT=1.4;
+
+// 이 그루가 놓인 자리(계약 객체 slots[].id)와 그 자리의 하루 광량.
+// ※ 지금 이 파일은 '한 그루 전용' 튜닝 창이다 — 개체 상태(SEED·GROWTH·PLANT_*)가 전부 전역이라
+//    여러 그루를 동시에 굴리려면 이것들을 개체 객체로 묶는 별도 작업이 필요하다.
+//    다만 '어느 슬롯의 값을 쓸지'는 지금부터 슬롯 id로 받아두면, 그때 손댈 곳이 줄어든다.
+let PLANT_SLOT=null;        // 이 그루가 놓인 슬롯 id (null이면 가장 밝은 자리)
+let PLANT_DLI=null;         // 가장 최근 하루의 DLI
+const DLI_HIST=[];          // 최근 며칠치 (뒤가 최신)
+const DLI_KEEP=14;          // 이동평균에 쓸 만큼만 남긴다
+
+// 하루치 빛을 넘긴다. 계약 객체 daily_light/1을 통째로 줘도 되고 숫자만 줘도 된다.
+//   setDailyLight(contract, 'shelf_top')  ← 이 그루가 놓인 슬롯을 지정
+//   setDailyLight(contract)               ← 지정해둔 슬롯, 없으면 best
+//   setDailyLight(6.55)                   ← 숫자만
+function setDailyLight(c, slotId){
+  if(slotId!==undefined) PLANT_SLOT=slotId;
+  let d=null;
+  if(c==null) d=null;
+  else if(typeof c==='number') d=c;
+  else {
+    const slots=c.slots||[];
+    let s=null;
+    if(PLANT_SLOT!=null){
+      s=slots.find(x=>x&&x.id===PLANT_SLOT) || null;
+      // 자리를 지정했는데 계약에 없으면 조용히 딴 자리 값을 쓰면 안 된다 — 티가 나야 고친다.
+      if(!s) console.warn('[빛] 슬롯 '+PLANT_SLOT+' 을(를) 계약 객체에서 못 찾음 → best로 대체');
+    }
+    d = s ? s.dli
+          : (c.best && c.best.dli!=null ? c.best.dli
+          : (slots[0] && slots[0].dli!=null ? slots[0].dli : null));
+  }
+  PLANT_DLI=d;
+  if(d!=null){ DLI_HIST.push(d); if(DLI_HIST.length>DLI_KEEP) DLI_HIST.shift(); }
+  return d;
 }
-function calcVarieProb(dli){  return P.varieProb;  }   // 무늬종으로 태어날 확률
-function calcMatureProb(dli){ return P.matureProb; }   // 중간잎 → 성숙잎으로 갈 확률
+// 최근 n일 이동평균. 날씨가 굴러가면 같은 자리도 하루 값이 크게 흔들려서,
+// 고사처럼 되돌릴 수 없는 판정은 하루 값이 아니라 이 값으로 해야 운으로 죽지 않는다.
+// 아직 n일치가 안 모였으면 모인 만큼으로 낸다(초반에 null을 주면 판정이 멈춰버린다).
+function dliAvg(days){
+  if(!DLI_HIST.length) return null;
+  const n=Math.max(1, Math.min(DLI_HIST.length, Math.round(days||7)));
+  let s=0; for(let i=DLI_HIST.length-n;i<DLI_HIST.length;i++) s+=DLI_HIST[i];
+  return s/n;
+}
+function dliHistory(){ return DLI_HIST.slice(); }
+function resetDailyLight(){ DLI_HIST.length=0; PLANT_DLI=null; }
+
+function calcVarieProb(dli){                     // 무늬종으로 태어날 확률
+  if(dli==null) return P.varieProb;
+  return Math.min(1, P.varieProb*fLight(dli7())*fStable());
+}
+// ★ 갈라짐(성숙잎). fenestrate 6.0 미만이면 0 —
+//   "자연광만으로는 아파트에 가야 갈라진 잎을 본다"(balance_decisions.md §②)가
+//   지금까지 문서에만 있고 코드엔 없었다. 이 한 줄이 그 설계를 실제로 성립시킨다.
+function calcMatureProb(dli){
+  if(dli==null) return P.matureProb;
+  const d=dli7(), T=TH_MONSTERA;
+  if(d==null)           return P.matureProb;
+  if(d <  T.fenestrate) return 0;                  // 못 본다. 식물등을 사거나 이사해야 한다
+  if(d >  T.max)        return P.matureProb*0.6;   // 과광 — 잎이 상해 성숙이 더디다
+  if(d >= T.best_hi)    return P.matureProb;
+  // 문턱을 막 넘으면 절반, best_hi(11)에서 최대. 6.0을 넘는 순간 갈라짐이 '켜진다'
+  return P.matureProb*(0.5+0.5*(d-T.fenestrate)/(T.best_hi-T.fenestrate));
+}
+// ★ 갈래 비율에는 빛 배율을 태우지 않는다.
+//   빛은 "무늬가 나오느냐"(varieProb)를 결정하고, 나온 무늬가 어느 갈래로 정착하는지는
+//   계보(MAT_TREE)가 결정한다. 같은 배율을 두 번 곱하면 관리 보상이 5.6배가 아니라
+//   30배가 되어 다른 캐릭터의 플레이를 무의미하게 만든다.
+//   → 잎당 희귀 무늬 확률: 최적 관리 3.9% vs 방치 0.7% (researcher_track.md §5)
 function calcMatRare(dli){    return P.matRare;    }   // 성숙 무늬가 희귀 갈래로 갈 확률
 function calcMatSub(dli){     return P.matSub;     }   // 성숙 무늬가 부 갈래로 갈 확률
 
@@ -1685,6 +1757,21 @@ function bindControls(){
   ls.addEventListener('input',()=>{ LIGHT_AZ=(+ls.value)*Math.PI/180; document.getElementById('lightV').textContent=ls.value+'°'; updateSun(); buildPlant(); });
   const ps=document.getElementById('photo');
   ps.addEventListener('input',()=>{ PHOTO=(+ps.value)/100; document.getElementById('photoV').textContent=ps.value+'%'; buildPlant(); });
+  // 🔆 DLI 테스트 — 조도 엔진 없이 "이 자리에 계속 뒀다면"을 확인한다.
+  //    −1 = 끔(상수 그대로) → 아래 슬라이더 튜닝이 평소대로 먹는다.
+  const dls=document.getElementById('dliTest');
+  dls.addEventListener('input',()=>{
+    const v=+dls.value, out=document.getElementById('dliV');
+    if(v<0){ setDailyLight(null); out.textContent='끔 · 상수'; }
+    else {
+      setDailyLightSteady(v);
+      const T=TH_MONSTERA, f=fLight(v);
+      const fen = v<T.fenestrate ? '갈라짐✕' : '갈라짐○';
+      const vk  = f===0 ? '무늬✕(정체)' : ('무늬 ×'+(f*fStable()).toFixed(2));
+      out.textContent=v.toFixed(1)+' · '+fen+' · '+vk;
+    }
+    buildPlant();
+  });
   document.getElementById('btnResetAsset').onclick=()=>{ const sel=document.getElementById('assetSel'); const k=sel.value; ADJ[k]=defAdj(k); buildAssetSliders(k); showPreview(k); buildPlant(); };
   buildAssetSelect(); buildShapePanel();
   // 패널 접기
