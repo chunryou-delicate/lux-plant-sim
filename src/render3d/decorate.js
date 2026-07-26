@@ -22,7 +22,8 @@ const SNAP = 0.25;
 const ROT_STEP = 15;                     // 회전 15°
 
 export function createDecorator(ctx, opts) {
-  const { camera, renderer, scene } = ctx;
+  const { renderer, scene } = ctx;
+  const camera = ctx.cam || ctx.camera;   // scene.js는 cam 으로 준다(camera 아님)
   const {
     getRoomDef,          // () => 현재 roomDef (furniture 배열을 직접 고침)
     getFurnitureGroup,   // () => buildHouse가 만든 furniture Group

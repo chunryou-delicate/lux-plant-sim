@@ -428,7 +428,8 @@ function bindControls(){
   function hitsHero(e){
     if(!hero) return false;
     const rc=new THREE.Raycaster(); rc.setFromCamera(ndcOf(e), ctx.cam);
-    return rc.intersectObject(hero.root, true).length > 0;
+    // 스킨드 메시는 레이캐스트가 안 맞아서 전용 픽 박스로 판정한다
+    return rc.intersectObject(hero.pickTarget, false).length > 0;
   }
 
   cv.addEventListener('contextmenu', e=>{        // 우클릭 = 해제

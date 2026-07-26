@@ -314,6 +314,18 @@ export async function createCharacter(scene, charId = 'jachwi_f', opt = {}) {
   ring.renderOrder = 998; ring.visible = false;
   root.add(ring);
 
+  /* ★ 클릭 판정용 보이지 않는 상자.
+     스킨드 메시는 정점이 뼈 행렬로 움직이는데 three의 레이캐스트는 바인드 포즈와
+     메시 노드 행렬만 본다 → 캐릭터를 클릭해도 안 맞는다(실제로 안 맞았다).
+     몸통 크기의 상자를 씌워 그걸로 집는다. */
+  const pick = new THREE.Mesh(
+    new THREE.BoxGeometry(0.62, 1.55, 0.62),
+    new THREE.MeshBasicMaterial({ visible: false })
+  );
+  pick.position.y = 0.78;
+  pick.userData.isCharacterPick = true;
+  root.add(pick);
+
   /* 걸어간 뒤 할 일 — 가구 상호작용에 쓴다 */
   let arriveCb = null;
 
@@ -321,6 +333,7 @@ export async function createCharacter(scene, charId = 'jachwi_f', opt = {}) {
     root, model, mixer, actions,
     get position() { return root.position; },
     get selected() { return ring.visible; },
+    get pickTarget() { return pick; },
     setSelected(v) { ring.visible = !!v; },
 
     /* 가구 앞으로 걸어가서 모션 하나 — main.js가 좌표와 동작을 준다 */

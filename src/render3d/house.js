@@ -651,7 +651,9 @@ export function buildHouse(GRAIN, roomDefIn, winPresets, doorPresets={}, finishe
       put(ft, dh, da+dw/2-ft/2, dh/2);
       put(dw, ft, da, dh-ft/2);
     }
-    g.userData={ normal:pt.axis==='x'?[1,0,0]:[0,0,1], center:pt.axis==='x'?[pt.at,CH/2,0]:[0,CH/2,pt.at], partition:true };
+    g.userData={ normal:pt.axis==='x'?[1,0,0]:[0,0,1],
+                 center:pt.axis==='x'?[pt.at,CH/2,0]:[0,CH/2,pt.at],
+                 partition:true, plane:{ axis:pt.axis, at:pt.at } };   // ★ 컷어웨이용
     shells['part_'+(pt.id||shellPartIdx++)]=g; room.add(g);
   }
 
@@ -732,12 +734,19 @@ export function buildHouse(GRAIN, roomDefIn, winPresets, doorPresets={}, finishe
       const a=(pt.from!=null)?pt.from:-along/2, b=(pt.to!=null)?pt.to:along/2;
       return a<=u0+0.05 && b>=u1-0.05;
     });
-    const g=new THREE.Group();
+    /* 면마다 그룹을 따로 만들어 shells에 넣는다 — 그래야 컷어웨이가 하나씩 숨긴다.
+       한 그룹에 몰아넣으면 앞뒤 벽이 같이 사라지거나 같이 남는다. */
+    let ci=0;
     const face=(ax,at,u0,u1)=>{
       if(covered(ax,at,u0,u1) || u1-u0<0.02) return;
       const c=(u0+u1)/2, len=u1-u0;
+      const g=new THREE.Group();
       g.add( ax==='x' ? box(WT, CH, len, cw, at, CH/2, c)
                       : box(len, CH, WT, cw, c, CH/2, at) );
+      g.userData={ normal: ax==='x'?[1,0,0]:[0,0,1],
+                   center: ax==='x'?[at,CH/2,c]:[c,CH/2,at],
+                   partition:true, plane:{ axis:ax, at } };
+      shells['cut_'+(ci++)]=g; room.add(g);
     };
     for(const c of cutouts){
       if(c.x0 > -CW/2+1e-6) face('x', c.x0, c.z0, c.z1);
@@ -745,7 +754,6 @@ export function buildHouse(GRAIN, roomDefIn, winPresets, doorPresets={}, finishe
       if(c.z0 > -CD/2+1e-6) face('z', c.z0, c.x0, c.x1);
       if(c.z1 <  CD/2-1e-6) face('z', c.z1, c.x0, c.x1);
     }
-    if(g.children.length) room.add(g);
   }
 
   /* ============================================================
@@ -869,10 +877,18 @@ function addSkirting(g, wall, uMin, uMax, openings){
 export function updateShellVisibility(shells, cam){
   const cp=cam.position;
   for(const key in shells){
-    const sh=shells[key]; const { normal, center, partition }=sh.userData;
-    const dot=(cp.x-center[0])*normal[0]+(cp.y-center[1])*normal[1]+(cp.z-center[2])*normal[2];
-    // 내벽(칸막이)은 방 안쪽이라 숨기지 않는다 — 공간 분획이 보여야 함
-    const hide = partition ? false : (dot >= 0.3);
+    const sh=shells[key]; const { normal, center, plane }=sh.userData;
+    let hide;
+    if(plane){
+      /* ★ 내벽(칸막이)·도려낸 자리 벽 — 카메라와 방 가운데 사이를 막고 있으면 숨긴다.
+         예전엔 칸막이를 아예 안 숨겨서 앞쪽 벽이 시야를 통째로 가렸다. */
+      const camA = plane.axis==='x' ? cp.x : cp.z;
+      hide = (plane.at > 0 && camA > plane.at + 0.3) ||
+             (plane.at < 0 && camA < plane.at - 0.3);
+    }else{
+      const dot=(cp.x-center[0])*normal[0]+(cp.y-center[1])*normal[1]+(cp.z-center[2])*normal[2];
+      hide = dot >= 0.3;
+    }
 
     // ★ 성능: 상태가 바뀔 때만 재질을 건드린다.
     //   material.transparent 를 매 프레임 토글하면 three가 셰이더 프로그램을
