@@ -95,6 +95,12 @@
       <button class="cbtn on" id="wallmode">벽: 시야자동</button>
       <button class="cbtn on" id="ceiling">천장광: 자동</button>
       <button class="cbtn" id="heat">조도맵</button>
+    </div>
+    <div class="row" id="heatRow" style="display:none">
+      <!-- ★ 높이별 차이가 이 게임의 핵심이다 — 바닥 한 층만 보면 못 본다.
+           반지하 0.10m 0.3 → 1.60m 3.7 · 아파트 0.10m 4.9 → 0.35m 9.0 -->
+      <label style="flex:1">조도맵 높이 <b id="heatYv">0.75m</b>
+        <input type="range" id="heatY" min="10" max="180" step="5" value="75"></label>
       <button class="cbtn" id="decoBtn">집꾸미기</button>
       <a class="cbtn" href="./tool.html" style="text-decoration:none;display:inline-flex;align-items:center">정밀조도툴 →</a>
     </div>

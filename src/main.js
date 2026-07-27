@@ -104,6 +104,7 @@ async function buildRoomPreset(name){
 }
 
 // ===== STEP4: 엔진 조도(lx) ↔ 3D 연결 =====
+let heatY=0.75;                       // 조도맵을 그리는 높이 [m]
 let heatMesh=buildFloorHeatmap(RW, RD); heatMesh.visible=false; ctx.scene.add(heatMesh);
 let RSIZE={ w:RW, d:RD, h:RH };   // 현재 방 실제 치수(방마다 다름) — 히트맵·조도 격자에 사용
 let showHeat=false;
@@ -163,9 +164,13 @@ function engineRefresh(){
     if(lampOn) lums.push({ x:0, y:RSIZE.h-0.35, z:0, flux:2400, dist:'wide' });
   }
 
-  const field=luxGrid(curWins, RSIZE, { sky:Ev, lums, grid:22, y:0.75, samples:'auto', occluders:curOcc, glazed:curGlazed });
+  /* ★ 조도맵 높이 — 방마다 명당 높이가 다르다.
+     아파트는 0.35m 위로 평평하고(창 아래끝 0.30m), 반지하는 1.60m 에서만 밝다.
+     바닥 한 층만 그리면 그 차이를 아예 못 본다. */
+  const field=luxGrid(curWins, RSIZE, { sky:Ev, lums, grid:22, y:heatY, samples:'auto', occluders:curOcc, glazed:curGlazed });
 
-  if(showHeat){ updateFloorHeatmap(heatMesh, field, RSIZE.w, RSIZE.d); heatMesh.visible=true; }
+  if(showHeat){ updateFloorHeatmap(heatMesh, field, RSIZE.w, RSIZE.d);
+                heatMesh.position.y=heatY; heatMesh.visible=true; }
   else heatMesh.visible=false;
 
   for(const p of plants){
@@ -238,8 +243,16 @@ function bindControls(){
     this.textContent = WALL_MODE_KO[wallMode];
     this.classList.toggle('on', wallMode!=='on');
   };
+  /* 조도맵 높이 슬라이더 — 켰을 때만 보인다.
+     나중에 플레이어 UI("조도맵 보임" 정보 단계)로 그대로 쓸 수 있게
+     높이는 상태 하나(heatY)로만 관리한다. */
+  const heatRow=document.getElementById('heatRow'), heatYEl=document.getElementById('heatY'),
+        heatYv=document.getElementById('heatYv');
+  if(heatYEl) heatYEl.oninput=()=>{ heatY=heatYEl.value/100;
+    heatYv.textContent=heatY.toFixed(2)+'m'; engineRefresh(); };
   document.getElementById('heat').onclick=function(){
     showHeat=!showHeat; this.classList.toggle('on',showHeat);
+    if(heatRow) heatRow.style.display = showHeat ? '' : 'none';
     engineRefresh();
   };
   // 방 전환(5종 모듈 프리셋)

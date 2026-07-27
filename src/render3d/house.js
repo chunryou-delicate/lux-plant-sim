@@ -21,8 +21,8 @@ import { buildFurniture } from './furniture_pastel.js';
 import { buildWindowFrame, buildDoor, glassMaterial, glassGeometry, frameMaterial,
          resolveWindowPreset, FRAME_DEFAULTS, drawArch } from './window_frame.js';
 import { wallOrient, orientK } from '../engine/daylight_lux.js';
-import { markShadow, applyShadowPolicy, SHADOW_ROLE } from './shadow_policy.js';
-export { SHADOW_ROLE, markShadow, applyShadowPolicy };   // 검사 도구가 여기서 가져다 쓴다
+import { markShadow, applyShadowPolicy, auditShadowCoverage, SHADOW_ROLE } from './shadow_policy.js';
+export { SHADOW_ROLE, markShadow, applyShadowPolicy, auditShadowCoverage };   // 검사 도구가 여기서 가져다 쓴다
 
 export const RW=7, RD=7, RH=4;           // 기본 치수(방에 size 없으면 이 값)
 // ★ 현재 조립 중인 방의 실제 치수. buildHouse 시작 시 roomDef.size로 세팅된다.

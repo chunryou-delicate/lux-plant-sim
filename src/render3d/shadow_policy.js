@@ -63,3 +63,56 @@ export function applyShadowPolicy(root) {
   if (suspect.length)  console.warn('[볕] 반투명인데 blocker 인 메시 ' + suspect.length + '개 — 유리를 놓쳤을 수 있다', suspect);
   return { untagged: untagged.length, suspect: suspect.length };
 }
+
+/* ============================================================
+   ★ 위음성 검사 — "막아야 하는 게 안 막는가"
+
+   applyShadowPolicy 는 위양성(막으면 안 되는 게 막음)만 본다.
+   그래서 유리 0건으로 통과했는데 천장이 빛을 안 막고 있었다 —
+   감사가 반대 방향을 안 봤다. 여섯 번째 사고였고, 검사까지 통과했다.
+
+   빛을 반드시 막아야 하는 면을 목록으로 정하고, 하나라도 안 막으면 실패로 낸다.
+============================================================ */
+
+/** 그룹 안에서 실제로 그림자를 던지는 메시 수 (밑동 복제본은 뺀다) */
+function castingCount(g){
+  let n = 0;
+  if (g) g.traverse(o => { if (o.isMesh && !o.userData.isStub && o.castShadow) n++; });
+  return n;
+}
+
+/**
+ * @param built buildHouse 결과
+ * @param roomDef 방 정의 (유리벽·유리천장은 면제 대상이라 필요하다)
+ * @returns {{fail:Array, ok:Array}}
+ */
+export function auditShadowCoverage(built, roomDef = {}) {
+  const fail = [], ok = [];
+  const glassWalls = (roomDef.glassWalls || []).map(g => typeof g === 'string' ? g : g.wall);
+  const ceilingIsGlass = roomDef.ceiling === 'glass' && !roomDef.ceilingGlass;   // 구간 유리면 나머지는 솔리드
+
+  const need = [];
+  need.push(['floor', built.shells.floor, false]);
+  need.push(['ceiling', built.shells.ceiling, ceilingIsGlass]);   // 전면 유리 천장은 면제
+  for (const w of ['back','front','left','right'])
+    need.push([w, built.shells[w], glassWalls.includes(w) && !(roomDef.glassWalls||[]).some(g=>typeof g==='object'&&g.wall===w&&(g.from!=null||g.to!=null))]);
+  for (const k in built.shells) if (k.startsWith('part_')) need.push([k, built.shells[k], false]);
+
+  for (const [name, g, exempt] of need) {
+    if (!g) { if (!exempt) fail.push({ face:name, why:'셸이 없다' }); continue; }
+    const n = castingCount(g);
+    if (n === 0 && !exempt) fail.push({ face:name, why:'빛을 막는 메시가 0개 — 해가 그냥 통과한다' });
+    else ok.push({ face:name, casting:n, exempt });
+  }
+
+  /* hidden-but-blocks 는 '안 보이되 막는다'가 존재 이유다 — 안 막으면 의미가 없다 */
+  const hiddenBroken = [];
+  built.room.traverse(o => {
+    if (o.isMesh && o.userData.shadowRole === SHADOW_ROLE.HIDDEN && !o.castShadow) hiddenBroken.push(o);
+  });
+  if (hiddenBroken.length) fail.push({ face:'hidden-but-blocks', why:hiddenBroken.length+'개가 castShadow=false — 감췄는데 빛도 안 막는다' });
+
+  if (fail.length) console.error('[볕] ★ 빛을 막아야 하는데 안 막는 면', fail);
+  return { fail, ok };
+}
+

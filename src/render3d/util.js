@@ -19,12 +19,14 @@ export function mat(hex, rough=0.85, tex){
   return new THREE.MeshStandardMaterial(o);
 }
 // 박스 메시 (그림자 on)
+/* shadow 인자는 '그림자 렌더를 생략한다'는 옛 성능 힌트다. **빛을 안 막는다는 뜻이 아니다.**
+   ★ 한 번 혼동해서 사고가 났다 — 바닥·천장·걸레받이가 box(...,false) 로 만들어지는데
+     그걸 transparent 로 매핑했더니 천장이 빛을 안 막아 해가 위에서 그냥 들어왔다.
+     빛을 안 막는 건 유리뿐이고, 그건 호출부에서 명시적으로 CLEAR 를 붙인다. */
 export function box(w,h,d,m,x,y,z,shadow=true){
   const mesh=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),m);
   mesh.position.set(x,y,z);
-  /* ★ castShadow 를 직접 켜지 않는다 — 정책 루프(applyShadowPolicy)가 유일한 주체다.
-     여기서 켜면 정책이 그 뒤에 안 돌 때 그대로 샌다(창틀이 실제로 그랬다).
-     shadow=false 는 '빛을 막지 않는 것'(러그·유리)이라는 뜻이다. */
-  markShadow(mesh, shadow ? SHADOW_ROLE.BLOCK : SHADOW_ROLE.CLEAR);
+  /* castShadow 는 건드리지 않는다 — 정책 루프(applyShadowPolicy)가 유일한 주체다. */
+  markShadow(mesh, SHADOW_ROLE.BLOCK);
   return mesh;
 }

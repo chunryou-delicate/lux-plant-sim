@@ -2,32 +2,50 @@
 <body style="background:#111;color:#ddd;font:12px/1.6 monospace;padding:16px"><pre id="o">…</pre>
 <script src="https://unpkg.com/three@0.128.0/build/three.min.js"></script>
 <script type="module">
-/* 그림자 정책이 방마다 제대로 붙었는지 센다.
-   묻는 것: 유리가 그림자를 던지고 있지 않나 · 정책이 안 붙은 메시가 없나 */
-import { buildHouse, SHADOW_ROLE } from './src/render3d/house.js';
+/* ★ 양방향 감사.
+   위양성 — 막으면 안 되는 게 막나 (유리가 그림자를 던지나)
+   위음성 — 막아야 하는 게 안 막나 (천장·바닥·외벽이 빛을 통과시키나)
+   위양성만 보다가 천장이 뚫린 채로 0/0/0 통과가 떴다. 그래서 양쪽을 본다. */
+import { buildHouse, SHADOW_ROLE, auditShadowCoverage } from './src/render3d/house.js';
 const J=p=>fetch(p).then(r=>r.json());
 const [HR,WP,DP,FIN,FP,LP,SH]=await Promise.all(['./data/house_rooms.json','./data/window_presets.json','./data/door_presets.json','./data/room_finishes.json','./data/furniture_presets.json','./data/lighting_presets.json','./data/shading_presets.json'].map(J));
 const NA={banjiha:'반지하',oneroom:'원룸',tworoom:'투룸',classroom:'학원교실',apartment:'아파트',greenhouse:'온실'};
-const L=[];
-L.push('# 그림자 정책 감사 — 전 방');
+const L=[]; let bad=0;
+L.push('# 그림자 정책 감사 — 양방향');
 L.push('');
-L.push('| 방 | 전체 메시 | blocker | transparent(유리·창틀) | ★유리 중 castShadow=true | 정책 미지정 | 반투명인데 blocker |');
+L.push('## ① 위양성 — 막으면 안 되는 게 막나');
+L.push('');
+L.push('| 방 | 메시 | blocker | transparent | ★유리가 그림자 던짐 | 정책 미지정 | 반투명인데 blocker |');
 L.push('|---|---|---|---|---|---|---|');
-let bad=0;
+const built={};
 for(const k in NA){
   const b=buildHouse(null,HR.rooms[k],WP.presets||WP,DP.presets||DP,FIN,FP.presets||FP,LP,SH);
-  let all=0,blk=0,clr=0,glassCast=0;
+  built[k]=b;
+  let all=0,blk=0,clr=0,gc=0;
   b.room.traverse(o=>{ if(!o.isMesh) return; all++;
-    const r=o.userData.shadowRole;
-    if(r===SHADOW_ROLE.CLEAR){ clr++; if(o.castShadow) glassCast++; } else blk++; });
+    if(o.userData.shadowRole===SHADOW_ROLE.CLEAR){ clr++; if(o.castShadow) gc++; } else blk++; });
   const a=b.shadowAudit||{};
-  bad += glassCast + (a.suspect||0);
-  L.push(`| ${NA[k]} | ${all} | ${blk} | ${clr} | ${glassCast?'★ '+glassCast:'0'} | ${a.untagged||0} | ${a.suspect?'★ '+a.suspect:'0'} |`);
+  bad += gc + (a.suspect||0) + (a.untagged||0);
+  L.push(`| ${NA[k]} | ${all} | ${blk} | ${clr} | ${gc?'★ '+gc:'0'} | ${a.untagged?'★ '+a.untagged:'0'} | ${a.suspect?'★ '+a.suspect:'0'} |`);
 }
 L.push('');
-L.push(bad? '★ 문제 '+bad+'건 — 위 표에서 ★ 표시를 보라' : '✅ 전 방 통과 — 유리가 그림자를 던지지 않고, 정책 누락도 없다');
+L.push('## ★② 위음성 — 막아야 하는 게 안 막나');
 L.push('');
-L.push('> `정책 미지정`은 blocker 로 자동 채워진 수다. 0이 아니면 새 메시에 정책을 안 붙였다는 뜻이고,');
-L.push('> `반투명인데 blocker`는 유리를 놓쳤다는 신호다 — 베란다 통유리가 정확히 이 상태였다.');
+L.push('바닥·천장·외벽 4면·칸막이가 각각 그림자를 던지는 메시를 하나라도 갖고 있어야 한다.');
+L.push('유리벽·유리천장은 면제(exempt).');
+L.push('');
+L.push('| 방 | 바닥 | 천장 | back | front | left | right | 칸막이 | 판정 |');
+L.push('|---|---|---|---|---|---|---|---|---|');
+for(const k in NA){
+  const r=auditShadowCoverage(built[k], HR.rooms[k]);
+  const cell=n=>{ const f=r.fail.find(x=>x.face===n); if(f) return '★ 0';
+    const o=r.ok.find(x=>x.face===n); return o? (o.exempt?'면제':String(o.casting)) : '—'; };
+  const parts=r.ok.filter(x=>x.face.startsWith('part_')).map(x=>x.casting).join('·') || '없음';
+  const pf=r.fail.filter(x=>x.face.startsWith('part_')).length;
+  bad += r.fail.length;
+  L.push(`| ${NA[k]} | ${cell('floor')} | ${cell('ceiling')} | ${cell('back')} | ${cell('front')} | ${cell('left')} | ${cell('right')} | ${pf?'★ 실패':parts} | ${r.fail.length?'★ 실패 '+r.fail.length:'✅'} |`);
+}
+L.push('');
+L.push(bad? '★ 문제 '+bad+'건' : '✅ 양방향 통과 — 유리는 빛을 통과시키고, 천장·바닥·벽은 빛을 막는다');
 document.getElementById('o').textContent=L.join('\n'); document.title='DONE';
 </script>
