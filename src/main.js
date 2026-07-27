@@ -79,6 +79,7 @@ async function buildRoomPreset(name){
   ctx.scene.remove(heatMesh);
   heatMesh=buildFloorHeatmap(RSIZE.w, RSIZE.d); heatMesh.visible=showHeat; ctx.scene.add(heatMesh);
   ctx.winPos=built.winPos; ctx.glassMeshes=built.glassMeshes;
+  curRigs=built.lightRigs||[];
   // ★ 조도용: 방 창을 3D 사각 개구부로, 화분 슬롯을 월드좌표로
   // ★ house.js가 진짜 창 + 유리벽(온실)을 합쳐 준다. 여기서 roomDef를 다시 읽지 않는다.
   curWins=(built.luxWins||[]).map(w=>
@@ -104,6 +105,7 @@ async function buildRoomPreset(name){
 }
 
 // ===== STEP4: 엔진 조도(lx) ↔ 3D 연결 =====
+let curRigs=[];                       // 방에 실제로 놓인 조명 기구(house.lightRigs)
 let heatY=0.75;                       // 조도맵을 그리는 높이 [m]
 let heatMesh=buildFloorHeatmap(RW, RD); heatMesh.visible=false; ctx.scene.add(heatMesh);
 let RSIZE={ w:RW, d:RD, h:RH };   // 현재 방 실제 치수(방마다 다름) — 히트맵·조도 격자에 사용
@@ -157,11 +159,27 @@ function engineRefresh(){
   const t=+sunEl.value;
   const Ev=skyEv(t);                                   // 시간 → 천공 조도(lx)
 
-  // 천장등(있으면) — 인공광도 같은 물리식으로
+  /* ★ 인공광 — 방에 실제로 놓인 조명 기구를 쓴다.
+     예전엔 방 중심에 가상 천장등 1개를 하드코딩했다. 그래서 아파트처럼 방이
+     여럿인 집도 밤에 거실 한가운데만 밝고 각 방은 캄캄했다 —
+     화면에 보이는 조명(스탠드·펜던트)과 계산이 서로 무관했다.
+     세기는 프리셋의 광도(ppfd_ref @ ref_dist_m)에서 역산한다. */
   const lums=[];
+  const lampOn = (ceilingMode===1) || Ev<1500;          // 자동: 어두우면 켜짐
   if(ceilingMode!==2){
-    const lampOn = (ceilingMode===1) || Ev<1500;        // 자동: 어두우면 켜짐
-    if(lampOn) lums.push({ x:0, y:RSIZE.h-0.35, z:0, flux:2400, dist:'wide' });
+    let placed=0;
+    for(const r of (curRigs||[])){
+      const fx=r.fx||{};
+      if(fx.grow){ if(r.schedule==='off') continue; }    // 식물등은 자기 스케줄
+      else if(!lampOn) continue;                         // 생활 조명은 어두울 때만
+      /* E_ref = I0 / d²  ·  E_ref[lx] = ppfd_ref / 0.0185 */
+      const Eref=(fx.ppfd_ref||10)/0.0185, d=fx.ref_dist_m||1.0;
+      lums.push({ x:r.pos.x, y:r.pos.y, z:r.pos.z, I0:Eref*d*d, dist:'wide' });
+      placed++;
+    }
+    /* 조명 기구가 하나도 없는 방은 그대로 두면 밤에 아무것도 안 보인다 —
+       그때만 예전처럼 가상 천장등을 넣는다(방 중심 1개). */
+    if(!placed && lampOn) lums.push({ x:0, y:RSIZE.h-0.35, z:0, flux:2400, dist:'wide' });
   }
 
   /* ★ 조도맵 높이 — 방마다 명당 높이가 다르다.
