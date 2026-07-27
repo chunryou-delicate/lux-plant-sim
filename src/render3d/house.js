@@ -833,18 +833,14 @@ export function buildHouse(GRAIN, roomDefIn, winPresets, doorPresets={}, finishe
     });
   });
 
-  /* ★ 유리는 그림자를 던지면 안 된다.
-     칸막이 유리(베란다 전창)가 셸 그룹 안에 들어 있어서 아래 강제 루프에 걸렸다.
-     그 결과 베란다 통유리가 불투명 그림자를 던져 거실·안방이 캄캄했다.
-     창틀은 이 이유로 이미 trims 로 빼놨는데, 칸막이 유리는 빠져 있었다. */
-  for(const m of glassMeshes) m.userData.isGlass = true;
+  /* ★ 그림자 정책을 '목록'이 아니라 '속성'으로 붙인다.
+     같은 실수를 정반대 방향으로 두 번 했다 —
+       천장: visible=false 로 감춰서 그림자 패스에서도 빠짐 → 해가 뚫고 들어옴
+       유리: castShadow=true 를 일괄로 걸어서 통유리가 불투명 그림자 → 거실이 캄캄
+     둘 다 "전체에 일괄 적용하고 예외를 안 둔" 것이고, 예외를 목록으로 관리하니
+     새 메시가 생길 때마다 빠졌다(창틀은 빼놨는데 칸막이 유리는 빠져 있었다).
+     이제 메시마다 shadowRole 을 달고, 일괄 루프는 그 속성만 본다. */
 
-  // 그림자: 껍데기 6면 모두 던지고/받게 (숨겨도 빛 막게). 유리만 뺀다.
-  for(const k in shells) shells[k].traverse(o=>{
-    if(!o.isMesh) return;
-    o.receiveShadow=true;
-    o.castShadow = !o.userData.isGlass;
-  });
 
   // 엔진 winPos = 첫 창(없으면 뒷벽 기본)
   const winPos = winWorld[0] || new THREE.Vector3(0.6,2.2,-CD/2+0.05);
@@ -942,8 +938,20 @@ export function buildHouse(GRAIN, roomDefIn, winPresets, doorPresets={}, finishe
   /* 벽 밑동 박스를 미리 만들어 둔다(감춰둔 채). 컷어웨이가 켜지면 이걸 보여준다. */
   buildWallStubs(shells);
 
+  /* ★ 그림자 정책은 '전부 붙인 뒤 맨 마지막에' 적용한다.
+     앞에서 돌렸더니 trims(창틀·유리)가 아직 room 에 없어서 통째로 빠졌다 —
+     buildWindowFrame 이 내부에서 castShadow=true 를 켜 두므로 창틀이 계속
+     빛을 막고 있었다. 순서가 곧 버그였다.
+     먼저 전부 blocker 로 칠하고, 그 다음 유리·창틀을 transparent 로 덮는다. */
+  for(const k in shells) markShadow(shells[k], SHADOW_ROLE.BLOCK);
+  markShadow(furnGroup, SHADOW_ROLE.BLOCK);
+  for(const m of glassMeshes) markShadow(m, SHADOW_ROLE.CLEAR);
+  for(const k in trims)       markShadow(trims[k], SHADOW_ROLE.CLEAR);
+  const shadowAudit = applyShadowPolicy(room);
+
   return { room, shells, trims, windows:winWorld, glassMeshes, winPos, size:{ w:CW, d:CD, h:CH },
-           furniture:furnGroup, lightRigs, plantSlots, occluders, colliders, doorways, luxWins, glazedPanes, facing };
+           furniture:furnGroup, lightRigs, plantSlots, occluders, colliders, doorways, luxWins, glazedPanes, facing,
+           glassMeshes2:glassMeshes, shadowAudit };
 }
 
 /* ---- 원점 중심 그룹을 벽에 앉힌다 (위치 + Y회전) ---- */
@@ -980,12 +988,15 @@ function tileGlassFrames(room, wall, uMin, uMax){
     const z0 = uMin!==undefined ? uMin : -CD/2, z1 = uMax!==undefined ? uMax : CD/2;
     const frame=buildWindowFrame(CW-0.1, (z1-z0)-0.1, opts);
     frame.rotation.x=Math.PI/2; frame.position.set(0, CH-0.01, (z0+z1)/2);
+    /* 격자살은 실제로 빛을 막는 부재다 — 유리와 달리 그림자를 던진다 */
+    markShadow(frame, SHADOW_ROLE.BLOCK);
     room.add(frame); return;
   }
   // 수직 유리벽: 벽 전체 크기 프레임
   const width=uMax-uMin;
   const frame=buildWindowFrame(width-0.02, CH-0.02, opts);
   placeInWall(frame, wall, (uMin+uMax)/2, CH/2);
+  markShadow(frame, SHADOW_ROLE.BLOCK);
   room.add(frame);
 }
 
@@ -1066,13 +1077,48 @@ export function updateShellVisibility(shells, cam, mode='auto', trims=null){
       if(!o.isMesh || !o.material || o.userData.isStub) return;
       const clr=mm=>{ if(mm.clippingPlanes){ mm.clippingPlanes=null; mm.needsUpdate=true; } };
       Array.isArray(o.material) ? o.material.forEach(clr) : clr(o.material);
-      o.castShadow = !o.userData.isGlass;       // 유리는 계속 그림자를 안 던진다
+      o.castShadow = o.userData.shadowRole !== SHADOW_ROLE.CLEAR;
     });
     setShadowOnly(sh, stub);                    // 벽 본체: 밑동 모드에선 안 보이게(그림자는 유지)
     if(sh.userData.stub) sh.userData.stub.visible = stub;
     const t = trims && trims[key];
     if(t){ t.scale.y = 1; t.visible = !stub; }   // 창틀은 감추면 어차피 안 보이니 같이 감춘다
   }
+}
+
+/* ============================================================
+   그림자 정책 — 메시마다 역할을 붙이고, 일괄 루프는 그 속성만 본다
+     blocker            벽·가구·칸막이       → castShadow true
+     transparent        유리·창틀            → castShadow false (빛이 지난다)
+     hidden-but-blocks  천장·컷어웨이된 벽   → 안 보이되 castShadow true
+============================================================ */
+export const SHADOW_ROLE = { BLOCK:'blocker', CLEAR:'transparent', HIDDEN:'hidden-but-blocks' };
+
+export function markShadow(objOrList, role){
+  const list = Array.isArray(objOrList) ? objOrList : [objOrList];
+  for(const o of list) if(o) o.traverse ? o.traverse(m=>{ if(m.isMesh) m.userData.shadowRole = role; })
+                                        : (o.userData.shadowRole = role);
+  return objOrList;
+}
+
+/** 정책을 실제 castShadow 로 옮기고, 빠뜨린 것을 돌려준다. */
+export function applyShadowPolicy(root){
+  const untagged = [], suspect = [];
+  root.traverse(o=>{
+    if(!o.isMesh) return;
+    /* 밑동 박스는 '보여주기용 복제본'이다. 그림자는 원래 벽이 던지므로 여기선 건드리지 않는다 */
+    if(o.userData.isStub) return;
+    if(!o.userData.shadowRole){ o.userData.shadowRole = SHADOW_ROLE.BLOCK; untagged.push(o); }
+    const role = o.userData.shadowRole;
+    const mat  = Array.isArray(o.material) ? o.material[0] : o.material;
+    /* ★ 안전망 — 반투명 재질인데 blocker 로 잡혀 있으면 유리를 놓친 것이다.
+       베란다 통유리가 정확히 이 상태였고, 거실이 캄캄해질 때까지 아무도 몰랐다. */
+    if(role === SHADOW_ROLE.BLOCK && mat && mat.transparent && (mat.opacity ?? 1) < 0.9) suspect.push(o);
+    o.receiveShadow = true;
+    o.castShadow    = role !== SHADOW_ROLE.CLEAR;
+  });
+  if(suspect.length) console.warn('[볕] 반투명인데 blocker 로 잡힌 메시 '+suspect.length+'개 — 유리를 놓쳤을 수 있다', suspect);
+  return { untagged: untagged.length, suspect: suspect.length };
 }
 
 /* ★ '안 보이지만 빛은 막는다'
@@ -1082,7 +1128,7 @@ export function updateShellVisibility(shells, cam, mode='auto', trims=null){
 function setShadowOnly(root, on){
   root.traverse(o=>{
     if(!o.isMesh || !o.material || o.userData.isStub) return;
-    o.castShadow = !o.userData.isGlass;
+    o.castShadow = o.userData.shadowRole !== SHADOW_ROLE.CLEAR;
     const set=mm=>{ if(mm.colorWrite===!on && mm.depthWrite===!on) return;
                     mm.colorWrite = !on; mm.depthWrite = !on; mm.needsUpdate = true; };
     Array.isArray(o.material) ? o.material.forEach(set) : set(o.material);

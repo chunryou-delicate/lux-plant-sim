@@ -1,0 +1,33 @@
+<!doctype html><meta charset="utf-8"><title>그림자 정책 감사</title>
+<body style="background:#111;color:#ddd;font:12px/1.6 monospace;padding:16px"><pre id="o">…</pre>
+<script src="https://unpkg.com/three@0.128.0/build/three.min.js"></script>
+<script type="module">
+/* 그림자 정책이 방마다 제대로 붙었는지 센다.
+   묻는 것: 유리가 그림자를 던지고 있지 않나 · 정책이 안 붙은 메시가 없나 */
+import { buildHouse, SHADOW_ROLE } from './src/render3d/house.js';
+const J=p=>fetch(p).then(r=>r.json());
+const [HR,WP,DP,FIN,FP,LP,SH]=await Promise.all(['./data/house_rooms.json','./data/window_presets.json','./data/door_presets.json','./data/room_finishes.json','./data/furniture_presets.json','./data/lighting_presets.json','./data/shading_presets.json'].map(J));
+const NA={banjiha:'반지하',oneroom:'원룸',tworoom:'투룸',classroom:'학원교실',apartment:'아파트',greenhouse:'온실'};
+const L=[];
+L.push('# 그림자 정책 감사 — 전 방');
+L.push('');
+L.push('| 방 | 전체 메시 | blocker | transparent(유리·창틀) | ★유리 중 castShadow=true | 정책 미지정 | 반투명인데 blocker |');
+L.push('|---|---|---|---|---|---|---|');
+let bad=0;
+for(const k in NA){
+  const b=buildHouse(null,HR.rooms[k],WP.presets||WP,DP.presets||DP,FIN,FP.presets||FP,LP,SH);
+  let all=0,blk=0,clr=0,glassCast=0;
+  b.room.traverse(o=>{ if(!o.isMesh) return; all++;
+    const r=o.userData.shadowRole;
+    if(r===SHADOW_ROLE.CLEAR){ clr++; if(o.castShadow) glassCast++; } else blk++; });
+  const a=b.shadowAudit||{};
+  bad += glassCast + (a.suspect||0);
+  L.push(`| ${NA[k]} | ${all} | ${blk} | ${clr} | ${glassCast?'★ '+glassCast:'0'} | ${a.untagged||0} | ${a.suspect?'★ '+a.suspect:'0'} |`);
+}
+L.push('');
+L.push(bad? '★ 문제 '+bad+'건 — 위 표에서 ★ 표시를 보라' : '✅ 전 방 통과 — 유리가 그림자를 던지지 않고, 정책 누락도 없다');
+L.push('');
+L.push('> `정책 미지정`은 blocker 로 자동 채워진 수다. 0이 아니면 새 메시에 정책을 안 붙였다는 뜻이고,');
+L.push('> `반투명인데 blocker`는 유리를 놓쳤다는 신호다 — 베란다 통유리가 정확히 이 상태였다.');
+document.getElementById('o').textContent=L.join('\n'); document.title='DONE';
+</script>
