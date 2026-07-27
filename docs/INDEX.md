@@ -117,7 +117,7 @@ https://raw.githubusercontent.com/chunryou-delicate/lux-plant-sim/main/docs/hand
 | `balance_decisions.md` | **왜 그 숫자인지.** 값 바꾸기 전 필독 (모드별 판정 단위 §②′) |
 | `env_difficulty_axis.md` | 시뮬 깊이 난이도축(빛→물→온도→습도) |
 | `food_economy.md` · `sale_economy.md` | 지출(식비·콩나물) / 수입(삽수·실생·상점) |
-| `researcher_track.md` · `time_modes.md` | 연구자 논문=재현성 / 시간 3모드 |
+| `researcher_track.md` · `time_modes.md` | 연구자=확률 게임(논문=재현성) / 시간 4단+튜토 |
 | `game_loop_spec.md` | 게임 루프 구현 명세(코어 인계용) |
 | **`house_building.md`** | ⏸ 집짓기(엔딩 이후) — 창값=면적² · 향은 땅이 결정 |
 | `crop_asset_direction.md` | 작물 10종 에셋 구조 |
