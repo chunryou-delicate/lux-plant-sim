@@ -8,7 +8,7 @@
   "게임로드": "Three.js (loader_glb.html, 직교 4방위)"
  },
  "summary": {
-  "total": 396,
+  "total": 448,
   "glb_done": 61
  },
  "items": [
@@ -8111,6 +8111,1536 @@
    "type": "crop",
    "scale_to_real": 1.0,
    "real_max_m": 0.242
+  },
+  {
+   "id": 416,
+   "file": "chive_s.png",
+   "path": "crops/thumbs/chive_s.png",
+   "is_glb": false,
+   "glb_matched": "chive_s.glb",
+   "name_ko": "부추-소",
+   "category": "작물·부추",
+   "kind": "crop_body",
+   "crop": "chive",
+   "stage": "소",
+   "light": "저광",
+   "note": "부추 소단계. 곧은 납작 잎 3장. 베면 다시 자라는 반복수확 작물.",
+   "size_m": {
+    "w": 0.0162,
+    "h": 0.0583,
+    "d": 0.0176
+   },
+   "status": "glb완료",
+   "source": "procedural",
+   "type": "crop",
+   "scale_to_real": 1.0,
+   "real_max_m": 0.058
+  },
+  {
+   "id": 417,
+   "file": "chive_s.glb",
+   "path": "crops/chive_s.glb",
+   "is_glb": true,
+   "glb_matched": null,
+   "source_2d": "chive_s.png",
+   "name_ko": "부추-소",
+   "category": "작물·부추",
+   "kind": "crop_body",
+   "crop": "chive",
+   "stage": "소",
+   "light": "저광",
+   "note": "부추 소단계. 곧은 납작 잎 3장. 베면 다시 자라는 반복수확 작물.",
+   "size_m": {
+    "w": 0.0162,
+    "h": 0.0583,
+    "d": 0.0176
+   },
+   "status": "glb완료",
+   "source": "procedural",
+   "type": "crop",
+   "scale_to_real": 1.0,
+   "real_max_m": 0.058
+  },
+  {
+   "id": 418,
+   "file": "chive_m.png",
+   "path": "crops/thumbs/chive_m.png",
+   "is_glb": false,
+   "glb_matched": "chive_m.glb",
+   "name_ko": "부추-중",
+   "category": "작물·부추",
+   "kind": "crop_body",
+   "crop": "chive",
+   "stage": "중",
+   "light": "저광",
+   "note": "부추 중단계. 곧은 납작 잎 5장. 베면 다시 자라는 반복수확 작물.",
+   "size_m": {
+    "w": 0.0377,
+    "h": 0.1219,
+    "d": 0.0405
+   },
+   "status": "glb완료",
+   "source": "procedural",
+   "type": "crop",
+   "scale_to_real": 1.0,
+   "real_max_m": 0.122
+  },
+  {
+   "id": 419,
+   "file": "chive_m.glb",
+   "path": "crops/chive_m.glb",
+   "is_glb": true,
+   "glb_matched": null,
+   "source_2d": "chive_m.png",
+   "name_ko": "부추-중",
+   "category": "작물·부추",
+   "kind": "crop_body",
+   "crop": "chive",
+   "stage": "중",
+   "light": "저광",
+   "note": "부추 중단계. 곧은 납작 잎 5장. 베면 다시 자라는 반복수확 작물.",
+   "size_m": {
+    "w": 0.0377,
+    "h": 0.1219,
+    "d": 0.0405
+   },
+   "status": "glb완료",
+   "source": "procedural",
+   "type": "crop",
+   "scale_to_real": 1.0,
+   "real_max_m": 0.122
+  },
+  {
+   "id": 420,
+   "file": "chive_l.png",
+   "path": "crops/thumbs/chive_l.png",
+   "is_glb": false,
+   "glb_matched": "chive_l.glb",
+   "name_ko": "부추-대",
+   "category": "작물·부추",
+   "kind": "crop_body",
+   "crop": "chive",
+   "stage": "대",
+   "light": "저광",
+   "note": "부추 대단계. 곧은 납작 잎 7장. 베면 다시 자라는 반복수확 작물.",
+   "size_m": {
+    "w": 0.0664,
+    "h": 0.2014,
+    "d": 0.0702
+   },
+   "status": "glb완료",
+   "source": "procedural",
+   "type": "crop",
+   "scale_to_real": 1.0,
+   "real_max_m": 0.201
+  },
+  {
+   "id": 421,
+   "file": "chive_l.glb",
+   "path": "crops/chive_l.glb",
+   "is_glb": true,
+   "glb_matched": null,
+   "source_2d": "chive_l.png",
+   "name_ko": "부추-대",
+   "category": "작물·부추",
+   "kind": "crop_body",
+   "crop": "chive",
+   "stage": "대",
+   "light": "저광",
+   "note": "부추 대단계. 곧은 납작 잎 7장. 베면 다시 자라는 반복수확 작물.",
+   "size_m": {
+    "w": 0.0664,
+    "h": 0.2014,
+    "d": 0.0702
+   },
+   "status": "glb완료",
+   "source": "procedural",
+   "type": "crop",
+   "scale_to_real": 1.0,
+   "real_max_m": 0.201
+  },
+  {
+   "id": 422,
+   "file": "scallion_s.png",
+   "path": "crops/thumbs/scallion_s.png",
+   "is_glb": false,
+   "glb_matched": "scallion_s.glb",
+   "name_ko": "쪽파-소",
+   "category": "작물·쪽파",
+   "kind": "crop_body",
+   "crop": "scallion",
+   "stage": "소",
+   "light": "중광",
+   "note": "쪽파 소단계. 크림빛 밑동 + 원통형 잎 2장. 반복수확.",
+   "size_m": {
+    "w": 0.0145,
+    "h": 0.0666,
+    "d": 0.0125
+   },
+   "status": "glb완료",
+   "source": "procedural",
+   "type": "crop",
+   "scale_to_real": 1.0,
+   "real_max_m": 0.067
+  },
+  {
+   "id": 423,
+   "file": "scallion_s.glb",
+   "path": "crops/scallion_s.glb",
+   "is_glb": true,
+   "glb_matched": null,
+   "source_2d": "scallion_s.png",
+   "name_ko": "쪽파-소",
+   "category": "작물·쪽파",
+   "kind": "crop_body",
+   "crop": "scallion",
+   "stage": "소",
+   "light": "중광",
+   "note": "쪽파 소단계. 크림빛 밑동 + 원통형 잎 2장. 반복수확.",
+   "size_m": {
+    "w": 0.0145,
+    "h": 0.0666,
+    "d": 0.0125
+   },
+   "status": "glb완료",
+   "source": "procedural",
+   "type": "crop",
+   "scale_to_real": 1.0,
+   "real_max_m": 0.067
+  },
+  {
+   "id": 424,
+   "file": "scallion_m.png",
+   "path": "crops/thumbs/scallion_m.png",
+   "is_glb": false,
+   "glb_matched": "scallion_m.glb",
+   "name_ko": "쪽파-중",
+   "category": "작물·쪽파",
+   "kind": "crop_body",
+   "crop": "scallion",
+   "stage": "중",
+   "light": "중광",
+   "note": "쪽파 중단계. 크림빛 밑동 + 원통형 잎 3장. 반복수확.",
+   "size_m": {
+    "w": 0.0351,
+    "h": 0.1573,
+    "d": 0.0324
+   },
+   "status": "glb완료",
+   "source": "procedural",
+   "type": "crop",
+   "scale_to_real": 1.0,
+   "real_max_m": 0.157
+  },
+  {
+   "id": 425,
+   "file": "scallion_m.glb",
+   "path": "crops/scallion_m.glb",
+   "is_glb": true,
+   "glb_matched": null,
+   "source_2d": "scallion_m.png",
+   "name_ko": "쪽파-중",
+   "category": "작물·쪽파",
+   "kind": "crop_body",
+   "crop": "scallion",
+   "stage": "중",
+   "light": "중광",
+   "note": "쪽파 중단계. 크림빛 밑동 + 원통형 잎 3장. 반복수확.",
+   "size_m": {
+    "w": 0.0351,
+    "h": 0.1573,
+    "d": 0.0324
+   },
+   "status": "glb완료",
+   "source": "procedural",
+   "type": "crop",
+   "scale_to_real": 1.0,
+   "real_max_m": 0.157
+  },
+  {
+   "id": 426,
+   "file": "scallion_l.png",
+   "path": "crops/thumbs/scallion_l.png",
+   "is_glb": false,
+   "glb_matched": "scallion_l.glb",
+   "name_ko": "쪽파-대",
+   "category": "작물·쪽파",
+   "kind": "crop_body",
+   "crop": "scallion",
+   "stage": "대",
+   "light": "중광",
+   "note": "쪽파 대단계. 크림빛 밑동 + 원통형 잎 4장. 반복수확.",
+   "size_m": {
+    "w": 0.0561,
+    "h": 0.2662,
+    "d": 0.0533
+   },
+   "status": "glb완료",
+   "source": "procedural",
+   "type": "crop",
+   "scale_to_real": 1.0,
+   "real_max_m": 0.266
+  },
+  {
+   "id": 427,
+   "file": "scallion_l.glb",
+   "path": "crops/scallion_l.glb",
+   "is_glb": true,
+   "glb_matched": null,
+   "source_2d": "scallion_l.png",
+   "name_ko": "쪽파-대",
+   "category": "작물·쪽파",
+   "kind": "crop_body",
+   "crop": "scallion",
+   "stage": "대",
+   "light": "중광",
+   "note": "쪽파 대단계. 크림빛 밑동 + 원통형 잎 4장. 반복수확.",
+   "size_m": {
+    "w": 0.0561,
+    "h": 0.2662,
+    "d": 0.0533
+   },
+   "status": "glb완료",
+   "source": "procedural",
+   "type": "crop",
+   "scale_to_real": 1.0,
+   "real_max_m": 0.266
+  },
+  {
+   "id": 428,
+   "file": "sprout_radish_s.png",
+   "path": "crops/thumbs/sprout_radish_s.png",
+   "is_glb": false,
+   "glb_matched": "sprout_radish_s.glb",
+   "name_ko": "무순-소",
+   "category": "작물·무순",
+   "kind": "crop_body",
+   "crop": "sprout_radish",
+   "stage": "소",
+   "light": "최저",
+   "note": "무순(새싹채소) 소단계. 크림 줄기 + 연두 떡잎 2장. 며칠 만에 수확.",
+   "size_m": {
+    "w": 0.0148,
+    "h": 0.025,
+    "d": 0.0057
+   },
+   "status": "glb완료",
+   "source": "procedural",
+   "type": "crop",
+   "scale_to_real": 1.0,
+   "real_max_m": 0.025
+  },
+  {
+   "id": 429,
+   "file": "sprout_radish_s.glb",
+   "path": "crops/sprout_radish_s.glb",
+   "is_glb": true,
+   "glb_matched": null,
+   "source_2d": "sprout_radish_s.png",
+   "name_ko": "무순-소",
+   "category": "작물·무순",
+   "kind": "crop_body",
+   "crop": "sprout_radish",
+   "stage": "소",
+   "light": "최저",
+   "note": "무순(새싹채소) 소단계. 크림 줄기 + 연두 떡잎 2장. 며칠 만에 수확.",
+   "size_m": {
+    "w": 0.0148,
+    "h": 0.025,
+    "d": 0.0057
+   },
+   "status": "glb완료",
+   "source": "procedural",
+   "type": "crop",
+   "scale_to_real": 1.0,
+   "real_max_m": 0.025
+  },
+  {
+   "id": 430,
+   "file": "sprout_radish_m.png",
+   "path": "crops/thumbs/sprout_radish_m.png",
+   "is_glb": false,
+   "glb_matched": "sprout_radish_m.glb",
+   "name_ko": "무순-중",
+   "category": "작물·무순",
+   "kind": "crop_body",
+   "crop": "sprout_radish",
+   "stage": "중",
+   "light": "최저",
+   "note": "무순(새싹채소) 중단계. 크림 줄기 + 연두 떡잎 2장. 며칠 만에 수확.",
+   "size_m": {
+    "w": 0.0282,
+    "h": 0.0477,
+    "d": 0.0109
+   },
+   "status": "glb완료",
+   "source": "procedural",
+   "type": "crop",
+   "scale_to_real": 1.0,
+   "real_max_m": 0.048
+  },
+  {
+   "id": 431,
+   "file": "sprout_radish_m.glb",
+   "path": "crops/sprout_radish_m.glb",
+   "is_glb": true,
+   "glb_matched": null,
+   "source_2d": "sprout_radish_m.png",
+   "name_ko": "무순-중",
+   "category": "작물·무순",
+   "kind": "crop_body",
+   "crop": "sprout_radish",
+   "stage": "중",
+   "light": "최저",
+   "note": "무순(새싹채소) 중단계. 크림 줄기 + 연두 떡잎 2장. 며칠 만에 수확.",
+   "size_m": {
+    "w": 0.0282,
+    "h": 0.0477,
+    "d": 0.0109
+   },
+   "status": "glb완료",
+   "source": "procedural",
+   "type": "crop",
+   "scale_to_real": 1.0,
+   "real_max_m": 0.048
+  },
+  {
+   "id": 432,
+   "file": "sprout_radish_l.png",
+   "path": "crops/thumbs/sprout_radish_l.png",
+   "is_glb": false,
+   "glb_matched": "sprout_radish_l.glb",
+   "name_ko": "무순-대",
+   "category": "작물·무순",
+   "kind": "crop_body",
+   "crop": "sprout_radish",
+   "stage": "대",
+   "light": "최저",
+   "note": "무순(새싹채소) 대단계. 크림 줄기 + 연두 떡잎 2장. 며칠 만에 수확.",
+   "size_m": {
+    "w": 0.0437,
+    "h": 0.0738,
+    "d": 0.0169
+   },
+   "status": "glb완료",
+   "source": "procedural",
+   "type": "crop",
+   "scale_to_real": 1.0,
+   "real_max_m": 0.074
+  },
+  {
+   "id": 433,
+   "file": "sprout_radish_l.glb",
+   "path": "crops/sprout_radish_l.glb",
+   "is_glb": true,
+   "glb_matched": null,
+   "source_2d": "sprout_radish_l.png",
+   "name_ko": "무순-대",
+   "category": "작물·무순",
+   "kind": "crop_body",
+   "crop": "sprout_radish",
+   "stage": "대",
+   "light": "최저",
+   "note": "무순(새싹채소) 대단계. 크림 줄기 + 연두 떡잎 2장. 며칠 만에 수확.",
+   "size_m": {
+    "w": 0.0437,
+    "h": 0.0738,
+    "d": 0.0169
+   },
+   "status": "glb완료",
+   "source": "procedural",
+   "type": "crop",
+   "scale_to_real": 1.0,
+   "real_max_m": 0.074
+  },
+  {
+   "id": 434,
+   "file": "fruit_tomato_m.png",
+   "path": "crops/thumbs/fruit_tomato_m.png",
+   "is_glb": false,
+   "glb_matched": "fruit_tomato_m.glb",
+   "name_ko": "열매-방울토마토-중",
+   "category": "작물·열매",
+   "kind": "fruit",
+   "crop": "tomato",
+   "stage": "중",
+   "note": "절차적 시험. 구체+꼭지 5갈래.",
+   "size_m": {
+    "w": 0.022,
+    "h": 0.02,
+    "d": 0.022
+   },
+   "status": "glb완료",
+   "source": "procedural",
+   "type": "crop",
+   "scale_to_real": 1.0,
+   "real_max_m": 0.022
+  },
+  {
+   "id": 435,
+   "file": "fruit_tomato_m.glb",
+   "path": "crops/fruit_tomato_m.glb",
+   "is_glb": true,
+   "glb_matched": null,
+   "source_2d": "fruit_tomato_m.png",
+   "name_ko": "열매-방울토마토-중",
+   "category": "작물·열매",
+   "kind": "fruit",
+   "crop": "tomato",
+   "stage": "중",
+   "note": "절차적 시험. 구체+꼭지 5갈래.",
+   "size_m": {
+    "w": 0.022,
+    "h": 0.02,
+    "d": 0.022
+   },
+   "status": "glb완료",
+   "source": "procedural",
+   "type": "crop",
+   "scale_to_real": 1.0,
+   "real_max_m": 0.022
+  },
+  {
+   "id": 436,
+   "file": "fruit_strawberry_m.png",
+   "path": "crops/thumbs/fruit_strawberry_m.png",
+   "is_glb": false,
+   "glb_matched": "fruit_strawberry_m.glb",
+   "name_ko": "열매-딸기-중",
+   "category": "작물·열매",
+   "kind": "fruit",
+   "crop": "strawberry",
+   "stage": "중",
+   "note": "절차적 시험. 원뿔+표면 씨앗 26개+꼭지.",
+   "size_m": {
+    "w": 0.0237,
+    "h": 0.0306,
+    "d": 0.0229
+   },
+   "status": "glb완료",
+   "source": "procedural",
+   "type": "crop",
+   "scale_to_real": 1.0,
+   "real_max_m": 0.031
+  },
+  {
+   "id": 437,
+   "file": "fruit_strawberry_m.glb",
+   "path": "crops/fruit_strawberry_m.glb",
+   "is_glb": true,
+   "glb_matched": null,
+   "source_2d": "fruit_strawberry_m.png",
+   "name_ko": "열매-딸기-중",
+   "category": "작물·열매",
+   "kind": "fruit",
+   "crop": "strawberry",
+   "stage": "중",
+   "note": "절차적 시험. 원뿔+표면 씨앗 26개+꼭지.",
+   "size_m": {
+    "w": 0.0237,
+    "h": 0.0306,
+    "d": 0.0229
+   },
+   "status": "glb완료",
+   "source": "procedural",
+   "type": "crop",
+   "scale_to_real": 1.0,
+   "real_max_m": 0.031
+  },
+  {
+   "id": 438,
+   "file": "flower_white.png",
+   "path": "crops/thumbs/flower_white.png",
+   "is_glb": false,
+   "glb_matched": "flower_white.glb",
+   "name_ko": "꽃-흰꽃",
+   "category": "작물·열매",
+   "kind": "flower",
+   "note": "절차적 시험. 꽃잎 5장+수술. 딸기·고추 공용 가능.",
+   "size_m": {
+    "w": 0.0223,
+    "h": 0.0044,
+    "d": 0.0228
+   },
+   "status": "glb완료",
+   "source": "procedural",
+   "type": "crop",
+   "scale_to_real": 1.0,
+   "real_max_m": 0.023
+  },
+  {
+   "id": 439,
+   "file": "flower_white.glb",
+   "path": "crops/flower_white.glb",
+   "is_glb": true,
+   "glb_matched": null,
+   "source_2d": "flower_white.png",
+   "name_ko": "꽃-흰꽃",
+   "category": "작물·열매",
+   "kind": "flower",
+   "note": "절차적 시험. 꽃잎 5장+수술. 딸기·고추 공용 가능.",
+   "size_m": {
+    "w": 0.0223,
+    "h": 0.0044,
+    "d": 0.0228
+   },
+   "status": "glb완료",
+   "source": "procedural",
+   "type": "crop",
+   "scale_to_real": 1.0,
+   "real_max_m": 0.023
+  },
+  {
+   "id": 440,
+   "file": "container_tray_s.png",
+   "path": "crops/thumbs/container_tray_s.png",
+   "is_glb": false,
+   "glb_matched": "container_tray_s.glb",
+   "name_ko": "용기-재배트레이-소",
+   "category": "작물·용기",
+   "kind": "tray",
+   "mount": "floor",
+   "slots": [
+    {
+     "x": -0.108,
+     "y": 0.026,
+     "z": -0.06
+    },
+    {
+     "x": -0.108,
+     "y": 0.026,
+     "z": 0.0
+    },
+    {
+     "x": -0.108,
+     "y": 0.026,
+     "z": 0.06
+    },
+    {
+     "x": -0.036,
+     "y": 0.026,
+     "z": -0.06
+    },
+    {
+     "x": -0.036,
+     "y": 0.026,
+     "z": 0.0
+    },
+    {
+     "x": -0.036,
+     "y": 0.026,
+     "z": 0.06
+    },
+    {
+     "x": 0.036,
+     "y": 0.026,
+     "z": -0.06
+    },
+    {
+     "x": 0.036,
+     "y": 0.026,
+     "z": 0.0
+    },
+    {
+     "x": 0.036,
+     "y": 0.026,
+     "z": 0.06
+    },
+    {
+     "x": 0.108,
+     "y": 0.026,
+     "z": -0.06
+    },
+    {
+     "x": 0.108,
+     "y": 0.026,
+     "z": 0.0
+    },
+    {
+     "x": 0.108,
+     "y": 0.026,
+     "z": 0.06
+    }
+   ],
+   "slot_count": 12,
+   "blocks_light": false,
+   "note": "소형 재배 트레이. 슬롯 12칸. 상추·바질 등.",
+   "size_m": {
+    "w": 0.36,
+    "h": 0.055,
+    "d": 0.24
+   },
+   "status": "glb완료",
+   "source": "procedural",
+   "type": "crop",
+   "scale_to_real": 1.0,
+   "real_max_m": 0.36
+  },
+  {
+   "id": 441,
+   "file": "container_tray_s.glb",
+   "path": "crops/container_tray_s.glb",
+   "is_glb": true,
+   "glb_matched": null,
+   "source_2d": "container_tray_s.png",
+   "name_ko": "용기-재배트레이-소",
+   "category": "작물·용기",
+   "kind": "tray",
+   "mount": "floor",
+   "slots": [
+    {
+     "x": -0.108,
+     "y": 0.026,
+     "z": -0.06
+    },
+    {
+     "x": -0.108,
+     "y": 0.026,
+     "z": 0.0
+    },
+    {
+     "x": -0.108,
+     "y": 0.026,
+     "z": 0.06
+    },
+    {
+     "x": -0.036,
+     "y": 0.026,
+     "z": -0.06
+    },
+    {
+     "x": -0.036,
+     "y": 0.026,
+     "z": 0.0
+    },
+    {
+     "x": -0.036,
+     "y": 0.026,
+     "z": 0.06
+    },
+    {
+     "x": 0.036,
+     "y": 0.026,
+     "z": -0.06
+    },
+    {
+     "x": 0.036,
+     "y": 0.026,
+     "z": 0.0
+    },
+    {
+     "x": 0.036,
+     "y": 0.026,
+     "z": 0.06
+    },
+    {
+     "x": 0.108,
+     "y": 0.026,
+     "z": -0.06
+    },
+    {
+     "x": 0.108,
+     "y": 0.026,
+     "z": 0.0
+    },
+    {
+     "x": 0.108,
+     "y": 0.026,
+     "z": 0.06
+    }
+   ],
+   "slot_count": 12,
+   "blocks_light": false,
+   "note": "소형 재배 트레이. 슬롯 12칸. 상추·바질 등.",
+   "size_m": {
+    "w": 0.36,
+    "h": 0.055,
+    "d": 0.24
+   },
+   "status": "glb완료",
+   "source": "procedural",
+   "type": "crop",
+   "scale_to_real": 1.0,
+   "real_max_m": 0.36
+  },
+  {
+   "id": 442,
+   "file": "container_tray_l.png",
+   "path": "crops/thumbs/container_tray_l.png",
+   "is_glb": false,
+   "glb_matched": "container_tray_l.glb",
+   "name_ko": "용기-재배트레이-대",
+   "category": "작물·용기",
+   "kind": "tray",
+   "mount": "floor",
+   "slots": [
+    {
+     "x": -0.1857,
+     "y": 0.026,
+     "z": -0.096
+    },
+    {
+     "x": -0.1857,
+     "y": 0.026,
+     "z": -0.032
+    },
+    {
+     "x": -0.1857,
+     "y": 0.026,
+     "z": 0.032
+    },
+    {
+     "x": -0.1857,
+     "y": 0.026,
+     "z": 0.096
+    },
+    {
+     "x": -0.1114,
+     "y": 0.026,
+     "z": -0.096
+    },
+    {
+     "x": -0.1114,
+     "y": 0.026,
+     "z": -0.032
+    },
+    {
+     "x": -0.1114,
+     "y": 0.026,
+     "z": 0.032
+    },
+    {
+     "x": -0.1114,
+     "y": 0.026,
+     "z": 0.096
+    },
+    {
+     "x": -0.0371,
+     "y": 0.026,
+     "z": -0.096
+    },
+    {
+     "x": -0.0371,
+     "y": 0.026,
+     "z": -0.032
+    },
+    {
+     "x": -0.0371,
+     "y": 0.026,
+     "z": 0.032
+    },
+    {
+     "x": -0.0371,
+     "y": 0.026,
+     "z": 0.096
+    },
+    {
+     "x": 0.0371,
+     "y": 0.026,
+     "z": -0.096
+    },
+    {
+     "x": 0.0371,
+     "y": 0.026,
+     "z": -0.032
+    },
+    {
+     "x": 0.0371,
+     "y": 0.026,
+     "z": 0.032
+    },
+    {
+     "x": 0.0371,
+     "y": 0.026,
+     "z": 0.096
+    },
+    {
+     "x": 0.1114,
+     "y": 0.026,
+     "z": -0.096
+    },
+    {
+     "x": 0.1114,
+     "y": 0.026,
+     "z": -0.032
+    },
+    {
+     "x": 0.1114,
+     "y": 0.026,
+     "z": 0.032
+    },
+    {
+     "x": 0.1114,
+     "y": 0.026,
+     "z": 0.096
+    },
+    {
+     "x": 0.1857,
+     "y": 0.026,
+     "z": -0.096
+    },
+    {
+     "x": 0.1857,
+     "y": 0.026,
+     "z": -0.032
+    },
+    {
+     "x": 0.1857,
+     "y": 0.026,
+     "z": 0.032
+    },
+    {
+     "x": 0.1857,
+     "y": 0.026,
+     "z": 0.096
+    }
+   ],
+   "slot_count": 24,
+   "blocks_light": false,
+   "note": "대형 재배 트레이. 슬롯 24칸.",
+   "size_m": {
+    "w": 0.52,
+    "h": 0.06,
+    "d": 0.32
+   },
+   "status": "glb완료",
+   "source": "procedural",
+   "type": "crop",
+   "scale_to_real": 1.0,
+   "real_max_m": 0.52
+  },
+  {
+   "id": 443,
+   "file": "container_tray_l.glb",
+   "path": "crops/container_tray_l.glb",
+   "is_glb": true,
+   "glb_matched": null,
+   "source_2d": "container_tray_l.png",
+   "name_ko": "용기-재배트레이-대",
+   "category": "작물·용기",
+   "kind": "tray",
+   "mount": "floor",
+   "slots": [
+    {
+     "x": -0.1857,
+     "y": 0.026,
+     "z": -0.096
+    },
+    {
+     "x": -0.1857,
+     "y": 0.026,
+     "z": -0.032
+    },
+    {
+     "x": -0.1857,
+     "y": 0.026,
+     "z": 0.032
+    },
+    {
+     "x": -0.1857,
+     "y": 0.026,
+     "z": 0.096
+    },
+    {
+     "x": -0.1114,
+     "y": 0.026,
+     "z": -0.096
+    },
+    {
+     "x": -0.1114,
+     "y": 0.026,
+     "z": -0.032
+    },
+    {
+     "x": -0.1114,
+     "y": 0.026,
+     "z": 0.032
+    },
+    {
+     "x": -0.1114,
+     "y": 0.026,
+     "z": 0.096
+    },
+    {
+     "x": -0.0371,
+     "y": 0.026,
+     "z": -0.096
+    },
+    {
+     "x": -0.0371,
+     "y": 0.026,
+     "z": -0.032
+    },
+    {
+     "x": -0.0371,
+     "y": 0.026,
+     "z": 0.032
+    },
+    {
+     "x": -0.0371,
+     "y": 0.026,
+     "z": 0.096
+    },
+    {
+     "x": 0.0371,
+     "y": 0.026,
+     "z": -0.096
+    },
+    {
+     "x": 0.0371,
+     "y": 0.026,
+     "z": -0.032
+    },
+    {
+     "x": 0.0371,
+     "y": 0.026,
+     "z": 0.032
+    },
+    {
+     "x": 0.0371,
+     "y": 0.026,
+     "z": 0.096
+    },
+    {
+     "x": 0.1114,
+     "y": 0.026,
+     "z": -0.096
+    },
+    {
+     "x": 0.1114,
+     "y": 0.026,
+     "z": -0.032
+    },
+    {
+     "x": 0.1114,
+     "y": 0.026,
+     "z": 0.032
+    },
+    {
+     "x": 0.1114,
+     "y": 0.026,
+     "z": 0.096
+    },
+    {
+     "x": 0.1857,
+     "y": 0.026,
+     "z": -0.096
+    },
+    {
+     "x": 0.1857,
+     "y": 0.026,
+     "z": -0.032
+    },
+    {
+     "x": 0.1857,
+     "y": 0.026,
+     "z": 0.032
+    },
+    {
+     "x": 0.1857,
+     "y": 0.026,
+     "z": 0.096
+    }
+   ],
+   "slot_count": 24,
+   "blocks_light": false,
+   "note": "대형 재배 트레이. 슬롯 24칸.",
+   "size_m": {
+    "w": 0.52,
+    "h": 0.06,
+    "d": 0.32
+   },
+   "status": "glb완료",
+   "source": "procedural",
+   "type": "crop",
+   "scale_to_real": 1.0,
+   "real_max_m": 0.52
+  },
+  {
+   "id": 444,
+   "file": "lettuce_s.png",
+   "path": "crops/thumbs/lettuce_s.png",
+   "is_glb": false,
+   "glb_matched": "lettuce_s.glb",
+   "category": "작물·상추",
+   "name_ko": "상추-소",
+   "kind": "crop_body",
+   "crop": "lettuce",
+   "stage": "소",
+   "status": "glb완료",
+   "source": "meshy-5",
+   "type": "crop",
+   "real_max_m": 0.09,
+   "scale_to_real": 0.045,
+   "glb_raw_max": 2.0,
+   "note": "상추-소. Meshy-5 원화→3D(주름·겹침 재현). 원화 crops/src/crop_*_src.png",
+   "light": "낮음"
+  },
+  {
+   "id": 445,
+   "file": "lettuce_s.glb",
+   "path": "crops/lettuce_s.glb",
+   "is_glb": true,
+   "glb_matched": null,
+   "source_2d": "lettuce_s.png",
+   "category": "작물·상추",
+   "name_ko": "상추-소",
+   "kind": "crop_body",
+   "crop": "lettuce",
+   "stage": "소",
+   "status": "glb완료",
+   "source": "meshy-5",
+   "type": "crop",
+   "real_max_m": 0.09,
+   "scale_to_real": 0.045,
+   "glb_raw_max": 2.0,
+   "note": "상추-소. Meshy-5 원화→3D(주름·겹침 재현). 원화 crops/src/crop_*_src.png",
+   "light": "낮음"
+  },
+  {
+   "id": 446,
+   "file": "lettuce_m.png",
+   "path": "crops/thumbs/lettuce_m.png",
+   "is_glb": false,
+   "glb_matched": "lettuce_m.glb",
+   "category": "작물·상추",
+   "name_ko": "상추-중",
+   "kind": "crop_body",
+   "crop": "lettuce",
+   "stage": "중",
+   "status": "glb완료",
+   "source": "meshy-5",
+   "type": "crop",
+   "real_max_m": 0.18,
+   "scale_to_real": 0.09,
+   "glb_raw_max": 2.0,
+   "note": "상추-중. Meshy-5 원화→3D(주름·겹침 재현). 원화 crops/src/crop_*_src.png",
+   "light": "낮음"
+  },
+  {
+   "id": 447,
+   "file": "lettuce_m.glb",
+   "path": "crops/lettuce_m.glb",
+   "is_glb": true,
+   "glb_matched": null,
+   "source_2d": "lettuce_m.png",
+   "category": "작물·상추",
+   "name_ko": "상추-중",
+   "kind": "crop_body",
+   "crop": "lettuce",
+   "stage": "중",
+   "status": "glb완료",
+   "source": "meshy-5",
+   "type": "crop",
+   "real_max_m": 0.18,
+   "scale_to_real": 0.09,
+   "glb_raw_max": 2.0,
+   "note": "상추-중. Meshy-5 원화→3D(주름·겹침 재현). 원화 crops/src/crop_*_src.png",
+   "light": "낮음"
+  },
+  {
+   "id": 448,
+   "file": "lettuce_l.png",
+   "path": "crops/thumbs/lettuce_l.png",
+   "is_glb": false,
+   "glb_matched": "lettuce_l.glb",
+   "category": "작물·상추",
+   "name_ko": "상추-대",
+   "kind": "crop_body",
+   "crop": "lettuce",
+   "stage": "대",
+   "status": "glb완료",
+   "source": "meshy-5",
+   "type": "crop",
+   "real_max_m": 0.26,
+   "scale_to_real": 0.13,
+   "glb_raw_max": 2.0,
+   "note": "상추-대. Meshy-5 원화→3D(주름·겹침 재현). 원화 crops/src/crop_*_src.png",
+   "light": "낮음"
+  },
+  {
+   "id": 449,
+   "file": "lettuce_l.glb",
+   "path": "crops/lettuce_l.glb",
+   "is_glb": true,
+   "glb_matched": null,
+   "source_2d": "lettuce_l.png",
+   "category": "작물·상추",
+   "name_ko": "상추-대",
+   "kind": "crop_body",
+   "crop": "lettuce",
+   "stage": "대",
+   "status": "glb완료",
+   "source": "meshy-5",
+   "type": "crop",
+   "real_max_m": 0.26,
+   "scale_to_real": 0.13,
+   "glb_raw_max": 2.0,
+   "note": "상추-대. Meshy-5 원화→3D(주름·겹침 재현). 원화 crops/src/crop_*_src.png",
+   "light": "낮음"
+  },
+  {
+   "id": 450,
+   "file": "basil_s.png",
+   "path": "crops/thumbs/basil_s.png",
+   "is_glb": false,
+   "glb_matched": "basil_s.glb",
+   "category": "작물·바질",
+   "name_ko": "바질-소",
+   "kind": "crop_body",
+   "crop": "basil",
+   "stage": "소",
+   "status": "glb완료",
+   "source": "meshy-5",
+   "type": "crop",
+   "real_max_m": 0.07,
+   "scale_to_real": 0.035,
+   "glb_raw_max": 2.0,
+   "note": "바질-소. Meshy-5 원화→3D(주름·겹침 재현). 원화 crops/src/crop_*_src.png",
+   "light": "중광"
+  },
+  {
+   "id": 451,
+   "file": "basil_s.glb",
+   "path": "crops/basil_s.glb",
+   "is_glb": true,
+   "glb_matched": null,
+   "source_2d": "basil_s.png",
+   "category": "작물·바질",
+   "name_ko": "바질-소",
+   "kind": "crop_body",
+   "crop": "basil",
+   "stage": "소",
+   "status": "glb완료",
+   "source": "meshy-5",
+   "type": "crop",
+   "real_max_m": 0.07,
+   "scale_to_real": 0.035,
+   "glb_raw_max": 2.0,
+   "note": "바질-소. Meshy-5 원화→3D(주름·겹침 재현). 원화 crops/src/crop_*_src.png",
+   "light": "중광"
+  },
+  {
+   "id": 452,
+   "file": "basil_m.png",
+   "path": "crops/thumbs/basil_m.png",
+   "is_glb": false,
+   "glb_matched": "basil_m.glb",
+   "category": "작물·바질",
+   "name_ko": "바질-중",
+   "kind": "crop_body",
+   "crop": "basil",
+   "stage": "중",
+   "status": "glb완료",
+   "source": "meshy-5",
+   "type": "crop",
+   "real_max_m": 0.16,
+   "scale_to_real": 0.08,
+   "glb_raw_max": 2.0,
+   "note": "바질-중. Meshy-5 원화→3D(주름·겹침 재현). 원화 crops/src/crop_*_src.png",
+   "light": "중광"
+  },
+  {
+   "id": 453,
+   "file": "basil_m.glb",
+   "path": "crops/basil_m.glb",
+   "is_glb": true,
+   "glb_matched": null,
+   "source_2d": "basil_m.png",
+   "category": "작물·바질",
+   "name_ko": "바질-중",
+   "kind": "crop_body",
+   "crop": "basil",
+   "stage": "중",
+   "status": "glb완료",
+   "source": "meshy-5",
+   "type": "crop",
+   "real_max_m": 0.16,
+   "scale_to_real": 0.08,
+   "glb_raw_max": 2.0,
+   "note": "바질-중. Meshy-5 원화→3D(주름·겹침 재현). 원화 crops/src/crop_*_src.png",
+   "light": "중광"
+  },
+  {
+   "id": 454,
+   "file": "basil_l.png",
+   "path": "crops/thumbs/basil_l.png",
+   "is_glb": false,
+   "glb_matched": "basil_l.glb",
+   "category": "작물·바질",
+   "name_ko": "바질-대",
+   "kind": "crop_body",
+   "crop": "basil",
+   "stage": "대",
+   "status": "glb완료",
+   "source": "meshy-5",
+   "type": "crop",
+   "real_max_m": 0.32,
+   "scale_to_real": 0.16,
+   "glb_raw_max": 2.0,
+   "note": "바질-대. Meshy-5 원화→3D(주름·겹침 재현). 원화 crops/src/crop_*_src.png",
+   "light": "중광"
+  },
+  {
+   "id": 455,
+   "file": "basil_l.glb",
+   "path": "crops/basil_l.glb",
+   "is_glb": true,
+   "glb_matched": null,
+   "source_2d": "basil_l.png",
+   "category": "작물·바질",
+   "name_ko": "바질-대",
+   "kind": "crop_body",
+   "crop": "basil",
+   "stage": "대",
+   "status": "glb완료",
+   "source": "meshy-5",
+   "type": "crop",
+   "real_max_m": 0.32,
+   "scale_to_real": 0.16,
+   "glb_raw_max": 2.0,
+   "note": "바질-대. Meshy-5 원화→3D(주름·겹침 재현). 원화 crops/src/crop_*_src.png",
+   "light": "중광"
+  },
+  {
+   "id": 456,
+   "file": "strawberry_s.png",
+   "path": "crops/thumbs/strawberry_s.png",
+   "is_glb": false,
+   "glb_matched": "strawberry_s.glb",
+   "category": "작물·딸기",
+   "name_ko": "딸기-소",
+   "kind": "crop_body",
+   "crop": "strawberry",
+   "stage": "소",
+   "status": "glb완료",
+   "source": "meshy-5",
+   "type": "crop",
+   "real_max_m": 0.09,
+   "scale_to_real": 0.045,
+   "glb_raw_max": 2.0,
+   "note": "딸기-소. Meshy-5 원화→3D(주름·겹침 재현). 원화 crops/src/crop_*_src.png",
+   "light": "중상"
+  },
+  {
+   "id": 457,
+   "file": "strawberry_s.glb",
+   "path": "crops/strawberry_s.glb",
+   "is_glb": true,
+   "glb_matched": null,
+   "source_2d": "strawberry_s.png",
+   "category": "작물·딸기",
+   "name_ko": "딸기-소",
+   "kind": "crop_body",
+   "crop": "strawberry",
+   "stage": "소",
+   "status": "glb완료",
+   "source": "meshy-5",
+   "type": "crop",
+   "real_max_m": 0.09,
+   "scale_to_real": 0.045,
+   "glb_raw_max": 2.0,
+   "note": "딸기-소. Meshy-5 원화→3D(주름·겹침 재현). 원화 crops/src/crop_*_src.png",
+   "light": "중상"
+  },
+  {
+   "id": 458,
+   "file": "strawberry_m.png",
+   "path": "crops/thumbs/strawberry_m.png",
+   "is_glb": false,
+   "glb_matched": "strawberry_m.glb",
+   "category": "작물·딸기",
+   "name_ko": "딸기-중",
+   "kind": "crop_body",
+   "crop": "strawberry",
+   "stage": "중",
+   "status": "glb완료",
+   "source": "meshy-5",
+   "type": "crop",
+   "real_max_m": 0.17,
+   "scale_to_real": 0.085,
+   "glb_raw_max": 2.0,
+   "note": "딸기-중. Meshy-5 원화→3D(주름·겹침 재현). 원화 crops/src/crop_*_src.png",
+   "light": "중상"
+  },
+  {
+   "id": 459,
+   "file": "strawberry_m.glb",
+   "path": "crops/strawberry_m.glb",
+   "is_glb": true,
+   "glb_matched": null,
+   "source_2d": "strawberry_m.png",
+   "category": "작물·딸기",
+   "name_ko": "딸기-중",
+   "kind": "crop_body",
+   "crop": "strawberry",
+   "stage": "중",
+   "status": "glb완료",
+   "source": "meshy-5",
+   "type": "crop",
+   "real_max_m": 0.17,
+   "scale_to_real": 0.085,
+   "glb_raw_max": 2.0,
+   "note": "딸기-중. Meshy-5 원화→3D(주름·겹침 재현). 원화 crops/src/crop_*_src.png",
+   "light": "중상"
+  },
+  {
+   "id": 460,
+   "file": "strawberry_l.png",
+   "path": "crops/thumbs/strawberry_l.png",
+   "is_glb": false,
+   "glb_matched": "strawberry_l.glb",
+   "category": "작물·딸기",
+   "name_ko": "딸기-대",
+   "kind": "crop_body",
+   "crop": "strawberry",
+   "stage": "대",
+   "status": "glb완료",
+   "source": "meshy-5",
+   "type": "crop",
+   "real_max_m": 0.28,
+   "scale_to_real": 0.14,
+   "glb_raw_max": 2.0,
+   "note": "딸기-대. Meshy-5 원화→3D(주름·겹침 재현). 원화 crops/src/crop_*_src.png",
+   "light": "중상"
+  },
+  {
+   "id": 461,
+   "file": "strawberry_l.glb",
+   "path": "crops/strawberry_l.glb",
+   "is_glb": true,
+   "glb_matched": null,
+   "source_2d": "strawberry_l.png",
+   "category": "작물·딸기",
+   "name_ko": "딸기-대",
+   "kind": "crop_body",
+   "crop": "strawberry",
+   "stage": "대",
+   "status": "glb완료",
+   "source": "meshy-5",
+   "type": "crop",
+   "real_max_m": 0.28,
+   "scale_to_real": 0.14,
+   "glb_raw_max": 2.0,
+   "note": "딸기-대. Meshy-5 원화→3D(주름·겹침 재현). 원화 crops/src/crop_*_src.png",
+   "light": "중상"
+  },
+  {
+   "id": 462,
+   "file": "fruit_strawberry_s.png",
+   "path": "crops/thumbs/fruit_strawberry_s.png",
+   "is_glb": false,
+   "glb_matched": "fruit_strawberry_s.glb",
+   "category": "작물·열매",
+   "name_ko": "열매-딸기-소",
+   "kind": "fruit",
+   "crop": "strawberry",
+   "stage": "소",
+   "status": "glb완료",
+   "source": "meshy-5",
+   "type": "crop",
+   "real_max_m": 0.018,
+   "scale_to_real": 0.009,
+   "glb_raw_max": 2.0,
+   "note": "열매-딸기-소. Meshy-5 원화→3D(주름·겹침 재현). 원화 crops/src/crop_*_src.png"
+  },
+  {
+   "id": 463,
+   "file": "fruit_strawberry_s.glb",
+   "path": "crops/fruit_strawberry_s.glb",
+   "is_glb": true,
+   "glb_matched": null,
+   "source_2d": "fruit_strawberry_s.png",
+   "category": "작물·열매",
+   "name_ko": "열매-딸기-소",
+   "kind": "fruit",
+   "crop": "strawberry",
+   "stage": "소",
+   "status": "glb완료",
+   "source": "meshy-5",
+   "type": "crop",
+   "real_max_m": 0.018,
+   "scale_to_real": 0.009,
+   "glb_raw_max": 2.0,
+   "note": "열매-딸기-소. Meshy-5 원화→3D(주름·겹침 재현). 원화 crops/src/crop_*_src.png"
+  },
+  {
+   "id": 464,
+   "file": "fruit_strawberry_m.png",
+   "path": "crops/thumbs/fruit_strawberry_m.png",
+   "is_glb": false,
+   "glb_matched": "fruit_strawberry_m.glb",
+   "category": "작물·열매",
+   "name_ko": "열매-딸기-중",
+   "kind": "fruit",
+   "crop": "strawberry",
+   "stage": "중",
+   "status": "glb완료",
+   "source": "meshy-5",
+   "type": "crop",
+   "real_max_m": 0.028,
+   "scale_to_real": 0.014,
+   "glb_raw_max": 2.0,
+   "note": "열매-딸기-중. Meshy-5 원화→3D(주름·겹침 재현). 원화 crops/src/crop_*_src.png"
+  },
+  {
+   "id": 465,
+   "file": "fruit_strawberry_m.glb",
+   "path": "crops/fruit_strawberry_m.glb",
+   "is_glb": true,
+   "glb_matched": null,
+   "source_2d": "fruit_strawberry_m.png",
+   "category": "작물·열매",
+   "name_ko": "열매-딸기-중",
+   "kind": "fruit",
+   "crop": "strawberry",
+   "stage": "중",
+   "status": "glb완료",
+   "source": "meshy-5",
+   "type": "crop",
+   "real_max_m": 0.028,
+   "scale_to_real": 0.014,
+   "glb_raw_max": 2.0,
+   "note": "열매-딸기-중. Meshy-5 원화→3D(주름·겹침 재현). 원화 crops/src/crop_*_src.png"
+  },
+  {
+   "id": 466,
+   "file": "fruit_strawberry_l.png",
+   "path": "crops/thumbs/fruit_strawberry_l.png",
+   "is_glb": false,
+   "glb_matched": "fruit_strawberry_l.glb",
+   "category": "작물·열매",
+   "name_ko": "열매-딸기-대",
+   "kind": "fruit",
+   "crop": "strawberry",
+   "stage": "대",
+   "status": "glb완료",
+   "source": "meshy-5",
+   "type": "crop",
+   "real_max_m": 0.038,
+   "scale_to_real": 0.019,
+   "glb_raw_max": 2.0,
+   "note": "열매-딸기-대. Meshy-5 원화→3D(주름·겹침 재현). 원화 crops/src/crop_*_src.png"
+  },
+  {
+   "id": 467,
+   "file": "fruit_strawberry_l.glb",
+   "path": "crops/fruit_strawberry_l.glb",
+   "is_glb": true,
+   "glb_matched": null,
+   "source_2d": "fruit_strawberry_l.png",
+   "category": "작물·열매",
+   "name_ko": "열매-딸기-대",
+   "kind": "fruit",
+   "crop": "strawberry",
+   "stage": "대",
+   "status": "glb완료",
+   "source": "meshy-5",
+   "type": "crop",
+   "real_max_m": 0.038,
+   "scale_to_real": 0.019,
+   "glb_raw_max": 2.0,
+   "note": "열매-딸기-대. Meshy-5 원화→3D(주름·겹침 재현). 원화 crops/src/crop_*_src.png"
   }
  ],
  "_scale_convention": {
@@ -8122,5 +9652,65 @@
    "glb_raw_max": "원본 GLB 최대축"
   },
   "note": "가구·선반(source=procedural)은 이미 실제 미터라 scale_to_real=1.0. 방/집은 data/house_rooms.json 과 동일한 미터계."
+ },
+ "_credit_log": {
+  "_rule": "유료 API(Meshy/Higgsfield)를 쓸 때마다 여기에 한 줄 남긴다: 날짜·창·용도·수량·크레딧·잔액. 창 여럿이 같은 계정을 쓰므로 이 기록이 없으면 충전 시점을 못 잡는다.",
+  "_caution": "meshy_list_tasks 로는 rigging·animation 이 조회되지 않는다(list 엔드포인트 없음). 캐릭터 리깅/모션 소비는 반드시 수동 기록할 것.",
+  "entries": [
+   {
+    "date": "2026-07-25",
+    "window": "leaf",
+    "service": "meshy",
+    "use": "화분 테라코타·데스크램프·마크라메 image-to-3d",
+    "qty": 3,
+    "credits": 45
+   },
+   {
+    "date": "2026-07-25",
+    "window": "growth",
+    "service": "meshy",
+    "use": "엽초·혹 text-to-3d + 줄기 텍스처",
+    "qty": 3,
+    "credits": 43
+   },
+   {
+    "date": "2026-07-25",
+    "window": "char(추정)",
+    "service": "meshy",
+    "use": "캐릭터 리깅·모션(list 조회 불가, 차액으로 추정)",
+    "qty": null,
+    "credits": 145,
+    "note": "추정치. 실제 사용 창이 확인해 정정 요망"
+   },
+   {
+    "date": "2026-07-26",
+    "window": "leaf",
+    "service": "higgsfield",
+    "use": "작물 원화 15장 + tomato_s 재생성 1장",
+    "qty": 16,
+    "credits": 16
+   },
+   {
+    "date": "2026-07-28",
+    "window": "leaf",
+    "service": "meshy",
+    "use": "작물 3D 12종(상추3 + 바질3 + 딸기본체3 + 딸기열매3)",
+    "qty": 12,
+    "credits": 180
+   },
+   {
+    "date": "2026-07-27",
+    "window": "leaf",
+    "service": "higgsfield",
+    "use": "딸기열매·콩나물 원화 6장",
+    "qty": 6,
+    "credits": 6
+   }
+  ],
+  "balance_checked": {
+   "date": "2026-07-28",
+   "meshy": 22,
+   "higgsfield": 815
+  }
  }
 }
