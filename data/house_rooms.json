@@ -110,6 +110,16 @@
           "vol6_m3": 0.0,
           "vol3_m3": 0.1,
           "vol_dark_m3": 30.3,
+          "best_height_m": 1.6,
+          "peak_by_height": {
+            "0.1": 0.3,
+            "0.35": 0.4,
+            "0.6": 0.6,
+            "0.85": 0.8,
+            "1.1": 1.2,
+            "1.35": 2.1,
+            "1.6": 3.7
+          },
           "_method": "0.25m 격자·높이 0.10~1.80m. 벽·칸막이·창턱은 남기고 가구만 제외."
         },
         "slots": {
@@ -117,7 +127,7 @@
           "avg7_summer": 0.35,
           "count": 13,
           "utilization_pct": 15,
-          "_method": "지금 house_rooms.json 의 furniture 배치 기준. 차폐에 가구 포함."
+          "_method": "지금 furniture 배치 기준. 차폐에 가구 포함."
         },
         "area": {
           "floor_m2": 20.0,
@@ -126,9 +136,9 @@
             "bar": 20,
             "stand": 10
           },
-          "_method": "바닥 면적(cutouts 제외). 등 상한 = 면적÷(2×coverage_r)². 통로 미반영 이론값."
+          "_method": "바닥 면적(cutouts 제외). 등 상한=면적÷(2×coverage_r)². 통로 미반영 이론값."
         },
-        "measuredAt": "2026-07-26",
+        "measuredAt": "2026-07-27",
         "roomRev": "379f9dc 2026-07-25",
         "status": "확정"
       }
@@ -236,6 +246,16 @@
           "vol6_m3": 0.5,
           "vol3_m3": 1.8,
           "vol_dark_m3": 33.4,
+          "best_height_m": 0.85,
+          "peak_by_height": {
+            "0.1": 2.2,
+            "0.35": 3.0,
+            "0.6": 4.5,
+            "0.85": 6.8,
+            "1.1": 6.7,
+            "1.35": 6.6,
+            "1.6": 6.4
+          },
           "_method": "0.25m 격자·높이 0.10~1.80m. 벽·칸막이·창턱은 남기고 가구만 제외."
         },
         "slots": {
@@ -243,7 +263,7 @@
           "avg7_summer": 3.07,
           "count": 11,
           "utilization_pct": 71,
-          "_method": "지금 house_rooms.json 의 furniture 배치 기준. 차폐에 가구 포함."
+          "_method": "지금 furniture 배치 기준. 차폐에 가구 포함."
         },
         "area": {
           "floor_m2": 30.0,
@@ -252,9 +272,9 @@
             "bar": 30,
             "stand": 15
           },
-          "_method": "바닥 면적(cutouts 제외). 등 상한 = 면적÷(2×coverage_r)². 통로 미반영 이론값."
+          "_method": "바닥 면적(cutouts 제외). 등 상한=면적÷(2×coverage_r)². 통로 미반영 이론값."
         },
-        "measuredAt": "2026-07-26",
+        "measuredAt": "2026-07-27",
         "roomRev": "379f9dc 2026-07-25",
         "status": "확정"
       }
@@ -554,6 +574,16 @@
           "vol6_m3": 2.3,
           "vol3_m3": 18.8,
           "vol_dark_m3": 95.1,
+          "best_height_m": 0.35,
+          "peak_by_height": {
+            "0.1": 4.9,
+            "0.35": 9.0,
+            "0.6": 9.0,
+            "0.85": 8.9,
+            "1.1": 8.9,
+            "1.35": 8.8,
+            "1.6": 8.7
+          },
           "_method": "0.25m 격자·높이 0.10~1.80m. 벽·칸막이·창턱은 남기고 가구만 제외."
         },
         "slots": {
@@ -561,7 +591,7 @@
           "avg7_summer": 3.87,
           "count": 83,
           "utilization_pct": 67,
-          "_method": "지금 house_rooms.json 의 furniture 배치 기준. 차폐에 가구 포함."
+          "_method": "지금 furniture 배치 기준. 차폐에 가구 포함."
         },
         "area": {
           "floor_m2": 99.4,
@@ -570,9 +600,9 @@
             "bar": 99,
             "stand": 50
           },
-          "_method": "바닥 면적(cutouts 제외). 등 상한 = 면적÷(2×coverage_r)². 통로 미반영 이론값."
+          "_method": "바닥 면적(cutouts 제외). 등 상한=면적÷(2×coverage_r)². 통로 미반영 이론값."
         },
-        "measuredAt": "2026-07-26",
+        "measuredAt": "2026-07-27",
         "roomRev": "b8da780 2026-07-26",
         "status": "미확정"
       }
@@ -728,6 +758,16 @@
           "vol6_m3": 1.4,
           "vol3_m3": 6.3,
           "vol_dark_m3": 48.4,
+          "best_height_m": 1.1,
+          "peak_by_height": {
+            "0.1": 1.7,
+            "0.35": 2.2,
+            "0.6": 3.1,
+            "0.85": 4.7,
+            "1.1": 7.6,
+            "1.35": 7.6,
+            "1.6": 7.3
+          },
           "_method": "0.25m 격자·높이 0.10~1.80m. 벽·칸막이·창턱은 남기고 가구만 제외."
         },
         "slots": {
@@ -735,7 +775,7 @@
           "avg7_summer": 3.86,
           "count": 128,
           "utilization_pct": 79,
-          "_method": "지금 house_rooms.json 의 furniture 배치 기준. 차폐에 가구 포함."
+          "_method": "지금 furniture 배치 기준. 차폐에 가구 포함."
         },
         "area": {
           "floor_m2": 66.0,
@@ -744,10 +784,10 @@
             "bar": 66,
             "stand": 33
           },
-          "_method": "바닥 면적(cutouts 제외). 등 상한 = 면적÷(2×coverage_r)². 통로 미반영 이론값."
+          "_method": "바닥 면적(cutouts 제외). 등 상한=면적÷(2×coverage_r)². 통로 미반영 이론값."
         },
-        "measuredAt": "2026-07-26",
-        "roomRev": "2026-07-26 도면 반영(교사방/연구실)",
+        "measuredAt": "2026-07-27",
+        "roomRev": "2026-07-26 교실+교사방 11x6",
         "status": "잠정"
       },
       "sills": [
@@ -931,9 +971,19 @@
         "space": {
           "peak_summer": 16.16,
           "avg7_summer": 10.39,
-          "vol6_m3": 122.6,
-          "vol3_m3": 123.3,
-          "vol_dark_m3": 80.4,
+          "vol6_m3": 122.7,
+          "vol3_m3": 124.0,
+          "vol_dark_m3": 62.3,
+          "best_height_m": 0.85,
+          "peak_by_height": {
+            "0.1": 15.7,
+            "0.35": 16.0,
+            "0.6": 16.1,
+            "0.85": 16.2,
+            "1.1": 16.1,
+            "1.35": 16.0,
+            "1.6": 15.8
+          },
           "_method": "0.25m 격자·높이 0.10~1.80m. 벽·칸막이·창턱은 남기고 가구만 제외."
         },
         "slots": {
@@ -941,7 +991,7 @@
           "avg7_summer": 9.36,
           "count": 64,
           "utilization_pct": 90,
-          "_method": "지금 house_rooms.json 의 furniture 배치 기준. 차폐에 가구 포함."
+          "_method": "지금 furniture 배치 기준. 차폐에 가구 포함."
         },
         "area": {
           "floor_m2": 120.0,
@@ -950,13 +1000,13 @@
             "bar": 120,
             "stand": 61
           },
-          "_method": "바닥 면적(cutouts 제외). 등 상한 = 면적÷(2×coverage_r)². 통로 미반영 이론값.",
+          "_method": "바닥 면적(cutouts 제외). 등 상한=면적÷(2×coverage_r)². 통로 미반영 이론값.",
           "floor_m2_greenhouse_only": 70.0,
           "floor_m2_lab_only": 50.0,
-          "_split": "온실(z<1.0) 70㎡ + 연구실 50㎡. 등 상한은 전체 120㎡ 기준이라 온실만 쓰려면 70/120 을 곱한다."
+          "_split": "온실(z<1.0) 70㎡ + 연구실 50㎡. 등 상한은 전체 120㎡ 기준."
         },
-        "measuredAt": "2026-07-26",
-        "roomRev": "2026-07-26 도면 반영(교사방/연구실)",
+        "measuredAt": "2026-07-27",
+        "roomRev": "2026-07-27 연구실 창2 + 천창 구간화",
         "status": "잠정"
       },
       "facing_note": "back=남. 온실(z<1)은 3면+천장 유리, 연구실(z>1)은 사방 벽·솔리드 천장.",
@@ -1101,6 +1151,16 @@
           "vol6_m3": 0.3,
           "vol3_m3": 1.7,
           "vol_dark_m3": 37.5,
+          "best_height_m": 0.85,
+          "peak_by_height": {
+            "0.1": 1.7,
+            "0.35": 2.6,
+            "0.6": 4.2,
+            "0.85": 6.7,
+            "1.1": 6.6,
+            "1.35": 6.6,
+            "1.6": 6.4
+          },
           "_method": "0.25m 격자·높이 0.10~1.80m. 벽·칸막이·창턱은 남기고 가구만 제외."
         },
         "slots": {
@@ -1108,7 +1168,7 @@
           "avg7_summer": 3.63,
           "count": 20,
           "utilization_pct": 84,
-          "_method": "지금 house_rooms.json 의 furniture 배치 기준. 차폐에 가구 포함."
+          "_method": "지금 furniture 배치 기준. 차폐에 가구 포함."
         },
         "area": {
           "floor_m2": 35.0,
@@ -1117,9 +1177,9 @@
             "bar": 35,
             "stand": 17
           },
-          "_method": "바닥 면적(cutouts 제외). 등 상한 = 면적÷(2×coverage_r)². 통로 미반영 이론값."
+          "_method": "바닥 면적(cutouts 제외). 등 상한=면적÷(2×coverage_r)². 통로 미반영 이론값."
         },
-        "measuredAt": "2026-07-26",
+        "measuredAt": "2026-07-27",
         "roomRev": "1fdc9ff 2026-07-26",
         "status": "잠정"
       }
