@@ -23,10 +23,16 @@ export function buildFloorHeatmap(RW, RD){
   geo.rotateX(-Math.PI/2);   // XZ 평면(바닥)으로 눕힘 → position에 반영됨
   const n=geo.attributes.position.count;
   geo.setAttribute('color', new THREE.BufferAttribute(new Float32Array(n*3), 3));
-  const mat=new THREE.MeshBasicMaterial({ vertexColors:true, transparent:true, opacity:0.5, depthWrite:false });
+  /* ★ depthTest 를 끈다 — 진단용 오버레이는 가려지면 안 된다.
+     높이를 0.75m 로 올릴 수 있게 되면서, 그보다 높은 가구(선반 1.16m·1.3m)가
+     판을 가려 '가구 모양대로 구멍이 뚫린' 것처럼 보였다.
+     값이 낮은 것(선반 안이라 실제로 어두움)과 안 보이는 것은 다른 문제인데
+     화면에선 똑같이 '빈 곳'으로 보여 구별이 안 됐다. */
+  const mat=new THREE.MeshBasicMaterial({ vertexColors:true, transparent:true, opacity:0.5,
+                                          depthWrite:false, depthTest:false });
   const mesh=new THREE.Mesh(geo, mat);
-  mesh.position.y=0.04;   // 바닥 살짝 위
-  mesh.renderOrder=2;
+  mesh.position.y=0.04;   // 기본은 바닥 살짝 위 (main.js 가 heatY 로 올린다)
+  mesh.renderOrder=999;   // 항상 맨 위에
   return mesh;
 }
 
