@@ -21,6 +21,8 @@ import { buildFurniture } from './furniture_pastel.js';
 import { buildWindowFrame, buildDoor, glassMaterial, glassGeometry, frameMaterial,
          resolveWindowPreset, FRAME_DEFAULTS, drawArch } from './window_frame.js';
 import { wallOrient, orientK } from '../engine/daylight_lux.js';
+import { markShadow, applyShadowPolicy, SHADOW_ROLE } from './shadow_policy.js';
+export { SHADOW_ROLE, markShadow, applyShadowPolicy };   // 검사 도구가 여기서 가져다 쓴다
 
 export const RW=7, RD=7, RH=4;           // 기본 치수(방에 size 없으면 이 값)
 // ★ 현재 조립 중인 방의 실제 치수. buildHouse 시작 시 roomDef.size로 세팅된다.
@@ -236,7 +238,7 @@ function shapedFiller(wall, spec, p, m){
   outer.holes.push(hole);
   const geo=new THREE.ExtrudeGeometry(outer,{ depth:WT, bevelEnabled:false, curveSegments:28 });
   geo.translate(0,0,-WT/2);
-  const mesh=new THREE.Mesh(geo,m); mesh.castShadow=true; mesh.receiveShadow=true;
+  const mesh=new THREE.Mesh(geo,m); markShadow(mesh, SHADOW_ROLE.BLOCK);
   placeInWall(mesh, wall, spec.cu, spec.cy);
   return mesh;
 }
@@ -945,8 +947,8 @@ export function buildHouse(GRAIN, roomDefIn, winPresets, doorPresets={}, finishe
      먼저 전부 blocker 로 칠하고, 그 다음 유리·창틀을 transparent 로 덮는다. */
   for(const k in shells) markShadow(shells[k], SHADOW_ROLE.BLOCK);
   markShadow(furnGroup, SHADOW_ROLE.BLOCK);
-  for(const m of glassMeshes) markShadow(m, SHADOW_ROLE.CLEAR);
-  for(const k in trims)       markShadow(trims[k], SHADOW_ROLE.CLEAR);
+  for(const m of glassMeshes) markShadow(m, SHADOW_ROLE.CLEAR, {force:true});
+  for(const k in trims)       markShadow(trims[k], SHADOW_ROLE.CLEAR, {force:true});
   const shadowAudit = applyShadowPolicy(room);
 
   return { room, shells, trims, windows:winWorld, glassMeshes, winPos, size:{ w:CW, d:CD, h:CH },
@@ -1084,41 +1086,6 @@ export function updateShellVisibility(shells, cam, mode='auto', trims=null){
     const t = trims && trims[key];
     if(t){ t.scale.y = 1; t.visible = !stub; }   // 창틀은 감추면 어차피 안 보이니 같이 감춘다
   }
-}
-
-/* ============================================================
-   그림자 정책 — 메시마다 역할을 붙이고, 일괄 루프는 그 속성만 본다
-     blocker            벽·가구·칸막이       → castShadow true
-     transparent        유리·창틀            → castShadow false (빛이 지난다)
-     hidden-but-blocks  천장·컷어웨이된 벽   → 안 보이되 castShadow true
-============================================================ */
-export const SHADOW_ROLE = { BLOCK:'blocker', CLEAR:'transparent', HIDDEN:'hidden-but-blocks' };
-
-export function markShadow(objOrList, role){
-  const list = Array.isArray(objOrList) ? objOrList : [objOrList];
-  for(const o of list) if(o) o.traverse ? o.traverse(m=>{ if(m.isMesh) m.userData.shadowRole = role; })
-                                        : (o.userData.shadowRole = role);
-  return objOrList;
-}
-
-/** 정책을 실제 castShadow 로 옮기고, 빠뜨린 것을 돌려준다. */
-export function applyShadowPolicy(root){
-  const untagged = [], suspect = [];
-  root.traverse(o=>{
-    if(!o.isMesh) return;
-    /* 밑동 박스는 '보여주기용 복제본'이다. 그림자는 원래 벽이 던지므로 여기선 건드리지 않는다 */
-    if(o.userData.isStub) return;
-    if(!o.userData.shadowRole){ o.userData.shadowRole = SHADOW_ROLE.BLOCK; untagged.push(o); }
-    const role = o.userData.shadowRole;
-    const mat  = Array.isArray(o.material) ? o.material[0] : o.material;
-    /* ★ 안전망 — 반투명 재질인데 blocker 로 잡혀 있으면 유리를 놓친 것이다.
-       베란다 통유리가 정확히 이 상태였고, 거실이 캄캄해질 때까지 아무도 몰랐다. */
-    if(role === SHADOW_ROLE.BLOCK && mat && mat.transparent && (mat.opacity ?? 1) < 0.9) suspect.push(o);
-    o.receiveShadow = true;
-    o.castShadow    = role !== SHADOW_ROLE.CLEAR;
-  });
-  if(suspect.length) console.warn('[볕] 반투명인데 blocker 로 잡힌 메시 '+suspect.length+'개 — 유리를 놓쳤을 수 있다', suspect);
-  return { untagged: untagged.length, suspect: suspect.length };
 }
 
 /* ★ '안 보이지만 빛은 막는다'

@@ -9,6 +9,8 @@
 
    사용: buildFurniture('bed_single', { color:'#e8d5c4' })
 ============================================================ */
+import { markShadow, SHADOW_ROLE } from './shadow_policy.js';
+
 import { col } from './util.js';
 
 /* ---- 재질 캐시 (색+광택 조합당 1개) ---- */
@@ -37,16 +39,16 @@ function soft(w,h,d,m,r=0.03){
   s.lineTo(x,y+r); s.quadraticCurveTo(x,y,x+r,y);
   const geo=new THREE.ExtrudeGeometry(s,{ depth:d, bevelEnabled:false, curveSegments:3 });
   geo.translate(0,0,-d/2);
-  const mesh=new THREE.Mesh(geo,m); mesh.castShadow=true; mesh.receiveShadow=true; return mesh;
+  const mesh=new THREE.Mesh(geo,m); return mesh;
 }
 /* 각진 박스(빠름) */
 function bx(w,h,d,m,x=0,y=0,z=0){
   const mesh=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),m);
-  mesh.position.set(x,y,z); mesh.castShadow=true; mesh.receiveShadow=true; return mesh;
+  mesh.position.set(x,y,z); return mesh;
 }
 function cyl(rt,rb,h,m,x=0,y=0,z=0,seg=14){
   const mesh=new THREE.Mesh(new THREE.CylinderGeometry(rt,rb,h,seg),m);
-  mesh.position.set(x,y,z); mesh.castShadow=true; mesh.receiveShadow=true; return mesh;
+  mesh.position.set(x,y,z); return mesh;
 }
 /* 가로놓인 소프트 박스(폭w×높이h×깊이d를 XY평면 라운드 후 Z압출) */
 function panel(w,h,d,m,x=0,y=0,z=0,r=0.03){
@@ -265,7 +267,7 @@ B.pot=(o)=>{
     const a=i/5*Math.PI*2, rr=pr*(0.5+Math.random()*0.5);
     const leaf=new THREE.Mesh(new THREE.SphereGeometry(ph*(0.28+Math.random()*0.16),8,6),lm);
     leaf.position.set(Math.cos(a)*rr*0.7, ph*(1.15+Math.random()*0.5), Math.sin(a)*rr*0.7);
-    leaf.scale.y=0.78; leaf.castShadow=true; g.add(leaf);
+    leaf.scale.y=0.78; g.add(leaf);
   }
   g.userData.size={w:pr*2,h:ph*2.1,d:pr*2}; return g;
 };
@@ -280,7 +282,7 @@ B.lamp_floor=(o)=>{
   const shade=new THREE.Mesh(new THREE.CylinderGeometry(0.16,0.21,0.24,18,1,true),
     new THREE.MeshStandardMaterial({ color:col(o.accent??'#f6efdc'), roughness:0.65,
       side:THREE.DoubleSide, emissive:col('#3a2f18'), emissiveIntensity:0.15 }));
-  shade.position.y=h-0.12; shade.castShadow=true; g.add(shade);
+  shade.position.y=h-0.12; g.add(shade);
   g.userData.size={w:0.42,h,d:0.42}; g.userData.lampShade=shade; return g;
 };
 
@@ -294,7 +296,7 @@ B.lamp_ceiling=(o)=>{
   const shade=new THREE.Mesh(new THREE.ConeGeometry(0.22,0.2,20,1,true),
     new THREE.MeshStandardMaterial({ color:col(o.accent??'#f6efdc'), roughness:0.6,
       side:THREE.DoubleSide, emissive:col('#3a2f18'), emissiveIntensity:0.2 }));
-  shade.position.y=-drop-0.08; shade.castShadow=true; g.add(shade);
+  shade.position.y=-drop-0.08; g.add(shade);
   g.userData.size={w:0.44,h:drop+0.2,d:0.44}; g.userData.lampShade=shade;
   g.userData.hangFromCeiling=true; return g;
 };
@@ -706,7 +708,7 @@ B.shelf_corner=(o)=>{
     sh.moveTo(0,0); sh.lineTo(w,0); sh.absarc(0,0,w,0,Math.PI/2,false); sh.lineTo(0,0);
     const geo=new THREE.ExtrudeGeometry(sh,{depth:t,bevelEnabled:false,curveSegments:10});
     geo.rotateX(-Math.PI/2); geo.translate(-w/2,y,-w/2);
-    const mesh=new THREE.Mesh(geo,m); mesh.castShadow=mesh.receiveShadow=true; g.add(mesh);
+    const mesh=new THREE.Mesh(geo,m); g.add(mesh);
     tiers.push(+y.toFixed(3)); dep.push(w*0.7);
     sl.push({x:+(-w*0.16).toFixed(3),y:+(y+t/2).toFixed(3),z:+(-w*0.16).toFixed(3)},
             {x:+(w*0.12).toFixed(3), y:+(y+t/2).toFixed(3),z:+(w*0.12).toFixed(3)});
@@ -1123,8 +1125,11 @@ export function buildFurniture(type, opts={}){
   if(!fn){ console.warn('[furniture] 알 수 없는 종류:', type); return new THREE.Group(); }
   const g=fn(opts||{});
   g.userData.type=type;
-  // ★ 모든 메시가 빛을 막고(castShadow) 받도록. Mesh 기본값이 false라
-  //   "명시적으로 켠 것만 켜짐"이 되면 안 된다 → 러그처럼 뺄 것만 noShadow로 표시.
-  g.traverse(o=>{ if(o.isMesh){ o.castShadow=!o.userData.noShadow; o.receiveShadow=true; } });
+  /* ★ 역할만 붙인다. castShadow 는 정책 루프(applyShadowPolicy)가 유일한 주체다.
+     빌더가 직접 켜면 정책이 그 뒤에 안 돌 때 그대로 샌다 — 창틀이 실제로 그랬다.
+     noShadow 는 '빛을 막지 않는다'(러그·조명 갓)는 뜻이라 transparent 로 간다.
+     기본이 blocker 여야 한다 — "명시적으로 켠 것만 켜짐"이 되면 러그처럼 예외인
+     것만 표시하면 되는 구조가 무너진다. */
+  g.traverse(o=>{ if(o.isMesh) markShadow(o, o.userData.noShadow ? SHADOW_ROLE.CLEAR : SHADOW_ROLE.BLOCK, {force:true}); });
   return g;
 }

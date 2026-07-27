@@ -57,9 +57,23 @@ export function updateLight(ctx, t, ceilingMode){
   ctx.scene.fog=new THREE.Fog(col(s.sky),30,120);   // 멀리 봐도 방 안 흐리게
 
   const wp=ctx.winPos||new THREE.Vector3(0.6,2.2,-3.4);
-  const dist=10, el=0.25+s.alt*0.9;
-  ctx.sunLight.position.set(wp.x+Math.sin(s.az)*dist*0.5, wp.y+Math.sin(el)*dist, wp.z-Math.cos(el)*dist*0.6);
-  ctx.sunLight.target.position.set(1.2,0.5,1.5);
+  const el=0.25+s.alt*0.9;
+  /* ★ 해는 무한히 멀리 있다 — 방향만으로 정한다.
+     예전엔 위치를 '첫 창' 기준으로 잡고 타깃을 (1.2,0.5,1.5)에 하드코딩했다.
+     그러면 창이 여럿인 방에서 빛이 한쪽으로 쏠린다 — 투룸 왼쪽 작은방은
+     자기 창으로 들어온 빛이 오른쪽으로 쏠려 칸막이에 막혀 바닥 자국이 아예 없었다.
+     조도 계산(창별 균일 천공)과 화면(단일 지향광)이 어긋난 것이다.
+     이제 태양은 방위·고도만 쓰고, 타깃은 방 중심이라 창이 몇 개든 같은 방향으로 든다. */
+  const dist=18;
+  const ca=Math.cos(el);
+  const dir=new THREE.Vector3(Math.sin(s.az)*ca, Math.sin(el), -Math.cos(s.az)*ca);
+  ctx.sunLight.target.position.set(0,0,0);
+  ctx.sunLight.position.copy(dir).multiplyScalar(dist);
+  /* 그림자 카메라가 제일 큰 방(아파트 12×10, 대각 15.6m)을 덮어야 한다.
+     해가 낮으면 투영 폭이 늘어나므로 여유를 둔다. */
+  const half=12;
+  const sc=ctx.sunLight.shadow.camera;
+  if(sc.left!==-half){ sc.left=-half; sc.right=half; sc.top=half; sc.bottom=-half; sc.updateProjectionMatrix(); }
   ctx.sunLight.intensity=s.intensity*1.55;   // 살짝 낮춰 그림자 대비↓(무겁지 않게). 밤엔 0
   ctx.sunLight.color=col(mix(hx('#fff3e2'),hx('#ff9d5c'),s.warm));
 

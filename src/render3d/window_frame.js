@@ -10,6 +10,7 @@
    ★ 재질 캐싱: 같은 색/광택/유리 조합은 인스턴스 공유(매 창마다 new 금지).
 ============================================================ */
 import { box, col } from './util.js';
+import { markShadow, SHADOW_ROLE } from './shadow_policy.js';
 
 export const FRAME_DEFAULTS={
   cols:2, rows:2,
@@ -126,7 +127,9 @@ function roundedRing(w,h,FT,d,m){
   shape.holes.push(roundedRectPath(w-2*FT, h-2*FT, Math.max(0.02, r-FT*0.4)));
   const geo=new THREE.ExtrudeGeometry(shape,{ depth:d, bevelEnabled:false, curveSegments:6 });
   geo.translate(0,0,-d/2);
-  const mesh=new THREE.Mesh(geo,m); mesh.castShadow=true; mesh.receiveShadow=true; return mesh;
+  /* ★ castShadow 는 건드리지 않는다 — 정책 루프(applyShadowPolicy)가 유일한 주체다.
+     여기서 켜면 정책이 그 뒤에 안 돌 때 그대로 샌다(실제로 창틀이 그랬다). */
+  const mesh=new THREE.Mesh(geo,m); markShadow(mesh, SHADOW_ROLE.BLOCK); return mesh;
 }
 
 /* ============================================================
@@ -174,7 +177,7 @@ export function buildWindowFrame(w, h, opts={}){
     }
   }
 
-  g.traverse(x=>{ if(x.isMesh){ x.castShadow=true; x.receiveShadow=true; } });
+  markShadow(g, SHADOW_ROLE.BLOCK);      // 역할만. castShadow 는 정책 루프가 정한다
   return g;
 }
 
@@ -197,7 +200,7 @@ function buildArchFrame(w, h, o, m){
     for(let j=1;j<o.rows;j++){ const y=y0+bh*j/o.rows; g.add(box(innerW,bt,bd,m,0,y,0)); }
     g.add(box(innerW,bt,bd,m,0,springY,0));   // 스프링라인 가로살
   }
-  g.traverse(x=>{ if(x.isMesh){ x.castShadow=true; x.receiveShadow=true; } });
+  markShadow(g, SHADOW_ROLE.BLOCK);      // 역할만. castShadow 는 정책 루프가 정한다
   return g;
 }
 
@@ -217,7 +220,7 @@ function buildCircleFrame(w, h, o, m){
     if(o.cols>1) g.add(box(bt, innerR*2, bd, m, 0,0,0));   // 세로살
     if(o.rows>1) g.add(box(innerR*2, bt, bd, m, 0,0,0));   // 가로살
   }
-  g.traverse(x=>{ if(x.isMesh){ x.castShadow=true; x.receiveShadow=true; } });
+  markShadow(g, SHADOW_ROLE.BLOCK);      // 역할만. castShadow 는 정책 루프가 정한다
   return g;
 }
 
@@ -237,6 +240,6 @@ export function buildDoor(w, h, opts={}){
   const knob=new THREE.Mesh(new THREE.SphereGeometry(0.045,12,12),
     new THREE.MeshStandardMaterial({ color:col('#c7b596'), roughness:0.3, metalness:0.35 }));
   knob.position.set(w/2-FT-0.18, -0.1, 0.07); g.add(knob);
-  g.traverse(x=>{ if(x.isMesh){ x.castShadow=true; x.receiveShadow=true; } });
+  markShadow(g, SHADOW_ROLE.BLOCK);      // 역할만. castShadow 는 정책 루프가 정한다
   return g;
 }
