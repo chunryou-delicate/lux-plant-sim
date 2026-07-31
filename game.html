@@ -85,6 +85,7 @@
         <button id="next">다음 날 ▸</button>
         <button id="run30" class="ghost">30일 자동</button>
         <button id="reset" class="ghost">초기화</button>
+        <button id="prof" class="ghost" title="이 방의 조도 기하를 JSON으로 — 밸런스 시뮬이 THREE 없이 읽는다">방 프로파일 ⭳</button>
       </div>
     </div>
 
@@ -188,13 +189,28 @@ $('lamps').onchange = e => { S.lamps.count = +e.target.value; io.light.clearCach
 $('lit').onchange = e => { S.lamps.litHours = Math.max(0, Math.min(24, +e.target.value || 0)); io.light.clearCache(); draw(); };
 $('mode').onchange = e => { S.sim.mode = e.target.value; io.light.clearCache(); draw(); };
 
-$('next').onclick = () => { lastTurn = nextDay(S, io); draw(); };
+/* loop.js 는 UI를 모른다 — S와 turn을 받아 화면을 그리는 건 여기 몫이다(헤드리스 시뮬 대비) */
+$('next').onclick = () => { lastTurn = nextDay(S, io).turn; draw(); };
 
 $('run30').onclick = () => {
-  const turns = runDays(S, io, 30);
+  const { turns } = runDays(S, io, 30);
   lastTurn = turns[turns.length - 1];
   draw();
   renderReport($('report'), S, io, turns);
+};
+
+/* ★ 방 프로파일 내보내기 — 밸런스 자동 시뮬이 THREE 없이 읽는 파일.
+   조도 기하는 방마다 고정이라 한 번만 뽑으면 된다(src/game/room_profile.js). */
+$('prof').onclick = () => {
+  const p = io.light.profile([0, 1, 2]);
+  const blob = new Blob([JSON.stringify(p, null, 1)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `room_profile.${p.room}.json`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+  pushLog(S, `방 프로파일 저장 — ${p.room} · 슬롯 ${p.slots.length}`);
+  renderLog($('log'), S);
 };
 
 $('reset').onclick = () => {

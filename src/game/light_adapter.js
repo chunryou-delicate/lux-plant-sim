@@ -15,37 +15,15 @@
 import { buildHouse } from '../render3d/house.js';
 import { faintGrainTexture } from '../render3d/textures.js';
 import { winFromHouse } from '../engine/daylight_lux.js';
-import { buildDailyLight, BANDS, thresholdsFor } from '../engine/daily_light.js';
+import { buildDailyLight, thresholdsFor, daylightRatio } from '../engine/daily_light.js';
 import { ppfdSum } from '../render3d/lighting_sim.js';
 import { skyOf, setWeatherProbs, seasonOf } from '../engine/weather.js';
 import { modeOf } from './state.js';
+import { validateContract } from './contract.js';
 
-/* ---------------------------------------------------------------
-   계약 객체 검증 — growth로 넘기기 전에 코어가 한 번 더 본다.
-   rng() < NaN 은 오류도 없이 항상 false라 무늬·갈라짐이 영영 안 나온다.
-   조용히 죽는 종류라, 값이 이상하면 넘기지 않고 화면에 띄운다.
---------------------------------------------------------------- */
-export function validateContract(report) {
-  const problems = [];
-  if (!report || report.schema !== 'daily_light/1') {
-    problems.push(`계약 스키마가 아닙니다: ${report && report.schema}`);
-    return { ok: false, problems, badSlots: new Set() };
-  }
-  const badSlots = new Set();
-  const num = (v) => typeof v === 'number' && isFinite(v) && v >= 0;
-
-  for (const s of report.slots || []) {
-    for (const k of ['dli', 'dli_daylight', 'dli_lamp']) {
-      if (!num(s[k])) { problems.push(`${s.slotId} · ${k}=${s[k]}`); badSlots.add(s.slotId); }
-    }
-    /* 밴드 이름에 로직을 걸지 않는다(개칭 진행 중). 목록에 있는지만 본다. */
-    if (s.band !== 'unknown' && !BANDS.includes(s.band)) {
-      problems.push(`${s.slotId} · 모르는 밴드 "${s.band}"`);
-    }
-  }
-  if (!report.best) problems.push('best 슬롯이 없습니다 (슬롯 0개?)');
-  return { ok: problems.length === 0, problems, badSlots };
-}
+/* 검증은 contract.js 로 옮겼다(THREE 없이도 불러야 해서). 여기서 다시 내보내
+   기존 호출부(`import { validateContract } from './light_adapter.js'`)는 안 깨진다. */
+export { validateContract };
 
 /* --------------------------------------------------------------- */
 export function createLightEngine(data) {
@@ -161,8 +139,38 @@ export function createLightEngine(data) {
   }
   function clearCache() { _cache.clear(); }
 
+  /* ---- ★ 방 프로파일 뽑기 (밸런스 자동 시뮬용, 2026-08-01) ----
+     조도 기하는 방마다 고정이다. `ratio`(천공 1lx당 그 지점이 받는 비율)도,
+     기구가 붙박이면 등 PPFD도 날씨·계절과 무관하다.
+     → 방마다 한 번만 뽑아 두면, 시뮬은 THREE·집 조립 없이 DLI를 낼 수 있다.
+       (수십 번 돌려야 하는데 매번 83슬롯 방을 조립할 이유가 없다)
+     ⚠ 여기서는 glazed 를 넘긴다 — `buildDailyLight` 이 아직 안 받는다(core-to-house ①).
+       그래서 아파트는 프로파일 쪽이 계약 쪽보다 낮게(정확하게) 나온다. house가 고치면 같아진다. */
+  function profile(lampCounts = [0, 1, 2]) {
+    const up = { x: 0, y: 1, z: 0 };
+    const counts = lampCounts.filter(n => n <= room.growRigs.length);
+    return {
+      schema: 'room_profile/1',
+      room: room.id,
+      label: room.def.label || room.id,
+      lampCounts: counts,
+      lampWatts: counts.map(n => rigsOn(n).reduce((a, r) => a + ((r.fx && r.fx.watts) || 0), 0)),
+      measured: room.def.measured || null,
+      slots: room.slots.map(s => {
+        const point = { x: s.x, y: s.y, z: s.z };
+        const opt = { occluders: room.built.occluders, glazed: room.built.glazedPanes,
+                      selfIdx: s.occIdx };
+        return {
+          slotId: s.slotId, owner: s.owner, point,
+          ratio: +daylightRatio(point, up, room.wins, opt).toPrecision(6),
+          ppfd: counts.map(n => +ppfdSum(rigsOn(n), point).toFixed(2))
+        };
+      })
+    };
+  }
+
   return {
-    build, daily, skyFor, dliOfSlot, clearCache,
+    build, daily, skyFor, dliOfSlot, clearCache, profile,
     get room() { return room; },
     rooms: () => Object.entries(data.houseRooms.rooms || {})
                    .map(([id, r]) => ({ id, label: r.label || id, light: r.light || '' })),

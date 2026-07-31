@@ -16,6 +16,19 @@
      고사는 growth의 체력(vigor) 모델이 v1에 맡는다. 코어는 판정하지 않는다.
      band === 'critical' 로 죽이는 코드는 절대 넣지 않는다 —
      반지하 산세는 맑음↔흐림으로 밴드를 매일 오가므로 하루로 죽이면 운으로 죽는다.
+
+   ★★ 이 파일은 UI를 모른다 (밸런스 자동 시뮬 대비, 2026-08-01)
+     document·window·DOM을 쓰지 않는다. 화면 갱신은 호출부(game.html)가 한다.
+     바깥과 닿는 곳은 인자 `io` 두 개뿐이다 — 이걸 바꿔 끼우면 헤드리스로 돈다.
+
+       io.light  { daily(day, S) -> {report, sky, check},  room, thresholdsOf(), dliOfSlot() }
+                   브라우저: light_adapter (buildHouse + THREE)
+                   헤드리스: room_profile.createProfileLight (THREE 없음)
+       io.growth { setDailyLight(dli), setGrowth(days), dli7(), dliCV(), ageOf(days) }
+                   브라우저: growth_adapter (plant_grow.html iframe)
+                   헤드리스: sim.nullGrowth — ⚠ 진짜 생장이 아니다(sim.js 주석 참고)
+
+     S는 제자리에서 바뀌고 그대로 반환된다. 호출부는 반환값을 쓰면 된다.
 ============================================================ */
 import { pot0, rehomePot, pushLog } from './state.js';
 import { dliFromContract } from './growth_adapter.js';
@@ -53,17 +66,17 @@ export function nextDay(S, io) {
     dli7Core: avg(S.dliHist, 7),       // 코어가 센 값 — 둘이 어긋나면 배선이 틀린 것
     cv: io.growth.dliCV()
   };
-  return turn;
+  return { S, turn };
 }
 
 export function runDays(S, io, n, onTurn) {
   const turns = [];
   for (let i = 0; i < n; i++) {
-    const t = nextDay(S, io);
-    turns.push(t);
-    if (onTurn) onTurn(t);
+    const { turn } = nextDay(S, io);
+    turns.push(turn);
+    if (onTurn) onTurn(turn);
   }
-  return turns;
+  return { S, turns };
 }
 
 /* ---------------------------------------------------------------
@@ -101,11 +114,15 @@ export function expectedWeekStats(S, io, { season = 'summer', over = null, years
   });
   const st = weekStats(dliOf, { season, over, years, seed: S.sim.seed });
 
-  /* ★ 평균은 코어가 다시 낸다.
-     weather.js 의 weekStats.mean 은 `맑은날값 × E[날씨계수]` 라 자연광만 있을 때만 맞다.
-     식물등 DLI는 날씨와 무관한데도 같이 깎여서, 등을 켜면 평균이 p10보다 낮게 나온다
-     (등 1개 검증에서 mean 7.14 < p10 8.46). 여기서는 날씨별 값에 확률을 직접 얹는다.
-     → house에 보고해 뒀다(core-to-house.md). 고쳐지면 이 블록을 지운다. */
+  /* ★ 평균은 코어가 다시 낸다. (2026-08-01 현재도 유효)
+     weekStats.mean 은 `맑은날값 × E[날씨계수]` 라 dliOf 가 날씨에 선형일 때만 맞다.
+     식물등 DLI는 날씨와 무관해서 같이 깎인다 — 등 1개에서 mean 7.14 < p10 8.46 이 나왔다.
+
+     house가 경고와 rolledMean 을 추가했고 "등은 weekStats 밖에서 더하라"고 처방했는데,
+     ★ 그 처방은 mean 에만 통한다. p10/p50/p90 과 overPct(문턱 넘는 주)는
+     **등을 포함한 하루 값**으로 세야 맞다 — 자연광만 넘기면 "등을 켜도 안 갈라진다"가 된다.
+     그래서 dliOf 는 등 포함으로 넘기고, mean 만 여기서 확률 가중으로 정확히 낸다.
+     (weekStats 안에서 Σ p_w·dliOf(w) 로 내면 둘 다 해결된다 — core-to-house 에 적었다) */
   const pw = WEATHER_P[season] || WEATHER_P.summer;
   let mean = 0;
   for (const w of ['clear', 'cloudy', 'rain']) mean += (pw[w] || 0) * dliOf(w, season);

@@ -62,6 +62,12 @@ export function createGrowthAdapter(iframe) {
     /* 생장 1틱. 화분을 심은 지 며칠 됐나를 넘긴다(게임 날짜가 아니라). */
     setGrowth(days) { const f = fn('setGrowth'); return f ? f(days) : null; },
 
+    /* ★ 갈라짐 표시는 반드시 이걸 쓴다 (growth 요청, 2026-08-01).
+       `bandOf(오늘값).fenestrating` 은 넘긴 하루 값 기준이라 오늘만 반짝 넘어도 true다.
+       실제 판정(`calcMatureProb`)은 7일 평균을 보므로, 하루 값으로 "갈라짐 시작!"을 띄우면
+       거짓말이 된다 — 반지하·등1개가 정확히 그 경우다(하루 6.02 넘음 / 7일평균 5.82 못 넘음). */
+    canFenestrate(varie) { const f = fn('canFenestrate'); return f ? f(!!varie) : null; },
+
     /* 읽기 전용 — growth가 진짜 쓴 값. 코어 계산과 대조하는 용도. */
     dli7()   { const f = fn('dli7');   return f ? f() : null; },
     dliCV()  { const f = fn('dliCV');  return f ? f() : null; },

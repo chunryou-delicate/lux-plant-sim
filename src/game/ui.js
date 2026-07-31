@@ -21,6 +21,12 @@ export function renderHUD(el, S, turn, io) {
   const th = io.light.thresholdsOf(S.pots[0].plantId, S.pots[0].variegated);
   const fen = th && th.fenestrate;
 
+  /* ★ 갈라짐 표시는 7일평균 기준인 growth의 canFenestrate() 를 쓴다.
+     계약의 slot.fenestrating 은 하루 값 기준이라 "오늘만 넘음"을 구분해 보여준다. */
+  const fenOn = io.growth.canFenestrate
+    ? io.growth.canFenestrate(S.pots[0].variegated)
+    : (s ? s.fenestrating : null);
+
   /* 코어와 growth의 7일 평균이 어긋나면 배선이 틀린 것이다 — 눈에 띄게 표시한다 */
   const drift = (turn.dli7Core != null && turn.dli7Growth != null &&
                  Math.abs(turn.dli7Core - turn.dli7Growth) > 0.01);
@@ -47,8 +53,9 @@ export function renderHUD(el, S, turn, io) {
     <div class="grid">
       <div class="cell"><span>밴드</span><b>${(s && (s.ko || BAND_KO[s.band])) || '—'}</b>
         <i>${(s && s.band) || '—'}</i></div>
-      <div class="cell"><span>갈라짐</span><b>${s && s.fenestrating ? '○ 켜짐' : '✕'}</b>
-        <i>문턱 ${fen == null ? '없음' : fen}</i></div>
+      <div class="cell"><span>갈라짐</span><b>${fenOn === null ? '—' : (fenOn ? '○ 켜짐' : '✕')}</b>
+        <i>문턱 ${fen == null ? '없음' : fen}${
+          s && s.fenestrating && fenOn === false ? ' · 오늘만 넘음' : ''}</i></div>
       <div class="cell"><span>과광</span><b>${s && s.overlight ? '○' : '✕'}</b>
         <i>${r.continuous_injury ? '연속점등 장해' : '광주기 ' + r.photoperiod.hours + 'h'}</i></div>
     </div>

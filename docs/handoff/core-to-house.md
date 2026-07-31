@@ -128,6 +128,60 @@ const wins = built.luxWins.map(w =>
 
 하루 1회만 바꾸고 `mult` 는 0.15 하한으로 두겠습니다. **구현은 v1입니다**(v0는 제어 없음).
 
+---
+
+# 2026-08-01 · 후속
+
+## 받았습니다 — ①`glazed` ②`weekStats` 캐시 ③온실 재측정
+
+셋 다 확인했습니다. 특히 ③의 원인(`_dli_probe` 가 `evScale` 을 안 넘기고 있었다)까지 짚어 주셔서
+왜 12.42와 13.01이 갈렸는지가 닫혔습니다.
+
+## ★ 요청② 후속 — "등은 밖에서 더하라"는 `mean` 에만 통합니다
+
+`weekStats` 에 넣어 주신 경고가 **코어에서 정상적으로 뜹니다.** 다만 처방대로는 못 씁니다.
+
+```
+[볕] weekStats.mean 이 굴림 평균과 53.1% 어긋난다 — … 등은 weekStats 밖에서 더할 것
+```
+
+자연광만 넘기고 등을 밖에서 더하면 `mean` 은 맞지만 **`p10`·`p50`·`p90`·`overPct` 가 틀립니다.**
+백분위와 "문턱 넘는 주"는 **등을 포함한 하루 값**으로 세야 합니다 —
+자연광만으로 세면 반지하는 등을 켜든 안 켜든 문턱 넘는 주가 0%가 됩니다.
+(등 1개 좋은 자리의 실제 값은 avg7 12.16 · 문턱 넘는 주 100%입니다)
+
+그래서 코어는 **등 포함 `dliOf` 를 넘기고 `mean` 만 따로 정확히 냅니다**(`loop.js expectedWeekStats`).
+경고는 그때마다 뜨는데, 진짜 이상해서가 아니라 구조상 뜨는 것이라 소음이 됩니다.
+
+```js
+// 붙일 수 있는 코드 — weekStats 안. memo 가 이미 있으니 추가 비용이 없습니다.
+/* ★ 해석적 mean 대신 확률 가중 기댓값. 등처럼 날씨와 무관한 성분이 섞여도 맞다. */
+const pw = WEATHER_P[season] || WEATHER_P.summer;
+let mean = 0;
+for (const w of ['clear', 'cloudy', 'rain']) mean += (pw[w] || 0) * call(w, season, base);
+// r.mean = +mean.toFixed(3);   ← analytic 대신. rolledMean·경고는 그대로 둬도 좋습니다
+```
+
+이러면 자연광만일 때 값이 지금과 같고(선형이라 동일), 등이 섞여도 맞습니다.
+반영되면 코어의 우회를 지우겠습니다.
+
+## 보고 — 방 프로파일을 뽑아 씁니다 (house 코드 변경 없음)
+
+밸런스 자동 시뮬을 헤드리스로 돌리려는데, 매번 방을 조립할 이유가 없어서
+**조도 기하만 JSON으로 뽑아 두는 경로**를 만들었습니다.
+
+```
+light_adapter.profile([0,1,2])   → { schema:'room_profile/1', slots:[{slotId, ratio, ppfd[]}] }
+room_profile.createProfileLight(profile)  → THREE 없이 daily_light.js 로 계약 객체 생성
+```
+
+- `ratio` 는 `daylightRatio` 결과(천공 1lx당 비율)라 **날씨·계절과 무관한 순수 기하값**입니다
+- 물리식은 다시 쓰지 않고 `daylightDLI`·`lampDLI`·`judgeDLI` 를 그대로 부릅니다.
+  시뮬과 게임이 다른 답을 내면 시뮬이 무의미하니까요
+- 대조 결과 **전 슬롯 오차 0.0000**, 90일 시나리오 7ms(방 조립 없이)
+- 반지하 프로파일 2.6KB. 방 6종이면 ~20KB입니다 —
+  **`data/` 아래 두는 게 나을지 house 판단을 듣고 싶습니다.** 지금은 버튼으로 내보내기만 합니다
+
 ## 미해결
 
 - [ ] 요청 ①②③
