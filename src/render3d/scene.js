@@ -35,9 +35,15 @@ export function createScene(canvas){
   sunLight.shadow.bias=-0.0004; sunLight.shadow.radius=11;   // 그림자 더 부드럽게(A미니멀)
   scene.add(sunLight,sunLight.target);
 
+  /* ★ 창 보조 스포트라이트 — 껐다. 남겨두면 안 되는 물건이었다.
+     창이 하나뿐이던 시절에 '창에서 빛이 쏟아지는 느낌'을 내려고 넣은 가짜 조명이다.
+     그런데 위치가 '첫 창'에 붙어 있어서, 창이 여럿인 방에서는 첫 창이 있는 방에만
+     조명이 하나 더 서 있는 꼴이 된다. 투룸 침실이 시간과 무관하게 계속 밝았던 이유다.
+     (방향만 해에 맞춰봤지만 위치가 그대로라 소용이 없었다 — 절반짜리 수정이었다.)
+     해가 제대로 된 지향광이 됐고 창 개구부로 그림자가 지나가므로 이 가짜는 불필요하다.
+     객체는 ctx 소비자를 위해 남기되 빛을 내지 않는다. */
   const winLight1=new THREE.SpotLight(0xfff2d8,0,14,Math.PI/3,0.5,1.5);
-  winLight1.castShadow=true; winLight1.shadow.mapSize.set(1024,1024);
-  winLight1.shadow.autoUpdate=false;
+  winLight1.castShadow=false;      // 해와 다른 방향의 그림자를 하나 더 던지고 있었다
   scene.add(winLight1,winLight1.target);
 
   const ceilingBulb=new THREE.PointLight(0xffe4b0,0,14,1.2);
@@ -82,16 +88,15 @@ export function updateLight(ctx, t, ceilingMode){
      세기만 해 높이를 따라가고 방향은 절대 안 바뀌었다.
      투룸은 첫 창이 침실 창이라 침실에 '해가 움직여도 그대로인 빛 자국'이 생겼다.
      태양 수정 때 sunLight 만 고치고 이건 놓쳤다. */
-  ctx.winLight1.position.set(wp.x,wp.y+0.3,wp.z+0.3);
-  ctx.winLight1.target.position.set(wp.x-dir.x*5, 0, wp.z-dir.z*5);
-  ctx.winLight1.intensity=s.intensity*2.0;   // 밤엔 창 스팟도 0
-  ctx.winLight1.color=col(mix(hx('#fff6e6'),hx('#ffb874'),s.warm));
+  ctx.winLight1.intensity=0;                 // 위 참조 — 첫 창에만 붙는 가짜 조명이라 껐다
 
   // 환경광(채움): 낮엔 넉넉히 올려 그림자 바닥을 밝게 → 부드럽고 밝은 파스텔.
   // 밤엔 낮되 완전 0은 아님(칙칙함 방지). 온기는 sunLight.warm으로만.
-  ctx.hemi.intensity=0.16+s.intensity*0.48;
+  /* 창 스팟을 끈 만큼 환경광으로 조금 메운다 — 방이 통째로 어두워지지 않게.
+     이건 방향이 없는 채움광이라 '어느 방만 밝다'가 안 생긴다. */
+  ctx.hemi.intensity=0.20+s.intensity*0.60;
   ctx.hemi.color=col(mix(hx('#bcd0e6'),s.sky,0.35));
-  ctx.ambient.intensity=0.07+s.intensity*0.22;
+  ctx.ambient.intensity=0.09+s.intensity*0.28;
 
   // 유리(창·유리벽) 하늘색 틴트 갱신 — clear 유리만(skyTint). 색조/간유리는 자기 색 유지.
   const glasses = ctx.glassMeshes || (ctx.glass?[ctx.glass]:[]);
@@ -109,7 +114,6 @@ export function updateLight(ctx, t, ceilingMode){
 
   // 조명이 바뀐 프레임에만 그림자맵 재생성 (autoUpdate=false 이므로 수동)
   ctx.sunLight.shadow.needsUpdate=true;
-  ctx.winLight1.shadow.needsUpdate=true;
   ctx.ceilingBulb.shadow.needsUpdate=true;
 
   return s.label;
