@@ -174,11 +174,16 @@ export function buildDailyLight(day, slots, wins, ctx = {}) {
   const {
     weather = 'clear', season = 'summer', region = 'default',
     clearSkyMax, occluders = null, lums = null,
+    /* ★ glazed 를 빠뜨리고 있었다 — 계약 문서엔 넘기라고 적혀 있는데 함수가 버렸다.
+       아파트 베란다 실내 유리(τ0.92)가 없는 것으로 계산돼 거실·안방 DLI 가
+       실제보다 높게 나왔다. probe·main.js 는 daylightRatio 를 직접 부르며
+       제대로 넘겼기 때문에 실측표는 영향이 없었다. (core-to-house 요청①) */
+    glazed = null,
     litHours = 12, tariffWonPerKwh = 0, lampWatts = 0,
     thresholds = null
   } = ctx;
 
-  const skyOpt = { weather, season, region, clearSkyMax, occluders };
+  const skyOpt = { weather, season, region, clearSkyMax, occluders, glazed };
   const evMax = skyEvMax(skyOpt);
   const PH = thresholds && thresholds.photoperiod;
   const photo = photoperiod(litHours, PH);

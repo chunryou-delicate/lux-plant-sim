@@ -102,11 +102,20 @@ export function skyOf(day, opt = {}) {
 export function weekStats(dliOf, { season = 'summer', win = 7, years = 20, seed = 0, over = null } = {}) {
   const base = SEASON_ORDER.indexOf(season) * DAYS_PER_SEASON;
   const avgs = [];
+  /* ★ dliOf 를 날씨·계절 조합으로 캐시한다. 조합은 12가지뿐인데 20년치면
+     1680번을 부른다 — 코어가 캐시 없이 돌렸다가 아파트 83슬롯에서 2분을 넘겼다.
+     호출자마다 캐시를 짜게 두면 또 갈리므로 여기서 한다. (core-to-house 요청②) */
+  const memo = new Map();
+  const call = (w, ss, d) => {
+    const k = w + '|' + ss;
+    if (!memo.has(k)) memo.set(k, dliOf(w, ss, d));
+    return memo.get(k);
+  };
   for (let y = 0; y < years; y++) {
     const daily = [];
     for (let i = 0; i < DAYS_PER_SEASON; i++) {
       const d = base + y * DAYS_PER_YEAR + i;
-      daily.push(dliOf(weatherOf(d, { season, seed }), season, d));
+      daily.push(call(weatherOf(d, { season, seed }), season, d));
     }
     for (let i = 0; i + win <= daily.length; i++) {
       let s = 0;
@@ -116,9 +125,20 @@ export function weekStats(dliOf, { season = 'summer', win = 7, years = 20, seed 
   }
   avgs.sort((a, b) => a - b);
   const q = f => avgs[Math.min(avgs.length - 1, Math.floor(f * avgs.length))];
-  const clear = dliOf('clear', season, base);
+  const clear = call('clear', season, base);
+  const analytic = clear * weatherE(season);
+  /* ★ mean 은 해석적 기댓값이라 dliOf 가 '날씨 계수에 선형'일 때만 맞다.
+     자연광만이면 정확하지만 식물등을 섞으면 틀린다 — 등 DLI 는 날씨와 무관한데
+     맑음 값에 E 를 곱해 버린다. 굴림 평균과 크게 어긋나면 그 경우이므로 알린다.
+     (예전엔 조용히 틀린 값을 냈다) */
+  const rolled = avgs.reduce((a, b) => a + b, 0) / (avgs.length || 1);
+  if (analytic > 0 && Math.abs(rolled / analytic - 1) > 0.05)
+    console.warn('[볕] weekStats.mean 이 굴림 평균과 ' +
+      ((rolled / analytic - 1) * 100).toFixed(1) + '% 어긋난다 — dliOf 가 날씨에 선형이 아닌 듯하다' +
+      ' (식물등을 섞었나? 등은 weekStats 밖에서 더할 것)');
   const r = {
-    mean: +(clear * weatherE(season)).toFixed(3),   // ★ 해석적. 굴림 평균이 아니다
+    mean: +analytic.toFixed(3),                     // ★ 해석적. 굴림 평균이 아니다
+    rolledMean: +rolled.toFixed(3),                 // 대조용 — mean 과 크게 다르면 위 경고
     p10: +q(0.10).toFixed(3),
     p50: +q(0.50).toFixed(3),
     p90: +q(0.90).toFixed(3),

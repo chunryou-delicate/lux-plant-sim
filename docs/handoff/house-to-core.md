@@ -346,3 +346,84 @@ core가 캐시 없이 돌렸다가 아파트 83슬롯에서 2분을 넘겼다고
 - [ ] **갈라짐 문턱 6.0** 은 plan 결정 대기입니다. 7일평균으로는 아파트가 못 넘습니다(§실측).
       결정 나면 `data/balance/light_thresholds.json` 이 바뀝니다 — 코어는 값을 하드코딩하지 마세요
 - [ ] `game.html` 신설 후 이 파일에 알려 주세요. 셸 이관 시점을 맞추겠습니다
+
+---
+
+# 2026-08-01 · core 요청 2건 처리 완료 + 최신 실측표
+
+## 요청 ① `ctx.glazed` 누락 — **고쳤습니다**
+
+`buildDailyLight` 이 `glazed` 를 구조분해에서 빠뜨려 `skyOpt` 에 안 싣고 있었습니다.
+
+```js
+const { ..., occluders = null, lums = null, glazed = null, ... } = ctx;
+const skyOpt = { weather, season, region, clearSkyMax, occluders, glazed };
+```
+
+**임시 우회를 지우셔도 됩니다.** 아파트 베란다 실내 유리(τ0.92)가 이제 계약 경로에서도 걸려
+거실·안방 DLI 가 이전보다 약 8% 낮아집니다. **실측표는 영향 없습니다**(probe 는 원래 제대로 넘겼습니다).
+
+## 요청 ② `weekStats` — 캐시 + 선형성 경고
+
+```js
+const memo = new Map();   // (weather, season) 조합은 12가지뿐인데 20년치면 1680번 부른다
+```
+
+호출자마다 캐시를 짜면 또 갈리므로 **모듈 안에서** 합니다.
+`loop.js` 의 `expectedWeekStats` 우회를 지우셔도 됩니다.
+
+**`mean` 의 한계도 드러나게 했습니다.** `mean` 은 해석적 기댓값이라 `dliOf` 가 날씨 계수에
+**선형일 때만** 맞습니다. 식물등을 섞으면 틀립니다(등 DLI 는 날씨와 무관한데 맑음 값에 E 를 곱함).
+굴림 평균과 5% 이상 어긋나면 경고하고, `rolledMean` 도 같이 돌려줍니다.
+
+```js
+// X  mean 이 틀린다 (경고가 뜬다)
+weekStats((w,s) => daylightDLI(r,{weather:w,season:s}) + lampDLI(ppfd,12), ...)
+// O  자연광만 넘기고 등은 밖에서 더한다
+weekStats((w,s) => daylightDLI(r,{weather:w,season:s}), ...).mean + lampDLI(ppfd,12)
+```
+
+## 최신 실측표 (2026-08-01 · 전 방 구조 확정)
+
+**방 등급의 정본은 `space`(가구 없는 공간)입니다.** 전문은 `docs/engine/rooms_spec.md`.
+
+| 방 | 면적 | space.peak_summer | space.avg7_summer | slots.peak | 슬롯 |
+|---|---|---|---|---|---|
+| 반지하 | 20.0㎡ | 3.74 | 2.40 | 0.55 | 13 |
+| 원룸 | 30.0㎡ | 6.76 | 4.34 | 4.77 | 11 |
+| 투룸 | 35.0㎡ | 6.69 | 4.30 | 5.64 | 20 |
+| 학원교실 | 66.0㎡ | 7.58 | 4.87 | 6.01 | **128** |
+| 아파트 | 99.4㎡ | 9.01 | 5.79 | 6.02 | 83 |
+| 온실 | 120.0㎡ | 16.16 | 10.39 | 14.55 | 64 |
+
+`measured` 가 라벨 구조입니다:
+
+```jsonc
+"measured": {
+  "space": { "peak_summer": 9.01, "avg7_summer": 5.79, "vol6_m3": 2.3,
+             "best_height_m": 0.35, "peak_by_height": { "0.1": 4.9, "0.35": 9.0 } },
+  "slots": { "peak_summer": 6.02, "utilization_pct": 67, "count": 83 },
+  "area":  { "floor_m2": 99.4, "lamp_max_pots": { "bar": 99, "clip": 202, "stand": 50 } },
+  "measuredAt": "2026-08-01", "roomRev": "...", "status": "확정"
+}
+```
+
+**라벨 없는 숫자는 쓰지 마세요.** peak/7일평균 x 공간/슬롯 으로 네 갈래라 이미 세 번 섞였습니다.
+
+## 구조 변경 — 두 방
+
+| 방 | 변경 | 계약에 영향 |
+|---|---|---|
+| 학원교실 | 11x6, 교실+교사방. **깊은 창턱**(높이 1.0m x 깊이 1.0m) | 슬롯 32 → **128**. 창턱 uid 는 `classroom-sill` |
+| 온실 | 10x12, 온실(z<1) 70㎡ + **연구실**(z>1) 50㎡. 3면 유리 + 천창 | 슬롯 64. 연구실은 거의 암흑(0.05) |
+
+창턱은 **건축 구조**라 집꾸미기에서 선택·이동·판매가 안 됩니다(`furnIdx` 를 안 붙였습니다).
+슬롯은 정상적으로 나옵니다 — `slotId` 는 `classroom-sill:0` ~ `:111`.
+
+## 미해결
+
+- [ ] `temp` / `humidity` / `weatherPattern` 은 자리만. `null` 이면 계수 1.0
+- [ ] `game.html` 신설되면 알려 주세요 — `index.html` 셸 이관 시점을 맞추겠습니다
+- [ ] **계산↔화면 자동 대조 검사**가 없습니다. 이번 렌더 사고 5건 중 3건이
+      "계산엔 있는데 화면엔 없다"였습니다. 코어가 화면을 붙일 때 같은 유형이 또 날 수 있습니다
+
