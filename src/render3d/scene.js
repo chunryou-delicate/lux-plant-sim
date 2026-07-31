@@ -52,7 +52,25 @@ export function createScene(canvas){
   ceilingBulb.shadow.autoUpdate=false; scene.add(ceilingBulb);
 
   // ctx: 렌더 상태 묶음 (room 빌드 후 winPos/glass/clShade 주입됨)
-  return { renderer, scene, cam, hemi, ambient, sunLight, winLight1, ceilingBulb,
+  /* ★ 창 확산광(sky portal) — 창 하나당 하나씩.
+     조도 엔진은 하늘을 '창 면적을 가진 램버시안 면광원'으로 본다. 그래서 거실처럼
+     직사광이 안 닿는 곳도 창에서 멀어질수록 서서히 어두워지는 분포가 나온다.
+     그런데 렌더러엔 그 확산광이 없었다 — 해(직사광) + 균일 환경광뿐이라
+     "발코니엔 볕이 들고 거실엔 아무것도 안 들어온다"로 보였다.
+     한낮엔 해가 높아 볕이 발코니에서 멈추는 게 맞지만(고도 66도 -> 1.03m),
+     거실이 받는 확산광까지 안 보이면 계산(거실 DLI 1.36)과 화면이 갈린다.
+     ★ winLight1 과 다른 점: '첫 창'이 아니라 모든 창에 똑같이 붙는다.
+       그래서 특정 방만 편애하지 않는다. */
+  const skyPortals=[];
+  for(let i=0;i<4;i++){
+    const sp=new THREE.SpotLight(0xeaf2ff, 0, 16, 1.15, 0.95, 1.4);
+    sp.castShadow = i<2;                      // 앞의 둘만 그림자(벽을 새지 않게). 비용 절충
+    if(sp.castShadow){ sp.shadow.mapSize.set(512,512); sp.shadow.autoUpdate=false;
+                       sp.shadow.bias=-0.0012; }
+    scene.add(sp, sp.target); skyPortals.push(sp);
+  }
+
+  return { renderer, scene, cam, hemi, ambient, sunLight, winLight1, ceilingBulb, skyPortals,
            winPos:null, glass:null, glassMeshes:null, clShade:null };
 }
 
@@ -90,13 +108,29 @@ export function updateLight(ctx, t, ceilingMode){
      태양 수정 때 sunLight 만 고치고 이건 놓쳤다. */
   ctx.winLight1.intensity=0;                 // 위 참조 — 첫 창에만 붙는 가짜 조명이라 껐다
 
+  /* 창 확산광 갱신 — 큰 창부터 채운다.
+     세기는 조도 엔진과 같은 인자를 쓴다: 면적 x 투과율(tau) x 향 계수(evScale).
+     면적을 그대로 곱하면 발코니 통창(22제곱m)이 폭주하므로 6에서 자른다 —
+     실제로도 창이 커질수록 밝기가 선형으로 늘지는 않는다(입체각이 포화). */
+  const portals=(ctx.skyPortals||[]);
+  const list=(ctx.skyWins||[]).slice().sort((a,b)=>(b.area*b.ev)-(a.area*a.ev));
+  for(let i=0;i<portals.length;i++){
+    const sp=portals[i], w=list[i];
+    if(!w){ sp.intensity=0; continue; }
+    const inx=w.nx||0, iny=w.ny||0, inz=w.nz||0;         // 실내를 향하는 법선
+    sp.position.set(w.x+inx*0.12, w.y+iny*0.12, w.z+inz*0.12);
+    sp.target.position.set(w.x+inx*4, w.y+iny*4-1.2, w.z+inz*4);
+    sp.intensity = 0.30 * Math.min(w.area,6) * (w.tau??0.8) * (w.ev??1) * s.intensity;
+    sp.color=col(mix(hx('#eaf2ff'),hx('#ffd9ae'),s.warm));
+  }
+
   // 환경광(채움): 낮엔 넉넉히 올려 그림자 바닥을 밝게 → 부드럽고 밝은 파스텔.
   // 밤엔 낮되 완전 0은 아님(칙칙함 방지). 온기는 sunLight.warm으로만.
-  /* 창 스팟을 끈 만큼 환경광으로 조금 메운다 — 방이 통째로 어두워지지 않게.
-     이건 방향이 없는 채움광이라 '어느 방만 밝다'가 안 생긴다. */
-  ctx.hemi.intensity=0.20+s.intensity*0.60;
+  /* 창 확산광이 생겼으므로 환경광은 낮게 유지 — 방향 없는 빛이 세면
+     방 안쪽이 창가와 구분이 안 돼서 "어디가 밝은지" 자체가 안 보인다. */
+  ctx.hemi.intensity=0.16+s.intensity*0.44;
   ctx.hemi.color=col(mix(hx('#bcd0e6'),s.sky,0.35));
-  ctx.ambient.intensity=0.09+s.intensity*0.28;
+  ctx.ambient.intensity=0.07+s.intensity*0.20;
 
   // 유리(창·유리벽) 하늘색 틴트 갱신 — clear 유리만(skyTint). 색조/간유리는 자기 색 유지.
   const glasses = ctx.glassMeshes || (ctx.glass?[ctx.glass]:[]);
@@ -114,6 +148,7 @@ export function updateLight(ctx, t, ceilingMode){
 
   // 조명이 바뀐 프레임에만 그림자맵 재생성 (autoUpdate=false 이므로 수동)
   ctx.sunLight.shadow.needsUpdate=true;
+  for(const sp of (ctx.skyPortals||[])) if(sp.castShadow) sp.shadow.needsUpdate=true;
   ctx.ceilingBulb.shadow.needsUpdate=true;
 
   return s.label;

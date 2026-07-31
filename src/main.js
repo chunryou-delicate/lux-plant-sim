@@ -84,6 +84,11 @@ async function buildRoomPreset(name){
   // ★ house.js가 진짜 창 + 유리벽(온실)을 합쳐 준다. 여기서 roomDef를 다시 읽지 않는다.
   curWins=(built.luxWins||[]).map(w=>
     winFromHouse(w.wall, w.cu, w.cy, w.w, w.h, built.size, w.tau, w.evScale, w.cz)).filter(Boolean);
+  /* 창 확산광용 — 조도 엔진이 쓰는 창 목록(curWins)을 그대로 넘긴다.
+     화면의 확산광과 계산의 천공 면광원이 같은 창·같은 계수를 보게 하려는 것이다. */
+  ctx.skyWins = curWins.map(w=>({ x:w.cx, y:w.cy, z:w.cz,
+                                  nx:w.nx||0, ny:w.ny||0, nz:w.nz||0,
+                                  area:w.width*w.height, tau:w.tau, ev:w.evScale }));
   curSlots=built.plantSlots||[];
   curOcc=built.occluders||[];
   curGlazed=built.glazedPanes||[];
