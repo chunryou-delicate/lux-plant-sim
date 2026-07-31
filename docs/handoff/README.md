@@ -27,6 +27,50 @@ docs/handoff/{내창}-to-{상대창}.md
 - [ ] ...
 ```
 
+## ★ 보고 규칙 (박사님 확정 2026-08-01)
+
+**대화로만 보고하지 않는다.** 그러면 박사님이 창 5개를 돌며 복붙해 전달하게 된다.
+
+작업이 끝나거나 중요한 결과가 나오면 **파일에도 남긴다**:
+
+```
+1. docs/handoff/{내창}-to-plan.md 에 결과를 쓴다   ← 전체 조율용
+2. 커밋 · 푸시                                    ← 푸시 안 하면 아무도 못 읽는다
+3. 대화 요약은 그대로 해도 된다. 파일에도 남기라는 것
+```
+
+**무엇을 쓰나** — 네 가지. 순서도 이대로:
+
+| | |
+|---|---|
+| **무엇을 했나** | 짧게 |
+| **발견한 것** | 예상과 달랐던 것 · 숫자 · 버그 |
+| **★ 다른 창이 알아야 할 것** | 인터페이스 변경 · 값이 바뀐 것 · 남의 전제를 깨는 것 |
+| **★ 판단이 필요한 것** | plan이 정해야 할 것. **선택지와 근거를 같이** |
+
+★ 표시 둘이 제일 중요하다 — **창을 가로질러 보는 사람에게 필요한 건 그 둘**이다.
+"무엇을 했나"는 커밋 로그에도 있지만, 저 둘은 여기 없으면 어디에도 없다.
+
+### ★ 그리고 `STATUS.md` 의 자기 섹션을 갱신한다 (2026-08-01)
+
+**`docs/handoff/STATUS.md`** 에 창별 섹션이 있다. 작업이 끝나면 **자기 섹션만** 갱신한다.
+
+```markdown
+## {내창}
+갱신: 2026-08-01 (커밋 abc1234)
+완료: (이번에 한 것 2~4줄)
+발견: (★다른 창이 알아야 할 것 — 없으면 생략)
+대기: (누구의 무엇을 기다리나)
+판단필요: (★사용자·plan이 정해야 할 것)
+```
+
+- **남의 섹션은 절대 건드리지 않는다.** 섹션이 나뉘어 있어 git이 자동 병합한다
+- **요약만.** 상세는 `{내창}-to-{상대}.md` 에
+- **커밋·푸시까지** — 푸시가 빠지면 안 쓴 것과 같다
+
+> plan은 `plan-to-plan.md`를 쓰지 않는다. 자기 섹션을 갱신하고,
+> 각 창의 `*-to-plan.md`를 읽어 판단이 필요한 것을 처리한다.
+
 ## 절차
 
 1. **작업 시작할 때** `docs/handoff/*-to-{내창}.md` 를 먼저 읽는다
@@ -49,7 +93,7 @@ docs/handoff/{내창}-to-{상대창}.md
 | `growth` | `plant_grow.html` |
 | `house` | `src/engine/*` · `src/render3d/*` · `data/*`(구조·에셋 정의) · `_dli_probe.html` · **`docs/engine/*`** |
 | `char` | `assets/characters/*` |
-| `leaf` | `assets/monstera/*` · 잎·작물 에셋 |
+| `leaf` | `assets/monstera/*` · 잎·작물 에셋 · **`docs/assets/*`** |
 | **`core`** ★ | **`src/game/*` · `game.html`** (신설 — 게임 루프) |
 | **`plan`** | **`docs/*`**(`docs/engine/` 제외) · **`data/balance/*`**. 그 외 코드 파일 0개. |
 
@@ -64,6 +108,7 @@ docs/handoff/{내창}-to-{상대창}.md
 |---|---|---|
 | `docs/engine/` | **house** | 조도 물리·회귀 기준선. **코드와 같이 움직여야 한다** |
 | | | `light_contract` · `lux_sampling` · `greenhouse_plan` · `rooms_progression` |
+| `docs/assets/` | **leaf** | 에셋 규격·파이프라인. **에셋과 같이 움직여야 한다** (2026-08-01) |
 | `docs/` 나머지 | **plan** | 기획. `balance_decisions` · `env_difficulty_axis` 포함 |
 
 **남의 파일은 절대 직접 수정 금지.** `git add` 파일 지정으로는 못 막는다는 게
@@ -82,9 +127,9 @@ data/balance/   plan  — 튜닝값
                   light_thresholds.json · growth_tuning.json   ← 이동 대기
 ```
 
-> `homes.json`은 **한 파일을 둘이 나눠 쓴다.**
-> plan = `rent`·`deposit`·`moveCost`·`utility`·`notes` / house = `peakDLI`·`slots`(실측으로 덮어씀).
-> 서로의 필드를 건드리지 않는다.
+> **빛 실측과 경제는 완전히 분리됐다**(2026-07-26). 한 파일을 나눠 쓰지 않는다 —
+> 빛 실측은 `data/house_rooms.json` → `rooms.{id}.measured`(house),
+> 경제는 `data/balance/homes.json`(plan).
 
 **임계값·계수가 아직 코드 안에 있으면 handoff로 `data/balance/` 외부화를 요청한다.**
 그게 이 충돌의 근본 해결이다. 자세한 현황은 `data/balance/README.md`.

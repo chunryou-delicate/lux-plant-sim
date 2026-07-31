@@ -1,0 +1,74 @@
+{
+  "schema": "acceptance/1",
+  "_doc": [
+    "★ 밸런스 합격 조건. 자동 시뮬이 그대로 판정에 쓴다.",
+    "왜 그 범위인지는 docs/balance_decisions.md 「판정 기준」 절에 있다 — 값만 보고 고치지 말 것.",
+    "",
+    "하한 = 이 아래면 압박이 없다(게임이 성립하지 않음)",
+    "상한 = 이 위면 고행이다(플레이어가 그만둠)",
+    "pending_remeasure: true = 방 재측정 대기(GAME_PLAN §6-0). 값은 잠정."
+  ],
+  "revised": "2026-08-01",
+
+  "economy": {
+    "jachwi_first_move_days":   { "min": 75, "max": 120, "fail_low": 30, "fail_high": 150, "pending_remeasure": true },
+    "jachwi_bankrupt_only_on_mismanagement": { "expect": true, "current": "FAIL — 관리해도 파산한다" },
+    "breadwinner_food_defense_pct": { "min": 60, "max": 80, "why": "100%면 압박 소멸, 40%↓면 작물 무의미" },
+    "researcher_paper_turns":   { "min": 30, "max": 45, "fail_high": 60 },
+    "researcher_graduate_turns":{ "min": 100, "max": 150 },
+    "researcher_seed_cost_lt_seedling_income": { "expect": true },
+    "housewife_no_bankruptcy":  { "expect": true }
+  },
+
+  "light": {
+    "_pending_remeasure": true,
+    "banjiha_lamp1_goodspot_fenestrates":  { "expect": true,  "note": "★튜토 핵심 학습" },
+    "banjiha_lamp1_badspot_fenestrates":   { "expect": false, "note": "★★이 대비가 '자리가 등보다 크다'의 증명" },
+    "apartment_winter_below_min":          { "expect": true,  "min": 3.0 },
+    "greenhouse_summer_avg7":              { "min": 6.5 },
+    "apartment_summer_avg7":               { "min": 3.5, "max": 4.5 },
+    "overlight_reachable_rooms_natural":   { "equals": ["greenhouse"] },
+    "variegated_stalls_in_apartment":      { "expect": true, "threshold": 4.2 }
+  },
+
+  "probability": {
+    "rare_managed_over_neglected": { "min": 4, "max": 8, "current": 5.6,
+      "why": "3배↓ 관리 보상 약함 / 10배↑ 운 게임" },
+    "varieProb_managed":   { "min": 0.35, "max": 0.45, "current": 0.39 },
+    "varieProb_neglected": { "min": 0.05, "max": 0.10, "current": 0.07 },
+    "researcher_repro3_turns": { "min": 20, "max": 35 }
+  },
+
+  "time": {
+    "tutorial_game_days":     { "min": 60, "max": 100, "target": 80 },
+    "tutorial_realtime_min":  { "min": 30, "max": 50, "fail_high": 90 },
+    "crop_vs_foliage_ratio":  { "min": 3, "target": 10 },
+    "monstera_first_leaf_days": { "equals": 11 },
+    "slow_mode_days_per_2h_session": { "min": 3, "target": 4 }
+  },
+
+  "character_divergence": {
+    "_doc": "막히는 축이 넷 다 달라야 한다. 둘 이상이 같으면 캐릭터가 스킨이다.",
+    "jachwi":     { "axis": "time",        "first_income_days_min": 40 },
+    "breadwinner":{ "axis": "space",       "needed_shelves_gt_dark_slots": true },
+    "researcher": { "axis": "probability", "same_variegation_3_turns_min": 20 },
+    "housewife":  { "axis": "maintenance", "bought_albo_stalls": true },
+    "all_axes_distinct": { "expect": true }
+  },
+
+  "_not_measurable": {
+    "_doc": [
+      "★ 시뮬이 못 잡는 것. 이걸 명시하지 않으면 '숫자가 다 통과했으니 재밌다'고 착각한다.",
+      "실플레이로만 보인다 — 헌법의 '재미 확인이 항상 앞'이 그래서 유효하다."
+    ],
+    "items": [
+      "지루한가 (game_flow §4 'day 0~40 진행감 0' — 파산도 안 하고 목표도 도달하는데 할 게 없다)",
+      "답답한가",
+      "보상이 체감되나",
+      "원인을 이해했나 (A4 말 피드백이 '왜 안 자라는지'를 알려주는가)",
+      "'등을 켜니 갈라졌다'가 감동적인가",
+      "peak 함정 — 숫자는 맞는데 플레이어가 속는 경우"
+    ],
+    "role_of_sim": "시뮬은 '틀린 것'을 걸러낼 뿐 '재미'를 증명하지 못한다. 실플레이 앞을 지킨다."
+  }
+}
