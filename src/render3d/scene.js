@@ -77,8 +77,13 @@ export function updateLight(ctx, t, ceilingMode){
   ctx.sunLight.intensity=s.intensity*1.55;   // 살짝 낮춰 그림자 대비↓(무겁지 않게). 밤엔 0
   ctx.sunLight.color=col(mix(hx('#fff3e2'),hx('#ff9d5c'),s.warm));
 
+  /* ★ 창 보조광도 해와 '같은 방향'으로 쏴야 한다.
+     여기만 옛 방식이 남아 있었다 — 첫 창에 세워두고 (1.5,0,2) 를 겨누게 해서,
+     세기만 해 높이를 따라가고 방향은 절대 안 바뀌었다.
+     투룸은 첫 창이 침실 창이라 침실에 '해가 움직여도 그대로인 빛 자국'이 생겼다.
+     태양 수정 때 sunLight 만 고치고 이건 놓쳤다. */
   ctx.winLight1.position.set(wp.x,wp.y+0.3,wp.z+0.3);
-  ctx.winLight1.target.position.set(1.5,0,2);
+  ctx.winLight1.target.position.set(wp.x-dir.x*5, 0, wp.z-dir.z*5);
   ctx.winLight1.intensity=s.intensity*2.0;   // 밤엔 창 스팟도 0
   ctx.winLight1.color=col(mix(hx('#fff6e6'),hx('#ffb874'),s.warm));
 
