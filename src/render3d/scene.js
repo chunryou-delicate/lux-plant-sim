@@ -62,9 +62,13 @@ export function createScene(canvas){
      ★ winLight1 과 다른 점: '첫 창'이 아니라 모든 창에 똑같이 붙는다.
        그래서 특정 방만 편애하지 않는다. */
   const skyPortals=[];
-  for(let i=0;i<4;i++){
-    const sp=new THREE.SpotLight(0xeaf2ff, 0, 16, 1.15, 0.95, 1.4);
-    sp.castShadow = i<2;                      // 앞의 둘만 그림자(벽을 새지 않게). 비용 절충
+  /* 16개 — 온실이 3면 유리+천창이라 토막이 16개 나온다(다른 방은 1~5개).
+     그림자를 던지는 건 앞의 둘뿐이라 나머지는 셰이더 비용만 든다. */
+  for(let i=0;i<16;i++){
+    /* 거리를 9m 로 제한한다 — 확산광은 창 근처를 밝히는 것이지 집 전체를 관통하면 안 된다.
+       그림자는 앞의 둘만(512) — 전부 켜면 그림자맵이 16장이라 감당이 안 된다. */
+    const sp=new THREE.SpotLight(0xeaf2ff, 0, 9, 1.2, 0.95, 1.6);
+    sp.castShadow = i<2;
     if(sp.castShadow){ sp.shadow.mapSize.set(512,512); sp.shadow.autoUpdate=false;
                        sp.shadow.bias=-0.0012; }
     scene.add(sp, sp.target); skyPortals.push(sp);

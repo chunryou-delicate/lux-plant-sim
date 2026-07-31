@@ -1,0 +1,24 @@
+<!doctype html><meta charset="utf-8"><title>확산광 포털</title><body style="background:#111;color:#ddd;font:12px/1.6 monospace;padding:12px"><pre id="o">…</pre>
+<script src="https://unpkg.com/three@0.128.0/build/three.min.js"></script>
+<script type="module">
+import { buildHouse } from './src/render3d/house.js';
+import { winFromHouse } from './src/engine/daylight_lux.js';
+const J=p=>fetch(p).then(r=>r.json());
+const [HR,WP,DP,FIN,FP,LP,SH]=await Promise.all(['./data/house_rooms.json','./data/window_presets.json','./data/door_presets.json','./data/room_finishes.json','./data/furniture_presets.json','./data/lighting_presets.json','./data/shading_presets.json'].map(J));
+const NA={banjiha:'반지하',oneroom:'원룸',tworoom:'투룸',classroom:'학원교실',apartment:'아파트',greenhouse:'온실'};
+const SEG=2.2, POOL=12;
+const L=['# 창 확산광 포털 — 방마다 몇 개가 어디에 서나','',
+ '| 방 | 창 | 토막(포털) | 풀 12개로 충분? | 포털 x 위치 |','|---|---|---|---|---|'];
+for(const k in NA){
+  const b=buildHouse(null,HR.rooms[k],WP.presets||WP,DP.presets||DP,FIN,FP.presets||FP,LP,SH);
+  const wins=(b.luxWins||[]).map(w=>winFromHouse(w.wall,w.cu,w.cy,w.w,w.h,b.size,w.tau,w.evScale,w.cz)).filter(Boolean);
+  const ps=[];
+  for(const w of wins){
+    const n=Math.max(1,Math.min(4,Math.round(w.width/SEG))), ux=w.ux||0,uy=w.uy||0,uz=w.uz||0;
+    for(let i=0;i<n;i++){ const t=(i-(n-1)/2)*(w.width/n);
+      ps.push({x:+(w.cx+ux*t).toFixed(1), z:+(w.cz+uz*t).toFixed(1), a:+((w.width/n)*w.height).toFixed(1)}); }
+  }
+  L.push(`| ${NA[k]} | ${wins.length} | **${ps.length}** | ${ps.length<=POOL?'✅':'★ 넘침 '+ps.length} | ${ps.slice(0,12).map(p=>p.x).join(', ')} |`);
+}
+document.getElementById('o').textContent=L.join('\n'); document.title='DONE';
+</script>

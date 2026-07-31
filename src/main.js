@@ -85,10 +85,28 @@ async function buildRoomPreset(name){
   curWins=(built.luxWins||[]).map(w=>
     winFromHouse(w.wall, w.cu, w.cy, w.w, w.h, built.size, w.tau, w.evScale, w.cz)).filter(Boolean);
   /* 창 확산광용 — 조도 엔진이 쓰는 창 목록(curWins)을 그대로 넘긴다.
-     화면의 확산광과 계산의 천공 면광원이 같은 창·같은 계수를 보게 하려는 것이다. */
-  ctx.skyWins = curWins.map(w=>({ x:w.cx, y:w.cy, z:w.cz,
-                                  nx:w.nx||0, ny:w.ny||0, nz:w.nz||0,
-                                  area:w.width*w.height, tau:w.tau, ev:w.evScale }));
+     화면의 확산광과 계산의 천공 면광원이 같은 창·같은 계수를 보게 하려는 것이다.
+
+     ★ 넓은 창은 토막 내서 넘긴다.
+       조도 엔진은 창을 격자로 잘게 나눠 면광원으로 적분한다(발코니 통창은 64×27).
+       그런데 화면 쪽에서 창 하나를 점광원 하나로 두면 **창 한가운데만 밝다** —
+       11.2m 발코니 통창이 거실만 비추고 안방·방1은 어두웠던 이유다.
+       면광원을 점 하나로 줄인 게 원인이므로, 폭을 2m 남짓으로 잘라 여러 개로 둔다. */
+  const SEG = 2.2;                                  // 토막 하나의 목표 폭 [m]
+  ctx.skyWins = [];
+  for(const w of curWins){
+    const n = Math.max(1, Math.min(4, Math.round(w.width / SEG)));
+    const ux = w.ux||0, uy = w.uy||0, uz = w.uz||0;  // 창의 가로 방향 단위벡터
+    for(let i=0;i<n;i++){
+      const t = (i - (n-1)/2) * (w.width / n);       // 토막 중심의 u 오프셋
+      ctx.skyWins.push({
+        x: w.cx + ux*t, y: w.cy + uy*t, z: w.cz + uz*t,
+        nx: w.nx||0, ny: w.ny||0, nz: w.nz||0,
+        area: (w.width/n) * w.height,                // 토막 면적 — 세기가 창 전체로 보존된다
+        tau: w.tau, ev: w.evScale
+      });
+    }
+  }
   curSlots=built.plantSlots||[];
   curOcc=built.occluders||[];
   curGlazed=built.glazedPanes||[];
