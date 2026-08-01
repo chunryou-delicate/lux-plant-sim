@@ -158,3 +158,34 @@ usePlant(slotId, () => { setDailyLight(report, slotId); nextDay(); });
 
 **착수 조건은 "core가 실제로 화분을 둘 이상 굴리기 시작할 때"다.** 그전에 만들면
 쓰이지 않는 구조가 된다. 시작하면 이 파일에 어댑터 형태를 먼저 적겠다.
+
+---
+
+## ★ 호출 변경 요청 — `setGrowth` → `advanceTo` (2026-08-01)
+
+저광이면 형태 진행이 멈추게 했다(BLOCKER). 달력 경과일과 유효 생장 진행도를 갈랐다.
+
+```js
+// 지금 — 저광 정지가 무시된다
+setDailyLight(dli);  setGrowth(pot.daysPlanted);
+
+// 바꿀 것
+setDailyLight(dli);  advanceTo(pot.daysPlanted);
+```
+
+- `advanceTo(달력날짜)` — 달력을 그 날짜로 옮기고, **`dliAvg(7) >= 3.0`일 때만** 유효 생장이 쌓인다.
+  반환값 `{ calDay, growth, grew }`
+- `setGrowth(v)` — **점프**다(디버그 슬라이더·처음·끝 버튼). 달력 날짜를 넣으면 저광 구간이 그냥 넘어간다.
+  그대로 두면 콘솔에 경고가 한 번 뜬다
+
+읽기용으로 넷을 더 냈다.
+
+```js
+calendarDay()   // 달력 경과일
+growthDays()    // 유효 생장 진행도 (형태를 결정)
+isGrowing()     // 지금 자라는 중인가 (저광 정지 아님)
+plantSeed(v)    // 개체 시드 읽기/쓰기
+```
+
+**표시 제안**: `isGrowing()===false`면 "빛이 모자라 자라지 않는 중"을 띄우면 좋겠다.
+날짜만 가고 아무 일도 안 일어나면 플레이어가 버그로 읽는다.
