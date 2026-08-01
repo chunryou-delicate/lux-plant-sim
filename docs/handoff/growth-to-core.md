@@ -138,3 +138,23 @@ house가 확정하면 growth도 같은 커밋 주기에 맞춰 바꾼다 — 그
 
 지출·수입·수확·저장·상점·식비. 전부 코어 몫이다.
 여기엔 "얼마나 자랐나"만 있고 죽음·수확 개념 자체가 없다.
+
+---
+
+## 다개체 — 설계 끝났다. 착수는 요청 시점
+
+`growth-multiplant-design.md` 참고. 요지만:
+
+- 전역 78개를 전수 조사했더니 **진짜 지속 상태는 8개뿐**이다
+  (`seed·day·slotId·dli·dliHist·propMode·vigor·group`). 나머지는 매 빌드 파생값이거나 공용이다
+- 개체 상태를 만지는 함수가 42개라 **인자를 추가하지 않는다.** 생장이 동기 처리라
+  `usePlant(id, fn)` 으로 전역을 꽂았다 되돌리는 방식이면 **호출부가 안 바뀐다**
+- `import { createPlant }` 형태를 원하면 ES 모듈로 낼 때 같이 한다. 그전까지는 위 방식으로 충분하다
+
+```js
+addPlant({ slotId, seed, day });
+usePlant(slotId, () => { setDailyLight(report, slotId); nextDay(); });
+```
+
+**착수 조건은 "core가 실제로 화분을 둘 이상 굴리기 시작할 때"다.** 그전에 만들면
+쓰이지 않는 구조가 된다. 시작하면 이 파일에 어댑터 형태를 먼저 적겠다.
