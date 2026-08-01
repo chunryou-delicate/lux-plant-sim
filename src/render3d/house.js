@@ -871,6 +871,12 @@ export function buildHouse(GRAIN, roomDefIn, winPresets, doorPresets={}, finishe
       g.userData={ normal: ax==='x'?[1,0,0]:[0,0,1],
                    center: ax==='x'?[at,CH/2,c]:[c,CH/2,at],
                    partition:true, plane:{ axis:ax, at } };
+      /* ★ 조도 차폐체로도 등록한다. 빠뜨리고 있었다 —
+         화면은 막는데 계산은 통과라 T자 평면(아파트)에서 39건이 어긋났다.
+         도려낸 자리는 '집 밖'이라 이 벽은 창이 없는 통짜다. 개구부를 뺄 필요가 없다. */
+      occluders.push(ax==='x'
+        ? { x:at-WT/2, z:u0, w:WT, d:len, h:CH, y0:0, rot:0, src:'cutwall' }
+        : { x:u0, z:at-WT/2, w:len, d:WT, h:CH, y0:0, rot:0, src:'cutwall' });
       g.userData._h=CH; shells['cut_'+(ci++)]=g; room.add(g);
     };
     for(const c of cutouts){
@@ -990,15 +996,18 @@ function tileGlassFrames(room, wall, uMin, uMax){
     const z0 = uMin!==undefined ? uMin : -CD/2, z1 = uMax!==undefined ? uMax : CD/2;
     const frame=buildWindowFrame(CW-0.1, (z1-z0)-0.1, opts);
     frame.rotation.x=Math.PI/2; frame.position.set(0, CH-0.01, (z0+z1)/2);
-    /* 격자살은 실제로 빛을 막는 부재다 — 유리와 달리 그림자를 던진다 */
-    markShadow(frame, SHADOW_ROLE.BLOCK);
+    /* ★ 창틀과 같은 취급 — transparent.
+       조도 엔진은 창틀·격자살을 모델링하지 않는다(개구부 전체를 면광원으로 본다).
+       여기만 blocker 로 두면 화면에만 있는 차폐가 되어 계산과 갈린다 —
+       실제로 온실에서 대조 검사 362건이 이것 때문이었다. */
+    markShadow(frame, SHADOW_ROLE.CLEAR, {force:true});   // 빌더가 BLOCK 을 붙여놔서 force 가 필요하다
     room.add(frame); return;
   }
   // 수직 유리벽: 벽 전체 크기 프레임
   const width=uMax-uMin;
   const frame=buildWindowFrame(width-0.02, CH-0.02, opts);
   placeInWall(frame, wall, (uMin+uMax)/2, CH/2);
-  markShadow(frame, SHADOW_ROLE.BLOCK);
+  markShadow(frame, SHADOW_ROLE.CLEAR, {force:true});   // 위와 같은 이유 — 창틀은 계산에 없다
   room.add(frame);
 }
 
