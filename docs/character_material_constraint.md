@@ -1,5 +1,12 @@
 # 캐릭터 머티리얼 제약 — Meshy는 아틀라스 한 장으로 굽는다
 
+> ⏸ **보류 (2026-08-01)** — 색 커스터마이징을 접었다(char 창 결정).
+> 마스크 우회법은 **지금은 안 쓰는 기법**이다. 기록으로 남긴다.
+>
+> ★ 근거가 강력하다 — 남주부 셔츠가 그의 얼굴과 색도거리 **0.0247** 로
+> 남연구원 **손(0.0374)보다 얼굴에 가깝다.** **어떤 색공간으로도 못 가른다.**
+> 필요하면 **모델 생성 단계에서 부위를 나눠 뽑아야** 한다(캐릭터 8종 재작업 비용).
+
 작성 2026-07-25 · 대상 `assets/characters/3d/`
 
 ## 요지
@@ -29,7 +36,7 @@ Meshy `multi_image_to_3d`는 머리·눈·옷·피부를 **2048² 아틀라스 �
 같은 UV를 쓰는 마스크 텍스처를 만들어 셰이더나 캔버스에서 **텍셀 단위로 부위를
 골라낸다.** 머티리얼 분리와 같은 결과를 얻는다.
 
-도구: `tools/make_part_mask.py` → `assets/characters/masks/{char}_mask.png`
+도구: `tools/char/make_part_mask.py` → `assets/characters/masks/{char}_mask.png`
 
 분류 방법 (두 단계가 모두 필요하다)
 
@@ -98,8 +105,8 @@ Hips, LeftUpLeg, LeftLeg, LeftFoot, LeftToeBase, RightUpLeg, RightLeg, ... (24�
 
 ## 관련
 
-- `tools/make_part_mask.py` — 마스크 생성
+- `tools/char/make_part_mask.py` — 마스크 생성
 - `assets/characters/color_shift.html` — 색시프트 검증 뷰어
-- `tools/rescale_char_glb.py` — 실스케일 (재실행 안전)
-- `tools/make_lq_glb.py` — 경량본 (재실행 안전)
+- `tools/char/rescale_char_glb.py` — 실스케일 (재실행 안전)
+- `tools/char/make_lq_glb.py` — 경량본 (재실행 안전)
 - `assets/characters/manifest.json` → `lq`, `scale` 블록

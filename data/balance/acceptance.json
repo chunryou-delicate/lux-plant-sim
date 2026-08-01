@@ -9,53 +9,174 @@
     "pending_remeasure: true = 방 재측정 대기(GAME_PLAN §6-0). 값은 잠정."
   ],
   "revised": "2026-08-01",
-
   "economy": {
-    "jachwi_first_move_days":   { "min": 75, "max": 120, "fail_low": 30, "fail_high": 150, "pending_remeasure": true },
-    "jachwi_bankrupt_only_on_mismanagement": { "expect": true, "current": "FAIL — 관리해도 파산한다" },
-    "breadwinner_food_defense_pct": { "min": 60, "max": 80, "why": "100%면 압박 소멸, 40%↓면 작물 무의미" },
-    "researcher_paper_turns":   { "min": 30, "max": 45, "fail_high": 60 },
-    "researcher_graduate_turns":{ "min": 100, "max": 150 },
-    "researcher_seed_cost_lt_seedling_income": { "expect": true },
-    "housewife_no_bankruptcy":  { "expect": true }
+    "jachwi_first_move_days": {
+      "min": 75,
+      "max": 120,
+      "fail_low": 30,
+      "fail_high": 150,
+      "pending_remeasure": true
+    },
+    "jachwi_bankrupt_only_on_mismanagement": {
+      "expect": true,
+      "current": "FAIL — 관리해도 파산한다"
+    },
+    "breadwinner_food_defense_pct": {
+      "min": 60,
+      "max": 80,
+      "why": "100%면 압박 소멸, 40%↓면 작물 무의미"
+    },
+    "researcher_paper_turns": {
+      "min": 30,
+      "max": 45,
+      "fail_high": 60
+    },
+    "researcher_graduate_turns": {
+      "min": 100,
+      "max": 150
+    },
+    "researcher_seed_cost_lt_seedling_income": {
+      "expect": true
+    },
+    "housewife_no_bankruptcy": {
+      "expect": true
+    }
   },
-
   "light": {
     "_pending_remeasure": true,
-    "banjiha_lamp1_goodspot_fenestrates":  { "expect": true,  "note": "★튜토 핵심 학습" },
-    "banjiha_lamp1_badspot_fenestrates":   { "expect": false, "note": "★★이 대비가 '자리가 등보다 크다'의 증명" },
-    "apartment_winter_below_min":          { "expect": true,  "min": 3.0 },
-    "greenhouse_summer_avg7":              { "min": 6.5 },
-    "apartment_summer_avg7":               { "min": 3.5, "max": 4.5 },
-    "overlight_reachable_rooms_natural":   { "equals": ["greenhouse"] },
-    "variegated_stalls_in_apartment":      { "expect": true, "threshold": 4.2 }
+    "banjiha_lamp1_goodspot_fenestrates": {
+      "expect": true,
+      "fenWeekPct_min": 60,
+      "note": "★튜토 핵심 학습. core 실측 avg7 12.16 → 100%"
+    },
+    "banjiha_lamp1_badspot_fenestrates": {
+      "expect": false,
+      "fenWeekPct_max": 20,
+      "note": "★★이 대비가 \"자리가 등보다 크다\"의 증명. core 실측 0.08 → 0%"
+    },
+    "apartment_winter_below_min": {
+      "expect": true,
+      "min": 3
+    },
+    "greenhouse_summer_avg7": {
+      "min": 6.5
+    },
+    "apartment_summer_avg7": {
+      "min": 3.5,
+      "max": 4.5
+    },
+    "overlight_reachable_rooms_natural": {
+      "equals": [
+        "greenhouse"
+      ]
+    },
+    "variegated_stalls_in_apartment": {
+      "expect": true,
+      "threshold": 4.2
+    },
+    "_fenestration_threshold": {
+      "_doc": "★ core 판단요청 답 — expect true/false 를 \"문턱 넘는 주 %\"로 바꾼다. 경계(20~60%)는 실패로 본다: 설계 의도가 아닌 40%짜리 방은 밸런싱이 우연에 걸린 것이다(아파트 마진 0.3% 사고가 그 유형).",
+      "metric": "fenWeekPct",
+      "pass_min_pct": 60,
+      "borderline_is_fail": [
+        20,
+        60
+      ],
+      "fail_max_pct": 20
+    }
   },
-
   "probability": {
-    "rare_managed_over_neglected": { "min": 4, "max": 8, "current": 5.6,
-      "why": "3배↓ 관리 보상 약함 / 10배↑ 운 게임" },
-    "varieProb_managed":   { "min": 0.35, "max": 0.45, "current": 0.39 },
-    "varieProb_neglected": { "min": 0.05, "max": 0.10, "current": 0.07 },
-    "researcher_repro3_turns": { "min": 20, "max": 35 }
+    "rare_managed_over_neglected": {
+      "min": 4,
+      "max": 8,
+      "current": 5.6,
+      "why": "3배↓ 관리 보상 약함 / 10배↑ 운 게임"
+    },
+    "varieProb_managed": {
+      "min": 0.35,
+      "max": 0.45,
+      "current": 0.39
+    },
+    "varieProb_neglected": {
+      "min": 0.05,
+      "max": 0.1,
+      "current": 0.07
+    },
+    "researcher_repro3_turns": {
+      "min": 20,
+      "max": 35
+    },
+    "individual_potential": {
+      "_doc": "개체 소질 2층 구조 (2026-08-01 확정). 잎 발현 = base × grades.mult × fLight × fStable",
+      "base": 0.1,
+      "grades": {
+        "plain": {
+          "p": 0.7,
+          "mult": 0
+        },
+        "normal": {
+          "p": 0.25,
+          "mult": 1
+        },
+        "potential": {
+          "p": 0.04,
+          "mult": 2.5
+        },
+        "elite": {
+          "p": 0.01,
+          "mult": 6
+        }
+      },
+      "lineage_pool": "MAT_TREE_MAIN (10그룹)",
+      "selection_works": "첫 잎 무늬율 — plain 0% / normal 20% / potential 49% / elite 100%. 첫 잎만 보고 소질을 알 수 있어야 실생 선발이 성립한다",
+      "researcher_paper_turns_check": "온실 45슬롯 · 회전 11일 → 같은 계열 3개까지 3~4회전 = 33~44일 (목표 30~45턴 통과)"
+    }
   },
-
   "time": {
-    "tutorial_game_days":     { "min": 60, "max": 100, "target": 80 },
-    "tutorial_realtime_min":  { "min": 30, "max": 50, "fail_high": 90 },
-    "crop_vs_foliage_ratio":  { "min": 3, "target": 10 },
-    "monstera_first_leaf_days": { "equals": 11 },
-    "slow_mode_days_per_2h_session": { "min": 3, "target": 4 }
+    "tutorial_game_days": {
+      "min": 60,
+      "max": 100,
+      "target": 80
+    },
+    "tutorial_realtime_min": {
+      "min": 30,
+      "max": 50,
+      "fail_high": 90
+    },
+    "crop_vs_foliage_ratio": {
+      "min": 3,
+      "target": 10
+    },
+    "monstera_first_leaf_days": {
+      "equals": 11
+    },
+    "slow_mode_days_per_2h_session": {
+      "min": 3,
+      "target": 4
+    }
   },
-
   "character_divergence": {
     "_doc": "막히는 축이 넷 다 달라야 한다. 둘 이상이 같으면 캐릭터가 스킨이다.",
-    "jachwi":     { "axis": "time",        "first_income_days_min": 40 },
-    "breadwinner":{ "axis": "space",       "needed_shelves_gt_dark_slots": true },
-    "researcher": { "axis": "probability", "same_variegation_3_turns_min": 20 },
-    "housewife":  { "axis": "maintenance", "bought_albo_stalls": true },
-    "all_axes_distinct": { "expect": true }
+    "jachwi": {
+      "axis": "time",
+      "first_income_days_min": 40
+    },
+    "breadwinner": {
+      "axis": "space",
+      "needed_shelves_gt_dark_slots": true
+    },
+    "researcher": {
+      "axis": "probability",
+      "same_variegation_3_turns_min": 20
+    },
+    "housewife": {
+      "axis": "maintenance",
+      "bought_albo_stalls": true
+    },
+    "all_axes_distinct": {
+      "expect": true
+    }
   },
-
   "_not_measurable": {
     "_doc": [
       "★ 시뮬이 못 잡는 것. 이걸 명시하지 않으면 '숫자가 다 통과했으니 재밌다'고 착각한다.",

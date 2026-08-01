@@ -91,8 +91,8 @@ docs/handoff/{내창}-to-{상대창}.md
 | 창 | 소유 파일 |
 |---|---|
 | `growth` | `plant_grow.html` |
-| `house` | `src/engine/*` · `src/render3d/*` · `data/*`(구조·에셋 정의) · `_dli_probe.html` · **`docs/engine/*`** |
-| `char` | `assets/characters/*` |
+| `house` | `src/engine/*` · `src/render3d/*` · `data/*`(구조·에셋 정의) · **`data/room_profiles/*`** · `_dli_probe.html` · **`docs/engine/*`** |
+| `char` | `assets/characters/*` · **`tools/char/*`** · **`assets/derived/*`** |
 | `leaf` | `assets/monstera/*` · 잎·작물 에셋 · **`docs/assets/*`** |
 | **`core`** ★ | **`src/game/*` · `game.html`** (신설 — 게임 루프) |
 | **`plan`** | **`docs/*`**(`docs/engine/` 제외) · **`data/balance/*`**. 그 외 코드 파일 0개. |

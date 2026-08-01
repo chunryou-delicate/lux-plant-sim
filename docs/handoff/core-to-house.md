@@ -165,6 +165,23 @@ for (const w of ['clear', 'cloudy', 'rain']) mean += (pw[w] || 0) * call(w, seas
 이러면 자연광만일 때 값이 지금과 같고(선형이라 동일), 등이 섞여도 맞습니다.
 반영되면 코어의 우회를 지우겠습니다.
 
+## ★ 협의 요청 — `data/profiles/` 에 프로파일 6개를 넣었습니다
+
+박사님이 "리포에 두자"고 결정하셔서 넣었습니다. **`data/` 가 house 소유라 사후 협의를 청합니다.**
+
+```
+data/profiles/room_profile.{banjiha,oneroom,tworoom,classroom,apartment,greenhouse}.json
+합계 44KB (교실 15.1 · 아파트 11.5 · 온실 9.3 · 투룸 3.3 · 반지하 2.6 · 원룸 2.1)
+```
+
+- **house 코드는 하나도 안 바뀝니다.** `light_adapter.profile()` 이 `buildHouse` 결과에서 뽑습니다
+- 내용은 `{slotId, point, ratio, ppfd[]}` 뿐입니다. `ratio` 는 `daylightRatio` 결과 그대로입니다
+- **위치가 마음에 안 드시면 옮기셔도 됩니다** — 코어는 경로 상수 한 줄만 고칩니다.
+  `data/` 를 구조·에셋 정의만으로 두고 싶으시면 말씀해 주세요
+- ⚠ **방 구조를 바꾸시면 프로파일이 낡습니다.** 지금은 수동 재생성입니다
+  (`game.html` 의 [방 프로파일 ⭳]). `roomRev` 같은 표시를 넣어 두면 자동 검출이 가능한데,
+  `measured.roomRev` 를 프로파일에도 복사해 둘까요? 그러면 어긋날 때 코어가 경고할 수 있습니다
+
 ## 보고 — 방 프로파일을 뽑아 씁니다 (house 코드 변경 없음)
 
 밸런스 자동 시뮬을 헤드리스로 돌리려는데, 매번 방을 조립할 이유가 없어서

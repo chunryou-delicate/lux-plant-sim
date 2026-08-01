@@ -158,6 +158,81 @@ tools/         공용        serve.py   (고치기 전 알리기 · 급하면 �
 
 ---
 
+## 추가 (2026-08-01) · 캐릭터별 성격 = idle 변주 — **새 모션 0건, 크레딧 0**
+
+박사님이 ㉮안(기본 idle 공용 + 간헐 변주)을 확정하셨습니다. 처음엔 Meshy 로 idle 3~4종을
+새로 뽑을 생각이었는데(12cr), **재보니 기존 16종으로 됩니다.** Meshy 잔액이 22cr뿐이고
+leaf가 토마토·고추에 90cr 필요하다고 올린 상태라 안 쓰는 쪽이 맞습니다.
+
+`tools/char/check_idle_break.py` 로 16종을 전수 측정했습니다. **서서 하고 · 끝자세가
+시작으로 돌아오는** 클립만 고른 결과입니다.
+
+| 판정 | 클립 |
+|---|---|
+| 서서 하는 변주 **10종** | `wave` `cheer` `listen` `heart` `happyjump` `harvest` `scratch` `opendoor` `pickup` `sleep` |
+| 앉음·누움이라 부적합 | `sit`(Hips 72%) · `harvest_crouch`(68%) · `doze`(55%) |
+| 끝자세가 안 돌아옴 | `repot`(46도) · `inspect`(91도) — 끼워 넣으면 idle 로 복귀할 때 툭 튑니다 |
+| 조건부 | `nod` — 자세는 되는데 **13초**라 깁니다 |
+
+> Hips 높이는 rest 대비 %입니다. **범위가 아니라 절대 높이**로 재야 합니다 —
+> 처음부터 앉아 있는 `sit` 은 "안 움직이니 서 있다"로 오판됩니다(제가 처음에 그랬습니다).
+
+### 붙일 것 — 변주 배정 + 재생
+
+```js
+// 캐릭터별 성격 = 기본 idle 공용 + 간헐 변주 (박사님 확정 ㉮안, 2026-08-01)
+// 새 모션 생성 0건. 아래 클립은 전부 assets/characters/3d/anim/ 에 이미 있다.
+const IDLE_BREAK = {
+  char_namja_jachwi    : ['scratch'],            // 자취 — 긁적, 무심
+  char_jachwi_f        : ['scratch'],
+  char_namja_gajang    : ['listen'],             // 가장 — 팔 내리고 듣는 자세
+  char_yeoja_gajang    : ['listen'],
+  char_namja_jubu      : ['pickup', 'harvest'],  // 주부 — 손이 바쁘다
+  char_yeoja_jubu      : ['pickup', 'harvest'],
+  char_namja_researcher: ['opendoor'],           // 연구원 — 관찰하듯 손을 뻗음
+  char_yeoja_researcher: ['opendoor'],
+};
+
+// 기본 idle 을 돌리다 8~20초마다 한 번 변주를 끼워 넣는다.
+// 클립이 끝자세=시작자세라 crossfade 0.3s 면 튀지 않는다.
+function playIdle(ch, mixer, clips) {
+  const base = mixer.clipAction(clips.idle);
+  base.play();
+  const pool = IDLE_BREAK[ch.id] || [];
+  if (!pool.length) return;
+  (function schedule() {
+    const wait = 8000 + Math.random() * 12000;
+    ch._idleTimer = setTimeout(() => {
+      const name = pool[(Math.random() * pool.length) | 0];
+      const a = mixer.clipAction(clips[name]);
+      a.setLoop(THREE.LoopOnce, 1); a.clampWhenFinished = false;
+      a.reset().crossFadeFrom(base, 0.3, false).play();
+      mixer.addEventListener('finished', function done(e) {
+        if (e.action !== a) return;
+        mixer.removeEventListener('finished', done);
+        base.reset().crossFadeFrom(a, 0.3, false).play();
+      });
+      schedule();
+    }, wait);
+  })();
+}
+
+// ★ 변주 클립은 루트가 최대 42% (Hips 높이 대비) 움직인다.
+//    걷기와 같은 방식으로 Hips XZ 를 고정해야 제자리에 선다.
+if (refHips) { refHips.position.x = hips0[0]; refHips.position.z = hips0[1]; }
+```
+
+### 제가 확인 못 한 것
+
+**"그 동작이 그 성격으로 보이는가"는 못 잽니다.** 위 배정은 클립 이름과 측정값으로
+정한 것이고, 눈으로는 안 봤습니다. `assets/characters/motion_library.html` 에서
+10종을 30초만 보시면 바꾸실 게 있을 겁니다. **배정만 바꾸면 되고 에셋은 그대로입니다.**
+
+`sleep` 은 이름과 달리 **1.8초 · Hips 가 rest보다 20% 높음** 이라 눕는 동작이
+아닐 가능성이 큽니다(기지개?). 쓰시기 전에 한 번 보세요.
+
+---
+
 ## 미해결 / 요청
 
 **2026-08-01 — house 창이 `house-to-char.md` 로 회신했습니다. 요청 3건 전부 처리됨.**
