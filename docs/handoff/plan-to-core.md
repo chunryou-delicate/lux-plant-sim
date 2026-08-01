@@ -260,3 +260,75 @@ if (pot.health.weakDays >= 5) kill(pot);    // 5일 연속일 때만
 
 - [ ] `fenWeekPct` 합격선 60%를 `acceptance.json`에 반영 (제가 함)
 - [ ] `room_profile.json` 위치·갱신 규칙을 house와 합의
+
+---
+
+# ■ 2026-08-01 (3차) · 첫 플레이 시나리오 — 루프가 지켜야 할 것
+
+정본: **`docs/first_play.md`**.
+
+## 구분 — 추가 / 정정 / 취소
+
+| | |
+|---|---|
+| **[취소]** | 첫 플레이에서 **식물등 설치**를 통과 조건으로 두던 것 |
+| **[정정]** | 첫 보상 **갈라짐 → 새순 전개/새잎** |
+| **[정정]** | 시작 **동시 지급 → 단계별** |
+| **[추가]** | 첫 플레이는 **novice 고정**(맑음·여름) |
+
+## 루프가 지켜야 할 순서
+
+```
+Day 0   열린 콩나물 트레이 1개만 지급.  몬스테라·뚜껑·식물등 없음
+Day 4   콩나물 첫 수확
+        ↳ 식물신 대사 한 줄 (외형 없음)
+        ↳ 어린 몬스테라 지급
+Day 4+3~7  새순 전개/새잎 → ★첫 플레이 종료
+```
+
+**Day 4 지급이 이벤트 정지 지점**입니다(`time_modes.md` 이벤트 목록에 추가).
+
+## novice 모드 = 날씨·계절 고정
+
+```js
+// data/balance/weather.json  modes.beginner
+weather_k: 1.0   season_k: 1.0
+```
+
+**매일 같은 DLI**라 `dli7`이 그 슬롯의 peak 조건으로 수렴합니다.
+→ 그쪽이 발견한 *"하루값 6.02 vs 7일평균 5.82"* 문제가 **novice에선 안 생깁니다.**
+표시는 그대로 **7일평균 기준**으로 두시면 됩니다(real 모드에서 필요하니까).
+
+## ⚠ real 모드로는 첫 플레이를 돌리지 마세요
+
+| 라벨 | 값 | 판정 |
+|---|---|---|
+| `banjiha.space.peak_summer` (h=1.6) | 3.74 | `min` 3.0 초과 → 성장 |
+| `banjiha.space.avg7_summer` (real) | **2.40** | **`min` 미만 → 정체** |
+
+real은 자연광만으로 성장이 **보장되지 않습니다.** 첫 플레이는 **novice 전용**입니다.
+
+## ★ 지금 막혀 있는 것 — house 대기
+
+`banjiha.slots.peak_summer`가 **0.55**라 3.74짜리 자리가 **가구 위에 없습니다.**
+house에 창 높이 슬롯을 요청했습니다(10차). **그게 오기 전엔 시나리오가 안 돕니다.**
+
+→ 그때까지는 **콩나물 구간(Day 0~4)만** 돌려보셔도 됩니다.
+
+## 시뮬 판정 추가
+
+`acceptance.json`에 넣을 첫 플레이 조건입니다(제가 넣겠습니다):
+
+```
+first_play_harvest_turn        = 4          (콩나물 첫 수확)
+first_play_monstera_arrive     = 4          (지급 시점)
+first_play_new_shoot_turns     = 3 ~ 7      (도착 후 새순까지) ← growth 측정 대기
+first_play_mode                = novice
+first_play_lamp_required       = false      ★식물등 없이 통과해야 한다
+```
+
+## 3차 미해결
+
+- [ ] house 창 높이 슬롯 대기
+- [ ] `first_play_new_shoot_turns` 확정 (growth 측정)
+- [ ] 2차(자리 축 · 합격선 60% · `room_profile.json`)는 그대로 유효
