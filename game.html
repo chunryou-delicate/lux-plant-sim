@@ -66,6 +66,16 @@
   #report h4{font-family:'Jua';font-size:12px;margin-bottom:6px;color:#fff}
   .note{font-size:10.5px;color:rgba(255,255,255,.38);margin-top:7px;line-height:1.5}
   .err{padding:12px;background:rgba(255,90,70,.15);border-radius:10px;font-size:12px;line-height:1.6}
+  .sparkleg{display:flex;gap:9px;flex-wrap:wrap;font-size:10px;margin-top:3px}
+  /* ★ 이벤트 배너 — 갈라짐이 켜지는 순간. v0가 증명하려는 것이 이 한 줄이다 */
+  #event{position:absolute;left:50%;top:34px;transform:translate(-50%,-14px);z-index:9;
+    opacity:0;transition:opacity .45s,transform .45s;pointer-events:none;max-width:88%}
+  #event.on{opacity:1;transform:translate(-50%,0)}
+  #event b{display:block;font-family:'Jua';font-size:19px;color:#14240f;
+    background:linear-gradient(#bff5b0,#7ce69a);padding:11px 22px;border-radius:16px;
+    box-shadow:0 8px 26px rgba(0,0,0,.45);text-align:center;line-height:1.45}
+  #event i{font-style:normal;display:block;font-size:12px;color:#2c4a22;margin-top:3px}
+  .scen-run #play{opacity:.45}
 </style>
 </head>
 <body>
@@ -89,6 +99,21 @@
       </div>
     </div>
 
+    <div class="box" id="scbox">
+      <h3>★ 재미 확인 시나리오 — 반지하</h3>
+      <label><span>시나리오</span><select id="scen"></select></label>
+      <div class="btns">
+        <button id="play">▶ 돌려보기</button>
+        <button id="stop" class="ghost" disabled>■ 정지</button>
+        <label style="margin:0 0 0 auto"><span style="width:auto">속도</span>
+          <select id="speed" style="width:74px;flex:0 0 74px">
+            <option value="90">느림</option><option value="45" selected>보통</option>
+            <option value="12">빠름</option><option value="0">즉시</option>
+          </select></label>
+      </div>
+      <div id="spark"></div>
+    </div>
+
     <div class="box"><h3>오늘</h3><div id="hud"></div></div>
     <div class="box"><h3>검수 리포트</h3><div id="report"><div class="ph">30일을 돌리면 나옵니다</div></div></div>
     <div class="box"><h3>기록</h3><div id="log"></div></div>
@@ -98,6 +123,8 @@
     <!-- growth 창 소유. 자체 UI(슬라이더·[다음 날])를 그대로 둔다 —
          코어를 안 거치고 직접 넣었을 때와 대조할 수 있어야 한다. -->
     <iframe id="growth" src="./plant_grow.html"></iframe>
+    <!-- ★ v0의 완료 조건이 걸린 자리 — "등을 켰더니 갈라지기 시작했어요"가 여기 뜬다 -->
+    <div id="event"></div>
   </main>
 </div>
 
@@ -105,8 +132,8 @@
 import { newState, SIM_MODES, pot0, pushLog } from './src/game/state.js';
 import { createLightEngine } from './src/game/light_adapter.js';
 import { createGrowthAdapter } from './src/game/growth_adapter.js';
-import { nextDay, runDays } from './src/game/loop.js';
-import { renderHUD, renderLog, renderReport } from './src/game/ui.js';
+import { nextDay, runDays, avg } from './src/game/loop.js';
+import { renderHUD, renderLog, renderReport, renderSpark } from './src/game/ui.js';
 
 const $ = (id) => document.getElementById(id);
 const side = $('side');
@@ -223,6 +250,133 @@ $('reset').onclick = () => {
   $('report').innerHTML = '<div class="ph">30일을 돌리면 나옵니다</div>';
   buildRoom(keep.room);
 };
+
+/* ============================================================
+   ★ 재미 확인 시나리오 — v0의 완료 조건을 눈으로 본다
+     "등을 켰더니 잎이 갈라지기 시작했어요"가 실제로 뜨는지.
+     판정은 growth의 canFenestrate()(7일평균 기준)를 그대로 쓴다 — 하루 값으로 띄우면 거짓말이 된다.
+============================================================ */
+const SCENARIOS = [
+  { id:'a', ko:'① 등 0개 · 좋은 자리 (90일)', days:90, lamps:0, pick:'brightest',
+    hint:'반지하 자연광만. 아무 일도 일어나지 않는 것이 정답이다' },
+  { id:'b', ko:'② 등 1개 · 나쁜 자리 (90일)', days:90, lamps:1, pick:'darkest',
+    hint:'등값·전기만 나가고 식물은 그대로 — 등을 "샀다"고 되는 게 아니다' },
+  { id:'c', ko:'③ 등 1개 · 좋은 자리 (90일)', days:90, lamps:1, pick:'brightest',
+    hint:'같은 등, 자리만 다르다' },
+  { id:'d', ko:'★④ 20일 뒤 등을 켠다 (좋은 자리)', days:90, lamps:0, pick:'brightest',
+    at:21, thenLamps:1, cause:'등을 켰더니',
+    hint:'★ 이게 v0의 완료 조건. 켜고 나서 며칠 뒤에 켜지는지 보라' },
+  { id:'e', ko:'★⑤ 등 1개 · 20일 뒤 자리를 옮긴다', days:90, lamps:1, pick:'darkest',
+    at:21, thenPick:'brightest', cause:'화분을 옮겼더니',
+    hint:'★ 등은 그대로. 자리만 바꾼다 — "자리가 등보다 크다"' }
+];
+$('scen').innerHTML = SCENARIOS.map(s => `<option value="${s.id}">${s.ko}</option>`).join('');
+
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+let stopFlag = false;
+
+/* 지금 설정에서 밝은/어두운 자리 — 등을 켜면 순위가 바뀌므로 그때그때 다시 본다 */
+function pickSlot(how) {
+  const list = [...io.light.daily(S.day + 1, S).report.slots].sort((a, b) => b.dli - a.dli);
+  return how === 'darkest' ? list[list.length - 1].slotId : list[0].slotId;
+}
+
+function banner(title, sub) {
+  const el = $('event');
+  el.innerHTML = `<b>${title}${sub ? `<i>${sub}</i>` : ''}</b>`;
+  el.classList.add('on');
+  setTimeout(() => el.classList.remove('on'), 6000);
+}
+
+function fenOn() {
+  const f = io.growth.canFenestrate ? io.growth.canFenestrate(pot0(S).variegated) : null;
+  if (f !== null) return f;
+  const a7 = avg(S.dliHist, 7), th = io.light.thresholdsOf(pot0(S).plantId, false);
+  return a7 != null && th && th.fenestrate != null && a7 >= th.fenestrate;
+}
+
+async function playScenario(sc) {
+  stopFlag = false;
+  document.body.classList.add('scen-run');
+  $('play').disabled = true; $('stop').disabled = false;
+
+  /* 초기화 — 같은 조건에서 다시 돌릴 수 있어야 비교가 된다 */
+  S = newState({ room: S.home.room, mode: S.sim.mode });
+  S.lamps.count = sc.lamps;
+  io.growth.reset(); io.growth.setGrowth(0);
+  pot0(S).slotId = pickSlot(sc.pick);
+  $('lamps').value = String(sc.lamps);
+  fillSlots(); $('slot').value = pot0(S).slotId;
+  pushLog(S, `시나리오 ${sc.ko} — ${sc.hint}`);
+
+  const th = io.light.thresholdsOf(pot0(S).plantId, false);
+  const speed = +$('speed').value;
+  const turns = [];
+  let announced = false, switched = false;
+
+  for (let d = 1; d <= sc.days; d++) {
+    if (stopFlag) { pushLog(S, `${sc.ko} 정지 (${d - 1}일)`); break; }
+
+    /* 전환 시점 — 등을 켜거나 자리를 옮긴다 */
+    if (sc.at && d === sc.at && !switched) {
+      switched = true;
+      if (sc.thenLamps != null) {
+        S.lamps.count = sc.thenLamps; $('lamps').value = String(sc.thenLamps);
+        io.light.clearCache();
+        pushLog(S, `☀ 식물등을 켰습니다 (${d}일)`);
+        banner('☀ 식물등을 켰습니다', '이제 며칠 지켜보세요 — 판정은 7일 평균입니다');
+      }
+      if (sc.thenPick) {
+        pot0(S).slotId = pickSlot(sc.thenPick); $('slot').value = pot0(S).slotId;
+        pushLog(S, `🪴 화분을 밝은 자리로 옮겼습니다 (${d}일)`);
+        banner('🪴 화분을 옮겼습니다', '등은 그대로입니다 — 자리만 바꿨습니다');
+      }
+      if (speed) await sleep(1400);
+    }
+
+    lastTurn = nextDay(S, io).turn;
+    turns.push(lastTurn);
+
+    /* ★ 갈라짐이 켜지는 순간 */
+    if (!announced && fenOn()) {
+      announced = true;
+      const since = sc.at ? ` · ${sc.cause || '바꾸고'} ${d - sc.at + 1}일 만에` : '';
+      pushLog(S, `🌿 잎이 갈라지기 시작했습니다 (${d}일)`);
+      banner(`🌿 ${sc.cause ? sc.cause + ' ' : ''}잎이 갈라지기 시작했어요!`,
+             `${d}일째 · 7일 평균 ${(turn7()).toFixed(2)} ≥ 문턱 ${th.fenestrate}${since}`);
+      if (speed) await sleep(2200);
+    }
+
+    if (speed === 0) { if (d % 15 === 0 || d === sc.days) { draw(); await sleep(0); } }
+    else { draw(); renderSpark($('spark'), S.dliHist, th && th.fenestrate, null); await sleep(speed); }
+  }
+
+  draw();
+  renderSpark($('spark'), S.dliHist, th && th.fenestrate, fenDayOf(th));
+  renderReport($('report'), S, io, turns);
+  $('play').disabled = false; $('stop').disabled = true;
+  document.body.classList.remove('scen-run');
+  if (!announced) {
+    pushLog(S, `${sc.days}일 동안 갈라지지 않았습니다 — 7일평균이 문턱 ${th.fenestrate}에 닿지 않았습니다`);
+    renderLog($('log'), S);
+  }
+}
+
+const turn7 = () => io.growth.dli7() ?? avg(S.dliHist, 7) ?? 0;
+
+/* 이력에서 처음 문턱을 넘은 날 — 그래프에 세로선으로 표시한다 */
+function fenDayOf(th) {
+  if (!th || th.fenestrate == null) return null;
+  for (let i = 0; i < S.dliHist.length; i++) {
+    const n = Math.min(7, i + 1);
+    let s = 0; for (let k = i - n + 1; k <= i; k++) s += S.dliHist[k];
+    if (s / n >= th.fenestrate) return i + 1;
+  }
+  return null;
+}
+
+$('play').onclick = () => playScenario(SCENARIOS.find(s => s.id === $('scen').value));
+$('stop').onclick = () => { stopFlag = true; };
 
 /* ---- 시작 ---- */
 try {

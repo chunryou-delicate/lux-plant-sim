@@ -172,20 +172,30 @@ export function runMatrix(scenarios, lightOf, opt = {}) {
      같은 방·같은 등 1개인데 자리만 바꾼다. 숫자는 내고 **합격선은 긋지 않는다** —
      "몇 % 이상이면 갈라진 것인가"는 plan 결정이라 여기서 정하면 안 된다.
 --------------------------------------------------------------- */
+/* ★ "갈라진다"의 합격선 — 문턱 넘는 주 50% 이상 (박사님 결정 2026-08-01).
+   `acceptance.json` 은 expect true/false 인데 시뮬은 %를 내므로 변환선이 필요했다.
+   plan이 `acceptance.json` 에 옮기면 그 값을 읽는다 — 그때 이 상수는 기본값이 된다. */
+export const FEN_PASS_PCT = 50;
+
 export function fenestrationContrast(light, opt = {}) {
   const base = { room: opt.room || 'banjiha', days: opt.days ?? 90,
                  lamps: { count: opt.lampCount ?? 1, litHours: opt.litHours ?? 12 },
                  plantId: opt.plantId || 'monstera_deliciosa', seed: opt.seed ?? 0 };
   const good = runScenario(makeScenario({ ...base, slotPick: 'brightest' }), light);
   const bad  = runScenario(makeScenario({ ...base, slotPick: 'darkest'   }), light);
+  const pass = opt.passPct ?? FEN_PASS_PCT;
+  const fen = r => (r.result.weeks_over_threshold_pct ?? 0) >= pass;
   return {
     room: base.room, lampCount: base.lamps.count, threshold: good.result.threshold,
+    passPct: pass,
     goodspot: { slot: good.notes[0], avg7: good.result.dli_avg7_expected,
-                weeks_over_pct: good.result.weeks_over_threshold_pct },
+                weeks_over_pct: good.result.weeks_over_threshold_pct, fenestrates: fen(good) },
     badspot:  { slot: bad.notes[0],  avg7: bad.result.dli_avg7_expected,
-                weeks_over_pct: bad.result.weeks_over_threshold_pct },
+                weeks_over_pct: bad.result.weeks_over_threshold_pct, fenestrates: fen(bad) },
     ratio: bad.result.dli_avg7_expected
-      ? +(good.result.dli_avg7_expected / bad.result.dli_avg7_expected).toFixed(1) : null
+      ? +(good.result.dli_avg7_expected / bad.result.dli_avg7_expected).toFixed(1) : null,
+    /* acceptance.json: goodspot expect true · badspot expect false */
+    accepted: fen(good) === true && fen(bad) === false
   };
 }
 

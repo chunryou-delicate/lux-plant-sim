@@ -1,0 +1,252 @@
+{
+ "schema": "room_profile/1",
+ "room": "banjiha",
+ "label": "반지하",
+ "lampCounts": [
+  0,
+  1,
+  2
+ ],
+ "lampWatts": [
+  0,
+  20,
+  32
+ ],
+ "measured": {
+  "_label": "★ 라벨 없는 숫자는 쓰지 않는다. space=가구 없는 공간 / slots=지금 가구 배치. peak_summer=맑음·여름 하루 최고. avg7_summer=7일 이동평균 기댓값(=peak×0.643).",
+  "space": {
+   "peak_summer": 3.74,
+   "avg7_summer": 2.4,
+   "vol6_m3": 0,
+   "vol3_m3": 0.1,
+   "vol_dark_m3": 30.3,
+   "best_height_m": 1.6,
+   "peak_by_height": {
+    "0.1": 0.3,
+    "0.35": 0.4,
+    "0.6": 0.6,
+    "0.85": 0.8,
+    "1.1": 1.2,
+    "1.35": 2.1,
+    "1.6": 3.7
+   },
+   "_method": "0.25m 격자·높이 0.10~1.80m. 벽·칸막이·창턱은 남기고 가구만 제외."
+  },
+  "slots": {
+   "peak_summer": 0.55,
+   "avg7_summer": 0.35,
+   "count": 13,
+   "utilization_pct": 15,
+   "_method": "지금 furniture 배치 기준. 차폐에 가구 포함."
+  },
+  "area": {
+   "floor_m2": 20,
+   "lamp_max_pots": {
+    "clip": 40,
+    "bar": 20,
+    "stand": 10
+   },
+   "_method": "바닥 면적(cutouts 제외). 등 상한=면적÷(2×coverage_r)². 통로 미반영 이론값."
+  },
+  "measuredAt": "2026-07-27",
+  "roomRev": "379f9dc 2026-07-25",
+  "status": "확정"
+ },
+ "slots": [
+  {
+   "slotId": "banjiha-desk-2:0",
+   "owner": "desk",
+   "point": {
+    "x": 0.79,
+    "y": 0.74,
+    "z": -1.41
+   },
+   "ratio": 0.0352898,
+   "ppfd": [
+    0,
+    11.45,
+    29
+   ]
+  },
+  {
+   "slotId": "banjiha-desk-2:1",
+   "owner": "desk",
+   "point": {
+    "x": 1.81,
+    "y": 0.74,
+    "z": -1.41
+   },
+   "ratio": 0.00952267,
+   "ppfd": [
+    0,
+    3.5,
+    26.64
+   ]
+  },
+  {
+   "slotId": "banjiha-dresser-4:0",
+   "owner": "dresser",
+   "point": {
+    "x": 1.7,
+    "y": 0.8,
+    "z": 0.94
+   },
+   "ratio": 0.00391353,
+   "ppfd": [
+    0,
+    1.5,
+    2.68
+   ]
+  },
+  {
+   "slotId": "banjiha-dresser-4:1",
+   "owner": "dresser",
+   "point": {
+    "x": 1.7,
+    "y": 0.8,
+    "z": 1.66
+   },
+   "ratio": 0.00251104,
+   "ppfd": [
+    0,
+    1.08,
+    1.79
+   ]
+  },
+  {
+   "slotId": "banjiha-shelf_etagere_3tier-7:0",
+   "owner": "shelf_etagere",
+   "point": {
+    "x": -0.62,
+    "y": 0.03,
+    "z": -1.72
+   },
+   "ratio": 0.00794837,
+   "ppfd": [
+    0,
+    17.49,
+    19.05
+   ]
+  },
+  {
+   "slotId": "banjiha-shelf_etagere_3tier-7:1",
+   "owner": "shelf_etagere",
+   "point": {
+    "x": -0.35,
+    "y": 0.03,
+    "z": -1.72
+   },
+   "ratio": 0.00862378,
+   "ppfd": [
+    0,
+    18.87,
+    20.86
+   ]
+  },
+  {
+   "slotId": "banjiha-shelf_etagere_3tier-7:2",
+   "owner": "shelf_etagere",
+   "point": {
+    "x": -0.08,
+    "y": 0.03,
+    "z": -1.72
+   },
+   "ratio": 0.00893329,
+   "ppfd": [
+    0,
+    17.49,
+    20.06
+   ]
+  },
+  {
+   "slotId": "banjiha-shelf_etagere_3tier-7:3",
+   "owner": "shelf_etagere",
+   "point": {
+    "x": -0.62,
+    "y": 0.412,
+    "z": -1.72
+   },
+   "ratio": 0.0145827,
+   "ppfd": [
+    0,
+    39.5,
+    41.21
+   ]
+  },
+  {
+   "slotId": "banjiha-shelf_etagere_3tier-7:4",
+   "owner": "shelf_etagere",
+   "point": {
+    "x": -0.35,
+    "y": 0.412,
+    "z": -1.72
+   },
+   "ratio": 0.0160205,
+   "ppfd": [
+    0,
+    47.34,
+    49.59
+   ]
+  },
+  {
+   "slotId": "banjiha-shelf_etagere_3tier-7:5",
+   "owner": "shelf_etagere",
+   "point": {
+    "x": -0.08,
+    "y": 0.412,
+    "z": -1.72
+   },
+   "ratio": 0.0166547,
+   "ppfd": [
+    0,
+    39.5,
+    42.53
+   ]
+  },
+  {
+   "slotId": "banjiha-shelf_etagere_3tier-7:6",
+   "owner": "shelf_etagere",
+   "point": {
+    "x": -0.62,
+    "y": 0.794,
+    "z": -1.72
+   },
+   "ratio": 0.0312093,
+   "ppfd": [
+    0,
+    126.78,
+    128.59
+   ]
+  },
+  {
+   "slotId": "banjiha-shelf_etagere_3tier-7:7",
+   "owner": "shelf_etagere",
+   "point": {
+    "x": -0.35,
+    "y": 0.794,
+    "z": -1.72
+   },
+   "ratio": 0.0343657,
+   "ppfd": [
+    0,
+    273.71,
+    276.12
+   ]
+  },
+  {
+   "slotId": "banjiha-shelf_etagere_3tier-7:8",
+   "owner": "shelf_etagere",
+   "point": {
+    "x": -0.08,
+    "y": 0.794,
+    "z": -1.72
+   },
+   "ratio": 0.0356206,
+   "ppfd": [
+    0,
+    126.78,
+    130.14
+   ]
+  }
+ ]
+}

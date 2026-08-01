@@ -11,6 +11,7 @@
 import { BAND_KO } from '../engine/daily_light.js';
 import { SIM_MODES } from './state.js';
 import { weekOverPct, expectedWeekStats } from './loop.js';
+import { FEN_PASS_PCT } from './sim.js';
 
 const SEASON_KO = { spring: '봄', summer: '여름', autumn: '가을', winter: '겨울' };
 const n2 = (v) => (v == null ? '—' : (+v).toFixed(2));
@@ -75,6 +76,41 @@ export function renderHUD(el, S, turn, io) {
   `;
 }
 
+/* ---------------------------------------------------------------
+   ★ 7일평균 흐름 — "언제 문턱을 넘었나"가 한눈에 보여야 한다
+     하루 값은 날씨로 튀어서 흐름이 안 보인다. 판정값(7일평균)과 문턱선을 같이 그린다.
+--------------------------------------------------------------- */
+export function renderSpark(el, hist, threshold, markDay) {
+  const W = 372, H = 84, pad = 2;
+  if (!hist || hist.length < 2) { el.innerHTML = '<div class="ph">아직 기록이 없습니다</div>'; return; }
+  const a7 = [];
+  for (let i = 0; i < hist.length; i++) {
+    const n = Math.min(7, i + 1);
+    let s = 0; for (let k = i - n + 1; k <= i; k++) s += hist[k];
+    a7.push(s / n);
+  }
+  const max = Math.max(threshold || 0, ...a7) * 1.12 || 1;
+  const x = i => pad + i / Math.max(1, a7.length - 1) * (W - pad * 2);
+  const y = v => H - pad - (v / max) * (H - pad * 2);
+  const line = a7.map((v, i) => `${i ? 'L' : 'M'}${x(i).toFixed(1)},${y(v).toFixed(1)}`).join('');
+  const daily = hist.map((v, i) => `${i ? 'L' : 'M'}${x(i).toFixed(1)},${y(v).toFixed(1)}`).join('');
+  const ty = threshold != null ? y(threshold) : null;
+  const mx = markDay ? x(markDay - 1) : null;
+  el.innerHTML = `
+    <svg viewBox="0 0 ${W} ${H}" width="100%" height="${H}" preserveAspectRatio="none">
+      ${ty != null ? `<line x1="0" y1="${ty.toFixed(1)}" x2="${W}" y2="${ty.toFixed(1)}"
+         stroke="#ff9a8a" stroke-width="1" stroke-dasharray="4 3"/>` : ''}
+      <path d="${daily}" fill="none" stroke="rgba(255,255,255,.22)" stroke-width="1"/>
+      <path d="${line}" fill="none" stroke="#ffb454" stroke-width="2"/>
+      ${mx != null ? `<line x1="${mx.toFixed(1)}" y1="0" x2="${mx.toFixed(1)}" y2="${H}"
+         stroke="#7ce69a" stroke-width="1.5"/>` : ''}
+    </svg>
+    <div class="sparkleg"><span style="color:#ffb454">━ 7일평균(판정값)</span>
+      <span style="color:rgba(255,255,255,.4)">━ 하루</span>
+      ${threshold != null ? `<span style="color:#ff9a8a">┄ 갈라짐 문턱 ${threshold}</span>` : ''}
+      ${markDay ? `<span style="color:#7ce69a">┃ ${markDay}일 갈라짐 시작</span>` : ''}</div>`;
+}
+
 export function renderLog(el, S) {
   el.innerHTML = S.log.slice(-40).reverse()
     .map(l => `<div class="li"><span>${l.day}일</span>${l.msg}</div>`).join('');
@@ -98,7 +134,11 @@ export function renderReport(el, S, io, turns) {
   /* house 실측표는 여름 기준이라 계절이 다르면 비교가 안 된다 — 여름 줄을 따로 낸다 */
   const sum = season === 'summer' ? exp : expectedWeekStats(S, io, { season: 'summer', over: fen });
   const room = io.light.room;
+  /* ★ house 라벨 규약(2026-08-01): measured.{space|slots}.{peak_summer|avg7_summer}.
+     라벨 없이 "아파트 6.02"만 오가다 세 번 사고가 났다. 코어 값은 전부 slots 기준이다. */
   const measured = (room.def.measured) || {};
+  const ms = measured.slots || {};
+  const sp = measured.space || {};
 
   const days = turns.length;
   const mean = hist.length ? hist.reduce((a, b) => a + b, 0) / hist.length : 0;
@@ -118,13 +158,16 @@ export function renderReport(el, S, io, turns) {
       <tr class="hl"><td>★ 갈라짐 문턱(${fen == null ? '없음' : fen}) 넘는 주 · ${SEASON_KO[season]}</td>
           <td><b>${exp.overPct == null ? '—' : exp.overPct + '%'}</b></td>
           <td>20년 ${exp.weeks}주 기준 · 굴린 ${days}일에선 ${ran ? ran.pct + '% (' + ran.weeks + '주)' : '주가 안 참'}</td></tr>
-      <tr><td>house 실측표 대조 (등 0개 기준)</td>
-          <td>${measured.avg7Summer == null ? '—' : 'avg7여름 ' + measured.avg7Summer}</td>
-          <td>fenWeekPct ${measured.fenWeekPct == null ? '—' : measured.fenWeekPct + '%'} · peak ${measured.peakDLI ?? '—'} <i>(peak·연평균은 판정에 쓰지 않음)</i></td></tr>
+      <tr><td>house 실측 대조 <i>(등 0개·자연광만)</i></td>
+          <td>${ms.avg7_summer == null ? '—' : 'avg7여름 ' + ms.avg7_summer}</td>
+          <td><b>slots</b> peak ${ms.peak_summer ?? '—'} · <b>space</b> avg7 ${sp.avg7_summer ?? '—'}
+              <i>(라벨 없는 숫자는 쓰지 않는다 — 내 값은 slots 기준)</i></td></tr>
       <tr><td>밴드 분포</td><td colspan="2">${
         Object.entries(bands).map(([b, c]) => `${BAND_KO[b] || b} ${c}일`).join(' · ') || '—'}</td></tr>
     </table>
-    <p class="note">등 개수를 바꿔 다시 30일을 돌리면 이 표가 바뀌어야 합니다.
-      "등을 켰더니 잎이 갈라지기 시작했다"가 v0의 완료 조건입니다.</p>
+    <p class="note">★ <b>자리</b>를 바꿔 다시 돌리면 이 표가 크게 바뀝니다 — 등을 하나 더 사는 것보다
+      화분을 한 칸 옮기는 쪽이 큽니다(박사님 확정 2026-08-01, 축은 등 개수가 아니라 자리).
+      갈라짐 합격선은 <b>문턱 넘는 주 ${FEN_PASS_PCT}% 이상</b> ${
+        exp.overPct == null ? '' : (exp.overPct >= FEN_PASS_PCT ? '— 지금 <b>통과</b>' : '— 지금 <b>미달</b>')}.</p>
   `;
 }

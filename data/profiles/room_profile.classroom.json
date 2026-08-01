@@ -1,0 +1,1717 @@
+{
+ "schema": "room_profile/1",
+ "room": "classroom",
+ "label": "학원교실",
+ "lampCounts": [
+  0
+ ],
+ "lampWatts": [
+  0
+ ],
+ "measured": {
+  "_label": "★ 라벨 없는 숫자는 쓰지 않는다. space=가구 없는 공간 / slots=지금 가구 배치. peak_summer=맑음·여름 하루 최고. avg7_summer=7일 이동평균 기댓값(=peak×0.643).",
+  "space": {
+   "peak_summer": 7.58,
+   "avg7_summer": 4.87,
+   "vol6_m3": 1.4,
+   "vol3_m3": 6.3,
+   "vol_dark_m3": 48.4,
+   "best_height_m": 1.1,
+   "peak_by_height": {
+    "0.1": 1.7,
+    "0.35": 2.2,
+    "0.6": 3.1,
+    "0.85": 4.7,
+    "1.1": 7.6,
+    "1.35": 7.6,
+    "1.6": 7.3
+   },
+   "_method": "0.25m 격자·높이 0.10~1.80m. 벽·칸막이·창턱은 남기고 가구만 제외."
+  },
+  "slots": {
+   "peak_summer": 6.01,
+   "avg7_summer": 3.86,
+   "count": 128,
+   "utilization_pct": 79,
+   "_method": "지금 furniture 배치 기준. 차폐에 가구 포함."
+  },
+  "area": {
+   "floor_m2": 66,
+   "lamp_max_pots": {
+    "clip": 134,
+    "bar": 66,
+    "stand": 33
+   },
+   "_method": "바닥 면적(cutouts 제외). 등 상한=면적÷(2×coverage_r)². 통로 미반영 이론값."
+  },
+  "measuredAt": "2026-07-27",
+  "roomRev": "2026-07-26 교실+교사방 11x6",
+  "status": "잠정"
+ },
+ "slots": [
+  {
+   "slotId": "classroom-lectern-51:0",
+   "owner": "lectern",
+   "point": {
+    "x": -3.6,
+    "y": 1.05,
+    "z": 1.6
+   },
+   "ratio": 0,
+   "ppfd": [
+    0
+   ]
+  },
+  {
+   "slotId": "classroom-desk_student_2-52:0",
+   "owner": "desk_student",
+   "point": {
+    "x": -2.91,
+    "y": 0.72,
+    "z": 0.69
+   },
+   "ratio": 0.032544,
+   "ppfd": [
+    0
+   ]
+  },
+  {
+   "slotId": "classroom-desk_student_2-52:1",
+   "owner": "desk_student",
+   "point": {
+    "x": -1.89,
+    "y": 0.72,
+    "z": 0.69
+   },
+   "ratio": 0.0371953,
+   "ppfd": [
+    0
+   ]
+  },
+  {
+   "slotId": "classroom-desk_student_2-53:0",
+   "owner": "desk_student",
+   "point": {
+    "x": -0.51,
+    "y": 0.72,
+    "z": 0.69
+   },
+   "ratio": 0.0385761,
+   "ppfd": [
+    0
+   ]
+  },
+  {
+   "slotId": "classroom-desk_student_2-53:1",
+   "owner": "desk_student",
+   "point": {
+    "x": 0.51,
+    "y": 0.72,
+    "z": 0.69
+   },
+   "ratio": 0.0295169,
+   "ppfd": [
+    0
+   ]
+  },
+  {
+   "slotId": "classroom-desk_student_2-54:0",
+   "owner": "desk_student",
+   "point": {
+    "x": 0.79,
+    "y": 0.72,
+    "z": 0.69
+   },
+   "ratio": 0.0323089,
+   "ppfd": [
+    0
+   ]
+  },
+  {
+   "slotId": "classroom-desk_student_2-54:1",
+   "owner": "desk_student",
+   "point": {
+    "x": 1.81,
+    "y": 0.72,
+    "z": 0.69
+   },
+   "ratio": 0.0206645,
+   "ppfd": [
+    0
+   ]
+  },
+  {
+   "slotId": "classroom-desk_student_2-55:0",
+   "owner": "desk_student",
+   "point": {
+    "x": -2.91,
+    "y": 0.72,
+    "z": -0.41
+   },
+   "ratio": 0.0672938,
+   "ppfd": [
+    0
+   ]
+  },
+  {
+   "slotId": "classroom-desk_student_2-55:1",
+   "owner": "desk_student",
+   "point": {
+    "x": -1.89,
+    "y": 0.72,
+    "z": -0.41
+   },
+   "ratio": 0.0725352,
+   "ppfd": [
+    0
+   ]
+  },
+  {
+   "slotId": "classroom-desk_student_2-56:0",
+   "owner": "desk_student",
+   "point": {
+    "x": -0.51,
+    "y": 0.72,
+    "z": -0.41
+   },
+   "ratio": 0.0718283,
+   "ppfd": [
+    0
+   ]
+  },
+  {
+   "slotId": "classroom-desk_student_2-56:1",
+   "owner": "desk_student",
+   "point": {
+    "x": 0.51,
+    "y": 0.72,
+    "z": -0.41
+   },
+   "ratio": 0.0620788,
+   "ppfd": [
+    0
+   ]
+  },
+  {
+   "slotId": "classroom-desk_student_2-57:0",
+   "owner": "desk_student",
+   "point": {
+    "x": 0.79,
+    "y": 0.72,
+    "z": -0.41
+   },
+   "ratio": 0.0615708,
+   "ppfd": [
+    0
+   ]
+  },
+  {
+   "slotId": "classroom-desk_student_2-57:1",
+   "owner": "desk_student",
+   "point": {
+    "x": 1.81,
+    "y": 0.72,
+    "z": -0.41
+   },
+   "ratio": 0.042349,
+   "ppfd": [
+    0
+   ]
+  },
+  {
+   "slotId": "classroom-locker_12-64:0",
+   "owner": "locker",
+   "point": {
+    "x": -3.72,
+    "y": 1.6,
+    "z": 2.31
+   },
+   "ratio": 0.00529937,
+   "ppfd": [
+    0
+   ]
+  },
+  {
+   "slotId": "classroom-locker_12-64:1",
+   "owner": "locker",
+   "point": {
+    "x": -3.72,
+    "y": 1.6,
+    "z": 1.6
+   },
+   "ratio": 0.00746909,
+   "ppfd": [
+    0
+   ]
+  },
+  {
+   "slotId": "classroom-locker_12-64:2",
+   "owner": "locker",
+   "point": {
+    "x": -3.72,
+    "y": 1.6,
+    "z": 0.89
+   },
+   "ratio": 0.00887864,
+   "ppfd": [
+    0
+   ]
+  },
+  {
+   "slotId": "classroom-sill:0",
+   "owner": "sill",
+   "point": {
+    "x": -4.875,
+    "y": 1,
+    "z": -2.775
+   },
+   "ratio": 0.307151,
+   "ppfd": [
+    0
+   ]
+  },
+  {
+   "slotId": "classroom-sill:1",
+   "owner": "sill",
+   "point": {
+    "x": -4.625,
+    "y": 1,
+    "z": -2.775
+   },
+   "ratio": 0.35319,
+   "ppfd": [
+    0
+   ]
+  },
+  {
+   "slotId": "classroom-sill:2",
+   "owner": "sill",
+   "point": {
+    "x": -4.375,
+    "y": 1,
+    "z": -2.775
+   },
+   "ratio": 0.370881,
+   "ppfd": [
+    0
+   ]
+  },
+  {
+   "slotId": "classroom-sill:3",
+   "owner": "sill",
+   "point": {
+    "x": -4.125,
+    "y": 1,
+    "z": -2.775
+   },
+   "ratio": 0.379247,
+   "ppfd": [
+    0
+   ]
+  },
+  {
+   "slotId": "classroom-sill:4",
+   "owner": "sill",
+   "point": {
+    "x": -3.875,
+    "y": 1,
+    "z": -2.775
+   },
+   "ratio": 0.383739,
+   "ppfd": [
+    0
+   ]
+  },
+  {
+   "slotId": "classroom-sill:5",
+   "owner": "sill",
+   "point": {
+    "x": -3.625,
+    "y": 1,
+    "z": -2.775
+   },
+   "ratio": 0.386358,
+   "ppfd": [
+    0
+   ]
+  },
+  {
+   "slotId": "classroom-sill:6",
+   "owner": "sill",
+   "point": {
+    "x": -3.375,
+    "y": 1,
+    "z": -2.775
+   },
+   "ratio": 0.387976,
+   "ppfd": [
+    0
+   ]
+  },
+  {
+   "slotId": "classroom-sill:7",
+   "owner": "sill",
+   "point": {
+    "x": -3.125,
+    "y": 1,
+    "z": -2.775
+   },
+   "ratio": 0.389013,
+   "ppfd": [
+    0
+   ]
+  },
+  {
+   "slotId": "classroom-sill:8",
+   "owner": "sill",
+   "point": {
+    "x": -2.875,
+    "y": 1,
+    "z": -2.775
+   },
+   "ratio": 0.389693,
+   "ppfd": [
+    0
+   ]
+  },
+  {
+   "slotId": "classroom-sill:9",
+   "owner": "sill",
+   "point": {
+    "x": -2.625,
+    "y": 1,
+    "z": -2.775
+   },
+   "ratio": 0.390149,
+   "ppfd": [
+    0
+   ]
+  },
+  {
+   "slotId": "classroom-sill:10",
+   "owner": "sill",
+   "point": {
+    "x": -2.375,
+    "y": 1,
+    "z": -2.775
+   },
+   "ratio": 0.39046,
+   "ppfd": [
+    0
+   ]
+  },
+  {
+   "slotId": "classroom-sill:11",
+   "owner": "sill",
+   "point": {
+    "x": -2.125,
+    "y": 1,
+    "z": -2.775
+   },
+   "ratio": 0.390666,
+   "ppfd": [
+    0
+   ]
+  },
+  {
+   "slotId": "classroom-sill:12",
+   "owner": "sill",
+   "point": {
+    "x": -1.875,
+    "y": 1,
+    "z": -2.775
+   },
+   "ratio": 0.390787,
+   "ppfd": [
+    0
+   ]
+  },
+  {
+   "slotId": "classroom-sill:13",
+   "owner": "sill",
+   "point": {
+    "x": -1.625,
+    "y": 1,
+    "z": -2.775
+   },
+   "ratio": 0.390841,
+   "ppfd": [
+    0
+   ]
+  },
+  {
+   "slotId": "classroom-sill:14",
+   "owner": "sill",
+   "point": {
+    "x": -1.375,
+    "y": 1,
+    "z": -2.775
+   },
+   "ratio": 0.390841,
+   "ppfd": [
+    0
+   ]
+  },
+  {
+   "slotId": "classroom-sill:15",
+   "owner": "sill",
+   "point": {
+    "x": -1.125,
+    "y": 1,
+    "z": -2.775
+   },
+   "ratio": 0.390787,
+   "ppfd": [
+    0
+   ]
+  },
+  {
+   "slotId": "classroom-sill:16",
+   "owner": "sill",
+   "point": {
+    "x": -0.875,
+    "y": 1,
+    "z": -2.775
+   },
+   "ratio": 0.390666,
+   "ppfd": [
+    0
+   ]
+  },
+  {
+   "slotId": "classroom-sill:17",
+   "owner": "sill",
+   "point": {
+    "x": -0.625,
+    "y": 1,
+    "z": -2.775
+   },
+   "ratio": 0.39046,
+   "ppfd": [
+    0
+   ]
+  },
+  {
+   "slotId": "classroom-sill:18",
+   "owner": "sill",
+   "point": {
+    "x": -0.375,
+    "y": 1,
+    "z": -2.775
+   },
+   "ratio": 0.390149,
+   "ppfd": [
+    0
+   ]
+  },
+  {
+   "slotId": "classroom-sill:19",
+   "owner": "sill",
+   "point": {
+    "x": -0.125,
+    "y": 1,
+    "z": -2.775
+   },
+   "ratio": 0.389693,
+   "ppfd": [
+    0
+   ]
+  },
+  {
+   "slotId": "classroom-sill:20",
+   "owner": "sill",
+   "point": {
+    "x": 0.125,
+    "y": 1,
+    "z": -2.775
+   },
+   "ratio": 0.389013,
+   "ppfd": [
+    0
+   ]
+  },
+  {
+   "slotId": "classroom-sill:21",
+   "owner": "sill",
+   "point": {
+    "x": 0.375,
+    "y": 1,
+    "z": -2.775
+   },
+   "ratio": 0.387976,
+   "ppfd": [
+    0
+   ]
+  },
+  {
+   "slotId": "classroom-sill:22",
+   "owner": "sill",
+   "point": {
+    "x": 0.625,
+    "y": 1,
+    "z": -2.775
+   },
+   "ratio": 0.386358,
+   "ppfd": [
+    0
+   ]
+  },
+  {
+   "slotId": "classroom-sill:23",
+   "owner": "sill",
+   "point": {
+    "x": 0.875,
+    "y": 1,
+    "z": -2.775
+   },
+   "ratio": 0.383739,
+   "ppfd": [
+    0
+   ]
+  },
+  {
+   "slotId": "classroom-sill:24",
+   "owner": "sill",
+   "point": {
+    "x": 1.125,
+    "y": 1,
+    "z": -2.775
+   },
+   "ratio": 0.379247,
+   "ppfd": [
+    0
+   ]
+  },
+  {
+   "slotId": "classroom-sill:25",
+   "owner": "sill",
+   "point": {
+    "x": 1.375,
+    "y": 1,
+    "z": -2.775
+   },
+   "ratio": 0.370881,
+   "ppfd": [
+    0
+   ]
+  },
+  {
+   "slotId": "classroom-sill:26",
+   "owner": "sill",
+   "point": {
+    "x": 1.625,
+    "y": 1,
+    "z": -2.775
+   },
+   "ratio": 0.35319,
+   "ppfd": [
+    0
+   ]
+  },
+  {
+   "slotId": "classroom-sill:27",
+   "owner": "sill",
+   "point": {
+    "x": 1.875,
+    "y": 1,
+    "z": -2.775
+   },
+   "ratio": 0.307151,
+   "ppfd": [
+    0
+   ]
+  },
+  {
+   "slotId": "classroom-sill:28",
+   "owner": "sill",
+   "point": {
+    "x": -4.875,
+    "y": 1,
+    "z": -2.525
+   },
+   "ratio": 0.22372,
+   "ppfd": [
+    0
+   ]
+  },
+  {
+   "slotId": "classroom-sill:29",
+   "owner": "sill",
+   "point": {
+    "x": -4.625,
+    "y": 1,
+    "z": -2.525
+   },
+   "ratio": 0.267677,
+   "ppfd": [
+    0
+   ]
+  },
+  {
+   "slotId": "classroom-sill:30",
+   "owner": "sill",
+   "point": {
+    "x": -4.375,
+    "y": 1,
+    "z": -2.525
+   },
+   "ratio": 0.292155,
+   "ppfd": [
+    0
+   ]
+  },
+  {
+   "slotId": "classroom-sill:31",
+   "owner": "sill",
+   "point": {
+    "x": -4.125,
+    "y": 1,
+    "z": -2.525
+   },
+   "ratio": 0.305816,
+   "ppfd": [
+    0
+   ]
+  },
+  {
+   "slotId": "classroom-sill:32",
+   "owner": "sill",
+   "point": {
+    "x": -3.875,
+    "y": 1,
+    "z": -2.525
+   },
+   "ratio": 0.313788,
+   "ppfd": [
+    0
+   ]
+  },
+  {
+   "slotId": "classroom-sill:33",
+   "owner": "sill",
+   "point": {
+    "x": -3.625,
+    "y": 1,
+    "z": -2.525
+   },
+   "ratio": 0.318657,
+   "ppfd": [
+    0
+   ]
+  },
+  {
+   "slotId": "classroom-sill:34",
+   "owner": "sill",
+   "point": {
+    "x": -3.375,
+    "y": 1,
+    "z": -2.525
+   },
+   "ratio": 0.321746,
+   "ppfd": [
+    0
+   ]
+  },
+  {
+   "slotId": "classroom-sill:35",
+   "owner": "sill",
+   "point": {
+    "x": -3.125,
+    "y": 1,
+    "z": -2.525
+   },
+   "ratio": 0.323767,
+   "ppfd": [
+    0
+   ]
+  },
+  {
+   "slotId": "classroom-sill:36",
+   "owner": "sill",
+   "point": {
+    "x": -2.875,
+    "y": 1,
+    "z": -2.525
+   },
+   "ratio": 0.32512,
+   "ppfd": [
+    0
+   ]
+  },
+  {
+   "slotId": "classroom-sill:37",
+   "owner": "sill",
+   "point": {
+    "x": -2.625,
+    "y": 1,
+    "z": -2.525
+   },
+   "ratio": 0.326037,
+   "ppfd": [
+    0
+   ]
+  },
+  {
+   "slotId": "classroom-sill:38",
+   "owner": "sill",
+   "point": {
+    "x": -2.375,
+    "y": 1,
+    "z": -2.525
+   },
+   "ratio": 0.326658,
+   "ppfd": [
+    0
+   ]
+  },
+  {
+   "slotId": "classroom-sill:39",
+   "owner": "sill",
+   "point": {
+    "x": -2.125,
+    "y": 1,
+    "z": -2.525
+   },
+   "ratio": 0.327067,
+   "ppfd": [
+    0
+   ]
+  },
+  {
+   "slotId": "classroom-sill:40",
+   "owner": "sill",
+   "point": {
+    "x": -1.875,
+    "y": 1,
+    "z": -2.525
+   },
+   "ratio": 0.327316,
+   "ppfd": [
+    0
+   ]
+  },
+  {
+   "slotId": "classroom-sill:41",
+   "owner": "sill",
+   "point": {
+    "x": -1.625,
+    "y": 1,
+    "z": -2.525
+   },
+   "ratio": 0.327434,
+   "ppfd": [
+    0
+   ]
+  },
+  {
+   "slotId": "classroom-sill:42",
+   "owner": "sill",
+   "point": {
+    "x": -1.375,
+    "y": 1,
+    "z": -2.525
+   },
+   "ratio": 0.327434,
+   "ppfd": [
+    0
+   ]
+  },
+  {
+   "slotId": "classroom-sill:43",
+   "owner": "sill",
+   "point": {
+    "x": -1.125,
+    "y": 1,
+    "z": -2.525
+   },
+   "ratio": 0.327316,
+   "ppfd": [
+    0
+   ]
+  },
+  {
+   "slotId": "classroom-sill:44",
+   "owner": "sill",
+   "point": {
+    "x": -0.875,
+    "y": 1,
+    "z": -2.525
+   },
+   "ratio": 0.327067,
+   "ppfd": [
+    0
+   ]
+  },
+  {
+   "slotId": "classroom-sill:45",
+   "owner": "sill",
+   "point": {
+    "x": -0.625,
+    "y": 1,
+    "z": -2.525
+   },
+   "ratio": 0.326658,
+   "ppfd": [
+    0
+   ]
+  },
+  {
+   "slotId": "classroom-sill:46",
+   "owner": "sill",
+   "point": {
+    "x": -0.375,
+    "y": 1,
+    "z": -2.525
+   },
+   "ratio": 0.326037,
+   "ppfd": [
+    0
+   ]
+  },
+  {
+   "slotId": "classroom-sill:47",
+   "owner": "sill",
+   "point": {
+    "x": -0.125,
+    "y": 1,
+    "z": -2.525
+   },
+   "ratio": 0.32512,
+   "ppfd": [
+    0
+   ]
+  },
+  {
+   "slotId": "classroom-sill:48",
+   "owner": "sill",
+   "point": {
+    "x": 0.125,
+    "y": 1,
+    "z": -2.525
+   },
+   "ratio": 0.323767,
+   "ppfd": [
+    0
+   ]
+  },
+  {
+   "slotId": "classroom-sill:49",
+   "owner": "sill",
+   "point": {
+    "x": 0.375,
+    "y": 1,
+    "z": -2.525
+   },
+   "ratio": 0.321746,
+   "ppfd": [
+    0
+   ]
+  },
+  {
+   "slotId": "classroom-sill:50",
+   "owner": "sill",
+   "point": {
+    "x": 0.625,
+    "y": 1,
+    "z": -2.525
+   },
+   "ratio": 0.318657,
+   "ppfd": [
+    0
+   ]
+  },
+  {
+   "slotId": "classroom-sill:51",
+   "owner": "sill",
+   "point": {
+    "x": 0.875,
+    "y": 1,
+    "z": -2.525
+   },
+   "ratio": 0.313788,
+   "ppfd": [
+    0
+   ]
+  },
+  {
+   "slotId": "classroom-sill:52",
+   "owner": "sill",
+   "point": {
+    "x": 1.125,
+    "y": 1,
+    "z": -2.525
+   },
+   "ratio": 0.305816,
+   "ppfd": [
+    0
+   ]
+  },
+  {
+   "slotId": "classroom-sill:53",
+   "owner": "sill",
+   "point": {
+    "x": 1.375,
+    "y": 1,
+    "z": -2.525
+   },
+   "ratio": 0.292155,
+   "ppfd": [
+    0
+   ]
+  },
+  {
+   "slotId": "classroom-sill:54",
+   "owner": "sill",
+   "point": {
+    "x": 1.625,
+    "y": 1,
+    "z": -2.525
+   },
+   "ratio": 0.267677,
+   "ppfd": [
+    0
+   ]
+  },
+  {
+   "slotId": "classroom-sill:55",
+   "owner": "sill",
+   "point": {
+    "x": 1.875,
+    "y": 1,
+    "z": -2.525
+   },
+   "ratio": 0.22372,
+   "ppfd": [
+    0
+   ]
+  },
+  {
+   "slotId": "classroom-sill:56",
+   "owner": "sill",
+   "point": {
+    "x": -4.875,
+    "y": 1,
+    "z": -2.275
+   },
+   "ratio": 0.173718,
+   "ppfd": [
+    0
+   ]
+  },
+  {
+   "slotId": "classroom-sill:57",
+   "owner": "sill",
+   "point": {
+    "x": -4.625,
+    "y": 1,
+    "z": -2.275
+   },
+   "ratio": 0.206536,
+   "ppfd": [
+    0
+   ]
+  },
+  {
+   "slotId": "classroom-sill:58",
+   "owner": "sill",
+   "point": {
+    "x": -4.375,
+    "y": 1,
+    "z": -2.275
+   },
+   "ratio": 0.229084,
+   "ppfd": [
+    0
+   ]
+  },
+  {
+   "slotId": "classroom-sill:59",
+   "owner": "sill",
+   "point": {
+    "x": -4.125,
+    "y": 1,
+    "z": -2.275
+   },
+   "ratio": 0.243672,
+   "ppfd": [
+    0
+   ]
+  },
+  {
+   "slotId": "classroom-sill:60",
+   "owner": "sill",
+   "point": {
+    "x": -3.875,
+    "y": 1,
+    "z": -2.275
+   },
+   "ratio": 0.253033,
+   "ppfd": [
+    0
+   ]
+  },
+  {
+   "slotId": "classroom-sill:61",
+   "owner": "sill",
+   "point": {
+    "x": -3.625,
+    "y": 1,
+    "z": -2.275
+   },
+   "ratio": 0.259114,
+   "ppfd": [
+    0
+   ]
+  },
+  {
+   "slotId": "classroom-sill:62",
+   "owner": "sill",
+   "point": {
+    "x": -3.375,
+    "y": 1,
+    "z": -2.275
+   },
+   "ratio": 0.263138,
+   "ppfd": [
+    0
+   ]
+  },
+  {
+   "slotId": "classroom-sill:63",
+   "owner": "sill",
+   "point": {
+    "x": -3.125,
+    "y": 1,
+    "z": -2.275
+   },
+   "ratio": 0.265851,
+   "ppfd": [
+    0
+   ]
+  },
+  {
+   "slotId": "classroom-sill:64",
+   "owner": "sill",
+   "point": {
+    "x": -2.875,
+    "y": 1,
+    "z": -2.275
+   },
+   "ratio": 0.267706,
+   "ppfd": [
+    0
+   ]
+  },
+  {
+   "slotId": "classroom-sill:65",
+   "owner": "sill",
+   "point": {
+    "x": -2.625,
+    "y": 1,
+    "z": -2.275
+   },
+   "ratio": 0.268983,
+   "ppfd": [
+    0
+   ]
+  },
+  {
+   "slotId": "classroom-sill:66",
+   "owner": "sill",
+   "point": {
+    "x": -2.375,
+    "y": 1,
+    "z": -2.275
+   },
+   "ratio": 0.269858,
+   "ppfd": [
+    0
+   ]
+  },
+  {
+   "slotId": "classroom-sill:67",
+   "owner": "sill",
+   "point": {
+    "x": -2.125,
+    "y": 1,
+    "z": -2.275
+   },
+   "ratio": 0.270439,
+   "ppfd": [
+    0
+   ]
+  },
+  {
+   "slotId": "classroom-sill:68",
+   "owner": "sill",
+   "point": {
+    "x": -1.875,
+    "y": 1,
+    "z": -2.275
+   },
+   "ratio": 0.270795,
+   "ppfd": [
+    0
+   ]
+  },
+  {
+   "slotId": "classroom-sill:69",
+   "owner": "sill",
+   "point": {
+    "x": -1.625,
+    "y": 1,
+    "z": -2.275
+   },
+   "ratio": 0.270963,
+   "ppfd": [
+    0
+   ]
+  },
+  {
+   "slotId": "classroom-sill:70",
+   "owner": "sill",
+   "point": {
+    "x": -1.375,
+    "y": 1,
+    "z": -2.275
+   },
+   "ratio": 0.270963,
+   "ppfd": [
+    0
+   ]
+  },
+  {
+   "slotId": "classroom-sill:71",
+   "owner": "sill",
+   "point": {
+    "x": -1.125,
+    "y": 1,
+    "z": -2.275
+   },
+   "ratio": 0.270795,
+   "ppfd": [
+    0
+   ]
+  },
+  {
+   "slotId": "classroom-sill:72",
+   "owner": "sill",
+   "point": {
+    "x": -0.875,
+    "y": 1,
+    "z": -2.275
+   },
+   "ratio": 0.270439,
+   "ppfd": [
+    0
+   ]
+  },
+  {
+   "slotId": "classroom-sill:73",
+   "owner": "sill",
+   "point": {
+    "x": -0.625,
+    "y": 1,
+    "z": -2.275
+   },
+   "ratio": 0.269858,
+   "ppfd": [
+    0
+   ]
+  },
+  {
+   "slotId": "classroom-sill:74",
+   "owner": "sill",
+   "point": {
+    "x": -0.375,
+    "y": 1,
+    "z": -2.275
+   },
+   "ratio": 0.268983,
+   "ppfd": [
+    0
+   ]
+  },
+  {
+   "slotId": "classroom-sill:75",
+   "owner": "sill",
+   "point": {
+    "x": -0.125,
+    "y": 1,
+    "z": -2.275
+   },
+   "ratio": 0.267706,
+   "ppfd": [
+    0
+   ]
+  },
+  {
+   "slotId": "classroom-sill:76",
+   "owner": "sill",
+   "point": {
+    "x": 0.125,
+    "y": 1,
+    "z": -2.275
+   },
+   "ratio": 0.265851,
+   "ppfd": [
+    0
+   ]
+  },
+  {
+   "slotId": "classroom-sill:77",
+   "owner": "sill",
+   "point": {
+    "x": 0.375,
+    "y": 1,
+    "z": -2.275
+   },
+   "ratio": 0.263138,
+   "ppfd": [
+    0
+   ]
+  },
+  {
+   "slotId": "classroom-sill:78",
+   "owner": "sill",
+   "point": {
+    "x": 0.625,
+    "y": 1,
+    "z": -2.275
+   },
+   "ratio": 0.259114,
+   "ppfd": [
+    0
+   ]
+  },
+  {
+   "slotId": "classroom-sill:79",
+   "owner": "sill",
+   "point": {
+    "x": 0.875,
+    "y": 1,
+    "z": -2.275
+   },
+   "ratio": 0.253033,
+   "ppfd": [
+    0
+   ]
+  },
+  {
+   "slotId": "classroom-sill:80",
+   "owner": "sill",
+   "point": {
+    "x": 1.125,
+    "y": 1,
+    "z": -2.275
+   },
+   "ratio": 0.243672,
+   "ppfd": [
+    0
+   ]
+  },
+  {
+   "slotId": "classroom-sill:81",
+   "owner": "sill",
+   "point": {
+    "x": 1.375,
+    "y": 1,
+    "z": -2.275
+   },
+   "ratio": 0.229084,
+   "ppfd": [
+    0
+   ]
+  },
+  {
+   "slotId": "classroom-sill:82",
+   "owner": "sill",
+   "point": {
+    "x": 1.625,
+    "y": 1,
+    "z": -2.275
+   },
+   "ratio": 0.206536,
+   "ppfd": [
+    0
+   ]
+  },
+  {
+   "slotId": "classroom-sill:83",
+   "owner": "sill",
+   "point": {
+    "x": 1.875,
+    "y": 1,
+    "z": -2.275
+   },
+   "ratio": 0.173718,
+   "ppfd": [
+    0
+   ]
+  },
+  {
+   "slotId": "classroom-sill:84",
+   "owner": "sill",
+   "point": {
+    "x": -4.875,
+    "y": 1,
+    "z": -2.025
+   },
+   "ratio": 0.137835,
+   "ppfd": [
+    0
+   ]
+  },
+  {
+   "slotId": "classroom-sill:85",
+   "owner": "sill",
+   "point": {
+    "x": -4.625,
+    "y": 1,
+    "z": -2.025
+   },
+   "ratio": 0.161645,
+   "ppfd": [
+    0
+   ]
+  },
+  {
+   "slotId": "classroom-sill:86",
+   "owner": "sill",
+   "point": {
+    "x": -4.375,
+    "y": 1,
+    "z": -2.025
+   },
+   "ratio": 0.180017,
+   "ppfd": [
+    0
+   ]
+  },
+  {
+   "slotId": "classroom-sill:87",
+   "owner": "sill",
+   "point": {
+    "x": -4.125,
+    "y": 1,
+    "z": -2.025
+   },
+   "ratio": 0.193239,
+   "ppfd": [
+    0
+   ]
+  },
+  {
+   "slotId": "classroom-sill:88",
+   "owner": "sill",
+   "point": {
+    "x": -3.875,
+    "y": 1,
+    "z": -2.025
+   },
+   "ratio": 0.20246,
+   "ppfd": [
+    0
+   ]
+  },
+  {
+   "slotId": "classroom-sill:89",
+   "owner": "sill",
+   "point": {
+    "x": -3.625,
+    "y": 1,
+    "z": -2.025
+   },
+   "ratio": 0.208834,
+   "ppfd": [
+    0
+   ]
+  },
+  {
+   "slotId": "classroom-sill:90",
+   "owner": "sill",
+   "point": {
+    "x": -3.375,
+    "y": 1,
+    "z": -2.025
+   },
+   "ratio": 0.213251,
+   "ppfd": [
+    0
+   ]
+  },
+  {
+   "slotId": "classroom-sill:91",
+   "owner": "sill",
+   "point": {
+    "x": -3.125,
+    "y": 1,
+    "z": -2.025
+   },
+   "ratio": 0.216332,
+   "ppfd": [
+    0
+   ]
+  },
+  {
+   "slotId": "classroom-sill:92",
+   "owner": "sill",
+   "point": {
+    "x": -2.875,
+    "y": 1,
+    "z": -2.025
+   },
+   "ratio": 0.218495,
+   "ppfd": [
+    0
+   ]
+  },
+  {
+   "slotId": "classroom-sill:93",
+   "owner": "sill",
+   "point": {
+    "x": -2.625,
+    "y": 1,
+    "z": -2.025
+   },
+   "ratio": 0.220013,
+   "ppfd": [
+    0
+   ]
+  },
+  {
+   "slotId": "classroom-sill:94",
+   "owner": "sill",
+   "point": {
+    "x": -2.375,
+    "y": 1,
+    "z": -2.025
+   },
+   "ratio": 0.221067,
+   "ppfd": [
+    0
+   ]
+  },
+  {
+   "slotId": "classroom-sill:95",
+   "owner": "sill",
+   "point": {
+    "x": -2.125,
+    "y": 1,
+    "z": -2.025
+   },
+   "ratio": 0.221775,
+   "ppfd": [
+    0
+   ]
+  },
+  {
+   "slotId": "classroom-sill:96",
+   "owner": "sill",
+   "point": {
+    "x": -1.875,
+    "y": 1,
+    "z": -2.025
+   },
+   "ratio": 0.222212,
+   "ppfd": [
+    0
+   ]
+  },
+  {
+   "slotId": "classroom-sill:97",
+   "owner": "sill",
+   "point": {
+    "x": -1.625,
+    "y": 1,
+    "z": -2.025
+   },
+   "ratio": 0.222419,
+   "ppfd": [
+    0
+   ]
+  },
+  {
+   "slotId": "classroom-sill:98",
+   "owner": "sill",
+   "point": {
+    "x": -1.375,
+    "y": 1,
+    "z": -2.025
+   },
+   "ratio": 0.222419,
+   "ppfd": [
+    0
+   ]
+  },
+  {
+   "slotId": "classroom-sill:99",
+   "owner": "sill",
+   "point": {
+    "x": -1.125,
+    "y": 1,
+    "z": -2.025
+   },
+   "ratio": 0.222212,
+   "ppfd": [
+    0
+   ]
+  },
+  {
+   "slotId": "classroom-sill:100",
+   "owner": "sill",
+   "point": {
+    "x": -0.875,
+    "y": 1,
+    "z": -2.025
+   },
+   "ratio": 0.221775,
+   "ppfd": [
+    0
+   ]
+  },
+  {
+   "slotId": "classroom-sill:101",
+   "owner": "sill",
+   "point": {
+    "x": -0.625,
+    "y": 1,
+    "z": -2.025
+   },
+   "ratio": 0.221067,
+   "ppfd": [
+    0
+   ]
+  },
+  {
+   "slotId": "classroom-sill:102",
+   "owner": "sill",
+   "point": {
+    "x": -0.375,
+    "y": 1,
+    "z": -2.025
+   },
+   "ratio": 0.220013,
+   "ppfd": [
+    0
+   ]
+  },
+  {
+   "slotId": "classroom-sill:103",
+   "owner": "sill",
+   "point": {
+    "x": -0.125,
+    "y": 1,
+    "z": -2.025
+   },
+   "ratio": 0.218495,
+   "ppfd": [
+    0
+   ]
+  },
+  {
+   "slotId": "classroom-sill:104",
+   "owner": "sill",
+   "point": {
+    "x": 0.125,
+    "y": 1,
+    "z": -2.025
+   },
+   "ratio": 0.216332,
+   "ppfd": [
+    0
+   ]
+  },
+  {
+   "slotId": "classroom-sill:105",
+   "owner": "sill",
+   "point": {
+    "x": 0.375,
+    "y": 1,
+    "z": -2.025
+   },
+   "ratio": 0.213251,
+   "ppfd": [
+    0
+   ]
+  },
+  {
+   "slotId": "classroom-sill:106",
+   "owner": "sill",
+   "point": {
+    "x": 0.625,
+    "y": 1,
+    "z": -2.025
+   },
+   "ratio": 0.208834,
+   "ppfd": [
+    0
+   ]
+  },
+  {
+   "slotId": "classroom-sill:107",
+   "owner": "sill",
+   "point": {
+    "x": 0.875,
+    "y": 1,
+    "z": -2.025
+   },
+   "ratio": 0.20246,
+   "ppfd": [
+    0
+   ]
+  },
+  {
+   "slotId": "classroom-sill:108",
+   "owner": "sill",
+   "point": {
+    "x": 1.125,
+    "y": 1,
+    "z": -2.025
+   },
+   "ratio": 0.193239,
+   "ppfd": [
+    0
+   ]
+  },
+  {
+   "slotId": "classroom-sill:109",
+   "owner": "sill",
+   "point": {
+    "x": 1.375,
+    "y": 1,
+    "z": -2.025
+   },
+   "ratio": 0.180017,
+   "ppfd": [
+    0
+   ]
+  },
+  {
+   "slotId": "classroom-sill:110",
+   "owner": "sill",
+   "point": {
+    "x": 1.625,
+    "y": 1,
+    "z": -2.025
+   },
+   "ratio": 0.161645,
+   "ppfd": [
+    0
+   ]
+  },
+  {
+   "slotId": "classroom-sill:111",
+   "owner": "sill",
+   "point": {
+    "x": 1.875,
+    "y": 1,
+    "z": -2.025
+   },
+   "ratio": 0.137835,
+   "ppfd": [
+    0
+   ]
+  }
+ ]
+}
