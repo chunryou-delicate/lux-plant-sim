@@ -192,6 +192,36 @@ function loadGLB(url) {
                   ★ 호스트가 확대 iframe(plant_grow.html)을 **늦게 싣도록** 바꾸면
                     그때는 켜는 게 맞다 — 그 경우 27MB 가 첫 화면의 유일한 짐이 된다
 ============================================================ */
+/* ★방 재질을 한 단계 어둡게 (박사님 2026-08-03, 세 번째 요청 — "여전히 밝아").
+   노출·채움광·배경을 다 낮췄는데도 방 안이 흰 이유는 **재질 자체가 거의 흰색**이라서다.
+   ACES 톤매핑은 밝은 쪽을 눌러 주지만 흰 벽은 눌러도 흰 벽이다. 색을 직접 내려야 한다.
+
+   ⚠ 재질 데이터(room_finishes.json)는 house 창 소유다. 파일은 안 건드리고
+     **게임 뷰에서 조립된 결과만** 곱한다 — 방 도구(index.html)는 그대로 밝다.
+   ⚠ 곱하기라 무늬·질감은 살아 있다. 단색으로 덮으면 벽지 결이 죽는다.
+   ⚠ 유리는 건드리지 않는다 — 창은 "밖이 밝다"는 정보다. */
+const ROOM_DIM = 0.62, FURN_DIM = 0.78;
+function isDescendant(node, root) {
+  for (let p = node; p; p = p.parent) if (p === root) return true;
+  return false;
+}
+function dimRoomMaterials(b) {
+  if (!b || !b.room) return;
+  const seen = new Set();
+  b.room.traverse(o => {
+    if (!o.isMesh || !o.material) return;
+    /* 가구는 방보다 덜 누른다 — 다 같이 내리면 형태가 뭉개져 무엇이 무엇인지 안 보인다 */
+    const k = (b.furniture && isDescendant(o, b.furniture)) ? FURN_DIM : ROOM_DIM;
+    const ms = Array.isArray(o.material) ? o.material : [o.material];
+    ms.forEach(m => {
+      if (!m || !m.color || seen.has(m.uuid)) return;
+      if (m.transparent && m.opacity < 0.95) return;      // 유리는 그대로
+      seen.add(m.uuid);
+      m.color.multiplyScalar(k);
+    });
+  });
+}
+
 export async function createRoomView(canvas, opts = {}) {
   const O = {
     roomId: 'banjiha', lightEngine: null,
@@ -350,6 +380,7 @@ export async function createRoomView(canvas, opts = {}) {
         .filter(Boolean);
     }
     if (!built || !built.room) throw new Error(`방 조립 결과가 비었습니다: ${id}`);
+    dimRoomMaterials(built);
 
     roomId = id;
     houseGroup.add(built.room);
