@@ -1,0 +1,33 @@
+<!doctype html><meta charset="utf-8"><title>시루 자리</title><body style="background:#111;color:#ddd;font:12px/1.6 monospace;padding:12px"><pre id="o">…</pre>
+<script src="https://unpkg.com/three@0.128.0/build/three.min.js"></script>
+<script type="module">
+import { buildHouse } from './src/render3d/house.js';
+import { winFromHouse } from './src/engine/daylight_lux.js';
+import { daylightRatio, daylightDLI } from './src/engine/daily_light.js';
+import { weatherE } from './src/engine/weather.js';
+const J=p=>fetch(p).then(r=>r.json());
+const [HR,WP,DP,FIN,FP,LP,SH]=await Promise.all(['./data/house_rooms.json','./data/window_presets.json','./data/door_presets.json','./data/room_finishes.json','./data/furniture_presets.json','./data/lighting_presets.json','./data/shading_presets.json'].map(J));
+const b=buildHouse(null,HR.rooms.banjiha,WP.presets||WP,DP.presets||DP,FIN,FP.presets||FP,LP,SH);
+const wins=(b.luxWins||[]).map(w=>winFromHouse(w.wall,w.cu,w.cy,w.w,w.h,b.size,w.tau,w.evScale,w.cz)).filter(Boolean);
+const E=weatherE('summer');
+const D=s=>daylightDLI(daylightRatio({x:s.x,y:s.y,z:s.z},{x:0,y:1,z:0},wins,{occluders:b.occluders,glazed:b.glazedPanes,selfIdx:s.occIdx}),{weather:'clear',season:'summer'});
+const SIRU_D=0.24;                                  // 열린 시루(413) 지름
+const L=[];
+L.push('# 열린 콩나물 시루(413, 0.24×0.109×0.24m) 를 놓을 어두운 슬롯');
+L.push('');
+L.push('| slotId | 가구 | 좌표 | maxPotD | 시루 0.24 들어가나 | peak_summer | avg7_summer |');
+L.push('|---|---|---|---|---|---|---|');
+const rows=(b.plantSlots||[]).map(s=>({s,d:D(s)})).filter(r=>r.d<=0.3).sort((a,c)=>a.d-c.d);
+for(const {s,d} of rows){
+  const fits = s.maxPotD==null ? '(제한없음)' : (s.maxPotD>=SIRU_D ? 'O '+s.maxPotD : '★ X '+s.maxPotD);
+  L.push(`| \`${s.slotId}\` | ${s.owner} | (${s.x}, ${s.y}, ${s.z}) | ${s.maxPotD??'—'} | ${fits} | ${d.toFixed(2)} | ${(d*E).toFixed(2)} |`);
+}
+L.push('');
+const ok=rows.filter(r=>r.s.maxPotD==null||r.s.maxPotD>=SIRU_D);
+L.push(`peak_summer <= 0.3 슬롯: ${rows.length}칸 · 그중 시루가 들어가는 칸: **${ok.length}칸**`);
+if(ok.length){ const t=ok[0];
+  L.push(`가장 어두우면서 시루 가능: \`${t.s.slotId}\` peak ${t.d.toFixed(2)} / avg7 ${(t.d*E).toFixed(2)} @ (${t.s.x}, ${t.s.y}, ${t.s.z})`);
+  L.push('판정: **PASS** — 열린 시루를 놓을 ≤0.3 슬롯이 존재한다');
+}else L.push('판정: **BLOCK** — 어둡지만 시루가 들어가는 슬롯이 없다');
+document.getElementById('o').textContent=L.join('\n'); document.title='DONE';
+</script>

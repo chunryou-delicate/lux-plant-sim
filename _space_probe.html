@@ -41,14 +41,34 @@ function scan(key){
                                         z0:Math.min(c.z0,c.z1),z1:Math.max(c.z0,c.z1)}));
   const inCut=(x,z)=>cuts.some(c=>x>c.x0&&x<c.x1&&z>c.z0&&z<c.z1);
 
+  /* ★ '고체 벽 속'인 점만 뺀다 — 창·문 개구부는 살린다.
+     예전엔 방 바깥 경계에서 0.05m 만 띄워서 벽 속 점이 섞였고,
+     그걸 고치려 안쪽면 기준으로 띄웠더니 이번엔 **창 개구부(reveal)** 가 통째로 빠졌다.
+     창턱은 실제로 그 개구부 안에 놓인다(반지하 창턱 슬롯이 z=-1.95 다).
+     그래서 벽 띠 안에 있으면서 개구부에 안 걸리는 점만 뺀다. */
+  const WT = 0.2;
+  const OPEN = { back:[], front:[], left:[], right:[] };
+  for(const w of (def.windows||[])) if(OPEN[w.wall]) OPEN[w.wall].push({u0:w.cu-w.w/2,u1:w.cu+w.w/2,y0:w.cy-w.h/2,y1:w.cy+w.h/2});
+  for(const d2 of (def.doors||[]))  if(OPEN[d2.wall]) OPEN[d2.wall].push({u0:d2.cu-d2.w/2,u1:d2.cu+d2.w/2,y0:0,y1:d2.h});
+  const inOpening=(wall,u,y)=>OPEN[wall].some(o=>u>=o.u0&&u<=o.u1&&y>=o.y0&&y<=o.y1);
+  const inSolidWall=(x,y,z)=>{
+    if(z < -size.d/2+WT/2) return !inOpening('back',  x, y);
+    if(z >  size.d/2-WT/2) return !inOpening('front', x, y);
+    if(x < -size.w/2+WT/2) return !inOpening('left',  z, y);
+    if(x >  size.w/2-WT/2) return !inOpening('right', z, y);
+    return false;
+  };
   const pts=[]; let cells=0;
   for(let x=-size.w/2+0.05; x<=size.w/2-0.05; x+=STEP)
     for(let z=-size.d/2+0.05; z<=size.d/2-0.05; z+=STEP){
       if(inCut(x,z)) continue;
-      cells++;
-      for(const y of YS)
+      /* 바닥 면적은 '벽 띠를 뺀 실내'로 센다 — 개구부는 바닥이 아니다 */
+      if(Math.abs(z)<size.d/2-WT/2 && Math.abs(x)<size.w/2-WT/2) cells++;
+      for(const y of YS){
+        if(inSolidWall(x,y,z)) continue;        // 고체 벽 속 — 화분을 못 놓는다
         pts.push({x,y,z,dli:daylightDLI(daylightRatio({x,y,z},{x:0,y:1,z:0},wins,
                  {occluders:archOcc, glazed:b.glazedPanes}),{weather:'clear',season:'summer'})});
+      }
     }
   /* 슬롯 기준(지금 가구 배치) — 이건 차폐에 가구를 포함한다 */
   const sd=(b.plantSlots||[]).map(s=>daylightDLI(daylightRatio({x:s.x,y:s.y,z:s.z},{x:0,y:1,z:0},wins,

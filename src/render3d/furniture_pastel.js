@@ -366,7 +366,9 @@ B.shelf_wall=(o)=>{
     g.add(br);
   }
   g.userData.size={w,h:t,d}; g.userData.mount='wall';
-  return addSlots(g, tierSlots(w, t, 3), [t]);
+  /* slots 옵션 — 기본 3은 그대로다(기존 프리셋 영향 없음).
+     반지하 창턱처럼 "1칸만" 이 의도인 자리에서 1로 준다. */
+  return addSlots(g, tierSlots(w, t, o.slots ?? 3), [t]);
 };
 
 /* 스툴 1단 (작은 화분 받침) */

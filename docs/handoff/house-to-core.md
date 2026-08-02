@@ -427,3 +427,78 @@ weekStats((w,s) => daylightDLI(r,{weather:w,season:s}), ...).mean + lampDLI(ppfd
 - [ ] **계산↔화면 자동 대조 검사**가 없습니다. 이번 렌더 사고 5건 중 3건이
       "계산엔 있는데 화면엔 없다"였습니다. 코어가 화면을 붙일 때 같은 유형이 또 날 수 있습니다
 
+---
+
+# 2026-08-02 · ★ 첫 플레이용 반지하 두 슬롯 — core 연결용
+
+## 슬롯 둘
+
+```jsonc
+// 밝은 자리 — 몬스테라
+{ "slotId": "banjiha-sill:0",
+  "point": { "x": 0, "y": 1.585, "z": -1.95 },
+  "maxPotD": 0.21,
+  "owner": "shelf_wall",            // 프리셋 shelf_sill_pot1 (반지하 전용, 1칸)
+  "peak_summer": 3.77, "avg7_summer": 2.42 }
+
+// 어두운 자리 — 열린 콩나물 시루(에셋 413, 0.24 x 0.109 x 0.24m)
+{ "slotId": "dresser#4:1",
+  "point": { "x": 1.7, "y": 0.8, "z": 1.66 },
+  "maxPotD": 0.42,
+  "owner": "dresser",
+  "peak_summer": 0.04, "avg7_summer": 0.02 }
+```
+
+- **배치 가능**: 몬스테라 화분 ≤0.21m / 열린 시루 0.24m ≤ 0.42m — 둘 다 들어갑니다
+- `peak_summer ≤ 0.3` 슬롯이 **9칸**이고 전부 시루가 들어갑니다(대체 자리가 넉넉합니다)
+- 반지하 슬롯 총 **14칸** (창턱 1 + 기존 13)
+
+## daily_light/1 호출 예
+
+```js
+const built = buildHouse(GRAIN, HR.rooms.banjiha, wp, dp, finishes, fp, lightPresets, shadePresets);
+const wins  = built.luxWins.map(w =>
+  winFromHouse(w.wall, w.cu, w.cy, w.w, w.h, built.size, w.tau, w.evScale, w.cz)).filter(Boolean);
+
+const report = buildDailyLight(day, slots, wins, {
+  weather:'clear', season:'summer',          // novice 는 고정 (weather_k=1, season_k=1)
+  occluders: built.occluders,
+  glazed   : built.glazedPanes,              // ★ 이제 제대로 반영됩니다
+  thresholds: lightThresholds, litHours: 0   // 첫 플레이는 식물등 없음
+});
+report.slots.find(s => s.slotId === 'banjiha-sill:0');
+```
+
+실제 반환값(확인 완료):
+
+```json
+{ "slotId": "banjiha-sill:0", "plantId": "monstera_deliciosa",
+  "point": { "x": 0, "y": 1.585, "z": -1.95 },
+  "peak_lx": 6130, "dli": 3.77, "dli_daylight": 3.77, "dli_lamp": 0,
+  "band": "slow", "ko": "느림", "fenestrating": false, "overlight": false }
+```
+
+- `report.best.slotId === "banjiha-sill:0"` — **조용한 fallback 없이 정확히 선택됩니다**
+- `slotId` 14개 전부 고유
+
+> **novice 는 매일 같은 자연광**이라 `dli7` 이 `peak_summer` 로 수렴합니다 → **3.77**.
+> `avg7_summer` 2.42 는 real 모드(날씨·계절 굴림) 값입니다. 첫 플레이 판정엔 3.77을 쓰세요.
+
+## 화면 증거
+
+`docs/engine/shots/banjiha_first_play_wide.png` (방 전체 — 두 자리 관계)
+`docs/engine/shots/banjiha_sill_near.png` (창턱 근접)
+
+## ★ 실측표 정정 — 온실 `space.peak` 16.16 → 15.09
+
+공간 격자가 고체 벽 속 점을 세고 있었습니다. 고쳤습니다.
+**다른 방 `space.peak` 는 불변**이고, 바닥 면적만 벽 띠를 빼서 5~7% 줄었습니다
+(아파트 99.4→94.6 · 온실 120→114.6㎡). 자세한 건 `docs/engine/rooms_spec.md` §2.
+
+## core 대기 (HOUSE 범위 밖)
+
+- 플레이어가 UI 에서 슬롯 선택 / 드래그 이동
+- 세이브 후 같은 슬롯 복원
+- Day 4 몬스테라 지급 이벤트 연결
+- 최종 게임 카메라에서의 체감
+

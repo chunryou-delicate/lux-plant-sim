@@ -1,0 +1,74 @@
+<!doctype html><meta charset="utf-8"><title>반지하 첫 플레이</title>
+<body style="margin:0;background:#1a2030"><canvas id="cv"></canvas>
+<script src="https://unpkg.com/three@0.128.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+<script type="module">
+/* 첫 플레이 두 자리를 한 화면에 — 창가 창턱(몬스테라) / 방 안쪽 서랍장(열린 시루) */
+import { buildHouse, updateShellVisibility } from './src/render3d/house.js';
+import { createScene, updateLight } from './src/render3d/scene.js';
+import { initTextures } from './src/render3d/textures.js';
+import { winFromHouse } from './src/engine/daylight_lux.js';
+const J=p=>fetch(p).then(r=>r.json());
+const [HR,WP,DP,FIN,FP,LP,SH]=await Promise.all(['./data/house_rooms.json','./data/window_presets.json','./data/door_presets.json','./data/room_finishes.json','./data/furniture_presets.json','./data/lighting_presets.json','./data/shading_presets.json'].map(J));
+const cv=document.getElementById('cv');
+cv.width=1280; cv.height=860;
+const ctx=createScene(cv);
+await initTextures();
+const b=buildHouse(null,HR.rooms.banjiha,WP.presets||WP,DP.presets||DP,FIN,FP.presets||FP,LP,SH);
+ctx.scene.add(b.room);
+ctx.winPos=b.winPos; ctx.glassMeshes=b.glassMeshes;
+const wins=(b.luxWins||[]).map(w=>winFromHouse(w.wall,w.cu,w.cy,w.w,w.h,b.size,w.tau,w.evScale,w.cz)).filter(Boolean);
+ctx.skyWins=wins.map(w=>({x:w.cx,y:w.cy,z:w.cz,nx:w.nx||0,ny:w.ny||0,nz:w.nz||0,area:w.width*w.height,tau:w.tau,ev:w.evScale}));
+updateLight(ctx, 50, 2);            // 한낮 · 천장등 끔(자연광만)
+
+/* 두 자리에 표식 — 몬스테라(창턱) / 열린 시루(서랍장) */
+const slots=b.plantSlots||[];
+const sill=slots.find(s=>String(s.slotId).startsWith('banjiha-sill'));
+const dark=slots.find(s=>s.slotId==='dresser#4:1');
+function pot(s, col, h){
+  const g=new THREE.Group();
+  const m=new THREE.MeshStandardMaterial({color:new THREE.Color(col), roughness:0.75});
+  const p=new THREE.Mesh(new THREE.CylinderGeometry(0.085,0.07,0.13,16), m);
+  p.position.y=0.065; g.add(p);
+  const lm=new THREE.MeshStandardMaterial({color:new THREE.Color('#5d8f52'), roughness:0.7});
+  for(let i=0;i<5;i++){ const l=new THREE.Mesh(new THREE.SphereGeometry(0.075,10,8), lm);
+    const a=i/5*Math.PI*2; l.position.set(Math.cos(a)*0.09, 0.13+h*(0.5+0.4*Math.random()), Math.sin(a)*0.09);
+    l.scale.y=0.55; g.add(l); }
+  g.traverse(o=>{ if(o.isMesh){ o.castShadow=true; o.receiveShadow=true; o.userData.shadowRole='blocker'; } });
+  g.position.set(s.x, s.y, s.z); return g;
+}
+function siru(s){
+  const g=new THREE.Group();
+  const m=new THREE.MeshStandardMaterial({color:new THREE.Color('#cbb79a'), roughness:0.85});
+  const bowl=new THREE.Mesh(new THREE.CylinderGeometry(0.12,0.10,0.109,20,1,true), m);
+  bowl.material.side=THREE.DoubleSide; bowl.position.y=0.055; g.add(bowl);
+  const sp=new THREE.MeshStandardMaterial({color:new THREE.Color('#e8e4c9'), roughness:0.8});
+  const heap=new THREE.Mesh(new THREE.SphereGeometry(0.105,14,10), sp);
+  heap.scale.y=0.42; heap.position.y=0.10; g.add(heap);
+  g.traverse(o=>{ if(o.isMesh){ o.castShadow=true; o.receiveShadow=true; o.userData.shadowRole='blocker'; } });
+  g.position.set(s.x, s.y, s.z); return g;
+}
+if(sill) ctx.scene.add(pot(sill,'#b98f6b',0.10));
+if(dark) ctx.scene.add(siru(dark));
+
+const VIEWS={
+  wide: { pos:[5.0,3.8,5.6], look:[0.3,0.7,-0.5], wall:'auto' },      // 방 전체 — 두 자리 관계
+  near: { pos:[1.05,2.05,0.35], look:[0.0,1.55,-1.95], wall:'auto' }  // 창턱 근접
+};
+const which = new URLSearchParams(location.search).get('v') || 'wide';
+const V=VIEWS[which];
+ctx.cam.position.set(...V.pos); ctx.cam.lookAt(...V.look);
+ctx.cam.updateProjectionMatrix();
+ctx.cam.updateMatrixWorld(true);
+/* 컷어웨이 — index.html 과 같은 '시야자동'. 안 부르면 앞벽이 화면을 다 가린다. */
+updateShellVisibility(b.shells, ctx.cam, V.wall||'auto', b.trims);
+updateLight(ctx, 50, 2);            // 벽 상태가 바뀌었으니 그림자 갱신
+ctx.renderer.setSize(1280,860,false);
+ctx.renderer.render(ctx.scene, ctx.cam);
+/* 헤드리스 --screenshot 이 WebGL 에서 빈 파일을 내서, 렌더 직후 캔버스를 그대로 뽑는다.
+   render() 바로 뒤 같은 프레임에 부르면 preserveDrawingBuffer 없이도 남아 있다. */
+const url=cv.toDataURL('image/png');
+const el=document.createElement('div'); el.id='png'; el.textContent=url;
+el.style.display='none'; document.body.appendChild(el);
+document.title='DONE';
+</script>

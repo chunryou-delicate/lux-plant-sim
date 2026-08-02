@@ -731,7 +731,11 @@ export function buildHouse(GRAIN, roomDefIn, winPresets, doorPresets={}, finishe
     // 충돌: 낮은 것(러그)·벽걸이·천장등 빼고 전부. 조도 차폐보다 기준이 넓다.
     if(fsz && fsz.h>0.20 && !hang && g.userData.mount!=='wall' && !/^rug/.test(type))
       pushCol(f.x??0, f.z??0, fsz.w, fsz.d, fsz.h, (f.rot||0)*Math.PI/180, 'furn');
-    if(fsz && fsz.h>0.25 && !/^rug|^lamp|light|^picture|^wall_clock|^mirror/.test(type)){
+    /* ★ 두께가 아니라 '빛 길목에 있나' 가 기준이다.
+       h>0.25 만 보면 창가 1.6m 창턱(두께 0.035)이 빠진다 — 화면은 막는데
+       계산은 통과라 대조 검사에 잡혔다. 높이 1m 이상이면 얇아도 넣는다.
+       바닥의 얇은 것(러그)은 y<1 이라 그대로 빠진다. */
+    if(fsz && (fsz.h>0.25 || yBase>=1.0) && !/^rug|^lamp|light|^picture|^wall_clock|^mirror/.test(type)){
       g.userData.occIdx = occluders.length;   // 자기 자신은 자기 슬롯을 가리지 않게(자가차폐 방지)
       occluders.push({ x:(f.x??0)-fsz.w/2, z:(f.z??0)-fsz.d/2,
                        w:fsz.w, d:fsz.d, h:fsz.h, y0:yBase, rot:(f.rot||0)*Math.PI/180,

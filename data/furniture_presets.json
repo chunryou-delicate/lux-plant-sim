@@ -206,6 +206,18 @@
       "mount": "window",
       "note": "창 아래 붙여 화분 4개"
     },
+    "shelf_sill_pot1": {
+      "type": "shelf_wall",
+      "name_ko": "창턱 화분받침(1칸)",
+      "w": 0.36,
+      "d": 0.24,
+      "slots": 1,
+      "color": "#e6e2d8",
+      "accent": "#c9c2b4",
+      "room": "창",
+      "mount": "wall",
+      "note": "★ 창 개구부(reveal) 안에 끼우는 얇은 받침. 화분 1개. 반지하 첫 플레이용 — 높이가 곧 빛이라는 힌트."
+    },
     "shelf_wall_1tier": {
       "type": "shelf_wall",
       "name_ko": "선반-벽걸이-1단",

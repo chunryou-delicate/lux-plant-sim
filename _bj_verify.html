@@ -1,0 +1,53 @@
+<!doctype html><meta charset="utf-8"><title>반지하 검증</title><body style="background:#111;color:#ddd;font:12px/1.6 monospace;padding:12px"><pre id="o">…</pre>
+<script src="https://unpkg.com/three@0.128.0/build/three.min.js"></script>
+<script type="module">
+import { buildHouse } from './src/render3d/house.js';
+import { winFromHouse } from './src/engine/daylight_lux.js';
+import { daylightRatio, daylightDLI, buildDailyLight } from './src/engine/daily_light.js';
+import { weatherE } from './src/engine/weather.js';
+const J=p=>fetch(p).then(r=>r.json());
+const [HR,WP,DP,FIN,FP,LP,TH,SH]=await Promise.all(['./data/house_rooms.json','./data/window_presets.json','./data/door_presets.json','./data/room_finishes.json','./data/furniture_presets.json','./data/lighting_presets.json','./data/balance/light_thresholds.json','./data/shading_presets.json'].map(J));
+const b=buildHouse(null,HR.rooms.banjiha,WP.presets||WP,DP.presets||DP,FIN,FP.presets||FP,LP,SH);
+const wins=(b.luxWins||[]).map(w=>winFromHouse(w.wall,w.cu,w.cy,w.w,w.h,b.size,w.tau,w.evScale,w.cz)).filter(Boolean);
+const E=weatherE('summer');
+const D=s=>daylightDLI(daylightRatio({x:s.x,y:s.y,z:s.z},{x:0,y:1,z:0},wins,{occluders:b.occluders,glazed:b.glazedPanes,selfIdx:s.occIdx}),{weather:'clear',season:'summer'});
+const L=[];
+const slots=b.plantSlots||[];
+L.push('# 반지하 슬롯 전수 (창턱 추가 후)');
+L.push('');
+L.push('| slotId | 가구 | x | y | z | peak_summer | avg7_summer |');
+L.push('|---|---|---|---|---|---|---|');
+const rows=slots.map(s=>({s,d:D(s)})).sort((a,b2)=>b2.d-a.d);
+for(const {s,d} of rows)
+  L.push(`| \`${s.slotId}\` | ${s.owner} | ${s.x} | ${s.y} | ${s.z} | **${d.toFixed(2)}** | ${(d*E).toFixed(2)} |`);
+L.push('');
+const top=rows[0], bot=rows[rows.length-1];
+const dark=rows.filter(r=>r.d<=0.3);
+L.push(`banjiha.slots.count = ${slots.length}`);
+L.push(`banjiha.slots.peak_summer = ${top.d.toFixed(2)}  (\`${top.s.slotId}\`)`);
+L.push(`banjiha.slots.avg7_summer = ${(top.d*E).toFixed(2)}`);
+L.push(`banjiha.slots 중 peak_summer <= 0.3 = ${dark.length}칸`);
+L.push(`가장 어두운 슬롯 = \`${bot.s.slotId}\` peak ${bot.d.toFixed(2)} / avg7 ${(bot.d*E).toFixed(2)} @ (${bot.s.x}, ${bot.s.y}, ${bot.s.z}) ${bot.s.owner}`);
+L.push('');
+L.push('## daily_light/1 계약이 새 슬롯을 고르나');
+const rep=buildDailyLight(0, slots.map(s=>({...s, plantId:'monstera_deliciosa'})), wins,
+  {weather:'clear',season:'summer',occluders:b.occluders,glazed:b.glazedPanes,thresholds:TH,litHours:0,lampWatts:0});
+const sill=rep.slots.find(x=>String(x.slotId).startsWith('banjiha-sill'));
+L.push('```json');
+L.push(JSON.stringify(sill,null,1));
+L.push('```');
+L.push(`계약 best.slotId = ${rep.best && rep.best.slotId}  ← 새 슬롯이어야 정상(조용한 fallback 아님)`);
+L.push(`계약 slots 개수 = ${rep.slots.length} · slotId 고유 = ${new Set(rep.slots.map(s=>s.slotId)).size}`);
+L.push('');
+L.push('## 창턱 실측 상세');
+const S=rows.find(r=>String(r.s.slotId).startsWith('banjiha-sill'));
+if(S){ L.push(`slotId: ${S.s.slotId}`);
+  L.push(`좌표: (${S.s.x}, ${S.s.y}, ${S.s.z}) · 상판 높이 ${S.s.y}m · maxPotD ${S.s.maxPotD}`);
+  L.push(`창(back 벽 z=-2.0) 까지 수평거리 = ${Math.abs(-2.0-S.s.z).toFixed(2)}m`);
+  L.push(`banjiha.slots.${S.s.slotId}.peak_summer = ${S.d.toFixed(2)}`);
+  L.push(`banjiha.slots.${S.s.slotId}.avg7_summer = ${(S.d*E).toFixed(2)}`);
+  const th=TH.plants.monstera_deliciosa;
+  L.push(`몬스테라 min ${th.min} → ${S.d>=3.6?'PASS (마진 20%↑)':S.d>=3.0?'PASS_WITH_WARNINGS':'BLOCK'}`);
+}else L.push('★ 창턱 슬롯이 없다');
+document.getElementById('o').textContent=L.join('\n'); document.title='DONE';
+</script>
