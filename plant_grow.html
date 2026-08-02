@@ -926,7 +926,13 @@ let GT={
   fStable:{ cv_stable:0.15, mult_stable:1.3, cv_mid:0.30, mult_mid:1.0, mult_unstable:0.7,
             min_days:7, window_days:14 },
   fProp:{ batch:1.0, individual:1.0 },
-  mature:{ threshold_floor:0.5, over_max_mult:0.6 }
+  // roll_lo/roll_hi = 성숙 굴림 확률의 하한·상한(박사님 확정 2026-08-03). ★하한이 0 이 아니다 —
+  //   0 이면 어두운 데 두는 것만으로 중간잎이 보장돼 "중간잎 개체"가 운이 아니라 설정이 된다.
+  // mid_lock_pct = 중간잎 확정(특수 잎) 확률. **환경 무관**이라야 농사가 안 된다.
+  // gauge_* = 성숙 게이지 속도. 전역 생장 곡선과 별개다.
+  mature:{ threshold_floor:0.5, over_max_mult:0.6,
+           roll_lo:0.10, roll_hi:0.90, mid_lock_pct:0.03,
+           gauge_days:12, gauge_lo:0.6, gauge_hi:1.4, gauge_over:0.5, fail_reset:0.5 }
 };
 // 정본이 '실렸다'고 말할 수 있으려면 파일을 읽은 것만으로는 부족하다 — 게이트가 쓰는
 // 임계값이 실제로 숫자로 들어와야 한다. 키 하나가 비면 게임이 코드 복제값으로 돌아간다.
@@ -1189,17 +1195,115 @@ function calcVarieProb(ctx){                     // 무늬종으로 태어날 �
 // ★ 갈라짐(성숙잎). fenestrate 6.0 미만이면 0 —
 //   "자연광만으로는 아파트에 가야 갈라진 잎을 본다"(balance_decisions.md §②)가
 //   지금까지 문서에만 있고 코드엔 없었다. 이 한 줄이 그 설계를 실제로 성립시킨다.
+// ★ [정정 2026-08-03] 하한이 0 이 아니다. 이전에는 문턱(6.0) 아래면 0 이었고
+//   그 한 줄이 "자연광만으로는 아파트에 가야 갈라진 잎을 본다"를 성립시켰다.
+//   0 이면 어두운 자리에 두는 것만으로 중간잎이 보장돼 **중간잎 개체가 운이 아니라 설정**이 된다.
+//   박사님 확정: 어디서 키우든 결과가 운으로 갈려야 값이 붙는다. 대가로 빛 대비가 줄고,
+//   대신 어두운 자리는 기회 자체가 뜸해진다(matGaugeStep)·확정 잎은 따로 뽑는다(mid_lock_pct).
 function calcMatureProb(ctx){
+  const M=GT.mature, LO=M.roll_lo, HI=M.roll_hi;
   const dli=ctx&&ctx.dli;
-  if(dli==null || !isFinite(dli)) return P.matureProb;
+  if(dli==null || !isFinite(dli)) return LO;
   const d=dli7(), T=TH_MONSTERA;
-  if(d==null || !isFinite(d)) return P.matureProb;
-  if(d <  T.fenestrate) return 0;                  // 못 본다. 식물등을 사거나 이사해야 한다
-  if(d >  T.max)        return P.matureProb*GT.mature.over_max_mult;   // 과광 — 잎이 상해 성숙이 더디다
-  if(d >= T.best_hi)    return P.matureProb;
-  // 문턱을 막 넘으면 절반, best_hi(11)에서 최대. 6.0을 넘는 순간 갈라짐이 '켜진다'
-  const fl=GT.mature.threshold_floor;
-  return P.matureProb*(fl+(1-fl)*(d-T.fenestrate)/(T.best_hi-T.fenestrate));
+  if(d==null || !isFinite(d)) return LO;
+  if(d <  T.fenestrate) return LO;                 // 드물지만 일어난다 — 0 이 아니다
+  if(d >  T.max)        return HI*M.over_max_mult; // 과광 — 잎이 상해 성숙이 더디다
+  if(d >= T.best_hi)    return HI;
+  return LO+(HI-LO)*(d-T.fenestrate)/(T.best_hi-T.fenestrate);
+}
+
+/* ===== 성숙 판정 = 게이지 + 굴림 (박사님 확정 2026-08-03 · plan-to-growth.md §2026-08-03) =====
+   중간잎 → 성숙잎(갈라짐) 넘어가는 자리 **하나만** 바꾼다. furled~mid 는 시간 자동 그대로다.
+     게이지가 차면 "넘어갈 기회"를 얻고 그 자리에서 즉시 굴린다.
+     성공 → 성숙잎.  실패 → 게이지 절반(fail_reset)으로 돌아가 다시 채운다.
+
+   ★ 왜 상태를 들고 있어야 하나 —
+     buildPlant 는 다시 그릴 때마다 통째로 돌면서 rng 를 SEED 로 리셋한다. 잎의 난수는 고정인데
+     비교 대상인 확률만 빛 따라 움직인다. 그래서 상태가 없으면 **빛이 좋아질 때 과거의 중간잎이
+     소급해서 갈라지고, 나빠지면 갈라졌던 잎이 도로 중간잎이 된다.** 고치기 전 실제 동작이었고,
+     반지하 자연광이 문턱 아래라 확률이 계속 0 이어서 안 드러났을 뿐이다.
+
+   ⚠ 전역 생장 곡선은 건드리지 않는다 — GROWTH 의 +1 · 143 · 146 · spawnStep · matSpan · timeCurve 불변.
+     첫 기회는 잎이 시간상 중간잎에 닿는 그 날 바로 온다(gauge 가 1 에서 시작).
+     그래서 **성공하는 경우의 일정은 이전과 같다.** 늦어지는 것은 실패한 잎뿐이다. */
+const MAT_STATE=new Map();          // leafBirth → {gauge, matured, rolls, locked}
+function matResetAll(){ MAT_STATE.clear(); }
+// 잎 정체성만으로 0..1 을 뽑는다. SEED 와 잎이 같으면 몇 번을 다시 그려도 같은 값이다.
+function matHash(leafBirth, salt){
+  let h=(SEED ^ Math.round(leafBirth*1000) ^ Math.imul(salt|0, 0x9e3779b1))>>>0;
+  h=Math.imul(h^(h>>>16), 0x85ebca6b)>>>0;
+  h=Math.imul(h^(h>>>13), 0xc2b2ae35)>>>0;
+  return ((h^(h>>>16))>>>0)/4294967296;
+}
+// ★ 중간잎 확정(특수 잎). 잎이 중간잎에 들어설 때 딱 한 번, **환경과 무관하게** 정해진다.
+//   환경에 태우면 어두운 자리에 처박아 두고 계속 실패시키는 '농사'가 성립해 운이 아니게 된다.
+//   환경 무관이라 저장할 필요도 없다 — 씨앗에서 다시 뽑으면 언제나 같은 답이 나온다.
+function midLockedOf(leafBirth){ return matHash(leafBirth, 0) < GT.mature.mid_lock_pct; }
+function matEntry(leafBirth){
+  let e=MAT_STATE.get(leafBirth);
+  if(!e){ e={ gauge:1, matured:false, rolls:0, locked:midLockedOf(leafBirth) };
+          MAT_STATE.set(leafBirth, e); }
+  return e;
+}
+function matureOf(leafBirth){ const e=MAT_STATE.get(leafBirth); return !!(e && e.matured); }
+// 성숙 게이지가 하루에 얼마나 차는가 — 기회가 **얼마나 자주** 오는지를 빛이 정한다.
+//   확률(calcMatureProb)이 '그 기회를 잡을 가능성'이고, 이건 '기회의 빈도'다. 두 축이 곱해진다.
+function matGaugeStep(){
+  const M=GT.mature, T=TH_MONSTERA, base=1/Math.max(1, M.gauge_days), d=dli7();
+  if(d==null || !isFinite(d)) return base*M.gauge_lo;
+  if(d <  T.min)      return 0;                    // 안 자라는 빛이면 기회 자체가 안 온다
+  if(d >  T.max)      return base*M.gauge_over;    // 과광
+  if(d >= T.best_lo)  return base*M.gauge_hi;
+  return base*M.gauge_lo;
+}
+// 하루치 성숙 판정. advanceTo 가 GROWTH 를 올린 뒤 **딱 한 번** 부른다.
+// 반환값은 그 날 실제로 굴린 잎들 — 화면 문구가 "이번엔 성숙하지 않았습니다"를 띄우는 근거다.
+function stepMaturation(){
+  const g=ageOf(GROWTH), out=[];
+  for(const ax of axisTimeline(g)){
+    if(ax.birth>g) continue;
+    if((g-ax.leafBirth)/P.matSpan < P.stageMid) continue;   // 시간상 아직 중간잎 이전
+    const e=matEntry(ax.leafBirth);
+    if(e.matured || e.locked) continue;                     // 끝났거나 중간잎으로 확정된 잎
+    const step=matGaugeStep();
+    if(step<=0) continue;
+    e.gauge+=step;
+    if(e.gauge<1) continue;
+    const p=calcMatureProb(lightCtx()), roll=matHash(ax.leafBirth, e.rolls+1);
+    e.rolls++;
+    if(roll<p){ e.matured=true; e.gauge=0; }
+    else      { e.gauge=GT.mature.fail_reset; }              // ★실패는 감소가 아니라 재시도다
+    out.push({ leafBirth:ax.leafBirth, ok:e.matured, p:+p.toFixed(4), rolls:e.rolls });
+  }
+  return out;
+}
+// 슬라이더·점프(setGrowth)용. 하루씩 걸어오지 않은 잎에게 기회를 한 번씩 준다.
+// ⚠ 게임 경로가 아니다 — 게임은 advanceTo → stepMaturation 으로만 진행한다.
+function matCatchUp(){
+  const g=ageOf(GROWTH);
+  for(const ax of axisTimeline(g)){
+    if(ax.birth>g) continue;
+    if((g-ax.leafBirth)/P.matSpan < P.stageMid) continue;
+    const e=matEntry(ax.leafBirth);
+    if(e.matured || e.locked || e.rolls>0) continue;
+    const p=calcMatureProb(lightCtx());
+    e.rolls=1; if(matHash(ax.leafBirth,1)<p){ e.matured=true; e.gauge=0; }
+    else e.gauge=GT.mature.fail_reset;
+  }
+}
+// 헤드리스 재현·표시용 **읽기 전용** 접근자. let/const 전역은 밖에서 못 보므로 함수로 낸다.
+// ⚠ 세터는 두지 않는다 — 밖에서 성숙을 켤 수 있으면 굴림이 그 순간 장식이 된다(thLoaded 와 같은 이유).
+function matStateAll(){ return [...MAT_STATE.entries()].map(([leafBirth,e])=>Object.assign({leafBirth},e)); }
+function matStateOf(leafBirth){ const e=MAT_STATE.get(leafBirth); return e? Object.assign({},e) : null; }
+function leafStageParams(){ return { matSpan:P.matSpan, stageYoung:P.stageYoung, stageMid:P.stageMid,
+                                     spawnStep:P.spawnStep, seedEnd:P.seedEnd, petGrow:P.petGrow }; }
+// 성숙 게이지 표시값(0..1). 시간상 중간잎에 닿지 않았거나 끝난 잎은 null — 화면에 안 그린다.
+function matGaugeOf(leafBirth){
+  const g=ageOf(GROWTH);
+  if((g-leafBirth)/P.matSpan < P.stageMid) return null;
+  const e=MAT_STATE.get(leafBirth);
+  if(!e || e.matured) return null;
+  return { gauge:Math.max(0,Math.min(1,e.gauge)), locked:e.locked, rolls:e.rolls };
 }
 // ★ 갈래 비율에는 빛 배율을 태우지 않는다.
 //   빛은 "무늬가 나오느냐"(varieProb)를 결정하고, 나온 무늬가 어느 갈래로 정착하는지는
@@ -1753,7 +1857,9 @@ function buildPlant(){
       const ca=rng()*Math.PI*2;
       const curveDir=cx.multiplyScalar(Math.cos(ca)).addScaledVector(cz, Math.sin(ca)).normalize();
       const ax={from, dir:d0, birth, leafBirth:birth+P.petGrow, segs:[], simTip:null, midType:null,
-                az:rng()*Math.PI*2, canMature:rng()<calcMatureProb(lightCtx()),
+                // ★성숙 여부는 여기서 굴리지 않는다. 다시 그릴 때마다 빛으로 재판정하면
+                //   과거의 잎이 소급해서 갈라지거나 도로 돌아간다 — MAT_STATE 가 기억한다.
+                az:rng()*Math.PI*2, canMature:matureOf(birth+P.petGrow),
                 triggered:false, grew:false,
                 varie:rng()<calcVarieProb(lightCtx()),                   // ★캐논: 변이는 어린잎 단계에서 확률로 결정
                 alboMid:ALBO_MID_POOL[Math.floor(rng()*ALBO_MID_POOL.length)],   // 이 잎이 쓸 알보 중기 종류
@@ -1995,7 +2101,7 @@ function bindControls(){
   document.getElementById('btnFirst').onclick=()=>{ stopPlay(); setGrowth(0); };
   document.getElementById('btnLast').onclick=()=>{ stopPlay(); setGrowth(GMAX); };
   document.getElementById('btnPlay').onclick=()=>{ playing?stopPlay():startPlay(); };
-  document.getElementById('btnSeed').onclick=()=>{ SEED=Math.floor(Math.random()*99999); buildPlant(); };
+  document.getElementById('btnSeed').onclick=()=>{ SEED=Math.floor(Math.random()*99999); matResetAll(); buildPlant(); };
   const ls=document.getElementById('light');
   ls.addEventListener('input',()=>{ LIGHT_AZ=(+ls.value)*Math.PI/180; document.getElementById('lightV').textContent=ls.value+'°'; updateSun(); buildPlant(); });
   const ps=document.getElementById('photo');
@@ -2157,7 +2263,12 @@ function advanceTo(calDay){
     throw new Error('[생장] advanceTo 는 하루만 받습니다 — 지금 달력 '+CAL_DAY+', 요청 '+target+'(delta '+delta+'). 하루씩 부르세요');
   const reason=growthBlockReason();
   CAL_DAY=target;
-  if(reason===null) GROWTH=Math.max(0, Math.min(GMAX, GROWTH+1));
+  let matured=[];
+  if(reason===null){
+    GROWTH=Math.max(0, Math.min(GMAX, GROWTH+1));
+    // ★성숙 판정은 형태가 하루 간 뒤에만 돈다. 안 자란 날은 기회도 안 온다.
+    matured=stepMaturation();
+  }
   // ★논리 진행은 위에서 이미 끝났다. 아래는 화면일 뿐이다 —
   //   그리다 난 예외를 여기서 던지면 코어는 "하루가 안 갔다"고 알고 growth 는 갔다고 아는,
   //   서로 어긋난 상태가 된다. 그 갈림은 다음 턴부터 조용히 누적된다.
@@ -2165,13 +2276,17 @@ function advanceTo(calDay){
   //     아무도 모르는 상태가 된다 — 이 게임이 가르치는 게 딱 '빛 → 형태 변화'다.
   const r=redraw();
   return { calDay:CAL_DAY, growth:GROWTH, grew:reason===null, blocked:reason,
+           // 그 날 굴린 잎들. 빈 배열이면 굴릴 잎이 없었던 것이고, ok:false 가 있으면
+           // 화면이 "이번엔 성숙하지 않았습니다"를 띄워야 한다 — 게이지가 절반으로 준 이유다.
+           matured,
            drawn:r.drawn, drawError:r.drawError, hudError:r.hudError };
 }
 let _warnedSetGrowth=false;
 // 코어·테스트가 상태를 읽고 쓰는 자리. let 전역은 밖에서 못 만지므로 함수로 낸다.
 function calendarDay(){ return CAL_DAY; }          // 달력 경과일
 function growthDays(){ return GROWTH; }            // 유효 생장 진행도(형태를 결정)
-function plantSeed(v){ if(v!=null){ SEED=v>>>0; buildPlant(); } return SEED; }
+// 씨앗이 바뀌면 다른 개체다 — 성숙 이력도 같이 버린다(잠금 판정이 SEED 기반이라 안 지우면 어긋난다)
+function plantSeed(v){ if(v!=null){ SEED=v>>>0; matResetAll(); buildPlant(); } return SEED; }
 function isGrowing(){ return canGrow(); }          // 지금 자라는 중인가
 function growthBlocked(){ return growthBlockReason(); }   // 왜 안 자라나(문자열) · null이면 자라는 중
 // 임계값 정본이 실렸는가(읽기 전용). 코어가 "서버로 안 열었네"를 화면에 띄울 수 있게 낸다.
@@ -2232,7 +2347,9 @@ function phaseAt(day){
   if(m<0.22)          return 'spear_opening';
   if(m<P.stageYoung)  return 'leaf_young';
   if(m<P.stageMid)    return 'leaf_mid';
-  return 'leaf_mature';
+  // ★시간이 다 됐다고 성숙잎이 아니다 — 굴림에 성공해야 넘어간다(2026-08-03 확정).
+  //   아직 못 넘었거나 중간잎으로 확정된 잎은 계속 중간잎이다.
+  return matureOf(ax.leafBirth)? 'leaf_mature' : 'leaf_mid';
 }
 // 코어용 — 표시 전용이다. 게임 판정은 advanceTo 의 grew·blocked 로 한다.
 //   progress01 은 '이 단계 안에서 얼마나 왔나'를 원비율 그대로 낸다(A안).
@@ -2269,7 +2386,11 @@ function setGrowth(v){
     _warnedSetGrowth=true;
     console.warn('[생장] setGrowth 는 점프입니다. 하루 진행은 advanceTo(달력날짜) 를 쓰세요 — 저광 정지가 무시됩니다');
   }
+  // ★점프는 이력을 버리는 행위다. 뒤로 가면 그 뒤에 있었던 성숙 판정도 없던 일이 된다 —
+  //   안 지우면 "과거로 돌아갔는데 미래의 갈라진 잎이 그대로"인 화면이 나온다.
+  if(nv<GROWTH) matResetAll();
   GROWTH=nv; CAL_DAY=nv;
+  matCatchUp();                    // 하루씩 안 걸어온 잎들에게 기회를 한 번씩
   const g=document.getElementById('growth'); if(g) g.value=GROWTH;
   const t=document.getElementById('growthV'); if(t) t.textContent=GROWTH;
   // advanceTo 와 같은 이유로 논리 상태와 화면을 가른다 — 렌더 실패가 점프 실패로 번지지 않게.
