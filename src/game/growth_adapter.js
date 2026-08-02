@@ -5,8 +5,8 @@
    그래서 iframe 으로 띄우고 contentWindow 로 부른다. 파일은 건드리지 않는다.
    ★ growth가 나중에 ES 모듈로 내주면(다개체 리팩터) 고칠 파일은 이것 하나다.
 
-   ★ 코어는 여기서 '죽음·수확'을 판정하지 않는다. v0엔 그 개념 자체가 없고,
-     v1에서도 vigor()·isDead() 를 읽기만 한다 (growth 소유).
+   ★ 코어는 여기서 '죽음·수확'을 판정하지 않는다. v0엔 그 개념 자체가 없다.
+     활력(vigor)은 표시 취소가 확정돼(2026-08-02) **훅조차 두지 않는다** — 아래 참고.
 ============================================================ */
 
 /* 계약 객체에서 이 화분 자리의 DLI를 코어가 직접 꺼낸다.
@@ -88,33 +88,49 @@ export function createGrowthAdapter(iframe) {
     });
   }
 
+  /* ★ ready 이후에 계약이 사라질 수 있다 (2026-08-02).
+     iframe 을 새로고침하면 contentWindow 가 갈리고 전역 함수가 잠시(또는 영영) 없어진다.
+     그때 null 을 돌려주면 **턴이 반쯤 진행된 채로 조용히 지나간다** — 달력만 가고 형태는 그대로,
+     그런데 화면엔 아무 말도 없다. 그래서 계약 함수는 전부 **없으면 던진다.** */
+  function must(name) {
+    const f = fn(name);
+    if (!f) throw new Error(
+      `[생장] ${name} 을(를) 부를 수 없습니다 — plant_grow 가 다시 로딩됐거나 계약이 사라졌습니다` +
+      `${missing().length ? ` (없는 함수: ${missing().join(', ')})` : ''}`);
+    return f;
+  }
+
+  /* 상태를 건드리기 전에 한 번에 확인한다 — 루프가 이걸 먼저 부른다(부분 진행 방지). */
+  function assertContract() {
+    const gone = missing();
+    if (gone.length) throw new Error(
+      `[생장] 계약이 끊겼습니다 — 없는 함수: ${gone.join(', ')}. ` +
+      `plant_grow 를 다시 불러온 것 같습니다. 오늘 턴은 진행하지 않았습니다`);
+    if (!thresholdsLoaded()) throw new Error(
+      '[생장] 임계값 정본이 실리지 않았습니다 — 오늘 턴은 진행하지 않았습니다');
+    return true;
+  }
+
   return {
-    ready, missing,
+    ready, missing, assertContract,
     has: (name) => !!fn(name),
 
     /* 하루치 빛 — 숫자로 넘긴다. ★ null 도 반드시 넘긴다(어제 값이 남으면 안 된다). */
-    setDailyLight(dli) { const f = fn('setDailyLight'); return f ? f(dli) : null; },
+    setDailyLight(dli) { return must('setDailyLight')(dli); },
 
     /* ★ 하루 진행 — 코어의 일일 루프는 이것만 쓴다.
        달력은 하루 가고, 유효 생장(형태)은 빛이 될 때만 쌓인다.
        반환 { calDay, growth, grew, blocked } · 하루가 아닌 값을 주면 growth 가 던진다. */
-    advanceTo(calDay) { const f = fn('advanceTo'); return f ? f(calDay) : null; },
-    calendarDay()     { const f = fn('calendarDay');    return f ? f() : null; },
-    growthDays()      { const f = fn('growthDays');     return f ? f() : null; },
-    growthBlocked()   { const f = fn('growthBlocked');  return f ? f() : null; },
+    advanceTo(calDay) { return must('advanceTo')(calDay); },
+    calendarDay()     { return must('calendarDay')(); },
+    growthDays()      { return must('growthDays')(); },
+    growthBlocked()   { return must('growthBlocked')(); },
 
     /* ⚠ 점프다. **초기 형태 배치·디버그 전용** — 일일 루프에서 부르지 않는다.
        개체가 생길 때 한 번(도착 진행도 143) 쓰는 게 전부다.
-       ★ 함수가 없으면 null 을 돌려주지 않고 **던진다**(2026-08-02).
-       null 을 돌려주면 "도착은 했는데 형태는 0일"인 개체가 조용히 생긴다 —
+       없으면 던진다 — null 을 돌려주면 "도착은 했는데 형태는 0일"인 개체가 조용히 생긴다.
        도착은 성공/실패가 갈려야 하는 원자적 사건이다(state.givePlant 참고). */
-    setGrowth(days) {
-      const f = fn('setGrowth');
-      if (!f) throw new Error('[생장] setGrowth 가 없습니다 — 개체를 만들 수 없습니다 ' +
-        `(없는 함수: ${missing().join(', ') || 'setGrowth'})`);
-      setGrowthCalls++;
-      return f(days);
-    },
+    setGrowth(days) { const f = must('setGrowth'); setGrowthCalls++; return f(days); },
     setGrowthCalls: () => setGrowthCalls,
 
     /* ★ 갈라짐 표시는 반드시 이걸 쓴다 (growth 요청, 2026-08-01).
@@ -123,15 +139,16 @@ export function createGrowthAdapter(iframe) {
        거짓말이 된다 — 반지하·등1개가 정확히 그 경우다(하루 6.02 넘음 / 7일평균 5.82 못 넘음). */
     canFenestrate(varie) { const f = fn('canFenestrate'); return f ? f(!!varie) : null; },
 
-    /* 읽기 전용 — growth가 진짜 쓴 값. 코어 계산과 대조하는 용도. */
+    /* 표시·대조 전용(판정에 안 쓴다) — 없으면 화면에 '—' 로 두면 되므로 던지지 않는다. */
     dli7()   { const f = fn('dli7');   return f ? f() : null; },
     dliCV()  { const f = fn('dliCV');  return f ? f() : null; },
     ageOf(d) { const f = fn('ageOf');  return f ? f(d) : null; },
     bandOf(dli, varie) { const f = fn('bandOf'); return f ? f(dli, varie) : null; },
     reset()  { const f = fn('resetDailyLight'); return f ? f() : null; },
 
-    /* v1에 생긴다(체력 모델). 지금은 없으므로 null — 코어는 이 값으로 판정하지 않는다. */
-    vigor()  { const f = fn('vigor');   return f ? f() : null; },
-    isDead() { const f = fn('isDead');  return f ? f() : null; }
+    /* ★ vigor()·isDead() 훅은 **제거했다** (2026-08-02).
+       활력 표시가 취소됐고(novice 는 형태 진행도 한 축, 활력은 숨김·감소 없음),
+       고수 모드 활력은 보류다. 지금 계약 밖이므로 자리조차 두지 않는다 —
+       "있으니까 언젠가 읽겠지"가 되면 판정이 코어로 새어 들어온다. */
   };
 }

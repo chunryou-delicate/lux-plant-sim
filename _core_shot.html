@@ -43,6 +43,10 @@ const stamp = document.getElementById('stamp');
    검수 촬영은 "이 조건에서 이 화면이 나온다"의 증거다. 파일 하나가 비어도 빈 기본값으로
    조용히 굴러가면 **틀린 조건의 사진**이 증거로 남는다. HTTP·JSON·필수 키 중 하나라도
    어긋나면 촬영을 멈추고 SHOT FAIL 을 낸다. */
+const empty = (v) => v == null
+  || (typeof v === 'object' && !Array.isArray(v) && Object.keys(v).length === 0)
+  || (Array.isArray(v) && v.length === 0);
+
 async function need(path, keys = []) {
   let res;
   try { res = await fetch(path); }
@@ -52,13 +56,29 @@ async function need(path, keys = []) {
   try { json = await res.json(); }
   catch (e) { throw new Error(`${path} JSON 파싱 실패 — ${e.message}`); }
   if (!json || typeof json !== 'object') throw new Error(`${path} 내용이 객체가 아닙니다`);
+  if (empty(json)) throw new Error(`${path} 이(가) 빈 객체입니다`);
   for (const k of keys) {
     const v = k.split('.').reduce((o, kk) => (o == null ? o : o[kk]), json);
-    if (v == null || (typeof v === 'object' && !Object.keys(v).length))
-      throw new Error(`${path} 에 필수 키 "${k}" 가 없습니다(비었습니다)`);
+    if (empty(v)) throw new Error(`${path} 에 필수 키 "${k}" 가 없습니다(비었습니다)`);
   }
   return json;
 }
+
+/* 프리셋류는 `{presets:{…}}` 이거나 그 자체가 표다. 어느 쪽이든 **비어 있으면 실패**시킨다 —
+   빈 표로 방을 조립하면 창도 문도 가구도 없는 방이 조용히 만들어지고, 그 사진이 증거로 남는다. */
+function presetsOf(path, raw, needIds = []) {
+  const table = raw && raw.presets ? raw.presets : raw;
+  if (empty(table)) throw new Error(`${path} 의 프리셋 표가 비었습니다`);
+  for (const id of needIds)
+    if (empty(table[id])) throw new Error(`${path} 에 "${id}" 프리셋이 없습니다`);
+  return table;
+}
+
+/* 테스트용 실패 주입 — `?empty=window` 처럼 준 데이터셋을 비워 검증이 실제로 잡는지 본다.
+   실패만 만들 수 있고 통과를 만들 수는 없다(검증을 우회하지 않는다). */
+const EMPTY_INJECT = (new URLSearchParams(location.search).get('empty') || '')
+  .split(',').map(s => s.trim()).filter(Boolean);
+const inject = (name, v) => EMPTY_INJECT.includes(name) ? {} : v;
 
 function fail(msg) {                       // 촬영 중단 — 사진 대신 실패를 남긴다
   stamp.textContent = 'SHOT FAIL — ' + msg;
@@ -69,9 +89,14 @@ function fail(msg) {                       // 촬영 중단 — 사진 대신 �
 }
 
 try {
+/* 인자부터 본다 — 데이터를 다 받고 나서 걸러 봐야 늦다 */
+if (!Number.isInteger(DAYS) || DAYS < 0)
+  fail(`days 는 0 이상 정수여야 합니다 — 받은 값 "${new URLSearchParams(location.search).get('days')}"`);
+
 const [houseRoomsRaw, winRaw, doorRaw, finishes, furnRaw, lightPresets, shadePresets,
        lightTh, weatherBalance] = await Promise.all([
-  need('./data/house_rooms.json', ['rooms', 'rooms.banjiha']),
+  need('./data/house_rooms.json', ['rooms', 'rooms.banjiha', 'rooms.banjiha.furniture',
+                                   'rooms.banjiha.windows', 'rooms.banjiha.size']),
   need('./data/window_presets.json'),
   need('./data/door_presets.json'),
   need('./data/room_finishes.json'),
@@ -81,18 +106,26 @@ const [houseRoomsRaw, winRaw, doorRaw, finishes, furnRaw, lightPresets, shadePre
   need('./data/balance/light_thresholds.json', ['plants.monstera_deliciosa.min']),
   need('./data/balance/weather.json', ['weather.clear.p', 'season_factor'])
 ]);
+
+/* 반지하 촬영에 실제로 쓰이는 것만 콕 집어 확인한다 — 표만 있고 항목이 없으면 같은 사고다 */
 const houseRooms = houseRoomsRaw;
-const winPresets = winRaw.presets || winRaw;
-const doorPresets = doorRaw.presets || doorRaw;
-const furnPresets = furnRaw.presets || furnRaw;
+const winPresets   = presetsOf('window_presets',    inject('window', winRaw),   ['win_semi_letterbox']);
+const doorPresets  = presetsOf('door_presets',      inject('door', doorRaw),    ['door_plain_cream']);
+/* 창턱 화분받침(shelf_sill_pot1)이 banjiha-sill:0 을 내는 가구다 — 이게 없으면 촬영 조건이 성립하지 않는다 */
+const furnPresets  = presetsOf('furniture_presets', inject('furniture', furnRaw),
+                               ['shelf_sill_pot1', 'shelf_etagere_3tier', 'desk']);
+const shading      = presetsOf('shading_presets',   inject('shading', shadePresets));
+const finishesOk   = presetsOf('room_finishes',     inject('finishes', finishes));
+if (empty(lightPresets.fixtures) || empty(lightPresets.spectra))
+  fail('lighting_presets.json 에 fixtures/spectra 가 비었습니다');
 
 const io = {
-  light: createLightEngine({ houseRooms, winPresets, doorPresets, finishes, furnPresets,
-                             lightPresets, shadePresets, lightTh, weatherBalance }),
+  light: createLightEngine({ houseRooms, winPresets, doorPresets, furnPresets,
+                             lightPresets, shadePresets: shading, finishes: finishesOk,
+                             lightTh, weatherBalance }),
   growth: createGrowthAdapter(document.getElementById('growth'))
 };
 
-  if (!Number.isFinite(DAYS) || DAYS < 0) fail(`days 인자가 이상합니다: ${location.search}`);
   io.light.build('banjiha');
   if (!io.light.room.slots.some(s => s.slotId === SLOT)) fail(`슬롯 ${SLOT} 이 방에 없습니다`);
   await io.growth.ready();                       // 여섯 함수가 다 있어야 통과

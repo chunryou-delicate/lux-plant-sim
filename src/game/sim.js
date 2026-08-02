@@ -135,8 +135,8 @@ export function nullGrowth(keep = 14, opt = {}) {
     },
     ageOf(d) { return d; },        // 진짜 곡선은 growth 소유(ageOf). 여기선 항등
     bandOf() { return null; },
-    vigor() { return null; },
-    isDead() { return null; },
+    assertContract: () => true,    // 스텁은 항상 살아 있다
+    /* vigor()·isDead() 는 두지 않는다 — 활력은 현재 계약 밖이다(2026-08-02) */
     history: () => H.slice()
   };
 }

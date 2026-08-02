@@ -229,15 +229,32 @@ $('lit').onchange = e => { S.lamps.litHours = Math.max(0, Math.min(24, +e.target
 $('mode').onchange = e => { S.sim.mode = e.target.value; io.light.clearCache(); draw(); };
 
 /* loop.js 는 UI를 모른다 — S와 turn을 받아 화면을 그리는 건 여기 몫이다(헤드리스 시뮬 대비) */
-$('next').onclick = () => { arrive(); lastTurn = nextDay(S, io).turn; draw(); };
 
-$('run30').onclick = () => {
+/* ★ 계약이 끊기면(iframe 새로고침 등) 진행 버튼을 도로 잠그고 이유를 띄운다.
+   조용히 넘어가면 '눌렀는데 아무 일도 안 남'이 되고, 그게 제일 늦게 발견된다. */
+function guard(fn) {
+  return (...a) => {
+    try { return fn(...a); }
+    catch (e) {
+      GATED.forEach(id => { $(id).disabled = true; });
+      pushLog(S, '⛔ ' + e.message);
+      renderLog($('log'), S);
+      side.insertAdjacentHTML('afterbegin',
+        `<div class="err">⛔ 진행을 멈췄습니다(상태는 그대로입니다)<br>${e.message}</div>`);
+      console.error(e);
+    }
+  };
+}
+
+$('next').onclick = guard(() => { arrive(); lastTurn = nextDay(S, io).turn; draw(); });
+
+$('run30').onclick = guard(() => {
   arrive();
   const { turns } = runDays(S, io, 30);
   lastTurn = turns[turns.length - 1];
   draw();
   renderReport($('report'), S, io, turns);
-};
+});
 
 /* ★ 방 프로파일 내보내기 — 밸런스 자동 시뮬이 THREE 없이 읽는 파일.
    조도 기하는 방마다 고정이라 한 번만 뽑으면 된다(src/game/room_profile.js). */
@@ -390,7 +407,17 @@ function fenDayOf(th) {
   return null;
 }
 
-$('play').onclick = () => playScenario(SCENARIOS.find(s => s.id === $('scen').value));
+$('play').onclick = () => playScenario(SCENARIOS.find(s => s.id === $('scen').value))
+  .catch(e => {                                  // 시나리오 도중 계약이 끊긴 경우도 같은 처리
+    stopFlag = true;
+    $('stop').disabled = true;
+    document.body.classList.remove('scen-run');
+    GATED.forEach(id => { $(id).disabled = true; });
+    pushLog(S, '⛔ ' + e.message); renderLog($('log'), S);
+    side.insertAdjacentHTML('afterbegin',
+      `<div class="err">⛔ 시나리오를 멈췄습니다(상태는 그대로입니다)<br>${e.message}</div>`);
+    console.error(e);
+  });
 $('stop').onclick = () => { stopFlag = true; };
 
 /* ---- 시작 ---- */

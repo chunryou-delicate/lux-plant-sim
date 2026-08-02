@@ -36,8 +36,15 @@ import { dliFromContract } from './growth_adapter.js';
 import { weekStats, WEATHER_P } from '../engine/weather.js';
 
 export function nextDay(S, io) {
-  S.day++;
   const p = pot0(S);
+
+  /* ★ 상태를 건드리기 전에 계약부터 확인한다 (2026-08-02).
+     iframe 을 새로고침하면 ready() 를 통과했던 계약이 사라진다. 그대로 진행하면
+     달력만 가고 형태는 그대로인 **반쯤 진행된 턴**이 조용히 남는다.
+     여기서 던지면 S 는 손도 안 댄 상태다 — 날짜조차 안 올라간다. */
+  if (p && io.growth.assertContract) io.growth.assertContract();
+
+  S.day++;
 
   /* 방을 바꿨거나 가구가 사라졌으면 화분을 회수한다(5-4) */
   if (p) rehomePot(S, io.light.room.slots, m => pushLog(S, m));
@@ -56,11 +63,19 @@ export function nextDay(S, io) {
   /* ★ 오늘 빛은 **매일 반드시** 넘긴다 — null 도 넘긴다 (2026-08-02).
      예전처럼 `if (dli != null)` 로 건너뛰면 growth 안의 PLANT_DLI 에 어제 값이 남아
      "빛이 없는데 어제 빛으로 자라는" 상태가 된다. 조용히 틀리는 유형이라 호출을 생략하지 않는다. */
-  io.growth.setDailyLight(dli);
+  /* ★ 여기서부터가 '되돌릴 수 없는' 구간이다. 중간에 터지면 날짜를 되감고 다시 던진다 —
+     반쯤 진행된 턴을 남기지 않는다(계약이 이 사이에 끊기는 경우). */
+  let step;
+  try {
+    io.growth.setDailyLight(dli);
 
-  /* ★ 하루 진행은 advanceTo 만 쓴다. setGrowth(점프)는 도착 때 한 번뿐이다.
-     달력은 하루 가고, 형태(유효 생장)는 빛이 될 때만 쌓인다 — 저광이면 여기서 멈춘다. */
-  const step = io.growth.advanceTo(io.growth.calendarDay() + 1);
+    /* ★ 하루 진행은 advanceTo 만 쓴다. setGrowth(점프)는 도착 때 한 번뿐이다.
+       달력은 하루 가고, 형태(유효 생장)는 빛이 될 때만 쌓인다 — 저광이면 여기서 멈춘다. */
+    step = io.growth.advanceTo(io.growth.calendarDay() + 1);
+  } catch (e) {
+    S.day--;                                         // 되감기 — dliHist·daysPlanted 는 아직 안 건드렸다
+    throw e;
+  }
   p.daysPlanted++;                                   // 플레이어가 돌본 날 (형태와 별개 축)
 
   /* ★ null 을 0으로 바꾸지 않는다 (2026-08-02).
