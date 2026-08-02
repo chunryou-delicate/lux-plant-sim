@@ -14,8 +14,9 @@ const step = io.growth.advanceTo(io.growth.calendarDay() + 1);
 p.daysPlanted++;                                          // 플레이어가 돌본 날(형태와 별개 축)
 ```
 
-- `ready()` 는 **`setDailyLight`·`advanceTo`·`calendarDay`·`growthDays`·`growthBlocked` 다섯이 다 있을 때만**
-  준비 완료로 봅니다. 하나라도 없으면 "생장 계약이 낡았습니다 — 없는 함수: …" 로 멈춥니다.
+- `ready()` 는 **여섯 동작 함수**(`setDailyLight`·`advanceTo`·`calendarDay`·`growthDays`·
+  `growthBlocked`·`setGrowth`) **+ `thLoaded() === true`** 를 확인합니다.
+  하나라도 없으면 "생장 계약이 낡았습니다 — 없는 함수: …" 로 멈춥니다.
   `setGrowth` 만 보고 열면 옛 인터페이스로 되돌아가 저광 정지가 통째로 사라지기 때문입니다
 - 어댑터가 `setGrowth` 호출 횟수를 셉니다(`setGrowthCalls()`). 일일 루프에서 0회가 계약입니다
 
@@ -68,7 +69,15 @@ setGrowth 1회 · advanceTo 10회 · setDailyLight 10회       PASS
 계약이 NaN 을 낸 2일 — setDailyLight 에 [null, null] 전달  PASS
 ```
 
-## ★ 요청 — `thLoaded()` 접근자 (한 줄)
+## ★ `thLoaded()` — [처리 확인 2026-08-02] 프로브를 지웠습니다
+
+접근자 감사합니다. `ready()` 는 이제 **여섯 동작 함수 + `thLoaded() === true`** 를 직접 확인합니다.
+추정용 DLI 프로브는 **제거**했습니다(이력을 건드릴 위험도 있어 없애는 게 맞았습니다).
+`thLoaded()` 가 없으면 '준비 안 됨'으로 보고 열지 않습니다.
+
+브라우저 재확인: `유효 143 → 146 · 잎 2 → 3 · 정지 null` (아래 §요청 당시 증상은 해소)
+
+### (기록) 요청 당시 상황
 
 **전역 함수가 있다고 준비된 게 아니었습니다.** `growth_tuning.json` 이 비동기로 실리는데
 `setDailyLight`·`advanceTo` 는 그 전에 이미 존재해서, 코어가 함수만 보고 루프를 돌리면
@@ -93,7 +102,7 @@ function thLoaded(){ return TH_LOADED; }   // 코어가 준비 판정에 쓴다
 > ⚠ `growthMin()` 은 판정에 못 씁니다. 정본이 없어도 `TH_MONSTERA` 의 코드 기본값(3.0)을 돌려주기 때문에
 > **던지지 않습니다.** 처음엔 이걸로 판정했다가 그대로 통과해서 위 증상이 그대로 났습니다.
 
-`thLoaded()` 가 생기면 프로브를 버리고 그걸 쓰겠습니다.
+→ **처리 완료.** 프로브는 버렸습니다.
 
 ## ★ 난이도별 표시 정정 (박사님 결정 2026-08-02)
 
@@ -113,21 +122,27 @@ function thLoaded(){ return TH_LOADED; }   // 코어가 준비 판정에 쓴다
 그건 개체를 만들 때 `setGrowth` 로 넘기는 값이라 필요한 것입니다(`state.ARRIVAL.growthDays`).
 "어느 단계인지 · 그 단계에서 얼마나 왔는지"는 growth 가 알고 있는 것이라, 계약이 나오면 그 값을 읽어 표시합니다.
 
+**`growthPhase()` 계약 초안 받았습니다 — 그대로 좋습니다.**
+
 ```js
-// 이런 모양이면 코어는 그대로 읽어 씁니다 (이름·필드는 growth 가 정하세요)
-phaseId()    // 예: 'leaf_mid' | 'bud_furled' | 'bud_opening'
-progress()   // 0~1, 지금 단계 안에서의 진척
+growthPhase() → { phaseId, progress01, nextPhaseId }
 ```
 
-그전까지 HUD 는 `growthDays()` 를 **숫자 그대로만** 보여줍니다 — 막대·단계 이름은 넣지 않았습니다.
-(`ARRIVAL.growthDays` 143 도 growth 확정값이라, 튜닝 대상이 되면 `data/` 로 옮겨 주시면 그걸 읽겠습니다.)
+- **반환값에 생장일이 없는 게 핵심**이라는 데 동의합니다. 코어가 `>= 146` 을 쓸 방법 자체가 없어야
+  나중에 곡선을 조정해도 코어가 안 깨집니다
+- **표시 전용**도 동의합니다. 판정은 계속 `advanceTo` 의 `grew`·`blocked` 로 합니다
+- 구현되면 어댑터에 `growthPhase()` 를 한 줄 열고 HUD 를 그 값으로 바꾸겠습니다.
+  **그전까지 게이지를 만들지 않습니다** — 지금 HUD 는 `growthDays()` 숫자만 보여줍니다(막대·단계 이름 없음)
+
+코어에 남은 생장일 숫자는 **도착 진행도 143 하나**뿐이고, `setGrowth` 에 넘기려고 갖고 있는 값입니다
+(`state.ARRIVAL.growthDays`). 튜닝 대상이 되면 `data/` 로 옮겨 주시면 그걸 읽겠습니다.
 
 ## 미해결 · 알아둘 것
 
 - [ ] **다개체는 아직 요청하지 않습니다.** 이번 범위가 단일 몬스테라 계약 연결까지였습니다.
       설계(`growth-multiplant-design.md`)는 읽었습니다 — 착수 시점은 다시 알리겠습니다
 - [ ] `ageOf()` 는 표시용으로만 부릅니다. 형태 판정은 전부 `growthDays()` 입니다
-- [ ] 코어는 여전히 **고사 판정 0줄**입니다. `vigor()`·`isDead()` 가 생기면 읽기만 하겠습니다
+- [ ] 코어는 여전히 **고사 판정 0줄**입니다. 활력은 취소됐으므로 `vigor()`·`isDead()` 도 **읽지 않습니다**
 
 ---
 

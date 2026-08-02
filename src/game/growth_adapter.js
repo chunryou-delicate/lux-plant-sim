@@ -35,6 +35,10 @@ export function dliFromContract(report, slotId, warn) {
 export const REQUIRED_GROWTH_FNS =
   ['setDailyLight', 'advanceTo', 'calendarDay', 'growthDays', 'growthBlocked', 'setGrowth'];
 
+/* 준비 완료 = 위 여섯 동작 함수 + `thLoaded() === true`.
+   함수가 있다고 준비된 게 아니다 — 임계값 정본은 비동기로 실린다(2026-08-02 브라우저에서 잡힘). */
+export const REQUIRED_GROWTH_STATE = ['thLoaded'];
+
 export function createGrowthAdapter(iframe) {
   const win = () => (iframe && iframe.contentWindow) || null;
   const fn = (name) => {
@@ -50,32 +54,15 @@ export function createGrowthAdapter(iframe) {
      plant_grow 는 임계값 정본(data/growth_tuning.json)을 **비동기로** 싣는다.
      전역 함수는 그 전에 이미 존재하므로, 함수만 보고 열면 첫 며칠이 통째로
      "임계값 정본이 안 실렸습니다"로 정지한다 — 실제로 유효 143에서 안 움직였다.
-     `growthMin()` 은 정본이 없으면 **던지도록** 되어 있어(plant_grow) 문자열 없이 판정할 수 있다.
-     ⚠ 계약 함수가 아니라 정황 증거다. growth 에 `thLoaded()` 를 요청해 뒀다 — 생기면 그걸 쓴다. */
+
+     growth 가 `thLoaded()` 접근자를 내줬으므로 **그 상태를 직접 묻는다.**
+     (한때 "밝은 빛을 넣어 보고 정지 여부로 추정하는" 프로브를 썼는데 지웠다 —
+      추정 대신 상태를 묻는 게 맞고, 프로브는 이력을 건드릴 위험도 있었다.
+      `growthMin()` 도 못 쓴다: 코드 기본값이 있어 정본 없이도 값을 돌려준다.) */
   function thresholdsLoaded() {
-    const w = win();
-    /* ① 정본 경로 — growth 가 thLoaded() 를 내면 이것만 본다.
-       ★ 그때 아래 ② 프로브 블록은 통째로 지운다(요청해 뒀다: core-to-growth 2026-08-02). */
-    if (w && typeof w.thLoaded === 'function') return !!w.thLoaded();
-
-    /* ② 임시 — thLoaded() 가 없는 동안만 쓴다 */
-
-    /* 정본 미로드를 **의미로** 확인한다 — 문자열도, 내부 변수도 보지 않는다.
-       "자랄 만큼 밝은 빛을 넣었는데도 정지"면 아직 준비가 안 된 것이다.
-       ⚠ growthMin() 은 못 쓴다 — 코드 기본값이 있어 정본 없이도 값을 돌려준다(그래서 안 던진다).
-       프로브로 넣은 값은 바로 지운다(resetDailyLight). 게임 시작 전이라 이력이 비어 있다. */
-    const sdl = fn('setDailyLight'), blocked = fn('growthBlocked'), reset = fn('resetDailyLight');
-    if (!sdl || !blocked) return true;                 // 알 수 없으면 막지 않는다
-    let loaded = false;
-    try {
-      const gm = fn('growthMin');
-      let probe = 100;
-      try { const v = gm && gm(); if (typeof v === 'number' && isFinite(v)) probe = v * 10 + 10; } catch {}
-      sdl(probe);
-      loaded = blocked() === null;
-    } catch { loaded = false; }
-    finally { try { reset && reset(); } catch {} }
-    return loaded;
+    const f = fn('thLoaded');
+    if (!f) return false;                 // 접근자가 없으면 '준비 안 됨'으로 본다
+    try { return !!f(); } catch { return false; }
   }
 
   function ready(timeoutMs = 30000) {
@@ -91,8 +78,10 @@ export function createGrowthAdapter(iframe) {
               : missing().length
                 ? `plant_grow.html 의 생장 계약이 낡았습니다 — 없는 함수: ${missing().join(', ')}.\n` +
                   `코어는 setGrowth 로 하루를 진행하지 않습니다(저광 정지가 무시됩니다).`
-                : 'plant_grow.html 이 임계값 정본(data/growth_tuning.json)을 못 실었습니다 — ' +
-                  '서버로 열었는지 확인해 주세요. 그 상태로 열면 첫날부터 형태가 정지합니다.'));
+                : !fn('thLoaded')
+                  ? 'plant_grow.html 에 thLoaded() 가 없습니다 — 정본 로딩을 확인할 수 없어 열지 않습니다.'
+                  : 'plant_grow.html 이 임계값 정본(data/growth_tuning.json)을 못 실었습니다 — ' +
+                    '서버로 열었는지 확인해 주세요. 그 상태로 열면 첫날부터 형태가 정지합니다.'));
         setTimeout(tick, 120);
       };
       tick();
