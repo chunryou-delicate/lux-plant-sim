@@ -117,7 +117,9 @@ https://raw.githubusercontent.com/chunryou-delicate/lux-plant-sim/main/docs/hand
 | **`first_play.md`** | ★ **첫 플레이 정본** — Day0 콩나물 → Day4 몬스테라 → 새순. novice 전용 |
 | **`game_flow.md`** | ★ **한 판이 어떻게 흘러가나** — 캐릭터×모드×초·중·후반 · 지루한 구간 |
 | `balance_decisions.md` | **왜 그 숫자인지.** 값 바꾸기 전 필독 (모드별 판정 단위 §②′) |
+| **`propagation.md`** | ★ **삽수(번식) 정본** — 어디를 자르나 · 물꽂이 · 무늬 계승 · 엔딩 역산 |
 | `env_difficulty_axis.md` | 시뮬 깊이 난이도축(빛→물→온도→습도) |
+| **`env_params.md`** | ★ **빛 외 파라미터 적용방안** — 온도·물·습도를 어느 계산에 끼우나. 스토리 모드 밖 |
 | `food_economy.md` · `sale_economy.md` | 지출(식비·콩나물) / 수입(삽수·실생·상점) |
 | `researcher_track.md` · `time_modes.md` | 연구자=확률 게임(논문=재현성) / 시간 4단+튜토 |
 | `game_loop_spec.md` | 게임 루프 구현 명세(코어 인계용) |

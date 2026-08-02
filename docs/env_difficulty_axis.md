@@ -6,6 +6,8 @@
 
 > 이 문서는 **기록만** 한 것이다. 여기 적힌 것 중 구현된 건 **빛**뿐이다.
 > 계약 객체(`docs/engine/light_contract.md`)에 `temp`/`humidity`/`weatherPattern` **자리만** 잡혀 있다.
+>
+> ★ **여기 설계를 실제 계산의 어디에 붙이는가는 `docs/env_params.md` (2026-08-03 신설).**
 
 ---
 
