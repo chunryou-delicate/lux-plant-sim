@@ -50,12 +50,46 @@ class Handler(SimpleHTTPRequestHandler):
             self.close_connection = True
 
 
+def lan_ips():
+    """이 컴퓨터가 같은 와이파이에서 어떤 주소로 보이는지. 폰으로 들어올 때 쓴다."""
+    out = []
+    try:
+        import socket
+        for info in socket.getaddrinfo(socket.gethostname(), None, socket.AF_INET):
+            ip = info[4][0]
+            if not ip.startswith(("127.", "169.254.")) and ip not in out:
+                out.append(ip)
+    except Exception:
+        pass
+    return out
+
+
 def main():
-    port = int(sys.argv[1]) if len(sys.argv) > 1 else 8780
-    root = sys.argv[2] if len(sys.argv) > 2 else os.getcwd()
-    srv = ThreadingHTTPServer(("127.0.0.1", port), partial(Handler, directory=root))
+    """기본은 127.0.0.1 이다. 폰으로 볼 때만 --host 0.0.0.0 으로 연다.
+
+    ⚠ 0.0.0.0 은 **같은 네트워크 아무나** 이 폴더를 읽을 수 있다는 뜻이다.
+      저장소 전체가 열리므로 집 와이파이에서 잠깐 쓰고 끄는 용도다.
+      기본값을 바꾸지 않는 이유가 그것이다 — 열려면 명시적으로 적어야 한다.
+    """
+    args = [a for a in sys.argv[1:]]
+    host = "127.0.0.1"
+    if "--host" in args:
+        i = args.index("--host")
+        host = args[i + 1] if i + 1 < len(args) else "0.0.0.0"
+        del args[i:i + 2]
+    if "--lan" in args:                      # --host 0.0.0.0 의 줄임
+        host = "0.0.0.0"
+        args.remove("--lan")
+
+    port = int(args[0]) if len(args) > 0 else 8780
+    root = args[1] if len(args) > 1 else os.getcwd()
+    srv = ThreadingHTTPServer((host, port), partial(Handler, directory=root))
     srv.daemon_threads = True
-    print(f"serving {root} on http://127.0.0.1:{port}  (threading, no-cache)")
+    print(f"serving {root} on http://{host}:{port}  (threading, no-cache)")
+    if host == "0.0.0.0":
+        for ip in lan_ips():
+            print(f"  폰에서는  http://{ip}:{port}/game.html")
+        print("  ⚠ 같은 네트워크에 이 폴더가 열려 있습니다. 다 보고 나면 끄세요.")
     srv.serve_forever()
 
 
