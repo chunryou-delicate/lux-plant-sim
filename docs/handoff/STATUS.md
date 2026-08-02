@@ -22,9 +22,10 @@
 ---
 
 ## growth
-갱신: 2026-08-01 (커밋 6f8c3d4)
+갱신: 2026-08-02 (커밋 976dcb6)
 완료:
-- ★ **BLOCKER 완료 — 저광이면 형태 진행이 멈춘다.** 달력 경과일과 유효 생장 진행도를 갈랐다(`advanceTo`). 재현 A~D 전부 PASS. **코어는 `setGrowth`→`advanceTo`로 바꿔야 한다**
+- ★ **BLOCKER + 보완 완료 — 저광이면 형태 진행이 멈춘다.** 조용히 넘어가는 길을 전부 막았다: advanceTo 는 하루만(초과 시 오류·상태 불변) · growthMin 폴백 제거 · DLI 미연결이면 게임 경로에서 정지(튜닝은 setTuningMode 로 분리). 재현 A~F PASS, data/ 변경 0
+- (이전) **BLOCKER — 저광이면 형태 진행이 멈춘다.** 달력 경과일과 유효 생장 진행도를 갈랐다(`advanceTo`). 재현 A~D 전부 PASS. **코어는 `setGrowth`→`advanceTo`로 바꿔야 한다**
 - core가 잡아준 **슬롯 매칭 버그** 수정 — 계약 객체 키는 `slotId`인데 `id`로만 찾아 항상 best로 떨어졌다. 둘 다 보게 함(옛 호출부 호환). 반지하 13배·아파트 273배 차이가 나던 자리다
 - **갈라짐 표시 기준 통일** — `canFenestrate()` 신설. `bandOf(오늘값).fenestrating`은 오늘만 반짝 넘어도 true라 "갈라짐 시작!"이 거짓말이 됐다(core 지적). 화면은 7일평균 기준
 - `plantCtx` 18축 확장 + `fCoef` **null→계수 1.0** 규칙 + `calcVarieType()` 자리

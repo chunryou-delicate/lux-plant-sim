@@ -49,9 +49,10 @@ ageOf(일수)                       // 실제 경과일 → 생장 나이 (초�
 계약 객체 연결은 v1에서. 코어가 붙을 때는 `nextDay()` 대신 이 순서로 부르면 된다.
 
 ```js
-const c = makeDailyLight(day, ...);   // 집/방 창
-setDailyLight(c, '이 화분의 슬롯 id'); // 생장 창
-setGrowth(day);                       // 생장 창 (또는 nextDay())
+// ⚠ [정정됨 — 게임 호출 금지] setGrowth(day) 는 '점프'다. 저광 정지가 무시된다.
+const c = makeDailyLight(day, ...);    // 집/방 창
+setDailyLight(c, '이 화분의 슬롯 id');  // 생장 창
+advanceTo(day);                        // ★ 하루씩. setGrowth 아님
 ```
 
 ---
@@ -189,3 +190,27 @@ plantSeed(v)    // 개체 시드 읽기/쓰기
 
 **표시 제안**: `isGrowing()===false`면 "빛이 모자라 자라지 않는 중"을 띄우면 좋겠다.
 날짜만 가고 아무 일도 안 일어나면 플레이어가 버그로 읽는다.
+
+---
+
+## [정정] advanceTo 계약이 좁아졌다 (2026-08-02, 커밋 976dcb6)
+
+```js
+advanceTo(calDay)   // ★ 하루만 받는다. delta !== 1 이면 상태를 안 바꾸고 오류를 던진다
+                    //   → 반드시 하루씩 부를 것. 여러 날을 몰아 넘기면 그 사이 빛을 알 수 없어
+                    //     저광 정지를 건너뛴다. 이력 재생 장치는 만들지 않는다
+                    //   반환 { calDay, growth, grew, blocked }   blocked = 막힌 사유(문자열) 또는 null
+```
+
+**빛이 없으면 자라지 않는다.** 예전에는 DLI 미연결 시 날짜대로 자랐는데(폴백) 그걸 없앴다.
+
+```js
+growthBlocked()        // 왜 안 자라나. null 이면 자라는 중
+                       //   '빛이 연결되지 않았습니다(DLI 없음)'
+                       //   'DLI 이력이 망가졌습니다'
+                       //   '빛 부족 — 7일평균 2.90 < 최소 3'
+setTuningMode(true)    // 조도 없이 형태만 볼 때. ★ 게임 경로에서는 켜지 말 것
+isTuningMode()
+```
+
+`growthBlocked()`를 화면에 그대로 띄우면 좋겠다 — 날짜만 가고 아무 일도 없으면 버그로 읽힌다.
