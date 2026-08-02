@@ -2,7 +2,11 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!-- ★폰 세로가 기준이다(390×844). viewport-fit=cover 로 노치 아래까지 쓰고,
+     safe-area-inset 으로 버튼이 홈 인디케이터에 안 걸리게 한다.
+     user-scalable=no — 3D 를 손가락으로 돌리다 페이지가 통째로 확대되면 조작이 망가진다. -->
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#14101c">
 <title>볕 · 첫 플레이</title>
 
 <!-- house.js·textures.js 가 전역 THREE 를 쓴다(index.html 과 같은 r128).
@@ -17,6 +21,160 @@
      마지막 줄에 한 글자만 남는 고아 줄이 생긴다(퀘스트 박스에서 실제로 났다). */
   .quest,.itemline,.note,.slotline,.bad,.err,.sub,#stageEmpty,#event{word-break:keep-all;overflow-wrap:break-word}
   #app{display:flex;height:100%}
+/* ══════════════════════════════════════════════════════════════════════════
+   폰 세로 셸 (2026-08-03) — ★여기가 게임 화면이다.
+   방 3D 전경이 화면의 대부분이고, 화분을 탭하면 식물이 확대된다.
+   위 규칙들은 데스크톱 검수용으로 남겨 두고, 아래에서 레이아웃만 덮어쓴다.
+   ⚠ element id 는 하나도 안 바꿨다 — 아래 module 스크립트가 전부 id 로 찾는다.
+══════════════════════════════════════════════════════════════════════════ */
+  :root{
+    --safe-t:env(safe-area-inset-top,0px);   --safe-b:env(safe-area-inset-bottom,0px);
+    --safe-l:env(safe-area-inset-left,0px);  --safe-r:env(safe-area-inset-right,0px);
+    --tap:44px;                              /* ★터치 타깃 최소치. 이보다 작게 만들지 말 것 */
+    --topbar-h:56px;  --bottom-h:112px;
+    --ink:#f2eef8;  --dim:rgba(255,255,255,.55);  --gold:#ffb454;  --leaf:#9fdc86;
+  }
+  html,body{
+    /* ★100dvh — 폰 주소창이 접히고 펴질 때 100vh 는 화면 밖으로 삐져나간다 */
+    height:100dvh;overscroll-behavior:none;
+    -webkit-tap-highlight-color:transparent;   /* 탭할 때 파란 사각형이 3D 위에 뜬다 */
+    -webkit-user-select:none;user-select:none;
+    touch-action:manipulation;                 /* 더블탭 확대 끄기 — 3D 조작과 충돌한다 */
+  }
+  #app{flex-direction:column;height:100dvh;width:100%;max-width:none}
+
+  /* ── 상단 상태 ─────────────────────────────────────────────────────── */
+  #topbar{flex:0 0 auto;padding:calc(var(--safe-t) + 8px) calc(var(--safe-r) + 12px) 8px calc(var(--safe-l) + 12px);
+          background:linear-gradient(180deg,rgba(20,16,28,.96) 0,rgba(20,16,28,.72) 70%,transparent 100%);
+          position:relative;z-index:20}
+  #topbar .resourcebar{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin:0}
+  #topbar .resource{display:flex;flex-direction:column;align-items:center;gap:1px;padding:5px 4px;
+          background:rgba(255,255,255,.055);border:1px solid rgba(255,255,255,.08);border-radius:10px}
+  #topbar .resource span{font-size:10px;color:var(--dim);line-height:1.1}
+  #topbar .resource b{font-family:'Jua';font-size:14px;color:var(--ink);line-height:1.15}
+  #topbar .r-saved b{color:var(--leaf)}
+
+  /* ── 방 전경 = 무대 ───────────────────────────────────────────────── */
+  #stage{flex:1 1 auto;min-height:0;position:relative;background:#0f0c16}
+  /* ★방 3D. 이게 게임 화면이고, plant_grow(iframe)는 탭했을 때 위로 올라오는 확대다. */
+  #roomCanvas{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none}
+  #roomFallback{position:absolute;inset:0;display:none;place-items:center;padding:24px;text-align:center;
+          font-size:13px;color:var(--dim);line-height:1.7}
+  #stage.room-failed #roomFallback{display:grid}
+  /* 확대 오버레이 — 기본은 숨어 있다. display:none 은 안 쓴다(iframe 이 멈추면 growth 계약이 끊긴다) */
+  #growth{position:absolute;inset:0;z-index:30;opacity:0;pointer-events:none;
+          transition:opacity .28s ease;background:#0f0c16}
+  #stage.zoom #growth{opacity:1;pointer-events:auto}
+  #closeZoom{position:absolute;z-index:31;top:calc(var(--safe-t) + 10px);right:12px;display:none;
+          width:var(--tap);height:var(--tap);border-radius:50%;border:1px solid rgba(255,255,255,.18);
+          background:rgba(20,16,28,.82);color:var(--ink);font-size:18px;line-height:1}
+  #stage.zoom #closeZoom{display:block}
+  /* 확대 중에는 no-plant 가림막이 위를 덮으면 안 된다 */
+  #stage.zoom.no-plant #growth{opacity:1;pointer-events:auto}
+  #stage.zoom #stageEmpty{display:none}
+
+  /* 배치 모드 안내 — 3D 위에 얇게 뜬다 */
+  #placeHint{position:absolute;z-index:25;left:12px;right:12px;top:10px;display:none;
+          padding:9px 12px;border-radius:12px;background:rgba(20,16,28,.86);
+          border:1px solid rgba(255,180,84,.30);font-size:13px;color:var(--ink);text-align:center;
+          word-break:keep-all}
+  #stage.placing #placeHint{display:block}
+  #placeHint b{color:var(--gold)}
+
+  /* ── 하단 액션 ─────────────────────────────────────────────────────── */
+  #bottom{flex:0 0 auto;padding:10px calc(var(--safe-r) + 12px) calc(var(--safe-b) + 10px) calc(var(--safe-l) + 12px);
+          background:linear-gradient(0deg,rgba(20,16,28,.97) 55%,rgba(20,16,28,.80) 100%);
+          border-top:1px solid rgba(255,255,255,.07);position:relative;z-index:20}
+  #bottom .quest{margin:0 0 9px;font-size:13.5px;line-height:1.5;color:var(--ink);
+          background:rgba(255,180,84,.09);border:1px solid rgba(255,180,84,.20);
+          border-radius:11px;padding:8px 11px}
+  .actionbar{display:flex;gap:7px}
+  /* ★엄지로 누르는 자리. 44px 밑으로 내리지 말 것 */
+  .actionbar button{flex:1;min-height:var(--tap);font-family:'Jua';font-size:14px;border-radius:12px}
+  .actionbar button#next{flex:1.5}
+  .actionbar button:disabled{opacity:.42}
+
+  /* ── 바텀시트 (가방·자리·설정) ───────────────────────────────────── */
+  #sheet{position:fixed;z-index:40;left:0;right:0;bottom:0;max-height:78dvh;
+         transform:translateY(101%);transition:transform .3s cubic-bezier(.22,.9,.3,1);
+         background:linear-gradient(180deg,#213326 0,#18241d 42%,#171421 100%);
+         border-top:1px solid rgba(255,255,255,.12);border-radius:18px 18px 0 0;
+         display:flex;flex-direction:column;box-shadow:0 -14px 40px rgba(0,0,0,.55)}
+  #sheet.open{transform:translateY(0)}
+  #sheetScrim{position:fixed;z-index:39;inset:0;background:rgba(0,0,0,.5);opacity:0;
+         pointer-events:none;transition:opacity .3s}
+  #sheetScrim.open{opacity:1;pointer-events:auto}
+  #sheet .grip{flex:0 0 auto;width:44px;height:4px;border-radius:3px;margin:9px auto 4px;
+         background:rgba(255,255,255,.28)}
+  .sheettabs{flex:0 0 auto;display:flex;gap:5px;padding:4px 12px 8px;overflow-x:auto;scrollbar-width:none}
+  .sheettabs::-webkit-scrollbar{display:none}
+  .sheettabs button{flex:0 0 auto;min-height:36px;padding:0 14px;border-radius:999px;font-size:13px;
+         background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.10);color:var(--dim);
+         background-image:none}
+  .sheettabs button[aria-selected=true]{background:rgba(255,180,84,.16);border-color:rgba(255,180,84,.42);color:var(--gold)}
+  .sheetbody{flex:1 1 auto;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;
+         padding:2px 12px calc(var(--safe-b) + 16px);overscroll-behavior:contain}
+  .sheetpage{display:none}  .sheetpage.on{display:block}
+  #sheet .box{margin-bottom:9px}
+  /* 시트 안에서는 라벨이 세로로 — 폰 폭에서 78px 라벨 + select 는 너무 좁다 */
+  #sheet label{flex-direction:column;align-items:stretch;gap:4px}
+  #sheet label>span{width:auto;flex:0 0 auto;font-size:11px}
+  #sheet select,#sheet input[type=number]{min-height:var(--tap);font-size:14px}
+  #sheet .btns button{min-height:var(--tap);flex:1 0 auto}
+
+  /* 아이템 카드 — 폰에서는 한 열 */
+  #sheet .inventory{display:grid;grid-template-columns:1fr;gap:8px}
+  #sheet .itemcard .place{display:flex;gap:6px;align-items:stretch}
+  #sheet .itemcard .place select{flex:1}
+  #sheet .itemcard .place button{min-height:var(--tap);padding:0 14px}
+
+  /* 개발용은 접어 둔다 — 플레이어 화면이 아니다 */
+  #sheet details.dev summary{min-height:var(--tap);display:flex;align-items:center}
+
+  /* ── 태블릿·좁은 PC — 폰 화면을 가운데 세워 둔다 ─────────────────── */
+  @media (min-width:820px) and (min-height:700px){
+    body{display:grid;place-items:center;background:#0a0810}
+    #app{width:min(420px,96vw);height:min(880px,94dvh);border-radius:26px;overflow:hidden;
+         border:1px solid rgba(255,255,255,.12);box-shadow:0 26px 80px rgba(0,0,0,.7)}
+    #sheet,#sheetScrim{position:absolute}
+  }
+
+  /* ══ PC 와이드 (2026-08-03) ═══════════════════════════════════════════
+     ★마크업은 폰과 **같은 한 벌**이다. 시트를 아래에서 오른쪽으로 옮기고
+       항상 펴 둘 뿐이다 — 레이아웃을 두 벌 만들면 한쪽이 반드시 낡는다.
+     방이 넓게 보이는 것이 이 화면의 값어치다. UI 를 키우는 게 아니다. */
+  @media (min-width:1000px) and (min-aspect-ratio:13/10){
+    body{display:block;background:#0a0810}
+    #app{width:auto;height:100dvh;max-width:none;border:0;border-radius:0;box-shadow:none;
+         margin-right:var(--pane-w)}
+    :root{--pane-w:360px}
+    /* 시트 = 오른쪽 고정 패널. 항상 열려 있고 스크림·손잡이는 없앤다 */
+    #sheet{position:fixed;top:0;right:0;bottom:0;left:auto;width:var(--pane-w);max-height:none;
+           transform:none;border-radius:0;border-top:0;border-left:1px solid rgba(255,255,255,.12);
+           box-shadow:none}
+    #sheet .grip{display:none}
+    #sheetScrim{display:none}
+    #openBag{display:none}                 /* 늘 보이므로 여는 버튼이 필요 없다 */
+    .sheetbody{padding:2px 14px 20px}
+    /* 넓으니 라벨을 다시 가로로 — 폰에서 세로로 세운 건 폭이 없어서였다 */
+    #sheet label{flex-direction:row;align-items:center}
+    #sheet label>span{width:84px;flex:0 0 84px;font-size:12px}
+    #sheet .inventory{grid-template-columns:1fr 1fr}
+    /* 하단 액션바는 방 위에 얹는다 — 넓은 화면에서 바를 통째로 깔면 방이 눌린다 */
+    #bottom{position:absolute;left:0;right:0;bottom:0;background:linear-gradient(0deg,rgba(20,16,28,.92) 40%,transparent 100%);
+            border-top:0;padding:26px 20px 18px}
+    #bottom .quest{max-width:620px;margin:0 auto 10px}
+    .actionbar{max-width:420px;margin:0 auto}
+    #topbar{position:absolute;left:0;right:0;top:0;background:linear-gradient(180deg,rgba(20,16,28,.86) 0,transparent 100%)}
+    #topbar .resourcebar{max-width:520px;margin:0 auto}
+    #stage{position:absolute;inset:0}
+  }
+  /* 마우스가 있는 환경에서만 호버를 켠다 — 터치에서 호버는 "탭했는데 안 눌림"이 된다 */
+  @media (hover:hover) and (pointer:fine){
+    .actionbar button:not(:disabled):hover,.sheettabs button:hover{filter:brightness(1.12)}
+    #roomCanvas{cursor:grab}  #roomCanvas:active{cursor:grabbing}
+    #stage.placing #roomCanvas{cursor:pointer}
+  }
   /* ★ HUD는 iframe 위에 겹치지 않는다. plant_grow 자체 표시와 나란히 놓고 대조한다. */
   #side{width:450px;flex:0 0 450px;height:100%;overflow-y:auto;padding:14px;
         background:linear-gradient(180deg,#213326 0,#18241d 48%,#171421 100%);
@@ -142,25 +300,64 @@
   .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
   details.dev>summary{cursor:pointer;font-family:'Jua';font-size:12px;color:rgba(255,255,255,.58)}
   details.dev[open]>summary{margin-bottom:9px}
-  @media(max-width:900px){#app{display:block;overflow:auto}#side{width:100%;height:auto}#stage{height:70vh}.inventory{grid-template-columns:1fr}}
+  /* (제거됨 2026-08-03) 옛 반응형 폴백 — 데스크톱 사이드바 시절에 좁은 화면을 세로로 눕히던 규칙.
+     `#app{display:block}` 과 `#stage{height:70vh}` 가 지금의 폰 세로 셸과 정면으로 싸웠다
+     (셸이 flex 로 화면을 꽉 채우려는데 block 으로 되돌리고 무대를 70vh 로 잘랐다).
+     좁은 화면이 이제 **기본**이라 폴백이 필요 없다. */
 </style>
 </head>
 <body>
 <div id="app">
-  <aside id="side">
-    <h1>볕 · <b>반지하의 첫 여름</b></h1>
-    <div class="sub">어두운 자리도, 밝은 자리도 쓸모가 있습니다.</div>
-
+  <!-- ══ 상단 상태 ══════════════════════════════════════════════════════ -->
+  <header id="topbar">
     <div class="resourcebar">
       <div class="resource r-day"><span>오늘</span><b id="resDay">Day 0</b></div>
       <div class="resource r-food"><span>첫 수확일 식비</span><b id="resFood">—</b></div>
       <div class="resource r-saved"><span>아낀 식비</span><b id="resSaved">0원</b></div>
     </div>
+  </header>
 
-    <div class="box journey">
-      <h3>첫 플레이 · 자리의 차이</h3>
-      <div class="quest" id="quest">가방의 열린 시루를 방 안 어두운 자리에 놓아 보세요.</div>
-      <div class="inventory">
+  <!-- ══ 방 전경 = 게임 화면 ═══════════════════════════════════════════
+       ★ canvas#room 이 방이고, iframe#growth 는 화분을 탭했을 때 올라오는 확대다.
+         예전에는 iframe 이 곧 화면이었다 — 방을 안 그리고 식물만 크게 보여줬다. -->
+  <main id="stage" class="no-plant">
+    <canvas id="roomCanvas"></canvas>
+    <div id="roomFallback"></div>
+    <div id="placeHint"></div>
+    <iframe id="growth" src="./plant_grow.html?embed=game" title="식물 확대"></iframe>
+    <button id="closeZoom" aria-label="확대 닫기">✕</button>
+    <div id="stageEmpty"><b><img src="./assets/ui/item_monstera.png" alt="">아직 몬스테라가 없습니다<i>콩나물을 수확하면 새로운 화분이 찾아옵니다.</i></b></div>
+    <!-- ★ v0의 완료 조건이 걸린 자리 — "등을 켰더니 갈라지기 시작했어요"가 여기 뜬다 -->
+    <div id="event"></div>
+  </main>
+
+  <!-- ══ 하단 액션 — 엄지로 누르는 자리 ═══════════════════════════════ -->
+  <nav id="bottom">
+    <div class="quest" id="quest">가방의 열린 시루를 방 안 어두운 자리에 놓아 보세요.</div>
+    <div class="actionbar">
+      <button id="next" disabled>다음 날 ▸</button>
+      <button id="ff" class="ghost" disabled>▶▶ 빨리감기</button>
+      <button id="openBag" class="ghost">가방</button>
+    </div>
+  </nav>
+</div>
+
+<!-- ══ 바텀시트 — 가방·자리·설정. 폰이라 옆이 아니라 아래에서 올라온다 ══ -->
+<div id="sheetScrim"></div>
+<section id="sheet" aria-hidden="true" aria-label="가방과 설정">
+  <div class="grip"></div>
+  <div class="sheettabs" role="tablist">
+    <button role="tab" id="tabBag"  aria-selected="true"  aria-controls="pageBag">가방</button>
+    <button role="tab" id="tabRoom" aria-selected="false" aria-controls="pageRoom">방</button>
+    <button role="tab" id="tabDev"  aria-selected="false" aria-controls="pageDev">검수</button>
+  </div>
+  <div class="sheetbody">
+
+    <div class="sheetpage on" id="pageBag" role="tabpanel">
+      <div class="box journey">
+        <h3>첫 플레이 · 자리의 차이</h3>
+        <div class="sub">어두운 자리도, 밝은 자리도 쓸모가 있습니다.</div>
+        <div class="inventory">
         <div class="itemcard">
           <div class="itemhead"><img class="thumb" id="cropThumb" alt="열린 콩나물 시루">
             <div><b>열린 콩나물 시루</b><small id="cropState">가방에 있음</small></div></div>
@@ -173,25 +370,29 @@
           <div class="meter"><i id="plantMeter"></i></div><div class="itemline" id="plantInfo">콩나물 첫 수확 뒤 도착</div>
         </div>
       </div>
-      <button id="firstRun" class="primary" disabled>▶ 첫 플레이 자동 시뮬레이션</button>
-      <div id="firstResult" class="simresult" aria-live="polite"></div>
-    </div>
-
-    <div class="box" id="ctl">
-      <h3>방 안에서 하기</h3>
-      <label><span>방</span><select id="room"></select></label>
-      <label for="slot"><span>몬스테라 자리</span><select id="slot" disabled></select></label>
-      <label><span>식물등</span><select id="lamps"></select></label>
-      <label><span>점등시간</span><input id="lit" type="number" min="0" max="24" step="1" value="12"></label>
-      <label><span>모드</span><select id="mode"></select></label>
-      <div class="btns">
-        <button id="next" disabled>다음 날 ▸</button>
-        <button id="run30" class="ghost" disabled>30일 자동</button>
-        <button id="reset" class="ghost">초기화</button>
-        <button id="prof" class="ghost" title="이 방의 조도 기하를 JSON으로 — 밸런스 시뮬이 THREE 없이 읽는다">방 프로파일 ⭳</button>
+        <button id="firstRun" class="primary" disabled>▶ 첫 플레이 자동 시뮬레이션</button>
+        <div id="firstResult" class="simresult" aria-live="polite"></div>
       </div>
-    </div>
+    </div><!-- /pageBag -->
 
+    <div class="sheetpage" id="pageRoom" role="tabpanel">
+      <div class="box" id="ctl">
+        <h3>방 안에서 하기</h3>
+        <label><span>방</span><select id="room"></select></label>
+        <label for="slot"><span>몬스테라 자리</span><select id="slot" disabled></select></label>
+        <label><span>식물등</span><select id="lamps"></select></label>
+        <label><span>점등시간</span><input id="lit" type="number" min="0" max="24" step="1" value="12"></label>
+        <label><span>모드</span><select id="mode"></select></label>
+        <!-- ★[다음 날]은 여기 없다. 하단 액션바로 갔다 — 폰에서 매 턴 시트를 열게 하면 안 된다. -->
+        <div class="btns">
+          <button id="run30" class="ghost" disabled>30일 자동</button>
+          <button id="reset" class="ghost">초기화</button>
+          <button id="prof" class="ghost" title="이 방의 조도 기하를 JSON으로 — 밸런스 시뮬이 THREE 없이 읽는다">방 프로파일 ⭳</button>
+        </div>
+      </div>
+    </div><!-- /pageRoom -->
+
+    <div class="sheetpage" id="pageDev" role="tabpanel">
     <details class="box dev" id="scbox">
       <summary>개발 검수 시나리오</summary>
       <label><span>시나리오</span><select id="scen"></select></label>
@@ -212,17 +413,10 @@
       <h3>검수 리포트</h3><div id="report"><div class="ph">30일을 돌리면 나옵니다</div></div>
       <h3>기록</h3><div id="log"></div>
     </details>
-  </aside>
+    </div><!-- /pageDev -->
 
-  <main id="stage">
-    <!-- growth 창 소유. 자체 UI(슬라이더·[다음 날])를 그대로 둔다 —
-         코어를 안 거치고 직접 넣었을 때와 대조할 수 있어야 한다. -->
-    <iframe id="growth" src="./plant_grow.html?embed=game"></iframe>
-    <div id="stageEmpty"><b><img src="./assets/ui/item_monstera.png" alt="">아직 몬스테라가 없습니다<i>콩나물을 수확하면 새로운 화분이 찾아옵니다.</i></b></div>
-    <!-- ★ v0의 완료 조건이 걸린 자리 — "등을 켰더니 갈라지기 시작했어요"가 여기 뜬다 -->
-    <div id="event"></div>
-  </main>
-</div>
+  </div><!-- /sheetbody -->
+</section>
 
 <!-- ★ 부팅 감시 — **모듈 밖에서** 지켜본다 (2026-08-03).
      아래 module 스크립트는 top-level import 와 top-level await 를 쓴다. 그 둘이 실패하면
@@ -237,10 +431,11 @@
   function say(why) {
     if (shown || window.__byeotBooted) return;
     shown = true;
-    var side = document.getElementById('side');
-    if (!side) return;
-    side.insertAdjacentHTML('afterbegin',
-      '<div class="err">⛔ 게임 코드를 불러오지 못했습니다 — 진행 버튼은 잠긴 채로 둡니다<br>' +
+    /* ★폰 세로로 바뀌며 #side 가 없어졌다. 하단 액션바 위에 띄운다 —
+       화면 밖으로 밀리면 "버튼이 안 눌린다"만 남고 이유는 안 보인다. */
+    var host = document.getElementById('bottom') || document.body;
+    host.insertAdjacentHTML('afterbegin',
+      '<div class="err" style="margin-bottom:8px">⛔ 게임 코드를 불러오지 못했습니다 — 진행 버튼은 잠긴 채로 둡니다<br>' +
       String(why) +
       '<br>파일을 직접 연 것이라면 <code>python tools/serve.py</code> 로 띄운 주소에서 열어 주세요.</div>');
   }
@@ -254,6 +449,91 @@
     say((e && e.reason && e.reason.message) || '부팅 중 처리되지 않은 오류');
   });
   setTimeout(function () { say('20초 안에 부팅이 끝나지 않았습니다'); }, 20000);
+})();
+</script>
+
+<!-- ══ 폰 세로 셸 조작 (2026-08-03) ═══════════════════════════════════════
+     시트 열고 닫기 · 탭 · 확대 오버레이. **모듈 밖 classic 스크립트**로 둔다 —
+     게임 로직이 못 뜨더라도 화면은 최소한 움직여야 원인을 볼 수 있다.
+     게임 상태는 하나도 안 만진다. 여기는 껍데기 조작만 한다. -->
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  var sheet = $('sheet'), scrim = $('sheetScrim'), stage = $('stage');
+
+  /* ── 바텀시트 ───────────────────────────────────────────────────── */
+  function openSheet(tab) {
+    sheet.classList.add('open'); scrim.classList.add('open');
+    sheet.setAttribute('aria-hidden', 'false');
+    if (tab) selectTab(tab);
+  }
+  function closeSheet() {
+    sheet.classList.remove('open'); scrim.classList.remove('open');
+    sheet.setAttribute('aria-hidden', 'true');
+  }
+  $('openBag').addEventListener('click', function () { openSheet('tabBag'); });
+  scrim.addEventListener('click', closeSheet);
+
+  /* 손잡이를 아래로 끌면 닫힌다 — 폰에서 스크림을 정확히 누르기 어렵다 */
+  (function () {
+    var y0 = null;
+    var grip = sheet.querySelector('.grip');
+    function start(e) { y0 = (e.touches ? e.touches[0] : e).clientY; }
+    function move(e) {
+      if (y0 == null) return;
+      var dy = (e.touches ? e.touches[0] : e).clientY - y0;
+      if (dy > 0) sheet.style.transform = 'translateY(' + dy + 'px)';
+    }
+    function end(e) {
+      if (y0 == null) return;
+      var dy = ((e.changedTouches ? e.changedTouches[0] : e).clientY) - y0;
+      sheet.style.transform = '';
+      y0 = null;
+      if (dy > 70) closeSheet();
+    }
+    ['touchstart', 'mousedown'].forEach(function (t) { grip.addEventListener(t, start, { passive: true }); });
+    ['touchmove', 'mousemove'].forEach(function (t) { grip.addEventListener(t, move, { passive: true }); });
+    ['touchend', 'mouseup', 'touchcancel'].forEach(function (t) { grip.addEventListener(t, end); });
+  })();
+
+  /* ── 탭 ─────────────────────────────────────────────────────────── */
+  var TABS = { tabBag: 'pageBag', tabRoom: 'pageRoom', tabDev: 'pageDev' };
+  function selectTab(tabId) {
+    Object.keys(TABS).forEach(function (t) {
+      var on = (t === tabId);
+      $(t).setAttribute('aria-selected', String(on));
+      $(TABS[t]).classList.toggle('on', on);
+    });
+    var body = sheet.querySelector('.sheetbody'); if (body) body.scrollTop = 0;
+  }
+  Object.keys(TABS).forEach(function (t) {
+    $(t).addEventListener('click', function () { selectTab(t); });
+  });
+
+  /* ── 확대 오버레이 ─────────────────────────────────────────────────
+     방에서 화분을 탭하면 열린다. 지금은 방 3D 가 붙기 전이라 무대 탭으로도 열린다 —
+     room_view 가 붙으면 onPlantTap 이 이 함수를 부른다. */
+  window.__byeotZoom = {
+    open: function () { stage.classList.add('zoom'); closeSheet(); },
+    close: function () { stage.classList.remove('zoom'); },
+    isOpen: function () { return stage.classList.contains('zoom'); }
+  };
+  $('closeZoom').addEventListener('click', window.__byeotZoom.close);
+  /* 안드로이드 뒤로가기·ESC 로도 닫힌다 */
+  window.addEventListener('keydown', function (e) {
+    if (e.key !== 'Escape') return;
+    if (window.__byeotZoom.isOpen()) window.__byeotZoom.close();
+    else if (sheet.classList.contains('open')) closeSheet();
+  });
+
+  /* ── 방 3D 가 아직 없을 때의 안내 ───────────────────────────────────
+     room_view.js 가 붙기 전까지는 캔버스가 비어 있다. 빈 검은 화면만 두면
+     "고장났나"로 읽히므로, 무엇을 기다리는 중인지 적어 둔다. */
+  window.__byeotRoomFallback = function (msg) {
+    stage.classList.add('room-failed');
+    $('roomFallback').innerHTML = msg;
+  };
+  window.__byeotSheet = { open: openSheet, close: closeSheet, tab: selectTab };
 })();
 </script>
 
