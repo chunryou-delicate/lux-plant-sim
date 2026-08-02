@@ -36,6 +36,10 @@ import {
   advanceBeansproutDay,
   cropDliFromReport,
   FIRST_PLAY_ASSETS,
+  FIRST_PLAY_COMPLETE_PHASE_ID,
+  firstPlayEventsOf,
+  firstPlayNextEvent,
+  firstPlaySnapshot,
   markMonsteraArrived,
   markMonsteraPhase,
   slotFitsDiameter
@@ -396,6 +400,222 @@ export function runDays(S, io, n, onTurn) {
     if (onTurn) onTurn(turn);
   }
   return { S, turns };
+}
+
+/* ============================================================
+   ★ 빨리감기 · 이벤트 점핑 (2026-08-03 신설)
+   ------------------------------------------------------------
+   박사님 확정(2026-08-03):
+     "약간 빠른 진행으로 빨리감기 형태로 해서, 집 전경으로 봐도 식물이 쪼끔 자라는 게 보이고"
+     "점점 자라는 모습을 보여주면서 점핑하게 해주면 될 것 같은데"
+
+   ★★ 순간이동이 아니다. **하루씩 진짜로 돈다.**
+     `nextDay` 를 msPerDay 간격으로 반복해서 부를 뿐이고, 지름길은 **하나도 없다** —
+     계약 검증 · setDailyLight(null 포함) · advanceTo 를 전부 그대로 지난다.
+     그래서 어두운 자리에 둔 채 감으면 **날짜만 가고 형태는 그대로**다. 그게 이 게임의 핵심이라
+     빨리감기에서 깨지면 안 된다(docs/first_play.md — "자리가 결과를 바꾼다").
+     식물 게임에서 자라는 장면 자체가 볼 것이므로, 건너뛰어서 그걸 없애지 않는다.
+
+   ★ 이 파일은 여전히 UI를 모른다.
+     그리는 것은 `onDay(turn, info)` 를 받은 쪽 몫이다. document·window·DOM 을 안 쓴다.
+     타이머조차 갈아 끼울 수 있게 열어 뒀다(opt.timers) — 헤드리스 재현이 실제 시간을 안 기다린다.
+
+   ★ 이벤트 정지 목록은 docs/time_modes.md §이벤트 정지 목록이고,
+     신호는 **first_play.js 가 이미 내던 것**을 쓴다(firstPlayEventsOf). 새 체계를 만들지 않았다.
+     형태 단계 전환만 여기서 본다 — 그건 first_play 상태가 아니라 growth 가 낸 turn.growthPhase 다.
+
+   ⚠ 정지 목록에 **`growthBlocked`(빛 부족)는 넣지 않았다.** 의도적이다.
+     time_modes.md 는 "밴드가 나빠짐"을 정지 사유로 적어 두었지만, 첫 플레이에서 그러면
+     **어두운 자리에 두자마자 첫 턴에 멈춘다** — "며칠이 지나도 안 자란다"를 볼 수가 없다.
+     배속 모드의 처방(§"정지 대신 알림")대로 **알림으로만** 낸다: onDay 의 info.blocked 로 매일 나가고,
+     정지가 필요하면 호출부가 `stopOnBlock:true` 로 켠다(기본 꺼짐).
+============================================================ */
+
+/* 한 번에 갈 수 있는 최대 일수. 이벤트가 영영 안 오는 경우(어두운 자리)에도 반드시 선다. */
+export const JUMP_MAX_DAYS = 60;
+/* ★ 튜토 이후에는 이벤트 점핑이 없다(time_modes.md §"점핑은 튜토 전용으로 잠근다").
+   배속은 남지만 **한 번에 이만큼까지**다 — 상한이 없으면 배속이 사실상 점핑이 된다. */
+export const FAST_MODE_MAX_DAYS = 30;
+export const DEFAULT_MS_PER_DAY = 120;
+
+/* ★ 시간 모드는 상태에서 유도한다. 호출부가 고를 수 있게 두면 잠금이 아니다.
+     jump  반지하 튜토리얼 진행 중 — 이벤트까지 점핑할 수 있다
+     fast  그 외(튜토 완료·본편) — 배속만. 박사님 확정: "초보 이후부터는 스킵은 없어" */
+export function timeModeOf(S) {
+  const fp = S && S.firstPlay;
+  return (fp && fp.enabled && !fp.completed) ? 'jump' : 'fast';
+}
+
+/* 다음에 멈출 이벤트가 무엇인지 미리 — 버튼 문구용. 튜토가 아니면 null(점핑 자체가 없다). */
+export function nextEventPreview(S) {
+  const fp = S && S.firstPlay;
+  if (!fp || !fp.enabled) return null;
+  return firstPlayNextEvent(fp);
+}
+
+const STOP_KO = {
+  event: '이벤트 도달',
+  maxDays: '한도 도달',
+  stopped: '중단',
+  error: '오류',
+  drawError: '그리기 실패',
+  hudError: 'HUD 실패',
+  desync: '어긋남',
+  callbackError: '화면 갱신 중 오류',
+  blocked: '형태 정지'
+};
+
+/* ★ 한 번에 하나만 돈다. 모듈 단일 상태인 이유는 계약이 `stopFastForward()` 라서다 —
+   핸들을 안 들고도 멈출 수 있어야 페이지 이탈·오류에서 유령 턴이 안 남는다. */
+let RUN = null;
+
+export function isFastForwarding() { return !!RUN; }
+
+/* 사용자가 중단. 돌고 있지 않으면 아무 일도 안 하고 false 를 낸다(두 번 눌러도 안전). */
+export function stopFastForward(reason = 'stopped') {
+  if (!RUN) return false;
+  RUN.finish(reason, {});
+  return true;
+}
+
+export function startFastForward(S, io, opt = {}) {
+  if (RUN) throw new Error('[빨리감기] 이미 돌고 있습니다 — 먼저 멈춰 주세요');
+
+  const mode = timeModeOf(S);
+  const untilEvent = opt.untilEvent === undefined ? (mode === 'jump') : !!opt.untilEvent;
+
+  /* ④ 튜토 전용 잠금 — 조용히 false 로 낮추지 않는다. 낮추면 호출부는 점핑한 줄 안다. */
+  if (untilEvent && mode !== 'jump')
+    throw new Error('[빨리감기] 이벤트 점핑은 반지하 튜토리얼 전용입니다 — ' +
+                    '이후에는 배속만 됩니다(maxDays 를 정해 주세요)');
+
+  let maxDays = opt.maxDays;
+  if (mode === 'jump') {
+    maxDays = Number.isFinite(maxDays) ? Math.min(Math.floor(maxDays), JUMP_MAX_DAYS) : JUMP_MAX_DAYS;
+  } else {
+    if (!Number.isFinite(maxDays))
+      throw new Error('[빨리감기] 배속에는 maxDays 가 필요합니다 — 무한 진행은 없습니다');
+    maxDays = Math.floor(maxDays);
+    if (maxDays > FAST_MODE_MAX_DAYS)
+      throw new Error(`[빨리감기] 배속은 한 번에 ${FAST_MODE_MAX_DAYS}일까지입니다 — ${maxDays}일은 점핑입니다`);
+  }
+  if (maxDays < 1) throw new Error('[빨리감기] maxDays 는 1 이상이어야 합니다');
+
+  /* 시작하기 전에 막을 수 있는 입력 실수는 여기서 막는다 — 첫 턴에 예외로 터지면
+     "빨리감기를 눌렀는데 오류만 떴다"가 된다. 고쳐서 다시 누를 수 있는 안내다. */
+  const fp = S.firstPlay;
+  if (fp && fp.enabled && !fp.beansprout.harvested && !fp.beansprout.slotId) {
+    const e = new Error('[빨리감기] 열린 시루를 먼저 방 안에 놓아 주세요');
+    e.firstPlayInput = true;
+    throw e;
+  }
+
+  const msPerDay = Number.isFinite(opt.msPerDay) ? Math.max(0, opt.msPerDay) : DEFAULT_MS_PER_DAY;
+  /* 타이머 주입구. 기본은 전역이고, 재현에서는 가짜 시계를 넣어 **실제 시간을 안 기다린다**.
+     ★ 여기서 window 를 뒤지지 않는다 — 이 파일은 UI를 모른다(맨 위 주석). */
+  const timers = opt.timers || {
+    setTimeout: (fn, ms) => setTimeout(fn, ms),
+    clearTimeout: (id) => clearTimeout(id)
+  };
+  const stopOnBlock = !!opt.stopOnBlock;
+  const onDay = typeof opt.onDay === 'function' ? opt.onDay : null;
+  const onStop = typeof opt.onStop === 'function' ? opt.onStop : null;
+
+  const startDay = S.day;
+  const run = {
+    mode, untilEvent, maxDays, msPerDay, stopOnBlock,
+    days: 0, timerId: null, done: false,
+    lastPhaseId: (fp && fp.monstera && fp.monstera.growthPhase)
+      ? fp.monstera.growthPhase.phaseId : null,
+    lastBlocked: S._lastBlock === undefined ? null : S._lastBlock,
+    finish
+  };
+
+  /* ⑤ 타이머는 **여기 한 곳에서만** 만들고 지운다. 여러 곳에서 만들면 반드시 하나가 남는다. */
+  function schedule() {
+    if (run.done) return;
+    run.timerId = timers.setTimeout(tick, msPerDay);
+  }
+  function clear() {
+    if (run.timerId == null) return;
+    const id = run.timerId;
+    run.timerId = null;
+    try { timers.clearTimeout(id); } catch { /* 시계가 이미 사라졌으면 남길 것도 없다 */ }
+  }
+
+  /* 정확히 한 번만 끝난다. RUN 을 먼저 비우므로 onStop 안에서 다시 시작해도 안전하다. */
+  function finish(reason, info) {
+    if (run.done) return;
+    run.done = true;
+    clear();
+    if (RUN === run) RUN = null;
+    pushLog(S, `⏩ 빨리감기 종료 — ${STOP_KO[reason] || reason} · ${run.days}일 진행 ` +
+               `(Day ${startDay} → ${S.day})`);
+    if (onStop) {
+      /* ★ onStop 이 던져도 타이머는 이미 지웠다. 여기서 삼키지 않으면 호출부의 UI 오류가
+         빨리감기 정리 실패로 번진다 — 로그로 남기고 넘어간다. */
+      try { onStop(reason, { ...info, reason, days: run.days, day: S.day, startDay, mode }); }
+      catch (e) { console.error('[빨리감기] onStop 처리 중 오류', e); }
+    }
+  }
+
+  function tick() {
+    run.timerId = null;
+    if (run.done) return;
+
+    const fpBefore = firstPlaySnapshot(S.firstPlay);
+    const desyncBefore = S.desync;
+
+    /* ★ 지름길 없음 — 평소 [다음 날] 과 **같은 함수**다. */
+    let turn;
+    try { turn = nextDay(S, io).turn; }
+    catch (e) { finish('error', { error: e, turn: e.turn || null }); return; }
+    run.days++;
+
+    /* ── 이벤트 수집 ─────────────────────────────────────────── */
+    const events = firstPlayEventsOf(fpBefore, S.firstPlay);
+    const phaseId = turn.growthPhase ? turn.growthPhase.phaseId : null;
+    if (phaseId && run.lastPhaseId && phaseId !== run.lastPhaseId &&
+        !events.some(e => e.id === FIRST_PLAY_COMPLETE_PHASE_ID))
+      events.push({ id: 'phase_change', ko: `형태 단계 전환 — ${turn.growthPhase.phaseKo || phaseId}`,
+                    phaseId, fromPhaseId: run.lastPhaseId });
+    if (phaseId) run.lastPhaseId = phaseId;
+
+    const blockedNow = turn.growthBlocked === undefined ? null : turn.growthBlocked;
+    const blockWorsened = !run.lastBlocked && !!blockedNow;
+    run.lastBlocked = blockedNow;
+
+    /* ── 화면 갱신 — 하루하루 그려야 "자라는 게 보인다" ────────── */
+    if (onDay) {
+      try {
+        onDay(turn, { day: S.day, index: run.days, days: run.days, maxDays,
+                      mode, events, blocked: blockedNow, blockWorsened });
+      } catch (e) { finish('callbackError', { error: e, turn }); return; }
+    }
+
+    /* ── ③ 사고는 즉시 정지. 조용히 계속 돌지 않는다 ──────────── */
+    if (turn.hudError) { finish('hudError', { turn, error: new Error(turn.hudError), events }); return; }
+    if (turn.drawError) { finish('drawError', { turn, error: new Error(turn.drawError), events }); return; }
+    if (S.desync && S.desync !== desyncBefore) { finish('desync', { turn, events }); return; }
+
+    /* ── ② 이벤트에서 멈춘다(점핑일 때만. 배속은 알림으로 지난다) ── */
+    if (untilEvent && events.length) { finish('event', { turn, events }); return; }
+    if (stopOnBlock && blockWorsened) { finish('blocked', { turn, events }); return; }
+    if (run.days >= maxDays) { finish('maxDays', { turn, events }); return; }
+
+    schedule();
+  }
+
+  const preview = nextEventPreview(S);
+  RUN = run;
+  pushLog(S, `⏩ 빨리감기 시작 — ${mode === 'jump' ? '이벤트까지' : '배속'} · ` +
+             `최대 ${maxDays}일 · ${msPerDay}ms/일` +
+             (untilEvent && preview ? ` · 다음: ${preview.ko}` : ''));
+  schedule();
+
+  /* 핸들도 돌려준다 — 계약(stopFastForward)만으로도 되지만, 시작 직후 무엇이 정해졌는지
+     호출부가 버튼 문구에 그대로 쓸 수 있어야 한다. */
+  return { mode, untilEvent, maxDays, msPerDay, preview, stop: () => stopFastForward('stopped') };
 }
 
 /* ---------------------------------------------------------------

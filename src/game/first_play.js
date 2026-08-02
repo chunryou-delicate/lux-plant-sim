@@ -236,3 +236,70 @@ export function markMonsteraPhase(fp, phase) {
   }
   return fp;
 }
+
+/* ============================================================
+   ★ 이벤트 신호 — 점핑이 멈출 지점 (2026-08-03 신설)
+   ------------------------------------------------------------
+   정지 목록의 정본은 docs/time_modes.md §이벤트 정지 목록이다.
+   첫 플레이에서 실제로 일어나는 것은 넷뿐이고, **넷 다 이 모듈이 이미 내고 있던 신호**다:
+     콩나물 첫 수확 · 몬스테라 도착 · 말린 새순 등장 · 식비(자금) 변화
+   그래서 새 이벤트 체계를 만들지 않고 **상태 두 장의 차이**로만 낸다.
+
+   ★ 왜 "신호"가 아니라 "차이"인가 — 빨리감기는 턴 반환값을 매번 보지 않는다.
+     advanceBeansproutDay 의 반환값은 그 턴을 부른 쪽만 본다. 점핑은 nextDay 만 부르므로
+     그 안에서 난 일을 알 창구가 없다. 앞뒤 스냅샷을 비교하면 **어느 경로로 바뀌었든** 잡힌다.
+
+   ★ 형태 단계 전환은 여기 없다 — 그건 first_play 상태가 아니라 growth 가 낸 turn.growthPhase 다.
+     loop.js 가 본다. 여기에 두면 첫 플레이가 아닌 개체의 단계 전환을 놓친다.
+============================================================ */
+
+/* 비교에 쓸 최소한만 뜬다. fp 를 통째로 복제하지 않는다 —
+   dliHist 까지 딸려오면 매 턴 깊은 비교가 되고, 무엇이 이벤트인지도 흐려진다. */
+export function firstPlaySnapshot(fp) {
+  if (!fp || !fp.enabled) return null;
+  return {
+    harvested: !!(fp.beansprout && fp.beansprout.harvested),
+    arrived: !!(fp.monstera && fp.monstera.arrived),
+    completed: !!fp.completed,
+    cashFoodWon: fp.food ? fp.food.cashFoodWon : null,
+    totalFoodSavedWon: fp.food ? fp.food.totalFoodSavedWon : null
+  };
+}
+
+/* 스냅샷 두 장의 차이를 이벤트 목록으로. 한 턴에 여러 개면 **여러 개 그대로 낸다** —
+   Day 4 는 수확·식비·도착이 같은 턴이다. 몇 번 멈출지는 부르는 쪽(loop)이 정한다. */
+export function firstPlayEventsOf(before, fp) {
+  const now = firstPlaySnapshot(fp);
+  if (!before || !now) return [];
+  const out = [];
+  if (!before.harvested && now.harvested)
+    out.push({ id: 'beansprout_harvest', ko: '콩나물 첫 수확',
+               meals: fp.beansprout.meals, quality: fp.beansprout.quality });
+  if (before.cashFoodWon !== now.cashFoodWon || before.totalFoodSavedWon !== now.totalFoodSavedWon)
+    out.push({ id: 'food_cash', ko: '식비가 바뀌었습니다',
+               cashFoodWon: now.cashFoodWon, totalFoodSavedWon: now.totalFoodSavedWon });
+  if (!before.arrived && now.arrived)
+    out.push({ id: 'monstera_arrived', ko: '몬스테라 도착', slotId: fp.monstera.slotId });
+  if (!before.completed && now.completed)
+    out.push({ id: FIRST_PLAY_COMPLETE_PHASE_ID, ko: '말린 새순 등장' });
+  return out;
+}
+
+/* 다음에 멈출 이벤트가 무엇인가 — 버튼 문구용. **한글 문장은 만들지 않는다**(UI 몫).
+   etaDays 는 **셀 수 있을 때만** 낸다. 몬스테라 쪽은 빛에 달렸으므로 코어가 지어내지 않는다 —
+   어두운 자리면 영영 안 오는 게 정답이라, 며칠 남았다고 쓰면 그 자체가 거짓말이 된다. */
+export function firstPlayNextEvent(fp) {
+  if (!fp || !fp.enabled || fp.completed) return null;
+  const b = fp.beansprout;
+  if (!b || !b.harvested) {
+    const left = (b && Number.isFinite(b.harvestDays) && Number.isFinite(b.ageDays))
+      ? b.harvestDays - b.ageDays : null;
+    return { id: 'beansprout_harvest', ko: '콩나물 첫 수확',
+             etaDays: left != null && left > 0 ? left : null,
+             note: '같은 턴에 몬스테라도 도착합니다' };
+  }
+  if (!fp.monstera || !fp.monstera.arrived)
+    return { id: 'monstera_arrived', ko: '몬스테라 도착', etaDays: null, note: null };
+  return { id: FIRST_PLAY_COMPLETE_PHASE_ID, ko: '말린 새순 등장', etaDays: null,
+           note: '빛이 되는 자리라야 옵니다 — 어두운 자리면 날짜만 갑니다' };
+}
