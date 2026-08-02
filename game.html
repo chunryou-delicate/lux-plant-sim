@@ -885,6 +885,71 @@ $('next').onclick = guard(() => {
   draw();
 });
 
+/* ══ 방 3D 전경 ═══════════════════════════════════════════════════════════
+   ★여기가 게임 화면이다. iframe#growth 는 화분을 탭했을 때 올라오는 상세다.
+   room_view.js 는 별도 모듈이라 아직 없을 수 있다 — **없어도 게임은 돌아간다.**
+   빈 검은 화면만 두면 "고장났나"로 읽히므로 무엇을 기다리는지 적어 둔다. */
+let roomView = null;
+async function bootRoomView() {
+  let mod = null;
+  try { mod = await import('./src/game/room_view.js'); }
+  catch {
+    window.__byeotRoomFallback(
+      '방 전경은 아직 준비 중입니다.<br>화분을 탭하는 대신 아래 <b>가방</b>에서 자리를 고를 수 있습니다.');
+    return;
+  }
+  try {
+    roomView = await mod.createRoomView($('roomCanvas'), {
+      roomId: S.room, lightEngine: io.light,
+      onPlantTap: () => window.__byeotZoom.open(),
+      onSlotTap: (slotId) => placeMode.pick(slotId),
+      onError: (e) => window.__byeotRoomFallback('방을 그리지 못했습니다 — ' + (e && e.message || e))
+    });
+    syncRoom();
+    addEventListener('resize', () => roomView && roomView.resize());
+  } catch (e) {
+    window.__byeotRoomFallback('방을 그리지 못했습니다 — ' + (e && e.message || e));
+  }
+}
+/* 코어 상태 → 방 화면. 한 방향으로만 흐른다 — 방이 게임 상태를 바꾸지 않는다. */
+function syncRoom() {
+  if (!roomView) return;
+  const p = pot0(S);
+  const b = S.firstPlay && S.firstPlay.beansprout;
+  try {
+    roomView.setPlant(p && p.slotId, p ? {
+      kind: 'monstera', phaseId: lastTurn && lastTurn.growthPhase && lastTurn.growthPhase.phaseId,
+      progress01: lastTurn && lastTurn.growthPhase && lastTurn.growthPhase.progress01,
+      band: lastTurn && lastTurn.band
+    } : null);
+    if (b && b.slotId) roomView.setPlant(b.slotId, { kind: 'beansprout' });
+  } catch (e) { console.warn('[방] 갱신 실패 —', e && e.message); }
+}
+/* 배치 모드 — 탭으로 고르고, 놓을 수 있는 자리를 밝기와 함께 빛나게 한다.
+   ★드래그는 안 쓴다. 폰 3D 에서 카메라 회전과 충돌하고 슬롯이 작아 오조작이 난다. */
+const placeMode = {
+  target: null,                        // 'monstera' | 'beansprout'
+  begin(what, allowed, hint) {
+    this.target = what;
+    $('stage').classList.add('placing');
+    $('placeHint').innerHTML = hint;
+    if (roomView) roomView.highlightSlots(allowed);
+    window.__byeotSheet.close();
+  },
+  end() {
+    this.target = null;
+    $('stage').classList.remove('placing');
+    if (roomView) roomView.highlightSlots([]);
+  },
+  pick(slotId) {
+    if (!this.target) { window.__byeotZoom.open(); return; }   // 배치 중이 아니면 그냥 상세
+    const sel = this.target === 'beansprout' ? $('cropSlot') : $('slot');
+    sel.value = slotId;
+    sel.dispatchEvent(new Event('change', { bubbles: true }));
+    this.end();
+  }
+};
+
 /* ══ 빨리감기 — ★순간이동이 아니다 (박사님 2026-08-03) ═══════════════════
    "점점 자라는 모습을 보여주면서 점핑하게." 하루씩 진짜로 돌면서 매일 그린다.
    그래서 어두운 자리에 둔 채 감으면 **날짜만 가고 형태는 그대로 서 있다** —
@@ -1220,10 +1285,12 @@ try {
   pushLog(S, '첫 플레이 준비 완료 — 열린 시루를 놓고 [다음 날]을 눌러 보세요');
   draw();
   window.__byeotBooted = true;      // 밖의 감시자에게 "여기까지는 왔다"고 알린다
+  bootRoomView();                   // 방 3D — 실패해도 게임은 돌아간다(아래)
 } catch (err) {
   GATED.forEach(id => { $(id).disabled = true; });       // 실패하면 계속 잠근다
-  side.insertAdjacentHTML('afterbegin',
-    `<div class="err">⚠ 진행 버튼을 잠갔습니다<br>${err.message.split('\n').join('<br>')}</div>`);
+  /* ★#side 는 폰 세로로 바뀌며 없어졌다. 하단에 띄운다 — 안 보이면 "버튼이 안 눌린다"만 남는다 */
+  ($('bottom') || document.body).insertAdjacentHTML('afterbegin',
+    `<div class="err" style="margin-bottom:8px">⚠ 진행 버튼을 잠갔습니다<br>${err.message.split('\n').join('<br>')}</div>`);
   console.error(err);
   /* 여기까지 왔으면 부팅 자체는 돌았고 안내도 이미 떴다 — 감시자가 같은 말을 또 하지 않게 한다 */
   window.__byeotBooted = true;
