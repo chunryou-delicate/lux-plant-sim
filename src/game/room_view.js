@@ -1085,20 +1085,29 @@ export async function createRoomView(canvas, opts = {}) {
   }
 
   function applyDaylight() {
-    const label = updateLight(ctx, daylightT * 100, 0);
+    /* ★천장등은 **낮에 아예 안 켠다** (박사님 2026-08-03: "낮에는 안 켜지게").
+       scene.js 의 자동 모드(0)는 해가 약하면 켜는데, 반지하는 낮에도 해가 약해서
+       한낮에 천장등이 같이 켜졌다 — 방이 통째로 하얘지고 창으로 드는 빛이 묻혔다.
+       이 게임에서 창빛은 볼거리이자 정보다. 그걸 덮는 조명은 낮에 있으면 안 된다.
+       0.30~0.78 을 낮으로 본다(아침 해 뜬 뒤 ~ 저녁 해 지기 전). */
+    const isDay = daylightT > 0.30 && daylightT < 0.78;
+    const label = updateLight(ctx, daylightT * 100, isDay ? 2 : 0);
 
-    /* ★밤 천장등을 낮춘다 (박사님 2026-08-03: "밤에 켜지는 등 불빛이 너무 밝아.
-       수치 말고 보이는 광원이 너무 밝어").
+    /* ★밤에도 낮춘다 ("보이는 광원이 너무 밝어").
        scene.js 는 갓의 emissiveIntensity 를 0.9, 전구를 4.5 로 둔다 — 방 도구에서는
-       천장등 자체를 검수하는 화면이라 맞지만, 게임에서는 **밤에 갓이 하얗게 타서**
-       식물이 그 옆에서 안 보인다. 화면 주인공은 방과 식물이지 조명이 아니다.
-       ⚠ scene.js 를 고치지 않는다 — house 창 소유이고 방 도구의 균형은 그대로 둔다.
-         게임 뷰에만 건다(낮 채움광 조정과 같은 자리). */
+       천장등 자체를 검수하는 화면이라 맞지만, 게임에서는 갓이 하얗게 타서
+       식물이 그 옆에서 안 보인다. 화면 주인공은 방과 식물이지 조명이 아니다. */
     if (ctx.ceilingBulb.intensity > 0) {
-      ctx.ceilingBulb.intensity *= 0.55;
+      ctx.ceilingBulb.intensity *= 0.42;
       if (ctx.clShade && ctx.clShade.material)
-        ctx.clShade.material.emissiveIntensity = 0.30;   // 0.9 → 은은하게 켜진 정도
+        ctx.clShade.material.emissiveIntensity = 0.22;   // 0.9 → 은은하게 켜진 정도
     }
+    /* ★방 전체를 한 톤 낮춘다 ("방이 너무 밝다").
+       채움광(hemi·ambient)이 세면 그림자가 옅어지고, 창으로 드는 빛 웅덩이가
+       배경에 묻힌다 — 빛이 자리를 가르는 게임에서 그건 정보가 사라지는 것이다.
+       해는 그대로 두어 창빛의 대비를 오히려 키운다. */
+    ctx.hemi.intensity *= 0.62;
+    ctx.ambient.intensity *= 0.58;
 
     /* updateLight 는 부른 김에 그림자 넉 장을 다 다시 굽게 표시한다. 일단 전부 내리고
        필요한 것만 다시 올린다 — 아래 정책이 유일한 결정권자가 되게. */

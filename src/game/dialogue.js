@@ -36,12 +36,14 @@ export const SCRIPTS = {
      ③ **몬이가 위로부터 하지 않는다.** "괜찮아"는 값싸다. 할 수 있는 일을 내민다 —
         이 게임이 주는 위로는 대사가 아니라 **자리를 옮기면 식물이 자라는 것**이다. */
   intro: [
-    { who: 'jachwi', face: 'worry', text: '…불도 잘 안 드는 방이네.' },
-    { who: 'jachwi', face: 'worry', text: '엄마… 아빠…' },
-    { who: 'jachwi', face: 'worry', text: '나 이제 어떻게 살지.' },
+    /* ★표정이 한 줄씩 다르다. 예전엔 worry 하나가 성격이 다른 네 줄을 혼자 감당했다 —
+       담담한 체념 · 울음 · 막막함 · 놀람은 같은 얼굴로 하면 안 된다. */
+    { who: 'jachwi', face: 'tired',    text: '…불도 잘 안 드는 방이네.' },
+    { who: 'jachwi', face: 'cry',      text: '엄마… 아빠…' },
+    { who: 'jachwi', face: 'worry',    text: '나 이제 어떻게 살지.' },
     /* ★여기서 몬이가 뿅 나타난다. 화면 연출은 game.html 의 .pop 이 한다. */
     { who: 'moni',   face: 'happy', pop: true, text: '— 뿅!' },
-    { who: 'jachwi', face: 'worry', text: '…뭐야?!' },
+    { who: 'jachwi', face: 'surprise', text: '…뭐야?!' },
     { who: 'moni',   text: '놀랐지. 나는 몬이야.' },
     { who: 'moni',   text: '**식물신**이 보냈어. 너 혼자 두면 안 되겠다고.' },
     { who: 'jachwi', text: '식물신…? 그런 게 있어?' },
@@ -73,8 +75,8 @@ export const SCRIPTS = {
   /* 몬스테라 도착 — ★정답이 아닌 자리에 온다(first_play.md 확정).
      "옮겨라"라고 대놓고 말하지 않는다. 옮기는 것이 두 번째 학습이라 스스로 해야 한다. */
   monsteraArrived: [
-    { who: 'jachwi', text: '몬스테라…?' },
-    { who: 'moni',   text: '얘는 콩나물이랑 반대야. 어두운 데 두면 아무 일도 안 일어나.' }
+    { who: 'jachwi', face: 'surprise', text: '몬스테라…?' },
+    { who: 'moni',   face: 'curious',  text: '얘는 콩나물이랑 반대야. 어두운 데 두면 아무 일도 안 일어나.' }
   ],
 
   /* 창턱으로 옮긴 뒤 */
@@ -92,7 +94,7 @@ export const SCRIPTS = {
 
   /* ★첫 플레이의 그 한 장면 — 말린 새순 */
   spearFurled: [
-    { who: 'jachwi', face: 'happy', text: '뭔가… 돌돌 말린 게 올라왔어.' },
+    { who: 'jachwi', face: 'surprise', text: '뭔가… 돌돌 말린 게 올라왔어.' },
     { who: 'moni',   face: 'happy', text: '새순이야! 저게 펴지면 잎이 돼.' },
     { who: 'god',    text: '자리를 옮긴 것뿐인데 말이지.' }
   ]

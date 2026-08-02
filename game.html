@@ -426,7 +426,7 @@
   <!-- ══ 상단 상태 ══════════════════════════════════════════════════════ -->
   <header id="topbar">
     <div class="resourcebar">
-      <div class="resource r-day"><span>오늘</span><b id="resDay">Day 0</b></div>
+      <div class="resource r-day"><span id="resWhen">아침</span><b id="resDay">Day 0</b></div>
       <div class="resource r-food"><span>첫 수확일 식비</span><b id="resFood">—</b></div>
       <div class="resource r-saved"><span>아낀 식비</span><b id="resSaved">0원</b></div>
     </div>
@@ -1109,9 +1109,12 @@ function showGpuInfo() {
    ★대사 순서는 계약이다 — Day 4 는 수확 → (식비는 화면이 숫자로) → 식물신 → 도착.
      dialogue.js 가 그 줄 세우기를 갖고 있고 여기서는 그리기만 한다. */
 const dlg = createDialogue();
+/* 표정 키(대사가 쓰는 뜻) → 파일명. 3차 초상화부터는 대체로 같지만 몬이만 다르다
+   (몬이의 '기뻐함'은 excited 다). 이름이 또 바뀌어도 대사는 안 고치게 여기서만 안다. */
 const FACE_FILE = {
-  jachwi: { base: 'neutral', happy: 'happy',   worry: 'worried' },
-  moni:   { base: 'neutral', happy: 'excited', sad:   'sad'     }
+  jachwi: { base: 'neutral', happy: 'happy', worry: 'worry',
+            cry: 'cry', surprise: 'surprise', tired: 'tired' },
+  moni:   { base: 'neutral', happy: 'excited', sad: 'sad', curious: 'curious' }
 };
 function dlgPaint() {
   const line = dlg.current();
@@ -1180,6 +1183,7 @@ async function bootRoomView() {
     window.__rv = roomView; window.__picked = picked; window.__drag = drag;
     $('stage').classList.add('room-ok');     /* 방이 떴다 — 빈 무대 안내를 걷는다 */
     showGpuInfo();
+    try { paintWhen(roomView.setDaylight(dayPhase)); } catch { }   /* 시작 시각을 적는다 */
     /* 캐릭터와 몬이를 세운다. 첫 플레이는 자취생 고정이고(story_arc.md 확정 —
        직업 선택은 초보 엔딩 뒤), 몬이는 오프닝부터 곁에 있어야 대사가 붕 뜨지 않는다.
        ⚠ 캐릭터가 있으면 idle 을 돌려야 해서 "놀 때 0장"이 깨진다 — 워커가 30fps 로 잘라 뒀다. */
@@ -1475,13 +1479,20 @@ function ffStop(reason) {
      아침→낮→저녁이 눈에 읽힌다. 날짜 수와 묶지 않는 것이 핵심이다. */
 const DAY_SWEEP_MS = 1600;
 let dayLoop = null, dayPhase = 0.28;       /* 0.28 ≈ 아침. 낮부터 시작하면 변화가 덜 보인다 */
+/* ★지금이 하루 중 언제인지를 화면에 적는다 (박사님 2026-08-03: "시간도 표기되면 좋겠고").
+   창빛만으로도 느낌은 오지만, 밝기가 낮은 반지하에서는 아침과 저녁이 잘 안 갈린다.
+   room_view 의 setDaylight 가 이미 시간대 이름을 돌려주므로 새 계산을 만들지 않는다. */
+function paintWhen(label) {
+  const el = $('resWhen'); if (!el) return;
+  el.textContent = label || '—';
+}
 function dayCycleStart() {
   if (dayLoop || !roomView) return;
   let prev = performance.now();
   const step = (now) => {
     if (!dayLoop) return;
     dayPhase = (dayPhase + (now - prev) / DAY_SWEEP_MS) % 1; prev = now;
-    try { roomView.setDaylight(dayPhase); } catch { /* 방이 없거나 실패해도 감기는 계속된다 */ }
+    try { paintWhen(roomView.setDaylight(dayPhase)); } catch { /* 방이 없거나 실패해도 감기는 계속된다 */ }
     dayLoop = requestAnimationFrame(step);
   };
   dayLoop = requestAnimationFrame(step);
@@ -1490,7 +1501,8 @@ function dayCycleStop() {
   if (!dayLoop) return;
   cancelAnimationFrame(dayLoop); dayLoop = null;
   /* 멈출 때는 한낮으로 되돌린다 — 저녁에 멈춰 서면 방이 어두운 채로 남아 "고장났나"가 된다 */
-  try { if (roomView) roomView.setDaylight(0.5); } catch { }
+  dayPhase = 0.5;
+  try { if (roomView) paintWhen(roomView.setDaylight(0.5)); } catch { }
 }
 let ffNextWas = null;                      /* 빨리감기 전에 [다음 날]이 눌리는 상태였는지 */
 function ffPaint(on) {
