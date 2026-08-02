@@ -34,6 +34,14 @@ export function createProfileLight(profile, data = {}) {
   if (profile.uidStable !== true)
     throw new Error(`[프로파일 거부] ${profile.room}: 안정 uid 계약(2026-08-02) 이전 파일입니다.\n` +
       `house 의 _profile_gen.html 로 다시 뽑아 주세요 (uidStable:true 가 찍힙니다).`);
+  /* ★ maxPotD 결측 경고 — 던지지는 않는다(옛 프로파일도 조도 재생에는 쓸 수 있다).
+     다만 물리 필터를 쓰는 경로(첫 플레이 배치)는 이 값이 없으면 후보 0칸으로 떨어져 멈춘다.
+     그게 조용히 아무 자리에나 놓는 것보다 낫다 — 어디가 문제인지 여기서 이름을 부른다. */
+  const noDim = (profile.slots || []).filter(s => !Number.isFinite(s.maxPotD));
+  if (noDim.length)
+    console.warn(`[프로파일] ${profile.room}: maxPotD 가 없는 슬롯 ${noDim.length}/${profile.slots.length}칸 ` +
+                 `— 화분 배치 물리 필터를 쓸 수 없습니다(light_adapter.profile 직렬화 필요)`);
+
   const temp = (profile.slots || []).filter(s => String(s.slotId).startsWith('TEMP~'));
   if (temp.length)
     throw new Error(`[프로파일 거부] ${profile.room}: 임시 uid 슬롯 ${temp.length}칸이 들어 있습니다.`);
@@ -82,6 +90,11 @@ export function createProfileLight(profile, data = {}) {
       const varie = isVariegated(TH, plantId, pot ? pot.variegated : undefined);
       return {
         slotId: s.slotId, plantId, point: s.point, variegated: varie,
+        /* ★ 물리 치수를 정적 경로에도 실어 보낸다 (2026-08-02).
+           라이브(light_adapter)는 house 의 plantSlots.maxPotD 를 그대로 쓰는데 프로파일이
+           이 값을 안 실으면, 같은 방인데 **정적 경로만 물리 필터가 통째로 빠진다** —
+           화분이 못 올라가는 자리에 조용히 놓인다. 없으면 null 로 두고 소비 쪽이 막는다. */
+        maxPotD: Number.isFinite(s.maxPotD) ? s.maxPotD : null,
         peak_lx: Math.round(s.ratio * evMax),
         dli: +dli.toFixed(2),
         dli_daylight: +dliDay.toFixed(2),
@@ -138,7 +151,8 @@ export function createProfileLight(profile, data = {}) {
         id: profile.room,
         def: { label: profile.label, measured: profile.measured || {} },
         slots: profile.slots.map(s => ({ slotId: s.slotId, owner: s.owner,
-                                         x: s.point.x, y: s.point.y, z: s.point.z })),
+                                         x: s.point.x, y: s.point.y, z: s.point.z,
+                                         maxPotD: Number.isFinite(s.maxPotD) ? s.maxPotD : null })),
         dupSlots: []
       };
     },

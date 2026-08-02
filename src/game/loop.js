@@ -37,10 +37,21 @@ import {
   cropDliFromReport,
   FIRST_PLAY_ASSETS,
   markMonsteraArrived,
-  markMonsteraPhase
+  markMonsteraPhase,
+  slotFitsDiameter
 } from './first_play.js';
 import { dliFromContract } from './growth_adapter.js';
 import { weekStats, WEATHER_P } from '../engine/weather.js';
+
+/* 단계 표시를 읽는 유일한 창구. **표시 계약**이라 실패해도 진행을 무르지 않는다 —
+   다만 조용히 null 로 숨기지 않고 사유를 같이 낸다(호출부가 라벨을 띄운다).
+   growth 가 phaseKo 를 안 내는 옛 버전이면 markMonsteraPhase 가 키를 그대로 쓴다. */
+export function phaseOf(io, S) {
+  if (!io.growth || typeof io.growth.growthPhase !== 'function')
+    return { phase: null, error: null };            // 계약 자체가 없는 경우는 '정보 없음'
+  try { return { phase: io.growth.growthPhase(), error: null }; }
+  catch (e) { return { phase: null, error: e.message }; }
+}
 
 export function nextDay(S, io) {
   const p = pot0(S);
@@ -49,9 +60,24 @@ export function nextDay(S, io) {
      iframe 을 새로고침하면 ready() 를 통과했던 계약이 사라진다. 그대로 진행하면
      달력만 가고 형태는 그대로인 **반쯤 진행된 턴**이 조용히 남는다.
      여기서 던지면 S 는 손도 안 댄 상태다 — 날짜조차 안 올라간다. */
-  if (p && io.growth.assertContract) {
+  /* ★ 첫 플레이는 **Day 1 부터** 검사한다 (2026-08-02 정정).
+     예전엔 화분이 있을 때만 봐서, 몬스테라가 오기 전 3일이 계약이 죽은 채로 지나갔다 —
+     Day 4 선물에서야 막히고 그때까지 쌓인 콩나물 상태는 근거가 없어진다. */
+  const needsGrowth = !!p || !!(S.firstPlay && S.firstPlay.enabled);
+  if (needsGrowth && io.growth.assertContract) {
     try { io.growth.assertContract(); }
     catch (e) { e.turnState = 'not_started'; throw e; }
+  }
+  /* ★ 단계 읽기도 **하루를 시작하기 전에** 확인한다 (2026-08-02 정정).
+     끝난 뒤에야 알면 "진행은 됐는데 말린 새순 경계를 못 본" 회차가 생긴다 —
+     첫 플레이가 증명하려는 게 딱 그 경계라 조용히 건너뛰면 안 된다. */
+  if (p && io.growth.growthPhase) {
+    const pre = phaseOf(io, S);
+    if (pre.error) {
+      const e = new Error(`[생장] 단계를 읽을 수 없어 오늘을 시작하지 않았습니다 — ${pre.error}`);
+      e.turnState = 'not_started';
+      throw e;
+    }
   }
 
   S.day++;
@@ -86,19 +112,33 @@ export function nextDay(S, io) {
            창가 높은 자리로 옮기는 것이 두 번째 학습이다. */
         const roomSlots = (io.light.room && io.light.room.slots) || [];
         const potDiameter = FIRST_PLAY_ASSETS.monsteraPotDiameterM;
+        /* ★ 치수가 숫자로 확인된 자리만 후보다. 폴백 금지 (2026-08-02 정정).
+           예전엔 후보가 0칸이면 `!canHoldPot.size` 로 **제약을 통째로 껐다** —
+           화분이 물리적으로 안 올라가는 자리에 조용히 놓였다. 0칸이면 그건 데이터 문제이므로
+           숨기지 않고 던진다. */
         const canHoldPot = new Set(roomSlots
-          .filter(s => s && (s.maxPotD == null || s.maxPotD >= potDiameter))
+          .filter(s => slotFitsDiameter(s, potDiameter))
           .map(s => s.slotId));
+        if (!canHoldPot.size)
+          throw new Error(`[첫 플레이] 지름 ${potDiameter}m 화분이 올라가는 자리가 이 방에 없습니다 ` +
+                          `(maxPotD 가 숫자로 있는 슬롯 0칸) — 방 데이터를 확인해 주세요`);
         const arrival = [...(report.slots || [])]
-          .filter(s => s && s.slotId !== cropSlotId &&
-                       (!canHoldPot.size || canHoldPot.has(s.slotId)) &&
+          .filter(s => s && s.slotId !== cropSlotId && canHoldPot.has(s.slotId) &&
                        typeof s.dli === 'number' && isFinite(s.dli))
           .sort((a, b) => a.dli - b.dli)[0];
         if (!arrival) throw new Error('[첫 플레이] 몬스테라가 도착할 화분 자리를 찾지 못했습니다');
 
         const arrived = givePlant(S, io, { slotId: arrival.slotId });
+        /* ★ 도착은 setGrowth 가 그려졌고 **단계까지 읽힌 뒤에만** 완성된다 (2026-08-02 정정).
+           단계를 못 읽으면 말린 새순 경계를 영영 못 보는 개체가 남는다 — 여기서 던지면
+           바깥 catch 가 화분·수확·식비·날짜를 통째로 되돌려 Day 4 를 다시 시도할 수 있다. */
+        const gp = phaseOf(io, S);
+        if (gp.error) {
+          S.pots.length = 0;                    // 되돌리기 전에 방금 만든 화분을 거둔다
+          throw new Error(`[첫 플레이] 도착한 몬스테라의 단계를 읽지 못했습니다 — ${gp.error}`);
+        }
         markMonsteraArrived(S.firstPlay, arrived.slotId);
-        if (io.growth.growthPhase) markMonsteraPhase(S.firstPlay, io.growth.growthPhase());
+        markMonsteraPhase(S.firstPlay, gp.phase);
         pushLog(S, '🌱 “콩나물을 잘 키웠구나. 이건 좀 더 어려울 거야.”');
       }
     } catch (e) {
@@ -121,13 +161,15 @@ export function nextDay(S, io) {
      그날은 키운 날로 세지 않는다 — 다음 날부터 빛을 받아 3턴 뒤 말린 새순이 된다. */
   if (!p) {
     const arrived = pot0(S);
+    const gpNo = arrived ? phaseOf(io, S) : { phase: null, error: null };   // ★ 한 번만
     return { S, turn: {
       day: S.day, sky, report, slot: null, dli: null, check,
       noPlant: !arrived, plantArrived: !!arrived, firstPlayEvent,
       daysPlanted: arrived ? 0 : null,
       growthCalendarDay: arrived ? io.growth.calendarDay() : null,
       effectiveGrowthDays: arrived ? io.growth.growthDays() : null,
-      growthPhase: arrived && io.growth.growthPhase ? io.growth.growthPhase() : null
+      growthPhase: gpNo.phase,
+      growthPhaseError: gpNo.error
     } };
   }
 
@@ -195,6 +237,7 @@ export function nextDay(S, io) {
   S.dliHist.push(dli);
   S.ledger.electricityWon += (report.energy && report.energy.won) || 0;   // 표시만. 차감 없음
 
+  const phaseAfter = phaseOf(io, S);          // ★ 한 번만 읽는다
   const turn = {
     day: S.day, sky, report, slot, dli,
     check,
@@ -209,16 +252,60 @@ export function nextDay(S, io) {
     dli7Core: avg(S.dliHist, 7),       // 코어가 센 값 — 둘이 어긋나면 배선이 틀린 것
     sample: sample(S.dliHist, 7),      // 표본 상태(결측 며칠인지) — 평균만 보면 못 판단한다
     cv: io.growth.dliCV(),
-    growthPhase: io.growth.growthPhase ? io.growth.growthPhase() : null,
+    /* growth 렌더 신호 — 논리 진행과 화면을 가른 뒤로 이게 유일한 "그림이 살아있나" 창구다.
+       옛 growth 는 안 내므로 undefined 다(= 정보 없음, 실패 아님). */
+    drawn: step ? step.drawn : undefined,
+    drawError: step ? (step.drawError ?? null) : null,
+    hudError: step ? (step.hudError ?? null) : null,
+    growthPhase: phaseAfter.phase,
+    growthPhaseError: phaseAfter.error,
     firstPlayEvent
   };
-  if (S.firstPlay && S.firstPlay.enabled) markMonsteraPhase(S.firstPlay, turn.growthPhase);
+
+  /* ★ 순서가 계약이다 (2026-08-02 정정).
+     ① 그림이 죽었으면 **단계를 반영하기 전에** 멈춘다 — 안 그러면 화면엔 아무 변화가 없는데
+        completed=true 가 되어 "말린 새순을 봤다"가 거짓이 된다.
+     ② 단계를 못 읽었으면 그것도 fail-loud — 조용히 경계를 건너뛰지 않는다.
+     둘 다 논리 진행(달력·유효 생장·이력·돌본 날)은 이미 기록했고 되감지 않는다. */
+  if (turn.drawn === false) {
+    S.desync = { coreDay: S.day, growthCalendar: turn.growthCalendarDay,
+                 reason: turn.drawError || '3D 그리기 실패',
+                 note: '논리 진행은 양쪽 모두 하루 갔다. 화면의 식물만 낡았다' };
+    pushLog(S, `⛔ 화면을 다시 그리지 못했습니다 — ${turn.drawError || '사유 미상'} ` +
+               `(유효 ${turn.effectiveGrowthDays}일까지 진행은 됐습니다)`);
+    const err = new Error(`[생장] 3D 를 다시 그리지 못했습니다 — ${turn.drawError || '사유 미상'}. ` +
+                          `하루는 진행됐고 화면만 낡았습니다`);
+    err.turnState = 'growth_advanced';
+    err.coreRolledBack = false;
+    err.turn = turn;
+    throw err;
+  }
+  if (turn.growthPhaseError) {
+    S.desync = { coreDay: S.day, growthCalendar: turn.growthCalendarDay,
+                 reason: turn.growthPhaseError,
+                 note: '하루는 진행됐지만 단계를 읽지 못해 경계를 확인할 수 없다' };
+    pushLog(S, `⛔ 단계를 읽지 못했습니다 — ${turn.growthPhaseError} (하루 진행은 됐습니다)`);
+    const err = new Error(`[생장] 단계를 읽지 못했습니다 — ${turn.growthPhaseError}. ` +
+                          `하루는 진행됐고 말린 새순 경계를 확인하지 못했습니다`);
+    err.turnState = 'growth_advanced';
+    err.coreRolledBack = false;
+    err.turn = turn;
+    throw err;
+  }
+  if (S.firstPlay && S.firstPlay.enabled && turn.growthPhase) markMonsteraPhase(S.firstPlay, turn.growthPhase);
+
+  /* ★ HUD 실패는 3D 실패와 등급이 다르다 — 형태는 그려졌고 growth 쪽 숫자판만 죽은 것이라 경고만 한다. */
+  if (turn.hudError) {
+    console.warn(`[생장] growth HUD 갱신 실패(3D 는 그려짐) — ${turn.hudError}`);
+    pushLog(S, `⚠ growth HUD 갱신 실패 — ${turn.hudError} (형태는 그려졌습니다)`);
+  }
   /* 정지 사유는 바뀔 때만 남긴다 — 매일 찍으면 기록이 같은 줄로 덮인다 */
   if (turn.growthBlocked !== S._lastBlock) {
     if (turn.growthBlocked) pushLog(S, `⏸ 형태 정지 — ${turn.growthBlocked}`);
     else if (S._lastBlock !== undefined) pushLog(S, `▶ 다시 자랍니다 (유효 진행 ${turn.effectiveGrowthDays}일)`);
     S._lastBlock = turn.growthBlocked;
   }
+
   return { S, turn };
 }
 

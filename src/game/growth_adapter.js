@@ -120,18 +120,28 @@ export function createGrowthAdapter(iframe) {
 
     /* ★ 하루 진행 — 코어의 일일 루프는 이것만 쓴다.
        달력은 하루 가고, 유효 생장(형태)은 빛이 될 때만 쌓인다.
-       반환 { calDay, growth, grew, blocked } · 하루가 아닌 값을 주면 growth 가 던진다. */
+       반환 { calDay, growth, grew, blocked, drawn, drawError, hudError }
+         drawn      3D 무대를 다시 그렸는가. **false 면 화면의 식물은 낡은 것**
+         drawError  3D 실패 사유 · hudError growth 자체 HUD 실패 사유(둘은 끝까지 별개 경계)
+       ⚠ 그리기가 터져도 growth 는 예외를 안 던진다 — 논리 진행은 이미 끝났기 때문이다.
+         그래서 코어가 `drawn` 을 안 보면 "게이지는 오르는데 그림은 멈춘" 상태를 아무도 모른다.
+       ⚠ 옛 growth 는 이 세 필드를 안 낸다(undefined = 정보 없음). 실패로 읽지 말 것. */
     advanceTo(calDay) { return must('advanceTo')(calDay); },
     calendarDay()     { return must('calendarDay')(); },
     growthDays()      { return must('growthDays')(); },
     growthBlocked()   { return must('growthBlocked')(); },
-    /* novice 형태 게이지의 정본. 생장일·단계 경계를 코어에 복제하지 않는다. */
+    /* novice 형태 게이지의 정본. 생장일·단계 경계를 코어에 복제하지 않는다.
+       반환 { phaseId, phaseKo, progress01, nextPhaseId, nextPhaseKo }
+       ★ 한글 이름도 growth 가 낸 것을 쓴다 — 코어가 자기 표를 들면 단계가 바뀔 때
+         **오류 없이 틀린 라벨**이 뜬다. 모르는 키는 growth 가 키 그대로 낸다. */
     growthPhase()     { return must('growthPhase')(); },
 
     /* ⚠ 점프다. **초기 형태 배치·디버그 전용** — 일일 루프에서 부르지 않는다.
        개체가 생길 때 한 번(도착 진행도 143) 쓰는 게 전부다.
        없으면 던진다 — null 을 돌려주면 "도착은 했는데 형태는 0일"인 개체가 조용히 생긴다.
        도착은 성공/실패가 갈려야 하는 원자적 사건이다(state.givePlant 참고). */
+    /* 반환 { growth, calDay, drawn, drawError, hudError } — 도착(개체 생성)이 이걸 쓴다.
+       `drawn` 을 안 보면 "화분은 있는데 화면엔 없는" 개체가 생긴다(state.givePlant 참고). */
     setGrowth(days) { const f = must('setGrowth'); setGrowthCalls++; return f(days); },
     setGrowthCalls: () => setGrowthCalls,
 

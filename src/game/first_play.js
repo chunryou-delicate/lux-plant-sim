@@ -22,6 +22,19 @@ export const FIRST_PLAY_ASSETS = Object.freeze({
   monsteraPotDiameterM: 0.202
 });
 
+/* ★ 완료는 **정확히 이 단계에서만** 인정한다 (2026-08-02 정정).
+   뒤 단계를 함께 통과시키면 "말린 새순을 봤다"가 아니라 "언젠가 지나갔다"가 된다 —
+   중간에 화면을 못 본 회차도 성공으로 처리되어 첫 학습의 증거가 사라진다.
+   단계 이름·경계는 growth 소유다. 코어는 이 열쇠 하나만 안다. */
+export const FIRST_PLAY_COMPLETE_PHASE_ID = 'spear_furled';
+
+/* 물리적으로 올라가는 자리인가 — ★ maxPotD 가 **숫자로 확인된** 슬롯만 허용한다.
+   `maxPotD == null` 을 통과시키면 치수를 모르는 자리에 화분이 올라간다(조용한 폴백). */
+export function slotFitsDiameter(slot, diameterM) {
+  if (!slot || !Number.isFinite(diameterM)) return false;
+  return Number.isFinite(slot.maxPotD) && slot.maxPotD >= diameterM;
+}
+
 /* leaf 정본의 열린 시루를 이름이 아니라 상태로 찾는다. blocks_light는 "차광 기능 보유"이고
    실제 적용 여부는 leaf-to-house 계약대로 lid_state가 closed일 때다. 첫 플레이는 open만 허용한다. */
 export function openSiruContractFromManifest(manifest) {
@@ -91,14 +104,20 @@ export function createFirstPlayState(opt = {}) {
   };
 }
 
+/* ★ 수확 전이면 언제든 옮길 수 있다 (2026-08-02 정정).
+   예전엔 하루라도 자라면 잠갔는데, 그 자리의 조도 계약이 깨지면 **고칠 방법이 사라졌다** —
+   매일 예외만 나고 시루는 못 옮기는 막다른 길이 됐다. 옮겨도 **과거 DLI 이력은 그대로 둔다**:
+   이력은 "이 콩나물이 실제로 받은 빛"이라 자리를 바꿨다고 없던 일이 되지 않는다.
+   수확 뒤에는 결과가 이미 확정됐으므로 막는다. */
 export function placeBeansprout(fp, slotId) {
   if (!fp || !fp.beansprout) throw new Error('[첫 플레이] 콩나물 상태가 없습니다');
   if (!slotId) throw new Error('[첫 플레이] 콩나물을 둘 자리를 골라 주세요');
   if (fp.beansprout.harvested)
     throw new Error('[첫 플레이] 이미 수확한 첫 시루는 옮길 수 없습니다');
+  const moved = fp.beansprout.slotId != null && fp.beansprout.slotId !== slotId;
   fp.beansprout.slotId = slotId;
   fp.phase = 'grow_beansprout';
-  return fp.beansprout;
+  return { ...fp.beansprout, moved, keptDays: fp.beansprout.dliHist.length };
 }
 
 function validDli(dli) {
@@ -180,16 +199,20 @@ export function moveMonstera(fp, slotId) {
   return slotId;
 }
 
+/* 표시용 단계를 그대로 보관한다. ★ 한글 이름도 growth 가 낸 것을 쓴다 —
+   코어가 자기 표를 들면 growth 가 단계를 늘리거나 이름을 바꿀 때 **오류 없이 틀린 라벨**이 뜬다.
+   phaseKo 가 없는(옛) growth 면 키를 그대로 보여준다 — 조용히 비우지 않는다. */
 export function markMonsteraPhase(fp, phase) {
   if (!fp.monstera.arrived || !phase) return fp;
   fp.monstera.growthPhase = {
     phaseId: phase.phaseId,
+    phaseKo: phase.phaseKo ?? phase.phaseId ?? null,
     progress01: phase.progress01,
-    nextPhaseId: phase.nextPhaseId ?? null
+    nextPhaseId: phase.nextPhaseId ?? null,
+    nextPhaseKo: phase.nextPhaseKo ?? phase.nextPhaseId ?? null
   };
-  /* The first-play close is one exact scene: the furled spear appears.  Accepting
-     later phases would let an invalid initial state or multi-day jump skip it. */
-  if (phase.phaseId === 'spear_furled') {
+  /* ★ 정확히 spear_furled 에서만 완료. 뒤 단계 포괄 성공 금지 — 위 상수 주석 참고. */
+  if (phase.phaseId === FIRST_PLAY_COMPLETE_PHASE_ID) {
     fp.completed = true;
     fp.phase = 'complete';
   }

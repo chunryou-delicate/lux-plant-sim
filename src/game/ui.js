@@ -80,13 +80,19 @@ export function renderHUD(el, S, turn, io) {
 
     <div class="grid">
       <div class="cell"><span>★ 형태 단계</span><b>${turn.growthPhase ? Math.round(turn.growthPhase.progress01 * 100) + '%' : '—'}</b>
-        <i>${turn.growthPhase ? turn.growthPhase.phaseId : '단계 정보 없음'} · 유효 ${turn.effectiveGrowthDays ?? '—'}일</i></div>
+        <!-- ★ 한글 이름은 growth 가 낸 phaseKo 를 그대로 쓴다. 코어는 표를 들지 않는다. -->
+        <i>${turn.growthPhase ? (turn.growthPhase.phaseKo || turn.growthPhase.phaseId)
+             : (turn.growthPhaseError ? '단계 읽기 실패' : '단계 정보 없음')} · 유효 ${turn.effectiveGrowthDays ?? '—'}일</i></div>
       <div class="cell"><span>돌본 날</span><b>${turn.daysPlanted ?? 0}일</b>
         <i>도착 진행도 ${P.arrivalGrowthDays ?? '—'}에서 시작</i></div>
       <div class="cell"><span>전기 (표시만)</span><b>${(r.energy && r.energy.won) || 0}원</b>
         <i>누적 ${S.ledger.electricityWon.toLocaleString()}원 · 차감 없음</i></div>
     </div>
 
+    ${turn.drawn === false ? `<div class="bad">⛔ 화면을 다시 그리지 못했습니다 — ${turn.drawError || '사유 미상'}<br>` +
+        `유효 ${turn.effectiveGrowthDays}일까지 진행은 됐습니다(그림만 낡음)</div>` : ''}
+    ${turn.hudError ? `<div class="slotline">⚠ growth HUD 갱신 실패 — ${turn.hudError} (3D 는 그려짐)</div>` : ''}
+    ${turn.growthPhaseError ? `<div class="slotline">⚠ 단계 표시 읽기 실패 — ${turn.growthPhaseError}</div>` : ''}
     <!-- ★ 정지 사유는 빈 값으로 숨기지 않는다. 안 자라는 이유가 화면에 없으면 버그로 읽힌다. -->
     <div class="${turn.growthBlocked ? 'bad' : 'slotline'}">${
       turn.growthBlocked ? `⏸ 형태 정지 — ${turn.growthBlocked}`

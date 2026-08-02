@@ -87,6 +87,8 @@ function growFourDays(dli) {
   assert.equal(fp.completed, false);
   markMonsteraPhase(fp, { phaseId: 'spear_opening', progress01: 0 });
   assert.equal(fp.completed, false, '말린 새순 단계를 건너뛴 상태를 성공으로 받으면 안 된다');
+  markMonsteraPhase(fp, { phaseId: 'leaf_mid', progress01: 0.5 });
+  assert.equal(fp.completed, false, '뒤 단계 포괄 성공 금지 — 지나쳐 버린 회차는 완료가 아니다');
   markMonsteraPhase(fp, { phaseId: 'spear_furled', progress01: 0 });
   assert.equal(fp.completed, true);
   assert.equal(fp.phase, 'complete');
@@ -106,14 +108,19 @@ console.log('first_play: PASS');
   let cal = 0;
   let growth = 0;
   let todayDli = null;
+  /* maxPotD 는 house 의 plantSlots 가 주는 물리 치수다. 코어가 폴백 없이 이 값으로
+     화분이 올라가는 자리만 고르므로 스텁에도 실제처럼 실어 준다. */
   const slots = [
-    { slotId: 'dark-slot', dli: 0.2, band: 'critical', ko: '어두움' },
-    { slotId: 'arrival-slot', dli: 0.1, band: 'critical', ko: '어두움' },
-    { slotId: 'banjiha-sill:0', dli: 3.77, band: 'slow', ko: '느린 성장' }
+    { slotId: 'dark-slot', dli: 0.2, maxPotD: 0.30, band: 'critical', ko: '어두움' },
+    { slotId: 'arrival-slot', dli: 0.1, maxPotD: 0.30, band: 'critical', ko: '어두움' },
+    { slotId: 'banjiha-sill:0', dli: 3.77, maxPotD: 0.21, band: 'slow', ko: '느린 성장' }
   ];
   const growthPhase = () => growth >= 146
-    ? { phaseId: 'spear_furled', progress01: 0, nextPhaseId: 'spear_opening' }
-    : { phaseId: 'spear_ready', progress01: Math.max(0, (growth - 143) / 3), nextPhaseId: 'spear_furled' };
+    ? { phaseId: 'spear_furled', phaseKo: '말린 새순 등장', progress01: 0,
+        nextPhaseId: 'spear_opening', nextPhaseKo: '새순이 펴지는 중' }
+    : { phaseId: 'spear_ready', phaseKo: '말린 새순을 준비하는 중',
+        progress01: Math.max(0, (growth - 143) / 3),
+        nextPhaseId: 'spear_furled', nextPhaseKo: '말린 새순 등장' };
   const io = {
     light: {
       room: { slots },
@@ -182,9 +189,9 @@ console.log('first_play_loop: PASS');
   let cal = 0;
   let growth = 0;
   const slots = [
-    { slotId: 'dark-slot', dli: 0.2 },
-    { slotId: 'arrival-slot', dli: 0.1 },
-    { slotId: 'banjiha-sill:0', dli: 3.77 }
+    { slotId: 'dark-slot', dli: 0.2, maxPotD: 0.30 },
+    { slotId: 'arrival-slot', dli: 0.1, maxPotD: 0.30 },
+    { slotId: 'banjiha-sill:0', dli: 3.77, maxPotD: 0.21 }
   ];
   const io = {
     light: {

@@ -120,13 +120,16 @@ export function nullGrowth(keep = 14, opt = {}) {
       const reason = blockReason();
       cal = t;
       if (reason === null) growth += 1;
-      return { calDay: cal, growth, grew: reason === null, blocked: reason };
+      /* 렌더 신호도 계약대로 낸다 — 스텁엔 3D 가 없으니 '그렸다'로 둔다(실패를 지어내지 않는다) */
+      return { calDay: cal, growth, grew: reason === null, blocked: reason,
+               drawn: true, drawError: null, hudError: null };
     },
     calendarDay: () => cal,
     growthDays: () => growth,
     growthBlocked: () => blockReason(),
     growthPhase: () => null,       // 표시 계약. 진짜 단계는 growth 전용 구현이 낸다
-    setGrowth(days) { growth = cal = Math.round(days); },
+    setGrowth(days) { growth = cal = Math.round(days);
+                      return { growth, calDay: cal, drawn: true, drawError: null, hudError: null }; },
     dli7() { return H.length ? avg(H, 7) : null; },
     dliCV() {
       if (H.length < 7) return null;

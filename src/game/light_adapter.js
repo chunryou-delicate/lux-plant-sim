@@ -242,6 +242,9 @@ export function createLightEngine(data) {
                       selfIdx: s.occIdx };
         return {
           slotId: s.slotId, owner: s.owner, point,
+          /* 정적 프로필도 라이브 슬롯과 같은 화분 크기 계약을 보존한다.
+             결측을 임의 값으로 메우지 않아 소비자가 fail-loud 할 수 있게 한다. */
+          maxPotD: Number.isFinite(s.maxPotD) ? s.maxPotD : null,
           ratio: +daylightRatio(point, up, room.wins, opt).toPrecision(6),
           ppfd: counts.map(n => +ppfdSum(rigsOn(n), point).toFixed(2))
         };

@@ -100,7 +100,25 @@ export function givePlant(S, io, opt = {}) {
     throw new Error('[도착] plant_grow 에 setGrowth 가 없습니다 — 개체를 만들지 않습니다');
 
   /* ① 형태부터 세운다. 여기서 던지면 아래로 내려가지 않는다(화분·로그 0) */
-  g.setGrowth(growthDays);
+  const res = g.setGrowth(growthDays);
+
+  /* ★ 그려졌는지까지 본다 (growth 렌더 신호 계약, 2026-08-02).
+     `setGrowth` 는 그리기가 실패해도 예외를 던지지 않는다 — 논리 진행과 화면을 갈라 뒀기 때문이다.
+     그 신호를 안 보면 **"화분은 있는데 화면엔 없는" 개체**가 조용히 생긴다.
+     도착은 화면에 보이는 것이 전부인 사건이라 여기서 멈춘다 — 화분도 로그도 만들지 않는다.
+     ⚠ drawn 이 undefined 인 옛 growth 는 '정보 없음'이라 막지 않는다(=== false 일 때만 멈춘다). */
+  if (res && res.drawn === false) {
+    const why = res.drawError ? ` — ${res.drawError}` : '';
+    const err = new Error(`[도착] 몬스테라를 화면에 그리지 못했습니다${why}. 개체를 만들지 않았습니다`);
+    err.drawError = res.drawError ?? null;
+    err.recoverable = true;          // 다시 그릴 수 있으면 재시도 가능한 종류다
+    throw err;
+  }
+  /* HUD 실패는 3D 실패와 등급이 다르다 — 형태는 보이는데 growth 쪽 숫자판만 죽은 것이라 경고만 한다. */
+  if (res && res.hudError) {
+    console.warn(`[도착] growth HUD 갱신 실패(3D 는 그려짐) — ${res.hudError}`);
+    pushLog(S, `⚠ growth HUD 갱신 실패 — ${res.hudError} (형태는 그려졌습니다)`);
+  }
 
   /* ② 성공했으니 개체를 남긴다 */
   const pot = {
