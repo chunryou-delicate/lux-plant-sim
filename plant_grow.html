@@ -179,7 +179,7 @@ const DEF={
 };
 let P=Object.assign({}, DEF);
 // 저장본 버전. 생장 로직/기본값이 바뀌면 올림 → 옛 저장값이 새 기본값을 덮어쓰지 않게.
-const CFG_VER='2026-08-02-strict3';
+const CFG_VER='2026-08-02-strict4';
 
 // ===== 튜닝 파라미터(B: 에셋별 개별 조정) =====
 const ADJ_KEYS=[
@@ -941,13 +941,21 @@ fetch('./data/growth_tuning.json').then(r=>{
   if(j.f_propagation) GT.fProp  =Object.assign({}, GT.fProp,   num(j.f_propagation));
   if(j.mature_prob)   GT.mature =Object.assign({}, GT.mature,  num(j.mature_prob));
   TH_LOADED=true;                              // ★검증·적용을 마친 여기서만 참이 된다
-  if(typeof buildPlant==='function') buildPlant();
-  if(typeof refreshDayHUD==='function') refreshDayHUD();
 }).catch(err=>{
-  // file:// 로 열면 fetch 가 막힌다. 코드값은 튜닝 폴백일 뿐이라 게임 경로는 열어주지 않는다.
+  // ★여기 걸리는 것은 '정본을 읽고 쓰는 일'의 실패뿐이다 — fetch·HTTP·JSON 파싱.
+  //   file:// 로 열면 fetch 가 막힌다. 코드값은 튜닝 폴백일 뿐이라 게임 경로는 열어주지 않는다.
   TH_LOADED=false;
   console.error('[생장] data/growth_tuning.json 을 못 읽었습니다 ('+(err&&err.message)+') — 서버로 여세요. 게임 경로는 정지합니다');
-  if(typeof refreshDayHUD==='function') refreshDayHUD();
+}).then(()=>{
+  // ★다시 그리기는 정본 로딩과 별개다. 같은 catch 에 두면 렌더 오류가 '정본 로딩 실패'로
+  //   둔갑해 TH_LOADED 를 꺼버린다 — 멀쩡한 정본으로 게임이 정지하고, 원인은 엉뚱한 데를 가리킨다.
+  //   성공·실패 어느 쪽이든 화면은 갱신해야 하므로(막힌 사유를 HUD 에 띄운다) 여기서 한 번만 부른다.
+  try{
+    if(typeof buildPlant==='function') buildPlant();
+    if(typeof refreshDayHUD==='function') refreshDayHUD();
+  }catch(e){
+    console.error('[화면] 다시 그리다 실패했습니다 ('+(e&&e.message)+') — 정본 로딩과는 무관합니다(TH_LOADED='+TH_LOADED+')');
+  }
 });
 // _doc 같은 설명 필드가 계산에 섞이지 않게 숫자만 걸러 온다
 function num(o){ const r={}; for(const k in o) if(typeof o[k]==='number') r[k]=o[k]; return r; }
