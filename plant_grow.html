@@ -179,7 +179,7 @@ const DEF={
 };
 let P=Object.assign({}, DEF);
 // 저장본 버전. 생장 로직/기본값이 바뀌면 올림 → 옛 저장값이 새 기본값을 덮어쓰지 않게.
-const CFG_VER='2026-08-02-strict4';
+const CFG_VER='2026-08-02-strict5';
 
 // ===== 튜닝 파라미터(B: 에셋별 개별 조정) =====
 const ADJ_KEYS=[
@@ -950,13 +950,18 @@ fetch('./data/growth_tuning.json').then(r=>{
   // ★다시 그리기는 정본 로딩과 별개다. 같은 catch 에 두면 렌더 오류가 '정본 로딩 실패'로
   //   둔갑해 TH_LOADED 를 꺼버린다 — 멀쩡한 정본으로 게임이 정지하고, 원인은 엉뚱한 데를 가리킨다.
   //   성공·실패 어느 쪽이든 화면은 갱신해야 하므로(막힌 사유를 HUD 에 띄운다) 여기서 한 번만 부른다.
-  try{
-    if(typeof buildPlant==='function') buildPlant();
-    if(typeof refreshDayHUD==='function') refreshDayHUD();
-  }catch(e){
-    console.error('[화면] 다시 그리다 실패했습니다 ('+(e&&e.message)+') — 정본 로딩과는 무관합니다(TH_LOADED='+TH_LOADED+')');
-  }
+  //   ★둘을 한 try 에 묶지 않는다 — 그리기가 터졌을 때 HUD 까지 같이 건너뛰면
+  //     "왜 안 자라는지" 알려줄 유일한 창구가 닫힌다. 제일 필요한 순간에 사라지는 셈이다.
+  drawStep('그리기', ()=>{ if(typeof buildPlant==='function')     buildPlant(); });
+  drawStep('HUD',    ()=>{ if(typeof refreshDayHUD==='function')  refreshDayHUD(); });
 });
+// 화면 갱신 한 조각. 터져도 TH_LOADED 는 건드리지 않는다 — 렌더 실패는 정본 실패가 아니다.
+function drawStep(what, fn){
+  try{ fn(); }
+  catch(e){
+    console.error('[화면] '+what+' 실패 ('+(e&&e.message)+') — 정본 로딩과는 무관합니다(TH_LOADED='+TH_LOADED+')');
+  }
+}
 // _doc 같은 설명 필드가 계산에 섞이지 않게 숫자만 걸러 온다
 function num(o){ const r={}; for(const k in o) if(typeof o[k]==='number') r[k]=o[k]; return r; }
 
