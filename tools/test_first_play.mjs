@@ -186,6 +186,18 @@ console.log('first_play: PASS');
   assert.equal(S.day, 4);
   assert.equal(S.firstPlay.beansprout.meals, 3);
   assert.equal(S.firstPlay.food.cashFoodWon, 2500);
+
+  /* ★수확한 날의 배움이 실제로 적혔는가 (2026-08-03 재발 방지).
+     nextDay 에는 반환구가 둘이고, **수확이 있는 Day 4 는 이른 반환 쪽**을 탄다.
+     튜토리얼 훅을 마지막 반환에만 붙였더니 "수확했는데 배웠다고 안 적히는" 회차가 났다 —
+     화면으로 돌려 보기 전까지 아무도 몰랐다. 하루에 반환구가 둘이면 둘 다 챙겨야 한다. */
+  assert.equal(S.tutorial.learned.harvest, true,
+    '★수확·식비 절감이 배움에 안 적혔습니다 — nextDay 의 이른 반환 경로가 튜토리얼을 건너뛰었습니까?');
+  assert.equal(S.tutorial.learned.cropDark, true,
+    '★어두운 자리 수확(4일평균 낮음)이 배움에 안 적혔습니다');
+  /* 첫 플레이 중에는 살림이 멈춰 있어야 한다 — 그 16일은 배우는 구간이다 */
+  assert.equal(S.tutorial.day, 0, '첫 플레이 중인데 반지하 날짜가 갔습니다');
+  assert.equal(S.tutorial.cashWon, S.tutorial.rules.startCashWon, '첫 플레이 중인데 돈이 빠졌습니다');
   assert.equal(pot0(S).arrivalGrowthDays, 143);
   assert.notEqual(pot0(S).slotId, 'banjiha-sill:0', '몬스테라는 먼저 어두운 자리에 도착해야 한다');
 

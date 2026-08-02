@@ -435,7 +435,7 @@
   <header id="topbar">
     <div class="resourcebar">
       <div class="resource r-day"><span id="resWhen">아침</span><b id="resDay">Day 0</b></div>
-      <div class="resource r-food"><span>첫 수확일 식비</span><b id="resFood">—</b></div>
+      <div class="resource r-food"><span id="resFoodLabel">첫 수확일 식비</span><b id="resFood">—</b></div>
       <div class="resource r-saved"><span>아낀 식비</span><b id="resSaved">0원</b></div>
     </div>
   </header>
@@ -525,6 +525,18 @@
     </div><!-- /pageBag -->
 
     <div class="sheetpage" id="pageRoom" role="tabpanel">
+      <!-- ══ 반지하 살림 — 첫 플레이가 끝나면 열린다 ══════════════════════ -->
+      <div class="box" id="tutBox" style="display:none">
+        <h3>반지하 살림</h3>
+        <div class="itemline" id="tutSeason">여름</div>
+        <div class="quest" id="tutGoal" style="margin:8px 0"></div>
+        <div id="tutCheck" class="itemline"></div>
+        <div class="btns">
+          <button id="buyLamp" class="ghost" disabled>식물등 사기</button>
+          <button id="moveOut" class="primary" disabled style="width:auto;margin-top:0">원룸으로 이사</button>
+        </div>
+      </div>
+
       <div class="box" id="ctl">
         <h3>방 안에서 하기</h3>
         <label><span>방</span><select id="room"></select></label>
@@ -733,6 +745,8 @@ import {
 import { createLightEngine } from './src/game/light_adapter.js';
 import { createGrowthAdapter } from './src/game/growth_adapter.js';
 import { createDialogue, SPEAKERS } from './src/game/dialogue.js';
+import { seasonAt, seasonDayAt, SEASON_KO, tutorialGoal, learningLeft,
+         canMoveOut, moveOut, buyLamp } from './src/game/tutorial.js';
 import { nextDay, runDays, avg, rollingAvg,
          startFastForward, stopFastForward, isFastForwarding, nextEventPreview,
          timeModeOf } from './src/game/loop.js';
@@ -906,13 +920,56 @@ function buildRoom(id) {
    phaseKo 가 없는 옛 growth 면 phaseId 키를 그대로 보여준다(조용히 비우지 않는다). */
 const phaseLabel = (gp) => (gp && (gp.phaseKo || gp.phaseId)) || null;
 
+/* ══ 반지하 살림 화면 (2026-08-03) ═══════════════════════════════════════
+   규칙은 tutorial.js 가 갖는다. 여기서는 **그 값을 읽어 그리기만** 한다 —
+   화면이 살림 규칙을 또 갖기 시작하면 두 벌이 되어 반드시 어긋난다. */
+function drawTutorial(living) {
+  const ts = S.tutorial;
+  $('tutBox').style.display = living ? '' : 'none';
+  if (!living) return;
+  const R = ts.rules;
+  const season = seasonAt(ts, ts.day), sd = seasonDayAt(ts, ts.day);
+  $('tutSeason').textContent =
+    `${SEASON_KO[season]} ${sd + 1}일째 · 반지하 ${ts.day}일차` +
+    (ts.lamp.owned ? ` · 식물등 ${ts.lamp.owned}개` : '');
+
+  const goal = tutorialGoal(ts);
+  $('tutGoal').textContent = goal ? goal.ko : '';
+
+  /* 체크리스트는 **남은 것만** 적는다. 다 한 것을 늘어놓으면 무엇이 남았는지가 묻힌다. */
+  const left = learningLeft(ts);
+  $('tutCheck').textContent = left.length
+    ? '남은 것 — ' + left.map(x => x.ko).join(' · ')
+    : '배울 것은 다 해 봤습니다';
+
+  const lamp = $('buyLamp');
+  lamp.disabled = !ts.lamp.unlocked || ts.cashWon < R.lampPriceWon;
+  lamp.textContent = !ts.lamp.unlocked
+    ? `식물등 (가을에 열림)`
+    : `식물등 사기 · ${R.lampPriceWon.toLocaleString()}원`;
+
+  const mv = $('moveOut'), c = canMoveOut(ts);
+  mv.disabled = !c.ok || ts.movedOut;
+  mv.textContent = ts.movedOut ? '이사 완료' : '원룸으로 이사';
+  mv.title = c.ok ? '' : (c.shortWon > 0 ? `${c.shortWon.toLocaleString()}원 부족` : '아직 못 해 본 것이 있습니다');
+}
+
 function drawJourney() {
   const fp = S.firstPlay;
   if (!fp || !fp.enabled) return;
   const crop = fp.beansprout, food = fp.food, plant = fp.monstera;
   $('resDay').textContent = `Day ${S.day}`;
-  $('resFood').textContent = `${food.cashFoodWon.toLocaleString()}원`;
+  /* ★첫 플레이가 끝나면 가운데 칸이 **오늘 식비 → 소지금**으로 바뀐다.
+     배우는 구간에는 식비가 그날의 답안지이지만, 살림이 시작되면 알아야 할 것은
+     "얼마 남았나"다. 칸을 하나 더 만들면 폰 상단이 좁아진다. */
+  const ts = S.tutorial;
+  const living = !!(ts && ts.enabled && fp.completed);
+  $('resFoodLabel').textContent = living ? '소지금' : '첫 수확일 식비';
+  $('resFood').textContent = living
+    ? `${ts.cashWon.toLocaleString()}원`
+    : `${food.cashFoodWon.toLocaleString()}원`;
   $('resSaved').textContent = `${food.totalFoodSavedWon.toLocaleString()}원`;
+  drawTutorial(living);
   $('cropMeter').style.width = `${Math.min(100, crop.ageDays / crop.harvestDays * 100)}%`;
   $('cropState').textContent = crop.harvested ? `${crop.meals}끼 수확 완료`
     : crop.slotId ? `${crop.ageDays}/${crop.harvestDays}일 자람` : '가방에 있음';
@@ -1210,6 +1267,7 @@ async function bootRoomView() {
     /* 진단용 손잡이. 브라우저 콘솔에서 방 상태를 볼 수 있게 낸다 —
        읽기용이고 게임은 이걸 안 쓴다(밖에서 켜면 검증이 장식이 되는 것과 같은 이유로 세터는 없다). */
     window.__rv = roomView; window.__picked = picked; window.__drag = drag;
+    window.__S = () => S;                    /* 진단용 — 읽기 전용으로 쓴다 */
     $('stage').classList.add('room-ok');     /* 방이 떴다 — 빈 무대 안내를 걷는다 */
     bootProgress(null);                      /* 진행 표시를 걷는다 */
     showGpuInfo();
@@ -1572,6 +1630,24 @@ $('ff').onclick = guard(() => {
 /* ★페이지를 떠날 때 타이머를 반드시 끈다. loop.js 는 DOM 을 모르므로 여기서 붙인다 —
    안 끄면 화면이 사라진 뒤에도 턴이 계속 돈다(유령 턴). */
 window.addEventListener('pagehide', () => ffStop('stopped'));
+
+/* 식물등·이사 — 규칙은 tutorial.js 가 판정하고 여기서는 부르기만 한다.
+   입력 실수(돈 부족·조건 미달)는 안내이지 고장이 아니므로 버튼을 잠그지 않는다. */
+$('buyLamp').onclick = guard(() => {
+  const r = buyLamp(S.tutorial);
+  S.lamps.count = S.tutorial.lamp.owned;      /* 조도 계산이 보는 곳에도 반영한다 */
+  io.light.clearCache();
+  pushLog(S, `💡 식물등을 샀습니다 — 남은 돈 ${r.cashWon.toLocaleString()}원`);
+  banner('식물등을 샀습니다', '자리가 나쁘면 등을 켜도 소용없습니다');
+  fillSlots(); draw();
+});
+
+$('moveOut').onclick = guard(() => {
+  moveOut(S.tutorial);
+  pushLog(S, '📦 원룸으로 이사했습니다 — 반지하 튜토리얼 종료');
+  banners([{ title: '📦 원룸으로 이사했습니다', sub: '반지하에서 배운 것을 가지고 갑니다' }]);
+  draw();
+});
 
 $('run30').onclick = guard(() => {
   arrive();

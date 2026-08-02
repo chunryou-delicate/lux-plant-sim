@@ -288,7 +288,7 @@ export function nextDay(S, io) {
        한 턴에 두 번 읽으면 두 답이 다를 수 있는데, 두 번째 실패는 이미 확정된 도착을
        되돌리지 못해 `growthPhaseError` 필드로만 조용히 남는다 — 아무도 안 막는 실패가 된다.
        도착이 없으면 단계도 없다(null = 정보 없음, 실패 아님). */
-    return { S, turn: {
+    const earlyTurn = {
       day: S.day, sky, report, slot: null, dli: null, check,
       noPlant: !arrived, plantArrived: !!arrived, firstPlayEvent,
       daysPlanted: arrived ? 0 : null,
@@ -296,7 +296,14 @@ export function nextDay(S, io) {
       effectiveGrowthDays: arrived ? io.growth.growthDays() : null,
       growthPhase: arrivalPhase,
       growthPhaseError: null
-    } };
+    };
+    /* ★이 경로도 튜토리얼을 돌려야 한다 (2026-08-03).
+       몬스테라가 오기 전(그리고 도착하는 그 날)은 여기서 일찍 반환된다 —
+       **수확이 있는 Day 4 가 바로 이 경로**다. 마지막 반환에만 붙였더니
+       "수확했는데 배웠다고 안 적히는" 회차가 났다. 하루에 반환구가 둘이면
+       둘 다 챙겨야 한다. */
+    earlyTurn.tutorial = stepTutorial(S, earlyTurn, io);
+    return { S, turn: earlyTurn };
   }
 
   const slot = (report.slots || []).find(s => s.slotId === p.slotId) || null;
