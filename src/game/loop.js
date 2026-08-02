@@ -8,8 +8,8 @@
      2. 날씨·계절            skyFor(day, mode)        ← weather.js (코어가 따로 굴리지 않는다)
      3. 조도 계산            buildDailyLight(...)     ← house
      4. ★ 계약 검증          NaN·음수·밴드            ← 지시 5-3
-     5. 개체별 빛 전달       setDailyLight(dli)       ← growth
-     6. 생장 1틱             setGrowth(경과일)         ← growth
+     5. 개체별 빛 전달       setDailyLight(dli)       ← growth · null 도 반드시 넘긴다
+     6. 하루 진행            advanceTo(달력+1)         ← growth · 형태는 빛이 될 때만 쌓인다
      7. 화면 갱신            (ui.js)
 
    ★ 없는 단계: 고사·수확·지출.
@@ -24,7 +24,8 @@
        io.light  { daily(day, S) -> {report, sky, check},  room, thresholdsOf(), dliOfSlot() }
                    브라우저: light_adapter (buildHouse + THREE)
                    헤드리스: room_profile.createProfileLight (THREE 없음)
-       io.growth { setDailyLight(dli), setGrowth(days), dli7(), dliCV(), ageOf(days) }
+       io.growth { setDailyLight(dli), advanceTo(day), calendarDay(), growthDays(), growthBlocked() }
+                   ⚠ setGrowth(점프)는 개체 도착 때 1회뿐 — 일일 루프에서 부르지 않는다
                    브라우저: growth_adapter (plant_grow.html iframe)
                    헤드리스: sim.nullGrowth — ⚠ 진짜 생장이 아니다(sim.js 주석 참고)
 
