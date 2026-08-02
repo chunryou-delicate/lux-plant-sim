@@ -137,6 +137,31 @@
   </div>
 
   <div class="card">
+    <h3>회전·미리보기 · setPlantYaw / previewMove</h3>
+    <div class="row">
+      <span class="hint">회전 <b id="yawV">0°</b></span><input type="range" id="yaw" min="0" max="359" value="0">
+    </div>
+    <div class="row" style="margin-top:6px">
+      <span class="hint">미리보기</span>
+      <select id="pvTo"></select>
+      <button class="b" id="pvOn">띄우기</button>
+      <button class="b" id="pvOff">지우기</button>
+      <span class="hint" id="pvR">—</span>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>캐릭터 · setCharacter</h3>
+    <div class="row">
+      <button class="b" id="cJachwi">자취생 (1.40m)</button>
+      <button class="b" id="cMoni">몬이 (0.375m)</button>
+      <button class="b" id="cBoth">둘 다</button>
+      <button class="b" id="cOff">치우기</button>
+    </div>
+    <div class="row" style="margin-top:6px"><span class="hint" id="cInfo">—</span></div>
+  </div>
+
+  <div class="card">
     <h3>자리 표시 · highlightSlots / focusSlot</h3>
     <div class="row">
       <button class="b" id="hlEmpty">빈 자리 전부</button>
@@ -185,6 +210,9 @@ window.addEventListener('error', e => log('window.error: ' + e.message, 'e'));
 let view = null, tipT = 0;
 function tip(t) { $('tip').textContent = t; clearTimeout(tipT); tipT = setTimeout(() => $('tip').textContent = '', 2600); }
 
+/* ★ growthDays 를 넣으면 방의 몬스테라가 plant_grow.html 의 그 날짜 형태와 같아진다.
+   여기서는 슬라이더 0..1 을 넣지 않고 그대로 두어(=phaseId 없음) 모듈이 첫 해(365일)에
+   펼치게 한다 — game.html 은 growthDays 를 그대로 넣으면 된다. */
 const specNow = () => ({
   kind: $('kind').value,
   phaseId: null,
@@ -195,7 +223,7 @@ const specNow = () => ({
 
 function refreshSlots() {
   const list = view.slots();
-  for (const id of ['slot', 'from', 'to']) {
+  for (const id of ['slot', 'from', 'to', 'pvTo']) {
     const sel = $(id), keep = sel.value;
     sel.innerHTML = '';
     for (const s of list) {
@@ -291,6 +319,41 @@ $('hlFit').onclick = () => {
   log(`fitCheck(${k.kind}) 통과 ${ok.length}칸`, 'k');
 };
 $('hlOff').onclick = () => view.highlightSlots([]);
+
+/* ── 회전 · 미리보기 ── */
+$('yaw').oninput = () => {
+  const deg = +$('yaw').value;
+  $('yawV').textContent = deg + '°';
+  try { view.setPlantYaw($('slot').value, deg * Math.PI / 180); }
+  catch (e) { log('setPlantYaw: ' + e.message, 'e'); }
+};
+$('pvOn').onclick = () => {
+  try {
+    const r = view.previewMove($('slot').value, $('pvTo').value);
+    $('pvR').textContent = r ? (r.ok ? '들어갑니다 (파랑)' : '★안 들어갑니다 (빨강)') : '—';
+  } catch (e) { log('previewMove: ' + e.message, 'e'); $('pvR').textContent = e.message; }
+};
+$('pvOff').onclick = () => { view.previewMove($('slot').value, null); $('pvR').textContent = '—'; };
+
+/* ── 캐릭터 ── */
+function charInfo() {
+  const cs = view.characters();
+  $('cInfo').textContent = cs.length
+    ? cs.map(c => `${c.id}(${c.assetId}) @ ${c.pos.x.toFixed(2)},${c.pos.z.toFixed(2)}`).join(' · ')
+    : '아무도 없습니다';
+}
+const putChar = async (...ids) => {
+  const t0 = performance.now();
+  for (const id of ids) {
+    try { await view.setCharacter(id); log(`setCharacter('${id}') ${Math.round(performance.now() - t0)}ms`, 'k'); }
+    catch (e) { log('setCharacter 실패: ' + e.message, 'e'); }
+  }
+  charInfo();
+};
+$('cJachwi').onclick = () => putChar('jachwi');
+$('cMoni').onclick = () => putChar('moni');
+$('cBoth').onclick = () => putChar('jachwi', 'moni');
+$('cOff').onclick = async () => { await view.setCharacter(null); charInfo(); };
 $('focus').onclick = () => view.focusSlot($('slot').value);
 $('unfocus').onclick = () => view.focusSlot(null);
 
@@ -334,7 +397,103 @@ $('room').value = rid;
 await boot(rid);
 
 const SHOT = Q.get('shot');
-if (SHOT) {
+
+/* ── 촬영용 시나리오 (2026-08-03 · 방 뷰 2차) ───────────────────────────────
+   chars  캐릭터·마스코트가 있는 방
+   same   같은 개체를 방과 확대에서 나란히 — 생김새가 같은지 눈으로 보라고
+   grow   생장 단계가 다른 두 그루
+   이 셋은 화면을 통째로 갈아치우거나 캐릭터를 싣느라 오래 걸린다. 위의 shot 들과
+   섞지 않고 따로 둔다. */
+const SHOT2 = ['chars', 'same', 'grow', 'preview'].includes(SHOT);
+if (SHOT2) {
+  const S = view.slots();
+  const sill = S.find(s => s.slotId.includes('sill')) || S[0];
+  const seed = +(Q.get('seed') || 92158);
+  $('sun').value = Math.round((+Q.get('t') || 0.42) * 1000); $('sun').oninput();
+
+  if (SHOT === 'chars') {
+    await view.setPlant(sill.slotId, { kind: 'monstera', growthDays: 260, seed, band: 'good' });
+    const shelf = S.find(s => !s.occupied && s.slotId.includes('etagere'));
+    if (shelf) await view.setPlant(shelf.slotId, { kind: 'monstera', growthDays: 90, seed: seed + 7, band: 'slow' });
+    await view.setCharacter('jachwi');
+    await view.setCharacter('moni');
+    /* ★ idle 을 실제로 1.5초쯤 돌린다. 첫 프레임은 바인드 자세(팔 벌린 A포즈)라
+       그대로 찍으면 사람이 허수아비로 나온다. 헤드리스는 rAF 가 안 돌 수 있어서
+       redraw() 로 직접 걸어 준다(redraw 가 캐릭터도 한 칸 걷는다). */
+    for (let i = 0; i < 50; i++) { await new Promise(r => setTimeout(r, 30)); view.redraw(); }
+    refreshSlots(); charInfo();
+    view.redraw();
+  }
+
+  /* 위가 트인 자리 — 반지하 창턱은 천장까지 0.6m 뿐이라 1년 넘은 그루가 천장을 뚫는다.
+     형태를 보는 그림에서는 머리가 트인 자리를 쓴다. */
+  const roomy = S.slice().sort((a, b) => (b.maxPotD || 0) - (a.maxPotD || 0))[0] || sill;
+
+  if (SHOT === 'grow') {
+    /* ★ 같은 씨앗 · 다른 날짜. 형태가 실제로 달라지는지 보는 그림이다. */
+    const desks = S.filter(s => s.slotId.startsWith(roomy.slotId.split(':')[0]));
+    await view.setPlant((desks[0] || roomy).slotId, { kind: 'monstera', growthDays: 520, seed, band: 'best' });
+    const other = desks[1] || S.find(s => !s.occupied && s.maxPotD >= 0.25);
+    if (other) await view.setPlant(other.slotId, { kind: 'monstera', growthDays: 90, seed, band: 'good' });
+    refreshSlots();
+    view.redraw();
+    $('tip').textContent = `같은 씨앗 ${seed} · 520일과 90일`;
+  }
+
+  if (SHOT === 'preview') {
+    /* 옮기기 미리보기 두 경우를 한 장에 — 들어가는 자리(파랑) · 안 들어가는 자리(빨강).
+       decorate.js 의 가구 고스트와 같은 색·같은 사상이다. */
+    const desk = S.find(s => s.slotId === 'banjiha-desk:0') || roomy;
+    await view.setPlant(desk.slotId, { kind: 'monstera', growthDays: 300, seed, band: 'good' });
+    view.setPlantYaw(desk.slotId, 0.7);
+    view.highlightSlots(S.filter(s => !s.occupied).map(s => s.slotId));
+    view.previewMove(desk.slotId, 'banjiha-etagere:6');
+    await new Promise(r => setTimeout(r, 400));
+    /* ★ redraw() 와 toDataURL() 사이에 await 를 두면 안 된다.
+       WebGL 드로잉 버퍼는 다음 합성에서 비워져 **검은 그림**이 나온다(실제로 나왔다). */
+    view.redraw();
+    const okImg = $('roomCanvas').toDataURL('image/png');
+
+    const siru = S.find(s => s.slotId === 'banjiha-desk:1') || S[1];
+    await view.setPlant(siru.slotId, { kind: 'beansprout', progress01: 0.85 });
+    view.previewMove(siru.slotId, 'banjiha-sill:0');       // 0.24 > 한도 0.21 → 안 들어간다
+    await new Promise(r => setTimeout(r, 400));
+    view.redraw();
+    const ngImg = $('roomCanvas').toDataURL('image/png');
+    document.body.innerHTML =
+      `<div style="display:flex;gap:18px;align-items:flex-start;font:13px/1.6 'Malgun Gothic',sans-serif;color:#e9e6f2">
+         <div><div style="padding:6px 2px">previewMove — 들어가는 자리 (파랑 · decorate.js GH_OK)</div>
+           <img src="${okImg}" style="width:390px;border-radius:20px"></div>
+         <div><div style="padding:6px 2px">previewMove — 안 들어가는 자리 (빨강 · 시루 0.24m &gt; 창턱 한도 0.21m)</div>
+           <img src="${ngImg}" style="width:390px;border-radius:20px"></div>
+       </div>`;
+  }
+
+  if (SHOT === 'same') {
+    /* 방 한 장 + 그 개체를 확대한 한 장을 **나란히** 붙인다.
+       두 장이 같은 그루라는 걸 말이 아니라 그림으로 보이려고 만든 화면이다. */
+    const days = +(Q.get('g') || 300);
+    const spot = roomy;
+    await view.setPlant(spot.slotId, { kind: 'monstera', growthDays: days, seed, band: 'good' });
+    view.focusSlot(null, true); view.redraw();
+    await new Promise(r => setTimeout(r, 500));
+    view.redraw();
+    const wide = $('roomCanvas').toDataURL('image/png');
+    view.focusSlot(spot.slotId, true); view.redraw();
+    await new Promise(r => setTimeout(r, 500));
+    view.redraw();
+    const near = $('roomCanvas').toDataURL('image/png');
+    document.body.innerHTML =
+      `<div style="display:flex;gap:18px;align-items:flex-start;font:13px/1.6 'Malgun Gothic',sans-serif;color:#e9e6f2">
+         <div><div style="padding:6px 2px">방 전경 — 몬스테라 ${days}일 · 씨앗 ${seed}</div>
+           <img src="${wide}" style="width:390px;border-radius:20px"></div>
+         <div><div style="padding:6px 2px">같은 개체를 확대 (focusSlot) — 같은 조립 코드다</div>
+           <img src="${near}" style="width:390px;border-radius:20px"></div>
+       </div>`;
+  }
+  document.title = 'DONE · ' + SHOT;
+}
+if (SHOT && !SHOT2) {
   const S = view.slots();
   const pick = (n) => S.filter(s => !s.occupied).slice(0, n).map(s => s.slotId);
   if (SHOT === 'wide') { $('phone').classList.add('wide'); view.resize(); }

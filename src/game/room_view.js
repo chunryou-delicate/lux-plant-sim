@@ -26,7 +26,10 @@ import { createScene, updateLight } from '../render3d/scene.js';
 import { faintGrainTexture } from '../render3d/textures.js';
 import { buildHouse, updateShellVisibility } from '../render3d/house.js';
 import { winFromHouse } from '../engine/daylight_lux.js';
-import { createPlantSample, applyBand } from '../render3d/plant_sample.js';
+/* BAND_LOOK 은 밴드별 색·처짐 표다. 조립본에도 같은 표를 쓴다 —
+   방과 확대가 같은 그루라면 "빛이 나쁘다"는 표시도 같아야 한다. */
+import { createPlantSample, applyBand, BAND_LOOK } from '../render3d/plant_sample.js';
+import { getPlantAssembler } from '../render3d/plant_assemble.js';
 
 /* ── 경로는 이 파일 기준으로 푼다 ──
    호스트 페이지가 저장소 뿌리에 있든 tools/ 아래에 있든 같은 곳을 가리켜야 한다.
@@ -126,6 +129,10 @@ export function rotationSafeDiameter(obj, space) {
 
 /* 화분만 잰다 — 잎은 화분 밖으로 나가는 게 정상이라 같이 재면 안 된다 */
 function potPartOf(group) {
+  /* 생장 모듈이 조립한 그루는 화분이 어느 자식인지 스스로 알려 준다.
+     마디 트리라 "잎이 아닌 첫 자식" 규칙으로는 줄기가 잡힌다 — 그러면 화분 지름이
+     줄기 굵기(2cm)로 나와 어떤 자리든 통과해 버린다. 티가 안 나는 종류의 사고다. */
+  if (group.userData.potPart) return group.userData.potPart;
   const leaves = group.userData.leaves || [];
   return group.children.find(c => !leaves.includes(c)) || group;
 }
@@ -210,12 +217,17 @@ export async function createRoomView(canvas, opts = {}) {
   let furnNames = {};          // 프리셋 → {name_ko} — 자리 이름을 한글로 내주려고만 쓴다
   let roomId = null, roomDef = null, built = null;
   let slotById = new Map();    // slotId → 슬롯(월드좌표)
-  let plants = new Map();      // slotId → { group, spec, potD }
+  let plants = new Map();      // slotId → { group, spec, potD, days }
   let rings = new Map();       // slotId → 하이라이트 링 메시
   let highlighted = new Set();
   let focused = null;
   let daylightT = 0.5;
   let disposed = false;
+  /* 플레이어가 돌려 놓은 화분 각도(Y축). ★ 화분이 다시 조립돼도 유지해야 한다 —
+     안 그러면 며칠 지나 형태가 바뀔 때 방향이 저절로 되돌아간다. */
+  let plantYaw = new Map();    // slotId → radian
+  let chars = new Map();       // 'jachwi' | 'moni' → { id, root, update(dt), dispose() }
+  let preview = null;          // { fromId, toId, group } — 옮기기 미리보기(반투명 복제)
 
   const cam = { az: 0, el: BASE_EL_PORTRAIT, dist: 8, target: new THREE.Vector3(0, 1, 0), look: new THREE.Vector3() };
   let tween = null;            // { from, to, t0, ms }
@@ -264,6 +276,13 @@ export async function createRoomView(canvas, opts = {}) {
 
   async function assemble(id) {
     /* 이전 방 정리 */
+    disposePreview();
+    /* 캐릭터도 이 그룹에 들어 있다. 그냥 비우면 치워지지 않은 채 씬에서만 사라져
+       mixer 와 GLB 가 그대로 남는다 — 방을 몇 번 바꾸면 그게 그대로 메모리다.
+       치우되 **누가 있었는지는 기억해** 새 방에 다시 세운다. */
+    const wasHere = [...chars.keys()];
+    for (const [, c] of chars) { try { c.dispose(); } catch (e) { /* 나머지는 계속 치운다 */ } }
+    chars.clear();
     clearPlants();
     clearRings();
     while (houseGroup.children.length) houseGroup.remove(houseGroup.children[0]);
@@ -330,6 +349,11 @@ export async function createRoomView(canvas, opts = {}) {
     frameRoom(true);
     applyDaylight();
     needsRender = true;
+
+    /* 있던 사람은 새 방에도 세운다. 자리는 새 방 기준으로 다시 고른다.
+       기다리지 않는다 — 캐릭터를 싣느라 방이 안 뜨면 안 된다. */
+    for (const k of wasHere)
+      setCharacter(k).catch(e => console.warn('[방뷰] 방을 바꾼 뒤 캐릭터를 다시 못 세웠습니다:', e.message));
   }
 
   /* ============================================================
@@ -505,18 +529,83 @@ export async function createRoomView(canvas, opts = {}) {
     return Number.isFinite(s.maxPotD) ? s.maxPotD : Infinity;
   }
 
-  async function buildPlantGroup(spec, s) {
+  /* ★ 방의 몬스테라 = 탭했을 때 보는 몬스테라 (2026-08-03 박사님 지시)
+     ------------------------------------------------------------
+     plant_sample.js 는 잎 5장을 고정 배치표로 놓는 자리채움이라 "크는 게" 안 보였다.
+     이제 plant_grow.html 의 buildPlant 를 그대로 불러 쓴다(render3d/plant_assemble.js).
+     실패하면 조용히 빈 화면을 내지 않고 옛 샘플로 내려앉되, 왜 내려앉았는지는 남긴다. */
+  let asmPromise = null, asmWarned = false;
+  function assembler() {
+    if (asmPromise === null) {
+      asmPromise = getPlantAssembler({}).catch(e => {
+        if (!asmWarned) {
+          asmWarned = true;
+          console.warn('[방뷰] 생장 모듈을 못 실었습니다 — 옛 샘플(plant_sample.js)로 그립니다:', e.message);
+        }
+        return null;
+      });
+    }
+    return asmPromise;
+  }
+
+  /* 창이 있는 방향(라디안). 굴광성이 그쪽으로 기울어야 방과 확대가 같은 그루가 된다. */
+  function lightAzimuth() {
+    const ws = (built && built.luxWins || []).filter(w => w.wall && w.wall !== 'ceiling');
+    if (!ws.length) return Math.PI * 0.5;
+    let big = ws[0], area = 0;
+    for (const w of ws) { const a = (w.w || 0) * (w.h || 0); if (a > area) { area = a; big = w; } }
+    switch (big.wall) {                       // 방 안에서 창을 바라보는 방위
+      case 'back': return Math.PI;            // 창이 z=-D/2 → 빛은 -z 에서 온다
+      case 'front': return 0;
+      case 'left': return -Math.PI / 2;
+      case 'right': return Math.PI / 2;
+    }
+    return Math.PI * 0.5;
+  }
+
+  /* 유효 생장일 — 형태를 정하는 유일한 값.
+     ① spec.growthDays 가 있으면 그것. **이게 정확한 길이다** — 호출부가 생장 창의
+        growthDays() 를 그대로 넘기면 방과 확대가 같은 날의 같은 그루가 된다
+     ② 없으면 phaseId 로 되짚는다. 지금 그 자리에 서 있는 날을 하한으로 줘서
+        되풀이되는 단계(spear_furled 등)가 어느 바퀴인지 정해지게 한다
+     ③ 둘 다 없으면(데모·수동 조작) 0..1 을 첫 해(365일)에 펼친다 */
+  const DEMO_SPAN_DAYS = 365;
+  function growthDaysOf(spec, asm, minDay) {
+    if (Number.isFinite(spec.growthDays)) return Math.max(0, Math.round(spec.growthDays));
+    if (asm && spec.phaseId) {
+      const d = asm.daysForPhase(spec.phaseId, spec.progress01, minDay);
+      if (d != null) return d;
+    }
+    return Math.round(clamp(spec.progress01 ?? 1, 0, 1) * DEMO_SPAN_DAYS);
+  }
+
+  /* days 는 호출부(setPlant)가 이미 정한 유효 생장일이다.
+     여기서 다시 구하면 안 된다 — 단조 되짚기의 하한이 달라져 값이 어긋난다. */
+  async function buildPlantGroup(spec, s, days) {
     const kind = spec.kind || 'monstera';
     const p01 = clamp(spec.progress01 ?? 1, 0, 1);
     const limit = slotPotLimit(s);
 
     if (kind === 'monstera') {
-      /* 화분 지름은 자리 한도 안에서 고른다. 성장은 잎 높이로만 보인다 —
+      /* 화분 지름은 자리 한도 안에서 고른다. 성장은 잎·마디로만 보인다 —
          화분이 같이 자라면 자리 한도 계약이 무너진다. */
       const potD = Math.min(MONSTERA_POT_D, limit === Infinity ? MONSTERA_POT_D : limit);
+      const asm = await assembler();
+      if (asm) {
+        try {
+          const g = asm.assemble({ growthDays: days, seed: spec.seed, potD,
+                                   lightAz: lightAzimuth(), photo: 0.5 });
+          g.userData.growthDays = days;
+          return g;
+        } catch (e) {
+          if (!asmWarned) { asmWarned = true; console.warn('[방뷰] 몬스테라 조립 실패 — 옛 샘플로 그립니다:', e.message); }
+        }
+      }
+      /* 폴백 — 생장 모듈이 없을 때만. 자라는 게 잘 안 보이지만 화면은 빈 채로 두지 않는다 */
       const H = Math.max(potD * 1.4, potD * 3.4 * (0.42 + 0.58 * p01));
       const g = await createPlantSample({ potD, height: H });
       g.userData.kind = 'monstera';
+      g.userData.growthDays = days;
       return g;
     }
 
@@ -555,10 +644,28 @@ export async function createRoomView(canvas, opts = {}) {
     throw new Error(`모르는 식물 종류: ${kind}`);
   }
 
-  /* 밴드·시듦 표현. 밴드는 plant_sample.applyBand 가 이미 하는 일을 그대로 쓴다. */
+  /* 밴드·시듦 표현.
+     ------------------------------------------------------------
+     옛 샘플은 잎 5장이 pivot 으로 묶여 있어 applyBand 가 색과 처짐을 다 줄 수 있었다.
+     생장 모듈이 조립한 그루는 마디 트리라 그런 pivot 이 없다. 대신 그루 색이 이미
+     씨앗·나이로 정해져 있으므로 **덧칠이 아니라 그 색을 밴드 쪽으로 끌어당긴다** —
+     setHex 로 갈아치우면 개체마다 다른 색이 전부 같은 색이 되어 그루 구분이 사라진다. */
   function applyLook(group, spec) {
-    if (group.userData.kind === 'monstera') {
-      applyBand(group, spec.band || 'unknown');
+    const band = spec.band || 'unknown';
+    if (group.userData.isPlantAssembled) {
+      const look = BAND_LOOK[band] || BAND_LOOK.unknown;
+      const tint = new THREE.Color(look.tint);
+      /* 좋은 빛(tint 흰색)이면 아무것도 안 한다 — 원래 색이 정답이다 */
+      const k = look.tint === 0xffffff ? 0 : 0.55;
+      group.traverse(o => {
+        if (!o.isMesh || !o.material || !o.material.color) return;
+        if (!o.userData.baseColor) o.userData.baseColor = o.material.color.clone();
+        o.material.color.copy(o.userData.baseColor);
+        if (k > 0) o.material.color.lerp(tint, k);
+      });
+      group.userData.band = band;
+    } else if (group.userData.kind === 'monstera') {
+      applyBand(group, band);
     }
     const fade = clamp(spec.fade ?? 0, 0, 1);
     if (fade > 0.001) {
@@ -575,10 +682,33 @@ export async function createRoomView(canvas, opts = {}) {
     group.userData.spec = spec;
   }
 
+  /* ★ 재질을 이 그루 것으로 만든다.
+     ------------------------------------------------------------
+     생장 모듈의 화분·줄기 GLB 는 THREE 의 clone(true) 로 복제되는데 **재질은 공유된다.**
+     그대로 두면 두 가지가 조용히 터진다.
+       ① 한 그루에 밴드 색을 얹으면 방 안의 모든 그루가 같이 변한다
+       ② 한 그루를 치울 때 disposeObject 가 그 재질을 버려, 원본(ASSETS)까지 못 쓰게 된다
+     한 번만 복제하고 표시해 둔다. */
+  function ownMaterials(group) {
+    group.traverse(o => {
+      if (!o.isMesh || !o.material) return;
+      const one = m => {
+        if (m && m.userData && m.userData.__rvOwned) return m;
+        const c = m.clone();
+        c.userData = { ...(m.userData || {}), __rvOwned: true };
+        return c;
+      };
+      o.material = Array.isArray(o.material) ? o.material.map(one) : one(o.material);
+    });
+  }
+
   function disposeObject(obj) {
     obj.traverse(o => {
       if (o.isMesh) {
-        o.geometry && o.geometry.dispose && o.geometry.dispose();
+        /* ★ 원본과 나눠 쓰는 기하는 안 버린다(plant_assemble 이 표시해 준다).
+           버리면 다음 그루가 GPU 에 다시 올려야 한다 — 매일 다시 짓는 화면에서는
+           그게 그대로 프레임 값이 된다. */
+        if (!o.userData.sharedGeometry) o.geometry && o.geometry.dispose && o.geometry.dispose();
         const mats = Array.isArray(o.material) ? o.material : (o.material ? [o.material] : []);
         for (const m of mats) m.dispose && m.dispose();
       }
@@ -598,33 +728,64 @@ export async function createRoomView(canvas, opts = {}) {
     for (const id of [...plants.keys()]) removePlant(id);
   }
 
-  /* 다시 지을 필요가 있나 — 종류가 바뀌었거나 자란 정도가 눈에 띄게 달라졌을 때만.
-     매 프레임 다시 만들면 GLB 복제 비용이 폰에서 그대로 프레임 드롭이 된다. */
-  function needsRebuild(prev, spec) {
+  /* 다시 지을 필요가 있나.
+     ------------------------------------------------------------
+     예전 정책은 progress01 이 0.05 칸 바뀔 때만 다시 지었다. 이제 형태는 **유효 생장일**이
+     정하므로 그 값이 바뀌면 다시 짓는다 — 하루가 가면 새순이 돋고 잎이 펴져야 하고,
+     빨리감기의 볼거리가 바로 그것이다. 하루는 한 턴에 한 번뿐이라 비싸지 않다.
+
+     대신 두 가지로 막는다.
+       ① 같은 날이면 절대 안 짓는다 (밴드·시듦만 바뀌면 색만 얹는다)
+       ② 슬라이더를 끄는 것처럼 연달아 들어오면 REBUILD_MIN_MS 안에는 안 짓는다.
+          데모에서 progress 슬라이더를 끌면 하루가 초당 수십 번 바뀐다 — 그걸 다 지으면
+          폰에서 그대로 프레임 드롭이다.
+          ★ 60ms 다. 빨리감기 최고 배속이 하루 140ms 라 **한 턴도 안 빠진다**
+            (조립은 재 보니 3~12ms). 이보다 크게 잡으면 빨리감기에서 하루가 통째로 씹힌다. */
+  const REBUILD_MIN_MS = 60;
+  function needsRebuild(prev, spec, days) {
     if (!prev) return true;
-    if ((prev.kind || 'monstera') !== (spec.kind || 'monstera')) return true;
-    return Math.abs((prev.progress01 ?? 1) - (spec.progress01 ?? 1)) >= 0.05;
+    if ((prev.spec.kind || 'monstera') !== (spec.kind || 'monstera')) return true;
+    if ((prev.days ?? null) !== days) {
+      if (performance.now() - (prev.builtAt || 0) < REBUILD_MIN_MS) return false;
+      return true;
+    }
+    return false;
   }
 
   async function setPlant(slotId, spec) {
     const s = slotOrThrow(slotId);
-    if (!spec) { removePlant(slotId); return null; }
+    /* 치우면 각도도 같이 버린다 — 남겨 두면 나중에 그 자리에 놓은 **다른** 화분이
+       옛 각도로 돌아간 채 나온다. "새로 놓으면 0 부터"가 계약이다. */
+    if (!spec) { removePlant(slotId); plantYaw.delete(slotId); clearPreviewFor(slotId); return null; }
+
+    const kind = spec.kind || 'monstera';
+    /* 어느 그루를 지을지 판단하려면 유효 생장일이 먼저 필요하다. 몬스테라만 해당된다 —
+       콩나물은 예전대로 progress01 을 쓴다(단계가 셋뿐이라 날짜가 없다). */
+    const prev = plants.get(slotId);
+    /* ★ 단조 하한은 '지금 서 있는 날'이 아니라 '마지막으로 요청받은 날'이다.
+       위 ②로 조립을 건너뛴 요청도 시간은 갔다 — 그걸 안 세면 하한이 멈춰 서서
+       다음 단계를 늘 한 바퀴 전으로 되짚는다. */
+    const days = kind === 'monstera'
+      ? growthDaysOf(spec, await assembler(), prev && (prev.wantDays ?? prev.days))
+      : Math.round(clamp(spec.progress01 ?? 1, 0, 1) * 100);
 
     const cur = plants.get(slotId);
-    if (cur && !needsRebuild(cur.spec, spec)) {
+    if (cur && !needsRebuild(cur, spec, days)) {
       applyLook(cur.group, spec);
       cur.spec = { ...spec };
+      cur.wantDays = days;
       needsRender = true;
       return cur.group;
     }
 
     let g;
     try {
-      g = await buildPlantGroup(spec, s);
+      g = await buildPlantGroup(spec, s, days);
     } catch (e) {
       throw fail(new Error(`화분을 못 만들었습니다 (${slotId}): ${e.message}`));
     }
     if (disposed) { disposeObject(g); return null; }
+    ownMaterials(g);
 
     /* ★ 자리에 들어가나 — 회전 무관 지름으로만 본다 */
     const limit = slotPotLimit(s);
@@ -637,13 +798,20 @@ export async function createRoomView(canvas, opts = {}) {
       console.warn(`[방뷰] ${slotId}: 화분 회전무관 지름 ${d.toFixed(3)} > 자리 한도 ${limit} — ${(k * 100) | 0}% 로 줄였습니다`);
     }
 
+    const hadPlant = plants.has(slotId);
     removePlant(slotId);
     g.position.set(s.x, s.y, s.z);
+    /* ★ 돌려 놓은 각도는 형태가 바뀌어도 유지한다. 새로 놓는 것이면 0 부터.
+       (Y 회전만 쓴다 — 눕히거나 기울이면 화분이 넘어진다) */
+    if (!hadPlant && !plantYaw.has(slotId)) plantYaw.set(slotId, 0);
+    g.rotation.y = plantYaw.get(slotId) || 0;
     g.userData.plantSlotId = slotId;
     g.traverse(o => { o.userData.plantSlotId = slotId; });
     applyLook(g, spec);
     houseGroup.add(g);
-    plants.set(slotId, { group: g, spec: { ...spec }, potD: Math.min(d, limit) });
+    plants.set(slotId, { group: g, spec: { ...spec }, potD: Math.min(d, limit),
+                         days, wantDays: days, builtAt: performance.now() });
+    if (preview && (preview.fromId === slotId || preview.toId === slotId)) refreshPreview();
     needsRender = true;
     return g;
   }
@@ -663,6 +831,10 @@ export async function createRoomView(canvas, opts = {}) {
 
     plants.delete(fromId);
     plants.set(toId, p);
+    /* 각도도 화분을 따라간다. 안 그러면 옮기자마자 방향이 튄다. */
+    const yaw = plantYaw.get(fromId) || 0;
+    plantYaw.delete(fromId); plantYaw.set(toId, yaw);
+    clearPreviewFor(fromId);
     p.group.userData.plantSlotId = toId;
     p.group.traverse(o => { o.userData.plantSlotId = toId; });
 
@@ -991,11 +1163,27 @@ export async function createRoomView(canvas, opts = {}) {
      움직일 때(카메라 트윈·하이라이트 맥박·화분 이동)만 그린다.
   ============================================================ */
   let lastFpsAt = performance.now(), framesSince = 0;
+  /* 캐릭터가 있으면 idle 이 계속 돌아야 한다 — 그동안은 놀 수가 없다.
+     대신 30fps 로 잘라 둔다. 폰에서 방 하나 때문에 60fps 를 계속 태울 이유는 없고,
+     idle 은 30fps 로도 충분히 부드럽다. */
+  const CHAR_FPS = 30;
+  let lastCharAt = performance.now();
+
+  function stepCharacters(now, force) {
+    if (!chars.size) { lastCharAt = now; return false; }
+    const dt = (now - lastCharAt) / 1000;
+    if (!force && dt < 1 / CHAR_FPS) return false;
+    lastCharAt = now;
+    for (const [, c] of chars) {
+      try { c.update(Math.min(dt, 0.1)); } catch (e) { fail(e); }
+    }
+    return true;
+  }
 
   function loop(now) {
     if (disposed) return;
     raf = requestAnimationFrame(loop);
-    const moving = stepTween(now) | pulseRings(now);
+    const moving = stepTween(now) | pulseRings(now) | stepCharacters(now);
     if (!needsRender && !moving && !forceContinuous) {
       /* ★ 노는 동안은 fps 를 세지 않는다. 여기서 세면 "가만히 있어서 1초에 두 장만
          그렸다"가 "1초에 두 장밖에 못 그린다"로 읽혀 화질을 멋대로 떨어뜨린다.
@@ -1059,7 +1247,397 @@ export async function createRoomView(canvas, opts = {}) {
   window.addEventListener('resize', resize);
 
   /* ============================================================
-     ⑧ 자리로 들어가기
+     ⑧ 옮기기 미리보기 — "놓으면 이렇게 된다"
+     ------------------------------------------------------------
+     링은 "여기 놓을 수 있다"는 말이지 "놓으면 이렇게 된다"는 말이 아니다.
+     창턱처럼 좁은 자리는 들어가는지 안 들어가는지가 링만으로는 안 보인다.
+     그래서 그 화분의 **반투명 복제**를 목표 자리에 띄운다. 원본은 제자리 그대로다.
+
+     ★ 생김새·색은 render3d/decorate.js 의 가구 고스트를 그대로 따른다
+       (GH_OK 0x4aa3ff · GH_NG 0xe8615a · opacity 0.28 · 윤곽선 · renderOrder 997/998
+        · 바닥 링 999). 두 화면이 다르게 생기면 플레이어가 다른 조작으로 오해한다.
+     개선한 곳은 하나 — decorate 는 **상자**를 띄우지만 여기서는 **그 식물의 복제**를
+     띄운다. 창턱처럼 좁은 자리에서 "이게 들어가나"는 실루엣이 있어야 판단된다.
+
+     지키는 것
+       · 복제는 **하나만** 유지한다. 목표가 바뀌면 옮기기만 한다(끄는 내내 새로 만들면
+         GLB 복제 비용이 계속 든다)
+       · 그림자는 안 건다. 끄는 동안 매 프레임 그림자맵을 다시 구우면 폰이 죽는다
+       · 실제로 놓일 **크기·회전** 그대로 보인다. 크기가 다르면 미리보기의 뜻이 없다
+       · 안 들어가는 자리면 붉게 — 판정은 bbox 가 아니라 회전 무관 지름이다
+  ============================================================ */
+  const GH_OK = 0x4aa3ff, GH_NG = 0xe8615a;      // decorate.js 와 같은 값
+
+  function disposePreview() {
+    if (!preview) return;
+    houseGroup.remove(preview.group);
+    /* 여기서 새로 만든 것은 윤곽선 기하와 재질 두 벌뿐이다. 그것만 버린다 —
+       메시 기하는 진짜 화분 것이라 disposeObject 가 건너뛴다(sharedGeometry). */
+    preview.group.traverse(o => { if (o.isLineSegments && o.geometry) o.geometry.dispose(); });
+    disposeObject(preview.group);
+    preview.mat && preview.mat.dispose();
+    preview.line && preview.line.dispose();
+    if (preview.marker) {
+      houseGroup.remove(preview.marker);
+      preview.marker.geometry.dispose(); preview.marker.material.dispose();
+    }
+    preview = null;
+    needsRender = true;
+  }
+  function clearPreviewFor(slotId) {
+    if (preview && (preview.fromId === slotId || preview.toId === slotId)) disposePreview();
+  }
+
+  /* 목표 자리에 이 화분이 들어가나 — movePlant 와 **같은 식**을 쓴다.
+     여기와 저기가 다른 식을 쓰면 "미리보기는 파란데 놓으면 거절"이 난다. */
+  function fitsInSlot(group, toSlot) {
+    const limit = slotPotLimit(toSlot);
+    if (!Number.isFinite(limit)) return true;
+    return rotationSafeDiameter(potPartOf(group), group) <= limit + 1e-4;
+  }
+
+  function previewMove(fromId, toId) {
+    if (toId == null) { disposePreview(); return null; }
+    const p = plants.get(fromId);
+    if (!p) throw new Error(`미리보기할 화분이 없습니다: ${fromId}`);
+    const to = slotOrThrow(toId);
+
+    /* 이미 같은 화분의 복제가 있으면 **옮기기만** 한다 */
+    if (preview && preview.fromId === fromId) {
+      preview.toId = toId;
+    } else {
+      disposePreview();
+      const g = p.group.clone(true);
+      /* ★ 탭 판정에 안 걸리게 — 미리보기를 눌러 화분이 선택되면 안 된다.
+         clone 은 userData 를 얕게 나눠 쓰므로 통째로 새로 만들어 끊는다. */
+      g.userData = { ...p.group.userData, isPreview: true, plantSlotId: undefined };
+      /* ★ potPart 는 **원본의** 화분을 가리킨다. 그대로 두면 자리 판정이 복제본이 아니라
+         원본을 원본과 다른 기준 좌표계로 재게 되어 늘 "안 들어간다"가 나온다(실제로 그랬다).
+         복제본 안에서 다시 찾는다. */
+      g.userData.potPart = null;
+      g.traverse(o => { if (!g.userData.potPart && o.userData && o.userData.assetKey === 'pot') g.userData.potPart = o; });
+      if (!g.userData.potPart) g.userData.potPart = null;   // 없으면 potPartOf 의 옛 규칙으로 내려간다
+      /* ★ 복제는 기하를 원본 화분과 **통째로 나눠 쓴다.** 미리보기를 지울 때
+         geometry.dispose() 를 부르면 제자리에 있던 진짜 화분이 사라진다(실제로 그런다).
+         전부 '공유'로 표시해 disposeObject 가 건너뛰게 한다. */
+      g.traverse(o => { o.userData = { ...o.userData, plantSlotId: undefined, isPreview: true, sharedGeometry: true }; });
+
+      /* 반투명 · 그림자 없음 · 윤곽선. decorate.js 고스트와 같은 값. */
+      const gm = new THREE.MeshBasicMaterial({ color: GH_OK, transparent: true,
+                                               opacity: 0.28, depthWrite: false });
+      const gl = new THREE.LineBasicMaterial({ color: GH_OK, transparent: true, opacity: 0.9,
+                                               depthTest: false });
+      const edges = [];
+      g.traverse(o => {
+        if (!o.isMesh) return;
+        o.castShadow = false; o.receiveShadow = false;   // 그림자맵을 다시 굽게 하지 않는다
+        o.material = gm;                                  // 재질 한 벌만 쓴다(색 바꾸기가 한 줄)
+        o.renderOrder = 997;
+        /* 윤곽선은 잎처럼 정점이 많은 메시에는 안 붙인다 — 끄는 동안 EdgesGeometry 를
+           수만 개 만들면 그 자리에서 멈춘다. 화분(잎이 아닌 것)에만 붙인다. */
+        if (o.geometry && o.geometry.attributes.position.count <= 900) edges.push(o);
+      });
+      for (const o of edges) {
+        const e = new THREE.LineSegments(new THREE.EdgesGeometry(o.geometry), gl);
+        e.renderOrder = 998;
+        o.add(e);
+      }
+      /* 바닥(자리)에 링 — decorate.js 의 marker 와 같은 모양 */
+      const marker = new THREE.Mesh(
+        new THREE.RingGeometry(0.28, 0.36, 28),
+        new THREE.MeshBasicMaterial({ color: GH_OK, transparent: true, opacity: 0.85,
+                                      side: THREE.DoubleSide, depthTest: false }));
+      marker.rotation.x = -Math.PI / 2;
+      marker.renderOrder = 999;
+      houseGroup.add(marker);
+      houseGroup.add(g);
+      preview = { fromId, toId, group: g, marker, mat: gm, line: gl, ok: null };
+    }
+
+    /* 위치·회전·크기는 **실제로 놓일 그대로** */
+    preview.group.position.set(to.x, to.y, to.z);
+    preview.group.rotation.y = p.group.rotation.y;
+    preview.group.scale.copy(p.group.scale);
+    const r = clamp((Number.isFinite(to.maxPotD) ? to.maxPotD : 0.22) * 1.5, 0.12, 0.55);
+    preview.marker.scale.setScalar(r / 0.32);
+    preview.marker.position.set(to.x, to.y + 0.004, to.z);
+
+    const ok = fitsInSlot(preview.group, to);
+    if (ok !== preview.ok) {
+      preview.ok = ok;
+      const hex = ok ? GH_OK : GH_NG;
+      preview.mat.color.setHex(hex);
+      preview.line.color.setHex(hex);
+      preview.marker.material.color.setHex(hex);
+    }
+    needsRender = true;
+    return { fromId, toId, ok };
+  }
+
+  /* 화분이 다시 조립됐을 때 미리보기도 그 모습으로 따라간다 */
+  function refreshPreview() {
+    if (!preview) return;
+    const { fromId, toId } = preview;
+    disposePreview();
+    if (plants.has(fromId) && slotById.has(toId)) { try { previewMove(fromId, toId); } catch (e) { /* 사라진 자리 */ } }
+  }
+
+  /* ============================================================
+     ⑨ 캐릭터와 마스코트
+     ------------------------------------------------------------
+     ★ 지침은 전부 assets/characters/README.md · docs/handoff/char-to-house.md 에서 온다.
+       여기서 새로 정한 것은 **어디에 세울지** 하나뿐이다.
+
+       크기   GLB 에 이미 구워져 있다 — 엔진에서 추가 스케일 **금지**.
+              자취녀 1.40m · 몬이 0.375m(고정, 키에 연동 안 함)
+       메시   lq/ 를 쓴다. 원본은 평균 22.5만 삼각형이라 방과 같이 돌리면 버벅인다
+              (char 창 확정). idle 파일 하나에 메시+동작이 다 들어 있어 리깅본을 따로 안 받는다
+       컬링   frustumCulled=false. 스킨드 메시는 노드 변환이 invBind 에 baked 되어
+              three 가 0.017m 상자로 판정한다 — 카메라를 붙이면 통째로 사라진다
+       방향   기본이 뒷모습이다. rotation.y 로 돌린다
+       변주   char-to-house.md 의 IDLE_BREAK 배정표·재생 코드를 그대로 쓴다
+       루트   변주 클립은 루트가 Hips 높이 대비 최대 42% 움직인다 — 걷기와 같이 XZ 를 고정한다
+  ============================================================ */
+  const CHAR_MESH = '../../assets/characters/3d/lq';
+  const CHAR_ANIM = '../../assets/characters/3d/anim';
+
+  /* 첫 플레이는 자취생 고정이다(직업 선택은 초보 엔딩 뒤 — docs/story_arc.md).
+     'jachwi' 는 게임이 부르는 이름이고, 뒤의 것이 에셋 id 다. */
+  const CHAR_ASSET = { jachwi: 'jachwi_f', jachwi_f: 'jachwi_f', namja_jachwi: 'namja_jachwi' };
+
+  /* 캐릭터별 성격 = 기본 idle 공용 + 간헐 변주 (박사님 확정 ㉮안, 2026-08-01)
+     ★ char-to-house.md 배정표 그대로. 새 모션 생성 0건 · 크레딧 0. */
+  const IDLE_BREAK = {
+    namja_jachwi: ['scratch'], jachwi_f: ['scratch'],
+    namja_gajang: ['listen'], yeoja_gajang: ['listen'],
+    namja_jubu: ['pickup', 'harvest'], yeoja_jubu: ['pickup', 'harvest'],
+    namja_researcher: ['opendoor'], yeoja_researcher: ['opendoor']
+  };
+
+  /* 몬이 추적 파라미터 — char-to-house.md 그대로 */
+  const MON = { floatHeight: 0.221, bobAmplitude: 0.103, bobPeriod_sec: 2.5,
+                followDistance: 0.774, followDamping: 4.1, tiltDegrees: 4.0 };
+
+  /* 사람이 차지하는 반지름[m]. 3.5등신 치비라 어깨가 넓다 — 0.30 으로 두면
+     벽에 붙었을 때 팔이 벽에 묻힌다(실제로 묻혔다). */
+  const BODY_R = 0.38;
+  /* 창을 보고 서되 방 쪽으로 이만큼 튼다. 정면으로 창만 보면 플레이어는 늘 뒤통수만 본다. */
+  const FACE_TURN = 0.60;       // 약 34°
+
+  function blockedAt(x, z, r) {
+    for (const c of (built.colliders || [])) {
+      const rot = c.rot || 0, co = Math.cos(-rot), si = Math.sin(-rot);
+      const lx = (x - c.x) * co - (z - c.z) * si;
+      const lz = (x - c.x) * si + (z - c.z) * co;
+      if (Math.abs(lx) < c.w / 2 + r && Math.abs(lz) < c.d / 2 + r) return true;
+    }
+    return false;
+  }
+
+  /* ★ 어디에 세울까 — 이 파일이 새로 정하는 유일한 것.
+     ------------------------------------------------------------
+     "가구·화분·통행을 가리면 안 된다. 주인공은 방과 식물이다."
+     그래서 방 한가운데가 아니라 **벽을 등지고 창을 보는** 자리를 고른다.
+       ① 가구·벽에서 몸 반지름만큼 떨어져 설 수 있는 칸만 후보
+       ② 화분 자리에서 멀수록 좋다(화분을 가리지 않는다)
+       ③ 벽에 가까울수록 좋다(가운데 바닥을 비워 둔다)
+       ④ 창에서 멀수록 좋다(창턱 화분 앞을 막지 않는다) */
+  function standSpot() {
+    const b = roomBox(), STEP = 0.20, EDGE = 0.34;
+    const win = (built.luxWins || []).filter(w => w.wall && w.wall !== 'ceiling');
+    let wx = 0, wz = -b.d / 2;                       // 창의 대략 위치(없으면 뒤벽)
+    if (win.length) {
+      let big = win[0], area = 0;
+      for (const w of win) { const a = (w.w || 0) * (w.h || 0); if (a > area) { area = a; big = w; } }
+      if (big.wall === 'back') { wx = big.cu || 0; wz = -b.d / 2; }
+      else if (big.wall === 'front') { wx = big.cu || 0; wz = b.d / 2; }
+      else if (big.wall === 'left') { wx = -b.w / 2; wz = big.cu || 0; }
+      else { wx = b.w / 2; wz = big.cu || 0; }
+    }
+    const slots = [...slotById.values()];
+    let best = null, bestScore = -Infinity;
+    for (let x = -b.w / 2 + EDGE; x <= b.w / 2 - EDGE; x += STEP)
+      for (let z = -b.d / 2 + EDGE; z <= b.d / 2 - EDGE; z += STEP) {
+        if (blockedAt(x, z, BODY_R)) continue;
+        let dSlot = Infinity;
+        for (const s of slots) dSlot = Math.min(dSlot, Math.hypot(s.x - x, s.z - z));
+        if (dSlot < 0.55) continue;                             // 화분 코앞에는 안 선다
+        const dWall = Math.min(b.w / 2 - Math.abs(x), b.d / 2 - Math.abs(z));
+        const dWin = Math.hypot(wx - x, wz - z);
+        const score = Math.min(dSlot, 2.0) * 1.0 + Math.min(dWin, 3.0) * 0.55 - dWall * 0.9;
+        if (score > bestScore) { bestScore = score; best = { x, z, wx, wz }; }
+      }
+    return best || { x: 0, z: 0, wx, wz };
+  }
+
+  const charLoad = url => new Promise((res, rej) =>
+    new THREE.GLTFLoader().load(AT(url), res, undefined, () => rej(new Error(`캐릭터 GLB 실패: ${url}`))));
+
+  async function makePerson(gameId) {
+    const id = CHAR_ASSET[gameId] || 'jachwi_f';
+    /* idle 파일 하나에 메시와 동작이 다 들어 있다 — 리깅본을 따로 안 받는다(char 창 §3) */
+    const g = await charLoad(`${CHAR_MESH}/char_${id}_idle.glb`);
+    const model = g.scene;
+    /* ★ 크기는 절대 안 건드린다. GLB 에 1.40m 가 구워져 있다(README §1).
+       여기서 다시 정규화하면 그 위에 곱해져 1.36m 같은 값이 된다. */
+    model.traverse(o => {
+      if (!o.isMesh) return;
+      o.castShadow = true; o.receiveShadow = true;
+      o.frustumCulled = false;                       // 스킨드 메시 컬링 오류 — 지우지 말 것
+      if (o.material && o.material.map) o.material.map.encoding = THREE.sRGBEncoding;
+    });
+
+    const root = new THREE.Group();
+    root.add(model);
+    const spot = standSpot();
+    root.position.set(spot.x, 0, spot.z);
+    /* 창 쪽을 보되 방 안쪽으로 조금 튼다. 캐릭터 기본이 뒷모습이라 π 를 더한다
+       (char-to-house.md "캐릭터는 기본 방향이 뒷모습입니다"). */
+    const toWin = Math.atan2(spot.wx - spot.x, spot.wz - spot.z);
+    const toRoom = Math.atan2(-spot.x, -spot.z);
+    let d = ((toRoom - toWin + Math.PI) % (Math.PI * 2)) - Math.PI;
+    root.rotation.y = toWin + d * FACE_TURN + Math.PI;
+    houseGroup.add(root);
+
+    const mixer = new THREE.AnimationMixer(model);
+    const idleClip = (g.animations || [])[0];
+    if (!idleClip) throw new Error(`idle 클립이 없습니다: char_${id}_idle.glb`);
+    idleClip.name = 'idle';
+    const base = mixer.clipAction(idleClip);
+    base.play();
+
+    /* ★ 루트 고정 — 변주 클립은 루트가 Hips 높이 대비 최대 42% 움직인다.
+       걷기와 같이 Hips 의 XZ 를 매 프레임 되돌린다(char-to-house.md). */
+    let hips = null;
+    model.traverse(o => { if (!hips && /hips/i.test(o.name || '')) hips = o; });
+    const hips0 = hips ? [hips.position.x, hips.position.z] : null;
+
+    /* idle 을 돌리다 8~20초마다 변주를 한 번 끼운다. 끝자세=시작자세인 클립만
+       배정표에 들어 있어 crossfade 0.3s 면 안 튄다. */
+    const pool = IDLE_BREAK[id] || [];
+    let timer = 0, alive = true;
+    const clips = {};
+    function schedule() {
+      if (!alive || !pool.length) return;
+      timer = setTimeout(async () => {
+        if (!alive) return;
+        const name = pool[(Math.random() * pool.length) | 0];
+        try {
+          if (!clips[name]) {
+            const c = await charLoad(`${CHAR_ANIM}/char_${id}_${name}.glb`);
+            const cl = (c.animations || [])[0];
+            if (!cl) throw new Error('클립 없음');
+            cl.name = name; clips[name] = cl;
+          }
+          if (!alive) return;
+          const a = mixer.clipAction(clips[name]);
+          a.setLoop(THREE.LoopOnce, 1); a.clampWhenFinished = false;
+          a.reset().crossFadeFrom(base, 0.3, false).play();
+          mixer.addEventListener('finished', function done(e) {
+            if (e.action !== a) return;
+            mixer.removeEventListener('finished', done);
+            base.reset().crossFadeFrom(a, 0.3, false).play();
+          });
+        } catch (e) {
+          console.warn(`[방뷰] idle 변주 '${name}' 을 못 실었습니다 — 기본 idle 만 돕니다:`, e.message);
+        }
+        schedule();
+      }, 8000 + Math.random() * 12000);
+    }
+    schedule();
+
+    return {
+      kind: 'person', assetId: id, root,
+      update(dt) {
+        mixer.update(dt);
+        if (hips && hips0) { hips.position.x = hips0[0]; hips.position.z = hips0[1]; }
+      },
+      dispose() {
+        alive = false; clearTimeout(timer);
+        mixer.stopAllAction();
+        houseGroup.remove(root);
+        disposeObject(root);
+      }
+    };
+  }
+
+  async function makeMascot() {
+    const g = await charLoad(`${CHAR_MESH}/char_mascot_sprout.glb`);
+    const model = g.scene;
+    /* 몬이도 0.375m 가 GLB 에 구워져 있다. 리깅이 없어 트랜스폼만 움직인다. */
+    model.traverse(o => {
+      if (!o.isMesh) return;
+      o.castShadow = true; o.receiveShadow = true; o.frustumCulled = false;
+      if (o.material && o.material.map) o.material.map.encoding = THREE.sRGBEncoding;
+    });
+    const root = new THREE.Group();
+    root.add(model);
+    houseGroup.add(root);
+
+    /* 어디에 뜨나 — 사람이 있으면 그 뒤를 졸졸, 없으면 화분 옆.
+       ★ 가구·화분을 가리지 않게 화분에서 한 뼘 옆으로 비켜 세운다. */
+    function homeXZ() {
+      const person = chars.get('jachwi');
+      if (person) {
+        const r = person.root;
+        return { x: r.position.x - Math.sin(r.rotation.y) * MON.followDistance,
+                 z: r.position.z - Math.cos(r.rotation.y) * MON.followDistance };
+      }
+      const p = [...plants.values()][0];
+      if (p) {
+        const a = Math.atan2(p.group.position.x, p.group.position.z);
+        return { x: p.group.position.x + Math.cos(a) * 0.34, z: p.group.position.z - Math.sin(a) * 0.34 };
+      }
+      const s = standSpot();
+      return { x: s.x, z: s.z };
+    }
+    const h = homeXZ();
+    root.position.set(h.x, MON.floatHeight, h.z);
+    let t = 0;
+    const pos = new THREE.Vector3(h.x, MON.floatHeight, h.z);
+
+    return {
+      kind: 'mascot', assetId: 'mascot_sprout', root,
+      update(dt) {
+        t += dt;
+        const g2 = homeXZ();
+        /* 수평 추적은 프레임레이트 무관하게(char-to-house.md) */
+        pos.lerp(new THREE.Vector3(g2.x, MON.floatHeight, g2.z), 1 - Math.exp(-MON.followDamping * dt));
+        root.position.x = pos.x; root.position.z = pos.z;
+        root.position.y = MON.floatHeight + Math.sin(t * Math.PI * 2 / MON.bobPeriod_sec) * MON.bobAmplitude;
+        root.rotation.z = Math.sin(t * Math.PI * 2 / MON.bobPeriod_sec) * (MON.tiltDegrees * Math.PI / 180);
+        root.rotation.y += (Math.PI - root.rotation.y) * Math.min(1, dt * 2);
+      },
+      dispose() { houseGroup.remove(root); disposeObject(root); }
+    };
+  }
+
+  /* 놓기·치우기. 자리·포즈는 안에서 정한다 — 밖에서 좌표를 주지 않는다. */
+  let charSeq = 0;
+  async function setCharacter(who, opt = {}) {
+    const my = ++charSeq;
+    if (who == null) {                                  // null 이면 놓인 것을 전부 치운다
+      for (const [k, c] of [...chars]) { c.dispose(); chars.delete(k); }
+      needsRender = true;
+      return null;
+    }
+    const key = who === 'moni' ? 'moni' : 'jachwi';
+    const old = chars.get(key);
+    if (old) { old.dispose(); chars.delete(key); needsRender = true; }
+    let c;
+    try {
+      c = who === 'moni' ? await makeMascot() : await makePerson(who);
+    } catch (e) {
+      throw fail(new Error(`캐릭터를 못 놓았습니다 (${who}): ${e.message}`));
+    }
+    if (disposed || my !== charSeq) { c.dispose(); return null; }
+    chars.set(key, c);
+    needsRender = true;
+    return c.root;
+  }
+
+  /* ============================================================
+     ⑩ 자리로 들어가기
   ============================================================ */
   function focusSlot(slotId, snap) {
     if (slotId == null) { frameRoom(!!snap); return; }
@@ -1069,16 +1647,24 @@ export async function createRoomView(canvas, opts = {}) {
     /* 화분이 있으면 그 키에 맞춰 거리를 잡는다. 없으면 자리만 보여주면 된다.
        ★ 잎이 벌어진 몬스테라는 bbox 가 실제 키보다 훨씬 크게 나온다. 그대로 쓰면
          카메라가 천장을 뚫고 올라가 하얀 벽만 찍혔다 — 위아래를 잘라 둔다. */
-    let hh = 0.22;
+    /* ★ 예전에는 키의 0.62 배를 0.45m 로 잘라 썼다. 잎 5장짜리 옛 샘플(키 0.3m 안팎)
+       기준이었기 때문이다. 이제 방의 몬스테라는 생장 모델이 조립해서 1년이면 0.6m,
+       2년이면 0.85m 다 — 그 어림으로는 확대해도 위가 잘려 나가
+       "탭했을 때와 같은 그루인가"를 확인할 수가 없다(실제로 잘렸다).
+       화분이 있으면 **그 개체의 bbox 를 그대로** 담는다. */
+    let hh = 0.22;                                   // 담을 반높이
+    let cy = s.y + 0.22;                             // 담을 한가운데 높이
     if (p) {
       const bb = new THREE.Box3().setFromObject(p.group);
-      hh = clamp((bb.max.y - bb.min.y) * 0.62, 0.12, 0.45);
+      const h = Math.max(0.12, bb.max.y - bb.min.y);
+      hh = clamp(h / 2 * 1.25, 0.12, 0.95);          // 1.25 = 위아래 여유(FRAME_BIAS 몫 포함)
+      cy = (bb.min.y + bb.max.y) / 2;
     }
     const tanV = Math.tan(THREE.MathUtils.degToRad(ctx.cam.fov) / 2);
     const tanH = tanV * Math.max(0.2, ctx.cam.aspect);
     // 자리에서는 지금 보고 있던 방위를 유지한다(갑자기 방이 돌면 어디인지 못 찾는다)
     const az = windowAzimuth() + YAW_OFFSET + userYaw;
-    const target = new THREE.Vector3(s.x, s.y + hh * 0.55, s.z);
+    const target = new THREE.Vector3(s.x, cy, s.z);
     /* ★ 너무 확대되지 않게, 그리고 방 밖으로 나가지 않게.
        화분에 코를 박으면 어디에 있는 자리인지 알 수 없고, 멀어지면 벽·천장 속으로 들어간다. */
     const want = clamp(Math.max(hh / tanV, (hh * 0.75) / tanH), 0.5, 3.6);
@@ -1140,6 +1726,24 @@ export async function createRoomView(canvas, opts = {}) {
     setPlant(slotId, plant) { return setPlant(slotId, plant); },
     /* 옮기기. 실패하면 throw */
     movePlant(a, b) { movePlant(a, b); },
+    /* ★ 화분을 세로축으로 돌린다. Y 회전만 — 눕히거나 기울이면 화분이 넘어진다.
+       회전무관 지름(2×max√(x²+z²))은 Y 회전에 불변이라 maxPotD 판정이 안 바뀐다.
+       다시 조립돼도(진행도가 바뀌어 새로 지어도) 각도는 유지된다. */
+    setPlantYaw(slotId, rad) {
+      slotOrThrow(slotId);
+      const y = Number.isFinite(+rad) ? +rad : 0;
+      plantYaw.set(slotId, y);
+      const p = plants.get(slotId);
+      if (p) p.group.rotation.y = y;
+      if (preview && preview.fromId === slotId) preview.group.rotation.y = y;
+      needsRender = true;
+      return y;
+    },
+    plantYaw(slotId) { return plantYaw.get(slotId) || 0; },
+    /* ★ 옮기기 미리보기 — 그 화분의 반투명 복제를 목표 자리에 띄운다.
+       원본은 제자리 그대로. toSlotId 가 null 이면 지운다.
+       돌려주는 값의 ok 가 false 면 안 들어가는 자리다(미리보기가 붉게 뜬다). */
+    previewMove(fromId, toId) { try { return previewMove(fromId, toId); } catch (e) { throw fail(e); } },
     /* 놓을 수 있는 자리 빛내기. [] 면 해제 */
     highlightSlots(ids) { if (!ids || !ids.length) clearRings(); else highlightSlots(ids); },
     /* 카메라를 그 자리로. null 이면 방 전체로.
@@ -1147,7 +1751,9 @@ export async function createRoomView(canvas, opts = {}) {
     focusSlot(id, snap) { try { focusSlot(id, !!snap); } catch (e) { throw fail(e); } },
     /* 한 장 지금 그린다. 평소엔 rAF 루프가 알아서 하지만, 헤드리스처럼 rAF 가
        안 도는 환경에서 화면을 확정지어야 할 때 쓴다. */
-    redraw() { updateCam(); ctx.renderer.render(ctx.scene, ctx.cam); needsRender = false; },
+    /* ★ 캐릭터도 한 칸 걸어 준다. rAF 가 안 도는 곳(헤드리스·숨은 탭)에서 이걸 안 하면
+       사람이 바인드 자세(팔 벌린 A포즈) 그대로 찍힌다 — 실제로 그렇게 찍혔다. */
+    redraw() { stepCharacters(performance.now(), true); updateCam(); ctx.renderer.render(ctx.scene, ctx.cam); needsRender = false; },
     /* 0..1 하루 시간대. 시간대 이름('아침'·'한낮'…)을 돌려준다.
        ★ 빨리감기는 이 함수를 하루에 한 바퀴 돌리는 것으로 표현한다 —
          해의 방향·색온도·창으로 든 빛 웅덩이가 같이 움직인다. */
@@ -1183,8 +1789,11 @@ export async function createRoomView(canvas, opts = {}) {
       const p = plants.get(slotId);
       return p ? rotationSafeDiameter(potPartOf(p.group), p.group) : null;
     },
-    /* ★ 그 자리가 화면 어디에 찍히나 — {x,y}(캔버스 CSS 픽셀) · 뒤에 있으면 null.
-       PC 호버 말풍선처럼 DOM 을 자리 옆에 붙일 때 쓴다. */
+    /* ★ 그 자리가 화면 어디에 찍히나 — 뒤에 있으면 null.
+       ★★ 좌표계는 **캔버스 기준 CSS 픽셀**이다(뷰포트 기준이 아니다).
+          캔버스 왼쪽 위가 (0,0) 이고 오른쪽 아래가 (캔버스 CSS 폭, 높이) 다.
+          뷰포트 좌표가 필요하면 canvas.getBoundingClientRect() 의 left/top 을 더하십시오.
+          (드래그 중 마우스 좌표와 비교할 때 이 보정을 빼먹으면 자리가 어긋난다) */
     screenPosOf(slotId) {
       const s = slotById.get(slotId);
       return s ? slotScreenPos(s) : null;
@@ -1199,6 +1808,17 @@ export async function createRoomView(canvas, opts = {}) {
     stats() { return { ...stats, pixelRatio: pxRatio, plants: plants.size, slots: slotById.size,
                        triangles: ctx.renderer.info.render.triangles, calls: ctx.renderer.info.render.calls }; },
     setContinuous(v) { forceContinuous = !!v; needsRender = true; },
+    /* ★ 캐릭터·마스코트 — 자리와 포즈는 안에서 정한다.
+         'jachwi'(자취생 1.40m) · 'moni'(마스코트 0.375m) · null(전부 치우기)
+       GLB 를 싣느라 Promise 를 돌려준다. .catch 를 붙이십시오. */
+    setCharacter(id, opt) { return setCharacter(id, opt || {}); },
+    characters() {
+      return [...chars].map(([id, c]) => ({
+        id, kind: c.kind, assetId: c.assetId,
+        pos: { x: c.root.position.x, y: c.root.position.y, z: c.root.position.z },
+        yaw: c.root.rotation.y
+      }));
+    },
     /* 지금 무엇을 보고 있나 */
     get roomId() { return roomId; },
     get focusedSlot() { return focused; },
@@ -1218,6 +1838,9 @@ export async function createRoomView(canvas, opts = {}) {
       canvas.removeEventListener('mouseleave', onLeave);
       window.removeEventListener('resize', resize);
       ro && ro.disconnect();
+      disposePreview();
+      for (const [, c] of chars) { try { c.dispose(); } catch (e) { /* 치우다 난 오류로 나머지를 못 치우면 안 된다 */ } }
+      chars.clear();
       clearPlants(); clearRings();
       disposeObject(ctx.scene);
       ctx.renderer.dispose();
@@ -1226,6 +1849,9 @@ export async function createRoomView(canvas, opts = {}) {
 
   /* ── 시작 ── */
   try {
+    /* 몬스테라 GLB 는 14MB 다. 방을 짓는 동안 같이 받아 두지 않으면 첫 화분에서
+       그만큼 멈춘다. 기다리지는 않는다 — 실패해도 방은 떠야 한다. */
+    assembler();
     resize();
     await assemble(O.roomId);
     resize();
