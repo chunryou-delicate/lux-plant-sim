@@ -624,6 +624,69 @@ E 의 사유 문구가 `빛이 연결되지 않았습니다` → **`오늘 빛�
 
 전역 성장 곡선·`data/balance/` 는 그대로다.
 
+---
+
+## 14. [정정 3] I 성공 경로 BLOCKER — 지난 커밋이 실제로는 안 돌았다
+
+### 무슨 일이었나
+
+정정2 에서 넣은 `TH_LOADED=true` 한 줄이 **`loadStemTex()` 안에** 들어갔다.
+게다가 `let TH_LOADED`(906줄) **선언보다 앞**이라 같은 script 블록에서 TDZ ReferenceError 였고,
+그게 `try{}catch` 에 삼켜져 **두 가지가 조용히 죽었다**:
+
+1. `TH_LOADED` 가 영영 false → **게임 경로가 아예 안 자란다**(I-성공 불가)
+2. `STEM_TEX` 대입이 실행되지 않아 **줄기 표면 텍스처가 안 실렸다**
+
+지난 하네스가 이걸 못 잡은 이유는 제가 `setLoaded()` 로 플래그를 손으로 세웠기 때문이다.
+**실제 로딩 경로를 안 태운 검증은 검증이 아니었다.** 이번 하네스는 `fetch` 를 갈아끼워
+진짜 로딩 코드를 통과시킨다.
+
+### 수정 — `plant_grow.html`
+
+| 항목 | 위치 |
+|---|---|
+| `loadStemTex()` 안의 오삽입 줄 제거 | `:485` |
+| `thBad()` — thresholds 필수 7키 숫자 검증(`die·survive·min·fenestrate·best_lo·best_hi·max`) | `:908` |
+| `TH_LOADED=true` 는 **검증·적용을 마친 뒤 한 곳에서만** | `:943` |
+| `!r.ok`(HTTP 오류) · fetch 실패 · 검증 실패 → `TH_LOADED=false` + `console.error` | `:930·934·948` |
+| `cleanDLI()` / `noteLightInput()` 공용화 — `setDailyLight` 과 `setDailyLightSteady` 가 같은 문을 지난다 | `:963` |
+| 튜닝 종료는 `setTuningMode(false)` 경유 — 내부 false 면 **체크박스도 해제** | `:975` |
+| 미사용 `null_lowLight()` 삭제 | — |
+
+### 필수 재현 — 실제 로딩 경로
+
+```
+★ I-성공  서버·정본 정상·DLI 3.5
+   로딩 전 TH_LOADED=false → 로딩 후 true (min=3)
+   하루 뒤 유효 60 → 61 (+1), 막힘 null                    PASS
+
+★ I-실패  fetch 실패·DLI 9.0
+   TH_LOADED=false, 유효 +0
+   막힘: 임계값 정본(...)이 안 실렸습니다 — 서버로 여세요
+   console.error: ... 못 읽었습니다 (Failed to fetch)       PASS
+
+  I-불량정본
+   HTTP 404              +0  ... 못 읽었습니다 (HTTP 404)
+   thresholds.min 없음    +0  ... thresholds.min 가 숫자가 아닙니다(undefined)
+   min 이 문자열          +0  동일                            PASS
+
+★ H-UI   튜닝 체크 → DLI 2.0
+   체크 후  체크박스 true / 내부 true
+   입력 후  체크박스 false / 내부 false
+   유효 +0, 막힘: 빛 부족 — 7일평균 2.00 < 최소 3           PASS
+   setDailyLightSteady(2.0) 도 동일. steady(NaN) → 이력 오염 없음
+
+  회귀  A +0 · B +7 · C 달력 19일 중 유효 14일 · D 저광 +0/적정 +30
+        E +0 · F delta 5 오류·상태 불변 · G 밝은이력→오늘 null +0   회귀 없음
+```
+
+`data/` 변경 0건. 전역 성장 곡선·밸런스 그대로.
+
+### 스스로 정정할 것
+
+§13 에서 "G/H/I PASS" 라고 보고했지만 **그 중 I 는 하네스가 실제 경로를 안 태운 가짜 PASS 였다.**
+지금 결과가 진짜다. 앞으로 로딩·초기화가 걸린 검증은 그 코드를 직접 통과시킨다.
+
 ## 미해결
 
 - [ ] **§3 아파트 갈라짐** — plan 판단 대기

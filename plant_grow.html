@@ -179,7 +179,7 @@ const DEF={
 };
 let P=Object.assign({}, DEF);
 // 저장본 버전. 생장 로직/기본값이 바뀌면 올림 → 옛 저장값이 새 기본값을 덮어쓰지 않게.
-const CFG_VER='2026-08-02-strict2';
+const CFG_VER='2026-08-02-strict3';
 
 // ===== 튜닝 파라미터(B: 에셋별 개별 조정) =====
 const ADJ_KEYS=[
@@ -483,7 +483,6 @@ const ASSETS={}; let ASSETS_READY=false;
 // 줄기 표면 텍스처(회색조) — 색은 stemTint가 정하고 이 맵은 밝기 디테일만 곱함
 let STEM_TEX=null;
 (function loadStemTex(){ try{
-  TH_LOADED=true;                              // 여기까지 와야 정본이 실린 것
   STEM_TEX=new THREE.TextureLoader().load('./assets/textures/stem_surface_tile.png', ()=>{ if(typeof buildPlant==='function') buildPlant(); });
   STEM_TEX.wrapS=STEM_TEX.wrapT=THREE.RepeatWrapping;
   if(THREE.sRGBEncoding) STEM_TEX.encoding=THREE.sRGBEncoding;
@@ -912,16 +911,44 @@ let GT={
   fProp:{ batch:1.0, individual:1.0 },
   mature:{ threshold_floor:0.5, over_max_mult:0.6 }
 };
-fetch('./data/growth_tuning.json').then(r=>r.json()).then(j=>{
-  if(j.thresholds) TH_MONSTERA=Object.assign({}, TH_MONSTERA, num(j.thresholds));
-  if(j.variegated && j.variegated.need_mult!=null) VARIE_MULT=j.variegated.need_mult;
+// 정본이 '실렸다'고 말할 수 있으려면 파일을 읽은 것만으로는 부족하다 — 게이트가 쓰는
+// 임계값이 실제로 숫자로 들어와야 한다. 키 하나가 비면 게임이 코드 복제값으로 돌아간다.
+const TH_NEED=['die','survive','min','fenestrate','best_lo','best_hi','max'];
+function thBad(t){
+  if(!t || typeof t!=='object') return 'thresholds 가 없습니다';
+  for(const k of TH_NEED){
+    const v=t[k];
+    if(typeof v!=='number' || !isFinite(v) || v<0) return 'thresholds.'+k+' 가 숫자가 아닙니다('+v+')';
+  }
+  if(t.min<=0)            return 'thresholds.min 이 0 이하입니다('+t.min+')';
+  if(t.best_lo>t.best_hi) return 'thresholds.best_lo 가 best_hi 보다 큽니다';
+  if(t.max<=t.min)        return 'thresholds.max 가 min 이하입니다';
+  return null;
+}
+fetch('./data/growth_tuning.json').then(r=>{
+  if(!r.ok) throw new Error('HTTP '+r.status);
+  return r.json();
+}).then(j=>{
+  const t=num((j&&j.thresholds)||{});
+  const bad=thBad(t);
+  if(bad){ TH_LOADED=false;
+    console.error('[생장] 임계값 정본을 못 씁니다 — '+bad+'. 게임 경로는 정지합니다');
+    return; }
+  TH_MONSTERA=Object.assign({}, TH_MONSTERA, t);
+  if(j.variegated && typeof j.variegated.need_mult==='number') VARIE_MULT=j.variegated.need_mult;
   if(j.f_light)       GT.fLight =Object.assign({}, GT.fLight,  num(j.f_light));
   if(j.f_stable)      GT.fStable=Object.assign({}, GT.fStable, num(j.f_stable));
   if(j.f_propagation) GT.fProp  =Object.assign({}, GT.fProp,   num(j.f_propagation));
   if(j.mature_prob)   GT.mature =Object.assign({}, GT.mature,  num(j.mature_prob));
+  TH_LOADED=true;                              // ★검증·적용을 마친 여기서만 참이 된다
   if(typeof buildPlant==='function') buildPlant();
   if(typeof refreshDayHUD==='function') refreshDayHUD();
-}).catch(()=>{ /* file:// 로 열면 fetch가 막힌다 — 코드값 그대로 쓴다 */ });
+}).catch(err=>{
+  // file:// 로 열면 fetch 가 막힌다. 코드값은 튜닝 폴백일 뿐이라 게임 경로는 열어주지 않는다.
+  TH_LOADED=false;
+  console.error('[생장] data/growth_tuning.json 을 못 읽었습니다 ('+(err&&err.message)+') — 서버로 여세요. 게임 경로는 정지합니다');
+  if(typeof refreshDayHUD==='function') refreshDayHUD();
+});
 // _doc 같은 설명 필드가 계산에 섞이지 않게 숫자만 걸러 온다
 function num(o){ const r={}; for(const k in o) if(typeof o[k]==='number') r[k]=o[k]; return r; }
 
@@ -938,6 +965,20 @@ const DLI_KEEP=14;          // 이동평균에 쓸 만큼만 남긴다
 //   setDailyLight(contract, 'shelf_top')  ← 이 그루가 놓인 슬롯을 지정
 //   setDailyLight(contract)               ← 지정해둔 슬롯, 없으면 best
 //   setDailyLight(6.55)                   ← 숫자만
+// 들어온 하루 광량이 쓸 수 있는 수인가. NaN·음수·문자열이 이력에 들어가면 이동평균까지
+// 오염되고, 확률이 NaN 이 되어도 rng()<NaN 은 조용히 false 라 티가 안 난다.
+function cleanDLI(d){
+  if(d==null) return null;
+  if(typeof d!=='number' || !isFinite(d) || d<0){
+    console.warn('[빛] 쓸 수 없는 DLI 값 '+d+' → 무시하고 끔으로 둡니다');
+    return null;
+  }
+  return d;
+}
+// 유효한 게임 입력이 들어오면 튜닝 모드는 끝난다. setTuningMode 를 거쳐야 체크박스도 같이 풀린다 —
+// TUNING_MODE 에 직접 대입하면 내부는 false 인데 화면은 켜진 채로 갈린다.
+function noteLightInput(d){ if(d!=null && TUNING_MODE) setTuningMode(false); }
+
 function setDailyLight(c, slotId){
   if(slotId!==undefined) PLANT_SLOT=slotId;
   let d=null;
@@ -956,14 +997,9 @@ function setDailyLight(c, slotId){
           : (c.best && c.best.dli!=null ? c.best.dli
           : (slots[0] && slots[0].dli!=null ? slots[0].dli : null));
   }
-  // ★ 들어온 값이 쓸 수 있는 수인지 먼저 본다. NaN·음수·문자열이 이력에 들어가면
-  //   이동평균까지 오염되고, 확률이 NaN이 되어도 rng()<NaN 은 조용히 false라 티가 안 난다.
-  if(d!=null && (typeof d!=='number' || !isFinite(d) || d<0)){
-    console.warn('[빛] 쓸 수 없는 DLI 값 '+d+' → 무시하고 끔으로 둡니다');
-    d=null;
-  }
+  d=cleanDLI(d);
   // ★유효한 게임 입력이 들어오면 튜닝 모드는 끝난다. 남겨두면 저광 게이트를 우회한다.
-  if(d!=null) TUNING_MODE=false;
+  noteLightInput(d);
   PLANT_DLI=d;
   if(d!=null){ DLI_HIST.push(d); if(DLI_HIST.length>DLI_KEEP) DLI_HIST.shift(); }
   return d;
@@ -990,7 +1026,15 @@ function dliCV(){
   return Math.sqrt(a.reduce((s,v)=>s+(v-m)*(v-m),0)/a.length)/m;
 }
 // 테스트·미리보기용: "이 DLI를 계속 유지했다면"으로 이력을 통째로 채운다.
-function setDailyLightSteady(v){ DLI_HIST.length=0; for(let i=0;i<DLI_KEEP;i++) DLI_HIST.push(v); PLANT_DLI=v; }
+// 게임 입력과 같은 문을 지난다 — 여기로만 넣고 튜닝 모드를 켜둔 채 게이트를 넘을 수 없다.
+function setDailyLightSteady(v){
+  const d=cleanDLI(v);
+  noteLightInput(d);
+  DLI_HIST.length=0;
+  if(d!=null) for(let i=0;i<DLI_KEEP;i++) DLI_HIST.push(d);
+  PLANT_DLI=d;
+  return d;
+}
 
 // ★ 빛 계수(무늬 발현). 최적 대역이 일반 best(5~11)가 아니라 그 ×1.4(7.0~15.4)다.
 //   흰 부분이 광합성을 안 하니 더 밝아야 무늬가 나오고 유지된다.
@@ -2055,7 +2099,6 @@ function growthBlockReason(){
   if(d < growthMin())           return '빛 부족 — 7일평균 '+d.toFixed(2)+' < 최소 '+growthMin();
   return null;
 }
-function null_lowLight(d){ return '빛 부족 — 7일평균 '+d.toFixed(2)+' < 최소 '+growthMin(); }
 function canGrow(){ return growthBlockReason()===null; }
 // ★ 코어용 — 달력 날짜를 이 값으로 옮긴다. 그 사이 유효 생장은 빛이 될 때만 쌓인다.
 //   setGrowth(점프)와 뜻이 다르다. 코어는 반드시 이걸 쓸 것.
