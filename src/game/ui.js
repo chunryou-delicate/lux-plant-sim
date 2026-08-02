@@ -19,6 +19,21 @@ const n2 = (v) => (v == null ? '—' : (+v).toFixed(2));
 export function renderHUD(el, S, turn, io) {
   if (!turn) { el.innerHTML = `<div class="ph">[다음 날]을 눌러 시작하세요</div>`; return; }
   const r = turn.report, s = turn.slot;
+  if (turn.noPlant || turn.plantArrived) {
+    const crop = S.firstPlay && S.firstPlay.beansprout;
+    el.innerHTML = `
+      <div class="row big"><span class="k">Day</span><b>${turn.day}</b>
+        <span class="sep"></span><span class="k">날씨</span><b>${(r.sky && r.sky.weather_ko) || turn.sky.weather}</b></div>
+      <div class="grid">
+        <div class="cell"><span>콩나물</span><b>${crop && crop.harvested ? `${crop.meals}끼` : `${(crop && crop.ageDays) || 0}/${(crop && crop.harvestDays) || '—'}일`}</b>
+          <i>${crop && crop.slotId ? crop.slotId : '자리 선택 전'}</i></div>
+        <div class="cell"><span>첫 수확일 식비</span><b>${S.firstPlay.food.cashFoodWon.toLocaleString()}원</b>
+          <i>누적 절감 ${S.firstPlay.food.totalFoodSavedWon.toLocaleString()}원</i></div>
+        <div class="cell"><span>몬스테라</span><b>${turn.plantArrived ? '도착!' : '아직 없음'}</b>
+          <i>${turn.plantArrived ? '높은 창가 자리를 찾아 주세요' : '첫 수확 뒤 선물'}</i></div>
+      </div>`;
+    return;
+  }
   const P = pot0(S) || { plantId: null, variegated: false, slotId: null };
   const th = io.light.thresholdsOf(P.plantId, P.variegated);
   const fen = th && th.fenestrate;
@@ -64,8 +79,8 @@ export function renderHUD(el, S, turn, io) {
     </div>
 
     <div class="grid">
-      <div class="cell"><span>★ 유효 생장</span><b>${turn.effectiveGrowthDays ?? '—'}일</b>
-        <i>형태를 정하는 값 · 달력 ${turn.growthCalendarDay ?? '—'}</i></div>
+      <div class="cell"><span>★ 형태 단계</span><b>${turn.growthPhase ? Math.round(turn.growthPhase.progress01 * 100) + '%' : '—'}</b>
+        <i>${turn.growthPhase ? turn.growthPhase.phaseId : '단계 정보 없음'} · 유효 ${turn.effectiveGrowthDays ?? '—'}일</i></div>
       <div class="cell"><span>돌본 날</span><b>${turn.daysPlanted ?? 0}일</b>
         <i>도착 진행도 ${P.arrivalGrowthDays ?? '—'}에서 시작</i></div>
       <div class="cell"><span>전기 (표시만)</span><b>${(r.energy && r.energy.won) || 0}원</b>

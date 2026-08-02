@@ -8,9 +8,12 @@
      · DLI·밴드·전기요금       → house (계약 객체 daily_light/1)
      · 임계값·계수·확률        → data/balance/*.json (plan)
 
-   ★ 고사·수확·경제가 없다. 자리도 만들지 않는다.
+   ★ 고사·정식 경제는 없다. 첫 플레이의 콩나물 1회 수확·식비 절감만
+     first_play.js의 닫힌 상태로 둔다. 월세·현금·상점으로 확장하지 않는다.
      활력(vigor)은 표시 취소·구현 보류다(2026-08-02) — 자리를 만들면 판정이 코어로 샌다.
 ============================================================ */
+
+import { createFirstPlayState } from './first_play.js';
 
 export const SCHEMA = 'game_state/1';
 
@@ -47,6 +50,10 @@ export function newState(opt = {}) {
        앱을 열었다고 Day 0부터 식물이 있으면 안 된다 — 도착 이벤트(Day 4 선물, 이번 범위 밖)나
        테스트 초기화 경계(givePlant)가 만들 때 생긴다. v0는 1개 (growth가 한 그루 전용). */
     pots: [],
+
+    /* Day 0 콩나물 → Day 4 첫 수확·선물 → 몬스테라 말린 새순.
+       정식 작물 목록이나 경제 장부가 아니라 첫 재미 검증 한 흐름만 담는다. */
+    firstPlay: createFirstPlayState({ enabled: !!opt.firstPlay, rules: opt.firstPlayRules }),
 
     /* 코어가 따로 쌓는 DLI 이력. 용도는 두 가지뿐:
          ① growth의 dli7()과 대조(어긋나면 배선이 틀린 것)

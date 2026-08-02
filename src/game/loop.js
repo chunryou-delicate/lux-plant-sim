@@ -31,7 +31,14 @@
 
      S는 제자리에서 바뀌고 그대로 반환된다. 호출부는 반환값을 쓰면 된다.
 ============================================================ */
-import { pot0, rehomePot, pushLog } from './state.js';
+import { givePlant, pot0, rehomePot, pushLog } from './state.js';
+import {
+  advanceBeansproutDay,
+  cropDliFromReport,
+  FIRST_PLAY_ASSETS,
+  markMonsteraArrived,
+  markMonsteraPhase
+} from './first_play.js';
 import { dliFromContract } from './growth_adapter.js';
 import { weekStats, WEATHER_P } from '../engine/weather.js';
 
@@ -42,7 +49,10 @@ export function nextDay(S, io) {
      iframe 을 새로고침하면 ready() 를 통과했던 계약이 사라진다. 그대로 진행하면
      달력만 가고 형태는 그대로인 **반쯤 진행된 턴**이 조용히 남는다.
      여기서 던지면 S 는 손도 안 댄 상태다 — 날짜조차 안 올라간다. */
-  if (p && io.growth.assertContract) io.growth.assertContract();
+  if (p && io.growth.assertContract) {
+    try { io.growth.assertContract(); }
+    catch (e) { e.turnState = 'not_started'; throw e; }
+  }
 
   S.day++;
 
@@ -52,8 +62,74 @@ export function nextDay(S, io) {
   const { report, sky, check } = io.light.daily(S.day, S);
   if (!check.ok) pushLog(S, '⚠ 계약 이상 — ' + check.problems.slice(0, 3).join(' / '));
 
-  /* 식물이 아직 도착하지 않았으면 빛만 굴리고 끝낸다 — 없는 개체를 자라게 하지 않는다 */
-  if (!p) return { S, turn: { day: S.day, sky, report, slot: null, dli: null, check, noPlant: true } };
+  /* 첫 4일은 열린 시루 하나만 돈다. 몬스테라 엔진과 섞지 않고, 시루가 놓인 방 슬롯의
+     DLI를 그대로 모아 4일째 3/2/1끼를 판정한다. 계약 누락은 암흑으로 보완하지 않는다. */
+  let firstPlayEvent = null;
+  if (S.firstPlay && S.firstPlay.enabled && !S.firstPlay.beansprout.harvested) {
+    const before = structuredClone(S.firstPlay);
+    const logLengthBefore = S.log.length;
+    try {
+      const cropSlotId = S.firstPlay.beansprout.slotId;
+      if (check.badSlots && check.badSlots.has(cropSlotId))
+        throw new Error(`[첫 플레이] 콩나물 자리 ${cropSlotId}의 조도 계약이 잘못됐습니다`);
+      firstPlayEvent = advanceBeansproutDay(
+        S.firstPlay,
+        cropDliFromReport(report, cropSlotId)
+      );
+
+      if (firstPlayEvent.harvested) {
+        pushLog(S, `🥣 콩나물 첫 수확 — ${firstPlayEvent.qualityKo} · ${firstPlayEvent.meals}끼`);
+        pushLog(S, `🍚 오늘 식비 ${firstPlayEvent.cashFoodWon}원 ` +
+                   `(작물 ${firstPlayEvent.usedMeals}끼 · ${firstPlayEvent.foodSavedWon}원 절감)`);
+
+        /* 선물은 수확 정산 뒤 온다. 처음부터 정답 창턱에 놓지 않는다 — 도착 후 플레이어가
+           창가 높은 자리로 옮기는 것이 두 번째 학습이다. */
+        const roomSlots = (io.light.room && io.light.room.slots) || [];
+        const potDiameter = FIRST_PLAY_ASSETS.monsteraPotDiameterM;
+        const canHoldPot = new Set(roomSlots
+          .filter(s => s && (s.maxPotD == null || s.maxPotD >= potDiameter))
+          .map(s => s.slotId));
+        const arrival = [...(report.slots || [])]
+          .filter(s => s && s.slotId !== cropSlotId &&
+                       (!canHoldPot.size || canHoldPot.has(s.slotId)) &&
+                       typeof s.dli === 'number' && isFinite(s.dli))
+          .sort((a, b) => a.dli - b.dli)[0];
+        if (!arrival) throw new Error('[첫 플레이] 몬스테라가 도착할 화분 자리를 찾지 못했습니다');
+
+        const arrived = givePlant(S, io, { slotId: arrival.slotId });
+        markMonsteraArrived(S.firstPlay, arrived.slotId);
+        if (io.growth.growthPhase) markMonsteraPhase(S.firstPlay, io.growth.growthPhase());
+        pushLog(S, '🌱 “콩나물을 잘 키웠구나. 이건 좀 더 어려울 거야.”');
+      }
+    } catch (e) {
+      /* givePlant는 setGrowth 성공 뒤에만 화분을 만들므로, 여기서 화분이 없으면 외부 상태도
+         커밋되지 않았다. 콩나물·식비·날짜·로그를 함께 되돌려 Day 4를 재시도할 수 있게 한다. */
+      if (!pot0(S)) {
+        S.firstPlay = before;
+        S.log.length = logLengthBefore;
+        S.day--;
+        e.coreRolledBack = true;
+        e.turnState = 'core_rolled_back';
+      } else {
+        e.turnState = 'unknown';
+      }
+      throw e;
+    }
+  }
+
+  /* 몬스테라가 아직 도착하지 않았으면 콩나물만 진행하고 끝낸다. Day 4에 막 도착한 경우도
+     그날은 키운 날로 세지 않는다 — 다음 날부터 빛을 받아 3턴 뒤 말린 새순이 된다. */
+  if (!p) {
+    const arrived = pot0(S);
+    return { S, turn: {
+      day: S.day, sky, report, slot: null, dli: null, check,
+      noPlant: !arrived, plantArrived: !!arrived, firstPlayEvent,
+      daysPlanted: arrived ? 0 : null,
+      growthCalendarDay: arrived ? io.growth.calendarDay() : null,
+      effectiveGrowthDays: arrived ? io.growth.growthDays() : null,
+      growthPhase: arrived && io.growth.growthPhase ? io.growth.growthPhase() : null
+    } };
+  }
 
   const slot = (report.slots || []).find(s => s.slotId === p.slotId) || null;
   const dli = check.badSlots.has(p.slotId)
@@ -72,8 +148,10 @@ export function nextDay(S, io) {
        `buildPlant()` 를 렌더 경계로 감싸 달라고 요청해 뒀다(core-to-growth). */
   const calBefore = io.growth.calendarDay();
   let step;
+  let lightInputRecorded = false;
   try {
     io.growth.setDailyLight(dli);
+    lightInputRecorded = true;
 
     /* ★ 하루 진행은 advanceTo 만 쓴다. setGrowth(점프)는 도착 때 한 번뿐이다.
        달력은 하루 가고, 형태(유효 생장)는 빛이 될 때만 쌓인다 — 저광이면 여기서 멈춘다. */
@@ -83,15 +161,28 @@ export function nextDay(S, io) {
     try { calAfter = io.growth.calendarDay(); } catch { /* 계약까지 끊긴 경우 */ }
 
     if (calAfter === calBefore) {
-      S.day--;                       // growth 도 안 갔다 → 코어만 되감으면 양쪽이 맞는다
+      S.day--;
       e.coreRolledBack = true;
-    } else {
+      e.turnState = lightInputRecorded ? 'growth_input_recorded' : 'core_rolled_back';
+      if (lightInputRecorded) {
+        S.desync = { coreDay: S.day, growthCalendar: calAfter, reason: e.message,
+                     note: '달력은 되감았지만 오늘 DLI 입력은 growth 이력에 남았을 수 있음' };
+      }
+    } else if (calAfter === calBefore + 1) {
       /* growth 는 갔는데 예외만 나왔다(렌더 오류 등). 되감지 않는다 — 날짜는 맞춰 두고,
          이 턴의 결과(형태·정지 사유)를 못 받았다는 사실을 상태에 남긴다. */
       S.desync = { coreDay: S.day, growthCalendar: calAfter, reason: e.message };
       pushLog(S, `⚠ 이 턴의 결과를 못 받았습니다 — growth 달력 ${calAfter}, 코어 ${S.day}일. ` +
                  `날짜는 맞췄지만 형태 결과는 화면에 반영되지 않았습니다`);
       e.coreRolledBack = false;
+      e.turnState = 'growth_advanced';
+    } else {
+      /* null·역행·2일 이상 점프는 진행 여부를 확정할 근거가 없다. 거짓으로 되감거나
+         "날짜를 맞췄다"고 하지 않고 잠근 뒤 불확정 상태를 그대로 남긴다. */
+      S.desync = { coreDay: S.day, growthCalendar: calAfter, reason: e.message,
+                   note: 'growth 달력을 확인할 수 없거나 예상한 하루 범위를 벗어남' };
+      e.coreRolledBack = false;
+      e.turnState = 'unknown';
     }
     throw e;
   }
@@ -117,8 +208,11 @@ export function nextDay(S, io) {
     dli7Growth: io.growth.dli7(),      // growth가 실제로 쓴 7일 평균
     dli7Core: avg(S.dliHist, 7),       // 코어가 센 값 — 둘이 어긋나면 배선이 틀린 것
     sample: sample(S.dliHist, 7),      // 표본 상태(결측 며칠인지) — 평균만 보면 못 판단한다
-    cv: io.growth.dliCV()
+    cv: io.growth.dliCV(),
+    growthPhase: io.growth.growthPhase ? io.growth.growthPhase() : null,
+    firstPlayEvent
   };
+  if (S.firstPlay && S.firstPlay.enabled) markMonsteraPhase(S.firstPlay, turn.growthPhase);
   /* 정지 사유는 바뀔 때만 남긴다 — 매일 찍으면 기록이 같은 줄로 덮인다 */
   if (turn.growthBlocked !== S._lastBlock) {
     if (turn.growthBlocked) pushLog(S, `⏸ 형태 정지 — ${turn.growthBlocked}`);

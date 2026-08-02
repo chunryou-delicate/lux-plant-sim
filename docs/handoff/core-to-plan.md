@@ -219,3 +219,65 @@ v0는 `real` 로만 검증했습니다. 중간 난이도 계수 자리(`sim.weat
       §2 “안 되어 있는 것 · 게임 루프 ❌ `src/game/` 없음” 과 §4 소스 트리가 바뀌었습니다.
       `game.html` + `src/game/{state,loop,light_adapter,growth_adapter,ui}.js` 신설,
       우선순위 ①의 “최소 루프”는 돌기 시작했습니다(재미 확인은 아직)
+
+---
+
+# 2026-08-02 · 추가 — 첫 플레이 얇은 통합 시뮬
+
+## 결과
+
+`game.html`에서 다음 한 흐름이 실제 입력과 자동 입력 모두 끝까지 돈다.
+
+1. 열린 콩나물 시루를 반지하의 어두운 슬롯에 배치
+2. 4턴 뒤 슬롯 DLI 평균으로 `3/2/1끼` 판정
+3. 하루 사용 상한 2끼를 적용해 식비 절감 표시(3끼 수확 시 2끼 사용, `7,500→2,500원`, 1끼 보관)
+4. 같은 Day 4 정산 뒤 몬스테라 도착 — 처음부터 정답 창턱에는 두지 않음
+5. 플레이어 또는 자동 시뮬이 `banjiha-sill:0`으로 이동
+6. 적정광 3턴 뒤 Day 7에 `spear_furled`(말린 새순) 확인
+
+기본 UI는 첫 플레이에 필요한 자원 3칸, 아이템 카드 2개, 자리 선택, 단계 게이지,
+퀘스트 문장, 자동 시뮬 결과만 열었다. 기존 개발 시나리오는 접힌 검수 영역에 남겼다.
+`plant_grow.html?embed=game`에서만 growth 튜닝 패널을 숨기며, 단독 growth 화면은 불변이다.
+
+새 에셋은 만들지 않았다. 기존 `assets/crops/thumbs/container_siru_open.png`와 CSS·이모지를 재사용했다.
+이번 승인에서 에셋 변경이 금지됐고, 첫 루프 판별에는 새 2D 제작이 필요하지 않았다.
+
+## 재현
+
+```powershell
+node --experimental-default-type=module tools/test_first_play.mjs
+node --experimental-default-type=module tools/test_loop_errors.mjs
+```
+
+결과: `first_play: PASS` · `first_play_loop: PASS` · `loop_errors: PASS`.
+
+브라우저 `http://127.0.0.1:8799/game.html`:
+
+- 자동 경로 3회: `#firstResult[data-status=pass]`, Day 7, 3끼, 5,000원 절감, `spear_furled` 전부 일치
+- 수동 경로: 직접 시루 배치→[다음 날] 4회→창턱 선택→[다음 날] 3회로 같은 결과
+- 첫 루프 전 `30일 자동` 잠김, 완료 후 열림
+- 첫 화면은 몬스테라 대신 빈 무대 안내, 도착 뒤 실제 3D로 교체
+
+## 문제 발생 시 3후보 × 3회 기록
+
+### 1. 자동 결과를 `window.__firstPlayResult`만으로 읽으면 격리된 브라우저 평가에서 `null`
+
+| 후보 | 3회 결과 | 판단 |
+|---|---|---|
+| A. window 전역만 사용 | `null / null / null` | 탈락 — 검수 경계를 건너 안정적으로 안 보임 |
+| B. 화면 결과 DOM의 `data-*` 사용 | `PASS / PASS / PASS` | 채택 — 사용자 화면과 자동 검수가 같은 증거를 봄 |
+| C. 기록의 완료 문구 사용 | `PASS / PASS / PASS` | 보조 채택 — 사람이 흐름을 역추적 가능 |
+
+### 2. growth 튜닝 UI가 게임 화면을 가림
+
+| 후보 | 3회 결과 | 판단 |
+|---|---|---|
+| A. 기존 전체 패널 | 3회 모두 폭 790px, 표시됨 | 탈락 |
+| B. 패널 본문만 접기 | 3회 모두 패널 껍데기 790px 유지 | 탈락 |
+| C. `?embed=game` 명시 모드 | 3회 모두 패널·뷰 숨김, 식물 본체만 표시 | 채택 |
+
+## 범위 밖 유지
+
+- 첫 플레이 전체 `PASS` 및 재미 판정은 선언하지 않는다 — 직접 플레이 체감은 사용자 판단이다.
+- 정식 경제, 월별 현금, 이사, 식물등 구매, 다개체 엔진, 활력, 고사, 새 작물·캐릭터는 미구현이다.
+- `data/balance/`, `docs/GAME_PLAN.md`, 에셋, 전역 생장 곡선·밸런스 수치는 변경하지 않았다.

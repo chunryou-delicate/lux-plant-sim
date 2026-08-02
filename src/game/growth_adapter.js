@@ -33,9 +33,9 @@ export function dliFromContract(report, slotId, warn) {
 /* ★ 준비 완료의 기준 (2026-08-02 계약) — 이 다섯이 다 있어야 게임 경로를 연다.
    `setGrowth` 만 보고 준비됐다고 하면 옛 인터페이스로 돌아가 저광 정지가 통째로 사라진다. */
 export const REQUIRED_GROWTH_FNS =
-  ['setDailyLight', 'advanceTo', 'calendarDay', 'growthDays', 'growthBlocked', 'setGrowth'];
+  ['setDailyLight', 'advanceTo', 'calendarDay', 'growthDays', 'growthBlocked', 'growthPhase', 'setGrowth'];
 
-/* 준비 완료 = 위 여섯 동작 함수 + `thLoaded() === true`.
+/* 준비 완료 = 위 일곱 동작 함수 + `thLoaded() === true`.
    함수가 있다고 준비된 게 아니다 — 임계값 정본은 비동기로 실린다(2026-08-02 브라우저에서 잡힘). */
 export const REQUIRED_GROWTH_STATE = ['thLoaded'];
 
@@ -125,6 +125,8 @@ export function createGrowthAdapter(iframe) {
     calendarDay()     { return must('calendarDay')(); },
     growthDays()      { return must('growthDays')(); },
     growthBlocked()   { return must('growthBlocked')(); },
+    /* novice 형태 게이지의 정본. 생장일·단계 경계를 코어에 복제하지 않는다. */
+    growthPhase()     { return must('growthPhase')(); },
 
     /* ⚠ 점프다. **초기 형태 배치·디버그 전용** — 일일 루프에서 부르지 않는다.
        개체가 생길 때 한 번(도착 진행도 143) 쓰는 게 전부다.

@@ -125,6 +125,7 @@ export function nullGrowth(keep = 14, opt = {}) {
     calendarDay: () => cal,
     growthDays: () => growth,
     growthBlocked: () => blockReason(),
+    growthPhase: () => null,       // 표시 계약. 진짜 단계는 growth 전용 구현이 낸다
     setGrowth(days) { growth = cal = Math.round(days); },
     dli7() { return H.length ? avg(H, 7) : null; },
     dliCV() {

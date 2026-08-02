@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>볕 · 게임 루프 v0</title>
+<title>볕 · 첫 플레이</title>
 
 <!-- house.js·textures.js 가 전역 THREE 를 쓴다(index.html 과 같은 r128).
      v0는 방을 그리지 않고 조도 계산에만 쓴다 — 렌더러를 만들지 않는다. -->
@@ -15,10 +15,17 @@
   html,body{height:100%;font-family:'Gaegu',sans-serif;background:#14101c;color:#f2eef8;overflow:hidden}
   #app{display:flex;height:100%}
   /* ★ HUD는 iframe 위에 겹치지 않는다. plant_grow 자체 표시와 나란히 놓고 대조한다. */
-  #side{width:420px;flex:0 0 420px;height:100%;overflow-y:auto;padding:14px;
-        background:#1b1626;border-right:1px solid rgba(255,255,255,.09)}
-  #stage{flex:1;position:relative;background:#0f0c16}
+  #side{width:450px;flex:0 0 450px;height:100%;overflow-y:auto;padding:14px;
+        background:linear-gradient(180deg,#213326 0,#18241d 48%,#171421 100%);
+        border-right:1px solid rgba(255,255,255,.09)}
+  #stage{flex:1;position:relative;background:#0f0c16;overflow:hidden}
   #growth{position:absolute;inset:0;width:100%;height:100%;border:0}
+  #growth{transition:opacity .4s,filter .4s}
+  #stage.no-plant #growth{opacity:.18;filter:blur(7px)}
+  #stageEmpty{display:none;position:absolute;inset:0;z-index:7;place-items:center;pointer-events:none}
+  #stage.no-plant #stageEmpty{display:grid}
+  #stageEmpty b{font-family:'Jua';font-size:22px;color:#dff8d4;text-align:center;text-shadow:0 3px 15px #000}
+  #stageEmpty i{display:block;font:normal 13px 'Gaegu';color:rgba(255,255,255,.62);margin-top:7px}
   h1{font-family:'Jua';font-size:19px;margin-bottom:2px}
   h1 b{color:#ffb454}
   .sub{font-size:12px;color:rgba(255,255,255,.45);margin-bottom:12px}
@@ -76,18 +83,74 @@
     box-shadow:0 8px 26px rgba(0,0,0,.45);text-align:center;line-height:1.45}
   #event i{font-style:normal;display:block;font-size:12px;color:#2c4a22;margin-top:3px}
   .scen-run #play{opacity:.45}
+  .resourcebar{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin:10px 0}
+  .resource{padding:8px 9px;border-radius:11px;background:rgba(238,255,225,.09);
+    border:1px solid rgba(190,235,165,.16)}
+  .resource span{display:block;font-size:10px;color:rgba(255,255,255,.5)}
+  .resource b{display:block;font-family:'Jua';font-size:16px;color:#e8ffd9;margin-top:1px}
+  .journey{border-color:rgba(190,235,165,.25);background:rgba(224,255,207,.07)}
+  .quest{padding:9px 11px;border-radius:10px;background:rgba(7,20,10,.35);color:#dff8d4;
+    font-size:13px;line-height:1.45;margin-bottom:9px}
+  .inventory{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .itemcard{min-width:0;padding:8px;border-radius:12px;background:rgba(255,255,255,.065);
+    border:1px solid rgba(255,255,255,.09)}
+  .itemhead{display:flex;gap:8px;align-items:center;margin-bottom:6px}
+  .thumb{width:48px;height:48px;flex:0 0 48px;border-radius:10px;object-fit:contain;
+    background:radial-gradient(circle,#eaf4d8,#a8b58f);padding:4px}
+  .emoji-thumb{display:grid;place-items:center;font-size:31px}
+  .itemhead b{font-family:'Jua';font-size:13px;display:block}
+  .itemhead small{font-size:10px;color:rgba(255,255,255,.46)}
+  .meter{height:8px;border-radius:9px;background:rgba(0,0,0,.35);overflow:hidden;margin:5px 0}
+  .meter>i{display:block;height:100%;width:0;background:linear-gradient(90deg,#8fd36f,#d5ef8b);
+    transition:width .35s}
+  .itemline{font-size:10.5px;color:rgba(255,255,255,.55);min-height:26px;line-height:1.3}
+  .place{display:flex;gap:5px;margin-top:7px}.place select{font-size:10px}.place button{padding:6px 8px;font-size:11px}
+  .primary{width:100%;margin-top:9px;background:linear-gradient(#d9f09e,#96d270);color:#1d381c}
+  .simresult{display:none;margin-top:8px;padding:8px 10px;border-radius:10px;font-size:11px;line-height:1.45;
+    background:rgba(124,230,154,.12);border:1px solid rgba(124,230,154,.35);color:#dff8d4}
+  .simresult.on{display:block}.simresult.fail{background:rgba(255,90,70,.14);border-color:rgba(255,90,70,.35)}
+  .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+  details.dev>summary{cursor:pointer;font-family:'Jua';font-size:12px;color:rgba(255,255,255,.58)}
+  details.dev[open]>summary{margin-bottom:9px}
+  @media(max-width:900px){#app{display:block;overflow:auto}#side{width:100%;height:auto}#stage{height:70vh}.inventory{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
 <div id="app">
   <aside id="side">
-    <h1>볕 · <b>게임 루프 v0</b></h1>
-    <div class="sub">날씨 → DLI(house) → 생장 1틱(growth). 고사·경제·수확은 없습니다.</div>
+    <h1>볕 · <b>반지하의 첫 여름</b></h1>
+    <div class="sub">어두운 자리도, 밝은 자리도 쓸모가 있습니다.</div>
+
+    <div class="resourcebar">
+      <div class="resource"><span>오늘</span><b id="resDay">Day 0</b></div>
+      <div class="resource"><span>첫 수확일 식비</span><b id="resFood">—</b></div>
+      <div class="resource"><span>아낀 식비</span><b id="resSaved">0원</b></div>
+    </div>
+
+    <div class="box journey">
+      <h3>첫 플레이 · 자리의 차이</h3>
+      <div class="quest" id="quest">가방의 열린 시루를 방 안 어두운 자리에 놓아 보세요.</div>
+      <div class="inventory">
+        <div class="itemcard">
+          <div class="itemhead"><img class="thumb" id="cropThumb" alt="열린 콩나물 시루">
+            <div><b>열린 콩나물 시루</b><small id="cropState">가방에 있음</small></div></div>
+          <div class="meter"><i id="cropMeter"></i></div><div class="itemline" id="cropInfo">4일 뒤 첫 수확</div>
+          <div class="place"><label for="cropSlot" class="sr-only">콩나물 자리</label><select id="cropSlot"></select><button id="placeCrop">두기</button></div>
+        </div>
+        <div class="itemcard">
+          <div class="itemhead"><div class="thumb emoji-thumb">🪴</div>
+            <div><b>몬스테라</b><small id="plantState">아직 만나지 못함</small></div></div>
+          <div class="meter"><i id="plantMeter"></i></div><div class="itemline" id="plantInfo">콩나물 첫 수확 뒤 도착</div>
+        </div>
+      </div>
+      <button id="firstRun" class="primary" disabled>▶ 첫 플레이 자동 시뮬레이션</button>
+      <div id="firstResult" class="simresult" aria-live="polite"></div>
+    </div>
 
     <div class="box" id="ctl">
-      <h3>설정</h3>
+      <h3>방 안에서 하기</h3>
       <label><span>방</span><select id="room"></select></label>
-      <label><span>자리</span><select id="slot"></select></label>
+      <label for="slot"><span>몬스테라 자리</span><select id="slot" disabled></select></label>
       <label><span>식물등</span><select id="lamps"></select></label>
       <label><span>점등시간</span><input id="lit" type="number" min="0" max="24" step="1" value="12"></label>
       <label><span>모드</span><select id="mode"></select></label>
@@ -99,8 +162,8 @@
       </div>
     </div>
 
-    <div class="box" id="scbox">
-      <h3>★ 재미 확인 시나리오 — 반지하</h3>
+    <details class="box dev" id="scbox">
+      <summary>개발 검수 시나리오</summary>
       <label><span>시나리오</span><select id="scen"></select></label>
       <div class="btns">
         <button id="play" disabled>▶ 돌려보기</button>
@@ -112,17 +175,20 @@
           </select></label>
       </div>
       <div id="spark"></div>
-    </div>
+    </details>
 
-    <div class="box"><h3>오늘</h3><div id="hud"></div></div>
-    <div class="box"><h3>검수 리포트</h3><div id="report"><div class="ph">30일을 돌리면 나옵니다</div></div></div>
-    <div class="box"><h3>기록</h3><div id="log"></div></div>
+    <details class="box dev"><summary>개발 HUD·리포트·기록</summary>
+      <h3>오늘</h3><div id="hud"></div>
+      <h3>검수 리포트</h3><div id="report"><div class="ph">30일을 돌리면 나옵니다</div></div>
+      <h3>기록</h3><div id="log"></div>
+    </details>
   </aside>
 
   <main id="stage">
     <!-- growth 창 소유. 자체 UI(슬라이더·[다음 날])를 그대로 둔다 —
          코어를 안 거치고 직접 넣었을 때와 대조할 수 있어야 한다. -->
     <iframe id="growth" src="./plant_grow.html"></iframe>
+    <div id="stageEmpty"><b>아직 몬스테라가 없습니다<i>콩나물을 수확하면 새로운 화분이 찾아옵니다.</i></b></div>
     <!-- ★ v0의 완료 조건이 걸린 자리 — "등을 켰더니 갈라지기 시작했어요"가 여기 뜬다 -->
     <div id="event"></div>
   </main>
@@ -130,6 +196,12 @@
 
 <script type="module">
 import { newState, SIM_MODES, pot0, pushLog, givePlant, hasPlant, ARRIVAL } from './src/game/state.js';
+import {
+  firstPlayRulesFromBalance,
+  openSiruContractFromManifest,
+  moveMonstera,
+  placeBeansprout
+} from './src/game/first_play.js';
 import { createLightEngine } from './src/game/light_adapter.js';
 import { createGrowthAdapter } from './src/game/growth_adapter.js';
 import { nextDay, runDays, avg, rollingAvg } from './src/game/loop.js';
@@ -159,8 +231,15 @@ const io = {
   growth: createGrowthAdapter($('growth'))
 };
 
-let S = newState({ room: 'banjiha' });
+const balanceResponse = await fetch('./data/balance/characters.json');
+if (!balanceResponse.ok) throw new Error(`[첫 플레이] characters.json HTTP ${balanceResponse.status}`);
+const FIRST_RULES = firstPlayRulesFromBalance(await balanceResponse.json());
+const manifestResponse = await fetch('./assets/manifest.json');
+if (!manifestResponse.ok) throw new Error(`[첫 플레이] assets/manifest.json HTTP ${manifestResponse.status}`);
+const OPEN_SIRU = openSiruContractFromManifest(await manifestResponse.json());
+let S = newState({ room: 'banjiha', mode: 'novice', firstPlay: true, firstPlayRules: FIRST_RULES });
 let lastTurn = null;
+$('cropThumb').src = OPEN_SIRU.thumbnail;
 
 /* ---- 셀렉트 채우기 ---- */
 $('room').innerHTML = io.light.rooms()
@@ -184,16 +263,41 @@ function fillLamps() {
    ★ 식물이 아직 도착 전이면 목록만 채우고 화분은 건드리지 않는다. */
 function fillSlots(pick) {
   const preview = io.light.daily(S.day + 1, S).report;
-  const list = [...preview.slots].sort((a, b) => b.dli - a.dli);
+  /* 기본 첫 플레이는 정답순·원시 DLI를 숨긴다. 알파벳 순은 밝기와 무관하고,
+     개발 시나리오가 필요로 하는 DLI는 preview 객체에 그대로 남아 있다. */
+  const list = [...preview.slots].sort((a, b) => a.slotId.localeCompare(b.slotId));
   $('slot').innerHTML = list.map(s => {
     const [uid, tier] = (s.slotId || '').split(':');
     const name = uid.split('-').slice(1, -1).join('-') || uid;
-    return `<option value="${s.slotId}">${name} ${tier}단 — DLI ${s.dli.toFixed(2)}</option>`;
+    return `<option value="${s.slotId}">${name} ${tier}단</option>`;
   }).join('');
   const p = pot0(S);
   if (p && (pick || !list.some(s => s.slotId === p.slotId)))
     p.slotId = list[0] ? list[0].slotId : null;
   $('slot').value = (p && p.slotId) || (list[0] ? list[0].slotId : '');
+  $('slot').disabled = !p;
+}
+
+/* 열린 시루는 방 슬롯 DLI를 그대로 받는다. 실제 지름이 올라가는 자리만 보여 준다.
+   기본 UI는 DLI·정답순을 숨긴다 — 무엇이 어두운지는 방을 보고 고르는 학습 대상이다. */
+function cropCandidates() {
+  const preview = io.light.daily(S.day + 1, S).report;
+  const roomSlot = new Map((io.light.room.slots || []).map(s => [s.slotId, s]));
+  return [...preview.slots].filter(s => {
+      const physical = roomSlot.get(s.slotId);
+      return physical && (physical.maxPotD == null || physical.maxPotD >= OPEN_SIRU.diameterM);
+    });
+}
+
+function fillCropSlots() {
+  const list = cropCandidates().sort((a, b) => a.slotId.localeCompare(b.slotId));
+  $('cropSlot').innerHTML = list.map(s =>
+    `<option value="${s.slotId}">${s.slotId}</option>`).join('');
+  if (S.firstPlay.beansprout.slotId) $('cropSlot').value = S.firstPlay.beansprout.slotId;
+  /* Harvest 전에는 언제든 옮길 수 있다. 지난 날짜의 DLI 이력은 그대로 유지한다. */
+  const locked = S.firstPlay.beansprout.harvested;
+  $('cropSlot').disabled = locked;
+  $('placeCrop').disabled = locked || !list.length;
 }
 
 /* ★ 개체 도착 = 테스트용 초기화 경계 (Day 4 선물 이벤트는 이번 범위 밖).
@@ -213,20 +317,77 @@ function buildRoom(id) {
   if (pot0(S)) pot0(S).slotId = null;
   fillLamps();
   fillSlots(true);          // 새 방에서는 가장 밝은 자리에 놓고 시작한다
+  if (S.firstPlay && S.firstPlay.enabled) fillCropSlots();
   draw();
+}
+
+const PHASE_KO = {
+  axis_rising: '새 축이 올라오는 중', spear_ready: '말린 새순을 준비하는 중',
+  spear_furled: '말린 새순 등장', spear_opening: '새순이 펴지는 중',
+  leaf_young: '어린잎', leaf_mid: '중간잎', leaf_mature: '성숙잎'
+};
+
+function drawJourney() {
+  const fp = S.firstPlay;
+  if (!fp || !fp.enabled) return;
+  const crop = fp.beansprout, food = fp.food, plant = fp.monstera;
+  $('resDay').textContent = `Day ${S.day}`;
+  $('resFood').textContent = `${food.cashFoodWon.toLocaleString()}원`;
+  $('resSaved').textContent = `${food.totalFoodSavedWon.toLocaleString()}원`;
+  $('cropMeter').style.width = `${Math.min(100, crop.ageDays / crop.harvestDays * 100)}%`;
+  $('cropState').textContent = crop.harvested ? `${crop.meals}끼 수확 완료`
+    : crop.slotId ? `${crop.ageDays}/${crop.harvestDays}일 자람` : '가방에 있음';
+  $('cropInfo').textContent = crop.harvested
+    ? `${crop.meals}끼 수확 · 수확일 ${Math.min(crop.meals, fp.rules.dailyCropMealCap)}끼 사용 · 남은 ${food.pantryMeals}끼`
+    : crop.slotId ? `자리 ${crop.slotId}` : '4일 뒤 첫 수확';
+
+  const gp = plant.growthPhase;
+  $('plantMeter').style.width = `${gp ? Math.round(gp.progress01 * 100) : 0}%`;
+  $('plantState').textContent = !plant.arrived ? '아직 만나지 못함'
+    : fp.completed ? '첫 새순 확인!' : (PHASE_KO[gp && gp.phaseId] || '도착함');
+  $('plantInfo').textContent = !plant.arrived ? '콩나물 첫 수확 뒤 도착'
+    : fp.completed ? `말린 새순 단계 시작 · ${gp ? Math.round(gp.progress01 * 100) : 0}%`
+    : `${plant.slotId} · ${gp ? Math.round(gp.progress01 * 100) + '%' : '준비 중'}`;
+
+  const quest = {
+    place_beansprout: '가방의 열린 시루를 방 안 어두운 자리에 놓아 보세요.',
+    grow_beansprout: `콩나물이 자라는 중입니다. 수확까지 ${Math.max(0, crop.harvestDays - crop.ageDays)}일.`,
+    monstera_gift: '콩나물을 수확했습니다. 새로운 화분이 옵니다.',
+    move_monstera: '몬스테라는 어두운 자리에서 자라지 않습니다. 높은 창가 자리로 옮겨 보세요.',
+    complete: '말린 새순이 나왔습니다! 어두운 자리와 밝은 자리를 모두 찾았습니다.'
+  };
+  $('quest').textContent = quest[fp.phase] || '첫 플레이를 진행하세요.';
+  $('slot').disabled = !plant.arrived;
+  /* 30일 자동은 개발용 장기 관찰이다. 첫 학습 루프를 끝내기 전에는 우회 진입시키지 않는다. */
+  $('run30').disabled = !fp.completed;
+  $('stage').classList.toggle('no-plant', !plant.arrived);
+  fillCropSlots();
 }
 
 function draw() {
   renderHUD($('hud'), S, lastTurn, io);
   renderLog($('log'), S);
+  drawJourney();
 }
 
 /* ---- 배선 ---- */
 $('room').onchange = e => buildRoom(e.target.value);
-$('slot').onchange = e => { if (pot0(S)) pot0(S).slotId = e.target.value; draw(); };
+$('slot').onchange = e => {
+  if (pot0(S)) {
+    pot0(S).slotId = e.target.value;
+    if (S.firstPlay.enabled) moveMonstera(S.firstPlay, e.target.value);
+    pushLog(S, `🪴 몬스테라를 ${e.target.value}(으)로 옮겼습니다`);
+  }
+  draw();
+};
 $('lamps').onchange = e => { S.lamps.count = +e.target.value; io.light.clearCache(); fillSlots(); draw(); };
 $('lit').onchange = e => { S.lamps.litHours = Math.max(0, Math.min(24, +e.target.value || 0)); io.light.clearCache(); draw(); };
 $('mode').onchange = e => { S.sim.mode = e.target.value; io.light.clearCache(); draw(); };
+$('placeCrop').onclick = guard(() => {
+  placeBeansprout(S.firstPlay, $('cropSlot').value);
+  pushLog(S, `🥣 열린 시루를 ${$('cropSlot').value}(으)로 옮겼습니다`);
+  draw();
+});
 
 /* loop.js 는 UI를 모른다 — S와 turn을 받아 화면을 그리는 건 여기 몫이다(헤드리스 시뮬 대비) */
 
@@ -239,18 +400,40 @@ function guard(fn) {
       GATED.forEach(id => { $(id).disabled = true; });
       pushLog(S, '⛔ ' + e.message);
       renderLog($('log'), S);
-      /* ★ "양쪽 그대로"라고 말하지 않는다 — 코어만 되감을 수 있고 growth 내부는 못 되돌린다.
-         되감았는지 여부를 loop 가 e.coreRolledBack 에 실어 준다. */
+      const stateText = {
+        not_started: '계약 확인에서 멈춰 오늘은 시작되지 않았습니다',
+        core_rolled_back: '코어 날짜를 되감았습니다',
+        growth_input_recorded: '날짜는 되감았지만 growth에 오늘 빛 입력이 남았을 수 있습니다',
+        growth_advanced: 'growth는 하루 진행됐고 이 턴 결과만 받지 못했습니다',
+        unknown: 'growth 진행 여부를 확인할 수 없어 상태를 잠갔습니다'
+      }[e.turnState] || '진행 상태를 확인할 수 없어 멈췄습니다';
       side.insertAdjacentHTML('afterbegin',
-        `<div class="err">⛔ 진행을 멈췄습니다 — ${e.coreRolledBack
-          ? '코어 날짜를 되감았습니다(growth 도 진행 전이었습니다)'
-          : '⚠ growth 는 이미 하루 진행됐습니다. 날짜는 맞췄지만 이 턴 결과는 못 받았습니다'}<br>${e.message}</div>`);
+        `<div class="err">⛔ 진행을 멈췄습니다 — ${stateText}<br>${e.message}</div>`);
       console.error(e);
     }
   };
 }
 
-$('next').onclick = guard(() => { arrive(); lastTurn = nextDay(S, io).turn; draw(); });
+function showFirstPlayEvents(turn) {
+  const ev = turn && turn.firstPlayEvent;
+  if (ev && ev.harvested) {
+    banner(`🥣 콩나물 ${ev.meals}끼 수확!`,
+      `오늘 식비 ${ev.cashFoodWon.toLocaleString()}원 · ${ev.foodSavedWon.toLocaleString()}원 절감`);
+  }
+  if (turn && turn.plantArrived) {
+    fillSlots(false);
+    $('slot').value = pot0(S).slotId;
+    banner('🪴 몬스테라가 도착했습니다', '“콩나물을 잘 키웠구나. 이건 좀 더 어려울 거야.”');
+  }
+  if (S.firstPlay.completed) banner('🌱 말린 새순이 나왔어요!', '자리에 따라 필요한 빛이 다릅니다.');
+}
+
+$('next').onclick = guard(() => {
+  if (!S.firstPlay.beansprout.slotId) throw new Error('가방의 열린 시루를 먼저 방 안에 놓아 주세요');
+  lastTurn = nextDay(S, io).turn;
+  showFirstPlayEvents(lastTurn);
+  draw();
+});
 
 $('run30').onclick = guard(() => {
   arrive();
@@ -276,12 +459,15 @@ $('prof').onclick = () => {
 
 $('reset').onclick = () => {
   const keep = { room: S.home.room, mode: S.sim.mode, lamps: { ...S.lamps } };
-  S = newState({ room: keep.room, mode: keep.mode });   // 화분도 없는 상태로 되돌아간다
+  S = newState({ room: keep.room, mode: 'novice', firstPlay: true, firstPlayRules: FIRST_RULES });
   S.lamps = keep.lamps;
   lastTurn = null;
   io.growth.reset();
   $('report').innerHTML = '<div class="ph">30일을 돌리면 나옵니다</div>';
   $('spark').innerHTML = '';
+  $('firstResult').className = 'simresult';
+  $('firstResult').textContent = '';
+  delete $('firstResult').dataset.status;
   buildRoom(keep.room);
 };
 
@@ -291,6 +477,7 @@ $('reset').onclick = () => {
      판정은 growth의 canFenestrate()(7일평균 기준)를 그대로 쓴다 — 하루 값으로 띄우면 거짓말이 된다.
 ============================================================ */
 const SCENARIOS = [
+  { id:'first', kind:'firstPlay', ko:'★ 첫 플레이 · 콩나물→말린 새순 (7일)' },
   { id:'a', ko:'① 등 0개 · 좋은 자리 (90일)', days:90, lamps:0, pick:'brightest',
     hint:'반지하 자연광만. 아무 일도 일어나지 않는 것이 정답이다' },
   { id:'b', ko:'② 등 1개 · 나쁜 자리 (90일)', days:90, lamps:1, pick:'darkest',
@@ -330,7 +517,75 @@ function fenOn() {
   return a7 != null && th && th.fenestrate != null && a7 >= th.fenestrate;
 }
 
+async function playFirstPlayScenario() {
+  stopFlag = false;
+  document.body.classList.add('scen-run');
+  $('play').disabled = true; $('firstRun').disabled = true; $('stop').disabled = false;
+
+  S = newState({ room: 'banjiha', mode: 'novice', firstPlay: true, firstPlayRules: FIRST_RULES });
+  S.lamps.count = 0;
+  lastTurn = null;
+  io.growth.reset();
+  $('room').value = 'banjiha'; $('mode').value = 'novice'; $('lamps').value = '0';
+  buildRoom('banjiha');
+
+  /* 시루가 들어가는 슬롯 중 가장 어두운 자리를 자동 시나리오의 플레이어 선택으로 삼는다. */
+  const darkest = cropCandidates().sort((a, b) => a.dli - b.dli)[0];
+  const darkSlot = darkest && darkest.slotId;
+  if (!darkSlot) throw new Error('첫 플레이 자동 시뮬: 열린 시루가 들어갈 자리가 없습니다');
+  placeBeansprout(S.firstPlay, darkSlot);
+  pushLog(S, `🥣 자동 시뮬: 열린 시루를 ${darkSlot}(으)로 옮겼습니다`);
+
+  const speed = +$('speed').value;
+  const turns = [];
+  for (let day = 1; day <= 4; day++) {
+    lastTurn = nextDay(S, io).turn; turns.push(lastTurn); showFirstPlayEvents(lastTurn);
+    draw(); if (speed) await sleep(speed);
+  }
+
+  const sill = io.light.room.slots.find(s => s.slotId === 'banjiha-sill:0');
+  if (!pot0(S) || !sill) throw new Error('첫 플레이 자동 시뮬: 몬스테라 또는 창턱 슬롯이 없습니다');
+  pot0(S).slotId = sill.slotId;
+  moveMonstera(S.firstPlay, sill.slotId);
+  fillSlots(false); $('slot').value = sill.slotId;
+  pushLog(S, `🪴 자동 시뮬: 몬스테라를 ${sill.slotId}(으)로 옮겼습니다`);
+
+  for (let day = 5; day <= 7 && !S.firstPlay.completed; day++) {
+    lastTurn = nextDay(S, io).turn; turns.push(lastTurn); showFirstPlayEvents(lastTurn);
+    draw(); if (speed) await sleep(speed);
+  }
+  if (!S.firstPlay.completed)
+    throw new Error(`첫 플레이 자동 시뮬: Day ${S.day}까지 말린 새순이 나오지 않았습니다`);
+
+  window.__firstPlayResult = {
+    ok: true,
+    day: S.day,
+    cropSlot: S.firstPlay.beansprout.slotId,
+    cropAvgDli: S.firstPlay.beansprout.avgDli,
+    cropMeals: S.firstPlay.beansprout.meals,
+    foodSavedWon: S.firstPlay.food.totalFoodSavedWon,
+    monsteraSlot: pot0(S).slotId,
+    growthPhase: S.firstPlay.monstera.growthPhase
+  };
+  const resultEl = $('firstResult');
+  resultEl.className = 'simresult on';
+  resultEl.dataset.status = 'pass';
+  resultEl.dataset.day = String(S.day);
+  resultEl.dataset.cropMeals = String(S.firstPlay.beansprout.meals);
+  resultEl.dataset.foodSavedWon = String(S.firstPlay.food.totalFoodSavedWon);
+  resultEl.dataset.monsteraPhase = S.firstPlay.monstera.growthPhase.phaseId;
+  resultEl.textContent = `✅ Day ${S.day} 완료 · 콩나물 ${S.firstPlay.beansprout.meals}끼 · ` +
+    `식비 ${S.firstPlay.food.totalFoodSavedWon.toLocaleString()}원 절감 · 말린 새순 등장`;
+  renderReport($('report'), S, io, turns);
+  pushLog(S, '✅ 첫 플레이 자동 시뮬레이션 완료 — 콩나물 수확부터 말린 새순까지 연결됨');
+  draw();
+  $('play').disabled = false; $('firstRun').disabled = false; $('stop').disabled = true;
+  document.body.classList.remove('scen-run');
+  return window.__firstPlayResult;
+}
+
 async function playScenario(sc) {
+  if (sc.kind === 'firstPlay') return playFirstPlayScenario();
   stopFlag = false;
   document.body.classList.add('scen-run');
   $('play').disabled = true; $('stop').disabled = false;
@@ -419,24 +674,36 @@ $('play').onclick = () => playScenario(SCENARIOS.find(s => s.id === $('scen').va
     GATED.forEach(id => { $(id).disabled = true; });
     pushLog(S, '⛔ ' + e.message); renderLog($('log'), S);
     side.insertAdjacentHTML('afterbegin',
-      `<div class="err">⛔ 시나리오를 멈췄습니다 — ${e.coreRolledBack
-        ? '코어 날짜를 되감았습니다' : '⚠ growth 는 이미 진행됐습니다(이 턴 결과 없음)'}<br>${e.message}</div>`);
+      `<div class="err">⛔ 시나리오를 멈췄습니다 — 상태 ${e.turnState || 'unknown'}<br>${e.message}</div>`);
     console.error(e);
   });
 $('stop').onclick = () => { stopFlag = true; };
+$('firstRun').onclick = () => playFirstPlayScenario().catch(e => {
+  window.__firstPlayResult = { ok: false, error: e.message };
+  $('play').disabled = true; $('firstRun').disabled = true; $('stop').disabled = true;
+  pushLog(S, '⛔ ' + e.message); renderLog($('log'), S);
+  $('firstResult').className = 'simresult on fail';
+  $('firstResult').dataset.status = 'fail';
+  $('firstResult').textContent = `⛔ ${e.message}`;
+  side.insertAdjacentHTML('afterbegin', `<div class="err">⛔ 첫 플레이 시뮬레이션 실패<br>${e.message}</div>`);
+  console.error(e);
+});
 
 /* ---- 시작 ---- */
 /* ★ 생장 계약이 준비되기 전에는 진행 버튼을 열지 않는다 (2026-08-02).
-   여섯 함수(setDailyLight·advanceTo·calendarDay·growthDays·growthBlocked·setGrowth)가
+   일곱 함수(setDailyLight·advanceTo·calendarDay·growthDays·growthBlocked·growthPhase·setGrowth)가
    다 있어야 ready() 가 통과한다. 실패하면 버튼은 계속 잠긴 채로 둔다 —
    반쯤 도는 상태로 굴리면 '왜 안 자라지'가 계약 문제인지 빛 문제인지 못 가른다. */
-const GATED = ['next', 'run30', 'play'];
+const GATED = ['next', 'run30', 'play', 'firstRun'];
 try {
   $('room').value = S.home.room;
+  $('mode').value = S.sim.mode;
   buildRoom(S.home.room);
   await io.growth.ready();
   GATED.forEach(id => { $(id).disabled = false; });
-  pushLog(S, '생장 계약 준비 완료 — [다음 날]을 눌러 보세요');
+  /* 첫 플레이는 고정 지역·novice·식물등 없음. 개발 검수 시나리오에서는 재설정할 수 있다. */
+  $('room').disabled = true; $('mode').disabled = true; $('lamps').disabled = true; $('lit').disabled = true;
+  pushLog(S, '첫 플레이 준비 완료 — 열린 시루를 놓고 [다음 날]을 눌러 보세요');
   draw();
 } catch (err) {
   GATED.forEach(id => { $(id).disabled = true; });       // 실패하면 계속 잠근다
