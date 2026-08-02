@@ -11,7 +11,13 @@
 
    ※ 조도 계산과 무관하다. 캐릭터는 차폐체로 넣지 않는다
      (움직일 때마다 격자를 다시 계산해야 해서 비싸고, 게임상 의미도 작다).
+
+   ★ 2026-08-03 · 길 찾기를 render3d/floor_nav.js 로 옮겼다 (방 뷰 3차).
+     game/room_view.js 도 캐릭터를 걷게 해야 하는데, 여기 있던 격자 BFS 를
+     그쪽에 복사하면 두 벌이 된다 — 방에서는 지나가는 자리가 방 도구에서는
+     막히는 식으로 어긋난다. **알고리즘은 한 글자도 안 바뀌었고** 자리만 옮겼다.
 ============================================================ */
+import { createFloorNav } from './floor_nav.js';
 
 /* 메시는 경량본(lq)을 쓴다 — 원본 14.3MB / 경량 2.26MB. 게임뷰엔 경량본으로 충분하다. */
 const BASE  = './assets/characters/3d';
@@ -149,136 +155,14 @@ export async function createCharacter(scene, charId = 'jachwi_f', opt = {}) {
 
   /* ---- 세계 (벽·가구·문) ----
      buildHouse가 준 colliders/doorways를 그대로 받는다.
-     colliders는 개구부를 이미 뺀 '조각'이라 문 자리는 저절로 비어 있다. */
-  let colliders = [], doorways = [];
-  let grid = null;              // { n, m, cell, x0, z0, free:Uint8Array }
+     colliders는 개구부를 이미 뺀 '조각'이라 문 자리는 저절로 비어 있다.
+     ★ 격자·BFS·pushOut 은 floor_nav.js 로 옮겼다 — game/room_view.js 와 같은 판정을 쓴다. */
+  let doorways = [];
+  const nav = createFloorNav({ radius: RADIUS });
   let path = [], pathI = 0;     // 웨이포인트
 
-  const CELL = 0.25;            // 가구 배치 그리드와 같은 간격
-
-  /* 방 전체를 0.25m 칸으로 나눠 '설 수 있는 칸'을 표시한다.
-     칸 중심이 어떤 충돌체 안(반지름 포함)이면 막힌 칸. */
-  function buildGrid(size) {
-    if (!size) return null;
-    const x0 = -size.w / 2, z0 = -size.d / 2;
-    const n = Math.ceil(size.w / CELL), m = Math.ceil(size.d / CELL);
-    const free = new Uint8Array(n * m);
-    for (let i = 0; i < n; i++) for (let j = 0; j < m; j++) {
-      const x = x0 + (i + 0.5) * CELL, z = z0 + (j + 0.5) * CELL;
-      free[j * n + i] = blockedAt(x, z) ? 0 : 1;
-    }
-    return { n, m, cell: CELL, x0, z0, free };
-  }
-  function blockedAt(x, z) {
-    for (const c of colliders) {
-      const rot = c.rot || 0, co = Math.cos(-rot), si = Math.sin(-rot);
-      const lx = (x - c.x) * co - (z - c.z) * si;
-      const lz = (x - c.x) * si + (z - c.z) * co;
-      if (Math.abs(lx) < c.w / 2 + RADIUS && Math.abs(lz) < c.d / 2 + RADIUS) return true;
-    }
-    return false;
-  }
-  const cellOf = (x, z) => grid
-    ? [Math.max(0, Math.min(grid.n - 1, Math.floor((x - grid.x0) / CELL))),
-       Math.max(0, Math.min(grid.m - 1, Math.floor((z - grid.z0) / CELL)))]
-    : [0, 0];
-  const cellPos = (i, j) => ({ x: grid.x0 + (i + 0.5) * CELL, z: grid.z0 + (j + 0.5) * CELL });
-
-  /* 막힌 칸이면 가장 가까운 빈 칸으로 옮긴다(문 앞 가구 같은 경우) */
-  function nearestFree(i, j) {
-    if (grid.free[j * grid.n + i]) return [i, j];
-    for (let r = 1; r < 24; r++)
-      for (let di = -r; di <= r; di++) for (let dj = -r; dj <= r; dj++) {
-        if (Math.max(Math.abs(di), Math.abs(dj)) !== r) continue;
-        const a = i + di, b = j + dj;
-        if (a < 0 || b < 0 || a >= grid.n || b >= grid.m) continue;
-        if (grid.free[b * grid.n + a]) return [a, b];
-      }
-    return [i, j];
-  }
-
-  /* BFS — 대각선 포함(모서리 끼임 방지로 양옆이 뚫린 경우만).
-
-     ★ 목표 칸이 '빈칸이지만 갇힌 주머니'일 수 있다(옷장과 서랍장 사이 2칸 같은).
-       그래서 목표를 먼저 정하지 않고, 출발점에서 갈 수 있는 곳을 전부 훑은 뒤
-       그중 목표에 가장 가까운 칸으로 간다. 못 가는 곳을 찍어도 최대한 다가간다. */
-  function findPath(sx, sz, tx, tz) {
-    if (!grid) return [];
-    const [si, sj] = nearestFree(...cellOf(sx, sz));
-    const [ti, tj] = cellOf(tx, tz);
-    const N = grid.n, M = grid.m, F = grid.free;
-    const prev = new Int32Array(N * M).fill(-1);
-    const seen = new Uint8Array(N * M);
-    const start = sj * N + si;
-    const q = [start]; seen[start] = 1;
-    const D = [[1,0],[-1,0],[0,1],[0,-1],[1,1],[1,-1],[-1,1],[-1,-1]];
-    let head = 0;
-    let best = start, bestD = (si - ti) ** 2 + (sj - tj) ** 2;
-    while (head < q.length) {
-      const cur = q[head++];
-      const ci = cur % N, cj = (cur - ci) / N;
-      const d2 = (ci - ti) ** 2 + (cj - tj) ** 2;
-      if (d2 < bestD) { bestD = d2; best = cur; }
-      if (d2 === 0) break;
-      for (const [di, dj] of D) {
-        const a = ci + di, b = cj + dj;
-        if (a < 0 || b < 0 || a >= N || b >= M) continue;
-        const k = b * N + a;
-        if (seen[k] || !F[k]) continue;
-        if (di && dj && (!F[cj * N + a] || !F[b * N + ci])) continue;   // 모서리 끼움 방지
-        seen[k] = 1; prev[k] = cur; q.push(k);
-      }
-    }
-    if (best === start) return [];
-    const out = [];
-    for (let k = best; k !== -1; k = prev[k]) {
-      const i = k % N, j = (k - i) / N;
-      out.push(cellPos(i, j));
-      if (k === start) break;
-    }
-    out.reverse();
-    return simplify(out);
-  }
-  /* 직선으로 갈 수 있는 구간은 웨이포인트를 지운다(지그재그 방지) */
-  function simplify(pts) {
-    if (pts.length < 3) return pts;
-    const out = [pts[0]];
-    let i = 0;
-    while (i < pts.length - 1) {
-      let j = pts.length - 1;
-      for (; j > i + 1; j--) if (clearLine(pts[i], pts[j])) break;
-      out.push(pts[j]); i = j;
-    }
-    return out;
-  }
-  function clearLine(a, b) {
-    const d = Math.hypot(b.x - a.x, b.z - a.z), steps = Math.ceil(d / (CELL * 0.5));
-    for (let k = 1; k < steps; k++) {
-      const t = k / steps;
-      if (blockedAt(a.x + (b.x - a.x) * t, a.z + (b.z - a.z) * t)) return false;
-    }
-    return true;
-  }
-
-  /* 축정렬 상자에 회전이 있는 경우까지 — 점을 상자 로컬로 옮겨 밀어낸다.
-     겹치면 가장 얕은 축으로 빼내고(=벽을 따라 미끄러짐), 안 겹치면 그대로. */
-  function pushOut(px, pz) {
-    for (const c of colliders) {
-      const cx = c.x, cz = c.z, rot = c.rot || 0;
-      const co = Math.cos(-rot), si = Math.sin(-rot);
-      let lx = (px - cx) * co - (pz - cz) * si;
-      let lz = (px - cx) * si + (pz - cz) * co;
-      const hw = c.w / 2 + RADIUS, hd = c.d / 2 + RADIUS;
-      if (Math.abs(lx) >= hw || Math.abs(lz) >= hd) continue;   // 안 겹침
-      const ox = hw - Math.abs(lx), oz = hd - Math.abs(lz);
-      if (ox < oz) lx = Math.sign(lx || 1) * hw;                 // x로 빼는 게 얕다
-      else         lz = Math.sign(lz || 1) * hd;
-      const c2 = Math.cos(rot), s2 = Math.sin(rot);
-      px = cx + lx * c2 - lz * s2;
-      pz = cz + lx * s2 + lz * c2;
-    }
-    return { x: px, z: pz };
-  }
+  const findPath = (sx, sz, tx, tz) => nav.path(sx, sz, tx, tz);
+  const pushOut = (px, pz) => nav.pushOut(px, pz);
 
   /* 문 열림 — 가까이 오면 t가 1로, 멀어지면 0으로. 실제 여닫이는 t로 그린다. */
   function updateDoors(dt) {
@@ -347,10 +231,9 @@ export async function createCharacter(scene, charId = 'jachwi_f', opt = {}) {
 
     /* 방이 바뀌면 다시 물려준다 */
     setWorld(w = {}) {
-      colliders = w.colliders || [];
-      doorways  = w.doorways  || [];
+      doorways = w.doorways || [];
       for (const d of doorways) d.t = 0;
-      grid = buildGrid(w.size);
+      nav.setWorld({ colliders: w.colliders || [], size: w.size });
       path = []; pathI = 0;
     },
 
@@ -391,10 +274,7 @@ export async function createCharacter(scene, charId = 'jachwi_f', opt = {}) {
 
     /* 디버그 — 경로와 격자 상태를 그대로 본다 */
     debug(tx, tz) {
-      const pth = findPath(root.position.x, root.position.z, tx, tz);
-      let freeN = 0;
-      if (grid) for (const v of grid.free) freeN += v;
-      return { path: pth, grid: grid && { n: grid.n, m: grid.m, free: freeN, total: grid.n * grid.m } };
+      return { path: findPath(root.position.x, root.position.z, tx, tz), grid: nav.debug() };
     },
 
     update(dt) {

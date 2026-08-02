@@ -30,6 +30,9 @@
   #dock .b{pointer-events:auto}
   #tip{position:absolute;left:0;right:0;bottom:96px;text-align:center;z-index:3;font-size:12px;
        color:#ffd479;text-shadow:0 2px 8px #000;pointer-events:none}
+  #boot{position:absolute;left:0;right:0;top:50%;text-align:center;z-index:2;font-size:12px;
+        color:#9f96c0;pointer-events:none;transition:opacity .4s}
+  #boot.done{opacity:0}
 
   .b{background:rgba(255,255,255,.92);color:#2c2836;border:0;border-radius:10px;padding:6px 10px;
      font:600 12px/1 inherit;cursor:pointer;box-shadow:0 2px 0 rgba(0,0,0,.35)}
@@ -62,6 +65,9 @@
   <div id="hud"><b>볕</b><span style="font-size:11px;color:#bdb6d6" id="hudRoom">—</span>
     <span class="pill" id="hudTime">한낮</span></div>
   <div id="tip"></div>
+  <!-- ★ 무엇을 기다리는 중인지 — onProgress 를 화면에 그대로 흘린다.
+       40초를 검은 화면으로 두면 고장으로 읽힌다. game.html 에도 같은 것을 권한다. -->
+  <div id="boot">방을 준비하는 중…</div>
   <div id="dock">
     <button class="b" id="dPlace">화분 놓기</button>
     <button class="b" id="dMove">옮기기</button>
@@ -162,6 +168,26 @@
   </div>
 
   <div class="card">
+    <h3>★ 고르기·걷기 · selectCharacter / walkTo / previewWalk</h3>
+    <div class="row">
+      <button class="b" id="selJ">자취생 고르기</button>
+      <button class="b" id="selM">몬이 고르기</button>
+      <button class="b" id="selOff">고르기 해제</button>
+      <span class="hint" id="selInfo">아무도 안 골랐습니다</span>
+    </div>
+    <div class="row" style="margin-top:6px">
+      <button class="b" id="walkRnd">아무 데나 보내기</button>
+      <button class="b" id="walkStop">세우기</button>
+      <button class="b" id="nudge">가린 사람 비켜세우기</button>
+    </div>
+    <div class="hint" style="margin-top:6px">
+      폰 화면에서 <b>캐릭터를 탭</b> → 주황 링. 그 뒤 <b>화면 아무 데나 끌면</b> 갈 자리가
+      반투명으로 뜨고 손을 떼면 걸어간다. <b>고르기 전에 끌면 카메라가 돈다.</b>
+      바닥을 탭해도 간다.
+    </div>
+  </div>
+
+  <div class="card">
     <h3>자리 표시 · highlightSlots / focusSlot</h3>
     <div class="row">
       <button class="b" id="hlEmpty">빈 자리 전부</button>
@@ -244,15 +270,23 @@ async function boot(roomId) {
   const t0 = performance.now();
   view = await createRoomView($('roomCanvas'), {
     roomId,
+    /* ?defer=0 이면 예전처럼 식물 에셋을 방과 같이 받는다 — 부팅 측정 비교용이다 */
+    deferPlantAssets: new URLSearchParams(location.search).get('defer') !== '0',
     onSlotTap: id => { window.__lastTap = { type: 'slot', id }; $('slot').value = id; $('from').value = id; tip('빈 자리 ' + id); log('onSlotTap ' + id, 'k'); },
     onPlantTap: id => { window.__lastTap = { type: 'plant', id }; $('slot').value = id; $('from').value = id; tip('화분 ' + id); log('onPlantTap ' + id, 'k'); view.focusSlot(id); },
     onSlotHover: (id, type) => { $('tip').textContent = id ? `${id}${type === 'plant' ? ' · 화분' : ''}` : ''; },
+    /* ★ 캐릭터를 눌렀다. 링은 모듈이 알아서 켠다 — 여기서는 누가 골라졌는지만 적는다 */
+    onCharacterTap: id => { window.__lastCharTap = id; log('onCharacterTap ' + id, 'k'); tip('캐릭터 ' + id); selInfo(); },
+    /* ★ 무엇을 기다리는 중인가 — 검은 화면 대신 이걸 띄운다 */
+    onProgress: p => { $('boot').textContent = `${p.ko} · ${p.ms}ms`; log(`진행 ${p.phase} — ${p.ko} (${p.ms}ms)`); },
     onReady: () => log(`onReady — ${Math.round(performance.now() - t0)}ms`, 'k'),
     onError: e => log('onError: ' + e.message, 'e')
   });
   window.view = view;                       // 콘솔에서 만져 보라고
+  $('boot').classList.add('done');
   $('sun').oninput();
   refreshSlots();
+  selInfo();
 }
 
 /* ── 조작 ── */
@@ -353,7 +387,32 @@ const putChar = async (...ids) => {
 $('cJachwi').onclick = () => putChar('jachwi');
 $('cMoni').onclick = () => putChar('moni');
 $('cBoth').onclick = () => putChar('jachwi', 'moni');
-$('cOff').onclick = async () => { await view.setCharacter(null); charInfo(); };
+$('cOff').onclick = async () => { await view.setCharacter(null); charInfo(); selInfo(); };
+
+/* ── ★ 고르기·걷기 ── */
+function selInfo() {
+  const id = view.selectedCharacter();
+  const c = view.characters().find(x => x.id === id);
+  $('selInfo').textContent = id
+    ? `${id} 고름${c && c.walking ? ' · 걷는 중' : ''}${c && !c.walkable ? ' (몬이는 못 보냅니다)' : ''}`
+    : '아무도 안 골랐습니다';
+}
+setInterval(() => { if (view) selInfo(); }, 400);
+$('selJ').onclick = () => { view.selectCharacter('jachwi'); selInfo(); };
+$('selM').onclick = () => { view.selectCharacter('moni'); selInfo(); };
+$('selOff').onclick = () => { view.selectCharacter(null); selInfo(); };
+$('walkStop').onclick = () => view.stopWalk(view.selectedCharacter());
+$('nudge').onclick = () => { view.nudgeCharacters(); log('nudgeCharacters()', 'k'); };
+/* 화면 아무 데나 한 점을 찍어 보낸다 — walkTo 가 화면좌표를 받는다는 걸 그대로 보인다 */
+$('walkRnd').onclick = () => {
+  const id = view.selectedCharacter() || 'jachwi';
+  const r = $('roomCanvas').getBoundingClientRect();
+  const x = r.left + r.width * (0.25 + Math.random() * 0.5);
+  const y = r.top + r.height * (0.52 + Math.random() * 0.22);
+  const res = view.walkTo(id, x, y);
+  log(`walkTo(${id}, ${Math.round(x)}, ${Math.round(y)}) → ` + JSON.stringify(res), res.ok ? 'k' : 'w');
+  tip(res.ok ? '걸어갑니다' : '못 갑니다 — ' + res.reason);
+};
 $('focus').onclick = () => view.focusSlot($('slot').value);
 $('unfocus').onclick = () => view.focusSlot(null);
 
@@ -404,7 +463,75 @@ const SHOT = Q.get('shot');
    grow   생장 단계가 다른 두 그루
    이 셋은 화면을 통째로 갈아치우거나 캐릭터를 싣느라 오래 걸린다. 위의 shot 들과
    섞지 않고 따로 둔다. */
-const SHOT2 = ['chars', 'same', 'grow', 'preview'].includes(SHOT);
+/* ── 촬영용 시나리오 (2026-08-03 · 방 뷰 3차) ───────────────────────────────
+   charsel   캐릭터를 골랐다 — 발밑 주황 링
+   walkprev  갈 자리 미리보기 — 반투명 기둥 + 링
+   walking   실제로 걷는 중 — 다리가 움직이는 순간
+   셋 다 캐릭터 GLB 를 싣고 애니메이션을 실제로 돌려야 해서 시간이 든다. */
+const SHOT3 = ['charsel', 'walkprev', 'walking'].includes(SHOT);
+if (SHOT3) {
+  const S = view.slots();
+  const seed = +(Q.get('seed') || 92158);
+  $('sun').value = Math.round((+Q.get('t') || 0.42) * 1000); $('sun').oninput();
+  const sill = S.find(s => s.slotId.includes('sill')) || S[0];
+  await view.setPlant(sill.slotId, { kind: 'monstera', growthDays: 260, seed, band: 'good' });
+  const shelf = S.find(s => !s.occupied && s.slotId.includes('etagere'));
+  if (shelf) await view.setPlant(shelf.slotId, { kind: 'monstera', growthDays: 90, seed: seed + 7, band: 'slow' });
+  await view.setCharacter('jachwi');
+  await view.setCharacter('moni');
+  /* idle 을 실제로 돌린다 — 첫 프레임은 바인드 자세(A포즈)라 그대로 찍으면 허수아비다 */
+  const spin = async (n) => { for (let i = 0; i < n; i++) { await new Promise(r => setTimeout(r, 32)); view.redraw(); } };
+  await spin(50);
+
+  view.selectCharacter('jachwi');
+  const r = $('roomCanvas').getBoundingClientRect();
+  /* ★ 기준점은 발밑이다(characterScreenPos). 여기서 끈 만큼이 갈 자리다.
+     아무 데나 찍으면 가구 위라 빨갛게 뜬다 — 그건 그것대로 맞지만, 이 그림에서
+     보이고 싶은 건 "갈 수 있다"는 파란 미리보기라 갈 수 있는 자리를 먼저 찾는다. */
+  const foot = view.characterScreenPos('jachwi') || { x: r.width / 2, y: r.height * 0.6 };
+  const FX = r.left + foot.x, FY = r.top + foot.y;
+  const here = view.characters().find(c => c.id === 'jachwi').pos;
+  let best = null;
+  for (const dy of [40, 70, 100, 130, 20]) for (const dx of [80, 120, 40, 160, 0, -40]) {
+    const t = view.previewWalk('jachwi', FX + dx, FY + dy);
+    if (t && t.ok) {
+      const dist = Math.hypot(t.x - here.x, t.z - here.z);
+      if (!best || dist > best.dist) best = { dx, dy, dist, t };
+    }
+  }
+  view.previewWalk('jachwi', null, null);
+  if (!best) best = { dx: 60, dy: 70, dist: 0 };
+
+  if (SHOT === 'walkprev') {
+    const t = view.previewWalk('jachwi', FX + best.dx, FY + best.dy);
+    await spin(8);
+    $('tip').textContent = t && t.ok ? '여기로 갑니다 — 손을 떼면 걸어간다'
+                                     : '여기에는 못 섭니다 (가구·벽)';
+    log('previewWalk → ' + JSON.stringify(t), 'k');
+  }
+  if (SHOT === 'walking') {
+    const res = view.walkTo('jachwi', FX + best.dx, FY + best.dy);
+    log('walkTo → ' + JSON.stringify(res), 'k');
+    /* ★ 걷는 **도중**을 찍어야 한다. 도착해 버리면 그냥 서 있는 그림이다.
+       전체 거리의 3분의 1쯤에서 멈춰 두고, 촬영 도구는 여기서 바로 찍는다. */
+    const want = best.dist * 0.35;
+    for (let i = 0; i < 90 && view.isWalking('jachwi'); i++) {
+      const p = view.characters().find(c => c.id === 'jachwi').pos;
+      if (Math.hypot(p.x - here.x, p.z - here.z) >= want) break;
+      await new Promise(r2 => setTimeout(r2, 30)); view.redraw();
+    }
+    $('tip').textContent = '걷는 중 — 하루빛·빨리감기는 계속 돈다';
+  }
+  if (SHOT === 'charsel') {
+    $('tip').textContent = `고름: ${view.selectedCharacter()} — 발밑 주황 링`;
+    await spin(6);
+  }
+  charInfo(); selInfo(); refreshSlots();
+  view.redraw();
+  document.title = 'DONE · ' + SHOT;
+}
+
+const SHOT2 = !SHOT3 && ['chars', 'same', 'grow', 'preview'].includes(SHOT);
 if (SHOT2) {
   const S = view.slots();
   const sill = S.find(s => s.slotId.includes('sill')) || S[0];
@@ -493,7 +620,7 @@ if (SHOT2) {
   }
   document.title = 'DONE · ' + SHOT;
 }
-if (SHOT && !SHOT2) {
+if (SHOT && !SHOT2 && !SHOT3) {
   const S = view.slots();
   const pick = (n) => S.filter(s => !s.occupied).slice(0, n).map(s => s.slotId);
   if (SHOT === 'wide') { $('phone').classList.add('wide'); view.resize(); }

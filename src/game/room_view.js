@@ -30,6 +30,9 @@ import { winFromHouse } from '../engine/daylight_lux.js';
    방과 확대가 같은 그루라면 "빛이 나쁘다"는 표시도 같아야 한다. */
 import { createPlantSample, applyBand, BAND_LOOK } from '../render3d/plant_sample.js';
 import { getPlantAssembler } from '../render3d/plant_assemble.js';
+/* 걷는 길은 render3d/character.js 가 쓰던 것과 **같은 한 벌**을 쓴다.
+   복사하면 방과 방 도구에서 통행 판정이 어긋난다(floor_nav.js 머리말). */
+import { createFloorNav } from '../render3d/floor_nav.js';
 
 /* ── 경로는 이 파일 기준으로 푼다 ──
    호스트 페이지가 저장소 뿌리에 있든 tools/ 아래에 있든 같은 곳을 가리켜야 한다.
@@ -48,6 +51,12 @@ const FRAME_BIAS = 0.07;     // 방을 화면 한가운데보다 살짝 위에 �
 const TAP_PX = 12;           // 이만큼 안 움직이면 탭
 const TAP_MS = 600;
 const SLOT_HIT_PX = 30;      // 슬롯은 점이라 화면거리로 잡는다. 손가락 크기
+/* ★ 캐릭터도 같은 방법으로 잡는다 — 방 전경에서 자취녀는 화면에서 40px 남짓이라
+   레이캐스트만 두면 손가락으로는 거의 못 짚는다(폰에서 실제로 못 짚었다).
+   슬롯보다 조금 넉넉하게 둔다. 사람이 슬롯보다 크게 보이기 때문이다. */
+const CHAR_HIT_PX = 36;
+const WALK_SPEED = 1.15;     // m/s. 1.5 는 5×4m 반지하에서 뛰어다니는 것처럼 보인다
+const ARRIVE_EPS = 0.10;     // 이만큼 가까워지면 그 웨이포인트는 지난 것
 const CAM_TWEEN_MS = 560;
 const SNAP_MS = 260;         // 손 뗀 뒤 8방으로 정돈되는 시간
 
@@ -167,16 +176,28 @@ function loadGLB(url) {
      onPlantTap(slotId)  그 자리 화분을 눌렀다
      onSlotHover(slotId|null, type)  ★ PC 전용. 마우스가 자리 위에 올라왔다.
                   폰에서는 안 불린다(hover: hover 인 기기에서만). 이름·밝기 표시는 호스트 몫이다
+     onCharacterTap(id)  캐릭터를 눌렀다. id 는 'jachwi' | 'moni'
+                  ★ 이 콜백을 주든 안 주든 링(고르기)은 이 모듈이 알아서 켠다 —
+                    호스트가 아무것도 안 해도 눌러서 걷게는 된다
+     onProgress({phase, ko, done, total})  ★ 무엇을 기다리는 중인지.
+                  검은 화면 40초는 고장으로 읽힌다. 진행 표시가 제일 값싼 개선이다
      onReady()           첫 프레임까지 다 그렸다
      onError(err)        조립·에셋 로딩이 깨졌다. ★ 조용히 넘기지 않는다
      orbit        돌리기·줌을 켤지. 기본 true
      maxPixelRatio 기본 1.75 (폰에서 2.0 은 픽셀이 두 배 넘게 든다)
+     deferPlantAssets  몬스테라 조립 모듈(plant_grow.html + GLB 27MB)을 **방이 뜬 뒤에**
+                  싣는다. ★ 기본은 false — 예전 그대로다.
+                  재 보니 이것만으로는 0.3초밖에 안 줄었다(tools/test_boot_profile.mjs).
+                  대신 첫 화분이 그만큼 늦게 나오므로 기본으로 켜지 않는다.
+                  ★ 호스트가 확대 iframe(plant_grow.html)을 **늦게 싣도록** 바꾸면
+                    그때는 켜는 게 맞다 — 그 경우 27MB 가 첫 화면의 유일한 짐이 된다
 ============================================================ */
 export async function createRoomView(canvas, opts = {}) {
   const O = {
     roomId: 'banjiha', lightEngine: null,
-    onSlotTap: null, onPlantTap: null, onSlotHover: null, onReady: null, onError: null,
-    orbit: true, maxPixelRatio: 1.75, ...opts
+    onSlotTap: null, onPlantTap: null, onSlotHover: null, onCharacterTap: null,
+    onProgress: null, onReady: null, onError: null,
+    orbit: true, maxPixelRatio: 1.75, deferPlantAssets: false, ...opts
   };
   const fail = (e) => {
     const err = e instanceof Error ? e : new Error(String(e));
@@ -228,6 +249,21 @@ export async function createRoomView(canvas, opts = {}) {
   let plantYaw = new Map();    // slotId → radian
   let chars = new Map();       // 'jachwi' | 'moni' → { id, root, update(dt), dispose() }
   let preview = null;          // { fromId, toId, group } — 옮기기 미리보기(반투명 복제)
+  let selChar = null;          // 지금 고른 캐릭터 id. null 이면 아무도 안 골랐다
+  let walkGhost = null;        // { mesh, ring, ok } — 걸어갈 자리 미리보기
+  /* 바닥 길 찾기 — 방을 지을 때마다 colliders 를 다시 물린다.
+     반지름은 BODY_R(0.38). 3.5등신 치비라 어깨가 넓다. */
+  const nav = createFloorNav({ radius: 0.38 });
+
+  /* ★ 부팅 이정표 — "무엇을 몇 초 기다렸나"를 남긴다.
+     밖에서 재는 것보다 이게 정확하다(네트워크 시간과 조립 시간이 갈린다). */
+  const T0 = performance.now();
+  const timings = {};
+  function progress(phase, ko, done, total) {
+    if (timings[phase] == null) timings[phase] = Math.round(performance.now() - T0);
+    try { O.onProgress && O.onProgress({ phase, ko, done, total, ms: Math.round(performance.now() - T0) }); }
+    catch (e) { /* 진행 표시가 깨져서 부팅이 멈추면 본말전도다 */ }
+  }
 
   const cam = { az: 0, el: BASE_EL_PORTRAIT, dist: 8, target: new THREE.Vector3(0, 1, 0), look: new THREE.Vector3() };
   let tween = null;            // { from, to, t0, ms }
@@ -247,6 +283,7 @@ export async function createRoomView(canvas, opts = {}) {
   ============================================================ */
   async function ensureData() {
     if (data) return data;
+    progress('data', '방 데이터를 읽는 중');
     const [houseRooms, winPresets, doorPresets, finishes, furnPresets, lightPresets, shadePresets] =
       await Promise.all([
         loadJSON(AT('../../data/house_rooms.json')),
@@ -277,6 +314,8 @@ export async function createRoomView(canvas, opts = {}) {
   async function assemble(id) {
     /* 이전 방 정리 */
     disposePreview();
+    disposeWalkGhost();
+    selChar = null;
     /* 캐릭터도 이 그룹에 들어 있다. 그냥 비우면 치워지지 않은 채 씬에서만 사라져
        mixer 와 GLB 가 그대로 남는다 — 방을 몇 번 바꾸면 그게 그대로 메모리다.
        치우되 **누가 있었는지는 기억해** 새 방에 다시 세운다. */
@@ -294,6 +333,7 @@ export async function createRoomView(canvas, opts = {}) {
       catch (e) { console.warn('[방뷰] 가구 이름표를 못 읽었습니다 — 자리 이름이 영문 프리셋 id 로 나옵니다'); }
     }
 
+    progress('room', '방을 짓는 중');
     let wins;
     if (O.lightEngine && typeof O.lightEngine.build === 'function') {
       /* ★ 조도 계산과 같은 방을 그린다. 두 번 짓지 않는다(폰에서 조립 비용이 아깝다). */
@@ -313,6 +353,8 @@ export async function createRoomView(canvas, opts = {}) {
 
     roomId = id;
     houseGroup.add(built.room);
+    /* 걸어 다닐 바닥을 다시 물린다 — 방이 바뀌면 벽도 가구도 다 다르다 */
+    nav.setWorld({ colliders: built.colliders || [], size: built.size });
 
     /* 창 확산광 — main.js 와 같은 방식으로 넓은 창은 토막 내서 넘긴다.
        창 하나를 점광원 하나로 두면 창 한가운데만 밝아진다(발코니 통창 문제). */
@@ -471,6 +513,10 @@ export async function createRoomView(canvas, opts = {}) {
     userEl = el;
     zoomK = dist / (fitDist || dist);
     setCam({ az: snapped, el, dist, target: cam.target }, false, SNAP_MS);
+    /* 시점이 바뀌면 누가 무엇을 가리는지도 바뀐다. 카메라가 다 정돈된 뒤에 본다 —
+       도는 중에 재면 매 프레임 다른 답이 나와 캐릭터가 안절부절못한다. */
+    clearTimeout(settleCam._nudge);
+    settleCam._nudge = setTimeout(() => { if (!disposed) nudgeIfOccluding(); }, SNAP_MS + 80);
   }
 
   function setCam(goal, snap, ms) {
@@ -812,6 +858,8 @@ export async function createRoomView(canvas, opts = {}) {
     plants.set(slotId, { group: g, spec: { ...spec }, potD: Math.min(d, limit),
                          days, wantDays: days, builtAt: performance.now() });
     if (preview && (preview.fromId === slotId || preview.toId === slotId)) refreshPreview();
+    /* 새 화분이 놓이면 그 앞을 막고 선 사람이 생길 수 있다 — 그때 비켜선다 */
+    nudgeIfOccluding();
     needsRender = true;
     return g;
   }
@@ -925,19 +973,20 @@ export async function createRoomView(canvas, opts = {}) {
     return { x: (tmp.x * 0.5 + 0.5) * r.width, y: (-tmp.y * 0.5 + 0.5) * r.height };
   }
 
-  function pickAt(cx, cy) {
-    /* 1) 화분은 덩치가 있으니 광선으로 정확히 잡는다 */
-    if (plants.size) {
-      ray.setFromCamera(ndcOf(cx, cy), ctx.cam);
-      const hits = ray.intersectObjects([...plants.values()].map(p => p.group), true);
-      if (hits.length) {
-        let o = hits[0].object;
-        while (o && !o.userData.plantSlotId) o = o.parent;
-        if (o) return { type: 'plant', slotId: o.userData.plantSlotId };
-      }
-    }
-    /* 2) 빈 슬롯은 점이라 광선으로는 손가락에 안 잡힌다 — 화면 거리로 가장 가까운 것.
-       하이라이트 중이면 그 자리들만 본다(놓기 모드에서 엉뚱한 자리가 잡히지 않게). */
+  /* 화분은 덩치가 있으니 광선으로 정확히 잡는다 */
+  function pickPlantRay(cx, cy) {
+    if (!plants.size) return null;
+    ray.setFromCamera(ndcOf(cx, cy), ctx.cam);
+    const hits = ray.intersectObjects([...plants.values()].map(p => p.group), true);
+    if (!hits.length) return null;
+    let o = hits[0].object;
+    while (o && !o.userData.plantSlotId) o = o.parent;
+    return o ? { type: 'plant', slotId: o.userData.plantSlotId } : null;
+  }
+
+  /* 빈 슬롯은 점이라 광선으로는 손가락에 안 잡힌다 — 화면 거리로 가장 가까운 것.
+     하이라이트 중이면 그 자리들만 본다(놓기 모드에서 엉뚱한 자리가 잡히지 않게). */
+  function pickSlotFuzzy(cx, cy) {
     const r = canvas.getBoundingClientRect();
     const px = cx - r.left, py = cy - r.top;
     const pool = highlighted.size ? [...highlighted] : [...slotById.keys()];
@@ -948,7 +997,34 @@ export async function createRoomView(canvas, opts = {}) {
       const d = Math.hypot(p.x - px, p.y - py);
       if (d < bestD) { bestD = d; best = id; }
     }
-    if (best) return { type: plants.has(best) ? 'plant' : 'slot', slotId: best };
+    return best ? { type: plants.has(best) ? 'plant' : 'slot', slotId: best } : null;
+  }
+
+  function pickAt(cx, cy) {
+    return pickPlantRay(cx, cy) || pickSlotFuzzy(cx, cy);
+  }
+
+  /* ★ 무엇을 눌렀나 — 한 곳에서만 정한다.
+     순서가 규칙이다. 정확한 판정을 먼저 쓰고, 손가락 오차를 감안한 판정을 뒤에 쓴다.
+       ① 캐릭터 픽 상자 (광선·정확)
+       ② 화분           (광선·정확)
+       ③ 캐릭터         (화면거리 36px)
+       ④ 자리           (화면거리 30px)
+       ⑤ 고른 캐릭터가 있으면 → 바닥
+     ③을 ②보다 앞에 두면, 화분 뒤에 선 캐릭터가 화분 탭을 계속 가로챈다. */
+  function resolveTap(cx, cy) {
+    const c1 = pickCharacterAt(cx, cy, false);
+    if (c1) return { type: 'character', id: c1 };
+    const p = pickPlantRay(cx, cy);
+    if (p) return p;
+    const c2 = pickCharacterAt(cx, cy, true);
+    if (c2) return { type: 'character', id: c2 };
+    const s = pickSlotFuzzy(cx, cy);
+    if (s) return s;
+    if (selChar && chars.get(selChar) && chars.get(selChar).walkable) {
+      const t = walkTargetAt(cx, cy);
+      if (t) return { type: 'floor', target: t };
+    }
     return null;
   }
 
@@ -957,6 +1033,7 @@ export async function createRoomView(canvas, opts = {}) {
      PC   좌드래그 = 회전 · 휠 = 줌 · 호버 = 자리 미리보기
      패닝은 넣지 않는다. 방은 고정 대상이라 옮길 이유가 없고, 있으면 길을 잃는다. */
   let down = null, dragging = false, pinch = 0;
+  let walkDrag = null;         // ★ 고른 캐릭터가 있을 때만 만들어진다. 이게 곧 규칙이다
   const canHover = !window.matchMedia || window.matchMedia('(hover: hover)').matches;
   let hoverId = null;
 
@@ -964,6 +1041,21 @@ export async function createRoomView(canvas, opts = {}) {
     const t = e.touches ? e.touches[0] : e;
     down = { x: t.clientX, y: t.clientY, t: performance.now(), az: cam.az, el: cam.el };
     dragging = false;
+    walkDrag = null;
+    /* ★ 여기가 카메라와 걷기를 가르는 유일한 자리다.
+       고른 캐릭터가 있을 때**만** 끌기를 걷기로 읽는다. 아무도 안 골랐으면
+       walkDrag 가 null 이라 아래 onMove 는 예전 그대로 카메라를 돌린다. */
+    const c = selChar && chars.get(selChar);
+    if (c && c.walkable) {
+      /* 상대 이동이다 — 손가락 위치로 순간이동시키지 않는다(game.html 화분 조작과 같은 사상).
+         지금 서 있는 자리가 기준점이고, 끈 만큼 옮겨진 자리로 간다.
+         그래서 캐릭터를 정확히 짚을 필요가 없고 화면 아무 데나 잡아도 된다. */
+      const r = canvas.getBoundingClientRect();
+      const p = charScreenPos(c);
+      walkDrag = { originX: r.left + (p ? p.x : r.width / 2),
+                   originY: r.top + (p ? p.y : r.height / 2),
+                   moved: false, target: null };
+    }
   };
   const onMove = e => {
     if (!down) { if (canHover && e.clientX != null) onHover(e); return; }
@@ -976,12 +1068,22 @@ export async function createRoomView(canvas, opts = {}) {
         cam.dist = softClamp(cam.dist * (1 - (dd - pinch) * 0.004), lo, hi);
         needsRender = true;
       }
+      /* 두 손가락이면 걷기가 아니라 줌이다 — 미리보기를 걷어 준다 */
+      if (walkDrag) { walkDrag = null; disposeWalkGhost(); }
       pinch = dd; dragging = true; e.preventDefault();
       return;
     }
     const t = e.touches ? e.touches[0] : e;
     const dx = t.clientX - down.x, dy = t.clientY - down.y;
     if (!dragging && Math.hypot(dx, dy) < TAP_PX) return;
+
+    if (walkDrag) {                       // 고른 뒤에만 여기로 온다
+      dragging = true; walkDrag.moved = true;
+      walkDrag.target = showWalkGhost(walkTargetAt(walkDrag.originX + dx, walkDrag.originY + dy));
+      e.preventDefault && e.preventDefault();
+      return;
+    }
+
     if (!O.orbit) return;
     dragging = true;
     tween = null;
@@ -995,17 +1097,47 @@ export async function createRoomView(canvas, opts = {}) {
   const onUp = e => {
     pinch = 0;
     if (!down) return;
-    const wasDrag = dragging, d0 = down;
-    down = null; dragging = false;
+    const wasDrag = dragging, d0 = down, wd = walkDrag;
+    down = null; dragging = false; walkDrag = null;
+
+    /* ① 고른 캐릭터를 끌었다 → 손을 뗀 자리로 걸어간다 */
+    if (wd && wd.moved) {
+      const t = wd.target;
+      disposeWalkGhost();
+      if (t && t.ok) doWalk(selChar, t);
+      return;
+    }
     if (wasDrag) { settleCam(); return; }
     if (performance.now() - d0.t > TAP_MS) return;
-    const hit = pickAt(d0.x, d0.y);
-    if (!hit) return;
+
+    /* ② 탭 */
+    const hit = resolveTap(d0.x, d0.y);
+    if (!hit) { selectCharacter(null); return; }   // 빈 데를 누르면 고르기 해제
     try {
-      if (hit.type === 'plant') O.onPlantTap && O.onPlantTap(hit.slotId);
-      else O.onSlotTap && O.onSlotTap(hit.slotId);
+      if (hit.type === 'character') {
+        /* 같은 캐릭터를 다시 누르면 해제 — main.js 의 setSelected(!selected) 그대로 */
+        selectCharacter(selChar === hit.id ? null : hit.id);
+        O.onCharacterTap && O.onCharacterTap(hit.id);
+      } else if (hit.type === 'floor') {
+        doWalk(selChar, hit.target);
+      } else if (hit.type === 'plant') {
+        selectCharacter(null);
+        O.onPlantTap && O.onPlantTap(hit.slotId);
+      } else {
+        selectCharacter(null);
+        O.onSlotTap && O.onSlotTap(hit.slotId);
+      }
     } catch (err) { fail(err); }
   };
+
+  /* 실제로 보낸다. 못 가는 자리면 조용히 삼키지 않고 남긴다. */
+  function doWalk(id, t) {
+    const c = id && chars.get(id);
+    if (!c || !c.walkable || !t) return null;
+    const r = c.goTo(t.x, t.z, { manual: true });
+    if (!r.ok) console.warn(`[방뷰] ${id} 를 그 자리로 못 보냅니다 — ${r.reason || '길이 없습니다'}`);
+    return r;
+  }
 
   /* 휠 줌 (PC). 폰의 두 손가락과 같은 한계를 쓴다. */
   const onWheel = e => {
@@ -1433,15 +1565,9 @@ export async function createRoomView(canvas, opts = {}) {
   /* 창을 보고 서되 방 쪽으로 이만큼 튼다. 정면으로 창만 보면 플레이어는 늘 뒤통수만 본다. */
   const FACE_TURN = 0.60;       // 약 34°
 
-  function blockedAt(x, z, r) {
-    for (const c of (built.colliders || [])) {
-      const rot = c.rot || 0, co = Math.cos(-rot), si = Math.sin(-rot);
-      const lx = (x - c.x) * co - (z - c.z) * si;
-      const lz = (x - c.x) * si + (z - c.z) * co;
-      if (Math.abs(lx) < c.w / 2 + r && Math.abs(lz) < c.d / 2 + r) return true;
-    }
-    return false;
-  }
+  /* 벽·가구 판정은 floor_nav 한 벌만 쓴다 — 여기와 걷기가 다른 식을 쓰면
+     "설 수는 있는데 걸어갈 수는 없는 자리"가 생긴다. */
+  const blockedAt = (x, z, r) => nav.blocked(x, z, r);
 
   /* ★ 어디에 세울까 — 이 파일이 새로 정하는 유일한 것.
      ------------------------------------------------------------
@@ -1482,6 +1608,59 @@ export async function createRoomView(canvas, opts = {}) {
   const charLoad = url => new Promise((res, rej) =>
     new THREE.GLTFLoader().load(AT(url), res, undefined, () => rej(new Error(`캐릭터 GLB 실패: ${url}`))));
 
+  /* ============================================================
+     고르기 표시 · 클릭 판정 — src/main.js 「선택 & 상호작용」 그대로
+     ------------------------------------------------------------
+     ★ 새로 만든 게 아니다. main.js 가 이미 쓰던 발밑 주황 링(0xffb454 · 0.26~0.34
+       · depthTest:false · renderOrder 998)과 보이지 않는 픽 상자를 그대로 옮겼다.
+       두 화면이 다르게 생기면 플레이어가 다른 조작으로 오해한다.
+
+     픽 상자가 왜 필요한가 (main.js 주석 그대로)
+       스킨드 메시는 정점이 뼈 행렬로 움직이는데 three 의 레이캐스트는 바인드 포즈와
+       메시 노드 행렬만 본다 → 캐릭터를 클릭해도 안 맞는다(실제로 안 맞았다).
+  ============================================================ */
+  function makeSelectRing(r0, r1) {
+    const m = new THREE.Mesh(
+      new THREE.RingGeometry(r0, r1, 26),
+      new THREE.MeshBasicMaterial({ color: 0xffb454, transparent: true, opacity: 0.9,
+                                    side: THREE.DoubleSide, depthTest: false }));
+    m.rotation.x = -Math.PI / 2;
+    m.renderOrder = 998;
+    m.visible = false;
+    return m;
+  }
+  function makePickBox(w, h, d, y) {
+    const b = new THREE.Mesh(new THREE.BoxGeometry(w, h, d),
+                             new THREE.MeshBasicMaterial({ visible: false }));
+    b.position.y = y;
+    b.userData.isCharacterPick = true;
+    return b;
+  }
+
+  /* ── 걷는 클립 ──
+     ★ lq/char_*_walking.glb 는 2.4MB 다. 메시를 통째로 다시 담고 있기 때문인데,
+       메시는 idle 을 실을 때 이미 받았다. 같은 것을 두 번 받을 이유가 없다.
+       assets/derived/char_clips/ 에 **클립만 뽑아 둔 35KB 짜리**가 있다
+       (render3d/character.js 가 쓰는 그것). 68배 가볍고 뼈 이름으로 붙으므로
+       경량 메시에도 그대로 물린다. 없으면 그때만 원본으로 내려간다. */
+  const CHAR_CLIPS = '../../assets/derived/char_clips';
+  const _walkClip = new Map();
+  async function walkClipOf(id) {
+    if (_walkClip.has(id)) return _walkClip.get(id);
+    const p = (async () => {
+      for (const url of [`${CHAR_CLIPS}/char_${id}_walking.glb`, `${CHAR_MESH}/char_${id}_walking.glb`]) {
+        try {
+          const g = await charLoad(url);
+          const c = (g.animations || [])[0];
+          if (c) { c.name = 'walking'; return c; }
+        } catch (e) { /* 다음 후보로 */ }
+      }
+      throw new Error(`걷기 클립이 없습니다: ${id} — tools/char/strip_anim_glb.py 를 돌렸나?`);
+    })();
+    _walkClip.set(id, p);
+    return p;
+  }
+
   async function makePerson(gameId) {
     const id = CHAR_ASSET[gameId] || 'jachwi_f';
     /* idle 파일 하나에 메시와 동작이 다 들어 있다 — 리깅본을 따로 안 받는다(char 창 §3) */
@@ -1506,6 +1685,14 @@ export async function createRoomView(canvas, opts = {}) {
     const toRoom = Math.atan2(-spot.x, -spot.z);
     let d = ((toRoom - toWin + Math.PI) % (Math.PI * 2)) - Math.PI;
     root.rotation.y = toWin + d * FACE_TURN + Math.PI;
+
+    /* 고르기 링 · 픽 상자 (main.js 와 같은 값) */
+    const ring = makeSelectRing(0.26, 0.34);
+    ring.position.y = 0.02;
+    root.add(ring);
+    const pick = makePickBox(0.62, 1.55, 0.62, 0.78);
+    root.add(pick);
+
     houseGroup.add(root);
 
     const mixer = new THREE.AnimationMixer(model);
@@ -1521,15 +1708,66 @@ export async function createRoomView(canvas, opts = {}) {
     model.traverse(o => { if (!hips && /hips/i.test(o.name || '')) hips = o; });
     const hips0 = hips ? [hips.position.x, hips.position.z] : null;
 
+    /* 이 사람이 아직 방에 있나. 치운 뒤에 늦게 도착한 GLB·타이머가
+       사라진 캐릭터를 다시 세우지 않게 하는 표시다. */
+    let alive = true, timer = 0;
+
+    /* ── 걷기 ──
+       ★ 클립은 처음 걸을 때 싣는다. 방이 뜨는 데 필요한 것이 아니다 —
+         부팅에 얹으면 첫 화면이 그만큼 늦어진다(35KB 라도 요청 하나는 요청 하나다). */
+    let walkAct = null, walking = false;
+    let path = [], pathI = 0, stuck = 0;
+    const goal = new THREE.Vector3();
+    let arriveAt = 0;                 // 도착한 시각 — 비켜서기 유예에 쓴다
+    let manualUntil = 0;              // 이때까지는 자동으로 안 비켜선다(플레이어가 보낸 자리다)
+
+    async function ensureWalkClip() {
+      if (walkAct) return walkAct;
+      const cl = await walkClipOf(id);
+      if (!alive) return null;
+      walkAct = mixer.clipAction(cl);
+      walkAct.setLoop(THREE.LoopRepeat, Infinity);
+      return walkAct;
+    }
+    function playWalk() {
+      if (!walkAct || walking) return;
+      walking = true;
+      walkAct.reset(); walkAct.enabled = true; walkAct.setEffectiveWeight(1);
+      walkAct.crossFadeFrom(base, 0.22, false).play();
+    }
+    function playIdle() {
+      if (!walking) return;
+      walking = false;
+      base.reset().crossFadeFrom(walkAct, 0.24, false).play();
+    }
+
+    /* 바닥 (x,z) 로 걸어간다. 갈 수 있는 데까지만 간다(막힌 주머니면 최대한 다가간다). */
+    function goTo(x, z, opt2 = {}) {
+      const p = nav.nearestFree(x, z);
+      path = nav.path(root.position.x, root.position.z, p.x, p.z);
+      pathI = 0; stuck = 0;
+      if (!path.length) { playIdle(); return { ok: false, x: p.x, z: p.z, reason: '갈 수 없는 자리입니다' }; }
+      goal.set(path[0].x, 0, path[0].z);
+      if (opt2.manual) manualUntil = performance.now() + 8000;
+      /* 클립을 아직 안 실었으면 실으면서 걷는다 — 다 실릴 때까지 idle 로 미끄러지느니
+         조금 늦게 다리가 움직이는 게 낫다(멈춰 서 있는 것보다 훨씬 덜 이상하다). */
+      ensureWalkClip().then(() => { if (alive && path.length) playWalk(); })
+        .catch(e => console.warn('[방뷰] 걷기 클립을 못 실었습니다 — 미끄러지듯 이동합니다:', e.message));
+      needsRender = true;
+      const last = path[path.length - 1];
+      return { ok: true, x: last.x, z: last.z, steps: path.length };
+    }
+
     /* idle 을 돌리다 8~20초마다 변주를 한 번 끼운다. 끝자세=시작자세인 클립만
-       배정표에 들어 있어 crossfade 0.3s 면 안 튄다. */
+       배정표에 들어 있어 crossfade 0.3s 면 안 튄다.
+       ★ 걷는 동안은 끼우지 않는다 — 걸어가다 갑자기 머리를 긁으면 다리가 멈춘다. */
     const pool = IDLE_BREAK[id] || [];
-    let timer = 0, alive = true;
     const clips = {};
     function schedule() {
       if (!alive || !pool.length) return;
       timer = setTimeout(async () => {
         if (!alive) return;
+        if (walking) { schedule(); return; }
         const name = pool[(Math.random() * pool.length) | 0];
         try {
           if (!clips[name]) {
@@ -1538,7 +1776,7 @@ export async function createRoomView(canvas, opts = {}) {
             if (!cl) throw new Error('클립 없음');
             cl.name = name; clips[name] = cl;
           }
-          if (!alive) return;
+          if (!alive || walking) { schedule(); return; }
           const a = mixer.clipAction(clips[name]);
           a.setLoop(THREE.LoopOnce, 1); a.clampWhenFinished = false;
           a.reset().crossFadeFrom(base, 0.3, false).play();
@@ -1556,10 +1794,57 @@ export async function createRoomView(canvas, opts = {}) {
     schedule();
 
     return {
-      kind: 'person', assetId: id, root,
+      kind: 'person', assetId: id, root, walkable: true,
+      get pickTarget() { return pick; },
+      get selected() { return ring.visible; },
+      setSelected(v) { ring.visible = !!v; needsRender = true; },
+      get walking() { return path.length > 0; },
+      get idleSince() { return path.length ? 0 : performance.now() - arriveAt; },
+      get manualHold() { return performance.now() < manualUntil; },
+      goTo,
+      stop() { path = []; pathI = 0; playIdle(); },
       update(dt) {
         mixer.update(dt);
+        /* ★ Hips XZ 고정 — 걷기 클립도 변주 클립도 루트가 앞으로 나간다.
+           안 잡으면 캐릭터가 제자리에서 두 배로 미끄러지거나 방 밖으로 걸어 나간다
+           (char-to-house.md §4). 실제 이동은 아래에서 root 를 움직여서 한다. */
         if (hips && hips0) { hips.position.x = hips0[0]; hips.position.z = hips0[1]; }
+        if (!path.length) return;
+
+        const dx = goal.x - root.position.x, dz = goal.z - root.position.z;
+        const dist = Math.hypot(dx, dz);
+        if (dist < ARRIVE_EPS) {
+          if (pathI < path.length - 1) { pathI++; goal.set(path[pathI].x, 0, path[pathI].z); return; }
+          path = []; pathI = 0; arriveAt = performance.now();
+          playIdle();
+          needsRender = true;
+          return;
+        }
+        const step = Math.min(WALK_SPEED * dt, dist);
+        const nx = root.position.x + (dx / dist) * step;
+        const nz = root.position.z + (dz / dist) * step;
+        const fixed = nav.pushOut(nx, nz);          // 벽에 걸리면 따라 미끄러진다
+        const moved = Math.hypot(fixed.x - root.position.x, fixed.z - root.position.z);
+        root.position.x = fixed.x; root.position.z = fixed.z;
+
+        /* 거의 못 움직였으면(구석에 낀 것) 다음 웨이포인트로 건너뛰고, 그래도 안 되면 포기.
+           포기를 안 넣으면 벽에 붙어 영원히 걷는 시늉을 한다(실제로 그랬다). */
+        if (moved < step * 0.12) {
+          stuck += dt;
+          if (stuck > 0.35) {
+            stuck = 0;
+            if (pathI < path.length - 1) { pathI++; goal.set(path[pathI].x, 0, path[pathI].z); }
+            else { path = []; pathI = 0; arriveAt = performance.now(); playIdle(); }
+          }
+        } else stuck = 0;
+
+        /* 가는 쪽을 본다. 캐릭터 기본이 뒷모습이라 π 를 더한다 */
+        const face = Math.atan2(dx, dz) + Math.PI;
+        let diff = face - root.rotation.y;
+        while (diff > Math.PI) diff -= Math.PI * 2;
+        while (diff < -Math.PI) diff += Math.PI * 2;
+        root.rotation.y += diff * Math.min(1, dt * 9);
+        needsRender = true;
       },
       dispose() {
         alive = false; clearTimeout(timer);
@@ -1581,6 +1866,15 @@ export async function createRoomView(canvas, opts = {}) {
     });
     const root = new THREE.Group();
     root.add(model);
+    /* 몬이도 눌러서 고를 수 있다. 다만 **따로 보낼 수는 없다** — 사람을 따라다니는 게
+       몬이의 규칙이라(char-to-house.md 추적 파라미터) 목적지를 주면 다음 프레임에
+       바로 되돌아온다. 그래서 walkable 은 false 고 링만 뜬다. */
+    const ring = makeSelectRing(0.11, 0.15);
+    ring.position.y = -MON.floatHeight + 0.02;      // 몬이 root 는 공중이라 바닥까지 내린다
+    root.add(ring);
+    /* 몬이는 0.375m 짜리가 root(공중 0.221m) 위에 서 있다 — 상자도 그만큼 올린다 */
+    const pick = makePickBox(0.34, 0.42, 0.34, 0.19);
+    root.add(pick);
     houseGroup.add(root);
 
     /* 어디에 뜨나 — 사람이 있으면 그 뒤를 졸졸, 없으면 화분 옆.
@@ -1606,7 +1900,14 @@ export async function createRoomView(canvas, opts = {}) {
     const pos = new THREE.Vector3(h.x, MON.floatHeight, h.z);
 
     return {
-      kind: 'mascot', assetId: 'mascot_sprout', root,
+      kind: 'mascot', assetId: 'mascot_sprout', root, walkable: false,
+      get pickTarget() { return pick; },
+      get selected() { return ring.visible; },
+      setSelected(v) { ring.visible = !!v; needsRender = true; },
+      get walking() { return false; },
+      get idleSince() { return Infinity; },
+      get manualHold() { return false; },
+      stop() { },
       update(dt) {
         t += dt;
         const g2 = homeXZ();
@@ -1616,9 +1917,201 @@ export async function createRoomView(canvas, opts = {}) {
         root.position.y = MON.floatHeight + Math.sin(t * Math.PI * 2 / MON.bobPeriod_sec) * MON.bobAmplitude;
         root.rotation.z = Math.sin(t * Math.PI * 2 / MON.bobPeriod_sec) * (MON.tiltDegrees * Math.PI / 180);
         root.rotation.y += (Math.PI - root.rotation.y) * Math.min(1, dt * 2);
+        /* 링은 바닥에 있어야 한다 — root 가 위아래로 흔들리므로 그만큼 되돌린다.
+           (안 하면 링이 몬이를 따라 공중에서 같이 출렁인다) */
+        ring.position.y = -root.position.y + 0.02;
       },
       dispose() { houseGroup.remove(root); disposeObject(root); }
     };
+  }
+
+  /* ============================================================
+     ⑨-b 캐릭터를 눌러 고르고 걸어 보내기
+     ------------------------------------------------------------
+     ★ 조작 사상은 두 곳에서 그대로 가져왔다. 새로 정한 규칙은 없다.
+       · src/main.js 「선택 & 상호작용」  — "캐릭터 클릭 → 선택(주황 링).
+         그 뒤 바닥 클릭하면 걸어간다"
+       · game.html 의 화분 조작        — 고른 뒤 **화면 아무 데나 끌면** 상대값으로
+         움직이고 손을 떼면 간다. 캐릭터가 작아 정확히 짚을 수 없기 때문에
+         화분에서 쓴 그 방법이 여기서는 더 필요하다.
+
+     ★★ 카메라와 안 부딪치게 하는 규칙 (제일 중요하다)
+       고르기 **전**에 끌면 카메라가 돈다. 고른 **뒤**에만 끌기가 걷기로 읽힌다.
+       이 한 줄이 안 지켜지면 방을 둘러보려던 손짓이 캐릭터를 엉뚱한 데로 보낸다.
+  ============================================================ */
+  const GHOST_H = 1.40;                 // 자취녀 키. 미리보기 기둥 높이
+
+  function disposeWalkGhost() {
+    if (!walkGhost) return;
+    houseGroup.remove(walkGhost.mesh); houseGroup.remove(walkGhost.ring);
+    walkGhost.mesh.geometry.dispose(); walkGhost.mesh.material.dispose();
+    walkGhost.ring.geometry.dispose(); walkGhost.ring.material.dispose();
+    walkGhost = null;
+    needsRender = true;
+  }
+
+  /* 갈 자리 미리보기 — 반투명 기둥 + 바닥 링.
+     ★ 캐릭터를 복제해 띄우지 않는다. 스킨드 메시 복제는 뼈까지 따라오고, 끄는 내내
+       매 프레임 복제하면 폰이 그 자리에서 멈춘다. 사람 크기의 기둥이면 "여기 서 있게
+       된다"는 뜻은 다 전해진다.
+     색은 decorate.js·previewMove 와 같다 — 파랑=갈 수 있다 · 빨강=못 간다. */
+  function ensureWalkGhost() {
+    if (walkGhost) return walkGhost;
+    const mesh = new THREE.Mesh(
+      new THREE.CylinderGeometry(BODY_R * 0.72, BODY_R * 0.72, GHOST_H, 18, 1, true),
+      new THREE.MeshBasicMaterial({ color: GH_OK, transparent: true, opacity: 0.22,
+                                    side: THREE.DoubleSide, depthWrite: false }));
+    mesh.renderOrder = 997;
+    const ring = new THREE.Mesh(
+      new THREE.RingGeometry(BODY_R * 0.72, BODY_R * 0.92, 28),
+      new THREE.MeshBasicMaterial({ color: GH_OK, transparent: true, opacity: 0.85,
+                                    side: THREE.DoubleSide, depthTest: false }));
+    ring.rotation.x = -Math.PI / 2;
+    ring.renderOrder = 999;
+    houseGroup.add(mesh); houseGroup.add(ring);
+    walkGhost = { mesh, ring, ok: null };
+    return walkGhost;
+  }
+
+  /* 화면 좌표(뷰포트 기준 — pointer 이벤트의 clientX/clientY 그대로) → 바닥 위 한 점.
+     ★ 슬롯이 아니다. 바닥 어디든 찍을 수 있다. */
+  const _floorPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+  const _floorHit = new THREE.Vector3();
+  function floorAt(cx, cy) {
+    ray.setFromCamera(ndcOf(cx, cy), ctx.cam);
+    if (!ray.ray.intersectPlane(_floorPlane, _floorHit)) return null;
+    return { x: _floorHit.x, z: _floorHit.z };
+  }
+
+  /* 그 점에 설 수 있나 + 어디에 서게 되나. 가구·벽 안으로는 못 간다. */
+  function walkTargetAt(cx, cy) {
+    if (!built) return null;
+    const f = floorAt(cx, cy);
+    if (!f) return null;
+    const b = roomBox();
+    const inRoom = Math.abs(f.x) <= b.w / 2 + 0.5 && Math.abs(f.z) <= b.d / 2 + 0.5;
+    const p = nav.nearestFree(f.x, f.z);
+    /* 찍은 곳에서 너무 멀리 끌려가면 "여기 못 간다"고 말해 주는 게 맞다.
+       조용히 딴 데로 보내면 플레이어는 자기가 찍은 자리를 못 믿게 된다. */
+    const pulled = Math.hypot(p.x - f.x, p.z - f.z);
+    return { x: p.x, z: p.z, rawX: f.x, rawZ: f.z, ok: inRoom && pulled < 0.9 };
+  }
+
+  function showWalkGhost(t) {
+    if (!t) { disposeWalkGhost(); return null; }
+    const g = ensureWalkGhost();
+    g.mesh.position.set(t.x, GHOST_H / 2, t.z);
+    g.ring.position.set(t.x, 0.02, t.z);
+    if (t.ok !== g.ok) {
+      g.ok = t.ok;
+      const hex = t.ok ? GH_OK : GH_NG;
+      g.mesh.material.color.setHex(hex);
+      g.ring.material.color.setHex(hex);
+    }
+    needsRender = true;
+    return t;
+  }
+
+  /* 캐릭터를 눌렀나.
+     ① 픽 상자를 광선으로 정확히 — 크게 보일 때는 이게 제일 정확하다
+     ② 안 맞으면 **화면 거리로 가장 가까운 캐릭터**(CHAR_HIT_PX 안).
+        방 전경에서 자취녀는 40px 남짓이라 ①만으로는 폰에서 거의 못 짚는다
+        (빈 슬롯을 30px 로 잡는 것과 같은 방법이다). */
+  /* ★ 두 점을 가른다. 헷갈리면 조작이 통째로 어긋난다.
+       발밑(y=0)  — **바닥과 맞바꿀 수 있는 점.** 상대 끌기의 기준점이 이것이다.
+                    몸통을 기준으로 잡으면 손가락을 하나도 안 움직였는데도
+                    "지금 서 있는 곳"이 아닌 데로 가 버린다(실제로 그랬다).
+       몸통       — **눈이 보는 점.** 탭 판정은 이걸 쓴다. 발밑은 가구에 잘 가린다. */
+  function charAnchor(c, up) {
+    const r = canvas.getBoundingClientRect();
+    tmp.set(c.root.position.x, up, c.root.position.z).project(ctx.cam);
+    if (tmp.z > 1) return null;
+    return { x: (tmp.x * 0.5 + 0.5) * r.width, y: (-tmp.y * 0.5 + 0.5) * r.height };
+  }
+  const charFootPos = c => charAnchor(c, 0);                                  // 바닥과 맞바꾸는 점
+  const charBodyPos = c => charAnchor(c, c.kind === 'person' ? 0.62 : 0.30);  // 눈이 보는 점
+  const charScreenPos = charFootPos;
+
+  function pickCharacterAt(cx, cy, fuzzy) {
+    if (!chars.size) return null;
+    if (!fuzzy) {
+      ray.setFromCamera(ndcOf(cx, cy), ctx.cam);
+      const boxes = [...chars.values()].map(c => c.pickTarget).filter(Boolean);
+      const hits = boxes.length ? ray.intersectObjects(boxes, false) : [];
+      if (hits.length) {
+        for (const [id, c] of chars) if (c.pickTarget === hits[0].object) return id;
+      }
+      return null;
+    }
+    const r = canvas.getBoundingClientRect();
+    const px = cx - r.left, py = cy - r.top;
+    let best = null, bestD = CHAR_HIT_PX;
+    for (const [id, c] of chars) {
+      const p = charBodyPos(c); if (!p) continue;
+      const d = Math.hypot(p.x - px, p.y - py);
+      if (d < bestD) { bestD = d; best = id; }
+    }
+    return best;
+  }
+
+  /* ── 화분·가구를 가리면 비켜선다 ──
+     "캐릭터가 화분·가구를 가리면 안 됩니다. 겹치면 비켜서게 하십시오."
+     화면에서 캐릭터 몸통과 화분이 겹치고, 캐릭터가 **더 앞에** 있으면 가린 것이다.
+     그때 가까운 빈 자리 중 안 가리는 데로 한 걸음 걸어 보낸다.
+     ★ 플레이어가 방금 보낸 자리에서는 안 비킨다(8초). 시켜서 간 자리를 제멋대로
+       옮기면 조작이 안 먹은 것처럼 보인다. */
+  const OCCLUDE_PX = 44;
+  function occludes(c) {
+    if (!plants.size) return false;
+    const cp = charBodyPos(c); if (!cp) return false;
+    const camPos = ctx.cam.position;
+    const dChar = Math.hypot(c.root.position.x - camPos.x, c.root.position.z - camPos.z);
+    for (const [, p] of plants) {
+      const s = { x: p.group.position.x, y: p.group.position.y + 0.15, z: p.group.position.z };
+      const sp = slotScreenPos(s); if (!sp) continue;
+      const dPlant = Math.hypot(s.x - camPos.x, s.z - camPos.z);
+      if (dChar >= dPlant - 0.05) continue;                 // 화분보다 뒤에 있으면 안 가린다
+      if (Math.hypot(sp.x - cp.x, sp.y - cp.y) < OCCLUDE_PX) return true;
+    }
+    return false;
+  }
+
+  /* force 면 "방금 플레이어가 보낸 자리" 유예도 무시한다 — 호스트가 대놓고
+     "지금 비켜세워라"라고 부른 경우다(view.nudgeCharacters). 저절로 도는 쪽은 유예를 지킨다. */
+  function nudgeIfOccluding(force) {
+    if (!built || !plants.size) return 0;
+    let moved = 0;
+    for (const [, c] of chars) {
+      if (!c.walkable || c.walking || (!force && c.manualHold)) continue;
+      if (!occludes(c)) continue;
+      /* 둘레를 훑어 안 가리는 자리를 찾는다. 가까운 데부터 본다 —
+         멀리 보내면 "왜 갑자기 저기로 갔지"가 된다. */
+      const x0 = c.root.position.x, z0 = c.root.position.z;
+      let found = null;
+      for (const r of [0.45, 0.75, 1.05, 1.4]) {
+        for (let k = 0; k < 12 && !found; k++) {
+          const a = (k / 12) * Math.PI * 2;
+          const x = x0 + Math.cos(a) * r, z = z0 + Math.sin(a) * r;
+          if (nav.blocked(x, z)) continue;
+          const probe = { root: { position: { x, y: 0, z } }, kind: 'person' };
+          if (!occludes(probe)) found = { x, z };
+        }
+        if (found) break;
+      }
+      if (found) { c.goTo(found.x, found.z); moved++; }
+    }
+    return moved;
+  }
+
+  /* 고르기 — 한 번에 한 명. 링은 이 함수만 켜고 끈다. */
+  function selectCharacter(id) {
+    const want = id != null && chars.has(id) ? id : null;
+    if (want === selChar) return selChar;
+    selChar = want;
+    for (const [k, c] of chars) c.setSelected && c.setSelected(k === want);
+    if (!want) disposeWalkGhost();
+    needsRender = true;
+    return selChar;
   }
 
   /* 놓기·치우기. 자리·포즈는 안에서 정한다 — 밖에서 좌표를 주지 않는다. */
@@ -1627,13 +2120,15 @@ export async function createRoomView(canvas, opts = {}) {
     const my = ++charSeq;
     if (who == null) {                                  // null 이면 놓인 것을 전부 치운다
       for (const [k, c] of [...chars]) { c.dispose(); chars.delete(k); }
+      selectCharacter(null);
       needsRender = true;
       return null;
     }
     const key = who === 'moni' ? 'moni' : 'jachwi';
     const old = chars.get(key);
-    if (old) { old.dispose(); chars.delete(key); needsRender = true; }
+    if (old) { old.dispose(); chars.delete(key); if (selChar === key) selectCharacter(null); needsRender = true; }
     let c;
+    progress('character:' + key, key === 'moni' ? '몬이를 부르는 중' : '캐릭터를 세우는 중');
     try {
       c = who === 'moni' ? await makeMascot() : await makePerson(who);
     } catch (e) {
@@ -1641,6 +2136,7 @@ export async function createRoomView(canvas, opts = {}) {
     }
     if (disposed || my !== charSeq) { c.dispose(); return null; }
     chars.set(key, c);
+    progress('character_done:' + key, '캐릭터 준비 완료');
     needsRender = true;
     return c.root;
   }
@@ -1823,11 +2319,68 @@ export async function createRoomView(canvas, opts = {}) {
     setCharacter(id, opt) { return setCharacter(id, opt || {}); },
     characters() {
       return [...chars].map(([id, c]) => ({
-        id, kind: c.kind, assetId: c.assetId,
+        id, kind: c.kind, assetId: c.assetId, walkable: !!c.walkable,
+        selected: id === selChar, walking: !!c.walking,
         pos: { x: c.root.position.x, y: c.root.position.y, z: c.root.position.z },
         yaw: c.root.rotation.y
       }));
     },
+
+    /* ══ 캐릭터를 눌러 고르고 걸어 보내기 ══════════════════════════════
+       ★ 좌표는 전부 **뷰포트 기준 CSS 픽셀**이다 — pointer 이벤트의 clientX/clientY
+         를 그대로 넣으면 된다. (screenPosOf 만 캔버스 기준이라는 점에 주의하십시오.
+          그 값을 여기 넣으려면 canvas.getBoundingClientRect().left/top 을 더해야 한다) */
+
+    /* 캐릭터를 눌렀을 때 부를 함수. createRoomView 의 opts.onCharacterTap 과 같은 것이고,
+       나중에 갈아 끼우고 싶을 때 쓴다. null 이면 해제. */
+    setCharacterTapHandler(fn) { O.onCharacterTap = (typeof fn === 'function') ? fn : null; },
+
+    /* 고르기. 링이 뜬다. null 이면 해제. 돌려주는 값은 실제로 골라진 id(없으면 null) */
+    selectCharacter(id) { return selectCharacter(id); },
+    selectedCharacter() { return selChar; },
+
+    /* 화면 좌표 → 바닥 위 한 점으로 걸어간다. **슬롯이 아니다.**
+       가구·벽 안으로는 못 간다(floor_nav 가 막는다. 근처 빈 자리로 당겨 준다).
+       돌려주는 값 { ok, x, z, steps } — ok:false 면 길이 없다. */
+    walkTo(id, screenX, screenY) {
+      const t = walkTargetAt(screenX, screenY);
+      if (!t) return { ok: false, reason: '바닥을 못 찾았습니다(카메라가 바닥을 안 보고 있습니다)' };
+      if (!t.ok) return { ok: false, x: t.x, z: t.z, reason: '거기에는 못 섭니다' };
+      return doWalk(id, t) || { ok: false, reason: `걸을 수 있는 캐릭터가 아닙니다: ${id}` };
+    },
+    /* 갈 자리를 반투명 기둥·링으로 미리 보여준다. screenY 가 null 이면 지운다.
+       파랑=갈 수 있다 · 빨강=못 간다 (decorate.js·previewMove 와 같은 색) */
+    previewWalk(id, screenX, screenY) {
+      const c = id && chars.get(id);
+      if (!c || !c.walkable || screenY == null || screenX == null) { disposeWalkGhost(); return null; }
+      return showWalkGhost(walkTargetAt(screenX, screenY));
+    },
+    /* 그 캐릭터가 화면 어디에 있나 — **캔버스 기준** CSS 픽셀(screenPosOf 와 같은 기준).
+       ★ 돌려주는 것은 **발밑**이다. 이게 바닥과 맞바꿀 수 있는 유일한 점이라
+         상대 끌기의 기준점으로 그대로 쓸 수 있다(손가락을 안 움직이면 제자리).
+       뒤에 있으면 null. */
+    characterScreenPos(id) {
+      const c = id && chars.get(id);
+      return c ? charFootPos(c) : null;
+    },
+    /* 지금 걷고 있나 */
+    isWalking(id) { const c = id && chars.get(id); return !!(c && c.walking); },
+    /* 걷던 것을 세운다 */
+    stopWalk(id) { const c = id && chars.get(id); if (c && c.stop) c.stop(); },
+    /* 화분을 가리고 선 사람이 있으면 비켜서게 한다. 평소엔 시점이 정돈될 때·화분을
+       놓을 때 저절로 돈다 — 호스트가 직접 부를 일은 드물다(검증용으로 낸다).
+       몇 명을 움직였는지 돌려준다. */
+    nudgeCharacters() { return nudgeIfOccluding(true); },
+    /* 그 사람이 지금 화분을 가리고 있나 — 검증·진단용 */
+    isOccludingPlant(id) { const c = id && chars.get(id); return c ? occludes(c) : false; },
+
+    /* ★ 부팅 이정표 — 무엇을 몇 ms 기다렸나. 느릴 때 짐작하지 말고 이걸 보십시오. */
+    bootTimings() { return { ...timings, now: Math.round(performance.now() - T0) }; },
+    /* 몬스테라 조립 모듈을 지금 싣는다(deferPlantAssets 를 켜 두고 미리 데우고 싶을 때).
+       기다리지 않아도 된다 — 첫 setPlant 가 어차피 기다린다. */
+    warmPlantAssets() { return assembler().then(a => !!a); },
+    /* 방의 실제 크기[m]. 걷기 판정·검증이 방 밖을 물어볼 때 기준이 된다. */
+    roomSize() { return built ? { ...roomBox() } : null; },
     /* 지금 무엇을 보고 있나 */
     get roomId() { return roomId; },
     get focusedSlot() { return focused; },
@@ -1847,7 +2400,9 @@ export async function createRoomView(canvas, opts = {}) {
       canvas.removeEventListener('mouseleave', onLeave);
       window.removeEventListener('resize', resize);
       ro && ro.disconnect();
+      clearTimeout(settleCam._nudge);
       disposePreview();
+      disposeWalkGhost();
       for (const [, c] of chars) { try { c.dispose(); } catch (e) { /* 치우다 난 오류로 나머지를 못 치우면 안 된다 */ } }
       chars.clear();
       clearPlants(); clearRings();
@@ -1858,9 +2413,18 @@ export async function createRoomView(canvas, opts = {}) {
 
   /* ── 시작 ── */
   try {
-    /* 몬스테라 GLB 는 14MB 다. 방을 짓는 동안 같이 받아 두지 않으면 첫 화분에서
-       그만큼 멈춘다. 기다리지는 않는다 — 실패해도 방은 떠야 한다. */
-    assembler();
+    progress('start', '3D 준비');
+    /* 몬스테라 GLB 는 27MB 다. 방을 짓는 동안 같이 받아 두지 않으면 첫 화분에서
+       그만큼 멈춘다. 기다리지는 않는다 — 실패해도 방은 떠야 한다.
+
+       ★ 재 본 결과 (2026-08-03 · tools/test_boot_profile.mjs)
+         이걸 방 뒤로 미뤄 봤다(deferPlantAssets). 방이 뜨는 시각은 **0.3초**밖에
+         안 당겨졌다 — 8Mbps 로 조여도 차이가 없었다. 방이 쓰는 파일은 다 작아서
+         27MB 와 회선을 다투지 않기 때문이다. 대신 첫 화분이 1초쯤 늦어진다.
+         그래서 기본은 예전 그대로 두고, 켤 수 있게만 남긴다.
+         부팅이 느린 진짜 이유는 따로 있다 — 확대 iframe 이 **잎 무늬 스킨 450MB** 를
+         부팅 때 통째로 받는다(보고서 ② 참조). 여기서 고칠 수 있는 것이 아니다. */
+    if (!O.deferPlantAssets) assembler();
     resize();
     await assemble(O.roomId);
     resize();
@@ -1868,7 +2432,14 @@ export async function createRoomView(canvas, opts = {}) {
     updateCam();
     ctx.renderer.render(ctx.scene, ctx.cam);
     raf = requestAnimationFrame(loop);
+    progress('ready', '방이 떴습니다');
     try { O.onReady && O.onReady(view); } catch (e) { fail(e); }
+    /* 방이 뜬 다음 프레임부터 식물 에셋을 받는다. 실패해도 방은 그대로 있다. */
+    if (O.deferPlantAssets) setTimeout(() => {
+      if (disposed) return;
+      progress('plant', '식물 에셋을 받는 중');
+      assembler().then(a => progress('plant_done', a ? '식물 에셋 준비 완료' : '식물 에셋 없이 갑니다'));
+    }, 0);
   } catch (e) {
     fail(e);
     throw e;         // ★ 조용히 반쯤 살아 있는 뷰를 돌려주지 않는다
