@@ -64,6 +64,8 @@
   #topbar .resource{display:flex;flex-direction:column;align-items:center;gap:1px;padding:5px 4px;
           background:rgba(255,255,255,.055);border:1px solid rgba(255,255,255,.08);border-radius:10px}
   #topbar .resource span{font-size:10px;color:var(--dim);line-height:1.1}
+  /* 시각은 라벨이 아니라 값이다 — 하루가 흐르는 걸 보여주는 자리라 흐리면 안 읽힌다 */
+  #topbar #resWhen{font-size:11px;color:var(--gold);font-family:'Jua';letter-spacing:.2px}
   #topbar .resource b{font-family:'Jua';font-size:14px;color:var(--ink);line-height:1.15}
   #topbar .r-saved b{color:var(--leaf)}
 
@@ -1262,7 +1264,15 @@ async function bootRoomView() {
          고른 뒤에 [옮기기] [돌리기] [자세히] 중에서 고른다. */
       onPlantTap: (slotId) => picked.select(slotId),
       onSlotTap: (slotId) => { if (!picked.slotId) placeMode.pick(slotId); },
-      onError: (e) => window.__byeotRoomFallback('방을 그리지 못했습니다 — ' + (e && e.message || e))
+      /* ★모든 오류가 "방을 못 그렸다"는 아니다. 미리보기·하이라이트처럼 곁가지가 실패해도
+         방은 그대로 있다. 그걸 치명으로 띄우면 멀쩡한 화면을 고장으로 읽게 만든다 —
+         실제로 그랬다. 방이 실제로 안 보일 때만 덮는다. */
+      onError: (e) => {
+        const msg = (e && e.message) || String(e);
+        const fatal = !$('stage').classList.contains('room-ok');
+        if (fatal) window.__byeotRoomFallback('방을 그리지 못했습니다 — ' + msg);
+        else console.warn('[방]', msg);
+      }
     });
     /* 진단용 손잡이. 브라우저 콘솔에서 방 상태를 볼 수 있게 낸다 —
        읽기용이고 게임은 이걸 안 쓴다(밖에서 켜면 검증이 장식이 되는 것과 같은 이유로 세터는 없다). */
@@ -1419,8 +1429,12 @@ const drag = {
     const hit = this.nearest(ev.clientX, ev.clientY);
     /* ★목표가 바뀔 때만 미리보기를 갱신한다. 매 프레임 부르면 GLB 복제 비용이 계속 든다.
        (room_view 에 previewMove 가 아직 없으면 조용히 넘어간다 — 링만 뜬다) */
-    if (hit !== this.best && roomView && roomView.previewMove) {
-      try { roomView.previewMove(picked.slotId || null, hit); } catch { }
+    /* ★소스 자리가 있을 때만 미리보기를 부른다. 인벤에서 끌 때는 옮길 화분이 없다 —
+       null 을 넘겼더니 room_view 가 "미리보기할 화분이 없습니다"로 던졌고,
+       그게 onError 를 타고 "방을 그리지 못했습니다"라는 치명 문구로 화면을 덮었다.
+       방은 멀쩡한데 고장으로 보였다(폰에서 실제로 났다). */
+    if (hit !== this.best && picked.slotId && roomView && roomView.previewMove) {
+      try { roomView.previewMove(picked.slotId, hit); } catch { }
     }
     this.best = hit;
     gh.classList.toggle('ok', !!hit); gh.classList.toggle('no', !hit);
@@ -1436,7 +1450,7 @@ const drag = {
     $('dragGhost').classList.remove('on', 'ok', 'no');
     if (roomView) {
       roomView.highlightSlots([]);
-      if (roomView.previewMove) { try { roomView.previewMove(null, null); } catch { } }
+      if (roomView.previewMove && picked.slotId) { try { roomView.previewMove(picked.slotId, null); } catch { } }
     }
     if (!hit) return;                        /* 아무 데도 안 놓았으면 조용히 되돌린다 */
     sel.value = hit;
@@ -1540,7 +1554,7 @@ const picked = {
       const hit = drag.best;
       drag.best = null; drag.valid = [];
       $('dragGhost').classList.remove('on', 'ok', 'no');
-      if (roomView && roomView.previewMove) { try { roomView.previewMove(null, null); } catch { } }
+      if (roomView && roomView.previewMove && this.slotId) { try { roomView.previewMove(this.slotId, null); } catch { } }
       if (hit) {
         drag.sel.value = hit;
         /* ★콩나물은 change 로 안 옮겨진다 — #cropSlot 에는 change 핸들러가 없고
@@ -1603,7 +1617,13 @@ let dayLoop = null, dayPhase = 0.28;       /* 0.28 ≈ 아침. 낮부터 시작�
    room_view 의 setDaylight 가 이미 시간대 이름을 돌려주므로 새 계산을 만들지 않는다. */
 function paintWhen(label) {
   const el = $('resWhen'); if (!el) return;
-  el.textContent = label || '—';
+  /* ★시각도 같이 적는다 (박사님 2026-08-03: "데이 위에 시간도 표기해줘").
+     이름만으로는 "아침"이 몇 시인지 안 잡히고, 빨리감기 때 시간이 흐르는 게
+     숫자로 보여야 하루가 지나간다는 감각이 붙는다. 0 = 자정, 0.5 = 정오. */
+  const m = Math.round(dayPhase * 24 * 60) % 1440;
+  const hh = String(Math.floor(m / 60)).padStart(2, '0');
+  const mm = String(m % 60).padStart(2, '0');
+  el.textContent = `${label || '—'} ${hh}:${mm}`;
 }
 function dayCycleStart() {
   if (dayLoop || !roomView) return;

@@ -1241,6 +1241,23 @@ export async function createRoomView(canvas, opts = {}) {
     ctx.hemi.intensity *= 0.62;
     ctx.ambient.intensity *= 0.58;
 
+    /* ★그래도 밝다 (박사님 2026-08-03, 폰 실측). 채움광만 줄여서는 부족했다 —
+       방 재질 자체가 밝은 파스텔이라 빛을 그대로 되돌려준다.
+       노출을 내리면 **재질을 안 건드리고** 전체가 한 단계 가라앉는다. ACESFilmic 이라
+       밝은 쪽이 먼저 눌리므로, 흰 벽이 타는 것부터 잡히고 그림자는 덜 뭉갠다.
+       ⚠ scene.js 기본값(1.1)은 그대로 둔다 — 방 도구는 검수 화면이라 밝아야 한다. */
+    ctx.renderer.toneMappingExposure = 0.60;
+
+    /* ★방 **바깥**을 어둡게 한다. 화면의 절반쯤이 배경인데 scene.js 는 그걸 하늘색으로
+       칠한다 — 방 도구에서는 맞지만(바깥에서 방을 들여다보는 화면이다), 게임에서는
+       그 밝은 면이 눈을 끌어 방이 상대적으로 어두워 보이지 않는다.
+       배경을 UI 바탕색으로 낮추면 방만 밝은 섬이 되고, 같은 노출에서도 훨씬 차분해진다.
+       ⚠ 창으로 보이는 하늘(skyPortals)은 안 건드린다 — 그건 "밖이 밝다"는 정보다. */
+    if (ctx.scene.background && ctx.scene.background.isColor)
+      ctx.scene.background.lerp(new THREE.Color(0x14101c), 0.72);
+    if (ctx.scene.fog && ctx.scene.fog.color)
+      ctx.scene.fog.color.lerp(new THREE.Color(0x14101c), 0.72);
+
     /* updateLight 는 부른 김에 그림자 넉 장을 다 다시 굽게 표시한다. 일단 전부 내리고
        필요한 것만 다시 올린다 — 아래 정책이 유일한 결정권자가 되게. */
     ctx.sunLight.shadow.needsUpdate = false;
