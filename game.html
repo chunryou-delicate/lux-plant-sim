@@ -1091,7 +1091,7 @@ async function bootRoomView() {
     });
     /* 진단용 손잡이. 브라우저 콘솔에서 방 상태를 볼 수 있게 낸다 —
        읽기용이고 게임은 이걸 안 쓴다(밖에서 켜면 검증이 장식이 되는 것과 같은 이유로 세터는 없다). */
-    window.__rv = roomView;
+    window.__rv = roomView; window.__picked = picked; window.__drag = drag;
     syncRoom();
     bindPicked();
     bindDrag('cropThumb', 'beansprout');
@@ -1239,6 +1239,7 @@ const drag = {
 const picked = {
   slotId: null, mode: null,          // 'move' | 'turn'
   yaw0: 0, x0: 0, y0: 0,
+  originX: 0, originY: 0,            // 옮기기 시작할 때 그 화분이 화면에서 있던 자리
 
   select(slotId) {
     if (drag.on) return;
@@ -1262,9 +1263,16 @@ const picked = {
     const { sel, ids } = drag.slotsFor(what);
     drag.what = what; drag.sel = sel;
     drag.valid = ids.filter(id => id !== this.slotId);
+    /* ★상대 이동이다 — 손가락 위치로 순간이동시키지 않는다(박사님).
+       원래 있던 자리에서 **끈 만큼** 움직인다. 그래서 화분을 정확히 짚을 필요가 없고,
+       화면 아무 데나 잡고 끌어도 된다. decorate.js 의 가구 옮기기와 같은 사상이다. */
+    const r = $('roomCanvas').getBoundingClientRect();
+    let p = null; try { p = roomView && roomView.screenPosOf(this.slotId); } catch { }
+    this.originX = p ? r.left + p.x : r.left + r.width / 2;
+    this.originY = p ? r.top + p.y : r.top + r.height / 2;
     $('stage').classList.add('moving');
     if (roomView) roomView.highlightSlots(drag.valid);
-    $('dropLabel').textContent = '끌어서 자리를 고르세요';
+    $('dropLabel').textContent = '아무 데나 잡고 끌어 보세요';
   },
   beginTurn() {
     if (!this.slotId) return;
@@ -1276,10 +1284,28 @@ const picked = {
   },
   down(e) {
     this.x0 = e.clientX; this.y0 = e.clientY;
-    if (this.mode === 'move') drag.move(e);
+    /* 누른 순간에는 아직 안 움직였다 — 원래 자리를 그대로 미리보기로 띄운다 */
+    if (this.mode === 'move') this.dragTo(0, 0);
+  },
+  /* 끈 만큼(dx,dy) 옮겼을 때 어느 자리에 놓이는지 계산하고 반투명으로 보여준다 */
+  dragTo(dx, dy) {
+    const gx = this.originX + dx, gy = this.originY + dy;
+    const hit = drag.nearest(gx, gy);
+    const gh = $('dragGhost');
+    gh.classList.add('on');
+    gh.style.left = gx + 'px'; gh.style.top = gy + 'px';
+    gh.style.backgroundImage = `url(${$('plantThumb').src})`;
+    gh.classList.toggle('ok', !!hit); gh.classList.toggle('no', !hit);
+    if (hit !== drag.best && roomView && roomView.previewMove) {
+      try { roomView.previewMove(this.slotId, hit); } catch { }
+    }
+    drag.best = hit;
+    const lb = $('dropLabel');
+    lb.textContent = hit ? slotLabel(hit) : '방 안으로 끌어 주세요';
+    lb.classList.toggle('ok', !!hit); lb.classList.toggle('no', !hit);
   },
   move(e) {
-    if (this.mode === 'move') { drag.move(e); return; }
+    if (this.mode === 'move') { this.dragTo(e.clientX - this.x0, e.clientY - this.y0); return; }
     if (this.mode !== 'turn' || !roomView || !roomView.setPlantYaw) return;
     /* 화면 폭 절반을 끌면 한 바퀴 — 폰에서 손가락이 갈 수 있는 거리에 맞춘다 */
     const yaw = this.yaw0 + (e.clientX - this.x0) / (innerWidth * 0.5) * Math.PI * 2;
@@ -1290,6 +1316,7 @@ const picked = {
     if (this.mode === 'move') {
       const hit = drag.best;
       drag.best = null; drag.valid = [];
+      $('dragGhost').classList.remove('on', 'ok', 'no');
       if (roomView && roomView.previewMove) { try { roomView.previewMove(null, null); } catch { } }
       if (hit) {
         drag.sel.value = hit;
