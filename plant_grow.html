@@ -932,7 +932,9 @@ let GT={
   // gauge_* = 성숙 게이지 속도. 전역 생장 곡선과 별개다.
   mature:{ threshold_floor:0.5, over_max_mult:0.6,
            roll_lo:0.10, roll_hi:0.90, mid_lock_pct:0.03,
-           gauge_days:12, gauge_lo:0.6, gauge_hi:1.4, gauge_over:0.5, fail_reset:0.5 }
+           gauge_days:12, gauge_lo:0.6, gauge_hi:1.4, gauge_over:0.5, fail_reset:0.5 },
+  // 잎 건강(바램·낙엽). ★drop_enabled=false 가 초보다 — 바랜 채로 유지되고 안 떨어진다.
+  health:{ fade_days:10, recover_days:6, drop_enabled:false, drop_hold_days:14 }
 };
 // 정본이 '실렸다'고 말할 수 있으려면 파일을 읽은 것만으로는 부족하다 — 게이트가 쓰는
 // 임계값이 실제로 숫자로 들어와야 한다. 키 하나가 비면 게임이 코드 복제값으로 돌아간다.
@@ -963,6 +965,9 @@ fetch('./data/growth_tuning.json').then(r=>{
   if(j.f_stable)      GT.fStable=Object.assign({}, GT.fStable, num(j.f_stable));
   if(j.f_propagation) GT.fProp  =Object.assign({}, GT.fProp,   num(j.f_propagation));
   if(j.mature_prob)   GT.mature =Object.assign({}, GT.mature,  num(j.mature_prob));
+  // ⚠ health.drop_enabled 는 불리언이라 num() 을 통과 못 한다 — 따로 받는다.
+  if(j.health){ GT.health=Object.assign({}, GT.health, num(j.health));
+    if(typeof j.health.drop_enabled==='boolean') GT.health.drop_enabled=j.health.drop_enabled; }
   TH_LOADED=true;                              // ★검증·적용을 마친 여기서만 참이 된다
 }).catch(err=>{
   // ★여기 걸리는 것은 '정본을 읽고 쓰는 일'의 실패뿐이다 — fetch·HTTP·JSON 파싱.
@@ -1227,7 +1232,64 @@ function calcMatureProb(ctx){
      첫 기회는 잎이 시간상 중간잎에 닿는 그 날 바로 온다(gauge 가 1 에서 시작).
      그래서 **성공하는 경우의 일정은 이전과 같다.** 늦어지는 것은 실패한 잎뿐이다. */
 const MAT_STATE=new Map();          // leafBirth → {gauge, matured, rolls, locked}
-function matResetAll(){ MAT_STATE.clear(); }
+
+/* ===== 잎 건강 — 바램과 낙엽 (박사님 지시 2026-08-03) ==========================
+   ⚠ 이 항목은 2026-08-02 에 **활력(vigor) 취소·보류** 로 내려갔던 것이다. 박사님이 되살렸다.
+     다만 되살아난 것은 **숨은 체력 막대가 아니다.** 잎의 색 자체가 정보다 —
+     플레이어가 보는 것은 숫자가 아니라 식물이라, "활력은 숨긴다"와 안 부딪힌다.
+
+   ★ 갈라진 잎이 중간잎으로 되돌아가는 일은 없다(그건 버그였고 MAT_STATE 로 막았다).
+     상태가 나쁘면 되돌아가는 게 아니라 **색이 바래고, 그 잎만 잃는다.**
+
+   밴드는 기존 것을 그대로 쓴다 — 새 숫자를 만들지 않았다.
+     7일평균 ≥ min(3.0)         정상 — 바랜 잎이 되돌아온다
+     survive(1.2) ~ min(3.0)    정지 — 자라지도, 잃지도 않는다
+     < survive(1.2)             바랜다 → (상위 모드에서만) 떨어진다
+   ★ 초보는 바랜 채로 유지된다. 안 떨어지고 안 죽는다(박사님 확정 2026-08-03).
+     낙엽 경로는 코드로 넣되 drop_enabled=false 로 꺼 둔다 — 나중에 켜기만 하면 된다. */
+const LEAF_HEALTH=new Map();        // leafBirth → {fade 0..1, dropped, hold}
+// 성숙 이력과 잎 건강은 같은 개체의 같은 이력이다 — 하나를 버리면 둘 다 버려야 어긋나지 않는다.
+function matResetAll(){ MAT_STATE.clear(); LEAF_HEALTH.clear(); }
+function leafHealthEntry(leafBirth){
+  let e=LEAF_HEALTH.get(leafBirth);
+  if(!e){ e={fade:0, dropped:false, hold:0}; LEAF_HEALTH.set(leafBirth, e); }
+  return e;
+}
+function leafFadeOf(leafBirth){ const e=LEAF_HEALTH.get(leafBirth); return e? e.fade : 0; }
+function leafDroppedOf(leafBirth){ const e=LEAF_HEALTH.get(leafBirth); return !!(e && e.dropped); }
+function leafHealthAll(){ return [...LEAF_HEALTH.entries()].map(([leafBirth,e])=>Object.assign({leafBirth},e)); }
+// 하루치 잎 건강. ★advanceTo 에서 **자란 날이든 아니든** 돈다 —
+//   빛이 모자라 안 자라는 그 상황이 바로 잎이 상하는 상황이라, 자란 날에만 돌면 아무 일도 안 일어난다.
+function stepLeafHealth(){
+  const H=GT.health, T=TH_MONSTERA, d=dli7(), g=ageOf(GROWTH), out=[];
+  if(d==null || !isFinite(d)) return out;
+  const dir = d < T.survive ? 1 : (d >= T.min ? -1 : 0);      // 바램 / 유지 / 회복
+  if(dir===0) return out;
+  const live=axisTimeline(g).filter(a=>a.birth<=g && g>=a.leafBirth && !leafDroppedOf(a.leafBirth));
+  if(!live.length) return out;
+  // 바랠 때는 **가장 오래된 잎부터**(오래된 잎이 곧 갈라진 잎이다), 회복은 반대로 어린 잎부터.
+  // ★하루에 한 장씩만 움직인다 — 한꺼번에 다 바래면 플레이어가 원인을 못 읽는다.
+  const order = dir>0 ? live : live.slice().reverse();
+  for(const ax of order){
+    const e=leafHealthEntry(ax.leafBirth);
+    if(dir>0){ if(e.fade>=1) continue;
+      e.fade=Math.min(1, e.fade+1/Math.max(1,H.fade_days));
+      out.push({leafBirth:ax.leafBirth, fade:+e.fade.toFixed(3), kind:'fade'}); break; }
+    if(e.fade<=0) continue;
+    e.fade=Math.max(0, e.fade-1/Math.max(1,H.recover_days)); e.hold=0;
+    out.push({leafBirth:ax.leafBirth, fade:+e.fade.toFixed(3), kind:'recover'}); break;
+  }
+  // 낙엽 — 상위 모드 전용. 다 바랜 채로 drop_hold_days 를 버티면 그 잎만 떨어진다.
+  if(H.drop_enabled && dir>0 && live.length>1){                // ★마지막 한 장은 안 떨어뜨린다
+    const full=live.filter(a=>leafHealthEntry(a.leafBirth).fade>=1);
+    if(full.length){
+      const e=leafHealthEntry(full[0].leafBirth);
+      if(++e.hold>=H.drop_hold_days){ e.dropped=true;
+        out.push({leafBirth:full[0].leafBirth, kind:'drop'}); }
+    }
+  }
+  return out;
+}
 // 잎 정체성만으로 0..1 을 뽑는다. SEED 와 잎이 같으면 몇 번을 다시 그려도 같은 값이다.
 function matHash(leafBirth, salt){
   let h=(SEED ^ Math.round(leafBirth*1000) ^ Math.imul(salt|0, 0x9e3779b1))>>>0;
@@ -1418,7 +1480,22 @@ function tintObj(obj, color){
 // 공통 기준: 개체 나이(PLANT_AGE)에 따라 전체가 짙고(밝기↓) 선명해짐(채도↑) → 줄기·잎 통일
 function baseL(){ return Math.max(0.12, P.leafLight - PLANT_AGE*P.ageDark); }
 function baseS(){ return Math.min(1, PLANT_SAT + PLANT_AGE*P.ageSat); }
-function leafTint(maturity){ return new THREE.Color().setHSL(PLANT_HUE+0.03*(1-maturity), Math.min(1,baseS()+0.1*maturity), Math.max(0.12, baseL()-maturity*P.leafDark)); }  // 새잎=연한→성숙=진함, 시간따라 전체 짙어짐
+// 새잎=연한→성숙=진함, 시간따라 전체 짙어짐. fade(0..1)는 생존선 아래에서 바래는 정도 —
+// 채도가 빠지고 노랗게 뜬다. 되돌아올 수 있는 상태라 완전히 회색까지는 안 간다.
+function leafTint(maturity, fade){ const c=new THREE.Color().setHSL(PLANT_HUE+0.03*(1-maturity), Math.min(1,baseS()+0.1*maturity), Math.max(0.12, baseL()-maturity*P.leafDark));
+  return (fade>0)? c.lerp(new THREE.Color().setHSL(0.13, 0.20, 0.60), Math.min(1,fade)*0.85) : c; }
+// ★무늬잎은 텍스처가 무늬 그 자체라 단색 틴트로 덮으면 안 된다(캐논). 대신 색을 **곱해서** 바래게 한다 —
+//   map 을 그대로 두므로 무늬는 남고 생기만 빠진다.
+function fadeObj(obj, fade){
+  const f=Math.min(1, Math.max(0, fade)); if(f<=0) return;
+  const k=1-0.35*f;                                    // 밝기를 조금 떨어뜨리고
+  obj.traverse(o=>{ if(o.isMesh&&o.material){
+    const ms=Array.isArray(o.material)?o.material:[o.material];
+    const nm=ms.map(m=>{ const c=m.clone(); if(c.color){ c.color=c.color.clone().multiplyScalar(k)
+        .lerp(new THREE.Color().setHSL(0.13,0.18,0.58), f*0.45); } c.userData={cloned:true}; return c; });
+    o.material=Array.isArray(o.material)?nm:nm[0];
+  }});
+}
 function budTint(){ return new THREE.Color().setHSL(PLANT_HUE+0.05, Math.min(1,baseS()+0.05), baseL()+0.08); }
 function stemTint(woodT){ return new THREE.Color().setHSL(PLANT_HUE, baseS(), baseL()-0.04).lerp(new THREE.Color().setHSL(0.11,0.32,0.34),(woodT||0)*0.28); }  // 잎과 같은 기준색(약간만 어둡게) → 통일
 // 잎 크기: 나이(age 0..1)에 따른 단계별 곡선. 각 전환 시점·시작크기를 P로 지정 → 작게 나서 커지다 형태 전환.
@@ -1682,7 +1759,9 @@ function addLeaf(nodePos, az, maturity, key, sizeOverride, stemDir, stemRad, own
     proto.scale.multiplyScalar(size);
     proto.quaternion.setFromUnitVectors(UP, ld);
     proto.position.copy(ld).multiplyScalar(reach);
-    if(!KEEP_TEX.has(key)) tintObj(proto, leafTint(maturity));           // 잎만 잎색(엽초는 줄기색 유지)
+    const fade=ownAx? leafFadeOf(ownAx.leafBirth) : 0;                   // 생존선 아래에서 바랜 정도
+    if(!KEEP_TEX.has(key)) tintObj(proto, leafTint(maturity, fade));     // 잎만 잎색(엽초는 줄기색 유지)
+    else if(fade>0)        fadeObj(proto, fade);                        // 무늬는 덮지 않고 곱해서 바래게
     // ★무늬종(알보 등)은 텍스처가 무늬 그 자체 → 아예 틴트하지 않고 원본 그대로 쓴다
     holder.add(proto); plantGroup.add(holder); return; }
   plantGroup.add(holder);
@@ -1991,7 +2070,8 @@ function buildPlant(){
       }
       const ax=e.ax, last=ax.segs.length?ax.segs[ax.segs.length-1]:null;
       const tipAz=last?last.az:ax.az, tipDir=last?last.dir:ax.dir;
-      if(g>=ax.leafBirth){ drawLeafStage(e.tip, tipAz, leafM(ax,g), ax.midType, ax.canMature, tipDir, P.rEarly*P.tipTaper*PLANT_GROW, ax.varie, ax, ax.alboMid, ax.matRoll); nLeaf++; }
+      // ★떨어진 잎은 안 그린다. 그 잎과 잎자루까지만 사라지고 줄기·다른 잎은 그대로다.
+      if(g>=ax.leafBirth && !leafDroppedOf(ax.leafBirth)){ drawLeafStage(e.tip, tipAz, leafM(ax,g), ax.midType, ax.canMature, tipDir, P.rEarly*P.tipTaper*PLANT_GROW, ax.varie, ax, ax.alboMid, ax.matRoll); nLeaf++; }
     }
     nodes=nSeg; leaves=nLeaf;
     stage = nSeg<=1 ? '새싹 🌱' : ((axes.length>1?'가지 '+(axes.length-1)+' · ':'')+(acts?'혹 '+acts+' · ':'')+'마디 '+nSeg);
@@ -2269,6 +2349,9 @@ function advanceTo(calDay){
     // ★성숙 판정은 형태가 하루 간 뒤에만 돈다. 안 자란 날은 기회도 안 온다.
     matured=stepMaturation();
   }
+  // ★잎 건강은 **안 자란 날에도** 돈다. 빛이 모자라 안 자라는 그 상황이 곧 잎이 상하는 상황이라,
+  //   자란 날에만 돌리면 정작 나쁜 자리에서 아무 일도 안 일어난다.
+  const leaves=stepLeafHealth();
   // ★논리 진행은 위에서 이미 끝났다. 아래는 화면일 뿐이다 —
   //   그리다 난 예외를 여기서 던지면 코어는 "하루가 안 갔다"고 알고 growth 는 갔다고 아는,
   //   서로 어긋난 상태가 된다. 그 갈림은 다음 턴부터 조용히 누적된다.
@@ -2279,6 +2362,8 @@ function advanceTo(calDay){
            // 그 날 굴린 잎들. 빈 배열이면 굴릴 잎이 없었던 것이고, ok:false 가 있으면
            // 화면이 "이번엔 성숙하지 않았습니다"를 띄워야 한다 — 게이지가 절반으로 준 이유다.
            matured,
+           // 그 날 색이 바래거나 되돌아오거나 떨어진 잎. kind: fade | recover | drop
+           leaves,
            drawn:r.drawn, drawError:r.drawError, hudError:r.hudError };
 }
 let _warnedSetGrowth=false;

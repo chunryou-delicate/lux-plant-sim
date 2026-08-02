@@ -52,7 +52,7 @@ function makeThree() {
 }
 
 /* ── plant_grow.html 의 본문 스크립트만 뽑아 vm 에 올린다 ─────────────────── */
-export function loadGrowth({ seed = 92158 } = {}) {
+export function loadGrowth({ seed = 92158, tuningPatch = null } = {}) {
   const html = fs.readFileSync(path.join(ROOT, 'plant_grow.html'), 'utf8');
   const blocks = [...html.matchAll(/<script>([\s\S]*?)<\/script>/g)].map(m => m[1]);
   const main = blocks[blocks.length - 1];
@@ -62,7 +62,9 @@ export function loadGrowth({ seed = 92158 } = {}) {
   const src = main.replace(/\n\s*init\(\);\s*updateCam\(\);\s*$/, '\n/* init() 제거(헤드리스) */\n');
   assert.notEqual(src, main, 'init() 호출부를 못 찾았습니다 — 파일 끝이 바뀌었습니다');
 
-  const tuning = fs.readFileSync(path.join(ROOT, 'data', 'growth_tuning.json'), 'utf8');
+  let tuning = fs.readFileSync(path.join(ROOT, 'data', 'growth_tuning.json'), 'utf8');
+  // 꺼 둔 경로(낙엽)를 켠 채로도 도는지 보려면 정본을 갈아끼워야 한다 — 파일은 안 건드린다.
+  if (tuningPatch) { const t = JSON.parse(tuning); tuningPatch(t); tuning = JSON.stringify(t); }
   const el = () => ({
     value: '', textContent: '', checked: false, dataset: {}, style: {}, classList: { add() {}, remove() {}, toggle() {} },
     appendChild() {}, addEventListener() {}, removeEventListener() {}, setAttribute() {}, getAttribute() { return null; },
@@ -116,7 +118,7 @@ function walk(g, { dli, days, fromGrowth = 0, seed = 92158 }) {
 
 /* 그 시점에 시간상 중간잎 이상인 잎들의 상태 — 상시 중간잎 수를 세는 데 쓴다. */
 function leafCensus(g) {
-  const age = g.growthDays(), LP = g.leafStageParams();
+  const age = g.ageOf(g.growthDays()), LP = g.leafStageParams();   // ★구현과 같은 기준(ageOf)
   let mid = 0, mature = 0, locked = 0;
   for (const ax of g.axisTimeline(age)) {
     if (ax.birth > age) continue;
@@ -226,6 +228,71 @@ check('H 소급 뒤집힘 없음 — 빛이 나빠져도 갈라진 잎이 안 �
   const after = leafCensus(g).mature;
   assert.equal(after, before, `★빛이 나빠지자 성숙잎이 ${before} → ${after} 로 줄었습니다`);
 });
+
+/* ══ I · 생존선 아래면 잎이 바랜다. 되돌릴 수 있다 ═════════════════════════ */
+check('I 잎 바램 — survive(1.2) 아래에서 바래고, 빛이 돌아오면 회복', () => {
+  walk(g, { dli: 12.16, days: 200 });                       // 잎을 여러 장 만들어 둔다
+  for (let i = 0; i < 40; i++) { g.setDailyLightSteady(0.6); g.advanceTo(g.calendarDay() + 1); }
+  const faded = g.leafHealthAll().filter(e => e.fade > 0);
+  assert.ok(faded.length > 0, '생존선 아래 40일인데 바랜 잎이 없습니다');
+  assert.ok(faded.some(e => e.fade >= 1), '40일인데 다 바랜 잎이 하나도 없습니다');
+  for (let i = 0; i < 40; i++) { g.setDailyLightSteady(12.16); g.advanceTo(g.calendarDay() + 1); }
+  assert.ok(g.leafHealthAll().every(e => e.fade === 0),
+    '빛이 돌아왔는데 안 되돌아온 잎이 있습니다: ' + JSON.stringify(g.leafHealthAll()));
+});
+
+/* ══ J · ★초보는 안 떨어진다 — 바랜 채로 유지 (박사님 확정) ════════════════ */
+check('J 초보 — 다 바래도 잎이 안 떨어지고 안 죽는다', () => {
+  walk(g, { dli: 12.16, days: 200 });
+  const before = g.leafHealthAll().length;
+  for (let i = 0; i < 300; i++) { g.setDailyLightSteady(0.6); g.advanceTo(g.calendarDay() + 1); }
+  const st = g.leafHealthAll();
+  assert.ok(st.some(e => e.fade >= 1), '300일인데 다 바랜 잎이 없습니다');
+  assert.equal(st.filter(e => e.dropped).length, 0,
+    '★초보인데 잎이 떨어졌습니다 — drop_enabled 가 켜져 있습니까?');
+});
+
+/* ══ K · 갈라진 잎은 되돌아가지 않는다 (박사님 지적) ═══════════════════════ */
+check('K 성숙잎은 바래도 중간잎으로 안 돌아간다', () => {
+  walk(g, { dli: 12.16, days: 200 });
+  const mature = g.matStateAll().filter(e => e.matured).map(e => e.leafBirth);
+  assert.ok(mature.length > 0, '적정광 200일에 성숙잎이 없습니다');
+  for (let i = 0; i < 60; i++) { g.setDailyLightSteady(0.6); g.advanceTo(g.calendarDay() + 1); }
+  for (const lb of mature)
+    assert.equal(g.matureOf(lb), true, `★성숙잎 ${lb} 이 중간잎으로 돌아갔습니다`);
+});
+
+/* ══ L · 정지 구간(1.2~3.0)에서는 자라지도 잃지도 않는다 ═══════════════════ */
+check('L 정지 구간 2.5 — 안 자라고 잎도 안 바랜다', () => {
+  walk(g, { dli: 12.16, days: 200 });
+  const before = JSON.stringify(g.leafHealthAll());
+  const turns = [];
+  for (let i = 0; i < 60; i++) { g.setDailyLightSteady(2.5); turns.push(g.advanceTo(g.calendarDay() + 1)); }
+  assert.ok(turns.every(t => t.grew === false), '2.5 인데 자란 턴이 있습니다');
+  assert.equal(JSON.stringify(g.leafHealthAll()), before, '정지 구간인데 잎 상태가 바뀌었습니다');
+});
+
+/* ══ M · 낙엽 경로 — 켜면 실제로 떨어진다(꺼 둔 코드가 썩지 않게) ══════════ */
+{
+  const g2 = await ready(loadGrowth({ tuningPatch: t => { t.health.drop_enabled = true; t.health.drop_hold_days = 3; } }));
+  try {
+    assert.equal(g2.growthTuning ? true : true, true);
+    g2.seedTo(92158); g2.matResetAll(); g2.setGrowth(0);
+    for (let i = 0; i < 200; i++) { g2.setDailyLightSteady(12.16); g2.advanceTo(g2.calendarDay() + 1); }
+    const born = g2.leafHealthAll().length;
+    let dropEvents = 0;
+    for (let i = 0; i < 400; i++) { g2.setDailyLightSteady(0.6);
+      dropEvents += (g2.advanceTo(g2.calendarDay() + 1).leaves || []).filter(x => x.kind === 'drop').length; }
+    const st = g2.leafHealthAll();
+    assert.ok(dropEvents > 0, '켰는데 400일 동안 떨어진 잎이 없습니다 — 낙엽 경로가 죽어 있습니다');
+    const age2 = g2.ageOf(g2.growthDays());                       // ★구현과 같은 기준
+    const alive = g2.axisTimeline(age2).filter(a => a.birth <= age2
+                    && age2 >= a.leafBirth && !g2.leafDroppedOf(a.leafBirth));
+    assert.ok(alive.length >= 1, '★잎이 하나도 안 남았습니다 — 마지막 한 장을 지켜야 합니다');
+    results.push(['INFO', `  낙엽 ${dropEvents}장 떨어지고 ${alive.length}장 남음(초보에서는 꺼져 있음)`]);
+    results.push(['PASS', 'M drop_enabled 를 켜면 떨어진다 · 마지막 한 장은 남는다']);
+  } catch (e) { results.push(['FAIL', 'M drop_enabled 를 켜면 떨어진다 · 마지막 한 장은 남는다', e.message]); }
+}
 
 /* ── 보고 ─────────────────────────────────────────────────────────────── */
 let fail = 0;
