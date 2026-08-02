@@ -82,6 +82,8 @@
     background:linear-gradient(#bff5b0,#7ce69a);padding:11px 22px;border-radius:16px;
     box-shadow:0 8px 26px rgba(0,0,0,.45);text-align:center;line-height:1.45}
   #event i{font-style:normal;display:block;font-size:12px;color:#2c4a22;margin-top:3px}
+  /* 한 턴에 사건이 둘이면 위아래로 쌓인다 — Day 4 의 수확과 도착이 그렇다 */
+  #event b+b{margin-top:7px}
   .scen-run #play{opacity:.45}
   .resourcebar{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin:10px 0}
   .resource{padding:8px 9px;border-radius:11px;background:rgba(238,255,225,.09);
@@ -394,6 +396,9 @@ function drawJourney() {
     grow_beansprout: `콩나물이 자라는 중입니다. 수확까지 ${Math.max(0, crop.harvestDays - crop.ageDays)}일.`,
     monstera_gift: '콩나물을 수확했습니다. 새로운 화분이 옵니다.',
     move_monstera: '몬스테라는 어두운 자리에서 자라지 않습니다. 높은 창가 자리로 옮겨 보세요.',
+    /* ★ 형태가 오르기 시작하면 여기로 넘어온다(first_play.markMonsteraPhase).
+       "옮겨 보세요"가 옮긴 뒤에도 남아 있으면 플레이어는 자기 선택이 먹혔는지 알 수 없다. */
+    grow_monstera: '자리를 옮긴 뒤부터 새순이 오르고 있습니다. 말린 새순이 설 때까지 하루씩 넘겨 보세요.',
     complete: '말린 새순이 나왔습니다! 어두운 자리와 밝은 자리를 모두 찾았습니다.'
   };
   $('quest').textContent = quest[fp.phase] || '첫 플레이를 진행하세요.';
@@ -487,18 +492,23 @@ function guard(fn) {
   };
 }
 
+/* Day 4 엔 수확과 도착이 같은 턴에 난다 — 모아서 한 번에 띄운다(위 banners 주석). */
 function showFirstPlayEvents(turn) {
   const ev = turn && turn.firstPlayEvent;
+  const events = [];
   if (ev && ev.harvested) {
-    banner(`🥣 콩나물 ${ev.meals}끼 수확!`,
-      `오늘 식비 ${ev.cashFoodWon.toLocaleString()}원 · ${ev.foodSavedWon.toLocaleString()}원 절감`);
+    events.push({ title: `🥣 콩나물 ${ev.meals}끼 수확!`,
+      sub: `오늘 식비 ${ev.cashFoodWon.toLocaleString()}원 · ${ev.foodSavedWon.toLocaleString()}원 절감` });
   }
   if (turn && turn.plantArrived) {
     fillSlots(false);
     $('slot').value = pot0(S).slotId;
-    banner('🪴 몬스테라가 도착했습니다', '“콩나물을 잘 키웠구나. 이건 좀 더 어려울 거야.”');
+    events.push({ title: '🪴 몬스테라가 도착했습니다',
+      sub: '“콩나물을 잘 키웠구나. 이건 좀 더 어려울 거야.”' });
   }
-  if (S.firstPlay.completed) banner('🌱 말린 새순이 나왔어요!', '자리에 따라 필요한 빛이 다릅니다.');
+  if (S.firstPlay.completed)
+    events.push({ title: '🌱 말린 새순이 나왔어요!', sub: '자리에 따라 필요한 빛이 다릅니다.' });
+  banners(events);
 }
 
 $('next').onclick = guard(() => {
@@ -581,12 +591,22 @@ function pickSlot(how) {
   return how === 'darkest' ? list[list.length - 1].slotId : list[0].slotId;
 }
 
-function banner(title, sub) {
+/* ★ 한 턴에 사건이 둘이면 **함께** 띄운다 (2026-08-02 정정).
+   예전엔 banner() 가 #event 를 통째로 덮어써서, Day 4 의 수확·식비 결과가 같은 프레임에서
+   몬스테라 도착 안내로 지워졌다 — 첫 자리 선택의 답안지를 플레이어가 못 보고 넘어갔다.
+   순서는 계약 그대로 수확 → 식비 → 도착이고(first_play.md §2), 위에서 아래로 그 순서로 쌓는다.
+   타이머도 하나만 둔다 — 배너마다 걸면 먼저 건 쪽이 나중 배너를 일찍 지운다. */
+let bannerTimer = null;
+function banners(events) {
+  const list = (events || []).filter(Boolean);
+  if (!list.length) return;
   const el = $('event');
-  el.innerHTML = `<b>${title}${sub ? `<i>${sub}</i>` : ''}</b>`;
+  el.innerHTML = list.map(e => `<b>${e.title}${e.sub ? `<i>${e.sub}</i>` : ''}</b>`).join('');
   el.classList.add('on');
-  setTimeout(() => el.classList.remove('on'), 6000);
+  clearTimeout(bannerTimer);
+  bannerTimer = setTimeout(() => el.classList.remove('on'), 6000);
 }
+function banner(title, sub) { banners([{ title, sub }]); }
 
 function fenOn() {
   const f = io.growth.canFenestrate ? io.growth.canFenestrate(pot0(S) && pot0(S).variegated) : null;

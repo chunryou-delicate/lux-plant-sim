@@ -199,11 +199,21 @@ export function moveMonstera(fp, slotId) {
   return slotId;
 }
 
+/* 직전 관측보다 형태가 나아갔나 — 단계가 바뀌었거나, 같은 단계 안에서 진행이 올랐거나.
+   도착 시점 값을 0으로 가정하지 않는다(첫 관측이 0%가 아닐 수도 있다) — 두 관측을 비교만 한다. */
+function phaseAdvanced(prev, now) {
+  if (!prev) return false;                          // 도착 직후 첫 관측은 비교 대상이 없다
+  if (prev.phaseId !== now.phaseId) return true;
+  return Number.isFinite(prev.progress01) && Number.isFinite(now.progress01) &&
+         now.progress01 > prev.progress01;
+}
+
 /* 표시용 단계를 그대로 보관한다. ★ 한글 이름도 growth 가 낸 것을 쓴다 —
    코어가 자기 표를 들면 growth 가 단계를 늘리거나 이름을 바꿀 때 **오류 없이 틀린 라벨**이 뜬다.
    phaseKo 가 없는(옛) growth 면 키를 그대로 보여준다 — 조용히 비우지 않는다. */
 export function markMonsteraPhase(fp, phase) {
   if (!fp.monstera.arrived || !phase) return fp;
+  const prev = fp.monstera.growthPhase;
   fp.monstera.growthPhase = {
     phaseId: phase.phaseId,
     phaseKo: phase.phaseKo ?? phase.phaseId ?? null,
@@ -211,6 +221,14 @@ export function markMonsteraPhase(fp, phase) {
     nextPhaseId: phase.nextPhaseId ?? null,
     nextPhaseKo: phase.nextPhaseKo ?? phase.nextPhaseId ?? null
   };
+  /* ★ 형태가 실제로 오르기 시작하면 안내 단계를 넘긴다 (2026-08-02 정정).
+     예전엔 move_monstera 가 완료될 때까지 그대로라, 창턱으로 옮겨 게이지가 오르는 중에도
+     화면은 계속 "높은 창가 자리로 옮겨 보세요" 였다 — 플레이어가 옮긴 것을 게임이 못 본 셈이다.
+     ★ 슬롯 id 로 판정하지 않는다. 정답 슬롯을 코어에 박으면 방이 바뀔 때 조용히 틀리고,
+     "어느 자리인지는 숨긴다"(first_play.md §4)도 깨진다. 오른다는 것 자체가 자리를 맞춘 증거다.
+     반대로 다른 어두운 자리로 옮기면 진행이 0에서 멈추므로 안내는 그대로 남는다 — 그게 맞다. */
+  if (fp.phase === 'move_monstera' && phaseAdvanced(prev, fp.monstera.growthPhase))
+    fp.phase = 'grow_monstera';
   /* ★ 정확히 spear_furled 에서만 완료. 뒤 단계 포괄 성공 금지 — 위 상수 주석 참고. */
   if (phase.phaseId === FIRST_PLAY_COMPLETE_PHASE_ID) {
     fp.completed = true;

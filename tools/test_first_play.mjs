@@ -85,12 +85,31 @@ function growFourDays(dli) {
 
   markMonsteraPhase(fp, { phaseId: 'spear_ready', progress01: 2 / 3 });
   assert.equal(fp.completed, false);
+  assert.equal(fp.phase, 'move_monstera', '도착 직후 첫 관측만으로는 옮겼다고 볼 수 없다');
   markMonsteraPhase(fp, { phaseId: 'spear_opening', progress01: 0 });
   assert.equal(fp.completed, false, '말린 새순 단계를 건너뛴 상태를 성공으로 받으면 안 된다');
   markMonsteraPhase(fp, { phaseId: 'leaf_mid', progress01: 0.5 });
   assert.equal(fp.completed, false, '뒤 단계 포괄 성공 금지 — 지나쳐 버린 회차는 완료가 아니다');
   markMonsteraPhase(fp, { phaseId: 'spear_furled', progress01: 0 });
   assert.equal(fp.completed, true);
+  assert.equal(fp.phase, 'complete');
+}
+
+/* 안내 단계: 어두운 자리에 있는 동안은 "옮겨 보세요"가 남고, 형태가 오르기 시작하면 넘어간다.
+   슬롯 id 로 판정하지 않으므로 다른 어두운 자리로 옮겨도 진행이 없으면 안내는 그대로다. */
+{
+  const { fp } = growFourDays(0.2);
+  markMonsteraArrived(fp, 'arrival-slot');
+  markMonsteraPhase(fp, { phaseId: 'spear_ready', progress01: 0 });
+  moveMonstera(fp, 'another-dark-slot');
+  markMonsteraPhase(fp, { phaseId: 'spear_ready', progress01: 0 });
+  assert.equal(fp.phase, 'move_monstera', '정지한 채면 옮겨 보라는 안내가 남아야 한다');
+
+  markMonsteraPhase(fp, { phaseId: 'spear_ready', progress01: 1 / 3 });
+  assert.equal(fp.phase, 'grow_monstera', '형태가 오르기 시작하면 안내를 넘긴다');
+  assert.equal(fp.completed, false, '안내 단계 전환은 완료가 아니다');
+
+  markMonsteraPhase(fp, { phaseId: 'spear_furled', progress01: 0 });
   assert.equal(fp.phase, 'complete');
 }
 
@@ -170,9 +189,13 @@ console.log('first_play: PASS');
   assert.equal(pot0(S).arrivalGrowthDays, 143);
   assert.notEqual(pot0(S).slotId, 'banjiha-sill:0', '몬스테라는 먼저 어두운 자리에 도착해야 한다');
 
+  assert.equal(S.firstPlay.phase, 'move_monstera');
   pot0(S).slotId = 'banjiha-sill:0';
   moveMonstera(S.firstPlay, pot0(S).slotId);
-  for (let day = 5; day <= 7; day++) nextDay(S, io);
+  nextDay(S, io);
+  assert.equal(S.firstPlay.phase, 'grow_monstera',
+    '창턱으로 옮겨 게이지가 오르는 중이면 "옮겨 보세요"가 남으면 안 된다');
+  for (let day = 6; day <= 7; day++) nextDay(S, io);
 
   assert.equal(S.day, 7);
   assert.equal(pot0(S).daysPlanted, 3);

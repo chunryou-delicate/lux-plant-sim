@@ -281,3 +281,64 @@ node --experimental-default-type=module tools/test_loop_errors.mjs
 - 첫 플레이 전체 `PASS` 및 재미 판정은 선언하지 않는다 — 직접 플레이 체감은 사용자 판단이다.
 - 정식 경제, 월별 현금, 이사, 식물등 구매, 다개체 엔진, 활력, 고사, 새 작물·캐릭터는 미구현이다.
 - `data/balance/`, `docs/GAME_PLAN.md`, 에셋, 전역 생장 곡선·밸런스 수치는 변경하지 않았다.
+
+---
+
+# 2026-08-02 · 추가 — 첫 플레이 화면 결함 2건 수정 (core)
+
+독립 검증에서 나온 **core 결함 두 개만** 고쳤습니다. 밸런스 수치·경제·패널은 건드리지 않았습니다.
+
+## 1. Day 4 배너가 서로를 덮어썼다 — 이제 **함께** 뜹니다
+
+수확 결과와 몬스테라 도착이 같은 턴에 나는데 `banner()` 가 `#event` 를 통째로 덮어써서,
+**식비 절감 결과가 같은 프레임에서 지워졌습니다.** 첫 자리 선택의 답안지를 못 보고 넘어가는 문제입니다.
+
+```
+전:  banner(수확) → banner(도착)   → 화면엔 도착만 남음
+후:  banners([수확, 도착])          → 한 배너에 계약 순서대로 두 줄
+```
+
+두 사건은 **그대로 Day 4** 입니다. 순서도 계약 그대로 **수확·식비 → 도착**이고, 위에서 아래로 쌓입니다.
+`first_play.md` §2의 *"식비 결과를 몬스테라보다 먼저"* 를 세로 순서로 지킨 것입니다.
+
+## 2. 옮긴 뒤에도 *"높은 창가 자리로 옮겨 보세요"* 가 남았다
+
+`fp.phase` 가 `move_monstera` 에서 **완료 전까지 바뀌지 않아**, 창턱으로 옮겨 게이지가 오르는 중에도
+안내가 그대로였습니다 — 플레이어가 옮긴 것을 게임이 못 본 셈입니다.
+
+```
+안내 단계 추가:  move_monstera  →  ★grow_monstera  →  complete
+전환 조건:       형태 진행이 직전 관측보다 오른 첫 순간 (markMonsteraPhase)
+```
+
+**★ 슬롯 id 로 판정하지 않았습니다.** `banjiha-sill:0` 을 코어에 박으면 방이 바뀔 때 조용히 틀리고,
+§4의 *"어느 자리인지는 숨긴다"* 도 깨집니다. **오르기 시작한다는 것 자체가 자리를 맞춘 증거**라
+게이지(§9 A안)와 같은 한 객체를 봅니다. 다른 어두운 자리로 옮기면 진행이 0에서 멈추므로
+안내는 그대로 남습니다 — 그게 맞습니다.
+
+> ⚠ **plan 확인 요청** — 새 안내 문구는 코어가 임시로 넣었습니다(`game.html` quest 표).
+> *"자리를 옮긴 뒤부터 새순이 오르고 있습니다. 말린 새순이 설 때까지 하루씩 넘겨 보세요."*
+> 문구 정본이 plan 소유라면 고쳐 주세요. **단계 키(`grow_monstera`)는 코어 소유**입니다.
+
+## 재현
+
+```powershell
+node --experimental-default-type=module tools/test_first_play.mjs
+node --experimental-default-type=module tools/test_first_play_attacks.mjs
+node --experimental-default-type=module tools/test_loop_errors.mjs
+node --experimental-default-type=module tools/test_banjiha_profile.mjs
+```
+
+전부 PASS. 브라우저(`game.html`) 수동 경로에서 확인한 것:
+
+| 확인 | 결과 |
+|---|---|
+| Day 4 배너 | 수확+식비 줄과 도착 줄이 **동시에** 보임 |
+| 창턱으로 옮긴 다음 턴(Day 5) | 안내가 `grow_monstera` 로 넘어감 · 게이지 33% |
+| Day 7 | `spear_furled` · 자동 시뮬 `data-status=pass` (도착 후 3턴 그대로) |
+| **어두운 자리로 옮긴 회차** | 게이지 0% 인 동안 안내 유지 → 7일평균이 문턱을 넘는 날 전환 |
+
+## 범위 밖 유지
+
+경제 확장·현금 원장·새 패널·정식 UI 확장 없음. `data/balance/`·에셋·생장 곡선 불변.
+Day 4 의 두 사건을 다른 날로 나누지 않았고, 종료 판정(`spear_furled` 하나)도 그대로입니다.
