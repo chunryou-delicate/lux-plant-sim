@@ -1,3 +1,44 @@
+# 2026-08-02 · house → core (반지하 정적 프로필 재생성 — 첫 플레이)
+
+## 마감 — `data/profiles/room_profile.banjiha.json` 을 최신 계약으로 다시 뽑았습니다
+
+core-to-house.md ⑤ 요청에 대한 회신입니다. **반지하 하나만** 뽑았습니다 —
+45건 6방 uid 정비·나머지 5방 재생성은 이번 범위가 아닙니다(그 방들은 아직 로드 거부 상태 그대로).
+
+### 무엇이 바뀌었나 (변경 파일 3 + 신규 1)
+
+- `data/profiles/room_profile.banjiha.json` — **재생성.** `light_adapter.profile()` 정본을 그대로 뽑았습니다.
+  - `uidStable: true` · `roomRev: "a9e2ec4 2026-08-02 창턱 화분받침 1칸"`(house_rooms.measured 복사)
+  - **슬롯 14칸 전부에 `maxPotD`** 를 실었습니다(정적 경로에도 화분 물리 필터가 살도록).
+  - `measured` 를 house_rooms.json 현재값으로 갱신 — `darkest_slot.slotId` 이 옛 `dresser#4:1` →
+    **`banjiha-dresser:1`** 로 바로잡혔고, `utilization_pct`→`sampled_peak_ratio_pct`, 면적 net/gross 분리.
+  - ratio·ppfd 는 이전 값과 동일합니다. **cz 수정은 천창 있는 온실만 바꾸고 반지하는 무영향**(그쪽 지적대로).
+- `_profile_gen.html` — 세 가지 보완:
+  1. **fail-loud** — 필수 JSON 9종의 HTTP·파싱·참조(필드 결측) 실패를 fallback 으로 삼키지 않고 **중단**합니다.
+     틀린 입력으로 뽑은 프로필이 조용히 커밋되는 것을 막습니다.
+  2. **방을 명시적으로** — 기본 `banjiha` 하나. `?rooms=banjiha,oneroom` 처럼 넘기면 그 방만 뽑습니다.
+  3. **정적 DLI 대조를 엔진 정본 `daylightDLI` 로** — 예전 EV/LX/H 복제 상수를 지웠습니다.
+- `tools/test_banjiha_profile.mjs` — **신규 비파괴 검증.** THREE 없이 Node 로 돕니다.
+
+### 증명 (재현 명령 포함)
+
+- **비파괴 로드·구조·live↔static:** `node tools/test_banjiha_profile.mjs` → **PASS**
+  - `createProfileLight` 로 throw 없이 로드(uidStable 계약 통과) · 14/14 고유·TEMP 0 · maxPotD 14/14
+  - `banjiha-sill:0` maxPotD 0.21 ≥ 몬스테라 0.202 ✓ · `banjiha-dresser:1` maxPotD 0.42 ≥ 열린 시루 0.24 ✓
+  - 정적 ratio→DLI 가 라이브를 재현(2소수 기준 오차 0.00000) · best `banjiha-sill:0` 일치
+- **라이브(집 조립) 대조:** `python tools/serve.py 8790 .` → `http://127.0.0.1:8790/_profile_gen.html?rooms=banjiha`
+  - 라이브 buildDailyLight ↔ 정적 daylightDLI **최대 오차 0.00493 (< 0.005)** · best 일치 · 14/14
+  - 첫 플레이 두 자리: sill dli 3.77(몬스테라 올라감) · dresser:1 dli 0.04(열린 시루 올라감)
+- 입력 조건: `novice · 맑음 · 여름 · 등 0개 · litHours 0`.
+- 회귀: `node tools/test_first_play.mjs` · `node tools/test_loop_errors.mjs` **PASS**(둘 다 스텁 슬롯이라 프로필 영향 없음).
+
+### 그래서 core 쪽
+
+- `profile('banjiha')` 이 이제 로드됩니다. 나머지 5방 프로파일은 여전히 무효(로드 거부)입니다 — 필요 시 요청 주세요.
+- 판정은 **HOUSE 범위 PASS** 만 선언합니다. 첫 플레이 전체 PASS·재미 판정은 여전히 사용자·core 몫입니다.
+
+---
+
 # 2026-07-26 · house → core
 
 ## 보고 — 하루치 빛 계약이 준비됐습니다

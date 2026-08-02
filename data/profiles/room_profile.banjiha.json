@@ -2,6 +2,8 @@
  "schema": "room_profile/1",
  "room": "banjiha",
  "label": "반지하",
+ "uidStable": true,
+ "roomRev": "a9e2ec4 2026-08-02 창턱 화분받침 1칸",
  "lampCounts": [
   0,
   1,
@@ -30,13 +32,14 @@
     "1.35": 2.1,
     "1.6": 3.7
    },
-   "_method": "0.25m 격자·높이 0.10~1.80m. 벽·칸막이·창턱은 남기고 가구만 제외. ★ 고체 벽 속 점은 빼고 창·문 개구부(reveal)는 살린다 — 창턱이 실제로 그 안에 놓인다."
+   "_method": "0.25m 격자·높이 0.10~1.80m. 가구 제외. 고체 벽(외곽)·칸막이·도려낸 경계 벽 속 점은 빼고, 창·문 개구부(reveal)는 살린다 — 창턱이 실제로 그 안에 놓인다."
   },
   "slots": {
    "peak_summer": 3.77,
    "avg7_summer": 2.42,
    "count": 14,
-   "utilization_pct": 101,
+   "sampled_peak_ratio_pct": 101,
+   "_sampled_note": "slots.peak ÷ space.peak. 두 값의 표본이 다르다 — space 는 0.25m 격자 위 점이고 slots 는 가구가 정한 임의 높이다. 격자 사이에 더 좋은 자리가 있으면 100%를 넘을 수 있고, 그건 오차가 아니라 표본 차이다.",
    "_method": "지금 furniture 배치 기준. 차폐에 가구 포함.",
    "bright_slot": {
     "slotId": "banjiha-sill:0",
@@ -52,7 +55,7 @@
    },
    "dark_slots_le_0_3": 9,
    "darkest_slot": {
-    "slotId": "dresser#4:1",
+    "slotId": "banjiha-dresser:1",
     "peak_summer": 0.04,
     "avg7_summer": 0.02,
     "point": {
@@ -61,20 +64,22 @@
      "z": 1.66
     },
     "maxPotD": 0.42,
-    "_note": "열린 콩나물 시루(0.24m) 배치 가능. 첫 플레이의 '어두운 자리'."
-   }
+    "_note": "열린 콩나물 시루(413, 지름 0.24m) 배치 가능. 첫 플레이의 '어두운 자리'."
+   },
+   "_slotid_note": "★ 반지하는 가구마다 uid 를 데이터에 못 박아 house.js 경로와 light_adapter 경로가 같은 slotId 를 낸다. 다른 방은 아직 light_adapter 가 로드 시점에 seq 로 붙이므로 편집만 해도 바뀐다(core-to-house 보고)."
   },
   "area": {
-   "floor_m2": 17.8,
+   "floor_m2_net": 17.8,
+   "floor_m2_gross": 20,
    "lamp_max_pots": {
     "clip": 36,
     "bar": 17,
     "stand": 9
    },
-   "_method": "벽 띠를 뺀 실내 바닥 면적. 등 상한=면적÷(2×coverage_r)². 통로 미반영 이론값."
+   "_method": "floor_m2_net = 0.25m 격자로 센 실제 바닥(외곽 벽 띠·칸막이·도려낸 자리 제외). floor_m2_gross = 외곽 치수 곱. 등 상한은 net 기준."
   },
   "measuredAt": "2026-08-02",
-  "roomRev": "2026-08-02 창턱 화분받침 1칸 추가 (shelf_sill_pot1)",
+  "roomRev": "a9e2ec4 2026-08-02 창턱 화분받침 1칸",
   "status": "확정"
  },
  "slots": [
@@ -86,6 +91,7 @@
     "y": 1.585,
     "z": -1.95
    },
+   "maxPotD": 0.21,
    "ratio": 0.245183,
    "ppfd": [
     0,
@@ -101,6 +107,7 @@
     "y": 0.74,
     "z": -1.41
    },
+   "maxPotD": 0.57,
    "ratio": 0.0311542,
    "ppfd": [
     0,
@@ -116,6 +123,7 @@
     "y": 0.74,
     "z": -1.41
    },
+   "maxPotD": 0.57,
    "ratio": 0.00874807,
    "ppfd": [
     0,
@@ -131,6 +139,7 @@
     "y": 0.8,
     "z": 0.94
    },
+   "maxPotD": 0.42,
    "ratio": 0.00391353,
    "ppfd": [
     0,
@@ -146,6 +155,7 @@
     "y": 0.8,
     "z": 1.66
    },
+   "maxPotD": 0.42,
    "ratio": 0.00251104,
    "ppfd": [
     0,
@@ -161,6 +171,7 @@
     "y": 0.03,
     "z": -1.72
    },
+   "maxPotD": 0.25,
    "ratio": 0.00669749,
    "ppfd": [
     0,
@@ -176,6 +187,7 @@
     "y": 0.03,
     "z": -1.72
    },
+   "maxPotD": 0.25,
    "ratio": 0.00707733,
    "ppfd": [
     0,
@@ -191,6 +203,7 @@
     "y": 0.03,
     "z": -1.72
    },
+   "maxPotD": 0.25,
    "ratio": 0.0065498,
    "ppfd": [
     0,
@@ -206,6 +219,7 @@
     "y": 0.412,
     "z": -1.72
    },
+   "maxPotD": 0.25,
    "ratio": 0.0119026,
    "ppfd": [
     0,
@@ -221,6 +235,7 @@
     "y": 0.412,
     "z": -1.72
    },
+   "maxPotD": 0.25,
    "ratio": 0.0114287,
    "ppfd": [
     0,
@@ -236,6 +251,7 @@
     "y": 0.412,
     "z": -1.72
    },
+   "maxPotD": 0.25,
    "ratio": 0.0109849,
    "ppfd": [
     0,
@@ -251,6 +267,7 @@
     "y": 0.794,
     "z": -1.72
    },
+   "maxPotD": 0.25,
    "ratio": 0.0258206,
    "ppfd": [
     0,
@@ -266,6 +283,7 @@
     "y": 0.794,
     "z": -1.72
    },
+   "maxPotD": 0.25,
    "ratio": 0.0246041,
    "ppfd": [
     0,
@@ -281,6 +299,7 @@
     "y": 0.794,
     "z": -1.72
    },
+   "maxPotD": 0.25,
    "ratio": 0.0244035,
    "ppfd": [
     0,

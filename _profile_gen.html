@@ -4,9 +4,17 @@
 <script type="module">
 /* data/profiles/room_profile.*.json 재생성 + 라이브(daily_light/1) 대조.
    ★ 프로필은 core 가 쓰는 정적 사본이다. 방 구조를 고치면 낡으므로 여기서 다시 뽑는다.
-   생성은 core 소유(light_adapter.profile)를 그대로 부른다 — house 가 물리를 다시 쓰지 않는다. */
+   생성은 core 소유(light_adapter.profile)를 그대로 부른다 — house 가 물리를 다시 쓰지 않는다.
+
+   ── 2026-08-02 house 보완 (첫 플레이 얇은 통합) ────────────────────────────
+   ① fail-loud: 필수 JSON 의 HTTP·파싱·참조 실패를 fallback 으로 삼키지 않고 중단한다.
+      틀린 입력으로 뽑은 프로필이 조용히 커밋되면 게임이 그 위에서 도는 게 더 나쁘다.
+   ② 방을 명시적으로 고른다: 기본은 첫 플레이에 필요한 `banjiha` 하나.
+      `?rooms=banjiha,oneroom` 처럼 넘기면 그 방만 뽑는다. 45건 6방 정비는 이번 범위가 아니다.
+   ③ 정적 DLI 대조를 엔진 정본(daylightDLI)으로 한다. 예전엔 EV/LX/H 상수를 손으로 복제해
+      새 정답을 만들 위험이 있었다 — 라이브와 같은 물리식을 불러야 대조가 정직하다. */
 import { createLightEngine } from './src/game/light_adapter.js';
-import { buildDailyLight } from './src/engine/daily_light.js';
+import { buildDailyLight, daylightDLI } from './src/engine/daily_light.js';
 import { initTextures } from './src/render3d/textures.js';
 
 const O = document.getElementById('o');
@@ -14,68 +22,117 @@ const fail = e => { O.textContent = '★ ' + (e && (e.stack || e.message) || e);
 window.onerror = (m, s, l, c, e) => fail(e || m);
 window.onunhandledrejection = e => fail(e.reason);
 
-const j = (p, fb) => fetch(p).then(r => r.json()).catch(() => fb);
+/* ★ fail-loud 로더. HTTP 실패·JSON 파싱 실패·참조(필드 결측) 실패를 전부 던진다.
+   `pick` 이 null/undefined 를 돌려주면 참조 실패로 본다. 조용한 기본값을 두지 않는다. */
+async function req(url, pick) {
+  let res;
+  try { res = await fetch(url); }
+  catch (e) { throw new Error(`[필수 JSON — 네트워크 실패] ${url}: ${e.message}`); }
+  if (!res.ok) throw new Error(`[필수 JSON — HTTP ${res.status}] ${url}`);
+  let data;
+  try { data = await res.json(); }
+  catch (e) { throw new Error(`[필수 JSON — 파싱 실패] ${url}: ${e.message}`); }
+  const out = pick ? pick(data) : data;
+  if (out == null)
+    throw new Error(`[필수 JSON — 참조 실패] ${url}: 기대한 필드가 없습니다`);
+  return out;
+}
+
+const params = new URLSearchParams(location.search);
+const ROOMS = (params.get('rooms') || 'banjiha')
+  .split(',').map(s => s.trim()).filter(Boolean);
+
 const [houseRooms, winPresets, doorPresets, finishes, furnPresets,
        lightPresets, shadePresets, lightTh, weatherBalance] = await Promise.all([
-  j('./data/house_rooms.json', { rooms: {} }),
-  j('./data/window_presets.json', {}).then(d => d.presets || d),
-  j('./data/door_presets.json', {}).then(d => d.presets || d),
-  j('./data/room_finishes.json', null),
-  j('./data/furniture_presets.json', {}).then(d => d.presets || d),
-  j('./data/lighting_presets.json', {}),
-  j('./data/shading_presets.json', { presets: {} }),
-  j('./data/balance/light_thresholds.json', null),
-  j('./data/balance/weather.json', null)
+  req('./data/house_rooms.json', d => d.rooms ? d : null),
+  req('./data/window_presets.json', d => d.presets || d),
+  req('./data/door_presets.json', d => d.presets || d),
+  req('./data/room_finishes.json'),
+  req('./data/furniture_presets.json', d => d.presets || d),
+  req('./data/lighting_presets.json'),
+  req('./data/shading_presets.json', d => d.presets ? d : { presets: d }),
+  req('./data/balance/light_thresholds.json'),
+  req('./data/balance/weather.json')
 ]);
 await initTextures();
 const light = createLightEngine({ houseRooms, winPresets, doorPresets, finishes, furnPresets,
                                   lightPresets, shadePresets, lightTh, weatherBalance });
 
-const ROOMS = ['banjiha','oneroom','tworoom','classroom','apartment','greenhouse'];
 const L = [], OUT = {};
 L.push('# room_profile 재생성 + 라이브 대조 (2026-08-02)');
+L.push(`뽑는 방: ${ROOMS.join(', ')}`);
 L.push('');
-L.push('| 방 | 슬롯 | 고유 slotId | best slotId | best ratio | roomRev |');
-L.push('|---|---|---|---|---|---|');
+L.push('| 방 | 슬롯 | 고유 slotId | uidStable | best slotId | best ratio | maxPotD 결측 | roomRev |');
+L.push('|---|---|---|---|---|---|---|---|');
 for (const id of ROOMS) {
   light.build(id);
-  const prof = light.profile([0,1,2]);
+  const prof = light.profile([0, 1, 2]);
+  prof.generatedAt = '2026-08-02';
+  prof.generatedBy = '_profile_gen.html (light_adapter.profile)';
   OUT[id] = prof;
   const ids = prof.slots.map(s => s.slotId);
-  const best = prof.slots.reduce((a,b) => b.ratio > a.ratio ? b : a);
-  L.push(`| ${id} | ${prof.slots.length} | ${new Set(ids).size} | \`${best.slotId}\` | ${best.ratio} | ${(prof.measured||{}).roomRev || '—'} |`);
+  const best = prof.slots.reduce((a, b) => b.ratio > a.ratio ? b : a);
+  const noDim = prof.slots.filter(s => !Number.isFinite(s.maxPotD)).length;
+  L.push(`| ${id} | ${prof.slots.length} | ${new Set(ids).size} | ${prof.uidStable} | ` +
+         `\`${best.slotId}\` | ${best.ratio} | ${noDim} | ${(prof.measured || {}).roomRev || '—'} |`);
 }
 
-/* ★ 라이브(daily_light/1) ↔ 정적(room_profile/1) — 반지하 전 슬롯 */
-const rm = light.build('banjiha');
-const rep = buildDailyLight(0, rm.slots, rm.wins, {
-  weather:'clear', season:'summer',
-  occluders: rm.built.occluders, glazed: rm.built.glazedPanes,
-  thresholds: lightTh, litHours: 0, lampWatts: 0 });
-const prof = OUT.banjiha;
-const pmap = new Map(prof.slots.map(s => [s.slotId, s]));
-const EV = 25000, LX = 0.0185, H = 14.5;
-const dliOf = r => r * EV * LX * (2/Math.PI) * H * 3600 / 1e6;
-let maxErr = 0, miss = 0;
-L.push('');
-L.push('## 라이브 daily_light/1 ↔ 정적 room_profile/1 — 반지하 전 슬롯');
-L.push('');
-L.push('| slotId | 라이브 dli | 정적 ratio→dli | 오차 |');
-L.push('|---|---|---|---|');
-for (const s of rep.slots) {
-  const p = pmap.get(s.slotId);
-  if (!p) { miss++; L.push(`| \`${s.slotId}\` | ${s.dli} | ★ 프로필에 없음 | — |`); continue; }
-  const d2 = dliOf(p.ratio), e = Math.abs(s.dli - d2);
-  maxErr = Math.max(maxErr, e);
-  L.push(`| \`${s.slotId}\` | ${s.dli.toFixed(4)} | ${d2.toFixed(4)} | ${e.toFixed(5)} |`);
+/* ★ 라이브(daily_light/1) ↔ 정적(room_profile/1) — 반지하 전 슬롯.
+   정적 DLI 는 엔진 정본 daylightDLI(ratio, {clear,summer}) 로 낸다(복제 상수 없음).
+   라이브는 buildDailyLight 로 낸다. 등 0개·litHours 0 이라 두 값은 자연광 DLI 뿐이다. */
+if (ROOMS.includes('banjiha')) {
+  const rm = light.build('banjiha');
+  const rep = buildDailyLight(0, rm.slots, rm.wins, {
+    weather: 'clear', season: 'summer',
+    occluders: rm.built.occluders, glazed: rm.built.glazedPanes,
+    thresholds: lightTh, litHours: 0, lampWatts: 0 });
+  const prof = OUT.banjiha;
+  const pmap = new Map(prof.slots.map(s => [s.slotId, s]));
+  const dliOf = ratio => daylightDLI(ratio, { weather: 'clear', season: 'summer' });
+  let maxErr = 0, miss = 0;
+  L.push('');
+  L.push('## 라이브 daily_light/1 ↔ 정적 room_profile/1 — 반지하 전 슬롯 (정본 daylightDLI)');
+  L.push('');
+  L.push('| slotId | 라이브 dli | 정적 ratio→dli | 오차 | maxPotD |');
+  L.push('|---|---|---|---|---|');
+  for (const s of rep.slots) {
+    const p = pmap.get(s.slotId);
+    if (!p) { miss++; L.push(`| \`${s.slotId}\` | ${s.dli} | ★ 프로필에 없음 | — | — |`); continue; }
+    const d2 = dliOf(p.ratio), e = Math.abs(s.dli - d2);
+    maxErr = Math.max(maxErr, e);
+    L.push(`| \`${s.slotId}\` | ${s.dli.toFixed(4)} | ${d2.toFixed(4)} | ${e.toFixed(5)} | ${p.maxPotD} |`);
+  }
+  const pbest = prof.slots.reduce((a, b) => b.ratio > a.ratio ? b : a);
+  L.push('');
+  L.push(`라이브 슬롯 ${rep.slots.length} · 정적 슬롯 ${prof.slots.length} · 프로필에 없는 슬롯 ${miss}`);
+  L.push(`최대 오차 **${maxErr.toFixed(5)}** mol/m²/day`);
+  L.push(`라이브 best = \`${rep.best.slotId}\` (dli ${rep.best.dli})`);
+  L.push(`정적 best = \`${pbest.slotId}\` (ratio→dli ${dliOf(pbest.ratio).toFixed(2)})`);
+  L.push(rep.best.slotId === pbest.slotId && maxErr < 0.005 && miss === 0 ? '✅ 일치' : '★ 불일치');
+
+  /* ★ 첫 플레이 두 자리 — 밝은 창턱(몬스테라 0.202) / 어두운 서랍장(열린 시루 0.24) */
+  const MONSTERA_D = 0.202, OPEN_SIRU_D = 0.24;
+  const focus = [
+    { slotId: 'banjiha-sill:0', potD: MONSTERA_D, what: '몬스테라 화분' },
+    { slotId: 'banjiha-dresser:1', potD: OPEN_SIRU_D, what: '열린 콩나물 시루' }
+  ];
+  L.push('');
+  L.push('## 첫 플레이 두 자리 — maxPotD 물리 필터');
+  L.push('');
+  L.push('| slotId | 화분 | 지름 | maxPotD | 올라감? | 라이브 dli | 정적 dli |');
+  L.push('|---|---|---|---|---|---|---|');
+  let focusOk = true;
+  for (const f of focus) {
+    const live = rep.slots.find(s => s.slotId === f.slotId);
+    const p = pmap.get(f.slotId);
+    if (!live || !p) { focusOk = false; L.push(`| \`${f.slotId}\` | ${f.what} | ${f.potD} | ★ 슬롯 없음 |`); continue; }
+    const fits = Number.isFinite(p.maxPotD) && f.potD <= p.maxPotD;
+    if (!fits) focusOk = false;
+    L.push(`| \`${f.slotId}\` | ${f.what} | ${f.potD} | ${p.maxPotD} | ${fits ? '✓' : '✗'} | ` +
+           `${live.dli.toFixed(2)} | ${dliOf(p.ratio).toFixed(2)} |`);
+  }
+  L.push(focusOk ? '✅ 두 화분 모두 지정 자리에 올라간다' : '★ 물리 필터 실패');
 }
-const pbest = prof.slots.reduce((a,b) => b.ratio > a.ratio ? b : a);
-L.push('');
-L.push(`라이브 슬롯 ${rep.slots.length} · 정적 슬롯 ${prof.slots.length} · 프로필에 없는 슬롯 ${miss}`);
-L.push(`최대 오차 **${maxErr.toFixed(5)}** mol/m²/day`);
-L.push(`라이브 best = \`${rep.best.slotId}\` (dli ${rep.best.dli})`);
-L.push(`정적 best = \`${pbest.slotId}\` (ratio→dli ${dliOf(pbest.ratio).toFixed(2)})`);
-L.push(rep.best.slotId === pbest.slotId && maxErr < 0.005 && miss === 0 ? '✅ 일치' : '★ 불일치');
 
 const dump = document.createElement('div');
 dump.id = 'json'; dump.style.display = 'none';
