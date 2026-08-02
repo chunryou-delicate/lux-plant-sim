@@ -2078,8 +2078,17 @@ export async function createRoomView(canvas, opts = {}) {
 
   /* force 면 "방금 플레이어가 보낸 자리" 유예도 무시한다 — 호스트가 대놓고
      "지금 비켜세워라"라고 부른 경우다(view.nudgeCharacters). 저절로 도는 쪽은 유예를 지킨다. */
+  /* ★ 자주 부르지 않는다. setPlant 에서도 부르는데, 빨리감기는 하루가 140ms 라
+     턴마다 들어온다. 안 가리고 있으면 값이 싸지만(투영 몇 번), 가리고 있는데
+     비킬 데가 없으면 매번 둘레 48칸을 훑게 된다 — 그건 그냥 낭비다.
+     force(호스트가 대놓고 부른 것)는 언제나 돈다. */
+  const NUDGE_MIN_MS = 900;
+  let lastNudge = 0;
   function nudgeIfOccluding(force) {
     if (!built || !plants.size) return 0;
+    const now = performance.now();
+    if (!force && now - lastNudge < NUDGE_MIN_MS) return 0;
+    lastNudge = now;
     let moved = 0;
     for (const [, c] of chars) {
       if (!c.walkable || c.walking || (!force && c.manualHold)) continue;
