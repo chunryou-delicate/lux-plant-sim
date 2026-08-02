@@ -99,7 +99,8 @@
 갱신: 2026-08-02 (커밋 812657a)
 완료 (2026-08-02 · 첫 플레이 유효 생장 연결):
 - ★ **일일 루프를 `advanceTo` 로 교체.** `setGrowth` 는 **개체 도착 때 1회**뿐이다(감시 카운터 있음).
-  `ready()` 는 `setDailyLight·advanceTo·calendarDay·growthDays·growthBlocked` 다섯이 다 있어야 연다
+  `ready()` 는 **여섯 함수**(위 다섯 + `setGrowth`)가 다 있고 **임계값 정본까지 실린 뒤**에만 연다.
+  진행 버튼은 그전까지 disabled, 실패하면 잠긴 채로 둔다
 - ★ **도착 진행도 143의 두 축 분리** — `daysPlanted`(돌본 날) 0 / `growthDays`(형태) 143.
   `newState().pots` 는 **빈 배열**이다. 앱을 열었다고 식물이 생기지 않는다(도착 이벤트가 만든다)
 - ★ **오늘 빛은 매일 넘긴다 — `null` 도.** 호출을 생략하면 growth 안에 어제 값이 남아
