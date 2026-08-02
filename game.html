@@ -239,8 +239,12 @@ function guard(fn) {
       GATED.forEach(id => { $(id).disabled = true; });
       pushLog(S, '⛔ ' + e.message);
       renderLog($('log'), S);
+      /* ★ "양쪽 그대로"라고 말하지 않는다 — 코어만 되감을 수 있고 growth 내부는 못 되돌린다.
+         되감았는지 여부를 loop 가 e.coreRolledBack 에 실어 준다. */
       side.insertAdjacentHTML('afterbegin',
-        `<div class="err">⛔ 진행을 멈췄습니다(상태는 그대로입니다)<br>${e.message}</div>`);
+        `<div class="err">⛔ 진행을 멈췄습니다 — ${e.coreRolledBack
+          ? '코어 날짜를 되감았습니다(growth 도 진행 전이었습니다)'
+          : '⚠ growth 는 이미 하루 진행됐습니다. 날짜는 맞췄지만 이 턴 결과는 못 받았습니다'}<br>${e.message}</div>`);
       console.error(e);
     }
   };
@@ -415,7 +419,8 @@ $('play').onclick = () => playScenario(SCENARIOS.find(s => s.id === $('scen').va
     GATED.forEach(id => { $(id).disabled = true; });
     pushLog(S, '⛔ ' + e.message); renderLog($('log'), S);
     side.insertAdjacentHTML('afterbegin',
-      `<div class="err">⛔ 시나리오를 멈췄습니다(상태는 그대로입니다)<br>${e.message}</div>`);
+      `<div class="err">⛔ 시나리오를 멈췄습니다 — ${e.coreRolledBack
+        ? '코어 날짜를 되감았습니다' : '⚠ growth 는 이미 진행됐습니다(이 턴 결과 없음)'}<br>${e.message}</div>`);
     console.error(e);
   });
 $('stop').onclick = () => { stopFlag = true; };

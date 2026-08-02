@@ -13,7 +13,7 @@
      7. 화면 갱신            (ui.js)
 
    ★ 없는 단계: 고사·수확·지출.
-     고사는 growth의 체력(vigor) 모델이 v1에 맡는다. 코어는 판정하지 않는다.
+     고사·활력은 **취소·보류**다(2026-08-02). 코어는 판정도 표시도 하지 않는다.
      band === 'critical' 로 죽이는 코드는 절대 넣지 않는다 —
      반지하 산세는 맑음↔흐림으로 밴드를 매일 오가므로 하루로 죽이면 운으로 죽는다.
 
@@ -63,17 +63,36 @@ export function nextDay(S, io) {
   /* ★ 오늘 빛은 **매일 반드시** 넘긴다 — null 도 넘긴다 (2026-08-02).
      예전처럼 `if (dli != null)` 로 건너뛰면 growth 안의 PLANT_DLI 에 어제 값이 남아
      "빛이 없는데 어제 빛으로 자라는" 상태가 된다. 조용히 틀리는 유형이라 호출을 생략하지 않는다. */
-  /* ★ 여기서부터가 '되돌릴 수 없는' 구간이다. 중간에 터지면 날짜를 되감고 다시 던진다 —
-     반쯤 진행된 턴을 남기지 않는다(계약이 이 사이에 끊기는 경우). */
+  /* ★ 여기서부터는 **코어 혼자 되감을 수 없는** 구간이다 (2026-08-02 정정).
+     `advanceTo` 안에서 growth 가 `CAL_DAY`·`GROWTH` 를 먼저 올리고 그다음 `buildPlant()` 를 부른다.
+     렌더에서 터지면 **growth 는 이미 하루 간 상태로 예외만 나온다.** 그때 코어가 날짜를 되감으면
+     오히려 두 쪽이 어긋난다(코어 N일 / growth N+1일).
+     그래서 되감기 전에 **growth 에게 어디까지 갔는지 물어본다.**
+     ⚠ 코어는 growth 내부 상태를 복원하지 못한다 — 그건 growth 소유다.
+       `buildPlant()` 를 렌더 경계로 감싸 달라고 요청해 뒀다(core-to-growth). */
+  const calBefore = io.growth.calendarDay();
   let step;
   try {
     io.growth.setDailyLight(dli);
 
     /* ★ 하루 진행은 advanceTo 만 쓴다. setGrowth(점프)는 도착 때 한 번뿐이다.
        달력은 하루 가고, 형태(유효 생장)는 빛이 될 때만 쌓인다 — 저광이면 여기서 멈춘다. */
-    step = io.growth.advanceTo(io.growth.calendarDay() + 1);
+    step = io.growth.advanceTo(calBefore + 1);
   } catch (e) {
-    S.day--;                                         // 되감기 — dliHist·daysPlanted 는 아직 안 건드렸다
+    let calAfter = null;
+    try { calAfter = io.growth.calendarDay(); } catch { /* 계약까지 끊긴 경우 */ }
+
+    if (calAfter === calBefore) {
+      S.day--;                       // growth 도 안 갔다 → 코어만 되감으면 양쪽이 맞는다
+      e.coreRolledBack = true;
+    } else {
+      /* growth 는 갔는데 예외만 나왔다(렌더 오류 등). 되감지 않는다 — 날짜는 맞춰 두고,
+         이 턴의 결과(형태·정지 사유)를 못 받았다는 사실을 상태에 남긴다. */
+      S.desync = { coreDay: S.day, growthCalendar: calAfter, reason: e.message };
+      pushLog(S, `⚠ 이 턴의 결과를 못 받았습니다 — growth 달력 ${calAfter}, 코어 ${S.day}일. ` +
+                 `날짜는 맞췄지만 형태 결과는 화면에 반영되지 않았습니다`);
+      e.coreRolledBack = false;
+    }
     throw e;
   }
   p.daysPlanted++;                                   // 플레이어가 돌본 날 (형태와 별개 축)

@@ -66,7 +66,7 @@ export function makeResult(scenario) {
       food_covered_pct: null,      // 가장이 식비를 몇 % 막나
       plants_grown: null,          // 다개체 생기면
       fenestrated_count: null,     // 갈라진 잎 수 — 진짜 growth 붙어야 잰다
-      deaths: null                 // 체력(vigor) 모델은 growth v1
+      deaths: null                 // 고사·활력은 취소·보류(2026-08-02) — 잴 대상이 없다
     },
     growth_real: false,            // ★ 위 주석 참고. true 되기 전엔 생장 수치를 믿지 않는다
     verdict: 'unknown',            // pass | too_slow | too_fast | unknown
