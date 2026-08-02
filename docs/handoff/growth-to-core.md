@@ -337,3 +337,35 @@ phaseId 후보(내부 경계에서 그대로 나온다 — 이 표는 growth 쪽
 | **C. 이전 단계 꼬리 포함** | 0.6 근처에서 시작 | "거의 다 왔다" 느낌. 3턴이 짧게 느껴진다 |
 
 어느 쪽이든 **core 코드는 안 바뀐다** — 사상은 growth 안에서만 한다.
+
+### [추가] `growthPhase()` 구현됨 (2026-08-02)
+
+```js
+growthPhase() → { phaseId, progress01, nextPhaseId }
+```
+
+**표시 전용이다.** 게임 판정은 그대로 `advanceTo` 의 `grew`·`blocked` 로 한다.
+
+- `phaseId` — `seed` / `sprout` / `spear_ready` / `spear_furled` / `spear_opening` /
+  `leaf_young` / `leaf_mid` / `leaf_mature`
+- `progress01` — 이 단계 안에서 얼마나 왔나. **원비율 그대로(A안)**, 항상 0..1
+- `nextPhaseId` — 다음 단계. 끝이면 `null`
+
+**반환값에 생장일도 단계 경계 숫자도 없다.** `vigor` 도 없다.
+경계는 growth 가 소유하고, `buildPlant`·`drawLeafStage` 가 쓰는 것과 **같은 격자·같은 임계값**에서
+나온다(`seedEnd`·`spawnStep`·`petGrow`·`matSpan`·`0.10`·`0.22`·`stageYoung`·`stageMid`).
+새 숫자를 만들지 않았으므로 `timeCurve` 를 조정해도 코어 코드는 안 바뀐다.
+
+저광으로 멈추면 `GROWTH` 가 안 늘고, `progress01` 은 `GROWTH` 의 함수라 **같이 멈춘다.**
+
+#### 단계 경계 (기본값 기준 · 참고용, 코어는 갖지 말 것)
+
+```
+  0 seed        51 spear_ready    134 spear_ready    234 spear_ready
+  5 sprout      61 spear_furled   146 spear_furled   249 spear_furled
+ 14 spear_furled 68 spear_opening 156 spear_opening  260 spear_opening
+ 15 spear_opening 78 leaf_young   167 leaf_young     273 leaf_young
+ 21 leaf_young  91 leaf_mid       183 leaf_mid       291 leaf_mid
+ 30 leaf_mid   115 leaf_mature    212 leaf_mature
+ 48 leaf_mature
+```
