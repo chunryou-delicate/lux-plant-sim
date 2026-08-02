@@ -4,8 +4,17 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>볕 · 모듈 식물 생장 프로토타입 (몬스테라)</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+<!-- ★엔진을 저장소 안에서 먼저 찾는다(2026-08-03). 폰에서 CDN 이 막혀 게임이 안 뜬 적이 있고,
+     이 파일은 game.html 이 iframe 으로 싣기 때문에 여기가 느리면 게임 부팅이 통째로 늦어진다.
+     로컬이 없거나 깨졌을 때만 CDN 으로 내려간다. 로직은 한 줄도 안 바꿨다. -->
+<script src="./vendor/three/three.min.js"></script>
+<script src="./vendor/three/GLTFLoader.js"></script>
+<script>
+  if (typeof THREE === 'undefined')
+    document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"><\/script>');
+  if (typeof THREE === 'undefined' || !THREE.GLTFLoader)
+    document.write('<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"><\/script>');
+</script>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Jua&family=Noto+Sans+KR:wght@400;500;700&display=swap');
   /* UI 본문 = 고딕(가독성). 손글씨체(Gaegu)는 12px 흰글씨에서 획이 뭉개져 교체함.
@@ -2835,7 +2844,19 @@ function buildGlobalPanel(){
   });
 }
 function updateSun(){ if(!sunMarker) return; const R=2.3; sunMarker.position.set(Math.sin(LIGHT_AZ)*R, 1.5, Math.cos(LIGHT_AZ)*R); }
-function animate(){ requestAnimationFrame(animate); if(autoRotate){ orbit.az+=0.004; updateCam(); } renderer.render(scene,cam);
+/* ★안 보일 때는 그리지 않는다 (2026-08-03).
+   game.html 이 이 파일을 iframe 으로 싣고, 평소에는 opacity 0 으로 숨겨 둔 채
+   화분을 탭했을 때만 띄운다. 그런데 숨어 있어도 rAF 는 계속 돌아서
+   **WebGL 컨텍스트 둘이 동시에 매 프레임 그렸다** — 폰에서 눈에 띄게 렉이 걸렸다.
+   보이지 않는 그림에 배터리를 쓸 이유가 없다. 논리 상태는 안 멈춘다(그리기만 쉰다). */
+let RENDER_PAUSED=false;
+function setRenderPaused(v){ const was=RENDER_PAUSED; RENDER_PAUSED=!!v;
+  if(was && !RENDER_PAUSED) redraw();          // 다시 보일 때 한 장은 확실히 그린다
+  return RENDER_PAUSED; }
+function renderPaused(){ return RENDER_PAUSED; }
+function animate(){ requestAnimationFrame(animate);
+  if(RENDER_PAUSED || document.hidden) return;
+  if(autoRotate){ orbit.az+=0.004; updateCam(); } renderer.render(scene,cam);
   if(prevObj&&prevR){ prevObj.rotation.y+=0.012; prevR.render(prevScene,prevCam); } }
 
 init(); updateCam();
