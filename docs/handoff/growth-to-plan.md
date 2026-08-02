@@ -780,6 +780,56 @@ min         3                   ← 정본값 적용됨
 `data/` · 밸런스 · 성장 곡선 변경 0.
 `STATUS.md` growth 갱신 커밋 표기를 실제 SHA **`b9b038c`** 로 정정했다.
 
+---
+
+## 17. [추가] 형태 진행도와 활력의 역할 분리 — 확정 반영 (2026-08-02)
+
+### 받은 확정
+
+형태 진행도와 활력은 다른 축이다. novice 는 **형태 진행도 한 축만** 본다.
+적정 환경에서 오르고 저광에서 멈추며, **novice 에서는 줄지 않는다.**
+활력 감소·시듦·새순 포기·잎 손실·고사는 **미래 고수 모드**다.
+
+지금 코드가 이미 그 모양이다 — `GROWTH` 는 `advanceTo` 에서 `+1` 만 하고 감소 경로가 없다.
+`setGrowth` 는 디버그 점프라 게임 경로가 아니다. **vigor·HP·고사는 구현하지 않았다.**
+
+### 한 것 — `thLoaded()` 하나
+
+```js
+function thLoaded(){ return TH_LOADED; }   // 읽기 전용. 세터는 두지 않는다
+```
+
+세터를 안 두는 이유는 밖에서 켤 수 있으면 로딩 게이트가 그 순간 장식이 되기 때문이다.
+
+```
+[실패] 로딩 전 false → 로딩 후 false   막힘: '임계값 정본 … 안 실렸습니다'
+[성공] 로딩 전 false → 로딩 후 true    막힘: '오늘 빛이 없습니다(DLI 없음)'
+내부값과 일치 true · 세터 없음 true                                   PASS
+A~I 회귀 없음 · data/ 변경 0
+```
+
+### 회신 — `growthPhase()` 계약 초안 (구현 안 함)
+
+`growth-to-core.md` 에 전문을 올렸다. 요지는 **core 가 143·146 같은 숫자를 안 갖는 것**이다.
+
+```js
+growthPhase() → { phaseId, progress01, nextPhaseId }
+```
+
+- `phaseId` 목록과 경계는 **growth 소유**. 반환값에 생장일이 없어 `>= 146` 같은 조건을 쓸 수가 없다
+- `timeCurve`·`spawnStep`·`matSpan` 을 나중에 조정해도 core 코드는 안 바뀐다
+- **표시 전용.** 판정은 그대로 `advanceTo` 의 `grew`·`blocked` 로 한다
+- novice 범위라 활력 축은 이 객체에 없다
+
+측정 대응: 143일 `spear_ready` → (적정광 3턴) → 146일 `spear_furled` → 160일 `spear_opening`.
+
+`progress01` 시작값은 **후보만 낸다**(A 단계비율 그대로 / B 바닥값 오프셋 / C 이전 단계 꼬리 포함).
+plan 이 고르면 growth 안에서 사상만 바꾼다 — core 코드는 안 바뀐다.
+
+### 안 한 것
+
+vigor·HP · 진행도 감소 · 시듦·고사 · 성장곡선 · `data/balance` · 다개체 착수.
+
 ## 미해결
 
 - [ ] **§3 아파트 갈라짐** — plan 판단 대기

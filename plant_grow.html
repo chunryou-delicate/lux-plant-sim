@@ -179,7 +179,7 @@ const DEF={
 };
 let P=Object.assign({}, DEF);
 // 저장본 버전. 생장 로직/기본값이 바뀌면 올림 → 옛 저장값이 새 기본값을 덮어쓰지 않게.
-const CFG_VER='2026-08-02-strict5';
+const CFG_VER='2026-08-02-phase-draft';
 
 // ===== 튜닝 파라미터(B: 에셋별 개별 조정) =====
 const ADJ_KEYS=[
@@ -2137,6 +2137,9 @@ function growthDays(){ return GROWTH; }            // 유효 생장 진행도(�
 function plantSeed(v){ if(v!=null){ SEED=v>>>0; buildPlant(); } return SEED; }
 function isGrowing(){ return canGrow(); }          // 지금 자라는 중인가
 function growthBlocked(){ return growthBlockReason(); }   // 왜 안 자라나(문자열) · null이면 자라는 중
+// 임계값 정본이 실렸는가(읽기 전용). 코어가 "서버로 안 열었네"를 화면에 띄울 수 있게 낸다.
+// ⚠ 세터는 두지 않는다 — 밖에서 켤 수 있으면 로딩 게이트가 그 순간 장식이 된다.
+function thLoaded(){ return TH_LOADED; }
 
 // 형태 진행도를 이 값으로 '점프'한다(디버그 슬라이더·처음·끝 버튼). 달력도 같이 맞춘다.
 // ⚠ 코어가 달력 날짜를 넣으면 저광 구간이 그냥 넘어간다 — 코어는 advanceTo 를 써야 한다.
