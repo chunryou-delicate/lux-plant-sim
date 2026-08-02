@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>core shot</title>
+<!--
+  코어 검수 촬영 하네스 (core 소유 · 게임 UI 아님)
+  ------------------------------------------------------------
+  첫 플레이 화면 검수 조건을 코드로 고정해 두고, 같은 각도·크기로 두 장을 찍기 위한 것.
+      novice · 식물등 0 · banjiha-sill:0 · [다음 날] N회
+  plant_grow.html 을 화면 전체로 띄우고 **기본 카메라 그대로** 둔다 —
+  에셋 크기·카메라·연출은 건드리지 않는다. 상태만 루프로 만들어 놓고 찍는다.
+
+  사용:  _core_shot.html?days=1  → 유효 144
+         _core_shot.html?days=3  → 유효 146
+  헤드리스: chrome --headless --screenshot=out.png --window-size=1280,860 \
+                    --virtual-time-budget=30000 "http://127.0.0.1:8781/_core_shot.html?days=3"
+-->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{height:100%;overflow:hidden;background:#14101c}
+  #growth{position:fixed;inset:0;width:100%;height:100%;border:0}
+  /* 촬영 식별용 한 줄. 3D 위에 얹지 않고 좌하단 구석에만 둔다(카메라·연출 불변) */
+  #stamp{position:fixed;left:8px;bottom:8px;z-index:9;font:12px/1.5 ui-monospace,monospace;
+    color:#fff;background:rgba(0,0,0,.62);padding:5px 9px;border-radius:7px;white-space:pre}
+</style>
+</head>
+<body>
+<iframe id="growth" src="./plant_grow.html"></iframe>
+<div id="stamp">준비 중…</div>
+<script type="module">
+import { newState, givePlant, pot0 } from './src/game/state.js';
+import { createLightEngine } from './src/game/light_adapter.js';
+import { createGrowthAdapter } from './src/game/growth_adapter.js';
+import { nextDay } from './src/game/loop.js';
+
+const DAYS = +(new URLSearchParams(location.search).get('days') ?? 0);
+const SLOT = new URLSearchParams(location.search).get('slot') || 'banjiha-sill:0';
+const stamp = document.getElementById('stamp');
+
+const j = (p, fb) => fetch(p).then(r => r.json()).catch(() => fb);
+const [houseRooms, winPresets, doorPresets, finishes, furnPresets, lightPresets, shadePresets,
+       lightTh, weatherBalance] = await Promise.all([
+  j('./data/house_rooms.json', { rooms: {} }),
+  j('./data/window_presets.json', {}).then(d => d.presets || d),
+  j('./data/door_presets.json', {}).then(d => d.presets || d),
+  j('./data/room_finishes.json', null),
+  j('./data/furniture_presets.json', {}).then(d => d.presets || d),
+  j('./data/lighting_presets.json', {}),
+  j('./data/shading_presets.json', { presets: {} }),
+  j('./data/balance/light_thresholds.json', null),
+  j('./data/balance/weather.json', null)
+]);
+
+const io = {
+  light: createLightEngine({ houseRooms, winPresets, doorPresets, finishes, furnPresets,
+                             lightPresets, shadePresets, lightTh, weatherBalance }),
+  growth: createGrowthAdapter(document.getElementById('growth'))
+};
+
+try {
+  io.light.build('banjiha');
+  await io.growth.ready();                       // 여섯 함수가 다 있어야 통과
+
+  const S = newState({ room: 'banjiha', mode: 'novice' });   // 계수 1.0 고정
+  S.lamps.count = 0;                                         // 식물등 0
+  givePlant(S, io, { slotId: SLOT });                        // 도착 143 (setGrowth 1회)
+
+  let turn = null;
+  for (let d = 0; d < DAYS; d++) turn = nextDay(S, io).turn;
+
+  /* plant_grow 자체 표시(단계·마디·잎)를 그대로 읽어 온다 — 코어가 다시 세지 않는다 */
+  const gdoc = document.getElementById('growth').contentDocument;
+  const info = gdoc && gdoc.getElementById('stat');
+  const infoTxt = info ? info.textContent.replace(/\s+/g, ' ').trim() : '(plant_grow 표시 없음)';
+
+  const line =
+    `novice · 등 0 · ${SLOT} · 다음날 ${DAYS}회\n` +
+    `DLI ${turn ? (turn.dli == null ? 'null' : turn.dli.toFixed(2)) : '—'}` +
+    ` · 유효 ${io.growth.growthDays()} · 달력 ${io.growth.calendarDay()}` +
+    ` · 갈라짐 ${io.growth.canFenestrate(false) ? '○' : '✕'}` +
+    ` · 정지 ${JSON.stringify(io.growth.growthBlocked())} · dli7 ${io.growth.dli7()}\n` +
+    `plant_grow: ${infoTxt}`;
+  stamp.textContent = line;
+  document.title = `SHOT days=${DAYS} | ${line.replace(/\n/g, ' | ')}`;
+  window.__shotReady = true;
+} catch (e) {
+  stamp.textContent = '실패: ' + e.message;
+  document.title = 'SHOT FAIL ' + e.message;
+  console.error(e);
+}
+</script>
+</body>
+</html>

@@ -63,7 +63,11 @@ export function nextDay(S, io) {
   const step = io.growth.advanceTo(io.growth.calendarDay() + 1);
   p.daysPlanted++;                                   // 플레이어가 돌본 날 (형태와 별개 축)
 
-  S.dliHist.push(dli == null ? 0 : dli);
+  /* ★ null 을 0으로 바꾸지 않는다 (2026-08-02).
+     0은 "쟀더니 암흑"이고 null 은 "못 쟀다"다. 0으로 넣으면 평균이 아래로 끌려가
+     계약 누락이 '어두운 날'로 둔갑한다 — 날짜 자리는 지키되 값은 null 로 남긴다.
+     평균·문턱 판정은 아래 avg()·weekOverPct() 가 null 을 걸러서 본다. */
+  S.dliHist.push(dli);
   S.ledger.electricityWon += (report.energy && report.energy.won) || 0;   // 표시만. 차감 없음
 
   const turn = {
@@ -78,6 +82,7 @@ export function nextDay(S, io) {
     growthAge: io.growth.ageOf ? io.growth.ageOf(step ? step.growth : 0) : null,
     dli7Growth: io.growth.dli7(),      // growth가 실제로 쓴 7일 평균
     dli7Core: avg(S.dliHist, 7),       // 코어가 센 값 — 둘이 어긋나면 배선이 틀린 것
+    sample: sample(S.dliHist, 7),      // 표본 상태(결측 며칠인지) — 평균만 보면 못 판단한다
     cv: io.growth.dliCV()
   };
   /* 정지 사유는 바뀔 때만 남긴다 — 매일 찍으면 기록이 같은 줄로 덮인다 */
@@ -102,12 +107,25 @@ export function runDays(S, io, n, onTurn) {
 /* ---------------------------------------------------------------
    검수 지표
 --------------------------------------------------------------- */
+/* ★ null(계약 누락)은 평균에서 뺀다 — 0으로 세면 '암흑'이 되어 판정이 아래로 끌린다.
+   growth 의 dliAvg 와 뜻을 맞춘 것이다: growth 도 유효한 값만 DLI_HIST 에 쌓고
+   그 **마지막 n개**로 평균을 낸다(못 잰 날은 자리를 차지하지 않는다).
+   그래서 여기서도 "최근 n개의 **유효값**" 평균을 낸다 — 두 값이 같아야 배선이 맞다. */
 export function avg(arr, n) {
-  if (!arr || !arr.length) return null;
-  const k = Math.max(1, Math.min(arr.length, n));
+  const v = (arr || []).filter(x => typeof x === 'number' && isFinite(x));
+  if (!v.length) return null;
+  const k = Math.max(1, Math.min(v.length, n));
   let s = 0;
-  for (let i = arr.length - k; i < arr.length; i++) s += arr[i];
+  for (let i = v.length - k; i < v.length; i++) s += v[i];
   return s / k;
+}
+
+/* 표본 상태까지 같이 낸다 — 화면이 "평균 2.9"만 보여주면 그게 7일치인지 2일치인지 모른다. */
+export function sample(arr, n = 7) {
+  const win = (arr || []).slice(-n);
+  const valid = win.filter(x => typeof x === 'number' && isFinite(x));
+  return { avg: avg(arr, n), days: win.length, valid: valid.length,
+           missing: win.length - valid.length, complete: win.length === n && valid.length === n };
 }
 
 /* ★ 되돌릴 수 없는 사건(갈라짐·무늬 발현·잎 손실)은 평균으로 보면 안 된다.
@@ -115,13 +133,15 @@ export function avg(arr, n) {
    여기서는 실제로 굴린 며칠의 롤링 주를 센다(표본이 작으니 아래 expectedWeekPct 와 같이 본다). */
 export function weekOverPct(hist, over, win = 7) {
   if (over == null || !hist || hist.length < win) return null;
-  let n = 0, hit = 0;
+  let n = 0, hit = 0, skipped = 0;
   for (let i = 0; i + win <= hist.length; i++) {
-    let s = 0;
-    for (let k = 0; k < win; k++) s += hist[i + k];
-    n++; if (s / win >= over) hit++;
+    const w = hist.slice(i, i + win);
+    /* ★ 결측이 낀 주는 세지 않는다 — 0으로 메우면 "안 넘은 주"가 되어 비율이 낮게 나오고,
+       빼고 세면 표본이 준다. 어느 쪽이든 **몇 주를 뺐는지 같이 낸다.** */
+    if (w.some(x => typeof x !== 'number' || !isFinite(x))) { skipped++; continue; }
+    n++; if (w.reduce((a, b) => a + b, 0) / win >= over) hit++;
   }
-  return n ? { pct: +(hit / n * 100).toFixed(1), weeks: n } : null;
+  return n ? { pct: +(hit / n * 100).toFixed(1), weeks: n, skipped } : { pct: null, weeks: 0, skipped };
 }
 
 /* 20년치 기대 분포 — house의 measured.fenWeekPct 와 같은 방식으로 낸다.

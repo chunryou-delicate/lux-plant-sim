@@ -47,7 +47,8 @@ export function renderHUD(el, S, turn, io) {
       <div class="cell"><span>오늘 DLI</span><b>${n2(turn.dli)}</b>
         <i>자연광 ${n2(s && s.dli_daylight)} + 등 ${n2(s && s.dli_lamp)}</i></div>
       <div class="cell"><span>7일 평균</span><b>${n2(turn.dli7Growth)}</b>
-        <i class="${drift ? 'warn' : ''}">코어 ${n2(turn.dli7Core)}${drift ? ' ⚠ 어긋남' : ''}</i></div>
+        <i class="${drift ? 'warn' : ''}">코어 ${n2(turn.dli7Core)}${drift ? ' ⚠ 어긋남' : ''}${
+          turn.sample && turn.sample.missing ? ` · 결측 ${turn.sample.missing}일` : ''}</i></div>
       <div class="cell"><span>계절 (판정 단위)</span><b>${SEASON_KO[turn.sky.season]}</b>
         <i>판정 = 계절별 7일 평균</i></div>
     </div>
@@ -88,17 +89,25 @@ export function renderHUD(el, S, turn, io) {
 export function renderSpark(el, hist, threshold, markDay) {
   const W = 372, H = 84, pad = 2;
   if (!hist || hist.length < 2) { el.innerHTML = '<div class="ph">아직 기록이 없습니다</div>'; return; }
-  const a7 = [];
-  for (let i = 0; i < hist.length; i++) {
-    const n = Math.min(7, i + 1);
-    let s = 0; for (let k = i - n + 1; k <= i; k++) s += hist[k];
-    a7.push(s / n);
-  }
-  const max = Math.max(threshold || 0, ...a7) * 1.12 || 1;
+  /* ★ 결측일은 0으로 메우지 않는다 — 선을 끊는다(그래야 '못 쟀다'가 눈에 보인다).
+     7일 평균은 그 구간의 유효값만으로 낸다(코어 avg 와 같은 규칙). */
+  const ok = v => typeof v === 'number' && isFinite(v);
+  const a7 = hist.map((_, i) => {
+    const w = hist.slice(Math.max(0, i - 6), i + 1).filter(ok);
+    return w.length ? w.reduce((a, b) => a + b, 0) / w.length : null;
+  });
+  const max = Math.max(threshold || 0, ...a7.filter(ok)) * 1.12 || 1;
   const x = i => pad + i / Math.max(1, a7.length - 1) * (W - pad * 2);
   const y = v => H - pad - (v / max) * (H - pad * 2);
-  const line = a7.map((v, i) => `${i ? 'L' : 'M'}${x(i).toFixed(1)},${y(v).toFixed(1)}`).join('');
-  const daily = hist.map((v, i) => `${i ? 'L' : 'M'}${x(i).toFixed(1)},${y(v).toFixed(1)}`).join('');
+  const path = (arr) => {
+    let d = '', pen = false;
+    arr.forEach((v, i) => {
+      if (!ok(v)) { pen = false; return; }
+      d += `${pen ? 'L' : 'M'}${x(i).toFixed(1)},${y(v).toFixed(1)}`; pen = true;
+    });
+    return d;
+  };
+  const line = path(a7), daily = path(hist);
   const ty = threshold != null ? y(threshold) : null;
   const mx = markDay ? x(markDay - 1) : null;
   el.innerHTML = `
@@ -146,7 +155,10 @@ export function renderReport(el, S, io, turns) {
   const sp = measured.space || {};
 
   const days = turns.length;
-  const mean = hist.length ? hist.reduce((a, b) => a + b, 0) / hist.length : 0;
+  /* ★ 결측(null)은 평균에서 뺀다. 0으로 세면 계약 누락이 '암흑'으로 둔갑한다. */
+  const valid = hist.filter(x => typeof x === 'number' && isFinite(x));
+  const missing = hist.length - valid.length;
+  const mean = valid.length ? valid.reduce((a, b) => a + b, 0) / valid.length : null;
   const bands = {};
   for (const t of turns) if (t.slot) bands[t.slot.band] = (bands[t.slot.band] || 0) + 1;
 
@@ -154,7 +166,8 @@ export function renderReport(el, S, io, turns) {
     <h4>${room.def.label || room.id} · ${SEASON_KO[season]} · 등 ${S.lamps.count}개 · ${days}일</h4>
     <table>
       <tr><td>굴린 하루 평균 DLI</td><td><b>${n2(mean)}</b></td>
-          <td>최저 ${n2(Math.min(...hist))} / 최고 ${n2(Math.max(...hist))}</td></tr>
+          <td>${valid.length ? `최저 ${n2(Math.min(...valid))} / 최고 ${n2(Math.max(...valid))}` : '유효 표본 없음'}
+              ${missing ? `<i> · ★ 결측 ${missing}/${hist.length}일(계약 누락) — 평균에서 제외</i>` : ''}</td></tr>
       <tr><td>★ 판정값 — 기대 7일평균 (${SEASON_KO[season]})</td><td><b>${n2(exp.mean)}</b></td>
           <td>p10 ${n2(exp.p10)} · p50 ${n2(exp.p50)} · p90 ${n2(exp.p90)}</td></tr>
       ${season === 'summer' ? '' : `
@@ -162,7 +175,9 @@ export function renderReport(el, S, io, turns) {
           <td>실측표가 여름 기준이라 비교용 · 문턱넘는주 ${sum.overPct == null ? '—' : sum.overPct + '%'}</td></tr>`}
       <tr class="hl"><td>★ 갈라짐 문턱(${fen == null ? '없음' : fen}) 넘는 주 · ${SEASON_KO[season]}</td>
           <td><b>${exp.overPct == null ? '—' : exp.overPct + '%'}</b></td>
-          <td>20년 ${exp.weeks}주 기준 · 굴린 ${days}일에선 ${ran ? ran.pct + '% (' + ran.weeks + '주)' : '주가 안 참'}</td></tr>
+          <td>20년 ${exp.weeks}주 기준 · 굴린 ${days}일에선 ${
+            ran && ran.pct != null ? `${ran.pct}% (${ran.weeks}주${ran.skipped ? `, 결측으로 ${ran.skipped}주 제외` : ''})`
+            : '유효한 주가 없음'}</td></tr>
       <tr><td>house 실측 대조 <i>(등 0개·자연광만)</i></td>
           <td>${ms.avg7_summer == null ? '—' : 'avg7여름 ' + ms.avg7_summer}</td>
           <td><b>slots</b> peak ${ms.peak_summer ?? '—'} · <b>space</b> avg7 ${sp.avg7_summer ?? '—'}

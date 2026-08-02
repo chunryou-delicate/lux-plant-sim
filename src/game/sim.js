@@ -57,6 +57,7 @@ export function makeResult(scenario) {
       threshold: null,                 // 무슨 문턱을 넘는 주인지(갈라짐 6.0 등)
       band_days: null,                 // { best: 12, slow: 9, ... }
       electricity_won: null,           // 전기요금 누적(차감은 아직 안 함)
+      dli_missing_days: null,          // ★ 계약 누락일 — 0으로 메우지 않고 따로 센다
 
       /* --- 아직 없는 것 (v1 이후) --- */
       days_to_goal: null,          // 자취생이 이사까지 며칠
@@ -175,7 +176,9 @@ export function runScenario(scenario, light, opt = {}) {
   for (const t of turns) if (t.slot) bands[t.slot.band] = (bands[t.slot.band] || 0) + 1;
 
   Object.assign(rec.result, {
-    dli_mean: +(S.dliHist.reduce((a, b) => a + b, 0) / (S.dliHist.length || 1)).toFixed(2),
+    dli_mean: (() => { const v = S.dliHist.filter(x => typeof x === 'number' && isFinite(x));
+                       return v.length ? +(v.reduce((a, b) => a + b, 0) / v.length).toFixed(2) : null; })(),
+    dli_missing_days: S.dliHist.filter(x => typeof x !== 'number' || !isFinite(x)).length,
     dli_avg7_expected: exp.mean,
     dli_p10: exp.p10, dli_p50: exp.p50, dli_p90: exp.p90,
     weeks_over_threshold_pct: exp.overPct ?? null,

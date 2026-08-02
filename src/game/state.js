@@ -78,8 +78,24 @@ export const ARRIVAL = {
 
    pot.daysPlanted 는 **플레이어가 돌본 날**이라 0부터 센다.
    growth 안의 달력·유효 진행도는 143에서 시작한다. 둘은 다른 축이다. */
+/* ★ 원자적이다 (2026-08-02) — 형태를 못 세우면 개체도 안 생긴다.
+   순서가 중요하다: **setGrowth 가 성공한 뒤에만** 화분·로그를 남긴다.
+   반대로 하면 "화분은 있는데 형태는 0일(=씨앗)"인 개체가 조용히 남는다.
+   던지면 S 는 손대기 전 상태 그대로다 — 부분 성공이 없다. */
 export function givePlant(S, io, opt = {}) {
   if (S.pots.length) return pot0(S);                     // 이미 있으면 다시 만들지 않는다
+
+  const g = io && io.growth;
+  const growthDays = opt.growthDays ?? ARRIVAL.growthDays;
+  if (!g || typeof g.setGrowth !== 'function')
+    throw new Error('[도착] 생장 창이 준비되지 않았습니다 — setGrowth 를 부를 수 없어 개체를 만들지 않습니다');
+  if (typeof g.has === 'function' && !g.has('setGrowth'))
+    throw new Error('[도착] plant_grow 에 setGrowth 가 없습니다 — 개체를 만들지 않습니다');
+
+  /* ① 형태부터 세운다. 여기서 던지면 아래로 내려가지 않는다(화분·로그 0) */
+  g.setGrowth(growthDays);
+
+  /* ② 성공했으니 개체를 남긴다 */
   const pot = {
     id: opt.id || 'pot_01',
     slotId: opt.slotId || null,
@@ -88,11 +104,10 @@ export function givePlant(S, io, opt = {}) {
     variegated: false,
     daysPlanted: 0,                                      // 플레이어가 돌본 날
     arrivedOnDay: S.day,
-    arrivalGrowthDays: opt.growthDays ?? ARRIVAL.growthDays
+    arrivalGrowthDays: growthDays
   };
   S.pots.push(pot);
-  if (io && io.growth && io.growth.setGrowth) io.growth.setGrowth(pot.arrivalGrowthDays);
-  pushLog(S, `🪴 몬스테라가 도착했습니다 — 이미 ${pot.arrivalGrowthDays}일 자란 개체입니다`);
+  pushLog(S, `🪴 몬스테라가 도착했습니다 — 이미 ${growthDays}일 자란 개체입니다`);
   return pot;
 }
 

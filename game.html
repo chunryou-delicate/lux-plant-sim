@@ -92,8 +92,8 @@
       <label><span>점등시간</span><input id="lit" type="number" min="0" max="24" step="1" value="12"></label>
       <label><span>모드</span><select id="mode"></select></label>
       <div class="btns">
-        <button id="next">다음 날 ▸</button>
-        <button id="run30" class="ghost">30일 자동</button>
+        <button id="next" disabled>다음 날 ▸</button>
+        <button id="run30" class="ghost" disabled>30일 자동</button>
         <button id="reset" class="ghost">초기화</button>
         <button id="prof" class="ghost" title="이 방의 조도 기하를 JSON으로 — 밸런스 시뮬이 THREE 없이 읽는다">방 프로파일 ⭳</button>
       </div>
@@ -103,7 +103,7 @@
       <h3>★ 재미 확인 시나리오 — 반지하</h3>
       <label><span>시나리오</span><select id="scen"></select></label>
       <div class="btns">
-        <button id="play">▶ 돌려보기</button>
+        <button id="play" disabled>▶ 돌려보기</button>
         <button id="stop" class="ghost" disabled>■ 정지</button>
         <label style="margin:0 0 0 auto"><span style="width:auto">속도</span>
           <select id="speed" style="width:74px;flex:0 0 74px">
@@ -384,9 +384,8 @@ const turn7 = () => io.growth.dli7() ?? avg(S.dliHist, 7) ?? 0;
 function fenDayOf(th) {
   if (!th || th.fenestrate == null) return null;
   for (let i = 0; i < S.dliHist.length; i++) {
-    const n = Math.min(7, i + 1);
-    let s = 0; for (let k = i - n + 1; k <= i; k++) s += S.dliHist[k];
-    if (s / n >= th.fenestrate) return i + 1;
+    const w = S.dliHist.slice(Math.max(0, i - 6), i + 1).filter(v => typeof v === 'number' && isFinite(v));
+    if (w.length && w.reduce((a, b) => a + b, 0) / w.length >= th.fenestrate) return i + 1;
   }
   return null;
 }
@@ -395,14 +394,22 @@ $('play').onclick = () => playScenario(SCENARIOS.find(s => s.id === $('scen').va
 $('stop').onclick = () => { stopFlag = true; };
 
 /* ---- 시작 ---- */
+/* ★ 생장 계약이 준비되기 전에는 진행 버튼을 열지 않는다 (2026-08-02).
+   여섯 함수(setDailyLight·advanceTo·calendarDay·growthDays·growthBlocked·setGrowth)가
+   다 있어야 ready() 가 통과한다. 실패하면 버튼은 계속 잠긴 채로 둔다 —
+   반쯤 도는 상태로 굴리면 '왜 안 자라지'가 계약 문제인지 빛 문제인지 못 가른다. */
+const GATED = ['next', 'run30', 'play'];
 try {
-  await io.growth.ready();
   $('room').value = S.home.room;
   buildRoom(S.home.room);
-  pushLog(S, '준비됐습니다. [다음 날]을 눌러 보세요');
+  await io.growth.ready();
+  GATED.forEach(id => { $(id).disabled = false; });
+  pushLog(S, '생장 계약 준비 완료 — [다음 날]을 눌러 보세요');
   draw();
 } catch (err) {
-  side.insertAdjacentHTML('afterbegin', `<div class="err">⚠ ${err.message}</div>`);
+  GATED.forEach(id => { $(id).disabled = true; });       // 실패하면 계속 잠근다
+  side.insertAdjacentHTML('afterbegin',
+    `<div class="err">⚠ 진행 버튼을 잠갔습니다<br>${err.message.split('\n').join('<br>')}</div>`);
   console.error(err);
 }
 </script>
