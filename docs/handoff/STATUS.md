@@ -96,7 +96,7 @@
 3. 나머지 5방 slotId 고정 시점 — 세이브 붙기 전이 싸다
 
 ## core
-갱신: 2026-08-02 (커밋 대기)
+갱신: 2026-08-02 (커밋 e2a7523)
 완료 (2026-08-02 · 첫 플레이 유효 생장 연결):
 - ★ **일일 루프를 `advanceTo` 로 교체.** `setGrowth` 는 **개체 도착 때 1회**뿐이다(감시 카운터 있음).
   `ready()` 는 `setDailyLight·advanceTo·calendarDay·growthDays·growthBlocked` 다섯이 다 있어야 연다
