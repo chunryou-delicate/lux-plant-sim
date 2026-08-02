@@ -549,7 +549,9 @@ import {
 } from './src/game/first_play.js';
 import { createLightEngine } from './src/game/light_adapter.js';
 import { createGrowthAdapter } from './src/game/growth_adapter.js';
-import { nextDay, runDays, avg, rollingAvg } from './src/game/loop.js';
+import { nextDay, runDays, avg, rollingAvg,
+         startFastForward, stopFastForward, isFastForwarding, nextEventPreview,
+         timeModeOf } from './src/game/loop.js';
 import { renderHUD, renderLog, renderReport, renderSpark } from './src/game/ui.js';
 
 const ARRIVAL_POT_D = FIRST_PLAY_ASSETS.monsteraPotDiameterM;
@@ -772,6 +774,7 @@ function draw() {
   renderHUD($('hud'), S, lastTurn, io);
   renderLog($('log'), S);
   drawJourney();
+  ffHint();                 /* 상태가 바뀌면 "무엇까지 감는지"도 바뀐다 */
 }
 
 /* ---- 배선 ---- */
@@ -881,6 +884,52 @@ $('next').onclick = guard(() => {
   showFirstPlayEvents(lastTurn);
   draw();
 });
+
+/* ══ 빨리감기 — ★순간이동이 아니다 (박사님 2026-08-03) ═══════════════════
+   "점점 자라는 모습을 보여주면서 점핑하게." 하루씩 진짜로 돌면서 매일 그린다.
+   그래서 어두운 자리에 둔 채 감으면 **날짜만 가고 형태는 그대로 서 있다** —
+   그 대비가 이 게임이 가르치려는 것이라 빨리감기에서도 살아 있어야 한다. */
+let ffHandle = null;
+function ffStop(reason) {
+  stopFastForward(reason || 'stopped');
+}
+let ffNextWas = null;                      /* 빨리감기 전에 [다음 날]이 눌리는 상태였는지 */
+function ffPaint(on) {
+  const b = $('ff');
+  b.textContent = on ? '■ 멈추기' : '▶▶ 빨리감기';
+  b.classList.toggle('primary', on);
+  if (on) { ffNextWas = $('next').disabled; $('next').disabled = true; }
+  else if (ffNextWas !== null) { $('next').disabled = ffNextWas; ffNextWas = null; }
+}
+/* 버튼 밑에 "무엇까지 감는지"를 적어 둔다 — 어디로 가는지 모르고 누르면 불안하다.
+   loop 가 이미 다음 이벤트를 알고 있으므로(nextEventPreview) 코어에 새 계산을 만들지 않는다. */
+function ffHint() {
+  if (isFastForwarding()) return;
+  let p = null; try { p = nextEventPreview(S); } catch { /* 미리보기 실패로 버튼을 막지 않는다 */ }
+  $('ff').title = p ? `${p.ko} 까지` : '다음 일이 생길 때까지';
+}
+$('ff').onclick = guard(() => {
+  if (isFastForwarding()) { ffStop('stopped'); return; }
+  if (!S.firstPlay.beansprout.slotId) {
+    const e = new Error('가방의 열린 시루를 먼저 방 안에 놓아 주세요');
+    e.firstPlayInput = true; throw e;
+  }
+  ffHandle = startFastForward(S, io, {
+    msPerDay: 140,                      /* 3D 를 실제로 다시 그리므로 계약값 120 보다 여유를 둔다 */
+    onDay(turn) { lastTurn = turn; showFirstPlayEvents(turn); draw(); },
+    onStop(reason, info) {
+      ffPaint(false);
+      if (reason === 'event') return;   /* 이벤트에서 선 것은 정상이다 — 배너가 이미 떴다 */
+      if (reason === 'stopped' || reason === 'maxDays') return;
+      /* 나머지는 진짜 고장이다. 조용히 넘기지 않는다. */
+      banner('빨리감기를 멈췄습니다', reason + (info && info.blocked ? ' · ' + info.blocked : ''));
+    }
+  });
+  ffPaint(true);
+});
+/* ★페이지를 떠날 때 타이머를 반드시 끈다. loop.js 는 DOM 을 모르므로 여기서 붙인다 —
+   안 끄면 화면이 사라진 뒤에도 턴이 계속 돈다(유령 턴). */
+window.addEventListener('pagehide', () => ffStop('stopped'));
 
 $('run30').onclick = guard(() => {
   arrive();
@@ -1157,7 +1206,9 @@ $('firstRun').onclick = () => playFirstPlayScenario().catch(e => {
    일곱 함수(setDailyLight·advanceTo·calendarDay·growthDays·growthBlocked·growthPhase·setGrowth)가
    다 있어야 ready() 가 통과한다. 실패하면 버튼은 계속 잠긴 채로 둔다 —
    반쯤 도는 상태로 굴리면 '왜 안 자라지'가 계약 문제인지 빛 문제인지 못 가른다. */
-const GATED = ['next', 'run30', 'play', 'firstRun'];
+/* ★'ff' 도 여기 있어야 한다 — 계약이 깨졌을 때 [다음 날]만 잠그고 빨리감기를 열어 두면
+   플레이어가 그쪽으로 우회해 고장난 상태로 며칠을 돌린다. 같이 잠기고 같이 열린다. */
+const GATED = ['next', 'run30', 'play', 'firstRun', 'ff'];
 try {
   $('room').value = S.home.room;
   $('mode').value = S.sim.mode;
