@@ -169,6 +169,40 @@
     #topbar .resourcebar{max-width:520px;margin:0 auto}
     #stage{position:absolute;inset:0}
   }
+  /* ══ 대화 (2026-08-03) ═══════════════════════════════════════════════
+     ★화면을 가리지 않는다. 방과 식물이 위쪽에 계속 보여야 "무슨 얘기 중인지" 읽힌다.
+     ★식물신은 초상화가 없다 — first_play.md 확정("대사 한 줄. 외형 없음").
+       얼굴 자리에 빛만 둔다. 얼굴을 그려 넣지 말 것. */
+  #dlg{position:absolute;z-index:34;left:0;right:0;bottom:0;display:none;
+       padding:0 10px calc(var(--safe-b) + 10px);pointer-events:auto}
+  #stage.talking #dlg{display:block}
+  #dlgBox{position:relative;display:flex;gap:10px;align-items:flex-end;
+       min-height:132px;padding:12px 14px 14px;border-radius:16px;
+       background:rgba(16,13,24,.94);border:1px solid rgba(255,255,255,.12);
+       box-shadow:0 -8px 30px rgba(0,0,0,.5)}
+  /* 초상화는 상자 위로 삐져나온다 — 상자 안에 가두면 얼굴이 작아져 안 읽힌다 */
+  #dlgFace{flex:0 0 92px;width:92px;height:132px;margin-top:-46px;align-self:flex-end;
+       background:center bottom/contain no-repeat;filter:drop-shadow(0 4px 10px rgba(0,0,0,.55))}
+  #dlgBox.noface #dlgFace{width:56px;flex-basis:56px;height:56px;margin:0 0 6px;
+       border-radius:50%;background:radial-gradient(circle at 50% 45%,
+         rgba(255,229,168,.95) 0,rgba(255,190,96,.42) 42%,rgba(255,180,84,0) 72%);
+       animation:godPulse 2.6s ease-in-out infinite}
+  @keyframes godPulse{0%,100%{opacity:.72;transform:scale(.94)}50%{opacity:1;transform:scale(1.06)}}
+  #dlgMain{flex:1;min-width:0}
+  #dlgWho{display:inline-block;font-family:'Jua';font-size:12px;color:var(--gold);
+       padding:2px 9px;border-radius:999px;background:rgba(255,180,84,.14);margin-bottom:6px}
+  #dlgBox.noface #dlgWho{color:#ffe6a8;background:rgba(255,229,168,.13)}
+  #dlgText{font-size:15px;line-height:1.55;color:var(--ink);word-break:keep-all;min-height:48px}
+  #dlgText b{color:var(--leaf)}
+  #dlgNext{position:absolute;right:12px;bottom:9px;font-size:11px;color:var(--dim);
+       animation:dlgBob 1.4s ease-in-out infinite}
+  @keyframes dlgBob{0%,100%{transform:translateY(0);opacity:.55}50%{transform:translateY(3px);opacity:1}}
+  #dlgSkip{position:absolute;right:12px;top:-30px;min-height:30px;padding:0 12px;font-size:11.5px;
+       border-radius:999px;background:rgba(16,13,24,.86);border:1px solid rgba(255,255,255,.14);
+       color:var(--dim);background-image:none}
+  /* 대화 중에는 하단 액션이 눌리면 안 된다 — 대사를 넘기려다 하루가 지나간다 */
+  #stage.talking ~ #bottom{opacity:.35;pointer-events:none}
+
   /* 마우스가 있는 환경에서만 호버를 켠다 — 터치에서 호버는 "탭했는데 안 눌림"이 된다 */
   @media (hover:hover) and (pointer:fine){
     .actionbar button:not(:disabled):hover,.sheettabs button:hover{filter:brightness(1.12)}
@@ -329,6 +363,21 @@
     <div id="stageEmpty"><b><img src="./assets/ui/item_monstera.png" alt="">아직 몬스테라가 없습니다<i>콩나물을 수확하면 새로운 화분이 찾아옵니다.</i></b></div>
     <!-- ★ v0의 완료 조건이 걸린 자리 — "등을 켰더니 갈라지기 시작했어요"가 여기 뜬다 -->
     <div id="event"></div>
+
+    <!-- ══ 대화 — 탭하면 다음 줄 ═══════════════════════════════════════
+         ★식물신은 초상화가 없다(first_play.md 확정: "대사 한 줄. 외형 없음").
+           .noface 가 붙으면 얼굴 자리에 빛만 돈다. 얼굴을 그려 넣지 말 것. -->
+    <div id="dlg">
+      <button id="dlgSkip">건너뛰기</button>
+      <div id="dlgBox">
+        <div id="dlgFace"></div>
+        <div id="dlgMain">
+          <span id="dlgWho"></span>
+          <div id="dlgText"></div>
+        </div>
+        <span id="dlgNext">▼ 탭</span>
+      </div>
+    </div>
   </main>
 
   <!-- ══ 하단 액션 — 엄지로 누르는 자리 ═══════════════════════════════ -->
@@ -549,6 +598,7 @@ import {
 } from './src/game/first_play.js';
 import { createLightEngine } from './src/game/light_adapter.js';
 import { createGrowthAdapter } from './src/game/growth_adapter.js';
+import { createDialogue, SPEAKERS } from './src/game/dialogue.js';
 import { nextDay, runDays, avg, rollingAvg,
          startFastForward, stopFastForward, isFastForwarding, nextEventPreview,
          timeModeOf } from './src/game/loop.js';
@@ -775,6 +825,7 @@ function draw() {
   renderLog($('log'), S);
   drawJourney();
   ffHint();                 /* 상태가 바뀌면 "무엇까지 감는지"도 바뀐다 */
+  syncRoom();               /* 방 전경도 같은 상태를 본다 — 화면이 둘로 갈리면 안 된다 */
 }
 
 /* ---- 배선 ---- */
@@ -785,6 +836,9 @@ $('slot').onchange = e => {
     if (S.firstPlay.enabled) moveMonstera(S.firstPlay, e.target.value);
     pushLog(S, `🪴 몬스테라를 ${slotLabel(e.target.value)}(으)로 옮겼습니다`);
     unlockAfterFix();
+    /* ★도착 자리에서 벗어난 순간이 두 번째 학습이 일어난 순간이다 */
+    if (arrivalSlotId && e.target.value !== arrivalSlotId) dlgOpen('monsteraMoved');
+    syncRoom();
   }
   draw();
 };
@@ -798,6 +852,8 @@ $('placeCrop').onclick = guard(() => {
     ? `🥣 열린 시루를 ${slotLabel(target)}(으)로 옮겼습니다 — 지금까지 받은 ${r.keptDays}일치 빛은 그대로입니다`
     : `🥣 열린 시루를 ${slotLabel(target)}에 두었습니다`);
   unlockAfterFix();                    // 자리를 고쳤으니 다시 시도할 수 있다
+  dlgOpen('cropPlaced');
+  syncRoom();
   draw();
 });
 
@@ -866,12 +922,21 @@ function showFirstPlayEvents(turn) {
     arrivalSlotId = pot0(S).slotId;          // 표시용 — 옮겼는지 비교할 기준점
     fillSlots(false);
     $('slot').value = pot0(S).slotId;
-    events.push({ title: '🪴 몬스테라가 도착했습니다',
-      sub: '“콩나물을 잘 키웠구나. 이건 좀 더 어려울 거야.”' });
+    /* ★식물신 대사를 배너 부제에서 뺐다. 계약 순서가 수확 → 식비 → **식물신** → 도착이라
+       도착 배너에 붙이면 순서가 뒤집히고, 누가 하는 말인지도 화면에서 안 보였다.
+       이제 대화로 나온다(dialogue.js SCRIPTS.god1). */
+    events.push({ title: '🪴 몬스테라가 도착했습니다', sub: '창가가 아닌 자리에 놓였습니다' });
   }
   if (S.firstPlay.completed)
     events.push({ title: '🌱 말린 새순이 나왔어요!', sub: '자리에 따라 필요한 빛이 다릅니다.' });
   banners(events);
+
+  /* 배너는 숫자를, 대화는 뜻을 말한다. 둘 다 있어야 "얼마"와 "왜"가 같이 남는다. */
+  const ids = [];
+  if (ev && ev.harvested)       ids.push('harvest', 'god1');
+  if (turn && turn.plantArrived) ids.push('monsteraArrived');
+  if (S.firstPlay.completed)     ids.push('spearFurled');
+  if (ids.length) dlgOpen(ids);
 }
 
 $('next').onclick = guard(() => {
@@ -884,6 +949,42 @@ $('next').onclick = guard(() => {
   showFirstPlayEvents(lastTurn);
   draw();
 });
+
+/* ══ 대화 ═══════════════════════════════════════════════════════════════
+   ★대사 순서는 계약이다 — Day 4 는 수확 → (식비는 화면이 숫자로) → 식물신 → 도착.
+     dialogue.js 가 그 줄 세우기를 갖고 있고 여기서는 그리기만 한다. */
+const dlg = createDialogue();
+function dlgPaint() {
+  const line = dlg.current();
+  if (!line) { $('stage').classList.remove('talking'); ffResume(); return; }
+  const sp = SPEAKERS[line.who] || { ko: line.who, portrait: false };
+  const box = $('dlgBox');
+  box.classList.toggle('noface', !sp.portrait);
+  $('dlgWho').textContent = sp.ko;
+  /* **굵게** 만 지원한다 — 대사에 HTML 을 넣게 두면 데이터가 코드가 된다 */
+  $('dlgText').innerHTML = String(line.text)
+    .replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]))
+    .replace(/\*\*(.+?)\*\*/g, '<b>$1</b>');
+  if (sp.portrait) {
+    const f = `./assets/characters/portraits/${line.who}_${line.face || 'base'}.png`;
+    $('dlgFace').style.backgroundImage = `url(${f}), url(./assets/characters/portraits/${line.who}_base.png)`;
+  } else $('dlgFace').style.backgroundImage = '';
+  $('stage').classList.add('talking');
+}
+/* 대화가 뜨면 빨리감기를 세운다 — 말하는 동안 날짜가 계속 가면 대사와 화면이 어긋난다 */
+let ffWasRunning = false;
+function dlgOpen(scriptIds) {
+  const ids = [].concat(scriptIds).filter(Boolean);
+  let any = false;
+  for (const id of ids) { try { if (dlg.push(id)) any = true; } catch (e) { console.warn(e.message); } }
+  if (!any) return false;
+  if (isFastForwarding()) { ffWasRunning = true; stopFastForward('stopped'); }
+  dlgPaint();
+  return true;
+}
+function ffResume() { ffWasRunning = false; }     /* 자동 재개는 안 한다 — 읽고 나서 직접 누른다 */
+$('dlgBox').addEventListener('click', () => { dlg.next(); dlgPaint(); });
+$('dlgSkip').addEventListener('click', (e) => { e.stopPropagation(); dlg.skip(); dlgPaint(); });
 
 /* ══ 방 3D 전경 ═══════════════════════════════════════════════════════════
    ★여기가 게임 화면이다. iframe#growth 는 화분을 탭했을 때 올라오는 상세다.
@@ -1286,6 +1387,7 @@ try {
   draw();
   window.__byeotBooted = true;      // 밖의 감시자에게 "여기까지는 왔다"고 알린다
   bootRoomView();                   // 방 3D — 실패해도 게임은 돌아간다(아래)
+  dlgOpen('intro');                 // 몬이가 무엇을 하는 게임인지 한 번에 말해 준다
 } catch (err) {
   GATED.forEach(id => { $(id).disabled = true; });       // 실패하면 계속 잠근다
   /* ★#side 는 폰 세로로 바뀌며 없어졌다. 하단에 띄운다 — 안 보이면 "버튼이 안 눌린다"만 남는다 */
