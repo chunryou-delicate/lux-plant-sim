@@ -9715,12 +9715,22 @@
         "credits": 10,
         "balance_after": 799,
         "note": "원본은 assets/ui/_raw/ 에 보존 — 규격이 바뀌어도 재생성 없이 다시 자를 수 있다"
+      },
+      {
+        "date": "2026-08-03",
+        "window": "master",
+        "service": "higgsfield",
+        "use": "폰 세로 배치·이동 UI — 3x3 아이콘 시트 1장에서 9개 (나머지는 _raw 재활용·절차적)",
+        "qty": 1,
+        "credits": 2,
+        "balance_after": 797,
+        "note": "3x3 시트가 2x2 보다 남는다 — 칸당 341px 라 96~128px 아이콘에 충분하고 9칸이 한 번에 톤이 맞는다"
       }
     ],
     "balance_checked": {
       "date": "2026-08-03",
       "meshy": 22,
-      "higgsfield": 799
+      "higgsfield": 797
     }
   }
 }
