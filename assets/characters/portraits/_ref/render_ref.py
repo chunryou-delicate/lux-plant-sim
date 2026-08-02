@@ -99,4 +99,6 @@ def run(glb, tag, face_band, size=640):
 if __name__ == "__main__":
     # 자취생은 상반신(가슴 위)이 초상화 프레임이다. 몬이는 통째로 얼굴이다.
     run("char_jachwi_f_base.glb", "jachwi_f", (0.62, 1.00))
+    # 남자 자취생 — 3차에서 추가. 여자와 같은 프레임(가슴 위)으로 본다.
+    run("char_namja_jachwi_base.glb", "jachwi_m", (0.62, 1.00))
     run("char_mascot_sprout.glb", "mascot", (0.30, 1.00))

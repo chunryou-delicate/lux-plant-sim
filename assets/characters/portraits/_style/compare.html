@@ -1,0 +1,205 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>대화 초상화 — 3차 납품 16장 / 화풍 기록</title>
+<style>
+  :root { color-scheme: dark; }
+  body { margin: 0; padding: 32px 28px 80px; background: #262019; color: #E8E0D4;
+         font: 15px/1.7 "Pretendard", "Malgun Gothic", sans-serif; }
+  h1 { font-size: 21px; margin: 0 0 4px; }
+  h2 { font-size: 16px; margin: 44px 0 4px; color: #C8BCA8;
+       border-top: 1px solid #3B332A; padding-top: 20px; }
+  h3 { font-size: 14px; margin: 22px 0 8px; color: #9E9384; font-weight: 600;
+       letter-spacing: .04em; }
+  p  { margin: 4px 0 16px; color: #9E9384; max-width: 64em; }
+  b  { color: #E8E0D4; }
+  .row { display: flex; gap: 14px; flex-wrap: wrap; align-items: flex-start; }
+  figure { margin: 0; }
+  figcaption { margin-top: 6px; font-size: 12px; color: #9E9384; max-width: 15em; }
+  figcaption b { display: block; font-size: 13px; }
+  /* 대화판이 얹히는 실제 배경. 어두운 판에서 알파가 새면 네모가 보인다 */
+  .plate { background: #433C33; border-radius: 10px; overflow: hidden; }
+  .plate img { display: block; width: 176px; height: auto; }
+  .light .plate { background: #E9E2D6; }
+  .big .plate img { width: 300px; }
+  .sheet img { width: 100%; max-width: 1180px; display: block; border-radius: 8px; }
+  .sheet.sq img { max-width: 620px; }
+  small { color: #7C7365; }
+  code { color: #C8BCA8; }
+  .note { border-left: 3px solid #6B5E4B; padding-left: 14px; margin: 18px 0 24px; }
+</style>
+
+<h1>대화 초상화 — 3차 납품</h1>
+<p>확정 화풍(<b>1번 + 2번 섞음</b>)으로 <b>자취생 여 6 · 자취생 남 6 · 몬이 4 = 16장</b>을 다시 뽑았다.
+   여기에 덤으로 <b>여·남 3표정씩 6장</b>을 더해 모두 <b>22장</b>이다.
+   기존 6장은 <code>_old/</code> 로 옮겨 두었다 — 되돌릴 수 있다.
+   전부 <b>600×800 · 3:4 · 투명 배경 RGBA</b>.
+   <b>CSS 배선은 하지 않았다</b>(<code>game.html</code> 은 코어 창 몫).</p>
+
+<div class="note">
+  <p>각 인물을 <b>어두운 판 <code>#433C33</code></b> 과 <b>밝은 판 <code>#E9E2D6</code></b> 위에 나란히 얹었다.
+     밝은 판에서 인물 주위에 네모난 판이 보이면 키잉이 샌 것이다.
+     같은 인물의 표정들은 <b>같은 배율·같은 기준선</b>이라 파일만 바꿔 교체된다.</p>
+</div>
+
+<h2>자취생 (여) — <code>portrait_jachwi_*.png</code></h2>
+<h3>어두운 판</h3>
+<div class="row">
+  <figure><div class="plate"><img src="../portrait_jachwi_neutral.png" alt=""></div>
+    <figcaption><b>neutral</b>기본. 담담함</figcaption></figure>
+  <figure><div class="plate"><img src="../portrait_jachwi_worry.png" alt=""></div>
+    <figcaption><b>worry</b>“나 이제 어떻게 살지”</figcaption></figure>
+  <figure><div class="plate"><img src="../portrait_jachwi_cry.png" alt=""></div>
+    <figcaption><b>cry</b>“엄마… 아빠…” 참는 울음</figcaption></figure>
+  <figure><div class="plate"><img src="../portrait_jachwi_surprise.png" alt=""></div>
+    <figcaption><b>surprise</b>“…뭐야?!” 세 군데 재사용</figcaption></figure>
+  <figure><div class="plate"><img src="../portrait_jachwi_happy.png" alt=""></div>
+    <figcaption><b>happy</b>옅은 미소. 크게 웃지 않는다</figcaption></figure>
+  <figure><div class="plate"><img src="../portrait_jachwi_tired.png" alt=""></div>
+    <figcaption><b>tired</b>밤·저광·실패 회차</figcaption></figure>
+</div>
+<h3>밝은 판</h3>
+<div class="row light">
+  <figure><div class="plate"><img src="../portrait_jachwi_neutral.png" alt=""></div></figure>
+  <figure><div class="plate"><img src="../portrait_jachwi_worry.png" alt=""></div></figure>
+  <figure><div class="plate"><img src="../portrait_jachwi_cry.png" alt=""></div></figure>
+  <figure><div class="plate"><img src="../portrait_jachwi_surprise.png" alt=""></div></figure>
+  <figure><div class="plate"><img src="../portrait_jachwi_happy.png" alt=""></div></figure>
+  <figure><div class="plate"><img src="../portrait_jachwi_tired.png" alt=""></div></figure>
+</div>
+<h3>덤 — 코어가 찾는 키는 아니다</h3>
+<div class="row">
+  <figure><div class="plate"><img src="../portrait_jachwi_think.png" alt=""></div>
+    <figcaption><b>think</b>고민·계산 중</figcaption></figure>
+  <figure><div class="plate"><img src="../portrait_jachwi_proud.png" alt=""></div>
+    <figcaption><b>proud</b>은은한 뿌듯함</figcaption></figure>
+  <figure><div class="plate"><img src="../portrait_jachwi_blank.png" alt=""></div>
+    <figcaption><b>blank</b>멍. 초점 없는 눈</figcaption></figure>
+</div>
+
+<h2>자취생 (남) — <code>portrait_jachwi_m_*.png</code></h2>
+<p>여자와 <b>다른 인물</b>이다. 화풍은 같게, 인물은 다르게 — 짧은 흑갈색 머리에 옆으로 흐른 앞머리,
+   같은 크림색 반팔 티. 3D 원본(<code>char_namja_jachwi_base.glb</code>)에서 식별 요소만 가져왔다.</p>
+<h3>어두운 판</h3>
+<div class="row">
+  <figure><div class="plate"><img src="../portrait_jachwi_m_neutral.png" alt=""></div>
+    <figcaption><b>neutral</b></figcaption></figure>
+  <figure><div class="plate"><img src="../portrait_jachwi_m_worry.png" alt=""></div>
+    <figcaption><b>worry</b></figcaption></figure>
+  <figure><div class="plate"><img src="../portrait_jachwi_m_cry.png" alt=""></div>
+    <figcaption><b>cry</b></figcaption></figure>
+  <figure><div class="plate"><img src="../portrait_jachwi_m_surprise.png" alt=""></div>
+    <figcaption><b>surprise</b></figcaption></figure>
+  <figure><div class="plate"><img src="../portrait_jachwi_m_happy.png" alt=""></div>
+    <figcaption><b>happy</b></figcaption></figure>
+  <figure><div class="plate"><img src="../portrait_jachwi_m_tired.png" alt=""></div>
+    <figcaption><b>tired</b></figcaption></figure>
+</div>
+<h3>밝은 판</h3>
+<div class="row light">
+  <figure><div class="plate"><img src="../portrait_jachwi_m_neutral.png" alt=""></div></figure>
+  <figure><div class="plate"><img src="../portrait_jachwi_m_worry.png" alt=""></div></figure>
+  <figure><div class="plate"><img src="../portrait_jachwi_m_cry.png" alt=""></div></figure>
+  <figure><div class="plate"><img src="../portrait_jachwi_m_surprise.png" alt=""></div></figure>
+  <figure><div class="plate"><img src="../portrait_jachwi_m_happy.png" alt=""></div></figure>
+  <figure><div class="plate"><img src="../portrait_jachwi_m_tired.png" alt=""></div></figure>
+</div>
+<h3>덤 — 코어가 찾는 키는 아니다</h3>
+<div class="row">
+  <figure><div class="plate"><img src="../portrait_jachwi_m_think.png" alt=""></div>
+    <figcaption><b>think</b></figcaption></figure>
+  <figure><div class="plate"><img src="../portrait_jachwi_m_proud.png" alt=""></div>
+    <figcaption><b>proud</b></figcaption></figure>
+  <figure><div class="plate"><img src="../portrait_jachwi_m_blank.png" alt=""></div>
+    <figcaption><b>blank</b></figcaption></figure>
+</div>
+
+<h2>몬이 — <code>portrait_moni_*.png</code></h2>
+<p>자취생과 <b>반대로</b> 따뜻하고 동글동글하게 그렸다 — 그 대비가 오프닝의 뜻이다.
+   0.375 m 라 작고 통통하며, 프레임을 다 안 채우는 것도 의도다.
+   잎과 화분이 <b>통째로</b> 들어가고 네 표정이 같은 배율·같은 바닥선이다.</p>
+<h3>어두운 판</h3>
+<div class="row">
+  <figure><div class="plate"><img src="../portrait_moni_neutral.png" alt=""></div>
+    <figcaption><b>neutral</b>안내</figcaption></figure>
+  <figure><div class="plate"><img src="../portrait_moni_excited.png" alt=""></div>
+    <figcaption><b>excited</b>칭찬·새순</figcaption></figure>
+  <figure><div class="plate"><img src="../portrait_moni_sad.png" alt=""></div>
+    <figcaption><b>sad</b>안 자랄 때</figcaption></figure>
+  <figure><div class="plate"><img src="../portrait_moni_curious.png" alt=""></div>
+    <figcaption><b>curious</b>되묻기·힌트</figcaption></figure>
+</div>
+<h3>밝은 판</h3>
+<div class="row light">
+  <figure><div class="plate"><img src="../portrait_moni_neutral.png" alt=""></div></figure>
+  <figure><div class="plate"><img src="../portrait_moni_excited.png" alt=""></div></figure>
+  <figure><div class="plate"><img src="../portrait_moni_sad.png" alt=""></div></figure>
+  <figure><div class="plate"><img src="../portrait_moni_curious.png" alt=""></div></figure>
+</div>
+
+<h2>세 인물을 나란히 — 같은 세계로 보이는가</h2>
+<p>여 · 남 · 몬이 기본 표정. 선 굵기와 채도만 보면 된다.</p>
+<div class="row big">
+  <figure><div class="plate"><img src="../portrait_jachwi_neutral.png" alt=""></div>
+    <figcaption><b>자취생 여</b></figcaption></figure>
+  <figure><div class="plate"><img src="../portrait_jachwi_m_neutral.png" alt=""></div>
+    <figcaption><b>자취생 남</b></figcaption></figure>
+  <figure><div class="plate"><img src="../portrait_moni_neutral.png" alt=""></div>
+    <figcaption><b>몬이</b></figcaption></figure>
+</div>
+
+<h2>★ 확정 화풍 — 박사님이 고르신 두 장</h2>
+<p>이 두 장을 <b>참조 이미지로 넣어</b> 3차를 뽑았다. 말로 묘사하는 것보다 정확하다.
+   1번의 정돈된 인상 + 2번의 또렷한 눈을 섞으라고 하셨다.</p>
+<div class="row big">
+  <figure><div class="plate"><img src="style_pick_jachwi_neutral.png" alt=""></div>
+    <figcaption><b>1번 style_pick_jachwi_neutral</b>정돈된 인상.
+      정수리에 <b>회색 띠</b>가 있다 — 3D 저폴리 머리 하이라이트를 물려받은 것</figcaption></figure>
+  <figure><div class="plate"><img src="../_ref/_in_style_1.png" alt=""></div>
+    <figcaption><b>1번 — 띠를 지운 것</b>실제로 생성기에 넣은 판.
+      원본을 그냥 넣으면 <b>16장 전부 머리띠</b>를 쓰고 나왔다</figcaption></figure>
+  <figure><div class="plate"><img src="style_2_cleareye.png" alt=""></div>
+    <figcaption><b>2번 style_2_cleareye</b>또렷한 눈. 띠가 없다</figcaption></figure>
+</div>
+
+<h2>원본 시트 — 여기서 잘라 냈다</h2>
+<p>같은 인물의 여러 표정을 <b>한 시트</b>에 담으면 표정 간 톤이 저절로 맞는다.
+   자취생은 표정이 6개라 3+3 두 장으로 나눴고, 시트끼리는
+   <code>_raw/derive3.py</code> 가 <b>bbox 폭 중앙값</b>으로 배율을 맞춘다.</p>
+<h3>자취생 여 — A(기본·걱정·지침) / B(울음·놀람·기쁨) / C(덤)</h3>
+<div class="sheet"><img src="../_raw/v3_jachwi_f_a_raw.png" alt=""></div>
+<div class="sheet" style="margin-top:12px"><img src="../_raw/v3_jachwi_f_b_raw.png" alt=""></div>
+<div class="sheet" style="margin-top:12px"><img src="../_raw/v3_jachwi_f_c_raw.png" alt=""></div>
+<h3>자취생 남 — A / B / C</h3>
+<div class="sheet"><img src="../_raw/v3_jachwi_m_a_raw.png" alt=""></div>
+<div class="sheet" style="margin-top:12px"><img src="../_raw/v3_jachwi_m_b_raw.png" alt=""></div>
+<div class="sheet" style="margin-top:12px"><img src="../_raw/v3_jachwi_m_c_raw.png" alt=""></div>
+<h3>몬이 — 2×2 한 장에 네 표정</h3>
+<div class="sheet sq"><img src="../_raw/v3_moni_raw.png" alt=""></div>
+
+<h2>버린 것 — 왜 다시 뽑았는지</h2>
+<p>남자 1차는 <b>목이 기린처럼 늘어나고</b> 어깨 둘레로 <b>마젠타가 인물 안까지 배어</b> 나왔다.
+   “목은 보통 길이 · 크루넥 · 인물 안에 분홍이 없을 것”을 프롬프트에 박아 고쳤다.</p>
+<div class="sheet"><img src="../_raw/_bad_jachwi_m_neck.png" alt=""></div>
+<p><small>어깨 위 분홍 번짐과 긴 목. 알파를 빼면 그대로 구멍이 된다.</small></p>
+
+<h2>참고 — 3D 원본 (식별 요소의 출처)</h2>
+<p>생성기에 넣은 신원 참조. 얼굴을 닮게 하려는 것이 아니라 <b>머리색·앞머리·옷</b>만 가져온다.</p>
+<div class="row">
+  <figure><div class="plate"><img src="../_ref/ref_in_jachwi_f.png" alt="" style="width:420px"></div>
+    <figcaption><b>자취생 여</b>긴 흑갈색 머리 · 갈라진 앞머리 · 크림색 반팔 티</figcaption></figure>
+  <figure><div class="plate"><img src="../_ref/ref_in_jachwi_m.png" alt="" style="width:420px"></div>
+    <figcaption><b>자취생 남</b>짧은 흑갈색 머리 · 옆으로 흐른 앞머리 · 크림색 반팔 티 · 청바지</figcaption></figure>
+  <figure><div class="plate"><img src="../_ref/ref_in_mascot.png" alt="" style="width:420px"></div>
+    <figcaption><b>몬이</b>연둣빛 새싹 · 큰 검은 눈 · 몬스테라 잎 둘 · 테라코타 화분</figcaption></figure>
+</div>
+
+<h2>참고 — 2차 화풍 후보 3안</h2>
+<p>화풍이 정해지기 전에 뽑아 둔 것. 버리지 않고 남긴다.</p>
+<div class="row">
+  <figure><div class="plate"><img src="style_1_fineline.png" alt=""></div>
+    <figcaption><b>㉠ 가는 선 · 저채도</b></figcaption></figure>
+  <figure><div class="plate"><img src="style_2_cleareye.png" alt=""></div>
+    <figcaption><b>㉡ 큰 눈 · 또렷</b> ← 채택</figcaption></figure>
+  <figure><div class="plate"><img src="style_3_softshade.png" alt=""></div>
+    <figcaption><b>㉢ 부드러운 음영</b></figcaption></figure>
+</div>
