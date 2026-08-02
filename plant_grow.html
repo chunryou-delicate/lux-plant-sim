@@ -2173,14 +2173,26 @@ function axisTimeline(gMax){
   }
   return axes;
 }
+// ageOf 의 역함수 — 생장 나이를 실제 유효 생장일로 되돌린다. 단계 경계를 '며칠'로 말하려면 필요하다.
+function dayOfAge(g){ const k=P.timeCurve||1; if(k===1||g<=0) return Math.max(0,g);
+  return GMAX*Math.pow(Math.min(1, g/GMAX), 1/k); }
+// 잎이 나기 전 구간을 둘로 가른다. 마지막 며칠이 '새순 직전 준비'다.
+//   3 은 확정 측정에서 온 표시 상수다 — 적정광 3턴 뒤에 말린 새순이 나온다(146일).
+//   ⚠ 첫 플레이 전용 오프셋이 아니다. 모든 새순 주기에 똑같이 적용된다.
+//   ⚠ 표시에만 쓴다. 형태·성장 곡선은 이 값을 보지 않는다.
+const SPEAR_READY_DAYS=3;
 // 그 날 화면에서 "지금 무슨 일이 벌어지는 중인가". 가장 늦게 난 생장점이 기준이다.
 function phaseAt(day){
-  const g=ageOf(Math.max(0, day));
+  const d=Math.max(0, day), g=ageOf(d);
   if(g<P.seedEnd)   return 'seed';
   if(g<P.sproutEnd) return 'sprout';
   const born=axisTimeline(g).filter(a=>a.birth<=g);
   const ax=born[born.length-1];
-  if(!ax || g<ax.leafBirth) return 'spear_ready';      // 새 생장점은 났는데 잎은 아직
+  if(!ax || g<ax.leafBirth){                           // 새 생장점은 났는데 잎은 아직
+    if(!ax) return 'spear_ready';
+    const leafDay=Math.ceil(dayOfAge(ax.leafBirth));   // 말린 새순이 처음 보이는 날
+    return (d >= leafDay-SPEAR_READY_DAYS)? 'spear_ready' : 'axis_rising';
+  }
   const m=Math.max(0, Math.min(1,(g-ax.leafBirth)/P.matSpan));
   if(m<0.10)          return 'spear_furled';           // drawLeafStage 와 같은 값
   if(m<0.22)          return 'spear_opening';

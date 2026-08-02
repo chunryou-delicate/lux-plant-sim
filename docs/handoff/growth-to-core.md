@@ -346,8 +346,10 @@ growthPhase() → { phaseId, progress01, nextPhaseId }
 
 **표시 전용이다.** 게임 판정은 그대로 `advanceTo` 의 `grew`·`blocked` 로 한다.
 
-- `phaseId` — `seed` / `sprout` / `spear_ready` / `spear_furled` / `spear_opening` /
-  `leaf_young` / `leaf_mid` / `leaf_mature`
+- `phaseId` — `seed` / `sprout` / **`axis_rising`** / `spear_ready` / `spear_furled` /
+  `spear_opening` / `leaf_young` / `leaf_mid` / `leaf_mature`
+  - `axis_rising` — 혹에서 난 새 축이 올라오는 구간
+  - `spear_ready` — 말린 새순 등장 **직전 3턴**의 마지막 준비 단계
 - `progress01` — 이 단계 안에서 얼마나 왔나. **원비율 그대로(A안)**, 항상 0..1
 - `nextPhaseId` — 다음 단계. 끝이면 `null`
 
@@ -361,11 +363,13 @@ growthPhase() → { phaseId, progress01, nextPhaseId }
 #### 단계 경계 (기본값 기준 · 참고용, 코어는 갖지 말 것)
 
 ```
-  0 seed        51 spear_ready    134 spear_ready    234 spear_ready
-  5 sprout      61 spear_furled   146 spear_furled   249 spear_furled
- 14 spear_furled 68 spear_opening 156 spear_opening  260 spear_opening
- 15 spear_opening 78 leaf_young   167 leaf_young     273 leaf_young
- 21 leaf_young  91 leaf_mid       183 leaf_mid       291 leaf_mid
- 30 leaf_mid   115 leaf_mature    212 leaf_mature
- 48 leaf_mature
+  0 seed          51 axis_rising    134 axis_rising   234 axis_rising
+  5 sprout        58 spear_ready    143 spear_ready   246 spear_ready
+ 14 spear_furled  61 spear_furled   146 spear_furled  249 spear_furled
+ 15 spear_opening 68 spear_opening  156 spear_opening 260 spear_opening
+ 21 leaf_young    78 leaf_young     167 leaf_young    273 leaf_young
+ 30 leaf_mid      91 leaf_mid       183 leaf_mid      291 leaf_mid
+ 48 leaf_mature  115 leaf_mature    212 leaf_mature
 ```
+
+`spear_ready` 는 매 주기마다 새순 3턴 전에 시작한다 — 첫 플레이 전용 오프셋이 아니다.
