@@ -127,7 +127,14 @@ export function nullGrowth(keep = 14, opt = {}) {
     calendarDay: () => cal,
     growthDays: () => growth,
     growthBlocked: () => blockReason(),
-    growthPhase: () => null,       // 표시 계약. 진짜 단계는 growth 전용 구현이 낸다
+    /* ★ growthPhase 는 **두지 않는다** (2026-08-02 정정).
+       예전엔 `growthPhase: () => null` 이었다 — 계약을 **있다고 광고하면서 null 을 냈다.**
+       코어가 단계 스키마를 검증하기 시작하면서(loop.phaseSchemaError) 이게 정확히 걸린다:
+       null 은 '단계 없음'이 아니라 **깨진 단계**다. 스텁은 진짜 형태를 굴리지 않으므로
+       낼 단계가 없다 — 그러면 **없다고 하는 게 맞다.**
+       loop.phaseOf 는 함수가 아예 없으면 `{phase:null, error:null}`(정보 없음)로 지나간다.
+       ⚠ 브라우저 게임 경로는 growth_adapter.assertContract 가 growthPhase 를 필수로 막으므로
+         이 구멍으로 실제 플레이가 새지 않는다. 여기는 빛·경제만 재는 헤드리스 시뮬이다. */
     setGrowth(days) { growth = cal = Math.round(days);
                       return { growth, calDay: cal, drawn: true, drawError: null, hudError: null }; },
     dli7() { return H.length ? avg(H, 7) : null; },

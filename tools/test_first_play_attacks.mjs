@@ -10,9 +10,10 @@ import {
   FIRST_PLAY_ASSETS, FIRST_PLAY_COMPLETE_PHASE_ID,
   markMonsteraArrived, markMonsteraPhase, placeBeansprout, slotFitsDiameter
 } from '../src/game/first_play.js';
-import { nextDay } from '../src/game/loop.js';
+import { nextDay, phaseSchemaError } from '../src/game/loop.js';
 import { newState, givePlant, pot0 } from '../src/game/state.js';
 import { createProfileLight } from '../src/game/room_profile.js';
+import { nullGrowth } from '../src/game/sim.js';
 
 const RULES = firstPlayRulesFromBalance(JSON.parse(
   readFileSync(new URL('../data/balance/characters.json', import.meta.url), 'utf8')));
@@ -367,4 +368,211 @@ function firstPlayState(slotId = 'dark') {
   assert.match(html, /plant_grow\.html\?embed=game/);
 }
 
-console.log('first_play_attacks: PASS (16 블록)');
+/* ══════════════════════════════════════════════════════════════
+   단계 스키마 공격 — `growthPhase()` 가 **던지지 않고 이상한 걸 돌려주는** 경우.
+   예전 코어는 던질 때만 막았다. 그래서 `null` 을 돌려주면 Day 4 수확·도착이 그대로
+   확정되고 `markMonsteraPhase` 가 조용히 no-op 해서 **phase null · completed false**
+   인 회차가 남았다 — "말린 새순을 못 봤다"가 아니라 "봤는지 아무도 모른다"가 된다.
+══════════════════════════════════════════════════════════════ */
+
+/* 한 줄이 한 공격이다. 값은 **전부 growth 가 실제로 낼 수 있는 실수 모양**으로 골랐다. */
+const BAD_PHASES = [
+  ['null 반환',             null],
+  ['undefined 반환',        undefined],
+  ['문자열 반환',            'spear_furled'],
+  ['숫자 반환',              146],
+  ['배열 반환',              []],
+  ['phaseId 없음',           { progress01: 0.5 }],
+  ['phaseId 빈 문자열',       { phaseId: '', progress01: 0.5 }],
+  ['phaseId 공백뿐',         { phaseId: '   ', progress01: 0.5 }],
+  ['phaseId 가 null',        { phaseId: null, progress01: 0.5 }],
+  ['phaseId 가 숫자',         { phaseId: 146, progress01: 0.5 }],
+  /* ★ 아래 넷은 phaseId 가 **완료 열쇠(spear_furled)** 다 — 검증이 없으면
+     "말린 새순을 봤다"가 NaN 게이지·범위 밖 진행도와 함께 참이 되어 버린다. */
+  ['progress01 없음',        { phaseId: 'spear_furled' }],
+  ['progress01 NaN',        { phaseId: 'spear_furled', progress01: NaN }],
+  ['progress01 Infinity',   { phaseId: 'spear_furled', progress01: Infinity }],
+  ['progress01 -Infinity',  { phaseId: 'spear_furled', progress01: -Infinity }],
+  ['progress01 문자열',      { phaseId: 'spear_furled', progress01: '0.5' }],
+  ['progress01 음수',        { phaseId: 'spear_furled', progress01: -0.001 }],
+  ['progress01 1 초과',      { phaseId: 'spear_furled', progress01: 1.001 }]
+];
+
+/* ── 15. 스키마 판정 자체 — 모양만 보고, 단계 **정본은 복제하지 않는다** ── */
+{
+  for (const [name, bad] of BAD_PHASES) {
+    const why = phaseSchemaError(bad);
+    assert.ok(typeof why === 'string' && why.length, `${name} 은 사유가 나와야 한다`);
+    assert.match(why, /growthPhase\(\)/, `${name}: 어디가 틀렸는지 이름이 있어야 한다`);
+  }
+
+  /* 경계는 통과한다 — 0 과 1 은 정상값이다(단계 시작·직전). */
+  for (const p of [0, 1, 0.5, 1 / 3])
+    assert.equal(phaseSchemaError({ phaseId: 'spear_ready', progress01: p }), null, `progress01 ${p}`);
+
+  /* ★★ 정본 복제 금지 — 코어는 phaseId 가 **무슨 값인지** 보지 않는다.
+     growth 가 단계를 하나 늘리면 코어가 오류 없이 틀린 판정을 내는 게 이 프로젝트의 상시 위험이다. */
+  assert.equal(phaseSchemaError({ phaseId: 'growth_가_내일_추가할_단계', progress01: 0.5 }), null,
+    '모르는 phaseId 는 코어가 막을 대상이 아니다 — 단계 정본은 growth 소유');
+
+  /* phaseKo·nextPhaseId 는 옛 growth 가 안 낸다(=정보 없음). 없다고 막지 않는다. */
+  assert.equal(phaseSchemaError({ phaseId: 'axis_rising', progress01: 0 }), null);
+  assert.equal(phaseSchemaError({ phaseId: 'leaf_mature', progress01: 1,
+                                  phaseKo: null, nextPhaseId: null, nextPhaseKo: null }), null);
+
+  /* 사유에 실제 값이 실려야 growth 쪽에서 뭘 고칠지 안다 */
+  assert.match(phaseSchemaError(null), /null/);
+  assert.match(phaseSchemaError({ phaseId: 'x', progress01: NaN }), /NaN/);
+  assert.match(phaseSchemaError({ phaseId: 'x', progress01: 1.001 }), /1\.001/);
+  assert.match(phaseSchemaError({ phaseId: '', progress01: 0 }), /""/);
+}
+
+/* ── 16. 일일 루프: 나쁜 스키마는 **하루를 시작조차 못 한다**(not_started) ── */
+{
+  for (const [name, bad] of BAD_PHASES) {
+    const growth = mkGrowth({ growthPhase: () => bad });
+    const S = newState({ room: 'banjiha', mode: 'novice' });
+    givePlant(S, { growth }, { slotId: 'sill' });
+    const calBefore = growth.calendarDay(), grownBefore = growth.growthDays();
+
+    let err = null;
+    try { nextDay(S, { light: mkLight(SLOTS()), growth }); } catch (e) { err = e; }
+    assert.ok(err, `${name}: 조용히 지나가면 안 된다`);
+    assert.equal(err.turnState, 'not_started', name);
+    assert.equal(S.day, 0, `${name}: 하루를 세지 않는다`);
+    assert.equal(pot0(S).daysPlanted, 0, `${name}: 돌본 날도 오르지 않는다`);
+    assert.equal(S.dliHist.length, 0, `${name}: 빛 이력도 남기지 않는다`);
+    assert.equal(S.desync, undefined, `${name}: 시작 전에 막았으므로 어긋남이 아니다`);
+    /* ★ 양쪽 상태가 정말 그대로인가 — 코어 주장이 아니라 growth 에 직접 물어본다 */
+    assert.equal(growth.calendarDay(), calBefore, `${name}: growth 달력도 그대로다`);
+    assert.equal(growth.growthDays(), grownBefore, `${name}: growth 유효 진행도 그대로다`);
+  }
+}
+
+/* ── 17. 진행 뒤에 스키마가 깨지면 fail-loud — 되감지 않고 사실을 남긴다 ── */
+{
+  for (const [name, bad] of [['null', null], ['NaN progress01', { phaseId: 'spear_furled', progress01: NaN }]]) {
+    let reads = 0;
+    const growth = mkGrowth({
+      growthPhase() {
+        return ++reads > 1 ? bad
+          : { phaseId: 'spear_ready', phaseKo: '말린 새순을 준비하는 중', progress01: 0 };
+      }
+    });
+    const S = firstPlayState();
+    S.firstPlay.beansprout.harvested = true;          // 도착 이후 상태를 만든다
+    S.firstPlay.monstera.arrived = true;
+    /* 어제까지 읽어 둔 **멀쩡한** 단계. 오늘 깨진 값이 이걸 덮어쓰면 안 된다. */
+    const KEPT = { phaseId: 'spear_ready', phaseKo: '말린 새순을 준비하는 중', progress01: 0,
+                   nextPhaseId: 'spear_furled', nextPhaseKo: '말린 새순 등장' };
+    S.firstPlay.monstera.growthPhase = { ...KEPT };
+    givePlant(S, { growth }, { slotId: 'sill' });
+    reads = 0;
+
+    let err = null;
+    try { nextDay(S, { light: mkLight(SLOTS()), growth }); } catch (e) { err = e; }
+    assert.ok(err, `${name}: 조용히 지나가면 안 된다`);
+    assert.equal(err.turnState, 'growth_advanced', name);
+    assert.equal(err.coreRolledBack, false, `${name}: growth 는 진짜 하루 갔다 — 거짓 롤백 금지`);
+    assert.equal(S.day, 1, `${name}: 날짜는 맞춰 둔다`);
+    assert.equal(growth.growthDays(), 144, `${name}: 논리 진행은 기록된다`);
+    assert.match(S.desync.reason, /growthPhase\(\)/, name);
+    assert.match(err.turn.growthPhaseError, /growthPhase\(\)/, name);
+    assert.equal(err.turn.growthPhase, null, `${name}: 반쪽짜리 단계를 실어 보내지 않는다`);
+    assert.equal(S.firstPlay.completed, false,
+      `${name}: spear_furled 라도 모양이 깨졌으면 "말린 새순을 봤다"가 될 수 없다`);
+    assert.deepEqual(S.firstPlay.monstera.growthPhase, KEPT,
+      `${name}: 깨진 값으로 어제 읽은 멀쩡한 단계를 덮어쓰지 않는다`);
+  }
+}
+
+/* ── 18. Day 4: 나쁜 스키마면 **수확·선물·날짜가 확정되지 않는다** ── */
+{
+  for (const [name, bad] of BAD_PHASES) {
+    const growth = mkGrowth({ growthPhase: () => bad });
+    const io = { light: mkLight(SLOTS()), growth };
+    const S = firstPlayState();
+    for (let d = 1; d <= 3; d++) nextDay(S, io);
+
+    let err = null;
+    try { nextDay(S, io); } catch (e) { err = e; }
+    assert.ok(err, `${name}: Day 4 가 조용히 확정되면 안 된다`);
+    assert.match(err.message, /단계를 읽지 못했습니다/, name);
+    assert.equal(err.turnState, 'core_rolled_back', name);
+    assert.equal(S.day, 3, `${name}: 날짜가 되돌아간다`);
+    assert.equal(S.pots.length, 0, `${name}: 화분을 만들지 않는다`);
+    assert.equal(S.firstPlay.beansprout.harvested, false, `${name}: 수확도 되돌아간다`);
+    assert.equal(S.firstPlay.food.totalFoodSavedWon, 0, `${name}: 식비 절감도 되돌아간다`);
+    assert.equal(S.firstPlay.monstera.arrived, false, name);
+    assert.equal(S.firstPlay.completed, false, name);
+
+    /* ★ 거짓 롤백을 주장하지 않는다 — growth 는 이미 setGrowth(143) 을 먹었고 코어엔 되감을 창구가 없다.
+       그 사실이 오류와 로그 양쪽에 남아야 한다. */
+    assert.equal(err.growthJumpApplied, 143, `${name}: growth 잔여물을 표시한다`);
+    assert.equal(growth.growthDays(), 143, `${name}: growth 는 실제로 143 에 남아 있다`);
+    assert.ok(S.log.some(l => /growth 는 이미 유효 143일로 점프/.test(l.msg)),
+      `${name}: "다 되돌렸다"고 하지 않고 잔여물을 로그로 남긴다`);
+  }
+}
+
+/* ── 19. 그 되돌림은 **진짜로 재시도 가능**해야 한다 (setGrowth 는 절대값 점프) ── */
+{
+  let sane = false;
+  const growth = mkGrowth({
+    growthPhase() {
+      return sane ? { phaseId: 'spear_ready', phaseKo: '말린 새순을 준비하는 중', progress01: 0,
+                      nextPhaseId: 'spear_furled', nextPhaseKo: '말린 새순 등장' }
+                  : null;
+    }
+  });
+  const io = { light: mkLight(SLOTS()), growth };
+  const S = firstPlayState();
+  for (let d = 1; d <= 3; d++) nextDay(S, io);
+  assert.throws(() => nextDay(S, io), /단계를 읽지 못했습니다/);
+
+  sane = true;                                   // growth 를 고쳤다 = iframe 을 다시 실었다
+  const { turn } = nextDay(S, io);               // 잠그지 않았으므로 그대로 다시 누른다
+  assert.equal(S.day, 4, '고친 뒤 Day 4 를 다시 밟을 수 있다');
+  assert.equal(S.firstPlay.beansprout.harvested, true);
+  assert.equal(S.pots.length, 1);
+  assert.equal(pot0(S).arrivalGrowthDays, 143);
+  assert.equal(growth.growthDays(), 143, 'setGrowth 는 절대값이라 두 번 밟아도 같은 자리다');
+  assert.equal(S.firstPlay.monstera.growthPhase.phaseId, 'spear_ready');
+  assert.equal(turn.growthPhase.phaseId, 'spear_ready', '도착 턴이 검증된 단계를 그대로 싣는다');
+  assert.equal(turn.growthPhaseError, null);
+  assert.equal(S.firstPlay.food.totalFoodSavedWon, 5000, '수확 정산도 한 번만 난다');
+}
+
+/* ── 20. `growthPhase` 가 **아예 없는** growth ──
+   일일 루프에선 '정보 없음'이라 막지 않는다(헤드리스 밸런스 시뮬 경로).
+   ★ 그러나 **도착에서는 실패다** — 단계 없이 열면 completed 가 영영 false 인 개체가 남는다. */
+{
+  const { growthPhase, ...noPhase } = mkGrowth();
+  assert.equal(noPhase.growthPhase, undefined);
+
+  /* 20-a) 화분이 이미 있는 일일 루프 — 그냥 돈다 */
+  const S = newState({ room: 'banjiha', mode: 'novice' });
+  givePlant(S, { growth: noPhase }, { slotId: 'sill' });
+  const { turn } = nextDay(S, { light: mkLight(SLOTS()), growth: noPhase });
+  assert.equal(S.day, 1);
+  assert.equal(turn.growthPhase, null, '정보 없음은 null 이다');
+  assert.equal(turn.growthPhaseError, null, '없는 것은 깨진 것과 다르다');
+
+  /* 20-b) 첫 플레이 도착 — 근거 없이 문을 열지 않는다 */
+  const S2 = firstPlayState();
+  const io2 = { light: mkLight(SLOTS()), growth: noPhase };
+  for (let d = 1; d <= 3; d++) nextDay(S2, io2);
+  let err = null;
+  try { nextDay(S2, io2); } catch (e) { err = e; }
+  assert.match(err.message, /단계 계약이 없습니다/);
+  assert.equal(S2.pots.length, 0);
+  assert.equal(S2.day, 3);
+  assert.equal(S2.firstPlay.beansprout.harvested, false);
+  assert.equal(S2.firstPlay.completed, false);
+
+  /* 20-c) 헤드리스 시뮬 스텁은 **광고하지 않는다** — 예전엔 () => null 이라 '깨진 단계'였다 */
+  assert.equal(typeof nullGrowth().growthPhase, 'undefined',
+    'nullGrowth 가 growthPhase 를 내면 null 반환이 되어 코어가 매일 막는다');
+}
+
+console.log('first_play_attacks: PASS (22 블록)');

@@ -43,14 +43,66 @@ import {
 import { dliFromContract } from './growth_adapter.js';
 import { weekStats, WEATHER_P } from '../engine/weather.js';
 
+/* ============================================================
+   ★ 단계 스키마 검증 (2026-08-02 신설)
+   ------------------------------------------------------------
+   예전엔 `growthPhase()` 가 **무엇을 돌려주든** 그대로 실어 보냈다. 던질 때만 막았다.
+   그래서 `null` 을 돌려주면 아무도 안 막고 Day 4 수확·도착이 그대로 확정된 다음,
+   `markMonsteraPhase` 가 `!phase` 에서 조용히 no-op 해서
+   **monstera.growthPhase === null · completed === false** 인 회차가 남았다 —
+   "말린 새순을 못 봤다"가 아니라 **"봤는지 아무도 모른다"** 가 된다.
+   화면에도 '단계 정보 없음'만 뜨고 오류는 어디에도 없다. 그 유형을 여기서 끊는다.
+
+   ★ 무엇을 **안** 보는가 — `phaseId` 가 **무슨 값인지는 보지 않는다.**
+     단계 이름·개수·순서·경계는 growth 소유다(plant_grow.html `phaseAt`).
+     코어가 허용 목록을 들면 growth 가 단계를 하나 늘리는 순간 **오류 없이 틀린 판정**이 난다 —
+     first_play.js 의 phaseKo 주석과 똑같은 이유다. 여기서 보는 건 **모양뿐**이다.
+     `phaseKo`·`nextPhaseId` 도 안 본다: 옛 growth 는 안 내고(=정보 없음),
+     markMonsteraPhase 가 키로 대체한다. 없다고 진행을 무를 값이 아니다.
+
+   보는 것은 세 가지 — 이게 없으면 **읽었다고 말할 수 없는** 최소치다.
+     ① 단계 객체인가            (null·배열·문자열·숫자 전부 실패)
+     ② phaseId 가 빈 문자열이 아닌 문자열인가   (완료 판정의 열쇠)
+     ③ progress01 이 0..1 안의 유한한 숫자인가  (게이지·"형태가 올랐나" 판정의 축)
+============================================================ */
+function showVal(v) {
+  if (typeof v === 'string') return `"${v}"`;
+  if (v === null || v === undefined || typeof v === 'number' ||
+      typeof v === 'boolean' || typeof v === 'bigint') return String(v);
+  if (Array.isArray(v)) return '배열';
+  return typeof v === 'function' ? '함수' : Object.prototype.toString.call(v);
+}
+
+/* 모양이 맞으면 null, 틀리면 **사람이 읽을 수 있는 사유**를 돌려준다.
+   사유에 실제 값을 넣는다 — "스키마 위반"만 뜨면 growth 쪽에서 뭘 고칠지 모른다. */
+export function phaseSchemaError(phase) {
+  if (phase === null || typeof phase !== 'object' || Array.isArray(phase))
+    return `growthPhase() 가 단계 객체를 내지 않았습니다 — ${showVal(phase)}`;
+  if (typeof phase.phaseId !== 'string' || phase.phaseId.trim() === '')
+    return `growthPhase().phaseId 가 비어 있지 않은 문자열이 아닙니다 — ${showVal(phase.phaseId)}`;
+  if (typeof phase.progress01 !== 'number' || !Number.isFinite(phase.progress01))
+    return `growthPhase().progress01 이 유한한 숫자가 아닙니다 — ${showVal(phase.progress01)}`;
+  if (phase.progress01 < 0 || phase.progress01 > 1)
+    return `growthPhase().progress01 이 0..1 밖입니다 — ${phase.progress01}`;
+  return null;
+}
+
 /* 단계 표시를 읽는 유일한 창구. **표시 계약**이라 실패해도 진행을 무르지 않는다 —
    다만 조용히 null 로 숨기지 않고 사유를 같이 낸다(호출부가 라벨을 띄운다).
-   growth 가 phaseKo 를 안 내는 옛 버전이면 markMonsteraPhase 가 키를 그대로 쓴다. */
+   growth 가 phaseKo 를 안 내는 옛 버전이면 markMonsteraPhase 가 키를 그대로 쓴다.
+
+   ★ 던진 예외와 **모양이 틀린 반환값**을 같은 등급으로 다룬다 (2026-08-02).
+     호출부는 `error` 만 보면 된다 — "던졌나 / 이상한 걸 돌려줬나"를 나눠 물을 필요가 없다. */
 export function phaseOf(io, S) {
   if (!io.growth || typeof io.growth.growthPhase !== 'function')
     return { phase: null, error: null };            // 계약 자체가 없는 경우는 '정보 없음'
-  try { return { phase: io.growth.growthPhase(), error: null }; }
+  let phase;
+  try { phase = io.growth.growthPhase(); }
   catch (e) { return { phase: null, error: e.message }; }
+  const bad = phaseSchemaError(phase);
+  /* ★ 모양이 틀리면 값을 **버린다.** 반쪽짜리 단계를 실어 보내면 markMonsteraPhase 가
+     phaseId 만 보고 완료를 찍거나, UI 가 NaN% 게이지를 그린다 — 둘 다 조용히 틀린다. */
+  return bad ? { phase: null, error: bad } : { phase, error: null };
 }
 
 export function nextDay(S, io) {
@@ -91,6 +143,7 @@ export function nextDay(S, io) {
   /* 첫 4일은 열린 시루 하나만 돈다. 몬스테라 엔진과 섞지 않고, 시루가 놓인 방 슬롯의
      DLI를 그대로 모아 4일째 3/2/1끼를 판정한다. 계약 누락은 암흑으로 보완하지 않는다. */
   let firstPlayEvent = null;
+  let arrivalPhase = null;          // Day 4 도착 때 **검증까지 마친** 단계. 아래서 다시 읽지 않는다
   if (S.firstPlay && S.firstPlay.enabled && !S.firstPlay.beansprout.harvested) {
     const before = structuredClone(S.firstPlay);
     const logLengthBefore = S.log.length;
@@ -132,13 +185,28 @@ export function nextDay(S, io) {
         /* ★ 도착은 setGrowth 가 그려졌고 **단계까지 읽힌 뒤에만** 완성된다 (2026-08-02 정정).
            단계를 못 읽으면 말린 새순 경계를 영영 못 보는 개체가 남는다 — 여기서 던지면
            바깥 catch 가 화분·수확·식비·날짜를 통째로 되돌려 Day 4 를 다시 시도할 수 있다. */
+        /* ★ 도착에서는 **'정보 없음'도 실패다** (2026-08-02 추가) — 일일 루프와 등급이 다르다.
+           일일 루프의 단계는 표시용이라 없어도 하루는 간다. 도착은 아니다:
+           단계 없이 열면 monstera.growthPhase 가 null 로 굳고, 그 뒤 markMonsteraPhase 가
+           매번 조용히 no-op 해서 **completed 가 영영 false** 인 개체가 남는다.
+           첫 플레이가 증명하려는 게 딱 그 경계라, 근거 없이 문을 열지 않는다. */
         const gp = phaseOf(io, S);
-        if (gp.error) {
+        const gpError = gp.error ||
+          (gp.phase ? null : 'growth 가 growthPhase() 를 내지 않습니다 — 단계 계약이 없습니다');
+        if (gpError) {
           S.pots.length = 0;                    // 되돌리기 전에 방금 만든 화분을 거둔다
-          throw new Error(`[첫 플레이] 도착한 몬스테라의 단계를 읽지 못했습니다 — ${gp.error}`);
+          const err = new Error(`[첫 플레이] 도착한 몬스테라의 단계를 읽지 못했습니다 — ${gpError}`);
+          /* ★ growth 쪽은 **코어가 못 되감는다** (2026-08-02 명시).
+             givePlant 안의 setGrowth(143) 은 이미 적용됐고 3D 도 그려진 뒤다 — 되돌릴 창구가 없다.
+             그래서 "다 되돌렸다"고 말하지 않고 잔여물을 표시로 남긴다(아래 catch 가 로그로 낸다).
+             ⚠ 그래도 **잠그지는 않는다**: setGrowth 는 절대값 점프라 Day 4 를 다시 밟으면
+               setGrowth(143) 이 같은 자리에 다시 꽂혀 두 쪽이 맞는다. 재시도가 정답인 상태다. */
+          err.growthJumpApplied = arrived.arrivalGrowthDays;
+          throw err;
         }
         markMonsteraArrived(S.firstPlay, arrived.slotId);
         markMonsteraPhase(S.firstPlay, gp.phase);
+        arrivalPhase = gp.phase;
         pushLog(S, '🌱 “콩나물을 잘 키웠구나. 이건 좀 더 어려울 거야.”');
       }
     } catch (e) {
@@ -150,6 +218,13 @@ export function nextDay(S, io) {
         S.day--;
         e.coreRolledBack = true;
         e.turnState = 'core_rolled_back';
+        /* ★ 되감은 것은 **코어뿐**이다 — growth 는 이미 점프한 뒤일 수 있다.
+           로그를 자른 **뒤에** 남긴다(먼저 남기면 위 truncate 에 같이 잘린다).
+           숨기면 "Day 3 · 화분 없음"인데 옆 창엔 다 자란 몬스테라가 서 있는 화면이 된다. */
+        if (e.growthJumpApplied != null)
+          pushLog(S, `⚠ 코어는 Day ${S.day} 로 되돌렸지만 growth 는 이미 유효 ` +
+                     `${e.growthJumpApplied}일로 점프한 뒤입니다 — 옆 창의 몬스테라는 남아 있습니다. ` +
+                     `[다음 날]을 다시 누르면 같은 값으로 다시 맞춰집니다`);
       } else {
         e.turnState = 'unknown';
       }
@@ -161,15 +236,19 @@ export function nextDay(S, io) {
      그날은 키운 날로 세지 않는다 — 다음 날부터 빛을 받아 3턴 뒤 말린 새순이 된다. */
   if (!p) {
     const arrived = pot0(S);
-    const gpNo = arrived ? phaseOf(io, S) : { phase: null, error: null };   // ★ 한 번만
+    /* ★ 단계를 **다시 읽지 않는다** (2026-08-02 정정).
+       여기 오는 개체는 방금 위 도착 블록이 만든 것뿐이고, 거기서 이미 읽고 검증했다.
+       한 턴에 두 번 읽으면 두 답이 다를 수 있는데, 두 번째 실패는 이미 확정된 도착을
+       되돌리지 못해 `growthPhaseError` 필드로만 조용히 남는다 — 아무도 안 막는 실패가 된다.
+       도착이 없으면 단계도 없다(null = 정보 없음, 실패 아님). */
     return { S, turn: {
       day: S.day, sky, report, slot: null, dli: null, check,
       noPlant: !arrived, plantArrived: !!arrived, firstPlayEvent,
       daysPlanted: arrived ? 0 : null,
       growthCalendarDay: arrived ? io.growth.calendarDay() : null,
       effectiveGrowthDays: arrived ? io.growth.growthDays() : null,
-      growthPhase: gpNo.phase,
-      growthPhaseError: gpNo.error
+      growthPhase: arrivalPhase,
+      growthPhaseError: null
     } };
   }
 
