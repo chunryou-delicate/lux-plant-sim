@@ -15,7 +15,7 @@
    "avg7_summer": 4.3,
    "vol6_m3": 0.3,
    "vol3_m3": 1.7,
-   "vol_dark_m3": 37.5,
+   "vol_dark_m3": 34.9,
    "best_height_m": 0.85,
    "peak_by_height": {
     "0.1": 1.7,
@@ -26,7 +26,7 @@
     "1.35": 6.6,
     "1.6": 6.4
    },
-   "_method": "0.25m 격자·높이 0.10~1.80m. 벽·칸막이·창턱은 남기고 가구만 제외."
+   "_method": "0.25m 격자·높이 0.10~1.80m. 벽·칸막이·창턱은 남기고 가구만 제외. ★ 고체 벽 속 점은 빼고 창·문 개구부(reveal)는 살린다 — 창턱이 실제로 그 안에 놓인다."
   },
   "slots": {
    "peak_summer": 5.64,
@@ -36,21 +36,21 @@
    "_method": "지금 furniture 배치 기준. 차폐에 가구 포함."
   },
   "area": {
-   "floor_m2": 35,
+   "floor_m2": 32.1,
    "lamp_max_pots": {
-    "clip": 71,
-    "bar": 35,
-    "stand": 17
+    "clip": 65,
+    "bar": 32,
+    "stand": 16
    },
-   "_method": "바닥 면적(cutouts 제외). 등 상한=면적÷(2×coverage_r)². 통로 미반영 이론값."
+   "_method": "벽 띠를 뺀 실내 바닥 면적. 등 상한=면적÷(2×coverage_r)². 통로 미반영 이론값."
   },
-  "measuredAt": "2026-07-27",
+  "measuredAt": "2026-08-02",
   "roomRev": "1fdc9ff 2026-07-26",
   "status": "잠정"
  },
  "slots": [
   {
-   "slotId": "tworoom-nightstand-79:0",
+   "slotId": "tworoom-nightstand-70:0",
    "owner": "nightstand",
    "point": {
     "x": -2.2,
@@ -63,7 +63,7 @@
    ]
   },
   {
-   "slotId": "tworoom-table_round-82:0",
+   "slotId": "tworoom-table_round-73:0",
    "owner": "table_round",
    "point": {
     "x": 1.4,
@@ -76,7 +76,7 @@
    ]
   },
   {
-   "slotId": "tworoom-shelf_low-84:0",
+   "slotId": "tworoom-shelf_low-75:0",
    "owner": "shelf",
    "point": {
     "x": 2.9,
@@ -89,7 +89,7 @@
    ]
   },
   {
-   "slotId": "tworoom-shelf_low-84:1",
+   "slotId": "tworoom-shelf_low-75:1",
    "owner": "shelf",
    "point": {
     "x": 2.9,
@@ -102,7 +102,7 @@
    ]
   },
   {
-   "slotId": "tworoom-shelf_low-84:2",
+   "slotId": "tworoom-shelf_low-75:2",
    "owner": "shelf",
    "point": {
     "x": 2.9,
@@ -115,7 +115,7 @@
    ]
   },
   {
-   "slotId": "tworoom-shelf_low-84:3",
+   "slotId": "tworoom-shelf_low-75:3",
    "owner": "shelf",
    "point": {
     "x": 2.9,
@@ -128,7 +128,7 @@
    ]
   },
   {
-   "slotId": "tworoom-shelf_low-84:4",
+   "slotId": "tworoom-shelf_low-75:4",
    "owner": "shelf",
    "point": {
     "x": 2.9,
@@ -141,7 +141,7 @@
    ]
   },
   {
-   "slotId": "tworoom-shelf_low-84:5",
+   "slotId": "tworoom-shelf_low-75:5",
    "owner": "shelf",
    "point": {
     "x": 2.9,
@@ -154,7 +154,7 @@
    ]
   },
   {
-   "slotId": "tworoom-shelf_etagere_3tier-87:0",
+   "slotId": "tworoom-shelf_etagere_3tier-78:0",
    "owner": "shelf_etagere",
    "point": {
     "x": -2.47,
@@ -167,7 +167,7 @@
    ]
   },
   {
-   "slotId": "tworoom-shelf_etagere_3tier-87:1",
+   "slotId": "tworoom-shelf_etagere_3tier-78:1",
    "owner": "shelf_etagere",
    "point": {
     "x": -2.2,
@@ -180,7 +180,7 @@
    ]
   },
   {
-   "slotId": "tworoom-shelf_etagere_3tier-87:2",
+   "slotId": "tworoom-shelf_etagere_3tier-78:2",
    "owner": "shelf_etagere",
    "point": {
     "x": -1.93,
@@ -193,7 +193,7 @@
    ]
   },
   {
-   "slotId": "tworoom-shelf_etagere_3tier-87:3",
+   "slotId": "tworoom-shelf_etagere_3tier-78:3",
    "owner": "shelf_etagere",
    "point": {
     "x": -2.47,
@@ -206,7 +206,7 @@
    ]
   },
   {
-   "slotId": "tworoom-shelf_etagere_3tier-87:4",
+   "slotId": "tworoom-shelf_etagere_3tier-78:4",
    "owner": "shelf_etagere",
    "point": {
     "x": -2.2,
@@ -219,7 +219,7 @@
    ]
   },
   {
-   "slotId": "tworoom-shelf_etagere_3tier-87:5",
+   "slotId": "tworoom-shelf_etagere_3tier-78:5",
    "owner": "shelf_etagere",
    "point": {
     "x": -1.93,
@@ -232,7 +232,7 @@
    ]
   },
   {
-   "slotId": "tworoom-shelf_etagere_3tier-87:6",
+   "slotId": "tworoom-shelf_etagere_3tier-78:6",
    "owner": "shelf_etagere",
    "point": {
     "x": -2.47,
@@ -245,7 +245,7 @@
    ]
   },
   {
-   "slotId": "tworoom-shelf_etagere_3tier-87:7",
+   "slotId": "tworoom-shelf_etagere_3tier-78:7",
    "owner": "shelf_etagere",
    "point": {
     "x": -2.2,
@@ -258,7 +258,7 @@
    ]
   },
   {
-   "slotId": "tworoom-shelf_etagere_3tier-87:8",
+   "slotId": "tworoom-shelf_etagere_3tier-78:8",
    "owner": "shelf_etagere",
    "point": {
     "x": -1.93,
@@ -271,7 +271,7 @@
    ]
   },
   {
-   "slotId": "tworoom-plant_step_3-88:0",
+   "slotId": "tworoom-plant_step_3-79:0",
    "owner": "plant_step",
    "point": {
     "x": 2.05,
@@ -284,7 +284,7 @@
    ]
   },
   {
-   "slotId": "tworoom-plant_step_3-88:1",
+   "slotId": "tworoom-plant_step_3-79:1",
    "owner": "plant_step",
    "point": {
     "x": 2.35,
@@ -297,7 +297,7 @@
    ]
   },
   {
-   "slotId": "tworoom-plant_step_3-88:2",
+   "slotId": "tworoom-plant_step_3-79:2",
    "owner": "plant_step",
    "point": {
     "x": 2.65,
@@ -309,5 +309,7 @@
     0
    ]
   }
- ]
+ ],
+ "generatedAt": "2026-08-02",
+ "generatedBy": "_profile_gen.html (light_adapter.profile)"
 }

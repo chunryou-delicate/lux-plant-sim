@@ -502,3 +502,95 @@ report.slots.find(s => s.slotId === 'banjiha-sill:0');
 - Day 4 몬스테라 지급 이벤트 연결
 - 최종 게임 카메라에서의 체감
 
+---
+
+# 2026-08-02 (보완) · 프로필 재생성 + ★ core 쪽 문제 둘
+
+## 1. `data/profiles/*.json` 6개 재생성했습니다
+
+`_profile_gen.html` (= `light_adapter.profile([0,1,2])` 그대로) 로 뽑았습니다.
+`generatedAt` · `generatedBy` 필드를 넣었고 `measured` 사본에 새 `roomRev` 가 들어갑니다.
+
+| 방 | 슬롯 | best slotId | best → dli | 라이브 대조 |
+|---|---|---|---|---|
+| banjiha | **14** | `banjiha-sill:0` | **3.77** | ✅ |
+| oneroom | 11 | `oneroom-shelf-6:5` | 4.77 | ✅ |
+| tworoom | 20 | `tworoom-shelf_etagere_3tier-78:7` | 5.64 | ✅ |
+| classroom | 128 | `classroom-sill:13` | 6.01 | ✅ |
+| apartment | 83 | `apartment-shelf_etagere_3tier-17:3` | 6.02 | ✅ |
+| **greenhouse** | 64 | `greenhouse-table-62:0` | **10.49** | ★ **라이브 14.55 — 4.06 차이** |
+
+### 반지하 라이브 ↔ 정적 대조 (전 14슬롯)
+
+```
+라이브 슬롯 14 · 정적 슬롯 14 · 프로필에 없는 슬롯 0
+최대 오차 0.00493 mol/m²/day   ← dli 2자리 반올림 + ratio 6자리 유효숫자 탓
+라이브 best = banjiha-sill:0 (3.77)
+정적  best = banjiha-sill:0 (3.77)   ✅ 일치
+```
+
+## 2. ★ `light_adapter.build()` 가 천창 z중심을 안 넘깁니다 — 온실만 어긋납니다
+
+```js
+// src/game/light_adapter.js:56~58  현재
+.map(w => winFromHouse(w.wall, w.cu, w.cy, w.w, w.h, built.size, w.tau, w.evScale))
+//                                                                              ↑ 9번째 인자 w.cz 누락
+```
+
+`winFromHouse` 의 9번째 인자 `cv` 는 **천창 전용 z중심**입니다.
+온실 천창은 `ceilingGlass` 로 `z<1` 구간만 덮으므로 `cz = −2.5` 여야 하는데,
+안 넘기면 **z=0 에 놓입니다.** 그래서 프로필이 라이브보다 낮게 나옵니다.
+
+```js
+// 고치면 됩니다
+.map(w => winFromHouse(w.wall, w.cu, w.cy, w.w, w.h, built.size, w.tau, w.evScale, w.cz))
+```
+
+고치신 뒤 `_profile_gen.html` 을 한 번 돌려 주세요. 지금 온실 프로필에는
+`_house_warning` 필드로 이 내용을 적어 뒀습니다. **다른 5방은 영향 없습니다**(천창이 없어서).
+
+## 3. ★ slotId 가 편집만 해도 바뀝니다 — 반지하만 못 박았습니다
+
+`light_adapter` 는 `f.uid` 가 없으면 로드 시점에 `roomKey-preset-(++seq)` 로 붙입니다.
+`seq` 가 **전 방을 훑는 전역 카운터**라, **다른 방 가구를 하나 추가하면 원룸 slotId 가 바뀝니다.**
+
+```
+반지하에 창턱 1개 추가  →  oneroom-shelf-15:5  →  oneroom-shelf-6:5
+```
+
+세이브에 slotId 를 넣으면 그때 화분이 갈 곳을 잃습니다.
+
+**반지하는 `data/house_rooms.json` 의 가구마다 `uid` 를 못 박았습니다** — house.js 경로와
+`light_adapter` 경로가 같은 ID 를 냅니다. 첫 플레이에 쓰실 ID 는 이겁니다:
+
+| | slotId | 좌표 | peak_summer | avg7_summer | maxPotD |
+|---|---|---|---|---|---|
+| 밝은 자리 | **`banjiha-sill:0`** | (0, 1.585, −1.95) | 3.77 | 2.42 | 0.21 |
+| 어두운 자리 | **`banjiha-dresser:1`** | (1.7, 0.8, 1.66) | 0.04 | 0.02 | 0.42 |
+
+> 앞서 `dresser#4:1` 로 보고했는데 그건 `buildHouse` 직접 호출 시의 ID 였습니다.
+> **게임이 실제로 보는 ID 는 `banjiha-dresser:1`** 입니다. 정정합니다.
+
+**나머지 5방도 uid 를 못 박을까요?** house 가 데이터에 넣으면 되는데, 지금 프로필·세이브에
+쓰이는 ID 가 바뀝니다. core 가 아직 세이브를 안 쓰면 지금이 바꿀 때입니다 — 판단 주세요.
+
+## 4. ★ CORE 의존 계약 — 첫 플레이 화분 외경
+
+화분 에셋에 `size_m` 이 없어서 **엔진 규칙만 검증**했습니다(`_bj_place.html`).
+
+```
+firstPlayPot.realMaxDiameterM  <= 0.21    // banjiha-sill:0 의 maxPotD
+firstPlaySiru.realMaxDiameterM <= 0.42    // banjiha-dresser:1 (열린 시루 0.24 → 여유)
+```
+
+CORE 가 첫 플레이 화분을 확정하면 **외경이 0.21m 이하인지 확인**해야 합니다.
+넘으면 창턱 깊이를 늘리면 됩니다(**슬롯 z 는 −1.95 유지**, 판만 넓힘 → DLI 불변).
+
+## 5. 실측 라벨 정리
+
+- `area.floor_m2_net` (격자 실측) / `area.floor_m2_gross` (외곽 곱) 로 분리
+- 온실 `split_nominal_gross` = 온실 70 + 연구실 50 → 합이 **gross 120** 과 맞습니다.
+  **net 112.4 와는 안 맞습니다**(벽·칸막이 두께). 등 상한은 net 기준입니다
+- `utilization_pct` → **`sampled_peak_ratio_pct`** 로 이름 변경.
+  반지하 101% 는 오차가 아니라 표본 차이라 **100 으로 자르지 않습니다**
+

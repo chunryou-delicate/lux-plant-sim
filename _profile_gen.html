@@ -1,0 +1,86 @@
+<!doctype html><meta charset="utf-8"><title>프로필 재생성</title>
+<body style="background:#111;color:#ddd;font:12px/1.6 monospace;padding:16px"><pre id="o">…</pre>
+<script src="https://unpkg.com/three@0.128.0/build/three.min.js"></script>
+<script type="module">
+/* data/profiles/room_profile.*.json 재생성 + 라이브(daily_light/1) 대조.
+   ★ 프로필은 core 가 쓰는 정적 사본이다. 방 구조를 고치면 낡으므로 여기서 다시 뽑는다.
+   생성은 core 소유(light_adapter.profile)를 그대로 부른다 — house 가 물리를 다시 쓰지 않는다. */
+import { createLightEngine } from './src/game/light_adapter.js';
+import { buildDailyLight } from './src/engine/daily_light.js';
+import { initTextures } from './src/render3d/textures.js';
+
+const O = document.getElementById('o');
+const fail = e => { O.textContent = '★ ' + (e && (e.stack || e.message) || e); document.title = 'DONE'; };
+window.onerror = (m, s, l, c, e) => fail(e || m);
+window.onunhandledrejection = e => fail(e.reason);
+
+const j = (p, fb) => fetch(p).then(r => r.json()).catch(() => fb);
+const [houseRooms, winPresets, doorPresets, finishes, furnPresets,
+       lightPresets, shadePresets, lightTh, weatherBalance] = await Promise.all([
+  j('./data/house_rooms.json', { rooms: {} }),
+  j('./data/window_presets.json', {}).then(d => d.presets || d),
+  j('./data/door_presets.json', {}).then(d => d.presets || d),
+  j('./data/room_finishes.json', null),
+  j('./data/furniture_presets.json', {}).then(d => d.presets || d),
+  j('./data/lighting_presets.json', {}),
+  j('./data/shading_presets.json', { presets: {} }),
+  j('./data/balance/light_thresholds.json', null),
+  j('./data/balance/weather.json', null)
+]);
+await initTextures();
+const light = createLightEngine({ houseRooms, winPresets, doorPresets, finishes, furnPresets,
+                                  lightPresets, shadePresets, lightTh, weatherBalance });
+
+const ROOMS = ['banjiha','oneroom','tworoom','classroom','apartment','greenhouse'];
+const L = [], OUT = {};
+L.push('# room_profile 재생성 + 라이브 대조 (2026-08-02)');
+L.push('');
+L.push('| 방 | 슬롯 | 고유 slotId | best slotId | best ratio | roomRev |');
+L.push('|---|---|---|---|---|---|');
+for (const id of ROOMS) {
+  light.build(id);
+  const prof = light.profile([0,1,2]);
+  OUT[id] = prof;
+  const ids = prof.slots.map(s => s.slotId);
+  const best = prof.slots.reduce((a,b) => b.ratio > a.ratio ? b : a);
+  L.push(`| ${id} | ${prof.slots.length} | ${new Set(ids).size} | \`${best.slotId}\` | ${best.ratio} | ${(prof.measured||{}).roomRev || '—'} |`);
+}
+
+/* ★ 라이브(daily_light/1) ↔ 정적(room_profile/1) — 반지하 전 슬롯 */
+const rm = light.build('banjiha');
+const rep = buildDailyLight(0, rm.slots, rm.wins, {
+  weather:'clear', season:'summer',
+  occluders: rm.built.occluders, glazed: rm.built.glazedPanes,
+  thresholds: lightTh, litHours: 0, lampWatts: 0 });
+const prof = OUT.banjiha;
+const pmap = new Map(prof.slots.map(s => [s.slotId, s]));
+const EV = 25000, LX = 0.0185, H = 14.5;
+const dliOf = r => r * EV * LX * (2/Math.PI) * H * 3600 / 1e6;
+let maxErr = 0, miss = 0;
+L.push('');
+L.push('## 라이브 daily_light/1 ↔ 정적 room_profile/1 — 반지하 전 슬롯');
+L.push('');
+L.push('| slotId | 라이브 dli | 정적 ratio→dli | 오차 |');
+L.push('|---|---|---|---|');
+for (const s of rep.slots) {
+  const p = pmap.get(s.slotId);
+  if (!p) { miss++; L.push(`| \`${s.slotId}\` | ${s.dli} | ★ 프로필에 없음 | — |`); continue; }
+  const d2 = dliOf(p.ratio), e = Math.abs(s.dli - d2);
+  maxErr = Math.max(maxErr, e);
+  L.push(`| \`${s.slotId}\` | ${s.dli.toFixed(4)} | ${d2.toFixed(4)} | ${e.toFixed(5)} |`);
+}
+const pbest = prof.slots.reduce((a,b) => b.ratio > a.ratio ? b : a);
+L.push('');
+L.push(`라이브 슬롯 ${rep.slots.length} · 정적 슬롯 ${prof.slots.length} · 프로필에 없는 슬롯 ${miss}`);
+L.push(`최대 오차 **${maxErr.toFixed(5)}** mol/m²/day`);
+L.push(`라이브 best = \`${rep.best.slotId}\` (dli ${rep.best.dli})`);
+L.push(`정적 best = \`${pbest.slotId}\` (ratio→dli ${dliOf(pbest.ratio).toFixed(2)})`);
+L.push(rep.best.slotId === pbest.slotId && maxErr < 0.005 && miss === 0 ? '✅ 일치' : '★ 불일치');
+
+const dump = document.createElement('div');
+dump.id = 'json'; dump.style.display = 'none';
+dump.textContent = JSON.stringify(OUT);
+document.body.appendChild(dump);
+O.textContent = L.join('\n');
+document.title = 'DONE';
+</script>

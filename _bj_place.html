@@ -1,0 +1,65 @@
+<!doctype html><meta charset="utf-8"><title>반지하 배치 검증</title>
+<body style="background:#111;color:#ddd;font:12px/1.6 monospace;padding:16px"><pre id="o">…</pre>
+<script src="https://unpkg.com/three@0.128.0/build/three.min.js"></script>
+<script type="module">
+/* 반지하 첫 플레이 두 슬롯 전용 배치 검증.
+   ★ 아파트 _place_test 통과는 이 슬롯의 증거가 아니다 — 방·슬롯이 다르다.
+   엔진이 슬롯에 얹을 수 있다고 보는 최대 지름은 maxPotD(= 단 깊이 − 0.03)다. */
+import { buildHouse } from './src/render3d/house.js';
+import { winFromHouse } from './src/engine/daylight_lux.js';
+import { daylightRatio, daylightDLI } from './src/engine/daily_light.js';
+
+const O=document.getElementById('o');
+window.onerror=(m,s,l,c,e)=>{O.textContent='★ '+(e&&e.stack||m);document.title='DONE';};
+const J=p=>fetch(p).then(r=>r.json());
+const [HR,WP,DP,FIN,FP,LP,SH]=await Promise.all(['./data/house_rooms.json','./data/window_presets.json','./data/door_presets.json','./data/room_finishes.json','./data/furniture_presets.json','./data/lighting_presets.json','./data/shading_presets.json'].map(J));
+const b=buildHouse(null,HR.rooms.banjiha,WP.presets||WP,DP.presets||DP,FIN,FP.presets||FP,LP,SH);
+const wins=(b.luxWins||[]).map(w=>winFromHouse(w.wall,w.cu,w.cy,w.w,w.h,b.size,w.tau,w.evScale,w.cz)).filter(Boolean);
+const D=s=>daylightDLI(daylightRatio({x:s.x,y:s.y,z:s.z},{x:0,y:1,z:0},wins,{occluders:b.occluders,glazed:b.glazedPanes,selfIdx:s.occIdx}),{weather:'clear',season:'summer'});
+const S=b.plantSlots||[];
+const L=[]; let fail=0;
+const fits=(slot,dia)=> slot.maxPotD==null || dia<=slot.maxPotD;
+L.push('# 반지하 첫 플레이 슬롯 — 배치 검증 (2026-08-02)');
+L.push('');
+L.push('아파트 `_place_test` 는 다른 방·다른 슬롯이라 이 슬롯의 증거로 쓰지 않는다.');
+L.push('');
+const BRIGHT='banjiha-sill:0', DARK='banjiha-dresser:1';
+for(const [id,label,items] of [
+  [BRIGHT,'밝은 자리(몬스테라)', [['화분 0.15',0.15,true],['화분 0.21',0.21,true],['화분 0.22',0.22,false],['열린 시루 0.24',0.24,false]]],
+  [DARK,'어두운 자리(콩나물)', [['열린 시루 0.24',0.24,true],['닫힌 시루 0.2424',0.2424,true],['화분 0.42',0.42,true],['0.43',0.43,false]]]
+]){
+  const s=S.find(x=>x.slotId===id);
+  L.push(`## ${label} — \`${id}\``);
+  if(!s){ L.push('★ 슬롯이 없다'); fail++; L.push(''); continue; }
+  L.push(`좌표 (${s.x}, ${s.y}, ${s.z}) · owner ${s.owner} · **maxPotD ${s.maxPotD}** · peak_summer ${D(s).toFixed(2)}`);
+  L.push('');
+  L.push('| 올릴 것 | 지름(m) | 엔진 판정 | 기대 | |');
+  L.push('|---|---|---|---|---|');
+  for(const [n,dia,exp] of items){
+    const got=fits(s,dia), ok=got===exp; if(!ok) fail++;
+    L.push(`| ${n} | ${dia} | ${got?'가능':'막힘'} | ${exp?'가능':'막힘'} | ${ok?'OK':'★ 불일치'} |`);
+  }
+  L.push('');
+}
+/* 슬롯 ID 안정성 — 데이터에 uid 를 박았으므로 재조립해도 같아야 한다 */
+const b2=buildHouse(null,HR.rooms.banjiha,WP.presets||WP,DP.presets||DP,FIN,FP.presets||FP,LP,SH);
+const same=JSON.stringify((b2.plantSlots||[]).map(s=>s.slotId))===JSON.stringify(S.map(s=>s.slotId));
+if(!same) fail++;
+L.push('## 슬롯 ID 안정성');
+L.push(`재조립 후 slotId 목록 동일: ${same?'OK':'★ 다름'} · 고유 ${new Set(S.map(s=>s.slotId)).size}/${S.length}`);
+L.push('');
+L.push('## ★ CORE 의존 계약');
+L.push('');
+L.push('화분 에셋에 실제 외경(`size_m.w`)이 기록돼 있지 않다. 그래서 **엔진 규칙만 검증**했다.');
+L.push('');
+L.push('```');
+L.push('firstPlayPot.realMaxDiameterM <= 0.21   // banjiha-sill:0 의 maxPotD');
+L.push('firstPlaySiru.realMaxDiameterM <= 0.42  // banjiha-dresser:1 (열린 시루 0.24 → 여유)');
+L.push('```');
+L.push('');
+L.push('CORE 가 첫 플레이 화분을 확정하면 그 외경이 0.21m 이하인지 확인해야 한다.');
+L.push('넘으면 창턱 깊이를 늘리거나(슬롯 z 는 유지) 화분을 바꿔야 한다.');
+L.push('');
+L.push(fail? `★ 실패 ${fail}건` : '✅ 전부 통과');
+O.textContent=L.join('\n'); document.title='DONE';
+</script>

@@ -14,8 +14,8 @@
    "peak_summer": 6.76,
    "avg7_summer": 4.35,
    "vol6_m3": 0.5,
-   "vol3_m3": 1.8,
-   "vol_dark_m3": 33.4,
+   "vol3_m3": 1.7,
+   "vol_dark_m3": 29.8,
    "best_height_m": 0.85,
    "peak_by_height": {
     "0.1": 2.2,
@@ -26,7 +26,7 @@
     "1.35": 6.6,
     "1.6": 6.4
    },
-   "_method": "0.25m 격자·높이 0.10~1.80m. 벽·칸막이·창턱은 남기고 가구만 제외."
+   "_method": "0.25m 격자·높이 0.10~1.80m. 벽·칸막이·창턱은 남기고 가구만 제외. ★ 고체 벽 속 점은 빼고 창·문 개구부(reveal)는 살린다 — 창턱이 실제로 그 안에 놓인다."
   },
   "slots": {
    "peak_summer": 4.77,
@@ -36,21 +36,21 @@
    "_method": "지금 furniture 배치 기준. 차폐에 가구 포함."
   },
   "area": {
-   "floor_m2": 30,
+   "floor_m2": 27.3,
    "lamp_max_pots": {
-    "clip": 61,
-    "bar": 30,
-    "stand": 15
+    "clip": 55,
+    "bar": 27,
+    "stand": 13
    },
-   "_method": "바닥 면적(cutouts 제외). 등 상한=면적÷(2×coverage_r)². 통로 미반영 이론값."
+   "_method": "벽 띠를 뺀 실내 바닥 면적. 등 상한=면적÷(2×coverage_r)². 통로 미반영 이론값."
   },
-  "measuredAt": "2026-07-27",
+  "measuredAt": "2026-08-02",
   "roomRev": "379f9dc 2026-07-25",
   "status": "확정"
  },
  "slots": [
   {
-   "slotId": "oneroom-nightstand-11:0",
+   "slotId": "oneroom-nightstand-2:0",
    "owner": "nightstand",
    "point": {
     "x": -2,
@@ -63,7 +63,7 @@
    ]
   },
   {
-   "slotId": "oneroom-desk-12:0",
+   "slotId": "oneroom-desk-3:0",
    "owner": "desk",
    "point": {
     "x": 0.89,
@@ -76,7 +76,7 @@
    ]
   },
   {
-   "slotId": "oneroom-desk-12:1",
+   "slotId": "oneroom-desk-3:1",
    "owner": "desk",
    "point": {
     "x": 1.91,
@@ -89,7 +89,7 @@
    ]
   },
   {
-   "slotId": "oneroom-shelf-15:0",
+   "slotId": "oneroom-shelf-6:0",
    "owner": "shelf",
    "point": {
     "x": -0.675,
@@ -102,7 +102,7 @@
    ]
   },
   {
-   "slotId": "oneroom-shelf-15:1",
+   "slotId": "oneroom-shelf-6:1",
    "owner": "shelf",
    "point": {
     "x": -0.125,
@@ -115,7 +115,7 @@
    ]
   },
   {
-   "slotId": "oneroom-shelf-15:2",
+   "slotId": "oneroom-shelf-6:2",
    "owner": "shelf",
    "point": {
     "x": -0.675,
@@ -128,7 +128,7 @@
    ]
   },
   {
-   "slotId": "oneroom-shelf-15:3",
+   "slotId": "oneroom-shelf-6:3",
    "owner": "shelf",
    "point": {
     "x": -0.125,
@@ -141,7 +141,7 @@
    ]
   },
   {
-   "slotId": "oneroom-shelf-15:4",
+   "slotId": "oneroom-shelf-6:4",
    "owner": "shelf",
    "point": {
     "x": -0.675,
@@ -154,7 +154,7 @@
    ]
   },
   {
-   "slotId": "oneroom-shelf-15:5",
+   "slotId": "oneroom-shelf-6:5",
    "owner": "shelf",
    "point": {
     "x": -0.125,
@@ -167,7 +167,7 @@
    ]
   },
   {
-   "slotId": "oneroom-shelf-15:6",
+   "slotId": "oneroom-shelf-6:6",
    "owner": "shelf",
    "point": {
     "x": -0.675,
@@ -180,7 +180,7 @@
    ]
   },
   {
-   "slotId": "oneroom-shelf-15:7",
+   "slotId": "oneroom-shelf-6:7",
    "owner": "shelf",
    "point": {
     "x": -0.125,
@@ -192,5 +192,7 @@
     0
    ]
   }
- ]
+ ],
+ "generatedAt": "2026-08-02",
+ "generatedBy": "_profile_gen.html (light_adapter.profile)"
 }

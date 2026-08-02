@@ -211,3 +211,4 @@ data/balance/  characters.json · homes.json   ← plan 소유. README.md에 경
 ## 앱 raw (코드 공유용)
 `https://raw.githubusercontent.com/chunryou-delicate/lux-plant-sim/main/plant_grow.html`
 `https://raw.githubusercontent.com/chunryou-delicate/lux-plant-sim/main/tool.html`
+- [검증 도구](engine/verify_tools.md) — 회귀 검사 6종 + 반지하 첫 플레이 전용 4종 + 프로필 재생성 (house)

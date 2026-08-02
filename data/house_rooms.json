@@ -56,40 +56,47 @@
         {
           "preset": "bed_single",
           "x": -1.55,
-          "z": -0.5
+          "z": -0.5,
+          "uid": "banjiha-bed"
         },
         {
           "preset": "desk",
           "x": 1.3,
-          "z": -1.5
+          "z": -1.5,
+          "uid": "banjiha-desk"
         },
         {
           "preset": "chair",
           "x": 1.3,
           "z": -0.85,
-          "rot": 180
+          "rot": 180,
+          "uid": "banjiha-chair"
         },
         {
           "preset": "dresser",
           "x": 1.7,
           "z": 1.3,
-          "rot": -90
+          "rot": -90,
+          "uid": "banjiha-dresser"
         },
         {
           "preset": "lamp_ceiling",
           "x": 0,
-          "z": 0
+          "z": 0,
+          "uid": "banjiha-lamp-ceiling"
         },
         {
           "preset": "lamp_floor",
           "x": 2.15,
-          "z": -0.6
+          "z": -0.6,
+          "uid": "banjiha-lamp-floor"
         },
         {
           "preset": "shelf_etagere_3tier",
           "x": -0.35,
           "z": -1.72,
-          "rot": 0
+          "rot": 0,
+          "uid": "banjiha-etagere"
         },
         {
           "preset": "growlight_bar",
@@ -97,7 +104,8 @@
           "z": -1.72,
           "y": 1.02,
           "spectrum": "redblue",
-          "schedule": "photo12"
+          "schedule": "photo12",
+          "uid": "banjiha-growlight-bar"
         },
         {
           "preset": "growlight_clip",
@@ -105,7 +113,8 @@
           "z": -1.5,
           "y": 0.75,
           "spectrum": "full",
-          "schedule": "photo16"
+          "schedule": "photo16",
+          "uid": "banjiha-growlight-clip"
         }
       ],
       "facing": "south",
@@ -128,13 +137,14 @@
             "1.35": 2.1,
             "1.6": 3.7
           },
-          "_method": "0.25m 격자·높이 0.10~1.80m. 벽·칸막이·창턱은 남기고 가구만 제외. ★ 고체 벽 속 점은 빼고 창·문 개구부(reveal)는 살린다 — 창턱이 실제로 그 안에 놓인다."
+          "_method": "0.25m 격자·높이 0.10~1.80m. 가구 제외. 고체 벽(외곽)·칸막이·도려낸 경계 벽 속 점은 빼고, 창·문 개구부(reveal)는 살린다 — 창턱이 실제로 그 안에 놓인다."
         },
         "slots": {
           "peak_summer": 3.77,
           "avg7_summer": 2.42,
           "count": 14,
-          "utilization_pct": 101,
+          "sampled_peak_ratio_pct": 101,
+          "_sampled_note": "slots.peak ÷ space.peak. 두 값의 표본이 다르다 — space 는 0.25m 격자 위 점이고 slots 는 가구가 정한 임의 높이다. 격자 사이에 더 좋은 자리가 있으면 100%를 넘을 수 있고, 그건 오차가 아니라 표본 차이다.",
           "_method": "지금 furniture 배치 기준. 차폐에 가구 포함.",
           "bright_slot": {
             "slotId": "banjiha-sill:0",
@@ -150,7 +160,7 @@
           },
           "dark_slots_le_0_3": 9,
           "darkest_slot": {
-            "slotId": "dresser#4:1",
+            "slotId": "banjiha-dresser:1",
             "peak_summer": 0.04,
             "avg7_summer": 0.02,
             "point": {
@@ -159,20 +169,22 @@
               "z": 1.66
             },
             "maxPotD": 0.42,
-            "_note": "열린 콩나물 시루(0.24m) 배치 가능. 첫 플레이의 '어두운 자리'."
-          }
+            "_note": "열린 콩나물 시루(413, 지름 0.24m) 배치 가능. 첫 플레이의 '어두운 자리'."
+          },
+          "_slotid_note": "★ 반지하는 가구마다 uid 를 데이터에 못 박아 house.js 경로와 light_adapter 경로가 같은 slotId 를 낸다. 다른 방은 아직 light_adapter 가 로드 시점에 seq 로 붙이므로 편집만 해도 바뀐다(core-to-house 보고)."
         },
         "area": {
-          "floor_m2": 17.8,
+          "floor_m2_net": 17.8,
+          "floor_m2_gross": 20,
           "lamp_max_pots": {
             "clip": 36,
             "bar": 17,
             "stand": 9
           },
-          "_method": "벽 띠를 뺀 실내 바닥 면적. 등 상한=면적÷(2×coverage_r)². 통로 미반영 이론값."
+          "_method": "floor_m2_net = 0.25m 격자로 센 실제 바닥(외곽 벽 띠·칸막이·도려낸 자리 제외). floor_m2_gross = 외곽 치수 곱. 등 상한은 net 기준."
         },
         "measuredAt": "2026-08-02",
-        "roomRev": "2026-08-02 창턱 화분받침 1칸 추가 (shelf_sill_pot1)",
+        "roomRev": "a9e2ec4 2026-08-02 창턱 화분받침 1칸",
         "status": "확정"
       }
     },
@@ -289,23 +301,25 @@
             "1.35": 6.6,
             "1.6": 6.4
           },
-          "_method": "0.25m 격자·높이 0.10~1.80m. 벽·칸막이·창턱은 남기고 가구만 제외. ★ 고체 벽 속 점은 빼고 창·문 개구부(reveal)는 살린다 — 창턱이 실제로 그 안에 놓인다."
+          "_method": "0.25m 격자·높이 0.10~1.80m. 가구 제외. 고체 벽(외곽)·칸막이·도려낸 경계 벽 속 점은 빼고, 창·문 개구부(reveal)는 살린다 — 창턱이 실제로 그 안에 놓인다."
         },
         "slots": {
           "peak_summer": 4.77,
           "avg7_summer": 3.07,
           "count": 11,
-          "utilization_pct": 71,
+          "sampled_peak_ratio_pct": 71,
+          "_sampled_note": "slots.peak ÷ space.peak. 두 값의 표본이 다르다 — space 는 0.25m 격자 위 점이고 slots 는 가구가 정한 임의 높이다. 격자 사이에 더 좋은 자리가 있으면 100%를 넘을 수 있고, 그건 오차가 아니라 표본 차이다.",
           "_method": "지금 furniture 배치 기준. 차폐에 가구 포함."
         },
         "area": {
-          "floor_m2": 27.3,
+          "floor_m2_net": 27.3,
+          "floor_m2_gross": 30,
           "lamp_max_pots": {
             "clip": 55,
             "bar": 27,
             "stand": 13
           },
-          "_method": "벽 띠를 뺀 실내 바닥 면적. 등 상한=면적÷(2×coverage_r)². 통로 미반영 이론값."
+          "_method": "floor_m2_net = 0.25m 격자로 센 실제 바닥(외곽 벽 띠·칸막이·도려낸 자리 제외). floor_m2_gross = 외곽 치수 곱. 등 상한은 net 기준."
         },
         "measuredAt": "2026-08-02",
         "roomRev": "379f9dc 2026-07-25",
@@ -606,7 +620,7 @@
           "avg7_summer": 5.79,
           "vol6_m3": 2.3,
           "vol3_m3": 18.8,
-          "vol_dark_m3": 93.1,
+          "vol_dark_m3": 87.8,
           "best_height_m": 0.35,
           "peak_by_height": {
             "0.1": 4.9,
@@ -617,27 +631,29 @@
             "1.35": 8.8,
             "1.6": 8.7
           },
-          "_method": "0.25m 격자·높이 0.10~1.80m. 벽·칸막이·창턱은 남기고 가구만 제외. ★ 고체 벽 속 점은 빼고 창·문 개구부(reveal)는 살린다 — 창턱이 실제로 그 안에 놓인다."
+          "_method": "0.25m 격자·높이 0.10~1.80m. 가구 제외. 고체 벽(외곽)·칸막이·도려낸 경계 벽 속 점은 빼고, 창·문 개구부(reveal)는 살린다 — 창턱이 실제로 그 안에 놓인다."
         },
         "slots": {
           "peak_summer": 6.02,
           "avg7_summer": 3.87,
           "count": 83,
-          "utilization_pct": 67,
+          "sampled_peak_ratio_pct": 67,
+          "_sampled_note": "slots.peak ÷ space.peak. 두 값의 표본이 다르다 — space 는 0.25m 격자 위 점이고 slots 는 가구가 정한 임의 높이다. 격자 사이에 더 좋은 자리가 있으면 100%를 넘을 수 있고, 그건 오차가 아니라 표본 차이다.",
           "_method": "지금 furniture 배치 기준. 차폐에 가구 포함."
         },
         "area": {
-          "floor_m2": 94.6,
+          "floor_m2_net": 91.6,
+          "floor_m2_gross": 120.0,
           "lamp_max_pots": {
-            "clip": 193,
-            "bar": 94,
-            "stand": 48
+            "clip": 186,
+            "bar": 91,
+            "stand": 46
           },
-          "_method": "벽 띠를 뺀 실내 바닥 면적. 등 상한=면적÷(2×coverage_r)². 통로 미반영 이론값."
+          "_method": "floor_m2_net = 0.25m 격자로 센 실제 바닥(외곽 벽 띠·칸막이·도려낸 자리 제외). floor_m2_gross = 외곽 치수 곱. 등 상한은 net 기준."
         },
         "measuredAt": "2026-08-02",
         "roomRev": "b8da780 2026-07-26",
-        "status": "미확정"
+        "status": "확정"
       }
     },
     "classroom": {
@@ -790,7 +806,7 @@
           "avg7_summer": 4.87,
           "vol6_m3": 1.4,
           "vol3_m3": 6.3,
-          "vol_dark_m3": 46.0,
+          "vol_dark_m3": 43.9,
           "best_height_m": 1.1,
           "peak_by_height": {
             "0.1": 1.7,
@@ -801,27 +817,29 @@
             "1.35": 7.6,
             "1.6": 7.3
           },
-          "_method": "0.25m 격자·높이 0.10~1.80m. 벽·칸막이·창턱은 남기고 가구만 제외. ★ 고체 벽 속 점은 빼고 창·문 개구부(reveal)는 살린다 — 창턱이 실제로 그 안에 놓인다."
+          "_method": "0.25m 격자·높이 0.10~1.80m. 가구 제외. 고체 벽(외곽)·칸막이·도려낸 경계 벽 속 점은 빼고, 창·문 개구부(reveal)는 살린다 — 창턱이 실제로 그 안에 놓인다."
         },
         "slots": {
           "peak_summer": 6.01,
           "avg7_summer": 3.86,
           "count": 128,
-          "utilization_pct": 79,
+          "sampled_peak_ratio_pct": 79,
+          "_sampled_note": "slots.peak ÷ space.peak. 두 값의 표본이 다르다 — space 는 0.25m 격자 위 점이고 slots 는 가구가 정한 임의 높이다. 격자 사이에 더 좋은 자리가 있으면 100%를 넘을 수 있고, 그건 오차가 아니라 표본 차이다.",
           "_method": "지금 furniture 배치 기준. 차폐에 가구 포함."
         },
         "area": {
-          "floor_m2": 61.8,
+          "floor_m2_net": 60.6,
+          "floor_m2_gross": 66.0,
           "lamp_max_pots": {
-            "clip": 126,
-            "bar": 61,
-            "stand": 31
+            "clip": 123,
+            "bar": 60,
+            "stand": 30
           },
-          "_method": "벽 띠를 뺀 실내 바닥 면적. 등 상한=면적÷(2×coverage_r)². 통로 미반영 이론값."
+          "_method": "floor_m2_net = 0.25m 격자로 센 실제 바닥(외곽 벽 띠·칸막이·도려낸 자리 제외). floor_m2_gross = 외곽 치수 곱. 등 상한은 net 기준."
         },
         "measuredAt": "2026-08-02",
-        "roomRev": "2026-07-26 교실+교사방 11x6",
-        "status": "잠정"
+        "roomRev": "6d38200 2026-07-26 교실+교사방 11x6 · 깊은 창턱",
+        "status": "확정"
       },
       "sills": [
         {
@@ -1006,7 +1024,7 @@
           "avg7_summer": 9.7,
           "vol6_m3": 115.3,
           "vol3_m3": 116.6,
-          "vol_dark_m3": 61.1,
+          "vol_dark_m3": 57.3,
           "best_height_m": 1.6,
           "peak_by_height": {
             "0.1": 13.7,
@@ -1017,30 +1035,34 @@
             "1.35": 14.9,
             "1.6": 15.1
           },
-          "_method": "0.25m 격자·높이 0.10~1.80m. 벽·칸막이·창턱은 남기고 가구만 제외. ★ 고체 벽 속 점은 빼고 창·문 개구부(reveal)는 살린다 — 창턱이 실제로 그 안에 놓인다."
+          "_method": "0.25m 격자·높이 0.10~1.80m. 가구 제외. 고체 벽(외곽)·칸막이·도려낸 경계 벽 속 점은 빼고, 창·문 개구부(reveal)는 살린다 — 창턱이 실제로 그 안에 놓인다."
         },
         "slots": {
           "peak_summer": 14.55,
           "avg7_summer": 9.36,
           "count": 64,
-          "utilization_pct": 96,
+          "sampled_peak_ratio_pct": 96,
+          "_sampled_note": "slots.peak ÷ space.peak. 두 값의 표본이 다르다 — space 는 0.25m 격자 위 점이고 slots 는 가구가 정한 임의 높이다. 격자 사이에 더 좋은 자리가 있으면 100%를 넘을 수 있고, 그건 오차가 아니라 표본 차이다.",
           "_method": "지금 furniture 배치 기준. 차폐에 가구 포함."
         },
         "area": {
-          "floor_m2": 114.6,
+          "floor_m2_net": 112.4,
+          "floor_m2_gross": 120.0,
           "lamp_max_pots": {
-            "clip": 233,
-            "bar": 114,
-            "stand": 58
+            "clip": 229,
+            "bar": 112,
+            "stand": 57
           },
-          "_method": "벽 띠를 뺀 실내 바닥 면적. 등 상한=면적÷(2×coverage_r)². 통로 미반영 이론값.",
-          "floor_m2_greenhouse_only": 70.0,
-          "floor_m2_lab_only": 50.0,
-          "_split": "온실(z<1.0) + 연구실. 등 상한은 전체 면적 기준."
+          "_method": "floor_m2_net = 0.25m 격자로 센 실제 바닥(외곽 벽 띠·칸막이·도려낸 자리 제외). floor_m2_gross = 외곽 치수 곱. 등 상한은 net 기준.",
+          "split_nominal_gross": {
+            "greenhouse_only": 70.0,
+            "lab_only": 50.0,
+            "_note": "★ 외곽 치수 기반 **명목** 면적이다(10×7 + 10×5 = 120 = floor_m2_gross). 순면적(floor_m2_net 112.4)과는 합이 다르다 — 벽·칸막이 두께를 뺐기 때문이다. 등 상한 계산엔 net 을 쓴다."
+          }
         },
         "measuredAt": "2026-08-02",
-        "roomRev": "2026-07-27 연구실 창2 + 천창 구간화",
-        "status": "잠정"
+        "roomRev": "7c94f1d 2026-07-26 연구실 창2 · 천창 구간화",
+        "status": "확정"
       },
       "facing_note": "back=남. 온실(z<1)은 3면+천장 유리, 연구실(z>1)은 사방 벽·솔리드 천장.",
       "ceilingGlass": {
@@ -1194,54 +1216,45 @@
             "1.35": 6.6,
             "1.6": 6.4
           },
-          "_method": "0.25m 격자·높이 0.10~1.80m. 벽·칸막이·창턱은 남기고 가구만 제외. ★ 고체 벽 속 점은 빼고 창·문 개구부(reveal)는 살린다 — 창턱이 실제로 그 안에 놓인다."
+          "_method": "0.25m 격자·높이 0.10~1.80m. 가구 제외. 고체 벽(외곽)·칸막이·도려낸 경계 벽 속 점은 빼고, 창·문 개구부(reveal)는 살린다 — 창턱이 실제로 그 안에 놓인다."
         },
         "slots": {
           "peak_summer": 5.64,
           "avg7_summer": 3.63,
           "count": 20,
-          "utilization_pct": 84,
+          "sampled_peak_ratio_pct": 84,
+          "_sampled_note": "slots.peak ÷ space.peak. 두 값의 표본이 다르다 — space 는 0.25m 격자 위 점이고 slots 는 가구가 정한 임의 높이다. 격자 사이에 더 좋은 자리가 있으면 100%를 넘을 수 있고, 그건 오차가 아니라 표본 차이다.",
           "_method": "지금 furniture 배치 기준. 차폐에 가구 포함."
         },
         "area": {
-          "floor_m2": 32.1,
+          "floor_m2_net": 32.1,
+          "floor_m2_gross": 35,
           "lamp_max_pots": {
             "clip": 65,
             "bar": 32,
             "stand": 16
           },
-          "_method": "벽 띠를 뺀 실내 바닥 면적. 등 상한=면적÷(2×coverage_r)². 통로 미반영 이론값."
+          "_method": "floor_m2_net = 0.25m 격자로 센 실제 바닥(외곽 벽 띠·칸막이·도려낸 자리 제외). floor_m2_gross = 외곽 치수 곱. 등 상한은 net 기준."
         },
         "measuredAt": "2026-08-02",
         "roomRev": "1fdc9ff 2026-07-26",
-        "status": "잠정"
+        "status": "확정"
       }
     }
   },
   "_partitions": "partitions=[{axis:x|z, at, from,to(선택), door:{at,w,h}}] — 내벽으로 공간 분획. 컷어웨이에서 안 숨김.",
   "_furniture": "furniture=[{preset,x,z,rot(도),color,...}] — data/furniture_presets.json 참조. x,z=방 중심 기준 m.",
   "_measured": {
-    "note": "★ house 소유. _dli_probe.html 실측(맑음·여름, 차광 없음). 방 구조를 고치면 여기도 갱신한다.",
-    "date": "2026-07-26",
-    "fields": {
-      "peakDLI": "최고 슬롯 DLI",
-      "minDLI": "최저",
-      "slots": "화분 자리 수",
-      "n3": "DLI>=3 자리 수",
-      "n6": "DLI>=6 자리 수(몬스테라 갈라짐)",
-      "dark": "DLI<0.3 자리 수(무광 작물용)",
-      "winterPeak": "맑음·겨울 최고",
-      "avg7Summer": "★ 판정 기준값. 날씨를 굴린 7일 이동평균의 기댓값(여름). peak의 46%",
-      "avg7SummerMin": "가장 나빴던 주",
-      "avg7SummerMax": "가장 좋았던 주 — 갈라짐처럼 '한 번 넘으면 남는' 판정은 이 값이 결정한다",
-      "avg7Winter": "7일 이동평균 기댓값(겨울). peak의 23.9%",
-      "fenWeekPct": "몬스테라 갈라짐(6.0)을 넘는 주의 비율 [%]. 20년치 굴림",
-      "measuredAt": "★ 이 숫자를 잰 날",
-      "roomRev": "★ 잴 당시 이 방의 '빛 관련 마지막 구조 변경' 커밋. 지금의 마지막 변경과 다르면 이 숫자는 낡은 것이다",
-      "status": "확정 = 구조 안 바뀜 · 잠정 = 바뀔 수 있음 · 미확정 = 바뀔 예정"
+    "note": "★ house 소유. _space_probe.html(공간) · _dli_probe.html(슬롯) 실측. 방 구조를 고치면 다시 재고 measuredAt·roomRev 를 같이 갱신한다.",
+    "date": "2026-08-02",
+    "labels": {
+      "space.*": "가구 없는 공간 — 방 등급의 정본",
+      "slots.*": "지금 가구 배치의 결과 — 밸런스 근거로 쓰지 말 것",
+      "area.floor_m2_net": "격자로 센 실제 바닥(벽·칸막이 제외)",
+      "area.floor_m2_gross": "외곽 치수 곱",
+      "slots.sampled_peak_ratio_pct": "slots.peak ÷ space.peak. 표본이 달라 100% 초과 가능",
+      "roomRev": "빛 관련 마지막 구조 변경 **커밋**. 지금의 마지막 변경과 다르면 낡은 값이다"
     },
-    "rule": "★ 방 구조(windows·size·partitions·cutouts·glassWalls·furniture)를 고치면 _dli_probe.html 을 다시 돌리고 measuredAt·roomRev 를 같이 갱신한다. 안 하면 밸런싱이 조용히 깨진다 — 아파트 >=6 자리가 18개에서 1개가 된 적이 있다.",
-    "check": "git log --format='%h %ad' --date=short -1 -- data/house_rooms.json 로 마지막 변경을 보고 roomRev 와 대조한다. 방별 대조는 docs/engine/rooms_progression.md 참고.",
-    "why_avg7": "peak는 1년에 며칠 있는 최고 조건이라 밸런싱 근거가 못 된다. 생장 창은 고사·갈라짐을 7일 이동평균으로 판정한다(하루 값으로 죽이면 운으로 죽는다). 날씨 확률은 src/engine/weather.js 가 단일 소스다."
+    "rule": "방 구조(windows·size·partitions·cutouts·glassWalls·furniture)를 고치면 _space_probe.html 을 돌리고 measuredAt·roomRev 를 갱신한다. data/profiles/*.json 도 _profile_gen.html 로 재생성한다."
   }
 }

@@ -15,7 +15,7 @@
    "avg7_summer": 4.87,
    "vol6_m3": 1.4,
    "vol3_m3": 6.3,
-   "vol_dark_m3": 48.4,
+   "vol_dark_m3": 46,
    "best_height_m": 1.1,
    "peak_by_height": {
     "0.1": 1.7,
@@ -26,7 +26,7 @@
     "1.35": 7.6,
     "1.6": 7.3
    },
-   "_method": "0.25m 격자·높이 0.10~1.80m. 벽·칸막이·창턱은 남기고 가구만 제외."
+   "_method": "0.25m 격자·높이 0.10~1.80m. 벽·칸막이·창턱은 남기고 가구만 제외. ★ 고체 벽 속 점은 빼고 창·문 개구부(reveal)는 살린다 — 창턱이 실제로 그 안에 놓인다."
   },
   "slots": {
    "peak_summer": 6.01,
@@ -36,21 +36,21 @@
    "_method": "지금 furniture 배치 기준. 차폐에 가구 포함."
   },
   "area": {
-   "floor_m2": 66,
+   "floor_m2": 61.8,
    "lamp_max_pots": {
-    "clip": 134,
-    "bar": 66,
-    "stand": 33
+    "clip": 126,
+    "bar": 61,
+    "stand": 31
    },
-   "_method": "바닥 면적(cutouts 제외). 등 상한=면적÷(2×coverage_r)². 통로 미반영 이론값."
+   "_method": "벽 띠를 뺀 실내 바닥 면적. 등 상한=면적÷(2×coverage_r)². 통로 미반영 이론값."
   },
-  "measuredAt": "2026-07-27",
+  "measuredAt": "2026-08-02",
   "roomRev": "2026-07-26 교실+교사방 11x6",
   "status": "잠정"
  },
  "slots": [
   {
-   "slotId": "classroom-lectern-51:0",
+   "slotId": "classroom-lectern-42:0",
    "owner": "lectern",
    "point": {
     "x": -3.6,
@@ -63,7 +63,7 @@
    ]
   },
   {
-   "slotId": "classroom-desk_student_2-52:0",
+   "slotId": "classroom-desk_student_2-43:0",
    "owner": "desk_student",
    "point": {
     "x": -2.91,
@@ -76,7 +76,7 @@
    ]
   },
   {
-   "slotId": "classroom-desk_student_2-52:1",
+   "slotId": "classroom-desk_student_2-43:1",
    "owner": "desk_student",
    "point": {
     "x": -1.89,
@@ -89,7 +89,7 @@
    ]
   },
   {
-   "slotId": "classroom-desk_student_2-53:0",
+   "slotId": "classroom-desk_student_2-44:0",
    "owner": "desk_student",
    "point": {
     "x": -0.51,
@@ -102,7 +102,7 @@
    ]
   },
   {
-   "slotId": "classroom-desk_student_2-53:1",
+   "slotId": "classroom-desk_student_2-44:1",
    "owner": "desk_student",
    "point": {
     "x": 0.51,
@@ -115,7 +115,7 @@
    ]
   },
   {
-   "slotId": "classroom-desk_student_2-54:0",
+   "slotId": "classroom-desk_student_2-45:0",
    "owner": "desk_student",
    "point": {
     "x": 0.79,
@@ -128,7 +128,7 @@
    ]
   },
   {
-   "slotId": "classroom-desk_student_2-54:1",
+   "slotId": "classroom-desk_student_2-45:1",
    "owner": "desk_student",
    "point": {
     "x": 1.81,
@@ -141,7 +141,7 @@
    ]
   },
   {
-   "slotId": "classroom-desk_student_2-55:0",
+   "slotId": "classroom-desk_student_2-46:0",
    "owner": "desk_student",
    "point": {
     "x": -2.91,
@@ -154,7 +154,7 @@
    ]
   },
   {
-   "slotId": "classroom-desk_student_2-55:1",
+   "slotId": "classroom-desk_student_2-46:1",
    "owner": "desk_student",
    "point": {
     "x": -1.89,
@@ -167,7 +167,7 @@
    ]
   },
   {
-   "slotId": "classroom-desk_student_2-56:0",
+   "slotId": "classroom-desk_student_2-47:0",
    "owner": "desk_student",
    "point": {
     "x": -0.51,
@@ -180,7 +180,7 @@
    ]
   },
   {
-   "slotId": "classroom-desk_student_2-56:1",
+   "slotId": "classroom-desk_student_2-47:1",
    "owner": "desk_student",
    "point": {
     "x": 0.51,
@@ -193,7 +193,7 @@
    ]
   },
   {
-   "slotId": "classroom-desk_student_2-57:0",
+   "slotId": "classroom-desk_student_2-48:0",
    "owner": "desk_student",
    "point": {
     "x": 0.79,
@@ -206,7 +206,7 @@
    ]
   },
   {
-   "slotId": "classroom-desk_student_2-57:1",
+   "slotId": "classroom-desk_student_2-48:1",
    "owner": "desk_student",
    "point": {
     "x": 1.81,
@@ -219,7 +219,7 @@
    ]
   },
   {
-   "slotId": "classroom-locker_12-64:0",
+   "slotId": "classroom-locker_12-55:0",
    "owner": "locker",
    "point": {
     "x": -3.72,
@@ -232,7 +232,7 @@
    ]
   },
   {
-   "slotId": "classroom-locker_12-64:1",
+   "slotId": "classroom-locker_12-55:1",
    "owner": "locker",
    "point": {
     "x": -3.72,
@@ -245,7 +245,7 @@
    ]
   },
   {
-   "slotId": "classroom-locker_12-64:2",
+   "slotId": "classroom-locker_12-55:2",
    "owner": "locker",
    "point": {
     "x": -3.72,
@@ -1713,5 +1713,7 @@
     0
    ]
   }
- ]
+ ],
+ "generatedAt": "2026-08-02",
+ "generatedBy": "_profile_gen.html (light_adapter.profile)"
 }

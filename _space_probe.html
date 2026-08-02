@@ -58,14 +58,23 @@ function scan(key){
     if(x >  size.w/2-WT/2) return !inOpening('right', z, y);
     return false;
   };
+  /* ★ 내부 건축 차폐물(칸막이·도려낸 경계 벽) 속도 뺀다.
+     외곽 벽만 빼면 칸막이 두께 안의 점이 남아 "벽 속에서 잰 값"이 또 섞인다.
+     이건 occluders 에 src 로 표시돼 있으니 그대로 쓰면 된다 —
+     가구(furniture)는 건축이 아니므로 여기서 제외 대상이 아니다(가구는 이미 차폐에서 뺐다).
+     창턱(sill)은 건축이지만 그 '위'가 화분 자리라 점을 지우면 안 된다 → 빼지 않는다. */
+  const INNER = (b.occluders||[]).filter(o => o.src==='partition' || o.src==='cutwall');
+  const inInnerWall=(x,y,z)=> INNER.some(o =>
+    x>=o.x && x<=o.x+o.w && z>=o.z && z<=o.z+o.d &&
+    y>=(o.y0||0) && y<=(o.y0||0)+o.h);
   const pts=[]; let cells=0;
   for(let x=-size.w/2+0.05; x<=size.w/2-0.05; x+=STEP)
     for(let z=-size.d/2+0.05; z<=size.d/2-0.05; z+=STEP){
       if(inCut(x,z)) continue;
-      /* 바닥 면적은 '벽 띠를 뺀 실내'로 센다 — 개구부는 바닥이 아니다 */
-      if(Math.abs(z)<size.d/2-WT/2 && Math.abs(x)<size.w/2-WT/2) cells++;
+      /* 바닥 면적 — 외곽 벽 띠 + 내부 벽(칸막이·도려낸 경계) 자리를 뺀 실제 바닥 */
+      if(Math.abs(z)<size.d/2-WT/2 && Math.abs(x)<size.w/2-WT/2 && !inInnerWall(x,0.10,z)) cells++;
       for(const y of YS){
-        if(inSolidWall(x,y,z)) continue;        // 고체 벽 속 — 화분을 못 놓는다
+        if(inSolidWall(x,y,z) || inInnerWall(x,y,z)) continue;   // 벽 속 — 화분을 못 놓는다
         pts.push({x,y,z,dli:daylightDLI(daylightRatio({x,y,z},{x:0,y:1,z:0},wins,
                  {occluders:archOcc, glazed:b.glazedPanes}),{weather:'clear',season:'summer'})});
       }
@@ -82,7 +91,7 @@ const R={}; for(const k of KEYS) R[k]=scan(k);
 const v=(pts,t)=>pts.filter(p=>p.dli>=t).length*CELL;
 const mx=pts=>Math.max(...pts.map(p=>p.dli));
 
-L.push('# 방 등급 — **공간 기준** 실측 (2026-07-26)');
+L.push('# 방 등급 — **공간 기준** 실측 (2026-08-02)');
 L.push('');
 L.push('> ★ 라벨 규칙: `{방}.space.*` = 가구 없는 공간 · `{방}.slots.*` = 지금 가구 배치');
 L.push('> `peak_summer` = 맑음·여름 하루 최고 · `avg7_summer` = 7일 이동평균 기댓값(= peak × '+E.toFixed(3)+')');
@@ -127,10 +136,16 @@ L.push('> 통로를 빼지 않은 **이론 상한**이다. 실제로는 60~70% �
 L.push('');
 L.push('## 3. 지금 가구 배치가 잠재력의 몇 %를 쓰나');
 L.push('');
-L.push('| 방 | space.peak_summer | slots.peak_summer | **활용률** | 슬롯 수 |');
+L.push('★ `sampled_peak_ratio_pct` = `slots.peak ÷ space.peak`. **두 값의 표본이 다르다** —');
+L.push('`space` 는 0.25m 격자 위 점이고 `slots` 는 가구가 정한 임의 높이다.');
+L.push('그래서 격자 사이에 더 좋은 자리가 있으면 **100%를 넘을 수 있다**(오차가 아니다).');
+L.push('반지하 창턱이 그 예다 — 격자는 y=1.60을 재는데 실제 상판은 1.585m 라 조금 더 밝다.');
+L.push('');
+L.push('| 방 | space.peak_summer | slots.peak_summer | sampled_peak_ratio_pct | 슬롯 수 |');
 L.push('|---|---|---|---|---|');
 for(const k of ord){ const r=R[k], m=mx(r.pts), sp=r.sd.length?Math.max(...r.sd):0;
-  L.push(`| ${NA[k]} | ${m.toFixed(2)} | ${sp.toFixed(2)} | **${m>0?(sp/m*100).toFixed(0):'—'}%** | ${r.sd.length} |`);
+  const pct=m>0?(sp/m*100):0;
+  L.push(`| ${NA[k]} | ${m.toFixed(2)} | ${sp.toFixed(2)} | **${pct.toFixed(0)}%**${pct>100?' ← 격자 사이':''} | ${r.sd.length} |`);
 }
 
 L.push('');

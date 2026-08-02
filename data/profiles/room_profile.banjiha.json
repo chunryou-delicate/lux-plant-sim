@@ -19,7 +19,7 @@
    "avg7_summer": 2.4,
    "vol6_m3": 0,
    "vol3_m3": 0.1,
-   "vol_dark_m3": 30.3,
+   "vol_dark_m3": 26.7,
    "best_height_m": 1.6,
    "peak_by_height": {
     "0.1": 0.3,
@@ -30,38 +30,78 @@
     "1.35": 2.1,
     "1.6": 3.7
    },
-   "_method": "0.25m 격자·높이 0.10~1.80m. 벽·칸막이·창턱은 남기고 가구만 제외."
+   "_method": "0.25m 격자·높이 0.10~1.80m. 벽·칸막이·창턱은 남기고 가구만 제외. ★ 고체 벽 속 점은 빼고 창·문 개구부(reveal)는 살린다 — 창턱이 실제로 그 안에 놓인다."
   },
   "slots": {
-   "peak_summer": 0.55,
-   "avg7_summer": 0.35,
-   "count": 13,
-   "utilization_pct": 15,
-   "_method": "지금 furniture 배치 기준. 차폐에 가구 포함."
+   "peak_summer": 3.77,
+   "avg7_summer": 2.42,
+   "count": 14,
+   "utilization_pct": 101,
+   "_method": "지금 furniture 배치 기준. 차폐에 가구 포함.",
+   "bright_slot": {
+    "slotId": "banjiha-sill:0",
+    "peak_summer": 3.77,
+    "avg7_summer": 2.42,
+    "point": {
+     "x": 0,
+     "y": 1.585,
+     "z": -1.95
+    },
+    "maxPotD": 0.21,
+    "_note": "★ 첫 플레이의 '높은 창가 자리'. 창 개구부 안. 몬스테라 min 3.0 대비 +26%."
+   },
+   "dark_slots_le_0_3": 9,
+   "darkest_slot": {
+    "slotId": "dresser#4:1",
+    "peak_summer": 0.04,
+    "avg7_summer": 0.02,
+    "point": {
+     "x": 1.7,
+     "y": 0.8,
+     "z": 1.66
+    },
+    "maxPotD": 0.42,
+    "_note": "열린 콩나물 시루(0.24m) 배치 가능. 첫 플레이의 '어두운 자리'."
+   }
   },
   "area": {
-   "floor_m2": 20,
+   "floor_m2": 17.8,
    "lamp_max_pots": {
-    "clip": 40,
-    "bar": 20,
-    "stand": 10
+    "clip": 36,
+    "bar": 17,
+    "stand": 9
    },
-   "_method": "바닥 면적(cutouts 제외). 등 상한=면적÷(2×coverage_r)². 통로 미반영 이론값."
+   "_method": "벽 띠를 뺀 실내 바닥 면적. 등 상한=면적÷(2×coverage_r)². 통로 미반영 이론값."
   },
-  "measuredAt": "2026-07-27",
-  "roomRev": "379f9dc 2026-07-25",
+  "measuredAt": "2026-08-02",
+  "roomRev": "2026-08-02 창턱 화분받침 1칸 추가 (shelf_sill_pot1)",
   "status": "확정"
  },
  "slots": [
   {
-   "slotId": "banjiha-desk-2:0",
+   "slotId": "banjiha-sill:0",
+   "owner": "shelf_wall",
+   "point": {
+    "x": 0,
+    "y": 1.585,
+    "z": -1.95
+   },
+   "ratio": 0.245183,
+   "ppfd": [
+    0,
+    42.62,
+    46.01
+   ]
+  },
+  {
+   "slotId": "banjiha-desk:0",
    "owner": "desk",
    "point": {
     "x": 0.79,
     "y": 0.74,
     "z": -1.41
    },
-   "ratio": 0.0352898,
+   "ratio": 0.0311542,
    "ppfd": [
     0,
     11.45,
@@ -69,14 +109,14 @@
    ]
   },
   {
-   "slotId": "banjiha-desk-2:1",
+   "slotId": "banjiha-desk:1",
    "owner": "desk",
    "point": {
     "x": 1.81,
     "y": 0.74,
     "z": -1.41
    },
-   "ratio": 0.00952267,
+   "ratio": 0.00874807,
    "ppfd": [
     0,
     3.5,
@@ -84,7 +124,7 @@
    ]
   },
   {
-   "slotId": "banjiha-dresser-4:0",
+   "slotId": "banjiha-dresser:0",
    "owner": "dresser",
    "point": {
     "x": 1.7,
@@ -99,7 +139,7 @@
    ]
   },
   {
-   "slotId": "banjiha-dresser-4:1",
+   "slotId": "banjiha-dresser:1",
    "owner": "dresser",
    "point": {
     "x": 1.7,
@@ -114,14 +154,14 @@
    ]
   },
   {
-   "slotId": "banjiha-shelf_etagere_3tier-7:0",
+   "slotId": "banjiha-etagere:0",
    "owner": "shelf_etagere",
    "point": {
     "x": -0.62,
     "y": 0.03,
     "z": -1.72
    },
-   "ratio": 0.00794837,
+   "ratio": 0.00669749,
    "ppfd": [
     0,
     17.49,
@@ -129,14 +169,14 @@
    ]
   },
   {
-   "slotId": "banjiha-shelf_etagere_3tier-7:1",
+   "slotId": "banjiha-etagere:1",
    "owner": "shelf_etagere",
    "point": {
     "x": -0.35,
     "y": 0.03,
     "z": -1.72
    },
-   "ratio": 0.00862378,
+   "ratio": 0.00707733,
    "ppfd": [
     0,
     18.87,
@@ -144,14 +184,14 @@
    ]
   },
   {
-   "slotId": "banjiha-shelf_etagere_3tier-7:2",
+   "slotId": "banjiha-etagere:2",
    "owner": "shelf_etagere",
    "point": {
     "x": -0.08,
     "y": 0.03,
     "z": -1.72
    },
-   "ratio": 0.00893329,
+   "ratio": 0.0065498,
    "ppfd": [
     0,
     17.49,
@@ -159,14 +199,14 @@
    ]
   },
   {
-   "slotId": "banjiha-shelf_etagere_3tier-7:3",
+   "slotId": "banjiha-etagere:3",
    "owner": "shelf_etagere",
    "point": {
     "x": -0.62,
     "y": 0.412,
     "z": -1.72
    },
-   "ratio": 0.0145827,
+   "ratio": 0.0119026,
    "ppfd": [
     0,
     39.5,
@@ -174,14 +214,14 @@
    ]
   },
   {
-   "slotId": "banjiha-shelf_etagere_3tier-7:4",
+   "slotId": "banjiha-etagere:4",
    "owner": "shelf_etagere",
    "point": {
     "x": -0.35,
     "y": 0.412,
     "z": -1.72
    },
-   "ratio": 0.0160205,
+   "ratio": 0.0114287,
    "ppfd": [
     0,
     47.34,
@@ -189,14 +229,14 @@
    ]
   },
   {
-   "slotId": "banjiha-shelf_etagere_3tier-7:5",
+   "slotId": "banjiha-etagere:5",
    "owner": "shelf_etagere",
    "point": {
     "x": -0.08,
     "y": 0.412,
     "z": -1.72
    },
-   "ratio": 0.0166547,
+   "ratio": 0.0109849,
    "ppfd": [
     0,
     39.5,
@@ -204,14 +244,14 @@
    ]
   },
   {
-   "slotId": "banjiha-shelf_etagere_3tier-7:6",
+   "slotId": "banjiha-etagere:6",
    "owner": "shelf_etagere",
    "point": {
     "x": -0.62,
     "y": 0.794,
     "z": -1.72
    },
-   "ratio": 0.0312093,
+   "ratio": 0.0258206,
    "ppfd": [
     0,
     126.78,
@@ -219,14 +259,14 @@
    ]
   },
   {
-   "slotId": "banjiha-shelf_etagere_3tier-7:7",
+   "slotId": "banjiha-etagere:7",
    "owner": "shelf_etagere",
    "point": {
     "x": -0.35,
     "y": 0.794,
     "z": -1.72
    },
-   "ratio": 0.0343657,
+   "ratio": 0.0246041,
    "ppfd": [
     0,
     273.71,
@@ -234,19 +274,21 @@
    ]
   },
   {
-   "slotId": "banjiha-shelf_etagere_3tier-7:8",
+   "slotId": "banjiha-etagere:8",
    "owner": "shelf_etagere",
    "point": {
     "x": -0.08,
     "y": 0.794,
     "z": -1.72
    },
-   "ratio": 0.0356206,
+   "ratio": 0.0244035,
    "ppfd": [
     0,
     126.78,
     130.14
    ]
   }
- ]
+ ],
+ "generatedAt": "2026-08-02",
+ "generatedBy": "_profile_gen.html (light_adapter.profile)"
 }
