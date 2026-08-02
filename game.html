@@ -1092,6 +1092,18 @@ async function bootRoomView() {
     /* 진단용 손잡이. 브라우저 콘솔에서 방 상태를 볼 수 있게 낸다 —
        읽기용이고 게임은 이걸 안 쓴다(밖에서 켜면 검증이 장식이 되는 것과 같은 이유로 세터는 없다). */
     window.__rv = roomView; window.__picked = picked; window.__drag = drag;
+    /* 캐릭터와 몬이를 세운다. 첫 플레이는 자취생 고정이고(story_arc.md 확정 —
+       직업 선택은 초보 엔딩 뒤), 몬이는 오프닝부터 곁에 있어야 대사가 붕 뜨지 않는다.
+       ⚠ 캐릭터가 있으면 idle 을 돌려야 해서 "놀 때 0장"이 깨진다 — 워커가 30fps 로 잘라 뒀다. */
+    /* ★순차로 세운다. 동시에 부르면 둘이 자리를 겹쳐 잡아 하나만 남는다(실측으로 확인). */
+    if (roomView.setCharacter) {
+      (async () => {
+        for (const who of ['jachwi', 'moni']) {
+          try { await roomView.setCharacter(who); }
+          catch (e) { console.warn('[방] ' + who + ' 배치 실패 —', (e && e.message) || e); }
+        }
+      })();
+    }
     syncRoom();
     bindPicked();
     bindDrag('cropThumb', 'beansprout');
@@ -1120,6 +1132,10 @@ function syncRoom() {
       kind: 'monstera',
       phaseId: lastTurn && lastTurn.growthPhase && lastTurn.growthPhase.phaseId,
       progress01: lastTurn && lastTurn.growthPhase && lastTurn.growthPhase.progress01,
+      /* ★유효 생장일을 그대로 넘긴다. 이게 없으면 방이 phaseId+progress01 로 날짜를
+         되짚어야 하는데, spear_furled 는 축마다 되풀이돼서 어림이 섞인다(±1일).
+         코어는 이미 이 값을 갖고 있으므로 안 넘길 이유가 없다. */
+      growthDays: lastTurn && lastTurn.effectiveGrowthDays,
       band: lastTurn && lastTurn.band,
       fade: p.fade
     } : null)).catch(warn('몬스테라'));
