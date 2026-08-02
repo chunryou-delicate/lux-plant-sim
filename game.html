@@ -197,6 +197,19 @@
          rgba(255,229,168,.95) 0,rgba(255,190,96,.42) 42%,rgba(255,180,84,0) 72%);
        animation:godPulse 2.6s ease-in-out infinite}
   @keyframes godPulse{0%,100%{opacity:.72;transform:scale(.94)}50%{opacity:1;transform:scale(1.06)}}
+  /* ★"뿅" — 몬이가 처음 나타나는 순간. 오프닝의 톤이 여기서 갈린다
+     (혼자 우는 장면 → 누가 왔다). 대사만으로는 그 전환이 안 실린다. */
+  #dlgBox.pop #dlgFace{animation:moniPop .52s cubic-bezier(.34,1.56,.64,1)}
+  @keyframes moniPop{
+    0%  {transform:translateY(26px) scale(.2) rotate(-14deg);opacity:0}
+    55% {transform:translateY(-8px) scale(1.12) rotate(4deg);opacity:1}
+    100%{transform:none;opacity:1}
+  }
+  #dlgBox.pop::before{content:'';position:absolute;left:34px;bottom:52px;width:96px;height:96px;
+    border-radius:50%;pointer-events:none;
+    background:radial-gradient(circle,rgba(255,229,168,.72) 0,rgba(255,229,168,0) 70%);
+    animation:moniFlash .52s ease-out forwards}
+  @keyframes moniFlash{0%{transform:scale(.3);opacity:1}100%{transform:scale(1.9);opacity:0}}
   #dlgMain{flex:1;min-width:0}
   #dlgWho{display:inline-block;font-family:'Jua';font-size:12px;color:var(--gold);
        padding:2px 9px;border-radius:999px;background:rgba(255,180,84,.14);margin-bottom:6px}
@@ -211,6 +224,42 @@
        color:var(--dim);background-image:none}
   /* 대화 중에는 하단 액션이 눌리면 안 된다 — 대사를 넘기려다 하루가 지나간다 */
   #stage.talking ~ #bottom{opacity:.35;pointer-events:none}
+
+  /* ══ 끌어다 놓기 (2026-08-03) ═══════════════════════════════════════════
+     ★드래그가 **3D 위가 아니라 아이템 위에서 시작**한다. 그래서 카메라 회전과 안 부딪힌다 —
+       예전에 드래그를 반대했던 이유가 그거였는데, 시작점을 UI 로 두면 사라진다.
+     손가락 밑에 유령을 띄우고, 방 위로 오면 놓을 수 있는 자리가 빛난다. */
+  .draggable{cursor:grab;touch-action:none}
+  .draggable:active{cursor:grabbing}
+  #dragGhost{position:fixed;z-index:60;width:72px;height:72px;margin:-36px 0 0 -36px;
+    pointer-events:none;display:none;background:center/contain no-repeat;
+    filter:drop-shadow(0 8px 14px rgba(0,0,0,.55));transition:transform .12s}
+  #dragGhost.on{display:block}
+  #dragGhost.ok{transform:scale(1.12)}
+  #dragGhost.no{transform:scale(.86);filter:drop-shadow(0 6px 10px rgba(0,0,0,.5)) grayscale(.7)}
+  /* 끄는 동안에는 시트를 반투명하게 — 방이 보여야 어디 놓을지 고를 수 있다 */
+  body.dragging #sheet{opacity:.18;pointer-events:none;transition:opacity .15s}
+  body.dragging #bottom{opacity:.25;pointer-events:none}
+  #dropLabel{position:absolute;z-index:26;left:50%;transform:translateX(-50%);top:12px;display:none;
+    padding:7px 14px;border-radius:999px;font-family:'Jua';font-size:13px;white-space:nowrap;
+    background:rgba(16,13,24,.9);border:1px solid rgba(255,255,255,.16);color:var(--ink)}
+  body.dragging #dropLabel{display:block}
+  #dropLabel.ok{border-color:rgba(159,220,134,.55);color:var(--leaf)}
+  #dropLabel.no{border-color:rgba(255,120,100,.5);color:#ff9c8c}
+
+  /* 놓인 식물을 탭하면 뜨는 작은 선택지. 하단에 붙인다 —
+     3D 위 말풍선은 폰에서 엄지가 안 닿고 카메라를 돌리면 따라다녀야 한다. */
+  #plantActions{position:absolute;z-index:27;left:12px;right:12px;bottom:12px;display:none;
+    gap:7px;align-items:stretch}
+  #stage.picked #plantActions{display:flex}
+  #plantActions button{flex:1;min-height:var(--tap);font-family:'Jua';font-size:14px;border-radius:12px}
+  #plantActions .who{flex:0 0 auto;display:flex;align-items:center;padding:0 12px;border-radius:12px;
+    font-size:12.5px;color:var(--dim);background:rgba(16,13,24,.86);border:1px solid rgba(255,255,255,.12)}
+  /* ★이동 모드 — 화면 아무 데나 끌어도 잡힌다.
+     투명 판이 3D 위를 덮어 카메라 회전을 막는다(끌다가 방이 돌면 조작이 망가진다). */
+  #moveCatcher{position:absolute;z-index:28;inset:0;display:none;touch-action:none}
+  #stage.moving #moveCatcher{display:block}
+  #stage.moving #plantActions{display:none}
 
   /* 마우스가 있는 환경에서만 호버를 켠다 — 터치에서 호버는 "탭했는데 안 눌림"이 된다 */
   @media (hover:hover) and (pointer:fine){
@@ -367,6 +416,15 @@
     <canvas id="roomCanvas"></canvas>
     <div id="roomFallback"></div>
     <div id="placeHint"></div>
+    <div id="dropLabel"></div>
+    <div id="moveCatcher"></div>
+    <div id="plantActions">
+      <span class="who" id="pickedName">—</span>
+      <button id="pickMove" class="primary">옮기기</button>
+      <button id="pickTurn" class="ghost">돌리기</button>
+      <button id="pickZoom" class="ghost">자세히</button>
+      <button id="pickClose" class="ghost" aria-label="닫기">✕</button>
+    </div>
     <iframe id="growth" src="./plant_grow.html?embed=game" title="식물 확대"></iframe>
     <button id="closeZoom" aria-label="확대 닫기">✕</button>
     <div id="stageEmpty"><b><img src="./assets/ui/item_monstera.png" alt="">아직 몬스테라가 없습니다<i>콩나물을 수확하면 새로운 화분이 찾아옵니다.</i></b></div>
@@ -399,6 +457,8 @@
     </div>
   </nav>
 </div>
+
+<div id="dragGhost"></div>
 
 <!-- ══ 바텀시트 — 가방·자리·설정. 폰이라 옆이 아니라 아래에서 올라온다 ══ -->
 <div id="sheetScrim"></div>
@@ -973,6 +1033,9 @@ function dlgPaint() {
   const sp = SPEAKERS[line.who] || { ko: line.who, portrait: false };
   const box = $('dlgBox');
   box.classList.toggle('noface', !sp.portrait);
+  /* 애니메이션은 클래스를 뗐다 붙여야 다시 돈다 — 같은 클래스가 남아 있으면 한 번만 돈다 */
+  box.classList.remove('pop');
+  if (line.pop) { void box.offsetWidth; box.classList.add('pop'); }
   $('dlgWho').textContent = sp.ko;
   /* **굵게** 만 지원한다 — 대사에 HTML 을 넣게 두면 데이터가 코드가 된다 */
   $('dlgText').innerHTML = String(line.text)
@@ -1020,11 +1083,19 @@ async function bootRoomView() {
   try {
     roomView = await mod.createRoomView($('roomCanvas'), {
       roomId: S.home.room, lightEngine: io.light,   /* ★S.room 이 아니다 — state.js 는 home.room 에 둔다 */
-      onPlantTap: () => window.__byeotZoom.open(),
-      onSlotTap: (slotId) => placeMode.pick(slotId),
+      /* 탭은 **고르기**다. 바로 확대로 넘어가면 옮기거나 돌릴 기회가 없다 —
+         고른 뒤에 [옮기기] [돌리기] [자세히] 중에서 고른다. */
+      onPlantTap: (slotId) => picked.select(slotId),
+      onSlotTap: (slotId) => { if (!picked.slotId) placeMode.pick(slotId); },
       onError: (e) => window.__byeotRoomFallback('방을 그리지 못했습니다 — ' + (e && e.message || e))
     });
+    /* 진단용 손잡이. 브라우저 콘솔에서 방 상태를 볼 수 있게 낸다 —
+       읽기용이고 게임은 이걸 안 쓴다(밖에서 켜면 검증이 장식이 되는 것과 같은 이유로 세터는 없다). */
+    window.__rv = roomView;
     syncRoom();
+    bindPicked();
+    bindDrag('cropThumb', 'beansprout');
+    bindDrag('plantThumb', 'monstera');
     addEventListener('resize', () => roomView && roomView.resize());
   } catch (e) {
     window.__byeotRoomFallback('방을 그리지 못했습니다 — ' + (e && e.message || e));
@@ -1086,6 +1157,176 @@ const placeMode = {
     this.end();
   }
 };
+
+/* ══ 끌어다 놓기 (박사님 2026-08-03: "드래그해서 배치할 수 있게") ══════════
+   드롭다운으로 자리를 고르면 **방을 보면서 놓는다**는 감각이 사라진다.
+   ★드래그를 **아이템 위에서 시작**한다 — 3D 위에서 시작하면 카메라 회전과 부딪힌다.
+     그래서 시작점만 UI 로 옮기면 예전에 걱정하던 문제가 그대로 사라진다.
+   놓을 수 있는 자리는 끄는 동안 링으로 빛나고, 손을 떼면 제일 가까운 자리에 붙는다. */
+const drag = {
+  on: false, what: null, sel: null, valid: [], best: null,
+
+  slotsFor(what) {
+    const sel = what === 'beansprout' ? $('cropSlot') : $('slot');
+    return { sel, ids: [...sel.options].map(o => o.value).filter(Boolean) };
+  },
+  /* 손가락 위치에서 가장 가까운 자리. 화면 거리로 잰다 — 3D 광선으로는 점이라 손에 안 잡힌다.
+     ★거리 제한을 두지 않는다. 방 위에 있으면 **언제나 제일 가까운 자리**가 잡힌다.
+       처음엔 110px 안쪽만 인정했는데, 방 한가운데는 빈 공간이라 아무것도 안 잡혔다 —
+       폰에서 작은 슬롯을 정확히 겨누게 하면 배치가 고문이 된다.
+       대신 방 **밖**(시트·버튼 위)에서는 아무 자리도 안 잡는다. 그게 취소다.
+     screenPosOf 는 캔버스 기준 좌표를 돌려준다(실측 확인). */
+  nearest(px, py) {
+    if (!roomView || !roomView.screenPosOf) return null;
+    const r = $('roomCanvas').getBoundingClientRect();
+    if (px < r.left || px > r.right || py < r.top || py > r.bottom) return null;
+    let best = null, bestD = Infinity;
+    for (const id of this.valid) {
+      let p; try { p = roomView.screenPosOf(id); } catch { continue; }
+      if (!p) continue;
+      const d = Math.hypot(r.left + p.x - px, r.top + p.y - py);
+      if (d < bestD) { bestD = d; best = id; }
+    }
+    return best;
+  },
+  begin(what, thumbUrl, ev) {
+    if (isFastForwarding()) return;
+    const { sel, ids } = this.slotsFor(what);
+    if (sel.disabled || !ids.length) return;
+    this.on = true; this.what = what; this.sel = sel; this.valid = ids; this.best = null;
+    document.body.classList.add('dragging');
+    $('dragGhost').style.backgroundImage = `url(${thumbUrl})`;
+    $('dragGhost').classList.add('on');
+    if (roomView) roomView.highlightSlots(ids);
+    this.move(ev);
+  },
+  move(ev) {
+    if (!this.on) return;
+    const gh = $('dragGhost');
+    gh.style.left = ev.clientX + 'px'; gh.style.top = ev.clientY + 'px';
+    const hit = this.nearest(ev.clientX, ev.clientY);
+    /* ★목표가 바뀔 때만 미리보기를 갱신한다. 매 프레임 부르면 GLB 복제 비용이 계속 든다.
+       (room_view 에 previewMove 가 아직 없으면 조용히 넘어간다 — 링만 뜬다) */
+    if (hit !== this.best && roomView && roomView.previewMove) {
+      try { roomView.previewMove(picked.slotId || null, hit); } catch { }
+    }
+    this.best = hit;
+    gh.classList.toggle('ok', !!hit); gh.classList.toggle('no', !hit);
+    const lb = $('dropLabel');
+    lb.textContent = hit ? slotLabel(hit) : '방 안의 빛나는 자리에 놓아 주세요';
+    lb.classList.toggle('ok', !!hit); lb.classList.toggle('no', !hit);
+  },
+  end() {
+    if (!this.on) return;
+    const hit = this.best, sel = this.sel, what = this.what;
+    this.on = false; this.what = null; this.sel = null; this.valid = []; this.best = null;
+    document.body.classList.remove('dragging');
+    $('dragGhost').classList.remove('on', 'ok', 'no');
+    if (roomView) {
+      roomView.highlightSlots([]);
+      if (roomView.previewMove) { try { roomView.previewMove(null, null); } catch { } }
+    }
+    if (!hit) return;                        /* 아무 데도 안 놓았으면 조용히 되돌린다 */
+    sel.value = hit;
+    /* 기존 경로를 그대로 탄다 — 드래그는 입력 방식만 바꾼다. 배치 규칙을 새로 만들지 않는다. */
+    if (what === 'beansprout') $('placeCrop').click();
+    else sel.dispatchEvent(new Event('change', { bubbles: true }));
+  }
+};
+/* ══ 놓인 식물 — 탭해서 고르고, 끌어서 옮기거나 돌린다 ═══════════════════
+   ★"멀리서 잡아도 된다"가 핵심이다(박사님). 슬롯이 작아 정확히 못 집는 문제가
+     이걸로 같이 풀린다 — 일단 고른 뒤에는 **화면 아무 데나** 끌면 된다. */
+const picked = {
+  slotId: null, mode: null,          // 'move' | 'turn'
+  yaw0: 0, x0: 0, y0: 0,
+
+  select(slotId) {
+    if (drag.on) return;
+    this.slotId = slotId;
+    $('pickedName').textContent = slotLabel(slotId);
+    $('stage').classList.add('picked');
+    if (roomView) roomView.highlightSlots([slotId]);
+  },
+  clear() {
+    this.slotId = null; this.mode = null;
+    $('stage').classList.remove('picked', 'moving');
+    if (roomView) roomView.highlightSlots([]);
+    $('dropLabel').classList.remove('ok', 'no');
+  },
+  beginMove() {
+    if (!this.slotId) return;
+    this.mode = 'move';
+    /* 그 식물이 갈 수 있는 자리들 — 지금 있는 자리는 빼고 */
+    const what = (S.firstPlay.beansprout && S.firstPlay.beansprout.slotId === this.slotId)
+      ? 'beansprout' : 'monstera';
+    const { sel, ids } = drag.slotsFor(what);
+    drag.what = what; drag.sel = sel;
+    drag.valid = ids.filter(id => id !== this.slotId);
+    $('stage').classList.add('moving');
+    if (roomView) roomView.highlightSlots(drag.valid);
+    $('dropLabel').textContent = '끌어서 자리를 고르세요';
+  },
+  beginTurn() {
+    if (!this.slotId) return;
+    this.mode = 'turn';
+    this.yaw0 = (roomView && roomView.plantYaw) ? (roomView.plantYaw(this.slotId) || 0) : 0;
+    $('stage').classList.add('moving');
+    $('dropLabel').textContent = '좌우로 끌어서 돌리세요';
+    $('dropLabel').classList.add('ok');
+  },
+  down(e) {
+    this.x0 = e.clientX; this.y0 = e.clientY;
+    if (this.mode === 'move') drag.move(e);
+  },
+  move(e) {
+    if (this.mode === 'move') { drag.move(e); return; }
+    if (this.mode !== 'turn' || !roomView || !roomView.setPlantYaw) return;
+    /* 화면 폭 절반을 끌면 한 바퀴 — 폰에서 손가락이 갈 수 있는 거리에 맞춘다 */
+    const yaw = this.yaw0 + (e.clientX - this.x0) / (innerWidth * 0.5) * Math.PI * 2;
+    try { roomView.setPlantYaw(this.slotId, yaw); } catch { }
+    $('dropLabel').textContent = Math.round((yaw * 180 / Math.PI) % 360) + '°';
+  },
+  up() {
+    if (this.mode === 'move') {
+      const hit = drag.best;
+      drag.best = null; drag.valid = [];
+      if (roomView && roomView.previewMove) { try { roomView.previewMove(null, null); } catch { } }
+      if (hit) {
+        drag.sel.value = hit;
+        drag.sel.dispatchEvent(new Event('change', { bubbles: true }));
+        this.clear(); return;
+      }
+    }
+    /* 돌리기는 끝나도 계속 고른 상태로 둔다 — 조금씩 맞추는 조작이라 */
+    this.mode = null;
+    $('stage').classList.remove('moving');
+    if (this.slotId) this.select(this.slotId);
+  }
+};
+function bindPicked() {
+  $('pickMove').onclick = () => picked.beginMove();
+  $('pickTurn').onclick = () => picked.beginTurn();
+  $('pickZoom').onclick = () => { window.__byeotZoom.open(); picked.clear(); };
+  $('pickClose').onclick = () => picked.clear();
+  const c = $('moveCatcher');
+  c.addEventListener('pointerdown', e => { e.preventDefault(); c.setPointerCapture(e.pointerId); picked.down(e); });
+  c.addEventListener('pointermove', e => picked.move(e));
+  c.addEventListener('pointerup', () => picked.up());
+  c.addEventListener('pointercancel', () => picked.up());
+}
+
+function bindDrag(thumbId, what) {
+  const el = $(thumbId); if (!el) return;
+  el.classList.add('draggable');
+  el.addEventListener('pointerdown', (e) => {
+    e.preventDefault();
+    drag.begin(what, el.src || el.currentSrc, e);
+    if (drag.on) el.setPointerCapture(e.pointerId);
+  });
+  el.addEventListener('pointermove', (e) => drag.move(e));
+  el.addEventListener('pointerup', () => drag.end());
+  el.addEventListener('pointercancel', () => drag.end());
+}
 
 /* ══ 빨리감기 — ★순간이동이 아니다 (박사님 2026-08-03) ═══════════════════
    "점점 자라는 모습을 보여주면서 점핑하게." 하루씩 진짜로 돌면서 매일 그린다.
