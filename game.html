@@ -954,6 +954,10 @@ $('next').onclick = guard(() => {
    ★대사 순서는 계약이다 — Day 4 는 수확 → (식비는 화면이 숫자로) → 식물신 → 도착.
      dialogue.js 가 그 줄 세우기를 갖고 있고 여기서는 그리기만 한다. */
 const dlg = createDialogue();
+const FACE_FILE = {
+  jachwi: { base: 'neutral', happy: 'happy',   worry: 'worried' },
+  moni:   { base: 'neutral', happy: 'excited', sad:   'sad'     }
+};
 function dlgPaint() {
   const line = dlg.current();
   if (!line) { $('stage').classList.remove('talking'); ffResume(); return; }
@@ -966,9 +970,14 @@ function dlgPaint() {
     .replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]))
     .replace(/\*\*(.+?)\*\*/g, '<b>$1</b>');
   if (sp.portrait) {
-    const f = `./assets/characters/portraits/${line.who}_${line.face || 'base'}.png`;
-    $('dlgFace').style.backgroundImage = `url(${f}), url(./assets/characters/portraits/${line.who}_base.png)`;
-  } else $('dlgFace').style.backgroundImage = '';
+    /* 표정 키 → 실제 파일명. 대사 데이터는 뜻으로 쓰고(happy·worry·sad) 파일 이름은 여기서만 안다 —
+       초상화를 다시 뽑아 이름이 바뀌어도 대사는 안 고친다. */
+    const file = (FACE_FILE[line.who] || {})[line.face || 'base'] || 'neutral';
+    const dir = './assets/characters/portraits';
+    /* 표정이 없으면 기본으로 떨어진다 — 없는 그림 하나에 대화가 멈추면 안 된다 */
+    $('dlgFace').style.backgroundImage =
+      `url(${dir}/portrait_${line.who}_${file}.png), url(${dir}/portrait_${line.who}_neutral.png)`;
+  } else $('dlgFace').style.backgroundImage = '';   /* ★식물신 — CSS 의 빛이 드러나야 한다 */
   $('stage').classList.add('talking');
 }
 /* 대화가 뜨면 빨리감기를 세운다 — 말하는 동안 날짜가 계속 가면 대사와 화면이 어긋난다 */
@@ -1001,7 +1010,7 @@ async function bootRoomView() {
   }
   try {
     roomView = await mod.createRoomView($('roomCanvas'), {
-      roomId: S.room, lightEngine: io.light,
+      roomId: S.home.room, lightEngine: io.light,   /* ★S.room 이 아니다 — state.js 는 home.room 에 둔다 */
       onPlantTap: () => window.__byeotZoom.open(),
       onSlotTap: (slotId) => placeMode.pick(slotId),
       onError: (e) => window.__byeotRoomFallback('방을 그리지 못했습니다 — ' + (e && e.message || e))
@@ -1013,18 +1022,30 @@ async function bootRoomView() {
   }
 }
 /* 코어 상태 → 방 화면. 한 방향으로만 흐른다 — 방이 게임 상태를 바꾸지 않는다. */
+/* ⚠ setPlant 는 GLB 를 싣느라 **Promise 를 돌려준다**(모듈 실제 시그니처).
+   try/catch 로는 거절을 못 잡으므로 .catch 를 반드시 붙인다 —
+   안 붙이면 화분이 조용히 안 나타나고 콘솔에만 남는다. */
+let syncSeq = 0;
 function syncRoom() {
   if (!roomView) return;
+  const my = ++syncSeq;                 // 늦게 끝난 옛 요청이 새 상태를 덮어쓰지 않게
   const p = pot0(S);
   const b = S.firstPlay && S.firstPlay.beansprout;
+  const warn = (what) => (e) => {
+    if (my !== syncSeq) return;         // 이미 지난 요청이면 조용히 버린다
+    console.warn('[방] ' + what + ' 갱신 실패 —', (e && e.message) || e);
+  };
   try {
-    roomView.setPlant(p && p.slotId, p ? {
-      kind: 'monstera', phaseId: lastTurn && lastTurn.growthPhase && lastTurn.growthPhase.phaseId,
+    Promise.resolve(roomView.setPlant(p && p.slotId, p ? {
+      kind: 'monstera',
+      phaseId: lastTurn && lastTurn.growthPhase && lastTurn.growthPhase.phaseId,
       progress01: lastTurn && lastTurn.growthPhase && lastTurn.growthPhase.progress01,
-      band: lastTurn && lastTurn.band
-    } : null);
-    if (b && b.slotId) roomView.setPlant(b.slotId, { kind: 'beansprout' });
-  } catch (e) { console.warn('[방] 갱신 실패 —', e && e.message); }
+      band: lastTurn && lastTurn.band,
+      fade: p.fade
+    } : null)).catch(warn('몬스테라'));
+    if (b && b.slotId)
+      Promise.resolve(roomView.setPlant(b.slotId, { kind: 'beansprout' })).catch(warn('콩나물'));
+  } catch (e) { warn('방')(e); }
 }
 /* 배치 모드 — 탭으로 고르고, 놓을 수 있는 자리를 밝기와 함께 빛나게 한다.
    ★드래그는 안 쓴다. 폰 3D 에서 카메라 회전과 충돌하고 슬롯이 작아 오조작이 난다. */
@@ -1059,13 +1080,38 @@ let ffHandle = null;
 function ffStop(reason) {
   stopFastForward(reason || 'stopped');
 }
+/* ★빨리감기 중에는 창으로 드는 빛이 계속 돈다 (박사님 2026-08-03) —
+   "시간이 빨리 가는 게 딱 느껴지게." 날짜 숫자만 올라가면 시간이 흐르는 감각이 없다.
+
+   ⚠ 하루(140ms)마다 한 바퀴 돌리지 않는다. 12일이면 12바퀴라 **깜빡임**이 된다.
+     한 바퀴를 1.6초로 두면 12일 감기(1.7초)에 대략 한 바퀴가 지나가고,
+     아침→낮→저녁이 눈에 읽힌다. 날짜 수와 묶지 않는 것이 핵심이다. */
+const DAY_SWEEP_MS = 1600;
+let dayLoop = null, dayPhase = 0.28;       /* 0.28 ≈ 아침. 낮부터 시작하면 변화가 덜 보인다 */
+function dayCycleStart() {
+  if (dayLoop || !roomView) return;
+  let prev = performance.now();
+  const step = (now) => {
+    if (!dayLoop) return;
+    dayPhase = (dayPhase + (now - prev) / DAY_SWEEP_MS) % 1; prev = now;
+    try { roomView.setDaylight(dayPhase); } catch { /* 방이 없거나 실패해도 감기는 계속된다 */ }
+    dayLoop = requestAnimationFrame(step);
+  };
+  dayLoop = requestAnimationFrame(step);
+}
+function dayCycleStop() {
+  if (!dayLoop) return;
+  cancelAnimationFrame(dayLoop); dayLoop = null;
+  /* 멈출 때는 한낮으로 되돌린다 — 저녁에 멈춰 서면 방이 어두운 채로 남아 "고장났나"가 된다 */
+  try { if (roomView) roomView.setDaylight(0.5); } catch { }
+}
 let ffNextWas = null;                      /* 빨리감기 전에 [다음 날]이 눌리는 상태였는지 */
 function ffPaint(on) {
   const b = $('ff');
   b.textContent = on ? '■ 멈추기' : '▶▶ 빨리감기';
   b.classList.toggle('primary', on);
-  if (on) { ffNextWas = $('next').disabled; $('next').disabled = true; }
-  else if (ffNextWas !== null) { $('next').disabled = ffNextWas; ffNextWas = null; }
+  if (on) { ffNextWas = $('next').disabled; $('next').disabled = true; dayCycleStart(); }
+  else { dayCycleStop(); if (ffNextWas !== null) { $('next').disabled = ffNextWas; ffNextWas = null; } }
 }
 /* 버튼 밑에 "무엇까지 감는지"를 적어 둔다 — 어디로 가는지 모르고 누르면 불안하다.
    loop 가 이미 다음 이벤트를 알고 있으므로(nextEventPreview) 코어에 새 계산을 만들지 않는다. */

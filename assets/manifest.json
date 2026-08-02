@@ -9725,12 +9725,22 @@
         "credits": 2,
         "balance_after": 797,
         "note": "3x3 시트가 2x2 보다 남는다 — 칸당 341px 라 96~128px 아이콘에 충분하고 9칸이 한 번에 톤이 맞는다"
+      },
+      {
+        "date": "2026-08-03",
+        "window": "master",
+        "service": "higgsfield",
+        "use": "대화 초상화 — 자취생 3표정 + 몬이 3표정 (3D 를 헤드리스 렌더해 참조 이미지로 투입)",
+        "qty": 3,
+        "credits": 6,
+        "balance_after": 791,
+        "note": "몬이 1장은 참조가 잘려 있어 결과도 잘려 폐기·재생성(2cr 손실). 참조 이미지가 잘리면 결과도 잘린다"
       }
     ],
     "balance_checked": {
       "date": "2026-08-03",
       "meshy": 22,
-      "higgsfield": 797
+      "higgsfield": 791
     }
   }
 }
