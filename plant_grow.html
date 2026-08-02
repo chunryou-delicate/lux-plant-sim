@@ -16,6 +16,12 @@
     user-select:none;color:#eceae3}
   #wrap{position:relative;width:100vw;height:100vh}
   #cv{position:absolute;inset:0;display:block}
+  /* ★ ?embed=game — 코어가 iframe 으로 띄울 때만. 단독 화면(파라미터 없음)은 하나도 안 바뀐다.
+     캔버스는 원래 #wrap 전체(100vw×100vh)를 덮고 패널이 그 위에 떠 있는 구조라,
+     패널·머리말을 걷어내면 그것만으로 3D 무대가 전체 폭이 된다. 레이아웃을 새로 짜지 않는다.
+     카메라 각도 버튼(.views)은 남긴다 — 튜닝이 아니라 보기 도구다. */
+  html.embed .panel,
+  html.embed .top{display:none}
   .top{position:absolute;top:0;left:0;right:0;z-index:5;display:flex;align-items:center;gap:10px;
     padding:14px 18px;pointer-events:none}
   .brand{font-family:'Jua';font-size:20px;color:#fff;letter-spacing:1px;text-shadow:0 2px 12px rgba(0,0,0,.6)}
@@ -74,6 +80,17 @@
       border:1px solid #4c7a46; font-size:12.5px; line-height:1.6; letter-spacing:.1px;
       white-space:pre-line; pointer-events:none; box-shadow:0 6px 22px rgba(0,0,0,.55); }
 </style>
+<script>
+/* ★ ?embed=game 일 때만 게임 임베드 모드. 첫 그림 전에 정해야 패널이 한 번 번쩍이지 않으므로
+   <head> 에서 html 요소에 바로 건다. 값이 정확히 'game' 일 때만이다 —
+   ?embed=1 이나 오타는 단독 화면 그대로 둔다(모르는 값에 화면을 바꾸면 디버깅이 지옥이 된다). */
+var EMBED_GAME = false;
+try{
+  EMBED_GAME = new URLSearchParams(location.search).get('embed') === 'game';
+  if(EMBED_GAME) document.documentElement.classList.add('embed');
+}catch(e){ /* location 을 못 읽는 환경이면 단독 화면으로 둔다 */ }
+function isEmbedGame(){ return EMBED_GAME; }
+</script>
 </head>
 <body>
 <div id="wrap">
@@ -952,15 +969,30 @@ fetch('./data/growth_tuning.json').then(r=>{
   //   성공·실패 어느 쪽이든 화면은 갱신해야 하므로(막힌 사유를 HUD 에 띄운다) 여기서 한 번만 부른다.
   //   ★둘을 한 try 에 묶지 않는다 — 그리기가 터졌을 때 HUD 까지 같이 건너뛰면
   //     "왜 안 자라는지" 알려줄 유일한 창구가 닫힌다. 제일 필요한 순간에 사라지는 셈이다.
-  drawStep('그리기', ()=>{ if(typeof buildPlant==='function')     buildPlant(); });
-  drawStep('HUD',    ()=>{ if(typeof refreshDayHUD==='function')  refreshDayHUD(); });
+  redraw();
 });
 // 화면 갱신 한 조각. 터져도 TH_LOADED 는 건드리지 않는다 — 렌더 실패는 정본 실패가 아니다.
+// ★ 성공 여부를 돌려준다. 콘솔에만 남기면 코어는 화면이 죽은 걸 알 방법이 없다 —
+//   게이지는 오르는데 그림은 멈춘 상태로 게임이 계속 돈다(빛→형태 피드백이 조용히 죽는다).
+//   반환: null 이면 성공, 아니면 사유 문자열.
 function drawStep(what, fn){
-  try{ fn(); }
+  try{ fn(); return null; }
   catch(e){
-    console.error('[화면] '+what+' 실패 ('+(e&&e.message)+') — 정본 로딩과는 무관합니다(TH_LOADED='+TH_LOADED+')');
+    const msg=(e&&e.message)||String(e);
+    console.error('[화면] '+what+' 실패 ('+msg+') — 정본 로딩과는 무관합니다(TH_LOADED='+TH_LOADED+')');
+    return what+': '+msg;
   }
+}
+// 3D 무대와 HUD 는 별개 실패다. 그림이 죽어도 HUD 는 살아 막힌 사유를 띄워야 하고,
+// 반대로 HUD 만 죽은 건 코어가 덜 심각하게 다룰 수 있어야 한다 — 그래서 따로 낸다.
+//   drawn      3D 무대를 다시 그렸는가 (이게 false 면 화면의 식물은 낡은 것이다)
+//   drawError  3D 실패 사유 · 없으면 null
+//   hudError   자체 HUD 실패 사유 · 없으면 null
+//              (embed 모드에서도 HUD 는 계속 갱신된다 — 화면에서 감춰졌을 뿐이라 값은 유효하다)
+function redraw(){
+  const drawError = drawStep('그리기', ()=>{ if(typeof buildPlant==='function')    buildPlant(); });
+  const hudError  = drawStep('HUD',    ()=>{ if(typeof refreshDayHUD==='function') refreshDayHUD(); });
+  return { drawn: drawError===null, drawError, hudError };
 }
 // _doc 같은 설명 필드가 계산에 섞이지 않게 숫자만 걸러 온다
 function num(o){ const r={}; for(const k in o) if(typeof o[k]==='number') r[k]=o[k]; return r; }
@@ -2129,9 +2161,11 @@ function advanceTo(calDay){
   // ★논리 진행은 위에서 이미 끝났다. 아래는 화면일 뿐이다 —
   //   그리다 난 예외를 여기서 던지면 코어는 "하루가 안 갔다"고 알고 growth 는 갔다고 아는,
   //   서로 어긋난 상태가 된다. 그 갈림은 다음 턴부터 조용히 누적된다.
-  drawStep('그리기', ()=>{ buildPlant(); });
-  drawStep('HUD',    ()=>{ if(typeof refreshDayHUD==='function') refreshDayHUD(); });
-  return { calDay:CAL_DAY, growth:GROWTH, grew:reason===null, blocked:reason };
+  //   ★다만 '그렸는가'는 반드시 돌려준다. 안 그러면 게이지는 오르고 그림은 멈춘 채
+  //     아무도 모르는 상태가 된다 — 이 게임이 가르치는 게 딱 '빛 → 형태 변화'다.
+  const r=redraw();
+  return { calDay:CAL_DAY, growth:GROWTH, grew:reason===null, blocked:reason,
+           drawn:r.drawn, drawError:r.drawError, hudError:r.hudError };
 }
 let _warnedSetGrowth=false;
 // 코어·테스트가 상태를 읽고 쓰는 자리. let 전역은 밖에서 못 만지므로 함수로 낸다.
@@ -2203,15 +2237,28 @@ function phaseAt(day){
 // 코어용 — 표시 전용이다. 게임 판정은 advanceTo 의 grew·blocked 로 한다.
 //   progress01 은 '이 단계 안에서 얼마나 왔나'를 원비율 그대로 낸다(A안).
 //   저광으로 멈추면 GROWTH 가 안 늘므로 값도 그대로 멈춘다 — 따로 얼릴 것이 없다.
+// ★사람에게 보여줄 이름은 growth 가 낸다. 코어가 자기 표를 들면 단계를 하나 늘리거나
+//   이름을 바꿀 때 **오류 없이 틀린 라벨**이 뜬다 — 조용히 틀리는 유형이다.
+//   phaseId(키)와 경계는 그대로다. 이름만 얹는다.
+const PHASE_KO={
+  seed:'씨앗', sprout:'새싹',
+  axis_rising:'새 축이 올라오는 중', spear_ready:'말린 새순을 준비하는 중',
+  spear_furled:'말린 새순 등장', spear_opening:'새순이 펴지는 중',
+  leaf_young:'어린잎', leaf_mid:'중간잎', leaf_mature:'성숙잎'
+};
+function phaseKoOf(id){ return PHASE_KO[id] || id; }   // 모르는 키는 키 그대로 — 조용히 비우지 않는다
 function growthPhase(){
   const d=Math.max(0, Math.min(GMAX, GROWTH));
   const id=phaseAt(d);
   let s=d; while(s>0 && phaseAt(s-1)===id) s--;                 // 이 단계가 시작한 날
   let e=d+1; while(e<=GMAX && phaseAt(e)===id) e++;             // 다음 단계로 넘어가는 날
   const span=Math.max(1, e-s);
+  const next = e<=GMAX? phaseAt(e) : null;
   return { phaseId:id,
+           phaseKo:phaseKoOf(id),
            progress01:Math.max(0, Math.min(1,(d-s)/span)),
-           nextPhaseId: e<=GMAX? phaseAt(e) : null };
+           nextPhaseId: next,
+           nextPhaseKo: next===null? null : phaseKoOf(next) };
 }
 
 // 형태 진행도를 이 값으로 '점프'한다(디버그 슬라이더·처음·끝 버튼). 달력도 같이 맞춘다.
@@ -2226,8 +2273,10 @@ function setGrowth(v){
   const g=document.getElementById('growth'); if(g) g.value=GROWTH;
   const t=document.getElementById('growthV'); if(t) t.textContent=GROWTH;
   // advanceTo 와 같은 이유로 논리 상태와 화면을 가른다 — 렌더 실패가 점프 실패로 번지지 않게.
-  drawStep('그리기', ()=>{ buildPlant(); });
-  drawStep('HUD',    ()=>{ if(typeof refreshDayHUD==='function') refreshDayHUD(); });
+  // ★도착(개체 생성)이 이 함수를 쓴다. 코어가 "형태를 세웠다"고 믿는 근거이므로
+  //   그렸는지 여부를 반드시 돌려준다 — 안 그리면 화분만 있고 화면엔 없는 개체가 생긴다.
+  const r=redraw();
+  return { growth:GROWTH, calDay:CAL_DAY, drawn:r.drawn, drawError:r.drawError, hudError:r.hudError };
 }
 function startPlay(){ playing=true; const b=document.getElementById('btnPlay'); if(b){ b.textContent='⏸ 정지'; b.classList.add('on'); } if(GROWTH>=GMAX) setGrowth(0);
   playTimer=setInterval(()=>{ if(GROWTH>=GMAX){ stopPlay(); return; } setGrowth(GROWTH+Math.max(3,Math.round(GMAX/120))); }, 110); }

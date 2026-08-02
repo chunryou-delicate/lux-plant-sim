@@ -348,6 +348,8 @@ growthPhase() → { phaseId, progress01, nextPhaseId }
 
 - `phaseId` — `seed` / `sprout` / **`axis_rising`** / `spear_ready` / `spear_furled` /
   `spear_opening` / `leaf_young` / `leaf_mid` / `leaf_mature`
+- `phaseKo` / `nextPhaseKo` — **사람에게 보여줄 이름.** 코어는 자기 표를 들지 말 것 —
+  단계를 하나 늘리거나 이름을 바꾸면 **오류 없이 틀린 라벨**이 뜬다
   - `axis_rising` — 혹에서 난 새 축이 올라오는 구간
   - `spear_ready` — 말린 새순 등장 **직전 3턴**의 마지막 준비 단계
 - `progress01` — 이 단계 안에서 얼마나 왔나. **원비율 그대로(A안)**, 항상 0..1
@@ -373,3 +375,85 @@ growthPhase() → { phaseId, progress01, nextPhaseId }
 ```
 
 `spear_ready` 는 매 주기마다 새순 3턴 전에 시작한다 — 첫 플레이 전용 오프셋이 아니다.
+
+---
+
+## [추가] 렌더 신호 · `phaseKo` · `?embed=game` (2026-08-02)
+
+### 1. 렌더 성공 여부를 반환한다 — 화면이 죽으면 코어가 안다
+
+지난 정정에서 렌더 예외를 `drawStep` 으로 삼켰는데, **성공 여부를 낼 창구를 안 만들었다.**
+게이지는 오르고 그림은 멈춘 채 게임이 계속 도는 상태가 가능했다 — 이 게임이 가르치는 게
+딱 "빛 → 형태 변화"인데 그 피드백이 조용히 죽는다. `advanceTo` 와 `setGrowth` 가 이제 낸다.
+
+```js
+advanceTo(calDay) → { calDay, growth, grew, blocked,
+                      drawn,        // ★3D 무대를 다시 그렸는가. false 면 화면의 식물은 낡은 것
+                      drawError,    // 3D 실패 사유(문자열) · 없으면 null
+                      hudError }    // growth 자체 HUD 실패 사유 · 없으면 null
+
+setGrowth(days)  → { growth, calDay, drawn, drawError, hudError }
+                   // ★도착(개체 생성)이 이걸 쓴다. drawn 을 안 보면
+                   //   "화분은 있는데 화면엔 없는" 개체가 생긴다
+```
+
+- **3D 와 HUD 는 끝까지 따로다.** 그리기가 터져도 HUD 는 돌고(막힌 사유를 띄워야 하므로),
+  반대로 HUD 만 죽은 건 덜 심각하게 다룰 수 있다. `drawn` 은 **3D 기준**이다
+- 어느 쪽이 터져도 **`TH_LOADED` 는 안 건드리고 예외도 안 던진다.** 논리 진행은 그대로다
+- 콘솔은 그대로 `[화면] 그리기 실패 …` / `[화면] HUD 실패 …`
+
+**코어 제안** — `drawn===false` 면 `S.desync` 를 남기면 된다. 지금 `loop.js` 의
+`calAfter === calBefore + 1` 분기는 예외가 안 나오므로 도달하지 않는다(죽은 코드).
+`step.drawn` 으로 갈아타면 살아난다.
+
+### 2. `growthPhase()` 에 `phaseKo` · `nextPhaseKo`
+
+```js
+growthPhase() → { phaseId, phaseKo, progress01, nextPhaseId, nextPhaseKo }
+```
+
+`phaseId` 키와 단계 경계는 **하나도 안 바뀌었다**(0~300일 경계 전수 대조 통과).
+이름만 얹었다. `game.html` 의 `PHASE_KO` 표는 지워도 된다 —
+지금 그 표엔 `seed`·`sprout` 가 빠져 있어 그 단계가 오면 조용히 `'도착함'` 으로 떨어진다.
+
+| phaseId | phaseKo |
+|---|---|
+| `seed` / `sprout` | 씨앗 / 새싹 |
+| `axis_rising` | 새 축이 올라오는 중 |
+| `spear_ready` | 말린 새순을 준비하는 중 |
+| `spear_furled` | 말린 새순 등장 |
+| `spear_opening` | 새순이 펴지는 중 |
+| `leaf_young` / `leaf_mid` / `leaf_mature` | 어린잎 / 중간잎 / 성숙잎 |
+
+모르는 키가 들어오면 `phaseKo` 는 **키 그대로** 낸다 — 조용히 비우지 않는다.
+
+### 3. `plant_grow.html?embed=game`
+
+코어가 iframe 으로 띄울 때 쓴다. **튜닝 패널과 머리말이 사라지고 3D 무대가 전체 폭**이 된다.
+
+```html
+<iframe src="./plant_grow.html?embed=game"></iframe>
+```
+
+- 값이 **정확히 `game`** 일 때만이다. `?embed=1`·`?embed=GAME`·오타는 단독 화면 그대로다
+- **단독 화면(파라미터 없음)은 하나도 안 바뀐다.** CSS 는 `html.embed` 아래에만 있다
+- 캔버스는 원래 `#wrap` 전체(100vw×100vh)를 덮고 패널이 그 위에 떠 있던 구조라,
+  패널만 걷으면 그것으로 전체 무대다 — 레이아웃을 새로 짜지 않았다
+- 카메라 각도 버튼(`.views`)은 남긴다. 튜닝이 아니라 보기 도구다
+- `isEmbedGame()` 으로 상태를 물을 수 있다
+- HUD 는 **감춰졌을 뿐 계속 갱신**된다 — 그래서 `hudError` 값은 embed 에서도 유효하다
+
+### 검증
+
+```
+① 렌더 신호   정상 drawn=true/null/null · 3D만 실패 drawn=false·hudError=null
+              HUD만 실패 drawn=true·drawError=null · 둘 다 실패 사유 2개 따로
+              콘솔 전부 [화면] · TH_LOADED 불변
+② phaseKo     143~146 값 불변 · 키 5개 · vigor·생장일 없음
+              0~300 경계 전수 불변 · 0~400 이름 매핑 이상 0건
+③ 143→146    144 0.333 / 145 0.667 / 146 spear_furled 0.000 · 전 구간 drawn=true
+④ 저광 정지    14일 유효 145 고정·progress 0.667 불변 → 재개(관성 1턴) → 146
+⑤ A~I        전부 PASS
+⑥ embed      6가지 쿼리 전부 기대대로 · 단독 화면 불변
+실패 0건
+```
