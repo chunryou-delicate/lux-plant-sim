@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<!-- ★ 뿌리 기준으로 푼다.
+     render3d/plant_sample.js 가 페이지 상대 경로('./assets/monstera')를 쓰기 때문에
+     tools/ 아래 페이지에서 그냥 열면 몬스테라만 404 가 난다. base 로 맞춰 준다. -->
+<base href="../">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>방 3D 뷰 데모 · room_view.js</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  body{background:#12101a;color:#e9e6f2;font:13px/1.5 -apple-system,'Malgun Gothic',sans-serif;
+       display:flex;gap:14px;padding:14px;align-items:flex-start;min-height:100vh;flex-wrap:wrap}
+
+  /* ── 폰 세로 390×844 ── */
+  #phone{position:relative;width:390px;height:844px;flex:none;border-radius:26px;overflow:hidden;
+         background:#0a0810;box-shadow:0 10px 40px rgba(0,0,0,.6);border:1px solid rgba(255,255,255,.10)}
+  #phone.wide{width:844px;height:475px}
+  #roomCanvas{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none}
+  /* 게임 셸이 쓸 자리 — 방이 가운데 띠로 앉는 걸 확인하려고 흉내만 낸다 */
+  #hud{position:absolute;left:0;right:0;top:0;padding:12px 14px;z-index:3;pointer-events:none;
+       background:linear-gradient(rgba(10,8,16,.72),transparent);display:flex;gap:8px;align-items:center}
+  #hud b{font-size:15px}
+  #hud .pill{margin-left:auto;background:rgba(255,255,255,.14);border-radius:12px;padding:3px 10px;font-size:11px}
+  #dock{position:absolute;left:0;right:0;bottom:0;z-index:3;padding:12px 14px 16px;
+        background:linear-gradient(transparent,rgba(10,8,16,.80) 42%);display:flex;gap:6px;flex-wrap:wrap}
+  #dock .b{pointer-events:auto}
+  #tip{position:absolute;left:0;right:0;bottom:96px;text-align:center;z-index:3;font-size:12px;
+       color:#ffd479;text-shadow:0 2px 8px #000;pointer-events:none}
+
+  .b{background:rgba(255,255,255,.92);color:#2c2836;border:0;border-radius:10px;padding:6px 10px;
+     font:600 12px/1 inherit;cursor:pointer;box-shadow:0 2px 0 rgba(0,0,0,.35)}
+  .b:active{transform:translateY(2px);box-shadow:0 0 0 rgba(0,0,0,.35)}
+  .b.on{background:#ffb454}
+  .b:disabled{opacity:.45;cursor:default}
+
+  /* ── 조작판 ── */
+  #panel{flex:1;min-width:330px;max-width:560px;display:flex;flex-direction:column;gap:10px}
+  .card{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.09);border-radius:12px;padding:10px}
+  .card h3{font-size:12px;color:#9f96c0;margin-bottom:7px;font-weight:700;letter-spacing:.4px}
+  .row{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+  select,input[type=range]{font:inherit}
+  select{background:#241f33;color:#e9e6f2;border:1px solid rgba(255,255,255,.15);border-radius:8px;padding:5px 7px;max-width:100%}
+  input[type=range]{flex:1;min-width:120px}
+  #log{height:150px;overflow:auto;background:#08060e;border-radius:8px;padding:8px;
+       font:11px/1.5 ui-monospace,Consolas,monospace;white-space:pre-wrap;color:#b9b3d0}
+  #log .e{color:#ff8f8f}
+  #log .w{color:#ffcf7a}
+  #log .k{color:#8fe0a8}
+  #stat{font:11px/1.6 ui-monospace,Consolas,monospace;color:#9f96c0}
+  #stat b{color:#ffd479}
+  .hint{font-size:11px;color:#8d86a8}
+</style>
+</head>
+<body>
+
+<div id="phone">
+  <canvas id="roomCanvas"></canvas>
+  <div id="hud"><b>볕</b><span style="font-size:11px;color:#bdb6d6" id="hudRoom">—</span>
+    <span class="pill" id="hudTime">한낮</span></div>
+  <div id="tip"></div>
+  <div id="dock">
+    <button class="b" id="dPlace">화분 놓기</button>
+    <button class="b" id="dMove">옮기기</button>
+    <button class="b" id="dFocus">자리로</button>
+    <button class="b" id="dBack">방 전체</button>
+  </div>
+</div>
+
+<div id="panel">
+  <div class="card">
+    <h3>방</h3>
+    <div class="row">
+      <select id="room">
+        <option value="banjiha">반지하</option>
+        <option value="oneroom">원룸</option>
+        <option value="tworoom">투룸</option>
+        <option value="apartment">아파트</option>
+        <option value="classroom">학원교실</option>
+        <option value="greenhouse">온실</option>
+      </select>
+      <button class="b" id="portrait">세로 390×844</button>
+      <button class="b" id="wide">가로 844×475</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>하루 시간대 · setDaylight(t01)</h3>
+    <div class="row">🌙<input type="range" id="sun" min="0" max="1000" value="520">☀️
+      <span id="sunV" class="hint">0.52</span><b id="sunLabel" style="color:#ffd479">한낮</b></div>
+    <div class="row" style="margin-top:6px">
+      <button class="b" id="play">▶ 자동 재생</button>
+      <span class="hint">하루</span>
+      <select id="speed">
+        <option value="140">140ms (빨리감기)</option>
+        <option value="600">0.6초</option>
+        <option value="3000" selected>3초</option>
+        <option value="12000">12초</option>
+      </select>
+      <span class="hint">그림자</span>
+      <select id="shadow">
+        <option value="lean" selected>lean (해만·조인 카메라)</option>
+        <option value="full">full (scene.js 기본)</option>
+        <option value="none">none</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>화분 · setPlant / movePlant</h3>
+    <div class="row">
+      <select id="slot"></select>
+      <select id="kind"><option value="monstera">몬스테라</option><option value="beansprout">콩나물 시루</option></select>
+    </div>
+    <div class="row" style="margin-top:6px">
+      <select id="band">
+        <option>critical</option><option>poor</option><option>stagnant</option>
+        <option>slow</option><option selected>good</option><option>best</option><option>over</option>
+      </select>
+      <span class="hint">자람 <b id="pV">0.60</b></span><input type="range" id="prog" min="0" max="100" value="60">
+      <span class="hint">시듦 <b id="fV">0.00</b></span><input type="range" id="fade" min="0" max="100" value="0">
+    </div>
+    <div class="row" style="margin-top:6px">
+      <button class="b" id="place">이 자리에 놓기</button>
+      <button class="b" id="remove">치우기</button>
+      <button class="b" id="fill">빈 자리 3곳에 놓기</button>
+      <button class="b" id="clear">전부 치우기</button>
+    </div>
+    <div class="row" style="margin-top:6px">
+      <span class="hint">옮기기</span>
+      <select id="from"></select>→<select id="to"></select>
+      <button class="b" id="move">옮기기</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>자리 표시 · highlightSlots / focusSlot</h3>
+    <div class="row">
+      <button class="b" id="hlEmpty">빈 자리 전부</button>
+      <button class="b" id="hlFit">이 화분 들어가는 자리만</button>
+      <button class="b" id="hlOff">해제</button>
+      <button class="b" id="focus">이 자리로</button>
+      <button class="b" id="unfocus">방 전체로</button>
+    </div>
+    <div class="hint" style="margin-top:6px">
+      회전 = 드래그(손 떼면 45° 스냅) · 줌 = 휠/두 손가락 · 탭 = 선택 · 마우스 올리면 자리 이름
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>성능</h3>
+    <div class="row">
+      <button class="b" id="bench">60초 연속 렌더 측정</button>
+      <span id="stat">—</span>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>기록 (onError · 콘솔)</h3>
+    <div id="log"></div>
+  </div>
+</div>
+
+<script type="module">
+import { createRoomView } from './src/game/room_view.js';
+
+const $ = id => document.getElementById(id);
+const logEl = $('log');
+function log(msg, cls) {
+  const d = document.createElement('div');
+  if (cls) d.className = cls;
+  d.textContent = new Date().toLocaleTimeString('ko-KR', { hour12: false }) + '  ' + msg;
+  logEl.appendChild(d); logEl.scrollTop = logEl.scrollHeight;
+}
+/* 콘솔 경고·오류도 같이 본다 — "조용히 넘어가는 것"을 눈으로 잡으려는 화면이다 */
+for (const k of ['warn', 'error']) {
+  const o = console[k].bind(console);
+  console[k] = (...a) => { o(...a); log(a.map(x => (x && x.message) || String(x)).join(' '), k === 'error' ? 'e' : 'w'); };
+}
+window.addEventListener('error', e => log('window.error: ' + e.message, 'e'));
+
+let view = null, tipT = 0;
+function tip(t) { $('tip').textContent = t; clearTimeout(tipT); tipT = setTimeout(() => $('tip').textContent = '', 2600); }
+
+const specNow = () => ({
+  kind: $('kind').value,
+  phaseId: null,
+  progress01: +$('prog').value / 100,
+  band: $('band').value,
+  fade: +$('fade').value / 100
+});
+
+function refreshSlots() {
+  const list = view.slots();
+  for (const id of ['slot', 'from', 'to']) {
+    const sel = $(id), keep = sel.value;
+    sel.innerHTML = '';
+    for (const s of list) {
+      const o = document.createElement('option');
+      o.value = s.slotId;
+      o.textContent = `${s.name} ${s.occupied ? '🪴' : '·'} ${s.slotId} (한도 ${s.maxPotD ?? '—'})`;
+      sel.appendChild(o);
+    }
+    if (list.some(s => s.slotId === keep)) sel.value = keep;
+  }
+  $('hudRoom').textContent = `${view.roomId} · 자리 ${list.length}칸`;
+}
+
+async function boot(roomId) {
+  if (view) { view.dispose(); view = null; }
+  logEl.innerHTML = '';
+  log('방 조립 시작: ' + roomId, 'k');
+  const t0 = performance.now();
+  view = await createRoomView($('roomCanvas'), {
+    roomId,
+    onSlotTap: id => { window.__lastTap = { type: 'slot', id }; $('slot').value = id; $('from').value = id; tip('빈 자리 ' + id); log('onSlotTap ' + id, 'k'); },
+    onPlantTap: id => { window.__lastTap = { type: 'plant', id }; $('slot').value = id; $('from').value = id; tip('화분 ' + id); log('onPlantTap ' + id, 'k'); view.focusSlot(id); },
+    onSlotHover: (id, type) => { $('tip').textContent = id ? `${id}${type === 'plant' ? ' · 화분' : ''}` : ''; },
+    onReady: () => log(`onReady — ${Math.round(performance.now() - t0)}ms`, 'k'),
+    onError: e => log('onError: ' + e.message, 'e')
+  });
+  window.view = view;                       // 콘솔에서 만져 보라고
+  $('sun').oninput();
+  refreshSlots();
+}
+
+/* ── 조작 ── */
+$('room').onchange = async () => { await boot($('room').value); };
+$('portrait').onclick = () => { $('phone').classList.remove('wide'); setTimeout(() => view.resize(), 30); };
+$('wide').onclick = () => { $('phone').classList.add('wide'); setTimeout(() => view.resize(), 30); };
+
+$('sun').oninput = () => {
+  const t = +$('sun').value / 1000;
+  $('sunV').textContent = t.toFixed(2);
+  const label = view.setDaylight(t);
+  $('hudTime').textContent = label; $('sunLabel').textContent = label;
+};
+$('shadow').onchange = () => log('그림자 예산 → ' + view.setShadowBudget($('shadow').value), 'k');
+
+/* ── 자동 재생 ──
+   빨리감기에서 하루가 눈에 보이는지 보는 화면이다. 하루를 0→1 로 한 바퀴 돌린다.
+   폰에서 부드러운지 보려면 '140ms' 로 두고 fps 를 본다. */
+let playT = 0, playing = false;
+$('play').onclick = function () {
+  playing = !playing;
+  this.classList.toggle('on', playing);
+  this.textContent = playing ? '❚❚ 멈춤' : '▶ 자동 재생';
+  if (playing) { view.setContinuous(true); playT = performance.now(); tickDay(); }
+  else view.setContinuous(false);
+};
+function tickDay() {
+  if (!playing || !view) return;
+  const dur = +$('speed').value;
+  const t = ((performance.now() - playT) % dur) / dur;
+  $('sun').value = Math.round(t * 1000);
+  $('sun').oninput();
+  requestAnimationFrame(tickDay);
+}
+$('prog').oninput = () => $('pV').textContent = (+$('prog').value / 100).toFixed(2);
+$('fade').oninput = () => $('fV').textContent = (+$('fade').value / 100).toFixed(2);
+
+async function place(slotId) {
+  try {
+    await view.setPlant(slotId, specNow());
+    refreshSlots(); tip('놓았습니다');
+  } catch (e) { log('setPlant 실패: ' + e.message, 'e'); tip('실패: ' + e.message); }
+}
+$('place').onclick = () => place($('slot').value);
+$('remove').onclick = async () => { await view.setPlant($('slot').value, null); refreshSlots(); };
+$('clear').onclick = async () => {
+  for (const s of view.slots()) if (s.occupied) await view.setPlant(s.slotId, null);
+  refreshSlots();
+};
+$('fill').onclick = async () => {
+  const empty = view.slots().filter(s => !s.occupied).slice(0, 3);
+  for (const s of empty) await place(s.slotId);
+};
+$('move').onclick = () => {
+  try { view.movePlant($('from').value, $('to').value); refreshSlots(); tip('옮겼습니다'); }
+  catch (e) { log('movePlant 거부: ' + e.message, 'e'); tip('못 옮깁니다 — ' + e.message); }
+};
+$('hlEmpty').onclick = () => view.highlightSlots(view.slots().filter(s => !s.occupied).map(s => s.slotId));
+$('hlFit').onclick = () => {
+  const k = specNow();
+  const ok = view.slots().filter(s => !s.occupied && view.fitCheck(s.slotId, k).ok);
+  view.highlightSlots(ok.map(s => s.slotId));
+  tip(`${ok.length}칸 / ${view.slots().length}칸`);
+  log(`fitCheck(${k.kind}) 통과 ${ok.length}칸`, 'k');
+};
+$('hlOff').onclick = () => view.highlightSlots([]);
+$('focus').onclick = () => view.focusSlot($('slot').value);
+$('unfocus').onclick = () => view.focusSlot(null);
+
+/* 폰 안 버튼 */
+$('dPlace').onclick = () => place($('slot').value);
+$('dMove').onclick = () => $('move').click();
+$('dFocus').onclick = () => view.focusSlot($('slot').value);
+$('dBack').onclick = () => view.focusSlot(null);
+
+/* ── 성능 측정 ──
+   평소엔 움직일 때만 그린다(놀 때 0장). 측정은 강제로 계속 그리게 해서 최악을 본다. */
+$('bench').onclick = function () {
+  view.setContinuous(true);
+  this.disabled = true;
+  const t0 = performance.now();
+  const timer = setInterval(() => {
+    const s = view.stats();
+    $('stat').innerHTML = `<b>${s.fps}</b> fps · 삼각형 ${s.triangles.toLocaleString()} · 드로우콜 ${s.calls}
+      · 픽셀비 ${s.pixelRatio}${s.reduced ? ' (줄임: ' + s.reduced + ')' : ''}`;
+    if (performance.now() - t0 > 60000) {
+      clearInterval(timer); view.setContinuous(false); $('bench').disabled = false;
+      log('측정 끝 — ' + $('stat').textContent.trim(), 'k');
+    }
+  }, 500);
+};
+setInterval(() => {
+  if (!view) return;
+  const s = view.stats();
+  if (!$('bench').disabled)
+    $('stat').innerHTML = `<b>${s.fps}</b> fps(움직일 때만) · 삼각형 ${s.triangles.toLocaleString()}
+      · 드로우콜 ${s.calls} · 픽셀비 ${s.pixelRatio} · 화분 ${s.plants}/${s.slots}`;
+}, 700);
+
+/* ── 시나리오 ──
+   ?room=banjiha&shot=plants|highlight|focus|wide|night
+   손으로 눌러 만든 상태를 헤드리스에서도 똑같이 재현하려고 둔다.
+   에셋(GLB)이 다 실린 뒤에 찍어야 하므로 마지막에 title 을 DONE 으로 바꾼다. */
+const Q = new URLSearchParams(location.search);
+const rid = Q.get('room') || 'banjiha';
+$('room').value = rid;
+await boot(rid);
+
+const SHOT = Q.get('shot');
+if (SHOT) {
+  const S = view.slots();
+  const pick = (n) => S.filter(s => !s.occupied).slice(0, n).map(s => s.slotId);
+  if (SHOT === 'wide') { $('phone').classList.add('wide'); view.resize(); }
+  if (Q.get('t')) { $('sun').value = Math.round(+Q.get('t') * 1000); $('sun').oninput(); }
+  if (Q.get('shadow')) { $('shadow').value = Q.get('shadow'); $('shadow').onchange(); }
+
+  /* 밝은 자리엔 큰 몬스테라, 어두운 자리엔 콩나물 시루 — 반지하 첫 플레이 구성 */
+  const bright = S.find(s => s.slotId.includes('sill')) || S[0];
+  const dark = S.find(s => s.slotId.includes('dresser')) || S[S.length - 1];
+  await view.setPlant(bright.slotId, { kind: 'monstera', progress01: 0.75, band: 'good', fade: 0 });
+  await view.setPlant(dark.slotId, { kind: 'beansprout', progress01: 0.8, band: 'critical', fade: 0 });
+  const mid = S.filter(s => !s.occupied && s.slotId.includes('etagere')).slice(-1)[0];
+  if (mid) await view.setPlant(mid.slotId, { kind: 'monstera', progress01: 0.35, band: 'poor', fade: 0.35 });
+  refreshSlots();
+
+  if (SHOT === 'highlight') view.highlightSlots(view.slots().filter(s => !s.occupied).map(s => s.slotId));
+  if (SHOT === 'focus') view.focusSlot(bright.slotId, true);   // 트윈 없이 바로
+  await new Promise(r => setTimeout(r, 900));
+  /* ★ 헤드리스(--virtual-time-budget)에서는 requestAnimationFrame 이 안 돈다.
+     그래서 화분을 놓아도 화면에 안 나온 채로 찍혔다. 마지막에 한 장 강제로 그린다. */
+  view.redraw();
+  document.title = 'DONE · ' + SHOT;
+}
+</script>
+</body>
+</html>
