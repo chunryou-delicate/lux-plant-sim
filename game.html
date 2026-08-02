@@ -1299,6 +1299,19 @@ async function bootRoomView() {
    try/catch 로는 거절을 못 잡으므로 .catch 를 반드시 붙인다 —
    안 붙이면 화분이 조용히 안 나타나고 콘솔에만 남는다. */
 let syncSeq = 0;
+/* ★어느 자리에 무엇을 놓아 뒀는지 기억한다 (2026-08-03).
+   안 기억하면 자리를 옮겨도 **옛 자리의 화분이 안 지워져** 두 개로 보인다 —
+   폰에서 실제로 났다("몬스테라를 옮기면 이동이 아니라 복사가 됐어").
+   setPlant 은 그 자리에 놓기만 하지 다른 자리를 치우지 않는다. 치우는 건 여기 몫이다. */
+const shownAt = { monstera: null, beansprout: null };
+function clearIfMoved(kind, nowSlot, warn) {
+  const was = shownAt[kind];
+  if (was && was !== nowSlot) {
+    try { Promise.resolve(roomView.setPlant(was, null)).catch(warn(kind + ' 옛 자리 정리')); }
+    catch (e) { warn(kind + ' 옛 자리 정리')(e); }
+  }
+  shownAt[kind] = nowSlot || null;
+}
 function syncRoom() {
   if (!roomView) return;
   const my = ++syncSeq;                 // 늦게 끝난 옛 요청이 새 상태를 덮어쓰지 않게
@@ -1308,6 +1321,8 @@ function syncRoom() {
     if (my !== syncSeq) return;         // 이미 지난 요청이면 조용히 버린다
     console.warn('[방] ' + what + ' 갱신 실패 —', (e && e.message) || e);
   };
+  clearIfMoved('monstera', p && p.slotId, warn);
+  clearIfMoved('beansprout', b && b.slotId, warn);
   try {
     Promise.resolve(roomView.setPlant(p && p.slotId, p ? {
       kind: 'monstera',
@@ -1438,10 +1453,22 @@ const picked = {
   yaw0: 0, x0: 0, y0: 0,
   originX: 0, originY: 0,            // 옮기기 시작할 때 그 화분이 화면에서 있던 자리
 
+  /* 그 자리에 있는 게 무엇인가. 콩나물과 몬스테라는 규칙이 다르다. */
+  kindAt(slotId) {
+    const b = S.firstPlay && S.firstPlay.beansprout;
+    return (b && b.slotId === slotId) ? 'beansprout' : 'monstera';
+  },
   select(slotId) {
     if (drag.on) return;
     this.slotId = slotId;
+    const kind = this.kindAt(slotId);
+    const b = S.firstPlay && S.firstPlay.beansprout;
+    /* ★수확한 시루는 못 옮긴다(first_play.md — 수확 전까지만 이동 자유).
+       예전엔 눌러도 아무 일이 없어 고장처럼 보였다. 이유를 버튼에 적는다. */
+    const locked = kind === 'beansprout' && b && b.harvested;
     $('pickedName').textContent = slotLabel(slotId);
+    $('pickMove').disabled = !!locked;
+    $('pickMove').title = locked ? '이미 수확한 시루는 옮길 수 없습니다' : '';
     $('stage').classList.add('picked');
     if (roomView) roomView.highlightSlots([slotId]);
   },
@@ -1455,8 +1482,7 @@ const picked = {
     if (!this.slotId) return;
     this.mode = 'move';
     /* 그 식물이 갈 수 있는 자리들 — 지금 있는 자리는 빼고 */
-    const what = (S.firstPlay.beansprout && S.firstPlay.beansprout.slotId === this.slotId)
-      ? 'beansprout' : 'monstera';
+    const what = this.kindAt(this.slotId);
     const { sel, ids } = drag.slotsFor(what);
     drag.what = what; drag.sel = sel;
     drag.valid = ids.filter(id => id !== this.slotId);
@@ -1517,7 +1543,11 @@ const picked = {
       if (roomView && roomView.previewMove) { try { roomView.previewMove(null, null); } catch { } }
       if (hit) {
         drag.sel.value = hit;
-        drag.sel.dispatchEvent(new Event('change', { bubbles: true }));
+        /* ★콩나물은 change 로 안 옮겨진다 — #cropSlot 에는 change 핸들러가 없고
+           [두기] 버튼이 배치를 한다. 그래서 몬스테라만 옮겨지고 시루는 제자리였다
+           (폰에서 실제로 났다). 인벤 드래그와 같은 경로를 탄다. */
+        if (drag.what === 'beansprout') $('placeCrop').click();
+        else drag.sel.dispatchEvent(new Event('change', { bubbles: true }));
         this.clear(); return;
       }
     }
