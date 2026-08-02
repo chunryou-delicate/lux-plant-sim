@@ -1,3 +1,164 @@
+# 2026-08-02 · core → house (프로파일 마감 전 선행 계약 수정)
+
+## ① `w.cz` 누락 수정 — 온실 **10.49 → 14.55** 재현했습니다
+
+`light_adapter.build()` 만 `winFromHouse()` 의 9번째 인자를 안 넘기고 있었습니다.
+`main.js` · `_dli_probe.html` · `_bj_*.html` 은 전부 넘기고 있었습니다.
+
+```js
+// src/game/light_adapter.js  (수정 후)
+winFromHouse(w.wall, w.cu, w.cy, w.w, w.h, built.size, w.tau, w.evScale, w.cz)
+//                                                                        ↑ 이것
+```
+
+전 방 대조 (맑음·여름 best, 등 0개):
+
+| 방 | 천창 | 수정 전 | 수정 후 |
+|---|---|---|---|
+| **온실** | 1개 (cz **−2.5**) | **10.49** | **14.55** ★ |
+| 반지하·아파트·학원교실·원룸·투룸 | 0개 | 3.77 / 6.02 / 6.01 / 4.77 / 5.64 | 동일 |
+
+**천창이 있는 방에서만 어긋납니다.** 벽창은 `cz` 를 안 쓰므로 다섯 방은 값이 그대로였고,
+그래서 지금까지 아무도 못 봤습니다 — 또 "오류 없이 조용히 틀리는" 유형입니다.
+부분 천창(`cgZ0~cgZ1`)이 도입되면서 생겼습니다. 이전엔 `cz:0` 하드코딩이라 우연히 맞았습니다.
+
+## ② 안정 `slotId` 계약 — 전역 순번 fallback 폐기
+
+`slotId` 는 세이브에 그대로 들어갑니다. 뿌리인 `uid` 가 흔들리면 **저장된 화분이 남의 자리로 갑니다.**
+예전 코어 fallback `{방}-{프리셋}-{전역순번}` 은 **모든 방을 가로지르는 순번**이라,
+한 방에 가구 하나만 추가돼도 다른 방 뒤쪽 uid 가 통째로 밀렸습니다. 폐기했습니다.
+
+**계약 (2026-08-02 확정)**
+
+1. **화분 슬롯을 내는 가구는 `house_rooms.json` 에 명시적 `uid` 가 있어야 한다**
+2. 없으면 코어가 **`TEMP~{방}#{인덱스}~{프리셋}`** 을 붙이고 `console.error` 로 알린다.
+   조용히 메꾸지 않는다 (게임은 계속 돌지만 id 가 임시임이 눈에 보인다)
+3. **영속 산출물(방 프로파일)은 임시 uid 가 하나라도 있으면 만들지 않고 오류를 던진다.**
+   파일로 굳으면 나중에 uid 를 붙이는 순간 저장된 slotId 가 전부 어긋나기 때문입니다
+
+```
+src/game/light_adapter.js   TEMP_UID · build() 의 console.error · profile() 의 throw · uidAudit()
+src/game/room_profile.js    uidStable !== true 인 프로파일은 로드 거부
+```
+
+프로파일에 `uidStable: true` 와 `roomRev` 를 같이 찍습니다(요청하셨던 `roomRev` 복사, 반영했습니다).
+
+> **uid 값은 무엇이든 좋습니다.** 규칙이 아니라 **JSON에 한 번 적히는 것** 자체가 계약입니다.
+> 아래 "제안 uid" 는 붙여 넣기 편하시라고 만든 것이고, 다른 이름으로 하셔도 코어는 그대로 돕니다.
+
+## ③ ★ 명시 `uid` 가 필요한 가구 — 방별 회신
+
+**반지하는 이미 전부 되어 있습니다(14칸 안정).** 학원교실은 창턱 112칸이 안정이라 16칸만 걸립니다.
+
+### banjiha (반지하) — 없음 ✓ (슬롯 14칸 전부 안정)
+
+### oneroom (원룸) — 3건 · 영향 슬롯 11/11칸
+| furniture[] | preset | 슬롯 | 제안 uid |
+|---|---|---|---|
+| 1 | `nightstand` | 1 | `oneroom-nightstand-1` |
+| 2 | `desk` | 2 | `oneroom-desk-2` |
+| 5 | `shelf` | 8 | `oneroom-shelf-5` |
+
+### apartment (아파트) — 18건 · 영향 슬롯 83/83칸
+| furniture[] | preset | 슬롯 | 제안 uid |
+|---|---|---|---|
+| 0 | `shelf_ladder_4tier` | 7 | `apartment-shelf_ladder_4tier-0` |
+| 1 | `shelf_etagere_3tier` | 9 | `apartment-shelf_etagere_3tier-1` |
+| 2 | `plant_step_3` | 3 | `apartment-plant_step_3-2` |
+| 3 | `shelf_etagere_3tier` | 9 | `apartment-shelf_etagere_3tier-3` |
+| 4 | `shelf_growrack_2tier` | 6 | `apartment-shelf_growrack_2tier-4` |
+| 5 | `plant_step_3` | 3 | `apartment-plant_step_3-5` |
+| 6 | `shelf_etagere_3tier` | 9 | `apartment-shelf_etagere_3tier-6` |
+| 7 | `plant_step_3` | 3 | `apartment-plant_step_3-7` |
+| 8 | `plant_pedestal` | 1 | `apartment-plant_pedestal-8` |
+| 10 | `nightstand` | 1 | `apartment-nightstand-10` |
+| 12 | `dresser` | 2 | `apartment-dresser-12` |
+| 14 | `table_round` | 1 | `apartment-table_round-14` |
+| 18 | `desk` | 2 | `apartment-desk-18` |
+| 20 | `shelf` | 8 | `apartment-shelf-20` |
+| 21 | `shoe_cabinet` | 2 | `apartment-shoe_cabinet-21` |
+| 22 | `shelf_low` | 6 | `apartment-shelf_low-22` |
+| 26 | `table` | 2 | `apartment-table-26` |
+| 28 | `shelf_etagere_3tier` | 9 | `apartment-shelf_etagere_3tier-28` |
+
+### classroom (학원교실) — 8건 · 영향 슬롯 16/128칸
+| furniture[] | preset | 슬롯 | 제안 uid |
+|---|---|---|---|
+| 2 | `lectern` | 1 | `classroom-lectern-2` |
+| 3~8 | `desk_student_2` ×6 | 2씩 | `classroom-desk_student_2-3` … `-8` |
+| 15 | `locker_12` | 3 | `classroom-locker_12-15` |
+
+### greenhouse (온실) — 11건 · 영향 슬롯 64/64칸
+| furniture[] | preset | 슬롯 | 제안 uid |
+|---|---|---|---|
+| 0 | `shelf_ladder_4tier` | 7 | `greenhouse-shelf_ladder_4tier-0` |
+| 1 | `shelf_etagere_3tier` | 9 | `greenhouse-shelf_etagere_3tier-1` |
+| 2 | `plant_step_3` | 3 | `greenhouse-plant_step_3-2` |
+| 3 | `shelf_growrack_2tier` | 6 | `greenhouse-shelf_growrack_2tier-3` |
+| 4 | `shelf_etagere_3tier` | 9 | `greenhouse-shelf_etagere_3tier-4` |
+| 5 | `shelf_cart_3tier` | 6 | `greenhouse-shelf_cart_3tier-5` |
+| 6 | `table` | 2 | `greenhouse-table-6` |
+| 7 | `plant_step_3` | 3 | `greenhouse-plant_step_3-7` |
+| 9 | `desk` | 2 | `greenhouse-desk-9` |
+| 11 | `shelf` | 8 | `greenhouse-shelf-11` |
+| 12 | `shelf_etagere_3tier` | 9 | `greenhouse-shelf_etagere_3tier-12` |
+
+### tworoom (투룸) — 5건 · 영향 슬롯 20/20칸
+| furniture[] | preset | 슬롯 | 제안 uid |
+|---|---|---|---|
+| 1 | `nightstand` | 1 | `tworoom-nightstand-1` |
+| 4 | `table_round` | 1 | `tworoom-table_round-4` |
+| 6 | `shelf_low` | 6 | `tworoom-shelf_low-6` |
+| 9 | `shelf_etagere_3tier` | 9 | `tworoom-shelf_etagere_3tier-9` |
+| 10 | `plant_step_3` | 3 | `tworoom-plant_step_3-10` |
+
+> 합계 **45건**. 슬롯을 안 내는 가구(침대·소파·냉장고 등)는 뺐습니다 — 지금은 필요 없습니다.
+> 나중에 그것들도 슬롯을 내게 되면 그때 다시 회신하겠습니다.
+
+## ④ 첫 플레이 몬스테라 화분 — `assets/monstera/pot.glb` 확정
+
+**창턱 한도 `maxPotD` 0.21m (반지하 창턱 1칸) 이하임을 정점에서 직접 쟀습니다.**
+
+| 에셋 | manifest `real_max_m` | bbox 지름 | **회전 무관 지름** | 높이 | 여유 | 판정 |
+|---|---|---|---|---|---|---|
+| **`monstera/pot.glb`** (id 확정) | 0.20 | 0.200 | **0.202** | 0.134 | **+0.008** | 올라감 ✓ |
+| `pots/pot_terracotta_wood.glb` | 0.20 | 0.200 | 0.201 | 0.180 | +0.009 | 올라감 ✓ |
+| `pots/pot_concrete_square.glb` | 0.20 | 0.200 | **0.275** | 0.187 | **−0.065** | **못 올림 ✗** |
+
+`pot.glb` 로 정한 이유: **`plant_grow.html:361` 이 이미 이 에셋을 렌더하고 있습니다.**
+첫 플레이 화분은 곧 생장 창이 그리는 그 화분이라, 다른 걸 고르면 창 간 교체 요청이 생깁니다.
+`pot_terracotta_wood.glb`(스타일 기준 화분)도 조건을 만족하니 상점 확장 때 쓰면 됩니다.
+
+### ★ 경고 — `maxPotD` 비교는 bbox 로 하면 안 됩니다
+
+`pot_concrete_square.glb` 는 **bbox 로는 0.200이라 통과처럼 보이는데 대각선이 0.275** 입니다.
+사각 화분은 회전에 따라 안 들어갑니다. 배치 코드가 `maxPotD` 를 검사할 때
+**`2×max√(x²+z²)`(회전 무관 지름)** 로 비교해 주세요. `real_max_m` 은 *최대 치수*(높이일 수 있음)라
+그대로 쓰면 안 됩니다 — 위 세 화분 모두 `real_max_m` 이 0.20으로 같지만 하나는 못 올라갑니다.
+
+## ⑤ 마무리 요청 — 프로파일 6개 재생성
+
+**`data/profiles/` 에 커밋돼 있는 6개는 전부 무효입니다** (①의 cz 이전 + ②의 uid 이전).
+지금은 로드하면 오류가 나서 조용히 쓰이지는 않습니다:
+
+```
+[프로파일 거부] greenhouse: 안정 uid 계약(2026-08-02) 이전 파일입니다.
+```
+
+`_profile_gen.html` 로 다시 뽑아 주실 때 두 가지만 부탁드립니다.
+
+1. `winFromHouse(..., w.tau, w.evScale, w.cz)` — 9번째 인자
+2. 산출물에 `uidStable: true` · `roomRev` 를 찍을 것 (코어가 `uidStable` 로 계약 이전 파일을 거릅니다)
+
+③의 uid 가 들어간 뒤에 뽑아야 합니다. 그 전에 뽑으면 코어 쪽 `profile()` 은 `throw` 합니다
+(fail-loud 로 맞춰 뒀습니다).
+
+## 이번에 안 건드린 것
+
+게임 UI · 경제 · 다개체 리팩터 · 밸런스 — 지시대로 전부 그대로입니다.
+
+---
+
 # 2026-07-26 · core → house
 
 ## 보고 — `game.html` 을 새로 팠습니다. 최소 루프 v0가 돕니다

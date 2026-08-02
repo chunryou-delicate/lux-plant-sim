@@ -26,12 +26,26 @@ import { validateContract } from './contract.js';
 export { validateContract };
 
 /* --------------------------------------------------------------- */
+/* ★ 안정 slotId 계약 (2026-08-02 확정) — `{가구 uid}:{단}`
+   ------------------------------------------------------------------
+   slotId 는 세이브에 그대로 들어간다. 뿌리인 uid 가 흔들리면 저장된 화분이 남의 자리로 간다.
+
+   ① **화분 슬롯을 내는 가구는 `house_rooms.json` 에 명시적 `uid` 가 있어야 한다.**
+   ② 없으면 코어가 임시 uid 를 붙이되 **`TEMP~` 로 표시한다.** 조용히 메꾸지 않는다.
+   ③ **영속 산출물(방 프로파일)은 임시 uid 가 하나라도 있으면 만들지 않고 오류를 던진다.**
+
+   왜 전역 순번을 버렸나: 예전 fallback `{방}-{프리셋}-{전역순번}` 은 **가구 배열 순서에
+   의존**했다. 다른 방에 가구가 하나 추가되면 뒤 번호가 통째로 밀려 이미 저장된 slotId 가
+   다른 자리를 가리킨다. 임시 uid 도 방·인덱스로만 만들어 그 전파는 막았지만,
+   그래도 인덱스가 바뀌면 흔들리므로 **임시일 뿐 해결이 아니다.** */
+export const TEMP_UID = 'TEMP~';
+const tempUid = (roomId, i, preset) => `${TEMP_UID}${roomId}#${i}~${preset || 'x'}`;
+
 export function createLightEngine(data) {
-  /* ★ 가구 uid — slotId의 뿌리다. 없으면 전부 'x:0' 으로 겹쳐 화분 매칭이 무너진다.
-     src/main.js 와 같은 규칙으로 붙인다(메모리 상의 사본에만). */
-  let seq = 0;
-  for (const [rk, rv] of Object.entries((data.houseRooms && data.houseRooms.rooms) || {}))
-    for (const f of (rv.furniture || [])) if (!f.uid) f.uid = rk + '-' + (f.preset || 'x') + '-' + (++seq);
+  /* 명시 uid 가 없는 가구에만 표시된 임시 uid 를 붙인다(메모리 사본에만). */
+  const roomsDef = (data.houseRooms && data.houseRooms.rooms) || {};
+  for (const [rk, rv] of Object.entries(roomsDef))
+    (rv.furniture || []).forEach((f, i) => { if (!f.uid) f.uid = tempUid(rk, i, f.preset); });
 
   /* 날씨 확률은 plan 소유값이다. 코어가 표를 들지 않는다 — 창마다 다른 표를 들다가
      같은 날 날씨가 갈렸던 게 이번 사고의 뿌리였다(weather.json _doc). */
@@ -53,8 +67,13 @@ export function createLightEngine(data) {
     if (!def) throw new Error(`모르는 방: ${roomId}`);
     const built = buildHouse(GRAIN, def, data.winPresets, data.doorPresets, data.finishes,
                              data.furnPresets, data.lightPresets, data.shadePresets);
+    /* ★ 9번째 인자 w.cz 를 빠뜨리면 안 된다 (2026-08-02 수정).
+       천창은 지붕 전체가 아니라 부분 개구부라 z 중심이 0이 아니다(온실 cgZ0~cgZ1).
+       안 넘기면 cv=0 으로 떨어져 천창이 방 한가운데로 밀리고, 그 아래 슬롯이 어두워진다.
+       벽창은 cz 를 안 쓰므로 티가 안 나고 천창 있는 방(온실)에서만 어긋났다 —
+       조용히 틀리는 유형이다. main.js·_dli_probe·_bj_* 는 전부 넘기고 있었고 코어만 빠져 있었다. */
     const wins = (built.luxWins || [])
-      .map(w => winFromHouse(w.wall, w.cu, w.cy, w.w, w.h, built.size, w.tau, w.evScale))
+      .map(w => winFromHouse(w.wall, w.cu, w.cy, w.w, w.h, built.size, w.tau, w.evScale, w.cz))
       .filter(Boolean);
     const slots = built.plantSlots || [];
 
@@ -63,12 +82,44 @@ export function createLightEngine(data) {
     for (const s of slots) { if (seen.has(s.slotId)) dup.push(s.slotId); seen.add(s.slotId); }
     if (dup.length) console.warn('[빛] slotId 중복', dup);
 
+    /* ★ 임시 uid 로 만들어진 슬롯 — 조용히 넘어가지 않는다(위 계약 ②) */
+    const unstable = slots.filter(s => String(s.slotId).startsWith(TEMP_UID));
+    if (unstable.length) {
+      const byOwner = [...new Set(unstable.map(s => String(s.slotId).split(':')[0]))];
+      console.error(`[빛] ★ 안정 slotId 아님 — ${roomId}: 슬롯 ${unstable.length}/${slots.length}칸이 ` +
+        `임시 uid 위에 있습니다. house_rooms.json 의 해당 가구에 명시적 uid 가 필요합니다.\n  ` +
+        byOwner.join('\n  '));
+    }
+
     room = {
       id: roomId, def, built, wins, slots,
       growRigs: (built.lightRigs || []).filter(r => r.grow),
-      dupSlots: dup
+      dupSlots: dup,
+      unstableSlots: unstable.map(s => s.slotId)
     };
     return room;
+  }
+
+  /* 방별로 "명시 uid 가 필요한 가구" 목록 — house 로 보낼 회신용 */
+  function uidAudit(roomIds) {
+    const out = {};
+    for (const id of (roomIds || Object.keys(roomsDef))) {
+      const before = room;
+      build(id);
+      const owners = new Map();
+      for (const s of room.slots) {
+        const uid = String(s.slotId).split(':')[0];
+        if (!uid.startsWith(TEMP_UID)) continue;
+        const m = uid.match(/^TEMP~.+?#(\d+)~(.*)$/);
+        const key = uid;
+        if (!owners.has(key)) owners.set(key, { idx: +m[1], preset: m[2], slots: 0, owner: s.owner });
+        owners.get(key).slots++;
+      }
+      out[id] = { label: room.def.label || id, totalSlots: room.slots.length,
+                  missing: [...owners.values()].sort((a, b) => a.idx - b.idx) };
+      room = before;
+    }
+    return out;
   }
 
   /* ---- 그날의 하늘. 모드에 따라 굴리거나 고정한다 ---- */
@@ -147,12 +198,25 @@ export function createLightEngine(data) {
      ⚠ 여기서는 glazed 를 넘긴다 — `buildDailyLight` 이 아직 안 받는다(core-to-house ①).
        그래서 아파트는 프로파일 쪽이 계약 쪽보다 낮게(정확하게) 나온다. house가 고치면 같아진다. */
   function profile(lampCounts = [0, 1, 2]) {
+    /* ★ 계약 ③ — 영속 산출물은 임시 uid 위에 만들지 않는다.
+       프로파일은 파일로 남아 세이브·밸런스 시뮬이 참조한다. 여기서 임시 id 를 굳히면
+       나중에 house 가 uid 를 붙이는 순간 저장된 slotId 가 전부 어긋난다.
+       조용히 보완하는 대신 여기서 멈춘다. */
+    if (room.unstableSlots && room.unstableSlots.length) {
+      const owners = [...new Set(room.unstableSlots.map(s => s.split(':')[0]))];
+      throw new Error(
+        `[프로파일 중단] ${room.id}: 슬롯 ${room.unstableSlots.length}칸이 임시 uid 위에 있습니다.\n` +
+        `house_rooms.json 의 아래 가구에 명시적 uid 를 넣은 뒤 다시 뽑으세요 ` +
+        `(화분 슬롯을 내는 가구는 uid 필수 — core-to-house.md 참고):\n  ` + owners.join('\n  '));
+    }
     const up = { x: 0, y: 1, z: 0 };
     const counts = lampCounts.filter(n => n <= room.growRigs.length);
     return {
       schema: 'room_profile/1',
       room: room.id,
       label: room.def.label || room.id,
+      uidStable: true,
+      roomRev: (room.def.measured && room.def.measured.roomRev) || null,
       lampCounts: counts,
       lampWatts: counts.map(n => rigsOn(n).reduce((a, r) => a + ((r.fx && r.fx.watts) || 0), 0)),
       measured: room.def.measured || null,
@@ -170,7 +234,7 @@ export function createLightEngine(data) {
   }
 
   return {
-    build, daily, skyFor, dliOfSlot, clearCache, profile,
+    build, daily, skyFor, dliOfSlot, clearCache, profile, uidAudit,
     get room() { return room; },
     rooms: () => Object.entries(data.houseRooms.rooms || {})
                    .map(([id, r]) => ({ id, label: r.label || id, light: r.light || '' })),

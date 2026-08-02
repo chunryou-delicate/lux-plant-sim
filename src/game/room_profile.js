@@ -28,6 +28,16 @@ export function createProfileLight(profile, data = {}) {
   if (!profile || profile.schema !== PROFILE_SCHEMA)
     throw new Error(`room_profile/1 이 아닙니다: ${profile && profile.schema}`);
 
+  /* ★ 안정 slotId 계약 검사 (2026-08-02).
+     프로파일의 slotId 는 세이브에 그대로 들어간다. 임시 uid 나 계약 이전 파일이면 멈춘다 —
+     조용히 쓰면 나중에 house 가 uid 를 붙이는 순간 저장된 화분이 남의 자리로 간다. */
+  if (profile.uidStable !== true)
+    throw new Error(`[프로파일 거부] ${profile.room}: 안정 uid 계약(2026-08-02) 이전 파일입니다.\n` +
+      `house 의 _profile_gen.html 로 다시 뽑아 주세요 (uidStable:true 가 찍힙니다).`);
+  const temp = (profile.slots || []).filter(s => String(s.slotId).startsWith('TEMP~'));
+  if (temp.length)
+    throw new Error(`[프로파일 거부] ${profile.room}: 임시 uid 슬롯 ${temp.length}칸이 들어 있습니다.`);
+
   const wb = data.weatherBalance;
   if (wb && wb.weather) {
     const p = { clear: wb.weather.clear.p, cloudy: wb.weather.cloudy.p, rain: wb.weather.rain.p };
