@@ -1052,8 +1052,14 @@ function syncRoom() {
       band: lastTurn && lastTurn.band,
       fade: p.fade
     } : null)).catch(warn('몬스테라'));
-    if (b && b.slotId)
-      Promise.resolve(roomView.setPlant(b.slotId, { kind: 'beansprout' })).catch(warn('콩나물'));
+    if (b && b.slotId) {
+      /* ★progress01 을 반드시 넘긴다. 안 넘기면 room_view 안에서 lerp(4,11,undefined)가
+         NaN 이 되어 **시루만 놓이고 콩나물이 0포기** 난다 — 빈 그릇만 보인다. */
+      const days = S.firstPlay.rules ? S.firstPlay.rules.harvestDays : 4;
+      const p01 = Math.max(0, Math.min(1, (b.ageDays || 0) / Math.max(1, days)));
+      Promise.resolve(roomView.setPlant(b.slotId, { kind: 'beansprout', progress01: p01 }))
+        .catch(warn('콩나물'));
+    }
   } catch (e) { warn('방')(e); }
 }
 /* 배치 모드 — 탭으로 고르고, 놓을 수 있는 자리를 밝기와 함께 빛나게 한다.
