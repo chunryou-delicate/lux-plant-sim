@@ -146,7 +146,13 @@
   `python tools/serve.py` → `game.html` → 시나리오 ④를 "보통" 속도로. 그다음이 A4 말 피드백이다
 - growth — 다개체 리팩터. **그때까지 시뮬의 생장 수치는 못 낸다**(`growth_real: false`).
   지금 시뮬이 재는 건 빛·전기뿐이다
-- house — `data/profiles/` 위치 승인 · `weekStats.mean` 확률 가중 · 프로파일에 `roomRev` 복사 여부
+- house — `weekStats.mean` 확률 가중 (`roomRev` 복사·프로파일 위치는 반영·승인 완료)
+
+내가 할 것 (다음 차례, 이번 범위 밖이라 손대지 않음):
+- ★ **`setGrowth` → `advanceTo` 교체** (growth 요구). 달력 경과일과 유효 생장 진행도가 갈렸다 —
+  저광이면 형태가 안 나아가야 하는데 지금 코어는 `setGrowth(경과일)` 로 달력 날짜를 그대로 넘긴다.
+  `advanceTo` 는 하루씩만 받으므로 루프의 6단계를 그에 맞춰 바꾼다
+- 첫 플레이 초기 진행도 **143일** 반영 (growth 확정) · 창턱 슬롯 `banjiha-sill:0` 에 첫 화분 배치
 
 판단필요 (plan·사용자):
 1. ~~등 축 → 자리 축~~ · ~~합격선 50%~~ · ~~프로파일 리포에 두기~~ — **셋 다 확정, 반영 완료**
