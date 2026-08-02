@@ -914,6 +914,20 @@ export async function createRoomView(canvas, opts = {}) {
 
   function applyDaylight() {
     const label = updateLight(ctx, daylightT * 100, 0);
+
+    /* ★밤 천장등을 낮춘다 (박사님 2026-08-03: "밤에 켜지는 등 불빛이 너무 밝아.
+       수치 말고 보이는 광원이 너무 밝어").
+       scene.js 는 갓의 emissiveIntensity 를 0.9, 전구를 4.5 로 둔다 — 방 도구에서는
+       천장등 자체를 검수하는 화면이라 맞지만, 게임에서는 **밤에 갓이 하얗게 타서**
+       식물이 그 옆에서 안 보인다. 화면 주인공은 방과 식물이지 조명이 아니다.
+       ⚠ scene.js 를 고치지 않는다 — house 창 소유이고 방 도구의 균형은 그대로 둔다.
+         게임 뷰에만 건다(낮 채움광 조정과 같은 자리). */
+    if (ctx.ceilingBulb.intensity > 0) {
+      ctx.ceilingBulb.intensity *= 0.55;
+      if (ctx.clShade && ctx.clShade.material)
+        ctx.clShade.material.emissiveIntensity = 0.30;   // 0.9 → 은은하게 켜진 정도
+    }
+
     /* updateLight 는 부른 김에 그림자 넉 장을 다 다시 굽게 표시한다. 일단 전부 내리고
        필요한 것만 다시 올린다 — 아래 정책이 유일한 결정권자가 되게. */
     ctx.sunLight.shadow.needsUpdate = false;

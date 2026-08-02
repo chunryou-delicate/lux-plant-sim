@@ -77,6 +77,26 @@ export async function createPlantSample(opt = {}) {
   g.add(pot);
   const rim = (potBB.max.y - potBB.min.y);      // 화분 높이 = 잎이 시작하는 곳
 
+  /* ---- 줄기 ----
+     ★ [추가 2026-08-03] 배치표에 잎만 있어서 **줄기가 아예 안 그려졌다.**
+       잎이 허공에 붙어 "식물이 날아다닌다"로 보였다(박사님 지적).
+       assets/monstera 에 stem_* 다섯 개가 이미 있는데 하나도 안 쓰고 있었다.
+       샘플이라 마디 트리는 만들지 않는다 — 곧은 줄기 하나로 잎을 이어 준다.
+       (진짜 마디 조립은 plant_grow.html 의 buildPlant 몫이다.) */
+  let stemTop = rim;
+  try {
+    const stem = await part('stem_mid_1');
+    const sbb0 = new THREE.Box3().setFromObject(stem);
+    const srcH = Math.max(1e-4, sbb0.max.y - sbb0.min.y);
+    const kStem = (H - rim) * 0.92 / srcH;          // 맨 위 잎이 줄기 끝보다 조금 위로 나오게
+    stem.scale.setScalar(kStem);
+    const sbb = new THREE.Box3().setFromObject(stem);
+    stem.position.y = rim - sbb.min.y;              // 밑동을 화분 입구에
+    g.add(stem);
+    g.userData.stem = stem;
+    stemTop = rim + (sbb.max.y - sbb.min.y);
+  } catch { /* 줄기가 없으면 잎만 그린다 — 예전 동작 그대로다 */ }
+
   // ---- 잎 ----
   const leafK = (H - rim) / SRC_LEAF_H * 1.25;
   for (const [name, hRatio, az, tilt, sz] of LAYOUT) {
@@ -91,12 +111,38 @@ export async function createPlantSample(opt = {}) {
     const bb = new THREE.Box3().setFromObject(leaf);
     leaf.position.y -= bb.min.y;                 // 잎 밑을 pivot 원점에
 
-    pivot.position.y = rim + (H - rim) * hRatio * 0.35;
+    /* ★줄기를 따라 퍼뜨린다. 예전 ×0.35 는 잎을 전부 아래 3분의 1에 뭉쳐 놓아
+       줄기가 없던 것과 겹쳐 "잎 뭉치"로 보였다. 줄기 길이를 그대로 쓴다. */
+    pivot.position.y = rim + (stemTop - rim) * hRatio;
     pivot.rotation.y = az * Math.PI / 180;
     pivot.rotation.x = tilt * Math.PI / 180;
     pivot.userData.baseTiltX = pivot.rotation.x;
     g.add(pivot);
     g.userData.leaves.push(pivot);
+  }
+
+  /* ★ [수정 2026-08-03] 조립 뒤 실제 높이를 재서 요청값에 맞춘다.
+     전에는 leafK 가 **잎 한 장을** (H-rim)×1.25 로 키웠다. LAYOUT 의 크기비가 1.00 인
+     monstera_leaf_mature 는 그래서 식물 전체보다 커졌고 — 화분 지름의 4.9배 —
+     화면에서 잎 한 장이 방을 가로질러 날아다녔다(나머지 잎은 1.6~1.9배로 정상).
+     조립 결과도 요청 0.71m 에 실제 1.04m 로 46% 넘쳐 자리 한도 계약이 깨졌다.
+
+     상수를 다시 맞추는 대신 **재서 맞춘다** — 잎 GLB 가 바뀌어도 다시 안 깨진다.
+     화분은 건드리지 않는다. potD 는 슬롯 한도라 줄이면 안 되는 값이다. */
+  {
+    const leaves = g.userData.leaves;
+    if (leaves.length) {
+      const bb = new THREE.Box3().setFromObject(g);
+      const grown = bb.max.y - rim;                    // 화분 위로 올라간 실제 높이
+      const want  = H - rim;
+      if (grown > 1e-4 && want > 0) {
+        const k = want / grown;
+        for (const pivot of leaves) {
+          pivot.scale.multiplyScalar(k);
+          pivot.position.y = rim + (pivot.position.y - rim) * k;
+        }
+      }
+    }
   }
 
   g.traverse(o => {

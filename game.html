@@ -12,6 +12,10 @@
 <!-- house.js·textures.js 가 전역 THREE 를 쓴다(index.html 과 같은 r128).
      v0는 방을 그리지 않고 조도 계산에만 쓴다 — 렌더러를 만들지 않는다. -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<!-- ★GLTFLoader 가 빠져 있었다(2026-08-03). 방을 안 그리던 시절에는 GLB 를 쓸 일이 없어
+     안 드러났다 — 방 전경이 붙는 순간 화분·식물이 통째로 안 나타나고
+     콘솔에만 "GLTFLoader 미로드"가 남았다. plant_grow.html 은 처음부터 둘 다 싣고 있다. -->
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Jua&family=Gaegu:wght@400;700&display=swap');
@@ -144,10 +148,15 @@
        항상 펴 둘 뿐이다 — 레이아웃을 두 벌 만들면 한쪽이 반드시 낡는다.
      방이 넓게 보이는 것이 이 화면의 값어치다. UI 를 키우는 게 아니다. */
   @media (min-width:1000px) and (min-aspect-ratio:13/10){
-    body{display:block;background:#0a0810}
-    #app{width:auto;height:100dvh;max-width:none;border:0;border-radius:0;box-shadow:none;
-         margin-right:var(--pane-w)}
     :root{--pane-w:360px}
+    /* ★place-items 를 반드시 되돌린다 — 위 820px 규칙이 body 를 grid+center 로 만들었고,
+       display 만 block 으로 덮으면 정렬이 남아 #app 이 폭 0 으로 접힌다(실제로 그랬다).
+       세 자식이 전부 absolute 라 안에 흐르는 내용이 없어 0 이 되고, 화면이 새까매진다. */
+    body{display:block;place-items:normal;background:#0a0810}
+    /* ★position:relative — 아래에서 #stage·#topbar·#bottom 을 absolute 로 만든다.
+       기준점이 없으면 뷰포트에 붙어 오른쪽 패널 밑으로 깔린다. */
+    #app{position:relative;width:calc(100% - var(--pane-w));max-width:none;height:100dvh;
+         margin:0;border:0;border-radius:0;box-shadow:none;overflow:hidden}
     /* 시트 = 오른쪽 고정 패널. 항상 열려 있고 스크림·손잡이는 없앤다 */
     #sheet{position:fixed;top:0;right:0;bottom:0;left:auto;width:var(--pane-w);max-height:none;
            transform:none;border-radius:0;border-top:0;border-left:1px solid rgba(255,255,255,.12);
