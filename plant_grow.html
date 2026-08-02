@@ -1241,14 +1241,22 @@ function calcVarieProb(ctx){                     // 무늬종으로 태어날 �
 //   대신 어두운 자리는 기회 자체가 뜸해진다(matGaugeStep)·확정 잎은 따로 뽑는다(mid_lock_pct).
 function calcMatureProb(ctx){
   const M=GT.mature, LO=M.roll_lo, HI=M.roll_hi;
+  /* ★하한·상한은 **계산 마지막에 한 번** 건다 (2026-08-03).
+     지금은 어차피 범위 안이지만, 나중에 물·온도·습도 계수가 붙으면 곱이 쌓여
+     하한이 조용히 무너진다 — 0.10 × 0.6 × 0.7 × 0.5 = 0.02.
+     그러면 "0 은 없다"는 확정이 숫자상으로만 남고 실제로는 사실상 0 이 된다.
+     계수를 추가하는 사람이 이 줄을 안 지나칠 수 없게 여기서 조인다(docs/env_params.md). */
+  const clamp = p => Math.max(LO, Math.min(HI, p));
   const dli=ctx&&ctx.dli;
   if(dli==null || !isFinite(dli)) return LO;
   const d=dli7(), T=TH_MONSTERA;
   if(d==null || !isFinite(d)) return LO;
   if(d <  T.fenestrate) return LO;                 // 드물지만 일어난다 — 0 이 아니다
-  if(d >  T.max)        return HI*M.over_max_mult; // 과광 — 잎이 상해 성숙이 더디다
-  if(d >= T.best_hi)    return HI;
-  return LO+(HI-LO)*(d-T.fenestrate)/(T.best_hi-T.fenestrate);
+  /* 과광만 예외로 하한 아래를 허용한다 — 잎이 상해 더뎌지는 것은 "빛이 모자란 것"과
+     다른 사건이고, 그 자리에까지 하한을 걸면 과광 페널티가 사라진다. */
+  if(d >  T.max)        return Math.min(HI, HI*M.over_max_mult);
+  if(d >= T.best_hi)    return clamp(HI);
+  return clamp(LO+(HI-LO)*(d-T.fenestrate)/(T.best_hi-T.fenestrate));
 }
 
 /* ===== 성숙 판정 = 게이지 + 굴림 (박사님 확정 2026-08-03 · plan-to-growth.md §2026-08-03) =====
