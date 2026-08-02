@@ -11,11 +11,20 @@
 
 <!-- house.js·textures.js 가 전역 THREE 를 쓴다(index.html 과 같은 r128).
      v0는 방을 그리지 않고 조도 계산에만 쓴다 — 렌더러를 만들지 않는다. -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-<!-- ★GLTFLoader 가 빠져 있었다(2026-08-03). 방을 안 그리던 시절에는 GLB 를 쓸 일이 없어
-     안 드러났다 — 방 전경이 붙는 순간 화분·식물이 통째로 안 나타나고
-     콘솔에만 "GLTFLoader 미로드"가 남았다. plant_grow.html 은 처음부터 둘 다 싣고 있다. -->
-<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+<!-- ★엔진을 저장소 안에 들였다(2026-08-03). 예전엔 CDN 두 곳에 매달려 있었는데,
+     폰에서 열었을 때 "게임 코드를 불러오지 못했습니다"가 떴다. DNS·광고 차단·통신사
+     필터 중 무엇이든 하나만 걸리면 게임 자체가 안 뜬다 — 엔진을 남의 집에 두면
+     그 집이 닫는 날 게임이 닫힌다. 로컬을 먼저 보고, 없을 때만 CDN 으로 내려간다. -->
+<script src="./vendor/three/three.min.js"></script>
+<script src="./vendor/three/GLTFLoader.js"></script>
+<script>
+  /* 로컬이 없거나 깨졌으면 CDN 으로 —  document.write 를 쓰는 이유는
+     아래 module 스크립트가 실행되기 **전에** 순서를 지켜 넣어야 하기 때문이다. */
+  if (typeof THREE === 'undefined')
+    document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"><\/script>');
+  if (typeof THREE === 'undefined' || !THREE.GLTFLoader)
+    document.write('<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"><\/script>');
+</script>
 
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Jua&family=Gaegu:wght@400;700&display=swap');
@@ -65,6 +74,15 @@
   #roomFallback{position:absolute;inset:0;display:none;place-items:center;padding:24px;text-align:center;
           font-size:13px;color:var(--dim);line-height:1.7}
   #stage.room-failed #roomFallback{display:grid}
+  /* ★방이 떴으면 "아직 몬스테라가 없습니다" 가림막을 걷는다 (2026-08-03).
+     그 안내는 **방을 안 그리던 시절**에 빈 검은 화면을 설명하려고 있던 것이다.
+     이제 방이 화면이라 가운데를 덮으면 방을 가릴 뿐이고, 할 일은 하단 퀘스트 줄이 말한다.
+     방이 실패했을 때만 남겨 둔다 — 그때는 진짜로 설명이 필요하다. */
+  #stage.room-ok #stageEmpty{display:none !important}
+  #stage.room-ok.no-plant{background:none}
+  /* 폰에서 GPU 를 실제로 쓰는지 — 검수 탭에 적는다. "하드웨어 가속이 켜졌나"의 답이다 */
+  #gpuInfo{font-size:11px;line-height:1.6;color:var(--dim);word-break:break-all}
+  #gpuInfo b{color:var(--leaf)}  #gpuInfo i{color:#ff9c8c;font-style:normal}
   /* 확대 오버레이 — 기본은 숨어 있다. display:none 은 안 쓴다(iframe 이 멈추면 growth 계약이 끊긴다) */
   #growth{position:absolute;inset:0;z-index:30;opacity:0;pointer-events:none;
           transition:opacity .28s ease;background:#0f0c16}
@@ -524,6 +542,10 @@
           </select></label>
       </div>
       <div id="spark"></div>
+    </details>
+
+    <details class="box dev" open><summary>화면·성능</summary>
+      <div id="gpuInfo">방을 그리는 중…</div>
     </details>
 
     <details class="box dev"><summary>개발 HUD·리포트·기록</summary>
@@ -1019,6 +1041,36 @@ $('next').onclick = guard(() => {
   draw();
 });
 
+/* ★"하드웨어 가속이 켜져 있나"의 답 (박사님 2026-08-03).
+   폰 브라우저는 WebGL 을 기본으로 GPU 에서 돌린다 — 따로 켤 설정이 거의 없다.
+   문제는 **진짜 GPU 를 쓰는지**이고, 그건 드라이버 이름으로 알 수 있다.
+   SwiftShader·llvmpipe·Software 가 보이면 소프트웨어 렌더러다(느리다). */
+function showGpuInfo() {
+  const el = $('gpuInfo'); if (!el) return;
+  let gpu = '?', soft = false, ver = '?';
+  try {
+    const c = document.createElement('canvas');
+    const gl = c.getContext('webgl2') || c.getContext('webgl');
+    if (gl) {
+      const dbg = gl.getExtension('WEBGL_debug_renderer_info');
+      gpu = dbg ? gl.getParameter(dbg.UNMASKED_RENDERER_WEBGL) : gl.getParameter(gl.RENDERER);
+      ver = gl.getParameter(gl.VERSION);
+      soft = /swiftshader|llvmpipe|software|swangle/i.test(String(gpu));
+    } else gpu = 'WebGL 없음';
+  } catch (e) { gpu = '확인 실패: ' + e.message; }
+  const draw = () => {
+    const s = roomView && roomView.stats ? roomView.stats() : null;
+    el.innerHTML =
+      `그래픽: ${soft ? `<i>${gpu} — 소프트웨어 렌더링(느립니다)</i>` : `<b>${gpu}</b>`}<br>` +
+      `${ver} · 화면 ${innerWidth}×${innerHeight} · 기기 픽셀비 ${devicePixelRatio}<br>` +
+      (s ? `그리는 픽셀비 <b>${s.pixelRatio}</b> · 삼각형 ${(s.triangles || 0).toLocaleString()} · 드로우콜 ${s.calls}` +
+           (s.fps ? ` · <b>${Math.round(s.fps)}fps</b>` : '') : '방 통계 없음');
+  };
+  draw();
+  clearInterval(showGpuInfo._t);
+  showGpuInfo._t = setInterval(draw, 1500);   /* 빨리감기 중 fps 가 보이게 */
+}
+
 /* ══ 대화 ═══════════════════════════════════════════════════════════════
    ★대사 순서는 계약이다 — Day 4 는 수확 → (식비는 화면이 숫자로) → 식물신 → 도착.
      dialogue.js 가 그 줄 세우기를 갖고 있고 여기서는 그리기만 한다. */
@@ -1092,6 +1144,8 @@ async function bootRoomView() {
     /* 진단용 손잡이. 브라우저 콘솔에서 방 상태를 볼 수 있게 낸다 —
        읽기용이고 게임은 이걸 안 쓴다(밖에서 켜면 검증이 장식이 되는 것과 같은 이유로 세터는 없다). */
     window.__rv = roomView; window.__picked = picked; window.__drag = drag;
+    $('stage').classList.add('room-ok');     /* 방이 떴다 — 빈 무대 안내를 걷는다 */
+    showGpuInfo();
     /* 캐릭터와 몬이를 세운다. 첫 플레이는 자취생 고정이고(story_arc.md 확정 —
        직업 선택은 초보 엔딩 뒤), 몬이는 오프닝부터 곁에 있어야 대사가 붕 뜨지 않는다.
        ⚠ 캐릭터가 있으면 idle 을 돌려야 해서 "놀 때 0장"이 깨진다 — 워커가 30fps 로 잘라 뒀다. */
