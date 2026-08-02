@@ -44,6 +44,7 @@ import {
   markMonsteraPhase,
   slotFitsDiameter
 } from './first_play.js';
+import { createTutorialState, tutorialDay, noteLearning } from './tutorial.js';
 import { dliFromContract } from './growth_adapter.js';
 import { weekStats, WEATHER_P } from '../engine/weather.js';
 
@@ -107,6 +108,48 @@ export function phaseOf(io, S) {
   /* ★ 모양이 틀리면 값을 **버린다.** 반쪽짜리 단계를 실어 보내면 markMonsteraPhase 가
      phaseId 만 보고 완료를 찍거나, UI 가 NaN% 게이지를 그린다 — 둘 다 조용히 틀린다. */
   return bad ? { phase: null, error: bad } : { phase, error: null };
+}
+
+/* ══ 반지하 튜토리얼 (2026-08-03) ═══════════════════════════════════════
+   첫 플레이가 끝난 뒤부터 원룸 이사까지. 규칙은 tutorial.js 가 갖고, 여기서는
+   **턴 결과를 그 규칙에 넘겨주기만** 한다 — 코어가 살림 규칙을 또 갖지 않게.
+   ★조용히 실패하지 않는다. 튜토가 터져도 하루는 이미 갔으므로 turn 에 실어 보낸다. */
+/* "자라기 시작하는 최소 빛". 코어가 숫자를 갖지 않는다 — 임계값 정본은 growth·house 소유다. */
+function minDliOf(io) {
+  try {
+    const t = io.light && io.light.thresholdsOf ? io.light.thresholdsOf() : null;
+    if (t && typeof t.min === 'number') return t.min;
+  } catch { /* 정본을 못 읽으면 판정을 안 한다 — 지어낸 값으로 배웠다고 하면 안 된다 */ }
+  return null;
+}
+function stepTutorial(S, turn, io) {
+  const ts = S.tutorial;
+  if (!ts || !ts.enabled) return null;
+  const fp = S.firstPlay;
+  try {
+    /* 배운 것부터 적는다 — 이사 판정이 이 값을 본다 */
+    const ev = turn.firstPlayEvent || {};
+    noteLearning(ts, {
+      harvested: !!ev.harvested,
+      foodSavedWon: ev.foodSavedWon,
+      cropAvgDli: fp && fp.beansprout ? fp.beansprout.avgDli : null,
+      /* ★자리 이름이 아니라 DLI 로 본다. 다른 방·다른 슬롯에서도 성립해야 한다.
+         growth 가 실제로 쓴 7일평균을 먼저 본다 — 코어가 센 값과 어긋나면 배선이 틀린 것이라
+         판정은 growth 쪽을 따르는 게 맞다(둘 다 없으면 코어 이력으로 뒤늦게라도 센다). */
+      plantDli7: turn.dli7Growth != null ? turn.dli7Growth : rollingAvg(S.dliHist, 7),
+      plantMinDli: minDliOf(io),
+      spearFurled: !!(fp && fp.completed)
+    });
+    const r = tutorialDay(ts, {
+      firstPlayDone: !!(fp && fp.completed),
+      mealsUsed: (ev && ev.mealsUsed) || 0
+    });
+    if (r && r.events) for (const e of r.events) pushLog(S, '📅 ' + e.ko);
+    return r;
+  } catch (e) {
+    pushLog(S, '⚠ 튜토리얼 진행 실패 — ' + e.message);
+    return { error: e.message };
+  }
 }
 
 export function nextDay(S, io) {
@@ -389,6 +432,7 @@ export function nextDay(S, io) {
     S._lastBlock = turn.growthBlocked;
   }
 
+  turn.tutorial = stepTutorial(S, turn, io);
   return { S, turn };
 }
 

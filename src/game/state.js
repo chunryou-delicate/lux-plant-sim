@@ -14,6 +14,7 @@
 ============================================================ */
 
 import { createFirstPlayState } from './first_play.js';
+import { createTutorialState } from './tutorial.js';
 
 export const SCHEMA = 'game_state/1';
 
@@ -54,6 +55,11 @@ export function newState(opt = {}) {
     /* Day 0 콩나물 → Day 4 첫 수확·선물 → 몬스테라 말린 새순.
        정식 작물 목록이나 경제 장부가 아니라 첫 재미 검증 한 흐름만 담는다. */
     firstPlay: createFirstPlayState({ enabled: !!opt.firstPlay, rules: opt.firstPlayRules }),
+
+    /* 반지하 튜토리얼 — 첫 플레이 **그 뒤**부터 원룸 이사까지 (2026-08-03).
+       규칙과 수치는 src/game/tutorial.js 가 갖는다(docs/story_arc.md 가 정본).
+       첫 플레이가 끝나기 전에는 날짜도 돈도 계절도 안 움직인다. */
+    tutorial: createTutorialState({ enabled: !!opt.firstPlay }),
 
     /* 코어가 따로 쌓는 DLI 이력. 용도는 두 가지뿐:
          ① growth의 dli7()과 대조(어긋나면 배선이 틀린 것)
