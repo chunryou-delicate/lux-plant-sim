@@ -2407,6 +2407,44 @@ export async function createRoomView(canvas, opts = {}) {
     warmPlantAssets() { return assembler().then(a => !!a); },
     /* 방의 실제 크기[m]. 걷기 판정·검증이 방 밖을 물어볼 때 기준이 된다. */
     roomSize() { return built ? { ...roomBox() } : null; },
+
+    /* ── 가구 보이기·숨기기 (2026-08-03) ──────────────────────────────────
+       ★조명 계산은 **안 건드린다.** 여기서 하는 것은 그리기뿐이다 —
+       숨긴 가구도 조도에는 그대로 들어간다. 화면과 계산이 갈리면 안 되므로,
+       실제로 안 켜진 것(count 0)만 숨기는 것이 호출부의 몫이다. */
+    setFurnitureVisible(uid, visible) {
+      if (!built || !built.furniture) return false;
+      let hit = false;
+      built.furniture.children.forEach(g => {
+        if (g.userData && g.userData.uid === uid) { g.visible = !!visible; hit = true; }
+      });
+      if (hit) needsRender = true;
+      return hit;
+    },
+    /* 식물등을 앞에서부터 n개만 보이게 한다. 아직 안 산 등이 방에 놓여 있으면
+       "이미 있는데 왜 또 사나"가 된다 — 사면 나타나는 편이 뜻이 맞다.
+       ★state.js 의 lamps.count 규약과 같은 순서다("앞에서부터 n개를 켠다"). */
+    setGrowLights(n) {
+      if (!built || !built.furniture || !roomDef) return 0;
+      const grows = (roomDef.furniture || [])
+        .map((f, i) => ({ f, i }))
+        .filter(({ f }) => {
+          /* ⚠ data 는 lightEngine 없이 혼자 지을 때만 찬다. game.html 은 엔진을 넘기므로
+             항상 실리는 furnNames(=프리셋 표)를 먼저 본다. 표가 없으면 이름으로 넘어간다. */
+          const p = (furnNames && furnNames[f.preset])
+                 || (data && data.furnPresets && data.furnPresets[f.preset]) || null;
+          return p ? !!p.grow : /^growlight/.test(String(f.preset || ''));
+        });
+      const want = Math.max(0, Math.min(grows.length, n | 0));
+      grows.forEach(({ f, i }, k) => {
+        const uid = f.uid || (f.preset + '#' + i);
+        built.furniture.children.forEach(g => {
+          if (g.userData && g.userData.uid === uid) g.visible = k < want;
+        });
+      });
+      needsRender = true;
+      return want;
+    },
     /* 지금 무엇을 보고 있나 */
     get roomId() { return roomId; },
     get focusedSlot() { return focused; },

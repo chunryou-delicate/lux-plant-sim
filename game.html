@@ -1333,6 +1333,10 @@ function syncRoom() {
   };
   clearIfMoved('monstera', p && p.slotId, warn);
   clearIfMoved('beansprout', b && b.slotId, warn);
+  /* ★식물등은 **산 만큼만** 보인다 (박사님 2026-08-03: "등도 다 없애, 천장등만 빼고").
+     아직 안 산 등이 방에 놓여 있으면 "이미 있는데 왜 또 사나"가 된다.
+     ⚠ 조도 계산은 안 건드린다 — 안 켠 등은 어차피 빛을 안 낸다. 화면만 맞춘다. */
+  if (roomView.setGrowLights) { try { roomView.setGrowLights(S.lamps.count || 0); } catch { } }
   try {
     Promise.resolve(roomView.setPlant(p && p.slotId, p ? {
       kind: 'monstera',
