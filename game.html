@@ -74,6 +74,14 @@
   #roomFallback{position:absolute;inset:0;display:none;place-items:center;padding:24px;text-align:center;
           font-size:13px;color:var(--dim);line-height:1.7}
   #stage.room-failed #roomFallback{display:grid}
+  /* ★부팅 중에는 무엇을 기다리는지 보여준다 (2026-08-03).
+     10초를 검은 화면으로 두면 고장으로 읽힌다. 같은 10초도 진행이 보이면 다르게 느껴진다 —
+     실제로 폰에서 "안 열린다"는 말이 먼저 나왔다. */
+  #stage.room-loading #roomFallback{display:grid}
+  #bootBar{width:min(220px,60%);height:4px;border-radius:3px;margin:10px auto 0;
+    background:rgba(255,255,255,.12);overflow:hidden}
+  #bootBar>i{display:block;height:100%;width:0;border-radius:3px;
+    background:linear-gradient(90deg,#8fd36f,#d5ef8b);transition:width .4s}
   /* ★방이 떴으면 "아직 몬스테라가 없습니다" 가림막을 걷는다 (2026-08-03).
      그 안내는 **방을 안 그리던 시절**에 빈 검은 화면을 설명하려고 있던 것이다.
      이제 방이 화면이라 가운데를 덮으면 방을 가릴 뿐이고, 할 일은 하단 퀘스트 줄이 말한다.
@@ -437,7 +445,7 @@
          예전에는 iframe 이 곧 화면이었다 — 방을 안 그리고 식물만 크게 보여줬다. -->
   <main id="stage" class="no-plant">
     <canvas id="roomCanvas"></canvas>
-    <div id="roomFallback"></div>
+    <div id="roomFallback"><div><span id="bootMsg">방을 준비하는 중…</span><div id="bootBar"><i></i></div></div></div>
     <div id="placeHint"></div>
     <div id="dropLabel"></div>
     <div id="moveCatcher"></div>
@@ -704,6 +712,7 @@
      room_view.js 가 붙기 전까지는 캔버스가 비어 있다. 빈 검은 화면만 두면
      "고장났나"로 읽히므로, 무엇을 기다리는 중인지 적어 둔다. */
   window.__byeotRoomFallback = function (msg) {
+    stage.classList.remove('room-loading');   /* 진행 표시를 걷고 그 자리에 이유를 적는다 */
     stage.classList.add('room-failed');
     $('roomFallback').innerHTML = msg;
   };
@@ -1161,10 +1170,28 @@ $('dlgSkip').addEventListener('click', (e) => { e.stopPropagation(); dlg.skip();
    room_view.js 는 별도 모듈이라 아직 없을 수 있다 — **없어도 게임은 돌아간다.**
    빈 검은 화면만 두면 "고장났나"로 읽히므로 무엇을 기다리는지 적어 둔다. */
 let roomView = null;
+/* 부팅 진행 표시. 단계 이름은 room_view 가 내는 것을 그대로 쓴다 —
+   여기서 새 이름을 지으면 실제 단계와 어긋나 거짓 진행률이 된다. */
+const BOOT_STEP = { start: 4, data: 18, room: 46, ready: 72, character: 90 };
+let bootDone = false;
+function bootProgress(p) {
+  const msg = $('bootMsg'), bar = $('bootBar');
+  if (!msg || !bar) return;
+  if (p === null) { bootDone = true; $('stage').classList.remove('room-loading'); return; }
+  /* ★방이 뜬 뒤에 오는 신호는 무시한다. 캐릭터는 방보다 늦게 실리므로,
+     안 막으면 다 그려진 화면 위에 "준비하는 중"이 다시 덮인다(실제로 그랬다). */
+  if (bootDone) return;
+  $('stage').classList.add('room-loading');
+  const key = String(p.phase || '').split(':')[0];
+  msg.textContent = p.ko || '준비하는 중…';
+  bar.firstElementChild.style.width = (BOOT_STEP[key] || 10) + '%';
+}
 async function bootRoomView() {
+  bootProgress({ phase: 'start', ko: '방을 준비하는 중…' });
   let mod = null;
   try { mod = await import('./src/game/room_view.js'); }
   catch {
+    bootProgress(null);
     window.__byeotRoomFallback(
       '방 전경은 아직 준비 중입니다.<br>화분을 탭하는 대신 아래 <b>가방</b>에서 자리를 고를 수 있습니다.');
     return;
@@ -1172,6 +1199,8 @@ async function bootRoomView() {
   try {
     roomView = await mod.createRoomView($('roomCanvas'), {
       roomId: S.home.room, lightEngine: io.light,   /* ★S.room 이 아니다 — state.js 는 home.room 에 둔다 */
+      onProgress: bootProgress,                     /* 무엇을 기다리는지 화면에 */
+      onCharacterTap: (id) => roomView && roomView.selectCharacter(id),
       /* 탭은 **고르기**다. 바로 확대로 넘어가면 옮기거나 돌릴 기회가 없다 —
          고른 뒤에 [옮기기] [돌리기] [자세히] 중에서 고른다. */
       onPlantTap: (slotId) => picked.select(slotId),
@@ -1182,6 +1211,7 @@ async function bootRoomView() {
        읽기용이고 게임은 이걸 안 쓴다(밖에서 켜면 검증이 장식이 되는 것과 같은 이유로 세터는 없다). */
     window.__rv = roomView; window.__picked = picked; window.__drag = drag;
     $('stage').classList.add('room-ok');     /* 방이 떴다 — 빈 무대 안내를 걷는다 */
+    bootProgress(null);                      /* 진행 표시를 걷는다 */
     showGpuInfo();
     try { paintWhen(roomView.setDaylight(dayPhase)); } catch { }   /* 시작 시각을 적는다 */
     /* 캐릭터와 몬이를 세운다. 첫 플레이는 자취생 고정이고(story_arc.md 확정 —
@@ -1202,6 +1232,7 @@ async function bootRoomView() {
     bindDrag('plantThumb', 'monstera');
     addEventListener('resize', () => roomView && roomView.resize());
   } catch (e) {
+    bootProgress(null);
     window.__byeotRoomFallback('방을 그리지 못했습니다 — ' + (e && e.message || e));
   }
 }
