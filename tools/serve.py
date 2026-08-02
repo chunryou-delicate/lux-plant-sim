@@ -36,6 +36,19 @@ class Handler(SimpleHTTPRequestHandler):
         if args and "GET" in str(args[0]) and ".glb" in str(args[0]):
             sys.stderr.write("%s %s\n" % (self.address_string(), args[0]))
 
+    def handle_one_request(self):
+        """★ 클라이언트가 먼저 끊어도 서버가 죽지 않게.
+
+        헤드리스 Chrome 을 --virtual-time-budget 만료로 강제 종료시키면 응답을
+        쓰던 중에 소켓이 끊기고 ConnectionResetError(WinError 10054) 가 난다.
+        기본 구현은 이걸 안 잡아서 프로세스째 내려갔다 — 측정 도구를 돌릴 때마다
+        서버가 죽었다. 상대가 끊은 건 오류가 아니므로 조용히 넘긴다.
+        """
+        try:
+            super().handle_one_request()
+        except (ConnectionResetError, ConnectionAbortedError, BrokenPipeError):
+            self.close_connection = True
+
 
 def main():
     port = int(sys.argv[1]) if len(sys.argv) > 1 else 8780
