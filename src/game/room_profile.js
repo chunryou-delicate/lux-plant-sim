@@ -37,6 +37,12 @@ export function createProfileLight(profile, data = {}) {
   const temp = (profile.slots || []).filter(s => String(s.slotId).startsWith('TEMP~'));
   if (temp.length)
     throw new Error(`[프로파일 거부] ${profile.room}: 임시 uid 슬롯 ${temp.length}칸이 들어 있습니다.`);
+  /* 중복 slotId — 뽑을 때 걸렀어야 하지만, 손으로 편집된 파일이 올 수 있으므로 로더도 본다 */
+  const seen = new Set(), dup = [];
+  for (const s of profile.slots || []) { if (seen.has(s.slotId)) dup.push(s.slotId); seen.add(s.slotId); }
+  if (dup.length)
+    throw new Error(`[프로파일 거부] ${profile.room}: slotId 가 ${dup.length}칸 겹칩니다 — ` +
+      `${[...new Set(dup)].slice(0, 5).join(', ')}`);
 
   const wb = data.weatherBalance;
   if (wb && wb.weather) {

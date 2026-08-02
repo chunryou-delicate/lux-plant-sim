@@ -39,20 +39,28 @@ export function nextDay(S, io) {
   const p = pot0(S);
 
   /* 방을 바꿨거나 가구가 사라졌으면 화분을 회수한다(5-4) */
-  rehomePot(S, io.light.room.slots, m => pushLog(S, m));
+  if (p) rehomePot(S, io.light.room.slots, m => pushLog(S, m));
 
   const { report, sky, check } = io.light.daily(S.day, S);
   if (!check.ok) pushLog(S, '⚠ 계약 이상 — ' + check.problems.slice(0, 3).join(' / '));
+
+  /* 식물이 아직 도착하지 않았으면 빛만 굴리고 끝낸다 — 없는 개체를 자라게 하지 않는다 */
+  if (!p) return { S, turn: { day: S.day, sky, report, slot: null, dli: null, check, noPlant: true } };
 
   const slot = (report.slots || []).find(s => s.slotId === p.slotId) || null;
   const dli = check.badSlots.has(p.slotId)
     ? null
     : dliFromContract(report, p.slotId, m => pushLog(S, '⚠ ' + m));
 
-  /* 5 → 6 순서 고정. 빛을 먼저 넣고 그 다음 자란다. */
-  if (dli != null) io.growth.setDailyLight(dli);
-  p.daysPlanted++;
-  io.growth.setGrowth(p.daysPlanted);
+  /* ★ 오늘 빛은 **매일 반드시** 넘긴다 — null 도 넘긴다 (2026-08-02).
+     예전처럼 `if (dli != null)` 로 건너뛰면 growth 안의 PLANT_DLI 에 어제 값이 남아
+     "빛이 없는데 어제 빛으로 자라는" 상태가 된다. 조용히 틀리는 유형이라 호출을 생략하지 않는다. */
+  io.growth.setDailyLight(dli);
+
+  /* ★ 하루 진행은 advanceTo 만 쓴다. setGrowth(점프)는 도착 때 한 번뿐이다.
+     달력은 하루 가고, 형태(유효 생장)는 빛이 될 때만 쌓인다 — 저광이면 여기서 멈춘다. */
+  const step = io.growth.advanceTo(io.growth.calendarDay() + 1);
+  p.daysPlanted++;                                   // 플레이어가 돌본 날 (형태와 별개 축)
 
   S.dliHist.push(dli == null ? 0 : dli);
   S.ledger.electricityWon += (report.energy && report.energy.won) || 0;   // 표시만. 차감 없음
@@ -61,11 +69,22 @@ export function nextDay(S, io) {
     day: S.day, sky, report, slot, dli,
     check,
     daysPlanted: p.daysPlanted,
-    growthAge: io.growth.ageOf(p.daysPlanted),
+    /* ★ 실제 growth 상태 — 빈 값으로 숨기지 않는다 */
+    growthCalendarDay: step ? step.calDay : io.growth.calendarDay(),
+    effectiveGrowthDays: step ? step.growth : io.growth.growthDays(),
+    grew: step ? step.grew : null,
+    growthBlocked: step ? step.blocked : io.growth.growthBlocked(),
+    growthAge: io.growth.ageOf ? io.growth.ageOf(step ? step.growth : 0) : null,
     dli7Growth: io.growth.dli7(),      // growth가 실제로 쓴 7일 평균
     dli7Core: avg(S.dliHist, 7),       // 코어가 센 값 — 둘이 어긋나면 배선이 틀린 것
     cv: io.growth.dliCV()
   };
+  /* 정지 사유는 바뀔 때만 남긴다 — 매일 찍으면 기록이 같은 줄로 덮인다 */
+  if (turn.growthBlocked !== S._lastBlock) {
+    if (turn.growthBlocked) pushLog(S, `⏸ 형태 정지 — ${turn.growthBlocked}`);
+    else if (S._lastBlock !== undefined) pushLog(S, `▶ 다시 자랍니다 (유효 진행 ${turn.effectiveGrowthDays}일)`);
+    S._lastBlock = turn.growthBlocked;
+  }
   return { S, turn };
 }
 
@@ -109,6 +128,7 @@ export function weekOverPct(hist, over, win = 7) {
    (data/balance/weather.json · judgement_unit). */
 export function expectedWeekStats(S, io, { season = 'summer', over = null, years = 20 } = {}) {
   const p = pot0(S);
+  if (!p || !p.slotId) return { mean: null, p10: null, p50: null, p90: null, weeks: 0, overPct: null };
   const dliOf = (weather, s) => io.light.dliOfSlot(p.slotId, {
     weather, season: s, lampCount: S.lamps.count, litHours: S.lamps.litHours
   });

@@ -30,22 +30,34 @@ export function dliFromContract(report, slotId, warn) {
   return v;
 }
 
+/* ★ 준비 완료의 기준 (2026-08-02 계약) — 이 다섯이 다 있어야 게임 경로를 연다.
+   `setGrowth` 만 보고 준비됐다고 하면 옛 인터페이스로 돌아가 저광 정지가 통째로 사라진다. */
+export const REQUIRED_GROWTH_FNS =
+  ['setDailyLight', 'advanceTo', 'calendarDay', 'growthDays', 'growthBlocked'];
+
 export function createGrowthAdapter(iframe) {
   const win = () => (iframe && iframe.contentWindow) || null;
   const fn = (name) => {
     const w = win();
     return w && typeof w[name] === 'function' ? w[name] : null;
   };
+  let setGrowthCalls = 0;          // ★ 일일 루프에서 0회여야 한다(감시용)
 
   /* iframe 안의 스크립트가 다 돌 때까지 기다린다(three.js·GLB 로드가 있어 몇 초 걸린다) */
+  function missing() { return REQUIRED_GROWTH_FNS.filter(n => !fn(n)); }
+
   function ready(timeoutMs = 30000) {
     return new Promise((resolve, reject) => {
       const t0 = Date.now();
       const tick = () => {
-        if (fn('setDailyLight') && fn('setGrowth')) return resolve(true);
+        if (missing().length === 0) return resolve(true);
         if (Date.now() - t0 > timeoutMs)
-          return reject(new Error('plant_grow.html 을 부를 수 없습니다. ' +
-            'file:// 로 열면 iframe 접근이 막힙니다 — tools/serve.py 로 띄워 주세요.'));
+          return reject(new Error(
+            fn('setDailyLight')
+              ? `plant_grow.html 의 생장 계약이 낡았습니다 — 없는 함수: ${missing().join(', ')}.\n` +
+                `코어는 setGrowth 로 하루를 진행하지 않습니다(저광 정지가 무시됩니다).`
+              : 'plant_grow.html 을 부를 수 없습니다. ' +
+                'file:// 로 열면 iframe 접근이 막힙니다 — tools/serve.py 로 띄워 주세요.'));
         setTimeout(tick, 120);
       };
       tick();
@@ -53,14 +65,24 @@ export function createGrowthAdapter(iframe) {
   }
 
   return {
-    ready,
+    ready, missing,
     has: (name) => !!fn(name),
 
-    /* 하루치 빛 — 숫자로 넘긴다(위 dliFromContract 참고) */
+    /* 하루치 빛 — 숫자로 넘긴다. ★ null 도 반드시 넘긴다(어제 값이 남으면 안 된다). */
     setDailyLight(dli) { const f = fn('setDailyLight'); return f ? f(dli) : null; },
 
-    /* 생장 1틱. 화분을 심은 지 며칠 됐나를 넘긴다(게임 날짜가 아니라). */
-    setGrowth(days) { const f = fn('setGrowth'); return f ? f(days) : null; },
+    /* ★ 하루 진행 — 코어의 일일 루프는 이것만 쓴다.
+       달력은 하루 가고, 유효 생장(형태)은 빛이 될 때만 쌓인다.
+       반환 { calDay, growth, grew, blocked } · 하루가 아닌 값을 주면 growth 가 던진다. */
+    advanceTo(calDay) { const f = fn('advanceTo'); return f ? f(calDay) : null; },
+    calendarDay()     { const f = fn('calendarDay');    return f ? f() : null; },
+    growthDays()      { const f = fn('growthDays');     return f ? f() : null; },
+    growthBlocked()   { const f = fn('growthBlocked');  return f ? f() : null; },
+
+    /* ⚠ 점프다. **초기 형태 배치·디버그 전용** — 일일 루프에서 부르지 않는다.
+       개체가 생길 때 한 번(도착 진행도 143) 쓰는 게 전부다. */
+    setGrowth(days) { const f = fn('setGrowth'); if (!f) return null; setGrowthCalls++; return f(days); },
+    setGrowthCalls: () => setGrowthCalls,
 
     /* ★ 갈라짐 표시는 반드시 이걸 쓴다 (growth 요청, 2026-08-01).
        `bandOf(오늘값).fenestrating` 은 넘긴 하루 값 기준이라 오늘만 반짝 넘어도 true다.

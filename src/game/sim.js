@@ -16,7 +16,7 @@
      "며칠 만에 몇 장 자랐다"를 논하면 안 된다. 빛·경제 밸런스만 본다.
      growth 다개체 리팩터 때 진짜 포트로 갈아끼운다(loop.js 는 안 바뀐다).
 ============================================================ */
-import { newState, SIM_MODES } from './state.js';
+import { newState, SIM_MODES, givePlant, pot0 } from './state.js';
 import { runDays, weekOverPct, expectedWeekStats, avg } from './loop.js';
 
 export const SIM_SCHEMA = 'balance_sim/1';
@@ -90,12 +90,41 @@ export function verdictOf(record, criteria = {}) {
 /* ---------------------------------------------------------------
    ③ growth 자리 채우기 — 빛 이력만 따라간다 (진짜 생장 아님)
 --------------------------------------------------------------- */
-export function nullGrowth(keep = 14) {
+export function nullGrowth(keep = 14, opt = {}) {
   const H = [];
+  /* growth 의 growthBlockReason 과 같은 모양으로 정지시킨다 — 저광이면 형태가 안 나아간다.
+     ⚠ 임계값은 growth 소유(growth_tuning.json growthMin). 시뮬은 호출부가 넘긴 값을 쓴다. */
+  const growthMin = opt.growthMin ?? null;
+  let cal = 0, growth = 0, today = null;
+  const avgOf = (n) => H.length ? avg(H, n) : null;
+  const blockReason = () => {
+    if (today == null) return '오늘 빛이 없습니다(DLI 없음)';
+    if (typeof today !== 'number' || !isFinite(today)) return '오늘 DLI 값이 망가졌습니다';
+    const d = avgOf(7);
+    if (d == null || !isFinite(d)) return 'DLI 이력이 없습니다';
+    if (growthMin != null && d < growthMin) return `빛 부족 — 7일평균 ${d.toFixed(2)} < 최소 ${growthMin}`;
+    return null;
+  };
   return {
     real: false,
-    setDailyLight(v) { H.push(v); if (H.length > keep) H.shift(); return v; },
-    setGrowth(days) { this.days = days; },
+    setDailyLight(v) {
+      today = (typeof v === 'number' && isFinite(v) && v >= 0) ? v : null;
+      if (today != null) { H.push(today); if (H.length > keep) H.shift(); }
+      return today;
+    },
+    /* 계약 그대로 — 하루만 받는다 */
+    advanceTo(calDay) {
+      const t = Math.round(calDay), delta = t - cal;
+      if (delta !== 1) throw new Error(`[생장] advanceTo 는 하루만 받습니다 — 지금 달력 ${cal}, 요청 ${t}`);
+      const reason = blockReason();
+      cal = t;
+      if (reason === null) growth += 1;
+      return { calDay: cal, growth, grew: reason === null, blocked: reason };
+    },
+    calendarDay: () => cal,
+    growthDays: () => growth,
+    growthBlocked: () => blockReason(),
+    setGrowth(days) { growth = cal = Math.round(days); },
     dli7() { return H.length ? avg(H, 7) : null; },
     dliCV() {
       if (H.length < 7) return null;
@@ -124,19 +153,21 @@ export function runScenario(scenario, light, opt = {}) {
   const S = newState({ room: scenario.room, mode: scenario.mode });
   S.sim.seed = scenario.seed;
   S.lamps = { ...scenario.lamps };
-  S.pots[0].plantId = scenario.plantId;
 
   /* 자리 고르기 — 첫날 조건으로 순위를 낸다 */
   const preview = light.daily(1, S).report;
   const ranked = [...preview.slots].sort((a, b) => b.dli - a.dli);
-  S.pots[0].slotId =
+  const slotId =
     scenario.slotPick === 'brightest' ? ranked[0] && ranked[0].slotId
     : scenario.slotPick === 'darkest' ? ranked[ranked.length - 1] && ranked[ranked.length - 1].slotId
     : scenario.slotPick;
+  /* 개체 도착 — setGrowth 는 여기서 한 번뿐이다(초기화 경계) */
+  givePlant(S, io, { slotId, plantId: scenario.plantId });
 
   const { turns } = runDays(S, io, scenario.days);
   const last = turns[turns.length - 1];
-  const th = light.thresholdsOf(S.pots[0].plantId, S.pots[0].variegated);
+  const P = pot0(S);
+  const th = light.thresholdsOf(P.plantId, P.variegated);
   const over = th && th.fenestrate;
   const season = last ? last.sky.season : 'summer';
   const exp = expectedWeekStats(S, io, { season, over });
@@ -152,7 +183,7 @@ export function runScenario(scenario, light, opt = {}) {
     band_days: bands,
     electricity_won: S.ledger.electricityWon
   });
-  rec.notes.push(`자리 ${S.pots[0].slotId} · ${season} · ${scenario.days}일`);
+  rec.notes.push(`자리 ${P.slotId} · ${season} · ${scenario.days}일`);
   if (weekOverPct(S.dliHist, over))
     rec.notes.push(`굴린 구간 문턱넘는주 ${weekOverPct(S.dliHist, over).pct}%`);
   rec.verdict = verdictOf(rec, opt.criteria);

@@ -9,7 +9,7 @@
      (die→critical 개칭이 진행 중이라 하드코딩하면 조용히 어긋난다).
 ============================================================ */
 import { BAND_KO } from '../engine/daily_light.js';
-import { SIM_MODES } from './state.js';
+import { SIM_MODES, pot0 } from './state.js';
 import { weekOverPct, expectedWeekStats } from './loop.js';
 import { FEN_PASS_PCT } from './sim.js';
 
@@ -19,13 +19,14 @@ const n2 = (v) => (v == null ? '—' : (+v).toFixed(2));
 export function renderHUD(el, S, turn, io) {
   if (!turn) { el.innerHTML = `<div class="ph">[다음 날]을 눌러 시작하세요</div>`; return; }
   const r = turn.report, s = turn.slot;
-  const th = io.light.thresholdsOf(S.pots[0].plantId, S.pots[0].variegated);
+  const P = pot0(S) || { plantId: null, variegated: false, slotId: null };
+  const th = io.light.thresholdsOf(P.plantId, P.variegated);
   const fen = th && th.fenestrate;
 
   /* ★ 갈라짐 표시는 7일평균 기준인 growth의 canFenestrate() 를 쓴다.
      계약의 slot.fenestrating 은 하루 값 기준이라 "오늘만 넘음"을 구분해 보여준다. */
   const fenOn = io.growth.canFenestrate
-    ? io.growth.canFenestrate(S.pots[0].variegated)
+    ? io.growth.canFenestrate(P.variegated)
     : (s ? s.fenestrating : null);
 
   /* 코어와 growth의 7일 평균이 어긋나면 배선이 틀린 것이다 — 눈에 띄게 표시한다 */
@@ -62,15 +63,19 @@ export function renderHUD(el, S, turn, io) {
     </div>
 
     <div class="grid">
-      <div class="cell"><span>심은 지</span><b>${turn.daysPlanted}일</b>
-        <i>생장 나이 ${turn.growthAge == null ? '—' : (+turn.growthAge).toFixed(1)}</i></div>
-      <div class="cell"><span>변동계수 CV</span><b>${turn.cv == null ? '기록 부족' : n2(turn.cv)}</b>
-        <i>7일 미만이면 '모른다'</i></div>
+      <div class="cell"><span>★ 유효 생장</span><b>${turn.effectiveGrowthDays ?? '—'}일</b>
+        <i>형태를 정하는 값 · 달력 ${turn.growthCalendarDay ?? '—'}</i></div>
+      <div class="cell"><span>돌본 날</span><b>${turn.daysPlanted ?? 0}일</b>
+        <i>도착 진행도 ${P.arrivalGrowthDays ?? '—'}에서 시작</i></div>
       <div class="cell"><span>전기 (표시만)</span><b>${(r.energy && r.energy.won) || 0}원</b>
         <i>누적 ${S.ledger.electricityWon.toLocaleString()}원 · 차감 없음</i></div>
     </div>
 
-    <div class="slotline">자리 <code>${S.pots[0].slotId || '—'}</code>
+    <!-- ★ 정지 사유는 빈 값으로 숨기지 않는다. 안 자라는 이유가 화면에 없으면 버그로 읽힌다. -->
+    <div class="${turn.growthBlocked ? 'bad' : 'slotline'}">${
+      turn.growthBlocked ? `⏸ 형태 정지 — ${turn.growthBlocked}`
+                         : `▶ 자라는 중 (오늘 ${turn.grew ? '+1일' : '진행 없음'}) · CV ${turn.cv == null ? '기록 부족' : n2(turn.cv)}`}</div>
+    <div class="slotline">자리 <code>${P.slotId || '—'}</code>
       · 최고 슬롯 ${n2(r.best && r.best.dli)} (<code>${(r.best && r.best.slotId) || '—'}</code>)</div>
     ${turn.check.ok ? '' : `<div class="bad">⚠ 계약 이상<br>${turn.check.problems.slice(0, 5).join('<br>')}</div>`}
   `;
@@ -123,7 +128,7 @@ export function renderLog(el, S) {
      · 20년 기대 분포(house measured.fenWeekPct 와 같은 방식)와 나란히
 --------------------------------------------------------------- */
 export function renderReport(el, S, io, turns) {
-  const p = S.pots[0];
+  const p = S.pots[0] || { plantId: null, variegated: false, slotId: null };
   const th = io.light.thresholdsOf(p.plantId, p.variegated);
   const fen = th && th.fenestrate;
   const season = turns.length ? turns[turns.length - 1].sky.season : 'summer';

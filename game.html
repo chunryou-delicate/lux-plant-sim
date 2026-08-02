@@ -129,7 +129,7 @@
 </div>
 
 <script type="module">
-import { newState, SIM_MODES, pot0, pushLog } from './src/game/state.js';
+import { newState, SIM_MODES, pot0, pushLog, givePlant, hasPlant, ARRIVAL } from './src/game/state.js';
 import { createLightEngine } from './src/game/light_adapter.js';
 import { createGrowthAdapter } from './src/game/growth_adapter.js';
 import { nextDay, runDays, avg } from './src/game/loop.js';
@@ -180,7 +180,8 @@ function fillLamps() {
 /* 자리 목록 — 오늘 조건에서 밝은 순.
    ★ 등을 켜면 순위가 바뀐다(자연광 최고 자리 ≠ 등 밑 자리). 화분은 자동으로 안 옮긴다 —
      옮기는 건 플레이어의 선택이어야 하고, 그 차이가 이 게임의 핵심이다.
-   pick=true 일 때만(방을 새로 조립할 때) 가장 밝은 자리로 놓는다. */
+   pick=true 일 때만(방을 새로 조립할 때) 가장 밝은 자리로 놓는다.
+   ★ 식물이 아직 도착 전이면 목록만 채우고 화분은 건드리지 않는다. */
 function fillSlots(pick) {
   const preview = io.light.daily(S.day + 1, S).report;
   const list = [...preview.slots].sort((a, b) => b.dli - a.dli);
@@ -189,16 +190,27 @@ function fillSlots(pick) {
     const name = uid.split('-').slice(1, -1).join('-') || uid;
     return `<option value="${s.slotId}">${name} ${tier}단 — DLI ${s.dli.toFixed(2)}</option>`;
   }).join('');
-  if (pick || !list.some(s => s.slotId === pot0(S).slotId))
-    pot0(S).slotId = list[0] ? list[0].slotId : null;
-  $('slot').value = pot0(S).slotId || '';
+  const p = pot0(S);
+  if (p && (pick || !list.some(s => s.slotId === p.slotId)))
+    p.slotId = list[0] ? list[0].slotId : null;
+  $('slot').value = (p && p.slotId) || (list[0] ? list[0].slotId : '');
+}
+
+/* ★ 개체 도착 = 테스트용 초기화 경계 (Day 4 선물 이벤트는 이번 범위 밖).
+   앱을 열었다고 식물이 생기지 않는다 — 이걸 불러야 생긴다.
+   setGrowth(143) 는 여기서 딱 한 번. 그 뒤 하루 진행은 전부 advanceTo 다. */
+function arrive(slotId) {
+  if (hasPlant(S)) return pot0(S);
+  const p = givePlant(S, io, { slotId: slotId || $('slot').value || null });
+  renderLog($('log'), S);
+  return p;
 }
 
 function buildRoom(id) {
   io.light.build(id);
   io.light.clearCache();
   S.home.room = id;
-  pot0(S).slotId = null;
+  if (pot0(S)) pot0(S).slotId = null;
   fillLamps();
   fillSlots(true);          // 새 방에서는 가장 밝은 자리에 놓고 시작한다
   draw();
@@ -211,15 +223,16 @@ function draw() {
 
 /* ---- 배선 ---- */
 $('room').onchange = e => buildRoom(e.target.value);
-$('slot').onchange = e => { pot0(S).slotId = e.target.value; draw(); };
+$('slot').onchange = e => { if (pot0(S)) pot0(S).slotId = e.target.value; draw(); };
 $('lamps').onchange = e => { S.lamps.count = +e.target.value; io.light.clearCache(); fillSlots(); draw(); };
 $('lit').onchange = e => { S.lamps.litHours = Math.max(0, Math.min(24, +e.target.value || 0)); io.light.clearCache(); draw(); };
 $('mode').onchange = e => { S.sim.mode = e.target.value; io.light.clearCache(); draw(); };
 
 /* loop.js 는 UI를 모른다 — S와 turn을 받아 화면을 그리는 건 여기 몫이다(헤드리스 시뮬 대비) */
-$('next').onclick = () => { lastTurn = nextDay(S, io).turn; draw(); };
+$('next').onclick = () => { arrive(); lastTurn = nextDay(S, io).turn; draw(); };
 
 $('run30').onclick = () => {
+  arrive();
   const { turns } = runDays(S, io, 30);
   lastTurn = turns[turns.length - 1];
   draw();
@@ -242,12 +255,12 @@ $('prof').onclick = () => {
 
 $('reset').onclick = () => {
   const keep = { room: S.home.room, mode: S.sim.mode, lamps: { ...S.lamps } };
-  S = newState({ room: keep.room, mode: keep.mode });
+  S = newState({ room: keep.room, mode: keep.mode });   // 화분도 없는 상태로 되돌아간다
   S.lamps = keep.lamps;
   lastTurn = null;
   io.growth.reset();
-  io.growth.setGrowth(0);
   $('report').innerHTML = '<div class="ph">30일을 돌리면 나옵니다</div>';
+  $('spark').innerHTML = '';
   buildRoom(keep.room);
 };
 
@@ -289,9 +302,10 @@ function banner(title, sub) {
 }
 
 function fenOn() {
-  const f = io.growth.canFenestrate ? io.growth.canFenestrate(pot0(S).variegated) : null;
+  const f = io.growth.canFenestrate ? io.growth.canFenestrate(pot0(S) && pot0(S).variegated) : null;
   if (f !== null) return f;
-  const a7 = avg(S.dliHist, 7), th = io.light.thresholdsOf(pot0(S).plantId, false);
+  const p = pot0(S); if (!p) return null;
+  const a7 = avg(S.dliHist, 7), th = io.light.thresholdsOf(p.plantId, false);
   return a7 != null && th && th.fenestrate != null && a7 >= th.fenestrate;
 }
 
@@ -300,12 +314,14 @@ async function playScenario(sc) {
   document.body.classList.add('scen-run');
   $('play').disabled = true; $('stop').disabled = false;
 
-  /* 초기화 — 같은 조건에서 다시 돌릴 수 있어야 비교가 된다 */
+  /* 초기화 — 같은 조건에서 다시 돌릴 수 있어야 비교가 된다.
+     ★ 개체가 새로 '도착'한다. setGrowth 는 그 한 번뿐이고 이후는 advanceTo 다. */
   S = newState({ room: S.home.room, mode: S.sim.mode });
   S.lamps.count = sc.lamps;
-  io.growth.reset(); io.growth.setGrowth(0);
-  pot0(S).slotId = pickSlot(sc.pick);
+  io.growth.reset();
   $('lamps').value = String(sc.lamps);
+  const startSlot = pickSlot(sc.pick);
+  arrive(startSlot);
   fillSlots(); $('slot').value = pot0(S).slotId;
   pushLog(S, `시나리오 ${sc.ko} — ${sc.hint}`);
 

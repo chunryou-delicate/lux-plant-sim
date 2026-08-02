@@ -42,15 +42,11 @@ export function newState(opt = {}) {
        개수·PPFD·와트를 코어가 지어내지 않는다(house의 lightRigs + lighting_presets). */
     lamps: { count: 0, litHours: 12 },
 
-    /* ★ 화분. v0는 1개 (growth가 한 그루 전용).
-       slotId 하나로 자리를 기억한다 — 가구를 옮겨도·세이브해도 안 바뀐다. */
-    pots: [{
-      id: 'pot_01',
-      slotId: null,
-      plantId: 'monstera_deliciosa',
-      variegated: false,
-      daysPlanted: 0
-    }],
+    /* ★ 화분 — **비어 있게 시작한다** (2026-08-02).
+       몬스테라는 플레이어가 143일 키운 게 아니라 **이미 자란 개체가 도착**하는 것이다.
+       앱을 열었다고 Day 0부터 식물이 있으면 안 된다 — 도착 이벤트(Day 4 선물, 이번 범위 밖)나
+       테스트 초기화 경계(givePlant)가 만들 때 생긴다. v0는 1개 (growth가 한 그루 전용). */
+    pots: [],
 
     /* 코어가 따로 쌓는 DLI 이력. 용도는 두 가지뿐:
          ① growth의 dli7()과 대조(어긋나면 배선이 틀린 것)
@@ -65,7 +61,40 @@ export function newState(opt = {}) {
   };
 }
 
-export function pot0(S) { return S.pots[0]; }
+export function pot0(S) { return S.pots[0] || null; }
+export function hasPlant(S) { return S.pots.length > 0; }
+
+/* ★ 도착 진행도 — growth 확정값 (2026-08-02 · growth STATUS "첫 플레이 초기 유효 진행도 = 143일").
+   143일 상태 = 비갈라짐 중간잎 2장·새순 없음. 적정광 3턴 뒤 146에서 말린 새순이 나온다.
+   ⚠ 이 숫자는 growth 소유다. 코어는 도착 시 한 번 넘기기만 한다. */
+export const ARRIVAL = {
+  plantId: 'monstera_deliciosa',
+  growthDays: 143,
+  potAsset: 'monstera/pot.glb'      // 회전 무관 지름 0.202 ≤ 창턱 0.21 (core-to-house ④)
+};
+
+/* ★ 개체 생성 = **도착**. 여기서만 setGrowth 를 쓴다(점프 1회).
+   그 뒤 일일 진행은 전부 advanceTo 다 — 이 경계를 흐리면 저광 정지가 무시된다.
+
+   pot.daysPlanted 는 **플레이어가 돌본 날**이라 0부터 센다.
+   growth 안의 달력·유효 진행도는 143에서 시작한다. 둘은 다른 축이다. */
+export function givePlant(S, io, opt = {}) {
+  if (S.pots.length) return pot0(S);                     // 이미 있으면 다시 만들지 않는다
+  const pot = {
+    id: opt.id || 'pot_01',
+    slotId: opt.slotId || null,
+    plantId: opt.plantId || ARRIVAL.plantId,
+    potAsset: ARRIVAL.potAsset,
+    variegated: false,
+    daysPlanted: 0,                                      // 플레이어가 돌본 날
+    arrivedOnDay: S.day,
+    arrivalGrowthDays: opt.growthDays ?? ARRIVAL.growthDays
+  };
+  S.pots.push(pot);
+  if (io && io.growth && io.growth.setGrowth) io.growth.setGrowth(pot.arrivalGrowthDays);
+  pushLog(S, `🪴 몬스테라가 도착했습니다 — 이미 ${pot.arrivalGrowthDays}일 자란 개체입니다`);
+  return pot;
+}
 
 export function modeOf(S) { return SIM_MODES[S.sim.mode] || SIM_MODES.real; }
 

@@ -77,10 +77,17 @@ export function createLightEngine(data) {
       .filter(Boolean);
     const slots = built.plantSlots || [];
 
-    /* 5-4 검증 — 슬롯 ID가 겹치면 화분이 남의 자리 빛을 먹는다 */
+    /* ★ 5-4 검증 — slotId 가 겹치면 화분이 남의 자리 빛을 먹는다.
+       원인은 대개 **서로 다른 가구에 같은 uid 를 적은 것**이다(복사·붙여넣기).
+       경고로 두면 아무도 안 본다 — 겹친 uid 와 그 가구를 같이 찍는다. */
     const seen = new Set(), dup = [];
     for (const s of slots) { if (seen.has(s.slotId)) dup.push(s.slotId); seen.add(s.slotId); }
-    if (dup.length) console.warn('[빛] slotId 중복', dup);
+    if (dup.length) {
+      const uids = [...new Set(dup.map(d => String(d).split(':')[0]))];
+      console.error(`[빛] ★ slotId 중복 — ${roomId}: ${dup.length}칸이 겹칩니다. ` +
+        `겹친 uid: ${uids.join(', ')}\n` +
+        `  house_rooms.json 에서 이 uid 를 쓰는 가구가 둘 이상입니다. uid 는 가구마다 달라야 합니다.`);
+    }
 
     /* ★ 임시 uid 로 만들어진 슬롯 — 조용히 넘어가지 않는다(위 계약 ②) */
     const unstable = slots.filter(s => String(s.slotId).startsWith(TEMP_UID));
@@ -208,6 +215,15 @@ export function createLightEngine(data) {
         `[프로파일 중단] ${room.id}: 슬롯 ${room.unstableSlots.length}칸이 임시 uid 위에 있습니다.\n` +
         `house_rooms.json 의 아래 가구에 명시적 uid 를 넣은 뒤 다시 뽑으세요 ` +
         `(화분 슬롯을 내는 가구는 uid 필수 — core-to-house.md 참고):\n  ` + owners.join('\n  '));
+    }
+    /* 중복 slotId — 명시 uid 를 두 가구에 똑같이 적은 경우가 대부분이다.
+       이걸 굳히면 세이브의 화분 두 개가 같은 자리를 가리킨다. */
+    if (room.dupSlots && room.dupSlots.length) {
+      const uids = [...new Set(room.dupSlots.map(d => String(d).split(':')[0]))];
+      throw new Error(
+        `[프로파일 중단] ${room.id}: slotId 가 ${room.dupSlots.length}칸 겹칩니다. ` +
+        `겹친 uid: ${uids.join(', ')}\n` +
+        `같은 uid 를 쓰는 가구가 둘 이상입니다 — uid 는 가구마다 달라야 합니다.`);
     }
     const up = { x: 0, y: 1, z: 0 };
     const counts = lampCounts.filter(n => n <= room.growRigs.length);
