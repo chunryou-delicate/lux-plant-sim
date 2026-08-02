@@ -2583,7 +2583,10 @@ function showPreview(key){                                 // 라이브: 현재 
   if(!prevScene) return;
   if(prevObj){ prevScene.remove(prevObj); prevObj=null; }
   const p=ASSETS[key];
-  if(!p){ console.warn('[preview] 에셋 로드 안됨:', key, ASSET_FILES[key]); return; }   // GLB 404 등
+  // ★"아직 안 실렸다"와 "실패했다"를 가른다. showPreview 는 GLB 로딩이 끝나기 전에 한 번 먼저 불리는데,
+  //   그걸 실패로 찍으면 로그만 보고 "말린 새순 에셋이 안 실렸다"로 읽힌다 — 실제로 그렇게 오해가 났다.
+  //   진짜 404 는 loadAssets 가 따로 찍는다. 여기서는 로딩이 끝난 뒤에만 실패로 본다.
+  if(!p){ if(ASSETS_READY) console.warn('[preview] 에셋 로드 안됨:', key, ASSET_FILES[key]); return; }
   try{
     const a=adjOf(key), N=(v,d)=>v==null?d:v, sc=N(a.scale,1), sxz=N(a.sxz,1), sy=N(a.sy,1);
     const inner=p.clone(true);
