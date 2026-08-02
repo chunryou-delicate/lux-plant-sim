@@ -39,19 +39,52 @@ const DAYS = +(new URLSearchParams(location.search).get('days') ?? 0);
 const SLOT = new URLSearchParams(location.search).get('slot') || 'banjiha-sill:0';
 const stamp = document.getElementById('stamp');
 
-const j = (p, fb) => fetch(p).then(r => r.json()).catch(() => fb);
-const [houseRooms, winPresets, doorPresets, finishes, furnPresets, lightPresets, shadePresets,
+/* ★ 폴백을 두지 않는다 (2026-08-02).
+   검수 촬영은 "이 조건에서 이 화면이 나온다"의 증거다. 파일 하나가 비어도 빈 기본값으로
+   조용히 굴러가면 **틀린 조건의 사진**이 증거로 남는다. HTTP·JSON·필수 키 중 하나라도
+   어긋나면 촬영을 멈추고 SHOT FAIL 을 낸다. */
+async function need(path, keys = []) {
+  let res;
+  try { res = await fetch(path); }
+  catch (e) { throw new Error(`${path} 요청 실패 — ${e.message}`); }
+  if (!res.ok) throw new Error(`${path} HTTP ${res.status}`);
+  let json;
+  try { json = await res.json(); }
+  catch (e) { throw new Error(`${path} JSON 파싱 실패 — ${e.message}`); }
+  if (!json || typeof json !== 'object') throw new Error(`${path} 내용이 객체가 아닙니다`);
+  for (const k of keys) {
+    const v = k.split('.').reduce((o, kk) => (o == null ? o : o[kk]), json);
+    if (v == null || (typeof v === 'object' && !Object.keys(v).length))
+      throw new Error(`${path} 에 필수 키 "${k}" 가 없습니다(비었습니다)`);
+  }
+  return json;
+}
+
+function fail(msg) {                       // 촬영 중단 — 사진 대신 실패를 남긴다
+  stamp.textContent = 'SHOT FAIL — ' + msg;
+  stamp.style.background = 'rgba(190,40,30,.92)';
+  document.title = 'SHOT FAIL | ' + msg;
+  window.__shotFailed = true;
+  throw new Error(msg);
+}
+
+try {
+const [houseRoomsRaw, winRaw, doorRaw, finishes, furnRaw, lightPresets, shadePresets,
        lightTh, weatherBalance] = await Promise.all([
-  j('./data/house_rooms.json', { rooms: {} }),
-  j('./data/window_presets.json', {}).then(d => d.presets || d),
-  j('./data/door_presets.json', {}).then(d => d.presets || d),
-  j('./data/room_finishes.json', null),
-  j('./data/furniture_presets.json', {}).then(d => d.presets || d),
-  j('./data/lighting_presets.json', {}),
-  j('./data/shading_presets.json', { presets: {} }),
-  j('./data/balance/light_thresholds.json', null),
-  j('./data/balance/weather.json', null)
+  need('./data/house_rooms.json', ['rooms', 'rooms.banjiha']),
+  need('./data/window_presets.json'),
+  need('./data/door_presets.json'),
+  need('./data/room_finishes.json'),
+  need('./data/furniture_presets.json'),
+  need('./data/lighting_presets.json', ['fixtures', 'tariff']),
+  need('./data/shading_presets.json'),
+  need('./data/balance/light_thresholds.json', ['plants.monstera_deliciosa.min']),
+  need('./data/balance/weather.json', ['weather.clear.p', 'season_factor'])
 ]);
+const houseRooms = houseRoomsRaw;
+const winPresets = winRaw.presets || winRaw;
+const doorPresets = doorRaw.presets || doorRaw;
+const furnPresets = furnRaw.presets || furnRaw;
 
 const io = {
   light: createLightEngine({ houseRooms, winPresets, doorPresets, finishes, furnPresets,
@@ -59,8 +92,9 @@ const io = {
   growth: createGrowthAdapter(document.getElementById('growth'))
 };
 
-try {
+  if (!Number.isFinite(DAYS) || DAYS < 0) fail(`days 인자가 이상합니다: ${location.search}`);
   io.light.build('banjiha');
+  if (!io.light.room.slots.some(s => s.slotId === SLOT)) fail(`슬롯 ${SLOT} 이 방에 없습니다`);
   await io.growth.ready();                       // 여섯 함수가 다 있어야 통과
 
   const S = newState({ room: 'banjiha', mode: 'novice' });   // 계수 1.0 고정
@@ -86,8 +120,11 @@ try {
   document.title = `SHOT days=${DAYS} | ${line.replace(/\n/g, ' | ')}`;
   window.__shotReady = true;
 } catch (e) {
-  stamp.textContent = '실패: ' + e.message;
-  document.title = 'SHOT FAIL ' + e.message;
+  if (!window.__shotFailed) {
+    stamp.textContent = 'SHOT FAIL — ' + e.message;
+    stamp.style.background = 'rgba(190,40,30,.92)';
+    document.title = 'SHOT FAIL | ' + e.message;
+  }
   console.error(e);
 }
 </script>

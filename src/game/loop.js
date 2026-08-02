@@ -107,17 +107,34 @@ export function runDays(S, io, n, onTurn) {
 /* ---------------------------------------------------------------
    검수 지표
 --------------------------------------------------------------- */
-/* ★ null(계약 누락)은 평균에서 뺀다 — 0으로 세면 '암흑'이 되어 판정이 아래로 끌린다.
-   growth 의 dliAvg 와 뜻을 맞춘 것이다: growth 도 유효한 값만 DLI_HIST 에 쌓고
-   그 **마지막 n개**로 평균을 낸다(못 잰 날은 자리를 차지하지 않는다).
-   그래서 여기서도 "최근 n개의 **유효값**" 평균을 낸다 — 두 값이 같아야 배선이 맞다. */
+/* ============================================================
+   ★ 이동평균의 정본 의미 — **"최근 n개의 유효 관측값"** (2026-08-02 통일)
+   ------------------------------------------------------------
+   달력 n일 창이 **아니다.** 못 잰 날(null)은 자리를 차지하지 않고, 그 전 유효값이 계속 쓰인다.
+   growth 의 `dliAvg` 와 같은 뜻이다 — growth 도 유효한 값만 `DLI_HIST` 에 쌓고 마지막 n개로 낸다.
+   0으로 메우면 계약 누락이 '암흑'이 되어 판정이 아래로 끌린다.
+
+   화면에서 이렇게 보인다:
+     하루선   결측일에서 **끊긴다**   (못 잰 날은 그릴 값이 없다)
+     평균선   결측일에도 **이어진다** (직전 유효 n개로 낸 값이 그날의 판정값이다)
+
+   ★ 코어 안에서 이 창을 다시 짜지 않는다. loop·HUD 그래프·fenDayOf 가 전부 이 두 함수를 쓴다.
+============================================================ */
+
+/* 각 날짜 시점의 판정값(그날 growth 가 봤을 dliAvg(n))을 하루씩 되짚어 낸다. */
+export function rollingAvg(hist, n = 7) {
+  const out = [], v = [];
+  for (const x of hist || []) {
+    if (typeof x === 'number' && isFinite(x)) { v.push(x); if (v.length > n) v.shift(); }
+    out.push(v.length ? v.reduce((a, b) => a + b, 0) / v.length : null);
+  }
+  return out;
+}
+
+/* 지금 시점의 판정값 = rollingAvg 의 마지막 값 */
 export function avg(arr, n) {
-  const v = (arr || []).filter(x => typeof x === 'number' && isFinite(x));
-  if (!v.length) return null;
-  const k = Math.max(1, Math.min(v.length, n));
-  let s = 0;
-  for (let i = v.length - k; i < v.length; i++) s += v[i];
-  return s / k;
+  const r = rollingAvg(arr, n);
+  return r.length ? r[r.length - 1] : null;
 }
 
 /* 표본 상태까지 같이 낸다 — 화면이 "평균 2.9"만 보여주면 그게 7일치인지 2일치인지 모른다. */

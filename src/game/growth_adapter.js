@@ -54,7 +54,11 @@ export function createGrowthAdapter(iframe) {
      ⚠ 계약 함수가 아니라 정황 증거다. growth 에 `thLoaded()` 를 요청해 뒀다 — 생기면 그걸 쓴다. */
   function thresholdsLoaded() {
     const w = win();
+    /* ① 정본 경로 — growth 가 thLoaded() 를 내면 이것만 본다.
+       ★ 그때 아래 ② 프로브 블록은 통째로 지운다(요청해 뒀다: core-to-growth 2026-08-02). */
     if (w && typeof w.thLoaded === 'function') return !!w.thLoaded();
+
+    /* ② 임시 — thLoaded() 가 없는 동안만 쓴다 */
 
     /* 정본 미로드를 **의미로** 확인한다 — 문자열도, 내부 변수도 보지 않는다.
        "자랄 만큼 밝은 빛을 넣었는데도 정지"면 아직 준비가 안 된 것이다.

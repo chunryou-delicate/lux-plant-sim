@@ -132,7 +132,7 @@
 import { newState, SIM_MODES, pot0, pushLog, givePlant, hasPlant, ARRIVAL } from './src/game/state.js';
 import { createLightEngine } from './src/game/light_adapter.js';
 import { createGrowthAdapter } from './src/game/growth_adapter.js';
-import { nextDay, runDays, avg } from './src/game/loop.js';
+import { nextDay, runDays, avg, rollingAvg } from './src/game/loop.js';
 import { renderHUD, renderLog, renderReport, renderSpark } from './src/game/ui.js';
 
 const $ = (id) => document.getElementById(id);
@@ -383,10 +383,10 @@ const turn7 = () => io.growth.dli7() ?? avg(S.dliHist, 7) ?? 0;
 /* 이력에서 처음 문턱을 넘은 날 — 그래프에 세로선으로 표시한다 */
 function fenDayOf(th) {
   if (!th || th.fenestrate == null) return null;
-  for (let i = 0; i < S.dliHist.length; i++) {
-    const w = S.dliHist.slice(Math.max(0, i - 6), i + 1).filter(v => typeof v === 'number' && isFinite(v));
-    if (w.length && w.reduce((a, b) => a + b, 0) / w.length >= th.fenestrate) return i + 1;
-  }
+  /* ★ 같은 창을 쓴다 — loop.rollingAvg(최근 7개 유효 관측). 여기서 다시 짜면 그래프와 어긋난다. */
+  const a7 = rollingAvg(S.dliHist, 7);
+  for (let i = 0; i < a7.length; i++)
+    if (a7[i] != null && a7[i] >= th.fenestrate) return i + 1;
   return null;
 }
 

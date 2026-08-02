@@ -10,7 +10,7 @@
 ============================================================ */
 import { BAND_KO } from '../engine/daily_light.js';
 import { SIM_MODES, pot0 } from './state.js';
-import { weekOverPct, expectedWeekStats } from './loop.js';
+import { weekOverPct, expectedWeekStats, rollingAvg } from './loop.js';
 import { FEN_PASS_PCT } from './sim.js';
 
 const SEASON_KO = { spring: '봄', summer: '여름', autumn: '가을', winter: '겨울' };
@@ -89,13 +89,10 @@ export function renderHUD(el, S, turn, io) {
 export function renderSpark(el, hist, threshold, markDay) {
   const W = 372, H = 84, pad = 2;
   if (!hist || hist.length < 2) { el.innerHTML = '<div class="ph">아직 기록이 없습니다</div>'; return; }
-  /* ★ 결측일은 0으로 메우지 않는다 — 선을 끊는다(그래야 '못 쟀다'가 눈에 보인다).
-     7일 평균은 그 구간의 유효값만으로 낸다(코어 avg 와 같은 규칙). */
+  /* ★ 창을 여기서 다시 짜지 않는다 — loop.rollingAvg 하나만 쓴다(정본: 최근 7개 유효 관측값).
+     하루선은 결측일에서 끊기고, 평균선은 직전 유효 7개로 이어진다. */
   const ok = v => typeof v === 'number' && isFinite(v);
-  const a7 = hist.map((_, i) => {
-    const w = hist.slice(Math.max(0, i - 6), i + 1).filter(ok);
-    return w.length ? w.reduce((a, b) => a + b, 0) / w.length : null;
-  });
+  const a7 = rollingAvg(hist, 7);
   const max = Math.max(threshold || 0, ...a7.filter(ok)) * 1.12 || 1;
   const x = i => pad + i / Math.max(1, a7.length - 1) * (W - pad * 2);
   const y = v => H - pad - (v / max) * (H - pad * 2);
@@ -119,8 +116,8 @@ export function renderSpark(el, hist, threshold, markDay) {
       ${mx != null ? `<line x1="${mx.toFixed(1)}" y1="0" x2="${mx.toFixed(1)}" y2="${H}"
          stroke="#7ce69a" stroke-width="1.5"/>` : ''}
     </svg>
-    <div class="sparkleg"><span style="color:#ffb454">━ 7일평균(판정값)</span>
-      <span style="color:rgba(255,255,255,.4)">━ 하루</span>
+    <div class="sparkleg"><span style="color:#ffb454">━ 7일평균(판정값 · 최근 7개 유효 관측)</span>
+      <span style="color:rgba(255,255,255,.4)">━ 하루(결측일은 끊김)</span>
       ${threshold != null ? `<span style="color:#ff9a8a">┄ 갈라짐 문턱 ${threshold}</span>` : ''}
       ${markDay ? `<span style="color:#7ce69a">┃ ${markDay}일 갈라짐 시작</span>` : ''}</div>`;
 }
