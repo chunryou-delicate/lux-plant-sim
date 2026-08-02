@@ -98,6 +98,9 @@
           <div class="field"><label>☀️ 빛 방위 <b id="lightV">90°</b></label><input type="range" id="light" min="0" max="360" value="90"></div>
           <div class="field"><label>굴광성(빛 쫓기) <b id="photoV">50%</b></label><input type="range" id="photo" min="0" max="100" value="50"></div>
           <div class="field"><label>🔆 DLI(조도엔진 연동 테스트) <b id="dliV">끔 · 상수</b></label><input type="range" id="dliTest" min="-1" max="20" step="0.5" value="-1"></div>
+          <label style="display:flex;align-items:center;gap:6px;font-size:11px;color:#9ab894;margin:2px 0 6px">
+            <input type="checkbox" id="tuneMode"> 단독 튜닝 모드 (조도 없이 형태만 — 게임 판정 끔)
+          </label>
           <button class="cbtn" id="btnNextDay" style="width:100%;margin-bottom:6px">🌤 다음 날 (1턴 = 1일)</button>
           <div id="dayStat" class="note2" style="padding:0 0 6px;font-size:11.5px;line-height:1.75"></div>
           <button class="cbtn" id="btnSeed" style="width:100%">🎲 랜덤 시드</button>
@@ -176,7 +179,7 @@ const DEF={
 };
 let P=Object.assign({}, DEF);
 // 저장본 버전. 생장 로직/기본값이 바뀌면 올림 → 옛 저장값이 새 기본값을 덮어쓰지 않게.
-const CFG_VER='2026-08-02-strict';
+const CFG_VER='2026-08-02-strict2';
 
 // ===== 튜닝 파라미터(B: 에셋별 개별 조정) =====
 const ADJ_KEYS=[
@@ -480,6 +483,7 @@ const ASSETS={}; let ASSETS_READY=false;
 // 줄기 표면 텍스처(회색조) — 색은 stemTint가 정하고 이 맵은 밝기 디테일만 곱함
 let STEM_TEX=null;
 (function loadStemTex(){ try{
+  TH_LOADED=true;                              // 여기까지 와야 정본이 실린 것
   STEM_TEX=new THREE.TextureLoader().load('./assets/textures/stem_surface_tile.png', ()=>{ if(typeof buildPlant==='function') buildPlant(); });
   STEM_TEX.wrapS=STEM_TEX.wrapT=THREE.RepeatWrapping;
   if(THREE.sRGBEncoding) STEM_TEX.encoding=THREE.sRGBEncoding;
@@ -898,6 +902,9 @@ let TH_MONSTERA={die:0.5, survive:1.2, min:3.0, fenestrate:6.0, best_lo:5.0, bes
 let VARIE_MULT=1.4;
 // ★ 튜닝값은 data/growth_tuning.json 이 정본이다. 위 코드값은 file:// 로 직접 열었을 때의 폴백.
 //   밸런싱은 JSON만 고치면 되고 이 파일은 열지 않아도 된다(창 충돌을 줄이려는 것).
+// 정본 JSON 이 실제로 실렸는가. 게임 경로는 코드 복제값으로 돌면 안 된다 —
+// 정본이 안 실린 채 밸런싱이 돌아가면 화면과 문서가 갈리고 그게 제일 늦게 발견된다.
+let TH_LOADED=false;
 let GT={
   fLight:{ below_min:0, below_best:0.5, best:1.5, below_max:1.0, over:0.3 },
   fStable:{ cv_stable:0.15, mult_stable:1.3, cv_mid:0.30, mult_mid:1.0, mult_unstable:0.7,
@@ -955,6 +962,8 @@ function setDailyLight(c, slotId){
     console.warn('[빛] 쓸 수 없는 DLI 값 '+d+' → 무시하고 끔으로 둡니다');
     d=null;
   }
+  // ★유효한 게임 입력이 들어오면 튜닝 모드는 끝난다. 남겨두면 저광 게이트를 우회한다.
+  if(d!=null) TUNING_MODE=false;
   PLANT_DLI=d;
   if(d!=null){ DLI_HIST.push(d); if(DLI_HIST.length>DLI_KEEP) DLI_HIST.shift(); }
   return d;
@@ -1907,9 +1916,9 @@ function bindControls(){
   const dls=document.getElementById('dliTest');
   dls.addEventListener('input',()=>{
     const v=+dls.value, out=document.getElementById('dliV');
-    if(v<0){ setDailyLight(null); setTuningMode(true);  out.textContent='끔 · 튜닝모드'; }
+    // '끔'은 빛을 끊는 것일 뿐 튜닝 모드가 아니다 — 게임 경로에서는 그대로 정지한다.
+    if(v<0){ setDailyLight(null); out.textContent='끔 (빛 없음)'; }
     else {
-      setTuningMode(false);                       // 빛을 넣는 순간 게임 경로로 돌아온다
       setDailyLightSteady(v);
       const T=TH_MONSTERA, f=fLight(v);
       const fen = v<T.fenestrate ? '갈라짐✕' : '갈라짐○';
@@ -1920,6 +1929,8 @@ function bindControls(){
     if(typeof refreshDayHUD==='function') refreshDayHUD();
   });
   {  // 최소 루프 v0
+    const tm=document.getElementById('tuneMode');
+    if(tm) tm.addEventListener('change',()=>{ setTuningMode(tm.checked); buildPlant(); });
     const nb=document.getElementById('btnNextDay');
     if(nb) nb.onclick=()=>{ stopPlay(); nextDay(); };
     refreshDayHUD();
@@ -2026,17 +2037,22 @@ function growthMin(){
 // 단독 튜닝 모드. 조도 없이 형태만 보려는 용도라 게임 경로와 반드시 갈라 둔다.
 // 기본은 꺼짐 = 게임 경로 — 빛이 없으면 자라지 않는다.
 let TUNING_MODE=false;
-function setTuningMode(on){ TUNING_MODE=!!on; if(typeof refreshDayHUD==='function') refreshDayHUD(); return TUNING_MODE; }
+function setTuningMode(on){ TUNING_MODE=!!on;
+  const tm=document.getElementById('tuneMode'); if(tm) tm.checked=TUNING_MODE; if(typeof refreshDayHUD==='function') refreshDayHUD(); return TUNING_MODE; }
 function isTuningMode(){ return TUNING_MODE; }
 
 // 오늘 자랄 수 있나. 이력이 7일 미만이면 dliAvg 가 있는 만큼으로 평균을 낸다.
 // ★ 빛이 없거나 값이 망가졌으면 '자란다'로 넘어가지 않는다. 그게 지금까지의 거짓말이었다.
 function growthBlockReason(){
-  if(TUNING_MODE) return null;                       // 명시적으로 켠 튜닝 모드만 예외
+  if(TUNING_MODE) return null;                       // 명시적으로 켠 단독 튜닝 모드만 예외
+  // ★정본이 실렸는지 먼저 본다. 코드 안의 복제값은 튜닝용 폴백이지 게임 기준이 아니다.
+  if(!TH_LOADED) return '임계값 정본(data/growth_tuning.json)이 안 실렸습니다 — 서버로 여세요';
+  // ★오늘 값을 이동평균보다 먼저 본다. 어제까지 밝았어도 오늘 빛을 모르면 자랄 근거가 없다.
+  if(PLANT_DLI==null)           return '오늘 빛이 없습니다(DLI 없음)';
+  if(typeof PLANT_DLI!=='number' || !isFinite(PLANT_DLI)) return '오늘 DLI 값이 망가졌습니다';
   const d=dliAvg(7);
-  if(d==null)          return '빛이 연결되지 않았습니다(DLI 없음)';
-  if(!isFinite(d))     return 'DLI 이력이 망가졌습니다';
-  if(d < growthMin())  return null_lowLight(d);
+  if(d==null || !isFinite(d))   return 'DLI 이력이 없습니다';
+  if(d < growthMin())           return '빛 부족 — 7일평균 '+d.toFixed(2)+' < 최소 '+growthMin();
   return null;
 }
 function null_lowLight(d){ return '빛 부족 — 7일평균 '+d.toFixed(2)+' < 최소 '+growthMin(); }
