@@ -338,6 +338,16 @@ function packTutorial(ts) {
       nextDueDay: needInt(rent.nextDueDay ?? 0, 'tutorial.rent.nextDueDay', { min: 0 })
     },
     learned,
+    /* ★ 튜토 확정 무늬 (2026-08-03) — **반드시 남긴다.**
+       안 적으면 저장 한 번에 "이미 준 무늬"가 없던 일이 되어 다시 받는다(잭팟이 두 번 난다).
+       반대로 `nodeIds` 를 잃으면 팔 때 값이 조용히 떨어진다. 둘 다 조용히 틀리는 유형이다. */
+    varieGrant: {
+      nodeIds: needArr((ts.varieGrant || {}).nodeIds || [], 'tutorial.varieGrant.nodeIds')
+        .map((v, i) => needStr(String(v), `tutorial.varieGrant.nodeIds[${i}]`)),
+      count: needInt((ts.varieGrant || {}).count ?? 0, 'tutorial.varieGrant.count', { min: 0 }),
+      lastDay: (ts.varieGrant || {}).lastDay == null ? null
+        : needInt(ts.varieGrant.lastDay, 'tutorial.varieGrant.lastDay', { min: 0 })
+    },
     /* 살림 장부 — 상점에 쓴 돈·판 돈. 안 적으면 "얼마 벌었나"가 저장 왕복에서 사라진다. */
     crop: {
       spentWon: needNum((ts.crop || {}).spentWon ?? 0, 'tutorial.crop.spentWon', { min: 0 }),
@@ -766,6 +776,7 @@ export function deserialize(raw, opt = {}) {
     ts.lamp = { ...ts.lamp, ...t.lamp };
     ts.rent = { ...ts.rent, ...t.rent };
     for (const k of Object.keys(ts.learned)) if (k in t.learned) ts.learned[k] = t.learned[k];
+    ts.varieGrant = { ...ts.varieGrant, ...t.varieGrant };
     ts.crop = { ...ts.crop, ...t.crop };
     ts.movedOut = t.movedOut; ts.bankrupt = t.bankrupt;
     S.tutorial = ts;

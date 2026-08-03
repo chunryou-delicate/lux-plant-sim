@@ -340,21 +340,60 @@ export function sellPot(S, opt = {}) {
                       leaves: q.leaves, variegatedLeaves: q.variegatedLeaves, v: q.v }] };
 }
 
+/* ============================================================
+   ★★ 삽수는 **뿌리내려야 팔린다** (2026-08-03 · 박사님 확정)
+   ------------------------------------------------------------
+   원문: *"꾸준수입은 삽수를 파는 것으로 성립시킨다. **자르고 → 뿌리내리고 → 판다.**"*
+
+   예전에는 자른 그 날 바로 팔렸다. 그러면 "자르기"가 곧 "돈"이라 **기다림이 없고**,
+   물꽂이 12일 · 직삽 24일이라는 두 갈래의 차이도 값이 아니게 된다.
+   뿌리 없는 조각은 상품이 아니다 — 실제로도 그렇고, 게임에서도 그래야 시간이 값이 된다.
+
+     rooting      아직 못 판다 (물꽂이 12일 · 직삽 24일 · propagation.METHODS)
+     rooted       판다 — 뿌리를 냈다
+     node         판다 — 혹까지 났다 (분갈이 기한이 도는 중)
+     established  판다 — 자리를 잡았다
+     dead         못 판다
+============================================================ */
+export const SELLABLE_CUTTING_STATUS = Object.freeze(['rooted', 'node', 'established']);
+
+/* 팔 때 돌아오는 용기 — `propagation.CONTAINERS[*].returnsOnSale` 과 **같은 표**다.
+   propagation 이 shop 을 import 하므로 반대로 부르면 순환이 된다. 그래서 여기 한 줄만 둔다.
+   ⚠ 둘이 갈리면 병이 사라지거나 늘어난다 — tools/test_propagation.mjs 가 등식을 고정한다. */
+export const CONTAINER_RETURNS = Object.freeze({ jar: 'jar' });
+
 /* 삽수를 판다. 코어가 전부 아는 물건이라 잎 수를 받지 않는다. */
 export function sellCutting(S, cuttingOrId, opt = {}) {
   const list = S.cuttings || [];
   const c = typeof cuttingOrId === 'string' ? list.find(x => x.id === cuttingOrId) : cuttingOrId;
   if (!c) throw new Error(`[상점] 모르는 삽수: ${cuttingOrId}`);
   if (c.status === 'dead') throw new Error(`[상점] ${c.id} 는 이미 시들었습니다 — 팔 수 없습니다`);
+  if (!SELLABLE_CUTTING_STATUS.includes(c.status)) {
+    const e = new Error(`[상점] ${c.id} 는 아직 뿌리가 없습니다 — 뿌리내린 뒤에 팔 수 있습니다 ` +
+      `(지금 ${c.days}일째)`);
+    e.tutorialInput = true;                 // 안내지 고장이 아니다
+    throw e;
+  }
   const q = priceOf({ species: opt.species || 'monstera',
                       leaves: c.source.leaves,
                       variegatedLeaves: c.source.variegatedLeaves });
   S.cuttings = list.filter(x => x !== c);
   const r = credit(S, q.won, 'cutting');
+  /* ★ 유리 수경병은 돌아온다 — 물꽂이는 병에서 뽑아 보내지 병째 보내지 않는다.
+     흙에 심긴 것(soil)은 흙째 나가므로 안 돌아온다. 규칙은 propagation.CONTAINERS 가 갖고
+     여기서는 그 표를 읽기만 한다(값을 두 곳에서 정하지 않는다).
+     ⚠ 순환 import 를 피하려고 표를 베끼지 않고 **반환값으로 알린다** — 호출부가 아니라
+       loop/게임이 아니라 여기서 바로 처리해야 하므로, 표만 지역 상수로 둔다(아래 한 줄). */
+  const returned = CONTAINER_RETURNS[c.container] || null;
+  if (returned) {
+    const shop = shopOf(S);
+    shop.stock[returned] = (shop.stock[returned] || 0) + 1;
+  }
   if (typeof opt.log === 'function')
     opt.log(`💰 삽수 ${c.id} 를 팔았습니다 — 잎 ${q.leaves}장 중 무늬 ${q.variegatedLeaves}장 ` +
-            `(v ${q.v.toFixed(3)}) · ${q.won.toLocaleString()}원`);
-  return { ...r, price: q, cuttingId: c.id,
+            `(v ${q.v.toFixed(3)}) · ${q.won.toLocaleString()}원` +
+            (returned ? ` · ${CATALOG[returned].ko} 는 남습니다` : ''));
+  return { ...r, price: q, cuttingId: c.id, containerReturned: returned,
            events: [{ id: 'cutting_sold', ko: '삽수를 팔았습니다', won: q.won,
                       leaves: q.leaves, variegatedLeaves: q.variegatedLeaves, v: q.v }] };
 }

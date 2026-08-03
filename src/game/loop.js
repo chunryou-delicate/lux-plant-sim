@@ -45,10 +45,11 @@ import {
   markMonsteraPhase,
   slotFitsDiameter
 } from './first_play.js';
-import { canMoveOut, createTutorialState, LEARNING, tutorialDay, noteLearning } from './tutorial.js';
+import { canMoveOut, createTutorialState, LEARNING, tutorialDay, noteLearning,
+         stepVarieGrant } from './tutorial.js';
 import { dliFromContract } from './growth_adapter.js';
 import { headroomCheck, PLANT_POT_D_REF } from './headroom.js';
-import { rehomeCuttings, stepCuttings } from './propagation.js';
+import { rehomeCuttings, stepCuttings, cuttableNow } from './propagation.js';
 import { stepShop } from './shop.js';
 import { weekStats, WEATHER_P } from '../engine/weather.js';
 
@@ -176,6 +177,42 @@ function stepCuttingsOfTurn(S) {
   }
 }
 
+/* ★ 튜토 확정 무늬 — 하루에 한 번 (2026-08-03). 규칙은 tutorial.js 가 갖는다.
+   여기서는 **growth 가 낸 값을 그대로 넘겨주기만** 한다 — 루프가 무늬 규칙을 또 갖지 않게.
+   ⚠ growth 가 접근자를 안 내면(옛 plant_grow · sim.nullGrowth) 아무것도 안 한다.
+     코어가 마디를 지어내면 그 순간 "실제 자란 것을 자른다"가 거짓이 된다. */
+function stepVarieGrantOfTurn(S, io) {
+  const ts = S.tutorial;
+  if (!ts || !ts.enabled || ts.movedOut) return null;
+  let nodes = null, stats = null;
+  try {
+    if (io.growth && typeof io.growth.cuttableNodes === 'function') nodes = io.growth.cuttableNodes();
+    if (io.growth && typeof io.growth.leafStats === 'function') stats = io.growth.leafStats();
+  } catch (e) {
+    pushLog(S, '⚠ 마디·잎 집계를 읽지 못했습니다 — ' + e.message);
+    return { error: e.message };
+  }
+  try {
+    /* ★ **지금 실제로 자를 수 있는 마디**에만 붙인다. growth 목록에는 이미 잘라낸 자리도
+       그대로 남아 있어서(propagation.js §유한성), 안 거르면 못 자르는 마디에 무늬가 붙어
+       "무늬는 났는데 팔 수가 없는" 막다른 길이 생긴다. */
+    /* ★ **지금 모주에 실제로 달려 있는** 마디에만 붙인다(cuttableNow 가 총량으로 거른다).
+       "지금 자를 수 있나"까지는 안 본다 — 잎이 한 장뿐이라 초보 규칙(모주가 끝나는 자르기)에
+       막히는 개체도 있는데, 그 경우에도 **그루째 팔면 같은 값**이다(잎1·v=1 = 732,000원).
+       여기서 더 좁히면 잎 두 장짜리 도착 개체가 통째로 막다른 길이 된다(재현에서 실제로 그랬다). */
+    const usable = nodes ? cuttableNow(S, nodes) : null;
+    const r = stepVarieGrant(S, { nodes: usable, stats });
+    if (r.granted) {
+      pushLog(S, `✨ 새 잎 한 장이 무늬로 나왔습니다 — ${r.nodeId} (잘라서 뿌리내리면 팔 수 있습니다)`);
+      r.events = [{ id: 'varie_granted', ko: '무늬 잎이 나왔습니다', nodeId: r.nodeId }];
+    }
+    return r;
+  } catch (e) {
+    pushLog(S, '⚠ 확정 무늬 판정 실패 — ' + e.message);
+    return { error: e.message };
+  }
+}
+
 /* ══ 서사 신호 (2026-08-03 신설) ═══════════════════════════════════════
    ★왜 여기인가 — 살림 신호(월세·계절·식물등)는 tutorial.js 가, 첫 플레이 신호는
      first_play.js 가 이미 낸다. 남은 셋은 **둘 다 알아야 나오는 것**이라 여기가 유일한 자리다:
@@ -267,6 +304,10 @@ function stepTutorial(S, turn, io) {
       mealsUsed: (ev && ev.mealsUsed) || 0
     });
     if (r && r.events) for (const e of r.events) pushLog(S, '📅 ' + e.ko);
+    /* ★확정 무늬는 **배움·돈이 오늘 값이 된 뒤에** 본다 — 조건 ②·④가 오늘 값이라야 맞다 */
+    const vg = stepVarieGrantOfTurn(S, io);
+    turn.varieGrant = vg;
+    if (r && vg && vg.events) r.events = [...(r.events || []), ...vg.events];
     /* ★서사 신호는 살림이 돈 **뒤에** 낸다 — 계절·돈이 오늘 값이어야 판정이 맞다 */
     if (r) r.storyEvents = narrativeEvents(S, turn, ts, learnedBefore, r);
     return r;

@@ -25,6 +25,7 @@
      화분·콩나물 시루와 **같은 불변식**이다(추천 자리 위면 안정 id, 벗어나면 `free:{id}`).
 ============================================================ */
 import { resolvePlacement, atFromSlot, isFreeSlotId, inRoom } from './place.js';
+import { useStock, shopOf, CATALOG } from './shop.js';
 
 export const PROPAGATION_SCHEMA = 'cutting/1';
 
@@ -106,12 +107,50 @@ export const METHODS = Object.freeze({
       규칙(capacity·gradeMult)은 여기 적어 두되 `takeCutting` 이 막는다 — 자리만 잡아 둔 것이다. */
 export const CONTAINERS = Object.freeze({
   jar:  Object.freeze({ id: 'jar',  ko: '유리 수경병',   method: 'water', capacity: 1,
-                        gradeMult: 1.0, assetId: 'pots/pot_glassjar.glb', realMaxM: 0.13, ready: true }),
+                        gradeMult: 1.0, assetId: 'pots/pot_glassjar.glb', realMaxM: 0.13, ready: true,
+                        /* 상점 품목 열쇠 · 팔 때 돌아오나 (아래 ★용기값 참고) */
+                        itemId: 'jar',  returnsOnSale: true }),
   tray: Object.freeze({ id: 'tray', ko: '물꽂이 트레이', method: 'water', capacity: 6,
-                        gradeMult: 0.8, assetId: null,                    realMaxM: 0.36, ready: false }),
+                        gradeMult: 0.8, assetId: null,                    realMaxM: 0.36, ready: false,
+                        itemId: null,   returnsOnSale: false }),
   soil: Object.freeze({ id: 'soil', ko: '검은 모종포트', method: 'pot',   capacity: 1,
-                        gradeMult: 1.0, assetId: null,                    realMaxM: 0.12, ready: true })
+                        gradeMult: 1.0, assetId: null,                    realMaxM: 0.12, ready: true,
+                        itemId: 'pot',  returnsOnSale: false })
 });
+
+/* ============================================================
+   ★★ 용기값 — 자르는 데 **돈과 이틀**이 든다 (2026-08-03)
+   ------------------------------------------------------------
+   박사님 확정: *"꾸준수입도 가능하지. 삽수 팔거나 하는 걸로."*
+   그러려면 삽수 한 개의 **순액**이 나와야 하고, 순액이 나오려면 원가가 실제로 걸려야 한다.
+   예전에는 `opt.container` 가 그냥 문자열이라 병이 **공짜로 무한히** 나왔다 —
+   그 상태로 "삽수를 팔면 얼마 남나"를 재면 그 답은 거짓이다.
+
+     · 자르기 = 용기 재고 하나를 **쓴다**(`shop.useStock`). 없으면 던진다.
+       용기는 배송 2일이라(`shop.CATALOG`) **미리 시켜 둬야** 자를 수 있다.
+     · 유리 수경병은 팔 때 **돌아온다**(`returnsOnSale`) — 물꽂이는 병에서 뽑아 보내지
+       병째 보내지 않는다. 그래서 첫 병만 7,000원이고 두 번째부터는 시간만 든다.
+     · 검은 모종포트는 흙째 나가므로 **안 돌아온다.** 분갈이(`repotCutting`)도 포트를 쓴다.
+
+   ⚠ 재고를 안 보고 자르는 길은 남기지 않았다. 하나라도 열어 두면 그 길로 경제가 샌다.
+============================================================ */
+export function containerItemOf(container) {
+  const c = CONTAINERS[container];
+  return c ? c.itemId : null;
+}
+export function containerCostWonOf(container) {
+  const it = CATALOG[containerItemOf(container)];
+  return it ? it.listWon : 0;                 // 참고용(정가). 실제 결제는 shop.buyPriceOf 다
+}
+
+/* 용기를 재고로 돌려놓는다. `shop.useStock` 의 반대짝이고, 여기서만 쓴다 —
+   상점이 "판 것"으로 세지 않게 값은 안 건드린다(돌아온 것은 수입이 아니다). */
+export function returnContainer(S, itemId, qty = 1) {
+  if (!itemId || !S) return 0;
+  const shop = shopOf(S);
+  shop.stock[itemId] = (shop.stock[itemId] || 0) + qty;
+  return shop.stock[itemId];
+}
 
 /* ============================================================
    ★★ 초보(스토리)에서 죽는 것이 맞는가 — 결론과 근거 (박사님 질문에 대한 답)
@@ -201,6 +240,115 @@ export function cuttingHash(seed, id, salt = 0) {
 }
 
 /* ============================================================
+   ★★ 유한성 — 자를 수 있는 것은 **모주가 실제로 가진 만큼**뿐이다 (2026-08-03)
+   ------------------------------------------------------------
+   박사님 지시: *"⚠ 무한 증식이 되면 안 된다. 자를 수 있는 마디는 유한하고, 자르면 모주가
+   잎을 잃는다(pot.pendingCutLoss). 그 제약을 실제로 걸어라."*
+
+   ★ 왜 코어가 막아야 하나. growth 는 **잘라낸 것을 모른다** — plant_grow 는 한 그루 전용이라
+     형태를 되돌리는 창구가 없고, 그래서 `takeCutting` 은 지금도 손실을 `pot.pendingCutLoss` 에
+     **적어만 둔다**(위 ④ 주석). 그 말은 growth 의 `cuttableNodes()` 가 **잘린 뒤에도 안 잘린
+     그루를 계속 낸다**는 뜻이다. 그 목록을 그대로 믿고 자르면 잎 2장짜리 그루에서 삽수가
+     영원히 나온다 — 경제가 그 자리에서 끝난다.
+
+   ★ 무엇으로 막나 — **총량 하나**다.
+       잘라낸 잎의 합(`pendingCutLoss.leaves`) ≤ 모주의 잎 수(`leafStats().leaves`)
+     이 부등식만 지키면 무한 증식이 물리적으로 불가능하다. 모주가 잎을 새로 내면
+     오른쪽이 커져 **그만큼만** 다시 열린다 — 그게 "꾸준수입의 속도"가 된다.
+
+   ★ 왜 마디 트리를 안 따라가나(대안을 버린 이유). nodeId 는 `n0.1:1#3` 처럼 **경로**라
+     문자열을 파싱하면 "어느 마디가 어느 마디 위인가"를 코어가 다시 셀 수 있다. 안 했다 —
+     그 규칙은 growth 소유의 id 형식에 코어를 묶고, growth 가 형식을 바꾸는 날
+     **오류 없이 틀린 필터**가 된다(무한 증식이 조용히 열린다). 총량은 형식과 무관하다.
+     대신 **같은 마디를 두 번 자르는 것**은 id 로 막는다(그건 형식과 상관없는 동일성이다).
+
+   ⚠ 그래서 이 필터는 "이 마디가 아직 달려 있나"를 완벽히 알지는 못한다. 아는 것은
+     **잘라낸 총량을 넘지 않는다**는 것뿐이고, 그게 경제가 필요로 하는 전부다.
+     정확한 형태 반영은 growth 의 다개체 리팩터 몫이다(docs/handoff/core-to-growth.md).
+============================================================ */
+
+/* 모주의 잎 수. **코어가 세지 않는다** — growth 가 낸 목록에서 읽는다.
+   밑동 마디를 자르면 그루가 통째로 딸려오므로 `leafStats().leaves` 와 항상 같다
+   (tools/test_cuttable.mjs 검사 K 가 그 등식을 고정한다). */
+export function motherLeavesOf(nodes) {
+  let max = 0;
+  for (const n of nodes || []) if (Number.isInteger(n.leaves) && n.leaves > max) max = n.leaves;
+  return max;
+}
+
+export function cutLossOf(pot) {
+  const l = pot && pot.pendingCutLoss;
+  return { leaves: (l && l.leaves) || 0, nodes: (l && l.nodes) || 0 };
+}
+
+/* 지금 몇 장을 더 자를 수 있나.
+   반환 { motherLeaves, lostLeaves, leftLeaves, cutNodeIds } */
+export function cutBudgetOf(S, nodes, opt = {}) {
+  const pot = opt.pot || (opt.potId ? (S.pots || []).find(p => p.id === opt.potId) : (S.pots || [])[0]);
+  const motherLeaves = Number.isInteger(opt.motherLeaves) ? opt.motherLeaves : motherLeavesOf(nodes);
+  const lost = cutLossOf(pot);
+  return {
+    motherLeaves,
+    lostLeaves: lost.leaves,
+    leftLeaves: Math.max(0, motherLeaves - lost.leaves),
+    cutNodeIds: ((pot && pot.cuts) || []).map(c => c.nodeId)
+  };
+}
+
+/* growth 가 낸 목록에서 **지금 실제로 자를 수 있는 것만** 남긴다.
+   ★ `takeCutting` 이 자기 안에서 이걸 한 번 더 돌린다 — 호출부가 잊어도 새지 않는다.
+   ★ 걸러 내는 사유를 같이 낸다(`why`) — 화면이 "왜 이 마디는 회색인가"를 말할 수 있게. */
+export function cuttableNow(S, nodes, opt = {}) {
+  if (!Array.isArray(nodes)) return [];
+  const b = cutBudgetOf(S, nodes, opt);
+  const cut = new Set(b.cutNodeIds);
+  const out = [];
+  for (const n of nodes) {
+    if (!n || typeof n !== 'object') continue;
+    if (!isCuttableStem(n.stem)) continue;                       // 잎꽂이는 안 된다(§①)
+    if (!Number.isInteger(n.leaves) || n.leaves < 1) continue;   // 잎 없는 조각은 상품이 아니다
+    if (cut.has(n.nodeId)) continue;                             // 이미 잘라낸 마디
+    if (n.leaves > b.leftLeaves) continue;                       // ★총량 — 없는 잎을 잘라낼 수 없다
+    out.push(n);
+  }
+  return out;
+}
+
+/* ★ 지금 모주에 **실제로 남아 있는** 잎 집계. growth 의 `leafStats()` 에서 잘라낸 만큼을 뺀다.
+   ⚠ 이게 없으면 `shop.sellPot` 에 growth 의 날값이 그대로 들어가 **이미 팔아 버린 잎을 또 판다.**
+     growth 는 잘린 것을 모르므로(위 §유한성) 빼 주는 것은 코어 몫이다.
+   반환 { leaves, variegatedLeaves, lostLeaves, rawLeaves } — 못 재면 null(0 으로 안 메꾼다). */
+export function motherStatsNow(S, stats, opt = {}) {
+  if (!stats || typeof stats !== 'object' || !Number.isInteger(stats.leaves)) return null;
+  const pot = opt.pot || (opt.potId ? (S.pots || []).find(p => p.id === opt.potId) : (S.pots || [])[0]);
+  const lost = cutLossOf(pot).leaves;
+  const leaves = Math.max(0, stats.leaves - lost);
+  /* 무늬 잎도 같이 깎는다 — 다만 **덜 깎는 쪽**으로 둔다(무늬가 남아 있을 수도 있으므로
+     전체 잎을 넘지 않게만 자른다). 넘치게 세면 안 판 잎을 판 게 된다. */
+  const varie = Math.min(leaves, Math.max(0, stats.variegatedLeaves || 0));
+  return { leaves, variegatedLeaves: varie, lostLeaves: lost, rawLeaves: stats.leaves };
+}
+
+/* 왜 못 자르나 — 사람이 읽을 수 있는 사유. 없으면 null(자를 수 있다). */
+export function cutBlockedReason(S, nodes, nodeId, opt = {}) {
+  const node = (nodes || []).find(n => n && n.nodeId === nodeId);
+  if (!node) return `모르는 마디입니다: ${nodeId}`;
+  if (!isCuttableStem(node.stem))
+    return `${nodeId} 는 stem 이 '${node.stem}' 이라 자를 수 없습니다 — ` +
+           `${CUTTABLE_STEMS.join('/')} 마디라야 새 생장점을 냅니다 (잎꽂이는 안 됩니다)`;
+  if (!Number.isInteger(node.leaves) || node.leaves < 1)
+    return `${nodeId} 에 잎이 없습니다 — 잎이 없는 조각은 뿌리 낼 에너지가 없습니다(propagation.md §3)`;
+  const b = cutBudgetOf(S, nodes, opt);
+  if (b.cutNodeIds.includes(nodeId))
+    return `${nodeId} 는 이미 잘라낸 마디입니다 — 같은 마디가 두 번 나오지 않습니다`;
+  if (node.leaves > b.leftLeaves)
+    return `${nodeId} 는 잎 ${node.leaves}장짜리인데 모주에 ${b.leftLeaves}장만 남았습니다 ` +
+           `(잎 ${b.motherLeaves}장 중 ${b.lostLeaves}장을 이미 잘랐습니다) — ` +
+           `새 잎이 날 때까지 기다려야 합니다`;
+  return null;
+}
+
+/* ============================================================
    ④ 자르기
 ============================================================ */
 
@@ -241,20 +389,21 @@ export function takeCutting(S, opt = {}) {
 
   const node = nodes.find(n => n.nodeId === opt.nodeId);
   if (!node) throw new Error(`[삽수] 모르는 마디입니다: ${opt.nodeId} ` +
-    `(자를 수 있는 것: ${nodes.filter(n => isCuttableStem(n.stem)).map(n => n.nodeId).join(', ') || '없음'})`);
+    `(자를 수 있는 것: ${cuttableNow(S, nodes, { potId: pot.id }).map(n => n.nodeId).join(', ') || '없음'})`);
 
-  /* ★ 잎꽂이는 안 된다. petiole·잎 하나로는 새 생장점을 못 낸다(propagation.md §1) */
-  if (!isCuttableStem(node.stem))
-    throw new Error(`[삽수] ${node.nodeId} 는 stem 이 '${node.stem}' 이라 자를 수 없습니다 — ` +
-      `${CUTTABLE_STEMS.join('/')} 마디라야 새 생장점을 냅니다 (잎꽂이는 안 됩니다)`);
-  if (node.leaves < 1)
-    throw new Error(`[삽수] ${node.nodeId} 에 잎이 없습니다 — ` +
-      `잎이 없는 조각은 뿌리 낼 에너지가 없습니다(propagation.md §3)`);
+  /* ★ 잎꽂이·잎 없는 조각·이미 잘라낸 마디·없는 잎을 자르는 것 — 사유는 한 곳에서 낸다.
+     (예전에는 여기서 stem·잎 수만 봤고, "이미 잘라낸 마디"와 "총량 초과"가 통째로 없었다.) */
+  const blocked = cutBlockedReason(S, nodes, node.nodeId, { potId: pot.id });
+  if (blocked) throw new Error('[삽수] ' + blocked);
 
-  /* ★ 모주를 끝내는 자르기(③) — 예비혹이 하나도 안 남는 경우.
-     초보(스토리)에서는 **실행 자체가 없다**(propagation.md §2). 자유·고수에서는 경고만 한다. */
-  const restCuttable = nodes.filter(n => n.nodeId !== node.nodeId && isCuttableStem(n.stem));
-  const wouldEndMother = restCuttable.length === 0;
+  /* ★ 모주를 끝내는 자르기(③) — **모주에 잎이 한 장도 안 남는** 경우.
+     초보(스토리)에서는 **실행 자체가 없다**(propagation.md §2). 자유·고수에서는 경고만 한다.
+     ★ 판정을 "다른 마디가 목록에 남아 있나"에서 **"잎이 남나"** 로 바꿨다(2026-08-03).
+       growth 목록에는 이미 잘려 나간 자리도 그대로 남아 있어서(위 §유한성) 마디 개수로 세면
+       거짓말이 된다 — 잎을 다 잘라낸 뒤에도 "아직 마디가 넷 남았다"고 통과시킨다.
+       남은 잎으로 세면 형태를 몰라도 항상 맞고, 초보에서 **모주가 최소 한 장을 지킨다.** */
+  const leftAfter = cutBudgetOf(S, nodes, { potId: pot.id }).leftLeaves - node.leaves;
+  const wouldEndMother = leftAfter < 1;
   const novice = isNoviceMode(S);
   if (wouldEndMother && novice)
     throw new Error(`[삽수] ${node.nodeId} 를 자르면 모주에 예비혹이 하나도 안 남아 모주가 끝납니다 — ` +
@@ -266,6 +415,10 @@ export function takeCutting(S, opt = {}) {
   if (!cont.ready)
     throw new Error(`[삽수] ${cont.ko} 는 아직 못 씁니다 — 에셋이 정해지지 않았습니다 ` +
       `(docs/propagation.md §4 ⏸ 물꽂이 트레이). 유리 수경병(jar)이나 화분 직삽(soil)을 쓰세요`);
+
+  /* ★ 용기를 실제로 쓴다 — 여기서 재고가 하나 빠진다(§용기값). 없으면 `useStock` 이 던지고,
+     그 예외에는 "몇 개가 배송 중인지"까지 들어 있다. 상태는 아직 아무것도 안 바뀌었다. */
+  if (cont.itemId) useStock(S, cont.itemId, 1);
 
   const method = cont.method;
   const id = opt.id || nextCuttingId(S);
@@ -513,6 +666,13 @@ export function repotCutting(S, cuttingOrId, opt = {}) {
   if (c.status === 'rooting')
     throw new Error(`[삽수] ${c.id} 는 아직 뿌리가 없습니다 — ` +
       `${METHODS[c.method].rootDays}일째부터 옮길 수 있습니다 (지금 ${c.days}일째)`);
+
+  /* ★ 분갈이도 **포트를 하나 쓴다**. 옮겨 심으려면 심을 그릇이 있어야 한다 —
+     이게 없으면 "죽는 길을 피하는 것"이 공짜가 되고, 물꽂이의 기한이 벌이 아니게 된다.
+     ★ 빠져나온 병은 **돌아온다**(returnsOnSale 과 같은 이유 — 병은 소모품이 아니다). */
+  const from = CONTAINERS[c.container] || null;
+  useStock(S, CONTAINERS.soil.itemId, 1);
+  if (from && from.returnsOnSale && from.itemId) returnContainer(S, from.itemId);
 
   c.potted = true;
   c.container = 'soil';

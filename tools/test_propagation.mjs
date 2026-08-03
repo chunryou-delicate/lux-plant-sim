@@ -111,6 +111,10 @@ function newFree(opt = {}) {
   S.pots.push({ id: 'pot_01', slotId: null, at: null, plantId: 'monstera_deliciosa',
                 variegated: !!opt.variegated, daysPlanted: 0, arrivedOnDay: 0, arrivalGrowthDays: 143 });
   setPotAt(S, 'pot_01', { x: 0, y: 1.2, z: -1.6 }, { size: room.size, slots: room.slots });
+  /* ★ 용기 재고 (2026-08-03) — 자르기가 용기를 **실제로 쓴다**(propagation.js §용기값).
+     여기서 미리 채워 두는 이유는 이 파일이 재는 것이 "상점"이 아니라 "삽수"이기 때문이다.
+     재고가 없을 때 던지는지는 아래 검사 A 가 따로 본다. */
+  S.shop = { schema: 'shop/1', seq: 0, orders: [], stock: { jar: 20, pot: 20 }, spentWon: 0, earnedWon: 0 };
   return S;
 }
 /* 초보(스토리) — sim.mode = novice */
@@ -184,7 +188,9 @@ check('B 무늬 잎을 품은 조각은 굴림 없이 무늬다 — 잎 수·무
   assert.equal(c.varieRolled, true, '딸려온 무늬 잎이 있는데 굴림을 남겨 뒀습니다');
 
   /* 무늬 없는 마디를 자르면 확정이 아니라 확률로 남는다 */
-  const c2 = P.takeCutting(S, { nodes: NODES(), nodeId: 'ax0#0', container: 'jar', at: FLOOR(0.8, 0.5), ...PLACE });
+  /* ★ 밑동(ax0#0·잎 3장)이 아니라 잎 1장 마디를 자른다 — ax0#1 로 이미 2장이 나갔고
+     모주에 1장만 남았다. 없는 잎은 못 자른다(propagation.js §유한성). */
+  const c2 = P.takeCutting(S, { nodes: NODES(), nodeId: 'ax1#0', container: 'jar', at: FLOOR(0.8, 0.5), ...PLACE });
   assert.equal(c2.variegated, false);
   assert.equal(c2.varieRolled, false, '안 굴렸는데 굴렸다고 표시됐습니다');
   assert.ok(c2.varieChance > 0, `무늬 모주인데 새 잎 무늬율이 ${c2.varieChance}`);
@@ -241,8 +247,8 @@ check('D 물꽂이 12일 · 화분 직삽 24일 — 정확히 12일 차이', () 
   assert.equal(P.METHODS.pot.rootDays, 24);
 
   const S = newFree();
-  const w = P.takeCutting(S, { nodes: NODES(), nodeId: 'ax0#0', container: 'jar',  at: FLOOR(0.5, 0.5), ...PLACE });
-  const d = P.takeCutting(S, { nodes: NODES(), nodeId: 'ax0#1', container: 'soil', at: FLOOR(0.9, 0.5), ...PLACE });
+  const w = P.takeCutting(S, { nodes: NODES(), nodeId: 'ax0#1', container: 'jar',  at: FLOOR(0.5, 0.5), ...PLACE });
+  const d = P.takeCutting(S, { nodes: NODES(), nodeId: 'ax1#0', container: 'soil', at: FLOOR(0.9, 0.5), ...PLACE });
 
   let wRooted = null, dRooted = null;
   for (let i = 1; i <= 30; i++) {
@@ -341,7 +347,8 @@ check('G 초보 — 유예 2배(16일) · 경고 더 많음 · 모주를 끝내�
 
   const S = newNovice();
   assert.equal(P.isNoviceMode(S), true);
-  const c = P.takeCutting(S, { nodes: NODES(), nodeId: 'ax0#0', container: 'jar', at: FLOOR(0.5, 0.5), ...PLACE });
+  /* 밑동(ax0#0)은 잎 3장 = 그루 전체라 초보에서는 막힌다(아래에서 따로 본다) — 잎 2장 마디를 쓴다 */
+  const c = P.takeCutting(S, { nodes: NODES(), nodeId: 'ax0#1', container: 'jar', at: FLOOR(0.5, 0.5), ...PLACE });
   assert.equal(P.deadlineDayOf(c, true), S.day + 48, '초보 기한이 자른 날 +48 이 아닙니다');
 
   let warns = 0, diedDay = null;
@@ -368,7 +375,7 @@ check('G 초보 — 유예 2배(16일) · 경고 더 많음 · 모주를 끝내�
 
   /* ★ 초보라도 화분 직삽은 절대 안 죽는다 — 죽음이 있는 길은 선택지일 뿐이다 */
   const Ss = newNovice();
-  P.takeCutting(Ss, { nodes: NODES(), nodeId: 'ax0#0', container: 'soil', at: FLOOR(0.5, 0.5), ...PLACE });
+  P.takeCutting(Ss, { nodes: NODES(), nodeId: 'ax0#1', container: 'soil', at: FLOOR(0.5, 0.5), ...PLACE });
   runDays(Ss, 300);
   assert.equal(Ss.cuttings.length, 1, '★ 초보에서 화분 직삽 삽수가 죽었습니다 — 안전한 길이 아닙니다');
   info(`초보: 유예 16일 · 기한 48일 · 경고 ${warns}회 · 화분 직삽은 300일 뒤에도 산다`);
@@ -385,21 +392,33 @@ check('H 잘라낸 사실이 모주에 기록된다 — 형태 반영은 "대기
   assert.equal(pot.cuts[0].leaves, 2);
   assert.deepEqual(pot.pendingCutLoss, { leaves: 2, nodes: 1 }, '모주 손실이 안 쌓였습니다');
 
-  P.takeCutting(S, { nodes: NODES(), nodeId: 'ax0#0', container: 'jar', log: m => logs.push(m) });
-  assert.deepEqual(pot.pendingCutLoss, { leaves: 5, nodes: 2 }, '두 번째 자르기가 안 쌓였습니다');
+  P.takeCutting(S, { nodes: NODES(), nodeId: 'ax1#0', container: 'jar', log: m => logs.push(m) });
+  assert.deepEqual(pot.pendingCutLoss, { leaves: 3, nodes: 2 }, '두 번째 자르기가 안 쌓였습니다');
+
+  /* ★ 여기서 끝이다 — 모주 잎 3장을 다 잘라냈으므로 더는 못 자른다(무한 증식 차단) */
+  assert.throws(() => P.takeCutting(S, { nodes: NODES(), nodeId: 'tip2', container: 'jar' }),
+    /모르는 마디|남았습니다/, '잎을 다 잘라낸 모주에서 또 잘렸습니다');
+  assert.equal(P.cuttableNow(S, NODES()).length, 0,
+    '★남은 잎이 0인데 자를 수 있는 마디가 남아 있습니다 — 무한 증식이 열립니다');
 
   /* ★ "줄였다"고 말하지 않는다 — growth 가 자기 형태를 깎을 창구가 없다 */
   assert.ok(logs.some(m => m.includes('대기 중')),
     '모주 형태 반영이 대기 중이라는 사실을 아무 데도 안 알렸습니다');
-  assert.equal(pot.motherEnded, false, '예비혹이 남았는데 모주가 끝났다고 적혔습니다');
+  /* ★ 잎 3장을 다 잘라냈으므로 모주가 끝났다고 적혀야 한다 — 자유 모드는 막지 않고 적는다.
+     (첫 자르기 뒤에는 아직 안 끝났었다: 아래에서 그 순서를 같이 고정한다) */
+  assert.equal(pot.motherEnded, true, '잎을 다 잘라냈는데 모주가 끝났다고 안 적혔습니다');
+  assert.equal(pot.cuts.length, 2);
+  const S2 = newFree();
+  P.takeCutting(S2, { nodes: NODES(), nodeId: 'ax0#1', container: 'jar' });
+  assert.equal(S2.pots[0].motherEnded, false, '예비혹이 남았는데 모주가 끝났다고 적혔습니다');
   info(`모주 pot_01 — 잘린 마디 ${pot.cuts.length}개 · 대기 손실 잎 ${pot.pendingCutLoss.leaves}장`);
 });
 
 /* ══ I · 저장·복원 왕복 ═══════════════════════════════════════════════ */
 check('I 저장·복원 — 삽수가 굴림 결과·경고 이력·모주 기록까지 그대로 살아난다', () => {
   const S = newFree({ variegated: true });
-  const a = P.takeCutting(S, { nodes: NODES(), nodeId: 'ax0#0', container: 'jar',  at: FLOOR(0.5, 0.5), ...PLACE });
-  const b = P.takeCutting(S, { nodes: NODES(), nodeId: 'ax0#1', container: 'soil', at: FLOOR(0.9, 0.5), ...PLACE });
+  const a = P.takeCutting(S, { nodes: NODES(), nodeId: 'ax0#1', container: 'jar',  at: FLOOR(0.5, 0.5), ...PLACE });
+  const b = P.takeCutting(S, { nodes: NODES(), nodeId: 'ax1#0', container: 'soil', at: FLOOR(0.9, 0.5), ...PLACE });
   runDays(S, 34);                                    // a 는 혹이 나서 경고가 한 번 나간 뒤
   assert.equal(a.status, 'node');
   assert.ok(a.warned.length >= 1, '경고 이력이 안 쌓였습니다');

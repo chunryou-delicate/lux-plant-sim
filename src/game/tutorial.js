@@ -13,6 +13,7 @@
  */
 
 import { seasonOf, DAYS_PER_SEASON } from '../engine/weather.js';
+import { priceOf } from './shop.js';
 
 /* weather.js 는 **연중 절대 일수**를 받는다(0~359, 봄→여름→가을→겨울 각 90일).
    "여름 45일째"를 그 축으로 옮기려면 여름이 시작하는 90 을 더해야 한다 —
@@ -88,8 +89,18 @@ export function createTutorialState(opt = {}) {
        품목·가격·배송은 shop.js 소유다. 여기는 **합계만** 센다. */
     crop: { spentWon: 0, soldWon: 0 },
     learned: LEARNING_KEYS.reduce((o, k) => (o[k] = false, o), {}),
+    /* ★ 튜토 확정 무늬 — 아래 §확정 무늬. 정식 모드에는 이 칸 자체가 없다(튜토 상태다). */
+    varieGrant: createVarieGrantState(),
     movedOut: false,
     bankrupt: false
+  };
+}
+
+export function createVarieGrantState() {
+  return {
+    nodeIds: [],         // 지금 **모주에** 붙어 있는 확정 무늬 마디
+    count: 0,            // 튜토 전체에서 몇 번 줬나 (표시·재현용)
+    lastDay: null        // 마지막으로 준 튜토 일자
   };
 }
 
@@ -256,6 +267,212 @@ export function noteLearning(ts, ev = {}) {
 
 export function learningLeft(ts) {
   return LEARNING_KEYS.filter(k => !ts.learned[k]).map(k => ({ id: k, ko: LEARNING[k].ko }));
+}
+
+/* ============================================================
+   ★★ 확정 무늬 — "임의 확정 성숙 무늬로 마무리" (2026-08-03 박사님 확정)
+   ------------------------------------------------------------
+   원문: *"튜토는 어느 정도 꾸준수입 + **임의 확정 성숙 무늬로 마무리**하는 걸로 하자."*
+   그 전에 같은 원칙을 이미 말씀하셨다 — *"튜토에 꼭 갈라져야만 하는 거면 튜토에선 100%로."*
+
+   ══ ★ 확률을 안 건드린다 ═══════════════════════════════════════════════
+   무늬 굴림의 정본은 growth 의 `calcVarieProb` 이고 **그건 growth 소유다.**
+   코어가 그 확률을 만지면 두 창이 같은 값을 두 곳에서 정하게 되고, 정식 모드로 새는 길도
+   거기서 열린다. 그래서 코어는 확률이 아니라 **"이 마디를 무늬로 친다"는 자기 상태**를 갖는다:
+
+     ts.varieGrant.nodeIds  ← 코어 상태(세이브에 남는다)
+     varieView(S, {nodes, stats})  ← 그 상태를 growth 가 낸 값 **위에 덧씌워 읽는다**
+
+   growth 에는 아무것도 요청하지 않았다 — 필요한 접근자(`cuttableNodes`·`leafStats`)가
+   이미 다 있다(2026-08-03 growth 창이 붙였다). `plant_grow.html` 은 한 글자도 안 바뀐다.
+
+   ══ ★ 어디에 두었나 · 왜 거기인가 ═══════════════════════════════════════
+   아래 **다섯이 같은 날 모두 참**이면, 모주의 맨 위 잎 한 장을 무늬로 친다.
+
+     ① 반지하 튜토 진행 중이다            `ts.enabled && !ts.movedOut`
+     ② **배움 넷을 다 채웠다**            `learningLeft().length === 0`
+     ③ **모주에서 삽수를 한 번 잘라 봤다** `pots[0].cuts.length >= 1`
+     ④⑤ **지금 가진 것을 다 팔아도 이사 자금에 못 닿는다**
+         `현금 + 살아 있는 삽수 값 + 모주 값 < 1,500,000`
+
+   ★ **플레이어가 한 일에 대한 답이다.** ②는 이 튜토가 가르친 넷(수확·어두운 자리·창가 자리·
+     말린 새순)을 다 해 봤다는 것이고, ③은 이번에 새로 가르치는 것(번식)에 **손을 댔다**는 것이다.
+     ③은 공짜가 아니다 — 자르려면 용기를 **주문해서 이틀을 기다려** 사야 하고(7,000원),
+     자를 마디가 있으려면 몬스테라가 밝은 자리에서 자라고 있어야 한다.
+     **시간만 지나서는 절대 안 온다** — 어두운 자리에 두면 ②의 `spear` 가 안 뜨고,
+     잎이 안 나서 자를 마디도 안 생긴다. 세 갈래 다 자리로 막힌다.
+
+   ★ **왜 "뿌리내려 봤다"가 아니라 "잘라 봤다"인가 — 자금 곡선이 정했다.**
+     뿌리내림까지 기다리면 확정 무늬가 12일 늦게 오고, 그 무늬를 다시 뿌리내려 파는 데
+     12일이 또 걸린다. 실측하면(tools/test_banjiha_routes.mjs) 시작 자금 100만이
+     하루 7,700원씩 줄어 **튜토 30일에 첫 월세 30만이 겹치면** 무늬 삽수 732,000원을 팔아도
+     150만에 못 닿는다. 즉 "뿌리내림"으로 걸면 **여유가 사흘**뿐이라 조금만 늦어도 막다른 길이 된다.
+     "잘라 봤다"로 걸면 그 여유가 **보름**이 되고, 그래도 **확정 무늬 자체는 여전히 잘라서
+     12일을 기다려 팔아야** 값이 된다 — 배우는 내용은 그대로고 문턱만 앞으로 왔다.
+
+   ★ **마지막 장도 플레이어가 배운 동작으로 친다.** 확정 무늬는 그 자리에서 돈이 되지 않는다 —
+     한 번 더 잘라 뿌리내려(12일) 팔아야 값이 된다. 그래서 튜토의 마지막 행동이 "삽수 판매"가
+     되고, ③ 원룸에서 이어질 번식 게임의 예고편이 그대로 된다.
+
+   ★★ **막다른 길이 없다(④⑤) — 이게 "마무리"의 내용이다.**
+     조건이 "무늬가 하나도 없다"가 아니라 **"다 팔아도 못 닿는다"** 인 이유가 여기 있다.
+     실측하면(tools/test_banjiha_routes.mjs) 도착 개체의 살아 있는 잎은 **두세 장**이고,
+     그중 한 장만 무늬가 되면 v = 1/3 ~ 1/2 이라 값이 38만~83만에서 멈춘다 — 150만에 못 닿는다.
+     "한 장만 준다"로 걸면 **무늬는 났는데 그래도 못 나가는** 판이 절반을 넘었다(재현으로 확인).
+
+     그래서 규칙을 이렇게 둔다: **닿을 때까지, 열이틀에 한 장씩.**
+       · 한 장을 준 뒤 **12일**은 안 준다. 12일은 `propagation.METHODS.water.rootDays` —
+         **받은 무늬를 잘라 뿌리내려 파는 데 걸리는 바로 그 시간**이다. 그래서 확정 무늬가
+         "그냥 주는 것"이 아니라 **번식 한 바퀴의 박자**로 온다. 하루에 한 장씩 주면
+         튜토가 이틀 만에 끝났다(재현으로 확인) — 배울 틈이 없다.
+       · **닿는 순간 멈춘다** — 필요한 만큼만 주고 한 장도 더 주지 않는다
+       · 잎이 없으면 못 준다 — 마디 하나에 그 마디의 잎 수까지만 붙는다(있는 잎에만 붙는다)
+     수도꼭지가 아니다. 총량이 **"이사 자금 한 번"** 으로 잠겨 있고, 이사하면 영영 끝난다.
+     `shop.js` §8 의 *"파산해도 막히지 않는다"* 가 여기서 확률이 아니라 **규칙**이 된다.
+
+   ★ **성숙 무늬라 부르는 이유.** 도착 개체는 유효 143일짜리 **성숙한 모주**이고, 무늬를 치는
+     자리도 그 모주의 잎이다. `leafStats().matureLeaves`(갈라짐)로 문을 걸지는 않았다 —
+     실측하면 반지하 창턱에서는 갈라짐이 유효 220일 언저리라(tools 로 확인) 그걸 조건에 넣으면
+     튜토가 영영 안 끝난다. **가진 조건으로 못 걸 문은 걸지 않는다.**
+
+   ══ ★ 정식 모드로 새지 않는 이유 ════════════════════════════════════════
+   ① `ts.varieGrant` 는 **튜토 상태**다. 튜토가 없는 판에는 이 칸 자체가 없다.
+   ② `stepVarieGrant` 가 첫 줄에서 `ts.enabled && !ts.movedOut` 을 본다 — 이사한 뒤에는 끝이다.
+   ③ 덧씌우기(`varieView`)도 같은 문을 지난다. 튜토가 꺼져 있으면 growth 값을 **그대로** 낸다.
+   ④ `growth` 는 아무 영향도 안 받는다 — 확정 무늬는 코어 장부일 뿐이라 다음 판·다른 개체에
+      한 글자도 안 남는다.
+   재현이 이 넷을 다 확인한다(tools/test_banjiha_routes.mjs 검사 H).
+============================================================ */
+
+/* ★ 지금 **가진 것을 다 팔면 얼마인가** — 조건 ④⑤.
+     현금 + 살아 있는 삽수 값 + 모주 값(확정 무늬를 덧씌우고, 잘라낸 잎은 뺀 값)
+   ⚠ 뿌리내리는 중인 삽수도 센다. 12일 뒤면 팔리는 물건이라 "가진 것"이 맞고,
+     안 세면 자르자마자 무늬를 또 주게 된다. */
+export function sellableWonOf(S, ctx = {}) {
+  const ts = S.tutorial;
+  let won = ts.cashWon;
+  for (const c of (S.cuttings || []))
+    if (c && c.status !== 'dead' && c.source && Number.isInteger(c.source.leaves) && c.source.leaves >= 1)
+      won += priceOf({ leaves: c.source.leaves, variegatedLeaves: c.source.variegatedLeaves || 0 }).won;
+  const v = varieView(S, ctx);
+  const st = v.stats;
+  if (st && Number.isInteger(st.leaves)) {
+    /* 모주는 **잘라낸 만큼을 뺀다** — growth 는 잘린 것을 모른다(propagation.js §유한성).
+       여기서 안 빼면 이미 팔아 버린 잎을 또 가진 것으로 센다. */
+    const lost = (((S.pots || [])[0] || {}).pendingCutLoss || {}).leaves || 0;
+    const leaves = Math.max(0, st.leaves - lost);
+    const varie = Math.min(leaves, Math.max(0, st.variegatedLeaves || 0));
+    if (leaves >= 1) won += priceOf({ leaves, variegatedLeaves: varie }).won;
+  }
+  return won;
+}
+
+/* 튜토 확정 무늬가 지금 열려 있나. 사유를 같이 낸다 — 화면·재현이 "왜 안 오나"를 말할 수 있게. */
+export function varieGrantCheck(S, ctx = {}) {
+  const ts = S && S.tutorial;
+  if (!ts || !ts.enabled || ts.movedOut) return { ok: false, why: '튜토가 아닙니다' };
+  const g = ts.varieGrant || (ts.varieGrant = createVarieGrantState());
+  const left = learningLeft(ts);
+  if (left.length) return { ok: false, why: '아직 못 해 본 것이 있습니다 — ' + left.map(x => x.ko).join(' · ') };
+  /* ③ — **모주가 적어 둔 사실**을 읽는다. 이벤트를 후킹하지 않는다:
+     자르기는 턴 밖(버튼)에서 일어나므로 신호를 따로 만들면 호출 경로마다 갈린다. */
+  const cuts = (((S.pots || [])[0] || {}).cuts || []).length;
+  if (!cuts) return { ok: false, why: '삽수를 아직 한 번도 잘라 보지 않았습니다' };
+  const have = sellableWonOf(S, ctx);
+  if (have >= ts.rules.moveOutCostWon)
+    return { ok: false, why: `지금 가진 것을 다 팔면 ${have.toLocaleString()}원 — 이사 자금에 닿습니다`, haveWon: have };
+  if (g.lastDay != null && ts.day - g.lastDay < VARIE_GRANT_INTERVAL_DAYS)
+    return { ok: false, haveWon: have,
+             why: `무늬를 받은 지 ${ts.day - g.lastDay}일째입니다 — ` +
+                  `${VARIE_GRANT_INTERVAL_DAYS}일에 한 장씩 옵니다(잘라 뿌리내리는 시간)` };
+  return { ok: true, why: null, haveWon: have };
+}
+
+/* 하루에 한 번. loop.nextDay 가 growth 에서 읽은 값을 그대로 넘긴다.
+     ctx.nodes  growth.cuttableNodes()  (null 이면 아무것도 안 한다 — 지어내지 않는다)
+     ctx.stats  growth.leafStats()
+   반환 { granted, nodeId, detached, why } */
+export function stepVarieGrant(S, ctx = {}) {
+  const ts = S && S.tutorial;
+  if (!ts || !ts.enabled) return { granted: false, nodeId: null, detached: [], why: '튜토가 아닙니다' };
+  const g = ts.varieGrant || (ts.varieGrant = createVarieGrantState());
+
+  /* ① 잘려 나간 무늬 마디를 모주 목록에서 뺀다 — 잘랐으면 그 잎은 삽수로 옮겨 갔다.
+     takeCutting 을 후킹하지 않는다(호출부가 game.html 이든 재현이든 같아야 한다).
+     대신 모주가 적어 둔 `pot.cuts` 를 읽는다 — 그게 "무엇을 잘라냈나"의 정본이다. */
+  const pot = (S.pots || [])[0];
+  const cutIds = new Set(((pot && pot.cuts) || []).map(c => c.nodeId));
+  const detached = g.nodeIds.filter(id => cutIds.has(id));
+  if (detached.length) g.nodeIds = g.nodeIds.filter(id => !cutIds.has(id));
+
+  const c = varieGrantCheck(S, ctx);
+  if (!c.ok) return { granted: false, nodeId: null, detached, why: c.why };
+
+  /* ② 어느 마디에 붙이나 — **맨 위 잎 한 장**. growth 가 낸 목록에서 잎이 제일 적은
+     자를 수 있는 마디를 고른다. 잎 한 장짜리 조각이라야 "무늬 잎 비율 v = 1"이 되고,
+     그게 docs/shop.md §1 이 낸 잭팟(잎1·v=1 → 732,000원)의 자리다.
+     ★ 코어가 마디를 새로 만들지 않는다 — 있는 목록에서 하나를 고를 뿐이다. */
+  const nodes = ctx.nodes;
+  if (!Array.isArray(nodes) || !nodes.length)
+    return { granted: false, nodeId: null, detached, why: 'growth 가 마디 목록을 안 냈습니다' };
+  /* ★ 잎이 제일 적은 마디부터 채운다 — 잎 한 장짜리 조각이라야 무늬 잎 비율 v 가 1 이 되고,
+     그게 docs/shop.md §1 이 낸 잭팟(잎1·v=1 → 732,000원)의 자리다.
+     한 마디에 **그 마디의 잎 수까지만** 붙는다 — 없는 잎에 무늬를 칠하지 않는다. */
+  const used = new Map();
+  for (const id of g.nodeIds) used.set(id, (used.get(id) || 0) + 1);
+  const cand = nodes
+    .filter(n => n && CUTTABLE_STEMS_FOR_GRANT.includes(n.stem) &&
+                 Number.isInteger(n.leaves) && n.leaves >= 1 && !cutIds.has(n.nodeId) &&
+                 (used.get(n.nodeId) || 0) < n.leaves)
+    .sort((a, b) => a.leaves - b.leaves || String(a.nodeId).localeCompare(String(b.nodeId)));
+  if (!cand.length)
+    return { granted: false, nodeId: null, detached, why: '무늬를 붙일 잎이 남지 않았습니다' };
+
+  const pick = cand[0];
+  g.nodeIds.push(pick.nodeId);
+  g.count += 1;
+  g.lastDay = ts.day;
+  return { granted: true, nodeId: pick.nodeId, leaves: pick.leaves, detached, why: null };
+}
+
+/* propagation.CUTTABLE_STEMS 와 같은 표. 여기서 propagation 을 import 하면
+   tutorial → propagation → shop 으로 의존이 늘어난다(tutorial 은 지금 weather 하나만 쓴다).
+   ⚠ 둘이 갈리면 못 자르는 마디에 무늬가 붙는다 — 재현이 등식을 고정한다. */
+const CUTTABLE_STEMS_FOR_GRANT = Object.freeze(['pink', 'thick', 'main']);
+
+/* 확정 무늬 사이의 간격(튜토 일수). `propagation.METHODS.water.rootDays` 와 같은 12 —
+   위 §확정 무늬 참고. 여기서 propagation 을 import 하지 않는 이유는 CUTTABLE_STEMS 와 같다. */
+export const VARIE_GRANT_INTERVAL_DAYS = 12;
+
+/* ★ 덧씌워 읽기 — growth 가 낸 값 위에 코어의 확정 무늬를 얹는다. **원본을 안 고친다.**
+     varieView(S, { nodes, stats }) → { nodes, stats, granted }
+
+   ⚠ **덜 세는 쪽으로 둔다.** 코어는 "어느 마디가 어느 마디를 품고 있나"를 모른다
+     (마디 트리는 growth 소유이고, nodeId 경로를 파싱하지 않기로 했다 — propagation.js §유한성).
+     그래서 무늬 +1 은 **확정 무늬 그 마디**와 **그루 전체(밑동·leafStats)** 에만 얹는다.
+     중간 마디는 그대로 둔다 — 넘치게 세면 안 판 잎을 판 게 되고, 덜 세면 손해가 없다. */
+export function varieView(S, io = {}) {
+  const nodes = Array.isArray(io.nodes) ? io.nodes : null;
+  const stats = io.stats && typeof io.stats === 'object' ? io.stats : null;
+  const ts = S && S.tutorial;
+  const g = ts && ts.enabled && !ts.movedOut ? ts.varieGrant : null;
+  const ids = (g && g.nodeIds) || [];
+  if (!ids.length) return { nodes, stats, granted: [] };
+
+  const cnt = new Map();
+  for (const id of ids) cnt.set(id, (cnt.get(id) || 0) + 1);
+  const motherLeaves = nodes ? nodes.reduce((m, n) => Math.max(m, (n && n.leaves) || 0), 0) : 0;
+  const outNodes = nodes && nodes.map(n => {
+    if (!n) return n;
+    const add = cnt.get(n.nodeId) || ((motherLeaves && n.leaves === motherLeaves) ? ids.length : 0);
+    if (!add) return n;
+    return { ...n, variegatedLeaves: Math.min(n.leaves, (n.variegatedLeaves || 0) + add) };
+  });
+  const outStats = stats && {
+    ...stats,
+    variegatedLeaves: Math.min(stats.leaves ?? 0, (stats.variegatedLeaves || 0) + ids.length)
+  };
+  return { nodes: outNodes, stats: outStats, granted: [...ids] };
 }
 
 /* ── 이사 ─────────────────────────────────────────────────────────────── */
