@@ -44,7 +44,10 @@ import {
   SCRIPTS, SPEAKERS, CHATTER, REPEATABLE, EVENT_SCRIPT,
   createDialogue, createStoryteller, scriptsForEvents, pickChatter
 } from '../src/game/dialogue.js';
-import { seasonAt, seasonDayAt, buyLamp, canMoveOut, moveOut } from '../src/game/tutorial.js';
+import { seasonAt, seasonDayAt, buyLamp, canMoveOut, moveOut,
+         varieGrantOpensDay } from '../src/game/tutorial.js';
+import { orderItem, stockOf, incomingOf } from '../src/game/shop.js';
+import { cuttableNow, takeCutting } from '../src/game/propagation.js';
 
 const U = p => new URL(p, import.meta.url);
 const J = p => JSON.parse(readFileSync(U(p), 'utf8'));
@@ -66,10 +69,23 @@ const DARK = 'banjiha-dresser:1';        // peak DLI 0.04 — 콩나물 자리
 const SILL = 'banjiha-sill:0';           // peak DLI 3.77 — 몬스테라 자리
 const BRIGHT_CROP = 'banjiha-sill:0';    // ★일부러 밝은 데 둔 콩나물(배움 ② 가 안 켜진다)
 
-/* growth 대역 — 단계 이름은 growth 소유라 지어내지 않는다. */
+/* growth 대역 — 단계 이름은 growth 소유라 지어내지 않는다.
+   ★ 마디·잎 집계도 낸다 (2026-08-03). 확정 무늬(varie_granted)는 growth 가 낸 마디 목록
+     **위에** 얹히는 것이라(tutorial.varieView), 목록이 없으면 코어가 아무것도 안 한다 —
+     그러면 튜토의 마지막 장면이 이 재현에서 영영 안 나온다.
+   ⚠ 값은 진짜 엔진이 실제로 내는 모양을 그대로 쓴다(tools/test_banjiha_routes.mjs 검사 0:
+     도착 잎 2장 · 자란 뒤 3장). 여기서는 잎 3장짜리 그루로 고정한다 — 한 장을 잘라도
+     모주에 두 장이 남아 초보 규칙(모주가 안 끝난다)에 안 걸린다. */
+const STUB_LEAVES = 3;
 function stubGrowth(start = 143) {
   let cal = start, growth = start, today = null;
   return {
+    cuttableNodes: () => [
+      { nodeId: 'n0#0', stem: 'pink', leaves: STUB_LEAVES, variegatedLeaves: 0, growthDays: growth },
+      { nodeId: 'n0#1', stem: 'pink', leaves: 1, variegatedLeaves: 0, growthDays: growth },
+      { nodeId: 'n0#2', stem: 'pink', leaves: 1, variegatedLeaves: 0, growthDays: growth }
+    ],
+    leafStats: () => ({ leaves: STUB_LEAVES, variegatedLeaves: 0, matureLeaves: 0, growthDays: growth }),
     assertContract() {}, has: () => true,
     setGrowth(d) { cal = d; growth = d; return { growth, calDay: cal, drawn: true, drawError: null, hudError: null }; },
     setDailyLight(v) { today = v; },
@@ -171,13 +187,28 @@ const B = play({
 });
 
 /* C — 진행이 늦어 겨울을 맞는다. ★실패가 아니라 더딘 것이다.
-   중간에 화분을 어두운 데로 옮겼다가 되돌린다 — 멈춤·재개도 이 판에서 겪는다. */
+   중간에 화분을 어두운 데로 옮겼다가 되돌린다 — 멈춤·재개도 이 판에서 겪는다.
+   ★삽수도 이 판에서 한 번 자른다 (2026-08-03) — 확정 무늬(varie_granted)의 조건 ③이라
+     안 자르면 튜토의 마지막 장면이 영영 안 난다. 지름길을 안 쓴다: 병을 **주문해서**
+     이틀 기다려 사고, 코어 API(propagation.takeCutting)로 자른다. */
 const C = play({
   cropSlot: DARK, plantSlot: SILL, incomeWon: 5_000, days: 175,
-  onDay: ({ S, day }) => {
+  onDay: ({ S, io, day }) => {
     if (day === 20) movePot(S, DARK);          // 어두운 데로
     if (day === 45) movePot(S, SILL);          // 다시 창턱으로
     if (day === 150) movePot(S, DARK);         // 겨울에 다시 멈춘다
+    /* 병을 하나 시켜 두고, 오면 잎 1장짜리 마디를 한 번 자른다 */
+    const pot = pot0(S);
+    if (pot && !(pot.cuts || []).length) {
+      if (stockOf(S, 'jar') + incomingOf(S, 'jar') === 0)
+        try { orderItem(S, 'jar', 1); } catch { /* 돈이 모자라면 다음 날 */ }
+      else if (stockOf(S, 'jar') >= 1) {
+        const nodes = cuttableNow(S, io.growth.cuttableNodes());
+        const one = nodes.find(n => n.leaves === 1);
+        if (one) try { takeCutting(S, { nodes, nodeId: one.nodeId, container: 'jar' }); }
+                 catch { /* 규칙대로 막힌 것이다 */ }
+      }
+    }
     return [];
   }
 });
@@ -192,6 +223,9 @@ info(`A 이사 Day ${A.rows[A.rows.length - 1].day} (${A.rows[A.rows.length - 1]
 info(`B 이사 Day ${B.rows[B.rows.length - 1].day} · 식물등 ${B.S.tutorial.lamp.owned}개`);
 info(`C 마지막 Day ${C.rows[C.rows.length - 1].day} (${C.rows[C.rows.length - 1].season}) · 이사 ${C.S.tutorial.movedOut}`);
 info(`D 마지막 Day ${D.rows[D.rows.length - 1].day} · 배운 것 ${Object.values(D.S.tutorial.learned).filter(Boolean).length}/4`);
+const cGrant = C.rows.find(r => r.events.includes('varie_granted'));
+info(`C 확정 무늬 — ${cGrant ? `Day ${cGrant.day}(튜토 ${cGrant.tday}일 · ${cGrant.season})` : '안 남'} ` +
+     `· 가을 진입은 튜토 ${varieGrantOpensDay(C.S.tutorial)}일`);
 
 /* ══ ⑴ 말 없는 날이 연속 3일을 넘지 않는다 ══════════════════════════════ */
 const MAX_SILENT_DAYS = 3;
@@ -229,7 +263,10 @@ const MUST = [
   ['이사할 수 있게 됐을 때',     'move_ready',          'moveReady',           [A, B]],
   ['★이사 나가는 순간',          'moved_out',           'movedOut',            [A, B]],
   ['겨울까지 못 나간 경우',      'winter_still',        'winterStill',         [C]],
-  ['돈이 다 떨어졌을 때',        'broke',               'brokeTalk',           [C]]
+  ['돈이 다 떨어졌을 때',        'broke',               'brokeTalk',           [C]],
+  /* ★튜토의 마지막 장면. 이벤트만 나고 대사가 없으면 화면에서는 아무 일도 안 일어난 것과 같다 —
+     실제로 2026-08-03 이전이 그 상태였다(varie_granted 에 대사가 없었다). */
+  ['★확정 무늬가 난 날',         'varie_granted',       'varieGranted',        [C]]
 ];
 const RUN_KO = new Map([[A, 'A'], [B, 'B'], [C, 'C'], [D, 'D']]);
 for (const [ko, eventId, scriptId, runs] of MUST) {

@@ -245,6 +245,31 @@ export const SCRIPTS = {
     { who: 'moni',   text: '그 "뿐인데"가 제일 어려운 거야.' }
   ],
 
+  /* ★★ 확정 무늬가 난 날 (varie_granted · tutorial.js §확정 무늬).
+     반지하 튜토의 **마지막 장면**이고, 이 잎 한 장이 곧 이사 자금이다.
+
+     지킨 것 넷:
+     ① **운이 아니다.** "운이 좋았다"가 한 줄이라도 들어가면 플레이어가 한 일이 그 자리에서
+        지워진다. 이 잎은 배움 넷을 채우고, 삽수를 한 번 잘라 보고, 가을까지 밝은 자리를
+        지킨 판에만 온다(그게 코어의 조건 그대로다). 그래서 몬이는 축하가 아니라 **원인**을 짚는다.
+     ② **몬이가 값을 안 읊는다.** 얼마짜리인지는 상점 화면이 숫자로 말한다. 여기서 금액을
+        말하면 튜토의 마지막 장면이 정산표가 된다.
+     ③ **그 자리에서 돈이 되지 않는다.** 잘라 뿌리내려야(12일) 판다 — 마지막 줄이 그 다음
+        동작을 가리킨다. 튜토의 끝이 "삽수 판매"가 되는 것이 설계다.
+     ④ 주인공이 **자기 공으로 안 돌린다.** "내가 뭐 한 것도 없는데"를 몬이가 받아 준다 —
+        이 사람은 계속 그렇게 말해 온 사람이고, 그 버릇을 여기서 한 번 고쳐 준다. */
+  varieGranted: [
+    { who: 'jachwi', face: 'surprise', text: '…새로 난 잎에 흰 게 섞였어.' },
+    { who: 'moni',   face: 'curious',  text: '무늬야. 흰 데는 빛을 못 만들어서, **밝은 자리에서만** 나와.' },
+    { who: 'jachwi', text: '내가 뭐 한 것도 없는데.' },
+    { who: 'moni',   face: 'happy', text: '창턱에 올려놨잖아. **그게 한 거야.**' },
+    { who: 'moni',   text: '어두운 데 뒀으면 이 잎은 아예 안 났어.' },
+    { who: 'jachwi', text: '…그런가.' },
+    { who: 'moni',   face: 'curious', text: '이건 값이 달라. 근데 지금 이대로는 아니야.' },
+    { who: 'moni',   text: '잘라서 물에 꽂아. 뿌리가 나오면 그때 팔 수 있어.' },
+    { who: 'jachwi', face: 'happy', text: '해 봤던 거네, 그건.' }
+  ],
+
   /* ═══ §6 이사 — 조건이 하나씩 차고, 마침내 나간다 ═══════════════════════ */
 
   /* 배움은 다 됐고 돈이 모자랄 때. */
@@ -495,6 +520,7 @@ export const EVENT_SCRIPT = Object.freeze({
   plant_resumed:       'plantResumed',
 
   winter_still:        'winterStill',
+  varie_granted:       'varieGranted',
   move_short_money:    'shortMoney',
   move_short_learn:    'shortLearn',
   move_ready:          'moveReady',
@@ -513,6 +539,10 @@ const EVENT_ORDER = [
   'season_autumn', 'season_winter', 'winter_still',
   'lamp_unlocked', 'lamp_bought', 'lamp_skipped',
   'rent_soon', 'rent_first', 'rent_again', 'broke',
+  /* ★확정 무늬는 살림(월세·파산) **뒤**, 이사 판정 **앞**이다.
+     월세 날에 겹치면 "삼십만 원이 나갔다" 다음에 이 잎이 오는 것이 맞고,
+     이사 판정보다 앞이라야 "그래서 나갈 수 있게 됐다"가 그 뒤에 온다. */
+  'varie_granted',
   'move_short_learn', 'move_short_money', 'move_ready', 'moved_out'
 ];
 

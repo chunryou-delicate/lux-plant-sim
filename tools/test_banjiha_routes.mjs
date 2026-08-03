@@ -28,7 +28,7 @@ import { newState, pot0, setPotSlot, resowCrop } from '../src/game/state.js';
 import { nextDay } from '../src/game/loop.js';
 import { firstPlayRulesFromBalance, placeBeansprout, moveMonstera } from '../src/game/first_play.js';
 import { seasonAt, seasonDayAt, buyLamp, canMoveOut, moveOut,
-         varieView, varieGrantCheck, stepVarieGrant } from '../src/game/tutorial.js';
+         varieView, varieGrantCheck, stepVarieGrant, varieGrantOpensDay } from '../src/game/tutorial.js';
 import { orderItem, stockOf, incomingOf, priceOf, varieLeavesNeededFor,
          sellCutting, sellPot, CATALOG, buyPriceOf, SELLABLE_CUTTING_STATUS } from '../src/game/shop.js';
 import { takeCutting, cuttableNow, cutBudgetOf, motherStatsNow, METHODS } from '../src/game/propagation.js';
@@ -337,14 +337,28 @@ check('0 ★도착 개체의 잎 수 — 값의 크기는 여기서 나온다 (�
   info(`민무늬 값: 잎1 ${priceOf({ leaves: 1, variegatedLeaves: 0 }).won.toLocaleString()}원 · ` +
        `잎${st0.leaves} ${priceOf({ leaves: st0.leaves, variegatedLeaves: 0 }).won.toLocaleString()}원 · ` +
        `★무늬 잎1(v=1) ${priceOf({ leaves: 1, variegatedLeaves: 1 }).won.toLocaleString()}원`);
-  /* ★★ 여기서 하나가 더 나온다 — **도착 개체가 무늬를 달고 오는 판이 있다.**
-     setGrowth(143) 은 143일치를 한 번에 굴리는데 그때 DLI 이력이 없어 fLight 가 중립이라
-     잎마다 varieProb 이 그대로 걸린다. 코어가 어쩔 수 있는 자리가 아니다(growth 소유) —
-     사실만 찍어 두고 handoff 로 넘긴다. */
-  let varieArrival = 0;
-  for (let s = 1; s <= 40; s++) if (standGrowth(s).leafStats().variegatedLeaves > 0) varieArrival++;
-  info(`★도착 개체가 무늬를 달고 오는 판: 40개 시드 중 ${varieArrival}개 ` +
-       `(그 판은 확정 무늬 없이도 이사한다 — growth 의 도착 굴림 문제라 코어가 못 막는다)`);
+  /* ★★ [고침 2026-08-03] 도착 개체는 **무늬 없이** 온다 (docs/propagation.md §7 "첫 몬스테라는
+     normal 고정"). 예전에는 40개 시드 중 13개(33%)가 무늬를 달고 왔고, 잎 2장이 다 무늬면
+     그루 값이 1,464,000원이라 **받자마자 팔면 튜토가 첫날에 끝났다.**
+     원인이 둘이었고 둘 다 plant_grow.html 에서 고쳤다:
+       ① `calcVarieProb` 이 **빛 이력이 없을 때** varieProb(0.20)을 그대로 돌려줬다 → 0 으로
+       ② 무늬 굴림이 **다시 그릴 때마다 다시 돌았다** → VARIE_STATE 가 잎마다 한 번만 기억한다
+     ②가 없으면 ①만으로는 못 막는다 — 도착 다음 날 빛이 들어오는 순간 **이미 있던 잎이
+     소급해서 무늬로 뒤집혔다**(실측 seed 13: 잎 3장 무늬 0 → 하루 뒤 무늬 1). */
+  let varieArrival = 0, varieFlip = 0;
+  for (let s = 1; s <= 40; s++) {
+    const gg = standGrowth(s);
+    if (gg.leafStats().variegatedLeaves > 0) varieArrival++;
+    /* 도착 다음 날 창턱 빛이 들어와도 **있던 잎이 뒤집히지 않는다** */
+    const before = gg.leafStats();
+    gg.setDailyLight(3.77); gg.advanceTo(144);
+    if (gg.leafStats().variegatedLeaves > before.variegatedLeaves) varieFlip++;
+  }
+  assert.equal(varieArrival, 0,
+    `★도착 개체 40판 중 ${varieArrival}판이 무늬를 달고 왔습니다 — propagation.md §7(normal 고정) 위반입니다`);
+  assert.equal(varieFlip, 0,
+    `★도착 다음 날 ${varieFlip}판에서 있던 잎이 무늬로 뒤집혔습니다 — 무늬 굴림이 소급하고 있습니다`);
+  info('★도착 개체 40판 전부 민무늬 · 다음 날 빛이 들어와도 소급해서 안 뒤집힌다');
 });
 
 /* ══ A · 상점 — 주문하면 하루 이틀 뒤에 온다 ════════════════════════════ */
@@ -546,6 +560,20 @@ check('H-1 확정 무늬는 **플레이어가 한 일**에 붙는다 — 조건 
   S.pots.push({ id: 'pot_01', slotId: SILL, at: null, plantId: 'monstera_deliciosa',
                 cuts: [{ day: 1, cuttingId: 'cut_01', nodeId: 'n0#2', stem: 'pink', leaves: 1 }],
                 pendingCutLoss: { leaves: 1, nodes: 1 } });
+
+  /* ★ 가을 게이트 (2026-08-03) — 배움·삽수를 다 채워도 **여름에는 안 온다.**
+     이게 없으면 튜토가 여름 안에 끝나 가을·식물등·겨울 콘텐츠를 아무도 못 본다. */
+  const OPEN = varieGrantOpensDay(S.tutorial);
+  assert.ok(OPEN > 0, `가을 진입일이 ${OPEN}일입니다 — 게이트가 아무 일도 안 합니다`);
+  S.tutorial.day = OPEN - 1;
+  let sc = varieGrantCheck(S, {});
+  assert.equal(sc.ok, false, '★여름인데 확정 무늬가 열렸습니다 — 가을 게이트가 없습니다');
+  assert.match(sc.why, /가을/, `사유가 계절이 아닙니다: ${sc.why}`);
+  assert.equal(seasonAt(S.tutorial, S.tutorial.day), 'summer', '게이트 하루 전이 여름이 아닙니다');
+
+  S.tutorial.day = OPEN;
+  assert.equal(seasonAt(S.tutorial, S.tutorial.day), 'autumn',
+    `튜토 ${OPEN}일이 가을이 아닙니다 — 게이트 날짜가 계절과 어긋났습니다`);
   assert.equal(varieGrantCheck(S, {}).ok, true, '조건을 다 채웠는데 안 열립니다');
 
   const cash = S.tutorial.cashWon;
@@ -561,7 +589,8 @@ check('H-1 확정 무늬는 **플레이어가 한 일**에 붙는다 — 조건 
   assert.equal(varieGrantCheck(S, {}).ok, false, '★받자마자 또 줍니다 — 간격이 안 걸립니다');
   S.tutorial.day += 12;
   assert.equal(varieGrantCheck(S, {}).ok, true, '12일이 지났는데도 안 옵니다');
-  info('확정 무늬 조건: 튜토 중 · 배움 넷 · 삽수를 한 번 잘라 봤다 · 다 팔아도 이사 자금에 못 닿는다 · 12일 간격');
+  info(`확정 무늬 조건: 튜토 중 · 배움 넷 · 삽수를 한 번 잘라 봤다 · 다 팔아도 이사 자금에 못 닿는다 · ` +
+       `★가을 진입(튜토 ${OPEN}일) · 12일 간격`);
 });
 
 check('H-2 ★정식 모드로 새지 않는다 — 튜토가 없으면 상태도 덧씌우기도 없다', () => {
@@ -666,20 +695,60 @@ check('G-2b ★세 경로가 중앙값 안에 성립한다', () => {
     `중앙값으로 이사하지 못하는 경로: ${bad.map(([n, r]) => `${n} ${(r.rate * 100).toFixed(0)}%`).join(' · ')}`);
 });
 
-/* ★★ 여기가 이 재현이 남기는 **판단필요**다. 고장이 아니라 기획 수치의 결과라 WARN 이다.
-   story_arc.md §2 는 A 를 "가을 안에", C 를 "겨울을 맞는다"로 적었는데, 지금은 셋 다
-   **여름 안에** 끝난다. 사유는 산수다 — 시작 자금 100만이 하루 약 7,700원씩 줄고
-   튜토 30일에 첫 월세 30만이 겹쳐서, **이사가 튜토 30일을 넘기면 150만을 만들 방법이 없다.**
-   그래서 확정 무늬가 30일 안에 닿게 설계할 수밖에 없고, 가을(45일)·식물등 해금은
-   튜토 안에 안 들어온다. 바꾸려면 확정 수치(자금·지출·이사비) 쪽을 건드려야 한다 —
-   이 창은 그것을 못 바꾸므로 **수치만 찍어 두고 plan 판단을 기다린다.** */
-warn('G-2c ⏸ 경로 A·C 가 story_arc §2 의 뜻(가을·겨울)대로 끝나는가', () => {
-  const autumnish = [...A.ok, ...C.ok].filter(r => r.season !== 'summer').length;
-  assert.ok(autumnish >= (A.ok.length + C.ok.length) / 2,
-    `이사한 판 ${A.ok.length + C.ok.length}개 중 여름을 넘긴 것이 ${autumnish}개뿐입니다 — ` +
-    `A(가을 안에)·C(겨울)가 아직 여름에서 끝납니다. ` +
-    `사유: 시작 자금 100만 − 하루 약 7,700원 − 튜토 30일 첫 월세 30만이라 ` +
-    `이사가 튜토 30일을 넘기면 150만에 못 닿는다(확정 수치가 만드는 산수)`);
+/* ★★ [해결 2026-08-03] 예전에는 셋 다 **여름 안에** 끝나서 WARN(판단필요)으로 남겨 두었다.
+   확정 무늬에 **가을 게이트**를 걸어(tutorial.varieGrantOpensDay) 해결했다 —
+   확정 수치(자금 100만·하루 2만·월세 30만·유예 30일·이사 150만)는 한 글자도 안 바꿨다.
+   이제는 검사다. 여기가 빨개지면 가을·식물등·겨울 콘텐츠를 아무도 못 보는 상태로 돌아간 것이다. */
+check('G-2c ★세 경로가 여름을 넘겨 끝난다 — 가을·식물등·겨울 콘텐츠를 실제로 만난다', () => {
+  const all = [...A.ok, ...B.ok, ...C.ok];
+  const summer = all.filter(r => r.season === 'summer');
+  assert.equal(summer.length, 0,
+    `★이사한 판 ${all.length}개 중 ${summer.length}개가 아직 여름에 끝납니다 ` +
+    `(가장 빠른 것 튜토 ${Math.min(...summer.map(r => r.lastDay))}일) — ` +
+    `그 판은 계절 전환도 식물등 해금도 못 봅니다`);
+  /* 확정 무늬가 실제로 가을 이후에만 온다 — 게이트가 살아 있다는 증거 */
+  const OPEN = varieGrantOpensDay(A.ok[0].S.tutorial);
+  const early = all.filter(r => r.grantDay != null && r.grantDay < OPEN);
+  assert.equal(early.length, 0,
+    `★확정 무늬가 가을(튜토 ${OPEN}일) 전에 온 판이 ${early.length}개 있습니다`);
+  const seasons = {};
+  for (const r of all) seasons[r.season] = (seasons[r.season] || 0) + 1;
+  info(`계절 분포(세 경로 합계 ${all.length}판) — ` +
+       Object.entries(seasons).map(([k, v]) => `${k}:${v}`).join(' ') +
+       ` · 가을 진입은 튜토 ${OPEN}일`);
+});
+
+/* ★★ 가을 게이트를 걸면 **돈이 버티는가** — 확정 수치를 안 바꾸고 산수만 다시 재는 자리다.
+   시작 100만 · 하루 지출 2만(월세 몫 포함) · 30일마다 월세 30만 · 이사 150만.
+   ⚠ 파산해도 하루는 계속 간다(story_arc.md §0). 다만 파산하면 병(7,000원)을 못 사서
+     **자를 수가 없어지므로**, "파산 전에 자르기·확정 무늬가 도는가"가 진짜 질문이다. */
+check('G-2d ★돈이 버틴다 — 가을(튜토 45일)에 잔액이 남고, 파산 전에 잭팟이 돈다', () => {
+  const OPEN = varieGrantOpensDay(A.ok[0].S.tutorial);
+  const at = (r, t) => { const x = r.rows.find(v => v.tday === t); return x ? x.cashWon : null; };
+  for (const [name, R] of [['A', A], ['B', B], ['C', C]]) {
+    const cash = t => median(R.ok.map(r => at(r, t)).filter(v => v != null));
+    const brokeBefore = R.ok.filter(r => {
+      const b = r.rows.find(v => v.bankrupt);
+      return b && r.grantDay != null && b.tday < r.grantDay;
+    }).length;
+    info(`${name} 잔액 중앙값 — 튜토 29일 ${(cash(29) || 0).toLocaleString()}원 · ` +
+         `30일(첫 월세) ${(cash(30) || 0).toLocaleString()}원 · ` +
+         `${OPEN}일(가을·확정 무늬) ${(cash(OPEN) || 0).toLocaleString()}원 · ` +
+         `57일 ${(cash(57) || 0).toLocaleString()}원 · ` +
+         `이사한 판 중 확정 무늬 전에 파산한 판 ${brokeBefore}/${R.ok.length}`);
+    assert.ok((cash(OPEN) || 0) > 0,
+      `★${name}: 가을(튜토 ${OPEN}일)에 잔액 중앙값이 ${cash(OPEN)}원입니다 — 게이트까지 돈이 안 버팁니다`);
+    assert.equal(brokeBefore, 0,
+      `★${name}: ${brokeBefore}판이 확정 무늬가 오기 전에 파산했습니다 — 병을 못 사 자르지 못합니다`);
+  }
+  /* ★ 잭팟 뒤에 실제로 150만을 넘는가 — 넘겨야 이사가 성립한다 */
+  const over = A.ok.filter(r => r.S.tutorial.cashWon >= 0 &&
+    (r.varieIncome + r.cuttingIncome + r.potIncome) > 0).length;
+  assert.equal(over, A.ok.length, '★판 돈 없이 이사한 판이 있습니다');
+  const gross = median(A.ok.map(r => r.varieIncome + r.cuttingIncome + r.potIncome));
+  info(`잭팟 총액 중앙값 ${gross.toLocaleString()}원 (이사 자금 ${MOVE_OUT_WON.toLocaleString()}원)`);
+  assert.ok(gross >= MOVE_OUT_WON - 1_000_000,
+    `★잭팟 총액 중앙값이 ${gross}원 — 이사 자금에 견주어 너무 작습니다`);
 });
 
 check('G-3 ★확정 무늬가 이사를 만든다 — 없으면 못 나간다 (대조군)', () => {

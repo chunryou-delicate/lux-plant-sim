@@ -1226,10 +1226,23 @@ function bandOf(dli, varie){
            overlight: dli > T.max };
 }
 
+// ★ [정정 2026-08-03] 빛 이력이 없으면 무늬가 **안 난다**. 예전에는 여기서 P.varieProb(0.20)을
+//   그대로 돌려줬다 — "오늘 값을 모르면 중립"이라는 뜻이었는데, 그 중립이 곧 만땅이었다.
+//   ⚠ 이것은 도착 시점만의 문제가 아니라 **"빛 이력이 한 칸도 없을 때"의 일반 문제**다.
+//     setGrowth(143) 처럼 이력 없이 한 번에 세우는 개체는 물론이고, plantSeed 직후에 그리는
+//     모든 잎이 잎마다 20%를 그대로 받았다. 실측으로 도착 개체 40판 중 13판(33%)이
+//     무늬를 달고 태어났고, 잎 2장이 다 무늬면 그루 값이 1,464,000원이라 이사 자금(150만)에
+//     받자마자 닿았다(docs/propagation.md §7 의 "첫 몬스테라는 normal 고정"과도 어긋난다).
+//   ★ 고친 자리가 여기인 이유: 무늬는 잎이 날 때 이 함수 하나로 정해진다(growTopology 의
+//     `varie:rng()<calcVarieProb(...)`). 진입점마다 옵션을 다는 것보다 확률 정본을 고치는 쪽이
+//     빠져나갈 구멍이 없다. 빛을 한 번도 안 받은 잎에 무늬가 나는 것은 물리적으로도 틀렸다 —
+//     f_light.below_min 이 0 인 것과 같은 판정이다.
+//   ★ 생장 로직은 안 바뀐다: rng() 은 여전히 같은 자리에서 같은 횟수로 뽑히므로(호출부는
+//     `rng()<calcVarieProb(...)`) 난수 스트림도 형태도 한 글자도 안 움직인다.
 function calcVarieProb(ctx){                     // 무늬종으로 태어날 확률
-  const dli=ctx&&ctx.dli;
-  if(dli==null || !isFinite(dli)) return P.varieProb;
-  return Math.min(1, P.varieProb*fLight(dli7())*fStable()*fPropagation(ctx));
+  const d7=dli7();
+  if(d7==null || !isFinite(d7)) return 0;        // 빛 이력이 없다 = 발현 기회 자체가 없었다
+  return Math.min(1, P.varieProb*fLight(d7)*fStable()*fPropagation(ctx));
 }
 // ★ 갈라짐(성숙잎). fenestrate 6.0 미만이면 0 —
 //   "자연광만으로는 아파트에 가야 갈라진 잎을 본다"(balance_decisions.md §②)가
@@ -1290,8 +1303,29 @@ const MAT_STATE=new Map();          // leafBirth → {gauge, matured, rolls, loc
    ★ 초보는 바랜 채로 유지된다. 안 떨어지고 안 죽는다(박사님 확정 2026-08-03).
      낙엽 경로는 코드로 넣되 drop_enabled=false 로 꺼 둔다 — 나중에 켜기만 하면 된다. */
 const LEAF_HEALTH=new Map();        // leafBirth → {fade 0..1, dropped, hold}
+
+/* ===== 무늬 이력 — 잎마다 한 번 정하고 **기억한다** (2026-08-03 정정) ==========
+   ★ MAT_STATE 와 정확히 같은 사고였다. 무늬는 `varie:rng()<calcVarieProb(...)` 한 줄로
+     정해지는데, 그 줄이 **다시 그릴 때마다 다시 돌았다.** rng 값은 잎마다 고정이지만
+     문턱(calcVarieProb)이 그날 빛으로 바뀌므로, **어제 민무늬였던 잎이 오늘 무늬가 된다.**
+     실측(seed 13): 도착 잎 3장 무늬 0장 → 하루 뒤 같은 3장인데 무늬 1장.
+   ★ 캐논은 바로 위 growTopology 주석이 이미 적어 두었다 —
+     *"변이는 **어린잎 단계에서** 확률로 결정"*. 한 번 정하고 기억하는 것이 그 캐논이고,
+     매번 다시 굴리는 것이 그 캐논을 어긴 것이었다(MAT_STATE 를 만든 이유와 같은 문장이다).
+   ★ 생장 로직은 안 바뀐다. `rng()` 은 **여전히 같은 자리에서 같은 횟수로** 뽑아 넘긴다 —
+     난수 스트림도 마디·가지·잎의 형태도 한 글자도 안 움직이고, 바뀌는 것은
+     "그 굴림을 언제 확정하느냐" 하나뿐이다. */
+const VARIE_STATE=new Map();        // leafBirth → true|false (한 번 정하면 안 바뀐다)
+function varieRoll(leafBirth, roll){
+  let v=VARIE_STATE.get(leafBirth);
+  if(v===undefined){ v = roll < calcVarieProb(lightCtx()); VARIE_STATE.set(leafBirth, v); }
+  return v;
+}
+function varieStateAll(){ return [...VARIE_STATE.entries()].map(([leafBirth,varie])=>({leafBirth,varie})); }
+
 // 성숙 이력과 잎 건강은 같은 개체의 같은 이력이다 — 하나를 버리면 둘 다 버려야 어긋나지 않는다.
-function matResetAll(){ MAT_STATE.clear(); LEAF_HEALTH.clear(); }
+// ★무늬 이력도 같다. 씨앗이 바뀌면(plantSeed) leafBirth 가 겹쳐 옛 개체의 무늬가 새 개체로 샌다.
+function matResetAll(){ MAT_STATE.clear(); LEAF_HEALTH.clear(); VARIE_STATE.clear(); }
 function leafHealthEntry(leafBirth){
   let e=LEAF_HEALTH.get(leafBirth);
   if(!e){ e={fade:0, dropped:false, hold:0}; LEAF_HEALTH.set(leafBirth, e); }
@@ -1968,7 +2002,9 @@ function growTopology(g){
                 //   과거의 잎이 소급해서 갈라지거나 도로 돌아간다 — MAT_STATE 가 기억한다.
                 az:rng()*Math.PI*2, canMature:matureOf(birth+P.petGrow),
                 triggered:false, grew:false,
-                varie:rng()<calcVarieProb(lightCtx()),                   // ★캐논: 변이는 어린잎 단계에서 확률로 결정
+                // ★캐논: 변이는 어린잎 단계에서 확률로 결정 — **그 잎이 처음 생길 때 한 번만** 굴린다.
+                //   rng() 은 예전과 똑같이 여기서 한 번 뽑는다(스트림 불변). 판정만 VARIE_STATE 가 기억한다.
+                varie:varieRoll(birth+P.petGrow, rng()),
                 alboMid:ALBO_MID_POOL[Math.floor(rng()*ALBO_MID_POOL.length)],   // 이 잎이 쓸 알보 중기 종류
                 matRoll:rng(),                             // 성숙 무늬 추첨값(트리에서 주/부/희귀를 가른다)
                 matAlbo:MAT_ALBO_POOL.length? MAT_ALBO_POOL[Math.floor(rng()*MAT_ALBO_POOL.length)] : 0,   // 성숙까지 갔을 때 쓸 변이 종류

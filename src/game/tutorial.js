@@ -367,6 +367,30 @@ export function sellableWonOf(S, ctx = {}) {
   return won;
 }
 
+/* ★★ 가을 게이트 — 확정 무늬는 **가을에 들어선 뒤부터** 준다 (2026-08-03 박사님 확정)
+   ------------------------------------------------------------------------------
+   왜 넣었나. 게이트가 없을 때 재현이 낸 중앙값은 튜토 13일(A·B)·27일(C) 이고 **셋 다 여름**이었다.
+   그런데 반지하 구간에는 가을 진입(autumnCame)·식물등 해금(lampUnlocked)·겨울(winterCame)이
+   콘텐츠와 대사로 이미 다 채워져 있다(dialogue.js §4 · story_arc.md §2). 튜토가 여름 안에
+   끝나면 **그걸 아무도 못 본다.** 식물등은 해금되기 전에 게임이 끝나므로 살 이유조차 없다.
+
+   ★ 새 수치를 만들지 않았다. 이 날짜는 TUTORIAL_RULES(시작 계절·시작 일자)와
+     weather.js 의 계절 길이가 정한다 — 여름 45일차 시작이므로 가을은 튜토 45일이다.
+     계절을 `lampUnlockSeason` 에 묶은 것은 의도 그대로다: **무늬가 오는 계절과 등이 열리는
+     계절을 같은 값으로 두면** 튜토 안에 계절 전환과 해금이 반드시 한 번씩 들어온다.
+     둘을 따로 두면 어느 한쪽이 조용히 밖으로 밀린다.
+
+   ★ 날짜로 재는 이유(계절 이름으로 안 재는 이유). 계절은 한 바퀴 돌아 봄으로 다시 간다 —
+     `seasonAt() === 'autumn'` 으로 걸면 겨울에 들어선 판에서 문이 **도로 닫힌다.**
+     시작점부터의 일수는 단조라 한 번 열리면 안 닫힌다. */
+export function varieGrantOpensDay(ts) {
+  const R = (ts && ts.rules) || TUTORIAL_RULES;
+  const Y = DAYS_PER_SEASON * 4;
+  const start = (SEASON_START[R.startSeason] ?? 0) + (R.startSeasonDay || 0);
+  const target = SEASON_START[R.lampUnlockSeason] ?? SEASON_START.autumn;
+  return ((target - start) % Y + Y) % Y;
+}
+
 /* 튜토 확정 무늬가 지금 열려 있나. 사유를 같이 낸다 — 화면·재현이 "왜 안 오나"를 말할 수 있게. */
 export function varieGrantCheck(S, ctx = {}) {
   const ts = S && S.tutorial;
@@ -381,6 +405,14 @@ export function varieGrantCheck(S, ctx = {}) {
   const have = sellableWonOf(S, ctx);
   if (have >= ts.rules.moveOutCostWon)
     return { ok: false, why: `지금 가진 것을 다 팔면 ${have.toLocaleString()}원 — 이사 자금에 닿습니다`, haveWon: have };
+  /* ★ 가을 게이트 — 위 §가을 게이트 참고. 배움·삽수 뒤에 두는 이유는 사유가 **가장 가까운 것**을
+     말해야 하기 때문이다. 아직 아무것도 안 해 본 사람에게 "가을을 기다리세요"는 틀린 안내다. */
+  const opens = varieGrantOpensDay(ts);
+  if (ts.day < opens)
+    return { ok: false, haveWon: have,
+             why: `${SEASON_KO[ts.rules.lampUnlockSeason] || '가을'}에 들어서야 옵니다 — ` +
+                  `${opens - ts.day}일 남았습니다(지금 ${SEASON_KO[seasonAt(ts, ts.day)]} ` +
+                  `${seasonDayAt(ts, ts.day) + 1}일째)` };
   if (g.lastDay != null && ts.day - g.lastDay < VARIE_GRANT_INTERVAL_DAYS)
     return { ok: false, haveWon: have,
              why: `무늬를 받은 지 ${ts.day - g.lastDay}일째입니다 — ` +
