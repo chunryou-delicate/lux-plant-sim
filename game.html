@@ -1279,17 +1279,11 @@ function bindGuide() {
   $('guideClose').onclick = closeGuide;
   $('guide').onclick = closeGuide;              /* 아무 데나 눌러도 닫힌다 */
   addEventListener('resize', () => { if ($('guide').classList.contains('on')) buildGuide(); });
-  let seen = false; try { seen = localStorage.getItem(GUIDE_SEEN) === '1'; } catch { }
-  /* 처음이면 저절로 보여준다 — 다만 인트로 대화가 끝난 뒤에. 겹치면 둘 다 안 읽힌다 */
-  if (!seen) {
-    const t = setInterval(() => {
-      const st = $('stage');
-      if (st.classList.contains('talking')) return;      /* 대화 중 — 겹치면 둘 다 안 읽힌다 */
-      if (st.classList.contains('room-loading')) return; /* 아직 방을 그리는 중 */
-      clearInterval(t); openGuide();
-    }, 600);
-    setTimeout(() => clearInterval(t), 60000);
-  }
+  /* ★저절로 안 띄운다 (박사님 2026-08-03: "안내 가이드가 다 가려서 안 보여, 첨에").
+     처음 열자마자 이걸 덮으면 **게임을 한 번도 못 본 채로** 설명 여덟 개를 먼저 본다.
+     무엇을 설명하는지 모르는 상태에서 설명만 읽는 셈이라 읽히지도 않는다.
+     첫 조작은 손가락 안내(updateHint)가 하나씩 짚어 주고, 전체 설명이 필요해지면
+     오른쪽 위 [?] 로 본다 — 그때는 이미 화면이 눈에 익어 있다. */
 }
 
 /* ══ 상세 창 — 나 · 아이템 · 식물 (박사님 2026-08-03: "캐릭창/인벤/템창/식물창") ══
@@ -1398,8 +1392,13 @@ function showBuild() {
   if (el) el.textContent = '이 판: ' + ((m && m.content) || '알 수 없음');
   const hr = $('hardReset');
   if (hr) hr.onclick = () => {
-    /* 저장과 본 것 표시까지 전부 지우고 새로 받아 열다 —
-       캐시든 세이브든 무엇이 문제여도 이 버튼 하나로 되돌린다. */
+    /* 저장과 본 것 표시까지 전부 지우고 새로 받아 연다 —
+       캐시든 세이브든 무엇이 문제여도 이 버튼 하나로 되돌린다.
+       ★saveOff 를 **먼저** 세운다. 안 그러면 나가면서 pagehide 가 떠서
+         방금 지운 자리에 지금 상태를 다시 써 넣는다 —
+         실제로 그래서 "초기화를 눌러도 Day 44 그대로"였다. */
+    saveOff = true;
+    if (saveTimer != null) { clearTimeout(saveTimer); saveTimer = null; }
     try { localStorage.clear(); } catch { }
     location.replace(location.pathname + '?v=' + Date.now());
   };
@@ -1667,6 +1666,7 @@ function drawJourney() {
 let saveTimer = null, saveWarned = false;
 function saveNow() {
   saveTimer = null;
+  if (saveOff) return;          /* 끝내기로 나가는 중 — 지운 자리에 다시 쓰지 않는다 */
   if (!saveReady) return;                 // 부팅 중에는 저장하지 않는다(반쯤 선 상태를 굳히지 않게)
   let r;
   try { r = save.saveTo(localStorage, save.SAVE_KEY, S); }
@@ -1678,7 +1678,7 @@ function saveNow() {
     : `⚠ 진행을 저장하지 못했습니다 — ${r.message}`);
 }
 function saveSoon() { if (saveReady && saveTimer == null) saveTimer = setTimeout(saveNow, 400); }
-let saveReady = false, resumed = false;
+let saveReady = false, resumed = false, saveOff = false;
 
 /* 있으면 이어 붙인다. 못 이으면 **왜인지 남기고 새 판으로 간다** —
    여기서 멈추면 세이브 하나 때문에 게임을 아예 못 하게 된다.
@@ -2157,6 +2157,13 @@ const freePlace = {
     if (!roomView || !roomView.showSlotRings) return;
     try { roomView.showSlotRings(on, { potD, near, nearMax: 0.45 }); } catch { }
   },
+  /* ★바닥 격자 (박사님 2026-08-03: "격자도 안 보이고").
+     API 는 있는데 아무도 안 불렀다 — 놓는 동안만 켜서
+     놓을 수 있는 칸과 막힌 칸을 보여 준다. 늘 켜 두면 방을 보는 화면을 덮는다. */
+  grid(on, opt) {
+    if (!roomView || !roomView.showGrid) return;
+    try { roomView.showGrid(on, opt || {}); } catch { }
+  },
   /* 그 자리가 무엇이라고 불리는지 — 추천 자리면 이름, 아니면 밝기로 말한다.
      ★좌표엔 이름이 없다. "여기가 얼마나 밝은가"가 플레이어가 진짜 알고 싶은 것이다. */
   label(hit) {
@@ -2214,6 +2221,7 @@ const drag = {
     $('dragGhost').classList.add('on');
     /* ★추천 자리를 원으로 알린다. 원은 안내지 제약이 아니다 — 원 밖에도 놓인다(박사님). */
     freePlace.rings(true, this.potD);
+    freePlace.grid(true, { potD: this.potD });
     if (roomView) roomView.highlightSlots(ids);
     this.move(ev);
   },
@@ -2240,7 +2248,7 @@ const drag = {
     this.on = false; this.what = null; this.sel = null; this.valid = []; this.best = null;
     document.body.classList.remove('dragging');
     $('dragGhost').classList.remove('on', 'ok', 'no');
-    freePlace.clear(); freePlace.rings(false);
+    freePlace.clear(); freePlace.rings(false); freePlace.grid(false);
     if (roomView) roomView.highlightSlots([]);
     if (!(hit && hit.ok)) return;            /* 못 놓는 자리면 조용히 되돌린다 */
     commitPlace(what, hit);
@@ -2338,6 +2346,7 @@ const picked = {
     drag.potD = what === 'beansprout' ? OPEN_SIRU.diameterM : ARRIVAL_POT_D;
     $('stage').classList.add('moving');
     freePlace.rings(true, drag.potD);
+    freePlace.grid(true, { potD: drag.potD });
     if (roomView) roomView.highlightSlots(drag.valid);
     $('dropLabel').textContent = '아무 데나 잡고 끌어 보세요';
   },
@@ -2386,7 +2395,7 @@ const picked = {
       const hit = drag.best, what = drag.what, sel = drag.sel;
       drag.best = null; drag.valid = [];
       $('dragGhost').classList.remove('on', 'ok', 'no');
-      freePlace.clear(); freePlace.rings(false);
+      freePlace.clear(); freePlace.rings(false); freePlace.grid(false);
       if (hit && hit.ok) {
         commitPlace(what, hit);              /* 인벤에서 끌 때와 **같은 경로**를 탄다 */
         this.clear(); return;
@@ -2425,6 +2434,7 @@ const furnPicked = {
   clear() {
     if (!this.uid && !this.mode) return;
     this.uid = null; this.mode = null; this.ghost = null;
+    freePlace.grid(false);
     $('stage').classList.remove('furnpicked', 'furnmoving');
     try { roomView && roomView.clearFurniturePreview && roomView.clearFurniturePreview(); } catch { }
     $('dropLabel').classList.remove('ok', 'no');
@@ -2436,6 +2446,7 @@ const furnPicked = {
     this.originX = this.tapX ?? (r.left + r.width / 2);
     this.originY = this.tapY ?? (r.top + r.height / 2);
     $('stage').classList.add('furnmoving');
+    freePlace.grid(true, { uid: this.uid });
     $('dropLabel').textContent = '아무 데나 잡고 끌어 보세요';
   },
   beginTurn() {
@@ -2478,6 +2489,7 @@ const furnPicked = {
     const mode = this.mode, uid = this.uid, to = this.ghost;
     this.mode = null; this.ghost = null;
     $('stage').classList.remove('furnmoving');
+    freePlace.grid(false);
     if (!mode || !uid || !to) { if (uid) $('stage').classList.add('furnpicked'); return; }
     try {
       await roomView.commitFurnitureAt(uid, to);
