@@ -7,10 +7,19 @@
    만든 게 아니라 이어붙인 것이다. 방은 render3d/house.js 가 이미 짓고 있고
    조명은 render3d/scene.js 가 이미 하고 있다. 여기서 새로 만든 것은
      ① 폰 세로 화면에 맞는 카메라 프레이밍
-     ② slotId 로만 다루는 화분 배치·이동
+     ② 화분 배치·이동 — slotId(추천 자리) **와** 자유 좌표(at) 둘 다
      ③ 탭 판정(플레이어가 화분을 만지는 유일한 통로)
      ④ 놀 때는 안 그리는 렌더 루프 (폰 배터리)
-   넷뿐이다.
+     ⑤ 가구 옮기기 — 유령으로 끌고, 손 뗄 때 한 번만 방을 다시 조립
+   다섯뿐이다.
+
+   ★ 자유 좌표 (2026-08-03)
+     배치 규칙은 game/place.js 한 벌만 쓴다. 좌표 하나 = `at = {x,y,z,rotY,onUid,occIdx}`.
+       surfaceAt(px,py)         화면 좌표 → 놓을 수 있는 면 (벽·천장은 거절)
+       setPlantAt(potId,at,spec) 그 좌표에 세운다. **옛 자리는 반드시 지운다**
+       previewAt(at,{valid})    반투명 유령
+       showSlotRings(on,{potD}) 추천 자리 원형 가이드 — 안내지 제약이 아니다
+     추천 자리(slotId) 경로는 그대로 남는다. 세이브·조도 계약이 그 이름을 쓴다.
 
    ★ 이 파일은 render3d/** 를 읽기만 한다. 고치지 않는다.
 
@@ -33,6 +42,12 @@ import { getPlantAssembler } from '../render3d/plant_assemble.js';
 /* 걷는 길은 render3d/character.js 가 쓰던 것과 **같은 한 벌**을 쓴다.
    복사하면 방과 방 도구에서 통행 판정이 어긋난다(floor_nav.js 머리말). */
 import { createFloorNav } from '../render3d/floor_nav.js';
+/* ★ 배치 규칙은 game/place.js 한 벌만 쓴다.
+   place.js 는 THREE 도 DOM 도 없이 도는 순수 모듈이라, 화면과 Node 테스트가
+   **같은 식**으로 판정한다. 여기서 다시 짜면 두 벌이 되고 두 벌은 반드시 어긋난다
+   (미리보기는 파란데 놓으면 거절 — previewMove 에서 이미 한 번 겪은 종류다). */
+import { nearestSlot, slotHolds, freeSlotId, isFreeSlotId, FREE_PREFIX,
+         samePoint, distanceXZ, inRoom, makeAt, atFromSlot } from './place.js';
 
 /* ── 경로는 이 파일 기준으로 푼다 ──
    호스트 페이지가 저장소 뿌리에 있든 tools/ 아래에 있든 같은 곳을 가리켜야 한다.
@@ -292,6 +307,21 @@ export async function createRoomView(canvas, opts = {}) {
      반지름은 BODY_R(0.38). 3.5등신 치비라 어깨가 넓다. */
   const nav = createFloorNav({ radius: 0.38 });
 
+  /* ── 자유 좌표 배치 (2026-08-03) ────────────────────────────────────────
+     ★ plants 의 열쇠는 두 가지뿐이다. 섞이면 같은 화분이 두 번 그려진다("복사 버그").
+         추천 자리 위  →  그 자리의 안정 slotId (`{가구 uid}:{단}`) — 예전 그대로
+         자유 좌표     →  place.freeSlotId(화분 id) = `free:{화분 id}`
+       state.js·light_adapter.js 가 세이브·조도에서 쓰는 이름과 **같은 규약**이다.
+       그래야 화면과 계산이 같은 자리를 같은 이름으로 부른다. */
+  let guideGroup = null;       // 추천 자리 원형 가이드. ★ 한 번 만들고 보이기만 껐다 켠다
+  let guideRings = new Map();  // slotId → 링 메시
+  let guideMat = null, guideGeo = null;
+  let guideNear = null;        // 지금 굵게 칠한 자리(커서에 제일 가까운 것)
+  let furnGhost = null;        // { uid, group, mat, line, ok } — 가구 옮기기 유령
+  /* lightEngine 없이 혼자 지을 때 쓰는 가구 덮어쓰기 표.
+     엔진이 있으면 light_adapter 쪽이 정본이고 여기는 안 쓴다(두 벌을 만들지 않는다). */
+  let localFurn = {};
+
   /* ★ 부팅 이정표 — "무엇을 몇 초 기다렸나"를 남긴다.
      밖에서 재는 것보다 이게 정확하다(네트워크 시간과 조립 시간이 갈린다). */
   const T0 = performance.now();
@@ -351,9 +381,26 @@ export async function createRoomView(canvas, opts = {}) {
     return data;
   }
 
-  async function assemble(id) {
+  /* lightEngine 없이 혼자 지을 때만 쓴다 — 플레이어가 옮긴 가구를 얹은 **사본**을 만든다.
+     ⚠ data/house_rooms.json 은 절대 안 고친다(light_adapter.defWithOverrides 와 같은 사상:
+       "기본값 + 차이". 세이브를 지우면 원래 방으로 돌아와야 한다). */
+  function applyLocalFurn(def) {
+    const ids = Object.keys(localFurn);
+    if (!ids.length || !def.furniture) return def;
+    return { ...def, furniture: def.furniture.map((f, i) => {
+      /* uid 가 없는 가구는 house.js 가 `{프리셋}#{인덱스}` 를 붙인다 — 같은 식으로 찾는다 */
+      const uid = f.uid || (f.preset + '#' + i);
+      return localFurn[uid] ? { ...f, ...localFurn[uid] } : f;
+    }) };
+  }
+
+  /* opt.prebuilt = { built, def, wins } — 이미 조립된 결과를 그대로 쓴다.
+     ★ 가구를 옮기면 light_adapter.moveFurniture 가 이미 방을 다시 지었다. 그걸 안 받으면
+       여기서 buildHouse 를 **한 번 더** 돌게 된다(재조립은 비싸다 — 손 뗄 때 한 번뿐이어야 한다). */
+  async function assemble(id, opt = {}) {
     /* 이전 방 정리 */
     disposePreview();
+    disposeFurnGhost();
     disposeWalkGhost();
     selChar = null;
     /* 캐릭터도 이 그룹에 들어 있다. 그냥 비우면 치워지지 않은 채 씬에서만 사라져
@@ -364,6 +411,7 @@ export async function createRoomView(canvas, opts = {}) {
     chars.clear();
     clearPlants();
     clearRings();
+    clearGuideRings();
     while (houseGroup.children.length) houseGroup.remove(houseGroup.children[0]);
 
     /* 가구 한글 이름표는 가볍다(수십 KB). lightEngine 을 받아 방을 안 짓는 경우에도
@@ -375,14 +423,18 @@ export async function createRoomView(canvas, opts = {}) {
 
     progress('room', '방을 짓는 중');
     let wins;
-    if (O.lightEngine && typeof O.lightEngine.build === 'function') {
+    if (opt.prebuilt && opt.prebuilt.built) {
+      /* 이미 지어진 것을 받았다 — 두 번 짓지 않는다 */
+      built = opt.prebuilt.built; roomDef = opt.prebuilt.def; wins = opt.prebuilt.wins;
+    } else if (O.lightEngine && typeof O.lightEngine.build === 'function') {
       /* ★ 조도 계산과 같은 방을 그린다. 두 번 짓지 않는다(폰에서 조립 비용이 아깝다). */
       const r = O.lightEngine.build(id);
       built = r.built; roomDef = r.def; wins = r.wins;
     } else {
       const d = await ensureData();
-      roomDef = (d.houseRooms.rooms || {})[id];
-      if (!roomDef) throw new Error(`모르는 방: ${id}`);
+      const raw = (d.houseRooms.rooms || {})[id];
+      if (!raw) throw new Error(`모르는 방: ${id}`);
+      roomDef = applyLocalFurn(raw);
       built = buildHouse(GRAIN, roomDef, d.winPresets, d.doorPresets, d.finishes,
                          d.furnPresets, d.lightPresets, d.shadePresets);
       wins = (built.luxWins || [])
@@ -668,10 +720,12 @@ export async function createRoomView(canvas, opts = {}) {
 
   /* days 는 호출부(setPlant)가 이미 정한 유효 생장일이다.
      여기서 다시 구하면 안 된다 — 단조 되짚기의 하한이 달라져 값이 어긋난다. */
-  async function buildPlantGroup(spec, s, days) {
+  /* limit 은 **화분 지름 상한[m]** 이다(자리 한도이거나 호출부가 정한 값).
+     ★ 예전에는 슬롯 객체를 받았다. 자유 좌표에는 슬롯이 없으므로 숫자로 낮췄다 —
+       이 함수가 슬롯을 알 이유가 없었다는 뜻이기도 하다. */
+  async function buildPlantGroup(spec, limit, days) {
     const kind = spec.kind || 'monstera';
     const p01 = clamp(spec.progress01 ?? 1, 0, 1);
-    const limit = slotPotLimit(s);
 
     if (kind === 'monstera') {
       /* 화분 지름은 자리 한도 안에서 고른다. 성장은 잎·마디로만 보인다 —
@@ -815,6 +869,70 @@ export async function createRoomView(canvas, opts = {}) {
     for (const id of [...plants.keys()]) removePlant(id);
   }
 
+  /* ── 화분을 '자리'가 아니라 '개체'로 찾는다 ──────────────────────────────
+     자유 좌표 배치가 들어오면서 한 화분이 열쇠를 갈아탈 수 있게 됐다
+     (`{가구 uid}:{단}` ↔ `free:{화분 id}`). 그때 옛 열쇠를 안 지우면 화면에 두 그루가
+     남는다 — 이게 예전 "복사처럼 보이던" 버그의 정체다. 그래서 찾기·지우기를
+     **개체 기준**으로 한 곳에 모아 둔다. */
+  const potIdOfKey = k => (isFreeSlotId(k) ? String(k).slice(FREE_PREFIX.length) : k);
+
+  function plantOf(potId) {
+    const k = freeSlotId(potId);
+    if (plants.has(k)) return plants.get(k);
+    for (const [, p] of plants) if (p.potId && p.potId === potId) return p;
+    /* 옛 경로 — 호출부가 화분을 그 자리 이름(slotId)으로 부르던 시절과의 다리 */
+    return plants.get(potId) || null;
+  }
+  function keyOfPlant(entry) {
+    for (const [k, p] of plants) if (p === entry) return k;
+    return null;
+  }
+  /* 그 화분을 **어느 열쇠로 놓여 있든** 전부 걷어낸다. 몇 개를 걷었는지 돌려준다. */
+  function removePlantOf(potId) {
+    const free = freeSlotId(potId);
+    let n = 0;
+    for (const [k, p] of [...plants]) {
+      if (k !== free && k !== potId && p.potId !== potId) continue;
+      removePlant(k); plantYaw.delete(k); clearPreviewFor(k); n++;
+    }
+    return n;
+  }
+  /* 그 추천 자리가 차 있나 — 슬롯 열쇠뿐 아니라 **그 점 위에 선 자유 좌표 화분**도 본다.
+     안 보면 링이 "비었다"고 말하는 자리에 이미 화분이 서 있게 된다. */
+  function slotOccupied(slotId) {
+    if (plants.has(slotId)) return true;
+    const s = slotById.get(slotId);
+    if (!s) return false;
+    for (const [, p] of plants) if (p.at && samePoint(p.at, s, 0.05)) return true;
+    return false;
+  }
+
+  /* 자리 한도에 안 들어가면 줄인다. **줄였다는 사실은 반드시 남긴다.**
+     그냥 두면 화분이 선반 밖으로 걸쳐진 채 게임이 돈다. */
+  function fitPotToLimit(g, limit, label) {
+    const d = rotationSafeDiameter(potPartOf(g), g);
+    if (Number.isFinite(limit) && d > limit + 1e-4) {
+      const k = limit / d;
+      g.scale.multiplyScalar(k);
+      console.warn(`[방뷰] ${label}: 화분 회전무관 지름 ${d.toFixed(3)} > 한도 ${limit} — ${(k * 100) | 0}% 로 줄였습니다`);
+      return limit;
+    }
+    return d;
+  }
+
+  /* 그루에 '누구의 어느 자리인지'를 새긴다 — 탭 판정이 이걸로 되짚는다.
+     ★ userData 를 **갈아 끼운다**(o.userData.x = ... 로 고치지 않는다).
+       ------------------------------------------------------------
+       생장 모듈이 조립한 그루는 **노드들이 userData 객체를 나눠 쓴다**(재서 확인했다 —
+       두 그루를 놓고 각각을 세어 보면 41개·51개가 서로의 이름표를 달고 있었다).
+       그래서 예전처럼 제자리에서 고치면 **다른 그루의 이름표까지 같이 바뀐다.**
+       ownMaterials 가 재질에 대해 이미 같은 일을 하고 있다 — 이름표도 그루 것이어야 한다.
+       (이걸 안 하면 화분을 탭했을 때 엉뚱한 자리가 잡히고, applyLook 의 baseColor 도 섞인다) */
+  function tagPlant(g, key, potId) {
+    const id = potId || null;
+    g.traverse(o => { o.userData = { ...(o.userData || {}), plantSlotId: key, potId: id }; });
+  }
+
   /* 다시 지을 필요가 있나.
      ------------------------------------------------------------
      예전 정책은 progress01 이 0.05 칸 바뀔 때만 다시 지었다. 이제 형태는 **유효 생장일**이
@@ -867,7 +985,7 @@ export async function createRoomView(canvas, opts = {}) {
 
     let g;
     try {
-      g = await buildPlantGroup(spec, s, days);
+      g = await buildPlantGroup(spec, slotPotLimit(s), days);
     } catch (e) {
       throw fail(new Error(`화분을 못 만들었습니다 (${slotId}): ${e.message}`));
     }
@@ -876,30 +994,118 @@ export async function createRoomView(canvas, opts = {}) {
 
     /* ★ 자리에 들어가나 — 회전 무관 지름으로만 본다 */
     const limit = slotPotLimit(s);
-    const d = rotationSafeDiameter(potPartOf(g), g);
-    if (Number.isFinite(limit) && d > limit + 1e-4) {
-      /* 여기서 조용히 놔두면 화분이 선반 밖으로 걸쳐진 채 게임이 돈다.
-         자리에 맞게 줄이되, 줄였다는 사실은 반드시 남긴다. */
-      const k = limit / d;
-      g.scale.multiplyScalar(k);
-      console.warn(`[방뷰] ${slotId}: 화분 회전무관 지름 ${d.toFixed(3)} > 자리 한도 ${limit} — ${(k * 100) | 0}% 로 줄였습니다`);
-    }
+    const d = fitPotToLimit(g, limit, slotId);
 
     const hadPlant = plants.has(slotId);
     removePlant(slotId);
+    /* ★ 같은 화분이 다른 열쇠(자유 좌표)로도 놓여 있으면 그것도 걷는다.
+       안 걷으면 좌표 배치 ↔ 자리 배치를 오갈 때 화분이 복사된 것처럼 보인다. */
+    if (spec.potId) for (const [k, p] of [...plants])
+      if (k !== slotId && p.potId === spec.potId) { removePlant(k); plantYaw.delete(k); }
     g.position.set(s.x, s.y, s.z);
     /* ★ 돌려 놓은 각도는 형태가 바뀌어도 유지한다. 새로 놓는 것이면 0 부터.
        (Y 회전만 쓴다 — 눕히거나 기울이면 화분이 넘어진다) */
     if (!hadPlant && !plantYaw.has(slotId)) plantYaw.set(slotId, 0);
     g.rotation.y = plantYaw.get(slotId) || 0;
-    g.userData.plantSlotId = slotId;
-    g.traverse(o => { o.userData.plantSlotId = slotId; });
+    tagPlant(g, slotId, spec.potId || null);
     applyLook(g, spec);
     houseGroup.add(g);
     plants.set(slotId, { group: g, spec: { ...spec }, potD: Math.min(d, limit),
+                         potId: spec.potId || null, at: atOfSlot(s, g.rotation.y),
                          days, wantDays: days, builtAt: performance.now() });
     if (preview && (preview.fromId === slotId || preview.toId === slotId)) refreshPreview();
     /* 새 화분이 놓이면 그 앞을 막고 선 사람이 생길 수 있다 — 그때 비켜선다 */
+    nudgeIfOccluding();
+    needsRender = true;
+    return g;
+  }
+
+  /* 추천 자리를 place.js 의 자리(at)로 옮긴다. 좌표가 이상하면 던지지 않고 null 을 준다 —
+     자리 자체는 house.js 가 낸 것이라 여기서 부팅을 멈출 이유가 없다. */
+  function atOfSlot(s, rotY) {
+    try { return atFromSlot(s, { rotY: rotY || 0 }); }
+    catch (e) { return null; }
+  }
+
+  /* ============================================================
+     ③-b ★ 자유 좌표 배치 — setPlantAt (2026-08-03)
+     ------------------------------------------------------------
+     setPlant(slotId, ...) 는 그대로 남는다. 추천 자리 위 화분은 예전 길을 탄다.
+     이쪽은 **자리 번호가 없는 곳**(방바닥 한가운데·선반 끄트머리·침대 위)에 놓는다.
+
+       potId  그 화분의 안정된 이름. 열쇠는 place.freeSlotId(potId) = `free:{potId}` 다
+       at     { x, y, z, rotY?, onUid?, occIdx? } — place.js 가 정본으로 정한 모양
+       spec   setPlant 과 같은 그림 명세. 여기에만 있는 것 두 가지
+                potD      이 화분이 차지할 지름 상한[m]. 넘으면 줄이고 경고를 남긴다
+                plantId   kind 의 다른 이름(계약 쪽 용어). kind 가 있으면 kind 가 이긴다
+
+     ★★ 옛 자리는 **반드시** 지운다.
+        같은 화분이 어느 열쇠로 놓여 있든 전부 걷어내고 새로 세운다(removePlantOf).
+        예전에 이걸 안 해서 옮길 때마다 화분이 늘어났다 — 테스트로 못 박아 뒀다
+        (tools/test_roomview_place.mjs "옮기면 옛 자리에 아무것도 안 남는다").
+  ============================================================ */
+  async function setPlantAt(potId, at, spec) {
+    const id = String(potId ?? '');
+    if (!id) throw fail(new TypeError('[방뷰] setPlantAt: 화분 id(문자열)가 필요합니다'));
+    if (!at || !spec) { removePlantOf(id); return null; }
+    if (!built) throw fail(new Error('[방뷰] 방이 아직 없습니다'));
+
+    /* 좌표 검증은 place.js 한 벌만 쓴다 — NaN·방 밖을 조용히 0 으로 메꾸지 않는다 */
+    let A;
+    try { A = makeAt(at, { size: built.size }); }
+    catch (e) { throw fail(new Error(`화분을 그 자리에 못 놓습니다 (${id}): ${e.message}`)); }
+
+    const key = freeSlotId(id);
+    const kind = spec.kind || spec.plantId || 'monstera';
+    const limit = Number.isFinite(spec.potD) ? spec.potD : Infinity;
+    const prev = plantOf(id);
+    const days = kind === 'monstera'
+      ? growthDaysOf(spec, await assembler(), prev && (prev.wantDays ?? prev.days))
+      : Math.round(clamp(spec.progress01 ?? 1, 0, 1) * 100);
+
+    /* ★ 끄는 동안 같은 그루를 매 프레임 다시 조립하지 않는다. 같은 날이면 **옮기기만** 한다.
+       (몬스테라 조립은 3~12ms 다. 손가락 이벤트마다 돌면 폰이 그 자리에서 멈춘다) */
+    if (prev && !needsRebuild(prev, { ...spec, kind }, days)) {
+      const old = keyOfPlant(prev);
+      applyLook(prev.group, { ...spec, kind });
+      prev.spec = { ...spec, kind };
+      prev.wantDays = days;
+      prev.potId = id;
+      prev.at = A;
+      prev.group.position.set(A.x, A.y, A.z);
+      if (A.rotY != null) prev.group.rotation.y = A.rotY;
+      if (old !== key) {
+        plants.delete(old);
+        plantYaw.delete(old);
+        plants.set(key, prev);
+        tagPlant(prev.group, key, id);
+      }
+      plantYaw.set(key, prev.group.rotation.y);
+      needsRender = true;
+      return prev.group;
+    }
+
+    let g;
+    try { g = await buildPlantGroup({ ...spec, kind }, limit, days); }
+    catch (e) { throw fail(new Error(`화분을 못 만들었습니다 (${id}): ${e.message}`)); }
+    if (disposed) { disposeObject(g); return null; }
+    ownMaterials(g);
+    const d = fitPotToLimit(g, limit, id);
+
+    /* 돌려 놓은 각도는 그루가 다시 지어져도 유지한다. at.rotY 가 있으면 그게 이긴다. */
+    const yaw = A.rotY != null ? A.rotY
+              : plantYaw.has(key) ? plantYaw.get(key)
+              : prev ? (prev.group.rotation.y || 0) : 0;
+    removePlantOf(id);                      // ★ 옛 자리는 반드시 지운다
+    g.position.set(A.x, A.y, A.z);
+    g.rotation.y = yaw;
+    plantYaw.set(key, yaw);
+    tagPlant(g, key, id);
+    applyLook(g, { ...spec, kind });
+    houseGroup.add(g);
+    plants.set(key, { group: g, spec: { ...spec, kind }, potId: id, at: A,
+                      potD: Math.min(d, limit === Infinity ? d : limit),
+                      days, wantDays: days, builtAt: performance.now() });
     nudgeIfOccluding();
     needsRender = true;
     return g;
@@ -924,8 +1130,8 @@ export async function createRoomView(canvas, opts = {}) {
     const yaw = plantYaw.get(fromId) || 0;
     plantYaw.delete(fromId); plantYaw.set(toId, yaw);
     clearPreviewFor(fromId);
-    p.group.userData.plantSlotId = toId;
-    p.group.traverse(o => { o.userData.plantSlotId = toId; });
+    tagPlant(p.group, toId, p.potId);
+    p.at = atOfSlot(b, yaw);
 
     /* 살짝 들었다 놓는다 — 순간이동하면 어디로 갔는지 눈이 못 쫓는다 */
     const from = new THREE.Vector3(a.x, a.y, a.z), to = new THREE.Vector3(b.x, b.y, b.z);
@@ -973,12 +1179,12 @@ export async function createRoomView(canvas, opts = {}) {
       m.position.set(s.x, s.y + 0.004, s.z);
       m.renderOrder = 5;
       m.userData.highlightSlotId = id;
-      m.userData.occupied = plants.has(id);
+      m.userData.occupied = slotOccupied(id);
       houseGroup.add(m);
       rings.set(id, m);
     }
     for (const [id, m] of rings) {
-      const occ = plants.has(id);
+      const occ = slotOccupied(id);
       m.userData.occupied = occ;
       m.material.color.setHex(occ ? 0x9fd0ff : 0xffd479);   // 찬 자리는 파랗게
     }
@@ -991,6 +1197,118 @@ export async function createRoomView(canvas, opts = {}) {
     const k = 0.42 + 0.32 * (0.5 + 0.5 * Math.sin(now / 320));
     for (const [, m] of rings) { m.material.opacity = k; m.scale.setScalar(1 + (k - 0.5) * 0.12); }
     return true;
+  }
+
+  /* ============================================================
+     ④-b ★ 추천 자리 원형 가이드 — showSlotRings (2026-08-03)
+     ------------------------------------------------------------
+     박사님 지시: "배치는 어디든 될 수 있도록 하되 추천지점을 지금처럼 선반 위나
+     그런 데 원형으로 가이딩 표시".
+     ★ 원은 **안내지 제약이 아니다.** 원 밖에도 놓을 수 있다 — 그 판단은 surfaceAt 이
+       하고, 여기 링은 "여기가 좋다"는 말만 한다.
+
+     성능 — 링은 방을 지을 때 한 벌만 만들고 그 뒤로는 **보이기만 껐다 켠다.**
+     매 프레임 만들면 끄는 동안 그대로 프레임 값이 된다(끄는 중이 제일 바쁜 구간이다).
+     재질은 세 벌(들어감·못들어감·커서근처)만 나눠 쓰고, 링마다 만들지 않는다.
+     맥박(pulseRings)도 안 걸었다 — 그건 매 프레임 렌더를 깨우기 때문이다.
+  ============================================================ */
+  const RING_FIT = 0xffd479;    // 이 화분이 올라가는 자리
+  const RING_NG  = 0x6b5a3e;    // 못 올라가는 자리(어둡게) — 지우지 않는다. 자리 자체는 있으니까
+  const RING_NEAR = 0xfff1c8;   // 커서에 제일 가까운 자리 — 굵고 밝게
+
+  function clearGuideRings() {
+    if (guideGroup) houseGroup.remove(guideGroup);
+    /* 기하·재질은 **나눠 쓰는 것**이라 링 하나씩 버리면 안 된다. 아래에서 한 번만 버린다. */
+    guideRings.clear();
+    if (guideGeo) { guideGeo.thin.dispose(); guideGeo.thick.dispose(); }
+    if (guideMat) for (const k in guideMat) guideMat[k].dispose();
+    guideGroup = null; guideGeo = null; guideMat = null; guideNear = null;
+    needsRender = true;
+  }
+
+  function buildGuideRings() {
+    clearGuideRings();
+    guideGroup = new THREE.Group();
+    guideGroup.visible = false;
+    houseGroup.add(guideGroup);
+    /* 반지름 1 짜리 링 두 벌만 만들고 자리마다 scale 로 키운다 */
+    guideGeo = { thin: new THREE.RingGeometry(0.74, 1, 26), thick: new THREE.RingGeometry(0.50, 1, 26) };
+    const mk = (color, opacity, depthTest) => new THREE.MeshBasicMaterial({
+      color, transparent: true, opacity, side: THREE.DoubleSide,
+      depthWrite: false, depthTest, toneMapped: false });
+    guideMat = {
+      /* 보통 링은 깊이 검사를 켠다 — 선반에 가려야 "그 선반 위 자리"로 읽힌다.
+         커서 근처 링만 깊이 검사를 끈다. 그건 지금 겨냥하는 자리라 늘 보여야 한다. */
+      fit: mk(RING_FIT, 0.55, true),
+      ng: mk(RING_NG, 0.34, true),
+      near: mk(RING_NEAR, 0.95, false)
+    };
+    for (const s of slotById.values()) {
+      const m = new THREE.Mesh(guideGeo.thin, guideMat.fit);
+      m.rotation.x = -Math.PI / 2;
+      m.position.set(s.x, s.y + 0.006, s.z);   // 상판에서 살짝 띄운다(z-파이팅 방지)
+      m.renderOrder = 4;
+      m.userData.guideSlotId = s.slotId;
+      guideGroup.add(m);
+      guideRings.set(s.slotId, m);
+    }
+    return guideRings.size;
+  }
+
+  const guideRadius = s => clamp((Number.isFinite(s.maxPotD) ? s.maxPotD : 0.22) * 0.62, 0.05, 0.32);
+
+  /* on=false 면 감춘다(지우지 않는다).
+       opt.potD     이 화분 지름. 못 올라가는 자리는 어둡게 칠한다
+       opt.plantId  potD 를 안 줄 때 쓰는 종류 이름('beansprout' 이면 시루 지름)
+       opt.near     { x, z } 커서 위치. 제일 가까운 자리를 굵고 밝게
+       opt.nearMax  이 거리를 넘으면 아무것도 굵게 하지 않는다[m]
+     돌려주는 값은 '올라갈 수 있는 자리 수' 다. */
+  function showSlotRings(on, opt = {}) {
+    if (!built) return 0;
+    if (!on) {
+      if (guideGroup) guideGroup.visible = false;
+      guideNear = null; needsRender = true;
+      return 0;
+    }
+    if (!guideRings.size) buildGuideRings();
+    const potD = Number.isFinite(opt.potD) ? opt.potD
+               : (opt.plantId === 'beansprout' ? SIRU_D : MONSTERA_POT_D);
+    let nearId = null, nearD = Infinity;
+    if (opt.near && Number.isFinite(opt.near.x) && Number.isFinite(opt.near.z)) {
+      for (const id of guideRings.keys()) {
+        const s = slotById.get(id);
+        if (!s || !slotHolds(s, potD)) continue;      // 못 올라가는 자리는 겨냥 대상이 아니다
+        const d = distanceXZ(opt.near, s);
+        if (d < nearD) { nearD = d; nearId = id; }
+      }
+      if (Number.isFinite(opt.nearMax) && nearD > opt.nearMax) nearId = null;
+    }
+    guideNear = nearId;
+    let fits = 0;
+    for (const [id, m] of guideRings) {
+      const s = slotById.get(id);
+      const holds = slotHolds(s, potD);
+      if (holds) fits++;
+      const isNear = id === nearId;
+      m.material = isNear ? guideMat.near : (holds ? guideMat.fit : guideMat.ng);
+      m.geometry = isNear ? guideGeo.thick : guideGeo.thin;
+      const r = guideRadius(s);
+      m.scale.setScalar(isNear ? r * 1.18 : r);
+      m.renderOrder = isNear ? 6 : 4;
+    }
+    guideGroup.visible = true;
+    needsRender = true;
+    return fits;
+  }
+
+  /* 검증·진단용 — 지금 링이 어떤 상태인가 */
+  function slotRingState() {
+    return [...guideRings].map(([id, m]) => ({
+      slotId: id, near: id === guideNear,
+      fits: m.material === guideMat.fit || m.material === guideMat.near,
+      color: '#' + m.material.color.getHexString(),
+      visible: !!(guideGroup && guideGroup.visible)
+    }));
   }
 
   /* ============================================================
@@ -1043,6 +1361,158 @@ export async function createRoomView(canvas, opts = {}) {
 
   function pickAt(cx, cy) {
     return pickPlantRay(cx, cy) || pickSlotFuzzy(cx, cy);
+  }
+
+  /* ============================================================
+     ⑤-b ★ 표면 레이캐스트 — surfaceAt (2026-08-03)
+     ------------------------------------------------------------
+     화면 좌표를 쏘아 **놓을 수 있는 면**을 찾는다. 자유 배치의 유일한 입구다.
+
+     규칙
+       ① 대상은 **위를 향한 면 전부** — 바닥·러그·선반 단·책상 상판·창턱·침대 위.
+          벽·천장은 거절한다(면 법선의 y 성분으로 가른다. 목록으로 관리하면 새 가구가
+          생길 때마다 빠진다 — house.js 가 그림자에서 똑같은 실수를 두 번 했다).
+       ② 판정은 **눈에 보이는 첫 면**으로 한다. 컷어웨이로 내려간 벽(visible=false)과
+          유리는 없는 셈 치고 지나간다 — 화면에서 안 보이는 것에 막히면 안 된다.
+       ③ 바닥 높이(8cm 아래)는 무조건 '바닥'으로 본다. 러그 위를 찍어도 바닥이다 —
+          러그 판때기 크기로 자리를 재면 러그 가장자리에 화분을 못 놓는다.
+       ④ 겹침은 소리 내어 거절한다(ok:false + 한국어 이유). 조용히 두면 화분이
+          가구 속에 박힌 채 게임이 돈다.
+       ⑤ nearest 는 place.nearestSlot() 결과다. **붙일지 말지는 호출부가 정한다** —
+          여기서 붙여 버리면 "원 밖에는 못 놓는다"가 되어 지시와 어긋난다.
+
+     반환 { x, y, z, onUid, occIdx, surfaceTop, maxPotD, ok, reason, nearest }
+  ============================================================ */
+  const SURF_UP_MIN = 0.6;      // 면 법선의 y. 이보다 누우면 '위를 향한 면'이 아니다
+  const FLOOR_Y = 0.08;         // 이 아래는 무조건 바닥으로 본다(러그 포함)
+  const _nmat = new THREE.Matrix3();
+  const _nrm = new THREE.Vector3();
+  const _wp = new THREE.Vector3(), _wq = new THREE.Quaternion(), _ws = new THREE.Vector3();
+  const _weu = new THREE.Euler();
+
+  function hiddenInScene(obj) {
+    for (let p = obj; p; p = p.parent) if (p.visible === false) return true;
+    return false;
+  }
+  function faceUpY(hit) {
+    if (!hit.face) return 0;
+    _nmat.getNormalMatrix(hit.object.matrixWorld);
+    _nrm.copy(hit.face.normal).applyMatrix3(_nmat).normalize();
+    return _nrm.y;
+  }
+  /* 그 메시가 만드는 **상판 사각형**. 월드 AABB 로 재면 돌려 놓은 책상이 실제보다
+     커져서 모서리 밖에도 놓을 수 있게 된다 — 로컬 bbox + Y회전으로 정확히 잰다.
+     좌표 규약은 house.js 의 슬롯 변환과 같다: X = x0 + u·cos + v·sin, Z = z0 − u·sin + v·cos */
+  function meshRect(obj) {
+    if (!obj.geometry) return null;
+    if (!obj.geometry.boundingBox) obj.geometry.computeBoundingBox();
+    const bb = obj.geometry.boundingBox;
+    obj.updateWorldMatrix(true, false);
+    obj.matrixWorld.decompose(_wp, _wq, _ws);
+    _weu.setFromQuaternion(_wq, 'YXZ');
+    const rot = _weu.y;
+    const c = Math.cos(rot), s = Math.sin(rot);
+    const cu = (bb.max.x + bb.min.x) / 2 * _ws.x, cv = (bb.max.z + bb.min.z) / 2 * _ws.z;
+    return {
+      x: _wp.x + cu * c + cv * s,
+      z: _wp.z - cu * s + cv * c,
+      w: (bb.max.x - bb.min.x) * Math.abs(_ws.x),
+      d: (bb.max.z - bb.min.z) * Math.abs(_ws.z),
+      rot
+    };
+  }
+  /* 사각형 안으로 몇 m 여유가 남나. 음수면 그만큼 삐져나온다. */
+  function rectMargin(x, z, r, potD) {
+    const c = Math.cos(r.rot), s = Math.sin(r.rot);
+    const dx = x - r.x, dz = z - r.z;
+    const u = dx * c - dz * s, v = dx * s + dz * c;
+    return Math.min(r.w / 2 - Math.abs(u), r.d / 2 - Math.abs(v)) - potD / 2;
+  }
+  /* 맞은 메시에서 부모로 거슬러 올라가 가구를 찾는다. 바닥이면 null. */
+  function ownerOf(obj) {
+    for (let p = obj; p; p = p.parent) {
+      if (p === built.room) return null;
+      if (p.userData && p.userData.uid) return p;
+    }
+    return null;
+  }
+
+  function surfaceAt(px, py, opt = {}) {
+    const potD = Number.isFinite(opt.potD) ? opt.potD : MONSTERA_POT_D;
+    const out = { x: null, y: null, z: null, onUid: null, occIdx: null,
+                  surfaceTop: null, maxPotD: null, ok: false, reason: null, nearest: null };
+    if (!built || !built.room) { out.reason = '방이 아직 없습니다'; return out; }
+
+    ray.setFromCamera(ndcOf(px, py), ctx.cam);
+    const hits = ray.intersectObject(built.room, true);
+    let hit = null, blockedBy = null;
+    for (const h of hits) {
+      if (!h.face || !h.object.isMesh) continue;
+      if (hiddenInScene(h.object)) continue;                       // 컷어웨이로 내려간 벽
+      const m = Array.isArray(h.object.material) ? h.object.material[0] : h.object.material;
+      if (m && (m.colorWrite === false || (m.transparent && m.opacity < 0.95))) continue;  // 유리·그림자전용
+      if (built.shells && isDescendant(h.object, built.shells.ceiling)) { blockedBy = '천장'; break; }
+      if (faceUpY(h) > SURF_UP_MIN) { hit = h; break; }
+      blockedBy = '벽';                                            // 눈에 보이는 첫 면이 서 있다
+      break;
+    }
+    if (!hit) {
+      out.reason = blockedBy === '천장' ? '천장에는 못 놓습니다'
+                 : blockedBy === '벽' ? '벽에는 못 놓습니다 — 위를 향한 면이 아닙니다'
+                 : '놓을 수 있는 면이 없습니다';
+      return out;
+    }
+
+    const p = hit.point;
+    const b = roomBox();
+    const isFloor = p.y < FLOOR_Y;
+    const own = isFloor ? null : ownerOf(hit.object);
+    out.x = +p.x.toFixed(4); out.y = +p.y.toFixed(4); out.z = +p.z.toFixed(4);
+    out.surfaceTop = out.y;
+    out.onUid = own ? (own.userData.uid || null) : null;
+    /* occIdx 는 자가차폐 제외 번호다. 그 가구가 차폐체가 아니면 null 이 정답이다 —
+       지어내면 남의 그림자를 지운다(place.validateAt 이 그래서 바닥+occIdx 를 막는다). */
+    out.occIdx = own && Number.isInteger(own.userData.occIdx) ? own.userData.occIdx : null;
+    if (own && own.userData.tier_max_pot_d && own.userData.tier_max_pot_d.length)
+      out.maxPotD = Math.max(...own.userData.tier_max_pot_d);
+
+    /* 추천 자리는 늘 같이 낸다 — 붙일지 말지는 호출부 몫이다 */
+    const near = nearestSlot({ x: out.x, y: out.y, z: out.z }, [...slotById.values()],
+                             { maxDist: opt.maxDist, potD });
+    if (near) out.nearest = { slotId: near.slot.slotId, dist: +near.dist.toFixed(4),
+                              distXZ: +near.distXZ.toFixed(4),
+                              pos: { x: near.slot.x, y: near.slot.y, z: near.slot.z },
+                              maxPotD: Number.isFinite(near.slot.maxPotD) ? near.slot.maxPotD : null };
+
+    /* ── 여기 놓을 수 있나 ── */
+    /* 바닥도 가구도 아닌 위쪽 면 = 벽 밑동 상자·구조물이다. 거기 놓으면 벽에 얹힌다. */
+    if (!isFloor && !own) { out.reason = '벽 밑동·구조물 위에는 못 놓습니다'; return out; }
+    if (!inRoom({ x: out.x, y: out.y, z: out.z }, b)) { out.reason = '방 밖입니다'; return out; }
+    if (Number.isFinite(out.maxPotD) && potD > out.maxPotD + 1e-9) {
+      out.reason = `이 면에는 지름 ${out.maxPotD}m 까지만 올라갑니다 (이 화분 ${potD.toFixed(2)}m)`;
+      return out;
+    }
+    if (isFloor) {
+      /* 바닥이면 가구·벽에 걸리는지 본다. 판정은 floor_nav 한 벌만 쓴다 —
+         걷기와 다른 식을 쓰면 "설 수는 없는데 화분은 놓이는 자리"가 생긴다. */
+      if (nav.blocked(out.x, out.z, potD / 2)) { out.reason = '가구·벽에 걸립니다'; return out; }
+    } else {
+      const r = meshRect(hit.object);
+      const m = r ? rectMargin(out.x, out.z, r, potD) : 0;
+      if (r && m < 0) { out.reason = `면 밖으로 ${(-m).toFixed(2)}m 삐져나옵니다`; return out; }
+    }
+    /* 다른 화분과 겹치나 — 같은 높이대(±8cm)만 본다.
+       선반 위 화분과 그 아래 바닥 화분은 화면에서 겹쳐 보여도 서로 자리를 안 뺏는다. */
+    for (const [k, q] of plants) {
+      const g = q.group.position;
+      if (Math.abs(g.y - out.y) > 0.08) continue;
+      if (opt.ignore && (k === opt.ignore || q.potId === opt.ignore)) continue;
+      const need = ((q.potD || MONSTERA_POT_D) + potD) / 2 * 0.9;
+      const d = Math.hypot(g.x - out.x, g.z - out.z);
+      if (d < need) { out.reason = `다른 화분과 겹칩니다 (${(need - d).toFixed(2)}m 모자랍니다)`; return out; }
+    }
+    out.ok = true;
+    return out;
   }
 
   /* ★ 무엇을 눌렀나 — 한 곳에서만 정한다.
@@ -1553,21 +2023,22 @@ export async function createRoomView(canvas, opts = {}) {
     return rotationSafeDiameter(potPartOf(group), group) <= limit + 1e-4;
   }
 
-  function previewMove(fromId, toId) {
-    if (toId == null) { disposePreview(); return null; }
-    const p = plants.get(fromId);
-    if (!p) throw new Error(`미리보기할 화분이 없습니다: ${fromId}`);
-    const to = slotOrThrow(toId);
-
-    /* 이미 같은 화분의 복제가 있으면 **옮기기만** 한다 */
-    if (preview && preview.fromId === fromId) {
-      preview.toId = toId;
-    } else {
-      disposePreview();
-      const g = p.group.clone(true);
+  /* 유령 한 벌을 만든다 — previewMove 와 previewAt 이 **같은 것**을 쓴다.
+       src   그 화분의 그룹. 있으면 실루엣이 그대로 복제된다
+             (창턱처럼 좁은 자리에서 "이게 들어가나"는 실루엣이 있어야 판단된다)
+       potD  src 가 없을 때 세울 대역 원기둥의 지름. 아직 놓을 화분이 없는 경우다 */
+  function buildGhost(src, potD) {
+    /* 반투명 · 그림자 없음 · 윤곽선. decorate.js 고스트와 같은 값. */
+    const gm = new THREE.MeshBasicMaterial({ color: GH_OK, transparent: true,
+                                             opacity: 0.28, depthWrite: false });
+    const gl = new THREE.LineBasicMaterial({ color: GH_OK, transparent: true, opacity: 0.9,
+                                             depthTest: false });
+    let g;
+    if (src) {
+      g = src.clone(true);
       /* ★ 탭 판정에 안 걸리게 — 미리보기를 눌러 화분이 선택되면 안 된다.
          clone 은 userData 를 얕게 나눠 쓰므로 통째로 새로 만들어 끊는다. */
-      g.userData = { ...p.group.userData, isPreview: true, plantSlotId: undefined };
+      g.userData = { ...src.userData, isPreview: true, plantSlotId: undefined, potId: undefined };
       /* ★ potPart 는 **원본의** 화분을 가리킨다. 그대로 두면 자리 판정이 복제본이 아니라
          원본을 원본과 다른 기준 좌표계로 재게 되어 늘 "안 들어간다"가 나온다(실제로 그랬다).
          복제본 안에서 다시 찾는다. */
@@ -1577,13 +2048,8 @@ export async function createRoomView(canvas, opts = {}) {
       /* ★ 복제는 기하를 원본 화분과 **통째로 나눠 쓴다.** 미리보기를 지울 때
          geometry.dispose() 를 부르면 제자리에 있던 진짜 화분이 사라진다(실제로 그런다).
          전부 '공유'로 표시해 disposeObject 가 건너뛰게 한다. */
-      g.traverse(o => { o.userData = { ...o.userData, plantSlotId: undefined, isPreview: true, sharedGeometry: true }; });
-
-      /* 반투명 · 그림자 없음 · 윤곽선. decorate.js 고스트와 같은 값. */
-      const gm = new THREE.MeshBasicMaterial({ color: GH_OK, transparent: true,
-                                               opacity: 0.28, depthWrite: false });
-      const gl = new THREE.LineBasicMaterial({ color: GH_OK, transparent: true, opacity: 0.9,
-                                               depthTest: false });
+      g.traverse(o => { o.userData = { ...o.userData, plantSlotId: undefined, potId: undefined,
+                                       isPreview: true, sharedGeometry: true }; });
       const edges = [];
       g.traverse(o => {
         if (!o.isMesh) return;
@@ -1599,17 +2065,51 @@ export async function createRoomView(canvas, opts = {}) {
         e.renderOrder = 998;
         o.add(e);
       }
-      /* 바닥(자리)에 링 — decorate.js 의 marker 와 같은 모양 */
-      const marker = new THREE.Mesh(
-        new THREE.RingGeometry(0.28, 0.36, 28),
-        new THREE.MeshBasicMaterial({ color: GH_OK, transparent: true, opacity: 0.85,
-                                      side: THREE.DoubleSide, depthTest: false }));
-      marker.rotation.x = -Math.PI / 2;
-      marker.renderOrder = 999;
-      houseGroup.add(marker);
-      houseGroup.add(g);
-      preview = { fromId, toId, group: g, marker, mat: gm, line: gl, ok: null };
+    } else {
+      /* 대역 유령 — 사람 미리보기(walkGhost)와 같은 사상이다. "여기 이만한 게 선다"만 전한다. */
+      const r = Math.max(0.03, potD / 2);
+      g = new THREE.Group();
+      const cyl = new THREE.Mesh(new THREE.CylinderGeometry(r, r, r * 2.2, 20, 1, true), gm);
+      cyl.position.y = r * 1.1;
+      cyl.renderOrder = 997;
+      g.add(cyl);
+      g.userData = { isPreview: true, generic: true };
     }
+    /* 바닥(자리)에 링 — decorate.js 의 marker 와 같은 모양 */
+    const marker = new THREE.Mesh(
+      new THREE.RingGeometry(0.28, 0.36, 28),
+      new THREE.MeshBasicMaterial({ color: GH_OK, transparent: true, opacity: 0.85,
+                                    side: THREE.DoubleSide, depthTest: false }));
+    marker.rotation.x = -Math.PI / 2;
+    marker.renderOrder = 999;
+    houseGroup.add(marker);
+    houseGroup.add(g);
+    return { group: g, marker, mat: gm, line: gl, ok: null };
+  }
+
+  function setGhostOk(ok) {
+    if (!preview || ok === preview.ok) return;
+    preview.ok = ok;
+    const hex = ok ? GH_OK : GH_NG;
+    preview.mat.color.setHex(hex);
+    preview.line.color.setHex(hex);
+    preview.marker.material.color.setHex(hex);
+  }
+
+  function previewMove(fromId, toId) {
+    if (toId == null) { disposePreview(); return null; }
+    const p = plants.get(fromId);
+    if (!p) throw new Error(`미리보기할 화분이 없습니다: ${fromId}`);
+    const to = slotOrThrow(toId);
+
+    /* 이미 같은 화분의 복제가 있으면 **옮기기만** 한다 */
+    if (!preview || preview.srcKey !== fromId || preview.kind !== 'move') {
+      disposePreview();
+      preview = buildGhost(p.group, p.potD || MONSTERA_POT_D);
+      preview.kind = 'move'; preview.srcKey = fromId; preview.fromId = fromId;
+    }
+    preview.toId = toId;
+    preview.at = null;
 
     /* 위치·회전·크기는 **실제로 놓일 그대로** */
     preview.group.position.set(to.x, to.y, to.z);
@@ -1619,24 +2119,331 @@ export async function createRoomView(canvas, opts = {}) {
     preview.marker.scale.setScalar(r / 0.32);
     preview.marker.position.set(to.x, to.y + 0.004, to.z);
 
-    const ok = fitsInSlot(preview.group, to);
-    if (ok !== preview.ok) {
-      preview.ok = ok;
-      const hex = ok ? GH_OK : GH_NG;
-      preview.mat.color.setHex(hex);
-      preview.line.color.setHex(hex);
-      preview.marker.material.color.setHex(hex);
-    }
+    setGhostOk(fitsInSlot(preview.group, to));
     needsRender = true;
-    return { fromId, toId, ok };
+    return { fromId, toId, ok: preview.ok };
+  }
+
+  /* ★ 좌표 미리보기 — previewAt (2026-08-03)
+     ------------------------------------------------------------
+     자유 배치용. previewMove 와 **한 벌의 유령**을 나눠 쓴다(둘이 동시에 뜨면
+     화분이 두 개인 것처럼 보인다 — 미리보기가 거짓말을 하는 셈이다).
+
+       at            { x, y, z, rotY? } 세울 자리
+       opt.potD      대역 유령을 세울 때의 지름. 원본이 있으면 그쪽이 이긴다
+       opt.valid     false 면 붉게. ★ 판정은 호출부 몫이다 — surfaceAt().ok 를 그대로 넣으면 된다
+       opt.fromId    이 열쇠의 화분 실루엣으로 띄운다(옮기는 중인 화분)
+       opt.potId     같은 뜻. 화분 이름으로 찾는다
+     at 이 null 이면 지운다. */
+  function previewAt(at, opt = {}) {
+    if (!at) { disposePreview(); return null; }
+    if (!built) throw new Error('방이 아직 없습니다');
+    /* ★ 여기서는 방 경계를 안 본다 — 유령은 **판정 결과를 보여주는 것**이지 배치가 아니다.
+       방 밖을 겨냥했으면 surfaceAt 이 ok:false 를 주고, 그 자리에 붉은 유령이 떠야
+       "여기는 안 된다"가 눈에 보인다. 여기서 던지면 화면이 그냥 멈춘다.
+       (NaN·무한대는 그대로 던진다. 그건 배선이 틀린 것이라 보여 줄 값이 없다) */
+    const A = makeAt(at);
+    const src = opt.fromId != null ? plants.get(opt.fromId)
+              : opt.potId != null ? plantOf(opt.potId) : null;
+    const potD = Number.isFinite(opt.potD) ? opt.potD : (src ? src.potD : MONSTERA_POT_D);
+    /* 같은 유령이면 다시 만들지 않는다 — 끄는 내내 GLB 를 복제하면 폰이 죽는다 */
+    const srcKey = src ? keyOfPlant(src) : `generic:${potD.toFixed(3)}`;
+    if (!preview || preview.srcKey !== srcKey || preview.kind !== 'at') {
+      disposePreview();
+      preview = buildGhost(src ? src.group : null, potD);
+      preview.kind = 'at'; preview.srcKey = srcKey;
+      preview.fromId = src ? keyOfPlant(src) : null;
+      if (src) preview.group.scale.copy(src.group.scale);
+    }
+    preview.toId = null;
+    preview.at = A;
+    preview.potD = potD;
+    preview.group.position.set(A.x, A.y, A.z);
+    preview.group.rotation.y = A.rotY || 0;
+    const r = clamp(potD * 1.5, 0.12, 0.55);
+    preview.marker.scale.setScalar(r / 0.32);
+    preview.marker.position.set(A.x, A.y + 0.004, A.z);
+    setGhostOk(opt.valid !== false);
+    needsRender = true;
+    return { at: A, potD, ok: preview.ok };
   }
 
   /* 화분이 다시 조립됐을 때 미리보기도 그 모습으로 따라간다 */
   function refreshPreview() {
     if (!preview) return;
-    const { fromId, toId } = preview;
+    const { kind, fromId, toId, at, potD } = preview;
     disposePreview();
-    if (plants.has(fromId) && slotById.has(toId)) { try { previewMove(fromId, toId); } catch (e) { /* 사라진 자리 */ } }
+    try {
+      if (kind === 'at' && at) previewAt(at, { fromId: plants.has(fromId) ? fromId : undefined, potD });
+      else if (plants.has(fromId) && slotById.has(toId)) previewMove(fromId, toId);
+    } catch (e) { /* 사라진 자리 — 미리보기가 없어질 뿐이다 */ }
+  }
+
+  /* ============================================================
+     ⑧-b ★ 가구 옮기기 (2026-08-03)
+     ------------------------------------------------------------
+     ⚠ 재조립이 비싸다. 그래서 조작이 두 단계다.
+        끄는 동안  previewFurnitureAt — **유령만** 움직인다. 방은 안 건드린다
+        손 뗄 때   commitFurnitureAt  — 여기서 **한 번만** 방을 다시 짓는다
+       이 순서를 뒤집으면(끄는 동안 커밋하면) 손가락 한 번에 buildHouse 가 수십 번 돈다.
+
+     ★★ 가구를 옮기면 그 위 화분은 어떻게 되나 — 확정 규칙 (조용히 허공에 두지 않는다)
+       ① 추천 자리(slotId) 위 화분 — **가구를 따라간다.**
+          slotId 는 `{가구 uid}:{단}` 이라 가구가 움직여도 이름이 안 바뀐다. 다시 조립된
+          그 자리의 새 좌표에 세우면 그게 곧 "같이 옮겨졌다"가 된다.
+       ② 자유 좌표 화분 중 at.onUid 가 그 가구인 것 — **가구를 따라간다.**
+          가구 좌표계에서의 상대 위치·각도를 그대로 보존한다(followFurniture).
+       ③ 바닥 화분(onUid=null)과 다른 가구 위 화분 — **제자리에 그대로 있다.**
+          옮긴 가구가 바닥 화분을 덮치면 화분은 안 움직이고 **경고만** 남긴다.
+          거기서 화분을 제멋대로 옮기면 플레이어가 고른 자리를 잃는다 — 알리고 맡긴다.
+       ④ ①~③ 을 해 봤는데 방 밖이거나 받치던 가구가 사라졌으면 — **회수한다.**
+          제일 가까운 빈 추천 자리로 옮기고 콘솔에 남긴다.
+       (state.js 의 rehomePot 과 같은 사상이다: 자유 좌표는 그대로 두되, 근거가 사라지면 회수)
+
+     ★ 창턱(sill)은 못 옮긴다. house.js 가 userData.fixed 를 달아 둔 건축 구조다.
+  ============================================================ */
+  /* 옮길 수 있는 가구 = **바닥에 서 있는** 가구다.
+       · uid·size 가 있어야 한다 (조명 PointLight 는 size 가 없어 저절로 빠진다)
+       · fixed        창턱 같은 건축 구조는 못 옮긴다(house.js 가 표시해 준다)
+       · mount        벽걸이·창턱받침·선반밑 등은 **바닥 좌표로 끄는 조작이 아니다.**
+                      (실제로 재 보니 창 개구부에 끼운 shelf_sill_pot1 은 제자리조차
+                       "벽 밖"으로 판정된다 — 벽 안에 끼워 넣은 물건이라 그게 맞다)
+       · hangFromCeiling  천장등도 같은 이유로 뺀다 */
+  function furnNodes() {
+    if (!built || !built.furniture) return [];
+    return built.furniture.children.filter(g => g.userData && g.userData.uid && g.userData.size
+      && !g.userData.fixed && !g.userData.mount && !g.userData.hangFromCeiling);
+  }
+  function furnNode(uid) { return furnNodes().find(g => g.userData.uid === uid) || null; }
+  /* 그 uid 가 지금 이 방에 있나 — 붙박이(창턱)까지 본다. 화분 회수 판정이 쓴다. */
+  const hasFurnUid = uid => !!(built && built.furniture &&
+    built.furniture.children.some(g => g.userData && g.userData.uid === uid));
+
+  /* rot 는 **도(°)** 다 — house_rooms.json·place.validateFurnitureAt 과 같은 단위.
+     (화분 rotY 는 라디안이다. 섞이면 가구가 57배 돌아간다 — place.js 머리말 참고) */
+  function furnInfo(g) {
+    const uid = g.userData.uid;
+    const f = roomDef && (roomDef.furniture || []).find(x => x.uid === uid);
+    const presetId = f ? f.preset : (String(uid).includes('#') ? String(uid).split('#')[0] : null);
+    return {
+      uid, preset: presetId,
+      name: (presetId && (furnNames[presetId] || {}).name_ko) || presetId || uid,
+      size: { ...g.userData.size },
+      x: +g.position.x.toFixed(4), y: +g.position.y.toFixed(4), z: +g.position.z.toFixed(4),
+      rot: +((g.rotation.y || 0) * 180 / Math.PI).toFixed(2),
+      moved: !!localFurn[uid]
+    };
+  }
+
+  function pickFurnitureAt(px, py) {
+    const nodes = furnNodes();
+    if (!nodes.length) return null;
+    ray.setFromCamera(ndcOf(px, py), ctx.cam);
+    const hits = ray.intersectObjects(nodes, true);
+    for (const h of hits) {
+      if (!h.object.isMesh || hiddenInScene(h.object)) continue;
+      let o = h.object;
+      while (o && !(o.userData && o.userData.uid)) o = o.parent;
+      if (o) return furnInfo(o);
+    }
+    return null;
+  }
+
+  /* 회전 사각형 네 꼭짓점 — house.js 슬롯 변환과 같은 규약 */
+  function rectCorners(r) {
+    const c = Math.cos(r.rot), s = Math.sin(r.rot), hw = r.w / 2, hd = r.d / 2;
+    return [[-hw, -hd], [hw, -hd], [hw, hd], [-hw, hd]]
+      .map(([u, v]) => ({ x: r.x + u * c + v * s, z: r.z - u * s + v * c }));
+  }
+  /* 겹치나 — 분리축 정리(SAT). 회전 사각형 둘이면 축 네 개만 보면 된다.
+     pad 가 음수면 그만큼은 스쳐도 봐 준다(가구끼리 딱 붙여 놓는 것을 막지 않는다). */
+  function rectOverlap(a, b, pad = 0) {
+    const A = rectCorners({ ...a, w: a.w + pad * 2, d: a.d + pad * 2 });
+    const B = rectCorners(b);
+    for (const r of [a, b]) {
+      const c = Math.cos(r.rot), s = Math.sin(r.rot);
+      for (const ax of [{ x: c, z: -s }, { x: s, z: c }]) {
+        let a0 = Infinity, a1 = -Infinity, b0 = Infinity, b1 = -Infinity;
+        for (const p of A) { const t = p.x * ax.x + p.z * ax.z; a0 = Math.min(a0, t); a1 = Math.max(a1, t); }
+        for (const p of B) { const t = p.x * ax.x + p.z * ax.z; b0 = Math.min(b0, t); b1 = Math.max(b1, t); }
+        if (a1 <= b0 || b1 <= a0) return false;          // 이 축에서 갈렸다 = 안 겹친다
+      }
+    }
+    return true;
+  }
+
+  /* 그 자리에 가구를 놓을 수 있나. 못 놓으면 **한국어 이유**를 준다. */
+  function furnitureFit(uid, pos) {
+    const g = furnNode(uid);
+    if (!g) return { ok: false, reason: `못 옮기는 가구입니다: ${uid}` };
+    if (!Number.isFinite(pos.x) || !Number.isFinite(pos.z))
+      return { ok: false, reason: `좌표가 유한한 숫자가 아닙니다: (${pos.x}, ${pos.z})` };
+    const sz = g.userData.size;
+    const rot = (pos.rot == null ? (g.rotation.y || 0) * 180 / Math.PI : pos.rot) * Math.PI / 180;
+    const me = { x: pos.x, z: pos.z, w: sz.w, d: sz.d, rot };
+    const b = roomBox();
+    for (const c of rectCorners(me))
+      if (Math.abs(c.x) > b.w / 2 + 1e-4 || Math.abs(c.z) > b.d / 2 + 1e-4)
+        return { ok: false, reason: '벽 밖으로 나갑니다' };
+    for (const n of furnNodes()) {
+      if (n === g) continue;
+      const s2 = n.userData.size;
+      if (!s2 || s2.h <= 0.05) continue;                 // 러그처럼 납작한 것 위로는 지나가도 된다
+      if (rectOverlap(me, { x: n.position.x, z: n.position.z, w: s2.w, d: s2.d,
+                            rot: n.rotation.y || 0 }, -0.01))
+        return { ok: false, reason: `${furnInfo(n).name} 와(과) 겹칩니다` };
+    }
+    /* 창턱·칸막이 같은 붙박이는 colliders 로 본다 — 그 그룹은 원점에 있고 상자만 옮겨져
+       있어서 position 으로 재면 틀린다(house.js sill 조립 참고). */
+    for (const c of (built.colliders || [])) {
+      if (c.kind === 'furn') continue;                   // 움직이는 가구는 위에서 이미 봤다
+      if (rectOverlap(me, { x: c.x, z: c.z, w: c.w, d: c.d, rot: c.rot || 0 }, -0.01))
+        return { ok: false, reason: c.kind === 'sill' ? '창턱과 겹칩니다' : '벽·칸막이와 겹칩니다' };
+    }
+    return { ok: true, reason: null };
+  }
+
+  function disposeFurnGhost() {
+    if (!furnGhost) return;
+    houseGroup.remove(furnGhost.group);
+    furnGhost.group.traverse(o => { if (o.isLineSegments && o.geometry) o.geometry.dispose(); });
+    disposeObject(furnGhost.group);
+    furnGhost.mat.dispose(); furnGhost.line.dispose();
+    furnGhost = null;
+    needsRender = true;
+  }
+
+  /* 가구 유령 — 화분 유령과 같은 색·같은 값(decorate.js GH_OK/GH_NG).
+     ★ uid 마다 **한 번만** 복제한다. 끄는 동안에는 위치·각도만 바꾼다. */
+  function makeFurnGhost(g) {
+    const gm = new THREE.MeshBasicMaterial({ color: GH_OK, transparent: true,
+                                             opacity: 0.30, depthWrite: false });
+    const gl = new THREE.LineBasicMaterial({ color: GH_OK, transparent: true, opacity: 0.9,
+                                             depthTest: false });
+    const c = g.clone(true);
+    c.userData = { isPreview: true };
+    const edges = [];
+    c.traverse(o => {
+      o.userData = { ...o.userData, uid: undefined, isPreview: true, sharedGeometry: true };
+      if (!o.isMesh) return;
+      o.castShadow = false; o.receiveShadow = false;
+      o.material = gm;
+      o.renderOrder = 997;
+      if (o.geometry && o.geometry.attributes.position.count <= 900) edges.push(o);
+    });
+    for (const o of edges) {
+      const e = new THREE.LineSegments(new THREE.EdgesGeometry(o.geometry), gl);
+      e.renderOrder = 998;
+      o.add(e);
+    }
+    houseGroup.add(c);
+    return { uid: g.userData.uid, group: c, mat: gm, line: gl, ok: null };
+  }
+
+  /* uid 가 null 이면 지운다. 돌려주는 값의 ok 가 false 면 못 놓는 자리다(유령이 붉게 뜬다). */
+  function previewFurnitureAt(uid, pos) {
+    if (uid == null || !pos) { disposeFurnGhost(); return null; }
+    const g = furnNode(uid);
+    if (!g) throw new Error(`못 옮기는 가구입니다: ${uid}`);
+    if (!furnGhost || furnGhost.uid !== uid) { disposeFurnGhost(); furnGhost = makeFurnGhost(g); }
+    const rot = pos.rot == null ? (g.rotation.y || 0) * 180 / Math.PI : pos.rot;
+    const y = pos.y == null ? g.position.y : pos.y;
+    furnGhost.group.position.set(pos.x, y, pos.z);
+    furnGhost.group.rotation.y = rot * Math.PI / 180;
+    const fit = furnitureFit(uid, { x: pos.x, z: pos.z, rot });
+    if (fit.ok !== furnGhost.ok) {
+      furnGhost.ok = fit.ok;
+      const hex = fit.ok ? GH_OK : GH_NG;
+      furnGhost.mat.color.setHex(hex);
+      furnGhost.line.color.setHex(hex);
+    }
+    needsRender = true;
+    return { uid, x: pos.x, z: pos.z, rot, y, ok: fit.ok, reason: fit.reason };
+  }
+
+  /* 가구 좌표계의 상대 위치를 보존한 채 새 자리로 옮긴다.
+     (house.js 규약: X = x0 + u·cos + v·sin · Z = z0 − u·sin + v·cos) */
+  function followFurniture(at, from, to) {
+    const fr = (from.rot || 0) * Math.PI / 180, tr = (to.rot || 0) * Math.PI / 180;
+    const c = Math.cos(fr), s = Math.sin(fr);
+    const dx = at.x - from.x, dz = at.z - from.z;
+    const u = dx * c - dz * s, v = dx * s + dz * c;
+    const c2 = Math.cos(tr), s2 = Math.sin(tr);
+    const dy = (to.y == null ? from.y : to.y) - (from.y || 0);
+    return { ...at,
+      x: to.x + u * c2 + v * s2,
+      z: to.z - u * s2 + v * c2,
+      y: at.y + dy,
+      rotY: (at.rotY || 0) + (tr - fr) };
+  }
+
+  /* 방을 다시 짓고 화분을 되돌린다. ★ 여기가 유일한 재조립 통로다. */
+  async function rebuildRoom(opt = {}) {
+    /* 화분을 먼저 적어 둔다 — assemble 이 방을 비우면서 다 치운다 */
+    const snap = [...plants].map(([key, p]) => ({
+      key, potId: p.potId || potIdOfKey(key), spec: { ...p.spec },
+      at: p.at ? { ...p.at } : null, yaw: p.group.rotation.y || 0, free: isFreeSlotId(key)
+    }));
+    await assemble(roomId, { prebuilt: opt.prebuilt });
+    const moved = opt.moved || null;
+    for (const p of snap) {
+      try {
+        if (!p.free && slotById.has(p.key)) {   // ① 추천 자리 — 가구를 따라간다
+          plantYaw.set(p.key, p.yaw);
+          await setPlant(p.key, p.spec);
+          continue;
+        }
+        let at = p.at;
+        if (at && moved && at.onUid === moved.uid) at = followFurniture(at, moved.from, moved.to);
+        const gone = at && at.onUid && !hasFurnUid(at.onUid);
+        const outside = at && !inRoom(at, built.size);
+        if (!at || gone || outside) {           // ④ 회수
+          const dest = [...slotById.values()].find(s => !slotOccupied(s.slotId));
+          if (!dest) { console.warn(`[방뷰] ${p.key}: 되돌릴 자리가 없어 화분을 못 세웠습니다`); continue; }
+          console.warn(`[방뷰] ${p.key}: ${gone ? '받치던 가구가 사라져' : outside ? '자리가 방 밖이라' : '좌표가 없어'} ` +
+                       `${dest.slotId} 로 회수했습니다`);
+          plantYaw.set(dest.slotId, p.yaw);
+          await setPlant(dest.slotId, p.spec);
+          continue;
+        }
+        await setPlantAt(p.potId, at, p.spec);  // ②③ 좌표 그대로(또는 가구를 따라간 좌표)
+      } catch (e) {
+        console.warn(`[방뷰] ${p.key} 를 다시 못 세웠습니다: ${e.message}`);
+      }
+    }
+    /* 옮긴 가구가 바닥 화분을 덮쳤나 — 옮기지는 않고 알리기만 한다(위 규칙 ③) */
+    if (moved) for (const [k, p] of plants) {
+      if (!p.at || p.at.onUid) continue;
+      if (nav.blocked(p.at.x, p.at.z, (p.potD || MONSTERA_POT_D) / 2))
+        console.warn(`[방뷰] 옮긴 가구가 바닥 화분 ${k} 자리를 덮었습니다 — 화분은 그대로 두었습니다`);
+    }
+    return snap.length;
+  }
+
+  /* 손을 뗄 때 한 번만 부른다. 방을 다시 조립하고 3D 를 갱신한다. */
+  async function commitFurnitureAt(uid, pos) {
+    if (!built) throw new Error('방이 아직 없습니다');
+    const g = furnNode(uid);
+    if (!g) throw new Error(`못 옮기는 가구입니다: ${uid}`);
+    const rot = pos.rot == null ? (g.rotation.y || 0) * 180 / Math.PI : pos.rot;
+    const fit = furnitureFit(uid, { x: pos.x, z: pos.z, rot });
+    if (!fit.ok) throw new Error(`가구를 못 놓습니다 — ${fit.reason}`);
+    const from = { x: g.position.x, z: g.position.z, y: g.position.y,
+                   rot: +((g.rotation.y || 0) * 180 / Math.PI).toFixed(4) };
+    const to = { x: pos.x, z: pos.z, rot, y: pos.y == null ? from.y : pos.y };
+    disposeFurnGhost();
+
+    let prebuilt = null;
+    if (O.lightEngine && typeof O.lightEngine.moveFurniture === 'function') {
+      /* ★ 조도 엔진이 방을 다시 짓는다. 그 결과를 그대로 그린다 —
+         여기서 또 지으면 buildHouse 가 한 번에 두 번 돈다. */
+      const r = O.lightEngine.moveFurniture(uid, { x: to.x, z: to.z, rot: to.rot });
+      if (r && r.room) prebuilt = { built: r.room.built, def: r.room.def, wins: r.room.wins };
+    } else {
+      localFurn[uid] = { x: to.x, z: to.z, rot: to.rot };
+    }
+    await rebuildRoom({ prebuilt, moved: { uid, from, to } });
+    return { uid, from, to };
   }
 
   /* ============================================================
@@ -2433,6 +3240,60 @@ export async function createRoomView(canvas, opts = {}) {
     setPlant(slotId, plant) { return setPlant(slotId, plant); },
     /* 옮기기. 실패하면 throw */
     movePlant(a, b) { movePlant(a, b); },
+
+    /* ══ 자유 좌표 배치 (2026-08-03) ══════════════════════════════════════
+       ★ 화면 좌표는 전부 **뷰포트 기준 CSS 픽셀**이다 — pointer 이벤트의
+         clientX/clientY 를 그대로 넣으면 된다. (screenPosOf 만 캔버스 기준이다) */
+
+    /* 화면 좌표를 쏘아 놓을 수 있는 면을 찾는다.
+         opt.potD    이 화분의 회전무관 지름[m] (기본 몬스테라 0.20)
+         opt.ignore  겹침 판정에서 뺄 화분(옮기는 중인 자기 자신). 열쇠나 화분 id
+         opt.maxDist 추천 자리를 이 거리 안에서만 찾는다[m]
+       반환 { x, y, z, onUid, occIdx, surfaceTop, maxPotD, ok, reason, nearest }
+         ok:false 면 reason 이 **한국어 이유**다. nearest 는 붙일 후보일 뿐 —
+         ★ 스냅 판단은 호출부가 한다. 원 밖에도 놓을 수 있어야 하기 때문이다. */
+    surfaceAt(px, py, opt) { try { return surfaceAt(px, py, opt || {}); } catch (e) { throw fail(e); } },
+
+    /* 임의 좌표에 화분을 세운다. spec 이 null 이면 그 화분을 치운다.
+       ★ 같은 potId 가 어디에 놓여 있든 옛 자리를 지우고 옮긴다(복사되지 않는다). */
+    setPlantAt(potId, at, spec) { return setPlantAt(potId, at, spec); },
+    /* 그 화분을 치운다. 몇 개를 걷었는지 돌려준다(정상이면 0 또는 1) */
+    removePlantOf(potId) { return removePlantOf(potId); },
+    /* 지금 방에 놓인 화분 전부 — 검증·UI 목록용 */
+    plants() {
+      return [...plants].map(([key, p]) => ({
+        key, potId: p.potId || null, free: isFreeSlotId(key),
+        kind: (p.spec && p.spec.kind) || null,
+        pos: { x: p.group.position.x, y: p.group.position.y, z: p.group.position.z },
+        yaw: p.group.rotation.y || 0,
+        at: p.at ? { ...p.at } : null,
+        potD: p.potD ?? null
+      }));
+    },
+    /* 반투명 유령을 그 좌표에 세운다. opt.valid=false 면 붉게.
+       previewMove 와 유령 한 벌을 나눠 쓴다 — 둘이 동시에 뜨지 않는다. */
+    previewAt(at, opt) { try { return previewAt(at, opt || {}); } catch (e) { throw fail(e); } },
+    clearPreview() { disposePreview(); },
+
+    /* 추천 자리 원형 가이드. on=false 면 감춘다(지우지 않는다 — 다시 켤 때 값싸다).
+         opt.potD/plantId  못 올라가는 자리를 어둡게 구분한다
+         opt.near {x,z}    커서에 제일 가까운 자리를 굵고 밝게
+       ★ 원은 안내지 제약이 아니다. 원 밖에도 놓을 수 있다.
+       돌려주는 값은 이 화분이 올라갈 수 있는 자리 수. */
+    showSlotRings(on, opt) { return showSlotRings(!!on, opt || {}); },
+    slotRings() { return slotRingState(); },
+
+    /* ── 가구 옮기기 ──
+       ⚠ 끄는 동안에는 previewFurnitureAt 만 부른다. commit 은 손 뗄 때 한 번이다. */
+    pickFurnitureAt(px, py) { try { return pickFurnitureAt(px, py); } catch (e) { throw fail(e); } },
+    furniture() { return furnNodes().map(furnInfo); },
+    /* 그 자리에 놓을 수 있나 — { ok, reason }. rot 는 도(°) */
+    furnitureFit(uid, pos) { return furnitureFit(uid, pos || {}); },
+    previewFurnitureAt(uid, pos) { try { return previewFurnitureAt(uid, pos); } catch (e) { throw fail(e); } },
+    clearFurniturePreview() { disposeFurnGhost(); },
+    /* 실제로 옮긴다 — 방을 다시 조립하고 화분을 규칙대로 되돌린다(위 ⑧-b 주석).
+       Promise 를 돌려준다. 못 놓는 자리면 reject 한다. */
+    commitFurnitureAt(uid, pos) { return commitFurnitureAt(uid, pos || {}); },
     /* ★ 화분을 세로축으로 돌린다. Y 회전만 — 눕히거나 기울이면 화분이 넘어진다.
        회전무관 지름(2×max√(x²+z²))은 Y 회전에 불변이라 maxPotD 판정이 안 바뀐다.
        다시 조립돼도(진행도가 바뀌어 새로 지어도) 각도는 유지된다. */
@@ -2475,7 +3336,7 @@ export async function createRoomView(canvas, opts = {}) {
         slotId: s.slotId,
         name: slotName(s.slotId, s),
         pos: { x: s.x, y: s.y, z: s.z },
-        occupied: plants.has(s.slotId),
+        occupied: slotOccupied(s.slotId),
         maxPotD: Number.isFinite(s.maxPotD) ? s.maxPotD : null
       }));
     },
@@ -2642,6 +3503,8 @@ export async function createRoomView(canvas, opts = {}) {
       ro && ro.disconnect();
       clearTimeout(settleCam._nudge);
       disposePreview();
+      disposeFurnGhost();
+      clearGuideRings();
       disposeWalkGhost();
       for (const [, c] of chars) { try { c.dispose(); } catch (e) { /* 치우다 난 오류로 나머지를 못 치우면 안 된다 */ } }
       chars.clear();

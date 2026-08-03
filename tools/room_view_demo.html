@@ -157,6 +157,53 @@
   </div>
 
   <div class="card">
+    <h3>★ 자유 배치 · surfaceAt / setPlantAt / previewAt / showSlotRings</h3>
+    <div class="row">
+      <button class="b" id="freeMode">자유 배치 모드 켜기</button>
+      <button class="b" id="ringsOn">추천 원 켜기</button>
+      <button class="b" id="ringsOff">추천 원 끄기</button>
+      <span class="hint">화분 id</span><input id="freeId" value="pot1" size="6"
+        style="background:#241f33;color:#e9e6f2;border:1px solid rgba(255,255,255,.15);border-radius:8px;padding:4px 6px;width:70px">
+    </div>
+    <div class="row" style="margin-top:6px">
+      <span class="hint">지름</span>
+      <select id="freeD">
+        <option value="0.20" selected>0.20 (몬스테라)</option>
+        <option value="0.24">0.24 (콩나물 시루)</option>
+        <option value="0.34">0.34 (큰 화분)</option>
+      </select>
+      <button class="b" id="freeClear">이 화분 치우기</button>
+      <span class="hint" id="freeR">—</span>
+    </div>
+    <div class="hint" style="margin-top:6px">
+      모드를 켜면 폰 화면 위에서 <b>마우스를 움직일 때마다</b> 놓을 수 있는 면을 찾아
+      유령을 띄운다(파랑=놓을 수 있다·빨강=못 놓는다). <b>누르면 그 자리에 선다.</b>
+      추천 원은 안내일 뿐이라 <b>원 밖에도 놓인다.</b>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>★ 가구 옮기기 · pickFurnitureAt / previewFurnitureAt / commitFurnitureAt</h3>
+    <div class="row">
+      <select id="furn"></select>
+      <button class="b" id="furnReload">목록 새로고침</button>
+    </div>
+    <div class="row" style="margin-top:6px">
+      <span class="hint">x <b id="fxV">0.0</b></span><input type="range" id="fx" min="-300" max="300" value="0">
+      <span class="hint">z <b id="fzV">0.0</b></span><input type="range" id="fz" min="-300" max="300" value="0">
+    </div>
+    <div class="row" style="margin-top:6px">
+      <span class="hint">회전 <b id="frV">0°</b></span><input type="range" id="fr" min="0" max="359" value="0">
+      <button class="b" id="furnCommit">여기로 옮기기 (재조립 1회)</button>
+      <span class="hint" id="furnR">—</span>
+    </div>
+    <div class="hint" style="margin-top:6px">
+      끄는 동안에는 <b>유령만</b> 움직인다. 방 재조립은 「옮기기」를 누를 때 <b>한 번</b>뿐이다.
+      가구 위 화분은 <b>같이 따라간다</b>(자리가 사라지면 회수하고 기록에 남긴다).
+    </div>
+  </div>
+
+  <div class="card">
     <h3>캐릭터 · setCharacter</h3>
     <div class="row">
       <button class="b" id="cJachwi">자취생 (1.40m)</button>
@@ -292,6 +339,7 @@ async function boot(roomId) {
   $('boot').classList.add('done');
   $('sun').oninput();
   refreshSlots();
+  refreshFurn();
   selInfo();
 }
 
@@ -374,6 +422,119 @@ $('pvOn').onclick = () => {
   } catch (e) { log('previewMove: ' + e.message, 'e'); $('pvR').textContent = e.message; }
 };
 $('pvOff').onclick = () => { view.previewMove($('slot').value, null); $('pvR').textContent = '—'; };
+
+/* ── ★ 자유 배치 ──────────────────────────────────────────────────────────
+   화면 좌표 → surfaceAt → previewAt → setPlantAt. 그게 전부다.
+   ★ 카메라 회전과 부딪히지 않게 **모드를 켠 동안에만** 캔버스 이벤트를 가로챈다
+     (캐릭터 걷기가 "고른 뒤에만 끌기가 걷기다"로 푸는 것과 같은 사상). */
+let freeOn = false, freeLast = null;
+const freeD = () => +$('freeD').value;
+function freeProbe(e) {
+  if (!freeOn || !view) return null;
+  const s = view.surfaceAt(e.clientX, e.clientY, { potD: freeD(), ignore: $('freeId').value });
+  freeLast = s;
+  $('freeR').textContent = s.ok
+    ? `놓을 수 있다 · ${s.onUid || '바닥'} y=${s.y}` +
+      (s.nearest ? ` · 추천 ${s.nearest.slotId} (${s.nearest.dist}m)` : '')
+    : '★ ' + (s.reason || '—');
+  if (s.x == null) { view.clearPreview(); return s; }
+  view.previewAt({ x: s.x, y: s.y, z: s.z, onUid: s.onUid, occIdx: s.occIdx },
+                 { potD: freeD(), valid: s.ok, potId: $('freeId').value });
+  /* 커서 근처 추천 원을 굵게 — 원은 안내지 제약이 아니다 */
+  view.showSlotRings(true, { potD: freeD(), near: { x: s.x, z: s.z }, nearMax: 0.6 });
+  return s;
+}
+const onFreeMove = e => { if (freeOn) { e.stopPropagation(); freeProbe(e); } };
+const onFreeDown = e => { if (freeOn) e.stopPropagation(); };
+const onFreeUp = async e => {
+  if (!freeOn) return;
+  e.stopPropagation();
+  const s = freeProbe(e);
+  if (!s || !s.ok) { tip('여기엔 못 놓습니다 — ' + (s && s.reason)); return; }
+  try {
+    await view.setPlantAt($('freeId').value,
+      { x: s.x, y: s.y, z: s.z, onUid: s.onUid, occIdx: s.occIdx }, specNow());
+    view.clearPreview();
+    refreshSlots();
+    log(`setPlantAt(${$('freeId').value}, ${s.x},${s.y},${s.z}, on=${s.onUid || '바닥'})`, 'k');
+    tip('놓았습니다');
+  } catch (err) { log('setPlantAt 실패: ' + err.message, 'e'); tip('실패: ' + err.message); }
+};
+/* ★ 캡처 단계에서 가로챈다. room_view 는 캔버스(mousedown)와 window(mousemove/mouseup)
+   에서 듣는데, 캡처에서 stopPropagation 하면 그 아래 단계가 아예 안 간다 —
+   그래서 자유 배치 모드일 때만 카메라가 안 돈다. */
+$('roomCanvas').addEventListener('mousemove', onFreeMove, true);
+$('roomCanvas').addEventListener('mousedown', onFreeDown, true);
+$('roomCanvas').addEventListener('mouseup', onFreeUp, true);
+
+$('freeMode').onclick = function () {
+  freeOn = !freeOn;
+  this.classList.toggle('on', freeOn);
+  this.textContent = freeOn ? '자유 배치 모드 끄기' : '자유 배치 모드 켜기';
+  if (freeOn) view.showSlotRings(true, { potD: freeD() });
+  else { view.clearPreview(); view.showSlotRings(false); $('freeR').textContent = '—'; }
+};
+$('ringsOn').onclick = () => {
+  const n = view.showSlotRings(true, { potD: freeD() });
+  log(`showSlotRings(true, potD ${freeD()}) → 올라가는 자리 ${n}/${view.slots().length}칸`, 'k');
+};
+$('ringsOff').onclick = () => view.showSlotRings(false);
+$('freeClear').onclick = () => { view.removePlantOf($('freeId').value); refreshSlots(); };
+
+/* ── ★ 가구 옮기기 ── */
+function refreshFurn() {
+  const list = view.furniture();
+  const sel = $('furn'), keep = sel.value;
+  sel.innerHTML = '';
+  for (const f of list) {
+    const o = document.createElement('option');
+    o.value = f.uid;
+    o.textContent = `${f.name} · ${f.uid} (${f.size.w}×${f.size.d})${f.moved ? ' ✱' : ''}`;
+    sel.appendChild(o);
+  }
+  if (list.some(f => f.uid === keep)) sel.value = keep;
+  syncFurnSliders();
+}
+function syncFurnSliders() {
+  const f = view.furniture().find(x => x.uid === $('furn').value);
+  if (!f) return;
+  $('fx').value = Math.round(f.x * 100); $('fz').value = Math.round(f.z * 100);
+  $('fr').value = ((Math.round(f.rot) % 360) + 360) % 360;
+  /* ★ 여기서 유령을 띄우지 않는다. 방을 열자마자 반투명 가구가 하나 떠 있으면
+     "이게 뭐지"가 되고, 성능을 잴 때도 기준선에 유령이 섞인다(실제로 섞였다). */
+  furnLabels();
+  view.clearFurniturePreview();
+}
+function furnLabels() {
+  const x = +$('fx').value / 100, z = +$('fz').value / 100, rot = +$('fr').value;
+  $('fxV').textContent = x.toFixed(2); $('fzV').textContent = z.toFixed(2); $('frV').textContent = rot + '°';
+  return { x, z, rot };
+}
+function furnPreview() {
+  const uid = $('furn').value;
+  if (!uid) return;
+  const { x, z, rot } = furnLabels();
+  try {
+    const r = view.previewFurnitureAt(uid, { x, z, rot });
+    $('furnR').textContent = r.ok ? '놓을 수 있다 (파랑)' : '★ ' + r.reason;
+  } catch (e) { $('furnR').textContent = e.message; }
+}
+$('furn').onchange = syncFurnSliders;
+$('furnReload').onclick = refreshFurn;
+for (const id of ['fx', 'fz', 'fr']) $(id).oninput = furnPreview;
+$('furnCommit').onclick = async function () {
+  const uid = $('furn').value;
+  const x = +$('fx').value / 100, z = +$('fz').value / 100, rot = +$('fr').value;
+  this.disabled = true;
+  const t0 = performance.now();
+  try {
+    const r = await view.commitFurnitureAt(uid, { x, z, rot });
+    log(`commitFurnitureAt(${uid}) ${JSON.stringify(r.from)} → ${JSON.stringify(r.to)} · ${Math.round(performance.now() - t0)}ms`, 'k');
+    refreshSlots(); refreshFurn();
+    tip('옮겼습니다');
+  } catch (e) { log('commitFurnitureAt 거부: ' + e.message, 'e'); tip('못 옮깁니다 — ' + e.message); }
+  this.disabled = false;
+};
 
 /* ── 캐릭터 ── */
 function charInfo() {
