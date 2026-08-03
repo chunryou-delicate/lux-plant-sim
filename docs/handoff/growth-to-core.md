@@ -1,5 +1,67 @@
 # growth → core
 
+# 2026-08-03 · growth → core · 확대 화면이 노는 동안에도 그리고 있었다
+
+박사님 지적 *"화분 상세보기 누르면 렉 걸려. 회전도 잘 안 되고"* 의 **확대 화면 쪽 절반**이다.
+방 쪽(`room_view` 를 멈춘 것, e4d30ae)은 코어가 이미 잡았다.
+
+## ★ 잰 것이 먼저다 — `__growthStats()` 를 냈다
+
+`plant_grow.html` 의 `renderer`·`scene`·`cam` 은 `<script>` 안의 `let` 이라 **window 에 안 붙는다.**
+그래서 `tools/probe_zoom_inside.mjs` 가 전부 `null` 을 읽었다(코어가 못 읽은 이유가 이것이다).
+함수 선언은 window 에 붙으므로 **읽기 전용 계측 창구 하나**를 냈다.
+
+```js
+__growthStats(reset) → { rafFps, mainFps, prevFps, mainMsAvg, prevMsAvg,
+                         avgGapMs, maxGapMs, calls, triangles, geometries, textures, programs,
+                         prevCalls, prevTriangles, pixelRatio, canvas,
+                         paused, hidden, embed, autoRotate, previewOn, previewVisible, dirty }
+```
+
+⚠ **세터는 없다.** 밖에서 그리기를 켜고 끌 수 있으면 계측이 아니라 조작이 된다.
+그리기를 멈추는 공식 창구는 지금도 `setRenderPaused` 하나뿐이고, 그 계약은 안 건드렸다.
+새 자는 `tools/probe_zoom_render.mjs` 다(`probe_zoom_inside.mjs` 는 코어 소유라 안 건드렸다).
+
+## 잰 수치 — 폰 390×844 · DPR 2 · 헤드리스(소프트웨어 GL)
+
+| 확대를 연 채 | 전 | 후 |
+|---|---|---|
+| **가만히 둘 때 본무대** | **16.6장/s** | **0장/s** |
+| **가만히 둘 때 미리보기** | **16.6장/s** | **0장/s** |
+| 가만히 둘 때 남는 프레임(rAF) | 16.6/s | **59.2/s** |
+| 손 뗀 뒤 2초 | 15.9장/s 계속 그림 | **0장/s** |
+| 드래그 한 장 값 | 3.22ms | **0.76ms** |
+| **드래그 프레임 최대 간격(끊김)** | **133.2ms** | **64.1ms** |
+| **자동회전 최대 간격(끊김)** | **115.5ms** | **68.6ms** |
+| 확대를 닫은 뒤 미리보기 | 1콜·2838삼각형 계속 | 0 |
+
+한 프레임 자체는 드로우콜 10 · 삼각형 15,693 · 프로그램 8~9 로 무겁지 않다.
+**무거웠던 것은 「아무것도 안 바뀌었는데 두 번 그린다」였다.**
+
+## 고친 것 셋
+
+1. **바뀐 게 있을 때만 그린다** — `NEEDS_RENDER` / `requestRender()`.
+   바뀐 것 = 카메라(드래그·휠·스냅·자동회전) · 창 크기 · 형태 다시 그림 · 빛 방향 · 격자 토글.
+   `room_view.js` 의 `needsRender` 와 같은 규칙이다.
+   ⚠ 지금 회전에는 **관성이 없다**(`pointerup` 에서 그냥 멈춘다). 그래서 손을 뗀 뒤에 더 그릴 것이
+   없다 — 관성을 넣게 되면 그 코드가 매 프레임 `requestRender()` 를 부르면 된다.
+2. **미리보기 렌더러는 보일 때만 돈다** (`previewVisible()`).
+   확대(`?embed=game`)에서는 패널이 통째로 `display:none` 이라 **한 번도 안 보이는데**
+   WebGL 컨텍스트 둘째 개가 매 프레임 돌고 게다가 계속 회전까지 하고 있었다.
+   단독 튜닝 화면에서는 그대로 돈다(probe ⑥ 이 그것까지 확인한다).
+3. **프레임 상한은 안 뒀다** — 재고 정했다. 이제 노는 동안 0장이라 자를 대상이 없고,
+   남은 프레임은 전부 "사람이 지금 돌리고 있는 중"이라 반으로 자르면 그 회전이 끊겨 보인다.
+   `room_view` 가 30fps 로 자르는 것은 방이 늘 살아 있기 때문이다.
+
+## 성장은 안 바뀌었다
+
+- 마디 트리 지문(축·마디·난수에서 나온 값·좌표 전부) **360 케이스 HEAD 와 전수 동일**
+- `test_maturation` A~M · `test_cuttable` A~N · `test_propagation` · `test_first_play` ·
+  `test_loop_errors` · `test_tutorial` · `test_save` · `test_free_place` · `test_banjiha_routes` 전부 PASS
+- `buildPlant` 에 더한 것은 첫 줄 `requestRender();` 하나뿐이다(그리기 플래그만 세운다)
+
+---
+
 # 2026-08-03 · growth → core · 판매용 잎 집계 `leafStats()`
 
 ## ★ 붙였다 — 판매 화면을 열어도 된다
