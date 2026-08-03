@@ -1936,27 +1936,13 @@ function ageOf(d){ const k=P.timeCurve||1; if(k===1||d<=0) return d;
 function clearGroup(g){ while(g.children.length){ const c=g.children[0]; g.remove(c); c.traverse&&c.traverse(o=>{ if(o.isMesh){ if(o.geometry) o.geometry.dispose();
   const ms=Array.isArray(o.material)?o.material:[o.material]; ms.forEach(m=>{ if(m&&m.userData&&m.userData.cloned) m.dispose(); }); } }); } }
 
-function buildPlant(){
-  rng=mulberry32(SEED);            // 매 빌드 동일 시드 → 안정적(슬라이더 드래그해도 안 흔들림)
-  seedColor();                     // 개체 통일 색(시드 고정: 색조+채도)
-  ensureSheath();                             // 엽초 구멍 크기 변경 반영
-  ensureLeafShape();                          // 잎자루 지름 변경 반영
-  clearGroup(plantGroup); clearPlaced();      // 겹침 회피용 자리 기록 초기화
-  addPot();
-  // ★실제 경과일(gReal)을 '생장 나이'(g)로 변환한다. 어린 개체가 빨리 자리잡고
-  //   덩치가 커질수록 더디게 자라는 실제 생장 곡선. timeCurve=1이면 예전과 동일(등속).
-  const gReal=GROWTH, g=ageOf(gReal), gf=Math.min(1, g/GMAX);
-  PLANT_AGE=gf;                             // 개체 나이(색 짙어짐·선명해짐 기준)
-  // ★한 게이지로 줄기·엽초·잎이 '지금 비율 그대로' 함께 커진다. growAmt가 한계치(최대 배율-1).
-  PLANT_GROW=1 + P.growAmt*Math.min(1, g/Math.max(1,P.growSpan));
-  let stage='', nodes=0, leaves=0;
-
-  if(g<P.seedEnd){
-    const t=g/Math.max(1,P.seedEnd);
-    const seed=new THREE.Mesh(new THREE.SphereGeometry(0.05+0.04*t,10,8), MAT.seed);
-    seed.position.set(0,SOIL_Y+0.03,0); seed.scale.y=0.7; seed.castShadow=true; plantGroup.add(seed);
-    stage='씨앗 🌰';
-  } else {
+// ===== 마디 트리 시뮬 — 형태의 정본 =====
+// buildPlant 이 그리기 전에 돌리던 그 루프를 **한 글자도 안 고치고** 여기로 옮겼다.
+// 옮긴 이유 하나뿐이다 — 삽수(cuttableNodes)가 "실제 자란 것"을 읽으려면 3D 없이도
+// 같은 트리가 나와야 하는데, buildPlant 는 그리기와 한 몸이라 3D 없이 못 돈다.
+// ⚠ 난수를 여기서 쓴다. 부르는 쪽이 rng=mulberry32(SEED) 로 스트림을 먼저 맞춰야 한다.
+//   그래야 같은 시드·같은 날이면 같은 트리가 나온다(buildPlant 이 하던 그대로다).
+function growTopology(g){
     // ===== 정밀 생장 (순서도 #0~#16 데이터 그대로) =====
     //  ① 생장점(TIP)은 고정된 하나. ★잎도 그 자리에 하나뿐이고, "그 잎이" 새순→반잎→어린→중간→(랜덤)성숙 으로 자란다.
     //  ② 새 마디는 TIP "아래"에 삽입된다(growUp). 그래서 줄기가 밑에서 길어지고 생장점(잎)은 위로 밀려 올라간다.
@@ -2066,6 +2052,32 @@ function buildPlant(){
         addSeg(ax,T); ax.grew=true;
       }
     }
+  return {axes, axBase, leafM};   // 렌더가 쓰는 셋. 기하 계산도 여기서 이미 끝났다
+}
+
+function buildPlant(){
+  rng=mulberry32(SEED);            // 매 빌드 동일 시드 → 안정적(슬라이더 드래그해도 안 흔들림)
+  seedColor();                     // 개체 통일 색(시드 고정: 색조+채도)
+  ensureSheath();                             // 엽초 구멍 크기 변경 반영
+  ensureLeafShape();                          // 잎자루 지름 변경 반영
+  clearGroup(plantGroup); clearPlaced();      // 겹침 회피용 자리 기록 초기화
+  addPot();
+  // ★실제 경과일(gReal)을 '생장 나이'(g)로 변환한다. 어린 개체가 빨리 자리잡고
+  //   덩치가 커질수록 더디게 자라는 실제 생장 곡선. timeCurve=1이면 예전과 동일(등속).
+  const gReal=GROWTH, g=ageOf(gReal), gf=Math.min(1, g/GMAX);
+  PLANT_AGE=gf;                             // 개체 나이(색 짙어짐·선명해짐 기준)
+  // ★한 게이지로 줄기·엽초·잎이 '지금 비율 그대로' 함께 커진다. growAmt가 한계치(최대 배율-1).
+  PLANT_GROW=1 + P.growAmt*Math.min(1, g/Math.max(1,P.growSpan));
+  let stage='', nodes=0, leaves=0;
+
+  if(g<P.seedEnd){
+    const t=g/Math.max(1,P.seedEnd);
+    const seed=new THREE.Mesh(new THREE.SphereGeometry(0.05+0.04*t,10,8), MAT.seed);
+    seed.position.set(0,SOIL_Y+0.03,0); seed.scale.y=0.7; seed.castShadow=true; plantGroup.add(seed);
+    stage='씨앗 🌰';
+  } else {
+    // ===== 정밀 생장 — 마디 트리는 growTopology 가 낸다(순서도 #0~#16) =====
+    const {axes, axBase, leafM}=growTopology(g);
     // ===== 렌더 =====
     // ★2단계로 나눈다: 잎이 "다른 줄기"를 피하려면 잎을 놓기 전에 모든 줄기를 알아야 하기 때문.
     //   1단계에서 전 축의 마디 점·굵기를 계산해 장애물(STEMS)로 등록하고, 2단계에서 그린다.
@@ -2503,6 +2515,76 @@ function growthPhase(){
            progress01:Math.max(0, Math.min(1,(d-s)/span)),
            nextPhaseId: next,
            nextPhaseKo: next===null? null : phaseKoOf(next) };
+}
+
+/* ===== 삽수 — 자를 수 있는 마디 목록 (코어 요청, docs/handoff/core-to-growth.md 2026-08-03) =====
+   ★읽기 전용이다. 형태를 만들지도 깎지도 않는다. 이미 자란 것을 그대로 읽어 낼 뿐이다.
+   ★ buildPlant 이 그리는 바로 그 트리를 읽는다(같은 growTopology 를 부른다) —
+     박사님 확정 "삽수는 실제 자랐던 거를 각각 잘라서" 가 여기서 문자 그대로 성립한다.
+     추정값이 섞이는 순간 이 기능의 존재 이유가 사라지므로, 여기서 새로 굴리는 난수는 없다.
+
+   반환 [{ nodeId, stem, leaves, variegatedLeaves, growthDays }, ...] — 마디 하나당 한 줄
+     nodeId            그 마디를 다시 가리키는 이름(아래 ★)
+     stem              캐논 등급 petiole / pink / thick / main (docs/propagation.md §1)
+     leaves            그 마디를 자르면 딸려 나올 잎 수 = 그 마디 위 전부 + 거기서 난 가지 전부
+     variegatedLeaves  그중 이미 무늬로 난 잎 수(물리적으로 같은 잎이 딸려간다)
+     growthDays        그 조각이 자란 유효 생장일
+   자를 수 있나(pink 이상인가)는 코어가 stem 으로 판정한다 — 목록은 마디를 다 낸다.
+
+   ★★ nodeId 는 자리가 아니라 "뿌리에서 그 마디까지 온 길"이다.
+     n0#2      원줄기(축0)의 세 번째 마디
+     n0.1#0    축0 의 두 번째 마디에서 난 가지의 첫 마디
+     n0.1:1#0  그 마디가 쌍혹이라 가지가 둘일 때, 둘째 가지의 첫 마디
+     마디는 뒤로만 쌓이고 이미 난 마디의 길은 안 바뀐다 → 더 자라도·다시 그려도 같은 마디를 가리킨다.
+     ⚠ 축 배열의 자리(인덱스)로 이름을 지으면 안 된다. 가지가 하나 더 나는 순간 딴 마디를 가리킨다. */
+function cuttableNodes(){
+  const day=Math.max(0, Math.min(GMAX, GROWTH)), g=ageOf(day);
+  if(g<P.seedEnd) return [];                       // 씨앗 — 아직 마디가 없다
+  const keep=rng;                                  // 그리기용 난수 스트림은 그대로 돌려준다
+  let axes;
+  try{ rng=mulberry32(SEED); axes=growTopology(g).axes; }
+  finally{ rng=keep; }
+
+  const pathOf=new Map(), branchNo=new Map(), kidsOf=new Map();
+  for(const ax of axes){
+    if(!ax.from){ pathOf.set(ax,'0'); continue; }
+    const base=pathOf.get(ax.from.ax)+'.'+ax.from.idx;
+    const n=branchNo.get(base)||0; branchNo.set(base, n+1);
+    pathOf.set(ax, n? base+':'+n : base);          // 쌍혹이라 한 마디에서 둘이 나면 둘째부터 :1
+    const arr=kidsOf.get(ax.from.ax)||[];          // 어느 마디에서 어느 가지가 났나
+    arr.push({idx:ax.from.idx, ax}); kidsOf.set(ax.from.ax, arr);
+  }
+  // 그 축이 지금 달고 있는 잎(생장점의 잎 1장). 떨어진 잎을 빼는 것까지 buildPlant 과 같은 기준이다
+  const hasLeaf=(ax)=> g>=ax.leafBirth && !leafDroppedOf(ax.leafBirth);
+  // fromIdx 번 마디부터 위로 딸려 나올 잎 — 자기 잎 + fromIdx 이상 마디에서 난 가지의 전부
+  const carried=(ax, fromIdx)=>{
+    let n=0, v=0;
+    if(hasLeaf(ax)){ n++; if(ax.varie) v++; }
+    for(const c of (kidsOf.get(ax)||[])){
+      if(c.idx<fromIdx || c.ax.birth>g) continue;
+      const r=carried(c.ax, 0); n+=r.n; v+=r.v;
+    }
+    return {n, v};
+  };
+  // 캐논 등급. 예비혹(pink)은 stemTrans 만큼 묵으면, 혹(thick/main)은 실제로 돋은 뒤부터 —
+  // 둘 다 buildPlant 이 후보를 고르고 혹 GLB 를 얹는 기준 그대로다(새 숫자를 안 만들었다).
+  const stemOf=(s)=>{
+    if(s.activated && g>=s.actT+P.bumpGrow) return s.actType==='main'? 'main' : 'thick';
+    return (g-s.birth>=P.stemTrans)? 'pink' : 'petiole';
+  };
+  const out=[];
+  for(const ax of axes){
+    if(ax.birth>g) continue;                       // 아직 안 난 가지
+    for(let i=0;i<ax.segs.length;i++){
+      const s=ax.segs[i]; if(s.birth>g) continue;
+      const r=carried(ax, i);
+      out.push({ nodeId:'n'+pathOf.get(ax)+'#'+i, stem:stemOf(s),
+                 leaves:r.n, variegatedLeaves:r.v,
+                 // 마디가 난 '생장 나이'를 실제 생장일로 되돌려 뺀다(ageOf 의 역함수 dayOfAge)
+                 growthDays:Math.max(0, Math.round(day-dayOfAge(s.birth))) });
+    }
+  }
+  return out;
 }
 
 // 형태 진행도를 이 값으로 '점프'한다(디버그 슬라이더·처음·끝 버튼). 달력도 같이 맞춘다.

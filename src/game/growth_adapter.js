@@ -154,11 +154,12 @@ export function createGrowthAdapter(iframe) {
     /* ★ 삽수용 — 모주의 **자를 수 있는 마디 목록** (2026-08-03).
        반환 `[{ nodeId, stem, leaves, variegatedLeaves, growthDays }]` 또는 **null**.
 
-       ⚠ **지금은 거의 항상 null 이다.** plant_grow.html 에 이 접근자가 없기 때문이다.
-         있는 것은 `axisTimeline`(축·마디의 시간표)뿐인데, 거기에는
-           · 어느 마디에서 어느 가지가 났는지의 연결
-           · 그 잎이 무늬인지
-         가 **없다.** 그 둘 없이는 "이 조각이 잎 몇 장을 품고 있나"를 못 낸다.
+       ★ [처리됨 2026-08-03 growth 창] 접근자가 붙었다. 이제 실제 목록이 온다.
+         plant_grow.html 이 `buildPlant` 이 그리던 마디 트리 시뮬을 `growTopology()` 로 꺼내
+         그리기 없이도 같은 트리를 낼 수 있게 했고, `cuttableNodes()` 가 그걸 읽어 낸다.
+         (그전엔 `axisTimeline` 뿐이라 「어느 마디에서 어느 가지가 났나」와 「그 잎이 무늬인가」가
+          없었고, 그 둘 없이는 "이 조각이 잎 몇 장을 품고 있나"를 못 냈다.)
+         ⚠ 옛 plant_grow 를 물리면 여전히 null 이다 — 그 경우의 규약은 아래 그대로다.
 
        ★ 그래서 **추정하지 않는다.** 여기서 잎 수를 지어내면 삽수가
          "실제 자랐던 것을 자른 것"이 아니라 코어가 만든 새 개체가 된다 —
