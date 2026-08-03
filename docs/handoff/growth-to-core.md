@@ -1,5 +1,55 @@
 # growth → core
 
+# 2026-08-03 · growth → core · 판매용 잎 집계 `leafStats()`
+
+## ★ 붙였다 — 판매 화면을 열어도 된다
+
+```js
+leafStats() → { leaves, variegatedLeaves, matureLeaves, growthDays }
+```
+
+`growth_adapter.leafStats()` 통로도 냈다. **접근자가 없는 옛 growth 면 `null`** 이다 —
+`cuttableNodes` 와 같은 규칙이고, 0 으로 메꾸지 않는다(0 을 내면 "값 0원짜리 그루"가 조용히 생긴다).
+
+- ★ `cuttableNodes()` 와 **같은 트리**(`growTopology`)를 센다. 난수 스트림을 되돌리는 자리도
+  `topologyNow(g)` 하나로 모았다 — 접근자가 둘이 됐으니 규칙이 두 군데 있으면 한쪽만 고쳐진다
+- 그래서 `leafStats().leaves` 는 `cuttableNodes()` 의 `n0#0` 잎 수와 **항상 같다**(밑동을 자르면
+  그루가 통째로 딸려오므로). 개체 **720건**(쌍혹 240건 포함)에서 전수 확인했다
+- `matureLeaves` 는 `MAT_STATE` 를 `matureOf` 로 **읽기만** 한다. 파는 순간 굴리면
+  "팔려니까 갈라졌다"가 된다
+- `growthDays` 는 `growthDays()` 와 같은 값이다(유효 생장일)
+
+## ★★ 바랜 잎은 **안 뺐다** — 떨어진 잎만 뺀다
+
+판단은 growth 가 했고 사유를 남긴다.
+
+| | |
+|---|---|
+| ① | 값은 보이는 것으로 매긴다(propagation.md §6). 바랜 잎은 아직 줄기에 달려 있고 화면에 그려진다 |
+| ② | 바램은 **되돌아간다**(빛이 오면 fade 0). 값에서 빼면 빛 한 번에 그루 값이 소급해서 오르내린다 — 갈라진 잎을 소급해 안 뒤집기로 한 것(`MAT_STATE`)과 같은 이유다 |
+| ③ | 초보는 잎이 안 떨어진다(`drop_enabled=false`). 바램으로 빼면 초보에서 그루 값이 조용히 0 으로 간다 — "초보는 안 죽는다"와 정면으로 어긋난다 |
+
+⚠ 바램을 값에 반영할지는 **판정이 아니라 기획**이다. 정하면 칸을 **따로** 낸다.
+코어가 어댑터에서 다시 깎지 말 것 — 두 곳이 깎으면 두 번 깎인다.
+
+## 실제 값 (SEED 92158)
+
+```
+DLI  3.77 · 143일  { leaves:2, variegatedLeaves:0, matureLeaves:0, growthDays:143 }
+DLI 12.16 · 143일  { leaves:2, variegatedLeaves:0, matureLeaves:2, growthDays:143 }
+DLI 12.16 · 500일  { leaves:6, variegatedLeaves:1, matureLeaves:5, growthDays:500 }
+DLI  3.77 · 500일  { leaves:6, variegatedLeaves:1, matureLeaves:0, growthDays:500 }
+```
+
+## 안 바뀐 근거
+
+`tools/test_cuttable.mjs` 에 K·L·M·N 블록을 더했다(새 파일 안 만들었다). 전 블록 PASS.
+`test_maturation` A~M 13블록 그대로 통과하고, `topologyNow` 로 뺀 것이 `cuttableNodes()` 출력을
+바꾸지 않았음을 **HEAD 판과 320 케이스 전수 대조**로 확인했다.
+N 블록이 *"매 턴 `leafStats`·`cuttableNodes` 를 불러도 220턴 결과가 한 글자도 안 바뀐다"* 를 고정한다.
+
+---
+
 # 2026-08-03 · growth → core · 삽수 마디 접근자
 
 ## ★ `cuttableNodes()` 붙였다 — `core-to-growth.md` 2026-08-03 요청 처리 완료

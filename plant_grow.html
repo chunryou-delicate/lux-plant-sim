@@ -2537,13 +2537,18 @@ function growthPhase(){
      n0.1:1#0  그 마디가 쌍혹이라 가지가 둘일 때, 둘째 가지의 첫 마디
      마디는 뒤로만 쌓이고 이미 난 마디의 길은 안 바뀐다 → 더 자라도·다시 그려도 같은 마디를 가리킨다.
      ⚠ 축 배열의 자리(인덱스)로 이름을 지으면 안 된다. 가지가 하나 더 나는 순간 딴 마디를 가리킨다. */
+/* 지금 이 그루의 마디 트리를 그리기 없이 한 번 굴린다. 읽기 전용 접근자들이 같이 쓴다.
+   ⚠ 난수 스트림을 쓰고 **반드시 되돌린다** — 그리기가 쓰는 rng 와 섞이면 형태가 조용히 달라진다.
+     되돌리는 자리가 둘로 갈라지면 한쪽만 고쳐질 수 있어 여기 하나로 모았다. */
+function topologyNow(g){
+  const keep=rng;
+  try{ rng=mulberry32(SEED); return growTopology(g).axes; }
+  finally{ rng=keep; }
+}
 function cuttableNodes(){
   const day=Math.max(0, Math.min(GMAX, GROWTH)), g=ageOf(day);
   if(g<P.seedEnd) return [];                       // 씨앗 — 아직 마디가 없다
-  const keep=rng;                                  // 그리기용 난수 스트림은 그대로 돌려준다
-  let axes;
-  try{ rng=mulberry32(SEED); axes=growTopology(g).axes; }
-  finally{ rng=keep; }
+  const axes=topologyNow(g);
 
   const pathOf=new Map(), branchNo=new Map(), kidsOf=new Map();
   for(const ax of axes){
@@ -2585,6 +2590,39 @@ function cuttableNodes(){
     }
   }
   return out;
+}
+
+/* ===== 판매·표시용 잎 집계 (코어 요청 2026-08-03) =====
+   가격 공식 '단위기본가 × 크기 × (1+60·v²)' 의 크기(잎 수)와 v(무늬 잎 비율)를
+   코어가 읽는 창구다 (docs/propagation.md §6 — "값은 보이는 것으로만 매긴다").
+
+   반환 { leaves, variegatedLeaves, matureLeaves, growthDays }
+
+   ★ cuttableNodes() 와 **같은 트리**(growTopology)를 센다. 두 접근자가 다른 것을 세면
+     "자를 때 본 잎 수"와 "팔 때 본 잎 수"가 갈린다. 밑동 마디를 자르면 그루가 통째로
+     딸려오므로 leafStats().leaves 는 cuttableNodes() 의 n0#0 잎 수와 **항상 같다**.
+   ★ 성숙(갈라짐)의 정본은 MAT_STATE 다. 여기서 새로 굴리지 않고 matureOf 로 읽기만 한다 —
+     굴리면 파는 순간 잎이 갈라지는 소급 판정이 된다.
+
+   ★★ 바랜 잎(LEAF_HEALTH.fade)은 **안 뺀다. 떨어진 잎만 뺀다.** 이유 셋:
+     ① 값은 보이는 것으로 매긴다 — 바랜 잎은 아직 줄기에 달려 있고 화면에 그려진다
+     ② 바램은 되돌아간다(빛이 돌아오면 fade 0). 값에서 빼면 빛 한 번에 그루 값이 소급해서
+        오르내린다. 갈라진 잎을 소급해 뒤집지 않기로 한 것(MAT_STATE)과 같은 이유다
+     ③ 초보(스토리)는 잎이 안 떨어진다(drop_enabled=false). 바램으로 빼면 초보에서
+        그루 값이 조용히 0 으로 간다 — "초보는 안 죽는다"와 정면으로 어긋난다
+     ⚠ 바램을 값에 반영할지는 판정이 아니라 기획이다. 정해지면 칸을 **따로** 낸다 —
+       여기서 임의로 깎으면 코어가 그걸 정본으로 알고 그 위에 가격을 쌓는다. */
+function leafStats(){
+  const day=Math.max(0, Math.min(GMAX, GROWTH)), g=ageOf(day);
+  let leaves=0, varie=0, mature=0;
+  if(g>=P.seedEnd) for(const ax of topologyNow(g)){
+    // 살아서 달려 있는 잎만 — buildPlant 이 실제로 그리는 기준 그대로다
+    if(ax.birth>g || g<ax.leafBirth || leafDroppedOf(ax.leafBirth)) continue;
+    leaves++;
+    if(ax.varie) varie++;                     // 무늬는 잎이 날 때 정해진 것을 읽기만 한다
+    if(matureOf(ax.leafBirth)) mature++;      // 갈라짐은 MAT_STATE 가 정본
+  }
+  return { leaves, variegatedLeaves:varie, matureLeaves:mature, growthDays:day };
 }
 
 // 형태 진행도를 이 값으로 '점프'한다(디버그 슬라이더·처음·끝 버튼). 달력도 같이 맞춘다.

@@ -16,6 +16,12 @@
      I  ★성장 결과 불변 — 매 턴 불러도 유효 생장·성숙·잎 상태가 한 글자도 안 바뀐다
      J  잎이 떨어지면 잎 수도 준다 · 씨앗 단계에는 마디가 없다
 
+   같은 성격의 접근자 `leafStats()` — 파는 값(단위기본가 × 크기 × (1+60·v²))의 크기와 v 를 낸다.
+     K  ★자를 때 본 잎 수와 팔 때 본 잎 수가 같다 — cuttableNodes 의 밑동 마디와 일치한다
+     L  ★무늬 잎 비율이 calcVarieProb 과 맞는다 (E 와 같은 방식)
+     M  ★성숙 잎 수가 MAT_STATE 와 맞는다 — 파는 순간 새로 굴리지 않는다
+     N  ★매 턴 leafStats() 를 불러도 성장 결과가 안 바뀐다 (I 와 같은 방식)
+
    ★ 헤드리스 방식은 tools/test_maturation.mjs 와 같다(3D 만 걷어낸다).
 
      node tools/test_cuttable.mjs
@@ -315,6 +321,9 @@ check('I ★매 턴 cuttableNodes 를 불러도 성장 결과가 한 글자도 �
     assert.ok(after < before, `★잎이 ${dropped}장 떨어졌는데 딸려가는 잎은 ${before} → ${after} 로 그대로입니다`);
     assert.equal(after, liveLeaves(g2), `떨어진 뒤 잎 수가 안 맞습니다: ${after} vs ${liveLeaves(g2)}`);
     info(`  낙엽 ${dropped}장 뒤 밑동 마디 잎 ${before} → ${after}`);
+    // ★ 파는 값도 같이 준다 — 떨어진 잎을 팔 수는 없다
+    assert.equal(g2.leafStats().leaves, after,
+      `★잎이 떨어졌는데 leafStats 는 ${g2.leafStats().leaves}장이라고 합니다 (실제 ${after}장)`);
   });
 }
 check('J2 씨앗 단계에는 마디가 없다 — 빈 배열이지 null 이 아니다', () => {
@@ -322,6 +331,118 @@ check('J2 씨앗 단계에는 마디가 없다 — 빈 배열이지 null 이 아
     const nodes = stand(g, { day: d });
     assert.ok(Array.isArray(nodes) && nodes.length === 0, `${d}일에 마디가 ${nodes && nodes.length}개 나왔습니다`);
   }
+});
+
+/* ══════════════════════════════════════════════════════════════════════
+   leafStats() — 파는 값이 쓰는 잎 집계
+   ══════════════════════════════════════════════════════════════════════ */
+
+/* ══ K · ★자를 때 본 잎 수 = 팔 때 본 잎 수 ══════════════════════════════
+   밑동 마디를 자르면 그루가 통째로 딸려온다. 그러니 두 접근자가 같은 트리를 본다면
+   leafStats().leaves 는 cuttableNodes() 의 n0#0 잎 수와 **항상** 같아야 한다.
+   여기가 갈리면 "잘라 판 것"과 "판 것"이 다른 그루가 된다. */
+check('K ★leafStats().leaves 가 cuttableNodes() 의 밑동 마디와 항상 같다', () => {
+  let n = 0, twin = 0;
+  for (const dli of [0.6, 3.77, 12.16]) for (const day of [30, 143, 300, 700]) {
+    for (let s = 1; s <= 60; s++) {
+      const nodes = stand(g, { seed: s, dli, day });
+      const st = g.leafStats();
+      const root = rootNode(nodes);
+      assert.equal(st.leaves, root ? root.leaves : 0,
+        `★seed ${s} · ${day}일 · DLI ${dli}: 팔 때 ${st.leaves}장인데 자를 때 ${root && root.leaves}장입니다`);
+      assert.equal(st.variegatedLeaves, root ? root.variegatedLeaves : 0,
+        `★seed ${s} · ${day}일: 무늬 잎 수가 두 접근자에서 다릅니다`);
+      assert.equal(st.growthDays, g.growthDays(), 'growthDays 가 유효 생장일과 다릅니다');
+      assert.ok(st.matureLeaves <= st.leaves, `★성숙 잎이 전체 잎보다 많습니다: ${JSON.stringify(st)}`);
+      assert.ok(st.variegatedLeaves <= st.leaves, `★무늬 잎이 전체 잎보다 많습니다: ${JSON.stringify(st)}`);
+      n++; if (hasTwin(nodes)) twin++;
+    }
+  }
+  assert.ok(n > 700 && twin > 0, `표본이 모자랍니다: ${n}건(쌍혹 ${twin}건)`);
+  info(`  개체 ${n}건(쌍혹 ${twin}건 포함) 전부 두 접근자가 같은 잎을 셈`);
+  const st = stand(g, { day: 143 }) && g.leafStats();
+  info(`  143일(SEED 92158 · DLI 3.77) leafStats = ${JSON.stringify(st)}`);
+});
+
+/* ══ L · ★무늬 잎 비율이 calcVarieProb 과 맞는다 (E 와 같은 방식) ═════════ */
+check('L ★leafStats 의 무늬 잎 비율이 calcVarieProb 과 맞는다 · 빛 따라 움직인다', () => {
+  const seen = [];
+  for (const dli of [0.6, 3.77, 12.16]) {
+    g.seedTo(1); g.setDailyLightSteady(dli);
+    const p = g.calcVarieProb(g.lightCtx());
+    let leaves = 0, varie = 0;
+    for (let s = 1; s <= 400; s++) {
+      stand(g, { seed: s, dli, day: 500 });
+      const st = g.leafStats(); leaves += st.leaves; varie += st.variegatedLeaves;
+    }
+    assert.ok(leaves > 2000, '표본이 너무 적습니다: ' + leaves);
+    const obs = varie / leaves;
+    assert.ok(Math.abs(obs - p) < 0.02,
+      `★DLI ${dli}: 확률은 ${p.toFixed(4)} 인데 실제 무늬 비율이 ${obs.toFixed(4)} 입니다 — 읽은 값이 아닙니다`);
+    seen.push(obs);
+    info(`  DLI ${dli}: calcVarieProb ${p.toFixed(4)} · 실제 ${obs.toFixed(4)} (${varie}/${leaves}장)`);
+  }
+  assert.equal(seen[0], 0, '★빛이 없다시피 한데 무늬 잎이 났습니다');
+  assert.ok(seen[2] > seen[1], '밝은 자리가 어두운 자리보다 무늬가 안 많습니다');
+});
+
+/* ══ M · ★성숙 잎 수가 MAT_STATE 와 맞는다 ═══════════════════════════════
+   갈라짐의 정본은 MAT_STATE 다. leafStats 가 파는 순간 새로 굴리면 "팔려니까 갈라졌다"가 된다.
+   대조군은 axisTimeline(다른 코드 경로) × matureOf 다. */
+check('M ★성숙 잎 수가 MAT_STATE 와 맞는다 — 여기서 새로 굴리지 않는다', () => {
+  let exact = 0, someMature = 0;
+  const age = () => g.ageOf(g.growthDays());
+  const liveMature = () => g.axisTimeline(age()).filter(a => a.birth <= age() && age() >= a.leafBirth
+    && !g.leafDroppedOf(a.leafBirth) && g.matureOf(a.leafBirth)).length;
+  for (const s of [92158, 1, 5, 7, 33, 42, 101, 555]) {
+    // ① 점프로 세운 개체 ② 하루씩 걸어온 개체 — 둘 다 본다
+    for (const walked of [false, true]) {
+      if (walked) {
+        g.seedTo(s); g.matResetAll(); g.setGrowth(0);
+        for (let i = 0; i < 300; i++) { g.setDailyLightSteady(12.16); g.advanceTo(g.calendarDay() + 1); }
+      } else stand(g, { seed: s, dli: 12.16, day: 500 });
+      const st = g.leafStats(), nodes = g.cuttableNodes();
+      const matured = new Set(g.matStateAll().filter(e => e.matured).map(e => e.leafBirth));
+      if (st.matureLeaves > 0) {
+        someMature++;
+        assert.ok(matured.size > 0,
+          `★seed ${s}: 성숙 잎 ${st.matureLeaves}장이라는데 MAT_STATE 에 성숙한 잎이 없습니다`);
+      }
+      if (hasTwin(nodes))                       // 쌍혹은 leafBirth 를 공유해 한 칸을 둘이 쓴다(C 참고)
+        assert.ok(st.matureLeaves >= liveMature(), `★seed ${s}: 성숙 잎이 대조군보다 적습니다`);
+      else { assert.equal(st.matureLeaves, liveMature(),
+        `★seed ${s}(walked=${walked}): 성숙 잎 ${st.matureLeaves} vs 대조군 ${liveMature()}`); exact++; }
+    }
+  }
+  assert.ok(exact > 0 && someMature > 0,
+    `적정광인데 성숙 잎이 하나도 안 나왔습니다(exact ${exact} · mature ${someMature})`);
+  // 어두운 자리면 성숙 잎이 확 준다 — 상수가 아니라 상태를 읽는다는 증거
+  let bright = 0, dark = 0;
+  for (let s = 1; s <= 60; s++) {
+    stand(g, { seed: s, dli: 12.16, day: 500 }); bright += g.leafStats().matureLeaves;
+    stand(g, { seed: s, dli: 3.77, day: 500 }); dark += g.leafStats().matureLeaves;
+  }
+  assert.ok(bright > dark, `밝은 자리 성숙 잎 ${bright} 이 어두운 자리 ${dark} 보다 많지 않습니다`);
+  info(`  성숙 잎 합계 — 밝음(12.16) ${bright} · 어두움(3.77) ${dark}`);
+});
+
+/* ══ N · ★성장 결과 불변 — leafStats 도 읽기만 하는지 확인한다 ═══════════ */
+check('N ★매 턴 leafStats 를 불러도 성장 결과가 한 글자도 안 바뀐다', () => {
+  const run = (probe) => {
+    g.seedTo(92158); g.matResetAll(); g.setGrowth(0);
+    const turns = [];
+    for (let i = 0; i < 220; i++) {
+      g.setDailyLightSteady(i < 120 ? 12.16 : 0.6);
+      turns.push(g.advanceTo(g.calendarDay() + 1));
+      if (probe) { g.leafStats(); g.cuttableNodes(); }      // 둘 다 매 턴 부른다
+    }
+    return JSON.stringify({
+      turns, growth: g.growthDays(), cal: g.calendarDay(),
+      mat: g.matStateAll(), health: g.leafHealthAll(),
+      timeline: g.axisTimeline(g.ageOf(g.growthDays())).map(a => [a.birth, a.leafBirth, a.segs.length])
+    });
+  };
+  assert.equal(run(true), run(false), '★접근자를 부른 쪽의 성장 결과가 다릅니다 — 읽기 전용이 아닙니다');
 });
 
 /* ── 보고 ─────────────────────────────────────────────────────────────── */

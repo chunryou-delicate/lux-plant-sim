@@ -173,6 +173,24 @@ export function createGrowthAdapter(iframe) {
       return Array.isArray(list) ? list : null;
     },
 
+    /* ★ 판매·표시용 — 지금 이 그루의 잎 집계 (2026-08-03).
+       반환 `{ leaves, variegatedLeaves, matureLeaves, growthDays }` 또는 **null**.
+
+       가격 공식(`단위기본가 × 크기 × (1+60·v²)`, docs/propagation.md §6)의 크기와 v 가
+       여기서 온다. **코어는 잎을 세지 않는다** — 형태는 growth 소유라 셀 근거가 없다.
+
+       ⚠ 접근자가 없으면 **null 이다. 0 으로 메꾸지 않는다.** cuttableNodes 와 같은 규칙이다 —
+         0 을 내면 "값 0원짜리 그루"가 조용히 생기고, 지어낸 잎 수를 내면 안 판 잎을 판 게 된다.
+         호출부는 null 이면 판매 화면을 열지 않으면 된다.
+       ⚠ 바랜 잎은 **안 빠져 있다**(떨어진 잎만 빠진다). growth 의 결정이고 사유는
+         plant_grow.html 의 leafStats 주석에 있다 — 코어가 여기서 다시 깎지 말 것. */
+    leafStats() {
+      const f = fn('leafStats');
+      if (!f) return null;
+      const s = f();
+      return (s && typeof s === 'object' && !Array.isArray(s)) ? s : null;
+    },
+
     /* 표시·대조 전용(판정에 안 쓴다) — 없으면 화면에 '—' 로 두면 되므로 던지지 않는다. */
     dli7()   { const f = fn('dli7');   return f ? f() : null; },
     dliCV()  { const f = fn('dliCV');  return f ? f() : null; },
