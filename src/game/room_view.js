@@ -176,7 +176,14 @@ function loadGLB(url) {
      onPlantTap(slotId)  그 자리 화분을 눌렀다
      onSlotHover(slotId|null, type)  ★ PC 전용. 마우스가 자리 위에 올라왔다.
                   폰에서는 안 불린다(hover: hover 인 기기에서만). 이름·밝기 표시는 호스트 몫이다
-     onCharacterTap(id)  캐릭터를 눌렀다. id 는 'jachwi' | 'moni'
+     onCharacterTap(selected, tapped)  캐릭터를 눌렀다.
+                  selected  누른 **결과** 골라진 id ('jachwi' | 'moni' | null)
+                  tapped    실제로 눌린 id
+                  ★ 첫 인자가 '누른 id' 가 아니라 '골라진 결과'다. 호스트가 흔히 쓰는
+                    onCharacterTap: id => view.selectCharacter(id) 한 줄이 **양방향으로**
+                    맞게 하려고 그렇게 뒀다. 같은 캐릭터를 다시 누르면 해제인데(아래),
+                    첫 인자가 누른 id 면 호스트가 방금 푼 것을 도로 골라 버린다.
+                  ★ 같은 캐릭터를 다시 누르면 **해제**된다(화분의 [✕]와 결이 같다).
                   ★ 이 콜백을 주든 안 주든 링(고르기)은 이 모듈이 알아서 켠다 —
                     호스트가 아무것도 안 해도 눌러서 걷게는 된다
      onProgress({phase, ko, done, total})  ★ 무엇을 기다리는 중인지.
@@ -305,7 +312,10 @@ export async function createRoomView(canvas, opts = {}) {
 
   let needsRender = true;      // 놀 때는 안 그린다
   let raf = 0;
-  const stats = { fps: 0, frames: 0, drawn: 0, last: performance.now(), worstMs: 0 };
+  /* navPaths·nudges 는 진단용 계수기다 — "걸을 때 왜 느린가"를 짐작이 아니라
+     횟수로 답하려고 둔다(tools/test_roomview_perf.mjs 가 구간별 차분을 읽는다). */
+  const stats = { fps: 0, frames: 0, drawn: 0, last: performance.now(), worstMs: 0,
+                  navPaths: 0, nudges: 0 };
   let forceContinuous = false; // 데모/측정용
 
   /* ============================================================
@@ -1100,7 +1110,7 @@ export async function createRoomView(canvas, opts = {}) {
         needsRender = true;
       }
       /* 두 손가락이면 걷기가 아니라 줌이다 — 미리보기를 걷어 준다 */
-      if (walkDrag) { walkDrag = null; disposeWalkGhost(); }
+      if (walkDrag) { walkDrag = null; pendingDrag = null; disposeWalkGhost(); }
       pinch = dd; dragging = true; e.preventDefault();
       return;
     }
@@ -1110,7 +1120,12 @@ export async function createRoomView(canvas, opts = {}) {
 
     if (walkDrag) {                       // 고른 뒤에만 여기로 온다
       dragging = true; walkDrag.moved = true;
-      walkDrag.target = showWalkGhost(walkTargetAt(walkDrag.originX + dx, walkDrag.originY + dy));
+      /* ★ 여기서 광선을 쏘지 않는다. 폰의 touchmove 는 초당 60~120번 온다 —
+         그때마다 바닥 광선 + 길찾기 + 한 장 그리기를 하면 손가락이 미끄러진다.
+         자리만 적어 두고 loop 이 프레임당 한 번만 계산한다. */
+      walkDrag.px = walkDrag.originX + dx; walkDrag.py = walkDrag.originY + dy;
+      pendingDrag = walkDrag;
+      needsRender = true;
       e.preventDefault && e.preventDefault();
       return;
     }
@@ -1129,11 +1144,13 @@ export async function createRoomView(canvas, opts = {}) {
     pinch = 0;
     if (!down) return;
     const wasDrag = dragging, d0 = down, wd = walkDrag;
-    down = null; dragging = false; walkDrag = null;
+    down = null; dragging = false; walkDrag = null; pendingDrag = null;
 
-    /* ① 고른 캐릭터를 끌었다 → 손을 뗀 자리로 걸어간다 */
+    /* ① 고른 캐릭터를 끌었다 → 손을 뗀 자리로 걸어간다
+       ★ 마지막 손가락 자리로 **여기서 한 번** 다시 계산한다. 프레임당 한 번만 계산하게
+         미뤄 뒀으므로, 손을 떼는 순간의 자리가 아직 반영되지 않았을 수 있다. */
     if (wd && wd.moved) {
-      const t = wd.target;
+      const t = wd.px != null ? walkTargetAt(wd.px, wd.py) : wd.target;
       disposeWalkGhost();
       if (t && t.ok) doWalk(selChar, t);
       return;
@@ -1147,8 +1164,16 @@ export async function createRoomView(canvas, opts = {}) {
     try {
       if (hit.type === 'character') {
         /* 같은 캐릭터를 다시 누르면 해제 — main.js 의 setSelected(!selected) 그대로 */
-        selectCharacter(selChar === hit.id ? null : hit.id);
-        O.onCharacterTap && O.onCharacterTap(hit.id);
+        const now = selectCharacter(selChar === hit.id ? null : hit.id);
+        /* ★ 첫 인자는 **누른 결과 골라진 것**이다(해제됐으면 null). 누른 id 는 둘째다.
+           ------------------------------------------------------------
+           왜 이렇게 두나 — 호스트가 대개 이렇게 쓴다:
+             onCharacterTap: (id) => roomView.selectCharacter(id)     ← game.html
+           여기에 '누른 id' 를 주면, 방금 해제한 것을 호스트가 곧바로 다시 골라 버린다.
+           그래서 폰에서 재선택이 안 풀렸다(박사님 지적). 결과를 주면 그 한 줄이
+           **양쪽 다** 맞는다 — 고르면 고른 것으로, 풀면 null 로 따라온다.
+           누가 눌렸는지가 필요하면 둘째 인자를 보십시오. */
+        O.onCharacterTap && O.onCharacterTap(now, hit.id);
       } else if (hit.type === 'floor') {
         doWalk(selChar, hit.target);
       } else if (hit.type === 'plant') {
@@ -1201,7 +1226,8 @@ export async function createRoomView(canvas, opts = {}) {
   canvas.addEventListener('touchmove', onMove, { passive: false });
   window.addEventListener('mouseup', onUp);
   canvas.addEventListener('touchend', onUp);
-  canvas.addEventListener('touchcancel', () => { down = null; dragging = false; pinch = 0; });
+  canvas.addEventListener('touchcancel', () => { down = null; dragging = false; pinch = 0;
+                                                 walkDrag = null; pendingDrag = null; disposeWalkGhost(); });
   canvas.addEventListener('wheel', onWheel, { passive: false });
   canvas.addEventListener('mouseleave', onLeave);
 
@@ -1358,10 +1384,29 @@ export async function createRoomView(canvas, opts = {}) {
   const CHAR_FPS = 30;
   let lastCharAt = performance.now();
 
+  /* ★★ 한 장 그리는 간격을 30fps 로 자른다 (2026-08-03 · "이동할 때 프레임이 겁나 떨어져")
+     ------------------------------------------------------------
+     재 보고 넣었다(tools/test_roomview_perf.mjs · 390×844 dpr2 · CPU 4배).
+       가만히 있을 때  22.6 장/초
+       **끌고 있을 때  48.6 장/초**   ← 손가락 이벤트마다 needsRender 가 켜졌다
+       걷는 중        23.0 장/초
+     끄는 동안만 그리는 양이 두 배였다. 폰의 touchmove 는 초당 60~120번 온다 —
+     그때마다 방 한 장(드로우콜 103 · 삼각형 7.6만)을 통째로 다시 그리고 있었던 것이다.
+     캐릭터는 어차피 30fps 로만 갱신하므로 그 사이 프레임은 **같은 그림을 한 번 더**
+     그리는 것이고, 폰에서는 그게 곧 손가락이 미끄러지는 느낌(=렉)이 된다.
+     ⚠ setContinuous(true)(데모·측정)일 때는 자르지 않는다 — 재는 화면까지 자르면
+       무엇을 재고 있는지 알 수 없게 된다. */
+  const MIN_FRAME_MS = 1000 / CHAR_FPS - 4;
+  let lastFrameAt = 0;
+  /* 끄는 동안 마지막 손가락 자리만 적어 둔다. 광선·길찾기는 프레임당 한 번만 한다. */
+  let pendingDrag = null;
+
   function stepCharacters(now, force) {
     if (!chars.size) { lastCharAt = now; return false; }
     const dt = (now - lastCharAt) / 1000;
-    if (!force && dt < 1 / CHAR_FPS) return false;
+    /* 0.9 배로 여유를 둔다 — 위 MIN_FRAME_MS 와 문턱이 딱 붙어 있으면 프레임이 조금만
+       흔들려도 한 번씩 걸러져 캐릭터가 20fps 로 뚝뚝 끊긴다(딱 붙여 두고 봤다). */
+    if (!force && dt < 0.9 / CHAR_FPS) return false;
     lastCharAt = now;
     for (const [, c] of chars) {
       try { c.update(Math.min(dt, 0.1)); } catch (e) { fail(e); }
@@ -1372,6 +1417,14 @@ export async function createRoomView(canvas, opts = {}) {
   function loop(now) {
     if (disposed) return;
     raf = requestAnimationFrame(loop);
+    /* 아직 이르면 아무것도 안 한다. needsRender 는 그대로 켜져 있으니 다음 프레임에 그린다. */
+    if (!forceContinuous && now - lastFrameAt < MIN_FRAME_MS) return;
+    lastFrameAt = now;
+    /* 끄는 중이면 여기서 딱 한 번 목적지를 계산한다(이벤트마다 하지 않는다) */
+    if (pendingDrag) {
+      const d = pendingDrag; pendingDrag = null;
+      if (d === walkDrag) d.target = showWalkGhost(walkTargetAt(d.px, d.py));
+    }
     const moving = stepTween(now) | pulseRings(now) | stepCharacters(now);
     if (!needsRender && !moving && !forceContinuous) {
       /* ★ 노는 동안은 fps 를 세지 않는다. 여기서 세면 "가만히 있어서 1초에 두 장만
@@ -1389,8 +1442,14 @@ export async function createRoomView(canvas, opts = {}) {
     stats.drawn++;
     framesSince++;
     if (now - lastFpsAt >= 500) {
-      /* 표본이 적으면 판정하지 않는다 — 몇 장 안 그린 구간은 '느린' 게 아니라 '안 바쁜' 것이다 */
-      if (framesSince >= 20) { stats.fps = Math.round(framesSince * 1000 / (now - lastFpsAt)); autoQuality(); }
+      /* '안 바쁜 것'과 '느린 것'을 가른다 — 노는 프레임이 하나라도 있으면 위에서
+         framesSince·lastFpsAt 을 통째로 되돌리므로, 여기까지 온 창은 **500ms 내내 바빴던 창**이다.
+         ★ 그래서 표본 문턱은 낮아도 된다. 예전 20장은 두 번 잘못됐다.
+           ① 위에서 30fps 로 자르니 한 창에 많아야 15장 — 영영 안 찼다.
+           ② 정작 느릴 때(6fps)는 3장뿐이라, **느릴수록 판정이 안 되는** 거꾸로 된 문턱이었다.
+           그래서 못 따라갈 때 해상도를 내리는 안전장치가 한 번도 안 돌았다.
+         4장이면 노는 창은 걸러지고 느린 창은 잡힌다. 튐 방지는 autoQuality 의 연속 2창이 맡는다. */
+      if (framesSince >= 4) { stats.fps = Math.round(framesSince * 1000 / (now - lastFpsAt)); autoQuality(); }
       framesSince = 0; lastFpsAt = now;
     }
   }
@@ -1398,8 +1457,17 @@ export async function createRoomView(canvas, opts = {}) {
   /* 못 따라가면 해상도를 내린다. 무엇을 줄였는지 stats 에 남긴다. */
   let pxRatio = Math.min(O.maxPixelRatio, dpr);
   const PX_STEPS = [1.75, 1.5, 1.25, 1.0, 0.85];
+  let slowWindows = 0;
   function autoQuality() {
-    if (!forceContinuous && stats.fps > 0 && stats.fps < 55) {
+    /* 목표는 '노리는 만큼'이다 — 30fps 로 자르는 화면에 55fps 를 요구하면 늘 불합격이라
+       픽셀비가 바닥까지 내려간다(예전 55 는 60fps 를 노리던 시절의 값이다). */
+    const target = CHAR_FPS - 6;               // 30 을 노리는데 24 도 못 내면 무거운 것이다
+    if (forceContinuous || !(stats.fps > 0)) return;
+    /* ★ 한 번 느렸다고 바로 안 내린다. 부팅 직후·화분 조립 같은 한 번짜리 걸림에
+       화질을 영구히 깎아 먹으면 안 된다 — 연속 두 창(1초)이 느릴 때만 내린다. */
+    slowWindows = stats.fps < target ? slowWindows + 1 : 0;
+    if (slowWindows >= 2) {
+      slowWindows = 0;
       const i = PX_STEPS.findIndex(v => v <= pxRatio + 1e-3);
       const next = PX_STEPS[Math.min(PX_STEPS.length - 1, (i < 0 ? 0 : i) + 1)];
       if (next < pxRatio - 1e-3) {
@@ -1610,8 +1678,40 @@ export async function createRoomView(canvas, opts = {}) {
   /* 사람이 차지하는 반지름[m]. 3.5등신 치비라 어깨가 넓다 — 0.30 으로 두면
      벽에 붙었을 때 팔이 벽에 묻힌다(실제로 묻혔다). */
   const BODY_R = 0.38;
-  /* 창을 보고 서되 방 쪽으로 이만큼 튼다. 정면으로 창만 보면 플레이어는 늘 뒤통수만 본다. */
-  const FACE_TURN = 0.60;       // 약 34°
+
+  /* ★★ 캐릭터의 '앞'은 로컬 **+Z** 다 — 짐작이 아니라 재서 확인했다.
+     ------------------------------------------------------------
+     char-to-house.md 는 "캐릭터는 기본 방향이 뒷모습입니다 · model.rotation.y = Math.PI"
+     라고 적어 두었고, 여기 걷기·서기가 그 말을 믿고 π 를 더하고 있었다.
+     그런데 lq/char_*_idle.glb 를 실제로 재 보면 (model.rotation 은 0 인 상태에서)
+       발끝 방향(LeftFoot → LeftToeBase)  자취녀 (x 0.000, z +0.068) · 자취남 (x 0.000, z +0.068)
+     즉 **발끝이 +Z 를 가리킨다**. 사람은 발끝 쪽으로 걷는다 — 그러니 앞은 +Z 다.
+     render3d/character.js 도 π 없이 atan2(d.x, d.z) 를 쓴다(그쪽이 맞았다).
+     여기 있던 +π 하나 때문에 방 뷰에서만 캐릭터가 **뒷걸음질**로 갔다.
+
+       yaw = atan2(가고 싶은 dx, dz)    ← π 를 더하지 않는다
+     ⚠ 이 규칙을 다시 뒤집고 싶으면 먼저 재십시오(도구: 발끝 벡터 한 줄이면 된다). */
+  const yawTo = (dx, dz) => Math.atan2(dx, dz);
+
+  /* 몸을 돌리는 속도[1/s]. 홱 돌면 인형이 튀는 것처럼 보인다 — 몇 프레임에 걸쳐 돈다.
+     9 면 180° 반대편으로 돌아서는 데 0.4초쯤 걸린다. */
+  const TURN_RATE = 9;
+
+  /* ★ 서 있을 때·도착했을 때 어디를 보나 — **카메라(플레이어) 쪽**이다.
+     ------------------------------------------------------------
+     고른 두 후보는 '마지막 진행 방향'과 '카메라 쪽'이었다. 카메라 쪽을 골랐다.
+       · 마지막 진행 방향은 사람이 고른 방향이 아니다. 경로의 마지막 한 칸은 가구를
+         돌아 나오는 옆걸음인 경우가 많아서, 도착하면 30cm 앞의 벽을 보고 서게 된다
+         (반지하처럼 좁은 방일수록 자주 그렇다).
+       · 플레이어가 "여기로 가"라고 시켜서 간 것이다. 도착해서 플레이어를 보고 서면
+         "다 왔습니다"가 되고, 다음 지시를 기다리는 자세로 읽힌다.
+       · 카메라는 늘 방 **밖에서 안을** 본다. 그래서 카메라 쪽 = 방 안쪽이기도 하다.
+         원래 자리 잡기(standSpot)가 "가운데 바닥을 비우고 벽을 등진다"로 노리던 그림과 같다.
+     ⚠ 계속 따라 보게 하지는 않는다. 도착한 그 순간의 카메라 방향으로 한 번 돌아설 뿐이다 —
+       시점을 돌릴 때마다 고개가 따라오면 인형이 노려보는 것처럼 된다. */
+  function faceCameraYaw(x, z) {
+    return yawTo(ctx.cam.position.x - x, ctx.cam.position.z - z);
+  }
 
   /* 벽·가구 판정은 floor_nav 한 벌만 쓴다 — 여기와 걷기가 다른 식을 쓰면
      "설 수는 있는데 걸어갈 수는 없는 자리"가 생긴다. */
@@ -1727,12 +1827,12 @@ export async function createRoomView(canvas, opts = {}) {
     root.add(model);
     const spot = standSpot();
     root.position.set(spot.x, 0, spot.z);
-    /* 창 쪽을 보되 방 안쪽으로 조금 튼다. 캐릭터 기본이 뒷모습이라 π 를 더한다
-       (char-to-house.md "캐릭터는 기본 방향이 뒷모습입니다"). */
-    const toWin = Math.atan2(spot.wx - spot.x, spot.wz - spot.z);
-    const toRoom = Math.atan2(-spot.x, -spot.z);
-    let d = ((toRoom - toWin + Math.PI) % (Math.PI * 2)) - Math.PI;
-    root.rotation.y = toWin + d * FACE_TURN + Math.PI;
+    /* 처음 서는 방향도 도착했을 때와 같은 규칙을 쓴다 — 카메라(플레이어) 쪽.
+       ★ 예전에는 '창 쪽을 보되 방 안으로 조금 튼' 각에 π 를 더했는데, +Z 가 앞이라
+         그 π 때문에 실제로는 **창을 등지고** 서 있었다. 규칙이 두 벌이면 반드시 어긋난다 —
+         한 벌로 합쳤다. (standSpot 이 창에서 멀리 세우는 것은 그대로다. 그건 자리 얘기지
+          방향 얘기가 아니다.) */
+    root.rotation.y = faceCameraYaw(spot.x, spot.z);
 
     /* 고르기 링 · 픽 상자 (main.js 와 같은 값) */
     const ring = makeSelectRing(0.26, 0.34);
@@ -1768,6 +1868,18 @@ export async function createRoomView(canvas, opts = {}) {
     const goal = new THREE.Vector3();
     let arriveAt = 0;                 // 도착한 시각 — 비켜서기 유예에 쓴다
     let manualUntil = 0;              // 이때까지는 자동으로 안 비켜선다(플레이어가 보낸 자리다)
+    let settleYaw = null;             // 도착한 뒤 돌아설 각. 다 돌면 null 로 내린다
+
+    /* 목표 각으로 조금 돌린다. 돌고 남은 각[rad]을 돌려준다(부호 있음).
+       ★ 한 프레임에 다 돌리지 않는다 — 인형이 튀는 것처럼 보인다. */
+    function turnToward(y, dt) {
+      let diff = y - root.rotation.y;
+      while (diff > Math.PI) diff -= Math.PI * 2;
+      while (diff < -Math.PI) diff += Math.PI * 2;
+      const k = Math.min(1, dt * TURN_RATE);
+      root.rotation.y += diff * k;
+      return diff * (1 - k);
+    }
 
     async function ensureWalkClip() {
       if (walkAct) return walkAct;
@@ -1792,8 +1904,9 @@ export async function createRoomView(canvas, opts = {}) {
     /* 바닥 (x,z) 로 걸어간다. 갈 수 있는 데까지만 간다(막힌 주머니면 최대한 다가간다). */
     function goTo(x, z, opt2 = {}) {
       const p = nav.nearestFree(x, z);
+      stats.navPaths++;
       path = nav.path(root.position.x, root.position.z, p.x, p.z);
-      pathI = 0; stuck = 0;
+      pathI = 0; stuck = 0; settleYaw = null;
       if (!path.length) { playIdle(); return { ok: false, x: p.x, z: p.z, reason: '갈 수 없는 자리입니다' }; }
       goal.set(path[0].x, 0, path[0].z);
       if (opt2.manual) manualUntil = performance.now() + 8000;
@@ -1850,48 +1963,74 @@ export async function createRoomView(canvas, opts = {}) {
       get idleSince() { return path.length ? 0 : performance.now() - arriveAt; },
       get manualHold() { return performance.now() < manualUntil; },
       goTo,
-      stop() { path = []; pathI = 0; playIdle(); },
+      /* 걷기 클립을 미리 실어 둔다. 고를 때 부른다 — 첫 걸음에서 GLB 를 받고 뼈에
+         물리느라 한 번 걸리던 것을 없앤다(폰에서 눈에 띈다). */
+      warmWalk() { return ensureWalkClip().catch(() => null); },
+      stop() {
+        path = []; pathI = 0; playIdle();
+        settleYaw = faceCameraYaw(root.position.x, root.position.z);
+        needsRender = true;
+      },
       update(dt) {
         mixer.update(dt);
-        /* ★ Hips XZ 고정 — 걷기 클립도 변주 클립도 루트가 앞으로 나간다.
-           안 잡으면 캐릭터가 제자리에서 두 배로 미끄러지거나 방 밖으로 걸어 나간다
-           (char-to-house.md §4). 실제 이동은 아래에서 root 를 움직여서 한다. */
+        /* ★ Hips XZ 고정 — 변주 클립은 루트가 Hips 높이 대비 최대 42% 움직인다.
+           안 잡으면 캐릭터가 제자리에서 미끄러지거나 방 밖으로 걸어 나간다
+           (char-to-house.md §4). 실제 이동은 아래에서 root 를 움직여서 한다.
+           (파생 걷기 클립 자체는 제자리 모션이라 걷기에는 이 고정이 필요 없지만,
+            변주 클립 때문에 어차피 있어야 한다 — 재서 확인했다) */
         if (hips && hips0) { hips.position.x = hips0[0]; hips.position.z = hips0[1]; }
-        if (!path.length) return;
+
+        if (!path.length) {
+          /* 도착한 뒤 돌아서는 중 */
+          if (settleYaw != null) {
+            const rest = turnToward(settleYaw, dt);
+            if (Math.abs(rest) < 0.01) { root.rotation.y = settleYaw; settleYaw = null; }
+            needsRender = true;
+          }
+          return;
+        }
 
         const dx = goal.x - root.position.x, dz = goal.z - root.position.z;
         const dist = Math.hypot(dx, dz);
         if (dist < ARRIVE_EPS) {
           if (pathI < path.length - 1) { pathI++; goal.set(path[pathI].x, 0, path[pathI].z); return; }
           path = []; pathI = 0; arriveAt = performance.now();
+          settleYaw = faceCameraYaw(root.position.x, root.position.z);   // 플레이어를 보고 선다
           playIdle();
           needsRender = true;
           return;
         }
-        const step = Math.min(WALK_SPEED * dt, dist);
-        const nx = root.position.x + (dx / dist) * step;
-        const nz = root.position.z + (dz / dist) * step;
-        const fixed = nav.pushOut(nx, nz);          // 벽에 걸리면 따라 미끄러진다
-        const moved = Math.hypot(fixed.x - root.position.x, fixed.z - root.position.z);
-        root.position.x = fixed.x; root.position.z = fixed.z;
 
-        /* 거의 못 움직였으면(구석에 낀 것) 다음 웨이포인트로 건너뛰고, 그래도 안 되면 포기.
-           포기를 안 넣으면 벽에 붙어 영원히 걷는 시늉을 한다(실제로 그랬다). */
-        if (moved < step * 0.12) {
-          stuck += dt;
-          if (stuck > 0.35) {
-            stuck = 0;
-            if (pathI < path.length - 1) { pathI++; goal.set(path[pathI].x, 0, path[pathI].z); }
-            else { path = []; pathI = 0; arriveAt = performance.now(); playIdle(); }
-          }
-        } else stuck = 0;
+        /* ★ 먼저 몸을 돌리고, **돌아선 만큼만** 나아간다.
+           걷기 클립은 앞으로 걷는 동작이다. 몸이 덜 돌았는데 그대로 밀면 게걸음·
+           뒷걸음질로 보인다 — 뒤로 보내면 특히 그렇다. cos 을 곱하면 반대편으로
+           보냈을 때 그 자리에서 돌아선 다음 걸어 나간다(0.4초쯤). */
+        const rest = turnToward(yawTo(dx, dz), dt);
+        const align = Math.max(0, Math.cos(rest));
+        const step = Math.min(WALK_SPEED * dt * align, dist);
 
-        /* 가는 쪽을 본다. 캐릭터 기본이 뒷모습이라 π 를 더한다 */
-        const face = Math.atan2(dx, dz) + Math.PI;
-        let diff = face - root.rotation.y;
-        while (diff > Math.PI) diff -= Math.PI * 2;
-        while (diff < -Math.PI) diff += Math.PI * 2;
-        root.rotation.y += diff * Math.min(1, dt * 9);
+        if (step > 1e-5) {
+          const nx = root.position.x + (dx / dist) * step;
+          const nz = root.position.z + (dz / dist) * step;
+          const fixed = nav.pushOut(nx, nz);          // 벽에 걸리면 따라 미끄러진다
+          const moved = Math.hypot(fixed.x - root.position.x, fixed.z - root.position.z);
+          root.position.x = fixed.x; root.position.z = fixed.z;
+
+          /* 거의 못 움직였으면(구석에 낀 것) 다음 웨이포인트로 건너뛰고, 그래도 안 되면 포기.
+             포기를 안 넣으면 벽에 붙어 영원히 걷는 시늉을 한다(실제로 그랬다). */
+          if (moved < step * 0.12) {
+            stuck += dt;
+            if (stuck > 0.35) {
+              stuck = 0;
+              if (pathI < path.length - 1) { pathI++; goal.set(path[pathI].x, 0, path[pathI].z); }
+              else {
+                path = []; pathI = 0; arriveAt = performance.now();
+                settleYaw = faceCameraYaw(root.position.x, root.position.z);
+                playIdle();
+              }
+            }
+          } else stuck = 0;
+        }
         needsRender = true;
       },
       dispose() {
@@ -2137,6 +2276,7 @@ export async function createRoomView(canvas, opts = {}) {
     const now = performance.now();
     if (!force && now - lastNudge < NUDGE_MIN_MS) return 0;
     lastNudge = now;
+    stats.nudges++;
     let moved = 0;
     for (const [, c] of chars) {
       if (!c.walkable || c.walking || (!force && c.manualHold)) continue;
@@ -2166,6 +2306,11 @@ export async function createRoomView(canvas, opts = {}) {
     if (want === selChar) return selChar;
     selChar = want;
     for (const [k, c] of chars) c.setSelected && c.setSelected(k === want);
+    /* ★ 고르는 순간 걷기 클립을 미리 받아 둔다. 예전에는 첫 걸음에서 GLB 를 받고
+       뼈에 물리느라 한 번 걸렸다 — 걷기 시작이 제일 눈에 띄는 순간인데 하필 거기였다.
+       고르기와 첫 걸음 사이에는 손가락을 끄는 시간이 있으니 그 틈에 받는다. */
+    const sel = want && chars.get(want);
+    if (sel && sel.warmWalk) sel.warmWalk();
     if (!want) disposeWalkGhost();
     needsRender = true;
     return selChar;

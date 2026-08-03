@@ -316,7 +316,14 @@ export async function createCharacter(scene, charId = 'jachwi_f', opt = {}) {
         }
       } else stuck = 0;
 
-      // 진행 방향 바라보기 (부드럽게)
+      /* 진행 방향 바라보기 (부드럽게)
+         ★ π 를 더하지 않는다 — 캐릭터의 앞은 로컬 **+Z** 다. 재서 확인했다(2026-08-03 방 뷰 4차):
+           lq/char_*_idle.glb 를 model.rotation 0 으로 놓고 발끝 벡터(LeftFoot→LeftToeBase)를
+           재면 자취녀·자취남 모두 (x 0.000, z +0.068) 로 **+Z** 를 가리킨다.
+           docs/handoff/char-to-house.md 의 "기본 방향이 뒷모습 · rotation.y = Math.PI" 는
+           이 에셋에는 안 맞는다. game/room_view.js 가 그 말을 믿고 +π 를 넣었다가
+           캐릭터가 **뒷걸음질**로 걸었다 — 여기 있던 이 식이 처음부터 맞았다.
+         ⚠ 여기에 π 를 더하고 싶어지면 먼저 재십시오. 고치는 게 아니라 고장 내는 것이다. */
       const face = Math.atan2(d.x, d.z);
       let diff = face - root.rotation.y;
       while (diff >  Math.PI) diff -= Math.PI * 2;

@@ -90,13 +90,19 @@ async function main() {
   const sel1 = await page.eval(`window.view.selectedCharacter()`);
   ok('A-1 캐릭터 탭 → 골라진다', sel1 === 'jachwi', `selected=${sel1}`);
   const tapped = await page.eval(`window.__lastCharTap || null`);
-  ok('A-2 onCharacterTap 이 불린다', tapped === 'jachwi', `${tapped}`);
+  ok('A-2 onCharacterTap 이 불린다(첫 인자 = 골라진 결과)', tapped === 'jachwi', `${tapped}`);
+  ok('A-2b 둘째 인자로 눌린 id 도 온다',
+     (await page.eval(`window.__lastCharTapped || null`)) === 'jachwi');
   const ringOn = await page.eval(`(()=>{ let n=0; window.view.three.scene.traverse(o=>{
       if(o.isMesh && o.material && o.material.color && o.material.color.getHex()===0xffb454 && o.visible) n++; }); return n; })()`);
   ok('A-3 발밑 주황 링(0xffb454)이 보인다', ringOn >= 1, `${ringOn}개`);
 
   await tap(page, AX, AY);
-  ok('A-4 다시 탭하면 풀린다', (await page.eval(`window.view.selectedCharacter()`)) === null);
+  /* ★ 데모는 game.html 과 같은 배선(호스트가 결과를 되돌려 selectCharacter)을 쓴다.
+     첫 인자가 '눌린 id' 였을 때는 여기서 호스트가 도로 골라 버려 해제가 안 됐다. */
+  ok('A-4 다시 탭하면 풀린다 (호스트가 결과를 되돌려도)',
+     (await page.eval(`window.view.selectedCharacter()`)) === null,
+     `onCharacterTap 첫 인자=${await page.eval(`String(window.__lastCharTap)`)}`);
 
   /* ── C 고른 뒤에 끌면 걷는다 · 카메라는 안 돈다 ── */
   await page.eval(`window.view.selectCharacter('jachwi')`);
@@ -129,6 +135,26 @@ async function main() {
   const walking = await page.eval(`window.view.isWalking('jachwi')`);
   ok('C-2 손을 떼면 걸어간다', walking === true);
 
+  /* ── K 가는 쪽을 보고 걷는다 (뒷걸음질 금지) ──
+     ★ 방향은 눈으로만 보면 놓친다. 두 시점의 **자리 차이**로 진행 방향을 구하고
+       그때의 yaw 와 비교한다. 캐릭터의 앞은 로컬 +Z 라 yaw = atan2(dx, dz) 여야 한다. */
+  const norm = a => { while (a > Math.PI) a -= Math.PI * 2; while (a < -Math.PI) a += Math.PI * 2; return a; };
+  let backwards = null;
+  if (walking) {
+    await sleep(320);                       // 몸이 다 돌 때까지 기다린다(0.4초쯤 걸린다)
+    const k0 = await page.eval(`window.view.characters().find(c=>c.id==='jachwi')`);
+    await sleep(260);
+    const k1 = await page.eval(`window.view.characters().find(c=>c.id==='jachwi')`);
+    const mx = k1.pos.x - k0.pos.x, mz = k1.pos.z - k0.pos.z;
+    if (Math.hypot(mx, mz) > 0.05) {
+      const travel = Math.atan2(mx, mz);
+      const off = Math.abs(norm(travel - k1.yaw));
+      backwards = off;
+      ok('K 가는 쪽을 보고 걷는다 (뒷걸음질이 아니다)', off < 0.7,
+         `진행 ${(travel * 180 / Math.PI).toFixed(0)}° vs 몸 ${(k1.yaw * 180 / Math.PI).toFixed(0)}° = ${(off * 180 / Math.PI).toFixed(0)}° 어긋남`);
+    } else ok('K 가는 쪽을 보고 걷는다 (뒷걸음질이 아니다)', false, '두 표본 사이에 안 움직여 못 쟀습니다');
+  } else ok('K 가는 쪽을 보고 걷는다 (뒷걸음질이 아니다)', false, '걷지 않아 못 쟀습니다');
+
   /* ── E 걷는 동안에도 하루빛이 돈다 ── */
   let daylightMoved = false;
   if (walking) {
@@ -144,6 +170,17 @@ async function main() {
   const after = await page.eval(`window.view.characters().find(c=>c.id==='jachwi').pos`);
   const moved = Math.hypot(after.x - before.x, after.z - before.z);
   ok('C-3 실제로 자리를 옮겼다', moved > 0.25, `${moved.toFixed(2)}m`);
+
+  /* ── L 도착하면 카메라(플레이어) 쪽으로 돌아선다 ──
+     "아무 데나 보고 서 있으면 어색합니다." 마지막 웨이포인트가 옆걸음이면 벽을 보고 서게 된다. */
+  await sleep(700);                          // 돌아서는 데 0.4초쯤
+  const land = await page.eval(`(()=>{
+    const c = window.view.characters().find(x=>x.id==='jachwi');
+    const p = window.view.three.cam.position;
+    return { yaw: c.yaw, want: Math.atan2(p.x - c.pos.x, p.z - c.pos.z) };
+  })()`);
+  ok('L 도착하면 카메라 쪽을 보고 선다', Math.abs(norm(land.want - land.yaw)) < 0.25,
+     `몸 ${(land.yaw * 180 / Math.PI).toFixed(0)}° vs 카메라 ${(land.want * 180 / Math.PI).toFixed(0)}°`);
 
   /* ── D 가구·벽 안으로는 못 간다 ── */
   const wallHit = await page.eval(`(()=>{
