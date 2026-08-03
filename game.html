@@ -156,6 +156,18 @@
   #sheet select,#sheet input[type=number]{min-height:var(--tap);font-size:14px}
   #sheet .btns button{min-height:var(--tap);flex:1 0 auto}
 
+  /* ══ 인터넷 주문 — 한 줄에 이름·값·[주문] ══════════════════════════ */
+  #shopList{display:flex;flex-direction:column;gap:6px;margin-bottom:8px}
+  .shopRow{display:flex;align-items:center;gap:8px;padding:7px 9px;border-radius:11px;
+    background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07)}
+  .shopRow .nm{flex:1;min-width:0;font-size:12.5px;color:rgba(255,255,255,.86)}
+  .shopRow .nm small{display:block;font-size:10.5px;color:var(--dim);margin-top:1px}
+  .shopRow .won{font-family:'Jua';font-size:13px;color:var(--gold);white-space:nowrap}
+  .shopRow button{min-height:34px;padding:0 12px;border-radius:9px;font-size:12px;flex:0 0 auto}
+  .shopRow .have{font-size:11px;color:var(--leaf);white-space:nowrap;min-width:34px;text-align:right}
+  #shopPending:empty,#sellHint:empty{display:none}
+  #shopPending{margin-bottom:8px;color:var(--gold)}
+
   /* 아이템 카드 — 폰에서는 한 열 */
   #sheet .inventory{display:grid;grid-template-columns:1fr;gap:8px}
   #sheet .itemcard .place{display:flex;gap:6px;align-items:stretch}
@@ -695,6 +707,21 @@
         </div>
       </div>
 
+      <!-- ══ 인터넷 주문 (박사님 2026-08-03) ═══════════════════════════
+           ★결제는 즉시, 물건은 하루 이틀 뒤. "지금 사서 지금 쓴다"가 아니라
+             "미리 시켜 둔다"가 되어야 해서 배송 중인 것을 같이 보여 준다. -->
+      <div class="box" id="shopBox" style="display:none">
+        <h3>인터넷 주문</h3>
+        <div class="sub">주문하면 하루 이틀 뒤에 옵니다. 취소는 안 됩니다.</div>
+        <div id="shopList"></div>
+        <div id="shopPending" class="itemline"></div>
+        <div class="btns">
+          <button id="resow" class="primary" disabled style="width:auto;margin-top:0">콩나물 다시 심기</button>
+          <button id="sellPlant" class="ghost" disabled>몬스테라 팔기</button>
+        </div>
+        <div id="sellHint" class="itemline"></div>
+      </div>
+
       <div class="box" id="ctl">
         <h3>방 안에서 하기</h3>
         <label><span>방</span><select id="room"></select></label>
@@ -894,7 +921,10 @@
 
 <script type="module">
 import { newState, SIM_MODES, pot0, pushLog, givePlant, hasPlant, ARRIVAL,
-         setPotAt, setPotSlot, setCropAt, setFurniturePlacement, furnitureOverrides } from './src/game/state.js';
+         setPotAt, setPotSlot, setCropAt, setFurniturePlacement, furnitureOverrides,
+         resowCrop } from './src/game/state.js';
+import { catalogList, orderItem, shopStatus, priceOf, sellPot,
+         varieLeavesNeededFor } from './src/game/shop.js';
 import { isFreeSlotId } from './src/game/place.js';
 import * as save from './src/game/save.js';
 import {
@@ -1397,6 +1427,70 @@ function drawTutorial(living) {
   mv.title = c.ok ? '' : (c.shortWon > 0 ? `${c.shortWon.toLocaleString()}원 부족` : '아직 못 해 본 것이 있습니다');
 }
 
+/* ══ 인터넷 주문 화면 (박사님 2026-08-03) ══════════════════════════════
+   ★첫 시루는 공짜로 받는다. 그 뒤로는 주문이다 — 결제는 즉시, 물건은 하루 이틀 뒤.
+     그래서 "가진 것"과 "오는 중"을 나란히 보여 준다. 안 그러면 두 번 주문한다. */
+const koOf = (id) => (catalogList().find(x => x.id === id) || {}).ko || id;
+function drawShop() {
+  const box = $('shopBox');
+  const ts = S.tutorial;
+  /* 살림이 시작되기 전에는 주문할 돈 개념이 없다 — 첫 플레이가 끝나야 연다 */
+  const open = !!(ts && ts.enabled && S.firstPlay.completed);
+  box.style.display = open ? '' : 'none';
+  if (!open) return;
+
+  let st; try { st = shopStatus(S); } catch { return; }
+  const cash = ts.cashWon || 0;
+  $('shopList').innerHTML = catalogList().map(it => {
+    const have = st.stock[it.id] || 0;
+    const short = cash < it.buyWon;
+    return `<div class="shopRow">
+      <div class="nm">${it.ko}<small>${it.leadDays}일 뒤 도착</small></div>
+      <div class="have">${have ? '보유 ' + have : ''}</div>
+      <div class="won">${it.buyWon.toLocaleString()}원</div>
+      <button class="ghost" data-buy="${it.id}"${short ? ' disabled title="돈이 모자랍니다"' : ''}>주문</button>
+    </div>`;
+  }).join('');
+  for (const b of $('shopList').querySelectorAll('[data-buy]')) {
+    b.onclick = guard(() => {
+      const r = orderItem(S, b.dataset.buy, 1, { log: m => pushLog(S, m) });
+      banner('주문했습니다', `${r.ko} · ${r.arrivesOnDay - S.day}일 뒤 도착`);
+      draw();
+    });
+  }
+  const pend = st.orders.filter(o => o.daysLeft >= 0);
+  $('shopPending').textContent = pend.length
+    /* ⚠ 주문 기록에는 itemId 만 있고 이름이 없다 — 카탈로그에서 찾는다 */
+    ? '오는 중 — ' + pend.map(o => `${koOf(o.itemId)}${o.qty > 1 ? ' ' + o.qty + '개' : ''}`
+        + ` (${o.daysLeft <= 0 ? '오늘' : o.daysLeft + '일 뒤'})`).join(' · ')
+    : '';
+
+  /* 다시 심기 — 거둔 뒤에만. 씨앗이 있어야 한다 */
+  const b = S.firstPlay.beansprout;
+  const canSow = !!(b && b.harvested && (st.stock.bean_seed || 0) >= 1);
+  $('resow').disabled = !canSow;
+  $('resow').title = !b || !b.harvested ? '거둔 뒤에 다시 심습니다'
+                   : !(st.stock.bean_seed || 0) ? '콩 씨앗을 먼저 주문하세요' : '';
+
+  /* 팔기 — 잎은 growth 소유라 leafStats 로 읽는다. 없으면 열지 않는다(값을 지어내지 않는다) */
+  let ls = null; try { ls = io.growth.leafStats && io.growth.leafStats(); } catch { }
+  const sell = $('sellPlant'), hint = $('sellHint');
+  if (!ls || !pot0(S)) { sell.disabled = true; hint.textContent = ''; return; }
+  /* ⚠ priceOf 는 숫자가 아니라 {won, leaves, variegatedLeaves, v} 를 낸다 */
+  const won = priceOf({ leaves: ls.leaves, variegatedLeaves: ls.variegatedLeaves }).won;
+  sell.disabled = false;
+  sell.textContent = `몬스테라 팔기 (${won.toLocaleString()}원)`;
+  /* ★"얼마가 모자란가"가 아니라 "무늬 잎이 몇 장이면 되나"를 말한다 —
+     플레이어가 움직일 수 있는 손잡이는 자리(밝기)뿐이고, 그게 무늬를 만든다. */
+  const nd = varieLeavesNeededFor(1_500_000, { leaves: ls.leaves });
+  const n = nd && nd.needVarieLeaves;
+  hint.textContent = won >= 1_500_000
+    ? '지금 팔면 이사 자금이 됩니다'
+    : `무늬 잎 ${ls.variegatedLeaves}/${ls.leaves}장 — ${n == null || n > ls.leaves
+        ? '지금 잎 수로는 이사 자금에 못 미칩니다. 더 키우거나 삽수를 파세요'
+        : `${n}장이 무늬면 이사 자금이 됩니다`}`;
+}
+
 function drawJourney() {
   const fp = S.firstPlay;
   if (!fp || !fp.enabled) return;
@@ -1518,6 +1612,7 @@ function draw() {
   renderHUD($('hud'), S, lastTurn, io);
   renderLog($('log'), S);
   drawJourney();
+  drawShop();               /* 주문·다시 심기·팔기 */
   ffHint();                 /* 상태가 바뀌면 "무엇까지 감는지"도 바뀐다 */
   syncRoom();               /* 방 전경도 같은 상태를 본다 — 화면이 둘로 갈리면 안 된다 */
   updateHint();             /* 다음에 무엇을 누르면 되는지 손가락으로 */
@@ -2449,6 +2544,24 @@ $('buyLamp').onclick = guard(() => {
   banner('식물등을 샀습니다', '자리가 나쁘면 등을 켜도 소용없습니다');
   dlgOpen(story.events(r.events));   /* 하루를 기다리면 산 순간이 조용해진다 */
   fillSlots(); draw();
+});
+
+$('resow').onclick = guard(() => {
+  const r = resowCrop(S, { slots: io.light.room.slots, size: io.light.room.size });
+  banner('콩나물을 다시 심었습니다', `시루 ${r.sirus}개 · 씨앗 ${r.seedsUsed}봉지`);
+  draw();
+});
+
+/* ★파는 순간 그루가 사라진다. growth 3D 는 코어가 못 지우므로 신호를 받아 화면이 정리한다 */
+$('sellPlant').onclick = guard(() => {
+  let ls = null; try { ls = io.growth.leafStats(); } catch { }
+  if (!ls) { const e = new Error('아직 팔 수 없습니다 — 식물 상태를 못 읽었습니다'); e.tutorialInput = true; throw e; }
+  const r = sellPot(S, { leaves: ls.leaves, variegatedLeaves: ls.variegatedLeaves,
+                         log: m => pushLog(S, m) });
+  banner('몬스테라를 팔았습니다', `${r.price.won.toLocaleString()}원`);
+  if (r.growthNeedsReset) { try { io.growth.reset(); } catch { } }
+  syncRoom();
+  draw();
 });
 
 $('moveOut').onclick = guard(() => {
