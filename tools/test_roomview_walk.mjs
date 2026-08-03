@@ -47,6 +47,49 @@ async function tap(page, x, y) {
   await sleep(80);
 }
 
+/* ★★ 진짜 폰처럼 누른다 (2026-08-03 · 박사님 "캐릭 이동 안 됨")
+   ------------------------------------------------------------
+   위의 tap/drag 은 **마우스만** 쏜다. 그건 폰 게임을 절반만 재는 것이다 —
+   실제로 이 파일이 21/21 을 통과하는 동안 폰에서는 캐릭터가 안 걸었다.
+
+   폰에서 다른 점이 둘이다. 둘 다 여기서 재현한다.
+     ① 이벤트 종류가 touchstart/touchmove/touchend 다
+     ② ★터치가 끝나면 브라우저가 **호환용 마우스 이벤트**를 뒤따라 쏜다.
+       합성 TouchEvent 는 그걸 안 만들므로 **손으로 쏴 줘야** 폰과 같아진다.
+       이걸 안 쏘면 "고르고 곧바로 되푸는" 버그가 검사에 안 잡힌다(안 잡혔다). */
+const T = (page, type, x, y) => page.eval(`(()=>{ const c=document.getElementById('roomCanvas');
+  const t=new Touch({identifier:1,target:c,clientX:${x},clientY:${y}});
+  c.dispatchEvent(new TouchEvent('${type}',{bubbles:true,cancelable:true,
+    touches:'${type}'==='touchend'?[]:[t],targetTouches:'${type}'==='touchend'?[]:[t],changedTouches:[t]})); })()`, false);
+
+/* ghost=true 면 폰처럼 호환 마우스까지 뒤따라 쏜다 */
+async function touchTap(page, x, y, ghost = true) {
+  await T(page, 'touchstart', x, y); await sleep(60);
+  await T(page, 'touchend', x, y);
+  if (ghost) {
+    await sleep(40);
+    await page.eval(`(()=>{ const c=document.getElementById('roomCanvas');
+      c.dispatchEvent(new MouseEvent('mousedown',{clientX:${x},clientY:${y},bubbles:true}));
+      window.dispatchEvent(new MouseEvent('mouseup',{clientX:${x},clientY:${y},bubbles:true})); })()`, false);
+  }
+  await sleep(250);
+}
+async function touchDrag(page, x0, y0, x1, y1, steps = 8, ghost = true) {
+  await T(page, 'touchstart', x0, y0); await sleep(40);
+  for (let i = 1; i <= steps; i++) {
+    await T(page, 'touchmove', Math.round(x0 + (x1 - x0) * i / steps), Math.round(y0 + (y1 - y0) * i / steps));
+    await sleep(24);
+  }
+  await T(page, 'touchend', x1, y1);
+  if (ghost) {
+    await sleep(40);
+    await page.eval(`(()=>{ const c=document.getElementById('roomCanvas');
+      c.dispatchEvent(new MouseEvent('mousedown',{clientX:${x1},clientY:${y1},bubbles:true}));
+      window.dispatchEvent(new MouseEvent('mouseup',{clientX:${x1},clientY:${y1},bubbles:true})); })()`, false);
+  }
+  await sleep(120);
+}
+
 async function main() {
   const page = await launch({ width: 390, height: 844, dpr: 2, mobile: false });
   const errs = [];
@@ -250,6 +293,71 @@ async function main() {
   const t = await page.eval(`window.view.bootTimings()`);
   ok('I bootTimings 가 이정표를 남긴다', t && t.ready != null,
      JSON.stringify(t));
+
+  /* ══ M ★ 터치로도 같은 것이 된다 (폰) ═══════════════════════════════════
+     ★ 마우스만 재는 검사는 폰 게임을 절반만 재는 것이다. 여기서 나머지 절반을 잰다. */
+  await page.eval(`window.view.stopWalk('jachwi'); window.view.selectCharacter(null); 1`);
+  await sleep(400);
+  const tf = await page.eval(`window.view.characterScreenPos('jachwi')`);
+  if (!tf) {
+    ok('M-1 터치로 캐릭터를 고른다', false, '캐릭터가 화면에 안 잡힙니다');
+    ok('M-2 터치 뒤 유령 마우스가 고르기를 풀지 않는다', false, '위와 같음');
+    ok('M-3 터치로 끌면 걸어간다', false, '위와 같음');
+    ok('M-4 고르기 전 터치 드래그는 카메라를 돌린다', false, '위와 같음');
+  } else {
+    const TX = Math.round(canvasRect.left + tf.x), TY = Math.round(canvasRect.top + tf.y);
+
+    /* M-4 먼저 — 아직 아무도 안 골랐을 때 끌면 카메라가 돈다 */
+    const camT0 = await page.eval(`window.view.camera()`);
+    await touchDrag(page, Math.round(canvasRect.left + canvasRect.w * 0.5),
+                          Math.round(canvasRect.top + canvasRect.h * 0.75),
+                          Math.round(canvasRect.left + canvasRect.w * 0.5) + 110,
+                          Math.round(canvasRect.top + canvasRect.h * 0.75));
+    await sleep(500);
+    const camT1 = await page.eval(`window.view.camera()`);
+    ok('M-4 고르기 전 터치 드래그는 카메라를 돌린다 (걷지 않는다)',
+       Math.abs(camT1.az - camT0.az) > 1e-3 && !(await page.eval(`window.view.isWalking('jachwi')`)),
+       `az ${camT0.az.toFixed(3)}→${camT1.az.toFixed(3)}`);
+
+    /* M-1·M-2 터치 탭 — 유령 마우스까지 포함해서 */
+    await page.eval(`window.view.selectCharacter(null)`);
+    const tf2 = await page.eval(`window.view.characterScreenPos('jachwi')`);
+    const AX2 = Math.round(canvasRect.left + tf2.x), AY2 = Math.round(canvasRect.top + tf2.y);
+    await touchTap(page, AX2, AY2, false);            // 터치만
+    const selPure = await page.eval(`window.view.selectedCharacter()`);
+    ok('M-1 터치로 캐릭터를 고른다', selPure === 'jachwi', `selected=${selPure}`);
+
+    await page.eval(`window.view.selectCharacter(null)`);
+    await sleep(200);
+    await touchTap(page, AX2, AY2, true);             // ★ 폰처럼 유령 마우스까지
+    const selGhost = await page.eval(`window.view.selectedCharacter()`);
+    ok('M-2 ★터치 뒤 따라오는 유령 마우스가 고르기를 풀지 않는다 (폰에서 게임이 막히던 원인)',
+       selGhost === 'jachwi', `selected=${selGhost} — null 이면 폰에서 아무도 안 골라진 채가 된다`);
+
+    /* M-3 터치로 걷기 — 마우스와 **같은 목표**로 간다(목표가 다르면 비교가 안 된다) */
+    const beforeT = await page.eval(`window.view.characters().find(c=>c.id==='jachwi').pos`);
+    const footT = await page.eval(`window.view.characterScreenPos('jachwi')`);
+    const FX2 = Math.round(canvasRect.left + footT.x), FY2 = Math.round(canvasRect.top + footT.y);
+    const spotT = await page.eval(`(()=>{
+      const out = [];
+      for (const [dx,dy] of [[0,55],[45,45],[-45,45],[70,20],[-70,20],[0,90],[60,80],[-60,80]]) {
+        const t = window.view.previewWalk('jachwi', ${FX2}+dx, ${FY2}+dy);
+        if (t && t.ok) out.push({dx,dy,x:t.x,z:t.z});
+      }
+      window.view.previewWalk('jachwi', null, null);
+      return out;
+    })()`);
+    const tgt = spotT.sort((a, b) =>
+      Math.hypot(b.x - beforeT.x, b.z - beforeT.z) - Math.hypot(a.x - beforeT.x, a.z - beforeT.z))[0];
+    if (!tgt) ok('M-3 터치로 끌면 걸어간다', false, '갈 수 있는 자리를 못 찾았습니다');
+    else {
+      await touchDrag(page, FX2, FY2, FX2 + tgt.dx, FY2 + tgt.dy, 10);
+      for (let i = 0; i < 120 && await page.eval(`window.view.isWalking('jachwi')`); i++) await sleep(100);
+      const afterT = await page.eval(`window.view.characters().find(c=>c.id==='jachwi').pos`);
+      const movedT = Math.hypot(afterT.x - beforeT.x, afterT.z - beforeT.z);
+      ok('M-3 터치로 끌면 걸어간다 (마우스와 같은 자리로)', movedT > 0.25, `${movedT.toFixed(2)}m`);
+    }
+  }
 
   const hard = errs.filter(e => !/favicon/.test(e));
   ok('J 콘솔에 처리 안 된 예외가 없다', hard.length === 0, hard.slice(0, 3).join(' | '));

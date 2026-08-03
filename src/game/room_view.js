@@ -47,7 +47,9 @@ import { createFloorNav } from '../render3d/floor_nav.js';
    **같은 식**으로 판정한다. 여기서 다시 짜면 두 벌이 되고 두 벌은 반드시 어긋난다
    (미리보기는 파란데 놓으면 거절 — previewMove 에서 이미 한 번 겪은 종류다). */
 import { nearestSlot, slotHolds, freeSlotId, isFreeSlotId, FREE_PREFIX,
-         samePoint, distanceXZ, inRoom, makeAt, atFromSlot } from './place.js';
+         samePoint, distanceXZ, inRoom, makeAt, atFromSlot,
+         GRID_UNIT, GRID_CELL, unitsFor, snapSpan, snapAngleDeg,
+         cellBox, cellBoxOverlap } from './place.js';
 
 /* ── 경로는 이 파일 기준으로 푼다 ──
    호스트 페이지가 저장소 뿌리에 있든 tools/ 아래에 있든 같은 곳을 가리켜야 한다.
@@ -318,6 +320,8 @@ export async function createRoomView(canvas, opts = {}) {
   let guideMat = null, guideGeo = null;
   let guideNear = null;        // 지금 굵게 칠한 자리(커서에 제일 가까운 것)
   let furnGhost = null;        // { uid, group, mat, line, ok } — 가구 옮기기 유령
+  let gridGroup = null;        // 바닥 격자. ★ 배치·이동 중에만 보인다(방을 보는 게 이 화면이다)
+  let gridKey = '';            // 지금 그려 둔 격자가 어떤 조건으로 만들어졌나
   /* lightEngine 없이 혼자 지을 때 쓰는 가구 덮어쓰기 표.
      엔진이 있으면 light_adapter 쪽이 정본이고 여기는 안 쓴다(두 벌을 만들지 않는다). */
   let localFurn = {};
@@ -401,6 +405,7 @@ export async function createRoomView(canvas, opts = {}) {
     /* 이전 방 정리 */
     disposePreview();
     disposeFurnGhost();
+    clearGrid();
     disposeWalkGhost();
     selChar = null;
     /* 캐릭터도 이 그룹에 들어 있다. 그냥 비우면 치워지지 않은 채 씬에서만 사라져
@@ -1542,6 +1547,28 @@ export async function createRoomView(canvas, opts = {}) {
      ★ 이게 불변식을 지킨다: 추천 자리 정중앙은 무엇에 가려 있든 반드시 통과한다.
        (창턱 받침은 창틀과 같은 높이에 겹쳐 있어서 레이캐스트가 창틀을 먼저 맞는다 —
         그때 "구조물 위"로 거절하면 반지하에서 제일 밝은 자리가 통째로 막힌다) */
+  /* ★★ 격자에 앉히기 (2026-08-03 박사님 지시 — "바닥에 그리드를 통한 칸수로 조절")
+     ------------------------------------------------------------
+     한 칸 0.05m·보이는 칸 0.25m·올림·90° 회전은 전부 place.js 가 정하고 근거도 거기 있다.
+     여기서 정하는 것은 **격자를 어느 좌표계에 붙이나** 하나뿐이다.
+
+       바닥      방 좌표계 (방이 원점 중심이라 격자도 원점 기준)
+       가구 상판 **그 가구의 좌표계** — 상판이 돌아가 있으면 격자도 같이 돈다
+     왜 — 선반 상판은 깊이가 0.28m(5.6칸)뿐이다. 방 격자를 그대로 얹으면 칸이 판때기
+     가장자리를 가로질러 상판 한가운데가 칸 경계에 걸린다. 격자를 면에 붙이면 그 면에서
+     늘 같은 자리에 떨어진다. (문서: docs/handoff/roomview-grid.md)
+
+     ★ 보이는 격자는 **바닥에만** 그린다. 선반마다 격자를 얹으면 방이 안 보인다. */
+  function snapOnSurface(x, z, potD, frame) {
+    if (!frame) return { x: snapSpan(x, potD), z: snapSpan(z, potD) };
+    const c = Math.cos(frame.rot || 0), s = Math.sin(frame.rot || 0);
+    /* 면 좌표계로 (house.js 규약의 역변환) */
+    const dx = x - frame.x, dz = z - frame.z;
+    const u = snapSpan(dx * c - dz * s, potD);
+    const v = snapSpan(dx * s + dz * c, potD);
+    return { x: frame.x + u * c + v * s, z: frame.z - u * s + v * c };
+  }
+
   const SLOT_GOVERN_R = 0.04;   // 자리 중심에서 이 안이면 그 자리로 본다[m]
   function governingSlot(p) {
     let best = null, bestD = SLOT_GOVERN_R;
@@ -1566,7 +1593,8 @@ export async function createRoomView(canvas, opts = {}) {
   function surfaceAt(px, py, opt = {}) {
     const potD = Number.isFinite(opt.potD) ? opt.potD : MONSTERA_POT_D;
     const out = { x: null, y: null, z: null, onUid: null, occIdx: null,
-                  surfaceTop: null, maxPotD: null, ok: false, reason: null, nearest: null };
+                  surfaceTop: null, maxPotD: null, ok: false, reason: null, nearest: null,
+                  snapped: false, snappedTo: null, cells: null };
     if (!built || !built.room) { out.reason = '방이 아직 없습니다'; return out; }
 
     ray.setFromCamera(ndcOf(px, py), ctx.cam);
@@ -1633,6 +1661,7 @@ export async function createRoomView(canvas, opts = {}) {
 
     out.x = +p.x.toFixed(4); out.y = +p.y.toFixed(4); out.z = +p.z.toFixed(4);
     out.surfaceTop = out.y;
+    out.snapped = false;
     /* 러그처럼 **바닥에 깔린 납작한 것** 위는 그냥 바닥이다 — 러그 판때기 크기로 자리를
        재면 러그 가장자리에 화분을 못 놓는다.
        ⚠ '납작하다'만 보면 안 된다. 벽걸이 선반(창턱 받침)도 판때기라 납작한데 그건 바닥이
@@ -1650,6 +1679,28 @@ export async function createRoomView(canvas, opts = {}) {
     } else if (out.onUid && own.userData.tier_max_pot_d && own.userData.tier_max_pot_d.length) {
       out.maxPotD = Math.max(...own.userData.tier_max_pot_d);
     }
+
+    /* ★★ 격자에 앉힌다 — 다만 **추천 자리가 지배하면 자리가 이긴다.**
+       ------------------------------------------------------------
+       ⚠ 재서 확인했다: 슬롯 320칸 중 **0.05 격자에 떨어지는 것은 7% 뿐이다.**
+         (house.js 가 가구 중심에서 상대 좌표로 슬롯을 내고, 가구 중심 자체가 격자 밖이다)
+       그러니 슬롯을 격자로 끌어당기면 창턱·선반 자리가 통째로 어긋나 다시 막힌다 —
+       이미 한 번 겪은 사고다(test_roomview_place S-1). **슬롯이 정본이고 격자는 안내다.**
+       자리가 없는 곳에서만 칸에 맞춘다. opt.grid:false 면 예전처럼 연속 좌표다. */
+    if (opt.grid !== false) {
+      if (gov) {
+        /* 슬롯이 곧 그 면의 '칸'이다 — 칸 중심 대신 **자리 중심**으로 간다 */
+        out.x = +gov.x.toFixed(4); out.z = +gov.z.toFixed(4); out.y = +gov.y.toFixed(4);
+        out.surfaceTop = out.y;
+        out.snapped = true; out.snappedTo = gov.slotId;
+      } else {
+        const frame = (!isFloor && ownHit) ? meshRect(ownHit.object) : null;
+        const sn = snapOnSurface(out.x, out.z, potD, frame);
+        if (Math.abs(sn.x - out.x) > 1e-9 || Math.abs(sn.z - out.z) > 1e-9) out.snapped = true;
+        out.x = +sn.x.toFixed(4); out.z = +sn.z.toFixed(4);
+      }
+    }
+    out.cells = { i: unitsFor(potD), j: unitsFor(potD), unit: GRID_UNIT };
 
     /* 추천 자리는 늘 같이 낸다 — 붙일지 말지는 호출부 몫이다 */
     const near = nearestSlot({ x: out.x, y: out.y, z: out.z }, [...slotById.values()],
@@ -1732,7 +1783,33 @@ export async function createRoomView(canvas, opts = {}) {
   const canHover = !window.matchMedia || window.matchMedia('(hover: hover)').matches;
   let hoverId = null;
 
+  /* ★★ 유령 마우스 막기 (2026-08-03 · 박사님 "캐릭 이동 안 됨")
+     ------------------------------------------------------------
+     폰 브라우저는 터치가 끝나면 **호환용 마우스 이벤트**를 뒤따라 쏜다
+     (touchend → mousedown → mouseup → click). 옛 사이트를 위한 장치다.
+     그래서 손가락 한 번이 **두 번** 처리됐다:
+       ① touchend  → resolveTap → 캐릭터를 고른다
+       ② 유령 mouseup → resolveTap → 같은 캐릭터를 다시 눌러 **고르기가 풀린다**
+     결과는 "아무도 안 골라진 상태". 그 뒤로는 끌어도 걷지 않고 카메라만 돈다 —
+     박사님이 겪으신 '캐릭 이동 안 됨'이 이것이다.
+
+     ⚠ 왜 검사에서 안 잡혔나 — 합성 TouchEvent 는 호환 마우스를 만들지 않는다.
+       그래서 tools/test_roomview_walk.mjs 가 21/21 을 통과하면서도 폰에서는 막혀 있었다.
+       재현하는 블록을 그 파일에 넣어 뒀다(터치 뒤에 마우스를 손으로 쏜다).
+
+     고치는 법은 업계에서 쓰는 그대로다 — **터치 직후에 오는 마우스는 버린다.**
+     touchstart 를 passive 로 달아 둬서(스크롤 성능) preventDefault 로는 못 막는다. */
+  const GHOST_MS = 700;
+  let lastTouchAt = -1e9;
+  const fromTouch = e => !!(e && (e.touches || e.changedTouches));
+  /* 터치면 시각을 적고 false, 마우스인데 터치 직후면 true(=버릴 것) */
+  function ghostMouse(e) {
+    if (fromTouch(e)) { lastTouchAt = performance.now(); return false; }
+    return performance.now() - lastTouchAt < GHOST_MS;
+  }
+
   const onDown = e => {
+    if (ghostMouse(e)) return;                 // 터치가 만든 유령 마우스
     const t = e.touches ? e.touches[0] : e;
     down = { x: t.clientX, y: t.clientY, t: performance.now(), az: cam.az, el: cam.el };
     dragging = false;
@@ -1753,6 +1830,7 @@ export async function createRoomView(canvas, opts = {}) {
     }
   };
   const onMove = e => {
+    if (ghostMouse(e)) return;
     if (!down) { if (canHover && e.clientX != null) onHover(e); return; }
     if (e.touches && e.touches.length === 2) {
       const dx = e.touches[0].clientX - e.touches[1].clientX;
@@ -1795,6 +1873,7 @@ export async function createRoomView(canvas, opts = {}) {
     e.preventDefault && e.preventDefault();
   };
   const onUp = e => {
+    if (ghostMouse(e)) return;
     pinch = 0;
     if (!down) return;
     const wasDrag = dragging, d0 = down, wd = walkDrag;
@@ -1851,6 +1930,7 @@ export async function createRoomView(canvas, opts = {}) {
 
   /* 휠 줌 (PC). 폰의 두 손가락과 같은 한계를 쓴다. */
   const onWheel = e => {
+    if (ghostMouse(e)) return;
     if (!O.orbit) return;
     e.preventDefault();
     const [lo, hi] = focused ? [0.5, 3.6] : zoomRange();
@@ -1880,7 +1960,7 @@ export async function createRoomView(canvas, opts = {}) {
   canvas.addEventListener('touchmove', onMove, { passive: false });
   window.addEventListener('mouseup', onUp);
   canvas.addEventListener('touchend', onUp);
-  canvas.addEventListener('touchcancel', () => { down = null; dragging = false; pinch = 0;
+  canvas.addEventListener('touchcancel', (e) => { ghostMouse(e); down = null; dragging = false; pinch = 0;
                                                  walkDrag = null; pendingDrag = null; disposeWalkGhost(); });
   canvas.addEventListener('wheel', onWheel, { passive: false });
   canvas.addEventListener('mouseleave', onLeave);
@@ -2512,8 +2592,13 @@ export async function createRoomView(canvas, opts = {}) {
        재서 확인: 이 규칙 없이는 투룸 2·아파트 4·학원교실 2·온실 4개가 제자리조차 거절당했다.
        ⚠ 대신 "이미 겹친 것 속으로 더 밀어 넣기"는 막지 못한다. 원래 그렇게 놓인 방이라
          새 규칙으로 되돌릴 수는 없다 — 막는 대신 **새로 생기는 겹침만** 막는다. */
+    /* ★ 겹침은 **칸 단위 정수 비교**다 (2026-08-03 격자 도입).
+       판때기 발자국을 실수로 재던 때는 "0.01m 모자란다" 같은 값이 나왔고, 그걸 봐 주려고
+       -0.01 같은 여유값을 달아야 했다. 칸으로 세면 그런 눈금이 아예 없다 — 겹치거나 안 겹치거나다. */
     const cur = { x: g.position.x, z: g.position.z, w: sz.w, d: sz.d, rot: g.rotation.y || 0 };
-    const already = r2 => rectOverlap(cur, r2, -0.01);
+    const curCell = cellBox(cur), meCell = cellBox(me);
+    const already = r2 => cellBoxOverlap(curCell, cellBox(r2));
+    const hits = r2 => cellBoxOverlap(meCell, cellBox(r2));
     /* 러그처럼 납작한 것은 무엇 밑으로든 들어간다(소파 밑 러그가 방 데이터의 기본 구성이다) */
     const flatMe = sz.h <= 0.05;
 
@@ -2528,7 +2613,7 @@ export async function createRoomView(canvas, opts = {}) {
       /* 얹힌 것(클립등·바 등)은 furnNodes 에 없다 — 애초에 바닥 장애물이 아니다 */
       const r2 = { x: n.position.x, z: n.position.z, w: s2.w, d: s2.d, rot: n.rotation.y || 0 };
       if (already(r2)) continue;
-      if (rectOverlap(me, r2, -0.01))
+      if (hits(r2))
         return { ok: false, reason: `${furnInfo(n).name} 와(과) 겹칩니다` };
     }
     /* 창턱·칸막이 같은 붙박이는 colliders 로 본다 — 그 그룹은 원점에 있고 상자만 옮겨져
@@ -2537,10 +2622,117 @@ export async function createRoomView(canvas, opts = {}) {
       if (c.kind === 'furn') continue;                   // 움직이는 가구는 위에서 이미 봤다
       const r2 = { x: c.x, z: c.z, w: c.w, d: c.d, rot: c.rot || 0 };
       if (already(r2)) continue;
-      if (rectOverlap(me, r2, -0.01))
+      if (hits(r2))
         return { ok: false, reason: c.kind === 'sill' ? '창턱과 겹칩니다' : '벽·칸막이와 겹칩니다' };
     }
     return { ok: true, reason: null };
+  }
+
+  /* 가구를 격자에 앉힌다. 회전은 90° 단위(place.snapAngleDeg 의 근거 참고).
+     ★ furnitureFit 안에서는 안 한다 — 그러면 "지금 자리 그대로" 물었을 때도 좌표가 흔들려
+       제자리 불변식을 스스로 깬다. 스냅은 **놓는 길**(미리보기·커밋)에서만 한다. */
+  function snapFurniture(uid, pos) {
+    const g = furnNode(uid);
+    if (!g) throw new Error(`못 옮기는 가구입니다: ${uid}`);
+    const sz = g.userData.size;
+    const rot = snapAngleDeg(pos.rot == null ? (g.rotation.y || 0) * 180 / Math.PI : pos.rot);
+    /* 90° 돌면 폭·깊이가 바뀐다 — 스냅도 돌아간 발자국으로 해야 칸에 맞는다 */
+    const swap = Math.round(rot / 90) % 2 !== 0;
+    const w = swap ? sz.d : sz.w, d = swap ? sz.w : sz.d;
+    return { x: +snapSpan(pos.x, w).toFixed(4), z: +snapSpan(pos.z, d).toFixed(4), rot,
+             cells: { i: unitsFor(w), j: unitsFor(d), unit: GRID_UNIT } };
+  }
+
+  /* ============================================================
+     ⑧-c ★ 바닥 격자 보이기 — showGrid (2026-08-03)
+     ------------------------------------------------------------
+     ★ 배치·이동 중에만 켠다. 늘 켜 두면 방이 안 보인다 — 방을 보는 게 이 게임의 화면이다.
+     그리는 것은 둘뿐이다(드로우콜 2개).
+       ① 눈금선  0.25m(보이는 칸)마다. 한 줄짜리 LineSegments 하나
+       ② 막힌 칸  그 화분·가구가 못 들어가는 칸을 붉게. 한 덩어리로 합친 기하 하나
+     ⚠ 0.05(단위 칸)로 선을 그으면 5m 방에서 100줄이라 폰에서 잡음이다. 눈금은 0.25,
+       크기·스냅은 0.05 — 둘을 가른 이유가 이것이다(place.js 머리말).
+  ============================================================ */
+  function clearGrid() {
+    if (!gridGroup) return;
+    houseGroup.remove(gridGroup);
+    gridGroup.traverse(o => {
+      if (o.geometry) o.geometry.dispose();
+      if (o.material) o.material.dispose();
+    });
+    gridGroup = null; gridKey = '';
+    needsRender = true;
+  }
+
+  /* on=false 면 감춘다. opt.potD 면 그 지름 화분 기준으로 막힌 칸을 칠한다.
+     opt.uid 면 그 가구 기준(발자국이 커서 막히는 칸이 훨씬 많다). */
+  function showGrid(on, opt = {}) {
+    if (!built) return 0;
+    if (!on) { if (gridGroup) gridGroup.visible = false; needsRender = true; return 0; }
+    const potD = Number.isFinite(opt.potD) ? opt.potD : MONSTERA_POT_D;
+    const key = `${roomId}|${opt.uid || ''}|${potD}|${plants.size}`;
+    if (gridGroup && gridKey === key) { gridGroup.visible = true; needsRender = true; return gridGroup.userData.free; }
+    clearGrid();
+
+    const b = roomBox();
+    const g = new THREE.Group();
+    /* ① 눈금선 */
+    const pts = [];
+    const nx = Math.round(b.w / GRID_CELL), nz = Math.round(b.d / GRID_CELL);
+    for (let i = 0; i <= nx; i++) {
+      const x = -b.w / 2 + i * GRID_CELL;
+      pts.push(x, 0, -b.d / 2, x, 0, b.d / 2);
+    }
+    for (let j = 0; j <= nz; j++) {
+      const z = -b.d / 2 + j * GRID_CELL;
+      pts.push(-b.w / 2, 0, z, b.w / 2, 0, z);
+    }
+    const lg = new THREE.BufferGeometry();
+    lg.setAttribute('position', new THREE.Float32BufferAttribute(pts, 3));
+    const lines = new THREE.LineSegments(lg, new THREE.LineBasicMaterial({
+      color: 0x8fd0ff, transparent: true, opacity: 0.22, depthWrite: false, toneMapped: false }));
+    lines.position.y = 0.004;
+    lines.renderOrder = 3;
+    g.add(lines);
+
+    /* ② 막힌 칸 — 한 덩어리로 합쳐 그린다(칸마다 메시를 만들면 수천 개가 된다) */
+    const r = opt.uid ? null : potD / 2;
+    const gu = opt.uid ? furnNode(opt.uid) : null;
+    const half = GRID_CELL / 2 - 0.012;
+    const pos = [], idx = [];
+    let free = 0, blocked = 0;
+    for (let i = 0; i < nx; i++) for (let j = 0; j < nz; j++) {
+      const cx = -b.w / 2 + (i + 0.5) * GRID_CELL, cz = -b.d / 2 + (j + 0.5) * GRID_CELL;
+      let bad;
+      if (gu) {
+        const sz = gu.userData.size;
+        bad = !furnitureFit(opt.uid, { x: cx, z: cz, rot: (gu.rotation.y || 0) * 180 / Math.PI }).ok;
+      } else {
+        bad = nav.blocked(cx, cz, r);
+      }
+      if (!bad) { free++; continue; }
+      blocked++;
+      const k = pos.length / 3;
+      pos.push(cx - half, 0, cz - half, cx + half, 0, cz - half,
+               cx + half, 0, cz + half, cx - half, 0, cz + half);
+      idx.push(k, k + 2, k + 1, k, k + 3, k + 2);
+    }
+    if (pos.length) {
+      const bg = new THREE.BufferGeometry();
+      bg.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+      bg.setIndex(idx);
+      const m = new THREE.Mesh(bg, new THREE.MeshBasicMaterial({
+        color: GH_NG, transparent: true, opacity: 0.16, side: THREE.DoubleSide,
+        depthWrite: false, toneMapped: false }));
+      m.position.y = 0.003;
+      m.renderOrder = 2;
+      g.add(m);
+    }
+    g.userData = { free, blocked, cell: GRID_CELL, unit: GRID_UNIT };
+    gridGroup = g; gridKey = key;
+    houseGroup.add(g);
+    needsRender = true;
+    return free;
   }
 
   function disposeFurnGhost() {
@@ -2586,11 +2778,16 @@ export async function createRoomView(canvas, opts = {}) {
     const g = furnNode(uid);
     if (!g) throw new Error(`못 옮기는 가구입니다: ${uid}`);
     if (!furnGhost || furnGhost.uid !== uid) { disposeFurnGhost(); furnGhost = makeFurnGhost(g); }
-    const rot = pos.rot == null ? (g.rotation.y || 0) * 180 / Math.PI : pos.rot;
+    /* ★ 격자에 앉힌 뒤 판정한다 — 보이는 유령과 실제로 놓일 자리가 같아야 한다.
+       opt.grid:false 로 끄면 예전처럼 연속 좌표다. */
+    const sn = pos.grid === false ? { x: pos.x, z: pos.z,
+                 rot: pos.rot == null ? (g.rotation.y || 0) * 180 / Math.PI : pos.rot, cells: null }
+             : snapFurniture(uid, pos);
+    const rot = sn.rot;
     const y = pos.y == null ? g.position.y : pos.y;
-    furnGhost.group.position.set(pos.x, y, pos.z);
+    furnGhost.group.position.set(sn.x, y, sn.z);
     furnGhost.group.rotation.y = rot * Math.PI / 180;
-    const fit = furnitureFit(uid, { x: pos.x, z: pos.z, rot });
+    const fit = furnitureFit(uid, { x: sn.x, z: sn.z, rot });
     if (fit.ok !== furnGhost.ok) {
       furnGhost.ok = fit.ok;
       const hex = fit.ok ? GH_OK : GH_NG;
@@ -2598,7 +2795,7 @@ export async function createRoomView(canvas, opts = {}) {
       furnGhost.line.color.setHex(hex);
     }
     needsRender = true;
-    return { uid, x: pos.x, z: pos.z, rot, y, ok: fit.ok, reason: fit.reason };
+    return { uid, x: sn.x, z: sn.z, rot, y, cells: sn.cells, ok: fit.ok, reason: fit.reason };
   }
 
   /* 가구 좌표계의 상대 위치를 보존한 채 새 자리로 옮긴다 — **화분도 얹힌 기구도 이 한 식**을 쓴다.
@@ -2673,12 +2870,16 @@ export async function createRoomView(canvas, opts = {}) {
     if (!built) throw new Error('방이 아직 없습니다');
     const g = furnNode(uid);
     if (!g) throw new Error(`못 옮기는 가구입니다: ${uid}`);
-    const rot = pos.rot == null ? (g.rotation.y || 0) * 180 / Math.PI : pos.rot;
-    const fit = furnitureFit(uid, { x: pos.x, z: pos.z, rot });
+    /* ★ 미리보기와 **같은 스냅**을 탄다. 여기서만 다르면 "파란 유령을 봤는데 딴 데 놓인다" 가 된다. */
+    const sn = pos.grid === false ? { x: pos.x, z: pos.z,
+                 rot: pos.rot == null ? (g.rotation.y || 0) * 180 / Math.PI : pos.rot }
+             : snapFurniture(uid, pos);
+    const rot = sn.rot;
+    const fit = furnitureFit(uid, { x: sn.x, z: sn.z, rot });
     if (!fit.ok) throw new Error(`가구를 못 놓습니다 — ${fit.reason}`);
     const from = { x: g.position.x, z: g.position.z, y: g.position.y,
                    rot: +((g.rotation.y || 0) * 180 / Math.PI).toFixed(4) };
-    const to = { x: pos.x, z: pos.z, rot, y: pos.y == null ? from.y : pos.y };
+    const to = { x: sn.x, z: sn.z, rot, y: pos.y == null ? from.y : pos.y };
     disposeFurnGhost();
 
     /* ★ 얹힌 기구도 같이 간다 — 책상에 물린 클립등이 제자리에 남으면 등만 허공에 뜬다.
@@ -3573,6 +3774,26 @@ export async function createRoomView(canvas, opts = {}) {
     showSlotRings(on, opt) { return showSlotRings(!!on, opt || {}); },
     slotRings() { return slotRingState(); },
 
+    /* ── 바닥 격자 (2026-08-03) ──
+       ★ 배치·이동 중에만 켠다. 늘 켜 두면 방이 안 보인다.
+         opt.potD  그 화분이 못 들어가는 칸을 붉게
+         opt.uid   그 가구가 못 들어가는 칸을 붉게(발자국이 커서 훨씬 많다)
+       돌려주는 값은 **놓을 수 있는 칸 수**. */
+    showGrid(on, opt) { return showGrid(!!on, opt || {}); },
+    /* 격자 눈금 — 한 칸 크기와 그 방의 칸 수 */
+    grid() {
+      const b = built ? roomBox() : null;
+      return { unit: GRID_UNIT, cell: GRID_CELL,
+               room: b ? { w: b.w, d: b.d, cols: Math.round(b.w / GRID_CELL), rows: Math.round(b.d / GRID_CELL) } : null,
+               visible: !!(gridGroup && gridGroup.visible),
+               free: gridGroup ? gridGroup.userData.free : null,
+               blocked: gridGroup ? gridGroup.userData.blocked : null };
+    },
+    /* 길이[m] → 칸 수(올림). UI 가 "책상 24×12칸" 같은 표시를 만들 때 쓴다 */
+    cellsOf(m) { return unitsFor(m); },
+    /* 가구를 격자에 앉힌 좌표 — 미리보기 없이 미리 물어볼 때 */
+    snapFurniture(uid, pos) { try { return snapFurniture(uid, pos || {}); } catch (e) { throw fail(e); } },
+
     /* ── 가구 옮기기 ──
        ⚠ 끄는 동안에는 previewFurnitureAt 만 부른다. commit 은 손 뗄 때 한 번이다. */
     pickFurnitureAt(px, py) { try { return pickFurnitureAt(px, py); } catch (e) { throw fail(e); } },
@@ -3835,6 +4056,7 @@ export async function createRoomView(canvas, opts = {}) {
       disposePreview();
       disposeFurnGhost();
       clearGuideRings();
+      clearGrid();
       disposeWalkGhost();
       for (const [, c] of chars) { try { c.dispose(); } catch (e) { /* 치우다 난 오류로 나머지를 못 치우면 안 된다 */ } }
       chars.clear();

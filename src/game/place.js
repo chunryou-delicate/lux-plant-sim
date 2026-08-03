@@ -37,6 +37,104 @@ export const isFreeSlotId = (id) => typeof id === 'string' && id.startsWith(FREE
    반올림해 내므로(toFixed(3)) 그보다 굵게 잡는다. */
 export const SAME_POINT_EPS = 0.005;
 
+/* ============================================================
+   ★ 바닥 격자 (2026-08-03 박사님 지시)
+   ------------------------------------------------------------
+   "바닥에 그리드를 통한 칸수로 조절하자. 전체 가구나 화분 다 네모난 그리드
+    최소치를 작게 해서 거기 배수로 사이즈 맞춰서 하자."
+
+   ── 왜 0.05 m 인가 (짐작이 아니라 재서 정했다) ──────────────────────────
+   방 여섯 개의 가구 89개·슬롯 320칸·치수 39종을 전부 뽑아 후보를 비교했다.
+
+     칸      가구 치수가 그대로 떨어짐   가구 좌표     방 치수
+     0.05    54%                        66%          100%
+     0.10    46%                        43%          100%
+     0.125   13%                        20%          100%
+     0.20    28%                        21%          100%
+
+   ① 방 치수가 전부 정수 m(4·5·6·7·10·11·12)라 어느 후보든 방은 나누어떨어진다.
+      가르는 것은 **가구**다 — 0.05 가 제일 잘 맞고, 안 맞아도 올림 오차가 최대 0.04 다.
+      0.25 로 잡으면 0.82m 짜리가 1.00m 로 세어져 22% 부풀고, 그러면 원래 있던 자리에도
+      못 들어간다. "최소치를 작게" 라는 지시가 실제로 이 오차를 줄인다.
+   ② 몬스테라 화분 0.202 m → **정확히 5칸(0.25 m)**. 그리고 창턱 슬롯 간격(house.js
+      SILL_GRID)·floor_nav 의 BFS 칸·decorate.js 의 가구 스냅이 **전부 0.25** 다.
+      즉 0.05 는 새 눈금이 아니라 **이 저장소가 이미 쓰는 0.25 격자를 다섯 등분한 것**이다.
+   ③ 이보다 잘게(0.025) 가면 5m 방에서 한 칸이 폰 화면 2px 라 안내가 안 된다.
+
+   ── 두 눈금을 쓴다 ──────────────────────────────────────────────────
+     UNIT 0.05  **크기를 세는 단위.** 모든 치수를 이 배수로 센다(칸 수). 배치 좌표도 여기 맞춘다
+     CELL 0.25  **눈에 보이는 칸.** 화면에 그리는 격자. UNIT 다섯 개다
+   크기는 잘게(정확하게), 눈금은 굵게(읽히게) — 둘을 같은 값으로 두면 하나가 반드시 나쁘다.
+
+   ── 올림이다 (내림이 아니다) ────────────────────────────────────────
+   실제 치수가 칸에 안 떨어지면 **올린다.** 내리면 실제보다 작게 세어 "들어간다"고 해 놓고
+   겹친다 — 조용히 틀리는 쪽이다. 올리면 못 놓는 자리가 조금 생길 뿐이고 그건 눈에 보인다.
+   이 저장소의 fail-loud 규약과 같은 방향이다.
+============================================================ */
+export const GRID_UNIT = 0.05;    // 크기를 세는 최소 칸[m]
+export const GRID_CELL = 0.25;    // 화면에 그리는 칸[m] = UNIT 5개
+
+/* 길이 → 칸 수(올림). 0 이하는 1칸으로 본다 — 넓이 0 짜리 물건은 없다. */
+export function unitsFor(m, unit = GRID_UNIT) {
+  if (!isNum(m) || m <= 0) return 1;
+  return Math.max(1, Math.ceil(m / unit - 1e-9));
+}
+/* 칸 수 → 길이[m] */
+export const unitsToM = (n, unit = GRID_UNIT) => n * unit;
+
+/* 발자국 한 변을 격자에 앉힌다.
+   ★ 칸 **중심**이 아니라 **앞 모서리**를 격자선에 맞춘다.
+     중심에 맞추면 짝수 칸짜리 물건이 늘 반 칸 어긋나 점유 칸이 정수가 아니게 된다.
+     모서리를 맞추면 홀수·짝수 어느 쪽이든 점유 칸이 정확히 n 개다.
+   center 는 그 변의 한가운데, sizeM 은 그 변의 길이다. 돌려주는 것도 한가운데다. */
+export function snapSpan(center, sizeM, unit = GRID_UNIT) {
+  if (!isNum(center)) throw new RangeError(`[격자] 중심이 유한하지 않습니다: ${center}`);
+  const n = unitsFor(sizeM, unit);
+  const half = n * unit / 2;
+  return Math.round((center - half) / unit) * unit + half;
+}
+/* 점 하나를 격자에 맞춘다(크기 없는 것 — 커서 등). 칸 중심으로 간다. */
+export function snapPoint(v, unit = GRID_UNIT) {
+  if (!isNum(v)) throw new RangeError(`[격자] 좌표가 유한하지 않습니다: ${v}`);
+  return Math.round(v / unit) * unit;
+}
+
+/* 회전은 90° 단위다.
+   ★ 근거: 격자가 축정렬 네모라 45° 로 돌리면 발자국이 칸에 안 떨어져 '정수 칸 점유'가
+     통째로 무너진다(회전 사각형의 칸 점유를 다시 근사해야 한다 — 격자를 쓰는 이유가 사라진다).
+     그리고 **방 데이터의 기존 회전값이 이미 전부 90° 배수다**(-90·0·90·180 넷뿐 · 89개 전수 확인).
+     즉 90° 단위는 새 제약이 아니라 데이터가 이미 지키던 규칙이다. */
+export function snapAngleDeg(deg, step = 90) {
+  if (!isNum(deg)) return 0;
+  return ((Math.round(deg / step) * step) % 360 + 360) % 360;
+}
+
+/* 발자국이 차지하는 칸 상자 — 겹침 판정을 정수로 만든다.
+     rect = { x, z, w, d, rot(라디안) }  rot 은 90° 배수로 본다
+   반환 { i0, j0, ni, nj } — i 는 x축, j 는 z축 칸 번호(방 원점 기준, 음수 가능) */
+export function cellBox(rect, unit = GRID_UNIT) {
+  if (!rect) throw new TypeError('[격자] cellBox: 사각형이 필요합니다');
+  for (const k of ['x', 'z', 'w', 'd']) {
+    if (!isNum(rect[k])) throw new RangeError(`[격자] cellBox: ${k} 가 유한하지 않습니다: ${rect[k]}`);
+  }
+  /* 90° 배수면 폭·깊이가 통째로 뒤바뀔 뿐이다 */
+  const q = Math.round(((rect.rot || 0) / (Math.PI / 2)) % 4);
+  const swap = Math.abs(q) % 2 === 1;
+  const w = swap ? rect.d : rect.w, d = swap ? rect.w : rect.d;
+  const ni = unitsFor(w, unit), nj = unitsFor(d, unit);
+  return {
+    i0: Math.round((rect.x - ni * unit / 2) / unit),
+    j0: Math.round((rect.z - nj * unit / 2) / unit),
+    ni, nj
+  };
+}
+/* 칸 상자 두 개가 겹치나 — 정수 비교뿐이라 오차가 없다.
+   (판때기 발자국을 실수로 재던 것과 달리 "0.01m 모자란다" 같은 일이 아예 안 생긴다) */
+export function cellBoxOverlap(a, b) {
+  return a.i0 < b.i0 + b.ni && b.i0 < a.i0 + a.ni
+      && a.j0 < b.j0 + b.nj && b.j0 < a.j0 + a.nj;
+}
+
 const isNum = (v) => typeof v === 'number' && Number.isFinite(v);
 const why = (reason) => ({ ok: false, reason });
 const OK = { ok: true, reason: null };

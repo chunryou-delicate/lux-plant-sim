@@ -173,6 +173,7 @@
         <option value="0.34">0.34 (큰 화분)</option>
       </select>
       <button class="b" id="freeClear">이 화분 치우기</button>
+      <button class="b" id="gridBtn">바닥 격자</button>
       <span class="hint" id="freeR">—</span>
     </div>
     <div class="hint" style="margin-top:6px">
@@ -193,7 +194,7 @@
       <span class="hint">z <b id="fzV">0.0</b></span><input type="range" id="fz" min="-300" max="300" value="0">
     </div>
     <div class="row" style="margin-top:6px">
-      <span class="hint">회전 <b id="frV">0°</b></span><input type="range" id="fr" min="0" max="359" value="0">
+      <span class="hint">회전 <b id="frV">0°</b></span><input type="range" id="fr" min="0" max="270" step="90" value="0">
       <button class="b" id="furnCommit">여기로 옮기기 (재조립 1회)</button>
       <span class="hint" id="furnR">—</span>
     </div>
@@ -465,7 +466,8 @@ function freeProbe(e) {
   const s = view.surfaceAt(e.clientX, e.clientY, { potD: freeD(), ignore: $('freeId').value });
   freeLast = s;
   $('freeR').textContent = s.ok
-    ? `놓을 수 있다 · ${s.onUid || '바닥'} y=${s.y}` +
+    ? `놓을 수 있다 · ${s.onUid || '바닥'} y=${s.y} · ${s.cells ? s.cells.i + '×' + s.cells.j + '칸' : ''}` +
+      (s.snappedTo ? ` · 자리 ${s.snappedTo} 에 앉음` : s.snapped ? ' · 격자에 앉음' : '') +
       (s.nearest ? ` · 추천 ${s.nearest.slotId} (${s.nearest.dist}m)` : '')
     : '★ ' + (s.reason || '—');
   if (s.x == null) { view.clearPreview(); return s; }
@@ -502,8 +504,17 @@ $('freeMode').onclick = function () {
   freeOn = !freeOn;
   this.classList.toggle('on', freeOn);
   this.textContent = freeOn ? '자유 배치 모드 끄기' : '자유 배치 모드 켜기';
-  if (freeOn) view.showSlotRings(true, { potD: freeD() });
-  else { view.clearPreview(); view.showSlotRings(false); $('freeR').textContent = '—'; }
+  if (freeOn) { view.showSlotRings(true, { potD: freeD() }); view.showGrid(true, { potD: freeD() }); }
+  else { view.clearPreview(); view.showSlotRings(false); view.showGrid(false); $('freeR').textContent = '—'; }
+};
+/* ★ 격자는 배치·이동 중에만 켠다 — 늘 켜 두면 방이 안 보인다 */
+$('gridBtn').onclick = function () {
+  const g = view.grid();
+  const on = !g.visible;
+  const free = view.showGrid(on, { potD: freeD() });
+  this.classList.toggle('on', on);
+  if (on) { const i = view.grid();
+    log(`showGrid(true) → ${i.room.cols}×${i.room.rows}칸(${i.cell}m) · 놓을 수 있는 칸 ${free} · 단위 ${i.unit}m`, 'k'); }
 };
 $('ringsOn').onclick = () => {
   const n = view.showSlotRings(true, { potD: freeD() });
@@ -535,6 +546,7 @@ function syncFurnSliders() {
      "이게 뭐지"가 되고, 성능을 잴 때도 기준선에 유령이 섞인다(실제로 섞였다). */
   furnLabels();
   view.clearFurniturePreview();
+  view.showGrid(false);
 }
 function furnLabels() {
   const x = +$('fx').value / 100, z = +$('fz').value / 100, rot = +$('fr').value;
@@ -546,8 +558,10 @@ function furnPreview() {
   if (!uid) return;
   const { x, z, rot } = furnLabels();
   try {
+    view.showGrid(true, { uid });
     const r = view.previewFurnitureAt(uid, { x, z, rot });
-    $('furnR').textContent = r.ok ? '놓을 수 있다 (파랑)' : '★ ' + r.reason;
+    $('furnR').textContent = (r.ok ? '놓을 수 있다 (파랑)' : '★ ' + r.reason)
+      + ` · ${r.cells ? r.cells.i + '×' + r.cells.j + '칸' : ''} · 앉은 자리 (${r.x}, ${r.z}) ${r.rot}°`;
   } catch (e) { $('furnR').textContent = e.message; }
 }
 $('furn').onchange = syncFurnSliders;
@@ -561,6 +575,7 @@ $('furnCommit').onclick = async function () {
   try {
     const r = await view.commitFurnitureAt(uid, { x, z, rot });
     log(`commitFurnitureAt(${uid}) ${JSON.stringify(r.from)} → ${JSON.stringify(r.to)} · ${Math.round(performance.now() - t0)}ms`, 'k');
+    view.showGrid(false);
     refreshSlots(); refreshFurn();
     tip('옮겼습니다');
   } catch (e) { log('commitFurnitureAt 거부: ' + e.message, 'e'); tip('못 옮깁니다 — ' + e.message); }

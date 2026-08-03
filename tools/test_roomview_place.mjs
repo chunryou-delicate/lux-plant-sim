@@ -128,6 +128,36 @@ async function perfMain() {
   await page.eval(PERF_START); await sleep(3000);
   console.log(perfRow('추천 원 켠 채 가만히', await page.eval(PERF_STOP)));
 
+  /* 바닥 격자만 켠 채 가만히 — 격자가 상시 비용을 만드는지 */
+  const gridInfo = await page.eval(`(() => { const free = window.view.showGrid(true, { potD: 0.20 });
+    window.view.redraw(); return { free, g: window.view.grid() }; })()`);
+  await page.eval(PERF_START); await sleep(3000);
+  console.log(perfRow('바닥 격자 켠 채 가만히', await page.eval(PERF_STOP)) +
+              `   (${gridInfo.g.room.cols}×${gridInfo.g.room.rows}칸 · 막힌 칸 ${gridInfo.g.blocked})`);
+
+  /* 격자 + 원 + 유령 을 전부 켜고 끄는 중 — 배치할 때 실제로 켜지는 조합 */
+  await page.eval(PERF_START);
+  const nAll = await page.eval(`(async () => {
+    const r = document.getElementById('roomCanvas').getBoundingClientRect();
+    let n = 0;
+    for (let i = 0; i < 45; i++) {
+      const a = i / 45 * 6.283;
+      const s = window.view.surfaceAt(r.left + r.width * 0.5 + Math.cos(a) * 90,
+                                      r.top + r.height * 0.62 + Math.sin(a) * 60, { potD: 0.20 });
+      n++;
+      if (s.x != null) {
+        window.view.previewAt({ x:s.x, y:s.y, z:s.z, onUid:s.onUid, occIdx:s.occIdx },
+                              { potD: 0.20, valid: s.ok });
+        window.view.showSlotRings(true, { potD: 0.20, near: { x:s.x, z:s.z }, nearMax: 0.6 });
+      }
+      await new Promise(r2 => setTimeout(r2, 16));
+    }
+    return n;
+  })()`);
+  console.log(perfRow('격자+원+유령 끌기', await page.eval(PERF_STOP)) + `   (surfaceAt ${nAll}회)`);
+  await page.eval(`(()=>{ window.view.showGrid(false); window.view.clearPreview();
+                          window.view.showSlotRings(false); return 1; })()`);
+
   /* 자유 배치 끌기 — 손가락이 움직일 때마다 surfaceAt + previewAt + 링 near 갱신 */
   await page.eval(PERF_START);
   const nProbe = await page.eval(`(async () => {
@@ -275,6 +305,89 @@ async function main() {
   ok('S-4 매달린 조명·벽걸이 위에는 못 놓는다 (천장등 포함)',
      banned.banned.length > 0 && banned.hitsBad.length === 0,
      `걸러야 할 것 ${JSON.stringify(banned.banned)} · 뚫린 것 ${JSON.stringify(banned.hitsBad)}`);
+
+  /* ══ Z 바닥 격자 ══════════════════════════════════════════════════════
+     ★ 박사님 지시: "바닥에 그리드를 통한 칸수로 조절하자. 전체 가구나 화분 다
+       네모난 그리드 최소치를 작게 해서 거기 배수로 사이즈 맞춰서 하자."
+     칸 크기와 근거는 place.js 머리말에 있다(방 여섯 개를 재서 정했다). */
+  const gi = await page.eval(`(() => { const g = window.view.grid();
+    return { g, desk: window.view.cellsOf(1.2), deep: window.view.cellsOf(0.6),
+             pot: window.view.cellsOf(0.202), up: window.view.cellsOf(0.82) }; })()`);
+  ok('Z-1 단위 칸 0.05m · 보이는 칸 0.25m',
+     gi.g.unit === 0.05 && gi.g.cell === 0.25, JSON.stringify(gi.g));
+  ok('Z-2 방이 칸으로 딱 떨어진다 (반지하 5×4m → 20×16칸)',
+     gi.g.room.cols === 20 && gi.g.room.rows === 16, JSON.stringify(gi.g.room));
+  ok('Z-3 크기를 칸 수로 센다 · 안 떨어지면 올린다',
+     gi.desk === 24 && gi.deep === 12 && gi.pot === 5 && gi.up === 17,
+     `책상 1.2→${gi.desk}칸 · 0.6→${gi.deep}칸 · 화분 0.202→${gi.pot}칸 · 0.82→${gi.up}칸(올림)`);
+
+  const gshow = await page.eval(`(() => {
+    const free = window.view.showGrid(true, { potD: 0.20 });
+    const on = window.view.grid();
+    window.view.showGrid(false);
+    return { free, on, off: window.view.grid().visible };
+  })()`);
+  ok('Z-4 격자가 켜지고 꺼진다 · 막힌 칸이 세어진다',
+     gshow.on.visible === true && gshow.off === false &&
+     gshow.free > 0 && gshow.on.blocked > 0 && gshow.free + gshow.on.blocked === 20 * 16,
+     `놓을 수 있는 칸 ${gshow.free} · 막힌 칸 ${gshow.on.blocked}`);
+
+  /* 바닥 아무 데나 쏘면 칸에 앉는다 — 발자국 앞 모서리가 격자선에 떨어져야 한다 */
+  const snapProbe = await page.eval(`(() => {
+    const v = window.view, rc = document.getElementById('roomCanvas').getBoundingClientRect();
+    const u = 0.05, out = [];
+    for (let i = 3; i < 13; i++) for (let j = 12; j < 20; j++) {
+      const t = v.surfaceAt(rc.left + rc.width * i / 16, rc.top + rc.height * j / 24, { potD: 0.20 });
+      if (!t.ok || t.onUid !== null) continue;
+      const n = t.cells.i;                       // 칸 수(0.20 → 4칸)
+      const ex = (t.x - n * u / 2) / u, ez = (t.z - n * u / 2) / u;
+      out.push({ x: t.x, z: t.z, offX: Math.abs(ex - Math.round(ex)), offZ: Math.abs(ez - Math.round(ez)) });
+    }
+    return out;
+  })()`);
+  ok('Z-5 바닥 좌표가 격자에 앉는다 (발자국 모서리가 격자선에)',
+     snapProbe.length > 5 && snapProbe.every(p => p.offX < 1e-6 && p.offZ < 1e-6),
+     `${snapProbe.length}점 · 최대 어긋남 ` +
+     Math.max(0, ...snapProbe.map(p => Math.max(p.offX, p.offZ))).toExponential(2));
+
+  /* ★ 슬롯이 격자에 안 떨어져도 **슬롯이 이긴다** — 격자에 끌려가면 창턱이 다시 막힌다 */
+  const slotWins = await page.eval(`(() => {
+    const v = window.view, rc = document.getElementById('roomCanvas').getBoundingClientRect();
+    const u = 0.05, rows = [];
+    for (const s of v.slots()) {
+      const sp = v.screenPosOf(s.slotId);
+      if (!sp) continue;
+      const t = v.surfaceAt(rc.left + sp.x, rc.top + sp.y, { potD: 0.20 });
+      const onGrid = Math.abs(s.pos.x / u - Math.round(s.pos.x / u)) < 1e-6
+                  && Math.abs(s.pos.z / u - Math.round(s.pos.z / u)) < 1e-6;
+      rows.push({ id: s.slotId, onGrid, snappedTo: t.snappedTo,
+                  moved: +Math.hypot(t.x - s.pos.x, t.z - s.pos.z).toFixed(4) });
+    }
+    return rows;
+  })()`);
+  const offGrid = slotWins.filter(r => !r.onGrid);
+  ok('Z-6 ★슬롯이 격자에 안 떨어져도 슬롯 중심으로 간다 (슬롯 우선)',
+     slotWins.length >= 14 && slotWins.every(r => r.snappedTo === r.id && r.moved < 1e-3),
+     `격자 밖 슬롯 ${offGrid.length}/${slotWins.length} · 어긋난 것 ` +
+     JSON.stringify(slotWins.filter(r => r.snappedTo !== r.id || r.moved >= 1e-3).slice(0, 3)));
+
+  /* 가구도 칸에 앉고 회전은 90° 단위 */
+  const fsnap = await page.eval(`(() => {
+    const v = window.view, u = 0.05, out = [];
+    for (const f of v.furniture()) {
+      const s = v.snapFurniture(f.uid, { x: f.x + 0.13, z: f.z - 0.07, rot: 44 });
+      const swap = Math.round(s.rot / 90) % 2 !== 0;
+      const w = swap ? f.size.d : f.size.w, d = swap ? f.size.w : f.size.d;
+      const ni = Math.ceil(w / u - 1e-9), nj = Math.ceil(d / u - 1e-9);
+      const ex = (s.x - ni * u / 2) / u, ez = (s.z - nj * u / 2) / u;
+      out.push({ uid: f.uid, rot: s.rot, cells: s.cells,
+                 offX: Math.abs(ex - Math.round(ex)), offZ: Math.abs(ez - Math.round(ez)) });
+    }
+    return out;
+  })()`);
+  ok('Z-7 가구도 칸에 앉는다 · 회전은 90° 단위(44° → 0°)',
+     fsnap.length > 0 && fsnap.every(f => f.rot % 90 === 0 && f.offX < 1e-6 && f.offZ < 1e-6),
+     JSON.stringify(fsnap.slice(0, 3)));
 
   /* ══ A 바닥 임의 지점 ═════════════════════════════════════════════════ */
   const floors = await page.eval(`(() => {
