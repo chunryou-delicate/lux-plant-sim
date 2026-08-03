@@ -315,6 +315,35 @@
     font-family:'Jua';font-size:12.5px;background:rgba(255,180,84,.94);color:#2a1c06;
     box-shadow:0 4px 12px rgba(0,0,0,.45)}
   /* 가리키는 대상이 눈에 띄게 — 테두리가 한 번씩 숨쉰다 */
+  /* ══ 조작 안내판 (박사님 2026-08-03: "각 버튼마다 가이드해줘") ══════════
+     한 번에 하나만 가리키는 손가락과는 다른 것이다. 이건 **모든 조작을 한 화면에**
+     펼쳐 보여주는 판이다 — 처음 열면 저절로 뜨고, 그 뒤엔 [?] 로 다시 본다.
+     ★화면을 가리지 않게 반투명으로 덮고, 각 대상 옆에 화살표와 설명을 붙인다. */
+  #guide{position:fixed;z-index:80;inset:0;display:none;background:rgba(8,6,12,.82);
+    -webkit-backdrop-filter:blur(2px);backdrop-filter:blur(2px)}
+  #guide.on{display:block}
+  #guide .gtitle{position:absolute;left:0;right:0;top:calc(var(--safe-t) + 18px);text-align:center;
+    font-family:'Jua';font-size:17px;color:var(--gold);text-shadow:0 2px 8px #000}
+  #guide .gsub{position:absolute;left:0;right:0;top:calc(var(--safe-t) + 44px);text-align:center;
+    font-size:12px;color:rgba(255,255,255,.6)}
+  /* 설명 한 조각 — 화살표 + 글. 위치는 JS 가 대상에 맞춰 잡는다 */
+  .gtip{position:absolute;display:flex;align-items:center;gap:6px;pointer-events:none;
+    font-family:'Jua';font-size:12.5px;color:#2a1c06;white-space:nowrap}
+  .gtip>span{padding:5px 11px;border-radius:999px;background:rgba(255,180,84,.96);
+    box-shadow:0 4px 14px rgba(0,0,0,.5)}
+  .gtip>i{font-style:normal;font-size:19px;color:var(--gold);text-shadow:0 2px 6px #000}
+  /* 대상 자리를 뚫어 보여준다 — 무엇을 말하는지 눈으로 잇게 */
+  .ghole{position:absolute;border-radius:12px;border:2px solid rgba(255,180,84,.9);
+    box-shadow:0 0 0 9999px rgba(8,6,12,.0), 0 0 18px rgba(255,180,84,.5);pointer-events:none}
+  #guideClose{position:absolute;left:50%;transform:translateX(-50%);
+    bottom:calc(var(--safe-b) + 18px);min-height:var(--tap);padding:0 26px;border-radius:999px;
+    font-family:'Jua';font-size:15px;background-image:url(./assets/ui/button_plate_sage.png);
+    background-size:100% 100%;color:#1d381c;border:0}
+  /* [?] — 안내판을 다시 여는 자리. 작지만 늘 같은 곳에 있다 */
+  #guideOpen{position:absolute;z-index:24;right:10px;top:calc(var(--safe-t) + 8px);
+    width:34px;height:34px;border-radius:50%;font-family:'Jua';font-size:15px;
+    background:rgba(16,13,24,.7);border:1px solid rgba(255,255,255,.18);color:var(--dim)}
+
   .hintTarget{position:relative;animation:hintGlow 1.4s ease-in-out infinite}
   @keyframes hintGlow{0%,100%{box-shadow:0 0 0 0 rgba(255,180,84,0)}
                       50%{box-shadow:0 0 0 4px rgba(255,180,84,.45)}}
@@ -499,6 +528,7 @@
     <div id="roomFallback"><div><span id="bootMsg">방을 준비하는 중…</span><div id="bootBar"><i></i></div></div></div>
     <div id="placeHint"></div>
     <div id="dropLabel"></div>
+    <button id="guideOpen" aria-label="조작 안내">?</button>
     <div id="moveCatcher"></div>
     <div id="plantActions">
       <span class="who" id="pickedName">—</span>
@@ -542,6 +572,12 @@
 
 <div id="dragGhost"></div>
 <div id="hint"><span class="hand">👆</span><span class="say"></span></div>
+<!-- ══ 조작 안내판 — 모든 조작을 한 화면에 ══════════════════════════════ -->
+<div id="guide">
+  <div class="gtitle">이렇게 하시면 됩니다</div>
+  <div class="gsub">아무 곳이나 누르면 닫힙니다</div>
+  <button id="guideClose">알겠어요</button>
+</div>
 <div id="hint"><span class="hand">👆</span><span class="say"></span></div>
 
 <!-- ══ 바텀시트 — 가방·자리·설정. 폰이라 옆이 아니라 아래에서 올라온다 ══ -->
@@ -996,6 +1032,93 @@ function hintAt(el, say) {
   el.classList.add('hintTarget');
   hintTargetEl = el;
 }
+/* ══ 조작 안내판 — 모든 조작을 한 화면에 (박사님 2026-08-03) ═══════════════
+   손가락(updateHint)은 "다음에 할 일 하나"를 가리킨다. 이건 다른 것이다 —
+   **무엇이 무엇인지** 한 번에 보여준다. 버튼이 여럿인데 이름만으로는 안 읽힌다.
+   ★처음 열면 저절로 뜨고, 그 뒤엔 [?] 로 다시 본다. 본 적이 있으면 안 뜬다. */
+const GUIDE_SEEN = 'byeot.guideSeen';
+function buildGuide() {
+  const gv = $('guide');
+  gv.querySelectorAll('.gtip,.ghole').forEach(n => n.remove());
+  /* [대상, 설명, 화살표 방향] — 대상이 화면에 없으면 그 줄은 건너뛴다(레이아웃마다 다르다) */
+  const rows = [
+    [$('resDay'),   '오늘 날짜와 시각',            'up'],
+    [$('resFood'),  '오늘 식비 · 살림이 시작되면 소지금', 'up'],
+    [$('resSaved'), '콩나물로 아낀 돈',            'up'],
+    [$('stage'),    '방을 끌면 돌아갑니다 · 두 손가락으로 확대\n화분을 누르면 [이동] [회전]', 'mid'],
+    [$('quest'),    '지금 할 일',                  'down'],
+    [$('next'),     '하루를 보냅니다',              'down'],
+    [$('ff'),       '일이 생길 때까지 감습니다',      'down'],
+    /* 좁은 화면엔 [가방] 버튼이, 넓은 화면엔 늘 펴진 시트 탭이 있다. 있는 쪽을 가리킨다 */
+    [$('openBag'),  '가방 · 방 설정 · 살림',        'down'],
+    [$('tabBag'),   '가방의 그림을 방으로 끌어다 놓습니다', 'up']
+  ];
+  /* 안내판 자신의 글자(제목·부제·[알겠어요])도 자리를 차지한다 — 미리 넣어 두면
+     아래 밀어내기가 이것들도 피해 간다. 실제로 부제와 상단 설명이 겹쳐 둘 다 안 읽혔다. */
+  const placed = ['gtitle', 'gsub', 'guideClose']
+    .map(c => gv.querySelector('.' + c) || $(c))
+    .filter(Boolean).map(n => n.getBoundingClientRect())
+    .filter(b => b.width && b.height);
+  for (const [el, say, dir] of rows) {
+    if (!el) continue;
+    const r = el.getBoundingClientRect();
+    if (!r.width || !r.height || r.bottom < 0 || r.top > innerHeight) continue;
+    const hole = document.createElement('div');
+    hole.className = 'ghole';
+    hole.style.cssText = `left:${r.left - 3}px;top:${r.top - 3}px;width:${r.width + 6}px;height:${r.height + 6}px`;
+    gv.appendChild(hole);
+    const tip = document.createElement('div');
+    tip.className = 'gtip';
+    const said = say.replace(/\n/g, '<br>');
+    tip.innerHTML = (dir === 'down' ? '<i>↓</i>' : '') + `<span>${said}</span>` + (dir === 'up' ? '<i>↑</i>' : '');
+    gv.appendChild(tip);
+    const tw = tip.getBoundingClientRect().width || 160;
+    /* 화면 밖으로 안 나가게 좌우를 물린다 — 폰에서 가장자리 버튼이 실제로 잘렸다 */
+    tip.style.left = Math.max(8, Math.min(innerWidth - tw - 8, r.left + r.width / 2 - tw / 2)) + 'px';
+    let top = dir === 'down' ? Math.max(4, r.top - 40)
+            : dir === 'up'   ? r.bottom + 8
+                             : r.top + r.height / 2 - 16;
+    tip.style.top = top + 'px';
+    /* 겹치면 밀어낸다 — 상단 칩 셋은 나란히 붙어 있는데 설명은 칩보다 넓어서 실제로 겹쳤다.
+       대상에서 멀어지는 쪽으로 민다: 위를 가리키면 아래로, 아래를 가리키면 위로.
+       ★자리를 잡은 **뒤에** 실측한다 — 배치 전 rect 는 폭이 달라서 겹침을 놓친다. */
+    let box = tip.getBoundingClientRect();
+    const step = dir === 'down' ? -(box.height + 6) : (box.height + 6);
+    for (let n = 0; n < 8; n++) {
+      if (!placed.some(p => box.left < p.right && p.left < box.right
+                         && box.top < p.bottom && p.top < box.bottom)) break;
+      top += step;
+      tip.style.top = top + 'px';
+      box = tip.getBoundingClientRect();
+    }
+    placed.push({ left: box.left, right: box.right, top: box.top, bottom: box.bottom });
+  }
+}
+/* ★먼저 켜고 나서 잰다 — display:none 인 채로 재면 사각형이 전부 0이라 겹침을 못 본다 */
+function openGuide() { $('guide').classList.add('on'); buildGuide(); hintAt(null); }
+function closeGuide() {
+  $('guide').classList.remove('on');
+  try { localStorage.setItem(GUIDE_SEEN, '1'); } catch { }
+  updateHint();
+}
+function bindGuide() {
+  $('guideOpen').onclick = openGuide;
+  $('guideClose').onclick = closeGuide;
+  $('guide').onclick = closeGuide;              /* 아무 데나 눌러도 닫힌다 */
+  addEventListener('resize', () => { if ($('guide').classList.contains('on')) buildGuide(); });
+  let seen = false; try { seen = localStorage.getItem(GUIDE_SEEN) === '1'; } catch { }
+  /* 처음이면 저절로 보여준다 — 다만 인트로 대화가 끝난 뒤에. 겹치면 둘 다 안 읽힌다 */
+  if (!seen) {
+    const t = setInterval(() => {
+      const st = $('stage');
+      if (st.classList.contains('talking')) return;      /* 대화 중 — 겹치면 둘 다 안 읽힌다 */
+      if (st.classList.contains('room-loading')) return; /* 아직 방을 그리는 중 */
+      clearInterval(t); openGuide();
+    }, 600);
+    setTimeout(() => clearInterval(t), 60000);
+  }
+}
+
 window.__byeotHint = () => { try { updateHint(); } catch (e) { /* 안내가 게임을 막지 않는다 */ } };
 function updateHint() {
   const fp = S.firstPlay, ts = S.tutorial;
@@ -2116,6 +2239,7 @@ try {
   pushLog(S, '첫 플레이 준비 완료 — 열린 시루를 놓고 [다음 날]을 눌러 보세요');
   draw();
   window.__byeotBooted = true;      // 밖의 감시자에게 "여기까지는 왔다"고 알린다
+  bindGuide();                      // 조작 안내판 — 처음이면 인트로 뒤에 저절로 뜬다
   bootRoomView();                   // 방 3D — 실패해도 게임은 돌아간다(아래)
   dlgOpen('intro');                 // 몬이가 무엇을 하는 게임인지 한 번에 말해 준다
 } catch (err) {
