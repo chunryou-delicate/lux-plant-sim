@@ -18,7 +18,7 @@ import { winFromHouse } from '../engine/daylight_lux.js';
 import { buildDailyLight, thresholdsFor, daylightRatio } from '../engine/daily_light.js';
 import { ppfdSum } from '../render3d/lighting_sim.js';
 import { skyOf, setWeatherProbs, seasonOf } from '../engine/weather.js';
-import { modeOf } from './state.js';
+import { modeOf, placedItems } from './state.js';
 import { validateContract } from './contract.js';
 import { assertAt, assertFurnitureAt, freeSlotId, isFreeSlotId,
          nearestSlot, samePoint } from './place.js';
@@ -176,14 +176,18 @@ export function createLightEngine(data) {
   /* ---- 켤 식물등. 방에 놓인 grow 기구를 앞에서부터 n개 ---- */
   function rigsOn(count) { return room.growRigs.slice(0, Math.max(0, count | 0)); }
 
-  /* ---- 슬롯 배열 만들기: 화분 정보 + 그 자리 식물등 PPFD ----
-     ★ 추천 자리(room.slots)와 **자유 좌표 화분**을 같은 모양으로 낸다 (2026-08-03).
+  /* ---- 슬롯 배열 만들기: 놓인 것 + 그 자리 식물등 PPFD ----
+     ★ 추천 자리(room.slots)와 **자유 좌표로 놓인 것**을 같은 모양으로 낸다 (2026-08-03).
        물리는 하나다 — daylightRatio 도 ppfdSum 도 처음부터 임의 좌표를 받았다.
-       달라지는 건 '어느 점을 넣느냐'뿐이라, 여기서 점 목록만 늘리면 끝난다. */
+       달라지는 건 '어느 점을 넣느냐'뿐이라, 여기서 점 목록만 늘리면 끝난다.
+
+     ★ 인자 이름이 `pots` 지만 **화분 전용이 아니다** — 콩나물 시루도 같은 모양으로 들어온다
+       (state.placedItems). 여기서 보는 건 `{id, slotId, at, plantId, variegated}` 뿐이라,
+       "무엇인가"를 조도 쪽이 알 필요가 없다. 종류마다 분기를 만들면 물건이 늘 때마다 여기가 는다. */
   function slotsFor(pots, rigs) {
     const list = pots || [];
-    const onSlot = new Map();          // 추천 자리 위에 앉은 화분: slotId → pot
-    const free = [];                   // 슬롯을 벗어난 화분
+    const onSlot = new Map();          // 추천 자리 위에 앉은 것: slotId → 그 물건
+    const free = [];                   // 슬롯을 벗어난 것
 
     for (const p of list) {
       if (!p) continue;
@@ -198,9 +202,13 @@ export function createLightEngine(data) {
            `p.slotId` 로 찾은 **다른 자리의 밝기**를 그 화분 것으로 쓴다.
            불변식은 state.setPotAt 이 세운다 — 여기까지 깨져 왔으면 배선이 틀린 것이다. */
         if (!samePoint(s, p.at))
-          throw new Error(`[조도] 화분 ${p.id} 의 자리가 어긋납니다 — slotId=${p.slotId} 는 ` +
+          throw new Error(`[조도] ${p.id} 의 자리가 어긋납니다 — slotId=${p.slotId} 는 ` +
             `(${s.x}, ${s.y}, ${s.z}) 인데 at 은 (${p.at.x}, ${p.at.y}, ${p.at.z}) 입니다. ` +
-            `자유 좌표로 옮겼다면 slotId 가 ${freeSlotId(p.id)} 여야 합니다(state.setPotAt).`);
+            `자유 좌표로 옮겼다면 slotId 가 ${freeSlotId(p.id)} 여야 합니다 ` +
+            `(state.setPotAt · state.setCropAt).`);
+        /* 같은 추천 자리를 둘이 가리키면 **계약에는 그 자리가 한 줄만 실린다**(Map 이라서).
+           물리적으로 같은 점이므로 DLI 도 하나뿐인 게 맞다 — 두 줄로 내면 계약에 같은 자리가
+           두 번 실려 K 검사가 막으려던 상태가 된다. 실린 줄의 plantId 만 뒤엣것이 이긴다. */
         onSlot.set(p.slotId, p);
         continue;
       }
@@ -249,7 +257,10 @@ export function createLightEngine(data) {
   function daily(day, S) {
     const sky = skyFor(day, S.sim);
     const rigs = rigsOn(S.lamps.count);
-    const report = buildDailyLight(day, slotsFor(S.pots, rigs), room.wins,
+    /* ★ S.pots 가 아니라 **놓인 것 전부**를 싣는다 (2026-08-03).
+       콩나물 시루가 자유 좌표면 그 자리는 방 슬롯 목록에 없는 점이라, 여기서 안 실으면
+       `cropDliFromReport` 가 오늘 계약에서 못 찾는다. 무엇이 놓였는지는 state 가 안다. */
+    const report = buildDailyLight(day, slotsFor(placedItems(S), rigs), room.wins,
                                    ctxFor(sky, rigs, S.lamps.litHours));
     return { report, sky, check: validateContract(report) };
   }

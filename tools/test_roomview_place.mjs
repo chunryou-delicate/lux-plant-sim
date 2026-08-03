@@ -209,6 +209,73 @@ async function main() {
 
   const size = await page.eval(`window.view.roomSize()`);
 
+  /* ══ S 추천 자리 불변식 ═══════════════════════════════════════════════
+     ★★ "추천 자리 정중앙은 반드시 통과해야 한다."
+        슬롯은 house.js 가 "여기 놓으라"고 낸 점이다. 거기서 거절하면 슬롯 정본이
+        거짓말이 된다. 실제로 반지하 14칸 중 13칸이 거절당한 적이 있다(2026-08-03) —
+        링은 "된다"는데 surfaceAt 은 "0.01m 모자란다"고 했다. 두 판정이 갈려 있었다.
+        이 블록이 있었으면 그 상황이 안 나왔다. 화분을 놓기 **전에** 잰다. */
+  const slotProbe = await page.eval(`(() => {
+    const v = window.view, rc = document.getElementById('roomCanvas').getBoundingClientRect();
+    const rows = [];
+    for (const s of v.slots()) {
+      const sp = v.screenPosOf(s.slotId);
+      if (!sp) { rows.push({ id: s.slotId, err: '화면에 안 잡힘' }); continue; }
+      const r = v.surfaceAt(rc.left + sp.x, rc.top + sp.y, { potD: 0.20 });
+      rows.push({ id: s.slotId, maxPotD: s.maxPotD, ok: r.ok, why: r.reason,
+                  onUid: r.onUid, occIdx: r.occIdx, near: r.nearest && r.nearest.slotId });
+    }
+    return rows;
+  })()`);
+  const slotBad = slotProbe.filter(r => !r.ok || r.near !== r.id);
+  ok('S-1 모든 추천 자리 정중앙에서 surfaceAt 이 ok:true 이고 nearest 가 그 자리다',
+     slotBad.length === 0 && slotProbe.length >= 14,
+     `${slotProbe.length - slotBad.length}/${slotProbe.length} · ` +
+     slotBad.slice(0, 4).map(r => `${r.id}: ${r.err || r.why || 'near=' + r.near}`).join(' | '));
+
+  const sill = slotProbe.find(r => r.id === 'banjiha-sill:0');
+  ok('S-2 창턱 받침(반지하 제일 밝은 자리)이 onUid·occIdx 를 제대로 낸다',
+     sill && sill.onUid === 'banjiha-sill' && Number.isInteger(sill.occIdx),
+     JSON.stringify(sill));
+
+  /* 링의 fits 와 surfaceAt 의 ok 가 **모든 자리에서 일치**해야 한다 — 같은 함수를 부르니까 */
+  const agree = await page.eval(`(() => {
+    const v = window.view, rc = document.getElementById('roomCanvas').getBoundingClientRect();
+    const out = [];
+    for (const potD of [0.20, 0.30]) {
+      v.showSlotRings(true, { potD });
+      const ring = new Map(v.slotRings().map(r => [r.slotId, r.fits]));
+      for (const s of v.slots()) {
+        const sp = v.screenPosOf(s.slotId);
+        if (!sp) continue;
+        const r = v.surfaceAt(rc.left + sp.x, rc.top + sp.y, { potD });
+        if (ring.get(s.slotId) !== r.ok)
+          out.push({ potD, id: s.slotId, ring: ring.get(s.slotId), surface: r.ok, why: r.reason });
+      }
+    }
+    v.showSlotRings(false);
+    return out;
+  })()`);
+  ok('S-3 링의 fits 와 surfaceAt 의 ok 가 모든 자리에서 일치한다 (판정이 한 벌이다)',
+     agree.length === 0, JSON.stringify(agree.slice(0, 4)));
+
+  /* 매달린 조명·벽걸이 장식 위는 면이 아니다 */
+  const banned = await page.eval(`(() => {
+    const v = window.view, rc = document.getElementById('roomCanvas').getBoundingClientRect();
+    const bad = new Set();
+    v.three.scene.traverse(o => { const u = o.userData || {};
+      if (u.uid && (u.hangFromCeiling || (u.mount && !(u.slots && u.slots.length)))) bad.add(u.uid); });
+    const hitsBad = [];
+    for (let i = 1; i < 16; i++) for (let j = 1; j < 28; j++) {
+      const t = v.surfaceAt(rc.left + rc.width * i / 16, rc.top + rc.height * j / 28, { potD: 0.20 });
+      if (t.ok && t.onUid && bad.has(t.onUid)) hitsBad.push({ uid: t.onUid, y: t.y });
+    }
+    return { banned: [...bad], hitsBad: hitsBad.slice(0, 4) };
+  })()`);
+  ok('S-4 매달린 조명·벽걸이 위에는 못 놓는다 (천장등 포함)',
+     banned.banned.length > 0 && banned.hitsBad.length === 0,
+     `걸러야 할 것 ${JSON.stringify(banned.banned)} · 뚫린 것 ${JSON.stringify(banned.hitsBad)}`);
+
   /* ══ A 바닥 임의 지점 ═════════════════════════════════════════════════ */
   const floors = await page.eval(`(() => {
     const b = window.view.roomSize(), out = [];
@@ -553,6 +620,240 @@ async function main() {
       { x: ${(size.w / 2 + 2).toFixed(3)}, z: 0, rot: 0 }).then(() => null, e => e.message)`);
     ok('F-6 방 밖으로는 못 옮긴다 (한국어 이유)', typeof refuse === 'string' && /벽 밖/.test(refuse), String(refuse));
   }
+
+  /* ══ I 열쇠 해석 — 슬롯 id · free: 열쇠 · 화분 id ════════════════════
+     ★ 셋 다 같은 개체를 가리킬 수 있다. 푸는 곳이 하나(resolveKey)여야 안 어긋난다.
+       (game.html 의 상대 드래그가 screenPosOf 를 원점으로 쓴다 — 여기가 null 이면
+        화분이 화면 한가운데에서 끌리기 시작해 손맛이 통째로 어긋난다) */
+  const canvasRect = await page.eval(`(() => { const r = document.getElementById('roomCanvas').getBoundingClientRect();
+    return { w: r.width, h: r.height }; })()`);
+
+  const sp1 = await page.eval(`(() => ({
+    byKey:  window.view.screenPosOf('free:potFloor'),
+    byPot:  window.view.screenPosOf('potFloor'),
+    plant:  window.view.plants().find(p => p.potId === 'potFloor') || null
+  }))()`);
+  ok('I-1 자유 좌표 화분의 screenPosOf 가 캔버스 안의 좌표를 준다',
+     sp1.byKey && sp1.byKey.x > 0 && sp1.byKey.x < canvasRect.w &&
+     sp1.byKey.y > 0 && sp1.byKey.y < canvasRect.h,
+     JSON.stringify(sp1.byKey) + ` / 캔버스 ${canvasRect.w}×${canvasRect.h}`);
+  ok('I-2 free: 열쇠와 화분 id 가 같은 화면 좌표를 준다',
+     sp1.byPot && near(sp1.byKey.x, sp1.byPot.x, 1e-9) && near(sp1.byKey.y, sp1.byPot.y, 1e-9),
+     JSON.stringify(sp1));
+
+  const sp2 = await page.eval(`(async () => {
+    const a = window.view.screenPosOf('potFloor');
+    await window.view.setPlantAt('potFloor',
+      { x:${dst.got.x}, y:${dst.got.y}, z:${dst.got.z}, onUid:null, occIdx:null }, ${SPEC});
+    const b = window.view.screenPosOf('potFloor');
+    return { a, b, pos: window.view.plants().find(p => p.potId === 'potFloor').pos };
+  })()`);
+  ok('I-3 화분을 옮기면 screenPosOf 도 따라 움직인다',
+     sp2.a && sp2.b && Math.hypot(sp2.b.x - sp2.a.x, sp2.b.y - sp2.a.y) > 8,
+     `${JSON.stringify(sp2.a)} → ${JSON.stringify(sp2.b)}`);
+
+  /* 회전 — 자유 좌표 화분에 먹고, 되읽히고, 다시 그려도 유지된다 */
+  const yaw = await page.eval(`(() => {
+    const set = window.view.setPlantYaw('free:potFloor', 0.9);
+    return { set, byKey: window.view.plantYaw('free:potFloor'),
+             byPot: window.view.plantYaw('potFloor'),
+             live: window.view.plants().find(p => p.potId === 'potFloor').yaw };
+  })()`);
+  ok('I-4 자유 좌표 화분에 setPlantYaw 가 먹는다 (던지지 않는다)',
+     yaw.set === 0.9 && near(yaw.live, 0.9, 1e-6), JSON.stringify(yaw));
+  ok('I-5 free: 열쇠로도 화분 id 로도 같은 각도가 되읽힌다',
+     near(yaw.byKey, 0.9, 1e-6) && near(yaw.byPot, 0.9, 1e-6), JSON.stringify(yaw));
+
+  await sleep(150);       // REBUILD_MIN_MS(60ms) 를 넘겨 실제로 다시 짓게 한다
+  const yaw2 = await page.eval(`(async () => {
+    /* 날짜를 바꿔 **그루를 다시 짓게** 한다. 각도를 안 주고 좌표만 옮긴다 */
+    await window.view.setPlantAt('potFloor',
+      { x:${spot.got.x}, y:${spot.got.y}, z:${spot.got.z}, onUid:null, occIdx:null },
+      { kind:'monstera', growthDays: 220, seed: 7, band:'good' });
+    const p = window.view.plants().find(x => x.potId === 'potFloor');
+    return { yaw: window.view.plantYaw('potFloor'), live: p.yaw, atRot: p.at && p.at.rotY };
+  })()`);
+  ok('I-6 다시 그려도(좌표만 옮겨도) 각도가 유지된다',
+     near(yaw2.live, 0.9, 1e-6) && near(yaw2.yaw, 0.9, 1e-6) && near(yaw2.atRot, 0.9, 1e-6),
+     JSON.stringify(yaw2));
+
+  /* 슬롯 id · 화분 id 두 이름이 같은 개체를 가리킨다 */
+  const tri = await page.eval(`(async () => {
+    const s = window.view.slots().find(x => !x.occupied);
+    if (!s) return null;
+    await window.view.setPlant(s.slotId, { ...${SPEC}, potId: 'potTri' });
+    const a = window.view.resolveKey(s.slotId), b = window.view.resolveKey('potTri');
+    window.view.setPlantYaw('potTri', 1.2);
+    return { slotId: s.slotId, a, b, yawBySlot: window.view.plantYaw(s.slotId),
+             screenSame: JSON.stringify(window.view.screenPosOf(s.slotId)) ===
+                         JSON.stringify(window.view.screenPosOf('potTri')) };
+  })()`);
+  ok('I-7 슬롯 id 와 화분 id 가 같은 개체로 풀린다',
+     tri && tri.a && tri.b && tri.a.key === tri.b.key && tri.a.key === tri.slotId &&
+     tri.b.potId === 'potTri' && tri.screenSame,
+     JSON.stringify(tri));
+  ok('I-8 화분 id 로 돌린 각도를 슬롯 id 로 되읽는다', tri && near(tri.yawBySlot, 1.2, 1e-6),
+     tri && String(tri.yawBySlot));
+
+  /* 없는 열쇠 — 예전처럼 (회귀 없음) */
+  const missing = await page.eval(`(() => {
+    let threw = null;
+    try { window.view.setPlantYaw('없는자리:9', 1); } catch (e) { threw = e.message; }
+    let hlThrew = null, rings = 0;
+    try { window.view.highlightSlots(['없는자리:9']); } catch (e) { hlThrew = e.message; }
+    window.view.three.scene.traverse(o => { if (o.userData && o.userData.highlightSlotId) rings++; });
+    return { screen: window.view.screenPosOf('없는자리:9'), yaw: window.view.plantYaw('없는자리:9'),
+             resolved: window.view.resolveKey('없는자리:9'), threw, hlThrew, rings };
+  })()`);
+  ok('I-9 없는 열쇠는 null·0·throw 로 예전처럼 처리된다',
+     missing.screen === null && missing.yaw === 0 && missing.resolved === null &&
+     typeof missing.threw === 'string' && missing.hlThrew === null && missing.rings === 0,
+     JSON.stringify(missing));
+
+  /* 자유 좌표 화분도 빛낼 수 있다 — 탭해서 고른 것을 표시할 길 */
+  const hl = await page.eval(`(() => {
+    window.view.highlightSlots(['free:potFloor']);
+    const rings = [];
+    window.view.three.scene.traverse(o => {
+      if (o.userData && o.userData.highlightSlotId)
+        rings.push({ id: o.userData.highlightSlotId, x: +o.position.x.toFixed(3), z: +o.position.z.toFixed(3) });
+    });
+    const p = window.view.plants().find(x => x.potId === 'potFloor').pos;
+    window.view.highlightSlots([]);
+    let after = 0;
+    window.view.three.scene.traverse(o => { if (o.userData && o.userData.highlightSlotId) after++; });
+    return { rings, plant: { x:+p.x.toFixed(3), z:+p.z.toFixed(3) }, after };
+  })()`);
+  ok('I-10 자유 좌표 화분도 highlightSlots 로 빛낼 수 있다 (그 자리에 링이 선다)',
+     hl.rings.length === 1 && hl.rings[0].id === 'free:potFloor' &&
+     near(hl.rings[0].x, hl.plant.x, 1e-3) && near(hl.rings[0].z, hl.plant.z, 1e-3) && hl.after === 0,
+     JSON.stringify(hl));
+
+  /* ══ N 가구 불변식 · 얹힌 기구 ═══════════════════════════════════════
+     ★ "가구는 자기가 지금 있는 자리를 반드시 통과해야 한다."
+       슬롯 건과 같은 이야기다 — 현재 상태를 거절하는 판정은 판정이 아니라 고장이다.
+       방을 바꿔 가며 **모든 방의 모든 가구**를 돈다(2026-08-03 코어 창 지적). */
+  const rooms = ['banjiha', 'oneroom', 'tworoom', 'apartment', 'classroom', 'greenhouse'];
+  const homeFit = [];
+  for (const rid of rooms) {
+    await page.eval(`window.view.setRoom('${rid}').then(()=>1)`);
+    await sleep(900);
+    const r = await page.eval(`(() => {
+      const v = window.view, bad = [];
+      const list = v.furniture();
+      for (const f of list) {
+        const fit = v.furnitureFit(f.uid, { x: f.x, z: f.z, rot: f.rot });
+        if (!fit.ok) bad.push({ uid: f.uid, why: fit.reason });
+      }
+      return { room: '${rid}', n: list.length, bad,
+               riders: list.map(f => ({ uid: f.uid, r: v.ridersOf(f.uid) })).filter(x => x.r.length) };
+    })()`);
+    homeFit.push(r);
+  }
+  const fitBad = homeFit.filter(r => r.bad.length);
+  ok('N-1 모든 방의 모든 가구가 제자리 판정을 통과한다',
+     fitBad.length === 0 && homeFit.reduce((a, r) => a + r.n, 0) > 60,
+     homeFit.map(r => `${r.room} ${r.n - r.bad.length}/${r.n}`).join(' · ') + ' · ' +
+     JSON.stringify(fitBad.slice(0, 3)));
+
+  const bj = homeFit.find(r => r.room === 'banjiha');
+  ok('N-2 책상에 물린 클립등을 "얹힌 것"으로 알아본다',
+     bj && bj.riders.some(x => x.uid === 'banjiha-desk' && x.r.includes('banjiha-growlight-clip')),
+     JSON.stringify(bj && bj.riders));
+
+  /* ── 등이 따라오나 · 따라온 뒤 그 자리 PPFD 가 조도 계약과 맞나 ──
+     ★ 조도 엔진을 붙여서 다시 띄운다(?engine=1). 그래야 방을 다시 짓는 쪽이
+       light_adapter 가 되고, 화면과 계산이 같은 방을 보는지 실제로 잴 수 있다. */
+  await page.goto(`${BASE}/tools/room_view_demo.html?room=banjiha&engine=1`);
+  await page.waitFor('!!window.view && !!window.engine', 120000, 200);
+  await page.eval(INSTALL);
+  await sleep(500);
+
+  const LAMP = `{ weather:'clear', season:'summer', lampCount: 2, litHours: 16 }`;
+  const before = await page.eval(`(() => {
+    const v = window.view, e = window.engine;
+    const desk = v.furniture().find(f => f.uid === 'banjiha-desk');
+    const slot = v.slots().find(s => s.slotId === 'banjiha-desk:0');
+    const clip = e.furnitureList().find(f => f.uid === 'banjiha-growlight-clip');
+    return { desk, slot, clip,
+             rigs: v.lightRigs().filter(r => r.grow),
+             lamp: e.dliAt(slot.pos, ${LAMP}).dli_lamp };
+  })()`);
+  ok('N-3 조도 엔진을 붙인 방 뷰가 뜬다', !!(before.desk && before.slot && before.clip),
+     JSON.stringify({ desk: before.desk && before.desk.uid, clip: before.clip }));
+
+  const dxF = 0.5;
+  const movedF = await page.eval(`(async () => {
+    const v = window.view, e = window.engine;
+    const d = v.furniture().find(f => f.uid === 'banjiha-desk');
+    /* 갈 수 있는 자리를 찾는다 — 좁은 방이라 후보가 많지 않다 */
+    let dest = null, bestD = 0;
+    for (let x = -2.2; x <= 2.2; x += 0.1) for (let z = -1.8; z <= 1.8; z += 0.1) {
+      const fit = v.furnitureFit(d.uid, { x, z, rot: d.rot });
+      if (!fit.ok) continue;
+      const dd = Math.hypot(x - d.x, z - d.z);
+      if (dd > bestD && dd < 1.2) { bestD = dd; dest = { x: +x.toFixed(3), z: +z.toFixed(3) }; }
+    }
+    if (!dest) return { error: '갈 자리가 없습니다' };
+    const r = await v.commitFurnitureAt(d.uid, { x: dest.x, z: dest.z, rot: d.rot });
+    return { r, dest, dist: +bestD.toFixed(3) };
+  })()`);
+  ok('N-4 책상을 옮기면 클립등이 같이 간다고 보고한다',
+     !movedF.error && movedF.r && movedF.r.riders && movedF.r.riders.includes('banjiha-growlight-clip'),
+     JSON.stringify(movedF));
+
+  await sleep(500);
+  const after = await page.eval(`(() => {
+    const v = window.view, e = window.engine;
+    const desk = v.furniture().find(f => f.uid === 'banjiha-desk');
+    const slot = v.slots().find(s => s.slotId === 'banjiha-desk:0');
+    const clip = e.furnitureList().find(f => f.uid === 'banjiha-growlight-clip');
+    const ov = e.furnitureOverrides();
+    return { desk, slot, clip, ov,
+             rigs: v.lightRigs().filter(r => r.grow),
+             lampNew: e.dliAt(slot.pos, ${LAMP}).dli_lamp,
+             lampOld: e.dliAt(${JSON.stringify(before.slot && before.slot.pos)}, ${LAMP}).dli_lamp,
+             fitHome: v.furnitureFit('banjiha-desk', { x: desk.x, z: desk.z, rot: desk.rot }) };
+  })()`);
+
+  const ddx = movedF.dest ? movedF.dest.x - before.desk.x : 0;
+  const ddz = movedF.dest ? movedF.dest.z - before.desk.z : 0;
+  ok('N-5 클립등 좌표가 책상과 같은 만큼 움직였다 (조립 정의가 같이 바뀐다)',
+     after.clip && near(after.clip.x - before.clip.x, ddx, 0.02) &&
+     near(after.clip.z - before.clip.z, ddz, 0.02),
+     `책상 Δ(${ddx.toFixed(2)}, ${ddz.toFixed(2)}) · 클립등 Δ(` +
+     `${after.clip ? (after.clip.x - before.clip.x).toFixed(2) : '?'}, ` +
+     `${after.clip ? (after.clip.z - before.clip.z).toFixed(2) : '?'})`);
+
+  const rigMoved = (() => {
+    if (!before.rigs.length || !after.rigs.length) return false;
+    /* 옮긴 책상 쪽 등(클립)이 3D 에서도 같이 갔나 — lightRigs 는 조도 계산이 쓰는 그 좌표다 */
+    const b0 = before.rigs.map(r => `${r.pos.x},${r.pos.z}`);
+    const a0 = after.rigs.map(r => `${r.pos.x},${r.pos.z}`);
+    return b0.join('|') !== a0.join('|');
+  })();
+  ok('N-6 3D 의 조명 기구 좌표도 따라 움직였다 (화면과 계산이 같은 등을 본다)', rigMoved,
+     `전 ${JSON.stringify(before.rigs.map(r => r.pos))} → 후 ${JSON.stringify(after.rigs.map(r => r.pos))}`);
+
+  /* ★ "그 자리 PPFD 가 조도 계약과 어긋나지 않는다"를 **혼동 없이** 잰다.
+     반지하에는 식물등이 둘이다(선반 밑 바 등 + 책상 클립등). 책상을 옮기면 선반과의
+     거리도 바뀌므로 자리의 총 등 조도는 당연히 달라진다 — 그걸로는 아무것도 증명 못 한다.
+     증명해야 하는 것은 **클립등과 그 자리의 기하가 그대로인가**(=등이 따라왔나)와
+     **조립 정의(계산이 읽는 그것)에 새 좌표가 실려 있나** 둘이다. */
+  const clipB = before.rigs.find(r => r.id === 'growlight_clip');
+  const clipA = after.rigs.find(r => r.id === 'growlight_clip');
+  const distB = clipB && before.slot ? Math.hypot(clipB.pos.x - before.slot.pos.x, clipB.pos.z - before.slot.pos.z) : NaN;
+  const distA = clipA && after.slot ? Math.hypot(clipA.pos.x - after.slot.pos.x, clipA.pos.z - after.slot.pos.z) : NaN;
+  const ovClip = after.ov && after.ov['banjiha-growlight-clip'];
+  ok('N-7 등이 자리와 같은 거리를 유지한 채 따라왔고, 조도 계약이 그 새 좌표를 읽는다',
+     near(distA, distB, 0.02) && after.lampNew > 0 && !!ovClip &&
+     near(ovClip.x, clipA.pos.x, 0.02) && near(ovClip.z, clipA.pos.z, 0.02),
+     `등–자리 거리 ${distB.toFixed(3)} → ${distA.toFixed(3)} · 계약 좌표 ${JSON.stringify(ovClip)} ` +
+     `vs 3D ${JSON.stringify(clipA && clipA.pos)} · 그 자리 등 조도 ${before.lamp} → ${after.lampNew}`);
+  ok('N-8 옛 자리는 등이 떠나 어두워졌다', after.lampOld < before.lamp - 1e-9,
+     `${before.lamp} → ${after.lampOld}`);
+  ok('N-9 옮긴 뒤에도 책상이 제자리 판정을 통과한다', after.fitHome && after.fitHome.ok === true,
+     JSON.stringify(after.fitHome));
 
   /* ══ H 콘솔 ═══════════════════════════════════════════════════════════ */
   const hard = errs.filter(e => !/favicon/.test(e));

@@ -254,7 +254,9 @@ export function nextDay(S, io) {
           err.growthJumpApplied = arrived.arrivalGrowthDays;
           throw err;
         }
-        markMonsteraArrived(S.firstPlay, arrived.slotId);
+        /* ★ 화분을 통째로 넘긴다 (2026-08-03) — slotId 만 넘기면 좌표가 사본에서 빠진다.
+           정본은 화분(arrived.slotId · arrived.at)이고 fp.monstera 는 그걸 베낀 사본이다. */
+        markMonsteraArrived(S.firstPlay, arrived);
         markMonsteraPhase(S.firstPlay, gp.phase);
         arrivalPhase = gp.phase;
         pushLog(S, '🌱 “콩나물을 잘 키웠구나. 이건 좀 더 어려울 거야.”');

@@ -5,7 +5,15 @@
 
    이 모듈이 맡는 것은 첫 수확 한 번과 그 결과 표시뿐이다.
    월세·현금·상점·반복 생산은 넣지 않는다. 몬스테라 형태는 growth가 맡는다.
+
+   ★ 자리는 화분과 **똑같은 모양**이다 (2026-08-03).
+     콩나물 시루도 임의 좌표에 놓인다. 그래서 여기서 두 번째 배치 개념을 만들지 않고
+     `place.js` 의 `at = {x,y,z,rotY,onUid,occIdx}` 와 불변식(resolvePlacement)을 그대로 쓴다.
+       추천 자리 위 : slotId = 그 자리의 안정 id  ·  at = 그 자리 좌표
+       자유 좌표    : slotId = `free:{id}`        ·  at = 그 좌표
+     `slotId` 는 **계약 열쇠라 버리지 않는다** — 옛 세이브와 헤드리스 시뮬(room_profile)이 그걸로 찾는다.
 ============================================================ */
+import { spotOf } from './place.js';
 
 /* 작물 품질표는 아직 plan JSON에 없다(docs/first_play.md §3의 "구현 없음").
    이번 얇은 통합에서는 이 모듈 한 곳만 임시 계약으로 가지며 UI·루프에는 숫자를 복제하지 않는다. */
@@ -21,6 +29,14 @@ export const FIRST_PLAY_RULES = Object.freeze({
 export const FIRST_PLAY_ASSETS = Object.freeze({
   monsteraPotDiameterM: 0.202
 });
+
+/* ★ 자유 좌표일 때 계약 열쇠에 붙는 이름 (2026-08-03).
+   콩나물 시루는 S.pots 에 없는 물건이라 화분 id 를 빌려 쓸 수 없다 — 자기 이름을 갖는다.
+   `free:crop_01` 이 그대로 하루치 계약(daily_light/1)의 slotId 가 되고 세이브에도 남는다. */
+export const BEANSPROUT_ID = 'crop_01';
+/* 몬스테라는 **자기 화분이 있다**(S.pots[0]). 그 화분 id 가 정본이고 여기 값은 기본값일 뿐이다 —
+   state.givePlant 의 `opt.id || 'pot_01'` 과 같은 값이다. 좌표를 직접 넘길 때만 쓰인다. */
+export const MONSTERA_POT_ID = 'pot_01';
 
 /* ★ 완료는 **정확히 이 단계에서만** 인정한다 (2026-08-02 정정).
    뒤 단계를 함께 통과시키면 "말린 새순을 봤다"가 아니라 "언젠가 지나갔다"가 된다 —
@@ -80,7 +96,9 @@ export function createFirstPlayState(opt = {}) {
     phase: 'place_beansprout',
     completed: false,
     beansprout: {
+      /* slotId = 계약 열쇠 · at = 좌표 정본. 화분(S.pots[])과 같은 두 칸이다. */
       slotId: null,
+      at: null,
       ageDays: 0,
       harvestDays: rules ? rules.harvestDays : 0,
       dliHist: [],
@@ -98,7 +116,10 @@ export function createFirstPlayState(opt = {}) {
     },
     monstera: {
       arrived: false,
+      /* ★ 정본은 **화분 쪽**(S.pots[0].slotId · .at)이다. 여기 둘은 첫 플레이 화면이 보는 사본이다 —
+         튜토리얼 안내가 화분 배열을 뒤지지 않게 두려고 남긴다. 판정에는 쓰지 않는다. */
       slotId: null,
+      at: null,
       growthPhase: null
     }
   };
@@ -108,26 +129,49 @@ export function createFirstPlayState(opt = {}) {
    예전엔 하루라도 자라면 잠갔는데, 그 자리의 조도 계약이 깨지면 **고칠 방법이 사라졌다** —
    매일 예외만 나고 시루는 못 옮기는 막다른 길이 됐다. 옮겨도 **과거 DLI 이력은 그대로 둔다**:
    이력은 "이 콩나물이 실제로 받은 빛"이라 자리를 바꿨다고 없던 일이 되지 않는다.
-   수확 뒤에는 결과가 이미 확정됐으므로 막는다. */
-export function placeBeansprout(fp, slotId) {
+   수확 뒤에는 결과가 이미 확정됐으므로 막는다.
+
+   ★ 좌표도 받는다 (2026-08-03). 셋 다 같은 함수다 — 기존 호출부(문자열)는 안 깨진다.
+       placeBeansprout(fp, 'banjiha-desk:1')                              추천 자리 이름
+       placeBeansprout(fp, {x,y,z,onUid,occIdx}, { size, slots, snapDist }) 임의 좌표
+       placeBeansprout(fp, { slotId, at })                                이미 자리를 가진 물건
+     opt.slots 를 같이 주면 이름으로 놓아도 좌표까지 세워진다(자유 좌표와 같은 정본을 갖는다). */
+export function placeBeansprout(fp, target, opt = {}) {
   if (!fp || !fp.beansprout) throw new Error('[첫 플레이] 콩나물 상태가 없습니다');
-  if (!slotId) throw new Error('[첫 플레이] 콩나물을 둘 자리를 골라 주세요');
+  if (target == null || target === '')
+    throw new Error('[첫 플레이] 콩나물을 둘 자리를 골라 주세요');
   if (fp.beansprout.harvested)
     throw new Error('[첫 플레이] 이미 수확한 첫 시루는 옮길 수 없습니다');
-  const moved = fp.beansprout.slotId != null && fp.beansprout.slotId !== slotId;
-  fp.beansprout.slotId = slotId;
+
+  const spot = spotOf(target, { id: BEANSPROUT_ID, ...opt });
+  const moved = fp.beansprout.slotId != null && fp.beansprout.slotId !== spot.slotId;
+  fp.beansprout.slotId = spot.slotId;
+  /* 좌표를 못 세운 경우(얇은 슬롯 · 좌표 없는 헤드리스 표)는 **null 로 남긴다.** 지어내면
+     그 시루만 방 한가운데로 순간이동한다 — 그때는 예전처럼 slotId 로 돈다. */
+  fp.beansprout.at = spot.at;
   fp.phase = 'grow_beansprout';
-  return { ...fp.beansprout, moved, keptDays: fp.beansprout.dliHist.length };
+  return { ...fp.beansprout, moved, keptDays: fp.beansprout.dliHist.length,
+           snappedTo: spot.snappedTo, dist: spot.dist };
 }
 
 function validDli(dli) {
   return typeof dli === 'number' && Number.isFinite(dli) && dli >= 0;
 }
 
-export function cropDliFromReport(report, slotId) {
+/* ★ 자유 좌표여도 **찾는 법은 그대로 slotId 다** (2026-08-03).
+   좌표로 옮긴 시루는 계약에 `free:crop_01` 이라는 이름으로 실린다(light_adapter.slotsFor).
+   그래서 여기서 좌표를 다시 재지 않는다 — 계약이 낸 값과 코어가 따로 낸 값이 갈리면
+   "화면의 밝기"와 "판정에 쓴 밝기"가 달라진다. 계약 한 곳만 본다.
+   ref 는 slotId 문자열이거나 콩나물 상태 객체({slotId})다. */
+export function cropDliFromReport(report, ref) {
+  const slotId = (ref && typeof ref === 'object') ? ref.slotId : ref;
   if (!slotId) throw new Error('[첫 플레이] 콩나물 자리가 정해지지 않았습니다');
   const slot = ((report && report.slots) || []).find(s => s && s.slotId === slotId);
-  if (!slot) throw new Error(`[첫 플레이] 콩나물 자리 ${slotId}가 오늘 조도 계약에 없습니다`);
+  if (!slot) throw new Error(`[첫 플레이] 콩나물 자리 ${slotId}가 오늘 조도 계약에 없습니다` +
+    (String(slotId).startsWith('free:')
+      ? ' — 자유 좌표 시루는 state.placedItems(S) 를 거쳐 계약에 실립니다. ' +
+        '정적 방 프로파일(room_profile)에는 임의 좌표 표가 없어 실리지 않습니다'
+      : ''));
   if (!validDli(slot.dli))
     throw new Error(`[첫 플레이] 콩나물 자리의 DLI를 쓸 수 없습니다: ${slot.dli}`);
   return slot.dli;
@@ -182,21 +226,28 @@ export function advanceBeansproutDay(fp, dli) {
   };
 }
 
-export function markMonsteraArrived(fp, slotId) {
+/* 콩나물과 **같은 세 가지 입력**을 받는다(이름 · 좌표 · 화분 객체).
+   loop.js 는 방금 만든 화분을 통째로 넘긴다 — 화분이 정본이므로 베끼는 게 가장 안 어긋난다. */
+export function markMonsteraArrived(fp, target, opt = {}) {
   if (!fp.beansprout.harvested)
     throw new Error('[첫 플레이] 콩나물을 수확하기 전에는 몬스테라가 오지 않습니다');
-  if (!slotId) throw new Error('[첫 플레이] 몬스테라 도착 자리가 없습니다');
+  if (target == null || target === '') throw new Error('[첫 플레이] 몬스테라 도착 자리가 없습니다');
+  const spot = spotOf(target, { id: MONSTERA_POT_ID, ...opt });
   fp.monstera.arrived = true;
-  fp.monstera.slotId = slotId;
+  fp.monstera.slotId = spot.slotId;
+  fp.monstera.at = spot.at;
   fp.phase = 'move_monstera';
   return fp.monstera;
 }
 
-export function moveMonstera(fp, slotId) {
+export function moveMonstera(fp, target, opt = {}) {
   if (!fp.monstera.arrived) throw new Error('[첫 플레이] 아직 몬스테라가 도착하지 않았습니다');
-  if (!slotId) throw new Error('[첫 플레이] 몬스테라를 옮길 자리를 골라 주세요');
-  fp.monstera.slotId = slotId;
-  return slotId;
+  if (target == null || target === '')
+    throw new Error('[첫 플레이] 몬스테라를 옮길 자리를 골라 주세요');
+  const spot = spotOf(target, { id: MONSTERA_POT_ID, ...opt });
+  fp.monstera.slotId = spot.slotId;
+  fp.monstera.at = spot.at;
+  return spot.slotId;
 }
 
 /* 직전 관측보다 형태가 나아갔나 — 단계가 바뀌었거나, 같은 단계 안에서 진행이 올랐거나.

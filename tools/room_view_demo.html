@@ -310,13 +310,44 @@ function refreshSlots() {
   $('hudRoom').textContent = `${view.roomId} · 자리 ${list.length}칸`;
 }
 
+/* ★ ?engine=1 — 조도 엔진(light_adapter)을 붙여서 띄운다.
+   ------------------------------------------------------------
+   평소 이 데모는 엔진 없이 방 뷰가 혼자 방을 짓는다(가볍고 빠르다).
+   엔진을 붙이면 **가구를 옮길 때 방을 다시 짓는 쪽이 light_adapter 가 된다** —
+   그래야 "등이 가구를 따라간 뒤 그 자리 PPFD 가 조도 계약과 맞나"를 실제로 잴 수 있다.
+   game.html 이 쓰는 배선과 같은 인자로 만든다. */
+let ENGINE = null;
+async function ensureEngine() {
+  if (ENGINE) return ENGINE;
+  const j = (p, fb) => fetch(p).then(r => r.json()).catch(() => fb);
+  const [houseRooms, winPresets, doorPresets, finishes, furnPresets, lightPresets, shadePresets,
+         lightTh, weatherBalance] = await Promise.all([
+    j('./data/house_rooms.json', { rooms: {} }),
+    j('./data/window_presets.json', {}).then(d => d.presets || d),
+    j('./data/door_presets.json', {}).then(d => d.presets || d),
+    j('./data/room_finishes.json', null),
+    j('./data/furniture_presets.json', {}).then(d => d.presets || d),
+    j('./data/lighting_presets.json', {}),
+    j('./data/shading_presets.json', { presets: {} }),
+    j('./data/balance/light_thresholds.json', null),
+    j('./data/balance/weather.json', null)
+  ]);
+  const { createLightEngine } = await import('./src/game/light_adapter.js');
+  ENGINE = createLightEngine({ houseRooms, winPresets, doorPresets, finishes, furnPresets,
+                               lightPresets, shadePresets, lightTh, weatherBalance });
+  window.engine = ENGINE;
+  return ENGINE;
+}
+
 async function boot(roomId) {
   if (view) { view.dispose(); view = null; }
   logEl.innerHTML = '';
   log('방 조립 시작: ' + roomId, 'k');
   const t0 = performance.now();
+  const useEngine = new URLSearchParams(location.search).get('engine') === '1';
   view = await createRoomView($('roomCanvas'), {
     roomId,
+    lightEngine: useEngine ? await ensureEngine() : null,
     /* ?defer=0 이면 예전처럼 식물 에셋을 방과 같이 받는다 — 부팅 측정 비교용이다 */
     deferPlantAssets: new URLSearchParams(location.search).get('defer') !== '0',
     onSlotTap: id => { window.__lastTap = { type: 'slot', id }; $('slot').value = id; $('from').value = id; tip('빈 자리 ' + id); log('onSlotTap ' + id, 'k'); },

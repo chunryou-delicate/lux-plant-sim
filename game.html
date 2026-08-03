@@ -290,9 +290,18 @@
     font-size:12.5px;color:var(--dim);background:rgba(16,13,24,.86);border:1px solid rgba(255,255,255,.12)}
   /* ★이동 모드 — 화면 아무 데나 끌어도 잡힌다.
      투명 판이 3D 위를 덮어 카메라 회전을 막는다(끌다가 방이 돌면 조작이 망가진다). */
+  /* 가구 고름 — 화분과 같은 자리에 뜬다. 둘이 동시에 뜨는 일은 없다(고르면 서로 푼다) */
+  #furnActions{position:absolute;z-index:27;left:12px;right:12px;bottom:12px;display:none;
+    gap:6px;align-items:center}
+  #stage.furnpicked #furnActions{display:flex}
+  #furnActions button{flex:1;min-height:var(--tap);font-family:'Jua';font-size:14px;border-radius:12px}
+  #furnActions .who{flex:0 0 auto;display:flex;align-items:center;padding:0 12px;border-radius:12px;
+    font-family:'Jua';font-size:13px;background:rgba(16,13,24,.82);color:var(--gold)}
   #moveCatcher{position:absolute;z-index:28;inset:0;display:none;touch-action:none}
   #stage.moving #moveCatcher{display:block}
-  #stage.moving #plantActions{display:none}
+  #stage.moving #plantActions,#stage.moving #furnActions{display:none}
+  #stage.furnmoving #moveCatcher{display:block}
+  #stage.furnmoving #furnActions{display:none}
 
   /* ★배치는 드래그로만 한다 (박사님 2026-08-03).
      드롭다운+[두기]는 방을 안 보고도 놓을 수 있어서 "자리를 고른다"는 감각이 사라진다.
@@ -536,6 +545,13 @@
       <button id="pickTurn" class="ghost">돌리기</button>
       <button id="pickZoom" class="ghost">자세히</button>
       <button id="pickClose" class="ghost" aria-label="닫기">✕</button>
+    </div>
+    <!-- 가구를 골랐을 때 — 화분과 버튼이 다르다(자세히·확대가 없다) -->
+    <div id="furnActions">
+      <span class="who" id="furnName">—</span>
+      <button id="furnMove" class="primary">옮기기</button>
+      <button id="furnTurn" class="ghost">돌리기</button>
+      <button id="furnClose" class="ghost" aria-label="닫기">✕</button>
     </div>
     <iframe id="growth" src="./plant_grow.html?embed=game" title="식물 확대"></iframe>
     <button id="closeZoom" aria-label="확대 닫기">✕</button>
@@ -826,14 +842,17 @@
 </script>
 
 <script type="module">
-import { newState, SIM_MODES, pot0, pushLog, givePlant, hasPlant, ARRIVAL } from './src/game/state.js';
+import { newState, SIM_MODES, pot0, pushLog, givePlant, hasPlant, ARRIVAL,
+         setPotAt, setPotSlot, setCropAt, setFurniturePlacement, furnitureOverrides } from './src/game/state.js';
+import { isFreeSlotId } from './src/game/place.js';
 import {
   FIRST_PLAY_ASSETS,
   firstPlayRulesFromBalance,
   openSiruContractFromManifest,
   moveMonstera,
   placeBeansprout,
-  slotFitsDiameter
+  slotFitsDiameter,
+  BEANSPROUT_ID
 } from './src/game/first_play.js';
 import { createLightEngine } from './src/game/light_adapter.js';
 import { createGrowthAdapter } from './src/game/growth_adapter.js';
@@ -923,6 +942,12 @@ const FURN_KO = [
   ['bed', '침대'], ['wardrobe', '옷장'], ['sofa', '소파']
 ];
 function slotLabel(slotId) {
+  /* ★자유 좌표에는 자리 이름이 없다 — `free:crop_01` 을 가구 이름으로 읽으면 "가구"가 된다.
+     그 자리에 무엇이 서 있는지로 부른다. 좌표를 이름으로 부를 수는 없다. */
+  if (isFreeSlotId(slotId)) {
+    const id = String(slotId).slice(5);
+    return id === BEANSPROUT_ID ? '열린 시루' : '몬스테라';
+  }
   const [uid, tier] = String(slotId || '').split(':');
   const key = uid.toLowerCase();
   /* 물리 슬롯이 알려 주는 종류(owner)를 먼저 보고, 없으면 uid 키워드로 찾는다 */
@@ -998,6 +1023,11 @@ function arrive(slotId) {
 
 function buildRoom(id) {
   io.light.build(id);
+  /* ★플레이어가 옮겨 둔 가구를 되살린다. 안 하면 방을 다시 지을 때마다 가구가 제자리로
+     돌아가고, 그 그림자를 보고 고른 화분 자리가 조용히 뜻을 잃는다.
+     ⚠ data/house_rooms.json 은 house 소유다 — 메모리 사본에만 덮어쓴다. */
+  const fo = furnitureOverrides(S);
+  if (fo && Object.keys(fo).length) { try { io.light.setFurnitureOverrides(fo); } catch (e) { console.warn('[방] 가구 자리 복원 실패 —', e && e.message); } }
   io.light.clearCache();
   S.home.room = id;
   if (pot0(S)) pot0(S).slotId = null;
@@ -1272,7 +1302,9 @@ function draw() {
 $('room').onchange = e => buildRoom(e.target.value);
 $('slot').onchange = e => {
   if (pot0(S)) {
-    pot0(S).slotId = e.target.value;
+    /* ★slotId 만 갈아 끼우면 안 된다 — 좌표가 이미 있는 화분이면 "자리가 어긋납니다"로 던진다.
+       setPotSlot 은 그 자리의 좌표까지 같이 세운다. */
+    setPotSlot(S, pot0(S), e.target.value, io.light.room.slots);
     if (S.firstPlay.enabled) moveMonstera(S.firstPlay, e.target.value);
     pushLog(S, `🪴 몬스테라를 ${slotLabel(e.target.value)}(으)로 옮겼습니다`);
     unlockAfterFix();
@@ -1506,11 +1538,11 @@ async function bootRoomView() {
     roomView = await mod.createRoomView($('roomCanvas'), {
       roomId: S.home.room, lightEngine: io.light,   /* ★S.room 이 아니다 — state.js 는 home.room 에 둔다 */
       onProgress: bootProgress,                     /* 무엇을 기다리는지 화면에 */
-      onCharacterTap: (id) => roomView && roomView.selectCharacter(id),
+      onCharacterTap: (id) => { roomTapped(); roomView && roomView.selectCharacter(id); },
       /* 탭은 **고르기**다. 바로 확대로 넘어가면 옮기거나 돌릴 기회가 없다 —
          고른 뒤에 [옮기기] [돌리기] [자세히] 중에서 고른다. */
-      onPlantTap: (slotId) => picked.select(slotId),
-      onSlotTap: (slotId) => { if (!picked.slotId) placeMode.pick(slotId); },
+      onPlantTap: (slotId) => { roomTapped(); furnPicked.clear(); picked.select(slotId); },
+      onSlotTap: (slotId) => { roomTapped(); if (!picked.slotId) placeMode.pick(slotId); },
       /* ★모든 오류가 "방을 못 그렸다"는 아니다. 미리보기·하이라이트처럼 곁가지가 실패해도
          방은 그대로 있다. 그걸 치명으로 띄우면 멀쩡한 화면을 고장으로 읽게 만든다 —
          실제로 그랬다. 방이 실제로 안 보일 때만 덮는다. */
@@ -1523,7 +1555,7 @@ async function bootRoomView() {
     });
     /* 진단용 손잡이. 브라우저 콘솔에서 방 상태를 볼 수 있게 낸다 —
        읽기용이고 게임은 이걸 안 쓴다(밖에서 켜면 검증이 장식이 되는 것과 같은 이유로 세터는 없다). */
-    window.__rv = roomView; window.__picked = picked; window.__drag = drag;
+    window.__rv = roomView; window.__picked = picked; window.__drag = drag; window.__io = io;
     window.__S = () => S;                    /* 진단용 — 읽기 전용으로 쓴다 */
     $('stage').classList.add('room-ok');     /* 방이 떴다 — 빈 무대 안내를 걷는다 */
     bootProgress(null);                      /* 진행 표시를 걷는다 */
@@ -1578,14 +1610,16 @@ function syncRoom() {
     if (my !== syncSeq) return;         // 이미 지난 요청이면 조용히 버린다
     console.warn('[방] ' + what + ' 갱신 실패 —', (e && e.message) || e);
   };
-  clearIfMoved('monstera', p && p.slotId, warn);
-  clearIfMoved('beansprout', b && b.slotId, warn);
+  /* ★몬스테라는 이제 화분 id 로 잡는다 — setPlantAt 이 옛 자리를 알아서 걷는다.
+     자리를 열쇠로 삼던 때는 옮길 때마다 옛 자리가 남아 두 개로 보였다. */
+  if (!(p && p.at)) clearIfMoved('monstera', p && p.slotId, warn);
+  if (!(b && b.at)) clearIfMoved('beansprout', b && b.slotId, warn);
   /* ★식물등은 **산 만큼만** 보인다 (박사님 2026-08-03: "등도 다 없애, 천장등만 빼고").
      아직 안 산 등이 방에 놓여 있으면 "이미 있는데 왜 또 사나"가 된다.
      ⚠ 조도 계산은 안 건드린다 — 안 켠 등은 어차피 빛을 안 낸다. 화면만 맞춘다. */
   if (roomView.setGrowLights) { try { roomView.setGrowLights(S.lamps.count || 0); } catch { } }
   try {
-    Promise.resolve(roomView.setPlant(p && p.slotId, p ? {
+    const potSpec = p ? {
       kind: 'monstera',
       phaseId: lastTurn && lastTurn.growthPhase && lastTurn.growthPhase.phaseId,
       progress01: lastTurn && lastTurn.growthPhase && lastTurn.growthPhase.progress01,
@@ -1594,15 +1628,24 @@ function syncRoom() {
          코어는 이미 이 값을 갖고 있으므로 안 넘길 이유가 없다. */
       growthDays: lastTurn && lastTurn.effectiveGrowthDays,
       band: lastTurn && lastTurn.band,
-      fade: p.fade
-    } : null)).catch(warn('몬스테라'));
-    if (b && b.slotId) {
+      fade: p.fade,
+      potD: ARRIVAL_POT_D,
+      potId: p.id
+    } : null;
+    /* 좌표가 있으면 좌표로, 없으면 옛 자리 경로로 — 둘이 같은 개체를 가리키게 potId 를 붙인다 */
+    Promise.resolve(p && p.at && roomView.setPlantAt
+      ? roomView.setPlantAt(p.id, p.at, potSpec)
+      : roomView.setPlant(p && p.slotId, potSpec)).catch(warn('몬스테라'));
+    if (b && (b.at || b.slotId)) {
       /* ★progress01 을 반드시 넘긴다. 안 넘기면 room_view 안에서 lerp(4,11,undefined)가
          NaN 이 되어 **시루만 놓이고 콩나물이 0포기** 난다 — 빈 그릇만 보인다. */
       const days = S.firstPlay.rules ? S.firstPlay.rules.harvestDays : 4;
       const p01 = Math.max(0, Math.min(1, (b.ageDays || 0) / Math.max(1, days)));
-      Promise.resolve(roomView.setPlant(b.slotId, { kind: 'beansprout', progress01: p01 }))
-        .catch(warn('콩나물'));
+      const cropSpec = { kind: 'beansprout', progress01: p01,
+                         potD: OPEN_SIRU.diameterM, potId: BEANSPROUT_ID };
+      Promise.resolve(b.at && roomView.setPlantAt
+        ? roomView.setPlantAt(BEANSPROUT_ID, b.at, cropSpec)
+        : roomView.setPlant(b.slotId, cropSpec)).catch(warn('콩나물'));
     }
   } catch (e) { warn('방')(e); }
 }
@@ -1631,6 +1674,66 @@ const placeMode = {
   }
 };
 
+/* ══ 자유 배치 (박사님 2026-08-03: "모든 가구나 식물을 자유배치") ══════════
+   조도는 좌표 하나면 난다 — 슬롯은 미리 재 둔 점이었을 뿐이다(커밋 74f52c3 의 H).
+   그래서 여기서는 **화면을 쏘아 면을 찾고 그 좌표를 그대로 쓴다.**
+
+   ★추천 자리는 원으로만 알린다. 붙일지 말지는 여기서 정한다 —
+     room_view 는 일부러 안 붙인다("원 밖에도 놓을 수 있어야 한다"). */
+const SNAP_PX = 44;                  // 이만큼 가까우면 추천 자리에 붙는다(폰 손가락 폭)
+const freePlace = {
+  /* 화면 한 점 아래의 놓을 수 있는 면. 못 놓으면 ok:false 와 한국어 이유가 온다. */
+  surfaceAt(px, py, potD) {
+    if (!roomView || !roomView.surfaceAt) return null;
+    const r = $('roomCanvas').getBoundingClientRect();
+    if (px < r.left || px > r.right || py < r.top || py > r.bottom) return null;  // 방 밖 = 취소
+    try { return roomView.surfaceAt(px, py, { potD }); } catch { return null; }
+  },
+  /* 추천 자리가 화면에서 코앞이면 거기 붙인다. 3D 거리가 아니라 **화면 거리**로 잰다 —
+     같은 3D 거리라도 멀리 있는 자리는 화면에서 작게 보여 손가락 감각과 안 맞는다. */
+  snap(hit, px, py) {
+    if (!hit || !hit.ok || !hit.nearest || !roomView.screenPosOf) return hit;
+    let sp = null; try { sp = roomView.screenPosOf(hit.nearest.slotId); } catch { }
+    if (!sp) return hit;
+    const r = $('roomCanvas').getBoundingClientRect();
+    if (Math.hypot(r.left + sp.x - px, r.top + sp.y - py) > SNAP_PX) return hit;
+    const n = hit.nearest;
+    if (n.maxPotD != null && hit.potD != null && n.maxPotD < hit.potD) return hit;  // 안 올라가는 자리엔 안 붙인다
+    return { ...hit, ...n.pos, onUid: n.onUid ?? hit.onUid, occIdx: n.occIdx ?? hit.occIdx,
+             snappedTo: n.slotId };
+  },
+  /* 놓을 자리를 반투명으로 보여 준다. 못 놓는 자리면 붉게. */
+  preview(hit, potD, potId) {
+    if (!roomView || !roomView.previewAt) return;
+    try {
+      if (!hit) { roomView.previewAt(null); return; }
+      roomView.previewAt({ x: hit.x, y: hit.y, z: hit.z, rotY: hit.rotY || 0,
+                           onUid: hit.onUid, occIdx: hit.occIdx },
+                         { potD, valid: !!hit.ok, potId });
+    } catch { }
+  },
+  clear() { try { roomView && roomView.clearPreview && roomView.clearPreview(); } catch { } },
+  rings(on, potD, near) {
+    if (!roomView || !roomView.showSlotRings) return;
+    try { roomView.showSlotRings(on, { potD, near, nearMax: 0.45 }); } catch { }
+  },
+  /* 그 자리가 무엇이라고 불리는지 — 추천 자리면 이름, 아니면 밝기로 말한다.
+     ★좌표엔 이름이 없다. "여기가 얼마나 밝은가"가 플레이어가 진짜 알고 싶은 것이다. */
+  label(hit) {
+    if (!hit) return '방 안에 놓아 주세요';
+    if (!hit.ok) return hit.reason || '여기엔 놓을 수 없습니다';
+    if (hit.snappedTo) return slotLabel(hit.snappedTo);
+    try {
+      const sky = io.light.skyFor(S.day, S.sim);
+      const s = io.light.dliAt({ x: hit.x, y: hit.y, z: hit.z }, {
+        weather: sky.weather, season: sky.season, occIdx: hit.occIdx,
+        lampCount: S.lamps.count, litHours: S.lamps.litHours, plantId: 'monstera_deliciosa'
+      });
+      return `여기 · DLI ${s.dli.toFixed(1)} · ${s.ko}`;
+    } catch { return '여기에 놓습니다'; }
+  }
+};
+
 /* ══ 끌어다 놓기 (박사님 2026-08-03: "드래그해서 배치할 수 있게") ══════════
    드롭다운으로 자리를 고르면 **방을 보면서 놓는다**는 감각이 사라진다.
    ★드래그를 **아이템 위에서 시작**한다 — 3D 위에서 시작하면 카메라 회전과 부딪힌다.
@@ -1643,11 +1746,9 @@ const drag = {
     const sel = what === 'beansprout' ? $('cropSlot') : $('slot');
     return { sel, ids: [...sel.options].map(o => o.value).filter(Boolean) };
   },
-  /* 손가락 위치에서 가장 가까운 자리. 화면 거리로 잰다 — 3D 광선으로는 점이라 손에 안 잡힌다.
-     ★거리 제한을 두지 않는다. 방 위에 있으면 **언제나 제일 가까운 자리**가 잡힌다.
-       처음엔 110px 안쪽만 인정했는데, 방 한가운데는 빈 공간이라 아무것도 안 잡혔다 —
-       폰에서 작은 슬롯을 정확히 겨누게 하면 배치가 고문이 된다.
-       대신 방 **밖**(시트·버튼 위)에서는 아무 자리도 안 잡는다. 그게 취소다.
+  /* 손가락 위치에서 가장 가까운 **추천 자리**. 화면 거리로 잰다 — 3D 광선으로는 점이라 손에 안 잡힌다.
+     ⚠ 이건 이제 배치가 아니라 **되돌림 경로**다. 자유 좌표를 못 쓰는 상황(콩나물·옛 방 뷰)에서만 쓴다.
+       방 밖(시트·버튼 위)에서는 아무 자리도 안 잡는다. 그게 취소다.
      screenPosOf 는 캔버스 기준 좌표를 돌려준다(실측 확인). */
   nearest(px, py) {
     if (!roomView || !roomView.screenPosOf) return null;
@@ -1667,9 +1768,12 @@ const drag = {
     const { sel, ids } = this.slotsFor(what);
     if (sel.disabled || !ids.length) return;
     this.on = true; this.what = what; this.sel = sel; this.valid = ids; this.best = null;
+    this.potD = what === 'beansprout' ? OPEN_SIRU.diameterM : ARRIVAL_POT_D;
     document.body.classList.add('dragging');
     $('dragGhost').style.backgroundImage = `url(${thumbUrl})`;
     $('dragGhost').classList.add('on');
+    /* ★추천 자리를 원으로 알린다. 원은 안내지 제약이 아니다 — 원 밖에도 놓인다(박사님). */
+    freePlace.rings(true, this.potD);
     if (roomView) roomView.highlightSlots(ids);
     this.move(ev);
   },
@@ -1677,21 +1781,18 @@ const drag = {
     if (!this.on) return;
     const gh = $('dragGhost');
     gh.style.left = ev.clientX + 'px'; gh.style.top = ev.clientY + 'px';
-    const hit = this.nearest(ev.clientX, ev.clientY);
-    /* ★목표가 바뀔 때만 미리보기를 갱신한다. 매 프레임 부르면 GLB 복제 비용이 계속 든다.
-       (room_view 에 previewMove 가 아직 없으면 조용히 넘어간다 — 링만 뜬다) */
-    /* ★소스 자리가 있을 때만 미리보기를 부른다. 인벤에서 끌 때는 옮길 화분이 없다 —
-       null 을 넘겼더니 room_view 가 "미리보기할 화분이 없습니다"로 던졌고,
-       그게 onError 를 타고 "방을 그리지 못했습니다"라는 치명 문구로 화면을 덮었다.
-       방은 멀쩡한데 고장으로 보였다(폰에서 실제로 났다). */
-    if (hit !== this.best && picked.slotId && roomView && roomView.previewMove) {
-      try { roomView.previewMove(picked.slotId, hit); } catch { }
-    }
+    /* ★자유 좌표다. 화면을 쏘아 면을 찾고 그 좌표를 그대로 쓴다 —
+       예전엔 "제일 가까운 슬롯"으로 튕겨서 방 한가운데를 고를 수가 없었다. */
+    let hit = freePlace.surfaceAt(ev.clientX, ev.clientY, this.potD);
+    hit = freePlace.snap(hit, ev.clientX, ev.clientY);
+    freePlace.preview(hit, this.potD);
+    freePlace.rings(true, this.potD, hit && hit.ok ? { x: hit.x, z: hit.z } : null);
     this.best = hit;
-    gh.classList.toggle('ok', !!hit); gh.classList.toggle('no', !hit);
+    const good = !!(hit && hit.ok);
+    gh.classList.toggle('ok', good); gh.classList.toggle('no', !good);
     const lb = $('dropLabel');
-    lb.textContent = hit ? slotLabel(hit) : '방 안의 빛나는 자리에 놓아 주세요';
-    lb.classList.toggle('ok', !!hit); lb.classList.toggle('no', !hit);
+    lb.textContent = freePlace.label(hit);
+    lb.classList.toggle('ok', good); lb.classList.toggle('no', !good);
   },
   end() {
     if (!this.on) return;
@@ -1699,17 +1800,49 @@ const drag = {
     this.on = false; this.what = null; this.sel = null; this.valid = []; this.best = null;
     document.body.classList.remove('dragging');
     $('dragGhost').classList.remove('on', 'ok', 'no');
-    if (roomView) {
-      roomView.highlightSlots([]);
-      if (roomView.previewMove && picked.slotId) { try { roomView.previewMove(picked.slotId, null); } catch { } }
-    }
-    if (!hit) return;                        /* 아무 데도 안 놓았으면 조용히 되돌린다 */
-    sel.value = hit;
-    /* 기존 경로를 그대로 탄다 — 드래그는 입력 방식만 바꾼다. 배치 규칙을 새로 만들지 않는다. */
-    if (what === 'beansprout') $('placeCrop').click();
-    else sel.dispatchEvent(new Event('change', { bubbles: true }));
+    freePlace.clear(); freePlace.rings(false);
+    if (roomView) roomView.highlightSlots([]);
+    if (!(hit && hit.ok)) return;            /* 못 놓는 자리면 조용히 되돌린다 */
+    commitPlace(what, hit);
   }
 };
+/* 놓기를 실제로 반영한다 — 화면이 아니라 **상태**를 바꾼다. 화면은 draw() 가 따라온다.
+   ★화분과 시루가 **같은 함수**를 탄다. 배치 규칙이 둘로 갈리면 한쪽만 고쳐지는 날이 온다. */
+const placeOpt = () => ({ size: io.light.room.size, slots: io.light.room.slots, snapDist: 0 });
+function atOf(hit) {
+  return { x: hit.x, y: hit.y, z: hit.z, rotY: hit.rotY || 0,
+           onUid: hit.onUid ?? null, occIdx: hit.occIdx ?? null };
+}
+function commitPlace(what, hit) {
+  if (what === 'beansprout') {
+    try {
+      const r = setCropAt(S, atOf(hit), placeOpt());
+      pushLog(S, r.moved
+        ? `🥣 열린 시루를 옮겼습니다 — 지금까지 받은 ${r.keptDays}일치 빛은 그대로입니다`
+        : '🥣 열린 시루를 두었습니다');
+      unlockAfterFix();                  // 자리를 고쳤으니 다시 시도할 수 있다
+      dlgOpen('cropPlaced');
+    } catch (e) { return placeFailed(e); }
+    draw();
+    return;
+  }
+  const p = pot0(S);
+  if (!p) return;
+  try {
+    const r = setPotAt(S, p, atOf(hit), placeOpt());
+    /* 추천 자리에 붙었으면 첫 플레이 학습 판정도 그 자리 이름으로 이어진다 */
+    if (S.firstPlay.enabled && r.slotId && !isFreeSlotId(r.slotId)) moveMonstera(S.firstPlay, r.slotId);
+    pushLog(S, `🪴 몬스테라를 ${r.slotId && !isFreeSlotId(r.slotId) ? slotLabel(r.slotId) : '고르신 자리'}(으)로 옮겼습니다`);
+    unlockAfterFix();
+    if (arrivalSlotId && r.slotId !== arrivalSlotId) dlgOpen('monsteraMoved');
+  } catch (e) { return placeFailed(e); }
+  draw();
+}
+/* 못 놓았으면 **왜** 못 놓았는지 그 자리에 적는다. 조용히 되돌리면 고장으로 읽힌다. */
+function placeFailed(e) {
+  $('dropLabel').textContent = (e && e.message) || '여기엔 놓을 수 없습니다';
+  $('dropLabel').classList.add('no');
+}
 /* ══ 놓인 식물 — 탭해서 고르고, 끌어서 옮기거나 돌린다 ═══════════════════
    ★"멀리서 잡아도 된다"가 핵심이다(박사님). 슬롯이 작아 정확히 못 집는 문제가
      이걸로 같이 풀린다 — 일단 고른 뒤에는 **화면 아무 데나** 끌면 된다. */
@@ -1719,9 +1852,13 @@ const picked = {
   originX: 0, originY: 0,            // 옮기기 시작할 때 그 화분이 화면에서 있던 자리
 
   /* 그 자리에 있는 게 무엇인가. 콩나물과 몬스테라는 규칙이 다르다. */
+  /* 그 열쇠가 가리키는 게 무엇인가. 자유 배치가 되면서 열쇠가 자리 이름일 수도,
+     `free:crop_01` 같은 개체 이름일 수도 있다 — 둘 다 본다. */
   kindAt(slotId) {
     const b = S.firstPlay && S.firstPlay.beansprout;
-    return (b && b.slotId === slotId) ? 'beansprout' : 'monstera';
+    if (!b) return 'monstera';
+    if (slotId === BEANSPROUT_ID || slotId === `free:${BEANSPROUT_ID}`) return 'beansprout';
+    return b.slotId === slotId ? 'beansprout' : 'monstera';
   },
   select(slotId) {
     if (drag.on) return;
@@ -1758,7 +1895,9 @@ const picked = {
     let p = null; try { p = roomView && roomView.screenPosOf(this.slotId); } catch { }
     this.originX = p ? r.left + p.x : r.left + r.width / 2;
     this.originY = p ? r.top + p.y : r.top + r.height / 2;
+    drag.potD = what === 'beansprout' ? OPEN_SIRU.diameterM : ARRIVAL_POT_D;
     $('stage').classList.add('moving');
+    freePlace.rings(true, drag.potD);
     if (roomView) roomView.highlightSlots(drag.valid);
     $('dropLabel').textContent = '아무 데나 잡고 끌어 보세요';
   },
@@ -1778,19 +1917,21 @@ const picked = {
   /* 끈 만큼(dx,dy) 옮겼을 때 어느 자리에 놓이는지 계산하고 반투명으로 보여준다 */
   dragTo(dx, dy) {
     const gx = this.originX + dx, gy = this.originY + dy;
-    const hit = drag.nearest(gx, gy);
+    let hit = freePlace.surfaceAt(gx, gy, drag.potD);
+    hit = freePlace.snap(hit, gx, gy);
     const gh = $('dragGhost');
     gh.classList.add('on');
     gh.style.left = gx + 'px'; gh.style.top = gy + 'px';
     gh.style.backgroundImage = `url(${$('plantThumb').src})`;
-    gh.classList.toggle('ok', !!hit); gh.classList.toggle('no', !hit);
-    if (hit !== drag.best && roomView && roomView.previewMove) {
-      try { roomView.previewMove(this.slotId, hit); } catch { }
-    }
+    const good = !!(hit && hit.ok);
+    gh.classList.toggle('ok', good); gh.classList.toggle('no', !good);
+    /* 옮기는 중인 그 화분은 미리보기 판정에서 뺀다 — 자기 자신과 겹친다고 나오면 못 움직인다 */
+    freePlace.preview(hit, drag.potD, drag.what === 'monstera' && pot0(S) ? pot0(S).id : null);
+    freePlace.rings(true, drag.potD, good ? { x: hit.x, z: hit.z } : null);
     drag.best = hit;
     const lb = $('dropLabel');
-    lb.textContent = hit ? slotLabel(hit) : '방 안으로 끌어 주세요';
-    lb.classList.toggle('ok', !!hit); lb.classList.toggle('no', !hit);
+    lb.textContent = freePlace.label(hit);
+    lb.classList.toggle('ok', good); lb.classList.toggle('no', !good);
   },
   move(e) {
     if (this.mode === 'move') { this.dragTo(e.clientX - this.x0, e.clientY - this.y0); return; }
@@ -1802,17 +1943,12 @@ const picked = {
   },
   up() {
     if (this.mode === 'move') {
-      const hit = drag.best;
+      const hit = drag.best, what = drag.what, sel = drag.sel;
       drag.best = null; drag.valid = [];
       $('dragGhost').classList.remove('on', 'ok', 'no');
-      if (roomView && roomView.previewMove && this.slotId) { try { roomView.previewMove(this.slotId, null); } catch { } }
-      if (hit) {
-        drag.sel.value = hit;
-        /* ★콩나물은 change 로 안 옮겨진다 — #cropSlot 에는 change 핸들러가 없고
-           [두기] 버튼이 배치를 한다. 그래서 몬스테라만 옮겨지고 시루는 제자리였다
-           (폰에서 실제로 났다). 인벤 드래그와 같은 경로를 탄다. */
-        if (drag.what === 'beansprout') $('placeCrop').click();
-        else drag.sel.dispatchEvent(new Event('change', { bubbles: true }));
+      freePlace.clear(); freePlace.rings(false);
+      if (hit && hit.ok) {
+        commitPlace(what, hit);              /* 인벤에서 끌 때와 **같은 경로**를 탄다 */
         this.clear(); return;
       }
     }
@@ -1822,16 +1958,151 @@ const picked = {
     if (this.slotId) this.select(this.slotId);
   }
 };
+/* ══ 가구 옮기기 (박사님 2026-08-03: "모든 가구나 식물을 자유배치") ═══════════
+   화분과 같은 손버릇을 쓴다 — 탭해서 고르고, [옮기기] 뒤에 화면 아무 데나 끌면
+   원래 자리에서 **끈 만큼** 움직인다. 다른 것은 두 가지다:
+     ① 재조립이 비싸다(60ms). 끄는 동안은 유령만 움직이고 **손 뗄 때 한 번만** 반영한다
+     ② 가구가 움직이면 그림자가 따라 움직인다 — 방 밝기가 실제로 바뀐다. 그게 이 기능의 뜻이다 */
+let lastRoomTap = 0;
+function roomTapped() { lastRoomTap = performance.now(); }
+const furnPicked = {
+  uid: null, mode: null, x0: 0, y0: 0, originX: 0, originY: 0, base: null, rot0: 0, ghost: null,
+  tapX: null, tapY: null,
+
+  select(f, px, py) {
+    if (drag.on || picked.slotId) return;
+    picked.clear();
+    this.uid = f.uid; this.base = { x: f.x, z: f.z, rot: f.rot || 0 };
+    /* 고를 때 누른 자리를 원점으로 삼는다 — 그 점이 곧 그 가구 위다.
+       3D 점을 화면으로 되쏘는 길이 따로 없어도 상대 이동이 정확히 맞는다. */
+    this.tapX = px; this.tapY = py;
+    $('furnName').textContent = f.name || f.preset || '가구';
+    $('stage').classList.add('furnpicked');
+  },
+  clear() {
+    if (!this.uid && !this.mode) return;
+    this.uid = null; this.mode = null; this.ghost = null;
+    $('stage').classList.remove('furnpicked', 'furnmoving');
+    try { roomView && roomView.clearFurniturePreview && roomView.clearFurniturePreview(); } catch { }
+    $('dropLabel').classList.remove('ok', 'no');
+  },
+  beginMove() {
+    if (!this.uid) return;
+    this.mode = 'move';
+    const r = $('roomCanvas').getBoundingClientRect();
+    this.originX = this.tapX ?? (r.left + r.width / 2);
+    this.originY = this.tapY ?? (r.top + r.height / 2);
+    $('stage').classList.add('furnmoving');
+    $('dropLabel').textContent = '아무 데나 잡고 끌어 보세요';
+  },
+  beginTurn() {
+    if (!this.uid) return;
+    this.mode = 'turn'; this.rot0 = this.base.rot || 0;
+    $('stage').classList.add('furnmoving');
+    $('dropLabel').textContent = '좌우로 끌어서 돌리세요';
+    $('dropLabel').classList.add('ok');
+  },
+  down(e) { this.x0 = e.clientX; this.y0 = e.clientY; if (this.mode === 'move') this.dragTo(0, 0); },
+  /* 화면에서 끈 만큼을 방 바닥 좌표로 옮긴다. 바닥을 쏘아 맞은 점을 그대로 쓴다 —
+     화면 픽셀을 미터로 환산하려 들면 카메라 각도마다 어긋난다. */
+  dragTo(dx, dy) {
+    const gx = this.originX + dx, gy = this.originY + dy;
+    const hit = freePlace.surfaceAt(gx, gy, 0);
+    if (!hit) { $('dropLabel').textContent = '방 안으로 끌어 주세요'; return; }
+    this.ghost = { x: hit.x, z: hit.z, rot: this.base.rot };
+    this.paintGhost();
+  },
+  paintGhost() {
+    if (!this.ghost || !roomView || !roomView.previewFurnitureAt) return;
+    let r = null;
+    try { r = roomView.previewFurnitureAt(this.uid, this.ghost); } catch { }
+    const good = !!(r && r.ok);
+    const lb = $('dropLabel');
+    lb.textContent = good ? '여기로 옮깁니다' : ((r && r.reason) || '여기엔 놓을 수 없습니다');
+    lb.classList.toggle('ok', good); lb.classList.toggle('no', !good);
+  },
+  move(e) {
+    if (this.mode === 'move') { this.dragTo(e.clientX - this.x0, e.clientY - this.y0); return; }
+    if (this.mode !== 'turn') return;
+    /* 화면 폭 절반이 한 바퀴 — 화분 돌리기와 같은 감각으로 맞춘다 */
+    const rot = Math.round(this.rot0 + (e.clientX - this.x0) / (innerWidth * 0.5) * 360);
+    this.ghost = { x: this.base.x, z: this.base.z, rot };
+    this.paintGhost();
+    $('dropLabel').textContent = ((rot % 360) + 360) % 360 + '°';
+  },
+  /* ★손을 뗄 때 딱 한 번 반영한다 — 여기서 방이 다시 조립되고 그림자가 바뀐다 */
+  async up() {
+    const mode = this.mode, uid = this.uid, to = this.ghost;
+    this.mode = null; this.ghost = null;
+    $('stage').classList.remove('furnmoving');
+    if (!mode || !uid || !to) { if (uid) $('stage').classList.add('furnpicked'); return; }
+    try {
+      await roomView.commitFurnitureAt(uid, to);
+      /* ★옮긴 가구 하나만 적으면 안 된다 — 책상에 물린 클립등도 같이 갔는데 그건 안 적혀서,
+         새로고침하면 책상만 옮겨가고 등은 제자리에 남는다. 조도 엔진이 들고 있는
+         **자리표 전체**를 그대로 옮겨 적는다. 정본이 둘이 되지 않게. */
+      const map = io.light.furnitureOverrides();
+      for (const [id, at] of Object.entries(map)) setFurniturePlacement(S, id, at, { size: io.light.room.size });
+      this.base = { ...to };
+      pushLog(S, `🪑 ${$('furnName').textContent}을(를) 옮겼습니다 — 빛이 드는 자리가 달라집니다`);
+      io.light.clearCache();
+      fillSlots();
+      draw();
+    } catch (e) {
+      $('dropLabel').textContent = (e && e.message) || '여기엔 놓을 수 없습니다';
+      $('dropLabel').classList.add('no');
+      try { roomView.clearFurniturePreview(); } catch { }
+    }
+    if (this.uid) $('stage').classList.add('furnpicked');
+  }
+};
+/* 방을 탭했는데 화분도 자리도 캐릭터도 아니면 — 가구를 골라 본다.
+   ★room_view 의 판정이 **먼저** 돌게 다음 틱으로 미룬다. 같은 틱에 하면
+     화분을 눌렀는데 그 밑 가구가 같이 골라진다. */
+function bindFurnitureTap() {
+  const c = $('roomCanvas');
+  let sx = 0, sy = 0, st = 0, moved = false;
+  c.addEventListener('pointerdown', e => { sx = e.clientX; sy = e.clientY; st = performance.now(); moved = false; });
+  c.addEventListener('pointermove', e => {
+    if (Math.hypot(e.clientX - sx, e.clientY - sy) > 6) moved = true;
+  });
+  c.addEventListener('pointerup', e => {
+    if (moved || performance.now() - st > 400) return;      // 끈 것은 카메라 조작이다
+    const x = e.clientX, y = e.clientY;
+    setTimeout(() => {
+      if (performance.now() - lastRoomTap < 60) return;      // 방 뷰가 이미 무언가를 잡았다
+      if (drag.on || picked.mode || furnPicked.mode) return;
+      if (!roomView || !roomView.pickFurnitureAt) return;
+      let f = null; try { f = roomView.pickFurnitureAt(x, y); } catch { }
+      if (f) furnPicked.select(f, x, y);
+      else furnPicked.clear();
+    }, 0);
+  });
+}
+
 function bindPicked() {
+  $('furnMove').onclick = () => furnPicked.beginMove();
+  $('furnTurn').onclick = () => furnPicked.beginTurn();
+  $('furnClose').onclick = () => furnPicked.clear();
   $('pickMove').onclick = () => picked.beginMove();
   $('pickTurn').onclick = () => picked.beginTurn();
   $('pickZoom').onclick = () => { window.__byeotZoom.open(); picked.clear(); };
   $('pickClose').onclick = () => picked.clear();
+  /* 같은 잡이판을 화분과 가구가 나눠 쓴다 — 지금 무엇을 옮기는 중인지로 갈린다.
+     둘이 동시에 옮겨지는 일은 없다(고르는 순간 서로 푼다). */
   const c = $('moveCatcher');
-  c.addEventListener('pointerdown', e => { e.preventDefault(); c.setPointerCapture(e.pointerId); picked.down(e); });
-  c.addEventListener('pointermove', e => picked.move(e));
-  c.addEventListener('pointerup', () => picked.up());
-  c.addEventListener('pointercancel', () => picked.up());
+  const who = () => furnPicked.mode ? furnPicked : picked;
+  /* ★잡기(capture)가 실패해도 조작은 이어져야 한다. 던지면 down 이 통째로 안 돌아
+     x0·y0 가 0 으로 남고, 그 뒤 상대 이동이 화면 밖을 가리킨다(실제로 그랬다). */
+  c.addEventListener('pointerdown', e => {
+    e.preventDefault();
+    try { c.setPointerCapture(e.pointerId); } catch { }
+    who().down(e);
+  });
+  c.addEventListener('pointermove', e => who().move(e));
+  c.addEventListener('pointerup', () => who().up());
+  c.addEventListener('pointercancel', () => who().up());
+  bindFurnitureTap();
 }
 
 function bindDrag(thumbId, what) {
@@ -1840,7 +2111,7 @@ function bindDrag(thumbId, what) {
   el.addEventListener('pointerdown', (e) => {
     e.preventDefault();
     drag.begin(what, el.src || el.currentSrc, e);
-    if (drag.on) el.setPointerCapture(e.pointerId);
+    if (drag.on) { try { el.setPointerCapture(e.pointerId); } catch { } }
   });
   el.addEventListener('pointermove', (e) => drag.move(e));
   el.addEventListener('pointerup', () => drag.end());

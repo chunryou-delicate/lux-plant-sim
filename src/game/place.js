@@ -25,11 +25,12 @@
 
 export const PLACE_SCHEMA = 'pot_place/1';
 
-/* ★ 자유 좌표 화분의 계약 slotId — `free:{화분 id}`
-   슬롯 위에 앉은 화분은 그 슬롯의 안정 slotId 를 그대로 쓴다(세이브 하위호환).
-   슬롯을 벗어난 화분만 이 접두사를 단다. 둘을 섞으면 계약에 같은 자리가 두 번 실린다. */
+/* ★ 자유 좌표로 놓인 것의 계약 slotId — `free:{그 물건의 id}`
+   슬롯 위에 앉았으면 그 슬롯의 안정 slotId 를 그대로 쓴다(세이브 하위호환).
+   슬롯을 벗어난 것만 이 접두사를 단다. 둘을 섞으면 계약에 같은 자리가 두 번 실린다.
+   ★ 화분 전용이 아니다 — 콩나물 시루도 같은 규칙을 탄다(2026-08-03). */
 export const FREE_PREFIX = 'free:';
-export const freeSlotId = (potId) => FREE_PREFIX + String(potId);
+export const freeSlotId = (id) => FREE_PREFIX + String(id);
 export const isFreeSlotId = (id) => typeof id === 'string' && id.startsWith(FREE_PREFIX);
 
 /* 좌표가 '같은 자리'인지 보는 기본 허용오차[m]. house.js 가 슬롯 좌표를 소수 셋째 자리로
@@ -174,6 +175,59 @@ export function nearestSlot(at, slots, opt = {}) {
    (loop.js 의 첫 플레이 후보 고르기와 같은 규약 — 결측을 관대하게 넘기지 않는다). */
 export function slotHolds(slot, potD) {
   return isNum(slot && slot.maxPotD) && isNum(potD) && potD <= slot.maxPotD + 1e-9;
+}
+
+/* ------------------------------------------------------------------
+   3-1. ★ 좌표 하나 → (계약 열쇠, 정규화된 자리)  (2026-08-03)
+------------------------------------------------------------------ */
+/* 불변식을 세우는 **유일한 곳**이다. 화분(state.setPotAt)도 콩나물 시루(first_play)도
+   여기를 지난다 — 두 곳에서 따로 세우면 한쪽만 고쳐지고 나머지가 조용히 어긋난다.
+
+     추천 자리에 붙으면  slotId = 그 자리의 안정 id   · at = 그 자리 좌표
+     벗어나면            slotId = `free:{id}`         · at = 준 좌표
+
+   ★ 붙이기는 '가까우면 그 자리 이름만 쓴다'가 아니라 '그 자리로 간다'다 — 좌표까지 슬롯 값이 된다.
+     이름만 바꾸면 계약이 두 자리(빈 슬롯 + 그 물건)를 같은 이름으로 부른다.
+
+     id    자유 좌표일 때 계약 열쇠에 붙일 이름 (화분 id · 콩나물 id)
+     opt   { size: 방 치수, slots: 추천 자리 배열, snapDist: 이 거리 안이면 붙는다 }
+   반환 { slotId, at, snappedTo, dist } */
+export function resolvePlacement(id, at, opt = {}) {
+  if (!id && id !== 0) throw new TypeError('[배치] resolvePlacement: 자유 좌표 id 가 필요합니다');
+  const next = makeAt(at, { size: opt.size });
+  const snap = opt.snapDist ?? 0;
+  const near = (opt.slots && opt.slots.length)
+    ? nearestSlot(next, opt.slots, { maxDist: snap > 0 ? snap : undefined }) : null;
+  if (near && (snap > 0 ? near.dist <= snap : samePoint(next, near.slot)))
+    return { slotId: near.slot.slotId, at: atFromSlot(near.slot, { rotY: next.rotY }),
+             snappedTo: near.slot.slotId, dist: near.dist };
+  return { slotId: freeSlotId(id), at: next, snappedTo: null, dist: near ? near.dist : null };
+}
+
+/* 자리를 가리키는 입력 세 가지를 하나로 푼다. UI·루프·옛 세이브가 서로 다른 모양을 들고 온다.
+     문자열          추천 자리 id      (옛 경로 · 헤드리스 시뮬 · <select> 값)
+     {x,y,z,...}     좌표             → resolvePlacement 가 불변식을 세운다
+     {slotId, at}    이미 자리를 가진 물건(화분 등) → 그대로 베낀다
+   반환 { slotId, at, snappedTo, dist } — at 은 알 수 없으면 null 이다(지어내지 않는다). */
+export function spotOf(target, opt = {}) {
+  if (target == null || target === '')
+    throw new Error('[배치] 놓을 자리가 없습니다 — 자리 이름이나 좌표를 주세요');
+
+  if (typeof target === 'string') {
+    const s = (opt.slots || []).find(x => x && x.slotId === target);
+    const usable = s && [s.x, s.y, s.z].every(v => typeof v === 'number' && Number.isFinite(v));
+    return { slotId: target, at: usable ? atFromSlot(s, { rotY: opt.rotY }) : null,
+             snappedTo: usable ? target : null, dist: 0 };
+  }
+  if (typeof target !== 'object')
+    throw new TypeError(`[배치] 자리를 알 수 없는 값입니다: ${typeof target}`);
+
+  /* 이미 자리를 가진 물건 — 좌표가 있으면 같이 베낀다(없으면 예전처럼 이름만 돈다) */
+  if (typeof target.slotId === 'string' && !('x' in target))
+    return { slotId: target.slotId, at: target.at ? makeAt(target.at, { size: opt.size }) : null,
+             snappedTo: null, dist: null };
+
+  return resolvePlacement(opt.id, target, opt);
 }
 
 /* ------------------------------------------------------------------

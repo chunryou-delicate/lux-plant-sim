@@ -19,13 +19,19 @@
      daylight_lux 를 통째로 import 하게 되고 "THREE·집 조립 없이 돈다"는 존재 이유가 사라진다.
      밸런스 시뮬은 '이 방이 이만큼 밝다'를 수십 번 굴려 보는 도구라 슬롯 표본으로 충분하다.
      자유 좌표가 필요한 경로(게임 화면·배치 미리보기)는 라이브 엔진(light_adapter.dliAt)을 쓴다.
+
+   ★ 콩나물 시루도 같은 경계를 따른다 (2026-08-03).
+     시루를 **슬롯에 놓은** 세이브는 여기서 그대로 돈다 — slotId 가 표에 있으니 계약에 실린다.
+     자유 좌표로 놓은 시루는 실리지 않고, `cropDliFromReport` 가 "오늘 계약에 없다"고 **던진다.**
+     조용히 0(=암흑)을 내지 않는 게 중요하다 — 그러면 헤드리스 밸런스 결과가 이유 없이 3끼가 된다.
+     헤드리스 시뮬은 지금도 슬롯으로만 시루를 놓는다(data/profiles/*.json 은 슬롯 그대로).
 ============================================================ */
 import { daylightDLI, lampDLI, judgeDLI, thresholdsFor, isVariegated }
   from '../engine/daily_light.js';
 import { skyEvMax, WEATHER, SEASON, REGION } from '../engine/daylight_lux.js';
 import { photoperiod } from '../engine/daily_light.js';
 import { skyOf, seasonOf, setWeatherProbs } from '../engine/weather.js';
-import { modeOf } from './state.js';
+import { modeOf, placedItems } from './state.js';
 import { validateContract } from './contract.js';
 
 export const PROFILE_SCHEMA = 'room_profile/1';
@@ -137,8 +143,10 @@ export function createProfileLight(profile, data = {}) {
     /* io.light 인터페이스 — light_adapter 와 같은 모양 */
     daily(day, S) {
       const sky = skyFor(day, S.sim);
+      /* 놓인 것 전부를 넘긴다(라이브 포트와 같은 목록). 다만 여기서 실제로 쓰이는 것은
+         **표에 있는 slotId 를 가진 것뿐**이다 — 위 주석의 경계다. */
       const report = build(day, { ...sky, lampCount: S.lamps.count,
-                                  litHours: S.lamps.litHours, pots: S.pots });
+                                  litHours: S.lamps.litHours, pots: placedItems(S) });
       return { report, sky, check: validateContract(report) };
     },
     skyFor,

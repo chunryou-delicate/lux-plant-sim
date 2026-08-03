@@ -13,10 +13,10 @@
      활력(vigor)은 표시 취소·구현 보류다(2026-08-02) — 자리를 만들면 판정이 코어로 샌다.
 ============================================================ */
 
-import { createFirstPlayState } from './first_play.js';
+import { createFirstPlayState, placeBeansprout, BEANSPROUT_ID } from './first_play.js';
 import { createTutorialState } from './tutorial.js';
-import { atFromSlot, freeSlotId, isFreeSlotId, makeAt,
-         nearestSlot, samePoint, inRoom, assertFurnitureAt } from './place.js';
+import { atFromSlot, isFreeSlotId, makeAt, resolvePlacement,
+         inRoom, assertFurnitureAt } from './place.js';
 
 export const SCHEMA = 'game_state/1';
 
@@ -168,22 +168,59 @@ export function modeOf(S) { return SIM_MODES[S.sim.mode] || SIM_MODES.real; }
 /* 옛 세이브 마이그레이션 — `slotId` 만 있는 화분에 그 슬롯의 좌표를 채운다.
    좌표가 이미 있으면 손대지 않는다(좌표가 이긴다).
    ⚠ 슬롯에 좌표가 없으면(정적 프로파일의 얇은 슬롯 등) **지어내지 않고 건너뛴다** —
-     그 화분은 예전처럼 slotId 로 돈다. 0,0,0 으로 메꾸면 방 한가운데로 순간이동한다. */
+     그 화분은 예전처럼 slotId 로 돈다. 0,0,0 으로 메꾸면 방 한가운데로 순간이동한다.
+
+   ★ 콩나물 시루도 같이 챙긴다 (2026-08-03) — 자리를 차지하는 물건은 화분만이 아니다.
+     시루만 좌표 없이 남으면 옛 세이브에서 시루가 계약에는 실리는데 방뷰에는 못 서거나,
+     자유 배치 UI 가 "지금 어디 있는지"를 물었을 때 답이 없다. */
 export function migratePots(S, slots) {
   const filled = [], skipped = [];
-  for (const p of S.pots || []) {
-    if (p.at) continue;
-    if (!p.slotId) { skipped.push({ id: p.id, why: 'slotId 가 없습니다' }); continue; }
-    if (isFreeSlotId(p.slotId)) { skipped.push({ id: p.id, why: '자유 좌표인데 at 이 없습니다' }); continue; }
-    const s = (slots || []).find(x => x && x.slotId === p.slotId);
-    if (!s) { skipped.push({ id: p.id, why: `슬롯 ${p.slotId} 이(가) 이 방에 없습니다` }); continue; }
+  const fill = (o, id) => {
+    if (!o || o.at) return;
+    if (!o.slotId) { skipped.push({ id, why: 'slotId 가 없습니다' }); return; }
+    if (isFreeSlotId(o.slotId)) { skipped.push({ id, why: '자유 좌표인데 at 이 없습니다' }); return; }
+    const s = (slots || []).find(x => x && x.slotId === o.slotId);
+    if (!s) { skipped.push({ id, why: `슬롯 ${o.slotId} 이(가) 이 방에 없습니다` }); return; }
     if (![s.x, s.y, s.z].every(v => typeof v === 'number' && Number.isFinite(v))) {
-      skipped.push({ id: p.id, why: `슬롯 ${p.slotId} 에 좌표가 없습니다` }); continue;
+      skipped.push({ id, why: `슬롯 ${o.slotId} 에 좌표가 없습니다` }); return;
     }
-    p.at = atFromSlot(s);
-    filled.push({ id: p.id, slotId: p.slotId, at: p.at });
-  }
+    o.at = atFromSlot(s);
+    filled.push({ id, slotId: o.slotId, at: o.at });
+  };
+
+  for (const p of S.pots || []) fill(p, p.id);
+
+  /* 아직 자리를 안 정한 시루(slotId 조차 없음)는 **마이그레이션 대상이 아니다** —
+     빠뜨린 게 아니라 아직 안 놓은 것이라 건너뛴 사유 목록에도 넣지 않는다. */
+  const fp = S.firstPlay;
+  if (fp && fp.enabled && fp.beansprout && fp.beansprout.slotId) fill(fp.beansprout, BEANSPROUT_ID);
+  /* 몬스테라 쪽은 **사본**이라 값만 맞춰 둔다(정본은 위 S.pots 가 이미 채웠다) */
+  if (fp && fp.enabled && fp.monstera && fp.monstera.arrived && fp.monstera.slotId)
+    fill(fp.monstera, (pot0(S) && pot0(S).id) || 'monstera');
+
   return { filled, skipped };
+}
+
+/* ★ 지금 방 안에서 **자리를 차지하고 있는 것 전부** (2026-08-03).
+   조도 계약(daily_light/1)에 실려야 하는 목록이고, 화분만이 아니다 — 첫 플레이의 콩나물 시루도
+   자유 좌표로 놓이면 계약에 실려야 `cropDliFromReport` 가 그 자리의 DLI 를 찾는다.
+
+   ★ 왜 여기(state)에 두는가: "방 안에 무엇이 있나"는 상태의 질문이다. 조도 창(light_adapter)이
+     `S.firstPlay` 를 뒤지기 시작하면 물건이 하나 늘 때마다 조도 쪽을 고쳐야 한다.
+   ★ 시루는 **화분 모양 그대로** 낸다. 두 번째 배치 개념을 만들지 않는다 —
+     slotsFor 는 `{id, slotId, at, plantId, variegated}` 만 보므로 그대로 돈다.
+   ⚠ `plantId: null` 이다. 콩나물은 광 임계값 표(light_thresholds)에 없는 작물이라
+     식물 id 를 지어내면 그 자리 밴드 판정이 몬스테라 기준으로 나온다. 시루는 자리일 뿐이다.
+
+   ★ 몬스테라는 여기 없다 — S.pots[0] 이 이미 그 개체다. fp.monstera 는 사본이라
+     같이 실으면 **같은 화분이 계약에 두 번** 실린다(K 검사와 같은 사상). */
+export function placedItems(S) {
+  const out = [...(S.pots || [])];
+  const b = S.firstPlay && S.firstPlay.enabled ? S.firstPlay.beansprout : null;
+  if (b && (b.slotId || b.at))
+    out.push({ id: BEANSPROUT_ID, slotId: b.slotId, at: b.at || null,
+               plantId: null, variegated: false, crop: true });
+  return out;
 }
 
 /* 화분을 좌표에 놓는다. **유일한 쓰기 창구**다 — 불변식은 여기서만 세운다.
@@ -194,21 +231,27 @@ export function migratePots(S, slots) {
 export function setPotAt(S, potOrId, at, opt = {}) {
   const p = typeof potOrId === 'string' ? (S.pots || []).find(x => x.id === potOrId) : potOrId;
   if (!p) throw new Error(`[배치] 모르는 화분: ${potOrId}`);
-  const next = makeAt(at, { size: opt.size });
+  /* 불변식 자체는 place.resolvePlacement 한 곳에만 있다 — 콩나물(setCropAt)도 같은 함수를 탄다.
+     여기서 다시 세우면 둘 중 하나만 고쳐지고 나머지가 조용히 어긋난다. */
+  const r = resolvePlacement(p.id, at, opt);
+  p.at = r.at;
+  p.slotId = r.slotId;
+  return { potId: p.id, slotId: r.slotId, at: r.at, snappedTo: r.snappedTo, dist: r.dist };
+}
 
-  const snap = opt.snapDist ?? 0;
-  const near = (opt.slots && opt.slots.length)
-    ? nearestSlot(next, opt.slots, { maxDist: snap > 0 ? snap : undefined }) : null;
-  /* 붙이기는 '가까우면 그 자리'가 아니라 '그 자리로 간다'다 — 좌표까지 슬롯 값으로 바꾼다.
-     좌표만 남기고 slotId 를 슬롯 것으로 쓰면 계약이 두 자리를 같은 이름으로 부른다. */
-  if (near && (snap > 0 ? near.dist <= snap : samePoint(next, near.slot))) {
-    p.at = atFromSlot(near.slot, { rotY: next.rotY });
-    p.slotId = near.slot.slotId;
-    return { potId: p.id, slotId: p.slotId, at: p.at, snappedTo: near.slot.slotId, dist: near.dist };
-  }
-  p.at = next;
-  p.slotId = freeSlotId(p.id);
-  return { potId: p.id, slotId: p.slotId, at: p.at, snappedTo: null, dist: near ? near.dist : null };
+/* ★ 콩나물 시루를 좌표에 놓는다 — `setPotAt` 과 **같은 문체·같은 불변식**이다 (2026-08-03).
+   시루는 S.pots 가 아니라 S.firstPlay.beansprout 에 산다(첫 플레이 닫힌 상태). 그래서 쓰기는
+   first_play.placeBeansprout 을 거친다 — 수확 뒤 잠금·단계 전환 같은 첫 플레이 규칙이 거기 있고,
+   그걸 여기서 다시 쓰면 규칙이 둘로 갈린다.
+     at   { x, y, z, rotY?, onUid?, occIdx? }
+     opt  { size, slots, snapDist } — setPotAt 과 같다
+   반환 { cropId, slotId, at, snappedTo, dist, moved, keptDays } */
+export function setCropAt(S, at, opt = {}) {
+  const fp = S && S.firstPlay;
+  if (!fp || !fp.beansprout) throw new Error('[배치] 첫 플레이 상태가 없습니다 — 놓을 시루가 없습니다');
+  const r = placeBeansprout(fp, at, opt);
+  return { cropId: BEANSPROUT_ID, slotId: fp.beansprout.slotId, at: fp.beansprout.at,
+           snappedTo: r.snappedTo, dist: r.dist, moved: r.moved, keptDays: r.keptDays };
 }
 
 /* 추천 자리에 놓는다(예전 경로). 좌표까지 같이 세운다. */

@@ -897,6 +897,41 @@ export async function createRoomView(canvas, opts = {}) {
     }
     return n;
   }
+  /* ★★ 열쇠 해석은 **여기 하나뿐이다** (2026-08-03 · 코어 창 지적).
+     ------------------------------------------------------------
+     같은 개체를 셋 중 아무 이름으로나 부를 수 있다.
+       ① 추천 자리 slotId   'banjiha-desk:0'   (빈 자리일 수도, 화분이 있을 수도)
+       ② 자유 좌표 열쇠     'free:pot_01'
+       ③ 화분 id            'pot_01'
+     screenPosOf·setPlantYaw·plantYaw·highlightSlots 가 각자 풀면 반드시 어긋난다 —
+     실제로 어긋났다(자유 좌표 화분은 화면 위치가 null 이고 회전은 던졌다).
+     그래서 푸는 곳을 하나로 모은다. 새 API 를 더할 때도 여기만 쓰면 된다.
+
+     반환 { key, plant, slot, pos } · 못 찾으면 **null** (0 으로 메꾸지 않는다)
+       key    이 개체의 정본 열쇠 — plants·plantYaw·rings 가 쓰는 그 이름
+       plant  놓여 있는 화분(없으면 null)
+       slot   추천 자리(자유 좌표면 null)
+       pos    월드 좌표 {x,y,z} — 화분이 있으면 **화분 발밑**, 없으면 자리 점 */
+  function resolveKey(x) {
+    if (x == null) return null;
+    const id = String(x);
+    const of = (key, plant, slot) => ({
+      key, plant: plant || null, slot: slot || null,
+      pos: plant ? { x: plant.group.position.x, y: plant.group.position.y, z: plant.group.position.z }
+                 : { x: slot.x, y: slot.y, z: slot.z }
+    });
+    /* ① 이미 놓인 화분의 열쇠 그대로 (슬롯 열쇠·free: 열쇠 둘 다) */
+    if (plants.has(id)) return of(id, plants.get(id), slotById.get(id));
+    /* ② 화분 id — free:{id} 이거나 potId 로 적어 둔 그루 */
+    const p = plantOf(id);
+    if (p) { const k = keyOfPlant(p); return of(k, p, slotById.get(k)); }
+    /* ③ 빈 추천 자리 */
+    const s = slotById.get(id);
+    if (s) return of(id, null, s);
+    /* ④ 'free:pot_01' 인데 그 화분이 없다 — 없는 것은 없다고 한다 */
+    return null;
+  }
+
   /* 그 추천 자리가 차 있나 — 슬롯 열쇠뿐 아니라 **그 점 위에 선 자유 좌표 화분**도 본다.
      안 보면 링이 "비었다"고 말하는 자리에 이미 화분이 서 있게 된다. */
   function slotOccupied(slotId) {
@@ -1054,6 +1089,11 @@ export async function createRoomView(canvas, opts = {}) {
     let A;
     try { A = makeAt(at, { size: built.size }); }
     catch (e) { throw fail(new Error(`화분을 그 자리에 못 놓습니다 (${id}): ${e.message}`)); }
+    /* ★ 각도는 **명시했을 때만** 갈아 끼운다.
+       makeAt 은 rotY 가 없으면 0 으로 채운다(그게 자리 객체의 정본 모양이다).
+       그 0 을 그대로 쓰면 좌표만 옮길 때마다 플레이어가 돌려 놓은 각도가 되돌아간다 —
+       끄는 동안 매 프레임 부르는 함수라 화분이 계속 제자리로 홱 돌아간다. */
+    const gaveRot = at.rotY != null;
 
     const key = freeSlotId(id);
     const kind = spec.kind || spec.plantId || 'monstera';
@@ -1071,16 +1111,18 @@ export async function createRoomView(canvas, opts = {}) {
       prev.spec = { ...spec, kind };
       prev.wantDays = days;
       prev.potId = id;
-      prev.at = A;
       prev.group.position.set(A.x, A.y, A.z);
-      if (A.rotY != null) prev.group.rotation.y = A.rotY;
+      if (gaveRot) prev.group.rotation.y = A.rotY;
+      A.rotY = prev.group.rotation.y || 0;
+      prev.at = A;
       if (old !== key) {
         plants.delete(old);
         plantYaw.delete(old);
         plants.set(key, prev);
         tagPlant(prev.group, key, id);
       }
-      plantYaw.set(key, prev.group.rotation.y);
+      plantYaw.set(key, A.rotY);
+      moveHighlightRing(key, A);
       needsRender = true;
       return prev.group;
     }
@@ -1092,13 +1134,14 @@ export async function createRoomView(canvas, opts = {}) {
     ownMaterials(g);
     const d = fitPotToLimit(g, limit, id);
 
-    /* 돌려 놓은 각도는 그루가 다시 지어져도 유지한다. at.rotY 가 있으면 그게 이긴다. */
-    const yaw = A.rotY != null ? A.rotY
+    /* 돌려 놓은 각도는 그루가 다시 지어져도 유지한다. at.rotY 를 **준 경우에만** 그게 이긴다. */
+    const yaw = gaveRot ? A.rotY
               : plantYaw.has(key) ? plantYaw.get(key)
               : prev ? (prev.group.rotation.y || 0) : 0;
     removePlantOf(id);                      // ★ 옛 자리는 반드시 지운다
     g.position.set(A.x, A.y, A.z);
     g.rotation.y = yaw;
+    A.rotY = yaw;
     plantYaw.set(key, yaw);
     tagPlant(g, key, id);
     applyLook(g, { ...spec, kind });
@@ -1106,6 +1149,7 @@ export async function createRoomView(canvas, opts = {}) {
     plants.set(key, { group: g, spec: { ...spec, kind }, potId: id, at: A,
                       potD: Math.min(d, limit === Infinity ? d : limit),
                       days, wantDays: days, builtAt: performance.now() });
+    moveHighlightRing(key, A);
     nudgeIfOccluding();
     needsRender = true;
     return g;
@@ -1164,32 +1208,47 @@ export async function createRoomView(canvas, opts = {}) {
     needsRender = true;
   }
 
+  /* ★ 추천 자리뿐 아니라 **자유 좌표 화분**도 빛낼 수 있다 (2026-08-03).
+     열쇠 해석은 resolveKey 한 곳만 쓴다 — 슬롯 id · `free:` 열쇠 · 화분 id 다 받는다.
+     (탭해서 고른 자유 배치 화분을 표시할 길이 없으면 "무엇을 고른 건지"가 안 보인다) */
   function highlightSlots(slotIds) {
-    const want = new Set((slotIds || []).filter(id => slotById.has(id)));
+    const want = new Map();                 // 정본 열쇠 → { pos, r }
+    for (const raw of (slotIds || [])) {
+      const t = resolveKey(raw);
+      if (!t) continue;                     // 없는 열쇠는 예전처럼 조용히 뺀다
+      const r = t.slot
+        ? clamp((Number.isFinite(t.slot.maxPotD) ? t.slot.maxPotD : 0.22) * 0.55, 0.05, 0.30)
+        : clamp(((t.plant && t.plant.potD) || 0.22) * 0.75, 0.05, 0.30);
+      want.set(t.key, { pos: t.pos, r });
+    }
     for (const [id, m] of [...rings]) {
       if (want.has(id)) continue;
       houseGroup.remove(m); disposeObject(m); rings.delete(id);
     }
-    for (const id of want) {
-      if (rings.has(id)) continue;
-      const s = slotById.get(id);
-      const r = clamp((Number.isFinite(s.maxPotD) ? s.maxPotD : 0.22) * 0.55, 0.05, 0.30);
-      const m = new THREE.Mesh(new THREE.RingGeometry(r * 0.72, r, 24), ringMaterial());
+    for (const [id, w] of want) {
+      if (rings.has(id)) { rings.get(id).position.set(w.pos.x, w.pos.y + 0.004, w.pos.z); continue; }
+      const m = new THREE.Mesh(new THREE.RingGeometry(w.r * 0.72, w.r, 24), ringMaterial());
       m.rotation.x = -Math.PI / 2;
-      m.position.set(s.x, s.y + 0.004, s.z);
+      m.position.set(w.pos.x, w.pos.y + 0.004, w.pos.z);
       m.renderOrder = 5;
       m.userData.highlightSlotId = id;
-      m.userData.occupied = slotOccupied(id);
       houseGroup.add(m);
       rings.set(id, m);
     }
     for (const [id, m] of rings) {
-      const occ = slotOccupied(id);
+      /* 슬롯이면 '찼나', 자유 좌표 열쇠면 그 자체가 화분이다 */
+      const occ = slotById.has(id) ? slotOccupied(id) : true;
       m.userData.occupied = occ;
       m.material.color.setHex(occ ? 0x9fd0ff : 0xffd479);   // 찬 자리는 파랗게
     }
-    highlighted = want;
+    highlighted = new Set(want.keys());
     needsRender = true;
+  }
+
+  /* 빛내 둔 화분이 움직이면 링도 따라간다. 링을 새로 만들지 않는다(끄는 동안 부른다). */
+  function moveHighlightRing(key, at) {
+    const m = rings.get(key);
+    if (m) { m.position.set(at.x, at.y + 0.004, at.z); needsRender = true; }
   }
 
   function pulseRings(now) {
@@ -1277,7 +1336,7 @@ export async function createRoomView(canvas, opts = {}) {
     if (opt.near && Number.isFinite(opt.near.x) && Number.isFinite(opt.near.z)) {
       for (const id of guideRings.keys()) {
         const s = slotById.get(id);
-        if (!s || !slotHolds(s, potD)) continue;      // 못 올라가는 자리는 겨냥 대상이 아니다
+        if (!s || !potFits(potD, { slot: s }).ok) continue;   // 못 올라가는 자리는 겨냥 대상이 아니다
         const d = distanceXZ(opt.near, s);
         if (d < nearD) { nearD = d; nearId = id; }
       }
@@ -1287,7 +1346,9 @@ export async function createRoomView(canvas, opts = {}) {
     let fits = 0;
     for (const [id, m] of guideRings) {
       const s = slotById.get(id);
-      const holds = slotHolds(s, potD);
+      /* ★ surfaceAt 과 **같은 함수**를 부른다. 여기서 따로 판정하면 또 어긋난다 —
+         실제로 어긋나서 링은 14칸 다 "된다"인데 surfaceAt 은 13칸을 거절했다. */
+      const holds = potFits(potD, { slot: s }).ok;
       if (holds) fits++;
       const isNear = id === nearId;
       m.material = isNear ? guideMat.near : (holds ? guideMat.fit : guideMat.ng);
@@ -1324,7 +1385,8 @@ export async function createRoomView(canvas, opts = {}) {
     return ndc;
   }
 
-  /* 화면에서 그 슬롯이 어디에 찍히나. 뒤에 있으면 null. */
+  /* 월드 한 점이 화면 어디에 찍히나 — **캔버스 기준** CSS 픽셀. 카메라 뒤면 null.
+     (이름은 슬롯 시절 그대로지만 {x,y,z} 면 무엇이든 받는다 — 자유 좌표 화분도 이걸 쓴다) */
   function slotScreenPos(s) {
     const r = canvas.getBoundingClientRect();
     tmp.set(s.x, s.y, s.z).project(ctx.cam);
@@ -1351,10 +1413,12 @@ export async function createRoomView(canvas, opts = {}) {
     const pool = highlighted.size ? [...highlighted] : [...slotById.keys()];
     let best = null, bestD = SLOT_HIT_PX;
     for (const id of pool) {
-      const s = slotById.get(id); if (!s) continue;
-      const p = slotScreenPos(s); if (!p) continue;
+      /* ★ 빛낸 것 중에 자유 좌표 화분이 섞여 있을 수 있다 — 그것도 짚을 수 있어야 한다.
+         (예전에는 slotById 만 봐서 조용히 빠졌다) */
+      const t = resolveKey(id); if (!t) continue;
+      const p = slotScreenPos(t.pos); if (!p) continue;
       const d = Math.hypot(p.x - px, p.y - py);
-      if (d < bestD) { bestD = d; best = id; }
+      if (d < bestD) { bestD = d; best = t.key; }
     }
     return best ? { type: plants.has(best) ? 'plant' : 'slot', slotId: best } : null;
   }
@@ -1428,12 +1492,74 @@ export async function createRoomView(canvas, opts = {}) {
     const u = dx * c - dz * s, v = dx * s + dz * c;
     return Math.min(r.w / 2 - Math.abs(u), r.d / 2 - Math.abs(v)) - potD / 2;
   }
+  /* uid 로 가구 그룹을 찾는다 — 붙박이·벽걸이까지 전부(furnNodes 와 달리 안 거른다) */
+  function furnByUid(uid) {
+    if (!built || !built.furniture) return null;
+    return built.furniture.children.find(g => g.userData && g.userData.uid === uid) || null;
+  }
+
   /* 맞은 메시에서 부모로 거슬러 올라가 가구를 찾는다. 바닥이면 null. */
   function ownerOf(obj) {
     for (let p = obj; p; p = p.parent) {
       if (p === built.room) return null;
       if (p.userData && p.userData.uid) return p;
     }
+    return null;
+  }
+
+  /* ★★ 화분이 그 자리에 서나 — **링의 fits 와 surfaceAt 이 같은 이 함수 하나를 부른다.**
+     ------------------------------------------------------------
+     두 곳이 각자 판정하던 것이 실제로 어긋났다(2026-08-03 코어 창 지적 · 재서 확인).
+       링   showSlotRings 는 slotHolds(자리 한도)만 봤다 → 반지하 14칸 전부 "올라간다"
+       면   surfaceAt 은 판때기 발자국을 다시 쟀다   → 같은 점에서 13칸이 "0.01m 모자란다"
+     어느 쪽이 맞나 — **자리 한도가 정본이다.** 슬롯은 house.js 가 "여기 놓으라"고 낸
+     점이고, 격자로 놓이다 보니 화분이 판때기 가장자리에 1cm쯤 걸치는 게 정상이다
+     (실제 선반도 그렇다). 거기서 거절하면 슬롯 정본이 거짓말을 하게 된다.
+
+     그래서 규칙은 둘이 아니라 하나다:
+       · 추천 자리 위        → 그 자리의 maxPotD 계약이 정한다 (발자국은 다시 안 잰다)
+       · 자리 번호가 없는 곳 → 발자국으로 잰다. 다만 **가장자리에 걸치는 것까지 막지 않는다** —
+                              반지름의 절반(OVERHANG)까지는 면 밖으로 나가도 된다
+     반환 { ok, reason, margin } */
+  const OVERHANG = 0.5;
+  function potFits(potD, { slot, rect, point } = {}) {
+    if (slot) {
+      if (!slotHolds(slot, potD))
+        return { ok: false, margin: null,
+                 reason: `이 자리는 지름 ${slot.maxPotD}m 까지만 올라갑니다 (이 화분 ${potD.toFixed(2)}m)` };
+      return { ok: true, reason: null, margin: null };
+    }
+    if (rect && point) {
+      const m = rectMargin(point.x, point.z, rect, potD);
+      if (m < -potD * OVERHANG / 2)
+        return { ok: false, margin: +m.toFixed(4), reason: `면 밖으로 ${(-m).toFixed(2)}m 삐져나옵니다` };
+      return { ok: true, reason: null, margin: +m.toFixed(4) };
+    }
+    return { ok: true, reason: null, margin: null };
+  }
+
+  /* 이 점을 **지배하는** 추천 자리 — 사실상 그 자리 한가운데를 찍은 경우다.
+     ★ 이게 불변식을 지킨다: 추천 자리 정중앙은 무엇에 가려 있든 반드시 통과한다.
+       (창턱 받침은 창틀과 같은 높이에 겹쳐 있어서 레이캐스트가 창틀을 먼저 맞는다 —
+        그때 "구조물 위"로 거절하면 반지하에서 제일 밝은 자리가 통째로 막힌다) */
+  const SLOT_GOVERN_R = 0.04;   // 자리 중심에서 이 안이면 그 자리로 본다[m]
+  function governingSlot(p) {
+    let best = null, bestD = SLOT_GOVERN_R;
+    for (const s of slotById.values()) {
+      if (Math.abs(s.y - p.y) > 0.06) continue;
+      const d = Math.hypot(s.x - p.x, s.z - p.z);
+      if (d <= bestD) { bestD = d; best = s; }
+    }
+    return best;
+  }
+
+  /* 놓을 수 있는 면을 가진 가구인가. 매달린 조명·벽걸이 장식은 면이 아니다.
+     ★ 다만 **화분 자리를 내는 벽걸이 선반**(창턱 받침 shelf_sill_pot1)은 면이다 —
+       mount 만 보고 자르면 반지하 튜토리얼 자리가 사라진다. slots 유무로 가른다. */
+  function surfaceKindOf(own) {
+    const u = own.userData || {};
+    if (u.hangFromCeiling) return '매달린 조명 위에는 못 놓습니다';
+    if (u.mount && !(u.slots && u.slots.length)) return '벽걸이·붙박이 위에는 못 놓습니다';
     return null;
   }
 
@@ -1445,17 +1571,35 @@ export async function createRoomView(canvas, opts = {}) {
 
     ray.setFromCamera(ndcOf(px, py), ctx.cam);
     const hits = ray.intersectObject(built.room, true);
-    let hit = null, blockedBy = null;
-    for (const h of hits) {
-      if (!h.face || !h.object.isMesh) continue;
-      if (hiddenInScene(h.object)) continue;                       // 컷어웨이로 내려간 벽
+    const usable = h => h.face && h.object.isMesh && !hiddenInScene(h.object) && (() => {
       const m = Array.isArray(h.object.material) ? h.object.material[0] : h.object.material;
-      if (m && (m.colorWrite === false || (m.transparent && m.opacity < 0.95))) continue;  // 유리·그림자전용
-      if (built.shells && isDescendant(h.object, built.shells.ceiling)) { blockedBy = '천장'; break; }
-      if (faceUpY(h) > SURF_UP_MIN) { hit = h; break; }
-      blockedBy = '벽';                                            // 눈에 보이는 첫 면이 서 있다
-      break;
+      return !(m && (m.colorWrite === false || (m.transparent && m.opacity < 0.95)));  // 유리·그림자전용
+    })();
+    const list = [];
+    for (let i = 0; i < hits.length && list.length < 12; i++) if (usable(hits[i])) list.push(hits[i]);
+
+    /* ★ 눈에 보이는 첫 '위를 향한 면'을 쓴다. 다만 **바로 뒤(BEHIND_MAX)** 까지는 더 본다.
+       왜 — 선반 앞면·창틀처럼 **얇은 것**이 자리 바로 앞에 서 있는 경우가 많다. 그걸
+       그대로 '벽'으로 읽으면 그 선반 한 칸이 통째로 못 쓰는 자리가 된다(재서 확인했다:
+       원룸 shelf#5 6칸·투룸 shelf_low#6 4칸이 전부 그렇게 막혀 있었다).
+       벽 하나를 통째로 뚫고 들어가지는 않는다 — 40cm 까지만 본다. */
+    const BEHIND_MAX = 0.4;
+    let hit = null, hitIdx = -1, blockedBy = null, firstD = null, back = null, backIdx = -1;
+    for (let i = 0; i < list.length; i++) {
+      const h = list[i];
+      const ceil = built.shells && isDescendant(h.object, built.shells.ceiling);
+      const up = !ceil && faceUpY(h) > SURF_UP_MIN;
+      if (firstD == null) { firstD = h.distance; if (!up) blockedBy = ceil ? '천장' : '벽'; }
+      if (!up) continue;
+      if (h.distance - firstD > BEHIND_MAX) break;
+      /* 놓을 수 있는 면인가 — 가구 위 · 바닥 · 추천 자리 셋 중 하나.
+         (싼 것부터 본다. governingSlot 은 자리 수만큼 도는데 학원교실은 128칸이다) */
+      if (ownerOf(h.object) || h.point.y < FLOOR_Y || governingSlot(h.point)) {
+        hit = h; hitIdx = i; blockedBy = null; break;
+      }
+      if (!back) { back = h; backIdx = i; }      // 구조물 — 아무것도 못 찾으면 이유를 여기서 낸다
     }
+    if (!hit && back) { hit = back; hitIdx = backIdx; blockedBy = null; }
     if (!hit) {
       out.reason = blockedBy === '천장' ? '천장에는 못 놓습니다'
                  : blockedBy === '벽' ? '벽에는 못 놓습니다 — 위를 향한 면이 아닙니다'
@@ -1465,16 +1609,47 @@ export async function createRoomView(canvas, opts = {}) {
 
     const p = hit.point;
     const b = roomBox();
-    const isFloor = p.y < FLOOR_Y;
-    const own = isFloor ? null : ownerOf(hit.object);
+    /* ★ 같은 높이에 구조물과 가구가 겹쳐 있으면 **가구 쪽을 본다.**
+       창턱 받침(shelf_sill_pot1)은 창틀 안에 끼워져 있어 창틀 상단을 먼저 맞는다 —
+       그걸 '구조물'로 읽으면 반지하에서 제일 밝은 자리가 통째로 막힌다(재서 확인했다). */
+    let own = ownerOf(hit.object), ownHit = hit;
+    if (!own) {
+      for (let i = hitIdx + 1, seen = 0; i < hits.length && seen < 4; i++) {
+        const h = hits[i];
+        if (!usable(h)) continue;
+        seen++;
+        if (Math.abs(h.point.y - p.y) > 0.02) continue;
+        const o = ownerOf(h.object);
+        if (o) { own = o; ownHit = h; break; }
+      }
+    }
+    /* 이 점을 지배하는 추천 자리 — 있으면 그 자리 계약이 정본이다 */
+    const gov = governingSlot(p);
+    if (gov && !own) {
+      /* 자리는 있는데 메시로는 못 찾았다(창틀에 가린 경우). slotId 가 곧 그 가구다. */
+      const cut = String(gov.slotId).lastIndexOf(':');
+      own = cut > 0 ? furnByUid(String(gov.slotId).slice(0, cut)) : null;
+    }
+
     out.x = +p.x.toFixed(4); out.y = +p.y.toFixed(4); out.z = +p.z.toFixed(4);
     out.surfaceTop = out.y;
-    out.onUid = own ? (own.userData.uid || null) : null;
+    /* 러그처럼 **바닥에 깔린 납작한 것** 위는 그냥 바닥이다 — 러그 판때기 크기로 자리를
+       재면 러그 가장자리에 화분을 못 놓는다.
+       ⚠ '납작하다'만 보면 안 된다. 벽걸이 선반(창턱 받침)도 판때기라 납작한데 그건 바닥이
+         아니다. 그리고 '높다'만 봐도 안 된다 — 선반 맨 아랫단은 y 0.03 이라 바닥으로
+         오인된다(실제로 둘 다 겪었다). 그래서 **납작하고 또 바닥 높이일 때**만 바닥이다. */
+    const flat = !!(own && own.userData.size && own.userData.size.h <= 0.06 && p.y < FLOOR_Y);
+    const isFloor = !own || flat;
+    out.onUid = (own && !flat) ? (own.userData.uid || null) : null;
     /* occIdx 는 자가차폐 제외 번호다. 그 가구가 차폐체가 아니면 null 이 정답이다 —
        지어내면 남의 그림자를 지운다(place.validateAt 이 그래서 바닥+occIdx 를 막는다). */
-    out.occIdx = own && Number.isInteger(own.userData.occIdx) ? own.userData.occIdx : null;
-    if (own && own.userData.tier_max_pot_d && own.userData.tier_max_pot_d.length)
+    out.occIdx = out.onUid && Number.isInteger(own.userData.occIdx) ? own.userData.occIdx : null;
+    if (gov) {
+      out.maxPotD = Number.isFinite(gov.maxPotD) ? gov.maxPotD : null;
+      if (Number.isInteger(gov.occIdx) && out.onUid) out.occIdx = gov.occIdx;
+    } else if (out.onUid && own.userData.tier_max_pot_d && own.userData.tier_max_pot_d.length) {
       out.maxPotD = Math.max(...own.userData.tier_max_pot_d);
+    }
 
     /* 추천 자리는 늘 같이 낸다 — 붙일지 말지는 호출부 몫이다 */
     const near = nearestSlot({ x: out.x, y: out.y, z: out.z }, [...slotById.values()],
@@ -1485,21 +1660,30 @@ export async function createRoomView(canvas, opts = {}) {
                               maxPotD: Number.isFinite(near.slot.maxPotD) ? near.slot.maxPotD : null };
 
     /* ── 여기 놓을 수 있나 ── */
-    /* 바닥도 가구도 아닌 위쪽 면 = 벽 밑동 상자·구조물이다. 거기 놓으면 벽에 얹힌다. */
-    if (!isFloor && !own) { out.reason = '벽 밑동·구조물 위에는 못 놓습니다'; return out; }
-    if (!inRoom({ x: out.x, y: out.y, z: out.z }, b)) { out.reason = '방 밖입니다'; return out; }
-    if (Number.isFinite(out.maxPotD) && potD > out.maxPotD + 1e-9) {
-      out.reason = `이 면에는 지름 ${out.maxPotD}m 까지만 올라갑니다 (이 화분 ${potD.toFixed(2)}m)`;
-      return out;
+    if (own && !gov) {
+      /* 매달린 조명·벽걸이 장식은 면이 아니다. 추천 자리가 지배하면 그건 이미 면이다. */
+      const bad = surfaceKindOf(own);
+      if (bad) { out.reason = bad; return out; }
     }
-    if (isFloor) {
+    /* 바닥도 가구도 아닌 위쪽 면 = 벽 밑동 상자·창틀 같은 구조물이다 */
+    if (!own && !gov && p.y > FLOOR_Y) { out.reason = '벽 밑동·구조물 위에는 못 놓습니다'; return out; }
+    if (!inRoom({ x: out.x, y: out.y, z: out.z }, b)) { out.reason = '방 밖입니다'; return out; }
+
+    /* ★ 판정은 potFits 한 곳뿐이다 — 링의 fits 와 같은 함수다 */
+    if (gov) {
+      const f = potFits(potD, { slot: gov });
+      if (!f.ok) { out.reason = f.reason; return out; }
+    } else if (isFloor) {
       /* 바닥이면 가구·벽에 걸리는지 본다. 판정은 floor_nav 한 벌만 쓴다 —
          걷기와 다른 식을 쓰면 "설 수는 없는데 화분은 놓이는 자리"가 생긴다. */
       if (nav.blocked(out.x, out.z, potD / 2)) { out.reason = '가구·벽에 걸립니다'; return out; }
     } else {
-      const r = meshRect(hit.object);
-      const m = r ? rectMargin(out.x, out.z, r, potD) : 0;
-      if (r && m < 0) { out.reason = `면 밖으로 ${(-m).toFixed(2)}m 삐져나옵니다`; return out; }
+      if (Number.isFinite(out.maxPotD) && potD > out.maxPotD + 1e-9) {
+        out.reason = `이 면에는 지름 ${out.maxPotD}m 까지만 올라갑니다 (이 화분 ${potD.toFixed(2)}m)`;
+        return out;
+      }
+      const f = potFits(potD, { rect: meshRect(ownHit.object), point: { x: out.x, z: out.z } });
+      if (!f.ok) { out.reason = f.reason; return out; }
     }
     /* 다른 화분과 겹치나 — 같은 높이대(±8cm)만 본다.
        선반 위 화분과 그 아래 바닥 화분은 화면에서 겹쳐 보여도 서로 자리를 안 뺏는다. */
@@ -2202,17 +2386,54 @@ export async function createRoomView(canvas, opts = {}) {
 
      ★ 창턱(sill)은 못 옮긴다. house.js 가 userData.fixed 를 달아 둔 건축 구조다.
   ============================================================ */
-  /* 옮길 수 있는 가구 = **바닥에 서 있는** 가구다.
-       · uid·size 가 있어야 한다 (조명 PointLight 는 size 가 없어 저절로 빠진다)
-       · fixed        창턱 같은 건축 구조는 못 옮긴다(house.js 가 표시해 준다)
-       · mount        벽걸이·창턱받침·선반밑 등은 **바닥 좌표로 끄는 조작이 아니다.**
-                      (실제로 재 보니 창 개구부에 끼운 shelf_sill_pot1 은 제자리조차
-                       "벽 밖"으로 판정된다 — 벽 안에 끼워 넣은 물건이라 그게 맞다)
-       · hangFromCeiling  천장등도 같은 이유로 뺀다 */
+  /* ★★ '바닥에 서 있는 가구'와 '무엇에 얹힌 물건'을 가르는 유일한 규칙 (2026-08-03)
+     ------------------------------------------------------------
+     ⚠ 먼저 확인했다: **house_rooms.json 에도 house.js 에도 부착 관계를 적는 칸이 없다.**
+       (가구 한 칸이 가진 열쇠는 preset·uid·x·z·y·rot·spectrum·schedule·note 뿐이다)
+     그래서 데이터가 **이미 하고 있는 표시**를 규칙으로 삼는다 —
+       바닥에 서는 가구는 y 를 안 적는다(=0). 무엇에 얹히거나 물린 것만 y 를 적는다.
+         반지하 클립등  y 0.75  ← 책상 상판 0.74 에 물려 있다
+         반지하 바 등   y 1.02  ← 선반 단 밑에 붙어 있다
+       house.js 의 mount·hangFromCeiling 도 같은 뜻이다(벽걸이·천장등).
+     ⇒ **y>0 이거나 mount·hangFromCeiling 이면 '얹힌 것'이다.**
+        얹힌 것은 ① 바닥 장애물이 아니고 ② 혼자 못 움직이며 ③ 받친 가구를 따라간다.
+
+     이걸 안 지키면 어떻게 되나 — 실제로 그랬다:
+       책상에 물린 클립등을 장애물로 세어 **책상이 자기가 지금 있는 자리조차 거절**당했다.
+       판정이 현재 상태를 거절하면 그건 판정이 아니라 고장이다. */
+  const RAISED_Y = 0.02;
+  const isRider = u => !!(u && (u.mount || u.hangFromCeiling));
+  function riderNode(g) {
+    return !!g && (isRider(g.userData) || g.position.y > RAISED_Y);
+  }
+
+  /* 옮길 수 있는 가구 = 바닥에 서 있고 붙박이가 아닌 것.
+     (조명 PointLight 도 같은 그룹의 자식이지만 size 가 없어 저절로 빠진다) */
   function furnNodes() {
     if (!built || !built.furniture) return [];
     return built.furniture.children.filter(g => g.userData && g.userData.uid && g.userData.size
-      && !g.userData.fixed && !g.userData.mount && !g.userData.hangFromCeiling);
+      && !g.userData.fixed && !riderNode(g));
+  }
+
+  /* 그 가구에 얹히거나 물려 있는 것들 — 겹침 판정에서 빼고, 옮길 때 같이 데려간다.
+     판단은 위 규칙 + **XZ 발자국이 겹치는가** 다(부착 관계가 데이터에 없으니 좌표로 본다).
+     ⚠ 벽걸이·천장등은 뺀다 — 그건 벽·천장 것이지 이 가구 것이 아니다. */
+  function ridersOf(g) {
+    if (!built || !built.furniture || !g || !g.userData.size) return [];
+    const sz = g.userData.size;
+    const base = { x: g.position.x, z: g.position.z, w: sz.w, d: sz.d, rot: g.rotation.y || 0 };
+    const out = [];
+    for (const n of built.furniture.children) {
+      if (n === g || !n.userData || !n.userData.uid || !n.userData.size) continue;
+      if (n.userData.fixed || n.userData.hangFromCeiling) continue;
+      if (n.userData.mount === 'wall' || n.userData.mount === 'window') continue;
+      if (!riderNode(n)) continue;
+      const s2 = n.userData.size;
+      if (!rectOverlap(base, { x: n.position.x, z: n.position.z, w: s2.w, d: s2.d,
+                               rot: n.rotation.y || 0 }, 0.05)) continue;
+      out.push(n);
+    }
+    return out;
   }
   function furnNode(uid) { return furnNodes().find(g => g.userData.uid === uid) || null; }
   /* 그 uid 가 지금 이 방에 있나 — 붙박이(창턱)까지 본다. 화분 회수 판정이 쓴다. */
@@ -2281,23 +2502,42 @@ export async function createRoomView(canvas, opts = {}) {
     const sz = g.userData.size;
     const rot = (pos.rot == null ? (g.rotation.y || 0) * 180 / Math.PI : pos.rot) * Math.PI / 180;
     const me = { x: pos.x, z: pos.z, w: sz.w, d: sz.d, rot };
+    /* ★★ 불변식: 가구는 **자기가 지금 있는 자리**를 반드시 통과한다.
+       ------------------------------------------------------------
+       방 데이터에는 원래부터 겹쳐 놓은 것들이 있다 — 소파 밑 러그, 침대에 밀어 넣은 의자,
+       교탁에 붙인 사물함, 벽에 바짝 댄 옷장(벽 두께의 절반만큼 물린다).
+       그걸 새 위반으로 세면 그 가구는 영영 못 움직인다. 현재 상태를 거절하는 판정은
+       판정이 아니라 고장이다(추천 자리에서 똑같은 실수를 한 번 했다).
+       ⇒ **지금도 겹쳐 있는 것은 장애물로 세지 않는다.**
+       재서 확인: 이 규칙 없이는 투룸 2·아파트 4·학원교실 2·온실 4개가 제자리조차 거절당했다.
+       ⚠ 대신 "이미 겹친 것 속으로 더 밀어 넣기"는 막지 못한다. 원래 그렇게 놓인 방이라
+         새 규칙으로 되돌릴 수는 없다 — 막는 대신 **새로 생기는 겹침만** 막는다. */
+    const cur = { x: g.position.x, z: g.position.z, w: sz.w, d: sz.d, rot: g.rotation.y || 0 };
+    const already = r2 => rectOverlap(cur, r2, -0.01);
+    /* 러그처럼 납작한 것은 무엇 밑으로든 들어간다(소파 밑 러그가 방 데이터의 기본 구성이다) */
+    const flatMe = sz.h <= 0.05;
+
     const b = roomBox();
     for (const c of rectCorners(me))
       if (Math.abs(c.x) > b.w / 2 + 1e-4 || Math.abs(c.z) > b.d / 2 + 1e-4)
         return { ok: false, reason: '벽 밖으로 나갑니다' };
-    for (const n of furnNodes()) {
-      if (n === g) continue;
+    if (!flatMe) for (const n of furnNodes()) {
+      if (n === g) continue;                             // ★ 자기 자신은 장애물이 아니다
       const s2 = n.userData.size;
       if (!s2 || s2.h <= 0.05) continue;                 // 러그처럼 납작한 것 위로는 지나가도 된다
-      if (rectOverlap(me, { x: n.position.x, z: n.position.z, w: s2.w, d: s2.d,
-                            rot: n.rotation.y || 0 }, -0.01))
+      /* 얹힌 것(클립등·바 등)은 furnNodes 에 없다 — 애초에 바닥 장애물이 아니다 */
+      const r2 = { x: n.position.x, z: n.position.z, w: s2.w, d: s2.d, rot: n.rotation.y || 0 };
+      if (already(r2)) continue;
+      if (rectOverlap(me, r2, -0.01))
         return { ok: false, reason: `${furnInfo(n).name} 와(과) 겹칩니다` };
     }
     /* 창턱·칸막이 같은 붙박이는 colliders 로 본다 — 그 그룹은 원점에 있고 상자만 옮겨져
        있어서 position 으로 재면 틀린다(house.js sill 조립 참고). */
     for (const c of (built.colliders || [])) {
       if (c.kind === 'furn') continue;                   // 움직이는 가구는 위에서 이미 봤다
-      if (rectOverlap(me, { x: c.x, z: c.z, w: c.w, d: c.d, rot: c.rot || 0 }, -0.01))
+      const r2 = { x: c.x, z: c.z, w: c.w, d: c.d, rot: c.rot || 0 };
+      if (already(r2)) continue;
+      if (rectOverlap(me, r2, -0.01))
         return { ok: false, reason: c.kind === 'sill' ? '창턱과 겹칩니다' : '벽·칸막이와 겹칩니다' };
     }
     return { ok: true, reason: null };
@@ -2361,20 +2601,28 @@ export async function createRoomView(canvas, opts = {}) {
     return { uid, x: pos.x, z: pos.z, rot, y, ok: fit.ok, reason: fit.reason };
   }
 
-  /* 가구 좌표계의 상대 위치를 보존한 채 새 자리로 옮긴다.
-     (house.js 규약: X = x0 + u·cos + v·sin · Z = z0 − u·sin + v·cos) */
-  function followFurniture(at, from, to) {
+  /* 가구 좌표계의 상대 위치를 보존한 채 새 자리로 옮긴다 — **화분도 얹힌 기구도 이 한 식**을 쓴다.
+     (house.js 규약: X = x0 + u·cos + v·sin · Z = z0 − u·sin + v·cos)
+     from·to 의 rot 은 도(°) 다. 돌려주는 rotDeg 도 도, rotY 는 라디안 — 쓰는 쪽이 골라 쓴다. */
+  function moveWithFurniture(p, from, to) {
     const fr = (from.rot || 0) * Math.PI / 180, tr = (to.rot || 0) * Math.PI / 180;
     const c = Math.cos(fr), s = Math.sin(fr);
-    const dx = at.x - from.x, dz = at.z - from.z;
+    const dx = p.x - from.x, dz = p.z - from.z;
     const u = dx * c - dz * s, v = dx * s + dz * c;
     const c2 = Math.cos(tr), s2 = Math.sin(tr);
     const dy = (to.y == null ? from.y : to.y) - (from.y || 0);
-    return { ...at,
+    return {
       x: to.x + u * c2 + v * s2,
       z: to.z - u * s2 + v * c2,
-      y: at.y + dy,
-      rotY: (at.rotY || 0) + (tr - fr) };
+      y: (p.y || 0) + dy,
+      rotDeg: (p.rotDeg || 0) + ((to.rot || 0) - (from.rot || 0)),
+      rotY: (p.rotY || 0) + (tr - fr)
+    };
+  }
+  /* 화분 자리(at) 판 */
+  function followFurniture(at, from, to) {
+    const m = moveWithFurniture({ x: at.x, y: at.y, z: at.z, rotY: at.rotY || 0 }, from, to);
+    return { ...at, x: m.x, y: m.y, z: m.z, rotY: m.rotY };
   }
 
   /* 방을 다시 짓고 화분을 되돌린다. ★ 여기가 유일한 재조립 통로다. */
@@ -2433,17 +2681,39 @@ export async function createRoomView(canvas, opts = {}) {
     const to = { x: pos.x, z: pos.z, rot, y: pos.y == null ? from.y : pos.y };
     disposeFurnGhost();
 
+    /* ★ 얹힌 기구도 같이 간다 — 책상에 물린 클립등이 제자리에 남으면 등만 허공에 뜬다.
+       ⚠ 등이 움직이면 그 자리 PPFD 가 바뀐다. 그래서 화면만 옮기지 않고 **조립 정의(def)를**
+         고쳐서 방을 다시 짓는다 — buildHouse 가 lightRigs 를 그 정의로 다시 만들므로
+         조도 계산(ppfdSum)과 화면이 같은 자리의 같은 등을 본다. 둘이 갈릴 틈이 없다. */
+    const moves = { [uid]: { x: to.x, z: to.z, rot: to.rot } };
+    const riders = [];
+    for (const n of ridersOf(g)) {
+      const m = moveWithFurniture(
+        { x: n.position.x, y: n.position.y, z: n.position.z,
+          rotDeg: (n.rotation.y || 0) * 180 / Math.PI }, from, to);
+      moves[n.userData.uid] = { x: +m.x.toFixed(4), z: +m.z.toFixed(4),
+                                rot: +m.rotDeg.toFixed(4), y: +m.y.toFixed(4) };
+      riders.push(n.userData.uid);
+    }
+
     let prebuilt = null;
-    if (O.lightEngine && typeof O.lightEngine.moveFurniture === 'function') {
+    if (O.lightEngine && typeof O.lightEngine.setFurnitureOverrides === 'function'
+        && typeof O.lightEngine.furnitureOverrides === 'function') {
       /* ★ 조도 엔진이 방을 다시 짓는다. 그 결과를 그대로 그린다 —
-         여기서 또 지으면 buildHouse 가 한 번에 두 번 돈다. */
+         여기서 또 지으면 buildHouse 가 한 번에 두 번 돈다.
+         ★★ 얹힌 것까지 **한 번에** 얹는다. moveFurniture 를 개수만큼 부르면 그만큼 재조립한다. */
+      const merged = { ...O.lightEngine.furnitureOverrides(), ...moves };
+      O.lightEngine.setFurnitureOverrides(merged);
+      const r = O.lightEngine.room;
+      if (r) prebuilt = { built: r.built, def: r.def, wins: r.wins };
+    } else if (O.lightEngine && typeof O.lightEngine.moveFurniture === 'function') {
       const r = O.lightEngine.moveFurniture(uid, { x: to.x, z: to.z, rot: to.rot });
       if (r && r.room) prebuilt = { built: r.room.built, def: r.room.def, wins: r.room.wins };
     } else {
-      localFurn[uid] = { x: to.x, z: to.z, rot: to.rot };
+      Object.assign(localFurn, moves);
     }
     await rebuildRoom({ prebuilt, moved: { uid, from, to } });
-    return { uid, from, to };
+    return { uid, from, to, riders };
   }
 
   /* ============================================================
@@ -3155,9 +3425,13 @@ export async function createRoomView(canvas, opts = {}) {
   ============================================================ */
   function focusSlot(slotId, snap) {
     if (slotId == null) { frameRoom(!!snap); return; }
-    const s = slotOrThrow(slotId);
-    focused = slotId;
-    const p = plants.get(slotId);
+    /* ★ 자유 좌표 화분도 확대할 수 있어야 한다 — game.html 의 onPlantTap 이 그대로 부른다.
+       열쇠 해석은 resolveKey 한 곳만 쓴다. */
+    const t = resolveKey(slotId);
+    if (!t) throw new Error(`모르는 슬롯: ${slotId} (방 ${roomId})`);
+    const s = t.pos;
+    focused = t.key;
+    const p = t.plant;
     /* 화분이 있으면 그 키에 맞춰 거리를 잡는다. 없으면 자리만 보여주면 된다.
        ★ 잎이 벌어진 몬스테라는 bbox 가 실제 키보다 훨씬 크게 나온다. 그대로 쓰면
          카메라가 천장을 뚫고 올라가 하얀 벽만 찍혔다 — 위아래를 잘라 둔다. */
@@ -3287,6 +3561,19 @@ export async function createRoomView(canvas, opts = {}) {
        ⚠ 끄는 동안에는 previewFurnitureAt 만 부른다. commit 은 손 뗄 때 한 번이다. */
     pickFurnitureAt(px, py) { try { return pickFurnitureAt(px, py); } catch (e) { throw fail(e); } },
     furniture() { return furnNodes().map(furnInfo); },
+    /* 그 가구에 얹히거나 물려 있는 것들(클립등 등) — 옮기면 같이 간다 */
+    ridersOf(uid) {
+      const g = furnNode(uid);
+      return g ? ridersOf(g).map(n => n.userData.uid) : [];
+    },
+    /* 방에 놓인 조명 기구의 **지금 자리** — 등이 가구를 따라왔는지 확인하는 창구.
+       ⚠ 이 좌표는 buildHouse 가 조립 정의로 만든 것이라 조도 계산(ppfdSum)이 쓰는 것과 같다. */
+    lightRigs() {
+      return ((built && built.lightRigs) || []).map(r => ({
+        id: r.id, grow: !!r.grow, schedule: r.schedule,
+        pos: { x: +r.pos.x.toFixed(4), y: +r.pos.y.toFixed(4), z: +r.pos.z.toFixed(4) }
+      }));
+    },
     /* 그 자리에 놓을 수 있나 — { ok, reason }. rot 는 도(°) */
     furnitureFit(uid, pos) { return furnitureFit(uid, pos || {}); },
     previewFurnitureAt(uid, pos) { try { return previewFurnitureAt(uid, pos); } catch (e) { throw fail(e); } },
@@ -3297,17 +3584,27 @@ export async function createRoomView(canvas, opts = {}) {
     /* ★ 화분을 세로축으로 돌린다. Y 회전만 — 눕히거나 기울이면 화분이 넘어진다.
        회전무관 지름(2×max√(x²+z²))은 Y 회전에 불변이라 maxPotD 판정이 안 바뀐다.
        다시 조립돼도(진행도가 바뀌어 새로 지어도) 각도는 유지된다. */
+    /* ★ 슬롯 id · `free:` 열쇠 · 화분 id 셋 다 받는다(resolveKey). 없으면 예전처럼 던진다. */
     setPlantYaw(slotId, rad) {
-      slotOrThrow(slotId);
+      const t = resolveKey(slotId);
+      if (!t) throw fail(new Error(`모르는 슬롯: ${slotId} (방 ${roomId})`));
       const y = Number.isFinite(+rad) ? +rad : 0;
-      plantYaw.set(slotId, y);
-      const p = plants.get(slotId);
-      if (p) p.group.rotation.y = y;
-      if (preview && preview.fromId === slotId) preview.group.rotation.y = y;
+      plantYaw.set(t.key, y);
+      if (t.plant) {
+        t.plant.group.rotation.y = y;
+        /* 자리(at)에도 적어 둔다 — 방을 다시 조립해도(가구 이동) 각도가 살아남는 길이다 */
+        if (t.plant.at) t.plant.at = { ...t.plant.at, rotY: y };
+      }
+      if (preview && preview.fromId === t.key) preview.group.rotation.y = y;
       needsRender = true;
       return y;
     },
-    plantYaw(slotId) { return plantYaw.get(slotId) || 0; },
+    /* 던지지 않는다 — 모르는 것이면 0 이다(예전 그대로) */
+    plantYaw(slotId) {
+      const t = resolveKey(slotId);
+      if (!t) return 0;
+      return t.plant ? (t.plant.group.rotation.y || 0) : (plantYaw.get(t.key) || 0);
+    },
     /* ★ 옮기기 미리보기 — 그 화분의 반투명 복제를 목표 자리에 띄운다.
        원본은 제자리 그대로. toSlotId 가 null 이면 지운다.
        돌려주는 값의 ok 가 false 면 안 들어가는 자리다(미리보기가 붉게 뜬다). */
@@ -3343,28 +3640,45 @@ export async function createRoomView(canvas, opts = {}) {
     /* ★ 계약에 없지만 필요해서 더한 것들 — 아래 셋은 배치 UI 가 '미리' 물어보는 통로다 */
     /* 그 자리에 이 화분이 들어가나. 회전 무관 지름으로 본다 */
     fitCheck(slotId, plantOrDiameter) {
-      const s = slotOrThrow(slotId);
-      const limit = slotPotLimit(s);
+      const t = resolveKey(slotId);
+      if (!t) throw fail(new Error(`모르는 슬롯: ${slotId} (방 ${roomId})`));
+      /* 자유 좌표 자리에는 '자리 한도'가 없다 — 그건 면이 정한다(surfaceAt.maxPotD) */
+      const limit = t.slot ? slotPotLimit(t.slot) : Infinity;
       let d = null;
       if (typeof plantOrDiameter === 'number') d = plantOrDiameter;
       else if (plantOrDiameter && plantOrDiameter.kind)
         d = plantOrDiameter.kind === 'beansprout' ? SIRU_D : MONSTERA_POT_D;
-      else if (plants.has(slotId)) d = rotationSafeDiameter(potPartOf(plants.get(slotId).group), plants.get(slotId).group);
-      return { slotId, maxPotD: Number.isFinite(limit) ? limit : null, diameter: d,
+      else if (t.plant) d = rotationSafeDiameter(potPartOf(t.plant.group), t.plant.group);
+      return { slotId: t.key, maxPotD: Number.isFinite(limit) ? limit : null, diameter: d,
                ok: d == null ? null : !Number.isFinite(limit) || d <= limit + 1e-4 };
     },
     plantDiameter(slotId) {
-      const p = plants.get(slotId);
-      return p ? rotationSafeDiameter(potPartOf(p.group), p.group) : null;
+      const t = resolveKey(slotId);
+      return t && t.plant ? rotationSafeDiameter(potPartOf(t.plant.group), t.plant.group) : null;
+    },
+    /* ★ 열쇠 하나를 풀어 본다 — UI 가 "이 이름이 무엇을 가리키나"를 물어보는 창구.
+       슬롯 id · `free:` 열쇠 · 화분 id 셋 다 받는다. 모르면 null. */
+    resolveKey(x) {
+      const t = resolveKey(x);
+      if (!t) return null;
+      return { key: t.key, slotId: t.slot ? t.slot.slotId : null,
+               potId: t.plant ? (t.plant.potId || null) : null,
+               free: isFreeSlotId(t.key), hasPlant: !!t.plant,
+               pos: { ...t.pos }, screen: slotScreenPos(t.pos) };
     },
     /* ★ 그 자리가 화면 어디에 찍히나 — 뒤에 있으면 null.
        ★★ 좌표계는 **캔버스 기준 CSS 픽셀**이다(뷰포트 기준이 아니다).
           캔버스 왼쪽 위가 (0,0) 이고 오른쪽 아래가 (캔버스 CSS 폭, 높이) 다.
           뷰포트 좌표가 필요하면 canvas.getBoundingClientRect() 의 left/top 을 더하십시오.
           (드래그 중 마우스 좌표와 비교할 때 이 보정을 빼먹으면 자리가 어긋난다) */
+    /* ★ 슬롯 id · `free:` 열쇠 · 화분 id 셋 다 받는다(resolveKey).
+       화분이 있으면 **그 화분 발밑**을, 빈 자리면 자리 점을 돌려준다.
+       발밑을 주는 이유는 캐릭터의 characterScreenPos 와 같다 — 바닥·상판과 맞바꿀 수 있는
+       유일한 점이라 **상대 드래그의 기준점**으로 그대로 쓸 수 있다(손가락을 안 움직이면 제자리).
+       ★★ 좌표계 규약은 안 바뀐다: **캔버스 기준 CSS 픽셀**. 카메라 뒤면 null 이다(0 으로 안 메꾼다). */
     screenPosOf(slotId) {
-      const s = slotById.get(slotId);
-      return s ? slotScreenPos(s) : null;
+      const t = resolveKey(slotId);
+      return t ? slotScreenPos(t.pos) : null;
     },
     /* 지금 시점 — 저장했다 복원하거나 검증할 때 쓴다 */
     camera() {

@@ -10,6 +10,10 @@
      F  옛 세이브(slotId 만)의 좌표가 정확히 채워진다
      A·B 좌표가 NaN·무한대·방 밖이면 조용히 통과하지 않는다
 
+   ★ O~R 은 **콩나물 시루**다 (2026-08-03). 화분만 자유 배치면 "모든 식물"이 아니다.
+     시루는 S.pots 가 아니라 S.firstPlay.beansprout 에 사는데, 자리 모양(at)·불변식·계약 열쇠는
+     화분과 **같은 것 하나**를 쓴다. 여기서 보는 것은 그 '하나'가 정말 하나인지다.
+
    ★ 집 조립(THREE)을 헤드리스로 돌린다.
      `vendor/three/three.min.js` 는 UMD 라 `vm.runInThisContext` 로 올리면 전역 THREE 가 선다.
      `house.js` 는 그 전역을 쓰므로 브라우저와 **같은 코드**가 그대로 돈다 —
@@ -60,9 +64,12 @@ assert.ok(globalThis.THREE && globalThis.THREE.REVISION,
 const { createLightEngine } = await import(toUrl('src/game/light_adapter.js'));
 const place = await import(toUrl('src/game/place.js'));
 const {
-  newState, givePlant, pot0, rehomePot, migratePots, setPotAt, setPotSlot,
-  setFurniturePlacement, furnitureOverrides
+  newState, givePlant, pot0, rehomePot, migratePots, setPotAt, setPotSlot, setCropAt,
+  placedItems, setFurniturePlacement, furnitureOverrides
 } = await import(toUrl('src/game/state.js'));
+const {
+  BEANSPROUT_ID, cropDliFromReport, firstPlayRulesFromBalance, placeBeansprout
+} = await import(toUrl('src/game/first_play.js'));
 
 function toUrl(rel) { return 'file:///' + path.join(ROOT, rel).replace(/\\/g, '/'); }
 const dataOf = (rel) => JSON.parse(fs.readFileSync(path.join(ROOT, 'data', rel), 'utf8'));
@@ -421,6 +428,167 @@ check('N rehomePot — 받치던 가구가 사라지면 회수 · 그 밖에는 
   rehomePot(S3, room.slots, null, eng.room);
   assert.equal(pot0(S3).slotId, 'banjiha-desk:1');
   assert.ok(pot0(S3).at, '회수 때 옛 세이브 좌표 채우기가 안 돌았습니다');
+});
+
+/* ══════════════════════════════════════════════════════════════════════
+   ★ 콩나물 시루 — 화분과 **같은 자리 모양**을 쓴다 (2026-08-03)
+   ══════════════════════════════════════════════════════════════════════ */
+const FP_RULES = firstPlayRulesFromBalance(dataOf('balance/characters.json'));
+const newFP = () => newState({ room: 'banjiha', mode: 'novice',
+                               firstPlay: true, firstPlayRules: FP_RULES });
+
+/* ══ O · 자유 좌표 시루가 계약에 실리고 cropDliFromReport 가 찾는다 ═══════ */
+check('O 자유 좌표 콩나물 — 그 자리 DLI 가 계약에 실리고 cropDliFromReport 가 찾는다', () => {
+  const S = newFP();
+  const spot = { x: -1.2, y: 0.9, z: -1.0 };          // 어느 추천 자리에도 안 붙는 점
+
+  const r = setCropAt(S, spot, { size: eng.room.size, slots: eng.room.slots, snapDist: 0.15 });
+  assert.equal(r.slotId, `free:${BEANSPROUT_ID}`, `자유 좌표인데 slotId 가 ${r.slotId}`);
+  assert.equal(S.firstPlay.beansprout.slotId, r.slotId, 'slotId 를 상태에 안 적었습니다');
+  assert.deepEqual({ x: S.firstPlay.beansprout.at.x, y: S.firstPlay.beansprout.at.y,
+                     z: S.firstPlay.beansprout.at.z }, spot, '좌표 정본이 안 세워졌습니다');
+  assert.equal(S.firstPlay.phase, 'grow_beansprout', '자리를 정했는데 단계가 안 넘어갔습니다');
+
+  const { report, check: c } = eng.daily(1, S);
+  assert.equal(c.ok, true, '계약 검증에 걸렸습니다: ' + c.problems.join(' / '));
+
+  const row = report.slots.find(s => s.slotId === r.slotId);
+  assert.ok(row, '★ 자유 좌표 시루가 오늘 계약에 없습니다 — cropDliFromReport 가 못 찾습니다');
+  assert.deepEqual(row.point, spot);
+  /* 시루는 '자리'일 뿐이다 — 식물 id 를 지어내면 그 자리 밴드가 몬스테라 기준으로 나온다 */
+  assert.equal(row.plantId, null, `시루 자리에 plantId 가 ${row.plantId} 로 실렸습니다`);
+
+  const dli = cropDliFromReport(report, S.firstPlay.beansprout.slotId);
+  assert.equal(dli, row.dli);
+  assert.equal(dli, eng.dliAt(spot, SKY).dli, '계약의 DLI 와 미리보기 DLI 가 다릅니다');
+  /* 상태 객체를 그대로 넘겨도 같은 답이어야 한다(호출부가 둘 중 아무거나 쓴다) */
+  assert.equal(cropDliFromReport(report, S.firstPlay.beansprout), dli);
+
+  /* 자유 좌표인데 계약에 안 실린 경우를 0(=암흑)으로 메꾸지 않는다 */
+  assert.throws(() => cropDliFromReport({ slots: [] }, r.slotId), /계약에 없습니다/);
+
+  /* 추천 자리 쪽으로 끌면 안정 slotId 를 되찾는다 — 화분(G)과 같은 규칙이다 */
+  const back = setCropAt(S, { x: SILL.x + 0.04, y: SILL.y, z: SILL.z },
+                         { size: eng.room.size, slots: eng.room.slots, snapDist: 0.15 });
+  assert.equal(back.slotId, 'banjiha-sill:0', `붙었는데 slotId 가 ${back.slotId}`);
+  assert.deepEqual({ x: back.at.x, y: back.at.y, z: back.at.z },
+                   { x: SILL.x, y: SILL.y, z: SILL.z }, '붙었는데 좌표가 슬롯과 다릅니다');
+  assert.equal(back.at.occIdx, SILL.occIdx, '자가차폐 번호를 안 가져왔습니다');
+
+  /* 방 밖·NaN 은 시루에서도 못 넣는다 */
+  assert.throws(() => setCropAt(S, { x: 99, y: 0, z: 0 }, { size: eng.room.size }), /방 밖/);
+  assert.throws(() => setCropAt(S, { x: 0, y: NaN, z: 0 }), /NaN/);
+  assert.throws(() => placeBeansprout(S.firstPlay, ''), /자리를 골라/);
+});
+
+/* ══ P · ★★ 시루도 물리는 하나다 ═══════════════════════════════════════ */
+check('P 같은 좌표면 슬롯 경로와 자유 좌표 경로의 콩나물 DLI 가 같다', () => {
+  const seen = [];
+  for (const s of eng.room.slots) {
+    /* ① 슬롯 경로 — 옛 호출부 그대로(이름 하나) */
+    const S1 = newFP();
+    placeBeansprout(S1.firstPlay, s.slotId, { slots: eng.room.slots });
+    assert.equal(S1.firstPlay.beansprout.slotId, s.slotId);
+    const bySlot = cropDliFromReport(eng.daily(1, S1).report, S1.firstPlay.beansprout.slotId);
+
+    /* ② 자유 좌표 경로 — **같은 점**인데 계약 열쇠가 다르다(slots 를 안 주니 안 붙는다) */
+    const S2 = newFP();
+    const free = setCropAt(S2, { x: s.x, y: s.y, z: s.z,
+                                 onUid: String(s.slotId).slice(0, String(s.slotId).lastIndexOf(':')),
+                                 occIdx: Number.isInteger(s.occIdx) ? s.occIdx : null },
+                           { size: eng.room.size });
+    assert.equal(free.slotId, `free:${BEANSPROUT_ID}`, '슬롯 목록을 안 줬는데 붙었습니다');
+    const byPoint = cropDliFromReport(eng.daily(1, S2).report, free.slotId);
+
+    assert.equal(byPoint, bySlot,
+      `${s.slotId}: 슬롯 경로 ${bySlot} vs 자유 좌표 경로 ${byPoint} — 시루 물리가 둘로 갈렸습니다`);
+    seen.push(bySlot);
+  }
+  results.push(['INFO', `  시루 ${seen.length}칸 전부 두 경로가 같은 값 ` +
+                        `(창턱 ${Math.max(...seen)})`]);
+});
+
+/* ══ Q · 옛 세이브(slotId 만)의 시루가 좌표로 마이그레이션된다 ══════════ */
+check('Q 옛 세이브 — 시루도 그 슬롯 좌표가 채워진다(slotId 는 안 버린다)', () => {
+  const S = newFP();
+  /* 2026-08-03 이전 세이브 모양: beansprout 에 at 칸 자체가 없다 */
+  delete S.firstPlay.beansprout.at;
+  S.firstPlay.beansprout.slotId = 'banjiha-desk:1';
+  S.firstPlay.beansprout.ageDays = 2;
+  S.firstPlay.beansprout.dliHist = [0.2, 0.2];
+
+  const r = migratePots(S, eng.room.slots);
+  const desk = eng.room.slots.find(x => x.slotId === 'banjiha-desk:1');
+  const at = S.firstPlay.beansprout.at;
+  assert.ok(at, '★ 시루 좌표를 안 채웠습니다 — 화분만 챙기고 있습니다');
+  assert.deepEqual({ x: at.x, y: at.y, z: at.z }, { x: desk.x, y: desk.y, z: desk.z });
+  assert.equal(at.onUid, 'banjiha-desk');
+  assert.equal(at.occIdx, desk.occIdx, '자가차폐 번호가 빠졌습니다');
+  assert.equal(S.firstPlay.beansprout.slotId, 'banjiha-desk:1', 'slotId 를 버렸습니다(하위호환 파손)');
+  assert.ok(r.filled.some(f => f.id === BEANSPROUT_ID), `채운 목록에 시루가 없습니다: ` +
+    JSON.stringify(r.filled));
+  assert.equal(S.firstPlay.beansprout.ageDays, 2, '마이그레이션이 자란 날을 건드렸습니다');
+
+  /* 마이그레이션 뒤에도 계약이 그 자리를 한 이름으로만 부른다 */
+  const { report } = eng.daily(1, S);
+  const ids = report.slots.map(x => x.slotId);
+  assert.equal(new Set(ids).size, ids.length, '계약에 같은 slotId 가 두 번 실렸습니다');
+  assert.equal(ids.length, eng.room.slots.length, '슬롯 위 시루가 자리를 하나 더 만들었습니다');
+  assert.equal(cropDliFromReport(report, 'banjiha-desk:1'), eng.dliOfSlot('banjiha-desk:1', SKY));
+
+  /* 아직 안 놓은 시루는 '빠뜨린 것'이 아니다 — 건너뛴 사유 목록에도 안 들어간다 */
+  const S2 = newFP();
+  const r2 = migratePots(S2, eng.room.slots);
+  assert.deepEqual([r2.filled.length, r2.skipped.length], [0, 0],
+    '자리를 안 정한 시루가 마이그레이션 목록에 올랐습니다');
+
+  /* 좌표가 이미 있으면 좌표가 이긴다 */
+  const S3 = newFP();
+  setCropAt(S3, { x: 0.2, y: 0.3, z: 0.4 }, { size: eng.room.size });
+  const keep = S3.firstPlay.beansprout.at;
+  migratePots(S3, eng.room.slots);
+  assert.equal(S3.firstPlay.beansprout.at, keep, '있는 좌표를 덮어썼습니다');
+});
+
+/* ══ R · 화분과 시루가 계약에 각각 한 번씩만 실린다 ═════════════════════ */
+check('R 화분·시루가 계약에 각각 한 번씩만 실린다', () => {
+  const S = newFP();
+  S.pots.push({ id: 'pot_01', slotId: null, plantId: 'monstera_deliciosa', variegated: false });
+  setPotAt(S, 'pot_01', { x: 0, y: 1.2, z: -1.6 }, { size: eng.room.size, slots: eng.room.slots });
+  setCropAt(S, { x: -1.0, y: 0.4, z: -1.0 }, { size: eng.room.size });
+
+  assert.equal(placedItems(S).length, 2, `놓인 것이 ${placedItems(S).length}개 — 화분+시루 2개여야 합니다`);
+
+  const { report, check: c } = eng.daily(1, S);
+  assert.equal(c.ok, true, '계약 검증에 걸렸습니다: ' + c.problems.join(' / '));
+  const ids = report.slots.map(s => s.slotId);
+  assert.equal(new Set(ids).size, ids.length, '★ 계약에 같은 slotId 가 두 번 실렸습니다');
+  assert.equal(ids.length, eng.room.slots.length + 2,
+    `슬롯 ${eng.room.slots.length}칸 + 자유 2개가 아닙니다 (${ids.length}칸)`);
+  assert.equal(ids.filter(i => i === 'free:pot_01').length, 1);
+  assert.equal(ids.filter(i => i === `free:${BEANSPROUT_ID}`).length, 1);
+  /* 둘이 서로의 값을 먹지 않는다 */
+  assert.equal(cropDliFromReport(report, `free:${BEANSPROUT_ID}`),
+               eng.dliAt({ x: -1.0, y: 0.4, z: -1.0 }, SKY).dli);
+  assert.equal(report.slots.find(s => s.slotId === 'free:pot_01').dli,
+               eng.dliAt({ x: 0, y: 1.2, z: -1.6 }, SKY).dli);
+
+  /* 시루를 추천 자리로 되돌리면 자유 칸이 하나 줄어든다 — 빈 슬롯과 겹쳐 실리지 않는다 */
+  placeBeansprout(S.firstPlay, 'banjiha-desk:1', { slots: eng.room.slots });
+  const ids2 = eng.daily(2, S).report.slots.map(s => s.slotId);
+  assert.equal(new Set(ids2).size, ids2.length, '슬롯으로 되돌렸더니 같은 자리가 두 번 실렸습니다');
+  assert.equal(ids2.length, eng.room.slots.length + 1,
+    `슬롯 ${eng.room.slots.length}칸 + 자유 화분 1개가 아닙니다 (${ids2.length}칸)`);
+
+  /* ★ 어긋난 조합은 시루에서도 조용히 안 지나간다(K 와 같은 사상) */
+  S.firstPlay.beansprout.slotId = 'banjiha-sill:0';        // 창턱이라 말하고 책상에 있다
+  assert.throws(() => eng.daily(3, S), /자리가 어긋납니다/,
+    '어긋난 시루 조합이 조용히 지나갔습니다');
+
+  /* 첫 플레이가 꺼져 있으면 시루는 아예 안 실린다(빈 게임에 유령 자리가 안 생긴다) */
+  const plain = newState({ room: 'banjiha', mode: 'novice' });
+  assert.equal(placedItems(plain).length, 0);
+  assert.equal(eng.daily(1, plain).report.slots.length, eng.room.slots.length);
 });
 
 /* ── 보고 ─────────────────────────────────────────────────────────────── */
