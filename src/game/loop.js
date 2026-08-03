@@ -181,8 +181,11 @@ export function nextDay(S, io) {
 
   S.day++;
 
-  /* 방을 바꿨거나 가구가 사라졌으면 화분을 회수한다(5-4) */
-  if (p) rehomePot(S, io.light.room.slots, m => pushLog(S, m));
+  /* 방을 바꿨거나 가구가 사라졌으면 화분을 회수한다(5-4).
+     ★ 방(room)까지 넘긴다 — 자유 좌표 화분은 슬롯 목록으로 판단할 수 없다.
+       "받치던 가구가 사라졌나 · 그 좌표가 지금 방 밖인가"를 봐야 한다(state.rehomePot).
+       옛 세이브(slotId 만)의 좌표 채우기도 여기서 같이 일어난다. */
+  if (p) rehomePot(S, io.light.room.slots, m => pushLog(S, m), io.light.room);
 
   const { report, sky, check } = io.light.daily(S.day, S);
   if (!check.ok) pushLog(S, '⚠ 계약 이상 — ' + check.problems.slice(0, 3).join(' / '));
@@ -732,7 +735,9 @@ export function weekOverPct(hist, over, win = 7) {
 export function expectedWeekStats(S, io, { season = 'summer', over = null, years = 20 } = {}) {
   const p = pot0(S);
   if (!p || !p.slotId) return { mean: null, p10: null, p50: null, p90: null, weeks: 0, overPct: null };
-  const dliOf = (weather, s) => io.light.dliOfSlot(p.slotId, {
+  /* ★ 자유 좌표 화분은 slotId 만으로 못 찾는다(방 슬롯 목록에 없는 이름이다).
+     그럴 때는 화분 자체를 넘긴다 — 조도 포트가 `at` 을 보고 그 좌표로 계산한다. */
+  const dliOf = (weather, s) => io.light.dliOfSlot(p.at ? p : p.slotId, {
     weather, season: s, lampCount: S.lamps.count, litHours: S.lamps.litHours
   });
   const st = weekStats(dliOf, { season, over, years, seed: S.sim.seed });

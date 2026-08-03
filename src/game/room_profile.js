@@ -12,6 +12,13 @@
 
    ★ 물리식을 여기서 다시 쓰지 않는다. daylightDLI·lampDLI·judgeDLI 를 그대로 부른다 —
      시뮬과 게임이 다른 답을 내면 시뮬이 아무 의미가 없다.
+
+   ★ 여기는 **슬롯 그대로 둔다** — 자유 좌표를 안 밀어 넣는다 (2026-08-03 · 의도된 경계).
+     프로파일은 방마다 한 번 뽑아 파일로 굳힌 **슬롯별 ratio 표**다. 임의 좌표의 ratio 는
+     그 표에 없고, 즉석에서 내려면 창 기하와 차폐체를 다시 들여야 한다 — 그러면 이 파일이
+     daylight_lux 를 통째로 import 하게 되고 "THREE·집 조립 없이 돈다"는 존재 이유가 사라진다.
+     밸런스 시뮬은 '이 방이 이만큼 밝다'를 수십 번 굴려 보는 도구라 슬롯 표본으로 충분하다.
+     자유 좌표가 필요한 경로(게임 화면·배치 미리보기)는 라이브 엔진(light_adapter.dliAt)을 쓴다.
 ============================================================ */
 import { daylightDLI, lampDLI, judgeDLI, thresholdsFor, isVariegated }
   from '../engine/daily_light.js';
@@ -135,7 +142,11 @@ export function createProfileLight(profile, data = {}) {
       return { report, sky, check: validateContract(report) };
     },
     skyFor,
-    dliOfSlot(slotId, { weather, season, lampCount, litHours }) {
+    /* ref 는 slotId 문자열 또는 화분 객체({slotId, at}) — 라이브 포트와 인자 모양을 맞춘다.
+       ⚠ 여기서는 `at` 을 **안 본다.** 위 주석대로 정적 표에는 임의 좌표가 없다.
+         자유 좌표 화분을 이 경로로 돌리면 그 화분의 slotId(`free:…`)가 표에 없어 0 이 나온다. */
+    dliOfSlot(ref, { weather, season, lampCount, litHours }) {
+      const slotId = (ref && typeof ref === 'object') ? ref.slotId : ref;
       const key = `${slotId}|${weather}|${season}|${lampCount}|${litHours}`;
       if (cache.has(key)) return cache.get(key);
       const r = build(0, { weather, season, lampCount, litHours });
