@@ -219,16 +219,24 @@
   #dlgBox,#dlgSkip{pointer-events:auto}
   #stage.talking #dlg{display:block}
   #dlgBox{position:relative;display:flex;gap:10px;align-items:flex-end;
-       min-height:132px;padding:12px 14px 14px;border-radius:16px;
+       min-height:100px;padding:12px 14px 14px;border-radius:16px;
        background:rgba(16,13,24,.94);border:1px solid rgba(255,255,255,.12);
        box-shadow:0 -8px 30px rgba(0,0,0,.5)}
-  /* 초상화는 상자 위로 삐져나온다 — 상자 안에 가두면 얼굴이 작아져 안 읽힌다 */
-  #dlgFace{flex:0 0 92px;width:92px;height:132px;margin-top:-46px;align-self:flex-end;
-       background:center bottom/contain no-repeat;filter:drop-shadow(0 4px 10px rgba(0,0,0,.55))}
-  #dlgBox.noface #dlgFace{width:56px;flex-basis:56px;height:56px;margin:0 0 6px;
+  /* ★초상화는 대화창 **위로 솟는다** (박사님 2026-08-03: "창 반 정도 크기로").
+     예전엔 상자 안 왼쪽 칸에 92px 로 앉아 있어서 ① 얼굴이 작아 표정이 안 읽히고
+     ② 글자 칸을 잘라먹었다. 지금은 상자 밖 위쪽에 세우므로 글은 **폭을 다 쓴다.**
+     ⚠ 화면 높이에 매단다(vh). 폰마다 화면이 달라 px 로 박으면 작은 폰에서 천장을 뚫는다.
+       위쪽은 상단 칩이 있으니 44vh 를 넘기지 않는다. */
+  #dlgFace{position:absolute;left:6px;bottom:100%;margin-bottom:-18px;
+       width:min(56vw,300px);height:min(44vh,420px);
+       background:center bottom/contain no-repeat;
+       filter:drop-shadow(0 6px 18px rgba(0,0,0,.6));pointer-events:none}
+  #dlgBox.noface #dlgFace{left:10px;width:64px;height:64px;bottom:auto;top:14px;margin:0;
        border-radius:50%;background:radial-gradient(circle at 50% 45%,
          rgba(255,229,168,.95) 0,rgba(255,190,96,.42) 42%,rgba(255,180,84,0) 72%);
        animation:godPulse 2.6s ease-in-out infinite}
+  /* 얼굴 없는 화자(식물신)만 글을 오른쪽으로 민다 — 그때만 상자 안에 앉기 때문 */
+  #dlgBox.noface #dlgMain{margin-left:74px}
   @keyframes godPulse{0%,100%{opacity:.72;transform:scale(.94)}50%{opacity:1;transform:scale(1.06)}}
   /* ★"뿅" — 몬이가 처음 나타나는 순간. 오프닝의 톤이 여기서 갈린다
      (혼자 우는 장면 → 누가 왔다). 대사만으로는 그 전환이 안 실린다. */
@@ -238,7 +246,9 @@
     55% {transform:translateY(-8px) scale(1.12) rotate(4deg);opacity:1}
     100%{transform:none;opacity:1}
   }
-  #dlgBox.pop::before{content:'';position:absolute;left:34px;bottom:52px;width:96px;height:96px;
+  /* 몬이가 솟아오른 자리에서 번쩍인다 — 초상화가 커졌으니 섬광도 그 자리로 따라간다 */
+  #dlgBox.pop::before{content:'';position:absolute;left:min(20vw,110px);bottom:calc(100% - 60px);
+    width:min(40vw,220px);height:min(40vw,220px);transform:translateX(-50%);
     border-radius:50%;pointer-events:none;
     background:radial-gradient(circle,rgba(255,229,168,.72) 0,rgba(255,229,168,0) 70%);
     animation:moniFlash .52s ease-out forwards}
@@ -1474,8 +1484,16 @@ async function resumeSave() {
   $('mode').value = S.sim.mode;
   fillLamps(); fillSlots(); if (S.firstPlay && S.firstPlay.enabled) fillCropSlots();
   /* ⚠ 회수 기록은 save.js 가 이미 pushLog 로 남긴다 — 여기서 또 적으면 두 번 뜬다 */
-  pushLog(S, `이어서 시작합니다 — Day ${S.day}`);
+  if (storyStarted()) pushLog(S, `이어서 시작합니다 — Day ${S.day}`);
   return true;
+}
+/* ★"세이브가 있나"와 "이야기가 시작됐나"는 다른 물음이다.
+   앱을 열자마자 첫 그림이 그려지면서 Day 0 세이브가 생긴다. 그걸 이어하기로 치면
+   **한 번 열었다 닫은 사람은 오프닝을 영영 못 본다** — 실제로 그랬다.
+   그래서 상태에서 직접 묻는다. 새 칸을 만들지 않아 세이브 규약도 안 건드린다. */
+function storyStarted() {
+  const b = S.firstPlay && S.firstPlay.beansprout;
+  return S.day > 0 || S.pots.length > 0 || !!(b && (b.at || b.slotId));
 }
 /* 앱을 덮거나 탭을 떠날 때 미룬 저장을 마저 한다 — 폰에서는 이게 마지막 기회다 */
 addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') saveNow(); });
@@ -2714,15 +2732,16 @@ try {
   GATED.forEach(id => { $(id).disabled = false; });
   /* 첫 플레이는 고정 지역·novice·식물등 없음. 개발 검수 시나리오에서는 재설정할 수 있다. */
   $('room').disabled = true; $('mode').disabled = true; $('lamps').disabled = true; $('lit').disabled = true;
-  if (!resumed) pushLog(S, '첫 플레이 준비 완료 — 열린 시루를 놓고 [다음 날]을 눌러 보세요');
+  if (!storyStarted()) pushLog(S, '첫 플레이 준비 완료 — 열린 시루를 놓고 [다음 날]을 눌러 보세요');
   saveReady = true;                 // 여기서부터 저장한다 — 반쯤 선 상태를 굳히지 않는다
   draw();
   window.__byeotBooted = true;      // 밖의 감시자에게 "여기까지는 왔다"고 알린다
   bindGuide();                      // 조작 안내판 — 처음이면 인트로 뒤에 저절로 뜬다
   bindDetail();                     // 나 · 아이템 · 식물 상세
   bootRoomView();                   // 방 3D — 실패해도 게임은 돌아간다(아래)
-  /* 이어하는 판에서는 인트로를 다시 틀지 않는다 — 이미 들은 이야기를 또 하면 안 된다 */
-  if (!resumed) dlgOpen('intro');
+  /* 이미 들은 이야기를 또 하지 않는다. 다만 기준은 '세이브가 있나'가 아니라
+     '이야기가 시작됐나'다 — 앞에서 설명한 이유다. */
+  if (!storyStarted()) dlgOpen('intro');
 } catch (err) {
   GATED.forEach(id => { $(id).disabled = true; });       // 실패하면 계속 잠근다
   /* ★#side 는 폰 세로로 바뀌며 없어졌다. 하단에 띄운다 — 안 보이면 "버튼이 안 눌린다"만 남는다 */
