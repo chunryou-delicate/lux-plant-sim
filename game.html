@@ -894,7 +894,7 @@ import {
 } from './src/game/first_play.js';
 import { createLightEngine } from './src/game/light_adapter.js';
 import { createGrowthAdapter } from './src/game/growth_adapter.js';
-import { createDialogue, SPEAKERS } from './src/game/dialogue.js';
+import { createDialogue, createStoryteller, SPEAKERS } from './src/game/dialogue.js';
 import { seasonAt, seasonDayAt, SEASON_KO, tutorialGoal, learningLeft,
          canMoveOut, moveOut, buyLamp } from './src/game/tutorial.js';
 import { nextDay, runDays, avg, rollingAvg,
@@ -1614,11 +1614,11 @@ function showFirstPlayEvents(turn) {
     events.push({ title: '🌱 말린 새순이 나왔어요!', sub: '자리에 따라 필요한 빛이 다릅니다.' });
   banners(events);
 
-  /* 배너는 숫자를, 대화는 뜻을 말한다. 둘 다 있어야 "얼마"와 "왜"가 같이 남는다. */
-  const ids = [];
-  if (ev && ev.harvested)       ids.push('harvest', 'god1');
-  if (turn && turn.plantArrived) ids.push('monsteraArrived');
-  if (S.firstPlay.completed)     ids.push('spearFurled');
+  /* 배너는 숫자를, 대화는 뜻을 말한다. 둘 다 있어야 "얼마"와 "왜"가 같이 남는다.
+     ★어떤 대사를 낼지는 storyteller 가 정한다. 여기서 이벤트를 다시 훑지 않는다 —
+       그러면 사건이 늘 때마다 이 목록도 같이 늘어야 하고, 실제로 그래서 빠뜨렸다.
+       순서 계약(수확 → 식비 → 식물신 → 도착)은 dialogue.js 의 EVENT_ORDER 가 지킨다. */
+  const ids = story.turn(turn, S);
   if (ids.length) dlgOpen(ids);
 }
 
@@ -1667,6 +1667,9 @@ function showGpuInfo() {
    ★대사 순서는 계약이다 — Day 4 는 수확 → (식비는 화면이 숫자로) → 식물신 → 도착.
      dialogue.js 가 그 줄 세우기를 갖고 있고 여기서는 그리기만 한다. */
 const dlg = createDialogue();
+/* ★조용한 날을 세고 작은 말을 고른다. 예전엔 첫 플레이 세 가지만 하드코딩으로 읽어서
+   월세·가을·식물등·성장 정지·이사가 전부 조용했다 — 대사는 있는데 화면이 안 읽었다. */
+const story = createStoryteller();
 /* 표정 키(대사가 쓰는 뜻) → 파일명. 3차 초상화부터는 대체로 같지만 몬이만 다르다
    (몬이의 '기뻐함'은 excited 다). 이름이 또 바뀌어도 대사는 안 고치게 여기서만 안다. */
 const FACE_FILE = {
@@ -2404,7 +2407,7 @@ $('ff').onclick = guard(() => {
   }
   ffHandle = startFastForward(S, io, {
     msPerDay: 140,                      /* 3D 를 실제로 다시 그리므로 계약값 120 보다 여유를 둔다 */
-    onDay(turn) { lastTurn = turn; showFirstPlayEvents(turn); draw(); },
+    onDay(turn) { lastTurn = turn; showFirstPlayEvents(turn); draw(); },   /* 대사도 같은 창구로 난다 — dlgOpen 이 알아서 빨리감기를 세운다 */
     onStop(reason, info) {
       ffPaint(false);
       if (reason === 'event') return;   /* 이벤트에서 선 것은 정상이다 — 배너가 이미 떴다 */
@@ -2427,13 +2430,15 @@ $('buyLamp').onclick = guard(() => {
   io.light.clearCache();
   pushLog(S, `💡 식물등을 샀습니다 — 남은 돈 ${r.cashWon.toLocaleString()}원`);
   banner('식물등을 샀습니다', '자리가 나쁘면 등을 켜도 소용없습니다');
+  dlgOpen(story.events(r.events));   /* 하루를 기다리면 산 순간이 조용해진다 */
   fillSlots(); draw();
 });
 
 $('moveOut').onclick = guard(() => {
-  moveOut(S.tutorial);
+  const r = moveOut(S.tutorial);
   pushLog(S, '📦 원룸으로 이사했습니다 — 반지하 튜토리얼 종료');
   banners([{ title: '📦 원룸으로 이사했습니다', sub: '반지하에서 배운 것을 가지고 갑니다' }]);
+  dlgOpen(story.events(r.events));   /* 반지하를 떠나는 장면이 여기서 나온다 */
   draw();
 });
 

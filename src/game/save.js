@@ -47,6 +47,7 @@ import {
 import { createFirstPlayState, placeBeansprout } from './first_play.js';
 import { createTutorialState } from './tutorial.js';
 import { inRoom, isFreeSlotId, makeAt } from './place.js';
+import { PROPAGATION_SCHEMA, rehomeCuttings } from './propagation.js';
 
 /* 저장 봉투의 스키마. **모르는 값이면 읽지 않는다**(fail-loud). */
 export const SAVE_SCHEMA = 'game_save/1';
@@ -72,7 +73,7 @@ export const DLI_HIST_KEEP = null;
    조용히 안 저장되는 칸이 생기는 것이 제일 나쁘다. */
 const KNOWN_STATE_KEYS = Object.freeze([
   'schema', 'day', 'timeScale', 'sim', 'home', 'lamps',
-  'pots', 'firstPlay', 'tutorial', 'dliHist', 'ledger', 'log'
+  'pots', 'cuttings', 'firstPlay', 'tutorial', 'dliHist', 'ledger', 'log'
 ]);
 
 /* ---------------------------------------------------------------
@@ -185,7 +186,77 @@ function packPot(p, i) {
     daysPlanted: needInt(p.daysPlanted ?? 0, `${path}.daysPlanted`, { min: 0 }),
     arrivedOnDay: needInt(p.arrivedOnDay ?? 0, `${path}.arrivedOnDay`, { min: 0 }),
     arrivalGrowthDays: needInt(p.arrivalGrowthDays ?? ARRIVAL.growthDays,
-                               `${path}.arrivalGrowthDays`, { min: 0 })
+                               `${path}.arrivalGrowthDays`, { min: 0 }),
+    /* ★ 번식 흔적 (2026-08-03) — **반드시 같이 적는다.**
+       `cuts`·`pendingCutLoss` 는 "이 모주에서 무엇을 잘라냈나"이고, growth 가 다개체 리팩터에서
+       형태에 반영할 때까지 코어가 들고 있는 유일한 기록이다. 안 적으면 저장 한 번에
+       잘라낸 사실이 통째로 사라진다 — 삽수는 남았는데 모주는 안 잘린 세이브가 된다.
+       `gen`·`varieChance` 는 계통 값이라 세대 감쇠(0.8ⁿ)가 세이브 왕복에서 초기화되면 안 된다. */
+    gen: needInt(p.gen ?? 0, `${path}.gen`, { min: 0 }),
+    varieChance: p.varieChance == null ? null : needNum(p.varieChance, `${path}.varieChance`, { min: 0 }),
+    motherEnded: !!p.motherEnded,
+    cuts: needArr(p.cuts || [], `${path}.cuts`).map((x, j) => {
+      const cp = `${path}.cuts[${j}]`;
+      needObj(x, cp);
+      return {
+        day: needInt(x.day ?? 0, `${cp}.day`, { min: 0 }),
+        cuttingId: needStr(x.cuttingId, `${cp}.cuttingId`),
+        nodeId: needStr(x.nodeId, `${cp}.nodeId`),
+        stem: needStr(x.stem, `${cp}.stem`),
+        leaves: needInt(x.leaves ?? 0, `${cp}.leaves`, { min: 0 })
+      };
+    }),
+    pendingCutLoss: p.pendingCutLoss == null ? null : {
+      leaves: needInt(p.pendingCutLoss.leaves ?? 0, `${path}.pendingCutLoss.leaves`, { min: 0 }),
+      nodes: needInt(p.pendingCutLoss.nodes ?? 0, `${path}.pendingCutLoss.nodes`, { min: 0 })
+    }
+  };
+}
+
+/* ★ 삽수 한 칸 (2026-08-03).
+   ------------------------------------------------------------
+   여기는 **화분과 규칙이 다르다.** 화분은 "코어가 아는 세 칸"만 적고 형태를 growth 에게
+   되세우게 하는데, 삽수는 growth 를 아예 안 쓴다(한 그루 전용이라 굴릴 창구가 없다).
+   즉 삽수는 **코어가 전부 아는 물건**이라 상태를 통째로 적는 게 맞다 — 되세울 남의 창이 없다.
+
+   ★ 굴림 결과(`variegated`·`varieRolled`)를 적는 이유. 안 적으면 복원할 때 다시 굴리게 되고
+     같은 세이브를 두 번 열면 무늬가 달라진다. 굴림은 결정적(cuttingHash)이라 재현은 되지만,
+     **결과를 적어 두는 쪽이 규칙이 바뀌어도 안 흔들린다.**
+   ★ `warned` 도 적는다. 안 적으면 복원 뒤 이미 한 경고가 다시 나가고, 더 나쁘게는
+     "경고 없이 죽었다" 검사가 통과해 버린다. */
+function packCutting(c, i) {
+  const path = `cuttings[${i}]`;
+  needObj(c, path);
+  const src = needObj(c.source, `${path}.source`);
+  return {
+    id: needStr(c.id, `${path}.id`),
+    schema: needStr(c.schema || PROPAGATION_SCHEMA, `${path}.schema`),
+    motherPotId: optStr(c.motherPotId, `${path}.motherPotId`),
+    motherPlantId: optStr(c.motherPlantId, `${path}.motherPlantId`),
+    cutOnDay: needInt(c.cutOnDay ?? 0, `${path}.cutOnDay`, { min: 0 }),
+    source: {
+      nodeId: needStr(src.nodeId, `${path}.source.nodeId`),
+      stem: needStr(src.stem, `${path}.source.stem`),
+      leaves: needInt(src.leaves ?? 0, `${path}.source.leaves`, { min: 0 }),
+      variegatedLeaves: needInt(src.variegatedLeaves ?? 0, `${path}.source.variegatedLeaves`, { min: 0 }),
+      growthDays: src.growthDays == null ? null : needNum(src.growthDays, `${path}.source.growthDays`, { min: 0 })
+    },
+    method: needStr(c.method, `${path}.method`),
+    container: needStr(c.container, `${path}.container`),
+    gen: needInt(c.gen ?? 1, `${path}.gen`, { min: 0 }),
+    varieChance: needNum(c.varieChance ?? 0, `${path}.varieChance`, { min: 0 }),
+    variegated: !!c.variegated,
+    varieRolled: !!c.varieRolled,
+    slotId: optStr(c.slotId, `${path}.slotId`),
+    at: packAt(c.at, `${path}.at`),
+    status: needStr(c.status, `${path}.status`),
+    days: needInt(c.days ?? 0, `${path}.days`, { min: 0 }),
+    rootedOnDay: c.rootedOnDay == null ? null : needInt(c.rootedOnDay, `${path}.rootedOnDay`, { min: 0 }),
+    nodeOnDay: c.nodeOnDay == null ? null : needInt(c.nodeOnDay, `${path}.nodeOnDay`, { min: 0 }),
+    pottedOnDay: c.pottedOnDay == null ? null : needInt(c.pottedOnDay, `${path}.pottedOnDay`, { min: 0 }),
+    deadlineDay: c.deadlineDay == null ? null : needInt(c.deadlineDay, `${path}.deadlineDay`, { min: 0 }),
+    warned: needArr(c.warned || [], `${path}.warned`).map((w, j) => needStr(w, `${path}.warned[${j}]`)),
+    potted: !!c.potted
   };
 }
 
@@ -327,6 +398,7 @@ export function serialize(S, opt = {}) {
         litHours: needNum(lamps.litHours ?? 0, 'lamps.litHours', { min: 0 })
       },
       pots: needArr(S.pots || [], 'pots').map(packPot),
+      cuttings: needArr(S.cuttings || [], 'cuttings').map(packCutting),
       firstPlay: packFirstPlay(S.firstPlay),
       tutorial: packTutorial(S.tutorial),
       /* ★ 자르지 않는다 — growth 복원의 입력이다(맨 위 §growth). null 은 '못 잰 날'이라 그대로 둔다. */
@@ -460,6 +532,13 @@ function reseat(S, room, report) {
   /* 화분 — 없어진 슬롯·사라진 가구·방 밖 좌표는 state.rehomePot 규칙으로 회수한다.
      v0 는 한 그루라 rehomePot 이 pot0 만 본다(코어 규약). */
   if (pot0(S)) rehomePot(S, room.slots, log, { size: room.size, surfaces: room.surfaces });
+
+  /* ★ 삽수 — 화분·시루와 **같은 검사**를 받는다 (2026-08-03).
+     안 하면 방을 옮긴 세이브에서 삽수가 방 밖 좌표로 남아 매일 계약이 던지거나,
+     화면에 안 보이는데 상태에는 살아 있는 **유령**이 된다.
+     ⚠ 자리를 잃었다고 죽이지 않는다 — 죽음의 사유는 기한 하나뿐이다(propagation.js). */
+  const cut = rehomeCuttings(S, room, log);
+  report.cuttingsRehomed = cut;
 
   /* 콩나물 시루 — 화분과 같은 검사를 받는다. 안 하면 방 밖 좌표가 남아
      매일 `light_adapter.slotsFor` 가 던진다(게임이 통째로 멈춘다). */
@@ -603,6 +682,11 @@ export function deserialize(raw, opt = {}) {
     /* 좌표는 place.makeAt 를 통과시켜 정본 모양으로 세운다(방 경계는 아래 회수 단계에서 본다) */
     return { ...q, at: q.at ? makeAt(q.at) : null };
   });
+  /* 삽수 — 쓸 때와 **같은 검증**을 읽을 때도 태운다(화분과 같은 규칙) */
+  S.cuttings = needArr(st.cuttings || [], 'state.cuttings').map((c, i) => {
+    const q = packCutting(c, i);
+    return { ...q, at: q.at ? makeAt(q.at) : null };
+  });
   S.dliHist = needArr(st.dliHist || [], 'state.dliHist')
     .map((v, i) => (v == null ? null : needNum(v, `state.dliHist[${i}]`)));
   const led = needObj(st.ledger || {}, 'state.ledger');
@@ -647,7 +731,7 @@ export function deserialize(raw, opt = {}) {
     saveSchema: env.saveSchema, savedAt: env.savedAt ?? null,
     room: S.home.room, day: S.day,
     appliedFurniture: false, furnitureNotInRoom: [],
-    migrated: { filled: [], skipped: [] }, rehomed: [], growth: null,
+    migrated: { filled: [], skipped: [] }, rehomed: [], cuttingsRehomed: [], growth: null,
     desyncAtSave: !!st.desync
   };
 

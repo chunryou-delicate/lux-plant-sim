@@ -371,3 +371,82 @@ err.growthJumpApplied = 143
 
 - [ ] `slotId` 한 줄 패치
 - [ ] 다개체 리팩터 시점에 어댑터 형태 협의 (코어는 언제든 맞추겠습니다)
+
+---
+
+# 2026-08-03 · core → growth · 삽수(번식)
+
+박사님 확정으로 삽수를 붙였습니다(`docs/propagation.md` §3·§3-2·§7-2).
+**논리는 코어에서 다 돌고 통과합니다**(`tools/test_propagation.mjs` 11블록 PASS).
+남은 것 하나가 생장 창에 있어 부탁드립니다.
+
+## ★ 요청 — `cuttableNodes()` 하나
+
+```js
+// plant_grow.html 전역
+function cuttableNodes(){
+  return [ { nodeId, stem, leaves, variegatedLeaves, growthDays }, ... ];
+}
+```
+
+| 칸 | 뜻 |
+|---|---|
+| `nodeId` | 그 마디를 다시 가리킬 수 있는 이름 |
+| `stem` | 캐논 등급 — `petiole` / `pink` / `thick` / `main` |
+| `leaves` | 그 마디부터 **위(생장점 방향)로 딸려 나오는** 잎 수 |
+| `variegatedLeaves` | 그중 이미 무늬로 난 잎 수 |
+| `growthDays` | 그 조각이 자란 유효 생장일 (표시·값 매김용) |
+
+## 왜 코어가 이걸 못 만드나 — **추정하지 않기로 했습니다**
+
+`axisTimeline(g)` 은 `contentWindow` 로 부를 수 있지만 거기에는
+
+- 어느 마디(`seg`)에서 어느 가지(`axis`)가 났는지의 **연결**이 없고
+- 그 잎이 **무늬인지**가 없습니다 (`ax.varie` 는 `buildPlant` 안에서 정해집니다)
+
+이 둘 없이는 *"이 조각이 잎 몇 장을 품고 있나"* 를 못 냅니다.
+박사님 확정이 *"삽수는 **실제 자랐던 거를 각각 잘라서** 적용되서 따라가도록"* 이라,
+여기서 잎 수를 지어내면 **이 기능의 존재 이유가 그 자리에서 사라집니다.**
+
+그래서 코어는 이렇게 해 뒀습니다:
+
+- `growth_adapter.cuttableNodes()` — 접근자가 없으면 **`null`**. 추정값을 안 냅니다
+- `propagation.takeCutting(S, {nodes, ...})` — 마디 목록이 없으면 **던집니다**
+- 호출부는 `null` 이면 자르기 UI 를 열지 않으면 됩니다
+
+즉 **접근자가 붙는 날 그대로 흐릅니다.** 코어 쪽은 이미 그 모양으로 테스트가 고정돼 있습니다
+(`test_propagation.mjs` K 블록).
+
+## ★ 부탁 둘 — 모주 형태 반영 (`pot.pendingCutLoss`)
+
+자르면 모주가 잎과 마디를 잃습니다(`docs/propagation.md` §2). 그런데 **코어는 growth 의
+형태를 못 깎습니다** — 계약에 그런 함수가 없습니다. 그래서 "줄였다"고 말하지 않고
+**적어만 뒀습니다**:
+
+```js
+pot.cuts = [{ day, cuttingId, nodeId, stem, leaves }, ...]
+pot.pendingCutLoss = { leaves: 5, nodes: 2 }      // 아직 형태에 반영 안 됨
+```
+
+로그에도 *"모주 형태 반영은 대기 중입니다"* 라고 그대로 냅니다(거짓 롤백을 주장하지 않는
+`growthJumpApplied` 와 같은 사상입니다). 세이브에도 남습니다 — 저장 한 번에 잘라낸 사실이
+사라지면 "삽수는 남았는데 모주는 안 잘린" 세이브가 되기 때문입니다.
+
+다개체 리팩터 때 이 표를 읽어 적용해 주시면 됩니다. 형태는 어느 쪽이든 growth 소유입니다.
+
+## 코어가 안 한 것 — 삽수는 **S.pots 로 승격하지 않습니다**
+
+`loop.nextDay` 는 `pot0` 만 굴립니다. 삽수를 화분으로 올리면 **하루가 안 가는 유령 화분**이
+생기므로, 조용히 만들지 않고 `propagation.promoteToPot()` 이 그 자리에서 던집니다.
+
+> `[삽수] 삽수를 두 번째 화분으로 승격하는 것은 아직 못 합니다 — plant_grow.html 이
+> 한 그루 전용이라 두 그루를 동시에 굴릴 창구가 없습니다`
+
+**다개체 리팩터가 끝나면 이 한 함수만 열면 됩니다.** 코어는 언제든 어댑터 형태를 맞추겠습니다.
+
+## 삽수는 생장 계약을 **안 탑니다**
+
+뿌리내림은 빛과 무관하다고 정했으므로(`propagation.md` §3), 삽수는 `setDailyLight`·`advanceTo`
+를 부르지 않습니다. **생장 창이 죽어 있어도 삽수는 정상으로 돕니다.**
+조도 계약에는 자리만 실리고 `plantId: null` 입니다(시루와 같은 규칙) — 밴드 판정을 걸
+근거가 없기 때문입니다.

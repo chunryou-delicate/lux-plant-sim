@@ -44,8 +44,10 @@ import {
   markMonsteraPhase,
   slotFitsDiameter
 } from './first_play.js';
-import { createTutorialState, tutorialDay, noteLearning } from './tutorial.js';
+import { canMoveOut, createTutorialState, LEARNING, tutorialDay, noteLearning } from './tutorial.js';
 import { dliFromContract } from './growth_adapter.js';
+import { headroomCheck, PLANT_POT_D_REF } from './headroom.js';
+import { rehomeCuttings, stepCuttings } from './propagation.js';
 import { weekStats, WEATHER_P } from '../engine/weather.js';
 
 /* ============================================================
@@ -122,12 +124,130 @@ function minDliOf(io) {
   } catch { /* 정본을 못 읽으면 판정을 안 한다 — 지어낸 값으로 배웠다고 하면 안 된다 */ }
   return null;
 }
+/* ══ 머리공간 정지 (2026-08-03 신설) ══════════════════════════════════
+   ★ 박사님 확정: "단수가 낮은 곳에서는 어느 크기 되면 더이상 안자라게 해서,
+     위가 뚫린 방바닥이나 단수 높이가 큰 곳으로 가거나 해야 자라도록 하자.
+     그리고 그게 싫으면 삽수를 하는 형태로."
+
+   규칙과 기하는 headroom.js 가 갖는다(docs/headroom.md 가 정본). 여기서는
+   **오늘 진행을 걸지 말지만** 정한다 — 루프가 기하를 또 갖지 않게.
+
+   ★ 빛 부족 정지와 **다른 사유**다. 섞으면 처방이 정반대가 된다 —
+     빛 부족은 "등을 켜라", 머리공간은 "자리를 옮기거나 삽수를 해라".
+     그래서 turn 에도 따로 실린다(growthBlocked ≠ headroomBlocked).
+   ★ 못 재면 막지 않는다. 정적 프로파일 경로(room_profile)에는 방 치수·차폐체가 없다 —
+     근거 없이 멈추면 아무도 못 고치는 진행 불가가 된다(headroom.blockedBy known:false). */
+function headroomOfTurn(S, io, p) {
+  if (!p || !p.at) return null;                       // 좌표를 모르는 옛 화분은 판정하지 않는다
+  const room = (io.light && io.light.room) || null;
+  if (!room) return null;
+  /* 화분 지름은 자리 한도 안에서 정해진다 — room_view 의 `min(MONSTERA_POT_D, 자리한도)` 와 같다.
+     지름이 작아지면 그루 전체가 같이 작아지므로 머리공간 판정도 같이 느슨해져야 한다. */
+  const slot = (room.slots || []).find(s => s.slotId === p.slotId);
+  const lim = slot && Number.isFinite(slot.maxPotD) ? slot.maxPotD : PLANT_POT_D_REF;
+  try {
+    return headroomCheck(p.at, io.growth.growthDays(), {
+      size: room.size,
+      occluders: (room.built && room.built.occluders) || [],
+      slots: room.slots || [],
+      potD: Math.min(PLANT_POT_D_REF, lim)
+    });
+  } catch (e) {
+    pushLog(S, '⚠ 머리공간을 재지 못했습니다 — ' + e.message);
+    return null;
+  }
+}
+
+/* ══ 삽수 (2026-08-03) ═════════════════════════════════════════════════
+   규칙과 수치는 propagation.js 가 갖는다(docs/propagation.md 가 정본). 여기서는
+   **하루를 한 번 넘겨주기만** 한다 — 루프가 번식 규칙을 또 갖지 않게.
+   ★ 삽수는 growth 를 안 쓴다. 형태 계약(setDailyLight·advanceTo)을 타지 않으므로
+     생장 창이 죽어 있어도 삽수는 정상으로 돈다 — 그게 맞다(뿌리내림은 빛과 무관).
+   ★조용히 실패하지 않는다. 삽수가 터져도 하루는 이미 갔으므로 turn 에 실어 보낸다. */
+function stepCuttingsOfTurn(S) {
+  if (!S.cuttings || !S.cuttings.length) return null;
+  try {
+    return stepCuttings(S, { log: m => pushLog(S, m) });
+  } catch (e) {
+    pushLog(S, '⚠ 삽수 진행 실패 — ' + e.message);
+    return { error: e.message, events: [], died: [], warnings: [] };
+  }
+}
+
+/* ══ 서사 신호 (2026-08-03 신설) ═══════════════════════════════════════
+   ★왜 여기인가 — 살림 신호(월세·계절·식물등)는 tutorial.js 가, 첫 플레이 신호는
+     first_play.js 가 이미 낸다. 남은 셋은 **둘 다 알아야 나오는 것**이라 여기가 유일한 자리다:
+       ① 배움 넷이 하나씩 처음 켜지는 순간   (튜토 상태 × 그날 턴)
+       ② 형태가 며칠째 멈췄나 · 다시 오르나   (growth 가 낸 blocked × 날수)
+       ③ 이사 조건 두 축 중 무엇이 모자란가   (돈 × 배움)
+
+   ★상태를 거의 안 늘린다. 늘린 것은 `_`로 시작하는 두 칸뿐이고 **세이브에 안 남는다**
+     (save.js 의 packTutorial 이 화이트리스트다). 다시 켜면 대사 이력도 같이 비므로
+     한 번 더 나오는 것이 자연스럽고, 어긋나지 않는다. */
+
+/* 며칠 멈춰 있어야 말을 거나. 하루 멈췄다고 말하면 흐린 날마다 잔소리가 된다 —
+   7일 이동평균이라 저광 전환 뒤 사흘은 관성으로 더 자란다(STATUS growth 판단필요). */
+const STALL_DAYS = 4;
+/* ★한 번 짚고 끝내지 않는다 (진단에서 나온 것) — 어두운 자리에 방치한 판은
+   Day 8 에 한 번 말하고 그 뒤 190일이 통째로 조용했다. 열흘마다 다시 짚는다.
+   대신 대사는 갈린다(plantStalled → plantStalledAgain) — 같은 말을 반복하지 않는다. */
+const STALL_REPEAT_DAYS = 10;
+
+function narrativeEvents(S, turn, ts, learnedBefore, day) {
+  const ev = [];
+  const season = day && day.season ? day.season : null;
+
+  /* ① 배움 — 처음 켜진 것만. 넷을 한 줄씩 짚어 주면 체크리스트가 화면 밖에서도 산다. */
+  for (const k of Object.keys(ts.learned))
+    if (ts.learned[k] && !learnedBefore[k])
+      ev.push({ id: 'learn_' + k, ko: (LEARNING[k] || {}).ko || k, key: k });
+
+  /* ② 형태 정지 — ★"자리를 옮겨라"가 아니라 "며칠째 그대로다"를 낸다.
+     정답 자리를 코어가 알면 방이 바뀔 때 조용히 틀린다(first_play.js markMonsteraPhase 주석). */
+  if (S.pots.length) {
+    const blocked = !!turn.growthBlocked;
+    const run = blocked ? (S._stallDays || 0) + 1 : 0;
+    S._stallDays = run;
+    if (run === STALL_DAYS || (run > STALL_DAYS && (run - STALL_DAYS) % STALL_REPEAT_DAYS === 0)) {
+      ts._stallCount = (ts._stallCount || 0) + 1;
+      /* ★겨울은 자리 탓만이 아니다 — 같은 "멈춤"이라도 짚는 말이 달라야 한다.
+         겨울에 "옮겨 보자"만 하면 옮길 데가 없는 플레이어를 몰아세우는 말이 된다. */
+      const id = season === 'winter' ? 'plant_stalled_winter'
+               : ts._stallCount > 1 ? 'plant_stalled_again'
+               : 'plant_stalled';
+      ev.push({ id, ko: `${run}일째 형태가 그대로입니다`, days: run, season });
+    }
+    /* 다시 오르기 시작한 순간 — 멈춰 본 적이 있어야 의미가 있다 */
+    if (!blocked && ts._stalledOnce && !ts._resumedNoted) {
+      ts._resumedNoted = true;
+      ev.push({ id: 'plant_resumed', ko: '다시 자랍니다' });
+    }
+    if (run >= STALL_DAYS) { ts._stalledOnce = true; ts._resumedNoted = false; }
+  }
+
+  /* ③ 이사 두 축 — ★모자란 쪽이 바뀔 때만 말한다. 매일 말하면 잔소리다. */
+  const c = canMoveOut(ts);
+  const state = ts.movedOut ? 'done'
+              : c.ok ? 'ready'
+              : c.learningLeft.length === 0 ? 'money'
+              : c.money ? 'learn' : null;      // null = 둘 다 멀었다. 아직 할 말이 없다
+  if (state && state !== ts._moveState) {
+    ts._moveState = state;
+    if (state === 'money') ev.push({ id: 'move_short_money', ko: '이사 자금이 모자랍니다', shortWon: c.shortWon });
+    if (state === 'learn') ev.push({ id: 'move_short_learn', ko: '아직 안 해 본 것이 있습니다', left: c.learningLeft });
+    if (state === 'ready') ev.push({ id: 'move_ready', ko: '원룸으로 이사할 수 있습니다' });
+  } else if (state) ts._moveState = state;
+
+  return ev;
+}
+
 function stepTutorial(S, turn, io) {
   const ts = S.tutorial;
   if (!ts || !ts.enabled) return null;
   const fp = S.firstPlay;
   try {
     /* 배운 것부터 적는다 — 이사 판정이 이 값을 본다 */
+    const learnedBefore = { ...ts.learned };
     const ev = turn.firstPlayEvent || {};
     noteLearning(ts, {
       harvested: !!ev.harvested,
@@ -145,6 +265,8 @@ function stepTutorial(S, turn, io) {
       mealsUsed: (ev && ev.mealsUsed) || 0
     });
     if (r && r.events) for (const e of r.events) pushLog(S, '📅 ' + e.ko);
+    /* ★서사 신호는 살림이 돈 **뒤에** 낸다 — 계절·돈이 오늘 값이어야 판정이 맞다 */
+    if (r) r.storyEvents = narrativeEvents(S, turn, ts, learnedBefore, r);
     return r;
   } catch (e) {
     pushLog(S, '⚠ 튜토리얼 진행 실패 — ' + e.message);
@@ -152,8 +274,29 @@ function stepTutorial(S, turn, io) {
   }
 }
 
+/* ══ turn.events — 이 턴에 난 일 **한 목록** (2026-08-03 신설) ═══════════
+   ★왜 필요한가 — 세 곳이 각자 신호를 내고 있었다(first_play · tutorial · 위 서사).
+     화면은 그중 첫 플레이 셋만 읽고 있어서, 월세도 가을도 식물등도 **아무도 말을 안 했다**
+     (진단: 반지하 43일 연속 무음). 대사를 붙이려면 먼저 목록이 하나여야 한다.
+
+   ★코어는 대사를 모른다. 여기서 내는 것은 **사건 목록**뿐이고,
+     그것을 무슨 말로 옮길지는 `dialogue.scriptsForEvents` 가 정한다. */
+function attachEvents(S, turn, fpBefore) {
+  const out = [];
+  const push = list => { for (const e of list || []) if (e && e.id) out.push(e); };
+  push(firstPlayEventsOf(fpBefore, S.firstPlay));
+  const t = turn.tutorial;
+  if (t && !t.error) { push(t.events); push(t.storyEvents); }
+  turn.events = out;
+  return turn;
+}
+
 export function nextDay(S, io) {
   const p = pot0(S);
+  /* ★첫 플레이 신호는 **앞뒤 스냅샷의 차이**로 낸다(first_play.js 주석 참고).
+     하루가 시작하기 전에 한 장 떠 둔다 — 되감기(catch)로 무른 턴은 아래 attachEvents
+     자체가 안 불리므로 유령 이벤트가 안 남는다. */
+  const fpBefore = firstPlaySnapshot(S.firstPlay);
 
   /* ★ 상태를 건드리기 전에 계약부터 확인한다 (2026-08-02).
      iframe 을 새로고침하면 ready() 를 통과했던 계약이 사라진다. 그대로 진행하면
@@ -186,6 +329,9 @@ export function nextDay(S, io) {
        "받치던 가구가 사라졌나 · 그 좌표가 지금 방 밖인가"를 봐야 한다(state.rehomePot).
        옛 세이브(slotId 만)의 좌표 채우기도 여기서 같이 일어난다. */
   if (p) rehomePot(S, io.light.room.slots, m => pushLog(S, m), io.light.room);
+  /* 삽수도 같은 검사를 받는다 — 안 하면 방을 옮긴 뒤 삽수가 방 밖 좌표로 남아
+     매일 계약이 던지거나 화면에 없는데 상태에는 사는 유령이 된다. */
+  if (S.cuttings && S.cuttings.length) rehomeCuttings(S, io.light.room, m => pushLog(S, '🔧 ' + m));
 
   const { report, sky, check } = io.light.daily(S.day, S);
   if (!check.ok) pushLog(S, '⚠ 계약 이상 — ' + check.problems.slice(0, 3).join(' / '));
@@ -284,6 +430,12 @@ export function nextDay(S, io) {
     }
   }
 
+  /* ★ 삽수는 **여기서 한 번** 돈다 (2026-08-03). 반환구가 둘(도착 전/후)로 갈리기 전이라
+     양쪽이 같은 하루를 받는다 — stepTutorial 을 한쪽에만 붙였다가 "수확했는데 안 배웠다"가
+     났던 것과 같은 함정을 여기서는 처음부터 피한다.
+     ★ 위 첫 플레이 되감기(catch)는 이 줄 **위에서** 끝난다 — 되감긴 턴은 삽수도 안 돈다. */
+  const cuttings = stepCuttingsOfTurn(S);
+
   /* 몬스테라가 아직 도착하지 않았으면 콩나물만 진행하고 끝낸다. Day 4에 막 도착한 경우도
      그날은 키운 날로 세지 않는다 — 다음 날부터 빛을 받아 3턴 뒤 말린 새순이 된다. */
   if (!p) {
@@ -300,7 +452,8 @@ export function nextDay(S, io) {
       growthCalendarDay: arrived ? io.growth.calendarDay() : null,
       effectiveGrowthDays: arrived ? io.growth.growthDays() : null,
       growthPhase: arrivalPhase,
-      growthPhaseError: null
+      growthPhaseError: null,
+      cuttings
     };
     /* ★이 경로도 튜토리얼을 돌려야 한다 (2026-08-03).
        몬스테라가 오기 전(그리고 도착하는 그 날)은 여기서 일찍 반환된다 —
@@ -308,7 +461,7 @@ export function nextDay(S, io) {
        "수확했는데 배웠다고 안 적히는" 회차가 났다. 하루에 반환구가 둘이면
        둘 다 챙겨야 한다. */
     earlyTurn.tutorial = stepTutorial(S, earlyTurn, io);
-    return { S, turn: earlyTurn };
+    return { S, turn: attachEvents(S, earlyTurn, fpBefore) };
   }
 
   const slot = (report.slots || []).find(s => s.slotId === p.slotId) || null;
@@ -326,16 +479,24 @@ export function nextDay(S, io) {
      그래서 되감기 전에 **growth 에게 어디까지 갔는지 물어본다.**
      ⚠ 코어는 growth 내부 상태를 복원하지 못한다 — 그건 growth 소유다.
        `buildPlant()` 를 렌더 경계로 감싸 달라고 요청해 뒀다(core-to-growth). */
+  /* ★ 머리공간 — advanceTo 를 부르기 **전에** 본다 (2026-08-03).
+     오늘 키가 이미 그 자리 천장을 채웠으면 형태를 하루도 더 안 올린다. 죽지는 않는다. */
+  const headroom = headroomOfTurn(S, io, p);
+  const headBlocked = !!(headroom && headroom.blocked);
+
   const calBefore = io.growth.calendarDay();
   let step;
   let lightInputRecorded = false;
   try {
+    /* ★ 빛은 막혔어도 넘긴다 — DLI 이력은 사실이어야 한다. 안 넘기면 growth 의 7일평균이
+       코어와 갈라지고, 자리를 옮긴 뒤 "왜 아직 안 자라지"가 된다. */
     io.growth.setDailyLight(dli);
     lightInputRecorded = true;
 
     /* ★ 하루 진행은 advanceTo 만 쓴다. setGrowth(점프)는 도착 때 한 번뿐이다.
-       달력은 하루 가고, 형태(유효 생장)는 빛이 될 때만 쌓인다 — 저광이면 여기서 멈춘다. */
-    step = io.growth.advanceTo(calBefore + 1);
+       달력은 하루 가고, 형태(유효 생장)는 빛이 될 때만 쌓인다 — 저광이면 여기서 멈춘다.
+       ★ 머리공간이 막혔으면 **아예 안 부른다.** 유효 생장일이 안 오르는 것이 이 규칙의 전부다. */
+    if (!headBlocked) step = io.growth.advanceTo(calBefore + 1);
   } catch (e) {
     let calAfter = null;
     try { calAfter = io.growth.calendarDay(); } catch { /* 계약까지 끊긴 경우 */ }
@@ -383,8 +544,12 @@ export function nextDay(S, io) {
     /* ★ 실제 growth 상태 — 빈 값으로 숨기지 않는다 */
     growthCalendarDay: step ? step.calDay : io.growth.calendarDay(),
     effectiveGrowthDays: step ? step.growth : io.growth.growthDays(),
-    grew: step ? step.grew : null,
+    grew: headBlocked ? false : (step ? step.grew : null),
     growthBlocked: step ? step.blocked : io.growth.growthBlocked(),
+    /* ★ 머리공간 정지 — 빛 부족(growthBlocked)과 **다른 칸**이다. 한 칸에 섞으면
+       화면이 "빛이 모자랍니다"라고 말하고 플레이어는 등을 하나 더 산다(정반대 처방). */
+    headroom,
+    headroomBlocked: headBlocked ? headroom.reason : null,
     growthAge: io.growth.ageOf ? io.growth.ageOf(step ? step.growth : 0) : null,
     dli7Growth: io.growth.dli7(),      // growth가 실제로 쓴 7일 평균
     dli7Core: avg(S.dliHist, 7),       // 코어가 센 값 — 둘이 어긋나면 배선이 틀린 것
@@ -397,7 +562,8 @@ export function nextDay(S, io) {
     hudError: step ? (step.hudError ?? null) : null,
     growthPhase: phaseAfter.phase,
     growthPhaseError: phaseAfter.error,
-    firstPlayEvent
+    firstPlayEvent,
+    cuttings
   };
 
   /* ★ 순서가 계약이다 (2026-08-02 정정).
@@ -437,6 +603,15 @@ export function nextDay(S, io) {
     console.warn(`[생장] growth HUD 갱신 실패(3D 는 그려짐) — ${turn.hudError}`);
     pushLog(S, `⚠ growth HUD 갱신 실패 — ${turn.hudError} (형태는 그려졌습니다)`);
   }
+  /* ★ 머리공간 정지·경고도 **바뀔 때만** 남긴다. 문구에 '빛'이라는 말을 넣지 않는다 —
+     플레이어가 처방을 헷갈리면 이 규칙은 그냥 "안 자라는 버그"가 된다. */
+  const headMsg = turn.headroomBlocked || (turn.headroom && turn.headroom.warn ? turn.headroom.reason : null);
+  if (headMsg !== S._lastHeadBlock) {
+    if (headMsg) pushLog(S, `📏 ${headMsg}`);
+    else if (S._lastHeadBlock !== undefined && S._lastHeadBlock !== null)
+      pushLog(S, `▶ 위가 트였습니다 — 다시 자랍니다 (유효 진행 ${turn.effectiveGrowthDays}일)`);
+    S._lastHeadBlock = headMsg;
+  }
   /* 정지 사유는 바뀔 때만 남긴다 — 매일 찍으면 기록이 같은 줄로 덮인다 */
   if (turn.growthBlocked !== S._lastBlock) {
     if (turn.growthBlocked) pushLog(S, `⏸ 형태 정지 — ${turn.growthBlocked}`);
@@ -445,7 +620,7 @@ export function nextDay(S, io) {
   }
 
   turn.tutorial = stepTutorial(S, turn, io);
-  return { S, turn };
+  return { S, turn: attachEvents(S, turn, fpBefore) };
 }
 
 export function runDays(S, io, n, onTurn) {

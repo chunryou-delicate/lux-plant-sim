@@ -41,6 +41,13 @@ export const TUTORIAL_RULES = Object.freeze({
   lampUnlockSeason: 'autumn'                  // 가을 진입에 해금 — 겨울 전 선택지가 생긴다
 });
 
+/* ── 알림 시점 (2026-08-03) ────────────────────────────────────────────
+   ★규칙이 아니라 **말이 나올 자리**다. 살림 수치(월세·등값)는 위 TUTORIAL_RULES 가 갖고,
+     여기 셋은 "언제 말을 거나"만 정한다. 값을 바꿔도 경제는 안 바뀐다. */
+const RENT_NOTICE_DAYS = 7;    // 유예 만료 이레 전에 미리 알린다
+const LAMP_NUDGE_DAY = 7;      // 가을 이레째까지 등을 안 샀으면 한 번만 짚는다
+const WINTER_STILL_DAY = 10;   // 겨울 열하루째까지 반지하면 한 번 더
+
 /* 학습 체크리스트 — story_arc.md §1. ★넷 다 **코어가 이미 내는 값**으로 판정한다.
    새 신호를 만들면 그게 또 어긋난다. */
 export const LEARNING = Object.freeze({
@@ -106,7 +113,11 @@ export function buyLamp(ts) {
   }
   ts.cashWon -= ts.rules.lampPriceWon;
   ts.lamp.owned += 1;
-  return { owned: ts.lamp.owned, cashWon: ts.cashWon };
+  /* ★사는 것은 **턴 밖**에서 일어난다(버튼). 그래서 다음 하루를 기다리지 않고
+     여기서 바로 신호를 낸다 — 하루 뒤에 "샀네" 하면 산 순간이 조용해진다.
+     호출부는 이 events 를 dialogue.createStoryteller().events() 에 그대로 넘기면 된다. */
+  return { owned: ts.lamp.owned, cashWon: ts.cashWon,
+           events: [{ id: 'lamp_bought', ko: '식물등을 샀습니다' }] };
 }
 
 /* ── 하루 ─────────────────────────────────────────────────────────────── */
@@ -129,6 +140,13 @@ export function tutorialDay(ts, { firstPlayDone = false, mealsUsed = 0 } = {}) {
   const out = Math.max(0, R.dailySpendWon - saved) + power;
   ts.cashWon -= out;
 
+  /* ★유예가 끝나 간다 (2026-08-03 추가) — 월세가 **처음 돈으로 느껴지는 자리**다.
+     30일째에 30만 원이 그냥 빠지면 놀라기만 하고 준비할 기회가 없다. 이레 전에 알린다.
+     새 규칙이 아니라 이미 있는 nextDueDay 를 읽기만 한다 — 상태를 늘리지 않았다. */
+  if (ts.rent.paidCount === 0 && ts.day === ts.rent.nextDueDay - RENT_NOTICE_DAYS)
+    ev.push({ id: 'rent_soon', ko: '월세 유예가 ' + RENT_NOTICE_DAYS + '일 뒤 끝납니다',
+              dueDay: ts.rent.nextDueDay, rentWon: R.rentWon });
+
   /* 월세 — 첫 달은 유예다(집주인 사정·보증금 상계라는 서사 장치) */
   let rentPaid = 0;
   if (ts.day >= ts.rent.nextDueDay) {
@@ -136,17 +154,36 @@ export function tutorialDay(ts, { firstPlayDone = false, mealsUsed = 0 } = {}) {
     ts.cashWon -= rentPaid;
     ts.rent.paidCount += 1;
     ts.rent.nextDueDay += 30;
-    ev.push({ id: 'rent', ko: '월세 ' + R.rentWon.toLocaleString() + '원' });
+    /* ★첫 달과 그 뒤는 다른 사건이다 — 첫 달은 유예가 끝난 날이고, 그 뒤는 반복이다.
+       대사도 갈린다(dialogue.rentFirst / rentAgain). */
+    ev.push({ id: 'rent', ko: '월세 ' + R.rentWon.toLocaleString() + '원',
+              first: ts.rent.paidCount === 1, count: ts.rent.paidCount });
   }
 
   /* 식물등 해금 — 가을에 들어서면 살 수 있다 */
   const season = seasonAt(ts, ts.day);
+  const seasonDay = seasonDayAt(ts, ts.day);
   if (!ts.lamp.unlocked && season === R.lampUnlockSeason) {
     ts.lamp.unlocked = true;
-    ev.push({ id: 'lamp_unlocked', ko: '식물등을 살 수 있게 되었습니다' });
+    ev.push({ id: 'lamp_unlocked', ko: '식물등을 살 수 있게 되었습니다',
+              priceWon: R.lampPriceWon });
   }
   const prevSeason = seasonAt(ts, ts.day - 1);
-  if (season !== prevSeason) ev.push({ id: 'season', ko: SEASON_KO[season] + '이 되었습니다' });
+  /* ★계절 이름을 같이 싣는다 — 가을과 겨울은 대사가 완전히 다르다.
+     싣지 않으면 화면이 ko 문자열을 뜯어 봐야 하고, 그건 조용히 틀리는 종류다. */
+  if (season !== prevSeason)
+    ev.push({ id: 'season', ko: SEASON_KO[season] + '이 되었습니다', season, prevSeason });
+
+  /* ★안 사는 것도 답이다 (story_arc.md §4) — 그래서 재촉이 아니라 한 번만 짚는다.
+     해금일을 따로 저장하지 않는다: 해금은 가을 0일째라 "가을 7일째"가 곧 이레 뒤다. */
+  if (ts.lamp.unlocked && ts.lamp.owned === 0 &&
+      season === R.lampUnlockSeason && seasonDay === LAMP_NUDGE_DAY)
+    ev.push({ id: 'lamp_skipped', ko: '식물등을 아직 사지 않았습니다' });
+
+  /* ★겨울까지 못 나간 경우 — **실패가 아니라 더딘 것**이다(박사님 지시).
+     겨울에 들어선 것만으로 한 번, 열흘이 지나도 그대로면 한 번 더 짚는다. */
+  if (season === 'winter' && !ts.movedOut && seasonDay === WINTER_STILL_DAY)
+    ev.push({ id: 'winter_still', ko: '겨울 ' + (WINTER_STILL_DAY + 1) + '일째 · 아직 반지하' });
 
   /* ★파산은 스토리 모드에서 끝이 아니다 — 초보 모드라 죽지 않는다(story_arc.md §0).
      0원 아래로는 안 내려가고, 표시로만 알린다. 게임을 끝내지 않는다. */
@@ -213,7 +250,10 @@ export function moveOut(ts) {
   }
   ts.cashWon -= ts.rules.moveOutCostWon;
   ts.movedOut = true;
-  return { movedOut: true, cashWon: ts.cashWon };
+  /* ★반지하 구간의 끝이다. buyLamp 와 같은 이유로 여기서 신호를 낸다 —
+     이사는 턴이 아니라 버튼이라, 다음 하루를 기다리면 장면이 하루 늦게 나온다. */
+  return { movedOut: true, cashWon: ts.cashWon,
+           events: [{ id: 'moved_out', ko: '원룸으로 이사했습니다' }] };
 }
 
 /* 화면이 "다음에 무엇을 하면 되나"를 적을 때 쓴다. 코어에 새 계산을 만들지 않는다. */

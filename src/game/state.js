@@ -58,6 +58,13 @@ export function newState(opt = {}) {
        테스트 초기화 경계(givePlant)가 만들 때 생긴다. v0는 1개 (growth가 한 그루 전용). */
     pots: [],
 
+    /* ★ 삽수 — 잘라서 물꽂이·화분에 담아 둔 조각들 (2026-08-03).
+       규칙과 수치는 src/game/propagation.js 가 갖는다(docs/propagation.md 가 정본).
+       여기 두는 이유는 **자리를 차지하기 때문**이다 — placedItems 가 이 배열을 같이 낸다.
+       ⚠ 화분(S.pots)이 아니다. 삽수는 growth 를 안 쓴다(한 그루 전용) — 논리로만 돈다.
+         승격은 다개체 리팩터 뒤다(propagation.promoteToPot 이 그 자리에서 던진다). */
+    cuttings: [],
+
     /* Day 0 콩나물 → Day 4 첫 수확·선물 → 몬스테라 말린 새순.
        정식 작물 목록이나 경제 장부가 아니라 첫 재미 검증 한 흐름만 담는다. */
     firstPlay: createFirstPlayState({ enabled: !!opt.firstPlay, rules: opt.firstPlayRules }),
@@ -220,6 +227,16 @@ export function placedItems(S) {
   if (b && (b.slotId || b.at))
     out.push({ id: BEANSPROUT_ID, slotId: b.slotId, at: b.at || null,
                plantId: null, variegated: false, crop: true });
+  /* ★ 삽수도 자리를 차지한다 (2026-08-03) — 시루와 **같은 모양**으로 낸다.
+     ⚠ `plantId: null` 인 이유는 시루와 같다: 뿌리내리는 동안 삽수는 빛과 무관하므로
+       (docs/propagation.md §3) 그 자리에 몬스테라 밴드 판정을 걸 근거가 없다.
+       판정이 아니라 **자리를 차지한다는 사실**만 계약에 실어야 유령이 안 생긴다.
+     ★ 여기서 propagation.js 를 import 하지 않는다 — 이 함수가 보는 것은
+       `{id, slotId, at}` 세 칸뿐이라 규칙 모듈을 끌어올 이유가 없고, 순환 import 도 안 생긴다. */
+  for (const c of S.cuttings || [])
+    if (c && (c.slotId || c.at))
+      out.push({ id: c.id, slotId: c.slotId, at: c.at || null,
+                 plantId: null, variegated: !!c.variegated, cutting: true });
   return out;
 }
 

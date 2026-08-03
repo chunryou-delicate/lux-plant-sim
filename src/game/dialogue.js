@@ -9,6 +9,15 @@
  *   god     식물신             ★초상화 없음 — first_play.md §식물신 확정:
  *                              "대사 한 줄. 외형 없음 · 이름·모습·설정을 지금 정하지 않는다"
  *                              화면에서는 빛/실루엣으로만 처리한다. 얼굴을 만들지 말 것.
+ *
+ * ★표정 키는 game.html 의 `FACE_FILE` 이 정본이다. 거기 없는 키를 쓰면 조용히 기본 얼굴로
+ *   떨어진다 — 오류가 안 나는 종류라 `tools/test_dialogue_coverage.mjs` 가 대조한다.
+ *     jachwi  base · happy · worry · cry · surprise · tired
+ *     moni    base · happy(파일은 excited) · sad · curious
+ *
+ * ★이 파일이 늘어난 이유 (2026-08-03) — 반지하 탈출까지 **말 없는 날이 43일** 있었다.
+ *   첫 플레이 3종(수확·도착·말린 새순) 말고는 대사가 아예 없어서, 월세도 가을도 식물등도
+ *   숫자만 바뀌고 아무도 아무 말을 안 했다. 그 구간을 채운 것이 아래 §2~§5 다.
  */
 
 export const SPEAKERS = {
@@ -20,10 +29,11 @@ export const SPEAKERS = {
 /* 한 대사 = { who, text, face? }
    face 는 초상화 표정 키다. 없으면 기본. 초상화가 없는 화자(god)는 무시된다. */
 
-/* ── 첫 플레이 ─────────────────────────────────────────────────────────
-   순서는 first_play.md §2 계약 그대로다 — 수확 → 식비 → 식물신 → 도착.
-   ★식물신이 식비 뒤·도착 앞에 온다. 그 자리가 확정이다. */
 export const SCRIPTS = {
+
+  /* ═══ §1 첫 플레이 ═════════════════════════════════════════════════════
+     순서는 first_play.md §2 계약 그대로다 — 수확 → 식비 → 식물신 → 도착.
+     ★식물신이 식비 뒤·도착 앞에 온다. 그 자리가 확정이다. */
 
   /* ★오프닝 (박사님 2026-08-03) — 주인공은 **고아 자취생**이다.
      힘든 상황에서 부모를 찾으며 울고, 그때 마스코트가 나타나 "식물신이 보냈다"고 한다.
@@ -97,20 +107,350 @@ export const SCRIPTS = {
     { who: 'jachwi', face: 'surprise', text: '뭔가… 돌돌 말린 게 올라왔어.' },
     { who: 'moni',   face: 'happy', text: '새순이야! 저게 펴지면 잎이 돼.' },
     { who: 'god',    text: '자리를 옮긴 것뿐인데 말이지.' }
+  ],
+
+  /* ═══ §2 배움 넷 — 체크리스트가 하나씩 채워지는 순간 ══════════════════════
+     ★한 줄씩이다. 이 넷은 다른 사건과 **같은 턴에 겹친다**(수확 날에 둘이 한꺼번에 켜진다).
+       길게 쓰면 Day 4 가 대사 열두 줄이 되어 아무도 안 읽는다.
+     ★규칙을 다시 읊지 않는다. 방금 겪은 것을 **한 문장으로 접어 주는** 역할만 한다. */
+  learnHarvest: [
+    { who: 'moni', face: 'happy', text: '그리고 오늘, 밥값을 네가 아니라 얘가 냈어.' }
+  ],
+  learnCropDark: [
+    { who: 'moni', face: 'curious', text: '이거 하나는 이제 아는 거다 — **어두운 자리도 자리야.**' }
+  ],
+  learnPlantWindow: [
+    { who: 'moni', face: 'happy', text: '얘가 지금 받는 빛, 자라기 시작하는 선을 넘었어.' },
+    { who: 'jachwi', text: '창턱이라서?' },
+    { who: 'moni', text: '창턱이라서가 아니라 **밝아서**. 다음 집에 가면 창턱부터 찾아.' }
+  ],
+  learnSpear: [
+    { who: 'moni', face: 'happy', text: '말린 새순은 밝은 자리에서만 나와. 봤다는 게 곧 배운 거야.' }
+  ],
+
+  /* ═══ §3 살림 — 돈이 실제로 압박이 되는 순간 ═══════════════════════════
+     ★몬이는 **대신 해 주지 않는다.** 돈 얘기에서 그게 제일 잘 드러난다 —
+       세어 주기는 하지만 벌어 주지는 않는다. */
+
+  /* 유예 만료 7일 전. 첫 달 월세를 봐준다는 것이 서사 장치(story_arc.md §3)라
+     그 장치가 **끝난다는 것**을 여기서 처음 몸으로 안다. */
+  rentSoon: [
+    { who: 'jachwi', face: 'worry', text: '달력에 동그라미 쳐 둔 날이 다가온다.' },
+    { who: 'jachwi', text: '집주인 아저씨가 첫 달은 봐준다고 했었지. 그 첫 달이 끝나 간다.' },
+    { who: 'moni',   face: 'curious', text: '얼마야?' },
+    { who: 'jachwi', face: 'tired', text: '삼십만 원.' },
+    { who: 'moni',   face: 'sad', text: '…그건 내가 못 도와줘.' },
+    { who: 'moni',   text: '대신 하루에 얼마 나가는지는 같이 세 줄게.' }
+  ],
+  rentFirst: [
+    { who: 'jachwi', face: 'tired', text: '삼십만 원. 한 번에 빠져나갔다.' },
+    { who: 'moni',   face: 'sad', text: '한 달이 이렇게 빨리 가는구나.' },
+    { who: 'jachwi', text: '…그러게.' },
+    { who: 'moni',   text: '남은 걸로 뭘 할지는 네가 정해. 나는 세는 것만 할게.' }
+  ],
+  /* 두 번째 달부터. ★반복 대사라 짧다 — 같은 무게를 두 번 주면 첫 달이 가벼워진다. */
+  rentAgain: [
+    { who: 'jachwi', face: 'tired', text: '월세 날. 이제 놀라지도 않는다.' },
+    { who: 'moni',   face: 'curious', text: '안 놀라게 된 것도 는 거야, 그것도.' }
+  ],
+  brokeTalk: [
+    { who: 'jachwi', face: 'worry', text: '지갑에 남은 게 없다.' },
+    { who: 'moni',   face: 'sad', text: '…미안. 나는 돈은 못 만들어.' },
+    { who: 'jachwi', text: '네가 미안할 게 뭐 있어.' },
+    /* ★초보 모드는 죽지 않는다(story_arc.md §0). 그 규칙을 대사가 그대로 말한다 —
+       "게임 오버가 없다"고 설명하지 않고, 하루가 그냥 계속된다는 걸로 보여준다. */
+    { who: 'moni',   text: '오늘 하루는 그래도 지나가. 내일도 지나가고.' }
+  ],
+
+  /* ═══ §4 계절 · 식물등 ════════════════════════════════════════════════ */
+
+  /* 가을 진입(Day 45). ★여기서 "자리를 더 못 올린다"는 벽을 처음 만난다 —
+     그래서 바로 다음에 식물등이 열리는 것이 말이 된다. */
+  autumnCame: [
+    { who: 'jachwi', text: '창으로 드는 빛이… 각도가 달라졌나?' },
+    { who: 'moni',   face: 'curious', text: '가을이야. 해가 조금씩 짧아져.' },
+    { who: 'moni',   text: '창턱이 예전만 못할 거야. 자리가 나빠진 게 아니라 **해가 낮아진** 거고.' },
+    { who: 'jachwi', text: '그럼 더 밝은 데로 옮기면 되나?' },
+    { who: 'moni',   face: 'sad', text: '이 방에서 창턱보다 밝은 데는 없어.' },
+    { who: 'moni',   text: '여기서부터는 자리 말고 다른 게 필요해.' }
+  ],
+  winterCame: [
+    { who: 'jachwi', face: 'tired', text: '유리에 김이 서린다.' },
+    { who: 'moni',   face: 'sad', text: '겨울이야. 반지하는 겨울이 길어.' },
+    { who: 'moni',   text: '해가 제일 낮은 계절이라, 창턱도 이제 창턱값을 못 해.' },
+    { who: 'jachwi', face: 'worry', text: '…아직 못 나갔네.' },
+    /* ★실패가 아니라 더딘 것이다. 그 톤을 여기서 못 지키면 경로 C 가 벌처럼 읽힌다. */
+    { who: 'moni',   text: '못 나간 게 아니라 아직 안 나간 거야. **늦은 거지 틀린 게 아니고.**' }
+  ],
+  /* 겨울 열흘째까지 반지하일 때. 위 winterCame 의 톤을 한 번 더 받쳐 준다. */
+  winterStill: [
+    { who: 'jachwi', face: 'tired', text: '겨울에도 반지하다.' },
+    { who: 'moni',   text: '겨울에 이사하는 사람 많지 않아. 다들 봄에 나가.' },
+    { who: 'jachwi', text: '위로야?' },
+    { who: 'moni',   face: 'curious', text: '사실이야. 위로는 덤이고.' }
+  ],
+
+  /* 식물등 해금 — ★필수품이 아니라 **선택**이다(story_arc.md §4).
+     그래서 몬이가 "사"라고 하지 않는다. 값과 전기값만 알려 주고 판단은 넘긴다.
+     여기만은 숫자를 대사로 준다 — 처음 보는 물건이라 겪을 기회가 아직 없다. */
+  lampUnlocked: [
+    { who: 'moni',   face: 'curious', text: '가을이 됐으니 하나 알려 줄게. **식물등.**' },
+    { who: 'moni',   text: '이만오천 원. 전기는 하루 이십삼 원이고.' },
+    { who: 'jachwi', text: '이만오천 원이면… 하루 살고 조금 더네.' },
+    { who: 'moni',   text: '사도 되고 안 사도 돼. 그 돈을 이사 자금에 보태도 되고.' },
+    { who: 'jachwi', face: 'worry', text: '…고민되네.' },
+    { who: 'moni',   face: 'happy', text: '고민할 만한 값이라서 알려 준 거야.' }
+  ],
+  lampBought: [
+    { who: 'jachwi', face: 'happy', text: '샀다. 생각보다 작네.' },
+    { who: 'moni',   face: 'happy', text: '켜 봐.' },
+    { who: 'jachwi', face: 'surprise', text: '어… 방이 좀 밝아진 것 같기도 하고.' },
+    /* ★등이 자리를 이기지 못한다 — 이 게임의 뼈대다(story_arc.md §4).
+       설명이 아니라 **플레이어가 이미 본 것**으로 짚는다. */
+    { who: 'moni',   face: 'curious', text: '방이 아니라 **그 자리**가 밝아진 거야. 등 밑에 있는 것만.' },
+    { who: 'moni',   text: '어두운 구석에 두고 켜면 아무 일도 안 일어나. 그건 전에 봤지?' }
+  ],
+  /* 해금하고 이레가 지나도록 안 샀을 때. ★"왜 안 사냐"가 아니다 — 안 사는 것도 답이다. */
+  lampSkipped: [
+    { who: 'moni',   face: 'curious', text: '등은 아직 안 샀네.' },
+    { who: 'jachwi', text: '이사 자금에 보태려고.' },
+    { who: 'moni',   text: '그것도 답이야. 창턱이 버텨 주는 동안은.' }
+  ],
+
+  /* ═══ §5 식물 상태 — 왜 멈췄는지 짚어 준다 ═════════════════════════════ */
+
+  /* 며칠째 형태가 안 오를 때. ★혼내지 않고, 정답 자리를 불러 주지도 않는다.
+     자리를 고르는 것은 플레이어 몫이다. */
+  plantStalled: [
+    { who: 'moni',   face: 'sad', text: '며칠째 그대로야.' },
+    { who: 'jachwi', text: '물은 줬는데.' },
+    { who: 'moni',   text: '물이 아니야. 저 자리에서 못 받는 게 있어.' },
+    { who: 'moni',   face: 'curious', text: '지금은 날짜만 가는 중이야. 옮겨 보자.' }
+  ],
+  plantStalledAgain: [
+    { who: 'moni',   face: 'sad', text: '또 멈췄어.' },
+    { who: 'jachwi', face: 'worry', text: '…어디로 옮겨야 되지.' },
+    { who: 'moni',   text: '제일 오래 잘 자랐던 자리를 떠올려 봐. 손이 먼저 기억할걸.' }
+  ],
+  /* 겨울에 멈춘 것은 자리 탓만이 아니다. ★"멈춘 것"과 "죽은 것"을 가른다 —
+     초보 모드는 잎을 잃지도 죽지도 않는다(story_arc.md §0). */
+  plantStalledWinter: [
+    { who: 'jachwi', face: 'worry', text: '겨울인데 안 자란다.' },
+    { who: 'moni',   text: '겨울엔 원래 더뎌. 멈춘 거랑 죽은 거는 달라.' },
+    { who: 'moni',   face: 'curious', text: '얘는 기다리는 중이야. 봄까지 기다려도 되고, 등을 켜 줘도 되고.' }
+  ],
+  plantResumed: [
+    { who: 'moni',   face: 'happy', text: '봐. 다시 오르기 시작했어.' },
+    { who: 'jachwi', face: 'happy', text: '자리 하나 옮겼을 뿐인데.' },
+    { who: 'moni',   text: '그 "뿐인데"가 제일 어려운 거야.' }
+  ],
+
+  /* ═══ §6 이사 — 조건이 하나씩 차고, 마침내 나간다 ═══════════════════════ */
+
+  /* 배움은 다 됐고 돈이 모자랄 때. */
+  shortMoney: [
+    { who: 'moni',   face: 'curious', text: '배울 건 다 배웠어. 남은 건 돈이야.' },
+    { who: 'jachwi', face: 'tired', text: '…제일 안 되는 거네.' },
+    { who: 'moni',   text: '백오십만 원. 보증금이랑 첫 달 월세랑 이삿짐값.' },
+    { who: 'jachwi', text: '한 번에 나가는구나.' },
+    { who: 'moni',   text: '한 번만 나가면 돼. 그다음엔 이 방이 아니고.' }
+  ],
+  /* 돈은 됐는데 배움이 모자랄 때. ★말이 완전히 다르다 —
+     이쪽은 "왜 지금 못 나가냐"에 답해야 한다. */
+  shortLearn: [
+    { who: 'moni',   face: 'curious', text: '돈은 됐는데, 아직 안 해 본 게 있어.' },
+    { who: 'jachwi', face: 'surprise', text: '돈이 됐으면 나가면 되는 거 아니야?' },
+    { who: 'moni',   text: '나가는 건 되지. 근데 다음 방도 창은 하나야.' },
+    { who: 'moni',   face: 'sad', text: '여기서 안 배우면 거기서 똑같이 헤매.' }
+  ],
+  moveReady: [
+    { who: 'moni',   face: 'happy', text: '됐다. 둘 다 됐어.' },
+    { who: 'jachwi', face: 'surprise', text: '진짜?' },
+    { who: 'moni',   text: '언제 나갈지는 네가 정해. 오늘이어도 되고.' }
+  ],
+
+  /* ★반지하 구간의 끝이자 감정의 정점.
+     지킨 것 넷:
+     ① **신파로 안 간다.** 부모 얘기는 한 줄. 그 뒤를 몬이가 농담으로 받는다.
+     ② **식물신은 한 줄뿐이다.** 여기가 세 번째이자 이 구간 마지막 등장이라
+        규모를 첫 플레이(god1 · spearFurled)와 똑같이 한 줄로 맞춘다.
+     ③ **짐이 적다는 것**으로 이 사람이 어떻게 살았는지를 말한다. 설명하지 않는다.
+     ④ 마지막 말은 **다음 방의 창**이다. 이 게임이 계속 하는 얘기가 그것이라. */
+  movedOut: [
+    { who: 'jachwi', text: '짐이 생각보다 적다.' },
+    { who: 'jachwi', text: '박스 네 개. 여기서 산 게 백 일이 넘는데.' },
+    { who: 'moni',   face: 'curious', text: '화분은 내가 안고 갈까?' },
+    { who: 'jachwi', face: 'happy', text: '네가 어떻게 안아.' },
+    { who: 'moni',   face: 'happy', text: '못 안지. 그냥 말해 본 거야.' },
+    { who: 'jachwi', face: 'cry', text: '…엄마 아빠한테 자랑할 게 생겼는데.' },
+    { who: 'moni',   face: 'sad', text: '…' },
+    { who: 'moni',   text: '들었을 거야. 여기 빛은 잘 안 들어와도, 소리는 잘 들리는 방이었잖아.' },
+    { who: 'jachwi', face: 'happy', text: '그게 뭐야.' },
+    { who: 'jachwi', text: '불 끄고 가자. 어차피 잘 안 들어오던 불.' },
+    { who: 'god',    text: '어두운 방에서도 자라는 것이 있었구나.' },
+    { who: 'moni',   face: 'happy', text: '가자. 다음 방은 창이 높대.' }
+  ],
+
+  /* ═══ §7 작은 말들 ═════════════════════════════════════════════════════
+     ★매일 같은 말이면 안 읽는다. 조건으로 갈리고(계절·날씨·돈·식물 상태),
+       고를 때는 **가장 오래 안 나온 것**부터 나온다(pickChatter).
+     ★사건이 있는 날에는 안 나온다. 조용한 날이 이틀 이어진 다음에만 나온다 —
+       매일 떠들면 사건의 무게가 같이 내려간다. */
+
+  /* 첫 플레이 · 콩나물이 자라는 사흘 */
+  chatCrop1: [
+    { who: 'jachwi', text: '콩나물이 진짜 자랄까.' },
+    { who: 'moni',   face: 'curious', text: '어두운 데 뒀으면 자라.' }
+  ],
+  chatCrop2: [
+    { who: 'jachwi', face: 'surprise', text: '뭔가 하얀 게 올라왔어.' },
+    { who: 'moni',   face: 'happy', text: '봐. 빛 없이도 자라는 게 있어.' },
+    { who: 'jachwi', text: '내일이면 먹는 건가.' },
+    { who: 'moni',   text: '내일 아침에 열어 봐.' }
+  ],
+
+  /* 여름 · 반지하 살림 */
+  chatSummerHeat: [
+    { who: 'jachwi', face: 'tired', text: '반지하는 여름에 덥고 겨울에 춥다.' },
+    { who: 'moni',   face: 'curious', text: '둘 다인 건 좀 심하지 않아?' },
+    { who: 'jachwi', text: '심하지.' }
+  ],
+  chatSummerDamp: [
+    { who: 'jachwi', text: '벽에서 눅눅한 냄새가 난다.' },
+    { who: 'moni',   text: '창 좀 열어. 나 말고 너한테 하는 말이야.' }
+  ],
+  chatDailySpend: [
+    { who: 'jachwi', text: '오늘도 이만 원.' },
+    { who: 'moni',   face: 'curious', text: '하루가 이만 원이야. 그렇게 세니까 좀 무섭다.' },
+    { who: 'jachwi', face: 'tired', text: '세지 말걸.' }
+  ],
+  chatMorning: [
+    { who: 'jachwi', text: '아침에 일어나서 제일 먼저 보는 게 화분이 됐다.' },
+    { who: 'moni',   face: 'happy', text: '나는?' },
+    { who: 'jachwi', text: '너는 안 봐도 있잖아.' }
+  ],
+  chatQuiet: [
+    { who: 'jachwi', text: '이 방은 조용하다.' },
+    { who: 'moni',   face: 'curious', text: '조용한 거 싫어?' },
+    { who: 'jachwi', text: '전엔 싫었어.' }
+  ],
+  chatMoniName: [
+    { who: 'jachwi', text: '몬이는 왜 몬이야?' },
+    { who: 'moni',   face: 'happy', text: '몬스테라니까.' },
+    { who: 'jachwi', text: '성의 없다.' },
+    { who: 'moni',   text: '성의 있는 이름은 네가 지어 줘.' }
+  ],
+  /* ★부모 얘기를 여기서 한 번 더 한다 — 다만 **웃으면서** 한다.
+     오프닝의 울음과 이사 장면의 한 줄 사이를 이 톤이 이어 준다. */
+  chatParents: [
+    { who: 'jachwi', text: '엄마가 화분을 잘 죽였어.' },
+    { who: 'jachwi', face: 'happy', text: '물을 너무 많이 줘서.' },
+    { who: 'moni',   face: 'curious', text: '너는 안 죽이잖아.' },
+    { who: 'jachwi', text: '…아직은.' }
+  ],
+  chatLandlord: [
+    { who: 'jachwi', text: '집주인 아저씨가 복도에서 인사했다.' },
+    { who: 'moni',   face: 'curious', text: '뭐래?' },
+    { who: 'jachwi', text: '"학생, 아직 있었네."' },
+    { who: 'moni',   text: '…없었으면 좋겠다는 뜻인가?' },
+    { who: 'jachwi', face: 'tired', text: '나도 그 생각 했어.' }
+  ],
+  chatNeighbor: [
+    { who: 'jachwi', text: '윗집에서 물 내리는 소리가 다 들린다.' },
+    { who: 'moni',   face: 'curious', text: '그 소리 무서워?' },
+    { who: 'jachwi', text: '아니. 누가 있다는 소리라서 좀 낫다.' }
+  ],
+
+  /* 가을 */
+  chatAutumnShort: [
+    { who: 'jachwi', text: '여섯 시인데 벌써 어둡다.' },
+    { who: 'moni',   face: 'sad', text: '가을은 그래.' }
+  ],
+  chatAutumnDust: [
+    { who: 'jachwi', text: '잎에 먼지가 앉았다.' },
+    { who: 'moni',   face: 'curious', text: '닦아 줘. 먼지도 빛을 가려.' },
+    { who: 'jachwi', face: 'surprise', text: '그것도 빛 얘기야?' },
+    { who: 'moni',   face: 'happy', text: '나는 원래 빛 얘기밖에 안 해.' }
+  ],
+  chatAutumnAngle: [
+    { who: 'jachwi', text: '해가 드는 자리가 조금씩 안쪽으로 옮겨 온다.' },
+    { who: 'moni',   face: 'curious', text: '깊이 들어오지? 대신 약해. 그게 가을 겨울이야.' }
+  ],
+
+  /* 겨울 */
+  chatWinterCold: [
+    { who: 'jachwi', face: 'tired', text: '입김이 난다. 안에서.' },
+    { who: 'moni',   face: 'sad', text: '…' },
+    { who: 'jachwi', text: '괜찮아. 이불 두 개 있어.' }
+  ],
+  chatWinterSlow: [
+    { who: 'jachwi', text: '얘가 요즘 느리다.' },
+    { who: 'moni',   text: '느린 거야. 나쁜 거 아니고.' }
+  ],
+  chatWinterWindow: [
+    { who: 'jachwi', text: '창이 뿌옇다.' },
+    { who: 'moni',   face: 'curious', text: '닦으면 조금 밝아져. 진짜야.' }
+  ],
+
+  /* 돈이 얼마 안 남았을 때 */
+  chatLowCash1: [
+    { who: 'jachwi', face: 'worry', text: '통장을 세 번 봤다. 세 번 다 같았다.' },
+    { who: 'moni',   face: 'curious', text: '세 번 볼 시간에 자.' }
+  ],
+  chatLowCash2: [
+    { who: 'jachwi', face: 'tired', text: '오늘은 라면.' },
+    { who: 'moni',   text: '내일은?' },
+    { who: 'jachwi', text: '…라면.' }
+  ],
+
+  /* 식물이 잘 자라고 있을 때 */
+  chatGrowing1: [
+    { who: 'jachwi', face: 'happy', text: '어제보다 큰 것 같은데.' },
+    { who: 'moni',   face: 'happy', text: '기분 탓이야. 근데 기분 탓이 맞을 때도 있어.' }
+  ],
+  chatGrowing2: [
+    { who: 'jachwi', text: '잎이 하나 더 생겼다.' },
+    { who: 'moni',   face: 'curious', text: '세어 봤어?' },
+    { who: 'jachwi', text: '매일 세.' }
+  ],
+
+  /* 날씨 — ★초보(novice)는 맑음 고정이라 안 뜬다. 실전 모드에서 쓰인다. */
+  chatRain: [
+    { who: 'jachwi', text: '비 오는 날은 창이 더 어둡다.' },
+    { who: 'moni',   face: 'curious', text: '오늘은 얘도 쉬는 날이야.' }
+  ],
+  chatCloudy: [
+    { who: 'jachwi', text: '흐린 날.' },
+    { who: 'moni',   text: '흐려도 빛은 들어와. 맑은 날의 사분의 일쯤.' }
   ]
 };
+
+/* ★어느 대사가 **다시 나올 수 있나.** 작은 말들과, **실제로 다시 일어나는 사건**만이다.
+   나머지 사건 대사는 한 번뿐이다 — 두 번째 들으면 안내가 잔소리가 되고 사건도 가벼워진다.
+     rentAgain            월세는 달마다 다시 온다
+     plantStalledAgain    멈춤은 다시 일어난다. 열흘마다 짚는다(loop.STALL_REPEAT_DAYS) —
+     plantStalledWinter   한 번 말하고 마는 쪽을 골랐다가, 어두운 자리에 방치한 판이
+                          190일 통째로 조용해졌다(2026-08-03 진단). */
+export const REPEATABLE = new Set(
+  Object.keys(SCRIPTS).filter(k => k.startsWith('chat'))
+    .concat(['rentAgain', 'plantStalledAgain', 'plantStalledWinter'])
+);
 
 /* ── 진행 ───────────────────────────────────────────────────────────── */
 
 /* 한 번만 보여줄 대사는 본 것을 기억한다. 같은 말을 두 번 들으면 안내가 잔소리가 된다. */
 export function createDialogue(seen = new Set()) {
   let queue = [], idx = 0;
+  /* ★본 것(seen)과 **나온 차례**(history)는 다른 값이다. Set 은 순서를 안 지켜서
+     "가장 오래 안 나온 말"을 고를 수가 없다 — 작은 말 고르기(pickChatter)가 그 순서를 본다. */
+  const history = [];
 
   function push(scriptId, { once = true } = {}) {
     const lines = SCRIPTS[scriptId];
     if (!lines) throw new Error(`[대화] 없는 스크립트: ${scriptId}`);
-    if (once && seen.has(scriptId)) return false;
-    if (once) seen.add(scriptId);
+    if (once && !REPEATABLE.has(scriptId) && seen.has(scriptId)) return false;
+    seen.add(scriptId);
+    history.push(scriptId);
     queue = queue.concat(lines.map(l => ({ ...l, scriptId })));
     return true;
   }
@@ -121,27 +461,221 @@ export function createDialogue(seen = new Set()) {
   function isOpen() { return idx < queue.length; }
   function clear() { queue = []; idx = 0; }
   function seenList() { return [...seen]; }
+  function recentList() { return [...history]; }
 
-  return { push, current, next, skip, isOpen, clear, seenList,
+  return { push, current, next, skip, isOpen, clear, seenList, recentList,
            get length() { return queue.length; },
            get index() { return idx; } };
 }
 
-/* 턴 결과 → 이번에 나올 대사. ★새 이벤트 체계를 만들지 않는다 —
-   loop.js 의 firstPlayEventsOf 가 이미 내는 id 를 그대로 읽는다. */
-export const EVENT_SCRIPT = {
-  beansprout_harvest: 'harvest',
-  monstera_arrived:   'monsteraArrived',
-  spear_furled:       'spearFurled'
-};
+/* ── 이벤트 → 대사 ──────────────────────────────────────────────────────
+   ★새 이벤트 체계를 만들지 않는다 — loop.js 가 `turn.events` 로 내는 id 를 그대로 읽는다.
+     (첫 플레이 신호는 first_play.firstPlayEventsOf, 살림 신호는 tutorial.tutorialDay,
+      식물·배움·이사 신호는 loop.stepTutorial 이 낸다.) */
+export const EVENT_SCRIPT = Object.freeze({
+  beansprout_harvest:  'harvest',
+  monstera_arrived:    'monsteraArrived',
+  spear_furled:        'spearFurled',
 
-/* Day 4 는 한 날에 수확·식비·도착이 겹친다. 계약 순서가 고정이라 그대로 줄 세운다:
-   수확 → (식비는 화면이 숫자로 보여준다) → 식물신 → 도착. */
+  learn_harvest:       'learnHarvest',
+  learn_cropDark:      'learnCropDark',
+  learn_plantWindow:   'learnPlantWindow',
+  learn_spear:         'learnSpear',
+
+  rent_soon:           'rentSoon',
+  broke:               'brokeTalk',
+
+  lamp_unlocked:       'lampUnlocked',
+  lamp_bought:         'lampBought',
+  lamp_skipped:        'lampSkipped',
+
+  plant_stalled:       'plantStalled',
+  plant_stalled_again: 'plantStalledAgain',
+  plant_stalled_winter:'plantStalledWinter',
+  plant_resumed:       'plantResumed',
+
+  winter_still:        'winterStill',
+  move_short_money:    'shortMoney',
+  move_short_learn:    'shortLearn',
+  move_ready:          'moveReady',
+  moved_out:           'movedOut'
+});
+
+/* ★한 턴에 여러 사건이 겹칠 때의 **순서가 계약이다.**
+   Day 4 는 수확·식비·배움 둘·식물신·도착이 한꺼번에 난다. 순서가 흔들리면
+   "식물신이 도착 뒤에 말하는" 회차가 생긴다(first_play.md §2 가 금지한 것).
+   여기 없는 id 는 대사가 없는 사건이다 — food_cash 처럼 화면이 숫자로 말하는 것들. */
+const EVENT_ORDER = [
+  'beansprout_harvest', 'learn_harvest', 'learn_cropDark',
+  'monstera_arrived',
+  'spear_furled', 'learn_spear', 'learn_plantWindow',
+  'plant_resumed', 'plant_stalled', 'plant_stalled_again', 'plant_stalled_winter',
+  'season_autumn', 'season_winter', 'winter_still',
+  'lamp_unlocked', 'lamp_bought', 'lamp_skipped',
+  'rent_soon', 'rent_first', 'rent_again', 'broke',
+  'move_short_learn', 'move_short_money', 'move_ready', 'moved_out'
+];
+
+/* 이벤트 하나 → 대사 id. 계절·월세처럼 **같은 id 안에서 갈리는** 것만 여기서 본다. */
+function scriptOf(ev) {
+  const id = typeof ev === 'string' ? ev : (ev && ev.id);
+  if (!id) return null;
+  if (id === 'season') return ev.season === 'autumn' ? 'autumnCame'
+                            : ev.season === 'winter' ? 'winterCame' : null;
+  if (id === 'rent') return ev.first ? 'rentFirst' : 'rentAgain';
+  return EVENT_SCRIPT[id] || null;
+}
+/* 정렬용 열쇠 — season·rent 는 갈린 뒤의 이름으로 줄을 선다. */
+function orderKey(ev) {
+  const id = typeof ev === 'string' ? ev : (ev && ev.id);
+  if (id === 'season') return 'season_' + (ev.season || '');
+  if (id === 'rent') return ev.first ? 'rent_first' : 'rent_again';
+  return id;
+}
+
+/* 턴 결과 → 이번에 나올 대사. events 는 loop.js 의 `turn.events` 그대로다.
+   ★Day 4 계약 순서(수확 → 식비 → 식물신 → 도착)는 EVENT_ORDER 가 지킨다. */
 export function scriptsForEvents(events = []) {
-  const ids = (events || []).map(e => (typeof e === 'string' ? e : e && e.id)).filter(Boolean);
+  const list = (events || []).filter(Boolean);
+  const rank = ev => { const i = EVENT_ORDER.indexOf(orderKey(ev)); return i < 0 ? 999 : i; };
   const out = [];
-  if (ids.includes('beansprout_harvest')) { out.push('harvest', 'god1'); }
-  if (ids.includes('monstera_arrived'))     out.push('monsteraArrived');
-  if (ids.includes('spear_furled'))         out.push('spearFurled');
+  for (const ev of [...list].sort((a, b) => rank(a) - rank(b))) {
+    const s = scriptOf(ev);
+    if (s && !out.includes(s)) out.push(s);
+    /* ★식물신은 수확 **바로 뒤**에 붙는다. 첫 플레이 계약이라 여기 한 곳에 박아 둔다. */
+    if (s === 'harvest' && !out.includes('god1')) out.push('god1');
+  }
+  /* 수확·배움이 같이 났으면 식물신을 배움 뒤로 민다 — 배움 두 줄은 수확의 꼬리다 */
+  const g = out.indexOf('god1');
+  if (g >= 0) {
+    const tail = ['learnHarvest', 'learnCropDark'].filter(x => out.includes(x));
+    if (tail.length) {
+      out.splice(g, 1);
+      const last = Math.max(...tail.map(x => out.indexOf(x)));
+      out.splice(last + 1, 0, 'god1');
+    }
+  }
   return out;
+}
+
+/* ── 작은 말 고르기 ────────────────────────────────────────────────────
+   ★조건은 **겪은 것**으로 쓴다. "지금 가을이다"가 아니라 "가을이라 해가 짧다"를
+     말할 수 있는 상황인가로 고른다. 조건이 겹치면 가장 오래 안 나온 것이 나온다. */
+export const CHATTER = [
+  /* 첫 플레이 — 수확 전 사흘. ★날짜를 딱 집어 걸지 않는다(`===` 로 걸었더니
+     조용한 날 세기와 어긋나 셋 다 못 나오는 날이 있었다). 둘 중 안 나온 쪽이 먼저 나온다. */
+  { id: 'chatCrop1', when: c => !c.cropHarvested && c.cropAgeDays >= 1 },
+  { id: 'chatCrop2', when: c => !c.cropHarvested && c.cropAgeDays >= 2 },
+
+  /* 날씨 — 그날 하늘이 실제로 그래야 한다 */
+  { id: 'chatRain',   when: c => c.weather === 'rain' },
+  { id: 'chatCloudy', when: c => c.weather === 'cloudy' },
+
+  /* 식물 상태 */
+  { id: 'chatGrowing1', when: c => c.grew === true },
+  { id: 'chatGrowing2', when: c => c.grew === true },
+  { id: 'chatWinterSlow', when: c => c.season === 'winter' && c.blocked },
+
+  /* 돈 — 한 달 치(60만) 아래로 내려가면 티가 난다 */
+  { id: 'chatLowCash1', when: c => c.cashWon != null && c.cashWon < 300_000 },
+  { id: 'chatLowCash2', when: c => c.cashWon != null && c.cashWon < 300_000 },
+
+  /* 계절 */
+  { id: 'chatAutumnShort', when: c => c.season === 'autumn' },
+  { id: 'chatAutumnDust',  when: c => c.season === 'autumn' },
+  { id: 'chatAutumnAngle', when: c => c.season === 'autumn' },
+  { id: 'chatWinterCold',   when: c => c.season === 'winter' },
+  { id: 'chatWinterWindow', when: c => c.season === 'winter' },
+
+  /* 살림 — 계절을 안 가린다. 아무것도 안 걸릴 때 여기서 나온다. */
+  { id: 'chatSummerHeat', when: c => c.season === 'summer' },
+  { id: 'chatSummerDamp', when: c => c.season === 'summer' },
+  { id: 'chatDailySpend', when: c => c.living },
+  { id: 'chatMorning',    when: c => c.living },
+  { id: 'chatQuiet',      when: c => c.living },
+  { id: 'chatMoniName',   when: c => c.living },
+  { id: 'chatParents',    when: c => c.living },
+  { id: 'chatLandlord',   when: c => c.living },
+  { id: 'chatNeighbor',   when: c => c.living },
+  /* ★맨 끝 그물 — 첫 플레이가 길어져 위가 전부 안 걸리는 날을 위해 둔다.
+     이게 없으면 어두운 자리에 방치한 판이 며칠이고 통째로 조용해진다(진단에서 46일). */
+  { id: 'chatQuiet',      when: () => true },
+  { id: 'chatMoniName',   when: () => true },
+  { id: 'chatMorning',    when: () => true }
+];
+
+/* 조건에 맞는 것 중 **가장 오래 안 나온 것**. recent 는 나온 차례(오래된 것부터)다.
+   ★순수하다 — 난수를 안 쓴다. 재현이 매번 같은 결과를 봐야 검증이 된다. */
+export function pickChatter(ctx = {}, recent = []) {
+  const pool = [];
+  for (const c of CHATTER) {
+    let ok = false;
+    try { ok = !!c.when(ctx); } catch { ok = false; }
+    if (ok && !pool.includes(c.id)) pool.push(c.id);
+  }
+  if (!pool.length) return null;
+  const rank = id => recent.lastIndexOf(id);      // 안 나온 적 있으면 -1 → 제일 앞
+  let best = pool[0];
+  for (const id of pool) if (rank(id) < rank(best)) best = id;
+  return best;
+}
+
+/* 턴 → 작은 말 고르기에 쓸 상황. ★turn 과 S 의 **읽기만** 한다. */
+export function chatterContext(turn = {}, S = null) {
+  const ts = (S && S.tutorial) || null;
+  const fp = (S && S.firstPlay) || null;
+  const t = turn.tutorial && !turn.tutorial.skipped ? turn.tutorial : null;
+  return {
+    day: turn.day ?? null,
+    weather: (turn.sky && turn.sky.weather) || null,
+    season: t ? t.season : (turn.sky && turn.sky.season) || null,
+    seasonDay: t ? t.seasonDay : null,
+    cashWon: t ? t.cashWon : (ts ? ts.cashWon : null),
+    living: !!t,                                     // 살림이 도는 중(첫 플레이 뒤)
+    firstPlayDone: !!(fp && fp.completed),
+    cropAgeDays: fp && fp.beansprout ? fp.beansprout.ageDays : null,
+    cropHarvested: !!(fp && fp.beansprout && fp.beansprout.harvested),
+    grew: turn.grew ?? null,
+    blocked: turn.growthBlocked || null,
+    lampOwned: ts ? ts.lamp.owned : 0,
+    movedOut: !!(ts && ts.movedOut)
+  };
+}
+
+/* ── 한 턴을 통째로 ─────────────────────────────────────────────────────
+   ★게임 화면이 쓰는 **유일한 창구**다. 사건이 있으면 사건 대사를, 없으면
+     조용한 날을 세다가 작은 말을 낸다.
+
+   왜 상태를 여기서 드나 — "며칠 조용했나"와 "무엇이 최근에 나왔나"는 대화의 리듬이지
+   게임 상태가 아니다. 세이브에 안 남고(다시 켜면 처음부터 센다) 코어도 몰라도 된다. */
+export const QUIET_DAYS_BEFORE_CHATTER = 2;
+
+export function createStoryteller(opt = {}) {
+  /* ★나온 차례를 **여기서 센다.** 예전엔 대화 상자(dlg.recentList)를 보게 해 뒀는데,
+     호출부가 낸 id 를 상자에 넣어 주지 않으면 이력이 영영 비어서 작은 말이
+     늘 같은 것만 나왔다(재현에서 chatGrowing1 이 연달아 두 번 나왔다).
+     세는 쪽과 고르는 쪽이 갈리면 반드시 어긋난다 — 한 곳에서 센다. */
+  const history = opt.recent ? [...opt.recent] : [];
+  const quietMax = Number.isFinite(opt.quietDays) ? opt.quietDays : QUIET_DAYS_BEFORE_CHATTER;
+  let quiet = 0;
+
+  /* 한 턴 → 이번에 띄울 대사 id 목록(순서 그대로). 빈 배열이면 조용한 날이다. */
+  function turn(turnObj, S = null) {
+    const ids = scriptsForEvents((turnObj && turnObj.events) || []);
+    if (ids.length) { quiet = 0; history.push(...ids); return ids; }
+    quiet++;
+    if (quiet <= quietMax) return [];
+    const id = pickChatter(chatterContext(turnObj || {}, S), history);
+    if (!id) return [];
+    quiet = 0; history.push(id);
+    return [id];
+  }
+  /* 턴 밖에서 나는 일(식물등 구입·이사 버튼) — 그쪽이 낸 events 를 그대로 준다.
+     buyLamp()·moveOut() 의 반환값에 `events` 가 실려 온다. */
+  function events(list) {
+    const ids = scriptsForEvents(list || []);
+    if (ids.length) { quiet = 0; history.push(...ids); }
+    return ids;
+  }
+  return { turn, events, get quietDays() { return quiet; }, recent: () => [...history] };
 }

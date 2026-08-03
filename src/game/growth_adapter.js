@@ -151,6 +151,27 @@ export function createGrowthAdapter(iframe) {
        거짓말이 된다 — 반지하·등1개가 정확히 그 경우다(하루 6.02 넘음 / 7일평균 5.82 못 넘음). */
     canFenestrate(varie) { const f = fn('canFenestrate'); return f ? f(!!varie) : null; },
 
+    /* ★ 삽수용 — 모주의 **자를 수 있는 마디 목록** (2026-08-03).
+       반환 `[{ nodeId, stem, leaves, variegatedLeaves, growthDays }]` 또는 **null**.
+
+       ⚠ **지금은 거의 항상 null 이다.** plant_grow.html 에 이 접근자가 없기 때문이다.
+         있는 것은 `axisTimeline`(축·마디의 시간표)뿐인데, 거기에는
+           · 어느 마디에서 어느 가지가 났는지의 연결
+           · 그 잎이 무늬인지
+         가 **없다.** 그 둘 없이는 "이 조각이 잎 몇 장을 품고 있나"를 못 낸다.
+
+       ★ 그래서 **추정하지 않는다.** 여기서 잎 수를 지어내면 삽수가
+         "실제 자랐던 것을 자른 것"이 아니라 코어가 만든 새 개체가 된다 —
+         이 기능의 존재 이유가 그 자리에서 사라진다.
+         null 이면 호출부는 자르기 UI 를 **열지 않으면 된다**(propagation.takeCutting 은
+         마디 목록 없이는 던진다). 요청은 docs/handoff/core-to-growth.md 에 적어 뒀다. */
+    cuttableNodes() {
+      const f = fn('cuttableNodes');
+      if (!f) return null;
+      const list = f();
+      return Array.isArray(list) ? list : null;
+    },
+
     /* 표시·대조 전용(판정에 안 쓴다) — 없으면 화면에 '—' 로 두면 되므로 던지지 않는다. */
     dli7()   { const f = fn('dli7');   return f ? f() : null; },
     dliCV()  { const f = fn('dliCV');  return f ? f() : null; },
