@@ -16,7 +16,13 @@
 ```js
 // createRoomView 옵션에 둘이 늘었다
 createRoomView(canvas, {
-  onCharacterTap : (id) => {},          // 'jachwi' | 'moni' 를 눌렀다
+  // ★ 2026-08-03 바뀜(방 뷰 4차) — 인자가 둘이고 **첫째가 '누른 결과'** 다
+  onCharacterTap : (selected, tapped) => {},
+  //   selected  누른 결과 골라진 id ('jachwi' | 'moni' | null)   ← 해제면 null
+  //   tapped    실제로 눌린 id
+  // game.html 의 `onCharacterTap: (id) => roomView.selectCharacter(id)` 는 **그대로 두면 된다.**
+  // 오히려 그 한 줄이 이제 양방향으로 맞는다 — 같은 캐릭터를 다시 누르면 해제되는데,
+  // 첫 인자가 '누른 id' 였을 때는 호스트가 방금 푼 것을 도로 골라서 해제가 안 됐다(폰 지적).
   onProgress     : ({phase, ko, ms}) => {},  // ★ 무엇을 기다리는 중인가
   deferPlantAssets: false,              // 기본 false. 아래 §3 참고
   …

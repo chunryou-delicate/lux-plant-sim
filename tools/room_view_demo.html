@@ -275,8 +275,14 @@ async function boot(roomId) {
     onSlotTap: id => { window.__lastTap = { type: 'slot', id }; $('slot').value = id; $('from').value = id; tip('빈 자리 ' + id); log('onSlotTap ' + id, 'k'); },
     onPlantTap: id => { window.__lastTap = { type: 'plant', id }; $('slot').value = id; $('from').value = id; tip('화분 ' + id); log('onPlantTap ' + id, 'k'); view.focusSlot(id); },
     onSlotHover: (id, type) => { $('tip').textContent = id ? `${id}${type === 'plant' ? ' · 화분' : ''}` : ''; },
-    /* ★ 캐릭터를 눌렀다. 링은 모듈이 알아서 켠다 — 여기서는 누가 골라졌는지만 적는다 */
-    onCharacterTap: id => { window.__lastCharTap = id; log('onCharacterTap ' + id, 'k'); tip('캐릭터 ' + id); selInfo(); },
+    /* ★ 캐릭터를 눌렀다. 첫 인자는 **누른 결과 골라진 것**(해제면 null), 둘째가 눌린 id 다.
+       ★★ game.html 과 **같은 배선**을 일부러 그대로 쓴다 — 호스트가 결과를 되돌려주는
+         이 한 줄이 재선택 해제를 삼키지 않는지가 여기서 걸려야 한다(실제로 삼켰다). */
+    onCharacterTap: (sel, tapped) => {
+      window.__lastCharTap = sel; window.__lastCharTapped = tapped;
+      view && view.selectCharacter(sel);
+      log(`onCharacterTap 골라짐=${sel} 눌린것=${tapped}`, 'k'); tip('캐릭터 ' + (sel || '해제')); selInfo();
+    },
     /* ★ 무엇을 기다리는 중인가 — 검은 화면 대신 이걸 띄운다 */
     onProgress: p => { $('boot').textContent = `${p.ko} · ${p.ms}ms`; log(`진행 ${p.phase} — ${p.ko} (${p.ms}ms)`); },
     onReady: () => log(`onReady — ${Math.round(performance.now() - t0)}ms`, 'k'),
