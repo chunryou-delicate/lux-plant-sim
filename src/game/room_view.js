@@ -225,23 +225,52 @@ function loadGLB(url) {
    ⚠ 곱하기라 무늬·질감은 살아 있다. 단색으로 덮으면 벽지 결이 죽는다.
    ⚠ 유리는 건드리지 않는다 — 창은 "밖이 밝다"는 정보다. */
 const ROOM_DIM = 0.62, FURN_DIM = 0.78;
+
+/* ★ 게임 화면의 빛 손잡이 — 값은 전부 **재서** 정했다(tools/probe_room_light.mjs).
+   눈으로 조이지 마라. 그 도구를 돌리면 낮·밤·창가·안쪽·등아래·구석이 숫자로 나온다.
+     SUN_BOOST     직사광만 올린다. 창으로 드는 햇살 기둥·바닥 자국이 이걸로 산다
+     PORTAL_BOOST  창 확산광(창가 밝기). 방 안쪽에는 거의 안 닿는다
+     DAY_FILL_CUT  낮에 방향 없는 채움광을 더 깎는다 — 창빛이 배경에 안 묻히게
+     NIGHT_*_MIN   밤 채움광 바닥값. ★ scene.js 의 밤값(0.16·0.07)보다 **낮아야** 한다
+     BULB_*        천장등. 거리·감쇠를 방 크기에 맞춰 **웅덩이**를 만든다 */
+const SUN_BOOST = 4.20, PORTAL_BOOST = 4.20;
+const DAY_FILL_CUT = { hemi: 0.50, amb: 0.55 };
+const NIGHT_HEMI_MIN = 0.055, NIGHT_AMB_MIN = 0.020;
+const GAME_EXPOSURE = 0.72;
+/* 밤 광원 — 화면 연출값이다. 판정(PPFD·DLI)은 조도 엔진 몫이고 여기서 안 건드린다.
+   ★ 재서 정했다: 이 값들이 크면 "밤이 낮보다 밝은" 화면이 된다(실제로 166% 였다). */
+const BULB_K = 0.30, BULB_DECAY = 2.2, BULB_EMISSIVE = 0.14;
+/* ★ 밤 밝기의 주범은 scene.js 의 ceilingBulb 가 아니라 **방에 놓인 조명 기구**였다.
+   재서 갈랐다(t=0.95 · 반지하 바닥 평균 130.9):
+     천장등(scene.js)만 끔        130.4   ← 0.5 밖에 기여 안 한다
+     기구 3개까지 끔(채움광만)      38.3   ← **기구가 92를 만들고 있었다**
+     채움광까지 끔                  1.2
+   그동안 BULB_K 만 조여 온 것이 헛손질이었던 이유다. 기구를 줄여야 밤이 밤이 된다. */
+const RIG_GROW = 0.20, RIG_LAMP = 0.55;
+/* 밤에는 방향 없는 채움광을 한 번 더 깎는다 — 채움광이 남아 있으면 등 웅덩이가 안 보인다 */
+const NIGHT_FILL_CUT = 0.60;
 function isDescendant(node, root) {
   for (let p = node; p; p = p.parent) if (p === root) return true;
   return false;
 }
-function dimRoomMaterials(b) {
+/* ★ 원래 색을 재질에 적어 두고 **곱이 아니라 대입**으로 칠한다 (2026-08-03).
+   예전에는 multiplyScalar 로 눌렀다 — 두 번 부르면 두 번 눌리고, 되돌릴 수가 없었다.
+   원래 색을 들고 있으면 house 기본(=index.html)과 게임 화면을 **같은 카메라에서 번갈아**
+   재서 비교할 수 있다. 밝기를 눈이 아니라 숫자로 다루려면 이게 먼저 필요하다. */
+function dimRoomMaterials(b, roomK = ROOM_DIM, furnK = FURN_DIM) {
   if (!b || !b.room) return;
   const seen = new Set();
   b.room.traverse(o => {
     if (!o.isMesh || !o.material) return;
     /* 가구는 방보다 덜 누른다 — 다 같이 내리면 형태가 뭉개져 무엇이 무엇인지 안 보인다 */
-    const k = (b.furniture && isDescendant(o, b.furniture)) ? FURN_DIM : ROOM_DIM;
+    const k = (b.furniture && isDescendant(o, b.furniture)) ? furnK : roomK;
     const ms = Array.isArray(o.material) ? o.material : [o.material];
     ms.forEach(m => {
       if (!m || !m.color || seen.has(m.uuid)) return;
       if (m.transparent && m.opacity < 0.95) return;      // 유리는 그대로
       seen.add(m.uuid);
-      m.color.multiplyScalar(k);
+      if (!m.userData.__rvBaseColor) m.userData.__rvBaseColor = m.color.clone();
+      m.color.copy(m.userData.__rvBaseColor).multiplyScalar(k);
     });
   });
 }
@@ -1985,6 +2014,10 @@ export async function createRoomView(canvas, opts = {}) {
      여기에 그림자 카메라를 방 크기로 좁혀(기본은 아파트 기준 24m 폭) 같은 1024 로
      훨씬 또렷한 창틀 무늬를 얻는다 — 오히려 더 잘 읽힌다. */
   let shadowMode = 'lean';
+  /* ★ 조명 정책 스위치 — 'game'(기본) · 'house'(scene.js 기본 = index.html 과 같은 그림)
+     재는 자다. 같은 카메라·같은 시각에서 번갈아 찍어야 "게임이 얼마나 더 어두운가"를
+     숫자로 말할 수 있다. 눈으로 두 페이지를 비교하면 카메라가 달라 답이 안 나온다. */
+  let lightPolicy = 'game';
   const _lastSunDir = new THREE.Vector3(0, 0, 0);
 
   function applyShadowBudget() {
@@ -2014,16 +2047,42 @@ export async function createRoomView(canvas, opts = {}) {
        이 게임에서 창빛은 볼거리이자 정보다. 그걸 덮는 조명은 낮에 있으면 안 된다.
        0.30~0.78 을 낮으로 본다(아침 해 뜬 뒤 ~ 저녁 해 지기 전). */
     const isDay = daylightT > 0.30 && daylightT < 0.78;
+    if (lightPolicy === 'house') {
+      /* index.html(집 도구)과 **같은 그림**. scene.js 기본값 그대로 — 아무것도 안 누른다.
+         비교용이라 그림자 예산만 게임과 같게 둔다(그건 밝기가 아니라 성능이다). */
+      const l0 = updateLight(ctx, daylightT * 100, 0);
+      ctx.renderer.toneMappingExposure = 1.1;
+      applyShadowBudget();
+      if (ctx.sunLight.castShadow) ctx.sunLight.shadow.needsUpdate = true;
+      needsRender = true;
+      return l0;
+    }
     const label = updateLight(ctx, daylightT * 100, isDay ? 2 : 0);
 
-    /* ★밤에도 낮춘다 ("보이는 광원이 너무 밝어").
-       scene.js 는 갓의 emissiveIntensity 를 0.9, 전구를 4.5 로 둔다 — 방 도구에서는
-       천장등 자체를 검수하는 화면이라 맞지만, 게임에서는 갓이 하얗게 타서
-       식물이 그 옆에서 안 보인다. 화면 주인공은 방과 식물이지 조명이 아니다. */
+    /* ★★ 밤은 **천장등 하나가 만드는 웅덩이**여야 한다 (2026-08-03 · 박사님 "밤에 등이 아직도 너무 밝다")
+       ------------------------------------------------------------
+       재 보고 알았다. 문제는 등의 세기가 아니라 **낮밤 대비가 없다**는 것이었다.
+         고치기 전 (tools/probe_room_light.mjs · 반지하 · 화면 휘도 0..255)
+           낮 t=0.50  방바닥 108
+           밤 t=0.95  방바닥 210   ← **밤이 낮보다 93% 더 밝았다**
+           밤 웅덩이(등아래/구석) 1.09배  ← 웅덩이가 아예 없다
+       원인은 둘이다.
+         ① 아래에 있던 '밤을 캄캄하게 두지 않는다' 바닥값(hemi 0.46 · ambient 0.23)이
+            **scene.js 의 밤 채움광(0.16 · 0.07)보다 3배 높았다.** 어둠을 막으려던 장치가
+            밤을 통째로 들어 올리고 있었다.
+         ② 천장등이 PointLight(거리 14 · 감쇠 1.2)라 2.3m 짜리 방에서는 감쇠가 안 보인다.
+            방 전체가 고르게 밝아 웅덩이가 안 생긴다.
+       그래서 채움광을 내리고 **등의 거리·감쇠를 방 크기에 맞춘다.** 등 아래는 밝고
+       구석은 어두운 것이 밤이다. 세기를 더 낮추는 게 아니라 대비를 만드는 게 답이다. */
     if (ctx.ceilingBulb.intensity > 0) {
-      ctx.ceilingBulb.intensity *= 0.42;
+      ctx.ceilingBulb.intensity *= BULB_K;
+      /* ★ 거리·감쇠를 방에 맞춘다 — 이게 웅덩이를 만드는 유일한 손잡이다.
+         scene.js 기본(14m · 1.2)은 아파트 거실까지 덮는 값이라 작은 방에서는 평평하다. */
+      const b0 = roomBox();
+      ctx.ceilingBulb.distance = Math.max(2.4, Math.min(b0.w, b0.d) * 0.70 + b0.h * 0.40);
+      ctx.ceilingBulb.decay = BULB_DECAY;
       if (ctx.clShade && ctx.clShade.material)
-        ctx.clShade.material.emissiveIntensity = 0.22;   // 0.9 → 은은하게 켜진 정도
+        ctx.clShade.material.emissiveIntensity = BULB_EMISSIVE;   // 0.9 → 은은하게 켜진 정도
     }
     /* ★방 전체를 한 톤 낮춘다 ("방이 너무 밝다").
        채움광(hemi·ambient)이 세면 그림자가 옅어지고, 창으로 드는 빛 웅덩이가
@@ -2037,7 +2096,7 @@ export async function createRoomView(canvas, opts = {}) {
        노출을 내리면 **재질을 안 건드리고** 전체가 한 단계 가라앉는다. ACESFilmic 이라
        밝은 쪽이 먼저 눌리므로, 흰 벽이 타는 것부터 잡히고 그림자는 덜 뭉갠다.
        ⚠ scene.js 기본값(1.1)은 그대로 둔다 — 방 도구는 검수 화면이라 밝아야 한다. */
-    ctx.renderer.toneMappingExposure = 0.60;
+    ctx.renderer.toneMappingExposure = GAME_EXPOSURE;
 
     /* ★방 **바깥**을 어둡게 한다. 화면의 절반쯤이 배경인데 scene.js 는 그걸 하늘색으로
        칠한다 — 방 도구에서는 맞지만(바깥에서 방을 들여다보는 화면이다), 게임에서는
@@ -2067,22 +2126,35 @@ export async function createRoomView(canvas, opts = {}) {
       }
     }
 
-    /* ★ 낮에는 채움광을 조금 낮추고 해를 조금 올린다.
-       빨리감기에서 눈이 잡는 건 '창으로 든 빛 웅덩이가 움직인다'는 것 하나다.
-       방향 없는 채움광이 세면 웅덩이가 배경에 묻혀 하루가 지나가도 화면이 안 변한다.
-       (방 도구 index.html 은 조도를 눈으로 읽는 화면이라 지금 균형이 맞다 — 게임만 다르다) */
-    const day = clamp(ctx.sunLight.intensity / 1.55, 0, 1);
-    ctx.hemi.intensity *= (1 - 0.20 * day);
-    ctx.ambient.intensity *= (1 - 0.25 * day);
-    ctx.sunLight.intensity *= 1.18;
+    /* ★★ 방은 어둡되 **창으로 드는 볕은 밝다** (2026-08-03 · 박사님 "외부 태양빛이 너무 안 들어온다")
+       ------------------------------------------------------------
+       재 보고 알았다. 그동안 "너무 밝다"는 지적에 채움광·노출·재질을 통째로 눌러 왔는데,
+       그게 **창으로 들어오는 빛까지 같이 눌렀다.**
+         고치기 전 (game / house(=index.html) 비율 · 낮 t=0.50)
+           방바닥 51% · **창가 64%** · 안쪽 44% · 벽 60%
+       방 안쪽을 44% 로 눌러 어둡게 만든 것은 의도한 것이고 그대로 둔다.
+       잘못은 창가까지 64% 로 같이 내려간 것이다 — 햇살이 드는 자리는 눌리면 안 된다.
 
-    /* ★ 밤을 캄캄하게 두지 않는다.
-       scene.js 의 밤은 hemi 0.16 · ambient 0.07 이라 식물이 안 보인다.
-       빨리감기에서 화면이 까매지면 "하루가 지나갔다"가 아니라 "꺼졌다"로 읽힌다.
-       밤일수록 푸른 채움광을 얹어 어둑한 정도까지만 내려가게 한다. */
-    const dark = 1 - clamp(ctx.sunLight.intensity / 1.2, 0, 1);
-    ctx.hemi.intensity = Math.max(ctx.hemi.intensity, 0.16 + dark * 0.30);
-    ctx.ambient.intensity = Math.max(ctx.ambient.intensity, 0.07 + dark * 0.16);
+       손잡이를 갈랐다. 방 안쪽 밝기와 창 밝기는 **다른 빛이 만든다.**
+         방 안쪽 ← hemi·ambient (방향 없는 채움광) · 재질 색
+         창가    ← sunLight(직사광) · skyPortals(창 확산광)   ← 이 둘만 올린다
+       채움광은 그대로 두고 해와 창 확산광만 올리면 **대비가 커진다.**
+       햇살 기둥과 창가 바닥의 밝은 자국이 그렇게 산다. 조도 계산은 안 건드린다 —
+       dliAt·daylightRatio·창 tau 는 그대로고 여기서 바꾸는 것은 **화면뿐**이다. */
+    const day = clamp(ctx.sunLight.intensity / 1.55, 0, 1);
+    ctx.hemi.intensity *= (1 - DAY_FILL_CUT.hemi * day);
+    ctx.ambient.intensity *= (1 - DAY_FILL_CUT.amb * day);
+    ctx.sunLight.intensity *= SUN_BOOST;
+    for (const sp of (ctx.skyPortals || [])) sp.intensity *= PORTAL_BOOST;
+
+    /* 밤을 완전한 암흑으로는 두지 않는다 — 빨리감기에서 까매지면 "꺼졌다"로 읽힌다.
+       ★ 다만 바닥값은 scene.js 의 밤 채움광(0.16·0.07)보다 **낮아야** 한다.
+         예전 값(0.46·0.23)은 그보다 높아서 밤을 낮보다 밝게 만들고 있었다. */
+    const dark = 1 - clamp(ctx.sunLight.intensity / (1.2 * SUN_BOOST), 0, 1);
+    ctx.hemi.intensity *= (1 - NIGHT_FILL_CUT * dark);
+    ctx.ambient.intensity *= (1 - NIGHT_FILL_CUT * dark);
+    ctx.hemi.intensity = Math.max(ctx.hemi.intensity, NIGHT_HEMI_MIN * dark);
+    ctx.ambient.intensity = Math.max(ctx.ambient.intensity, NIGHT_AMB_MIN * dark);
 
     /* 안개는 scene.js 가 매번 새로 만든다(30~120m). 폰 세로는 방을 통째로 담느라
        카메라가 멀리 서므로 그대로 두면 방이 뿌옇게 죽는다. 카메라 거리에 맞춘다. */
@@ -2097,8 +2169,15 @@ export async function createRoomView(canvas, opts = {}) {
     for (const r of (built && built.lightRigs) || []) {
       if (!r.light) continue;
       const want = r.grow ? (r.schedule && r.schedule !== 'off') : lampsOn;
-      r.light.intensity = (want && on < 4) ? (r.grow ? 1.6 : 2.4) : 0;
-      if (r.light.intensity > 0) on++;
+      r.light.intensity = (want && on < 4) ? (r.grow ? RIG_GROW : RIG_LAMP) : 0;
+      /* ★ 기구도 방 크기에 맞춰 조인다 — 넓게 퍼지면 방 전체가 고르게 밝아 '웅덩이'가 안 생긴다.
+         house.js 는 coverage_r×6(최대 수 m)로 두는데 그건 아파트 거실 기준이다. */
+      if (r.light.intensity > 0) {
+        const b1 = roomBox();
+        r.light.distance = Math.max(1.8, Math.min(b1.w, b1.d) * (r.grow ? 0.35 : 0.62) + b1.h * 0.35);
+        r.light.decay = 2.0;
+        on++;
+      }
       if (r.shade && r.shade.material) r.shade.material.emissiveIntensity = want ? 0.85 : 0;
     }
     needsRender = true;
@@ -2131,7 +2210,35 @@ export async function createRoomView(canvas, opts = {}) {
      ⚠ setContinuous(true)(데모·측정)일 때는 자르지 않는다 — 재는 화면까지 자르면
        무엇을 재고 있는지 알 수 없게 된다. */
   const MIN_FRAME_MS = 1000 / CHAR_FPS - 4;
+  /* ★★ 노는 동안은 더 낮게 그린다 (2026-08-03 · "가만히 있는 화면이 계속 그린다")
+     ------------------------------------------------------------
+     재 보고 넣었다(390×844 · 반지하 · 3초 동안 그린 장수).
+       캐릭터 없음        0장    ← 놀 때 안 그리는 정책은 원래 잘 돌고 있었다
+       자취녀만          37장 (12.3fps)
+       **자취녀+몬이     66장 (22.0fps)**  ← 몬이가 늘 흔들려서 두 배가 됐다
+     몬이는 공중에서 계속 위아래로 흔들린다(bobPeriod 2.5초). 그 느린 움직임 하나 때문에
+     방 한 장(드로우콜 103·삼각형 7.6만)을 초당 22번 다시 그리고 있었다 — 폰 배터리가 그냥 탄다.
+
+     그렇다고 흔들림을 없앨 수는 없다(살아 있다는 표시다). 대신 **그리는 빈도를 나눈다.**
+       바쁠 때  걷기·끌기·카메라 트윈·링 맥박·밖에서 뭔가 바뀜  → 30fps
+       놀 때    캐릭터 idle 만 도는 중                        → 10fps
+     2.5초에 한 바퀴 흔들리는 것이라 10fps 로도 부드럽다(주기당 25장). */
+  const IDLE_FPS = 10;
+  const IDLE_FRAME_MS = 1000 / IDLE_FPS - 4;
   let lastFrameAt = 0;
+  /* ★ 확대(화분 상세보기)처럼 방이 안 보이는 동안 rAF 를 통째로 멈춘다 — setPaused */
+  let paused = false;
+  /* 이 500ms 창에 **노는 프레임**이 한 장이라도 있었나. autoQuality 가 이걸 본다. */
+  let idleWindow = false;
+
+  /* 지금 '바쁜가' — 바쁘면 30fps, 아니면 10fps 로 그린다.
+     needsRender 는 **밖에서 뭔가 바뀌었다**는 표시다(setPlant·setDaylight·카메라…).
+     캐릭터 idle 은 needsRender 를 안 켠다 — 그래서 이 한 줄로 둘이 갈린다. */
+  function busyNow() {
+    if (needsRender || tween || pendingDrag || walkDrag || rings.size) return true;
+    for (const [, c] of chars) if (c.walking) return true;
+    return false;
+  }
   /* 끄는 동안 마지막 손가락 자리만 적어 둔다. 광선·길찾기는 프레임당 한 번만 한다. */
   let pendingDrag = null;
 
@@ -2149,10 +2256,13 @@ export async function createRoomView(canvas, opts = {}) {
   }
 
   function loop(now) {
-    if (disposed) return;
+    if (disposed || paused) return;
     raf = requestAnimationFrame(loop);
     /* 아직 이르면 아무것도 안 한다. needsRender 는 그대로 켜져 있으니 다음 프레임에 그린다. */
-    if (!forceContinuous && now - lastFrameAt < MIN_FRAME_MS) return;
+    /* ★ 이 창이 '바쁜 창'이었나를 같이 적어 둔다 — 아래 autoQuality 가 그것만 본다 */
+    const busy = busyNow();
+    if (!forceContinuous && now - lastFrameAt < (busy ? MIN_FRAME_MS : IDLE_FRAME_MS)) return;
+    if (!busy) idleWindow = true;
     lastFrameAt = now;
     /* 끄는 중이면 여기서 딱 한 번 목적지를 계산한다(이벤트마다 하지 않는다) */
     if (pendingDrag) {
@@ -2164,7 +2274,7 @@ export async function createRoomView(canvas, opts = {}) {
       /* ★ 노는 동안은 fps 를 세지 않는다. 여기서 세면 "가만히 있어서 1초에 두 장만
          그렸다"가 "1초에 두 장밖에 못 그린다"로 읽혀 화질을 멋대로 떨어뜨린다.
          실제로 그랬다 — 픽셀비가 1.75에서 1.25로 내려가 있었다. */
-      lastFpsAt = now; framesSince = 0;
+      lastFpsAt = now; framesSince = 0; idleWindow = false;
       return;
     }
     needsRender = false;
@@ -2183,9 +2293,45 @@ export async function createRoomView(canvas, opts = {}) {
            ② 정작 느릴 때(6fps)는 3장뿐이라, **느릴수록 판정이 안 되는** 거꾸로 된 문턱이었다.
            그래서 못 따라갈 때 해상도를 내리는 안전장치가 한 번도 안 돌았다.
          4장이면 노는 창은 걸러지고 느린 창은 잡힌다. 튐 방지는 autoQuality 의 연속 2창이 맡는다. */
-      if (framesSince >= 4) { stats.fps = Math.round(framesSince * 1000 / (now - lastFpsAt)); autoQuality(); }
-      framesSince = 0; lastFpsAt = now;
+      /* ★★ '안 바쁜 것'과 '느린 것'을 가르는 문이 하나 더 필요해졌다 (2026-08-03).
+         노는 동안 10fps 로 자르기 시작하면서, autoQuality 가 그 10 을 보고
+         "못 따라간다"고 판단해 **픽셀비를 0.85 까지 떨어뜨렸다**(실제로 떨어뜨렸다).
+         노는 창은 느린 게 아니라 **일부러 덜 그린 창**이다. 판정에서 뺀다.
+         (fps 자체는 그대로 남긴다 — 몇 장 그렸는지는 사실이고, 재는 도구가 그걸 읽는다) */
+      if (framesSince >= 4) {
+        stats.fps = Math.round(framesSince * 1000 / (now - lastFpsAt));
+        if (!idleWindow) autoQuality(); else slowWindows = 0;
+      }
+      framesSince = 0; lastFpsAt = now; idleWindow = false;
     }
+  }
+
+  /* ★ 방을 통째로 멈춘다·되돌린다 (2026-08-03 · "화분 상세보기 누르면 렉 걸려")
+     ------------------------------------------------------------
+     확대(plant_grow iframe)가 열리면 **WebGL 컨텍스트 둘이 동시에** 돈다. 방은 안 보이는데도
+     계속 그려서 확대 쪽이 프레임을 못 받는다(회전이 뻑뻑한 이유다).
+     setContinuous(false) 로는 안 된다 — 그건 상한만 푸는 것이고 loop 은 계속 돈다.
+     여기서는 **rAF 자체를 끊는다.** 그리기도 캐릭터 애니메이션도 멈춘다.
+
+     ⚠ 논리는 안 멈춘다. 하루·성장·경제는 밖에서 돌고, 여기서 멈추는 것은 화면뿐이다.
+     ⚠ 풀 때 시각 기준을 **지금으로 되잡는다.** 안 그러면 10초 멈췄다 풀었을 때
+       stepCharacters 가 10초치 dt 를 한 번에 받아 캐릭터가 순간이동한다
+       (update 안에서 dt 를 0.1초로 자르고 있지만, 그것도 한 프레임에 10cm 튀는 것이다). */
+  function setPaused(on) {
+    const want = !!on;
+    if (want === paused) return paused;
+    paused = want;
+    if (paused) {
+      cancelAnimationFrame(raf);
+      raf = 0;
+    } else if (!disposed) {
+      const now = performance.now();
+      lastFrameAt = now; lastCharAt = now; lastFpsAt = now;
+      framesSince = 0; stats.fps = 0; slowWindows = 0;
+      needsRender = true;                      // 멈춰 있는 동안 바뀐 것을 한 장에 반영한다
+      raf = requestAnimationFrame(loop);
+    }
+    return paused;
   }
 
   /* 못 따라가면 해상도를 내린다. 무엇을 줄였는지 stats 에 남긴다. */
@@ -3863,6 +4009,18 @@ export async function createRoomView(canvas, opts = {}) {
     get daylight() { return daylightT; },
     /* 그림자 예산 — 'lean'(기본) · 'full'(scene.js 기본) · 'none'. 측정·비교용이다. */
     setShadowBudget(mode) { shadowMode = mode; applyDaylight(); return shadowMode; },
+    /* ★ 조명 정책 — 'game'(기본) · 'house'(scene.js 기본 = index.html 과 같은 그림).
+       밝기를 만질 때 **먼저 재기 위한 자**다. 재질 눌림까지 같이 되돌린다.
+       (tools/probe_room_light.mjs 가 이걸로 두 그림을 같은 카메라에서 번갈아 찍는다) */
+    setLightPolicy(p) {
+      lightPolicy = p === 'house' ? 'house' : 'game';
+      if (built) dimRoomMaterials(built, lightPolicy === 'house' ? 1 : ROOM_DIM,
+                                         lightPolicy === 'house' ? 1 : FURN_DIM);
+      applyDaylight();
+      needsRender = true;
+      return lightPolicy;
+    },
+    lightPolicy() { return lightPolicy; },
     resize,
     /* 배치 UI 가 읽는다 */
     slots() {
@@ -3927,6 +4085,11 @@ export async function createRoomView(canvas, opts = {}) {
     stats() { return { ...stats, pixelRatio: pxRatio, plants: plants.size, slots: slotById.size,
                        triangles: ctx.renderer.info.render.triangles, calls: ctx.renderer.info.render.calls }; },
     setContinuous(v) { forceContinuous = !!v; needsRender = true; },
+    /* ★ 방을 멈춘다 — 확대(화분 상세보기)를 열 때처럼 방이 안 보일 때 쓴다.
+       rAF 자체를 끊으므로 그리기도 캐릭터 애니메이션도 안 돈다. **논리는 안 멈춘다.**
+       풀면 시각 기준을 지금으로 되잡아 캐릭터가 순간이동하지 않는다. */
+    setPaused(on) { return setPaused(on); },
+    isPaused() { return paused; },
     /* ★ 캐릭터·마스코트 — 자리와 포즈는 안에서 정한다.
          'jachwi'(자취생 1.40m) · 'moni'(마스코트 0.375m) · null(전부 치우기)
        GLB 를 싣느라 Promise 를 돌려준다. .catch 를 붙이십시오. */

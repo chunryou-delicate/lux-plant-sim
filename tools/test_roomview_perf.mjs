@@ -166,6 +166,46 @@ async function main() {
   const after = await page.eval(STOP);
   console.log(row('걷기 후', after));
 
+  /* ══ ★ 노는 화면 · setPaused (2026-08-03) ═══════════════════════════════
+     박사님: "화분 상세보기 누르면 렉 걸려. 회전도 잘 안 되고"
+     확대(plant_grow iframe)가 열리면 WebGL 컨텍스트 둘이 동시에 돈다. 방이 안 보이는데도
+     계속 그리면 확대 쪽이 프레임을 못 받는다. 그래서 방을 통째로 멈출 수 있어야 한다.
+     ⚠ 여기서 재는 것은 **가만히 둔 화면이 몇 장을 그리나**와 **멈추면 정말 0인가** 둘이다. */
+  console.log('─'.repeat(100));
+  await page.eval(`window.view.stopWalk('jachwi'); window.view.selectCharacter(null); 1`);
+  await sleep(800);
+  const drawn = async (ms) => {
+    const a = await page.eval(`window.view.stats().drawn`);
+    await sleep(ms);
+    const b = await page.eval(`window.view.stats().drawn`);
+    return b - a;
+  };
+  const idle = await drawn(3000);
+  console.log(`가만히 둔 화면(자취녀+몬이) ${idle}장 / 3초 = ${(idle / 3).toFixed(1)} fps` +
+              `   ← 고치기 전 66장(22.0fps). 몬이 흔들림 때문에 방을 계속 다시 그리고 있었다`);
+
+  const posBefore = await page.eval(`window.view.characters().find(c=>c.id==='jachwi').pos`);
+  await page.eval(`window.view.setPaused(true)`);
+  const paused = await drawn(2000);
+  const isPaused = await page.eval(`window.view.isPaused()`);
+  console.log(`setPaused(true)  ${paused}장 / 2초   (isPaused=${isPaused})` +
+              `   ${paused === 0 ? '✔ 안 그린다' : '✘ 아직 그린다'}`);
+
+  await page.eval(`window.view.setPaused(false)`);
+  const resumed = await drawn(2000);
+  await sleep(200);
+  const posAfter = await page.eval(`window.view.characters().find(c=>c.id==='jachwi').pos`);
+  const jump = Math.hypot(posAfter.x - posBefore.x, posAfter.z - posBefore.z);
+  console.log(`setPaused(false) ${resumed}장 / 2초   ${resumed > 0 ? '✔ 다시 그린다' : '✘ 안 돈다'}` +
+              `   · 푼 직후 캐릭터 이동 ${jump.toFixed(3)}m ${jump < 0.05 ? '✔ 순간이동 없음' : '✘ 튀었다'}`);
+
+  const bad = [];
+  if (paused !== 0) bad.push('멈춰도 그린다');
+  if (!(resumed > 0)) bad.push('풀어도 안 그린다');
+  if (!(jump < 0.05)) bad.push('푼 직후 캐릭터가 튄다');
+  if (!(idle / 3 < 14)) bad.push(`노는 화면이 아직 ${(idle / 3).toFixed(1)}fps (14 미만이어야 한다)`);
+  console.log(bad.length ? `★ 일시정지 검사 FAIL — ${bad.join(' · ')}` : '★ 일시정지 검사 PASS');
+
   console.log('─'.repeat(100));
   console.log(`보낸 거리 ${sent && sent.d}m · ${JSON.stringify(sentR)}`);
   const drop = before.fps ? (1 - during.fps / before.fps) * 100 : 0;
