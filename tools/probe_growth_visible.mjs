@@ -32,7 +32,8 @@ const snap = async () => page.eval(`(()=>{ const rv=window.__rv, S=window.__S();
   const ph = (S.firstPlay.monstera||{}).growthPhase || null;
   return { day:S.day, growthDays:gd, leaves: ls&&ls.leaves, mature: ls&&ls.matureLeaves,
            phase: ph && ph.phaseId, prog: ph && ph.progress01,
-           potY: p ? +p.pos.y.toFixed(3) : null, key: p ? p.key : null }; })()`);
+           potY: p ? +p.pos.y.toFixed(3) : null,
+           오늘: (document.getElementById('plantToday')||{}).textContent || '' }; })()`);
 const rows = [await snap()];
 for (let i=0;i<10;i++){ await page.eval(`document.getElementById('next').click()`, false); await sleep(1000); await skip(); rows.push(await snap()); }
 for (const r of rows) console.log(JSON.stringify(r));
