@@ -25,7 +25,14 @@
  *   콩나물은 첫 시루 한 번뿐이고 판매도 없어서, 소지금은 시작 100만에서 줄기만 한다.
  *   그대로 두면 이사 자금 150만에 **영영 도달하지 못해** ⑵의 절반을 못 잰다.
  *   그래서 하루 수입만 주입하고 나머지(월세·지출·계절·해금)는 전부 코어 규칙대로 돈다.
- *   ★수입 배선이 붙으면 이 주입을 지우면 된다 — 다른 곳은 안 고쳐도 된다.
+ *
+ * ★ 2026-08-03 갱신 — 주입액을 35,000/15,000 에서 24,300/5,000 으로 낮췄다. 두 가지가 바뀌었다:
+ *   ① 월세가 하루 지출에서 **두 번 빠지던 것**을 고쳤다(tutorial.dailyCashOutWon). 지출이
+ *      실제로 하루 20,000원(월 60만)이 되면서 예전 주입액으로는 A 가 **여름 28일째**에
+ *      이사해 버려 가을·식물등 장면이 통째로 안 났다.
+ *   ② 실제 수입은 이제 주입이 아니라 **무늬 개체 판매 한 방**이다(docs/shop.md).
+ *      그 경제는 tools/test_banjiha_routes.mjs 가 잰다. 여기서 재는 것은 **대사 채움**뿐이라,
+ *      세 경로의 도착 시점만 story_arc.md §2 대로 맞춰 두면 된다.
  */
 import assert from 'node:assert';
 import { readFileSync, existsSync } from 'node:fs';
@@ -142,7 +149,7 @@ function longestSilence(rows) {
 
 /* A — 식물등 없이 가을 안에 이사 */
 const A = play({
-  cropSlot: DARK, plantSlot: SILL, incomeWon: 35_000, days: 90,
+  cropSlot: DARK, plantSlot: SILL, incomeWon: 24_300, days: 90,
   onDay: ({ S }) => {
     const ts = S.tutorial;
     return (canMoveOut(ts).ok && !ts.movedOut) ? moveOut(ts).events : [];
@@ -151,7 +158,7 @@ const A = play({
 
 /* B — 식물등을 사고 가을에 이사 */
 const B = play({
-  cropSlot: DARK, plantSlot: SILL, incomeWon: 35_000, days: 90,
+  cropSlot: DARK, plantSlot: SILL, incomeWon: 24_300, days: 90,
   onDay: ({ S, io }) => {
     const ts = S.tutorial, out = [];
     if (ts.lamp.unlocked && ts.lamp.owned === 0 && ts.cashWon >= ts.rules.lampPriceWon) {
@@ -166,7 +173,7 @@ const B = play({
 /* C — 진행이 늦어 겨울을 맞는다. ★실패가 아니라 더딘 것이다.
    중간에 화분을 어두운 데로 옮겼다가 되돌린다 — 멈춤·재개도 이 판에서 겪는다. */
 const C = play({
-  cropSlot: DARK, plantSlot: SILL, incomeWon: 15_000, days: 175,
+  cropSlot: DARK, plantSlot: SILL, incomeWon: 5_000, days: 175,
   onDay: ({ S, day }) => {
     if (day === 20) movePot(S, DARK);          // 어두운 데로
     if (day === 45) movePot(S, SILL);          // 다시 창턱으로

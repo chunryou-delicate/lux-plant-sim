@@ -34,6 +34,7 @@
 import { givePlant, pot0, rehomePot, pushLog } from './state.js';
 import {
   advanceBeansproutDay,
+  eatFromPantry,
   cropDliFromReport,
   FIRST_PLAY_ASSETS,
   FIRST_PLAY_COMPLETE_PHASE_ID,
@@ -48,6 +49,7 @@ import { canMoveOut, createTutorialState, LEARNING, tutorialDay, noteLearning } 
 import { dliFromContract } from './growth_adapter.js';
 import { headroomCheck, PLANT_POT_D_REF } from './headroom.js';
 import { rehomeCuttings, stepCuttings } from './propagation.js';
+import { stepShop } from './shop.js';
 import { weekStats, WEATHER_P } from '../engine/weather.js';
 
 /* ============================================================
@@ -285,6 +287,8 @@ function attachEvents(S, turn, fpBefore) {
   const out = [];
   const push = list => { for (const e of list || []) if (e && e.id) out.push(e); };
   push(firstPlayEventsOf(fpBefore, S.firstPlay));
+  /* 상점 도착도 사건이다 — 안 실으면 "시켰는데 왔는지 아무도 말 안 하는" 날이 생긴다 */
+  if (turn.shop) push(turn.shop.events);
   const t = turn.tutorial;
   if (t && !t.error) { push(t.events); push(t.storyEvents); }
   turn.events = out;
@@ -338,6 +342,10 @@ export function nextDay(S, io) {
 
   /* 첫 4일은 열린 시루 하나만 돈다. 몬스테라 엔진과 섞지 않고, 시루가 놓인 방 슬롯의
      DLI를 그대로 모아 4일째 3/2/1끼를 판정한다. 계약 누락은 암흑으로 보완하지 않는다. */
+  /* ★ 상점 배송 — **날짜를 올린 뒤에** 받는다. 그래야 "하루 뒤 도착"이 다음 날 아침이 된다.
+     조도·생장보다 먼저 두는 이유는 그날 도착한 씨앗을 그날 심을 수 있어야 하기 때문이다. */
+  const shop = stepShop(S, { log: m => pushLog(S, m) });
+
   let firstPlayEvent = null;
   let arrivalPhase = null;          // Day 4 도착 때 **검증까지 마친** 단계. 아래서 다시 읽지 않는다
   if (S.firstPlay && S.firstPlay.enabled && !S.firstPlay.beansprout.harvested) {
@@ -371,6 +379,7 @@ export function nextDay(S, io) {
         if (!canHoldPot.size)
           throw new Error(`[첫 플레이] 지름 ${potDiameter}m 화분이 올라가는 자리가 이 방에 없습니다 ` +
                           `(maxPotD 가 숫자로 있는 슬롯 0칸) — 방 데이터를 확인해 주세요`);
+        if (!S.firstPlay.monstera.arrived) {
         const arrival = [...(report.slots || [])]
           .filter(s => s && s.slotId !== cropSlotId && canHoldPot.has(s.slotId) &&
                        typeof s.dli === 'number' && isFinite(s.dli))
@@ -406,6 +415,7 @@ export function nextDay(S, io) {
         markMonsteraPhase(S.firstPlay, gp.phase);
         arrivalPhase = gp.phase;
         pushLog(S, '🌱 “콩나물을 잘 키웠구나. 이건 좀 더 어려울 거야.”');
+        }   /* ← 선물은 **첫 수확에만** 온다. 둘째 시루에서 몬스테라가 또 오면 안 된다 */
       }
     } catch (e) {
       /* givePlant는 setGrowth 성공 뒤에만 화분을 만들므로, 여기서 화분이 없으면 외부 상태도
@@ -429,6 +439,14 @@ export function nextDay(S, io) {
       throw e;
     }
   }
+  /* ★ 밥은 **매일** 먹는다 (2026-08-03 신설).
+     예전에는 수확한 날 하루만 절감이 났다. 시루가 4일에 3끼를 내는데 하루 2끼 상한은
+     **매일** 걸리는 것이라(food_economy.md §4), 나머지 끼니가 창고에서 잠들어 있었다.
+     ★ 거둔 날에는 안 부른다 — 그날 몫은 advanceBeansproutDay 가 이미 꺼내 썼다.
+     ★ 다음 시루가 자라는 중이어도 부른다. 창고에 남은 끼니는 그 사이에도 먹는다 —
+       이 줄이 위 블록 **안**에 있으면 재파종한 다음 날부터 절감이 통째로 끊긴다. */
+  if (S.firstPlay && S.firstPlay.enabled && !(firstPlayEvent && firstPlayEvent.harvested))
+    firstPlayEvent = eatFromPantry(S.firstPlay);
 
   /* ★ 삽수는 **여기서 한 번** 돈다 (2026-08-03). 반환구가 둘(도착 전/후)로 갈리기 전이라
      양쪽이 같은 하루를 받는다 — stepTutorial 을 한쪽에만 붙였다가 "수확했는데 안 배웠다"가
@@ -453,7 +471,7 @@ export function nextDay(S, io) {
       effectiveGrowthDays: arrived ? io.growth.growthDays() : null,
       growthPhase: arrivalPhase,
       growthPhaseError: null,
-      cuttings
+      cuttings, shop
     };
     /* ★이 경로도 튜토리얼을 돌려야 한다 (2026-08-03).
        몬스테라가 오기 전(그리고 도착하는 그 날)은 여기서 일찍 반환된다 —
@@ -563,7 +581,7 @@ export function nextDay(S, io) {
     growthPhase: phaseAfter.phase,
     growthPhaseError: phaseAfter.error,
     firstPlayEvent,
-    cuttings
+    cuttings, shop
   };
 
   /* ★ 순서가 계약이다 (2026-08-02 정정).

@@ -31,8 +31,23 @@ export const TUTORIAL_RULES = Object.freeze({
   moveOutCostWon: 1_500_000,      // 원룸 보증금 + 첫 달 월세 + 이사비. 실비 근거가 있어 안 내린다
   rentWon: 300_000,               // 반지하 월세
   rentGraceDays: 30,              // ★첫 달 유예. plan 권고 — 서사 장치이고 정체성을 안 건드린다
-  dailySpendWon: 20_000,          // 식비 7,500 + 공과·전기 2,500 + 그 밖 (food_economy.md)
+  rentPeriodDays: 30,             // 월세 주기. 아래 dailyCashOutWon 이 이 값으로 하루치를 뗀다
+
+  /* ★★ 하루 지출 합 — **월세를 포함한 값**이다 (food_economy.md §2 표 · story_arc.md §3).
+         월세 10,000 + 공과·전기 2,500 + 식비 7,500 = 20,000원/일 = 월 60만.
+     ⚠ 2026-08-03 정정: 예전에는 이 20,000 을 매일 떼고 **월세 30만을 30일마다 또** 뗐다.
+       월세가 두 번 나간 셈이라 실제 지출이 하루 30,000원(월 90만)이었고, 그래서
+       재현에서 42일에 파산했다. 지금은 하루치에서 월세 몫(rentWon/rentPeriodDays)을 빼고
+       월세는 30일마다 목돈으로 낸다 — **평균은 그대로 20,000원/일**이고 유예도 그대로 산다. */
+  dailySpendWon: 20_000,
   mealCostWon: 2_500,             // 한 끼. 콩나물 한 끼가 이만큼을 아낀다
+
+  /* ★ 콩나물은 **버티는 수단이지 이사 자금이 아니다** (2026-08-03 박사님 확정).
+     이사 자금은 무늬 개체 하나를 팔아 한 번에 만든다(docs/shop.md §1 역산).
+     그래서 시루 수의 상한은 "돈을 얼마나 버나"가 아니라 **끼니 상한**이 정한다 —
+     하루 2끼(food_economy.md §4)를 채우는 데 필요한 시루가 3개다(3끼 ÷ 4일 × 3 = 2.25끼/일).
+     그 이상은 남아서 버려지므로 사는 의미가 없다. 규칙이 아니라 **셈이 상한을 만든다.** */
+  cropSirusForCap: 3,             // 표시·안내용. 판정에는 안 쓴다(끼니 상한이 알아서 막는다)
 
   /* 식물등 — 필수가 아니라 선택이다. 하루 지출보다 조금 커서 망설임이 생기고,
      전기는 거의 공짜라 부담이 사는 순간 한 번뿐이다(story_arc.md §4). */
@@ -69,6 +84,9 @@ export function createTutorialState(opt = {}) {
     seasonRunning: false,
     lamp: { unlocked: false, owned: 0, litHours: R.lampHours },
     rent: { paidCount: 0, nextDueDay: R.rentGraceDays },   // 첫 달은 유예라 30일 뒤부터
+    /* 살림 장부 — 상점에 쓴 돈과 판 돈. 재배 자체(시루 나이·품질)는 first_play 소유이고,
+       품목·가격·배송은 shop.js 소유다. 여기는 **합계만** 센다. */
+    crop: { spentWon: 0, soldWon: 0 },
     learned: LEARNING_KEYS.reduce((o, k) => (o[k] = false, o), {}),
     movedOut: false,
     bankrupt: false
@@ -104,6 +122,15 @@ export function foodSavedWon(ts, mealsUsed) {
   return Math.max(0, Math.round(mealsUsed || 0)) * ts.rules.mealCostWon;
 }
 
+/* ★ 오늘 지갑에서 나가는 돈 — **월세 몫을 뺀 나머지**다.
+   `dailySpendWon` 은 월세를 포함한 하루 지출 합(20,000)이고, 월세는 30일마다 목돈으로
+   따로 나간다. 두 번 떼지 않으려면 여기서 한 번 나눠야 한다(TUTORIAL_RULES 주석 참고). */
+export function dailyCashOutWon(ts) {
+  const R = ts.rules;
+  const period = R.rentPeriodDays || 30;
+  return Math.max(0, Math.round(R.dailySpendWon - R.rentWon / period));
+}
+
 export function buyLamp(ts) {
   if (!ts.lamp.unlocked) throw new Error('[튜토] 식물등은 아직 살 수 없습니다');
   if (ts.cashWon < ts.rules.lampPriceWon) {
@@ -125,7 +152,7 @@ export function buyLamp(ts) {
 /* 하루가 지났을 때 튜토리얼 쪽에서 일어나는 일.
    ★첫 플레이가 끝나기 전에는 계절도 돈도 안 움직인다 — 그 7~16일은 배우는 구간이지
      살림을 하는 구간이 아니다(first_play.md §0: novice·맑음·여름 고정). */
-export function tutorialDay(ts, { firstPlayDone = false, mealsUsed = 0 } = {}) {
+export function tutorialDay(ts, { firstPlayDone = false, mealsUsed = 0, incomeWon = 0 } = {}) {
   if (!ts.enabled) return null;
   if (!firstPlayDone) return { skipped: '첫 플레이 진행 중' };
 
@@ -134,10 +161,17 @@ export function tutorialDay(ts, { firstPlayDone = false, mealsUsed = 0 } = {}) {
   const R = ts.rules;
   const ev = [];
 
-  /* 지출 — 콩나물로 아낀 만큼은 빼고 낸다 */
+  /* ★ 수입 — 그날 지갑에 들어온 돈. 지금은 상점 판매(shop.sellPot·sellCutting)가 유일하고,
+     그쪽은 턴 밖에서 즉시 정산하므로 여기로는 대개 0이 온다. 자리를 남겨 두는 이유는
+     "수입이 하루 결산에 실린다"는 것이 살림의 계약이기 때문이다. */
+  const income = Math.max(0, Math.round(incomeWon || 0));
+  if (income > 0) ts.cashWon += income;
+
+  /* 지출 — 콩나물로 아낀 만큼은 빼고 낸다. ★월세 몫은 여기 없다(아래 목돈으로 나간다) */
   const saved = foodSavedWon(ts, mealsUsed);
   const power = lampElectricityWon(ts);
-  const out = Math.max(0, R.dailySpendWon - saved) + power;
+  const base = dailyCashOutWon(ts);
+  const out = Math.max(0, base - saved) + power;
   ts.cashWon -= out;
 
   /* ★유예가 끝나 간다 (2026-08-03 추가) — 월세가 **처음 돈으로 느껴지는 자리**다.
@@ -193,7 +227,8 @@ export function tutorialDay(ts, { firstPlayDone = false, mealsUsed = 0 } = {}) {
   } else if (ts.bankrupt && ts.cashWon > 0) ts.bankrupt = false;
 
   return { day: ts.day, season, seasonDay: seasonDayAt(ts, ts.day),
-           cashWon: ts.cashWon, spentWon: out, savedWon: saved,
+           cashWon: ts.cashWon, spentWon: out, savedWon: saved, incomeWon: income,
+           dailyBaseWon: base,
            electricityWon: power, rentWon: rentPaid, events: ev };
 }
 

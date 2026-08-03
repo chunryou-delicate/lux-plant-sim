@@ -48,6 +48,7 @@ import { createFirstPlayState, placeBeansprout } from './first_play.js';
 import { createTutorialState } from './tutorial.js';
 import { inRoom, isFreeSlotId, makeAt } from './place.js';
 import { PROPAGATION_SCHEMA, rehomeCuttings } from './propagation.js';
+import { SHOP_SCHEMA, createShopState } from './shop.js';
 
 /* 저장 봉투의 스키마. **모르는 값이면 읽지 않는다**(fail-loud). */
 export const SAVE_SCHEMA = 'game_save/1';
@@ -73,7 +74,7 @@ export const DLI_HIST_KEEP = null;
    조용히 안 저장되는 칸이 생기는 것이 제일 나쁘다. */
 const KNOWN_STATE_KEYS = Object.freeze([
   'schema', 'day', 'timeScale', 'sim', 'home', 'lamps',
-  'pots', 'cuttings', 'firstPlay', 'tutorial', 'dliHist', 'ledger', 'log'
+  'pots', 'cuttings', 'firstPlay', 'tutorial', 'shop', 'dliHist', 'ledger', 'log'
 ]);
 
 /* ---------------------------------------------------------------
@@ -282,14 +283,21 @@ function packFirstPlay(fp) {
       harvested: !!b.harvested,
       quality: optStr(b.quality, 'firstPlay.beansprout.quality'),
       meals: needInt(b.meals ?? 0, 'firstPlay.beansprout.meals', { min: 0 }),
-      avgDli: optNum(b.avgDli, 'firstPlay.beansprout.avgDli')
+      avgDli: optNum(b.avgDli, 'firstPlay.beansprout.avgDli'),
+      /* ★ 회전 (2026-08-03) — 안 적으면 저장 한 번에 시루 수가 1로 돌아가고
+         "몇 번째 수확인가"가 사라져 첫 수확 대사가 다시 나온다. */
+      sirus: needInt(b.sirus ?? 1, 'firstPlay.beansprout.sirus', { min: 1 }),
+      cycle: needInt(b.cycle ?? 1, 'firstPlay.beansprout.cycle', { min: 1 }),
+      harvestCount: needInt(b.harvestCount ?? 0, 'firstPlay.beansprout.harvestCount', { min: 0 }),
+      harvestMeals: needInt(b.harvestMeals ?? 0, 'firstPlay.beansprout.harvestMeals', { min: 0 })
     },
     food: {
       pantryMeals: needInt(f.pantryMeals ?? 0, 'firstPlay.food.pantryMeals', { min: 0 }),
       lastHarvestMeals: needInt(f.lastHarvestMeals ?? 0, 'firstPlay.food.lastHarvestMeals', { min: 0 }),
       lastFoodSavedWon: needNum(f.lastFoodSavedWon ?? 0, 'firstPlay.food.lastFoodSavedWon', { min: 0 }),
       totalFoodSavedWon: needNum(f.totalFoodSavedWon ?? 0, 'firstPlay.food.totalFoodSavedWon', { min: 0 }),
-      cashFoodWon: needNum(f.cashFoodWon ?? 0, 'firstPlay.food.cashFoodWon', { min: 0 })
+      cashFoodWon: needNum(f.cashFoodWon ?? 0, 'firstPlay.food.cashFoodWon', { min: 0 }),
+      lastSpoiledMeals: needInt(f.lastSpoiledMeals ?? 0, 'firstPlay.food.lastSpoiledMeals', { min: 0 })
     },
     monstera: {
       arrived: !!m.arrived,
@@ -330,8 +338,43 @@ function packTutorial(ts) {
       nextDueDay: needInt(rent.nextDueDay ?? 0, 'tutorial.rent.nextDueDay', { min: 0 })
     },
     learned,
+    /* 살림 장부 — 상점에 쓴 돈·판 돈. 안 적으면 "얼마 벌었나"가 저장 왕복에서 사라진다. */
+    crop: {
+      spentWon: needNum((ts.crop || {}).spentWon ?? 0, 'tutorial.crop.spentWon', { min: 0 }),
+      soldWon: needNum((ts.crop || {}).soldWon ?? 0, 'tutorial.crop.soldWon', { min: 0 })
+    },
     movedOut: !!ts.movedOut,
     bankrupt: !!ts.bankrupt
+  };
+}
+
+/* ★ 상점 (2026-08-03) — **배송 중인 주문이 세이브의 핵심**이다.
+   돈은 이미 나갔고 물건은 아직 안 왔으므로, 안 적으면 저장 한 번에 **돈만 사라진다.**
+   `arrivesOnDay` 는 절대 게임일이라 복원 뒤에도 그대로 맞는다(상대 일수로 적으면 어긋난다). */
+function packShop(shop) {
+  if (!shop) return null;
+  const stock = {};
+  for (const [k, v] of Object.entries(shop.stock || {}))
+    stock[k] = needInt(v ?? 0, `shop.stock['${k}']`, { min: 0 });
+  return {
+    schema: needStr(shop.schema || SHOP_SCHEMA, 'shop.schema'),
+    seq: needInt(shop.seq ?? 0, 'shop.seq', { min: 0 }),
+    orders: needArr(shop.orders || [], 'shop.orders').map((o, i) => {
+      const path = `shop.orders[${i}]`;
+      needObj(o, path);
+      return {
+        orderId: needStr(o.orderId, `${path}.orderId`),
+        itemId: needStr(o.itemId, `${path}.itemId`),
+        qty: needInt(o.qty ?? 0, `${path}.qty`, { min: 1 }),
+        unitWon: needNum(o.unitWon ?? 0, `${path}.unitWon`, { min: 0 }),
+        totalWon: needNum(o.totalWon ?? 0, `${path}.totalWon`, { min: 0 }),
+        orderedOnDay: needInt(o.orderedOnDay ?? 0, `${path}.orderedOnDay`, { min: 0 }),
+        arrivesOnDay: needInt(o.arrivesOnDay ?? 0, `${path}.arrivesOnDay`, { min: 0 })
+      };
+    }),
+    stock,
+    spentWon: needNum(shop.spentWon ?? 0, 'shop.spentWon', { min: 0 }),
+    earnedWon: needNum(shop.earnedWon ?? 0, 'shop.earnedWon', { min: 0 })
   };
 }
 
@@ -401,6 +444,7 @@ export function serialize(S, opt = {}) {
       cuttings: needArr(S.cuttings || [], 'cuttings').map(packCutting),
       firstPlay: packFirstPlay(S.firstPlay),
       tutorial: packTutorial(S.tutorial),
+      shop: packShop(S.shop),
       /* ★ 자르지 않는다 — growth 복원의 입력이다(맨 위 §growth). null 은 '못 잰 날'이라 그대로 둔다. */
       dliHist: needArr(S.dliHist || [], 'dliHist')
         .map((v, i) => (v == null ? null : needNum(v, `dliHist[${i}]`))),
@@ -722,9 +766,13 @@ export function deserialize(raw, opt = {}) {
     ts.lamp = { ...ts.lamp, ...t.lamp };
     ts.rent = { ...ts.rent, ...t.rent };
     for (const k of Object.keys(ts.learned)) if (k in t.learned) ts.learned[k] = t.learned[k];
+    ts.crop = { ...ts.crop, ...t.crop };
     ts.movedOut = t.movedOut; ts.bankrupt = t.bankrupt;
     S.tutorial = ts;
   }
+
+  /* 상점 — 쓸 때와 **같은 검증**을 읽을 때도 태운다. 없는(옛) 세이브면 빈 상점으로 연다. */
+  S.shop = st.shop ? { ...createShopState(), ...packShop(st.shop) } : createShopState();
 
   /* ── 무결성 ──────────────────────────────────────────────── */
   const report = {

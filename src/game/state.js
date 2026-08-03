@@ -13,8 +13,9 @@
      활력(vigor)은 표시 취소·구현 보류다(2026-08-02) — 자리를 만들면 판정이 코어로 샌다.
 ============================================================ */
 
-import { createFirstPlayState, placeBeansprout, BEANSPROUT_ID } from './first_play.js';
+import { createFirstPlayState, placeBeansprout, resowBeansprout, BEANSPROUT_ID } from './first_play.js';
 import { createTutorialState } from './tutorial.js';
+import { createShopState, useStock } from './shop.js';
 import { atFromSlot, isFreeSlotId, makeAt, resolvePlacement,
          inRoom, assertFurnitureAt } from './place.js';
 
@@ -73,6 +74,11 @@ export function newState(opt = {}) {
        규칙과 수치는 src/game/tutorial.js 가 갖는다(docs/story_arc.md 가 정본).
        첫 플레이가 끝나기 전에는 날짜도 돈도 계절도 안 움직인다. */
     tutorial: createTutorialState({ enabled: !!opt.firstPlay }),
+
+    /* 인터넷 주문 상점 — 배송 중인 주문과 도착한 재고 (2026-08-03).
+       규칙·값·배송일은 src/game/shop.js 가 갖는다(docs/shop.md 가 정본).
+       ★첫 콩나물 시루는 **공짜로 준 것**이라 재고에 안 들어간다. 그 뒤부터 주문이다. */
+    shop: createShopState(),
 
     /* 코어가 따로 쌓는 DLI 이력. 용도는 두 가지뿐:
          ① growth의 dli7()과 대조(어긋나면 배선이 틀린 것)
@@ -269,6 +275,49 @@ export function setCropAt(S, at, opt = {}) {
   const r = placeBeansprout(fp, at, opt);
   return { cropId: BEANSPROUT_ID, slotId: fp.beansprout.slotId, at: fp.beansprout.at,
            snappedTo: r.snappedTo, dist: r.dist, moved: r.moved, keptDays: r.keptDays };
+}
+
+/* ★ 콩나물을 다시 심는다 — **재배(first_play)와 지갑(tutorial)을 한 동작으로** (2026-08-03).
+   ------------------------------------------------------------
+   씨앗값을 안 내고 다시 심을 수 있으면 그건 경제가 아니다. 그렇다고 first_play 가 지갑을
+   만지면 살림 규칙이 두 곳으로 갈린다 — 그래서 `setCropAt` 과 같은 자리에서 묶는다.
+   게임 화면·재현은 **이 함수 하나만** 부르면 된다(buyLamp·moveOut 과 같은 결).
+
+   ★ 씨앗은 **미리 주문해 둔 재고**를 쓴다. 돈으로 바로 사는 게 아니다 —
+     주문하면 하루 뒤에 오므로(shop.CATALOG.bean_seed.leadDays) 회전을 이어 가려면
+     수확 전에 시켜 둬야 한다. 그게 이 상점의 성격이고, 잊으면 하루가 빈다.
+   ★ 시루 용기도 마찬가지다. 시루를 늘리려면(`opt.sirus` 를 올리려면) 늘어난 만큼
+     `siru` 재고가 있어야 한다. 첫 시루 하나는 처음에 받은 것이라 안 센다.
+
+     opt.sirus  이번 회전에 돌릴 시루 수 (없으면 그대로)
+     opt.at     자리를 옮기려면. placeBeansprout 과 같은 세 가지 입력
+     opt.slots · size · snapDist  좌표를 세울 때 쓰는 것들(setCropAt 과 같다)
+   반환 { sirus, cycle, seedsUsed, sirusAdded, slotId, at, events } */
+export function resowCrop(S, opt = {}) {
+  const fp = S && S.firstPlay;
+  if (!fp || !fp.enabled || !fp.beansprout)
+    throw new Error('[콩나물] 첫 플레이 상태가 없습니다 — 다시 심을 시루가 없습니다');
+  if (!fp.beansprout.harvested) {
+    const e = new Error('[콩나물] 아직 수확하지 않았습니다 — 거둔 뒤에 다시 심습니다');
+    e.tutorialInput = true;
+    throw e;
+  }
+  const had = Math.max(1, Math.round(fp.beansprout.sirus || 1));
+  const sirus = opt.sirus == null ? had : opt.sirus;
+  if (!Number.isInteger(sirus) || sirus < 1)
+    throw new Error(`[콩나물] 시루 수가 1 이상의 정수가 아닙니다: ${sirus}`);
+
+  /* ★ 재고부터 뺀다. resowBeansprout 은 이력을 비우므로 되돌릴 수 없다 —
+     "심어 놓고 씨앗이 없어서 실패"가 나면 그 회전이 통째로 사라진다. */
+  const sirusAdded = Math.max(0, sirus - had);
+  if (sirusAdded > 0) useStock(S, 'siru', sirusAdded);
+  useStock(S, 'bean_seed', sirus);                 // 시루 하나에 씨앗 한 봉지
+
+  const r = resowBeansprout(fp, { ...opt, sirus });
+  pushLog(S, `🌱 콩나물을 다시 심었습니다 — 시루 ${r.sirus}개 · 씨앗 ${sirus}봉지를 썼습니다`);
+  return { ...r, seedsUsed: sirus, sirusAdded,
+           events: [{ id: 'crop_resown', ko: '콩나물을 다시 심었습니다',
+                      sirus: r.sirus, cycle: r.cycle, seedsUsed: sirus }] };
 }
 
 /* 추천 자리에 놓는다(예전 경로). 좌표까지 같이 세운다. */

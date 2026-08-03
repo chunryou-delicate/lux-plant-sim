@@ -42,15 +42,33 @@ check('B 계절 — 시작 여름 · 45일 뒤 가을 · 135일 뒤 겨울', () 
   assert.equal(seasonAt(ts, 135), 'winter', '135일째가 겨울이 아닙니다');
 });
 
-/* ══ C · 하루 지출과 콩나물 절감 ═════════════════════════════════════════ */
-check('C 하루 지출 20,000원 · 콩나물 3끼면 7,500원 덜 나간다', () => {
+/* ══ C · 하루 지출과 콩나물 절감 ═════════════════════════════════════════
+   ★2026-08-03 정정 — 예전에는 `spentWon === dailySpendWon(20,000)` 을 확인했다.
+     그런데 월세 30만이 30일마다 **따로** 또 빠지고 있었다. `dailySpendWon` 은
+     food_economy.md §2 표대로 **월세 10,000원을 이미 포함한** 하루 지출 합이라,
+     그 상태에서는 월세가 두 번 나가 실제 지출이 하루 30,000원(월 90만)이었다.
+     지금은 하루치에서 월세 몫을 빼고(=10,000) 월세는 목돈으로 낸다 —
+     **30일 평균은 그대로 20,000원**이고, 그것을 아래에서 직접 잰다. */
+check('C 하루 지출 — 월세를 두 번 안 뗀다 · 30일 평균이 20,000원', () => {
   const ts = mk();
   const r0 = tutorialDay(ts, { firstPlayDone: true, mealsUsed: 0 });
-  assert.equal(r0.spentWon, TUTORIAL_RULES.dailySpendWon, `지출이 ${r0.spentWon}`);
+  assert.equal(r0.spentWon, 10_000, `하루 현금 지출이 ${r0.spentWon} — 월세 몫을 뺀 10,000이어야 합니다`);
+  assert.equal(r0.dailyBaseWon, 10_000);
+
   const ts2 = mk();
   const r1 = tutorialDay(ts2, { firstPlayDone: true, mealsUsed: 3 });
   assert.equal(r1.savedWon, 7500, `절감이 ${r1.savedWon}`);
-  assert.equal(r1.spentWon, 20000 - 7500, `절감 뒤 지출이 ${r1.spentWon}`);
+  assert.equal(r1.spentWon, 10_000 - 7_500, `절감 뒤 지출이 ${r1.spentWon}`);
+
+  /* ★진짜로 재는 것 — 유예가 끝난 뒤 30일 동안 실제로 얼마가 빠지나.
+     story_arc.md §3 "하루 지출 합 20,000원 (월 60만)" 이 그대로 나와야 한다. */
+  const ts3 = mk();
+  ts3.cashWon = 5_000_000;          // 0원 클램프에 걸리지 않게 넉넉히 — 여기서 재는 건 지출뿐이다
+  for (let i = 0; i < 30; i++) tutorialDay(ts3, { firstPlayDone: true, mealsUsed: 0 });
+  const after30 = ts3.cashWon;
+  for (let i = 0; i < 30; i++) tutorialDay(ts3, { firstPlayDone: true, mealsUsed: 0 });
+  const spent = after30 - ts3.cashWon;
+  assert.equal(spent, 600_000, `유예 뒤 한 달 지출이 ${spent.toLocaleString()}원 — 60만원이어야 합니다`);
 });
 
 /* ══ D · 월세 — 첫 달은 유예, 30일째부터 ═══════════════════════════════ */

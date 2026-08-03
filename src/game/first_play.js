@@ -19,6 +19,11 @@ import { spotOf } from './place.js';
    이번 얇은 통합에서는 이 모듈 한 곳만 임시 계약으로 가지며 UI·루프에는 숫자를 복제하지 않는다. */
 export const FIRST_PLAY_RULES = Object.freeze({
   harvestDays: 4,
+  /* ★ 씨앗값 — 시루 하나를 다시 심을 때마다 든다 (docs/food_economy.md §3 "씨앗(콩) 1시루분 1,500원").
+     ⚠ 이 값만 `characters.json._meta` 가 아니라 여기 있다. 그 파일은 이 창 소유가 아니라
+       못 고쳤다 — plan 에 `seedWonPerSiru` 를 _meta 로 옮겨 달라고 요청해 뒀다(보고 ⑤).
+     ★ 공짜로 무한히 나오면 경제가 아니다. 재파종이 돈을 쓰는 행동이라야 회전이 선택이 된다. */
+  seedWonPerSiru: 1_500,
   quality: Object.freeze([
     Object.freeze({ maxDli: 0.3, id: 'crisp_white', ko: '하얗고 아삭', meals: 3 }),
     Object.freeze({ maxDli: 1.0, id: 'slightly_green', ko: '살짝 초록', meals: 2 }),
@@ -105,14 +110,26 @@ export function createFirstPlayState(opt = {}) {
       harvested: false,
       quality: null,
       meals: 0,
-      avgDli: null
+      avgDli: null,
+      /* ★ 시루는 **하나가 아니다** (2026-08-03 · 반복 수입).
+         `sirus` 는 같은 자리에서 함께 도는 시루 수다. 상한은 살림 쪽(tutorial.cropSlotsOf)이
+         정한다 — 방 칸이 곧 상한이라 시루가 공짜로 무한히 늘지 않는다.
+         ⚠ 전부 **같은 자리의 DLI** 를 쓴다. 밝은 데 두면 열 개가 다 같이 초록이 된다 —
+           "자리 하나가 결과를 바꾼다"가 수입 전체로 확대되는 것이고, 그게 이 게임의 뼈대다. */
+      sirus: 1,
+      cycle: 1,              // 몇 번째 회전인가 (재파종할 때마다 오른다)
+      harvestCount: 0,       // 지금까지 몇 번 수확했나 — 첫 수확과 그 뒤를 가르는 열쇠
+      harvestMeals: 0        // 직전 수확의 **합계** 끼니(= meals × sirus)
     },
     food: {
       pantryMeals: 0,
       lastHarvestMeals: 0,
       lastFoodSavedWon: 0,
       totalFoodSavedWon: 0,
-      cashFoodWon: rules ? rules.dailyFoodWon : 0
+      cashFoodWon: rules ? rules.dailyFoodWon : 0,
+      /* 못 먹고 쉬어 버린 끼니. 팔지 않는다 — 콩나물은 지출 방어이지 수입이 아니다
+         (docs/food_economy.md 머리말). 시루를 과하게 산 것이 눈에 보이라고 세어 둔다. */
+      lastSpoiledMeals: 0
     },
     monstera: {
       arrived: false,
@@ -200,19 +217,38 @@ export function advanceBeansproutDay(fp, dli) {
   const hist = fp.beansprout.dliHist;
   const avgDli = hist.reduce((sum, v) => sum + v, 0) / hist.length;
   const quality = rules.quality.find(q => avgDli <= q.maxDli);
-  const usedMeals = Math.min(quality.meals, rules.dailyCropMealCap);
+  /* ★ 시루 수만큼 곱해진다. 품질은 자리 하나가 정하므로 **자리가 수입 전체를 가른다** —
+     어두운 자리 10시루는 30끼, 밝은 자리 10시루는 10끼다(세 배). */
+  const sirus = Math.max(1, Math.round(fp.beansprout.sirus || 1));
+  const totalMeals = quality.meals * sirus;
+  const usedMeals = Math.min(rules.dailyCropMealCap, totalMeals);
   const savedWon = usedMeals * rules.mealWon;
+
+  /* ★ 남는 끼니는 **버려진다. 팔지 않는다.**
+     박사님 확정(2026-08-03): 콩나물은 굶지 않게 버티는 수단이고 이사 자금이 아니다.
+     콩나물은 며칠이면 쉬는 채소라 쌓아 둘 수도 없다 — 다음 회전까지 먹을 만큼
+     (`상한 × 회전일` = 2끼 × 4일 = 8끼)만 남고 그보다 많으면 버린다.
+     그래서 시루를 네 개 이상 사도 소용이 없다: **끼니 상한이 곧 시루 상한**이다.
+     시루 1개(3끼)면 버릴 것이 없어 **첫 수확의 숫자는 예전 그대로**다. */
+  let pantry = fp.food.pantryMeals + (totalMeals - usedMeals);
+  const keepMeals = rules.dailyCropMealCap * rules.harvestDays;
+  const spoiledMeals = Math.max(0, pantry - keepMeals);
+  pantry -= spoiledMeals;
 
   fp.beansprout.harvested = true;
   fp.beansprout.avgDli = avgDli;
   fp.beansprout.quality = quality.id;
-  fp.beansprout.meals = quality.meals;
-  fp.food.lastHarvestMeals = quality.meals;
-  fp.food.pantryMeals += quality.meals - usedMeals;
+  fp.beansprout.meals = quality.meals;              // ★시루 **하나당** 끼니. 표시·판정의 기준
+  fp.beansprout.harvestMeals = totalMeals;          // 합계는 따로 둔다
+  fp.beansprout.harvestCount = (fp.beansprout.harvestCount || 0) + 1;
+  fp.food.lastHarvestMeals = totalMeals;
+  fp.food.pantryMeals = pantry;
   fp.food.lastFoodSavedWon = savedWon;
   fp.food.totalFoodSavedWon += savedWon;
   fp.food.cashFoodWon = rules.dailyFoodWon - savedWon;
-  fp.phase = 'monstera_gift';
+  fp.food.lastSpoiledMeals = spoiledMeals;
+  /* ★ 선물은 **첫 수확에만** 온다. 두 번째 시루에서 몬스테라가 또 오면 안 된다. */
+  if (!fp.monstera.arrived) fp.phase = 'monstera_gift';
 
   return {
     harvested: true,
@@ -220,10 +256,94 @@ export function advanceBeansproutDay(fp, dli) {
     quality: quality.id,
     qualityKo: quality.ko,
     meals: quality.meals,
+    sirus,
+    totalMeals,
     usedMeals,
+    /* ★ `mealsUsed` 라는 이름으로도 낸다 (2026-08-03 정정).
+       loop.stepTutorial 이 `ev.mealsUsed` 를 읽는데 여기서는 `usedMeals` 로만 내고 있었다 —
+       이름이 하나 어긋나서 **식비 절감이 살림에 한 번도 반영되지 않았다.**
+       읽는 쪽을 고치면 옛 호출부가 조용히 깨지므로 두 이름을 같이 낸다. */
+    mealsUsed: usedMeals,
     foodSavedWon: savedWon,
+    spoiledMeals,
+    harvestCount: fp.beansprout.harvestCount,
     cashFoodWon: fp.food.cashFoodWon
   };
+}
+
+/* ★ 수확한 날이 아닌 날의 밥 — 창고에서 상한만큼 꺼내 쓴다 (2026-08-03 신설).
+   ------------------------------------------------------------
+   예전에는 절감이 **수확한 날 하루만** 일어났다. 시루 하나가 4일에 3끼를 내는데
+   그중 2끼를 수확일 하루에 몰아 쓰고 나머지는 창고에서 잠들었다 —
+   `food_economy.md` §4 의 "하루 2끼 상한"은 **매일** 걸리는 상한이지 4일에 한 번이 아니다.
+   그래서 회전이 돌기 시작하면 이 함수가 매일 불린다(loop.nextDay).
+   ★ 수확한 날에는 안 부른다 — 그날 몫은 위 advanceBeansproutDay 가 이미 꺼내 썼다. */
+export function eatFromPantry(fp) {
+  const zero = { mealsUsed: 0, foodSavedWon: 0 };
+  if (!fp || !fp.enabled || !fp.rules || !fp.food) return zero;
+  const rules = fp.rules;
+  const use = Math.min(rules.dailyCropMealCap, Math.max(0, fp.food.pantryMeals || 0));
+  fp.food.lastSpoiledMeals = 0;
+  if (use <= 0) {
+    fp.food.lastFoodSavedWon = 0;
+    fp.food.cashFoodWon = rules.dailyFoodWon;
+    return zero;
+  }
+  fp.food.pantryMeals -= use;
+  const won = use * rules.mealWon;
+  fp.food.lastFoodSavedWon = won;
+  fp.food.totalFoodSavedWon += won;
+  fp.food.cashFoodWon = rules.dailyFoodWon - won;
+  return { mealsUsed: use, foodSavedWon: won };
+}
+
+/* ★ 다시 심는다 — **막다른 길을 없애는 함수** (2026-08-03 신설).
+   ------------------------------------------------------------
+   두 가지를 한꺼번에 푼다.
+     ① **반복 수입.** 시루가 한 번뿐이면 식비 절감도 한 번뿐이라 소지금이 줄기만 한다.
+     ② **막다른 길.** 배움 ②(`cropDark`)는 수확할 때의 4일평균 DLI 로 판정하는데,
+        시루가 하나뿐이면 밝은 자리에서 첫 수확을 한 판은 **영영 못 나간다.**
+        다시 심을 수 있으면 "다시 해 보면 배운다"가 된다 — 자동으로 채워 주지 않는다.
+
+   ★ 씨앗값은 **호출부가 낸다.** 여기서 지갑을 만지지 않는다(코어의 살림은 tutorial.js 소유).
+     `state.resowCrop(S, ...)` 이 그 둘을 한 동작으로 묶는다 — 게임 화면은 그것만 부르면 된다.
+     opt.sirus     이번 회전에 돌릴 시루 수 (없으면 그대로)
+     opt.maxSirus  놓을 수 있는 칸 수 (없으면 검사 안 함)
+     opt.at        자리를 옮기려면. placeBeansprout 과 같은 세 가지 입력을 받는다 */
+export function resowBeansprout(fp, opt = {}) {
+  if (!fp || !fp.beansprout) throw new Error('[첫 플레이] 콩나물 상태가 없습니다');
+  const b = fp.beansprout;
+  if (!b.harvested)
+    throw new Error('[콩나물] 아직 수확하지 않은 시루입니다 — 수확한 뒤에 다시 심습니다');
+  const rules = fp.rules;
+  if (!rules) throw new Error('[첫 플레이] 밸런스 계약이 없습니다');
+
+  const sirus = opt.sirus == null ? Math.max(1, Math.round(b.sirus || 1)) : opt.sirus;
+  if (!Number.isInteger(sirus) || sirus < 1)
+    throw new Error(`[콩나물] 시루 수가 1 이상의 정수가 아닙니다: ${sirus}`);
+  if (Number.isFinite(opt.maxSirus) && sirus > opt.maxSirus)
+    throw new Error(`[콩나물] 시루를 놓을 칸이 ${opt.maxSirus}칸뿐입니다 — ${sirus}개는 못 놓습니다 ` +
+                    `(시루 선반을 놓으면 늘어납니다)`);
+
+  const seedCostWon = sirus * rules.seedWonPerSiru;
+
+  /* ★ **이력을 비운다.** 지난 회전의 DLI 는 이번 콩나물이 받은 빛이 아니다 —
+     남겨 두면 밝은 데서 한 번 망친 판이 어두운 데로 옮겨도 평균이 안 내려가 영영 못 배운다. */
+  b.harvested = false;
+  b.ageDays = 0;
+  b.dliHist = [];
+  b.quality = null;
+  b.meals = 0;
+  b.avgDli = null;
+  b.harvestMeals = 0;
+  b.sirus = sirus;
+  b.cycle = (b.cycle || 1) + 1;
+
+  /* 자리를 다시 고를 수 있다 — 이게 ②(막다른 길)의 실제 해법이다.
+     placeBeansprout 은 수확한 시루를 막으므로 **위에서 harvested 를 내린 뒤에** 부른다. */
+  if (opt.at != null && opt.at !== '') placeBeansprout(fp, opt.at, opt);
+
+  return { sirus, cycle: b.cycle, seedCostWon, slotId: b.slotId, at: b.at };
 }
 
 /* 콩나물과 **같은 세 가지 입력**을 받는다(이름 · 좌표 · 화분 객체).
@@ -310,6 +430,10 @@ export function firstPlaySnapshot(fp) {
   if (!fp || !fp.enabled) return null;
   return {
     harvested: !!(fp.beansprout && fp.beansprout.harvested),
+    /* ★ 회전이 생기면서 `harvested` 만으로는 부족해졌다 — 재파종하면 false 로 내려갔다가
+       다시 true 가 되므로 "몇 번째 수확인가"를 세야 첫 수확과 그 뒤를 가를 수 있다. */
+    harvestCount: fp.beansprout ? (fp.beansprout.harvestCount || 0) : 0,
+    cycle: fp.beansprout ? (fp.beansprout.cycle || 1) : 1,
     arrived: !!(fp.monstera && fp.monstera.arrived),
     completed: !!fp.completed,
     cashFoodWon: fp.food ? fp.food.cashFoodWon : null,
@@ -323,10 +447,24 @@ export function firstPlayEventsOf(before, fp) {
   const now = firstPlaySnapshot(fp);
   if (!before || !now) return [];
   const out = [];
-  if (!before.harvested && now.harvested)
-    out.push({ id: 'beansprout_harvest', ko: '콩나물 첫 수확',
-               meals: fp.beansprout.meals, quality: fp.beansprout.quality });
-  if (before.cashFoodWon !== now.cashFoodWon || before.totalFoodSavedWon !== now.totalFoodSavedWon)
+  /* ★ 첫 수확과 **그 뒤의 수확**은 다른 사건이다 (2026-08-03).
+     같은 id 로 내면 화면이 "콩나물 첫 수확"을 4일마다 다시 띄우고, 대사는 한 번뿐이라
+     두 번째부터는 **아무 말도 안 하는 날**이 된다 — 회전이 도는 구간이 통째로 조용해진다. */
+  if (now.harvestCount > before.harvestCount) {
+    out.push(before.harvestCount === 0
+      ? { id: 'beansprout_harvest', ko: '콩나물 첫 수확',
+          meals: fp.beansprout.meals, quality: fp.beansprout.quality }
+      : { id: 'beansprout_harvest_again', ko: '콩나물을 또 거뒀습니다',
+          meals: fp.beansprout.meals, totalMeals: fp.beansprout.harvestMeals,
+          sirus: fp.beansprout.sirus, quality: fp.beansprout.quality,
+          cycle: fp.beansprout.cycle });
+  }
+  /* ★ 식비 신호는 **거둔 날에만** 낸다 (2026-08-03 정정).
+     회전이 생기면서 창고에서 매일 끼니를 꺼내 쓰게 됐는데, 그걸 그대로 신호로 내면
+     `totalFoodSavedWon` 이 매일 바뀌어 **빨리감기가 하루도 못 간다**(재현에서 Day 5 에 섰다).
+     매일 밥을 먹는 것은 사건이 아니라 살림이다 — 사건은 "거둬서 식비가 달라진 날"이다. */
+  if (now.harvestCount > before.harvestCount &&
+      (before.cashFoodWon !== now.cashFoodWon || before.totalFoodSavedWon !== now.totalFoodSavedWon))
     out.push({ id: 'food_cash', ko: '식비가 바뀌었습니다',
                cashFoodWon: now.cashFoodWon, totalFoodSavedWon: now.totalFoodSavedWon });
   if (!before.arrived && now.arrived)
