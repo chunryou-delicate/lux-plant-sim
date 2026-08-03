@@ -872,6 +872,7 @@
 import { newState, SIM_MODES, pot0, pushLog, givePlant, hasPlant, ARRIVAL,
          setPotAt, setPotSlot, setCropAt, setFurniturePlacement, furnitureOverrides } from './src/game/state.js';
 import { isFreeSlotId } from './src/game/place.js';
+import * as save from './src/game/save.js';
 import {
   FIRST_PLAY_ASSETS,
   firstPlayRulesFromBalance,
@@ -1429,7 +1430,59 @@ function drawJourney() {
   fillCropSlots();
 }
 
+/* ══ 세이브 (박사님 2026-08-03) ═══════════════════════════════════════════
+   자유 배치가 들어오면서 잃는 것이 커졌다 — 예전엔 자리 하나였는데 이제 방을 꾸민 게
+   통째로 날아간다. 그래서 **저장 버튼을 두지 않는다.** 폰 게임이라 앱을 그냥 닫는다.
+   ★그릴 때마다 저장하되 한 박자 묶는다. draw() 는 한 턴에 여러 번 불릴 수 있다.
+   ★저장 실패는 게임을 막지 않는다 — 다만 조용히 넘어가지도 않는다(용량 초과는 알린다). */
+let saveTimer = null, saveWarned = false;
+function saveNow() {
+  saveTimer = null;
+  if (!saveReady) return;                 // 부팅 중에는 저장하지 않는다(반쯤 선 상태를 굳히지 않게)
+  let r;
+  try { r = save.saveTo(localStorage, save.SAVE_KEY, S); }
+  catch (e) { r = { ok: false, reason: 'storage', message: (e && e.message) || String(e) }; }
+  if (r.ok || saveWarned) return;
+  saveWarned = true;                       // 한 번만 말한다 — 매 턴 같은 경고를 띄우면 소음이다
+  pushLog(S, r.reason === 'quota'
+    ? '⚠ 저장 공간이 가득 차 진행이 저장되지 않습니다'
+    : `⚠ 진행을 저장하지 못했습니다 — ${r.message}`);
+}
+function saveSoon() { if (saveReady && saveTimer == null) saveTimer = setTimeout(saveNow, 400); }
+let saveReady = false, resumed = false;
+
+/* 있으면 이어 붙인다. 못 이으면 **왜인지 남기고 새 판으로 간다** —
+   여기서 멈추면 세이브 하나 때문에 게임을 아예 못 하게 된다.
+   ★못 읽은 세이브를 지우지 않는다. 지우면 되살릴 길이 사라진다. */
+async function resumeSave() {
+  let head = null;
+  try { head = save.peek(localStorage, save.SAVE_KEY); } catch { }
+  if (!head || !head.ok) return false;
+  bootProgress({ phase: 'start', ko: `이어서 부르는 중 — Day ${head.day}` });
+  let r;
+  try {
+    r = save.loadFrom(localStorage, save.SAVE_KEY,
+      { light: io.light, growth: io.growth, firstPlayRules: FIRST_RULES });
+  } catch (e) { r = { ok: false, reason: e && e.saveReason, message: (e && e.message) || String(e) }; }
+  if (!r.ok) {
+    console.warn('[세이브] 못 읽었습니다 —', r.reason, r.message);
+    pushLog(S, `⚠ 저장된 진행을 못 읽어 새로 시작합니다 — ${r.message || r.reason}`);
+    return false;
+  }
+  S = r.S;
+  $('room').value = S.home.room;
+  $('mode').value = S.sim.mode;
+  fillLamps(); fillSlots(); if (S.firstPlay && S.firstPlay.enabled) fillCropSlots();
+  /* ⚠ 회수 기록은 save.js 가 이미 pushLog 로 남긴다 — 여기서 또 적으면 두 번 뜬다 */
+  pushLog(S, `이어서 시작합니다 — Day ${S.day}`);
+  return true;
+}
+/* 앱을 덮거나 탭을 떠날 때 미룬 저장을 마저 한다 — 폰에서는 이게 마지막 기회다 */
+addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') saveNow(); });
+addEventListener('pagehide', saveNow);
+
 function draw() {
+  saveSoon();
   renderHUD($('hud'), S, lastTurn, io);
   renderLog($('log'), S);
   drawJourney();
@@ -2112,7 +2165,10 @@ const furnPicked = {
   tapX: null, tapY: null,
 
   select(f, px, py) {
-    if (drag.on || picked.slotId) return;
+    /* ★고르는 중인 화분이 있으면 **풀고 가구를 고른다.** 예전엔 조용히 아무 일도 안 났다 —
+       화분을 한 번 고른 뒤로는 가구를 눌러도 반응이 없어 고장으로 보인다.
+       다만 무엇을 **옮기는 중**이면 건드리지 않는다. 그건 진행 중인 조작이다. */
+    if (drag.on || picked.mode || this.mode) return;
     picked.clear();
     this.uid = f.uid; this.base = { x: f.x, z: f.z, rot: f.rot || 0 };
     /* 고를 때 누른 자리를 원점으로 삼는다 — 그 점이 곧 그 가구 위다.
@@ -2399,6 +2455,11 @@ $('reset').onclick = () => {
   delete $('firstResult').dataset.status;
   delete document.body.dataset.hardLock;      // 새 판이므로 잠금도 푼다
   GATED.forEach(id => { $(id).disabled = false; });
+  /* ★저장된 진행도 같이 지운다. 안 지우면 새로 시작해도 새로고침하면 옛 판이 돌아온다 —
+     "초기화를 눌렀는데 안 됐다"로 보인다. 가구 자리표도 기본값으로 되돌린다. */
+  try { save.clear(localStorage, save.SAVE_KEY); } catch { }
+  try { io.light.setFurnitureOverrides({}); } catch { }
+  saveWarned = false;
   buildRoom(keep.room);
 };
 
@@ -2646,16 +2707,22 @@ try {
   $('mode').value = S.sim.mode;
   buildRoom(S.home.room);
   await io.growth.ready();
+  /* ★이어하기 — 있으면 말없이 이어 붙인다. 폰 게임이라 시작 메뉴를 두지 않는다.
+     ⚠ growth 를 되세우는 건 **빛 이력을 다시 거는 것**이라 날짜만큼 시간이 든다.
+       그래서 growth 가 준비된 **뒤에** 부르고, 도는 동안 무엇을 하는지 화면에 적는다. */
+  resumed = await resumeSave();
   GATED.forEach(id => { $(id).disabled = false; });
   /* 첫 플레이는 고정 지역·novice·식물등 없음. 개발 검수 시나리오에서는 재설정할 수 있다. */
   $('room').disabled = true; $('mode').disabled = true; $('lamps').disabled = true; $('lit').disabled = true;
-  pushLog(S, '첫 플레이 준비 완료 — 열린 시루를 놓고 [다음 날]을 눌러 보세요');
+  if (!resumed) pushLog(S, '첫 플레이 준비 완료 — 열린 시루를 놓고 [다음 날]을 눌러 보세요');
+  saveReady = true;                 // 여기서부터 저장한다 — 반쯤 선 상태를 굳히지 않는다
   draw();
   window.__byeotBooted = true;      // 밖의 감시자에게 "여기까지는 왔다"고 알린다
   bindGuide();                      // 조작 안내판 — 처음이면 인트로 뒤에 저절로 뜬다
   bindDetail();                     // 나 · 아이템 · 식물 상세
   bootRoomView();                   // 방 3D — 실패해도 게임은 돌아간다(아래)
-  dlgOpen('intro');                 // 몬이가 무엇을 하는 게임인지 한 번에 말해 준다
+  /* 이어하는 판에서는 인트로를 다시 틀지 않는다 — 이미 들은 이야기를 또 하면 안 된다 */
+  if (!resumed) dlgOpen('intro');
 } catch (err) {
   GATED.forEach(id => { $(id).disabled = true; });       // 실패하면 계속 잠근다
   /* ★#side 는 폰 세로로 바뀌며 없어졌다. 하단에 띄운다 — 안 보이면 "버튼이 안 눌린다"만 남는다 */
