@@ -3123,10 +3123,26 @@ export async function createRoomView(canvas, opts = {}) {
     const g = await charLoad(`${CHAR_MESH}/char_mascot_sprout.glb`);
     const model = g.scene;
     /* 몬이도 0.375m 가 GLB 에 구워져 있다. 리깅이 없어 트랜스폼만 움직인다. */
+    /* ★몬이 채도를 한 눈금 낮춘다 (2026-08-03).
+       방은 벽·가구를 0.62/0.78 로 눌러 뒀는데(게임 조명 정책) 몬이만 원본 채도라
+       혼자 스티커처럼 떠 보였다. 재질을 **제 것으로 만든 뒤** 회색과 섞는다 —
+       공유 재질을 제자리에서 고치면 같은 GLB 를 쓰는 다른 것까지 같이 바랜다.
+       ⚠ 밝기가 아니라 채도만 낮춘다. 어둡게 하면 마스코트가 안 보인다.
+       되돌리려면 MONI_SAT 만 1 로 두면 된다. */
+    const MONI_SAT = 0.78;
     model.traverse(o => {
       if (!o.isMesh) return;
       o.castShadow = true; o.receiveShadow = true; o.frustumCulled = false;
-      if (o.material && o.material.map) o.material.map.encoding = THREE.sRGBEncoding;
+      if (o.material) {
+        o.material = Array.isArray(o.material) ? o.material.map(m => m.clone()) : o.material.clone();
+        for (const m of (Array.isArray(o.material) ? o.material : [o.material])) {
+          if (m.map) m.map.encoding = THREE.sRGBEncoding;
+          if (m.color) {
+            const hsl = m.color.getHSL({ h: 0, s: 0, l: 0 });
+            m.color.setHSL(hsl.h, hsl.s * MONI_SAT, hsl.l);
+          }
+        }
+      }
     });
     const root = new THREE.Group();
     root.add(model);

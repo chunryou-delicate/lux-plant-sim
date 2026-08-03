@@ -313,6 +313,44 @@
   .dragcue::before{content:'☝';font-size:14px;animation:cueBob 1.3s ease-in-out infinite}
   @keyframes cueBob{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
 
+  /* ══ 나 칩 · 상세 창 ══════════════════════════════════════════════════
+     나·아이템·식물이 **한 틀**을 나눠 쓴다. 폰에서 창이 늘어나면 어디서 무엇을
+     보는지 안 잡힌다 — 여는 손버릇을 하나로 두면 세 번째 창이 생겨도 안 헷갈린다. */
+  #meChip{flex:0 0 auto;width:34px;height:34px;padding:0;border-radius:50%;overflow:hidden;
+    border:1.5px solid rgba(255,180,84,.55);background:rgba(16,13,24,.8)}
+  #meChip img{width:100%;height:100%;object-fit:cover;object-position:50% 18%;display:block}
+  #detail{position:fixed;z-index:82;inset:0;display:none;align-items:flex-end;justify-content:center;
+    background:rgba(8,6,12,.7);-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px)}
+  #detail.on{display:flex}
+  .dcard{position:relative;width:min(520px,100%);max-height:86vh;overflow:auto;
+    background:linear-gradient(180deg,#1b1626,#141020);border-radius:20px 20px 0 0;
+    border:1px solid rgba(255,255,255,.1);padding:18px 16px calc(var(--safe-b) + 16px)}
+  @media (min-width:820px){ #detail{align-items:center} .dcard{border-radius:20px} }
+  .dhead{display:flex;gap:12px;align-items:center;margin-bottom:12px;padding-right:40px}
+  .dhead img{width:64px;height:64px;border-radius:14px;object-fit:cover;object-position:50% 18%;
+    background:rgba(255,255,255,.05);flex:0 0 auto}
+  .dhead b{display:block;font-family:'Jua';font-size:17px;color:var(--gold)}
+  .dhead small{display:block;font-size:12px;color:var(--dim);margin-top:2px}
+  #dBody{font-size:13px;line-height:1.65;color:rgba(255,255,255,.86)}
+  #dBody .row{display:flex;justify-content:space-between;gap:10px;padding:7px 0;
+    border-bottom:1px solid rgba(255,255,255,.06)}
+  #dBody .row span{color:var(--dim)}
+  #dBody .row b{font-family:'Jua';color:#fff;font-weight:400}
+  #dBody p{margin:10px 0 0;color:rgba(255,255,255,.72)}
+  #dBody .todo{margin:10px 0 0;padding:0;list-style:none}
+  #dBody .todo li{padding:5px 0 5px 22px;position:relative;color:var(--dim)}
+  #dBody .todo li::before{content:'○';position:absolute;left:2px;color:var(--dim)}
+  #dBody .todo li.done{color:rgba(255,255,255,.85)}
+  #dBody .todo li.done::before{content:'●';color:var(--gold)}
+  .dbtns{display:flex;gap:8px;margin-top:14px}
+  .dbtns:empty{display:none}
+  .dbtns button{flex:1;min-height:var(--tap);font-family:'Jua';font-size:14px;border-radius:12px}
+  #dClose{position:absolute;right:10px;top:10px;width:34px;height:34px;border-radius:50%;
+    background:rgba(255,255,255,.07);border:0;color:var(--dim);font-size:15px}
+  /* 아이템 카드는 이제 눌러서 연다 — 눌리는 것처럼 보여야 한다 */
+  #sheet .itemcard{cursor:pointer}
+  #sheet .itemcard:active{transform:scale(.995)}
+
   /* ★어디를 눌러야 하는지 손가락으로 가리킨다 (박사님 요청).
      버튼이 여럿인데 무엇을 눌러야 하는지 화면이 말해 주지 않았다. */
   #hint{position:fixed;z-index:70;pointer-events:none;display:none;transform:translate(-50%,0)}
@@ -357,29 +395,6 @@
   @keyframes hintGlow{0%,100%{box-shadow:0 0 0 0 rgba(255,180,84,0)}
                       50%{box-shadow:0 0 0 4px rgba(255,180,84,.45)}}
 
-  /* ★배치는 드래그로만 한다 (박사님 2026-08-03).
-     드롭다운+[두기]는 방을 안 보고도 놓을 수 있어서 "자리를 고른다"는 감각이 사라진다.
-     ⚠ 요소는 지우지 않고 숨긴다 — 드래그가 이 select 를 통해 배치를 하고,
-       기존 검증·테스트도 이 id 를 본다. 보이지만 않게 한다. */
-  #sheet .itemcard .place{display:none}
-  #ctl label[for="slot"]{display:none}
-  .dragcue{margin-top:6px;font-size:11px;color:var(--gold);display:flex;align-items:center;gap:5px}
-  .dragcue::before{content:'±D';font-size:14px;animation:cueBob 1.3s ease-in-out infinite}
-  @keyframes cueBob{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
-
-  /* ★어디를 눌러야 하는지 손가락으로 가리킨다 (박사님 요청).
-     버튼이 여럿인데 무엇을 눌러야 하는지 화면이 말해 주지 않았다. */
-  #hint{position:fixed;z-index:70;pointer-events:none;display:none;transform:translate(-50%,0)}
-  #hint.on{display:block}
-  #hint .hand{font-size:30px;display:block;text-align:center;
-    filter:drop-shadow(0 3px 6px rgba(0,0,0,.6));animation:handBob 1.1s ease-in-out infinite}
-  @keyframes handBob{0%,100%{transform:translateY(0)}50%{transform:translateY(-9px)}}
-  #hint .say{display:block;margin-top:2px;padding:5px 11px;border-radius:999px;white-space:nowrap;
-    font-family:'Jua';font-size:12.5px;background:rgba(255,180,84,.94);color:#2a1c06;
-    box-shadow:0 4px 12px rgba(0,0,0,.45)}
-  .hintTarget{position:relative;animation:hintGlow 1.4s ease-in-out infinite}
-  @keyframes hintGlow{0%,100%{box-shadow:0 0 0 0 rgba(255,180,84,0)}
-                      50%{box-shadow:0 0 0 4px rgba(255,180,84,.45)}}
 
   /* 마우스가 있는 환경에서만 호버를 켠다 — 터치에서 호버는 "탭했는데 안 눌림"이 된다 */
   @media (hover:hover) and (pointer:fine){
@@ -523,6 +538,8 @@
   <!-- ══ 상단 상태 ══════════════════════════════════════════════════════ -->
   <header id="topbar">
     <div class="resourcebar">
+      <!-- 나 — 누르면 내가 누구고 지금 어디까지 왔는지 -->
+      <button id="meChip" aria-label="나"><img id="meFace" src="./assets/characters/portraits/portrait_jachwi_neutral.png" alt=""></button>
       <div class="resource r-day"><span id="resWhen">아침</span><b id="resDay">Day 0</b></div>
       <div class="resource r-food"><span id="resFoodLabel">첫 수확일 식비</span><b id="resFood">—</b></div>
       <div class="resource r-saved"><span>아낀 식비</span><b id="resSaved">0원</b></div>
@@ -594,7 +611,18 @@
   <div class="gsub">아무 곳이나 누르면 닫힙니다</div>
   <button id="guideClose">알겠어요</button>
 </div>
-<div id="hint"><span class="hand">👆</span><span class="say"></span></div>
+
+<!-- ══ 상세 창 — 나 · 아이템 · 식물이 한 틀을 나눠 쓴다 ═══════════════════
+     ★셋을 따로 만들지 않는다. 폰에서 창이 늘어나면 어디서 무엇을 보는지 안 잡힌다.
+       내용만 바뀌고 여는 손버릇(탭 → 뜸 → 아무 데나 눌러 닫음)은 하나다. -->
+<div id="detail" aria-hidden="true">
+  <div class="dcard" role="dialog" aria-labelledby="dTitle">
+    <button id="dClose" aria-label="닫기">✕</button>
+    <div class="dhead"><img id="dArt" alt=""><div><b id="dTitle">—</b><small id="dSub"></small></div></div>
+    <div id="dBody"></div>
+    <div class="dbtns" id="dBtns"></div>
+  </div>
+</div>
 
 <!-- ══ 바텀시트 — 가방·자리·설정. 폰이라 옆이 아니라 아래에서 올라온다 ══ -->
 <div id="sheetScrim"></div>
@@ -616,7 +644,6 @@
           <div class="itemhead"><img class="thumb" id="cropThumb" alt="열린 콩나물 시루">
             <div><b>열린 콩나물 시루</b><small id="cropState">가방에 있음</small></div></div>
           <div class="meter"><i id="cropMeter"></i></div><div class="itemline" id="cropInfo">4일 뒤 첫 수확</div>
-          <div class="dragcue">이 그림을 <b>끌어서</b> 방 안에 놓으세요</div>
           <div class="dragcue">이 그림을 <b>끌어서</b> 방 안에 놓으세요</div>
           <div class="place"><label for="cropSlot" class="sr-only">콩나물 자리</label><select id="cropSlot"></select><button id="placeCrop">두기</button></div>
         </div>
@@ -1149,6 +1176,119 @@ function bindGuide() {
   }
 }
 
+/* ══ 상세 창 — 나 · 아이템 · 식물 (박사님 2026-08-03: "캐릭창/인벤/템창/식물창") ══
+   ★셋을 따로 만들지 않는다. 폰에서 창이 늘어나면 어디서 무엇을 보는지 안 잡힌다.
+     틀 하나에 내용만 갈아 끼우고, 여는 손버릇(탭 → 뜸 → 아무 데나 눌러 닫음)은 하나로 둔다. */
+const won = n => (n == null ? '—' : Math.round(n).toLocaleString('ko-KR') + '원');
+const detail = {
+  open(kind) {
+    const d = $('detail');
+    const view = this[kind];
+    if (!view) return;
+    const v = view.call(this);
+    $('dArt').src = v.art; $('dArt').alt = '';
+    $('dTitle').textContent = v.title;
+    $('dSub').textContent = v.sub || '';
+    $('dBody').innerHTML = v.body;
+    const btns = $('dBtns'); btns.innerHTML = '';
+    for (const b of (v.btns || [])) {
+      const el = document.createElement('button');
+      el.textContent = b.ko; el.className = b.primary ? 'primary' : 'ghost';
+      el.disabled = !!b.off;
+      if (b.why) el.title = b.why;
+      el.onclick = () => { this.close(); b.go && b.go(); };
+      btns.appendChild(el);
+    }
+    d.classList.add('on'); d.setAttribute('aria-hidden', 'false');
+    hintAt(null);
+  },
+  close() { $('detail').classList.remove('on'); $('detail').setAttribute('aria-hidden', 'true'); updateHint(); },
+
+  /* 나 — 내가 누구고 지금 어디까지 왔나. 튜토리얼 체크리스트가 여기 산다.
+     ★상단 칩은 숫자만 보여 준다. "왜 그 숫자인지"는 여기서 읽는다. */
+  me() {
+    const fp = S.firstPlay, ts = S.tutorial;
+    const rows = [
+      ['오늘', `Day ${S.day} · ${SEASON_KO[seasonAt(ts, S.day)] || '여름'}`],
+      ['사는 곳', '반지하 원룸'],
+      ['아낀 식비', won(fp.food && fp.food.totalFoodSavedWon)]
+    ];
+    if (ts && ts.enabled && fp.completed) {
+      rows.push(['소지금', won(ts.cashWon)], ['월세', won(ts.rules && ts.rules.rentWon) + ' / 달']);
+    }
+    const learn = [
+      ['어두운 자리에도 쓸모가 있다', ts && ts.learned && ts.learned.cropDark],
+      ['밝은 자리라야 자란다',       ts && ts.learned && ts.learned.plantWindow],
+      ['거둬서 아낀다',               ts && ts.learned && ts.learned.harvest],
+      ['새순이 오른다',               ts && ts.learned && ts.learned.spear]
+    ];
+    return {
+      art: './assets/characters/portraits/portrait_jachwi_neutral.png',
+      title: '나', sub: '고아 자취생 · 반지하 첫 여름',
+      body: rows.map(([k, v]) => `<div class="row"><span>${k}</span><b>${v}</b></div>`).join('')
+        + '<p>부모님은 안 계신다. 가진 건 반지하 한 칸과, 어느 날 뿅 나타난 몬이뿐이다.</p>'
+        + '<ul class="todo">' + learn.map(([k, ok]) => `<li class="${ok ? 'done' : ''}">${k}</li>`).join('') + '</ul>',
+      btns: [{ ko: '몬이는 누구?', go: () => detail.open('moni') }]
+    };
+  },
+  moni() {
+    return {
+      art: './assets/characters/portraits/portrait_moni_neutral.png',
+      title: '몬이', sub: '식물신이 보낸 마스코트',
+      body: '<p>어느 날 뿅 나타나서는 식물신이 보냈다고 했다. 무엇을 어떻게 해야 하는지 알려 준다.</p>'
+          + '<p>따라다니기만 하고 대신 해 주지는 않는다 — 자리를 고르는 건 내 몫이다.</p>'
+    };
+  },
+
+  /* 아이템 — 이게 무엇이고, 지금 어떤 상태고, 어떻게 쓰나 */
+  crop() {
+    const b = S.firstPlay.beansprout;
+    const days = (S.firstPlay.rules && S.firstPlay.rules.harvestDays) || 4;
+    const where = b.harvested ? '수확을 마침'
+                : b.at || b.slotId ? (b.slotId && !isFreeSlotId(b.slotId) ? slotLabel(b.slotId) + '에 있음' : '방에 놓여 있음')
+                : '가방에 있음';
+    return {
+      art: OPEN_SIRU.thumbnail, title: '열린 콩나물 시루', sub: where,
+      body: `<div class="row"><span>자란 날</span><b>${b.ageDays || 0} / ${days}일</b></div>`
+        + `<div class="row"><span>받은 빛(평균)</span><b>${b.avgDli != null ? b.avgDli.toFixed(2) : '—'} DLI</b></div>`
+        + (b.quality ? `<div class="row"><span>품질</span><b>${b.quality}</b></div>` : '')
+        + '<p>콩나물은 <b>어두울수록</b> 잘 자란다. 빛을 보면 쓴맛이 난다 — 이 방에서 제일 어두운 자리를 찾으면 된다.</p>'
+        + '<p>가방의 그림을 방으로 <b>끌어다</b> 놓는다.</p>'
+    };
+  },
+  monstera() {
+    const p = pot0(S);
+    if (!p) return { art: './assets/ui/item_monstera.png', title: '몬스테라', sub: '아직 만나지 못함',
+                     body: '<p>콩나물을 첫 수확하면 찾아온다.</p>' };
+    const dli = lastTurn && lastTurn.dli;
+    return {
+      art: './assets/ui/item_monstera.png', title: '몬스테라',
+      sub: p.slotId && !isFreeSlotId(p.slotId) ? slotLabel(p.slotId) + '에 있음' : '방에 놓여 있음',
+      body: `<div class="row"><span>지금 단계</span><b>${(lastTurn && lastTurn.growthPhase && lastTurn.growthPhase.phaseKo) || '—'}</b></div>`
+        + `<div class="row"><span>오늘 받은 빛</span><b>${dli != null ? dli.toFixed(2) + ' DLI' : '아직 없음'}</b></div>`
+        + `<div class="row"><span>상태</span><b>${(lastTurn && lastTurn.slot && lastTurn.slot.ko) || '아직 없음'}</b></div>`
+        + `<div class="row"><span>돌본 날</span><b>${p.daysPlanted || 0}일</b></div>`
+        + '<p>이미 자란 개체가 도착한 것이다. <b>밝은 자리</b>라야 새순이 오르고, 어두우면 날짜만 간다.</p>',
+      btns: [{ ko: '자세히 보기', primary: true, go: () => window.__byeotZoom.open() }]
+    };
+  }
+};
+function bindDetail() {
+  $('meChip').onclick = () => detail.open('me');
+  $('dClose').onclick = () => detail.close();
+  $('detail').onclick = e => { if (e.target === $('detail')) detail.close(); };
+  /* 아이템 카드를 눌러서 연다. ★끌기와 부딪히지 않게 — 끄는 중이면 열지 않는다 */
+  const card = (el, kind) => {
+    if (!el) return;
+    el.addEventListener('click', e => {
+      if (drag.on || e.target.closest('button,select')) return;
+      detail.open(kind);
+    });
+  };
+  card($('cropThumb').closest('.itemcard'), 'crop');
+  card($('plantCard'), 'monstera');
+}
+
 window.__byeotHint = () => { try { updateHint(); } catch (e) { /* 안내가 게임을 막지 않는다 */ } };
 function updateHint() {
   const fp = S.firstPlay, ts = S.tutorial;
@@ -1627,7 +1767,9 @@ function syncRoom() {
          되짚어야 하는데, spear_furled 는 축마다 되풀이돼서 어림이 섞인다(±1일).
          코어는 이미 이 값을 갖고 있으므로 안 넘길 이유가 없다. */
       growthDays: lastTurn && lastTurn.effectiveGrowthDays,
-      band: lastTurn && lastTurn.band,
+      /* ★turn 에는 band 가 없다 — judgeDLI 결과는 turn.slot 안에 있다.
+         지금까지 undefined 가 가서 방 화면의 밴드 색이 안 붙고 있었다. */
+      band: lastTurn && lastTurn.slot && lastTurn.slot.band,
       fade: p.fade,
       potD: ARRIVAL_POT_D,
       potId: p.id
@@ -2511,6 +2653,7 @@ try {
   draw();
   window.__byeotBooted = true;      // 밖의 감시자에게 "여기까지는 왔다"고 알린다
   bindGuide();                      // 조작 안내판 — 처음이면 인트로 뒤에 저절로 뜬다
+  bindDetail();                     // 나 · 아이템 · 식물 상세
   bootRoomView();                   // 방 3D — 실패해도 게임은 돌아간다(아래)
   dlgOpen('intro');                 // 몬이가 무엇을 하는 게임인지 한 번에 말해 준다
 } catch (err) {
