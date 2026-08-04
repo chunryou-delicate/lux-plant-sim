@@ -50,6 +50,7 @@ import { createTutorialState } from './tutorial.js';
 import { inRoom, isFreeSlotId, makeAt } from './place.js';
 import { PROPAGATION_SCHEMA, rehomeCuttings, syncCuttingLeaves } from './propagation.js';
 import { SHOP_SCHEMA, createShopState } from './shop.js';
+import { STORY_SCHEMA, createStoryState } from './oneroom.js';
 
 /* 저장 봉투의 스키마. **모르는 값이면 읽지 않는다**(fail-loud). */
 export const SAVE_SCHEMA = 'game_save/1';
@@ -75,7 +76,7 @@ export const DLI_HIST_KEEP = null;
    조용히 안 저장되는 칸이 생기는 것이 제일 나쁘다. */
 const KNOWN_STATE_KEYS = Object.freeze([
   'schema', 'day', 'timeScale', 'sim', 'home', 'lamps',
-  'pots', 'cuttings', 'firstPlay', 'tutorial', 'shop', 'perks', 'dliHist', 'ledger', 'log'
+  'pots', 'cuttings', 'firstPlay', 'story', 'tutorial', 'shop', 'perks', 'dliHist', 'ledger', 'log'
 ]);
 
 /* ---------------------------------------------------------------
@@ -485,6 +486,25 @@ function packTutorial(ts) {
   };
 }
 
+/* ★ 스토리 ③④ (2026-08-05) — 원룸에 들어온 날과 엔딩을 본 날.
+   ★ **단계(stage)는 안 적는다.** 단계는 `tutorial.movedOut` 과 아래 `ending.doneOnDay` 에서
+     유도한다(oneroom.stageOf). 적어 두면 둘이 갈렸을 때 어느 쪽이 사실인지 알 수 없다.
+   ⚠ `doneOnDay` 를 잃으면 **끝난 판이 다시 안 끝난 판**이 되고, 초보 모드도 다시 켜진다
+     (propagation.isNoviceMode 가 이 값을 본다). 조용히 틀리는 유형이라 반드시 남긴다. */
+function packStory(story) {
+  if (!story) return null;
+  const end = needObj(story.ending || {}, 'story.ending');
+  const optDay = (v, path) => (v == null ? null : needInt(v, path, { min: 0 }));
+  return {
+    schema: needStr(story.schema || STORY_SCHEMA, 'story.schema'),
+    movedInOnDay: optDay(story.movedInOnDay, 'story.movedInOnDay'),
+    ending: {
+      reachedOnDay: optDay(end.reachedOnDay, 'story.ending.reachedOnDay'),
+      doneOnDay: optDay(end.doneOnDay, 'story.ending.doneOnDay')
+    }
+  };
+}
+
 /* ★ 상점 (2026-08-03) — **배송 중인 주문이 세이브의 핵심**이다.
    돈은 이미 나갔고 물건은 아직 안 왔으므로, 안 적으면 저장 한 번에 **돈만 사라진다.**
    `arrivesOnDay` 는 절대 게임일이라 복원 뒤에도 그대로 맞는다(상대 일수로 적으면 어긋난다). */
@@ -580,6 +600,7 @@ export function serialize(S, opt = {}) {
       pots: needArr(S.pots || [], 'pots').map(packPot),
       cuttings: needArr(S.cuttings || [], 'cuttings').map(packCutting),
       firstPlay: packFirstPlay(S.firstPlay),
+      story: packStory(S.story),
       tutorial: packTutorial(S.tutorial),
       shop: packShop(S.shop),
       /* ★ 보상으로 켜지는 편의 기능 (2026-08-04 · state.js §perks).
@@ -934,6 +955,11 @@ export function deserialize(raw, opt = {}) {
     ts.movedOut = t.movedOut; ts.bankrupt = t.bankrupt;
     S.tutorial = ts;
   }
+
+  /* 스토리 ③④ — 없는(옛) 세이브면 **처음 상태**로 연다.
+     ★ 그래도 단계는 안 틀린다: 옛 세이브에 `tutorial.movedOut = true` 가 있으면
+       `oneroom.stageOf` 가 그것만 보고 ③ 원룸이라고 답한다(단계를 저장 안 하는 이유가 이것이다). */
+  S.story = st.story ? { ...createStoryState(), ...packStory(st.story) } : createStoryState();
 
   /* 상점 — 쓸 때와 **같은 검증**을 읽을 때도 태운다. 없는(옛) 세이브면 빈 상점으로 연다. */
   S.shop = st.shop ? { ...createShopState(), ...packShop(st.shop) } : createShopState();

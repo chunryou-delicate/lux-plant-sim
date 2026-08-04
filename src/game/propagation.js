@@ -180,12 +180,24 @@ export function returnContainer(S, itemId, qty = 1) {
         손실이 "삽수 1개 + 그 32일"로 끝나고 진행이 막히지 않는다
 ============================================================ */
 export function isNoviceMode(S) {
-  /* 스토리 모드 전체가 초보다(docs/story_arc.md §0). 코어에서 그 신호는 둘이다:
+  /* 스토리 모드 **전체**가 초보다(docs/story_arc.md §0). 코어에서 그 신호는 둘이다:
        · sim.mode === 'novice'
-       · 반지하 튜토리얼이 켜져 있다(=스토리 진행 중) */
+       · 스토리가 아직 도는 중이다 — 반지하 튜토가 켜져 있고 ④ 엔딩을 아직 안 봤다
+
+     ★★ 2026-08-05 정정 — 예전에는 `!S.tutorial.movedOut` 이었다. 그러면 **② 탈출에서
+       초보가 꺼진다.** 그런데 story_arc.md §0 이 못 박은 범위는 *"①반지하 → ②탈출 →
+       ③원룸 → ④내 집 마련 엔딩 ← 여기까지"* 다. ③④ 가 통째로 빠져 있었던 것이고,
+       그 판에서는 이사하는 순간 삽수 유예가 16일 → 8일로 줄고 모주를 끝내는 자르기가
+       열린다(§키메라·§2). **초보는 죽지 않는다는 약속이 이사 버튼에서 깨졌다.**
+     ★ 새 이벤트 체계를 만들지 않았다 — `S.story.ending.doneOnDay` 한 칸을 읽을 뿐이다.
+       ⚠ 여기서 oneroom.js 를 import 하지 않는다: 그쪽이 propagation 을 부르므로 순환이 된다
+         (shop ↔ propagation 과 같은 규약). 대신 **읽기만** 한다.
+       ⚠ 둘이 갈리면 초보가 반씩 켜진다 — tools/test_oneroom.mjs 검사 F 가 등식을 고정한다. */
   if (!S) return false;
   if (S.sim && S.sim.mode === 'novice') return true;
-  return !!(S.tutorial && S.tutorial.enabled && !S.tutorial.movedOut);
+  if (!(S.tutorial && S.tutorial.enabled)) return false;
+  const end = S.story && S.story.ending;
+  return !(end && end.doneOnDay != null);
 }
 
 export function graceDaysOf(method, novice) {

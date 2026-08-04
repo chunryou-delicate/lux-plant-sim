@@ -31,6 +31,13 @@ export const TUTORIAL_RULES = Object.freeze({
   startCashWon: 1_000_000,        // game_flow.md — "없음"이 정체성이라 안 올린다
   moveOutCostWon: 1_500_000,      // 원룸 보증금 + 첫 달 월세 + 이사비. 실비 근거가 있어 안 내린다
   rentWon: 300_000,               // 반지하 월세
+  /* ★★ ③ 원룸 월세 — **⏸ 미확정이라 자리만 둔다** (2026-08-05 · docs/oneroom.md §2).
+     `null` 이면 이사한 뒤에도 반지하 월세로 돈다. 0 이 아니다 — 0 으로 두면 원룸이
+     공짜인 방이 조용히 성립하고, 그게 미확정이었다는 것을 아무도 모른다.
+     확정되면 여기 숫자를 박는 것이 아니라 `oneroom.withOneroomRent(TUTORIAL_RULES,
+     oneroom.oneroomRulesFromHomes(homes))` 가 이 칸을 채운 사본을 낸다 —
+     살림 값의 정본은 `data/balance/homes.json`(plan 소유)이지 코어가 아니다. */
+  oneroomRentWon: null,
   rentGraceDays: 30,              // ★첫 달 유예. plan 권고 — 서사 장치이고 정체성을 안 건드린다
   rentPeriodDays: 30,             // 월세 주기. 아래 dailyCashOutWon 이 이 값으로 하루치를 뗀다
 
@@ -136,13 +143,30 @@ export function foodSavedWon(ts, mealsUsed) {
   return Math.max(0, Math.round(mealsUsed || 0)) * ts.rules.mealCostWon;
 }
 
+/* ★★ 이번 달 월세는 얼마인가 — **사는 방이 정한다** (2026-08-05 · ③ 원룸).
+   ------------------------------------------------------------
+   반지하는 `rentWon`, 원룸은 `oneroomRentWon` 이다. 어느 쪽인지는 **세이브에 있는 사실**
+   (`ts.movedOut`)로 고른다 — `ts.rules` 자체를 갈아 끼우면 저장 왕복에서 사라진다
+   (save.js §packTutorial: "여기도 rules 는 안 적는다"). 그래서 규칙 객체에 두 값을 다 담고
+   고르는 일만 여기서 한다. 읽는 곳은 이 함수 하나뿐이다 — 여러 곳에서 고르면 반씩 바뀐다.
+   ⚠ `oneroomRentWon` 이 `null`(미확정)이면 반지하 월세로 그대로 돈다. 숫자를 지어내지 않는다. */
+export function rentWonOf(ts) {
+  const R = (ts && ts.rules) || TUTORIAL_RULES;
+  if (ts && ts.movedOut && R.oneroomRentWon != null) return R.oneroomRentWon;
+  return R.rentWon;
+}
+
 /* ★ 오늘 지갑에서 나가는 돈 — **월세 몫을 뺀 나머지**다.
    `dailySpendWon` 은 월세를 포함한 하루 지출 합(20,000)이고, 월세는 30일마다 목돈으로
-   따로 나간다. 두 번 떼지 않으려면 여기서 한 번 나눠야 한다(TUTORIAL_RULES 주석 참고). */
+   따로 나간다. 두 번 떼지 않으려면 여기서 한 번 나눠야 한다(TUTORIAL_RULES 주석 참고).
+   ★ 뺄 몫도 **지금 사는 방의 월세**다(rentWonOf) — 안 그러면 원룸에서 하루치가
+     반지하 월세 몫만큼만 줄어 월세가 어긋난 만큼 두 번 새어 나간다.
+   ⏸ 원룸의 `dailySpendWon`(월세를 포함한 하루 지출 합) 자체는 아직 미확정이다 —
+     docs/oneroom.md §2. 여기서는 반지하 값을 그대로 쓰고 월세 몫만 바꾼다. */
 export function dailyCashOutWon(ts) {
   const R = ts.rules;
   const period = R.rentPeriodDays || 30;
-  return Math.max(0, Math.round(R.dailySpendWon - R.rentWon / period));
+  return Math.max(0, Math.round(R.dailySpendWon - rentWonOf(ts) / period));
 }
 
 export function buyLamp(ts) {
@@ -198,18 +222,19 @@ export function tutorialDay(ts, { firstPlayDone = false, mealsUsed = 0, savedWon
      새 규칙이 아니라 이미 있는 nextDueDay 를 읽기만 한다 — 상태를 늘리지 않았다. */
   if (ts.rent.paidCount === 0 && ts.day === ts.rent.nextDueDay - RENT_NOTICE_DAYS)
     ev.push({ id: 'rent_soon', ko: '월세 유예가 ' + RENT_NOTICE_DAYS + '일 뒤 끝납니다',
-              dueDay: ts.rent.nextDueDay, rentWon: R.rentWon });
+              dueDay: ts.rent.nextDueDay, rentWon: rentWonOf(ts) });
 
-  /* 월세 — 첫 달은 유예다(집주인 사정·보증금 상계라는 서사 장치) */
+  /* 월세 — 첫 달은 유예다(집주인 사정·보증금 상계라는 서사 장치).
+     ★ 액수는 **사는 방**이 정한다(rentWonOf) — 반지하와 원룸이 같을 이유가 없다. */
   let rentPaid = 0;
   if (ts.day >= ts.rent.nextDueDay) {
-    rentPaid = R.rentWon;
+    rentPaid = rentWonOf(ts);
     ts.cashWon -= rentPaid;
     ts.rent.paidCount += 1;
     ts.rent.nextDueDay += 30;
     /* ★첫 달과 그 뒤는 다른 사건이다 — 첫 달은 유예가 끝난 날이고, 그 뒤는 반복이다.
        대사도 갈린다(dialogue.rentFirst / rentAgain). */
-    ev.push({ id: 'rent', ko: '월세 ' + R.rentWon.toLocaleString() + '원',
+    ev.push({ id: 'rent', ko: '월세 ' + rentPaid.toLocaleString() + '원',
               first: ts.rent.paidCount === 1, count: ts.rent.paidCount });
   }
 
@@ -547,6 +572,11 @@ export function canMoveOut(ts) {
   };
 }
 
+/* ★★ 이것만 부르면 **방은 안 바뀐다** (2026-08-05 명시).
+   여기서 하는 일은 「이사비를 내고 깃발을 세우는 것」뿐이다 — `S.home.room` 은 그대로다.
+   스토리 경로는 `oneroom.moveIntoOneroom(S, io)` 를 부른다. 그쪽이 이 함수를 감싸고
+   방·자리·조도까지 옮긴다. 이 함수를 직접 부르면 「이사했다는데 여전히 반지하」가 된다
+   (실제로 game.html 의 [원룸으로 이사] 버튼이 그 상태다 — docs/oneroom.md §6 배선 인계). */
 export function moveOut(ts) {
   const c = canMoveOut(ts);
   if (!c.ok) {

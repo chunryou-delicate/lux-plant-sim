@@ -77,6 +77,17 @@ export function newState(opt = {}) {
        첫 플레이가 끝나기 전에는 날짜도 돈도 계절도 안 움직인다. */
     tutorial: createTutorialState({ enabled: !!opt.firstPlay }),
 
+    /* ★★ 스토리 ③④ — 원룸에 언제 들어왔나 · 엔딩을 봤나 (2026-08-05 신설).
+       규칙과 수치는 src/game/oneroom.js · ending.js 가 갖는다(docs/oneroom.md 가 정본).
+       ⚠ **여기서 import 하지 않는다** — state 를 import 하는 쪽이라 순환이 된다
+         (`cuttings`·`perks` 와 같은 규약: 모양만 여기, 규칙은 저쪽).
+         두 곳이 갈리지 않게 `tools/test_oneroom.mjs` 검사 A 가 등식을 고정한다.
+       ★ **단계(stage)를 여기 안 적는다.** 단계를 정하는 사실은 이미 상태에 둘 다 있다 —
+         `tutorial.movedOut`(②를 했나)과 아래 `ending.doneOnDay`(④를 봤나)다.
+         적어 두면 「이사는 했는데 단계는 반지하」인 어긋난 판이 생기고 고칠 길이 없다. */
+    story: { schema: 'story/1', movedInOnDay: null,
+             ending: { reachedOnDay: null, doneOnDay: null } },
+
     /* 인터넷 주문 상점 — 배송 중인 주문과 도착한 재고 (2026-08-03).
        규칙·값·배송일은 src/game/shop.js 가 갖는다(docs/shop.md 가 정본).
        ★첫 콩나물 시루는 **공짜로 준 것**이라 재고에 안 들어간다. 그 뒤부터 주문이다. */

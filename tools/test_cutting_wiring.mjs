@@ -60,9 +60,12 @@ function newGame({ novice = true, cash = 0 } = {}) {
   S.day = 1;
   S.tutorial.enabled = true;
   S.tutorial.cashWon = cash;
-  /* 초보 판정은 `sim.mode==='novice'` 이거나 튜토리얼이 도는 중이다(propagation.isNoviceMode).
-     자유 모드를 재려면 둘 다 꺼야 한다 — 하나만 끄면 여전히 초보로 읽힌다. */
-  if (!novice) { S.sim.mode = 'real'; S.tutorial.movedOut = true; }
+  /* 초보 판정은 `sim.mode==='novice'` 이거나 **스토리가 도는 중**이다(propagation.isNoviceMode).
+     자유 모드를 재려면 둘 다 꺼야 한다 — 하나만 끄면 여전히 초보로 읽힌다.
+     ★ 2026-08-05 — 예전에는 `movedOut = true` 로 껐다. 그건 ② 탈출이지 스토리의 끝이 아니다
+       (story_arc.md §0 은 ④ 엔딩까지 초보라고 못 박았다). 스토리를 끝내는 사실은
+       `story.ending.doneOnDay` 하나다 — tools/test_oneroom.mjs 검사 F 가 그 등식을 고정한다. */
+  if (!novice) { S.sim.mode = 'real'; S.tutorial.movedOut = true; S.story.ending.doneOnDay = 0; }
   S.pots.push({ id: 'pot_01', plantId: 'monstera', slotId: 'banjiha-sill:0',
                 at: null, variegated: false, gen: 0 });
   return S;

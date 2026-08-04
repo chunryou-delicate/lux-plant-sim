@@ -118,6 +118,7 @@ https://raw.githubusercontent.com/chunryou-delicate/lux-plant-sim/main/docs/hand
 | **`game_flow.md`** | ★ **한 판이 어떻게 흘러가나** — 캐릭터×모드×초·중·후반 · 지루한 구간 |
 | `balance_decisions.md` | **왜 그 숫자인지.** 값 바꾸기 전 필독 (모드별 판정 단위 §②′) |
 | **`propagation.md`** | ★ **삽수(번식) 정본** — 어디를 자르나 · 물꽂이 · 무늬 계승 · 엔딩 역산 |
+| **`oneroom.md`** | ★ **③ 원룸 · ④ 내 집 마련 정본** — 이사가 실제로 일어나는 자리 · ⏸미확정 후보 · house 인계 |
 | **`headroom.md`** | ★ **머리공간 정본** — 위가 막히면 더 안 자란다(죽지 않는다). 반지하 실측·정지 시점 |
 | `env_difficulty_axis.md` | 시뮬 깊이 난이도축(빛→물→온도→습도) |
 | **`env_params.md`** | ★ **빛 외 파라미터 적용방안** — 온도·물·습도를 어느 계산에 끼우나. 스토리 모드 밖 |
