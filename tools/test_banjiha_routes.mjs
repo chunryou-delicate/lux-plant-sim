@@ -24,7 +24,8 @@ import vm from 'node:vm';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createProfileLight } from '../src/game/room_profile.js';
-import { newState, pot0, setPotSlot, resowCrop, waterCrop } from '../src/game/state.js';
+import { newState, pot0, setPotSlot, resowCrop, waterCrop,
+         cropWaterStatus } from '../src/game/state.js';
 import { nextDay, harvestCrop } from '../src/game/loop.js';
 import { firstPlayRulesFromBalance, placeBeansprout, moveMonstera, beansproutReady,
          FIRST_PLAY_RULES, CROP_KINDS } from '../src/game/first_play.js';
@@ -229,10 +230,13 @@ function play(opt = {}) {
   };
 
   for (let d = 1; d <= (opt.days || 240); d++) {
-    /* ★ 물주기 (2026-08-04) — [물 주기] + [다음 날] 이 표준 하루다(first_play.js §물주기).
-       물을 준 날만 자라므로 재현도 그 행위를 한다. 표준 플레이는 매일 주는 것이고,
-       빼먹으면 얼마나 늦어지는지는 tools/probe_crop_cycle.mjs 가 따로 잰다. */
-    if (opt.water !== false) { try { waterCrop(S); } catch { /* 안 놓았거나 이미 거둔 시루 */ } }
+    /* ★★ 물주기 = **회전 시작** (2026-08-04 새 규칙 · first_play.js §물주기).
+       한 번 누르면 **시루 하나**가 그날을 0일차로 잡는다. 그래서 하루에 한 번 누르는 이 재현은
+       시루가 여럿이면 **저절로 하루씩 어긋난다** — 그것이 표준 플레이다.
+       `opt.waterAll` 이면 그날 대기를 전부 시작한다(= 겹치는 판. B-2 가 그 대조군을 쓴다). */
+    if (opt.water !== false) {
+      try { waterCrop(S, { all: !!opt.waterAll }); } catch { /* 아직 안 놓은 시루 */ }
+    }
 
     let turn;
     try { turn = nextDay(S, io).turn; }
@@ -436,48 +440,77 @@ check('B 콩나물 — 다시 심을 수 있고 회전이 이어진다 · 절감
   const b = r.S.firstPlay.beansprout;
   /* ★ 회전이 4일 → **5일**로 늘었다(2026-08-04) — 40일이면 일곱 번 남짓이다 */
   assert.ok(b.harvestCount >= 6, `40일에 수확이 ${b.harvestCount}번뿐입니다 — 회전이 안 돕니다`);
-  /* ★ 절감은 하루 600원 상한이다 — "매일 걸리나"는 **날수 × 상한**에 견주어 본다.
-     첫 회전(5일)은 곳간이 비어 있으므로 그만큼 빼고 센다. */
-  const RULES_CAP = r.S.firstPlay.rules.dailyCropSaveWon;
-  const expectMin = RULES_CAP * (40 - r.S.firstPlay.rules.harvestDays) * 0.9;
-  assert.ok(r.S.firstPlay.food.totalFoodSavedWon > expectMin,
-    `총 절감이 ${r.S.firstPlay.food.totalFoodSavedWon}원 (기대 ${Math.round(expectMin)}원 이상) — 매일 안 걸리고 있습니다`);
+  /* ★★ 2026-08-04 — 하루 상한이 600원에서 **한 회전분(3,000원)** 으로 올랐다(§dailyCropSaveWon).
+     그래서 "매일 걸리나"를 날수 × 상한으로 재면 안 된다 — 시루 하나로는 그 상한을 못 채운다.
+     ★ 옛 검사가 지키려던 것은 **"거둔 것이 곳간에서 안 새 나가나"** 다. 그건 그대로 잰다:
+       거둔 값의 합 = 이미 먹은 것 + 곳간에 남은 것 + 쉬어서 버린 것. 한 푼도 안 새야 한다. */
+  const fpS = r.S.firstPlay;
+  const cycleWon = fpS.rules.cropKindSavedWon[0];
+  const gotWon = b.harvestCount * cycleWon;                 // 시루 하나 = 겹칠 일이 없다
+  const eaten = fpS.food.totalFoodSavedWon;
+  assert.ok(eaten + fpS.food.pantryWon >= gotWon * 0.99 &&
+            eaten + fpS.food.pantryWon <= gotWon + 1,
+    `거둔 ${gotWon}원 중 먹은 ${eaten}원 + 곳간 ${fpS.food.pantryWon}원 — 어디론가 샜습니다`);
+  /* 회전이 5일이므로 40일이면 대략 (40−5)/5 × 3,000원이 실제로 밥값에서 빠져야 한다 */
+  const expectMin = cycleWon * Math.floor((40 - fpS.rules.harvestDays) / fpS.rules.harvestDays) * 0.9;
+  assert.ok(eaten > expectMin,
+    `총 절감이 ${eaten}원 (기대 ${Math.round(expectMin)}원 이상) — 회전이 안 걸리고 있습니다`);
   info(`회전: 40일에 수확 ${b.harvestCount}번 · 총 절감 ${r.S.firstPlay.food.totalFoodSavedWon.toLocaleString()}원 ` +
        `· 씨앗·시루값 ${r.S.tutorial.crop.spentWon.toLocaleString()}원 ` +
        `(씨앗 ${buyPriceOf('bean_seed').toLocaleString()}원/시루)`);
 });
 
-/* ══ B-2 · ★★ 체감은 **개수가 아니라 종류**에 걸린다 (2026-08-04 박사님 확정) ══════ */
-check('B-2 ★같은 시루를 여러 개 사도 절감이 안 는다 — 씨앗값만 더 나간다', () => {
+/* ══ B-2 · ★★ 시루를 늘리면 **짜임새**를 사는 것이다 (2026-08-04 박사님 확정) ══════
+   ------------------------------------------------------------
+   옛 검사는 "시루를 늘려도 절감이 아예 안 는다"였다. 그 규칙은 시루를 살 이유를 없앴다.
+   지금 지키는 것은 그 자리에 들어온 새 규칙이다:
+     거두는 날이 **어긋나면** 시루마다 온전히 3,000원 · **겹치면** 3,000 → 2,000 → 1,000 → 0원.
+   ★ 이 재현은 하루에 [물 주기]를 **한 번** 누른다 = 시루가 하루씩 어긋나게 시작한다.
+     그래서 시루를 늘린 판은 저절로 시차가 생긴다 — 그것이 표준 플레이다. */
+check('B-2 ★시루를 늘리고 어긋나게 돌리면 절감이 는다 — 겹치면 깎인다', () => {
   const one   = play({ seed: 3, days: 40, propagate: false, cropSlot: DARK, plantSlot: SILL, sirus: 1 });
   const three = play({ seed: 3, days: 40, propagate: false, cropSlot: DARK, plantSlot: SILL, sirus: 3 });
-  assert.equal(three.S.firstPlay.food.totalFoodSavedWon, one.S.firstPlay.food.totalFoodSavedWon,
-    '★시루를 셋 돌렸더니 절감이 늘었습니다 — 개수에 값이 붙고 있습니다(질림 규칙 위반)');
+  const s1 = one.S.firstPlay.food.totalFoodSavedWon;
+  const s3 = three.S.firstPlay.food.totalFoodSavedWon;
+  assert.ok(s3 > s1 * 1.5,
+    `★시루를 셋 돌렸는데 절감이 ${s1} → ${s3} 원뿐입니다 — 시차가 값을 못 만들고 있습니다`);
   assert.ok(three.S.tutorial.crop.spentWon > one.S.tutorial.crop.spentWon,
-    '★시루를 셋 돌렸는데 씨앗값이 안 늘었습니다 — 늘리는 것이 공짜가 되면 안 됩니다');
-  assert.ok(three.S.tutorial.cashWon < one.S.tutorial.cashWon,
-    '★시루를 셋 돌렸는데 손해가 아닙니다 — "질려서 못 먹는다"가 값으로 안 나타납니다');
-  info(`체감의 축: 시루 1개 절감 ${one.S.firstPlay.food.totalFoodSavedWon.toLocaleString()}원 · ` +
-       `시루 3개도 같은 ${three.S.firstPlay.food.totalFoodSavedWon.toLocaleString()}원 ` +
-       `(씨앗값만 ${one.S.tutorial.crop.spentWon.toLocaleString()} → ${three.S.tutorial.crop.spentWon.toLocaleString()}원)`);
-  info(`  ⤷ 늘리려면 **다른 작물**이라야 한다 — 종류 순번별 ` +
-       `${FIRST_PLAY_RULES.cropKindSavedWon.map(w => w.toLocaleString()).join(' → ')}원/회전. ` +
-       `지금 작물은 ${CROP_KINDS.length}종뿐이라 2·3종은 자리만 있다`);
+    '★시루를 셋 돌렸는데 씨앗·시루값이 안 늘었습니다 — 늘리는 것이 공짜가 되면 안 됩니다');
+  info(`짜임새: 시루 1개 절감 ${s1.toLocaleString()}원 → 시루 3개(하루씩 어긋남) ${s3.toLocaleString()}원 ` +
+       `(씨앗·시루값 ${one.S.tutorial.crop.spentWon.toLocaleString()} → ` +
+       `${three.S.tutorial.crop.spentWon.toLocaleString()}원)`);
+  info(`  ⤷ 겹치면 순번별로 ` +
+       `${FIRST_PLAY_RULES.cropKindSavedWon.map(w => w.toLocaleString()).join(' → ')}원/회전으로 깎인다. ` +
+       `★${RULES.harvestDays}일 주기니까 **${RULES.harvestDays}개까지**가 천장이다 — 규칙에서 나온 값이다`);
+  /* ★★ 겹치면 실제로 깎이는지 — 같은 판을 **한꺼번에 시작**시켜 확인한다 */
+  const same = play({ seed: 3, days: 40, propagate: false, cropSlot: DARK, plantSlot: SILL,
+                      sirus: 3, waterAll: true });
+  assert.ok(same.S.firstPlay.food.totalFoodSavedWon < s3,
+    `★셋을 같은 날 시작했는데 어긋나게 돌린 것과 절감이 같습니다 — 겹침이 안 물립니다`);
+  info(`  ⤷ 같은 날 셋을 다 시작하면 ${same.S.firstPlay.food.totalFoodSavedWon.toLocaleString()}원 ` +
+       `(어긋나게 돌린 ${s3.toLocaleString()}원보다 적다)`);
 });
 
-check('B-3 ★물주기가 회전 속도를 가른다 — 빼먹으면 늦어지고, 늦어진 만큼만 손해다', () => {
+/* ══ B-3 · ★★ 물은 **회전 시작**이다 (2026-08-04 새 규칙) ══════════════════
+   옛 검사가 지키려던 것("물이 회전을 가른다 · 그래도 안 죽는다")을 새 규칙에서 그대로 지킨다.
+   달라진 것은 벌의 모양이다: 마른 날이 아니라 **아직 시작을 안 한 것**이다. */
+check('B-3 ★물을 줘야 회전이 시작된다 — 안 주면 아무 일도 안 나고, 죽지도 않는다', () => {
   const wet = play({ seed: 3, days: 40, propagate: false, cropSlot: DARK, plantSlot: SILL });
-  const dryRun = play({ seed: 3, days: 40, propagate: false, cropSlot: DARK, plantSlot: SILL, water: false });
-  /* ★ 물을 한 번도 안 주면 콩나물이 한 번도 안 자란다 — 그런데 **죽지는 않는다** */
-  assert.equal(dryRun.S.firstPlay.beansprout.ageDays, 0, '★물을 안 줬는데 자랐습니다');
-  assert.equal(dryRun.S.firstPlay.beansprout.harvested, false);
-  assert.equal(dryRun.S.firstPlay.food.totalFoodSavedWon, 0, '★물을 안 줬는데 절감이 났습니다');
-  assert.ok(dryRun.S.firstPlay.beansprout.dryDays >= 39,
-    `마른 날이 ${dryRun.S.firstPlay.beansprout.dryDays}일뿐입니다 — 안 세고 있습니다`);
+  const never = play({ seed: 3, days: 40, propagate: false, cropSlot: DARK, plantSlot: SILL, water: false });
+  const nb = never.S.firstPlay.beansprout;
+  assert.equal(nb.ageDays, 0, '★물을 안 줬는데 자랐습니다');
+  assert.equal(nb.harvested, false);
+  assert.equal(never.S.firstPlay.food.totalFoodSavedWon, 0, '★물을 안 줬는데 절감이 났습니다');
+  /* ★ 시들지 않는다 — 시루는 그대로 놓여 있고 **시작을 기다린다** */
+  assert.equal(nb.pots.length, 1, '★안 준 시루가 사라졌습니다 — 죽으면 안 됩니다');
+  assert.equal(nb.pots[0].startedOnDay, null, '★안 줬는데 시작한 것으로 잡혔습니다');
+  const ws = cropWaterStatus(never.S);
+  assert.equal(ws.waiting, 1, '★시작을 기다리는 시루가 안 세어졌습니다');
+  assert.ok(ws.idleDays >= 39,
+    `★며칠째 안 줬는지가 ${ws.idleDays}일뿐입니다 — 화면이 "N일째 물을 안 줬습니다"를 못 말합니다`);
   assert.ok(wet.S.firstPlay.food.totalFoodSavedWon > 0);
-  info(`물 = 속도: 매일 주면 40일에 수확 ${wet.S.firstPlay.beansprout.harvestCount}번 · ` +
-       `한 번도 안 주면 0번(마른 날 ${dryRun.S.firstPlay.beansprout.dryDays}일) — ` +
-       `그래도 시들지 않는다(초보는 안 죽는다)`);
+  info(`물 = 회전 시작: 주면 40일에 수확 ${wet.S.firstPlay.beansprout.harvestCount}번 · ` +
+       `한 번도 안 주면 0번(${ws.idleDays}일째 대기) — 시들지 않고 그대로 기다린다`);
 });
 
 /* ══ C · ★막다른 길이 없다 ═══════════════════════════════════════════════ */

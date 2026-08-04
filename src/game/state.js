@@ -294,18 +294,26 @@ export function setCropAt(S, at, opt = {}) {
            snappedTo: r.snappedTo, dist: r.dist, moved: r.moved, keptDays: r.keptDays };
 }
 
-/* ★★ 물을 준다 — **게임 화면의 [물 주기] 버튼이 부르는 유일한 함수** (2026-08-04).
+/* ★ 시루를 놓는 것과 **회전을 시작하는 것은 다른 동작**이다 (2026-08-04 새 규칙).
+   예전에는 여기서 놓는 날 물을 부었다. 이제는 안 붓는다 — 물이 회전 시작이라
+   놓자마자 시작되면 플레이어가 시차를 만들 손이 사라진다(first_play.js §물주기). */
+
+/* ★★ 물을 준다 = **회전을 시작한다** — 게임 화면의 [물 주기] 버튼이 부르는 유일한 함수
    ------------------------------------------------------------
    규칙은 first_play.js §물주기 가 갖는다. 여기 있는 이유는 `setCropAt`·`resowCrop` 과 같다 —
    **오늘이 며칠인지는 S 만 안다.** first_play 는 게임일을 모르므로(fp 만 받는다) 날짜를
    호출부가 넘겨야 하는데, 그걸 화면에 맡기면 창마다 다른 날을 넘길 수 있다. 여기서 한 번 묶는다.
 
-   ★ 하루 한 번이고 **두 번 눌러도 안전하다** — 두 번째는 `already:true` 로 조용히 지난다.
+   ★★ 2026-08-04 새 규칙 — **회전당 한 번**이다. 매일 주는 것이 아니다.
+     한 번 누르면 **시루 하나**가 그날을 0일차로 잡고 시작한다. `{ all: true }` 면 전부.
+     ⇒ 시루 셋을 하루씩 걸러 시작하면 거두는 날이 하루씩 어긋난다 — 그게 시차이고, 손이다.
+   ★ 여러 번 눌러도 안전하다 — 시작할 시루가 없으면 `already:true` 로 조용히 지난다.
      던지지 않는 이유: 버튼을 두 번 누른 것은 고장이 아니고, 던지면 화면이 붉어진다.
-   ★ 돈이 안 든다. 물값을 만들지 않았다 — 이 행위가 가르치는 것은 **잊지 않는 것**이지
+   ★ 돈이 안 든다. 물값을 만들지 않았다 — 이 행위가 가르치는 것은 **언제 시작할지 정하는 것**이지
      살림이 아니다. 돈을 붙이면 "물을 안 주는 것이 절약"이 되어 규칙이 뒤집힌다.
-   반환 { watered, already, day, dryRun, events } */
-export function waterCrop(S) {
+     opt.all   대기 중인 시루를 전부 시작한다 (기본은 하나)
+   반환 { watered, already, day, started, waiting, idleDays, events } */
+export function waterCrop(S, opt = {}) {
   const fp = S && S.firstPlay;
   if (!fp || !fp.enabled || !fp.beansprout)
     throw new Error('[물주기] 첫 플레이 상태가 없습니다 — 물을 줄 시루가 없습니다');
@@ -314,10 +322,19 @@ export function waterCrop(S) {
     e.tutorialInput = true;                 // 안내지 고장이 아니다
     throw e;
   }
-  const r = waterBeansprout(fp, S.day);
-  if (r.watered) pushLog(S, '💧 콩나물에 물을 주었습니다');
+  const r = waterBeansprout(fp, S.day, opt);
+  if (r.watered)
+    pushLog(S, r.started > 1
+      ? `💧 시루 ${r.started}개에 물을 주었습니다 — 오늘이 0일차입니다 ` +
+        `(${fp.beansprout.harvestDays}일 뒤에 거둡니다)`
+      : `💧 콩나물에 물을 주었습니다 — 오늘이 0일차입니다 ` +
+        `(${fp.beansprout.harvestDays}일 뒤에 거둡니다` +
+        (r.waiting ? ` · 아직 안 준 시루 ${r.waiting}개` : '') + ')');
   return { ...r,
-           events: r.watered ? [{ id: 'crop_watered', ko: '콩나물에 물을 주었습니다' }] : [] };
+           events: r.watered
+             ? [{ id: 'crop_watered', ko: '콩나물 회전을 시작했습니다',
+                  started: r.started, waiting: r.waiting }]
+             : [] };
 }
 
 /* 오늘 물을 줘야 하나 — 버튼을 켤지 흐리게 할지의 근거. 상태를 안 바꾼다. */
@@ -352,33 +369,40 @@ export function resowCrop(S, opt = {}) {
   const fp = S && S.firstPlay;
   if (!fp || !fp.enabled || !fp.beansprout)
     throw new Error('[콩나물] 첫 플레이 상태가 없습니다 — 다시 심을 시루가 없습니다');
-  if (!fp.beansprout.harvested) {
+  const pots = (fp.beansprout.pots || []);
+  const had = Math.max(1, pots.length || Math.round(fp.beansprout.sirus || 1));
+  const sirus = opt.sirus == null ? had : opt.sirus;
+  if (!Number.isInteger(sirus) || sirus < 1)
+    throw new Error(`[콩나물] 시루 수가 1 이상의 정수가 아닙니다: ${sirus}`);
+  const sirusAdded = Math.max(0, sirus - had);
+  /* ★★ 거둔 시루만 다시 심는다 (2026-08-04 · first_play.js §다시 심는다).
+     시차 판에서는 늘 일부만 거둬져 있다 — 전부를 요구하면 시차를 둔 판이 영영 못 심는다. */
+  const harvestedCount = pots.filter(p => p.harvested).length;
+  if (!harvestedCount && !sirusAdded) {
     const e = new Error('[콩나물] 아직 수확하지 않았습니다 — 거둔 뒤에 다시 심습니다');
     e.tutorialInput = true;
     throw e;
   }
-  const had = Math.max(1, Math.round(fp.beansprout.sirus || 1));
-  const sirus = opt.sirus == null ? had : opt.sirus;
-  if (!Number.isInteger(sirus) || sirus < 1)
-    throw new Error(`[콩나물] 시루 수가 1 이상의 정수가 아닙니다: ${sirus}`);
+  /* 씨앗은 **실제로 심는 시루 수**만큼만 든다 — 자라는 중인 시루는 안 건드리므로 안 나간다 */
+  const seedsUsed = harvestedCount + sirusAdded;
 
   /* ★ 재고부터 뺀다. resowBeansprout 은 이력을 비우므로 되돌릴 수 없다 —
      "심어 놓고 씨앗이 없어서 실패"가 나면 그 회전이 통째로 사라진다. */
-  const sirusAdded = Math.max(0, sirus - had);
   if (sirusAdded > 0) useStock(S, 'siru', sirusAdded);
-  useStock(S, 'bean_seed', sirus);                 // 시루 하나에 씨앗 한 봉지
+  useStock(S, 'bean_seed', seedsUsed);             // 시루 하나에 씨앗 한 봉지
 
   const r = resowBeansprout(fp, { ...opt, sirus, day: S.day });
-  pushLog(S, `🌱 콩나물을 다시 심었습니다 — 시루 ${r.sirus}개 · 씨앗 ${sirus}봉지를 썼습니다`);
-  /* ★ 같은 작물은 몇 시루를 심어도 절감이 안 는다 (2026-08-04 · first_play.js §작물 종류).
-     막지는 않는다 — 놓을 자유는 남기고 **손해라는 사실만 말한다.** 막으면 규칙이 아니라 벽이 되고,
-     작물 종류가 늘었을 때 이 검사가 조용히 틀린 말을 하게 된다. */
-  if (sirus > 1)
-    pushLog(S, `🥱 시루 ${sirus}개를 심었지만 절감은 한 시루분입니다 — ` +
-               `같은 것을 계속 먹으면 질립니다. 늘리려면 **다른 작물**이라야 합니다`);
-  return { ...r, seedsUsed: sirus, sirusAdded, wastedSirus: sirus - 1,
+  pushLog(S, `🌱 콩나물을 다시 심었습니다 — 시루 ${r.resown}개 · 씨앗 ${seedsUsed}봉지를 썼습니다 ` +
+             `(물을 줘야 회전이 시작됩니다)`);
+  /* ★★ 2026-08-04 재정정 — 예전에는 "몇 시루를 심어도 절감은 한 시루분"이라고 말했다.
+     이제는 다르다: **거두는 때가 겹치면** 깎이고, 어긋나게 돌리면 온전히 받는다(§겹침).
+     그래서 막지도, 손해라고 말하지도 않는다 — **어떻게 하면 안 겹치는지**를 말한다. */
+  if (r.resown > 1)
+    pushLog(S, `⏱ 시루 ${r.resown}개를 한꺼번에 심었습니다 — 물을 **날을 달리해** 주면 ` +
+               `거두는 날이 어긋나 절감이 안 깎입니다(같은 날 거두면 3,000 → 2,000 → 1,000원)`);
+  return { ...r, seedsUsed, sirusAdded,
            events: [{ id: 'crop_resown', ko: '콩나물을 다시 심었습니다',
-                      sirus: r.sirus, cycle: r.cycle, seedsUsed: sirus }] };
+                      sirus: r.sirus, resown: r.resown, cycle: r.cycle, seedsUsed }] };
 }
 
 /* 추천 자리에 놓는다(예전 경로). 좌표까지 같이 세운다. */

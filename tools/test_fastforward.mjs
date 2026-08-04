@@ -15,7 +15,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import {
   beansproutReady, firstPlayRulesFromBalance, firstPlayNextEvent, markMonsteraPhase,
-  moveMonstera, placeBeansprout
+  moveMonstera, placeBeansprout, resowBeansprout
 } from '../src/game/first_play.js';
 import {
   FAST_MODE_MAX_DAYS, JUMP_MAX_DAYS,
@@ -87,15 +87,20 @@ function mkGrowth(over = {}) {
   };
   return Object.assign(base, over);
 }
-function firstPlayState(slotId = 'dark') {
+/* ★★ 놓고 **물을 준다** = 회전을 시작한다 (2026-08-04 새 규칙 · first_play.js §물주기).
+   물이 회전 시작이 되면서 "놓기만 한 판"은 하루도 안 가는 판이 됐다 — 여기 있는 검사들은
+   빨리감기가 **도는 동안** 무엇에 서는가를 보므로, 시작까지가 준비다.
+   시작 안 한 판에서 무엇이 나는가는 아래 §물주기 블록이 따로 잰다(`{ water: false }`). */
+function firstPlayState(slotId = 'dark', opt = {}) {
   const S = newState({ room: 'banjiha', mode: 'novice', firstPlay: true, firstPlayRules: RULES });
   placeBeansprout(S.firstPlay, slotId);
+  if (opt.water !== false) waterCrop(S);
   return S;
 }
 /* 한 번 부르면 끝날 때까지 돌린다. onStop 이 실제로 왔는지도 같이 확인한다.
    ★ `autoWater: true` 가 기본이다 (2026-08-04) — 여기 있는 검사들은 **"매일 물을 준 판"** 에서
      빨리감기가 무엇에 서는가를 본다. 물주기 자체는 아래 §물주기 블록이 따로 잰다.
-     (점핑의 실제 기본값은 `stopOnDry` 쪽이다 — loop.js §물주기와 어떻게 맞물리나) */
+     (점핑의 실제 기본값은 `stopOnIdle` 쪽이다 — loop.js §물주기와 어떻게 맞물리나) */
 function drive(S, io, clock, opt) {
   const seen = [];
   let stop = null;
@@ -445,22 +450,30 @@ check('④-b 시루를 안 놨으면 시작 전에 안내한다(버튼을 잠그
    loop.js §물주기와 어떻게 맞물리나 가 정본이다. 두 모드가 답을 달리 낸다:
      jump(튜토)  마른 날에 **선다**       — 배우는 구간이라 코어가 대신 하지 않는다
      fast(그 뒤) 물을 **같이 준다**       — 안 그러면 배속이 하루짜리가 되어 사라진다 */
-check('★물주기-a 점핑은 마른 날에 선다 — 물을 대신 주지 않는다', () => {
+check('★물주기-a 점핑은 시작 대기에 선다 — 물을 대신 주지 않는다', () => {
   const clock = makeClock();
   const io = { light: mkLight(SLOTS()), growth: mkGrowth() };
-  const S = firstPlayState();
+  const S = firstPlayState('dark', { water: false });   // 놓기만 하고 물은 안 줬다
   assert.equal(timeModeOf(S), 'jump');
 
-  /* 오늘(Day 0) 물을 주고 시작하면 그 하루는 간다 — 그리고 다음 날 말라 선다 */
-  waterCrop(S);
+  /* ★★ 안 서면 **60일을 헛돈다** — 물을 안 준 시루는 영영 안 자라므로 수확 이벤트가 안 온다.
+     그 대신 매일 서지도 않는다: 대기가 **생긴 순간**에만 선다(loop.js §물주기와 어떻게 맞물리나). */
   const run = drive(S, io, clock, { untilEvent: true, autoWater: undefined });
   clock.run();
-  assert.equal(run.stop.reason, 'dry', `마른 날에 서야 한다: ${run.stop.reason}`);
-  assert.equal(S.day, 2, `물을 준 하루 + 마른 하루 = 2일: ${S.day}`);
-  assert.equal(S.firstPlay.beansprout.ageDays, 1, '★마른 날에 콩나물이 자랐다');
+  assert.equal(run.stop.reason, 'idle', `시작 대기에 서야 한다: ${run.stop.reason}`);
+  assert.equal(S.day, 1, `첫 턴에 선다: ${S.day}`);
+  assert.equal(S.firstPlay.beansprout.ageDays, 0, '★물을 안 줬는데 콩나물이 자랐다');
   assert.equal(S.firstPlay.beansprout.harvested, false);
   assert.equal(clock.pending(), 0, '⑸ 타이머가 남으면 안 된다');
   assert.equal(isFastForwarding(), false);
+
+  /* ★ 물을 주고 다시 감으면 **안 선다** — 대기가 없으므로 거둘 때까지 간다 */
+  waterCrop(S);
+  const run2 = drive(S, io, clock, { untilEvent: true, autoWater: undefined });
+  clock.run();
+  assert.equal(run2.stop.reason, 'event',
+    `물을 준 뒤에는 수확까지 가야 한다: ${run2.stop.reason}`);
+  assert.deepEqual(run2.stop.events.map(e => e.id), ['beansprout_ready']);
 });
 
 check('★물주기-b 배속은 물을 같이 준다 — 손으로 매일 준 것과 결과가 같다', () => {
@@ -474,9 +487,9 @@ check('★물주기-b 배속은 물을 같이 준다 — 손으로 매일 준 �
     pot0(S).slotId = 'sill'; moveMonstera(S.firstPlay, 'sill');
     drive(S, io, clock, { untilEvent: true }); clock.run();     // 말린 새순 → 튜토 완료
     assert.equal(timeModeOf(S), 'fast');
-    /* 다음 회전을 심어 둔다(씨앗·시루 재고 없이 상태만 되돌린다 — 여기서 재는 것은 물주기다) */
-    Object.assign(S.firstPlay.beansprout,
-      { harvested: false, ageDays: 0, dliHist: [], wateredOnDay: null, dryDays: 0, dryRun: 0 });
+    /* 다음 회전을 심어 둔다(씨앗·시루 재고 없이 상태만 되돌린다 — 여기서 재는 것은 물주기다).
+       ★ **물은 안 준다** — 배속의 자동 급수가 그 시작을 대신 하는지가 이 검사의 내용이다. */
+    resowBeansprout(S.firstPlay, { day: S.day });
     return { S, io, clock };
   };
 
@@ -495,7 +508,8 @@ check('★물주기-b 배속은 물을 같이 준다 — 손으로 매일 준 �
 
   assert.equal(auto.S.firstPlay.beansprout.ageDays, hand.S.firstPlay.beansprout.ageDays,
     '★배속과 손이 다른 결과를 냈습니다 — 자동 급수가 지름길이 되었습니다');
-  assert.equal(auto.S.firstPlay.beansprout.dryDays, 0, '배속에서 마른 날이 생겼습니다');
+  assert.equal(auto.S.firstPlay.beansprout.pots[0].startedOnDay != null, true,
+    '배속이 회전을 시작시키지 못했습니다 — 자동 급수가 안 먹혔습니다');
   assert.equal(auto.S.firstPlay.food.totalFoodSavedWon, hand.S.firstPlay.food.totalFoodSavedWon,
     '★배속과 손의 절감액이 다릅니다');
 });
@@ -532,9 +546,10 @@ check('★수확-a 배속도 거둘 때가 되면 선다 — 그리고 **한 번
   drive(S, io, clock, { untilEvent: true }); clock.run();       // 말린 새순 → 튜토 완료
   assert.equal(timeModeOf(S), 'fast');
 
-  /* 다음 회전을 심어 둔다(여기서 재는 것은 수확이다 — 재고는 안 본다) */
-  Object.assign(S.firstPlay.beansprout,
-    { harvested: false, ageDays: 0, dliHist: [], wateredOnDay: null, dryDays: 0, dryRun: 0 });
+  /* 다음 회전을 심고 **물까지 준다**(여기서 재는 것은 수확이다 — 재고는 안 본다).
+     새 규칙에서는 물을 줘야 회전이 시작된다 — 안 주면 시작 대기로 서서 수확을 못 잰다. */
+  resowBeansprout(S.firstPlay, { day: S.day });
+  waterCrop(S);
 
   const run = drive(S, io, clock, { untilEvent: false, maxDays: 20 });
   clock.run();
@@ -551,7 +566,6 @@ check('★수확-a 배속도 거둘 때가 되면 선다 — 그리고 **한 번
   assert.equal(again.stop.days, 20);
   /* ★ 안 거둔 20일 동안 **아무 벌도 없다** — 회전이 멈출 뿐이다(물주기와 같은 사상) */
   assert.equal(S.firstPlay.beansprout.ageDays, CYCLE, '★다 자란 뒤에 더 자랐다');
-  assert.equal(S.firstPlay.beansprout.dryDays, 0, '★다 자란 시루가 마른 날을 쌓았다 — 둘째 벌이다');
   assert.equal(S.firstPlay.food.pantryWon, 0, '★안 거뒀는데 곳간에 돈이 들어갔다');
   assert.equal(clock.pending(), 0);
 });

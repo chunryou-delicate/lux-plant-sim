@@ -9,7 +9,8 @@ import {
   advanceBeansproutDay, beansproutReady, harvestBeansprout,
   createFirstPlayState, firstPlayRulesFromBalance,
   FIRST_PLAY_ASSETS, FIRST_PLAY_COMPLETE_PHASE_ID,
-  markMonsteraArrived, markMonsteraPhase, placeBeansprout, slotFitsDiameter
+  markMonsteraArrived, markMonsteraPhase, placeBeansprout, slotFitsDiameter,
+  waterBeansprout
 } from '../src/game/first_play.js';
 import { nextDay, harvestCrop, phaseSchemaError } from '../src/game/loop.js';
 import { newState, givePlant, pot0, waterCrop } from '../src/game/state.js';
@@ -247,13 +248,17 @@ function firstPlayState(slotId = 'dark') {
   assert.throws(() => advanceBeansproutDay(fp, 0.2), /자리/);
   assert.equal(fp.beansprout.ageDays, 0);
   assert.equal(fp.beansprout.slotId, null);
-  /* 놓고 나면 바로 진행된다 */
+  /* ★★ 놓기만 해서는 안 자란다 — 물이 **회전 시작**이다 (2026-08-04 새 규칙 · §물주기).
+     옛 검사가 지키려던 것("물이 하루를 가른다")을 새 규칙에서 그대로 지킨다. */
   placeBeansprout(fp, 'dark');
-  assert.equal(advanceBeansproutDay(fp, 0.2, { watered: true }).harvested, false);
+  assert.equal(advanceBeansproutDay(fp, 0.2).grew, 0, '★물을 안 줬는데 자랐다');
+  assert.equal(fp.beansprout.ageDays, 0, '★시작도 안 했는데 하루가 갔다');
+  /* 물을 주면 그날이 0일차이고, 그 뒤로는 매일 저절로 자란다 */
+  waterBeansprout(fp, 0);
+  assert.equal(advanceBeansproutDay(fp, 0.2).harvested, false);
   assert.equal(fp.beansprout.ageDays, 1);
-  /* ★ 물을 안 주면 자리를 잡았어도 하루가 안 간다 (2026-08-04 · §물주기) */
-  assert.equal(advanceBeansproutDay(fp, 0.2, { watered: false }).dry, true);
-  assert.equal(fp.beansprout.ageDays, 1, '★물을 안 줬는데 하루가 갔다');
+  assert.equal(advanceBeansproutDay(fp, 0.2).grew, 1, '★시작한 뒤에 또 물을 요구한다');
+  assert.equal(fp.beansprout.ageDays, 2);
 }
 
 /* ── 8. 첫 플레이 중에는 Day 1 부터 growth 계약을 본다 ── */
@@ -294,8 +299,9 @@ function firstPlayState(slotId = 'dark') {
   const grow = (dli) => {
     const fp = createFirstPlayState({ rules: RULES });
     placeBeansprout(fp, 'dark');
-    for (let d = 1; d <= CYCLE; d++) advanceBeansproutDay(fp, dli, { watered: true });
-    return harvestBeansprout(fp);
+    waterBeansprout(fp, 0);                 // ★ 물이 회전 시작이다 — 한 번만 준다(§물주기)
+    for (let d = 1; d <= CYCLE; d++) advanceBeansproutDay(fp, dli);
+    return harvestBeansprout(fp, { day: CYCLE });
   };
   assert.equal(grow(0.3).meals, 3);
   assert.equal(grow(0.7).meals, 2);
@@ -311,8 +317,9 @@ function firstPlayState(slotId = 'dark') {
 {
   const fp = createFirstPlayState({ rules: RULES });
   placeBeansprout(fp, 'dark');
-  for (let d = 1; d <= CYCLE; d++) advanceBeansproutDay(fp, 0.2, { watered: true });
-  harvestBeansprout(fp);                 /* ★ 손으로 거둬야 선물의 문이 열린다 (2026-08-04) */
+  waterBeansprout(fp, 0);                /* ★ 물이 회전 시작이다 — 한 번만 준다 (§물주기) */
+  for (let d = 1; d <= CYCLE; d++) advanceBeansproutDay(fp, 0.2);
+  harvestBeansprout(fp, { day: CYCLE }); /* ★ 손으로 거둬야 선물의 문이 열린다 (2026-08-04) */
   markMonsteraArrived(fp, 'arrival');
 
   markMonsteraPhase(fp, { phaseId: 'spear_ready', phaseKo: '말린 새순을 준비하는 중', progress01: 2 / 3 });
@@ -323,8 +330,9 @@ function firstPlayState(slotId = 'dark') {
   for (const later of ['spear_opening', 'leaf_young', 'leaf_mid', 'leaf_mature']) {
     const f2 = createFirstPlayState({ rules: RULES });
     placeBeansprout(f2, 'dark');
-    for (let d = 1; d <= CYCLE; d++) advanceBeansproutDay(f2, 0.2, { watered: true });
-    harvestBeansprout(f2);
+    waterBeansprout(f2, 0);
+    for (let d = 1; d <= CYCLE; d++) advanceBeansproutDay(f2, 0.2);
+    harvestBeansprout(f2, { day: CYCLE });
     markMonsteraArrived(f2, 'arrival');
     markMonsteraPhase(f2, { phaseId: later, progress01: 0.5 });
     assert.equal(f2.completed, false, `${later} 은 완료가 아니다`);
@@ -336,8 +344,9 @@ function firstPlayState(slotId = 'dark') {
   /* phaseKo 가 없는 옛 growth 면 키를 그대로 보여준다 — 조용히 비우지 않는다 */
   const f3 = createFirstPlayState({ rules: RULES });
   placeBeansprout(f3, 'dark');
-  for (let d = 1; d <= CYCLE; d++) advanceBeansproutDay(f3, 0.2, { watered: true });
-  harvestBeansprout(f3);
+  waterBeansprout(f3, 0);
+  for (let d = 1; d <= CYCLE; d++) advanceBeansproutDay(f3, 0.2);
+  harvestBeansprout(f3, { day: CYCLE });
   markMonsteraArrived(f3, 'arrival');
   markMonsteraPhase(f3, { phaseId: 'axis_rising', progress01: 0.1 });
   assert.equal(f3.monstera.growthPhase.phaseKo, 'axis_rising');

@@ -44,7 +44,8 @@
 import {
   SCHEMA, SIM_MODES, ARRIVAL, newState, pot0, pushLog, migratePots, rehomePot
 } from './state.js';
-import { createFirstPlayState, placeBeansprout } from './first_play.js';
+import { createFirstPlayState, placeBeansprout,
+         ensureCropPots, syncCropLead } from './first_play.js';
 import { createTutorialState } from './tutorial.js';
 import { inRoom, isFreeSlotId, makeAt } from './place.js';
 import { PROPAGATION_SCHEMA, rehomeCuttings } from './propagation.js';
@@ -261,6 +262,16 @@ function packCutting(c, i) {
   };
 }
 
+/* ★★ 옛 세이브 이전 — **한 칸짜리 옛 상태를 시루 목록으로** (2026-08-04).
+   `ensureCropPots` 한 함수가 그 일을 한다(first_play.js). 여기서 부르는 이유는
+   **쓸 때도 읽을 때도 같은 모양이라야** 하기 때문이다: 옛 세이브를 읽어 바로 다시 저장해도
+   같은 값이 나온다. 이 함수는 원본을 안 건드린다(사본을 만들어 옮긴다) — 검증 도중에
+   상태가 바뀌면 던졌을 때 반쯤 옮겨진 상태가 남는다. */
+function cropPotsOf(b) {
+  if (Array.isArray(b.pots) && b.pots.length) return b.pots;
+  return ensureCropPots({ ...b, pots: null }).pots;
+}
+
 /* 첫 플레이 — `rules` 는 **안 적는다.** 밸런스 정본(data/balance/characters.json)에서
    불러올 때 다시 유도한다. 세이브에 굳히면 밸런스를 고쳐도 옛 세이브만 옛 값으로 돈다. */
 function packFirstPlay(fp) {
@@ -290,14 +301,40 @@ function packFirstPlay(fp) {
       cycle: needInt(b.cycle ?? 1, 'firstPlay.beansprout.cycle', { min: 1 }),
       harvestCount: needInt(b.harvestCount ?? 0, 'firstPlay.beansprout.harvestCount', { min: 0 }),
       harvestMeals: needInt(b.harvestMeals ?? 0, 'firstPlay.beansprout.harvestMeals', { min: 0 }),
-      /* ★ 물주기 (2026-08-04) — **반드시 남긴다.** 안 적으면 저장 한 번에 "오늘 물을 줬다"가
-         없던 일이 되어, 불러오자마자 마른 날이 하루 생긴다(회전이 조용히 하루 늘어난다).
-         반대로 `dryDays` 를 잃으면 수확 화면이 "물을 며칠 빼먹었나"를 못 말한다.
-         ⚠ `wateredOnDay` 는 **절대 게임일**이라 복원 뒤에도 그대로 맞는다(상대 일수면 어긋난다). */
+      /* ★ 마지막으로 회전을 시작한 날 (2026-08-04) — **절대 게임일**이라 복원 뒤에도 맞는다.
+         ⚠ 정본은 아래 `pots[].startedOnDay` 다. 이 칸은 화면이 읽는 사본이고,
+           불러올 때 `syncCropLead` 가 pots 에서 다시 세운다. */
       wateredOnDay: b.wateredOnDay == null ? null
         : needInt(b.wateredOnDay, 'firstPlay.beansprout.wateredOnDay', { min: 0 }),
-      dryDays: needInt(b.dryDays ?? 0, 'firstPlay.beansprout.dryDays', { min: 0 }),
-      dryRun: needInt(b.dryRun ?? 0, 'firstPlay.beansprout.dryRun', { min: 0 })
+      /* ★★ 시루마다 자기 회전 (2026-08-04 · first_play.js §시루마다 자기 회전).
+         **여기가 정본이다.** 위 칸들(ageDays·dliHist·harvested…)은 대표 시루의 사본이라
+         불러올 때 pots 에서 다시 세워진다 — 두 정본을 남기지 않는다.
+         ⚠ `dryDays`·`dryRun`(마른 날)은 **사라졌다.** 물이 회전 시작이 되면서 그 개념 자체가
+           없어졌다(§물주기). 옛 세이브에 그 칸이 있어도 그냥 안 읽는다 — 잃을 진행이 없다.
+         ⚠ 옛 세이브에는 pots 가 아예 없다. 그때는 `ensureCropPots` 가 한 칸짜리 옛 상태를
+           그대로 첫 시루로 옮긴다(아래 unpack) — 진행·이력·수확 횟수가 한 개도 안 사라진다. */
+      pots: needArr(cropPotsOf(b), 'firstPlay.beansprout.pots').map((p, i) => {
+        const w = `firstPlay.beansprout.pots[${i}]`;
+        const o = needObj(p, w);
+        return {
+          id: needStr(o.id, `${w}.id`),
+          startedOnDay: o.startedOnDay == null ? null
+            : needInt(o.startedOnDay, `${w}.startedOnDay`, { min: 0 }),
+          idleSinceDay: needInt(o.idleSinceDay ?? 0, `${w}.idleSinceDay`, { min: 0 }),
+          ageDays: needInt(o.ageDays ?? 0, `${w}.ageDays`, { min: 0 }),
+          dliHist: needArr(o.dliHist || [], `${w}.dliHist`)
+            .map((v, j) => needNum(v, `${w}.dliHist[${j}]`, { min: 0 })),
+          harvested: !!o.harvested,
+          quality: optStr(o.quality, `${w}.quality`),
+          meals: needInt(o.meals ?? 0, `${w}.meals`, { min: 0 }),
+          avgDli: optNum(o.avgDli, `${w}.avgDli`),
+          cycle: needInt(o.cycle ?? 1, `${w}.cycle`, { min: 1 }),
+          harvestCount: needInt(o.harvestCount ?? 0, `${w}.harvestCount`, { min: 0 }),
+          harvestMeals: needInt(o.harvestMeals ?? 0, `${w}.harvestMeals`, { min: 0 }),
+          savedWon: needNum(o.savedWon ?? 0, `${w}.savedWon`, { min: 0 }),
+          overlapIndex: needInt(o.overlapIndex ?? 0, `${w}.overlapIndex`, { min: 0 })
+        };
+      })
     },
     food: {
       /* ★ 곳간은 **원**이다 (2026-08-04 · first_play.js §작물 종류).
@@ -307,6 +344,11 @@ function packFirstPlay(fp) {
       pantryWon: needNum(
         f.pantryWon ?? (Number.isFinite(f.pantryMeals) ? f.pantryMeals * 2_500 : 0),
         'firstPlay.food.pantryWon', { min: 0 }),
+      /* ★ 겹침을 세는 기억 (2026-08-04 · first_play.js §겹침). 안 남기면 저장 한 번에
+         "오늘 이미 둘을 거뒀다"가 사라져, 불러온 뒤 셋째가 온전한 값을 받는다. */
+      harvestDay: f.harvestDay == null ? null
+        : needInt(f.harvestDay, 'firstPlay.food.harvestDay', { min: 0 }),
+      harvestedOnDay: needInt(f.harvestedOnDay ?? 0, 'firstPlay.food.harvestedOnDay', { min: 0 }),
       lastHarvestMeals: needInt(f.lastHarvestMeals ?? 0, 'firstPlay.food.lastHarvestMeals', { min: 0 }),
       lastFoodSavedWon: needNum(f.lastFoodSavedWon ?? 0, 'firstPlay.food.lastFoodSavedWon', { min: 0 }),
       totalFoodSavedWon: needNum(f.totalFoodSavedWon ?? 0, 'firstPlay.food.totalFoodSavedWon', { min: 0 }),
@@ -782,6 +824,10 @@ export function deserialize(raw, opt = {}) {
     fp.completed = saved.completed;
     Object.assign(fp.beansprout, saved.beansprout,
                   { at: saved.beansprout.at ? makeAt(saved.beansprout.at) : null });
+    /* ★ 대표 칸(ageDays·harvested…)은 **pots 에서 다시 세운다** — 세이브에 두 정본이 있으면
+       하나가 조용히 낡는다. pots 가 정본이므로 그쪽으로 맞춘다. */
+    ensureCropPots(fp.beansprout);
+    syncCropLead(fp.beansprout);
     Object.assign(fp.food, saved.food);
     Object.assign(fp.monstera, saved.monstera,
                   { at: saved.monstera.at ? makeAt(saved.monstera.at) : null });

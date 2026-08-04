@@ -355,6 +355,16 @@
      ★화분은 화면에서 작다. 정확히 짚게 하면 조작이 고문이 된다 —
        말풍선을 오브젝트보다 크게 만들어 그걸 누르게 한다. */
   #marks{position:absolute;z-index:25;inset:0;pointer-events:none}
+  /* 동작 게이지 — 화면 아래쪽 가운데. 캐릭터를 안 가린다 */
+  #actBar{position:absolute;z-index:29;left:50%;transform:translateX(-50%);
+    bottom:14px;width:min(74%,300px);pointer-events:none;text-align:center}
+  #actBar b{display:block;font-family:'Jua';font-size:13px;color:var(--ink);
+    margin-bottom:5px;text-shadow:0 2px 6px #000}
+  #actBar i{display:block;height:7px;border-radius:999px;background:rgba(255,255,255,.16);
+    overflow:hidden;position:relative}
+  #actBar i::after{content:'';position:absolute;inset:0 auto 0 0;width:var(--p,0%);
+    border-radius:999px;background:linear-gradient(90deg,#8fd8ea,#5fb9d4);
+    transition:width .12s linear}
   .mark{position:absolute;transform:translate(-50%,-100%);pointer-events:auto;
     display:flex;align-items:center;gap:6px;padding:9px 14px;border-radius:999px;
     font-family:'Jua';font-size:14px;white-space:nowrap;border:0;color:#0d2a33;
@@ -669,6 +679,10 @@
          ★오브젝트보다 크게 만든다 — 화분은 화면에서 작아서 정확히 짚기가 어렵다.
            말풍선이 곧 버튼이라 무엇을 해야 하는지와 어디를 눌러야 하는지가 한 번에 잡힌다. -->
     <div id="marks"></div>
+    <!-- ★동작 게이지 — 캐릭터가 가서 하는 동안 얼마나 됐나.
+         3D 링이 아니라 화면 띠다: 시점을 돌리면 링이 기울고, 폰에서 40px 캐릭터
+         발밑 링은 손가락에 가린다. -->
+    <div id="actBar" style="display:none"><b></b><i></i></div>
     <button id="guideOpen" aria-label="조작 안내">?</button>
     <div id="moveCatcher"></div>
     <div id="plantActions">
@@ -1587,37 +1601,37 @@ function drawLedger() {
   const fp = S.firstPlay, ts = S.tutorial, R = fp && fp.rules;
   if (!R || !ts || !ts.enabled || !fp.completed) { el.innerHTML = ''; return; }
 
-  const cap = R.dailyCropMealCap, mealWon = R.mealWon;
   const daily = R.dailyFoodWon;                       // 하루 식비 정가
   const savedToday = (fp.food && fp.food.lastFoodSavedWon) || 0;
-  const sirus = Math.max(0, Math.round((fp.beansprout && fp.beansprout.sirus) || 0));
-  const best = R.quality[0];                          // 어두운 자리 = 하얀고 아삭 = 제일 많은 끼니
-  /* 시루 하나가 한 번 키우는 동안(harvestDays) 내는 끼니 — 그걸 하루로 나눈다 */
-  const perSiruDay = best.meals * mealWon / R.harvestDays;
-  const capWon = cap * mealWon;
-  /* 상한을 채우는 시루 수 — 이것보다 많으면 남는 콩나물은 버려진다 */
-  const need = Math.ceil(cap * R.harvestDays / best.meals);
+  const pantryWon = Math.max(0, Math.round((fp.food && fp.food.pantryWon) || 0));
   const won = n => Math.round(n).toLocaleString('ko-KR') + '원';
   const row = (k, v, cls) => `<div class="lrow ${cls || ''}"><span>${k}</span><b>${v}</b></div>`;
 
-  /* ⚠ 2026-08-04 절감이 끼니에서 **원**으로 바뀌었다(pantryMeals → pantryWon) */
-  const pantryWon = Math.max(0, Math.round((fp.food && fp.food.pantryWon) || 0));
-  const harvested = !!(fp.beansprout && fp.beansprout.harvested);
+  /* ★2026-08-04 — 셈이 통째로 바뀌었다. 예전엔 "끼니 상한을 채우는 시루 수"를 셌는데,
+     이제 답은 **주기 길이**다: 5일 주기면 시루 5개까지 하루씩 어긋나게 돌리면
+     매일 온전한 값을 받는다. 6개째는 거둘 날이 겹쳐서 깎인다.
+     ⇒ 시루는 **더 버는 것이 아니라 끊기지 않게 하는 것**이다. */
+  let ws = null, hs = null;
+  try { ws = cropWaterStatus(S); hs = cropHarvestStatus(S); } catch { }
+  const sirus = Math.max(0, Math.round((hs && hs.sirus) || 0));
+  const cycleWon = R.cropKindSavedWon ? R.cropKindSavedWon[0] : 0;   // 한 회전분
+  const maxSirus = R.harvestDays;                                    // 천장 = 주기 길이
+  const waiting = (ws && ws.waiting) || 0;
+  const idleDays = (ws && ws.idleDays) || 0;
 
-  /* ★다음에 무엇을 해야 하는지까지 말한다. 숫자만 보여 주면
-     "그래서 어쩌라고"가 된다 — 이 판은 살지 말지를 정하려고 보는 것이다. */
   let tip;
   if (sirus <= 0)
-    tip = '시루가 없습니다. 씨앗과 시루를 주문해 다시 심으면 식비가 다시 줄어듭니다.';
-  else if (harvested && pantry <= 0)
-    tip = `다 먹었습니다. <b>다시 심어야</b> 식비가 다시 줄어듭니다 — `
-        + `씨앗 ${won(R.seedWonPerSiru * 1.4)}으로 ${R.harvestDays}일에 ${won(best.meals * mealWon)}을 아낍니다.`;
-  else if (sirus < need)
-    tip = `시루 <b>${sirus}개</b> — 하루 상한(${won(capWon)})을 아직 못 채웁니다.<br>`
-        + `<b>${need}개</b>까지는 늘릴수록 더 아낍니다.`;
+    tip = '시루가 없습니다. 씨앗과 시루를 주문해 심으면 식비가 다시 줄어듭니다.';
+  else if (waiting > 0)
+    tip = `시루 <b>${waiting}개</b>가 아직 물을 안 받았습니다`
+        + (idleDays ? ` (${idleDays}일째)` : '')
+        + ` — <b>물을 준 날이 0일차</b>입니다. ${R.harvestDays}일 뒤에 거둡니다.`;
+  else if (sirus < maxSirus)
+    tip = `시루 <b>${sirus}개</b> — ${R.harvestDays}일 주기라 <b>${maxSirus}개</b>까지는`
+        + ` 하루씩 어긋나게 돌리면 매일 ${won(cycleWon)}을 온전히 받습니다.`;
   else
-    tip = `시루 <b>${sirus}개</b> — 하루 상한(${won(capWon)})을 채웁니다.<br>`
-        + `★<b>더 사도 소용없습니다</b> — 남는 끼니는 쉬어서 버려집니다.`;
+    tip = `시루 <b>${sirus}개</b> — 주기 길이만큼 찼습니다.<br>`
+        + `★더 사도 거둘 날이 겹쳐 깎입니다 (${won(cycleWon)} → ${won(cycleWon * 2 / 3)} → …).`;
 
   el.innerHTML =
       row('하루 식비', won(daily))
@@ -1625,7 +1639,8 @@ function drawLedger() {
     + row('오늘 실제로 나가는 돈', won(Math.max(0, daily - savedToday)), 'net')
     + row('보유금', won(ts.cashWon || 0), 'cash')
     + row('곳간에 남은 것', pantryWon ? won(pantryWon) : '없음')
-    + row('시루 1개가 아끼는 돈', `하루 ${won(perSiruDay)}`)
+    + row('시루', sirus ? `${sirus}개` + (waiting ? ` (${waiting}개 대기)` : '') : '없음')
+    + row('한 번 거두면', won(cycleWon))
     + `<div class="tip">${tip}</div>`;
 }
 
@@ -1729,13 +1744,59 @@ function drawPlantToday() {
      안 준 날은 그날만큼 안 자란다. 죽지는 않는다 — 벌은 시간이다.
    ★할 일이 있을 때만 보인다. 항상 띄우면 버튼 넷이 되어 폰에서 전부 작아진다. */
 /* 거둘 때가 됐나 — 되면 그것부터다. 물주기는 이때 안 뜬다(다 자라면 물을 안 요구한다) */
+/* ══ 세 동작을 캐릭터가 한다 (박사님 2026-08-04) ═══════════════════════
+   "씨앗심기 / 물주기 / 수확하기는 캐릭이 그 위치로 가서 뭔가 모션하면서
+    게이지 차면서 완료되게 해줘."
+
+   ★순서가 계약이다 — 걸어가고 · 모션하고 · **그제야** 논리가 돈다.
+     중간에 취소되면 논리는 안 돈다(반쯤 준 물은 없다). room_view 가 그걸 지킨다.
+   ★빨리감기 중에는 연출을 건너뛴다. 그게 빨리감기의 뜻이다.
+   ★방 뷰가 없거나 캐릭터가 없으면 그냥 논리만 돈다 —
+     사람이 없다고 물이 안 들어가면 게임이 막힌다. */
+const ACT_KO = { water: '물 주는 중', sow: '씨앗 심는 중', harvest: '거두는 중' };
+let acting = false;
+function cropKey() {
+  const b = S.firstPlay && S.firstPlay.beansprout;
+  if (!b) return null;
+  return b.slotId || `free:${BEANSPROUT_ID}`;
+}
+function actBar(on, ko, p01) {
+  const el = $('actBar');
+  if (!el) return;
+  el.style.display = on ? '' : 'none';
+  if (!on) return;
+  el.querySelector('b').textContent = ko;
+  el.querySelector('i').style.setProperty('--p', Math.round((p01 || 0) * 100) + '%');
+}
+/* kind 를 하고 나서 done() 을 부른다. 연출이 되면 연출 뒤에, 안 되면 바로. */
+function doAct(kind, done) {
+  if (acting) return;                       /* 두 동작이 겹치면 게이지가 뒤엉킨다 */
+  const key = cropKey();
+  const canAct = roomView && typeof roomView.actAt === 'function' && key && !isFastForwarding();
+  if (!canAct) { done(); return; }
+  acting = true;
+  actBar(true, ACT_KO[kind] || '', 0);
+  roomView.actAt(key, kind, {
+    onProgress: (p, phase) => actBar(true, phase === 'walk' ? '가는 중' : (ACT_KO[kind] || ''), p),
+    onDone: () => { acting = false; actBar(false); try { done(); } catch (e) { throw e; } },
+    onFail: (why) => {
+      acting = false; actBar(false);
+      /* ★못 갔으면 **왜인지 말한다.** 구석에 밀어 넣은 화분이 원인이라
+         이 안내가 곧 배치를 가르치는 재료가 된다. */
+      banner('가지 못했습니다', (why || '') + ' — 화분을 손이 닿는 자리로 옮겨 보세요');
+    }
+  }).catch(() => { acting = false; actBar(false); });
+}
+
 function drawHarvest() {
   const b = $('harvestCrop');
   if (!b) return;
   let st = null; try { st = cropHarvestStatus(S); } catch { }
   const show = !!(st && st.ready);
   b.style.display = show ? '' : 'none';
-  if (show) b.textContent = st.sirus > 1 ? `🥣 콩나물 거두기 (시루 ${st.sirus}개)` : '🥣 콩나물 거두기';
+  /* ⚠ 익은 것만 센다 — sirus 는 가진 시루 전부라 안 익은 것까지 세어 버린다 */
+  const n = st.readyCount || 0;
+  if (show) b.textContent = n > 1 ? `🥣 콩나물 거두기 (${n}개)` : '🥣 콩나물 거두기';
 }
 
 function drawWater() {
@@ -1746,9 +1807,15 @@ function drawWater() {
   b.style.display = '';
   b.disabled = !st.needsWater;
   b.classList.toggle('done', !st.needsWater);
+  /* ★2026-08-04 — 물은 **회전 시작**이다. 매일 주는 것이 아니다.
+     그래서 "빼먹었다"가 아니라 "아직 시작을 안 했다"로 말한다 —
+     벌이 아니라 아직 안 한 일이다. */
+  const wait = st.waiting || 0;
   b.textContent = st.needsWater
-    ? (st.dryRun > 0 ? `💧 물을 ${st.dryRun}일 빼먹었습니다 — 지금 주기` : '💧 콩나물에 물 주기')
-    : '💧 오늘 물을 줬습니다';
+    ? (wait > 1 ? `💧 물 주기 (${wait}개 대기)`
+       : st.idleDays > 0 ? `💧 물 주기 (${st.idleDays}일째 대기)`
+       : '💧 콩나물에 물 주기')
+    : '💧 전부 자라는 중';
 }
 
 /* ══ 할 일 말풍선 (박사님 2026-08-04) ═══════════════════════════════════
@@ -1773,7 +1840,7 @@ function markList() {
   let hv = null;
   try { hv = typeof cropHarvestStatus === 'function' ? cropHarvestStatus(S) : null; } catch { }
   if (hv && hv.canHarvest) {
-    out.push({ key, ko: '🥣 거두기', tone: 'crop',
+    out.push({ key, ko: hv.readyCount > 1 ? `🥣 거두기 ${hv.readyCount}개` : '🥣 거두기', tone: 'crop',
                go: () => { const el = $('harvestCrop'); if (el) el.click(); } });
     return out;                       /* 거둘 게 있으면 그것부터다. 여럿을 띄우면 소음이다 */
   }
@@ -1794,7 +1861,7 @@ function markList() {
   /* ③ 물을 줘야 한다 */
   let w = null; try { w = cropWaterStatus(S); } catch { }
   if (w && w.needsWater)
-    out.push({ key, ko: w.dryRun > 0 ? `💧 물 (${w.dryRun}일 밀림)` : '💧 물 주기', tone: '',
+    out.push({ key, ko: (w.waiting || 0) > 1 ? `💧 물 주기 ${w.waiting}개` : '💧 물 주기', tone: '',
                go: () => $('waterCrop').click() });
   return out;
 }
@@ -2944,7 +3011,9 @@ $('buyLamp').onclick = guard(() => {
   fillSlots(); draw();
 });
 
-$('harvestCrop').onclick = guard(() => {
+$('harvestCrop').onclick = guard(() => doAct('harvest', () => reallyHarvest()));
+/* ★guard(fn) 은 **함수를 돌려준다.** 한 겹 더 감싸면 불러도 안 도는 함수만 나온다 */
+const reallyHarvest = guard(() => {
   /* ★거두기는 io 를 탄다 — 첫 수확에 몬스테라가 도착하고 그건 growth 창구를 쓴다.
      그래서 state 가 아니라 loop 가 맡는다(반환에 arrived 가 실려 온다). */
   const r = harvestCrop(S, io);
@@ -2957,14 +3026,19 @@ $('harvestCrop').onclick = guard(() => {
   draw();
 });
 
-$('waterCrop').onclick = guard(() => {
+$('waterCrop').onclick = guard(() => doAct('water', () => reallyWater()));
+const reallyWater = guard(() => {
   const r = waterCrop(S);
   /* 두 번 눌러도 안전하다 — 이미 줬으면 already 로 돌아온다(안 던진다) */
-  if (r.watered) pushLog(S, '💧 콩나물에 물을 줬습니다');
+  /* ★한 번에 하나씩 시작한다. 전부 주면 회전이 같이 돌아 거둘 날이 겹친다 —
+     날을 달리해 주는 것이 이 게임에서 시차를 만드는 유일한 손이다. */
+  if (r.watered) pushLog(S, `💧 콩나물에 물을 줬습니다 — 오늘이 0일차입니다 `
+    + `(${S.firstPlay.rules.harvestDays}일 뒤 거둡니다)`);
   draw();
 });
 
-$('resow').onclick = guard(() => {
+$('resow').onclick = guard(() => doAct('sow', () => reallySow()));
+const reallySow = guard(() => {
   const r = resowCrop(S, { slots: io.light.room.slots, size: io.light.room.size });
   banner('콩나물을 다시 심었습니다', `시루 ${r.sirus}개 · 씨앗 ${r.seedsUsed}봉지`);
   draw();

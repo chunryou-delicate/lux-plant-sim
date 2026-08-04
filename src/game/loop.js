@@ -364,13 +364,13 @@ export function nextDay(S, io) {
      자체가 안 불리므로 유령 이벤트가 안 남는다. */
   const fpBefore = firstPlaySnapshot(S.firstPlay);
 
-  /* ★★ 오늘 물을 줬나 — **날짜를 올리기 전에** 읽는다 (2026-08-04).
-     플레이어는 화면에 뜬 날(S.day)에 [물 주기]를 누르고 그다음 [다음 날]을 누른다.
-     그래서 이 턴이 정산하는 하루의 물은 **증가 전 S.day** 의 물이다.
-     `S.day++` 뒤에 읽으면 항상 어긋나서 물을 줘도 안 자란다(조용히 틀리는 유형).
-     규칙 자체는 first_play.js §물주기 가 갖는다 — 여기서는 사실 한 가지만 읽어 넘긴다. */
+  /* ★★ 2026-08-04 새 규칙 — 물은 **회전 시작**이라 하루 진행이 "오늘 줬나"를 안 본다
+     (first_play.js §물주기). 물을 준 시루는 그날부터 `startedOnDay` 를 갖고, 하루는
+     **시작한 시루만** 나이를 먹인다. 그래서 예전의 `cropWatered` 계산이 통째로 사라졌다.
+     표시용으로만 남긴다 — 화면이 "오늘 시작한 시루가 있나"를 읽는다. */
   const cropWatered = !!(S.firstPlay && S.firstPlay.enabled && S.firstPlay.beansprout &&
-                         S.firstPlay.beansprout.wateredOnDay === S.day);
+                         (S.firstPlay.beansprout.pots || [])
+                           .some(p => p && p.startedOnDay === S.day));
 
   /* ★ 상태를 건드리기 전에 계약부터 확인한다 (2026-08-02).
      iframe 을 새로고침하면 ready() 를 통과했던 계약이 사라진다. 그대로 진행하면
@@ -420,7 +420,10 @@ export function nextDay(S, io) {
   /* ★ 2026-08-04 — **여기서 거두지 않는다.** 하루가 하는 일은 "자라게 하는 것"까지고,
      거두는 것은 `harvestCrop(S, io)`(=[수확하기] 버튼)이다(first_play.js §수확).
      그래서 몬스테라 선물도 이 블록에서 사라졌다 — 선물은 수확에 붙어 있고, 수확이 옮겨 갔다. */
-  if (S.firstPlay && S.firstPlay.enabled && !S.firstPlay.beansprout.harvested) {
+  /* ★★ 시루가 여럿이 되면서 조건이 바뀌었다 (2026-08-04) — 예전 `!beansprout.harvested` 는
+     "하나라도 거뒀나"라서, 시차 판에서 **첫 시루를 거두는 순간 나머지가 통째로 멈췄다.**
+     이제 조건은 자리를 정했나 하나뿐이고, 어느 시루가 오늘 자라는지는 안에서 가른다. */
+  if (S.firstPlay && S.firstPlay.enabled && S.firstPlay.beansprout.slotId) {
     const before = structuredClone(S.firstPlay);
     const logLengthBefore = S.log.length;
     try {
@@ -429,20 +432,28 @@ export function nextDay(S, io) {
         throw new Error(`[첫 플레이] 콩나물 자리 ${cropSlotId}의 조도 계약이 잘못됐습니다`);
       firstPlayEvent = advanceBeansproutDay(
         S.firstPlay,
-        cropDliFromReport(report, cropSlotId),
-        { watered: cropWatered }
+        cropDliFromReport(report, cropSlotId)
       );
 
-      /* ★ 마른 날은 **바뀔 때만** 남긴다. 매일 찍으면 기록이 같은 줄로 덮인다
-         (형태 정지·머리공간과 같은 처리다). 죽지 않으므로 경고가 아니라 알림이다. */
-      if (firstPlayEvent.dry && firstPlayEvent.dryRun === 1)
-        pushLog(S, '💧 물을 안 줘서 콩나물이 오늘은 안 자랐습니다 — 시들지는 않습니다');
+      /* ★★ 마른 날 알림이 사라졌다 (2026-08-04 새 규칙). 그 개념 자체가 없다 —
+         물을 안 준 시루는 **아직 시작을 안 한 것**이지 벌을 받는 것이 아니다.
+         그래도 잊은 플레이어가 영영 멈춰 있으면 안 되므로 **바뀔 때 한 번** 알린다:
+         자라는 시루가 하나도 없는데 대기만 있는 날 = "아무 일도 안 나는 날"이다.
+         매일 찍지 않는다(형태 정지·머리공간과 같은 처리다). */
+      const stalled = firstPlayEvent.idle > 0 && firstPlayEvent.grew === 0 &&
+                      !firstPlayEvent.ready;
+      if (stalled !== S._lastCropStall) {
+        if (stalled)
+          pushLog(S, `💧 물을 줘야 콩나물이 자라기 시작합니다 — 시루 ${firstPlayEvent.idle}개가 ` +
+                     `기다리고 있습니다 (물을 준 날이 0일차입니다)`);
+        S._lastCropStall = stalled;
+      }
 
-      /* ★ 다 자란 날도 **바뀔 때만** 남긴다. 안 거두면 이 상태가 며칠이고 이어지는데
+      /* ★ 다 자란 날은 **바뀔 때만** 남긴다. 안 거두면 이 상태가 며칠이고 이어지는데
          매일 찍으면 기록이 그 줄로 덮인다. 안 거둬도 벌은 없다 — 회전이 멈출 뿐이다. */
       if (firstPlayEvent.justReady)
-        pushLog(S, `🥬 콩나물을 거둘 때가 됐습니다 — [수확하기]를 눌러 주세요 ` +
-                   `(거두기 전에는 다음 회전이 시작되지 않습니다)`);
+        pushLog(S, `🥬 콩나물 ${firstPlayEvent.justReadyCount}시루를 거둘 때가 됐습니다 — ` +
+                   `[수확하기]를 눌러 주세요 (거두기 전에는 그 시루의 다음 회전이 시작되지 않습니다)`);
     } catch (e) {
       /* 콩나물 하루가 터졌으면 날짜·상태를 통째로 되돌려 그날을 다시 밟을 수 있게 한다.
          ★ 이 블록은 이제 growth 를 안 건드린다(선물이 harvestCrop 으로 갔다) — 되돌릴 수 없는
@@ -486,8 +497,10 @@ export function nextDay(S, io) {
       growthPhase: null,
       growthPhaseError: null,
       /* ★ 물주기 (2026-08-04) — 형태 정지(growthBlocked)·머리공간(headroomBlocked)과 **다른 칸**이다.
-         셋을 한 칸에 섞으면 처방이 뒤섞인다(등을 켜라 / 자리를 옮겨라 / 물을 줘라). */
-      cropWatered, cropDry: !!(firstPlayEvent && firstPlayEvent.dry),
+         셋을 한 칸에 섞으면 처방이 뒤섞인다(등을 켜라 / 자리를 옮겨라 / 물을 줘라).
+         ★★ `cropDry`(마른 날)가 **`cropIdle`(시작 대기)로 바뀌었다** — 물이 회전 시작이 되면서
+           "빼먹었다"가 아니라 "아직 시작을 안 했다"가 됐다(first_play.js §물주기). */
+      cropWatered, cropIdle: (firstPlayEvent && firstPlayEvent.idle) || 0,
       /* ★ 수확 (2026-08-04) — 물주기와 **다른 칸**이다. 같은 칸에 섞으면 화면이
          "물을 주세요"와 "거두세요"를 못 가른다(둘은 서로를 배제한다 — §수확). */
       cropReady: beansproutReady(S.firstPlay && S.firstPlay.beansprout),
@@ -605,7 +618,7 @@ export function nextDay(S, io) {
     growthPhaseError: phaseAfter.error,
     firstPlayEvent,
     /* ★ 물주기·수확 — earlyTurn 과 같은 칸. 반환구가 둘이면 둘 다 챙긴다(이 파일의 오랜 함정). */
-    cropWatered, cropDry: !!(firstPlayEvent && firstPlayEvent.dry),
+    cropWatered, cropIdle: (firstPlayEvent && firstPlayEvent.idle) || 0,
     cropReady: beansproutReady(S.firstPlay && S.firstPlay.beansprout),
     cropJustReady: !!(firstPlayEvent && firstPlayEvent.justReady),
     cropHarvest: beansproutHarvestStatus(S.firstPlay),
@@ -706,13 +719,16 @@ export function harvestCrop(S, io) {
     const e = new Error('[수확] 시루를 먼저 방 안에 놓아 주세요');
     e.tutorialInput = true; throw e;
   }
-  if (b.harvested) {
-    const e = new Error('[수확] 이미 거둔 시루입니다 — 다시 심어야 또 거둡니다');
-    e.tutorialInput = true; throw e;
-  }
+  /* ★★ 2026-08-04 — `b.harvested`(하나라도 거뒀나)로 막지 않는다. 시차 판에서는 거의 늘 true 라
+     **둘째 시루가 익어도 못 거두게 된다.** 판정은 언제나 "익은 시루가 있나"다(first_play.js). */
   if (!beansproutReady(b)) {
-    const e = new Error(`[수확] 아직 ${Math.max(0, b.harvestDays - b.ageDays)}일 더 자라야 합니다 ` +
-                        `(${b.ageDays}/${b.harvestDays}일)`);
+    const st = beansproutHarvestStatus(fp);
+    const e = new Error(
+      st && st.nextReadyInDays != null
+        ? `[수확] 아직 ${st.nextReadyInDays}일 더 자라야 합니다 (${b.ageDays}/${b.harvestDays}일)`
+        : (st && st.idleCount
+            ? `[수확] 아직 물을 안 준 시루가 ${st.idleCount}개 있습니다 — 물을 줘야 회전이 시작됩니다`
+            : '[수확] 이미 거둔 시루입니다 — 다시 심어야 또 거둡니다'));
     e.tutorialInput = true; throw e;
   }
 
@@ -724,13 +740,18 @@ export function harvestCrop(S, io) {
 
   let r = null, arrived = null, arrivalPhase = null;
   try {
-    r = harvestBeansprout(fp);
-    pushLog(S, `🥣 콩나물 수확 — ${r.qualityKo} · ${r.meals}끼 상당 · ` +
-               `${r.cycleDays}일 회전에 ${r.cycleSavedWon.toLocaleString()}원` +
-               (r.dryDays ? ` (물 빼먹은 날 ${r.dryDays}일)` : ''));
-    if (r.wastedSirus > 0)
-      pushLog(S, `🥱 시루 ${r.wastedSirus}개분은 질려서 못 먹습니다 — ` +
-                 `같은 작물은 몇 시루를 심어도 절감이 늘지 않습니다`);
+    r = harvestBeansprout(fp, { day: S.day });
+    pushLog(S, `🥣 콩나물 수확 — 시루 ${r.harvestedPots}개 · ${r.qualityKo} · ${r.meals}끼 상당 · ` +
+               `${r.cycleDays}일 회전에 ${r.cycleSavedWon.toLocaleString()}원`);
+    /* ★★ 겹침 (2026-08-04 · first_play.js §겹침) — 예전 "시루를 늘려도 안 는다"를 대신한다.
+       손해의 이유가 시루 수가 아니라 **거두는 때가 겹친 것**이라, 처방도 달라진다:
+       "사지 마라"가 아니라 **"물을 날을 달리해 줘라"** 다. */
+    if (r.overlapLostWon > 0)
+      pushLog(S, `🥱 곳간이 안 비어 있어 ${r.overlapLostWon.toLocaleString()}원을 못 받았습니다 ` +
+                 `(시루 ${r.overlapCount}개가 겹쳤습니다) — 물을 **날을 달리해** 주면 ` +
+                 `거두는 날이 어긋나 온전히 받습니다`);
+    if (r.spoiledWon > 0)
+      pushLog(S, `🗑 곳간이 넘쳐 ${r.spoiledWon.toLocaleString()}원어치가 쉬었습니다`);
 
     /* ── 선물은 **첫 수확에만** 온다. 둘째 시루에서 몬스테라가 또 오면 안 된다 ── */
     if (!fp.monstera.arrived) {
@@ -846,29 +867,31 @@ export function runDays(S, io, n, onTurn) {
      배속 모드의 처방(§"정지 대신 알림")대로 **알림으로만** 낸다: onDay 의 info.blocked 로 매일 나가고,
      정지가 필요하면 호출부가 `stopOnBlock:true` 로 켠다(기본 꺼짐).
 
-   ══ ★★ 물주기와 어떻게 맞물리나 (2026-08-04 · 반드시 정해야 하는 것) ═══════════
-   빨리감기 중에 매일 [물 주기]를 누를 수는 없다. 그래서 **두 모드가 답을 달리 낸다** —
-   두 모드가 이미 다른 것을 하고 있기 때문이고, 새 모드를 만들지 않았다.
+   ══ ★★ 물주기와 어떻게 맞물리나 (2026-08-04 새 규칙으로 다시 정함) ═══════════
+   ★ 물이 **회전 시작**이 되면서(first_play.js §물주기) 이 자리의 질문이 바뀌었다.
+     예전 질문: "매일 눌러야 하는데 빨리감기 중에는 못 누른다 — 어떡하나."
+     지금 질문: **"물을 줄 수 있는데 안 준 시루가 있으면 서는 게 맞나."**
 
-     jump (반지하 튜토 = 첫 플레이 진행 중)   마른 날에 **선다**   `stopOnDry` 기본 켜짐
-     fast (그 뒤 · 본편)                      물을 **같이 준다**   `autoWater` 기본 켜짐
+     jump (반지하 튜토 = 첫 플레이 진행 중)   시작 대기가 **생기면 선다**  `stopOnIdle` 기본 켜짐
+     fast (그 뒤 · 본편)                      물을 **같이 준다**           `autoWater` 기본 켜짐
 
-   ★ 왜 점핑은 서나 — **점핑이 도는 구간이 곧 물주기를 배우는 구간**이다.
-     첫 플레이는 "행위가 있어야 재미있다"는 그 행위를 처음 만나는 자리다(박사님 지시).
-     여기서 코어가 대신 주면 플레이어는 물주기를 **한 번도 안 하고** 튜토를 끝낸다.
-     그리고 점핑은 "다음 이벤트까지"인데 물을 안 주면 수확 이벤트가 영영 안 온다 —
-     안 서면 60일 한도까지 헛돌고 화면은 이유를 말할 창구가 없다. 서면 정지 사유가 곧 답이다.
-
+   ★★ 왜 점핑은 서나 — **안 서면 헛돈다.** 새 규칙에서 물을 안 준 시루는 자라지 않으므로
+     수확 이벤트가 **영영 안 온다.** 그대로 두면 60일 한도까지 감고 화면은 이유를 말할 창구가
+     없다. 서면 정지 사유가 곧 답이다("물을 줘야 시작합니다"). 이 근거는 옛 규칙과 같다.
+   ★★ 그런데 **매일 서지는 않는다.** 마른 날은 매일 왔지만 시작 대기는 **생기는 순간이 있다** —
+     게임을 시작할 때와 다시 심은 뒤다. 그래서 **전환에서만** 선다(`turn.cropIdle` 이 0에서
+     올라간 턴). 매일 서면 [다음 날]과 같아지고, 안 서면 헛돈다 — 전환이 그 사이다.
    ★ 왜 배속은 주나 — **배속에서 서면 배속이 하루짜리가 되어 기능이 사라진다.**
-     콩나물 회전은 튜토 내내(50일 넘게) 계속 돈다. 마를 때마다 서면 [다음 날]과 같아진다.
-     그리고 이것은 **지름길이 아니다**(맨 위 ★★의 정의 그대로): 물은 공짜라 자동으로 줘서
-     버는 것이 없고, 회전 속도도 손으로 매일 준 것과 **한 글자도 다르지 않다.**
-     건너뛰는 것이 아니라 같은 길을 빠르게 밟는 것이다 — 어두운 자리에 두면 여전히 안 자란다.
+     그리고 이것은 **지름길이 아니다**: 배속의 자동 급수는 **하루에 한 시루씩**이라
+     손으로 매일 [물 주기]를 누른 것과 한 글자도 다르지 않다.
+     ⚠ 그래서 배속은 **저절로 시차를 만든다** — 그것도 손과 같은 결과다. 한꺼번에 시작하고
+       싶으면 그것이 오히려 손으로만 되는 일(`waterCrop(S, {all:true})`)이다.
      ⚠ 그 대신 **배속은 튜토 이후 전용**이라(timeModeOf) 배우는 구간으로는 새지 않는다.
 
-   ★ 둘 다 호출부가 명시로 뒤집을 수 있다(`stopOnDry` · `autoWater`). 조용한 기본값이 아니라
+   ★ 둘 다 호출부가 명시로 뒤집을 수 있다(`stopOnIdle` · `autoWater`). 조용한 기본값이 아니라
      **모드에서 유도한 기본값**이라, 모드가 바뀌면 같이 바뀐다.
-   ★ 시루를 아직 안 놓았거나 이미 거뒀으면 마를 것이 없다 — 두 규칙 다 아무 일도 안 한다.
+     옛 이름 `stopOnDry` 도 받는다 — 화면·재현이 아직 그 이름으로 부를 수 있다.
+   ★ 시루를 아직 안 놓았거나 전부 자라는 중이면 대기가 없다 — 두 규칙 다 아무 일도 안 한다.
 
    ══ ★★ 수확과 어떻게 맞물리나 (2026-08-04) ═══════════════════════════════
    ★★ **두 모드가 다 선다.** 물과 달리 여기서는 답이 갈리지 않는다 — `stopOnReady` 기본 켜짐.
@@ -930,7 +953,8 @@ const STOP_KO = {
   desync: '어긋남',
   callbackError: '화면 갱신 중 오류',
   blocked: '형태 정지',
-  dry: '물이 말랐습니다',
+  idle: '물을 줘야 시작합니다',
+  dry: '물을 줘야 시작합니다',        // 옛 이름 — 화면이 아직 이 열쇠를 알 수 있다
   ready: '거둘 때가 됐습니다'
 };
 
@@ -979,7 +1003,7 @@ export function startFastForward(S, io, opt = {}) {
   /* 시작하기 전에 막을 수 있는 입력 실수는 여기서 막는다 — 첫 턴에 예외로 터지면
      "빨리감기를 눌렀는데 오류만 떴다"가 된다. 고쳐서 다시 누를 수 있는 안내다. */
   const fp = S.firstPlay;
-  if (fp && fp.enabled && !fp.beansprout.harvested && !fp.beansprout.slotId) {
+  if (fp && fp.enabled && !fp.beansprout.slotId) {
     const e = new Error('[빨리감기] 열린 시루를 먼저 방 안에 놓아 주세요');
     e.firstPlayInput = true;
     throw e;
@@ -995,7 +1019,9 @@ export function startFastForward(S, io, opt = {}) {
   const stopOnBlock = !!opt.stopOnBlock;
   /* ★ 물주기 — **모드에서 유도한다**(위 §물주기와 어떻게 맞물리나). 지어낸 기본값이 아니다.
      둘이 동시에 켜지는 일은 없다: 자동으로 주면 마를 날이 없고, 마르면 안 준 것이다. */
-  const stopOnDry = opt.stopOnDry === undefined ? (mode === 'jump') : !!opt.stopOnDry;
+  /* 옛 이름(`stopOnDry`)도 받는다 — 뜻이 "물 때문에 선다"로 같아서 갈아타는 동안 안 깨진다 */
+  const idleOpt = opt.stopOnIdle === undefined ? opt.stopOnDry : opt.stopOnIdle;
+  const stopOnIdle = idleOpt === undefined ? (mode === 'jump') : !!idleOpt;
   const autoWater = opt.autoWater === undefined ? (mode === 'fast') : !!opt.autoWater;
   /* ★ 수확 — **두 모드가 다 선다**(위 §수확과 어떻게 맞물리나). 모드에서 유도하지 않는 이유는
      둘의 답이 같기 때문이다. 유일하게 이 값을 끄는 것은 **자동수확 보상**이고, 지금은 늘 꺼져 있다. */
@@ -1007,6 +1033,8 @@ export function startFastForward(S, io, opt = {}) {
   const run = {
     mode, untilEvent, maxDays, msPerDay, stopOnBlock, stopOnReady,
     days: 0, timerId: null, done: false,
+    /* null = 아직 한 턴도 안 돌았다 — 첫 턴의 판단이 그 뒤와 다르다(아래 tick 참고) */
+    lastIdle: null,
     lastPhaseId: (fp && fp.monstera && fp.monstera.growthPhase)
       ? fp.monstera.growthPhase.phaseId : null,
     lastBlocked: S._lastBlock === undefined ? null : S._lastBlock,
@@ -1050,9 +1078,11 @@ export function startFastForward(S, io, opt = {}) {
 
     /* ★ 배속은 물을 같이 준다 — 손으로 [물 주기]를 누른 것과 **같은 함수·같은 결과**다
        (위 §물주기와 어떻게 맞물리나). 놓지 않았거나 이미 거둔 시루면 아무 일도 안 한다. */
+    /* ★ **하루에 한 시루씩**이다 — 손으로 매일 [물 주기]를 누른 것과 같은 결과다.
+       `{all:true}` 로 주면 손보다 빨라져 그것이 지름길이 된다. 여기서는 안 준다. */
     if (autoWater) {
       const b = S.firstPlay && S.firstPlay.enabled ? S.firstPlay.beansprout : null;
-      if (b && b.slotId && !b.harvested) waterBeansprout(S.firstPlay, S.day);
+      if (b && b.slotId) waterBeansprout(S.firstPlay, S.day);
     }
 
     /* ★ 지름길 없음 — 평소 [다음 날] 과 **같은 함수**다. */
@@ -1094,9 +1124,15 @@ export function startFastForward(S, io, opt = {}) {
        ★ 전환에서만 본다(`cropJustReady`) — "지금 거둘 수 있다"로 세우면 안 거둔 채로
          다시 감을 때마다 첫날에 또 서서 배속이 못 돈다. */
     if (stopOnReady && turn.cropJustReady) { finish('ready', { turn, events }); return; }
-    /* ★ 마른 날 — 이벤트보다 뒤에 본다. 수확한 턴이면 그 이벤트가 먼저 서야 맞다.
-       ★ 자라는 중인 시루가 없으면 turn.cropDry 가 애초에 안 뜬다 → 빨리감기는 그대로 간다. */
-    if (stopOnDry && turn.cropDry) { finish('dry', { turn, events }); return; }
+    /* ★★ 시작 대기 — 이벤트보다 뒤에 본다. 수확한 턴이면 그 이벤트가 먼저 서야 맞다.
+       ★ **전환에서만** 선다(위 §물주기와 어떻게 맞물리나). 대기가 0에서 올라간 턴이다 —
+         "지금 대기가 있다"로 세우면 물을 줄 때까지 매일 서서 빨리감기가 못 돈다.
+       ⚠ 첫 턴은 비교 대상이 없다(`lastIdle === null`). 그때는 **대기가 있으면 선다** —
+         물을 안 준 채로 감기 시작한 판이 60일을 헛도는 것을 막는 자리다. */
+    const idleNow = turn.cropIdle || 0;
+    const idleAppeared = run.lastIdle === null ? idleNow > 0 : (idleNow > 0 && !run.lastIdle);
+    run.lastIdle = idleNow;
+    if (stopOnIdle && idleAppeared) { finish('idle', { turn, events }); return; }
     if (stopOnBlock && blockWorsened) { finish('blocked', { turn, events }); return; }
     if (run.days >= maxDays) { finish('maxDays', { turn, events }); return; }
 

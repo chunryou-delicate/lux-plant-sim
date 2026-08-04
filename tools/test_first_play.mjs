@@ -13,7 +13,9 @@ import {
   markMonsteraPhase,
   moveMonstera,
   placeBeansprout,
-  waterBeansprout
+  waterBeansprout,
+  makeCropPot,
+  resowBeansprout
 } from '../src/game/first_play.js';
 import { nextDay, harvestCrop } from '../src/game/loop.js';
 import { newState, pot0, waterCrop, cropHarvestStatus } from '../src/game/state.js';
@@ -39,15 +41,20 @@ assert.equal(OPEN_SIRU.lidState, 'open');
 assert.equal(OPEN_SIRU.transmitsSlotDli, true);
 assert.equal(OPEN_SIRU.diameterM, 0.24);
 
-/* ★ 물을 준 날만 자란다 (2026-08-04 · first_play.js §물주기).
-   그래서 재현도 **매일 물을 준다** — 표준 플레이가 그것이다. 물을 빼먹는 판은 아래 §물주기가 잰다. */
+/* ★★ 물은 **회전 시작**이다 (2026-08-04 새 규칙 · first_play.js §물주기).
+   심고 물을 줘야 그날이 0일차이고, 그 뒤로는 매일 저절로 자란다 — 매일 안 준다.
+   그래서 재현도 **한 번만 준다.** 안 주고 굴리는 판(=시작을 안 한 판)은 아래 §물주기가 잰다.
+   ⚠ `advanceBeansproutDay` 는 이제 `{watered}` 를 안 받는다. 시작한 시루만 나이를 먹는다. */
 const CYCLE = TEST_RULES.harvestDays;
-const growDay = (fp, dli) => advanceBeansproutDay(fp, dli, { watered: true });
+const growDay = (fp, dli) => advanceBeansproutDay(fp, dli);
+/* 회전을 시작한다(= [물 주기]). 날짜는 아무 값이나 되지만 0일차라는 뜻은 같다. */
+const start = (fp, day = 0) => waterBeansprout(fp, day);
 
 /* ★ 다 자랄 때까지 굴리고 **손으로 거둔다** (2026-08-04). 자동으로 안 거둬진다. */
 function growCycle(dli) {
   const fp = createFirstPlayState({ rules: TEST_RULES });
   placeBeansprout(fp, 'dark-slot');
+  start(fp);
   for (let day = 1; day <= CYCLE; day++) growDay(fp, dli);
   return { fp, result: harvestBeansprout(fp) };
 }
@@ -58,6 +65,10 @@ function growCycle(dli) {
   assert.throws(() => growDay(fp, 0.2), /자리/);
 
   placeBeansprout(fp, 'banjiha-dresser:1');
+  /* ★★ 물을 줘야 시작한다 — 놓기만 해서는 하루가 가도 안 자란다(§물주기) */
+  assert.equal(growDay(fp, 0.2).grew, 0, '★물을 안 줬는데 자랐다');
+  assert.equal(fp.beansprout.ageDays, 0);
+  assert.equal(start(fp, 0).started, 1, '★[물 주기]가 시루를 시작시키지 못했다');
   for (let day = 1; day <= 2; day++) {
     const result = growDay(fp, 0.2);
     assert.equal(result.harvested, false, `${day}일에는 수확되면 안 된다`);
@@ -82,13 +93,14 @@ function growCycle(dli) {
   const idle = growDay(fp, 0.2);
   assert.equal(idle.ready, true);
   assert.equal(idle.justReady, false, '전환은 한 번뿐이다 — 매일 나면 점핑이 못 돈다');
-  assert.equal(idle.dry, false, '★다 자란 시루가 마른 날로 잡혔다 — 물을 계속 요구하고 있다');
+  assert.equal(idle.grew, 0, '★다 자란 시루가 또 자랐다');
   assert.equal(fp.beansprout.ageDays, CYCLE, '다 자란 뒤에 더 자랐다');
-  assert.equal(fp.beansprout.dryDays, 0, '★다 자란 시루가 마른 날을 쌓고 있다');
 
-  /* ★ 물도 안 요구한다 — 다 자란 시루에 [물 주기]가 뜨면 손이 두 배가 된다 */
+  /* ★ 물도 안 요구한다 — 물은 회전당 한 번이라 이미 줬다(§물주기).
+     다 자란 시루에 [물 주기]가 또 뜨면 버튼 뜻이 둘이 된다. */
   const ws = beansproutWaterStatus({ ...fp, enabled: true }, 9);
-  assert.equal(ws.needsWater, false, '★다 자란 시루가 아직 물을 요구한다');
+  assert.equal(ws.needsWater, false, '★이미 시작한 시루가 또 물을 요구한다');
+  assert.equal(ws.waiting, 0, '★시작한 시루가 대기로 잡혔다');
   assert.equal(ws.ready, true);
 
   /* ★ [수확하기] 를 눌러야 들어간다 */
@@ -122,6 +134,7 @@ function growCycle(dli) {
 {
   const fp = createFirstPlayState({ enabled: true, rules: TEST_RULES });
   placeBeansprout(fp, 'dark-slot');
+  start(fp);
   growDay(fp, 0.2);
   const st = beansproutHarvestStatus(fp);
   assert.deepEqual({ ready: st.ready, daysLeft: st.daysLeft }, { ready: false, daysLeft: CYCLE - 1 });
@@ -132,33 +145,76 @@ function growCycle(dli) {
   assert.equal(fp.beansprout.harvested, false);
 }
 
-/* ★ 물주기 — 준 날만 자란다 · 죽지 않는다 · 하루 한 번 (first_play.js §물주기) */
+/* ★★ 물주기 = **회전 시작** (2026-08-04 새 규칙 · first_play.js §물주기)
+   ------------------------------------------------------------
+   옛 검사가 지키려던 것 셋을 그대로 지킨다 — 규칙만 새것으로 옮겼다.
+     ① "물이 속도를 가른다"            → **물이 시작을 가른다**(안 주면 아예 안 자란다)
+     ② "안 자란 날은 이력에 안 쌓인다"  → 시작 안 한 날은 이력에 안 쌓인다(빛 축 분리)
+     ③ "죽지 않는다"                   → 며칠을 안 줘도 상태가 살아 있고, 주면 그날부터 돈다 */
 {
   const fp = createFirstPlayState({ rules: TEST_RULES });
   placeBeansprout(fp, 'dark-slot');
 
-  const dry = advanceBeansproutDay(fp, 0.2, { watered: false });
-  assert.equal(dry.dry, true, '물을 안 줬는데 마른 날로 안 잡혔다');
+  /* ① 안 주면 아무 일도 안 난다 — 벌이 아니라 **아직 시작을 안 한 것**이다 */
+  const notyet = advanceBeansproutDay(fp, 0.2);
+  assert.equal(notyet.grew, 0, '★물을 안 줬는데 자랐다');
+  assert.equal(notyet.idle, 1, '★시작을 기다리는 시루가 안 세어졌다');
   assert.equal(fp.beansprout.ageDays, 0, '★물을 안 줬는데 하루가 갔다');
-  assert.equal(fp.beansprout.dliHist.length, 0,
-    '★안 자란 날의 빛이 이력에 쌓였다 — 물이 품질(빛 축)을 건드리게 된다');
-  assert.equal(dry.dryRun, 1);
+  /* ② 시작 안 한 날의 빛은 이력에 안 쌓인다 — 물이 품질(빛 축)을 못 건드린다 */
+  assert.equal(fp.beansprout.dliHist.length, 0, '★시작도 안 한 날의 빛이 이력에 쌓였다');
 
-  /* 하루 한 번 — 두 번 눌러도 하루가 두 번 가지 않는다 */
+  /* ★ 두 번 눌러도 회전이 앞당겨지지 않는다 — 이미 시작한 시루는 다시 안 받는다 */
   assert.equal(waterBeansprout(fp, 5).watered, true);
-  assert.equal(waterBeansprout(fp, 5).already, true, '★같은 날 두 번 준 것이 새 물로 셌다');
-  assert.equal(fp.beansprout.wateredOnDay, 5);
+  assert.equal(waterBeansprout(fp, 5).already, true, '★이미 시작한 시루가 또 시작됐다');
+  assert.equal(waterBeansprout(fp, 6).already, true, '★다음 날 누른 것이 회전을 다시 시작시켰다');
+  assert.equal(fp.beansprout.pots[0].startedOnDay, 5, '★0일차가 첫 물 준 날이 아니다');
 
-  /* 죽지 않는다 — 열흘을 내리 빼먹어도 상태가 살아 있고, 다시 주면 이어서 자란다 */
-  for (let i = 0; i < 10; i++) advanceBeansproutDay(fp, 0.2, { watered: false });
-  assert.equal(fp.beansprout.dryRun, 11);
-  assert.equal(fp.beansprout.harvested, false);
+  /* ③ 죽지 않는다 — 그냥 둬도 살아 있고, 시작한 뒤로는 저절로 자란다 */
   for (let d = 1; d <= CYCLE; d++) growDay(fp, 0.2);
-  const last = harvestBeansprout(fp);
-  assert.equal(last.harvested, true, '★물을 다시 줬는데 회전이 이어지지 않았다');
-  assert.equal(last.quality, 'crisp_white', '★물을 빼먹은 것이 품질을 바꿨다 — 축이 겹쳤다');
-  assert.equal(last.cycleSavedWon, 3000, '★마른 날이 절감액 자체를 깎았다 — 벌은 시간뿐이어야 한다');
-  assert.equal(last.dryDays, 11);
+  const last = harvestBeansprout(fp, { day: 15 });
+  assert.equal(last.harvested, true, '★물을 준 뒤에도 회전이 안 돌았다');
+  assert.equal(last.quality, 'crisp_white', '★물주기가 품질을 바꿨다 — 축이 겹쳤다');
+  assert.equal(last.cycleSavedWon, 3000, '★늦게 시작한 것이 절감액 자체를 깎았다');
+  assert.equal(last.harvestedPots, 1);
+}
+
+/* ★★ 겹침 — **같은 날 거둔 둘째·셋째는 깎인다** (2026-08-04 · first_play.js §겹침)
+   3,000 → 2,000 → 1,000 → 0. 시차를 만들 이유가 이 표 하나다. */
+{
+  const fp = createFirstPlayState({ rules: TEST_RULES });
+  placeBeansprout(fp, 'dark-slot');
+  /* 시루 넷을 **같은 날** 시작한다 — 넷 다 같은 날 익는다 */
+  for (let i = 2; i <= 4; i++) fp.beansprout.pots.push(makeCropPot('crop_01_0' + i));
+  assert.equal(waterBeansprout(fp, 0, { all: true }).started, 4, '★[전부 주기]가 안 먹혔다');
+  for (let d = 1; d <= CYCLE; d++) growDay(fp, 0.2);
+
+  const h = harvestBeansprout(fp, { day: CYCLE });
+  assert.equal(h.harvestedPots, 4, '★한 번에 다 안 거둬졌다 — 시루마다 누르게 되어 있다');
+  assert.deepEqual(h.perPot.map(p => p.savedWon), [3000, 2000, 1000, 0],
+    '★같은 날 거둔 것이 안 깎였다 — 겹침이 안 물린다');
+  assert.equal(h.cycleSavedWon, 6000);
+  assert.equal(h.overlapLostWon, 1000 + 2000 + 3000, '겹쳐서 못 받은 몫이 안 맞는다');
+
+  /* ★ 시차를 두면 안 깎인다 — 같은 시루 넷을 **다른 날** 거두면 넷 다 3,000원이다.
+     ★★ 이것이 박사님 그림이다: "5일 주기니까 5개까지 1일씩 안 겹치게 하면 매일 다 3,000". */
+  const fp2 = createFirstPlayState({ rules: TEST_RULES });
+  placeBeansprout(fp2, 'dark-slot');
+  for (let i = 2; i <= 4; i++) fp2.beansprout.pots.push(makeCropPot('crop_01_0' + i));
+  const got = [];
+  for (let d = 1; d <= CYCLE + 4; d++) {
+    /* ★ 하루에 **한 시루씩** 시작한다 — 이게 플레이어가 [물 주기]를 하루씩 걸러 누르는 것이다.
+       ⚠ 하루가 가기 전에 넷을 다 주면 시차가 아니라 같은 날 시작이 된다(위 판이 그 경우다). */
+    waterBeansprout(fp2, d);
+    growDay(fp2, 0.2);
+    if (beansproutReady(fp2.beansprout)) {
+      const r = harvestBeansprout(fp2, { day: d });
+      assert.equal(r.harvestedPots, 1, `Day ${d} 에 시루 둘이 같이 익었다 — 시차가 무너졌다`);
+      got.push(...r.perPot.map(p => p.savedWon));
+      resowBeansprout(fp2, { day: d });                     // 거둔 것만 다시 심는다
+    }
+  }
+  assert.deepEqual(got, [3000, 3000, 3000, 3000],
+    '★하루씩 어긋나게 거뒀는데 깎였다 — 시차가 값을 못 지킨다');
 }
 
 {
@@ -174,17 +230,27 @@ function growCycle(dli) {
   assert.equal(bright.cycleSavedWon, 1000);
 }
 
-/* ★ 같은 작물은 시루를 늘려도 절감이 안 는다 (2026-08-04 · first_play.js §작물 종류) */
+/* ★★ 시루를 늘려도 **같은 날 거두면** 안 는다 (2026-08-04 재정정 · first_play.js §겹침)
+   ------------------------------------------------------------
+   옛 검사는 "시루를 늘려도 절감이 아예 안 는다"였다. 그 규칙은 시루를 살 이유를 없앴다.
+   지금 지키는 것은 그 자리에 들어온 새 규칙이다: **겹치면 깎이고, 어긋나면 온전히 받는다.**
+   그래서 여섯 시루를 같은 날 거두면 3,000+2,000+1,000 이고 넷째부터는 0원이다 —
+   ★천장(5일 주기 = 5개)이 규칙에서 나온다는 것이 이 줄로 확인된다. */
 {
   const one = growCycle(0.2).result;
   const fp = createFirstPlayState({ rules: TEST_RULES });
   placeBeansprout(fp, 'dark-slot');
-  fp.beansprout.sirus = 6;
+  for (let i = 2; i <= 6; i++) fp.beansprout.pots.push(makeCropPot('crop_01_0' + i));
+  waterBeansprout(fp, 0, { all: true });                // 여섯을 **같은 날** 시작한다
   for (let d = 1; d <= CYCLE; d++) growDay(fp, 0.2);
-  const six = harvestBeansprout(fp);
-  assert.equal(six.cycleSavedWon, one.cycleSavedWon,
-    '★시루를 여섯 개 심었더니 절감이 늘었다 — 종류가 아니라 개수에 값이 붙고 있다');
-  assert.equal(six.wastedSirus, 5, '질려서 못 먹는 시루 수를 안 세고 있다');
+  const six = harvestBeansprout(fp, { day: CYCLE });
+  assert.equal(six.harvestedPots, 6);
+  assert.deepEqual(six.perPot.map(p => p.savedWon), [3000, 2000, 1000, 0, 0, 0],
+    '★같은 날 거둔 넷째부터가 0원이 아니다 — 천장이 규칙에서 안 나온다');
+  assert.equal(six.cycleSavedWon, 6000);
+  assert.equal(six.cycleSavedWon, one.cycleSavedWon * 2,
+    '★여섯 시루를 같은 날 거둔 값이 한 시루의 두 배(3,000+2,000+1,000)가 아니다');
+  assert.equal(six.overlapCount, 5, '겹친 시루 수를 안 세고 있다');
 }
 
 {

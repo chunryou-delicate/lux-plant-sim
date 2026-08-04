@@ -62,9 +62,10 @@ const dataOf = (rel) => JSON.parse(fs.readFileSync(path.join(ROOT, 'data', rel),
 
 const { createLightEngine } = await import(toUrl('src/game/light_adapter.js'));
 const {
-  newState, givePlant, pot0, setPotAt, setCropAt, setFurniturePlacement, ARRIVAL
+  newState, givePlant, pot0, setPotAt, setCropAt, setFurniturePlacement, ARRIVAL, waterCrop
 } = await import(toUrl('src/game/state.js'));
-const { firstPlayRulesFromBalance, BEANSPROUT_ID, advanceBeansproutDay, harvestBeansprout } =
+const { firstPlayRulesFromBalance, BEANSPROUT_ID, advanceBeansproutDay, harvestBeansprout,
+        makeCropPot, syncCropLead } =
   await import(toUrl('src/game/first_play.js'));
 const { nullGrowth } = await import(toUrl('src/game/sim.js'));
 const { runDays } = await import(toUrl('src/game/loop.js'));
@@ -141,16 +142,22 @@ function playedGame() {
 
   /* 시루 — 자유 좌표(어느 추천 자리에도 안 붙는 점) */
   setCropAt(S, { x: -1.2, y: 0.9, z: -1.0 }, { size: eng.room.size, slots: eng.room.slots, snapDist: 0.15 });
-  /* ★ 물을 준 날만 자란다 (2026-08-04 · first_play.js §물주기) — 재현도 매일 준다 */
+  /* ★★ 물은 **회전 시작**이다 (2026-08-04 · first_play.js §물주기) — 한 번만 준다.
+     ★ 시루를 셋으로 늘려 **시차가 세이브를 왕복하는지**까지 본다: 시작일이 다르면
+       거두는 날도 달라야 하는데, 그 어긋남이 세이브에서 사라지면 회전이 통째로 겹친다. */
   const CYCLE = FP_RULES.harvestDays;
-  for (let i = 0; i < CYCLE; i++) advanceBeansproutDay(S.firstPlay, 0.2, { watered: true });
+  for (let i = 2; i <= 3; i++) S.firstPlay.beansprout.pots.push(makeCropPot('crop_01_0' + i));
+  waterCrop(S);                              // 첫 시루만 시작 — 나머지 둘은 대기
+  for (let i = 0; i < CYCLE; i++) advanceBeansproutDay(S.firstPlay, 0.2);
   /* ★ 자라는 날이 찼다고 저절로 안 거둬진다 (2026-08-04 · §수확) — 손으로 거둔다 */
-  assert.equal(S.firstPlay.beansprout.harvested, false, '★저절로 거둬졌습니다');
-  harvestBeansprout(S.firstPlay);
-  assert.equal(S.firstPlay.beansprout.harvested, true, `${CYCLE}일인데 수확이 안 됐습니다`);
-  /* 물 상태도 세이브에 남아야 한다 — 안 남으면 불러오자마자 마른 날이 하루 생긴다 */
-  S.firstPlay.beansprout.wateredOnDay = S.day;
-  S.firstPlay.beansprout.dryDays = 2;
+  assert.equal(S.firstPlay.beansprout.pots[0].harvested, false, '★저절로 거둬졌습니다');
+  harvestBeansprout(S.firstPlay, { day: S.day });
+  assert.equal(S.firstPlay.beansprout.pots[0].harvested, true, `${CYCLE}일인데 수확이 안 됐습니다`);
+  /* 둘째 시루를 지금 시작한다 — 첫째와 시작일이 다르다(= 시차).
+     ★ 손으로 pots 를 건드렸으니 대표 칸(사본)도 다시 세운다 — 그게 정본이 pots 라는 뜻이다. */
+  S.firstPlay.beansprout.pots[1].startedOnDay = S.day;
+  S.firstPlay.beansprout.pots[1].ageDays = 2;
+  syncCropLead(S.firstPlay.beansprout);
 
   /* 화분 — 도착시킨 뒤 자유 좌표로 옮긴다 */
   const g = nullGrowth(14, { growthMin: GROWTH_MIN });
@@ -206,11 +213,20 @@ check('A 저장 → 복원 — day·방·화분 좌표·가구 자리표·첫 �
   assert.equal(S2.firstPlay.beansprout.quality, S.firstPlay.beansprout.quality);
   assert.equal(S2.firstPlay.food.totalFoodSavedWon, S.firstPlay.food.totalFoodSavedWon);
   assert.equal(S2.firstPlay.food.pantryWon, S.firstPlay.food.pantryWon, '곳간(원)이 사라졌습니다');
-  /* ★ 물 상태 (2026-08-04) — 안 남으면 불러오자마자 마른 날이 하루 생겨 회전이 조용히 늘어난다 */
+  /* ★★ 시루마다 자기 회전 (2026-08-04 · first_play.js §시루마다 자기 회전).
+     옛 검사가 지키려던 것("물 상태가 사라지면 회전이 조용히 늘어난다")을 새 규칙에서 지킨다:
+     ★ **시작일이 시루마다 그대로여야** 거두는 날의 어긋남(=시차)이 살아난다.
+       한 칸으로 뭉뚱그려 저장하면 셋이 같은 날 익어 겹침으로 깎인다 — 조용히 틀리는 유형이다. */
+  assert.equal(S2.firstPlay.beansprout.pots.length, 3, '★시루 수가 세이브에서 사라졌습니다');
+  assert.deepEqual(
+    S2.firstPlay.beansprout.pots.map(p => [p.id, p.startedOnDay, p.ageDays, p.harvested]),
+    S.firstPlay.beansprout.pots.map(p => [p.id, p.startedOnDay, p.ageDays, p.harvested]),
+    '★시루별 회전(시작일·나이·수확 여부)이 세이브에서 어긋났습니다 — 시차가 무너집니다');
   assert.equal(S2.firstPlay.beansprout.wateredOnDay, S.firstPlay.beansprout.wateredOnDay,
-    '★"오늘 물을 줬다"가 세이브에서 사라졌습니다');
-  assert.equal(S2.firstPlay.beansprout.dryDays, S.firstPlay.beansprout.dryDays,
-    '★물을 빼먹은 날 수가 세이브에서 사라졌습니다');
+    '★마지막으로 회전을 시작한 날이 세이브에서 사라졌습니다');
+  /* ★ 겹침을 세는 기억도 왕복해야 한다 — 안 그러면 불러온 뒤 셋째가 온전한 값을 받는다 */
+  assert.equal(S2.firstPlay.food.harvestedOnDay, S.firstPlay.food.harvestedOnDay);
+  assert.equal(S2.firstPlay.food.harvestDay, S.firstPlay.food.harvestDay);
   assert.equal(S2.tutorial.day, 3, '튜토 진행이 사라졌습니다');
   assert.equal(S2.tutorial.cashWon, 940000);
   assert.deepEqual(S2.tutorial.learned, S.tutorial.learned, '배운 것이 사라졌습니다');
@@ -351,6 +367,50 @@ check('D 옛 세이브 — at 없이 slotId 만 있어도 좌표가 채워진다
   /* 복원 뒤 계약이 그 자리를 한 이름으로만 부른다 */
   const ids = eng.daily(1, S2).report.slots.map(s => s.slotId);
   assert.equal(new Set(ids).size, ids.length, '계약에 같은 slotId 가 두 번 실렸습니다');
+});
+
+/* ══ D-2 · ★★ 옛 세이브(시루 한 칸) → 시루 목록 (2026-08-04) ══════════════
+   ------------------------------------------------------------
+   2026-08-04 이전 세이브에는 `beansprout.pots` 가 아예 없다. 대신 한 칸(ageDays·dliHist…)에
+   시루 전부가 나눠 쓰던 진행이 들어 있고, `sirus` 로 개수만 적혀 있었다.
+   ★ 그 판이 **열려야 한다.** 그리고 진행이 한 개도 안 사라져야 한다 —
+     "옛 세이브를 열었더니 콩나물이 처음부터 다시 자란다"는 조용히 틀리는 유형이다. */
+check('D-2 ★옛 세이브(시루 한 칸·마른 날) — 시루 목록으로 열리고 진행이 안 사라진다', () => {
+  const S = newState({ room: 'banjiha', mode: 'novice', firstPlay: true, firstPlayRules: FP_RULES });
+  setCropAt(S, 'banjiha-desk:1', { slots: eng.room.slots });
+  S.day = 9;
+  const raw = serialize(S);
+
+  /* 2026-08-04 이전 모양으로 손수 되돌린다 — pots 는 없고, 없어진 칸(dryDays·dryRun)이 있다 */
+  const b = raw.state.firstPlay.beansprout;
+  delete b.pots;
+  b.sirus = 3;
+  b.ageDays = 3;
+  b.dliHist = [0.1, 0.2, 0.15];
+  b.cycle = 2;
+  b.harvestCount = 1;
+  b.wateredOnDay = 8;
+  b.dryDays = 2;                       // ★ 없어진 칸 — 있어도 조용히 무시돼야 한다
+  b.dryRun = 1;
+
+  const S2 = deserialize(raw, { ...roomOpt(), firstPlayRules: FP_RULES, growth: recordingGrowth() });
+  const nb = S2.firstPlay.beansprout;
+  assert.equal(nb.pots.length, 3, '★옛 `sirus` 가 시루 칸으로 안 옮겨졌습니다');
+  assert.deepEqual(nb.pots.map(p => p.ageDays), [3, 3, 3],
+    '★옛 진행이 시루 칸으로 안 옮겨졌습니다 — 콩나물이 처음부터 다시 자랍니다');
+  assert.deepEqual(nb.pots[0].dliHist, [0.1, 0.2, 0.15], '★DLI 이력이 사라졌습니다(품질이 바뀝니다)');
+  /* ★ 옛 `wateredOnDay` 가 새 `startedOnDay`(회전 시작일)로 읽힌다 — 옛 규칙에서도
+     "마지막으로 물을 준 날"이라 그 값이 회전 시작으로 읽혀도 어긋나지 않는다 */
+  assert.deepEqual(nb.pots.map(p => p.startedOnDay), [8, 8, 8],
+    '★옛 물 준 날이 회전 시작일로 안 옮겨졌습니다 — 열자마자 회전이 멈춥니다');
+  assert.equal(nb.harvestCount, 3, '★수확 횟수가 사라졌습니다(첫 수확 대사가 다시 납니다)');
+  assert.equal(nb.sirus, 3);
+  /* 없어진 칸은 새 상태에 남지 않는다 — 두 규칙이 같이 살면 안 된다 */
+  assert.equal(nb.dryDays, undefined, '★없어진 마른 날 칸이 새 상태에 살아 있습니다');
+  assert.equal(nb.dryRun, undefined);
+  /* 그리고 **그대로 다시 저장된다** — 한 번 열면 새 모양으로 굳는다 */
+  const again = serialize(S2);
+  assert.equal(again.state.firstPlay.beansprout.pots.length, 3);
 });
 
 /* ══ E · 모르는 스키마·깨진 JSON·빈 값 ═════════════════════════════════ */

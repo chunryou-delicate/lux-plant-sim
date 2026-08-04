@@ -27,8 +27,14 @@ import { spotOf } from './place.js';
      **다른 작물을 들이는 것**에만 값이 붙어야 그 이유와 셈이 같은 말을 한다.
 
    ⇒ 그래서 규칙이 이렇게 갈린다:
-       같은 종류 시루를 늘린다  → 절감은 **안 는다** (씨앗값만 더 나간다 = 질려서 못 먹는다)
        다른 종류를 들인다       → 3,000 → +2,000 → +1,000 (순번마다 체감)
+       같은 종류 시루를 늘린다  → **거두는 때가 겹치면** 같은 표로 깎인다(아래 §겹침)
+
+   ★★ 2026-08-04 재정정 — 예전에는 "같은 종류 시루를 늘리면 절감이 아예 안 는다"였다.
+     그 규칙은 **시루를 살 이유를 통째로 없앴다**(재현 tools/probe_crop_cases.mjs 가 그걸 쟀다:
+     20일 순이득이 1개 -800원 · 3개 -20,400원이었다 — 살수록 손해다).
+     이제는 **겹치면 깎이고, 어긋나게 돌리면 온전히 받는다.** 시루를 더 사는 이유가
+     "더 번다"가 아니라 **"끊기지 않는다"** 가 된다 — 그 어긋남을 만드는 것이 플레이어의 손이다.
 
    ★ 지금 작물은 콩나물 하나뿐이다. 2종·3종은 **자리만** 만들어 둔다 —
      쓰지 않는 값을 지어내지 않는다. 작물이 생기면 이 배열에 한 줄 붙이면 그대로 흐른다.
@@ -59,11 +65,20 @@ export const FIRST_PLAY_RULES = Object.freeze({
      ⚠ 이 값만 `characters.json._meta` 가 아니라 여기 있다. 그 파일은 이 창 소유가 아니라
        못 고쳤다 — plan 에 `seedWonPerSiru` 를 _meta 로 옮겨 달라고 요청해 뒀다(보고 ⑤).
      ★ 그래도 **공짜는 아니다.** 재파종이 돈을 쓰는 행동이라야 회전이 선택이 된다. */
-  seedWonPerSiru: 1_000,
-  /* ★★ 종류 순번별 **한 회전(=harvestDays)이 내는 절감액**. 박사님 확정값 그대로다.
+  /* ★실제 시세 700~1,200원의 **아래쪽**을 잡는다 (박사님 2026-08-04: "씨앗값을 더 줄여").
+     나물콩은 큰 봉지를 사 나누어 쓰는 것이라 1시루분은 그만큼 싼다.
+     ⚠ shop.CATALOG.bean_seed.listWon 과 **같은 값이어야 한다** — 지갑에 닿는 건 그쪽이다. */
+  seedWonPerSiru: 500,
+  /* ★★ **순번별 한 회전이 내는 절감액**. 박사님 확정값 그대로다.
      ⚠ 이 셋도 `data/balance/` 가 아니라 여기 있다 — 그 폴더는 이 창 소유가 아니다.
        plan 에 `characters.json._meta.cropKindSavedWon` 으로 옮겨 달라고 요청한다(보고 ⑤).
-     ★ 배열 길이가 곧 "몇 종까지 값이 붙나"다. 4종째부터는 0 — 질려서 더는 못 먹는다. */
+     ★ 배열 길이가 곧 "몇 번째까지 값이 붙나"다. 4번째부터는 0 — 질려서 더는 못 먹는다.
+
+     ★★ 이 표는 **두 곳에서 같이 쓴다** (2026-08-04 박사님 확정 · 아래 §겹침).
+       ① 작물 **종류**가 늘 때 — 콩나물 다음에 들인 것은 2,000, 그다음은 1,000
+       ② 거두는 **때가 겹칠** 때 — 곳간이 아직 안 빈 채로 또 거두면 둘째는 2,000, 셋째는 1,000
+     둘을 다른 표로 만들면 안 된다. 줄어드는 **이유가 같기 때문**이다 — 질림이다.
+     같은 것이 아직 남아 있는데 또 들어오는 것이나, 같은 것을 계속 먹는 것이나 한 가지다. */
   cropKindSavedWon: Object.freeze([3_000, 2_000, 1_000]),
   /* 품질 배수의 분모. 최상 품질(3끼)이 그 종류의 기본값을 그대로 낸다.
      ★ 끼니는 **품질 라벨로 남는다** — "하얗고 아삭 3끼"라는 말이 절감액보다 눈에 잘 들어온다.
@@ -129,6 +144,41 @@ export function cropCycleSavedWon(rules, meals, kindIndex = 0) {
   return Math.round(base * Math.max(0, meals) / maxMeals);
 }
 
+/* ============================================================
+   ★★ 겹침 — **"같은 날에 거둔 것"** 이 겹친 것이다 (2026-08-04 박사님 확정)
+   ------------------------------------------------------------
+   원문: *"띄엄으로 해야지. 내 말은 5일 주기니까 5개까지 1일씩 안 겹치게 하면
+          저감량이 매일 다 3000 아녀?"*
+
+       주기 5일 · 시루 5개 · 물을 하루씩 걸러 준다
+         → 거두는 날이 하루씩 어긋난다 → 매일 하나씩 거둔다
+         → 겹치는 것이 없으니 **전부 3,000원** → 하루 저감 3,000원
+
+   ★★ **천장이 주기 길이에서 저절로 나온다.** 5일 주기면 5개가 상한이다 —
+     6개째부터는 반드시 어느 날과 겹쳐 그날 둘째가 되어 2,000원, 그다음 1,000원, 그다음 0원이다.
+     상한을 따로 박지 않는다. 규칙에서 나온다. **이것이 이 설계의 핵심이다.**
+   ⇒ 시루를 사는 것이 "돈"을 사는 것이 아니라 **"짜임새"** 를 사는 것이 된다.
+
+   ★ 후보가 둘이었다 — **같은 날인가** · **곳간이 안 빈 동안인가**. 박사님 그림이 앞을 골랐고,
+     재 보니 **하루 상한이 한 회전분이 된 뒤로는 둘이 사실상 같은 답을 낸다**:
+     완전 시차 판에서는 매일 곳간이 비므로 "곳간이 안 빔" = "그날 처음 거둠"이다.
+     그래도 **같은 날**을 정본으로 삼는 이유는 정확해서다 —
+     곳간 잔량으로 세면 깎인 수확(2,000·1,000원)이 들어간 뒤 잔량이 회전 배수와 안 맞아
+     **넷째가 0원이 아니라 1,000원이 된다.** 세는 대상이 "금액"이 아니라 "건수"라야 눈금이 맞다.
+
+   ★ 순번 = **그날 이미 거둔 시루 수**.
+       그날 첫째 → 0 → 3,000 (온전히)
+       그날 둘째 → 1 → 2,000
+       그날 셋째 → 2 → 1,000
+       그날 넷째부터 → 3 이상 → **0원** (표에 값이 없다 = 질려서 더는 못 먹는다)
+   ★ 넷째부터 0인 것은 표 길이가 셋이기 때문이고, 3종째까지만 값이 붙는 것과 **같은 이유**다.
+     버리는 것이 아니다 — 곳간에 안 들어가므로 쉬어서 버려지는 몫(spoiledWon)과도 다르다.
+     들고 오긴 왔는데 **먹을 마음이 안 드는 것**이라 셈이 0이다.
+============================================================ */
+export function overlapSavedWon(rules, meals, indexOnDay) {
+  return cropCycleSavedWon(rules, meals, Math.max(0, Math.round(indexOnDay || 0)));
+}
+
 /* 경제값의 정본은 data/balance/characters.json._meta다. 코어는 그 값을 받아 1끼 값을
    유도할 뿐 복제하지 않는다. 잘못된 JSON은 기본값으로 굴리지 않고 시작 전에 중단한다.
    ★ 2026-08-04 — 절감은 이제 **원**으로 매긴다(위 §작물 종류). 그래도 이 검증은 그대로 둔다:
@@ -155,55 +205,190 @@ export function firstPlayRulesFromBalance(balance) {
     /* ★ 지금 도는 작물 전부가 **한 회전에** 내는 절감 합계(최상 품질 기준). 곳간 한도이기도 하다 —
        한 회전분보다 많이 쌓일 수 없다(그 이상은 쉬어서 버린다. 콩나물은 냉장 3~4일이다). */
     cropSavedWonPerCycle,
-    /* 하루에 곳간에서 꺼내 쓸 수 있는 상한. 한 회전분을 회전 일수로 고르게 나눈 값이다 —
-       ★ 이것이 예전의 "하루 2끼 상한"을 대신한다. 종류 체감이 이미 총량을 막으므로
-         상한은 "몰아 쓰지 않게" 고르게 펴는 일만 한다. */
-    dailyCropSaveWon: Math.round(cropSavedWonPerCycle / FIRST_PLAY_RULES.harvestDays),
+    /* ★★ 하루에 곳간에서 꺼내 쓸 수 있는 상한 — **한 회전분**이다 (2026-08-04 다시 정함).
+       ------------------------------------------------------------
+       박사님: *"5일 주기니까 5개까지 1일씩 안 겹치게 하면 저감량이 매일 다 3000 아녀?"*
+
+       ★ 예전에는 `한 회전분 ÷ 회전 일수` = 600원이었다. 그 값이 **박사님 그림을 막고 있었다**:
+         완전 시차로 매일 3,000원이 들어와도 600원씩만 꺼내 쓰면 곳간에 쌓이다 버려진다.
+         상한이 "고르게 펴는 일"을 넘어 **총량을 막는 두 번째 규칙**이 되어 있었던 것이다.
+         (실측: 시루를 몇 개로 늘려도 20일 총저감이 9,000원으로 똑같았다.)
+
+       ★ 그래서 상한을 **한 회전분**으로 올린다. 근거 셋:
+         ① ★**천장이 주기 길이에서 저절로 나온다.** 5일 주기면 시루 5개까지 매일 하나씩 거둘 수
+            있고, 그때 하루 저감이 딱 한 회전분이다. 6개째부터는 반드시 어느 날과 겹쳐
+            2,000 → 1,000 → 0 으로 깎인다 — **상한을 따로 박을 필요가 없다.**
+         ② 정본에 이미 천장이 있다 — `characters.json._meta.cropMealCapPerPerson`(자취생 2끼).
+            원으로 5,000원이고, 한 회전분 3,000원은 그 아래다. 아래 `Math.min` 이 그 정본을 지킨다.
+            작물 종류가 늘어 한 회전분 합계가 5,000원을 넘으면 **끼니 상한이 이긴다.**
+         ③ 하루 식비 7,500원의 40%다. 그 위로 가면 "하루 세 끼를 콩나물로만"이 되어 현실이 아니다.
+       ⚠ 그래서 시루 1개짜리는 저감이 **고르지 않다**: 거둔 날 3,000원, 나머지 나흘 0원.
+         총액은 예전과 같고(5일에 3,000원), 오히려 "거둔 날에 밥값이 준다"가 또렷해진다. */
+    dailyCropSaveWon: Math.min(cropSavedWonPerCycle, dailyCropMealCap * (dailyFoodWon / mealsPerDay)),
     cropKinds: kinds
   });
+}
+
+/* ============================================================
+   ★★ 시루마다 자기 회전 (2026-08-04 박사님 지시 "시차를 두자")
+   ------------------------------------------------------------
+   예전에는 `beansprout.ageDays` **하나를 시루 전부가 나눠 썼다.** 그래서 시루를 몇 개 놓든
+   회전이 같이 돌고 거두는 날도 같았다 — 시차가 아예 생길 수 없는 모양이었다.
+   이제 `beansprout.pots[]` 가 정본이고, 칸 하나가 시루 하나다.
+
+   ★ **자리는 여전히 하나다**(`beansprout.slotId` · `.at`). 시루들은 같은 자리에서 나란히 돈다.
+     시루마다 좌표를 주지 않은 이유 셋:
+       ① 시차는 **시간의 축**이지 자리의 축이 아니다. 자리를 쪼개면 시루마다 빛이 달라져
+          품질까지 갈리는데, 그건 이 지시가 재려던 것이 아니다(빛 축은 이미 몬스테라가 쓴다).
+       ② 조도 계약(daily_light/1)·방뷰·자유 배치가 전부 `slotId` 하나를 전제한다.
+          시루마다 좌표를 주면 그 셋을 같이 고쳐야 하는데 화면은 이 창 소유가 아니다.
+       ③ 현실이 그렇다 — 시루 셋은 같은 선반 위에 나란히 놓는다.
+
+   ★ 칸 하나가 갖는 것은 **자기 회전에 관한 것뿐**이다. 자리·자라는 날처럼 시루 전부가
+     나눠 갖는 것은 `beansprout` 쪽에 그대로 둔다. 두 곳에 같은 값을 두지 않는다.
+============================================================ */
+export function makeCropPot(id, opt = {}) {
+  return {
+    id,                    // 'crop_01' … 표시·세이브의 안정 열쇠
+    /* ★★ **회전 시작일** (2026-08-04 새 규칙 · 아래 §물주기).
+       물을 준 날이 곧 0일차다. null = 아직 물을 안 줘서 **시작하지 않았다.** */
+    startedOnDay: opt.startedOnDay ?? null,
+    /* ★ **언제부터 시작을 기다리고 있나** — 벌이 아니라 화면이 말할 근거다(§물주기 ⚠).
+       놓은 날(=게임 시작)이나 다시 심은 날이 여기 들어간다. 시작하면 뜻이 없어진다. */
+    idleSinceDay: opt.idleSinceDay ?? 0,
+    ageDays: 0,
+    dliHist: [],
+    harvested: false,
+    quality: null,
+    meals: 0,
+    avgDli: null,
+    cycle: opt.cycle ?? 1,   // 이 시루의 몇 번째 회전인가
+    harvestCount: 0,         // 이 시루가 지금까지 몇 번 거둬졌나
+    harvestMeals: 0,         // 직전 수확의 품질 끼니 라벨 (표시용)
+    savedWon: 0,             // 직전 수확이 실제로 곳간에 넣은 값
+    overlapIndex: 0          // 직전 수확이 몇 번째로 겹쳤나 (0 = 안 겹쳤다)
+  };
+}
+
+/* 옛 세이브·옛 상태(칸이 하나뿐인 모양)를 `pots[]` 로 옮긴다. **되돌릴 수 있는 모양으로만** 옮긴다 —
+   지어낼 값이 없다: 옛 한 칸이 그대로 첫 시루가 되고, `sirus` 가 2 이상이면 나머지는
+   **같은 회전을 함께 돌던 것**이므로 같은 값으로 복제한다(옛 규칙이 실제로 그랬다).
+   ★ 옛 `wateredOnDay` 는 새 `startedOnDay` 가 된다 — 옛 규칙에서도 "마지막으로 물을 준 날"이라
+     그 값이 회전 시작으로 읽혀도 하루 이상 어긋나지 않는다(아래 §세이브 이전).
+   ⚠ 이미 pots 가 있으면 **손대지 않는다.** 두 번 부르는 것이 안전해야 세이브·복원이 안 꼬인다. */
+export function ensureCropPots(b) {
+  if (!b) return b;
+  if (Array.isArray(b.pots) && b.pots.length) return b;
+  const n = Math.max(1, Math.round(b.sirus || 1));
+  const started = Number.isInteger(b.wateredOnDay) ? b.wateredOnDay : null;
+  b.pots = [];
+  for (let i = 0; i < n; i++) {
+    const p = makeCropPot(`${BEANSPROUT_ID}_${String(i + 1).padStart(2, '0')}`,
+                          { startedOnDay: started, cycle: b.cycle || 1 });
+    /* 옛 한 칸의 진행을 그대로 옮긴다. `dliHist` 는 배열이라 시루마다 사본을 준다 */
+    p.ageDays = Math.max(0, Math.round(b.ageDays || 0));
+    p.dliHist = (b.dliHist || []).slice();
+    p.harvested = !!b.harvested;
+    p.quality = b.quality ?? null;
+    p.meals = b.meals || 0;
+    p.avgDli = b.avgDli ?? null;
+    p.harvestCount = b.harvestCount || 0;
+    p.harvestMeals = b.harvestMeals || 0;
+    /* ★ 아직 한 번도 안 자란 시루는 **시작 안 한 것**으로 본다 — 옛 규칙에서 "심고 물만 준" 상태와
+       새 규칙의 "아직 물을 안 준" 상태를 가를 근거가 `ageDays` 뿐이다. 0이면 잃을 진행이 없다. */
+    if (p.ageDays === 0 && !p.harvested) p.startedOnDay = started;
+    b.pots.push(p);
+  }
+  return b;
+}
+
+/* 시루 목록 — 옛 모양(pots 없음)도 받아 준다. **읽기 전용 경로에서 상태를 안 만든다.** */
+function potsOf(b) {
+  if (!b) return [];
+  if (Array.isArray(b.pots) && b.pots.length) return b.pots;
+  return [];
+}
+
+/* 이 시루가 지금 거둘 수 있나 — 시작했고 · 안 거뒀고 · 다 자랐다 */
+function potReady(p, harvestDays) {
+  return !!(p && !p.harvested && p.startedOnDay != null &&
+            Number.isFinite(harvestDays) && p.ageDays >= harvestDays);
+}
+
+/* ★ 대표 칸을 `beansprout` 에 비춘다 — **옛 이름을 살려 두는 유일한 장치**다.
+   화면(game.html)·방뷰·옛 재현이 `beansprout.ageDays` 같은 칸을 그대로 읽고 있고, 그 파일들은
+   이 창 소유가 아니다. 그래서 정본은 `pots[]` 로 옮기되 **읽기용 사본**을 여기 남긴다.
+   ⚠ 사본은 **판정에 쓰지 않는다.** 판정은 전부 pots 를 본다(beansproutReady·harvest·water).
+
+   대표는 **가장 앞선 시루**다: 거둘 수 있는 것이 있으면 그것, 없으면 제일 많이 자란 것.
+   그래야 화면의 "수확까지 N일"이 **다음에 실제로 일어날 일**을 말한다.
+   `harvested` 만 뜻이 다르다 — **하나라도 거뒀나**(= 자리를 잠글까 · 다시 심을 수 있나)다. */
+export function syncCropLead(b) {
+  const pots = potsOf(b);
+  if (!pots.length) return b;
+  const hd = b.harvestDays;
+  const lead = pots.slice().sort((x, y) => {
+    const rx = potReady(x, hd) ? 1 : 0, ry = potReady(y, hd) ? 1 : 0;
+    if (rx !== ry) return ry - rx;
+    return (y.ageDays || 0) - (x.ageDays || 0);
+  })[0];
+  b.sirus = pots.length;
+  b.ageDays = lead.ageDays;
+  b.dliHist = lead.dliHist;
+  b.quality = lead.quality;
+  b.meals = lead.meals;
+  b.avgDli = lead.avgDli;
+  b.harvestMeals = lead.harvestMeals;
+  b.cycle = pots.reduce((m, p) => Math.max(m, p.cycle || 1), 1);
+  b.harvestCount = pots.reduce((a, p) => a + (p.harvestCount || 0), 0);
+  b.harvested = pots.some(p => p.harvested);
+  /* 마지막으로 회전을 시작한 날 — 옛 이름 그대로다(세이브·화면이 읽는다) */
+  const started = pots.map(p => p.startedOnDay).filter(v => Number.isInteger(v));
+  b.wateredOnDay = started.length ? Math.max(...started) : null;
+  return b;
 }
 
 export function createFirstPlayState(opt = {}) {
   const enabled = !!opt.enabled;
   const rules = opt.rules || null;
   if (enabled && !rules) throw new Error('[첫 플레이] 밸런스 계약 없이 시작할 수 없습니다');
+  const b = {
+    /* slotId = 계약 열쇠 · at = 좌표 정본. 화분(S.pots[])과 같은 두 칸이다.
+       ★ 시루 전부가 이 자리 하나를 나눠 쓴다(위 §시루마다 자기 회전). */
+    slotId: null,
+    at: null,
+    harvestDays: rules ? rules.harvestDays : 0,
+    /* ★★ 정본은 여기다 — 시루 하나가 칸 하나. `ensureCropPots` 가 옛 모양을 여기로 옮긴다. */
+    pots: [makeCropPot(`${BEANSPROUT_ID}_01`)],
+    /* ── 아래는 전부 `pots[대표]` 의 **읽기용 사본**이다(syncCropLead 가 채운다) ── */
+    ageDays: 0,
+    dliHist: [],
+    harvested: false,
+    quality: null,
+    meals: 0,
+    avgDli: null,
+    /* `sirus` = 시루 수 = `pots.length`. 화면이 이 이름을 읽는다 */
+    sirus: 1,
+    cycle: 1,
+    harvestCount: 0,
+    harvestMeals: 0,
+    /* ★ 마지막으로 회전을 시작한 날(=물을 준 날). **게임일**이다(상대 일수가 아니다) */
+    wateredOnDay: null
+  };
   return {
     enabled,
     rules,
     phase: 'place_beansprout',
     completed: false,
-    beansprout: {
-      /* slotId = 계약 열쇠 · at = 좌표 정본. 화분(S.pots[])과 같은 두 칸이다. */
-      slotId: null,
-      at: null,
-      ageDays: 0,
-      harvestDays: rules ? rules.harvestDays : 0,
-      dliHist: [],
-      harvested: false,
-      quality: null,
-      meals: 0,
-      avgDli: null,
-      /* ★ 시루는 **하나가 아니다** (2026-08-03 · 반복 수입).
-         `sirus` 는 같은 자리에서 함께 도는 시루 수다.
-         ⚠ 2026-08-04 정정 — **같은 종류를 늘려도 절감은 안 는다**(위 §작물 종류).
-           칸을 없애지 않은 이유는 둘이다: ① 시루는 여전히 **자리를 차지하고 씨앗을 먹는다**
-           (늘리면 손해가 눈에 보인다) ② 작물 종류가 늘면 종류마다 시루가 필요하다.
-           즉 시루는 "많이 먹는 장치"에서 **"한 종류를 담는 그릇"** 으로 뜻이 바뀌었다. */
-      sirus: 1,
-      cycle: 1,              // 몇 번째 회전인가 (재파종할 때마다 오른다)
-      harvestCount: 0,       // 지금까지 몇 번 수확했나 — 첫 수확과 그 뒤를 가르는 열쇠
-      harvestMeals: 0,       // 직전 수확의 품질 끼니 라벨 (표시용)
-      /* ★★ 물주기 (2026-08-04) — 아래 §물주기 참고.
-         `wateredOnDay` 는 **게임일**이다(상대 일수가 아니다). 세이브에 그대로 남아
-         복원 뒤에도 "오늘 줬나"가 맞는다. null = 아직 한 번도 안 줬다. */
-      wateredOnDay: null,
-      dryDays: 0,            // 이번 회전에서 물을 빼먹은 날 (누적)
-      dryRun: 0              // 지금 연속 며칠째 빼먹고 있나 (0 = 어제 줬다)
-    },
+    beansprout: b,
     food: {
       /* ★ 곳간은 **원**으로 센다 (2026-08-04). 예전에는 끼니였는데, 한 회전 절감이
          3,000원이라 1끼(2,500원) 단위로는 안 떨어진다. 끼니는 품질 라벨로만 남는다. */
       pantryWon: 0,
+      /* ★ 겹침을 세는 두 칸 (2026-08-04 · §겹침) — "그날 몇 번째로 거두나"의 기억이다.
+         날이 바뀌면 `harvestDay` 가 안 맞아 저절로 0부터 다시 센다. */
+      harvestDay: null,
+      harvestedOnDay: 0,
       lastHarvestMeals: 0,   // 직전 수확의 품질 끼니 라벨 (표시용)
       lastFoodSavedWon: 0,
       totalFoodSavedWon: 0,
@@ -234,18 +419,20 @@ export function createFirstPlayState(opt = {}) {
        placeBeansprout(fp, {x,y,z,onUid,occIdx}, { size, slots, snapDist }) 임의 좌표
        placeBeansprout(fp, { slotId, at })                                이미 자리를 가진 물건
      opt.slots 를 같이 주면 이름으로 놓아도 좌표까지 세워진다(자유 좌표와 같은 정본을 갖는다).
-   ★ opt.day 를 주면 **그날 물을 준 것으로 친다** (2026-08-04). 심을 때 물을 붓는 것이
-     현실이고, 그래야 "놓자마자 마른 날"이 안 생긴다. 안 주면 물 상태를 손대지 않는다. */
+   ★★ 2026-08-04 정정 — **놓는다고 물이 주어지지 않는다.** 예전에는 `opt.day` 로 심는 날 물을
+     부었는데, 새 규칙에서 물은 **회전 시작**이라(아래 §물주기) 놓자마자 시작되면
+     플레이어가 시차를 만들 손이 사라진다. 심는 것과 시작하는 것은 다른 동작이다.
+     `opt.day` 는 받되 무시한다 — 옛 호출부가 안 깨진다. */
 export function placeBeansprout(fp, target, opt = {}) {
   if (!fp || !fp.beansprout) throw new Error('[첫 플레이] 콩나물 상태가 없습니다');
   if (target == null || target === '')
     throw new Error('[첫 플레이] 콩나물을 둘 자리를 골라 주세요');
+  ensureCropPots(fp.beansprout);
   if (fp.beansprout.harvested)
     throw new Error('[첫 플레이] 이미 수확한 첫 시루는 옮길 수 없습니다');
 
   const spot = spotOf(target, { id: BEANSPROUT_ID, ...opt });
   const moved = fp.beansprout.slotId != null && fp.beansprout.slotId !== spot.slotId;
-  if (Number.isInteger(opt.day)) waterBeansprout(fp, opt.day);
   fp.beansprout.slotId = spot.slotId;
   /* 좌표를 못 세운 경우(얇은 슬롯 · 좌표 없는 헤드리스 표)는 **null 로 남긴다.** 지어내면
      그 시루만 방 한가운데로 순간이동한다 — 그때는 예전처럼 slotId 로 돈다. */
@@ -279,56 +466,95 @@ export function cropDliFromReport(report, ref) {
 }
 
 /* ============================================================
-   ★★ 물주기 — **속도 축** (2026-08-04 박사님 지시 "행위가 있어야 재미있겠지")
+   ★★ 물주기 — **회전 시작 버튼** (2026-08-04 박사님 재지시)
    ------------------------------------------------------------
-   ★ 축을 겹치지 않는다. 이 게임이 가르치는 것은 빛이다.
-       자리(빛) = **품질**   어두우면 하얗고 아삭 · 밝으면 초록·쓴맛. 예전 그대로.
-       물       = **속도**   준 날만 자란다. 빼먹으면 그날은 안 자란다.
-     그래서 물은 새 축이 되되 빛과 부딪히지 않는다.
+   원문: *"물은 시작 1번만 주도록 하는 게 어때? 심고, 물을 줘야 그날 기준으로 주기 뒤에 수확인 거야.
+          그걸 이용해서 이용자가 알아서 시차 조절"* · *"이러면 가이드에 설명도 풍부해지지"*
 
-   ★★ 빼먹은 날은 **DLI 이력에도 안 쌓는다.** 이게 축 분리의 실제 구현이다 —
-     안 쌓아야 "물을 안 준 것"이 품질 평균을 못 건드린다. 쌓으면 어두운 방에서 물을
-     빼먹을수록 평균이 더 어두워져 **물이 품질을 올리는** 이상한 규칙이 된다.
-     이력은 "이 콩나물이 **자란 날에** 받은 빛"이고, 안 자란 날은 그 콩나물의 하루가 아니다.
+       씨앗을 심는다 → **물을 준다(그날이 0일차)** → 5일 뒤 거둘 수 있음 → 거둔다
+                        ↑ 여기가 회전 시작이다
 
-   ★ **죽지 않는다.** 박사님 확정 원칙("초보는 안 죽는다")을 그대로 지킨다.
-     며칠을 내리 빼먹어도 시들지 않고 **늦어질 뿐**이다. 벌은 시간이고, 시간이 곧 돈이다:
-     5일 회전이 7일이 되면 하루평균 절감이 600원 → 429원으로 스스로 내려간다.
-     따로 벌점을 만들지 않는다 — 만들면 그것이 두 번째 벌이 되고 "안 죽는다"가 흔들린다.
-     그래서 **연속으로 안 준 날에도 품질은 안 떨어진다.** 속도만 멈춘다.
+   ★★ 물은 **회전당 한 번**이다. 매일 주는 것이 아니다.
+     그래서 마른 날(`dryRun`·`dryDays`)이라는 개념 자체가 **없어졌다.**
+     물을 안 주면 벌을 받는 것이 아니라 **아직 시작을 안 한 것**이다. 시루는 그대로 놓여 있다.
 
-   ★ **하루 한 번**이다. 현실은 하루 3~4번 헹궈 줘야 하지만(집에서 시루로 기르는 실제 방식),
-     게임에서 하루에 여러 번 누르게 하면 그건 재미가 아니라 노동이다. 누르는 횟수가 아니라
-     **잊지 않는 것**이 이 행위의 내용이라, 하루 한 번이면 그 내용이 다 담긴다.
-     두 번 눌러도 안전하다(아래 `already`) — 실수로 두 번 눌러 하루가 두 번 가면 안 된다.
+   ★★ 왜 바꿨나 — 세 가지가 한꺼번에 풀린다.
+     ① **노동이 사라진다.** 5일 회전이면 5일에 한 번 누른다. 매일 누르던 것이 잡음이었다.
+     ② **뜻이 하나로 선다.** [물 주기] = "이 시루를 지금 시작한다". 버튼 하나에 뜻 하나다.
+     ③ ★**시차가 규칙이 아니라 판단이 된다.** 시루 셋을 다 심어 두고 물을 하루씩 걸러 주면
+        거두는 날이 하루씩 어긋난다. 시스템이 시차를 주는 것이 아니라 **손으로 만드는 것**이다.
+        그리고 그 어긋남이 곧 돈이다(§겹침) — 가르칠 것이 생긴다.
 
-   ★ 대상은 **작물뿐이다. 몬스테라에는 안 건다.** 근거 셋:
-     ① 현실이 다르다 — 시루는 하루 3~4번, 관엽은 주 1회다. 매일 축이 아니다.
-     ② 몬스테라의 속도 축은 **이미 빛**이다(저광 정지). 거기에 물을 얹으면 정지 사유가 둘이 되어
-        "왜 안 자라지"의 처방이 흐려진다 — loop.js 가 머리공간 정지를 빛 정지와 **다른 칸**에
-        두는 것과 같은 이유다.
-     ③ 몬스테라의 하루 진행은 growth 창 소유(advanceTo)다. 코어가 물로 그걸 막으면
-        남의 창 규칙을 코어가 갖게 된다.
+   ★ **한 번 누르면 시루 하나가 시작한다.** 전부가 아니다. 여기가 시차를 만드는 손이라
+     "한 번에 전부"를 기본으로 두면 플레이어가 시차를 영영 못 만든다.
+     ⇒ 노동 걱정은 안 남는다: 매일이 아니라 회전당 한 번이고, 시루 셋이면 5일에 세 번이다.
+     ⇒ 한꺼번에 시작하고 싶으면 `opt.all` 이다 — 화면이 [전부 주기]를 붙일 수 있다.
+     ⚠ **하루 한 번 제한이 없다.** 같은 날 세 번 눌러 셋을 다 시작할 수 있어야 하기 때문이다
+       (그게 곧 `opt.all` 과 같은 결과다). 대신 **이미 시작한 시루는 다시 안 받는다** —
+       그래서 두 번 눌러도 회전이 앞당겨지지 않는다.
+
+   ⚠ **잊어버린 플레이어가 영영 멈춰 있으면 안 된다.** 벌이 없어진 대신 아무 일도 안 나기
+     때문이다. 그래서 **며칠째 안 줬는지를 상태로 낸다**(`idleDays`) — 화면이
+     "3일째 물을 안 줬습니다"라고 말할 수 있다. 코어는 숫자만 내고 문장은 안 만든다(UI 몫).
+
+   ★ 축은 그대로다. 이 게임이 가르치는 것은 빛이다.
+       자리(빛) = **품질**   어두우면 하얗고 아삭 · 밝으면 초록·쓴맛
+       물       = **시작**   준 날이 0일차. 안 주면 시작이 안 된다
+     물은 여전히 품질을 못 건드린다 — 시작 안 한 날은 DLI 이력에도 안 쌓인다.
+
+   ★ **죽지 않는다.** 박사님 확정 원칙("초보는 안 죽는다")은 그대로다. 늦어질 뿐이다.
+   ★ 대상은 **작물뿐이다. 몬스테라에는 안 건다** (근거는 예전과 같다 — 몬스테라의 속도 축은
+     이미 빛이고, 하루 진행은 growth 창 소유다).
 ============================================================ */
 
-/* 오늘 물을 준다. **하루 한 번**이고 두 번 눌러도 안전하다.
+/* 아직 시작 안 한 시루 — 놓여 있고 · 안 거뒀고 · 물을 안 줬다. 먼저 만든 순서대로 낸다. */
+function idlePots(b) {
+  return potsOf(b).filter(p => !p.harvested && p.startedOnDay == null);
+}
+
+/* 물을 준다 = **회전을 시작한다**. 시작할 시루가 없으면 아무 일도 안 하고 조용히 지난다.
      fp   첫 플레이 상태
-     day  게임일(S.day). 상대 일수가 아니라 절대 게임일이라 세이브 왕복에서도 맞는다
-   반환 { watered, already, day, dryRun } */
-export function waterBeansprout(fp, day) {
+     day  게임일(S.day). 절대 게임일이라 세이브 왕복에서도 맞는다 — 이 값이 그 회전의 0일차다
+     opt.all    true 면 대기 중인 시루를 **전부** 시작한다 (기본은 하나)
+     opt.count  몇 개를 시작할지 (기본 1). `all` 이 우선한다
+   반환 { watered, already, day, started, startedIds, waiting, idleDays } */
+export function waterBeansprout(fp, day, opt = {}) {
   if (!fp || !fp.beansprout) throw new Error('[첫 플레이] 콩나물 상태가 없습니다');
   if (!Number.isInteger(day) || day < 0)
     throw new Error(`[물주기] 게임일이 0 이상의 정수가 아닙니다: ${day}`);
-  const b = fp.beansprout;
-  if (b.harvested) {
-    /* 이미 거둔 시루는 물을 줄 것이 없다. 고장이 아니라 안내다 — 던지지 않는다.
-       (다시 심으면 그때부터 다시 물이 필요하다) */
-    return { watered: false, already: false, harvested: true, day, dryRun: b.dryRun || 0 };
+  const b = ensureCropPots(fp.beansprout);
+  const idle = idlePots(b);
+  if (!idle.length) {
+    /* 줄 것이 없다. 고장이 아니라 안내다 — 던지지 않는다(두 번 눌러도 안전).
+       `harvested` 는 **전부 거둬져 있나**다: 다시 심어야 물을 줄 것이 생긴다는 뜻이다. */
+    syncCropLead(b);
+    return { watered: false, already: true, day, started: 0, startedIds: [],
+             waiting: 0, idleDays: 0,
+             harvested: potsOf(b).length > 0 && potsOf(b).every(p => p.harvested) };
   }
-  if (b.wateredOnDay === day)
-    return { watered: false, already: true, day, dryRun: b.dryRun || 0 };
-  b.wateredOnDay = day;
-  return { watered: true, already: false, day, dryRun: b.dryRun || 0 };
+  const want = opt.all ? idle.length
+             : Math.max(1, Math.min(idle.length, Math.round(opt.count || 1)));
+  const startedIds = [];
+  for (let i = 0; i < want; i++) {
+    idle[i].startedOnDay = day;
+    idle[i].ageDays = 0;
+    idle[i].dliHist = [];
+    startedIds.push(idle[i].id);
+  }
+  syncCropLead(b);
+  return { watered: true, already: false, day, started: want, startedIds,
+           waiting: idle.length - want, idleDays: 0, harvested: false };
+}
+
+/* 며칠째 안 줬나 — 대기 중인 시루가 **가장 오래 기다린 날 수**다.
+   ⚠ 벌이 아니다(§물주기). 화면이 "3일째 물을 안 줬습니다"라고 말할 근거일 뿐이다.
+   기준은 `b.idleSinceDay`(대기가 생긴 날)이고, 그 값이 없으면 셀 수 없으므로 0을 낸다. */
+function idleDaysOf(b, day) {
+  if (!Number.isInteger(day)) return 0;
+  const idle = idlePots(b);
+  if (!idle.length) return 0;
+  const since = idle.map(p => (Number.isInteger(p.idleSinceDay) ? p.idleSinceDay : day));
+  return Math.max(0, day - Math.min(...since));
 }
 
 /* ============================================================
@@ -348,117 +574,146 @@ export function waterBeansprout(fp, day) {
        품질은 이미 `dliHist` 로 확정돼 있고(자리=빛), 거두는 시각이 그 값을 못 바꾼다.
        바꾸게 만들면 **물이 아니라 시각이 빛 축을 건드리는** 세 번째 축이 생긴다.
 
-   ★★ **다 자란 뒤에는 물을 안 요구한다.** 현실에서는 거두기 전까지 주지만, 게임에서는 안 준다:
-     ① 물은 **속도 축**이고(§물주기) 속도가 쓸 곳이 없다 — `ageDays` 가 이미 만수라 더 올릴 데가 없다.
-        아무것도 안 바꾸는 입력을 매일 요구하면 그건 규칙이 아니라 잡음이다.
-     ② 효과를 만들려면 "안 주면 나빠진다"라야 하는데 그게 곧 **둘째 벌**이라 위 원칙과 부딪힌다.
-     ③ 손이 두 배가 된다 — 다 자란 날에 [물 주기]와 [수확하기]가 같이 뜨면 버튼이 겹친다.
-        `beansproutWaterStatus.needsWater` 가 다 자란 시루에서 false 가 되는 것이 이 결정의 구현이다.
-     ⇒ 그래서 `advanceBeansproutDay` 는 **물 검사보다 먼저** 다 자람에서 선다 — 마른 날도 안 센다.
+   ★★ **다 자란 뒤에는 아무것도 안 요구한다.** 물은 이미 회전 시작에 한 번 줬고(§물주기),
+     `ageDays` 가 만수라 더 올릴 데도 없다. 거둘 때까지 그대로 서 있는다.
+
+   ★★ **한 번에 다 거둔다** (2026-08-04 · 시루가 여럿이 된 뒤). 익은 시루가 셋이면 셋 다 거둔다.
+     ⚠ 시루마다 버튼을 누르게 하면 그건 폰에서 노동이다. 그리고 거두는 데에는 **판단이 없다** —
+       익은 것을 안 거둘 이유가 없다(안 거두면 다음 회전이 안 시작될 뿐이다).
+       판단이 있는 것은 **물주기**(언제 시작하나)뿐이고, 그래서 손이 하나씩인 것도 그쪽뿐이다.
+     ⇒ 그래도 한꺼번에 거두면 **겹쳐서 깎인다**(§겹침). 그게 시차를 만들 이유다 —
+       규칙으로 막는 대신 **셈으로 보여 준다.**
 
    ★ 자동수확(`S.perks.autoHarvest`)은 **나중 보상**이다. 지금은 늘 꺼져 있다(state.js §perks).
 ============================================================ */
 
-/* 다 자랐나 = 거둘 수 있나. 상태를 안 바꾼다. 놓지 않았거나 이미 거둔 시루는 false 다. */
+/* 지금 거둘 수 있는 시루들. 먼저 시작한 순서대로 낸다 —
+   ★ 순서가 곧 **겹침 순번**이다(§겹침): 먼저 심은 것이 먼저 곳간에 들어가 온전한 값을 받는다. */
+export function readyCropPots(b) {
+  if (!b || !b.slotId) return [];
+  const hd = b.harvestDays;
+  return potsOf(b).filter(p => potReady(p, hd))
+    .sort((x, y) => (x.startedOnDay ?? 0) - (y.startedOnDay ?? 0));
+}
+
+/* 거둘 수 있나 — **시루 하나라도** 익었나. 상태를 안 바꾼다.
+   ⚠ `b.harvested`(사본)를 안 본다. 그 칸은 "하나라도 거뒀나"라서, 시차 판에서는 거의 늘 true 다 —
+     그걸로 막으면 **둘째 시루가 익어도 [수확하기]가 안 뜬다.** 판정은 언제나 pots 를 본다. */
 export function beansproutReady(b) {
-  return !!(b && b.slotId && !b.harvested &&
-            Number.isFinite(b.harvestDays) && Number.isFinite(b.ageDays) &&
-            b.ageDays >= b.harvestDays);
+  return readyCropPots(b).length > 0;
 }
 
 /* [수확하기] 버튼을 켤지 흐리게 할지의 근거. **한글 문장은 만들지 않는다**(UI 몫). */
 export function beansproutHarvestStatus(fp) {
   const b = fp && fp.beansprout;
   if (!fp || !fp.enabled || !b) return null;
-  const ready = beansproutReady(b);
+  const pots = potsOf(b);
+  const ripe = readyCropPots(b);
+  const hd = b.harvestDays || 0;
+  /* 자라는 중인 시루 중 가장 빨리 익을 것까지 며칠 — 시작 안 한 시루는 셀 수 없어 안 센다 */
+  const growing = pots.filter(p => !p.harvested && p.startedOnDay != null && p.ageDays < hd);
+  const nextIn = growing.length
+    ? Math.min(...growing.map(p => hd - p.ageDays)) : null;
   return {
-    ready,
-    canHarvest: ready,
+    ready: ripe.length > 0,
+    canHarvest: ripe.length > 0,
+    /* ★ 몇 개를 거두나 — 화면이 "시루 2개 거두기"라고 말할 근거다 */
+    readyCount: ripe.length,
+    readyIds: ripe.map(p => p.id),
     placed: !!b.slotId,
     harvested: !!b.harvested,
     ageDays: b.ageDays || 0,
-    harvestDays: b.harvestDays || 0,
-    daysLeft: Math.max(0, (b.harvestDays || 0) - (b.ageDays || 0)),
-    sirus: Math.max(1, Math.round(b.sirus || 1)),
-    cycle: b.cycle || 1,
-    dryDays: b.dryDays || 0
+    harvestDays: hd,
+    daysLeft: Math.max(0, hd - (b.ageDays || 0)),
+    nextReadyInDays: nextIn,
+    growingCount: growing.length,
+    idleCount: idlePots(b).length,
+    sirus: Math.max(1, pots.length || Math.round(b.sirus || 1)),
+    cycle: b.cycle || 1
   };
 }
 
-/* 오늘 물을 줬나 · 며칠째 빼먹었나 — 화면 버튼 문구용. **한글 문장은 만들지 않는다**(UI 몫). */
+/* 물을 줄(=회전을 시작할) 시루가 있나 · 며칠째 안 줬나 — 화면 버튼 문구용.
+   **한글 문장은 만들지 않는다**(UI 몫). */
 export function beansproutWaterStatus(fp, day) {
   const b = fp && fp.beansprout;
   if (!fp || !fp.enabled || !b) return null;
-  const wateredToday = Number.isInteger(day) && b.wateredOnDay === day;
-  const ready = beansproutReady(b);
+  const pots = potsOf(b);
+  const idle = idlePots(b);
+  const startedToday = Number.isInteger(day) && pots.some(p => p.startedOnDay === day);
+  const idleDays = idleDaysOf(b, day);
   return {
-    wateredToday,
-    /* 놓지 않았거나 · 이미 거뒀거나 · **다 자랐으면** 줄 것이 없다 — 버튼을 흐리게 할 근거다.
-       다 자란 시루에 물을 안 받는 이유는 위 §수확 ★★ 참고(속도가 쓸 곳이 없다). */
-    needsWater: !!b.slotId && !b.harvested && !ready && !wateredToday,
-    ready,
+    /* ★ 새 규칙에서 "오늘 줬나"는 더는 회전을 가르지 않는다 — 표시용으로만 남긴다 */
+    wateredToday: startedToday,
+    startedToday,
+    /* 놓았고 · 아직 시작 안 한 시루가 있으면 줄 것이 있다.
+       ⚠ **다 자란 시루는 애초에 대기가 아니다** — 물은 회전당 한 번이라 이미 줬다(§물주기). */
+    needsWater: !!b.slotId && idle.length > 0,
+    /* 몇 개가 시작을 기다리나 — 화면이 "시루 2개가 아직 안 자랍니다"를 말할 근거 */
+    waiting: idle.length,
+    idleIds: idle.map(p => p.id),
+    /* ★ 며칠째 안 줬나. 벌이 아니라 **알림의 근거**다(§물주기 ⚠) */
+    idleDays,
+    /* 옛 이름 — 화면(game.html)이 아직 `dryRun` 을 읽는다. 뜻은 "며칠째 밀렸나"로 같다.
+       ⚠ 새 이름은 `idleDays` 다. 화면이 갈아타면 이 칸은 지운다. */
+    dryRun: idleDays,
+    ready: beansproutReady(b),
     placed: !!b.slotId,
-    harvested: !!b.harvested,
+    /* **전부** 거둬져 있나 = 다시 심어야 줄 것이 생긴다 */
+    harvested: pots.length > 0 && pots.every(p => p.harvested),
     wateredOnDay: b.wateredOnDay ?? null,
-    dryRun: b.dryRun || 0,
-    dryDays: b.dryDays || 0,
+    sirus: Math.max(1, pots.length),
     ageDays: b.ageDays || 0,
     harvestDays: b.harvestDays || 0
   };
 }
 
 /* 하루 공개 경계. 입력을 먼저 검증하고 나서만 상태를 바꾼다.
-     dli        그날 그 자리의 조도
-     opt.watered  ★ 오늘 물을 줬나. loop.js 가 `wateredOnDay === 어제(진행 전 S.day)` 로 낸다.
-                  안 넘기면 **준 것으로 치지 않는다** — 조용한 폴백을 만들지 않는다.
-   ★ 2026-08-04 — **여기서 거두지 않는다.** 자라는 날이 차면 `ready:true` 로 서고,
+     dli   그날 그 자리의 조도 — 시루 전부가 **같은 자리**에 있으므로 한 값이다
+   ★★ 2026-08-04 새 규칙 — `opt.watered` 가 사라졌다. **물을 준(=시작한) 시루만 나이를 먹는다.**
+     시작 안 한 시루는 하루가 가도 그대로다. 마른 날을 세지 않는다 — 그런 개념이 없어졌다(§물주기).
+     인자는 받되 무시한다(옛 호출부가 안 깨진다).
+   ★ **여기서 거두지 않는다.** 자라는 날이 차면 `ready:true` 로 서고,
      거두는 것은 `harvestBeansprout`(=[수확하기] 버튼)의 몫이다(위 §수확). */
 export function advanceBeansproutDay(fp, dli, opt = {}) {
   if (!fp.beansprout.slotId) throw new Error('[첫 플레이] 콩나물 자리를 먼저 정해 주세요');
   if (!validDli(dli)) throw new Error(`[첫 플레이] 콩나물 DLI가 올바르지 않습니다: ${dli}`);
-  if (fp.beansprout.harvested)
-    return { harvested: false, alreadyHarvested: true };
-
   const rules = fp.rules;
   if (!rules) throw new Error('[첫 플레이] 밸런스 계약이 없습니다');
-  const b = fp.beansprout;
+  const b = ensureCropPots(fp.beansprout);
+  const hd = rules.harvestDays;
 
-  /* ★★ 이미 다 자랐다 — 하루가 지나도 **아무 일도 안 난다.** 안 거뒀다고 벌을 주지 않고,
-     ★ 물도 안 센다(마른 날로 안 잡힌다). 그래서 이 줄이 물 검사보다 **먼저** 있다(위 §수확).
-       뒤에 두면 다 자란 시루가 매일 마른 날을 쌓아 "거두기 전까지 물을 줘야" 하게 된다. */
-  if (b.ageDays >= rules.harvestDays) {
-    return {
-      harvested: false, ready: true, justReady: false, dry: false,
-      ageDays: b.ageDays, daysLeft: 0,
-      dryRun: b.dryRun || 0, dryDays: b.dryDays || 0
-    };
+  let grew = 0, justReady = 0;
+  for (const p of potsOf(b)) {
+    /* 거뒀거나 · 아직 시작 안 했거나 · 이미 다 자랐으면 오늘 아무 일도 안 난다 */
+    if (p.harvested || p.startedOnDay == null || p.ageDays >= hd) continue;
+    p.ageDays++;
+    /* ★ 이력은 **자란 날의 빛**만 쌓는다 — 시작 안 한 시루의 하루는 그 콩나물의 하루가 아니다.
+       이 한 줄이 "물이 품질(빛 축)을 못 건드린다"의 실제 구현이다. */
+    p.dliHist.push(dli);
+    grew++;
+    if (p.ageDays === hd) justReady++;
   }
+  syncCropLead(b);
 
-  /* ★ 물을 안 준 날 — **하루도 안 자란다. 이력도 안 쌓는다.** 죽지도 않는다(위 §물주기). */
-  if (!opt.watered) {
-    b.dryDays = (b.dryDays || 0) + 1;
-    b.dryRun = (b.dryRun || 0) + 1;
-    return {
-      harvested: false, ready: false, dry: true,
-      ageDays: b.ageDays, daysLeft: rules.harvestDays - b.ageDays,
-      dryRun: b.dryRun, dryDays: b.dryDays
-    };
-  }
-  b.dryRun = 0;
-
-  b.ageDays++;
-  b.dliHist.push(dli);
-
+  const idle = idlePots(b).length;
+  const alreadyHarvested = potsOf(b).length > 0 && potsOf(b).every(p => p.harvested);
   return {
     harvested: false,
-    dry: false,
-    /* ★ 오늘 다 자랐나 · 오늘 **막** 다 자랐나 — 둘을 가른다.
+    alreadyHarvested,
+    /* 오늘 몇 시루가 자랐나 · 오늘 **막** 익은 시루가 몇인가 */
+    grew,
+    justReadyCount: justReady,
+    /* ★ 오늘 익은 시루가 있나 · 오늘 **막** 익었나 — 둘을 가른다.
        빨리감기가 서는 것은 `justReady`(전환) 쪽이다. `ready` 로 세우면 안 거둔 채로
        다시 감을 때마다 첫날에 또 서서 빨리감기가 못 돈다. */
-    ready: b.ageDays >= rules.harvestDays,
-    justReady: b.ageDays === rules.harvestDays,
+    ready: beansproutReady(b),
+    justReady: justReady > 0,
+    /* ★★ 마른 날 대신 **시작 대기**다 (2026-08-04). 물을 줄 수 있는데 안 준 시루 수 —
+       벌이 아니라 "아직 시작을 안 했다"는 사실이다. 빨리감기가 여기를 본다(loop.js §물주기). */
+    idle,
     ageDays: b.ageDays,
-    daysLeft: Math.max(0, rules.harvestDays - b.ageDays)
+    daysLeft: Math.max(0, hd - b.ageDays)
   };
 }
 
@@ -468,7 +723,7 @@ export function advanceBeansproutDay(fp, dli, opt = {}) {
    ⚠ 몬스테라 선물은 여기 없다 — 그건 `io.growth` 를 쓰므로 loop.harvestCrop 이 맡는다.
      여기서는 `phase = 'monstera_gift'` 로 **문만 연다**(예전과 같은 자리다).
    반환은 예전 `advanceBeansproutDay` 의 수확 반환과 **같은 모양**이다 — 화면·재현이 안 깨진다. */
-export function harvestBeansprout(fp) {
+export function harvestBeansprout(fp, opt = {}) {
   if (!fp || !fp.beansprout) throw new Error('[수확] 콩나물 상태가 없습니다');
   const b = fp.beansprout;
   const rules = fp.rules;
@@ -477,74 +732,127 @@ export function harvestBeansprout(fp) {
     const e = new Error('[수확] 시루를 먼저 방 안에 놓아 주세요');
     e.tutorialInput = true; throw e;
   }
-  if (b.harvested) {
-    const e = new Error('[수확] 이미 거둔 시루입니다 — 다시 심어야 또 거둡니다');
-    e.tutorialInput = true; throw e;
-  }
-  if (b.ageDays < rules.harvestDays) {
-    const e = new Error(`[수확] 아직 ${rules.harvestDays - b.ageDays}일 더 자라야 합니다 ` +
-                        `(${b.ageDays}/${rules.harvestDays}일)`);
+  ensureCropPots(b);
+  const ripe = readyCropPots(b);
+  if (!ripe.length) {
+    const hd = rules.harvestDays;
+    const growing = potsOf(b).filter(p => !p.harvested && p.startedOnDay != null && p.ageDays < hd);
+    const idle = idlePots(b).length;
+    const e = new Error(
+      growing.length
+        ? `[수확] 아직 ${Math.min(...growing.map(p => hd - p.ageDays))}일 더 자라야 합니다 ` +
+          `(${b.ageDays}/${hd}일)`
+        : idle
+          ? `[수확] 아직 물을 안 준 시루가 ${idle}개 있습니다 — 물을 줘야 회전이 시작됩니다`
+          : '[수확] 이미 거둔 시루입니다 — 다시 심어야 또 거둡니다');
     e.tutorialInput = true;                 // 안내지 고장이 아니다
     throw e;
   }
 
-  const hist = b.dliHist;
-  const avgDli = hist.reduce((sum, v) => sum + v, 0) / hist.length;
-  const quality = rules.quality.find(q => avgDli <= q.maxDli);
-  /* ★★ 시루 수를 **곱하지 않는다** (2026-08-04). 같은 콩나물을 두 시루 심어도 두 배로 먹지
-     않는다 — 질리는 것이 상한의 이유이기 때문이다(위 §작물 종류 · food_economy.md §4).
-     예전에는 `quality.meals × sirus` 였고, 그래서 시루 3개가 하루평균을 2.25배로 올렸다.
-     이제 늘어나는 것은 **씨앗값뿐**이라 시루를 늘리면 손해가 그대로 보인다. */
-  const sirus = Math.max(1, Math.round(b.sirus || 1));
-  /* 한 회전이 내는 절감. 종류 순번 0 = 콩나물(지금은 이것뿐이다). */
-  const cycleSavedWon = cropCycleSavedWon(rules, quality.meals, 0);
-
-  /* ★ 곳간에 넣고 **매일 조금씩** 꺼내 먹는다(eatFromPantry). 수확한 날 몰아 쓰지 않는다 —
-     한 회전분을 회전 일수로 나눠 먹는 것이 "5일 주기로 3,000원"의 실제 모양이다.
+  /* ★ 곳간에 넣고 **매일 조금씩** 꺼내 먹는다(eatFromPantry). 수확한 날 몰아 쓰지 않는다.
      ★ 남는 것은 **버려진다. 팔지 않는다.** 콩나물은 냉장 3~4일이면 쉬는 채소라 쌓이지 않는다
        (docs/food_economy.md 머리말 — 지출 방어이지 수입이 아니다).
-       한도는 **한 회전분**이다: 그보다 많이 쌓였다는 것은 지난 회전을 다 못 먹었다는 뜻이다. */
-  let pantry = (fp.food.pantryWon || 0) + cycleSavedWon;
-  const capWon = rules.cropSavedWonPerCycle;
-  const spoiledWon = Math.max(0, pantry - capWon);
-  pantry -= spoiledWon;
+     ⚠ 한도는 **시루 수 × 한 회전분**이다 (2026-08-04). 시루 n개면 도는 회전이 n개이므로
+       곳간에 들어올 수 있는 것도 n회전분이다. 예전처럼 한 회전분으로 두면 시루를 늘리는
+       순간 대부분이 쉬어서 버려져 **겹침 체감이 재기도 전에 상한이 먼저 잘라 버린다.** */
+  const capWon = pantryCapWon(fp);
 
-  b.harvested = true;
-  b.avgDli = avgDli;
-  b.quality = quality.id;
-  b.meals = quality.meals;                        // ★ 품질 **라벨**(3·2·1끼). 값은 원으로 매긴다
-  b.harvestMeals = quality.meals;
-  b.harvestCount = (b.harvestCount || 0) + 1;
-  /* 다음 회전을 위해 물 상태를 비운다 — 거둔 시루에 물을 주는 일은 없다 */
-  b.wateredOnDay = null;
-  fp.food.lastHarvestMeals = quality.meals;
-  fp.food.pantryWon = pantry;
-  fp.food.lastSpoiledWon = spoiledWon;
+  /* ★★ 겹침 순번은 **그날 몇 번째로 거두는가**다(§겹침).
+     [수확하기]는 익은 시루를 한 번에 다 거두므로 보통 이 한 번의 셈으로 끝난다. 그래도
+     같은 날 두 번 불릴 수 있으니(자동수확 보상·화면 두 번 누름) **게임일로 이어 센다** —
+     안 이으면 같은 날 두 번 거둔 둘째가 순번 0으로 잡혀 규칙이 조용히 새어 나간다. */
+  const day = Number.isInteger(opt.day) ? opt.day : null;
+  let onDay = (day != null && fp.food.harvestDay === day)
+    ? Math.max(0, Math.round(fp.food.harvestedOnDay || 0)) : 0;
+
+  const perPot = [];
+  let savedTotal = 0, spoiledTotal = 0, lostTotal = 0;
+  for (const p of ripe) {
+    const hist = p.dliHist;
+    const avgDli = hist.length ? hist.reduce((sum, v) => sum + v, 0) / hist.length : 0;
+    const quality = rules.quality.find(q => avgDli <= q.maxDli);
+    const overlapIndex = onDay++;
+    const fullWon = cropCycleSavedWon(rules, quality.meals, 0);
+    const savedWon = overlapSavedWon(rules, quality.meals, overlapIndex);
+    /* 겹쳐서 못 받은 몫 — 화면이 "곳간이 안 비어 N원을 못 받았습니다"를 말할 근거다 */
+    const lostWon = Math.max(0, fullWon - savedWon);
+
+    let pantry = (fp.food.pantryWon || 0) + savedWon;
+    const spoiledWon = Math.max(0, pantry - capWon);
+    pantry -= spoiledWon;
+    fp.food.pantryWon = pantry;
+
+    p.harvested = true;
+    p.avgDli = avgDli;
+    p.quality = quality.id;
+    p.meals = quality.meals;                 // ★ 품질 **라벨**(3·2·1끼). 값은 원으로 매긴다
+    p.harvestMeals = quality.meals;
+    p.harvestCount = (p.harvestCount || 0) + 1;
+    p.savedWon = savedWon;
+    p.overlapIndex = overlapIndex;
+    /* 다음 회전을 위해 시작 표시를 지운다 — 다시 심고 물을 줘야 또 돈다 */
+    p.startedOnDay = null;
+
+    savedTotal += savedWon;
+    spoiledTotal += spoiledWon;
+    lostTotal += lostWon;
+    perPot.push({ id: p.id, avgDli, quality: quality.id, qualityKo: quality.ko,
+                  meals: quality.meals, overlapIndex, savedWon, fullWon, lostWon, spoiledWon });
+  }
+
+  syncCropLead(b);
+  const lead = perPot[0];
+  fp.food.lastHarvestMeals = lead.meals;
+  fp.food.lastSpoiledWon = spoiledTotal;
+  if (day != null) { fp.food.harvestDay = day; fp.food.harvestedOnDay = onDay; }
   /* ★ 여기서 **먹지 않는다.** 곳간에 넣기만 하고, 꺼내 먹는 것은 다음 [다음 날] 의 eatFromPantry 다
      (2026-08-04 정정 — 수확이 손 동작이 되면서 거두는 순간과 하루 정산이 갈렸다).
      ⚠ 여기서 한 입 꺼내면 **하루에 두 번 먹는 날**이 생긴다: 다 자란 날의 [다음 날] 이
-       지난 회전의 마지막 600원을 이미 꺼낸 뒤라, 같은 날 또 꺼내면 하루 1,200원이 된다.
-       "하루 상한 600원"이 그 자리에서 깨진다. 먹는 것은 살림이고 살림은 하루에 한 번이다. */
+       지난 회전의 마지막 몫을 이미 꺼낸 뒤라, 같은 날 또 꺼내면 하루 상한이 그 자리에서 깨진다. */
   /* ★ 선물은 **첫 수확에만** 온다. 두 번째 시루에서 몬스테라가 또 오면 안 된다. */
   if (!fp.monstera.arrived) fp.phase = 'monstera_gift';
 
   return {
     harvested: true,
-    dry: false,
-    avgDli,
-    quality: quality.id,
-    qualityKo: quality.ko,
-    meals: quality.meals,
-    sirus,
-    /* ★ 시루를 늘려도 안 늘어난 몫. 화면이 "두 시루째는 질려서 못 먹습니다"를 말할 근거다. */
-    wastedSirus: sirus - 1,
-    cycleSavedWon,
-    spoiledWon,
+    /* 대표 시루(먼저 시작한 것)의 결과 — 옛 이름 그대로다. 화면·배움이 이걸 읽는다 */
+    avgDli: lead.avgDli,
+    quality: lead.quality,
+    qualityKo: lead.qualityKo,
+    meals: lead.meals,
+    sirus: Math.max(1, potsOf(b).length),
+    /* ★ 이번에 몇 시루를 거뒀나 · 그 합계가 얼마인가 */
+    harvestedPots: ripe.length,
+    perPot,
+    cycleSavedWon: savedTotal,
+    /* ★★ 겹쳐서 못 받은 몫. 화면이 "곳간이 안 비어 있어 덜 받았습니다"를 말할 근거다 —
+       예전 `wastedSirus`(시루를 늘려도 안 늘어난 몫)를 대신한다. 이제 손해는 시루 수가 아니라
+       **거두는 때가 겹친 것**에서 온다(§겹침). */
+    overlapLostWon: lostTotal,
+    overlapCount: perPot.filter(x => x.overlapIndex > 0).length,
+    spoiledWon: spoiledTotal,
     cycleDays: rules.harvestDays,
-    dryDays: b.dryDays || 0,
     harvestCount: b.harvestCount,
     cashFoodWon: fp.food.cashFoodWon
   };
+}
+
+/* 곳간 한도 — **시루 수 × 한 회전분**. 시루가 n개면 도는 회전도 n개다. */
+export function pantryCapWon(fp) {
+  const rules = fp && fp.rules;
+  if (!rules) return 0;
+  const n = Math.max(1, potsOf(fp.beansprout).length);
+  return rules.cropSavedWonPerCycle * n;
+}
+
+/* 하루에 곳간에서 꺼낼 수 있는 상한 — **시루 수와 무관한 한 값**이다 (2026-08-04).
+   ★ 값의 정본은 `rules.dailyCropSaveWon`(= 한 회전분, 끼니 상한이 이기면 그 값)이고
+     근거는 firstPlayRulesFromBalance 의 주석에 있다. 시루 수에 안 비례하는 이유:
+     **비례시키면 겹침이 물리지 않는다.** 시루 5개를 같은 날 다 거둬도 상한이 5배면
+     깎인 값(3,000+2,000+1,000)을 전부 다 먹어 버려 "짜임새"가 아무 일도 안 하게 된다.
+     천장은 주기 길이가 정하고(§겹침), 그 천장이 곧 하루 한 회전분이다. */
+export function dailyCropSaveWonOf(fp) {
+  const rules = fp && fp.rules;
+  return rules ? rules.dailyCropSaveWon : 0;
 }
 
 /* ★ 오늘의 밥 — 곳간에서 하루치만 꺼내 쓴다 (2026-08-03 신설 · 2026-08-04 원 단위로).
@@ -555,13 +863,14 @@ export function harvestBeansprout(fp) {
 
    ★ **매일** 불린다. 수확한 날도 포함이다(2026-08-04 정정) — 수확이 곳간에 넣고,
      같은 턴에 이 함수가 그날 몫을 꺼낸다. 예전처럼 수확일만 따로 계산하면 규칙이 둘이 된다.
-   ★ 곳간이 비면 절감은 0이다. **물을 빼먹어 회전이 늘어지면 여기서 빈 날이 생긴다** —
-     물주기의 벌이 돈으로 보이는 자리이고, 따로 만든 벌점이 아니다. */
+   ★ 곳간이 비면 절감은 0이다. **물을 늦게 줘 회전이 늦어지면 여기서 빈 날이 생긴다** —
+     물주기의 값이 돈으로 보이는 자리이고, 따로 만든 벌점이 아니다.
+   ★★ 상한은 **시루 수에 비례한다** (2026-08-04 · dailyCropSaveWonOf). 근거는 그 함수 주석 참고. */
 export function eatFromPantry(fp) {
   const zero = { savedWon: 0, foodSavedWon: 0, mealsUsed: 0 };
   if (!fp || !fp.enabled || !fp.rules || !fp.food) return zero;
   const rules = fp.rules;
-  const use = Math.min(rules.dailyCropSaveWon, Math.max(0, Math.round(fp.food.pantryWon || 0)));
+  const use = Math.min(dailyCropSaveWonOf(fp), Math.max(0, Math.round(fp.food.pantryWon || 0)));
   if (use <= 0) {
     fp.food.lastFoodSavedWon = 0;
     fp.food.cashFoodWon = rules.dailyFoodWon;
@@ -593,49 +902,72 @@ export function eatFromPantry(fp) {
      `state.resowCrop(S, ...)` 이 그 둘을 한 동작으로 묶는다 — 게임 화면은 그것만 부르면 된다.
      opt.sirus     이번 회전에 돌릴 시루 수 (없으면 그대로)
      opt.maxSirus  놓을 수 있는 칸 수 (없으면 검사 안 함)
-     opt.at        자리를 옮기려면. placeBeansprout 과 같은 세 가지 입력을 받는다 */
+     opt.at        자리를 옮기려면. placeBeansprout 과 같은 세 가지 입력을 받는다
+     opt.day       다시 심는 날 (게임일). 대기 시작일로만 쓴다 — **물은 안 준다**
+
+   ★★ 2026-08-04 — **거둔 시루만 다시 심는다.** 시차 판에서는 늘 일부만 거둬져 있고,
+     자라는 중인 시루까지 갈아엎으면 시차가 그 자리에서 무너진다(그리고 진행을 잃는다).
+   ★★ **다시 심어도 물은 안 준다.** 새 규칙에서 물은 회전 시작이라(§물주기), 여기서 자동으로
+     주면 회전이 늘 같은 날 시작되어 **시차를 만들 손이 사라진다.** 심는 것과 시작하는 것은
+     다른 동작이고, 그 사이의 간격이 곧 플레이어가 쥔 눈금이다.
+   ★ 씨앗값은 **다시 심는 시루 수**만큼 든다(다 자란 것을 갈아엎지 않으므로 헛돈이 안 나간다). */
 export function resowBeansprout(fp, opt = {}) {
   if (!fp || !fp.beansprout) throw new Error('[첫 플레이] 콩나물 상태가 없습니다');
-  const b = fp.beansprout;
-  if (!b.harvested)
-    throw new Error('[콩나물] 아직 수확하지 않은 시루입니다 — 수확한 뒤에 다시 심습니다');
+  const b = ensureCropPots(fp.beansprout);
   const rules = fp.rules;
   if (!rules) throw new Error('[첫 플레이] 밸런스 계약이 없습니다');
 
-  const sirus = opt.sirus == null ? Math.max(1, Math.round(b.sirus || 1)) : opt.sirus;
+  const had = potsOf(b).length;
+  const sirus = opt.sirus == null ? had : opt.sirus;
   if (!Number.isInteger(sirus) || sirus < 1)
     throw new Error(`[콩나물] 시루 수가 1 이상의 정수가 아닙니다: ${sirus}`);
   if (Number.isFinite(opt.maxSirus) && sirus > opt.maxSirus)
     throw new Error(`[콩나물] 시루를 놓을 칸이 ${opt.maxSirus}칸뿐입니다 — ${sirus}개는 못 놓습니다 ` +
                     `(시루 선반을 놓으면 늘어납니다)`);
 
-  const seedCostWon = sirus * rules.seedWonPerSiru;
+  const added = Math.max(0, sirus - had);
+  const harvestedPots = potsOf(b).filter(p => p.harvested);
+  if (!harvestedPots.length && !added)
+    throw new Error('[콩나물] 아직 수확하지 않은 시루입니다 — 수확한 뒤에 다시 심습니다');
+
+  const day = Number.isInteger(opt.day) ? opt.day : 0;
 
   /* ★ **이력을 비운다.** 지난 회전의 DLI 는 이번 콩나물이 받은 빛이 아니다 —
      남겨 두면 밝은 데서 한 번 망친 판이 어두운 데로 옮겨도 평균이 안 내려가 영영 못 배운다. */
-  b.harvested = false;
-  b.ageDays = 0;
-  b.dliHist = [];
-  b.quality = null;
-  b.meals = 0;
-  b.avgDli = null;
-  b.harvestMeals = 0;
-  b.sirus = sirus;
-  b.cycle = (b.cycle || 1) + 1;
-  /* ★ 물 상태도 새 회전 것으로 비운다 (2026-08-04). 안 비우면 지난 회전에 준 물이
-     이번 회전 첫날을 대신 채워 하루가 공짜로 간다. `opt.day` 를 주면 **심는 날 물을 준다**
-     (placeBeansprout 과 같은 규칙 — 심을 때 물을 붓는다). */
-  b.dryDays = 0;
-  b.dryRun = 0;
-  b.wateredOnDay = null;
-  if (Number.isInteger(opt.day)) waterBeansprout(fp, opt.day);
+  for (const p of harvestedPots) {
+    p.harvested = false;
+    p.ageDays = 0;
+    p.dliHist = [];
+    p.quality = null;
+    p.meals = 0;
+    p.avgDli = null;
+    p.harvestMeals = 0;
+    p.savedWon = 0;
+    p.overlapIndex = 0;
+    p.startedOnDay = null;                  // ★ 물을 줘야 다시 돈다
+    p.idleSinceDay = day;
+    p.cycle = (p.cycle || 1) + 1;
+  }
+  /* 시루를 더 샀으면 **빈 시루로** 붙는다 — 새 칸도 물을 줘야 시작한다 */
+  for (let i = 0; i < added; i++)
+    b.pots.push(makeCropPot(`${BEANSPROUT_ID}_${String(had + i + 1).padStart(2, '0')}`,
+                            { idleSinceDay: day }));
+  /* 시루를 줄였으면 **거둔 것부터** 뺀다 — 자라는 중인 회전을 버리지 않는다 */
+  if (sirus < had) {
+    const keep = [...potsOf(b)].sort((x, y) => (y.ageDays || 0) - (x.ageDays || 0)).slice(0, sirus);
+    b.pots = potsOf(b).filter(p => keep.includes(p));
+  }
+
+  const resown = harvestedPots.length + added;
+  const seedCostWon = resown * rules.seedWonPerSiru;
+  syncCropLead(b);
 
   /* 자리를 다시 고를 수 있다 — 이게 ②(막다른 길)의 실제 해법이다.
-     placeBeansprout 은 수확한 시루를 막으므로 **위에서 harvested 를 내린 뒤에** 부른다. */
+     placeBeansprout 은 거둔 시루가 남아 있으면 막으므로 **위에서 되살린 뒤에** 부른다. */
   if (opt.at != null && opt.at !== '') placeBeansprout(fp, opt.at, opt);
 
-  return { sirus, cycle: b.cycle, seedCostWon, slotId: b.slotId, at: b.at,
-           wateredOnDay: b.wateredOnDay };
+  return { sirus: potsOf(b).length, resown, added, cycle: b.cycle, seedCostWon,
+           slotId: b.slotId, at: b.at, wateredOnDay: b.wateredOnDay };
 }
 
 /* 콩나물과 **같은 세 가지 입력**을 받는다(이름 · 좌표 · 화분 객체).
@@ -726,9 +1058,14 @@ export function firstPlaySnapshot(fp) {
        "다 자랐다"와 "거뒀다"가 다른 날이 될 수 있게 됐다. 점핑이 서야 하는 곳은 앞쪽이다. */
     ready: beansproutReady(fp.beansprout),
     /* ★ 회전이 생기면서 `harvested` 만으로는 부족해졌다 — 재파종하면 false 로 내려갔다가
-       다시 true 가 되므로 "몇 번째 수확인가"를 세야 첫 수확과 그 뒤를 가를 수 있다. */
+       다시 true 가 되므로 "몇 번째 수확인가"를 세야 첫 수확과 그 뒤를 가를 수 있다.
+       ★ 2026-08-04 — **시루 전부의 합계**다(syncCropLead). 시차 판에서는 시루마다 따로
+         거둬지므로, 대표 한 칸만 세면 둘째·셋째 시루의 수확이 사건에서 통째로 빠진다. */
     harvestCount: fp.beansprout ? (fp.beansprout.harvestCount || 0) : 0,
     cycle: fp.beansprout ? (fp.beansprout.cycle || 1) : 1,
+    /* ★ 시작을 기다리는 시루 수 — 물이 회전 시작이 되면서 생긴 칸이다(§물주기).
+       빨리감기가 "물을 줄 수 있는데 안 준 시루가 새로 생겼나"를 여기로 본다(loop.js). */
+    idle: fp.beansprout ? idlePots(fp.beansprout).length : 0,
     arrived: !!(fp.monstera && fp.monstera.arrived),
     completed: !!fp.completed,
     cashFoodWon: fp.food ? fp.food.cashFoodWon : null,
@@ -786,6 +1123,12 @@ export function firstPlayNextEvent(fp) {
   if (beansproutReady(b))
     return { id: 'beansprout_ready', ko: '콩나물을 거둘 때가 됐습니다', etaDays: 0,
              note: '거두기 전에는 다음 회전이 시작되지 않습니다' };
+  /* ★★ 물을 안 줘서 **아직 시작도 안 했다** (2026-08-04 새 규칙 · §물주기).
+     여기서 날짜를 세면 거짓말이 된다 — 며칠을 넘겨도 안 온다. 다음에 올 것은 손이다. */
+  if (b && idlePots(b).length && !potsOf(b).some(p => p.startedOnDay != null && !p.harvested))
+    return { id: 'crop_needs_water', ko: '물을 줘야 자라기 시작합니다', etaDays: null,
+             waiting: idlePots(b).length,
+             note: '물을 준 날이 0일차입니다 — 시루마다 따로 시작할 수 있습니다' };
   if (!b || !b.harvested) {
     const left = (b && Number.isFinite(b.harvestDays) && Number.isFinite(b.ageDays))
       ? b.harvestDays - b.ageDays : null;

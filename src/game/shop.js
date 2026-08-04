@@ -57,7 +57,7 @@ export const CATALOG = Object.freeze({
      1,500원이면 씨앗값이 절감의 70%를 먹어 순액이 하루 180원(지출의 0.9%)밖에 안 남았다. */
   bean_seed: Object.freeze({
     id: 'bean_seed', ko: '콩 씨앗 (1시루분)', kind: 'seed',
-    listWon: 1_000, leadDays: 1,
+    listWon: 500, leadDays: 1,
     note: 'docs/food_economy.md §3 — 실제 시세 700~1,200원의 한가운데. ' +
           'first_play.FIRST_PLAY_RULES.seedWonPerSiru 와 **같은 값이어야 한다**'
   }),
