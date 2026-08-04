@@ -140,6 +140,17 @@
       <select id="from"></select>→<select id="to"></select>
       <button class="b" id="move">옮기기</button>
     </div>
+    <!-- ★ 가서·하고·끝난다 (2026-08-04) — 위 [자리]에 고른 곳으로 캐릭터가 걸어가서 한다.
+         게이지는 game.html 몫이라 방 뷰가 안 그린다. 여기서는 숫자만 글로 보여 준다. -->
+    <div class="row" style="margin-top:6px">
+      <span class="hint">동작</span>
+      <button class="b" id="actWater">💧 물주기</button>
+      <button class="b" id="actSow">🌱 씨앗심기</button>
+      <button class="b" id="actHarvest">✂ 수확</button>
+      <button class="b" id="actCancel">취소</button>
+      <label class="hint"><input type="checkbox" id="actFF"> 빨리감기(연출 생략)</label>
+      <span class="hint" id="actMsg">—</span>
+    </div>
   </div>
 
   <div class="card">
@@ -418,6 +429,28 @@ async function place(slotId) {
 }
 $('place').onclick = () => place($('slot').value);
 $('remove').onclick = async () => { await view.setPlant($('slot').value, null); refreshSlots(); };
+
+/* ★ 가서·하고·끝난다 — 게이지를 **글로** 보여 준다.
+   방 뷰는 숫자만 낸다(그리는 것은 game.html 몫이라는 계약을 여기서도 지킨다). */
+function runAct(kind) {
+  const key = $('slot').value;
+  const bar = p => '█'.repeat(Math.round(p * 12)).padEnd(12, '░');
+  $('actMsg').textContent = `${kind} 준비…`;
+  const p = view.actAt(key, kind, {
+    instant: $('actFF').checked,
+    onProgress: (v, ph) => { $('actMsg').textContent = `${kind} ${ph === 'walk' ? '가는 중' : '하는 중'} ${bar(v)} ${(v * 100) | 0}%`; },
+    onArrive: () => { $('actMsg').textContent = `${kind} 시작`; },
+    /* ★여기가 게임이 실제로 물을 주는 자리다 — 연출이 다 끝난 뒤에만 불린다 */
+    onDone: () => { $('actMsg').textContent = `${kind} ✔ 완료 — 여기서 게임 논리가 돈다`; },
+    onFail: r => { $('actMsg').textContent = `${kind} ✘ ${r}`; }
+  });
+  window.__act = p;
+  p.catch(e => { $('actMsg').textContent = `${kind} ✘ ${e.message}`; });
+}
+$('actWater').onclick = () => runAct('water');
+$('actSow').onclick = () => runAct('sow');
+$('actHarvest').onclick = () => runAct('harvest');
+$('actCancel').onclick = () => { view.cancelAct('데모에서 취소'); };
 $('clear').onclick = async () => {
   for (const s of view.slots()) if (s.occupied) await view.setPlant(s.slotId, null);
   refreshSlots();

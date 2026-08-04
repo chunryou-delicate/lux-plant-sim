@@ -72,7 +72,25 @@ const SLOT_HIT_PX = 30;      // 슬롯은 점이라 화면거리로 잡는다. �
    레이캐스트만 두면 손가락으로는 거의 못 짚는다(폰에서 실제로 못 짚었다).
    슬롯보다 조금 넉넉하게 둔다. 사람이 슬롯보다 크게 보이기 때문이다. */
 const CHAR_HIT_PX = 36;
-const WALK_SPEED = 1.15;     // m/s. 1.5 는 5×4m 반지하에서 뛰어다니는 것처럼 보인다
+/* ★ 걷는 속도 — 1.15 → 1.45 (박사님 "걷는것 쫌만더 빠르게", 2026-08-04)
+   1.5 는 5×4m 반지하에서 뛰어다니는 것처럼 보인다. 그 선은 그대로 두고 그 **바로 아래**로 올렸다. */
+const WALK_SPEED = 1.45;
+/* ⚠⚠ 속도만 올리면 **발이 미끄러진다.** 걷기 클립은 제자리 걸음이라(루트모션이 빠져 있다)
+   보폭이라는 게 없고, 바닥 속도만 올라가면 다리는 그대로인데 몸만 앞으로 밀린다.
+   그래서 클립 배속(timeScale)을 같이 올린다. 값은 짐작이 아니라 재서 골랐다 —
+   ★ 클립이 제 속도로 돌 때의 **지면 속도 0.871 m/s**
+     (assets/derived/char_clips/char_jachwi_f_walking.glb 를 순운동학으로 풀어 디딤 구간에서
+      발끝이 몸 기준으로 뒤로 흐르는 속도를 쟀다. 양발이 0.001 이내로 같게 나왔다.)
+   ★ 걸음당 미끄러지는 거리 = (WALK_SPEED − 0.871×배속) × 디딤시간(0.48s ÷ 배속)
+       배속 1.00 → 33.2cm   속도만 올리고 클립은 그대로 둔 경우. 확 티가 난다
+       배속 1.26 → 13.4cm   **예전(1.15 m/s·배속 1.0)과 똑같은 값**. 즉 예전에도 이만큼 밀렸다
+       배속 1.40 →  7.9cm   ← 여기로 정했다. 예전보다 41% 덜 밀린다
+       배속 1.66 →     0cm   안 밀린다. 그런데 초당 3.1걸음이라 **뛰는 걸음**이 된다
+     1.40 이면 초당 2.6걸음이다. 키 1.4m 인 사람이 1.45 m/s 로 걸을 때 걸음수가 그쯤이라
+     생체적으로도 맞고, "쫌만 더 빠르게"의 범위 안이다.
+   ⚠ WALK_SPEED 를 다시 손대면 배속은 아래 식이 알아서 따라간다. 상수를 또 고치지 말 것. */
+const WALK_CLIP_MPS = 0.871;   // 클립의 지면 속도[m/s] — 재서 넣은 값
+const WALK_SLIP_OK = 0.23;     // 눈감아 주는 미끄러짐[m/s]. 0 으로 두면 뛰는 걸음이 된다
 const ARRIVE_EPS = 0.10;     // 이만큼 가까워지면 그 웨이포인트는 지난 것
 const CAM_TWEEN_MS = 560;
 const SNAP_MS = 260;         // 손 뗀 뒤 8방으로 정돈되는 시간
@@ -2236,6 +2254,9 @@ export async function createRoomView(canvas, opts = {}) {
      캐릭터 idle 은 needsRender 를 안 켠다 — 그래서 이 한 줄로 둘이 갈린다. */
   function busyNow() {
     if (needsRender || tween || pendingDrag || walkDrag || rings.size) return true;
+    /* ★ 무언가 하는 중(actAt)도 바쁜 것이다 — 모션과 물줄기는 30fps 로 그려야 한다.
+       끝나면 이펙트를 통째로 치우므로 곧바로 노는 화면(10fps)으로 돌아간다. */
+    if (actBusy()) return true;
     for (const [, c] of chars) if (c.walking) return true;
     return false;
   }
@@ -3280,6 +3301,11 @@ export async function createRoomView(canvas, opts = {}) {
     model.traverse(o => { if (!hips && /hips/i.test(o.name || '')) hips = o; });
     const hips0 = hips ? [hips.position.x, hips.position.z] : null;
 
+    /* 오른손 뼈 — 물뿌리개를 들려 줄 자리다. 이름은 재서 확인했다(GLB 노드 26개 중
+       'RightHand'). 못 찾으면 소품 없이 모션만 낸다. */
+    let rHand = null;
+    model.traverse(o => { if (!rHand && /^righthand$/i.test(o.name || '')) rHand = o; });
+
     /* 이 사람이 아직 방에 있나. 치운 뒤에 늦게 도착한 GLB·타이머가
        사라진 캐릭터를 다시 세우지 않게 하는 표시다. */
     let alive = true, timer = 0;
@@ -3293,6 +3319,25 @@ export async function createRoomView(canvas, opts = {}) {
     let arriveAt = 0;                 // 도착한 시각 — 비켜서기 유예에 쓴다
     let manualUntil = 0;              // 이때까지는 자동으로 안 비켜선다(플레이어가 보낸 자리다)
     let settleYaw = null;             // 도착한 뒤 돌아설 각. 다 돌면 null 로 내린다
+
+    /* ── actAt(가서·하고·끝난다)이 쓰는 약속 세 가지 ──
+       ★★ 전부 **update(dt) 위에서** 푼다. setTimeout 을 하나도 안 쓴다.
+         setPaused 로 rAF 를 끊으면 그리기도 캐릭터도 멈춘다 — 그때 타이머로 재고 있으면
+         **멈춘 화면 뒤에서 물이 다 들어간다.** 연출이 멈추면 논리도 멈춰야 한다
+         (박사님: "반쯤 준 물은 없다"). 그래서 시계를 update 의 dt 하나로 통일한다. */
+    let walkWait = null;    // { resolve, onTick, total } — 도착하면 푼다
+    let faceWait = null;    // { resolve } — 다 돌아서면 푼다
+    let clipRun = null;     // { a, sec, t, onTick, resolve, y0 } — 모션 한 번
+
+    function settleWalk(ok, reason) {
+      if (!walkWait) return;
+      const w = walkWait; walkWait = null;
+      w.resolve({ ok: !!ok, x: root.position.x, z: root.position.z, reason: reason || null });
+    }
+    function settleFace() {
+      if (!faceWait) return;
+      const f = faceWait; faceWait = null; f.resolve();
+    }
 
     /* 목표 각으로 조금 돌린다. 돌고 남은 각[rad]을 돌려준다(부호 있음).
        ★ 한 프레임에 다 돌리지 않는다 — 인형이 튀는 것처럼 보인다. */
@@ -3311,6 +3356,9 @@ export async function createRoomView(canvas, opts = {}) {
       if (!alive) return null;
       walkAct = mixer.clipAction(cl);
       walkAct.setLoop(THREE.LoopRepeat, Infinity);
+      /* ★ 다리가 도는 속도를 바닥이 흐르는 속도에 맞춘다 — 이 한 줄이 발 미끄러짐을 줄인다.
+         근거와 숫자는 WALK_SPEED 주석에 다 적어 뒀다. 지금 값으로는 1.40 배다. */
+      walkAct.timeScale = Math.max(0.6, (WALK_SPEED - WALK_SLIP_OK) / WALK_CLIP_MPS);
       return walkAct;
     }
     function playWalk() {
@@ -3329,6 +3377,9 @@ export async function createRoomView(canvas, opts = {}) {
     function goTo(x, z, opt2 = {}) {
       const p = nav.nearestFree(x, z);
       stats.navPaths++;
+      /* 새 걸음이 시작되면 앞선 약속은 여기서 끝난다 — 안 풀면 actAt 이 영영 기다린다 */
+      settleWalk(false, '다른 걸음에 밀렸습니다');
+      settleFace();
       path = nav.path(root.position.x, root.position.z, p.x, p.z);
       pathI = 0; stuck = 0; settleYaw = null;
       if (!path.length) { playIdle(); return { ok: false, x: p.x, z: p.z, reason: '갈 수 없는 자리입니다' }; }
@@ -3343,6 +3394,70 @@ export async function createRoomView(canvas, opts = {}) {
       return { ok: true, x: last.x, z: last.z, steps: path.length };
     }
 
+    /* ── 바닥 (x,z) 까지 걸어간다. **도착하면 푸는 약속**을 돌려준다 ──
+       돌려주는 값 { ok, x, z, reason }. ok:false 는 길이 없거나 도중에 밀린 것이다.
+       ★ '도착했다'가 곧 '거기 섰다'는 아니다 — 구석에 끼면 최대한 다가간 자리에서
+         멈춘다(goTo 의 stuck 규칙). 그래서 부르는 쪽이 **거리를 다시 재야** 한다. */
+    function walkToXZ(x, z, onTick) {
+      const r = goTo(x, z, { manual: true });
+      if (!r.ok) return Promise.resolve(r);
+      const total = Math.max(0.01, Math.hypot(r.x - root.position.x, r.z - root.position.z));
+      return new Promise(resolve => { walkWait = { resolve, onTick: onTick || null, total, gx: r.x, gz: r.z }; });
+    }
+
+    /* 그 점을 **바라보고 선다**. 다 돌아서면 푼다. 이미 보고 있으면 그 자리에서 푼다. */
+    function faceXZ(x, z) {
+      const y = yawTo(x - root.position.x, z - root.position.z);
+      let d = y - root.rotation.y;
+      while (d > Math.PI) d -= Math.PI * 2;
+      while (d < -Math.PI) d += Math.PI * 2;
+      if (Math.abs(d) < 0.03) { root.rotation.y = y; needsRender = true; return Promise.resolve(); }
+      settleFace();
+      settleYaw = y;
+      needsRender = true;
+      return new Promise(resolve => { faceWait = { resolve }; });
+    }
+
+    /* ── 모션 한 번 ──
+       clip 이 있으면 그것을 **sec 초에 맞춰** 한 번 돌린다(timeScale 로 맞춘다).
+       clip 이 null 이면 **절차적으로** 굽힌다 — 클립이 없다고 아무 일도 안 일어나면
+       "버튼이 안 먹었다"가 된다.
+       ⚠ 절차적 몸짓은 뼈를 안 건드린다. 뼈를 굽혀 봐야 같은 프레임에 믹서가
+         idle 로 되돌려 놓는다(믹서가 나중에 쓴다). 대신 래퍼(root·model)를 움직인다.
+       onTick(0..1) 을 매 프레임 부른다. 다 돌면 true 로 푼다(중간에 끊기면 false). */
+    function runClip(clip, sec, onTick) {
+      if (clipRun) { const c = clipRun; clipRun = null; c.resolve(false); }
+      const dur = Math.max(0.2, +sec || 1.6);
+      let a = null;
+      if (clip) {
+        a = mixer.clipAction(clip);
+        a.setLoop(THREE.LoopOnce, 1);
+        a.clampWhenFinished = true;
+        a.timeScale = clip.duration / dur;
+        a.reset(); a.enabled = true; a.setEffectiveWeight(1);
+        a.crossFadeFrom(base, Math.min(0.26, dur * 0.16), false).play();
+      }
+      needsRender = true;
+      return new Promise(resolve => {
+        clipRun = { a, sec: dur, t: 0, onTick: onTick || null, resolve, y0: root.position.y };
+      });
+    }
+
+    /* 하던 것을 전부 끊는다 — 취소·치우기·방 다시 짓기. 약속은 **전부 푼다**(안 풀면 샌다). */
+    function abortAct(reason) {
+      if (clipRun) {
+        const c = clipRun; clipRun = null;
+        if (c.a) { c.a.stop(); base.reset().setEffectiveWeight(1).play(); }
+        else { root.position.y = c.y0; model.rotation.x = 0; }
+        c.resolve(false);
+      }
+      path = []; pathI = 0; playIdle();
+      settleWalk(false, reason || '취소했습니다');
+      settleFace();
+      settleYaw = null;
+      needsRender = true;
+    }
+
     /* idle 을 돌리다 8~20초마다 변주를 한 번 끼운다. 끝자세=시작자세인 클립만
        배정표에 들어 있어 crossfade 0.3s 면 안 튄다.
        ★ 걷는 동안은 끼우지 않는다 — 걸어가다 갑자기 머리를 긁으면 다리가 멈춘다. */
@@ -3352,7 +3467,8 @@ export async function createRoomView(canvas, opts = {}) {
       if (!alive || !pool.length) return;
       timer = setTimeout(async () => {
         if (!alive) return;
-        if (walking) { schedule(); return; }
+        /* ★ 무언가 하는 중에는 안 끼운다 — 물을 주다 머리를 긁으면 물뿌리개가 순간이동한다 */
+        if (walking || clipRun) { schedule(); return; }
         const name = pool[(Math.random() * pool.length) | 0];
         try {
           if (!clips[name]) {
@@ -3361,7 +3477,7 @@ export async function createRoomView(canvas, opts = {}) {
             if (!cl) throw new Error('클립 없음');
             cl.name = name; clips[name] = cl;
           }
-          if (!alive || walking) { schedule(); return; }
+          if (!alive || walking || clipRun) { schedule(); return; }
           const a = mixer.clipAction(clips[name]);
           a.setLoop(THREE.LoopOnce, 1); a.clampWhenFinished = false;
           a.reset().crossFadeFrom(base, 0.3, false).play();
@@ -3387,16 +3503,42 @@ export async function createRoomView(canvas, opts = {}) {
       get idleSince() { return path.length ? 0 : performance.now() - arriveAt; },
       get manualHold() { return performance.now() < manualUntil; },
       goTo,
+      /* ── actAt 이 쓰는 창구 (위 「약속 세 가지」 참고) ── */
+      walkToXZ, faceXZ, runClip, abortAct,
+      get handBone() { return rHand; },
+      get acting() { return !!clipRun; },
       /* 걷기 클립을 미리 실어 둔다. 고를 때 부른다 — 첫 걸음에서 GLB 를 받고 뼈에
          물리느라 한 번 걸리던 것을 없앤다(폰에서 눈에 띈다). */
       warmWalk() { return ensureWalkClip().catch(() => null); },
       stop() {
         path = []; pathI = 0; playIdle();
+        settleWalk(false, '멈췄습니다');
         settleYaw = faceCameraYaw(root.position.x, root.position.z);
         needsRender = true;
       },
       update(dt) {
         mixer.update(dt);
+
+        /* ── 모션 시계 ── ★ 여기 말고 다른 곳에서 재지 않는다(위 「약속 세 가지」) */
+        if (clipRun) {
+          clipRun.t += dt;
+          const p01 = Math.min(1, clipRun.t / clipRun.sec);
+          if (!clipRun.a) {
+            /* 클립이 없을 때의 절차적 몸짓 — 무릎을 굽혔다 펴고 앞으로 숙인다.
+               발이 조금 묻히는 것보다 아무 일도 안 일어나는 게 훨씬 나쁘다. */
+            const s = Math.sin(Math.PI * p01);
+            root.position.y = clipRun.y0 - 0.10 * s;
+            model.rotation.x = 0.24 * s;
+          }
+          try { clipRun.onTick && clipRun.onTick(p01); } catch (e) { fail(e); }
+          needsRender = true;
+          if (p01 >= 1) {
+            const c = clipRun; clipRun = null;
+            if (c.a) base.reset().crossFadeFrom(c.a, 0.28, false).play();
+            else { root.position.y = c.y0; model.rotation.x = 0; }
+            c.resolve(true);
+          }
+        }
         /* ★ Hips XZ 고정 — 변주 클립은 루트가 Hips 높이 대비 최대 42% 움직인다.
            안 잡으면 캐릭터가 제자리에서 미끄러지거나 방 밖으로 걸어 나간다
            (char-to-house.md §4). 실제 이동은 아래에서 root 를 움직여서 한다.
@@ -3408,9 +3550,9 @@ export async function createRoomView(canvas, opts = {}) {
           /* 도착한 뒤 돌아서는 중 */
           if (settleYaw != null) {
             const rest = turnToward(settleYaw, dt);
-            if (Math.abs(rest) < 0.01) { root.rotation.y = settleYaw; settleYaw = null; }
+            if (Math.abs(rest) < 0.01) { root.rotation.y = settleYaw; settleYaw = null; settleFace(); }
             needsRender = true;
-          }
+          } else settleFace();
           return;
         }
 
@@ -3421,8 +3563,16 @@ export async function createRoomView(canvas, opts = {}) {
           path = []; pathI = 0; arriveAt = performance.now();
           settleYaw = faceCameraYaw(root.position.x, root.position.z);   // 플레이어를 보고 선다
           playIdle();
+          settleWalk(true);
           needsRender = true;
           return;
+        }
+
+        /* 걷는 진행률 — 남은 직선거리로 재는 **어림값**이다(경로는 꺾이므로 정확하지 않다).
+           게이지의 본체는 모션 쪽이고, 이건 "가고 있다"를 보여주는 용도다. */
+        if (walkWait && walkWait.onTick) {
+          const left = Math.hypot(walkWait.gx - root.position.x, walkWait.gz - root.position.z);
+          try { walkWait.onTick(clamp(1 - left / walkWait.total, 0, 1)); } catch (e) { fail(e); }
         }
 
         /* ★ 먼저 몸을 돌리고, **돌아선 만큼만** 나아간다.
@@ -3451,6 +3601,9 @@ export async function createRoomView(canvas, opts = {}) {
                 path = []; pathI = 0; arriveAt = performance.now();
                 settleYaw = faceCameraYaw(root.position.x, root.position.z);
                 playIdle();
+                /* ★ ok:true 로 푼다 — "갈 수 있는 데까지 갔다"는 뜻이다.
+                   여기서 멈춘 게 목표 근처인지는 **부르는 쪽이 거리를 다시 재서** 판정한다. */
+                settleWalk(true, '더 못 갑니다');
               }
             }
           } else stuck = 0;
@@ -3459,6 +3612,9 @@ export async function createRoomView(canvas, opts = {}) {
       },
       dispose() {
         alive = false; clearTimeout(timer);
+        /* ★ 치우기 전에 하던 약속을 푼다. 안 풀면 actAt 이 영영 기다리고,
+           그 뒤에 붙은 논리(물주기·심기·수확)가 **영영 안 돈다**. */
+        abortAct('캐릭터가 사라졌습니다');
         mixer.stopAllAction();
         houseGroup.remove(root);
         disposeObject(root);
@@ -3550,6 +3706,566 @@ export async function createRoomView(canvas, opts = {}) {
       },
       dispose() { houseGroup.remove(root); disposeObject(root); }
     };
+  }
+
+  /* ============================================================
+     ⑨-c 가서 · 하고 · 끝난다 — actAt (2026-08-04)
+     ------------------------------------------------------------
+     박사님: "씨앗심기 / 물주기 / 수확하기는 캐릭이 그 위치로 가서 뭔가 모션하면서
+              게이지 차면서 완료되게 해줘."
+
+     ★★ 순서를 정한다 — 연출이 먼저, 논리가 나중이다.
+       걸어간다 → 선다(대상을 본다) → 모션(게이지 0→1) → **그제야** onDone().
+       중간에 취소되거나 캐릭터가 사라지거나 방이 다시 지어지면 onDone 은 **안 부른다.**
+       그래야 "반쯤 준 물"이 안 생긴다. 이 파일은 물을 주지 않는다 — 물 줄 때를 알릴 뿐이다.
+
+     ★★ 시계는 update(dt) 하나뿐이다. setTimeout 을 안 쓴다.
+       setPaused(확대 화면)로 rAF 가 끊기면 연출이 멈춘다. 그때 타이머로 재고 있으면
+       멈춘 화면 뒤에서 논리가 끝나 버린다. 멈추면 같이 멈춰야 한다.
+
+     ★★ 16종을 **전부** 풀어서 재고 골랐다 (2026-08-04 재조사)
+       assets/characters/3d/anim/ 에 캐릭터마다 클립 16종이 있다. 이름만 보고 고르면 틀린다.
+       tools/char/probe_anim_hands.py 로 골격을 순운동학으로 풀어 **손이 어디에 있나**를
+       프레임마다 쟀다(Hips 높이 · 손이 몸보다 앞에 나간 거리 · 손 높이 · 팔 폄 정도).
+       8캐릭터 모두 클립 이름·길이가 같다(sit 만 Chair_Sit_Idle_F/M 로 갈린다).
+
+         파일            클립 이름                              길이   무슨 동작   물주기
+         ────────────────────────────────────────────────────────────────────────────
+         opendoor        open_door                              4.77  서서 앞으로 손을 뻗는다  ★쓴다
+         inspect         Female_Bend_Over_Pick_Up_Inspect       3.87  숙여 집어 들고 살핀다    ✗
+         pickup          Male_Bend_Over_Pick_Up                 7.23  숙여서 바닥 것을 집는다  ✗
+         repot           Female_Crouch_Pick_Up_Place_Side       9.60  쭈그려 집어 옆에 놓는다  ✗(심기에 쓴다)
+         harvest         Female_Stand_Pick_Fruit_Basket         6.23  서서 위쪽 열매를 딴다    ✗(수확에 쓴다)
+         harvest_crouch  Female_Crouch_Pick_Fruit_Basket_Stand  7.13  쭈그려 따고 일어선다     ✗(바닥 수확)
+         nod             Agree_Gesture                         13.03  끄덕이며 손짓한다        ✗ 손이 가슴 위
+         listen          Listening_Gesture                      9.37  듣는 손짓                ✗ 뻗음 0.30m 뿐
+         cheer           Motivational_Cheer                     9.03  팔을 들어 응원한다       ✗ 손이 머리 위
+         happyjump       Happy_jump_f                           9.87  뛰며 좋아한다            ✗ 발이 뜬다
+         heart           Big_Heart_Gesture                      6.20  손하트                   ✗ 손이 가슴에 붙는다
+         wave            Big_Wave_Hello                         5.37  크게 손을 흔든다         ✗ 뻗음 0.19m 뿐
+         scratch         Confused_Scratch                      11.53  머리를 긁는다            ✗
+         sit             Chair_Sit_Idle_F/M                    11.37  앉아 있다                ✗ 앉은 자세
+         doze            Sit_and_Doze_Off                      17.33  앉아 존다                ✗ 앉은 자세
+         sleep           Sleep_Normally                         1.77  누워 잔다                ✗ 누운 자세
+
+     ★ 물주기를 inspect → **opendoor** 로 갈았다. 근거는 셋 다 잰 값이다.
+       ① 물주기는 **서서** 한다. opendoor 는 Hips 낙차 0.1%(사실상 고정), inspect 는 22% 다.
+       ② 물뿌리개는 **오른손**(handBone=rHand)에 쥔다. inspect 는 오른손이 되레 **뒤로**
+          간다(0.68~1.9s 구간 -0.10~-0.20m). 물건을 다루는 것은 왼손이다 —
+          물뿌리개가 몸 뒤로 돌아가고 물줄기가 등 뒤에서 나온다. 앞 작업자가
+          "완전히 자연스럽지는 않다"고 적은 것의 정체가 이것이다.
+          opendoor 는 오른손이 0.5s 부터 앞으로 나가 1.6s 에 **+0.345m·높이 0.92m** 에
+          닿고 2.0s 까지 그대로 멎어 있다 — 물뿌리개를 내밀고 붓는 그 자세다.
+       ③ 발이 안 끌린다. check_anim.py 의 루트이동이 opendoor 3.4 로 16종 중 제일 작다
+          (inspect 25.3 · harvest_crouch 26.5). 척추·목 비틀림도 1.0/0.7 로 제일 깨끗하다 —
+          사람 모캡을 3.5등신 치비에 얹은 것치고 가장 덜 망가진 클립이다.
+       ⚠ 문 여는 클립이라 2.2s 부터는 팔을 당겨 문을 젖힌다. **그 앞만** 쓴다(아래 win).
+
+     ★ 씨앗심기·수확은 **안 바꿨다** — 16종을 다 재 봤지만 더 나은 것이 없다.
+       심기(repot=쭈그려 집어 옆에 놓는다): 오른손이 0.4s 부터 앞아래로 내려가 2.0~2.6s 에
+         높이 0.13m 에 멎었다가 다시 올라온다. '흙에 손을 대고 다독인다'의 모양 그대로다.
+         손이 낮게 가는 클립은 이것 말고 inspect·pickup 뿐인데 둘 다 '집어 든다'라 더 멀다.
+         ⚠ 남는 흠 하나 — 손이 0.13m 까지 내려가므로 **상판 화분(0.75m)** 에 심을 때는
+           발치를 짚는 꼴이 된다. 고치려면 수확처럼 high/low 를 갈라야 하는데, 서서 하는
+           '심기' 클립이 opendoor 밖에 없고 그건 지금 물주기가 쓴다 — 같이 쓰면 물주기와
+           심기가 **똑같이** 보인다. 새 클립이 오기 전에는 지금이 최선이다.
+       수확(harvest=서서 위쪽 열매를 딴다 / harvest_crouch=쭈그려 딴다): 이름 그대로다.
+         오른손이 0.9~1.3s 에 앞 0.57m·높이 1.16m 로 올라간다 — 딴다는 동작 그 자체라
+         바꿀 후보가 없다.
+
+     ★★ 한 마디만 잘라 쓴다(subclip) — 앞도 뒤도 버린다
+       클립이 3.9~9.6초다. 통째로 틀면 물 한 번 주는 데 6초를 기다린다. 그렇다고 6배로
+       빨리 돌리면 인형이 경련한다. 그래서 **필요한 마디만** 잘라 쓴다(from~from+win).
+       어디서 끊나는 두 가지를 재서 골랐다 — probe_anim_hands.py --cuts (jachwi_f 기준).
+         **시작** 은 idle 에서 넘어오는 지점이다. 첫 자세와 멀면 crossfade 가 팔을 낚아챈다.
+           네 클립 모두 앞 0.3초는 **가만히 있는 구간**이다(손 위치 차 0.02m 이하 —
+           opendoor 는 0.005m 다). 그래서 넷 다 **0.30s 부터** 쓴다. 쉬는 0.3초를 버리는 셈이다.
+         **끝** 은 그 순간 **몸이 멎어 있는 지점**이라야 한다(move[m/s] 가 작은 곳).
+           움직이는 중에 끊으면 idle 로 되돌아가는 0.28s crossfade 가 홱 낚아챈다.
+             opendoor       1.80s  move 0.092  ← 1.2~3.8s 통틀어 제일 조용하다
+             repot          2.40s  move 0.225  ← 손이 흙에 닿아 멎는 그 순간이다
+             harvest        2.10s  move 0.347
+             harvest_crouch 2.40s  move 0.609  ← 이 클립에서 가장 조용한 지점
+  ============================================================ */
+
+  /* 동작 시간 — 왜 이 숫자인가 (박사님: "정하고 근거를 대라")
+     ① 1.2초 아래면 게이지가 '깜빡'으로 보인다. 차는 게 보여야 게이지다.
+     ② 2.5초 위면 기다림이 된다. 물주기는 **매일** 누른다 — 하루 한 번짜리 연출의 상한이다.
+     ③ 걷는 시간이 앞에 붙는다. 반지하에서 한두 걸음이 1~3초라 체감은 이미 3~5초다.
+     ④ 배속(win/sec)이 2.5 를 넘기면 눈에 '빨리 감았다'로 보인다 — 그 선 안에 넣는다.
+     ★★ 셋 다 **1.5초**로 맞췄다 (박사님 "모션은 1.5초로?", 2026-08-04).
+       ⚠ 여기서 함정 하나 — **sec 만 줄이면 배속이 튄다.** 옛 값 그대로 sec 만 1.5 로
+         내리면 심기가 4.8/1.5 = 3.2배가 되어 위 ④ 선을 넘는다. 그래서 sec 를 줄인 만큼
+         **win 도 다시 골랐다.** 통째로 빨리 감는 것과 짧은 마디를 고르는 것은 다른 일이다.
+       그 결과 넷 다 배속이 **1.0~1.4** 로, 오히려 옛 값(1.8~2.2배)보다 느긋해졌다.
+         물주기 1.50/1.5 = 1.00배   심기 2.10/1.5 = 1.40배
+         수확  1.80/1.5 = 1.20배   바닥수확 2.10/1.5 = 1.40배
+       ★ 물주기는 배속이 **정확히 1.0** 이다 — 손도 발도 원래 속도 그대로 돈다. */
+  const ACT_SPEC = {
+    /* from=클립의 몇 초부터 · win=몇 초어치 · sec=화면에서 몇 초에 걸쳐 (배속 = win/sec) */
+    water:   { clip: 'opendoor', from: 0.30, win: 1.50, sec: 1.5,
+               prop: 'can', fx: 'water', ko: '물 주는 중' },
+    sow:     { clip: 'repot',    from: 0.30, win: 2.10, sec: 1.5,
+               prop: null,  fx: null,    ko: '씨앗 심는 중' },
+    harvest: { clip: 'harvest',  from: 0.30, win: 1.80, sec: 1.5,
+               prop: null,  fx: null,    ko: '거두는 중',
+               /* 시루가 바닥에 있으면 선 채로 딸 수 없다 — 쭈그리는 클립으로 갈아탄다.
+                  기준 0.45m 는 '무릎 높이' 어림이다(방의 서랍장 상판이 0.75m 안팎).
+                  ⚠ 이것만 쭈그린 채로 끝난다(끝 자세가 첫 자세에서 제일 멀다). 그래도
+                    옛 값(5.2s 에서 끊기)보다 **양쪽 다 낫다** — 끝 자세 거리 1.22 vs 1.47,
+                    끊는 순간 속도 0.61 vs 0.86. 일어서는 데까지 담으려면 6.6초가 필요해
+                    배속 4.4배가 된다. 못 담는다. */
+               low: { clip: 'harvest_crouch', from: 0.30, win: 2.10, sec: 1.5, atY: 0.45 } }
+  };
+  /* 대상 둘레 어디쯤에 서나. 화분에 손이 닿는 거리부터 훑는다.
+     ★ 0.70 부터 시작하는 이유 — 몸 반지름이 0.38 이고 서랍장 깊이가 0.45 안팎이라
+       0.62 로 잡으면 상판 화분 앞자리가 **가구 안**으로 판정된다(재서 확인했다). */
+  const ACT_STAND_R = [0.70, 0.90, 1.10, 1.35];
+  /* ★ '못 갔다'는 **노린 자리**가 아니라 **대상까지의 거리**로 판정한다.
+     ------------------------------------------------------------
+     floor_nav 의 path 는 못 가는 곳이라도 최대한 다가간 경로를 돌려준다(빈 배열이
+     아니다). 그래서 "길이 없다"를 goTo 의 실패로는 못 잡는다 — 잡을 수 있는 자리는
+     **다 걷고 난 뒤 어디에 서 있나** 하나뿐이다. 벽 하나를 사이에 두면 여기서 걸린다.
+     1.45m 는 ACT_STAND_R 의 끝(1.35)에 격자 한 칸 남짓을 더한 값이다. */
+  const ACT_REACH = 1.45;
+  /* 이미 이만큼 가까이 서 있으면 걷지 않는다. 한 뼘 옮기자고 걷는 시늉을 하면 우습다. */
+  const ACT_NEAR_ENOUGH = 0.28;
+
+  /* 동작 클립 — from 초부터 win 초어치만 잘라 캐시한다. 캐릭터·동작·마디별로 한 번만 받는다.
+     ★ subclip 은 잘라낸 마디를 **0초로 당겨 준다**(three 가 알아서 shift 한다).
+       그래서 from 이 얼마든 runClip 은 그냥 0부터 sec 초에 걸쳐 틀면 된다. */
+  const _actClip = new Map();
+  function actClipOf(id, name, from, win) {
+    const a = Math.max(0, +from || 0);
+    const k = `${id}/${name}/${a}/${win}`;
+    if (_actClip.has(k)) return _actClip.get(k);
+    const p = (async () => {
+      const g = await charLoad(`${CHAR_ANIM}/char_${id}_${name}.glb`);
+      let cl = (g.animations || [])[0];
+      if (!cl) throw new Error(`클립이 비었습니다: ${name}`);
+      const U = THREE.AnimationUtils;
+      /* 통째로 쓰라는 뜻(win<=0)이거나 클립이 마디보다 짧으면 자르지 않는다 */
+      if (win > 0 && cl.duration > a + win + 0.05 && U && U.subclip)
+        cl = U.subclip(cl, `${name}:act`, Math.round(a * 30), Math.round((a + win) * 30), 30);
+      cl.name = `${name}:act`;
+      return cl;
+    })();
+    _actClip.set(k, p);
+    return p;
+  }
+
+  /* ── 어디에 서서 하나 ──
+     ★ 대상 **뒤**에 서면 화분이 사람을 가리고, 대상 **바로 앞**(카메라와 화분 사이)에
+       서면 사람이 화분을 가린다. 둘 다 볼 게 안 보인다. 그래서 '살짝 앞의 옆'을 노린다
+       (카메라 방향과 이루는 각의 cos 가 0.15 쯤인 자리). nudgeIfOccluding 이 재는
+       가림과 같은 이야기를, 여기서는 **미리** 피하는 것이다. */
+  function standNear(t, from) {
+    const camA = Math.atan2(ctx.cam.position.x - t.x, ctx.cam.position.z - t.z);
+    const cand = [];
+    for (const r of ACT_STAND_R) {
+      for (let k = 0; k < 24; k++) {
+        const a = camA + (k / 24) * Math.PI * 2;
+        const x = t.x + Math.sin(a) * r, z = t.z + Math.cos(a) * r;
+        if (nav.blocked(x, z, BODY_R)) continue;
+        const side = Math.cos(a - camA);                       // 1=카메라 쪽 · -1=화분 뒤
+        const score = -Math.abs(side - 0.15) * 1.6
+                      - Math.hypot(x - from.x, z - from.z) * 0.35
+                      - (r - ACT_STAND_R[0]) * 0.5;
+        cand.push({ x, z, score });
+      }
+    }
+    cand.sort((p, q) => q.score - p.score);
+    /* ⚠ 여기서 nav.path 로 걸러내지 않는다. path 는 **이미 그 자리에 서 있어도**
+       빈 배열을 준다(best===start) — 그걸 "못 간다"로 읽으면 제자리 물주기가 통째로
+       막힌다(실제로 막혔다). 갈 수 있나는 다 걷고 나서 거리로 판정한다(ACT_REACH). */
+    return cand;
+  }
+
+  /* ── 물뿌리개 ──
+     ★★ 두 갈래다. **진짜 GLB 가 있으면 그것을, 없으면 원기둥 셋을** 쓴다.
+       쓰는 쪽은 어느 쪽인지 몰라도 된다 — 보는 것은 **주둥이 끝(userData.tip) 하나뿐**이다.
+     생김새 규약 — 몸통은 +Y, 주둥이는 +X, 원점은 밑면 가운데.
+       기울이는 쪽(runAct)이 이 약속을 쓴다. GLB 도 여기 맞춰 다듬어 넣는다.
+
+     ★★ 지금은 **원기둥 판을 쓴다**(CAN_USE_GLB = false). 재고 정한 것이라 근거를 남긴다.
+       2026-08-04 assets/props/watering_can.glb 가 들어왔다. tools/probe_watering_can.mjs 로
+       둘을 같은 자리·같은 재질로 놓고 재고 찍었다(docs/engine/shots/can_*.png).
+         삼각형     GLB 12,170  vs  원기둥 224            → 54배
+         화면 삼각형 37,616  vs  25,670                   → 보이는 것의 +47%
+         드로우콜   GLB 1 · 원기둥 3                       (여기는 GLB 가 낫다)
+         받는 바이트 GLB 559KB · 원기둥 0
+         **화면에서 몇 px 인가**  폰 세로(390×844)에서 **18 × 24.5 px**
+       ★ 그리고 그 18px 를 8배로 늘려 나란히 붙여 봤다(can_real.png) — **분간이 안 된다.**
+         둘 다 흰 덩어리 하나다. 오히려 원기둥 판이 주둥이가 삐죽해 물뿌리개로 더 읽힌다.
+       ⇒ 아무도 못 보는 데에 삼각형 1.2만과 559KB 를 쓰는 셈이라 **안 쓴다.**
+       ⚠ **파일은 지우지 않았다.** 아래 스위치 한 줄이면 켜진다. 켤 만한 때는 둘이다 —
+         ① 삼각형 1천 안팎짜리 저폴리가 오면(그때는 공짜다).
+         ② 호스트가 물 주는 동안 focusSlot(자리 확대)로 들어가게 되면.
+            그 화면에서는 같은 물뿌리개가 **557 × 662 px** 로 잰다 — 그때는 원기둥이 든다.
+            (지금 game.html 은 물 줄 때 focusSlot 을 안 쓴다. 그래서 지금은 18px 이 전부다) */
+  const CAN_URL = '../../assets/props/watering_can.glb';
+  const CAN_USE_GLB = false;          // ★ 저폴리 물뿌리개가 오면 여기만 true
+  /* 손에 쥔 물건의 제일 긴 치수[m]. 캐릭터 키가 1.40m 이고 원기둥 판의 길이가 0.27m 다 —
+     같은 덩치로 맞춘다("0.2m 안팎"). GLB 가 어떤 크기로 오든 여기에 맞춰 줄인다. */
+  const CAN_MAX = 0.24;
+  const CAN_TIP = '__can_tip';        // ★ 이름으로 찾는다. clone 이 userData 는 못 넘긴다
+  /* 지금 들어온 GLB 는 **주둥이가 -X 를 본다** — 이름 있는 노드가 없어 물어볼 데가 없어서
+     tools/probe_watering_can.mjs 로 0°·90°·180°·270° 를 찍어 눈으로 잡았다
+     (docs/engine/shots/can_zoom.png). 규약은 +X 이므로 반 바퀴 돌려서 맞춘다.
+     ⚠ 다른 파일로 갈아 끼우면 그 도구로 **다시 찍어서** 이 값을 고쳐라. */
+  const CAN_YAW_FIX = Math.PI;
+
+  /* 물뿌리개 색 — GLB 판이 무텍스처(재질 0건)라 색은 코드에서 입힌다.
+     방이 파스텔이라 채도를 낮춘 청록으로 맞췄다. 원기둥 판도 같은 색을 쓴다.
+     ⚠ 원기둥 판은 **매번 새로 만든다**(끝나면 disposeObject 가 버린다).
+       GLB 판은 원본과 나눠 쓰므로 아래 하나짜리를 돌려 쓰고, 버리지 않는다. */
+  const CAN_LOOK = { color: 0x8fb6c9, roughness: 0.5, metalness: 0.15, flatShading: true };
+  let _canMat = null;
+  function canMatShared() {
+    if (!_canMat) _canMat = new THREE.MeshStandardMaterial(CAN_LOOK);
+    return _canMat;
+  }
+
+  /* GLB 한 벌을 '손에 쥘 물건'으로 다듬는다 — 크기·원점·재질·주둥이. 한 번만 한다. */
+  function fitCanAsset(scene) {
+    const box = new THREE.Box3().setFromObject(scene);
+    const size = new THREE.Vector3(); box.getSize(size);
+    const big = Math.max(size.x, size.y, size.z);
+    if (!(big > 1e-4)) throw new Error('빈 모델입니다');
+    const k = CAN_MAX / big;
+    const g = new THREE.Group();
+    /* 안쪽 = 원점·크기 맞추기, 바깥쪽 = 방향 맞추기. 둘을 갈라 놔야 서로 안 엉킨다. */
+    const yaw = new THREE.Group();
+    yaw.rotation.y = CAN_YAW_FIX;
+    yaw.add(scene);
+    g.add(yaw);
+    scene.scale.multiplyScalar(k);
+    /* 원점 약속 맞추기 — XZ 는 가운데, Y 는 밑면(원기둥 판과 같다) */
+    scene.position.set(-(box.min.x + box.max.x) * 0.5 * k, -box.min.y * k,
+                       -(box.min.z + box.max.z) * 0.5 * k);
+    scene.traverse(o => {
+      if (!o.isMesh) return;
+      o.material = canMatShared();
+      o.castShadow = true;
+      o.frustumCulled = false;
+      /* ★ 원본과 기하를 나눠 쓴다 — disposeObject 가 버리면 다음 물뿌리개가 빈다 */
+      o.userData.sharedGeometry = true;
+    });
+    /* 물이 나오는 점 — **이름 있는 노드가 없어서** 바운딩 박스로 잡는다.
+       쓸 때 로컬 +X 가 화분을 보게 돌리므로, 화분 쪽 실루엣 끝(+X 끝)이 곧 주둥이다.
+       높이는 몸통 위쪽 3분의 2 — 주둥이는 물이 안 넘치게 위에 달린다. */
+    const tip = new THREE.Object3D();
+    tip.name = CAN_TIP;
+    tip.position.set(size.x * k * 0.5, size.y * k * 0.66, 0);
+    g.add(tip);
+    return g;
+  }
+
+  /* 한 번만 시도한다. 파일이 없으면 **조용히 넘어가지 않고** 한 번 경고하고 만다.
+     ★★ 쓰는 쪽은 이 함수를 **기다리지 않는다.** 다 받아 놓은 것(_canReady)만 동기로 읽는다.
+       기다리게 두면 느린 회선에서 물주기가 파일을 받는 동안 통째로 멈춘다 —
+       심하면 응답이 안 오는 동안 게이지가 영영 안 찬다. 그래서 첫 한 번은 원기둥으로
+       그리고, 받아진 다음부터 진짜를 쓴다. 18px 짜리 소품이라 그 차이는 안 보인다. */
+  let _canTried = false, _canReady = null;
+  function ensureCanAsset() {
+    if (!CAN_USE_GLB || _canTried) return;
+    _canTried = true;
+    loadGLB(AT(CAN_URL)).then(g => { _canReady = fitCanAsset(g); needsRender = true; })
+      .catch(e => console.warn(
+        `[방뷰] 물뿌리개 GLB 를 못 실었습니다 (${CAN_URL}) — 원기둥으로 그립니다:`, e.message));
+  }
+
+  /* proto 가 있으면 그것을 복제하고, 없으면 원기둥 셋으로 그 자리에서 만든다. */
+  function makeWateringCan(proto) {
+    if (proto) {
+      const g = proto.clone(true);
+      /* ⚠ clone 은 userData 를 JSON 으로 베낀다 — Object3D 를 못 넘긴다. 이름으로 다시 찾는다. */
+      g.userData.tip = g.getObjectByName(CAN_TIP);
+      g.userData.shared = true;                 // 기하·재질은 원본 것이다. 버리지 않는다
+      return g;
+    }
+    const g = new THREE.Group();
+    const mat = new THREE.MeshStandardMaterial(CAN_LOOK);
+    /* 크기 — 방 전경에서 캐릭터가 화면 40px 남짓이다. 실물 비례(몸통 9cm)로 만들었더니
+       손에 든 것이 무엇인지 안 보였다(찍어서 봤다). 1.4배로 키워 '들고 있는 물건'으로 읽히게 한다.
+       3.5등신 치비라 손도 그만큼 크다 — 커진 쪽이 오히려 비례가 맞는다. */
+    const body = new THREE.Mesh(new THREE.CylinderGeometry(0.068, 0.078, 0.135, 12), mat);
+    body.position.y = 0.068;
+    const spout = new THREE.Mesh(new THREE.CylinderGeometry(0.013, 0.023, 0.175, 8), mat);
+    spout.rotation.z = -Math.PI / 2 - 0.32;                 // 앞으로 뻗고 살짝 든다
+    spout.position.set(0.105, 0.110, 0);
+    const grip = new THREE.Mesh(new THREE.TorusGeometry(0.046, 0.011, 6, 12), mat);
+    grip.rotation.y = Math.PI / 2;
+    grip.position.set(-0.064, 0.106, 0);
+    g.add(body, spout, grip);
+    /* 물이 나오는 점. 쓰는 쪽은 이것만 본다 — 모양이 바뀌어도 여기만 맞으면 된다. */
+    const tip = new THREE.Object3D();
+    tip.name = CAN_TIP;
+    tip.position.set(0.193, 0.138, 0);
+    g.add(tip);
+    g.userData.tip = tip;
+    for (const m of [body, spout, grip]) { m.castShadow = true; m.frustumCulled = false; }
+    return g;
+  }
+
+  /* ── 물 뿌리기 이펙트 ──
+     ★ 물방울 48개를 **점 하나짜리 드로우콜 한 번**으로 낸다. 자리 계산은 전부 정점
+       셰이더가 한다 — 자바스크립트는 매 프레임 uniform 두 개만 쓴다(uPhase·uAlpha).
+       CPU 로 48개 좌표를 매 프레임 다시 쓰면 폰에서 그게 그대로 프레임이 된다.
+     ⚠ 성능 정책을 안 깬다. 이펙트가 도는 동안만 '바쁜 화면'(30fps)이고,
+       끝나면 이펙트를 통째로 치워서 다시 노는 화면(10fps)으로 돌아간다. */
+  const WATER_N = 48;
+  function makeWaterFx() {
+    const geo = new THREE.BufferGeometry();
+    const pos = new Float32Array(WATER_N * 3);              // 자리는 셰이더가 정한다(전부 0)
+    const seed = new Float32Array(WATER_N);
+    const jit = new Float32Array(WATER_N * 3);
+    for (let i = 0; i < WATER_N; i++) {
+      seed[i] = i / WATER_N + (Math.random() - 0.5) * 0.01;
+      jit[i * 3] = (Math.random() - 0.5) * 0.075;
+      jit[i * 3 + 1] = (Math.random() - 0.5) * 0.02;
+      jit[i * 3 + 2] = (Math.random() - 0.5) * 0.075;
+    }
+    geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+    geo.setAttribute('aSeed', new THREE.BufferAttribute(seed, 1));
+    geo.setAttribute('aJit', new THREE.BufferAttribute(jit, 3));
+    const uni = {
+      uFrom: { value: new THREE.Vector3() }, uTo: { value: new THREE.Vector3() },
+      uPhase: { value: 0 }, uAlpha: { value: 0 }, uSize: { value: 40 }, uPx: { value: pxRatio }
+    };
+    const mat = new THREE.ShaderMaterial({
+      uniforms: uni, transparent: true, depthWrite: false,
+      vertexShader: `
+        attribute float aSeed; attribute vec3 aJit;
+        uniform vec3 uFrom; uniform vec3 uTo; uniform float uPhase; uniform float uSize; uniform float uPx;
+        varying float vT;
+        void main(){
+          float t = fract(uPhase + aSeed);
+          vT = t;
+          vec3 p = mix(uFrom, uTo, t) + aJit * t;
+          p.y -= 0.16 * t * t;                    /* 떨어지는 물이라 끝으로 갈수록 처진다 */
+          vec4 mv = modelViewMatrix * vec4(p, 1.0);
+          gl_Position = projectionMatrix * mv;
+          gl_PointSize = uSize * uPx / max(0.25, -mv.z);
+        }`,
+      fragmentShader: `
+        precision mediump float;
+        uniform float uAlpha; varying float vT;
+        void main(){
+          vec2 d = gl_PointCoord - 0.5;
+          float m = 1.0 - smoothstep(0.20, 0.5, length(d));
+          float a = uAlpha * m * smoothstep(0.0, 0.06, vT) * (1.0 - smoothstep(0.82, 1.0, vT));
+          if (a < 0.01) discard;
+          gl_FragColor = vec4(0.80, 0.91, 1.0, a);
+        }`
+    });
+    const pts = new THREE.Points(geo, mat);
+    pts.frustumCulled = false;                   // 좌표가 셰이더 안에 있어 bbox 가 원점이다
+    pts.renderOrder = 996;
+    /* 흙에 떨어진 자국 — 물이 닿았다는 표시. 한 장이면 충분하다. */
+    const ringMat = new THREE.MeshBasicMaterial({ color: 0x9fd0e8, transparent: true, opacity: 0,
+                                                  side: THREE.DoubleSide, depthWrite: false });
+    const ring = new THREE.Mesh(new THREE.RingGeometry(0.03, 0.05, 20), ringMat);
+    ring.rotation.x = -Math.PI / 2;
+    ring.renderOrder = 997;
+    houseGroup.add(pts); houseGroup.add(ring);
+    return {
+      /* from=주둥이 끝 · to=흙 */
+      aim(from, to) {
+        uni.uFrom.value.copy(from); uni.uTo.value.copy(to);
+        ring.position.set(to.x, to.y + 0.004, to.z);
+      },
+      /* t01 은 동작 진행률. 처음·끝을 부드럽게 열고 닫는다(갑자기 물이 끊기면 놀란다) */
+      tick(t01, dt) {
+        uni.uPhase.value = (uni.uPhase.value + dt * 2.6) % 1;
+        uni.uAlpha.value = Math.min(1, t01 / 0.22) * Math.min(1, (1 - t01) / 0.18);
+        const pulse = (t01 * 3) % 1;
+        ring.scale.setScalar(0.6 + pulse * 1.9);
+        ringMat.opacity = uni.uAlpha.value * (1 - pulse) * 0.55;
+      },
+      dispose() {
+        houseGroup.remove(pts); houseGroup.remove(ring);
+        geo.dispose(); mat.dispose(); ring.geometry.dispose(); ringMat.dispose();
+      }
+    };
+  }
+
+  /* ── 진행 상태 ── 한 번에 하나만 돈다. 새로 부르면 앞의 것을 취소한다. */
+  let curAct = null;          // { token, kind, key, charId, phase, p01 }
+  let actInstant = false;     // 빨리감기 — 켜져 있으면 연출을 통째로 건너뛴다
+  const actBusy = () => !!curAct;
+
+  function cancelAct(reason) {
+    if (!curAct) return false;
+    const tk = curAct.token;
+    if (tk.cancelled) return true;
+    tk.cancelled = true;
+    tk.reason = reason || '취소했습니다';
+    const c = tk.charId && chars.get(tk.charId);
+    if (c && c.abortAct) c.abortAct(tk.reason);
+    return true;
+  }
+
+  /* 흙의 높이 — 물이 떨어질 자리. 화분 윗면을 재서 쓴다(없으면 자리 점 위 12cm). */
+  const _actBox = new THREE.Box3();
+  function soilPointOf(t) {
+    const p = t.pos;
+    if (t.plant && t.plant.group) {
+      try {
+        _actBox.setFromObject(potPartOf(t.plant.group));
+        if (Number.isFinite(_actBox.max.y))
+          return new THREE.Vector3(p.x, _actBox.max.y + 0.01, p.z);
+      } catch (e) { /* 못 재면 어림으로 */ }
+    }
+    return new THREE.Vector3(p.x, p.y + 0.12, p.z);
+  }
+
+  const _tipV = new THREE.Vector3();
+
+  async function runAct(key, kind, o, token) {
+    const K = String(kind || '').toLowerCase();
+    const base = ACT_SPEC[K];
+    /* 모르는 이름은 **던진다** — 프로그램이 잘못 부른 것이지 게임에서 일어난 일이 아니다 */
+    if (!base) throw fail(new Error(`모르는 동작: ${kind} — water·sow·harvest 뿐입니다`));
+    const t = resolveKey(key);
+    if (!t) throw fail(new Error(`모르는 슬롯: ${key} (방 ${roomId})`));
+    /* 소품은 **걷는 동안** 미리 받아 둔다. 다 걷고 나서 받으면 모션 앞이 한 박자 빈다.
+       (안 켜져 있거나 파일이 없으면 곧바로 null 이 되어 원기둥으로 간다) */
+    if (base.prop === 'can') ensureCanAsset();
+
+    const t0 = performance.now();
+    const prog = (p, phase) => {
+      if (curAct && curAct.token === token) { curAct.p01 = p; curAct.phase = phase; }
+      try { o.onProgress && o.onProgress(clamp(p, 0, 1), phase); } catch (e) { fail(e); }
+    };
+    const bail = (reason) => {
+      try { o.onFail && o.onFail(reason); } catch (e) { fail(e); }
+      return { ok: false, kind: K, key: t.key, reason, ms: Math.round(performance.now() - t0) };
+    };
+    /* ★ 연출이 다 끝난 **뒤에만** 여기 온다. 논리는 이 한 곳에서만 돈다. */
+    const finish = async (skipped) => {
+      prog(1, 'act');
+      if (o.onDone) await o.onDone();          // 던지면 그대로 밖으로 나간다 — 논리 오류는 감추지 않는다
+      return { ok: true, kind: K, key: t.key, instant: !!skipped,
+               ms: Math.round(performance.now() - t0) };
+    };
+
+    /* ── 빨리감기·연출 없음 ──
+       ⚠ 빨리감기 중에는 연출을 하지 않는다. 그게 빨리감기의 뜻이다(박사님).
+       ★ 캐릭터가 아예 없을 때도 여기로 온다. 사람이 없다고 물이 안 들어가면
+         게임이 막힌다 — 못 하는 것과 안 보여주는 것은 다른 얘기다. */
+    const person = (() => {
+      const id = o.charId || (selChar && chars.get(selChar) && chars.get(selChar).walkable ? selChar : null)
+                 || (chars.has('jachwi') ? 'jachwi' : null);
+      const c = id && chars.get(id);
+      return c && c.walkable && c.walkToXZ ? { id, c } : null;
+    })();
+    const instant = o.instant != null ? !!o.instant : actInstant;
+    if (instant || !person || !built) {
+      prog(0, 'act');
+      return finish(true);
+    }
+    token.charId = person.id;
+
+    /* ① 걸어간다 ------------------------------------------------------- */
+    prog(0, 'walk');
+    const here = () => ({ x: person.c.root.position.x, z: person.c.root.position.z });
+    const cands = standNear({ x: t.pos.x, z: t.pos.z }, here());
+    if (!cands.length) return bail('그 자리 곁에는 설 데가 없습니다');
+    const stand = cands[0];
+    if (Math.hypot(here().x - stand.x, here().z - stand.z) > ACT_NEAR_ENOUGH) {
+      const w = await person.c.walkToXZ(stand.x, stand.z, p => prog(p, 'walk'));
+      if (token.cancelled) return bail(token.reason);
+      /* ok:false 는 '길이 아예 안 잡혔다'거나 '다른 걸음에 밀렸다'다. 둘 다 그만둔다 —
+         밀린 것을 이어서 하면 플레이어가 방금 시킨 걸음을 이 함수가 되돌리게 된다. */
+      if (!w.ok && w.reason !== '갈 수 없는 자리입니다') return bail(w.reason || '걸음이 끊겼습니다');
+    }
+    /* ★ 여기가 "못 가는 자리면 실패한다"를 재는 유일한 곳이다(위 ACT_REACH 주석) */
+    const gap = Math.hypot(here().x - t.pos.x, here().z - t.pos.z);
+    if (gap > ACT_REACH) return bail(`거기까지 못 갑니다 (${gap.toFixed(2)}m 떨어져 있습니다)`);
+    prog(1, 'walk');
+
+    /* ② 선다 — 대상을 본다 --------------------------------------------- */
+    await person.c.faceXZ(t.pos.x, t.pos.z);
+    if (token.cancelled) return bail(token.reason);
+
+    /* ③ 모션 ------------------------------------------------------------ */
+    /* 바닥에 놓인 것은 쭈그려서 딴다 */
+    const spec = (base.low && t.pos.y < base.low.atY) ? { ...base, ...base.low } : base;
+    const clip = await actClipOf(person.c.assetId, spec.clip, spec.from, spec.win)
+      .catch(e => { console.warn(`[방뷰] 동작 클립 '${spec.clip}' 을 못 실었습니다 — 절차적 몸짓으로 대신합니다:`, e.message); return null; });
+    if (token.cancelled) return bail(token.reason);
+
+    /* 소품·이펙트는 여기서 만들고 여기서 치운다. 새는 길을 하나만 둔다. */
+    let can = null, fx = null, soil = null, hand = null;
+    if (spec.prop === 'can') {
+      hand = person.c.handBone;
+      /* ★ 받아 놨으면 진짜, 아니면 원기둥. **기다리지 않는다**(ensureCanAsset 주석 참고) */
+      if (hand) { can = makeWateringCan(_canReady); can.rotation.order = 'YXZ'; houseGroup.add(can); }
+      else console.warn('[방뷰] 오른손 뼈를 못 찾았습니다 — 물뿌리개 없이 이펙트만 냅니다');
+    }
+    if (spec.fx === 'water') { fx = makeWaterFx(); soil = soilPointOf(t); }
+    const cleanup = () => {
+      if (can) {
+        houseGroup.remove(can);
+        /* ★ GLB 판은 원본과 기하·재질을 나눠 쓴다 — 버리면 다음 물뿌리개가 텅 빈다 */
+        if (!can.userData.shared) disposeObject(can);
+        can = null;
+      }
+      if (fx) { fx.dispose(); fx = null; }
+      needsRender = true;
+    };
+
+    let last = performance.now();
+    try {
+      prog(0, 'act');
+      try { o.onArrive && o.onArrive(); } catch (e) { fail(e); }
+      const done = await person.c.runClip(clip, spec.sec, p01 => {
+        const now = performance.now();
+        const dt = Math.min(0.1, (now - last) / 1000); last = now;
+        if (can && hand) {
+          hand.getWorldPosition(_tipV);
+          can.position.copy(_tipV);
+          /* 로컬 +X 가 대상을 향하게 돌린다(+X 는 Ry 로 (cos,0,-sin) 이 된다) */
+          can.rotation.y = Math.atan2(-(t.pos.z - can.position.z), t.pos.x - can.position.x);
+          /* 붓는 각 — **팔이 다 나간 뒤에** 제일 많이 기울인다.
+             쓰는 마디(open_door 0.30~1.80s)에서 팔은 p01 0.13 에 나가기 시작해 0.87 에
+             닿고 그대로 멎는다(재서 확인했다). sin(πp01) 로 두면 팔이 아직 나가는 중에
+             물뿌리개만 먼저 엎어져 허공에 붓는 그림이 된다. 그래서 올라갈 때는 팔을
+             따라가고 끝에서만 짧게 세운다 — 물줄기(fx)가 열리고 닫히는 모양과 같은 꼴이다. */
+          can.rotation.z = -0.95 * Math.min(1, p01 / 0.65) * Math.min(1, (1 - p01) / 0.13);
+        }
+        if (fx) {
+          if (can) can.userData.tip.getWorldPosition(_tipV);
+          else if (hand) hand.getWorldPosition(_tipV);
+          else _tipV.set(soil.x, soil.y + 0.55, soil.z);
+          fx.aim(_tipV, soil);
+          fx.tick(p01, dt);
+        }
+        prog(p01, 'act');
+      });
+      if (token.cancelled) return bail(token.reason);
+      if (!done) return bail('동작이 끊겼습니다');
+    } finally {
+      cleanup();
+    }
+
+    /* ④ 그제야 논리 ------------------------------------------------------ */
+    return finish();
+  }
+
+  /* ★ 공개 창구는 actAt 하나다. 돌려주는 Promise 에 .cancel() 이 붙어 있다. */
+  function actAt(key, kind, opt) {
+    const o = opt || {};
+    cancelAct('다른 동작이 시작됐습니다');
+    const token = { cancelled: false, reason: null, charId: null };
+    const rec = { token, kind: String(kind || '').toLowerCase(), key: String(key), phase: 'walk', p01: 0 };
+    curAct = rec;
+    const p = runAct(key, kind, o, token)
+      .finally(() => { if (curAct === rec) curAct = null; needsRender = true; });
+    /* 취소하는 법 — 이 한 줄이다. 취소하면 onDone 은 안 부른다. */
+    p.cancel = (reason) => { if (curAct === rec) cancelAct(reason); return p; };
+    return p;
   }
 
   /* ============================================================
@@ -3713,6 +4429,9 @@ export async function createRoomView(canvas, opts = {}) {
   let lastNudge = 0;
   function nudgeIfOccluding(force) {
     if (!built || !plants.size) return 0;
+    /* ★ 무언가 하는 중에는 안 비킨다. 물을 주다 말고 옆으로 걸어가면 그건 비켜선 게
+       아니라 그만둔 것이다(실제로 걸어가면 걸음이 모션을 끊는다). */
+    if (actBusy()) return 0;
     const now = performance.now();
     if (!force && now - lastNudge < NUDGE_MIN_MS) return 0;
     lastNudge = now;
@@ -4144,6 +4863,50 @@ export async function createRoomView(canvas, opts = {}) {
     isWalking(id) { const c = id && chars.get(id); return !!(c && c.walking); },
     /* 걷던 것을 세운다 */
     stopWalk(id) { const c = id && chars.get(id); if (c && c.stop) c.stop(); },
+
+    /* ══ 가서 · 하고 · 끝난다 ═══════════════════════════════════════════
+       view.actAt('banjiha-dresser:1', 'water', { onProgress, onArrive, onDone, onFail })
+         → Promise<{ ok, kind, key, ms, instant?, reason? }>  (+ .cancel(사유))
+
+       ★★ 순서가 이 함수의 전부다 — **연출 뒤에 논리**다.
+         걸어간다 → 대상을 보고 선다 → 모션(게이지 0→1) → **그제야** onDone().
+         취소되거나 캐릭터가 사라지면 onDone 은 **안 부른다**. 반쯤 준 물은 없다.
+         실제 물주기·심기·수확은 onDone 안에서 게임이 한다. 이 파일은 규칙을 모른다.
+
+       kind  'water' · 'sow' · 'harvest' — 그 밖의 이름은 던진다(잘못 부른 것이다)
+       opt
+         onProgress(p01, phase)  phase 'walk' 이면 걷는 어림 진행률, 'act' 면 **게이지**다.
+                                 ★그리는 것은 game.html 몫이다. 여기서는 숫자만 낸다 —
+                                   방 위에 링을 얹으면 카메라를 돌릴 때마다 게이지가 기울고,
+                                   폰에서 40px 짜리 캐릭터 발밑에 든 링은 손가락에 가린다.
+         onArrive()              모션이 시작될 때 한 번. 게이지를 띄울 순간이 여기다.
+         onDone()                ★연출이 끝난 뒤. async 여도 된다 — 기다렸다가 끝낸다.
+                                 여기서 던지면 그대로 밖으로 나간다(논리 오류는 안 감춘다).
+         onFail(reason)          못 갔거나 취소됐을 때. onDone 은 안 불린다.
+         instant:true            연출 없이 즉시. **빨리감기가 이걸 쓴다.**
+         charId                  누가 할까. 기본은 고른 캐릭터, 없으면 'jachwi'.
+
+       못 하면 어떻게 되나
+         모르는 슬롯·모르는 kind          → **던진다**(프로그램이 잘못 부른 것이다)
+         곁에 설 데가 없다 · 길이 막혔다   → { ok:false, reason } + onFail. 안 던진다.
+         캐릭터가 아예 없다 · 방이 아직 없다 → instant 와 같은 길로 간다.
+           ⚠ 여기서 실패로 만들면 사람이 없는 화면에서 게임이 통째로 막힌다.
+             "못 하는 것"과 "안 보여주는 것"은 다르다.
+
+       ⚠ setPaused(확대 화면) 중에는 **멈춘다**. 풀면 이어서 한다. 시계가 update(dt)
+         하나뿐이라 그렇다 — 멈춘 화면 뒤에서 논리가 끝나면 안 되기 때문이다. */
+    actAt(key, kind, opt) { return actAt(key, kind, opt); },
+    /* 하던 동작을 취소한다. 취소하면 onDone 은 안 불린다. 취소할 게 있었으면 true. */
+    cancelAct(reason) { return cancelAct(reason); },
+    /* 지금 무엇을 하고 있나 — { kind, key, phase, p01 } · 없으면 null */
+    actState() {
+      return curAct ? { kind: curAct.kind, key: curAct.key, phase: curAct.phase,
+                        p01: +curAct.p01.toFixed(3) } : null;
+    },
+    /* ★ 빨리감기 스위치. 켜면 actAt 이 연출을 통째로 건너뛰고 곧바로 논리를 돌린다.
+       빨리감기를 켤 때 한 번, 끌 때 한 번 부르면 된다(호출마다 instant 를 넣어도 된다). */
+    setActInstant(on) { actInstant = !!on; return actInstant; },
+    isActInstant() { return actInstant; },
     /* 화분을 가리고 선 사람이 있으면 비켜서게 한다. 평소엔 시점이 정돈될 때·화분을
        놓을 때 저절로 돈다 — 호스트가 직접 부를 일은 드물다(검증용으로 낸다).
        몇 명을 움직였는지 돌려준다. */
@@ -4204,6 +4967,8 @@ export async function createRoomView(canvas, opts = {}) {
     dispose() {
       if (disposed) return;
       disposed = true;
+      /* ★ 화면이 죽으면 논리도 안 돈다 — 하던 동작을 먼저 취소한다(반쯤 준 물은 없다) */
+      cancelAct('방이 사라졌습니다');
       cancelAnimationFrame(raf);
       canvas.removeEventListener('mousedown', onDown);
       canvas.removeEventListener('touchstart', onDown);

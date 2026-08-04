@@ -166,6 +166,38 @@ async function main() {
   const after = await page.eval(STOP);
   console.log(row('걷기 후', after));
 
+  /* ── ★ 물주기 중 (2026-08-04) ──────────────────────────────────────────
+     박사님: "이펙트가 30fps 정책을 깨면 안 된다. test_roomview_perf 로 전후를 재라."
+     물줄기는 정점 셰이더가 자리를 정하는 THREE.Points 하나(드로우콜 +1)와
+     흙 자국 링 하나(+1), 물뿌리개 원기둥 셋(+3)이다. 여기서 보는 것은 둘이다.
+       ① 물주기 중 그린fps 가 **30 상한 안**인가 (걷는 중과 같은 '바쁜 화면'이어야 한다)
+       ② 끝난 뒤 **콜 수가 원래대로** 돌아오나 (이펙트를 안 치우면 여기서 잡힌다) */
+  await page.eval(`window.view.stopWalk('jachwi'); 1`);
+  await sleep(400);
+  const wKey = await page.eval(`(()=>{ const p = window.view.plants(); return p.length ? p[0].key : null; })()`);
+  let waterSeg = null, callsAfterWater = null, waterRes = null;
+  if (wKey) {
+    await page.eval(`(()=>{ window.__W=null;
+      window.view.actAt(${JSON.stringify(wKey)}, 'water', { onDone: () => 1 })
+        .then(r => window.__W = r, e => window.__W = { ok:false, threw:String(e && e.message) });
+      return 1; })()`);
+    /* 걷는 구간은 위에서 이미 쟀다 — 모션이 시작될 때부터 잰다 */
+    for (let k = 0; k < 300; k++) {
+      const st = JSON.parse(await page.eval(`JSON.stringify(window.view.actState())`) || 'null');
+      if (st && st.phase === 'act') break;
+      if (await page.eval(`window.__W || null`)) break;
+      await sleep(50);
+    }
+    await page.eval(START);
+    for (let k = 0; k < 300 && !(await page.eval(`window.__W || null`)); k++) await sleep(50);
+    waterSeg = await page.eval(STOP);
+    waterRes = await page.eval(`JSON.stringify(window.__W)`);
+    console.log(row('물주기 중', waterSeg));
+    await sleep(600);
+    callsAfterWater = await page.eval(`(()=>{ window.view.redraw();
+      return window.view.three.renderer.info.render.calls; })()`);
+  }
+
   /* ══ ★ 노는 화면 · setPaused (2026-08-03) ═══════════════════════════════
      박사님: "화분 상세보기 누르면 렉 걸려. 회전도 잘 안 되고"
      확대(plant_grow iframe)가 열리면 WebGL 컨텍스트 둘이 동시에 돈다. 방이 안 보이는데도
@@ -200,6 +232,16 @@ async function main() {
               `   · 푼 직후 캐릭터 이동 ${jump.toFixed(3)}m ${jump < 0.05 ? '✔ 순간이동 없음' : '✘ 튀었다'}`);
 
   const bad = [];
+  /* ★ 물주기가 성능 정책을 깨지 않았나 — 상한(30fps) 위로 못 올라가고,
+     끝난 뒤에는 이펙트가 남아 있으면 안 된다(콜 수가 걷기 전으로 돌아와야 한다). */
+  if (waterSeg) {
+    const backToNormal = callsAfterWater != null && callsAfterWater <= after.calls + 1;
+    console.log(`물주기 ${waterRes} · 그린fps ${waterSeg.fps} (상한 30) · ` +
+                `콜 ${after.calls} → ${waterSeg.calls}(물주는 중) → ${callsAfterWater}(끝난 뒤) ` +
+                `${backToNormal ? '✔ 이펙트를 치웠다' : '✘ 이펙트가 남았다'}`);
+    if (waterSeg.fps > 33) bad.push(`물주기 중 ${waterSeg.fps}fps — 30 상한을 넘었다`);
+    if (!backToNormal) bad.push(`물주기 뒤 드로우콜이 안 돌아왔다 (${after.calls} → ${callsAfterWater})`);
+  }
   if (paused !== 0) bad.push('멈춰도 그린다');
   if (!(resumed > 0)) bad.push('풀어도 안 그린다');
   if (!(jump < 0.05)) bad.push('푼 직후 캐릭터가 튄다');

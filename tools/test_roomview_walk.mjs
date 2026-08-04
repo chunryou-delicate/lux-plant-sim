@@ -15,6 +15,8 @@
      E 걷는 동안에도 setDaylight(하루빛)이 계속 돈다
      F 화분을 가리고 서면 비켜선다
      G 걷기 클립은 경량 파생본(35KB)을 쓴다 — 2.4MB 짜리를 안 받는다
+     N ★가서·하고·끝난다(actAt) — 가서 서서 끝난다 · 못 가는 자리면 실패한다 ·
+        빨리감기에서는 연출을 건너뛴다 · **연출이 끝난 뒤에 논리가 돈다**
 ============================================================ */
 import { launch, sleep } from './test_cdp.mjs';
 
@@ -357,6 +359,165 @@ async function main() {
       const movedT = Math.hypot(afterT.x - beforeT.x, afterT.z - beforeT.z);
       ok('M-3 터치로 끌면 걸어간다 (마우스와 같은 자리로)', movedT > 0.25, `${movedT.toFixed(2)}m`);
     }
+  }
+
+  /* ══ N 가서 · 하고 · 끝난다 — actAt (2026-08-04) ═══════════════════════════
+     박사님: "씨앗심기 / 물주기 / 수확하기는 캐릭이 그 위치로 가서 뭔가 모션하면서
+              게이지 차면서 완료되게 해줘."
+     ★ 여기서 재는 것은 셋이다(지시 그대로).
+       ① 가서 → 서서 → 끝난다        ② 못 가는 자리면 실패한다
+       ③ 빨리감기에서는 연출을 건너뛴다
+     그리고 이 셋보다 더 중요한 것 하나를 더 잰다 —
+       ④ **연출이 끝난 뒤에 논리가 돈다.** 중간에 끊기면 논리는 안 돈다(반쯤 준 물은 없다). */
+  {
+    /* 무대 정리 — 걷기 검사가 남긴 상태를 씻는다 */
+    await page.eval(`window.view.stopWalk('jachwi'); window.view.selectCharacter(null); 1`);
+    await page.eval(`window.view.setActInstant(false)`);
+    await sleep(400);
+
+    /* 동작 하나를 걸고 끝날 때까지 기다린다. 무슨 일이 어떤 **순서**로 났는지 남긴다. */
+    const runAct = async (key, kind, extra = '') => {
+      await page.eval(`(()=>{ window.__A = { log: [], prog: [], res: null };
+        const L = window.__A;
+        const p = window.view.actAt(${JSON.stringify('KEY')}.replace('KEY', ${JSON.stringify(key)}), ${JSON.stringify(kind)}, {
+          ${extra}
+          onProgress: (v, ph) => { L.prog.push([ph, +v.toFixed(3)]); L.log.push('P:' + ph); },
+          onArrive:   () => L.log.push('ARRIVE'),
+          onDone:     () => L.log.push('DONE'),
+          onFail:     (r) => L.log.push('FAIL:' + r) });
+        window.__AP = p;
+        p.then(r => L.res = r, e => L.res = { threw: String(e && e.message) });
+        return 1; })()`);
+      for (let i = 0; i < 250; i++) {
+        await sleep(100);
+        if (await page.eval(`(window.__A.res ? 1 : 0)`)) break;
+      }
+      return page.eval(`window.__A`);
+    };
+    /* 씬에 물뿌리개(userData.tip 을 단 그룹)와 물줄기(Points)가 몇 개 떠 있나 */
+    const FX = `(()=>{ let pts=0, can=0; window.view.three.scene.traverse(o=>{
+        if (o.isPoints) pts++; if (o.isGroup && o.userData && o.userData.tip) can++; });
+      return pts * 10 + can; })()`;
+
+    const SLOT = await page.eval(`(()=>{ const s = window.view.slots().find(v => !v.occupied); return s ? s.slotId : null; })()`);
+    await page.eval(`window.view.setPlant(${JSON.stringify(SLOT)}, {kind:'beansprout', progress01:0.5, band:'good'}) && 1`);
+    await sleep(500);
+
+    /* ── N-1·N-2·N-3 물주기 한 번 ── */
+    const A = await runAct(SLOT, 'water');
+    const target = await page.eval(`window.view.resolveKey(${JSON.stringify(SLOT)})`);
+    const me = await page.eval(`window.view.characters().find(c=>c.id==='jachwi').pos`);
+    const gap = Math.hypot(me.x - target.pos.x, me.z - target.pos.z);
+    ok('N-1 가서 → 서서 → 끝난다 (물주기)',
+       A.res && A.res.ok === true && A.log.includes('DONE'), JSON.stringify(A.res));
+    ok('N-1b 대상 곁에 서 있다 (손이 닿는 거리)', gap < 1.45, `${gap.toFixed(2)}m`);
+    ok('N-1c 걷는 구간과 모션 구간이 갈린다',
+       A.prog.some(p => p[0] === 'walk') && A.prog.some(p => p[0] === 'act'),
+       A.prog.slice(0, 3).map(p => p.join('=')).join(' '));
+
+    /* ★ 이 한 줄이 제일 중요하다 — 게이지가 다 찬 **뒤에** 논리가 돈다 */
+    const iArrive = A.log.indexOf('ARRIVE'), iDone = A.log.indexOf('DONE');
+    const actProg = A.prog.filter(p => p[0] === 'act').map(p => p[1]);
+    ok('N-2 ★연출이 끝난 뒤에 논리가 돈다 (ARRIVE → 게이지 → DONE 순서)',
+       iArrive >= 0 && iDone > iArrive && A.log[A.log.length - 1] === 'DONE',
+       A.log.slice(-4).join(' → '));
+    ok('N-3 게이지가 0 에서 1 까지 고르게 찬다',
+       actProg.length >= 5 && actProg[0] < 0.35 && actProg[actProg.length - 1] === 1
+       && actProg.every((v, i) => i === 0 || v >= actProg[i - 1] - 1e-6),
+       `${actProg.length}표본 ${actProg[0]}…${actProg[actProg.length - 1]}`);
+
+    /* ── N-4 물뿌리개·물줄기는 뜨고, 끝나면 사라진다 ── */
+    await page.eval(`(()=>{ window.__F = { mid: 0, end: 0 };
+      window.view.actAt(${JSON.stringify(SLOT)}, 'water', { onDone: () => 1 })
+        .then(() => { window.__F.done = 1; }); return 1; })()`);
+    for (let i = 0; i < 250; i++) {
+      await sleep(80);
+      const st = await page.eval(`JSON.stringify(window.view.actState())`);
+      const s = JSON.parse(st || 'null');
+      if (s && s.phase === 'act' && s.p01 > 0.3 && s.p01 < 0.8) {
+        await page.eval(`window.__F.mid = ${FX}`); break;
+      }
+      if (await page.eval(`window.__F.done ? 1 : 0`)) break;
+    }
+    for (let i = 0; i < 250 && !(await page.eval(`window.__F.done ? 1 : 0`)); i++) await sleep(100);
+    await sleep(400);
+    const F = await page.eval(`(()=>{ window.__F.end = ${FX}; return window.__F; })()`);
+    ok('N-4 물주기에는 물뿌리개와 물줄기가 뜬다', F.mid === 11, `pts*10+can = ${F.mid} (11 이어야 한다)`);
+    ok('N-4b 끝나면 둘 다 치운다 (드로우콜이 안 샌다)', F.end === 0, `끝난 뒤 ${F.end}`);
+
+    /* ── N-5 못 가는 자리면 실패한다 ──
+       ★ 가구 뒤 구석에 화분을 놓는다. floor_nav 의 path 는 못 가는 곳이라도 최대한
+         다가간 경로를 주므로, '못 갔다'는 **다 걷고 난 뒤의 거리**로만 잡힌다. */
+    const put = await page.eval(`window.view.setPlantAt('probe_far', {x:2.35,y:0,z:1.85,rotY:0},
+      {kind:'beansprout', progress01:0.4, band:'good'}).then(()=>'ok', e=>'거절:'+e.message)`);
+    if (put !== 'ok') ok('N-5 못 가는 자리면 실패한다', false, `구석에 화분을 못 놓았습니다: ${put}`);
+    else {
+      await sleep(400);
+      const B = await runAct('free:probe_far', 'water');
+      ok('N-5 ★못 가는 자리면 실패한다 (가구 뒤 구석)',
+         B.res && B.res.ok === false && /못 갑니다|설 데가 없습니다/.test(B.res.reason || ''),
+         JSON.stringify(B.res));
+      ok('N-5b 실패하면 논리가 안 돈다 (onDone 대신 onFail)',
+         !B.log.includes('DONE') && B.log.some(s => String(s).startsWith('FAIL:')),
+         B.log.slice(-3).join(' → '));
+      ok('N-5c 실패한 뒤에도 이펙트가 안 남는다', (await page.eval(FX)) === 0);
+      await page.eval(`window.view.setPlantAt('probe_far', null, null).then(()=>1,()=>1)`);
+      await sleep(300);
+    }
+
+    /* ── N-6 빨리감기에서는 연출을 건너뛴다 ── */
+    const posBefore = await page.eval(`window.view.characters().find(c=>c.id==='jachwi').pos`);
+    const t0 = Date.now();
+    const C = await runAct(SLOT, 'water', 'instant: true,');
+    const dtMs = Date.now() - t0;
+    const posAfter = await page.eval(`window.view.characters().find(c=>c.id==='jachwi').pos`);
+    const moved = Math.hypot(posAfter.x - posBefore.x, posAfter.z - posBefore.z);
+    ok('N-6 ★빨리감기(instant)는 연출을 건너뛴다 — 걷지도 않고 곧바로 끝난다',
+       C.res && C.res.ok === true && C.res.instant === true && C.res.ms < 50 && moved < 0.02,
+       `${JSON.stringify(C.res)} · 이동 ${moved.toFixed(3)}m · 벽시계 ${dtMs}ms`);
+    ok('N-6b 건너뛰어도 논리는 돈다 (DONE 은 그대로 불린다)', C.log.includes('DONE'), C.log.join(' → '));
+    ok('N-6c 건너뛰면 걷는 구간이 아예 없다',
+       !C.prog.some(p => p[0] === 'walk'), JSON.stringify(C.prog));
+
+    /* setActInstant — 호출마다 안 넘겨도 되는 전역 스위치 */
+    await page.eval(`window.view.setActInstant(true)`);
+    const D = await runAct(SLOT, 'harvest');
+    await page.eval(`window.view.setActInstant(false)`);
+    ok('N-6d setActInstant(true) 도 같은 길로 간다 (빨리감기 스위치)',
+       D.res && D.res.ok === true && D.res.instant === true && D.res.ms < 50,
+       JSON.stringify(D.res));
+
+    /* ── N-7 취소하면 논리가 안 돈다 ── */
+    await page.eval(`(()=>{ window.__A = { log: [], prog: [], res: null };
+      const L = window.__A;
+      const p = window.view.actAt(${JSON.stringify(SLOT)}, 'sow', {
+        onDone: () => L.log.push('DONE'), onFail: r => L.log.push('FAIL:' + r) });
+      p.then(r => L.res = r, e => L.res = { threw: String(e && e.message) });
+      window.__AP = p; return 1; })()`);
+    await sleep(700);
+    await page.eval(`window.__AP.cancel('검사 취소') && 1`);
+    for (let i = 0; i < 60 && !(await page.eval(`window.__A.res ? 1 : 0`)); i++) await sleep(100);
+    const E = await page.eval(`window.__A`);
+    ok('N-7 ★취소하면 논리가 안 돈다 (반쯤 준 물은 없다)',
+       E.res && E.res.ok === false && !E.log.includes('DONE') && E.log.includes('FAIL:검사 취소'),
+       `${JSON.stringify(E.res)} · ${E.log.join(' → ')}`);
+    ok('N-7b 취소한 뒤에도 이펙트가 안 남는다', (await page.eval(FX)) === 0);
+
+    /* ── N-8 모르는 이름은 던진다(조용히 넘어가지 않는다) ── */
+    ok('N-8 모르는 동작 이름은 던진다',
+       /모르는 동작/.test(await page.eval(`window.view.actAt(${JSON.stringify(SLOT)},'춤',{}).then(()=>'풀림',e=>e.message)`)));
+    ok('N-8b 모르는 슬롯은 던진다',
+       /모르는 슬롯/.test(await page.eval(`window.view.actAt('없는자리','water',{}).then(()=>'풀림',e=>e.message)`)));
+
+    /* ── N-9 사람이 없어도 논리는 돈다 ── */
+    await page.eval(`window.view.setCharacter(null).then(()=>1)`);
+    await sleep(400);
+    const G = await runAct(SLOT, 'harvest');
+    ok('N-9 캐릭터가 없으면 연출 없이 논리만 돈다 (게임이 막히지 않는다)',
+       G.res && G.res.ok === true && G.res.instant === true && G.log.includes('DONE'),
+       JSON.stringify(G.res));
+    await page.eval(`window.view.setCharacter('jachwi').then(()=>1)`);
+    await sleep(500);
   }
 
   const hard = errs.filter(e => !/favicon/.test(e));
