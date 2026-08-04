@@ -368,9 +368,17 @@ export function learningLeft(ts) {
 export function sellableWonOf(S, ctx = {}) {
   const ts = S.tutorial;
   let won = ts.cashWon;
-  for (const c of (S.cuttings || []))
-    if (c && c.status !== 'dead' && c.source && Number.isInteger(c.source.leaves) && c.source.leaves >= 1)
-      won += priceOf({ leaves: c.source.leaves, variegatedLeaves: c.source.variegatedLeaves || 0 }).won;
+  /* ★ **지금** 달고 있는 잎으로 센다 (2026-08-04 삽수 생장). `c.source` 는 자를 때의 기록이라
+     자란 삽수를 작게 세고, 그러면 확정 무늬가 「아직 모자란다」고 판단해 더 준다 —
+     실제로는 이미 넘었는데도. 값을 매기는 자리(shop.sellCutting)와 **같은 값**을 봐야 한다. */
+  for (const c of (S.cuttings || [])) {
+    if (!c || c.status === 'dead') continue;
+    const leaves = Number.isInteger(c.leaves) ? c.leaves : (c.source && c.source.leaves);
+    const varie = Number.isInteger(c.variegatedLeaves)
+      ? c.variegatedLeaves : ((c.source && c.source.variegatedLeaves) || 0);
+    if (Number.isInteger(leaves) && leaves >= 1)
+      won += priceOf({ leaves, variegatedLeaves: varie }).won;
+  }
   const v = varieView(S, ctx);
   const st = v.stats;
   if (st && Number.isInteger(st.leaves)) {

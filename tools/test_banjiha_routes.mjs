@@ -619,10 +619,55 @@ check('D-2 콩나물을 돌리면 돈이 덜 준다 — 그게 콩나물의 값�
        `(1,500원이던 때 하루 100원 = 0.5%. 보고 ① 참고)`);
 });
 
-/* ══ E · 값 공식 — propagation.md §6 그대로 ══════════════════════════════ */
-check('E 값 — 잎 2장 이하로는 150만이 안 된다 · 무늬 잎 하나가 그것을 뒤집는다', () => {
+/* ══ E · 값 공식 — 잎 한 장씩 매기고 무늬 잎 장수가 등급을 정한다 (shop.js §6) ══
+   ★ 2026-08-04 전면 개편. 옛 공식(`× (1+60·v²)`, v=무늬 잎 **비율**)은 잎이 적을수록 값이
+     올라서 **잘 키우는 것이 손해**였다 — 잎 1장짜리 무늬 삽수가 732,000원이었다.
+     여기서 재는 것은 그 병이 실제로 뒤집혔나다. */
+check('E 값 — 잎 2장 이하로는 150만이 안 된다 · 키워서 팔기가 떼어 팔기보다 이득이다', () => {
   assert.equal(priceOf({ leaves: 1, variegatedLeaves: 0 }).won, 12_000, '민무늬 삽수 잎1');
-  assert.equal(priceOf({ leaves: 1, variegatedLeaves: 1 }).won, 732_000, '무늬 삽수 잎1 (v=1)');
+  /* ★ 정본(sale_economy.md)이 원래 적어 둔 「몬스테라 삽수(알보) 80,000」 그 값이다.
+     옛 공식은 같은 물건을 732,000원으로 읽었다 — 정본에 없던 값이었다. */
+  assert.equal(priceOf({ leaves: 1, variegatedLeaves: 1 }).won, 80_000, '무늬 삽수 잎1 (산반)');
+  assert.equal(priceOf({ leaves: 3, variegatedLeaves: 3 }).won, 1_830_000, '무늬 성체 잎3(하프문)');
+
+  /* ★★ ① 잎 수에 우상향이다 — 잎이 늘어서 값이 **주는** 자리가 하나도 없어야 한다 */
+  for (let v = 0; v <= 6; v++)
+    for (let n = Math.max(1, v); n < 12; n++) {
+      const a = priceOf({ leaves: n, variegatedLeaves: v }).won;
+      const b = priceOf({ leaves: n + 1, variegatedLeaves: v }).won;
+      assert.ok(b > a, `★잎 ${n}→${n + 1}장(무늬 ${v})에서 값이 ${a}→${b} 로 떨어집니다 — 잘 키운 벌입니다`);
+    }
+  /* ② 무늬 잎이 늘어서 값이 주는 자리도 없어야 한다 */
+  for (let n = 1; n <= 12; n++)
+    for (let v = 0; v < n; v++)
+      assert.ok(priceOf({ leaves: n, variegatedLeaves: v + 1 }).won >
+                priceOf({ leaves: n, variegatedLeaves: v }).won,
+        `★잎 ${n}장에서 무늬 ${v}→${v + 1}장인데 값이 안 늘었습니다`);
+
+  /* ★★ ③ 떼어 팔기가 통째로 파는 것을 **절대 못 이긴다** — 이 개편의 목적이다.
+     그루를 두 조각으로 나누는 모든 방법을 다 해 본다. */
+  let worstGain = -Infinity, worstAt = null;
+  for (let n = 2; n <= 8; n++)
+    for (let v = 0; v <= n; v++) {
+      const whole = priceOf({ leaves: n, variegatedLeaves: v }).won;
+      for (let n1 = 1; n1 < n; n1++)
+        for (let v1 = Math.max(0, v - (n - n1)); v1 <= Math.min(v, n1); v1++) {
+          const split = priceOf({ leaves: n1, variegatedLeaves: v1 }).won +
+                        priceOf({ leaves: n - n1, variegatedLeaves: v - v1 }).won;
+          if (split - whole > worstGain) { worstGain = split - whole; worstAt = `잎${n}·무늬${v} → ${n1}+${n - n1}`; }
+        }
+    }
+  /* ★ 0 이 아니라 **용기값**을 기준으로 잰다. 소품 하한(shop.js §소품 하한) 때문에 아주 작은
+     그루에서만 몇 천 원이 남는데, 자르려면 용기가 하나 들어서 실제로는 손해다.
+     하한을 없애면 정확히 0 이 되지만 정본의 「몬스테라 삽수 12,000」이 깨진다 — 그 판단은
+     shop.js 에 적어 뒀다. 여기서 재는 것은 **실비를 넘는 이득이 있나**다. */
+  const JAR = buyPriceOf('jar');
+  assert.ok(worstGain < JAR,
+    `★떼어 팔기가 ${worstGain.toLocaleString()}원 더 남습니다(${worstAt}) — 용기값 ${JAR.toLocaleString()}원을 넘으면 ` +
+    `뜯어 파는 것이 실제로 최적이 됩니다`);
+  info(`떼어 팔기 최대 이득 ${worstGain.toLocaleString()}원 (${worstAt}) — 용기값 ${JAR.toLocaleString()}원보다 작아야 ` +
+       `"키워서 팔기"가 성립한다 (옛 공식에서는 잎3·무늬3 을 쪼개면 ${(3 * 732_000 - 1_830_000).toLocaleString()}원 더 남았다)`);
+
   const rows = [];
   for (const n of [1, 2, 3, 6, 9, 12]) {
     const r = varieLeavesNeededFor(MOVE_OUT_WON, { leaves: n });
@@ -730,8 +775,14 @@ check('H-1 확정 무늬는 **플레이어가 한 일**에 붙는다 — 조건 
   assert.equal(varieGrantCheck(S, {}).ok, false, '★이사 자금이 찼는데도 확정 무늬가 열립니다');
   S.tutorial.cashWon = cash;
 
-  /* 다 팔면 닿는 상태면 안 준다 — 필요한 만큼만 주고 한 장도 더 안 준다 */
-  assert.equal(varieGrantCheck(S, { stats: { leaves: 3, variegatedLeaves: 3 } }).ok, false,
+  /* 다 팔면 닿는 상태면 안 준다 — 필요한 만큼만 주고 한 장도 더 안 준다.
+     ★ 잎 4장 중 4장 무늬로 잡는다. 위에서 이미 한 마디(잎 1장)를 잘라 뒀으므로
+       실제로 세는 것은 잎 3장·무늬 3장 = 1,830,000원 이고 이사 자금(150만)을 넘는다.
+       ⚠ 예전에는 잎 3장으로 잡았는데(=세는 것은 잎 2장), 값 개편(2026-08-04)으로
+         잎 2장짜리는 아무리 무늬여도 160,000원이라 더 이상 닿지 않는다. 그게 이 개편의
+         목적 자체다 — **작은 그루로는 150만이 안 된다.** 그래서 검사가 재는 뜻은 그대로 두고
+         「닿는 상태」를 지금 값으로 다시 잡았다. */
+  assert.equal(varieGrantCheck(S, { stats: { leaves: 4, variegatedLeaves: 4 } }).ok, false,
     '★다 팔면 이사 자금에 닿는데도 무늬를 또 줍니다');
   /* 방금 받았으면 12일은 안 준다 */
   S.tutorial.varieGrant.lastDay = S.tutorial.day;

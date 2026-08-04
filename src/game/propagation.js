@@ -202,28 +202,159 @@ export function deadlineDayOf(c, novice) {
 }
 
 /* ============================================================
-   ③ 무늬 상속 — 두 갈래로 나뉜다 (docs/propagation.md §5)
+   ③ 무늬 상속 — **키메라 세 갈래** (2026-08-04 박사님 확정으로 전면 개편)
    ------------------------------------------------------------
-   ㉮ **딸려간 잎** — 굴리지 않는다. 유전이 아니라 **물리적으로 같은 잎**이다.
-      무늬 잎 2장짜리 조각을 자르면 삽수도 무늬 잎 2장으로 시작한다. 100%다.
-      (같은 논리로 잠긴 중간잎도 잠긴 채 딸려간다 — propagation.md §5)
-   ㉯ **앞으로 날 새 잎** — 세대마다 `gradeMult` 가 곱해진다. batch 0.8 / individual 1.0.
-      0.8ⁿ = 0.5 → n ≈ 3.1 이라 **삽수 3세대마다 무늬가 반으로 준다.**
+   박사님 원문: *"삽수는 자라야지 실제와 같지. 실제도 알보가 유지될 확률도 있지만
+   다시 원복될 확률도 있던데"* · *"삽수 시 이후 무늬 확률은 랜덤으로 올라가되 이전처럼
+   무늬 100퍼는 아니게 천장이 있게, 그리고 올라간 확률은 유전되게"*
 
-   ⚠ **기준 확률의 정본은 growth 의 `calcVarieProb` 다.** 코어는 감쇠만 곱한다.
-     아래 두 값은 propagation.md §5 표(최적관리 normal 19.5%)에서 온 **잠정 기본값**이고,
-     호출부가 `opt.varieChance` 로 덮어쓸 수 있다 — first_play.FIRST_PLAY_RULES 와 같은 자리다.
+   ══ 예전에는 무엇이었나 ═════════════════════════════════════════════════════
+   `varieChance = 모주값 × gradeMult(0.8)` — **세대마다 반드시 줄어드는 감쇠 하나**였다.
+   그래서 삽수를 뜰 이유가 「지금 이 조각을 판다」밖에 없었다. 대를 이을수록 나빠지므로
+   **육종이라는 행위 자체가 손해**였다. 박사님 지시는 이 방향을 뒤집으라는 것이다.
+
+   ══ 새 규칙 — 실제 알보 몬스테라가 그렇게 번식한다 ═══════════════════════════
+   알보 무늬는 색소 유전자가 아니라 **키메라**다. 생장점이 유전자가 다른 세포층으로
+   겹쳐 쌓여 있고(periclinal chimera · L1/L2/L3), 겨드랑눈은 그 층에서 조직을 물려받는다.
+   그래서 삽수 하나의 운명이 실제로 셋으로 갈린다 — 조사(2026-08-04)와 박사님 말씀이 같다.
+
+     ㉮ **원복(reversion)** — 눈이 **초록 조직만** 물려받았다. 무늬가 빠지고 민짜가 된다.
+        삽수에서 흔하다. 한국 시장 용어로 「무늬 퇴화」다.
+     ㉯ **유지(키메라)** — 눈이 **두 조직을 다** 물려받았다. 무늬가 이어지고 짙어질 수 있다.
+     ㉰ **고스트(전백)** — 눈이 **흰 조직만** 물려받았다. 엽록소가 없어 광합성을 못 한다.
+        조사에서 확인: 「고스트 잎이 연달아 나면 성장점 안의 정상 세포가 죽은 것이고
+        그루가 결국 죽는다」. 순수한 흰 삽수는 저장양분이 떨어지면 **살지 못한다.**
+        ★ 다만 **뿌리는 낸다.** 뿌리내림은 광합성이 아니라 줄기에 든 저장양분으로 하는 일이라
+          엽록소와 무관하다(조사에서 확인 — "아주 창백한 조각도 뿌리는 내지만, 스스로를
+          못 먹여서 그 뒤에 멈춘다"). 그래서 고스트는 **뿌리내리고, 팔 수 있고, 그 뒤에 죽는다.**
+        ★★ 그 결과 고스트의 벌은 **돈이 아니라 계통**이다 — 그 조각은 팔면 값을 받지만
+          거기서 대가 끊긴다. 자를 마디를 잘못 골라도 지갑이 비지는 않는다.
+
+   ══ 확률을 어떻게 정하나 — **자른 마디가 정한다** ═════════════════════════════
+   ⚠ 먼저 정직하게: **몬스테라 알보의 원복률·전백률을 잰 자료는 세상에 없다.** 찾아봤고 없었다
+     (조사 2026-08-04 — 논문도 종묘장 통계도 없고, 숫자를 적어 둔 블로그는 출처가 없다).
+     그래서 **숫자를 베끼지 않고 기전에서 끌어냈다.** 기전 쪽은 자료가 있다.
+
+   층이 둘(초록·흰)이고 눈이 그 둘을 각각 물려받나 마나로 갈린다고 보면 확률이 저절로 나온다.
+   `w` = 자른 마디가 달고 있는 **무늬 잎의 비율**(= 그 자리 조직이 얼마나 희냐. 화면에 보인다).
+
+       원복  = (1−w)²        유지 = 2·w·(1−w)        고스트 = w²
+
+   ★ 이 셋을 **지어내지 않았다.** 층 둘을 각각 뽑는 것에서 그대로 떨어지는 값이고, 합이 1이다.
+     자료가 받쳐 주는 것은 기전이다 — 겨드랑눈은 생장점의 층 구조를 물려받고(그래서 마디
+     삽수가 무늬를 이어 준다), 부정아는 층을 못 물려받아 무늬가 깨진다(Marcotrigiano 1993).
+   ★ **크기가 터무니없지 않다는 것도 확인된다.** 아프리칸바이올렛 부정아 실측에서 키메라로
+     남은 비율이 3.7% · 30% 였다(Frontiers 2017). 우리 모델의 최대치는 `w=0.5` 의 **50%** 로
+     그보다 후하다 — 마디 삽수는 부정아보다 유리하므로 방향이 맞고, 게임이 더 너그러운 쪽이다.
+   ★★ 그래서 **실제 육종가의 판단이 그대로 게임이 된다** — 조사에서 확인한 조언과 같다
+      (*"너무 희지도 너무 푸르지도 않은, 균형 잡힌 무늬의 잎에서 잘라라"*).
+   ⚠ 다만 그 조언의 **비율(반반)은 근거가 없는 통설**이다(조사에서 확인). 우리가 반반을 최적으로
+     둔 것은 그 통설을 베낀 것이 아니라 `2w(1−w)` 의 꼭짓점이 거기라서다 — 식이 먼저고 통설이 뒤다.
+   ⚠ 그리고 자료는 **「잎의 무늬로 자식을 예측할 수 있다」를 명시적으로 부정한다** —
+     잎은 이미 지나간 생장점의 산물이고 마디마다 세포 분포가 따로다. 그래서 `w` 를
+     **예측이 아니라 확률을 기울이는 값**으로만 쓴다. 이 코드가 하는 일이 정확히 그것이다.
+
+     | 자른 마디 w | 원복 | 유지 | 고스트 | |
+     |---|---|---|---|---|
+     | 0 (민무늬 마디)   | 100% |  0%  |  0%  | 무늬가 없으면 물려줄 것도 없다 |
+     | 1/3               | 44.4%| 44.4%| 11.1%| |
+     | **1/2 (반반)**    | 25%  | **50%** | 25% | ★유지가 최대. 육종가가 여기를 고른다 |
+     | 2/3               | 11.1%| 44.4%| 44.4%| |
+     | 1 (전부 무늬)     |  0%  |  0%  | **100%** | ★반드시 죽는다 |
+
+   ★★★ **천장이 여기서 저절로 나온다.** 박사님이 짚으신 그대로다 —
+     소질이 오를수록 그루의 잎이 희어지고, 희어질수록 잘라 낸 것이 고스트로 죽는다.
+     `varieP` 에 상한을 **규칙으로 박지 않았다.** 1.0 에 가까워지는 계통은 후손이 안 남아
+     스스로 끊긴다. 「5일 주기라 시루 5개가 천장」과 같은 꼴 — 규칙에서 나온 상한이다.
+     한 세대를 넘길 확률이 아무리 좋아도 `max 2w(1−w) = 0.5` 라 **대를 이을수록 기하급수로 어렵다.**
+
+   ══ 소질이 얼마나 오르나 ═════════════════════════════════════════════════════
+       유지된 자식의 varieP = 모주 varieP + (1 − 모주 varieP) × w × u,   u ~ 균등(0,1)
+
+   ★ 왜 이 꼴인가. ① **남은 거리의 일부만** 오르므로 오를수록 덜 오른다(수확체감).
+     ② **w 가 곱해진다** — 무늬가 짙은 자리에서 잘라야 많이 오른다. 그런데 짙을수록
+     고스트로 죽으므로, 「많이 오르는 선택」과 「살아남는 선택」이 서로 당긴다.
+     ③ `u` 가 박사님의 *"랜덤으로 올라가되"* 다.
+   ★ 원복한 자식은 **0 이다** — 초록 조직만 남았으므로. 옛 규칙의 *"plain 은 복제해도 영원히 0"*
+     (0 × 0.8 = 0)이 여기서 같은 자리를 지킨다.
+
+   ══ ★ 헛수고가 되지 않는 이유 — 셋 ═══════════════════════════════════════════
+     ① **모주는 안 깎인다.** 자식이 원복해도 모주의 `varieChance` 는 그대로다.
+        떨어지기만 하는 판이 원리적으로 없다 — 잃는 것은 그 가지 하나뿐이다.
+     ② **원복한 자식도 팔린다.** 딸려간 무늬 잎은 **물리적으로 같은 잎**이라 그대로 붙어 있다.
+        계통은 끝나도 그 삽수는 무늬 삽수 값(80,000원)을 받는다.
+     ③ **민무늬 마디를 자르면 아무 위험이 없다**(w=0 → 고스트 0%). 꾸준수입 경로는
+        위험을 전혀 안 진다. 위험은 **소질을 올리려 할 때만** 생긴다.
 ============================================================ */
 export const VARIE = Object.freeze({
   variegatedMother: 0.195,   // 무늬 모주의 새 잎 무늬율(최적 관리 · normal 기준)
-  plainMother: 0             // ★ plain 은 복제해도 영원히 0 이다 (0 × 0.8 = 0)
+  plainMother: 0             // ★ plain 은 복제해도 영원히 0 이다
 });
 
-export function varieChanceOf(pot) {
-  if (pot && Number.isFinite(pot.varieChance)) return pot.varieChance;
-  return pot && pot.variegated ? VARIE.variegatedMother : VARIE.plainMother;
+/* 자른 마디의 무늬 짙기 w → 세 갈래 확률. 합은 언제나 1이다. */
+export function chimeraOddsOf(w) {
+  const c = Math.max(0, Math.min(1, Number.isFinite(w) ? w : 0));
+  return { revert: (1 - c) * (1 - c), chimera: 2 * c * (1 - c), ghost: c * c, w: c };
 }
 
+export const LINEAGE_KO = Object.freeze({
+  revert:  '원복 — 무늬가 빠졌다',
+  chimera: '무늬를 물려받았다',
+  ghost:   '고스트 — 엽록소가 없다'
+});
+
+/* ★★ 화면이 **자르기 전에** 물어보는 창구 — "이 마디를 자르면 무엇을 거나".
+   ------------------------------------------------------------
+   박사님 지시: *"결과까지 미리 알려 주면 안 됩니다 — 도박이 아니라 **정보 있는 판단**이 되게,
+   보이는 것은 「이 마디가 어떤 상태인가」까지입니다."*
+   그 경계가 정확히 여기다. 이 함수가 내는 것은 **확률**이고, 결과(`c.lineage`)는 안 낸다.
+   확률은 잎을 세면 사람이 직접 계산할 수 있는 값이라 숨길 이유가 없다 — 숨기면 도박이 된다.
+
+   ⚠ 특히 `w = 1`(달린 잎이 전부 무늬인 마디)은 **반드시 고스트**다. 그걸 화면이 안 알려 주면
+     그건 벌이 아니라 함정이다. 그래서 `warn` 을 같이 낸다.
+   반환 { w, revert, chimera, ghost, ko, warn } */
+export function cutRiskOf(node) {
+  const leaves = (node && node.leaves) || 0;
+  const varie = (node && node.variegatedLeaves) || 0;
+  const o = chimeraOddsOf(leaves > 0 ? varie / leaves : 0);
+  const p = (x) => Math.round(x * 100) + '%';
+  return {
+    ...o,
+    ko: varie === 0
+      ? '민무늬 마디 — 무늬가 안 따라갑니다(위험도 없습니다)'
+      : `무늬 ${varie}/${leaves}장 — 원복 ${p(o.revert)} · 무늬 유지 ${p(o.chimera)} · 고스트 ${p(o.ghost)}`,
+    warn: o.ghost >= 0.5
+      ? (o.ghost >= 1 ? '★달린 잎이 전부 무늬입니다 — 잘라 내면 반드시 고스트가 되어 시듭니다'
+                      : '★고스트 위험이 절반을 넘습니다 — 무늬가 덜한 마디가 안전합니다')
+      : null
+  };
+}
+
+/* 굴림 하나로 갈래를 정한다. `roll` 은 0~1 (cuttingHash 가 낸 결정적 값). */
+export function rollLineage(w, roll) {
+  const o = chimeraOddsOf(w);
+  const r = Math.max(0, Math.min(1, roll));
+  if (r < o.revert) return 'revert';
+  if (r < o.revert + o.chimera) return 'chimera';
+  return 'ghost';
+}
+
+/* 유지된 자식의 소질. 위 §소질 참고 — 남은 거리의 `w × u` 만큼 오른다. */
+export function varieChanceRise(motherChance, w, u) {
+  const m = Math.max(0, Math.min(1, Number.isFinite(motherChance) ? motherChance : 0));
+  const cw = Math.max(0, Math.min(1, Number.isFinite(w) ? w : 0));
+  const cu = Math.max(0, Math.min(1, Number.isFinite(u) ? u : 0));
+  return +(m + (1 - m) * cw * cu).toFixed(6);
+}
+
+export function varieChanceOf(mother) {
+  if (mother && Number.isFinite(mother.varieChance)) return mother.varieChance;
+  return mother && mother.variegated ? VARIE.variegatedMother : VARIE.plainMother;
+}
+
+/* ⏸ 용기 등급 감쇠. 트레이(batch 0.8)가 열리면 다시 쓴다 — 지금은 둘 다 1.0 이라
+   곱해도 값이 안 바뀐다. **세대 감쇠(0.8ⁿ)는 위 키메라 모델로 대체됐다** — 감쇠가
+   세대마다 확정으로 걸리면 박사님의 "확률이 올라가되 유전되게"가 성립할 수 없다. */
 export function gradeMultOf(container) {
   const c = CONTAINERS[container];
   return c ? c.gradeMult : 1;
@@ -284,6 +415,18 @@ export function cutLossOf(pot) {
 /* 지금 몇 장을 더 자를 수 있나.
    반환 { motherLeaves, lostLeaves, leftLeaves, cutNodeIds } */
 export function cutBudgetOf(S, nodes, opt = {}) {
+  /* ★ 모주가 삽수면 총량 장부가 **필요 없다.** 삽수의 잎은 코어가 들고 있어서
+     자르는 그 자리에서 실제로 빠지기 때문이다(`takeCutting` 이 `leafVarie` 를 자른다).
+     화분은 growth 가 형태를 되돌리는 창구가 없어서 「적어만 두는」 장부가 필요했다 —
+     그 사정이 삽수에는 없으므로, 없는 장부를 흉내 내지 않는다.
+     ⚠ 그래서 삽수의 `cutNodeIds` 도 비어 있다. 같은 이름(`cut_01#1`)이 다시 나올 수 있는데,
+       그때는 **정말로 다른 마디**다 — 앞의 잎은 이미 떨어져 나갔고 새로 난 잎이 그 자리다. */
+  if (opt.motherCuttingId || opt.motherCutting) {
+    const c = opt.motherCutting ||
+              (S.cuttings || []).find(x => x.id === opt.motherCuttingId) || null;
+    const n = cuttingStatsNow(c).leaves;
+    return { motherLeaves: n, lostLeaves: 0, leftLeaves: n, cutNodeIds: [], motherKind: 'cutting' };
+  }
   const pot = opt.pot || (opt.potId ? (S.pots || []).find(p => p.id === opt.potId) : (S.pots || [])[0]);
   const motherLeaves = Number.isInteger(opt.motherLeaves) ? opt.motherLeaves : motherLeavesOf(nodes);
   const lost = cutLossOf(pot);
@@ -291,7 +434,8 @@ export function cutBudgetOf(S, nodes, opt = {}) {
     motherLeaves,
     lostLeaves: lost.leaves,
     leftLeaves: Math.max(0, motherLeaves - lost.leaves),
-    cutNodeIds: ((pot && pot.cuts) || []).map(c => c.nodeId)
+    cutNodeIds: ((pot && pot.cuts) || []).map(c => c.nodeId),
+    motherKind: 'pot'
   };
 }
 
@@ -370,6 +514,103 @@ export function cutBlockedReason(S, nodes, nodeId, opt = {}) {
 }
 
 /* ============================================================
+   ★★ 삽수가 자란다 — 그리고 삽수에서 또 자를 수 있다 (2026-08-04 박사님 확정)
+   ------------------------------------------------------------
+   박사님 원문: *"응 맞어. 삽수는 자라야지 실제와 같지."*
+
+   ★ 왜 이게 있어야 하나. *"올라간 확률은 유전되게"* 가 성립하려면 **자식이 잎을 내야** 한다.
+     예전 삽수는 `established`("자리를 잡았다")에서 멈추고 새 잎이 안 났다 — 물려받은 확률을
+     쓸 일이 영영 없었다. 그러면 유전이라는 말 자체가 장부에만 있는 값이 된다.
+
+   ══ 코어가 잎을 세는 것이 이 저장소 원칙과 안 부딪히나 ═══════════════════════
+   안 부딪힌다. 원칙은 *"생장 나이·잎 수 → growth. 코어는 읽기만 한다"* 인데 그 대상은
+   **growth 가 그리는 그루(S.pots)** 다. 삽수는 처음부터 growth 가 아예 모르는 물건이고
+   (`docs/propagation.md` §7-2 — "삽수는 growth 를 안 쓰고 코어가 전부 아는 물건"),
+   `c.source.leaves` 도 이미 코어가 들고 있던 값이다. 여기서 늘어난 것은 「그 값이 자란다」뿐이다.
+   ⚠ 그래도 **캐논을 새로 짓지는 않았다.** 아래 두 숫자 다 이미 있던 것이다.
+
+   ══ 규칙 넷 ═════════════════════════════════════════════════════════════════
+     ① **흙에 자리를 잡은 뒤부터 난다**(`established`). 물꽂이는 뿌리만 내고 잎은 안 낸다 —
+        실제로도 그렇고, 그래야 분갈이가 「죽음을 피하는 일」을 넘어 **키우는 일**이 된다.
+     ② **32일에 한 장.** `METHODS.water.nodeDays` 와 **같은 32** 다 — 그 값의 뜻이 애초에
+        *"자른 날부터 다음 마디(혹)가 나기까지"* 이고, 몬스테라는 마디 하나에 잎 하나다.
+        새 숫자를 안 만들었고, 뜻이 정확히 겹친다.
+     ③ **빛이 있어야 쌓인다.** 어두운 자리에 둔 삽수는 날짜만 가고 잎이 안 난다.
+        판정은 코어가 안 한다 — 그 자리의 DLI 를 growth 의 밴드로 물어본다(`opt.lightOf`).
+        ★ 이게 무한 증식을 막는 힘의 절반이다. 잎이 나야 자를 수 있고, 잎은 **빛과 자리**가 낸다.
+     ④ **새 잎의 무늬는 그 삽수의 `varieChance` 로 굴린다.** 물려받은 소질이 여기서 쓰인다.
+
+   ══ 잎을 어떻게 들고 있나 ═══════════════════════════════════════════════════
+   `c.leafVarie` = 아래(오래된 잎)부터 위(생장점)로 늘어놓은 참/거짓 배열이다.
+   ★ 개수만 들고 있으면 **어느 잎이 무늬인지**를 잃어서 「이 마디를 자르면 무늬가 몇 장 딸려오나」
+     를 못 낸다 — 그 값이 곧 위 §키메라의 `w` 라, 게임의 판단 자체가 사라진다.
+   `c.leaves` · `c.variegatedLeaves` 는 그 배열에서 나온 값이고 `syncCuttingLeaves` 한 곳에서만
+   갱신한다(두 곳에서 세면 반드시 어긋난다). shop.js 가 그 둘을 읽는다 — 순환 import 를 피한다.
+============================================================ */
+
+/* 삽수가 잎 한 장을 내는 데 걸리는 날. 위 ② — METHODS.water.nodeDays 와 같은 값이다. */
+export const CUTTING_LEAF_DAYS = METHODS.water.nodeDays;
+
+export function syncCuttingLeaves(c) {
+  const arr = Array.isArray(c.leafVarie) ? c.leafVarie : [];
+  c.leaves = arr.length;
+  c.variegatedLeaves = arr.reduce((n, v) => n + (v ? 1 : 0), 0);
+  return c;
+}
+
+/* 지금 이 삽수의 잎 집계. **`c.source` 는 안 본다** — source 는 「자를 때 딸려온 것」이라
+   영원히 안 변하는 기록이고, 지금 값은 자란 만큼 다르다. 둘을 섞으면 자란 삽수를 팔 때
+   안 자란 값을 받는다. 옛 세이브(배열이 없는 것)는 source 로 되메운다. */
+export function cuttingStatsNow(c) {
+  if (!c) return { leaves: 0, variegatedLeaves: 0 };
+  if (Array.isArray(c.leafVarie)) {
+    return { leaves: c.leafVarie.length,
+             variegatedLeaves: c.leafVarie.reduce((n, v) => n + (v ? 1 : 0), 0) };
+  }
+  const s = c.source || {};
+  return { leaves: s.leaves || 0, variegatedLeaves: s.variegatedLeaves || 0 };
+}
+
+/* 삽수에서 자를 수 있는 마디. **코어가 지어내는 것이 아니라 자기가 가진 잎을 읽는 것**이다.
+   ★ `i = 0` 은 안 낸다 — 밑동을 자르면 모주(그 삽수)가 통째로 딸려가 자르는 의미가 없다.
+     그래서 삽수에서는 「모주가 끝나는 자르기」가 애초에 목록에 없다.
+   ★ stem 을 'pink' 로 둔 근거: `i ≥ 1` 이므로 그 마디의 잎은 생장점 잎보다 최소
+     한 주기(32일) 먼저 났다. 캐논의 `stemTrans`(마디가 묵어 pink 가 되는 데 걸리는 시간)
+     와 같은 자리이고, 코어가 새 등급을 만들지 않는다. */
+export function cuttableNodesOfCutting(c) {
+  const arr = (c && Array.isArray(c.leafVarie)) ? c.leafVarie : [];
+  const out = [];
+  for (let i = 1; i < arr.length; i++) {
+    const carried = arr.slice(i);
+    out.push({
+      nodeId: `${c.id}#${i}`,
+      stem: 'pink',
+      leaves: carried.length,
+      variegatedLeaves: carried.reduce((n, v) => n + (v ? 1 : 0), 0),
+      growthDays: null
+    });
+  }
+  return out;
+}
+
+/* 자르는 대상(모주)을 하나로 본다 — 화분이든 삽수든.
+   반환 { kind:'pot'|'cutting', obj } · 못 찾으면 던진다 */
+function motherOf(S, opt) {
+  if (opt.motherCuttingId) {
+    const c = (S.cuttings || []).find(x => x.id === opt.motherCuttingId);
+    if (!c) throw new Error(`[삽수] 모르는 모주 삽수: ${opt.motherCuttingId}`);
+    if (c.status === 'dead') throw new Error(`[삽수] ${c.id} 는 이미 시들었습니다 — 자를 수 없습니다`);
+    if (c.status !== 'established')
+      throw new Error(`[삽수] ${c.id} 는 아직 자리를 잡지 않았습니다 — ` +
+        `흙에 자리를 잡은 뒤에 자를 수 있습니다 (지금 ${CUTTING_STATUS_KO[c.status] || c.status})`);
+    return { kind: 'cutting', obj: c };
+  }
+  const pot = opt.potId ? (S.pots || []).find(p => p.id === opt.potId) : (S.pots || [])[0];
+  if (!pot) throw new Error('[삽수] 자를 모주가 없습니다 — 화분이 비어 있습니다');
+  return { kind: 'pot', obj: pot };
+}
+
+/* ============================================================
    ④ 자르기
 ============================================================ */
 
@@ -398,23 +639,37 @@ export function takeCutting(S, opt = {}) {
   if (!S || !Array.isArray(S.cuttings))
     throw new Error('[삽수] S.cuttings 가 없습니다 — 옛 상태입니다(state.newState 를 쓰세요)');
 
-  const pot = opt.potId ? (S.pots || []).find(p => p.id === opt.potId) : (S.pots || [])[0];
-  if (!pot) throw new Error('[삽수] 자를 모주가 없습니다 — 화분이 비어 있습니다');
+  const M = motherOf(S, opt);
+  const pot = M.kind === 'pot' ? M.obj : null;
+  const momCut = M.kind === 'cutting' ? M.obj : null;
 
-  const nodes = opt.nodes;
+  /* ★ 마디 목록의 출처가 모주 종류에 따라 다르다 — 그리고 **그게 원칙 그대로**다.
+       화분  : growth 가 그린 그루라 코어가 잎 수를 모른다 → `opt.nodes` 를 **받아야** 한다
+       삽수  : growth 가 아예 모르는 물건이고 잎을 코어가 들고 있다 → 코어가 **읽어서** 낸다
+     지어내는 것이 아니라 자기 장부를 읽는 것이라 "실제 자란 것을 자른다"가 그대로 성립한다. */
+  const nodes = Array.isArray(opt.nodes) && opt.nodes.length
+    ? opt.nodes
+    : (momCut ? cuttableNodesOfCutting(momCut) : null);
   if (!Array.isArray(nodes) || !nodes.length)
-    throw new Error('[삽수] 모주의 마디 목록(opt.nodes)이 없습니다 — ' +
-      '어느 마디를 잘랐는지가 결과에 따라가야 하므로 코어가 잎 수를 지어내지 않습니다 ' +
-      '(growth_adapter.cuttableNodes 참고)');
+    throw new Error(momCut
+      ? `[삽수] ${momCut.id} 에서 자를 마디가 없습니다 — 잎이 두 장 이상이라야 자릅니다 ` +
+        `(지금 ${cuttingStatsNow(momCut).leaves}장)`
+      : '[삽수] 모주의 마디 목록(opt.nodes)이 없습니다 — ' +
+        '어느 마디를 잘랐는지가 결과에 따라가야 하므로 코어가 잎 수를 지어내지 않습니다 ' +
+        '(growth_adapter.cuttableNodes 참고)');
   nodes.forEach((n, i) => assertCutNode(n, `nodes[${i}]`));
+
+  /* 모주를 가리키는 열쇠 하나 — 아래 판정 함수들이 전부 이걸 그대로 받는다.
+     화분이냐 삽수냐를 함수마다 다시 가르면 한 군데만 고쳐지는 날이 온다. */
+  const mkey = momCut ? { motherCuttingId: momCut.id, motherCutting: momCut } : { potId: pot.id };
 
   const node = nodes.find(n => n.nodeId === opt.nodeId);
   if (!node) throw new Error(`[삽수] 모르는 마디입니다: ${opt.nodeId} ` +
-    `(자를 수 있는 것: ${cuttableNow(S, nodes, { potId: pot.id }).map(n => n.nodeId).join(', ') || '없음'})`);
+    `(자를 수 있는 것: ${cuttableNow(S, nodes, mkey).map(n => n.nodeId).join(', ') || '없음'})`);
 
   /* ★ 잎꽂이·잎 없는 조각·이미 잘라낸 마디·없는 잎을 자르는 것 — 사유는 한 곳에서 낸다.
      (예전에는 여기서 stem·잎 수만 봤고, "이미 잘라낸 마디"와 "총량 초과"가 통째로 없었다.) */
-  const blocked = cutBlockedReason(S, nodes, node.nodeId, { potId: pot.id });
+  const blocked = cutBlockedReason(S, nodes, node.nodeId, mkey);
   if (blocked) throw new Error('[삽수] ' + blocked);
 
   /* ★ 모주를 끝내는 자르기(③) — **모주에 잎이 한 장도 안 남는** 경우.
@@ -428,7 +683,7 @@ export function takeCutting(S, opt = {}) {
        "왜 이 마디는 회색인가"를 물어볼 데가 없어서 **던질 마디를 멀쩡히 눌리게** 띄운다
        (실제로 그랬고 tools/probe_cutting_ui.mjs 가 잡았다). 여기 남은 값은 자유 모드의
        경고와 `pot.motherEnded` 기록에만 쓴다. */
-  const wouldEndMother = cutEndsMother(S, nodes, node.nodeId, { potId: pot.id });
+  const wouldEndMother = cutEndsMother(S, nodes, node.nodeId, mkey);
   const novice = isNoviceMode(S);
 
   const cont = CONTAINERS[opt.container];
@@ -443,16 +698,37 @@ export function takeCutting(S, opt = {}) {
   if (cont.itemId) useStock(S, cont.itemId, 1);
 
   const method = cont.method;
-  const id = opt.id || nextCuttingId(S);
+  const mom = momCut || pot;
+  const motherChance = Number.isFinite(opt.varieChance) ? opt.varieChance : varieChanceOf(mom);
 
-  const motherChance = Number.isFinite(opt.varieChance) ? opt.varieChance : varieChanceOf(pot);
+  /* ★★ 키메라 굴림 — **자르는 그 순간 한 번**이다(§③).
+     ------------------------------------------------------------
+     왜 여기서 굴리나. 갈래를 정하는 것은 「어느 조직이 눈에 딸려 갔나」이고 그건 **자르는 행위**다.
+     뿌리내릴 때 굴리면 자른 뒤에 상태를 바꿔 결과를 흔들 수 있게 되고(자리를 옮긴다든가),
+     그러면 자를 마디를 고르는 판단이 판단이 아니게 된다.
+     ★ 결정적 해시라 같은 세이브를 몇 번 불러도 같은 답이다.
+     ★ **드러나는 것은 뿌리내릴 때다**(`lineageKnown`). 화면은 자른 직후에 결과를 못 말한다 —
+       플레이어가 보는 것은 자르기 전의 `w`(그 마디의 무늬 상태)까지이고, 그게 정보 있는 판단과
+       결과를 미리 아는 것의 경계다. */
+  const w = node.leaves > 0 ? node.variegatedLeaves / node.leaves : 0;
+  const seed = (S.sim && S.sim.seed) || 0;
+  const id = opt.id || nextCuttingId(S);
+  const lineage = opt.lineage || rollLineage(w, cuttingHash(seed, id, 2));
+  const rise = cuttingHash(seed, id, 3);
+  const childChance =
+    lineage === 'chimera' ? varieChanceRise(motherChance, w, rise)
+  : lineage === 'ghost'   ? 1                       // 흰 조직만 — 살지 못한다(§⑥ 고스트)
+  :                         0;                      // 원복 — 초록 조직만
+
   const c = {
     id,
     schema: PROPAGATION_SCHEMA,
-    motherPotId: pot.id,
-    motherPlantId: pot.plantId || null,
+    motherPotId: pot ? pot.id : null,
+    motherCuttingId: momCut ? momCut.id : null,
+    motherPlantId: (pot && pot.plantId) || (momCut && momCut.motherPlantId) || null,
     cutOnDay: S.day,
-    /* ★ 원본에서 물리적으로 딸려온 것. 굴리지 않는다 */
+    /* ★ 원본에서 물리적으로 딸려온 것. 굴리지 않는다. **영원히 안 변한다** —
+       지금 잎 수는 `leafVarie` 가 갖는다(§삽수가 자란다). */
     source: {
       nodeId: node.nodeId,
       stem: node.stem,
@@ -460,14 +736,31 @@ export function takeCutting(S, opt = {}) {
       variegatedLeaves: node.variegatedLeaves,
       growthDays: Number.isFinite(node.growthDays) ? node.growthDays : null
     },
+    /* ★ 지금 달고 있는 잎. 아래(오래된 것)부터 위(생장점)로.
+       ★★ 딸려온 무늬 잎을 **위쪽에** 둔다. growth 는 「무늬 잎이 몇 장인가」만 주고 어느 자리인지는
+         안 주므로 코어가 자리를 정해야 하는데, 위쪽이 맞다:
+         ① 무늬는 **지금 생장점이 내는 것**이고, 생장점에 가까운 잎이 최근 것이다
+            (조사 2026-08-04 — "잎은 이미 지나간 생장점의 산물이라 예측이 안 된다"의 뒷면이다.
+             그 말은 곧 **최근 잎일수록 지금 조직을 반영한다**는 뜻이다).
+         ② ⚠ 아래쪽에 두면 **버그가 된다.** 자를 수 있는 마디는 `i ≥ 1`(밑동은 안 낸다)이라
+            무늬 잎이 전부 `i=0` 에 몰려 있으면 어느 마디를 잘라도 `w = 0` 이다 —
+            대를 잇는 길이 원리적으로 막힌다. 처음에 아래쪽으로 짰다가
+            tools/probe_varie_lineage.mjs 가 「2000판 전부 원복」으로 잡았다. */
+    leafVarie: Array.from({ length: node.leaves },
+                          (_, i) => i >= node.leaves - node.variegatedLeaves),
+    leafDays: 0,                 // 빛이 든 날만 쌓인다. CUTTING_LEAF_DAYS 마다 잎 한 장
+    grewLeaves: 0,               // 자기가 낸 잎 수(딸려온 것 제외) — 재현·표시용
     method,
     container: cont.id,
-    gen: Number.isInteger(pot.gen) ? pot.gen + 1 : 1,
-    /* 앞으로 날 **새 잎**의 무늬율 — 세대마다 gradeMult 가 곱해진다 */
-    varieChance: +(motherChance * cont.gradeMult).toFixed(6),
+    gen: Number.isInteger(mom.gen) ? mom.gen + 1 : 1,
+    /* 앞으로 날 **새 잎**의 무늬율 — 위 키메라 굴림이 정한다 */
+    varieChance: childChance,
+    lineage,
+    lineageKnown: false,
+    cutW: +w.toFixed(6),         // 자를 때 그 마디가 얼마나 희었나(사후 검증·재현용)
     /* 이 삽수가 '무늬 개체'인가. 딸려온 무늬 잎이 있으면 굴릴 것도 없이 그렇다 */
-    variegated: node.variegatedLeaves > 0,
-    varieRolled: node.variegatedLeaves > 0,
+    variegated: node.variegatedLeaves > 0 || lineage === 'chimera',
+    varieRolled: true,
     slotId: null,
     at: null,
     status: 'rooting',
@@ -478,31 +771,57 @@ export function takeCutting(S, opt = {}) {
     warned: [],
     potted: false
   };
+  syncCuttingLeaves(c);
 
   S.cuttings.push(c);
   if (opt.at) setCuttingAt(S, c, opt.at, opt);
 
-  /* ── 모주가 받는 영향 ────────────────────────────────────────────────
-     ★ 코어는 모주의 **형태를 못 깎는다.** growth 가 자기 형태를 되돌리는 창구가 없기 때문이다
-       (plant_grow 계약에 그런 함수가 없다). 그래서 지금은 **적어만 둔다** —
-       "줄였다"고 말하면 화면과 어긋난 거짓말이 되고, 아무 데도 안 적으면 잘라낸 사실이 사라진다.
-       growth 가 다개체 리팩터에서 이 표를 읽어 적용한다(docs/handoff/core-to-growth.md). */
-  if (!Array.isArray(pot.cuts)) pot.cuts = [];
-  pot.cuts.push({ day: S.day, cuttingId: id, nodeId: node.nodeId, stem: node.stem, leaves: node.leaves });
-  pot.pendingCutLoss = {
-    leaves: ((pot.pendingCutLoss && pot.pendingCutLoss.leaves) || 0) + node.leaves,
-    nodes: ((pot.pendingCutLoss && pot.pendingCutLoss.nodes) || 0) + 1
-  };
-  pot.motherEnded = !!pot.motherEnded || wouldEndMother;
-
   const log = typeof opt.log === 'function' ? opt.log : null;
+
+  /* ── 모주가 받는 영향 ────────────────────────────────────────────────
+     ★ 모주가 삽수면 **잎이 그 자리에서 실제로 빠진다.** 코어가 그 잎을 들고 있기 때문이다.
+       화분은 그럴 수 없다 — growth 가 자기 형태를 되돌리는 창구가 없어서(plant_grow 계약에
+       그런 함수가 없다) **적어만 둔다.** "줄였다"고 말하면 화면과 어긋난 거짓말이 되고,
+       아무 데도 안 적으면 잘라낸 사실이 사라진다.
+       growth 가 다개체 리팩터에서 그 표를 읽어 적용한다(docs/handoff/core-to-growth.md). */
+  if (momCut) {
+    const at = Number(String(node.nodeId).split('#')[1]);
+    momCut.leafVarie = (momCut.leafVarie || []).slice(0, at);   // 그 마디 위가 통째로 떨어져 나갔다
+    syncCuttingLeaves(momCut);
+    /* ⚠ 삽수 모주에는 `cuts` 장부를 안 남긴다. 화분의 그것은 **아직 안 반영된 손실**을 적어 두는
+       것이라 뜻이 있는데(growth 가 형태를 못 깎으므로), 삽수는 잎이 바로 위에서 빠져서
+       적어 둘 미반영분이 없다. 없는 뜻의 장부를 두면 세이브에 안 실린 상태가 하나 생긴다. */
+    if (log)
+      log(`✂ 삽수 ${momCut.id} 의 ${node.nodeId} 마디를 잘랐습니다 — ` +
+          `잎 ${node.leaves}장${node.variegatedLeaves ? ` (무늬 ${node.variegatedLeaves}장)` : ''} · ` +
+          `${cont.ko} · ${METHODS[method].ko} · ${momCut.id} 에 잎 ${momCut.leaves}장이 남았습니다`);
+  } else {
+    if (!Array.isArray(pot.cuts)) pot.cuts = [];
+    pot.cuts.push({ day: S.day, cuttingId: id, nodeId: node.nodeId, stem: node.stem, leaves: node.leaves });
+    pot.pendingCutLoss = {
+      leaves: ((pot.pendingCutLoss && pot.pendingCutLoss.leaves) || 0) + node.leaves,
+      nodes: ((pot.pendingCutLoss && pot.pendingCutLoss.nodes) || 0) + 1
+    };
+    pot.motherEnded = !!pot.motherEnded || wouldEndMother;
+    if (log) {
+      log(`✂ ${pot.id} 의 ${node.nodeId}(${node.stem}) 마디를 잘랐습니다 — ` +
+          `잎 ${node.leaves}장${node.variegatedLeaves ? ` (무늬 ${node.variegatedLeaves}장)` : ''} · ` +
+          `${cont.ko} · ${METHODS[method].ko}`);
+      log(`  ⤷ 모주 형태 반영은 대기 중입니다(잎 -${pot.pendingCutLoss.leaves} · ` +
+          `마디 -${pot.pendingCutLoss.nodes}) — 생장 창이 다개체 리팩터에서 적용합니다`);
+      if (wouldEndMother) log(`⚠ ${pot.id} 에 예비혹이 남지 않았습니다 — 모주는 새 생장점을 못 냅니다`);
+    }
+  }
+
   if (log) {
-    log(`✂ ${pot.id} 의 ${node.nodeId}(${node.stem}) 마디를 잘랐습니다 — ` +
-        `잎 ${node.leaves}장${node.variegatedLeaves ? ` (무늬 ${node.variegatedLeaves}장)` : ''} · ` +
-        `${cont.ko} · ${METHODS[method].ko}`);
-    log(`  ⤷ 모주 형태 반영은 대기 중입니다(잎 -${pot.pendingCutLoss.leaves} · ` +
-        `마디 -${pot.pendingCutLoss.nodes}) — 생장 창이 다개체 리팩터에서 적용합니다`);
-    if (wouldEndMother) log(`⚠ ${pot.id} 에 예비혹이 남지 않았습니다 — 모주는 새 생장점을 못 냅니다`);
+    /* ★ 갈래는 **말하지 않는다.** 대신 「무엇을 걸었나」를 적는다 — 자른 뒤에 결과를 알려 주면
+       마디를 고르는 일이 판단이 아니라 도박 결과 확인이 된다. 확률은 자르기 **전에** 볼 수 있었다. */
+    if (node.variegatedLeaves > 0) {
+      const o = chimeraOddsOf(w);
+      log(`  ⤷ 무늬 마디입니다(무늬 ${node.variegatedLeaves}/${node.leaves}장) — ` +
+          `뿌리를 내려 봐야 압니다: 원복 ${Math.round(o.revert * 100)}% · ` +
+          `무늬 유지 ${Math.round(o.chimera * 100)}% · 고스트 ${Math.round(o.ghost * 100)}%`);
+    }
     if (method === 'water')
       log(`  ⤷ ${METHODS.water.rootDays}일 뒤 뿌리 · ${METHODS.water.nodeDays}일 뒤 혹 → ` +
           `그때부터 ${graceDaysOf('water', novice)}일 안에 분갈이해야 삽니다`);
@@ -586,14 +905,53 @@ function warnKeyFor(daysLeft, grace, novice) {
   return null;
 }
 
+/* ★ 고스트가 뿌리내린 뒤 버티는 날. 저장양분이 잎 한 장 낼 만큼 남았다가 떨어진다는 뜻이라
+   `CUTTING_LEAF_DAYS`(=32) 와 같은 값을 쓴다.
+   ⚠ **잰 값이 아니다.** 조사에서 확인했다 — 전백 삽수가 며칠 버티는지 적어 둔 자료가 없다.
+     그래서 새 숫자를 만드는 대신 이미 있는 「잎 한 장 주기」를 빌렸다:
+     *"제 잎 한 장을 낼 만큼도 못 벌고 끝난다"* 가 이 규칙의 뜻이고, 화면에 그대로 보인다. */
+export const GHOST_DECLINE_DAYS = CUTTING_LEAF_DAYS;
+
+/* ★ 갈래가 드러나는 순간의 로그·사건. 뿌리내림에서 딱 한 번 부른다. */
+function revealLineage(c, events, log) {
+  if (c.lineageKnown) return;
+  c.lineageKnown = true;
+  if (c.lineage === 'ghost') {
+    const e = { id: 'cutting_ghost', cuttingId: c.id,
+                ko: `삽수 ${c.id} — 새로 난 조직이 전부 흽니다(고스트). 엽록소가 없어 ` +
+                    `${GHOST_DECLINE_DAYS}일 안에 시듭니다 — 팔려면 그 전에 파세요` };
+    events.push(e);
+    if (log) log('👻 ' + e.ko);
+  } else if (c.lineage === 'revert') {
+    const e = { id: 'cutting_revert', cuttingId: c.id,
+                ko: `삽수 ${c.id} — 무늬가 빠졌습니다(원복). 앞으로 나는 잎은 민무늬입니다` +
+                    (c.variegatedLeaves ? ` (달고 있던 무늬 잎 ${c.variegatedLeaves}장은 그대로입니다)` : '') };
+    events.push(e);
+    if (log) log('🌿 ' + e.ko);
+  } else {
+    const e = { id: 'cutting_chimera', cuttingId: c.id,
+                ko: `삽수 ${c.id} — 무늬를 물려받았습니다. 새 잎 무늬율 ` +
+                    `${(c.varieChance * 100).toFixed(1)}%` };
+    events.push(e);
+    if (log) log('✨ ' + e.ko);
+  }
+}
+
 /* 하루 진행. loop.nextDay 가 하루에 한 번 부른다.
-     opt.log   로그 콜백(코어는 pushLog 를 넘긴다)
-   반환 { events, died, warnings } — 빨리감기·UI 가 이걸 보고 멈추거나 띄운다. */
+     opt.log      로그 콜백(코어는 pushLog 를 넘긴다)
+     opt.lightOf  ★ (삽수) → { dli, grows } | null. **빛 판정은 코어가 안 한다** —
+                  그 자리의 DLI 와 "그 빛이면 자라나"는 둘 다 growth 소유다(loop.js 가 물어 준다).
+                  없으면 삽수는 **안 자란다**(잎이 안 는다). 뿌리내림·기한은 빛과 무관하므로
+                  그대로 돈다 — 그게 propagation.md §3 의 "등은 증식의 세금이 아니다" 다.
+   반환 { events, died, warnings, grewLeaves } */
 export function stepCuttings(S, opt = {}) {
   const log = typeof opt.log === 'function' ? opt.log : null;
+  const lightOf = typeof opt.lightOf === 'function' ? opt.lightOf : null;
   const novice = isNoviceMode(S);
   const events = [], died = [], warnings = [];
-  if (!S || !Array.isArray(S.cuttings) || !S.cuttings.length) return { events, died, warnings };
+  let grewLeaves = 0;
+  if (!S || !Array.isArray(S.cuttings) || !S.cuttings.length)
+    return { events, died, warnings, grewLeaves };
 
   const alive = [];
   for (const c of S.cuttings) {
@@ -605,13 +963,22 @@ export function stepCuttings(S, opt = {}) {
     /* ① 뿌리 */
     if (c.status === 'rooting' && c.days >= m.rootDays) {
       c.rootedOnDay = S.day;
-      /* ★ 무늬 굴림은 여기서 딱 한 번. 딸려온 무늬 잎이 있으면 이미 확정이라 안 굴린다.
-         결과를 상태에 적어 두므로 세이브를 다시 불러도 같은 답이다. */
-      if (!c.varieRolled) {
-        const roll = cuttingHash((S.sim && S.sim.seed) || 0, c.id, 1);
-        c.variegated = roll < c.varieChance;
-        c.varieRolled = true;
+      /* ★ 갈래는 자를 때 이미 정해졌다(§③ 키메라). 여기서는 **드러나기만** 한다 —
+         굴리지 않으므로 세이브를 다시 불러도 같은 답이고, 자른 뒤에 상태를 흔들어
+         결과를 바꾸는 길이 없다.
+         ⚠ 옛 세이브에는 `lineage` 가 없다. 그때는 예전 규칙대로 여기서 한 번 굴린다 —
+           안 그러면 옛 판의 삽수가 전부 민무늬로 바뀐다. */
+      if (!c.lineage) {
+        if (!c.varieRolled) {
+          const roll = cuttingHash((S.sim && S.sim.seed) || 0, c.id, 1);
+          c.variegated = roll < c.varieChance;
+          c.varieRolled = true;
+        }
+        c.lineage = c.variegated ? 'chimera' : 'revert';
       }
+      revealLineage(c, events, log);
+      c.ghostDeadlineDay = c.lineage === 'ghost' ? S.day + GHOST_DECLINE_DAYS : null;
+
       if (m.canDie) {
         c.status = 'rooted';
         events.push({ id: 'cutting_rooted', cuttingId: c.id,
@@ -624,6 +991,57 @@ export function stepCuttings(S, opt = {}) {
                       ko: `삽수 ${c.id} — 화분에서 자리를 잡았습니다${c.variegated ? ' (무늬)' : ''}` });
       }
       if (log) log('🌱 ' + events[events.length - 1].ko);
+    }
+
+    /* ①-2 ★ 고스트는 저장양분이 떨어지면 끝난다. **뿌리는 냈고 팔 수도 있었다** —
+       벌은 돈이 아니라 계통이다(§③ ㉰). 경고가 죽음보다 먼저 나가는 것은 아래 ③④와 같은 규칙이다. */
+    if (c.lineage === 'ghost' && Number.isFinite(c.ghostDeadlineDay)) {
+      const left = c.ghostDeadlineDay - S.day;
+      if (left > 0 && (left === Math.ceil(GHOST_DECLINE_DAYS / 2) || left <= 3)) {
+        const key = `g${left}`;
+        if (!c.warned.includes(key)) {
+          c.warned.push(key);
+          const w = { id: 'cutting_warn', cuttingId: c.id, daysLeft: left,
+                      ko: `삽수 ${c.id}(고스트) — ${left}일 뒤 시듭니다. 팔려면 지금입니다` };
+          warnings.push(w); events.push(w);
+          if (log) log('⚠ ' + w.ko);
+        }
+      }
+      if (left <= 0) {
+        c.status = 'dead';
+        c.diedOnDay = S.day;
+        const e = { id: 'cutting_died', cuttingId: c.id, cause: 'ghost',
+                    ko: `삽수 ${c.id} 가 시들었습니다 — 엽록소가 없어 스스로를 못 먹였습니다(고스트)` };
+        events.push(e); died.push(c);
+        if (log) log('💀 ' + e.ko);
+        continue;
+      }
+    }
+
+    /* ①-3 ★ 자란다 — 흙에 자리를 잡은 뒤부터, 빛이 든 날만 (§삽수가 자란다).
+       ⚠ 고스트는 안 자란다. 광합성을 못 하니 새 잎을 낼 밑천이 없다. */
+    if (c.status === 'established' && c.lineage !== 'ghost') {
+      const lit = lightOf ? lightOf(c) : null;
+      if (lit && lit.grows) {
+        c.leafDays = (c.leafDays || 0) + 1;
+        while (c.leafDays >= CUTTING_LEAF_DAYS) {
+          c.leafDays -= CUTTING_LEAF_DAYS;
+          /* 새 잎의 무늬 — **물려받은 소질**이 여기서 쓰인다. 잎마다 따로, 한 번만 굴린다
+             (growth 의 `varieRoll` 과 같은 사고 — 한 번 정하면 안 바뀐다). */
+          const idx = (c.leafVarie || []).length;
+          const roll = cuttingHash((S.sim && S.sim.seed) || 0, `${c.id}L${idx}`, 4);
+          const varie = roll < (c.varieChance || 0);
+          c.leafVarie = [...(c.leafVarie || []), varie];
+          c.grewLeaves = (c.grewLeaves || 0) + 1;
+          syncCuttingLeaves(c);
+          grewLeaves++;
+          const e = { id: 'cutting_leaf', cuttingId: c.id, variegated: varie,
+                      ko: `삽수 ${c.id} — 새 잎이 났습니다${varie ? ' (무늬!)' : ''} · ` +
+                          `잎 ${c.leaves}장 중 무늬 ${c.variegatedLeaves}장` };
+          events.push(e);
+          if (log) log((varie ? '🌟 ' : '🍃 ') + e.ko);
+        }
+      }
     }
 
     /* ② 혹 — 여기서부터 기한이 돈다 (물꽂이만) */
@@ -671,7 +1089,7 @@ export function stepCuttings(S, opt = {}) {
 
   /* ★ "죽어서 없어진다" — 배열에서 뺀다. 다만 **로그가 먼저 남은 뒤**다(위 순서). */
   S.cuttings = alive;
-  return { events, died, warnings };
+  return { events, died, warnings, grewLeaves };
 }
 
 /* ============================================================
@@ -719,15 +1137,32 @@ export function cuttingSnapshot(S, c) {
   const novice = isNoviceMode(S);
   const m = METHODS[c.method] || {};
   const deadline = c.status === 'node' ? c.deadlineDay : null;
+  const now = cuttingStatsNow(c);
+  /* ★ 고스트 기한도 `daysLeft` 로 낸다 — 화면이 "며칠 남았나"를 한 칸에서 읽게.
+     둘이 동시에 도는 일은 없다(고스트는 분갈이해도 안 산다). 더 급한 쪽을 낸다. */
+  const ghostLeft = Number.isFinite(c.ghostDeadlineDay) ? c.ghostDeadlineDay - S.day : null;
+  const potLeft = deadline == null ? null : deadline - S.day;
+  const daysLeft = [potLeft, ghostLeft].filter(v => v != null).sort((a, b) => a - b)[0] ?? null;
   return {
     id: c.id, method: c.method, methodKo: m.ko || c.method,
     container: c.container, containerKo: (CONTAINERS[c.container] || {}).ko || c.container,
     status: c.status, statusKo: CUTTING_STATUS_KO[c.status] || c.status,
     days: c.days, gen: c.gen,
-    leaves: c.source.leaves, variegatedLeaves: c.source.variegatedLeaves,
+    /* ★ **지금** 달고 있는 잎이다. `c.source` 는 자를 때 딸려온 기록이라 자란 뒤에는 다르다 */
+    leaves: now.leaves, variegatedLeaves: now.variegatedLeaves,
+    sourceLeaves: c.source.leaves, sourceVariegatedLeaves: c.source.variegatedLeaves,
+    grewLeaves: c.grewLeaves || 0,
     variegated: c.variegated, varieChance: c.varieChance,
-    motherPotId: c.motherPotId, nodeId: c.source.nodeId,
-    daysLeft: deadline == null ? null : deadline - S.day,
+    /* ★ 갈래는 **드러난 뒤에만** 낸다. 자른 직후에 결과를 말하면 마디 고르기가 판단이 아니게 된다 */
+    lineage: c.lineageKnown ? (c.lineage || null) : null,
+    lineageKo: c.lineageKnown ? (LINEAGE_KO[c.lineage] || null) : null,
+    cutW: c.cutW ?? null,
+    /* 다음 잎까지 — 빛이 드는 날만 준다. 화면이 "왜 안 자라나"를 말할 수 있게 같이 낸다 */
+    leafDays: c.leafDays || 0, leafEveryDays: CUTTING_LEAF_DAYS,
+    canCut: c.status === 'established' && now.leaves >= 2,
+    motherPotId: c.motherPotId, motherCuttingId: c.motherCuttingId || null,
+    nodeId: c.source.nodeId,
+    daysLeft, ghostDaysLeft: ghostLeft,
     graceDays: graceDaysOf(c.method, novice),
     slotId: c.slotId, at: c.at
   };
@@ -737,13 +1172,16 @@ export function cuttingSnapshot(S, c) {
    무엇을 그릴지만 말하고, 그리는 것은 방 뷰(다른 창) 몫이다. */
 export function cuttingViewModel(c) {
   const cont = CONTAINERS[c.container] || {};
+  const now = cuttingStatsNow(c);
   return {
     id: c.id,
     assetId: cont.assetId,               // null 이면 아직 에셋이 없다 — 대체 표현을 쓰라는 뜻
     diameterM: cont.realMaxM || 0.12,
     at: c.at, slotId: c.slotId,
-    leaves: c.source.leaves,
+    leaves: now.leaves,                  // ★ 자란 만큼 큰다 — 그려야 하는 것은 지금 모습이다
+    variegatedLeaves: now.variegatedLeaves,
     variegated: c.variegated,
+    ghost: c.lineageKnown && c.lineage === 'ghost',
     label: `${cont.ko || c.container} · ${CUTTING_STATUS_KO[c.status] || c.status}`
   };
 }

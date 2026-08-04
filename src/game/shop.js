@@ -84,6 +84,24 @@ export const CATALOG = Object.freeze({
     id: 'jar', ko: '유리 수경병', kind: 'container',
     listWon: 5_000, leadDays: 2,
     note: 'docs/propagation.md §4 CONTAINERS.jar (pot_glassjar.glb · 0.13m) — 같은 소품 가격대'
+  }),
+  /* ── 2종째 작물 무순 (2026-08-05 · first_play.js §작물 종류) ─────────────────
+     ⚠⚠ 콩 씨앗과 같은 규약이다 — **지갑에서 실제로 나가는 값은 여기다.**
+       `CROP_KINDS.musun.seedWonPerPot`(정가·표시용)와 늘 같은 값이어야 한다. */
+  radish_seed: Object.freeze({
+    id: 'radish_seed', ko: '무 씨앗 (1판분)', kind: 'seed',
+    listWon: 400, leadDays: 1,
+    note: '실제 무씨 시세 100g 1,758원 · 1kg 18,000원(=1,800원/100g). 한 판(20×30cm)에 ' +
+          '20~30g 쓰므로 350~530원 — 그 한가운데. 콩(500원)보다 씨가 잘아 조금 덜 든다. ' +
+          'first_play.CROP_KINDS.musun.seedWonPerPot 과 **같은 값이어야 한다**'
+  }),
+  sprout_tray: Object.freeze({
+    id: 'sprout_tray', ko: '새싹 재배판', kind: 'container',
+    listWon: 3_000, leadDays: 2,
+    note: '시루(5,000원)보다 싸다 — **차광 뚜껑이 없는** 얕은 플라스틱 트레이라서다. ' +
+          '★ 값이 이 자리인 이유는 개수다: 무순은 7일 주기라 매일 거두려면 7판이 든다. ' +
+          '시루와 같은 값이면 용기값 회수가 40일을 넘어 2종째가 영영 안 돈다(재현 ' +
+          'tools/probe_crop_cases.mjs 가 그 회수일을 낸다). plan 확인 대기'
   })
 });
 
@@ -228,33 +246,139 @@ export function useStock(S, itemId, qty = 1) {
 }
 
 /* ============================================================
-   ⑥ ★★ 값 — `docs/propagation.md` §6 의 공식 하나
+   ⑥ ★★ 값 — **잎 한 장씩 값을 매긴다** (2026-08-04 박사님 지시로 전면 개편)
    ------------------------------------------------------------
-       값 = 단위기본가 × 크기 × (1 + K·v²)        K = 60
-         v = 그 그루의 **무늬 잎 비율** (0~1)
-         크기 = 잎(마디) 수
-       잎 1~2장 → 삽수 가격표 · 잎 3장~ → 성체 가격표 (같은 문서 §6)
+   박사님 원문: *"가격을 낮춰. 무늬 삽수 가격 자체를 낮춰. 무늬 희귀등급별 차등가격 필요.
+   (…) 그리고 잘 큰 화분은 훨씬 더 비싸게"*
 
-   ★ v 를 **잎 비율로 읽는다.** 그게 propagation.md §6 의 문장 그대로다 —
-     "v 는 소질 등급이 아니라 그 그루에 실제로 난 무늬 잎의 비율이다. 플레이어는 잎을 세어서
-      값을 읽는다." 코어가 안 보이는 값을 지어내지 않는다는 원칙과도 맞는다.
+   ══ 무엇이 잘못돼 있었나 — 표가 그대로 말한다 ═══════════════════════════════
+   옛 공식은 `값 = 단위가 × 잎수 × (1 + 60·v²)` 이고 `v` 가 **무늬 잎 비율**이었다.
+   비율이라 **잎이 적을수록 값이 올랐다.**
 
-   ⚠ **정본 안에서 어긋나는 곳이 하나 있다** — 같은 문서의 검산표는 「몬스테라 삽수(알보)
-     80,000」을 `12,000 × 6.667`(v = 0.307)로 맞춘다. 그런데 잎 1장짜리 삽수의 그 한 장이
-     무늬면 잎 비율로는 v = 1.0 이고 값이 732,000원이 된다. 즉 검산표의 v 는 **라벨(무늬 짙기)**
-     이고 §6 본문의 v 는 **잎 비율**이라, 둘이 같은 기호를 다르게 쓰고 있다.
-     여기서는 **본문의 정의(잎 비율)** 를 따르고, 그 사실을 `docs/shop.md` §3 에 적어 두었다.
-     이 선택이 곧 "잭팟이 성립하느냐"를 가르므로 plan 판단이 필요하다(보고 ⑥).
+     잎 5장 중 2장 무늬 530,000  <  잎 3장 중 2장 무늬 830,000
+     극단이 **잎 1장짜리 무늬 삽수 732,000원** — 무늬 잎 하나만 떼면 모주보다 비쌌다.
+
+   즉 **잘 키우는 것이 손해**였고, 최적 전략이 "무늬 잎마다 잘라서 따로 팔기"였다.
+   박사님 지시 넷은 전부 이것을 뒤집는다.
+
+   ══ 새 공식 — 한국 무늬식물 시장이 실제로 값을 부르는 방식 그대로 ═════════════
+   조사(2026-08-04): 한국 알보몬 시장은 값을 **「잎 1장당」** 으로 부른다
+   (`엽수 5엽 · 잎당 30만` 꼴. 식테크 거품기 잎당 30만~80만, 2023년 ~5만으로 붕괴).
+   그래서 그루값을 하나의 곱이 아니라 **잎마다의 합**으로 매긴다.
+
+       값 = 민무늬 잎 수 × 크기단가  +  무늬 잎 수 × 성체단가 × 등급배수
+
+   ★★ **무늬 잎에는 크기 프리미엄을 안 먹인다.** 크기단가가 삽수 12,000 / 성체 10,000 으로
+     작은 쪽이 비싼 것은 *"작아도 최소 이만큼은 받는다"* 는 **소품 하한**이고(propagation.md §6),
+     그건 민무늬 잎에나 붙는 말이다. 무늬 잎 값은 무늬가 정한다.
+     ⚠ 안 갈라 두면 **경계에서 값이 꺾인다.** 실제로 처음 짤 때 그랬고 검사 E 가 잡았다:
+       잎2·무늬1 = 92,000 → 잎3·무늬1 = 86,667. 잎이 한 장 늘었는데 값이 준다 —
+       고치려던 그 병이 경계 한 칸에 그대로 남아 있었다. 무늬 잎을 성체 단가로 고정하면
+       잎이 늘 때 **더해지기만** 하므로 그 자리가 원리적으로 사라진다.
+
+   ★ 이 형태가 박사님 지시 셋을 **동시에** 만족시킨다. 우연이 아니라 형태가 그렇다.
+     ① **잎 수에 우상향** — 잎이 한 장 늘면 값이 반드시 는다(비율이 안 들어간다).
+     ② **떼어 팔기가 절대 이득이 아니다** — 합이라서 쪼개도 총합이 같고, 쪼개다 등급이
+        내려가면 오히려 준다(아래 ★증명).
+     ③ **무늬 삽수가 싸진다** — 잎 1장짜리 무늬 삽수 732,000 → **80,000원**.
+
+   ★★ 증명 — 떼어 팔기는 왜 이득일 수 없나.
+     그루를 A·B 두 조각으로 쪼개면 잎은 그대로 나뉜다. 값이 잎별 합이므로
+     쪼갠 뒤의 합은 **등급배수가 안 내려갈 때만** 원래와 같다. 그런데 등급은
+     **무늬 잎 장수**로 정하므로 쪼개면 양쪽 다 장수가 줄어 등급이 내려가거나 그대로다.
+     따라서 `쪼갠 합 ≤ 통째 값` 이고, 등호는 무늬 잎이 한쪽에 몰릴 때뿐이다.
+     ⇒ **"키워서 팔기"가 언제나 같거나 이득이다.**
+
+   ══ 등급 — 실제 한국 시장 용어를 쓴다 (조사 2026-08-04) ══════════════════════
+   무늬 등급 이름은 지어내지 않고 한국 무늬식물 시장에서 실제로 쓰는 말을 가져왔다.
+   선호 순서도 시장이 매긴 그대로다 — **무지 < 산반 < 섹터 < 하프문**.
+
+     무지(민무늬)  무늬가 없다. 「무지 잎」은 알보의 값을 깎는 말로 쓰인다
+     산반(散斑)    잎 전체에 붓으로 튀긴 듯 잘게 흩뿌려진 무늬. 마블(marble)과 같은 말.
+                   ★시장이 산반을 권하는 이유가 **생리적 안전**이다 — 초록(광합성)과
+                     흰색(광합성 불가)이 고르게 섞여 있어 그루가 버틴다
+     섹터          흰 부분이 큼직한 덩어리로 앉은 것(sectoral). 산반보다 위
+     하프문        잎이 주맥에서 반으로 갈려 한쪽이 흰 것. **식테크의 정점**이고
+                   경매 최고가가 여기서 나온다. 줄기까지 반반으로 갈리면 더 오른다
+
+   ★ **고스트(전백)는 이 사다리에 없다.** 잎 전체가 흰 것을 한국 시장은 「고스트」라 부르는데,
+     값의 꼭대기가 아니라 **경고**로 읽는다 — 고스트 잎이 연달아 나면 성장점 안의 정상 세포가
+     죽었다는 뜻이고 그루가 결국 죽는다. 그래서 고스트는 **등급이 아니라 죽음**이고,
+     `propagation.js` §키메라가 그것을 다룬다. 값을 매기는 자리에는 아예 안 나온다.
+     ★★ 이게 곧 **천장**이다. 「가장 흰 것이 가장 비싸다」가 아니므로 무늬를 끝까지 밀어붙이는
+       길이 값으로 보상받지 않는다 — 상한을 규칙으로 박지 않아도 사다리 자체가 거기서 끝난다.
+
+   ⚠ 조사가 같이 알려 준 것: 이 이름들은 원래 **잎 한 장의 무늬 모양**을 가리키는 말이다.
+     그루 단위 축은 시장에서 「엽수 + 성장점 상태」로 따로 말한다. 그런데 코어는 잎 하나하나의
+     무늬 모양을 모른다 — growth 가 내주는 것은 `variegatedLeaves`(무늬 잎이 **몇 장인가**)뿐이다.
+     그래서 여기서는 그 이름들을 **그루의 무늬가 어디까지 굳었나**에 붙여 쓴다.
+     잎마다 다른 무늬 모양을 값에 넣으려면 growth 가 잎별 무늬 종류를 내줘야 한다
+     (`docs/handoff/core-to-growth.md` 에 요청을 적어 두었다). 지금 없는 것을 지어내지 않는다.
+
+   ══ 배수는 어디서 왔나 — **셋 다 이미 있던 값이다** ═════════════════════════════
+   셋 다 **성체 잎당 단가에 대한 비**로 통일했다(위 ★★ 무늬 잎은 성체 단가를 쓴다).
+     산반  8             `sale_economy.md` 「몬스테라 삽수(알보) 80,000」 ÷ 10,000
+     섹터  320/9 ≈ 35.556 `sale_economy.md` 「포토스 희귀무늬 성체 800,000」 ÷ (3,750×6)
+     하프문 61             옛 공식의 상한 `1 + 60·1²` — 값의 꼭대기를 안 올렸다는 뜻이다
+   ★ 새 숫자를 하나도 만들지 않았다. 바뀐 것은 **그 배수가 언제 붙느냐**뿐이다:
+     예전에는 잎 비율이 높으면 붙었고(그래서 잎 1장이 제일 유리했다),
+     이제는 **무늬 잎 장수**가 쌓여야 붙는다(그래서 잘 큰 그루라야 한다).
 ============================================================ */
-export const PRICE_K = 60;
+
+/* ★ 등급 — 무늬 잎 **장수**로만 정한다. 비율로 정하면 민무늬 잎이 한 장 나는 순간
+   등급이 내려가 **잘 키운 벌**이 된다(그게 옛 공식의 병이었다). 장수는 늘기만 하므로
+   값이 잎 수에 대해 절대 안 꺾인다. 위 ★증명이 성립하는 것도 이 성질 때문이다. */
+export const VARIE_GRADES = Object.freeze([
+  Object.freeze({ id: 'plain',    ko: '무지',   minVarieLeaves: 0, leafMult: 1 }),
+  Object.freeze({ id: 'sanban',   ko: '산반',   minVarieLeaves: 1, leafMult: 8 }),
+  Object.freeze({ id: 'sector',   ko: '섹터',   minVarieLeaves: 2, leafMult: 320 / 9 }),
+  Object.freeze({ id: 'halfmoon', ko: '하프문', minVarieLeaves: 3, leafMult: 61 })
+]);
+
+/* ★★ 삽수에는 등급을 안 붙인다 — 산반까지다.
+   ------------------------------------------------------------
+   왜. **삽수는 그 무늬가 유지될지 아직 아무도 모른다.** 조사에서 확인한 그대로다 —
+   삽수는 원복(무늬 퇴화)할 수도, 고스트로 죽을 수도 있고, 그 판정은 뿌리내린 뒤에 난다
+   (`propagation.js` §키메라). 시장이 값을 쳐 주는 것은 **무늬가 굳은 것이 확인된 그루**다.
+   그래서 잎 1~2장짜리 조각은 무늬가 아무리 많아도 「산반」 값을 받는다.
+
+   ★ 이 한 줄이 박사님의 *"무늬 삽수 가격 자체를 낮춰"* 를 실제로 성립시킨다.
+     이게 없으면 잎 2장 전부 무늬인 삽수가 섹터 등급을 받아 854,400원이 된다 —
+     고친 병이 그대로 돌아온다. 지금은 160,000원이 상한이다. */
+export const CUTTING_GRADE_CAP = 'sanban';
+
 export const UNIT_WON = Object.freeze({
-  monstera: Object.freeze({ cutting: 12_000, adult: 10_000 }),   // propagation.md §6 표
+  monstera: Object.freeze({ cutting: 12_000, adult: 10_000 }),   // propagation.md §6 표 (숫자를 안 바꿨다)
   pothos:   Object.freeze({ cutting:  3_000, adult:  3_750 })
 });
-/* 잎 몇 장부터 성체 가격표인가 — propagation.md §6: "잎 1~2장이면 삽수, 3장부터 성체". */
+
+/* ★★ 소품 하한 — `cutting` 값을 **잎당 웃돈이 아니라 그루당 최저가**로 읽는다 (2026-08-04)
+   ------------------------------------------------------------
+   정본(propagation.md §6)이 삽수 단가를 12,000 으로 둔 이유는 한 줄로 적혀 있다:
+   *"작아도 **최소 이만큼은** 받는다는 소품 프리미엄"*. 그건 **하한**을 말하는 문장이다.
+   그런데 코드는 그것을 **잎마다 붙는 2,000원 웃돈**으로 읽고 있었고, 그래서
+   잎이 적을수록 잎당 값이 비쌌다 — 값의 병(잎 비율 v)과 **같은 방향의 병**이 하나 더 있었던 셈이다.
+
+   ⚠ 실제로 재서 잡았다(검사 E). 잎 4장 민무늬 40,000원짜리를 2장+2장으로 쪼개면
+     24,000+24,000 = 48,000원이라 **뜯어 파는 쪽이 8,000원 더 남았다.**
+     문장대로 하한으로 읽으면 잎당 값이 어디서나 같아져 그 이득이 사라진다.
+
+   ★ 지금 남는 최대 이득은 「잎 2장 민무늬(20,000) → 1장+1장(24,000)」의 **4,000원**뿐이고,
+     그건 용기값 7,000원보다 작다 — **실비를 못 넘기므로 실제로는 손해다.**
+     (게다가 초보에서는 모주를 끝내는 자르기가 막혀 있어 그 수 자체가 없다.)
+     하한을 0 으로 없애면 이득이 정확히 0 이 되지만, 그러면 정본의 「몬스테라 삽수 12,000」이
+     깨지고 꾸준수입이 17% 준다. **정본을 지키면서 실질 이득을 없애는 쪽**을 골랐다. */
+export const minSaleWonOf = (species) => (UNIT_WON[species] || {}).cutting || 0;
+
+/* 잎 몇 장부터 성체로 보나 — propagation.md §6: "잎 1~2장이면 삽수, 3장부터 성체".
+   ★ 이제 이 값이 가르는 것은 **단가가 아니라 등급 상한**이다(잎당 값은 어디서나 같다).
+   ★ 삽수가 자라게 되면서(2026-08-04) 뜻이 하나 늘었다 — **자라서 잎 3장이 된 삽수는
+     그 순간부터 등급 상한이 풀린다.** "키우면 값이 붙는다"가 여기서도 같은 규칙이다. */
 export const ADULT_MIN_LEAVES = 3;
 
-/* 무늬 잎 비율. 잎이 없으면 값을 매길 수 없다(0으로 굴리지 않는다). */
+/* 무늬 잎 비율. **값에는 더 이상 안 쓴다**(위 §병폐) — 화면 표시·기록용으로만 남긴다.
+   지우지 않은 이유: 「이 그루가 얼마나 무늬인가」는 여전히 사람이 읽는 값이고,
+   옛 세이브·재현이 이 이름으로 기록을 남겨 뒀다. */
 export function varieRatio(leaves, variegatedLeaves) {
   if (!Number.isInteger(leaves) || leaves < 1)
     throw new Error(`[상점] 잎 수가 1 이상의 정수가 아닙니다: ${leaves} — 값은 잎으로 매깁니다`);
@@ -265,41 +389,63 @@ export function varieRatio(leaves, variegatedLeaves) {
   return variegatedLeaves / leaves;
 }
 
+/* 무늬 잎 장수 → 등급. 삽수(잎 1~2장)면 상한을 건다.
+   반환 VARIE_GRADES 의 한 줄(얼려 둔 객체 그대로) */
+export function varieGradeOf(variegatedLeaves, { isCutting = false } = {}) {
+  let g = VARIE_GRADES[0];
+  for (const row of VARIE_GRADES) if (variegatedLeaves >= row.minVarieLeaves) g = row;
+  if (isCutting) {
+    const capIdx = VARIE_GRADES.findIndex(r => r.id === CUTTING_GRADE_CAP);
+    const myIdx = VARIE_GRADES.indexOf(g);
+    if (myIdx > capIdx) g = VARIE_GRADES[capIdx];
+  }
+  return g;
+}
+
 /* 값을 매긴다. 순수 함수라 화면이 "지금 팔면 얼마"를 미리 보여줄 수 있다.
      species 'monstera' | 'pothos'
-   반환 { won, v, leaves, variegatedLeaves, grade, unitWon, multiplier } */
+   반환 { won, v, leaves, variegatedLeaves, plainLeaves, size, grade, gradeKo,
+          gradeCapped, unitWon, leafMult, multiplier } */
 export function priceOf({ species = 'monstera', leaves, variegatedLeaves = 0 } = {}) {
   const unit = UNIT_WON[species];
   if (!unit) throw new Error(`[상점] 모르는 종입니다: ${species} (아는 것: ${Object.keys(UNIT_WON).join(', ')})`);
-  const v = varieRatio(leaves, variegatedLeaves);
-  const grade = leaves >= ADULT_MIN_LEAVES ? 'adult' : 'cutting';
-  const unitWon = unit[grade];
-  const multiplier = 1 + PRICE_K * v * v;
+  const v = varieRatio(leaves, variegatedLeaves);          // 검사도 여기서 같이 한다
+  const size = leaves >= ADULT_MIN_LEAVES ? 'adult' : 'cutting';
+  const g = varieGradeOf(variegatedLeaves, { isCutting: size === 'cutting' });
+  const raw = varieGradeOf(variegatedLeaves);
+  const plainLeaves = leaves - variegatedLeaves;
+  /* 잎당 값은 **어디서나 같다**(위 ★★ 소품 하한). 그래서 잎을 어떻게 나눠도 합이 안 커진다 */
+  const raw$ = plainLeaves * unit.adult + variegatedLeaves * unit.adult * g.leafMult;
+  const floorWon = minSaleWonOf(species);
+  const won = Math.round(Math.max(raw$, floorWon));
   return {
-    won: Math.round(unitWon * leaves * multiplier),
-    v, leaves, variegatedLeaves, grade, unitWon, multiplier
+    won,
+    v, leaves, variegatedLeaves, plainLeaves, size,
+    grade: g.id, gradeKo: g.ko, gradeCapped: g.id !== raw.id,
+    unitWon: unit.adult, floorWon, floored: raw$ < floorWon, leafMult: g.leafMult,
+    /* 옛 이름과의 다리 — 「민무늬 잎 한 장 값의 몇 배인가」. 화면이 배수 하나로 말할 때 쓴다 */
+    multiplier: won / (unit.adult * leaves)
   };
 }
 
 /* ★ 150만원(원룸 이사 자금)을 만들려면 무늬 잎이 몇 장이라야 하나 — **역산**.
    `docs/shop.md` §1 의 표를 내는 함수다. 화면이 "이 그루를 몇 장 더 무늬로 만들면 되나"를
    말할 수 있게 코어가 셈을 갖는다(문서와 코드가 갈리지 않게).
-   반환 { leaves, needV, needVarieLeaves, wonAtNeed } · 불가능하면 needVarieLeaves = null */
+   ★ 공식이 등급 계단이라 닫힌 역함수가 없다 — **한 장씩 올려 보고 처음 넘는 장수**를 낸다.
+     계단이 몇 개 안 되고 잎 수도 작아서 이게 가장 정직하다(근사식을 쓰면 경계에서 어긋난다).
+   반환 { leaves, size, needVarieLeaves, wonAtNeed, maxWon } · 불가능하면 needVarieLeaves = null */
 export function varieLeavesNeededFor(targetWon, { species = 'monstera', leaves } = {}) {
-  const unit = UNIT_WON[species];
-  if (!unit) throw new Error(`[상점] 모르는 종입니다: ${species}`);
+  if (!UNIT_WON[species]) throw new Error(`[상점] 모르는 종입니다: ${species}`);
   if (!Number.isInteger(leaves) || leaves < 1)
     throw new Error(`[상점] 잎 수가 1 이상의 정수가 아닙니다: ${leaves}`);
-  const grade = leaves >= ADULT_MIN_LEAVES ? 'adult' : 'cutting';
-  const base = unit[grade] * leaves;
-  const need = (targetWon / base - 1) / PRICE_K;          // = v²
-  const needV = need <= 0 ? 0 : Math.sqrt(need);
-  if (needV > 1) return { leaves, grade, needV, needVarieLeaves: null, wonAtNeed: null,
-                          maxWon: Math.round(base * (1 + PRICE_K)) };
-  const n = Math.ceil(needV * leaves);
-  return { leaves, grade, needV, needVarieLeaves: n,
-           wonAtNeed: priceOf({ species, leaves, variegatedLeaves: n }).won,
-           maxWon: Math.round(base * (1 + PRICE_K)) };
+  const size = leaves >= ADULT_MIN_LEAVES ? 'adult' : 'cutting';
+  const maxWon = priceOf({ species, leaves, variegatedLeaves: leaves }).won;
+  for (let n = 0; n <= leaves; n++) {
+    const q = priceOf({ species, leaves, variegatedLeaves: n });
+    if (q.won >= targetWon)
+      return { leaves, size, needVarieLeaves: n, wonAtNeed: q.won, grade: q.grade, maxWon };
+  }
+  return { leaves, size, needVarieLeaves: null, wonAtNeed: null, grade: null, maxWon };
 }
 
 /* ============================================================
@@ -386,9 +532,16 @@ export function sellCutting(S, cuttingOrId, opt = {}) {
     e.tutorialInput = true;                 // 안내지 고장이 아니다
     throw e;
   }
-  const q = priceOf({ species: opt.species || 'monstera',
-                      leaves: c.source.leaves,
-                      variegatedLeaves: c.source.variegatedLeaves });
+  /* ★ **지금** 달고 있는 잎으로 값을 매긴다 (2026-08-04 — 삽수가 자라게 되면서).
+     `c.source` 는 「자를 때 딸려온 것」이라 영원히 안 변하는 기록이다. 그걸로 값을 매기면
+     반 년을 키운 삽수를 자른 날 값에 팔게 된다 — 「키우면 값이 붙는다」가 그 자리에서 깨진다.
+     ⚠ propagation.js 를 import 하지 않는다(그쪽이 이 파일을 부르므로 순환이 된다).
+       그래서 propagation 이 잎을 건드릴 때마다 `c.leaves`·`c.variegatedLeaves` 를 맞춰 둔다
+       (`syncCuttingLeaves` 한 곳에서만 한다). 옛 세이브에는 그 칸이 없어 `source` 로 떨어진다. */
+  const leaves = Number.isInteger(c.leaves) ? c.leaves : c.source.leaves;
+  const varieLeaves = Number.isInteger(c.variegatedLeaves)
+    ? c.variegatedLeaves : c.source.variegatedLeaves;
+  const q = priceOf({ species: opt.species || 'monstera', leaves, variegatedLeaves: varieLeaves });
   S.cuttings = list.filter(x => x !== c);
   const r = credit(S, q.won, 'cutting');
   /* ★ 유리 수경병은 돌아온다 — 물꽂이는 병에서 뽑아 보내지 병째 보내지 않는다.

@@ -185,60 +185,90 @@ check('B 무늬 잎을 품은 조각은 굴림 없이 무늬다 — 잎 수·무
 
   /* ★ 굴린 게 아니다 — 물리적으로 같은 잎이 딸려간 것이라 그 자리에서 확정이다 */
   assert.equal(c.variegated, true, '무늬 잎을 품었는데 무늬 개체가 아닙니다');
-  assert.equal(c.varieRolled, true, '딸려온 무늬 잎이 있는데 굴림을 남겨 뒀습니다');
+  /* ★ 무늬 잎은 **위쪽(생장점 쪽)** 에 놓인다 — propagation.js §키메라 ②.
+     아래쪽에 놓으면 자를 수 있는 마디(i≥1)에 무늬가 하나도 안 실려 대를 잇는 길이 막힌다. */
+  assert.deepEqual(c.leafVarie, [false, true],
+    '딸려온 잎의 무늬 여부·자리가 안 따라왔습니다 — 그 배열이 곧 다음 세대의 w 입니다');
+  assert.equal(c.leaves, 2);
+  assert.equal(c.variegatedLeaves, 1);
 
-  /* 무늬 없는 마디를 자르면 확정이 아니라 확률로 남는다 */
-  /* ★ 밑동(ax0#0·잎 3장)이 아니라 잎 1장 마디를 자른다 — ax0#1 로 이미 2장이 나갔고
-     모주에 1장만 남았다. 없는 잎은 못 자른다(propagation.js §유한성). */
+  /* ★ 갈래는 자를 때 정해지되 **뿌리내리기 전에는 안 드러난다**(정보 있는 판단 ≠ 결과 미리보기) */
+  assert.ok(['revert', 'chimera', 'ghost'].includes(c.lineage), `모르는 갈래 ${c.lineage}`);
+  assert.equal(c.lineageKnown, false, '자르자마자 결과가 드러났습니다');
+  assert.equal(P.cuttingSnapshot(S, c).lineage, null, '화면에 결과가 미리 새어 나갑니다');
+
+  /* ★ 민무늬 마디(w=0)는 **반드시 원복**이다 — 물려줄 흰 조직이 없다.
+     ★ 밑동(ax0#0·잎 3장)이 아니라 잎 1장 마디를 자른다 — ax0#1 로 이미 2장이 나갔고
+       모주에 1장만 남았다. 없는 잎은 못 자른다(propagation.js §유한성). */
   const c2 = P.takeCutting(S, { nodes: NODES(), nodeId: 'ax1#0', container: 'jar', at: FLOOR(0.8, 0.5), ...PLACE });
+  assert.equal(c2.cutW, 0, '민무늬 마디인데 w 가 0 이 아닙니다');
+  assert.equal(c2.lineage, 'revert', `민무늬 마디에서 ${c2.lineage} 가 나왔습니다 — w=0 이면 원복만 납니다`);
+  assert.equal(c2.varieChance, 0, `원복인데 새 잎 무늬율이 ${c2.varieChance}`);
   assert.equal(c2.variegated, false);
-  assert.equal(c2.varieRolled, false, '안 굴렸는데 굴렸다고 표시됐습니다');
-  assert.ok(c2.varieChance > 0, `무늬 모주인데 새 잎 무늬율이 ${c2.varieChance}`);
 
-  /* ★ plain 모주는 복제해도 영원히 0 이다 (0 × 0.8 = 0) */
+  /* ★ plain 모주는 복제해도 영원히 0 이다 — 무늬 잎이 없으니 w 가 언제나 0 이다 */
   const Sp = newFree({ variegated: false });
   const c3 = P.takeCutting(Sp, { nodes: NODES(), nodeId: 'ax0#0', container: 'jar' });
   assert.equal(c3.varieChance, 0, `plain 모주의 삽수 무늬율이 ${c3.varieChance} — 0 이라야 합니다`);
-  runDays(Sp, 12);                                   // 뿌리내림 = 굴림이 도는 날
-  assert.equal(c3.varieRolled, true, '뿌리를 냈는데 굴림이 안 돌았습니다');
+  runDays(Sp, 12);                                   // 뿌리내림 = 갈래가 드러나는 날
+  assert.equal(c3.lineageKnown, true, '뿌리를 냈는데 갈래가 안 드러났습니다');
   assert.equal(c3.variegated, false, 'plain 계통에서 무늬가 나왔습니다');
   info(`상속: ${c.source.nodeId} → 잎 ${c.source.leaves}장(무늬 ${c.source.variegatedLeaves}) · ` +
-       `무늬 개체 확정 · 새 잎 무늬율 ${c.varieChance}`);
+       `w ${c.cutW} · 갈래 ${c.lineage} · 새 잎 무늬율 ${c.varieChance}`);
 });
 
-/* ══ C · ★ 확률 상속 — 세대마다 ×0.8 (batch) / ×1.0 (individual) ══════ */
-check('C 새 잎 무늬율이 세대마다 감쇠한다 — 3세대에 절반(0.8³=0.512)', () => {
-  assert.equal(P.gradeMultOf('tray'), 0.8, '일괄(batch) 등급 계수가 0.8 이 아닙니다');
-  assert.equal(P.gradeMultOf('jar'), 1.0, '개별(individual) 등급 계수가 1.0 이 아닙니다');
+/* ══ C · ★★ 키메라 세 갈래 — 원복 / 유지 / 고스트 ══════════════ */
+check('C 소질은 자른 마디의 무늬 짙기(w)가 정한다 — 천장은 고스트가 만든다', () => {
+  /* 확률 셋의 합은 언제나 1이다 — 두 층을 각각 뽑은 것이라 그렇게 나온다 */
+  for (const w of [0, 0.2, 1 / 3, 0.5, 0.75, 1]) {
+    const o = P.chimeraOddsOf(w);
+    assert.ok(Math.abs(o.revert + o.chimera + o.ghost - 1) < 1e-9, `w=${w} 에서 합이 1이 아닙니다`);
+  }
+  /* ★ 양끝이 규칙에서 저절로 막힌다 — 여기가 「천장」이다 */
+  assert.equal(P.chimeraOddsOf(0).revert, 1, 'w=0 인데 원복이 100% 가 아닙니다');
+  assert.equal(P.chimeraOddsOf(1).ghost, 1, 'w=1 인데 고스트가 100% 가 아닙니다 — 천장이 사라집니다');
+  /* ★ 유지가 가장 잘 되는 곳이 반반이다 — 육종가가 반반을 고르는 이유가 식에서 나온다 */
+  const half = P.chimeraOddsOf(0.5).chimera;
+  for (const w of [0.1, 0.3, 0.7, 0.9])
+    assert.ok(P.chimeraOddsOf(w).chimera < half, `w=${w} 의 유지율이 반반보다 높습니다`);
+  assert.equal(half, 0.5, `반반의 유지율이 ${half} — 2w(1-w) 의 꼭짓점은 0.5 입니다`);
 
-  const base = P.VARIE.variegatedMother;                 // 무늬 모주의 새 잎 무늬율
+  /* 소질은 **남은 거리의 일부만** 오른다 — 절대 1을 못 넘고, 오를수록 덜 오른다 */
+  const base = P.VARIE.variegatedMother;
+  assert.equal(P.varieChanceRise(base, 0, 1), base, 'w=0 인데 소질이 올랐습니다');
+  assert.ok(P.varieChanceRise(base, 1, 1) <= 1, '소질이 1을 넘었습니다');
+  let prev = base, gap0 = 1 - base;
+  for (let g = 0; g < 8; g++) {
+    const next = P.varieChanceRise(prev, 0.5, 1);
+    assert.ok(next > prev, `${g}대에서 소질이 안 올랐습니다`);
+    assert.ok(next < 1, `${g}대에서 소질이 1에 닿았습니다`);
+    assert.ok(1 - next < 1 - prev, '남은 거리가 안 줄었습니다');
+    prev = next;
+  }
+  assert.ok(1 - prev < gap0, '수확체감이 없습니다');
+
+  /* 유리병(개별)은 감쇠가 없다 — 세대 감쇠(0.8ⁿ)는 키메라 모델로 대체됐다 */
+  assert.equal(P.gradeMultOf('jar'), 1.0, '개별(individual) 등급 계수가 1.0 이 아닙니다');
   const S = newFree({ variegated: true });
   const c1 = P.takeCutting(S, { nodes: NODES(), nodeId: 'ax0#0', container: 'jar' });
   assert.equal(c1.gen, 1, `세대가 ${c1.gen}`);
-  assert.ok(Math.abs(c1.varieChance - base) < 1e-9,
-    `유리병(개별)인데 ${c1.varieChance} — 감쇠가 없어야 합니다(${base})`);
-
-  /* 일괄(트레이)의 감쇠를 규칙으로 확인한다 — 용기 자체는 에셋이 없어 못 놓는다 */
-  let v = base;
-  const seen = [];
-  for (let g = 1; g <= 5; g++) { v = +(v * P.gradeMultOf('tray')).toFixed(6); seen.push(v); }
-  assert.ok(Math.abs(seen[2] / base - 0.512) < 1e-6,
-    `3세대 감쇠가 ${seen[2] / base} — 0.8³=0.512 여야 합니다`);
-  info(`일괄 감쇠 ${base} → ` + seen.map((x, i) => `${i + 1}세대 ${(x * 100).toFixed(1)}%`).join(' · '));
 
   /* ★ 굴림은 결정적이다 — 같은 씨앗·같은 id 면 언제 굴려도 같은 답 */
-  const a = P.cuttingHash(12345, 'cut_01', 1);
-  const b = P.cuttingHash(12345, 'cut_01', 1);
+  const a = P.cuttingHash(12345, 'cut_01', 2);
+  const b = P.cuttingHash(12345, 'cut_01', 2);
   assert.equal(a, b, '같은 입력인데 굴림 결과가 다릅니다 — 세이브 복원이 흔들립니다');
-  assert.notEqual(P.cuttingHash(12345, 'cut_02', 1), a, '다른 삽수인데 같은 굴림이 나왔습니다');
+  assert.notEqual(P.cuttingHash(12345, 'cut_02', 2), a, '다른 삽수인데 같은 굴림이 나왔습니다');
 
-  /* 확률이 실제로 그 비율로 나오는가 — 씨앗을 바꿔가며 400개를 굴린다 */
-  let hit = 0, N = 400;
-  for (let i = 0; i < N; i++) if (P.cuttingHash(i, 'cut_01', 1) < base) hit++;
-  const got = hit / N;
-  assert.ok(Math.abs(got - base) < 0.06,
-    `기대 무늬율 ${base} 인데 실측 ${got.toFixed(3)} — 굴림이 확률을 안 따릅니다`);
-  info(`무늬 굴림 실측 ${(got * 100).toFixed(1)}% (기대 ${(base * 100).toFixed(1)}% · 표본 ${N})`);
+  /* 갈래가 실제로 그 비율로 나오는가 — 씨앗 800개로 w=0.5 를 굴린다 */
+  const N = 800, cnt = { revert: 0, chimera: 0, ghost: 0 };
+  for (let i = 0; i < N; i++) cnt[P.rollLineage(0.5, P.cuttingHash(i, 'cut_01', 2))]++;
+  for (const [k, want] of [['revert', 0.25], ['chimera', 0.5], ['ghost', 0.25]]) {
+    const got = cnt[k] / N;
+    assert.ok(Math.abs(got - want) < 0.05,
+      `w=0.5 에서 ${k} 기대 ${want} 인데 실측 ${got.toFixed(3)} — 굴림이 확률을 안 따릅니다`);
+  }
+  info(`w=0.5 실측 ${N}판 — 원복 ${(cnt.revert / N * 100).toFixed(1)}% · ` +
+       `유지 ${(cnt.chimera / N * 100).toFixed(1)}% · 고스트 ${(cnt.ghost / N * 100).toFixed(1)}%`);
 });
 
 /* ══ D · ★★ 물꽂이가 화분보다 12일 빠르다 ═════════════════════════════ */
