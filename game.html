@@ -207,6 +207,21 @@
   #shopPending:empty,#sellHint:empty{display:none}
   #shopPending{margin-bottom:8px;color:var(--gold)}
 
+  /* ══ 삽수 — 자를 마디 한 줄 + 가진 삽수 한 줄 ═══════════
+     상점 줄(.shopRow)과 **같은 골격**을 쓴다 — 목록이 둘로 보이면
+     폰에서 어느 줄이 무엇인지 구분하는 데 눈이 쓰인다. */
+  #cutNodes,#cutList{display:flex;flex-direction:column;gap:6px;margin-bottom:8px}
+  #cutBox .sub2{font-size:11px;color:var(--dim);margin:6px 0 5px}
+  .cutRow{display:flex;align-items:center;gap:6px;padding:7px 9px;border-radius:11px;
+    background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07)}
+  .cutRow.warn{background:rgba(240,138,114,.10);border-color:rgba(240,138,114,.28)}
+  .cutRow .nm{flex:1;min-width:0;font-size:12.5px;color:rgba(255,255,255,.86)}
+  .cutRow .nm small{display:block;font-size:10.5px;color:var(--dim);margin-top:1px}
+  .cutRow .won{font-family:'Jua';font-size:12.5px;color:var(--gold);white-space:nowrap}
+  .cutRow button{min-height:34px;padding:0 10px;border-radius:9px;font-size:11.5px;flex:0 0 auto}
+  #cutHint:empty{display:none}
+  #cutHint{margin-top:6px;color:var(--dim)}
+
   /* 아이템 카드 — 폰에서는 한 열 */
   #sheet .inventory{display:grid;grid-template-columns:1fr;gap:8px}
   #sheet .itemcard .place{display:flex;gap:6px;align-items:stretch}
@@ -827,6 +842,21 @@
         <div id="sellHint" class="itemline"></div>
       </div>
 
+      <!-- ══ 삽수(꺾꽂이) — 꾸준수입의 길 ══════════════════
+           박사님 원문: "병에 수생으로 해서 하면 좀 빨리 자라되 다음 줄기 혹이 나면
+           분갈이해서 심어야 자라고 안그러고 내비두고 지나면 죽어서 없어져버리는 형태로."
+           ★그래서 분갈이가 이 상자의 존재 이유다 — 분갈이 창구가 없으면
+             물꽂이는 반드시 죽는다. 말풍선은 따로 또 뜼다(markList). -->
+      <div class="box" id="cutBox" style="display:none">
+        <h3>삽수</h3>
+        <div class="sub">자르고 → 뿌리내고 → 팔아서 꾸준히 벌어요.</div>
+        <div class="sub2">자를 수 있는 마디</div>
+        <div id="cutNodes"></div>
+        <div class="sub2">가진 삽수</div>
+        <div id="cutList"></div>
+        <div id="cutHint" class="itemline"></div>
+      </div>
+
       <div class="box" id="ctl">
         <h3>방 안에서 하기</h3>
         <label><span>방</span><select id="room"></select></label>
@@ -1038,9 +1068,14 @@
 import { newState, SIM_MODES, pot0, pushLog, givePlant, hasPlant, ARRIVAL,
          setPotAt, setPotSlot, setCropAt, setFurniturePlacement, furnitureOverrides,
          resowCrop, waterCrop, cropWaterStatus, cropHarvestStatus } from './src/game/state.js';
-import { catalogList, orderItem, shopStatus, priceOf, sellPot,
-         varieLeavesNeededFor } from './src/game/shop.js';
-import { isFreeSlotId } from './src/game/place.js';
+import { catalogList, orderItem, shopStatus, priceOf, sellPot, sellCutting,
+         stockOf, SELLABLE_CUTTING_STATUS, varieLeavesNeededFor } from './src/game/shop.js';
+/* ★ 삽수 — 규칙과 수치는 전부 propagation.js 것이다. 여기서는 부르기만 한다
+   (날짜를 여기서 다시 세면 화면과 코어가 갈라진다). */
+import { takeCutting, repotCutting, cuttableNow, cutBudgetOf, cutBlockedReason,
+         cuttingsOf, cuttingSnapshot, containerItemOf, graceDaysOf, isNoviceMode,
+         CONTAINERS, METHODS } from './src/game/propagation.js';
+import { isFreeSlotId, atFromSlot } from './src/game/place.js';
 import * as save from './src/game/save.js';
 import {
   FIRST_PLAY_ASSETS,
@@ -1644,6 +1679,213 @@ function drawLedger() {
     + `<div class="tip">${tip}</div>`;
 }
 
+
+/* ══ 삽수(꺾꽂이) — 자르기 · 분갈이 · 팔기 (2026-08-04) ═══════════
+   박사님 원문: "병에 수생으로 해서 하면 좀 빨리 자라되 다음 줄기 혹이 나면
+   분갈이해서 심어야 자라고 안그러고 내비두고 지나면 죽어서 없어져버리는 형태로."
+
+   ★ 배선 전 상태: 코어(propagation.js 54회 · loop 15 · save 15)는 다 있는데
+     화면에는 「삽수」가 **글자로 한 번** 나올 뿐이었다. 자를 길도 없었지만,
+     더 위험하게는 **분갈이 창구가 하나도 없었다** — 규칙상 물꽂이는 혹이 난 뒤
+     유예 안에 분갈이를 안 하면 사라지므로, 꽂으면 **반드시 죽었다.**
+     tools/test_cutting_wiring.mjs 검사 B 가 그걸 못 박아 둔다(초보 Day 49 · 자유 Day 41 사망).
+
+   ★ 수치를 하나도 안 만들었다. 물꽂이 12 / 직삽 24 / 마디 32 / 기한 40 은
+     propagation.METHODS 가 갖고, 값은 shop.priceOf 가 갖는다. 여기는 배선만 한다. */
+
+/* 모주에서 지금 실제로 자를 수 있는 마디.
+   ★ 목록은 growth 소유다(io.growth.cuttableNodes). 없으면 **화면을 안 열면 된다** —
+     잎 수를 여기서 지어내면 "실제 자란 것"이라는 이 기능의 뜻이 그 자리에서 사라진다. */
+function cutNodesNow() {
+  const p = pot0(S);
+  if (!p) return { nodes: null, ok: [] };
+  let nodes = null;
+  try { nodes = io.growth.cuttableNodes(); } catch { nodes = null; }
+  if (!Array.isArray(nodes) || !nodes.length) return { nodes: null, ok: [] };
+  let ok = [];
+  try { ok = cuttableNow(S, nodes, { potId: p.id }); } catch { ok = []; }
+  /* 잎이 적은 마디부터 보인다 — 잎당 값은 같은데(12,000원) 총량을 덜 쓴다.
+     즉 작게 잘라 파는 쪽이 항상 유리하다(test_cutting_wiring 검사 G). */
+  return { nodes, ok: ok.slice().sort((a, b) => a.leaves - b.leaves) };
+}
+const cutKeyOf = (c) => (c && (c.slotId || 'free:' + c.id)) || null;
+
+/* 삽수를 어디에 놓나 — **빈 추천 자리의 첫 칸**이다.
+   ★ 밝기를 안 따진다: 뿌리내는 동안은 두 갈래 다 빛과 무관하다(propagation.md §3).
+     그래서 자리 고르기를 플레이어에게 안 묻는다 — 물으면 의미 없는 선택이 하나 늘 뿐이다.
+   ⚠ 자리가 있어야 말풍선이 뜨고 캐릭터가 걸어간다(screenPosOf · actAt 이 열쇠를 푸는 길). */
+function cutPlaceOpt() {
+  const room = io.light.room || {};
+  const slots = room.slots || [];
+  const taken = new Set();
+  const p = pot0(S); if (p && p.slotId) taken.add(p.slotId);
+  const b = S.firstPlay && S.firstPlay.beansprout; if (b && b.slotId) taken.add(b.slotId);
+  for (const c of cuttingsOf(S)) if (c.slotId) taken.add(c.slotId);
+  const s = slots.find(x => x && !taken.has(x.slotId)) || slots[0] || null;
+  return { at: s ? atFromSlot(s) : null, size: room.size, slots, snapDist: 0 };
+}
+
+/* ① 자르기 — 캐릭터가 모주 앞으로 가서 모션을 하고 난 뒤에 논리가 돈다 */
+function doCut(nodeId, container) {
+  const p = pot0(S);
+  if (!p) return;
+  doAct('harvest', () => reallyCut(nodeId, container),
+        { key: p.id, ko: '삽수 자르는 중' });
+}
+const reallyCut = guard((nodeId, container) => {
+  const { nodes } = cutNodesNow();
+  if (!nodes) {
+    const e = new Error('아직 자를 수 없습니다 — 식물의 마디를 못 읽었습니다');
+    e.tutorialInput = true; throw e;
+  }
+  const pl = cutPlaceOpt();
+  /* ★ takeCutting 이 던지는 사유는 **전부 플레이어 입력**이다 — 잎꽂이 마디를 골랐거나,
+     이미 자른 마디이거나, 용기 재고가 없거나, 모주가 끝나는 자르기다.
+     고장이 아니므로 안내로 내려 잡는다(안 그러면 한 번의 오탭에 판이 통째로 잠긴다). */
+  let c;
+  try {
+    c = takeCutting(S, { potId: pot0(S).id, nodes, nodeId, container,
+                         at: pl.at, size: pl.size, slots: pl.slots, snapDist: pl.snapDist,
+                         log: m => pushLog(S, m) });
+  } catch (e) { e.tutorialInput = true; throw e; }
+  const m = METHODS[c.method];
+  banner('✂ 삽수를 잘랐습니다',
+         CONTAINERS[c.container].ko + ' · ' + m.rootDays + '일 뒤에 뿌리가 납니다' +
+         (m.canDie ? ' · ' + m.nodeDays + '일 뒤 혹이 나면 분갈이해야 삽니다'
+                   : ' · 기한은 없습니다'));
+  syncRoom(); draw();
+});
+
+/* ② 분갈이 — ★안 하면 죽는다. 그래서 못 걸어갔을 때도 논리는 돌린다(doAnyway) */
+function doRepot(id) {
+  const c = cuttingsOf(S).find(x => x.id === id);
+  if (!c) return;
+  doAct('sow', () => reallyRepot(id),
+        { key: cutKeyOf(c), ko: '분갈이하는 중', doAnyway: true });
+}
+const reallyRepot = guard((id) => {
+  /* 분갈이가 던지는 사유도 전부 입력이다(아직 뿌리가 없다 · 포트 재고가 없다 · 이미 흙이다) */
+  try { repotCutting(S, id, { log: m => pushLog(S, m) }); }
+  catch (e) { e.tutorialInput = true; throw e; }
+  banner('삽수를 분갈이했습니다', '이제 죽지 않습니다 — 유리병은 돌려받았습니다');
+  syncRoom(); draw();
+});
+
+/* ③ 팔기 — 이사비 150만을 모으는 꾸준수입 경로다.
+   ★걸어가지 않는다 — 파는 것은 인터넷 주문과 같은 창구이고(몬스테라 팔기도 그렇다),
+     손 동작을 붙이면 파는 데만 연출이 둘(자르기·팔기) 걸리게 된다. */
+const doSellCutting = guard((id) => {
+  let r;
+  try { r = sellCutting(S, id, { log: m => pushLog(S, m) }); }
+  catch (e) { e.tutorialInput = true; throw e; }
+  banner('삽수를 팔았습니다',
+         r.price.won.toLocaleString() + '원' +
+         (r.containerReturned ? ' · 유리병은 남습니다' : ''));
+  syncRoom(); draw();
+});
+
+/* 삽수 상자 — 자를 마디 목록과 가진 삽수 목록 */
+function drawCuttings() {
+  const box = $('cutBox');
+  if (!box) return;
+  const p = pot0(S);
+  const list = cuttingsOf(S);
+  /* 모주가 있어야 자를 것이 생긴다. 이미 자른 것이 있으면 모주를 팔았어도 보여야 한다 */
+  const open = !!(p || list.length);
+  box.style.display = open ? '' : 'none';
+  if (!open) return;
+
+  let st = null; try { st = shopStatus(S); } catch { return; }
+  const novice = isNoviceMode(S);
+
+  /* ── 자를 수 있는 마디 ── */
+  const { nodes, ok } = cutNodesNow();
+  const rows = [];
+  if (!p) rows.push('<div class="cutRow"><div class="nm">모주가 없습니다<small>먼저 몬스테라가 있어야 자릅니다</small></div></div>');
+  else if (!nodes) rows.push('<div class="cutRow"><div class="nm">아직 자를 마디가 없습니다<small>식물이 더 자라야 합니다</small></div></div>');
+  else if (!ok.length) {
+    /* ★「왜 회색인가」를 말한다. 총량 제약(propagation §유한성)은 화면에 안 보이므로
+       안 알려 주면 "버튼이 그냥 안 눌린다"로만 보인다. */
+    let b = null; try { b = cutBudgetOf(S, nodes, { potId: p.id }); } catch { }
+    rows.push('<div class="cutRow"><div class="nm">지금은 자를 마디가 없습니다<small>' +
+      (b ? '모주 잎 ' + b.motherLeaves + '장 중 ' + b.lostLeaves +
+           '장을 이미 잘랐습니다 — 새 잎이 날 때까지 기다립니다'
+         : '새 잎이 날 때까지 기다립니다') + '</small></div></div>');
+  } else {
+    for (const n of ok.slice(0, 5)) {
+      let sellWon = 0;
+      try { sellWon = priceOf({ leaves: n.leaves, variegatedLeaves: n.variegatedLeaves }).won; } catch { }
+      /* ★★ 「목록에 떠 있는데 누르면 던지는」 마디를 없앤다.
+         `cuttableNow` 는 총량만 보고, 「초보에서 모주를 끝내는 자르기」는
+         takeCutting 이 따로 막는다. 그 사유를 화면이 물어볼 데가 없어서
+         예전에는 그런 마디가 멀쩡히 눌렸고, 누르면 판이 잠겼다
+         (tools/probe_cutting_ui.mjs 가 잡았다 — 도착 직후 몬스테라가 정확히 그 상태다).
+         이제 propagation.cutBlockedReason 이 그 사유까지 낸다 — **한 곳에서** 묻는다. */
+      let why = null;
+      try { why = cutBlockedReason(S, nodes, n.nodeId, { potId: p.id }); } catch { }
+      const btn = (cid) => {
+        const item = containerItemOf(cid);
+        const have = item ? (st.stock[item] || 0) : 0;
+        const ko = cid === 'jar' ? '병에' : '흙에';
+        const off = why || !have;
+        const tip = why ? why : (have ? '' : CONTAINERS[cid].ko + '을(를) 먼저 주문하세요');
+        return '<button class="ghost" data-cut="' + n.nodeId + '" data-cont="' + cid + '"' +
+               (off ? ' disabled title="' + tip.replace(/"/g, '') + '"' : '') +
+               '>' + ko + '</button>';
+      };
+      rows.push('<div class="cutRow"><div class="nm">잎 ' + n.leaves + '장' +
+        (n.variegatedLeaves ? ' · 무늬 ' + n.variegatedLeaves + '장' : '') +
+        '<small>' + n.nodeId + ' · ' + n.stem + ' · ' +
+        (why ? why : '뿌리내면 팔 수 있습니다') + '</small></div>' +
+        '<div class="won">' + sellWon.toLocaleString() + '원</div>' + btn('jar') + btn('soil') + '</div>');
+    }
+  }
+  $('cutNodes').innerHTML = rows.join('');
+  for (const b of $('cutNodes').querySelectorAll('[data-cut]'))
+    b.onclick = guard(() => doCut(b.dataset.cut, b.dataset.cont));
+
+  /* ── 가진 삽수 ── */
+  const mine = [];
+  for (const c of list) {
+    let v = null; try { v = cuttingSnapshot(S, c); } catch { continue; }
+    let sellWon = 0;
+    try { sellWon = priceOf({ leaves: v.leaves, variegatedLeaves: v.variegatedLeaves }).won; } catch { }
+    const dying = v.status === 'node';
+    const canSell = SELLABLE_CUTTING_STATUS.includes(v.status);
+    const havePot = (st.stock.pot || 0) > 0;
+    const why = v.status === 'rooting'
+      ? (METHODS[c.method].rootDays + '일짜리 · ' + v.days + '일째')
+      : v.statusKo;
+    mine.push('<div class="cutRow' + (dying ? ' warn' : '') + '"><div class="nm">' +
+      v.containerKo + ' · 잎 ' + v.leaves + '장' + (v.variegated ? ' · 무늬' : '') +
+      '<small>' + why + (dying && v.daysLeft != null ? ' · ★분갈이까지 ' + v.daysLeft + '일' : '') +
+      '</small></div>' +
+      (dying ? '<button class="primary" data-repot="' + c.id + '"' +
+               (havePot ? '' : ' disabled title="검은 모종포트를 먼저 주문하세요"') +
+               '>분갈이</button>' : '') +
+      (canSell ? '<button class="ghost" data-sell="' + c.id + '">팔기 ' +
+                 sellWon.toLocaleString() + '원</button>' : '') + '</div>');
+  }
+  $('cutList').innerHTML = mine.length ? mine.join('')
+    : '<div class="cutRow"><div class="nm">가진 삽수가 없습니다<small>위에서 마디를 하나 잘라 보세요</small></div></div>';
+  for (const b of $('cutList').querySelectorAll('[data-repot]'))
+    b.onclick = guard(() => doRepot(b.dataset.repot));
+  for (const b of $('cutList').querySelectorAll('[data-sell]'))
+    b.onclick = guard(() => doSellCutting(b.dataset.sell));
+
+  /* ── 한 줄 안내 — ★죽는 규칙과 **파산 탈출구**를 같이 적는다 ──
+     탈출구를 모르면 "포트 살 돈이 없으니 삽수는 죽는다"가 된다.
+     재서 확인했다(test_cutting_wiring 검사 F): 혹 난 삽수 12,000원 > 포트 7,000원. */
+  const dyingN = list.filter(c => c.status === 'node').length;
+  $('cutHint').textContent = dyingN
+    ? ('⚠ 분갈이를 기다리는 삽수 ' + dyingN + '개 — 유예 ' +
+       graceDaysOf('water', novice) + '일을 넘기면 시들어 사라집니다. ' +
+       '포트를 못 사면 그 전에 팔아도 됩니다 — 삽수 값이 포트값보다 높습니다.')
+    : ('물꽂이(병)는 ' + METHODS.water.rootDays + '일에 뿌리가 나고 ' +
+       METHODS.water.nodeDays + '일에 혹이 납니다 — 그때 분갈이를 해야 삽니다. ' +
+       '흙에 바로 심으면 ' + METHODS.pot.rootDays + '일로 느리지만 죽지 않습니다.');
+}
+
 function drawShop() {
   const box = $('shopBox');
   const ts = S.tutorial;
@@ -1769,21 +2011,34 @@ function actBar(on, ko, p01) {
   el.querySelector('i').style.setProperty('--p', Math.round((p01 || 0) * 100) + '%');
 }
 /* kind 를 하고 나서 done() 을 부른다. 연출이 되면 연출 뒤에, 안 되면 바로. */
-function doAct(kind, done) {
+/* ★ opt.key · opt.ko 를 밖에서 줄 수 있게 뜼워 둔다 (2026-08-04 삽수).
+     key  어느 물건 앞으로 가나. 안 주면 예전대로 콩나물 시루다
+     ko   게이지에 적힐 말. 동작 이름(kind)과 따로 둔 이유는 하나다 —
+          room_view.ACT_SPEC 에 없는 kind 를 주면 **던진다**(읽고 확인했다).
+          그래서 삽수도 있는 셋 안에서 가장 가까운 것을 재사용한다 —
+            자르기 → harvest(손을 뻗어 따는 동작)
+            분갈이 → sow    (ACT_SPEC.sow 의 클립 이름이 말 그대로 'repot' 이다)
+          ⚠ room_view.js 는 다른 작업자 것이라 손대지 않는다. */
+function doAct(kind, done, opt = {}) {
   if (acting) return;                       /* 두 동작이 겹치면 게이지가 뒤엉킨다 */
-  const key = cropKey();
+  const key = opt.key || cropKey();
+  const ko = opt.ko || ACT_KO[kind] || '';
   const canAct = roomView && typeof roomView.actAt === 'function' && key && !isFastForwarding();
   if (!canAct) { done(); return; }
   acting = true;
-  actBar(true, ACT_KO[kind] || '', 0);
+  actBar(true, ko, 0);
   roomView.actAt(key, kind, {
-    onProgress: (p, phase) => actBar(true, phase === 'walk' ? '가는 중' : (ACT_KO[kind] || ''), p),
+    onProgress: (p, phase) => actBar(true, phase === 'walk' ? '가는 중' : ko, p),
     onDone: () => { acting = false; actBar(false); try { done(); } catch (e) { throw e; } },
     onFail: (why) => {
       acting = false; actBar(false);
       /* ★못 갔으면 **왜인지 말한다.** 구석에 밀어 넣은 화분이 원인이라
          이 안내가 곧 배치를 가르치는 재료가 된다. */
       banner('가지 못했습니다', (why || '') + ' — 화분을 손이 닿는 자리로 옮겨 보세요');
+      /* ★분갈이는 못 갔다고 끝나면 **삽수가 죽는다.** 그래서 여기서만은
+         연출을 포기하고 논리를 돌린다 — 사람이 못 갔다고 조각이 시들면
+         그건 규칙이 아니라 길찾기 사고다(물주기가 사람 없이도 돌아가는 것과 같은 사상). */
+      if (opt.doAnyway) { try { done(); } catch (e) { throw e; } }
     }
   }).catch(() => { acting = false; actBar(false); });
 }
@@ -1828,7 +2083,96 @@ function drawWater() {
      여기서 낮은 빈도로 따라간다 — 말풍선 한둘의 투영이라 값이 싸다.
      ⚠ 말풍선이 없으면 아예 안 돈다. 노는 화면을 계속 깨우면 폰 배터리가 탄다. */
 let markTick = null;
+/* ★★ 말풍선 우선순위 (2026-08-04 삽수)
+   ------------------------------------------------------------
+   박사님: "말풍선이 우층상단에 나와서 (오브젝트보다 크게) 클릭이 쉽고 파악이 되도록."
+   여럿을 한꺼번에 띄우면 소음이라 **한 갈래만** 낸다. 그 순서를 여기서 정한다.
+
+     ① 죽을 삽수    — 안 하면 사라진다. 되돌릴 수 없으므로 무조건 먼저다
+     ② 콩나물       — 거두기·심기·물주기 (예전부터 있던 것)
+     ③ 자르기·팔기  — 놓쳐도 잃는 것이 없다. 급한 것이 없을 때만 뜬다
+
+   ⚠ ①을 ② 뒤에 두면 "물 줄 게 있는 날"마다 삽수 경고가 통째로 가려진다.
+     그 상태로 유예 8일이 지나면 경고를 한 번도 못 보고 삽수가 사라진다. */
 function markList() {
+  const urgent = cutMarks(true);
+  if (urgent.length) return urgent;
+  const crop = cropMarks();
+  if (crop.length) return crop;
+  return cutMarks(false);
+}
+
+/* 삽수 말풍선.
+     urgent=true   ★분갈이 기한이 도는 것만. 안 하면 죽으므로 남은 날짜를 같이 적는다
+     urgent=false  자를 수 있다 · 팔 수 있다 (급하지 않은 것) */
+function cutMarks(urgent) {
+  const out = [];
+  const list = cuttingsOf(S);
+  if (urgent) {
+    /* 남은 날이 적은 것부터 — 둘이 겹치면 먼저 죽는 쪽을 띄운다 */
+    const dying = list.filter(c => c.status === 'node')
+      .sort((a, b) => (a.deadlineDay || 0) - (b.deadlineDay || 0));
+    for (const c of dying.slice(0, 1)) {
+      const key = cutKeyOf(c);
+      if (!key) continue;
+      const left = Number.isFinite(c.deadlineDay) ? c.deadlineDay - S.day : null;
+      let havePot = false;
+      try { havePot = (shopStatus(S).stock.pot || 0) > 0; } catch { }
+      if (havePot)
+        out.push({ key, tone: 'warn',
+                   ko: '🪴 분갈이' + (left != null ? ' D-' + left : ''),
+                   go: () => doRepot(c.id) });
+      else {
+        /* ★포트가 없으면 **파는 길**을 띄운다. 이게 파산 탈출구다 —
+           삽수 값(12,000원)이 포트값(7,000원)보다 높아서 팔면 다시 살 수 있다.
+           "포트를 사세요"만 띄우면 돈 없는 플레이어에게는 죽으라는 말이 된다. */
+        let w = 0;
+        try { w = priceOf({ leaves: c.source.leaves, variegatedLeaves: c.source.variegatedLeaves }).won; } catch { }
+        out.push({ key, tone: 'warn',
+                   ko: '💰 팔기 ' + w.toLocaleString() + '원' + (left != null ? ' D-' + left : ''),
+                   go: () => doSellCutting(c.id) });
+      }
+    }
+    return out;
+  }
+
+  /* 팔 때가 된 삽수 — 뿌리를 냈고 기한이 안 도는 것 */
+  const sellable = list.filter(c => c.status === 'rooted' || c.status === 'established');
+  for (const c of sellable.slice(0, 1)) {
+    const key = cutKeyOf(c);
+    if (!key) continue;
+    let w = 0;
+    try { w = priceOf({ leaves: c.source.leaves, variegatedLeaves: c.source.variegatedLeaves }).won; } catch { }
+    out.push({ key, tone: 'crop', ko: '💰 삽수 팔기 ' + w.toLocaleString() + '원',
+               go: () => doSellCutting(c.id) });
+  }
+  if (out.length) return out;
+
+  /* 자를 수 있다 — 용기 재고가 있을 때만. 없으면 "누르면 안 되는 말풍선"이 된다 */
+  const p = pot0(S);
+  if (p) {
+    const { ok } = cutNodesNow();
+    let jar = 0, pot = 0;
+    try { const st = shopStatus(S); jar = st.stock.jar || 0; pot = st.stock.pot || 0; } catch { }
+    /* ★ 「누르면 안 되는 말풍선」을 안 만든다 — 막힌 마디는 빼고 센다 */
+    let free = 0;
+    if (ok.length) {
+      const { nodes } = cutNodesNow();
+      for (const n of ok) {
+        let why = null;
+        try { why = cutBlockedReason(S, nodes, n.nodeId, { potId: p.id }); } catch { why = '알 수 없음'; }
+        if (!why) free++;
+      }
+    }
+    if (free && (jar || pot))
+      out.push({ key: p.id, tone: '', ko: '✂ 삽수 자르기',
+                 go: () => { window.__byeotSheet.open(); window.__byeotSheet.tab && window.__byeotSheet.tab('room');
+                             const el = $('cutBox'); if (el) el.scrollIntoView({ block: 'nearest' }); } });
+  }
+  return out;
+}
+
+function cropMarks() {
   const out = [];
   const fp = S.firstPlay;
   if (!fp || !fp.enabled) return out;
@@ -1888,6 +2232,7 @@ function refreshOverlays() {
   try { drawMarks(); }  catch (e) { console.warn('[말풍선]', e && e.message); }
   try { drawHarvest(); } catch (e) { console.warn('[거두기]', e && e.message); }
   try { drawWater(); }  catch (e) { console.warn('[물주기]', e && e.message); }
+  try { drawCuttings(); } catch (e) { console.warn('[삽수]', e && e.message); }
 }
 function drawMarks() {
   const box = $('marks');
@@ -2047,6 +2392,7 @@ function draw() {
   drawWater();              /* 물을 줘야 하나 */
   try { drawMarks(); } catch (e) { console.warn('[말풍선]', e && e.message); }
   drawShop();               /* 주문·다시 심기·팔기 */
+  drawCuttings();           /* ★삽수 — 자르기·분갈이·팔기 (분갈이가 없으면 삽수는 반드시 죽는다) */
   ffHint();                 /* 상태가 바뀌면 "무엇까지 감는지"도 바뀐다 */
   syncRoom();               /* 방 전경도 같은 상태를 본다 — 화면이 둘로 갈리면 안 된다 */
   updateHint();             /* 다음에 무엇을 누르면 되는지 손가락으로 */
@@ -2099,7 +2445,15 @@ const RECOVERABLE_TURN_STATES = new Set(['core_rolled_back']);
 function isRecoverable(e) {
   if (e && e.recoverable === true) return true;
   if (e && e.turnState) return RECOVERABLE_TURN_STATES.has(e.turnState);
-  return !!(e && e.firstPlayInput);          // 시루 미배치 같은 입력 안내
+  /* ★★ `tutorialInput` 도 되돌릴 수 있는 것으로 본다 (2026-08-04).
+     ------------------------------------------------------------
+     shop.js 는 "돈이 모자랍니다" · "먼저 주문해 주세요" 에 이 표를 붙이면서
+     주석에 **"안내지 고장이 아니다"** 라고 적어 뒀다. 그런데 여기서는 안 읽고 있었다 —
+     그래서 재고 없이 [자르기]를 한 번 누르면 `hardLock=1` 이 되어
+     [다음 날]·[빨리감기]까지 전부 잠겼다(tools/probe_cutting_ui.mjs 가 잡았다).
+     삽수를 붙이기 전에는 이 길로 잘 안 들어왔을 뿐, 구멍은 원래 있었다
+     (상점에서 돈이 모자란 채로 [주문]을 눌러도 같은 일이 난다). */
+  return !!(e && (e.firstPlayInput || e.tutorialInput));   // 시루 미배치·재고 없음 같은 입력 안내
 }
 /* 자리를 고쳤을 때 다시 열어 주는 창구 — 잠긴 채로 방치하지 않는다. */
 function unlockAfterFix() {
@@ -2356,6 +2710,8 @@ let syncSeq = 0;
    폰에서 실제로 났다("몬스테라를 옮기면 이동이 아니라 복사가 됐어").
    setPlant 은 그 자리에 놓기만 하지 다른 자리를 치우지 않는다. 치우는 건 여기 몫이다. */
 const shownAt = { monstera: null, beansprout: null };
+/* 방에 실제로 세워 둔 삽수 id — 판 것·죽은 것을 걷어내려면 무엇을 세웠는지 알아야 한다 */
+const shownCuts = new Set();
 function clearIfMoved(kind, nowSlot, warn) {
   const was = shownAt[kind];
   if (was && was !== nowSlot) {
@@ -2412,6 +2768,38 @@ function syncRoom() {
         ? roomView.setPlantAt(BEANSPROUT_ID, b.at, cropSpec)
         : roomView.setPlant(b.slotId, cropSpec)).catch(warn('콩나물'));
     }
+    /* ★ 삽수도 방에 보인다 (2026-08-04).
+       ------------------------------------------------------------
+       ⚠ 안 그리면 **말풍선이 아예 안 뜬다** — roomView.screenPosOf / actAt 은
+         resolveKey 로 열쇠를 푸는데, 자유 좌표 열쇠(`free:cut_01`)는 그 자리에
+         화분이 실제로 놓여 있을 때만 풀린다. 즉 3D 는 장식이 아니라 배선이다.
+
+       ★ 종류는 'monstera' 를 쓴다. room_view.buildPlantGroup 은 모르는 kind 를 **던지고**
+         (아는 것은 monstera·beansprout 둘뿐), 그 파일은 다른 작업자 것이라 손대지 않는다.
+         대신 지름을 용기 크기(CONTAINERS[*].realMaxM = 0.12~0.13m)로 묶어서
+         **작은 조각**으로 보이게 한다 — 몬스테라 기본 화분보다 한참 작다.
+       ★ 생장일은 조각의 나이(c.days)에 어린 개체 밑값을 더해 쓴다. 모주의 143일을
+         그대로 넘기면 다 자란 그루가 병 안에 축소돼 들어앉는다 — 삽수로 안 읽힌다.
+         형태의 정본은 어차피 growth 소유이고 삽수는 그 계약 밖이다(propagation.js §②). */
+    const want = new Set();
+    for (const c of cuttingsOf(S)) {
+      if (!c.at && !c.slotId) continue;
+      const cont = CONTAINERS[c.container] || {};
+      const spec = { kind: 'monstera', potId: c.id, variegated: !!c.variegated,
+                     potD: cont.realMaxM || 0.12,
+                     growthDays: Math.min(120, 34 + (c.days || 0)) };
+      want.add(c.id);
+      Promise.resolve(c.at && roomView.setPlantAt
+        ? roomView.setPlantAt(c.id, c.at, spec)
+        : roomView.setPlant(c.slotId, spec)).catch(warn('삽수 ' + c.id));
+    }
+    /* 판 것·죽은 것은 걷는다. 안 걷으면 **판 삽수가 방에 그대로 남는다** —
+       화분에서 이미 겪은 일이라(shownAt 주석) 같은 실수를 되풀이하지 않는다. */
+    for (const id of [...shownCuts]) if (!want.has(id)) {
+      shownCuts.delete(id);
+      try { if (roomView.removePlantOf) roomView.removePlantOf(id); } catch { }
+    }
+    for (const id of want) shownCuts.add(id);
   } catch (e) { warn('방')(e); }
 }
 /* 배치 모드 — 탭으로 고르고, 놓을 수 있는 자리를 밝기와 함께 빛나게 한다.

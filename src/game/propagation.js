@@ -329,6 +329,21 @@ export function motherStatsNow(S, stats, opt = {}) {
   return { leaves, variegatedLeaves: varie, lostLeaves: lost, rawLeaves: stats.leaves };
 }
 
+/* ★ 이 마디를 자르면 **모주가 끝나나** — 자른 뒤 모주에 잎이 한 장도 안 남는 경우.
+   ------------------------------------------------------------
+   판정 자체는 예전부터 `takeCutting` 안에 있었다. 밖으로 뺀 이유는 하나다 —
+   **화면이 같은 답을 물어볼 데가 없었다.** 그래서 game.html 의 자르기 목록에는
+   초보에서 던질 마디가 그대로 떠 있었고, 누르면 예외가 났다(실제로 났다.
+   tools/probe_cutting_ui.mjs 가 그걸 잡았다). 두 곳에서 세면 반드시 어긋난다.
+
+   ⚠ 여기서 새 규칙을 만들지 않았다. 식은 `takeCutting` 이 쓰던 그것 그대로고,
+     `takeCutting` 이 이제 이 함수를 부른다 — 셈은 한 곳에만 있다. */
+export function cutEndsMother(S, nodes, nodeId, opt = {}) {
+  const node = (nodes || []).find(n => n && n.nodeId === nodeId);
+  if (!node) return false;
+  return cutBudgetOf(S, nodes, opt).leftLeaves - node.leaves < 1;
+}
+
 /* 왜 못 자르나 — 사람이 읽을 수 있는 사유. 없으면 null(자를 수 있다). */
 export function cutBlockedReason(S, nodes, nodeId, opt = {}) {
   const node = (nodes || []).find(n => n && n.nodeId === nodeId);
@@ -345,6 +360,12 @@ export function cutBlockedReason(S, nodes, nodeId, opt = {}) {
     return `${nodeId} 는 잎 ${node.leaves}장짜리인데 모주에 ${b.leftLeaves}장만 남았습니다 ` +
            `(잎 ${b.motherLeaves}장 중 ${b.lostLeaves}장을 이미 잘랐습니다) — ` +
            `새 잎이 날 때까지 기다려야 합니다`;
+  /* ★ 초보에서 모주를 끝내는 자르기 — `takeCutting` 이 던지는 마지막 사유다.
+     예전에는 여기 없어서 **화면이 "왜 회색인가"를 말할 수 없었다**(그래서 안 회색이었고
+     누르면 던졌다). 사유를 내는 곳은 한 군데라야 한다는 이 함수의 취지 그대로다. */
+  if (isNoviceMode(S) && cutEndsMother(S, nodes, nodeId, opt))
+    return `${nodeId} 를 자르면 모주에 예비혹이 하나도 안 남아 모주가 끝납니다 — ` +
+           `초보 모드에서는 이 마디를 자를 수 없습니다`;
   return null;
 }
 
@@ -401,13 +422,14 @@ export function takeCutting(S, opt = {}) {
      ★ 판정을 "다른 마디가 목록에 남아 있나"에서 **"잎이 남나"** 로 바꿨다(2026-08-03).
        growth 목록에는 이미 잘려 나간 자리도 그대로 남아 있어서(위 §유한성) 마디 개수로 세면
        거짓말이 된다 — 잎을 다 잘라낸 뒤에도 "아직 마디가 넷 남았다"고 통과시킨다.
-       남은 잎으로 세면 형태를 몰라도 항상 맞고, 초보에서 **모주가 최소 한 장을 지킨다.** */
-  const leftAfter = cutBudgetOf(S, nodes, { potId: pot.id }).leftLeaves - node.leaves;
-  const wouldEndMother = leftAfter < 1;
+       남은 잎으로 세면 형태를 몰라도 항상 맞고, 초보에서 **모주가 최소 한 장을 지킨다.**
+     ★ 초보에서 막는 일 자체는 이제 **위 `blocked` 가 한다**(2026-08-04). 여기서 따로 던지지
+       않는 이유는 화면 때문이다 — 사유를 `cutBlockedReason` 밖에 두면 game.html 이
+       "왜 이 마디는 회색인가"를 물어볼 데가 없어서 **던질 마디를 멀쩡히 눌리게** 띄운다
+       (실제로 그랬고 tools/probe_cutting_ui.mjs 가 잡았다). 여기 남은 값은 자유 모드의
+       경고와 `pot.motherEnded` 기록에만 쓴다. */
+  const wouldEndMother = cutEndsMother(S, nodes, node.nodeId, { potId: pot.id });
   const novice = isNoviceMode(S);
-  if (wouldEndMother && novice)
-    throw new Error(`[삽수] ${node.nodeId} 를 자르면 모주에 예비혹이 하나도 안 남아 모주가 끝납니다 — ` +
-      `초보 모드에서는 이 마디를 자를 수 없습니다`);
 
   const cont = CONTAINERS[opt.container];
   if (!cont) throw new Error(`[삽수] 모르는 용기입니다: ${opt.container} ` +
