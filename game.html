@@ -170,6 +170,18 @@
   #sheet select,#sheet input[type=number]{min-height:var(--tap);font-size:14px}
   #sheet .btns button{min-height:var(--tap);flex:1 0 auto}
 
+  /* ══ 살림 장부 — 하루에 얼마 나가고 콩나물이 얼마를 덜어 주나 ══════════ */
+  #ledger{margin:8px 0 4px;font-size:12.5px}
+  #ledger .lrow{display:flex;justify-content:space-between;gap:8px;padding:4px 0;color:var(--dim)}
+  #ledger .lrow b{font-family:'Jua';font-weight:400;color:rgba(255,255,255,.88)}
+  #ledger .lrow.save b{color:var(--leaf)}
+  #ledger .lrow.net{border-top:1px solid rgba(255,255,255,.12);margin-top:3px;padding-top:6px}
+  #ledger .lrow.net span,#ledger .lrow.net b{color:#fff}
+  #ledger .lrow.cash b{color:var(--gold)}
+  #ledger .tip{margin-top:7px;padding:7px 9px;border-radius:9px;line-height:1.55;
+    background:rgba(255,180,84,.09);border:1px solid rgba(255,180,84,.20);color:rgba(255,255,255,.8)}
+  #ledger .tip b{color:var(--gold);font-family:'Jua';font-weight:400}
+
   /* ══ 인터넷 주문 — 한 줄에 이름·값·[주문] ══════════════════════════ */
   #shopList{display:flex;flex-direction:column;gap:6px;margin-bottom:8px}
   .shopRow{display:flex;align-items:center;gap:8px;padding:7px 9px;border-radius:11px;
@@ -730,6 +742,9 @@
       <div class="box" id="tutBox" style="display:none">
         <h3>반지하 살림</h3>
         <div class="itemline" id="tutSeason">여름</div>
+        <!-- ★하루에 얼마가 나가고 콩나물이 얼마를 덜어 주는지 (박사님 2026-08-04).
+             "시루를 더 살까"는 이 표가 없으면 감으로 정하게 된다. -->
+        <div id="ledger"></div>
         <div class="quest" id="tutGoal" style="margin:8px 0"></div>
         <div id="tutCheck" class="itemline"></div>
         <div class="btns">
@@ -1516,6 +1531,58 @@ function drawTutorial(living) {
    ★첫 시루는 공짜로 받는다. 그 뒤로는 주문이다 — 결제는 즉시, 물건은 하루 이틀 뒤.
      그래서 "가진 것"과 "오는 중"을 나란히 보여 준다. 안 그러면 두 번 주문한다. */
 const koOf = (id) => (catalogList().find(x => x.id === id) || {}).ko || id;
+
+/* ══ 살림 장부 (박사님 2026-08-04) ══════════════════════════
+   "일자별 나가는 식비, 콩나물시루 1개당 줄어드는 식비 같은 식으로"
+   ★시루를 더 살지는 **산수**로 정해지는 문제다. 그런데 그 산수가 화면에 없어
+     감으로 정해야 했다. 하루 상한까지 있어서 무작정 사면 그냥 낭비다. */
+function drawLedger() {
+  const el = $('ledger');
+  if (!el) return;
+  const fp = S.firstPlay, ts = S.tutorial, R = fp && fp.rules;
+  if (!R || !ts || !ts.enabled || !fp.completed) { el.innerHTML = ''; return; }
+
+  const cap = R.dailyCropMealCap, mealWon = R.mealWon;
+  const daily = R.dailyFoodWon;                       // 하루 식비 정가
+  const savedToday = (fp.food && fp.food.lastFoodSavedWon) || 0;
+  const sirus = Math.max(0, Math.round((fp.beansprout && fp.beansprout.sirus) || 0));
+  const best = R.quality[0];                          // 어두운 자리 = 하얀고 아삭 = 제일 많은 끼니
+  /* 시루 하나가 한 번 키우는 동안(harvestDays) 내는 끼니 — 그걸 하루로 나눈다 */
+  const perSiruDay = best.meals * mealWon / R.harvestDays;
+  const capWon = cap * mealWon;
+  /* 상한을 채우는 시루 수 — 이것보다 많으면 남는 콩나물은 버려진다 */
+  const need = Math.ceil(cap * R.harvestDays / best.meals);
+  const won = n => Math.round(n).toLocaleString('ko-KR') + '원';
+  const row = (k, v, cls) => `<div class="lrow ${cls || ''}"><span>${k}</span><b>${v}</b></div>`;
+
+  const pantry = Math.max(0, Math.round((fp.food && fp.food.pantryMeals) || 0));
+  const harvested = !!(fp.beansprout && fp.beansprout.harvested);
+
+  /* ★다음에 무엇을 해야 하는지까지 말한다. 숫자만 보여 주면
+     "그래서 어쩌라고"가 된다 — 이 판은 살지 말지를 정하려고 보는 것이다. */
+  let tip;
+  if (sirus <= 0)
+    tip = '시루가 없습니다. 씨앗과 시루를 주문해 다시 심으면 식비가 다시 줄어듭니다.';
+  else if (harvested && pantry <= 0)
+    tip = `다 먹었습니다. <b>다시 심어야</b> 식비가 다시 줄어듭니다 — `
+        + `씨앗 ${won(R.seedWonPerSiru * 1.4)}으로 ${R.harvestDays}일에 ${won(best.meals * mealWon)}을 아낍니다.`;
+  else if (sirus < need)
+    tip = `시루 <b>${sirus}개</b> — 하루 상한(${won(capWon)})을 아직 못 채웁니다.<br>`
+        + `<b>${need}개</b>까지는 늘릴수록 더 아낍니다.`;
+  else
+    tip = `시루 <b>${sirus}개</b> — 하루 상한(${won(capWon)})을 채웁니다.<br>`
+        + `★<b>더 사도 소용없습니다</b> — 남는 끼니는 쉬어서 버려집니다.`;
+
+  el.innerHTML =
+      row('하루 식비', won(daily))
+    + row('콩나물로 아낌', savedToday ? '−' + won(savedToday) : '—', 'save')
+    + row('오늘 실제로 나가는 돈', won(Math.max(0, daily - savedToday)), 'net')
+    + row('보유금', won(ts.cashWon || 0), 'cash')
+    + row('남은 끼니', pantry ? `${pantry}끼 (${won(pantry * mealWon)})` : '없음')
+    + row('시루 1개가 아끼는 돈', `하루 ${won(perSiruDay)}`)
+    + `<div class="tip">${tip}</div>`;
+}
+
 function drawShop() {
   const box = $('shopBox');
   const ts = S.tutorial;
@@ -1734,6 +1801,7 @@ function draw() {
   renderLog($('log'), S);
   drawJourney();
   drawPlantToday();         /* 오늘 자랐나 — 안 자랐으면 왜인지까지 */
+  drawLedger();             /* 하루에 얼마 나가고 콩나물이 얼마를 덜어 주나 */
   drawShop();               /* 주문·다시 심기·팔기 */
   ffHint();                 /* 상태가 바뀌면 "무엇까지 감는지"도 바뀐다 */
   syncRoom();               /* 방 전경도 같은 상태를 본다 — 화면이 둘로 갈리면 안 된다 */
