@@ -13,8 +13,9 @@
      활력(vigor)은 표시 취소·구현 보류다(2026-08-02) — 자리를 만들면 판정이 코어로 샌다.
 ============================================================ */
 
-import { createFirstPlayState, placeBeansprout, resowBeansprout, waterBeansprout,
-         beansproutWaterStatus, beansproutHarvestStatus, BEANSPROUT_ID } from './first_play.js';
+import { createFirstPlayState, placeBeansprout, placeCrop, resowBeansprout, waterBeansprout,
+         beansproutWaterStatus, beansproutHarvestStatus, BEANSPROUT_ID,
+         CROP_SITE_IDS, cropKindOf, cropSites, cropSiteOf } from './first_play.js';
 import { createTutorialState } from './tutorial.js';
 import { createShopState, useStock } from './shop.js';
 import { atFromSlot, isFreeSlotId, makeAt, resolvePlacement,
@@ -266,7 +267,10 @@ export function migratePots(S, slots) {
   /* 아직 자리를 안 정한 시루(slotId 조차 없음)는 **마이그레이션 대상이 아니다** —
      빠뜨린 게 아니라 아직 안 놓은 것이라 건너뛴 사유 목록에도 넣지 않는다. */
   const fp = S.firstPlay;
-  if (fp && fp.enabled && fp.beansprout && fp.beansprout.slotId) fill(fp.beansprout, BEANSPROUT_ID);
+  /* ★ 2026-08-05 — 작물 자리가 **종류마다 하나**가 됐다(first_play §작물 자리). 전부 채운다 */
+  if (fp && fp.enabled)
+    for (const site of cropSites(fp))
+      if (site.slotId) fill(site, CROP_SITE_IDS[site.kind || 'beansprout'] || BEANSPROUT_ID);
   /* 몬스테라 쪽은 **사본**이라 값만 맞춰 둔다(정본은 위 S.pots 가 이미 채웠다) */
   if (fp && fp.enabled && fp.monstera && fp.monstera.arrived && fp.monstera.slotId)
     fill(fp.monstera, (pot0(S) && pot0(S).id) || 'monstera');
@@ -289,10 +293,14 @@ export function migratePots(S, slots) {
      같이 실으면 **같은 화분이 계약에 두 번** 실린다(K 검사와 같은 사상). */
 export function placedItems(S) {
   const out = [...(S.pots || [])];
-  const b = S.firstPlay && S.firstPlay.enabled ? S.firstPlay.beansprout : null;
-  if (b && (b.slotId || b.at))
-    out.push({ id: BEANSPROUT_ID, slotId: b.slotId, at: b.at || null,
-               plantId: null, variegated: false, crop: true });
+  /* ★ 2026-08-05 — 작물 자리가 여럿이다. **놓인 자리는 전부** 계약에 실린다 —
+     안 실으면 그 자리의 DLI 를 못 찾아 `cropDliFromReport` 가 던진다(무순이 그 경우다). */
+  if (S.firstPlay && S.firstPlay.enabled)
+    for (const b of cropSites(S.firstPlay))
+      if (b && (b.slotId || b.at))
+        out.push({ id: CROP_SITE_IDS[b.kind || 'beansprout'] || BEANSPROUT_ID,
+                   slotId: b.slotId, at: b.at || null,
+                   plantId: null, variegated: false, crop: true, crop_kind: b.kind || 'beansprout' });
   /* ★ 삽수도 자리를 차지한다 (2026-08-03) — 시루와 **같은 모양**으로 낸다.
      ⚠ `plantId: null` 인 이유는 시루와 같다: 뿌리내리는 동안 삽수는 빛과 무관하므로
        (docs/propagation.md §3) 그 자리에 몬스테라 밴드 판정을 걸 근거가 없다.
@@ -332,10 +340,15 @@ export function setPotAt(S, potOrId, at, opt = {}) {
 export function setCropAt(S, at, opt = {}) {
   const fp = S && S.firstPlay;
   if (!fp || !fp.beansprout) throw new Error('[배치] 첫 플레이 상태가 없습니다 — 놓을 시루가 없습니다');
+  /* ★ 2026-08-05 — `opt.kind` 로 어느 작물 자리인지 고른다. 없으면 콩나물(옛 호출부).
+     ⚠ 자리는 종류마다 따로다 — 무순을 놓아도 콩나물 자리는 안 움직인다(first_play §작물 자리). */
+  const kindId = opt.kind || 'beansprout';
   /* ★ 놓는 날은 물을 준 날이다 (2026-08-04) — 심을 때 물을 붓는 것이 현실이고,
      그래야 "방금 놓았는데 오늘은 마른 날"이 안 생긴다. 날짜는 S 만 안다(§물주기). */
-  const r = placeBeansprout(fp, at, { ...opt, day: S.day });
-  return { cropId: BEANSPROUT_ID, slotId: fp.beansprout.slotId, at: fp.beansprout.at,
+  const r = placeCrop(fp, kindId, at, { ...opt, day: S.day });
+  const site = cropSiteOf(fp, kindId);
+  return { cropId: CROP_SITE_IDS[kindId], kind: kindId,
+           slotId: site.slotId, at: site.at,
            snappedTo: r.snappedTo, dist: r.dist, moved: r.moved, keptDays: r.keptDays };
 }
 
@@ -362,23 +375,28 @@ export function waterCrop(S, opt = {}) {
   const fp = S && S.firstPlay;
   if (!fp || !fp.enabled || !fp.beansprout)
     throw new Error('[물주기] 첫 플레이 상태가 없습니다 — 물을 줄 시루가 없습니다');
-  if (!fp.beansprout.slotId) {
-    const e = new Error('[물주기] 시루를 먼저 방 안에 놓아 주세요');
+  /* ★ 2026-08-05 — `opt.kind` 로 종류를 고른다(기본 콩나물). 자리도 종류마다 따로 본다 */
+  const kindId = opt.kind || 'beansprout';
+  const k = cropKindOf(kindId);
+  const site = cropSiteOf(fp, kindId);
+  if (!site) throw new Error(`[물주기] ${k.ko} 상태가 없습니다`);
+  if (!site.slotId) {
+    const e = new Error(`[물주기] ${k.containerKo}를 먼저 방 안에 놓아 주세요`);
     e.tutorialInput = true;                 // 안내지 고장이 아니다
     throw e;
   }
   const r = waterBeansprout(fp, S.day, opt);
   if (r.watered)
     pushLog(S, r.started > 1
-      ? `💧 시루 ${r.started}개에 물을 주었습니다 — 오늘이 0일차입니다 ` +
-        `(${fp.beansprout.harvestDays}일 뒤에 거둡니다)`
-      : `💧 콩나물에 물을 주었습니다 — 오늘이 0일차입니다 ` +
-        `(${fp.beansprout.harvestDays}일 뒤에 거둡니다` +
-        (r.waiting ? ` · 아직 안 준 시루 ${r.waiting}개` : '') + ')');
+      ? `💧 ${k.containerKo} ${r.started}개에 물을 주었습니다 — 오늘이 0일차입니다 ` +
+        `(${site.harvestDays}일 뒤에 거둡니다)`
+      : `💧 ${k.ko}에 물을 주었습니다 — 오늘이 0일차입니다 ` +
+        `(${site.harvestDays}일 뒤에 거둡니다` +
+        (r.waiting ? ` · 아직 안 준 ${k.containerKo} ${r.waiting}개` : '') + ')');
   return { ...r,
            events: r.watered
-             ? [{ id: 'crop_watered', ko: '콩나물 회전을 시작했습니다',
-                  started: r.started, waiting: r.waiting }]
+             ? [{ id: 'crop_watered', ko: `${k.ko} 회전을 시작했습니다`,
+                  kind: kindId, started: r.started, waiting: r.waiting }]
              : [] };
 }
 
@@ -414,17 +432,26 @@ export function resowCrop(S, opt = {}) {
   const fp = S && S.firstPlay;
   if (!fp || !fp.enabled || !fp.beansprout)
     throw new Error('[콩나물] 첫 플레이 상태가 없습니다 — 다시 심을 시루가 없습니다');
-  const pots = (fp.beansprout.pots || []);
-  const had = Math.max(1, pots.length || Math.round(fp.beansprout.sirus || 1));
+  /* ★ 2026-08-05 — `opt.kind` 로 종류를 고른다(기본 콩나물).
+     ★★ 씨앗·용기 품목도 **작물이 정한다** — `bean_seed`·`siru` 를 여기 박아 두면
+       무순을 심을 때 콩 씨앗이 나간다(재고가 조용히 틀린 데서 빠진다). */
+  const kindId = opt.kind || 'beansprout';
+  const k = cropKindOf(kindId);
+  const site = cropSiteOf(fp, kindId);
+  if (!site) throw new Error(`[${k.ko}] 상태가 없습니다 — 다시 심을 것이 없습니다`);
+  const pots = (site.pots || []);
+  /* ★ 2종째는 0개에서 시작한다(재배판을 사야 생긴다). 콩나물만 "적어도 하나"가 사실이다 */
+  const floor = kindId === 'beansprout' ? 1 : 0;
+  const had = Math.max(floor, pots.length || Math.round(site.sirus || 0));
   const sirus = opt.sirus == null ? had : opt.sirus;
-  if (!Number.isInteger(sirus) || sirus < 1)
-    throw new Error(`[콩나물] 시루 수가 1 이상의 정수가 아닙니다: ${sirus}`);
+  if (!Number.isInteger(sirus) || sirus < floor)
+    throw new Error(`[${k.ko}] ${k.containerKo} 수가 ${floor} 이상의 정수가 아닙니다: ${sirus}`);
   const sirusAdded = Math.max(0, sirus - had);
   /* ★★ 거둔 시루만 다시 심는다 (2026-08-04 · first_play.js §다시 심는다).
      시차 판에서는 늘 일부만 거둬져 있다 — 전부를 요구하면 시차를 둔 판이 영영 못 심는다. */
   const harvestedCount = pots.filter(p => p.harvested).length;
   if (!harvestedCount && !sirusAdded) {
-    const e = new Error('[콩나물] 아직 수확하지 않았습니다 — 거둔 뒤에 다시 심습니다');
+    const e = new Error(`[${k.ko}] 아직 수확하지 않았습니다 — 거둔 뒤에 다시 심습니다`);
     e.tutorialInput = true;
     throw e;
   }
@@ -433,20 +460,20 @@ export function resowCrop(S, opt = {}) {
 
   /* ★ 재고부터 뺀다. resowBeansprout 은 이력을 비우므로 되돌릴 수 없다 —
      "심어 놓고 씨앗이 없어서 실패"가 나면 그 회전이 통째로 사라진다. */
-  if (sirusAdded > 0) useStock(S, 'siru', sirusAdded);
-  useStock(S, 'bean_seed', seedsUsed);             // 시루 하나에 씨앗 한 봉지
+  if (sirusAdded > 0) useStock(S, k.containerItemId, sirusAdded);
+  useStock(S, k.seedItemId, seedsUsed);            // 용기 하나에 씨앗 한 봉지
 
-  const r = resowBeansprout(fp, { ...opt, sirus, day: S.day });
-  pushLog(S, `🌱 콩나물을 다시 심었습니다 — 시루 ${r.resown}개 · 씨앗 ${seedsUsed}봉지를 썼습니다 ` +
-             `(물을 줘야 회전이 시작됩니다)`);
+  const r = resowBeansprout(fp, { ...opt, kind: kindId, sirus, day: S.day });
+  pushLog(S, `🌱 ${k.ko}을(를) 다시 심었습니다 — ${k.containerKo} ${r.resown}개 · ` +
+             `씨앗 ${seedsUsed}봉지를 썼습니다 (물을 줘야 회전이 시작됩니다)`);
   /* ★★ 2026-08-04 재정정 — 예전에는 "몇 시루를 심어도 절감은 한 시루분"이라고 말했다.
      이제는 다르다: **거두는 때가 겹치면** 깎이고, 어긋나게 돌리면 온전히 받는다(§겹침).
      그래서 막지도, 손해라고 말하지도 않는다 — **어떻게 하면 안 겹치는지**를 말한다. */
   if (r.resown > 1)
-    pushLog(S, `⏱ 시루 ${r.resown}개를 한꺼번에 심었습니다 — 물을 **날을 달리해** 주면 ` +
+    pushLog(S, `⏱ ${k.containerKo} ${r.resown}개를 한꺼번에 심었습니다 — 물을 **날을 달리해** 주면 ` +
                `거두는 날이 어긋나 절감이 안 깎입니다(같은 날 거두면 3,000 → 2,000 → 1,000원)`);
-  return { ...r, seedsUsed, sirusAdded,
-           events: [{ id: 'crop_resown', ko: '콩나물을 다시 심었습니다',
+  return { ...r, seedsUsed, sirusAdded, kind: kindId,
+           events: [{ id: 'crop_resown', ko: `${k.ko}을(를) 다시 심었습니다`, kind: kindId,
                       sirus: r.sirus, resown: r.resown, cycle: r.cycle, seedsUsed }] };
 }
 

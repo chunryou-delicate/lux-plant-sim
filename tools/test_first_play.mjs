@@ -392,7 +392,11 @@ console.log('first_play: PASS');
      같은 날 또 꺼내면 하루 상한 600원이 그 자리에서 깨진다. */
   assert.equal(S.firstPlay.food.cashFoodWon, TEST_RULES.dailyFoodWon,
     '★거둔 그 날에 곳간에서 또 꺼냈습니다 — 하루에 두 번 먹었습니다');
-  assert.equal(S.firstPlay.food.pantryWon, TEST_RULES.cropSavedWonPerCycle,
+  /* ★ 2026-08-05 — 재는 값을 **콩나물 한 회전분**으로 바로잡았다.
+     예전에는 `cropSavedWonPerCycle` 로 쟀는데 그 값은 "지금 도는 작물 **전부**가 한 회전에
+     내는 합계"다. 작물이 콩나물뿐이던 동안에는 둘이 우연히 같았지만(3,000),
+     2종째(무순)가 들어오면서 5,000이 되어 갈라졌다 — 여기서 거둔 것은 콩나물 한 시루뿐이다. */
+  assert.equal(S.firstPlay.food.pantryWon, TEST_RULES.cropKindSavedWon[0],
     '곳간에 들어간 몫이 안 맞습니다');
 
   /* ★수확한 날의 배움이 실제로 적혔는가 (2026-08-03 재발 방지 · 2026-08-04 자리 이동).

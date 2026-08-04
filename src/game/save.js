@@ -44,11 +44,11 @@
 import {
   SCHEMA, SIM_MODES, ARRIVAL, newState, pot0, pushLog, migratePots, rehomePot
 } from './state.js';
-import { createFirstPlayState, placeBeansprout,
+import { createFirstPlayState, placeBeansprout, placeCrop, cropSites, cropKindOf,
          ensureCropPots, syncCropLead } from './first_play.js';
 import { createTutorialState } from './tutorial.js';
 import { inRoom, isFreeSlotId, makeAt } from './place.js';
-import { PROPAGATION_SCHEMA, rehomeCuttings } from './propagation.js';
+import { PROPAGATION_SCHEMA, rehomeCuttings, syncCuttingLeaves } from './propagation.js';
 import { SHOP_SCHEMA, createShopState } from './shop.js';
 
 /* 저장 봉투의 스키마. **모르는 값이면 읽지 않는다**(fail-loud). */
@@ -249,6 +249,27 @@ function packCutting(c, i) {
     varieChance: needNum(c.varieChance ?? 0, `${path}.varieChance`, { min: 0 }),
     variegated: !!c.variegated,
     varieRolled: !!c.varieRolled,
+    /* ★★ 자란 잎 (2026-08-04 삽수 생장) — **반드시 같이 적는다.**
+       `leafVarie` 는 「어느 잎이 무늬인가」이고, 그 배열이 곧 자를 마디 목록과 그 마디의 `w` 다
+       (propagation.js §삽수가 자란다). 안 적으면 저장 한 번에 자란 잎이 통째로 사라지고
+       삽수가 자른 날 크기로 되돌아간다 — 게다가 `w` 가 달라져 계통 판단이 어긋난다.
+       ⚠ 옛 세이브에는 이 칸이 없다. 그때는 `source` 로 되메운다(propagation.cuttingStatsNow 와 같은 규칙). */
+    leafVarie: needArr(
+      Array.isArray(c.leafVarie)
+        ? c.leafVarie
+        : Array.from({ length: (c.source && c.source.leaves) || 0 },
+                     (_, i) => i < ((c.source && c.source.variegatedLeaves) || 0)),
+      `${path}.leafVarie`).map(v => !!v),
+    leafDays: needInt(c.leafDays ?? 0, `${path}.leafDays`, { min: 0 }),
+    grewLeaves: needInt(c.grewLeaves ?? 0, `${path}.grewLeaves`, { min: 0 }),
+    /* ★ 계통 갈래(원복·유지·고스트). 자를 때 정해진 것이라 **다시 굴리면 안 된다** —
+       세이브를 다시 불러 다른 답이 나오면 그 자리에서 결정성이 깨진다. */
+    lineage: optStr(c.lineage, `${path}.lineage`),
+    lineageKnown: !!c.lineageKnown,
+    cutW: c.cutW == null ? null : needNum(c.cutW, `${path}.cutW`, { min: 0 }),
+    ghostDeadlineDay: c.ghostDeadlineDay == null
+      ? null : needInt(c.ghostDeadlineDay, `${path}.ghostDeadlineDay`, { min: 0 }),
+    motherCuttingId: optStr(c.motherCuttingId, `${path}.motherCuttingId`),
     slotId: optStr(c.slotId, `${path}.slotId`),
     at: packAt(c.at, `${path}.at`),
     status: needStr(c.status, `${path}.status`),
@@ -274,6 +295,58 @@ function cropPotsOf(b) {
 
 /* 첫 플레이 — `rules` 는 **안 적는다.** 밸런스 정본(data/balance/characters.json)에서
    불러올 때 다시 유도한다. 세이브에 굳히면 밸런스를 고쳐도 옛 세이브만 옛 값으로 돈다. */
+/* ★★ 작물 자리 하나를 적는다 (2026-08-05 · first_play §작물 자리).
+   ------------------------------------------------------------
+   ★ **0번 자리(콩나물)는 여전히 `beansprout` 이라는 이름으로 적는다.** 이름을 안 바꾼 근거는
+     first_play.js §작물 자리 ★★ 에 있다 — 요약하면 ① 옛 세이브가 그 이름이고 ② 화면(game.html·
+     room_view.js)이 그 이름을 읽는데 그 파일들은 이 창 소유가 아니다.
+   ★ 1번부터는 `firstPlay.crops[]` 로 **덧붙인다.** 옛 세이브에는 이 칸이 아예 없고,
+     없으면 `createFirstPlayState` 가 만든 빈 자리가 그대로 남는다 = **옛 판이 그대로 열린다.**
+   ⚠ `crops` 에 0번을 또 넣지 않는다. 같은 객체를 두 번 실으면 `assertPlainJson` 이
+     순환참조로 보고 던진다(그 함수는 본 객체를 다시 안 본다). */
+function packCropSite(site, path) {
+  const o = needObj(site, path);
+  return {
+    kind: needStr(o.kind, `${path}.kind`),
+    slotId: optStr(o.slotId, `${path}.slotId`),
+    at: packAt(o.at, `${path}.at`),
+    harvestDays: needInt(o.harvestDays ?? 0, `${path}.harvestDays`, { min: 0 }),
+    sirus: needInt(o.sirus ?? 0, `${path}.sirus`, { min: 0 }),
+    cycle: needInt(o.cycle ?? 1, `${path}.cycle`, { min: 1 }),
+    harvestCount: needInt(o.harvestCount ?? 0, `${path}.harvestCount`, { min: 0 }),
+    harvestMeals: needInt(o.harvestMeals ?? 0, `${path}.harvestMeals`, { min: 0 }),
+    wateredOnDay: o.wateredOnDay == null ? null
+      : needInt(o.wateredOnDay, `${path}.wateredOnDay`, { min: 0 }),
+    /* ★ 정본은 pots 다 — 대표 칸(ageDays·dliHist…)은 불러올 때 syncCropLead 가 다시 세운다.
+       ⚠ 여기서는 `ensureCropPots` 로 채우지 않는다. 2종째는 **빈 것이 정상**이라
+         지어내면 안 산 재배판이 공짜로 생긴다(first_play.ensureCropPots 의 ★★). */
+    pots: needArr(o.pots || [], `${path}.pots`).map((p, i) => packCropPot(p, `${path}.pots[${i}]`))
+  };
+}
+
+/* 시루/재배판 한 칸. 0번 자리와 1번부터가 **같은 검증**을 타야 세이브가 안 갈린다. */
+function packCropPot(p, w) {
+  const o = needObj(p, w);
+  return {
+    id: needStr(o.id, `${w}.id`),
+    startedOnDay: o.startedOnDay == null ? null
+      : needInt(o.startedOnDay, `${w}.startedOnDay`, { min: 0 }),
+    idleSinceDay: needInt(o.idleSinceDay ?? 0, `${w}.idleSinceDay`, { min: 0 }),
+    ageDays: needInt(o.ageDays ?? 0, `${w}.ageDays`, { min: 0 }),
+    dliHist: needArr(o.dliHist || [], `${w}.dliHist`)
+      .map((v, j) => needNum(v, `${w}.dliHist[${j}]`, { min: 0 })),
+    harvested: !!o.harvested,
+    quality: optStr(o.quality, `${w}.quality`),
+    meals: needInt(o.meals ?? 0, `${w}.meals`, { min: 0 }),
+    avgDli: optNum(o.avgDli, `${w}.avgDli`),
+    cycle: needInt(o.cycle ?? 1, `${w}.cycle`, { min: 1 }),
+    harvestCount: needInt(o.harvestCount ?? 0, `${w}.harvestCount`, { min: 0 }),
+    harvestMeals: needInt(o.harvestMeals ?? 0, `${w}.harvestMeals`, { min: 0 }),
+    savedWon: needNum(o.savedWon ?? 0, `${w}.savedWon`, { min: 0 }),
+    overlapIndex: needInt(o.overlapIndex ?? 0, `${w}.overlapIndex`, { min: 0 })
+  };
+}
+
 function packFirstPlay(fp) {
   if (!fp) return null;
   const b = needObj(fp.beansprout, 'firstPlay.beansprout');
@@ -285,6 +358,8 @@ function packFirstPlay(fp) {
     phase: needStr(fp.phase, 'firstPlay.phase'),
     completed: !!fp.completed,
     beansprout: {
+      /* ★ 0번 자리의 종류. 옛 세이브에는 없다 — 없으면 콩나물이다(그때는 그것뿐이었다) */
+      kind: needStr(b.kind || 'beansprout', 'firstPlay.beansprout.kind'),
       slotId: optStr(b.slotId, 'firstPlay.beansprout.slotId'),
       at: packAt(b.at, 'firstPlay.beansprout.at'),
       ageDays: needInt(b.ageDays ?? 0, 'firstPlay.beansprout.ageDays', { min: 0 }),
@@ -313,29 +388,13 @@ function packFirstPlay(fp) {
            없어졌다(§물주기). 옛 세이브에 그 칸이 있어도 그냥 안 읽는다 — 잃을 진행이 없다.
          ⚠ 옛 세이브에는 pots 가 아예 없다. 그때는 `ensureCropPots` 가 한 칸짜리 옛 상태를
            그대로 첫 시루로 옮긴다(아래 unpack) — 진행·이력·수확 횟수가 한 개도 안 사라진다. */
-      pots: needArr(cropPotsOf(b), 'firstPlay.beansprout.pots').map((p, i) => {
-        const w = `firstPlay.beansprout.pots[${i}]`;
-        const o = needObj(p, w);
-        return {
-          id: needStr(o.id, `${w}.id`),
-          startedOnDay: o.startedOnDay == null ? null
-            : needInt(o.startedOnDay, `${w}.startedOnDay`, { min: 0 }),
-          idleSinceDay: needInt(o.idleSinceDay ?? 0, `${w}.idleSinceDay`, { min: 0 }),
-          ageDays: needInt(o.ageDays ?? 0, `${w}.ageDays`, { min: 0 }),
-          dliHist: needArr(o.dliHist || [], `${w}.dliHist`)
-            .map((v, j) => needNum(v, `${w}.dliHist[${j}]`, { min: 0 })),
-          harvested: !!o.harvested,
-          quality: optStr(o.quality, `${w}.quality`),
-          meals: needInt(o.meals ?? 0, `${w}.meals`, { min: 0 }),
-          avgDli: optNum(o.avgDli, `${w}.avgDli`),
-          cycle: needInt(o.cycle ?? 1, `${w}.cycle`, { min: 1 }),
-          harvestCount: needInt(o.harvestCount ?? 0, `${w}.harvestCount`, { min: 0 }),
-          harvestMeals: needInt(o.harvestMeals ?? 0, `${w}.harvestMeals`, { min: 0 }),
-          savedWon: needNum(o.savedWon ?? 0, `${w}.savedWon`, { min: 0 }),
-          overlapIndex: needInt(o.overlapIndex ?? 0, `${w}.overlapIndex`, { min: 0 })
-        };
-      })
+      pots: needArr(cropPotsOf(b), 'firstPlay.beansprout.pots')
+        .map((p, i) => packCropPot(p, `firstPlay.beansprout.pots[${i}]`))
     },
+    /* ★★ 2종째부터의 작물 자리 (2026-08-05 · 위 §작물 자리).
+       옛 세이브에는 없다 → `[]` 로 적히고, 불러올 때 새 상태의 빈 자리가 그대로 남는다. */
+    crops: needArr(fp.crops || [], 'firstPlay.crops')
+      .map((s, i) => packCropSite(s, `firstPlay.crops[${i}]`)),
     food: {
       /* ★ 곳간은 **원**이다 (2026-08-04 · first_play.js §작물 종류).
          ⚠ 옛 세이브는 `pantryMeals`(끼니)를 갖고 있다. 스키마를 올려 통째로 못 읽게 하는 대신
@@ -349,6 +408,18 @@ function packFirstPlay(fp) {
       harvestDay: f.harvestDay == null ? null
         : needInt(f.harvestDay, 'firstPlay.food.harvestDay', { min: 0 }),
       harvestedOnDay: needInt(f.harvestedOnDay ?? 0, 'firstPlay.food.harvestedOnDay', { min: 0 }),
+      /* ★★ 그날 종류별로 몇 번째까지 거뒀나 (2026-08-05 · first_play §겹침).
+         겹침을 **종류마다 따로** 세게 되면서 합계 한 칸으로는 못 이어 센다 —
+         저장 뒤 같은 날 또 거두면 순번이 0 으로 돌아가 규칙이 조용히 새어 나간다.
+         옛 세이브에는 없다 → `{}` 로 시작한다(그때는 종류가 하나라 합계가 곧 순번이었다). */
+      harvestedOnDayByKind: (() => {
+        const src = f.harvestedOnDayByKind;
+        if (!src || typeof src !== 'object') return {};
+        const out = {};
+        for (const k of Object.keys(src))
+          out[k] = needInt(src[k] ?? 0, `firstPlay.food.harvestedOnDayByKind.${k}`, { min: 0 });
+        return out;
+      })(),
       lastHarvestMeals: needInt(f.lastHarvestMeals ?? 0, 'firstPlay.food.lastHarvestMeals', { min: 0 }),
       lastFoodSavedWon: needNum(f.lastFoodSavedWon ?? 0, 'firstPlay.food.lastFoodSavedWon', { min: 0 }),
       totalFoodSavedWon: needNum(f.totalFoodSavedWon ?? 0, 'firstPlay.food.totalFoodSavedWon', { min: 0 }),
@@ -656,11 +727,15 @@ function reseat(S, room, report) {
   const cut = rehomeCuttings(S, room, log);
   report.cuttingsRehomed = cut;
 
-  /* 콩나물 시루 — 화분과 같은 검사를 받는다. 안 하면 방 밖 좌표가 남아
-     매일 `light_adapter.slotsFor` 가 던진다(게임이 통째로 멈춘다). */
+  /* 작물 자리 — 화분과 같은 검사를 받는다. 안 하면 방 밖 좌표가 남아
+     매일 `light_adapter.slotsFor` 가 던진다(게임이 통째로 멈춘다).
+     ★ 2026-08-05 — **자리마다** 돈다. 콩나물 하나만 검사하면 무순 판이 방 밖 좌표로 남아
+       같은 고장이 그대로 난다(자리가 종류마다 따로다 — first_play §작물 자리). */
   const fp = S.firstPlay;
-  const b = fp && fp.enabled ? fp.beansprout : null;
-  if (b && (b.slotId || b.at)) {
+  if (fp && fp.enabled) for (const b of cropSites(fp)) {
+    if (!b || !(b.slotId || b.at)) continue;
+    const kindId = b.kind || 'beansprout';
+    const boxKo = cropKindOf(kindId).containerKo;
     let why = null;
     if (b.at) {
       if (room.size && !inRoom(b.at, room.size)) why = '자리가 방 밖입니다';
@@ -673,14 +748,14 @@ function reseat(S, room, report) {
     if (why) {
       const dest = (room.slots || [])[0] || null;
       if (!b.harvested && dest) {
-        placeBeansprout(fp, dest.slotId, { slots: room.slots });
-        log(`시루 회수 — ${why} · ${dest.slotId} 로 옮겼습니다`);
+        placeCrop(fp, kindId, dest.slotId, { slots: room.slots });
+        log(`${boxKo} 회수 — ${why} · ${dest.slotId} 로 옮겼습니다`);
       } else {
         /* 이미 수확했거나 갈 자리가 없으면 자리만 비운다 — 수확 결과는 이미 확정이라
            옮길 이유가 없고, 그대로 두면 계약이 방 밖 좌표를 실어 매일 던진다. */
         b.at = null;
         if (why.startsWith('슬롯')) b.slotId = null;
-        log(`시루 자리 해제 — ${why}`);
+        log(`${boxKo} 자리 해제 — ${why}`);
       }
     }
   }
@@ -801,7 +876,9 @@ export function deserialize(raw, opt = {}) {
   /* 삽수 — 쓸 때와 **같은 검증**을 읽을 때도 태운다(화분과 같은 규칙) */
   S.cuttings = needArr(st.cuttings || [], 'state.cuttings').map((c, i) => {
     const q = packCutting(c, i);
-    return { ...q, at: q.at ? makeAt(q.at) : null };
+    /* ★ `leaves`·`variegatedLeaves` 는 `leafVarie` 에서 나온 값이라 **저장하지 않고 다시 센다.**
+       두 벌로 저장하면 언젠가 어긋나고, 어긋난 쪽이 값(shop.sellCutting)으로 새어 나간다. */
+    return syncCuttingLeaves({ ...q, at: q.at ? makeAt(q.at) : null });
   });
   S.dliHist = needArr(st.dliHist || [], 'state.dliHist')
     .map((v, i) => (v == null ? null : needNum(v, `state.dliHist[${i}]`)));
@@ -828,6 +905,16 @@ export function deserialize(raw, opt = {}) {
        하나가 조용히 낡는다. pots 가 정본이므로 그쪽으로 맞춘다. */
     ensureCropPots(fp.beansprout);
     syncCropLead(fp.beansprout);
+    /* ★★ 2종째부터의 자리 (2026-08-05). **새 상태가 만든 자리에 덮어쓴다** —
+       세이브에 없는 종류(나중에 3종이 생기면 옛 세이브가 그 경우다)는 빈 자리로 남는다.
+       ⚠ 세이브에만 있고 지금 빌드가 모르는 종류는 **버린다.** 지어내면 CROP_KINDS 에 없는
+         종류의 값을 셈해야 하는데 그 값이 없다(cropKindOf 가 던진다). */
+    for (const s of (saved.crops || [])) {
+      const site = (fp.crops || []).find(x => x.kind === s.kind);
+      if (!site) continue;
+      Object.assign(site, s, { at: s.at ? makeAt(s.at) : null });
+      syncCropLead(site);
+    }
     Object.assign(fp.food, saved.food);
     Object.assign(fp.monstera, saved.monstera,
                   { at: saved.monstera.at ? makeAt(saved.monstera.at) : null });

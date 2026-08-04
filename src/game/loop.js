@@ -41,6 +41,8 @@ import {
   waterBeansprout,
   eatFromPantry,
   cropDliFromReport,
+  cropKindOf,
+  cropSites,
   FIRST_PLAY_ASSETS,
   FIRST_PLAY_COMPLETE_PHASE_ID,
   firstPlayEventsOf,
@@ -173,10 +175,36 @@ function headroomOfTurn(S, io, p) {
    ★ 삽수는 growth 를 안 쓴다. 형태 계약(setDailyLight·advanceTo)을 타지 않으므로
      생장 창이 죽어 있어도 삽수는 정상으로 돈다 — 그게 맞다(뿌리내림은 빛과 무관).
    ★조용히 실패하지 않는다. 삽수가 터져도 하루는 이미 갔으므로 turn 에 실어 보낸다. */
-function stepCuttingsOfTurn(S) {
+/* ★ 삽수 자리의 빛 — **판정은 코어가 안 한다** (2026-08-04 삽수 생장).
+   그 자리 DLI 는 조도 계약이 갖고, "그 빛이면 자라나"는 growth 의 밴드가 갖는다.
+   코어는 둘을 이어 주기만 한다. 밴드 이름을 코어가 베끼면 growth 가 문턱을 바꾸는 날
+   **오류 없이 틀린 판정**이 된다(삽수만 조용히 안 자란다).
+   ⚠ 못 재면 `null` 을 낸다 — 0 으로도 "자란다"로도 메꾸지 않는다. 모르면 안 자란다. */
+const NO_GROW_BANDS = new Set(['critical', 'poor', 'stagnant']);
+function cuttingLightOf(S, io, report) {
+  return (c) => {
+    const key = c.at ? c : c.slotId;
+    if (!key) return null;                       // 자리가 없는 삽수 — 빛을 잴 데가 없다
+    let dli = null;
+    try {
+      dli = c.at && io.light && typeof io.light.dliOfSlot === 'function'
+        ? io.light.dliOfSlot(c, {})
+        : dliFromContract(report, c.slotId);
+    } catch { return null; }
+    if (typeof dli !== 'number' || !isFinite(dli)) return null;
+    let band = null;
+    try { const b = io.growth && io.growth.bandOf ? io.growth.bandOf(dli, !!c.variegated) : null;
+          band = b && b.band; } catch { band = null; }
+    if (!band) return null;                      // growth 가 밴드를 못 내면 판정하지 않는다
+    return { dli, band, grows: !NO_GROW_BANDS.has(band) };
+  };
+}
+
+function stepCuttingsOfTurn(S, io, report) {
   if (!S.cuttings || !S.cuttings.length) return null;
   try {
-    return stepCuttings(S, { log: m => pushLog(S, m) });
+    return stepCuttings(S, { log: m => pushLog(S, m),
+                             lightOf: report ? cuttingLightOf(S, io, report) : null });
   } catch (e) {
     pushLog(S, '⚠ 삽수 진행 실패 — ' + e.message);
     return { error: e.message, events: [], died: [], warnings: [] };
@@ -428,13 +456,18 @@ export function nextDay(S, io) {
     const before = structuredClone(S.firstPlay);
     const logLengthBefore = S.log.length;
     try {
-      const cropSlotId = S.firstPlay.beansprout.slotId;
-      if (check.badSlots && check.badSlots.has(cropSlotId))
-        throw new Error(`[첫 플레이] 콩나물 자리 ${cropSlotId}의 조도 계약이 잘못됐습니다`);
-      firstPlayEvent = advanceBeansproutDay(
-        S.firstPlay,
-        cropDliFromReport(report, cropSlotId)
-      );
+      /* ★★ 2026-08-05 — 작물 자리가 **종류마다 하나**라 DLI 도 자리마다 따로 잰다
+         (first_play §작물 자리 — 콩나물은 어두워야 하고 무순은 밝아야 해서 한 자리에 못 선다).
+         ⚠ 안 놓은 자리는 빼고 넘긴다. 표에 없는 열쇠를 넘기면 advance 가 던진다. */
+      const cropDli = {};
+      for (const site of cropSites(S.firstPlay)) {
+        if (!site.slotId) continue;
+        if (check.badSlots && check.badSlots.has(site.slotId))
+          throw new Error(`[첫 플레이] ${cropKindOf(site.kind || 'beansprout').ko} 자리 ` +
+                          `${site.slotId}의 조도 계약이 잘못됐습니다`);
+        cropDli[site.kind || 'beansprout'] = cropDliFromReport(report, site.slotId);
+      }
+      firstPlayEvent = advanceBeansproutDay(S.firstPlay, cropDli);
 
       /* ★★ 마른 날 알림이 사라졌다 (2026-08-04 새 규칙). 그 개념 자체가 없다 —
          물을 안 준 시루는 **아직 시작을 안 한 것**이지 벌을 받는 것이 아니다.
@@ -482,7 +515,7 @@ export function nextDay(S, io) {
      양쪽이 같은 하루를 받는다 — stepTutorial 을 한쪽에만 붙였다가 "수확했는데 안 배웠다"가
      났던 것과 같은 함정을 여기서는 처음부터 피한다.
      ★ 위 첫 플레이 되감기(catch)는 이 줄 **위에서** 끝난다 — 되감긴 턴은 삽수도 안 돈다. */
-  const cuttings = stepCuttingsOfTurn(S);
+  const cuttings = stepCuttingsOfTurn(S, io, report);
 
   /* 몬스테라가 아직 도착하지 않았으면 콩나물만 진행하고 끝낸다.
      ★ 2026-08-04 — 도착은 이제 **턴 안에서 안 일어난다**(harvestCrop 이 준다). 그래서 이 경로에
@@ -504,7 +537,7 @@ export function nextDay(S, io) {
       cropWatered, cropIdle: (firstPlayEvent && firstPlayEvent.idle) || 0,
       /* ★ 수확 (2026-08-04) — 물주기와 **다른 칸**이다. 같은 칸에 섞으면 화면이
          "물을 주세요"와 "거두세요"를 못 가른다(둘은 서로를 배제한다 — §수확). */
-      cropReady: beansproutReady(S.firstPlay && S.firstPlay.beansprout),
+      cropReady: beansproutReady(S.firstPlay),
       cropJustReady: !!(firstPlayEvent && firstPlayEvent.justReady),
       cropHarvest: beansproutHarvestStatus(S.firstPlay),
       cropWater: beansproutWaterStatus(S.firstPlay, S.day),
@@ -620,7 +653,7 @@ export function nextDay(S, io) {
     firstPlayEvent,
     /* ★ 물주기·수확 — earlyTurn 과 같은 칸. 반환구가 둘이면 둘 다 챙긴다(이 파일의 오랜 함정). */
     cropWatered, cropIdle: (firstPlayEvent && firstPlayEvent.idle) || 0,
-    cropReady: beansproutReady(S.firstPlay && S.firstPlay.beansprout),
+    cropReady: beansproutReady(S.firstPlay),
     cropJustReady: !!(firstPlayEvent && firstPlayEvent.justReady),
     cropHarvest: beansproutHarvestStatus(S.firstPlay),
     cropWater: beansproutWaterStatus(S.firstPlay, S.day),
@@ -722,7 +755,7 @@ export function harvestCrop(S, io) {
   }
   /* ★★ 2026-08-04 — `b.harvested`(하나라도 거뒀나)로 막지 않는다. 시차 판에서는 거의 늘 true 라
      **둘째 시루가 익어도 못 거두게 된다.** 판정은 언제나 "익은 시루가 있나"다(first_play.js). */
-  if (!beansproutReady(b)) {
+  if (!beansproutReady(fp)) {
     const st = beansproutHarvestStatus(fp);
     const e = new Error(
       st && st.nextReadyInDays != null
@@ -742,8 +775,11 @@ export function harvestCrop(S, io) {
   let r = null, arrived = null, arrivalPhase = null;
   try {
     r = harvestBeansprout(fp, { day: S.day });
-    pushLog(S, `🥣 콩나물 수확 — 시루 ${r.harvestedPots}개 · ${r.qualityKo} · ${r.meals}끼 상당 · ` +
-               `${r.cycleDays}일 회전에 ${r.cycleSavedWon.toLocaleString()}원`);
+    /* ★ 2026-08-05 — 종류가 늘어 "콩나물 수확"이 늘 맞는 말이 아니다. 거둔 것을 그대로 적는다 */
+    const what = (r.byKind || []).map(g => `${g.kindKo} ${g.pots}개`).join(' · ') ||
+                 `시루 ${r.harvestedPots}개`;
+    pushLog(S, `🥣 수확 — ${what} · ${r.qualityKo} · ${r.meals}끼 상당 · ` +
+               `${r.cycleSavedWon.toLocaleString()}원`);
     /* ★★ 겹침 (2026-08-04 · first_play.js §겹침) — 예전 "시루를 늘려도 안 는다"를 대신한다.
        손해의 이유가 시루 수가 아니라 **거두는 때가 겹친 것**이라, 처방도 달라진다:
        "사지 마라"가 아니라 **"물을 날을 달리해 줘라"** 다. */
@@ -775,8 +811,11 @@ export function harvestCrop(S, io) {
       if (!canHoldPot.size)
         throw new Error(`[첫 플레이] 지름 ${potDiameter}m 화분이 올라가는 자리가 이 방에 없습니다 ` +
                         `(maxPotD 가 숫자로 있는 슬롯 0칸) — 방 데이터를 확인해 주세요`);
+      /* ★ 2026-08-05 — 작물 자리가 **전부** 후보에서 빠진다. 예전에는 콩나물 자리 하나만
+         뺐는데, 그러면 무순 판 위에 몬스테라가 내려앉는다(자리가 겹친다). */
+      const cropSlotIds = new Set(cropSites(fp).map(s => s.slotId).filter(Boolean));
       const spot = [...(report.slots || [])]
-        .filter(s => s && s.slotId !== b.slotId && canHoldPot.has(s.slotId) &&
+        .filter(s => s && !cropSlotIds.has(s.slotId) && canHoldPot.has(s.slotId) &&
                      typeof s.dli === 'number' && isFinite(s.dli))
         .sort((x, y) => x.dli - y.dli)[0];
       if (!spot) throw new Error('[첫 플레이] 몬스테라가 도착할 화분 자리를 찾지 못했습니다');

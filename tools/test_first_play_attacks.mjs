@@ -646,7 +646,10 @@ const BAD_PHASES = [
      ★ 거둔 그 날에는 꺼내 먹지 않는다(2026-08-04) — 다음 [다음 날] 부터다. */
   assert.equal(S.firstPlay.food.totalFoodSavedWon, foodAtThrow.totalFoodSavedWon,
     '★거둔 날에 곳간을 열었습니다');
-  assert.equal(S.firstPlay.food.pantryWon, foodAtThrow.pantryWon + RULES.cropSavedWonPerCycle,
+  /* ★ 2026-08-05 — 재는 값을 **콩나물 한 회전분**으로 바로잡았다(test_first_play.mjs 와 같은 이유).
+     `cropSavedWonPerCycle` 은 "도는 작물 전부의 한 회전 합계"라 2종째가 들어오며 5,000이 됐다.
+     여기서 거둔 것은 콩나물 한 시루뿐이므로 3,000이 맞다. */
+  assert.equal(S.firstPlay.food.pantryWon, foodAtThrow.pantryWon + RULES.cropKindSavedWon[0],
     '★되돌린 수확이 곳간에 두 번 들어갔습니다');
 }
 
