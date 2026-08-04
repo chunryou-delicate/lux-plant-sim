@@ -309,6 +309,67 @@ function potsOf(b) {
   return [];
 }
 
+/* ============================================================
+   ★★ 몬스테라 선물이 오는 때 — **첫 수확이 아니다** (2026-08-04 박사님 확정)
+   ------------------------------------------------------------
+   원문: *"몬스테라는 좀 더 뒤에 줘야겠다. 먹는 거 재배 좀 더 알려줘야 될 듯."*
+
+   예전에는 **첫 수확**에 왔다(튜토 4~5일차). 그러면 콩나물로 배우는 것이 한 회전뿐이라
+   방금 들어온 시차 규칙(5일 주기 · 회전당 3,000원 · 같은 날 겹치면 3,000→2,000→1,000→0 ·
+   시루 5개가 천장 · 물이 회전 시작)을 **하나도 못 겪고** 다음 식물로 넘어간다.
+
+   ★ 조건은 둘 중 **먼저 오는 쪽**이다.
+     ① 거둔 횟수 3회 이상          — 시루 하나만 굴려도 **반드시** 닿는다(5일 주기 × 3 ≈ 15일)
+     ② 시루 2개 이상 · 거둔 횟수 2회 이상 — 시루를 늘린 사람은 더 빨리 온다(≈ 10일)
+
+   ★ ②를 "시루 2개"만으로 걸지 않은 이유 — 사는 것은 배움이 아니다. 두 시루가 **각각
+     한 번씩 돌아 본 뒤**라야 같은 날 겹쳐 깎이는 것도, 날을 어긋내면 안 깎이는 것도 겪는다.
+   ★ 겹침(overlapCount)을 조건으로 안 건 이유 — **안 겪는 판이 있다.** 시루를 하나만 쓰거나
+     처음부터 날을 어긋내 물을 준 사람에게는 영영 안 온다. 안 오는 판이 하나라도 있으면
+     그건 틀린 조건이다.
+   ★ ①이 바닥이라 **반드시 온다** — 콩나물을 계속 거두는 것 말고는 튜토에 할 일이 없고,
+     안 거두면 다음 회전이 시작되지 않아 화면이 계속 [수확하기]를 가리킨다(firstPlayNextEvent).
+
+   ══ ⛔ 그런데 지금은 `harvestCount: 1` 이다 — **화면이 못 따라온다** (2026-08-04 실측) ══
+   `tools/probe_arrival_ingame.mjs` 로 game.html 을 실제로 띄워 눌러 보고 잡았다.
+
+     game.html 의 `drawShop()` 이 첫 줄에서 이렇게 닫는다:
+       const open = !!(ts && ts.enabled && S.firstPlay.completed);
+       box.style.display = open ? '' : 'none'; if (!open) return;
+     그리고 **[콩나물 다시 심기] 버튼(`#resow`)이 그 `#shopBox` 안에 들어 있다.**
+
+   ⇒ 첫 플레이 동안에는 **씨앗을 주문할 수도, 다시 심을 수도 없다.** 회전이 한 번에서 멈춘다.
+     그 상태에서 조건을 2 이상으로 걸면 선물이 **영영 안 온다** — 게임이 그 자리에서 멈춘다.
+     (재현 표: 게임 70일을 눌러도 회전 1 · 화분 0 · 도착 null)
+
+   ★ 그래서 값만 1 로 두고 **자리는 남긴다.** 상점·다시심기 게이트를 첫 수확 뒤로 여는 순간
+     여기 숫자 하나(1 → 3)만 바꾸면 박사님 지시대로 돌아간다. 조건식·검사·대사는 이미 그 모양이다.
+   ⚠ 그 게이트는 game.html 에 있고 이 창 소유가 아니다 — 손대지 않았다. 보고에 적었다.
+============================================================ */
+export const MONSTERA_ARRIVAL_RULE = Object.freeze({
+  /* ⛔ 위 §게이트 참고. 박사님 지시대로면 3 이고, 화면이 회전을 못 돌려서 지금은 1 이다. */
+  harvestCount: 1,
+  sirus: 2, sirusHarvestCount: 2   // ② 지름길 — 시루를 늘려 둘 다 굴려 봤다
+});
+
+/* 지금 선물이 올 때가 됐나. **읽기 전용**이다 — 상태를 안 만든다. */
+export function monsteraArrivalDue(fp, rule = MONSTERA_ARRIVAL_RULE) {
+  const b = fp && fp.beansprout;
+  if (!b) return false;
+  const n = b.harvestCount || 0;
+  if (n >= rule.harvestCount) return true;
+  return potsOf(b).length >= rule.sirus && n >= rule.sirusHarvestCount;
+}
+
+/* 아직 안 왔다면 무엇이 남았나 — 화면·재현이 "왜 아직인가"를 말할 수 있게. null 이면 올 때가 됐다. */
+export function monsteraArrivalLeft(fp, rule = MONSTERA_ARRIVAL_RULE) {
+  if (monsteraArrivalDue(fp, rule)) return null;
+  const b = (fp && fp.beansprout) || null;
+  const n = (b && b.harvestCount) || 0;
+  return { harvestsLeft: Math.max(0, rule.harvestCount - n),
+           sirus: potsOf(b).length, harvestCount: n };
+}
+
 /* 이 시루가 지금 거둘 수 있나 — 시작했고 · 안 거뒀고 · 다 자랐다 */
 function potReady(p, harvestDays) {
   return !!(p && !p.harvested && p.startedOnDay != null &&

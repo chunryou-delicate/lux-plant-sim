@@ -37,7 +37,7 @@
 import assert from 'node:assert';
 import { readFileSync, existsSync } from 'node:fs';
 import { createProfileLight } from '../src/game/room_profile.js';
-import { newState, pot0, setPotSlot, waterCrop } from '../src/game/state.js';
+import { newState, pot0, setPotSlot, waterCrop, resowCrop, ARRIVAL } from '../src/game/state.js';
 import { nextDay, harvestCrop } from '../src/game/loop.js';
 import { firstPlayRulesFromBalance, placeBeansprout, moveMonstera,
          beansproutReady } from '../src/game/first_play.js';
@@ -78,7 +78,15 @@ const BRIGHT_CROP = 'banjiha-sill:0';    // ★일부러 밝은 데 둔 콩나�
      도착 잎 2장 · 자란 뒤 3장). 여기서는 잎 3장짜리 그루로 고정한다 — 한 장을 잘라도
      모주에 두 장이 남아 초보 규칙(모주가 안 끝난다)에 안 걸린다. */
 const STUB_LEAVES = 3;
-function stubGrowth(start = 143) {
+/* ★★ 2026-08-04 — 도착 진행도가 **줄기 1개짜리(state.ARRIVAL)** 로 내려갔고, 그 뒤 첫
+   말린 새순은 유효 61 이다(재서 나온 값 — tools/probe_arrival_stems.mjs).
+   ⚠ 위 STUB_LEAVES=3 은 **진짜 엔진보다 후한 값**이 됐다: 유효 61 에서 실제 잎은 2장이고
+     3장째는 유효 150 에서 난다. 여기서는 대사가 다 나오는가만 보므로 그대로 두지만,
+     살림이 성립하는가는 tools/test_banjiha_routes.mjs 가 **진짜 엔진으로** 잰다. */
+const ARR = ARRIVAL.growthDays;
+const SPEAR = 61;
+const SPEAR_DAYS = SPEAR - ARR;
+function stubGrowth(start = ARR) {
   let cal = start, growth = start, today = null;
   return {
     cuttableNodes: () => [
@@ -95,11 +103,11 @@ function stubGrowth(start = 143) {
       return { calDay: cal, growth, grew, blocked: grew ? null : '빛 부족',
                drawn: true, drawError: null, hudError: null }; },
     growthBlocked: () => (today >= 3 ? null : '빛 부족'),
-    growthPhase: () => (growth >= 146
+    growthPhase: () => (growth >= SPEAR
       ? { phaseId: 'spear_furled', phaseKo: '말린 새순 등장', progress01: 0,
           nextPhaseId: 'spear_opening', nextPhaseKo: '새순이 펴지는 중' }
       : { phaseId: 'spear_ready', phaseKo: '말린 새순을 준비하는 중',
-          progress01: Math.max(0, (growth - 143) / 3),
+          progress01: Math.max(0, (growth - ARR) / SPEAR_DAYS),
           nextPhaseId: 'spear_furled', nextPhaseKo: '말린 새순 등장' }),
     dli7: () => today, dliCV: () => 0, ageOf: d => d
   };
@@ -122,6 +130,16 @@ function play(opt) {
 
     /* ★ 물주기 (2026-08-04) — [물 주기] + [다음 날] 이 표준 하루다. 물을 준 날만 자라므로
        재현도 그 행위를 한다. 안 하면 콩나물이 영영 안 커서 몬스테라도 안 온다. */
+    /* ★ 몬스테라는 3회전째에 온다 (2026-08-04) — 그래서 거둔 시루는 **다시 심는다.**
+       안 심으면 회전이 한 번에서 멈춰 선물이 영영 안 오고, 튜토가 통째로 안 열린다. */
+    const bs = S.firstPlay.beansprout;
+    if (bs && bs.harvested) {
+      if (stockOf(S, 'bean_seed') < 1 && incomingOf(S, 'bean_seed') < 1)
+        try { orderItem(S, 'bean_seed', 1); } catch { /* 돈이 모자라면 다음 날 */ }
+      if (stockOf(S, 'bean_seed') >= 1)
+        try { resowCrop(S, { at: opt.cropSlot || DARK, slots: light.room.slots }); }
+        catch { /* 재고가 안 맞으면 다음 날 */ }
+    }
     try { waterCrop(S); } catch { /* 아직 안 놓았거나 이미 거둔 시루 */ }
 
     let turn;
@@ -206,11 +224,18 @@ const B = play({
      안 자르면 튜토의 마지막 장면이 영영 안 난다. 지름길을 안 쓴다: 병을 **주문해서**
      이틀 기다려 사고, 코어 API(propagation.takeCutting)로 자른다. */
 const C = play({
-  cropSlot: DARK, plantSlot: SILL, incomeWon: 5_000, days: 175,
-  onDay: ({ S, io, day }) => {
-    if (day === 20) movePot(S, DARK);          // 어두운 데로
-    if (day === 45) movePot(S, SILL);          // 다시 창턱으로
-    if (day === 150) movePot(S, DARK);         // 겨울에 다시 멈춘다
+  /* ★ 2026-08-04 — 175 → 220 일. 첫 플레이가 길어져(선물이 3회전째로 밀렸다) 튜토 시계가
+     그만큼 늦게 돌기 시작한다. 겨울(튜토 135일)·winter_still(튜토 145일)까지 가려면
+     게임 일수로 그만큼 더 필요하다 — 새 규칙이 아니라 같은 지점까지 가는 데 드는 날수다. */
+  cropSlot: DARK, plantSlot: SILL, incomeWon: 5_000, days: 220,
+  onDay: ({ S, io }) => {
+    /* ★ 2026-08-04 — **튜토 일자**로 센다. 게임 일자로 세면 첫 플레이가 길어진 만큼
+       옮기는 날이 통째로 앞당겨져 "겨울에 멈춘다"가 가을에 일어난다(실제로 그랬다).
+       살림·계절은 첫 플레이가 끝난 뒤에야 흐르므로, 계절을 겨냥한 각본은 튜토 일자가 맞다. */
+    const tday = S.tutorial.day;
+    if (tday === 12) movePot(S, DARK);          // 어두운 데로
+    if (tday === 37) movePot(S, SILL);          // 다시 창턱으로
+    if (tday === 142) movePot(S, DARK);         // 겨울에 다시 멈춘다
     /* 병을 하나 시켜 두고, 오면 잎 1장짜리 마디를 한 번 자른다 */
     const pot = pot0(S);
     if (pot && !(pot.cuts || []).length) {
@@ -295,13 +320,24 @@ for (const [ko, eventId, scriptId, runs] of MUST) {
 }
 
 /* ★첫 플레이 세 장면도 같이 지킨다 — 여기가 깨지면 first_play.md §2 계약이 깨진 것이다 */
-check('⑵ 첫 플레이 — 수확 → 식물신 → 도착 순서가 그대로다', () => {
-  const day4 = A.rows.find(r => r.said.includes('harvest'));
-  assert.ok(day4, '수확 대사가 안 나왔습니다');
+check('⑵ 첫 플레이 — 수확은 먼저, 식물신은 도착 바로 앞이다', () => {
+  /* ★★ 2026-08-04 — **두 장면이 갈렸다.**
+       첫 수확 날   수확 대사(harvest)
+       3회전째 날   식물신(god1) → 도착(monsteraArrived)
+     선물이 첫 수확에서 3회전째로 밀리면서(first_play.monsteraArrivalDue) 식물신도
+     "주는 순간" 쪽으로 따라갔다(dialogue.scriptsForEvents). 지켜야 할 것은 하나다 —
+     **식물신이 도착보다 뒤로 밀리면 안 된다**(first_play.md §2). */
+  const hRow = A.rows.findIndex(r => r.said.includes('harvest'));
+  assert.ok(hRow >= 0, '수확 대사가 안 나왔습니다');
+  const aRow = A.rows.findIndex(r => r.said.includes('monsteraArrived'));
+  assert.ok(aRow >= 0, '도착 대사가 안 나왔습니다');
+  /* 도착이 몇 회전째인가는 first_play.MONSTERA_ARRIVAL_RULE 이 정한다 — 지금은 1 이라
+     수확과 **같은 날**이다. 그 값이 오르면 도착이 뒤 날로 간다. 어느 쪽이든 앞서면 안 된다. */
+  assert.ok(hRow <= aRow, '★수확보다 도착이 먼저 났습니다');
+  const day4 = A.rows[aRow];
   const i = day4.said.indexOf('god1'), j = day4.said.indexOf('monsteraArrived');
-  assert.ok(i >= 0 && j >= 0, `Day ${day4.day} 에 식물신·도착이 안 실렸습니다: ${day4.said}`);
-  assert.ok(i < j, `★식물신이 도착 뒤로 밀렸습니다: ${day4.said.join(' → ')}`);
-  assert.ok(day4.said.indexOf('harvest') < i, '식물신이 수확보다 먼저 나왔습니다');
+  assert.ok(i >= 0, `Day ${day4.day} 에 식물신이 안 실렸습니다: ${day4.said}`);
+  assert.equal(i, j - 1, `★식물신이 도착 바로 앞이 아닙니다: ${day4.said.join(' → ')}`);
   assert.ok(A.said.has('spearFurled'), '말린 새순 대사가 안 나왔습니다');
 });
 

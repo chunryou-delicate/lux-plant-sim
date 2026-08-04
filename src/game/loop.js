@@ -48,6 +48,7 @@ import {
   firstPlaySnapshot,
   markMonsteraArrived,
   markMonsteraPhase,
+  monsteraArrivalDue,
   slotFitsDiameter
 } from './first_play.js';
 import { canMoveOut, createTutorialState, LEARNING, tutorialDay, noteLearning,
@@ -753,8 +754,13 @@ export function harvestCrop(S, io) {
     if (r.spoiledWon > 0)
       pushLog(S, `🗑 곳간이 넘쳐 ${r.spoiledWon.toLocaleString()}원어치가 쉬었습니다`);
 
-    /* ── 선물은 **첫 수확에만** 온다. 둘째 시루에서 몬스테라가 또 오면 안 된다 ── */
-    if (!fp.monstera.arrived) {
+    /* ── 선물은 **콩나물을 충분히 겪은 뒤** 한 번만 온다 (2026-08-04) ──
+       예전에는 `!fp.monstera.arrived` 하나였다 = **첫 수확**. 박사님이 뒤로 미루셨다:
+       *"몬스테라는 좀 더 뒤에 줘야겠다. 먹는 거 재배 좀 더 알려줘야 될 듯."*
+       때의 정본은 first_play.monsteraArrivalDue 다 — 여기에 회전 수를 베끼지 않는다.
+       ★ `!arrived` 는 그대로 남는다. 조건을 만족한 뒤에도 수확은 계속 나므로,
+         이게 없으면 둘째·셋째 수확에서 몬스테라가 또 온다. */
+    if (!fp.monstera.arrived && monsteraArrivalDue(fp)) {
       /* 처음부터 정답 창턱에 놓지 않는다 — 도착 후 플레이어가 창가 높은 자리로 옮기는 것이
          두 번째 학습이다. 그래서 **가장 어두운 자리**에 내려놓는다. */
       const { report } = io.light.daily(S.day, S);
@@ -786,7 +792,7 @@ export function harvestCrop(S, io) {
       if (gpError) {
         S.pots.length = 0;                    // 되돌리기 전에 방금 만든 화분을 거둔다
         const err = new Error(`[첫 플레이] 도착한 몬스테라의 단계를 읽지 못했습니다 — ${gpError}`);
-        /* ★ growth 쪽은 **코어가 못 되감는다** — setGrowth(143) 은 이미 적용됐다.
+        /* ★ growth 쪽은 **코어가 못 되감는다** — setGrowth(도착 진행도) 는 이미 적용됐다.
            ⚠ 그래도 잠그지 않는다: setGrowth 는 절대값 점프라 [수확하기]를 다시 누르면
              같은 자리에 다시 꽂혀 두 쪽이 맞는다. 재시도가 정답인 상태다. */
         err.growthJumpApplied = arrived.arrivalGrowthDays;
@@ -796,7 +802,10 @@ export function harvestCrop(S, io) {
       markMonsteraArrived(fp, arrived);
       markMonsteraPhase(fp, gp.phase);
       arrivalPhase = gp.phase;
-      pushLog(S, '🌱 “콩나물을 잘 키웠구나. 이건 좀 더 어려울 거야.”');
+      /* ★ 문구가 바뀐 이유 — **오는 물건이 바뀌었다** (2026-08-04).
+         이제 줄기 하나짜리 어린 포기가 온다(state.ARRIVAL = 유효 45일).
+         "이건 좀 더 어려울 거야"는 이미 자란 포기를 받을 때의 말이라 화면과 어긋난다. */
+      pushLog(S, '🌱 “콩나물을 잘 키웠구나. 작은 걸 하나 줄 테니 키워 봐라.”');
     }
   } catch (e) {
     /* givePlant 는 setGrowth 성공 뒤에만 화분을 만들고, 위에서 실패하면 바로 거둔다.

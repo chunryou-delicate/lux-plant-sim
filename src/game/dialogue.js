@@ -77,16 +77,23 @@ export const SCRIPTS = {
   ],
 
   /* ★식물신 — 대사 한 줄. 외형 없음.
-     first_play.md 의 예시 문장을 그대로 쓴다. 새 설정을 만들지 않는다. */
+     ★ 2026-08-04 문구를 고쳤다 — **오는 물건이 바뀌었다.** 줄기 하나짜리 어린 포기가
+       온다(state.ARRIVAL). "이건 좀 더 어려울 거야"는 이미 자란 포기를 받을 때의 말이라
+       화면과 어긋난다. loop.harvestCrop 이 남기는 로그 문장과 **같은 문장**이다 —
+       둘이 갈리면 같은 장면에서 신이 두 가지로 말한다. */
   god1: [
-    { who: 'god', text: '콩나물을 잘 키웠구나. 이건 좀 더 어려울 거야.' }
+    { who: 'god', text: '콩나물을 잘 키웠구나. 작은 걸 하나 줄 테니 키워 봐라.' }
   ],
 
   /* 몬스테라 도착 — ★정답이 아닌 자리에 온다(first_play.md 확정).
-     "옮겨라"라고 대놓고 말하지 않는다. 옮기는 것이 두 번째 학습이라 스스로 해야 한다. */
+     "옮겨라"라고 대놓고 말하지 않는다. 옮기는 것이 두 번째 학습이라 스스로 해야 한다.
+     ★ 2026-08-04 — 오는 물건이 **줄기 하나짜리 어린 포기**로 바뀌었다(state.ARRIVAL = 유효 45일).
+       그래서 첫 마디가 "작다"를 먼저 짚는다. 그래야 며칠 뒤 2개째가 올라오는 것이
+       플레이어에게 **처음 보는 성장**이 된다. 여기서 "두 개째가 날 거야"라고 미리 말하지 않는다 —
+       발견을 뺏는다. */
   monsteraArrived: [
-    { who: 'jachwi', face: 'surprise', text: '몬스테라…?' },
-    { who: 'moni',   face: 'curious',  text: '얘는 콩나물이랑 반대야. 어두운 데 두면 아무 일도 안 일어나.' }
+    { who: 'jachwi', face: 'surprise', text: '몬스테라…? 줄기가 하나뿐인데.' },
+    { who: 'moni',   face: 'curious',  text: '작은 걸 줬네. 얘는 콩나물이랑 반대야 — 어두운 데 두면 아무 일도 안 일어나.' }
   ],
 
   /* 창턱으로 옮긴 뒤 */
@@ -572,19 +579,14 @@ export function scriptsForEvents(events = []) {
   for (const ev of [...list].sort((a, b) => rank(a) - rank(b))) {
     const s = scriptOf(ev);
     if (s && !out.includes(s)) out.push(s);
-    /* ★식물신은 수확 **바로 뒤**에 붙는다. 첫 플레이 계약이라 여기 한 곳에 박아 둔다. */
-    if (s === 'harvest' && !out.includes('god1')) out.push('god1');
   }
-  /* 수확·배움이 같이 났으면 식물신을 배움 뒤로 민다 — 배움 두 줄은 수확의 꼬리다 */
-  const g = out.indexOf('god1');
-  if (g >= 0) {
-    const tail = ['learnHarvest', 'learnCropDark'].filter(x => out.includes(x));
-    if (tail.length) {
-      out.splice(g, 1);
-      const last = Math.max(...tail.map(x => out.indexOf(x)));
-      out.splice(last + 1, 0, 'god1');
-    }
-  }
+  /* ★★ 식물신은 **주는 순간 바로 앞**에 붙는다 (2026-08-04 고침).
+     예전에는 `harvest`(첫 수확) 뒤였다 — 그때가 곧 도착이었기 때문이다. 이제 도착이
+     3회전째로 밀려서(first_play.monsteraArrivalDue) 옛 자리에 두면 신이 "줄 테니" 하고
+     **며칠 뒤에** 물건이 온다. 주는 말과 오는 물건은 붙어 있어야 한다.
+     ⚠ 도착보다 **앞**이라야 한다 — first_play.md §2 가 금지한 것이 "식물신이 도착 뒤에 말하는" 회차다. */
+  const arr = out.indexOf('monsteraArrived');
+  if (arr >= 0 && !out.includes('god1')) out.splice(arr, 0, 'god1');
   return out;
 }
 

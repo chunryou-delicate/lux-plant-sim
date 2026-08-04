@@ -137,7 +137,7 @@ export function createGrowthAdapter(iframe) {
     growthPhase()     { return must('growthPhase')(); },
 
     /* ⚠ 점프다. **초기 형태 배치·디버그 전용** — 일일 루프에서 부르지 않는다.
-       개체가 생길 때 한 번(도착 진행도 143) 쓰는 게 전부다.
+       개체가 생길 때 한 번(도착 진행도 = state.ARRIVAL.growthDays) 쓰는 게 전부다.
        없으면 던진다 — null 을 돌려주면 "도착은 했는데 형태는 0일"인 개체가 조용히 생긴다.
        도착은 성공/실패가 갈려야 하는 원자적 사건이다(state.givePlant 참고). */
     /* 반환 { growth, calDay, drawn, drawError, hudError } — 도착(개체 생성)이 이걸 쓴다.

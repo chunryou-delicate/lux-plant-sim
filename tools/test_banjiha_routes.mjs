@@ -25,7 +25,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createProfileLight } from '../src/game/room_profile.js';
 import { newState, pot0, setPotSlot, resowCrop, waterCrop,
-         cropWaterStatus } from '../src/game/state.js';
+         cropWaterStatus, ARRIVAL } from '../src/game/state.js';
 import { nextDay, harvestCrop } from '../src/game/loop.js';
 import { firstPlayRulesFromBalance, placeBeansprout, moveMonstera, beansproutReady,
          FIRST_PLAY_RULES, CROP_KINDS } from '../src/game/first_play.js';
@@ -141,7 +141,9 @@ function standGrowth(seed) {
   try { G.plantSeed(seed); } catch { /* 3D 무대 없음 */ }
   G.matResetAll();
   G.resetDailyLight();
-  G.setGrowth(143);                      // 도착 개체 — first_play 의 arrivalGrowthDays 와 같은 값
+  /* 도착 개체 — 숫자를 여기 베끼지 않는다. state.ARRIVAL 이 정본이고 코어가 실제로 넘기는 값이다
+     (예전엔 143 이 박혀 있어서 정본이 바뀌면 재현만 옛 개체로 조용히 남았다). */
+  G.setGrowth(ARRIVAL.growthDays);
   return {
     assertContract() { return true; },
     has: (n) => typeof G[n] === 'function',
@@ -267,7 +269,16 @@ function play(opt = {}) {
     }
 
     /* ── ① 콩나물 회전 — 씨앗을 미리 시켜 두고, 오면 다시 심는다 ────────── */
-    if (opt.farm !== false) {
+    /* ★★ 2026-08-04 — `farm: false` 여도 **첫 플레이 동안은 돌린다.**
+       몬스테라가 3회전째에 오게 바뀌면서(first_play.monsteraArrivalDue), 회전을 아예 안 돌리면
+       선물이 영영 안 오고 → 첫 플레이가 안 끝나고 → **튜토 시계가 시작조차 안 한다.**
+       그러면 "아무것도 안 하면 파산한다"(검사 D)가 파산이 아니라 **아무 일도 없음**이 된다.
+       `farm: false` 가 재려던 것은 "튜토를 사는 동안 콩나물을 안 돌리면"이므로 거기서만 끈다.
+       ★ `farm: 'never'` 는 첫 플레이에서도 안 돌린다 — **재고 규칙 자체**를 재는 검사용이다. */
+    const farmNow = opt.farm === 'never' ? false
+                  : opt.farm !== false ? true
+                  : !S.firstPlay.completed;
+    if (farmNow) {
       const b = S.firstPlay.beansprout;
       /* ★★ 2026-08-04 — 시루를 **더 사지 않는다.** 같은 작물은 몇 시루를 심어도 절감이 안 는다
          (first_play.js §작물 종류 — 체감은 개수가 아니라 종류에 걸린다). 예전에는 셋까지 늘렸는데
@@ -352,10 +363,10 @@ check('0 ★도착 개체의 잎 수 — 값의 크기는 여기서 나온다 (�
   const st0 = g.leafStats();
   assert.ok(Number.isInteger(st0.leaves) && st0.leaves >= 1, `잎 집계가 이상합니다: ${JSON.stringify(st0)}`);
   const marks = [];
-  let cal = 143;
+  let cal = ARRIVAL.growthDays;
   for (let d = 1; d <= 120; d++) { g.setDailyLight(3.77); g.advanceTo(++cal);
     if (d % 30 === 0) marks.push(`${d}일 뒤 ${g.leafStats().leaves}장`); }
-  info(`도착(유효 143일): 잎 ${st0.leaves}장 · 마디 ${g.cuttableNodes().length}개 → ` + marks.join(' · '));
+  info(`도착(유효 ${ARRIVAL.growthDays}일): 잎 ${st0.leaves}장 · 마디 ${g.cuttableNodes().length}개 → ` + marks.join(' · '));
   info(`민무늬 값: 잎1 ${priceOf({ leaves: 1, variegatedLeaves: 0 }).won.toLocaleString()}원 · ` +
        `잎${st0.leaves} ${priceOf({ leaves: st0.leaves, variegatedLeaves: 0 }).won.toLocaleString()}원 · ` +
        `★무늬 잎1(v=1) ${priceOf({ leaves: 1, variegatedLeaves: 1 }).won.toLocaleString()}원`);
@@ -373,7 +384,7 @@ check('0 ★도착 개체의 잎 수 — 값의 크기는 여기서 나온다 (�
     if (gg.leafStats().variegatedLeaves > 0) varieArrival++;
     /* 도착 다음 날 창턱 빛이 들어와도 **있던 잎이 뒤집히지 않는다** */
     const before = gg.leafStats();
-    gg.setDailyLight(3.77); gg.advanceTo(144);
+    gg.setDailyLight(3.77); gg.advanceTo(ARRIVAL.growthDays + 1);
     if (gg.leafStats().variegatedLeaves > before.variegatedLeaves) varieFlip++;
   }
   assert.equal(varieArrival, 0,
@@ -410,8 +421,8 @@ check('A 상점 — 결제는 지금, 물건은 1~2일 뒤. 도착 전에는 못
 });
 
 check('A-2 재고 없이 다시 심을 수 없다 — 공짜로 무한히 나오지 않는다', () => {
-  const r = play({ seed: 7, days: 6, farm: false, propagate: false, cropSlot: DARK, plantSlot: SILL });
-  assert.equal(r.S.firstPlay.beansprout.harvested, true, 'Day 4 수확이 안 났습니다');
+  const r = play({ seed: 7, days: 6, farm: 'never', propagate: false, cropSlot: DARK, plantSlot: SILL });
+  assert.equal(r.S.firstPlay.beansprout.harvested, true, '첫 수확이 안 났습니다');
   assert.throws(() => resowCrop(r.S, {}), /먼저 주문|배송 중/, '★씨앗 없이 다시 심어졌습니다');
 });
 
@@ -420,17 +431,42 @@ check('A-3 용기 없이 못 자른다 — 병은 이틀 걸려 온다', () => {
   light.clearCache();
   const io = { light, growth: standGrowth(1) };
   placeBeansprout(S.firstPlay, DARK, { slots: light.room.slots });
-  /* ★ [물 주기] → [다음 날] → (거둘 때가 되면) [수확하기] — 게임과 같은 순서다 (2026-08-04) */
-  for (let i = 0; i < 6; i++) {
-    try { waterCrop(S); } catch {}
+  /* ★ [물 주기] → [다음 날] → (거둘 때가 되면) [수확하기] → (거뒀으면) 씨앗 주문·다시 심기.
+     게임과 같은 순서다 (2026-08-04). ★ 선물은 **3회전째**에 오므로 거기까지 돈다. */
+  for (let i = 0; i < 40 && !pot0(S); i++) {
+    const b = S.firstPlay.beansprout;
+    if (b.harvested) {
+      if (stockOf(S, 'bean_seed') < 1 && incomingOf(S, 'bean_seed') < 1)
+        try { orderItem(S, 'bean_seed', 1); } catch { /* 다음 날 */ }
+      if (stockOf(S, 'bean_seed') >= 1)
+        try { resowCrop(S, { at: DARK, slots: light.room.slots }); } catch { /* 다음 날 */ }
+    }
+    try { waterCrop(S); } catch { /* 이미 준 날 */ }
     nextDay(S, io);
     if (beansproutReady(S.firstPlay.beansprout)) harvestCrop(S, io);
   }
-  assert.ok(pot0(S), '몬스테라가 안 왔습니다 — 거둬야 옵니다');
+  assert.ok(pot0(S), '몬스테라가 안 왔습니다 — 세 번 거둬야 옵니다');
+  /* ★★ 2026-08-04 — 도착 개체는 **잎이 한 장**이다(줄기 1개). 잎 한 장짜리 그루에서는
+     어느 마디를 잘라도 그루가 통째로 딸려와 초보 규칙(모주가 끝난다)에 먼저 걸린다 —
+     그건 용기 규칙이 아니다. 그래서 창턱에서 잎이 두 장이 될 때까지 키운 뒤에 잰다.
+     (유효 61에 2개째 줄기의 첫 잎이 난다 — tools/probe_arrival_stems.mjs) */
+  setPotSlot(S, pot0(S), SILL, light.room.slots);
+  moveMonstera(S.firstPlay, SILL, { slots: light.room.slots });
+  for (let i = 0; i < 40 && (io.growth.leafStats().leaves < 2); i++) {
+    try { waterCrop(S); } catch { /* 이미 준 날 */ }
+    nextDay(S, io);
+    if (beansproutReady(S.firstPlay.beansprout)) harvestCrop(S, io);
+  }
+  assert.ok(io.growth.leafStats().leaves >= 2, '★창턱에서 40일이 지나도 잎이 두 장이 안 됐습니다');
   const nodes = cuttableNow(S, io.growth.cuttableNodes());
   const one = nodes.filter(n => n.leaves === 1);
   assert.ok(one.length, '잎 1장짜리 마디가 없습니다');
-  assert.throws(() => takeCutting(S, { nodes, nodeId: one[0].nodeId, container: 'jar' }),
+  /* ★ 밑동(n0#0)은 자르면 그루가 통째로 딸려와 **모주가 끝난다** — 초보 모드가 따로 막는 규칙이다.
+     여기서 재려는 것은 "병이 없으면 못 자른다" 하나이므로 그 규칙에 안 걸리는 **위쪽 마디**를 고른다.
+     (도착 개체가 줄기 1개로 작아지면서 잎 1장짜리 마디의 첫 자리가 밑동이 됐다 — 2026-08-04) */
+  const target = one[one.length - 1];
+  assert.notEqual(target.nodeId, nodes[0].nodeId, '밑동 말고 자를 마디가 없습니다');
+  assert.throws(() => takeCutting(S, { nodes, nodeId: target.nodeId, container: 'jar' }),
     /먼저 주문|배송 중|필요한데/, '★병 없이 삽수가 잘렸습니다 — 용기가 공짜입니다');
 });
 
@@ -729,11 +765,11 @@ check('H-2 ★정식 모드로 새지 않는다 — 튜토가 없으면 상태�
   assert.equal(stepVarieGrant(done, { nodes, stats }).granted, false, '★이사한 뒤에도 무늬가 주어집니다');
 
   /* ③ growth 는 아무 영향도 안 받는다 — 같은 씨앗·같은 날이면 잎 집계가 똑같다 */
-  const before = (() => { const g = standGrowth(31); let c = 143;
+  const before = (() => { const g = standGrowth(31); let c = ARRIVAL.growthDays;
     for (let i = 0; i < 60; i++) { g.setDailyLight(3.77); g.advanceTo(++c); }
     return JSON.stringify(g.leafStats()); })();
   const r = play({ seed: 31, days: 60, cropSlot: DARK, plantSlot: SILL });
-  const after = (() => { const g = standGrowth(31); let c = 143;
+  const after = (() => { const g = standGrowth(31); let c = ARRIVAL.growthDays;
     for (let i = 0; i < 60; i++) { g.setDailyLight(3.77); g.advanceTo(++c); }
     return JSON.stringify(g.leafStats()); })();
   assert.equal(after, before,

@@ -11,6 +11,7 @@ import {
   openSiruContractFromManifest,
   markMonsteraArrived,
   markMonsteraPhase,
+  MONSTERA_ARRIVAL_RULE,
   moveMonstera,
   placeBeansprout,
   waterBeansprout,
@@ -18,7 +19,8 @@ import {
   resowBeansprout
 } from '../src/game/first_play.js';
 import { nextDay, harvestCrop } from '../src/game/loop.js';
-import { newState, pot0, waterCrop, cropHarvestStatus } from '../src/game/state.js';
+import { newState, pot0, waterCrop, cropHarvestStatus, resowCrop, ARRIVAL } from '../src/game/state.js';
+import { orderItem, stockOf, incomingOf, buyPriceOf } from '../src/game/shop.js';
 
 /* ★ 게임 화면의 [물 주기] + [다음 날] + (거둘 때가 됐으면) [수확하기] = 표준 하루 (2026-08-04).
    물을 준 날만 자라고, **거둬야 곳간에 들어간다** — 재현도 그 두 행위를 그대로 밟는다.
@@ -29,6 +31,24 @@ const day1 = (S, io) => {
   const r = nextDay(S, io);
   if (beansproutReady(S.firstPlay.beansprout)) r.turn.harvest = harvestCrop(S, io);
   return r;
+};
+
+/* ★ 몬스테라는 이제 **첫 수확이 아니라 3회전째**에 온다 (2026-08-04 · first_play.monsteraArrivalDue).
+   그래서 재현도 회전을 그만큼 돌린다 — 씨앗을 주문해 하루 기다렸다 다시 심는 것까지
+   게임 화면의 순서 그대로다. 도착할 때까지 돌리고, 안 오면 그 자체가 고장이라 던진다. */
+const rotateUntilArrival = (S, io, at) => {
+  for (let guard = 0; guard < 60 && !pot0(S); guard++) {
+    const b = S.firstPlay.beansprout;
+    if (b.harvested) {
+      if (stockOf(S, 'bean_seed') < 1 && incomingOf(S, 'bean_seed') < 1)
+        try { orderItem(S, 'bean_seed', 1); } catch { /* 돈이 없으면 다음 날 */ }
+      if (stockOf(S, 'bean_seed') >= 1)
+        try { resowCrop(S, { at, slots: io.light.room.slots }); } catch { /* 재고가 안 맞으면 다음 날 */ }
+    }
+    day1(S, io);
+  }
+  assert.ok(pot0(S), '★회전을 예순 번 돌려도 몬스테라가 안 왔습니다 — 도착 조건이 영영 안 열립니다');
+  return S.firstPlay.beansprout.harvestCount;
 };
 
 const TEST_RULES = firstPlayRulesFromBalance(JSON.parse(
@@ -310,11 +330,17 @@ console.log('first_play: PASS');
     { slotId: 'arrival-slot', dli: 0.1, maxPotD: 0.30, band: 'critical', ko: '어두움' },
     { slotId: 'banjiha-sill:0', dli: 3.77, maxPotD: 0.21, band: 'slow', ko: '느린 성장' }
   ];
-  const growthPhase = () => growth >= 146
+  /* ★ 도착(유효 45) 뒤 **첫 말린 새순은 유효 61** 이다 — 재서 나온 값이다
+     (tools/probe_arrival_stems.mjs · docs/engine/shots/arrival/). 그 61 은 곧
+     **2개째 줄기의 첫 잎**이라, 첫 플레이의 완료 신호와 "2개째가 자란다"가 같은 사건이다.
+     ⚠ 숫자를 여기 박지 않는다 — 도착값은 state.ARRIVAL 이 정본이다. */
+  const SPEAR_GROWTH = 61;
+  const SPEAR_DAYS = SPEAR_GROWTH - ARRIVAL.growthDays;
+  const growthPhase = () => growth >= SPEAR_GROWTH
     ? { phaseId: 'spear_furled', phaseKo: '말린 새순 등장', progress01: 0,
         nextPhaseId: 'spear_opening', nextPhaseKo: '새순이 펴지는 중' }
     : { phaseId: 'spear_ready', phaseKo: '말린 새순을 준비하는 중',
-        progress01: Math.max(0, (growth - 143) / 3),
+        progress01: Math.max(0, (growth - ARRIVAL.growthDays) / SPEAR_DAYS),
         nextPhaseId: 'spear_furled', nextPhaseKo: '말린 새순 등장' };
   const io = {
     light: {
@@ -376,29 +402,42 @@ console.log('first_play: PASS');
     '★수확·식비 절감이 배움에 안 적혔습니다 — harvestCrop 이 배움을 안 켜고 있습니까?');
   assert.equal(S.tutorial.learned.cropDark, true,
     '★어두운 자리 수확(4일평균 낮음)이 배움에 안 적혔습니다');
-  /* 첫 플레이 중에는 살림이 멈춰 있어야 한다 — 그 16일은 배우는 구간이다 */
+  /* 첫 플레이 중에는 살림이 멈춰 있어야 한다 — 그 며칠은 배우는 구간이다 */
   assert.equal(S.tutorial.day, 0, '첫 플레이 중인데 반지하 날짜가 갔습니다');
   assert.equal(S.tutorial.cashWon, S.tutorial.rules.startCashWon, '첫 플레이 중인데 돈이 빠졌습니다');
-  assert.equal(pot0(S).arrivalGrowthDays, 143);
+  /* ★ 도착은 `first_play.MONSTERA_ARRIVAL_RULE.harvestCount` 회전째에 온다 (2026-08-04).
+     지금 그 값은 **1** 이다 — 화면(game.html)이 첫 플레이 동안 상점·다시심기를 닫아 둬서
+     회전을 더 돌릴 수가 없다(first_play.js §게이트). 게이트가 열려 값이 오르면
+     아래 `rotateUntilArrival` 이 그만큼 더 돌 뿐 이 검사는 그대로 선다. */
+  const cashBeforeRotate = S.tutorial.cashWon;
+  const harvests = rotateUntilArrival(S, io, 'dark-slot');
+  assert.equal(harvests, MONSTERA_ARRIVAL_RULE.harvestCount,
+    `★거둔 횟수 ${harvests}회에 왔습니다 — 규칙은 ${MONSTERA_ARRIVAL_RULE.harvestCount}회전입니다`);
+  assert.equal(S.tutorial.day, 0, '첫 플레이 중인데 반지하 날짜가 갔습니다');
+  assert.equal(S.tutorial.cashWon,
+    cashBeforeRotate - buyPriceOf('bean_seed') * (harvests - 1),
+    '★첫 플레이 중에 씨앗값 말고 다른 돈이 나갔습니다');
+  assert.equal(pot0(S).arrivalGrowthDays, ARRIVAL.growthDays);
   assert.notEqual(pot0(S).slotId, 'banjiha-sill:0', '몬스테라는 먼저 어두운 자리에 도착해야 한다');
 
   assert.equal(S.firstPlay.phase, 'move_monstera');
   pot0(S).slotId = 'banjiha-sill:0';
   moveMonstera(S.firstPlay, pot0(S).slotId);
+  const dayAtMove = S.day;
   nextDay(S, io);
-  /* ★ 곳간은 **거둔 다음 날부터** 열린다 — 거둔 그 날에는 한 입도 안 꺼냈다(위 ★★) */
-  assert.equal(S.firstPlay.food.cashFoodWon, TEST_RULES.dailyFoodWon - TEST_RULES.dailyCropSaveWon);
-  assert.equal(S.firstPlay.food.pantryWon,
-    TEST_RULES.cropSavedWonPerCycle - TEST_RULES.dailyCropSaveWon, '곳간에 남은 몫이 안 맞습니다');
   assert.equal(S.firstPlay.phase, 'grow_monstera',
     '창턱으로 옮겨 게이지가 오르는 중이면 "옮겨 보세요"가 남으면 안 된다');
-  for (let day = CYCLE + 2; day <= CYCLE + 3; day++) nextDay(S, io);
+  assert.equal(S.firstPlay.completed, false,
+    '★옮긴 다음 날 바로 끝났습니다 — 말린 새순까지는 며칠 걸려야 합니다');
+  /* 창턱(3.77)에서 하루 1일씩 쌓여 유효 61 에서 말린 새순이 난다 */
+  for (let i = 2; i <= SPEAR_DAYS; i++) nextDay(S, io);
 
-  assert.equal(S.day, CYCLE + 3);
-  assert.equal(pot0(S).daysPlanted, 3);
-  assert.equal(S.firstPlay.completed, true);
+  assert.equal(S.day, dayAtMove + SPEAR_DAYS);
+  assert.equal(pot0(S).daysPlanted, SPEAR_DAYS);
+  assert.equal(S.firstPlay.completed, true,
+    `★유효 ${SPEAR_GROWTH}일이 됐는데 첫 플레이가 안 끝났습니다`);
   assert.equal(S.firstPlay.monstera.growthPhase.phaseId, 'spear_furled');
-  assert.deepEqual(S.dliHist, [3.77, 3.77, 3.77]);
+  assert.deepEqual(S.dliHist, Array(SPEAR_DAYS).fill(3.77));
 }
 
 console.log('first_play_loop: PASS');
@@ -439,15 +478,35 @@ console.log('first_play_loop: PASS');
   assert.equal(S.day, CYCLE, '★선물이 실패하는 판인데 자라는 날에서 이미 터졌습니다');
   assert.equal(beansproutReady(S.firstPlay.beansprout), true);
 
-  let err = null;
-  try { harvestCrop(S, io); } catch (e) { err = e; }
+  /* ★ 선물은 이제 **3회전째**에 시도된다 (2026-08-04) — 앞의 두 회전은 조용히 지나가야 한다.
+     여기서 앞 회전이 터지면 그건 도착 조건이 아니라 수확 자체가 깨진 것이다. */
+  let err = null, dayAtThrow = null, foodBefore = null;
+  for (let guard = 0; guard < 40 && !err; guard++) {
+    if (beansproutReady(S.firstPlay.beansprout)) {
+      /* ★ 되돌림의 기준선 — 앞 회전이 이미 곳간을 채워 뒀으므로 "0 이어야 한다"로는 못 잰다.
+         **터진 그 수확만** 없던 일이 됐는가를 본다. */
+      foodBefore = { pantryWon: S.firstPlay.food.pantryWon,
+                     totalFoodSavedWon: S.firstPlay.food.totalFoodSavedWon };
+      try { harvestCrop(S, io); } catch (e) { err = e; dayAtThrow = S.day; break; }
+    }
+    const b = S.firstPlay.beansprout;
+    if (b.harvested) {
+      if (stockOf(S, 'bean_seed') < 1 && incomingOf(S, 'bean_seed') < 1)
+        try { orderItem(S, 'bean_seed', 1); } catch { /* 다음 날 */ }
+      if (stockOf(S, 'bean_seed') >= 1)
+        try { resowCrop(S, { at: 'dark-slot', slots }); } catch { /* 다음 날 */ }
+    }
+    try { waterCrop(S); } catch { /* 이미 준 날 */ }
+    nextDay(S, io);
+  }
+  assert.ok(err, '★선물 초기화가 실패하는 판인데 아무 회전에서도 안 터졌습니다');
   assert.match(err.message, /도착 초기화 실패 주입/);
   assert.equal(err.harvestRolledBack, true, '수확을 물렀다는 표식이 없습니다');
-  assert.equal(S.day, CYCLE, '★날짜는 이미 확정된 뒤다 — 되감으면 오히려 어긋난다');
+  assert.equal(S.day, dayAtThrow, '★날짜는 이미 확정된 뒤다 — 되감으면 오히려 어긋난다');
   assert.equal(S.firstPlay.beansprout.ageDays, CYCLE);
   assert.equal(S.firstPlay.beansprout.harvested, false, '★수확이 안 물렸습니다');
-  assert.equal(S.firstPlay.food.pantryWon, 0, '★무른 수확이 곳간에 남았습니다');
-  assert.equal(S.firstPlay.food.totalFoodSavedWon, 0);
+  assert.equal(S.firstPlay.food.pantryWon, foodBefore.pantryWon, '★무른 수확이 곳간에 남았습니다');
+  assert.equal(S.firstPlay.food.totalFoodSavedWon, foodBefore.totalFoodSavedWon);
   assert.equal(S.pots.length, 0);
   /* ★ 잠기지 않는다 — 거둘 수 있는 상태 그대로라 다시 누를 수 있다 */
   assert.equal(cropHarvestStatus(S).canHarvest, true, '★무른 뒤에 다시 거둘 수 없게 됐습니다');
