@@ -24,9 +24,10 @@ import vm from 'node:vm';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createProfileLight } from '../src/game/room_profile.js';
-import { newState, pot0, setPotSlot, resowCrop } from '../src/game/state.js';
+import { newState, pot0, setPotSlot, resowCrop, waterCrop } from '../src/game/state.js';
 import { nextDay } from '../src/game/loop.js';
-import { firstPlayRulesFromBalance, placeBeansprout, moveMonstera } from '../src/game/first_play.js';
+import { firstPlayRulesFromBalance, placeBeansprout, moveMonstera,
+         FIRST_PLAY_RULES, CROP_KINDS } from '../src/game/first_play.js';
 import { seasonAt, seasonDayAt, buyLamp, canMoveOut, moveOut,
          varieView, varieGrantCheck, stepVarieGrant, varieGrantOpensDay } from '../src/game/tutorial.js';
 import { orderItem, stockOf, incomingOf, priceOf, varieLeavesNeededFor,
@@ -228,6 +229,11 @@ function play(opt = {}) {
   };
 
   for (let d = 1; d <= (opt.days || 240); d++) {
+    /* ★ 물주기 (2026-08-04) — [물 주기] + [다음 날] 이 표준 하루다(first_play.js §물주기).
+       물을 준 날만 자라므로 재현도 그 행위를 한다. 표준 플레이는 매일 주는 것이고,
+       빼먹으면 얼마나 늦어지는지는 tools/probe_crop_cycle.mjs 가 따로 잰다. */
+    if (opt.water !== false) { try { waterCrop(S); } catch { /* 안 놓았거나 이미 거둔 시루 */ } }
+
     let turn;
     try { turn = nextDay(S, io).turn; }
     catch (e) { throw new Error(`Day ${S.day} 에서 턴이 터졌습니다 — ${e.message}`); }
@@ -248,9 +254,10 @@ function play(opt = {}) {
     /* ── ① 콩나물 회전 — 씨앗을 미리 시켜 두고, 오면 다시 심는다 ────────── */
     if (opt.farm !== false) {
       const b = S.firstPlay.beansprout;
-      /* ★시루를 셋까지 늘린다 — 하루 2끼 상한을 채우는 데 필요한 수(food_economy.md §4).
-         그 이상은 남아서 쉬어 버리므로 사는 의미가 없다. 용기는 이틀 걸린다. */
-      const want = Math.min(opt.sirus ?? 3, 3);
+      /* ★★ 2026-08-04 — 시루를 **더 사지 않는다.** 같은 작물은 몇 시루를 심어도 절감이 안 는다
+         (first_play.js §작물 종류 — 체감은 개수가 아니라 종류에 걸린다). 예전에는 셋까지 늘렸는데
+         이제 그건 씨앗값만 세 배로 내는 손해다. 늘리려면 **다른 작물**이라야 하고, 지금은 없다. */
+      const want = Math.min(opt.sirus ?? 1, 3);
       if (b.sirus + stockOf(S, 'siru') + incomingOf(S, 'siru') < want)
         try { orderItem(S, 'siru', 1); } catch { /* 돈이 모자라면 다음 날 */ }
       const target = Math.min(want, b.sirus + stockOf(S, 'siru'));
@@ -398,7 +405,7 @@ check('A-3 용기 없이 못 자른다 — 병은 이틀 걸려 온다', () => {
   light.clearCache();
   const io = { light, growth: standGrowth(1) };
   placeBeansprout(S.firstPlay, DARK, { slots: light.room.slots });
-  for (let i = 0; i < 6; i++) nextDay(S, io);
+  for (let i = 0; i < 6; i++) { try { waterCrop(S); } catch {} nextDay(S, io); }
   assert.ok(pot0(S), '몬스테라가 안 왔습니다');
   const nodes = cuttableNow(S, io.growth.cuttableNodes());
   const one = nodes.filter(n => n.leaves === 1);
@@ -411,11 +418,49 @@ check('A-3 용기 없이 못 자른다 — 병은 이틀 걸려 온다', () => {
 check('B 콩나물 — 다시 심을 수 있고 회전이 이어진다 · 절감이 매일 걸린다', () => {
   const r = play({ seed: 3, days: 40, propagate: false, cropSlot: DARK, plantSlot: SILL });
   const b = r.S.firstPlay.beansprout;
-  assert.ok(b.harvestCount >= 5, `40일에 수확이 ${b.harvestCount}번뿐입니다 — 회전이 안 돕니다`);
-  assert.ok(r.S.firstPlay.food.totalFoodSavedWon > 100_000,
-    `총 절감이 ${r.S.firstPlay.food.totalFoodSavedWon}원 — 매일 안 걸리고 있습니다`);
+  /* ★ 회전이 4일 → **5일**로 늘었다(2026-08-04) — 40일이면 일곱 번 남짓이다 */
+  assert.ok(b.harvestCount >= 6, `40일에 수확이 ${b.harvestCount}번뿐입니다 — 회전이 안 돕니다`);
+  /* ★ 절감은 하루 600원 상한이다 — "매일 걸리나"는 **날수 × 상한**에 견주어 본다.
+     첫 회전(5일)은 곳간이 비어 있으므로 그만큼 빼고 센다. */
+  const RULES_CAP = r.S.firstPlay.rules.dailyCropSaveWon;
+  const expectMin = RULES_CAP * (40 - r.S.firstPlay.rules.harvestDays) * 0.9;
+  assert.ok(r.S.firstPlay.food.totalFoodSavedWon > expectMin,
+    `총 절감이 ${r.S.firstPlay.food.totalFoodSavedWon}원 (기대 ${Math.round(expectMin)}원 이상) — 매일 안 걸리고 있습니다`);
   info(`회전: 40일에 수확 ${b.harvestCount}번 · 총 절감 ${r.S.firstPlay.food.totalFoodSavedWon.toLocaleString()}원 ` +
        `· 씨앗값 ${r.S.tutorial.crop.spentWon.toLocaleString()}원`);
+});
+
+/* ══ B-2 · ★★ 체감은 **개수가 아니라 종류**에 걸린다 (2026-08-04 박사님 확정) ══════ */
+check('B-2 ★같은 시루를 여러 개 사도 절감이 안 는다 — 씨앗값만 더 나간다', () => {
+  const one   = play({ seed: 3, days: 40, propagate: false, cropSlot: DARK, plantSlot: SILL, sirus: 1 });
+  const three = play({ seed: 3, days: 40, propagate: false, cropSlot: DARK, plantSlot: SILL, sirus: 3 });
+  assert.equal(three.S.firstPlay.food.totalFoodSavedWon, one.S.firstPlay.food.totalFoodSavedWon,
+    '★시루를 셋 돌렸더니 절감이 늘었습니다 — 개수에 값이 붙고 있습니다(질림 규칙 위반)');
+  assert.ok(three.S.tutorial.crop.spentWon > one.S.tutorial.crop.spentWon,
+    '★시루를 셋 돌렸는데 씨앗값이 안 늘었습니다 — 늘리는 것이 공짜가 되면 안 됩니다');
+  assert.ok(three.S.tutorial.cashWon < one.S.tutorial.cashWon,
+    '★시루를 셋 돌렸는데 손해가 아닙니다 — "질려서 못 먹는다"가 값으로 안 나타납니다');
+  info(`체감의 축: 시루 1개 절감 ${one.S.firstPlay.food.totalFoodSavedWon.toLocaleString()}원 · ` +
+       `시루 3개도 같은 ${three.S.firstPlay.food.totalFoodSavedWon.toLocaleString()}원 ` +
+       `(씨앗값만 ${one.S.tutorial.crop.spentWon.toLocaleString()} → ${three.S.tutorial.crop.spentWon.toLocaleString()}원)`);
+  info(`  ⤷ 늘리려면 **다른 작물**이라야 한다 — 종류 순번별 ` +
+       `${FIRST_PLAY_RULES.cropKindSavedWon.map(w => w.toLocaleString()).join(' → ')}원/회전. ` +
+       `지금 작물은 ${CROP_KINDS.length}종뿐이라 2·3종은 자리만 있다`);
+});
+
+check('B-3 ★물주기가 회전 속도를 가른다 — 빼먹으면 늦어지고, 늦어진 만큼만 손해다', () => {
+  const wet = play({ seed: 3, days: 40, propagate: false, cropSlot: DARK, plantSlot: SILL });
+  const dryRun = play({ seed: 3, days: 40, propagate: false, cropSlot: DARK, plantSlot: SILL, water: false });
+  /* ★ 물을 한 번도 안 주면 콩나물이 한 번도 안 자란다 — 그런데 **죽지는 않는다** */
+  assert.equal(dryRun.S.firstPlay.beansprout.ageDays, 0, '★물을 안 줬는데 자랐습니다');
+  assert.equal(dryRun.S.firstPlay.beansprout.harvested, false);
+  assert.equal(dryRun.S.firstPlay.food.totalFoodSavedWon, 0, '★물을 안 줬는데 절감이 났습니다');
+  assert.ok(dryRun.S.firstPlay.beansprout.dryDays >= 39,
+    `마른 날이 ${dryRun.S.firstPlay.beansprout.dryDays}일뿐입니다 — 안 세고 있습니다`);
+  assert.ok(wet.S.firstPlay.food.totalFoodSavedWon > 0);
+  info(`물 = 속도: 매일 주면 40일에 수확 ${wet.S.firstPlay.beansprout.harvestCount}번 · ` +
+       `한 번도 안 주면 0번(마른 날 ${dryRun.S.firstPlay.beansprout.dryDays}일) — ` +
+       `그래도 시들지 않는다(초보는 안 죽는다)`);
 });
 
 /* ══ C · ★막다른 길이 없다 ═══════════════════════════════════════════════ */
@@ -434,6 +479,7 @@ check('C 밝은 자리에서 첫 수확을 해도 만회할 수 있다 (cropDark
       try { orderItem(S, 'bean_seed', b.sirus); } catch { /* 파산이면 다음 날 */ }
     if (b.harvested && stockOf(S, 'bean_seed') >= b.sirus)
       resowCrop(S, { at: DARK, slots: light.room.slots });
+    try { waterCrop(S); } catch { /* 아직 안 놓은 시루 */ }
     nextDay(S, io);
     got = S.tutorial.learned.cropDark;
   }
@@ -463,11 +509,21 @@ check('D-2 콩나물을 돌리면 돈이 덜 준다 — 그게 콩나물의 값�
   const farm = play({ seed: 2, days: 120, propagate: false, cropSlot: DARK, plantSlot: SILL });
   const at = t => (bare.rows.find(r => r.tday === t) || {}).cashWon;
   const bt = t => (farm.rows.find(r => r.tday === t) || {}).cashWon;
-  const D = 29;                                     // 첫 월세(30일) 직전 — 계단에 안 걸리는 자리
-  assert.ok(bt(D) > at(D),
-    `★콩나물을 돌렸는데 돈이 더 안 남았습니다 (튜토 ${D}일: 맨몸 ${at(D)} vs 회전 ${bt(D)})`);
-  info(`콩나물 값어치: 튜토 ${D}일에 ${(bt(D) - at(D)).toLocaleString()}원 더 남는다 ` +
+  /* ★★ 2026-08-04 — **본전을 뽑는 날을 찾는다.** 예전에는 튜토 29일 한 지점만 봤는데,
+     새 수치(5일 3,000원)에서는 순액이 하루 180원뿐이라 초반에는 씨앗값이 앞선다.
+     첫 플레이 구간(살림이 멈춘 며칠)에는 절감이 지갑에 안 실리는데 씨앗값은 나가기 때문이다.
+     그래서 "언제부터 이득인가"를 재고, **튜토가 끝나기 전에 그날이 오는지**를 검사한다. */
+  let cross = null;
+  for (let t = 1; t <= 90; t++) { if (at(t) != null && bt(t) != null && bt(t) > at(t)) { cross = t; break; } }
+  assert.ok(cross != null && cross <= 57,
+    `★콩나물이 90일 안에(또는 이사 전에) 본전을 못 뽑습니다 — 돌릴 이유가 없습니다 ` +
+    `(튜토 29일: 맨몸 ${at(29)} vs 회전 ${bt(29)})`);
+  const D = 57;                                     // 이사 중앙값 — 튜토를 다 산 시점
+  info(`콩나물 값어치: 튜토 ${cross}일부터 이득으로 돌아서고, ${D}일에 ` +
+       `${(bt(D) - at(D)).toLocaleString()}원 더 남는다 ` +
        `(하루 ${Math.round((bt(D) - at(D)) / D).toLocaleString()}원 · 씨앗값 낸 뒤 순액)`);
+  info(`  ⤷ ★순액이 얇다 — 절감 600원/일 − 씨앗 420원/일(2,100원÷5일) = **180원/일**. ` +
+       `하루 지출 20,000원의 0.9%다(예전 2,175원/일 = 10.9%). 보고 ③ 참고`);
 });
 
 /* ══ E · 값 공식 — propagation.md §6 그대로 ══════════════════════════════ */

@@ -133,6 +133,14 @@
   #plantToday:empty{display:none}
   #plantToday.grew{color:var(--leaf)}
   #plantToday.stop{color:#ffb454}
+  /* 물주기 — 할 일이 있을 때만 보인다. 안 주면 그날은 안 자란다(죽지는 않는다) */
+  #waterCrop{width:100%;min-height:var(--tap);margin:0 0 9px;border-radius:12px;
+    font-family:'Jua';font-size:14px;color:#0d2a33;border:0;
+    background:linear-gradient(180deg,#8fd8ea,#5fb9d4);
+    box-shadow:0 3px 0 rgba(0,0,0,.25);animation:waterPulse 1.8s ease-in-out infinite}
+  @keyframes waterPulse{0%,100%{filter:brightness(1)}50%{filter:brightness(1.12)}}
+  #waterCrop.done{background:rgba(255,255,255,.07);color:var(--dim);
+    box-shadow:none;animation:none}
   #bottom .quest{margin:0 0 9px;font-size:13.5px;line-height:1.5;color:var(--ink);
           background:rgba(255,180,84,.09);border:1px solid rgba(255,180,84,.20);
           border-radius:11px;padding:8px 11px}
@@ -674,6 +682,10 @@
     <div class="quest" id="quest">가방의 열린 시루를 방 안 어두운 자리에 놓아 보세요.</div>
     <!-- 오늘 식물이 자랐나 — 지금까지 검수 탭 개발 HUD 안에만 있어 아무도 못 봤다 -->
     <div id="plantToday"></div>
+    <!-- ★물을 줘야 할 때만 나타난다 (박사님 2026-08-04: "물주기 정도는 넣자").
+         항상 보이면 버튼 넷이 되어 폰에서 전부 작아진다.
+         할 일이 있을 때만 뜨면 버튼이 곧 안내가 된다. -->
+    <button id="waterCrop" style="display:none">💧 콩나물에 물 주기</button>
     <div class="actionbar">
       <button id="next" disabled>다음 날 ▸</button>
       <button id="ff" class="ghost" disabled>▶▶ 빨리감기</button>
@@ -978,7 +990,7 @@
 <script type="module">
 import { newState, SIM_MODES, pot0, pushLog, givePlant, hasPlant, ARRIVAL,
          setPotAt, setPotSlot, setCropAt, setFurniturePlacement, furnitureOverrides,
-         resowCrop } from './src/game/state.js';
+         resowCrop, waterCrop, cropWaterStatus } from './src/game/state.js';
 import { catalogList, orderItem, shopStatus, priceOf, sellPot,
          varieLeavesNeededFor } from './src/game/shop.js';
 import { isFreeSlotId } from './src/game/place.js';
@@ -1555,7 +1567,8 @@ function drawLedger() {
   const won = n => Math.round(n).toLocaleString('ko-KR') + '원';
   const row = (k, v, cls) => `<div class="lrow ${cls || ''}"><span>${k}</span><b>${v}</b></div>`;
 
-  const pantry = Math.max(0, Math.round((fp.food && fp.food.pantryMeals) || 0));
+  /* ⚠ 2026-08-04 절감이 끼니에서 **원**으로 바뀌었다(pantryMeals → pantryWon) */
+  const pantryWon = Math.max(0, Math.round((fp.food && fp.food.pantryWon) || 0));
   const harvested = !!(fp.beansprout && fp.beansprout.harvested);
 
   /* ★다음에 무엇을 해야 하는지까지 말한다. 숫자만 보여 주면
@@ -1578,7 +1591,7 @@ function drawLedger() {
     + row('콩나물로 아낌', savedToday ? '−' + won(savedToday) : '—', 'save')
     + row('오늘 실제로 나가는 돈', won(Math.max(0, daily - savedToday)), 'net')
     + row('보유금', won(ts.cashWon || 0), 'cash')
-    + row('남은 끼니', pantry ? `${pantry}끼 (${won(pantry * mealWon)})` : '없음')
+    + row('곳간에 남은 것', pantryWon ? won(pantryWon) : '없음')
     + row('시루 1개가 아끼는 돈', `하루 ${won(perSiruDay)}`)
     + `<div class="tip">${tip}</div>`;
 }
@@ -1678,6 +1691,23 @@ function drawPlantToday() {
   el.textContent = t.dli != null ? `오늘은 진행이 없었습니다 · 받은 빛 ${t.dli.toFixed(1)} DLI` : '';
 }
 
+/* ══ 물주기 (박사님 2026-08-04: "물주기 정도는 넣자. 행위가 있어야 재미있겠지") ══
+   ★축을 겹치지 않는다 — 자리(빛)는 **품질**을, 물은 **속도**를 정한다.
+     안 준 날은 그날만큼 안 자란다. 죽지는 않는다 — 벌은 시간이다.
+   ★할 일이 있을 때만 보인다. 항상 띄우면 버튼 넷이 되어 폰에서 전부 작아진다. */
+function drawWater() {
+  const b = $('waterCrop');
+  if (!b) return;
+  let st = null; try { st = cropWaterStatus(S); } catch { }
+  if (!st || !st.placed || st.harvested) { b.style.display = 'none'; return; }
+  b.style.display = '';
+  b.disabled = !st.needsWater;
+  b.classList.toggle('done', !st.needsWater);
+  b.textContent = st.needsWater
+    ? (st.dryRun > 0 ? `💧 물을 ${st.dryRun}일 빼먹었습니다 — 지금 주기` : '💧 콩나물에 물 주기')
+    : '💧 오늘 물을 줬습니다';
+}
+
 function drawJourney() {
   const fp = S.firstPlay;
   if (!fp || !fp.enabled) return;
@@ -1698,8 +1728,8 @@ function drawJourney() {
   $('cropState').textContent = crop.harvested ? `${crop.meals}끼 수확 완료`
     : crop.slotId ? `${crop.ageDays}/${crop.harvestDays}일 자람` : '가방에 있음';
   $('cropInfo').textContent = crop.harvested
-    ? `${crop.meals}끼 수확 · 수확일 ${Math.min(crop.meals, fp.rules.dailyCropMealCap)}끼 사용 · 남은 ${food.pantryMeals}끼`
-    : crop.slotId ? `자리 ${slotLabel(crop.slotId)}` : '4일 뒤 첫 수확';
+    ? `${crop.meals}끼 수확 · 곳간에 ${Math.round(food.pantryWon || 0).toLocaleString()}원 남음`
+    : crop.slotId ? `자리 ${slotLabel(crop.slotId)}` : `${crop.harvestDays || fp.rules.harvestDays}일 뒤 첫 수확`;
   /* 표시만 바꾼다 — 몬스테라 슬롯은 도착 전까지 빛이 죽어 있다 */
   $('plantCard').classList.toggle('locked', !plant.arrived);
 
@@ -1802,6 +1832,7 @@ function draw() {
   drawJourney();
   drawPlantToday();         /* 오늘 자랐나 — 안 자랐으면 왜인지까지 */
   drawLedger();             /* 하루에 얼마 나가고 콩나물이 얼마를 덜어 주나 */
+  drawWater();              /* 물을 줘야 하나 */
   drawShop();               /* 주문·다시 심기·팔기 */
   ffHint();                 /* 상태가 바뀌면 "무엇까지 감는지"도 바뀐다 */
   syncRoom();               /* 방 전경도 같은 상태를 본다 — 화면이 둘로 갈리면 안 된다 */
@@ -2762,6 +2793,13 @@ $('buyLamp').onclick = guard(() => {
   banner('식물등을 샀습니다', '자리가 나쁘면 등을 켜도 소용없습니다');
   dlgOpen(story.events(r.events));   /* 하루를 기다리면 산 순간이 조용해진다 */
   fillSlots(); draw();
+});
+
+$('waterCrop').onclick = guard(() => {
+  const r = waterCrop(S);
+  /* 두 번 눌러도 안전하다 — 이미 줬으면 already 로 돌아온다(안 던진다) */
+  if (r.watered) pushLog(S, '💧 콩나물에 물을 줬습니다');
+  draw();
 });
 
 $('resow').onclick = guard(() => {

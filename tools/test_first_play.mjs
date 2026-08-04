@@ -8,10 +8,15 @@ import {
   markMonsteraArrived,
   markMonsteraPhase,
   moveMonstera,
-  placeBeansprout
+  placeBeansprout,
+  waterBeansprout
 } from '../src/game/first_play.js';
 import { nextDay } from '../src/game/loop.js';
-import { newState, pot0 } from '../src/game/state.js';
+import { newState, pot0, waterCrop } from '../src/game/state.js';
+
+/* ★ 게임 화면의 [물 주기] 버튼 한 번 + [다음 날] 한 번 = 표준 하루 (2026-08-04).
+   물을 준 날만 자라므로 재현도 그 행위를 한다 — 안 하면 콩나물이 영영 안 큰다. */
+const day1 = (S, io) => { waterCrop(S); return nextDay(S, io); };
 
 const TEST_RULES = firstPlayRulesFromBalance(JSON.parse(
   readFileSync(new URL('../data/balance/characters.json', import.meta.url), 'utf8')
@@ -23,62 +28,113 @@ assert.equal(OPEN_SIRU.lidState, 'open');
 assert.equal(OPEN_SIRU.transmitsSlotDli, true);
 assert.equal(OPEN_SIRU.diameterM, 0.24);
 
-function growFourDays(dli) {
+/* ★ 물을 준 날만 자란다 (2026-08-04 · first_play.js §물주기).
+   그래서 재현도 **매일 물을 준다** — 표준 플레이가 그것이다. 물을 빼먹는 판은 아래 §물주기가 잰다. */
+const CYCLE = TEST_RULES.harvestDays;
+const growDay = (fp, dli) => advanceBeansproutDay(fp, dli, { watered: true });
+
+function growCycle(dli) {
   const fp = createFirstPlayState({ rules: TEST_RULES });
   placeBeansprout(fp, 'dark-slot');
   let result = null;
-  for (let day = 1; day <= 4; day++) result = advanceBeansproutDay(fp, dli);
+  for (let day = 1; day <= CYCLE; day++) result = growDay(fp, dli);
   return { fp, result };
 }
 
 {
   const fp = createFirstPlayState({ rules: TEST_RULES });
   assert.equal(fp.phase, 'place_beansprout');
-  assert.throws(() => advanceBeansproutDay(fp, 0.2), /자리/);
+  assert.throws(() => growDay(fp, 0.2), /자리/);
 
   placeBeansprout(fp, 'banjiha-dresser:1');
   for (let day = 1; day <= 2; day++) {
-    const result = advanceBeansproutDay(fp, 0.2);
+    const result = growDay(fp, 0.2);
     assert.equal(result.harvested, false, `${day}일에는 수확되면 안 된다`);
   }
   placeBeansprout(fp, 'another-dark-slot');
   assert.equal(fp.beansprout.slotId, 'another-dark-slot');
-  const day3 = advanceBeansproutDay(fp, 0.2);
-  assert.equal(day3.harvested, false);
-  const harvest = advanceBeansproutDay(fp, 0.2);
+  for (let day = 3; day < CYCLE; day++)
+    assert.equal(growDay(fp, 0.2).harvested, false, `${day}일에는 수확되면 안 된다`);
+  const harvest = growDay(fp, 0.2);
   assert.deepEqual(
     {
       harvested: harvest.harvested,
       meals: harvest.meals,
       quality: harvest.quality,
-      foodSavedWon: harvest.foodSavedWon,
-      cashFoodWon: harvest.cashFoodWon,
-      pantryMeals: fp.food.pantryMeals,
+      /* ★ 절감은 **곳간에 들어간다** — 거둔 날 몰아 쓰지 않는다(first_play.js §eatFromPantry).
+         한 회전 3,000원이 5일에 걸쳐 600원씩 나간다. */
+      cycleSavedWon: harvest.cycleSavedWon,
+      pantryWon: fp.food.pantryWon,
       phase: fp.phase
     },
     {
       harvested: true,
       meals: 3,
       quality: 'crisp_white',
-      foodSavedWon: 5000,
-      cashFoodWon: 2500,
-      pantryMeals: 1,
+      cycleSavedWon: 3000,
+      pantryWon: 3000,
       phase: 'monstera_gift'
     }
   );
 }
 
+/* ★ 물주기 — 준 날만 자란다 · 죽지 않는다 · 하루 한 번 (first_play.js §물주기) */
 {
-  const low = growFourDays(0.3).result;
-  const medium = growFourDays(0.7).result;
-  const bright = growFourDays(1.2).result;
-  assert.equal(low.meals, 3);
-  assert.equal(medium.meals, 2);
-  assert.equal(bright.meals, 1);
+  const fp = createFirstPlayState({ rules: TEST_RULES });
+  placeBeansprout(fp, 'dark-slot');
+
+  const dry = advanceBeansproutDay(fp, 0.2, { watered: false });
+  assert.equal(dry.dry, true, '물을 안 줬는데 마른 날로 안 잡혔다');
+  assert.equal(fp.beansprout.ageDays, 0, '★물을 안 줬는데 하루가 갔다');
+  assert.equal(fp.beansprout.dliHist.length, 0,
+    '★안 자란 날의 빛이 이력에 쌓였다 — 물이 품질(빛 축)을 건드리게 된다');
+  assert.equal(dry.dryRun, 1);
+
+  /* 하루 한 번 — 두 번 눌러도 하루가 두 번 가지 않는다 */
+  assert.equal(waterBeansprout(fp, 5).watered, true);
+  assert.equal(waterBeansprout(fp, 5).already, true, '★같은 날 두 번 준 것이 새 물로 셌다');
+  assert.equal(fp.beansprout.wateredOnDay, 5);
+
+  /* 죽지 않는다 — 열흘을 내리 빼먹어도 상태가 살아 있고, 다시 주면 이어서 자란다 */
+  for (let i = 0; i < 10; i++) advanceBeansproutDay(fp, 0.2, { watered: false });
+  assert.equal(fp.beansprout.dryRun, 11);
+  assert.equal(fp.beansprout.harvested, false);
+  let last = null;
+  for (let d = 1; d <= CYCLE; d++) last = growDay(fp, 0.2);
+  assert.equal(last.harvested, true, '★물을 다시 줬는데 회전이 이어지지 않았다');
+  assert.equal(last.quality, 'crisp_white', '★물을 빼먹은 것이 품질을 바꿨다 — 축이 겹쳤다');
+  assert.equal(last.cycleSavedWon, 3000, '★마른 날이 절감액 자체를 깎았다 — 벌은 시간뿐이어야 한다');
+  assert.equal(last.dryDays, 11);
 }
 
 {
-  const { fp } = growFourDays(0.2);
+  const low = growCycle(0.3).result;
+  const medium = growCycle(0.7).result;
+  const bright = growCycle(1.2).result;
+  assert.equal(low.meals, 3);
+  assert.equal(medium.meals, 2);
+  assert.equal(bright.meals, 1);
+  /* ★ 자리(빛)가 값을 가른다 — 끼니 라벨이 원으로 그대로 옮겨졌다 */
+  assert.equal(low.cycleSavedWon, 3000);
+  assert.equal(medium.cycleSavedWon, 2000);
+  assert.equal(bright.cycleSavedWon, 1000);
+}
+
+/* ★ 같은 작물은 시루를 늘려도 절감이 안 는다 (2026-08-04 · first_play.js §작물 종류) */
+{
+  const one = growCycle(0.2).result;
+  const fp = createFirstPlayState({ rules: TEST_RULES });
+  placeBeansprout(fp, 'dark-slot');
+  fp.beansprout.sirus = 6;
+  let six = null;
+  for (let d = 1; d <= CYCLE; d++) six = growDay(fp, 0.2);
+  assert.equal(six.cycleSavedWon, one.cycleSavedWon,
+    '★시루를 여섯 개 심었더니 절감이 늘었다 — 종류가 아니라 개수에 값이 붙고 있다');
+  assert.equal(six.wastedSirus, 5, '질려서 못 먹는 시루 수를 안 세고 있다');
+}
+
+{
+  const { fp } = growCycle(0.2);
   markMonsteraArrived(fp, 'banjiha-dresser:0');
   assert.equal(fp.phase, 'move_monstera');
   assert.equal(fp.monstera.slotId, 'banjiha-dresser:0');
@@ -98,7 +154,7 @@ function growFourDays(dli) {
 /* 안내 단계: 어두운 자리에 있는 동안은 "옮겨 보세요"가 남고, 형태가 오르기 시작하면 넘어간다.
    슬롯 id 로 판정하지 않으므로 다른 어두운 자리로 옮겨도 진행이 없으면 안내는 그대로다. */
 {
-  const { fp } = growFourDays(0.2);
+  const { fp } = growCycle(0.2);
   markMonsteraArrived(fp, 'arrival-slot');
   markMonsteraPhase(fp, { phaseId: 'spear_ready', progress01: 0 });
   moveMonstera(fp, 'another-dark-slot');
@@ -182,10 +238,13 @@ console.log('first_play: PASS');
   const S = newState({ room: 'banjiha', mode: 'novice', firstPlay: true, firstPlayRules: TEST_RULES });
   placeBeansprout(S.firstPlay, 'dark-slot');
 
-  for (let day = 1; day <= 4; day++) nextDay(S, io);
-  assert.equal(S.day, 4);
+  for (let day = 1; day <= CYCLE; day++) day1(S, io);
+  assert.equal(S.day, CYCLE);
   assert.equal(S.firstPlay.beansprout.meals, 3);
-  assert.equal(S.firstPlay.food.cashFoodWon, 2500);
+  /* ★ 거둔 날에도 곳간에서 **하루치만** 꺼낸다 — 몰아 쓰지 않는다(600원/일) */
+  assert.equal(S.firstPlay.food.cashFoodWon, TEST_RULES.dailyFoodWon - TEST_RULES.dailyCropSaveWon);
+  assert.equal(S.firstPlay.food.pantryWon,
+    TEST_RULES.cropSavedWonPerCycle - TEST_RULES.dailyCropSaveWon, '곳간에 남은 몫이 안 맞습니다');
 
   /* ★수확한 날의 배움이 실제로 적혔는가 (2026-08-03 재발 방지).
      nextDay 에는 반환구가 둘이고, **수확이 있는 Day 4 는 이른 반환 쪽**을 탄다.
@@ -207,9 +266,9 @@ console.log('first_play: PASS');
   nextDay(S, io);
   assert.equal(S.firstPlay.phase, 'grow_monstera',
     '창턱으로 옮겨 게이지가 오르는 중이면 "옮겨 보세요"가 남으면 안 된다');
-  for (let day = 6; day <= 7; day++) nextDay(S, io);
+  for (let day = CYCLE + 2; day <= CYCLE + 3; day++) nextDay(S, io);
 
-  assert.equal(S.day, 7);
+  assert.equal(S.day, CYCLE + 3);
   assert.equal(pot0(S).daysPlanted, 3);
   assert.equal(S.firstPlay.completed, true);
   assert.equal(S.firstPlay.monstera.growthPhase.phaseId, 'spear_furled');
@@ -247,10 +306,10 @@ console.log('first_play_loop: PASS');
   };
   const S = newState({ room: 'banjiha', mode: 'novice', firstPlay: true, firstPlayRules: TEST_RULES });
   placeBeansprout(S.firstPlay, 'dark-slot');
-  for (let day = 1; day <= 3; day++) nextDay(S, io);
-  assert.throws(() => nextDay(S, io), /도착 초기화 실패 주입/);
-  assert.equal(S.day, 3);
-  assert.equal(S.firstPlay.beansprout.ageDays, 3);
+  for (let day = 1; day < CYCLE; day++) day1(S, io);
+  assert.throws(() => day1(S, io), /도착 초기화 실패 주입/);
+  assert.equal(S.day, CYCLE - 1);
+  assert.equal(S.firstPlay.beansprout.ageDays, CYCLE - 1);
   assert.equal(S.firstPlay.beansprout.harvested, false);
   assert.equal(S.firstPlay.food.totalFoodSavedWon, 0);
   assert.equal(S.pots.length, 0);

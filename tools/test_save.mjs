@@ -141,8 +141,13 @@ function playedGame() {
 
   /* 시루 — 자유 좌표(어느 추천 자리에도 안 붙는 점) */
   setCropAt(S, { x: -1.2, y: 0.9, z: -1.0 }, { size: eng.room.size, slots: eng.room.slots, snapDist: 0.15 });
-  for (let i = 0; i < 4; i++) advanceBeansproutDay(S.firstPlay, 0.2);   // 4일이면 수확까지 간다
-  assert.equal(S.firstPlay.beansprout.harvested, true, '4일인데 수확이 안 됐습니다');
+  /* ★ 물을 준 날만 자란다 (2026-08-04 · first_play.js §물주기) — 재현도 매일 준다 */
+  const CYCLE = FP_RULES.harvestDays;
+  for (let i = 0; i < CYCLE; i++) advanceBeansproutDay(S.firstPlay, 0.2, { watered: true });
+  assert.equal(S.firstPlay.beansprout.harvested, true, `${CYCLE}일인데 수확이 안 됐습니다`);
+  /* 물 상태도 세이브에 남아야 한다 — 안 남으면 불러오자마자 마른 날이 하루 생긴다 */
+  S.firstPlay.beansprout.wateredOnDay = S.day;
+  S.firstPlay.beansprout.dryDays = 2;
 
   /* 화분 — 도착시킨 뒤 자유 좌표로 옮긴다 */
   const g = nullGrowth(14, { growthMin: GROWTH_MIN });
@@ -197,6 +202,12 @@ check('A 저장 → 복원 — day·방·화분 좌표·가구 자리표·첫 �
   assert.equal(S2.firstPlay.beansprout.harvested, true, '수확 기록이 사라졌습니다');
   assert.equal(S2.firstPlay.beansprout.quality, S.firstPlay.beansprout.quality);
   assert.equal(S2.firstPlay.food.totalFoodSavedWon, S.firstPlay.food.totalFoodSavedWon);
+  assert.equal(S2.firstPlay.food.pantryWon, S.firstPlay.food.pantryWon, '곳간(원)이 사라졌습니다');
+  /* ★ 물 상태 (2026-08-04) — 안 남으면 불러오자마자 마른 날이 하루 생겨 회전이 조용히 늘어난다 */
+  assert.equal(S2.firstPlay.beansprout.wateredOnDay, S.firstPlay.beansprout.wateredOnDay,
+    '★"오늘 물을 줬다"가 세이브에서 사라졌습니다');
+  assert.equal(S2.firstPlay.beansprout.dryDays, S.firstPlay.beansprout.dryDays,
+    '★물을 빼먹은 날 수가 세이브에서 사라졌습니다');
   assert.equal(S2.tutorial.day, 3, '튜토 진행이 사라졌습니다');
   assert.equal(S2.tutorial.cashWon, 940000);
   assert.deepEqual(S2.tutorial.learned, S.tutorial.learned, '배운 것이 사라졌습니다');

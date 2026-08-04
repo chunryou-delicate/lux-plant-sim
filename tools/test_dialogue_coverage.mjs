@@ -37,7 +37,7 @@
 import assert from 'node:assert';
 import { readFileSync, existsSync } from 'node:fs';
 import { createProfileLight } from '../src/game/room_profile.js';
-import { newState, pot0, setPotSlot } from '../src/game/state.js';
+import { newState, pot0, setPotSlot, waterCrop } from '../src/game/state.js';
 import { nextDay } from '../src/game/loop.js';
 import { firstPlayRulesFromBalance, placeBeansprout, moveMonstera } from '../src/game/first_play.js';
 import {
@@ -118,6 +118,10 @@ function play(opt) {
     const ts = S.tutorial;
     /* ⚠ 주입 — 위 머리말 참고. 하루가 시작하기 **전에** 넣어야 그날 판정이 오늘 돈을 본다. */
     if (ts.day > 0 && opt.incomeWon) ts.cashWon += opt.incomeWon;
+
+    /* ★ 물주기 (2026-08-04) — [물 주기] + [다음 날] 이 표준 하루다. 물을 준 날만 자라므로
+       재현도 그 행위를 한다. 안 하면 콩나물이 영영 안 커서 몬스테라도 안 온다. */
+    try { waterCrop(S); } catch { /* 아직 안 놓았거나 이미 거둔 시루 */ }
 
     let turn;
     try { turn = nextDay(S, io).turn; }

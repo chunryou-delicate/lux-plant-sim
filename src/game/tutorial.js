@@ -128,7 +128,10 @@ export function lampElectricityWon(ts) {
   return Math.round(kwh * R.kwhWon);
 }
 
-/* 콩나물이 아껴 준 오늘 식비. 끼니 하나가 mealCostWon 을 아낀다. */
+/* 콩나물이 아껴 준 오늘 식비. 끼니 하나가 mealCostWon 을 아낀다.
+   ⚠ 2026-08-04 — 값의 정본은 이제 **원**이다(first_play.js §작물 종류: 한 회전 3,000원은
+     1끼 2,500원으로 안 떨어진다). 이 함수는 **끼니로 부르던 옛 호출부**를 위해 남는다.
+     새 경로(loop.stepTutorial)는 `savedWon` 을 그대로 넘긴다 — 아래 tutorialDay 참고. */
 export function foodSavedWon(ts, mealsUsed) {
   return Math.max(0, Math.round(mealsUsed || 0)) * ts.rules.mealCostWon;
 }
@@ -163,7 +166,11 @@ export function buyLamp(ts) {
 /* 하루가 지났을 때 튜토리얼 쪽에서 일어나는 일.
    ★첫 플레이가 끝나기 전에는 계절도 돈도 안 움직인다 — 그 7~16일은 배우는 구간이지
      살림을 하는 구간이 아니다(first_play.md §0: novice·맑음·여름 고정). */
-export function tutorialDay(ts, { firstPlayDone = false, mealsUsed = 0, incomeWon = 0 } = {}) {
+/* ★ 절감은 **원으로 받는 것이 정본**이다 (2026-08-04). `savedWon` 을 주면 그대로 쓰고,
+   안 주면 옛 방식(`mealsUsed × 한 끼 값`)으로 유도한다 — 옛 호출부를 조용히 깨지 않으려고
+   둘 다 받되, **한 턴에 둘을 섞지 않는다**(savedWon 이 있으면 mealsUsed 는 보지 않는다). */
+export function tutorialDay(ts, { firstPlayDone = false, mealsUsed = 0, savedWon = null,
+                                  incomeWon = 0 } = {}) {
   if (!ts.enabled) return null;
   if (!firstPlayDone) return { skipped: '첫 플레이 진행 중' };
 
@@ -179,7 +186,8 @@ export function tutorialDay(ts, { firstPlayDone = false, mealsUsed = 0, incomeWo
   if (income > 0) ts.cashWon += income;
 
   /* 지출 — 콩나물로 아낀 만큼은 빼고 낸다. ★월세 몫은 여기 없다(아래 목돈으로 나간다) */
-  const saved = foodSavedWon(ts, mealsUsed);
+  const saved = savedWon == null ? foodSavedWon(ts, mealsUsed)
+                                 : Math.max(0, Math.round(savedWon));
   const power = lampElectricityWon(ts);
   const base = dailyCashOutWon(ts);
   const out = Math.max(0, base - saved) + power;

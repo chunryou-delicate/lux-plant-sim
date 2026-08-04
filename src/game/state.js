@@ -13,7 +13,8 @@
      활력(vigor)은 표시 취소·구현 보류다(2026-08-02) — 자리를 만들면 판정이 코어로 샌다.
 ============================================================ */
 
-import { createFirstPlayState, placeBeansprout, resowBeansprout, BEANSPROUT_ID } from './first_play.js';
+import { createFirstPlayState, placeBeansprout, resowBeansprout, waterBeansprout,
+         beansproutWaterStatus, BEANSPROUT_ID } from './first_play.js';
 import { createTutorialState } from './tutorial.js';
 import { createShopState, useStock } from './shop.js';
 import { atFromSlot, isFreeSlotId, makeAt, resolvePlacement,
@@ -272,9 +273,42 @@ export function setPotAt(S, potOrId, at, opt = {}) {
 export function setCropAt(S, at, opt = {}) {
   const fp = S && S.firstPlay;
   if (!fp || !fp.beansprout) throw new Error('[배치] 첫 플레이 상태가 없습니다 — 놓을 시루가 없습니다');
-  const r = placeBeansprout(fp, at, opt);
+  /* ★ 놓는 날은 물을 준 날이다 (2026-08-04) — 심을 때 물을 붓는 것이 현실이고,
+     그래야 "방금 놓았는데 오늘은 마른 날"이 안 생긴다. 날짜는 S 만 안다(§물주기). */
+  const r = placeBeansprout(fp, at, { ...opt, day: S.day });
   return { cropId: BEANSPROUT_ID, slotId: fp.beansprout.slotId, at: fp.beansprout.at,
            snappedTo: r.snappedTo, dist: r.dist, moved: r.moved, keptDays: r.keptDays };
+}
+
+/* ★★ 물을 준다 — **게임 화면의 [물 주기] 버튼이 부르는 유일한 함수** (2026-08-04).
+   ------------------------------------------------------------
+   규칙은 first_play.js §물주기 가 갖는다. 여기 있는 이유는 `setCropAt`·`resowCrop` 과 같다 —
+   **오늘이 며칠인지는 S 만 안다.** first_play 는 게임일을 모르므로(fp 만 받는다) 날짜를
+   호출부가 넘겨야 하는데, 그걸 화면에 맡기면 창마다 다른 날을 넘길 수 있다. 여기서 한 번 묶는다.
+
+   ★ 하루 한 번이고 **두 번 눌러도 안전하다** — 두 번째는 `already:true` 로 조용히 지난다.
+     던지지 않는 이유: 버튼을 두 번 누른 것은 고장이 아니고, 던지면 화면이 붉어진다.
+   ★ 돈이 안 든다. 물값을 만들지 않았다 — 이 행위가 가르치는 것은 **잊지 않는 것**이지
+     살림이 아니다. 돈을 붙이면 "물을 안 주는 것이 절약"이 되어 규칙이 뒤집힌다.
+   반환 { watered, already, day, dryRun, events } */
+export function waterCrop(S) {
+  const fp = S && S.firstPlay;
+  if (!fp || !fp.enabled || !fp.beansprout)
+    throw new Error('[물주기] 첫 플레이 상태가 없습니다 — 물을 줄 시루가 없습니다');
+  if (!fp.beansprout.slotId) {
+    const e = new Error('[물주기] 시루를 먼저 방 안에 놓아 주세요');
+    e.tutorialInput = true;                 // 안내지 고장이 아니다
+    throw e;
+  }
+  const r = waterBeansprout(fp, S.day);
+  if (r.watered) pushLog(S, '💧 콩나물에 물을 주었습니다');
+  return { ...r,
+           events: r.watered ? [{ id: 'crop_watered', ko: '콩나물에 물을 주었습니다' }] : [] };
+}
+
+/* 오늘 물을 줘야 하나 — 버튼을 켤지 흐리게 할지의 근거. 상태를 안 바꾼다. */
+export function cropWaterStatus(S) {
+  return beansproutWaterStatus(S && S.firstPlay, S ? S.day : null);
 }
 
 /* ★ 콩나물을 다시 심는다 — **재배(first_play)와 지갑(tutorial)을 한 동작으로** (2026-08-03).
@@ -313,9 +347,15 @@ export function resowCrop(S, opt = {}) {
   if (sirusAdded > 0) useStock(S, 'siru', sirusAdded);
   useStock(S, 'bean_seed', sirus);                 // 시루 하나에 씨앗 한 봉지
 
-  const r = resowBeansprout(fp, { ...opt, sirus });
+  const r = resowBeansprout(fp, { ...opt, sirus, day: S.day });
   pushLog(S, `🌱 콩나물을 다시 심었습니다 — 시루 ${r.sirus}개 · 씨앗 ${sirus}봉지를 썼습니다`);
-  return { ...r, seedsUsed: sirus, sirusAdded,
+  /* ★ 같은 작물은 몇 시루를 심어도 절감이 안 는다 (2026-08-04 · first_play.js §작물 종류).
+     막지는 않는다 — 놓을 자유는 남기고 **손해라는 사실만 말한다.** 막으면 규칙이 아니라 벽이 되고,
+     작물 종류가 늘었을 때 이 검사가 조용히 틀린 말을 하게 된다. */
+  if (sirus > 1)
+    pushLog(S, `🥱 시루 ${sirus}개를 심었지만 절감은 한 시루분입니다 — ` +
+               `같은 것을 계속 먹으면 질립니다. 늘리려면 **다른 작물**이라야 합니다`);
+  return { ...r, seedsUsed: sirus, sirusAdded, wastedSirus: sirus - 1,
            events: [{ id: 'crop_resown', ko: '콩나물을 다시 심었습니다',
                       sirus: r.sirus, cycle: r.cycle, seedsUsed: sirus }] };
 }

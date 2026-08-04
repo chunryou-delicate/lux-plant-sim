@@ -289,15 +289,29 @@ function packFirstPlay(fp) {
       sirus: needInt(b.sirus ?? 1, 'firstPlay.beansprout.sirus', { min: 1 }),
       cycle: needInt(b.cycle ?? 1, 'firstPlay.beansprout.cycle', { min: 1 }),
       harvestCount: needInt(b.harvestCount ?? 0, 'firstPlay.beansprout.harvestCount', { min: 0 }),
-      harvestMeals: needInt(b.harvestMeals ?? 0, 'firstPlay.beansprout.harvestMeals', { min: 0 })
+      harvestMeals: needInt(b.harvestMeals ?? 0, 'firstPlay.beansprout.harvestMeals', { min: 0 }),
+      /* ★ 물주기 (2026-08-04) — **반드시 남긴다.** 안 적으면 저장 한 번에 "오늘 물을 줬다"가
+         없던 일이 되어, 불러오자마자 마른 날이 하루 생긴다(회전이 조용히 하루 늘어난다).
+         반대로 `dryDays` 를 잃으면 수확 화면이 "물을 며칠 빼먹었나"를 못 말한다.
+         ⚠ `wateredOnDay` 는 **절대 게임일**이라 복원 뒤에도 그대로 맞는다(상대 일수면 어긋난다). */
+      wateredOnDay: b.wateredOnDay == null ? null
+        : needInt(b.wateredOnDay, 'firstPlay.beansprout.wateredOnDay', { min: 0 }),
+      dryDays: needInt(b.dryDays ?? 0, 'firstPlay.beansprout.dryDays', { min: 0 }),
+      dryRun: needInt(b.dryRun ?? 0, 'firstPlay.beansprout.dryRun', { min: 0 })
     },
     food: {
-      pantryMeals: needInt(f.pantryMeals ?? 0, 'firstPlay.food.pantryMeals', { min: 0 }),
+      /* ★ 곳간은 **원**이다 (2026-08-04 · first_play.js §작물 종류).
+         ⚠ 옛 세이브는 `pantryMeals`(끼니)를 갖고 있다. 스키마를 올려 통째로 못 읽게 하는 대신
+           **여기서 한 번 환산한다** — 한 끼 2,500원이라는 사실은 지금도 정본(characters.json)이라
+           지어낸 값이 아니다. 환산 뒤에는 끼니 칸을 안 적는다(두 정본을 남기지 않는다). */
+      pantryWon: needNum(
+        f.pantryWon ?? (Number.isFinite(f.pantryMeals) ? f.pantryMeals * 2_500 : 0),
+        'firstPlay.food.pantryWon', { min: 0 }),
       lastHarvestMeals: needInt(f.lastHarvestMeals ?? 0, 'firstPlay.food.lastHarvestMeals', { min: 0 }),
       lastFoodSavedWon: needNum(f.lastFoodSavedWon ?? 0, 'firstPlay.food.lastFoodSavedWon', { min: 0 }),
       totalFoodSavedWon: needNum(f.totalFoodSavedWon ?? 0, 'firstPlay.food.totalFoodSavedWon', { min: 0 }),
       cashFoodWon: needNum(f.cashFoodWon ?? 0, 'firstPlay.food.cashFoodWon', { min: 0 }),
-      lastSpoiledMeals: needInt(f.lastSpoiledMeals ?? 0, 'firstPlay.food.lastSpoiledMeals', { min: 0 })
+      lastSpoiledWon: needNum(f.lastSpoiledWon ?? 0, 'firstPlay.food.lastSpoiledWon', { min: 0 })
     },
     monstera: {
       arrived: !!m.arrived,
