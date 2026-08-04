@@ -47,15 +47,27 @@ export const BUY_MARKUP = 1.4;
             규칙이 하나라 외우기 쉽고, "급하면 씨앗부터"라는 판단이 생긴다.
 ============================================================ */
 export const CATALOG = Object.freeze({
+  /* ★★ 1,500 → **1,000원** (2026-08-04 박사님 확정 "씨앗을 줄여").
+     ⚠⚠ **지갑에서 실제로 나가는 씨앗값은 여기다.** `first_play.FIRST_PLAY_RULES.seedWonPerSiru`
+       가 아니다 — 재파종(state.resowCrop)은 미리 주문해 둔 재고를 쓰고, 돈은 주문할 때
+       `orderItem` 이 이 값으로 뺀다. 그래서 저쪽만 고치면 **순액이 한 푼도 안 바뀐다.**
+       두 값은 늘 같아야 한다(둘 다 "콩 씨앗 1시루분"이다). 하나만 고치면 화면이 말하는 값과
+       지갑에서 나가는 값이 갈린다 — 실제로 이 판이 그 상태였다.
+     근거는 first_play.js §seedWonPerSiru 와 같다: 실제 나물콩 1시루분이 700~1,200원이고,
+     1,500원이면 씨앗값이 절감의 70%를 먹어 순액이 하루 180원(지출의 0.9%)밖에 안 남았다. */
   bean_seed: Object.freeze({
     id: 'bean_seed', ko: '콩 씨앗 (1시루분)', kind: 'seed',
-    listWon: 1_500, leadDays: 1,
-    note: 'docs/food_economy.md §3 — "씨앗(콩) 1시루분 1,500원"'
+    listWon: 1_000, leadDays: 1,
+    note: 'docs/food_economy.md §3 — 실제 시세 700~1,200원의 한가운데. ' +
+          'first_play.FIRST_PLAY_RULES.seedWonPerSiru 와 **같은 값이어야 한다**'
   }),
+  /* ⚠ 콩 씨앗과 **더는 같은 값이 아니다** (2026-08-04). 예전 근거였던 "콩 1시루와 같은 값"은
+     콩 쪽이 내려가면서 끊겼다 — 이 값은 sale_economy.md §3 가 직접 적은 1,500원으로 선다.
+     몬스테라 씨앗은 파는 물건(수입)의 씨앗이고 콩은 지출을 막는 물건이라 축이 애초에 다르다. */
   monstera_seed: Object.freeze({
     id: 'monstera_seed', ko: '몬스테라 씨앗 (1립)', kind: 'seed',
     listWon: 1_500, leadDays: 1,
-    note: 'docs/sale_economy.md §3 가격표 — "몬스테라 씨앗 1립 1,500 · 콩 1시루와 같은 값"'
+    note: 'docs/sale_economy.md §3 가격표 — "몬스테라 씨앗 1립 1,500"'
   }),
   siru: Object.freeze({
     id: 'siru', ko: '콩나물 시루 (차광 용기)', kind: 'container',

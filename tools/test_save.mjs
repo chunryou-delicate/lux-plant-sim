@@ -64,7 +64,7 @@ const { createLightEngine } = await import(toUrl('src/game/light_adapter.js'));
 const {
   newState, givePlant, pot0, setPotAt, setCropAt, setFurniturePlacement, ARRIVAL
 } = await import(toUrl('src/game/state.js'));
-const { firstPlayRulesFromBalance, BEANSPROUT_ID, advanceBeansproutDay } =
+const { firstPlayRulesFromBalance, BEANSPROUT_ID, advanceBeansproutDay, harvestBeansprout } =
   await import(toUrl('src/game/first_play.js'));
 const { nullGrowth } = await import(toUrl('src/game/sim.js'));
 const { runDays } = await import(toUrl('src/game/loop.js'));
@@ -144,6 +144,9 @@ function playedGame() {
   /* ★ 물을 준 날만 자란다 (2026-08-04 · first_play.js §물주기) — 재현도 매일 준다 */
   const CYCLE = FP_RULES.harvestDays;
   for (let i = 0; i < CYCLE; i++) advanceBeansproutDay(S.firstPlay, 0.2, { watered: true });
+  /* ★ 자라는 날이 찼다고 저절로 안 거둬진다 (2026-08-04 · §수확) — 손으로 거둔다 */
+  assert.equal(S.firstPlay.beansprout.harvested, false, '★저절로 거둬졌습니다');
+  harvestBeansprout(S.firstPlay);
   assert.equal(S.firstPlay.beansprout.harvested, true, `${CYCLE}일인데 수확이 안 됐습니다`);
   /* 물 상태도 세이브에 남아야 한다 — 안 남으면 불러오자마자 마른 날이 하루 생긴다 */
   S.firstPlay.beansprout.wateredOnDay = S.day;
@@ -220,6 +223,28 @@ check('A 저장 → 복원 — day·방·화분 좌표·가구 자리표·첫 �
   assert.ok(S2.tutorial.rules && S2.tutorial.rules.startCashWon, '튜토 규칙이 안 붙었습니다');
 
   sameState(S, S2, '왕복한 상태가 원본과 다릅니다');
+});
+
+/* ══ A-2 · ★보상(perks) — 지금은 늘 꺼져 있지만 **칸이 이미 왕복한다** ════════
+   자동수확은 나중에 업적 보상으로 켠다(state.js §perks). 그때 세이브 규약을 같이 넓히는 것을
+   잊으면 "보상을 받았는데 껐다 켜면 사라지는" 유형이 난다 — 칸을 먼저 파 두고 여기서 지킨다. */
+check('A-2 ★보상 칸(perks.autoHarvest)이 세이브를 왕복한다 · 옛 세이브는 꺼진 채로 열린다', () => {
+  const mk = () => newState({ room: 'banjiha', mode: 'novice', firstPlay: true, firstPlayRules: FP_RULES });
+  const open = raw => deserialize(raw, { ...roomOpt(), firstPlayRules: FP_RULES });
+
+  const S = mk();
+  assert.equal(S.perks.autoHarvest, false, '★자동수확이 기본으로 켜져 있습니다 — 나중 보상입니다');
+
+  S.perks.autoHarvest = true;                       // 보상을 받은 판을 흉내 낸다
+  assert.deepEqual(serialize(S).state.perks, { autoHarvest: true }, '★보상이 세이브에 안 실렸습니다');
+  assert.equal(open(JSON.stringify(serialize(S))).perks.autoHarvest, true,
+    '★보상이 복원에서 사라졌습니다');
+
+  /* 옛 세이브(칸이 없는) — 지어내지 않고 꺼진 채로 연다 */
+  const old = serialize(mk());
+  delete old.state.perks;
+  assert.equal(open(JSON.stringify(old)).perks.autoHarvest, false,
+    '★옛 세이브가 보상을 켠 채로 열렸습니다');
 });
 
 /* ══ B · 자유 좌표 — 화분도 시루도 좌표까지 그대로 ═══════════════════════ */

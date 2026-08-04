@@ -25,8 +25,8 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createProfileLight } from '../src/game/room_profile.js';
 import { newState, pot0, setPotSlot, resowCrop, waterCrop } from '../src/game/state.js';
-import { nextDay } from '../src/game/loop.js';
-import { firstPlayRulesFromBalance, placeBeansprout, moveMonstera,
+import { nextDay, harvestCrop } from '../src/game/loop.js';
+import { firstPlayRulesFromBalance, placeBeansprout, moveMonstera, beansproutReady,
          FIRST_PLAY_RULES, CROP_KINDS } from '../src/game/first_play.js';
 import { seasonAt, seasonDayAt, buyLamp, canMoveOut, moveOut,
          varieView, varieGrantCheck, stepVarieGrant, varieGrantOpensDay } from '../src/game/tutorial.js';
@@ -237,6 +237,16 @@ function play(opt = {}) {
     let turn;
     try { turn = nextDay(S, io).turn; }
     catch (e) { throw new Error(`Day ${S.day} 에서 턴이 터졌습니다 — ${e.message}`); }
+
+    /* ★★ 수확 (2026-08-04) — **[수확하기] 를 눌러야 곳간에 들어간다**(first_play.js §수확).
+       재현이 자동으로 거두게 두면 **검사가 게임과 다른 것을 재게 된다.** 그래서 여기서
+       사람이 누르는 그 자리·그 순서로 부른다: [다음 날] 뒤 · [다시 심기] 앞.
+       ★ 첫 수확의 몬스테라 선물도 이 함수가 준다(turn.plantArrived 가 아니다). */
+    let harvested = null;
+    if (opt.harvest !== false && beansproutReady(S.firstPlay.beansprout)) {
+      try { harvested = harvestCrop(S, io); }
+      catch (e) { throw new Error(`Day ${S.day} 에서 수확이 터졌습니다 — ${e.message}`); }
+    }
     const ts = S.tutorial;
 
     /* ★ 대조군 — 코어가 준 확정 무늬를 매일 걷어 낸다(규칙이 없는 세계를 흉내 낸다).
@@ -246,7 +256,8 @@ function play(opt = {}) {
       grantDay = ts.day; grantNode = turn.varieGrant.nodeId;
     }
 
-    if (turn.plantArrived && opt.plantSlot) {
+    /* ★ 도착은 이제 **수확의 반환값**으로 온다 (2026-08-04) — turn.plantArrived 가 아니다 */
+    if (harvested && harvested.arrived && opt.plantSlot) {
       setPotSlot(S, pot0(S), opt.plantSlot, light.room.slots);
       moveMonstera(S.firstPlay, opt.plantSlot, { slots: light.room.slots });
     }
@@ -405,8 +416,13 @@ check('A-3 용기 없이 못 자른다 — 병은 이틀 걸려 온다', () => {
   light.clearCache();
   const io = { light, growth: standGrowth(1) };
   placeBeansprout(S.firstPlay, DARK, { slots: light.room.slots });
-  for (let i = 0; i < 6; i++) { try { waterCrop(S); } catch {} nextDay(S, io); }
-  assert.ok(pot0(S), '몬스테라가 안 왔습니다');
+  /* ★ [물 주기] → [다음 날] → (거둘 때가 되면) [수확하기] — 게임과 같은 순서다 (2026-08-04) */
+  for (let i = 0; i < 6; i++) {
+    try { waterCrop(S); } catch {}
+    nextDay(S, io);
+    if (beansproutReady(S.firstPlay.beansprout)) harvestCrop(S, io);
+  }
+  assert.ok(pot0(S), '몬스테라가 안 왔습니다 — 거둬야 옵니다');
   const nodes = cuttableNow(S, io.growth.cuttableNodes());
   const one = nodes.filter(n => n.leaves === 1);
   assert.ok(one.length, '잎 1장짜리 마디가 없습니다');
@@ -427,7 +443,8 @@ check('B 콩나물 — 다시 심을 수 있고 회전이 이어진다 · 절감
   assert.ok(r.S.firstPlay.food.totalFoodSavedWon > expectMin,
     `총 절감이 ${r.S.firstPlay.food.totalFoodSavedWon}원 (기대 ${Math.round(expectMin)}원 이상) — 매일 안 걸리고 있습니다`);
   info(`회전: 40일에 수확 ${b.harvestCount}번 · 총 절감 ${r.S.firstPlay.food.totalFoodSavedWon.toLocaleString()}원 ` +
-       `· 씨앗값 ${r.S.tutorial.crop.spentWon.toLocaleString()}원`);
+       `· 씨앗·시루값 ${r.S.tutorial.crop.spentWon.toLocaleString()}원 ` +
+       `(씨앗 ${buyPriceOf('bean_seed').toLocaleString()}원/시루)`);
 });
 
 /* ══ B-2 · ★★ 체감은 **개수가 아니라 종류**에 걸린다 (2026-08-04 박사님 확정) ══════ */
@@ -481,6 +498,8 @@ check('C 밝은 자리에서 첫 수확을 해도 만회할 수 있다 (cropDark
       resowCrop(S, { at: DARK, slots: light.room.slots });
     try { waterCrop(S); } catch { /* 아직 안 놓은 시루 */ }
     nextDay(S, io);
+    /* ★ 거둬야 배움이 켜진다 (2026-08-04) — 배움 ①·②의 증거는 거두는 순간에만 온전하다 */
+    if (beansproutReady(S.firstPlay.beansprout)) harvestCrop(S, io);
     got = S.tutorial.learned.cropDark;
   }
   assert.equal(got, true, '★어두운 자리로 옮겨 다시 심었는데도 cropDark 가 안 켜졌습니다 — 막다른 길입니다');
@@ -519,11 +538,16 @@ check('D-2 콩나물을 돌리면 돈이 덜 준다 — 그게 콩나물의 값�
     `★콩나물이 90일 안에(또는 이사 전에) 본전을 못 뽑습니다 — 돌릴 이유가 없습니다 ` +
     `(튜토 29일: 맨몸 ${at(29)} vs 회전 ${bt(29)})`);
   const D = 57;                                     // 이사 중앙값 — 튜토를 다 산 시점
+  const net = Math.round((bt(D) - at(D)) / D);
   info(`콩나물 값어치: 튜토 ${cross}일부터 이득으로 돌아서고, ${D}일에 ` +
        `${(bt(D) - at(D)).toLocaleString()}원 더 남는다 ` +
-       `(하루 ${Math.round((bt(D) - at(D)) / D).toLocaleString()}원 · 씨앗값 낸 뒤 순액)`);
-  info(`  ⤷ ★순액이 얇다 — 절감 600원/일 − 씨앗 420원/일(2,100원÷5일) = **180원/일**. ` +
-       `하루 지출 20,000원의 0.9%다(예전 2,175원/일 = 10.9%). 보고 ③ 참고`);
+       `(하루 ${net.toLocaleString()}원 · 씨앗값 낸 뒤 순액)`);
+  /* ★★ 씨앗값을 1,500 → 1,000원으로 내린 뒤(2026-08-04) 순액이 얼마가 됐나를 **재서** 낸다.
+     ⚠ 지갑에서 나가는 씨앗값의 정본은 `shop.CATALOG.bean_seed.listWon` 이다
+       (first_play 의 seedWonPerSiru 는 표시용이라 그것만 고치면 순액이 안 바뀐다). */
+  info(`  ⤷ ★씨앗 ${buyPriceOf('bean_seed').toLocaleString()}원/시루 기준 순액 ` +
+       `**하루 ${net.toLocaleString()}원** — 하루 지출 20,000원의 ${(net / 20000 * 100).toFixed(1)}%. ` +
+       `(1,500원이던 때 하루 100원 = 0.5%. 보고 ① 참고)`);
 });
 
 /* ══ E · 값 공식 — propagation.md §6 그대로 ══════════════════════════════ */

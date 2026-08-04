@@ -34,7 +34,10 @@
 import { givePlant, pot0, rehomePot, pushLog } from './state.js';
 import {
   advanceBeansproutDay,
+  beansproutHarvestStatus,
+  beansproutReady,
   beansproutWaterStatus,
+  harvestBeansprout,
   waterBeansprout,
   eatFromPantry,
   cropDliFromReport,
@@ -234,14 +237,24 @@ const STALL_DAYS = 4;
    대신 대사는 갈린다(plantStalled → plantStalledAgain) — 같은 말을 반복하지 않는다. */
 const STALL_REPEAT_DAYS = 10;
 
+/* 방금 처음 켜진 배움만 사건으로 — ★두 곳이 쓴다 (2026-08-04).
+   턴 안(narrativeEvents)과 **턴 밖**(harvestCrop)이다. 수확이 손 동작이 되면서
+   배움 ①·②가 턴 밖에서 켜지게 됐는데, 그때 사건을 안 내면 화면은 아무 말도 안 한다. */
+function learnEventsOf(ts, before) {
+  const out = [];
+  if (!ts || !ts.enabled || !before) return out;
+  for (const k of Object.keys(ts.learned))
+    if (ts.learned[k] && !before[k])
+      out.push({ id: 'learn_' + k, ko: (LEARNING[k] || {}).ko || k, key: k });
+  return out;
+}
+
 function narrativeEvents(S, turn, ts, learnedBefore, day) {
   const ev = [];
   const season = day && day.season ? day.season : null;
 
   /* ① 배움 — 처음 켜진 것만. 넷을 한 줄씩 짚어 주면 체크리스트가 화면 밖에서도 산다. */
-  for (const k of Object.keys(ts.learned))
-    if (ts.learned[k] && !learnedBefore[k])
-      ev.push({ id: 'learn_' + k, ko: (LEARNING[k] || {}).ko || k, key: k });
+  ev.push(...learnEventsOf(ts, learnedBefore));
 
   /* ② 형태 정지 — ★"자리를 옮겨라"가 아니라 "며칠째 그대로다"를 낸다.
      정답 자리를 코어가 알면 방이 바뀔 때 조용히 틀린다(first_play.js markMonsteraPhase 주석). */
@@ -291,9 +304,12 @@ function stepTutorial(S, turn, io) {
     const learnedBefore = { ...ts.learned };
     const ev = turn.firstPlayEvent || {};
     noteLearning(ts, {
-      harvested: !!ev.harvested,
+      /* ★ 배움 ①·② (수확·어두운 자리)는 **여기서 안 켜진다** (2026-08-04).
+         수확이 손 동작이 되면서 그 둘의 증거가 턴 밖에서 난다 — `harvestCrop` 이 켠다.
+         여기서도 켜려고 `harvested: fp.beansprout.harvested` 같은 것을 쓰면, 거둔 그 날에
+         바로 다시 심은 판(avgDli 가 null 로 초기화된다)에서 배움이 통째로 사라진다.
+         증거가 나는 그 자리에서 켜는 것이 유일하게 안 새는 배선이다. */
       foodSavedWon: ev.foodSavedWon,
-      cropAvgDli: fp && fp.beansprout ? fp.beansprout.avgDli : null,
       /* ★자리 이름이 아니라 DLI 로 본다. 다른 방·다른 슬롯에서도 성립해야 한다.
          growth 가 실제로 쓴 7일평균을 먼저 본다 — 코어가 센 값과 어긋나면 배선이 틀린 것이라
          판정은 growth 쪽을 따르는 게 맞다(둘 다 없으면 코어 이력으로 뒤늦게라도 센다). */
@@ -401,7 +417,9 @@ export function nextDay(S, io) {
   const shop = stepShop(S, { log: m => pushLog(S, m) });
 
   let firstPlayEvent = null;
-  let arrivalPhase = null;          // Day 4 도착 때 **검증까지 마친** 단계. 아래서 다시 읽지 않는다
+  /* ★ 2026-08-04 — **여기서 거두지 않는다.** 하루가 하는 일은 "자라게 하는 것"까지고,
+     거두는 것은 `harvestCrop(S, io)`(=[수확하기] 버튼)이다(first_play.js §수확).
+     그래서 몬스테라 선물도 이 블록에서 사라졌다 — 선물은 수확에 붙어 있고, 수확이 옮겨 갔다. */
   if (S.firstPlay && S.firstPlay.enabled && !S.firstPlay.beansprout.harvested) {
     const before = structuredClone(S.firstPlay);
     const logLengthBefore = S.log.length;
@@ -420,85 +438,20 @@ export function nextDay(S, io) {
       if (firstPlayEvent.dry && firstPlayEvent.dryRun === 1)
         pushLog(S, '💧 물을 안 줘서 콩나물이 오늘은 안 자랐습니다 — 시들지는 않습니다');
 
-      if (firstPlayEvent.harvested) {
-        pushLog(S, `🥣 콩나물 수확 — ${firstPlayEvent.qualityKo} · ${firstPlayEvent.meals}끼 상당 · ` +
-                   `${firstPlayEvent.cycleDays}일 회전에 ${firstPlayEvent.cycleSavedWon.toLocaleString()}원` +
-                   (firstPlayEvent.dryDays ? ` (물 빼먹은 날 ${firstPlayEvent.dryDays}일)` : ''));
-        if (firstPlayEvent.wastedSirus > 0)
-          pushLog(S, `🥱 시루 ${firstPlayEvent.wastedSirus}개분은 질려서 못 먹습니다 — ` +
-                     `같은 작물은 몇 시루를 심어도 절감이 늘지 않습니다`);
-
-        /* 선물은 수확 정산 뒤 온다. 처음부터 정답 창턱에 놓지 않는다 — 도착 후 플레이어가
-           창가 높은 자리로 옮기는 것이 두 번째 학습이다. */
-        const roomSlots = (io.light.room && io.light.room.slots) || [];
-        const potDiameter = FIRST_PLAY_ASSETS.monsteraPotDiameterM;
-        /* ★ 치수가 숫자로 확인된 자리만 후보다. 폴백 금지 (2026-08-02 정정).
-           예전엔 후보가 0칸이면 `!canHoldPot.size` 로 **제약을 통째로 껐다** —
-           화분이 물리적으로 안 올라가는 자리에 조용히 놓였다. 0칸이면 그건 데이터 문제이므로
-           숨기지 않고 던진다. */
-        const canHoldPot = new Set(roomSlots
-          .filter(s => slotFitsDiameter(s, potDiameter))
-          .map(s => s.slotId));
-        if (!canHoldPot.size)
-          throw new Error(`[첫 플레이] 지름 ${potDiameter}m 화분이 올라가는 자리가 이 방에 없습니다 ` +
-                          `(maxPotD 가 숫자로 있는 슬롯 0칸) — 방 데이터를 확인해 주세요`);
-        if (!S.firstPlay.monstera.arrived) {
-        const arrival = [...(report.slots || [])]
-          .filter(s => s && s.slotId !== cropSlotId && canHoldPot.has(s.slotId) &&
-                       typeof s.dli === 'number' && isFinite(s.dli))
-          .sort((a, b) => a.dli - b.dli)[0];
-        if (!arrival) throw new Error('[첫 플레이] 몬스테라가 도착할 화분 자리를 찾지 못했습니다');
-
-        const arrived = givePlant(S, io, { slotId: arrival.slotId });
-        /* ★ 도착은 setGrowth 가 그려졌고 **단계까지 읽힌 뒤에만** 완성된다 (2026-08-02 정정).
-           단계를 못 읽으면 말린 새순 경계를 영영 못 보는 개체가 남는다 — 여기서 던지면
-           바깥 catch 가 화분·수확·식비·날짜를 통째로 되돌려 Day 4 를 다시 시도할 수 있다. */
-        /* ★ 도착에서는 **'정보 없음'도 실패다** (2026-08-02 추가) — 일일 루프와 등급이 다르다.
-           일일 루프의 단계는 표시용이라 없어도 하루는 간다. 도착은 아니다:
-           단계 없이 열면 monstera.growthPhase 가 null 로 굳고, 그 뒤 markMonsteraPhase 가
-           매번 조용히 no-op 해서 **completed 가 영영 false** 인 개체가 남는다.
-           첫 플레이가 증명하려는 게 딱 그 경계라, 근거 없이 문을 열지 않는다. */
-        const gp = phaseOf(io, S);
-        const gpError = gp.error ||
-          (gp.phase ? null : 'growth 가 growthPhase() 를 내지 않습니다 — 단계 계약이 없습니다');
-        if (gpError) {
-          S.pots.length = 0;                    // 되돌리기 전에 방금 만든 화분을 거둔다
-          const err = new Error(`[첫 플레이] 도착한 몬스테라의 단계를 읽지 못했습니다 — ${gpError}`);
-          /* ★ growth 쪽은 **코어가 못 되감는다** (2026-08-02 명시).
-             givePlant 안의 setGrowth(143) 은 이미 적용됐고 3D 도 그려진 뒤다 — 되돌릴 창구가 없다.
-             그래서 "다 되돌렸다"고 말하지 않고 잔여물을 표시로 남긴다(아래 catch 가 로그로 낸다).
-             ⚠ 그래도 **잠그지는 않는다**: setGrowth 는 절대값 점프라 Day 4 를 다시 밟으면
-               setGrowth(143) 이 같은 자리에 다시 꽂혀 두 쪽이 맞는다. 재시도가 정답인 상태다. */
-          err.growthJumpApplied = arrived.arrivalGrowthDays;
-          throw err;
-        }
-        /* ★ 화분을 통째로 넘긴다 (2026-08-03) — slotId 만 넘기면 좌표가 사본에서 빠진다.
-           정본은 화분(arrived.slotId · arrived.at)이고 fp.monstera 는 그걸 베낀 사본이다. */
-        markMonsteraArrived(S.firstPlay, arrived);
-        markMonsteraPhase(S.firstPlay, gp.phase);
-        arrivalPhase = gp.phase;
-        pushLog(S, '🌱 “콩나물을 잘 키웠구나. 이건 좀 더 어려울 거야.”');
-        }   /* ← 선물은 **첫 수확에만** 온다. 둘째 시루에서 몬스테라가 또 오면 안 된다 */
-      }
+      /* ★ 다 자란 날도 **바뀔 때만** 남긴다. 안 거두면 이 상태가 며칠이고 이어지는데
+         매일 찍으면 기록이 그 줄로 덮인다. 안 거둬도 벌은 없다 — 회전이 멈출 뿐이다. */
+      if (firstPlayEvent.justReady)
+        pushLog(S, `🥬 콩나물을 거둘 때가 됐습니다 — [수확하기]를 눌러 주세요 ` +
+                   `(거두기 전에는 다음 회전이 시작되지 않습니다)`);
     } catch (e) {
-      /* givePlant는 setGrowth 성공 뒤에만 화분을 만들므로, 여기서 화분이 없으면 외부 상태도
-         커밋되지 않았다. 콩나물·식비·날짜·로그를 함께 되돌려 Day 4를 재시도할 수 있게 한다. */
-      if (!pot0(S)) {
-        S.firstPlay = before;
-        S.log.length = logLengthBefore;
-        S.day--;
-        e.coreRolledBack = true;
-        e.turnState = 'core_rolled_back';
-        /* ★ 되감은 것은 **코어뿐**이다 — growth 는 이미 점프한 뒤일 수 있다.
-           로그를 자른 **뒤에** 남긴다(먼저 남기면 위 truncate 에 같이 잘린다).
-           숨기면 "Day 3 · 화분 없음"인데 옆 창엔 다 자란 몬스테라가 서 있는 화면이 된다. */
-        if (e.growthJumpApplied != null)
-          pushLog(S, `⚠ 코어는 Day ${S.day} 로 되돌렸지만 growth 는 이미 유효 ` +
-                     `${e.growthJumpApplied}일로 점프한 뒤입니다 — 옆 창의 몬스테라는 남아 있습니다. ` +
-                     `[다음 날]을 다시 누르면 같은 값으로 다시 맞춰집니다`);
-      } else {
-        e.turnState = 'unknown';
-      }
+      /* 콩나물 하루가 터졌으면 날짜·상태를 통째로 되돌려 그날을 다시 밟을 수 있게 한다.
+         ★ 이 블록은 이제 growth 를 안 건드린다(선물이 harvestCrop 으로 갔다) — 되돌릴 수 없는
+           바깥 상태가 없으므로 되감기가 언제나 완전하다. */
+      S.firstPlay = before;
+      S.log.length = logLengthBefore;
+      S.day--;
+      e.coreRolledBack = true;
+      e.turnState = 'core_rolled_back';
       throw e;
     }
   }
@@ -519,26 +472,27 @@ export function nextDay(S, io) {
      ★ 위 첫 플레이 되감기(catch)는 이 줄 **위에서** 끝난다 — 되감긴 턴은 삽수도 안 돈다. */
   const cuttings = stepCuttingsOfTurn(S);
 
-  /* 몬스테라가 아직 도착하지 않았으면 콩나물만 진행하고 끝낸다. Day 4에 막 도착한 경우도
-     그날은 키운 날로 세지 않는다 — 다음 날부터 빛을 받아 3턴 뒤 말린 새순이 된다. */
+  /* 몬스테라가 아직 도착하지 않았으면 콩나물만 진행하고 끝낸다.
+     ★ 2026-08-04 — 도착은 이제 **턴 안에서 안 일어난다**(harvestCrop 이 준다). 그래서 이 경로에
+       화분이 생겨 있는 일이 없다 — `plantArrived` 는 늘 false 다. 칸을 지우지는 않는다:
+       화면·재현이 그 이름을 읽고 있고, "이 턴에 도착했나"라는 질문 자체는 여전히 유효하다. */
   if (!p) {
-    const arrived = pot0(S);
-    /* ★ 단계를 **다시 읽지 않는다** (2026-08-02 정정).
-       여기 오는 개체는 방금 위 도착 블록이 만든 것뿐이고, 거기서 이미 읽고 검증했다.
-       한 턴에 두 번 읽으면 두 답이 다를 수 있는데, 두 번째 실패는 이미 확정된 도착을
-       되돌리지 못해 `growthPhaseError` 필드로만 조용히 남는다 — 아무도 안 막는 실패가 된다.
-       도착이 없으면 단계도 없다(null = 정보 없음, 실패 아님). */
     const earlyTurn = {
       day: S.day, sky, report, slot: null, dli: null, check,
-      noPlant: !arrived, plantArrived: !!arrived, firstPlayEvent,
-      daysPlanted: arrived ? 0 : null,
-      growthCalendarDay: arrived ? io.growth.calendarDay() : null,
-      effectiveGrowthDays: arrived ? io.growth.growthDays() : null,
-      growthPhase: arrivalPhase,
+      noPlant: true, plantArrived: false, firstPlayEvent,
+      daysPlanted: null,
+      growthCalendarDay: null,
+      effectiveGrowthDays: null,
+      growthPhase: null,
       growthPhaseError: null,
       /* ★ 물주기 (2026-08-04) — 형태 정지(growthBlocked)·머리공간(headroomBlocked)과 **다른 칸**이다.
          셋을 한 칸에 섞으면 처방이 뒤섞인다(등을 켜라 / 자리를 옮겨라 / 물을 줘라). */
       cropWatered, cropDry: !!(firstPlayEvent && firstPlayEvent.dry),
+      /* ★ 수확 (2026-08-04) — 물주기와 **다른 칸**이다. 같은 칸에 섞으면 화면이
+         "물을 주세요"와 "거두세요"를 못 가른다(둘은 서로를 배제한다 — §수확). */
+      cropReady: beansproutReady(S.firstPlay && S.firstPlay.beansprout),
+      cropJustReady: !!(firstPlayEvent && firstPlayEvent.justReady),
+      cropHarvest: beansproutHarvestStatus(S.firstPlay),
       cropWater: beansproutWaterStatus(S.firstPlay, S.day),
       cuttings, shop
     };
@@ -650,8 +604,11 @@ export function nextDay(S, io) {
     growthPhase: phaseAfter.phase,
     growthPhaseError: phaseAfter.error,
     firstPlayEvent,
-    /* ★ 물주기 — earlyTurn 과 같은 칸. 반환구가 둘이면 둘 다 챙긴다(이 파일의 오랜 함정). */
+    /* ★ 물주기·수확 — earlyTurn 과 같은 칸. 반환구가 둘이면 둘 다 챙긴다(이 파일의 오랜 함정). */
     cropWatered, cropDry: !!(firstPlayEvent && firstPlayEvent.dry),
+    cropReady: beansproutReady(S.firstPlay && S.firstPlay.beansprout),
+    cropJustReady: !!(firstPlayEvent && firstPlayEvent.justReady),
+    cropHarvest: beansproutHarvestStatus(S.firstPlay),
     cropWater: beansproutWaterStatus(S.firstPlay, S.day),
     cuttings, shop
   };
@@ -711,6 +668,144 @@ export function nextDay(S, io) {
 
   turn.tutorial = stepTutorial(S, turn, io);
   return { S, turn: attachEvents(S, turn, fpBefore) };
+}
+
+/* ============================================================
+   ★★ 수확 — **게임 화면의 [수확하기] 버튼이 부르는 유일한 함수** (2026-08-04 신설)
+   ------------------------------------------------------------
+   박사님 지시: *"수확하기를 해야 반영되도록 하자."*
+
+   ★ 규칙 자체는 `first_play.js §수확` 이 갖는다. 여기 있는 이유는 **`io` 가 필요해서**다 —
+     첫 수확에는 몬스테라 선물이 딸려 오고, 그건 `io.growth`(setGrowth)와 `io.light`(자리 고르기)를
+     쓴다. `state.waterCrop` 이 state 에 있는 것과 같은 판단이다: 그 함수는 `S.day` 만 필요했다.
+
+   ★★ 원자적이다. 선물이 실패하면 **수확도 안 난 것으로 되돌린다.**
+     예전에는 이 원자성이 `nextDay` 의 Day 4 되감기였다(날짜까지 되돌렸다). 이제는 날짜가
+     이미 확정된 뒤라 되돌릴 것이 **수확 하나뿐**이고, 그래서 오히려 더 완전하다 —
+     플레이어는 growth 를 고친 뒤 [수확하기]를 다시 누르면 된다.
+
+   ★★ 배움도 여기서 켠다(learnEventsOf). 배움 ①(첫 수확·식비 절감)·②(어두운 자리)의 증거는
+     **거두는 순간**에만 온전하다. 다음 턴으로 미루면 "거두고 바로 다시 심은" 판에서
+     `avgDli` 가 초기화되어 배움이 조용히 사라진다.
+
+   ★ 곳간에서 **먹지는 않는다.** 절감은 다음 [다음 날] 부터 하루 600원씩 나간다
+     (first_play.js §harvestBeansprout 의 ⚠ — 같은 날 두 번 먹는 것을 막는다).
+
+   반환 { ...수확 결과, arrived, growthPhase, events }
+     events 는 `turn.events` 와 **같은 모양**이라 그대로 `dialogue.scriptsForEvents` 에 넣으면 된다:
+       beansprout_harvest → learn_harvest → learn_cropDark → monstera_arrived (EVENT_ORDER 가 정렬한다)
+============================================================ */
+export function harvestCrop(S, io) {
+  const fp = S && S.firstPlay;
+  if (!fp || !fp.enabled || !fp.beansprout)
+    throw new Error('[수확] 첫 플레이 상태가 없습니다 — 거둘 시루가 없습니다');
+  if (!io || !io.light || !io.growth)
+    throw new Error('[수확] 조도·생장 계약이 필요합니다 — nextDay 와 같은 io 를 넘겨 주세요');
+  const b = fp.beansprout;
+  if (!b.slotId) {
+    const e = new Error('[수확] 시루를 먼저 방 안에 놓아 주세요');
+    e.tutorialInput = true; throw e;
+  }
+  if (b.harvested) {
+    const e = new Error('[수확] 이미 거둔 시루입니다 — 다시 심어야 또 거둡니다');
+    e.tutorialInput = true; throw e;
+  }
+  if (!beansproutReady(b)) {
+    const e = new Error(`[수확] 아직 ${Math.max(0, b.harvestDays - b.ageDays)}일 더 자라야 합니다 ` +
+                        `(${b.ageDays}/${b.harvestDays}일)`);
+    e.tutorialInput = true; throw e;
+  }
+
+  const fpBefore = firstPlaySnapshot(fp);
+  const rollback = structuredClone(fp);
+  const logLengthBefore = S.log.length;
+  const ts = S.tutorial && S.tutorial.enabled ? S.tutorial : null;
+  const learnedBefore = ts ? { ...ts.learned } : null;
+
+  let r = null, arrived = null, arrivalPhase = null;
+  try {
+    r = harvestBeansprout(fp);
+    pushLog(S, `🥣 콩나물 수확 — ${r.qualityKo} · ${r.meals}끼 상당 · ` +
+               `${r.cycleDays}일 회전에 ${r.cycleSavedWon.toLocaleString()}원` +
+               (r.dryDays ? ` (물 빼먹은 날 ${r.dryDays}일)` : ''));
+    if (r.wastedSirus > 0)
+      pushLog(S, `🥱 시루 ${r.wastedSirus}개분은 질려서 못 먹습니다 — ` +
+                 `같은 작물은 몇 시루를 심어도 절감이 늘지 않습니다`);
+
+    /* ── 선물은 **첫 수확에만** 온다. 둘째 시루에서 몬스테라가 또 오면 안 된다 ── */
+    if (!fp.monstera.arrived) {
+      /* 처음부터 정답 창턱에 놓지 않는다 — 도착 후 플레이어가 창가 높은 자리로 옮기는 것이
+         두 번째 학습이다. 그래서 **가장 어두운 자리**에 내려놓는다. */
+      const { report } = io.light.daily(S.day, S);
+      const roomSlots = (io.light.room && io.light.room.slots) || [];
+      const potDiameter = FIRST_PLAY_ASSETS.monsteraPotDiameterM;
+      /* ★ 치수가 숫자로 확인된 자리만 후보다. 폴백 금지 (2026-08-02 정정).
+         예전엔 후보가 0칸이면 제약을 통째로 껐다 — 화분이 물리적으로 안 올라가는 자리에
+         조용히 놓였다. 0칸이면 그건 데이터 문제이므로 숨기지 않고 던진다. */
+      const canHoldPot = new Set(roomSlots
+        .filter(s => slotFitsDiameter(s, potDiameter))
+        .map(s => s.slotId));
+      if (!canHoldPot.size)
+        throw new Error(`[첫 플레이] 지름 ${potDiameter}m 화분이 올라가는 자리가 이 방에 없습니다 ` +
+                        `(maxPotD 가 숫자로 있는 슬롯 0칸) — 방 데이터를 확인해 주세요`);
+      const spot = [...(report.slots || [])]
+        .filter(s => s && s.slotId !== b.slotId && canHoldPot.has(s.slotId) &&
+                     typeof s.dli === 'number' && isFinite(s.dli))
+        .sort((x, y) => x.dli - y.dli)[0];
+      if (!spot) throw new Error('[첫 플레이] 몬스테라가 도착할 화분 자리를 찾지 못했습니다');
+
+      arrived = givePlant(S, io, { slotId: spot.slotId });
+      /* ★ 도착은 setGrowth 가 그려졌고 **단계까지 읽힌 뒤에만** 완성된다 (2026-08-02 정정).
+         ★ 도착에서는 **'정보 없음'도 실패다** — 일일 루프와 등급이 다르다. 단계 없이 열면
+           monstera.growthPhase 가 null 로 굳고, markMonsteraPhase 가 매번 조용히 no-op 해서
+           **completed 가 영영 false** 인 개체가 남는다. 근거 없이 문을 열지 않는다. */
+      const gp = phaseOf(io, S);
+      const gpError = gp.error ||
+        (gp.phase ? null : 'growth 가 growthPhase() 를 내지 않습니다 — 단계 계약이 없습니다');
+      if (gpError) {
+        S.pots.length = 0;                    // 되돌리기 전에 방금 만든 화분을 거둔다
+        const err = new Error(`[첫 플레이] 도착한 몬스테라의 단계를 읽지 못했습니다 — ${gpError}`);
+        /* ★ growth 쪽은 **코어가 못 되감는다** — setGrowth(143) 은 이미 적용됐다.
+           ⚠ 그래도 잠그지 않는다: setGrowth 는 절대값 점프라 [수확하기]를 다시 누르면
+             같은 자리에 다시 꽂혀 두 쪽이 맞는다. 재시도가 정답인 상태다. */
+        err.growthJumpApplied = arrived.arrivalGrowthDays;
+        throw err;
+      }
+      /* ★ 화분을 통째로 넘긴다 — slotId 만 넘기면 좌표가 사본에서 빠진다. */
+      markMonsteraArrived(fp, arrived);
+      markMonsteraPhase(fp, gp.phase);
+      arrivalPhase = gp.phase;
+      pushLog(S, '🌱 “콩나물을 잘 키웠구나. 이건 좀 더 어려울 거야.”');
+    }
+  } catch (e) {
+    /* givePlant 는 setGrowth 성공 뒤에만 화분을 만들고, 위에서 실패하면 바로 거둔다.
+       그래서 여기서 화분이 없으면 바깥 상태도 커밋되지 않았다 — 수확을 통째로 무른다. */
+    if (!pot0(S)) {
+      S.firstPlay = rollback;
+      S.log.length = logLengthBefore;
+      e.harvestRolledBack = true;
+      /* ★ 무른 것은 **코어뿐**이다 — growth 는 이미 점프한 뒤일 수 있다.
+         로그를 자른 **뒤에** 남긴다(먼저 남기면 위 truncate 에 같이 잘린다). */
+      if (e.growthJumpApplied != null)
+        pushLog(S, `⚠ 수확은 물렀지만 growth 는 이미 유효 ${e.growthJumpApplied}일로 ` +
+                   `점프한 뒤입니다 — 옆 창의 몬스테라는 남아 있습니다. ` +
+                   `[수확하기]를 다시 누르면 같은 값으로 다시 맞춰집니다`);
+    } else {
+      e.harvestRolledBack = false;
+    }
+    throw e;
+  }
+
+  /* ── 사건 · 배움 ─────────────────────────────────────────────
+     ★ 순서는 여기서 안 정한다 — `dialogue.EVENT_ORDER` 가 정본이다(수확 → 배움 → 도착). */
+  const events = firstPlayEventsOf(fpBefore, fp);
+  if (ts) {
+    /* ★ 증거는 **이 회전이 실제로 식비를 덜었나**(cycleSavedWon)다 — tutorial.noteLearning 참고.
+       예전 증거(`foodSavedWon` = 그날 곳간에서 꺼낸 돈)는 이제 수확과 **다른 날**에 난다. */
+    noteLearning(ts, { harvested: true, cycleSavedWon: r.cycleSavedWon, cropAvgDli: r.avgDli });
+    events.push(...learnEventsOf(ts, learnedBefore));
+  }
+  return { ...r, arrived, growthPhase: arrivalPhase, events };
 }
 
 export function runDays(S, io, n, onTurn) {
@@ -774,6 +869,33 @@ export function runDays(S, io, n, onTurn) {
    ★ 둘 다 호출부가 명시로 뒤집을 수 있다(`stopOnDry` · `autoWater`). 조용한 기본값이 아니라
      **모드에서 유도한 기본값**이라, 모드가 바뀌면 같이 바뀐다.
    ★ 시루를 아직 안 놓았거나 이미 거뒀으면 마를 것이 없다 — 두 규칙 다 아무 일도 안 한다.
+
+   ══ ★★ 수확과 어떻게 맞물리나 (2026-08-04) ═══════════════════════════════
+   ★★ **두 모드가 다 선다.** 물과 달리 여기서는 답이 갈리지 않는다 — `stopOnReady` 기본 켜짐.
+
+     jump (첫 플레이)  거둘 수 있게 되면 **선다.** 박사님 확정 —
+                       "첫 수확은 이 구간이 가르치는 것이다."
+                       ⚠ 안 서면 더 나쁘다: 수확이 손 동작이 된 뒤로 **거두기 전에는
+                         다음 이벤트가 영영 안 온다.** 안 서면 60일 한도까지 헛돈다.
+     fast (튜토 이후)  **선다.** 물과 같은 논리가 서는지 재 봤고, **한 곳에서 안 선다:**
+
+       물을 세우면 배속이 죽는가?  죽는다. 마른 날은 **매일** 오므로 30일 배속이 1일이 된다(-97%).
+       수확을 세우면?              안 죽는다. 거둘 날은 회전당 한 번이고, 배속은 **재파종을
+                                   대신 안 하므로** 한 번 거두면 다음 회전이 시작되지 않는다.
+                                   ⇒ 한 번 감는 동안 **최대 한 번** 선다.
+       "결과가 손과 같은가"는 수확도 참이다(품질은 dliHist 로 이미 확정됐고 거두는 시각이
+       그 값을 못 바꾼다). 그러나 **정지 비용이 물과 두 자릿수 다르다** — 물은 자동으로 줄
+       이유가 그 비용이었지, 논리가 성립한다는 것만으로는 자동이 되지 않는다.
+
+     ★ 그리고 자동수확은 박사님이 **나중 보상**으로 확정했다(아이템·특수보상·업적).
+       배속에서 지금 켜면 그 보상이 미리 새어 나간다 — 배속은 튜토 이후 **전 구간**이다.
+
+   ★ 정지는 **전환(`beansprout_ready` 사건 · `turn.cropJustReady`)** 에서만 난다.
+     "지금 거둘 수 있다"로 세우면 안 거둔 채로 다시 감을 때마다 첫날에 또 서서 못 돈다.
+
+   ★★ 자동수확 자리 — `S.perks.autoHarvest` (state.js §perks). **지금은 늘 꺼져 있다.**
+     켜지면 여기서 이렇게 돈다: `stopOnReady` 기본값이 false 가 되고, tick 이 `autoWater` 와
+     같은 자리에서 `harvestCrop(S, io)` 를 부른다(첫 수확 선물까지 같은 함수가 처리한다).
 ============================================================ */
 
 /* 한 번에 갈 수 있는 최대 일수. 이벤트가 영영 안 오는 경우(어두운 자리)에도 반드시 선다. */
@@ -808,8 +930,15 @@ const STOP_KO = {
   desync: '어긋남',
   callbackError: '화면 갱신 중 오류',
   blocked: '형태 정지',
-  dry: '물이 말랐습니다'
+  dry: '물이 말랐습니다',
+  ready: '거둘 때가 됐습니다'
 };
+
+/* 자동수확 보상을 가졌나 — **지금은 늘 false** 다(state.js §perks). 켜고 끌 자리만 둔다.
+   여기 한 곳에서만 읽는다: 자리를 여러 곳에서 읽기 시작하면 나중에 켤 때 반씩 켜진다. */
+export function hasAutoHarvest(S) {
+  return !!(S && S.perks && S.perks.autoHarvest);
+}
 
 /* ★ 한 번에 하나만 돈다. 모듈 단일 상태인 이유는 계약이 `stopFastForward()` 라서다 —
    핸들을 안 들고도 멈출 수 있어야 페이지 이탈·오류에서 유령 턴이 안 남는다. */
@@ -868,12 +997,15 @@ export function startFastForward(S, io, opt = {}) {
      둘이 동시에 켜지는 일은 없다: 자동으로 주면 마를 날이 없고, 마르면 안 준 것이다. */
   const stopOnDry = opt.stopOnDry === undefined ? (mode === 'jump') : !!opt.stopOnDry;
   const autoWater = opt.autoWater === undefined ? (mode === 'fast') : !!opt.autoWater;
+  /* ★ 수확 — **두 모드가 다 선다**(위 §수확과 어떻게 맞물리나). 모드에서 유도하지 않는 이유는
+     둘의 답이 같기 때문이다. 유일하게 이 값을 끄는 것은 **자동수확 보상**이고, 지금은 늘 꺼져 있다. */
+  const stopOnReady = opt.stopOnReady === undefined ? !hasAutoHarvest(S) : !!opt.stopOnReady;
   const onDay = typeof opt.onDay === 'function' ? opt.onDay : null;
   const onStop = typeof opt.onStop === 'function' ? opt.onStop : null;
 
   const startDay = S.day;
   const run = {
-    mode, untilEvent, maxDays, msPerDay, stopOnBlock,
+    mode, untilEvent, maxDays, msPerDay, stopOnBlock, stopOnReady,
     days: 0, timerId: null, done: false,
     lastPhaseId: (fp && fp.monstera && fp.monstera.growthPhase)
       ? fp.monstera.growthPhase.phaseId : null,
@@ -957,6 +1089,11 @@ export function startFastForward(S, io, opt = {}) {
 
     /* ── ② 이벤트에서 멈춘다(점핑일 때만. 배속은 알림으로 지난다) ── */
     if (untilEvent && events.length) { finish('event', { turn, events }); return; }
+    /* ★ 거둘 때가 됐다 — **배속도 선다**(위 §수확과 어떻게 맞물리나).
+       점핑은 위 ②에서 `beansprout_ready` 사건으로 이미 섰다. 여기 걸리는 것은 배속뿐이다.
+       ★ 전환에서만 본다(`cropJustReady`) — "지금 거둘 수 있다"로 세우면 안 거둔 채로
+         다시 감을 때마다 첫날에 또 서서 배속이 못 돈다. */
+    if (stopOnReady && turn.cropJustReady) { finish('ready', { turn, events }); return; }
     /* ★ 마른 날 — 이벤트보다 뒤에 본다. 수확한 턴이면 그 이벤트가 먼저 서야 맞다.
        ★ 자라는 중인 시루가 없으면 turn.cropDry 가 애초에 안 뜬다 → 빨리감기는 그대로 간다. */
     if (stopOnDry && turn.cropDry) { finish('dry', { turn, events }); return; }

@@ -74,7 +74,7 @@ export const DLI_HIST_KEEP = null;
    조용히 안 저장되는 칸이 생기는 것이 제일 나쁘다. */
 const KNOWN_STATE_KEYS = Object.freeze([
   'schema', 'day', 'timeScale', 'sim', 'home', 'lamps',
-  'pots', 'cuttings', 'firstPlay', 'tutorial', 'shop', 'dliHist', 'ledger', 'log'
+  'pots', 'cuttings', 'firstPlay', 'tutorial', 'shop', 'perks', 'dliHist', 'ledger', 'log'
 ]);
 
 /* ---------------------------------------------------------------
@@ -469,6 +469,12 @@ export function serialize(S, opt = {}) {
       firstPlay: packFirstPlay(S.firstPlay),
       tutorial: packTutorial(S.tutorial),
       shop: packShop(S.shop),
+      /* ★ 보상으로 켜지는 편의 기능 (2026-08-04 · state.js §perks).
+         지금은 `autoHarvest` 하나뿐이고 **늘 false** 다. 그래도 지금 싣는다 —
+         나중에 켜질 때 세이브 규약을 같이 넓히는 것을 잊으면 "보상을 받았는데 껐다 켜면
+         사라지는" 유형이 난다. 칸이 먼저 있어야 그 유형이 아예 안 생긴다.
+         ⚠ 없는(옛) 세이브는 아래 복원에서 기본값(전부 꺼짐)으로 열린다. */
+      perks: { autoHarvest: !!(S.perks || {}).autoHarvest },
       /* ★ 자르지 않는다 — growth 복원의 입력이다(맨 위 §growth). null 은 '못 잰 날'이라 그대로 둔다. */
       dliHist: needArr(S.dliHist || [], 'dliHist')
         .map((v, i) => (v == null ? null : needNum(v, `dliHist[${i}]`))),
@@ -798,6 +804,9 @@ export function deserialize(raw, opt = {}) {
 
   /* 상점 — 쓸 때와 **같은 검증**을 읽을 때도 태운다. 없는(옛) 세이브면 빈 상점으로 연다. */
   S.shop = st.shop ? { ...createShopState(), ...packShop(st.shop) } : createShopState();
+
+  /* 보상 — 없는(옛) 세이브면 전부 꺼진 채로 연다. 지어내지 않는다(state.js §perks). */
+  if (st.perks) S.perks.autoHarvest = !!st.perks.autoHarvest;
 
   /* ── 무결성 ──────────────────────────────────────────────── */
   const report = {

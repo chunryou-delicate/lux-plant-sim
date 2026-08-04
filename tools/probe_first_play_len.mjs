@@ -4,8 +4,8 @@
 import { readFileSync } from 'node:fs';
 import { createProfileLight } from '../src/game/room_profile.js';
 import { newState, givePlant, pot0, setPotSlot, waterCrop } from '../src/game/state.js';
-import { nextDay } from '../src/game/loop.js';
-import { firstPlayRulesFromBalance, placeBeansprout } from '../src/game/first_play.js';
+import { nextDay, harvestCrop } from '../src/game/loop.js';
+import { firstPlayRulesFromBalance, placeBeansprout, beansproutReady } from '../src/game/first_play.js';
 
 /* ★자가 제한 — 재는 도구가 재는 대상보다 오래 살면 안 된다.
    이게 없어서 측정 하나가 21시간 매달려 있었다. 헤드리스 크롬은 무언가를
@@ -58,9 +58,11 @@ for (const slotId of ['banjiha-sill:0', 'banjiha-etagere:5', 'banjiha-dresser:1'
   placeBeansprout(S.firstPlay, slotId, { slots: light.room.slots });
   let arrivedDay = null, spearDay = null;
   for (let d = 1; d <= 40 && spearDay == null; d++) {
-    /* ★ 물주기 (2026-08-04) — [물 주기] + [다음 날] 이 표준 하루다(first_play.js §물주기) */
+    /* ★ [물 주기] + [다음 날] + [수확하기] 가 표준 하루다 (2026-08-04 · §물주기 · §수확) */
     try { waterCrop(S); } catch { /* 이미 거둔 시루 */ }
-    const r = nextDay(S, io);
+    nextDay(S, io);
+    /* ★ 거둬야 몬스테라가 온다 — 자동으로 안 거둬진다 */
+    if (beansproutReady(S.firstPlay.beansprout)) harvestCrop(S, io);
     if (!arrivedDay && S.pots.length) {
       arrivedDay = S.day;
       setPotSlot(S, pot0(S), slotId, light.room.slots);

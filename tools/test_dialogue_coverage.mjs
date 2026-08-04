@@ -38,8 +38,9 @@ import assert from 'node:assert';
 import { readFileSync, existsSync } from 'node:fs';
 import { createProfileLight } from '../src/game/room_profile.js';
 import { newState, pot0, setPotSlot, waterCrop } from '../src/game/state.js';
-import { nextDay } from '../src/game/loop.js';
-import { firstPlayRulesFromBalance, placeBeansprout, moveMonstera } from '../src/game/first_play.js';
+import { nextDay, harvestCrop } from '../src/game/loop.js';
+import { firstPlayRulesFromBalance, placeBeansprout, moveMonstera,
+         beansproutReady } from '../src/game/first_play.js';
 import {
   SCRIPTS, SPEAKERS, CHATTER, REPEATABLE, EVENT_SCRIPT,
   createDialogue, createStoryteller, scriptsForEvents, pickChatter
@@ -127,13 +128,22 @@ function play(opt) {
     try { turn = nextDay(S, io).turn; }
     catch (e) { throw new Error(`Day ${S.day} 에서 턴이 터졌습니다 — ${e.message}`); }
 
-    /* 몬스테라가 도착한 날 자리를 옮긴다(플레이어가 하는 일) */
-    if (turn.plantArrived && opt.plantSlot) movePot(S, opt.plantSlot);
+    /* ★★ 수확 (2026-08-04) — **[수확하기] 를 눌러야** 곳간에 들어가고 몬스테라가 온다
+       (first_play.js §수확). 그래서 첫 플레이 세 장면(수확 → 식물신 → 도착)의 대사도
+       턴이 아니라 **이 함수의 반환값**에서 나온다 — 게임 화면이 하는 것과 똑같이. */
+    let harvestEvents = [];
+    if (beansproutReady(S.firstPlay.beansprout)) {
+      const r = harvestCrop(S, io);
+      harvestEvents = r.events || [];
+      /* 몬스테라가 도착한 날 자리를 옮긴다(플레이어가 하는 일) */
+      if (r.arrived && opt.plantSlot) movePot(S, opt.plantSlot);
+    }
 
     const said = st.turn(turn, S);
-    /* ★턴 밖에서 나는 일(식물등 구입·이사 버튼)도 같은 창구로 돌린다 —
+    /* ★턴 밖에서 나는 일(수확·식물등 구입·이사 버튼)도 같은 창구로 돌린다 —
        게임 화면이 하는 것과 똑같이. onDay 는 그쪽이 낸 events 배열을 돌려준다. */
-    const extraEvents = (opt.onDay && opt.onDay({ S, io, day: S.day, turn })) || [];
+    const extraEvents = [...harvestEvents,
+                         ...((opt.onDay && opt.onDay({ S, io, day: S.day, turn })) || [])];
     const extraSaid = extraEvents.length ? st.events(extraEvents) : [];
 
     rows.push({

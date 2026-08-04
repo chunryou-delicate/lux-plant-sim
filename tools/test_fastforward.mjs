@@ -14,14 +14,15 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import {
-  firstPlayRulesFromBalance, firstPlayNextEvent, markMonsteraPhase,
+  beansproutReady, firstPlayRulesFromBalance, firstPlayNextEvent, markMonsteraPhase,
   moveMonstera, placeBeansprout
 } from '../src/game/first_play.js';
 import {
   FAST_MODE_MAX_DAYS, JUMP_MAX_DAYS,
-  isFastForwarding, nextEventPreview, startFastForward, stopFastForward, timeModeOf
+  harvestCrop, isFastForwarding, nextDay, nextEventPreview,
+  startFastForward, stopFastForward, timeModeOf
 } from '../src/game/loop.js';
-import { givePlant, newState, pot0 } from '../src/game/state.js';
+import { givePlant, newState, pot0, waterCrop } from '../src/game/state.js';
 
 const RULES = firstPlayRulesFromBalance(JSON.parse(
   readFileSync(new URL('../data/balance/characters.json', import.meta.url), 'utf8')));
@@ -91,17 +92,29 @@ function firstPlayState(slotId = 'dark') {
   placeBeansprout(S.firstPlay, slotId);
   return S;
 }
-/* 한 번 부르면 끝날 때까지 돌린다. onStop 이 실제로 왔는지도 같이 확인한다. */
+/* 한 번 부르면 끝날 때까지 돌린다. onStop 이 실제로 왔는지도 같이 확인한다.
+   ★ `autoWater: true` 가 기본이다 (2026-08-04) — 여기 있는 검사들은 **"매일 물을 준 판"** 에서
+     빨리감기가 무엇에 서는가를 본다. 물주기 자체는 아래 §물주기 블록이 따로 잰다.
+     (점핑의 실제 기본값은 `stopOnDry` 쪽이다 — loop.js §물주기와 어떻게 맞물리나) */
 function drive(S, io, clock, opt) {
   const seen = [];
   let stop = null;
   const handle = startFastForward(S, io, {
-    msPerDay: 0, timers: clock.timers,
+    msPerDay: 0, timers: clock.timers, autoWater: true,
     onDay: (turn, info) => seen.push({ turn, info }),
     onStop: (reason, info) => { stop = { reason, ...info }; },
     ...opt
   });
   return { handle, seen, get stop() { return stop; } };
+}
+
+const CYCLE = RULES.harvestDays;                 // ★ 자라는 날 = 물을 준 날 (2026-08-04)
+
+/* ★ 거둘 수 있으면 손으로 거둔다 — **첫 수확의 몬스테라 선물도 여기서 온다** (2026-08-04).
+   빨리감기는 대신 안 거둔다(loop.js §수확과 어떻게 맞물리나) — 그래서 재현도 사람이 누른다. */
+function harvest(S, io) {
+  assert.equal(beansproutReady(S.firstPlay.beansprout), true, '★거둘 수 있는 상태가 아니다');
+  return harvestCrop(S, io);
 }
 
 const results = [];
@@ -110,7 +123,7 @@ const check = (name, fn) => { try { fn(); results.push(['PASS', name]); }
                               finally { stopFastForward(); } };
 
 /* ══ ⑴ 적정광 빨리감기가 이벤트에서 멈춘다 ═══════════════════════════════ */
-check('⑴-a Day 4 콩나물 수확·도착에서 선다 (건너뛰지 않는다)', () => {
+check('⑴-a ★거둘 때가 되면 선다 — 대신 거두지 않는다 (건너뛰지도 않는다)', () => {
   const clock = makeClock();
   const growth = mkGrowth();
   const io = { light: mkLight(SLOTS()), growth };
@@ -118,32 +131,44 @@ check('⑴-a Day 4 콩나물 수확·도착에서 선다 (건너뛰지 않는다
 
   const pre = nextEventPreview(S);
   assert.equal(pre.id, 'beansprout_harvest');
-  assert.equal(pre.etaDays, 4, '남은 날을 셀 수 있으면 낸다');
+  assert.equal(pre.etaDays, CYCLE, '남은 날을 셀 수 있으면 낸다');
 
   const run = drive(S, io, clock, { untilEvent: true });
   assert.equal(isFastForwarding(), true, '시작하면 돌고 있어야 한다');
   clock.run();
 
   assert.equal(run.stop.reason, 'event', `이벤트에서 서야 한다: ${run.stop.reason}`);
-  assert.equal(S.day, 4, `Day 4 에서 선다: ${S.day}`);
-  assert.equal(run.stop.days, 4);
-  assert.equal(run.seen.length, 4, '★ 하루씩 실제로 그렸다(순간이동 아님)');
-  assert.deepEqual(run.seen.map(x => x.info.day), [1, 2, 3, 4]);
-  const ids = run.stop.events.map(e => e.id);
-  assert.deepEqual(ids, ['beansprout_harvest', 'food_cash', 'monstera_arrived'],
-    `Day 4 의 세 사건이 다 실려야 한다: ${ids}`);
+  assert.equal(S.day, CYCLE, `Day ${CYCLE} 에서 선다: ${S.day}`);
+  assert.equal(run.stop.days, CYCLE);
+  assert.equal(run.seen.length, CYCLE, '★ 하루씩 실제로 그렸다(순간이동 아님)');
+  assert.deepEqual(run.seen.map(x => x.info.day),
+    Array.from({ length: CYCLE }, (_, i) => i + 1));
+  /* ★★ 2026-08-04 — 빨리감기는 **거두지 않는다.** 서는 사유가 "거둘 때가 됐다" 하나다. */
+  assert.deepEqual(run.stop.events.map(e => e.id), ['beansprout_ready'],
+    `거둘 때가 됐다는 사건 하나로 서야 한다: ${run.stop.events.map(e => e.id)}`);
+  assert.equal(S.firstPlay.beansprout.harvested, false, '★빨리감기가 대신 거뒀다');
+  assert.equal(S.pots.length, 0, '★안 거뒀는데 몬스테라가 왔다');
+  assert.equal(nextEventPreview(S).id, 'beansprout_ready', '다음에 올 것은 날짜가 아니라 손이다');
+
+  /* ★ 손으로 거둔다 — 그때 수확·도착이 한꺼번에 난다 */
+  const r = harvest(S, io);
   assert.equal(S.firstPlay.beansprout.meals, 3);
+  assert.deepEqual(r.events.map(e => e.id).sort(),
+    ['beansprout_harvest', 'learn_cropDark', 'learn_harvest', 'monstera_arrived'],
+    `[수확하기] 가 그날의 사건을 다 내야 한다: ${r.events.map(e => e.id)}`);
+  assert.equal(S.pots.length, 1, '첫 수확에 몬스테라가 온다');
   assert.equal(clock.pending(), 0, '⑸ 타이머가 남으면 안 된다');
   assert.equal(isFastForwarding(), false);
 });
 
-check('⑴-b 창턱으로 옮긴 뒤 말린 새순(Day 7)에서 선다', () => {
+check('⑴-b 창턱으로 옮긴 뒤 말린 새순에서 선다', () => {
   const clock = makeClock();
   const growth = mkGrowth();
   const io = { light: mkLight(SLOTS()), growth };
   const S = firstPlayState();
   drive(S, io, clock, { untilEvent: true }); clock.run();
-  assert.equal(S.day, 4);
+  assert.equal(S.day, CYCLE);
+  harvest(S, io);                                  // ★ 거둬야 몬스테라가 온다
 
   pot0(S).slotId = 'sill';
   moveMonstera(S.firstPlay, 'sill');
@@ -153,7 +178,7 @@ check('⑴-b 창턱으로 옮긴 뒤 말린 새순(Day 7)에서 선다', () => {
   const run = drive(S, io, clock, { untilEvent: true });
   clock.run();
   assert.equal(run.stop.reason, 'event');
-  assert.equal(S.day, 7, `Day 7 에서 선다: ${S.day}`);
+  assert.equal(S.day, CYCLE + 3, `말린 새순에서 선다: ${S.day}`);
   assert.equal(run.stop.days, 3);
   assert.equal(growth.growthDays(), 146);
   assert.equal(S.firstPlay.completed, true);
@@ -164,12 +189,13 @@ check('⑴-b 창턱으로 옮긴 뒤 말린 새순(Day 7)에서 선다', () => {
   assert.equal(clock.pending(), 0);
 });
 
-check('⑴-c Day 16 까지 빨리감기 — 새순이 절정으로 가는 구간이 다 그려진다', () => {
+check('⑴-c 배속 9일 — 새순이 절정으로 가는 구간이 다 그려진다', () => {
   const clock = makeClock();
   const growth = mkGrowth();
   const io = { light: mkLight(SLOTS()), growth };
   const S = firstPlayState();
   drive(S, io, clock, { untilEvent: true }); clock.run();
+  harvest(S, io);
   pot0(S).slotId = 'sill';
   moveMonstera(S.firstPlay, 'sill');
   drive(S, io, clock, { untilEvent: true }); clock.run();       // Day 7 · 말린 새순
@@ -179,7 +205,7 @@ check('⑴-c Day 16 까지 빨리감기 — 새순이 절정으로 가는 구간
   const run = drive(S, io, clock, { untilEvent: false, maxDays: 9 });
   clock.run();
   assert.equal(run.stop.reason, 'maxDays');
-  assert.equal(S.day, 16, `Day 16 까지 간다: ${S.day}`);
+  assert.equal(S.day, CYCLE + 3 + 9, `9일을 더 간다: ${S.day}`);
   assert.equal(run.seen.length, 9, '9일이 하루씩 다 그려졌다');
   assert.equal(growth.growthDays(), 155, `유효 생장 155 여야 한다: ${growth.growthDays()}`);
   assert.equal(clock.pending(), 0);
@@ -192,7 +218,8 @@ check('⑵ 어두운 자리 — 12일이 지나도 유효 생장 143 그대로',
   const io = { light: mkLight(SLOTS()), growth };
   const S = firstPlayState();
   drive(S, io, clock, { untilEvent: true }); clock.run();
-  assert.equal(S.day, 4);
+  harvest(S, io);
+  assert.equal(S.day, CYCLE);
   assert.equal(growth.growthDays(), 143);
   assert.equal(pot0(S).slotId, 'arrival', '몬스테라는 어두운 자리에 도착한다');
 
@@ -201,7 +228,7 @@ check('⑵ 어두운 자리 — 12일이 지나도 유효 생장 143 그대로',
   clock.run();
 
   assert.equal(run.stop.reason, 'maxDays', `이벤트가 안 오므로 한도에서 선다: ${run.stop.reason}`);
-  assert.equal(S.day, 16, `★날짜는 갔다: ${S.day}`);
+  assert.equal(S.day, CYCLE + 12, `★날짜는 갔다: ${S.day}`);
   assert.equal(run.stop.days, 12);
   assert.equal(growth.growthDays(), 143, `★형태는 안 늘었다: ${growth.growthDays()}`);
   assert.equal(S.firstPlay.completed, false, '어두운 자리에서 말린 새순이 나오면 안 된다');
@@ -220,6 +247,7 @@ check('⑵-b 어두운 자리에서 stopOnBlock 을 켜면 첫 정지에서 선�
   const io = { light: mkLight(SLOTS()), growth: mkGrowth() };
   const S = firstPlayState();
   drive(S, io, clock, { untilEvent: true }); clock.run();
+  harvest(S, io);
   const run = drive(S, io, clock, { untilEvent: true, maxDays: 12, stopOnBlock: true });
   clock.run();
   assert.equal(run.stop.reason, 'blocked');
@@ -322,19 +350,26 @@ check('⑷-c 계약 단절(not_started) — 하루도 안 세고 즉시 정지',
   assert.equal(clock.pending(), 0);
 });
 
-check('⑷-d Day 4 도착 실패 — 되돌린 그 자리에서 정지(재시도 가능)', () => {
+check('⑷-d 도착 실패 — [수확하기] 가 무르고 그 자리에서 다시 누를 수 있다', () => {
   const clock = makeClock();
   const growth = mkGrowth({ growthPhase: () => null });      // 단계를 못 읽는 growth
   const io = { light: mkLight(SLOTS()), growth };
   const S = firstPlayState();
   const run = drive(S, io, clock, { untilEvent: true });
   clock.run();
-  assert.equal(run.stop.reason, 'error');
-  assert.match(run.stop.error.message, /단계를 읽지 못했습니다/);
-  assert.equal(run.stop.error.turnState, 'core_rolled_back');
-  assert.equal(S.day, 3, 'Day 4 는 확정되지 않는다');
+  /* ★ 2026-08-04 — 빨리감기는 거두지 않으므로 **여기서는 안 터진다.** 거둘 때가 돼서 설 뿐이다.
+     도착 실패는 사람이 [수확하기] 를 누른 그 순간에 난다. */
+  assert.equal(run.stop.reason, 'event', `거둘 때가 됐다에서 선다: ${run.stop.reason}`);
+  assert.equal(S.day, CYCLE);
+
+  let err = null;
+  try { harvestCrop(S, io); } catch (e) { err = e; }
+  assert.match(err.message, /단계를 읽지 못했습니다/);
+  assert.equal(err.harvestRolledBack, true, '수확을 물렀다는 표식이 없다');
+  assert.equal(S.day, CYCLE, '★날짜는 이미 확정된 뒤다');
   assert.equal(S.pots.length, 0);
   assert.equal(S.firstPlay.beansprout.harvested, false);
+  assert.equal(beansproutReady(S.firstPlay.beansprout), true, '다시 누를 수 있다');
   assert.equal(clock.pending(), 0);
 });
 
@@ -344,7 +379,7 @@ check('⑷-e onDay 가 던져도 타이머를 남기지 않는다(화면 쪽 사
   const S = firstPlayState();
   let stop = null;
   startFastForward(S, io, {
-    msPerDay: 0, timers: clock.timers, untilEvent: true,
+    msPerDay: 0, timers: clock.timers, untilEvent: true, autoWater: true,
     onDay: (t, info) => { if (info.index === 2) throw new Error('화면 갱신 실패 주입'); },
     onStop: (reason, info) => { stop = { reason, ...info }; }
   });
@@ -406,14 +441,144 @@ check('④-b 시루를 안 놨으면 시작 전에 안내한다(버튼을 잠그
   assert.equal(clock.pending(), 0);
 });
 
+/* ══ ★★ 물주기 × 빨리감기 (2026-08-04) ═════════════════════════════════
+   loop.js §물주기와 어떻게 맞물리나 가 정본이다. 두 모드가 답을 달리 낸다:
+     jump(튜토)  마른 날에 **선다**       — 배우는 구간이라 코어가 대신 하지 않는다
+     fast(그 뒤) 물을 **같이 준다**       — 안 그러면 배속이 하루짜리가 되어 사라진다 */
+check('★물주기-a 점핑은 마른 날에 선다 — 물을 대신 주지 않는다', () => {
+  const clock = makeClock();
+  const io = { light: mkLight(SLOTS()), growth: mkGrowth() };
+  const S = firstPlayState();
+  assert.equal(timeModeOf(S), 'jump');
+
+  /* 오늘(Day 0) 물을 주고 시작하면 그 하루는 간다 — 그리고 다음 날 말라 선다 */
+  waterCrop(S);
+  const run = drive(S, io, clock, { untilEvent: true, autoWater: undefined });
+  clock.run();
+  assert.equal(run.stop.reason, 'dry', `마른 날에 서야 한다: ${run.stop.reason}`);
+  assert.equal(S.day, 2, `물을 준 하루 + 마른 하루 = 2일: ${S.day}`);
+  assert.equal(S.firstPlay.beansprout.ageDays, 1, '★마른 날에 콩나물이 자랐다');
+  assert.equal(S.firstPlay.beansprout.harvested, false);
+  assert.equal(clock.pending(), 0, '⑸ 타이머가 남으면 안 된다');
+  assert.equal(isFastForwarding(), false);
+});
+
+check('★물주기-b 배속은 물을 같이 준다 — 손으로 매일 준 것과 결과가 같다', () => {
+  /* 튜토를 끝낸 판(= 배속 모드)에서 열흘을 감는다 */
+  const mk = () => {
+    const clock = makeClock();
+    const io = { light: mkLight(SLOTS()), growth: mkGrowth() };
+    const S = firstPlayState();
+    drive(S, io, clock, { untilEvent: true }); clock.run();     // 거둘 때가 됐다에서 선다
+    harvest(S, io);                                             // ★ 손으로 거둔다 → 도착
+    pot0(S).slotId = 'sill'; moveMonstera(S.firstPlay, 'sill');
+    drive(S, io, clock, { untilEvent: true }); clock.run();     // 말린 새순 → 튜토 완료
+    assert.equal(timeModeOf(S), 'fast');
+    /* 다음 회전을 심어 둔다(씨앗·시루 재고 없이 상태만 되돌린다 — 여기서 재는 것은 물주기다) */
+    Object.assign(S.firstPlay.beansprout,
+      { harvested: false, ageDays: 0, dliHist: [], wateredOnDay: null, dryDays: 0, dryRun: 0 });
+    return { S, io, clock };
+  };
+
+  /* ★ `stopOnReady: false` — 이 블록이 재는 것은 **물**이다. 거둘 때가 됐다는 정지는
+     아래 §수확 블록이 따로 잰다(둘을 한 검사에 섞으면 무엇 때문에 섰는지 안 보인다). */
+  const auto = mk();
+  const runAuto = drive(auto.S, auto.io, auto.clock,
+    { untilEvent: false, maxDays: 10, stopOnReady: false });
+  auto.clock.run();
+  assert.equal(runAuto.stop.reason, 'maxDays', `배속이 마른 날에 서면 안 된다: ${runAuto.stop.reason}`);
+  assert.equal(runAuto.stop.days, 10, '열흘을 다 갔다');
+
+  /* 대조군 — 같은 열흘을 **손으로** [물 주기]+[다음 날] 로 밟는다(거두지는 않는다) */
+  const hand = mk();
+  for (let i = 0; i < 10; i++) { waterCrop(hand.S); nextDay(hand.S, hand.io); }
+
+  assert.equal(auto.S.firstPlay.beansprout.ageDays, hand.S.firstPlay.beansprout.ageDays,
+    '★배속과 손이 다른 결과를 냈습니다 — 자동 급수가 지름길이 되었습니다');
+  assert.equal(auto.S.firstPlay.beansprout.dryDays, 0, '배속에서 마른 날이 생겼습니다');
+  assert.equal(auto.S.firstPlay.food.totalFoodSavedWon, hand.S.firstPlay.food.totalFoodSavedWon,
+    '★배속과 손의 절감액이 다릅니다');
+});
+
+check('★물주기-c 거둔 시루·안 놓은 시루는 마를 것이 없다 — 빨리감기가 그대로 간다', () => {
+  const clock = makeClock();
+  const io = { light: mkLight(SLOTS()), growth: mkGrowth() };
+  const S = firstPlayState();
+  drive(S, io, clock, { untilEvent: true }); clock.run();       // 거둘 때가 됐다에서 선다
+  harvest(S, io);                                               // ★ 손으로 거둔다
+  assert.equal(S.firstPlay.beansprout.harvested, true);
+
+  /* 다시 심지 않은 채 점핑 — 마름 판정이 아예 안 나므로 한도까지 간다 */
+  pot0(S).slotId = 'arrival';                                   // 어두운 자리 = 이벤트도 안 온다
+  const run = drive(S, io, clock, { untilEvent: true, autoWater: undefined, maxDays: 8 });
+  clock.run();
+  assert.equal(run.stop.reason, 'maxDays',
+    `거둔 시루뿐인데 마름으로 섰다: ${run.stop.reason} — 빨리감기가 죽습니다`);
+  assert.equal(run.stop.days, 8);
+});
+
+/* ══ ★★ 수확 × 빨리감기 (2026-08-04) ═══════════════════════════════════
+   loop.js §수확과 어떻게 맞물리나 가 정본이다. **두 모드가 다 선다** — 물과 달리 답이 안 갈린다:
+     점핑  `beansprout_ready` 사건으로 선다 (거두기 전에는 다음 이벤트가 영영 안 온다)
+     배속  `stopOnReady`(기본 켜짐)로 선다 — 거둘 날은 회전당 한 번이라 배속이 안 죽는다
+   ★ 자동수확은 나중 보상이다(S.perks.autoHarvest). 지금은 늘 꺼져 있다. */
+check('★수확-a 배속도 거둘 때가 되면 선다 — 그리고 **한 번만** 선다', () => {
+  const clock = makeClock();
+  const io = { light: mkLight(SLOTS()), growth: mkGrowth() };
+  const S = firstPlayState();
+  drive(S, io, clock, { untilEvent: true }); clock.run();       // 거둘 때가 됐다
+  harvest(S, io);
+  pot0(S).slotId = 'sill'; moveMonstera(S.firstPlay, 'sill');
+  drive(S, io, clock, { untilEvent: true }); clock.run();       // 말린 새순 → 튜토 완료
+  assert.equal(timeModeOf(S), 'fast');
+
+  /* 다음 회전을 심어 둔다(여기서 재는 것은 수확이다 — 재고는 안 본다) */
+  Object.assign(S.firstPlay.beansprout,
+    { harvested: false, ageDays: 0, dliHist: [], wateredOnDay: null, dryDays: 0, dryRun: 0 });
+
+  const run = drive(S, io, clock, { untilEvent: false, maxDays: 20 });
+  clock.run();
+  assert.equal(run.stop.reason, 'ready', `배속이 거둘 때가 됐다에서 서야 한다: ${run.stop.reason}`);
+  assert.equal(run.stop.days, CYCLE, `${CYCLE}일 만에 선다: ${run.stop.days}`);
+  assert.equal(S.firstPlay.beansprout.harvested, false, '★배속이 대신 거뒀다 — 자동수확은 나중 보상이다');
+
+  /* ★ 안 거두고 다시 감으면 **또 서지 않는다** — 전환에서만 서기 때문이다.
+     "지금 거둘 수 있다"로 세우면 여기서 매번 첫날에 서서 배속이 못 돈다. */
+  const again = drive(S, io, clock, { untilEvent: false, maxDays: 20 });
+  clock.run();
+  assert.equal(again.stop.reason, 'maxDays',
+    `안 거둔 채로 다시 감았더니 또 섰다(${again.stop.reason}) — 배속이 못 돕니다`);
+  assert.equal(again.stop.days, 20);
+  /* ★ 안 거둔 20일 동안 **아무 벌도 없다** — 회전이 멈출 뿐이다(물주기와 같은 사상) */
+  assert.equal(S.firstPlay.beansprout.ageDays, CYCLE, '★다 자란 뒤에 더 자랐다');
+  assert.equal(S.firstPlay.beansprout.dryDays, 0, '★다 자란 시루가 마른 날을 쌓았다 — 둘째 벌이다');
+  assert.equal(S.firstPlay.food.pantryWon, 0, '★안 거뒀는데 곳간에 돈이 들어갔다');
+  assert.equal(clock.pending(), 0);
+});
+
+check('★수확-b 자동수확 보상이 켜지면 서지 않는다 — 자리만 있고 지금은 늘 꺼져 있다', () => {
+  const clock = makeClock();
+  const io = { light: mkLight(SLOTS()), growth: mkGrowth() };
+  const S = firstPlayState();
+  assert.equal(S.perks.autoHarvest, false, '★자동수확이 기본으로 켜져 있다 — 나중 보상이다');
+
+  /* 보상을 받은 판을 흉내 낸다 — 정지 기본값이 뒤집힌다(거두는 것 자체는 아직 구현 안 함) */
+  S.perks.autoHarvest = true;
+  const run = drive(S, io, clock, { untilEvent: false, maxDays: CYCLE + 2 });
+  clock.run();
+  assert.equal(run.stop.reason, 'maxDays',
+    `자동수확이 켜졌는데 거둘 때가 됐다고 섰다: ${run.stop.reason}`);
+  assert.equal(clock.pending(), 0);
+});
+
 /* ══ 미리보기 · 형태 단계 전환 ═════════════════════════════════════════ */
 check('nextEventPreview — 콩나물 → 말린 새순 순서로 안내한다', () => {
   const S = firstPlayState();
   assert.deepEqual(
     { id: nextEventPreview(S).id, eta: nextEventPreview(S).etaDays },
-    { id: 'beansprout_harvest', eta: 4 });
+    { id: 'beansprout_harvest', eta: CYCLE });
   S.firstPlay.beansprout.ageDays = 2;
-  assert.equal(nextEventPreview(S).etaDays, 2);
+  assert.equal(nextEventPreview(S).etaDays, CYCLE - 2);
   assert.equal(firstPlayNextEvent(null), null);
 });
 

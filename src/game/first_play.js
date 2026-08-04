@@ -50,11 +50,16 @@ export const FIRST_PLAY_RULES = Object.freeze({
         "5일마다 3,000원"으로 읽으면 물을 안 줘도 5일마다 들어와 물주기가 경제에 안 걸린다.
      ⚠ 그래서 **자라는 날 = 물을 준 날 5일**이다. 달력 5일이 아니다(아래 §물주기). */
   harvestDays: 5,
-  /* ★ 씨앗값 — 시루 하나를 다시 심을 때마다 든다 (docs/food_economy.md §3 "씨앗(콩) 1시루분 1,500원").
+  /* ★ 씨앗값 — 시루 하나를 다시 심을 때마다 든다 (docs/food_economy.md §3).
+     ★★ 1,500 → **1,000원** (2026-08-04 박사님 확정). 근거 둘:
+       ① 현실이 그렇다. 나물콩 1시루분 실제 시세가 **700~1,200원**이라 1,000원이 그 한가운데다.
+          1,500원은 시세 위끝을 넘는 값이었다.
+       ② 1,500원이면 씨앗값이 절감의 **70%**를 먹어 순액이 하루 180원(지출의 0.9%)뿐이었다.
+          "콩나물을 돌릴 이유"가 산수로 거의 안 남는다.
      ⚠ 이 값만 `characters.json._meta` 가 아니라 여기 있다. 그 파일은 이 창 소유가 아니라
        못 고쳤다 — plan 에 `seedWonPerSiru` 를 _meta 로 옮겨 달라고 요청해 뒀다(보고 ⑤).
-     ★ 공짜로 무한히 나오면 경제가 아니다. 재파종이 돈을 쓰는 행동이라야 회전이 선택이 된다. */
-  seedWonPerSiru: 1_500,
+     ★ 그래도 **공짜는 아니다.** 재파종이 돈을 쓰는 행동이라야 회전이 선택이 된다. */
+  seedWonPerSiru: 1_000,
   /* ★★ 종류 순번별 **한 회전(=harvestDays)이 내는 절감액**. 박사님 확정값 그대로다.
      ⚠ 이 셋도 `data/balance/` 가 아니라 여기 있다 — 그 폴더는 이 창 소유가 아니다.
        plan 에 `characters.json._meta.cropKindSavedWon` 으로 옮겨 달라고 요청한다(보고 ⑤).
@@ -326,15 +331,72 @@ export function waterBeansprout(fp, day) {
   return { watered: true, already: false, day, dryRun: b.dryRun || 0 };
 }
 
+/* ============================================================
+   ★★ 수확은 **행위**다 (2026-08-04 박사님 지시)
+   ------------------------------------------------------------
+   원문: *"수확하기를 해야 반영되도록 하자. 자동수확은 나중에 뭐 아이템이나 아니면
+          특수보상이나 업적 달성 보상으로 주도록 하고."*
+
+   ★ 자라는 날이 차면 **거둘 수 있는 상태**가 될 뿐, 저절로 거둬지지 않는다.
+     `[수확하기]` 를 눌러야(harvestBeansprout) 곳간에 들어가고 절감이 시작된다.
+
+   ★★ **안 거둬도 따로 벌을 주지 않는다.** 물주기와 같은 사상이다 —
+     안 거두면 다음 회전이 시작되지 않고, 그동안 곳간이 비어 절감이 0이다.
+     **그것이 이미 벌이고, 그 벌은 시간이다.** 둘째 벌(품질 하락·시듦)을 만들면
+     "초보는 안 죽는다"가 흔들린다.
+     ⚠ 늦게 거둘수록 품질이 떨어지게 하고 싶어지면 **먼저 재고 근거를 대라.** 기본은 안 떨어뜨린다.
+       품질은 이미 `dliHist` 로 확정돼 있고(자리=빛), 거두는 시각이 그 값을 못 바꾼다.
+       바꾸게 만들면 **물이 아니라 시각이 빛 축을 건드리는** 세 번째 축이 생긴다.
+
+   ★★ **다 자란 뒤에는 물을 안 요구한다.** 현실에서는 거두기 전까지 주지만, 게임에서는 안 준다:
+     ① 물은 **속도 축**이고(§물주기) 속도가 쓸 곳이 없다 — `ageDays` 가 이미 만수라 더 올릴 데가 없다.
+        아무것도 안 바꾸는 입력을 매일 요구하면 그건 규칙이 아니라 잡음이다.
+     ② 효과를 만들려면 "안 주면 나빠진다"라야 하는데 그게 곧 **둘째 벌**이라 위 원칙과 부딪힌다.
+     ③ 손이 두 배가 된다 — 다 자란 날에 [물 주기]와 [수확하기]가 같이 뜨면 버튼이 겹친다.
+        `beansproutWaterStatus.needsWater` 가 다 자란 시루에서 false 가 되는 것이 이 결정의 구현이다.
+     ⇒ 그래서 `advanceBeansproutDay` 는 **물 검사보다 먼저** 다 자람에서 선다 — 마른 날도 안 센다.
+
+   ★ 자동수확(`S.perks.autoHarvest`)은 **나중 보상**이다. 지금은 늘 꺼져 있다(state.js §perks).
+============================================================ */
+
+/* 다 자랐나 = 거둘 수 있나. 상태를 안 바꾼다. 놓지 않았거나 이미 거둔 시루는 false 다. */
+export function beansproutReady(b) {
+  return !!(b && b.slotId && !b.harvested &&
+            Number.isFinite(b.harvestDays) && Number.isFinite(b.ageDays) &&
+            b.ageDays >= b.harvestDays);
+}
+
+/* [수확하기] 버튼을 켤지 흐리게 할지의 근거. **한글 문장은 만들지 않는다**(UI 몫). */
+export function beansproutHarvestStatus(fp) {
+  const b = fp && fp.beansprout;
+  if (!fp || !fp.enabled || !b) return null;
+  const ready = beansproutReady(b);
+  return {
+    ready,
+    canHarvest: ready,
+    placed: !!b.slotId,
+    harvested: !!b.harvested,
+    ageDays: b.ageDays || 0,
+    harvestDays: b.harvestDays || 0,
+    daysLeft: Math.max(0, (b.harvestDays || 0) - (b.ageDays || 0)),
+    sirus: Math.max(1, Math.round(b.sirus || 1)),
+    cycle: b.cycle || 1,
+    dryDays: b.dryDays || 0
+  };
+}
+
 /* 오늘 물을 줬나 · 며칠째 빼먹었나 — 화면 버튼 문구용. **한글 문장은 만들지 않는다**(UI 몫). */
 export function beansproutWaterStatus(fp, day) {
   const b = fp && fp.beansprout;
   if (!fp || !fp.enabled || !b) return null;
   const wateredToday = Number.isInteger(day) && b.wateredOnDay === day;
+  const ready = beansproutReady(b);
   return {
     wateredToday,
-    /* 놓지 않았거나 이미 거뒀으면 줄 것이 없다 — 버튼을 흐리게 할 근거다 */
-    needsWater: !!b.slotId && !b.harvested && !wateredToday,
+    /* 놓지 않았거나 · 이미 거뒀거나 · **다 자랐으면** 줄 것이 없다 — 버튼을 흐리게 할 근거다.
+       다 자란 시루에 물을 안 받는 이유는 위 §수확 ★★ 참고(속도가 쓸 곳이 없다). */
+    needsWater: !!b.slotId && !b.harvested && !ready && !wateredToday,
+    ready,
     placed: !!b.slotId,
     harvested: !!b.harvested,
     wateredOnDay: b.wateredOnDay ?? null,
@@ -348,7 +410,9 @@ export function beansproutWaterStatus(fp, day) {
 /* 하루 공개 경계. 입력을 먼저 검증하고 나서만 상태를 바꾼다.
      dli        그날 그 자리의 조도
      opt.watered  ★ 오늘 물을 줬나. loop.js 가 `wateredOnDay === 어제(진행 전 S.day)` 로 낸다.
-                  안 넘기면 **준 것으로 치지 않는다** — 조용한 폴백을 만들지 않는다. */
+                  안 넘기면 **준 것으로 치지 않는다** — 조용한 폴백을 만들지 않는다.
+   ★ 2026-08-04 — **여기서 거두지 않는다.** 자라는 날이 차면 `ready:true` 로 서고,
+     거두는 것은 `harvestBeansprout`(=[수확하기] 버튼)의 몫이다(위 §수확). */
 export function advanceBeansproutDay(fp, dli, opt = {}) {
   if (!fp.beansprout.slotId) throw new Error('[첫 플레이] 콩나물 자리를 먼저 정해 주세요');
   if (!validDli(dli)) throw new Error(`[첫 플레이] 콩나물 DLI가 올바르지 않습니다: ${dli}`);
@@ -359,12 +423,23 @@ export function advanceBeansproutDay(fp, dli, opt = {}) {
   if (!rules) throw new Error('[첫 플레이] 밸런스 계약이 없습니다');
   const b = fp.beansprout;
 
+  /* ★★ 이미 다 자랐다 — 하루가 지나도 **아무 일도 안 난다.** 안 거뒀다고 벌을 주지 않고,
+     ★ 물도 안 센다(마른 날로 안 잡힌다). 그래서 이 줄이 물 검사보다 **먼저** 있다(위 §수확).
+       뒤에 두면 다 자란 시루가 매일 마른 날을 쌓아 "거두기 전까지 물을 줘야" 하게 된다. */
+  if (b.ageDays >= rules.harvestDays) {
+    return {
+      harvested: false, ready: true, justReady: false, dry: false,
+      ageDays: b.ageDays, daysLeft: 0,
+      dryRun: b.dryRun || 0, dryDays: b.dryDays || 0
+    };
+  }
+
   /* ★ 물을 안 준 날 — **하루도 안 자란다. 이력도 안 쌓는다.** 죽지도 않는다(위 §물주기). */
   if (!opt.watered) {
     b.dryDays = (b.dryDays || 0) + 1;
     b.dryRun = (b.dryRun || 0) + 1;
     return {
-      harvested: false, dry: true,
+      harvested: false, ready: false, dry: true,
       ageDays: b.ageDays, daysLeft: rules.harvestDays - b.ageDays,
       dryRun: b.dryRun, dryDays: b.dryDays
     };
@@ -374,13 +449,43 @@ export function advanceBeansproutDay(fp, dli, opt = {}) {
   b.ageDays++;
   b.dliHist.push(dli);
 
+  return {
+    harvested: false,
+    dry: false,
+    /* ★ 오늘 다 자랐나 · 오늘 **막** 다 자랐나 — 둘을 가른다.
+       빨리감기가 서는 것은 `justReady`(전환) 쪽이다. `ready` 로 세우면 안 거둔 채로
+       다시 감을 때마다 첫날에 또 서서 빨리감기가 못 돈다. */
+    ready: b.ageDays >= rules.harvestDays,
+    justReady: b.ageDays === rules.harvestDays,
+    ageDays: b.ageDays,
+    daysLeft: Math.max(0, rules.harvestDays - b.ageDays)
+  };
+}
+
+/* ★★ 거둔다 — **[수확하기] 버튼이 부르는 함수** (2026-08-04 신설. 위 §수확).
+   ------------------------------------------------------------
+   예전에는 `advanceBeansproutDay` 안에서 자동으로 일어났다. 이제는 손 동작이다.
+   ⚠ 몬스테라 선물은 여기 없다 — 그건 `io.growth` 를 쓰므로 loop.harvestCrop 이 맡는다.
+     여기서는 `phase = 'monstera_gift'` 로 **문만 연다**(예전과 같은 자리다).
+   반환은 예전 `advanceBeansproutDay` 의 수확 반환과 **같은 모양**이다 — 화면·재현이 안 깨진다. */
+export function harvestBeansprout(fp) {
+  if (!fp || !fp.beansprout) throw new Error('[수확] 콩나물 상태가 없습니다');
+  const b = fp.beansprout;
+  const rules = fp.rules;
+  if (!rules) throw new Error('[수확] 밸런스 계약이 없습니다');
+  if (!b.slotId) {
+    const e = new Error('[수확] 시루를 먼저 방 안에 놓아 주세요');
+    e.tutorialInput = true; throw e;
+  }
+  if (b.harvested) {
+    const e = new Error('[수확] 이미 거둔 시루입니다 — 다시 심어야 또 거둡니다');
+    e.tutorialInput = true; throw e;
+  }
   if (b.ageDays < rules.harvestDays) {
-    return {
-      harvested: false,
-      dry: false,
-      ageDays: b.ageDays,
-      daysLeft: rules.harvestDays - b.ageDays
-    };
+    const e = new Error(`[수확] 아직 ${rules.harvestDays - b.ageDays}일 더 자라야 합니다 ` +
+                        `(${b.ageDays}/${rules.harvestDays}일)`);
+    e.tutorialInput = true;                 // 안내지 고장이 아니다
+    throw e;
   }
 
   const hist = b.dliHist;
@@ -415,8 +520,11 @@ export function advanceBeansproutDay(fp, dli, opt = {}) {
   fp.food.lastHarvestMeals = quality.meals;
   fp.food.pantryWon = pantry;
   fp.food.lastSpoiledWon = spoiledWon;
-  /* ★ 거둔 날 자체의 절감은 아래 eatFromPantry 가 낸다(loop.js 가 같은 턴에 부른다).
-     여기서 미리 빼 쓰면 수확일만 두 배가 되고 "고르게 나눠 먹는다"가 깨진다. */
+  /* ★ 여기서 **먹지 않는다.** 곳간에 넣기만 하고, 꺼내 먹는 것은 다음 [다음 날] 의 eatFromPantry 다
+     (2026-08-04 정정 — 수확이 손 동작이 되면서 거두는 순간과 하루 정산이 갈렸다).
+     ⚠ 여기서 한 입 꺼내면 **하루에 두 번 먹는 날**이 생긴다: 다 자란 날의 [다음 날] 이
+       지난 회전의 마지막 600원을 이미 꺼낸 뒤라, 같은 날 또 꺼내면 하루 1,200원이 된다.
+       "하루 상한 600원"이 그 자리에서 깨진다. 먹는 것은 살림이고 살림은 하루에 한 번이다. */
   /* ★ 선물은 **첫 수확에만** 온다. 두 번째 시루에서 몬스테라가 또 오면 안 된다. */
   if (!fp.monstera.arrived) fp.phase = 'monstera_gift';
 
@@ -614,6 +722,9 @@ export function firstPlaySnapshot(fp) {
   if (!fp || !fp.enabled) return null;
   return {
     harvested: !!(fp.beansprout && fp.beansprout.harvested),
+    /* ★ 거둘 수 있게 된 것도 **사건**이다 (2026-08-04) — 수확이 손 동작이 되면서
+       "다 자랐다"와 "거뒀다"가 다른 날이 될 수 있게 됐다. 점핑이 서야 하는 곳은 앞쪽이다. */
+    ready: beansproutReady(fp.beansprout),
     /* ★ 회전이 생기면서 `harvested` 만으로는 부족해졌다 — 재파종하면 false 로 내려갔다가
        다시 true 가 되므로 "몇 번째 수확인가"를 세야 첫 수확과 그 뒤를 가를 수 있다. */
     harvestCount: fp.beansprout ? (fp.beansprout.harvestCount || 0) : 0,
@@ -631,6 +742,11 @@ export function firstPlayEventsOf(before, fp) {
   const now = firstPlaySnapshot(fp);
   if (!before || !now) return [];
   const out = [];
+  /* ★ 거둘 때가 됐다 — **전환에서만** 낸다 (2026-08-04). 매일 내면 안 거둔 채로 두는 동안
+     사건이 매일 나서 점핑이 하루도 못 간다. 대사는 없다(food_cash 처럼 화면이 버튼으로 말한다). */
+  if (!before.ready && now.ready)
+    out.push({ id: 'beansprout_ready', ko: '콩나물을 거둘 때가 됐습니다',
+               ageDays: fp.beansprout.ageDays, cycle: fp.beansprout.cycle });
   /* ★ 첫 수확과 **그 뒤의 수확**은 다른 사건이다 (2026-08-03).
      같은 id 로 내면 화면이 "콩나물 첫 수확"을 4일마다 다시 띄우고, 대사는 한 번뿐이라
      두 번째부터는 **아무 말도 안 하는 날**이 된다 — 회전이 도는 구간이 통째로 조용해진다. */
@@ -664,12 +780,18 @@ export function firstPlayEventsOf(before, fp) {
 export function firstPlayNextEvent(fp) {
   if (!fp || !fp.enabled || fp.completed) return null;
   const b = fp.beansprout;
+  /* ★ 다 자랐는데 아직 안 거뒀다 — 다음에 올 것은 **날짜가 아니라 손**이다 (2026-08-04).
+     여기서 `beansprout_harvest` 를 계속 내면 화면이 "며칠 뒤 수확"이라고 말하는데
+     날짜를 아무리 넘겨도 안 온다. 안 거두면 아무 일도 안 나는 것이 규칙이다(§수확). */
+  if (beansproutReady(b))
+    return { id: 'beansprout_ready', ko: '콩나물을 거둘 때가 됐습니다', etaDays: 0,
+             note: '거두기 전에는 다음 회전이 시작되지 않습니다' };
   if (!b || !b.harvested) {
     const left = (b && Number.isFinite(b.harvestDays) && Number.isFinite(b.ageDays))
       ? b.harvestDays - b.ageDays : null;
     return { id: 'beansprout_harvest', ko: '콩나물 첫 수확',
              etaDays: left != null && left > 0 ? left : null,
-             note: '같은 턴에 몬스테라도 도착합니다' };
+             note: '거둔 뒤에 몬스테라가 옵니다' };
   }
   if (!fp.monstera || !fp.monstera.arrived)
     return { id: 'monstera_arrived', ko: '몬스테라 도착', etaDays: null, note: null };

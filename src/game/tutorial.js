@@ -258,8 +258,15 @@ export function tutorialDay(ts, { firstPlayDone = false, mealsUsed = 0, savedWon
 export function noteLearning(ts, ev = {}) {
   if (!ts.enabled) return ts.learned;
   const R = ts.rules;
-  /* ① 첫 수확 · 식비 절감 */
-  if (ev.harvested && (ev.foodSavedWon || 0) > 0) ts.learned.harvest = true;
+  /* ① 첫 수확 · 식비 절감
+     ★ 2026-08-04 — 증거를 **거두는 순간의 것**으로 넓혔다. 수확이 손 동작이 되면서
+       (first_play.js §수확) 거두는 날과 곳간에서 꺼내 먹는 날이 갈렸다:
+         cycleSavedWon  이 회전이 식비를 얼마나 덜었나 — **거두는 순간** 확정된다 (loop.harvestCrop)
+         foodSavedWon   오늘 곳간에서 얼마를 꺼냈나 — 그 **다음 날부터** 난다 (loop.nextDay)
+       둘 중 하나라도 0보다 크면 "거뒀고 그것이 식비를 덜었다"는 사실은 같다.
+       옛 이름을 안 지우는 이유는 그것이 여전히 참인 증거이고, 지우면 옛 호출부가 조용히 죽어서다. */
+  if (ev.harvested && ((ev.cycleSavedWon || 0) > 0 || (ev.foodSavedWon || 0) > 0))
+    ts.learned.harvest = true;
   /* ② 콩나물을 어두운 자리에 — ★자리를 검사하지 않고 품질로 본다.
      콩나물은 빛을 받으면 초록이 되고 써진다. 3끼가 나오는 구간이 곧 어두운 자리라,
      **품질이 곧 배치의 증거**다(story_arc.md §1). 다른 방·다른 슬롯에서도 성립한다. */

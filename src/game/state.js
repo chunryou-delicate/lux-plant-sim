@@ -14,7 +14,7 @@
 ============================================================ */
 
 import { createFirstPlayState, placeBeansprout, resowBeansprout, waterBeansprout,
-         beansproutWaterStatus, BEANSPROUT_ID } from './first_play.js';
+         beansproutWaterStatus, beansproutHarvestStatus, BEANSPROUT_ID } from './first_play.js';
 import { createTutorialState } from './tutorial.js';
 import { createShopState, useStock } from './shop.js';
 import { atFromSlot, isFreeSlotId, makeAt, resolvePlacement,
@@ -86,6 +86,20 @@ export function newState(opt = {}) {
          ② 30일 검수 리포트의 '문턱 넘는 주 비율'
        ★ 판정에는 쓰지 않는다. 고사·활력은 취소·보류다(2026-08-02). */
     dliHist: [],
+
+    /* ★★ perks — **보상으로 켜지는 편의 기능** (2026-08-04 신설. 지금은 자리만).
+       ------------------------------------------------------------
+       박사님 확정: *"자동수확은 나중에 뭐 아이템이나 아니면 특수보상이나
+                    업적 달성 보상으로 주도록 하고."*
+
+       ★ 지금은 **늘 꺼져 있다.** 여기 두는 이유는 하나다 — 나중에 켤 자리를 미리 파 두면
+         세이브 규약과 빨리감기 기본값을 그때 고치지 않아도 된다(세이브는 이미 이 칸을 싣는다).
+       ★ `autoHarvest` 가 켜지면 이렇게 돈다(loop.js §수확과 어떻게 맞물리나):
+           ① 빨리감기가 거둘 때가 됐다고 서지 않는다(`stopOnReady` 기본값이 false 가 된다)
+           ② 대신 빨리감기 tick 이 `harvestCrop(S, io)` 를 대신 부른다 — [수확하기]와 같은 함수다
+         ⚠ 재파종(씨앗값·자리 고르기)은 **자동이 아니다.** 그건 선택이라 대신 해 주면 안 된다.
+       ★ 읽는 곳은 `loop.hasAutoHarvest(S)` 한 곳뿐이다 — 여러 곳에서 읽으면 반씩 켜진다. */
+    perks: { autoHarvest: false },
 
     /* 경제는 3단계다. 표시만 하고 차감하지 않는다. */
     ledger: { today: { in: 0, out: 0 }, total: 0, electricityWon: 0 },
@@ -309,6 +323,13 @@ export function waterCrop(S) {
 /* 오늘 물을 줘야 하나 — 버튼을 켤지 흐리게 할지의 근거. 상태를 안 바꾼다. */
 export function cropWaterStatus(S) {
   return beansproutWaterStatus(S && S.firstPlay, S ? S.day : null);
+}
+
+/* ★ 지금 거둘 수 있나 — [수확하기] 버튼을 켤지 흐리게 할지의 근거. 상태를 안 바꾼다 (2026-08-04).
+   ⚠ **거두는 함수는 여기 없다.** `loop.harvestCrop(S, io)` 다 — 첫 수확에 몬스테라 선물이
+     딸려 오고 그건 `io` 를 쓴다. 상태(state)는 io 를 모른다. */
+export function cropHarvestStatus(S) {
+  return beansproutHarvestStatus(S && S.firstPlay);
 }
 
 /* ★ 콩나물을 다시 심는다 — **재배(first_play)와 지갑(tutorial)을 한 동작으로** (2026-08-03).

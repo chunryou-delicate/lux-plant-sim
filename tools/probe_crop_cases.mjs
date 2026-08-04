@@ -17,6 +17,7 @@
 ============================================================ */
 import { readFileSync } from 'node:fs';
 import * as FP from '../src/game/first_play.js';
+import { buyPriceOf } from '../src/game/shop.js';
 
 /* ★자가 제한 — 재는 도구가 재는 대상보다 오래 살면 안 된다. */
 const _WATCHDOG_MS = +(process.env.BYEOT_PROBE_TIMEOUT_MS || 300000);
@@ -34,7 +35,10 @@ const RULES = FP.firstPlayRulesFromBalance(
 
 const DARK = 0.05;                 // 어두운 자리 — 품질 최상
 const START_CASH = 1_000_000;      // tutorial.js startCashWon
-const SEED = RULES.seedWonPerSiru;
+/* ★ 지갑에서 실제로 나가는 값은 **상점 사는 값**이다 (2026-08-04) — 재파종은 미리 주문해 둔
+   재고를 쓰고, 돈은 주문할 때 나간다. `rules.seedWonPerSiru` 는 정가(표시용)라
+   그걸로 재면 살림이 실제보다 싸게 나온다. */
+const SEED = buyPriceOf('bean_seed');
 
 /* 있으면 쓴다 — 수확이 손 동작이 되기 전/후 양쪽에서 이 자가 돈다 */
 const hasHarvestAction = typeof FP.harvestBeansprout === 'function';
@@ -81,12 +85,15 @@ function run(cs) {
     }
     /* ④ ★거두기는 손 동작이다. 이 자는 "부지런한 사람"을 재므로 되는 날 바로 거둔다 —
        미루는 경우는 그 자체가 따로 재야 할 경우다. */
+    /* ⚠ 거두는 것과 **먹는 것은 다른 일**이고, **순서가 계약이다** (2026-08-04 고침).
+       화면에서 플레이어는 [다음 날]을 누르고(그 안에서 곳간이 한 번 열린다) 그다음에
+       [수확하기]를 누른다. 그래서 곳간이 **먼저**다 — 뒤집으면 거둔 날에 새 곳간을 바로
+       열어 하루 상한이 그 자리에서 깨지고, 회전마다 하루치가 공짜로 더 나온다.
+       (예전에는 `h.foodSavedWon`(없는 칸)을 읽어 곳간을 아예 안 열었다 — 30일에 3,000원이 사라졌다.) */
+    saved = FP.eatFromPantry(fp).foodSavedWon || 0;
     if (FP.beansproutReady(fp.beansprout)) {
-      const h = FP.harvestBeansprout(fp);
-      saved = h.foodSavedWon || 0;
+      FP.harvestBeansprout(fp);
       state = '거둠';
-    } else if (!(ev && ev.harvested)) {
-      saved = FP.eatFromPantry(fp).foodSavedWon || 0;
     }
     /* ⑤ 다 거뒀으면 바로 다시 심는다 — 씨앗값이 또 나간다 */
     if (fp.beansprout.harvested) {
@@ -105,7 +112,7 @@ const runs = CASES.map(c => ({ ...c, ...run(c) }));
 const won = n => Math.round(n).toLocaleString('ko-KR');
 
 console.log(`\n규칙 — 자라는 날 ${RULES.harvestDays}일 · 하루 식비 ${won(RULES.dailyFoodWon)}원 · ` +
-            `씨앗 ${won(SEED)}원/시루 · 회전당 절감 ${won(RULES.cropKindSavedWon?.[0] ?? 0)}원`);
+            `씨앗 ${won(SEED)}원/시루(사는 값) · 회전당 절감 ${won(RULES.cropKindSavedWon?.[0] ?? 0)}원`);
 console.log(`수확 손 동작: ${hasHarvestAction ? '있음' : '없음(자동)'} · 물주기: ${hasWater ? '있음' : '없음'}\n`);
 
 const head = (t) => {
