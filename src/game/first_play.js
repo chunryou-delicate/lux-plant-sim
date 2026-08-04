@@ -347,8 +347,16 @@ function potsOf(b) {
    ⚠ 그 게이트는 game.html 에 있고 이 창 소유가 아니다 — 손대지 않았다. 보고에 적었다.
 ============================================================ */
 export const MONSTERA_ARRIVAL_RULE = Object.freeze({
-  /* ⛔ 위 §게이트 참고. 박사님 지시대로면 3 이고, 화면이 회전을 못 돌려서 지금은 1 이다. */
-  harvestCount: 1,
+  /* ★2026-08-04 — 게이트를 열었으므로 박사님 지시대로 3 으로 올린다.
+     위 §게이트가 지목한 game.html 두 곳을 고쳤다:
+       ① `#resow` 를 `#shopBox` 밖으로 뺐다 — 심기는 상점 일이 아니라 작물 일이다.
+       ② `drawShop()` 의 `&& S.firstPlay.completed` 를 뺐다.
+     ★②를 고치며 §게이트의 전제 하나가 틀렸음이 드러났다 — "첫 플레이 중에는 돈 개념이
+       없다"가 아니라, 첫 플레이 중에도 `tutorial.enabled` 가 켜져 있어 씨앗값이 실제로
+       나간다(이 파일 아래 `test_first_play` 가 그 차감을 검산한다). 코어는 처음부터
+       회전을 더 돌릴 수 있었고, 막고 있던 것은 화면 한 줄뿐이었다.
+       그래서 **공짜 씨앗을 주지 않는다** — "재고 없이는 못 심는다"가 그대로 선다. */
+  harvestCount: 3,
   sirus: 2, sirusHarvestCount: 2   // ② 지름길 — 시루를 늘려 둘 다 굴려 봤다
 });
 
@@ -688,6 +696,10 @@ export function beansproutHarvestStatus(fp) {
     daysLeft: Math.max(0, hd - (b.ageDays || 0)),
     nextReadyInDays: nextIn,
     growingCount: growing.length,
+    /* ★ 다시 심어야 할 시루 수. `state.resowCrop` 의 `harvestedCount` 와 **같은 셈**이라
+       화면이 "몇 개를 심나"를 물어볼 데가 생긴다 — 안 그러면 UI 가 pots 를 직접 뒤져
+       같은 규칙을 두 곳에 적게 된다(시차가 들어오면서 `b.harvested` 하나로는 모자라다). */
+    harvestedCount: pots.filter(p => p.harvested).length,
     idleCount: idlePots(b).length,
     sirus: Math.max(1, pots.length || Math.round(b.sirus || 1)),
     cycle: b.cycle || 1

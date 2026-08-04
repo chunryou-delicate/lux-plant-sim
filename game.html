@@ -146,6 +146,11 @@
     font-family:'Jua';font-size:14px;color:#3a2708;border:0;
     background:linear-gradient(180deg,#ffd98f,#f0b45c);
     box-shadow:0 3px 0 rgba(0,0,0,.25);animation:waterPulse 1.8s ease-in-out infinite}
+  /* 다시 심기 — 셋 다 같은 자리를 쓴다. 초록은 "심는다"의 색이다 */
+  #resow{width:100%;min-height:var(--tap);margin:0 0 9px;border-radius:12px;
+    font-family:'Jua';font-size:14px;color:#12331a;border:0;
+    background:linear-gradient(180deg,#a8e6a3,#78c97a);
+    box-shadow:0 3px 0 rgba(0,0,0,.25);animation:waterPulse 1.8s ease-in-out infinite}
   #bottom .quest{margin:0 0 9px;font-size:13.5px;line-height:1.5;color:var(--ink);
           background:rgba(255,180,84,.09);border:1px solid rgba(255,180,84,.20);
           border-radius:11px;padding:8px 11px}
@@ -748,6 +753,11 @@
          다 자란 시루는 물을 안 요구하므로 needsWater 가 false 다. -->
     <button id="harvestCrop" style="display:none">🥣 콩나물 거두기</button>
     <button id="waterCrop" style="display:none">💧 콩나물에 물 주기</button>
+    <!-- ★2026-08-04 — 상점 상자 안에 있던 것을 여기로 옮겼다.
+         상점은 첫 플레이가 끝나야 열리는데(살림 전에는 돈 개념이 없다) 이 버튼이 그 안에
+         갇혀 있어서 **첫 플레이 동안 회전이 1에서 멈췄다** — 70일을 눌러도 안 늘었다.
+         심기는 상점 일이 아니라 물주기·거두기와 같은 **작물 일**이라 여기가 제자리다. -->
+    <button id="resow" style="display:none">🌱 콩나물 다시 심기</button>
     <div class="actionbar">
       <button id="next" disabled>다음 날 ▸</button>
       <button id="ff" class="ghost" disabled>▶▶ 빨리감기</button>
@@ -836,7 +846,6 @@
         <div id="shopList"></div>
         <div id="shopPending" class="itemline"></div>
         <div class="btns">
-          <button id="resow" class="primary" disabled style="width:auto;margin-top:0">콩나물 다시 심기</button>
           <button id="sellPlant" class="ghost" disabled>몬스테라 팔기</button>
         </div>
         <div id="sellHint" class="itemline"></div>
@@ -1889,8 +1898,16 @@ function drawCuttings() {
 function drawShop() {
   const box = $('shopBox');
   const ts = S.tutorial;
-  /* 살림이 시작되기 전에는 주문할 돈 개념이 없다 — 첫 플레이가 끝나야 연다 */
-  const open = !!(ts && ts.enabled && S.firstPlay.completed);
+  /* ★2026-08-04 — `&& S.firstPlay.completed` 를 뺐다.
+     예전 주석은 "살림이 시작되기 전에는 주문할 돈 개념이 없다"였는데 **그게 틀렸다.**
+     첫 플레이 중에도 `tutorial.enabled` 가 켜져 있어 `orderItem` 이 실제로 지갑에서
+     씨앗값을 뺀다(검사 `test_first_play` 가 그 차감을 검산한다). 돈은 처음부터 있었고
+     막고 있던 것은 코어가 아니라 **이 한 줄뿐이었다.**
+     그 바람에 첫 플레이 동안 씨앗을 못 사서 **회전이 1에서 멈췄다** — 박사님
+     "먹는거 재배 좀더 알려줘야될듯"이 가리키는 구간이 통째로 막혀 있었다.
+     ★날짜가 안 가므로(첫 플레이 중 tutorial.day = 0) 월세·식비 압박 없이
+       "미리 시켜 둔다"만 배운다. 가르치기에 오히려 좋은 자리다. */
+  const open = !!(ts && ts.enabled);
   box.style.display = open ? '' : 'none';
   if (!open) return;
 
@@ -1919,13 +1936,6 @@ function drawShop() {
     ? '오는 중 — ' + pend.map(o => `${koOf(o.itemId)}${o.qty > 1 ? ' ' + o.qty + '개' : ''}`
         + ` (${o.daysLeft <= 0 ? '오늘' : o.daysLeft + '일 뒤'})`).join(' · ')
     : '';
-
-  /* 다시 심기 — 거둔 뒤에만. 씨앗이 있어야 한다 */
-  const b = S.firstPlay.beansprout;
-  const canSow = !!(b && b.harvested && (st.stock.bean_seed || 0) >= 1);
-  $('resow').disabled = !canSow;
-  $('resow').title = !b || !b.harvested ? '거둔 뒤에 다시 심습니다'
-                   : !(st.stock.bean_seed || 0) ? '콩 씨앗을 먼저 주문하세요' : '';
 
   /* 팔기 — 잎은 growth 소유라 leafStats 로 읽는다. 없으면 열지 않는다(값을 지어내지 않는다) */
   let ls = null; try { ls = io.growth.leafStats && io.growth.leafStats(); } catch { }
@@ -2052,6 +2062,31 @@ function drawHarvest() {
   /* ⚠ 익은 것만 센다 — sirus 는 가진 시루 전부라 안 익은 것까지 세어 버린다 */
   const n = st.readyCount || 0;
   if (show) b.textContent = n > 1 ? `🥣 콩나물 거두기 (${n}개)` : '🥣 콩나물 거두기';
+}
+
+/* 다시 심어야 하나 — 거둔 시루가 있고 씨앗이 있을 때만 뜬다.
+   ★예전엔 이 셈이 `drawShop` 안에 있었다. 그런데 그 함수는 상점이 닫혀 있으면 곧바로
+     돌아가므로(첫 플레이 동안 늘 닫혀 있다) **첫 플레이 내내 이 버튼이 죽어 있었다.**
+     화면에 뜨는 조건과 상자가 열리는 조건은 서로 다른 일이라, 셈도 따로 있어야 한다. */
+function drawSow() {
+  const btn = $('resow');
+  if (!btn) return;
+  let hv = null, st = null;
+  try { hv = cropHarvestStatus(S); } catch { }
+  try { st = shopStatus(S); } catch { }
+  /* ★거둔 시루만 다시 심는다 — `state.resowCrop` 과 같은 규칙이다.
+     시차 판에서는 늘 일부만 거둬져 있어서, 전부를 요구하면 영영 못 심는다. */
+  const need = hv ? (hv.harvestedCount || 0) : 0;
+  const seeds = st ? (st.stock.bean_seed || 0) : 0;
+  btn.style.display = need > 0 ? '' : 'none';
+  if (!need) return;
+  /* 씨앗이 모자라도 **버튼은 보인다** — 안 보이면 왜 못 심는지 알 길이 없다.
+     회색으로 두고 사유를 말한다. */
+  btn.disabled = seeds < 1;
+  btn.textContent = seeds < 1
+    ? '🌱 콩 씨앗이 없습니다'
+    : (need > 1 ? `🌱 콩나물 다시 심기 (${need}개)` : '🌱 콩나물 다시 심기');
+  btn.title = seeds < 1 ? '콩 씨앗을 먼저 주문하세요' : '';
 }
 
 function drawWater() {
@@ -2231,6 +2266,7 @@ function refreshOverlays() {
   try { updateHint(); } catch (e) { console.warn('[안내]', e && e.message); }
   try { drawMarks(); }  catch (e) { console.warn('[말풍선]', e && e.message); }
   try { drawHarvest(); } catch (e) { console.warn('[거두기]', e && e.message); }
+  try { drawSow(); }     catch (e) { console.warn('[심기]', e && e.message); }
   try { drawWater(); }  catch (e) { console.warn('[물주기]', e && e.message); }
   try { drawCuttings(); } catch (e) { console.warn('[삽수]', e && e.message); }
 }
@@ -2390,6 +2426,7 @@ function draw() {
   drawLedger();             /* 하루에 얼마 나가고 콩나물이 얼마를 덜어 주나 */
   drawHarvest();            /* 거둘 때가 됐나 */
   drawWater();              /* 물을 줘야 하나 */
+  drawSow();                /* 다시 심어야 하나 */
   try { drawMarks(); } catch (e) { console.warn('[말풍선]', e && e.message); }
   drawShop();               /* 주문·다시 심기·팔기 */
   drawCuttings();           /* ★삽수 — 자르기·분갈이·팔기 (분갈이가 없으면 삽수는 반드시 죽는다) */
