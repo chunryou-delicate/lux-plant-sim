@@ -34,6 +34,11 @@
 import { createScene, updateLight } from '../render3d/scene.js';
 import { faintGrainTexture } from '../render3d/textures.js';
 import { buildHouse, updateShellVisibility } from '../render3d/house.js';
+/* ★ 창밖 골목 — **보이는 것일 뿐** 빛의 근원이 아니다.
+   무광원(MeshBasicMaterial) + castShadow/receiveShadow 없음이라
+   sunLight·skyPortals·조도 엔진 어느 쪽도 이 기하를 보지 않는다.
+   (그래서 이걸 켜고 꺼도 test_banjiha_profile 의 숫자는 한 자리도 안 움직인다) */
+import { buildOutsideAlley } from '../render3d/outside_alley.js';
 import { winFromHouse } from '../engine/daylight_lux.js';
 /* BAND_LOOK 은 밴드별 색·처짐 표다. 조립본에도 같은 표를 쓴다 —
    방과 확대가 같은 그루라면 "빛이 나쁘다"는 표시도 같아야 한다. */
@@ -338,10 +343,15 @@ export async function createRoomView(canvas, opts = {}) {
   let data = null;             // lightEngine 없이 혼자 지을 때만 채운다
   let furnNames = {};          // 프리셋 → {name_ko} — 자리 이름을 한글로 내주려고만 쓴다
   let roomId = null, roomDef = null, built = null;
+  /* 창밖 골목. 방마다 다시 짓고, 창이 없으면 null 이다. */
+  let outside = null;
+  /* 'auto'(반지하만) · true(어느 방이든) · false(끔). opts.outside 로 덮어쓸 수 있다 */
+  let outsideMode = (O.outside === undefined ? 'auto' : O.outside);
   let slotById = new Map();    // slotId → 슬롯(월드좌표)
   let plants = new Map();      // slotId → { group, spec, potD, days }
   let rings = new Map();       // slotId → 하이라이트 링 메시
   let highlighted = new Set();
+  let highlightRank = new Map();   // 열쇠 → 'good'|'ok'|'bad'. rank 를 받은 자리만 들어 있다
   let focused = null;
   let daylightT = 0.5;
   let disposed = false;
@@ -445,6 +455,45 @@ export async function createRoomView(canvas, opts = {}) {
     }) };
   }
 
+  /* ============================================================
+     ①-2 창밖 골목
+     ------------------------------------------------------------
+     창이 이 게임의 중심인데 그 너머가 비어 있으면 창은 그냥 밝은 사각형이다.
+     반지하는 눈높이가 지면이라 골목 바닥과 담벼락 아래쪽이 보인다 —
+     그 한 장면이 "반지하에 산다"를 말한다.
+
+     ★ 빛은 절대 안 건드린다. render3d/outside_alley.js 머리말 참조 —
+       무광원 재질에 그림자를 안 던지고 안 받는다. 조도 계산(winFromHouse ·
+       daily_light)은 물론 렌더 조명도 이 기하를 보지 않는다.
+     ★ 기본은 반지하만이다. 위층 방(아파트·온실)에 골목 바닥을 깔면 거짓말이 된다.
+  ============================================================ */
+  const OUTSIDE_ROOMS = new Set(['banjiha']);
+  function outsideWanted(id) {
+    if (outsideMode === false) return false;
+    if (outsideMode === true) return true;
+    return OUTSIDE_ROOMS.has(id);
+  }
+  function disposeOutside() {
+    if (!outside) return;
+    try { outside.dispose(); } catch (e) { console.warn('[방뷰] 창밖을 치우다 났습니다:', e.message); }
+    outside = null;
+  }
+  function buildOutside(id) {
+    disposeOutside();
+    if (!outsideWanted(id) || !built) return null;
+    try {
+      outside = buildOutsideAlley(built, {});
+    } catch (e) {
+      /* 배경이 안 떠서 방이 안 뜨면 본말전도다 */
+      console.warn('[방뷰] 창밖 골목을 못 지었습니다 — 창밖 없이 갑니다:', e.message);
+      outside = null;
+    }
+    /* ★ houseGroup 에 넣는다. 레이캐스트는 built.room 에만 쏘므로 배치·걷기와 안 부딪힌다
+       (그래도 mesh.raycast 를 비워 뒀다 — 두 겹으로 막는다). */
+    if (outside) houseGroup.add(outside.group);
+    return outside;
+  }
+
   /* opt.prebuilt = { built, def, wins } — 이미 조립된 결과를 그대로 쓴다.
      ★ 가구를 옮기면 light_adapter.moveFurniture 가 이미 방을 다시 지었다. 그걸 안 받으면
        여기서 buildHouse 를 **한 번 더** 돌게 된다(재조립은 비싸다 — 손 뗄 때 한 번뿐이어야 한다). */
@@ -464,6 +513,7 @@ export async function createRoomView(canvas, opts = {}) {
     clearPlants();
     clearRings();
     clearGuideRings();
+    disposeOutside();               // 방마다 다시 짓는다 — 창 자리가 다르다
     while (houseGroup.children.length) houseGroup.remove(houseGroup.children[0]);
 
     /* 가구 한글 이름표는 가볍다(수십 KB). lightEngine 을 받아 방을 안 짓는 경우에도
@@ -498,6 +548,7 @@ export async function createRoomView(canvas, opts = {}) {
 
     roomId = id;
     houseGroup.add(built.room);
+    buildOutside(id);                       // 창밖 골목 (창 없는 방이면 조용히 아무것도 안 한다)
     /* 걸어 다닐 바닥을 다시 물린다 — 방이 바뀌면 벽도 가구도 다 다르다 */
     nav.setWorld({ colliders: built.colliders || [], size: built.size });
 
@@ -701,6 +752,8 @@ export async function createRoomView(canvas, opts = {}) {
     cam.look.y -= dist * tanV * FRAME_BIAS;
     ctx.cam.lookAt(cam.look);
     if (built) updateShellVisibility(built.shells, ctx.cam, 'auto', built.trims);
+    /* 벽이 밑동만 남으면(카메라가 그 벽 바깥이면) 골목이 방 옆에 판때기로 서 있게 된다 */
+    if (outside) outside.updateVisibility(ctx.cam.position);
   }
 
   /* ============================================================
@@ -1242,7 +1295,9 @@ export async function createRoomView(canvas, opts = {}) {
       if (t < 1) requestAnimationFrame(anim);
     };
     anim();
-    if (highlighted.size) highlightSlots([...highlighted]);   // 링 상태(빈 자리) 갱신
+    /* ★ rank 를 붙여서 다시 부른다. 열쇠만 넘기면 갱신할 때마다 색이 예전 두 색으로
+       되돌아간다(화분이 자랄 때마다 초록이 호박색으로 바뀌는 셈이다). */
+    if (highlighted.size) highlightSlots(rehighlightArg());   // 링 상태(빈 자리) 갱신
   }
 
   /* ============================================================
@@ -1257,21 +1312,31 @@ export async function createRoomView(canvas, opts = {}) {
     for (const [, m] of rings) { houseGroup.remove(m); disposeObject(m); }
     rings.clear();
     highlighted.clear();
+    highlightRank.clear();
     needsRender = true;
   }
 
   /* ★ 추천 자리뿐 아니라 **자유 좌표 화분**도 빛낼 수 있다 (2026-08-03).
      열쇠 해석은 resolveKey 한 곳만 쓴다 — 슬롯 id · `free:` 열쇠 · 화분 id 다 받는다.
      (탭해서 고른 자유 배치 화분을 표시할 길이 없으면 "무엇을 고른 건지"가 안 보인다) */
+  /* ★ 원소는 두 가지를 다 받는다 (2026-08-05)
+       'shelf#1:0'                       예전 그대로 — 색도 예전 그대로다
+       { slotId:'shelf#1:0', rank:'good' } 새로 — rank 로 세 색을 칠한다
+     rank 는 'good'(초록) · 'ok'(노랑) · 'bad'(빨강). 위 RANK_HEX 머리말 참조.
+     ★ 판정은 게임 쪽 몫이다. 여기는 받은 대로 칠하기만 한다. */
   function highlightSlots(slotIds) {
-    const want = new Map();                 // 정본 열쇠 → { pos, r }
+    const want = new Map();                 // 정본 열쇠 → { pos, r, rank }
     for (const raw of (slotIds || [])) {
-      const t = resolveKey(raw);
+      /* 문자열이면 예전 규약, 객체면 { slotId | id | key, rank } */
+      const isObj = raw && typeof raw === 'object';
+      const key = isObj ? (raw.slotId != null ? raw.slotId
+                         : raw.id != null ? raw.id : raw.key) : raw;
+      const t = resolveKey(key);
       if (!t) continue;                     // 없는 열쇠는 예전처럼 조용히 뺀다
       const r = t.slot
         ? clamp((Number.isFinite(t.slot.maxPotD) ? t.slot.maxPotD : 0.22) * 0.55, 0.05, 0.30)
         : clamp(((t.plant && t.plant.potD) || 0.22) * 0.75, 0.05, 0.30);
-      want.set(t.key, { pos: t.pos, r });
+      want.set(t.key, { pos: t.pos, r, rank: isObj ? normRank(raw.rank) : null });
     }
     for (const [id, m] of [...rings]) {
       if (want.has(id)) continue;
@@ -1291,10 +1356,23 @@ export async function createRoomView(canvas, opts = {}) {
       /* 슬롯이면 '찼나', 자유 좌표 열쇠면 그 자체가 화분이다 */
       const occ = slotById.has(id) ? slotOccupied(id) : true;
       m.userData.occupied = occ;
-      m.material.color.setHex(occ ? 0x9fd0ff : 0xffd479);   // 찬 자리는 파랗게
+      const rank = (want.get(id) || {}).rank;
+      m.userData.rank = rank || null;
+      /* rank 를 받았으면 그 색이 이긴다 — 그게 이 표시의 뜻이니까.
+         못 받았으면 예전 그대로(찬 자리 파랑 · 빈 자리 호박색). */
+      m.material.color.setHex(rank ? RANK_HEX[rank] : (occ ? 0x9fd0ff : 0xffd479));
     }
     highlighted = new Set(want.keys());
+    highlightRank.clear();
+    for (const [id, w] of want) if (w.rank) highlightRank.set(id, w.rank);
     needsRender = true;
+  }
+
+  /* 지금 빛나는 자리를 **rank 를 붙인 채로** 다시 넘길 인자.
+     안에서 스스로 갱신할 때(화분이 다시 조립될 때) 색을 잃지 않게 하는 유일한 길이다. */
+  function rehighlightArg() {
+    return [...highlighted].map(id =>
+      highlightRank.has(id) ? { slotId: id, rank: highlightRank.get(id) } : id);
   }
 
   /* 빛내 둔 화분이 움직이면 링도 따라간다. 링을 새로 만들지 않는다(끄는 동안 부른다). */
@@ -2058,6 +2136,18 @@ export async function createRoomView(canvas, opts = {}) {
     }
   }
 
+  /* 창밖 골목의 색 — updateLight 바로 뒤에 부른다.
+     ★ 여기서 읽기만 한다. 조명 값을 **되돌려 쓰지 않는다** — 배경이 빛을 바꾸면
+       그 순간 배경이 조도의 일부가 된다. 방향은 한쪽뿐이다(빛 → 배경).
+     ★ 하늘색은 game 정책이 배경을 0x14101c 로 눌러 버리기 전에 집어야 한다. */
+  function tintOutside() {
+    if (!outside) return;
+    const sky = (ctx.scene.background && ctx.scene.background.isColor)
+      ? ctx.scene.background : null;
+    outside.setDaylight({ sunI: ctx.sunLight.intensity,
+                          sunColor: ctx.sunLight.color, sky });
+  }
+
   function applyDaylight() {
     /* ★천장등은 **낮에 아예 안 켠다** (박사님 2026-08-03: "낮에는 안 켜지게").
        scene.js 의 자동 모드(0)는 해가 약하면 켜는데, 반지하는 낮에도 해가 약해서
@@ -2069,6 +2159,7 @@ export async function createRoomView(canvas, opts = {}) {
       /* index.html(집 도구)과 **같은 그림**. scene.js 기본값 그대로 — 아무것도 안 누른다.
          비교용이라 그림자 예산만 게임과 같게 둔다(그건 밝기가 아니라 성능이다). */
       const l0 = updateLight(ctx, daylightT * 100, 0);
+      tintOutside();
       ctx.renderer.toneMappingExposure = 1.1;
       applyShadowBudget();
       if (ctx.sunLight.castShadow) ctx.sunLight.shadow.needsUpdate = true;
@@ -2076,6 +2167,7 @@ export async function createRoomView(canvas, opts = {}) {
       return l0;
     }
     const label = updateLight(ctx, daylightT * 100, isDay ? 2 : 0);
+    tintOutside();                 // ★ 배경을 눌러 어둡게 만들기 **전에** 하늘색을 집는다
 
     /* ★★ 밤은 **천장등 하나가 만드는 웅덩이**여야 한다 (2026-08-03 · 박사님 "밤에 등이 아직도 너무 밝다")
        ------------------------------------------------------------
@@ -2215,6 +2307,31 @@ export async function createRoomView(canvas, opts = {}) {
   const CHAR_FPS = 30;
   let lastCharAt = performance.now();
 
+  /* ★★ 캐릭터가 **실제로 움직이는 동안만** 상한을 푼다
+     (2026-08-05 · 박사님 "캐릭 움직이거나 하는 게 약간 프레임이 떨어져 보여")
+     ------------------------------------------------------------
+     ★ 무엇을 재서 알았나
+       ① 렌더 자체는 안 무겁다. 헤드리스(SwiftShader·소프트웨어 GL)에서도
+          한 장 1.4ms(중앙) 였다 — 60장을 그려도 프레임 예산의 10%다.
+          즉 30 은 **못 그려서가 아니라 배터리 때문에 자른 값**이다.
+       ② 그런데 캐릭터는 스켈레톤 클립을 AnimationMixer 로 돌린다
+          (render3d/character.js · idle·walking GLB). 골격 애니메이션은
+          30장에서 눈에 띄게 끊긴다. 몬이의 느린 흔들림(2.5초 주기)과는 다른 물건이다.
+       ③ ⚠ **폰의 체감은 헤드리스로 못 잰다** — 화면이 없어 rAF 가 9장/초밖에 안 돈다.
+          그래서 "30이 원인이다"를 숫자로 못 박지는 못했다. 아래는 그 사실을 안 채로
+          **되돌릴 수 있게** 넣은 변경이다(스스로 30으로 내려간다).
+
+     그래서 상한을 셋으로 나눈다. **배터리를 태우던 두 경우는 그대로 둔다.**
+       노는 중(idle)      10  — 그대로. 몬이 흔들림 때문에 방을 22번 다시 그리던 그 값이다
+       바쁜 중(busy)      30  — 그대로. 손가락 끌기가 초당 48장을 태우던 그 값이다
+       움직이는 중(move)  60  — ★ 여기만 푼다. 걷기·물주기는 짧고 드물다
+     그리고 못 따라가면 **스스로 30 으로 내린다**(아래 moveBackoff). 폰이 느리면
+     예전 값으로 돌아가므로, 이 변경이 느린 기기를 더 나쁘게 만들 길은 없다. */
+  const MOVE_FPS_MAX = 60;
+  let moveFps = MOVE_FPS_MAX;      // 못 따라가면 CHAR_FPS 로 내려앉는다
+  let slowMoveWindows = 0;
+  let moveWindow = false;          // 이 500ms 창에 '움직이는 중' 프레임이 있었나
+
   /* ★★ 한 장 그리는 간격을 30fps 로 자른다 (2026-08-03 · "이동할 때 프레임이 겁나 떨어져")
      ------------------------------------------------------------
      재 보고 넣었다(tools/test_roomview_perf.mjs · 390×844 dpr2 · CPU 4배).
@@ -2252,23 +2369,38 @@ export async function createRoomView(canvas, opts = {}) {
   /* 지금 '바쁜가' — 바쁘면 30fps, 아니면 10fps 로 그린다.
      needsRender 는 **밖에서 뭔가 바뀌었다**는 표시다(setPlant·setDaylight·카메라…).
      캐릭터 idle 은 needsRender 를 안 켠다 — 그래서 이 한 줄로 둘이 갈린다. */
-  function busyNow() {
-    if (needsRender || tween || pendingDrag || walkDrag || rings.size) return true;
-    /* ★ 무언가 하는 중(actAt)도 바쁜 것이다 — 모션과 물줄기는 30fps 로 그려야 한다.
+  /* 0 = 노는 중 · 1 = 바쁜 중 · 2 = 캐릭터가 실제로 움직이는 중
+     ★ 2 는 **사람의 몸이 움직이는 것**만이다(걷기·물주기 모션). 손가락 끌기나
+       카메라 트윈은 1 이다 — 그건 예전에 30 으로 자른 이유가 따로 있다. */
+  const LV_IDLE = 0, LV_BUSY = 1, LV_MOVE = 2;
+  function busyLevel() {
+    for (const [, c] of chars) if (c.walking) return LV_MOVE;
+    /* ★ 무언가 하는 중(actAt)도 몸이 움직인다 — 모션과 물줄기가 여기 걸린다.
        끝나면 이펙트를 통째로 치우므로 곧바로 노는 화면(10fps)으로 돌아간다. */
-    if (actBusy()) return true;
-    for (const [, c] of chars) if (c.walking) return true;
-    return false;
+    if (actBusy()) return LV_MOVE;
+    if (needsRender || tween || pendingDrag || walkDrag || rings.size) return LV_BUSY;
+    return LV_IDLE;
+  }
+  /* 그 단계에서 한 장 사이의 최소 간격[ms]. 4ms 여유는 예전 값 그대로다
+     (문턱이 rAF 주기에 딱 붙으면 한 장씩 걸러져 오히려 절반이 된다). */
+  function frameGapFor(level) {
+    if (level === LV_MOVE) return 1000 / moveFps - 4;
+    if (level === LV_BUSY) return MIN_FRAME_MS;
+    return IDLE_FRAME_MS;
   }
   /* 끄는 동안 마지막 손가락 자리만 적어 둔다. 광선·길찾기는 프레임당 한 번만 한다. */
   let pendingDrag = null;
 
-  function stepCharacters(now, force) {
+  /* ★ 몸을 갱신하는 빈도는 **그리는 빈도와 같아야** 한다.
+     여기만 30 으로 두고 60장을 그리면 같은 자세를 두 번 그리는 것이라
+     배터리만 쓰고 부드러워지지는 않는다(예전 창이 끌기에서 짚은 그 낭비다). */
+  function stepCharacters(now, force, level) {
     if (!chars.size) { lastCharAt = now; return false; }
     const dt = (now - lastCharAt) / 1000;
-    /* 0.9 배로 여유를 둔다 — 위 MIN_FRAME_MS 와 문턱이 딱 붙어 있으면 프레임이 조금만
+    const rate = (level === LV_MOVE) ? moveFps : CHAR_FPS;
+    /* 0.9 배로 여유를 둔다 — 위 frameGapFor 와 문턱이 딱 붙어 있으면 프레임이 조금만
        흔들려도 한 번씩 걸러져 캐릭터가 20fps 로 뚝뚝 끊긴다(딱 붙여 두고 봤다). */
-    if (!force && dt < 0.9 / CHAR_FPS) return false;
+    if (!force && dt < 0.9 / rate) return false;
     lastCharAt = now;
     for (const [, c] of chars) {
       try { c.update(Math.min(dt, 0.1)); } catch (e) { fail(e); }
@@ -2281,21 +2413,22 @@ export async function createRoomView(canvas, opts = {}) {
     raf = requestAnimationFrame(loop);
     /* 아직 이르면 아무것도 안 한다. needsRender 는 그대로 켜져 있으니 다음 프레임에 그린다. */
     /* ★ 이 창이 '바쁜 창'이었나를 같이 적어 둔다 — 아래 autoQuality 가 그것만 본다 */
-    const busy = busyNow();
-    if (!forceContinuous && now - lastFrameAt < (busy ? MIN_FRAME_MS : IDLE_FRAME_MS)) return;
-    if (!busy) idleWindow = true;
+    const level = busyLevel();
+    if (!forceContinuous && now - lastFrameAt < frameGapFor(level)) return;
+    if (level === LV_IDLE) idleWindow = true;
+    if (level === LV_MOVE) moveWindow = true;
     lastFrameAt = now;
     /* 끄는 중이면 여기서 딱 한 번 목적지를 계산한다(이벤트마다 하지 않는다) */
     if (pendingDrag) {
       const d = pendingDrag; pendingDrag = null;
       if (d === walkDrag) d.target = showWalkGhost(walkTargetAt(d.px, d.py));
     }
-    const moving = stepTween(now) | pulseRings(now) | stepCharacters(now);
+    const moving = stepTween(now) | pulseRings(now) | stepCharacters(now, false, level);
     if (!needsRender && !moving && !forceContinuous) {
       /* ★ 노는 동안은 fps 를 세지 않는다. 여기서 세면 "가만히 있어서 1초에 두 장만
          그렸다"가 "1초에 두 장밖에 못 그린다"로 읽혀 화질을 멋대로 떨어뜨린다.
          실제로 그랬다 — 픽셀비가 1.75에서 1.25로 내려가 있었다. */
-      lastFpsAt = now; framesSince = 0; idleWindow = false;
+      lastFpsAt = now; framesSince = 0; idleWindow = false; moveWindow = false;
       return;
     }
     needsRender = false;
@@ -2322,8 +2455,9 @@ export async function createRoomView(canvas, opts = {}) {
       if (framesSince >= 4) {
         stats.fps = Math.round(framesSince * 1000 / (now - lastFpsAt));
         if (!idleWindow) autoQuality(); else slowWindows = 0;
+        moveBackoff();
       }
-      framesSince = 0; lastFpsAt = now; idleWindow = false;
+      framesSince = 0; lastFpsAt = now; idleWindow = false; moveWindow = false;
     }
   }
 
@@ -2348,11 +2482,27 @@ export async function createRoomView(canvas, opts = {}) {
     } else if (!disposed) {
       const now = performance.now();
       lastFrameAt = now; lastCharAt = now; lastFpsAt = now;
-      framesSince = 0; stats.fps = 0; slowWindows = 0;
+      framesSince = 0; stats.fps = 0; slowWindows = 0; slowMoveWindows = 0; moveWindow = false;
       needsRender = true;                      // 멈춰 있는 동안 바뀐 것을 한 장에 반영한다
       raf = requestAnimationFrame(loop);
     }
     return paused;
+  }
+
+  /* ★ 움직임 상한을 스스로 내린다 — "빠른 폰에서만 60"
+     ------------------------------------------------------------
+     캐릭터가 움직이는 500ms 창에서 실제로 그린 장수가 상한의 4분의 3도 안 되면
+     그 폰은 60 을 못 낸다. 연속 두 창이 그러면 예전 값(30)으로 내려앉는다.
+     ⚠ 다시 안 올린다 — 오르내리면 그 자체가 '프레임이 튄다'로 보인다.
+       한 번 30 으로 내려가면 그 화면이 살아 있는 동안 30 이다(예전과 똑같은 화면). */
+  function moveBackoff() {
+    if (forceContinuous || !moveWindow || moveFps <= CHAR_FPS) return;
+    slowMoveWindows = (stats.fps < moveFps * 0.75) ? slowMoveWindows + 1 : 0;
+    if (slowMoveWindows >= 2) {
+      slowMoveWindows = 0;
+      moveFps = CHAR_FPS;
+      stats.moveFps = moveFps;
+    }
   }
 
   /* 못 따라가면 해상도를 내린다. 무엇을 줄였는지 stats 에 남긴다. */
@@ -2424,7 +2574,40 @@ export async function createRoomView(canvas, opts = {}) {
        · 실제로 놓일 **크기·회전** 그대로 보인다. 크기가 다르면 미리보기의 뜻이 없다
        · 안 들어가는 자리면 붉게 — 판정은 bbox 가 아니라 회전 무관 지름이다
   ============================================================ */
-  const GH_OK = 0x4aa3ff, GH_NG = 0xe8615a;      // decorate.js 와 같은 값
+  /* ★ 세 색 (2026-08-05 · 박사님 "추천하거나 맞는 곳은 초록빛, 별로인 곳은 빨간빛")
+     ------------------------------------------------------------
+     예전엔 파랑/빨강 두 색이었고 뜻은 **"놓을 수 있다/없다"** 하나뿐이었다.
+     그런데 첫 플레이가 가르치는 것은 "자리가 결과를 바꾼다" 하나다 —
+     놓을 수 있느냐가 아니라 **좋은 자리냐**를 말해야 그 학습이 된다. 그래서 셋으로 가른다.
+
+       good  초록   놓을 수 있고 그 작물에 좋은 자리
+       ok    노랑   놓을 수는 있는데 별로
+       bad   빨강   여기는 아니다 — 못 놓거나(크기·점유), 그 작물에 못 쓸 자리
+     ★ 'bad' 는 **어디서든 빨강**이다. 이유가 물리(크기)든 빛이든 플레이어에게는
+       "여기는 아니다" 한 가지다 — 박사님 말도 "별로인 곳은 빨간빛" 이었다.
+
+     ★★ 좋은 자리인지는 **여기서 판정하지 않는다.** 몬스테라는 밝아야 좋고 콩나물은
+       어두워야 좋다 — 작물마다 반대다. 그건 게임 쪽(loop·first_play)이 아는 값이라
+       rank 로 **받아서 칠하기만** 한다. 방뷰가 판정하면 작물이 늘 때마다 여기가 틀린다.
+
+     ⚠ rank 를 안 주면 예전 그대로다 — 놓을 수 있으면 GH_OK, 아니면 GH_NG.
+       (game.html 이 아직 문자열 배열로 부른다. 그 호출을 깨면 안 된다) */
+  const GH_OK  = 0x54c98a;                       // 초록 — 놓을 수 있다 / 좋은 자리
+  const GH_MID = 0xf2c14e;                       // 노랑 — 놓을 수는 있는데 별로
+  const GH_NG  = 0xe8615a;                       // 빨강 — 못 놓는다 (decorate.js 와 같은 값)
+  /* rank → 색. 모르는 말이 오면 예전 두 색으로 떨어진다(던지지 않는다 — 색 하나 때문에
+     배치가 멈추면 안 된다). */
+  const RANK_HEX = { good: GH_OK, ok: GH_MID, bad: GH_NG };
+  function rankHex(rank) {
+    if (typeof rank === 'string' && RANK_HEX[rank] != null) return RANK_HEX[rank];
+    return rank === false ? GH_NG : GH_OK;       // 예전 규약(boolean)
+  }
+  /* 'good'|'ok'|'bad' 로 정규화. 아무것도 안 주면 null(= 호출부가 정하게 둔다) */
+  function normRank(rank) {
+    if (rank === true) return 'good';
+    if (rank === false) return 'bad';
+    return (typeof rank === 'string' && RANK_HEX[rank] != null) ? rank : null;
+  }
 
   function disposePreview() {
     if (!preview) return;
@@ -2518,16 +2701,24 @@ export async function createRoomView(canvas, opts = {}) {
     return { group: g, marker, mat: gm, line: gl, ok: null };
   }
 
-  function setGhostOk(ok) {
-    if (!preview || ok === preview.ok) return;
-    preview.ok = ok;
-    const hex = ok ? GH_OK : GH_NG;
+  /* 유령 색을 정한다. ok 는 boolean 또는 'good'|'ok'|'bad' — 예전 호출(boolean)도 그대로 돈다.
+     ★ preview.ok 는 **예전 뜻 그대로 "놓을 수 있나"** 다. 색(rank)과 갈라 둔다 —
+       밖으로 나가는 값이라 뜻을 바꾸면 부르는 쪽이 조용히 틀린다.
+       "빨간데 놓을 수는 있다"(빛이 안 맞는 자리)가 실제로 있는 조합이다. */
+  function setGhostOk(ok, placeable) {
+    const rank = normRank(ok) || (ok ? 'good' : 'bad');
+    if (preview) preview.ok = (placeable == null) ? (rank !== 'bad') : !!placeable;
+    if (!preview || rank === preview.rank) return;
+    preview.rank = rank;
+    const hex = RANK_HEX[rank];
     preview.mat.color.setHex(hex);
     preview.line.color.setHex(hex);
     preview.marker.material.color.setHex(hex);
   }
 
-  function previewMove(fromId, toId) {
+  /* rank(선택) — 'good'|'ok'|'bad'. 안 주면 예전 그대로 "들어가나"로만 칠한다.
+     들어가지 않는 자리는 rank 가 뭐라 오든 빨강이다(못 놓는 게 먼저다). */
+  function previewMove(fromId, toId, rank) {
     if (toId == null) { disposePreview(); return null; }
     const p = plants.get(fromId);
     if (!p) throw new Error(`미리보기할 화분이 없습니다: ${fromId}`);
@@ -2550,9 +2741,11 @@ export async function createRoomView(canvas, opts = {}) {
     preview.marker.scale.setScalar(r / 0.32);
     preview.marker.position.set(to.x, to.y + 0.004, to.z);
 
-    setGhostOk(fitsInSlot(preview.group, to));
+    /* 못 들어가는 자리는 rank 가 뭐라 오든 빨강이다 — 못 놓는 게 먼저다 */
+    const fits = fitsInSlot(preview.group, to);
+    setGhostOk(fits ? (normRank(rank) || 'good') : 'bad', fits);
     needsRender = true;
-    return { fromId, toId, ok: preview.ok };
+    return { fromId, toId, ok: preview.ok, rank: preview.rank };
   }
 
   /* ★ 좌표 미리보기 — previewAt (2026-08-03)
@@ -2594,9 +2787,11 @@ export async function createRoomView(canvas, opts = {}) {
     const r = clamp(potD * 1.5, 0.12, 0.55);
     preview.marker.scale.setScalar(r / 0.32);
     preview.marker.position.set(A.x, A.y + 0.004, A.z);
-    setGhostOk(opt.valid !== false);
+    /* opt.rank 가 있으면 세 색, 없으면 예전 두 색.
+       놓을 수 없는 자리(valid:false)는 rank 와 무관하게 빨강이다. */
+    setGhostOk(opt.valid === false ? 'bad' : (normRank(opt.rank) || 'good'), opt.valid !== false);
     needsRender = true;
-    return { at: A, potD, ok: preview.ok };
+    return { at: A, potD, ok: preview.ok, rank: preview.rank };
   }
 
   /* 화분이 다시 조립됐을 때 미리보기도 그 모습으로 따라간다 */
@@ -4710,9 +4905,18 @@ export async function createRoomView(canvas, opts = {}) {
     /* ★ 옮기기 미리보기 — 그 화분의 반투명 복제를 목표 자리에 띄운다.
        원본은 제자리 그대로. toSlotId 가 null 이면 지운다.
        돌려주는 값의 ok 가 false 면 안 들어가는 자리다(미리보기가 붉게 뜬다). */
-    previewMove(fromId, toId) { try { return previewMove(fromId, toId); } catch (e) { throw fail(e); } },
-    /* 놓을 수 있는 자리 빛내기. [] 면 해제 */
+    /* rank(선택) — 'good'|'ok'|'bad'. 안 주면 예전 그대로 "들어가나"로만 칠한다 */
+    previewMove(fromId, toId, rank) { try { return previewMove(fromId, toId, rank); } catch (e) { throw fail(e); } },
+    /* 놓을 수 있는 자리 빛내기. [] 면 해제.
+         highlightSlots(['shelf#1:0', ...])                       예전 그대로
+         highlightSlots([{ slotId:'shelf#1:0', rank:'good' }, …])  세 색
+       rank: 'good' 초록(좋은 자리) · 'ok' 노랑(놓을 수는 있는데 별로) · 'bad' 빨강(못 놓는다)
+       ★ 어디가 좋은 자리인가는 **작물마다 반대**라 여기서 판정하지 않는다 — 받아서 칠할 뿐이다 */
     highlightSlots(ids) { if (!ids || !ids.length) clearRings(); else highlightSlots(ids); },
+    /* 지금 어떤 자리를 어떤 rank 로 빛내고 있나 — 검사·복원용 */
+    highlighted() {
+      return [...highlighted].map(id => ({ slotId: id, rank: highlightRank.get(id) || null }));
+    },
     /* 카메라를 그 자리로. null 이면 방 전체로.
        snap=true 면 부드럽게 가지 않고 바로 간다(스크린샷·헤드리스 검증용). */
     focusSlot(id, snap) { try { focusSlot(id, !!snap); } catch (e) { throw fail(e); } },
@@ -4740,6 +4944,22 @@ export async function createRoomView(canvas, opts = {}) {
       return lightPolicy;
     },
     lightPolicy() { return lightPolicy; },
+    /* ★ 창밖 골목 — true · false · 'auto'(반지하만, 기본).
+       비교 스크린샷과 성능 측정을 위해 켜고 끌 수 있어야 한다. */
+    setOutside(mode) {
+      outsideMode = (mode === true || mode === false) ? mode : 'auto';
+      buildOutside(roomId);
+      tintOutside();
+      if (outside) outside.updateVisibility(ctx.cam.position);
+      needsRender = true;
+      return outsideMode;
+    },
+    /* 무엇이 얼마나 붙어 있나 — 삼각형·판때기·어느 벽. 없으면 null */
+    outsideInfo() {
+      return outside ? { mode: outsideMode, tris: outside.tris,
+                         quads: outside.quads, walls: [...outside.walls] }
+                     : { mode: outsideMode, tris: 0, quads: 0, walls: [] };
+    },
     resize,
     /* 배치 UI 가 읽는다 */
     slots() {
@@ -4802,7 +5022,16 @@ export async function createRoomView(canvas, opts = {}) {
     },
     /* 측정용 — fps · 무엇을 줄였는지 */
     stats() { return { ...stats, pixelRatio: pxRatio, plants: plants.size, slots: slotById.size,
+                       /* 지금 상한 셋 — 재는 도구가 "무엇에 걸려 있나"를 알아야 한다 */
+                       fpsCap: { idle: IDLE_FPS, busy: CHAR_FPS, move: moveFps },
+                       level: busyLevel(),
                        triangles: ctx.renderer.info.render.triangles, calls: ctx.renderer.info.render.calls }; },
+    /* ★ 움직임 상한을 손으로 정한다 — 재기·비교용. null 이면 기본(60, 못 따라가면 30) */
+    setMoveFps(v) {
+      moveFps = Number.isFinite(+v) ? Math.max(10, Math.min(120, +v)) : MOVE_FPS_MAX;
+      slowMoveWindows = 0;
+      return moveFps;
+    },
     setContinuous(v) { forceContinuous = !!v; needsRender = true; },
     /* ★ 방을 멈춘다 — 확대(화분 상세보기)를 열 때처럼 방이 안 보일 때 쓴다.
        rAF 자체를 끊으므로 그리기도 캐릭터 애니메이션도 안 돈다. **논리는 안 멈춘다.**
@@ -4989,6 +5218,7 @@ export async function createRoomView(canvas, opts = {}) {
       for (const [, c] of chars) { try { c.dispose(); } catch (e) { /* 치우다 난 오류로 나머지를 못 치우면 안 된다 */ } }
       chars.clear();
       clearPlants(); clearRings();
+      disposeOutside();
       disposeObject(ctx.scene);
       ctx.renderer.dispose();
     }
