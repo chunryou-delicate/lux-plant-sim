@@ -28,6 +28,17 @@
 ============================================================ */
 import { launch, sleep } from './test_cdp.mjs';
 
+/* ★자가 제한 — 재는 도구가 재는 대상보다 오래 살면 안 된다.
+   이게 없어서 측정 하나가 21시간 매달려 있었다. 헤드리스 크롬은 무언가를
+   기다리다 영영 안 끝나는 일이 실제로 생긴다. 시간은 환경변수로 늘릴 수 있다. */
+const _WATCHDOG_MS = +(process.env.BYEOT_PROBE_TIMEOUT_MS || 300000);
+const _wd = setTimeout(() => {
+  console.error('⏱ 자가 제한 ' + Math.round(_WATCHDOG_MS / 1000) + '초를 넘겨 멈춥니다 — 재는 중에 멈춘 것입니다.');
+  process.exit(2);
+}, _WATCHDOG_MS);
+process.on('exit', () => clearTimeout(_wd));
+
+
 const BASE = process.env.BYEOT_URL || 'http://localhost:8971';
 const argv = process.argv.slice(2);
 const argOf = (k, d) => { const i = argv.indexOf(k); return i < 0 ? d : argv[i + 1]; };

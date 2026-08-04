@@ -1,6 +1,17 @@
 /* 폰에서 안내판의 설명·테두리가 실제 버튼 자리에 맞나.
    ★박사님: "가이드 버튼이나 지정하는 위치가 좀 안 맞더라". 눈이 아니라 픽셀로 잰다. */
 import { launch, sleep } from './test_cdp.mjs';
+
+/* ★자가 제한 — 재는 도구가 재는 대상보다 오래 살면 안 된다.
+   이게 없어서 측정 하나가 21시간 매달려 있었다. 헤드리스 크롬은 무언가를
+   기다리다 영영 안 끝나는 일이 실제로 생긴다. 시간은 환경변수로 늘릴 수 있다. */
+const _WATCHDOG_MS = +(process.env.BYEOT_PROBE_TIMEOUT_MS || 300000);
+const _wd = setTimeout(() => {
+  console.error('⏱ 자가 제한 ' + Math.round(_WATCHDOG_MS / 1000) + '초를 넘겨 멈춥니다 — 재는 중에 멈춘 것입니다.');
+  process.exit(2);
+}, _WATCHDOG_MS);
+process.on('exit', () => clearTimeout(_wd));
+
 const BASE = process.env.BYEOT_URL || 'http://localhost:8971';
 for (const [w, h] of [[390, 844], [360, 780], [430, 932]]) {
   const page = await launch({ width: w, height: h, dpr: 2, mobile: false });
