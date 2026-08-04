@@ -346,6 +346,26 @@
   /* ★"어디에 놓이는지"는 **손가락 옆**에 뜬다 (박사님 2026-08-04: "템 놓는 곳이 직관적이지 못해").
      예전엔 화면 맨 위에 고정이라, 눈은 손가락에 있는데 정보는 700px 떨어진 데 있었다.
      position:fixed 로 두고 JS 가 손가락을 따라 옮긴다. */
+  /* ══ 할 일 말풍선 — 물건 위에 떠서 그 자체가 버튼이다 ══════════════════
+     ★화분은 화면에서 작다. 정확히 짚게 하면 조작이 고문이 된다 —
+       말풍선을 오브젝트보다 크게 만들어 그걸 누르게 한다. */
+  #marks{position:absolute;z-index:25;inset:0;pointer-events:none}
+  .mark{position:absolute;transform:translate(-50%,-100%);pointer-events:auto;
+    display:flex;align-items:center;gap:6px;padding:9px 14px;border-radius:999px;
+    font-family:'Jua';font-size:14px;white-space:nowrap;border:0;color:#0d2a33;
+    background:linear-gradient(180deg,#8fd8ea,#5fb9d4);
+    box-shadow:0 4px 0 rgba(0,0,0,.28),0 6px 18px rgba(0,0,0,.45);
+    animation:markBob 1.6s ease-in-out infinite}
+  /* 꼬리 — 무엇을 가리키는지 */
+  .mark::after{content:'';position:absolute;left:50%;bottom:-7px;margin-left:-7px;
+    border:7px solid transparent;border-top-color:#5fb9d4;border-bottom:0}
+  .mark.crop{background:linear-gradient(180deg,#ffd98f,#f0b45c);color:#3a2708}
+  .mark.crop::after{border-top-color:#f0b45c}
+  .mark.warn{background:linear-gradient(180deg,#ffb9a8,#f08a72);color:#3a1408}
+  .mark.warn::after{border-top-color:#f08a72}
+  @keyframes markBob{0%,100%{transform:translate(-50%,-100%)}
+                     50%{transform:translate(-50%,calc(-100% - 5px))}}
+
   #dropLabel{position:fixed;z-index:26;left:50%;transform:translateX(-50%);top:12px;display:none;
     padding:7px 14px;border-radius:999px;font-family:'Jua';font-size:13px;white-space:nowrap;
     background:rgba(16,13,24,.92);border:1px solid rgba(255,255,255,.16);color:var(--ink);
@@ -639,6 +659,11 @@
     <div id="roomFallback"><div><span id="bootMsg">방을 준비하는 중…</span><div id="bootBar"><i></i></div></div></div>
     <div id="placeHint"></div>
     <div id="dropLabel"></div>
+    <!-- ★해야 할 일이 있는 물건 위에 말풍선을 띄운다 (박사님 2026-08-04).
+         물 줘야 하는 시루 · 씨앗을 심어야 하는 빈 시루 · 거둘 때가 된 시루.
+         ★오브젝트보다 크게 만든다 — 화분은 화면에서 작아서 정확히 짚기가 어렵다.
+           말풍선이 곧 버튼이라 무엇을 해야 하는지와 어디를 눌러야 하는지가 한 번에 잡힌다. -->
+    <div id="marks"></div>
     <button id="guideOpen" aria-label="조작 안내">?</button>
     <div id="moveCatcher"></div>
     <div id="plantActions">
@@ -1708,6 +1733,106 @@ function drawWater() {
     : '💧 오늘 물을 줬습니다';
 }
 
+/* ══ 할 일 말풍선 (박사님 2026-08-04) ═══════════════════════════════════
+   "물 줘야 되고, 씨앗이 없어서 씨앗 심어야 되는 빈 화분, 그리고 수확해야 되는 화분은
+    말풍선이 위쪽 상단에 나와서 (오브젝트보다 크게) 클릭이 쉽고 파악이 되도록"
+
+   ★말풍선이 곧 버튼이다. 화분은 화면에서 작아 정확히 짚기가 어려운데,
+     "무엇을 해야 하나"와 "어디를 눌러야 하나"를 하나로 합치면 둘 다 풀린다.
+   ★카메라를 돌리면 따라와야 한다. 방 뷰가 카메라 신호를 안 내주므로
+     여기서 낮은 빈도로 따라간다 — 말풍선 한둘의 투영이라 값이 싸다.
+     ⚠ 말풍선이 없으면 아예 안 돈다. 노는 화면을 계속 깨우면 폰 배터리가 탄다. */
+let markTick = null;
+function markList() {
+  const out = [];
+  const fp = S.firstPlay;
+  if (!fp || !fp.enabled) return out;
+  const b = fp.beansprout;
+  if (!b || !(b.at || b.slotId)) return out;
+  const key = b.slotId || `free:${BEANSPROUT_ID}`;
+
+  /* ① 거둘 때가 됐다 — 수확이 손 동작이 된 뒤에만 뜬다(그 전에는 자동이라 뜰 일이 없다) */
+  let hv = null;
+  try { hv = typeof cropHarvestStatus === 'function' ? cropHarvestStatus(S) : null; } catch { }
+  if (hv && hv.canHarvest) {
+    out.push({ key, ko: '🥣 거두기', tone: 'crop',
+               go: () => { const el = $('harvestCrop'); if (el) el.click(); } });
+    return out;                       /* 거둘 게 있으면 그것부터다. 여럿을 띄우면 소음이다 */
+  }
+
+  /* ② 다 거둔 빈 시루 — 씨앗을 심어야 한다 */
+  if (b.harvested) {
+    let seeds = 0;
+    try { seeds = (shopStatus(S).stock || {}).bean_seed || 0; } catch { }
+    if (seeds > 0)
+      out.push({ key, ko: '🌱 씨앗 심기', tone: 'crop',
+                 go: () => { const el = $('resow'); if (el && !el.disabled) el.click(); } });
+    else
+      out.push({ key, ko: '🌱 씨앗이 없습니다', tone: 'warn',
+                 go: () => { window.__byeotSheet.open(); window.__byeotSheet.tab && window.__byeotSheet.tab('room'); } });
+    return out;
+  }
+
+  /* ③ 물을 줘야 한다 */
+  let w = null; try { w = cropWaterStatus(S); } catch { }
+  if (w && w.needsWater)
+    out.push({ key, ko: w.dryRun > 0 ? `💧 물 (${w.dryRun}일 밀림)` : '💧 물 주기', tone: '',
+               go: () => $('waterCrop').click() });
+  return out;
+}
+function placeMarks() {
+  const box = $('marks');
+  if (!box || !roomView || !roomView.screenPosOf) return;
+  const c = $('roomCanvas');
+  for (const el of box.children) {
+    const key = el.dataset.key;
+    let sp = null; try { sp = roomView.screenPosOf(key); } catch { }
+    /* 화면 밖이거나 카메라 뒤면 감춘다 — 0으로 메꾸면 구석에 붙어 오해를 만든다 */
+    if (!sp) { el.style.display = 'none'; continue; }
+    el.style.display = '';
+    el.style.left = sp.x + 'px';
+    /* 발밑 좌표라 위로 올린다 — 화분 높이만큼 띄워야 물건을 안 가린다 */
+    el.style.top = Math.max(24, sp.y - 46) + 'px';
+  }
+}
+/* ★갉화면만 다시 그린다. draw() 전체를 부르면 저장·방 동기화까지 같이 돌아
+   대사 한 줄 넘길 때마다 그러면 낭비다. — 보이는 것만 맞춘다.
+   ★보이는 것 하나가 망가져도 턴은 돌아야 한다 — 각각 감싼다. */
+function refreshOverlays() {
+  try { updateHint(); } catch (e) { console.warn('[안내]', e && e.message); }
+  try { drawMarks(); }  catch (e) { console.warn('[말풍선]', e && e.message); }
+  try { drawWater(); }  catch (e) { console.warn('[물주기]', e && e.message); }
+}
+function drawMarks() {
+  const box = $('marks');
+  if (!box) return;
+  const want = (stageBusy() ? [] : markList());
+  /* 내용이 같으면 다시 만들지 않는다 — 매 턴 새로 만들면 뛰는 애니메이션이 끊긴다 */
+  const sig = want.map(m => m.key + '|' + m.ko).join(',');
+  if (box.dataset.sig !== sig) {
+    box.dataset.sig = sig;
+    box.innerHTML = '';
+    for (const m of want) {
+      const el = document.createElement('button');
+      el.className = 'mark' + (m.tone ? ' ' + m.tone : '');
+      el.dataset.key = m.key;
+      el.textContent = m.ko;
+      el.onclick = (e) => { e.stopPropagation(); m.go(); };
+      box.appendChild(el);
+    }
+  }
+  placeMarks();
+  if (want.length && markTick == null) markTick = setInterval(placeMarks, 120);
+  if (!want.length && markTick != null) { clearInterval(markTick); markTick = null; }
+}
+/* 지금 말풍선을 띄우면 안 되는 상황 — 이미 할 일이 분명하거나 화면이 딴 데 있다 */
+function stageBusy() {
+  const st = $('stage');
+  return drag.on || picked.mode || furnPicked.mode
+      || st.classList.contains('talking') || st.classList.contains('zoom')
+      || st.classList.contains('placing') || isFastForwarding();
+}
+
 function drawJourney() {
   const fp = S.firstPlay;
   if (!fp || !fp.enabled) return;
@@ -1833,6 +1958,7 @@ function draw() {
   drawPlantToday();         /* 오늘 자랐나 — 안 자랐으면 왜인지까지 */
   drawLedger();             /* 하루에 얼마 나가고 콩나물이 얼마를 덜어 주나 */
   drawWater();              /* 물을 줘야 하나 */
+  try { drawMarks(); } catch (e) { console.warn('[말풍선]', e && e.message); }
   drawShop();               /* 주문·다시 심기·팔기 */
   ffHint();                 /* 상태가 바뀌면 "무엇까지 감는지"도 바뀐다 */
   syncRoom();               /* 방 전경도 같은 상태를 본다 — 화면이 둘로 갈리면 안 된다 */
@@ -2009,7 +2135,7 @@ const FACE_FILE = {
 };
 function dlgPaint() {
   const line = dlg.current();
-  if (!line) { $('stage').classList.remove('talking'); ffResume(); try { updateHint(); } catch { } return; }
+  if (!line) { $('stage').classList.remove('talking'); ffResume(); refreshOverlays(); return; }
   const sp = SPEAKERS[line.who] || { ko: line.who, portrait: false };
   const box = $('dlgBox');
   box.classList.toggle('noface', !sp.portrait);
@@ -2031,9 +2157,10 @@ function dlgPaint() {
       `url(${dir}/portrait_${line.who}_${file}.png), url(${dir}/portrait_${line.who}_neutral.png)`;
   } else $('dlgFace').style.backgroundImage = '';   /* ★식물신 — CSS 의 빛이 드러나야 한다 */
   $('stage').classList.add('talking');
-  /* ★대화가 열리면 손가락을 걷는다. updateHint 는 draw() 때만 도는데
-     부팅 끝에 dlgOpen('intro') 가 불려서, 이미 그려진 손가락이 대화 위에 그대로 남았다. */
-  try { updateHint(); } catch { }
+  /* ★대화가 열리고 닫힐 때 곉화면을 다시 그린다. draw() 는 턴이 돌 때만 도는데
+     대화는 그 사이에 열리고 닫힌다 — 그러면 손가락과 말풍선이 대화 직전 상태로 멈춰 있다.
+     실제로 말풍선이 대화 뒤에 안 떴다. */
+  refreshOverlays();
 }
 /* 대화가 뜨면 빨리감기를 세운다 — 말하는 동안 날짜가 계속 가면 대사와 화면이 어긋난다 */
 let ffWasRunning = false;
@@ -2103,6 +2230,8 @@ async function bootRoomView() {
     /* 진단용 손잡이. 브라우저 콘솔에서 방 상태를 볼 수 있게 낸다 —
        읽기용이고 게임은 이걸 안 쓴다(밖에서 켜면 검증이 장식이 되는 것과 같은 이유로 세터는 없다). */
     window.__rv = roomView; window.__picked = picked; window.__drag = drag; window.__io = io;
+    /* 진단용 — 말풍선이 왜 안 뜨는지 밖에서 볼 수 있게. 읽기 전용이다 */
+    window.__marks = { list: () => markList(), busy: () => stageBusy() };
     window.__S = () => S;                    /* 진단용 — 읽기 전용으로 쓴다 */
     $('stage').classList.add('room-ok');     /* 방이 떴다 — 빈 무대 안내를 걷는다 */
     bootProgress(null);                      /* 진행 표시를 걷는다 */
