@@ -11,6 +11,7 @@
 import { readFileSync } from 'node:fs';
 import { createFirstPlayState, firstPlayRulesFromBalance, placeBeansprout,
 
+         advanceBeansproutDay, eatFromPantry, resowBeansprout } from '../src/game/first_play.js';
 /* ★자가 제한 — 재는 도구가 재는 대상보다 오래 살면 안 된다.
    이게 없어서 측정 하나가 21시간 매달려 있었다. 헤드리스 크롬은 무언가를
    기다리다 영영 안 끝나는 일이 실제로 생긴다. 시간은 환경변수로 늘릴 수 있다. */
@@ -19,9 +20,10 @@ const _wd = setTimeout(() => {
   console.error('⏱ 자가 제한 ' + Math.round(_WATCHDOG_MS / 1000) + '초를 넘겨 멈춥니다 — 재는 중에 멈춘 것입니다.');
   process.exit(2);
 }, _WATCHDOG_MS);
+/* ★타이머가 프로세스를 붙잡으면 안 된다 — unref 를 빠뜨려서
+   재기를 다 끝낸 도구가 제한 시간까지 안 죽고 매달려 있었다(넣자마자 났다). */
+_wd.unref && _wd.unref();
 process.on('exit', () => clearTimeout(_wd));
-
-         advanceBeansproutDay, eatFromPantry, resowBeansprout } from '../src/game/first_play.js';
 const R = firstPlayRulesFromBalance(JSON.parse(readFileSync('./data/balance/characters.json','utf8')));
 console.log(`규칙 — 자라는 날 ${R.harvestDays}일 · 한 끼 ${R.mealWon}원 · 하루 식비 ${R.dailyFoodWon}원 · 하루 상한 ${R.dailyCropMealCap}끼 · 씨앗 ${R.seedWonPerSiru}원/시루`);
 console.log(`품질 — ${R.quality.map(q=>`${q.ko} ${q.meals}끼`).join(' · ')}`);

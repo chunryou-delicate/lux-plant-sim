@@ -9,6 +9,9 @@ const _wd = setTimeout(() => {
   console.error('⏱ 자가 제한 ' + Math.round(_WATCHDOG_MS / 1000) + '초를 넘겨 멈춥니다 — 재는 중에 멈춘 것입니다.');
   process.exit(2);
 }, _WATCHDOG_MS);
+/* ★타이머가 프로세스를 붙잡으면 안 된다 — unref 를 빠뜨려서
+   재기를 다 끝낸 도구가 제한 시간까지 안 죽고 매달려 있었다(넣자마자 났다). */
+_wd.unref && _wd.unref();
 process.on('exit', () => clearTimeout(_wd));
 
 const BASE = process.env.BYEOT_URL || 'http://localhost:8971';
