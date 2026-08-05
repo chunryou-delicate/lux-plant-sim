@@ -186,6 +186,63 @@ function potPartOf(group) {
   return group.children.find(c => !leaves.includes(c)) || group;
 }
 
+/* ★★ 무리 짓기 — 한 자리에 용기 N개를 늘어놓는 자리표 (2026-08-05)
+   ══════════════════════════════════════════════════════════════════
+   ★ 왜 필요한가 — **시루를 12개 사도 방에는 한 그루만 섰다.**
+     작물 자리(site)는 좌표가 하나고 그 위에서 시루 N개가 돈다(first_play §pots[]).
+     그런데 방뷰는 그 좌표에 그루를 **하나만** 세운다. 플레이어는 7,000원짜리 시루를
+     열두 번 사고 화면에서는 아무것도 안 바뀌는 것을 본다 —
+     「사면 돈만 없어진다」와 같은 종류의 사고다. 겹쳐 쌓고 숫자만 적어 두는 길도 있지만
+     그러면 "12개"가 눈으로 안 읽힌다. **늘어놓아야 산 것이 보인다.**
+
+   ★ 자리표는 **정육각 격자**에서 고른다.
+     이 파일의 자리 판정은 전부 회전무관 지름(= 외접원) 하나로만 돈다(§rotationSafeDiameter).
+     그러니 무리도 **둥글게** 뭉쳐야 값이 싸다. 골라내는 규칙은 셋뿐이다.
+       ① 격자점을 넉넉히 깔고
+       ② 격자의 대칭 중심 셋(격자점 · 변의 중점 · 삼각형 무게중심)을 후보로 두고
+       ③ 각 후보에서 가까운 n점을 골라 **외접원이 제일 작은** 후보를 쓴다
+     ①~③ 에 난수가 없다. 하루가 갈 때마다 다시 짓는데 그때마다 자리가 바뀌면
+     시루가 들썩인다(§buildMusun 의 황금각과 같은 이유다).
+
+   ★ 얼마나 좋은가 — 이 격자가 내는 폭은 **실제로 세워 놓고 정점을 훑어 쟀고**,
+     원 안에 원 n개 채우기의 **문헌 최적값**(R/r · n=3 은 1+2/√3, n=4 는 1+√2, n=12 는 4.0294)을
+     견줄 자로 썼다.
+       n=12  이 격자 0.973m · 최적 0.967m — 0.6% 차이
+       n=3·6·7 은 최적과 **같다**. 제일 나쁜 n=4 가 13% 다.
+     표를 베끼지 않고 이만큼 나온다. 표를 들이면 표에 없는 n 에서 규칙이 끊긴다
+     (체력 계통이 말하는 노가다의 폭이 시루 15개다 — stamina.js §STAMINA_MAX).
+
+   ⚠ 돌려주는 좌표·폭은 **용기 지름 1 기준**이다. 실제 지름을 곱해서 쓴다 —
+     그래야 자리 한도에 맞춰 무리를 통째로 줄일 때 자리표를 다시 안 짜도 된다. */
+const _clusterCache = new Map();
+function clusterUnit(n) {
+  const k = Math.max(1, Math.round(Number(n)) || 1);
+  if (_clusterCache.has(k)) return _clusterCache.get(k);
+  let out;
+  if (k === 1) out = { offs: [{ x: 0, z: 0 }], span: 1 };
+  else {
+    const H = Math.sqrt(3) / 2;                       // 격자 줄 간격
+    const R = Math.ceil(Math.sqrt(k)) + 2;            // 이만큼만 깔면 n점이 반드시 안에 든다
+    const lat = [];
+    for (let a = -R; a <= R; a++) for (let b = -R; b <= R; b++)
+      lat.push({ x: a + b * 0.5, z: b * H });
+    const cands = [{ x: 0, z: 0 }, { x: 0.5, z: 0 }, { x: 0.5, z: 1 / (2 * Math.sqrt(3)) }];
+    let best = null;
+    for (const c of cands) {
+      const near = lat.map(p => ({ x: p.x - c.x, z: p.z - c.z }))
+        .map(p => ({ p, d2: p.x * p.x + p.z * p.z }))
+        /* 같은 거리면 각도로 가른다 — 정렬이 흔들리면 같은 n 이 판마다 다른 모양이 된다 */
+        .sort((u, v) => u.d2 - v.d2 || Math.atan2(u.p.z, u.p.x) - Math.atan2(v.p.z, v.p.x))
+        .slice(0, k);
+      const r = Math.sqrt(near[near.length - 1].d2);
+      if (!best || r < best.r - 1e-12) best = { r, offs: near.map(u => u.p) };
+    }
+    out = { offs: best.offs, span: 2 * best.r + 1 };
+  }
+  _clusterCache.set(k, out);
+  return out;
+}
+
 async function loadJSON(url) {
   const r = await fetch(url);
   if (!r.ok) throw new Error(`데이터를 못 읽었습니다: ${url} (${r.status})`);
@@ -895,36 +952,65 @@ export async function createRoomView(canvas, opts = {}) {
     return g;
   }
 
+  /* 시루 + 콩나물. 콩나물은 어두울수록 좋은 작물이라 밴드 해석이 몬스테라와 반대다.
+     여기서는 '자란 정도'만 그린다 — 판정은 게임 쪽 몫이다.
+
+     ★ 시루가 **여럿**일 수 있다 (2026-08-05 · §clusterUnit).
+       `spec.count` 가 시루 수다. 안 주거나 1 이면 **예전 식이 글자 그대로 남는다**
+       (span=1 이라 곱해도 안 바뀌고, 자리표는 원점 한 점뿐이다).
+     ★★ `limit` 의 뜻은 **안 바꾼다** — 여전히 「이 자리가 받아 줄 회전무관 지름[m]」이고,
+       그 지름은 **무리 전체**의 것이다. 뜻을 "시루 한 개"로 바꾸면 potFits·surfaceAt·
+       fitPotToLimit 이 전부 무리보다 작은 값으로 판정하게 되어, 12개짜리 무리가
+       창턱을 통과한 뒤 방바닥까지 삐져나온다 — §rotationSafeDiameter 가 적어 둔
+       "네모 화분을 폭으로 재서 창턱을 통과시킨" 사고의 판박이다.
+       ⇒ 화면이 넣을 값은 방뷰에 묻는다: `plantPotD('beansprout', n)`.
+     ⚠ 무리가 한도보다 크면 **통째로 줄인다.** 무순 재배판과 같은 규칙이다 —
+       "안 들어가면 조용히 걸쳐 두지 않는다". 대신 시루 한 개도 같이 작아진다. */
   async function buildBeansprout(spec, limit) {
-    /* 시루 + 콩나물. 콩나물은 어두울수록 좋은 작물이라 밴드 해석이 몬스테라와 반대다.
-       여기서는 '자란 정도'만 그린다 — 판정은 게임 쪽 몫이다. */
     const p01 = clamp(spec.progress01 ?? 1, 0, 1);
     const g = new THREE.Group();
-    const siru = await loadGLB(AT('../../assets/crops/container_siru_open.glb'));
-    const bb = new THREE.Box3().setFromObject(siru);
+    const cl = clusterUnit(countOf('beansprout', spec.count));
+    /* 무리 전체의 지름 → 시루 한 개의 지름. n=1 이면 span=1 이라 예전 want 와 같다. */
+    const full = SIRU_D * cl.span;
+    const want = Math.min(full, limit === Infinity ? full : limit) / cl.span;
+
+    /* ★ 시루들은 한 그룹에 모아 두고 그걸 potPart 로 못 박는다.
+       안 그러면 potPartOf 가 "잎이 아닌 첫 자식" 규칙으로 **시루 하나만** 잡아
+       12개짜리 무리의 지름이 0.24 로 나온다. 티가 안 나는 종류의 거짓말이다. */
+    const pots = new THREE.Group();
+    const siru0 = await loadGLB(AT('../../assets/crops/container_siru_open.glb'));
+    const bb = new THREE.Box3().setFromObject(siru0);
     const cur = Math.max(bb.max.x - bb.min.x, bb.max.z - bb.min.z) || SIRU_D;
-    const want = Math.min(SIRU_D, limit === Infinity ? SIRU_D : limit);
-    siru.scale.setScalar(want / cur);
-    const bb2 = new THREE.Box3().setFromObject(siru);
-    siru.position.y -= bb2.min.y;
-    g.add(siru);
+    siru0.scale.setScalar(want / cur);
+    const bb2 = new THREE.Box3().setFromObject(siru0);
     const rim = bb2.max.y - bb2.min.y;
+    cl.offs.forEach((o, i) => {
+      const s = i === 0 ? siru0 : siru0.clone(true);
+      s.position.set(o.x * want, -bb2.min.y, o.z * want);
+      /* 검사가 **실제로 선 시루를 센다**. 상태를 되읽는 게 아니라 장면을 센다 */
+      s.userData = { ...(s.userData || {}), containerIndex: i };
+      pots.add(s);
+    });
+    g.add(pots);
+    g.userData.potPart = pots;
 
     const stage = p01 < 0.34 ? 's' : p01 < 0.7 ? 'm' : 'l';
     const body = await loadGLB(AT(`../../assets/crops/beansprout_${stage}.glb`));
     const n = Math.round(lerp(4, 11, p01));
-    for (let i = 0; i < n; i++) {
-      const c = i === 0 ? body : body.clone(true);
+    let made = 0;
+    for (const o of cl.offs) for (let i = 0; i < n; i++) {
+      const c = made++ === 0 ? body : body.clone(true);
       const a = (i / n) * Math.PI * 2 + i * 0.7;
       const r = want * 0.30 * Math.sqrt((i + 0.4) / n);
       c.scale.setScalar(want / SIRU_D);
-      c.position.set(Math.cos(a) * r, rim * 0.55, Math.sin(a) * r);
+      c.position.set(o.x * want + Math.cos(a) * r, rim * 0.55, o.z * want + Math.sin(a) * r);
       c.rotation.y = a;
       c.rotation.z = (Math.random() - 0.5) * 0.18;
       g.add(c);
     }
     g.userData.kind = 'beansprout';
     g.userData.leaves = [];
+    g.userData.containerCount = cl.offs.length;
     return g;
   }
 
@@ -1005,15 +1091,23 @@ export async function createRoomView(canvas, opts = {}) {
        potD          그 종류가 차지하는 **회전무관 지름[m]**. potD 를 안 준 호출부의 기본값이다
        growthByDays  true = 형태를 '유효 생장일'이 정한다(몬스테라)
                      false = progress01 이 정한다(작물). days 는 progress01×100 으로만 쓴다
+       clustered     true = 한 자리에 용기 **여럿**을 늘어놓을 수 있다(spec.count · §clusterUnit)
        build         실제 조립. 던지는 것은 buildPlantGroup 한 곳뿐이다
      ⚠ 없는 이름의 기본값은 **예전 그대로**다 — 지름은 몬스테라 화분, 생장은 progress01. */
   const PLANT_KINDS = Object.freeze({
-    monstera:   { potD: MONSTERA_POT_D, growthByDays: true,  build: buildMonstera },
-    beansprout: { potD: SIRU_D,         growthByDays: false, build: buildBeansprout },
-    musun:      { potD: MUSUN_D,        growthByDays: false, build: buildMusun }
+    monstera:   { potD: MONSTERA_POT_D, growthByDays: true,  clustered: false, build: buildMonstera },
+    beansprout: { potD: SIRU_D,         growthByDays: false, clustered: true,  build: buildBeansprout },
+    musun:      { potD: MUSUN_D,        growthByDays: false, clustered: false, build: buildMusun }
   });
-  /* 모르는 이름은 몬스테라 화분 지름으로 떨어진다 — 옛 삼항의 else 가지와 같은 값이다 */
-  const potDOf = kind => (PLANT_KINDS[kind] || PLANT_KINDS.monstera).potD;
+  /* ★ 그 종류가 실제로 세울 용기 수. **무리를 못 짓는 종류는 무조건 1 이다** —
+     여기서 count 를 그냥 믿으면 몬스테라에 count:3 을 준 호출부가 3배 넓은 자리를
+     차지한다고 통보받는데 방에는 한 그루만 선다. 안 지을 것의 자리를 잡아 두지 않는다. */
+  const countOf = (kind, count) => (PLANT_KINDS[kind] && PLANT_KINDS[kind].clustered)
+    ? Math.max(1, Math.round(Number(count)) || 1) : 1;
+  /* 모르는 이름은 몬스테라 화분 지름으로 떨어진다 — 옛 삼항의 else 가지와 같은 값이다.
+     ★ count 를 주면 **무리 전체**의 지름이다. 안 주면 예전과 같은 한 개 지름이다. */
+  const potDOf = (kind, count) =>
+    (PLANT_KINDS[kind] || PLANT_KINDS.monstera).potD * clusterUnit(countOf(kind, count)).span;
   /* 옛 `kind === 'monstera'` 와 **정확히** 같다(모르는 이름은 false) */
   const usesGrowthDays = kind => !!(PLANT_KINDS[kind] && PLANT_KINDS[kind].growthByDays);
 
@@ -1217,6 +1311,10 @@ export async function createRoomView(canvas, opts = {}) {
   function needsRebuild(prev, spec, days) {
     if (!prev) return true;
     if ((prev.spec.kind || 'monstera') !== (spec.kind || 'monstera')) return true;
+    /* ★ 용기 수가 바뀌면 **날이 안 가도** 다시 짓는다 (2026-08-05 · §clusterUnit).
+       이걸 빠뜨리면 시루를 산 그날은 화면이 안 바뀐다 — 고치려던 바로 그 증상이
+       "하루 뒤에야 보인다"로 모습만 바꿔 남는다. */
+    if (countOf(spec.kind, prev.spec.count) !== countOf(spec.kind, spec.count)) return true;
     if ((prev.days ?? null) !== days) {
       if (performance.now() - (prev.builtAt || 0) < REBUILD_MIN_MS) return false;
       return true;
@@ -1304,7 +1402,10 @@ export async function createRoomView(canvas, opts = {}) {
        at     { x, y, z, rotY?, onUid?, occIdx? } — place.js 가 정본으로 정한 모양
        spec   setPlant 과 같은 그림 명세. 여기에만 있는 것 두 가지
                 potD      이 화분이 차지할 지름 상한[m]. 넘으면 줄이고 경고를 남긴다
+                          ★ count 를 줄 때는 **무리 전체**의 상한이다(§clusterUnit)
                 plantId   kind 의 다른 이름(계약 쪽 용어). kind 가 있으면 kind 가 이긴다
+              ★ count — 그 자리에 세울 용기 수(콩나물 시루). 안 주거나 1 이면 예전과
+                **완전히 같다.** 넣을 지름은 방뷰에 묻는다: plantPotD(kind, count)
 
      ★★ 옛 자리는 **반드시** 지운다.
         같은 화분이 어느 열쇠로 놓여 있든 전부 걷어내고 새로 세운다(removePlantOf).
@@ -1588,7 +1689,9 @@ export async function createRoomView(canvas, opts = {}) {
       return 0;
     }
     if (!guideRings.size) buildGuideRings();
-    const potD = Number.isFinite(opt.potD) ? opt.potD : potDOf(opt.plantId);
+    /* ★ opt.count 를 주면 **무리 전체**로 잰다 — 시루 12개를 끌고 있는데 "한 개는
+       들어갑니다"로 원을 밝히면, 놓는 순간 무리가 통째로 줄어든다(§clusterUnit) */
+    const potD = Number.isFinite(opt.potD) ? opt.potD : potDOf(opt.plantId, opt.count);
     let nearId = null, nearD = Infinity;
     if (opt.near && Number.isFinite(opt.near.x) && Number.isFinite(opt.near.z)) {
       for (const id of guideRings.keys()) {
@@ -4945,7 +5048,9 @@ export async function createRoomView(canvas, opts = {}) {
         pos: { x: p.group.position.x, y: p.group.position.y, z: p.group.position.z },
         yaw: p.group.rotation.y || 0,
         at: p.at ? { ...p.at } : null,
-        potD: p.potD ?? null
+        potD: p.potD ?? null,
+        /* 실제로 **세워진** 용기 수다. spec 을 되읽는 게 아니라 그루가 스스로 적어 둔 값이다 */
+        count: p.group.userData.containerCount || 1
       }));
     },
     /* 반투명 유령을 그 좌표에 세운다. opt.valid=false 면 붉게.
@@ -4955,6 +5060,7 @@ export async function createRoomView(canvas, opts = {}) {
 
     /* 추천 자리 원형 가이드. on=false 면 감춘다(지우지 않는다 — 다시 켤 때 값싸다).
          opt.potD/plantId  못 올라가는 자리를 어둡게 구분한다
+         opt.count         용기 여럿을 끌고 있을 때의 수(§clusterUnit). 안 주면 1
          opt.near {x,z}    커서에 제일 가까운 자리를 굵고 밝게
        ★ 원은 안내지 제약이 아니다. 원 밖에도 놓을 수 있다.
        돌려주는 값은 이 화분이 올라갈 수 있는 자리 수. */
@@ -5108,7 +5214,9 @@ export async function createRoomView(canvas, opts = {}) {
       let d = null;
       if (typeof plantOrDiameter === 'number') d = plantOrDiameter;
       else if (plantOrDiameter && plantOrDiameter.kind)
-        d = potDOf(plantOrDiameter.kind);
+        /* ★ count 를 같이 주면 **무리 전체**로 본다 — 시루 12개를 창턱에 올리려는
+           물음에 "시루 한 개는 들어갑니다"로 답하지 않는다 */
+        d = potDOf(plantOrDiameter.kind, plantOrDiameter.count);
       else if (t.plant) d = rotationSafeDiameter(potPartOf(t.plant.group), t.plant.group);
       return { slotId: t.key, maxPotD: Number.isFinite(limit) ? limit : null, diameter: d,
                ok: d == null ? null : !Number.isFinite(limit) || d <= limit + 1e-4 };
@@ -5122,8 +5230,16 @@ export async function createRoomView(canvas, opts = {}) {
        숫자를 화면 쪽에 베껴 두면 두 곳이 갈린다. 여기가 정본이고 화면은 물어서 쓴다.
          'monstera' 0.20 · 'beansprout' 0.24(시루) · 'musun' 0.20(재배판 — 0.4327 에서 줄였다. §MUSUN_D)
        모르는 이름은 몬스테라 화분 지름으로 떨어진다(예전 삼항의 else 와 같은 값).
-       ⚠ 무순이 폭 0.36 이 아니라 0.4327 인 이유는 §buildMusun 머리말에 있다. */
-    plantPotD(kind) { return potDOf(kind); },
+       ⚠ 무순이 폭 0.36 이 아니라 0.4327 인 이유는 §buildMusun 머리말에 있다.
+
+       ★ 둘째 인자 `count` — 그 자리에 용기를 **여럿** 세울 때의 무리 전체 지름이다
+         (2026-08-05 · §clusterUnit). 안 주거나 1 이면 예전 값 그대로다.
+           plantPotD('beansprout')      → 0.240   (시루 1개)
+           plantPotD('beansprout', 12)  → 0.973   (시루 12개 무리)
+         무리를 못 짓는 종류는 count 를 줘도 안 늘어난다 — 안 지을 것의 자리를 안 잡는다.
+       ⇒ 화면은 이 값을 **setPlantAt 의 spec.potD 와 surfaceAt 의 opt.potD 양쪽에** 넣는다.
+         한쪽만 넣으면 놓을 때는 통과하고 그릴 때는 줄어든다(또는 그 반대다). */
+    plantPotD(kind, count) { return potDOf(kind, count); },
     /* 이 방뷰가 그릴 줄 아는 종류들 — 화면이 "심을 수 있나"를 미리 물어보는 창구 */
     plantKinds() {
       return Object.keys(PLANT_KINDS).map(k => ({ kind: k, potD: PLANT_KINDS[k].potD,
