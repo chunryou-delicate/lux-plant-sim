@@ -59,6 +59,8 @@ import { dliFromContract } from './growth_adapter.js';
 import { headroomCheck, PLANT_POT_D_REF } from './headroom.js';
 import { rehomeCuttings, stepCuttings, cuttableNow } from './propagation.js';
 import { stepShop } from './shop.js';
+/* 체력 — 하루에 돌볼 수 있는 양. 규칙은 전부 그쪽 모듈이 갖는다(docs/stamina.md) */
+import { resetDay, spend as spendStamina, canAct as canActStamina } from './stamina.js';
 import { weekStats, WEATHER_P } from '../engine/weather.js';
 import { judgeDLI } from '../engine/daily_light.js';
 
@@ -517,6 +519,11 @@ export function nextDay(S, io) {
   }
 
   S.day++;
+  /* ★ 하루가 갔으니 체력이 **가득 찬다** (2026-08-05 · docs/stamina.md §4).
+     이월도 누적도 없다 — 쌓이게 두면 "며칠 참았다가 한꺼번에"가 최적해가 되어
+     하루의 리듬이 통째로 사라진다.
+     ⚠ 여기가 유일한 회복 자리다. 빨리감기는 이 함수를 날마다 부르므로 저절로 따라온다. */
+  resetDay(S, S.day);
 
   /* 방을 바꿨거나 가구가 사라졌으면 화분을 회수한다(5-4).
      ★ 방(room)까지 넘긴다 — 자유 좌표 화분은 슬롯 목록으로 판단할 수 없다.
@@ -888,6 +895,13 @@ export function harvestCrop(S, io) {
     const e = new Error('[수확] 시루를 먼저 방 안에 놓아 주세요');
     e.tutorialInput = true; throw e;
   }
+  /* ★ 체력 — 오늘 손이 남았나 (2026-08-05 · docs/stamina.md).
+     ⚠ **아무것도 바꾸기 전에** 묻는다. 반쯤 거두고 멈추면 그 회전이 통째로 어긋난다.
+     ⚠ `tutorialInput` 을 붙인다 — 이건 고장이 아니라 안내다(game.html isRecoverable). */
+  {
+    const st = canActStamina(S, 'harvest');
+    if (!st.ok) { const e = new Error('[수확] ' + st.reason); e.tutorialInput = true; throw e; }
+  }
   /* ★★ 2026-08-04 — `b.harvested`(하나라도 거뒀나)로 막지 않는다. 시차 판에서는 거의 늘 true 라
      **둘째 시루가 익어도 못 거두게 된다.** 판정은 언제나 "익은 시루가 있나"다(first_play.js). */
   if (!beansproutReady(fp)) {
@@ -910,6 +924,9 @@ export function harvestCrop(S, io) {
   let r = null, arrived = null, arrivalPhase = null;
   try {
     r = harvestBeansprout(fp, { day: S.day });
+    /* 실제로 거뒀으니 손을 쓴다. **던진 뒤가 아니라 성공한 뒤**에 깎는다 —
+       실패한 동작에 체력을 물리면 "아무 일도 안 났는데 오늘이 끝났다"가 된다. */
+    spendStamina(S, 'harvest');
     /* ★ 2026-08-05 — 종류가 늘어 "콩나물 수확"이 늘 맞는 말이 아니다. 거둔 것을 그대로 적는다 */
     const what = (r.byKind || []).map(g => `${g.kindKo} ${g.pots}개`).join(' · ') ||
                  `시루 ${r.harvestedPots}개`;

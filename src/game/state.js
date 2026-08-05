@@ -17,6 +17,8 @@ import { createFirstPlayState, placeBeansprout, placeCrop, resowBeansprout, wate
          beansproutWaterStatus, beansproutHarvestStatus, BEANSPROUT_ID,
          CROP_SITE_IDS, cropKindOf, cropSites, cropSiteOf } from './first_play.js';
 import { createTutorialState, yearDay0Of } from './tutorial.js';
+/* 체력 — 하루에 돌볼 수 있는 양. 규칙은 전부 그쪽 모듈이 갖는다(docs/stamina.md) */
+import { spend as spendStamina, canAct as canActStamina, createStaminaState } from './stamina.js';
 import { createShopState, useStock } from './shop.js';
 import { atFromSlot, isFreeSlotId, makeAt, resolvePlacement,
          inRoom, assertFurnitureAt } from './place.js';
@@ -127,6 +129,14 @@ export function newState(opt = {}) {
          ⚠ 재파종(씨앗값·자리 고르기)은 **자동이 아니다.** 그건 선택이라 대신 해 주면 안 된다.
        ★ 읽는 곳은 `loop.hasAutoHarvest(S)` 한 곳뿐이다 — 여러 곳에서 읽으면 반씩 켜진다. */
     perks: { autoHarvest: false },
+
+    /* ★★ 체력 — **하루에 돌볼 수 있는 양** (2026-08-05 박사님 확정 · docs/stamina.md).
+       규칙과 값은 전부 `src/game/stamina.js` 가 갖는다. 여기는 모양만 둔다
+       (`cuttings`·`perks` 와 같은 규약 — 두 곳이 갈리지 않게).
+       ★ 넣은 이유 한 줄: 「잉여 채소를 판다」가 들어오면 시루를 늘릴 이유가 **무한**해진다.
+         그전에는 끼니 상한 위가 버려져 저절로 멈췄는데, 팔 수 있으면 안 멈춘다.
+         체력이 그 상한이고, 그 상한이 곧 박사님이 원하신 노가다다. */
+    stamina: createStaminaState(),
 
     /* 경제는 3단계다. 표시만 하고 차감하지 않는다. */
     ledger: { today: { in: 0, out: 0 }, total: 0, electricityWon: 0 },
@@ -414,7 +424,16 @@ export function waterCrop(S, opt = {}) {
     e.tutorialInput = true;                 // 안내지 고장이 아니다
     throw e;
   }
+  /* ★ 체력 — 오늘 손이 남았나 (2026-08-05 · docs/stamina.md).
+     ⚠ **아무것도 바꾸기 전에** 묻는다. 반쯤 준 물은 없다. */
+  {
+    const st = canActStamina(S, 'water');
+    if (!st.ok) { const e = new Error('[물주기] ' + st.reason); e.tutorialInput = true; throw e; }
+  }
   const r = waterBeansprout(fp, S.day, opt);
+  /* 실제로 준 날만 깎는다 — 이미 준 시루에 또 눌러 봤자 아무 일도 안 나는데
+     그것까지 물리면 "눌렀더니 오늘이 끝났다"가 된다. */
+  if (r.watered) spendStamina(S, 'water');
   if (r.watered)
     pushLog(S, r.started > 1
       ? `💧 ${k.containerKo} ${r.started}개에 물을 주었습니다 — 오늘이 0일차입니다 ` +
@@ -489,8 +508,14 @@ export function resowCrop(S, opt = {}) {
 
   /* ★ 재고부터 뺀다. resowBeansprout 은 이력을 비우므로 되돌릴 수 없다 —
      "심어 놓고 씨앗이 없어서 실패"가 나면 그 회전이 통째로 사라진다. */
+  /* ★ 체력 — 재고를 빼기 **전에** 묻는다. 씨앗만 나가고 안 심기면 그 씨앗이 사라진다 */
+  {
+    const st = canActStamina(S, 'sow');
+    if (!st.ok) { const e = new Error(`[${k.ko}] ` + st.reason); e.tutorialInput = true; throw e; }
+  }
   if (sirusAdded > 0) useStock(S, k.containerItemId, sirusAdded);
   useStock(S, k.seedItemId, seedsUsed);            // 용기 하나에 씨앗 한 봉지
+  spendStamina(S, 'sow');
 
   const r = resowBeansprout(fp, { ...opt, kind: kindId, sirus, day: S.day });
   pushLog(S, `🌱 ${k.ko}을(를) 다시 심었습니다 — ${k.containerKo} ${r.resown}개 · ` +

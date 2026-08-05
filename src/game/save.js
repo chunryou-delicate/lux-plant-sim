@@ -50,6 +50,8 @@ import { createTutorialState } from './tutorial.js';
 import { inRoom, isFreeSlotId, makeAt } from './place.js';
 import { PROPAGATION_SCHEMA, rehomeCuttings, syncCuttingLeaves } from './propagation.js';
 import { SHOP_SCHEMA, createShopState } from './shop.js';
+/* 체력 — 규칙(최대치)은 저쪽 것이다. 세이브는 남은 양만 싣는다(docs/stamina.md) */
+import { STAMINA_MAX, createStaminaState } from './stamina.js';
 import { STORY_SCHEMA, createStoryState } from './oneroom.js';
 
 /* 저장 봉투의 스키마. **모르는 값이면 읽지 않는다**(fail-loud). */
@@ -76,7 +78,7 @@ export const DLI_HIST_KEEP = null;
    조용히 안 저장되는 칸이 생기는 것이 제일 나쁘다. */
 const KNOWN_STATE_KEYS = Object.freeze([
   'schema', 'day', 'timeScale', 'sim', 'home', 'lamps',
-  'pots', 'cuttings', 'firstPlay', 'story', 'tutorial', 'shop', 'perks', 'dliHist', 'ledger', 'log'
+  'pots', 'cuttings', 'firstPlay', 'story', 'tutorial', 'shop', 'perks', 'stamina', 'dliHist', 'ledger', 'log'
 ]);
 
 /* ---------------------------------------------------------------
@@ -620,6 +622,13 @@ export function serialize(S, opt = {}) {
          사라지는" 유형이 난다. 칸이 먼저 있어야 그 유형이 아예 안 생긴다.
          ⚠ 없는(옛) 세이브는 아래 복원에서 기본값(전부 꺼짐)으로 열린다. */
       perks: { autoHarvest: !!(S.perks || {}).autoHarvest },
+      /* ★★ 체력 — 하루에 돌볼 수 있는 양 (2026-08-05 · docs/stamina.md).
+         **`left` 만 싣는다.** `max` 는 규칙(stamina.STAMINA_MAX)이지 판의 상태가 아니다 —
+         세이브에 넣으면 나중에 최대치를 바꿔도 옛 판만 옛 값으로 도는 유령이 생긴다.
+         `spentToday` 도 안 싣는다. 표시용이고 날이 바뀌면 어차피 0 이다.
+         ⚠ 옛 세이브에는 이 칸이 없다 — 그때는 **가득 찬 채로** 연다(아래 복원).
+           0 으로 열면 "껐다 켰더니 오늘 아무것도 못 한다"가 된다. */
+      stamina: { left: needInt(((S.stamina || {}).left ?? STAMINA_MAX), 'stamina.left', { min: 0 }) },
       /* ★ 자르지 않는다 — growth 복원의 입력이다(맨 위 §growth). null 은 '못 잰 날'이라 그대로 둔다. */
       dliHist: needArr(S.dliHist || [], 'dliHist')
         .map((v, i) => (v == null ? null : needNum(v, `dliHist[${i}]`))),
@@ -982,6 +991,13 @@ export function deserialize(raw, opt = {}) {
 
   /* 보상 — 없는(옛) 세이브면 전부 꺼진 채로 연다. 지어내지 않는다(state.js §perks). */
   if (st.perks) S.perks.autoHarvest = !!st.perks.autoHarvest;
+
+  /* 체력 — 없는(옛) 세이브면 **가득 찬 채로** 연다(위 §stamina).
+     `max` 는 규칙에서 새로 오므로 최대치를 바꾸면 옛 판도 그 값으로 돈다.
+     ⚠ 저장된 `left` 가 지금 최대치보다 크면 잘라 낸다 — 최대치를 낮춘 뒤 열면 그럴 수 있다. */
+  S.stamina = createStaminaState();
+  if (st.stamina && Number.isInteger(st.stamina.left))
+    S.stamina.left = Math.max(0, Math.min(S.stamina.max, st.stamina.left));
 
   /* ── 무결성 ──────────────────────────────────────────────── */
   const report = {

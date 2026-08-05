@@ -154,6 +154,12 @@
   #bottom .quest{margin:0 0 9px;font-size:13.5px;line-height:1.5;color:var(--ink);
           background:rgba(255,180,84,.09);border:1px solid rgba(255,180,84,.20);
           border-radius:11px;padding:8px 11px}
+  /* 체력 — 점으로 센다. 숫자만 두면 "10 중 7"을 읽어야 하는데, 점은 **한눈에** 남은 양이 보인다 */
+  #staBar{display:flex;align-items:center;gap:8px;margin:0 0 7px;padding:0 2px;
+    font-size:11.5px;color:var(--dim)}
+  #staDots{letter-spacing:2px;font-size:13px;line-height:1;color:var(--leaf)}
+  #staBar.empty #staDots{color:#e8615a}
+  #staBar.empty b{color:#e8615a}
   .actionbar{display:flex;gap:7px}
   /* ★엄지로 누르는 자리. 44px 밑으로 내리지 말 것 */
   .actionbar button{flex:1;min-height:var(--tap);font-family:'Jua';font-size:14px;border-radius:12px}
@@ -767,6 +773,11 @@
          갇혀 있어서 **첫 플레이 동안 회전이 1에서 멈췄다** — 70일을 눌러도 안 늘었다.
          심기는 상점 일이 아니라 물주기·거두기와 같은 **작물 일**이라 여기가 제자리다. -->
     <button id="resow" style="display:none">🌱 콩나물 다시 심기</button>
+    <!-- ★★ 체력 — 하루에 돌볼 수 있는 양 (2026-08-05 · docs/stamina.md).
+         **동작 버튼 바로 위**에 둔다. 상단 자원칩에 넣으면 누를 것과 멀어지고,
+         그 줄은 이미 폰 세로에서 두 줄로 접힌다(QA 2026-08-05).
+         손이 남았나를 **누르기 직전에** 보는 것이 이 값의 쓸모다. -->
+    <div id="staBar" style="display:none"><span id="staDots"></span><b id="staText"></b></div>
     <div class="actionbar">
       <button id="next" disabled>다음 날 ▸</button>
       <button id="ff" class="ghost" disabled>▶▶ 빨리감기</button>
@@ -1154,6 +1165,8 @@ import { nextDay, runDays, avg, rollingAvg, harvestCrop,
          startFastForward, stopFastForward, isFastForwarding, nextEventPreview,
          timeModeOf, FAST_MODE_MAX_DAYS } from './src/game/loop.js';
 import { renderHUD, renderLog, renderReport, renderSpark } from './src/game/ui.js';
+/* 체력 — 값만 읽는다. 규칙도 문구도 여기서 짓지 않는다(docs/stamina.md) */
+import { staminaView } from './src/game/stamina.js';
 
 const ARRIVAL_POT_D = FIRST_PLAY_ASSETS.monsteraPotDiameterM;
 const $ = (id) => document.getElementById(id);
@@ -2310,6 +2323,25 @@ function drawSow() {
   btn.title = seeds < 1 ? '콩 씨앗을 먼저 주문하세요' : '';
 }
 
+/* ══ 체력 — 오늘 손이 얼마나 남았나 (2026-08-05 · docs/stamina.md) ═════════
+   ★ 문구를 여기서 만든다. `stamina.js` 는 값만 낸다 —
+     규칙 모듈이 화면 말을 갖기 시작하면 두 곳이 갈린다.
+   ★ 첫 플레이가 안 도는 판(검수)에서는 안 보여 준다 — 셈이 안 도는데 칸만 뜨면 소음이다. */
+function drawStamina() {
+  const el = $('staBar');
+  if (!el) return;
+  const v = staminaView(S);
+  const on = !!(v && S.firstPlay && S.firstPlay.enabled);
+  el.style.display = on ? '' : 'none';
+  if (!on) return;
+  el.classList.toggle('empty', v.empty);
+  /* 채운 점 = 남은 손. 빈 점 = 오늘 쓴 손. 열 칸이라 한눈에 세어진다 */
+  $('staDots').textContent = '●'.repeat(v.left) + '○'.repeat(Math.max(0, v.max - v.left));
+  $('staText').textContent = v.empty
+    ? '오늘은 여기까지 — [다음 날]을 누르면 다시 움직입니다'
+    : `오늘 손 ${v.left}/${v.max}`;
+}
+
 function drawWater() {
   const b = $('waterCrop');
   if (!b) return;
@@ -2662,6 +2694,7 @@ function draw() {
   drawLedger();             /* 하루에 얼마 나가고 콩나물이 얼마를 덜어 주나 */
   drawHarvest();            /* 거둘 때가 됐나 */
   drawWater();              /* 물을 줘야 하나 */
+  drawStamina();            /* 오늘 손이 얼마나 남았나 — 누르기 직전에 보는 값이다 */
   drawSow();                /* 다시 심어야 하나 */
   try { drawMarks(); } catch (e) { console.warn('[말풍선]', e && e.message); }
   drawShop();               /* 주문·다시 심기·팔기 */
