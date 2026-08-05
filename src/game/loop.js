@@ -60,6 +60,97 @@ import { headroomCheck, PLANT_POT_D_REF } from './headroom.js';
 import { rehomeCuttings, stepCuttings, cuttableNow } from './propagation.js';
 import { stepShop } from './shop.js';
 import { weekStats, WEATHER_P } from '../engine/weather.js';
+import { judgeDLI } from '../engine/daily_light.js';
+
+/* ══ 걷는 속도 — 밝기가 「품질」만이 아니라 「속도」도 정한다 (2026-08-05 박사님 확정) ══
+   ------------------------------------------------------------------------------
+   그 전까지 밝기는 **켜짐/꺼짐 두 값**이었다. 7일평균이 min(3.0) 위면 달력 하루가 그대로
+   생장 하루였고 아래면 0 이었다. 그래서 DLI 3.77 과 12.0 이 **둘 다 잎당 72일**이었고,
+   식물등 25,000원이 사는 것은 잔액 −25,000원뿐이었다(test_balance_routes ①-1).
+
+   ★★ 전역 생장 곡선은 **한 글자도 안 건드린다.**
+     plant_grow.html 의 `GROWTH +1` · 143 · 146 · `spawnStep` · `matSpan` · `timeCurve` 는 정본이고
+     첫 플레이 재현이 거기 걸려 있다. 여기서 바꾸는 것은 **그 곡선 위를 걷는 속도**뿐이다 —
+     "달력 하루가 생장일 몇 일어치인가". 곡선은 그대로 두고 걷는 사람만 빨라진다.
+
+   ★ 왜 이 자리인가
+     ① `advanceTo(달력+1)` 를 부르는 곳이 여기 하나뿐이다. 다른 자리에서 속도를 걸면
+        누가 하루를 늘렸는지 코어 밖에서는 못 읽는다.
+     ② `setDailyLight` → `S.dliHist.push` 가 여기서 **1:1** 로 쌓인다. 그 짝이 곧
+        세이브 재생(save.restoreGrowth)의 입력이라, 여기서 늘리면 재생도 같이 늘어난다.
+
+   ★★★ 왜 **빠르게** 하고 느리게 하지 않았나 — 이게 이 설계의 핵심이고, 되돌리기 쉬운 자리다.
+     처음엔 반대로 만들었다: `best` 를 1.0 에 두고 `slow` 를 0.7 로 내려 **어두우면 하루를 거른다.**
+     실측에서 두 가지가 깨졌다.
+       ① **세이브가 안 맞는다.** `save.restoreGrowth` 는 `dliHist` 를 한 칸당 `advanceTo` 한 번으로
+          되밟는다(save.js §growth). 코어가 하루를 걸러도 재생은 안 거르므로,
+          **저장 53일 → 복원 57일** 이 된다(test_save H). 거르는 쪽은 코어가 삼킨 하루를
+          이력에 남길 방법이 없다 — 늘리는 쪽은 `setDailyLight` 를 한 번 더 부르는 것이
+          곧 이력 한 칸이라 **재생이 저절로 같아진다.**
+       ② **A 경로(등 없이)가 죽는다.** slow 0.7 로 반지하 창턱(=slow 밴드)을 늦추면
+          이사 성공률이 78% → 21% 로 떨어진다(test_banjiha_routes G-2b). 창턱이 곧 첫 플레이
+          자리라 튜토 전체가 같이 느려진다. story_arc §2 가 A 를 "표준"이라 부르는 한 이건 못 쓴다.
+     그래서 **기준선을 slow 에 둔다** — 지금까지의 속도가 곧 "겨우 자라는 속도"였다고 읽고,
+     밝은 자리에서 그보다 빨라지게 한다. A 는 한 걸음도 안 바뀌고 B 만 빨라진다.
+
+   ★ 그래서 계수는 **1.0 이 바닥**이다. 1 아래 값은 안 받는다(`source:'unsupported'` 로 알린다) —
+     받으려면 save.js 의 재생도 같은 규칙을 알아야 하고, 그 파일은 이 창 소유가 아니다.
+   ⚠ 알려진 흠 — 빠른 날은 `dliHist` 가 하루에 두 칸 쌓여서 `hist.length !== daysPlanted` 가 된다.
+     `save.restoreGrowth` 는 그걸 "중간에 깨진 턴"으로 읽고 경고를 한 줄 남긴다. 재생 자체는
+     정확하다(칸마다 하루씩 되밟으므로). 그 한 줄은 save.js 소유라 여기서 못 고친다 —
+     docs/handoff/growthspeed-to-plan.md 에 넘겨 뒀다.
+
+   ★ 숫자는 여기 없다. 정본은 `data/growth_tuning.json` 의 `growth_speed.by_band` 다.
+     못 읽으면 **1.0(=예전 그대로)** 으로 돈다. 조용히 다른 밸런스로 굴리지 않으려고
+     그 사실을 `turn.growthSpeed.source` 에 실어 보낸다(화면·검사가 읽는다).
+
+   ★ 밴드는 **베끼지 않는다.** 경계 판정은 조도 정본인 `judgeDLI`(engine/daily_light.js)를 그대로 쓴다.
+     plant_grow 의 `bandOf` 와 같은 표라야 하고(그쪽 주석도 그렇게 적혀 있다),
+     `tools/test_growth_speed.mjs` 가 두 함수의 답이 같은지 매번 확인한다.
+     ⚠ `io.growth.bandOf` 를 안 쓰는 이유 — 헤드리스 하네스들이 그 창구를 안 낸다.
+       있으면 쓰고 없으면 딴 길로 가면, **게임과 검사가 서로 다른 규칙으로 도는** 상태가 된다.
+============================================================================== */
+let GROWTH_SPEED = null;
+try {
+  const m = await import('../../data/growth_tuning.json', { with: { type: 'json' } });
+  GROWTH_SPEED = (m && m.default && m.default.growth_speed) || null;
+} catch { GROWTH_SPEED = null; }     // file:// · 옛 런타임 — 1.0 으로 돈다(아래 source 로 알린다)
+
+/* 하루에 걸을 수 있는 생장일의 천장. 곡선을 두 배 넘게 건너뛰면 그건 '속도'가 아니라
+   '다른 곡선'이다 — 성숙 굴림·잎 건강도 그만큼 몰아서 돈다. 늘리기 전에 반드시 재 볼 것. */
+export const GROWTH_STEPS_MAX = 2;
+
+/* 오늘의 걷는 속도. **판정만** 한다 — 상태를 안 건드린다(검사가 이 함수만 따로 부를 수 있게).
+   dli7 은 growth 가 실제로 쓴 7일 평균이다. 오늘 값이 아니라 평균을 보는 이유는
+   정지 판정(growthBlockReason)·갈라짐(calcMatureProb)이 전부 7일 평균을 보기 때문이다 —
+   축이 둘이면 "왜 오늘은 자랐는데 갈라지진 않지"가 설명이 안 된다.
+
+   source 는 **왜 그 값이 됐는가**다. 조용히 1.0 으로 돌아가는 경우를 화면·검사가 구분해야 한다.
+     tuning      정본 표에서 읽었다
+     default     표가 없거나(못 읽음) 그 밴드에 값이 없다 — 예전 그대로 돈다
+     unknown     빛·임계값을 못 읽었다 — 모르는 것으로 벌하지 않는다
+     unsupported 표에 1 미만이 적혀 있다. 세이브 재생이 못 따라오므로 안 받는다(위 §왜 빠르게) */
+export function growthSpeedOf(dli7, th) {
+  const table = GROWTH_SPEED && GROWTH_SPEED.by_band;
+  if (!table) return { band: null, mult: 1, source: 'default' };
+  if (!th || typeof dli7 !== 'number' || !isFinite(dli7))
+    return { band: null, mult: 1, source: 'unknown' };
+  const band = judgeDLI(dli7, th).band;
+  const m = table[band];
+  if (typeof m !== 'number' || !isFinite(m)) return { band, mult: 1, source: 'default' };
+  if (m < 1) return { band, mult: 1, source: 'unsupported' };
+  return { band, mult: Math.min(m, GROWTH_STEPS_MAX), source: 'tuning' };
+}
+
+/* 오늘 몇 걸음인가. 소수점은 `S._growthCredit` 에 쌓아 두고 1 이 모이는 날 한 걸음 더 간다.
+   ⚠ `_` 로 시작한다 = **세이브에 안 남는다**(save.js 화이트리스트와 같은 규칙).
+     다시 켜면 0 부터 모으므로 최대 한 걸음이 늦어질 뿐 어긋나지는 않는다. */
+function growthStepsOf(S, mult) {
+  const credit = (S._growthCredit || 0) + mult;
+  const steps = Math.min(GROWTH_STEPS_MAX, Math.floor(credit + 1e-9));
+  S._growthCredit = credit - steps;
+  return Math.max(1, steps);         // 자랄 수 있는 날은 최소 한 걸음. 코어는 하루를 삼키지 않는다
+}
 
 /* ============================================================
    ★ 단계 스키마 검증 (2026-08-02 신설)
@@ -575,16 +666,42 @@ export function nextDay(S, io) {
   const calBefore = io.growth.calendarDay();
   let step;
   let lightInputRecorded = false;
+  let speed = { band: null, mult: 1, source: 'default' };
+  /* 오늘 growth 에게 실제로 넘긴 하루의 수. **dliHist 에 이만큼 쌓인다** — 그 짝이 세이브 재생의
+     입력이라(save.js §growth) 여기서 어긋나면 복원한 형태가 조용히 달라진다. */
+  let fedDays = 0;
   try {
     /* ★ 빛은 막혔어도 넘긴다 — DLI 이력은 사실이어야 한다. 안 넘기면 growth 의 7일평균이
        코어와 갈라지고, 자리를 옮긴 뒤 "왜 아직 안 자라지"가 된다. */
     io.growth.setDailyLight(dli);
     lightInputRecorded = true;
+    fedDays = 1;
+
+    /* ★ 걷는 속도는 **오늘 빛을 넣은 뒤에** 잰다 — dli7 에 오늘이 들어가야 엔진과 같은 값이 된다 */
+    speed = growthSpeedOf(
+      typeof io.growth.dli7 === 'function' ? io.growth.dli7() : null,
+      io.light && typeof io.light.thresholdsOf === 'function'
+        ? io.light.thresholdsOf(p.plantId, p.variegated) : null);
 
     /* ★ 하루 진행은 advanceTo 만 쓴다. setGrowth(점프)는 도착 때 한 번뿐이다.
        달력은 하루 가고, 형태(유효 생장)는 빛이 될 때만 쌓인다 — 저광이면 여기서 멈춘다.
-       ★ 머리공간이 막혔으면 **아예 안 부른다.** 유효 생장일이 안 오르는 것이 이 규칙의 전부다. */
-    if (!headBlocked) step = io.growth.advanceTo(calBefore + 1);
+       ★ 머리공간이 막혔으면 **아예 안 부른다.** 유효 생장일이 안 오르는 것이 이 규칙의 전부다.
+
+       ★★ 밝기 속도 (2026-08-05) — 밝은 자리는 **한 걸음 더 간다**(위 §걷는 속도).
+         `advanceTo` 는 하루(delta 1)만 받으므로 "1.5일치"를 한 번에 넘길 방법이 없다.
+         그래서 소수점은 적립해 두고, 1 이 모인 날 `setDailyLight` + `advanceTo` 를 **한 벌 더** 돈다.
+         한 벌씩 도는 것이 중요하다 — 빛 한 칸에 하루 한 걸음이라야 세이브 재생이 같아진다.
+         ⚠ 엔진이 막는 날(빛 부족)은 어차피 형태가 안 오르므로 한 걸음으로 끝난다.
+           그 날도 `advanceTo` 는 반드시 부른다 — 안 부르면 `stepLeafHealth` 가 안 돌아
+           **어두운 자리에서 잎이 안 바래는** 정반대 결과가 난다. */
+    if (!headBlocked) {
+      const engineBlocked = !!(typeof io.growth.growthBlocked === 'function' && io.growth.growthBlocked());
+      const steps = engineBlocked ? 1 : growthStepsOf(S, speed.mult);
+      for (let i = 0; i < steps; i++) {
+        if (i > 0) { io.growth.setDailyLight(dli); fedDays++; }   // 한 벌 = 빛 한 칸 + 하루 한 걸음
+        step = io.growth.advanceTo(calBefore + i + 1);
+      }
+    }
   } catch (e) {
     let calAfter = null;
     try { calAfter = io.growth.calendarDay(); } catch { /* 계약까지 끊긴 경우 */ }
@@ -597,9 +714,11 @@ export function nextDay(S, io) {
         S.desync = { coreDay: S.day, growthCalendar: calAfter, reason: e.message,
                      note: '달력은 되감았지만 오늘 DLI 입력은 growth 이력에 남았을 수 있음' };
       }
-    } else if (calAfter === calBefore + 1) {
+    } else if (calAfter > calBefore && calAfter <= calBefore + GROWTH_STEPS_MAX) {
       /* growth 는 갔는데 예외만 나왔다(렌더 오류 등). 되감지 않는다 — 날짜는 맞춰 두고,
-         이 턴의 결과(형태·정지 사유)를 못 받았다는 사실을 상태에 남긴다. */
+         이 턴의 결과(형태·정지 사유)를 못 받았다는 사실을 상태에 남긴다.
+         ★ 밝은 날은 한 턴에 두 걸음까지 가므로 여기가 `+1` 이 아니라 범위다(§걷는 속도).
+           GROWTH_STEPS_MAX 가 1 이면 예전 `calAfter === calBefore + 1` 과 완전히 같다. */
       S.desync = { coreDay: S.day, growthCalendar: calAfter, reason: e.message };
       pushLog(S, `⚠ 이 턴의 결과를 못 받았습니다 — growth 달력 ${calAfter}, 코어 ${S.day}일. ` +
                  `날짜는 맞췄지만 형태 결과는 화면에 반영되지 않았습니다`);
@@ -621,7 +740,10 @@ export function nextDay(S, io) {
      0은 "쟀더니 암흑"이고 null 은 "못 쟀다"다. 0으로 넣으면 평균이 아래로 끌려가
      계약 누락이 '어두운 날'로 둔갑한다 — 날짜 자리는 지키되 값은 null 로 남긴다.
      평균·문턱 판정은 아래 avg()·weekOverPct() 가 null 을 걸러서 본다. */
-  S.dliHist.push(dli);
+  /* ★★ growth 에게 넘긴 만큼 쌓는다 — **1:1 이 계약이다**(save.js §growth).
+     밝은 날은 `setDailyLight` 를 두 번 불렀으므로 여기도 두 칸이다. 한 칸만 쌓으면
+     복원한 형태가 저장 때보다 덜 자란 채로 선다(그게 처음 설계가 깨진 자리였다). */
+  for (let i = 0; i < Math.max(1, fedDays); i++) S.dliHist.push(dli);
   S.ledger.electricityWon += (report.energy && report.energy.won) || 0;   // 표시만. 차감 없음
 
   const phaseAfter = phaseOf(io, S);          // ★ 한 번만 읽는다
@@ -634,6 +756,12 @@ export function nextDay(S, io) {
     effectiveGrowthDays: step ? step.growth : io.growth.growthDays(),
     grew: headBlocked ? false : (step ? step.grew : null),
     growthBlocked: step ? step.blocked : io.growth.growthBlocked(),
+    /* ★ 밝기 속도 — 빛 부족 정지(growthBlocked)와도 머리공간(headroomBlocked)과도 **다른 칸**이다.
+       셋을 섞으면 처방이 뒤섞인다: 빛 부족은 "등을 켜라", 머리공간은 "자리를 옮겨라",
+       여기는 "지금도 자라고 있고, 밝을수록 빠르다"이다. 아무것도 막힌 상태가 아니다.
+       `growthSteps` = 오늘 실제로 간 걸음 수(=넘긴 빛 칸 수). 1 이면 예전과 같은 하루다. */
+    growthSpeed: speed,
+    growthSteps: fedDays,
     /* ★ 머리공간 정지 — 빛 부족(growthBlocked)과 **다른 칸**이다. 한 칸에 섞으면
        화면이 "빛이 모자랍니다"라고 말하고 플레이어는 등을 하나 더 산다(정반대 처방). */
     headroom,
