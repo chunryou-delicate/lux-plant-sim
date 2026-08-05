@@ -9,9 +9,10 @@
 ============================================================ */
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { newState, waterCrop, resowCrop } from '../src/game/state.js';
+import { newState, waterCrop, resowCrop, cropWaterStatus } from '../src/game/state.js';
 import { nextDay, harvestCrop } from '../src/game/loop.js';
-import { firstPlayRulesFromBalance, CROP_KINDS, placeBeansprout } from '../src/game/first_play.js';
+import { firstPlayRulesFromBalance, CROP_KINDS, placeBeansprout,
+         placeCrop, cropSiteOf } from '../src/game/first_play.js';
 import { STAMINA_MAX, ACT_COST, costOf, canAct, spend, resetDay,
          staminaOf, staminaView, createStaminaState } from '../src/game/stamina.js';
 
@@ -135,6 +136,32 @@ check('C-4 ★이미 준 시루에 또 눌러도 체력이 안 준다', () => {
   assert.ok(!r.watered, `두 번째 물주기가 ${r.watered} 로 무언가를 시작했습니다`);
   assert.equal(staminaOf(S).left, after1,
     '아무 일도 안 났는데 체력이 줄었습니다 — "눌렀더니 오늘이 끝났다"가 됩니다');
+});
+
+/* ══ C-5 · ★작물이 둘일 때 물이 **둘 다** 간다 (2026-08-06) ══════════════════
+   무순을 사고 심고 놓아도 **회전이 영영 시작 안 됐다** — 화면이 `waterCrop(S)` 를
+   종류 없이 불러 언제나 콩나물에 줬기 때문이다. 버튼은 「2개 대기」라 해 놓고서.
+   ⇒ 이 검사가 그 구멍을 막는다. 작물이 셋째로 늘어도 같은 규칙이면 저절로 걸린다. */
+check('C-5 ★기다리는 작물이 둘이면 두 번 눌러 **둘 다** 시작된다', () => {
+  const S = mk();
+  placeBeansprout(S.firstPlay, 'banjiha-dresser:1');
+  const ms = cropSiteOf(S.firstPlay, 'musun');
+  ms.pots = [{ id: 'm1', harvested: false, startedOnDay: null, ageDays: 0, dliHist: [] }];
+  placeCrop(S.firstPlay, 'musun', 'banjiha-desk:0');
+
+  /* 화면(reallyWater)이 하는 그대로 — 기다리는 종류를 골라 준다 */
+  const press = () => {
+    const w = cropWaterStatus(S);
+    const t = (w.byKind || []).find(k => k.needsWater);
+    return { ko: t ? t.kindKo : null, r: waterCrop(S, { kind: t ? t.kind : 'beansprout' }) };
+  };
+  const a = press(), b = press();
+  assert.equal(a.ko, '콩나물', `첫 번째가 ${a.ko} 입니다`);
+  assert.equal(b.ko, '무순', `두 번째가 ${b.ko} 입니다 — 무순에 물이 안 갑니다`);
+  assert.ok(S.firstPlay.beansprout.pots[0].startedOnDay != null, '콩나물이 안 시작됐습니다');
+  assert.ok(ms.pots[0].startedOnDay != null,
+    '★무순이 안 시작됐습니다 — 사고 심고 놓아도 못 키웁니다');
+  assert.equal(cropWaterStatus(S).waiting, 0, '아직 기다리는 것이 남았습니다');
 });
 
 /* ══ D · 빨리감기·하루 넘기기가 안 막힌다 ════════════════════════════════ */
