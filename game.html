@@ -158,6 +158,9 @@
   /* ★엄지로 누르는 자리. 44px 밑으로 내리지 말 것 */
   .actionbar button{flex:1;min-height:var(--tap);font-family:'Jua';font-size:14px;border-radius:12px}
   .actionbar button#next{flex:1.5}
+  /* 음악 단추는 좁게 — 매 턴 누르는 것이 아니라 한 번 켜 두는 것이다 */
+  .actionbar button#btnMusic{flex:0 0 var(--tap);font-size:17px;opacity:.5}
+  .actionbar button#btnMusic[aria-pressed=true]{opacity:1;color:var(--leaf)}
   .actionbar button:disabled{opacity:.42}
 
   /* ── 바텀시트 (가방·자리·설정) ───────────────────────────────────── */
@@ -762,6 +765,9 @@
       <button id="next" disabled>다음 날 ▸</button>
       <button id="ff" class="ghost" disabled>▶▶ 빨리감기</button>
       <button id="openBag" class="ghost">가방</button>
+      <!-- ★음악은 꺼진 채로 시작한다. 브라우저가 사용자 조작 없이는 소리를 안 내주기도 하고,
+           무엇보다 소리를 원치 않는 자리에서 켜는 게임은 그 자리에서 닫힌다. -->
+      <button id="btnMusic" class="ghost" aria-pressed="false" title="배경 음악">♪</button>
     </div>
   </nav>
 </div>
@@ -1046,7 +1052,19 @@
     catch (e) { /* 방이 아직 안 붙었으면 그만이다 */ }
   }
   window.__byeotZoom = {
-    open: function () { stage.classList.add('zoom'); closeSheet(); pauseRoom(true); pauseZoomRender(false); },
+    /* ★확대는 **몬스테라 자리일 때만** 연다 (박사님 2026-08-05:
+       "콩나물 클릭했는데 오지도 않은 몬스테라 확대가 나와").
+       이 오버레이는 plant_grow.html 이고 그건 몬스테라 생장 모델 하나다.
+       작물을 탭했는데 몬스테라가 뜨면 **아직 오지도 않은 물건**이 화면을 덮는다.
+       판정은 모듈 쪽이 안다(__byeotIsPlantSlot). 없으면 예전대로 연다. */
+    open: function (slotId) {
+      if (slotId && window.__byeotIsPlantSlot && !window.__byeotIsPlantSlot(slotId)) {
+        openSheet('tabBag');            // 작물은 가방에서 자란 정도·끼니를 본다
+        return false;
+      }
+      stage.classList.add('zoom'); closeSheet(); pauseRoom(true); pauseZoomRender(false);
+      return true;
+    },
     close: function () { stage.classList.remove('zoom'); pauseZoomRender(true); pauseRoom(false); },
     isOpen: function () { return stage.classList.contains('zoom'); }
   };
@@ -1098,16 +1116,30 @@ import {
 import { createLightEngine } from './src/game/light_adapter.js';
 import { createGrowthAdapter } from './src/game/growth_adapter.js';
 import { createDialogue, createStoryteller, SPEAKERS } from './src/game/dialogue.js';
+import { createMusic } from './src/game/music.js';
 import { seasonAt, seasonDayAt, SEASON_KO, tutorialGoal, learningLeft,
          canMoveOut, moveOut, buyLamp } from './src/game/tutorial.js';
+/* ★이사는 사건이 아니라 **이동**이다. moveOut 은 돈과 판정만 하고 방을 안 바꿨다 —
+   moveIntoOneroom 이 그 위에서 S.home.room 과 자리를 옮긴다(oneroom.js 머리말). */
+import { moveIntoOneroom } from './src/game/oneroom.js';
 import { nextDay, runDays, avg, rollingAvg, harvestCrop,
          startFastForward, stopFastForward, isFastForwarding, nextEventPreview,
-         timeModeOf } from './src/game/loop.js';
+         timeModeOf, FAST_MODE_MAX_DAYS } from './src/game/loop.js';
 import { renderHUD, renderLog, renderReport, renderSpark } from './src/game/ui.js';
 
 const ARRIVAL_POT_D = FIRST_PLAY_ASSETS.monsteraPotDiameterM;
 const $ = (id) => document.getElementById(id);
-const side = $('side');
+/* ★★ 오류를 어디에 적나 (2026-08-05 · QA 워커가 잡았다).
+   `#side` 는 **폰 세로 레이아웃으로 바꾸면서 없어졌다.** 그런데 이 상수는 남아 `null` 이 됐고,
+   guard() 가 오류를 적으려고 `side.insertAdjacentHTML` 을 부르는 순간 **거기서 또 터졌다.**
+   잠그는 줄은 그 앞이라 **잠금만 걸리고 설명은 사라졌다** — 화면이 통째로 회색이 되는데
+   아무 말도 안 뜨는 그 증상이 이것이다. 오류를 알리는 길이 오류로 끊기면 최악이다.
+   ⇒ 살아 있는 곳을 그때그때 고른다. `document.body` 는 언제나 있으므로 **null 이 될 수 없다.** */
+const side = {
+  insertAdjacentHTML(where, html) {
+    ($('side') || $('bottom') || document.body).insertAdjacentHTML(where, html);
+  }
+};
 
 /* ---- 데이터 (house = 구조·에셋 / balance = plan 소유 튜닝값) ---- */
 const j = (p, fb) => fetch(p).then(r => r.json()).catch(() => fb);
@@ -1717,7 +1749,10 @@ function cutNodesNow() {
      즉 작게 잘라 파는 쪽이 항상 유리하다(test_cutting_wiring 검사 G). */
   return { nodes, ok: ok.slice().sort((a, b) => a.leaves - b.leaves) };
 }
-const cutKeyOf = (c) => (c && (c.slotId || 'free:' + c.id)) || null;
+/* ★ 자유 좌표 열쇠(`free:{id}`)는 **그 조각을 실제로 방에 놓았을 때만** 뜻이 있다 —
+   안 놓은 것에 지어 붙이면 resolveKey 가 null 을 내고 「모르는 슬롯」으로 실패한다
+   (cropKey 의 같은 구멍을 2026-08-05 에 고치면서 여기도 같이 맞췄다). */
+const cutKeyOf = (c) => (c && (c.slotId || (c.at ? 'free:' + c.id : null))) || null;
 
 /* 삽수를 어디에 놓나 — **빈 추천 자리의 첫 칸**이다.
    ★ 밝기를 안 따진다: 뿌리내는 동안은 두 갈래 다 빛과 무관하다(propagation.md §3).
@@ -2010,7 +2045,17 @@ let acting = false;
 function cropKey() {
   const b = S.firstPlay && S.firstPlay.beansprout;
   if (!b) return null;
-  return b.slotId || `free:${BEANSPROUT_ID}`;
+  /* ★★ `at` 도 `slotId` 도 없으면 **열쇠가 없다** (2026-08-05 · 창밖 워커 실측).
+     예전엔 그럴 때도 `free:crop_01` 을 지어 냈는데, 그건 방에 등록된 적이 없는 이름이라
+     `resolveKey` 가 null 을 내고 `actAt` 이 「모르는 슬롯」으로 즉시 실패했다.
+     ⇒ 갓 켠 판에서 [물주기]를 누르면 캐릭터가 **한 발도 안 떼고** 배너만 떴다.
+     ⇒ 같은 뿌리로 콘솔에 `모르는 슬롯: null` 이 매 틱 찍혔다.
+     열쇠가 없다는 것은 **아직 방에 놓지 않았다**는 뜻이고, 그때는 연출 없이 논리만 돈다 —
+     캐릭터가 없을 때와 같은 길이다(doAct 의 canAct). 놓지 않은 것 앞으로 걸어갈 수는 없다.
+     ⚠ cropMarks 는 이 판단을 이미 하고 있었다(`!(b.at || b.slotId)` 면 말풍선을 안 띄운다) —
+       두 곳이 어긋나 있었던 것이다. 이제 같은 규칙을 본다. */
+  if (b.slotId) return b.slotId;
+  return b.at ? `free:${BEANSPROUT_ID}` : null;
 }
 function actBar(on, ko, p01) {
   const el = $('actBar');
@@ -2033,7 +2078,16 @@ function doAct(kind, done, opt = {}) {
   if (acting) return;                       /* 두 동작이 겹치면 게이지가 뒤엉킨다 */
   const key = opt.key || cropKey();
   const ko = opt.ko || ACT_KO[kind] || '';
-  const canAct = roomView && typeof roomView.actAt === 'function' && key && !isFastForwarding();
+  /* ★★ 열쇠가 **풀리는지** 먼저 본다 (2026-08-05 · 창밖 워커 처방 ②).
+     예전엔 열쇠가 빈 문자열만 아니면 통과시켜서, 방이 모르는 이름이면 `actAt` 이 던지고
+     「가지 못했습니다」 배너가 떴다 — 실은 못 간 게 아니라 **갈 곳이 없었던 것**이다.
+     안 풀리면 연출을 건너뛰고 논리만 돈다. 캐릭터가 없을 때와 같은 길이고, 결과도 같다:
+     배너 없이 조용히 물이 들어간다(사람이 없다고 물이 안 들어가면 게임이 막힌다).
+     ⚠ resolveKey 가 없는 옛 room_view 도 있으므로 **있을 때만** 묻는다 — 없으면 예전대로. */
+  const keyResolves = !roomView || typeof roomView.resolveKey !== 'function'
+    || !!(() => { try { return roomView.resolveKey(key); } catch { return null; } })();
+  const canAct = roomView && typeof roomView.actAt === 'function'
+    && key && keyResolves && !isFastForwarding();
   if (!canAct) { done(); return; }
   acting = true;
   actBar(true, ko, 0);
@@ -2655,11 +2709,35 @@ function ffResume() { ffWasRunning = false; }     /* 자동 재개는 안 한다
 $('dlgBox').addEventListener('click', () => { dlg.next(); dlgPaint(); });
 $('dlgSkip').addEventListener('click', (e) => { e.stopPropagation(); dlg.skip(); dlgPaint(); });
 
+/* ══ 배경 음악 ═══════════════════════════════════════════════════════════
+   music.js 는 음원 파일이 아니라 **연주**다(받을 바이트 0). AudioContext 하나만 받는다.
+   ★AudioContext 를 미리 만들지 않는다 — 브라우저가 사용자 조작 전에는 소리를 막고,
+     막힌 컨텍스트를 들고 있으면 나중에 켜도 안 나는 상태가 된다. 누를 때 만든다. */
+let music = null, musicCtx = null;
+function toggleMusic() {
+  const b = $('btnMusic');
+  try {
+    if (!music) {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) { b.disabled = true; b.title = '이 브라우저는 소리를 못 냅니다'; return; }
+      musicCtx = new AC();
+      music = createMusic(musicCtx);
+    }
+    if (musicCtx.state === 'suspended') musicCtx.resume();
+    if (music.isPlaying()) { music.stop(); b.setAttribute('aria-pressed', 'false'); }
+    else { music.start(); b.setAttribute('aria-pressed', 'true'); }
+  } catch (e) {
+    console.warn('[음악] 못 켰습니다 —', (e && e.message) || e);
+    b.disabled = true; b.title = '음악을 켜지 못했습니다';
+  }
+}
+
 /* ══ 방 3D 전경 ═══════════════════════════════════════════════════════════
    ★여기가 게임 화면이다. iframe#growth 는 화분을 탭했을 때 올라오는 상세다.
    room_view.js 는 별도 모듈이라 아직 없을 수 있다 — **없어도 게임은 돌아간다.**
    빈 검은 화면만 두면 "고장났나"로 읽히므로 무엇을 기다리는지 적어 둔다. */
 let roomView = null;
+let roomListenersBound = false;         /* 한 번만 거는 리스너를 지킨다 — remountRoomView 참조 */
 /* 부팅 진행 표시. 단계 이름은 room_view 가 내는 것을 그대로 쓴다 —
    여기서 새 이름을 지으면 실제 단계와 어긋나 거짓 진행률이 된다. */
 const BOOT_STEP = { start: 4, data: 18, room: 46, ready: 72, character: 90 };
@@ -2707,7 +2785,13 @@ async function bootRoomView() {
     });
     /* 진단용 손잡이. 브라우저 콘솔에서 방 상태를 볼 수 있게 낸다 —
        읽기용이고 게임은 이걸 안 쓴다(밖에서 켜면 검증이 장식이 되는 것과 같은 이유로 세터는 없다). */
-    window.__rv = roomView; window.__picked = picked; window.__drag = drag; window.__io = io;
+    window.__rv = roomView; window.__picked = picked; window.__drag = drag;
+    /* ★그 자리가 몬스테라인가. 확대 오버레이(plant_grow)는 몬스테라 전용이라
+       작물 자리에서 열면 아직 오지도 않은 물건이 화면을 덮는다. */
+    window.__byeotIsPlantSlot = (id) => {
+      const p = pot0(S);
+      return !!(p && p.slotId && id && p.slotId === id);
+    }; window.__io = io;
     /* 진단용 — 말풍선이 왜 안 뜨는지 밖에서 볼 수 있게. 읽기 전용이다 */
     window.__marks = { list: () => markList(), busy: () => stageBusy() };
     window.__S = () => S;                    /* 진단용 — 읽기 전용으로 쓴다 */
@@ -2728,15 +2812,38 @@ async function bootRoomView() {
       })();
     }
     syncRoom();
-    bindPicked();
-    bindDrag('cropThumb', 'beansprout');
-    bindDrag('plantThumb', 'monstera');
-    addEventListener('resize', () => roomView && roomView.resize());
+    bindPicked();                       /* onclick 대입이라 다시 불러도 안 겹친다 */
+    /* ★ addEventListener 쪽은 **한 번만** 건다. 이사로 방을 다시 지을 때 또 걸면
+       드래그 한 번에 핸들러가 두 번 돈다 — 조용히 두 배로 움직인다. */
+    if (!roomListenersBound) {
+      roomListenersBound = true;
+      bindDrag('cropThumb', 'beansprout');
+      bindDrag('plantThumb', 'monstera');
+      addEventListener('resize', () => roomView && roomView.resize());
+    }
   } catch (e) {
     bootProgress(null);
     window.__byeotRoomFallback('방을 그리지 못했습니다 — ' + (e && e.message || e));
   }
 }
+/* ══ 방을 갈아 끼운다 (이사) ═════════════════════════════════════════════
+   room_view 에는 방을 바꾸는 문이 없다 — 만들 때 한 번 짓고 끝이다. 그래서 **부수고 다시 짓는다.**
+   ⚠ setRoom 을 room_view 에 새로 뚫지 않은 이유: 그 파일은 다른 창 소유고, 방을 갈아 끼우는 일은
+     이사 때 딱 한 번이라 재생성 비용(수 초)이 새 API 의 위험보다 싸다.
+   ★ S.home.room 은 부르기 **전에** 이미 바뀌어 있어야 한다(moveIntoOneroom 이 바꾼다). */
+async function remountRoomView() {
+  if (roomView) {
+    try { roomView.dispose(); }
+    catch (e) { console.warn('[방] 옛 방 정리 실패 —', (e && e.message) || e); }
+    roomView = null; window.__rv = null;
+  }
+  /* 무엇을 어디에 세워 뒀는지는 옛 방 이야기다. 안 지우면 새 방에서 없는 자리를 치우려 든다 */
+  shownAt.monstera = null; shownAt.beansprout = null; shownCuts.clear();
+  bootDone = false;
+  $('stage').classList.remove('room-ok');
+  await bootRoomView();
+}
+
 /* 코어 상태 → 방 화면. 한 방향으로만 흐른다 — 방이 게임 상태를 바꾸지 않는다. */
 /* ⚠ setPlant 는 GLB 를 싣느라 **Promise 를 돌려준다**(모듈 실제 시그니처).
    try/catch 로는 거절을 못 잡으므로 .catch 를 반드시 붙인다 —
@@ -2790,10 +2897,16 @@ function syncRoom() {
       potD: ARRIVAL_POT_D,
       potId: p.id
     } : null;
-    /* 좌표가 있으면 좌표로, 없으면 옛 자리 경로로 — 둘이 같은 개체를 가리키게 potId 를 붙인다 */
-    Promise.resolve(p && p.at && roomView.setPlantAt
-      ? roomView.setPlantAt(p.id, p.at, potSpec)
-      : roomView.setPlant(p && p.slotId, potSpec)).catch(warn('몬스테라'));
+    /* 좌표가 있으면 좌표로, 없으면 옛 자리 경로로 — 둘이 같은 개체를 가리키게 potId 를 붙인다.
+       ★★ **아직 아무 데도 안 놓았으면 방에 부탁하지 않는다** (2026-08-05 · 창밖 워커 실측).
+         `p` 는 있는데 `at`·`slotId` 가 둘 다 없는 판(갓 켠 게임)에서 `setPlant(null, …)` 을
+         불러 왔고, 방은 「모르는 슬롯: null」로 **매 틱 던졌다** — 콘솔이 그 경고로 덮였다.
+         가방에 있는 화분은 방에 없는 것이 맞다. 없는 것을 놓아 달라고 할 일이 아니다.
+         ⚠ 옛 자리를 걷는 일은 위 clearIfMoved 가 이미 했다 — 여기서 안 해도 안 남는다. */
+    if (p && p.at && roomView.setPlantAt)
+      Promise.resolve(roomView.setPlantAt(p.id, p.at, potSpec)).catch(warn('몬스테라'));
+    else if (p && p.slotId)
+      Promise.resolve(roomView.setPlant(p.slotId, potSpec)).catch(warn('몬스테라'));
     if (b && (b.at || b.slotId)) {
       /* ★progress01 을 반드시 넘긴다. 안 넘기면 room_view 안에서 lerp(4,11,undefined)가
          NaN 이 되어 **시루만 놓이고 콩나물이 0포기** 난다 — 빈 그릇만 보인다. */
@@ -2839,6 +2952,50 @@ function syncRoom() {
     for (const id of want) shownCuts.add(id);
   } catch (e) { warn('방')(e); }
 }
+/* ══ 자리 등급 — 초록 · 노랑 · 빨강 (박사님 2026-08-05 ⑥) ═══════════════════
+   방뷰는 색만 칠한다(`highlightSlots([{slotId, rank}])`). **어디가 좋은 자리인가는 여기서 판정한다** —
+   몬스테라는 밝아야 좋고 콩나물은 어두워야 좋아 작물마다 정반대라 방이 알 수 없는 일이다
+   (docs/handoff/outside-to-plan.md ②「게임 쪽이 해야 할 일」).
+
+   ★★ **첫 플레이 동안은 등급을 안 낸다.** 이 게임이 가르치려는 한 가지가 「자리가 결과를
+     바꾼다」이고, 그건 놓아 보고 **결과로** 배우는 것이다. 놓기도 전에 초록이 켜지면
+     그 배움이 색 읽기로 바뀐다 — fillSlots 가 첫 플레이에서 정답순·원시 DLI 를 숨기는 것과
+     **같은 판단**이고, 한쪽만 숨기면 숨긴 쪽이 무의미해진다.
+     ⇒ 첫 플레이를 마친 판(개발 검수 포함)에서만 세 색이 켜진다.
+   ⚠ 이건 제 판단입니다 — 박사님이 "튜토에서도 보여라" 하시면 이 한 줄만 지우면 됩니다.
+
+   ★ 판정 기준은 **새로 짓지 않는다.** 작물은 제 품질표(끼니 3/2/1), 몬스테라는 growth 의
+     밴드를 그대로 읽는다. 여기서 숫자를 지으면 색과 실제 결과가 갈린다. */
+const RANK_BY_BAND = { best: 'good', good: 'good', slow: 'ok', over: 'ok',
+                       stagnant: 'bad', poor: 'bad', critical: 'bad' };
+function dliBySlotId() {
+  try {
+    const rep = io.light.daily(S.day + 1, S).report;
+    return new Map((rep.slots || []).map(s => [s.slotId, s.dli]));
+  } catch { return new Map(); }
+}
+function rankSlots(what, ids) {
+  if (!ids || !ids.length) return ids || [];
+  if (S.firstPlay && S.firstPlay.enabled) return ids;   /* ★위 ★★ — 튜토에서는 색을 안 나눈다 */
+  const dliOf = dliBySlotId();
+  const varie = what === 'monstera' && !!(pot0(S) && pot0(S).variegated);
+  return ids.map(id => {
+    const dli = dliOf.get(id);
+    if (!Number.isFinite(dli)) return id;               /* 못 재면 예전 색 그대로 — 지어내지 않는다 */
+    let rank = null;
+    if (what === 'monstera') {
+      let b = null; try { b = io.growth.bandOf(dli, varie); } catch { }
+      rank = b && RANK_BY_BAND[b.band] || null;
+    } else {
+      /* `what` 이 곧 작물 종류 id 다('beansprout'·'musun' — CROP_KINDS 의 id 와 같은 이름).
+         모르는 이름이면 cropQualityOf 가 **던진다** — 조용히 콩나물로 굴리지 않는다(그쪽 계약). */
+      let q = null; try { q = cropQualityOf(what, dli); } catch { }
+      rank = q ? (q.meals >= 3 ? 'good' : q.meals === 2 ? 'ok' : 'bad') : null;
+    }
+    return rank ? { slotId: id, rank } : id;
+  });
+}
+
 /* 배치 모드 — 탭으로 고르고, 놓을 수 있는 자리를 밝기와 함께 빛나게 한다.
    ★드래그는 안 쓴다. 폰 3D 에서 카메라 회전과 충돌하고 슬롯이 작아 오조작이 난다. */
 const placeMode = {
@@ -2856,7 +3013,7 @@ const placeMode = {
     if (roomView) roomView.highlightSlots([]);
   },
   pick(slotId) {
-    if (!this.target) { window.__byeotZoom.open(); return; }   // 배치 중이 아니면 그냥 상세
+    if (!this.target) { window.__byeotZoom.open(slotId); return; }   // 배치 중이 아니면 그냥 상세
     const sel = this.target === 'beansprout' ? $('cropSlot') : $('slot');
     sel.value = slotId;
     sel.dispatchEvent(new Event('change', { bubbles: true }));
@@ -3307,7 +3464,7 @@ function bindPicked() {
   $('furnClose').onclick = () => furnPicked.clear();
   $('pickMove').onclick = () => picked.beginMove();
   $('pickTurn').onclick = () => picked.beginTurn();
-  $('pickZoom').onclick = () => { window.__byeotZoom.open(); picked.clear(); };
+  $('pickZoom').onclick = () => { const id = picked.slotId; window.__byeotZoom.open(id); picked.clear(); };
   $('pickClose').onclick = () => picked.clear();
   /* 같은 잡이판을 화분과 가구가 나눠 쓴다 — 지금 무엇을 옮기는 중인지로 갈린다.
      둘이 동시에 옮겨지는 일은 없다(고르는 순간 서로 푼다). */
@@ -3403,12 +3560,26 @@ function ffHint() {
 }
 $('ff').onclick = guard(() => {
   if (isFastForwarding()) { ffStop('stopped'); return; }
-  if (!S.firstPlay.beansprout.slotId) {
+  /* ★시루를 놓으라는 요구는 **첫 플레이 동안만**이다 (2026-08-05).
+     끝난 판에서까지 물으면 시루가 없는 살림에서 빨리감기가 영영 안 눌린다.
+     ★`at` 도 본다 — 자유 배치는 좌표만 있고 slotId 가 없다(cropKey 와 같은 규칙). */
+  const fpRunning = S.firstPlay && S.firstPlay.enabled && !S.firstPlay.completed;
+  const bs = S.firstPlay && S.firstPlay.beansprout;
+  if (fpRunning && bs && !(bs.slotId || bs.at)) {
     const e = new Error('가방의 열린 시루를 먼저 방 안에 놓아 주세요');
     e.firstPlayInput = true; throw e;
   }
   ffHandle = startFastForward(S, io, {
     msPerDay: 140,                      /* 3D 를 실제로 다시 그리므로 계약값 120 보다 여유를 둔다 */
+    /* ★★ `maxDays` 를 반드시 넘긴다 (2026-08-05 · QA 워커가 잡았다).
+       첫 플레이가 끝나면 `timeModeOf` 가 **점핑에서 배속으로** 바뀌는데, 배속은 한도가 없으면
+       `loop.js:1044` 에서 **반드시 던진다**(「무한 진행은 없습니다」). 점핑은 한도를 안 주면
+       JUMP_MAX_DAYS 로 알아서 채우지만 배속은 안 채운다 — 그래서 완주한 판에서 [빨리감기]를
+       한 번 누르는 것만으로 게임 전체가 잠겼다(그리고 #side 버그 때문에 이유도 안 떴다).
+       ⇒ 배속일 때만 그 모드의 **자기 상한**(FAST_MODE_MAX_DAYS)을 넘긴다. 숫자를 새로 짓지 않는다.
+       ⚠ 「완주 뒤 한 번에 며칠을 감을 것인가」는 아직 박사님 판단입니다 — 지금은 한도(30일)를
+         그대로 씁니다. 어차피 이벤트를 만나면 그 전에 섭니다. */
+    maxDays: timeModeOf(S) === 'fast' ? FAST_MODE_MAX_DAYS : undefined,
     onDay(turn) { lastTurn = turn; showFirstPlayEvents(turn); draw(); },   /* 대사도 같은 창구로 난다 — dlgOpen 이 알아서 빨리감기를 세운다 */
     onStop(reason, info) {
       ffPaint(false);
@@ -3482,11 +3653,19 @@ $('sellPlant').onclick = guard(() => {
 });
 
 $('moveOut').onclick = guard(() => {
-  const r = moveOut(S.tutorial);
+  /* ★moveOut 이 아니라 moveIntoOneroom 이다 — 전자는 돈과 판정만 하고 방을 안 바꿨다.
+     그래서 「이사했습니다」가 떠도 조도도 자리도 화면도 전부 반지하로 남아 있었다. */
+  const r = moveIntoOneroom(S, io);
   pushLog(S, '📦 원룸으로 이사했습니다 — 반지하 튜토리얼 종료');
   banners([{ title: '📦 원룸으로 이사했습니다', sub: '반지하에서 배운 것을 가지고 갑니다' }]);
   dlgOpen(story.events(r.events));   /* 반지하를 떠나는 장면이 여기서 나온다 */
+  /* 방 고르개·등 개수·자리 목록은 전부 옛 방 것이다. 새 방 것으로 다시 채운다 */
+  $('room').value = S.home.room;
+  fillLamps(); fillSlots(false);
+  if (S.firstPlay && S.firstPlay.enabled) fillCropSlots();
   draw();
+  /* 3D 는 새로 짓는다. 늦게 끝나도 위 화면은 이미 새 방을 말하고 있다 */
+  if (r.roomChanged) remountRoomView();
 });
 
 $('run30').onclick = guard(() => {
@@ -3791,6 +3970,7 @@ try {
   bindGuide();                      // 조작 안내판 — 처음이면 인트로 뒤에 저절로 뜬다
   bindDetail();                     // 나 · 아이템 · 식물 상세
   showBuild();                      // 지금 보는 판이 언제 것인지 — 캐시가 의심될 때 여기를 본다
+  $('btnMusic').onclick = toggleMusic;
   bootRoomView();                   // 방 3D — 실패해도 게임은 돌아간다(아래)
   /* 이미 들은 이야기를 또 하지 않는다. 다만 기준은 '세이브가 있나'가 아니라
      '이야기가 시작됐나'다 — 앞에서 설명한 이유다. */
