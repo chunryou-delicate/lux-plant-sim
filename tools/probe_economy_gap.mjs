@@ -79,6 +79,11 @@ const CANDIDATES = [
     cost: '위 둘을 한꺼번에' },
 
   /* ㉡ 시작 자금 ─ 올리는 방향이다(내리면 파산이 더 빨라진다) */
+  /* ★ 2026-08-05 2차 — ㉣ 가 살아나면 시작 자금을 조금만 올려도 되는지 보는 값들 */
+  { id: '㉡α', ko: '시작 110만', cash: 1_100_000,
+    cost: '시작점을 10%만 올린다 — 「없음」이 거의 그대로다' },
+  { id: '㉡β', ko: '시작 115만', cash: 1_150_000,
+    cost: '위와 같음' },
   { id: '㉡0', ko: '시작 120만', cash: 1_200_000,
     cost: '「없음이 정체성인 고아 자취생」이라는 시작점을 묽게 한다 (game_flow.md §㉯)' },
   { id: '㉡1', ko: '시작 130만', cash: 1_300_000,
@@ -150,22 +155,38 @@ const CANDIDATES = [
    ⚠ 「잉여」의 정의도 코어가 이미 갖고 있다 — `harvestCrop` 이 내는
      `overlapLostWon`(질려서 못 받은 몫) + `spoiledWon`(곳간이 넘쳐 쉰 몫)이다. */
 const SELL_RATES = [0, 0.20, 0.2333, 0.25, 0.30, 0.40, 0.50, 0.70, 1.00];
-/* ★★ 반지하는 **자리가 14칸**이고 몬스테라가 한 칸을 쓴다 — 작물은 **13칸이 천장**이다
-   (`data/profiles/room_profile.banjiha.json` 실측 14 · `docs/food_economy.md` §5 가
-   "13슬롯 중 8칸이 콩나물에 잡아먹혀"라고 같은 셈을 한다).
-   ⚠ 지금 코드는 한 자리에 시루를 여러 개 두는 것을 안 막는다(`resowCrop` 이 `at` 하나에
-     `sirus: N` 을 받는다). 그래서 13칸을 넘는 계획도 **장부로는 돈다** — 아래 ⚠ 줄이 그것이다.
-     그게 진짜 되는지는 이 창이 못 정한다(자리 규칙은 house·core 소유). */
+/* ★★ 2026-08-05 정정 — **자리는 시루 수를 안 막는다.**
+   ------------------------------------------------------------
+   처음에 「반지하 자리 14칸 − 몬스테라 1 = 작물 13칸이 천장」으로 재고 그렇게 보고했는데,
+   **틀렸다.** 실측하면(`tools/zz_checkslots` 식으로 확인) 시루 40개를 심어도
+   작물 **자리(site)는 2곳**(콩나물 1 · 무순 1)이고 `pot` 마다 `slotId` 가 **없다**:
+
+     resowCrop(S, {sirus: 40})  →  b.pots 40개 · cropSites 2곳 · b.slotId 'banjiha-dresser:1' 하나
+     setCropAt(S, {x:0,y:0.02,z:0})  →  던지지 않는다. 'free:crop_01' 로 바닥에 잡힌다
+
+   즉 「13칸」은 **추천 자리(가구 위) 수**였고 작물의 상한이 아니었다.
+
+   ★ 진짜 천장은 **체력**이다 (`src/game/stamina.js` · `docs/stamina.md` · 2026-08-05 신설).
+     하루에 쓸 수 있는 손이 `STAMINA_MAX`(10)이고 물주기·수확·심기가 1씩 쓴다.
+     완전 시차면 한 회전을 돌리는 데 **3**(물+수확+심기)이 들고 몬스테라 물주기가 **1**이라,
+     하루에 돌릴 수 있는 회전이 `floor((10 − 1) / 3) = 3`회다.
+     ⇒ 콩나물만이면 **시루 15개**, `docs/stamina.md §2` 의 「17개」는 몬스테라를 뺀 값이다.
+     아래 장부는 **둘 다** 재고, 넘치는 회전은 **다음 날로 밀린다**(백로그). */
 const CROP_PLANS = [
-  { id: '콩5',      siru: 5,  tray: 0 },
-  { id: '콩10',     siru: 10, tray: 0 },
-  { id: '콩13',     siru: 13, tray: 0 },   // 자리를 전부 콩나물로
-  { id: '콩8무5',   siru: 8,  tray: 5 },
-  { id: '⚠콩20무28', siru: 20, tray: 28 }  // 자리 천장(13)을 훌쩍 넘는다
+  { id: '콩5',       siru: 5,  tray: 0 },
+  { id: '콩10',      siru: 10, tray: 0 },
+  { id: '콩13',      siru: 13, tray: 0 },   // 삽수 자를 손을 남겨 두는 계획
+  { id: '콩15',      siru: 15, tray: 0 },   // 체력 천장(몬스테라 포함) — 손이 안 남는다
+  { id: '콩17',      siru: 17, tray: 0 },   // docs/stamina.md §2 가 말하는 천장
+  { id: '콩10무7',   siru: 10, tray: 7 },
+  { id: '콩17무14',  siru: 17, tray: 14 },
+  { id: '⚠콩30무21', siru: 30, tray: 21 }   // 체력 천장을 훌쩍 넘긴다 — 백로그가 쌓인다
 ];
-const PLAN_MAIN = '콩13';
-const PLAN_HONEST = '콩13';                 // ㉣ 없이 지금 규칙으로 할 수 있는 최선
+const PLAN_MAIN = '콩17';
+const PLAN_HONEST = '콩10';                 // ㉣ 없이 지금 규칙으로 할 수 있는 최선(끼니 상한이 막는다)
 const RATE_MAIN = 0.25;
+/* ★ 「파산일 ≥ 이사일」을 만드는 **최소 판매가**를 찾는다 — ㉢ 없이도 되는지가 여기서 갈린다 */
+const RATE_SCAN = [0.25, 0.30, 0.35, 0.40, 0.50, 0.60, 0.70, 0.85, 1.00];
 
 /* 딸린 검사 — 박사님이 지정하신 것 전부 */
 const COLLATERAL = ['test_balance_routes', 'test_save', 'test_maturation', 'test_first_play',
@@ -237,16 +258,34 @@ async function measure(OPT) {
 
   const harvestsToday = (n, cycle, d) => Math.floor(n / cycle) + ((d % cycle) < (n % cycle) ? 1 : 0);
 
-  function cropLedger({ rate = 0, siruTarget = 1, trayTarget = 0, maxDays = 600, buy = true }) {
+  /* ★ 체력 — 진짜 모듈에서 읽는다. 숫자를 여기서 정하지 않는다 */
+  const { STAMINA_MAX, ACT_COST } = await import('../src/game/stamina.js');
+  const ACTS_PER_CYCLE = ACT_COST.water + ACT_COST.harvest + ACT_COST.sow;   // 물+수확+심기 = 3
+  const MONSTERA_ACTS = ACT_COST.water;                                      // 몬스테라 물주기 = 1
+
+  function cropLedger({ rate = 0, siruTarget = 1, trayTarget = 0, maxDays = 600, buy = true,
+                        stamina = true }) {
     const ts = createTutorialState({ enabled: true });
     let siru = 1, tray = 0;                 // 시작 = 선물로 받은 시루 하나
     let bust = null, reach = null, invested = 0, cumNet = 0, payback = null;
     let pantry = 0, soldTotal = 0, seedTotal = 0, savedTotal = 0;
     let steadyFrom = null, steadyNet = 0, steadyDays = 0;
+    /* ★ 백로그 — 체력이 모자라 오늘 못 거둔 회전. 다음 날로 밀린다(안 사라진다) */
+    let dueS = 0, dueT = 0, actsSum = 0, actsDays = 0, maxDue = 0, choked = 0;
     for (let d = 1; d <= maxDays; d++) {
-      /* 오늘 거둔 것 — 종류마다 그날 순번(overlapIndex)이 붙는다 */
-      const kS = harvestsToday(siru, CYCLE.siru, d);
-      const kT = harvestsToday(tray, CYCLE.tray, d);
+      /* 오늘 익은 것을 밀린 것에 더한다 */
+      dueS += harvestsToday(siru, CYCLE.siru, d);
+      dueT += harvestsToday(tray, CYCLE.tray, d);
+      /* ★ 체력이 오늘 몇 회전을 돌릴 수 있나 — 몬스테라 물주기를 먼저 뗀다.
+         콩나물을 먼저 돌린다(회전값이 크다). 못 돌린 것은 백로그로 남는다. */
+      let budget = (stamina ? STAMINA_MAX : Infinity) - MONSTERA_ACTS;
+      let kS = 0, kT = 0;
+      while (dueS - kS >= 1 && budget >= ACTS_PER_CYCLE) { kS++; budget -= ACTS_PER_CYCLE; }
+      while (dueT - kT >= 1 && budget >= ACTS_PER_CYCLE) { kT++; budget -= ACTS_PER_CYCLE; }
+      dueS -= kS; dueT -= kT;
+      if (dueS + dueT > 0) choked++;
+      maxDue = Math.max(maxDue, dueS + dueT);
+      actsSum += MONSTERA_ACTS + (kS + kT) * ACTS_PER_CYCLE; actsDays++;
       let saved = 0, full = 0;
       for (let j = 0; j < kS; j++) { saved += cropCycleSavedWon(RULES, 3, 0 + j); full += FULL.siru; }
       for (let j = 0; j < kT; j++) { saved += cropCycleSavedWon(RULES, 3, 1 + j); full += FULL.tray; }
@@ -280,13 +319,16 @@ async function measure(OPT) {
     }
     return { rate, siruTarget, trayTarget, bust, reach, invested, payback,
              siru, tray, soldTotal, seedTotal, savedTotal,
-             steadyPerDay: steadyDays ? Math.round(steadyNet / steadyDays) : null };
+             steadyPerDay: steadyDays ? Math.round(steadyNet / steadyDays) : null,
+             actsPerDay: actsDays ? +(actsSum / actsDays).toFixed(1) : null,
+             maxDue, chokedDays: choked };
   }
 
   /* 비율 × 계획 표 · 그리고 대표 한 벌 */
   const gap4 = {
     price: PRICE, cycle: CYCLE, full: FULL, breakeven: BREAKEVEN, byQuality: BYQUALITY,
     dailyCapWon: RULES.dailyCropSaveWon, mealCapWon: RULES.cropMealCapWon,
+    staminaMax: STAMINA_MAX, actsPerCycle: ACTS_PER_CYCLE, monsteraActs: MONSTERA_ACTS,
     grid: SELL_RATES.map(r => ({ rate: r,
       plans: CROP_PLANS.map(p => ({ id: p.id,
         ...cropLedger({ rate: r, siruTarget: p.siru, trayTarget: p.tray }) })) })),
@@ -297,10 +339,29 @@ async function measure(OPT) {
     honest: cropLedger({ rate: 0,
                        siruTarget: CROP_PLANS.find(p => p.id === PLAN_HONEST).siru,
                        trayTarget: CROP_PLANS.find(p => p.id === PLAN_HONEST).tray }),
+    /* ★★ 후보마다 — **가장 잘 버는 계획(콩15)** 으로 판매가를 훑는다.
+       「파산일 ≥ 이사일」이 처음 참이 되는 칸이 그 후보에 필요한 최소 판매가다. */
+    scan15: RATE_SCAN.map(r => ({ rate: r,
+      ...(({ bust, steadyPerDay, invested, reach }) => ({ bust, steadyPerDay, invested, reach }))(
+        cropLedger({ rate: r, siruTarget: 15, trayTarget: 0 })) })),
+    /* 삽수 자를 손을 남겨 두는 계획(콩13)으로도 같은 것을 훑는다 */
+    scan13: RATE_SCAN.map(r => ({ rate: r,
+      ...(({ bust, steadyPerDay, invested, actsPerDay }) => ({ bust, steadyPerDay, invested, actsPerDay }))(
+        cropLedger({ rate: r, siruTarget: 13, trayTarget: 0 })) })),
+    /* ★ 체력을 끄면 얼마나 달라지나 — 체력이 진짜 천장인지 확인하는 대조군 */
+    noStamina: cropLedger({ rate: RATE_MAIN, siruTarget: 30, trayTarget: 21, stamina: false }),
+    withStamina: cropLedger({ rate: RATE_MAIN, siruTarget: 30, trayTarget: 21, stamina: true }),
     main50: cropLedger({ rate: 0.5,
                        siruTarget: CROP_PLANS.find(p => p.id === PLAN_MAIN).siru,
                        trayTarget: CROP_PLANS.find(p => p.id === PLAN_MAIN).tray }),
     /* 시루 한 개를 **더** 들이면 하루에 얼마가 남나 — 겹침 순번(overlap)마다 다르다 */
+    /* ★★ 「파산일 ≥ 이사일」을 만드는 **최소 판매가** — 계획마다 훑는다.
+       이게 ㉢ 없이도 되는 조합이 있는지의 답이다. 이사일은 부모가 채운다(여기선 후보값만 낸다). */
+    scan: CROP_PLANS.map(p => ({ id: p.id,
+      rates: RATE_SCAN.map(r => ({ rate: r,
+        ...(({ bust, reach, invested, steadyPerDay, actsPerDay, maxDue }) =>
+             ({ bust, reach, invested, steadyPerDay, actsPerDay, maxDue }))(
+          cropLedger({ rate: r, siruTarget: p.siru, trayTarget: p.tray })) })) })),
     /* 하루 저감 상한(5,000원) **아래**면 깎인 저감이 실제로 산다.
        상한을 이미 넘겼으면 그 저감도 곳간에서 쉬어 버리므로 0이고, 잉여가 한 회전분 전부다. */
     marginal: [...[0, 1, 2, 3].map(j => {
@@ -790,6 +851,28 @@ if (base) {
                 r.plans.map(p => pad(p.bust == null ? '안 망함' : p.bust + '일', 13)).join(''));
 
   console.log('');
+  console.log('── ㉣-1b ★체력이 진짜 천장인가 (콩30무21 을 두 가지로) ──────────────');
+  for (const [ko, p] of [['체력 끔', g.noStamina], ['체력 켬', g.withStamina]])
+    console.log(`  ${pad(ko, 10)} 하루 손 ${pad(p.actsPerDay, 6)} 밀린 회전 최대 ${pad(p.maxDue, 5)} ` +
+                `못 다 돌본 날 ${pad(p.chokedDays, 5)} 안정 순이익 ${pad((p.steadyPerDay || 0).toLocaleString() + '원/일', 12)} 파산 ${D(p.bust)}`);
+  console.log(`  ★ 체력 최대치 ${g.staminaMax} · 한 회전에 드는 손 ${g.actsPerCycle} · 몬스테라 ${g.monsteraActs}`);
+
+  console.log('');
+  console.log('── ㉣-1c ★★파산일 ≥ 이사일 을 만드는 **최소 판매가** ─────────────────');
+  console.log('   (판매가 = 한 회전분 대비. 손익분기는 콩 23.3% · 무순 30.0%)');
+  const need = base.m.A.medDay;
+  console.log(pad('재배 계획', 14) + pad('하루 손', 9) + pad('★남는 손', 10) + pad('용기 투자', 12) +
+              RATE_SCAN.map(r => pad(`${(r * 100).toFixed(0)}%`, 8)).join(''));
+  for (const p of g.scan) {
+    const r0 = p.rates[0];
+    console.log(pad(p.id, 14) + pad(r0.actsPerDay, 9) +
+                pad((g.staminaMax - r0.actsPerDay).toFixed(1), 10) + pad(r0.invested.toLocaleString(), 12) +
+                p.rates.map(x => pad(x.bust == null ? '안망함' : x.bust + '일', 8)).join(''));
+  }
+  console.log(`  ★ 「남는 손」이 1 아래면 **삽수를 자를 손이 없다** — 자르기도 체력 1을 쓴다`);
+  console.log(`  ★ 기준 이사일이 ${need}일이다 — 그 위(또는 「안망함」)가 처음 나오는 칸이 답이다.`);
+
+  console.log('');
   console.log(`── ㉣-2 ★함정 — 용기를 언제 다 사나 · 회수는 되나 (${PLAN_MAIN} 목표) ──`);
   console.log(pad('판매가', 10) + pad('도달일', 10) + pad('실제 도달', 14) +
               pad('용기 투자', 12) + pad('회수일', 10) + pad('안정 순이익', 13) + '파산일');
@@ -799,6 +882,22 @@ if (base) {
                 pad(`시루${p.siru}·판${p.tray}`, 14) + pad(p.invested.toLocaleString(), 12) +
                 pad(D(p.payback), 10) + pad((p.steadyPerDay == null ? '—' : p.steadyPerDay.toLocaleString() + '원/일'), 13) +
                 D(p.bust));
+  }
+
+  console.log('');
+  console.log(`── ㉣-3b ★★후보마다 — 콩15(체력 천장)로 팔 때 합격선을 넘는 최소 판매가 ──`);
+  console.log(pad('후보', 30) + pad('이사일', 8) +
+              RATE_SCAN.map(r => pad(`${(r * 100).toFixed(0)}%`, 7)).join('') + '최소 판매가');
+  for (const { c, m } of rows) {
+    const mv = m.A.medDay;
+    for (const [ko, scan] of [['콩15', m.gap4.scan15], ['콩13', m.gap4.scan13]]) {
+      const cells = scan.map(x =>
+        (mv != null && (x.bust == null || x.bust >= mv)) ? '★' + (x.bust == null ? '∞' : x.bust) : (x.bust == null ? '∞' : x.bust));
+      const hit = scan.find(x => mv != null && (x.bust == null || x.bust >= mv));
+      console.log(pad(`${c.id} ${c.ko}`.slice(0, 26) + ` [${ko}]`, 30) + pad(D(mv), 8) +
+                  cells.map(s => pad(s, 7)).join('') +
+                  (hit ? `${(hit.rate * 100).toFixed(0)}%` : '★없다'));
+    }
   }
 
   console.log('');
