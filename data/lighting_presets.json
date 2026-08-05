@@ -1,5 +1,6 @@
 {
   "_note": "조명 기구 스펙. 식물등은 grow=true. PPFD는 기준거리(ref_dist_m)에서의 값이고, 실제 값은 거리²로 감쇠(lighting_sim.ppfdAt).",
+  "_aim": "겨누기 범위(docs/growlight_aim.md §2). aim 이 있는 기구만 머리를 돌릴 수 있다. yaw=좌우 최대각(±도), tilt_max=똑바로 아래(0)에서 꺾어 올릴 수 있는 최대각(도). aim 이 없으면 붙박이라 못 돌린다 — growlight_bar 가 그렇고, 그게 튜토리얼의 긴장이다(못 돌리는 등으로 시작해 자리를 옮겨 맞추는 것을 먼저 배운다). 범위는 adjustable_height 와 같은 구분을 따른다.",
   "_spectrum": "full=풀스펙트럼(백색, 비쌈·예쁨) / redblue=적청LED(보라빛, 싸고 효율↑·분위기↓) / warm=따뜻한 백색(관상용, 식물효율 낮음)",
   "_use": "house_rooms furniture 항목에 조명 프리셋을 넣고, lighting.schedule로 광주기 지정.",
 
@@ -21,15 +22,17 @@
     "growlight_clip": {
       "name_ko": "식물등-클립형", "grow": true, "watts": 12, "ppfd_ref": 120, "ref_dist_m": 0.3,
       "coverage_r": 0.35, "spectrum": "redblue", "price": 18000, "adjustable_height": true,
-      "note": "싸고 좁게. 화분 1개용. 기본 적청이라 보라빛." },
+      "aim": { "yaw": 180, "tilt_max": 75 },
+      "note": "싸고 좁게. 화분 1개용. 기본 적청이라 보라빛. 목이 꺾이는 물건이라 겨눌 수 있다." },
     "growlight_bar": {
       "name_ko": "식물등-바(선반밑)", "grow": true, "watts": 20, "ppfd_ref": 180, "ref_dist_m": 0.3,
       "coverage_r": 0.5, "spectrum": "full", "price": 34000, "adjustable_height": false,
-      "note": "선반 단마다 부착 → 다층 재배. 거리 고정(단 높이)." },
+      "note": "선반 단마다 부착 → 다층 재배. 거리 고정(단 높이). aim 이 없다 = 붙박이라 못 겨눈다." },
     "growlight_stand": {
       "name_ko": "식물등-스탠드", "grow": true, "watts": 36, "ppfd_ref": 250, "ref_dist_m": 0.4,
       "coverage_r": 0.7, "spectrum": "full", "price": 72000, "adjustable_height": true,
-      "note": "넓고 강함. 큰 식물·여러 화분." },
+      "aim": { "yaw": 180, "tilt_max": 60 },
+      "note": "넓고 강함. 큰 식물·여러 화분. 세워 두는 물건이라 겨눌 수 있다." },
     "lamp_ceiling": {
       "name_ko": "천장등", "grow": false, "watts": 30, "ppfd_ref": 12, "ref_dist_m": 1.5,
       "coverage_r": 2.2, "spectrum": "warm", "price": 25000, "note": "생활 조명. 식물엔 거의 도움 안 됨." },

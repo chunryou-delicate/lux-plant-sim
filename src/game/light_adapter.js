@@ -16,7 +16,7 @@ import { buildHouse } from '../render3d/house.js';
 import { faintGrainTexture } from '../render3d/textures.js';
 import { winFromHouse } from '../engine/daylight_lux.js';
 import { buildDailyLight, thresholdsFor, daylightRatio } from '../engine/daily_light.js';
-import { ppfdSum } from '../render3d/lighting_sim.js';
+import { ppfdSum, aimVector } from '../render3d/lighting_sim.js';
 import { skyOf, setWeatherProbs, seasonOf } from '../engine/weather.js';
 import { modeOf, placedItems } from './state.js';
 import { validateContract } from './contract.js';
@@ -179,8 +179,97 @@ export function createLightEngine(data) {
     };
   }
 
-  /* ---- 켤 식물등. 방에 놓인 grow 기구를 앞에서부터 n개 ---- */
-  function rigsOn(count) { return room.growRigs.slice(0, Math.max(0, count | 0)); }
+  /* ★ 겨누기 표 — `{ <등 uid>: {yaw, tilt} }` (2026-08-06 · docs/growlight_aim.md §2)
+     가구 덮어쓰기(furnOverrides)와 **같은 규약**이다: 플레이어가 실제로 겨눈 등만 담는다.
+     비어 있으면 data 의 기본 상태 = 안 겨눔이고, 그때 물리는 옛 식과 비트 단위로 같다. */
+  let lampAims = {};
+
+  /* 그 등을 겨눌 수 있나. 못 겨누는 등이면 왜 못 겨누는지까지 말한다. */
+  function aimRangeOf(uid) {
+    if (!room) throw new Error('[조도] 방을 아직 조립하지 않았습니다');
+    const rig = room.growRigs.find(r => r.uid === uid)
+             || (room.built.lightRigs || []).find(r => r.uid === uid);
+    if (!rig) throw new Error(`[겨누기] 모르는 등 uid: ${uid} (방 ${room.id})`);
+    return rig.aimRange;
+  }
+
+  /* ---- ★ 등 겨누기 (2026-08-06 · docs/growlight_aim.md §2) ----
+     yaw  좌우(도)   tilt 똑바로 아래에서 꺾어 올린 각(도, 0 = 수직 아래)
+
+     검사(checkAim)와 쓰기(setLampAim)를 갈라 뒀다 — setLampAims 가 **전부 검사한 뒤에**
+     한 번에 얹어야 하기 때문이다.
+
+     ⚠ **못 겨누는 등은 조용히 무시하지 않고 던진다.** 무시하면 화면은 손잡이를 보여 주는데
+       빛이 안 움직이고, 세이브에는 값이 남아 "겨눴는데 안 먹는" 상태가 굳는다.
+       바 등이 못 도는 것은 버그가 아니라 설계(§2)라 크게 말해야 한다.
+       화면은 lampList() 의 aimable:false 를 보고 손잡이를 아예 안 그리면 된다 —
+       던지기는 배선이 틀렸을 때의 안전망이지 평소 경로가 아니다. */
+
+  /* 검사만 한다 — 통과하면 정규화된 {yaw, tilt}, 아니면 던진다. 아무것도 안 바꾼다. */
+  function checkAim(uid, aim) {
+    const range = aimRangeOf(uid);
+    if (!range)
+      throw new Error(`[겨누기] ${uid} 는 겨눌 수 없는 등입니다 — 붙박이라 머리가 안 돌아갑니다 ` +
+        `(data/lighting_presets.json 에 aim 이 없습니다). docs/growlight_aim.md §2 참고.`);
+    /* ⚠ `Number(x) || 0` 로 쓰면 안 된다 — NaN 도 0 이 되어 아래 검사가 영영 안 걸린다.
+       안 준 것(null·undefined)만 0 이고, 준 것이 숫자가 아니면 **던진다.** */
+    const ry = aim == null ? null : aim.yaw, rt = aim == null ? null : aim.tilt;
+    const yaw = ry == null ? 0 : Number(ry), tilt = rt == null ? 0 : Number(rt);
+    if (!Number.isFinite(yaw) || !Number.isFinite(tilt))
+      throw new Error(`[겨누기] ${uid}: yaw·tilt 가 유한한 숫자가 아닙니다 (${ry}, ${rt})`);
+    if (Math.abs(yaw) > range.yaw)
+      throw new Error(`[겨누기] ${uid}: yaw ${yaw}° 는 범위 밖입니다 (±${range.yaw}°)`);
+    if (tilt < range.tiltMin || tilt > range.tiltMax)
+      throw new Error(`[겨누기] ${uid}: tilt ${tilt}° 는 범위 밖입니다 (${range.tiltMin}~${range.tiltMax}°)`);
+    return { yaw, tilt };
+  }
+
+  function setLampAim(uid, aim) {
+    lampAims[uid] = checkAim(uid, aim);
+    _cache.clear();
+    return lampAims[uid];
+  }
+
+  /* 겨누기를 푼다 — 다시 "안 겨눔"이 되어 옛 대칭 모형으로 돌아간다. */
+  function clearLampAim(uid) {
+    const had = uid in lampAims;
+    delete lampAims[uid];
+    _cache.clear();
+    return had;
+  }
+
+  /* 세이브에서 읽은 표를 통째로 얹는다.
+     ★ **전부 검사한 뒤에 얹는다** — 한 칸이라도 틀리면 아무것도 안 바뀐 채로 던진다.
+       반쯤 얹고 던지면 "세이브는 못 읽었는데 등은 일부 돌아간" 상태가 남는다. */
+  function setLampAims(map) {
+    const next = {};
+    for (const [uid, a] of Object.entries(map || {})) next[uid] = checkAim(uid, a);
+    lampAims = next;
+    _cache.clear();
+    return { ...lampAims };
+  }
+
+  /* UI 가 쓸 목록 — 어느 등을 얼마나 돌릴 수 있고 지금 어디를 보고 있나 */
+  function lampList() {
+    if (!room) throw new Error('[조도] 방을 아직 조립하지 않았습니다');
+    return room.growRigs.map((r, i) => ({
+      uid: r.uid, preset: r.id, idx: i, pos: { ...r.pos },
+      aimable: !!r.aimRange, range: r.aimRange ? { ...r.aimRange } : null,
+      aim: lampAims[r.uid] ? { ...lampAims[r.uid] } : null
+    }));
+  }
+
+  /* ---- 켤 식물등. 방에 놓인 grow 기구를 앞에서부터 n개 ----
+     ★ 겨눈 등에만 `aim` 을 실어 보낸다. 안 겨눈 등은 `aim` 이 아예 없고, 그러면
+       lighting_sim.ppfdSum 이 옛 대칭 모형 그대로 돈다(= 회귀). 축이 생긴 등만
+       원뿔이 되어 뒤쪽을 안 비춘다 — 왜 이렇게 갈랐는지는 ppfdSum 주석에 잰 숫자로 적어 두었다. */
+  function rigsOn(count) {
+    const list = room.growRigs.slice(0, Math.max(0, count | 0));
+    return list.map(r => {
+      const a = lampAims[r.uid];
+      return a ? { ...r, aim: aimVector(a.yaw, a.tilt) } : r;
+    });
+  }
 
   /* ---- 슬롯 배열 만들기: 놓인 것 + 그 자리 식물등 PPFD ----
      ★ 추천 자리(room.slots)와 **자유 좌표로 놓인 것**을 같은 모양으로 낸다 (2026-08-03).
@@ -408,6 +497,12 @@ export function createLightEngine(data) {
     if (Object.keys(furnOverrides).length)
       throw new Error(`[프로파일 중단] ${room.id}: 가구가 옮겨진 상태입니다 ` +
         `(${Object.keys(furnOverrides).join(', ')}). setFurnitureOverrides({}) 로 되돌린 뒤 뽑으세요.`);
+    /* ★ 겨눈 등 위에서도 안 뽑는다 (2026-08-06) — 위 가구와 같은 이유다.
+       프로파일의 `ppfd` 배열은 파일로 굳어 밸런스 시뮬의 근거가 된다. 플레이어가 겨눈
+       상태를 굳히면 "이 방은 이렇다"가 그 한 사람의 조준으로 바뀐다. */
+    if (Object.keys(lampAims).length)
+      throw new Error(`[프로파일 중단] ${room.id}: 등이 겨눠진 상태입니다 ` +
+        `(${Object.keys(lampAims).join(', ')}). setLampAims({}) 로 되돌린 뒤 뽑으세요.`);
 
     const up = { x: 0, y: 1, z: 0 };
     const counts = lampCounts.filter(n => n <= room.growRigs.length);
@@ -441,6 +536,9 @@ export function createLightEngine(data) {
     /* ★ 자유 좌표 배치 (2026-08-03) — UI 창이 쓰는 공개 API */
     dliAt, nearestSlotTo, moveFurniture, setFurnitureOverrides, furnitureList,
     furnitureOverrides: () => ({ ...furnOverrides }),
+    /* ★ 등 겨누기 (2026-08-06) — 화면 창이 쓰는 공개 API */
+    setLampAim, clearLampAim, setLampAims, lampList, aimRangeOf,
+    lampAims: () => ({ ...lampAims }),
     get room() { return room; },
     rooms: () => Object.entries(data.houseRooms.rooms || {})
                    .map(([id, r]) => ({ id, label: r.label || id, light: r.light || '' })),

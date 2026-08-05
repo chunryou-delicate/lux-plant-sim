@@ -69,8 +69,14 @@ export function newState(opt = {}) {
     home: { room: opt.room || 'banjiha', furniture: {} },
 
     /* 식물등 — 방에 이미 놓인 grow 기구를 앞에서부터 n개 켠다.
-       개수·PPFD·와트를 코어가 지어내지 않는다(house의 lightRigs + lighting_presets). */
-    lamps: { count: 0, litHours: 12 },
+       개수·PPFD·와트를 코어가 지어내지 않는다(house의 lightRigs + lighting_presets).
+
+       ★ aim — 등마다 겨눈 각도 `{ <등 uid>: {yaw, tilt} }` (2026-08-06).
+         가구 덮어쓰기(home.furniture)와 **같은 규약**이다: 플레이어가 실제로 겨눈 등만 담는다.
+         비어 있으면 「안 겨눔」이고 그때 조도는 옛 식과 비트 단위로 같다 —
+         그래서 **옛 세이브(aim 칸이 없는 것)는 자동으로 「안 겨눔」으로 열린다.**
+         돌릴 수 있는 범위는 여기가 아니라 data/lighting_presets.json 이 갖는다. */
+    lamps: { count: 0, litHours: 12, aim: {} },
 
     /* ★ 화분 — **비어 있게 시작한다** (2026-08-02).
        몬스테라는 플레이어가 처음부터 키운 게 아니라 **이미 싹이 튼 개체가 도착**하는 것이다.
@@ -600,6 +606,37 @@ export function setFurniturePlacement(S, uid, pos, opt = {}) {
 
 export function clearFurniturePlacement(S, uid) {
   const tbl = furnitureOverrides(S);
+  const had = uid in tbl;
+  delete tbl[uid];
+  return had;
+}
+
+/* ---- 등 겨누기 표 (S.lamps.aim) — 2026-08-06 ----
+   ★ 옛 세이브에는 이 칸이 없다. 없으면 만들어 주되 **비운 채로** 만든다 = 안 겨눔. */
+export function lampAims(S) {
+  if (!S.lamps) S.lamps = { count: 0, litHours: 12, aim: {} };
+  if (!S.lamps.aim) S.lamps.aim = {};
+  return S.lamps.aim;
+}
+
+/* 플레이어가 등을 겨눈 것을 세이브에 적는다. **범위 검사는 여기서 안 한다** —
+   무엇이 얼마나 도는지는 프리셋과 조립된 rig 가 알고, 그건 light_adapter.setLampAim 이 본다.
+   상태는 "무엇을 골랐나"만 적는다(가구 자리표와 같은 분담). */
+export function setLampAim(S, uid, aim) {
+  if (!uid || typeof uid !== 'string') throw new TypeError('[겨누기] 등 uid 가 필요합니다');
+  /* ⚠ `Number(x) || 0` 로 쓰면 NaN 이 0 으로 삼켜져 아래 검사가 영영 안 걸린다.
+     안 준 것만 0 이고, 준 것이 숫자가 아니면 던진다. */
+  const ry = aim == null ? null : aim.yaw, rt = aim == null ? null : aim.tilt;
+  const yaw = ry == null ? 0 : Number(ry), tilt = rt == null ? 0 : Number(rt);
+  if (!Number.isFinite(yaw) || !Number.isFinite(tilt))
+    throw new TypeError(`[겨누기] ${uid}: yaw·tilt 는 유한한 숫자여야 합니다 (${ry}, ${rt})`);
+  const tbl = lampAims(S);
+  tbl[uid] = { yaw, tilt };
+  return tbl[uid];
+}
+
+export function clearLampAim(S, uid) {
+  const tbl = lampAims(S);
   const had = uid in tbl;
   delete tbl[uid];
   return had;

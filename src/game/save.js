@@ -563,6 +563,22 @@ function packFurniture(tbl) {
   return out;
 }
 
+/* 등 겨누기 표 — `{ 등 uid: {yaw, tilt} }`. 둘 다 도(°)다.
+   ★ 겨눈 등만 담긴다. 빈 표 = 안 겨눔이고, 옛 세이브에는 이 칸 자체가 없어 빈 표가 된다
+     (docs/growlight_aim.md §2 · state.lamps.aim 주석).
+   ⚠ 여기서 범위(±180 · 0~75 …)를 검사하지 않는다 — 범위는 프리셋이 갖고 방마다 다른
+     기구가 놓이므로, 세이브가 그 표를 복제하면 두 정본이 생긴다.
+     실제 적용 시점에 light_adapter.setLampAims 가 검사하고 범위 밖이면 던진다. */
+function packLampAims(tbl) {
+  const out = {};
+  for (const [uid, a] of Object.entries(tbl || {})) {
+    const path = `lamps.aim['${uid}']`;
+    needObj(a, path);
+    out[uid] = { yaw: needNum(a.yaw ?? 0, `${path}.yaw`), tilt: needNum(a.tilt ?? 0, `${path}.tilt`) };
+  }
+  return out;
+}
+
 /* ★ 저장 객체를 만든다. 순수 JSON 이고 함수·Map·Set·순환참조가 없다(끝에서 검사한다).
      opt.now         저장 시각(테스트 주입용). 없으면 지금
      opt.appVersion  빌드 표식(있으면 적는다). 없으면 null */
@@ -608,7 +624,8 @@ export function serialize(S, opt = {}) {
       home: { room: needStr(home.room, 'home.room'), furniture: packFurniture(home.furniture) },
       lamps: {
         count: needInt(lamps.count ?? 0, 'lamps.count', { min: 0 }),
-        litHours: needNum(lamps.litHours ?? 0, 'lamps.litHours', { min: 0 })
+        litHours: needNum(lamps.litHours ?? 0, 'lamps.litHours', { min: 0 }),
+        aim: packLampAims(lamps.aim)
       },
       pots: needArr(S.pots || [], 'pots').map(packPot),
       cuttings: needArr(S.cuttings || [], 'cuttings').map(packCutting),
@@ -727,6 +744,19 @@ function roomOf(S, opt) {
     catch (e) {
       if (/모르는 방/.test(e.message)) throw fail('unknown_room', `이 빌드가 모르는 방입니다: ${S.home.room}`);
       throw e;
+    }
+    /* ★ 등 겨누기도 같은 규약으로 얹는다 (2026-08-06).
+       가구와 똑같이 **비어 있어도 반드시 부른다** — 안 부르면 직전 게임에서 겨눈 각도가
+       남아 "새 세이브를 불렀는데 등이 딴 데를 본다"가 된다.
+       ⚠ 방을 조립한 **뒤**에 얹는다. 겨눌 수 있는지는 지금 방에 놓인 기구가 아는 것이라
+         조립 전에는 uid 를 검증할 수 없다. */
+    if (typeof light.setLampAims === 'function') {
+      const aims = S.lamps && S.lamps.aim ? S.lamps.aim : {};
+      const here = new Set((typeof light.lampList === 'function' ? light.lampList() : []).map(l => l.uid));
+      /* 지금 방에 없는 등의 각도는 남겨 두되 안 얹는다 — 방을 옮겨 다니면 정상이고,
+         돌아오면 그 각도를 다시 쓴다(가구 자리표와 같은 판단). */
+      const mine = {}; for (const [uid, a] of Object.entries(aims)) if (here.has(uid)) mine[uid] = a;
+      light.setLampAims(mine);
     }
     return { slots: room.slots || [], size: room.size || null, surfaces: room.surfaces || null,
              appliedFurniture: true, roomId: room.id };
@@ -910,9 +940,13 @@ export function deserialize(raw, opt = {}) {
   S.sim.weatherK = optNum(sim.weatherK, 'state.sim.weatherK');
   S.sim.seasonK = optNum(sim.seasonK, 'state.sim.seasonK');
   S.home.furniture = packFurniture(home.furniture);       // 같은 검증을 읽을 때도 한 번 더
+  /* ★ aim 이 없는 옛 세이브는 빈 표 = 「안 겨눔」으로 열린다 (2026-08-06).
+     조용히 메꾸는 게 아니라 **없음이 곧 뜻을 갖는** 경우다 — 안 겨눈 등의 물리는
+     옛 식과 비트 단위로 같으므로, 옛 세이브는 저장될 때와 똑같은 빛을 다시 본다. */
   S.lamps = {
     count: needInt((st.lamps || {}).count ?? 0, 'state.lamps.count', { min: 0 }),
-    litHours: needNum((st.lamps || {}).litHours ?? 12, 'state.lamps.litHours', { min: 0 })
+    litHours: needNum((st.lamps || {}).litHours ?? 12, 'state.lamps.litHours', { min: 0 }),
+    aim: packLampAims((st.lamps || {}).aim)
   };
   S.pots = needArr(st.pots || [], 'state.pots').map((p, i) => {
     const q = packPot(p, i);

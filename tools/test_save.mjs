@@ -206,7 +206,10 @@ check('A 저장 → 복원 — day·방·화분 좌표·가구 자리표·첫 �
   assert.equal(S2.home.room, 'banjiha');
   assert.equal(S2.sim.mode, 'novice');
   assert.equal(S2.sim.seed, 7);
-  assert.deepEqual(S2.lamps, { count: 1, litHours: 10 });
+  /* aim 은 등마다 겨눈 각도 표다(2026-08-06 · docs/growlight_aim.md §2).
+     이 판은 겨눈 등이 없어 **빈 표**로 열린다 — 그게 「안 겨눔」이고, 그때 조도는
+     겨누기 이전과 비트 단위로 같다. 겨누기 왕복 자체는 test_lampaim ⑦ 이 본다. */
+  assert.deepEqual(S2.lamps, { count: 1, litHours: 10, aim: {} });
   assert.deepEqual(S2.home.furniture, { 'banjiha-bed': { x: 0.5, z: 0.5, rot: 90 } });
   assert.equal(S2.firstPlay.phase, S.firstPlay.phase, '첫 플레이 단계가 다릅니다');
   assert.equal(S2.firstPlay.beansprout.harvested, true, '수확 기록이 사라졌습니다');

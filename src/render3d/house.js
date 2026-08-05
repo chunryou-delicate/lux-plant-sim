@@ -752,9 +752,18 @@ export function buildHouse(GRAIN, roomDefIn, winPresets, doorPresets={}, finishe
       L.position.set(f.x??0, emitY, f.z??0);
       L.castShadow=false;                                  // 보조광 — 그림자맵 절약
       furnGroup.add(L);
-      lightRigs.push({ id:f.preset, fx:fxSpec, spec:sp, specId,
+      /* ★ 겨누기 범위 (2026-08-06 · docs/growlight_aim.md §2)
+         프리셋의 `aim` 을 그대로 실어 보낸다. **여기서 값을 짓지 않는다** — 못 돌리는 등은
+         프리셋에 aim 이 없고, 그 없음이 곧 "붙박이"라는 뜻이다(growlight_bar).
+         house 는 원래 프리셋을 읽기만 하지만 rig 는 house 가 만드는 물건이라,
+         겨누기 범위를 rig 에 붙이는 일은 여기서만 한다. */
+      const aimRange = fxSpec.aim
+        ? { yaw:fxSpec.aim.yaw ?? 180, tiltMin:fxSpec.aim.tilt_min ?? 0,
+            tiltMax:fxSpec.aim.tilt_max ?? 0 }
+        : null;
+      lightRigs.push({ id:f.preset, uid:g.userData.uid, fx:fxSpec, spec:sp, specId,
         schedule:f.schedule||fxSpec.default_schedule||'off',
-        light:L, shade:g.userData.lampShade||null,
+        light:L, shade:g.userData.lampShade||null, aimRange,
         pos:{x:f.x??0,y:emitY,z:f.z??0}, grow:!!fxSpec.grow });
     }
   }
