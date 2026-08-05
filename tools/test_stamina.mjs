@@ -167,12 +167,26 @@ check('E-1 staminaView 가 화면이 쓸 값을 낸다 (문구는 안 만든다)
 /* ══ F · 상한이 실제로 노가다를 막나 ═════════════════════════════════════ */
 check('F-1 ★시루를 얼마나 늘리면 하루에 다 못 돌보나 — 규칙에서 나오는 천장', () => {
   const bean = CROP_KINDS.find(k => k.id === 'beansprout');
-  /* 완전 시차면 하루에 (시루수 / 주기) 번씩 물·수확·심기가 난다 */
-  const actsFor = (n) => Math.round(n / bean.harvestDays * 3);
-  const cap = (() => { for (let n = 1; n <= 60; n++) if (actsFor(n) > STAMINA_MAX) return n - 1; return 60; })();
-  console.log(`      시루 5개 ${actsFor(5)}번 · 10개 ${actsFor(10)}번 · 15개 ${actsFor(15)}번 → 체력이 정하는 천장 **${cap}개**`);
-  assert.ok(cap >= 10 && cap <= 20,
-    `체력이 정하는 시루 천장이 ${cap}개입니다 — 끼니 상한(10개)보다 조금 위여야 "팔아야 뜻이 생기는 구간"이 납니다`);
+  /* 완전 시차면 하루에 (시루수 / 주기) 번씩 물·수확·심기가 난다.
+     ★★ 정정 (2026-08-05 · econgap 창이 잡았다) — **몬스테라 물주기 1을 빼야 한다.**
+       처음엔 `시루 손질 ≤ 10` 으로 셌는데 몬스테라는 날마다 물을 먹는다.
+       작물에 쓸 수 있는 손은 10 이 아니라 **9** 이고, 그래서 천장이 17 이 아니라 **15** 다.
+       17 로 두면 플레이어가 시루 두 개(14,000원)를 사고 아무것도 못 얻는다 —
+       실측으로도 콩17(107일)이 콩15(113일)보다 나빴다. */
+  const MONSTERA_DAILY = costOf('water');                 // 몬스테라도 날마다 한 손
+  const forCrops = STAMINA_MAX - MONSTERA_DAILY;
+  const actsFor = (n) => n / bean.harvestDays * 3;
+  const cap = (() => { for (let n = 1; n <= 60; n++) if (actsFor(n) > forCrops) return n - 1; return 60; })();
+  /* ★ 실질 상한은 그보다 낮다 — **삽수를 자를 손 하나가 남아야** 한다.
+     안 남으면 varieGrantCheck 의 「삽수를 아직 한 번도 잘라 보지 않았습니다」에 걸려
+     확정 무늬가 안 오고 **튜토가 안 끝난다.** 시루를 더 산 것이 판을 막는 셈이다. */
+  const usable = (() => { for (let n = 1; n <= 60; n++)
+    if (actsFor(n) + MONSTERA_DAILY + costOf('cut') > STAMINA_MAX) return n - 1; return 60; })();
+  console.log(`      작물에 쓸 손 ${forCrops} (체력 ${STAMINA_MAX} − 몬스테라 ${MONSTERA_DAILY}) → ` +
+              `셈상 천장 **${cap}개** · 삽수까지 자를 수 있는 실질 상한 **${usable}개**`);
+  assert.equal(cap, 15, `셈상 천장이 ${cap}개입니다 — 문서(docs/stamina.md §2)는 15개입니다`);
+  assert.ok(usable < cap, '삽수를 자를 손이 남는 상한이 셈상 천장보다 낮아야 합니다');
+  assert.ok(cap > 10, `천장 ${cap}개가 끼니 상한(10개)보다 위여야 "팔아야 뜻이 생기는 구간"이 납니다`);
 });
 
 console.log(`\nstamina: ${fail ? 'FAIL' : 'PASS'}  (${pass}/${pass + fail})`);
