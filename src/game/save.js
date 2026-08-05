@@ -187,6 +187,17 @@ function packPot(p, i) {
     variegated: !!p.variegated,
     /* ★ 코어가 아는 세 칸만 적는다. 유효 생장일은 여기 없다(growth 소유) */
     daysPlanted: needInt(p.daysPlanted ?? 0, `${path}.daysPlanted`, { min: 0 }),
+    /* ★★ `fedDays` — growth 에게 **실제로 먹인 하루의 수** (2026-08-05 신설).
+       ------------------------------------------------------------
+       예전에는 「돌본 날」과 「먹인 날」이 늘 같아서 `daysPlanted` 하나면 됐다.
+       밝기가 속도를 정하게 되면서(loop.js §growthSpeedOf) 밝은 날은 하루에 **두 걸음**을
+       걷는다 — 그날 `dliHist` 에 두 칸이 쌓이는데 `daysPlanted` 는 1 만 는다.
+       ⇒ 복원 때 `hist.length !== daysPlanted` 가 「깨진 턴」이라고 **잘못 경고했다.**
+         재생 자체는 정확했다(hist 한 칸당 advanceTo 한 번이 곧 그 걸음이다).
+       ⇒ 그래서 짝이 되는 값을 따로 적는다. 검사 대상은 `daysPlanted` 가 아니라 이쪽이다.
+       ⚠ 옛 세이브에는 이 칸이 없다. 그때는 `daysPlanted` 로 떨어뜨린다 —
+         속도가 도입되기 전 세이브라 둘이 같았던 것이 사실이다. */
+    fedDays: needInt(p.fedDays ?? p.daysPlanted ?? 0, `${path}.fedDays`, { min: 0 }),
     arrivedOnDay: needInt(p.arrivedOnDay ?? 0, `${path}.arrivedOnDay`, { min: 0 }),
     arrivalGrowthDays: needInt(p.arrivalGrowthDays ?? ARRIVAL.growthDays,
                                `${path}.arrivalGrowthDays`, { min: 0 }),
@@ -806,9 +817,14 @@ export function restoreGrowth(S, growth, opt = {}) {
 
   const hist = S.dliHist || [];
   /* 교차검증 — 이 둘은 loop.js 에서 같은 자리에서 늘어난다. 다르면 중간에 턴이 깨진 것이라
-     재생 길이가 실제와 다를 수 있다. 조용히 넘기지 않는다. */
-  if (hist.length !== p.daysPlanted)
-    warnings.push(`빛 이력 ${hist.length}일 ≠ 돌본 날 ${p.daysPlanted}일 — ` +
+     재생 길이가 실제와 다를 수 있다. 조용히 넘기지 않는다.
+     ★★ 재는 대상은 `daysPlanted`(돌본 날)가 아니라 **`fedDays`(먹인 날)**다 (2026-08-05).
+       밝은 날은 하루에 두 걸음을 걸어 `dliHist` 에 두 칸이 쌓인다 — 그때 `daysPlanted` 로
+       재면 멀쩡한 세이브가 「깨진 턴」으로 잡힌다. 위 §fedDays 참고.
+     ⚠ 옛 세이브는 `fedDays` 가 없어 `daysPlanted` 로 떨어진다(그 시절엔 둘이 같았다). */
+  const fed = Number.isInteger(p.fedDays) ? p.fedDays : p.daysPlanted;
+  if (hist.length !== fed)
+    warnings.push(`빛 이력 ${hist.length}일 ≠ growth 에 먹인 날 ${fed}일 — ` +
                   `중간에 깨진 턴이 있어 형태가 그만큼 어긋날 수 있습니다`);
   if (S.desync)
     warnings.push(`어긋난 상태에서 저장된 세이브입니다(${S.desync.reason || '사유 미상'}) — ` +

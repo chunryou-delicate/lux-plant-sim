@@ -743,7 +743,14 @@ export function nextDay(S, io) {
   /* ★★ growth 에게 넘긴 만큼 쌓는다 — **1:1 이 계약이다**(save.js §growth).
      밝은 날은 `setDailyLight` 를 두 번 불렀으므로 여기도 두 칸이다. 한 칸만 쌓으면
      복원한 형태가 저장 때보다 덜 자란 채로 선다(그게 처음 설계가 깨진 자리였다). */
-  for (let i = 0; i < Math.max(1, fedDays); i++) S.dliHist.push(dli);
+  const fedToday = Math.max(1, fedDays);
+  for (let i = 0; i < fedToday; i++) S.dliHist.push(dli);
+  /* ★★ **먹인 날을 따로 센다** (2026-08-05 · save.js §fedDays).
+     `daysPlanted` 는 "플레이어가 돌본 날"이라 하루에 1 만 는다. 그런데 밝은 날은 여기서
+     두 칸을 쌓으므로 그 둘이 갈린다 — 세이브가 그 짝을 `daysPlanted` 로 재고 있어서
+     멀쩡한 판이 「깨진 턴」으로 경고됐다. 재생은 정확했고, **재는 자가 틀렸던 것**이다.
+     ⇒ `dliHist` 와 1:1 인 값을 화분에 남긴다. 이 줄과 위 push 는 **같이 움직여야 한다.** */
+  p.fedDays = (Number.isInteger(p.fedDays) ? p.fedDays : 0) + fedToday;
   S.ledger.electricityWon += (report.energy && report.energy.won) || 0;   // 표시만. 차감 없음
 
   const phaseAfter = phaseOf(io, S);          // ★ 한 번만 읽는다

@@ -244,6 +244,9 @@ export function givePlant(S, io, opt = {}) {
     potAsset: ARRIVAL.potAsset,
     variegated: false,
     daysPlanted: 0,                                      // 플레이어가 돌본 날
+    /* growth 에게 실제로 먹인 하루의 수. 밝은 날은 하루에 둘이라 위 칸과 갈린다 —
+       `S.dliHist` 와 **1:1** 이고, 그 짝을 세이브 복원이 검사한다(save.js §fedDays) */
+    fedDays: 0,
     arrivedOnDay: S.day,
     arrivalGrowthDays: growthDays
   };
