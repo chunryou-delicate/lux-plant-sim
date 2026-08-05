@@ -49,7 +49,7 @@ check('B 계절 — 시작 여름 · 45일 뒤 가을 · 135일 뒤 겨울', () 
      그 상태에서는 월세가 두 번 나가 실제 지출이 하루 30,000원(월 90만)이었다.
      지금은 하루치에서 월세 몫을 빼고(=10,000) 월세는 목돈으로 낸다 —
      **30일 평균은 그대로 20,000원**이고, 그것을 아래에서 직접 잰다. */
-check('C 하루 지출 — 월세를 두 번 안 뗀다 · 30일 평균이 20,000원', () => {
+check('C 하루 지출 — 월세를 두 번 안 뗀다 · 30일 평균이 15,000원', () => {
   const ts = mk();
   const r0 = tutorialDay(ts, { firstPlayDone: true, mealsUsed: 0 });
   assert.equal(r0.spentWon, 10_000, `하루 현금 지출이 ${r0.spentWon} — 월세 몫을 뺀 10,000이어야 합니다`);
@@ -61,14 +61,20 @@ check('C 하루 지출 — 월세를 두 번 안 뗀다 · 30일 평균이 20,00
   assert.equal(r1.spentWon, 10_000 - 7_500, `절감 뒤 지출이 ${r1.spentWon}`);
 
   /* ★진짜로 재는 것 — 유예가 끝난 뒤 30일 동안 실제로 얼마가 빠지나.
-     story_arc.md §3 "하루 지출 합 20,000원 (월 60만)" 이 그대로 나와야 한다. */
+     ★★ 2026-08-05 — **20,000원(월 60만) → 15,000원(월 45만)** (박사님 확정, 월세 30만 → 15만).
+       살림이 구조적 적자였다: 하루 지출 20,000원인데 벌 수 있는 최대가 8,000원이라
+       무엇을 하든 60~90일에 파산했고 이사는 189일에나 됐다. 게다가 0원이면 씨앗도 못 사서
+       회전이 끝나면 벌이가 통째로 끊겼다 — 되돌아올 길이 없었다.
+       ⇒ 이 숫자가 바뀐 것은 **검사가 물러선 것이 아니라 기획이 바뀐 것**이다.
+       ⚠ `rentWon` 과 `dailySpendWon` 은 같이 움직인다 — 한쪽만 바꾸면 총액이 그대로다
+         (tutorial.js §rentWon 의 ⚠). 이 검사가 바로 그 짝을 지킨다. */
   const ts3 = mk();
   ts3.cashWon = 5_000_000;          // 0원 클램프에 걸리지 않게 넉넉히 — 여기서 재는 건 지출뿐이다
   for (let i = 0; i < 30; i++) tutorialDay(ts3, { firstPlayDone: true, mealsUsed: 0 });
   const after30 = ts3.cashWon;
   for (let i = 0; i < 30; i++) tutorialDay(ts3, { firstPlayDone: true, mealsUsed: 0 });
   const spent = after30 - ts3.cashWon;
-  assert.equal(spent, 600_000, `유예 뒤 한 달 지출이 ${spent.toLocaleString()}원 — 60만원이어야 합니다`);
+  assert.equal(spent, 450_000, `유예 뒤 한 달 지출이 ${spent.toLocaleString()}원 — 45만원이어야 합니다`);
 });
 
 /* ══ D · 월세 — 첫 달은 유예, 30일째부터 ═══════════════════════════════ */
