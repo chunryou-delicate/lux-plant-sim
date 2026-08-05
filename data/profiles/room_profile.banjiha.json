@@ -17,34 +17,34 @@
  "measured": {
   "_label": "★ 라벨 없는 숫자는 쓰지 않는다. space=가구 없는 공간 / slots=지금 가구 배치. peak_summer=맑음·여름 하루 최고. avg7_summer=7일 이동평균 기댓값(=peak×0.643).",
   "space": {
-   "peak_summer": 3.74,
-   "avg7_summer": 2.4,
+   "peak_summer": 4.76,
+   "avg7_summer": 3.05,
    "vol6_m3": 0,
    "vol3_m3": 0.1,
    "vol_dark_m3": 26.7,
    "best_height_m": 1.6,
    "peak_by_height": {
-    "0.1": 0.3,
-    "0.35": 0.4,
-    "0.6": 0.6,
-    "0.85": 0.8,
-    "1.1": 1.2,
-    "1.35": 2.1,
-    "1.6": 3.7
+    "0.1": 0.38,
+    "0.35": 0.51,
+    "0.6": 0.76,
+    "0.85": 1.02,
+    "1.1": 1.53,
+    "1.35": 2.67,
+    "1.6": 4.71
    },
    "_method": "0.25m 격자·높이 0.10~1.80m. 가구 제외. 고체 벽(외곽)·칸막이·도려낸 경계 벽 속 점은 빼고, 창·문 개구부(reveal)는 살린다 — 창턱이 실제로 그 안에 놓인다."
   },
   "slots": {
-   "peak_summer": 3.77,
-   "avg7_summer": 2.42,
+   "peak_summer": 4.8,
+   "avg7_summer": 3.08,
    "count": 14,
    "sampled_peak_ratio_pct": 101,
    "_sampled_note": "slots.peak ÷ space.peak. 두 값의 표본이 다르다 — space 는 0.25m 격자 위 점이고 slots 는 가구가 정한 임의 높이다. 격자 사이에 더 좋은 자리가 있으면 100%를 넘을 수 있고, 그건 오차가 아니라 표본 차이다.",
    "_method": "지금 furniture 배치 기준. 차폐에 가구 포함.",
    "bright_slot": {
     "slotId": "banjiha-sill:0",
-    "peak_summer": 3.77,
-    "avg7_summer": 2.42,
+    "peak_summer": 4.8,
+    "avg7_summer": 3.08,
     "point": {
      "x": 0,
      "y": 1.585,
@@ -56,8 +56,8 @@
    "dark_slots_le_0_3": 9,
    "darkest_slot": {
     "slotId": "banjiha-dresser:1",
-    "peak_summer": 0.04,
-    "avg7_summer": 0.02,
+    "peak_summer": 0.05,
+    "avg7_summer": 0.03,
     "point": {
      "x": 1.7,
      "y": 0.8,
@@ -78,9 +78,10 @@
    },
    "_method": "floor_m2_net = 0.25m 격자로 센 실제 바닥(외곽 벽 띠·칸막이·도려낸 자리 제외). floor_m2_gross = 외곽 치수 곱. 등 상한은 net 기준."
   },
-  "measuredAt": "2026-08-02",
+  "measuredAt": "2026-08-05",
   "roomRev": "a9e2ec4 2026-08-02 창턱 화분받침 1칸",
-  "status": "확정"
+  "status": "확정",
+  "tau_change_note": "2026-08-05 — 반지하 창 tau 0.55 → 0.70(박사님 확정). ratio 는 tau 에 정비례하므로 옛 값에 0.70/0.55 = 1.2727 을 곱했다. 브라우저에서 io.light.profile() 로 다시 뽑은 값과 일치함을 확인했다(창턱 ratio 0.245183 → 0.312051). ⚠ space 격자 값은 같은 비례로 민 것이고 격자 sweep 을 다시 돌린 것은 아니다 — 차폐 기하가 안 바뀌었으므로 비례가 맞지만, 정밀이 필요하면 _profile_gen.html 을 다시 돌려라."
  },
  "slots": [
   {
@@ -92,7 +93,7 @@
     "z": -1.95
    },
    "maxPotD": 0.21,
-   "ratio": 0.245183,
+   "ratio": 0.3120511,
    "ppfd": [
     0,
     42.62,
@@ -108,7 +109,7 @@
     "z": -1.41
    },
    "maxPotD": 0.57,
-   "ratio": 0.0311542,
+   "ratio": 0.0396508,
    "ppfd": [
     0,
     11.45,
@@ -124,7 +125,7 @@
     "z": -1.41
    },
    "maxPotD": 0.57,
-   "ratio": 0.00874807,
+   "ratio": 0.0111339,
    "ppfd": [
     0,
     3.5,
@@ -140,7 +141,7 @@
     "z": 0.94
    },
    "maxPotD": 0.42,
-   "ratio": 0.00391353,
+   "ratio": 0.0049809,
    "ppfd": [
     0,
     1.5,
@@ -156,7 +157,7 @@
     "z": 1.66
    },
    "maxPotD": 0.42,
-   "ratio": 0.00251104,
+   "ratio": 0.0031959,
    "ppfd": [
     0,
     1.08,
@@ -172,7 +173,7 @@
     "z": -1.72
    },
    "maxPotD": 0.25,
-   "ratio": 0.00669749,
+   "ratio": 0.0085241,
    "ppfd": [
     0,
     17.49,
@@ -188,7 +189,7 @@
     "z": -1.72
    },
    "maxPotD": 0.25,
-   "ratio": 0.00707733,
+   "ratio": 0.0090075,
    "ppfd": [
     0,
     18.87,
@@ -204,7 +205,7 @@
     "z": -1.72
    },
    "maxPotD": 0.25,
-   "ratio": 0.0065498,
+   "ratio": 0.0083361,
    "ppfd": [
     0,
     17.49,
@@ -220,7 +221,7 @@
     "z": -1.72
    },
    "maxPotD": 0.25,
-   "ratio": 0.0119026,
+   "ratio": 0.0151488,
    "ppfd": [
     0,
     39.5,
@@ -236,7 +237,7 @@
     "z": -1.72
    },
    "maxPotD": 0.25,
-   "ratio": 0.0114287,
+   "ratio": 0.0145456,
    "ppfd": [
     0,
     47.34,
@@ -252,7 +253,7 @@
     "z": -1.72
    },
    "maxPotD": 0.25,
-   "ratio": 0.0109849,
+   "ratio": 0.0139808,
    "ppfd": [
     0,
     39.5,
@@ -268,7 +269,7 @@
     "z": -1.72
    },
    "maxPotD": 0.25,
-   "ratio": 0.0258206,
+   "ratio": 0.0328626,
    "ppfd": [
     0,
     126.78,
@@ -284,7 +285,7 @@
     "z": -1.72
    },
    "maxPotD": 0.25,
-   "ratio": 0.0246041,
+   "ratio": 0.0313143,
    "ppfd": [
     0,
     273.71,
@@ -300,7 +301,7 @@
     "z": -1.72
    },
    "maxPotD": 0.25,
-   "ratio": 0.0244035,
+   "ratio": 0.031059,
    "ppfd": [
     0,
     126.78,
@@ -308,6 +309,6 @@
    ]
   }
  ],
- "generatedAt": "2026-08-02",
- "generatedBy": "_profile_gen.html (light_adapter.profile)"
+ "generatedAt": "2026-08-05",
+ "generatedBy": "game.html io.light.profile — 반지하 창 tau 0.55→0.70 반영"
 }

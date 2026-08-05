@@ -16,7 +16,7 @@
 import { createFirstPlayState, placeBeansprout, placeCrop, resowBeansprout, waterBeansprout,
          beansproutWaterStatus, beansproutHarvestStatus, BEANSPROUT_ID,
          CROP_SITE_IDS, cropKindOf, cropSites, cropSiteOf } from './first_play.js';
-import { createTutorialState } from './tutorial.js';
+import { createTutorialState, yearDay0Of } from './tutorial.js';
 import { createShopState, useStock } from './shop.js';
 import { atFromSlot, isFreeSlotId, makeAt, resolvePlacement,
          inRoom, assertFurnitureAt } from './place.js';
@@ -42,8 +42,23 @@ export function newState(opt = {}) {
     /* 시간 3모드가 이 숫자 하나로 갈린다 — 하드코딩 금지(plan-to-core §미해결). v0 미사용. */
     timeScale: { minutesPerGameDay: 30 },
 
-    /* 모드. seasonK/weatherK 는 '중간 난이도'가 생길 때 쓸 자리다(null = 모드 기본). */
-    sim: { mode: opt.mode || 'real', seed: 0, weatherK: null, seasonK: null },
+    /* 모드. seasonK/weatherK 는 '중간 난이도'가 생길 때 쓸 자리다(null = 모드 기본).
+       ★★ `yearDay0` — **게임 0일이 연중 며칠인가** (2026-08-05 · 박사님 확정으로 고침).
+       ------------------------------------------------------------
+       달력이 **두 벌이었다.** 화면은 `tutorial.seasonAt` 을 쓰는데 그건 연중 135일
+       (= 여름 90 + `startSeasonDay` 45)에서 시작하고, 빛은 `skyFor` 안에서
+       `seasonOf(S.day)` 를 그냥 써서 **0일을 봄 0일**로 봤다.
+       ⇒ 게임 50일이 화면엔 `autumn`, 빛 계산엔 `spring` 이었다(test_balance_routes ②-b).
+         novice 는 빛 계절이 안 굴러 안 보였을 뿐, 켜는 순간 드러나는 고장이다.
+
+       ★ 고치는 자리를 여기로 고른 이유 — **빛에게 튜토리얼을 가르치지 않는다.**
+         `room_profile`·`light_adapter` 가 `tutorial.js` 를 import 하면 의존이 거꾸로 선다
+         (빛은 튜토가 있든 없든 도는 물건이다). 대신 상태가 "우리 0일은 연중 N일이다"
+         한 줄만 알려 준다. 빛은 그 숫자만 더한다.
+       ⚠ 값의 정본은 `TUTORIAL_RULES` 다 — 여기서 135 를 베끼지 않는다.
+         `tutorial.yearDay0Of()` 가 계산해 주고, 그 값이 없으면 0(= 봄 0일, 옛 동작)이다. */
+    sim: { mode: opt.mode || 'real', seed: 0, weatherK: null, seasonK: null,
+           yearDay0: Number.isFinite(opt.yearDay0) ? opt.yearDay0 : yearDay0Of() },
 
     /* ★ 가구 덮어쓰기 표 (2026-08-03) — `{ <uid>: {x, z, rot} }`
        **플레이어가 옮긴 가구만** 담는다. 비어 있으면 data/house_rooms.json 의 기본값이다.

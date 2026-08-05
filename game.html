@@ -2013,7 +2013,23 @@ function drawShop() {
      7,000원짜리 [주문]을 누르게 돼 있었다. 돈이 모자라면 버튼이 회색이 되긴 하지만
      그때도 "왜 회색인지"가 화면에 없다. 값을 새로 세지 않는다 — ts.cashWon 을 그대로 적는다. */
   $('shopCash').textContent = `· 소지금 ${cash.toLocaleString()}원`;
-  $('shopList').innerHTML = catalogList().map(it => {
+  /* ══ ★★ 2종째 작물은 **콩나물을 굴려 본 뒤에** 나온다 (2026-08-05 박사님 확정) ══════
+     박사님: *"튜토에서 콩나물 몇 개 이후에 다음 단계 등장으로 하자."*
+
+     ★ **문을 여는 값을 새로 짓지 않았다.** 몬스테라 도착 조건(`MONSTERA_ARRIVAL_RULE`
+       = 콩나물 3회전)을 그대로 문턱으로 쓴다. 그 순간이 이미 게임이 "한 단계 넘었다"고
+       말하는 자리라, 거기에 얹으면 단계가 둘로 안 갈린다.
+     ★ 왜 감추나 — 무순의 값어치는 **하루 저감 상한을 3,000 → 5,000원으로 올리는 것**이다
+       (`rules.dailyCropSaveWon`. 3,000+2,000 이 정확히 자취생 2끼 = 5,000원이다).
+       콩나물 상한도 아직 못 채운 사람에게 그걸 팔면 **천장이 안 올라가고 돈만 나간다.**
+       실제로 그게 QA 가 잡은 「사면 돈만 없어진다」의 절반이었다.
+     ⚠ 상점이 무엇을 파는지는 `shop.js` 가 정한다. 여기서는 **지금 보여 줄지**만 고른다 —
+       카탈로그를 건드리면 세이브·주문 기록이 모르는 물건을 가리키게 된다.
+     ⚠ 첫 플레이가 꺼진 판(검수)에서는 안 감춘다. 검수는 다 보여야 한다. */
+  const fp = S.firstPlay;
+  const musunOpen = !(fp && fp.enabled) || !!(fp.monstera && fp.monstera.arrived);
+  const MUSUN_ITEMS = new Set(['radish_seed', 'sprout_tray']);
+  $('shopList').innerHTML = catalogList().filter(it => musunOpen || !MUSUN_ITEMS.has(it.id)).map(it => {
     const have = st.stock[it.id] || 0;
     const short = cash < it.buyWon;
     return `<div class="shopRow">

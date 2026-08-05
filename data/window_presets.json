@@ -18,9 +18,10 @@
       "gloss": "matte",
       "glass": {
         "type": "frosted",
-        "transmittance": 0.55,
+        "transmittance": 0.7,
         "tintColor": null,
-        "glossy": 0.2
+        "glossy": 0.2,
+        "tau_note": "2026-08-05 박사님 확정 — 0.55 → 0.70. 근거: 등 1개일 때 7일평균 DLI 가 5.82 로 갈라짐 문턱 6.0 을 간발로 못 넘어, 식물등을 사는 경로(B)와 안 사는 경로(A)의 결과가 바이트 단위로 같았다(test_balance_routes ①-1). 25,000원이 사는 것이 잔액 -25,000원뿐이면 그건 선택이 아니다. ⚠ 같은 0.55 를 쓰던 win_semi_narrow·win_bath_frost·win_attic_porthole·win_louver_vent 는 **안 건드렸다** — 바꾼 것은 반지하 가로창 하나다."
       },
       "light": {
         "illumMul": 0.57,

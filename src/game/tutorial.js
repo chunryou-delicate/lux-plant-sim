@@ -121,6 +121,17 @@ function yearDay(ts, day) {
   return ((base + Math.max(0, day)) % Y + Y) % Y;
 }
 export function seasonAt(ts, day) { return seasonOf(yearDay(ts, day)); }
+
+/* ★★ 게임 0일이 **연중 며칠인가** (2026-08-05 신설).
+   화면(`seasonAt`)과 빛(`room_profile.skyFor`)이 서로 다른 0일을 보고 있었다 —
+   화면은 여기 `base`(여름 90 + 45 = 135)에서 시작하는데 빛은 `seasonOf(S.day)` 를
+   그냥 써서 0일을 봄 0일로 봤다. 135일 어긋난 것이다.
+   ⇒ **그 오프셋의 정본은 여기 하나다.** 빛은 이 숫자를 `S.sim.yearDay0` 으로 받아
+     더하기만 한다(state.js §yearDay0). 숫자를 두 곳에 적지 않는다.
+   ⚠ 인자 없이 부르면 `TUTORIAL_RULES` 기본값이다 — 규칙이 다른 판은 그 규칙을 넘겨라. */
+export function yearDay0Of(rules = TUTORIAL_RULES) {
+  return ((SEASON_START[rules.startSeason] ?? 0) + (rules.startSeasonDay || 0)) % (DAYS_PER_SEASON * 4);
+}
 /* 그 계절이 며칠째인가. 화면이 "가을 12일째"처럼 적을 때 쓴다. */
 export function seasonDayAt(ts, day) { return yearDay(ts, day) % DAYS_PER_SEASON; }
 export const SEASON_KO = Object.freeze({ spring: '봄', summer: '여름', autumn: '가을', winter: '겨울' });

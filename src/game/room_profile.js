@@ -80,10 +80,19 @@ export function createProfileLight(profile, data = {}) {
 
   function skyFor(day, sim) {
     const m = modeOf({ sim });
-    if (m.rollWeather && m.rollSeason) return skyOf(day, { seed: sim.seed });
+    /* ★★ 게임 날짜 → **연중 날짜** (2026-08-05 · 달력이 둘이던 것을 하나로).
+       화면은 여름 45일차(연중 135일)에서 시작하는데 여기서는 `seasonOf(day)` 를 그냥 써서
+       0일을 **봄 0일**로 봤다. 그래서 게임 50일이 화면엔 가을, 빛엔 봄이었다.
+       ⇒ 상태가 실어 주는 `sim.yearDay0` 만 더한다. 빛이 튜토리얼을 알 필요는 없다 —
+         "우리 0일은 연중 N일이다" 한 줄이면 된다(state.js §yearDay0 · tutorial.yearDay0Of).
+       ⚠ 없으면 0이다 = 옛 동작 그대로. 옛 세이브·옛 호출부가 안 깨진다.
+       ⚠ 날씨(`skyOf`)에도 같은 축을 준다 — 날씨만 옛 축이면 "봄 날씨가 가을에 온다"가 된다. */
+    const Y = (sim && Number.isFinite(sim.yearDay0)) ? sim.yearDay0 : 0;
+    const yd = Math.max(0, day) + Y;
+    if (m.rollWeather && m.rollSeason) return skyOf(yd, { seed: sim.seed });
     return {
-      season: m.rollSeason ? seasonOf(day) : m.season,
-      weather: m.rollWeather ? skyOf(day, { seed: sim.seed }).weather : m.weather
+      season: m.rollSeason ? seasonOf(yd) : m.season,
+      weather: m.rollWeather ? skyOf(yd, { seed: sim.seed }).weather : m.weather
     };
   }
 

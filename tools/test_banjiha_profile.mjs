@@ -28,15 +28,33 @@ const profile = JSON.parse(readFileSync(
 const lightTh = JSON.parse(readFileSync(
   new URL('../data/balance/light_thresholds.json', import.meta.url), 'utf8'));
 
-/* 라이브 참조 — buildDailyLight(맑음·여름·등 0개). _profile_gen.html 캡처(2026-08-02). */
+/* 라이브 참조 — buildDailyLight(맑음·여름·등 0개).
+   ★★ **2026-08-05 갱신 — 반지하 창 tau 0.55 → 0.70 (박사님 확정).**
+   ------------------------------------------------------------
+   이 표는 검사가 무르익어서 고친 것이 아니라 **입력이 바뀌어서** 다시 뜬 것이다.
+   `data/window_presets.json` 의 `win_semi_letterbox.glass.transmittance` 를 올렸고,
+   창턱 DLI 가 등 0개 3.77 → **4.80** 이 되어 등 1개일 때 5.61 → **6.64** 로
+   갈라짐 문턱 6.0 을 넘게 됐다. 그 전에는 못 넘어서 「등을 사는 경로」와
+   「안 사는 경로」의 결과가 바이트 단위로 같았다(test_balance_routes ①-1).
+
+   ★ 값은 지어낸 것이 아니라 **브라우저에서 실제로 다시 잰 것**이다 —
+     `game.html` 을 띄우고 `io.light.dliOfSlot(…, {weather:'clear', season:'summer',
+     lampCount:0, litHours:0})` 를 14칸 전부 돌렸다.
+   ★ 열네 칸이 **전부 정확히 1.2727배**(= 0.70/0.55)다. 차폐 기하가 안 바뀌었으므로
+     그래야 맞고, 한 칸이라도 어긋났으면 그건 tau 말고 다른 것이 바뀐 것이다.
+     ⇒ 이 「전부 같은 배율」이 곧 이 갱신이 정당하다는 증거다.
+
+   옛 값(tau 0.55, 2026-08-02): sill 3.77 · desk:0 0.48 · desk:1 0.13 ·
+     dresser:0 0.06 · dresser:1 0.04 · etagere:0~2 0.10/0.11/0.10 ·
+     etagere:3~5 0.18/0.18/0.17 · etagere:6~8 0.40/0.38/0.38 */
 const LIVE = {
   best: 'banjiha-sill:0',
   dli: {
-    'banjiha-sill:0': 3.77, 'banjiha-desk:0': 0.48, 'banjiha-desk:1': 0.13,
-    'banjiha-dresser:0': 0.06, 'banjiha-dresser:1': 0.04,
-    'banjiha-etagere:0': 0.1, 'banjiha-etagere:1': 0.11, 'banjiha-etagere:2': 0.1,
-    'banjiha-etagere:3': 0.18, 'banjiha-etagere:4': 0.18, 'banjiha-etagere:5': 0.17,
-    'banjiha-etagere:6': 0.4, 'banjiha-etagere:7': 0.38, 'banjiha-etagere:8': 0.38
+    'banjiha-sill:0': 4.8, 'banjiha-desk:0': 0.61, 'banjiha-desk:1': 0.17,
+    'banjiha-dresser:0': 0.08, 'banjiha-dresser:1': 0.05,
+    'banjiha-etagere:0': 0.13, 'banjiha-etagere:1': 0.14, 'banjiha-etagere:2': 0.13,
+    'banjiha-etagere:3': 0.23, 'banjiha-etagere:4': 0.22, 'banjiha-etagere:5': 0.21,
+    'banjiha-etagere:6': 0.51, 'banjiha-etagere:7': 0.48, 'banjiha-etagere:8': 0.48
   }
 };
 

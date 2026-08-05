@@ -163,13 +163,19 @@ export function createLightEngine(data) {
     return out;
   }
 
-  /* ---- 그날의 하늘. 모드에 따라 굴리거나 고정한다 ---- */
+  /* ---- 그날의 하늘. 모드에 따라 굴리거나 고정한다 ----
+     ★★ `sim.yearDay0` — 게임 0일이 연중 며칠인가 (2026-08-05).
+       `room_profile.skyFor` 와 **글자 그대로 같은 규칙**이다. 둘이 갈리면 라이브 화면과
+       헤드리스 검사가 다른 계절을 보게 되고, 그건 재현이 안 되는 유형의 고장이다.
+       왜 이렇게 고쳤는지는 `room_profile.js` 의 같은 자리 주석에 적어 두었다. */
   function skyFor(day, sim) {
     const m = modeOf({ sim });
-    if (m.rollWeather && m.rollSeason) return skyOf(day, { seed: sim.seed });
+    const Y = (sim && Number.isFinite(sim.yearDay0)) ? sim.yearDay0 : 0;
+    const yd = Math.max(0, day) + Y;
+    if (m.rollWeather && m.rollSeason) return skyOf(yd, { seed: sim.seed });
     return {
-      season: m.rollSeason ? seasonOf(day) : m.season,
-      weather: m.rollWeather ? skyOf(day, { seed: sim.seed }).weather : m.weather
+      season: m.rollSeason ? seasonOf(yd) : m.season,
+      weather: m.rollWeather ? skyOf(yd, { seed: sim.seed }).weather : m.weather
     };
   }
 
