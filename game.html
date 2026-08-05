@@ -828,7 +828,12 @@
           <div class="meter"><i id="plantMeter"></i></div><div class="itemline" id="plantInfo">콩나물 첫 수확 뒤 도착</div>
         </div>
       </div>
-        <button id="firstRun" class="primary" disabled>▶ 첫 플레이 자동 시뮬레이션</button>
+        <!-- ★★ **검수용이다. 플레이어에게 보이면 안 된다** (2026-08-05 · QA 워커가 잡았다).
+             누르면 `newState(...)` 로 판을 통째로 갈아치우고 — 날짜·소지금·화분·삽수·상점이
+             전부 날아간다 — 이어지는 draw() 가 saveSoon() 을 태워 **지워진 판이 세이브에 덮인다.**
+             묻지도 않았다. HTML 에 disabled 로 적혀 있었지만 부팅 끝의 GATED 해제가 다시 켜 줬다.
+             ⇒ 첫 플레이가 도는 판에서는 숨긴다(아래 drawSim). 되묻기도 붙였다. -->
+        <button id="firstRun" class="primary" disabled style="display:none">▶ 첫 플레이 자동 시뮬레이션</button>
         <div id="firstResult" class="simresult" aria-live="polite"></div>
       </div>
     </div><!-- /pageBag -->
@@ -2479,6 +2484,10 @@ function drawJourney() {
   $('slot').disabled = !plant.arrived;
   /* 30일 자동은 개발용 장기 관찰이다. 첫 학습 루프를 끝내기 전에는 우회 진입시키지 않는다. */
   $('run30').disabled = !fp.completed;
+  /* ★[첫 플레이 자동 시뮬레이션]은 **검수용**이다. 지금 판을 지우고 새 판을 깐다.
+     첫 플레이가 켜져 있으면 그건 사람이 하고 있는 판이라는 뜻이므로 아예 안 보여 준다 —
+     `disabled` 로는 부족했다. 부팅 끝의 GATED 해제가 다시 켜 주기 때문이다. */
+  $('firstRun').style.display = fp.enabled ? 'none' : '';
   $('stage').classList.toggle('no-plant', !plant.arrived);
   fillCropSlots();
 }
@@ -4018,7 +4027,9 @@ $('play').onclick = () => playScenario(SCENARIOS.find(s => s.id === $('scen').va
     console.error(e);
   });
 $('stop').onclick = () => { stopFlag = true; };
-$('firstRun').onclick = () => playFirstPlayScenario().catch(e => {
+/* ★되묻는다 — 지금 판을 지우고 새로 깐다(위 §firstRun). 숨겨 두긴 했지만
+   검수 중에 눌러도 "지워지는 줄 몰랐다"가 나면 안 된다. */
+$('firstRun').onclick = confirmOnce('지금 판을 지웁니다?', () => playFirstPlayScenario().catch(e => {
   window.__firstPlayResult = { ok: false, error: e.message };
   if (!isRecoverable(e)) { $('play').disabled = true; $('firstRun').disabled = true; document.body.dataset.hardLock = '1'; }
   $('stop').disabled = true;
@@ -4028,7 +4039,7 @@ $('firstRun').onclick = () => playFirstPlayScenario().catch(e => {
   $('firstResult').textContent = `⛔ ${e.message}`;
   side.insertAdjacentHTML('afterbegin', `<div class="err">⛔ 첫 플레이 시뮬레이션 실패<br>${e.message}</div>`);
   console.error(e);
-});
+}));
 
 /* ---- 시작 ---- */
 /* ★ 생장 계약이 준비되기 전에는 진행 버튼을 열지 않는다 (2026-08-02).
