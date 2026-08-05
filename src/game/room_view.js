@@ -773,6 +773,21 @@ export async function createRoomView(canvas, opts = {}) {
   const TRAY_S_W = 0.36, TRAY_S_DEPTH = 0.24;
   /* 재배판의 '자리 지름' = **대각선**. 이 값 하나가 potFits·maxPotD·fitPotToLimit 을 다 탄다 */
   const TRAY_S_D = Math.hypot(TRAY_S_W, TRAY_S_DEPTH);   // 0.4327
+  /* ★★ 무순 판은 **0.20m 로 세운다** (2026-08-05 박사님 확정 · ㉮ 작은 재배판).
+     ------------------------------------------------------------
+     GLB 원본대로 0.4327 로 세웠더니 반지하 14칸 중 받아 주는 곳이 **책상 2칸뿐**이었다.
+     그런데 무순은 밝아야 좋은 작물이고 이 방에서 밝은 곳은 창턱(DLI 4.80) 하나인데
+     창턱은 0.21m 다. 즉 **제일 좋은 자리에 못 올라가는 작물**이 되어 있었다.
+
+     ★ 왜 0.20 인가 — 격자가 0.05m 라 **정확히 4칸**이다. 몬스테라 화분(0.20)이 창턱에
+       딱 맞는 것과 같은 값이고, 새 눈금을 만들지 않는다. 실제 판은 16.6 × 11.1cm 가 되는데
+       그건 실물 새싹 재배판(소형)의 치수 범위 안이다.
+     ★ 에셋을 새로 안 만들었다. `container_tray_s.glb` 를 **그릴 때** 줄인다 —
+       assets/ 는 이 창 소유가 아니고, 줄이는 것만으로 답이 나오는데 파일을 늘릴 이유가 없다.
+     ⚠ 대신 **무순 포기는 판을 따라 줄이지 않는다.** 같이 줄이면 한 포기가 7mm 가 되어
+       "작은 판"이 아니라 "인형 집"이 된다. 포기는 실물 크기로 두고,
+       제 칸을 넘칠 때만 칸에 맞춘다(§buildMusun 의 bodyK). */
+  const MUSUN_D = 0.20;
   /* manifest 의 slots 12칸을 그대로 옮긴 것이다(재배판 자기 좌표계[m]).
      x 4열 × z 3행 · y 0.026 은 판 안쪽 흙 높이다. 숫자를 여기서 지어내지 않았다. */
   const TRAY_S_SLOTS = Object.freeze([
@@ -941,7 +956,7 @@ export async function createRoomView(canvas, opts = {}) {
     /* ★ fitPotToLimit 이 나중에 쓰는 것과 **같은 자**로 잰다. 여기서 bbox 로 재면
        원점이 가운데가 아닐 때 두 값이 갈려 판이 한 번 더 줄어든다. */
     const cur = rotationSafeDiameter(tray, tray) || TRAY_S_D;
-    const want = Math.min(TRAY_S_D, limit === Infinity ? TRAY_S_D : limit);
+    const want = Math.min(MUSUN_D, limit === Infinity ? MUSUN_D : limit);
     const k = want / cur;
     tray.scale.setScalar(k);
     const bb = new THREE.Box3().setFromObject(tray);
@@ -954,10 +969,21 @@ export async function createRoomView(canvas, opts = {}) {
        선형의 반올림이라 progress01 이 늘면 포기 수가 **줄지 않는다**.
        ⚠ 0칸에서 시작하지 않는다. 빈 판은 위 NaN 사고와 눈으로 구별이 안 된다. */
     const n = clamp(Math.round(lerp(3, TRAY_S_SLOTS.length, p01)), 1, TRAY_S_SLOTS.length);
+    /* ★★ 한 포기의 크기 — **판을 따라 줄이지 않는다** (2026-08-05 · §MUSUN_D).
+       판은 0.20m 로 줄였지만 무순은 실물이다(소 1.5cm · 중 2.8cm · 대 4.4cm 폭).
+       같이 줄이면 대 단계가 7mm 가 되어 재배판이 인형 소품이 된다.
+       ★ 다만 **제 칸을 넘지는 않게** 한다 — 규칙은 그거 하나다. 칸 간격은 판 좌표계의
+         가로 간격(0.072m)에 판 배율 k 를 곱한 값이고, 대 단계 폭이 그보다 크면 그만큼만 줄인다.
+         상수를 새로 안 짓는다: 칸이 자를 정한다.
+       ⚠ `bodyW` 는 GLB 에서 **실제로 재서** 쓴다. manifest 값을 여기 베끼면
+         에셋이 바뀔 때 조용히 겹친다. */
+    const cellX = 0.072 * k;                                  // 이웃한 두 칸의 가로 거리[m]
+    const bodyW = rotationSafeDiameter(body, body) || cellX;
+    const bodyK = Math.min(1, cellX / bodyW);
     for (let i = 0; i < n; i++) {
       const c = i === 0 ? body : body.clone(true);
       const s = TRAY_S_SLOTS[i];
-      c.scale.setScalar(k);
+      c.scale.setScalar(bodyK);
       /* 칸 좌표는 판 좌표계 값이다 — 판을 줄인 배율 k 를 곱하고, 판을 내린 만큼 따라 내린다 */
       c.position.set(s.x * k, s.y * k + tray.position.y, s.z * k);
       /* 뿌린 씨앗이라 향이 제각각이다. **난수를 안 쓴다** — 하루가 갈 때마다 다시 짓는데
@@ -984,7 +1010,7 @@ export async function createRoomView(canvas, opts = {}) {
   const PLANT_KINDS = Object.freeze({
     monstera:   { potD: MONSTERA_POT_D, growthByDays: true,  build: buildMonstera },
     beansprout: { potD: SIRU_D,         growthByDays: false, build: buildBeansprout },
-    musun:      { potD: TRAY_S_D,       growthByDays: false, build: buildMusun }
+    musun:      { potD: MUSUN_D,        growthByDays: false, build: buildMusun }
   });
   /* 모르는 이름은 몬스테라 화분 지름으로 떨어진다 — 옛 삼항의 else 가지와 같은 값이다 */
   const potDOf = kind => (PLANT_KINDS[kind] || PLANT_KINDS.monstera).potD;
@@ -1550,7 +1576,7 @@ export async function createRoomView(canvas, opts = {}) {
   /* on=false 면 감춘다(지우지 않는다).
        opt.potD     이 화분 지름. 못 올라가는 자리는 어둡게 칠한다
        opt.plantId  potD 를 안 줄 때 쓰는 종류 이름. 지름은 PLANT_KINDS 표가 정한다
-                    ('beansprout' → 시루 0.24 · 'musun' → 재배판 대각선 0.433 · 그 밖 → 0.20)
+                    ('beansprout' → 시루 0.24 · 'musun' → 재배판 0.20 · 그 밖 → 0.20)
        opt.near     { x, z } 커서 위치. 제일 가까운 자리를 굵고 밝게
        opt.nearMax  이 거리를 넘으면 아무것도 굵게 하지 않는다[m]
      돌려주는 값은 '올라갈 수 있는 자리 수' 다. */
@@ -5094,7 +5120,7 @@ export async function createRoomView(canvas, opts = {}) {
     /* ★ 그 종류가 차지하는 **회전무관 지름[m]** — 화면(game.html)이 potD 자리에 넣을 값이다.
        ------------------------------------------------------------
        숫자를 화면 쪽에 베껴 두면 두 곳이 갈린다. 여기가 정본이고 화면은 물어서 쓴다.
-         'monstera' 0.20 · 'beansprout' 0.24(시루) · 'musun' 0.4327(재배판 **대각선**)
+         'monstera' 0.20 · 'beansprout' 0.24(시루) · 'musun' 0.20(재배판 — 0.4327 에서 줄였다. §MUSUN_D)
        모르는 이름은 몬스테라 화분 지름으로 떨어진다(예전 삼항의 else 와 같은 값).
        ⚠ 무순이 폭 0.36 이 아니라 0.4327 인 이유는 §buildMusun 머리말에 있다. */
     plantPotD(kind) { return potDOf(kind); },

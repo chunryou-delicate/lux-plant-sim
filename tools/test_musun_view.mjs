@@ -131,8 +131,17 @@ const GOLD = {
   /* 링·fitCheck 의 지름 삼항이 표로 바뀌었다. 두 종류의 답은 한 톨도 안 바뀌어야 한다 */
   ringsFit: { beansprout: 13, monstera: 14, none: 14 },   // 14칸 중 통과하는 칸 수
   fitDiameter: { beansprout: 0.24, monstera: 0.20 },
-  /* 재배판(0.36 × 0.24)의 회전무관 지름 = 대각선 */
-  trayD: +Math.hypot(0.36, 0.24).toFixed(5)               // 0.43267
+  /* ★★ 2026-08-05 — 무순 판을 **0.20m 로 세운다**(박사님 확정 ㉮ · room_view §MUSUN_D).
+     GLB 원본대로 0.4327(대각선)로 세웠더니 반지하 14칸 중 받아 주는 곳이 책상 2칸뿐이었고,
+     그 둘은 어두운 자리다. 무순은 밝아야 좋은 작물인데 제일 밝은 창턱(0.21m)에 못 올라갔다.
+     0.20 은 격자(0.05m) **4칸 정확히**라 창턱에 들어간다 — 몬스테라 화분과 같은 값이다.
+     ⇒ 이 표가 바뀐 것은 검사가 물러선 것이 아니라 **기획이 바뀐 것**이다. */
+  trayD: 0.20,
+  /* 판을 0.20 으로 줄이면 GLB 0.36×0.24 는 이 크기가 된다(배율 0.20/0.43267 = 0.46224) */
+  trayWH: { w: +(0.36 * 0.20 / Math.hypot(0.36, 0.24)).toFixed(5),      // 0.16641
+            d: +(0.24 * 0.20 / Math.hypot(0.36, 0.24)).toFixed(5) },    // 0.11094
+  /* 칸 좌표도 같은 배율로 줄어든다 — 판 안에 있어야 하니 당연하다 */
+  trayK: 0.20 / Math.hypot(0.36, 0.24)
 };
 
 const EPS = 1e-4;
@@ -234,11 +243,11 @@ async function main() {
      near(ring.fit.monstera, GOLD.fitDiameter.monstera, EPS) &&
      near(ring.fit.unknown, GOLD.fitDiameter.monstera, EPS),
      JSON.stringify(ring.fit));
-  ok('①-E 종류표가 창구로 나온다 — 무순 지름은 재배판 **대각선**이다',
+  ok('①-E 종류표가 창구로 나온다 — 무순 지름은 0.20 (격자 4칸 · §trayD)',
      ring.table && near(ring.table.musun, GOLD.trayD, 1e-4) &&
      near(ring.table.beansprout, 0.24, EPS) && near(ring.table.monstera, 0.20, EPS) &&
      near(ring.table.unknown, 0.20, EPS),
-     JSON.stringify(ring.table) + ` · 재배판 대각선 ${GOLD.trayD}`);
+     JSON.stringify(ring.table) + ` · 재배판 ${GOLD.trayD}`);
   ok('①-F 무순은 fitCheck 에도 같은 지름으로 잡힌다',
      near(ring.fit.musun, GOLD.trayD, 1e-4), `${ring.fit.musun} vs ${GOLD.trayD}`);
 
@@ -250,15 +259,19 @@ async function main() {
   ok('②-B 그 좌표에 실제로 선다',
      free && near(free.pos.x, AT.x, EPS) && near(free.pos.y, AT.y, EPS) && near(free.pos.z, AT.z, EPS),
      free && JSON.stringify(free.pos));
-  ok('②-C 한도를 안 주면 재배판이 제 크기(대각선 0.4327)로 선다 — 두 번 줄지 않는다',
+  ok('②-C 한도를 안 주면 재배판이 0.20 으로 선다 — 두 번 줄지 않는다',
      free && near(free.diameter, GOLD.trayD, 1e-3) &&
-     near(free.pot.w, 0.36, 5e-3) && near(free.pot.d, 0.24, 5e-3),
+     near(free.pot.w, GOLD.trayWH.w, 5e-3) && near(free.pot.d, GOLD.trayWH.d, 5e-3),
      free && `지름 ${free.diameter} · 판 ${free.pot.w}×${free.pot.d}×h${free.pot.h}`);
 
   /* 칸 좌표가 manifest 격자 그대로인가 — 원형으로 흩뿌리면 여기서 걸린다 */
   const full = await page.eval(`window.__place('musunFree', ${JSON.stringify(AT)},
                                 { kind:'musun', progress01: 1 })`);
-  const XS = [-0.108, -0.036, 0.036, 0.108], ZS = [-0.06, 0, 0.06];
+  /* ★ 칸 좌표는 판 좌표계 값에 **판 배율**을 곱한 것이다. 판을 줄였으니 칸도 같이 줄어든다 —
+     안 줄면 포기가 판 밖에 선다. 격자 모양(4열×3행)이 그대로인지가 이 검사의 뜻이다. */
+  const K = GOLD.trayK;
+  const XS = [-0.108, -0.036, 0.036, 0.108].map(v => v * K),
+        ZS = [-0.06, 0, 0.06].map(v => v * K);
   const gridBad = (full ? full.bodyXZ : []).filter(([x, z]) =>
     !XS.some(v => near(x, v, 1e-3)) || !ZS.some(v => near(z, v, 1e-3)));
   ok('②-D 다 자라면 manifest 슬롯 12칸(4열×3행)에 정확히 선다 (원형 흩뿌리기가 아니다)',
@@ -293,11 +306,21 @@ async function main() {
      JSON.stringify(soil));
 
   /* 좁은 자리에 놓으면 판이 그 한도까지 줄어든다(걸쳐 두지 않는다) */
+  /* ★ 한도는 판(0.20)보다 **좁아야** 뜻이 있다. 예전엔 0.24 를 줬는데 그때는 판이 0.4327 이라
+     좁은 한도였다. 이제 0.24 는 판보다 넓어서 안 줄어드는 것이 맞다 —
+     한도가 넓다고 판을 키우면 "선반이 크면 판도 커진다"가 되어 규칙이 거꾸로 선다.
+     그래서 선반(0.25) 대신 **창턱보다도 좁은 0.15** 로 잰다. */
   const tight = await page.eval(`window.__place('musunFree', ${JSON.stringify(AT)},
-                                 { kind:'musun', progress01: 1, potD: 0.24 })`);
-  ok('②-E 한도 0.24 를 주면 판이 그 한도로 줄어든다 (선반 밖으로 안 걸친다)',
-     tight && near(tight.diameter, 0.24, 1e-3) && tight.bodies === 12,
+                                 { kind:'musun', progress01: 1, potD: 0.15 })`);
+  ok('②-E 판보다 좁은 한도(0.15)를 주면 판이 그 한도로 줄어든다 (밖으로 안 걸친다)',
+     tight && near(tight.diameter, 0.15, 1e-3) && tight.bodies === 12,
      tight && `지름 ${tight.diameter} · 판 ${tight.pot.w}×${tight.pot.d}`);
+  /* 넓은 한도로는 안 커진다 — 위 규칙의 반대쪽 */
+  const wide = await page.eval(`window.__place('musunFree', ${JSON.stringify(AT)},
+                                 { kind:'musun', progress01: 1, potD: 0.50 })`);
+  ok('②-E2 판보다 넓은 한도(0.50)를 줘도 판은 0.20 그대로다 (자리가 넓다고 안 커진다)',
+     wide && near(wide.diameter, 0.20, 1e-3),
+     wide && `지름 ${wide.diameter}`);
 
   /* 추천 자리에도 선다 — setPlant 쪽 길 */
   const slotPlace = await page.eval(`(async () => {
