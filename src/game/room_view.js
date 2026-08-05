@@ -762,6 +762,26 @@ export async function createRoomView(canvas, opts = {}) {
   const MONSTERA_POT_D = 0.20;    // assets/monstera/pot.glb 회전무관 지름 0.202
   const SIRU_D = 0.24;            // 열린 콩나물 시루
 
+  /* ★ 새싹 재배판(소) — assets/crops/container_tray_s.glb (manifest id 441)
+     ------------------------------------------------------------
+     size_m 0.36 × 0.055 × 0.24 · 슬롯 12칸 · blocks_light **false**.
+     시루(0.24 원형·blocks_light true)와 두 가지가 다르다.
+       ① 네모다. 폭과 깊이가 달라 "지름 하나"로 못 잰다 — §buildMusun 의 limit 주석 참고
+       ② 빛을 안 막는다. 무순은 밝아야 좋은 작물이라 그게 맞다 — 방뷰는 화분을
+          가림막으로 넣지 않으므로(조도는 light_adapter 몫) 여기서 **아무것도 안 한다**.
+          그 '안 함'이 계약이라 tools/test_musun_view.mjs 가 숫자로 못 박아 둔다. */
+  const TRAY_S_W = 0.36, TRAY_S_DEPTH = 0.24;
+  /* 재배판의 '자리 지름' = **대각선**. 이 값 하나가 potFits·maxPotD·fitPotToLimit 을 다 탄다 */
+  const TRAY_S_D = Math.hypot(TRAY_S_W, TRAY_S_DEPTH);   // 0.4327
+  /* manifest 의 slots 12칸을 그대로 옮긴 것이다(재배판 자기 좌표계[m]).
+     x 4열 × z 3행 · y 0.026 은 판 안쪽 흙 높이다. 숫자를 여기서 지어내지 않았다. */
+  const TRAY_S_SLOTS = Object.freeze([
+    { x: -0.108, y: 0.026, z: -0.06 }, { x: -0.108, y: 0.026, z: 0 }, { x: -0.108, y: 0.026, z: 0.06 },
+    { x: -0.036, y: 0.026, z: -0.06 }, { x: -0.036, y: 0.026, z: 0 }, { x: -0.036, y: 0.026, z: 0.06 },
+    { x:  0.036, y: 0.026, z: -0.06 }, { x:  0.036, y: 0.026, z: 0 }, { x:  0.036, y: 0.026, z: 0.06 },
+    { x:  0.108, y: 0.026, z: -0.06 }, { x:  0.108, y: 0.026, z: 0 }, { x:  0.108, y: 0.026, z: 0.06 }
+  ]);
+
   function slotOrThrow(slotId) {
     const s = slotById.get(slotId);
     if (!s) throw new Error(`모르는 슬롯: ${slotId} (방 ${roomId})`);
@@ -830,65 +850,146 @@ export async function createRoomView(canvas, opts = {}) {
        이 함수가 슬롯을 알 이유가 없었다는 뜻이기도 하다. */
   async function buildPlantGroup(spec, limit, days) {
     const kind = spec.kind || 'monstera';
-    const p01 = clamp(spec.progress01 ?? 1, 0, 1);
-
-    if (kind === 'monstera') {
-      /* 화분 지름은 자리 한도 안에서 고른다. 성장은 잎·마디로만 보인다 —
-         화분이 같이 자라면 자리 한도 계약이 무너진다. */
-      const potD = Math.min(MONSTERA_POT_D, limit === Infinity ? MONSTERA_POT_D : limit);
-      const asm = await assembler();
-      if (asm) {
-        try {
-          const g = asm.assemble({ growthDays: days, seed: spec.seed, potD,
-                                   lightAz: lightAzimuth(), photo: 0.5 });
-          g.userData.growthDays = days;
-          return g;
-        } catch (e) {
-          if (!asmWarned) { asmWarned = true; console.warn('[방뷰] 몬스테라 조립 실패 — 옛 샘플로 그립니다:', e.message); }
-        }
-      }
-      /* 폴백 — 생장 모듈이 없을 때만. 자라는 게 잘 안 보이지만 화면은 빈 채로 두지 않는다 */
-      const H = Math.max(potD * 1.4, potD * 3.4 * (0.42 + 0.58 * p01));
-      const g = await createPlantSample({ potD, height: H });
-      g.userData.kind = 'monstera';
-      g.userData.growthDays = days;
-      return g;
-    }
-
-    if (kind === 'beansprout') {
-      /* 시루 + 콩나물. 콩나물은 어두울수록 좋은 작물이라 밴드 해석이 몬스테라와 반대다.
-         여기서는 '자란 정도'만 그린다 — 판정은 게임 쪽 몫이다. */
-      const g = new THREE.Group();
-      const siru = await loadGLB(AT('../../assets/crops/container_siru_open.glb'));
-      const bb = new THREE.Box3().setFromObject(siru);
-      const cur = Math.max(bb.max.x - bb.min.x, bb.max.z - bb.min.z) || SIRU_D;
-      const want = Math.min(SIRU_D, limit === Infinity ? SIRU_D : limit);
-      siru.scale.setScalar(want / cur);
-      const bb2 = new THREE.Box3().setFromObject(siru);
-      siru.position.y -= bb2.min.y;
-      g.add(siru);
-      const rim = bb2.max.y - bb2.min.y;
-
-      const stage = p01 < 0.34 ? 's' : p01 < 0.7 ? 'm' : 'l';
-      const body = await loadGLB(AT(`../../assets/crops/beansprout_${stage}.glb`));
-      const n = Math.round(lerp(4, 11, p01));
-      for (let i = 0; i < n; i++) {
-        const c = i === 0 ? body : body.clone(true);
-        const a = (i / n) * Math.PI * 2 + i * 0.7;
-        const r = want * 0.30 * Math.sqrt((i + 0.4) / n);
-        c.scale.setScalar(want / SIRU_D);
-        c.position.set(Math.cos(a) * r, rim * 0.55, Math.sin(a) * r);
-        c.rotation.y = a;
-        c.rotation.z = (Math.random() - 0.5) * 0.18;
-        g.add(c);
-      }
-      g.userData.kind = 'beansprout';
-      g.userData.leaves = [];
-      return g;
-    }
-
-    throw new Error(`모르는 식물 종류: ${kind}`);
+    const def = PLANT_KINDS[kind];
+    if (!def) throw new Error(`모르는 식물 종류: ${kind} ` +
+                              `(아는 것: ${Object.keys(PLANT_KINDS).join(', ')})`);
+    return def.build(spec, limit, days);
   }
+
+  async function buildMonstera(spec, limit, days) {
+    const p01 = clamp(spec.progress01 ?? 1, 0, 1);
+    /* 화분 지름은 자리 한도 안에서 고른다. 성장은 잎·마디로만 보인다 —
+       화분이 같이 자라면 자리 한도 계약이 무너진다. */
+    const potD = Math.min(MONSTERA_POT_D, limit === Infinity ? MONSTERA_POT_D : limit);
+    const asm = await assembler();
+    if (asm) {
+      try {
+        const g = asm.assemble({ growthDays: days, seed: spec.seed, potD,
+                                 lightAz: lightAzimuth(), photo: 0.5 });
+        g.userData.growthDays = days;
+        return g;
+      } catch (e) {
+        if (!asmWarned) { asmWarned = true; console.warn('[방뷰] 몬스테라 조립 실패 — 옛 샘플로 그립니다:', e.message); }
+      }
+    }
+    /* 폴백 — 생장 모듈이 없을 때만. 자라는 게 잘 안 보이지만 화면은 빈 채로 두지 않는다 */
+    const H = Math.max(potD * 1.4, potD * 3.4 * (0.42 + 0.58 * p01));
+    const g = await createPlantSample({ potD, height: H });
+    g.userData.kind = 'monstera';
+    g.userData.growthDays = days;
+    return g;
+  }
+
+  async function buildBeansprout(spec, limit) {
+    /* 시루 + 콩나물. 콩나물은 어두울수록 좋은 작물이라 밴드 해석이 몬스테라와 반대다.
+       여기서는 '자란 정도'만 그린다 — 판정은 게임 쪽 몫이다. */
+    const p01 = clamp(spec.progress01 ?? 1, 0, 1);
+    const g = new THREE.Group();
+    const siru = await loadGLB(AT('../../assets/crops/container_siru_open.glb'));
+    const bb = new THREE.Box3().setFromObject(siru);
+    const cur = Math.max(bb.max.x - bb.min.x, bb.max.z - bb.min.z) || SIRU_D;
+    const want = Math.min(SIRU_D, limit === Infinity ? SIRU_D : limit);
+    siru.scale.setScalar(want / cur);
+    const bb2 = new THREE.Box3().setFromObject(siru);
+    siru.position.y -= bb2.min.y;
+    g.add(siru);
+    const rim = bb2.max.y - bb2.min.y;
+
+    const stage = p01 < 0.34 ? 's' : p01 < 0.7 ? 'm' : 'l';
+    const body = await loadGLB(AT(`../../assets/crops/beansprout_${stage}.glb`));
+    const n = Math.round(lerp(4, 11, p01));
+    for (let i = 0; i < n; i++) {
+      const c = i === 0 ? body : body.clone(true);
+      const a = (i / n) * Math.PI * 2 + i * 0.7;
+      const r = want * 0.30 * Math.sqrt((i + 0.4) / n);
+      c.scale.setScalar(want / SIRU_D);
+      c.position.set(Math.cos(a) * r, rim * 0.55, Math.sin(a) * r);
+      c.rotation.y = a;
+      c.rotation.z = (Math.random() - 0.5) * 0.18;
+      g.add(c);
+    }
+    g.userData.kind = 'beansprout';
+    g.userData.leaves = [];
+    return g;
+  }
+
+  /* ★ 재배판 + 무순 (2026-08-05)
+     ------------------------------------------------------------
+     ★★ limit 을 어떻게 읽었나 — 재배판은 **네모**다.
+       시루는 원형이라 "폭 = 회전무관 지름" 이 그냥 성립했다. 재배판은 아니다:
+         폭 0.36 · 깊이 0.24 · **대각선 0.4327**
+       이 방뷰의 자리 판정(potFits · maxPotD · fitPotToLimit · surfaceAt)은 **전부**
+       회전무관 지름 하나로만 본다. 그렇게 정한 이유가 §rotationSafeDiameter 에 적혀 있다 —
+       네모 화분을 bbox 폭으로 재서 창턱을 통과시켰다가, 돌리니 대각선이 걸린 사고였다.
+       재배판은 그 사고의 판박이다. 게다가 setPlantYaw 로 플레이어가 판을 실제로 돌린다.
+       ⇒ 그래서 **폭(0.36)이 아니라 대각선(0.4327)** 을 이 판의 지름으로 잡는다.
+         limit 은 그 대각선에 걸고, 모자라면 판 전체를 그 비율로 줄인다.
+         want = min(0.4327, limit) 로 맞춰 두면 fitPotToLimit 이 다시 재도 정확히 want 라
+         **두 번 줄지 않고 경고도 안 뜬다**(콩나물이 want/cur 로 하는 것과 같은 사상이다).
+       ⚠ 대신 좁은 자리에서는 판이 통째로 작아진다. 그것도 시루와 같은 규칙이다 —
+         "안 들어가면 조용히 걸쳐 두지 않는다"가 이 파일의 계약이다.
+     ★ 무순은 **격자**로 선다. 시루처럼 원형으로 흩뿌리면 재배판이 아니라 화분이 된다.
+       칸 좌표는 TRAY_S_SLOTS(= manifest 의 slots 12칸)를 그대로 쓴다. */
+  async function buildMusun(spec, limit) {
+    /* ★ progress01 은 **유한한 수일 때만** 믿는다.
+       콩나물에서 lerp(4, 11, undefined) → NaN → 0포기(빈 그릇)가 실제로 났다.
+       여기서는 NaN·null·undefined 가 들어와도 '다 자란 것'으로 떨어지게 막는다. */
+    const p01 = clamp(Number.isFinite(spec.progress01) ? spec.progress01 : 1, 0, 1);
+    const g = new THREE.Group();
+
+    const tray = await loadGLB(AT('../../assets/crops/container_tray_s.glb'));
+    /* ★ fitPotToLimit 이 나중에 쓰는 것과 **같은 자**로 잰다. 여기서 bbox 로 재면
+       원점이 가운데가 아닐 때 두 값이 갈려 판이 한 번 더 줄어든다. */
+    const cur = rotationSafeDiameter(tray, tray) || TRAY_S_D;
+    const want = Math.min(TRAY_S_D, limit === Infinity ? TRAY_S_D : limit);
+    const k = want / cur;
+    tray.scale.setScalar(k);
+    const bb = new THREE.Box3().setFromObject(tray);
+    tray.position.y -= bb.min.y;          // 판 바닥을 그루 원점에 맞춘다
+    g.add(tray);
+
+    const stage = p01 < 0.34 ? 's' : p01 < 0.7 ? 'm' : 'l';
+    const body = await loadGLB(AT(`../../assets/crops/sprout_radish_${stage}.glb`));
+    /* 몇 칸이 텄나 — 3칸에서 시작해 12칸(slot_count)까지 찬다.
+       선형의 반올림이라 progress01 이 늘면 포기 수가 **줄지 않는다**.
+       ⚠ 0칸에서 시작하지 않는다. 빈 판은 위 NaN 사고와 눈으로 구별이 안 된다. */
+    const n = clamp(Math.round(lerp(3, TRAY_S_SLOTS.length, p01)), 1, TRAY_S_SLOTS.length);
+    for (let i = 0; i < n; i++) {
+      const c = i === 0 ? body : body.clone(true);
+      const s = TRAY_S_SLOTS[i];
+      c.scale.setScalar(k);
+      /* 칸 좌표는 판 좌표계 값이다 — 판을 줄인 배율 k 를 곱하고, 판을 내린 만큼 따라 내린다 */
+      c.position.set(s.x * k, s.y * k + tray.position.y, s.z * k);
+      /* 뿌린 씨앗이라 향이 제각각이다. **난수를 안 쓴다** — 하루가 갈 때마다 다시 짓는데
+         그때마다 방향이 바뀌면 판이 들썩인다. 황금각으로 칸마다 다른 향을 준다. */
+      c.rotation.y = i * 2.39996;
+      c.rotation.z = ((i % 3) - 1) * 0.05;
+      g.add(c);
+    }
+    g.userData.kind = 'musun';
+    g.userData.leaves = [];
+    return g;
+  }
+
+  /* ★ 종류표 — 삼항을 늘리지 않기 위한 한 벌 (2026-08-05)
+     ------------------------------------------------------------
+     예전에는 종류가 갈리는 곳이 네 군데였고 전부 `x === 'beansprout' ? … : …` 였다.
+     작물이 하나 늘 때마다 네 군데를 같이 고쳐야 했고, 한 군데를 빠뜨리면
+     "링은 된다는데 놓으면 줄어든다" 같은 어긋남이 난다. 여기 한 줄로 모은다.
+       potD          그 종류가 차지하는 **회전무관 지름[m]**. potD 를 안 준 호출부의 기본값이다
+       growthByDays  true = 형태를 '유효 생장일'이 정한다(몬스테라)
+                     false = progress01 이 정한다(작물). days 는 progress01×100 으로만 쓴다
+       build         실제 조립. 던지는 것은 buildPlantGroup 한 곳뿐이다
+     ⚠ 없는 이름의 기본값은 **예전 그대로**다 — 지름은 몬스테라 화분, 생장은 progress01. */
+  const PLANT_KINDS = Object.freeze({
+    monstera:   { potD: MONSTERA_POT_D, growthByDays: true,  build: buildMonstera },
+    beansprout: { potD: SIRU_D,         growthByDays: false, build: buildBeansprout },
+    musun:      { potD: TRAY_S_D,       growthByDays: false, build: buildMusun }
+  });
+  /* 모르는 이름은 몬스테라 화분 지름으로 떨어진다 — 옛 삼항의 else 가지와 같은 값이다 */
+  const potDOf = kind => (PLANT_KINDS[kind] || PLANT_KINDS.monstera).potD;
+  /* 옛 `kind === 'monstera'` 와 **정확히** 같다(모르는 이름은 false) */
+  const usesGrowthDays = kind => !!(PLANT_KINDS[kind] && PLANT_KINDS[kind].growthByDays);
 
   /* 밴드·시듦 표현.
      ------------------------------------------------------------
@@ -1110,7 +1211,7 @@ export async function createRoomView(canvas, opts = {}) {
     /* ★ 단조 하한은 '지금 서 있는 날'이 아니라 '마지막으로 요청받은 날'이다.
        위 ②로 조립을 건너뛴 요청도 시간은 갔다 — 그걸 안 세면 하한이 멈춰 서서
        다음 단계를 늘 한 바퀴 전으로 되짚는다. */
-    const days = kind === 'monstera'
+    const days = usesGrowthDays(kind)
       ? growthDaysOf(spec, await assembler(), prev && (prev.wantDays ?? prev.days))
       : Math.round(clamp(spec.progress01 ?? 1, 0, 1) * 100);
 
@@ -1204,7 +1305,7 @@ export async function createRoomView(canvas, opts = {}) {
     const kind = spec.kind || spec.plantId || 'monstera';
     const limit = Number.isFinite(spec.potD) ? spec.potD : Infinity;
     const prev = plantOf(id);
-    const days = kind === 'monstera'
+    const days = usesGrowthDays(kind)
       ? growthDaysOf(spec, await assembler(), prev && (prev.wantDays ?? prev.days))
       : Math.round(clamp(spec.progress01 ?? 1, 0, 1) * 100);
 
@@ -1448,7 +1549,8 @@ export async function createRoomView(canvas, opts = {}) {
 
   /* on=false 면 감춘다(지우지 않는다).
        opt.potD     이 화분 지름. 못 올라가는 자리는 어둡게 칠한다
-       opt.plantId  potD 를 안 줄 때 쓰는 종류 이름('beansprout' 이면 시루 지름)
+       opt.plantId  potD 를 안 줄 때 쓰는 종류 이름. 지름은 PLANT_KINDS 표가 정한다
+                    ('beansprout' → 시루 0.24 · 'musun' → 재배판 대각선 0.433 · 그 밖 → 0.20)
        opt.near     { x, z } 커서 위치. 제일 가까운 자리를 굵고 밝게
        opt.nearMax  이 거리를 넘으면 아무것도 굵게 하지 않는다[m]
      돌려주는 값은 '올라갈 수 있는 자리 수' 다. */
@@ -1460,8 +1562,7 @@ export async function createRoomView(canvas, opts = {}) {
       return 0;
     }
     if (!guideRings.size) buildGuideRings();
-    const potD = Number.isFinite(opt.potD) ? opt.potD
-               : (opt.plantId === 'beansprout' ? SIRU_D : MONSTERA_POT_D);
+    const potD = Number.isFinite(opt.potD) ? opt.potD : potDOf(opt.plantId);
     let nearId = null, nearD = Infinity;
     if (opt.near && Number.isFinite(opt.near.x) && Number.isFinite(opt.near.z)) {
       for (const id of guideRings.keys()) {
@@ -4981,7 +5082,7 @@ export async function createRoomView(canvas, opts = {}) {
       let d = null;
       if (typeof plantOrDiameter === 'number') d = plantOrDiameter;
       else if (plantOrDiameter && plantOrDiameter.kind)
-        d = plantOrDiameter.kind === 'beansprout' ? SIRU_D : MONSTERA_POT_D;
+        d = potDOf(plantOrDiameter.kind);
       else if (t.plant) d = rotationSafeDiameter(potPartOf(t.plant.group), t.plant.group);
       return { slotId: t.key, maxPotD: Number.isFinite(limit) ? limit : null, diameter: d,
                ok: d == null ? null : !Number.isFinite(limit) || d <= limit + 1e-4 };
@@ -4989,6 +5090,18 @@ export async function createRoomView(canvas, opts = {}) {
     plantDiameter(slotId) {
       const t = resolveKey(slotId);
       return t && t.plant ? rotationSafeDiameter(potPartOf(t.plant.group), t.plant.group) : null;
+    },
+    /* ★ 그 종류가 차지하는 **회전무관 지름[m]** — 화면(game.html)이 potD 자리에 넣을 값이다.
+       ------------------------------------------------------------
+       숫자를 화면 쪽에 베껴 두면 두 곳이 갈린다. 여기가 정본이고 화면은 물어서 쓴다.
+         'monstera' 0.20 · 'beansprout' 0.24(시루) · 'musun' 0.4327(재배판 **대각선**)
+       모르는 이름은 몬스테라 화분 지름으로 떨어진다(예전 삼항의 else 와 같은 값).
+       ⚠ 무순이 폭 0.36 이 아니라 0.4327 인 이유는 §buildMusun 머리말에 있다. */
+    plantPotD(kind) { return potDOf(kind); },
+    /* 이 방뷰가 그릴 줄 아는 종류들 — 화면이 "심을 수 있나"를 미리 물어보는 창구 */
+    plantKinds() {
+      return Object.keys(PLANT_KINDS).map(k => ({ kind: k, potD: PLANT_KINDS[k].potD,
+                                                  growthByDays: PLANT_KINDS[k].growthByDays }));
     },
     /* ★ 열쇠 하나를 풀어 본다 — UI 가 "이 이름이 무엇을 가리키나"를 물어보는 창구.
        슬롯 id · `free:` 열쇠 · 화분 id 셋 다 받는다. 모르면 null. */
