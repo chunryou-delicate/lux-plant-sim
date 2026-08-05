@@ -704,9 +704,17 @@
   <!-- ══ 방 전경 = 게임 화면 ═══════════════════════════════════════════
        ★ canvas#room 이 방이고, iframe#growth 는 화분을 탭했을 때 올라오는 확대다.
          예전에는 iframe 이 곧 화면이었다 — 방을 안 그리고 식물만 크게 보여줬다. -->
-  <main id="stage" class="no-plant">
+  <!-- ★★ `room-loading` 을 **HTML 에 박아 둔다** (2026-08-05 박사님 지적: "로딩화면이 안 나온다").
+       예전에는 `bootProgress()` 가 이 클래스를 붙였는데, 그 함수는 모듈이 **다 실린 뒤**에야
+       처음 불린다 — 그 앞에 `import` 20여 개와 `await fetch` 둘(balance·manifest)이 있다.
+       즉 **정작 기다리는 그 몇 초 동안은 아무것도 안 떴다.** 검은 화면을 두는 것이
+       고장으로 읽히는 바로 그 구간이 안 덮여 있었던 것이다.
+       ⇒ 첫 페인트부터 켜 두고, 방이 뜨면 `bootProgress(null)` 이 걷는다.
+       ⚠ 모듈이 아예 못 실려도(문법 오류·네트워크) 이 화면은 그대로 남는다 —
+         그게 맞다. "안 열린다"보다 "준비 중"이 사실에 가깝고, 아래 감시 타이머가 말을 바꾼다. -->
+  <main id="stage" class="no-plant room-loading">
     <canvas id="roomCanvas"></canvas>
-    <div id="roomFallback"><div><span id="bootMsg">방을 준비하는 중…</span><div id="bootBar"><i></i></div></div></div>
+    <div id="roomFallback"><div><span id="bootMsg">게임을 불러오는 중…</span><div id="bootBar"><i style="width:6%"></i></div></div></div>
     <div id="placeHint"></div>
     <div id="dropLabel"></div>
     <!-- ★해야 할 일이 있는 물건 위에 말풍선을 띄운다 (박사님 2026-08-04).
