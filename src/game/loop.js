@@ -444,7 +444,13 @@ function stepTutorial(S, turn, io) {
       /* ★ 절감은 **원**으로 넘긴다 (2026-08-04). 예전에는 끼니를 넘기고 살림이 2,500원을
          곱했는데, 한 회전 절감이 3,000원이라 끼니 단위로 안 떨어진다(first_play.js §작물 종류).
          두 단위가 섞이면 반올림이 어디서 나는지 아무도 모른다 — 값의 정본은 원 하나다. */
-      savedWon: (ev && ev.foodSavedWon) || 0
+      savedWon: (ev && ev.foodSavedWon) || 0,
+      /* ★ **실제로 켠 것**을 넘긴다 (2026-08-06 · tutorial §lampElectricityWon).
+         예전에는 살림이 `ts.lamp.owned`·`ts.lamp.litHours` 만 봤는데 화면이 켜는 것은
+         `S.lamps` 다. 둘을 아무도 안 맞춰서 **끄든 켜든 요금이 같았고**,
+         24시간을 틀어도 요금이 안 올랐다 — 전기세가 밸런스 손잡이가 될 수 없던 이유다. */
+      lampCount: (S.lamps && S.lamps.count) || 0,
+      lampHours: (S.lamps && S.lamps.litHours)
     });
     if (r && r.events) for (const e of r.events) pushLog(S, '📅 ' + e.ko);
     /* ★확정 무늬는 **배움·돈이 오늘 값이 된 뒤에** 본다 — 조건 ②·④가 오늘 값이라야 맞다 */

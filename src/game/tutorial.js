@@ -157,9 +157,24 @@ export const SEASON_KO = Object.freeze({ spring: '봄', summer: '여름', autumn
 
 /* 하루 전기값. 식물등 몫만 실계산하고 나머지는 dailySpendWon 안에 상수로 들어 있다
    (food_economy.md 의 결정 그대로 — 실측 23원/일이 월세 30만 옆에서 먼지가 되지 않게). */
-export function lampElectricityWon(ts) {
+export function lampElectricityWon(ts, opt = {}) {
   const R = ts.rules;
-  const kwh = (R.lampWatt * ts.lamp.owned * ts.lamp.litHours) / 1000;
+  /* ★★ **켠 만큼 낸다** (2026-08-06 · lampecon 창이 잡았다).
+     ------------------------------------------------------------
+     예전에는 `ts.lamp.owned` 와 `ts.lamp.litHours` 만 봤다. 그런데 화면이 실제로 켜는 것은
+     `S.lamps.count` · `S.lamps.litHours` 이고 **둘을 아무도 안 맞췄다.** 그래서:
+       · 등을 **꺼도 요금이 그대로** 나갔다 (owned 를 보니까)
+       · 점등시간을 24h 로 늘려도 **요금이 한 푼도 안 올랐다** (ts 쪽 12h 를 보니까)
+     ⇒ 「켜고 끄기」가 돈에 안 닿아 **고정비**였다. 밸런스 손잡이가 될 수가 없었다.
+
+     이제 부르는 쪽이 **실제로 켠 값**을 넘긴다. 안 넘기면 예전 그대로다(옛 호출부 보호).
+     ⚠ 켠 개수는 **산 개수를 못 넘는다** — 안 산 등의 요금을 물릴 수는 없다.
+       (못 켜게 막는 것은 화면 몫이다. 여기서는 셈만 지킨다.) */
+  const owned = Math.max(0, ts.lamp.owned || 0);
+  const on = Number.isFinite(opt.count) ? Math.max(0, Math.min(owned, opt.count)) : owned;
+  const hours = Number.isFinite(opt.litHours) ? Math.max(0, Math.min(24, opt.litHours))
+                                              : ts.lamp.litHours;
+  const kwh = (R.lampWatt * on * hours) / 1000;
   return Math.round(kwh * R.kwhWon);
 }
 
@@ -221,8 +236,8 @@ export function buyLamp(ts) {
 /* ★ 절감은 **원으로 받는 것이 정본**이다 (2026-08-04). `savedWon` 을 주면 그대로 쓰고,
    안 주면 옛 방식(`mealsUsed × 한 끼 값`)으로 유도한다 — 옛 호출부를 조용히 깨지 않으려고
    둘 다 받되, **한 턴에 둘을 섞지 않는다**(savedWon 이 있으면 mealsUsed 는 보지 않는다). */
-export function tutorialDay(ts, { firstPlayDone = false, mealsUsed = 0, savedWon = null,
-                                  incomeWon = 0 } = {}) {
+export function tutorialDay(ts, opt = {}) {
+  const { firstPlayDone = false, mealsUsed = 0, savedWon = null, incomeWon = 0 } = opt;
   if (!ts.enabled) return null;
   if (!firstPlayDone) return { skipped: '첫 플레이 진행 중' };
 
@@ -240,7 +255,8 @@ export function tutorialDay(ts, { firstPlayDone = false, mealsUsed = 0, savedWon
   /* 지출 — 콩나물로 아낀 만큼은 빼고 낸다. ★월세 몫은 여기 없다(아래 목돈으로 나간다) */
   const saved = savedWon == null ? foodSavedWon(ts, mealsUsed)
                                  : Math.max(0, Math.round(savedWon));
-  const power = lampElectricityWon(ts);
+  /* 켠 만큼 낸다 — 부르는 쪽(loop)이 S.lamps 를 넘긴다(§lampElectricityWon) */
+  const power = lampElectricityWon(ts, { count: opt.lampCount, litHours: opt.lampHours });
   const base = dailyCashOutWon(ts);
   const out = Math.max(0, base - saved) + power;
   ts.cashWon -= out;

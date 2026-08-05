@@ -1241,11 +1241,28 @@ $('mode').innerHTML = Object.entries(SIM_MODES)
   .map(([k, m]) => `<option value="${k}">${m.ko}</option>`).join('');
 
 function fillLamps() {
-  const n = io.light.growLampCount();
+  /* ★★ **산 것만 켤 수 있다** (2026-08-06 · lampecon 창이 잡았다).
+     ------------------------------------------------------------
+     예전에는 방에 달린 기구 수(`growLampCount`)만큼 고를 수 있었다. 그래서
+     **돈 한 푼 안 내고 드롭다운으로 2개를 켤 수 있었다** — 실측하니 창턱이
+     4.80 → 6.78 이 되어 갈라짐 문턱 6.0 을 공짜로 넘었다. 점등시간을 24h 로 늘리면 8.77 까지 갔다.
+     ⇒ 지금까지 잰 밸런스가 전부 이 구멍 위에 있었다.
+     ⇒ 산 개수(`ts.lamp.owned`)가 천장이다. 방에 기구가 둘 있어도 하나만 샀으면 하나까지다.
+     ⚠ 첫 플레이가 꺼진 판(검수)에는 튜토 상태가 없다 — 그때는 예전처럼 전부 고를 수 있다.
+       검수는 다 볼 수 있어야 하고, 그 판은 살림이 안 도니 공짜로 켜도 잴 것이 없다. */
+  const rigs = io.light.growLampCount();
+  const ts = S.tutorial;
+  const owned = (ts && ts.enabled) ? Math.max(0, ts.lamp.owned || 0) : rigs;
+  const n = Math.min(rigs, owned);
   $('lamps').innerHTML = Array.from({ length: n + 1 }, (_, i) =>
     `<option value="${i}">${i}개${i === 0 ? ' (자연광만)' : ''}</option>`).join('');
   $('lamps').value = String(Math.min(S.lamps.count, n));
   S.lamps.count = +$('lamps').value;
+  /* 왜 못 고르는지 말한다 — 빈 드롭다운은 고장으로 읽힌다(다른 곳과 같은 판단) */
+  const sel = $('lamps');
+  if (sel) sel.title = (ts && ts.enabled && owned < rigs)
+    ? `산 등 ${owned}개까지 켤 수 있습니다 (방에 달린 기구는 ${rigs}개)`
+    : '';
 }
 
 /* 자리 목록 — 오늘 조건에서 밝은 순. 계약을 미리 한 번 돌려 보는 것이라 이력에 쌓이지 않는다. */

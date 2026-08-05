@@ -77,6 +77,33 @@ check('C 하루 지출 — 월세를 두 번 안 뗀다 · 30일 평균이 15,00
   assert.equal(spent, 450_000, `유예 뒤 한 달 지출이 ${spent.toLocaleString()}원 — 45만원이어야 합니다`);
 });
 
+/* ══ C-2 · ★전기세가 **실제로 켠 것**을 따라간다 (2026-08-06) ══════════════
+   예전에는 `ts.lamp.owned`·`ts.lamp.litHours` 만 봤는데 화면이 켜는 것은 `S.lamps` 였고
+   **둘을 아무도 안 맞췄다.** 그래서 등을 꺼도 요금이 그대로 나갔고, 24시간을 틀어도
+   요금이 한 푼도 안 올랐다 — 전기세가 밸런스 손잡이가 될 수 없던 이유다. */
+check('C-2 ★전기세 — 끄면 0원 · 오래 켜면 그만큼 · 안 산 등은 0원', () => {
+  const ts = mk();
+  /* 안 산 등을 켰다고 넘겨도 요금이 없다 — 없는 물건의 전기를 물릴 수는 없다 */
+  assert.equal(lampElectricityWon(ts, { count: 2, litHours: 24 }), 0,
+    '안 산 등에 요금이 붙었습니다');
+
+  ts.lamp.unlocked = true; buyLamp(ts); buyLamp(ts);
+  const base = lampElectricityWon(ts, { count: 1, litHours: 12 });
+  assert.ok(base > 0, '켰는데 요금이 0원입니다');
+  assert.equal(lampElectricityWon(ts, { count: 0, litHours: 12 }), 0,
+    '★껐는데 요금이 나갑니다 — 켜고 끄기가 돈에 안 닿습니다');
+  assert.equal(lampElectricityWon(ts, { count: 2, litHours: 12 }), base * 2,
+    '두 개를 켰는데 두 배가 아닙니다');
+  assert.equal(lampElectricityWon(ts, { count: 1, litHours: 24 }), base * 2,
+    '★두 배로 오래 켰는데 요금이 그대로입니다');
+  /* 켠 개수는 산 개수를 못 넘는다 */
+  assert.equal(lampElectricityWon(ts, { count: 9, litHours: 12 }), base * 2,
+    '산 것보다 많이 켠 요금이 나갑니다');
+  /* 아무것도 안 넘기면 예전 그대로 — 옛 호출부가 안 깨진다 */
+  assert.equal(lampElectricityWon(ts), lampElectricityWon(ts, { count: 2, litHours: ts.lamp.litHours }),
+    '인자 없이 부른 값이 예전과 다릅니다');
+});
+
 /* ══ D · 월세 — 첫 달은 유예, 30일째부터 ═══════════════════════════════ */
 check('D 월세 — 30일 유예 뒤 첫 청구 · 그 뒤 30일마다', () => {
   const ts = mk();
