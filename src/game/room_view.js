@@ -98,7 +98,7 @@ const WALK_CLIP_MPS = 0.871;   // 클립의 지면 속도[m/s] — 재서 넣은
 const WALK_SLIP_OK = 0.23;     // 눈감아 주는 미끄러짐[m/s]. 0 으로 두면 뛰는 걸음이 된다
 const ARRIVE_EPS = 0.10;     // 이만큼 가까워지면 그 웨이포인트는 지난 것
 const CAM_TWEEN_MS = 560;
-const SNAP_MS = 260;         // 손 뗀 뒤 8방으로 정돈되는 시간
+const SNAP_MS = 260;         // 손 뗀 뒤 턱으로 되돌아가는 시간(방위는 안 건드린다)
 
 /* ★ 카메라 제약 (2026-08-03 박사님 지시 · docs/byeot_plan.md "8방회전 + pitch2")
    ------------------------------------------------------------
@@ -748,7 +748,7 @@ export async function createRoomView(canvas, opts = {}) {
     return [f * ZOOM_IN, f * ZOOM_OUT];
   }
 
-  /* 손을 떼면 정돈한다 — 8방으로 스냅하고, 턱 너머로 끌려간 값은 턱으로 되돌린다 */
+  /* 손을 떼면 **턱만** 되돌린다. 방위는 놓은 자리에 그대로 선다(아래 ★★, 2026-08-06) */
   function settleCam() {
     if (focused) {                       // 자리에 들어가 있을 땐 스냅하지 않는다
       const [lo, hi] = [0.5, 3.6];
@@ -757,8 +757,17 @@ export async function createRoomView(canvas, opts = {}) {
         setCam({ az: cam.az, el, dist, target: cam.target }, false, SNAP_MS);
       return;
     }
+    /* ★★ **손을 뗀 자리에 선다** (2026-08-06 박사님: "각도가 8방으로 자동 이동해 버려.
+       내가 멈춘 곳에 멈추게 해 줘").
+       ⚠ 예전에는 45°(8방)로 끌어당겼다. 2026-08-03 지시였는데, 실제로 돌려 보니
+         **내가 놓은 데서 화면이 저 혼자 미끄러지는** 것이 거슬린다는 것이 박사님 판단이다.
+       ⇒ 방위(az)는 안 건드린다. **상하각·거리 턱은 그대로 지킨다** —
+         그건 "정돈"이 아니라 **못 가는 데를 막는 것**이라 뜻이 다르다
+         (위로 넘어가면 천장 위에서 보게 되고, 너무 당기면 벽을 뚫는다).
+       ★ `SNAP` 상수는 남겨 둔다 — `YAW_OFFSET`(시작 각도)이 그 격자 위의 한 칸이라
+         지우면 시작 시점이 바뀐다. */
+    const snapped = cam.az;
     const base = windowAzimuth() + YAW_OFFSET;
-    const snapped = base + Math.round((cam.az - base) / SNAP) * SNAP;
     const el = clamp(cam.el, EL_MIN, EL_MAX);
     const [lo, hi] = zoomRange();
     const dist = clamp(cam.dist, lo, hi);

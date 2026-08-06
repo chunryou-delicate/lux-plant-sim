@@ -14,7 +14,15 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <!-- 지금 보고 있는 판이 언제 것인지. 캐시가 의심되면 이걸 본다 -->
-<meta name="byeot-build" content="2026-08-03T16">
+<meta name="byeot-build" content="2026-08-06T10">
+<!-- ★★ 글씨 (2026-08-06 박사님: "글씨체가 이상해. 한글이 안 읽히네 뭔가. 잘 안 보여").
+     Pretendard 를 **실제로 받아 온다.** 이름만 적어 두면 그 글씨가 깔린 기계에서만 보이고,
+     안 깔린 기계에서는 조용히 system-ui 로 떨어진다 — 화면이 기계마다 달라진다.
+     ⚠ 못 받아 와도 게임은 돈다(아래 CSS 의 대체 목록으로 떨어진다). 그래서 preconnect 만 걸고
+       `display=swap` 성격의 동적 서브셋을 쓴다 — 글씨 때문에 첫 화면이 늦으면 안 된다. -->
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<link rel="stylesheet" as="style" crossorigin
+      href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
 <title>볕 · 첫 플레이</title>
 
 <!-- house.js·textures.js 가 전역 THREE 를 쓴다(index.html 과 같은 r128).
@@ -94,14 +102,29 @@
   #stage{flex:1 1 auto;min-height:0;position:relative;background:#0f0c16}
   /* ★방 3D. 이게 게임 화면이고, plant_grow(iframe)는 탭했을 때 위로 올라오는 확대다. */
   #roomCanvas{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none}
+  /* ★★ 로딩판은 **화면을 통째로 덮는다** (2026-08-06 박사님: "아직 몬스테라가 없습니다 라는
+       화면을 전체를 로딩화면으로 좀 해 줄래?").
+     ⚠ 예전에는 배경이 없어서, 아직 몬스테라가 없는 판(=첫 플레이 시작)에서
+       `#stageEmpty`(아직 몬스테라가 없습니다)와 **둘 다 떠서 글자가 겹쳤다.**
+       둘 다 「지금 무슨 상태인가」를 말하는 것이라 겹치면 둘 다 못 읽는다.
+     ⇒ 불투명 배경을 깔고, 로딩 중에는 아래 것을 덮는다(z-index 도 그 위로). */
   #roomFallback{position:absolute;inset:0;display:none;place-items:center;padding:24px;text-align:center;
-          font-size:13px;color:var(--dim);line-height:1.7}
+          font-size:13px;color:var(--dim);line-height:1.7;
+          z-index:12;background:#0f0c16}
   #stage.room-failed #roomFallback{display:grid}
   /* ★부팅 중에는 무엇을 기다리는지 보여준다 (2026-08-03).
      10초를 검은 화면으로 두면 고장으로 읽힌다. 같은 10초도 진행이 보이면 다르게 느껴진다 —
      실제로 폰에서 "안 열린다"는 말이 먼저 나왔다. */
   #stage.room-loading #roomFallback{display:grid}
-  #bootBar{width:min(220px,60%);height:4px;border-radius:3px;margin:10px auto 0;
+  /* 로딩 화면 한 벌 — 그림 · 제목 · 지금 무엇을 기다리나 · 막대.
+     ★ 20~40초를 기다리게 하는 화면이라 "멈춘 것"이 아니라 "오는 중"으로 읽혀야 한다. */
+  #bootArt{display:block;width:84px;margin:0 auto 14px;opacity:.5;filter:grayscale(.4);
+    animation:bootBreathe 2.6s ease-in-out infinite}
+  @keyframes bootBreathe{0%,100%{opacity:.38;transform:translateY(0)}50%{opacity:.62;transform:translateY(-4px)}}
+  #bootTitle{display:block;font-size:26px;font-weight:800;color:#dff8d4;letter-spacing:6px;
+    margin-bottom:10px;text-shadow:0 3px 18px #000}
+  #roomFallback #bootMsg{display:block;font-size:13px;color:rgba(255,255,255,.62)}
+  #bootBar{width:min(220px,60%);height:4px;border-radius:3px;margin:14px auto 0;
     background:rgba(255,255,255,.12);overflow:hidden}
   #bootBar>i{display:block;height:100%;width:0;border-radius:3px;
     background:linear-gradient(90deg,#8fd36f,#d5ef8b);transition:width .4s}
@@ -110,6 +133,9 @@
      이제 방이 화면이라 가운데를 덮으면 방을 가릴 뿐이고, 할 일은 하단 퀘스트 줄이 말한다.
      방이 실패했을 때만 남겨 둔다 — 그때는 진짜로 설명이 필요하다. */
   #stage.room-ok #stageEmpty{display:none !important}
+  /* 로딩 중에는 「아직 몬스테라가 없습니다」를 안 띄운다 — 그건 **방이 뜬 뒤**의 이야기다.
+     아직 불러오는 중인데 "없습니다"라고 하면 없는 것인지 안 실린 것인지 알 수 없다. */
+  #stage.room-loading #stageEmpty{display:none !important}
   #stage.room-ok.no-plant{background:none}
   /* 폰에서 GPU 를 실제로 쓰는지 — 검수 탭에 적는다. "하드웨어 가속이 켜졌나"의 답이다 */
   #gpuInfo{font-size:11px;line-height:1.6;color:var(--dim);word-break:break-all}
@@ -389,6 +415,9 @@
     pointer-events:none;display:none;background:center/contain no-repeat;
     filter:drop-shadow(0 8px 14px rgba(0,0,0,.55));transition:transform .12s}
   #dragGhost.on{display:block}
+  /* 방 안(놓을 수 있는 면 위)에 오면 사진을 감춘다 — 3D 유령이 그 자리를 대신한다.
+     ⚠ 아주 없애지 않고 흐리게만 남긴다. 손가락 밑에 아무것도 없으면 "놓친 건가"가 된다. */
+  #dragGhost.inroom{opacity:.18;transform:scale(.6)}
   #dragGhost.ok{transform:scale(1.12)}
   #dragGhost.no{transform:scale(.86);filter:drop-shadow(0 6px 10px rgba(0,0,0,.5)) grayscale(.7)}
   /* 끄는 동안에는 시트를 반투명하게 — 방이 보여야 어디 놓을지 고를 수 있다 */
@@ -437,7 +466,14 @@
 
   /* 놓인 식물을 탭하면 뜨는 작은 선택지. 하단에 붙인다 —
      3D 위 말풍선은 폰에서 엄지가 안 닿고 카메라를 돌리면 따라다녀야 한다. */
-  #plantActions{position:absolute;z-index:27;left:12px;right:12px;bottom:12px;display:none;
+  /* ★★ 아래 띠(#bottom)를 **비켜서** 뜬다 (2026-08-06 박사님: "물건 클릭 시 다음 날 넘기기랑
+       빨리감기 버튼이 다 가려버려").
+     ⚠ 넓은 화면에서는 #bottom 이 `position:absolute; bottom:0` 으로 방 위를 덮는다.
+       그런데 이 띠도 `bottom:12px` 였다 — 둘이 같은 자리를 다퉜고, z-index 27 인 이쪽이 이겼다.
+       그래서 물건을 고르는 동안 [다음 날]·[빨리감기]가 통째로 사라졌다.
+     ⇒ `--pickLift` 만큼 띄운다. 값은 JS 가 #bottom 을 **실제로 재서** 넣는다 —
+       높이를 CSS 에 박아 두면 글씨 크기나 안전영역이 바뀔 때마다 어긋난다. */
+  #plantActions{position:absolute;z-index:27;left:12px;right:12px;bottom:var(--pickLift,12px);display:none;
     gap:7px;align-items:stretch}
   #stage.picked #plantActions{display:flex}
   #plantActions button{flex:1;min-height:var(--tap);font-weight:700;font-size:14px;border-radius:12px}
@@ -446,7 +482,7 @@
   /* ★이동 모드 — 화면 아무 데나 끌어도 잡힌다.
      투명 판이 3D 위를 덮어 카메라 회전을 막는다(끌다가 방이 돌면 조작이 망가진다). */
   /* 가구 고름 — 화분과 같은 자리에 뜬다. 둘이 동시에 뜨는 일은 없다(고르면 서로 푼다) */
-  #furnActions{position:absolute;z-index:27;left:12px;right:12px;bottom:12px;display:none;
+  #furnActions{position:absolute;z-index:27;left:12px;right:12px;bottom:var(--pickLift,12px);display:none;
     gap:6px;align-items:center}
   #stage.furnpicked #furnActions{display:flex}
   #furnActions button{flex:1;min-height:var(--tap);font-weight:700;font-size:14px;border-radius:12px}
@@ -747,7 +783,12 @@
          그게 맞다. "안 열린다"보다 "준비 중"이 사실에 가깝고, 아래 감시 타이머가 말을 바꾼다. -->
   <main id="stage" class="no-plant room-loading">
     <canvas id="roomCanvas"></canvas>
-    <div id="roomFallback"><div><span id="bootMsg">게임을 불러오는 중…</span><div id="bootBar"><i style="width:6%"></i></div></div></div>
+    <div id="roomFallback"><div>
+      <img id="bootArt" src="./assets/ui/item_monstera.png" alt="">
+      <b id="bootTitle">볕</b>
+      <span id="bootMsg">게임을 불러오는 중…</span>
+      <div id="bootBar"><i style="width:6%"></i></div>
+    </div></div>
     <div id="placeHint"></div>
     <div id="dropLabel"></div>
     <!-- ★해야 할 일이 있는 물건 위에 말풍선을 띄운다 (박사님 2026-08-04).
@@ -1148,7 +1189,15 @@
        판정은 모듈 쪽이 안다(__byeotIsPlantSlot). 없으면 예전대로 연다. */
     open: function (slotId) {
       if (slotId && window.__byeotIsPlantSlot && !window.__byeotIsPlantSlot(slotId)) {
-        openSheet('tabBag');            // 작물은 가방에서 자란 정도·끼니를 본다
+        /* ★★ 작물은 **상세 카드**를 연다 (2026-08-06 박사님: "콩나물 시루 자세히보기 먹통이야").
+           ⚠ 예전에는 가방만 열었다. 가방은 "무엇을 갖고 있나"지 "이게 지금 어떤가"가 아니라
+             자세히 보려고 눌렀는데 아무것도 안 열린 것처럼 느껴졌다.
+           ⚠ 확대(plant_grow)는 **몬스테라 생장 모델 하나**라 시루를 못 그린다 —
+             그래서 작물의 「자세히」는 상세 카드가 제자리다(자란 날·받은 빛·품질이 거기 있다).
+           ⚠ 카드도 못 열면 그때는 예전대로 가방을 연다. 아무 일도 안 나는 것보다는 낫다. */
+        var shown = false;
+        try { shown = !!(window.__byeotCropDetail && window.__byeotCropDetail(slotId)); } catch (e) { }
+        if (!shown) openSheet('tabBag');
         return false;
       }
       stage.classList.add('zoom'); closeSheet(); pauseRoom(true); pauseZoomRender(false);
@@ -1731,6 +1780,25 @@ const detail = {
         + '<p>가방의 그림을 방으로 <b>끌어다</b> 놓는다.</p>'
     };
   },
+  /* 무순 — 콩나물과 **같은 골격**이되 빛 방향이 정반대라 그 말만 뒤집는다 */
+  musun() {
+    const site = musunSite();
+    const k = (() => { try { return cropKindOf('musun'); } catch { return null; } })();
+    const days = (site && site.harvestDays) || (k && k.harvestDays) || 7;
+    const where = !site ? '아직 없음'
+                : site.harvested ? '수확을 마침'
+                : (site.at || site.slotId) ? (site.slotId && !isFreeSlotId(site.slotId)
+                    ? slotLabel(site.slotId) + '에 있음' : '방에 놓여 있음')
+                : '가방에 있음';
+    return {
+      art: './assets/crops/thumbs/container_tray_s.png', title: '무순 · 새싹 재배판', sub: where,
+      body: `<div class="row"><span>자란 날</span><b>${(site && site.ageDays) || 0} / ${days}일</b></div>`
+        + `<div class="row"><span>받은 빛(평균)</span><b>${site && site.avgDli != null ? site.avgDli.toFixed(2) : '—'} DLI</b></div>`
+        + (site && site.quality ? `<div class="row"><span>품질</span><b>${site.quality}</b></div>` : '')
+        + '<p>무순은 <b>밝을수록</b> 파릇하고 알싸하다 — 콩나물과 정반대다. 어두우면 웃자라 밍밍해진다.</p>'
+        + '<p>죽지는 않는다. 자리가 값을 바꿀 뿐이다.</p>'
+    };
+  },
   monstera() {
     const p = pot0(S);
     if (!p) return { art: './assets/ui/item_monstera.png', title: '몬스테라', sub: '아직 만나지 못함',
@@ -1836,6 +1904,20 @@ function updateHint() {
      ★순서는 거두기 → 물주기다. 다 자란 것을 두고 새 회전을 시작할 이유가 없고,
        cropMarks 의 말풍선 순서(①거두기 ②심기 ③물주기)와도 같은 차례다 —
        두 안내가 서로 다른 곳을 가리키면 그게 곧 소음이다. */
+  /* ★★ **식물 위 말풍선을 먼저 가리킨다** (2026-08-06 박사님:
+     "밑에 물주기 버튼은 없애고 식물에 물주기 버튼에 손가락 가이드 표기해 줘").
+     ⚠ 예전에는 아래 버튼과 말풍선이 **둘 다** 떠서 같은 일을 두 번 말했고,
+       손가락은 아래를 가리켰다 — 정작 눌러야 할 것은 식물 위에 있는데.
+     ⇒ 말풍선이 떠 있으면 **그걸** 가리킨다. 그러면 손가락이 곧 "어디를 눌러라"가 된다.
+     ⚠ 말풍선이 없을 때(가려졌거나 방이 안 떴을 때)는 아래 버튼으로 떨어진다 —
+       안 그러면 안내가 통째로 사라진다. */
+  const markEl = !sheetOpen && $('marks') && $('marks').querySelector('.mark');
+  if (markEl && onScreen(markEl)) {
+    const ko = (markEl.textContent || '').replace(/^[^가-힣]+/, '');
+    return hintAt(markEl, /거두/.test(ko) ? '거둘 때가 됐습니다'
+                        : /물/.test(ko)   ? '물을 주면 자라기 시작합니다'
+                        : ko || '여기를 눌러 보세요');
+  }
   const btnHarvest = $('harvestCrop'), btnWater = $('waterCrop');
   if (!sheetOpen && onScreen(btnHarvest) && !btnHarvest.disabled)
     return hintAt(btnHarvest, '거둘 때가 됐습니다');
@@ -1846,7 +1928,14 @@ function updateHint() {
     return hintAt($('openBag'), '가방에서 살림을 봅니다');
   /* ⑤ 그 밖에는 하루를 진행한다 — 며칠 기다려야 할 때는 빨리감기가 낫다 */
   if (!$('ff').disabled && plant.arrived && !fp.completed) return hintAt($('ff'), '며칠 감아 보세요');
-  if (!$('next').disabled) return hintAt($('next'), '하루를 보냅니다');
+  /* ★★ [다음 날]은 **첫 이틀만** 가리킨다 (2026-08-06 박사님:
+       "자꾸 다음 날에 쓰잘데기없이 계속 가이드 손가락 유지된다").
+     ⚠ 예전에는 조건이 `!$('next').disabled` 뿐이라, 오늘 할 일이 없는 날이면 **매일** 붙었다.
+       [다음 날]은 화면에서 가장 크고 노란 버튼이라 안 가리켜도 눈에 띈다 —
+       손가락이 거기 늘 붙어 있으면 "가리킨다"가 "늘 켜져 있는 장식"이 되어,
+       정작 물주기·거두기를 가리킬 때도 안 보게 된다.
+     ⇒ 처음 이틀만 붙이고 그 뒤로는 걷는다. 손가락은 **모르는 것**에만 쓴다. */
+  if (!$('next').disabled && S.day <= 1) return hintAt($('next'), '하루를 보냅니다');
   hintAt(null);
 }
 
@@ -2469,15 +2558,27 @@ function drawSow() {
      시차 판에서는 늘 일부만 거둬져 있어서, 전부를 요구하면 영영 못 심는다. */
   const need = hv ? (hv.harvestedCount || 0) : 0;
   const seeds = st ? (st.stock.bean_seed || 0) : 0;
-  btn.style.display = need > 0 ? '' : 'none';
-  if (!need) return;
+  /* ★★ **산 시루도 여기서 쓴다** (2026-08-06 박사님: "콩나물 시루랑 콩을 사는데
+       뭐가 와야 되는데 사지기만 하고 안 오네").
+     ⚠ 예전에는 조건이 「거둔 시루가 있나」 하나뿐이었다. 그래서 시루를 더 사도
+       **버튼이 아예 안 떴고**, 뜨더라도 `resowCrop` 에 `sirus` 를 안 넘겨 `sirusAdded=0` 이라
+       산 시루가 재고에 쌓이기만 했다 — 돈만 나가고 판에는 아무 일도 안 일어났다.
+     ⇒ 「거둔 시루 + 산 시루」를 함께 센다. 씨앗은 **둘을 합한 만큼** 든다
+       (시루 하나에 씨앗 한 봉지 — state.js §resowCrop). */
+  const spare = st ? (st.stock.siru || 0) : 0;
+  const want = need + spare;                       // 이번에 씨앗이 들어갈 시루 수
+  btn.style.display = want > 0 ? '' : 'none';
+  if (!want) return;
   /* 씨앗이 모자라도 **버튼은 보인다** — 안 보이면 왜 못 심는지 알 길이 없다.
      회색으로 두고 사유를 말한다. */
-  btn.disabled = seeds < 1;
-  btn.textContent = seeds < 1
-    ? '🌱 콩 씨앗이 없습니다'
-    : (need > 1 ? `🌱 콩나물 다시 심기 (${need}개)` : '🌱 콩나물 다시 심기');
-  btn.title = seeds < 1 ? '콩 씨앗을 먼저 주문하세요' : '';
+  btn.disabled = seeds < want;
+  btn.textContent = seeds < want
+    ? (seeds < 1 ? '🌱 콩 씨앗이 없습니다' : `🌱 콩 씨앗이 ${want}봉지 필요합니다 (${seeds}봉지 있음)`)
+    : spare > 0
+      ? (need > 0 ? `🌱 콩나물 심기 (다시 ${need} + 새 시루 ${spare})` : `🌱 새 시루에 콩나물 심기 (${spare}개)`)
+      : (need > 1 ? `🌱 콩나물 다시 심기 (${need}개)` : '🌱 콩나물 다시 심기');
+  btn.title = seeds < want ? '콩 씨앗을 먼저 주문하세요' : '';
+  btn.dataset.spare = String(spare);
 }
 
 /* ══ 체력 — 오늘 손이 얼마나 남았나 (2026-08-05 · docs/stamina.md) ═════════
@@ -2509,6 +2610,13 @@ function drawWater() {
   if (!b) return;
   let st = null; try { st = cropWaterStatus(S); } catch { }
   if (!st || !st.placed || st.harvested) { b.style.display = 'none'; return; }
+  /* ★ 식물 위에 말풍선이 떠 있으면 아래 버튼은 **안 띄운다** (2026-08-06 박사님).
+     같은 일을 두 곳에서 말하면 어디를 눌러야 하는지가 오히려 흐려진다 —
+     말풍선이 물건 위에 있어서 "무엇에 주는지"까지 말해 주므로 그쪽이 낫다.
+     ⚠ 말풍선이 안 뜨는 상황(대화 중·확대 중·방이 안 뜸)에서는 아래 버튼이 나온다.
+       그때 버튼마저 없으면 물을 줄 길이 사라진다. */
+  const hasMark = !!($('marks') && $('marks').querySelector('.mark'));
+  if (hasMark) { b.style.display = 'none'; return; }
   b.style.display = '';
   b.disabled = !st.needsWater;
   b.classList.toggle('done', !st.needsWater);
@@ -2683,13 +2791,33 @@ function placeMarks() {
 /* ★갉화면만 다시 그린다. draw() 전체를 부르면 저장·방 동기화까지 같이 돌아
    대사 한 줄 넘길 때마다 그러면 낭비다. — 보이는 것만 맞춘다.
    ★보이는 것 하나가 망가져도 턴은 돌아야 한다 — 각각 감싼다. */
+/* ══ 고른 물건의 버튼 띠를 아래 띠 위로 띄운다 (2026-08-06) ══════════════
+   박사님: "물건 클릭 시 다음 날 넘기기랑 빨리감기 버튼이 다 가려버려".
+   ★ 재서 넣는다. #bottom 은 좁은 화면에서는 흐름 안에 있고(방을 안 덮는다),
+     넓은 화면에서는 `position:absolute` 로 방 위를 덮는다 — 덮을 때만 띄우면 된다.
+   ⚠ 안 덮는데도 띄우면 폰에서 버튼 띠가 허공에 뜬다. 그래서 **위치를 보고** 가른다. */
+function syncPickLift() {
+  const bot = $('bottom'), st = $('stage');
+  if (!bot || !st) return;
+  const overlays = getComputedStyle(bot).position === 'absolute';
+  st.style.setProperty('--pickLift', overlays ? (bot.offsetHeight + 10) + 'px' : '12px');
+}
+addEventListener('resize', syncPickLift);
+if (window.ResizeObserver) try { new ResizeObserver(syncPickLift).observe($('bottom')); } catch { }
+
 function refreshOverlays() {
-  try { updateHint(); } catch (e) { console.warn('[안내]', e && e.message); }
+  syncPickLift();
+  /* ★ 말풍선을 **먼저** 만든다 (2026-08-06). 아래 둘이 그걸 보고 정하기 때문이다:
+       · `drawWater` 는 말풍선이 있으면 아래 버튼을 안 띄운다(같은 일을 두 번 말하지 않는다)
+       · `updateHint` 는 말풍선이 있으면 그걸 가리킨다(누를 것이 거기 있다)
+     ⚠ 예전에는 `updateHint` 가 맨 앞이라 **한 프레임 늦은 말풍선**을 봤다 —
+       손가락이 아래 버튼을 가리켰다가 다음 그리기에야 옮겨 갔다. */
   try { drawMarks(); }  catch (e) { console.warn('[말풍선]', e && e.message); }
   try { drawHarvest(); } catch (e) { console.warn('[거두기]', e && e.message); }
   try { drawSow(); }     catch (e) { console.warn('[심기]', e && e.message); }
   try { drawWater(); }  catch (e) { console.warn('[물주기]', e && e.message); }
   try { drawCuttings(); } catch (e) { console.warn('[삽수]', e && e.message); }
+  try { updateHint(); } catch (e) { console.warn('[안내]', e && e.message); }
 }
 function drawMarks() {
   const box = $('marks');
@@ -2869,12 +2997,13 @@ function draw() {
   drawJourney();
   drawPlantToday();         /* 오늘 자랐나 — 안 자랐으면 왜인지까지 */
   drawLedger();             /* 하루에 얼마 나가고 콩나물이 얼마를 덜어 주나 */
+  /* ★ 말풍선을 **먼저** — 아래 물주기 버튼과 손가락이 그걸 보고 정한다(§refreshOverlays) */
+  try { drawMarks(); } catch (e) { console.warn('[말풍선]', e && e.message); }
   drawHarvest();            /* 거둘 때가 됐나 */
-  drawWater();              /* 물을 줘야 하나 */
+  drawWater();              /* 물을 줘야 하나 — 말풍선이 있으면 안 띄운다 */
   drawStamina();            /* 오늘 손이 얼마나 남았나 — 누르기 직전에 보는 값이다 */
   drawGrowGauge();          /* 확대 창 — 다음 단계까지 얼마나 왔나 (안 차면 왜인지도) */
   drawSow();                /* 다시 심어야 하나 */
-  try { drawMarks(); } catch (e) { console.warn('[말풍선]', e && e.message); }
   drawShop();               /* 주문·다시 심기·팔기 */
   try { drawMusun(); } catch (e) { console.warn('[무순]', e && e.message); }  /* 2종째 작물 — 없으면 안 보인다 */
   drawCuttings();           /* ★삽수 — 자르기·분갈이·팔기 (분갈이가 없으면 삽수는 반드시 죽는다) */
@@ -3200,6 +3329,13 @@ async function bootRoomView() {
     window.__rv = roomView; window.__picked = picked; window.__drag = drag;
     /* ★그 자리가 몬스테라인가. 확대 오버레이(plant_grow)는 몬스테라 전용이라
        작물 자리에서 열면 아직 오지도 않은 물건이 화면을 덮는다. */
+    /* 작물 자리를 탭했을 때 상세 카드를 여는 창구. 어느 작물인지는 여기서만 안다 —
+       확대 오버레이 쪽(인라인 스크립트)은 상태를 모른다. */
+    window.__byeotCropDetail = (slotId) => {
+      const ms = musunSite();
+      const isMusun = !!(ms && slotId && (ms.slotId === slotId || slotId === `free:${CROP_SITE_IDS.musun}`));
+      try { detail.open(isMusun ? 'musun' : 'crop'); return true; } catch { return false; }
+    };
     window.__byeotIsPlantSlot = (id) => {
       const p = pot0(S);
       return !!(p && p.slotId && id && p.slotId === id);
@@ -3619,10 +3755,23 @@ const drag = {
        예전엔 "제일 가까운 슬롯"으로 튕겨서 방 한가운데를 고를 수가 없었다. */
     let hit = freePlace.surfaceAt(ev.clientX, ev.clientY, this.potD);
     hit = freePlace.snap(hit, ev.clientX, ev.clientY);
-    freePlace.preview(hit, this.potD);
+    /* ★★ **방 안에 들어오면 진짜 물건으로 바뀐다** (2026-08-06 박사님:
+       "저 콩나물이 저 사진이 오니까 이상해. 게임 안으로 올 때는 그 실제 물품으로 와야지?").
+       ⚠ 예전에는 손가락을 따라다니는 **2D 사진**(#dragGhost)과 방 안의 3D 유령이 **둘 다** 보였다.
+         그래서 시루가 흰 네모 사진으로 방에 떠 있는 것처럼 보였다.
+       ⇒ 놓을 수 있는 면 위에 오면 사진을 숨기고 **3D 유령만** 보여 준다.
+         방 밖(시트·버튼 위)에서는 사진이 필요하다 — 거기엔 3D 유령을 세울 자리가 없어서
+         아무 표시도 없으면 무엇을 끌고 있는지 사라진다.
+       ★ `potId` 를 넘겨야 그 물건의 **제 모습**으로 선다. 안 넘기면 방뷰가 무엇인지 몰라
+         일반 모양으로 그린다. */
+    const potId = this.what === 'monstera' ? (pot0(S) ? pot0(S).id : null)
+                : this.what === 'musun'    ? CROP_SITE_IDS.musun
+                :                            BEANSPROUT_ID;
+    freePlace.preview(hit, this.potD, potId);
     freePlace.rings(true, this.potD, hit && hit.ok ? { x: hit.x, z: hit.z } : null);
     this.best = hit;
     const good = !!(hit && hit.ok);
+    gh.classList.toggle('inroom', !!hit);      /* 면 위에 오면 사진을 감춘다 */
     gh.classList.toggle('ok', good); gh.classList.toggle('no', !good);
     const lb = $('dropLabel');
     lb.textContent = freePlace.label(hit, drag.what);
@@ -4092,6 +4241,38 @@ function bindPicked() {
   bindFurnitureTap();
 }
 
+/* ══ ★★ 끌던 중에 손을 놓친 경우 (2026-08-06 박사님 신고) ═══════════════════
+   *"드래그하다가 스샷 찍으려고 스샷 단축키 버튼 누르니까 저 상태로 더 이상 움직여지지가 않고
+     마우스도 뭐 반응이 없네"*
+
+   ⚠ 창이 **포커스를 잃으면 `pointerup` 이 안 온다.** 스샷 도구·알트탭·화면 잠금·
+     브라우저 탭 전환이 전부 그 경우다. 그러면 `drag.on`(또는 picked.mode·furnPicked.mode)이
+     **켜진 채로 굳고**, 그 뒤로는 탭도 회전도 안 먹는다 — 조작이 통째로 막힌다.
+   ⇒ 창이 흐려지거나 숨겨지면 **끌던 것을 취소한다.** 놓은 자리를 모르니 되돌리는 것이 맞다 —
+     엉뚱한 데 놓아 버리면 그게 더 나쁘다(그때는 되돌릴 길이 없다).
+   ★ `pointercancel` 만으로는 부족하다. 브라우저가 그걸 항상 쏘지는 않는다 —
+     실제로 이 신고가 그 증거다. */
+function cancelAnyDrag(why) {
+  let did = false;
+  try { if (drag.on) { drag.cancel ? drag.cancel() : drag.end(); did = true; } } catch { }
+  try { if (picked.mode) { picked.mode = null; picked.ghost = null; did = true;
+        $('stage').classList.remove('moving'); freePlace.clear(); freePlace.rings(false); freePlace.grid(false); } } catch { }
+  try { if (furnPicked.mode) { furnPicked.mode = null; furnPicked.ghost = null; did = true;
+        $('stage').classList.remove('furnmoving'); freePlace.grid(false);
+        if (roomView) { try { roomView.clearFurniturePreview(); } catch { } try { roomView.clearLampPreview(); } catch { } }
+        try { roomView && roomView.highlightSlots([]); } catch { } } } catch { }
+  if (did) {
+    const lb = $('dropLabel');
+    if (lb) { lb.textContent = '끌던 것을 취소했습니다 — 다시 잡아 주세요'; lb.classList.remove('ok', 'no'); }
+    try { draw(); } catch { }
+  }
+  return did;
+}
+addEventListener('blur', () => cancelAnyDrag('blur'));
+document.addEventListener('visibilitychange', () => { if (document.hidden) cancelAnyDrag('hidden'); });
+/* 손가락·마우스가 창 밖에서 떨어진 경우도 같은 길이다 */
+addEventListener('pointerup', (e) => { if (e.target === document.documentElement) cancelAnyDrag('outside'); }, true);
+
 function bindDrag(thumbId, what) {
   const el = $(thumbId); if (!el) return;
   el.classList.add('draggable');
@@ -4292,8 +4473,18 @@ const reallyWater = guard(() => {
 
 $('resow').onclick = guard(() => doAct('sow', () => reallySow()));
 const reallySow = guard(() => {
-  const r = resowCrop(S, { slots: io.light.room.slots, size: io.light.room.size });
-  banner('콩나물을 다시 심었습니다', `시루 ${r.sirus}개 · 씨앗 ${r.seedsUsed}봉지`);
+  /* ★ 산 시루가 있으면 그만큼 **늘려서** 심는다 (drawSow §산 시루).
+     ⚠ `sirus` 를 안 넘기면 `resowCrop` 이 지금 개수를 그대로 써서 산 시루가 영영 안 쓰인다.
+     ⚠ 개수는 화면이 짓지 않는다 — 지금 몇 개인지는 `cropHarvestStatus` 가 안다. */
+  const spare = Number($('resow').dataset.spare || 0);
+  const opt = { slots: io.light.room.slots, size: io.light.room.size };
+  if (spare > 0) {
+    let had = 0; try { had = (cropHarvestStatus(S).sirus || 0); } catch { }
+    if (had > 0) opt.sirus = had + spare;
+  }
+  const r = resowCrop(S, opt);
+  banner(r.sirusAdded ? '콩나물 시루를 늘렸습니다' : '콩나물을 다시 심었습니다',
+         `시루 ${r.sirus}개 · 씨앗 ${r.seedsUsed}봉지`);
   draw();
 });
 
