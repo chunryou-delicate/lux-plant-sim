@@ -913,8 +913,12 @@
         <div id="shopList"></div>
         <div id="shopPending" class="itemline"></div>
         <div class="btns">
+          <!-- ★잉여 채소 넘기기 (2026-08-06 · docs/handoff/cropsale-to-plan.md).
+               팔 것이 있을 때만 뜬다 — 늘 띄우면 "왜 회색이지"가 된다. -->
+          <button id="sellSurplus" class="ghost" style="display:none">잉여 채소 넘기기</button>
           <button id="sellPlant" class="ghost" disabled>몬스테라 팔기</button>
         </div>
+        <div id="surplusHint" class="itemline"></div>
         <div id="sellHint" class="itemline"></div>
       </div>
 
@@ -1155,7 +1159,8 @@
 <script type="module">
 import { newState, SIM_MODES, pot0, pushLog, givePlant, hasPlant, ARRIVAL,
          setPotAt, setPotSlot, setCropAt, setFurniturePlacement, furnitureOverrides,
-         resowCrop, waterCrop, cropWaterStatus, cropHarvestStatus } from './src/game/state.js';
+         resowCrop, waterCrop, cropWaterStatus, cropHarvestStatus,
+         cropSurplusStatus, sellCropSurplus } from './src/game/state.js';
 import { catalogList, orderItem, shopStatus, priceOf, sellPot, sellCutting,
          stockOf, SELLABLE_CUTTING_STATUS, varieLeavesNeededFor } from './src/game/shop.js';
 /* ★ 삽수 — 규칙과 수치는 전부 propagation.js 것이다. 여기서는 부르기만 한다
@@ -2210,6 +2215,23 @@ function drawShop() {
       draw();
     }));
   }
+  /* ── 잉여 채소 넘기기 (2026-08-06) ──
+     ★ 파는 것은 **곳간이 못 받은 몫**뿐이다 — 겹쳐서 깎인 차액과 넘쳐서 쉰 몫.
+       둘 다 정의상 곳간 밖이라 밥이 될 길이 없다. 끼니로 쓸 것은 안 팔린다.
+     ⚠ 값(정가의 몇 %)은 **아직 미확정**이다. 지금은 70% 로 돌고 있고, 그 사실을
+       화면이 말해 준다 — 안 말하면 확정된 값처럼 읽힌다. */
+  let sq = null; try { sq = cropSurplusStatus(S); } catch { }
+  const sBtn = $('sellSurplus'), sHint = $('surplusHint');
+  const hasSurplus = !!(sq && sq.pendingWon > 0);
+  if (sBtn) {
+    sBtn.style.display = hasSurplus ? '' : 'none';
+    sBtn.textContent = hasSurplus ? `잉여 채소 넘기기 (${sq.won.toLocaleString()}원)` : '잉여 채소 넘기기';
+  }
+  if (sHint) sHint.textContent = hasSurplus
+    ? `겹쳐서 못 받거나 쉰 몫 ${sq.pendingWon.toLocaleString()}원 — ` +
+      `${Math.round(sq.rate * 100)}%에 넘깁니다 (끼니로 쓸 몫은 안 팔립니다)`
+    : '';
+
   const pend = st.orders.filter(o => o.daysLeft >= 0);
   $('shopPending').textContent = pend.length
     /* ⚠ 주문 기록에는 itemId 만 있고 이름이 없다 — 카탈로그에서 찾는다 */
@@ -4105,6 +4127,14 @@ const reallySow = guard(() => {
 });
 
 /* ★파는 순간 그루가 사라진다. growth 3D 는 코어가 못 지우므로 신호를 받아 화면이 정리한다 */
+/* 잉여 넘기기 — 되돌릴 수 없지만 **잃는 것이 없다**(어차피 버려질 몫이라
+   되묻지 않는다. 몬스테라 팔기와 다른 점이 그것이다). */
+$('sellSurplus').onclick = guard(() => {
+  const r = sellCropSurplus(S);
+  banner('잉여 채소를 넘겼습니다', `${r.won.toLocaleString()}원`);
+  draw();
+});
+
 /* ★한 번 되묻는다 (2026-08-05) — 파는 것은 **되돌릴 수 없고**, 그 판의 몬스테라가 사라진다.
    바로 밑 설명이 "지금 잎 수로는 이사 자금에 못 미칩니다"라고 말리고 있는데도 이 버튼이
    그 패널에서 제일 컸다. 잘못 누르면 판이 통째로 날아간다.

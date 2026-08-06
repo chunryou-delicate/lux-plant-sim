@@ -438,7 +438,18 @@ function packFirstPlay(fp) {
       lastFoodSavedWon: needNum(f.lastFoodSavedWon ?? 0, 'firstPlay.food.lastFoodSavedWon', { min: 0 }),
       totalFoodSavedWon: needNum(f.totalFoodSavedWon ?? 0, 'firstPlay.food.totalFoodSavedWon', { min: 0 }),
       cashFoodWon: needNum(f.cashFoodWon ?? 0, 'firstPlay.food.cashFoodWon', { min: 0 }),
-      lastSpoiledWon: needNum(f.lastSpoiledWon ?? 0, 'firstPlay.food.lastSpoiledWon', { min: 0 })
+      lastSpoiledWon: needNum(f.lastSpoiledWon ?? 0, 'firstPlay.food.lastSpoiledWon', { min: 0 }),
+      /* ★★ 잉여 판매 (2026-08-06 · first_play §잉여 판매).
+         ⚠ 이 블록은 열쇠를 **하나하나 적는** 모양이라, `fp.food` 에 칸을 늘려도
+           여기 안 적으면 **저장하는 순간 사라진다.** cropsale 창이 그걸 직접 확인했다:
+             surplusWon 6,000 · totalSurplusSoldWon 4,200 → 저장 → 복원 → **0 · 0**
+           안 넘긴 잉여를 안고 저장하면 그만큼 잃는다(판 돈은 지갑에 든 뒤라 안 잃는다).
+         ★ 옛 세이브에는 이 칸이 없다 → 0 으로 연다. 잃을 진행이 없다.
+         ★ 복원 쪽은 `Object.assign(fp.food, saved.food)` 라 고칠 것이 없다. */
+      surplusWon: needNum(f.surplusWon ?? 0, 'firstPlay.food.surplusWon', { min: 0 }),
+      lastSurplusWon: needNum(f.lastSurplusWon ?? 0, 'firstPlay.food.lastSurplusWon', { min: 0 }),
+      totalSurplusSoldWon: needNum(f.totalSurplusSoldWon ?? 0,
+                                   'firstPlay.food.totalSurplusSoldWon', { min: 0 })
     },
     monstera: {
       arrived: !!m.arrived,
