@@ -92,6 +92,85 @@ async function touchDrag(page, x0, y0, x1, y1, steps = 8, ghost = true) {
   await sleep(120);
 }
 
+/* ★★ 걷는 동안 매 프레임 자리·몸방향을 **브라우저 안에서** 찍는다
+   ------------------------------------------------------------
+   (2026-08-06 · K 가 네 번에 한 번 "안 움직여 못 쟀습니다"로 떨어지던 것)
+   전에는 node 에서 page.eval 로 두 번만 찍어 그 차이를 썼다. 그 두 표본이
+   출발 직전(몸만 도는 구간)·도착 직후·CDP 왕복이 늦은 프레임에 걸리면
+   이동량이 0 이 되어 **걷기는 멀쩡한데 검사만** 떨어졌다.
+   여기서는 rAF 마다 찍으므로 왕복 지연에 안 흔들리고, 표본이 아주 많아
+   그 중 "실제로 움직인" 구간만 골라 쓸 수 있다.
+
+   ★ 걷기를 다 삼키지 않는다 — 쓸 만한 걸음이 wantSteps 개 모이면 곧바로 멈춘다.
+     (뒤따르는 E 는 **걷는 동안** 하루빛이 도는지를 봐야 한다) */
+const MIN_STEP = 0.05;                       // 이만큼은 움직여야 방향을 잰다(전과 같은 문턱)
+async function sampleWalk(page, id, { wantSteps = 8, maxMs = 4000 } = {}) {
+  await page.eval(`(()=>{
+    window.__K = { s: [], steps: 0, done: false };
+    const id = ${JSON.stringify(id)}, t0 = performance.now();
+    let ax = null, az = null;
+    const tick = () => {
+      const c = window.view.characters().find(x => x.id === id);
+      const now = performance.now() - t0;
+      if (c) {
+        window.__K.s.push({ t: +now.toFixed(1), x: c.pos.x, z: c.pos.z, yaw: c.yaw });
+        if (ax === null) { ax = c.pos.x; az = c.pos.z; }
+        else if (Math.hypot(c.pos.x - ax, c.pos.z - az) >= ${MIN_STEP}) {
+          ax = c.pos.x; az = c.pos.z; window.__K.steps++;
+        }
+      }
+      if (window.__K.steps >= ${wantSteps} || !window.view.isWalking(id) || now > ${maxMs}) {
+        window.__K.done = true; return;
+      }
+      requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick); return 1; })()`);
+  for (let i = 0; i < Math.ceil(maxMs / 60) + 10; i++) {
+    if (await page.eval(`window.__K.done ? 1 : 0`)) break;
+    await sleep(60);
+  }
+  return page.eval(`window.__K.s`);
+}
+
+/* 표본 줄에서 **실제로 움직인 구간**만 골라 (진행 방향 vs 몸 방향) 어긋남을 잰다.
+   안 움직인 표본은 방향을 못 주므로 버리고 다음 표본을 본다 — 검사를 무르게
+   하는 게 아니라, 잴 수 없는 표본을 안 쓰는 것이다. */
+function facingSteps(samples, minStep = MIN_STEP) {
+  const norm = a => { while (a > Math.PI) a -= Math.PI * 2; while (a < -Math.PI) a += Math.PI * 2; return a; };
+  const out = [];
+  let a = null;
+  for (const s of samples) {
+    if (!a) { a = s; continue; }
+    const dx = s.x - a.x, dz = s.z - a.z;
+    if (Math.hypot(dx, dz) < minStep) continue;       // 아직 덜 움직였다 — 다음 표본으로
+    const travel = Math.atan2(dx, dz);                // 캐릭터의 앞은 로컬 +Z
+    out.push({ t: s.t, travel, yaw: s.yaw, off: Math.abs(norm(travel - s.yaw)) });
+    a = s;
+  }
+  return out;
+}
+
+/* 갈 수 있는 자리 중 ref 에서 **가장 먼 곳**으로 다시 걷게 한다.
+   K 가 표본을 못 건졌을 때(걷기가 이미 끝나 있었다) 다시 찍기 위한 것.
+   ref 에서 먼 곳을 고르므로 뒤따르는 C-3(실제로 자리를 옮겼다)도 안 흔들린다. */
+async function walkFarFrom(page, id, ref) {
+  return page.eval(`(()=>{
+    const rc = document.getElementById('roomCanvas').getBoundingClientRect();
+    const f = window.view.characterScreenPos(${JSON.stringify(id)});
+    if (!f) return null;
+    const FX = rc.left + f.x, FY = rc.top + f.y, out = [];
+    for (const [dx,dy] of [[0,55],[45,45],[-45,45],[70,20],[-70,20],[0,90],[60,80],[-60,80],[90,-20],[-90,-20],[110,45],[-110,45]]) {
+      const t = window.view.previewWalk(${JSON.stringify(id)}, FX+dx, FY+dy);
+      if (t && t.ok) out.push({dx,dy,x:t.x,z:t.z});
+    }
+    window.view.previewWalk(${JSON.stringify(id)}, null, null);
+    if (!out.length) return null;
+    out.sort((a,b) => Math.hypot(b.x-(${ref.x}), b.z-(${ref.z})) - Math.hypot(a.x-(${ref.x}), a.z-(${ref.z})));
+    const g = out[0];
+    return { r: window.view.walkTo(${JSON.stringify(id)}, FX+g.dx, FY+g.dy), x:g.x, z:g.z };
+  })()`);
+}
+
 async function main() {
   const page = await launch({ width: 390, height: 844, dpr: 2, mobile: false });
   const errs = [];
@@ -181,24 +260,44 @@ async function main() {
   ok('C-2 손을 떼면 걸어간다', walking === true);
 
   /* ── K 가는 쪽을 보고 걷는다 (뒷걸음질 금지) ──
-     ★ 방향은 눈으로만 보면 놓친다. 두 시점의 **자리 차이**로 진행 방향을 구하고
-       그때의 yaw 와 비교한다. 캐릭터의 앞은 로컬 +Z 라 yaw = atan2(dx, dz) 여야 한다. */
+     ★ 방향은 눈으로만 보면 놓친다. **자리 차이**로 진행 방향을 구하고 그때의 yaw 와
+       비교한다. 캐릭터의 앞은 로컬 +Z 라 yaw = atan2(dx, dz) 여야 한다.
+
+     표본은 rAF 마다 브라우저 안에서 찍고(sampleWalk), 그 중 **실제로 움직인 걸음**만
+     골라 쓴다. 못 건지면 다시 걷게 해서 다시 찍는다 — 잴 수 없는 표본을 버릴 뿐
+     문턱은 그대로다(어긋남 0.7rad = 40°).
+     ★ 여러 걸음의 **중앙값**으로 본다. 뒷걸음질이면 모든 걸음이 180° 어긋나므로
+       반드시 걸린다. 코너에서 몸을 트는 한두 걸음에는 안 흔들린다. */
   const norm = a => { while (a > Math.PI) a -= Math.PI * 2; while (a < -Math.PI) a += Math.PI * 2; return a; };
+  const TURN_MS = 300;                      // 출발할 때 몸이 도는 데 0.3~0.4초 걸린다
   let backwards = null;
-  if (walking) {
-    await sleep(320);                       // 몸이 다 돌 때까지 기다린다(0.4초쯤 걸린다)
-    const k0 = await page.eval(`window.view.characters().find(c=>c.id==='jachwi')`);
-    await sleep(260);
-    const k1 = await page.eval(`window.view.characters().find(c=>c.id==='jachwi')`);
-    const mx = k1.pos.x - k0.pos.x, mz = k1.pos.z - k0.pos.z;
-    if (Math.hypot(mx, mz) > 0.05) {
-      const travel = Math.atan2(mx, mz);
-      const off = Math.abs(norm(travel - k1.yaw));
-      backwards = off;
-      ok('K 가는 쪽을 보고 걷는다 (뒷걸음질이 아니다)', off < 0.7,
-         `진행 ${(travel * 180 / Math.PI).toFixed(0)}° vs 몸 ${(k1.yaw * 180 / Math.PI).toFixed(0)}° = ${(off * 180 / Math.PI).toFixed(0)}° 어긋남`);
-    } else ok('K 가는 쪽을 보고 걷는다 (뒷걸음질이 아니다)', false, '두 표본 사이에 안 움직여 못 쟀습니다');
-  } else ok('K 가는 쪽을 보고 걷는다 (뒷걸음질이 아니다)', false, '걷지 않아 못 쟀습니다');
+  {
+    let steps = [], why = '걷지 않아 못 쟀습니다';
+    for (let tries = 0; tries < 3 && steps.length < 3; tries++) {
+      if (!(await page.eval(`window.view.isWalking('jachwi')`))) {
+        /* 걷기가 이미 끝나 있었다 — 다시 보낸다(=표본을 다시 찍는다) */
+        const again = await walkFarFrom(page, 'jachwi', before);
+        if (!again || !again.r || again.r.ok !== true) { why = `다시 걷게 못 했습니다: ${JSON.stringify(again && again.r)}`; break; }
+        await sleep(120);
+      }
+      const raw = await sampleWalk(page, 'jachwi');
+      const all = facingSteps(raw);
+      /* 출발 회전 구간은 몸이 아직 도는 중이라 뺀다. 뺀 뒤 너무 적으면 전부 쓴다. */
+      const late = all.length ? all.filter(o => o.t >= all[0].t + TURN_MS) : [];
+      steps = late.length >= 3 ? late : all;
+      if (steps.length < 3) why = `표본 ${raw.length}개 중 ${MIN_STEP}m 넘게 움직인 걸음이 ${all.length}개뿐입니다`;
+    }
+    if (steps.length >= 3) {
+      const offs = steps.map(o => o.off).sort((a, b) => a - b);
+      const med = offs[offs.length >> 1];
+      backwards = med;
+      const last = steps[steps.length - 1];
+      ok('K 가는 쪽을 보고 걷는다 (뒷걸음질이 아니다)', med < 0.7,
+         `걸음 ${offs.length}개 · 어긋남 중앙값 ${(med * 180 / Math.PI).toFixed(0)}° ` +
+         `(최소 ${(offs[0] * 180 / Math.PI).toFixed(0)}° 최대 ${(offs[offs.length - 1] * 180 / Math.PI).toFixed(0)}°) · ` +
+         `마지막 진행 ${(last.travel * 180 / Math.PI).toFixed(0)}° vs 몸 ${(last.yaw * 180 / Math.PI).toFixed(0)}°`);
+    } else ok('K 가는 쪽을 보고 걷는다 (뒷걸음질이 아니다)', false, why);
+  }
 
   /* ── E 걷는 동안에도 하루빛이 돈다 ── */
   let daylightMoved = false;
