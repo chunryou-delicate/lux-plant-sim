@@ -148,7 +148,15 @@ const SNAP_MS = 260;         // 손 뗀 뒤 턱으로 되돌아가는 시간(방
 const EL_MIN = 0.28, EL_MAX = 0.95;      // 약 16°~54°
 const SNAP = Math.PI / 4;                // 8방
 const RUBBER = 0.28;                     // 턱 너머로 끌리는 비율
-const ZOOM_IN = 0.58, ZOOM_OUT = 1.15;   // fit 거리 대비 줌 한계
+const ZOOM_IN = 0.58;
+/* ★★ 줄 아웃 한계는 **화면 비율마다 다르다** (2026-08-06)
+   박사님(PC): "피씨일 때 좀 더 멀리 떨어지게 하자 화면이.
+                    지금 최대 원경이 최소고, 좀 더 멀게 해야 최대 멀리가 되도록 해 줘."
+   ★ 폰 세로는 **그대로 1.15** 다. 거기서 더 멀어지면 390px 폭에서 화분이
+     손톱만 해져 무엇을 놓는지가 안 보인다 — 넓은 화면에서만 푸는 것이 맞다.
+   ★ 가르는 문턱은 이미 쓰던 것 그대로 쓴다(aspect 0.95 — FOV·기본 상하각과 같은 문턱이다).
+   ⚠ fit 거리 대비 배율이다. 절대값(m)을 박으면 방 크기마다 맞지 않는다. */
+const ZOOM_OUT_PORTRAIT = 1.15, ZOOM_OUT_WIDE = 2.00;
 
 /* 기본 상하각은 화면 비율에 따라 다르다.
    세로 화면에서는 위에서 내려다볼수록 방 바닥이 세로로 길게 맺혀 화면을 더 채운다
@@ -210,6 +218,132 @@ export function rotationSafeDiameter(obj, space) {
   return 2 * Math.sqrt(maxR2);
 }
 
+/* ★★ 네모 테두리 — squareFrameGeometry (2026-08-06)
+   ══════════════════════════════════════════════════════════════════
+   박사님: "밑에 물품들 이동칸 표시가 약간 네모로 표기됐으면 좋겠어.
+            동그라미여서 밑에 네모 격자랑 뭔가 안 맞아"
+
+   RingGeometry 를 그대로 갈아 끼울 수 있게 **같은 규약**으로 만든다.
+     · XY 평면에 눕혀 있다(쓰는 쪽이 rotation.x = −π/2 로 눕힌다 — 예전 그대로)
+     · 바깥 반지름이 1 이다(쓰는 쪽이 scale 로 키운다 — 예전 그대로)
+   그래서 색·맥박·깊이검사·renderOrder 규약은 한 줄도 안 바뀐다. 모양만 바뀐다.
+
+   ★ 크기는 **격자에 물린다**(§squareHalf). 모양만 네모로 바꾸고 크기가 0.25m 격자와
+     어긋나면 오히려 더 어색하다 — 박사님이 지적하신 것이 정확히 그 어긋남이다.
+   @param inner 안쪽 반(半)너비 (0..1). 바깥은 1 */
+function squareFrameGeometry(inner) {
+  const a = Math.max(0, Math.min(0.98, inner)), b = 1;
+  const o = [[-b, -b], [b, -b], [b, b], [-b, b]];
+  const i4 = [[-a, -a], [a, -a], [a, a], [-a, a]];
+  const pos = [], idx = [];
+  for (const p of o) pos.push(p[0], p[1], 0);
+  for (const p of i4) pos.push(p[0], p[1], 0);
+  for (let k = 0; k < 4; k++) {
+    const k2 = (k + 1) % 4;
+    /* 바깥 k → 바깥 k2 → 안쪽 k2 → 안쪽 k 로 이어지는 띠 하나 */
+    idx.push(k, k2, 4 + k2, k, 4 + k2, 4 + k);
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  g.setIndex(idx);
+  return g;
+}
+
+/* 반지름[m] → **격자 칸에 물린 반너비[m]**.
+   ★ 0.25m 격자 위에 얹히는 네모여야 한다. 화분 지름 0.22 짜리 자리는 한 칸(0.25),
+     0.6 짜리 상판은 두 칸(0.50) 이 된다. 최소 한 칸 — 0.5칸짜리 네모는 격자에 안 맞는다. */
+function squareHalf(r) {
+  const cells = Math.max(1, Math.round((r * 2) / GRID_CELL));
+  return cells * GRID_CELL / 2;
+}
+
+/* ★★ 스킨드 메시의 **실제 최저점** — skinLowestY (2026-08-06)
+   ══════════════════════════════════════════════════════════════════
+   ⚠⚠ `new THREE.Box3().setFromObject(캐릭터)` 는 **쓰면 안 된다.**
+     스킨드 메시의 정점은 뼈 행렬이 움직이는데 three 의 Box3 는 기하의 바인드 상자에
+     메시 노드 행렬만 곱한다. 재 보면 그 값이 [0, 0.014]m 로 나온다 — 1.4m 짜리 사람이다.
+     (실제로 이걸로 재다가 "캐릭터 키 0.02m" 라는 검사 결과를 받았다.)
+
+   그래서 뼈를 실제로 풀어서 잰다. three r128 의 SkinnedMesh.boneTransform 이 그 일을 한다.
+   ⚠ 앞에 `skeleton.update()` 가 반드시 있어야 한다 — 안 부르면 뼈 행렬이 바인드 포즈라
+     **늘 0 이 나온다**(그렇게 나와서 "클립은 멀쩡하다"는 잘못된 결론을 한 번 냈다).
+
+   ★ 전부 세지 않는다. 메시마다 GROUND_VERTS 점만 고른다 — 발바닥은 정점이 촘촘해서
+     성기게 훑어도 최저점이 몇 mm 안에서 잡힌다. 클립마다 한 번만 부르는 함수다. */
+const GROUND_VERTS = 220;
+function skinLowestY(root) {
+  let lo = Infinity;
+  const v = new THREE.Vector3();
+  root.updateMatrixWorld(true);
+  root.traverse(n => {
+    if (!n.isSkinnedMesh || !n.geometry || !n.geometry.attributes || !n.geometry.attributes.position) return;
+    if (typeof n.boneTransform !== 'function') return;
+    n.skeleton.update();
+    const pos = n.geometry.attributes.position;
+    const step = Math.max(1, Math.floor(pos.count / GROUND_VERTS));
+    for (let i = 0; i < pos.count; i += step) {
+      n.boneTransform(i, v);
+      v.applyMatrix4(n.matrixWorld);
+      if (v.y < lo) lo = v.y;
+    }
+  });
+  return lo;
+}
+
+/* ★★ 접지 그림자 (blob) — "물건이 바닥에 붙어 보이게" (2026-08-06)
+   ══════════════════════════════════════════════════════════════════
+   박사님: "약간 그림자가 없으니 애매하네. 살짝 빛에 따른 가구나 사람 그림자 대충 나오게"
+   ★ 핵심은 **"대충"** 이다. 정밀한 그림자맵이 아니라 "붙어 보이는 정도"면 된다.
+
+   왜 그림자맵을 더 켜지 않았나 — 재 봤다(tools/test_perf_budget.mjs §그림자).
+     지금(lean) 해 하나만 굽는다. full 로 올리면 천장등 큐브맵 6면 + 창확산광 2장이
+     늘어 프레임 시간이 크게 뛴다. 그리고 **반지하는 해가 약해서** 그림자맵을 다 켜도
+     바닥에 아무것도 안 보인다 — 값을 치르고 얻는 게 없다.
+   접지 그림자는 빛과 무관하게 늘 보이고, 값이 텍스처 한 장 + 판때기 하나다.
+
+   ⚠⚠ **이것은 그림이지 계산이 아니다.** 조도(DLI)에 한 톨도 안 들어간다 —
+     조도는 light_adapter 가 방 정의로 내고, 이 판때기는 houseGroup 에만 붙는다.
+     tools/test_ground.mjs 가 그 사실을 숫자로 못 박는다. */
+let _blobTex = null;
+function blobTexture() {
+  if (_blobTex) return _blobTex;
+  const N = 64;
+  const c = document.createElement('canvas');
+  c.width = c.height = N;
+  const g = c.getContext('2d');
+  /* 가운데가 짙고 가장자리로 부드럽게 사라진다. 가장자리를 완전히 0 으로 떨어뜨려야
+     판때기 네모가 안 보인다(0.02 만 남아도 사각형 자국이 보인다 — 실제로 보였다). */
+  const grd = g.createRadialGradient(N / 2, N / 2, 0, N / 2, N / 2, N / 2);
+  grd.addColorStop(0.00, 'rgba(0,0,0,0.78)');
+  grd.addColorStop(0.42, 'rgba(0,0,0,0.66)');
+  grd.addColorStop(0.72, 'rgba(0,0,0,0.30)');
+  grd.addColorStop(0.90, 'rgba(0,0,0,0.07)');
+  grd.addColorStop(1.00, 'rgba(0,0,0,0)');
+  g.fillStyle = grd;
+  g.fillRect(0, 0, N, N);
+  _blobTex = new THREE.CanvasTexture(c);
+  _blobTex.minFilter = THREE.LinearFilter;
+  _blobTex.magFilter = THREE.LinearFilter;
+  return _blobTex;
+}
+
+/* 판때기 하나. 지름 d[m] · 진하기 a. XZ 평면에 눕혀 돌려준다.
+   ★ userData.isBlobShadow 로 표시한다 — 검사(test_ground)가 bb 를 잴 때 이걸 빼야
+     "min.y 가 0 이다"가 그림자 때문에 늘 참이 되는 거짓 통과를 막는다. */
+function makeBlobShadow(d, a = 1) {
+  const m = new THREE.Mesh(
+    new THREE.PlaneGeometry(1, 1),
+    new THREE.MeshBasicMaterial({ map: blobTexture(), transparent: true, opacity: a,
+                                  depthWrite: false, toneMapped: false,
+                                  color: 0x000000, side: THREE.DoubleSide }));
+  m.rotation.x = -Math.PI / 2;
+  m.scale.set(d, d, 1);
+  m.renderOrder = 1;                 // 격자(2·3)·링(4~6)보다 아래
+  m.userData.isBlobShadow = true;
+  m.matrixAutoUpdate = true;
+  return m;
+}
+
 /* 화분만 잰다 — 잎은 화분 밖으로 나가는 게 정상이라 같이 재면 안 된다 */
 function potPartOf(group) {
   /* 생장 모듈이 조립한 그루는 화분이 어느 자식인지 스스로 알려 준다.
@@ -217,7 +351,9 @@ function potPartOf(group) {
      줄기 굵기(2cm)로 나와 어떤 자리든 통과해 버린다. 티가 안 나는 종류의 사고다. */
   if (group.userData.potPart) return group.userData.potPart;
   const leaves = group.userData.leaves || [];
-  return group.children.find(c => !leaves.includes(c)) || group;
+  /* ⚠ 접지 그림자는 이제 그루의 자식이 아니다(§syncPlantBlob) — 그래도 두 겹으로 막아 둔다.
+     자식으로 넣었던 때 이 규칙이 판때기를 화분으로 읽어 0.2m 화분의 지름이 0.48m 가 됐다. */
+  return group.children.find(c => !leaves.includes(c) && !c.userData.isBlobShadow) || group;
 }
 
 /* ★★ 무리 짓기 — 한 자리에 용기 N개를 늘어놓는 자리표 (2026-08-05)
@@ -361,6 +497,14 @@ const BULB_K = 0.30, BULB_DECAY = 2.2, BULB_EMISSIVE = 0.14;
      채움광까지 끔                  1.2
    그동안 BULB_K 만 조여 온 것이 헛손질이었던 이유다. 기구를 줄여야 밤이 밤이 된다. */
 const RIG_GROW = 0.20, RIG_LAMP = 0.55;
+/* ★ 접지 그림자 진하기 (2026-08-06 · §makeBlobShadow).
+   ⚠ 이것은 **그림**이다. 조도(DLI)에 안 들어간다 — 값을 바꿔도 자리 판정은 안 바뀐다.
+   ★ 왜 서로 다른가
+     사람   0.55  방에서 제일 크고, 안 붙어 보이던 그 물건이다
+     가구   0.40  한 판에 합쳐 그린다(드로우콜 1). 세면 방바닥이 얼룩덜룩해진다
+     화분   0.45  작아서 조금 진해야 보인다
+     몬이   0.30  **일부러 떠 있는** 마스코트다. 진하면 붙어 있는 것처럼 읽힌다 */
+const BLOB_A_CHAR = 0.55, BLOB_A_FURN = 0.40, BLOB_A_PLANT = 0.45, BLOB_A_MASCOT = 0.30;
 /* 밤에는 방향 없는 채움광을 한 번 더 깎는다 — 채움광이 남아 있으면 등 웅덩이가 안 보인다 */
 const NIGHT_FILL_CUT = 0.60;
 function isDescendant(node, root) {
@@ -602,6 +746,7 @@ export async function createRoomView(canvas, opts = {}) {
     for (const [, c] of chars) { try { c.dispose(); } catch (e) { /* 나머지는 계속 치운다 */ } }
     chars.clear();
     clearPlants();
+    for (const k of [...plantBlobs.keys()]) dropPlantBlob(k);   // 남은 접지 그림자까지
     clearRings();
     clearGuideRings();
     disposeOutside();               // 방마다 다시 짓는다 — 창 자리가 다르다
@@ -675,6 +820,8 @@ export async function createRoomView(canvas, opts = {}) {
     }
     if (!slotById.size) console.warn(`[방뷰] ${id}: 화분 슬롯이 없습니다`);
 
+    buildFurnitureBlobs();                  // ★ 가구 접지 그림자 한 판 (§buildFurnitureBlobs)
+
     frameRoom(true);
     applyDaylight();
     needsRender = true;
@@ -683,6 +830,80 @@ export async function createRoomView(canvas, opts = {}) {
        기다리지 않는다 — 캐릭터를 싣느라 방이 안 뜨면 안 된다. */
     for (const k of wasHere)
       setCharacter(k).catch(e => console.warn('[방뷰] 방을 바꾼 뒤 캐릭터를 다시 못 세웠습니다:', e.message));
+  }
+
+  /* ============================================================
+     ①-3 ★ 가구 접지 그림자 — buildFurnitureBlobs (2026-08-06)
+     ------------------------------------------------------------
+     박사님: "살짝 빛에 따른 가구나 사람 그림자 대충 나오게 해 줘"
+
+     ★★ **드로우콜 1개**다. 가구마다 판때기를 만들면 반지하만 해도 10장이 늘고
+       학원교실은 30장이 넘는다 — 렉을 잡으랬는데 렉을 만드는 셈이다.
+       그래서 모든 가구의 발자국을 **한 기하로 합치고** 텍스처 하나를 UV 로 반복해 쓴다.
+       (합쳐도 부드러운 가장자리가 나오는 이유가 이것이다 — 사각형 네 점에 0~1 UV 를
+        그대로 물리므로 판마다 방사형 그라디언트가 제자리에 맺힌다.)
+
+     ★ 방을 지을 때 한 번만 만든다. 가구를 옮기면 방이 다시 조립되므로 여기도 다시 돈다.
+     ⚠ **바닥에 선 가구만** 깐다. 벽걸이 선반·집게등·천장등 밑에 바닥 그림자를 깔면
+       공중에 뜬 물건이 바닥에 붙은 것처럼 보여 오히려 거짓말이 된다.
+     ⚠⚠ 조도는 한 톨도 안 바뀐다 — 이건 houseGroup 에 붙는 무광원 판때기고,
+       조도는 light_adapter 가 **방 정의**로 낸다. tools/test_ground.mjs 가 못 박는다.
+  ============================================================ */
+  let furnBlobs = null;
+  /* 접지 그림자를 켜 둘까 — 기본은 켠다. setBlobShadows 로 끄면 새로 만드는 것도 꺼진 채 난다
+     (재는 도구가 before/after 를 찍는 동안 새 화분이 혼자 그림자를 달고 나오면 안 된다). */
+  let blobsOn = true;
+  function clearFurnitureBlobs() {
+    if (!furnBlobs) return;
+    houseGroup.remove(furnBlobs);
+    disposeObject(furnBlobs);
+    furnBlobs = null;
+  }
+  /* 바닥에 붙어 선 가구로 본다 — 밑동이 바닥에서 이만큼 안쪽이면 '바닥에 선 것' */
+  const BLOB_FLOOR_EPS = 0.06;
+  function buildFurnitureBlobs() {
+    clearFurnitureBlobs();
+    if (!built || !built.furniture) return 0;
+    const pos = [], uv = [], idx = [];
+    let n = 0;
+    const bb = new THREE.Box3();
+    for (const g of built.furniture.children) {
+      if (!g.visible) continue;
+      bb.makeEmpty();
+      bb.setFromObject(g);
+      if (!isFinite(bb.min.y)) continue;
+      if (bb.min.y > BLOB_FLOOR_EPS) continue;             // 공중에 달린 것 — 바닥 그림자 없음
+      const w = bb.max.x - bb.min.x, d = bb.max.z - bb.min.z;
+      if (!(w > 0.02 && d > 0.02)) continue;
+      if (w > 6 || d > 6) continue;                        // 러그처럼 방을 덮는 것은 뺀다
+      const cx = (bb.min.x + bb.max.x) / 2, cz = (bb.min.z + bb.max.z) / 2;
+      /* 발자국보다 조금 넓게 — 그라디언트가 가장자리에서 0 이라 딱 맞추면 그림자가 안 보인다 */
+      const hw = w * 0.88, hd = d * 0.88;
+      const k = pos.length / 3;
+      pos.push(cx - hw, 0, cz - hd,  cx + hw, 0, cz - hd,
+               cx + hw, 0, cz + hd,  cx - hw, 0, cz + hd);
+      uv.push(0, 0,  1, 0,  1, 1,  0, 1);
+      idx.push(k, k + 2, k + 1, k, k + 3, k + 2);
+      n++;
+    }
+    if (!n) return 0;
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+    geo.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
+    geo.setIndex(idx);
+    const m = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({
+      map: blobTexture(), transparent: true, opacity: BLOB_A_FURN, color: 0x000000,
+      depthWrite: false, side: THREE.DoubleSide, toneMapped: false }));
+    m.position.y = 0.0025;
+    m.renderOrder = 1;
+    m.userData.isBlobShadow = true;
+    m.userData.blobCount = n;
+    m.visible = blobsOn;
+    m.raycast = () => {};                 // 배치·걷기 광선에 안 걸린다
+    furnBlobs = m;
+    houseGroup.add(m);
+    needsRender = true;
+    return n;
   }
 
   /* ============================================================
@@ -771,7 +992,7 @@ export async function createRoomView(canvas, opts = {}) {
     const target = new THREE.Vector3(0, b.h * 0.42, 0);
     const el = clamp(userEl == null ? defaultEl() : userEl, EL_MIN, EL_MAX);
     fitDist = fitDistance(target, az, el);
-    const dist = clamp(fitDist * zoomK, fitDist * ZOOM_IN, fitDist * ZOOM_OUT);
+    const dist = clamp(fitDist * zoomK, fitDist * ZOOM_IN, fitDist * zoomOutK());
     focused = null;
     setCam({ az, el, dist, target }, snap);
   }
@@ -779,7 +1000,11 @@ export async function createRoomView(canvas, opts = {}) {
   /* 지금 프레이밍에서의 줌 한계. 화면 비율마다 fit 이 달라 절대값으로 박으면 안 된다. */
   function zoomRange() {
     const f = fitDist || cam.dist;
-    return [f * ZOOM_IN, f * ZOOM_OUT];
+    return [f * ZOOM_IN, f * zoomOutK()];
+  }
+  /* 넓은 화면(PC·가로)에서만 더 멀리 물러난다 (§ZOOM_OUT_WIDE) */
+  function zoomOutK() {
+    return ctx.cam.aspect < 0.95 ? ZOOM_OUT_PORTRAIT : ZOOM_OUT_WIDE;
   }
 
   /* 손을 떼면 **턱만** 되돌린다. 방위는 놓은 자리에 그대로 선다(아래 ★★, 2026-08-06) */
@@ -1169,6 +1394,9 @@ export async function createRoomView(canvas, opts = {}) {
       const k = look.tint === 0xffffff ? 0 : 0.55;
       group.traverse(o => {
         if (!o.isMesh || !o.material || !o.material.color) return;
+        /* ⚠ 접지 그림자는 그루가 아니다 — 밴드 색을 입히면 **검은 판이 밝은 원판**이 된다
+           (색이 0x000000 이라 tint 로 55% 끌면 그대로 회색 접시가 나온다) */
+        if (o.userData.isBlobShadow) return;
         if (!o.userData.baseColor) o.userData.baseColor = o.material.color.clone();
         o.material.color.copy(o.userData.baseColor);
         if (k > 0) o.material.color.lerp(tint, k);
@@ -1182,6 +1410,7 @@ export async function createRoomView(canvas, opts = {}) {
       /* 밴드 위에 얹는다 — 색을 마른 잎 쪽으로 끌고, 조금 더 처지게 한다 */
       const dry = new THREE.Color(0x8a7350);
       group.traverse(o => {
+        if (o.userData.isBlobShadow) return;          // 그림자는 시들지 않는다
         if (o.isMesh && o.material && o.material.color) o.material.color.lerp(dry, fade * 0.8);
       });
       for (const pivot of (group.userData.leaves || [])) {
@@ -1230,6 +1459,7 @@ export async function createRoomView(canvas, opts = {}) {
     if (!p) return;
     houseGroup.remove(p.group);
     disposeObject(p.group);
+    dropPlantBlob(slotId);            // 접지 그림자는 그루 밖에 달려 있다 (§syncPlantBlob)
     plants.delete(slotId);
     needsRender = true;
   }
@@ -1313,6 +1543,106 @@ export async function createRoomView(canvas, opts = {}) {
 
   /* 자리 한도에 안 들어가면 줄인다. **줄였다는 사실은 반드시 남긴다.**
      그냥 두면 화분이 선반 밖으로 걸쳐진 채 게임이 돈다. */
+  /* ★★ 화분을 그 면에 **앉힌다** (2026-08-06 · 박사님 "화분도 선반 옆 공중에 떠 있다")
+     ------------------------------------------------------------
+     지금까지는 `g.position.y = 면의 y` 였다. 그건 "그룹 원점이 곧 화분 바닥"일 때만
+     맞는 식이다. 시루·재배판은 지을 때 스스로 보정하고 있었지만(`-bb.min.y`),
+     몬스테라 조립본은 원점 규약이 조립 모듈 쪽에 있어 여기서 보장되지 않았다.
+     ⇒ 실제로 재서 어긋난 만큼만 내린다. 이미 맞으면 **한 톨도 안 움직인다**.
+
+     ⚠ **화분 부분만** 잰다. 그루 전체로 재면 늘어진 잎끝이 바닥이 되어 화분이 떠오른다
+       (몬스테라 잎은 화분보다 아래로 내려온다 — 그게 정상이다).
+     ⚠ 크기는 안 건드린다. y 만 옮긴다.
+     @returns 실제로 옮긴 양[m] */
+  function seatPlantY(g, y) {
+    const want = supportY(g, y);
+    g.position.y = want;
+    g.updateMatrixWorld(true);
+    const pot = potPartOf(g);
+    if (!pot) return want - y;
+    const bb = new THREE.Box3().setFromObject(pot);
+    if (!isFinite(bb.min.y)) return want - y;
+    const d = bb.min.y - want;
+    if (Math.abs(d) <= 0.003) return +(want - y).toFixed(5);
+    g.position.y = want - d;
+    g.updateMatrixWorld(true);
+    return +(want - d - y).toFixed(5);
+  }
+
+  /* ★ 안전망 — "화분은 무엇인가 **위에** 있어야 한다" (2026-08-06)
+     ------------------------------------------------------------
+     ⚠ 방뷰가 스스로 내는 자리는 안 뜬다 — 반지하 화면 48점을 훑어 확인했다
+       (tools/test_ground.mjs §H). 그런데 자리(at)는 **세이브에서도** 온다.
+       가구를 옮기면 상판 높이가 바뀌는데 저장된 at.y 는 옛 높이 그대로다 —
+       그때 화분이 그 자리에 그대로 남으면 **선반 옆 공중에 뜬다.**
+     그래서 놓기 직전에 한 번 아래를 본다. 받쳐 주는 면이 3cm 넘게 아래에 있으면
+     거기로 내려앉힌다. 받쳐 주는 게 아예 없으면(방 밖) 그대로 둔다 —
+     조용히 0 으로 메꾸면 화분이 방 반대편 바닥으로 순간이동한다.
+     ⚠ 3cm 문턱 아래로는 한 톨도 안 움직인다. 정상 배치는 gap 이 정확히 0 이다. */
+  const POT_DROP_EPS = 0.03;
+  const _dropRay = new THREE.Raycaster();
+  function supportY(g, y) {
+    if (!built || !built.room) return y;
+    const x = g.position.x, z = g.position.z;
+    if (!Number.isFinite(x) || !Number.isFinite(z)) return y;
+    _dropRay.set(new THREE.Vector3(x, y + 0.02, z), new THREE.Vector3(0, -1, 0));
+    const hits = _dropRay.intersectObject(built.room, true);
+    let top = null;
+    for (const h of hits) {
+      if (!h.object.isMesh || !h.object.visible) continue;
+      const m = Array.isArray(h.object.material) ? h.object.material[0] : h.object.material;
+      if (m && (m.colorWrite === false || (m.transparent && m.opacity < 0.95))) continue;  // 유리·그림자전용
+      top = h.point.y; break;
+    }
+    if (top == null) return y;                       // 받쳐 주는 게 없다 — 건드리지 않는다
+    if (y - top <= POT_DROP_EPS) return y;           // 이미 붙어 있다
+    console.warn(`[방뷰] 화분이 받쳐지지 않은 자리에 있었습니다 — y ${y.toFixed(3)} → ` +
+                 `${top.toFixed(3)} 로 내려앉힙니다 (가구를 옮긴 뒤 옛 좌표가 남은 경우입니다)`);
+    return +top.toFixed(4);
+  }
+
+  /* 그루 발밑 접지 그림자.
+     ★★ **그루의 자식으로 안 넣는다.** 넣어 봤더니 `group.children.length` 가 하나 늘어
+       `test_multisiru` 의 「콩나물 12가지가 예전 값과 완전히 같다」가 통째로 깨졌고,
+       `potPartOf` 의 "잎이 아닌 첫 자식" 규칙과 `rotationSafeDiameter` 도 판때기를 화분으로
+       읽을 수 있다(0.2m 화분의 지름이 0.48m 가 된다). 그루의 모양은 그루만의 것이어야 한다.
+     ⇒ houseGroup 에 따로 달고 **열쇠로 짝지어** 자리만 맞춘다. */
+  const plantBlobs = new Map();          // 열쇠 → 접지 그림자 메시(houseGroup 소속)
+
+  function syncPlantBlob(key, g, d) {
+    let b = plantBlobs.get(key);
+    if (!b) {
+      b = makeBlobShadow(1, BLOB_A_PLANT);
+      b.visible = blobsOn;
+      houseGroup.add(b);
+      plantBlobs.set(key, b);
+    }
+    /* 화분 **바닥**에 깐다. 그루 원점이 화분 바닥과 같다는 보장이 없으므로 재서 맞춘다 */
+    const pot = potPartOf(g);
+    let baseY = g.position.y;
+    if (pot) {
+      g.updateMatrixWorld(true);
+      const bb = new THREE.Box3().setFromObject(pot);
+      if (isFinite(bb.min.y)) baseY = bb.min.y;
+    }
+    /* ★ 크기 — 1.45배로 두었더니 **화분이 그림자를 통째로 덮어** 화면에서 아무것도
+       안 보였다(직접 찍어 확인했다). 2.4배면 화분 밖으로 한 두레기가 남는다. */
+    const w = Math.max(0.16, (Number.isFinite(d) ? d : 0.20) * 2.40);
+    b.scale.set(w, w, 1);
+    b.position.set(g.position.x, baseY + 0.004, g.position.z);
+    needsRender = true;
+    return b;
+  }
+
+  function dropPlantBlob(key) {
+    const b = plantBlobs.get(key);
+    if (!b) return;
+    houseGroup.remove(b);
+    disposeObject(b);
+    plantBlobs.delete(key);
+    needsRender = true;
+  }
+
   function fitPotToLimit(g, limit, label) {
     const d = rotationSafeDiameter(potPartOf(g), g);
     if (Number.isFinite(limit) && d > limit + 1e-4) {
@@ -1415,6 +1745,8 @@ export async function createRoomView(canvas, opts = {}) {
        (Y 회전만 쓴다 — 눕히거나 기울이면 화분이 넘어진다) */
     if (!hadPlant && !plantYaw.has(slotId)) plantYaw.set(slotId, 0);
     g.rotation.y = plantYaw.get(slotId) || 0;
+    seatPlantY(g, s.y);                  // ★ 상판에 앉힌다 (§seatPlantY)
+    syncPlantBlob(slotId, g, d);         // ★ 접지 그림자 (그루 밖에 달린다)
     tagPlant(g, slotId, spec.potId || null);
     applyLook(g, spec);
     houseGroup.add(g);
@@ -1488,6 +1820,7 @@ export async function createRoomView(canvas, opts = {}) {
       prev.wantDays = days;
       prev.potId = id;
       prev.group.position.set(A.x, A.y, A.z);
+      seatPlantY(prev.group, A.y);       // ★ 옮겨도 그 면에 앉는다 (§seatPlantY)
       if (gaveRot) prev.group.rotation.y = A.rotY;
       A.rotY = prev.group.rotation.y || 0;
       prev.at = A;
@@ -1496,7 +1829,9 @@ export async function createRoomView(canvas, opts = {}) {
         plantYaw.delete(old);
         plants.set(key, prev);
         tagPlant(prev.group, key, id);
+        dropPlantBlob(old);
       }
+      syncPlantBlob(key, prev.group, prev.potD);   // 그림자도 따라간다
       plantYaw.set(key, A.rotY);
       moveHighlightRing(key, A);
       needsRender = true;
@@ -1517,6 +1852,8 @@ export async function createRoomView(canvas, opts = {}) {
     removePlantOf(id);                      // ★ 옛 자리는 반드시 지운다
     g.position.set(A.x, A.y, A.z);
     g.rotation.y = yaw;
+    seatPlantY(g, A.y);                     // ★ 그 면에 앉힌다 (§seatPlantY)
+    syncPlantBlob(key, g, Math.min(d, limit === Infinity ? d : limit));   // ★ 접지 그림자
     A.rotY = yaw;
     plantYaw.set(key, yaw);
     tagPlant(g, key, id);
@@ -1546,6 +1883,7 @@ export async function createRoomView(canvas, opts = {}) {
 
     plants.delete(fromId);
     plants.set(toId, p);
+    dropPlantBlob(fromId);
     /* 각도도 화분을 따라간다. 안 그러면 옮기자마자 방향이 튄다. */
     const yaw = plantYaw.get(fromId) || 0;
     plantYaw.delete(fromId); plantYaw.set(toId, yaw);
@@ -1562,10 +1900,16 @@ export async function createRoomView(canvas, opts = {}) {
       const t = clamp((performance.now() - t0) / dur, 0, 1), k = ease(t);
       p.group.position.lerpVectors(from, to, k);
       p.group.position.y += Math.sin(k * Math.PI) * lift;
+      /* ★ 그림자는 **바닥에 남는다** — 들린 만큼 따라 올라가면 화분이 안 들려 보인다.
+         자리만 따라가고 높이는 목표 면에 둔다. */
+      const bl = plantBlobs.get(toId);
+      if (bl) { bl.position.x = p.group.position.x; bl.position.z = p.group.position.z; }
       needsRender = true;
       if (t < 1) requestAnimationFrame(anim);
+      else syncPlantBlob(toId, p.group, p.potD);
     };
     anim();
+    syncPlantBlob(toId, p.group, p.potD);
     /* ★ rank 를 붙여서 다시 부른다. 열쇠만 넘기면 갱신할 때마다 색이 예전 두 색으로
        되돌아간다(화분이 자랄 때마다 초록이 호박색으로 바뀌는 셈이다). */
     if (highlighted.size) highlightSlots(rehighlightArg());   // 링 상태(빈 자리) 갱신
@@ -1615,11 +1959,16 @@ export async function createRoomView(canvas, opts = {}) {
     }
     for (const [id, w] of want) {
       if (rings.has(id)) { rings.get(id).position.set(w.pos.x, w.pos.y + 0.004, w.pos.z); continue; }
-      const m = new THREE.Mesh(new THREE.RingGeometry(w.r * 0.72, w.r, 24), ringMaterial());
+      /* ★ 네모다 (2026-08-06 · 박사님 "동그라미여서 밑에 네모 격자랑 안 맞아").
+         크기는 격자 칸에 물린다 — 색 규약(RANK_HEX)·맥박은 예전 그대로다. */
+      const half = squareHalf(w.r);
+      const m = new THREE.Mesh(squareFrameGeometry(0.72), ringMaterial());
       m.rotation.x = -Math.PI / 2;
+      m.scale.setScalar(half);
       m.position.set(w.pos.x, w.pos.y + 0.004, w.pos.z);
       m.renderOrder = 5;
       m.userData.highlightSlotId = id;
+      m.userData.baseScale = half;      // 맥박(pulseRings)이 이 값에 곱한다
       houseGroup.add(m);
       rings.set(id, m);
     }
@@ -1655,7 +2004,12 @@ export async function createRoomView(canvas, opts = {}) {
   function pulseRings(now) {
     if (!rings.size) return false;
     const k = 0.42 + 0.32 * (0.5 + 0.5 * Math.sin(now / 320));
-    for (const [, m] of rings) { m.material.opacity = k; m.scale.setScalar(1 + (k - 0.5) * 0.12); }
+    /* ★ 네모가 된 뒤로 기하는 반너비 1 짜리다 — 실제 크기는 baseScale 에 있다.
+       여기서 setScalar(1+…) 로 덮으면 표시가 방 크기만 해진다(그렇게 만들어 봤다). */
+    for (const [, m] of rings) {
+      m.material.opacity = k;
+      m.scale.setScalar((m.userData.baseScale || 1) * (1 + (k - 0.5) * 0.12));
+    }
     return true;
   }
 
@@ -1691,8 +2045,9 @@ export async function createRoomView(canvas, opts = {}) {
     guideGroup = new THREE.Group();
     guideGroup.visible = false;
     houseGroup.add(guideGroup);
-    /* 반지름 1 짜리 링 두 벌만 만들고 자리마다 scale 로 키운다 */
-    guideGeo = { thin: new THREE.RingGeometry(0.74, 1, 26), thick: new THREE.RingGeometry(0.50, 1, 26) };
+    /* 반너비 1 짜리 **네모 테두리** 두 벌만 만들고 자리마다 scale 로 키운다.
+       ★ 2026-08-06 네모로 바꿨다(§squareFrameGeometry). 색·굵기 규약은 그대로다. */
+    guideGeo = { thin: squareFrameGeometry(0.74), thick: squareFrameGeometry(0.50) };
     const mk = (color, opacity, depthTest) => new THREE.MeshBasicMaterial({
       color, transparent: true, opacity, side: THREE.DoubleSide,
       depthWrite: false, depthTest, toneMapped: false });
@@ -1715,7 +2070,9 @@ export async function createRoomView(canvas, opts = {}) {
     return guideRings.size;
   }
 
-  const guideRadius = s => clamp((Number.isFinite(s.maxPotD) ? s.maxPotD : 0.22) * 0.62, 0.05, 0.32);
+  /* ★ 격자 칸에 물린 반너비[m]. 예전 원 반지름 식을 그대로 두고 마지막에 칸으로 반올림한다 —
+     자리 한도 0.22 는 한 칸(0.25×0.25), 0.6 짜리 상판은 두 칸(0.50×0.50) 이 된다. */
+  const guideRadius = s => squareHalf(clamp((Number.isFinite(s.maxPotD) ? s.maxPotD : 0.22) * 0.62, 0.05, 0.32));
 
   /* on=false 면 감춘다(지우지 않는다).
        opt.potD     이 화분 지름. 못 올라가는 자리는 어둡게 칠한다
@@ -2634,6 +2991,42 @@ export async function createRoomView(canvas, opts = {}) {
      2.5초에 한 바퀴 흔들리는 것이라 10fps 로도 부드럽다(주기당 25장). */
   const IDLE_FPS = 10;
   const IDLE_FRAME_MS = 1000 / IDLE_FPS - 4;
+
+  /* ★★★ 사람이 서 있는 동안만 idle 상한을 올린다 (2026-08-06)
+     ══════════════════════════════════════════════════════════════════
+     박사님이 렉을 정확히 좁혀 주셨다:
+       "이동할 때는 되게 쾌적한데 **가만히 서서 모션할 때** 뭔가 버버벅 한다고 할까나?"
+     상한 표와 정확히 맞는다 — 걷는 중은 60, 가만히 서 있는 중은 **10** 이다.
+
+     ★ 왜 10 이었나(그 판단을 뒤집지 않는다)
+       몬이가 2.5초 주기로 흔들려서 방 한 장을 초당 22번 다시 그리고 있었다.
+       "노는 화면은 안 그린다"가 배터리 정책이고, 그건 그대로 옳다.
+     ★ 그런데 사람은 다르다 — **스켈레톤 클립**이다. 앞선 창도 "30에서 눈에 띄게
+       끊긴다"고 적었는데 idle 은 그 3분의 1인 10이다. 2.5초짜리 느린 흔들림과
+       1초에 여러 번 움직이는 골격 애니메이션을 **같은 상한으로 묶은 것**이 잘못이었다.
+
+     ★ 그래서 가르는 기준은 "노는가"가 아니라 **"스켈레톤이 도는가"** 다.
+       사람이 없는 방(확대 중·이사 직후·몬이만 있는 방)은 **예전 그대로 10** 이다.
+     ★ 그리고 moveBackoff 와 같은 사상으로 **느린 기기는 스스로 내려앉는다**(idleBackoff).
+       한 번 내려가면 그 화면이 사는 동안 10 이다 — 오르내리면 그 자체가 렉으로 보인다.
+
+     ★ 값을 24 로 고른 근거는 tools/test_perf_budget.mjs §③ 이다. 표를 그 파일이 낸다. */
+  const ANIM_IDLE_FPS = 24;
+  let idleFps = IDLE_FPS;          // 지금 쓰는 idle 상한
+  let idleForced = null;           // setIdleFps 로 손으로 못 박은 값(재는 도구용)
+  let animBackedOff = false;       // 한 번 내려앉았으면 다시 안 올린다
+  let slowIdleWindows = 0;
+  let animWindow = false;          // 이 500ms 창에 '사람이 서 있는' 프레임이 있었나
+  /* 스켈레톤이 도는 사람이 방에 있나 — 마스코트는 트랜스폼만 움직인다(스켈레톤이 없다) */
+  function hasSkeletalChar() {
+    for (const [, c] of chars) if (c.kind === 'person') return true;
+    return false;
+  }
+  function idleCap() {
+    if (idleForced != null) return idleForced;
+    if (animBackedOff) return IDLE_FPS;
+    return hasSkeletalChar() ? ANIM_IDLE_FPS : IDLE_FPS;
+  }
   let lastFrameAt = 0;
   /* ★ 확대(화분 상세보기)처럼 방이 안 보이는 동안 rAF 를 통째로 멈춘다 — setPaused */
   let paused = false;
@@ -2660,7 +3053,8 @@ export async function createRoomView(canvas, opts = {}) {
   function frameGapFor(level) {
     if (level === LV_MOVE) return 1000 / moveFps - 4;
     if (level === LV_BUSY) return MIN_FRAME_MS;
-    return IDLE_FRAME_MS;
+    idleFps = idleCap();
+    return 1000 / idleFps - 4;
   }
   /* 끄는 동안 마지막 손가락 자리만 적어 둔다. 광선·길찾기는 프레임당 한 번만 한다. */
   let pendingDrag = null;
@@ -2689,7 +3083,7 @@ export async function createRoomView(canvas, opts = {}) {
     /* ★ 이 창이 '바쁜 창'이었나를 같이 적어 둔다 — 아래 autoQuality 가 그것만 본다 */
     const level = busyLevel();
     if (!forceContinuous && now - lastFrameAt < frameGapFor(level)) return;
-    if (level === LV_IDLE) idleWindow = true;
+    if (level === LV_IDLE) { idleWindow = true; if (idleFps > IDLE_FPS) animWindow = true; }
     if (level === LV_MOVE) moveWindow = true;
     lastFrameAt = now;
     /* 끄는 중이면 여기서 딱 한 번 목적지를 계산한다(이벤트마다 하지 않는다) */
@@ -2702,7 +3096,7 @@ export async function createRoomView(canvas, opts = {}) {
       /* ★ 노는 동안은 fps 를 세지 않는다. 여기서 세면 "가만히 있어서 1초에 두 장만
          그렸다"가 "1초에 두 장밖에 못 그린다"로 읽혀 화질을 멋대로 떨어뜨린다.
          실제로 그랬다 — 픽셀비가 1.75에서 1.25로 내려가 있었다. */
-      lastFpsAt = now; framesSince = 0; idleWindow = false; moveWindow = false;
+      lastFpsAt = now; framesSince = 0; idleWindow = false; moveWindow = false; animWindow = false;
       return;
     }
     needsRender = false;
@@ -2730,8 +3124,9 @@ export async function createRoomView(canvas, opts = {}) {
         stats.fps = Math.round(framesSince * 1000 / (now - lastFpsAt));
         if (!idleWindow) autoQuality(); else slowWindows = 0;
         moveBackoff();
+        idleBackoff();
       }
-      framesSince = 0; lastFpsAt = now; idleWindow = false; moveWindow = false;
+      framesSince = 0; lastFpsAt = now; idleWindow = false; moveWindow = false; animWindow = false;
     }
   }
 
@@ -2769,6 +3164,22 @@ export async function createRoomView(canvas, opts = {}) {
      그 폰은 60 을 못 낸다. 연속 두 창이 그러면 예전 값(30)으로 내려앉는다.
      ⚠ 다시 안 올린다 — 오르내리면 그 자체가 '프레임이 튄다'로 보인다.
        한 번 30 으로 내려가면 그 화면이 살아 있는 동안 30 이다(예전과 똑같은 화면). */
+  /* ★ 서 있는 상한을 스스로 내린다 — "빠른 폰에서만 24"
+     ------------------------------------------------------------
+     moveBackoff 와 **같은 사상**이다. 사람이 서 있는 500ms 창에서 실제로 그린 장수가
+     상한의 4분의 3도 안 되면 그 폰은 24 를 못 낸다. 연속 두 창이 그러면 예전 값(10)으로
+     내려앉고 **다시 안 올린다.** 그래서 이 변경이 느린 기기를 더 나쁘게 만들 길은 없다. */
+  function idleBackoff() {
+    if (forceContinuous || !animWindow || animBackedOff || idleForced != null) return;
+    slowIdleWindows = (stats.fps < ANIM_IDLE_FPS * 0.75) ? slowIdleWindows + 1 : 0;
+    if (slowIdleWindows >= 2) {
+      slowIdleWindows = 0;
+      animBackedOff = true;
+      stats.idleFps = IDLE_FPS;
+      stats.reduced = `서 있는 상한 ${IDLE_FPS}`;
+    }
+  }
+
   function moveBackoff() {
     if (forceContinuous || !moveWindow || moveFps <= CHAR_FPS) return;
     slowMoveWindows = (stats.fps < moveFps * 0.75) ? slowMoveWindows + 1 : 0;
@@ -2963,11 +3374,13 @@ export async function createRoomView(canvas, opts = {}) {
       g.add(cyl);
       g.userData = { isPreview: true, generic: true };
     }
-    /* 바닥(자리)에 링 — decorate.js 의 marker 와 같은 모양 */
+    /* 바닥(자리) 표시 — ★ 2026-08-06 네모로 바꿨다. 격자 한 칸(0.25m) 반너비에 맞춘다
+       (박사님 "동그라미여서 밑에 네모 격자랑 안 맞아"). 색·깊이검사 규약은 그대로다. */
     const marker = new THREE.Mesh(
-      new THREE.RingGeometry(0.28, 0.36, 28),
+      squareFrameGeometry(0.72),
       new THREE.MeshBasicMaterial({ color: GH_OK, transparent: true, opacity: 0.85,
                                     side: THREE.DoubleSide, depthTest: false }));
+    marker.scale.setScalar(squareHalf(0.36));
     marker.rotation.x = -Math.PI / 2;
     marker.renderOrder = 999;
     houseGroup.add(marker);
@@ -3977,6 +4390,7 @@ export async function createRoomView(canvas, opts = {}) {
                              new THREE.MeshBasicMaterial({ visible: false }));
     b.position.y = y;
     b.userData.isCharacterPick = true;
+    b.userData.isPickBox = true;       // 보이지 않는 상자다 — bb 를 잴 때 빼야 한다
     return b;
   }
 
@@ -4035,6 +4449,14 @@ export async function createRoomView(canvas, opts = {}) {
     root.add(ring);
     const pick = makePickBox(0.62, 1.55, 0.62, 0.78);
     root.add(pick);
+    /* ★ 접지 그림자 — 발밑에 깔린다. root 의 자식이라 걸으면 저절로 따라간다.
+       크기는 어깨 폭(0.62 픽 상자)보다 조금 넓게 둔다 — 딱 맞으면 오히려 떠 보인다. */
+    /* 사람 몸통(픽 상자 0.62)보다 넓어야 발밑에 깔린 것으로 읽힌다 — 같거나 좁으면 몸에 가려 안 보인다 */
+    const blob = makeBlobShadow(1.05, BLOB_A_CHAR);
+    blob.visible = blobsOn;
+    blob.position.y = 0.006;
+    root.add(blob);
+    root.userData.charKind = 'person';
 
     houseGroup.add(root);
 
@@ -4044,6 +4466,59 @@ export async function createRoomView(canvas, opts = {}) {
     idleClip.name = 'idle';
     const base = mixer.clipAction(idleClip);
     base.play();
+
+    /* ★★★ 발바닥을 바닥에 붙인다 — **클립마다** 잰다 (2026-08-06)
+       ══════════════════════════════════════════════════════════════
+       박사님(폰 실기): "캐릭이 허리가 공중에 매달려서 대롱대롱해."
+
+       ★ 무엇이 문제였나 — 재서 알았다(tools/test_ground.mjs · 스킨 정점을 실제로 푼 값).
+         바인드 포즈는 발바닥이 정확히 y=0 이다. **클립이 그걸 통째로 들어 올린다.**
+
+           캐릭터            바인드   idle 최저점   walking 최저점
+           jachwi_f            0      **+0.0857**    −0.0276
+           namja_jachwi        0      **+0.0823**    −0.0297
+           yeoja_jubu          0      **+0.1006**    −0.0194
+
+         즉 서 있을 때 **8~10cm 떠 있고**, 걸을 때는 2~3cm 파묻힌다.
+         "허리가 공중에 매달려" 있다는 말이 정확히 이 8.6cm 다.
+
+       ★ 그래서 한 숫자로 못 고친다. idle 값(−8.6cm)만 빼면 걸을 때 11cm 가 파묻힌다.
+         **클립마다 재서 클립마다 다른 값**을 쓴다. 재는 값은 캐시한다(클립당 한 번).
+       ★ 옮기는 것은 **model** 이다. root 는 자리(x,z)·걷기·픽 상자·링·접지 그림자가
+         쓰는 좌표계라 그걸 움직이면 그 전부가 같이 어긋난다.
+       ★ 크기는 한 톨도 안 건드린다 — y 평행이동뿐이다(GLB 의 1.40m 는 그대로).
+       ⚠ 클립이 바뀔 때 8~11cm 를 한 프레임에 옮기면 사람이 툭 떨어진다.
+         크로스페이드(0.22~0.24초)와 같은 속도로 따라가게 둔다(GROUND_EASE). */
+    const GROUND_PHASES = 8;      // 클립을 몇 등분해 재나
+    const GROUND_EASE = 9;        // 지수 감쇠 계수 — 1/9초쯤이면 크로스페이드와 비슷하다
+    const groundOf = new Map();   // 클립 이름 → model.position.y 가 가야 할 값
+    function measureGround(clip, name) {
+      if (groundOf.has(name)) return groundOf.get(name);
+      const y0 = model.position.y;
+      let lo = Infinity;
+      try {
+        /* ★ 임시 믹서로 잰다. 진짜 믹서를 건드리면 지금 재생 중인 자세가 흐트러진다.
+           같은 뼈에 쓰므로 다 재고 나서 진짜 믹서로 한 번 되돌린다(mixer.update). */
+        const tm = new THREE.AnimationMixer(model);
+        const a = tm.clipAction(clip); a.play();
+        for (let i = 0; i < GROUND_PHASES; i++) {
+          tm.setTime(clip.duration * i / GROUND_PHASES);
+          const y = skinLowestY(root);
+          if (y < lo) lo = y;
+        }
+        tm.stopAllAction();
+        if (tm.uncacheRoot) tm.uncacheRoot(model);
+      } catch (e) {
+        console.warn('[방뷰] 발바닥 높이를 못 쟀습니다 — 보정 없이 갑니다:', e.message);
+      }
+      /* 못 쟀으면 예전 그대로(보정 0). 조용히 엉뚱한 값으로 내려 꽂지 않는다. */
+      const want = isFinite(lo) ? +(y0 - (lo - root.position.y)).toFixed(4) : y0;
+      groundOf.set(name, want);
+      try { mixer.update(1e-4); } catch (e) { /* 자세 되돌리기 실패는 다음 프레임이 고친다 */ }
+      return want;
+    }
+    let groundY = measureGround(idleClip, 'idle');
+    model.position.y = groundY;   // 처음 한 장은 곧바로 붙인다(부드럽게 내려올 이유가 없다)
 
     /* ★ 루트 고정 — 변주 클립은 루트가 Hips 높이 대비 최대 42% 움직인다.
        걷기와 같이 Hips 의 XZ 를 매 프레임 되돌린다(char-to-house.md). */
@@ -4116,11 +4591,14 @@ export async function createRoomView(canvas, opts = {}) {
       walking = true;
       walkAct.reset(); walkAct.enabled = true; walkAct.setEffectiveWeight(1);
       walkAct.crossFadeFrom(base, 0.22, false).play();
+      /* ★ 걷기 클립은 idle 보다 11cm 아래에 선다 — 클립을 바꿀 때 접지 높이도 같이 바꾼다 */
+      groundY = measureGround(walkAct.getClip(), 'walking');
     }
     function playIdle() {
       if (!walking) return;
       walking = false;
       base.reset().crossFadeFrom(walkAct, 0.24, false).play();
+      groundY = measureGround(idleClip, 'idle');
     }
 
     /* 바닥 (x,z) 로 걸어간다. 갈 수 있는 데까지만 간다(막힌 주머니면 최대한 다가간다). */
@@ -4186,6 +4664,8 @@ export async function createRoomView(canvas, opts = {}) {
         a.timeScale = clip.duration / dur;
         a.reset(); a.enabled = true; a.setEffectiveWeight(1);
         a.crossFadeFrom(base, Math.min(0.26, dur * 0.16), false).play();
+        /* 모션 클립도 저마다 다른 높이에 선다 — 같은 규칙으로 잰다(§measureGround) */
+        groundY = measureGround(clip, 'clip:' + (clip.name || 'act'));
       }
       needsRender = true;
       return new Promise(resolve => {
@@ -4197,7 +4677,8 @@ export async function createRoomView(canvas, opts = {}) {
     function abortAct(reason) {
       if (clipRun) {
         const c = clipRun; clipRun = null;
-        if (c.a) { c.a.stop(); base.reset().setEffectiveWeight(1).play(); }
+        if (c.a) { c.a.stop(); base.reset().setEffectiveWeight(1).play();
+                   groundY = measureGround(idleClip, 'idle'); }
         else { root.position.y = c.y0; model.rotation.x = 0; }
         c.resolve(false);
       }
@@ -4231,10 +4712,13 @@ export async function createRoomView(canvas, opts = {}) {
           const a = mixer.clipAction(clips[name]);
           a.setLoop(THREE.LoopOnce, 1); a.clampWhenFinished = false;
           a.reset().crossFadeFrom(base, 0.3, false).play();
+          /* 변주 클립도 저마다 다른 높이에 선다 — 안 재면 머리를 긁는 동안 발이 뜬다 */
+          groundY = measureGround(clips[name], 'clip:' + name);
           mixer.addEventListener('finished', function done(e) {
             if (e.action !== a) return;
             mixer.removeEventListener('finished', done);
             base.reset().crossFadeFrom(a, 0.3, false).play();
+            groundY = measureGround(idleClip, 'idle');
           });
         } catch (e) {
           console.warn(`[방뷰] idle 변주 '${name}' 을 못 실었습니다 — 기본 idle 만 돕니다:`, e.message);
@@ -4246,6 +4730,12 @@ export async function createRoomView(canvas, opts = {}) {
 
     return {
       kind: 'person', assetId: id, root, walkable: true,
+      /* ★ 발바닥 보정을 밖에서 볼 수 있게 낸다 — 검사(tools/test_ground.mjs)가
+         "클립마다 재서 주는가"를 숫자로 못 박는 유일한 길이다. */
+      get ground() {
+        return { y: +model.position.y.toFixed(4), target: +groundY.toFixed(4),
+                 clips: Object.fromEntries(groundOf) };
+      },
       get pickTarget() { return pick; },
       get selected() { return ring.visible; },
       setSelected(v) { ring.visible = !!v; needsRender = true; },
@@ -4284,10 +4774,17 @@ export async function createRoomView(canvas, opts = {}) {
           needsRender = true;
           if (p01 >= 1) {
             const c = clipRun; clipRun = null;
-            if (c.a) base.reset().crossFadeFrom(c.a, 0.28, false).play();
+            if (c.a) { base.reset().crossFadeFrom(c.a, 0.28, false).play();
+                       groundY = measureGround(idleClip, 'idle'); }   // 접지 높이도 idle 로
             else { root.position.y = c.y0; model.rotation.x = 0; }
             c.resolve(true);
           }
+        }
+        /* ★ 발바닥을 바닥에 붙여 둔다 — 클립이 바뀌면 목표가 바뀌고, 여기서 따라간다.
+           한 프레임에 옮기면 8~11cm 를 툭 떨어뜨리므로 크로스페이드와 같은 속도로 간다. */
+        if (Math.abs(model.position.y - groundY) > 1e-4) {
+          model.position.y += (groundY - model.position.y) * (1 - Math.exp(-dt * GROUND_EASE));
+          needsRender = true;
         }
         /* ★ Hips XZ 고정 — 변주 클립은 루트가 Hips 높이 대비 최대 42% 움직인다.
            안 잡으면 캐릭터가 제자리에서 미끄러지거나 방 밖으로 걸어 나간다
@@ -4408,6 +4905,14 @@ export async function createRoomView(canvas, opts = {}) {
     /* 몬이는 0.375m 짜리가 root(공중 0.221m) 위에 서 있다 — 상자도 그만큼 올린다 */
     const pick = makePickBox(0.34, 0.42, 0.34, 0.19);
     root.add(pick);
+    /* ★ 접지 그림자 — 몬이는 **일부러 뜬 것**이라 그림자가 오히려 필요하다.
+       그림자가 없으면 "떠 있다"가 안 읽히고 그냥 어긋난 것으로 보인다.
+       링과 같이 바닥까지 내리고, 흔들릴 때 update 가 다시 내린다. */
+    const blob = makeBlobShadow(0.42, BLOB_A_MASCOT);
+    blob.visible = blobsOn;
+    blob.position.y = -MON.floatHeight + 0.006;
+    root.add(blob);
+    root.userData.charKind = 'mascot';
     houseGroup.add(root);
 
     /* 어디에 뜨나 — 사람이 있으면 그 뒤를 졸졸, 없으면 화분 옆.
@@ -4453,6 +4958,12 @@ export async function createRoomView(canvas, opts = {}) {
         /* 링은 바닥에 있어야 한다 — root 가 위아래로 흔들리므로 그만큼 되돌린다.
            (안 하면 링이 몬이를 따라 공중에서 같이 출렁인다) */
         ring.position.y = -root.position.y + 0.02;
+        /* ★ 접지 그림자도 바닥에 남는다. 높이 뜰수록 조금 넓고 옅어진다 —
+           그 변화가 곧 "떠 있다"를 읽게 하는 신호다(값은 크기 6%·진하기 18%). */
+        blob.position.y = -root.position.y + 0.006;
+        const k = root.position.y / Math.max(0.001, MON.floatHeight);
+        blob.scale.set(0.42 * (0.97 + 0.06 * k), 0.42 * (0.97 + 0.06 * k), 1);
+        blob.material.opacity = BLOB_A_MASCOT * (1.09 - 0.18 * k);
       },
       dispose() { houseGroup.remove(root); disposeObject(root); }
     };
@@ -5626,9 +6137,42 @@ export async function createRoomView(canvas, opts = {}) {
     /* 측정용 — fps · 무엇을 줄였는지 */
     stats() { return { ...stats, pixelRatio: pxRatio, plants: plants.size, slots: slotById.size,
                        /* 지금 상한 셋 — 재는 도구가 "무엇에 걸려 있나"를 알아야 한다 */
-                       fpsCap: { idle: IDLE_FPS, busy: CHAR_FPS, move: moveFps },
+                       fpsCap: { idle: idleCap(), busy: CHAR_FPS, move: moveFps },
+                       /* ★ 서 있는 상한이 왜 그 값인지 — 재는 도구가 알아야 한다 */
+                       idleCap: { now: idleCap(), floor: IDLE_FPS, anim: ANIM_IDLE_FPS,
+                                  skeletal: hasSkeletalChar(), backedOff: animBackedOff,
+                                  forced: idleForced },
                        level: busyLevel(),
                        triangles: ctx.renderer.info.render.triangles, calls: ctx.renderer.info.render.calls }; },
+    /* ★ **서 있는** 상한을 손으로 정한다 — 재기·비교용. null 이면 기본으로 돌아간다
+       (사람이 있으면 24, 없으면 10, 못 따라가면 스스로 10). */
+    setIdleFps(v) {
+      /* ⚠ `+null` 은 0 이고 0 은 유한하다 — Number.isFinite 만 보면 null 이 4 로 잘린다
+         (실제로 그렇게 잘려서 재는 도구가 상한 4 를 재고 있었다). 먼저 null 을 가른다. */
+      idleForced = (v == null || v === '' || !Number.isFinite(+v))
+                 ? null : Math.max(4, Math.min(60, +v));
+      /* ★ 손으로 되돌리는 것은 **자동 내려앉기와 다른 길**이다 — 재는 도구가 같은 화면에서
+         여러 상한을 번갈아 재려면 되돌릴 수 있어야 한다. 자동 경로는 그대로 한 방향이다. */
+      animBackedOff = false;
+      slowIdleWindows = 0;
+      needsRender = true;
+      return idleCap();
+    },
+    /* ★ 접지 그림자를 켜고 끈다 — **재기·비교용**이다(before/after 스크린샷·값 재기).
+       ⚠ 이건 그림이라 조도(DLI)는 켜든 끄든 한 톨도 안 바뀐다. */
+    setBlobShadows(on) {
+      const want = !!on;
+      let n = 0;
+      ctx.scene.traverse(o => { if (o.userData && o.userData.isBlobShadow) { o.visible = want; n++; } });
+      blobsOn = want;
+      needsRender = true;
+      return n;
+    },
+    blobShadows() {
+      let n = 0;
+      ctx.scene.traverse(o => { if (o.userData && o.userData.isBlobShadow && o.visible) n++; });
+      return { on: blobsOn, count: n };
+    },
     /* ★ 움직임 상한을 손으로 정한다 — 재기·비교용. null 이면 기본(60, 못 따라가면 30) */
     setMoveFps(v) {
       moveFps = Number.isFinite(+v) ? Math.max(10, Math.min(120, +v)) : MOVE_FPS_MAX;
@@ -5650,7 +6194,9 @@ export async function createRoomView(canvas, opts = {}) {
         id, kind: c.kind, assetId: c.assetId, walkable: !!c.walkable,
         selected: id === selChar, walking: !!c.walking,
         pos: { x: c.root.position.x, y: c.root.position.y, z: c.root.position.z },
-        yaw: c.root.rotation.y
+        yaw: c.root.rotation.y,
+        /* 발바닥 보정 — 클립마다 재서 넣은 값들(사람만 있다) */
+        ground: c.ground || null
       }));
     },
 
@@ -5817,6 +6363,7 @@ export async function createRoomView(canvas, opts = {}) {
       disposeFurnGhost();
       clearGuideRings();
       clearGrid();
+      clearFurnitureBlobs();
       disposeWalkGhost();
       for (const [, c] of chars) { try { c.dispose(); } catch (e) { /* 치우다 난 오류로 나머지를 못 치우면 안 된다 */ } }
       chars.clear();
