@@ -53,8 +53,9 @@ vm.runInThisContext(fs.readFileSync(path.join(ROOT, 'vendor', 'three', 'three.mi
 assert.ok(globalThis.THREE && globalThis.THREE.REVISION, 'vendor/three 로 전역 THREE 를 못 세웠습니다');
 
 const { createLightEngine } = await import(toUrl('src/game/light_adapter.js'));
-const { ppfdAt, ppfdSum, aimVector, offAxisFalloff, AIM_DOWN, TAIL_K }
+const { ppfdAt, ppfdSum, aimVector, offAxisFalloff, AIM_DOWN, TAIL_K, BACK_REFLECT }
   = await import(toUrl('src/render3d/lighting_sim.js'));
+const TAIL_BACK = BACK_REFLECT;
 const { newState, setLampAim: stateSetLampAim } = await import(toUrl('src/game/state.js'));
 const { serialize, deserialize } = await import(toUrl('src/game/save.js'));
 
@@ -84,9 +85,26 @@ const check = (name, fn) => { try { fn(); results.push(['PASS', name]); }
      dli  = light_adapter.dliOfSlot(맑음·여름·12h)
    ⚠ 허용 오차를 두지 않는다. `assert.equal` 이다 — 마지막 자리가 흔들려도 잡는다.
      여기 숫자를 "새로 재서" 고치면 안 된다. 이 표가 움직였다는 것은
-     안 겨눈 등의 물리가 바뀌었다는 뜻이고, 그러면 창 tau 0.70 결정이 무효가 된다. */
+     안 겨눈 등의 물리가 바뀌었다는 뜻이다.
+
+   ★★ **§반사광 — 2026-08-06 에 그 물리를 의도해서 바꿨다**(박사님 확정).
+     ------------------------------------------------------------
+     옛 식은 `Math.abs(dy)` 라 등이 **자기 위쪽도 똑같이** 비췄다. 그런데 `banjiha-sill:0` 은
+     두 식물등보다 **0.56m 위**에 있어서, 창턱의 등 PPFD 42.62 가 전부 "등이 아래에서 위로
+     쏜 빛"이었다. 그게 창 tau 0.70 결정의 근거이기도 했다.
+     ⇒ 박사님 판단: *"반사광도 OK인데 반사광은 좀 많이 약하게 해 주고 밑은 세고,
+       근데 대가리를 식물 바라보게 하면 직광 아닌가"*
+     ⇒ 뒤쪽은 0 도 아니고 그대로도 아닌 **`BACK_REFLECT`(직광의 18%)** 다.
+       그래서 창턱만 42.62 → 8.20 으로 내려앉았고, **나머지 13칸은 한 톨도 안 바뀌었다** —
+       그 칸들은 전부 등 **아래**라 직광이기 때문이다. 그 "13칸 불변"이 이 변경이
+       정확히 의도한 자리에만 걸렸다는 증거다.
+     ⇒ 창턱이 문턱 6.0 을 넘는 길은 이제 **집게등을 창턱 가까이 옮겨 다는 것**이다
+       (0.5m 안쪽 6.67 · 0.3m 9.98 — 재서 확인). `growlight_clip` 에 `movable:true` 를 켠 이유다.
+     ⚠ **이 표가 또 움직이면 그때는 사고다.** 위 한 줄(창턱)만 바뀌었고 나머지는 옛 값 그대로다. */
 const BEFORE = {
-  'banjiha-sill:0':     { ppfd: [0, 42.621255, 46.013589],   dli: [4.8, 6.64, 6.78] },
+  /* ★★ 창턱만 바뀌었다 — 42.621255 → 8.195413 (DLI 6.64 → 5.15).
+     **의도한 변경이다**(2026-08-06 박사님 확정 · 반사광 도입). 아래 §반사광 참고. */
+  'banjiha-sill:0':     { ppfd: [0, 8.195413, 9.068633],     dli: [4.8, 5.15, 5.19] },
   'banjiha-desk:0':     { ppfd: [0, 11.45266, 28.997637],    dli: [0.61, 1.1, 1.86] },
   'banjiha-desk:1':     { ppfd: [0, 3.500658, 26.6363],      dli: [0.17, 0.32, 1.32] },
   'banjiha-dresser:0':  { ppfd: [0, 1.497063, 2.675664],     dli: [0.08, 0.14, 0.19] },
@@ -101,6 +119,19 @@ const BEFORE = {
   'banjiha-etagere:7':  { ppfd: [0, 273.707829, 276.11858],  dli: [0.48, 12.31, 12.41] },
   'banjiha-etagere:8':  { ppfd: [0, 126.779329, 130.135417], dli: [0.48, 5.95, 6.1] }
 };
+
+/* 새 값을 뽑을 때 쓴다: BYEOT_REGEN=1 node tools/test_lampaim.mjs */
+if (process.env.BYEOT_REGEN) {
+  unaimed();
+  for (const s of room.slots) {
+    const pt = { x: s.x, y: s.y, z: s.z };
+    const pp = [0, 1, 2].map(n => +ppfdSum(eng.room.growRigs.slice(0, n), pt).toFixed(6));
+    const dd = [0, 1, 2].map(n => +dli(s.slotId, n).toFixed(6));
+    console.log(`  '${s.slotId}':${' '.repeat(Math.max(0, 22 - s.slotId.length))}` +
+                `{ ppfd: [${pp.join(', ')}], dli: [${dd.join(', ')}] },`);
+  }
+  process.exit(0);
+}
 
 check('① 회귀 — 안 겨눈 14칸 PPFD·DLI 가 옛 값과 정확히 같다', () => {
   unaimed();
@@ -118,11 +149,34 @@ check('① 회귀 — 안 겨눈 14칸 PPFD·DLI 가 옛 값과 정확히 같다
   }
 });
 
-check('①-b 합격선 — 창턱 등0개 4.80 · 등1개 6.64 (창 tau 0.70 의 근거)', () => {
+/* ★ 합격선이 바뀌었다 — 창턱은 이제 **등을 옮겨 달아야** 문턱을 넘는다(위 §반사광).
+   ⚠ 자연광 4.80 은 그대로다. 그게 창 tau 0.70 의 남은 근거고, 여기가 흔들리면 그 결정이 무효다. */
+check('①-b 합격선 — 창턱 자연광 4.80 · 등은 붙박이로는 문턱을 못 넘는다', () => {
   unaimed();
-  assert.equal(dli('banjiha-sill:0', 0), 4.8, '창턱 등 0개가 4.80 이 아닙니다');
-  assert.equal(dli('banjiha-sill:0', 1), 6.64, '창턱 등 1개가 6.64 가 아닙니다');
-  assert.ok(dli('banjiha-sill:0', 1) > 6.0, '갈라짐 문턱 6.0 을 넘어야 합니다');
+  assert.equal(dli('banjiha-sill:0', 0), 4.8, '창턱 자연광이 4.80 이 아닙니다');
+  assert.ok(dli('banjiha-sill:0', 1) < 6.0,
+    '창턱이 붙박이 등만으로 문턱을 넘습니다 — 등을 옮길 이유가 사라집니다');
+  assert.ok(dli('banjiha-sill:0', 1) > dli('banjiha-sill:0', 0),
+    '등을 켰는데 창턱이 하나도 안 밝아졌습니다 — 반사광이 0 이 되었습니다');
+});
+
+/* ★★ 그러면 창턱은 **어떻게** 넘나 — 집게등을 옮겨 달면 넘는다.
+   이 검사가 그 길이 실제로 열려 있음을 못 박는다. 안 열려 있으면 창턱은 죽은 자리다. */
+check('①-c ★집게등을 창턱 0.5m 안쪽에 달면 문턱 6.0 을 넘는다', () => {
+  const fx = dataOf('lighting_presets.json').fixtures.growlight_clip;
+  const sill = room.slots.find(s => s.slotId === 'banjiha-sill:0');
+  const at = (d) => ({ x: sill.x, y: sill.y + d, z: sill.z });
+  const aimDown = aimVector(0, 0);
+  const ppfdOf = (d) => ppfdSum([{ fx, spec: { par_eff: 1 }, pos: at(d), aim: aimDown }],
+                                { x: sill.x, y: sill.y, z: sill.z });
+  /* 자연광 4.80 에 등 몫을 더한다. 환산비는 이 방의 실측에서 나온다(42.621255 PPFD = 1.84 DLI) */
+  const K = 1.84 / 42.621255;
+  assert.ok(4.8 + ppfdOf(0.5) * K > 6.0, `0.5m 위에 달아도 문턱을 못 넘습니다`);
+  assert.ok(4.8 + ppfdOf(1.0) * K < 6.0, `1.0m 위에서도 넘습니다 — 거리가 뜻이 없습니다`);
+  /* 그리고 그 등은 실제로 **옮길 수 있어야** 한다 */
+  const fp = dataOf('furniture_presets.json').presets || dataOf('furniture_presets.json');
+  assert.equal(fp.growlight_clip.movable, true, '집게등을 못 옮기면 위 길이 막힙니다');
+  assert.notEqual(fp.growlight_bar.movable, true, '바 등은 붙박이여야 합니다(튜토의 긴장)');
 });
 
 /* ══ ② 항등 — aim 을 명시해도 등 **아래쪽**은 옛 식과 같다 ══════════════════
@@ -237,17 +291,26 @@ check('④-d 표를 통째로 얹다 실패하면 아무것도 안 바뀐다(전
 });
 
 /* ══ ⑤ 뒤쪽을 안 비춘다 ═══════════════════════════════════════════════════ */
-check('⑤ 겨눈 등의 뒤쪽은 0 이다', () => {
+/* ★★ 뒤쪽은 **0 이 아니라 반사광**이다 (2026-08-06 · 위 §반사광).
+   0 으로 자르면 계산은 편하지만 "방은 반사광으로 밝다"는 사실이 게임에서 사라진다.
+   대신 **직광보다 훨씬 약해야** 한다 — 그 둘을 여기서 같이 못 박는다. */
+check('⑤ 겨눈 등의 뒤쪽은 반사광이다 — 0 이 아니고, 직광보다 훨씬 약하다', () => {
   const fx = dataOf('lighting_presets.json').fixtures.growlight_clip;
   const rig = { fx, spec: { par_eff: 1 }, pos: { x: 0, y: 1.0, z: 0 }, aim: aimVector(0, 0) };
-  assert.equal(ppfdSum([rig], { x: 0, y: 1.6, z: 0 }), 0, '바로 위가 0 이 아닙니다');
-  assert.equal(ppfdSum([rig], { x: 0.4, y: 1.6, z: 0.2 }), 0, '뒤쪽 비스듬한 점이 0 이 아닙니다');
-  assert.equal(ppfdSum([rig], { x: 0, y: 1.0, z: 0.5 }), 0, '옆(정확히 90°)이 0 이 아닙니다');
-  assert.ok(ppfdSum([rig], { x: 0, y: 0.4, z: 0 }) > 0, '앞쪽이 0 이면 안 됩니다');
+  const up = ppfdSum([rig], { x: 0, y: 1.6, z: 0 });      // 바로 위 0.6m
+  const down = ppfdSum([rig], { x: 0, y: 0.4, z: 0 });    // 바로 아래 0.6m — 같은 거리
+  assert.ok(up > 0, '뒤쪽이 0 입니다 — 반사광이 사라졌습니다');
+  assert.ok(down > 0, '앞쪽이 0 이면 안 됩니다');
+  /* 같은 거리인데 앞이 훨씬 세야 한다. 그게 「밑은 세고 반사는 약하게」다 */
+  assert.ok(down > up * 4, `앞뒤 차이가 ${(down / up).toFixed(1)}배뿐입니다 — 반사광이 너무 셉니다`);
+  assert.equal(+(up / down).toFixed(6), TAIL_BACK,
+    `뒤/앞 비가 ${(up / down).toFixed(6)} 입니다 — BACK_REFLECT 와 달라졌습니다`);
   /* 옆으로 겨누면 '뒤'도 같이 돈다 */
   const side = { ...rig, aim: aimVector(0, 90) };        // +z 수평
-  assert.ok(ppfdSum([side], { x: 0, y: 1.0, z: 0.5 }) > 0, '겨눈 쪽이 밝아야 합니다');
-  assert.equal(ppfdSum([side], { x: 0, y: 1.0, z: -0.5 }), 0, '반대쪽이 0 이 아닙니다');
+  const front = ppfdSum([side], { x: 0, y: 1.0, z: 0.5 });
+  const back = ppfdSum([side], { x: 0, y: 1.0, z: -0.5 });
+  assert.ok(front > 0, '겨눈 쪽이 밝아야 합니다');
+  assert.ok(back > 0 && back < front, '반대쪽이 0 이거나 앞보다 밝습니다');
 });
 
 /* ══ ⑥ 꼬리 ═══════════════════════════════════════════════════════════════ */
@@ -304,8 +367,10 @@ check('⑦-b 옛 세이브 — aim 칸이 없으면 「안 겨눔」으로 열�
   assert.deepEqual(eng2.lampAims(), {}, '조도 창에 유령 각도가 남았습니다');
   /* 그리고 그 상태의 빛은 옛 값 그대로여야 한다 */
   eng2.build('banjiha');
-  assert.equal(eng2.dliOfSlot('banjiha-sill:0', { ...SKY, lampCount: 1 }), 6.64,
-    '옛 세이브를 열었더니 창턱 밝기가 달라졌습니다');
+  /* ★ 6.64 → 5.15 (위 §반사광). 옛 세이브라고 옛 물리로 도는 것이 아니라,
+     **안 겨눔으로 열려서 지금 물리의 안 겨눔 값**이 나오는 것이 맞다. */
+  assert.equal(eng2.dliOfSlot('banjiha-sill:0', { ...SKY, lampCount: 1 }), 5.15,
+    '옛 세이브를 열었더니 창턱 밝기가 지금 물리의 안 겨눔 값과 다릅니다');
 });
 
 check('⑦-c 새 세이브를 열면 직전 판에서 겨눈 각도가 안 남는다', () => {

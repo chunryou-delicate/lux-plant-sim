@@ -30,6 +30,15 @@ export function spectrumOf(LP, id){
      그 정확한 0 이 아래 ppfdSum 의 회귀를 떠받친다. */
 export const AIM_DOWN = Object.freeze({ x:0, y:-1, z:0 });
 
+/* ★★ 뒤쪽(반사광) 배율 — **직광보다 훨씬 약하다** (2026-08-06 박사님 확정 · §ppfdSum).
+   실내 반사광은 재질에 따라 대략 직광의 5~20% 다(밝은 벽지가 위쪽, 어두운 벽이 아래쪽).
+   반지하는 벽이 밝은 크림색이라 그 범위의 위쪽을 쓴다.
+   ⚠ 이 값이 곧 **창턱이 등에서 받는 몫**이다 — 창턱이 두 등보다 0.56m 위에 있어서
+     지금 그 자리에 가는 빛은 전부 반사광이다. 값을 바꾸면 창턱 DLI 가 바로 따라 움직인다.
+   ⚠ **자르지 마라(0).** 자르면 현실이 아니라 계산 편의가 되고, 방이 반사광으로 밝다는
+     사실이 게임에서 사라진다. 대신 **겨누면 직광이 된다**는 것이 이 설계의 답이다. */
+export const BACK_REFLECT = 0.18;
+
 export function aimVector(yaw=0, tilt=0){
   const a=(yaw||0)*Math.PI/180, b=(tilt||0)*Math.PI/180;
   const s=Math.sin(b);
@@ -86,13 +95,23 @@ export function ppfdAt(fx, dist, offAxis=0, spec){
       ⚠ dist 를 hypot(vx,vy,vz) 로 구하면 안 된다 — 수학은 같아도 마지막 자리가 갈린다.
         직교 성분 둘로 hypot(along, off) 을 쓰는 쪽이 옛 식과 **같은 연산 순서**다.
 
-   ★★ 「뒤쪽을 안 비춘다」는 **겨눈 등에만** 건다 (`aim` 이 실제로 실린 등).
-      ⚠ 이건 편의가 아니라 잰 결과다 — `banjiha-sill:0` 은 두 식물등보다 **0.52m 위**에 있다.
-        옛 식은 `Math.abs(dy)` 라 등 위쪽도 똑같이 비췄고, 창턱의 등 PPFD 42.62 가
-        전부 거기서 나온다. 겨누지 않은 등에까지 뒤쪽 차단을 걸면 그 42.62 가 0 이 되어
-        창턱 DLI 가 6.64 → 4.80 으로 내려앉는다(= 갈라짐 문턱 6.0 아래).
-        그래서 **축이 없는 등(안 겨눔)은 옛 대칭 모형 그대로** 두고, 축이 생긴 등만
-        원뿔이 된다. 자세한 숫자와 판단 요청은 docs/handoff/lampaim-to-plan.md 에 있다. */
+   ★★ **뒤쪽은 반사광이다 — 0 이 아니고, 대신 아주 약하다** (2026-08-06 박사님 확정).
+      원문: *"반사광도 OK인데 반사광은 좀 많이 약하게 해 주고 밑은 세고,
+             근데 대가리를 식물 바라보게 하면 직광 아닌가"*
+
+      ⚠ 왜 이 문제가 생겼나 — `banjiha-sill:0` 은 두 식물등보다 **0.56m 위**에 있다.
+        옛 식은 `Math.abs(dy)` 라 등이 자기 **위쪽도 똑같이** 비췄고, 창턱의 등 PPFD 42.62 가
+        전부 거기서 나온다. 등이 아래에서 위로 쏘아 준 값이라는 뜻이다.
+      ⇒ 그렇다고 0 으로 자르면 그것도 거짓말이다. 현실에서 방은 **반사광**으로 밝다 —
+        천장·벽·바닥이 되쏘아 광원 뒤쪽도 어느 정도 밝다. 다만 **직광보다 훨씬 약하다.**
+      ⇒ 그래서 뒤쪽은 `BACK_REFLECT` 배로 준다. 자르지도 않고 그대로 두지도 않는다.
+
+      ★★ **겨누면 직광이 된다.** 등 머리를 그 자리로 돌리면 `along > 0` 이 되어
+        반사광 계수가 안 걸리고 온전한 세기가 간다 — 박사님 말씀 그대로다.
+        ⇒ 창턱을 밝히고 싶으면 **집게등을 창턱 쪽으로 겨누면 된다.** 멀리서 쏴도 된다.
+          그것이 "빛의 자리"를 고르는 일이고, 이 게임이 가르치려는 것과 같은 결이다.
+      ⚠ 이 값은 **안 겨눈 등에도 걸린다.** 그래서 창턱의 등 몫이 줄어든다 —
+        얼마나 줄고 그때 무엇을 해야 하는지는 아래 상수 주석에 잰 값으로 적었다. */
 export function ppfdSum(list, pt){
   let sum=0;
   for(const it of list){
@@ -101,11 +120,15 @@ export function ppfdSum(list, pt){
     const a=it.aim||AIM_DOWN;
     const vx=(pt.x??0)-(p.x??0), vy=(pt.y??0)-(p.y??0), vz=(pt.z??0)-(p.z??0);
     const along=vx*a.x + vy*a.y + vz*a.z;             // 광축 방향으로 얼마나 갔나
-    if(it.aim && along<=0) continue;                  // 겨눈 등은 뒤쪽을 안 비춘다
+    /* 뒤쪽 = 반사광. 0 이 아니라 아주 약하다(위 ★★). 겨누면 직광이 되어 안 걸린다. */
+    const back = along<=0;
     const px=vx-along*a.x, py=vy-along*a.y, pz=vz-along*a.z;
     const off=Math.hypot(px, py, pz);                 // 광축에서 옆으로
     const dist=Math.hypot(along, off);
-    sum += ppfdAt(it.fx, dist, off, it.spec);
+    /* ★ 뒤쪽은 **광축에서 벗어난 각도로 또 깎지 않는다** — 반사광에는 광축이 없다.
+       방 전체가 되쏘는 것이라 방향이 아니라 거리만 남는다. off=0 으로 넘겨 역제곱만 태운다. */
+    sum += back ? ppfdAt(it.fx, dist, 0, it.spec) * BACK_REFLECT
+                : ppfdAt(it.fx, dist, off, it.spec);
   }
   return sum;
 }
