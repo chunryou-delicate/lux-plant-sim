@@ -286,8 +286,44 @@
   #cutHint:empty{display:none}
   #cutHint{margin-top:6px;color:var(--dim)}
 
+  /* ══ 가방 격자 — ★흔한 인벤토리 (2026-08-06 박사님: "템이 늘어나거나 스택처럼
+       쌓여서 분명하게 표현되었으면 좋겠어. 특히 시루 용기는 따로 표기되게") ══════
+     한 칸에 **그림 + 이름 + 개수 배지** 하나. 스타듀밸리식 격자를 그대로 따왔다 —
+     이 게임 몸집(품목 일곱)에 목록보다 격자가 맞고, 개수가 배지 하나로 읽힌다.
+     ★ 칸 폭을 고정하지 않고 auto-fill 로 둔다. 폰(390)에서 4열, PC 패널(360)에서 3열이
+       저절로 나오고, 품목이 늘어도 규칙을 안 고친다. */
+  #bagGrid .grouphead{font-size:11px;color:var(--dim);margin:10px 0 5px}
+  #bagGrid .grouphead:first-child{margin-top:2px}
+  .baggrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(72px,1fr));gap:7px}
+  .bagslot{position:relative;min-width:0;padding:6px 3px 7px;border-radius:11px;text-align:center;
+    background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.09)}
+  /* 그림 뒤는 아이템 카드와 **같은 빈 슬롯 판**이다 — 둘이 다른 물건처럼 보이면 안 된다 */
+  .bagslot .art{width:44px;height:44px;margin:0 auto;border-radius:9px;display:grid;place-items:center;
+    background:url(./assets/ui/slot_plate.png) center/100% 100% no-repeat;overflow:hidden}
+  .bagslot .art img{width:100%;height:100%;object-fit:contain;padding:4px}
+  /* ★ 마땅한 원화가 없는 품목(모종포트·수경병)은 **글자 한 자와 색**으로 대신한다.
+     에셋을 새로 만들지 않는다 — 없는 그림을 지어내면 나중에 진짜 그림과 어긋난다. */
+  .bagslot .art b{font-weight:700;font-size:18px;color:#14101c;width:30px;height:30px;
+    border-radius:8px;display:grid;place-items:center}
+  .bagslot .nm{display:block;margin-top:4px;font-size:10px;line-height:1.3;
+    color:rgba(255,255,255,.72);word-break:keep-all}
+  /* 개수 배지 — 「×3」. 하나뿐이어도 적는다(있고 없고가 아니라 몇 개인지를 보는 칸이다) */
+  .bagslot .qty{position:absolute;right:3px;top:3px;min-width:21px;padding:1px 5px;border-radius:999px;
+    background:rgba(16,13,24,.92);border:1px solid rgba(255,180,84,.5);color:var(--gold);
+    font-weight:700;font-size:11px;line-height:1.5}
+  .bagslot .eta{display:block;margin-top:3px;font-size:9.5px;color:var(--gold);line-height:1.25}
+  /* 배송 중인 것 — 같은 격자에 흐리게. 「없다」와 「오는 중」은 다른 상태다 */
+  .bagslot.coming{opacity:.5;border-style:dashed}
+  .bagslot.coming .qty{border-color:rgba(255,255,255,.28);color:var(--dim)}
+  #bagEmpty{display:none}
+  #bagBox.empty #bagEmpty{display:block}
+  #bagCount{font-weight:700;font-size:11.5px;color:var(--dim);letter-spacing:0}
+  /* [가방]에 있던 진행 안내가 온 자리. 할 말이 없으면 빈 상자만 남으므로 걷는다 */
+  #sheetQuest:empty{display:none}
+
   /* 아이템 카드 — 폰에서는 한 열 */
   #sheet .inventory{display:grid;grid-template-columns:1fr;gap:8px}
+  #sheet .inventory:empty{display:none}
   #sheet .itemcard .place{display:flex;gap:6px;align-items:stretch}
   #sheet .itemcard .place select{flex:1}
   #sheet .itemcard .place button{min-height:var(--tap);padding:0 14px}
@@ -914,23 +950,58 @@
   </div>
 </div>
 
-<!-- ══ 바텀시트 — 가방·자리·설정. 폰이라 옆이 아니라 아래에서 올라온다 ══ -->
+<!-- ══ 바텀시트 — 가방·식물·상점·방·검수. 폰이라 옆이 아니라 아래에서 올라온다 ══
+     ★★ 탭을 셋에서 다섯으로 갈랐다 (2026-08-06 박사님: *"가방은 퀘스트창 같고,
+       방은 상점 같어.. 좀 직관적으로 쾌적하게 더 나누던지 합치던지"*).
+       예전에는 [가방]에 퀘스트 안내와 카드 두 장뿐이라 **산 물건이 어디에도 없었고**,
+       [방]의 대부분을 「인터넷 주문」이 차지해 방 탭이 상점으로 읽혔다.
+
+     ★ 가르는 자는 **그 물건이 지금 어디 있나** 하나다. 새 개념을 만들지 않았다:
+         가방  아직 방에 안 놓은 것 (상점 재고 + 안 놓은 용기)
+         식물  방에 놓인 것 (작물·몬스테라·삽수)
+         상점  아직 안 산 것 (주문·배송 중)
+         방    물건이 아닌 것 (집·자리·등)
+         검수  개발용 — 그대로 둔다
+       그래서 한 물건이 두 탭에 동시에 있는 일이 없다. 시루 카드는 놓이는 순간
+       [가방]에서 [식물]로 **DOM 채로 옮겨간다**(drawBag) — 두 벌을 만들면
+       끌기·상세창 배선이 갈라진다.
+     ⚠ 다섯이라 폰 세로에서 빠듯하다. `.sheettabs` 가 원래 가로 스크롤이고
+       이름을 전부 두 글자로 맞춰 390px 에서 한 줄에 들어간다. -->
 <div id="sheetScrim"></div>
-<section id="sheet" aria-hidden="true" aria-label="가방과 설정">
+<section id="sheet" aria-hidden="true" aria-label="가방·식물·상점·방">
   <div class="grip"></div>
   <div class="sheettabs" role="tablist">
-    <button role="tab" id="tabBag"  aria-selected="true"  aria-controls="pageBag">가방</button>
-    <button role="tab" id="tabRoom" aria-selected="false" aria-controls="pageRoom">방</button>
-    <button role="tab" id="tabDev"  aria-selected="false" aria-controls="pageDev">검수</button>
+    <button role="tab" id="tabBag"    aria-selected="true"  aria-controls="pageBag">가방</button>
+    <button role="tab" id="tabPlants" aria-selected="false" aria-controls="pagePlants">식물</button>
+    <button role="tab" id="tabShop"   aria-selected="false" aria-controls="pageShop">상점</button>
+    <button role="tab" id="tabRoom"   aria-selected="false" aria-controls="pageRoom">방</button>
+    <button role="tab" id="tabDev"    aria-selected="false" aria-controls="pageDev">검수</button>
   </div>
   <div class="sheetbody">
 
+    <!-- ══ 가방 — ★오직 재고다. 퀘스트 안내는 [식물] 맨 위로 갔다 ══════════ -->
     <div class="sheetpage on" id="pageBag" role="tabpanel">
-      <div class="box journey">
-        <h3>첫 플레이 · 자리의 차이</h3>
+      <div class="box" id="bagBox">
+        <h3>가방 <span id="bagCount"></span></h3>
+        <!-- 아직 안 놓은 용기 카드가 여기 선다. 놓으면 [식물]로 옮겨간다(drawBag) -->
+        <div class="inventory" id="bagHold"></div>
+        <!-- 산 물건 격자. 용기·씨앗을 줄로 갈라 그린다(drawBag) -->
+        <div id="bagGrid"></div>
+        <div id="bagEmpty" class="ph">아직 가진 물건이 없습니다 — [상점]에서 주문해 보세요.</div>
+      </div>
+    </div><!-- /pageBag -->
+
+    <!-- ══ 식물 — 방에 놓인 것 ═══════════════════════════════════════════
+         ★ [가방]에 있던 「첫 플레이 · 자리의 차이」 안내가 여기로 왔다.
+           없애면 처음 하는 사람이 길을 잃는다 — 자리를 옮겼을 뿐이다. -->
+    <div class="sheetpage" id="pagePlants" role="tabpanel">
+      <div class="quest" id="sheetQuest"></div>
+      <div class="box journey" id="plantsBox">
+        <h3>방에 있는 것</h3>
         <div class="sub">어두운 자리도, 밝은 자리도 쓸모가 있습니다.</div>
-        <div class="inventory">
-        <div class="itemcard">
+        <div class="inventory" id="plantsHold">
+        <!-- data-ord — [가방]↔[식물] 을 오갈 때 자리를 지킨다(holdCard) -->
+        <div class="itemcard" id="cropCard" data-ord="1">
           <div class="itemhead"><img class="thumb" id="cropThumb" alt="열린 콩나물 시루">
             <div><b>열린 콩나물 시루</b><small id="cropState">가방에 있음</small></div></div>
           <div class="meter"><i id="cropMeter"></i></div><div class="itemline" id="cropInfo">4일 뒤 첫 수확</div>
@@ -939,7 +1010,7 @@
         </div>
         <!-- ★ 2종째 작물 — 몬스테라가 온 뒤에만 보인다(drawMusun). 콩나물 칸과 **같은 골격**이다:
              둘이 다르게 생기면 "같은 일"인 것이 화면에서 안 보인다. -->
-        <div class="itemcard" id="musunCard" style="display:none">
+        <div class="itemcard" id="musunCard" data-ord="2" style="display:none">
           <div class="itemhead"><img class="thumb" id="musunThumb" alt="새싹 재배판">
             <div><b>무순 · 새싹 재배판</b><small id="musunState">아직 없음</small></div></div>
           <div class="meter"><i id="musunMeter"></i></div><div class="itemline" id="musunInfo">밝은 자리일수록 알싸합니다</div>
@@ -947,22 +1018,56 @@
           <div class="place"><label for="musunSlot" class="sr-only">무순 자리</label><select id="musunSlot"></select><button id="placeMusun">두기</button></div>
           <button id="sowMusun" style="display:none">🌱 무순 심기</button>
         </div>
-        <div class="itemcard locked" id="plantCard">
+        <div class="itemcard locked" id="plantCard" data-ord="3">
           <div class="itemhead"><img class="thumb" id="plantThumb" src="./assets/ui/item_monstera.png" alt="몬스테라">
             <div><b>몬스테라</b><small id="plantState">아직 만나지 못함</small></div></div>
           <div class="meter"><i id="plantMeter"></i></div><div class="itemline" id="plantInfo">콩나물 첫 수확 뒤 도착</div>
         </div>
-      </div>
-        <!-- ★★ **검수용이다. 플레이어에게 보이면 안 된다** (2026-08-05 · QA 워커가 잡았다).
-             누르면 `newState(...)` 로 판을 통째로 갈아치우고 — 날짜·소지금·화분·삽수·상점이
-             전부 날아간다 — 이어지는 draw() 가 saveSoon() 을 태워 **지워진 판이 세이브에 덮인다.**
-             묻지도 않았다. HTML 에 disabled 로 적혀 있었지만 부팅 끝의 GATED 해제가 다시 켜 줬다.
-             ⇒ 첫 플레이가 도는 판에서는 숨긴다(아래 drawSim). 되묻기도 붙였다. -->
-        <button id="firstRun" class="primary" disabled style="display:none">▶ 첫 플레이 자동 시뮬레이션</button>
-        <div id="firstResult" class="simresult" aria-live="polite"></div>
-      </div>
-    </div><!-- /pageBag -->
+        </div><!-- /plantsHold -->
+      </div><!-- /plantsBox -->
 
+      <!-- ══ 삽수(꺾꽂이) — 꾸준수입의 길 ══════════════════
+           박사님 원문: "병에 수생으로 해서 하면 좀 빨리 자라되 다음 줄기 혹이 나면
+           분갈이해서 심어야 자라고 안그러고 내비두고 지나면 죽어서 없어져버리는 형태로."
+           ★그래서 분갈이가 이 상자의 존재 이유다 — 분갈이 창구가 없으면
+             물꽂이는 반드시 죽는다. 말풍선은 따로 또 뜬다(markList).
+           ★ [방]에서 [식물]로 옮겼다 — 삽수는 병이나 포트에 담겨 **방에 서 있는 식물**이다.
+             probe_cutting_ui 는 id 로 찾으므로 자리가 바뀌어도 그대로 돈다. -->
+      <div class="box" id="cutBox" style="display:none">
+        <h3>삽수</h3>
+        <div class="sub">자르고 → 뿌리내고 → 팔아서 꾸준히 벌어요.</div>
+        <div class="sub2">자를 수 있는 마디</div>
+        <div id="cutNodes"></div>
+        <div class="sub2">가진 삽수</div>
+        <div id="cutList"></div>
+        <div id="cutHint" class="itemline"></div>
+      </div>
+    </div><!-- /pagePlants -->
+
+    <!-- ══ 상점 — 인터넷 주문 (박사님 2026-08-03) ═════════════════════════
+         ★결제는 즉시, 물건은 하루 이틀 뒤. "지금 사서 지금 쓴다"가 아니라
+           "미리 시켜 둔다"가 되어야 해서 배송 중인 것을 같이 보여 준다.
+         ★ [방]에서 통째로 빠져나왔다 — 이 목록이 방 탭의 대부분을 차지해서
+           방이 상점처럼 읽혔다(박사님 2026-08-06). -->
+    <div class="sheetpage" id="pageShop" role="tabpanel">
+      <div class="box" id="shopBox" style="display:none">
+        <h3>인터넷 주문 <span id="shopCash"></span></h3>
+        <div class="sub">주문하면 하루 이틀 뒤에 옵니다. 취소는 안 됩니다.</div>
+        <div id="shopList"></div>
+        <div id="shopPending" class="itemline"></div>
+        <div class="btns">
+          <!-- ★잉여 채소 넘기기 (2026-08-06 · docs/handoff/cropsale-to-plan.md).
+               팔 것이 있을 때만 뜬다 — 늘 띄우면 "왜 회색이지"가 된다. -->
+          <button id="sellSurplus" class="ghost" style="display:none">잉여 채소 넘기기</button>
+          <button id="sellPlant" class="ghost" disabled>몬스테라 팔기</button>
+        </div>
+        <div id="surplusHint" class="itemline"></div>
+        <div id="sellHint" class="itemline"></div>
+      </div>
+      <div id="shopClosed" class="ph">아직 주문할 수 있는 것이 없습니다.</div>
+    </div><!-- /pageShop -->
+
+    <!-- ══ 방 — 집·자리에 관한 것만 ══════════════════════════════════════ -->
     <div class="sheetpage" id="pageRoom" role="tabpanel">
       <!-- ══ 반지하 살림 — 첫 플레이가 끝나면 열린다 ══════════════════════ -->
       <div class="box" id="tutBox" style="display:none">
@@ -979,52 +1084,27 @@
         </div>
       </div>
 
-      <!-- ══ 인터넷 주문 (박사님 2026-08-03) ═══════════════════════════
-           ★결제는 즉시, 물건은 하루 이틀 뒤. "지금 사서 지금 쓴다"가 아니라
-             "미리 시켜 둔다"가 되어야 해서 배송 중인 것을 같이 보여 준다. -->
-      <div class="box" id="shopBox" style="display:none">
-        <h3>인터넷 주문 <span id="shopCash"></span></h3>
-        <div class="sub">주문하면 하루 이틀 뒤에 옵니다. 취소는 안 됩니다.</div>
-        <div id="shopList"></div>
-        <div id="shopPending" class="itemline"></div>
-        <div class="btns">
-          <!-- ★잉여 채소 넘기기 (2026-08-06 · docs/handoff/cropsale-to-plan.md).
-               팔 것이 있을 때만 뜬다 — 늘 띄우면 "왜 회색이지"가 된다. -->
-          <button id="sellSurplus" class="ghost" style="display:none">잉여 채소 넘기기</button>
-          <button id="sellPlant" class="ghost" disabled>몬스테라 팔기</button>
-        </div>
-        <div id="surplusHint" class="itemline"></div>
-        <div id="sellHint" class="itemline"></div>
-      </div>
-
-      <!-- ══ 삽수(꺾꽂이) — 꾸준수입의 길 ══════════════════
-           박사님 원문: "병에 수생으로 해서 하면 좀 빨리 자라되 다음 줄기 혹이 나면
-           분갈이해서 심어야 자라고 안그러고 내비두고 지나면 죽어서 없어져버리는 형태로."
-           ★그래서 분갈이가 이 상자의 존재 이유다 — 분갈이 창구가 없으면
-             물꽂이는 반드시 죽는다. 말풍선은 따로 또 뜼다(markList). -->
-      <div class="box" id="cutBox" style="display:none">
-        <h3>삽수</h3>
-        <div class="sub">자르고 → 뿌리내고 → 팔아서 꾸준히 벌어요.</div>
-        <div class="sub2">자를 수 있는 마디</div>
-        <div id="cutNodes"></div>
-        <div class="sub2">가진 삽수</div>
-        <div id="cutList"></div>
-        <div id="cutHint" class="itemline"></div>
-      </div>
-
       <div class="box" id="ctl">
-        <h3>방 안에서 하기</h3>
+        <h3>집과 자리</h3>
         <label><span>방</span><select id="room"></select></label>
         <label for="slot"><span>몬스테라 자리</span><select id="slot" disabled></select></label>
         <label><span>식물등</span><select id="lamps"></select></label>
         <label><span>점등시간</span><input id="lit" type="number" min="0" max="24" step="1" value="12"></label>
-        <label><span>모드</span><select id="mode"></select></label>
         <!-- ★[다음 날]은 여기 없다. 하단 액션바로 갔다 — 폰에서 매 턴 시트를 열게 하면 안 된다. -->
-        <div class="btns">
-          <button id="run30" class="ghost" disabled>30일 자동</button>
-          <button id="reset" class="ghost">초기화</button>
-          <button id="prof" class="ghost" title="이 방의 조도 기하를 JSON으로 — 밸런스 시뮬이 THREE 없이 읽는다">방 프로파일 ⭳</button>
-        </div>
+        <!-- ★★ 개발자 설정은 **접어 둔다** (2026-08-06 박사님).
+             모드·30일 자동·초기화·방 프로파일은 플레이어가 매일 쓰는 손잡이가 아니다.
+             지우지 않는다 — 검수가 이 넷을 쓴다. 기본은 닫힌 채로 둔다.
+             ⚠ `details` 안이라 닫혀 있어도 요소는 살아 있다. 검사·시나리오가 id 로
+               찾아 누르는 길이 그대로 남는다(숨기기와 지우기는 다른 일이다). -->
+        <details class="dev" id="roomDev">
+          <summary>개발자 설정</summary>
+          <label><span>모드</span><select id="mode"></select></label>
+          <div class="btns">
+            <button id="run30" class="ghost" disabled>30일 자동</button>
+            <button id="reset" class="ghost">초기화</button>
+            <button id="prof" class="ghost" title="이 방의 조도 기하를 JSON으로 — 밸런스 시뮬이 THREE 없이 읽는다">방 프로파일 ⭳</button>
+          </div>
+        </details>
       </div>
     </div><!-- /pageRoom -->
 
@@ -1042,6 +1122,15 @@
           </select></label>
       </div>
       <div id="spark"></div>
+      <!-- ★★ **검수용이다. 플레이어에게 보이면 안 된다** (2026-08-05 · QA 워커가 잡았다).
+           누르면 `newState(...)` 로 판을 통째로 갈아치우고 — 날짜·소지금·화분·삽수·상점이
+           전부 날아간다 — 이어지는 draw() 가 saveSoon() 을 태워 **지워진 판이 세이브에 덮인다.**
+           HTML 에 disabled 로 적혀 있었지만 부팅 끝의 GATED 해제가 다시 켜 줬다.
+           ⇒ 첫 플레이가 도는 판에서는 숨긴다(drawJourney). 되묻기도 붙였다.
+           ★ 2026-08-06 — [가방]에서 **[검수]로 옮겼다.** QA 가 "검수용인데 플레이어의
+             가방 탭 안에 있다"고 적어 둔 그 자리다(docs/handoff/qa-to-plan.md). -->
+      <button id="firstRun" class="primary" disabled style="display:none">▶ 첫 플레이 자동 시뮬레이션</button>
+      <div id="firstResult" class="simresult" aria-live="polite"></div>
     </details>
 
     <details class="box dev" open><summary>화면·성능</summary>
@@ -1157,11 +1246,22 @@
     ['touchend', 'mouseup', 'touchcancel'].forEach(function (t) { grip.addEventListener(t, end); });
   })();
 
-  /* ── 탭 ─────────────────────────────────────────────────────────── */
-  var TABS = { tabBag: 'pageBag', tabRoom: 'pageRoom', tabDev: 'pageDev' };
+  /* ── 탭 ───────────────────────────────────────────────────────────
+     ★★ 짧은 이름도 받는다 (2026-08-06). 부르는 쪽이 `tab('room')` 을 쓰고 있었는데
+       표에는 `tabRoom` 만 있어서 **아무 탭에도 안 걸렸다** — 그러면 위 forEach 가
+       모든 페이지의 `.on` 을 떼어 시트가 **빈 채로** 열린다. 실제로 말풍선
+       [삽수 자르기]와 [씨앗이 없습니다]가 그 길을 탔고, probe_cutting_ui 도 그랬다.
+       고장이 조용해서 아무도 안 봤다. 이름을 하나로 통일하는 대신 **둘 다 받는다** —
+       바깥에서 부르는 이름을 화면 구조가 정해야 할 이유가 없다. */
+  var TABS = { tabBag: 'pageBag', tabPlants: 'pagePlants', tabShop: 'pageShop',
+               tabRoom: 'pageRoom', tabDev: 'pageDev' };
+  var TAB_ALIAS = { bag: 'tabBag', plants: 'tabPlants', plant: 'tabPlants',
+                    shop: 'tabShop', room: 'tabRoom', dev: 'tabDev' };
   function selectTab(tabId) {
+    var want = TABS[tabId] ? tabId : (TAB_ALIAS[tabId] || tabId);
+    if (!TABS[want]) return;                 /* 모르는 이름이면 지금 탭을 그대로 둔다 */
     Object.keys(TABS).forEach(function (t) {
-      var on = (t === tabId);
+      var on = (t === want);
       $(t).setAttribute('aria-selected', String(on));
       $(TABS[t]).classList.toggle('on', on);
     });
@@ -1204,10 +1304,11 @@
              자세히 보려고 눌렀는데 아무것도 안 열린 것처럼 느껴졌다.
            ⚠ 확대(plant_grow)는 **몬스테라 생장 모델 하나**라 시루를 못 그린다 —
              그래서 작물의 「자세히」는 상세 카드가 제자리다(자란 날·받은 빛·품질이 거기 있다).
-           ⚠ 카드도 못 열면 그때는 예전대로 가방을 연다. 아무 일도 안 나는 것보다는 낫다. */
+           ⚠ 카드도 못 열면 [식물] 탭으로 간다 — **놓인 작물은 이제 거기 산다**(가방은 재고뿐).
+             아무 일도 안 나는 것보다는 낫다. */
         var shown = false;
         try { shown = !!(window.__byeotCropDetail && window.__byeotCropDetail(slotId)); } catch (e) { }
-        if (!shown) openSheet('tabBag');
+        if (!shown) openSheet('tabPlants');
         return false;
       }
       stage.classList.add('zoom'); closeSheet(); pauseRoom(true); pauseZoomRender(false);
@@ -2281,6 +2382,108 @@ function drawCuttings() {
        '흙에 바로 심으면 ' + METHODS.pot.rootDays + '일로 느리지만 죽지 않습니다.');
 }
 
+/* ══ 가방 — ★오직 재고다 (2026-08-06 박사님) ══════════════════════════════
+   원문: *"가방은 퀘스트창 같고 (…) 가방에 템이 늘어나거나 스택처럼 쌓여서 분명하게
+   표현되었으면 좋겠어. 특히 시루 용기는 따로 표기되게."*
+
+   ★ 예전 [가방]에는 퀘스트 제목과 카드 두 장뿐이었다. **산 물건이 어디에도 없었다** —
+     재고는 `shop.js` 가 처음부터 갖고 있었는데(`shopStatus(S).stock`) 화면에 창구가 없었다.
+   ★ 여기서 새 규칙을 만들지 않는다. 품목·이름·종류는 전부 `CATALOG` 것이고, 개수는
+     `stock`, 배송 중은 `orders` 다. 화면은 **읽어서 그리기만** 한다.
+
+   ★ 왜 격자인가 — 품목이 일곱이고 앞으로도 열 남짓이다. 목록(한 줄에 하나)이면
+     "몇 개 있나"를 세로로 훑어야 하고, 격자면 배지 하나로 한눈에 읽힌다.
+     스타듀밸리식 격자를 그대로 따왔다(박사님 "다른 게임 따오던가").
+   ★ 용기와 씨앗을 **줄로 가른다** — 박사님이 "특히 시루 용기는 따로 표기되게"라고 했다.
+     가르는 자는 `CATALOG[*].kind` 라 화면이 품목을 하나하나 알 필요가 없다.
+   ★ 배송 중인 것도 **같은 격자에** 흐리게 둔다. 「없다」와 「오는 중」은 다른 상태고,
+     그 둘이 화면에서 같아 보이면 이미 시킨 것을 또 시킨다. */
+const BAG_ART = Object.freeze({
+  siru:          './assets/crops/thumbs/container_siru_open.png',
+  sprout_tray:   './assets/crops/thumbs/container_tray_s.png',
+  bean_seed:     './assets/crops/thumbs/seed_dicot.png',      // 콩은 쌍떡잎
+  radish_seed:   './assets/crops/thumbs/seed_dicot.png',      // 무도 쌍떡잎
+  monstera_seed: './assets/crops/thumbs/seed_monocot.png'     // 몬스테라(천남성과)는 외떡잎
+});
+/* ★ 원화가 없는 둘은 **글자 한 자와 색**으로 세운다. 에셋을 새로 만들지 않는다 —
+   지어낸 그림은 나중에 진짜 그림이 왔을 때 어긋나고, 그때 고칠 사람이 없다. */
+const BAG_LETTER = Object.freeze({
+  pot: { ko: '포', bg: '#8d8a99' },      // 검은 모종포트 — 무채색 플라스틱
+  jar: { ko: '병', bg: '#9fd0e6' }       // 유리 수경병 — 맑은 유리
+});
+const BAG_GROUPS = Object.freeze([
+  { kind: 'container', ko: '용기' },
+  { kind: 'seed',      ko: '씨앗' }
+]);
+
+function bagSlotHTML(it, have, coming) {
+  const art = BAG_ART[it.id], ltr = BAG_LETTER[it.id];
+  const pic = art ? `<img src="${art}" alt="">`
+    : `<b style="background:${(ltr || {}).bg || '#8d8a99'}">${(ltr || {}).ko || it.ko.slice(0, 1)}</b>`;
+  const empty = have <= 0;                        // 0개인데 오는 중 — 흐리게 둔다
+  const n = empty ? (coming ? coming.qty : 0) : have;
+  const eta = !coming ? ''
+    : `<span class="eta">${empty ? '' : '+' + coming.qty + ' · '}` +
+      `${coming.days <= 0 ? '오늘 도착' : coming.days + '일 뒤 도착'}</span>`;
+  /* 칸 이름은 괄호를 뗀다 — 「콩나물 시루 (차광 용기)」가 80px 칸에서 넉 줄이 된다.
+     뗀 말은 사라지지 않는다: 전체 이름은 title 로 남고, 상점 목록에는 그대로 있다. */
+  const short = it.ko.replace(/\s*\([^)]*\)\s*$/, '');
+  return `<div class="bagslot${empty ? ' coming' : ''}" title="${it.ko}">` +
+    `<span class="qty">×${n}</span><span class="art">${pic}</span>` +
+    `<span class="nm">${short}</span>${eta}</div>`;
+}
+
+/* 카드를 [가방] ↔ [식물] 사이로 **노드째** 옮긴다.
+   ⚠ 두 벌을 만들지 않는다 — 끌기(bindDrag)·상세창(bindDetail)·안내(updateHint)가
+     전부 `#cropThumb` 같은 id 하나를 붙잡고 있다. 노드를 옮기면 그 배선이 그대로 따라온다.
+   `data-ord` 로 자리를 지킨다 — appendChild 만 하면 돌아올 때 순서가 뒤집힌다. */
+function holdCard(card, inRoom) {
+  if (!card) return;
+  const host = $(inRoom ? 'plantsHold' : 'bagHold');
+  if (!host || card.parentElement === host) return;
+  const ord = +(card.dataset.ord || 0);
+  const at = [...host.children].find(c => +(c.dataset.ord || 0) > ord);
+  host.insertBefore(card, at || null);
+}
+const cardShown = (el) => !!el && el.style.display !== 'none';
+
+function drawBag() {
+  const grid = $('bagGrid'); if (!grid) return;
+  let st; try { st = shopStatus(S); } catch { st = { stock: {}, orders: [] }; }
+  /* 배송 중 — 품목마다 개수를 모으고 **가장 이른 도착일**을 적는다 */
+  const coming = new Map();
+  for (const o of (st.orders || [])) {
+    const c = coming.get(o.itemId) || { qty: 0, days: o.daysLeft };
+    c.qty += o.qty; c.days = Math.min(c.days, o.daysLeft);
+    coming.set(o.itemId, c);
+  }
+  let html = '', total = 0;
+  const cat = catalogList();
+  for (const g of BAG_GROUPS) {
+    const rows = cat.filter(it => it.kind === g.kind)
+      .map(it => ({ it, have: st.stock[it.id] || 0, c: coming.get(it.id) || null }))
+      .filter(r => r.have > 0 || r.c);          // 0개이고 오지도 않는 것은 안 보인다
+    if (!rows.length) continue;
+    total += rows.reduce((n, r) => n + r.have, 0);
+    html += `<div class="grouphead">${g.ko}</div><div class="baggrid">` +
+            rows.map(r => bagSlotHTML(r.it, r.have, r.c)).join('') + '</div>';
+  }
+  grid.innerHTML = html;
+  $('bagCount').textContent = total ? `· ${total}개` : '';
+
+  /* ★ 안 놓은 용기는 가방에, 놓은 것은 [식물]에. 「가방에 있음」이라고 적힌 시루가
+     정작 가방에 없으면 두 화면이 서로 다른 말을 한다 — 그래서 자리를 상태에 맞춘다. */
+  const fp = S.firstPlay;
+  const b = fp && fp.beansprout;
+  holdCard($('cropThumb').closest('.itemcard'), !!(b && (b.slotId || b.at)));
+  const ms = musunSite();
+  holdCard($('musunCard'), !!(ms && (ms.slotId || ms.at)));
+  holdCard($('plantCard'), true);              // 몬스테라는 늘 방에 온다(가방을 거치지 않는다)
+
+  const held = [...$('bagHold').children].some(cardShown);
+  $('bagBox').classList.toggle('empty', !html && !held);
+}
+
 function drawShop() {
   const box = $('shopBox');
   const ts = S.tutorial;
@@ -2295,6 +2498,8 @@ function drawShop() {
        "미리 시켜 둔다"만 배운다. 가르치기에 오히려 좋은 자리다. */
   const open = !!(ts && ts.enabled);
   box.style.display = open ? '' : 'none';
+  /* 상점 탭이 통째로 빈 채로 열리면 고장으로 읽힌다 — 왜 비었는지 한 줄 남긴다 */
+  const closed = $('shopClosed'); if (closed) closed.style.display = open ? 'none' : '';
   if (!open) return;
 
   let st; try { st = shopStatus(S); } catch { return; }
@@ -2789,7 +2994,7 @@ function cutMarks(urgent) {
     }
     if (free && (jar || pot))
       out.push({ key: p.id, tone: '', ko: '✂ 삽수 자르기',
-                 go: () => { window.__byeotSheet.open(); window.__byeotSheet.tab && window.__byeotSheet.tab('room');
+                 go: () => { window.__byeotSheet.open(); window.__byeotSheet.tab && window.__byeotSheet.tab('plants');
                              const el = $('cutBox'); if (el) el.scrollIntoView({ block: 'nearest' }); } });
   }
   return out;
@@ -2821,7 +3026,9 @@ function cropMarks() {
                  go: () => { const el = $('resow'); if (el && !el.disabled) el.click(); } });
     else
       out.push({ key, ko: '🌱 씨앗이 없습니다', tone: 'warn',
-                 go: () => { window.__byeotSheet.open(); window.__byeotSheet.tab && window.__byeotSheet.tab('room'); } });
+                 /* 씨앗이 없으면 갈 곳은 [상점]이다 — 예전엔 [방]으로 보냈는데
+                    주문 목록이 거기 있어서였다. 목록이 옮겨졌으니 손도 따라간다 */
+                 go: () => { window.__byeotSheet.open(); window.__byeotSheet.tab && window.__byeotSheet.tab('shop'); } });
     return out;
   }
 
@@ -2980,6 +3187,10 @@ function drawJourney() {
   $('quest').textContent = justMoved
     ? `${slotLabel(plant.slotId)}(으)로 옮겼습니다. [다음 날]을 눌러 새순이 오르는지 보세요.`
     : (quest[fp.phase] || '첫 플레이를 진행하세요.');
+  /* ★ [가방]에 있던 진행 안내가 [식물] 맨 위로 왔다 (2026-08-06).
+     없애면 처음 하는 사람이 시트 안에서 길을 잃는다 — 아래 퀘스트 줄은 시트를 열면 가린다.
+     ⚠ 문구를 여기서 새로 짓지 않는다. 같은 한 줄을 두 곳이 나눠 볼 뿐이다. */
+  const sq = $('sheetQuest'); if (sq) sq.textContent = $('quest').textContent;
   $('slot').disabled = !plant.arrived;
   /* 30일 자동은 개발용 장기 관찰이다. 첫 학습 루프를 끝내기 전에는 우회 진입시키지 않는다. */
   $('run30').disabled = !fp.completed;
@@ -3067,6 +3278,9 @@ function draw() {
   drawSow();                /* 다시 심어야 하나 */
   drawShop();               /* 주문·다시 심기·팔기 */
   try { drawMusun(); } catch (e) { console.warn('[무순]', e && e.message); }  /* 2종째 작물 — 없으면 안 보인다 */
+  /* ★ 가방은 **무순 다음**이다 — 무순 카드가 보이는지(display)를 읽어 「가방이 비었나」를 정한다.
+     앞에 두면 한 프레임 늦은 값을 본다. 없어도 턴은 돌아야 하므로 감싼다. */
+  try { drawBag(); } catch (e) { console.warn('[가방]', e && e.message); }
   drawCuttings();           /* ★삽수 — 자르기·분갈이·팔기 (분갈이가 없으면 삽수는 반드시 죽는다) */
   ffHint();                 /* 상태가 바뀌면 "무엇까지 감는지"도 바뀐다 */
   syncRoom();               /* 방 전경도 같은 상태를 본다 — 화면이 둘로 갈리면 안 된다 */
