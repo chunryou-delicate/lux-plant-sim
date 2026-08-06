@@ -185,6 +185,9 @@
     "oneroom": {
       "label": "원룸",
       "light": "보통",
+      "floorNo": 2,
+      "skyViewK": 1.18,
+      "skyViewK_note": "★ 골목 안 2층. 맞은편 건물이 아직 하늘의 상당 부분을 가린다. 반지하(기준 1.00)보다 눈높이가 5m 쯤 올라와 앞 건물 어깨 너머가 조금 보이는 정도. 잰 값: 자연광 최고 자리 7일평균 3.65 → 4.31 (반지하 3.09). ★ 왜 여기서 멈추나 — 1.65배를 넘기면 자연광만으로 갈라짐 문턱 6.0 을 넘어 **식물등을 산 뜻이 없어진다.** 원룸은 「등으로 넘는 방」이다. 근거표는 docs/handoff/oneroomfix-to-plan.md §층수.",
       "done": true,
       "wall": "w_cream",
       "floor": "f_oak",
@@ -220,59 +223,97 @@
       "furniture": [
         {
           "preset": "bed_single",
+          "uid": "oneroom-bed",
           "x": -2,
           "z": -0.9,
           "rot": 0
         },
         {
           "preset": "nightstand",
+          "uid": "oneroom-nightstand",
           "x": -2,
           "z": 0.45
         },
         {
           "preset": "desk",
+          "uid": "oneroom-desk",
           "x": 1.4,
           "z": -1.95,
           "rot": 0
         },
         {
           "preset": "chair",
+          "uid": "oneroom-chair",
           "x": 1.4,
           "z": -1.25,
           "rot": 180
         },
         {
           "preset": "wardrobe",
+          "uid": "oneroom-wardrobe",
           "x": 2.4,
           "z": 1.4,
           "rot": -90
         },
         {
           "preset": "shelf",
+          "uid": "oneroom-shelf",
           "x": -0.4,
           "z": -2.15
         },
         {
           "preset": "rug",
+          "uid": "oneroom-rug",
           "x": 0.6,
           "z": 0.8
         },
         {
           "preset": "lamp_floor",
+          "uid": "oneroom-lamp-floor",
           "x": 2.5,
           "z": -1.9
         },
         {
           "preset": "lamp_ceiling",
+          "uid": "oneroom-lamp-ceiling",
           "x": 0,
           "z": 0
         },
         {
           "preset": "lamp_pendant",
+          "uid": "oneroom-lamp-pendant",
           "x": 0.4,
           "z": 0.6,
           "spectrum": "warm",
           "schedule": "night"
+        },
+        {
+          "preset": "shelf_sill_pot4",
+          "uid": "oneroom-sill",
+          "x": 0.75,
+          "z": -2.33,
+          "y": 1.3,
+          "note": "★ 큰 창을 가로지르는 화분받침 4칸. 창 개구부는 x -0.7~1.7 · y 0.775~2.225 이고, 이 받침은 그 안 x 0.05~1.45 · y 1.30 에 걸린다(뒷벽 안쪽면 z -2.4, 받침 z -2.46~-2.20 이라 개구부 안으로 0.06 들어간다). 왜 여기인가 — 창은 2.9배가 되었는데 그 빛을 받는 자리가 하나도 없었다. 잰 값: 이 4칸이 맑음·여름 peak 6.16~6.69 (7일평균 3.96~4.30) 로 방에서 제일 밝고, 반지하 최고(4.80/3.09)보다 밝으며 투룸(5.08)·아파트(6.27)보다 어둡다. 왜 y 1.30 인가 — 책상 윗면(0.74)보다 위여서 안 겹치고, 개구부 바닥(0.775) 바로 위만큼 밝지는 않아 계단이 남는다. ⚠ 바닥에 놓는 다단 선반은 이 창 앞에서 값을 못 한다 — 창 밑변이 0.775m 라 3단 선반 맨 위(0.794)가 겨우 창 밑변 높이다(재 보니 7일평균 2.9). 그래서 창가 자리는 **벽에 거는 것**이어야 한다. 도구: tools/test_oneroom_room.mjs"
+        },
+        {
+          "preset": "growlight_bar",
+          "uid": "oneroom-growlight-bar",
+          "x": 0.547,
+          "z": -2.33,
+          "y": 1.75,
+          "spectrum": "redblue",
+          "schedule": "photo12",
+          "note": "★★ 「산 등이 이사를 따라온다」 — 원룸에도 등 기구를 **반지하와 같은 2개**, **같은 종류로 같은 순서로** 둔다(바 → 집게). 켜지는 개수는 `ts.lamp.owned` 가 정한다(game.html fillLamps: min(방 기구 수, 산 개수))이고 앞에서부터 켠다(light_adapter.rigsOn). 그래서 반지하에서 처음 산 등이 바 등이면 원룸에서도 바 등이 켜진다 — 종류를 바꾸면 180 → 120 ppfd 로 조용히 깎인다. 자리: 창턱 2번 칸(x 0.547) 위 0.461m(발광점 y 1.796, 칸 y 1.335). 반지하는 선반 위 0.23m 라 한 칸이 등에서만 11.83 을 받는데, 여기서 그대로 두면 6.69 + 11.83 = 18.5 로 과광선(16.0)까지 넘는다. 0.461m 로 띄워 4.12 만 받게 했다 — 잰 값 등0 6.69 → 등1 10.81 (7일평균 4.30 → 6.95, 갈라짐 문턱 6.0). ⚠ 이 등은 반지하와 같이 못 겨누고 못 옮긴다(mount:under-shelf · aim 없음) — 그것이 튜토의 긴장이다(docs/growlight_aim.md §2 §7)."
+        },
+        {
+          "preset": "growlight_clip",
+          "uid": "oneroom-growlight-clip",
+          "x": 1.36,
+          "z": -2.2,
+          "y": 1.345,
+          "spectrum": "redblue",
+          "schedule": "photo16",
+          "note": "둘째 등 — 반지하의 둘째와 같은 집게형이라 **겨눌 수 있고 옮길 수 있다**. 자리: 창턱 상판(1.335) 에 0.01m 얹어 물린다(room_view.lampMountOf 가 lift 0.01 로 읽어 `oneroom-sill@1.335` 에 물린 것으로 잡는다 — 반지하 집게등이 책상 0.74 위 0.75 에 있는 것과 같은 규약이다. 상판보다 낮게 두면 물린 자리를 못 찾는다). 4번 칸(x 1.36) 옆이라 그 칸이 등1 7.03 → 등2 10.28 (7일평균 4.52 → 6.61) 이 된다. 바 등(x 0.547)과 0.81m 떼어 놓았다 — 붙이면 한 칸이 두 몫을 받아 무늬종 갈라짐(8.4)까지 넘어 ④ 가 죽는다."
         }
       ],
       "facing": "south",
@@ -280,30 +321,76 @@
       "measured": {
         "_label": "★ 라벨 없는 숫자는 쓰지 않는다. space=가구 없는 공간 / slots=지금 가구 배치. peak_summer=맑음·여름 하루 최고. avg7_summer=7일 이동평균 기댓값(=peak×0.643).",
         "space": {
-          "peak_summer": 6.76,
-          "avg7_summer": 4.35,
-          "vol6_m3": 0.5,
-          "vol3_m3": 1.7,
-          "vol_dark_m3": 29.8,
+          "peak_summer": 7.98,
+          "avg7_summer": 5.13,
+          "vol6_m3": null,
+          "vol3_m3": null,
+          "vol_dark_m3": null,
           "best_height_m": 0.85,
           "peak_by_height": {
-            "0.1": 2.2,
-            "0.35": 3,
-            "0.6": 4.5,
-            "0.85": 6.8,
-            "1.1": 6.7,
-            "1.35": 6.6,
-            "1.6": 6.4
+            "0.1": 2.6,
+            "0.35": 3.5,
+            "0.6": 5.3,
+            "0.85": 8,
+            "1.1": 7.9,
+            "1.35": 7.8,
+            "1.6": 7.6
           },
-          "_method": "0.25m 격자·높이 0.10~1.80m. 가구 제외. 고체 벽(외곽)·칸막이·도려낸 경계 벽 속 점은 빼고, 창·문 개구부(reveal)는 살린다 — 창턱이 실제로 그 안에 놓인다."
+          "_method": "0.25m 격자·높이 0.10~1.80m. 가구 제외. 고체 벽(외곽)·칸막이·도려낸 경계 벽 속 점은 빼고, 창·문 개구부(reveal)는 살린다 — 창턱이 실제로 그 안에 놓인다.",
+          "_scaled_note": "★ 2026-08-06 skyViewK 1.18 이 붙어 위 값들은 **옛 실측(6.76 등)에 1.18 을 곱한 것**이다. 조도는 evScale 에 선형이라 peak 계열은 정확히 이렇게 움직인다(재서 확인: 슬롯 최고 5.67 → 6.69, 배수 1.180). ⚠ vol6_m3·vol3_m3·vol_dark_m3 는 **문턱을 넘는 부피**라 선형이 아니다 — 곱해서 채우면 거짓말이 되므로 null 로 비웠다. 다시 재려면 `_profile_gen.html` 의 공간 스캔이 필요하고 그건 이 창이 못 하는 일이다(인계)."
         },
         "slots": {
-          "peak_summer": 4.77,
-          "avg7_summer": 3.07,
-          "count": 11,
-          "sampled_peak_ratio_pct": 71,
+          "peak_summer": 6.69,
+          "avg7_summer": 4.3,
+          "count": 15,
+          "sampled_peak_ratio_pct": 84,
           "_sampled_note": "slots.peak ÷ space.peak. 두 값의 표본이 다르다 — space 는 0.25m 격자 위 점이고 slots 는 가구가 정한 임의 높이다. 격자 사이에 더 좋은 자리가 있으면 100%를 넘을 수 있고, 그건 오차가 아니라 표본 차이다.",
-          "_method": "지금 furniture 배치 기준. 차폐에 가구 포함."
+          "_method": "지금 furniture 배치 기준. 차폐에 가구 포함. 식물등 0개(자연광만) 값이다 — 등을 켠 값은 아래 lamp 절.",
+          "bright_slot": {
+            "slotId": "oneroom-sill:1",
+            "peak_summer": 6.69,
+            "avg7_summer": 4.3,
+            "point": {
+              "x": 0.547,
+              "y": 1.335,
+              "z": -2.33
+            },
+            "maxPotD": 0.23,
+            "_note": "★ 큰 창을 처음으로 쓰는 자리. 7일평균 4.30 — 반지하 최고(3.09)보다 +39%, 투룸(5.08)·아파트(6.27)보다 아래다. 무늬종 최소(4.2)를 자연광만으로 겨우 넘는 자리이기도 하다."
+          },
+          "dark_slots_le_0_3": 1,
+          "darkest_slot": {
+            "slotId": "oneroom-nightstand:0",
+            "peak_summer": 0,
+            "avg7_summer": 0,
+            "point": {
+              "x": -2,
+              "y": 0.48,
+              "z": 0.45
+            },
+            "maxPotD": 0.33,
+            "_note": "⚠ 원룸에는 콩나물 자리(7일평균 0.3 미만)가 이 한 칸뿐이다. 반지하는 9칸이었다 — 밝아진 값이다."
+          },
+          "lamp": {
+            "_method": "맑음·여름·점등 12h. 등은 앞에서부터 켠다(light_adapter.rigsOn). 켤 수 있는 개수의 천장은 산 개수(ts.lamp.owned)다.",
+            "peak_summer_by_lamps": [
+              6.69,
+              10.81,
+              11.32
+            ],
+            "avg7_summer_by_lamps": [
+              4.3,
+              6.95,
+              7.28
+            ],
+            "fenestrating_slots_by_lamps": [
+              0,
+              1,
+              3
+            ],
+            "_note": "★ 갈라짐 문턱은 7일평균 6.0 (data/balance/light_thresholds.json · monstera_deliciosa). 자연광만으로는 못 넘고 등 1개로 넘는다 — 반지하에서 산 등이 원룸에서 값을 하는 자리다. 반지하는 같은 조건에서 등1·등2 모두 1칸이었다. ⚠ 무늬종 갈라짐(8.4)은 등 둘을 다 켜도 못 넘는다(7.28, 여유 13%). 그건 온실(자연광 9.36) 몫으로 남겨 둔 것이다."
+          },
+          "_slotid_note": "★ 2026-08-06 부터 원룸도 가구마다 uid 를 데이터에 못 박는다(반지하와 같은 규약). 그 전에는 light_adapter 가 로드 때 `TEMP~oneroom#n~preset` 을 붙여 11칸 전부가 임시 uid 위에 있었고, 가구를 하나만 더해도 저장된 화분이 남의 자리로 갔다."
         },
         "area": {
           "floor_m2_net": 27.3,
@@ -315,14 +402,17 @@
           },
           "_method": "floor_m2_net = 0.25m 격자로 센 실제 바닥(외곽 벽 띠·칸막이·도려낸 자리 제외). floor_m2_gross = 외곽 치수 곱. 등 상한은 net 기준."
         },
-        "measuredAt": "2026-08-02",
-        "roomRev": "379f9dc 2026-07-25",
+        "measuredAt": "2026-08-06",
+        "roomRev": "2026-08-06 창턱 4칸 + 식물등 2개 · 가구 uid 고정 · skyViewK 1.18 (oneroomfix)",
         "status": "확정"
       }
     },
     "apartment": {
       "label": "아파트",
       "light": "좋음",
+      "floorNo": 12,
+      "skyViewK": 1.62,
+      "skyViewK_note": "★ 고층. 앞 건물을 넘어서서 하늘이 거의 트인다. 잰 값: 자연광 최고 자리 7일평균 3.87 → 6.27. ★★ 이것이 ④ 「내 집」의 보상이다 — **등 없이도 몬스테라가 갈라진다**(문턱 6.0). 반지하는 등 1개로 1칸, 원룸은 등 1개로 1칸이었는데 여기는 자연광만으로 12칸이다. ⚠ 무늬종 갈라짐(8.4)은 여전히 못 넘는다 — 그건 온실(9.36) 몫으로 남겨 두었다.",
       "glassWalls": [],
       "ceiling": "solid",
       "windows": [
@@ -653,6 +743,9 @@
     "classroom": {
       "label": "학원교실",
       "light": "좋음",
+      "floorNo": 3,
+      "skyViewK": 1.2,
+      "skyViewK_note": "★ 상가 건물 3층. 원룸(2층)보다 한 층 위지만 상가 골목이라 트임은 비슷하다. 잰 값: 자연광 최고 자리 7일평균 3.86 → 4.63. 남의 공간이라 가구를 못 건드리는 대신 깊은 창턱(1m)이 자산이다.",
       "wallColor": "#eef0ea",
       "floorColor": "#e6ebea",
       "ceilColor": "#f6f7f3",
@@ -865,6 +958,9 @@
     "greenhouse": {
       "label": "온실",
       "light": "최상",
+      "floorNo": 1,
+      "skyViewK": 1,
+      "skyViewK_note": "★★ **일부러 1.00 이다.** 온실은 층이 아니라 유리가 답이다 — 유리벽 셋과 천창이 이미 하늘을 거의 다 보고 있다. 잰 값: 공간 최고 15.09, 과광선(monstera max 16.0)까지 여유가 5.7% 뿐이다. 여기에 1.06 만 곱해도 잎이 탄다. 「고층이라 밝다」가 온실에서는 이미 「유리라서 밝다」로 나와 있고, 더 올리면 밝은 것이 상이 아니라 벌이 된다. ⚠ 이 방의 게임은 밝기를 늘리는 것이 아니라 **차광으로 줄이는 것**이다.",
       "wallColor": "#eef0ea",
       "floorColor": "#e6ebea",
       "ceilColor": "#f4f7f3",
@@ -1067,6 +1163,9 @@
     "tworoom": {
       "label": "투룸",
       "light": "보통",
+      "floorNo": 5,
+      "skyViewK": 1.4,
+      "skyViewK_note": "★ 5층. 앞 건물 지붕선 위로 올라와 하늘이 넓어진다. 잰 값: 자연광 최고 자리 7일평균 3.63 → 5.08. 원룸(4.31)과 아파트(6.27) 사이다 — 무늬종 최소(4.2)는 자연광으로 여유 있게 넘고 갈라짐(6.0)은 아직 못 넘는다. 그 「아직」이 아파트로 가는 이유다.",
       "done": false,
       "size": {
         "w": 7,

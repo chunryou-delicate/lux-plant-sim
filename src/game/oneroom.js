@@ -307,9 +307,13 @@ function reseatCrops(S, room, log) {
        무늬종               전 구간 ×1.4 (need_mult) → min 4.2 · fenestrate 8.4
      여기서는 그 값을 **읽어서 지금 방이 넘나 못 넘나만 말한다.** 숫자를 새로 만들지 않는다.
 
-   ★ 왜 「말하는 함수」가 필요한가 — 지금 원룸 방 데이터로는 **하나도 못 넘는다**
-     (docs/oneroom.md §3 실측). 그 사실을 코드가 조용히 넘기면 ③ 이 왜 심심한지
+   ★ 왜 「말하는 함수」가 필요한가 — 그 사실을 코드가 조용히 넘기면 ③ 이 왜 심심한지
      아무도 모른 채 밸런스를 뒤진다. 재현(tools/test_oneroom.mjs)이 이 함수로 그것을 고정한다.
+
+   ★ 2026-08-06 (oneroomfix) — 원룸이 넘을 수 있게 되었다.
+       등0 7일평균 3.65 (못 넘음) · 등1 7.15 (넘음) · 등2 7.50
+     그 전에는 등 기구가 0개라 어떤 자리에서도 못 넘었다. 잰 표는
+     `docs/handoff/oneroomfix-to-plan.md` · `tools/test_oneroom_room.mjs`.
 
    ⚠ 판정이 아니다. 갈라짐·무늬를 **실제로 정하는 것은 growth** 이고 코어는 안 굴린다
      (tutorial.js §확정 무늬가 확률을 안 건드린 것과 같은 이유).
@@ -317,7 +321,7 @@ function reseatCrops(S, room, log) {
      lightGateOf(S, io, { season, lampCount, plantId })
    반환 { roomId, season, lampCount, best: {slotId, peak, avg7},
           min, fenestrate, varieMin, varieFenestrate,
-          canGrow, canFenestrate, canVarie, growRigs, why } */
+          canGrow, canFenestrate, canVarie, growRigs, ownedLamps, canTurnOn, why } */
 export function lightGateOf(S, io = {}, opt = {}) {
   const light = io.light;
   if (!light || !light.room)
@@ -343,25 +347,46 @@ export function lightGateOf(S, io = {}, opt = {}) {
   }).sort((a, b) => b.avg7 - a.avg7);
   const best = rows[0] || { slotId: null, peak: 0, avg7: 0 };
 
-  /* 방에 실제로 달려 있는 식물등 기구 수 — **산 개수가 아니라 켤 수 있는 개수**다.
-     반지하에는 둘(growlight_bar · growlight_clip)이 박혀 있고 원룸에는 하나도 없다. */
+  /* 방에 실제로 달려 있는 식물등 기구 수. 반지하에도 원룸에도 둘씩 박혀 있다
+     (2026-08-06 oneroomfix 전에는 원룸이 0개였고, 그래서 이사하면 산 등이 사라졌다). */
   const growRigs = typeof light.growLampCount === 'function' ? light.growLampCount()
                  : (room.growRigs || []).length;
+
+  /* ★★ 「산 등이 이사를 따라온다」 (2026-08-06 · docs/handoff/oneroomfix-to-plan.md ㉠)
+     ------------------------------------------------------------
+     등은 방 데이터에 박혀 있고, **켤 수 있는 개수의 천장은 산 개수**다
+     (`game.html` fillLamps: `min(방 기구 수, ts.lamp.owned)`). 반지하에도 원룸에도
+     기구가 둘씩 있으니, 하나만 샀으면 어느 방에서든 하나만 켜진다.
+
+     ⚠ 그래서 「몇 개 더 켤 수 있나」를 **기구 수로만 세면 거짓말이 된다** —
+       원룸에 기구가 둘 있어도 등을 안 샀으면 한 개도 못 켠다. 여기서 그 천장을 같이 본다.
+     ★ 튜토가 없는 판(검수·헤드리스)에는 산 개수라는 개념이 없다. 그때는 예전처럼
+       기구 수가 곧 천장이다 — 그 판은 살림이 안 돌아 공짜로 켜도 잴 것이 없다
+       (fillLamps 의 같은 판단). */
+  const ts = S && S.tutorial;
+  const ownedLamps = (ts && ts.enabled && ts.lamp) ? Math.max(0, ts.lamp.owned || 0) : null;
+  const canTurnOn = Math.min(growRigs, ownedLamps == null ? growRigs : ownedLamps);
 
   const canGrow = best.avg7 >= th.min;
   const canFenestrate = th.fenestrate != null && best.avg7 >= th.fenestrate;
   const canVarie = !!(thV && best.avg7 >= thV.min);
   const round2 = (v) => +Number(v).toFixed(2);
 
+  /* 왜 못 넘는지 — **할 수 있는 것을 말한다.** 켤 등이 남았으면 켜라고, 다 켰는데
+     모자라면 사라고, 방에 기구가 없으면 그렇다고. 셋을 뭉치면 조언이 거짓이 된다. */
+  const hint = canTurnOn > lampCount ? ` — 식물등을 ${canTurnOn - lampCount}개 더 켤 수 있습니다`
+    : growRigs === 0 ? ' — 이 방에는 식물등 기구가 하나도 없습니다'
+    : growRigs > lampCount ? ` — 식물등을 더 사야 켭니다 (이 방 기구 ${growRigs}개 · 산 등 ${ownedLamps}개)`
+    : '';
   const why = canFenestrate ? null
     : th.fenestrate == null ? '이 식물은 갈라지지 않습니다'
     : `가장 밝은 자리(${best.slotId})의 7일평균이 ${round2(best.avg7)} 로 ` +
-      `갈라짐 문턱 ${th.fenestrate} 에 못 미칩니다` +
-      (growRigs > lampCount ? ` — 식물등을 ${growRigs - lampCount}개 더 켤 수 있습니다`
-                            : growRigs === 0 ? ' — 이 방에는 식물등 기구가 하나도 없습니다' : '');
+      `갈라짐 문턱 ${th.fenestrate} 에 못 미칩니다` + hint;
 
   return {
     ok: true, roomId: room.id, season, lampCount, growRigs,
+    /* ownedLamps 는 튜토가 없으면 null 이다 — 「0개 샀다」와 「살 개념이 없는 판」은 다르다 */
+    ownedLamps, canTurnOn,
     best: { slotId: best.slotId, peak: round2(best.peak), avg7: round2(best.avg7) },
     slots: rows.length,
     min: th.min, fenestrate: th.fenestrate,

@@ -218,6 +218,18 @@
       "mount": "wall",
       "note": "★ 창 개구부(reveal) 안에 끼우는 얇은 받침. 화분 1개. 반지하 첫 플레이용 — 높이가 곧 빛이라는 힌트."
     },
+    "shelf_sill_pot4": {
+      "type": "shelf_wall",
+      "name_ko": "창턱 화분받침(4칸)",
+      "w": 1.4,
+      "d": 0.26,
+      "slots": 4,
+      "color": "#efe9dc",
+      "accent": "#cfc6b4",
+      "room": "창",
+      "mount": "wall",
+      "note": "★ shelf_sill_pot1 의 형제 — 같은 shelf_wall 빌더에 폭과 칸 수만 다르다. 큰 창(원룸 2.4×1.45m) 앞을 가로지르는 받침. 반지하 창턱이 1칸인 것은 창이 2.2×0.55m 라 그만큼밖에 못 걸려서고, 창이 커지면 걸 자리도 커진다는 것이 이 프리셋이 말하는 것이다. 깊이 0.26 → maxPotD 0.23 (반지하 창턱 0.21 보다 크다). 쓰는 곳: oneroom-sill."
+    },
     "shelf_wall_1tier": {
       "type": "shelf_wall",
       "name_ko": "선반-벽걸이-1단",

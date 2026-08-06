@@ -397,6 +397,38 @@ export function buildHouse(GRAIN, roomDefIn, winPresets, doorPresets={}, finishe
     if(!sp) return 1;
     return sp.mult!=null ? sp.mult : 1;           // 자동 블라인드(mult:null)는 런타임에서 정한다
   };
+
+  /* ★★ 조망(skyViewK) — 「이 창이 하늘을 얼마나 보나」 (2026-08-06 · 박사님 지시)
+     ------------------------------------------------------------
+     박사님 원문: *"반지하는 주변에 건물이 있어서 최하인 거고, 나머지들은 점점 더 고층이라
+     더 빛이 세다는 느낌"*.
+
+     ★ 왜 새 계통을 안 만들고 여기에 곱하나
+       `evScale` 은 이미 **「그 창이 하늘을 얼마나 보나」** 를 담는 자리다 —
+       방위(orientK: 남향 1.0 / 북향 0.38)와 차광막(shadeMult)이 여기서 곱해진다.
+       "앞 건물에 가려 하늘의 절반만 보인다"는 그 셋과 **같은 종류의 말**이다.
+       물리식도 계약도 안 바뀐다: `daylight_lux` 가 `Ev × tau × evScale / π` 로 천공 휘도를
+       내고, 기하 적분(창이 그 점에서 얼마나 크게 보이나)은 그대로다.
+
+     ★ 왜 창마다인가 (방마다가 아니라)
+       같은 방이라도 창마다 가림이 다를 수 있다 — 뒷창은 옆 건물에 막히고 앞창은 트인 집이
+       흔하다. 그래서 값은 **창이 이기고**, 창에 없으면 방 값을 쓴다. 지금 데이터는 전부
+       방 값 하나뿐이라 결과는 방마다 하나와 같지만, 나중에 창을 나눌 때 여기를 안 고쳐도 된다.
+       ⚠ 하늘(skyEvMax)에 곱하면 안 된다 — 하늘은 온 동네가 같이 쓰는 것이고,
+         방마다 다른 것은 **그 하늘을 얼마나 보느냐**다. 거기 곱하면 같은 날 밖이
+         방마다 다른 밝기가 된다.
+
+     ★★ **절대값이 아니라 배수다.** 이름 끝의 `K` 가 그 뜻이다(orientK 와 같은 규약).
+       `1.00 = 지금까지 잰 값 그대로`이지 `하늘이 다 보인다`가 아니다.
+       왜 절대값으로 안 갔나 — 절대값이면 반지하가 0.6 쯤이어야 하는데, 반지하는
+       tau 0.70 · 창턱 4.80 · 등1 6.64 가 확정되어 그 위에 밸런스가 얹혀 있어 **못 움직인다.**
+       그래서 「반지하가 최하」를 *반지하를 깎는 것*이 아니라 *나머지를 올리는 것*으로 쓴다.
+       순서는 같고, 이미 확정된 것만 안 흔든다.
+       ⏸ 언젠가 절대값으로 가려면 반지하 tau 부터 다시 잡아야 한다 — 박사님 결정 사항이다.
+     근거표와 방별 값은 `docs/handoff/oneroomfix-to-plan.md` §층수 · `tools/test_floorlight.mjs`. */
+  const roomSkyView = Number.isFinite(roomDef.skyViewK) ? roomDef.skyViewK : 1;
+  const skyViewKOf = w => (w && Number.isFinite(w.skyViewK)) ? w.skyViewK : roomSkyView;
+
   const luxWins=[];
   for(const w of (roomDef.windows||[])){
     const p=winPresets[w.preset]||{};
@@ -404,9 +436,10 @@ export function buildHouse(GRAIN, roomDefIn, winPresets, doorPresets={}, finishe
     const tau = w.tau ?? ((p.glass&&p.glass.transmittance)!=null ? p.glass.transmittance : 0.85);
     const orient=w.orient||wallOrient(facing, w.wall);
     const sh=shadeMult(w.shade);
+    const sv=skyViewKOf(w);
     luxWins.push({ wall:w.wall, cu:w.cu, cy:w.cy, w:w.w, h:w.h, tau,
-                   orient, shade:w.shade||'none', shadeMult:sh,
-                   evScale:orientK(orient)*sh, from:'window' });
+                   orient, shade:w.shade||'none', shadeMult:sh, skyViewK:sv,
+                   evScale:orientK(orient)*sh*sv, from:'window' });
   }
   /* ★ 천창 — ceiling:'glass' 인 방은 지붕 전체가 개구부다.
      수평면은 하늘 반구를 통째로 봐서 벽 유리보다 훨씬 세다. */
@@ -418,10 +451,14 @@ export function buildHouse(GRAIN, roomDefIn, winPresets, doorPresets={}, finishe
   if(roomDef.ceiling==='glass'){
     const go=wallOrient(facing,'ceiling');
     const sh=shadeMult(roomDef.ceilingShade);
+    /* 천창은 위를 본다 — 앞 건물이 가리는 것은 지평 쪽 하늘이라 조망 손실이 벽창보다 적다.
+       그래도 여기서 갈라 두지 않는다: 지금 방 중 천창이 있는 것은 온실 하나고 그 방은
+       skyViewK 1.00 이라 값이 안 갈린다. 갈릴 일이 생기면 그때 창에 skyViewK 를 적으면 된다. */
+    const sv=skyViewKOf(roomDef.ceilingWin);
     luxWins.push({ wall:'ceiling', cu:0, cy:CH, w:CW-0.1, h:(cgZ1-cgZ0)-0.1, cz:(cgZ0+cgZ1)/2,
                    tau:roomDef.ceilingTau ?? 0.85,
-                   orient:go, shade:roomDef.ceilingShade||'none', shadeMult:sh,
-                   evScale:orientK(go)*sh, from:'skylight' });
+                   orient:go, shade:roomDef.ceilingShade||'none', shadeMult:sh, skyViewK:sv,
+                   evScale:orientK(go)*sh*sv, from:'skylight' });
   }
 
   // ---------- 바닥: 통판 1장 (조각 이음새 z-fighting 방지). 결/칸은 텍스처로 ----------
@@ -480,9 +517,10 @@ export function buildHouse(GRAIN, roomDefIn, winPresets, doorPresets={}, finishe
     if(kind==='glass'){
       const go=wallOrient(facing, wall);
       const sh=shadeMult((roomDef.glassWallShade||{})[wall] || roomDef.glassWallShade);
+      const sv=roomSkyView;
       luxWins.push({ wall, cu:(gMin+gMax)/2, cy:CH/2, w:(gMax-gMin)-0.1, h:CH-0.1,
-                     tau:0.85, orient:go, shade:'none', shadeMult:sh,
-                     evScale:orientK(go)*sh, from:'glassWall' });
+                     tau:0.85, orient:go, shade:'none', shadeMult:sh, skyViewK:sv,
+                     evScale:orientK(go)*sh*sv, from:'glassWall' });
     }
     const g=new THREE.Group();
     g.userData={ normal:wallNormals[wall], center:wallCenters[wall] };
@@ -995,6 +1033,7 @@ export function buildHouse(GRAIN, roomDefIn, winPresets, doorPresets={}, finishe
 
   return { room, shells, trims, windows:winWorld, glassMeshes, winPos, size:{ w:CW, d:CD, h:CH },
            furniture:furnGroup, lightRigs, plantSlots, occluders, colliders, doorways, luxWins, glazedPanes, facing,
+           skyViewK:roomSkyView,
            glassMeshes2:glassMeshes, shadowAudit };
 }
 
