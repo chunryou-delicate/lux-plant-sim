@@ -31,7 +31,7 @@
 
      S는 제자리에서 바뀌고 그대로 반환된다. 호출부는 반환값을 쓰면 된다.
 ============================================================ */
-import { givePlant, pot0, rehomePot, pushLog } from './state.js';
+import { givePlant, pot0, rehomePot, reseatAllOnSlots, pushLog } from './state.js';
 import {
   advanceBeansproutDay,
   beansproutHarvestStatus,
@@ -535,6 +535,13 @@ export function nextDay(S, io) {
      ★ 방(room)까지 넘긴다 — 자유 좌표 화분은 슬롯 목록으로 판단할 수 없다.
        "받치던 가구가 사라졌나 · 그 좌표가 지금 방 밖인가"를 봐야 한다(state.rehomePot).
        옛 세이브(slotId 만)의 좌표 채우기도 여기서 같이 일어난다. */
+  /* ★ 가구가 움직였으면 그 위에 얹힌 것들의 좌표를 먼저 맞춘다 (2026-08-06 · 베타테스터 신고).
+     자리는 가구를 따라가는데 물건의 `at` 은 안 따라가서, 둘이 어긋나면 조도 계약이 던지고
+     그 예외는 hardLock 이라 **판이 통째로 잠긴다**(state.js §reseatOnSlot).
+     ⚠ 회수(rehomePot)보다 **먼저** 돈다 — 회수는 "자리가 사라졌나"를 보는데,
+       좌표가 어긋난 것은 사라진 것이 아니라 옮겨진 것이라 회수로는 안 고쳐진다. */
+  const reseated = reseatAllOnSlots(S, io.light.room.slots);
+  if (reseated) pushLog(S, `🪴 가구를 따라 ${reseated}개의 자리를 맞췄습니다`);
   if (p) rehomePot(S, io.light.room.slots, m => pushLog(S, m), io.light.room);
   /* 삽수도 같은 검사를 받는다 — 안 하면 방을 옮긴 뒤 삽수가 방 밖 좌표로 남아
      매일 계약이 던지거나 화면에 없는데 상태에는 사는 유령이 된다. */

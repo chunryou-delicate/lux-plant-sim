@@ -607,6 +607,49 @@ export function setPotSlot(S, potOrId, slotId, slots) {
    ★ 자유 좌표 화분은 슬롯 목록과 무관하게 **그 자리에 그대로 있다.** 회수는 두 경우뿐이다:
      ① 올라앉았던 가구(onUid)가 방에서 사라졌다   ② 방이 바뀌어 그 좌표가 방 밖이다
    room 을 안 넘기면 ①·②를 판단할 근거가 없으므로 자유 좌표는 손대지 않는다. */
+/* ★★ 가구가 **움직이면** 그 위 물건의 좌표도 따라가야 한다 (2026-08-06 · 베타테스터 신고).
+   ------------------------------------------------------------
+   신고된 화면:
+     ⛔ 진행을 멈췄습니다 — [조도] pot_01 의 자리가 어긋납니다
+        slotId=banjiha-desk:0 는 (-0.36, 0.74, -0.86) 인데 at 은 (0.79, 0.74, -1.41) 입니다.
+
+   책상 위에 화분을 놓고 책상을 옮기면 **자리(slot)는 가구를 따라가는데 화분의 `at` 은
+   제자리에 남는다.** 둘이 어긋나면 조도 계약이 던지고, 그 예외는 `isRecoverable` 이 아니라
+   `hardLock` 이라 **판이 통째로 잠긴다** — 즉 옳은 조작(빛을 받으러 가구를 옮김)이 판을 끝낸다.
+
+   ⚠ `rehomePot` 의 옛 검사 둘로는 못 잡는다. 그건 「받치던 가구가 **사라졌나**」와
+     「방 **밖**인가」만 본다 — **움직인 경우**는 그 둘 다 아니라 이른 return 으로 빠져나갔다.
+
+   ⇒ `slotId` 가 아직 살아 있으면 그 자리의 **지금 좌표**로 `at` 을 다시 뜬다.
+     화분은 그 선반 칸에 그대로 있는 것이 맞다 — 가구를 옮기면 얹힌 것도 같이 가는 것이
+     플레이어가 기대하는 바이고 3D 도 이미 그렇게 그린다(room_view 의 riders).
+   ⚠ 자유 좌표(`free:`)는 **안 건드린다.** 그건 가구가 아니라 좌표에 놓은 것이라
+     따라갈 자리가 없다. 받치던 가구가 사라지는 경우는 위 ①이 따로 맡는다.
+   ⚠ 회전(`rotY`)은 지킨다 — 플레이어가 돌려 둔 것을 가구를 옮겼다고 되돌리면 안 된다. */
+function reseatOnSlot(o, slots) {
+  if (!o || !o.slotId || isFreeSlotId(o.slotId) || !o.at) return false;
+  const s = (slots || []).find(x => x && x.slotId === o.slotId);
+  if (!s || ![s.x, s.y, s.z].every(v => typeof v === 'number' && Number.isFinite(v))) return false;
+  if (['x', 'y', 'z'].every(k => Math.abs((o.at[k] ?? 0) - s[k]) < 1e-6)) return false;
+  o.at = atFromSlot(s, { rotY: o.at.rotY || 0 });
+  return true;
+}
+
+/* 놓인 것 **전부**를 다시 앉힌다 — 화분·작물 자리·삽수.
+   ★ 한 곳에서 도는 이유: 셋이 같은 규칙(`slotId` 가 살아 있으면 그 자리 좌표)인데
+     세 곳에 흩어 두면 하나를 빠뜨린다. 실제로 화분만 고쳐 두고 시루는 안 고쳐져 있었다.
+   ⚠ 이것은 **회수(rehome)가 아니라 재정렬(reseat)** 이다 — 자리를 안 바꾸고 좌표만 맞춘다.
+     자리가 사라진 경우의 회수는 `rehomePot`·`rehomeCuttings` 가 따로 맡는다. */
+export function reseatAllOnSlots(S, slots) {
+  if (!S) return 0;
+  let n = 0;
+  for (const p of (S.pots || [])) if (reseatOnSlot(p, slots)) n++;
+  if (S.firstPlay && S.firstPlay.enabled)
+    for (const site of cropSites(S.firstPlay)) if (reseatOnSlot(site, slots)) n++;
+  for (const c of (S.cuttings || [])) if (reseatOnSlot(c, slots)) n++;
+  return n;
+}
+
 export function rehomePot(S, slots, log, room = null) {
   const p = pot0(S);
   if (!p) return null;
@@ -616,7 +659,7 @@ export function rehomePot(S, slots, log, room = null) {
     const surfaces = room && room.surfaces;    // Set<uid> — 지금 방에 있는 가구
     const gone = p.at.onUid && surfaces && !surfaces.has(p.at.onUid);
     const outside = room && room.size && !inRoom(p.at, room.size);
-    if (!gone && !outside) return p.slotId;
+    if (!gone && !outside) { reseatOnSlot(p, slots); return p.slotId; }
     if (log) log(gone
       ? `화분 회수 — 받치던 ${p.at.onUid} 이(가) 사라졌습니다`
       : '화분 회수 — 자리가 방 밖입니다');
