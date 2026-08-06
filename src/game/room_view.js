@@ -63,6 +63,40 @@ import { nearestSlot, slotHolds, freeSlotId, isFreeSlotId, FREE_PREFIX,
 const AT = p => new URL(p, import.meta.url).href;
 
 /* ============================================================
+   ★ 옮길 때의 걸음 — SNAP_DIV (박사님 2026-08-06)
+   ------------------------------------------------------------
+   지시: "이동을 한 격자 단위나 1/2 격자 단위로 옮겨지게 하자."
+
+   크기를 세는 칸(place.GRID_UNIT 0.05m)은 안 건드린다. 굵게 하는 것은 **놓는 걸음**뿐이다.
+   0.05 로 끌면 5m 방에서 한 칸이 폰 2px 이라 손이 가는 대로 서고, 그래서 줄이 안 맞는다.
+   눈에 보이는 칸은 0.25m(place.GRID_CELL)다 — 그 칸이나 반 칸에 떨어져야 사람 눈에
+   '맞았다'고 읽힌다. 걸음을 새로 지어내지 않고 이미 그리고 있는 칸을 나눠 쓴다.
+
+     SNAP_DIV = 1   한 칸  0.25m
+     SNAP_DIV = 2   반 칸  0.125m   ← 기본
+
+   ⚠ 0.125 는 0.05 의 배수가 아니다. place.cellBox 는 좌표를 0.05 칸으로 반올림해 겹침을
+     정수로 보므로, 반 칸에 선 물건은 **겹침 판정이 최대 0.025m 어긋난다.**
+     벽 밖 판정은 실수 좌표를 그대로 쓰므로(furnitureFit 의 rectCorners) 영향이 없다.
+     칸 정수를 한 치도 안 틀리게 하려면 SNAP_DIV = 1 로 두면 된다 — 0.25 는 0.05 의 배수다.
+============================================================ */
+export const SNAP_DIV = 2;
+export const MOVE_STEP = GRID_CELL / SNAP_DIV;
+
+/* 발자국 한 변을 걸음에 맞춘다. 규약은 place.snapSpan 그대로다 —
+   칸 중심이 아니라 **앞 모서리**를 선에 맞춘다(홀수·짝수 어느 쪽이든 점유 칸이 정수).
+   다른 것은 그 선의 간격(step) 하나뿐이고, 크기는 여전히 GRID_UNIT 으로 센다.
+   ★ step 을 안 주면 place.snapSpan 과 **같은 값**이 나온다 — 예전 길이 그대로다. */
+export function snapSpanStep(center, sizeM, step = GRID_UNIT) {
+  if (!Number.isFinite(center)) throw new RangeError(`[격자] 중심이 유한하지 않습니다: ${center}`);
+  if (!(step > 0)) throw new RangeError(`[격자] 걸음이 0 보다 커야 합니다: ${step}`);
+  const half = unitsFor(sizeM, GRID_UNIT) * GRID_UNIT / 2;
+  return Math.round((center - half) / step) * step + half;
+}
+/* 걸음 값 고르기 — 안 주면 예전대로 0.05 다. 옮기는 길만 MOVE_STEP 을 준다. */
+const stepOf = v => (Number.isFinite(v) && v > 0 ? v : GRID_UNIT);
+
+/* ============================================================
    폰 세로 기준값 — 기준 화면 390×844
 ============================================================ */
 const PHONE = { w: 390, h: 844 };
@@ -1923,13 +1957,13 @@ export async function createRoomView(canvas, opts = {}) {
      늘 같은 자리에 떨어진다. (문서: docs/handoff/roomview-grid.md)
 
      ★ 보이는 격자는 **바닥에만** 그린다. 선반마다 격자를 얹으면 방이 안 보인다. */
-  function snapOnSurface(x, z, potD, frame) {
-    if (!frame) return { x: snapSpan(x, potD), z: snapSpan(z, potD) };
+  function snapOnSurface(x, z, potD, frame, step) {
+    if (!frame) return { x: snapSpanStep(x, potD, step), z: snapSpanStep(z, potD, step) };
     const c = Math.cos(frame.rot || 0), s = Math.sin(frame.rot || 0);
     /* 면 좌표계로 (house.js 규약의 역변환) */
     const dx = x - frame.x, dz = z - frame.z;
-    const u = snapSpan(dx * c - dz * s, potD);
-    const v = snapSpan(dx * s + dz * c, potD);
+    const u = snapSpanStep(dx * c - dz * s, potD, step);
+    const v = snapSpanStep(dx * s + dz * c, potD, step);
     return { x: frame.x + u * c + v * s, z: frame.z - u * s + v * c };
   }
 
@@ -2059,7 +2093,8 @@ export async function createRoomView(canvas, opts = {}) {
         out.snapped = true; out.snappedTo = gov.slotId;
       } else {
         const frame = (!isFloor && ownHit) ? meshRect(ownHit.object) : null;
-        const sn = snapOnSurface(out.x, out.z, potD, frame);
+        /* opt.step 은 **옮기는 길**만 준다(반 칸 0.125m). 안 주면 예전대로 0.05 다. */
+        const sn = snapOnSurface(out.x, out.z, potD, frame, stepOf(opt.step));
         if (Math.abs(sn.x - out.x) > 1e-9 || Math.abs(sn.z - out.z) > 1e-9) out.snapped = true;
         out.x = +sn.x.toFixed(4); out.z = +sn.z.toFixed(4);
       }
@@ -3240,8 +3275,10 @@ export async function createRoomView(canvas, opts = {}) {
     /* 90° 돌면 폭·깊이가 바뀐다 — 스냅도 돌아간 발자국으로 해야 칸에 맞는다 */
     const swap = Math.round(rot / 90) % 2 !== 0;
     const w = swap ? sz.d : sz.w, d = swap ? sz.w : sz.d;
-    return { x: +snapSpan(pos.x, w).toFixed(4), z: +snapSpan(pos.z, d).toFixed(4), rot,
-             cells: { i: unitsFor(w), j: unitsFor(d), unit: GRID_UNIT } };
+    /* pos.step 은 **옮기는 길**만 준다(반 칸 0.125m). 안 주면 예전대로 0.05 다. */
+    const step = stepOf(pos.step);
+    return { x: +snapSpanStep(pos.x, w, step).toFixed(4), z: +snapSpanStep(pos.z, d, step).toFixed(4), rot,
+             cells: { i: unitsFor(w), j: unitsFor(d), unit: GRID_UNIT, step } };
   }
 
   /* ============================================================
@@ -5372,6 +5409,9 @@ export async function createRoomView(canvas, opts = {}) {
     },
     /* 길이[m] → 칸 수(올림). UI 가 "책상 24×12칸" 같은 표시를 만들 때 쓴다 */
     cellsOf(m) { return unitsFor(m); },
+    /* ★ 옮길 때의 걸음[m] — 화면이 surfaceAt·previewFurnitureAt 에 그대로 넣는다.
+       값과 근거는 이 파일 머리말(SNAP_DIV) 참고. 기본은 반 칸 0.125m 다. */
+    moveStep() { return MOVE_STEP; },
     /* 가구를 격자에 앉힌 좌표 — 미리보기 없이 미리 물어볼 때 */
     snapFurniture(uid, pos) { try { return snapFurniture(uid, pos || {}); } catch (e) { throw fail(e); } },
 
