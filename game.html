@@ -3768,6 +3768,15 @@ const furnPicked = {
   },
   beginMove() {
     if (!this.uid) return;
+    /* ★★ 등은 **상판에 물리는** 물건이라 길이 다르다 (2026-08-06 · lampmove-to-plan §3).
+       가구는 바닥에 놓지만 집게등은 창턱·책상 같은 **상판**에 물린다. 그래서 자리 판정도
+       놓는 함수도 따로다(lampFit·commitLampAt). 손짓은 같게 두되 길만 가른다.
+       ⚠ 못 옮기는 등이면 **왜 못 옮기는지** 그 자리에 적는다 — 조용히 아무 일도 안 나면
+         고장으로 읽힌다(바 등은 선반 밑 붙박이다). */
+    const why = (() => { try { return roomView.lampImmovableReason(this.uid); } catch { return null; } })();
+    const isLamp = (() => { try { return (roomView.lamps() || []).some(l => l.uid === this.uid); } catch { return false; } })();
+    if (why) { $('dropLabel').textContent = why; $('dropLabel').classList.add('no'); return; }
+    if (isLamp) { this.mode = 'lampmove'; this.beginLampMove(); return; }
     this.mode = 'move';
     const r = $('roomCanvas').getBoundingClientRect();
     this.originX = this.tapX ?? (r.left + r.width / 2);
@@ -3802,6 +3811,33 @@ const furnPicked = {
     $('dropLabel').classList.add('ok');
     this.paintAim();
   },
+  /* ── 등 옮기기 — 상판에 물린다 (lampmove-to-plan §3) ──
+     ★가구 옮기기와 **같은 손짓**이다: 끌면 유령이 따라오고 손을 떼면 그 자리에 놓인다.
+       다른 것은 「어디에 놓이나」뿐 — 바닥이 아니라 **화분이 올라갈 수 있는 상판**이다. */
+  beginLampMove() {
+    const r = $('roomCanvas').getBoundingClientRect();
+    this.originX = this.tapX ?? (r.left + r.width / 2);
+    this.originY = this.tapY ?? (r.top + r.height / 2);
+    $('stage').classList.add('furnmoving');
+    $('dropLabel').textContent = '아무 데나 잡고 끌어 상판에 물리세요';
+    /* 물릴 수 있는 상판을 원으로 알린다 — 어디에 놓을 수 있는지 안 보이면 헤맨다 */
+    try {
+      const ids = (roomView.lampMounts() || []).flatMap(m => m.slots || []);
+      roomView.highlightSlots(ids);
+    } catch { }
+  },
+  lampDragTo(dx, dy) {
+    const hit = freePlace.surfaceAt(this.originX + dx, this.originY + dy, 0.2);
+    const lb = $('dropLabel');
+    if (!hit) { try { roomView.previewLampAt(this.uid, null); } catch { } ; lb.textContent = '방 안 상판으로'; return; }
+    let r = null;
+    try { r = roomView.previewLampAt(this.uid, { x: hit.x, z: hit.z, lift: 0 }); } catch { }
+    this.ghost = r && r.ok ? { x: hit.x, z: hit.z, lift: 0 } : null;
+    const ok = !!(r && r.ok);
+    lb.textContent = ok ? '여기에 물립니다' : ((r && r.reason) || '여기엔 못 물립니다');
+    lb.classList.toggle('ok', ok); lb.classList.toggle('no', !ok);
+  },
+
   /* 겨누는 동안 **어디가 밝아지는지 보여 준다** — 안 보여 주면 눈 감고 돌리는 것이다.
      자리 등급(초록·노랑·빨강)을 그대로 쓴다. 겨눌 때마다 등급이 바뀌면 그게 곧 조준경이다. */
   paintAim() {
@@ -3835,6 +3871,7 @@ const furnPicked = {
   },
   move(e) {
     if (this.mode === 'move') { this.dragTo(e.clientX - this.x0, e.clientY - this.y0); return; }
+    if (this.mode === 'lampmove') { this.lampDragTo(e.clientX - this.x0, e.clientY - this.y0); return; }
     if (this.mode === 'aim') {
       const R = this.range;
       /* 화면 폭 절반 = 한 바퀴(가구 돌리기와 같은 감각) · 화면 높이 절반 = 꺾임 전 범위 */
@@ -3877,6 +3914,26 @@ const furnPicked = {
         $('dropLabel').classList.add('no');
       }
       try { roomView && roomView.highlightSlots([]); } catch { }
+      if (this.uid) $('stage').classList.add('furnpicked');
+      return;
+    }
+    if (this.mode === 'lampmove') {
+      const uid = this.uid, to = this.ghost;
+      this.mode = null; this.ghost = null;
+      $('stage').classList.remove('furnmoving');
+      try { roomView.highlightSlots([]); roomView.clearLampPreview(); } catch { }
+      if (uid && to) {
+        try {
+          const r = await roomView.commitLampAt(uid, to);
+          /* 자리는 **가구와 같은 표**에 적는다 — 세이브가 저절로 따라온다(§3-3) */
+          setFurniturePlacement(S, r.uid, r.to, { size: io.light.room.size });
+          pushLog(S, `💡 ${$('furnName').textContent}을(를) 옮겼습니다 — 빛이 닿는 자리가 달라집니다`);
+          io.light.clearCache(); fillSlots(); draw();
+        } catch (e) {
+          $('dropLabel').textContent = (e && e.message) || '여기엔 못 물립니다';
+          $('dropLabel').classList.add('no');
+        }
+      }
       if (this.uid) $('stage').classList.add('furnpicked');
       return;
     }
