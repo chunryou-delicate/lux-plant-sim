@@ -94,9 +94,16 @@
   #topbar #resWhen{font-size:11px;color:var(--gold);font-weight:700;letter-spacing:.2px}
   #topbar .resource b{font-weight:700;font-size:14px;color:var(--ink);line-height:1.15}
   #topbar .r-food b{color:var(--gold)}
-  #topbar .r-sta b{color:var(--leaf);letter-spacing:1px}
-  /* 손이 바닥나면 붉게 — 위에서도 한눈에 보여야 "왜 안 눌리지"가 안 생긴다 */
+  #topbar .r-sta b{color:#ff6b63;letter-spacing:1px}
+  /* ★ 게이지 — 남은 만큼 붉게 찬다. 줄어드는 쪽(바닥)은 어둡게 남겨 "얼마나 썼나"도 보인다.
+     ⚠ 폭을 %로 준다. 칸 너비는 화면마다 다르고 px 로 박으면 좁은 폰에서 삐져나온다. */
+  #topbar .r-sta .gauge{display:block;width:100%;height:4px;margin-top:3px;border-radius:3px;
+    background:rgba(255,255,255,.13);overflow:hidden}
+  #topbar .r-sta .gauge u{display:block;height:100%;width:0;border-radius:3px;text-decoration:none;
+    background:linear-gradient(90deg,#ff4d43,#ff8a62);transition:width .18s ease}
+  /* 손이 바닥나면 더 짙게 — 위에서도 한눈에 보여야 "왜 안 눌리지"가 안 생긴다 */
   #topbar .r-sta.empty b{color:#e8615a}
+  #topbar .r-sta.empty .gauge u{background:#8d2b26}
 
   /* ── 방 전경 = 무대 ───────────────────────────────────────────────── */
   #stage{flex:1 1 auto;min-height:0;position:relative;background:#0f0c16}
@@ -766,7 +773,10 @@
            ⚠ 「아낀 식비」를 뺐다 — 살림 장부에 그대로 있고, 위에서 늘 보여야 하는 값은
              **지금 쓸 수 있는 것**(돈·손)이지 지나간 합계가 아니다. -->
       <div class="resource r-food"><span id="resFoodLabel">소지금</span><b id="resFood">—</b></div>
-      <div class="resource r-sta"><span>오늘 손</span><b id="resSta">—</b></div>
+      <!-- ★★ 2026-08-06 박사님: "오늘 손이 아니라 **체력**하고 빨간 게이지 레인지 하고, 10/10 표현해."
+           숫자만으로는 "많이 남았나"가 한눈에 안 온다 — 막대가 그 일을 한다. -->
+      <div class="resource r-sta"><span>체력</span>
+        <b id="resSta">—</b><i class="gauge"><u id="resStaFill"></u></i></div>
     </div>
   </header>
 
@@ -1604,7 +1614,7 @@ function buildGuide() {
   const rows = [
     [$('resDay'),   '오늘 날짜와 시각',            'up'],
     [$('resFood'),  '지금 가진 돈',                'up'],
-    [$('resSta'),   '오늘 손질할 수 있는 횟수',      'up'],
+    [$('resSta'),   '체력 — 오늘 돌볼 수 있는 횟수',  'up'],
     [$('stage'),    '방을 끌면 돌아갑니다 · 두 손가락으로 확대\n화분을 누르면 [이동] [회전]', 'mid'],
     [$('quest'),    '지금 할 일',                  'down'],
     [$('next'),     '하루를 보냅니다',              'down'],
@@ -2500,8 +2510,33 @@ function actBar(on, ko, p01) {
             자르기 → harvest(손을 뻗어 따는 동작)
             분갈이 → sow    (ACT_SPEC.sow 의 클립 이름이 말 그대로 'repot' 이다)
           ⚠ room_view.js 는 다른 작업자 것이라 손대지 않는다. */
+/* ★★★ 2026-08-06 — **연출이 규칙을 막지 못하게 한다** (박사님: "거두기 심기 물주기
+     다 버튼이 안 먹혀").
+   ------------------------------------------------------------
+   여기가 어떻게 죽었나:
+     ① `acting` 은 `roomView.actAt` 이 `onDone`/`onFail` 을 불러 줘야 풀린다. 그런데
+        그 안은 `await walkToXZ(...)` 를 거친다 — 걸음이 안 끝나면 **둘 다 안 불린다.**
+        `.catch()` 는 거절될 때만 도므로 조용히 끝나면 그것도 안 돈다.
+        ⇒ `acting` 이 참인 채로 남고, 그 뒤로 **거두기·심기·물주기가 전부 죽는다.**
+        말풍선은 멀쩡히 떠 있으니 눌러도 아무 일이 없다 — 고장 중 가장 나쁜 종류다.
+     ② 못 가는 자리면 `onFail` 이 돌고 배너만 뜬 채 **아무 일도 안 했다.** 그런데
+        걸어가는 것은 보여 주기고, 거두는 것은 규칙이다. 사람이 못 갔다고 콩나물이
+        안 거둬지면 그건 규칙이 아니라 길찾기 사고다.
+   ⇒ 셋을 못 박는다:
+     · 약속이 **어떻게 끝나든** `acting` 을 푼다(`finally`).
+     · 그래도 안 끝나면 감시자가 푼다 — 연출은 몇 초짜리다. 그보다 오래 걸리면 사고다.
+     · 못 갔으면 **논리는 돌린다.** 분갈이에만 있던 `doAnyway` 를 기본으로 올린다. */
+const ACT_WATCHDOG_MS = 7000;
+function clearActing(why) {
+  if (!acting) return false;
+  acting = false; actBar(false);
+  if (why) console.warn('[동작] 잠금을 풀었습니다 —', why);
+  return true;
+}
 function doAct(kind, done, opt = {}) {
-  if (acting) return;                       /* 두 동작이 겹치면 게이지가 뒤엉킨다 */
+  /* ⚠ 막혀 있으면 **조용히 돌아가지 않는다.** 예전에는 여기서 그냥 return 이라
+     눌러도 아무 일이 없었고, 그게 곧 「버튼이 안 먹힌다」였다. */
+  if (acting) { banner('아직 하는 중입니다', '앞 동작이 끝나면 다시 눌러 주세요'); return; }
   const key = opt.key || cropKey();
   const ko = opt.ko || ACT_KO[kind] || '';
   /* ★★ 열쇠가 **풀리는지** 먼저 본다 (2026-08-05 · 창밖 워커 처방 ②).
@@ -2517,30 +2552,54 @@ function doAct(kind, done, opt = {}) {
   if (!canAct) { done(); return; }
   acting = true;
   actBar(true, ko, 0);
+  let settled = false;
+  const runOnce = () => { if (settled) return; settled = true; try { done(); } catch (e) { throw e; } };
+  /* 감시자 — 연출이 안 끝나도 판은 돈다. 이게 없으면 걸음 한 번 어긋난 뒤로 게임이 죽는다 */
+  const wd = setTimeout(() => {
+    if (clearActing('연출이 ' + ACT_WATCHDOG_MS + 'ms 안에 안 끝났습니다')) runOnce();
+  }, ACT_WATCHDOG_MS);
+  const stop = () => { clearTimeout(wd); clearActing(); };
   roomView.actAt(key, kind, {
     onProgress: (p, phase) => actBar(true, phase === 'walk' ? '가는 중' : ko, p),
-    onDone: () => { acting = false; actBar(false); try { done(); } catch (e) { throw e; } },
+    onDone: () => { stop(); runOnce(); },
     onFail: (why) => {
-      acting = false; actBar(false);
+      stop();
       /* ★못 갔으면 **왜인지 말한다.** 구석에 밀어 넣은 화분이 원인이라
-         이 안내가 곧 배치를 가르치는 재료가 된다. */
-      banner('가지 못했습니다', (why || '') + ' — 화분을 손이 닿는 자리로 옮겨 보세요');
-      /* ★분갈이는 못 갔다고 끝나면 **삽수가 죽는다.** 그래서 여기서만은
-         연출을 포기하고 논리를 돌린다 — 사람이 못 갔다고 조각이 시들면
-         그건 규칙이 아니라 길찾기 사고다(물주기가 사람 없이도 돌아가는 것과 같은 사상). */
-      if (opt.doAnyway) { try { done(); } catch (e) { throw e; } }
+         이 안내가 곧 배치를 가르치는 재료가 된다.
+         ⚠ 그래도 **일은 한다.** 연출은 보여 주기고 규칙은 규칙이다. */
+      banner('가지는 못했습니다', (why || '') + ' — 자리는 손이 닿는 데로 옮겨 보세요');
+      runOnce();
     }
-  }).catch(() => { acting = false; actBar(false); });
+  }).then(stop, () => { stop(); runOnce(); });
 }
 
+/* 지금 방 안에 **그 일을 하는 말풍선**이 떠 있나 (2026-08-06)
+   ------------------------------------------------------------
+   박사님: "밑에 물주기 버튼은 없애고 식물에 물주기 버튼에 손가락 가이드 표기해 줘",
+   그리고 "밑에 거두기 버튼 없애기로 했잖아". 같은 일을 두 곳에서 말하지 않는다.
+   ⚠ 그런데 「말풍선이 하나라도 있으면 아래를 전부 감춘다」로 하면 안 된다.
+     말풍선은 **한 번에 하나만** 뜬다(markList 가 급한 것 하나를 고른다). 그래서
+     물주기 말풍선이 떠 있는 동안 심기 버튼까지 사라져 **할 수 있는 일이 감춰진다.**
+   ⇒ 하는 일이 **같을 때만** 감춘다. */
+function markSays(re) {
+  const box = $('marks');
+  if (!box) return false;
+  return [...box.querySelectorAll('.mark')].some(el => re.test(el.textContent || ''));
+}
 function drawHarvest() {
   const b = $('harvestCrop');
   if (!b) return;
   let st = null; try { st = cropHarvestStatus(S); } catch { }
-  const show = !!(st && st.ready);
+  /* ★★ 식물 위 말풍선이 떠 있으면 **아래 버튼은 안 뜬다** (2026-08-06 박사님:
+       "밑에 거두기 버튼 없애기로 했잖아" — 물주기와 **같은 규칙**이다).
+     ⚠ 둘이 같이 뜨면 같은 일을 두 번 말한다. 게다가 아래 띠가 통째로 밀려서
+       [다음 날]·[빨리감기]가 화면 밖으로 나간다.
+     ⇒ 말풍선이 있으면 거기서 거둔다. 말풍선이 없을 때(방이 안 떴거나 가려졌을 때)만
+       아래 버튼으로 떨어진다 — 안 그러면 거둘 길이 통째로 사라진다. */
+  const show = !!(st && st.ready) && !markSays(/거두/);
   b.style.display = show ? '' : 'none';
   /* ⚠ 익은 것만 센다 — sirus 는 가진 시루 전부라 안 익은 것까지 세어 버린다 */
-  const n = st.readyCount || 0;
+  const n = (st && st.readyCount) || 0;
   if (show) b.textContent = n > 1 ? `🥣 콩나물 거두기 (${n}개)` : '🥣 콩나물 거두기';
 }
 
@@ -2567,7 +2626,8 @@ function drawSow() {
        (시루 하나에 씨앗 한 봉지 — state.js §resowCrop). */
   const spare = st ? (st.stock.siru || 0) : 0;
   const want = need + spare;                       // 이번에 씨앗이 들어갈 시루 수
-  btn.style.display = want > 0 ? '' : 'none';
+  /* 거두기·물주기와 **같은 규칙** — 심는 말풍선이 떠 있으면 아래 버튼은 안 뜬다 (2026-08-06) */
+  btn.style.display = (want > 0 && !markSays(/심기/)) ? '' : 'none';
   if (!want) return;
   /* 씨앗이 모자라도 **버튼은 보인다** — 안 보이면 왜 못 심는지 알 길이 없다.
      회색으로 두고 사유를 말한다. */
@@ -2615,8 +2675,7 @@ function drawWater() {
      말풍선이 물건 위에 있어서 "무엇에 주는지"까지 말해 주므로 그쪽이 낫다.
      ⚠ 말풍선이 안 뜨는 상황(대화 중·확대 중·방이 안 뜸)에서는 아래 버튼이 나온다.
        그때 버튼마저 없으면 물을 줄 길이 사라진다. */
-  const hasMark = !!($('marks') && $('marks').querySelector('.mark'));
-  if (hasMark) { b.style.display = 'none'; return; }
+  if (markSays(/물/)) { b.style.display = 'none'; return; }
   b.style.display = '';
   b.disabled = !st.needsWater;
   b.classList.toggle('done', !st.needsWater);
@@ -2872,6 +2931,8 @@ function drawJourney() {
   if (staEl && sv) {
     staEl.textContent = `${sv.left}/${sv.max}`;
     staEl.parentElement.classList.toggle('empty', sv.empty);
+    const fill = $('resStaFill');
+    if (fill) fill.style.width = `${Math.max(0, Math.min(100, sv.left / Math.max(1, sv.max) * 100))}%`;
   }
   drawTutorial(living);
   $('cropMeter').style.width = `${Math.min(100, crop.ageDays / crop.harvestDays * 100)}%`;
@@ -4255,6 +4316,9 @@ function bindPicked() {
 function cancelAnyDrag(why) {
   let did = false;
   try { if (drag.on) { drag.cancel ? drag.cancel() : drag.end(); did = true; } } catch { }
+  /* ★ 동작 잠금도 같이 푼다 (2026-08-06) — 창을 벗어난 사이 걸음이 끊기면
+     `acting` 이 참으로 남아 그 뒤 모든 버튼이 죽는다. */
+  if (clearActing(why)) did = true;
   try { if (picked.mode) { picked.mode = null; picked.ghost = null; did = true;
         $('stage').classList.remove('moving'); freePlace.clear(); freePlace.rings(false); freePlace.grid(false); } } catch { }
   try { if (furnPicked.mode) { furnPicked.mode = null; furnPicked.ghost = null; did = true;
@@ -4343,7 +4407,11 @@ function dayCycleStart() {
    64초면 방을 만지는 동안 볕이 **천천히 옮겨 가는 것**이 보이고 거슬리지 않는다.
    ⚠ 밤도 지나간다. 그때 방이 깜깜해지지는 않는다 — room_view 가 낮이 아니면
      천장등을 켠다(§isDay). 그래서 예전처럼 "저녁에 멈춰 서서 고장난 것처럼" 보이지 않는다. */
-const IDLE_SWEEP_MULT = 40;
+/* ★★ 2026-08-06 — 40 → 90 (박사님: "시간이 되게 빨리 가는데").
+   64초에 한 바퀴는 방을 만지는 동안 볕이 **눈에 띄게 뛰었다.** 144초면 같은 조작을 하는
+   동안 볕이 한 뼘쯤 옮겨 가는 정도라, 흐르는 것은 보이되 쫓기지 않는다.
+   ⚠ 빨리감기 속도(DAY_SWEEP_MS)는 안 건드린다 — 그건 "하루를 보여 주는" 속도라 다른 일이다. */
+const IDLE_SWEEP_MULT = 90;
 function dayCycleStop() {
   if (!dayLoop) return;
   cancelAnimationFrame(dayLoop); dayLoop = null;
@@ -4352,12 +4420,31 @@ function dayCycleStop() {
 
 /* 평소 시계 — 해만 돈다. 날짜는 안 넘긴다. */
 let idleLoop = null;
+/* ★★ 시간이 멈추는 때 (2026-08-06 박사님: "시간이 되게 빨리 가는데 대화창 뜰 때는
+     시간이 일시정지 되게 하자. 가이드할 때나.")
+   ------------------------------------------------------------
+   대사를 읽는 동안에도 해가 돌면 **읽는 것이 벌**이 된다. 천천히 읽는 사람이 손해를
+   보는 게임은 안 만든다. 안내판을 펴 놓은 동안도 같다 — 조작을 배우는 시간은
+   게임 시간이 아니다.
+   ⚠ 「멈춤」을 상태로 안 둔다. 매 프레임 **지금 멈춰야 하나**를 묻는다 —
+     상태로 두면 켜고 끄는 자리를 하나 빠뜨리는 날 시간이 영영 멈추거나 영영 돈다. */
+function clockPaused() {
+  const st = $('stage');
+  return !!(st && st.classList.contains('talking'))
+      || !!($('guide') && $('guide').classList.contains('on'))
+      || document.hidden;
+}
 function idleClockStart() {
   if (idleLoop || dayLoop || !roomView) return;
   let prev = performance.now();
   const step = (now) => {
-    if (!idleLoop) return;
-    dayPhase = (dayPhase + (now - prev) / (DAY_SWEEP_MS * IDLE_SWEEP_MULT)) % 1; prev = now;
+    if (!idleLoop) return;                 /* ⚠ 멈춤 검사보다 **먼저** — 안 그러면 멈춘 시계가 되살아난다 */
+    if (clockPaused()) { prev = now; idleLoop = requestAnimationFrame(step); return; }
+    /* ★ 한 걸음을 250ms 로 자른다. 탭을 떠나 있으면 rAF 가 아예 안 도는데,
+       돌아온 첫 걸음의 간격은 **떠나 있던 시간 전부**다 — 안 자르면 해가 껑충 뛴다
+       (몇 분 자리를 비우면 아침에 나갔다 저녁에 돌아온다). */
+    const dt = Math.min(now - prev, 250);
+    dayPhase = (dayPhase + dt / (DAY_SWEEP_MS * IDLE_SWEEP_MULT)) % 1; prev = now;
     try { paintWhen(roomView.setDaylight(dayPhase)); } catch { }
     idleLoop = requestAnimationFrame(step);
   };
