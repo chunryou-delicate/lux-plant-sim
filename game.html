@@ -574,6 +574,21 @@
         border-right:1px solid rgba(255,255,255,.09)}
   #stage{flex:1;position:relative;background:#0f0c16;overflow:hidden}
   #growth{position:absolute;inset:0;width:100%;height:100%;border:0}
+  /* 확대 창 위 게이지 — 아래쪽에 띠로 얹는다. 식물을 가리지 않는 자리다 */
+  #growGauge{position:absolute;left:12px;right:12px;bottom:14px;z-index:31;display:none;
+    padding:9px 12px;border-radius:13px;background:rgba(16,12,24,.82);
+    border:1px solid rgba(255,255,255,.10);backdrop-filter:blur(6px)}
+  #stage.zoom #growGauge{display:block}
+  #growGauge .gg-row{display:flex;align-items:baseline;gap:8px;margin-bottom:6px}
+  #growGauge b{font-size:13px;color:var(--ink);font-weight:700}
+  #growGauge span{font-size:11px;color:var(--dim)}
+  #growGauge .gg-bar{height:7px;border-radius:5px;background:rgba(255,255,255,.13);overflow:hidden}
+  #growGauge .gg-bar>i{display:block;height:100%;width:0;border-radius:5px;
+    background:linear-gradient(90deg,#8fd36f,#d5ef8b);transition:width .45s}
+  /* 안 자라는 중이면 띠가 회색이 되고 이유를 적는다 — 그게 이 게이지의 절반이다 */
+  #growGauge.stuck .gg-bar>i{background:linear-gradient(90deg,#7a7486,#9a94a6)}
+  #growGauge .gg-why{margin-top:5px;font-size:11px;color:#f0b45a;line-height:1.4}
+  #growGauge .gg-why:empty{display:none}
   #growth{transition:opacity .4s,filter .4s}
   /* ★ 식물이 없을 때는 무대를 **실제로 가린다** (2026-08-03).
      예전엔 opacity .18 + blur 라 "아직 몬스테라가 없습니다" 뒤로 화분·잎이 그대로 비쳤고,
@@ -764,6 +779,15 @@
       <button id="furnClose" class="ghost" aria-label="닫기">✕</button>
     </div>
     <iframe id="growth" src="./plant_grow.html?embed=game" title="식물 확대"></iframe>
+    <!-- ★★ 다음 단계까지 얼마나 왔나 (2026-08-06 박사님 · 베타테스터 "크는 게 안 보여 재미없다").
+         ★ 확대 창 **위에 얹는다** — plant_grow.html 은 다른 창 소유라 안 건드린다.
+         ★ 초보 모드에서만 뜬다. 게이지는 "얼마나 남았나"를 숫자로 말해 주는 것이라
+           고수 모드에서는 식물을 보고 읽는 것이 맞다(fillSlots 가 DLI 를 숨기는 것과 같은 판단). -->
+    <div id="growGauge">
+      <div class="gg-row"><b id="ggPhase">—</b><span id="ggNext"></span></div>
+      <div class="gg-bar"><i id="ggFill"></i></div>
+      <div class="gg-why" id="ggWhy"></div>
+    </div>
     <button id="closeZoom" aria-label="확대 닫기">✕</button>
     <div id="stageEmpty"><b><img src="./assets/ui/item_monstera.png" alt="">아직 몬스테라가 없습니다<i>콩나물을 수확하면 새로운 화분이 찾아옵니다.</i></b></div>
     <!-- ★ v0의 완료 조건이 걸린 자리 — "등을 켰더니 갈라지기 시작했어요"가 여기 뜬다 -->
@@ -2264,6 +2288,52 @@ function drawShop() {
    ★그런데 "자랐나"는 지금까지 검수 탭 개발 HUD 안에만 있었다 — 아무도 안 본다.
      자란 날과 안 자란 날이 화면에서 구별되지 않으면 그건 "안 자란다"와 같다.
    그래서 매 턴 한 줄로 말한다. 안 자랐으면 **왜**인지까지. */
+/* ══ 확대 창 게이지 — 다음 단계까지 얼마나 왔나 (2026-08-06) ═══════════════════
+   박사님: *"베타테스터가 100일까지 하는데 몬스테라가 크는 게 안 보여서 좀 재미가 없대.
+   다음 단계까지 [-----   ] 이케 게이지 차는 건 초보 모드에서는 보이게 하는 게 어떨까.
+   식물 누르면 뜨는 창에 보이게 하는 거야."*
+
+   ★★ 그 테스터의 화면을 보니 **실제로 안 자라고 있었다** — 화분이 책상(DLI 0.61)에 있어서
+     「7일평균 0.61 < 최소 3」이었다. 화면이 말은 했지만 그건 **하루짜리 로그**라
+     "지금 어디쯤인지"도 "며칠째 멈춰 있는지"도 안 보였다.
+   ⇒ 그래서 이 게이지는 **차오르는 것만 보여 주는 물건이 아니다.** 안 차는 것도 보여 준다 —
+     멈춰 있으면 띠가 회색이 되고 **왜 멈췄는지**를 그 자리에 적는다. 그게 절반이다.
+
+   ★ 값을 새로 세지 않는다 — `growthPhase()`(단계·진행·다음)와 `turn.growthBlocked`(이유)가
+     이미 있다. 화면이 또 세면 두 곳이 갈린다.
+   ⚠ 초보 모드에서만 뜬다. 고수는 식물을 보고 읽는 것이 맞다. */
+function drawGrowGauge() {
+  const box = $('growGauge');
+  if (!box) return;
+  const novice = !!(S.firstPlay && S.firstPlay.enabled);
+  const p = pot0(S);
+  if (!novice || !p) { box.style.display = 'none'; return; }
+  box.style.display = '';                 /* CSS 가 .zoom 일 때만 실제로 보여 준다 */
+  const t = lastTurn;
+  /* ★ 단계는 **살아 있는 값**에서 읽는다 — `lastTurn` 은 하루를 돌려야 생기므로,
+     갓 켠 판이나 세이브를 막 연 판에서는 null 이라 게이지가 빈 채로 뜬다.
+     `io.growth.growthPhase()` 는 지금 형태를 그대로 낸다(growth_adapter §137).
+     ⚠ 「왜 안 자라나」는 turn 에만 있다 — 그건 **어제 무슨 일이 있었나**라 turn 이 정본이 맞다. */
+  let ph = null;
+  try { ph = io.growth.growthPhase(); } catch { }
+  if (!ph) ph = t && t.growthPhase;
+  const why = t && (t.headroomBlocked || t.growthBlocked) || null;
+  box.classList.toggle('stuck', !!why);
+  $('ggPhase').textContent = (ph && ph.phaseKo) || '자라는 중';
+  $('ggNext').textContent = ph && ph.nextPhaseKo
+    ? `→ ${ph.nextPhaseKo}까지 ${Math.round((ph.progress01 || 0) * 100)}%`
+    : '';
+  $('ggFill').style.width = `${Math.round(((ph && ph.progress01) || 0) * 100)}%`;
+  /* ★ 멈춰 있으면 **며칠째인지**까지 말한다 — 하루짜리 로그로는 "계속 이런지"를 알 수 없다.
+     `daysPlanted`(돌본 날)와 `fedDays`(실제로 자란 날)의 차가 곧 멈춰 있던 날 수다. */
+  if (why) {
+    const still = Math.max(0, (p.daysPlanted || 0) - (p.fedDays || 0));
+    $('ggWhy').textContent = still > 1
+      ? `${why} · ${still}일째 그대로입니다`
+      : String(why);
+  } else $('ggWhy').textContent = '';
+}
+
 function drawPlantToday() {
   const el = $('plantToday');
   if (!el) return;
@@ -2802,6 +2872,7 @@ function draw() {
   drawHarvest();            /* 거둘 때가 됐나 */
   drawWater();              /* 물을 줘야 하나 */
   drawStamina();            /* 오늘 손이 얼마나 남았나 — 누르기 직전에 보는 값이다 */
+  drawGrowGauge();          /* 확대 창 — 다음 단계까지 얼마나 왔나 (안 차면 왜인지도) */
   drawSow();                /* 다시 심어야 하나 */
   try { drawMarks(); } catch (e) { console.warn('[말풍선]', e && e.message); }
   drawShop();               /* 주문·다시 심기·팔기 */
@@ -3140,6 +3211,7 @@ async function bootRoomView() {
     bootProgress(null);                      /* 진행 표시를 걷는다 */
     showGpuInfo();
     try { paintWhen(roomView.setDaylight(dayPhase)); } catch { }   /* 시작 시각을 적는다 */
+    idleClockStart();                      /* 방이 떴으니 해가 돌기 시작한다(위 §IDLE_SWEEP_MULT) */
     /* 캐릭터와 몬이를 세운다. 첫 플레이는 자취생 고정이고(story_arc.md 확정 —
        직업 선택은 초보 엔딩 뒤), 몬이는 오프닝부터 곁에 있어야 대사가 붕 뜨지 않는다.
        ⚠ 캐릭터가 있으면 idle 을 돌려야 해서 "놀 때 0장"이 깨진다 — 워커가 30fps 로 잘라 뒀다. */
@@ -4064,6 +4136,7 @@ function paintWhen(label) {
 }
 function dayCycleStart() {
   if (dayLoop || !roomView) return;
+  idleClockStop();                         /* 둘이 같이 돌면 해가 두 배로 간다 */
   let prev = performance.now();
   const step = (now) => {
     if (!dayLoop) return;
@@ -4073,12 +4146,45 @@ function dayCycleStart() {
   };
   dayLoop = requestAnimationFrame(step);
 }
+/* ★★ 빨리감기를 멈춰도 **시계는 계속 간다** (2026-08-06 박사님: "실시간으로 시간이 흐르는 게
+   표현이 지금 되고 있나?").
+   ------------------------------------------------------------
+   ⚠ 예전에는 `dayCycleStart` 가 **빨리감기에서만** 불렸고, 멈추면 한낮 12:00 에 **고정**됐다.
+     그래서 빨리감기를 안 누르는 플레이어에게는 시계가 영영 안 움직였다 —
+     베타테스터 화면의 「한낮 12:00」이 그것이다. 시간이 흐르는 게임인데 시간이 안 흘렀다.
+   ⇒ 멈춰도 시계는 돈다. 다만 **훨씬 느리게** — 빨리감기는 "하루가 지나가는 것을 보여 주는" 속도고,
+     평소는 "방에 볕이 도는 것"만 보이면 된다.
+   ★ 하루가 넘어가지는 않는다. 날짜를 넘기는 것은 [다음 날]·빨리감기뿐이다 —
+     시계가 저 혼자 날짜를 넘기면 플레이어가 안 누른 하루가 지나간다. 여기서는 **해만 돈다.**
+   ⚠ 방이 없으면 안 돈다(`roomView` 검사). 부팅 전에 돌면 아무 데도 안 그려진다. */
+/* ★ 평소 해가 도는 속도 — 빨리감기(1.6초에 하루)의 40배 = **한 바퀴 64초**.
+   빨리감기는 "하루가 지나가는 것을 보여 주는" 속도라 평소에 그 속도면 해가 뛰어다닌다.
+   64초면 방을 만지는 동안 볕이 **천천히 옮겨 가는 것**이 보이고 거슬리지 않는다.
+   ⚠ 밤도 지나간다. 그때 방이 깜깜해지지는 않는다 — room_view 가 낮이 아니면
+     천장등을 켠다(§isDay). 그래서 예전처럼 "저녁에 멈춰 서서 고장난 것처럼" 보이지 않는다. */
+const IDLE_SWEEP_MULT = 40;
 function dayCycleStop() {
   if (!dayLoop) return;
   cancelAnimationFrame(dayLoop); dayLoop = null;
-  /* 멈출 때는 한낮으로 되돌린다 — 저녁에 멈춰 서면 방이 어두운 채로 남아 "고장났나"가 된다 */
-  dayPhase = 0.5;
-  try { if (roomView) paintWhen(roomView.setDaylight(0.5)); } catch { }
+  idleClockStart();                        // 멈춘 자리에서 이어서 천천히 돈다
+}
+
+/* 평소 시계 — 해만 돈다. 날짜는 안 넘긴다. */
+let idleLoop = null;
+function idleClockStart() {
+  if (idleLoop || dayLoop || !roomView) return;
+  let prev = performance.now();
+  const step = (now) => {
+    if (!idleLoop) return;
+    dayPhase = (dayPhase + (now - prev) / (DAY_SWEEP_MS * IDLE_SWEEP_MULT)) % 1; prev = now;
+    try { paintWhen(roomView.setDaylight(dayPhase)); } catch { }
+    idleLoop = requestAnimationFrame(step);
+  };
+  idleLoop = requestAnimationFrame(step);
+}
+function idleClockStop() {
+  if (!idleLoop) return;
+  cancelAnimationFrame(idleLoop); idleLoop = null;
 }
 let ffNextWas = null;                      /* 빨리감기 전에 [다음 날]이 눌리는 상태였는지 */
 function ffPaint(on) {
