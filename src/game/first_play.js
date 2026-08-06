@@ -179,7 +179,31 @@ export const FIRST_PLAY_RULES = Object.freeze({
   /* ★ 2026-08-05 — 정본이 `CROP_KINDS[0].quality` 로 옮겨 갔다(작물마다 표가 다르다).
      여기 칸은 **그것을 가리키는 사본**이다 — 값을 두 곳에 적지 않는다.
      옛 호출부(`rules.quality`)가 그대로 도는 이유가 이 한 줄이다. */
-  quality: CROP_KINDS[0].quality
+  quality: CROP_KINDS[0].quality,
+
+  /* ============================================================
+     ★★★ 잉여 채소를 넘기는 값 — **정가의 몇 %인가** (2026-08-06 신설 · 아래 §잉여 판매)
+     ------------------------------------------------------------
+     ⚠⚠ **이 값은 아직 박사님이 안 정하셨다.** 0.70 은 econgap 이 「합격선을 넘는 조합」으로
+       권한 값일 뿐 확정이 아니다(`docs/handoff/econgap-to-plan.md §B-3`).
+       그래서 **여기 한 곳에만** 적는다 — 코드 어디에도 0.7 을 또 쓰지 않는다.
+
+     ★ 값이 왜 여기 있나 — `data/balance/` 는 이 창 소유가 아니라 못 고친다.
+       `cropKindSavedWon`(3,000/2,000/1,000)도 같은 이유로 여기 있고, 그 칸 바로 옆이
+       이 값의 자연스러운 자리다. 둘은 같은 표를 읽는 한 쌍이기 때문이다 —
+       한 회전분이 **밥으로** 얼마인가(위)와 **돈으로** 얼마인가(여기).
+     ★ 옮길 자리도 정해 둔다: 확정되면 `characters.json._meta.cropSurplusSaleRate` 로 간다.
+       `firstPlayRulesFromBalance` 가 **이미 그 칸을 먼저 읽는다** — 정본이 생기는 날
+       이 줄은 기본값(폴백)으로 조용히 물러난다. 그때 코드는 한 글자도 안 고쳐도 된다.
+
+     ★ 어느 값이 말이 되나 — 손익분기가 바닥이다(`shop.cropBreakEvenRate`).
+         콩나물 700원 / 3,000원 = **23.3%**   ← 이 아래는 씨앗값도 못 건진다
+         무순   600원 / 2,000원 = **30.0%**
+       econgap 실측: 시작 140만 + 콩13 에서 50%면 여유 +1일 · 60%면 +3일 · **70%면 +9일**.
+       ⇒ 「씨앗 비용보다는 살짝 이득」(박사님)이 70% 언저리에서 성립한다.
+     ★ 서사로도 100% 가 아니어야 한다 — 이건 **떨이**다. 곳간이 못 받아 버릴 것을
+       이웃·가게에 헐값으로 넘기는 것이라 제값을 못 받는 편이 앞뒤가 맞는다. */
+  cropSurplusSaleRate: 0.70
 });
 
 export const FIRST_PLAY_ASSETS = Object.freeze({
@@ -294,8 +318,18 @@ export function firstPlayRulesFromBalance(balance) {
   const kinds = CROP_KINDS.length;
   const cropSavedWonPerCycle = FIRST_PLAY_RULES.cropKindSavedWon
     .slice(0, kinds).reduce((a, b) => a + b, 0);
+  /* ★★ 잉여 판매가 — **정본이 생기면 그쪽을 먼저 읽는다** (2026-08-06 · §잉여 판매).
+     지금은 `characters.json._meta` 에 이 칸이 없어서 늘 폴백으로 떨어진다. 그래도 이 세 줄을
+     지금 두는 이유: 값이 확정되어 `_meta` 로 옮겨지는 날 **코드를 안 고쳐도 되게** 하려는 것이다.
+     ⚠ 0 ≤ rate 만 본다. 위끝을 안 막는 이유는 1.0(제값)이 말이 되는 값이기 때문이다 —
+       막아야 할 것은 위가 아니라 **손익분기 아래**이고, 그건 값이 아니라 판단이라
+       여기서 던지지 않고 `shop.cropBreakEvenRate` 로 **재서 보여 준다.** */
+  const rateFromMeta = meta && meta.cropSurplusSaleRate;
+  if (rateFromMeta != null && (!Number.isFinite(rateFromMeta) || rateFromMeta < 0))
+    throw new Error('[첫 플레이] characters.json의 잉여 판매가(cropSurplusSaleRate)가 올바르지 않습니다');
   return Object.freeze({
     ...FIRST_PLAY_RULES,
+    cropSurplusSaleRate: rateFromMeta ?? FIRST_PLAY_RULES.cropSurplusSaleRate,
     dailyFoodWon,
     mealWon: dailyFoodWon / mealsPerDay,
     dailyCropMealCap,
@@ -639,9 +673,25 @@ export function createFirstPlayState(opt = {}) {
       lastFoodSavedWon: 0,
       totalFoodSavedWon: 0,
       cashFoodWon: rules ? rules.dailyFoodWon : 0,
-      /* 못 먹고 쉬어 버린 몫. 팔지 않는다 — 콩나물은 지출 방어이지 수입이 아니다
-         (docs/food_economy.md 머리말). 한 회전분보다 많이 쌓이면 여기로 빠진다. */
-      lastSpoiledWon: 0
+      /* 못 먹고 쉬어 버린 몫. 한 회전분보다 많이 쌓이면 여기로 빠진다.
+         ★ 2026-08-06 — *"팔지 않는다"* 였던 줄이다. 이제 **이 몫만** 팔린다(§잉여 판매).
+           바뀐 것은 「채소를 판다」가 아니라 「버릴 것을 버리지 않는다」다 — 곳간(끼니)은
+           그대로이고, 곳간이 **못 받은 것**에만 값이 붙는다. */
+      lastSpoiledWon: 0,
+      /* ★★ 아직 안 넘긴 잉여 — **정가 기준 누적**이다 (2026-08-06 · §잉여 판매).
+         거둘 때마다 `overlapLostWon + spoiledWon` 이 여기 쌓이고, [잉여 팔기]가 비운다.
+         ⚠ **원이지 채소가 아니다.** 곳간(pantryWon)과 달리 여기 있는 값은 절대로 밥이 안 된다 —
+           애초에 곳간이 못 받은 몫이라 끼니로 돌아갈 길이 없다. 그래서 쌓아 둬도
+           「썩는 채소를 창고에 재는」 그림이 아니라 **아직 안 받은 떨이값**이다.
+         ⚠⚠ **아직 세이브에 안 실린다.** `save.js` 는 이 창 소유가 아니라 못 고쳤다 —
+           `packFirstPlay` 의 `food` 칸이 열쇠를 하나하나 적는 모양이라, 여기 칸을 늘려도
+           저장하면 사라진다(실제로 확인했다: 저장 → 불러오기 뒤 0원). 안 넘긴 잉여를 안고
+           저장하면 그만큼 잃는다. 고칠 세 줄은 인계 문서 `cropsale-to-plan.md §세이브` 에 있다.
+         ⚠ 그래서 `takeCropSurplus` 는 **거래를 두 쪽으로 안 나눈다** — 비우는 것과 값을 내는 것이
+           한 번에 끝난다. 중간 상태가 있으면 그 사이에 저장하는 판이 생긴다. */
+      surplusWon: 0,
+      lastSurplusWon: 0,             // 직전 수확이 낸 잉여 (표시용)
+      totalSurplusSoldWon: 0         // 지금까지 실제로 받은 돈 (판매가를 곱한 뒤의 값)
     },
     monstera: {
       arrived: false,
@@ -1182,6 +1232,13 @@ export function harvestBeansprout(fp, opt = {}) {
   const lead = perPot[0];
   fp.food.lastHarvestMeals = lead.meals;
   fp.food.lastSpoiledWon = spoiledTotal;
+  /* ★★ 잉여를 장부에 적는다 (2026-08-06 · 아래 §잉여 판매).
+     **셈은 한 글자도 안 바뀐다** — 곳간에 들어간 값(savedTotal)도, 쉰 값(spoiledTotal)도
+     예전 그대로다. 여기서 하는 일은 「버려질 몫이 얼마였나」를 **기억해 두는 것뿐**이다.
+     ⇒ 그래서 이 줄은 기존 검사·재현을 못 건드린다. 파는 것은 뒤의 손 동작이다. */
+  const surplusWon = lostTotal + spoiledTotal;
+  fp.food.lastSurplusWon = surplusWon;
+  fp.food.surplusWon = Math.max(0, Math.round((fp.food.surplusWon || 0) + surplusWon));
   if (day != null) {
     fp.food.harvestDay = day;
     fp.food.harvestedOnDayByKind = onDayByKind;
@@ -1214,6 +1271,10 @@ export function harvestBeansprout(fp, opt = {}) {
     overlapLostWon: lostTotal,
     overlapCount: perPot.filter(x => x.overlapIndex > 0).length,
     spoiledWon: spoiledTotal,
+    /* ★ 이번 수확이 낸 잉여(정가) · 아직 안 넘긴 잉여 누적(정가) — 화면이 [잉여 팔기]를
+       켤 근거다. **값(원)이 아니라 정가**임에 주의: 실제로 받는 돈은 판매가를 곱한 뒤다. */
+    surplusWon,
+    surplusPendingWon: fp.food.surplusWon,
     cycleDays: rules.harvestDays,
     /* ★ 거둔 횟수는 **종류를 다 세어** 낸다 — 무순만 거둔 날에도 늘어야 사건이 안 빠진다 */
     harvestCount: cropSites(fp).reduce((a, s) => a + (s.harvestCount || 0), 0),
@@ -1288,6 +1349,79 @@ export function eatFromPantry(fp) {
     mealsUsed: Math.floor(use / rules.mealWon),
     cashFoodWon: fp.food.cashFoodWon
   };
+}
+
+/* ============================================================
+   ★★★ §잉여 판매 — **끼니가 못 될 몫만 판다** (2026-08-06 신설)
+   ------------------------------------------------------------
+   박사님 확정(2026-08-05): *"잉여 채소를 팔 수 있게 해서 오래 노가다하면 일단 마칠 수는 있게.
+   씨앗 비용보다는 살짝 이득이게."*
+
+   ## 무엇이 「잉여」인가 — **새로 정하지 않았다. 코어가 이미 갖고 있던 두 값이다.**
+
+     ㉠ `overlapLostWon`  같은 날 겹쳐 거둬 **곳간에 아예 안 들어간 몫** (§겹침)
+                          — 표가 3,000 → 2,000 → 1,000 → 0 으로 깎은 그 차액이다
+     ㉡ `spoiledWon`      곳간 한도를 넘어 **쉬어서 버려진 몫** (harvestBeansprout)
+
+   ★★ **이 둘이 잉여의 전부이고, 그래서 끼니를 못 판다.**
+     둘 다 정의상 **곳간에 못 있는 값**이다 — ㉠ 은 애초에 안 들어갔고 ㉡ 은 넘쳐 나갔다.
+     밥은 `eatFromPantry` 가 **곳간에서만** 꺼낸다(`pantryWon`). 파는 함수는 곳간을
+     **한 번도 안 만진다.** 그래서 "끼니로 쓸 수 있는 것은 안 팔린다"가 검사로 지키는 약속이
+     아니라 **구조**다. 시루가 하나뿐인 판에서는 잉여가 늘 0 이라 팔 것이 아예 없다.
+
+   ## ★ 그러면 「하루 저감 상한을 넘긴 몫」과 어떤 사이인가 — **같은 문지기의 앞뒤다**
+
+     같은 날 안에서  → 겹침 표가 자른다        → ㉠ 로 떨어진다
+     여러 날에 걸쳐  → 곳간 한도가 넘친다      → ㉡ 로 떨어진다
+                        (곳간은 하루 `dailyCropSaveWon` 씩만 빠지므로, 그보다 많이 들어오면
+                         반드시 한도에 닿는다 — ㉡ 는 상한 초과가 **며칠 걸려** 드러난 모습이다)
+
+     ⇒ 하루 저감 상한(5,000원)은 그대로 살아 있고, 이 함수는 그 상한을 **한 푼도 못 올린다.**
+       올릴 수 있었다면 「식물로 밥값을 아낀다」가 「식물을 판다」로 바뀌었을 것이다.
+
+   ## ★ 왜 「쉰 것을 판다」가 앞뒤가 맞나 — 그래서 **떨이**다
+   `spoiledWon` 은 곳간이 못 받아 **결국 버릴** 몫이다. 그걸 알면서 그날 넘기면 쉬지 않는다.
+   대신 제값은 못 받는다 — 급히 넘기는 것이라 그렇다. 판매가가 100%가 아닌 이유가 여기 있고,
+   그 값은 `FIRST_PLAY_RULES.cropSurplusSaleRate` 한 곳에만 있다(**아직 미확정**).
+   ⚠ 그래서 `loop.harvestCrop` 의 로그는 여전히 *"쉬었습니다"* 라고 말한다 — 안 판다면 정말
+     쉬기 때문이다. 문구를 다듬는 것은 그 파일 소유자의 몫이다(인계 문서에 적었다).
+
+   ## ★ 쌓아 둬도 되나 — 된다. **이건 채소가 아니라 아직 안 받은 값이다**
+   `fp.food.surplusWon` 은 원이고, 곳간과 달리 **밥으로 돌아갈 길이 없다.** 며칠 모았다 한 번에
+   넘겨도 살림의 총액이 같다(econgap 의 장부가 매일 넘긴 것과 같은 값을 낸다). 날짜 제한을
+   두면 빨리감기가 잉여를 통째로 버려 **잰 값과 어긋난다** — 그래서 안 둔다.
+
+   ## ★ 지갑은 여기서 안 만진다
+   이 모듈의 오랜 규칙 그대로다(§다시 심는다: *"씨앗값은 호출부가 낸다"*).
+   `takeCropSurplus` 는 장부를 비우고 **얼마인지만** 낸다. 돈으로 바꾸는 것은
+   `state.sellCropSurplus(S)` 이고, 지갑에 넣는 것은 `shop.creditCropSurplus` 다.
+============================================================ */
+
+/* 지금 판매가 — 정본은 `rules.cropSurplusSaleRate`(= _meta 아니면 FIRST_PLAY_RULES). */
+export function cropSurplusRateOf(fp) {
+  const rules = fp && fp.rules;
+  const r = rules ? rules.cropSurplusSaleRate : FIRST_PLAY_RULES.cropSurplusSaleRate;
+  return Number.isFinite(r) && r >= 0 ? r : 0;
+}
+
+/* 지금 넘기면 얼마를 받나 — **상태를 안 바꾼다.** 버튼을 켤지 흐리게 할지의 근거다.
+   반환 { pendingWon(정가) · rate · won(실수령) · canSell } */
+export function cropSurplusQuote(fp) {
+  const pendingWon = Math.max(0, Math.round((fp && fp.food && fp.food.surplusWon) || 0));
+  const rate = cropSurplusRateOf(fp);
+  const won = Math.round(pendingWon * rate);
+  return { pendingWon, rate, won, canSell: pendingWon > 0 && won > 0 };
+}
+
+/* 장부를 비우고 받을 값을 낸다. **지갑은 안 만진다**(위 §잉여 판매 마지막 줄).
+   ⚠ 곳간(`pantryWon`)을 안 건드린다 — 그 한 줄이 이 계통의 전부다. */
+export function takeCropSurplus(fp) {
+  if (!fp || !fp.food) throw new Error('[잉여] 첫 플레이 상태가 없습니다');
+  const q = cropSurplusQuote(fp);
+  if (q.pendingWon <= 0) return { ...q, won: 0 };
+  fp.food.surplusWon = 0;
+  fp.food.totalSurplusSoldWon = Math.round((fp.food.totalSurplusSoldWon || 0) + q.won);
+  return q;
 }
 
 /* ★ 다시 심는다 — **막다른 길을 없애는 함수** (2026-08-03 신설).

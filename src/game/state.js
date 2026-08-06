@@ -15,11 +15,12 @@
 
 import { createFirstPlayState, placeBeansprout, placeCrop, resowBeansprout, waterBeansprout,
          beansproutWaterStatus, beansproutHarvestStatus, BEANSPROUT_ID,
-         CROP_SITE_IDS, cropKindOf, cropSites, cropSiteOf } from './first_play.js';
+         CROP_SITE_IDS, cropKindOf, cropSites, cropSiteOf,
+         cropSurplusQuote, takeCropSurplus } from './first_play.js';
 import { createTutorialState, yearDay0Of } from './tutorial.js';
 /* 체력 — 하루에 돌볼 수 있는 양. 규칙은 전부 그쪽 모듈이 갖는다(docs/stamina.md) */
 import { spend as spendStamina, canAct as canActStamina, createStaminaState } from './stamina.js';
-import { createShopState, useStock } from './shop.js';
+import { createShopState, useStock, creditCropSurplus } from './shop.js';
 import { atFromSlot, isFreeSlotId, makeAt, resolvePlacement,
          inRoom, assertFurnitureAt } from './place.js';
 
@@ -535,6 +536,57 @@ export function resowCrop(S, opt = {}) {
   return { ...r, seedsUsed, sirusAdded, kind: kindId,
            events: [{ id: 'crop_resown', ko: `${k.ko}을(를) 다시 심었습니다`, kind: kindId,
                       sirus: r.sirus, resown: r.resown, cycle: r.cycle, seedsUsed }] };
+}
+
+/* ★★ 잉여 채소를 넘긴다 — **재배(first_play)와 지갑(shop)을 한 동작으로** (2026-08-06 신설).
+   ------------------------------------------------------------
+   `resowCrop` 과 **같은 결**이다: 규칙은 first_play 가, 지갑은 shop 이 갖고, 둘을 여기서 묶는다.
+   게임 화면·재현은 **이 함수 하나만** 부르면 된다.
+
+   ★ 무엇이 팔리나 — `first_play.js §잉여 판매` 가 정본이다. 한 줄로 줄이면:
+     **곳간이 못 받은 몫**(겹쳐서 못 받은 것 + 넘쳐서 쉰 것)만 팔린다. 곳간(끼니)은 안 만진다.
+
+   ★ 체력을 안 쓴다. 물주기·수확·심기는 **돌보는 손**이지만 넘기는 것은 그 축이 아니다
+     (`shop.sellPot`·`sellCutting` 도 체력을 안 쓴다 — 파는 일에 체력을 물린 적이 없다).
+     ⚠ 이건 판단이다. 만약 물리게 되면 콩나물 15시루가 삽수를 못 자르는 문제(econgap §A-3)가
+       한 칸 더 나빠진다 — 그래서 지금은 안 물린다. 바꾸려면 stamina 창과 같이 정해야 한다.
+
+   반환 { won, pendingWon, rate, cashWon, kind, events } */
+export function sellCropSurplus(S, opt = {}) {
+  const fp = S && S.firstPlay;
+  if (!fp || !fp.enabled)
+    throw new Error('[잉여] 첫 플레이 상태가 없습니다 — 넘길 잉여가 없습니다');
+  const q = cropSurplusQuote(fp);
+  if (q.pendingWon <= 0) {
+    const e = new Error('[잉여] 넘길 잉여가 없습니다 — 곳간이 받은 것은 밥으로 씁니다 ' +
+                        '(겹쳐서 못 받거나 넘쳐서 쉰 몫만 넘길 수 있습니다)');
+    e.tutorialInput = true;                 // 안내지 고장이 아니다
+    throw e;
+  }
+  if (q.won <= 0) {
+    const e = new Error(`[잉여] 지금 넘기면 0원입니다 — 넘기는 값이 정가의 ` +
+                        `${Math.round(q.rate * 100)}% 입니다`);
+    e.tutorialInput = true;
+    throw e;
+  }
+  const taken = takeCropSurplus(fp);
+  /* ⚠ `opt.log` 를 넘기지 않는다 — 바로 아래에서 `pushLog` 로 한 줄을 적는다.
+     둘 다 켜면 같은 일이 로그에 두 번 적힌다(다른 문장으로 적혀서 더 나쁘다). */
+  const r = creditCropSurplus(S, taken.won);
+  pushLog(S, `💰 잉여 채소를 넘겼습니다 — 정가 ${taken.pendingWon.toLocaleString()}원어치를 ` +
+             `${Math.round(taken.rate * 100)}% 에 넘겨 ${taken.won.toLocaleString()}원 ` +
+             `(곳간에 든 몫은 그대로 밥입니다)`);
+  return { ...r, pendingWon: taken.pendingWon, rate: taken.rate, won: taken.won,
+           totalSoldWon: fp.food.totalSurplusSoldWon,
+           events: [{ id: 'crop_surplus_sold', ko: '잉여 채소를 넘겼습니다',
+                      won: taken.won, pendingWon: taken.pendingWon, rate: taken.rate }] };
+}
+
+/* 지금 넘길 것이 있나 · 얼마인가 — 버튼을 켤지 흐리게 할지의 근거. **상태를 안 바꾼다.** */
+export function cropSurplusStatus(S) {
+  const fp = S && S.firstPlay;
+  if (!fp || !fp.enabled) return { pendingWon: 0, rate: 0, won: 0, canSell: false };
+  return cropSurplusQuote(fp);
 }
 
 /* 추천 자리에 놓는다(예전 경로). 좌표까지 같이 세운다. */

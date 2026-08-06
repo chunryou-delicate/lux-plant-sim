@@ -28,6 +28,10 @@
    ★ THREE 를 쓰지 않는다. DOM 도 타이머도 모른다.
 ============================================================ */
 
+/* ★ 작물 표를 읽는다 — 씨앗 품목·한 회전분의 정본은 first_play 다(값을 여기 베끼지 않는다).
+   ⚠ 순환이 아니다: first_play 는 `place.js` 하나만 import 하고 shop 을 안 부른다. */
+import { CROP_KINDS, cropKindIndexOf, cropCycleSavedWon, FIRST_PLAY_RULES } from './first_play.js';
+
 export const SHOP_SCHEMA = 'shop/1';
 
 /* ============================================================
@@ -561,6 +565,50 @@ export function sellCutting(S, cuttingOrId, opt = {}) {
   return { ...r, price: q, cuttingId: c.id, containerReturned: returned,
            events: [{ id: 'cutting_sold', ko: '삽수를 팔았습니다', won: q.won,
                       leaves: q.leaves, variegatedLeaves: q.variegatedLeaves, v: q.v }] };
+}
+
+/* ============================================================
+   ★★ 잉여 채소 — 지갑에 닿는 자리 (2026-08-06 신설)
+   ------------------------------------------------------------
+   무엇을 파는지·왜 그것만 파는지는 **first_play.js §잉여 판매**가 전부 갖고 있다.
+   여기 있는 것은 두 가지뿐이다: **돈으로 바꾸는 한 줄**과 **손익분기를 재는 자**.
+
+   ★ 왜 여기 있나 — `credit` 이 여기 있기 때문이다. 그루(`sellPot`)·삽수(`sellCutting`)와
+     **같은 문**으로 들어와야 `ts.crop.soldWon`·`shop.earnedWon`·파산 해제가 한 곳에서 돈다.
+============================================================ */
+
+/* ★★ 손익분기 — **이 아래로 팔면 씨앗값도 못 건진다.**
+   ------------------------------------------------------------
+   한 회전을 돌리는 데 지갑에서 나가는 것은 **씨앗값**이고, 그 값은 정가가 아니라
+   `buyPriceOf`(정가 × 1.4 · 100원 올림)다. 한 회전이 낼 수 있는 최대는 최상 품질(3끼)의
+   한 회전분이다. 그 둘의 비가 손익분기다.
+
+     콩나물  700원 / 3,000원 = **23.3%**
+     무순    600원 / 2,000원 = **30.0%**
+
+   ⚠ 정가(500·400원)로 셈하면 16.7% / 20.0% 가 나온다 — **틀린 값이다.**
+     지갑에서 나가는 것은 정가가 아니다(econgap 이 실제로 그렇게 한 번 틀렸다).
+   ★ 판매가를 여기서 막지 않는다. **재서 보여 줄 뿐**이다 — 손익분기 아래로 두는 것은
+     고장이 아니라 판단이고, 그 판단은 박사님 것이다. */
+export function cropBreakEvenRate(kindId = 'beansprout') {
+  const k = CROP_KINDS[cropKindIndexOf(kindId)];
+  const fullWon = cropCycleSavedWon(FIRST_PLAY_RULES, FIRST_PLAY_RULES.qualityMaxMeals,
+                                    cropKindIndexOf(kindId));
+  if (!(fullWon > 0)) throw new Error(`[상점] ${kindId} 의 한 회전분이 0원입니다`);
+  return buyPriceOf(k.seedItemId) / fullWon;
+}
+
+/* 잉여를 넘긴 값을 지갑에 넣는다. **얼마인지는 여기서 안 정한다** —
+   `first_play.takeCropSurplus` 가 낸 값을 그대로 받는다(값의 정본을 둘로 만들지 않는다).
+   ⚠ 이 함수는 장부를 안 비운다. 비우는 것은 그쪽이고 묶는 것은 `state.sellCropSurplus` 다. */
+export function creditCropSurplus(S, won, opt = {}) {
+  const v = Math.round(won);
+  if (!Number.isFinite(v) || v < 0)
+    throw new Error(`[상점] 잉여 판매액이 올바르지 않습니다: ${won}`);
+  const r = credit(S, v, 'crop');
+  if (typeof opt.log === 'function')
+    opt.log(`💰 잉여 채소를 넘겼습니다 — ${v.toLocaleString()}원`);
+  return r;
 }
 
 /* ============================================================
