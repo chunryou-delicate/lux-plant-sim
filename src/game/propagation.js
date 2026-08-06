@@ -26,6 +26,10 @@
 ============================================================ */
 import { resolvePlacement, atFromSlot, isFreeSlotId, inRoom } from './place.js';
 import { useStock, shopOf, CATALOG } from './shop.js';
+/* ★ 체력 — 하루에 돌볼 수 있는 양. **규칙도 값도 전부 그쪽 모듈이 갖는다**(docs/stamina.md).
+   여기서 새 비용을 만들지 않는다 — `ACT_COST.cut` · `ACT_COST.repot` 을 그대로 쓴다.
+   ⚠ 이 import 는 한 방향이다: propagation → stamina. stamina 는 아무것도 안 부른다. */
+import { canAct as canActStamina, spend as spendStamina } from './stamina.js';
 
 export const PROPAGATION_SCHEMA = 'cutting/1';
 
@@ -705,6 +709,19 @@ export function takeCutting(S, opt = {}) {
     throw new Error(`[삽수] ${cont.ko} 는 아직 못 씁니다 — 에셋이 정해지지 않았습니다 ` +
       `(docs/propagation.md §4 ⏸ 물꽂이 트레이). 유리 수경병(jar)이나 화분 직삽(soil)을 쓰세요`);
 
+  /* ★★ 체력 — 오늘 자를 손이 남았나 (docs/stamina.md · `ACT_COST.cut`).
+     ------------------------------------------------------------
+     ★ **아무것도 바꾸기 전에** 묻는다. 여기 바로 아래에서 용기 재고가 빠지므로, 뒤에서 물으면
+       「병만 나가고 삽수는 없는」 판이 남는다 — `state.waterCrop` 이 지키는 그 순서 그대로다.
+     ★ 위의 검증(마디·용기·초보)이 **먼저** 나는 것도 일부러다. 체력이 바닥이어도 잎꽂이 마디는
+       여전히 잎꽂이라, 사유를 체력으로 덮으면 화면이 틀린 안내를 한다.
+     ⚠ `tutorialInput` 을 붙인다 — 이건 고장이 아니라 안내다(game.html `isRecoverable`).
+       안 붙이면 판이 통째로 잠긴다. */
+  {
+    const st = canActStamina(S, 'cut');
+    if (!st.ok) { const e = new Error('[삽수] ' + st.reason); e.tutorialInput = true; throw e; }
+  }
+
   /* ★ 용기를 실제로 쓴다 — 여기서 재고가 하나 빠진다(§용기값). 없으면 `useStock` 이 던지고,
      그 예외에는 "몇 개가 배송 중인지"까지 들어 있다. 상태는 아직 아무것도 안 바뀌었다. */
   if (cont.itemId) useStock(S, cont.itemId, 1);
@@ -787,6 +804,11 @@ export function takeCutting(S, opt = {}) {
 
   S.cuttings.push(c);
   if (opt.at) setCuttingAt(S, c, opt.at, opt);
+
+  /* ★ 실제로 잘랐으니 손을 쓴다. **던진 뒤가 아니라 성공한 뒤**에 깎는다 —
+     실패한 동작에 체력을 물리면 "아무 일도 안 났는데 오늘이 끝났다"가 된다
+     (loop.harvestCrop 의 그 주석과 같은 규칙이다). */
+  spendStamina(S, 'cut');
 
   const log = typeof opt.log === 'function' ? opt.log : null;
 
@@ -1119,6 +1141,15 @@ export function repotCutting(S, cuttingOrId, opt = {}) {
     throw new Error(`[삽수] ${c.id} 는 아직 뿌리가 없습니다 — ` +
       `${METHODS[c.method].rootDays}일째부터 옮길 수 있습니다 (지금 ${c.days}일째)`);
 
+  /* ★★ 체력 — 오늘 분갈이할 손이 남았나 (docs/stamina.md · `ACT_COST.repot`).
+     ★ **재고를 만지기 전에** 묻는다. 뒤에서 물으면 포트만 빠지고 삽수는 병에 남는다.
+     ⚠ 여기서 막히는 것은 **되돌릴 수 있는 상황**이다 — 기한 안이면 내일 하면 되고,
+       그래서 `tutorialInput` 이 맞다(고장이 아니라 "오늘은 여기까지"라는 안내다). */
+  {
+    const st = canActStamina(S, 'repot');
+    if (!st.ok) { const e = new Error('[삽수] ' + st.reason); e.tutorialInput = true; throw e; }
+  }
+
   /* ★ 분갈이도 **포트를 하나 쓴다**. 옮겨 심으려면 심을 그릇이 있어야 한다 —
      이게 없으면 "죽는 길을 피하는 것"이 공짜가 되고, 물꽂이의 기한이 벌이 아니게 된다.
      ★ 빠져나온 병은 **돌아온다**(returnsOnSale 과 같은 이유 — 병은 소모품이 아니다). */
@@ -1133,6 +1164,9 @@ export function repotCutting(S, cuttingOrId, opt = {}) {
   c.deadlineDay = null;
   c.pottedOnDay = S.day;
   if (opt.at) setCuttingAt(S, c, opt.at, opt);
+
+  /* ★ 성공한 뒤에 깎는다 (위 takeCutting 과 같은 규칙) */
+  spendStamina(S, 'repot');
 
   const log = typeof opt.log === 'function' ? opt.log : null;
   if (log) log(`🪴 삽수 ${c.id} 를 분갈이했습니다 — 이제 죽지 않습니다` +

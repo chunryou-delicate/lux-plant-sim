@@ -61,6 +61,26 @@ export function endingRulesFrom({ targetWon } = {}) {
   return Object.freeze({ ...ENDING_RULES, targetWon: Math.round(targetWon) });
 }
 
+/* ★★ 정본에서 **읽어** 온다 — `oneroom.oneroomRulesFromHomes` 와 같은 결 (2026-08-06 신설)
+   ------------------------------------------------------------
+   왜 이게 필요했나. `endingRulesFrom({targetWon})` 은 있었는데 **그 값을 어디서 받나**가
+   아무 데도 없었다. 그래서 화면(game.html)이 ④ 를 붙이려면 숫자를 직접 들고 있어야 하고,
+   그 순간 정본이 코드 안으로 들어온다 — `ONEROOM_RULES` 가 피한 바로 그 함정이다.
+
+   ⚠ **지금 `data/balance/homes.json` 에는 이 칸이 없다.** 없으면 `ENDING_RULES`(=null)를
+     그대로 낸다 — 여기서 후보값으로 메꾸지 않는다. 미확정은 미확정이라고 답하는 것이
+     이 파일의 규칙이다(§① 머리말).
+   ★ plan 이 `homes.json` 에 아래 한 칸을 적으면 화면은 **한 글자도 안 고치고** 그 값으로 돈다:
+       { "ending": { "targetWon": 10000000 } }        ← 후보·근거는 docs/propagation.md §7
+     `homes[].id === 'home_purchase'` 같은 집 항목으로 적어도 읽는다(둘 다 본다). */
+export function endingRulesFromHomes(homes) {
+  if (!homes || typeof homes !== 'object') return ENDING_RULES;
+  const row = (homes.homes || []).find(h => h && h.id === ENDING_RULES.id) || null;
+  const raw = (homes.ending && homes.ending.targetWon) ?? (row && row.targetWon) ?? null;
+  if (raw == null) return ENDING_RULES;
+  return endingRulesFrom({ targetWon: raw });      // 검증은 한 곳에서만 한다
+}
+
 const rulesOf = (opt) => (opt && opt.rules) || ENDING_RULES;
 
 /* ============================================================
@@ -186,6 +206,48 @@ export function endingGoal(S, io = {}, opt = {}) {
   if (p.targetWon == null) return { id: 'undecided', ko: '내 집 마련 목표가 아직 정해지지 않았습니다' };
   if (p.ok) return { id: 'ready', ko: '내 집을 마련할 수 있습니다' };
   return { id: 'money', ko: p.why };
+}
+
+/* ★★ 화면이 한 번에 읽는 값 — `tutorial.canMoveOut` + `tutorialGoal` 을 합친 자리 (2026-08-06)
+   ------------------------------------------------------------
+   game.html 의 ② 배선이 지금 이렇게 생겼다(그 파일 §draw):
+
+     const mv = $('moveOut'), c = canMoveOut(ts);
+     mv.disabled = !c.ok || ts.movedOut;
+     mv.title    = c.ok ? '' : `${c.shortWon.toLocaleString()}원 부족`;
+
+   ④ 도 **같은 모양으로 읽히게** 한 칸에 담는다. 셋(`canFinish`·`endingProgress`·`endingGoal`)을
+   따로 부르게 두면 화면이 같은 것을 세 번 세고, 셋이 어긋나는 날 아무도 못 찾는다.
+   ★ 여기서 문구를 **만들지 않는다** — `why`·`goal.ko` 는 이미 있는 것을 그대로 싣는다.
+
+     buttonKo   버튼에 쓸 말 (누를 수 있을 때/없을 때/끝난 뒤가 다르다)
+     disabled   그대로 `btn.disabled` 에 넣으면 된다
+     visible    ★ ③ 전에는 **버튼 자체를 안 보이는 게** 맞다(②를 아직 안 했다)
+   반환 { stage, stageKo, visible, disabled, buttonKo, title, done, ok, goal, ...endingProgress } */
+export function endingView(S, io = {}, opt = {}) {
+  const stage = stageOf(S);
+  const c = canFinish(S, io, opt);
+  const goal = endingGoal(S, io, opt);
+  const done = stage === STAGES.ending;
+  return {
+    stage: stage.id, stageKo: stage.ko,
+    visible: stage !== STAGES.banjiha,
+    disabled: !c.ok,
+    buttonKo: done ? '내 집 마련 완료'
+            : c.ok ? '내 집 마련하기'
+            : '내 집 마련',
+    title: c.ok ? '' : (c.why || ''),
+    done, ok: !!c.ok,
+    goal: goal ? { id: goal.id, ko: goal.ko } : null,
+    targetWon: c.targetWon ?? null,
+    cashWon: c.cashWon ?? null,
+    netWorthWon: c.netWorthWon ?? null,
+    shortWon: c.shortWon ?? null,
+    netShortWon: c.netShortWon ?? null,
+    reachedOnDay: (S && S.story && S.story.ending) ? S.story.ending.reachedOnDay : null,
+    doneOnDay: (S && S.story && S.story.ending) ? S.story.ending.doneOnDay : null,
+    why: c.why || null
+  };
 }
 
 /* ★ 초보 모드가 여기서 끝난다 — 화면·재현이 같은 창구로 읽게 다시 낸다.
