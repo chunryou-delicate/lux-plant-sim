@@ -758,6 +758,9 @@
       <span class="who" id="furnName">—</span>
       <button id="furnMove" class="primary">옮기기</button>
       <button id="furnTurn" class="ghost">돌리기</button>
+      <!-- ★식물등만 뜬다 — 겨눌 수 있는 등에서만(io.light.lampList().aimable).
+           바 등은 선반 밑 붙박이라 안 뜬다(docs/growlight_aim.md §2). -->
+      <button id="furnAim" class="ghost" style="display:none">겨누기</button>
       <button id="furnClose" class="ghost" aria-label="닫기">✕</button>
     </div>
     <iframe id="growth" src="./plant_grow.html?embed=game" title="식물 확대"></iframe>
@@ -1161,6 +1164,8 @@ import { takeCutting, repotCutting, cuttableNow, cutBudgetOf, cutBlockedReason,
          cuttingsOf, cuttingSnapshot, containerItemOf, graceDaysOf, isNoviceMode,
          CONTAINERS, METHODS } from './src/game/propagation.js';
 import { isFreeSlotId, atFromSlot } from './src/game/place.js';
+/* 식물등 겨누기 — 물리는 io.light 가, 세이브는 이쪽이 맡는다(lampaim-to-plan §1) */
+import { setLampAim, clearLampAim } from './src/game/state.js';
 import * as save from './src/game/save.js';
 import {
   FIRST_PLAY_ASSETS,
@@ -3725,6 +3730,10 @@ const furnPicked = {
        3D 점을 화면으로 되쏘는 길이 따로 없어도 상대 이동이 정확히 맞는다. */
     this.tapX = px; this.tapY = py;
     $('furnName').textContent = f.name || f.preset || '가구';
+    /* ★겨눌 수 있는 등에서만 [겨누기]를 보여 준다 — 방뷰가 아니라 **조도 창**이 답을 안다
+       (`aimable` 은 프리셋의 adjustable_height 에서 온다. 바 등은 붙박이라 false). */
+    let range = null; try { range = io.light.aimRangeOf(f.uid); } catch { }
+    $('furnAim').style.display = range ? '' : 'none';
     $('stage').classList.add('furnpicked');
   },
   clear() {
@@ -3753,6 +3762,36 @@ const furnPicked = {
     $('dropLabel').textContent = '좌우로 끌어서 돌리세요';
     $('dropLabel').classList.add('ok');
   },
+  /* ══ 겨누기 — 등 **머리**를 돌린다 (2026-08-06 · docs/growlight_aim.md) ══════
+     ★가구 [돌리기]와 **같은 손짓**이다 — 좌우로 끌면 방위(yaw), 위아래로 끌면 꺾임(tilt).
+       새로 배울 것을 만들지 않는다.
+     ★가구를 옮기는 것과 다르다: 가구는 **몸**이 움직이고 여기는 **머리**만 돈다.
+       그래서 `commitFurnitureAt` 이 아니라 `setLampAim` 이다. */
+  beginAim() {
+    if (!this.uid) return;
+    let range = null; try { range = io.light.aimRangeOf(this.uid); } catch { }
+    if (!range) { $('dropLabel').textContent = '이 등은 겨눌 수 없습니다'; return; }
+    this.mode = 'aim'; this.range = range;
+    const cur = (io.light.lampAims() || {})[this.uid] || { yaw: 0, tilt: 0 };
+    this.aim0 = { yaw: cur.yaw || 0, tilt: cur.tilt || 0 };
+    this.aim = { ...this.aim0 };
+    $('stage').classList.add('furnmoving');
+    $('dropLabel').textContent = '좌우로 방향 · 위아래로 각도';
+    $('dropLabel').classList.add('ok');
+    this.paintAim();
+  },
+  /* 겨누는 동안 **어디가 밝아지는지 보여 준다** — 안 보여 주면 눈 감고 돌리는 것이다.
+     자리 등급(초록·노랑·빨강)을 그대로 쓴다. 겨눌 때마다 등급이 바뀌면 그게 곧 조준경이다. */
+  paintAim() {
+    if (!roomView) return;
+    try {
+      io.light.setLampAim(this.uid, this.aim);
+      io.light.clearCache();
+      const what = (pot0(S) && pot0(S).slotId) ? 'monstera' : 'beansprout';
+      const { ids } = drag.slotsFor(what);
+      roomView.highlightSlots(rankSlots(what, ids));
+    } catch { /* 범위 밖이면 setLampAim 이 던진다 — 그때는 그리지 않는다 */ }
+  },
   down(e) { this.x0 = e.clientX; this.y0 = e.clientY; if (this.mode === 'move') this.dragTo(0, 0); },
   /* 화면에서 끈 만큼을 방 바닥 좌표로 옮긴다. 바닥을 쏘아 맞은 점을 그대로 쓴다 —
      화면 픽셀을 미터로 환산하려 들면 카메라 각도마다 어긋난다. */
@@ -3774,6 +3813,21 @@ const furnPicked = {
   },
   move(e) {
     if (this.mode === 'move') { this.dragTo(e.clientX - this.x0, e.clientY - this.y0); return; }
+    if (this.mode === 'aim') {
+      const R = this.range;
+      /* 화면 폭 절반 = 한 바퀴(가구 돌리기와 같은 감각) · 화면 높이 절반 = 꺾임 전 범위 */
+      const yaw = this.aim0.yaw + (e.clientX - this.x0) / (innerWidth * 0.5) * 360;
+      const span = Math.max(1, R.tiltMax - R.tiltMin);
+      const tilt = this.aim0.tilt + (this.y0 - e.clientY) / (innerHeight * 0.5) * span;
+      const wrap = (v) => ((v + 180) % 360 + 360) % 360 - 180;
+      this.aim = {
+        yaw: Math.round(R.yaw >= 180 ? wrap(yaw) : Math.max(-R.yaw, Math.min(R.yaw, yaw))),
+        tilt: Math.round(Math.max(R.tiltMin, Math.min(R.tiltMax, tilt)))
+      };
+      this.paintAim();
+      $('dropLabel').textContent = `방향 ${this.aim.yaw}° · 각도 ${this.aim.tilt}°`;
+      return;
+    }
     if (this.mode !== 'turn') return;
     /* 화면 폭 절반이 한 바퀴 — 화분 돌리기와 같은 감각으로 맞춘다 */
     const rot = Math.round(this.rot0 + (e.clientX - this.x0) / (innerWidth * 0.5) * 360);
@@ -3783,6 +3837,27 @@ const furnPicked = {
   },
   /* ★손을 뗄 때 딱 한 번 반영한다 — 여기서 방이 다시 조립되고 그림자가 바뀐다 */
   async up() {
+    /* ★겨누기는 방을 다시 안 짓는다 — 머리만 돌았으니 조도만 다시 센다.
+       세이브에 남기는 것은 **물리에 먼저 먹인 뒤**다(lampaim-to-plan §1):
+       범위 밖이면 setLampAim 이 던지므로 못 쓰는 값이 세이브에 안 들어간다. */
+    if (this.mode === 'aim') {
+      const uid = this.uid, aim = this.aim;
+      this.mode = null;
+      $('stage').classList.remove('furnmoving');
+      try {
+        io.light.setLampAim(uid, aim);
+        setLampAim(S, uid, aim);
+        io.light.clearCache();
+        pushLog(S, `💡 ${$('furnName').textContent}을(를) 겨눴습니다 — 방향 ${aim.yaw}° · 각도 ${aim.tilt}°`);
+        fillSlots(); draw();
+      } catch (e) {
+        $('dropLabel').textContent = (e && e.message) || '그 각도로는 못 겨눕니다';
+        $('dropLabel').classList.add('no');
+      }
+      try { roomView && roomView.highlightSlots([]); } catch { }
+      if (this.uid) $('stage').classList.add('furnpicked');
+      return;
+    }
     const mode = this.mode, uid = this.uid, to = this.ghost;
     this.mode = null; this.ghost = null;
     $('stage').classList.remove('furnmoving');
@@ -3835,6 +3910,7 @@ function bindFurnitureTap() {
 function bindPicked() {
   $('furnMove').onclick = () => furnPicked.beginMove();
   $('furnTurn').onclick = () => furnPicked.beginTurn();
+  $('furnAim').onclick = () => furnPicked.beginAim();
   $('furnClose').onclick = () => furnPicked.clear();
   $('pickMove').onclick = () => picked.beginMove();
   $('pickTurn').onclick = () => picked.beginTurn();
