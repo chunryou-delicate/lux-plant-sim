@@ -3510,6 +3510,285 @@ export async function createRoomView(canvas, opts = {}) {
   }
 
   /* ============================================================
+     ⑧-d ★ 등 옮기기 — 집게등·스탠드등 (2026-08-06)
+     ------------------------------------------------------------
+     ★ 왜 가구 옮기기로는 안 되나
+       `furnNodes()` 는 **바닥에 서 있는 것**만 낸다. 집게등은 책상에 물려 있어
+       `riderNode` 로 걸러진다 — 그 모형 자체는 맞다(책상을 옮기면 등도 따라간다).
+       ⚠ 그런데 **따로 떼서 옮기는 길이 없었다.** 여기가 그 길이다.
+
+     ★ 왜 옮혀야 하나 — 겨누는 것만으로는 창턱이 안 산다
+       반사광 모형(직광의 18%) 뒤로 `banjiha-sill:0` 은 등 1개로 DLI 5.15 다(문턱 6.0).
+       집게등은 제자리(1.35, 0.75, −1.5)에서 창턱(0, 1.585, −1.95)까지 **1.65m** 라
+       역제곱이 1/30 을 먹는다. 게다가 창턱은 등보다 **위**라 tilt 상한 75° 로는 못 겨눈다.
+       ⇒ **거리가 방향을 이긴다.** 옮길 수 있어야 창턱이 산다(잰 표는 tools/test_lampmove.mjs).
+
+     ★★ 세 갈래로 갈린다 — 그 갈림은 **데이터가 이미 하고 있는 표시**를 읽은 것이다
+       ① 바닥에 서는 등 (스탠드)  `y` 를 안 적어 바닥에 선다 → riderNode 가 아니다
+          ⇒ **이미 `furniture()` 에 나오고 `commitFurnitureAt` 으로 옮겨진다.**
+             새로 만들 것이 없다. 여기서는 아무것도 안 한다.
+       ② 물려 있는 등 (집게등)    `y>0` 이라 rider 다 → 아래 `lamps()` 가 낸다
+       ③ 붙박이 등 (바 등)        `mount:"under-shelf"` → **어느 목록에도 안 나오고,
+                                   억지로 부르면 던진다.** 겨누기(setLampAim)와 같은 규약이다.
+
+     ★ 공중에 안 뜬다 — **물릴 데(mount)가 있어야 놓인다**
+       집게등은 무엇엔가 물리는 물건이다. 물릴 수 있는 자리는 새로 만들지 않는다 —
+       **화분이 올라갈 수 있는 상판**이 곧 집게를 물릴 수 있는 상판이다. 그 목록은
+       `built.plantSlots` 가 이미 갖고 있다(창턱·책상·서랍장·선반 단마다). 새 데이터를
+       만들면 두 정본이 생기고, 가구를 옮길 때 한쪽만 따라간다.
+
+     ★ 높이 — `adjustable_height` 를 살린다
+       물릴 자리를 고르면 밑동 y 의 **바닥**(상판 높이)이 정해지고, 거기서 `lift` 만큼 든다.
+       상한은 house.js 가 rig 에 실어 준 `liftRange`(= 그 등의 키). 잰 값으로 확인:
+       창턱에 물린 집게등의 창턱 DLI 가 lift 0/0.05/0.10 에서 8.27/7.60/7.12 로 움직인다.
+
+     ⚠ 자리를 저장하는 표는 **가구와 같은 표**다 — `S.home.furniture[uid] = {x,z,rot,y}`.
+       등 전용 칸을 새로 만들지 않는다. 세이브 왕복이 저절로 따라온다.
+  ============================================================ */
+  const LAMP_FIXED_MOUNTS = new Set(['under-shelf', 'wall', 'window']);
+
+  /* 방에 있는 조명 rig 를 uid 로. 붙박이까지 전부 본다(못 옮긴다고 말해 주려면 찾긴 해야 한다) */
+  function lampRig(uid) {
+    return ((built && built.lightRigs) || []).find(r => r.uid === uid) || null;
+  }
+  /* 그 rig 의 3D 그룹 */
+  function lampNode(uid) {
+    if (!built || !built.furniture) return null;
+    return built.furniture.children.find(g => g.userData && g.userData.uid === uid) || null;
+  }
+  /* 밑동 y → 발광점 y. house.js 의 emitY 와 **같은 식**이어야 한다(둘이 갈리면
+     화면의 등과 계산의 등이 다른 높이에 있게 된다). 매달린 것은 여기 안 온다. */
+  function lampEmitOffset(g) {
+    return ((g && g.userData.size && g.userData.size.h) || 0.4) * 0.92;
+  }
+
+  /* 왜 못 옮기나 — 못 옮기면 **한국어 이유**, 옮길 수 있으면 null.
+     ★ 조용히 무시하지 않는다. 화면은 `lamps()` 에 안 나오는 것으로 손잡이를 안 그리면 되고,
+       던지기는 배선이 틀렸을 때의 안전망이다(setLampAim 과 같은 결). */
+  function lampImmovableReason(uid) {
+    const rig = lampRig(uid);
+    if (!rig) return `모르는 등입니다: ${uid} (방 ${roomId})`;
+    const g = lampNode(uid);
+    const me = lampName(uid) + topicJosa(lampName(uid));
+    const mount = (g && g.userData.mount) || rig.mount || null;
+    if (mount && LAMP_FIXED_MOUNTS.has(mount))
+      return `${me} 붙박이라 못 옮깁니다 (${mount}). ` +
+             `선반 밑에 붙은 등은 자리를 등에 맞추는 물건입니다 — docs/growlight_aim.md §2`;
+    if (g && g.userData.hangFromCeiling) return `${me} 천장에 달려 있어 못 옮깁니다`;
+    if (!(g && g.userData.movable))
+      return `${me} 옮길 수 있는 등이 아닙니다 ` +
+             `(data/furniture_presets.json 의 ${rig.id} 에 movable 이 없습니다)`;
+    return null;
+  }
+  /* 은/는 — 이름이 데이터에서 오니 받침을 보고 고른다("천장등 는" 이 되면 안 읽힌다) */
+  function topicJosa(name) {
+    const s = String(name || '');
+    const c = s.charCodeAt(s.length - 1);
+    const hangul = c >= 0xAC00 && c <= 0xD7A3;
+    return (hangul && (c - 0xAC00) % 28 === 0) ? '는' : '은';
+  }
+  function lampName(uid) {
+    const rig = lampRig(uid);
+    const id = rig ? rig.id : null;
+    return (id && (furnNames[id] || {}).name_ko) || id || uid;
+  }
+
+  /* ★ 물릴 수 있는 자리 — 화분 상판을 단(y)마다 하나로 묶는다.
+     한 단에 화분 칸이 셋이어도 물릴 상판은 하나다(집게는 그 단 가장자리에 문다). */
+  function lampMounts() {
+    if (!built) return [];
+    const byKey = new Map();
+    for (const s of (built.plantSlots || [])) {
+      const ownerUid = String(s.slotId).slice(0, String(s.slotId).lastIndexOf(':'));
+      const g = lampNode(ownerUid);
+      if (!g || !g.userData.size) continue;
+      const key = `${ownerUid}@${s.y.toFixed(3)}`;
+      if (!byKey.has(key)) {
+        const sz = g.userData.size;
+        byKey.set(key, {
+          mountId: key, uid: ownerUid, name: furnLabel(g), y: s.y,
+          x: +g.position.x.toFixed(4), z: +g.position.z.toFixed(4),
+          w: sz.w, d: sz.d, rot: +((g.rotation.y || 0) * 180 / Math.PI).toFixed(2),
+          slots: []
+        });
+      }
+      byKey.get(key).slots.push(s.slotId);
+    }
+    return [...byKey.values()].sort((a, b) => a.y - b.y || a.mountId.localeCompare(b.mountId));
+  }
+  function furnLabel(g) {
+    const uid = g.userData.uid;
+    const f = roomDef && (roomDef.furniture || []).find(x => x.uid === uid);
+    const pid = f ? f.preset : String(uid).split('#')[0];
+    return (pid && (furnNames[pid] || {}).name_ko) || pid || uid;
+  }
+
+  /* 지금 이 등이 어느 상판에 물려 있나 — 밑동 y 가 그 상판 높이와 같고 발자국 안이면 그것이다.
+     ⚠ 못 찾아도 던지지 않는다. 방 데이터의 기본 자리가 어느 상판과도 딱 안 맞을 수 있다
+       (집게등 기본 y 0.75 vs 책상 상판 0.74 — 1cm 차이로 물려 있다). 그건 고장이 아니다. */
+  function lampMountOf(uid, mounts) {
+    const g = lampNode(uid);
+    if (!g) return null;
+    const list = mounts || lampMounts();
+    let best = null;
+    for (const m of list) {
+      if (!pointInMountXZ(m, g.position.x, g.position.z, 0.25)) continue;
+      const lift = g.position.y - m.y;
+      if (lift < -0.02) continue;                       // 상판보다 아래면 그 단이 아니다
+      if (!best || lift < best.lift) best = { mount: m, lift: +lift.toFixed(4) };
+    }
+    return best;
+  }
+  /* 그 상판 발자국 안인가. pad 는 가장자리 바깥으로 봐 주는 여유(집게는 **가장자리**에 문다) */
+  function pointInMountXZ(m, x, z, pad = 0) {
+    const r = (m.rot || 0) * Math.PI / 180;
+    const c = Math.cos(r), s = Math.sin(r);
+    const dx = x - m.x, dz = z - m.z;
+    const u = dx * c - dz * s, v = dx * s + dz * c;
+    return Math.abs(u) <= m.w / 2 + pad && Math.abs(v) <= m.d / 2 + pad;
+  }
+
+  /* 옮길 수 있는 등 목록.
+     ⚠ **바닥에 선 등은 여기 없다** — 그건 `furniture()` 에 이미 나오고 가구와 같은 길로 옮긴다.
+       여기 나오는 것은 "무엇엔가 물려 있어 가구 목록에서 빠지는 등"뿐이다.
+     ⚠ **붙박이 등(바)도 여기 없다.** 그것이 이 설계의 답이다(위 ★★ ③). */
+  function lampList() {
+    if (!built) return [];
+    const mounts = lampMounts();
+    const out = [];
+    for (const rig of (built.lightRigs || [])) {
+      const g = lampNode(rig.uid);
+      if (!g) continue;
+      if (lampImmovableReason(rig.uid)) continue;       // 붙박이·천장·movable 없음
+      if (!riderNode(g)) continue;                      // 바닥에 선 등 = 가구 목록 몫
+      const cur = lampMountOf(rig.uid, mounts);
+      out.push({
+        uid: rig.uid, preset: rig.id, name: lampName(rig.uid), grow: !!rig.grow,
+        x: +g.position.x.toFixed(4), y: +g.position.y.toFixed(4), z: +g.position.z.toFixed(4),
+        rot: +((g.rotation.y || 0) * 180 / Math.PI).toFixed(2),
+        emitY: +(g.position.y + lampEmitOffset(g)).toFixed(4),
+        mountId: cur ? cur.mount.mountId : null,
+        lift: cur ? cur.lift : null,
+        liftRange: rig.liftRange ? { ...rig.liftRange } : null,
+        aimable: !!rig.aimRange,
+        moved: !!localFurn[rig.uid]
+      });
+    }
+    return out;
+  }
+
+  /* 그 자리에 등을 물릴 수 있나. 못 물리면 **한국어 이유**를 준다.
+       pos.mountId  물릴 상판을 이름으로 고른다(제일 확실한 길)
+       pos.x/pos.z  좌표로 고른다 — 그 좌표를 품는 상판을 찾는다(가구 끌기와 같은 손짓)
+       pos.lift     상판에서 얼마나 들까(m). 안 주면 0. `liftRange` 밖이면 막는다 */
+  function lampFit(uid, pos = {}) {
+    const why = lampImmovableReason(uid);
+    if (why) return { ok: false, reason: why, mountId: null };
+    const rig = lampRig(uid), g = lampNode(uid);
+    const mounts = lampMounts();
+    let m = null;
+    if (pos.mountId != null) {
+      m = mounts.find(k => k.mountId === pos.mountId) || null;
+      if (!m) return { ok: false, reason: `모르는 물림 자리입니다: ${pos.mountId}`, mountId: null };
+    } else {
+      if (!Number.isFinite(pos.x) || !Number.isFinite(pos.z))
+        return { ok: false, reason: `좌표가 유한한 숫자가 아닙니다: (${pos.x}, ${pos.z})`, mountId: null };
+      /* 여러 단이 겹쳐 보이면(선반) **가장 가까운 높이**를 고른다. 안 주면 지금 높이 기준 */
+      const wantY = Number.isFinite(pos.y) ? pos.y : g.position.y;
+      const cands = mounts.filter(k => pointInMountXZ(k, pos.x, pos.z, 0.25));
+      if (!cands.length)
+        return { ok: false, reason:
+          `여기엔 물릴 데가 없습니다 — ${lampName(uid)}${topicJosa(lampName(uid))} 상판에 무는 물건입니다 ` +
+          `(창턱·책상·서랍장·선반 단). 공중에는 못 답니다.`, mountId: null };
+      cands.sort((a, b) => Math.abs(a.y - wantY) - Math.abs(b.y - wantY));
+      m = cands[0];
+    }
+    const lift = pos.lift == null ? 0 : Number(pos.lift);
+    if (!Number.isFinite(lift))
+      return { ok: false, reason: `높이가 유한한 숫자가 아닙니다: ${pos.lift}`, mountId: m.mountId };
+    const lr = rig.liftRange;
+    if (!lr && lift !== 0)
+      return { ok: false, reason:
+        `${lampName(uid)}${topicJosa(lampName(uid))} 높이를 못 바꿉니다 (lighting_presets.json 의 ${rig.id} 에 ` +
+        `adjustable_height 가 없습니다)`, mountId: m.mountId };
+    if (lr && (lift < lr.min || lift > lr.max))
+      return { ok: false, reason: `높이 ${lift}m 는 범위 밖입니다 (${lr.min}~${lr.max}m)`,
+               mountId: m.mountId };
+    const x = Number.isFinite(pos.x) ? pos.x : m.x;
+    const z = Number.isFinite(pos.z) ? pos.z : m.z;
+    if (!pointInMountXZ(m, x, z, 0.25))
+      return { ok: false, reason: `${m.name} 의 상판 밖입니다 — 거기엔 못 뭅니다`, mountId: m.mountId };
+    const y = +(m.y + lift).toFixed(4);
+    /* 천장을 뚫지 않는다 — 발광점이 천장 위로 가면 등이 벽 속에 박힌다 */
+    const ceil = built && built.size ? built.size.h : Infinity;
+    if (y + lampEmitOffset(g) > ceil)
+      return { ok: false, reason: `천장에 닿습니다 (천장 ${ceil}m)`, mountId: m.mountId };
+    return { ok: true, reason: null, mountId: m.mountId, mount: m,
+             x: +x.toFixed(4), y, z: +z.toFixed(4), lift: +lift.toFixed(4),
+             emitY: +(y + lampEmitOffset(g)).toFixed(4) };
+  }
+
+  /* 유령 — 가구와 **같은 것을 쓴다**(makeFurnGhost). 새로 배울 것을 만들지 않는다. */
+  function previewLampAt(uid, pos) {
+    if (uid == null || !pos) { disposeFurnGhost(); return null; }
+    const why = lampImmovableReason(uid);
+    if (why) throw new Error(why);
+    const g = lampNode(uid);
+    if (!furnGhost || furnGhost.uid !== uid) { disposeFurnGhost(); furnGhost = makeFurnGhost(g); }
+    const fit = lampFit(uid, pos);
+    const x = fit.ok ? fit.x : (Number.isFinite(pos.x) ? pos.x : g.position.x);
+    const z = fit.ok ? fit.z : (Number.isFinite(pos.z) ? pos.z : g.position.z);
+    const y = fit.ok ? fit.y : g.position.y;
+    furnGhost.group.position.set(x, y, z);
+    furnGhost.group.rotation.y = (pos.rot == null ? (g.rotation.y || 0) * 180 / Math.PI : pos.rot)
+                                 * Math.PI / 180;
+    if (fit.ok !== furnGhost.ok) {
+      furnGhost.ok = fit.ok;
+      const hex = fit.ok ? GH_OK : GH_NG;
+      furnGhost.mat.color.setHex(hex);
+      furnGhost.line.color.setHex(hex);
+    }
+    needsRender = true;
+    return { uid, x, y, z, lift: fit.ok ? fit.lift : null,
+             mountId: fit.mountId, ok: fit.ok, reason: fit.reason };
+  }
+
+  /* 실제로 옮긴다 — 가구와 **같은 통로**(조도 엔진의 덮어쓰기 표 → 재조립)를 탄다.
+     그래서 옮긴 뒤 `lightRigs()` 도 `ppfdSum` 도 새 좌표를 본다. 둘이 갈릴 틈이 없다.
+     ⚠ 등에는 화분이 안 얹힌다 — rider 를 데려가지 않는다(등에 물린 등은 없다). */
+  async function commitLampAt(uid, pos = {}) {
+    if (!built) throw new Error('방이 아직 없습니다');
+    const why = lampImmovableReason(uid);
+    if (why) throw new Error(`등을 못 옮깁니다 — ${why}`);
+    const fit = lampFit(uid, pos);
+    if (!fit.ok) throw new Error(`등을 못 놓습니다 — ${fit.reason}`);
+    const g = lampNode(uid);
+    const from = { x: +g.position.x.toFixed(4), y: +g.position.y.toFixed(4),
+                   z: +g.position.z.toFixed(4),
+                   rot: +((g.rotation.y || 0) * 180 / Math.PI).toFixed(4) };
+    const rot = pos.rot == null ? from.rot : snapAngleDeg(pos.rot);
+    const to = { x: fit.x, z: fit.z, y: fit.y, rot };
+    disposeFurnGhost();
+
+    const moves = { [uid]: { x: to.x, z: to.z, rot: to.rot, y: to.y } };
+    let prebuilt = null;
+    if (O.lightEngine && typeof O.lightEngine.setFurnitureOverrides === 'function'
+        && typeof O.lightEngine.furnitureOverrides === 'function') {
+      const merged = { ...O.lightEngine.furnitureOverrides(), ...moves };
+      O.lightEngine.setFurnitureOverrides(merged);
+      const r = O.lightEngine.room;
+      if (r) prebuilt = { built: r.built, def: r.def, wins: r.wins };
+    } else if (O.lightEngine && typeof O.lightEngine.moveFurniture === 'function') {
+      const r = O.lightEngine.moveFurniture(uid, to);
+      if (r && r.room) prebuilt = { built: r.room.built, def: r.room.def, wins: r.room.wins };
+    } else {
+      Object.assign(localFurn, moves);
+    }
+    await rebuildRoom({ prebuilt });
+    return { uid, from, to, mountId: fit.mountId, lift: fit.lift };
+  }
+
+  /* ============================================================
      ⑨ 캐릭터와 마스코트
      ------------------------------------------------------------
      ★ 지침은 전부 assets/characters/README.md · docs/handoff/char-to-house.md 에서 온다.
@@ -5111,6 +5390,26 @@ export async function createRoomView(canvas, opts = {}) {
     /* 실제로 옮긴다 — 방을 다시 조립하고 화분을 규칙대로 되돌린다(위 ⑧-b 주석).
        Promise 를 돌려준다. 못 놓는 자리면 reject 한다. */
     commitFurnitureAt(uid, pos) { return commitFurnitureAt(uid, pos || {}); },
+
+    /* ── ★ 등 옮기기 (2026-08-06 · 위 ⑧-d 주석) ──
+       ⚠ **바닥에 선 등(스탠드)은 여기 없다** — 그건 위 `furniture()`·`commitFurnitureAt` 몫이다.
+         여기 나오는 것은 무엇엔가 물려 있어 가구 목록에서 빠지는 등뿐이다(집게등).
+       ⚠ **붙박이 등(바)은 목록에 안 나오고, 억지로 부르면 던진다.** 겨누기와 같은 규약. */
+    lamps() { return lampList(); },
+    /* 물릴 수 있는 상판 — 화분이 올라갈 수 있는 상판이 곧 집게를 물릴 수 있는 상판이다.
+       [{ mountId, uid, name, x, y, z, w, d, rot, slots }] · y 오름차순 */
+    lampMounts() { return lampMounts(); },
+    /* 왜 못 옮기나 — 옮길 수 있으면 null, 아니면 한국어 이유(붙박이·천장·movable 없음) */
+    lampImmovableReason(uid) { return lampImmovableReason(uid); },
+    /* 여기 물릴 수 있나 — { ok, reason, mountId, x, y, z, lift, emitY }.
+       pos = { mountId? , x?, z?, lift?, rot? } · lift 는 상판에서 들어 올릴 높이(m) */
+    lampFit(uid, pos) { return lampFit(uid, pos || {}); },
+    previewLampAt(uid, pos) { try { return previewLampAt(uid, pos); } catch (e) { throw fail(e); } },
+    clearLampPreview() { disposeFurnGhost(); },
+    /* 실제로 옮긴다. Promise. 못 놓는 자리·못 옮기는 등이면 reject 한다.
+       ★ 자리는 가구와 **같은 표**(S.home.furniture[uid] = {x,z,rot,y})에 쌓인다 —
+         조도 엔진의 furnitureOverrides() 로 읽어 세이브에 적으면 왕복한다. */
+    commitLampAt(uid, pos) { return commitLampAt(uid, pos || {}); },
     /* ★ 화분을 세로축으로 돌린다. Y 회전만 — 눕히거나 기울이면 화분이 넘어진다.
        회전무관 지름(2×max√(x²+z²))은 Y 회전에 불변이라 maxPotD 판정이 안 바뀐다.
        다시 조립돼도(진행도가 바뀌어 새로 지어도) 각도는 유지된다. */

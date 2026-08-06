@@ -721,6 +721,13 @@ export function buildHouse(GRAIN, roomDefIn, winPresets, doorPresets={}, finishe
     const g=buildFurniture(type, p);
     g.userData.furnIdx=furnIdx;      // ★ 집꾸미기: 클릭한 메시 → 원본 배열 인덱스 역추적용
     g.userData.uid = f.uid || (f.preset+'#'+furnIdx);   // ★ 슬롯 ID의 뿌리 (아래 plantSlots)
+    /* ★ `movable` — 플레이어가 옮길 수 있나 (2026-08-06 · docs/handoff/lampmove-to-plan.md §1)
+       ------------------------------------------------------------
+       ⚠ 이 칸은 `data/furniture_presets.json` 에 있었는데 **아무도 안 읽고 있었다.**
+         읽는 데를 여기 하나로 만든다 — 조립이 이미 프리셋을 읽는 유일한 자리라서다.
+       ★ 값이 있을 때만 덮어쓴다. 몇몇 빌더(카트·가림막)가 스스로 movable=true 를 켜는데,
+         `!!p.movable` 을 무조건 쓰면 그걸 **꺼 버린다.** 데이터가 말한 것만 반영한다. */
+    if(p.movable!=null) g.userData.movable=!!p.movable;
     const hang=g.userData.hangFromCeiling;
     const yBase = f.y!=null ? f.y : (hang ? CH : 0);       // 천장 매달림/벽걸이 높이
     g.position.set(f.x??0, yBase, f.z??0);
@@ -761,10 +768,26 @@ export function buildHouse(GRAIN, roomDefIn, winPresets, doorPresets={}, finishe
         ? { yaw:fxSpec.aim.yaw ?? 180, tiltMin:fxSpec.aim.tilt_min ?? 0,
             tiltMax:fxSpec.aim.tilt_max ?? 0 }
         : null;
+      /* ★ 옮기기 (2026-08-06 · docs/handoff/lampmove-to-plan.md)
+         겨누기와 **같은 자리·같은 방식**으로 rig 에 실어 보낸다. rig 는 house 가 만드는
+         물건이라 "이 등이 무엇을 할 수 있나" 를 붙이는 일은 여기서만 한다.
+
+           movable   `furniture_presets.json` 의 `movable`. 없으면 못 옮긴다(바 등).
+           mount     `under-shelf`·`wall` 같은 붙박이 표시. 있으면 못 옮긴다.
+           liftRange 물린 자리에서 **얼마나 들어 올릴 수 있나**(m).
+                     프리셋의 `adjustable_height` 가 그 여부고, 상한은 **그 등의 키**다 —
+                     지어낸 숫자가 아니라 물건의 크기다(집게등 0.42m). 목이 자기 키보다
+                     더 길 수는 없다. `adjustable_height:false` 면 null = 못 든다.
+         ⚠ 여기서 `movable` 을 **짓지 않는다.** 없으면 없는 것이고, 그 없음이 곧 붙박이다
+           (aimRange 와 같은 규약). */
+      const liftRange = (g.userData.movable && !g.userData.mount && fxSpec.adjustable_height)
+        ? { min:0, max:+((g.userData.size?.h)||0).toFixed(4) }
+        : null;
       lightRigs.push({ id:f.preset, uid:g.userData.uid, fx:fxSpec, spec:sp, specId,
         schedule:f.schedule||fxSpec.default_schedule||'off',
-        light:L, shade:g.userData.lampShade||null, aimRange,
-        pos:{x:f.x??0,y:emitY,z:f.z??0}, grow:!!fxSpec.grow });
+        light:L, shade:g.userData.lampShade||null, aimRange, liftRange,
+        movable:!!g.userData.movable, mount:g.userData.mount||null,
+        pos:{x:f.x??0,y:emitY,z:f.z??0}, base:{x:f.x??0,y:yBase,z:f.z??0}, grow:!!fxSpec.grow });
     }
   }
   /* ★ 창턱(sill) — 가구가 아니라 건축 구조다.
