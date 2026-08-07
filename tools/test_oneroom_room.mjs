@@ -3,26 +3,15 @@
    ------------------------------------------------------------
      node tools/test_oneroom_room.mjs
 
-   증명 대상 (docs/handoff/oneroomfix-to-plan.md · docs/handoff/oneroomlamp-to-plan.md):
+   증명 대상 (docs/handoff/oneroomfix-to-plan.md):
 
      ① uid      원룸 슬롯이 **명시 uid** 위에 있다 — `TEMP~` 가 하나도 없다
      ② 자리     큰 창 앞에 화분 자리가 생겼다. 자연광 최고가 반지하보다 밝고 아파트보다 어둡다
-     ③ 빈 집    원룸에는 식물등 기구가 **하나도 없다** — 새 집은 원래 비어 있다
-     ④ 문턱     원룸 자연광이 무늬종 최소(4.2)는 넘고 갈라짐(6.0)은 **못 넘는다**
-     ⑤ 과하지   원룸의 어떤 자리도 반지하 최고를 넘지 않는다. 무늬종 갈라짐(8.4)은 못 넘는다
+     ③ 등       원룸에도 식물등 기구가 **반지하와 같은 2개** 있다 — 산 등이 이사를 따라온다
+     ④ 문턱     몬스테라가 원룸에서 갈라짐 문턱 6.0 을 **등 1개로** 넘는다.
+                자연광만으로는 **못 넘는다**(등이 값을 하는 자리가 남아 있어야 한다)
+     ⑤ 과하지   원룸의 어떤 자리도 반지하 최고를 넘지 않는다. 무늬종 갈라짐(8.4)은 못 넘는다 → ④가 산다
      ⑥ 회귀     **반지하 14칸이 한 톨도 안 바뀐다** — 아래 표와 정확히 같다(허용 오차 없음)
-
-   ★★ 2026-08-07 (oneroomlamp) — ③ 과 ④ 가 **뒤집혔다.** 왜:
-     박사님 확정: *"이사 가면 기존 짐 가지고 가는 형태. 새 집은 원래 비어 있고."*
-     2026-08-06 에는 「산 등이 이사를 따라온다」를 **원룸 데이터에 등 기구 2개를 박아 두고
-     켜지는 개수만 `ts.lamp.owned` 로 막는 것**으로 구현했었다. 그런데 그러면
-       · 튜토가 꺼진 판(`ts.enabled` 가 아닌 판)에서는 `owned = rigs` 로 떨어져 **2개가 공짜**고,
-       · 「새 집은 비어 있다」는 확정과도 어긋난다.
-     그래서 원룸의 `oneroom-growlight-bar`·`oneroom-growlight-clip` 을 뺐다.
-     반지하 둘은 그대로 둔다 — 거기는 「등을 사서 켜 본다」를 가르치는 방이고, 그 등이
-     곧 **살 수 있는 자리**다(그래서 「산 개수가 천장」 검사는 ③-2 에서 반지하로 옮겨 살렸다).
-   ⏸ 그 결과 원룸에는 지금 「등으로 문턱을 넘는다」가 **없다.** 산 등을 들고 가서
-     설치하는 길이 아직 없기 때문이다 — 박사님 판단 자리다(oneroomlamp-to-plan §못 한 것).
 
    ★ 집 조립(THREE)을 헤드리스로 돌린다 — tools/test_lampaim.mjs 와 같은 방식이라
      브라우저와 **같은 코드**가 그대로 돈다.
@@ -170,11 +159,8 @@ check('① -2 프로파일을 뽑을 수 있다 — 임시 uid 면 던지던 곳
   assert.equal(p.room, 'oneroom');
   assert.equal(p.uidStable, true);
   assert.equal(p.slots.length, 15);
-  /* ★ 2026-08-07 — [0,1,2] 를 달라고 해도 [0] 만 나온다. `light_adapter.profile` 이
-     `lampCounts.filter(n => n <= growRigs.length)` 로 **없는 등을 안 지어내기** 때문이다.
-     원룸 기구가 0개가 됐으니 이것이 맞는 값이다(옛 값 [0,1,2] · [0,20,32]W). */
-  assert.deepEqual(p.lampCounts, [0]);
-  assert.deepEqual(p.lampWatts, [0]);
+  assert.deepEqual(p.lampCounts, [0, 1, 2]);
+  assert.deepEqual(p.lampWatts, [0, 20, 32]);   // 바 20W + 집게 12W — 반지하와 같다
   info(`원룸 프로파일 뽑힘 — 슬롯 ${p.slots.length}칸 · 등 ${p.lampCounts.join('/')}개 · ` +
        `${p.lampWatts.join('/')}W`);
 });
@@ -198,45 +184,36 @@ check('② 창가 자리 — 창턱 4칸이 생겼고, 자연광 최고가 반�
   eng.build('oneroom');
 });
 
-/* ══ ③ 새 집은 비어 있다 ═══════════════════════════════════════════════════
-   2026-08-07 확정: *"이사 가면 기존 짐 가지고 가는 형태. 새 집은 원래 비어 있고."*
-   원룸에 미리 놓여 있던 식물등 2개를 뺐다. 반지하 둘은 그대로다 —
-   거기는 「등을 사서 켜 본다」를 가르치는 방이고, 그 등이 곧 살 수 있는 자리다. */
-check('③ 빈 집 — 원룸에는 식물등 기구가 하나도 없다 (반지하 2개는 그대로)', () => {
-  eng.build('oneroom');
-  assert.equal(eng.growLampCount(), 0,
-    '★ 원룸에 식물등 기구가 다시 생겼습니다 — 새 집은 원래 비어 있습니다(2026-08-07 확정)');
-  assert.deepEqual(eng.lampList().map(l => l.preset), [],
-    '★ 원룸 등 목록이 안 비었습니다');
-  /* 데이터 쪽도 본다 — 프리셋 이름으로 되살아나는 것을 막는다 */
-  const orLamps = (HOUSE.rooms.oneroom.furniture || [])
-    .filter(f => /^growlight/.test(String(f.preset || '')));
-  assert.deepEqual(orLamps.map(f => f.uid), [],
-    `★ house_rooms.json 원룸에 growlight 가 남아 있습니다: ${orLamps.map(f => f.uid).join(', ')}`);
-
-  /* 반지하는 손대지 않았다 — 같은 짝이 같은 순서로 그대로 있어야 한다 */
+/* ══ ③ 산 등이 이사를 따라온다 ═══════════════════════════════════════════ */
+check('③ 등 — 원룸에도 반지하와 **같은 종류가 같은 순서로** 2개 있다', () => {
   eng.build('banjiha');
-  const bj = eng.lampList();
-  assert.equal(eng.growLampCount(), 2, '★ 반지하 식물등 기구가 2개가 아닙니다 — 튜토가 죽습니다');
-  assert.deepEqual(bj.map(l => l.preset), ['growlight_bar', 'growlight_clip']);
-  /* ⚠ 바 등은 **못 겨눈다.** 그것이 튜토의 긴장이다(growlight_aim.md §2 §7) */
-  assert.equal(bj.find(l => l.uid === 'banjiha-growlight-bar').aimable, false,
-    '★ 반지하 바 등이 겨눠집니다 — 튜토의 긴장이 깨졌습니다');
-  assert.equal(bj.find(l => l.uid === 'banjiha-growlight-clip').aimable, true,
-    '★ 반지하 집게등을 못 겨눕니다');
+  const bjOrder = eng.lampList().map(l => l.preset);
   eng.build('oneroom');
-  info(`원룸 등 0개 · 반지하 등 ${bj.map(l => `${l.uid}[${l.preset}]`).join(' · ')}`);
+  assert.equal(eng.growLampCount(), 2,
+    '★ 원룸 식물등 기구가 2개가 아닙니다 — 반지하에서 산 등이 이사에서 사라집니다');
+  const orOrder = eng.lampList().map(l => l.preset);
+  /* ★ 순서까지 같아야 한다 — light_adapter.rigsOn 이 **앞에서부터** 켠다.
+     순서가 다르면 반지하에서 바(180)를 사고 원룸에서 집게(120)가 켜지는 조용한 강등이 된다. */
+  assert.deepEqual(orOrder, bjOrder,
+    `★ 등 종류·순서가 반지하와 다릅니다 — 반지하 [${bjOrder}] · 원룸 [${orOrder}]`);
+  assert.deepEqual(orOrder, ['growlight_bar', 'growlight_clip']);
+  /* ⚠ 바 등은 두 방 모두 **못 겨눈다.** 그것이 튜토의 긴장이다(growlight_aim.md §2 §7) */
+  const list = eng.lampList();
+  assert.equal(list[0].aimable, false, '★ 원룸 바 등이 겨눠집니다 — 붙박이여야 합니다');
+  assert.equal(list[1].aimable, true, '★ 원룸 집게등을 못 겨눕니다');
+  eng.build('banjiha');
+  assert.equal(eng.lampList().find(l => l.uid === 'banjiha-growlight-bar').aimable, false,
+    '★ 반지하 바 등이 겨눠집니다 — 튜토의 긴장이 깨졌습니다');
+  eng.build('oneroom');
+  info(`원룸 등 ${list.map(l => `${l.uid}[${l.preset}]`).join(' · ')} — 반지하와 같은 짝`);
 });
 
-check('③ -2 산 개수가 천장이다 — 안 샀으면 기구가 있어도 못 켠다 (반지하에서 잰다)', () => {
-  /* ★ 이 검사는 원래 원룸에서 돌았다(2026-08-06 lampecon 의 구멍 막음). 원룸에 기구가
-     0개가 되어 「기구는 있는데 안 샀다」를 원룸에서는 더 못 보인다 — 그래서 **반지하로
-     옮겨 그대로 살렸다.** 판정을 뺀 것이 아니다: 같은 셈(lightGateOf.canTurnOn =
-     min(기구 수, 산 개수))을 기구가 남아 있는 방에서 잠근다. */
-  const S = newState({ room: 'banjiha', mode: 'real' });
+check('③ -2 산 개수가 천장이다 — 안 샀으면 방에 기구가 있어도 못 켠다', () => {
+  /* game.html fillLamps 와 같은 셈을 코어 쪽에서 확인한다(lightGateOf.canTurnOn) */
+  const S = newState({ room: 'oneroom', mode: 'real' });
   S.pots.push({ id: 'pot_01', plantId: 'monstera_deliciosa', slotId: null, at: null, variegated: false });
   S.tutorial = createTutorialState({ enabled: true });
-  eng.build('banjiha');
+  eng.build('oneroom');
 
   S.tutorial.lamp.owned = 0;
   const g0 = lightGateOf(S, { light: eng }, { season: 'summer', lampCount: 0 });
@@ -251,34 +228,16 @@ check('③ -2 산 개수가 천장이다 — 안 샀으면 기구가 있어도 �
   assert.match(g1.why, /1개 더 켤 수 있습니다/);
 
   /* 튜토가 없는 판(검수)은 예전 그대로 — 기구 수가 곧 천장이다 */
-  const V = newState({ room: 'banjiha', mode: 'real' });
+  const V = newState({ room: 'oneroom', mode: 'real' });
   V.pots.push({ id: 'pot_01', plantId: 'monstera_deliciosa', slotId: null, at: null, variegated: false });
   const gv = lightGateOf(V, { light: eng }, { season: 'summer', lampCount: 0 });
   assert.equal(gv.ownedLamps, null, '튜토 없는 판에서 「0개 샀다」로 말합니다');
   assert.equal(gv.canTurnOn, 2);
   assert.match(gv.why, /2개 더 켤 수 있습니다/);
-
-  /* 원룸 쪽은 **기구가 없다**고 말해야 한다 — 「더 사라」로 말하면 거짓 조언이 된다.
-     (등을 두 개 사서 이사해도 켤 자리가 없다. 그 사실을 화면이 그대로 말하는지 본다.) */
-  const O = newState({ room: 'oneroom', mode: 'real' });
-  O.pots.push({ id: 'pot_01', plantId: 'monstera_deliciosa', slotId: null, at: null, variegated: false });
-  O.tutorial = createTutorialState({ enabled: true });
-  O.tutorial.lamp.owned = 2;
-  eng.build('oneroom');
-  const go = lightGateOf(O, { light: eng }, { season: 'summer', lampCount: 0 });
-  assert.equal(go.growRigs, 0);
-  assert.equal(go.canTurnOn, 0);
-  assert.match(go.why, /이 방에는 식물등 기구가 하나도 없습니다/,
-    `★ 등 2개를 산 채로 원룸에 왔는데 화면이 이렇게 말합니다 — "${go.why}"`);
-  info(`⏸ 등 2개를 사서 이사해도 원룸에서 켤 자리가 0개다 — "${go.why}"`);
 });
 
-/* ══ ④ 갈라짐 문턱 ═══════════════════════════════════════════════════════
-   ⏸★ 2026-08-07 — 이 검사가 **뒤집혔다.** 원래는 "등 1개로 문턱 6.0 을 넘는다"였고,
-     등을 빼면서 그 길이 데이터에서 사라졌다. 문턱 6.0 은 한 톨도 안 건드렸다
-     (data/balance/light_thresholds.json). 숫자를 낮춰 맞춘 것이 아니라,
-     **넘던 수단이 없어진 것**을 그대로 적는다. 박사님 판단 자리다. */
-check('④ 문턱 — 자연광이 무늬종 최소(4.2)는 넘고, 갈라짐(6.0)은 지금 아무 수로도 못 넘는다', () => {
+/* ══ ④ 갈라짐 문턱 ═══════════════════════════════════════════════════════ */
+check('④ 문턱 — 자연광만으로는 못 넘고, 등 1개로 넘는다', () => {
   const S = newState({ room: 'oneroom', mode: 'real' });
   S.pots.push({ id: 'pot_01', plantId: 'monstera_deliciosa', slotId: null, at: null, variegated: false });
   eng.build('oneroom');
@@ -286,36 +245,30 @@ check('④ 문턱 — 자연광이 무늬종 최소(4.2)는 넘고, 갈라짐(6.
   const g0 = lightGateOf(S, { light: eng }, { season: 'summer', lampCount: 0 });
   assert.equal(g0.fenestrate, FEN, '갈라짐 문턱이 light_thresholds.json 값이 아닙니다');
   assert.equal(g0.canGrow, true, `★ 원룸 자연광이 min ${g0.min} 도 못 넘습니다 (${g0.best.avg7})`);
-  assert.equal(g0.canVarie, true,
-    `★ 원룸 자연광(${g0.best.avg7})이 무늬종 최소 ${g0.varieMin} 에 못 닿습니다 — ` +
-    `그것마저 없으면 원룸이 반지하와 다를 것이 없습니다`);
   assert.equal(g0.canFenestrate, false,
-    `★ 자연광만으로 갈라집니다 (${g0.best.avg7}) — skyViewK 1.18 은 그 아래로 잡은 값입니다`);
+    `★ 자연광만으로 갈라집니다 (${g0.best.avg7}) — 그러면 등을 산 뜻이 없습니다`);
 
-  /* ⏸ 등 개수를 뭘로 주든 값이 안 움직인다 — 켤 기구가 없기 때문이다.
-     "등을 켰다고 치면"이 조용히 값을 올리는 일이 없어야 셈을 믿을 수 있다. */
-  for (const n of [1, 2]) {
-    const g = lightGateOf(S, { light: eng }, { season: 'summer', lampCount: n });
-    assert.equal(g.best.avg7, g0.best.avg7,
-      `★ 기구가 0개인데 lampCount ${n} 에서 값이 움직였습니다 (${g0.best.avg7} → ${g.best.avg7})`);
-    assert.equal(g.canFenestrate, false);
-  }
-  assert.equal(countAvg7Over(OR.out, 2, FEN), 0,
-    '★ 등 기구가 0개인 원룸에 갈라지는 칸이 있습니다 — 셈이 틀린 것입니다');
+  const g1 = lightGateOf(S, { light: eng }, { season: 'summer', lampCount: 1 });
+  assert.equal(g1.canFenestrate, true,
+    `★ 등 1개로도 갈라짐 문턱 ${FEN} 을 못 넘습니다 (${g1.best.avg7} @ ${g1.best.slotId})`);
+  assert.equal(g1.why, null);
 
-  /* 반지하보다 **넓다** — 자연광만으로 자랄 수 있는 칸 수로 잰다(⑤ 가 최고값을 잠근다).
-     이것이 지금 원룸에 남은 유일한 「나아짐」이다. */
+  const g2 = lightGateOf(S, { light: eng }, { season: 'summer', lampCount: 2 });
+  assert.equal(g2.canFenestrate, true);
+
+  /* 반지하보다 **넓다** — 최고값이 아니라 칸 수로 잰다(⑤ 가 최고값을 잠근다) */
+  assert.ok(countAvg7Over(OR.out, 2, FEN) >= 2,
+    `★ 등 둘을 다 켜도 갈라지는 칸이 ${countAvg7Over(OR.out, 2, FEN)}개뿐입니다 — 반지하(1칸)보다 넓어야 합니다`);
   assert.ok(countAvg7Over(OR.out, 0, g0.min) > countAvg7Over(BJ.out, 0, g0.min),
     '★ 자연광만으로 자랄 수 있는 칸이 반지하보다 안 많습니다');
-  assert.ok(countAvg7Over(OR.out, 0, g0.varieMin) > countAvg7Over(BJ.out, 0, g0.varieMin),
-    `★ 무늬종 최소(${g0.varieMin})를 넘는 칸이 반지하보다 안 많습니다`);
 
-  info(`원룸 자연광 최고 ${g0.best.avg7} @ ${g0.best.slotId} — ` +
-       `자람 ${g0.min} 넘음 · 무늬종 최소 ${g0.varieMin} 넘음 · 갈라짐 ${FEN} 못 넘음`);
-  info(`  ⏸ ${g0.why}`);
-  info(`  칸 수 — 자람(${g0.min}) 원룸 ${countAvg7Over(OR.out, 0, g0.min)}칸 vs 반지하 ${countAvg7Over(BJ.out, 0, g0.min)}칸 · ` +
-       `무늬종 최소(${g0.varieMin}) 원룸 ${countAvg7Over(OR.out, 0, g0.varieMin)}칸 vs 반지하 ${countAvg7Over(BJ.out, 0, g0.varieMin)}칸 · ` +
-       `갈라짐(${FEN}) 원룸 0칸`);
+  info(`원룸 갈라짐(문턱 ${FEN}) — 등0 ${g0.best.avg7} 불가 · 등1 ${g1.best.avg7} 가능(${g1.best.slotId}) · ` +
+       `등2 ${g2.best.avg7} 가능`);
+  info(`  문턱 넘는 칸 수 — 등0 ${countAvg7Over(OR.out, 0, FEN)} · ` +
+       `등1 ${countAvg7Over(OR.out, 1, FEN)} · 등2 ${countAvg7Over(OR.out, 2, FEN)}칸 ` +
+       `(반지하는 등1 ${countAvg7Over(BJ.out, 1, FEN)} · 등2 ${countAvg7Over(BJ.out, 2, FEN)}칸)`);
+  info(`  자랄 수 있는 칸(min ${g0.min}) — 원룸 등0 ${countAvg7Over(OR.out, 0, g0.min)}칸 · ` +
+       `반지하 등0 ${countAvg7Over(BJ.out, 0, g0.min)}칸`);
 });
 
 /* ══ ⑤ 반지하보다 낫되 과하지 않다 ═══════════════════════════════════════ */
