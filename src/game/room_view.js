@@ -333,12 +333,17 @@ function blobTexture() {
   const g = c.getContext('2d');
   /* 가운데가 짙고 가장자리로 부드럽게 사라진다. 가장자리를 완전히 0 으로 떨어뜨려야
      판때기 네모가 안 보인다(0.02 만 남아도 사각형 자국이 보인다 — 실제로 보였다). */
+  /* ★★ RGB 를 **흰색**으로 둔다 (2026-08-07 · §설 초록빛). 예전에는 검정이었다.
+     그림은 **한 톨도 안 바뀐다** — 재질의 기본 `color` 가 검정이라
+     흰색 × 검정 = 검정이고, 알파는 손대지 않았다. 곱셈의 항등원을 옮겼을 뿐이다.
+     ⚠ 검정으로 두면 `material.color` 가 **아무 일도 안 한다**(0 × 무엇 = 0).
+       그래서 「식물 아래 원이 빛 따라 초록으로」를 색으로 못 낸다. 흰색이라야 색이 먹는다. */
   const grd = g.createRadialGradient(N / 2, N / 2, 0, N / 2, N / 2, N / 2);
-  grd.addColorStop(0.00, 'rgba(0,0,0,0.78)');
-  grd.addColorStop(0.42, 'rgba(0,0,0,0.66)');
-  grd.addColorStop(0.72, 'rgba(0,0,0,0.30)');
-  grd.addColorStop(0.90, 'rgba(0,0,0,0.07)');
-  grd.addColorStop(1.00, 'rgba(0,0,0,0)');
+  grd.addColorStop(0.00, 'rgba(255,255,255,0.78)');
+  grd.addColorStop(0.42, 'rgba(255,255,255,0.66)');
+  grd.addColorStop(0.72, 'rgba(255,255,255,0.30)');
+  grd.addColorStop(0.90, 'rgba(255,255,255,0.07)');
+  grd.addColorStop(1.00, 'rgba(255,255,255,0)');
   g.fillStyle = grd;
   g.fillRect(0, 0, N, N);
   _blobTex = new THREE.CanvasTexture(c);
@@ -1629,6 +1634,28 @@ export async function createRoomView(canvas, opts = {}) {
      ⇒ houseGroup 에 따로 달고 **열쇠로 짝지어** 자리만 맞춘다. */
   const plantBlobs = new Map();          // 열쇠 → 접지 그림자 메시(houseGroup 소속)
 
+  /* ══ 설 초록빛 — 「자리가 좋을수록 발밑이 살짝 초록으로」 (박사님 2026-08-07) ══
+     박사님 원문: *"위에 식물이 있으면 좀 더 좋아질수록(빛이) 약간 식물 아래 원형이
+     살짝 초록색으로 점점 변하게 하자."*
+
+     ★★ **이건 미리보기가 아니라 결과다.** 그래서 첫 플레이에도 켜진다 —
+       `rankSlots` 가 튜토에서 자리 색을 안 내는 것과 **어긋나지 않는다.** 그쪽은 **놓기 전에**
+       답을 알려주는 것이라 배움이 색 읽기로 바뀌지만, 이쪽은 **이미 놓은 뒤** 그 자리가
+       돌려주는 답이다. 「자리가 결과를 바꾼다」를 결과로 배우게 하는 자리가 바로 여기다.
+
+     ★ **얼마나 좋은가는 방뷰가 모른다.** 몬스테라는 밝아야 좋고 콩나물은 어두워야 좋다 —
+       판정은 game.html 이 제 표(밴드·끼니)로 하고, 여기는 0~1 을 받아 **칠하기만** 한다
+       (`highlightSlots` 가 색만 칠하는 것과 같은 경계).
+
+     ⚠ 조도에 한 톨도 안 들어간다. 판때기는 houseGroup 에만 붙고 DLI 는 light_adapter 것이다. */
+  const GLOW_RGB = [0.243, 0.639, 0.286];   // #3ea349 — 잎 초록. 알파 0.45 라 이 값이 곧 「살짝」이다
+  const plantGlow = new Map();              // 열쇠 → 0~1 (판때기가 다시 만들어져도 살아남는다)
+
+  function applyGlow(b, v) {
+    /* v=0 이면 검정 = 예전 그대로의 그림자다. 커질수록 초록이 올라온다. */
+    b.material.color.setRGB(GLOW_RGB[0] * v, GLOW_RGB[1] * v, GLOW_RGB[2] * v);
+  }
+
   function syncPlantBlob(key, g, d) {
     let b = plantBlobs.get(key);
     if (!b) {
@@ -1636,6 +1663,9 @@ export async function createRoomView(canvas, opts = {}) {
       b.visible = blobsOn;
       houseGroup.add(b);
       plantBlobs.set(key, b);
+      /* ★ 다시 지어진 판때기에 **예전 초록을 되씌운다.** 안 하면 하루가 갈 때마다
+         (그루를 다시 조립할 때마다) 초록이 깜빡 꺼졌다 켜진다. */
+      applyGlow(b, plantGlow.get(key) || 0);
     }
     /* 화분 **바닥**에 깐다. 그루 원점이 화분 바닥과 같다는 보장이 없으므로 재서 맞춘다 */
     const pot = potPartOf(g);
@@ -6217,6 +6247,23 @@ export async function createRoomView(canvas, opts = {}) {
       needsRender = true;
       return idleCap();
     },
+    /* ★★ 그루 발밑을 **얼마나 초록으로** 물들일지 (박사님 2026-08-07 · §설 초록빛).
+       ------------------------------------------------------------
+         key   그루 열쇠 — `setPlant` 의 slotId, `setPlantAt` 의 potId. `plants()[i].key` 와 같다
+         t     0~1. **「그 식물에게」 자리가 얼마나 좋은가**이지 밝기가 아니다.
+               콩나물은 어두울수록 1 에 가깝다 — 판정은 부르는 쪽(game.html)이 한다.
+       0 이면 예전 그대로의 검은 그림자다. 안 부르면 아무것도 안 바뀐다.
+       ⚠ 값을 기억해 둔다 — 그루가 다시 조립돼도 초록이 안 꺼진다.
+       ⚠ 조도(DLI)에 한 톨도 안 들어간다. 이건 그림이다. */
+    setPlantGlow(key, t) {
+      const v = Number.isFinite(t) ? Math.max(0, Math.min(1, t)) : 0;
+      plantGlow.set(key, v);
+      const b = plantBlobs.get(key);
+      if (b) applyGlow(b, v);
+      needsRender = true;
+      return v;
+    },
+    plantGlowOf(key) { return plantGlow.get(key) ?? null; },
     /* ★ 접지 그림자를 켜고 끈다 — **재기·비교용**이다(before/after 스크린샷·값 재기).
        ⚠ 이건 그림이라 조도(DLI)는 켜든 끄든 한 톨도 안 바뀐다. */
     setBlobShadows(on) {

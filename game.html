@@ -3890,6 +3890,10 @@ function syncRoom() {
     }
     for (const id of want) shownCuts.add(id);
   } catch (e) { warn('방')(e); }
+  /* ★ 발밑 초록 — 방을 맞춘 **바로 뒤**에 한 번만 부른다 (2026-08-07 · §설 초록빛).
+     여기 둔 이유: 그루를 세우는 갈래가 여럿(자리/좌표 · 작물 종류마다)인데 그 자리마다
+     칠하면 한 갈래를 빠뜨린다. 방이 맞은 뒤 한 곳에서 훑으면 갈래가 늘어도 안 샌다. */
+  try { syncPlantGlow(); } catch (e) { warn('발밑 초록')(e); }
 }
 /* ★ 지금 시루가 몇 개인가. **정본은 pots[] 다** — `sirus` 는 읽기용 사본이다(first_play §대표 칸).
    한 곳에서만 세는 이유: 끌기·판정·그리기가 서로 다른 수를 보면
@@ -3935,6 +3939,54 @@ function dliBySlotId() {
     return new Map((rep.slots || []).map(s => [s.slotId, s.dli]));
   } catch { return new Map(); }
 }
+/* ══ 설 초록빛 — 「자리가 좋을수록 발밑이 살짝 초록으로」 (박사님 2026-08-07) ══
+   박사님 원문: *"위에 식물이 있으면 좀 더 좋아질수록(빛이) 약간 식물 아래 원형이
+   살짝 초록색으로 점점 변하게 하자."*
+
+   ★★ **`rankSlots` 와 어긋나지 않는다.** 그쪽은 첫 플레이에 자리 색을 안 낸다 —
+     **놓기 전에** 답을 알려주면 배움이 색 읽기로 바뀌기 때문이다. 이쪽은 **이미 놓은 뒤**
+     그 자리가 돌려주는 답이라 정반대다. 「자리가 결과를 바꾼다」를 결과로 배우는 자리가
+     바로 여기고, 그래서 **첫 플레이에도 켠다.** (「자세히」의 물 준 지 줄과 같은 판단이다.)
+
+   ★ 판정 기준을 **새로 짓지 않는다** — rankSlots 와 **같은 표**를 읽는다.
+     여기서 문턱을 새로 지으면 초록빛과 자리 색이 서로 다른 말을 하게 된다.
+     rank 세 단계를 0~1 로 펴기만 한다. 계단이 셋이라 「점점」이 거칠어 보일 수 있는데,
+     그건 판정이 원래 세 단계라서다 — 매끄럽게 하려고 여기서 숫자를 지어내지 않는다. */
+const GLOW_BY_RANK = { good: 1.0, ok: 0.42, bad: 0.0 };
+function plantGlow01(what, dli) {
+  if (!Number.isFinite(dli)) return null;         // 못 재면 안 칠한다 — 지어내지 않는다
+  let rank = null;
+  if (what === 'monstera') {
+    const varie = !!(pot0(S) && pot0(S).variegated);
+    let b = null; try { b = io.growth.bandOf(dli, varie); } catch { }
+    rank = b && RANK_BY_BAND[b.band] || null;
+  } else {
+    let q = null; try { q = cropQualityOf(what, dli); } catch { }
+    rank = q ? (q.meals >= 3 ? 'good' : q.meals === 2 ? 'ok' : 'bad') : null;
+  }
+  return rank ? GLOW_BY_RANK[rank] : null;
+}
+
+/* 지금 놓여 있는 것들의 발밑 초록을 갱신한다. 하루가 갈 때·자리를 옮길 때 부른다.
+   ⚠ 못 재는 것은 **건드리지 않는다** — 0 으로 밀면 "어두운 자리"라고 거짓말하게 된다. */
+function syncPlantGlow() {
+  if (!roomView || !roomView.setPlantGlow) return;
+  const dliOf = dliBySlotId();
+  const put = (key, what, slotId) => {
+    if (!key) return;
+    const t = plantGlow01(what, dliOf.get(slotId));
+    if (t != null) { try { roomView.setPlantGlow(key, t); } catch { } }
+  };
+  /* ★ 열쇠는 **방뷰를 부른 방식과 같아야 한다** — 좌표로 세웠으면 potId, 자리로 세웠으면 slotId.
+     어긋나면 없는 열쇠에 칠하게 되어 조용히 아무 일도 안 난다(syncRoom 과 같은 갈래). */
+  const p = pot0(S);
+  if (p && p.slotId) put(p.at ? p.id : p.slotId, 'monstera', p.slotId);
+  const b = S.firstPlay && S.firstPlay.beansprout;
+  if (b && b.slotId) put(b.at ? BEANSPROUT_ID : b.slotId, 'beansprout', b.slotId);
+  const ms = musunSite();
+  if (ms && ms.slotId) put(ms.at ? CROP_SITE_IDS.musun : ms.slotId, 'musun', ms.slotId);
+}
+
 function rankSlots(what, ids) {
   if (!ids || !ids.length) return ids || [];
   if (S.firstPlay && S.firstPlay.enabled) return ids;   /* ★위 ★★ — 튜토에서는 색을 안 나눈다 */
