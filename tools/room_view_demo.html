@@ -547,7 +547,9 @@ $('gridBtn').onclick = function () {
   const free = view.showGrid(on, { potD: freeD() });
   this.classList.toggle('on', on);
   if (on) { const i = view.grid();
-    log(`showGrid(true) → ${i.room.cols}×${i.room.rows}칸(${i.cell}m) · 놓을 수 있는 칸 ${free} · 단위 ${i.unit}m`, 'k'); }
+    /* ★ 그리는 것은 바깥 치수(cols×rows)가 아니라 **벽 속 칸을 뺀 것**(room.cells)이다 */
+    log(`showGrid(true) → 그린 칸 ${i.room.cells}칸(${i.cell}m · 방 바깥 ${i.room.cols}×${i.room.rows}, ` +
+        `안쪽 ${i.room.inner.w}×${i.room.inner.d}m) · 놓을 수 있는 칸 ${free} · 단위 ${i.unit}m`, 'k'); }
 };
 $('ringsOn').onclick = () => {
   const n = view.showSlotRings(true, { potD: freeD() });

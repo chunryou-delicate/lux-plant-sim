@@ -785,6 +785,8 @@ export async function createRoomView(canvas, opts = {}) {
     /* 이전 방 정리 */
     disposePreview();
     disposeFurnGhost();
+    clearFurnHighlight();        // ★ 방을 다시 지으면 밝혀 둔 메시가 사라진다 — 먼저 되돌린다
+    spanCache = null;            // 방이 바뀌면 「어느 칸이 벽 속인가」도 다시 센다
     clearGrid();
     disposeWalkGhost();
     selChar = null;
@@ -970,6 +972,88 @@ export async function createRoomView(canvas, opts = {}) {
   function roomBox() {
     const s = built.size;
     return { w: s.w, d: s.d, h: s.h };
+  }
+
+  /* ★ 방 **안쪽** 사각형 — 벽 속을 뺀 진짜 바닥 (2026-08-08)
+     ------------------------------------------------------------
+     roomBox 는 **바깥 치수**다. 반지하는 5×4m 인데 벽이 두께 0.2m 로 그 선을 타고 서 있어
+     (house.js blockLine: at=±CW/2 에 두께 WT 를 걸친다) 안쪽 면은 ∓2.40 / ∓1.90 이다.
+     즉 바깥 치수 위에 격자를 깔면 제일 바깥 한 줄은 절반이 **벽 속**이다.
+     그 줄은 「막힌 칸」이 아니라 「방이 아닌 칸」이다 — 뜻이 다르다.
+
+     두께를 0.2 로 적어 두지 않는 이유: house.js 가 값을 바꾸면 여기가 조용히 안 맞는다.
+     그래서 **벽 조각(콜라이더)에서 재서** 쓴다. 네 변마다,
+       · 축에 나란하고(rot≈0) · 그 변 위에 중심이 있고 · 그 변에 대해 얇은 조각
+     의 반두께 중 **제일 큰 값**을 안쪽으로 밀어낸다. 문 자리(구멍)에는 조각이 없지만
+     한 변에 조각이 하나라도 있으면 그 변의 두께를 알 수 있으므로 문 자리도 같이 밀린다.
+     ⚠ 칸막이·도려내기 경계는 여기서 안 본다 — 그건 방 안의 장애물이라 「막힌 칸」이 맞다. */
+  /* 바깥 경계 네 변 위에 서 있는 벽 조각만 골라 준다.
+     ⚠ 칸막이·도려내기 경계는 **안 고른다** — 그건 방 안의 장애물이라 「막힌 칸」이 맞다.
+       바깥 벽만이 「방이 아니다」다. */
+  function perimeterWalls() {
+    const b = roomBox();
+    const cs = (built && built.colliders) || [];
+    const x0 = -b.w / 2, x1 = b.w / 2, z0 = -b.d / 2, z1 = b.d / 2;
+    const out = [];
+    for (const c of cs) {
+      if (!c || c.kind === 'furn') continue;
+      if (Math.abs(c.rot || 0) > 1e-3) continue;              // 벽 조각은 축에 나란하다
+      const vert = c.w <= c.d && (Math.abs(c.x - x0) < 1e-3 || Math.abs(c.x - x1) < 1e-3);
+      const horz = c.d <= c.w && (Math.abs(c.z - z0) < 1e-3 || Math.abs(c.z - z1) < 1e-3);
+      if (vert || horz) out.push(c);
+    }
+    return out;
+  }
+
+  /* 방 **안쪽** 사각형 — 바깥 벽의 안쪽 면. 두께는 벽 조각에서 재서 쓴다. */
+  function roomInner() {
+    const b = roomBox();
+    const x0 = -b.w / 2, x1 = b.w / 2, z0 = -b.d / 2, z1 = b.d / 2;
+    const in0 = { x0: 0, x1: 0, z0: 0, z1: 0 };
+    for (const c of perimeterWalls()) {
+      if (c.w <= c.d) {
+        if (Math.abs(c.x - x0) < 1e-3) in0.x0 = Math.max(in0.x0, c.w / 2);
+        if (Math.abs(c.x - x1) < 1e-3) in0.x1 = Math.max(in0.x1, c.w / 2);
+      }
+      if (c.d <= c.w) {
+        if (Math.abs(c.z - z0) < 1e-3) in0.z0 = Math.max(in0.z0, c.d / 2);
+        if (Math.abs(c.z - z1) < 1e-3) in0.z1 = Math.max(in0.z1, c.d / 2);
+      }
+    }
+    /* 그 변에 벽 조각이 하나도 없으면 밀지 않는다 — 짐작으로 방을 좁히지 않는다(예전 그대로) */
+    return { x0: x0 + in0.x0, x1: x1 - in0.x1, z0: z0 + in0.z0, z1: z1 - in0.z1,
+             w: +(b.w - in0.x0 - in0.x1).toFixed(4), d: +(b.d - in0.z0 - in0.z1).toFixed(4) };
+  }
+
+  /* 어느 칸을 그리나 — 칸 선은 예전 그대로 방 원점 기준 GRID_CELL 배수에 있고
+     (앉는 자리가 0.125 배수라 선과 눈금이 맞는다), 그중 **바깥 벽에 물리는 칸만 뺀다.**
+     ★ 문 자리는 벽 조각이 없어서 그대로 남는다 — 거기는 실제로 놓을 수 있는 바닥이다.
+       (재 봤다: 반지하 문 앞 칸 셋이 그렇다. 벽이라고 지워 버리면 놓을 자리가 준다.) */
+  let spanCache = null;                 // 방마다 한 번만 센다(방을 다시 지으면 assemble 이 버린다)
+  function gridSpan() {
+    if (spanCache) return spanCache;
+    const b = roomBox();
+    const nx = Math.round(b.w / GRID_CELL), nz = Math.round(b.d / GRID_CELL);
+    const x0 = -b.w / 2, z0 = -b.d / 2;
+    /* 바깥 벽은 축에 나란한 것만 골라 왔으므로(perimeterWalls) 겹침은 구간 두 개면 끝난다.
+       SAT(rectOverlap)까지 쓸 일이 아니다 — 방마다 칸 수천 개 × 벽 조각 수십 개를 돈다. */
+    const walls = perimeterWalls().map(c => ({ x: c.x, z: c.z,
+                                               hx: (c.w + GRID_CELL) / 2, hz: (c.d + GRID_CELL) / 2 }));
+    const keep = new Uint8Array(nx * nz);
+    let cells = 0;
+    for (let i = 0; i < nx; i++) {
+      const cx = x0 + (i + 0.5) * GRID_CELL;
+      for (let j = 0; j < nz; j++) {
+        const cz = z0 + (j + 0.5) * GRID_CELL;
+        let inWall = false;
+        for (const c of walls)
+          if (Math.abs(cx - c.x) < c.hx && Math.abs(cz - c.z) < c.hz) { inWall = true; break; }
+        if (!inWall) { keep[j * nx + i] = 1; cells++; }
+      }
+    }
+    spanCache = { x0, z0, nx, nz, keep, cells, inner: roomInner(),
+                  at: (i, j) => (i >= 0 && j >= 0 && i < nx && j < nz && keep[j * nx + i] === 1) };
+    return spanCache;
   }
 
   const defaultEl = () => (ctx.cam.aspect < 0.95 ? BASE_EL_PORTRAIT : BASE_EL_LANDSCAPE);
@@ -2735,6 +2819,49 @@ export async function createRoomView(canvas, opts = {}) {
     return null;
   }
 
+  /* ============================================================
+     ★ 포인터 모드 — 「바로 그 자리」냐 「끈 만큼」이냐 (2026-08-08)
+     ------------------------------------------------------------
+     박사님: "클릭을 터치 또는 그 커서를 **상대 이동**으로 움직이게 설정에서 고를 수 있게."
+
+     끌어서 옮기는 조작에는 기준점이 두 가지밖에 없다.
+       direct    (기본·지금 그대로)  **손가락 자리**가 기준이다. 물건이 손가락 밑으로 온다.
+       relative                      **물건이 지금 있는 자리**가 기준이다. 끈 만큼만 움직인다.
+
+     ⚠ 방 뷰가 스스로 하는 끌기 둘은 **예전부터 상대**다 — 모드와 무관하게 안 바뀐다.
+         걷기(walkDrag)  기준점 = 캐릭터 발밑(§onDown). 캐릭터는 폰에서 40px 남짓이라
+                         정확히 짚을 수가 없어 애초에 이렇게 만들었다.
+         시점 회전       각도를 손가락이 움직인 만큼 더한다. 이건 원래 상대다.
+       그래서 이 모드가 실제로 가르는 것은 **화면(game.html)이 기준점을 잡는 끌기**다 —
+       가구 끌기·등 끌기가 지금 손가락 자리를 기준으로 잡고 있다(재서 확인했다).
+       화면은 아래 dragOrigin 한 줄로 두 조작을 이 모드에 맡길 수 있다.
+
+     ⚠ 기본값은 반드시 direct 다. 바꾸면 폰 손버릇이 통째로 달라진다.
+  ============================================================ */
+  let ptrMode = 'direct';
+  const POINTER_MODES = ['direct', 'relative'];
+
+  /* 끌기의 기준점 — **뷰포트 CSS 픽셀**(clientX/clientY 와 같은 자)로 받고 같은 자로 준다.
+     surfaceAt·pickFurnitureAt 이 쓰는 좌표계와 같다. (screenPosOf 만 캔버스 기준이다.)
+       id            밝히거나 끄는 대상. 가구 uid · 자리 열쇠 · 화분 id · 캐릭터 id 다 받는다
+       tapX, tapY    손가락이 눌린 자리. 안 주면 화면 한가운데
+     돌려주는 값 { x, y, mode, from } — from 은 'tap' 또는 'object' 다.
+     ★ relative 인데 그 물건이 화면에 안 보이면(카메라 뒤) 손가락 자리로 물러난다.
+       그래야 "아무 반응이 없다"가 안 생긴다. */
+  function dragOrigin(id, tapX, tapY) {
+    const r = canvas.getBoundingClientRect();
+    const tap = { x: Number.isFinite(tapX) ? tapX : r.left + r.width / 2,
+                  y: Number.isFinite(tapY) ? tapY : r.top + r.height / 2 };
+    if (ptrMode !== 'relative' || id == null) return { ...tap, mode: ptrMode, from: 'tap' };
+    let p = null;
+    const t = (() => { try { return resolveKey(id); } catch (e) { return null; } })();
+    if (t) p = slotScreenPos(t.pos);
+    else if (chars.has(id)) p = charScreenPos(chars.get(id));
+    else p = furnScreenPos(anyFurnNode(id), 0);
+    if (!p) return { ...tap, mode: ptrMode, from: 'tap' };
+    return { x: +(r.left + p.x).toFixed(1), y: +(r.top + p.y).toFixed(1), mode: ptrMode, from: 'object' };
+  }
+
   /* ── 포인터 ──
      폰   한 손가락 = 회전(손 떼면 8방 스냅) · 두 손가락 = 줌 · 탭 = 선택
      PC   좌드래그 = 회전 · 휠 = 줌 · 호버 = 자리 미리보기
@@ -3821,6 +3948,93 @@ export async function createRoomView(canvas, opts = {}) {
     return null;
   }
 
+  /* ============================================================
+     ★ 가구 밝히기 — highlightFurniture (2026-08-08)
+     ------------------------------------------------------------
+     박사님: "가구 클릭 시 … 가구가 **살짝 밝아지면서** 활성화된 것처럼 되면서
+             그 옆으로 선택 가능 메뉴들이 뜨게."
+     그래서 윤곽선이 아니라 **밝기**다. 재질을 복제해 emissive 를 얹는다.
+       · 무늬(map)가 있으면 emissiveMap 에 그 무늬를 그대로 물려 준다 —
+         흰 빛을 통으로 얹으면 나뭇결이 사라져 「밝아졌다」가 아니라 「하얘졌다」가 된다.
+       · 무늬가 없으면 제 색을 emissive 로 쓴다. 색이 안 변하고 밝기만 오른다.
+     ⚠ **원래 재질로 정확히 돌아와야 한다.** 그래서 갈아 끼운 것만 적어 뒀다가
+       되돌리고 복제본을 버린다. 원본은 손대지 않는다(공유 재질이라 손대면 방 전체가 밝아진다).
+     ⚠ 스스로 빛나는 부품(전구·갓)은 **건너뛴다.** 저 재질의 emissiveIntensity 는 등을
+       켜고 끄는 코드가 따로 만진다(§등). 갈아 끼우면 그 조작이 복제본으로 가서
+       되돌리는 순간 켜짐 상태가 옛날로 돌아간다.
+     ⚠ 이건 **그림만**이다. 조도(DLI)·판정·좌표는 한 줄도 안 건드린다.
+  ============================================================ */
+  const FURN_HL_K = 0.16;      // 얹는 밝기. 0.16 은 "살짝"이다(1.0 이면 전구처럼 탄다)
+  let furnHL = null;           // { uid, swaps:[{mesh, mat}], clones:Set }
+
+  function clearFurnHighlight() {
+    if (!furnHL) return;
+    for (const s of furnHL.swaps) s.mesh.material = s.mat;
+    for (const c of furnHL.clones) { try { c.dispose(); } catch (e) { /* 나머지는 계속 버린다 */ } }
+    furnHL = null;
+    needsRender = true;
+  }
+
+  /* 그 재질을 k 만큼 밝힌 **복제본**. 원본은 안 건드린다. */
+  function brightenedMat(m, k) {
+    const c = m.clone();
+    if (c.emissive) {
+      if (c.map) { c.emissiveMap = c.map; c.emissive = new THREE.Color(1, 1, 1); }
+      else c.emissive = new THREE.Color().copy(c.color || new THREE.Color(1, 1, 1));
+      c.emissiveIntensity = k;
+    } else if (c.color) {
+      /* MeshBasicMaterial 처럼 빛을 안 받는 재질 — 색을 그만큼 올린다 */
+      c.color = new THREE.Color().copy(c.color).multiplyScalar(1 + k);
+    }
+    return c;
+  }
+
+  const glowing = m => !!(m && m.emissive && (m.emissive.r + m.emissive.g + m.emissive.b) > 0.001);
+
+  /* 어느 가구든 uid 로 찾는다 — 옮길 수 있는 것(furnNodes)만이 아니다.
+     붙박이·벽걸이도 「누른 것」이 될 수 있고, 밝히는 것은 옮기는 것과 다른 일이다. */
+  function anyFurnNode(uid) {
+    if (!built || !built.furniture || uid == null) return null;
+    return built.furniture.children.find(g => g.userData && g.userData.uid === uid) || null;
+  }
+
+  /* uid 를 밝힌다. null 이면 끈다. 돌려주는 값에 **메뉴를 띄울 화면 좌표**가 들어 있다. */
+  function highlightFurniture(uid, opt = {}) {
+    clearFurnHighlight();
+    if (uid == null) return null;
+    const g = anyFurnNode(uid);
+    if (!g) return null;
+    const k = Number.isFinite(opt.strength) && opt.strength > 0 ? opt.strength : FURN_HL_K;
+    const swaps = [], clones = new Set(), made = new Map();
+    g.traverse(o => {
+      if (!o.isMesh || !o.material || o.userData.isPreview) return;
+      const ms = Array.isArray(o.material) ? o.material : [o.material];
+      if (ms.some(glowing)) return;                     // 스스로 빛나는 부품은 그대로 둔다
+      const next = ms.map(m => {
+        if (!made.has(m)) { const c = brightenedMat(m, k); made.set(m, c); clones.add(c); }
+        return made.get(m);
+      });
+      swaps.push({ mesh: o, mat: o.material });
+      o.material = Array.isArray(o.material) ? next : next[0];
+    });
+    furnHL = { uid, swaps, clones };
+    needsRender = true;
+    return { ...furnInfo(g), lit: swaps.length, screen: furnScreenPos(g, 0), top: furnScreenPos(g, 1) };
+  }
+
+  /* 그 가구가 화면 어디에 찍히나 — **캔버스 기준 CSS 픽셀**(screenPosOf 와 같은 규약).
+     up=0 이면 **발밑**(바닥과 맞바꿀 수 있는 점 — 상대 끌기의 기준점),
+     up=1 이면 **머리 위**(메뉴를 띄우기 좋은 점). 카메라 뒤면 null 이다. */
+  function furnScreenPos(g, up) {
+    if (!g) return null;
+    const h = (g.userData.size && g.userData.size.h) || 0;
+    tmp.set(g.position.x, g.position.y + h * (up || 0), g.position.z).project(ctx.cam);
+    if (tmp.z > 1) return null;
+    const r = canvas.getBoundingClientRect();
+    return { x: +((tmp.x * 0.5 + 0.5) * r.width).toFixed(1),
+             y: +((-tmp.y * 0.5 + 0.5) * r.height).toFixed(1) };
+  }
+
   /* 회전 사각형 네 꼭짓점 — house.js 슬롯 변환과 같은 규약 */
   function rectCorners(r) {
     const c = Math.cos(r.rot), s = Math.sin(r.rot), hw = r.w / 2, hd = r.d / 2;
@@ -3947,18 +4161,39 @@ export async function createRoomView(canvas, opts = {}) {
     if (gridGroup && gridKey === key) { gridGroup.visible = true; needsRender = true; return gridGroup.userData.free; }
     clearGrid();
 
-    const b = roomBox();
+    /* ★ 격자는 **벽 속 칸을 빼고** 깐다 (2026-08-08 — 벽을 따라 돌던 붉은 띠의 정체)
+       예전에는 바깥 치수(반지하 5×4m) 위에 20×16칸을 통째로 깔았다. 벽이 그 선을 걸치고
+       서 있어(house.js: at=±CW/2 에 두께 0.2) 제일 바깥 한 줄은 절반이 벽 속이고,
+       화분 반지름을 얹으면 **언제나** 막힌다. 그래서 붉은 띠가 한 줄 돌았다 —
+       그건 "여기 놓지 마세요"가 아니라 "여기는 벽입니다"였다. 뜻이 다른 것을 같은 색으로
+       말하고 있었으므로, 그 칸은 **아예 안 그린다**(placegrid-to-plan §9 ㉯안).
+       ⚠ 안 그리는 것과 못 놓는 것은 다르다 — 여기서 판정은 한 줄도 안 바뀐다.
+         그래서 **문 자리는 남긴다.** 거기는 벽 조각이 없어 실제로 놓을 수 있는 바닥이다
+         (재 봤다: 반지하 문 앞 칸 셋. 사각형으로 잘라내면 그 셋이 사라진다). */
+    const sp = gridSpan();
     const g = new THREE.Group();
-    /* ① 눈금선 */
+    const nx = sp.nx, nz = sp.nz, gx0 = sp.x0, gz0 = sp.z0;
+    /* ① 눈금선 — 그리는 칸의 테두리만. 이어지는 선은 한 토막으로 합친다
+       (칸마다 네 변을 따로 쏘면 큰 방에서 선 토막이 수천 개가 된다). */
     const pts = [];
-    const nx = Math.round(b.w / GRID_CELL), nz = Math.round(b.d / GRID_CELL);
-    for (let i = 0; i <= nx; i++) {
-      const x = -b.w / 2 + i * GRID_CELL;
-      pts.push(x, 0, -b.d / 2, x, 0, b.d / 2);
+    const line = (x1, z1, x2, z2) => pts.push(x1, 0, z1, x2, 0, z2);
+    for (let i = 0; i <= nx; i++) {                    // 세로선: 좌우 두 칸 중 하나라도 그리면 긋는다
+      let run = -1;
+      for (let j = 0; j <= nz; j++) {
+        const on = j < nz && (sp.at(i - 1, j) || sp.at(i, j));
+        if (on && run < 0) run = j;
+        if (!on && run >= 0) { line(gx0 + i * GRID_CELL, gz0 + run * GRID_CELL,
+                                    gx0 + i * GRID_CELL, gz0 + j * GRID_CELL); run = -1; }
+      }
     }
-    for (let j = 0; j <= nz; j++) {
-      const z = -b.d / 2 + j * GRID_CELL;
-      pts.push(-b.w / 2, 0, z, b.w / 2, 0, z);
+    for (let j = 0; j <= nz; j++) {                    // 가로선
+      let run = -1;
+      for (let i = 0; i <= nx; i++) {
+        const on = i < nx && (sp.at(i, j - 1) || sp.at(i, j));
+        if (on && run < 0) run = i;
+        if (!on && run >= 0) { line(gx0 + run * GRID_CELL, gz0 + j * GRID_CELL,
+                                    gx0 + i * GRID_CELL, gz0 + j * GRID_CELL); run = -1; }
+      }
     }
     const lg = new THREE.BufferGeometry();
     lg.setAttribute('position', new THREE.Float32BufferAttribute(pts, 3));
@@ -3975,7 +4210,8 @@ export async function createRoomView(canvas, opts = {}) {
     const pos = [], idx = [];
     let free = 0, blocked = 0;
     for (let i = 0; i < nx; i++) for (let j = 0; j < nz; j++) {
-      const cx = -b.w / 2 + (i + 0.5) * GRID_CELL, cz = -b.d / 2 + (j + 0.5) * GRID_CELL;
+      if (!sp.at(i, j)) continue;                      // 벽 속 칸 — 방이 아니라서 안 센다
+      const cx = gx0 + (i + 0.5) * GRID_CELL, cz = gz0 + (j + 0.5) * GRID_CELL;
       let bad;
       if (gu) {
         const sz = gu.userData.size;
@@ -4001,7 +4237,7 @@ export async function createRoomView(canvas, opts = {}) {
       m.renderOrder = 2;
       g.add(m);
     }
-    g.userData = { free, blocked, cell: GRID_CELL, unit: GRID_UNIT };
+    g.userData = { free, blocked, cell: GRID_CELL, unit: GRID_UNIT, cells: sp.cells };
     gridGroup = g; gridKey = key;
     houseGroup.add(g);
     needsRender = true;
@@ -6178,11 +6414,20 @@ export async function createRoomView(canvas, opts = {}) {
     /* 격자 눈금 — 한 칸 크기와 그 방의 칸 수 */
     grid() {
       const b = built ? roomBox() : null;
+      const sp = built ? gridSpan() : null;
       return { unit: GRID_UNIT, cell: GRID_CELL,
                /* 놓는 걸음 = 보이는 칸의 절반. 화면에 그리는 선(cell)과 실제로 앉는 자리가
                   다르다는 것을 화면이 알 수 있게 같이 낸다(머리말 2026-08-07). */
                step: MOVE_STEP,
-               room: b ? { w: b.w, d: b.d, cols: Math.round(b.w / GRID_CELL), rows: Math.round(b.d / GRID_CELL) } : null,
+               /* room.w/d·cols/rows 는 **바깥 치수** 그대로다(예전 뜻을 안 바꾼다).
+                  실제로 그리는 칸 수는 room.cells 다 — 바깥 벽에 물리는 칸을 뺀 수다.
+                  free+blocked 은 cols*rows 가 아니라 **cells** 와 같다(2026-08-08).
+                  inner 는 벽 안쪽 면이 만드는 사각형 — 「방 안쪽이 몇 m 냐」를 재는 자다. */
+               room: b ? { w: b.w, d: b.d, cols: Math.round(b.w / GRID_CELL), rows: Math.round(b.d / GRID_CELL),
+                           cells: sp.cells,
+                           inner: { w: sp.inner.w, d: sp.inner.d,
+                                    x0: +sp.inner.x0.toFixed(4), x1: +sp.inner.x1.toFixed(4),
+                                    z0: +sp.inner.z0.toFixed(4), z1: +sp.inner.z1.toFixed(4) } } : null,
                visible: !!(gridGroup && gridGroup.visible),
                free: gridGroup ? gridGroup.userData.free : null,
                blocked: gridGroup ? gridGroup.userData.blocked : null };
@@ -6199,6 +6444,41 @@ export async function createRoomView(canvas, opts = {}) {
        ⚠ 끄는 동안에는 previewFurnitureAt 만 부른다. commit 은 손 뗄 때 한 번이다. */
     pickFurnitureAt(px, py) { try { return pickFurnitureAt(px, py); } catch (e) { throw fail(e); } },
     furniture() { return furnNodes().map(furnInfo); },
+
+    /* ── 가구 밝히기 (2026-08-08) ──
+       roomView.highlightFurniture(uid)        그 가구를 살짝 밝힌다(한 번에 하나)
+       roomView.highlightFurniture(null)       끈다 — 원래 재질로 정확히 되돌린다
+       roomView.highlightFurniture(uid, { strength: 0.16 })   밝기를 손으로 정할 때
+
+       돌려주는 값 = furniture() 한 줄 + 다음 셋. 메뉴를 띄우는 데 필요한 것이 다 들어 있다.
+         lit     밝힌 메시 수(0 이면 밝힐 게 없었다는 뜻이다)
+         screen  가구 **발밑**의 화면 좌표 { x, y } — 캔버스 기준 CSS 픽셀
+         top     가구 **머리 위**의 화면 좌표 — 메뉴는 대개 이 옆에 띄운다
+       ⚠ 화면 좌표는 **그 순간의 값**이다. 시점을 돌리면 따라 움직여야 하므로
+         프레임마다 screenPosOf(uid) 로 다시 물어야 한다(둘은 같은 규약·같은 점이다).
+       ⚠ 조도·판정·좌표는 안 건드린다. 이건 그림이다. */
+    highlightFurniture(uid, opt) {
+      try { return highlightFurniture(uid == null ? null : uid, opt || {}); }
+      catch (e) { throw fail(e); }
+    },
+    /* 지금 밝혀 둔 가구 uid — 없으면 null */
+    highlightedFurniture() { return furnHL ? furnHL.uid : null; },
+
+    /* ── 포인터 모드 (2026-08-08) ──
+       roomView.setPointerMode('direct' | 'relative')   기본은 'direct'(지금 그대로)
+       roomView.pointerMode()                           지금 모드
+       roomView.dragOrigin(id, tapX, tapY)              그 모드에 맞는 **끌기 기준점**
+
+       설정 화면과 저장은 game.html 몫이다. 여기는 값과 기준점만 낸다.
+       무엇이 바뀌는지·안 바뀌는지는 위 §포인터 모드 머리말에 적어 뒀다. */
+    setPointerMode(m) {
+      if (!POINTER_MODES.includes(m)) throw fail(new Error(`모르는 포인터 모드입니다: ${m}`));
+      ptrMode = m;
+      return ptrMode;
+    },
+    pointerMode() { return ptrMode; },
+    pointerModes() { return [...POINTER_MODES]; },
+    dragOrigin(id, tapX, tapY) { try { return dragOrigin(id, tapX, tapY); } catch (e) { throw fail(e); } },
     /* 그 가구에 얹히거나 물려 있는 것들(클립등 등) — 옮기면 같이 간다 */
     ridersOf(uid) {
       const g = furnNode(uid);
@@ -6393,9 +6673,14 @@ export async function createRoomView(canvas, opts = {}) {
        발밑을 주는 이유는 캐릭터의 characterScreenPos 와 같다 — 바닥·상판과 맞바꿀 수 있는
        유일한 점이라 **상대 드래그의 기준점**으로 그대로 쓸 수 있다(손가락을 안 움직이면 제자리).
        ★★ 좌표계 규약은 안 바뀐다: **캔버스 기준 CSS 픽셀**. 카메라 뒤면 null 이다(0 으로 안 메꾼다). */
+    /* ★ 2026-08-08 — **가구 uid 도 받는다.** 자리 열쇠로 못 풀면 가구에서 찾는다.
+       가구는 **발밑**(y=0 면의 한가운데)을 준다 — 자리·캐릭터와 같은 규약이라
+       상대 끌기의 기준점으로 그대로 쓸 수 있다. 머리 위 점이 필요하면
+       highlightFurniture 가 돌려주는 top 을 쓰십시오(메뉴는 그쪽이 맞다). */
     screenPosOf(slotId) {
       const t = resolveKey(slotId);
-      return t ? slotScreenPos(t.pos) : null;
+      if (t) return slotScreenPos(t.pos);
+      return furnScreenPos(anyFurnNode(slotId), 0);
     },
     /* 지금 시점 — 저장했다 복원하거나 검증할 때 쓴다 */
     camera() {
@@ -6647,6 +6932,7 @@ export async function createRoomView(canvas, opts = {}) {
       clearTimeout(settleCam._nudge);
       disposePreview();
       disposeFurnGhost();
+      clearFurnHighlight();
       clearGuideRings();
       clearGrid();
       clearFurnitureBlobs();

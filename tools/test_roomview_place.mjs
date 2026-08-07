@@ -133,7 +133,7 @@ async function perfMain() {
     window.view.redraw(); return { free, g: window.view.grid() }; })()`);
   await page.eval(PERF_START); await sleep(3000);
   console.log(perfRow('바닥 격자 켠 채 가만히', await page.eval(PERF_STOP)) +
-              `   (${gridInfo.g.room.cols}×${gridInfo.g.room.rows}칸 · 막힌 칸 ${gridInfo.g.blocked})`);
+              `   (그린 칸 ${gridInfo.g.room.cells} · 막힌 칸 ${gridInfo.g.blocked})`);
 
   /* 격자 + 원 + 유령 을 전부 켜고 끄는 중 — 배치할 때 실제로 켜지는 조합 */
   await page.eval(PERF_START);
@@ -315,8 +315,20 @@ async function main() {
              pot: window.view.cellsOf(0.202), up: window.view.cellsOf(0.82) }; })()`);
   ok('Z-1 단위 칸 0.05m · 보이는 칸 0.25m',
      gi.g.unit === 0.05 && gi.g.cell === 0.25, JSON.stringify(gi.g));
-  ok('Z-2 방이 칸으로 딱 떨어진다 (반지하 5×4m → 20×16칸)',
-     gi.g.room.cols === 20 && gi.g.room.rows === 16, JSON.stringify(gi.g.room));
+  /* ★ 2026-08-08 — 여기에 「방 안쪽」이 붙었다. 자를 낮춘 게 아니라 **하나 더 잰다.**
+     방 치수(5×4m)는 **바깥 치수**다. 벽(두께 0.2m)이 그 선을 걸치고 서 있어서
+     바깥 치수 위에 20×16칸을 깔면 제일 바깥 한 줄은 절반이 벽 속이다.
+     그 줄은 화분 반지름을 얹으면 언제나 막히므로 붉은 띠가 한 줄 돌았다 —
+     "여기 놓지 마세요"가 아니라 "여기는 벽입니다"였다. 그래서 **안 그린다.**
+       · cols/rows(=20×16) 는 뜻이 안 바뀌었다. 바깥 치수가 칸으로 떨어지는지 그대로 본다.
+       · inner(=4.8×3.8m) 는 벽 안쪽 면이 만드는 사각형이다. 5−0.2, 4−0.2 다.
+       · cells(=255) 는 **실제로 그리는 칸 수**다. 320 − 65(바깥 벽에 물리는 칸).
+         65 가 아니라 68(=20·16−18·14)이 아닌 이유는 **문 자리**다 — 문에는 벽 조각이
+         없어서 그 앞 칸 셋은 실제로 놓을 수 있는 바닥이고, 그래서 남겨 뒀다. */
+  ok('Z-2 방이 칸으로 딱 떨어진다 (반지하 5×4m → 20×16칸) · 벽 속 칸은 안 그린다',
+     gi.g.room.cols === 20 && gi.g.room.rows === 16 &&
+     near(gi.g.room.inner.w, 4.8, 1e-6) && near(gi.g.room.inner.d, 3.8, 1e-6) &&
+     gi.g.room.cells === 255, JSON.stringify(gi.g.room));
   ok('Z-3 크기를 칸 수로 센다 · 안 떨어지면 올린다',
      gi.desk === 24 && gi.deep === 12 && gi.pot === 5 && gi.up === 17,
      `책상 1.2→${gi.desk}칸 · 0.6→${gi.deep}칸 · 화분 0.202→${gi.pot}칸 · 0.82→${gi.up}칸(올림)`);
@@ -327,10 +339,16 @@ async function main() {
     window.view.showGrid(false);
     return { free, on, off: window.view.grid().visible };
   })()`);
-  ok('Z-4 격자가 켜지고 꺼진다 · 막힌 칸이 세어진다',
+  /* ★ 2026-08-08 — 합계가 20×16(=320) 에서 **그린 칸 수**(room.cells=255)로 바뀌었다.
+     세는 대상이 「방 바깥 치수의 칸」에서 「실제로 그린 칸」으로 바뀐 것이지 판정이
+     느슨해진 게 아니다. 오히려 여기가 못 박는 불변식이 하나 늘었다 —
+     **안 그리게 된 칸은 전부 예전에 「막힌 칸」이던 것**이라 `free` 는 한 칸도 안 준다.
+     여섯 방을 다 재서 확인했다(roomui-to-plan §1 표): 줄어든 칸 수 = 줄어든 막힌 칸 수. */
+  ok('Z-4 격자가 켜지고 꺼진다 · 막힌 칸이 세어진다 (합계 = 그린 칸)',
      gshow.on.visible === true && gshow.off === false &&
-     gshow.free > 0 && gshow.on.blocked > 0 && gshow.free + gshow.on.blocked === 20 * 16,
-     `놓을 수 있는 칸 ${gshow.free} · 막힌 칸 ${gshow.on.blocked}`);
+     gshow.free > 0 && gshow.on.blocked > 0 &&
+     gshow.free + gshow.on.blocked === gshow.on.room.cells,
+     `놓을 수 있는 칸 ${gshow.free} · 막힌 칸 ${gshow.on.blocked} · 그린 칸 ${gshow.on.room.cells}`);
 
   /* 바닥 아무 데나 쏘면 칸에 앉는다 — **걸음(보이는 칸의 절반) 배수**여야 한다.
      ★ 2026-08-07 규약이 바뀌었다. 예전에는 「발자국 앞 모서리를 0.05 선에」였는데,
@@ -972,6 +990,135 @@ async function main() {
      `${before.lamp} → ${after.lampOld}`);
   ok('N-9 옮긴 뒤에도 책상이 제자리 판정을 통과한다', after.fitHome && after.fitHome.ok === true,
      JSON.stringify(after.fitHome));
+
+  /* ══ L 가구 밝히기 ════════════════════════════════════════════════════
+     ★ 박사님 지시: "가구 클릭 시 … 가구가 **살짝 밝아지면서** 활성화된 것처럼 되면서
+       그 옆으로 선택 가능 메뉴들이 뜨게." 메뉴는 game.html 몫이고, 여기는 **밝히는 것**이다.
+     여기서 못 박는 것은 셋이다.
+       ① 밝아졌다가 **원래 재질로 정확히** 돌아온다(재질 지문을 통째로 견준다)
+       ② 껐다 켜기를 되풀이해도 재질이 안 샌다
+       ③ **조도가 한 톨도 안 바뀐다** — 이건 그림이지 빛이 아니다 */
+  await page.eval(`(() => {
+    /* 재질 지문 — uuid·emissive·색·emissiveMap 까지 본다. 되돌아왔는지는 이걸로만 확실하다 */
+    window.__matFP = (uid) => {
+      let node = null;
+      window.view.three.scene.traverse(o => { if (o.userData && o.userData.uid === uid && o.userData.size) node = o; });
+      if (!node) return null;
+      const out = [];
+      node.traverse(o => {
+        if (!o.isMesh || !o.material) return;
+        for (const m of (Array.isArray(o.material) ? o.material : [o.material]))
+          out.push([m.uuid, m.emissive ? m.emissive.getHexString() : '-',
+                    m.emissiveIntensity == null ? '-' : m.emissiveIntensity,
+                    m.color ? m.color.getHexString() : '-', m.emissiveMap ? 'map' : '-']);
+      });
+      return JSON.stringify(out);
+    };
+    window.__matCount = () => { let n = 0;
+      window.view.three.scene.traverse(o => { if (o.isMesh && o.material) n += (Array.isArray(o.material) ? o.material.length : 1); });
+      return n; };
+    /* 조도는 좌표 함수다(light_adapter.dliAt) — 자리마다 그 값을 통째로 적어 견준다.
+       등을 켠 조건으로 재는 이유: emissive 를 만지는 것이 등 조도로 새는지도 같이 보려는 것이다. */
+    window.__dliAll = () => JSON.stringify(window.view.slots().map(s =>
+      [s.slotId, +window.engine.dliAt(s.pos, { weather: 'clear', season: 'summer', lampCount: 2, litHours: 16 }).dli.toFixed(6)]));
+    return true;
+  })()`);
+  const lit = await page.eval(`(() => {
+    const v = window.view, uids = v.furniture().map(f => f.uid);
+    const A = uids.find(u => /desk/.test(u)) || uids[0], B = uids.find(u => u !== A);
+    const fp0 = window.__matFP(A), d0 = window.__dliAll(), m0 = window.__matCount();
+    const hl = v.highlightFurniture(A);
+    const fp1 = window.__matFP(A), d1 = window.__dliAll();
+    v.highlightFurniture(null);
+    const fp2 = window.__matFP(A), d2 = window.__dliAll();
+    for (let i = 0; i < 20; i++) { v.highlightFurniture(A); v.highlightFurniture(null); }
+    const fp3 = window.__matFP(A), m3 = window.__matCount();
+    /* 한 번에 하나 — 다른 가구를 밝히면 앞엣것이 저절로 꺼진다 */
+    v.highlightFurniture(A); v.highlightFurniture(B);
+    const fp4 = window.__matFP(A), who = v.highlightedFurniture();
+    v.highlightFurniture(null);
+    return { A, B, hl, changed: fp0 !== fp1, back: fp0 === fp2, back20: fp0 === fp3, backOther: fp0 === fp4,
+             mats: [m0, m3], who, dliSame: d0 === d1 && d0 === d2, slots: JSON.parse(d0).length,
+             none: v.highlightFurniture(null), ghost: v.highlightFurniture('없는가구') };
+  })()`);
+  ok('L-1 가구를 밝히면 재질이 바뀌고, 끄면 **원래 재질로 정확히** 돌아온다',
+     lit.changed === true && lit.back === true,
+     `${lit.A} · 밝힌 메시 ${lit.hl && lit.hl.lit}개 · 바뀜 ${lit.changed} · 되돌아옴 ${lit.back}`);
+  ok('L-2 20번 껐다 켜도 재질이 안 샌다 (수·지문 그대로)',
+     lit.back20 === true && lit.mats[0] === lit.mats[1], `재질 수 ${lit.mats[0]} → ${lit.mats[1]}`);
+  ok('L-3 한 번에 하나만 밝다 — 다른 가구를 밝히면 앞엣것은 원래대로',
+     lit.backOther === true && lit.who === lit.B, `지금 밝은 것 ${lit.who} (기대 ${lit.B})`);
+  ok('L-4 ★ 밝혀도 조도(DLI)는 한 톨도 안 바뀐다 — 이건 그림이다',
+     lit.dliSame === true, `자리 ${lit.slots}곳`);
+  ok('L-5 메뉴를 띄울 화면 좌표를 같이 준다 (발밑 screen · 머리 위 top)',
+     !!(lit.hl && lit.hl.screen && lit.hl.top && Number.isFinite(lit.hl.screen.x) &&
+        Number.isFinite(lit.hl.top.y) && lit.hl.top.y < lit.hl.screen.y && lit.hl.lit > 0),
+     JSON.stringify(lit.hl && { screen: lit.hl.screen, top: lit.hl.top, lit: lit.hl.lit }));
+  ok('L-6 null·모르는 uid 는 조용히 null 이다 (예외로 화면을 끊지 않는다)',
+     lit.none === null && lit.ghost === null, `${JSON.stringify(lit.none)} · ${JSON.stringify(lit.ghost)}`);
+  const spos = await page.eval(`(() => {
+    const v = window.view, uid = v.furniture()[0].uid;
+    return { furn: v.screenPosOf(uid), slot: v.screenPosOf(v.slots()[0].slotId), none: v.screenPosOf('없는열쇠') };
+  })()`);
+  ok('L-7 screenPosOf 가 **가구 uid 도** 받는다 (메뉴를 그 옆에 띄우려면 필요하다)',
+     !!(spos.furn && Number.isFinite(spos.furn.x)) && !!spos.slot && spos.none === null,
+     JSON.stringify(spos));
+
+  /* ══ P 포인터 모드 ════════════════════════════════════════════════════
+     ★ 박사님 지시: "클릭을 터치 또는 그 커서를 **상대 이동**으로 움직이게
+       설정에서 고를 수 있게." 설정 UI 와 저장은 game.html 몫이고, 여기는 값과 기준점이다.
+     제일 중요한 것은 **기본값이 지금 그대로(direct)** 라는 것이다 — 아니면 손버릇이 통째로 바뀐다.
+     재는 자: 가구를 모서리에서 잡고 **손가락을 하나도 안 움직였을 때** 가구가 튀는 거리.
+       direct   손가락 자리가 기준이라 그만큼 튄다(그게 지금 동작이다)
+       relative 가구 제자리가 기준이라 0 이어야 한다 */
+  const ptr = await page.eval(`(() => {
+    const v = window.view, rc = document.getElementById('roomCanvas').getBoundingClientRect();
+    const floorAt = (px, py) => {
+      const ndc = new THREE.Vector2(((px - rc.left)/rc.width)*2-1, -((py - rc.top)/rc.height)*2+1);
+      const ray = new THREE.Raycaster(); ray.setFromCamera(ndc, v.three.cam);
+      const p = new THREE.Vector3();
+      return ray.ray.intersectPlane(new THREE.Plane(new THREE.Vector3(0,1,0), 0), p) ? { x: p.x, z: p.z } : null;
+    };
+    const scr = (x, z) => { const p = new THREE.Vector3(x, 0, z).project(v.three.cam);
+      return { x: rc.left + (p.x*0.5+0.5)*rc.width, y: rc.top + (-p.y*0.5+0.5)*rc.height, behind: p.z > 1 }; };
+    const jumps = () => {
+      const out = [];
+      for (const f of v.furniture()) {
+        const t = scr(f.x + f.size.w/2*0.8, f.z + f.size.d/2*0.8);      // 발자국 모서리를 짚는다
+        if (t.behind) continue;
+        const o = v.dragOrigin(f.uid, t.x, t.y), p = floorAt(o.x, o.y);
+        if (p) out.push({ uid: f.uid, from: o.from, d: +Math.hypot(p.x - f.x, p.z - f.z).toFixed(3) });
+      }
+      return out;
+    };
+    const dflt = v.pointerMode();
+    const direct = jumps();
+    v.setPointerMode('relative');
+    const rel = jumps();
+    let refused = false;
+    try { v.setPointerMode('nope'); } catch (e) { refused = true; }
+    const modeAfterBad = v.pointerMode();
+    v.setPointerMode('direct');
+    /* 화분·걷기는 **예전부터 상대**다 — 모드와 무관하다는 것을 같은 자로 보인다 */
+    const s = v.slots()[0];
+    const sp = v.screenPosOf(s.slotId);
+    const hit = sp ? v.surfaceAt(rc.left + sp.x, rc.top + sp.y, { potD: 0.202, step: v.moveStep() }) : null;
+    return { dflt, direct, rel, refused, modeAfterBad, back: v.pointerMode(),
+             slotJump: hit ? +Math.hypot(hit.x - s.pos.x, hit.z - s.pos.z).toFixed(4) : null };
+  })()`);
+  ok('P-1 ★ 기본값은 direct 다 (지금 손버릇 그대로)', ptr.dflt === 'direct', ptr.dflt);
+  ok('P-2 direct 는 **손가락 자리**가 기준이다 — 모서리에서 잡으면 그만큼 튄다',
+     ptr.direct.length > 0 && ptr.direct.every(r => r.from === 'tap') &&
+     ptr.direct.some(r => r.d > 0.2),
+     ptr.direct.map(r => `${r.uid} ${r.d}m`).join(' · '));
+  ok('P-3 relative 는 **물건 제자리**가 기준이다 — 안 움직이면 안 튄다(≤1cm)',
+     ptr.rel.length === ptr.direct.length && ptr.rel.every(r => r.from === 'object' && r.d <= 0.01),
+     ptr.rel.map(r => `${r.uid} ${r.d}m`).join(' · '));
+  ok('P-4 모르는 모드는 거절하고, 거절해도 모드가 안 바뀐다',
+     ptr.refused === true && ptr.modeAfterBad === 'relative' && ptr.back === 'direct',
+     `${ptr.refused} · ${ptr.modeAfterBad} → ${ptr.back}`);
+  ok('P-5 화분 옮기기는 **예전부터 상대**다 (기준점 screenPosOf · 안 움직이면 제자리)',
+     ptr.slotJump === 0, `튄 거리 ${ptr.slotJump}m`);
 
   /* ══ H 콘솔 ═══════════════════════════════════════════════════════════ */
   const hard = errs.filter(e => !/favicon/.test(e));
