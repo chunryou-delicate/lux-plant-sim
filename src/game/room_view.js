@@ -124,7 +124,10 @@ const FOV_PORTRAIT = 38;     // 세로일 때 수직 화각[도]. 방 전경이 
 const FOV_LANDSCAPE = 34;    // 가로/정사각이면 scene.js 기본값과 같게
 const FIT_MARGIN = 1.03;     // 방이 화면 끝에 딱 붙지 않게 하는 여유
 const FRAME_BIAS = 0.07;     // 방을 화면 한가운데보다 살짝 위에 둔다(아래는 UI 자리)
-const TAP_PX = 12;           // 이만큼 안 움직이면 탭
+const TAP_PX = 12;           // 이만큼 안 움직이면 탭 (손가락)
+/* ★ 마우스는 누르는 동안 늘 몇 px 이 흔들린다 — 12 는 손가락 기준이라 마우스에서는
+   그냥 누른 것도 회전으로 읽힌다. 28 은 「손목 떨림」이지 「끌려는 뜻」이 아니다. */
+const TAP_PX_MOUSE = 28;
 const TAP_MS = 600;
 const SLOT_HIT_PX = 30;      // 슬롯은 점이라 화면거리로 잡는다. 손가락 크기
 /* ★ 캐릭터도 같은 방법으로 잡는다 — 방 전경에서 자취녀는 화면에서 40px 남짓이라
@@ -2806,7 +2809,18 @@ export async function createRoomView(canvas, opts = {}) {
     }
     const t = e.touches ? e.touches[0] : e;
     const dx = t.clientX - down.x, dy = t.clientY - down.y;
-    if (!dragging && Math.hypot(dx, dy) < TAP_PX) return;
+    /* ★★ **마우스는 문턱을 더 크게 잡는다** (박사님 2026-08-08: "클릭하면 저렇게 옆으로 가버려").
+       ══════════════════════════════════════════════════════════════════
+       마우스로 누르면 누르는 동안 몇 px 이 늘 흔들린다(손·휠·바닥 마찰). 12px 은 손가락
+       기준으로 고른 값이라 마우스에서는 **그냥 누른 것도 회전으로 읽힌다.**
+       그러면 화면이 통째로 돌고, 방 위에 떠 있는 말풍선도 같이 미끄러져
+       「버튼이 도망간다」가 된다 — 실제로 그렇게 보였다.
+       ⚠ 손가락은 **그대로 12px** 이다. 폰에서 문턱을 올리면 이번엔 회전이 뻑뻑해진다.
+         터치는 누를 때 흔들림이 적어 12 로 충분하다는 것이 지금까지의 값이고, 안 건드린다.
+       ★ 28px 은 「손목이 떨리는 폭」이지 「끌려는 뜻」이 아니다 — 진짜로 돌리려면
+         그보다 훨씬 크게 움직인다. 돌리기 자체는 한 번 시작되면 예전과 똑같이 부드럽다. */
+    const slop = e.touches ? TAP_PX : TAP_PX_MOUSE;
+    if (!dragging && Math.hypot(dx, dy) < slop) return;
 
     if (walkDrag) {                       // 고른 뒤에만 여기로 온다
       dragging = true; walkDrag.moved = true;
