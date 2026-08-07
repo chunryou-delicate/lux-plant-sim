@@ -654,6 +654,7 @@ export async function createRoomView(canvas, opts = {}) {
        그래야 화면과 계산이 같은 자리를 같은 이름으로 부른다. */
   let guideGroup = null;       // 추천 자리 원형 가이드. ★ 한 번 만들고 보이기만 껐다 켠다
   let guideRings = new Map();  // slotId → 링 메시
+  let guideFills = new Map();  // slotId → 그 안을 채우는 판(추천 자리 녹색 투명면)
   let guideMat = null, guideGeo = null;
   let guideNear = null;        // 지금 굵게 칠한 자리(커서에 제일 가까운 것)
   let furnGhost = null;        // { uid, group, mat, line, ok } — 가구 옮기기 유령
@@ -2018,9 +2019,20 @@ export async function createRoomView(canvas, opts = {}) {
                          : raw.id != null ? raw.id : raw.key) : raw;
       const t = resolveKey(key);
       if (!t) continue;                     // 없는 열쇠는 예전처럼 조용히 뺀다
+      /* ★★ **`markerHalf` 와 같은 자를 쓴다** (박사님 2026-08-08: "여전히 책상 위랑 서랍장 위는 저래").
+         ══════════════════════════════════════════════════════════════════
+         2026-08-08 에 `guideRadius`(끌 때 뜨는 네모)를 「끌고 있는 것 크기」로 고쳤는데
+         **여기는 안 고쳤다.** 그래서 이 네모만 옛 공식(`maxPotD * 0.55`)으로 남아,
+         책상(maxPotD 0.57)에서 0.5m 짜리 금색 네모가 상판을 덮고 있었다.
+         자리 표시를 그리는 곳이 둘인데 자가 하나만 바뀐 것이다 — 한쪽만 고치면 이렇게 남는다.
+
+         ★ 자리(slot)는 **한 칸**으로 그린다. 이 표시의 뜻은 「여기 놓을 수 있다」이고
+           그 단위는 격자 한 칸이다. 「이 자리가 얼마나 넉넉한가」는 크기가 아니라
+           **색**(RANK_HEX)이 말한다 — 크기로도 말하면 두 가지가 같은 것을 두 번 말한다.
+         ★ 놓인 물건(plant)은 제 지름으로 그린다. 그건 실제로 그만큼 먹고 있으니까. */
       const r = t.slot
-        ? clamp((Number.isFinite(t.slot.maxPotD) ? t.slot.maxPotD : 0.22) * 0.55, 0.05, 0.30)
-        : clamp(((t.plant && t.plant.potD) || 0.22) * 0.75, 0.05, 0.30);
+        ? 0.22 / 2                                   // 한 칸 — markerHalf 가 0.25 로 올린다
+        : ((t.plant && t.plant.potD) || 0.22) / 2;
       want.set(t.key, { pos: t.pos, r, rank: isObj ? normRank(raw.rank) : null });
     }
     for (const [id, m] of [...rings]) {
@@ -2031,7 +2043,9 @@ export async function createRoomView(canvas, opts = {}) {
       if (rings.has(id)) { rings.get(id).position.set(w.pos.x, w.pos.y + 0.004, w.pos.z); continue; }
       /* ★ 네모다 (2026-08-06 · 박사님 "동그라미여서 밑에 네모 격자랑 안 맞아").
          크기는 격자 칸에 물린다 — 색 규약(RANK_HEX)·맥박은 예전 그대로다. */
-      const half = squareHalf(w.r);
+      /* `w.r` 은 반지름이다 — `markerHalf` 는 지름을 받으므로 두 배로 되돌려 넘긴다.
+         자를 하나로 묶는 것이 요점이라 여기서 `squareHalf` 를 직접 부르지 않는다. */
+      const half = markerHalf(w.r * 2);
       const m = new THREE.Mesh(squareFrameGeometry(0.72), ringMaterial());
       m.rotation.x = -Math.PI / 2;
       m.scale.setScalar(half);
@@ -2099,12 +2113,16 @@ export async function createRoomView(canvas, opts = {}) {
   const RING_FIT = 0xffd479;    // 이 화분이 올라가는 자리
   const RING_NG  = 0x6b5a3e;    // 못 올라가는 자리(어둡게) — 지우지 않는다. 자리 자체는 있으니까
   const RING_NEAR = 0xfff1c8;   // 커서에 제일 가까운 자리 — 굵고 밝게
+  /* ★ 추천 자리를 채우는 초록 (박사님 2026-08-08). 발밑 초록빛(#3ea349)과 **같은 계열**로
+     맞췄다 — 「초록 = 이 식물에게 좋다」가 게임 안에서 한 가지 뜻이어야 한다. */
+  const GUIDE_FILL = 0x4fc463;
 
   function clearGuideRings() {
     if (guideGroup) houseGroup.remove(guideGroup);
     /* 기하·재질은 **나눠 쓰는 것**이라 링 하나씩 버리면 안 된다. 아래에서 한 번만 버린다. */
     guideRings.clear();
-    if (guideGeo) { guideGeo.thin.dispose(); guideGeo.thick.dispose(); }
+    guideFills.clear();
+    if (guideGeo) { guideGeo.thin.dispose(); guideGeo.thick.dispose(); guideGeo.fill.dispose(); }
     if (guideMat) for (const k in guideMat) guideMat[k].dispose();
     guideGroup = null; guideGeo = null; guideMat = null; guideNear = null;
     needsRender = true;
@@ -2117,7 +2135,10 @@ export async function createRoomView(canvas, opts = {}) {
     houseGroup.add(guideGroup);
     /* 반너비 1 짜리 **네모 테두리** 두 벌만 만들고 자리마다 scale 로 키운다.
        ★ 2026-08-06 네모로 바꿨다(§squareFrameGeometry). 색·굵기 규약은 그대로다. */
-    guideGeo = { thin: squareFrameGeometry(0.74), thick: squareFrameGeometry(0.50) };
+    /* ★ `fill` — 테두리 안을 채우는 판. 반너비 1 로 테두리와 **같은 자**를 쓴다
+       (2026-08-08 · 박사님 "격자들 중 추천 지점은 살짝 녹색 투명면이 보였으면"). */
+    guideGeo = { thin: squareFrameGeometry(0.74), thick: squareFrameGeometry(0.50),
+                 fill: new THREE.PlaneGeometry(2, 2) };
     const mk = (color, opacity, depthTest) => new THREE.MeshBasicMaterial({
       color, transparent: true, opacity, side: THREE.DoubleSide,
       depthWrite: false, depthTest, toneMapped: false });
@@ -2126,9 +2147,24 @@ export async function createRoomView(canvas, opts = {}) {
          커서 근처 링만 깊이 검사를 끈다. 그건 지금 겨냥하는 자리라 늘 보여야 한다. */
       fit: mk(RING_FIT, 0.55, true),
       ng: mk(RING_NG, 0.34, true),
-      near: mk(RING_NEAR, 0.95, false)
+      near: mk(RING_NEAR, 0.95, false),
+      /* ★★ 추천 자리의 **녹색 투명면**. 「살짝」이 지시라 0.16 이다 —
+         이보다 진하면 상판 무늬가 죽어 무엇 위에 놓는지가 안 보인다.
+         겨냥한 자리만 조금 더 밝힌다(아래 fillNear). */
+      fill: mk(GUIDE_FILL, 0.16, true),
+      fillNear: mk(GUIDE_FILL, 0.30, false)
     };
     for (const s of slotById.values()) {
+      /* ★ 채움을 **먼저** 넣는다 — 같은 높이면 나중에 넣은 것이 위로 온다.
+         테두리가 채움 위에 와야 칸의 경계가 안 뭉갠다. */
+      const f = new THREE.Mesh(guideGeo.fill, guideMat.fill);
+      f.rotation.x = -Math.PI / 2;
+      f.position.set(s.x, s.y + 0.005, s.z);
+      f.renderOrder = 3;
+      f.visible = false;                       // 올라가는 자리에서만 켠다
+      guideGroup.add(f);
+      guideFills.set(s.slotId, f);
+
       const m = new THREE.Mesh(guideGeo.thin, guideMat.fit);
       m.rotation.x = -Math.PI / 2;
       m.position.set(s.x, s.y + 0.006, s.z);   // 상판에서 살짝 띄운다(z-파이팅 방지)
@@ -2216,6 +2252,19 @@ export async function createRoomView(canvas, opts = {}) {
       m.geometry = isNear ? guideGeo.thick : guideGeo.thin;
       m.scale.setScalar(half);
       m.renderOrder = isNear ? 6 : 4;
+      /* ★★ 추천 자리에 **녹색 투명면**을 깐다 (박사님 2026-08-08:
+         "옮기기 눌렀을 때 격자들 중 추천 지점은 살짝 녹색 투명면이 보였으면 좋겠어").
+         ★ **올라가는 자리에만** 켠다 — 못 올라가는 자리까지 초록이면 그건 추천이 아니라
+           그냥 격자 색칠이고, 「초록 = 여기 놓아도 된다」가 거짓말이 된다.
+         ★ 네모가 격자 칸에 물려 있으므로(markerHalf) 이 면이 곧 「그 칸」이다.
+         ⚠ 유령이 앉은 칸은 네모와 **같이** 감춘다 — 유령 밑에 초록이 비치면 색이 섞여
+           유령이 무슨 색인지(놓을 수 있나) 안 읽힌다. */
+      const f = guideFills.get(id);
+      if (f) {
+        f.visible = holds && id !== hideId;
+        f.material = isNear ? guideMat.fillNear : guideMat.fill;
+        f.scale.setScalar(half);
+      }
     }
     guideGroup.visible = true;
     needsRender = true;
