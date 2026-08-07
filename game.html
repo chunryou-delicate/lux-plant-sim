@@ -542,6 +542,15 @@
     background:linear-gradient(180deg,#8fd8ea,#5fb9d4);
     box-shadow:0 4px 0 rgba(0,0,0,.28),0 6px 18px rgba(0,0,0,.45);
     animation:markBob 1.6s ease-in-out infinite}
+  /* ★★ 눌리는 자리를 **보이는 것보다 넓게** (박사님 2026-08-07: "자꾸 클릭하면 버튼이 도망가").
+     말풍선은 방 위에 떠 있는 작은 표적이다. 조금만 빗나가면 밑의 3D 캔버스가 그 눌림을
+     가져가고, 마우스는 누르는 동안 몇 px 이 흔들리므로 그게 **카메라 회전**으로 읽힌다
+     (room_view TAP_PX 12). 그러면 화면이 돌아 말풍선이 미끄러지고 다음 클릭도 빗나간다.
+     보이는 크기는 그대로 두고 **눌리는 자리만** 넓힌다. */
+  .mark::before{content:'';position:absolute;inset:-12px;border-radius:999px}
+  /* ★ 마우스를 올리면 **까딱임을 멈춘다** — 겨냥하는 동안 표적이 움직이면 안 된다.
+     손가락에는 hover 가 없으니 폰은 예전 그대로 까딱인다. */
+  @media (hover:hover) and (pointer:fine){ .mark:hover{animation-play-state:paused} }
   /* 꼬리 — 무엇을 가리키는지 */
   .mark::after{content:'';position:absolute;left:50%;bottom:-7px;margin-left:-7px;
     border:7px solid transparent;border-top-color:#5fb9d4;border-bottom:0}
@@ -3294,8 +3303,27 @@ function drawMarks() {
     }
   }
   placeMarks();
-  if (want.length && markTick == null) markTick = setInterval(placeMarks, 120);
-  if (!want.length && markTick != null) { clearInterval(markTick); markTick = null; }
+  /* ★★ **프레임마다** 따라간다 (박사님 2026-08-07: "마우스로 시점 회전하면 물주기가 잘 안 따라와",
+     "자꾸 클릭하면 버튼이 도망가").
+     ------------------------------------------------------------
+     예전에는 `setInterval(placeMarks, 120)` 이었다. 방은 60fps 로 도는데 말풍선은 초당 8번만
+     따라가니, **카메라를 돌리는 동안 말풍선이 최대 120ms 뒤처져 미끄러진다.**
+     마우스는 누를 때 몇 px 이 흔들리고 그게 카메라 회전으로 읽히므로(TAP_PX 12),
+     ① 화면이 돌고 ② 말풍선이 뒤늦게 따라오고 ③ 손가락이 있던 자리는 이미 빈 곳이다.
+     ⇒ 「눌러도 안 먹는다」·「버튼이 도망간다」가 **같은 하나의 원인**이었다.
+       물주기·거두기·씨앗심기가 다 같이 안 되던 것도 셋 다 말풍선이기 때문이다.
+
+     ⚠ 값이 싼가 — 말풍선은 많아야 두어 개이고 하는 일은 `screenPosOf` 투영뿐이다.
+       그리고 **말풍선이 없으면 아예 안 돈다**(아래 `stop`) — 노는 화면을 계속 깨우지 않는다.
+       그 판단은 예전 주석(§markTick)이 이미 해 둔 것이고, 여기서는 주기만 프레임에 맞춘다. */
+  if (want.length) {
+    if (markTick == null) {
+      const tick = () => { markTick = requestAnimationFrame(tick); placeMarks(); };
+      markTick = requestAnimationFrame(tick);
+    }
+  } else if (markTick != null) {
+    cancelAnimationFrame(markTick); markTick = null;
+  }
 }
 /* 지금 말풍선을 띄우면 안 되는 상황 — 이미 할 일이 분명하거나 화면이 딴 데 있다 */
 function stageBusy() {
