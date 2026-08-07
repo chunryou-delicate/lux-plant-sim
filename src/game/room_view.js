@@ -257,6 +257,26 @@ function squareHalf(r) {
   return cells * GRID_CELL / 2;
 }
 
+/* ★★ 유령 밑 네모의 반너비 — **지름을 그대로 받는다** (2026-08-07 버그 고침).
+   ══════════════════════════════════════════════════════════════════
+   ⚠⚠ 여기가 한 번 크게 틀렸다. 박사님이 폰 사진으로 잡아 주셨다 —
+     시루 하나를 끄는데 방 절반을 덮는 초록 판이 떴다.
+
+   원인: 자리 표시가 **원에서 네모로 바뀐 날**(2026-08-06) 이 자리만 안 따라왔다.
+     · 원 시절  : 기하가 반지름 0.32 짜리 `RingGeometry` → `scale = r / 0.32` 가 맞았다
+     · 네모 지금: 기하가 **바깥 반너비 1** 짜리(`squareFrameGeometry`) → 같은 식을 쓰면
+                  배율이 곧 반너비[m] 가 된다. r 최대 0.55 → 0.55/0.32 = **1.72**,
+                  즉 한 변 3.4m 짜리 네모다. 방보다 크다.
+
+   ⇒ 뜻으로 다시 세운다: 네모는 **그 물건이 실제로 먹는 자리**여야 하고,
+     격자 칸(0.25m)에 물려야 한다(박사님 "밑에 네모 격자랑 안 맞아").
+     시루 한 개(0.24m)는 정확히 **한 칸**, 시루 12개 무리(0.97m)는 네 칸이 된다.
+   ★ `* 1.5` 부풀림도 뺐다. 그건 원이 화분보다 커 보이게 하려던 값인데,
+     네모는 격자에 물리는 순간 저절로 화분보다 한 뼘 커진다(0.24 → 0.25). */
+function markerHalf(potD) {
+  return squareHalf((Number.isFinite(potD) ? potD : 0.22) / 2);
+}
+
 /* ★★ 스킨드 메시의 **실제 최저점** — skinLowestY (2026-08-06)
    ══════════════════════════════════════════════════════════════════
    ⚠⚠ `new THREE.Box3().setFromObject(캐릭터)` 는 **쓰면 안 된다.**
@@ -3394,7 +3414,9 @@ export async function createRoomView(canvas, opts = {}) {
       squareFrameGeometry(0.72),
       new THREE.MeshBasicMaterial({ color: GH_OK, transparent: true, opacity: 0.85,
                                     side: THREE.DoubleSide, depthTest: false }));
-    marker.scale.setScalar(squareHalf(0.36));
+    /* ★ 만들 때 값도 **같은 자**를 쓴다 — previewAt/previewMove 가 곧바로 덮어쓰지만,
+       두 곳이 다른 식을 쓰면 언젠가 한쪽만 고쳐진다(실제로 그래서 3.4m 네모가 났다). */
+    marker.scale.setScalar(markerHalf(potD));
     marker.rotation.x = -Math.PI / 2;
     marker.renderOrder = 999;
     houseGroup.add(marker);
@@ -3438,8 +3460,7 @@ export async function createRoomView(canvas, opts = {}) {
     preview.group.position.set(to.x, to.y, to.z);
     preview.group.rotation.y = p.group.rotation.y;
     preview.group.scale.copy(p.group.scale);
-    const r = clamp((Number.isFinite(to.maxPotD) ? to.maxPotD : 0.22) * 1.5, 0.12, 0.55);
-    preview.marker.scale.setScalar(r / 0.32);
+    preview.marker.scale.setScalar(markerHalf(Number.isFinite(to.maxPotD) ? to.maxPotD : 0.22));
     preview.marker.position.set(to.x, to.y + 0.004, to.z);
 
     /* 못 들어가는 자리는 rank 가 뭐라 오든 빨강이다 — 못 놓는 게 먼저다 */
@@ -3485,8 +3506,7 @@ export async function createRoomView(canvas, opts = {}) {
     preview.potD = potD;
     preview.group.position.set(A.x, A.y, A.z);
     preview.group.rotation.y = A.rotY || 0;
-    const r = clamp(potD * 1.5, 0.12, 0.55);
-    preview.marker.scale.setScalar(r / 0.32);
+    preview.marker.scale.setScalar(markerHalf(potD));
     preview.marker.position.set(A.x, A.y + 0.004, A.z);
     /* opt.rank 가 있으면 세 색, 없으면 예전 두 색.
        놓을 수 없는 자리(valid:false)는 rank 와 무관하게 빨강이다. */
@@ -4286,8 +4306,33 @@ export async function createRoomView(canvas, opts = {}) {
 
   /* 캐릭터별 성격 = 기본 idle 공용 + 간헐 변주 (박사님 확정 ㉮안, 2026-08-01)
      ★ char-to-house.md 배정표 그대로. 새 모션 생성 0건 · 크레딧 0. */
+  /* ★★ 자취생 변주를 `scratch` → **`heart`** 로 갈았다 (박사님 2026-08-07).
+     ══════════════════════════════════════════════════════════════════
+     박사님: "머리 쓰다듬을 때 그 모션 할 때 허리 고정하고 발이 공중에 뜨는 듯한 모션이야."
+
+     ⚠ 2026-08-06 의 발바닥 보정으로는 **못 고치는 종류**다. 그 보정은 클립당 **상수 하나**라
+       클립을 통째로 내려 붙일 수는 있어도, **클립 안에서** 무게중심을 옮기며 발을 드는 것은
+       못 잡는다. ⇒ 상수를 더 만지지 말고 **클립을 바꾼다.**
+
+     ★★ 왜 `scratch` 가 애초에 뽑혔었나 — **거르는 자에 발이 없었다.**
+       `tools/char/check_idle_break.py` 는 ① 서 있나(Hips 절대높이) ② 시작=끝인가 둘만 본다.
+       루트 이동(drift)은 "Hips XZ 를 고정하면 제자리가 된다"며 **탈락 사유에서 뺐다.**
+       그런데 XZ 를 고정해도 **체중이 옮겨 가는 것 자체는 안 없어진다** — 한 발에 실리면
+       반대 발이 뜬다. 3.5등신 치비에서 그게 「대롱대롱」으로 읽힌 것이다.
+       ⇒ drift 를 **하체가 얼마나 움직이나의 대리 지표**로 다시 읽었다.
+
+     잰 값 (check_idle_break.py · 2026-08-07 · 동작에 이미 쓰는 클립 제외):
+       heart      6.2s  drift **15%**  Hips 98→105%   ← 골랐다. 제일 안 움직인다
+       listen     9.4s  drift  26%     Hips 107→108%  (가장 캐릭터가 이미 쓴다)
+       wave       5.4s  drift  34%     Hips 105→110%
+       cheer      9.0s  drift  41%
+       scratch   11.5s  drift **42%**  ← 쓰던 것. 통과한 10종 중 **제일 많이 움직였다**
+       happyjump  9.9s  drift  55%     (표에 ✗ 발이 뜬다 로 이미 적혀 있다)
+     ⚠ `nod` 는 drift 38% 이고 **13초라 도구가 이미 탈락**시켜 뒀다(변주는 짧아야 한다).
+       처음에 그걸 고르려다 재 보고 물렀다.
+     ★ 새 모션 생성 0건 · 크레딧 0 은 그대로다 — char_*_heart.glb 가 이미 있다. */
   const IDLE_BREAK = {
-    namja_jachwi: ['scratch'], jachwi_f: ['scratch'],
+    namja_jachwi: ['heart'], jachwi_f: ['heart'],
     namja_gajang: ['listen'], yeoja_gajang: ['listen'],
     namja_jubu: ['pickup', 'harvest'], yeoja_jubu: ['pickup', 'harvest'],
     namja_researcher: ['opendoor'], yeoja_researcher: ['opendoor']
