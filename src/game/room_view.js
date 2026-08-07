@@ -79,6 +79,21 @@ const AT = p => new URL(p, import.meta.url).href;
      정수로 보므로, 반 칸에 선 물건은 **겹침 판정이 최대 0.025m 어긋난다.**
      벽 밖 판정은 실수 좌표를 그대로 쓰므로(furnitureFit 의 rectCorners) 영향이 없다.
      칸 정수를 한 치도 안 틀리게 하려면 SNAP_DIV = 1 로 두면 된다 — 0.25 는 0.05 의 배수다.
+
+   ── ★ 2026-08-07 : 놓는 걸음도 같은 반 칸이다 ──────────────────────────
+   박사님: "그 배치 스냅 간격이 너무 촘촘한 거 같아. 밑에 그리드의 절반 정도로 해줘."
+
+   ⚠ 「스냅이 없다」가 아니었다 — **재서 확인했다.** 가방에서 끌어 놓는 길은 예전부터
+     surfaceAt 이 격자에 앉히고 있었다. 다만 걸음이 **GRID_UNIT 0.05m** 이라
+     5m 방에서 한 칸이 폰 화면 2px 다. 그러면 눈으로는 연속이나 다름없고,
+     그게 「촘촘하다」의 정체다. 옮기는 길(MOVE_STEP)만 반 칸이고 놓는 길은 0.05 였다 —
+     **같은 손짓인데 걸음이 두 벌**이었던 셈이다.
+
+   ⇒ 놓는 걸음의 기본값을 MOVE_STEP(=보이는 칸의 절반 0.125m)으로 맞춘다.
+     새 상수를 만들지 않는다. 두 벌이 되면 반드시 어긋난다.
+     ★ 가구를 앉히는 stepOf 의 기본값은 **안 건드린다**(0.05 그대로) — 가구는 놓는 길에서
+       화면이 늘 step 을 넘겨 주고, 기본값을 바꾸면 `snapFurniture` 를 step 없이 부르는
+       옛 길(테스트 Z-7 포함)이 조용히 반 칸으로 옮겨 간다.
 ============================================================ */
 export const SNAP_DIV = 2;
 export const MOVE_STEP = GRID_CELL / SNAP_DIV;
@@ -93,8 +108,13 @@ export function snapSpanStep(center, sizeM, step = GRID_UNIT) {
   const half = unitsFor(sizeM, GRID_UNIT) * GRID_UNIT / 2;
   return Math.round((center - half) / step) * step + half;
 }
-/* 걸음 값 고르기 — 안 주면 예전대로 0.05 다. 옮기는 길만 MOVE_STEP 을 준다. */
+/* 걸음 값 고르기 — 안 주면 예전대로 0.05 다. 옮기는 길만 MOVE_STEP 을 준다.
+   ★ 가구(snapFurniture)가 쓴다. 화분을 놓는 길은 아래 placeStepOf 다. */
 const stepOf = v => (Number.isFinite(v) && v > 0 ? v : GRID_UNIT);
+/* ★ 화분·시루를 **놓는** 걸음 — 안 주면 반 칸(MOVE_STEP 0.125m)이다.
+   화면이 opt.step 을 안 넘겨도 손버릇이 같아지라고 기본값 쪽을 옮겼다(머리말 2026-08-07).
+   더 잘게 놓고 싶으면 opt.step 으로 내려 줄 수 있고, 아예 안 앉히려면 opt.grid:false 다. */
+const placeStepOf = v => (Number.isFinite(v) && v > 0 ? v : MOVE_STEP);
 
 /* ============================================================
    폰 세로 기준값 — 기준 화면 390×844
@@ -2371,15 +2391,54 @@ export async function createRoomView(canvas, opts = {}) {
      가장자리를 가로질러 상판 한가운데가 칸 경계에 걸린다. 격자를 면에 붙이면 그 면에서
      늘 같은 자리에 떨어진다. (문서: docs/handoff/roomview-grid.md)
 
-     ★ 보이는 격자는 **바닥에만** 그린다. 선반마다 격자를 얹으면 방이 안 보인다. */
+     ★ 보이는 격자는 **바닥에만** 그린다. 선반마다 격자를 얹으면 방이 안 보인다.
+
+     ── ★ 2026-08-07 : 상판 격자의 원점은 **그 가구 한가운데**다 ──────────────
+     박사님: "바닥 그리드 간격만치 책상 위나 가구 위에 배치도 그만큼 많이 배치할 수 있게,
+              가구 크기만큼 또는 살짝 더 작게 맞게 그리드를 배치해줘."
+
+     예전에는 상판에서도 바닥과 **같은 규약**(발자국 앞 모서리를 걸음 선에 맞춤)을 썼다.
+     그 선은 면 한가운데에서 시작하는 게 아니라 「발자국 반 칸」만큼 밀려 있어서,
+     ① 면 한가운데가 자리가 아닐 때가 있고 ② 마지막 칸이 상판 밖으로 넘어간다.
+     상판은 좁다 — 선반 단 깊이가 0.28m 다. 반 칸만 넘겨도 화분이 모서리에 걸친다.
+
+     그래서 상판에서는 격자를 이렇게 깐다.
+       원점  면 한가운데 (u=v=0 이 늘 자리다)
+       걸음  바닥과 같은 값(step)
+       범위  |u| ≤ 면 반폭 − 화분 반지름   ← "가구 크기만큼 또는 살짝 더 작게"
+     범위 밖으로는 아예 자리를 안 낸다. 그래서 **격자에 물린 뒤에 삐져나오는 일이 없다.**
+     한 칸도 안 들어갈 만큼 좁은 면이면 면 한가운데 하나만 남고, 그래도 안 들어가면
+     그건 격자가 아니라 **판정(potFits)이 거절할 일**이다 — 여기서 봐 주지 않는다.
+
+     ── ★ 그리고 바닥도 같은 규약으로 바꿨다 (같은 날) ─────────────────────
+     예전 바닥 규약은 「발자국 앞 모서리를 걸음 선에 맞춘다」였다(snapSpanStep).
+     그러면 앉는 자리가 **화분 크기마다 달라진다** — 걸음이 0.125m 일 때
+       몬스테라(0.202 → 5칸)  자리 = 0.125k          보이는 칸의 선·한가운데에 딱 앉는다
+       콩나물 시루(0.18 → 4칸) 자리 = 0.125k + 0.10  같은 방인데 눈금이 어긋난다
+     "밑에 그리드의 절반"이라는 지시는 **보이는 칸과 같은 눈금**을 뜻한다. 그러니 화분도
+     원점(방 한가운데) 기준 걸음 배수에 앉힌다. 방 치수가 전부 정수 m 이라 0.125 배수는
+     보이는 칸선(0.25) 위이거나 그 한가운데다 — 어느 화분이든, 어느 방이든 그렇다.
+     ⚠ 이 규약은 **화분·시루 것**이다. 가구는 예전 그대로 발자국 모서리를 맞춘다
+       (snapFurniture → snapSpanStep). 가구는 칸 수 정수 점유가 겹침 판정의 근거다. */
   function snapOnSurface(x, z, potD, frame, step) {
-    if (!frame) return { x: snapSpanStep(x, potD, step), z: snapSpanStep(z, potD, step) };
+    /* 바닥 — 방 원점이 격자 원점이다. 범위는 안 본다(방 경계는 inRoom·nav 가 본다) */
+    if (!frame) return { x: snapInSpan(x, potD, step, null), z: snapInSpan(z, potD, step, null) };
     const c = Math.cos(frame.rot || 0), s = Math.sin(frame.rot || 0);
     /* 면 좌표계로 (house.js 규약의 역변환) */
     const dx = x - frame.x, dz = z - frame.z;
-    const u = snapSpanStep(dx * c - dz * s, potD, step);
-    const v = snapSpanStep(dx * s + dz * c, potD, step);
+    const u = snapInSpan(dx * c - dz * s, potD, step, frame.w);
+    const v = snapInSpan(dx * s + dz * c, potD, step, frame.d);
     return { x: frame.x + u * c + v * s, z: frame.z - u * s + v * c };
+  }
+  /* 원점 기준 걸음 격자에 앉힌다. span 을 주면 **그 안**으로만 앉힌다(상판).
+     span 이 없으면 범위를 안 본다 — 면 크기를 모르는 곳에서 지어내지 않는다(바닥). */
+  function snapInSpan(v, potD, step, span) {
+    const k = Math.round(v / step);
+    if (!Number.isFinite(span)) return k * step;
+    /* 화분이 면 안에 다 들어오는 마지막 칸 번호. 0 이하면 한 칸도 없다 → 면 한가운데 */
+    const kMax = Math.floor((span / 2 - potD / 2) / step + 1e-9);
+    if (!(kMax > 0)) return 0;
+    return Math.max(-kMax, Math.min(kMax, k)) * step;
   }
 
   const SLOT_GOVERN_R = 0.04;   // 자리 중심에서 이 안이면 그 자리로 본다[m]
@@ -2407,7 +2466,7 @@ export async function createRoomView(canvas, opts = {}) {
     const potD = Number.isFinite(opt.potD) ? opt.potD : MONSTERA_POT_D;
     const out = { x: null, y: null, z: null, onUid: null, occIdx: null,
                   surfaceTop: null, maxPotD: null, ok: false, reason: null, nearest: null,
-                  snapped: false, snappedTo: null, cells: null };
+                  snapped: false, snappedTo: null, cells: null, surface: null };
     if (!built || !built.room) { out.reason = '방이 아직 없습니다'; return out; }
 
     ray.setFromCamera(ndcOf(px, py), ctx.cam);
@@ -2500,6 +2559,10 @@ export async function createRoomView(canvas, opts = {}) {
        그러니 슬롯을 격자로 끌어당기면 창턱·선반 자리가 통째로 어긋나 다시 막힌다 —
        이미 한 번 겪은 사고다(test_roomview_place S-1). **슬롯이 정본이고 격자는 안내다.**
        자리가 없는 곳에서만 칸에 맞춘다. opt.grid:false 면 예전처럼 연속 좌표다. */
+    const step = placeStepOf(opt.step);
+    /* 상판 사각형은 **한 번만** 잰다 — 격자도 판정(potFits)도 같은 값을 봐야 한다.
+       두 번 재던 때 미리보기와 판정이 어긋난 적이 있다(§potFits 머리말). */
+    const frame = (!isFloor && ownHit) ? meshRect(ownHit.object) : null;
     if (opt.grid !== false) {
       if (gov) {
         /* 슬롯이 곧 그 면의 '칸'이다 — 칸 중심 대신 **자리 중심**으로 간다 */
@@ -2507,14 +2570,19 @@ export async function createRoomView(canvas, opts = {}) {
         out.surfaceTop = out.y;
         out.snapped = true; out.snappedTo = gov.slotId;
       } else {
-        const frame = (!isFloor && ownHit) ? meshRect(ownHit.object) : null;
-        /* opt.step 은 **옮기는 길**만 준다(반 칸 0.125m). 안 주면 예전대로 0.05 다. */
-        const sn = snapOnSurface(out.x, out.z, potD, frame, stepOf(opt.step));
+        /* opt.step 을 안 주면 **반 칸 0.125m**(보이는 칸의 절반)이다 — 머리말 2026-08-07.
+           바닥이면 방 격자, 상판이면 그 가구 한가운데를 원점으로 한 격자다(snapOnSurface). */
+        const sn = snapOnSurface(out.x, out.z, potD, frame, step);
         if (Math.abs(sn.x - out.x) > 1e-9 || Math.abs(sn.z - out.z) > 1e-9) out.snapped = true;
         out.x = +sn.x.toFixed(4); out.z = +sn.z.toFixed(4);
       }
     }
-    out.cells = { i: unitsFor(potD), j: unitsFor(potD), unit: GRID_UNIT };
+    /* 이 자리를 낸 격자를 그대로 알린다 — 화면이 칸을 그릴 때도, 검사가 걸음을 잴 때도
+       같은 값을 봐야 한다. surface 는 상판 격자의 원점·크기다(바닥이면 null). */
+    out.cells = { i: unitsFor(potD), j: unitsFor(potD), unit: GRID_UNIT, step };
+    out.surface = frame ? { x: +frame.x.toFixed(4), z: +frame.z.toFixed(4),
+                            w: +frame.w.toFixed(4), d: +frame.d.toFixed(4),
+                            rot: +frame.rot.toFixed(6) } : null;
 
     /* 추천 자리는 늘 같이 낸다 — 붙일지 말지는 호출부 몫이다 */
     const near = nearestSlot({ x: out.x, y: out.y, z: out.z }, [...slotById.values()],
@@ -2547,7 +2615,10 @@ export async function createRoomView(canvas, opts = {}) {
         out.reason = `이 면에는 지름 ${out.maxPotD}m 까지만 올라갑니다 (이 화분 ${potD.toFixed(2)}m)`;
         return out;
       }
-      const f = potFits(potD, { rect: meshRect(ownHit.object), point: { x: out.x, z: out.z } });
+      /* ★ 격자에 물린 **뒤에** 다시 잰다. 물려 놓고 판정을 안 하면 상판 밖에 뜬 화분이
+         생긴다(render3d-to-plan ①「공중에 뜬 화분」과 같은 사고다). 격자가 이미 면 안으로만
+         자리를 내지만(snapInSpan), 그건 격자의 약속이지 판정이 아니다 — 판정은 여기 한 곳뿐이다. */
+      const f = potFits(potD, { rect: frame || meshRect(ownHit.object), point: { x: out.x, z: out.z } });
       if (!f.ok) { out.reason = f.reason; return out; }
     }
     /* 다른 화분과 겹치나 — 같은 높이대(±8cm)만 본다.
@@ -6002,6 +6073,9 @@ export async function createRoomView(canvas, opts = {}) {
     grid() {
       const b = built ? roomBox() : null;
       return { unit: GRID_UNIT, cell: GRID_CELL,
+               /* 놓는 걸음 = 보이는 칸의 절반. 화면에 그리는 선(cell)과 실제로 앉는 자리가
+                  다르다는 것을 화면이 알 수 있게 같이 낸다(머리말 2026-08-07). */
+               step: MOVE_STEP,
                room: b ? { w: b.w, d: b.d, cols: Math.round(b.w / GRID_CELL), rows: Math.round(b.d / GRID_CELL) } : null,
                visible: !!(gridGroup && gridGroup.visible),
                free: gridGroup ? gridGroup.userData.free : null,

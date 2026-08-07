@@ -332,21 +332,26 @@ async function main() {
      gshow.free > 0 && gshow.on.blocked > 0 && gshow.free + gshow.on.blocked === 20 * 16,
      `놓을 수 있는 칸 ${gshow.free} · 막힌 칸 ${gshow.on.blocked}`);
 
-  /* 바닥 아무 데나 쏘면 칸에 앉는다 — 발자국 앞 모서리가 격자선에 떨어져야 한다 */
+  /* 바닥 아무 데나 쏘면 칸에 앉는다 — **걸음(보이는 칸의 절반) 배수**여야 한다.
+     ★ 2026-08-07 규약이 바뀌었다. 예전에는 「발자국 앞 모서리를 0.05 선에」였는데,
+       그러면 앉는 자리가 화분 크기마다 달라져 보이는 칸(0.25)과 눈금이 어긋났다.
+       지금은 방 원점 기준 걸음 배수다 — 화분 크기와 무관하고, 0.125 배수는 늘
+       보이는 칸선 위이거나 그 한가운데다. 근거는 room_view.js §snapOnSurface. */
   const snapProbe = await page.eval(`(() => {
     const v = window.view, rc = document.getElementById('roomCanvas').getBoundingClientRect();
-    const u = 0.05, out = [];
-    for (let i = 3; i < 13; i++) for (let j = 12; j < 20; j++) {
-      const t = v.surfaceAt(rc.left + rc.width * i / 16, rc.top + rc.height * j / 24, { potD: 0.20 });
-      if (!t.ok || t.onUid !== null) continue;
-      const n = t.cells.i;                       // 칸 수(0.20 → 4칸)
-      const ex = (t.x - n * u / 2) / u, ez = (t.z - n * u / 2) / u;
-      out.push({ x: t.x, z: t.z, offX: Math.abs(ex - Math.round(ex)), offZ: Math.abs(ez - Math.round(ez)) });
-    }
+    const st = v.grid().step, out = [];
+    for (const potD of [0.20, 0.18])
+      for (let i = 3; i < 13; i++) for (let j = 12; j < 20; j++) {
+        const t = v.surfaceAt(rc.left + rc.width * i / 16, rc.top + rc.height * j / 24, { potD });
+        if (!t.ok || t.onUid !== null) continue;
+        const ex = t.x / st, ez = t.z / st;
+        out.push({ potD, x: t.x, z: t.z, step: t.cells.step,
+                   offX: Math.abs(ex - Math.round(ex)), offZ: Math.abs(ez - Math.round(ez)) });
+      }
     return out;
   })()`);
-  ok('Z-5 바닥 좌표가 격자에 앉는다 (발자국 모서리가 격자선에)',
-     snapProbe.length > 5 && snapProbe.every(p => p.offX < 1e-6 && p.offZ < 1e-6),
+  ok('Z-5 바닥 좌표가 걸음(반 칸 0.125m) 배수에 앉는다 · 화분 크기와 무관하다',
+     snapProbe.length > 5 && snapProbe.every(p => p.offX < 1e-3 && p.offZ < 1e-3 && p.step === 0.125),
      `${snapProbe.length}점 · 최대 어긋남 ` +
      Math.max(0, ...snapProbe.map(p => Math.max(p.offX, p.offZ))).toExponential(2));
 
