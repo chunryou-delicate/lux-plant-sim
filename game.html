@@ -523,6 +523,19 @@
   #actBar i::after{content:'';position:absolute;inset:0 auto 0 0;width:var(--p,0%);
     border-radius:999px;background:linear-gradient(90deg,#8fd8ea,#5fb9d4);
     transition:width .12s linear}
+  /* ★★ 말풍선 자체가 진행을 보여 준다 (박사님 2026-08-07).
+     "밑에 버튼은 없애기로 했잖아. 물주기 멘트 위에 게이지가 생겨서 차는 걸로 하면 되지."
+     ------------------------------------------------------------
+     아래 버튼을 없앤 뒤로 **누를 것이 말풍선 하나뿐**인데, 누르면 캐릭터가 걸어가는
+     5~11초 동안 아무 표시가 없어서 「안 눌린다」로 보였다(폰·PC 둘 다 재서 확인했다 —
+     물은 실제로 들어가고 있었다). 누른 그 자리에 진행이 보이면 그 오해가 사라진다.
+     ★ 게이지는 **글 위**에 붙인다. 옆에 두면 풍선이 길어져 물건을 덮는다. */
+  .mark .mg{display:none}
+  .mark.acting{flex-direction:column;align-items:stretch;gap:5px;pointer-events:none}
+  .mark.acting .mg{display:block;height:6px;border-radius:999px;
+    background:rgba(0,0,0,.22);overflow:hidden;position:relative}
+  .mark.acting .mg::after{content:'';position:absolute;inset:0 auto 0 0;width:var(--p,0%);
+    border-radius:999px;background:rgba(255,255,255,.92);transition:width .12s linear}
   .mark{position:absolute;transform:translate(-50%,-100%);pointer-events:auto;
     display:flex;align-items:center;gap:6px;padding:9px 14px;border-radius:999px;
     font-weight:700;font-size:14px;white-space:nowrap;border:0;color:#0d2a33;
@@ -2775,7 +2788,39 @@ function cropKey() {
   if (b.slotId) return b.slotId;
   return b.at ? `free:${BEANSPROUT_ID}` : null;
 }
+/* ★★ 진행을 **누른 그 말풍선 위에** 그린다 (박사님 2026-08-07).
+   "밑에 버튼은 없애기로 했잖아. 물주기 멘트 위에 게이지가 생겨서 차는 걸로 하면 되지."
+   ------------------------------------------------------------
+   아래 버튼을 없앤 뒤로 누를 것이 말풍선 하나뿐인데, 누르면 캐릭터가 걸어가는 몇 초 동안
+   그 자리에 아무 표시가 없어 「안 눌린다」로 보였다(폰·PC 둘 다 재서 확인했다 —
+   물은 실제로 들어가고 있었다). 누른 자리에서 차오르면 그 오해가 사라진다.
+   ⚠ 말풍선이 없을 때(버튼·시트에서 시작한 동작)도 있으므로 **하단 막대는 그대로 둔다** —
+     둘 중 보이는 쪽이 말한다. 말풍선이 잡히면 하단 막대는 감춘다(같은 말을 두 번 안 한다). */
+let actingKey = null;
+function markGauge(key, p01) {
+  const box = $('marks');
+  if (!box) return false;
+  let found = false;
+  for (const el of box.children) {
+    const mine = key != null && el.dataset.key === key;
+    el.classList.toggle('acting', mine);
+    if (mine) {
+      const g = el.querySelector('.mg');
+      if (g) g.style.setProperty('--p', Math.round(Math.max(0, Math.min(1, p01 || 0)) * 100) + '%');
+      /* 화면 밖이면 못 본 것이다 — 그때는 하단 막대가 말해야 한다 */
+      found = getComputedStyle(el).display !== 'none';
+    }
+  }
+  return found;
+}
+
 function actBar(on, ko, p01) {
+  /* 말풍선이 진행을 보여 줄 수 있으면 거기 그리고 하단 막대는 안 띄운다 */
+  if (markGauge(on ? actingKey : null, p01) && on) {
+    const b = $('actBar');
+    if (b) b.style.display = 'none';
+    return;
+  }
   const el = $('actBar');
   if (!el) return;
   el.style.display = on ? '' : 'none';
@@ -2811,7 +2856,7 @@ function actBar(on, ko, p01) {
 const ACT_WATCHDOG_MS = 7000;
 function clearActing(why) {
   if (!acting) return false;
-  acting = false; actBar(false);
+  acting = false; actingKey = null; actBar(false);
   if (why) console.warn('[동작] 잠금을 풀었습니다 —', why);
   return true;
 }
@@ -2833,6 +2878,7 @@ function doAct(kind, done, opt = {}) {
     && key && keyResolves && !isFastForwarding();
   if (!canAct) { done(); return; }
   acting = true;
+  actingKey = key;                  // 이 열쇠의 말풍선 위에 게이지가 찬다
   actBar(true, ko, 0);
   let settled = false;
   const runOnce = () => { if (settled) return; settled = true; try { done(); } catch (e) { throw e; } };
@@ -3230,7 +3276,11 @@ function drawMarks() {
       const el = document.createElement('button');
       el.className = 'mark' + (m.tone ? ' ' + m.tone : '');
       el.dataset.key = m.key;
-      el.textContent = m.ko;
+      /* ★ 게이지 + 글. 글을 `textContent` 로 넣으면 게이지가 지워지므로 칸을 나눠 둔다.
+         게이지는 `.acting` 이 붙을 때만 보인다(§말풍선 진행). */
+      const g = document.createElement('i'); g.className = 'mg';
+      const s = document.createElement('span'); s.textContent = m.ko;
+      el.append(g, s);
       el.onclick = (e) => { e.stopPropagation(); m.go(); };
       box.appendChild(el);
     }
