@@ -453,6 +453,36 @@
   /* 대화 중에는 하단 액션이 눌리면 안 된다 — 대사를 넘기려다 하루가 지나간다 */
   #stage.talking ~ #bottom{opacity:.35;pointer-events:none}
 
+  /* ══ 대화창 — PC 에서는 크게 (박사님 2026-08-07) ═══════════════════════
+     "피씨 버전에서는 대화창 크기를 훨씬 더 키우고 캐릭 원화도 그만큼 비율대로 키워."
+
+     ★★ **자리가 여기여야 한다.** 위 PC 와이드 블록(§min-width:1000px) 안에 넣었더니
+       하나도 안 먹었다 — 재서 확인했다(faceH 가 폰 값 그대로, 글자 15px 그대로).
+       **미디어쿼리는 우선순위를 안 올린다.** 같은 선택자(`#dlgBox`)면 **파일에서 뒤에 있는
+       쪽이 이긴다.** 위 블록은 351줄, 대화창 기본값은 409줄이라 폰 값이 덮고 있었다.
+       ⇒ 대화창 기본값 **뒤에** 둔다. 문턱(1000px · 13/10)은 위 블록과 **같은 값**을 쓴다 —
+         문턱을 새로 만들면 두 벌이 되고 두 벌은 어긋난다.
+
+     ★ 키우는 자리는 **`--faceH` 하나**다. 초상화 폭은 이미 `--faceH * 3/4` 로 따라오고
+       "뿅" 섬광 자리도 `--faceH` 로 잡혀 있어, 이 한 줄이 그림·섬광·여백을 같이 끌고 간다.
+       두 값을 따로 키우면 폰에서 겪었던 「상자는 371px 인데 그림은 291px」이 되풀이된다.
+     ★ 폰의 상한(24vh · 40vw · 240px)은 **작은 화면에서 천장을 안 뚫으려던 값**이다.
+       PC 는 높이가 넉넉하니 vh 를 키우고 px 상한을 올린다. 폭 조건(40vw)은 뺀다 —
+       PC 는 가로가 넓어 폭이 모자란 적이 없다. */
+  @media (min-width:1000px) and (min-aspect-ratio:13/10){
+    #dlgBox{--faceH:min(52vh, 560px);
+            max-width:1000px;margin:0 auto;min-height:168px;
+            padding:20px 26px 22px;border-radius:22px;gap:16px}
+    #dlg{padding:0 0 22px}
+    #dlgWho{font-size:16px;padding:4px 14px;margin-bottom:10px}
+    #dlgText{font-size:22px;line-height:1.62;min-height:76px}
+    #dlgNext{font-size:15px;right:18px;bottom:12px}
+    #dlgSkip{font-size:14px;padding:0 18px;min-height:38px;top:-42px;right:18px}
+    /* 얼굴 없는 화자(식물신)도 같이 키운다 — 여기만 두면 그 장면에서만 글이 작아진다 */
+    #dlgBox.noface #dlgFace{width:96px;height:96px;top:20px;left:16px}
+    #dlgBox.noface #dlgMain{margin-left:124px}
+  }
+
   /* ══ 끌어다 놓기 (2026-08-03) ═══════════════════════════════════════════
      ★드래그가 **3D 위가 아니라 아이템 위에서 시작**한다. 그래서 카메라 회전과 안 부딪힌다 —
        예전에 드래그를 반대했던 이유가 그거였는데, 시작점을 UI 로 두면 사라진다.
@@ -465,7 +495,12 @@
   #dragGhost.on{display:block}
   /* 방 안(놓을 수 있는 면 위)에 오면 사진을 감춘다 — 3D 유령이 그 자리를 대신한다.
      ⚠ 아주 없애지 않고 흐리게만 남긴다. 손가락 밑에 아무것도 없으면 "놓친 건가"가 된다. */
-  #dragGhost.inroom{opacity:.18;transform:scale(.6)}
+  /* ★ 면 위에 오면 **아예 감춘다** (박사님 2026-08-07: "네모난 인벤 그림이 투명하게 보이는데 없애줘").
+     예전에는 0.18 로 흐리게만 뒀는데, 흐린 네모가 3D 유령과 겹쳐 **판때기가 하나 더 떠 있는 것처럼**
+     보였다. 위 §2D 사진의 판단("면 위에 오면 사진을 숨기고 3D 유령만")이 원래 이 뜻이었고,
+     투명도로 반만 지킨 것이 어중간했다. 방 밖(시트·버튼 위)에서는 그대로 보인다 —
+     거기엔 3D 유령을 세울 자리가 없어 감추면 무엇을 끌고 있는지 사라진다. */
+  #dragGhost.inroom{display:none}
   #dragGhost.ok{transform:scale(1.12)}
   #dragGhost.no{transform:scale(.86);filter:drop-shadow(0 6px 10px rgba(0,0,0,.5)) grayscale(.7)}
   /* 끄는 동안에는 시트를 반투명하게 — 방이 보여야 어디 놓을지 고를 수 있다 */
@@ -3628,22 +3663,56 @@ $('dlgSkip').addEventListener('click', (e) => { e.stopPropagation(); dlg.skip();
    ★AudioContext 를 미리 만들지 않는다 — 브라우저가 사용자 조작 전에는 소리를 막고,
      막힌 컨텍스트를 들고 있으면 나중에 켜도 안 나는 상태가 된다. 누를 때 만든다. */
 let music = null, musicCtx = null;
+
+/* ★★ 켬/끔을 **기억한다** (박사님 2026-08-07: "음악 나오게 해줘").
+   음악은 이미 있었고 ♪ 로 켤 수 있었는데 **기본이 꺼짐**이라, 누르지 않으면
+   끝까지 조용한 게임이었다. 기본을 켬으로 바꾸고 끈 사람만 기억한다 —
+   반대로 하면(껐는데 다음에 또 켜짐) 그게 더 나쁘다. */
+const MUSIC_KEY = 'byeot.music';
+const musicWanted = () => localStorage.getItem(MUSIC_KEY) !== 'off';
+
+function startMusic() {
+  const b = $('btnMusic');
+  if (!music) {
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) { b.disabled = true; b.title = '이 브라우저는 소리를 못 냅니다'; return false; }
+    musicCtx = new AC();
+    music = createMusic(musicCtx);
+  }
+  if (musicCtx.state === 'suspended') musicCtx.resume();
+  if (!music.isPlaying()) music.start();
+  b.setAttribute('aria-pressed', 'true');
+  return true;
+}
+
 function toggleMusic() {
   const b = $('btnMusic');
   try {
-    if (!music) {
-      const AC = window.AudioContext || window.webkitAudioContext;
-      if (!AC) { b.disabled = true; b.title = '이 브라우저는 소리를 못 냅니다'; return; }
-      musicCtx = new AC();
-      music = createMusic(musicCtx);
+    if (music && music.isPlaying()) {
+      music.stop();
+      b.setAttribute('aria-pressed', 'false');
+      localStorage.setItem(MUSIC_KEY, 'off');
+      return;
     }
-    if (musicCtx.state === 'suspended') musicCtx.resume();
-    if (music.isPlaying()) { music.stop(); b.setAttribute('aria-pressed', 'false'); }
-    else { music.start(); b.setAttribute('aria-pressed', 'true'); }
+    if (startMusic()) localStorage.setItem(MUSIC_KEY, 'on');
   } catch (e) {
     console.warn('[음악] 못 켰습니다 —', (e && e.message) || e);
     b.disabled = true; b.title = '음악을 켜지 못했습니다';
   }
+}
+
+/* ★ 브라우저는 **사용자가 뭔가 누르기 전에는 소리를 막는다.** 그래서 페이지가 뜨자마자
+   켤 수는 없다 — 막힌 AudioContext 를 들고 있으면 나중에 눌러도 안 나는 상태가 된다.
+   ⇒ **첫 조작 한 번**에 얹는다. 어차피 이 게임은 첫 화면에서 뭔가를 누르게 되어 있다.
+   ⚠ 한 번만 듣고 스스로 뗀다(`once`). 안 떼면 탭할 때마다 start 를 부르게 된다. */
+function armMusicAutostart() {
+  if (!musicWanted()) return;
+  const go = () => {
+    try { if (musicWanted()) startMusic(); }
+    catch (e) { console.warn('[음악] 자동 시작 실패 —', (e && e.message) || e); }
+  };
+  for (const ev of ['pointerdown', 'keydown', 'touchstart'])
+    window.addEventListener(ev, go, { once: true, passive: true });
 }
 
 /* ══ 방 3D 전경 ═══════════════════════════════════════════════════════════
@@ -5392,6 +5461,7 @@ try {
   bindDetail();                     // 나 · 아이템 · 식물 상세
   showBuild();                      // 지금 보는 판이 언제 것인지 — 캐시가 의심될 때 여기를 본다
   $('btnMusic').onclick = toggleMusic;
+  armMusicAutostart();              // 첫 조작에 저절로 켠다 — 끈 사람만 기억한다
   bootRoomView();                   // 방 3D — 실패해도 게임은 돌아간다(아래)
   /* 이미 들은 이야기를 또 하지 않는다. 다만 기준은 '세이브가 있나'가 아니라
      '이야기가 시작됐나'다 — 앞에서 설명한 이유다. */
