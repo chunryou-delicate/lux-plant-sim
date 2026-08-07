@@ -265,6 +265,10 @@ export function givePlant(S, io, opt = {}) {
        `S.dliHist` 와 **1:1** 이고, 그 짝을 세이브 복원이 검사한다(save.js §fedDays) */
     fedDays: 0,
     arrivedOnDay: S.day,
+    /* ★★ 마지막으로 물 준 날 (2026-08-07 · §몬스테라 물주기).
+       **온 날을 채운다.** null 로 두면 선물로 온 화분이 도착하자마자 목말라 있다 —
+       받자마자 벌이 된다. 첫 주기는 도착일부터 센다. */
+    wateredOnDay: S.day,
     arrivalGrowthDays: growthDays
   };
   S.pots.push(pot);
@@ -458,6 +462,119 @@ export function waterCrop(S, opt = {}) {
 /* 오늘 물을 줘야 하나 — 버튼을 켤지 흐리게 할지의 근거. 상태를 안 바꾼다. */
 export function cropWaterStatus(S) {
   return beansproutWaterStatus(S && S.firstPlay, S ? S.day : null);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   ★★ 몬스테라 물주기 (2026-08-07 박사님 확정 · docs/handoff/plan-to-core.md)
+   ------------------------------------------------------------
+   ★ 한 문장 — 물은 「오늘이 **하루로 세어지는가**」를 가르는 문이다.
+     **얼마나** 자라나는 빛이 정하고, 물은 **곱하지 않고 직렬로** 걸린다.
+     곱하면 "물을 반만 줬으니 반만 자란다"가 되어 처방이 흐려진다 — 화면이
+     "물을 주세요"가 아니라 "물을 조금 더 주세요"라고 말하게 된다.
+     그리고 이 게임의 다른 정지가 전부 문 모양이다(growthBlocked · headroomBlocked).
+
+   ★★ 콩나물 물과 **뜻이 다르다. `waterCrop` 과 합치지 마라:**
+     | | 콩나물 | 몬스테라 |
+     | 물의 뜻 | **회전 시작**(startedOnDay) | **유지** |
+     | 언제 | 회전당 한 번 | 주기마다 다시 |
+     | 자리에 걸리나 | 안 걸린다 | **걸린다** — 밝을수록 빨리 마른다 |
+
+   ★ 죽지 않는다. 마른 날은 달력만 가고 형태가 안 는다
+     (loop.js §17 "band === 'critical' 로 죽이는 코드는 절대 넣지 않는다"와 같은 규약).
+
+   ★★ 이게 왜 있나 — **밝은 자리가 공짜가 아니게 된다.**
+     지금 밝은 자리는 순수 이득이라 「자리」의 교훈이 "제일 밝은 데 두면 된다" 한 줄로 끝난다.
+     물이 들어오면 밝은 자리는 잘 크지만 **자주 챙겨야 한다.** 체력이 하루 10 인 판에서
+     그건 진짜 고민이 된다 — 시루를 늘릴수록 몬스테라를 챙길 손이 준다.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* 얼마나 만에 마르나 — **숫자를 새로 짓지 않는다.**
+   밝기를 재는 자를 새로 만들면 색(rankSlots)·속도(growthSpeedOf)·물주기가 **세 벌**이 되고
+   세 벌은 반드시 어긋난다. growth 가 이미 내는 **밴드**를 그대로 읽는다.
+   ⚠ 밴드는 **7일평균(dli7)** 으로 잰다 — 하루 값으로 재면 흐린 날마다 주기가 들썩여
+     "어제는 8일이라더니 오늘은 12일"이 된다. 흙이 마르는 속도는 그렇게 안 움직인다. */
+export const WATER_INTERVAL_BY_BAND = Object.freeze({
+  over: 7, best: 7,                       // 아주 밝다 — 빨리 마른다
+  good: 8,                                // 밝다
+  slow: 10,                               // 어둑하다
+  stagnant: 12, poor: 12, critical: 12    // 어둡다 — 오래 간다
+});
+/* 밴드를 못 읽을 때(헤드리스·옛 판). **실제 7~10일의 한가운데**라 지어낸 값이 아니다. */
+export const WATER_INTERVAL_DEFAULT = 8;
+/* 계절 — 실제로 밝기만큼 크다. 겨울 실내 몬스테라는 2~3주에 한 번이다. */
+export const WATER_SEASON_ADJ = Object.freeze({ spring: 0, summer: -1, autumn: 0, winter: 3 });
+/* 아무리 밝고 더워도 이보다 자주 마르지는 않는다 — 화분 흙이 그렇게는 안 마른다. */
+export const WATER_INTERVAL_MIN = 5;
+/* ★ 마르기 **며칠 전부터 물이 드나.** 0 으로 두면 마른 날(=하루를 잃은 날)에만 줄 수 있어
+   주기마다 반드시 하루씩 잃는다. 2 면 「마를 때가 됐다」 사흘 창이 생겨 안 잃고 넘어갈 수 있다. */
+export const WATER_GRACE_DAYS = 2;
+
+export function waterIntervalOf(band, season) {
+  const base = WATER_INTERVAL_BY_BAND[band] ?? WATER_INTERVAL_DEFAULT;
+  return Math.max(WATER_INTERVAL_MIN, base + (WATER_SEASON_ADJ[season] ?? 0));
+}
+
+/* 지금 목마른가 — 버튼·안내·loop 판정이 **전부 이 하나를 읽는다.**
+   ★ **상태를 안 바꾼다.** `wateredOnDay` 가 없는 화분도 여기서 고치지 않는다 —
+     그건 세이브 복원(save.js)과 도착(givePlant)이 채울 일이고, 읽기 경로에서 상태를
+     만들면 "화면을 열었더니 물을 준 것이 됐다"가 난다(ensureCropPots §읽기 전용과 같은 규칙).
+   ⚠ 화분이 없으면 **null 이다. 던지지 않는다** — 안내지 고장이 아니다.
+     opt.band    growth 밴드(7일평균 기준). 없으면 기본 주기
+     opt.season  'spring'|'summer'|'autumn'|'winter'
+   반환 { dryDays, interval, leftDays, dry, canWater, wateredOnDay } */
+export function potWaterStatus(S, opt = {}) {
+  const p = pot0(S);
+  if (!p || !S) return null;
+  /* 없는 칸은 **오늘 준 것으로 읽는다.** 0 으로 읽으면 300일째 세이브가 열리자마자
+     "물 준 지 300일"이 되어 그 판의 몬스테라가 영영 안 자란다. */
+  const last = Number.isInteger(p.wateredOnDay) ? p.wateredOnDay : S.day;
+  const interval = waterIntervalOf(opt.band ?? null, opt.season ?? null);
+  const dryDays = Math.max(0, S.day - last);
+  return {
+    dryDays, interval,
+    leftDays: interval - dryDays,          // 음수면 그만큼 잃고 있다
+    dry: dryDays > interval,               // ← 이 날은 하루가 안 세어진다
+    canWater: dryDays >= interval - WATER_GRACE_DAYS,
+    wateredOnDay: last
+  };
+}
+
+/* ★★ 물을 준다 — 화면의 [몬스테라에 물 주기] 버튼이 부르는 유일한 함수.
+   ★ 과습 — 아직 촉촉하면 **아무 일도 안 난다. 체력도 안 쓴다.**
+     실제로는 과습이 몬스테라를 죽이는 1위지만 **벌을 주지 않는다.** 하루 한 번 눌러 두는
+     습관이 손해가 되면 플레이어가 버튼을 무서워하고, 그러면 안 무서운 쪽(=아예 안 누름)으로
+     간다 — 가르치려는 행동을 말리는 셈이다. 화면은 "아직 촉촉합니다"라고만 말한다.
+   ★ 던지지 않는다(자리가 없을 때만 뺀다) — 버튼을 두 번 누른 것은 고장이 아니다.
+   ★ 돈이 안 든다. `waterCrop` 과 같은 판단이다.
+   반환 { watered, already, dryDays, interval, leftDays, events } */
+export function waterPot(S, opt = {}) {
+  const p = pot0(S);
+  if (!p) { const e = new Error('[물주기] 아직 몬스테라가 없습니다'); e.tutorialInput = true; throw e; }
+  if (!p.slotId && !p.at) {
+    const e = new Error('[물주기] 화분을 먼저 방 안에 놓아 주세요');
+    e.tutorialInput = true; throw e;
+  }
+  const st = potWaterStatus(S, opt);
+  if (st && !st.canWater)
+    return { ...st, watered: false, already: true, events: [] };
+  /* ★ `free` — 배속의 자동 급수가 쓴다(loop.js §autoWater). 체력도 안 쓰고 기록도 안 남긴다.
+     콩나물 배속이 `waterBeansprout` 을 직접 부르는 것과 **같은 결**이다: 배속은 손이 아니라
+     시간이 흐른 것이라, 매일 체력을 물리면 배속이 체력에 막혀 하루짜리가 된다.
+     ⚠ 규칙 자체(언제 물이 드나)는 **위 한 곳뿐**이다 — 여기서 갈라지지 않는다. */
+  if (!opt.free) {
+    /* ★ 체력 — **아무것도 바꾸기 전에** 묻는다. 반쯤 준 물은 없다(waterCrop 과 같은 순서). */
+    const sta = canActStamina(S, 'water');
+    if (!sta.ok) { const e = new Error('[물주기] ' + sta.reason); e.tutorialInput = true; throw e; }
+  }
+  p.wateredOnDay = S.day;
+  if (!opt.free) spendStamina(S, 'water');
+  const after = potWaterStatus(S, opt);
+  if (!opt.free) pushLog(S, st.dry
+    ? `💧 몬스테라에 물을 주었습니다 — ${st.dryDays - st.interval}일 멈춰 있었습니다. 다시 자랍니다`
+    : `💧 몬스테라에 물을 주었습니다 (다음은 ${after.interval}일 뒤)`);
+  return { ...after, watered: true, already: false,
+           events: [{ id: 'pot_watered', ko: '몬스테라에 물을 주었습니다',
+                      wasDry: !!st.dry, interval: after.interval }] };
 }
 
 /* ★ 지금 거둘 수 있나 — [수확하기] 버튼을 켤지 흐리게 할지의 근거. 상태를 안 바꾼다 (2026-08-04).

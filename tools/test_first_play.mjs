@@ -19,7 +19,7 @@ import {
   resowBeansprout
 } from '../src/game/first_play.js';
 import { nextDay, harvestCrop } from '../src/game/loop.js';
-import { newState, pot0, waterCrop, cropHarvestStatus, resowCrop, ARRIVAL } from '../src/game/state.js';
+import { newState, pot0, waterCrop, waterPot, cropHarvestStatus, resowCrop, ARRIVAL } from '../src/game/state.js';
 import { orderItem, stockOf, incomingOf, buyPriceOf } from '../src/game/shop.js';
 
 /* ★ 게임 화면의 [물 주기] + [다음 날] + (거둘 때가 됐으면) [수확하기] = 표준 하루 (2026-08-04).
@@ -28,6 +28,7 @@ import { orderItem, stockOf, incomingOf, buyPriceOf } from '../src/game/shop.js'
      거두는 날이 하루씩 밀려 회전이 5일이 아니라 6일이 된다. */
 const day1 = (S, io) => {
   waterCrop(S);
+  try { waterPot(S); } catch { /* 아직 없거나 안 놓은 화분 — 그런 날은 물이 안 든다 */ }
   const r = nextDay(S, io);
   if (beansproutReady(S.firstPlay.beansprout)) r.turn.harvest = harvestCrop(S, io);
   return r;
@@ -433,8 +434,12 @@ console.log('first_play: PASS');
     '창턱으로 옮겨 게이지가 오르는 중이면 "옮겨 보세요"가 남으면 안 된다');
   assert.equal(S.firstPlay.completed, false,
     '★옮긴 다음 날 바로 끝났습니다 — 말린 새순까지는 며칠 걸려야 합니다');
-  /* 창턱(3.77)에서 하루 1일씩 쌓여 유효 61 에서 말린 새순이 난다 */
-  for (let i = 2; i <= SPEAR_DAYS; i++) nextDay(S, io);
+  /* 창턱(3.77)에서 하루 1일씩 쌓여 유효 61 에서 말린 새순이 난다.
+     ★ 물을 **매일 챙긴다** (2026-08-07 · state.js §몬스테라 물주기). 창턱은 밝아서
+       주기가 6~7일이라, 안 주면 여기서 흙이 말라 하루가 안 세어진다 —
+       그러면 `dliHist` 도 안 쌓여 아래 마지막 줄(하루 하나씩 3.77)이 어긋난다.
+       화면에서 [몬스테라에 물 주기]를 누른 것과 같은 함수다(줄 때가 된 날에만 든다). */
+  for (let i = 2; i <= SPEAR_DAYS; i++) { try { waterPot(S); } catch { } nextDay(S, io); }
 
   assert.equal(S.day, dayAtMove + SPEAR_DAYS);
   assert.equal(pot0(S).daysPlanted, SPEAR_DAYS);
@@ -479,6 +484,7 @@ console.log('first_play_loop: PASS');
   placeBeansprout(S.firstPlay, 'dark-slot');
   /* 다 자랄 때까지는 아무 일도 안 난다 — 선물은 [수확하기]에 달려 있으므로 여기서는 안 터진다 */
   for (let day = 1; day <= CYCLE; day++) { waterCrop(S); nextDay(S, io); }
+  try { waterPot(S); } catch { /* 아직 없거나 안 놓은 화분 — 그런 날은 물이 안 든다 */ }
   assert.equal(S.day, CYCLE, '★선물이 실패하는 판인데 자라는 날에서 이미 터졌습니다');
   assert.equal(beansproutReady(S.firstPlay.beansprout), true);
 
@@ -501,6 +507,7 @@ console.log('first_play_loop: PASS');
         try { resowCrop(S, { at: 'dark-slot', slots }); } catch { /* 다음 날 */ }
     }
     try { waterCrop(S); } catch { /* 이미 준 날 */ }
+    try { waterPot(S); } catch { /* 아직 없거나 안 놓은 화분 — 그런 날은 물이 안 든다 */ }
     nextDay(S, io);
   }
   assert.ok(err, '★선물 초기화가 실패하는 판인데 아무 회전에서도 안 터졌습니다');

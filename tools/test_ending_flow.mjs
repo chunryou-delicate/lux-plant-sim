@@ -31,7 +31,7 @@ import vm from 'node:vm';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { newState, pot0, setPotSlot, resowCrop, waterCrop, ARRIVAL } from '../src/game/state.js';
+import { newState, pot0, setPotSlot, resowCrop, waterCrop, waterPot, ARRIVAL } from '../src/game/state.js';
 import { nextDay, harvestCrop } from '../src/game/loop.js';
 import { firstPlayRulesFromBalance, placeBeansprout, moveMonstera, beansproutReady } from '../src/game/first_play.js';
 import { orderItem, stockOf, incomingOf, sellCutting, sellPot, priceOf,
@@ -233,6 +233,10 @@ function playToEnding(opt = {}) {
 
   const days = opt.days || 320;
   for (let d = 1; d <= days; d++) {
+    /* ★ 몬스테라 물주기 (2026-08-07) — **표준 하루에 늘어난 손**이다.
+       마른 날은 하루가 안 세어지므로, 안 주면 이 320일 재현이 형태에서 통째로 멈춘다.
+       화면의 [몬스테라에 물 주기]를 누른 것과 같은 함수·같은 결과다. */
+    try { waterPot(S); } catch { /* 아직 없거나 안 놓은 화분 */ }
     /* ── ① 진짜 하루 ─────────────────────────────────────────── */
     nextDay(S, io);
     const ts = S.tutorial;

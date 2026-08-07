@@ -37,7 +37,7 @@
 import assert from 'node:assert';
 import { readFileSync, existsSync } from 'node:fs';
 import { createProfileLight } from '../src/game/room_profile.js';
-import { newState, pot0, setPotSlot, waterCrop, resowCrop, ARRIVAL } from '../src/game/state.js';
+import { newState, pot0, setPotSlot, waterCrop, waterPot, resowCrop, ARRIVAL } from '../src/game/state.js';
 import { nextDay, harvestCrop } from '../src/game/loop.js';
 import { firstPlayRulesFromBalance, placeBeansprout, moveMonstera,
          beansproutReady } from '../src/game/first_play.js';
@@ -141,6 +141,7 @@ function play(opt) {
         catch { /* 재고가 안 맞으면 다음 날 */ }
     }
     try { waterCrop(S); } catch { /* 아직 안 놓았거나 이미 거둔 시루 */ }
+    try { waterPot(S); } catch { /* 아직 없거나 안 놓은 화분 — 그런 날은 물이 안 든다 */ }
 
     let turn;
     try { turn = nextDay(S, io).turn; }

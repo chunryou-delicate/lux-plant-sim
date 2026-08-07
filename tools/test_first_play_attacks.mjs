@@ -13,7 +13,7 @@ import {
   waterBeansprout
 } from '../src/game/first_play.js';
 import { nextDay, harvestCrop, phaseSchemaError } from '../src/game/loop.js';
-import { newState, givePlant, pot0, waterCrop, resowCrop, ARRIVAL } from '../src/game/state.js';
+import { newState, givePlant, pot0, waterCrop, waterPot, resowCrop, ARRIVAL } from '../src/game/state.js';
 import { orderItem, stockOf, incomingOf } from '../src/game/shop.js';
 import { createProfileLight } from '../src/game/room_profile.js';
 import { nullGrowth } from '../src/game/sim.js';
@@ -24,6 +24,7 @@ import { nullGrowth } from '../src/game/sim.js';
    ⚠ 수확은 [다음 날] **뒤**다 — 첫 수확의 몬스테라 선물도 여기서 온다(loop.harvestCrop). */
 const day1 = (S, io) => {
   try { waterCrop(S); } catch { /* 아직 안 놓은 시루 */ }
+  try { waterPot(S); } catch { /* 아직 없거나 안 놓은 화분 — 그런 날은 물이 안 든다 */ }
   const r = nextDay(S, io);
   if (beansproutReady(S.firstPlay && S.firstPlay.beansprout)) r.turn.harvest = harvestCrop(S, io);
   return r;
@@ -122,6 +123,7 @@ function firstPlayState(slotId = 'dark') {
           try { resowCrop(S, { at: b.slotId, slots: io.light.room.slots }); } catch { /* 다음 날 */ }
       }
       try { waterCrop(S); } catch { /* 아직 안 놓은 시루 */ }
+      try { waterPot(S); } catch { /* 아직 없거나 안 놓은 화분 — 그런 날은 물이 안 든다 */ }
       nextDay(S, io);
       if (beansproutReady(S.firstPlay.beansprout)) {
         food = foodBefore();          // ★ 거두기 **직전**의 곳간 — 되돌림의 기준선
@@ -404,7 +406,9 @@ function firstPlayState(slotId = 'dark') {
   assert.equal(pot0(S).arrivalGrowthDays, ARR);
   assert.notEqual(pot0(S).slotId, 'sill', '몬스테라는 먼저 어두운 자리에 도착한다');
   pot0(S).slotId = 'sill';
-  for (let d = 1; d <= SPEAR_DAYS; d++) nextDay(S, io);
+  /* ★ 물을 매일 챙긴다 (2026-08-07) — 창턱은 밝아 주기가 6~7일이라, 안 주면 마른 날마다
+     하루가 안 세어져 유효 생장일이 모자란다(실제로 51/61 이 나왔다). */
+  for (let d = 1; d <= SPEAR_DAYS; d++) { try { waterPot(S); } catch { } nextDay(S, io); }
   assert.equal(growth.growthDays(), SPEAR);
   assert.equal(S.firstPlay.completed, true);
   assert.equal(S.firstPlay.monstera.growthPhase.phaseId, 'spear_furled');
@@ -584,6 +588,7 @@ const BAD_PHASES = [
             try { resowCrop(S, { at: b.slotId, slots: io.light.room.slots }); } catch { /* 다음 날 */ }
         }
         try { waterCrop(S); } catch { /* 아직 안 놓은 시루 */ }
+        try { waterPot(S); } catch { /* 아직 없거나 안 놓은 화분 — 그런 날은 물이 안 든다 */ }
         nextDay(S, io);
         if (beansproutReady(S.firstPlay.beansprout)) {
           food = { pantryWon: S.firstPlay.food.pantryWon,      // ★ 거두기 직전이 기준선

@@ -201,6 +201,14 @@ function packPot(p, i) {
          속도가 도입되기 전 세이브라 둘이 같았던 것이 사실이다. */
     fedDays: needInt(p.fedDays ?? p.daysPlanted ?? 0, `${path}.fedDays`, { min: 0 }),
     arrivedOnDay: needInt(p.arrivedOnDay ?? 0, `${path}.arrivedOnDay`, { min: 0 }),
+    /* ★★ 마지막으로 물 준 날 (2026-08-07 · state.js §몬스테라 물주기).
+       ⚠ **옛 세이브에는 이 칸이 없다.** 여기서 0 으로 떨어뜨리지 **않는다** —
+         300일째 세이브를 열자마자 "물 준 지 300일"이 되어 그 판의 몬스테라가 영영 안 자란다.
+         `null` 로 두고 **읽는 쪽에서 그 판의 오늘로 채운다**(아래 §복원).
+         `fedDays` 가 `daysPlanted` 로 떨어지는 것과 다른 이유다 — 그쪽은 옛 판에서 둘이
+         **같았던 것이 사실**이라 근거가 있고, 이쪽은 **근거가 없다.** 지어내지 않는다. */
+    wateredOnDay: p.wateredOnDay == null
+      ? null : needInt(p.wateredOnDay, `${path}.wateredOnDay`, { min: 0 }),
     arrivalGrowthDays: needInt(p.arrivalGrowthDays ?? ARRIVAL.growthDays,
                                `${path}.arrivalGrowthDays`, { min: 0 }),
     /* ★ 번식 흔적 (2026-08-03) — **반드시 같이 적는다.**
@@ -962,7 +970,11 @@ export function deserialize(raw, opt = {}) {
   S.pots = needArr(st.pots || [], 'state.pots').map((p, i) => {
     const q = packPot(p, i);
     /* 좌표는 place.makeAt 를 통과시켜 정본 모양으로 세운다(방 경계는 아래 회수 단계에서 본다) */
-    return { ...q, at: q.at ? makeAt(q.at) : null };
+    /* ★ 물 준 날이 없는 옛 세이브는 **그 판의 오늘**로 채운다(위 §wateredOnDay).
+       지어낼 값이 없으면 잃는 쪽이 아니라 **안전한 쪽**으로 채운다 —
+       ensureCropPots 가 옛 시루를 옮길 때 쓴 사상과 같다. */
+    return { ...q, at: q.at ? makeAt(q.at) : null,
+             wateredOnDay: q.wateredOnDay ?? S.day };
   });
   /* 삽수 — 쓸 때와 **같은 검증**을 읽을 때도 태운다(화분과 같은 규칙) */
   S.cuttings = needArr(st.cuttings || [], 'state.cuttings').map((c, i) => {

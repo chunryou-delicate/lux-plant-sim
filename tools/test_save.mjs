@@ -62,13 +62,26 @@ const dataOf = (rel) => JSON.parse(fs.readFileSync(path.join(ROOT, 'data', rel),
 
 const { createLightEngine } = await import(toUrl('src/game/light_adapter.js'));
 const {
-  newState, givePlant, pot0, setPotAt, setCropAt, setFurniturePlacement, ARRIVAL, waterCrop
+  newState, givePlant, pot0, setPotAt, setCropAt, setFurniturePlacement, ARRIVAL, waterCrop,
+  waterPot
 } = await import(toUrl('src/game/state.js'));
 const { firstPlayRulesFromBalance, BEANSPROUT_ID, advanceBeansproutDay, harvestBeansprout,
         makeCropPot, syncCropLead } =
   await import(toUrl('src/game/first_play.js'));
 const { nullGrowth } = await import(toUrl('src/game/sim.js'));
 const { runDays } = await import(toUrl('src/game/loop.js'));
+/* ★ 몬스테라 물주기가 생긴 뒤로 **「그냥 N일」이 없다** (2026-08-07 · state.js §몬스테라 물주기).
+   안 주면 주기(밝은 자리면 6~7일)가 지난 날부터 흙이 말라 **그날이 growth 로 안 넘어간다** —
+   `dliHist` 도 안 쌓인다. 여기 검사가 재는 것은 「이력과 재생이 1:1 인가」지 「물을 안 준 판」이
+   아니므로, 화면에서 사람이 매일 [물 주기]를 누른 것과 같은 하루로 돌린다.
+   ⚠ 대개 아무 일도 안 한다 — 줄 때가 된 날에만 든다(과습은 no-op 이다). */
+const runDaysCared = (S, io, n, onTurn) => {
+  for (let i = 0; i < n; i++) {
+    try { waterPot(S); } catch { /* 아직 없거나 안 놓은 화분 */ }
+    runDays(S, io, 1, onTurn);
+  }
+  return { S };
+};
 const save = await import(toUrl('src/game/save.js'));
 const {
   serialize, deserialize, restoreGrowth, saveTo, loadFrom, clear, peek, describe,
@@ -148,6 +161,7 @@ function playedGame() {
   const CYCLE = FP_RULES.harvestDays;
   for (let i = 2; i <= 3; i++) S.firstPlay.beansprout.pots.push(makeCropPot('crop_01_0' + i));
   waterCrop(S);                              // 첫 시루만 시작 — 나머지 둘은 대기
+  try { waterPot(S); } catch { /* 아직 없거나 안 놓은 화분 — 그런 날은 물이 안 든다 */ }
   for (let i = 0; i < CYCLE; i++) advanceBeansproutDay(S.firstPlay, 0.2);
   /* ★ 자라는 날이 찼다고 저절로 안 거둬진다 (2026-08-04 · §수확) — 손으로 거둔다 */
   assert.equal(S.firstPlay.beansprout.pots[0].harvested, false, '★저절로 거둬졌습니다');
@@ -552,7 +566,7 @@ check('H growth 복원 — 빛 이력을 다시 걸어 같은 유효 생장일�
   givePlant(S, io, { slotId: 'banjiha-sill:0' });
   setPotAt(S, 'pot_01', { x: SILL.x, y: SILL.y, z: SILL.z, onUid: 'banjiha-sill', occIdx: SILL.occIdx },
            { size: eng.room.size, slots: eng.room.slots });
-  runDays(S, io, 12);
+  runDaysCared(S, io, 12);
 
   const wantGrowth = g1.growthDays(), wantCal = g1.calendarDay();
   assert.equal(S.dliHist.length, 12, `빛 이력이 ${S.dliHist.length}일`);
@@ -577,7 +591,7 @@ check('H growth 복원 — 빛 이력을 다시 걸어 같은 유효 생장일�
     '재생에 넣은 빛이 저장된 이력과 다릅니다');
 
   /* ④ 이어서 하루를 더 살아도 두 쪽이 안 어긋난다 */
-  runDays(S2, { light: eng, growth: g2 }, 1);
+  runDaysCared(S2, { light: eng, growth: g2 }, 1);
   assert.equal(g2.calendarDay(), wantCal + 1, '복원 뒤 하루가 어긋납니다');
   assert.equal(S2.day, S.day + 1);
 
@@ -586,7 +600,7 @@ check('H growth 복원 — 빛 이력을 다시 걸어 같은 유효 생장일�
   const gd = nullGrowth(14, { growthMin: GROWTH_MIN });
   givePlant(D, { light: eng, growth: gd }, { slotId: 'banjiha-sill:0' });
   setPotAt(D, 'pot_01', { x: 0, y: 0.2, z: 1.8 }, { size: eng.room.size, slots: eng.room.slots });
-  runDays(D, { light: eng, growth: gd }, 8);
+  runDaysCared(D, { light: eng, growth: gd }, 8);
   assert.equal(gd.growthDays(), ARRIVAL.growthDays, '어두운 자리인데 형태가 자랐습니다');
   const gd2 = recordingGrowth();
   deserialize(JSON.stringify(serialize(D)), { light: eng, growth: gd2 });

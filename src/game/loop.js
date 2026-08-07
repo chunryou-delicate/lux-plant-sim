@@ -31,7 +31,8 @@
 
      S는 제자리에서 바뀌고 그대로 반환된다. 호출부는 반환값을 쓰면 된다.
 ============================================================ */
-import { givePlant, pot0, rehomePot, reseatAllOnSlots, pushLog } from './state.js';
+import { givePlant, pot0, rehomePot, reseatAllOnSlots, pushLog,
+         potWaterStatus, waterPot } from './state.js';
 import {
   advanceBeansproutDay,
   beansproutHarvestStatus,
@@ -645,6 +646,9 @@ export function nextDay(S, io) {
          셋을 한 칸에 섞으면 처방이 뒤섞인다(등을 켜라 / 자리를 옮겨라 / 물을 줘라).
          ★★ `cropDry`(마른 날)가 **`cropIdle`(시작 대기)로 바뀌었다** — 물이 회전 시작이 되면서
            "빼먹었다"가 아니라 "아직 시작을 안 했다"가 됐다(first_play.js §물주기). */
+      /* ★ 몬스테라 물 — 이 경로엔 화분이 없으므로 늘 null 이다. **칸은 반드시 둔다** —
+         반환구가 둘인데 한쪽에만 칸이 있으면 화면이 `undefined` 를 읽는다(§809 의 오랜 함정). */
+      potWater: null, potDry: null,
       cropWatered, cropIdle: (firstPlayEvent && firstPlayEvent.idle) || 0,
       /* ★ 수확 (2026-08-04) — 물주기와 **다른 칸**이다. 같은 칸에 섞으면 화면이
          "물을 주세요"와 "거두세요"를 못 가른다(둘은 서로를 배제한다 — §수확). */
@@ -687,10 +691,40 @@ export function nextDay(S, io) {
   let step;
   let lightInputRecorded = false;
   let speed = { band: null, mult: 1, source: 'default' };
+  /* ★ 물 — **오늘이 하루로 세어지나** (2026-08-07 · state.js §몬스테라 물주기).
+     빛 부족(growthBlocked)·머리공간(headroomBlocked)과 **다른 칸**이다. 셋을 섞으면
+     처방이 뒤섞인다: 등을 켜라 / 자리를 옮겨라 / **물을 줘라**.
+     ⚠ 주기가 밴드에 걸려 있어(밝을수록 빨리 마른다) 오늘 빛을 넣은 **뒤에** 잰다. */
+  let water = null;
+  let dryBlocked = false;
   /* 오늘 growth 에게 실제로 넘긴 하루의 수. **dliHist 에 이만큼 쌓인다** — 그 짝이 세이브 재생의
      입력이라(save.js §growth) 여기서 어긋나면 복원한 형태가 조용히 달라진다. */
   let fedDays = 0;
+  const th = io.light && typeof io.light.thresholdsOf === 'function'
+    ? io.light.thresholdsOf(p.plantId, p.variegated) : null;
   try {
+    /* ★★ 흙이 말랐나 — **먹이기 전에** 판정한다 (2026-08-07).
+       밴드(밝기)와 계절이 주기를 정한다. 6일(여름·창가) ~ 15일(겨울·구석).
+
+       ⚠⚠ **왜 먹인 뒤가 아니라 먹기 전인가** — 처음에 뒤에 뒀다가 세이브가 깨졌다.
+         `dliHist` 한 칸 = `advanceTo` 한 번이 세이브 재생의 계약이다(save.js §growth).
+         먹인 뒤에 막으면 이력에는 한 칸이 쌓이는데 걸음은 안 걸어서, 복원한 개체가
+         **저장 때보다 더 자란 채로 선다.** `test_save` H 가 정확히 그것을 잡았다.
+       ⇒ 마른 날은 growth 에게 **하루를 통째로 안 넘긴다.** setDailyLight 도 안 부르고
+         `dliHist` 에도 안 쌓는다. `dliHist` 의 뜻이 「실제로 넘긴 빛」이므로 이게 사실이다.
+       ⚠ 그래서 머리공간 정지와는 **모양이 다르다** — 그쪽은 빛은 넘기고 걸음만 안 걷는다.
+         두 정지가 다른 이유는 하나뿐이다: 머리공간은 「빛은 받았는데 못 큰 날」이고,
+         마름은 「하루가 아예 안 세어진 날」이다. 이 계통의 한 문장이 그것이다.
+
+       ★ 밴드는 **어제까지의 7일평균**으로 잰다(오늘을 아직 안 넣었다).
+         흙이 마르는 속도는 지난 주가 정하는 것이라 뜻으로도 이쪽이 맞다. */
+    water = potWaterStatus(S, {
+      band: growthSpeedOf(typeof io.growth.dli7 === 'function' ? io.growth.dli7() : null, th).band,
+      season: sky && sky.season
+    });
+    dryBlocked = !!(water && water.dry);
+
+    if (!dryBlocked) {
     /* ★ 빛은 막혔어도 넘긴다 — DLI 이력은 사실이어야 한다. 안 넘기면 growth 의 7일평균이
        코어와 갈라지고, 자리를 옮긴 뒤 "왜 아직 안 자라지"가 된다. */
     io.growth.setDailyLight(dli);
@@ -699,9 +733,7 @@ export function nextDay(S, io) {
 
     /* ★ 걷는 속도는 **오늘 빛을 넣은 뒤에** 잰다 — dli7 에 오늘이 들어가야 엔진과 같은 값이 된다 */
     speed = growthSpeedOf(
-      typeof io.growth.dli7 === 'function' ? io.growth.dli7() : null,
-      io.light && typeof io.light.thresholdsOf === 'function'
-        ? io.light.thresholdsOf(p.plantId, p.variegated) : null);
+      typeof io.growth.dli7 === 'function' ? io.growth.dli7() : null, th);
 
     /* ★ 하루 진행은 advanceTo 만 쓴다. setGrowth(점프)는 도착 때 한 번뿐이다.
        달력은 하루 가고, 형태(유효 생장)는 빛이 될 때만 쌓인다 — 저광이면 여기서 멈춘다.
@@ -722,6 +754,7 @@ export function nextDay(S, io) {
         step = io.growth.advanceTo(calBefore + i + 1);
       }
     }
+    }   /* ← if (!dryBlocked) */
   } catch (e) {
     let calAfter = null;
     try { calAfter = io.growth.calendarDay(); } catch { /* 계약까지 끊긴 경우 */ }
@@ -763,7 +796,9 @@ export function nextDay(S, io) {
   /* ★★ growth 에게 넘긴 만큼 쌓는다 — **1:1 이 계약이다**(save.js §growth).
      밝은 날은 `setDailyLight` 를 두 번 불렀으므로 여기도 두 칸이다. 한 칸만 쌓으면
      복원한 형태가 저장 때보다 덜 자란 채로 선다(그게 처음 설계가 깨진 자리였다). */
-  const fedToday = Math.max(1, fedDays);
+  /* ★ 마른 날은 **0 이다** — growth 에게 하루를 안 넘겼으므로 이력에도 안 쌓는다.
+     `Math.max(1, …)` 를 그대로 두면 안 넘긴 빛이 이력에 한 칸 생겨 세이브 재생이 어긋난다. */
+  const fedToday = dryBlocked ? 0 : Math.max(1, fedDays);
   for (let i = 0; i < fedToday; i++) S.dliHist.push(dli);
   /* ★★ **먹인 날을 따로 센다** (2026-08-05 · save.js §fedDays).
      `daysPlanted` 는 "플레이어가 돌본 날"이라 하루에 1 만 는다. 그런데 밝은 날은 여기서
@@ -781,7 +816,7 @@ export function nextDay(S, io) {
     /* ★ 실제 growth 상태 — 빈 값으로 숨기지 않는다 */
     growthCalendarDay: step ? step.calDay : io.growth.calendarDay(),
     effectiveGrowthDays: step ? step.growth : io.growth.growthDays(),
-    grew: headBlocked ? false : (step ? step.grew : null),
+    grew: (headBlocked || dryBlocked) ? false : (step ? step.grew : null),
     growthBlocked: step ? step.blocked : io.growth.growthBlocked(),
     /* ★ 밝기 속도 — 빛 부족 정지(growthBlocked)와도 머리공간(headroomBlocked)과도 **다른 칸**이다.
        셋을 섞으면 처방이 뒤섞인다: 빛 부족은 "등을 켜라", 머리공간은 "자리를 옮겨라",
@@ -793,6 +828,12 @@ export function nextDay(S, io) {
        화면이 "빛이 모자랍니다"라고 말하고 플레이어는 등을 하나 더 산다(정반대 처방). */
     headroom,
     headroomBlocked: headBlocked ? headroom.reason : null,
+    /* ★ 물 — 빛 부족·머리공간과 **다른 칸**이다(위 §water). 화면이 처방을 가르는 근거다.
+       `potWater` 는 늘 실리고(며칠 남았나를 버튼이 읽는다), `potDry` 는 **막힌 날만** 문장이다. */
+    potWater: water,
+    potDry: dryBlocked
+      ? `흙이 말랐습니다 — ${water.dryDays}일째입니다 (주기 ${water.interval}일)`
+      : null,
     growthAge: io.growth.ageOf ? io.growth.ageOf(step ? step.growth : 0) : null,
     dli7Growth: io.growth.dli7(),      // growth가 실제로 쓴 7일 평균
     dli7Core: avg(S.dliHist, 7),       // 코어가 센 값 — 둘이 어긋나면 배선이 틀린 것
@@ -860,6 +901,14 @@ export function nextDay(S, io) {
     else if (S._lastHeadBlock !== undefined && S._lastHeadBlock !== null)
       pushLog(S, `▶ 위가 트였습니다 — 다시 자랍니다 (유효 진행 ${turn.effectiveGrowthDays}일)`);
     S._lastHeadBlock = headMsg;
+  }
+  /* ★ 마름 정지 — 머리공간과 **같은 모양**으로 바뀔 때만 남긴다.
+     문구에 '빛'을 넣지 않는다: 처방이 「물을 줘라」지 「등을 켜라」가 아니다. */
+  if (turn.potDry !== S._lastDry) {
+    if (turn.potDry) pushLog(S, `⏸ ${turn.potDry} — 물을 주면 다시 자랍니다`);
+    else if (S._lastDry !== undefined && S._lastDry !== null)
+      pushLog(S, `▶ 흙이 촉촉합니다 — 다시 자랍니다 (유효 진행 ${turn.effectiveGrowthDays}일)`);
+    S._lastDry = turn.potDry;
   }
   /* 정지 사유는 바뀔 때만 남긴다 — 매일 찍으면 기록이 같은 줄로 덮인다 */
   if (turn.growthBlocked !== S._lastBlock) {
@@ -1296,6 +1345,15 @@ export function startFastForward(S, io, opt = {}) {
     if (autoWater) {
       const b = S.firstPlay && S.firstPlay.enabled ? S.firstPlay.beansprout : null;
       if (b && b.slotId) waterBeansprout(S.firstPlay, S.day);
+      /* ★ 몬스테라도 **같은 표에 얹는다**(위 §물주기와 어떻게 맞물리나). 새 갈래를 만들면
+         두 벌이 되고 두 벌은 어긋난다.
+         ★ 밴드는 **어제 것**을 쓴다 — 오늘 빛은 아직 안 넣었다. 주기가 하루 어긋날 수는 있으나
+           물은 「줄 때가 됐나」만 보므로 그 하루가 결과를 안 바꾼다(마르기 2일 전부터 든다).
+         ★ `free` — 체력을 안 쓴다. 콩나물 배속이 `waterBeansprout` 을 직접 부르는 것과 같다.
+         ⚠ 던지지 않게 감싼다: 화분이 아직 없거나 안 놓인 판에서 배속이 통째로 죽으면 안 된다. */
+      try { if (pot0(S)) waterPot(S, { band: run.lastBand || null,
+                                       season: run.lastSeason || null, free: true }); }
+      catch { /* 아직 못 주는 상태 — 배속을 세울 일이 아니다 */ }
     }
 
     /* ★ 지름길 없음 — 평소 [다음 날] 과 **같은 함수**다. */
@@ -1316,6 +1374,9 @@ export function startFastForward(S, io, opt = {}) {
     const blockedNow = turn.growthBlocked === undefined ? null : turn.growthBlocked;
     const blockWorsened = !run.lastBlocked && !!blockedNow;
     run.lastBlocked = blockedNow;
+    /* ★ 다음 턴의 자동 급수가 읽을 값 — 물 주기가 밝기·계절에 걸려 있어서다(위 §autoWater) */
+    run.lastBand = (turn.growthSpeed && turn.growthSpeed.band) || run.lastBand || null;
+    run.lastSeason = (turn.sky && turn.sky.season) || run.lastSeason || null;
 
     /* ── 화면 갱신 — 하루하루 그려야 "자라는 게 보인다" ────────── */
     if (onDay) {

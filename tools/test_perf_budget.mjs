@@ -254,14 +254,20 @@ async function main() {
      `시루 1개당 +${perSiru}콜 · 1개 ${siru[1].calls} → 12개 ${siru[12].calls} → 24개 ${siru[24].calls}콜`);
   const idleDefault = idleRows[0];
   const cap = JSON.parse(await page.eval(`JSON.stringify(window.view.stats().idleCap)`));
-  ok('C 사람이 서 있으면 서 있는 상한이 24 다 (사람이 없으면 10)',
-     cap.anim === 24 && cap.floor === 10 && cap.skeletal === true,
+  /* ★ 24 → 18 (박사님 2026-08-07 확정 · room_view §ANIM_IDLE_FPS).
+     끊겨 보이던 것은 15 아래였기 때문이라 18 이면 사라지고, 배터리는 2.4배가 아니라 1.8배다. */
+  ok('C 사람이 서 있으면 서 있는 상한이 18 이다 (사람이 없으면 10)',
+     cap.anim === 18 && cap.floor === 10 && cap.skeletal === true,
      JSON.stringify(cap));
-  /* ⚠ 헤드리스(SwiftShader)는 24 를 못 낸다 — 여기서는 **스스로 내려앉는 쪽**이 정답이다.
-     둘 중 하나면 통과다: 24 를 냈거나(빠른 기기), 못 내서 스스로 10 으로 내려앉았거나. */
+  /* ⚠ 헤드리스(SwiftShader)는 상한을 못 낼 수 있다 — 그때는 **스스로 내려앉는 쪽**이 정답이다.
+     둘 중 하나면 통과다: 상한 언저리를 냈거나(빠른 기기), 못 내서 스스로 10 으로 내려앉았거나.
+     ★ 문턱을 숫자로 박지 않는다 — 내려앉는 규칙 자체가 `상한 × 0.75` 라
+       상한을 바꿀 때마다 이 줄이 조용히 어긋난다(24 로 맞춰 둔 16 이 실제로 그랬다). */
+  const backoffFloor = cap.anim * 0.75;
   ok('C2 그 상한을 못 내는 기기는 스스로 10 으로 내려앉는다 (moveBackoff 와 같은 사상)',
-     idleDefault[5] === true || idleDefault[2] >= 16,
-     `기본에서 ${idleDefault[2]}fps · 그때 상한 ${idleDefault[3]} · 내려앉음=${idleDefault[5]}`);
+     idleDefault[5] === true || idleDefault[2] >= backoffFloor,
+     `기본에서 ${idleDefault[2]}fps · 그때 상한 ${idleDefault[3]} · 내려앉음=${idleDefault[5]} ` +
+     `· 내려앉는 문턱 ${backoffFloor}`);
   ok('D 예외가 없다', exs.length === 0, exs.join(' | '));
 
   console.log(`\n창밖 골목: ${JSON.stringify(outInfo)}`);

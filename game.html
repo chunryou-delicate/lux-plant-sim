@@ -180,13 +180,18 @@
   #plantToday.grew{color:var(--leaf)}
   #plantToday.stop{color:#ffb454}
   /* 물주기 — 할 일이 있을 때만 보인다. 안 주면 그날은 안 자란다(죽지는 않는다) */
-  #waterCrop{width:100%;min-height:var(--tap);margin:0 0 9px;border-radius:12px;
+  /* ★ 몬스테라 물주기(#waterPot)는 **같은 옷을 입되 다른 버튼**이다 (2026-08-07).
+     둘이 같은 날 같이 뜰 수 있다 — 콩나물 물은 회전 시작, 몬스테라 물은 유지라
+     서로를 배제하지 않는다(거두기·물주기가 서로 배제하는 것과 다르다). */
+  #waterCrop,#waterPot{width:100%;min-height:var(--tap);margin:0 0 9px;border-radius:12px;
     font-weight:700;font-size:14px;color:#0d2a33;border:0;
     background:linear-gradient(180deg,#8fd8ea,#5fb9d4);
     box-shadow:0 3px 0 rgba(0,0,0,.25);animation:waterPulse 1.8s ease-in-out infinite}
   @keyframes waterPulse{0%,100%{filter:brightness(1)}50%{filter:brightness(1.12)}}
-  #waterCrop.done{background:rgba(255,255,255,.07);color:var(--dim);
+  #waterCrop.done,#waterPot.done{background:rgba(255,255,255,.07);color:var(--dim);
     box-shadow:none;animation:none}
+  /* 마른 채로 하루를 잃고 있는 중 — 재촉이 아니라 **잃고 있다는 사실**을 색으로 말한다 */
+  #waterPot.dry{background:linear-gradient(180deg,#ffc98f,#f0a35f);color:#3a2708}
   /* 거두기 — 물주기와 같은 자리, 다른 색. 둘이 같이 뜨는 일은 없다 */
   #harvestCrop{width:100%;min-height:var(--tap);margin:0 0 9px;border-radius:12px;
     font-weight:700;font-size:14px;color:#3a2708;border:0;
@@ -908,6 +913,11 @@
          다 자란 시루는 물을 안 요구하므로 needsWater 가 false 다. -->
     <button id="harvestCrop" style="display:none">🥣 콩나물 거두기</button>
     <button id="waterCrop" style="display:none">💧 콩나물에 물 주기</button>
+    <!-- ★ 몬스테라 물주기 (2026-08-07) — 콩나물 물과 **다른 버튼**이다.
+         콩나물 물 = 회전 시작(회전당 한 번) · 몬스테라 물 = 유지(주기마다 다시).
+         한 버튼에 묶으면 "물 주기"를 눌렀는데 무엇에 갔는지 알 수 없고,
+         둘 다 필요한 날에 하나가 조용히 밀린다. -->
+    <button id="waterPot" style="display:none">💧 몬스테라에 물 주기</button>
     <!-- ★2026-08-04 — 상점 상자 안에 있던 것을 여기로 옮겼다.
          상점은 첫 플레이가 끝나야 열리는데(살림 전에는 돈 개념이 없다) 이 버튼이 그 안에
          갇혀 있어서 **첫 플레이 동안 회전이 1에서 멈췄다** — 70일을 눌러도 안 늘었다.
@@ -1344,6 +1354,7 @@
 import { newState, SIM_MODES, pot0, pushLog, givePlant, hasPlant, ARRIVAL,
          setPotAt, setPotSlot, setCropAt, setFurniturePlacement, furnitureOverrides,
          resowCrop, waterCrop, cropWaterStatus, cropHarvestStatus,
+         waterPot, potWaterStatus,
          cropSurplusStatus, sellCropSurplus, reseatAllOnSlots } from './src/game/state.js';
 import { catalogList, orderItem, shopStatus, priceOf, sellPot, sellCutting,
          stockOf, SELLABLE_CUTTING_STATUS, varieLeavesNeededFor } from './src/game/shop.js';
@@ -1541,6 +1552,26 @@ function fillSlots(pick) {
   $('slot').value = (p && p.slotId) || (list[0] ? list[0].slotId : '');
   $('slot').disabled = !p;
 }
+
+/* ══ 원시 DLI 숫자를 「자세히」에 적어도 되는 때인가 (박사님 2026-08-07 판단) ══
+   첫 플레이 **동안은 숨기고 마친 뒤부터 보인다.**
+   이 게임이 가르치려는 한 가지가 「자리가 결과를 바꾼다」이고 그건 놓아 보고 결과로
+   배우는 것이라, 배우는 동안 숫자가 곁에 있으면 그 배움이 숫자 읽기로 바뀐다
+   (§rankSlots 의 판단과 **같은 판단**이다). 다 배운 뒤에는 반대다 — 겪어 본 자리의
+   결과를 되읽는 것이라 숫자가 있어야 다음 자리를 고를 수 있다.
+
+   ⚠ `fillSlots` 의 `devMode` 와 **다른 문**이다. 헷갈리기 쉬워 적어 둔다:
+     · `devMode`  = 첫 플레이 시나리오 **자체가 꺼진 판**. 자리 목록의 **정답순**을 가른다.
+                    정답순은 놓기 **전**에 답을 알려주는 것이라 **완료 뒤에도 계속 숨긴다.**
+     · `showDli()` = 첫 플레이를 **마쳤나**. 이미 겪은 자리의 **결과**를 되읽는 것이라
+                    완료가 문턱이다.
+   한 문으로 합치지 마라 — 합치면 둘 중 하나가 반드시 틀린 때에 열린다. */
+const showDli = () => !(S.firstPlay && S.firstPlay.enabled) || !!S.firstPlay.completed;
+/* 숨길 때는 **줄째 지운다.** "— DLI" 로 비워 두면 "고장났나"로 읽힌다 —
+   빈 값은 *모르는 것*이지 *감춘 것*이 아니어서 뜻이 다르다. 감춘 자리는 조용해야 한다.
+   ★ 보일 때의 그림은 **한 톨도 안 바뀐다** — 값이 없으면 예전대로 `empty` 를 적는다. */
+const dliRow = (ko, v, empty = '—') => !showDli() ? ''
+  : `<div class="row"><span>${ko}</span><b>${v != null ? v.toFixed(2) + ' DLI' : empty}</b></div>`;
 
 /* 열린 시루는 방 슬롯 DLI를 그대로 받는다. 실제 지름이 올라가는 자리만 보여 준다.
    기본 UI는 DLI·정답순을 숨긴다 — 무엇이 어두운지는 방을 보고 고르는 학습 대상이다. */
@@ -1885,7 +1916,7 @@ const detail = {
     return {
       art: OPEN_SIRU.thumbnail, title: '열린 콩나물 시루', sub: where,
       body: `<div class="row"><span>자란 날</span><b>${b.ageDays || 0} / ${days}일</b></div>`
-        + `<div class="row"><span>받은 빛(평균)</span><b>${b.avgDli != null ? b.avgDli.toFixed(2) : '—'} DLI</b></div>`
+        + dliRow('받은 빛(평균)', b.avgDli, '— DLI')
         + (b.quality ? `<div class="row"><span>품질</span><b>${b.quality}</b></div>` : '')
         + '<p>콩나물은 <b>어두울수록</b> 잘 자란다. 빛을 보면 쓴맛이 난다 — 이 방에서 제일 어두운 자리를 찾으면 된다.</p>'
         + '<p>가방의 그림을 방으로 <b>끌어다</b> 놓는다.</p>'
@@ -1904,7 +1935,7 @@ const detail = {
     return {
       art: './assets/crops/thumbs/container_tray_s.png', title: '무순 · 새싹 재배판', sub: where,
       body: `<div class="row"><span>자란 날</span><b>${(site && site.ageDays) || 0} / ${days}일</b></div>`
-        + `<div class="row"><span>받은 빛(평균)</span><b>${site && site.avgDli != null ? site.avgDli.toFixed(2) : '—'} DLI</b></div>`
+        + dliRow('받은 빛(평균)', site && site.avgDli != null ? site.avgDli : null, '— DLI')
         + (site && site.quality ? `<div class="row"><span>품질</span><b>${site.quality}</b></div>` : '')
         + '<p>무순은 <b>밝을수록</b> 파릇하고 알싸하다 — 콩나물과 정반대다. 어두우면 웃자라 밍밍해진다.</p>'
         + '<p>죽지는 않는다. 자리가 값을 바꿀 뿐이다.</p>'
@@ -1919,10 +1950,21 @@ const detail = {
       art: './assets/ui/item_monstera.png', title: '몬스테라',
       sub: p.slotId && !isFreeSlotId(p.slotId) ? slotLabel(p.slotId) + '에 있음' : '방에 놓여 있음',
       body: `<div class="row"><span>지금 단계</span><b>${(lastTurn && lastTurn.growthPhase && lastTurn.growthPhase.phaseKo) || '—'}</b></div>`
-        + `<div class="row"><span>오늘 받은 빛</span><b>${dli != null ? dli.toFixed(2) + ' DLI' : '아직 없음'}</b></div>`
+        + dliRow('오늘 받은 빛', dli, '아직 없음')
         + `<div class="row"><span>상태</span><b>${(lastTurn && lastTurn.slot && lastTurn.slot.ko) || '아직 없음'}</b></div>`
         + `<div class="row"><span>돌본 날</span><b>${p.daysPlanted || 0}일</b></div>`
-        + '<p>이미 자란 개체가 도착한 것이다. <b>밝은 자리</b>라야 새순이 오르고, 어두우면 날짜만 간다.</p>',
+        /* ★ 물 — **DLI 줄과 달리 첫 플레이에도 보인다.** 숨기는 것은 놓기 *전*에 답을 주는
+           숫자(§showDli)이고, 이것은 이미 놓은 자리가 **되돌려주는 결과**다.
+           오히려 이 줄이 「밝은 자리는 물이 자주 필요하다」를 가르치는 자리다. */
+        + (() => {
+            const w = potWaterNow();
+            if (!w) return '';
+            return `<div class="row"><span>물 준 지</span><b>${w.dryDays} / ${w.interval}일`
+                 + (w.dry ? ' · <span style="color:#f0a35f">말랐습니다</span>' : '') + '</b></div>';
+          })()
+        + '<p>이미 자란 개체가 도착한 것이다. <b>밝은 자리</b>라야 새순이 오르고, 어두우면 날짜만 간다.</p>'
+        + '<p>흙이 마르면 <b>그날은 세어지지 않는다</b> — 죽지는 않고 날짜만 간다. '
+        + '밝고 더운 자리일수록 빨리 마른다.</p>',
       btns: [{ ko: '자세히 보기', primary: true, go: () => window.__byeotZoom.open() }]
     };
   }
@@ -2901,6 +2943,42 @@ function drawWater() {
     : '💧 전부 자라는 중';
 }
 
+/* ══ 몬스테라 물주기 (2026-08-07 박사님 확정) ═══════════════════════════
+   규칙·숫자는 전부 `state.js` §몬스테라 물주기 것이다. 여기서는 **묻기만** 한다 —
+   주기를 화면에서 다시 세면 코어가 막는 날과 화면이 말하는 날이 갈린다.
+   ★ 밴드·계절은 **지난 턴 것**을 넘긴다. 코어가 그 값으로 판정했으므로 화면이 같은 말을 한다. */
+function potWaterNow() {
+  if (!hasPlant(S)) return null;
+  try {
+    return potWaterStatus(S, {
+      band: (lastTurn && lastTurn.growthSpeed && lastTurn.growthSpeed.band) || null,
+      season: (lastTurn && lastTurn.sky && lastTurn.sky.season) || null
+    });
+  } catch { return null; }
+}
+
+function drawPotWater() {
+  const b = $('waterPot');
+  if (!b) return;
+  const st = potWaterNow();
+  const p = pot0(S);
+  /* 아직 없거나 아직 방에 안 놓았으면 할 일이 아니다 */
+  if (!st || !p || (!p.slotId && !p.at)) { b.style.display = 'none'; return; }
+  /* ★ 말풍선이 이미 같은 말을 하고 있으면 아래 버튼은 안 띄운다 — `drawWater` 와 같은 규칙 */
+  if (markSays(/몬스테라.*물|물.*몬스테라/)) { b.style.display = 'none'; return; }
+  b.style.display = '';
+  b.disabled = !st.canWater;
+  b.classList.toggle('done', !st.canWater);
+  b.classList.toggle('dry', !!st.dry);
+  /* ★ 마르기 **하루 전 경고는 안 한다**(박사님 확정) — 알림 따라가기가 되기 때문이다.
+     대신 며칠 남았는지를 **늘 적어 둔다.** 재촉이 아니라 읽을 수 있는 상태다. */
+  b.textContent = st.dry
+    ? `💧 몬스테라에 물 주기 (${st.dryDays - st.interval}일째 멈춰 있습니다)`
+    : st.canWater
+      ? '💧 몬스테라에 물 주기'
+      : `💧 아직 촉촉합니다 (${st.leftDays - 2}일 뒤)`;
+}
+
 /* ══ 할 일 말풍선 (박사님 2026-08-04) ═══════════════════════════════════
    "물 줘야 되고, 씨앗이 없어서 씨앗 심어야 되는 빈 화분, 그리고 수확해야 되는 화분은
     말풍선이 위쪽 상단에 나와서 (오브젝트보다 크게) 클릭이 쉽고 파악이 되도록"
@@ -2925,9 +3003,27 @@ let markTick = null;
 function markList() {
   const urgent = cutMarks(true);
   if (urgent.length) return urgent;
+  /* ★ 마른 몬스테라 — **콩나물보다 먼저**다 (2026-08-07).
+     마른 날은 **하루가 통째로 안 세어진다** — 놓치면 그날이 사라진다.
+     콩나물의 물·수확은 하루 늦어도 그날이 뒤로 밀릴 뿐 없어지지 않는다.
+     ⚠ 「마를 때가 됐다」(canWater)로는 안 띄운다. 그건 아직 잃는 것이 없는 상태라
+       띄우면 매 주기 사흘씩 말풍선이 서서 급한 것을 가린다(위 ⚠ 와 같은 함정). */
+  const dry = potMarks();
+  if (dry.length) return dry;
   const crop = cropMarks();
   if (crop.length) return crop;
   return cutMarks(false);
+}
+
+/* 몬스테라 말풍선 — **마른 것만.** 규칙은 state.js §몬스테라 물주기 것이다. */
+function potMarks() {
+  const p = pot0(S);
+  if (!p || !p.slotId) return [];
+  const w = potWaterNow();
+  if (!w || !w.dry) return [];
+  return [{ key: p.slotId, tone: 'warn',
+            ko: `💧 몬스테라에 물 주기 (${w.dryDays - w.interval}일째 멈춤)`,
+            go: () => $('waterPot').click() }];
 }
 
 /* 삽수 말풍선.
@@ -3082,6 +3178,7 @@ function refreshOverlays() {
   try { drawHarvest(); } catch (e) { console.warn('[거두기]', e && e.message); }
   try { drawSow(); }     catch (e) { console.warn('[심기]', e && e.message); }
   try { drawWater(); }  catch (e) { console.warn('[물주기]', e && e.message); }
+  try { drawPotWater(); } catch (e) { console.warn('[몬스테라 물주기]', e && e.message); }
   try { drawCuttings(); } catch (e) { console.warn('[삽수]', e && e.message); }
   try { updateHint(); } catch (e) { console.warn('[안내]', e && e.message); }
 }
@@ -3273,6 +3370,7 @@ function draw() {
   try { drawMarks(); } catch (e) { console.warn('[말풍선]', e && e.message); }
   drawHarvest();            /* 거둘 때가 됐나 */
   drawWater();              /* 물을 줘야 하나 — 말풍선이 있으면 안 띄운다 */
+  drawPotWater();           /* 몬스테라도 같은 규칙 */
   drawStamina();            /* 오늘 손이 얼마나 남았나 — 누르기 직전에 보는 값이다 */
   drawGrowGauge();          /* 확대 창 — 다음 단계까지 얼마나 왔나 (안 차면 왜인지도) */
   drawSow();                /* 다시 심어야 하나 */
@@ -3945,9 +4043,13 @@ const freePlace = {
     lb.style.left = Math.max(w / 2 + 8, Math.min(innerWidth - w / 2 - 8, px)) + 'px';
     lb.style.top = Math.max(8, py - 78) + 'px';
   },
-  rings(on, potD, near) {
+  /* ★ `hideRing` — 유령이 **앉은 칸의 네모만** 감춘다 (박사님 2026-08-07 확정 · 3㉮).
+     그 자리는 유령이 이미 "여기"를 말하고 있어 네모가 중복이다. 나머지 칸은 그대로 둔다.
+     ★ 라벨(㉯)은 **이미 손가락 78px 위**에 있어(labelAt) 따로 올릴 것이 없다 — 확인했다.
+       겹치던 것은 네모와 유령 둘이었다. */
+  rings(on, potD, near, snappedTo) {
     if (!roomView || !roomView.showSlotRings) return;
-    try { roomView.showSlotRings(on, { potD, near, nearMax: 0.45 }); } catch { }
+    try { roomView.showSlotRings(on, { potD, near, nearMax: 0.45, hideRing: snappedTo || null }); } catch { }
   },
   /* ★바닥 격자 (박사님 2026-08-03: "격자도 안 보이고").
      API 는 있는데 아무도 안 불렀다 — 놓는 동안만 켜서
@@ -3979,7 +4081,15 @@ const freePlace = {
       if (what && what !== 'monstera') {
         try { ko = cropQualityOf(what, s.dli).ko; } catch { /* 표에 없으면 s.ko 그대로 */ }
       }
-      return `여기 · DLI ${s.dli.toFixed(1)} · ${ko}`;
+      /* ★★ 첫 플레이 동안은 **숫자만 뺀다. 말은 남긴다** (박사님 2026-08-07 확정 · 3-b).
+         이 라벨이 원시 DLI 를 그대로 보여 주는 바람에 `fillSlots`(정답순 숨김)와
+         `rankSlots`(등급색 숨김)가 통째로 무의미해져 있었다 — **한쪽만 숨기면
+         숨긴 쪽이 무의미해진다**는 그 주석이 정작 이 자리에서 깨져 있었다.
+         ★ 말(`ko`)까지 지우지는 않는다. 자리를 고를 근거가 아예 없어지면 그건 배움이 아니라
+           찍기가 된다 — 가르치려는 것은 「밝기를 느끼는 것」이지 「숫자를 읽는 것」이다. */
+      return showDli()
+        ? `여기 · DLI ${s.dli.toFixed(1)} · ${ko}`
+        : `여기 · ${ko}`;
     } catch { return '여기에 놓습니다'; }
   }
 };
@@ -4056,7 +4166,8 @@ const drag = {
                 : this.what === 'musun'    ? CROP_SITE_IDS.musun
                 :                            BEANSPROUT_ID;
     freePlace.preview(hit, this.potD, potId);
-    freePlace.rings(true, this.potD, hit && hit.ok ? { x: hit.x, z: hit.z } : null);
+    freePlace.rings(true, this.potD, hit && hit.ok ? { x: hit.x, z: hit.z } : null,
+                    hit && hit.snappedTo);
     this.best = hit;
     const good = !!(hit && hit.ok);
     gh.classList.toggle('inroom', !!hit);      /* 면 위에 오면 사진을 감춘다 */
@@ -4212,7 +4323,8 @@ const picked = {
     gh.classList.toggle('ok', good); gh.classList.toggle('no', !good);
     /* 옮기는 중인 그 화분은 미리보기 판정에서 뺀다 — 자기 자신과 겹친다고 나오면 못 움직인다 */
     freePlace.preview(hit, drag.potD, drag.what === 'monstera' && pot0(S) ? pot0(S).id : null);
-    freePlace.rings(true, drag.potD, good ? { x: hit.x, z: hit.z } : null);
+    freePlace.rings(true, drag.potD, good ? { x: hit.x, z: hit.z } : null,
+                    hit && hit.snappedTo);
     drag.best = hit;
     const lb = $('dropLabel');
     lb.textContent = freePlace.label(hit, drag.what);
@@ -4843,6 +4955,26 @@ const reallyWater = guard(() => {
     const days = (target && target.harvestDays) || S.firstPlay.rules.harvestDays;
     pushLog(S, `💧 ${ko}에 물을 줬습니다 — 오늘이 0일차입니다 (${days}일 뒤 거둡니다)`);
   }
+  draw();
+});
+
+/* ★ 몬스테라 물주기 — 콩나물과 **다른 함수**다(state.js §몬스테라 물주기).
+   `doAct('water', …)` 를 그대로 쓴다: 걸어가서 주는 연출이 콩나물과 같고,
+   못 가도 규칙은 도는 3중 잠금 해제(2026-08-06)가 여기에도 그대로 걸린다. */
+/* ★ 열쇠는 화분의 `slotId` 다 — 자유 좌표 화분도 `free:{pot.id}` 를 들고 있는 것이
+   상태의 불변식이라(state.js §화분 자리) 여기서 좌표로 이름을 지어낼 일이 없다.
+   ⚠ 아직 안 놓았으면 `null` → `doAct` 가 연출을 건너뛰고 논리만 돈다(cropKey 와 같은 판단). */
+$('waterPot').onclick = guard(() =>
+  doAct('water', () => reallyWaterPot(), { key: (pot0(S) && pot0(S).slotId) || null }));
+const reallyWaterPot = guard(() => {
+  const before = potWaterNow();
+  const r = waterPot(S, {
+    band: (lastTurn && lastTurn.growthSpeed && lastTurn.growthSpeed.band) || null,
+    season: (lastTurn && lastTurn.sky && lastTurn.sky.season) || null
+  });
+  /* 두 번 눌러도 안전하다 — 아직 촉촉하면 `already` 로 돌아온다(안 던진다) */
+  if (r.watered && before && before.dry)
+    banners([{ title: '💧 물을 줬습니다', sub: '흙이 촉촉해졌습니다 — 다시 자랍니다' }]);
   draw();
 });
 

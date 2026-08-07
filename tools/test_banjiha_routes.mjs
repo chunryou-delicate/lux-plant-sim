@@ -24,7 +24,7 @@ import vm from 'node:vm';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createProfileLight } from '../src/game/room_profile.js';
-import { newState, pot0, setPotSlot, resowCrop, waterCrop,
+import { newState, pot0, setPotSlot, resowCrop, waterCrop, waterPot,
          cropWaterStatus, ARRIVAL } from '../src/game/state.js';
 import { nextDay, harvestCrop } from '../src/game/loop.js';
 import { firstPlayRulesFromBalance, placeBeansprout, moveMonstera, beansproutReady,
@@ -238,6 +238,7 @@ function play(opt = {}) {
        `opt.waterAll` 이면 그날 대기를 전부 시작한다(= 겹치는 판. B-2 가 그 대조군을 쓴다). */
     if (opt.water !== false) {
       try { waterCrop(S, { all: !!opt.waterAll }); } catch { /* 아직 안 놓은 시루 */ }
+      try { waterPot(S); } catch { /* 아직 없거나 안 놓은 화분 — 그런 날은 물이 안 든다 */ }
     }
 
     let turn;
@@ -442,6 +443,7 @@ check('A-3 용기 없이 못 자른다 — 병은 이틀 걸려 온다', () => {
         try { resowCrop(S, { at: DARK, slots: light.room.slots }); } catch { /* 다음 날 */ }
     }
     try { waterCrop(S); } catch { /* 이미 준 날 */ }
+    try { waterPot(S); } catch { /* 아직 없거나 안 놓은 화분 — 그런 날은 물이 안 든다 */ }
     nextDay(S, io);
     if (beansproutReady(S.firstPlay.beansprout)) harvestCrop(S, io);
   }
@@ -454,6 +456,7 @@ check('A-3 용기 없이 못 자른다 — 병은 이틀 걸려 온다', () => {
   moveMonstera(S.firstPlay, SILL, { slots: light.room.slots });
   for (let i = 0; i < 40 && (io.growth.leafStats().leaves < 2); i++) {
     try { waterCrop(S); } catch { /* 이미 준 날 */ }
+    try { waterPot(S); } catch { /* 아직 없거나 안 놓은 화분 — 그런 날은 물이 안 든다 */ }
     nextDay(S, io);
     if (beansproutReady(S.firstPlay.beansprout)) harvestCrop(S, io);
   }
@@ -566,6 +569,7 @@ check('C 밝은 자리에서 첫 수확을 해도 만회할 수 있다 (cropDark
     if (b.harvested && stockOf(S, 'bean_seed') >= b.sirus)
       resowCrop(S, { at: DARK, slots: light.room.slots });
     try { waterCrop(S); } catch { /* 아직 안 놓은 시루 */ }
+    try { waterPot(S); } catch { /* 아직 없거나 안 놓은 화분 — 그런 날은 물이 안 든다 */ }
     nextDay(S, io);
     /* ★ 거둬야 배움이 켜진다 (2026-08-04) — 배움 ①·②의 증거는 거두는 순간에만 온전하다 */
     if (beansproutReady(S.firstPlay.beansprout)) harvestCrop(S, io);

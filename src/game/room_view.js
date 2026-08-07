@@ -2103,8 +2103,16 @@ export async function createRoomView(canvas, opts = {}) {
       if (Number.isFinite(opt.nearMax) && nearD > opt.nearMax) nearId = null;
     }
     guideNear = nearId;
+    /* ★★ 유령이 앉은 칸의 **네모만 감춘다** (박사님 2026-08-07 확정 · 3㉮).
+       한 자리에 네모(어디에) + 유령(무엇이) + 라벨(어떻게 될지) 셋이 겹쳐 안 읽혔다.
+       ★ 셋 다 하는 일이 달라서 **하나를 없애면 그 질문의 답이 사라진다** — 그래서
+         감추는 것이 아니라 층을 가른다. 유령이 이미 "여기"를 말하고 있으므로 그 칸의
+         네모만 중복이고, **나머지 칸의 네모는 그대로 둔다**(후보가 어디인지는 계속 보여야 한다).
+       ⚠ `visible` 은 매번 되돌린다 — 안 그러면 한 번 감춘 칸이 드래그가 끝나도 안 돌아온다. */
+    const hideId = opt.hideRing || null;
     let fits = 0;
     for (const [id, m] of guideRings) {
+      m.visible = (id !== hideId);
       const s = slotById.get(id);
       /* ★ surfaceAt 과 **같은 함수**를 부른다. 여기서 따로 판정하면 또 어긋난다 —
          실제로 어긋나서 링은 14칸 다 "된다"인데 surfaceAt 은 13칸을 거절했다. */
@@ -3010,8 +3018,14 @@ export async function createRoomView(canvas, opts = {}) {
      ★ 그리고 moveBackoff 와 같은 사상으로 **느린 기기는 스스로 내려앉는다**(idleBackoff).
        한 번 내려가면 그 화면이 사는 동안 10 이다 — 오르내리면 그 자체가 렉으로 보인다.
 
-     ★ 값을 24 로 고른 근거는 tools/test_perf_budget.mjs §③ 이다. 표를 그 파일이 낸다. */
-  const ANIM_IDLE_FPS = 24;
+     ★ 값의 표는 tools/test_perf_budget.mjs §③ 이 낸다 (10 → 10.0 · 18 → 18.0 · 24 → 24.3).
+
+     ★★ 24 → **18** (박사님 2026-08-07 확정).
+       끊겨 보이던 것은 fps 가 낮아서가 아니라 **15 아래**였기 때문이다 — 사람 눈이 동작을
+       연속으로 읽기 시작하는 문턱이 그 언저리다. 18 은 그 위라 "버버벅"이 사라지고,
+       배터리는 예전 대비 2.4배가 아니라 **1.8배**다. 24 와 18 의 차이는 나란히 놓고 봐야
+       겨우 보이는데 값은 33% 더 낸다. 사람이 서 있는 동안만 드는 값이라 아껴 둘 자리다. */
+  const ANIM_IDLE_FPS = 18;
   let idleFps = IDLE_FPS;          // 지금 쓰는 idle 상한
   let idleForced = null;           // setIdleFps 로 손으로 못 박은 값(재는 도구용)
   let animBackedOff = false;       // 한 번 내려앉았으면 다시 안 올린다
