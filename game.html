@@ -4182,7 +4182,9 @@ const placeMode = {
      room_view 는 일부러 안 붙인다("원 밖에도 놓을 수 있어야 한다"). */
 const SNAP_PX = 44;                  // 이만큼 가까우면 추천 자리에 붙는다(폰 손가락 폭)
 /* ★옮길 때의 걸음[m] — 값도 근거도 room_view 가 갖는다(SNAP_DIV). 여기서 지어내지 않는다.
-   방 뷰가 아직 없으면 undefined 를 주고, 그러면 room_view 가 예전 눈금(0.05m)을 쓴다. */
+   방 뷰가 아직 없으면 undefined 를 준다 — 그때 **화분은 room_view 기본값(반 칸 0.125m)**,
+   **가구는 옛 눈금(0.05m)** 으로 앉는다. 둘이 다른 것은 일부러다(2026-08-07 placegrid §5-2):
+   가구 눈금까지 반 칸으로 넘기면 옛 배치가 조용히 자리를 옮긴다. */
 const moveStep = () => { try { return roomView.moveStep(); } catch { return undefined; } };
 /* 지금 만지는 것이 마우스인가 — 손가락이면 예전 손버릇 그대로 둔다(폰을 망가뜨리지 않는다).
    ★ 버튼([옮기기])을 누른 뒤처럼 손댄 자국이 없는 자리에서는 **직전에 방을 만진 것**으로 본다.
@@ -4658,7 +4660,12 @@ const furnPicked = {
     } catch { }
   },
   lampDragTo(dx, dy) {
-    const hit = freePlace.surfaceAt(this.originX + dx, this.originY + dy, 0.2);
+    /* ★ 여기서는 바닥·상판 점을 **안 앉힌다**(grid:false) — 2026-08-07 placegrid §5-1.
+       끌고 있는 것이 화분이 아니라 **등**이고, 등이 물리는 자리는 `lampFit` 이 따로 정한다.
+       화분 격자(0.125m)에 먼저 앉히면 그 반올림 위에 lampFit 이 또 앉아 자리가 밀린다.
+       걸음이 0.05 이던 때는 티가 안 났는데 0.125 가 되면서 눈에 든다.
+       가구 끌기(`furnSel.dragTo`)가 이미 같은 이유로 grid:false 를 쓴다 — 손버릇을 맞춘다. */
+    const hit = freePlace.surfaceAt(this.originX + dx, this.originY + dy, 0.2, { grid: false });
     const lb = $('dropLabel');
     if (!hit) { try { roomView.previewLampAt(this.uid, null); } catch { } ; lb.textContent = '방 안 상판으로'; return; }
     let r = null;
