@@ -25,7 +25,14 @@ import { launch, sleep } from './test_cdp.mjs';
 
 const BASE = process.env.BYEOT_URL || 'http://localhost:8971';
 const SECONDS = 12;                 // 마디 넷이 한 바퀴(약 7.6초)이라 한 바퀴 반이 넘는다
-const BPM = 126, BEAT = 60 / BPM;
+/* ★ 곡에서 **직접 읽는다** (2026-08-07). 예전에는 126 을 여기 박아 뒀는데,
+   곡이 서정으로 바뀌어 72 가 되자 이 검사가 「곡이 틀렸다」고 말했다 — 틀린 건 검사였다.
+   숫자를 두 곳에 두면 반드시 한쪽이 낡는다. music.js 가 정본이다. */
+const { BPM, BEAT, BAR } = await (async () => {
+  const src = await import('file:///' + process.cwd().replace(/\\/g, '/') + '/src/game/music.js');
+  const bpm = src.BPM ?? 72, beat = 60 / bpm;
+  return { BPM: bpm, BEAT: beat, BAR: beat * 4 };
+})();
 
 /* ★ 워치독 — 재는 도구가 스스로 매달리면 안 된다.
    ⚠ `unref()` 를 반드시 부른다. 안 부르면 이 타이머가 살아 있어서 **정상 종료도 막는다**
@@ -74,7 +81,29 @@ const RENDER = `(async (secs, seed) => {
   for (let k = 0; k < n; k++) {
     if (env[k] < mean * 0.12) { run++; if (run > quiet) quiet = run; } else run = 0;
   }
-  return { rms, peak, mx, mean, peakCount: peaks.length, medGap, quietMs: quiet * 10,
+  /* ★★ 박자를 **자기상관**으로 잰다 (2026-08-07).
+     예전에는 봉우리 사이 간격(medGap)으로 쟀는데, 그건 북·하이햇처럼 **뾰족한 소리**가
+     있을 때만 되는 방법이다. 곡이 서정으로 바뀌며 북을 빼고 붙는 시간을 늘리자
+     봉우리가 파형 잔물결에서 잡혀 0.030초(=33Hz)가 나왔다 — 박자가 아니라 잡음이다.
+     ⇒ 「이 곡이 얼마 주기로 되풀이되나」를 직접 잰다. 포락선을 밀어 가며 겹쳐 보고
+       가장 잘 맞는 밀린 양이 곧 주기다. 북이 없어도 화음이 바뀌면 잡힌다. */
+  const acLags = [];
+  {
+    const avg = mean;
+    const dev = new Float32Array(n);
+    for (let k = 0; k < n; k++) dev[k] = env[k] - avg;
+    let best = 0, bestLag = 0;
+    /* 0.3초 ~ 5초 사이만 본다. 그보다 짧으면 파형, 길면 곡보다 크다 */
+    for (let lag = 30; lag <= Math.min(500, Math.floor(n / 2)); lag++) {
+      let s = 0;
+      for (let k = 0; k + lag < n; k++) s += dev[k] * dev[k + lag];
+      s /= (n - lag);
+      acLags.push([lag * 0.01, s]);
+      if (s > best) { best = s; bestLag = lag; }
+    }
+    var acBestSec = bestLag * 0.01;
+  }
+  return { rms, peak, mx, mean, peakCount: peaks.length, medGap, acBestSec, quietMs: quiet * 10,
            firstSoundMs: (() => { for (let k = 0; k < n; k++) if (env[k] > mean * 0.3) return k * 10; return -1; })() };
 })(${SECONDS}, SEED)`;
 
@@ -96,12 +125,21 @@ try {
   ok(a.peak < 1.0, '찢어지지 않는다 (최댓값 < 1.0)', a.peak.toFixed(3));
   ok(a.rms < 0.45, '너무 크지 않다', `RMS ${a.rms.toFixed(4)}`);
   ok(a.peakCount > SECONDS * 2, '박자가 계속 돈다', `${a.peakCount}개 봉우리 / ${SECONDS}초`);
-  /* 봉우리는 8분음(0.238초)이나 한 박(0.476초) 자리에 선다. 둘 중 하나에 붙으면 된다 */
-  const near = x => Math.abs(a.medGap - x) < 0.06;
-  ok(near(BEAT) || near(BEAT / 2) || near(BEAT * 2),
-     `박자가 ${BPM}BPM 과 맞는다`, `간격 ${a.medGap.toFixed(3)}초`);
+  /* ★ 되풀이 주기가 **한 마디(또는 그 배수·절반)** 에 붙나. 화음이 마디마다 바뀌므로
+     북이 없어도 여기서 잡힌다. 여유는 한 박의 절반(0.42초)까지 본다 — 붙는 시간이 길어
+     경계가 물러서 그보다 좁게 잡으면 곡이 멀쩡해도 떨어진다. */
+  const near = x => Math.abs(a.acBestSec - x) < BEAT * 0.5;
+  ok(near(BAR) || near(BAR * 2) || near(BAR / 2) || near(BEAT),
+     `되풀이 주기가 ${BPM}BPM 의 마디와 맞는다`,
+     `주기 ${a.acBestSec.toFixed(2)}초 (한 마디 ${BAR.toFixed(2)}초)`);
   ok(a.firstSoundMs >= 0 && a.firstSoundMs < 600, '시작하자마자 들어온다', `${a.firstSoundMs}ms`);
-  ok(a.quietMs < 900, '중간에 곡이 죽지 않는다', `가장 긴 정적 ${a.quietMs}ms`);
+  /* ★ 문턱을 **한 마디에 매단다** (2026-08-07). 900ms 는 126BPM 짜리 곡의 두 박이었다.
+     서정으로 바뀌며 한 박이 0.83초가 됐고, **여백이 이 곡의 성격**이라 900ms 로 재면
+     "곡이 죽었다"고 잘못 말한다. 재려던 것은 「끊겼나」이지 「조용한가」가 아니다.
+     ⇒ 한 마디(3.33초)의 3분의 2를 넘게 비면 그건 끊긴 것이다. 그 아래는 숨이다. */
+  const quietLimitMs = Math.round(BAR * 1000 * 0.66);
+  ok(a.quietMs < quietLimitMs, '중간에 곡이 죽지 않는다',
+     `가장 긴 정적 ${a.quietMs}ms (한계 ${quietLimitMs}ms = 한 마디의 2/3)`);
 
   /* ⑤ 재현 — 같은 씨앗이면 같은 곡. 다른 씨앗이면 다른 곡 */
   const b = await page.eval(RENDER.replace('SEED', '20260804'));
