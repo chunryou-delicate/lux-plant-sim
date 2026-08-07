@@ -147,9 +147,19 @@ const BANJIHA_FROZEN = {
 const BJ = scan('banjiha');
 check('① 회귀 — 반지하 14칸이 skyViewK 를 붙인 뒤에도 한 톨도 안 바뀐다', () => {
   assert.equal(BJ.slots, 14);
-  assert.equal(BJ.skyViewK, 1, '★ 반지하에 skyViewK 가 붙었습니다 — 반지하는 기준(1.00)이라 못 건드립니다');
-  assert.equal(HOUSE.rooms.banjiha.skyViewK, undefined,
-    '★ house_rooms.json 의 banjiha 절이 수정되었습니다 (소유 밖)');
+  assert.equal(BJ.skyViewK, 1, '★ 반지하 skyViewK 가 1.00 이 아닙니다 — 반지하는 기준이라 못 건드립니다');
+  /* ★ 2026-08-07 (oneroomlamp) — 여기가 원래 `undefined` 였다. 왜 바꿨나:
+       반지하가 기준 1.00 이라는 사실이 **데이터에 안 적혀 있어 암묵**이었다(house.js 가
+       "안 적으면 1"로 읽는 것에 기대고 있었다). 다른 방은 전부 skyViewK + skyViewK_note 를
+       갖는데 기준인 방만 비어 있으면, 다음 사람이 「반지하는 이 계통 밖」으로 읽는다.
+       그래서 `"skyViewK": 1` 을 명시했다.
+     ⚠ 판정을 느슨하게 한 것이 아니다 — 「없어야 한다」를 「정확히 1 이어야 한다」로 **좁혔다.**
+       1 이 아닌 값이 붙으면 여기서 바로 걸린다. 그리고 값이 진짜 안 움직였다는 증거는
+       아래 14칸 얼린 표다(한 톨도 안 바뀐다 · 재서 확인함). */
+  assert.equal(HOUSE.rooms.banjiha.skyViewK, 1,
+    '★ house_rooms.json 의 banjiha.skyViewK 가 기준값 1.00 이 아닙니다 (그 값은 못 움직입니다)');
+  assert.equal(typeof HOUSE.rooms.banjiha.skyViewK_note, 'string',
+    '★ 반지하 skyViewK 에 근거(skyViewK_note)가 없습니다 — 다른 방과 같은 모양이어야 합니다');
   for (const [id, [w0, wn]] of Object.entries(BANJIHA_FROZEN)) {
     const i = BJ.ids.indexOf(id);
     assert.ok(i >= 0, `★ 반지하 자리가 사라졌습니다: ${id}`);
@@ -218,12 +228,26 @@ check('③ -2 단계마다 남는 것이 있다 — 다음 방이 처음 여는 
   const bj = SC.banjiha, or = SC.oneroom, tw = SC.tworoom, ap = SC.apartment, gh = SC.greenhouse;
   /* 반지하 — 자연광으로는 무늬종 최소(4.2)에 못 닿는다 */
   assert.ok(bj.daylightAvg7 < VARIE_MIN, `반지하 자연광이 무늬종 최소(${VARIE_MIN})를 넘었습니다`);
-  /* 원룸 — 무늬종 최소는 자연광으로 닿고, 갈라짐(6.0)은 **등이 있어야** 넘는다 */
+  /* 원룸 — 무늬종 최소는 자연광으로 닿고, 갈라짐(6.0)은 자연광으로는 못 넘는다 */
   assert.ok(or.daylightAvg7 >= VARIE_MIN,
     `★ 원룸 자연광(${or.daylightAvg7})이 무늬종 최소 ${VARIE_MIN} 에 못 닿습니다 — 반지하와 다를 것이 없습니다`);
   assert.equal(or.fenDaylight, 0,
     `★ 원룸이 자연광만으로 갈라집니다 — 식물등을 산 뜻이 없어집니다`);
-  assert.ok(or.fenFull >= 1, '★ 원룸이 등을 다 켜도 못 갈라집니다');
+  /* ⏸★ 2026-08-07 (oneroomlamp) — 여기는 원래 `or.fenFull >= 1`("등을 다 켜면 갈라진다") 였다.
+       왜 뒤집혔나 — 박사님 확정(2026-08-07): *"이사 가면 기존 짐 가지고 가는 형태. 새 집은
+       원래 비어 있고."* 그래서 `house_rooms.json` 의 원룸에 미리 놓여 있던 식물등 기구 2개
+       (`oneroom-growlight-bar`·`-clip`)를 뺐다. 기구가 0개면 `rigsOn` 이 켤 것이 없다.
+     ⚠ **판정을 낮춘 것이 아니다.** 문턱 6.0 은 그대로고(data/balance/light_thresholds.json),
+       원룸이 그 문턱을 넘던 길(등 1개 → 7일평균 6.95)이 **데이터에서 사라진 것**이다.
+       재서 확인: 등 기구 0개 · 어떤 lampCount 를 줘도 15칸이 자연광 값 그대로(최고 4.30).
+     ⏸ 그래서 지금 ③ 원룸에는 「등으로 문턱을 넘는다」가 **없다.** 산 등을 들고 가는 길
+       (플레이어 소유물로 두고 방에 설치)이 아직 없기 때문이다 — 박사님 판단 자리다.
+       `docs/handoff/oneroomlamp-to-plan.md` §못 한 것 참고. 그 길이 생기면 이 줄을
+       "설치하면 넘는다"로 되돌려야 한다. */
+  assert.equal(or.rigs, 0,
+    '★ 원룸에 식물등 기구가 다시 생겼습니다 — 새 집은 비어 있어야 합니다(2026-08-07 확정)');
+  assert.equal(or.fenFull, 0,
+    `★ 원룸이 등 없이 갈라집니다 (${or.fullAvg7}) — 기구가 0개인데 값이 나오면 셈이 틀린 것입니다`);
   /* 투룸 — 원룸보다 밝지만 자연광 갈라짐은 **아직** */
   assert.equal(tw.fenDaylight, 0, `★ 투룸이 자연광으로 갈라집니다 — 아파트가 처음 여는 것이 없어집니다`);
   /* 아파트 — ④ 의 보상. 자연광만으로 갈라진다 */
@@ -235,7 +259,7 @@ check('③ -2 단계마다 남는 것이 있다 — 다음 방이 처음 여는 
     `★ 원룸이 무늬종 갈라짐(${VARIE_FEN})까지 됩니다 (${or.fullAvg7}) — 뒤 단계가 죽습니다`);
   assert.ok(ap.daylightAvg7 < VARIE_FEN, `아파트 자연광이 무늬종 갈라짐까지 갑니다`);
   info(`단계마다 처음 열리는 것 — 반지하: 등 1개로 몬스테라 갈라짐 1칸(${bj.fenFull}) · ` +
-       `원룸: 자연광 무늬종 최소 ${VARIE_MIN} 도달(${or.daylightAvg7}) + 등으로 갈라짐 ${or.fenFull}칸 · ` +
+       `원룸: 자연광 무늬종 최소 ${VARIE_MIN} 도달(${or.daylightAvg7}) ⏸등 기구 0개라 갈라짐은 없다 · ` +
        `투룸: 자연광 ${tw.daylightAvg7} (갈라짐은 아직) · ` +
        `아파트: 자연광 갈라짐 ${ap.fenDaylight}칸 · 온실: 자연광 무늬종 갈라짐 ${VARIE_FEN} 도달(${gh.daylightAvg7})`);
 });
