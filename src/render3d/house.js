@@ -1086,18 +1086,38 @@ function tileGlassFrames(room, wall, uMin, uMax){
   room.add(frame);
 }
 
-/* ---- 걸레받이: 벽 하단, 개구부(문) 자리는 비움 ---- */
+/* ---- 걸레받이: 벽 하단, 개구부(문) 자리는 비움 ----
+   ★★ 2026-08-08 — 꺼 뒀다. 박사님: *"저 바닥에 턱을 좀 없애줄래? 가구가 박혀버리네."*
+   (방뷰 창이 껐다. 이 파일은 원래 집 창 것이다 — docs/handoff/placegrid-to-plan.md §8)
+
+   재서 확인한 것(반지하 5×4m):
+     · 이 상자는 두께 0.06m·높이 0.22m 로, **벽 안쪽 면보다 6cm 더 방 안으로 튀어나와** 있었다
+       (벽 두께 WT=0.2 → 안쪽 면 CD/2−0.10, 걸레받이 안쪽 면 CD/2−0.16)
+     · 그런데 **콜라이더에는 안 들어간다.** 벽 콜라이더는 blockLine 이 WT 두께로만 만든다.
+       그래서 가구는 예전에도 벽에 붙을 수 있었고(재 보니 방 끝에서 0.075m 까지),
+       **붙으면 이 6cm 턱을 그대로 뚫고 들어간 것처럼 보였다** — 그것이 "박혀버리네" 다.
+       (decorate.js 도 "걸레받이 두께(6cm)만큼 파고드는 건 봐준다"고 적어 두고 있었다)
+     · 즉 이건 **그림만의 문제**였다. 없애도 걷기·배치 판정은 한 줄도 안 바뀐다 — 재서 확인했다.
+
+   ⚠ 벽 자체는 안 건드렸다. 방 치수(CW·CD·WT)가 바뀌면 조도·자리·세이브가 다 흔들린다.
+   ★ 되돌리려면 SKIRT_D 를 0 보다 크게 두면 된다. 얇게(0.012) 두면 「선」처럼 보이고
+     가구가 파고드는 양도 1.2cm 라 눈에 안 띈다 — 박사님이 다시 원하시면 그 값이 낫다. */
+const SKIRT_D = 0;      // 걸레받이 두께[m]. 0 이면 안 그린다
+const SKIRT_H = 0.22;   // 걸레받이 높이[m]
 function addSkirting(g, wall, uMin, uMax, openings){
+  if(!(SKIRT_D > 0)) return;
   const skirt=mat('#efeae1',0.7);   // 연한 크림 걸레받이
+  /* 벽 안쪽 면에 딱 붙인다 — 안쪽 면은 (치수/2 − 벽두께/2) 다 */
+  const off = WT/2 + SKIRT_D/2;
   // spec 없는 항목 = 윤곽 도려내기 구간. 거기도 걸레받이를 비운다.
   const doorHoles=openings.filter(o=>!o.spec || o.spec.module==='door');
-  for(const r of rectMinus({x0:uMin,y0:0,x1:uMax,y1:0.22},
-      doorHoles.map(o=>({x0:o.x0,y0:0,x1:o.x1,y1:0.22})))){
-    const cu=(r.x0+r.x1)/2, du=r.x1-r.x0;
-    if(wall==='back')  g.add(box(du,0.22,0.06,skirt,cu,0.11,-CD/2+0.13,false));
-    if(wall==='front') g.add(box(du,0.22,0.06,skirt,cu,0.11, CD/2-0.13,false));
-    if(wall==='left')  g.add(box(0.06,0.22,du,skirt,-CW/2+0.13,0.11,cu,false));
-    if(wall==='right') g.add(box(0.06,0.22,du,skirt, CW/2-0.13,0.11,cu,false));
+  for(const r of rectMinus({x0:uMin,y0:0,x1:uMax,y1:SKIRT_H},
+      doorHoles.map(o=>({x0:o.x0,y0:0,x1:o.x1,y1:SKIRT_H})))){
+    const cu=(r.x0+r.x1)/2, du=r.x1-r.x0, hy=SKIRT_H/2;
+    if(wall==='back')  g.add(box(du,SKIRT_H,SKIRT_D,skirt,cu,hy,-CD/2+off,false));
+    if(wall==='front') g.add(box(du,SKIRT_H,SKIRT_D,skirt,cu,hy, CD/2-off,false));
+    if(wall==='left')  g.add(box(SKIRT_D,SKIRT_H,du,skirt,-CW/2+off,hy,cu,false));
+    if(wall==='right') g.add(box(SKIRT_D,SKIRT_H,du,skirt, CW/2-off,hy,cu,false));
   }
 }
 

@@ -2140,9 +2140,30 @@ export async function createRoomView(canvas, opts = {}) {
     return guideRings.size;
   }
 
-  /* ★ 격자 칸에 물린 반너비[m]. 예전 원 반지름 식을 그대로 두고 마지막에 칸으로 반올림한다 —
-     자리 한도 0.22 는 한 칸(0.25×0.25), 0.6 짜리 상판은 두 칸(0.50×0.50) 이 된다. */
-  const guideRadius = s => squareHalf(clamp((Number.isFinite(s.maxPotD) ? s.maxPotD : 0.22) * 0.62, 0.05, 0.32));
+  /* ★★ 자리 네모의 크기 — **끌고 있는 것**으로 잰다 (2026-08-08 버그 고침)
+     ══════════════════════════════════════════════════════════════════
+     박사님이 폰 사진으로 잡아 주셨다: *"책상이랑 서랍장 위에는 여전히 저래."*
+     금색 네모가 상판을 통째로 덮고 있었다.
+
+     원인은 자리마다 다른 `maxPotD` 로 크기를 잰 것이다. 그 값은 **그 자리가 받아 줄 수
+     있는 최대 지름**이지 지금 끌고 있는 물건의 지름이 아니다. 재 보면:
+       책상   maxPotD 0.57 → 0.57×0.62 = 0.353 → 상한 0.32 → 네모 한 변 **0.75m**
+       서랍장 maxPotD 0.42 → 0.42×0.62 = 0.260              → 네모 한 변 **0.50m**
+     시루 한 개(0.24m)를 끌고 있어도 저 크기로 그렸다. 상판보다 크거나 맞먹는다.
+
+     ⇒ 뜻으로 다시 세운다 — 네모는 **그 물건이 실제로 먹는 자리**다. 유령 밑 네모
+       (§markerHalf)와 **같은 자 하나**를 쓴다. 두 벌이 되면 또 어긋난다.
+       시루 한 개면 어느 자리든 한 칸, 12개 무리(0.97m)면 네 칸이다.
+     ★ `* 0.62` 부풀림과 `상한 0.32` 도 뺐다 — 둘 다 원 시절 값이다.
+     ⚠ squareHalf 가 **반올림**이라 지름이 칸 경계보다 조금 큰 경우(시루 3개 0.517m,
+       8개 0.875m — 재서 확인했다)에는 네모가 물건보다 **작게** 나온다. 올림으로 바꾸면
+       사라지지만 유령 밑 네모까지 같이 커지므로 여기서 혼자 안 옮겼다
+       (docs/handoff/placegrid-to-plan.md §7-1 — 박사님 판단을 기다린다).
+     ⚠ 「이 자리가 넉넉하다」를 크기로 말하던 것이 사라지는데, 그건 **색**이 이미 말한다
+       (못 올라가는 자리는 guideMat.ng 로 어둡게 — 그 규약은 그대로다).
+     ⚠ 겨냥한 자리를 1.18배로 키우던 것도 뺐다. 격자에 물린 네모를 1.18배 하면 다시
+       칸에서 벗어난다 — 박사님이 지적하신 어긋남이 바로 그것이다. 굵기(guideGeo.thick)와
+       색(guideMat.near)이 이미 그 자리를 도드라지게 한다. */
 
   /* on=false 면 감춘다(지우지 않는다).
        opt.potD     이 화분 지름. 못 올라가는 자리는 어둡게 칠한다
@@ -2180,6 +2201,8 @@ export async function createRoomView(canvas, opts = {}) {
          네모만 중복이고, **나머지 칸의 네모는 그대로 둔다**(후보가 어디인지는 계속 보여야 한다).
        ⚠ `visible` 은 매번 되돌린다 — 안 그러면 한 번 감춘 칸이 드래그가 끝나도 안 돌아온다. */
     const hideId = opt.hideRing || null;
+    /* 크기는 자리마다가 아니라 **끌고 있는 것** 하나로 정해진다(위 ★★). 한 번만 잰다. */
+    const half = markerHalf(potD);
     let fits = 0;
     for (const [id, m] of guideRings) {
       m.visible = (id !== hideId);
@@ -2191,8 +2214,7 @@ export async function createRoomView(canvas, opts = {}) {
       const isNear = id === nearId;
       m.material = isNear ? guideMat.near : (holds ? guideMat.fit : guideMat.ng);
       m.geometry = isNear ? guideGeo.thick : guideGeo.thin;
-      const r = guideRadius(s);
-      m.scale.setScalar(isNear ? r * 1.18 : r);
+      m.scale.setScalar(half);
       m.renderOrder = isNear ? 6 : 4;
     }
     guideGroup.visible = true;
@@ -2206,6 +2228,8 @@ export async function createRoomView(canvas, opts = {}) {
       slotId: id, near: id === guideNear,
       fits: m.material === guideMat.fit || m.material === guideMat.near,
       color: '#' + m.material.color.getHexString(),
+      /* 네모 반너비[m] — 크기가 자리(maxPotD)를 타는지 물건(potD)을 타는지 검사가 이걸로 잰다 */
+      half: +m.scale.x.toFixed(4),
       visible: !!(guideGroup && guideGroup.visible)
     }));
   }

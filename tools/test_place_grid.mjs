@@ -284,6 +284,60 @@ async function main() {
      `${siruFloor.length}곳 · 최대 어긋남 ` +
      (Math.max(0, ...siruFloor.map(s => Math.max(s.offX, s.offZ))) * 0.125).toExponential(1) + 'm');
 
+  /* ══ U 자리 네모의 크기 ═══════════════════════════════════════════════
+     ★ 박사님 2026-08-07: *"책상이랑 서랍장 위에는 여전히 저래."* 금색 네모가 상판을
+       통째로 덮고 있었다. 크기를 **그 자리의 maxPotD**(책상 0.57)로 재고 있었기 때문이다.
+       네모는 「그 물건이 실제로 먹는 자리」여야 한다 — 끌고 있는 것의 지름으로 잰다. */
+  const marks = await page.eval(`(() => {
+    const v = window.view, out = [];
+    for (const potD of [0.202, 0.24, 0.97]) {
+      v.showSlotRings(true, { potD });
+      const st = v.slotRings();
+      out.push({ potD, halves: [...new Set(st.map(r => r.half))], n: st.length });
+    }
+    v.showSlotRings(false);
+    return out;
+  })()`);
+  /* 격자 칸에 물린 반너비 = ceil 아닌 round 로 칸을 센다(room_view.squareHalf) */
+  const wantHalf = potD => Math.max(1, Math.round(potD / 0.25)) * 0.25 / 2;
+  const badMark = marks.filter(m => m.halves.length !== 1
+                                 || Math.abs(m.halves[0] - wantHalf(m.potD)) > 1e-6);
+  ok('U-1 자리 네모 크기가 **끌고 있는 것**으로 정해진다 (자리마다 다르지 않다)',
+     marks.length === 3 && badMark.length === 0,
+     marks.map(m => `${m.potD} → ${JSON.stringify(m.halves)} (기대 ${wantHalf(m.potD)})`).join(' | '));
+  ok('U-2 시루 한 개(0.24m)면 한 칸 · 무리(0.97m)면 네 칸이다',
+     marks[0] && marks[1] && marks[2] &&
+     marks[1].halves[0] === 0.125 && marks[2].halves[0] === 0.5,
+     marks.map(m => `${m.potD} → 반너비 ${m.halves[0]}m`).join(' · '));
+
+  /* ══ V 바닥 턱(걸레받이) ══════════════════════════════════════════════
+     ★ 박사님 2026-08-07: *"저 바닥에 턱을 좀 없애줄래? 가구가 박혀버리네."*
+       벽 안쪽 면보다 방 안으로 튀어나온 **바닥에 붙은 띠**가 없어야 한다.
+     ⚠ 벽 두께(WT 0.2)는 안 건드린다 — 방 치수가 바뀌면 조도·자리·세이브가 흔들린다.
+       그래서 재는 것은 「벽 안쪽 면(치수/2 − 0.1)보다 안쪽으로 튀어나온 것이 있나」다. */
+  const ledge = await page.eval(`(() => {
+    const v = window.view, b = v.roomSize(), out = [];
+    const inX = b.w / 2 - 0.1, inZ = b.d / 2 - 0.1;      // 벽 안쪽 면
+    v.three.scene.traverse(o => {
+      if (!o.isMesh || !o.geometry || !o.geometry.parameters) return;
+      const p = o.geometry.parameters;
+      if (!(p.height > 0.02 && p.height < 0.40)) return;                 // 낮은 띠
+      if (!(Math.min(p.width, p.depth) < 0.12)) return;                  // 얇은 띠
+      if (Math.max(p.width, p.depth) < 0.5) return;                      // 길게 도는 것만
+      const w = new THREE.Vector3(); o.updateWorldMatrix(true, false); o.getWorldPosition(w);
+      if (Math.abs(w.y - p.height / 2) > 0.03) return;                   // 바닥에 붙은 것만
+      /* 벽 안쪽 면보다 **방 안쪽**으로 넘어온 양. 얇은 축이 벽에 수직인 축이다. */
+      const into = (p.width < p.depth)
+        ? inX - (Math.abs(w.x) - p.width / 2)      // 좌·우 벽을 따라 도는 띠
+        : inZ - (Math.abs(w.z) - p.depth / 2);     // 앞·뒤 벽을 따라 도는 띠
+      if (into > 0.002) out.push({ w: p.width, h: p.height, d: p.depth,
+                                   x: +w.x.toFixed(3), z: +w.z.toFixed(3), into: +into.toFixed(3) });
+    });
+    return out;
+  })()`);
+  ok('V-1 벽 안쪽 면보다 방 안으로 튀어나온 바닥 턱이 없다',
+     ledge.length === 0, `${ledge.length}조각 — ` + JSON.stringify(ledge.slice(0, 3)));
+
   ok('H 콘솔에 처리 안 된 예외가 없다', errs.length === 0, errs.slice(0, 3).join(' | '));
 
   await page.close();
