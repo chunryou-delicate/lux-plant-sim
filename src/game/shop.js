@@ -30,7 +30,8 @@
 
 /* ★ 작물 표를 읽는다 — 씨앗 품목·한 회전분의 정본은 first_play 다(값을 여기 베끼지 않는다).
    ⚠ 순환이 아니다: first_play 는 `place.js` 하나만 import 하고 shop 을 안 부른다. */
-import { CROP_KINDS, cropKindIndexOf, cropCycleSavedWon, FIRST_PLAY_RULES } from './first_play.js';
+import { CROP_KINDS, cropKindIndexOf, cropCycleSavedWon, FIRST_PLAY_RULES,
+         slotFitsDiameter } from './first_play.js';
 
 export const SHOP_SCHEMA = 'shop/1';
 
@@ -106,6 +107,42 @@ export const CATALOG = Object.freeze({
           '★ 값이 이 자리인 이유는 개수다: 무순은 7일 주기라 매일 거두려면 7판이 든다. ' +
           '시루와 같은 값이면 용기값 회수가 40일을 넘어 2종째가 영영 안 돈다(재현 ' +
           'tools/probe_crop_cases.mjs 가 그 회수일을 낸다). plan 확인 대기'
+  }),
+
+  /* ── 화분 넷 (2026-08-08 · §②-2 화분 종류) ────────────────────────────
+     ⚠⚠ **값을 새로 짓지 않았다.** 넷 다 5,000원인데, 그건 이 표가 이미
+       `siru`·`pot`·`jar` 셋에 매겨 둔 값 그대로다(docs/shop.md §2 「용기값 5,000원」 —
+       *"정본에 있는 가장 싼 완제품(sale_economy.md §4 묘목 5,000원)"* · *"용기 셋은
+       전부 그 자리에 있다(0.12~0.36m 소품)"*). 새 화분 넷도 0.13~0.28m 소품이라
+       **같은 문장이 그대로 적용된다.** 크기로 값을 가르려면 새 눈금을 지어내야 하는데,
+       이 창은 `data/balance/` 를 읽기만 한다 — 그래서 안 갈랐다.
+     ★ 검산으로도 같은 자리다. `pot`(검은 모종포트 0.1314)과 `jar`(유리 수경병 0.0970)는
+       지름이 서로 35% 다른데 **이미 같은 값**이다. 즉 이 표는 처음부터
+       「소품 화분은 크기가 달라도 5,000원」으로 서 있었고, 넷은 그 줄에 선다.
+     ⏸ 종류마다 값을 다르게 하려면 `data/balance/` 에 shop 항목이 필요하다 — 박사님 판단. */
+  pot_concrete_round: Object.freeze({
+    id: 'pot_concrete_round', ko: '회색 콘크리트 화분', kind: 'container',
+    listWon: 5_000, leadDays: 2, potKind: 'concrete_round',
+    note: 'docs/shop.md §2 용기값 5,000원과 같은 줄 — 0.1801m 소품'
+  }),
+  pot_terracotta: Object.freeze({
+    id: 'pot_terracotta', ko: '테라코타 화분 (나무받침)', kind: 'container',
+    listWon: 5_000, leadDays: 2, potKind: 'terracotta',
+    note: 'docs/shop.md §2 용기값 5,000원과 같은 줄 — 0.2010m 소품'
+  }),
+  pot_ceramic: Object.freeze({
+    id: 'pot_ceramic', ko: '크림도자기 화분 (나무받침)', kind: 'container',
+    listWon: 5_000, leadDays: 2, potKind: 'ceramic',
+    note: '★ 몬스테라가 **신고 오는** 화분이다(state.ARRIVAL.potAsset). 값이 붙은 이유는 ' +
+          '하나뿐이다 — 다른 화분으로 갈아 낀 뒤 되돌리려면 살 데가 있어야 한다. ' +
+          'docs/shop.md §2 용기값 5,000원과 같은 줄 — 0.2020m 소품'
+  }),
+  pot_concrete_square: Object.freeze({
+    id: 'pot_concrete_square', ko: '콘크리트 사각 화분', kind: 'container',
+    listWon: 5_000, leadDays: 2, potKind: 'concrete_square',
+    note: '★ 값은 같은데 **자리를 잃는다** — 0.2755m 라 반지하 14칸 중 4칸에만 올라간다. ' +
+          '이 화분이 치르는 값은 돈이 아니라 자리다(§②-2 ★네모의 값). ' +
+          'docs/shop.md §2 용기값 5,000원과 같은 줄'
   })
 });
 
@@ -121,6 +158,253 @@ export function catalogList() {
     id: it.id, ko: it.ko, kind: it.kind,
     listWon: it.listWon, buyWon: buyPriceOf(it.id), leadDays: it.leadDays, note: it.note
   }));
+}
+
+/* ============================================================
+   ②-2 ★★ 화분 종류 — 「바꿔 낀다」가 무엇을 바꾸나 (2026-08-08)
+   ------------------------------------------------------------
+   박사님 원문: *"화분 종류를 늘려서 바꿔 낄 수 있도록 해줘."*
+
+   ══ 먼저 — 지금은 어떻게 도나 ═══════════════════════════════════════════
+   화분은 **한 종류밖에 없다.** `state.givePlant` 가 `potAsset: ARRIVAL.potAsset`
+   ('monstera/pot.glb') 하나를 못 박고, 세이브는 그 칸을 이미 적었다가 그대로 되세운다
+   (save.js §packPot.potAsset). 즉 **그릇은 이미 세이브를 왕복하는데 고를 데가 없었다.**
+   지름은 아예 상태에 없다 — `first_play.FIRST_PLAY_ASSETS.monsteraPotDiameterM = 0.202`
+   라는 **상수 하나**가 그 자리에 서 있고, 자리 판정 셋이 전부 그 값을 본다:
+     `first_play.slotFitsDiameter`  숫자로 확인된 maxPotD 만 받는다(모르면 못 받는다)
+     `place.fitsOn` · `place.slotHolds`  면 한도와 견준다
+     `room_view.potFits` · `rotationSafeDiameter`  실제 메시로 다시 잰다
+
+   ══ ★★ 그래서 이 일의 핵심은 겉모습이 아니라 **지름**이다 ═════════════════
+   화분을 바꾸면 지름이 바뀌고, 지름이 바뀌면 **놓을 수 있는 자리가 바뀐다.**
+   반지하 14칸의 한도는 창턱 0.21 · 선반 0.25 × 9 · 서랍장 0.42 × 2 · 책상 0.57 × 2 다.
+     0.2755m 짜리 네모 화분  →  **4칸**  (창턱 한 칸과 선반 아홉 칸을 잃는다)
+     나머지 넷              →  14칸
+   ⇒ **네모 화분이 치르는 값은 돈이 아니라 자리다.** 잃는 창턱이 이 방에서 제일 밝은
+     자리(DLI 4.80)라 「예뻐 보여서 갈아 꼈더니 안 자란다」가 실제로 일어난다.
+     그 사실이 화면에 안 뜨면 조용히 틀리는 유형이 된다 — §canSwapPot 이 그래서 있다.
+
+   ══ 지름은 **잰 값이다. 지어내지 않았다** ══════════════════════════════════
+   `tools/test_pots.mjs` 가 GLB 를 직접 열어 `2 × max √(x²+z²)`(회전 무관 지름)를 재고
+   매니페스트의 `scale_to_real` 을 곱한다. 그 값을 0.1mm 단위로 **올림**한 것이 아래 표다.
+     · 회전 무관 지름인 이유 — bbox 로 재면 네모 화분이 통과한다.
+       `pot_concrete_square` 는 bbox 0.20 인데 대각선이 0.2755 다. 돌리면 안 들어간다
+       (`room_view.rotationSafeDiameter` 머리말 · core-to-house.md 2026-08-02 ④).
+     · 올림인 이유 — 내리면 실제보다 작게 세어 "들어간다"고 해 놓고 겹친다
+       (`place.js` §올림이다).
+   ★ 검산: 크림도자기 화분의 잰 값이 0.201983 이고 올리면 **0.202** — 이 저장소가
+     예전부터 손으로 적어 두던 `FIRST_PLAY_ASSETS.monsteraPotDiameterM` 과 **한 자리도
+     안 다르다.** 재는 방법이 맞다는 증거이고, 검사가 그 등식을 못 박는다.
+   ⚠ 못 잰 것은 안 넣었다:
+     · `pots/pot_macrame_hanging.glb`(마크라메 행잉 · 0.1794) — **걸이**다. 방의 자리는
+       전부 상판 위 좌표(onUid + top)라 매다는 자리가 없다. 지름은 쟀지만 그 지름으로
+       갈 자리가 없으므로 품목이 될 수 없다.
+     · `pots/pot_glassjar.glb`(유리 수경병 · 0.0970) — 이미 `CATALOG.jar` 이고
+       **물꽂이 삽수 용기**다(propagation.CONTAINERS.jar · 팔 때 돌아온다).
+       흙이 없어 몬스테라를 심는 그릇이 아니다.
+     · `pots/pot_macrame.glb` — 매니페스트에 없다. `scale_to_real` 이 없어 **실제 크기를
+       못 잰다.** 짐작한 지름은 「창턱을 통과한 뒤 바닥까지 삐져나오는」 사고가 된다.
+
+   ══ ★ 색은 지름을 안 바꾼다 ═════════════════════════════════════════════
+   민트·핑크는 같은 지오메트리의 **다시 칠한 판**이라 잰 지름이 소수 여섯째 자리까지 같다.
+   그래서 이 표는 둘을 갈라 둔다 — 이게 박사님 질문 「무엇이 바뀌나」의 답이기도 하다.
+     **색 갈아입기** 겉모습만 바뀐다. 지름이 그대로라 **자리를 절대 못 잃는다**
+     **모양 갈아끼우기** 지름이 바뀐다. **자리를 잃을 수 있다**
+   ⇒ 값을 치르는 것은 모양이고 색은 아니다. 그래서 색은 따로 안 판다(§colors).
+============================================================ */
+
+/* ★ 아무것도 안 고른 화분이 신고 있는 것. `state.ARRIVAL.potAsset` 과 **같은 값이어야 한다.**
+   ⚠ `state.js` 를 import 하지 않는다 — 그쪽이 이 파일을 부르므로 순환이 된다
+     (`CATALOG.bean_seed` 와 `first_play.seedWonPerSiru` 가 서로를 못 부르는 것과 같은 규약).
+     둘이 갈리면 도착한 화분의 지름을 이 표가 모르게 된다. 검사가 등식을 고정한다. */
+export const DEFAULT_POT_ASSET = 'monstera/pot.glb';
+
+/* 지름을 0.1mm 눈금으로 **올린다**. 표의 값이 이 함수를 거친 결과와 같아야 한다(검사). */
+export const ceilPotDiameter = (m) => Math.ceil(m * 1e4 - 1e-9) / 1e4;
+
+/* 종류마다 ① 한글 이름 ② 잰 지름 ③ 상점 품목 ④ 색 갈래.
+   `measuredM` 은 **GLB 에서 실제로 나온 값**이고 `diameterM` 은 그것을 올린 값이다.
+   둘 다 적는 이유: 검사가 재현할 수 있어야 하고, 나중에 에셋이 바뀌면 어디가 어긋났는지
+   한눈에 보여야 한다. */
+export const POT_KINDS = Object.freeze({
+  nursery: Object.freeze({
+    id: 'nursery', ko: '검은 모종포트', itemId: 'pot',
+    asset: 'pots/pot_nursery_black.glb',
+    measuredM: 0.131304, diameterM: 0.1314,
+    colors: Object.freeze([
+      Object.freeze({ id: 'base', ko: '검정', asset: 'pots/pot_nursery_black.glb' })
+    ]),
+    /* ★ 새 품목을 안 만들었다 — `CATALOG.pot` 이 이미 이 물건이다
+       (propagation.CONTAINERS.soil.itemId === 'pot'). 그래서 **재고를 나눠 쓴다**:
+       몬스테라에 갈아 끼우면 삽수를 심을 포트가 하나 준다. 그게 사실이라 그대로 둔다. */
+    note: '이미 있는 품목(CATALOG.pot)이다. 삽수용 포트와 같은 재고를 쓴다'
+  }),
+  concrete_round: Object.freeze({
+    id: 'concrete_round', ko: '회색 콘크리트 화분', itemId: 'pot_concrete_round',
+    asset: 'pots/pot_concrete_round.glb',
+    measuredM: 0.180070, diameterM: 0.1801,
+    colors: Object.freeze([
+      Object.freeze({ id: 'base', ko: '회색', asset: 'pots/pot_concrete_round.glb' }),
+      Object.freeze({ id: 'mint', ko: '민트', asset: 'pots/pot_concrete_round_c1.glb' }),
+      Object.freeze({ id: 'pink', ko: '핑크', asset: 'pots/pot_concrete_round_c2.glb' })
+    ]),
+    note: '원형이라 대각선이 안 튄다 — bbox 1.858×2.000 인데 회전 무관 지름이 2.0008 이다'
+  }),
+  terracotta: Object.freeze({
+    id: 'terracotta', ko: '테라코타 화분 (나무받침)', itemId: 'pot_terracotta',
+    asset: 'pots/pot_terracotta_wood.glb',
+    measuredM: 0.200907, diameterM: 0.2010,
+    colors: Object.freeze([
+      Object.freeze({ id: 'base', ko: '테라코타', asset: 'pots/pot_terracotta_wood.glb' }),
+      Object.freeze({ id: 'mint', ko: '민트', asset: 'pots/pot_terracotta_wood_c1.glb' }),
+      Object.freeze({ id: 'pink', ko: '핑크', asset: 'pots/pot_terracotta_wood_c2.glb' })
+    ]),
+    note: '창턱 한도 0.21 을 9mm 차이로 통과한다 — 기본 화분과 사실상 같은 자리를 쓴다'
+  }),
+  ceramic: Object.freeze({
+    id: 'ceramic', ko: '크림도자기 화분 (나무받침)', itemId: 'pot_ceramic',
+    asset: 'monstera/pot.glb',
+    measuredM: 0.201983, diameterM: 0.2020,
+    colors: Object.freeze([
+      Object.freeze({ id: 'base', ko: '크림', asset: 'monstera/pot.glb' }),
+      Object.freeze({ id: 'mint', ko: '민트', asset: 'monstera/pot_c1.glb' }),
+      Object.freeze({ id: 'pink', ko: '핑크', asset: 'monstera/pot_c2.glb' })
+    ]),
+    /* ★ 이 줄이 옛 판을 지킨다 — 도착 화분이 그대로 이 종류이고 지름도 그대로 0.202 다 */
+    note: '★ 도착 화분(DEFAULT_POT_ASSET). 잰 값을 올리면 0.202 로, ' +
+          'first_play.FIRST_PLAY_ASSETS.monsteraPotDiameterM 과 **같은 값이어야 한다**'
+  }),
+  concrete_square: Object.freeze({
+    id: 'concrete_square', ko: '콘크리트 사각 화분', itemId: 'pot_concrete_square',
+    asset: 'pots/pot_concrete_square.glb',
+    measuredM: 0.275434, diameterM: 0.2755,
+    colors: Object.freeze([
+      Object.freeze({ id: 'base', ko: '콘크리트', asset: 'pots/pot_concrete_square.glb' })
+    ]),
+    /* ★★ 네모의 값 — bbox 로는 0.20 이라 창턱(0.21)을 통과하는 것처럼 보인다.
+       대각선이 0.2755 라 실제로는 못 올라간다. 이 한 줄이 회전 무관 지름을 쓰는 이유이고
+       (room_view.rotationSafeDiameter 머리말이 바로 이 파일을 예로 든다),
+       동시에 「바꿔 끼면 자리가 바뀐다」를 눈에 보이게 만드는 유일한 화분이다. */
+    note: '★ 네모다. bbox 0.20 인데 대각선 0.2755 — 창턱과 선반을 못 쓴다'
+  })
+});
+
+/* 에셋 경로 → 종류·색. 색 판까지 전부 실린다(민트 화분도 제 종류를 안다). */
+const POT_ASSET_INDEX = (() => {
+  const m = new Map();
+  for (const k of Object.values(POT_KINDS))
+    for (const c of k.colors) m.set(c.asset, { kind: k, color: c });
+  return m;
+})();
+
+export function potKindList() {
+  return Object.values(POT_KINDS).map(k => ({
+    id: k.id, ko: k.ko, itemId: k.itemId, asset: k.asset,
+    diameterM: k.diameterM, measuredM: k.measuredM,
+    listWon: CATALOG[k.itemId].listWon, buyWon: buyPriceOf(k.itemId),
+    leadDays: CATALOG[k.itemId].leadDays,
+    colors: k.colors.map(c => ({ ...c })), note: k.note
+  }));
+}
+
+/* 이 에셋을 아는가. **모르면 지름을 지어내지 않는다** — 부르는 쪽이 먼저 물어본다. */
+export const knowsPotAsset = (asset) => POT_ASSET_INDEX.has(asset);
+
+/* 에셋 경로 → 종류. 모르면 null (던지지 않는다 — 화면이 매 프레임 부를 수 있다). */
+export function potKindOfAsset(asset) {
+  const hit = POT_ASSET_INDEX.get(asset);
+  return hit ? hit.kind : null;
+}
+export function potColorOfAsset(asset) {
+  const hit = POT_ASSET_INDEX.get(asset);
+  return hit ? hit.color : null;
+}
+
+/* ★ 화분 하나의 지름[m]. **자리 판정이 쓰는 유일한 창구다.**
+     asset  `pot.potAsset` 문자열. 비어 있으면 도착 화분으로 본다
+   ⚠ 모르는 에셋이면 **던진다.** 조용히 기본값(0.202)으로 떨어뜨리면 더 굵은 화분이
+     창턱을 통과해 버린다 — `slotFitsDiameter` 가 「모르는 maxPotD 는 못 받는다」로
+     서 있는 것과 같은 이유다. 던지기 싫으면 `knowsPotAsset` 으로 먼저 물어라. */
+export function potDiameterOf(asset) {
+  const key = asset == null || asset === '' ? DEFAULT_POT_ASSET : asset;
+  const hit = POT_ASSET_INDEX.get(key);
+  if (!hit)
+    throw new Error(`[상점] 모르는 화분 에셋입니다: ${key} — 지름을 잴 수 없어 자리를 정할 수 없습니다 ` +
+                    `(아는 것: ${[...POT_ASSET_INDEX.keys()].join(', ')})`);
+  return hit.kind.diameterM;
+}
+
+/* 이 지름이 올라갈 수 있는 자리 목록. 판정은 `first_play.slotFitsDiameter` 하나뿐이다 —
+   여기서 다시 재면 화면과 코어가 갈린다.
+     slots  방의 슬롯 배열(`io.light.room.slots` 모양 · maxPotD 를 가진 것) */
+export function potSlotsThatHold(diameterM, slots) {
+  if (!Number.isFinite(diameterM))
+    throw new Error(`[상점] 화분 지름이 유한한 숫자가 아닙니다: ${diameterM}`);
+  return (slots || []).filter(s => slotFitsDiameter(s, diameterM));
+}
+export const potSlotCount = (diameterM, slots) => potSlotsThatHold(diameterM, slots).length;
+
+/* ============================================================
+   ★★ 바꿔 끼기 — 무엇을 바꾸고, 무엇을 안 바꾸나
+   ------------------------------------------------------------
+   바뀌는 것  ① 겉모습(`pot.potAsset`)  ② **지름**(그 에셋에서 잰 값)
+              ③ 그래서 **놓을 수 있는 자리**
+   안 바뀌는 것 그루 자체다. 잎 수·유효 생장일·무늬는 화분을 안 본다
+              (`priceOf` 는 잎으로만 값을 매기고, growth 는 화분 지름을 입력으로 안 받는다).
+              **분갈이가 아니라 그릇 바꾸기**라서 그렇다. 자란 속도가 화분 크기로 달라지면
+              그건 새 생장 규칙이고, 생장 규칙은 이 창 것이 아니다(⏸ 박사님 판단).
+
+   ★ 굵어져서 지금 자리에 못 있게 되면 **막는다. 몰래 옮기지 않는다.**
+     옮겨 주면 그 자리의 밝기가 달라져 **그루의 앞날이 바뀐다** — 화분을 바꿨을 뿐인데
+     자란다/안 자란다가 뒤집힌다. 이 저장소가 `slotFitsDiameter` 를 「모르면 못 받는다」로
+     둔 것과 같은 방향이고, 되돌릴 수 없는 일을 조용히 하지 않는다는 규약이기도 하다.
+     ⇒ 화면은 "먼저 옮기고 나서 갈아 끼우세요"라고 말하면 된다. 자리를 고르는 것은 사람이다.
+   ★ 가늘어지는 쪽은 언제나 된다 — 지금 자리가 더 굵은 것을 이미 받고 있었으므로.
+============================================================ */
+
+/* 갈아 낄 수 있나. **상태를 안 바꾼다** — 화면이 [갈아 끼우기] 를 회색으로 만들 때도,
+   코어가 실제로 갈아 끼우기 직전에도 같은 함수를 본다(판정을 두 벌 만들지 않는다).
+     S
+     asset   갈아 낄 화분 에셋(색 판도 된다)
+     opt.potId  (없으면 S.pots[0])
+     opt.slots  방의 슬롯 배열. 있으면 "지금 자리에 계속 있을 수 있나"까지 본다
+   반환 { ok, reason, asset, kind, color, fromAsset, fromDiameterM, diameterM,
+          slotId, wider, fits, holdCount } */
+export function canSwapPot(S, asset, opt = {}) {
+  const pots = (S && S.pots) || [];
+  const p = opt.potId ? pots.find(x => x.id === opt.potId) : pots[0];
+  if (!p) return { ok: false, reason: '갈아 끼울 화분이 없습니다 — 아직 그루가 없습니다' };
+  if (!knowsPotAsset(asset))
+    return { ok: false, reason: `모르는 화분입니다: ${asset}`, fromAsset: p.potAsset || DEFAULT_POT_ASSET };
+
+  const kind = potKindOfAsset(asset), color = potColorOfAsset(asset);
+  const fromAsset = p.potAsset || DEFAULT_POT_ASSET;
+  const fromD = knowsPotAsset(fromAsset) ? potDiameterOf(fromAsset) : null;
+  const d = potDiameterOf(asset);
+  const base = { asset, kind, color, fromAsset, fromDiameterM: fromD, diameterM: d,
+                 slotId: p.slotId || null, wider: fromD != null && d > fromD + 1e-9 };
+
+  if (asset === fromAsset) return { ...base, ok: false, reason: '이미 그 화분입니다' };
+  if (stockOf(S, kind.itemId) < 1) {
+    const inbound = incomingOf(S, kind.itemId);
+    return { ...base, ok: false,
+             reason: `${kind.ko}가 없습니다 — ` +
+                     (inbound ? `${inbound}개가 배송 중입니다` : '먼저 주문해 주세요') };
+  }
+
+  /* 자리 판정. 슬롯을 안 주면 **자리는 안 본 것**이라고 말한다(봤다고 하지 않는다). */
+  if (!opt.slots) return { ...base, ok: true, reason: null, fits: null, holdCount: null };
+  const holdCount = potSlotCount(d, opt.slots);
+  const here = p.slotId ? (opt.slots || []).find(s => s && s.slotId === p.slotId) : null;
+  /* 아직 아무 데도 안 놓았거나 자유 좌표면 슬롯이 없다 — 그때는 자리 문제가 없다.
+     자유 좌표의 면 판정은 `place.fitsOn` 이 놓을 때 한다. 여기서 그 일을 대신하지 않는다. */
+  const fits = here ? slotFitsDiameter(here, d) : null;
+  if (fits === false)
+    return { ...base, ok: false, fits, holdCount,
+             reason: `${kind.ko}(지름 ${(d * 100).toFixed(1)}cm)는 지금 자리에 안 올라갑니다 ` +
+                     `(한도 ${Number.isFinite(here.maxPotD) ? (here.maxPotD * 100).toFixed(1) + 'cm' : '알 수 없음'}) — ` +
+                     `먼저 화분을 옮기고 나서 갈아 끼워 주세요 (지금 이 화분이 올라가는 자리 ${holdCount}칸)` };
+  return { ...base, ok: true, reason: null, fits, holdCount };
 }
 
 /* ============================================================
