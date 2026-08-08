@@ -606,13 +606,42 @@
     font-size:12.5px;color:var(--dim);background:rgba(16,13,24,.86);border:1px solid rgba(255,255,255,.12)}
   /* ★이동 모드 — 화면 아무 데나 끌어도 잡힌다.
      투명 판이 3D 위를 덮어 카메라 회전을 막는다(끌다가 방이 돌면 조작이 망가진다). */
-  /* 가구 고름 — 화분과 같은 자리에 뜬다. 둘이 동시에 뜨는 일은 없다(고르면 서로 푼다) */
-  #furnActions{position:absolute;z-index:27;left:12px;right:12px;bottom:var(--pickLift,12px);display:none;
-    gap:6px;align-items:center}
+  /* ══ 가구 고름 — **가구 옆에 뜨는 팝오버** (박사님 2026-08-08) ═══════════════
+     *"가구 클릭 시 옮기기 이런 선택창이 밑에가 아니라 가구가 살짝 밝아지면서
+       활성화된 것처럼 되면서 그 옆으로 선택 가능 메뉴들이 뜨게."*
+     ══════════════════════════════════════════════════════════════════
+     예전에는 화면 **아래 고정 띠**였다. 고른 것은 방 위쪽에 있는데 할 일은 화면 바닥에
+     적혀 있어 눈이 두 번 오갔고, 무엇이 골라졌는지는 글자(가구 이름)로만 남았다.
+     이제 가구가 실제로 밝아지고(방뷰 `highlightFurniture`) 메뉴가 그 옆에 선다.
+     ★ `absolute` 를 **그대로 둔다**(자리만 아래 띠에서 가구 옆으로 옮긴다).
+       ⚠ 한 번 `fixed` 로 바꿔 봤다가 되돌렸다: `position:fixed` 인 요소는 **`offsetParent` 가
+         언제나 null** 이라, 「보이나」를 `offsetParent !== null` 로 재는 바깥 도구가
+         **늘 안 보인다고 답한다**(QA 프로브 `probe_qa_full.mjs` §v 가 그렇게 잰다.
+         실제로 「가구를 눌렀는데 판이 안 뜸」이 그 이유로 찍혔다 — 판은 떠 있었다).
+         화면에 없는 버그를 만드는 것보다 좌표를 한 번 빼는 것이 싸다.
+       ⇒ 방뷰가 주는 좌표(캔버스 기준)에 캔버스 rect 를 더해 화면 좌표로 만든 뒤,
+         **자리잡이(#stage) rect 를 빼서** 넣는다(§placeFurnMenu).
+     ⚠⚠ **크기가 변하면 안 된다.** 말풍선에서 이미 겪었다(§.mark 2026-08-08) —
+       누를 때 상자가 커지면 그만큼 밀려나 다음 클릭이 빗나간다. 그래서 여기에는
+       :active 로 상자를 키우는 규칙을 두지 않는다(버튼 하나가 2px 내려앉는 것은
+       상자 크기가 아니라 그 버튼의 그림이다 — 자리를 잡는 것은 바깥 상자다).
+     ⚠ 떠 있는 것을 누르면 **그 밑 캔버스가 눌림을 가져가 카메라가 돈다.** 말풍선이 쓰는
+       손버릇을 그대로 따른다: 눌리는 자리를 보이는 것보다 넓게(::before) 잡고,
+       확정은 `pointerdown` 에서 한다(bindPicked §가구 메뉴). */
+  #furnActions{position:absolute;z-index:27;left:0;top:0;display:none;
+    flex-direction:column;gap:5px;align-items:stretch;
+    width:max-content;max-width:min(58vw,230px);padding:7px;border-radius:14px;
+    background:rgba(16,13,24,.9);border:1px solid rgba(255,255,255,.14);
+    box-shadow:0 8px 24px rgba(0,0,0,.5)}
+  /* 눌리는 자리를 **보이는 것보다 넓게** — .mark::before 와 같은 손이다.
+     ⚠ 버튼에 position:relative 를 줘야 이 판이 버튼을 안 덮는다(위치 잡힌 것이 위로 온다). */
+  #furnActions::before{content:'';position:absolute;inset:-12px;border-radius:22px}
   #stage.furnpicked #furnActions{display:flex}
-  #furnActions button{flex:1;min-height:var(--tap);font-weight:700;font-size:14px;border-radius:12px}
-  #furnActions .who{flex:0 0 auto;display:flex;align-items:center;padding:0 12px;border-radius:12px;
-    font-weight:700;font-size:13px;background:rgba(16,13,24,.82);color:var(--gold)}
+  #furnActions button{position:relative;min-height:var(--tap);font-weight:700;font-size:14px;
+    border-radius:10px;white-space:nowrap;padding:0 14px}
+  #furnActions .who{position:relative;display:block;padding:1px 4px 3px;
+    font-weight:700;font-size:12.5px;color:var(--gold);
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   #moveCatcher{position:absolute;z-index:28;inset:0;display:none;touch-action:none}
   #stage.moving #moveCatcher{display:block}
   #stage.moving #plantActions,#stage.moving #furnActions{display:none}
@@ -792,7 +821,24 @@
          color:#3a2c12;background:url(./assets/ui/button_plate_amber.png) center/100% 100% no-repeat;
          filter:drop-shadow(0 3px 0 rgba(0,0,0,.32))}
   button.ghost{background-image:url(./assets/ui/button_plate_slate.png);color:#f2eef8}
-  button:active{transform:translateY(2px);filter:drop-shadow(0 1px 0 rgba(0,0,0,.32))}
+  /* ★★★ 「말풍선이 누르는 사이에 61.6px 도망간다」의 **진짜 원인** (2026-08-08 · QA §3-D)
+     ══════════════════════════════════════════════════════════════════
+     말풍선(`.mark`)은 `<button>` 이다. 그리고 제 자리를 `transform:translate(-50%,-100%)`
+     **로 잡는다** — 자리가 곧 변형이다. 그런데 여기 있는 누름 효과가 `transform` 을
+     통째로 갈아 끼우므로, 누르는 동안 그 `translate(-50%,-100%)` 가 **사라진다.**
+     그러면 말풍선이 (폭/2, 높이+2) 만큼 오른쪽 아래로 튄다.
+     ⇒ 재서 확인했다(PC 1440×900 · 진짜 마우스 · 누르고 0.14초 뒤):
+         누르기 전 (439.0, 651.3) → 누르는 중 (485.8, 691.3) = **61.6px**
+         그때 계산된 transform 이 `matrix(1,0,0,1,0,2)` — 즉 `translateY(2px)` 하나뿐이다
+         (카메라·캔버스·`screenPosOf` 는 **한 톨도 안 바뀌었다** — 방이 아니라 CSS 였다)
+       61.6 = hypot(93.7/2, 38+2) 로 폭·높이에서 정확히 나온다. QA 가 잰 61.6px 과 같은 값이다.
+     ★ 평소에는 왜 안 났나 — `markBob` 애니메이션이 `transform` 을 계속 써서 누름 효과를
+       이기고 있었다. 그런데 안내 손가락이 그 말풍선을 가리키면 `.hintTarget` 이 붙어
+       애니메이션이 **`hintGlow` 로 바뀌고**(그쪽은 transform 을 안 건드린다) 방패가 사라진다.
+       QA 가 "첫 탭에만 났다"고 적은 것이 이것이다 — 손가락이 가리키던 그 한 번이다.
+     ⇒ **자리가 변형인 것에는 누름 효과를 안 준다.** 나머지 버튼은 그대로 2px 내려앉는다. */
+  button:active:not(.mark){transform:translateY(2px);filter:drop-shadow(0 1px 0 rgba(0,0,0,.32))}
+  .mark:active{filter:drop-shadow(0 1px 0 rgba(0,0,0,.32))}
   button:disabled{opacity:.45;cursor:default}
   .row{display:flex;align-items:baseline;gap:6px;flex-wrap:wrap}
   .row.big{font-size:15px;margin-bottom:9px}
@@ -1190,6 +1236,16 @@
         <label for="slot"><span>몬스테라 자리</span><select id="slot" disabled></select></label>
         <label><span>식물등</span><select id="lamps"></select></label>
         <label><span>점등시간</span><input id="lit" type="number" min="0" max="24" step="1" value="12"></label>
+        <!-- ★★ 포인터 「상대 이동」 (박사님 2026-08-08: "클릭을 터치 또는 그 커서를
+             상대 이동으로 움직이게 설정에서 고를 수 있게").
+             가구·등을 끌 때 **잡은 자리로 순간이동할지**, 있던 자리에서 **끈 만큼**
+             움직일지. 기본은 direct — 지금 손버릇을 안 바꾼다.
+             ⚠ 화분 끌기·걷기는 이 설정과 무관하다. 그 둘은 예전부터 상대다
+               (roomui-to-plan §3-1 이 튀는 거리 0m 로 재서 확인했다). -->
+        <label><span>포인터 이동</span><select id="ptrMode">
+          <option value="direct">직접 — 잡은 자리로 옮겨집니다</option>
+          <option value="relative">상대 — 끈 만큼만 움직입니다</option>
+        </select></label>
         <!-- ★[다음 날]은 여기 없다. 하단 액션바로 갔다 — 폰에서 매 턴 시트를 열게 하면 안 된다. -->
         <!-- ★★ 개발자 설정은 **접어 둔다** (2026-08-06 박사님).
              모드·30일 자동·초기화·방 프로파일은 플레이어가 매일 쓰는 손잡이가 아니다.
@@ -1701,6 +1757,14 @@ function fillCropSlots() {
         `그림을 끌어 바닥에 놓아 보세요 — 어두워서 콩나물엔 제일 좋습니다`
       : '올라갈 자리가 없습니다 — 그림을 끌어 바닥에 놓아 보세요';
   }
+  /* ★★ 산 시루가 가방에 남아 있으면 **무엇을 해야 하는지 여기서 말한다** (2026-08-08).
+     예전에는 [심기] 버튼이 알아서 심어 버려 말할 것이 없었다. 이제 사람이 놓아야 하므로
+     안 적으면 「샀는데 아무 데도 없다」가 된다 — 2026-08-06 에 고쳤던 그 증상이 되돌아온다.
+     ⚠ 위 두 줄보다 **뒤에** 쓴다. 자리가 없다는 말보다 이쪽이 지금 할 일이다. */
+  const spare = spareSiru();
+  if (hint && spare > 0)
+    hint.textContent = `산 시루 ${spare}개가 가방에 있습니다 — 이 그림을 끌어 놓으면 ` +
+                       `${n + spare}개가 함께 섭니다`;
 }
 
 /* ══ 무순 — 2종째 작물 (2026-08-05) ══════════════════════════════════════
@@ -2607,7 +2671,13 @@ function drawBag() {
      정작 가방에 없으면 두 화면이 서로 다른 말을 한다 — 그래서 자리를 상태에 맞춘다. */
   const fp = S.firstPlay;
   const b = fp && fp.beansprout;
-  holdCard($('cropThumb').closest('.itemcard'), !!(b && (b.slotId || b.at)));
+  /* ★★ **산 시루가 남아 있으면 카드는 가방에 있다** (박사님 2026-08-08).
+     이미 놓은 자리가 있어도 마찬가지다 — 가방에 아직 안 선 시루가 있다는 사실을
+     화면이 말해야 하고, 그 카드가 곧 **끌어다 놓는 손잡이**이기 때문이다
+     (끄는 것은 `#cropThumb` 이고 카드는 노드째 옮겨 다닌다 — §holdCard).
+     ⚠ 가방 격자에도 「열린 시루 ×N」이 이미 뜬다. 그건 세는 칸이지 끄는 칸이 아니다 —
+       둘이 같은 말을 하는 게 아니라 **세는 것과 잡는 것**이 다른 일이다. */
+  holdCard($('cropThumb').closest('.itemcard'), !!(b && (b.slotId || b.at)) && !spareSiru());
   const ms = musunSite();
   holdCard($('musunCard'), !!(ms && (ms.slotId || ms.at)));
   holdCard($('plantCard'), true);              // 몬스테라는 늘 방에 온다(가방을 거치지 않는다)
@@ -2671,7 +2741,13 @@ function drawShop() {
     /* ★한 번 되묻는다 — 결제는 즉시고 취소가 없다(위 §confirmOnce) */
     b.onclick = confirmOnce('정말 주문?', guard(() => {
       const r = orderItem(S, b.dataset.buy, 1, { log: m => pushLog(S, m) });
-      banner('주문했습니다', `${r.ko} · ${r.arrivesOnDay - S.day}일 뒤 도착`);
+      /* ★ 이름은 **품목 표에서 찾는다** (2026-08-08 · QA §3-B).
+         ⚠ `orderItem` 의 반환에는 `ko` 가 없다(`{orderId,itemId,qty,unitWon,totalWon,
+           orderedOnDay,arrivesOnDay}` + cashWon·events). 그래서 배너가 늘
+           **「주문했습니다undefined」**로 떴다 — 무엇을 샀는지를 화면이 못 말했다.
+         ⚠ 이름을 여기서 짓지 않는다. `koOf` 가 이미 그 표를 본다(§koOf) —
+           `r.events[0].ko` 를 캐는 길도 있지만, 그건 사건의 문장이지 품목 이름이 아니다. */
+      banner('주문했습니다', `${koOf(r.itemId)} · ${r.arrivesOnDay - S.day}일 뒤 도착`);
       draw();
     }));
   }
@@ -3003,28 +3079,31 @@ function drawSow() {
      시차 판에서는 늘 일부만 거둬져 있어서, 전부를 요구하면 영영 못 심는다. */
   const need = hv ? (hv.harvestedCount || 0) : 0;
   const seeds = st ? (st.stock.bean_seed || 0) : 0;
-  /* ★★ **산 시루도 여기서 쓴다** (2026-08-06 박사님: "콩나물 시루랑 콩을 사는데
-       뭐가 와야 되는데 사지기만 하고 안 오네").
-     ⚠ 예전에는 조건이 「거둔 시루가 있나」 하나뿐이었다. 그래서 시루를 더 사도
-       **버튼이 아예 안 떴고**, 뜨더라도 `resowCrop` 에 `sirus` 를 안 넘겨 `sirusAdded=0` 이라
-       산 시루가 재고에 쌓이기만 했다 — 돈만 나가고 판에는 아무 일도 안 일어났다.
-     ⇒ 「거둔 시루 + 산 시루」를 함께 센다. 씨앗은 **둘을 합한 만큼** 든다
-       (시루 하나에 씨앗 한 봉지 — state.js §resowCrop). */
-  const spare = st ? (st.stock.siru || 0) : 0;
-  const want = need + spare;                       // 이번에 씨앗이 들어갈 시루 수
+  /* ★★ **산 시루는 이 버튼이 안 세운다** (박사님 2026-08-08: "시루를 샀는데 자동 배치가
+       되는데 이상하게 배치되고. 애초에 인벤에서 끌어서 배치하도록 해").
+     ══════════════════════════════════════════════════════════════════
+     ⚠ 2026-08-06 에는 여기서 「거둔 시루 + 산 시루」를 함께 심었다. 그때 고치려던 것은
+       「사도 아무 일이 없다」였고 그 진단은 맞았지만, 대신 **자리를 고르는 손이 사라졌다** —
+       산 시루는 이미 놓여 있는 자리에 저절로 붙었다. 시루는 자리 하나(`site.at`)에
+       **무리로** 서므로(multisiru §3), 무리가 커지면 그 자리 한도에 맞춰 통째로 찌그러진다
+       (서랍장 0.42m 에 12개면 시루 한 개가 10.4cm — multisiru §6). 그게 「이상하게 배치」다.
+     ⇒ 이 버튼은 **거둔 시루를 그 자리에 다시 심는 것**만 한다. 자리가 안 바뀌는 동작이라
+       고를 것이 없고, 그래서 버튼이 맞다.
+       산 시루는 가방에 남아 있다가 **콩나물 카드를 끌어다 놓을 때** 판에 선다
+       (§commitPlace 산 시루). 자리가 바뀌는 동작은 끌어서 한다 — 화분·가구와 같은 손버릇이다. */
+  /* ★ 잠그는 것을 **늘 먼저** 정한다 (2026-08-08 · drawWater §진짜 원인).
+     말풍선이 누르는 길이 이 버튼이라, `disabled` 가 옛 값으로 굳으면 눌러도 삼켜진다.
+     여기는 `markSays` 로 돌아가지는 않았지만 `!need` 로 돌아갔다 — 같은 함정이라 막는다. */
+  btn.disabled = !need || seeds < need;
   /* 거두기·물주기와 **같은 규칙** — 심는 말풍선이 떠 있으면 아래 버튼은 안 뜬다 (2026-08-06) */
-  btn.style.display = (want > 0 && !markSays(/심기/)) ? '' : 'none';
-  if (!want) return;
+  btn.style.display = (need > 0 && !markSays(/심기/)) ? '' : 'none';
+  if (!need) return;
   /* 씨앗이 모자라도 **버튼은 보인다** — 안 보이면 왜 못 심는지 알 길이 없다.
      회색으로 두고 사유를 말한다. */
-  btn.disabled = seeds < want;
-  btn.textContent = seeds < want
-    ? (seeds < 1 ? '🌱 콩 씨앗이 없습니다' : `🌱 콩 씨앗이 ${want}봉지 필요합니다 (${seeds}봉지 있음)`)
-    : spare > 0
-      ? (need > 0 ? `🌱 콩나물 심기 (다시 ${need} + 새 시루 ${spare})` : `🌱 새 시루에 콩나물 심기 (${spare}개)`)
-      : (need > 1 ? `🌱 콩나물 다시 심기 (${need}개)` : '🌱 콩나물 다시 심기');
-  btn.title = seeds < want ? '콩 씨앗을 먼저 주문하세요' : '';
-  btn.dataset.spare = String(spare);
+  btn.textContent = seeds < need
+    ? (seeds < 1 ? '🌱 콩 씨앗이 없습니다' : `🌱 콩 씨앗이 ${need}봉지 필요합니다 (${seeds}봉지 있음)`)
+    : (need > 1 ? `🌱 콩나물 다시 심기 (${need}개)` : '🌱 콩나물 다시 심기');
+  btn.title = seeds < need ? '콩 씨앗을 먼저 주문하세요' : '';
 }
 
 /* ══ 체력 — 오늘 손이 얼마나 남았나 (2026-08-05 · docs/stamina.md) ═════════
@@ -3051,20 +3130,36 @@ function drawStamina() {
     : `오늘 손 ${v.left}/${v.max}`;
 }
 
+/* ══ ★★★ 「눌러도 안 먹는다」의 진짜 원인 (2026-08-08 · QA §3-A) ═══════════════
+   ══════════════════════════════════════════════════════════════════
+   말풍선(`.mark`)이 하는 일은 `$('waterCrop').click()` 이다. 그런데 **`disabled` 인 버튼은
+   `click()` 을 불러도 핸들러가 안 돈다** — 그래서 `actAt` 까지 못 가고 조용히 삼켜진다.
+   그 `disabled` 가 왜 참으로 굳나:
+     ① 물을 준 직후 — `needsWater` 가 거짓이고 말풍선도 없으니 여기가 끝까지 돌아
+        `disabled = true` 를 적는다.
+     ② 새 회전에서 말풍선이 뜨면 — 예전 코드는 `markSays` 에서 **돌아가 버려서**
+        `disabled` 를 적는 줄까지 못 왔다. 그래서 `true` 가 **영영 남는다.**
+   ⇒ 회전마다 하루~이틀이 사라지는데 화면은 아무 말도 안 했다. QA 가 도청해서 잡았다
+     (판 넷 전부 · 폰·PC 둘 다).
+   ★ **감추는 것과 잠그는 것은 다른 일이다.** 말풍선이 같은 말을 하면 감추는 것이 맞지만,
+     그렇다고 잠글 이유는 없다 — 감춘 버튼도 말풍선이 눌러 주는 **길**이기 때문이다.
+   ⇒ 상태(`disabled`·글)는 **늘 갱신하고**, 마지막에 **보이기만** 끈다.
+     `drawHarvest` 가 이미 그 모양이다(그래서 거두기 말풍선은 멀쩡했다). 그쪽에 맞춘다. */
 function drawWater() {
   const b = $('waterCrop');
   if (!b) return;
   let st = null; try { st = cropWaterStatus(S); } catch { }
-  if (!st || !st.placed || st.harvested) { b.style.display = 'none'; return; }
+  const live = !!(st && st.placed && !st.harvested);
+  if (!live) { b.disabled = true; b.style.display = 'none'; return; }
+  b.disabled = !st.needsWater;
+  b.classList.toggle('done', !st.needsWater);
   /* ★ 식물 위에 말풍선이 떠 있으면 아래 버튼은 **안 띄운다** (2026-08-06 박사님).
      같은 일을 두 곳에서 말하면 어디를 눌러야 하는지가 오히려 흐려진다 —
      말풍선이 물건 위에 있어서 "무엇에 주는지"까지 말해 주므로 그쪽이 낫다.
      ⚠ 말풍선이 안 뜨는 상황(대화 중·확대 중·방이 안 뜸)에서는 아래 버튼이 나온다.
-       그때 버튼마저 없으면 물을 줄 길이 사라진다. */
-  if (markSays(/물/)) { b.style.display = 'none'; return; }
-  b.style.display = '';
-  b.disabled = !st.needsWater;
-  b.classList.toggle('done', !st.needsWater);
+       그때 버튼마저 없으면 물을 줄 길이 사라진다.
+     ⚠⚠ **여기서 돌아가면 안 된다** — 위 §진짜 원인. 보이기만 끈다. */
+  b.style.display = markSays(/물/) ? 'none' : '';
   /* ★2026-08-04 — 물은 **회전 시작**이다. 매일 주는 것이 아니다.
      그래서 "빼먹었다"가 아니라 "아직 시작을 안 했다"로 말한다 —
      벌이 아니라 아직 안 한 일이다. */
@@ -3102,13 +3197,17 @@ function drawPotWater() {
   const st = potWaterNow();
   const p = pot0(S);
   /* 아직 없거나 아직 방에 안 놓았으면 할 일이 아니다 */
-  if (!st || !p || (!p.slotId && !p.at)) { b.style.display = 'none'; return; }
-  /* ★ 말풍선이 이미 같은 말을 하고 있으면 아래 버튼은 안 띄운다 — `drawWater` 와 같은 규칙 */
-  if (markSays(/몬스테라.*물|물.*몬스테라/)) { b.style.display = 'none'; return; }
-  b.style.display = '';
+  if (!st || !p || (!p.slotId && !p.at)) { b.disabled = true; b.style.display = 'none'; return; }
+  /* ★★ **여기서 돌아가면 안 된다** — `drawWater` §진짜 원인과 **같은 함정**이다
+     (2026-08-08 · QA §3-A ⚠ 가 "drawPotWater 도 똑같이 일찍 돌아간다"고 짚었다).
+     말풍선이 뜬 동안 `disabled` 가 옛 값으로 굳으면 말풍선이 눌러도 삼켜진다.
+     ⚠ QA §3-F(「PC 에서 몬스테라 물 주기가 한 번 안 먹었다」)가 이것일 수 있다 —
+       다만 그쪽은 다음 날 상태를 안 봐서 확정되지 않았다. **같은 것이라고 단정하지 않는다.** */
   b.disabled = !st.canWater;
   b.classList.toggle('done', !st.canWater);
   b.classList.toggle('dry', !!st.dry);
+  /* ★ 말풍선이 이미 같은 말을 하고 있으면 아래 버튼은 안 띄운다 — `drawWater` 와 같은 규칙 */
+  b.style.display = markSays(/몬스테라.*물|물.*몬스테라/) ? 'none' : '';
   /* ★ 마르기 **하루 전 경고는 안 한다**(박사님 확정) — 알림 따라가기가 되기 때문이다.
      대신 며칠 남았는지를 **늘 적어 둔다.** 재촉이 아니라 읽을 수 있는 상태다. */
   b.textContent = st.dry
@@ -3585,6 +3684,8 @@ $('slot').onchange = e => {
 };
 $('lamps').onchange = e => { S.lamps.count = +e.target.value; io.light.clearCache(); fillSlots(); draw(); };
 $('lit').onchange = e => { S.lamps.litHours = Math.max(0, Math.min(24, +e.target.value || 0)); io.light.clearCache(); draw(); };
+/* 포인터 이동 방식 — 켠 값을 기억한다(§PTR_KEY). 게임 상태가 아니라 조작 취향이라 draw() 가 없다 */
+$('ptrMode').onchange = e => applyPointerMode(e.target.value);
 $('mode').onchange = e => { S.sim.mode = e.target.value; io.light.clearCache(); draw(); };
 $('placeCrop').onclick = guard(() => {
   const target = $('cropSlot').value;
@@ -3868,6 +3969,39 @@ function armMusicAutostart() {
    빈 검은 화면만 두면 "고장났나"로 읽히므로 무엇을 기다리는지 적어 둔다. */
 let roomView = null;
 let roomListenersBound = false;         /* 한 번만 거는 리스너를 지킨다 — remountRoomView 참조 */
+
+/* ══ 포인터 「상대 이동」 (박사님 2026-08-08) ═══════════════════════════════
+   *"클릭을 터치 또는 그 커서를 상대 이동으로 움직이게 설정에서 고를 수 있게."*
+   ══════════════════════════════════════════════════════════════════
+   ★ 판정도 기준점도 **방뷰가 갖는다**(`setPointerMode`·`dragOrigin`). 여기서 하는 일은
+     ① 고른 값을 기억하고 ② 방을 켤 때 한 번 넣어 주는 것뿐이다 —
+     방뷰는 값을 저장하지 않는다(roomui-to-plan §3-3).
+   ★ 기본은 **direct** 다. 지금 손버릇을 안 바꾼다 — 바꾸려는 사람만 바꾼다.
+   ⚠ 이 설정이 바꾸는 것은 **가구 끌기·등 끌기 둘뿐**이다. 화분 끌기와 걷기는 예전부터
+     상대라(§3-1 · 튀는 거리 0m) `dragOrigin` 을 끼우면 오히려 손버릇이 바뀐다.
+     그래서 `picked.beginMove` 와 걷기에는 **안 넣었다.**
+   ⚠ 저장은 세이브가 아니라 localStorage 다. 판을 지우거나 새로 시작해도 남아야 하는
+     **조작 취향**이지 게임 진행이 아니다(음악 켜짐과 같은 결 — §MUSIC_KEY). */
+const PTR_KEY = 'byeot.pointerMode';
+const PTR_MODES = ['direct', 'relative'];
+function pointerModeWanted() {
+  let v = null; try { v = localStorage.getItem(PTR_KEY); } catch { }
+  return PTR_MODES.includes(v) ? v : 'direct';
+}
+/* 지금 실제로 도는 모드 — 방뷰가 정본이다. 방이 아직 없으면 기억한 값으로 답한다 */
+function pointerModeNow() {
+  try { if (roomView && roomView.pointerMode) return roomView.pointerMode(); } catch { }
+  return pointerModeWanted();
+}
+function applyPointerMode(m) {
+  const v = PTR_MODES.includes(m) ? m : 'direct';
+  try { localStorage.setItem(PTR_KEY, v); } catch { }
+  const sel = $('ptrMode'); if (sel) sel.value = v;
+  /* 방뷰가 없거나 거절해도 화면은 안 끊는다 — 모르는 모드는 저쪽이 거절하고 모드도 안 바꾼다 */
+  try { if (roomView && roomView.setPointerMode) roomView.setPointerMode(v); }
+  catch (e) { console.warn('[포인터]', (e && e.message) || e); }
+}
+applyPointerMode(pointerModeWanted());          /* 고르개 값을 먼저 맞춘다(방은 아직 없다) */
 /* 부팅 진행 표시. 단계 이름은 room_view 가 내는 것을 그대로 쓴다 —
    여기서 새 이름을 지으면 실제 단계와 어긋나 거짓 진행률이 된다. */
 const BOOT_STEP = { start: 4, data: 18, room: 46, ready: 72, character: 90 };
@@ -3916,6 +4050,9 @@ async function bootRoomView() {
     /* 진단용 손잡이. 브라우저 콘솔에서 방 상태를 볼 수 있게 낸다 —
        읽기용이고 게임은 이걸 안 쓴다(밖에서 켜면 검증이 장식이 되는 것과 같은 이유로 세터는 없다). */
     window.__rv = roomView; window.__picked = picked; window.__drag = drag;
+    /* ★ 기억해 둔 포인터 모드를 방에 넣어 준다 — 방뷰는 값을 저장하지 않는다(§PTR_KEY).
+       이사로 방을 다시 지어도 여기를 지나므로 설정이 안 풀린다. */
+    applyPointerMode(pointerModeWanted());
     /* ★그 자리가 몬스테라인가. 확대 오버레이(plant_grow)는 몬스테라 전용이라
        작물 자리에서 열면 아직 오지도 않은 물건이 화면을 덮는다. */
     /* 작물 자리를 탭했을 때 상세 카드를 여는 창구. 어느 작물인지는 여기서만 안다 —
@@ -3944,6 +4081,13 @@ async function bootRoomView() {
     /* 진단용 — 말풍선이 왜 안 뜨는지 밖에서 볼 수 있게. 읽기 전용이다 */
     window.__marks = { list: () => markList(), busy: () => stageBusy() };
     window.__S = () => S;                    /* 진단용 — 읽기 전용으로 쓴다 */
+    /* ★ 고른 가구 — `__picked`(화분)와 같은 결의 **읽기용** 손잡이다.
+       검사가 "무엇이 골라졌나 · 지금 옮기는 중인가"를 화면 클래스가 아니라 상태로 볼 수 있다. */
+    window.__furn = furnPicked;
+    /* ★ 다시 그리기. 규칙을 바꾸는 문이 아니라 **화면을 지금 상태에 맞추는** 문이다 —
+       검사가 상태를 만들어 놓고 화면이 그걸 따라오는지 보려면 이 한 걸음이 필요하다.
+       ⚠ 게임은 이걸 안 쓴다(draw() 를 직접 부른다). 밖에서만 쓰는 진단용이다. */
+    window.__redraw = () => { try { draw(); } catch (e) { console.warn('[진단] 다시 그리기', e); } };
     $('stage').classList.add('room-ok');     /* 방이 떴다 — 빈 무대 안내를 걷는다 */
     bootProgress(null);                      /* 진행 표시를 걷는다 */
     showGpuInfo();
@@ -3983,6 +4127,10 @@ async function bootRoomView() {
      이사 때 딱 한 번이라 재생성 비용(수 초)이 새 API 의 위험보다 싸다.
    ★ S.home.room 은 부르기 **전에** 이미 바뀌어 있어야 한다(moveIntoOneroom 이 바꾼다). */
 async function remountRoomView() {
+  /* ★ 고른 가구를 **먼저 푼다** (2026-08-08). 옛 방의 uid 를 쥔 채로 넘어가면
+     새 방에서 없는 가구를 따라다니는 메뉴가 남고, 밝히기도 옛 재질에 걸린 채 끝난다.
+     ⚠ 방뷰를 부수기 **전에** 불러야 highlightFurniture(null) 이 실제로 되돌린다. */
+  try { furnPicked.clear(); } catch { }
   if (roomView) {
     try { roomView.dispose(); }
     catch (e) { console.warn('[방] 옛 방 정리 실패 —', (e && e.message) || e); }
@@ -4132,13 +4280,51 @@ function cropCount(kind) {
   return Math.max(1, (site.pots || []).length || Math.round(site.sirus || 1));
 }
 
+/* ══ 가방에 남은 **산 시루** (2026-08-08 · 박사님 "인벤에서 끌어서 배치") ═══════
+   판에 선 시루는 `cropCount` 가 세고, **아직 안 선 것**은 상점 재고가 센다.
+   둘을 섞지 않는다 — 섞으면 방에 없는 것을 그리려 들거나 있는 것을 두 번 센다.
+   ★ 품목 이름을 화면이 짓지 않는다. 용기 품목은 **작물이 안다**(first_play §작물 종류) —
+     'siru' 를 여기 박아 두면 무순 쪽과 조용히 어긋난다(state.resowCrop 이 같은 말을 한다). */
+function spareContainerOf(kind) {
+  let itemId = null;
+  try { itemId = cropKindOf(kind).containerItemId; } catch { return 0; }
+  try { return Math.max(0, Math.round(stockOf(S, itemId) || 0)); } catch { return 0; }
+}
+const spareSiru = () => spareContainerOf('beansprout');
+
+/* 끌어다 놓으면 몇 개가 서나 — **지금 선 것 + 가방에 남은 것**.
+   ⚠ 이 수로 지름을 물어야 한다. 지금 개수로 물으면 「놓을 때는 통과하고 그릴 때는
+     줄어든다」가 난다(multisiru §1 이 못 박아 둔 그 어긋남이다). */
+const dropCount = (kind) => cropCount(kind) + spareContainerOf(kind);
+
+/* 끌어다 놓는 순간 산 시루를 함께 심을 수 있나 — **재고를 미리 센다.**
+   ⚠ 그냥 `resowCrop` 을 불러 보고 실패를 받는 길로 가면 안 된다:
+     그 함수는 **시루 재고를 먼저 빼고 그 다음에 씨앗을 뺀다**(state.js §resowCrop).
+     씨앗에서 던지면 이미 빠진 시루가 그대로 사라진다 — 돈만 나가고 물건이 없어진다.
+     저쪽을 고치는 것은 저쪽 몫이고(인계 §다른 파일이 할 일), 여기서는 그 길로 안 들어간다.
+   반환 null = 얹을 산 시루가 없다(예전 경로 그대로 옮기기만 한다). */
+function sowOnDropPlan() {
+  const spare = spareSiru();
+  if (spare <= 0) return null;
+  let harvested = 0, seeds = 0, seedItem = null;
+  try { harvested = (cropHarvestStatus(S).harvestedCount || 0); } catch { }
+  try { seedItem = cropKindOf('beansprout').seedItemId; } catch { }
+  try { seeds = seedItem ? (stockOf(S, seedItem) || 0) : 0; } catch { }
+  /* 씨앗은 **실제로 심는 시루 수**만큼 든다 — 거둔 것 + 새 것(state.js §resowCrop) */
+  const seedsNeeded = harvested + spare;
+  return { spare, harvested, seeds, seedsNeeded, ok: seeds >= seedsNeeded };
+}
+
 /* 끌고 있는 것의 지름. ★방뷰에 묻는다 — 화면이 숫자를 또 적어 두면 자리표가 바뀔 때 조용히 어긋난다.
    ★★ 콩나물은 **무리 전체**의 지름이다 (2026-08-05 · multisiru).
      시루 12개면 0.24 가 아니라 무리 지름이 자다 — 0.24 를 그대로 두면 12개 무리가
      그 안으로 통째로 찌그러져 시루 한 개가 5.9cm 가 된다. */
-function potDOf(what) {
+/* ★ `n` 을 주면 **그 수로** 묻는다 (2026-08-08). 안 주면 예전 그대로 지금 선 수다.
+   끌 때는 「지금 선 것 + 가방에 남은 것」으로 물어야 한다 — 놓고 나면 그만큼 서기 때문이다. */
+function potDOf(what, n) {
   if (what === 'beansprout') {
-    if (roomView && roomView.plantPotD) return roomView.plantPotD('beansprout', cropCount('beansprout'));
+    const cnt = Math.max(1, Math.round(n || cropCount('beansprout')));
+    if (roomView && roomView.plantPotD) return roomView.plantPotD('beansprout', cnt);
     return OPEN_SIRU.diameterM;                 // 방뷰가 없으면 예전 값(한 개 기준)
   }
   if (what === 'musun') return musunPotD() || ARRIVAL_POT_D;
@@ -4310,7 +4496,17 @@ const freePlace = {
   preview(hit, potD, potId) {
     if (!roomView || !roomView.previewAt) return;
     try {
-      if (!hit) { roomView.previewAt(null); return; }
+      /* ★★ **좌표가 없는 hit 은 「자리 없음」이다** (2026-08-08 · QA §3-C).
+         ⚠ `surfaceAt` 은 못 놓는 자리에서 `{ ok:false, reason }` 만 주고 좌표를 **안 채운다.**
+           그걸 그대로 넘기면 `place.assertAt` 이 던진다 —
+           `RangeError: [배치] 자리가 올바르지 않습니다 — x 가 숫자가 아닙니다: null`.
+           try 가 삼켜서 게임은 안 죽었지만 **그 프레임 미리보기가 통째로 안 그려졌고**,
+           끄는 내내 콘솔이 그 오류로 덮였다(끌 때마다 났다).
+         ⇒ 여기서 가른다. 「없는 것」과 「못 놓는 것」은 미리보기에서 같은 뜻이다 —
+           둘 다 보여 줄 유령이 없다. 이유는 `dropLabel` 이 따로 말한다. */
+      if (!hit || !Number.isFinite(hit.x) || !Number.isFinite(hit.y) || !Number.isFinite(hit.z)) {
+        roomView.previewAt(null); return;
+      }
       roomView.previewAt({ x: hit.x, y: hit.y, z: hit.z, rotY: hit.rotY || 0,
                            onUid: hit.onUid, occIdx: hit.occIdx },
                          { potD, valid: !!hit.ok, potId });
@@ -4411,9 +4607,27 @@ const drag = {
   begin(what, thumbUrl, ev) {
     if (isFastForwarding()) return;
     const { sel, ids } = this.slotsFor(what);
-    if (sel.disabled || !ids.length) return;
+    /* ★★ **추천 자리가 없어도 끌 수 있다** (2026-08-08).
+       ══════════════════════════════════════════════════════════════════
+       ⚠ 예전 조건은 `sel.disabled || !ids.length` 였다. 그런데 시루가 늘면 무리 지름이
+         커져서 가구 위 자리가 통째로 사라진다(12개면 0.97m — multisiru §6). 바로 그때
+         `fillCropSlots` 는 **"그림을 끌어 바닥에 놓아 보세요"라고 말해 놓고** 정작
+         여기서 되돌아갔다 — 말과 손이 어긋나 있었다. 바닥은 추천 자리가 아니라
+         **자유 좌표**라 목록과 아무 상관이 없다(freePlace.surfaceAt 이 y=0 을 잡는다).
+       ⇒ 자유 배치를 할 수 있으면 목록이 비어도 끈다. 목록(`valid`)은 이제 원을 밝히고
+         되돌림 경로(`nearest`)를 잡는 데만 쓴다 — 원래 그 용도였다.
+       ★ `sel.disabled`(다 거둔 시루)도 **산 시루가 있으면** 푼다. 그때는 옮기기가 아니라
+         `resowCrop` 이 이력을 되살린 뒤 놓는 길로 가므로 코어가 막지 않는다. */
+    const canFree = !!(roomView && roomView.surfaceAt);
+    const sowing = what === 'beansprout' && spareSiru() > 0;
+    if (sel.disabled && !sowing) return;
+    if (!ids.length && !canFree) return;
     this.on = true; this.what = what; this.sel = sel; this.valid = ids; this.best = null;
-    this.potD = potDOf(what);
+    /* ★ 지름은 **놓고 나면 설 수**로 묻는다 — 가방에 남은 산 시루까지 센다(§dropCount).
+       지금 개수로 물으면 좁은 자리를 통과시켜 놓고 그릴 때 무리가 찌그러진다. */
+    this.sowing = sowing;
+    this.potD = what === 'beansprout' ? potDOf('beansprout', dropCount('beansprout'))
+                                      : potDOf(what);
     document.body.classList.add('dragging');
     $('dragGhost').style.backgroundImage = `url(${thumbUrl})`;
     $('dragGhost').classList.add('on');
@@ -4455,7 +4669,17 @@ const drag = {
     gh.classList.toggle('inroom', !!hit);      /* 면 위에 오면 사진을 감춘다 */
     gh.classList.toggle('ok', good); gh.classList.toggle('no', !good);
     const lb = $('dropLabel');
-    lb.textContent = freePlace.label(hit, drag.what);
+    /* ★ 산 시루를 함께 세우는 중이면 **몇 개가 서고 씨앗이 몇 봉지 드는지** 붙인다 (2026-08-08).
+       놓는 순간 씨앗과 손이 실제로 나가므로, 손을 떼기 전에 말해야 한다.
+       씨앗이 모자라면 그것도 여기서 말한다 — 그때는 옮기기만 되고 시루는 가방에 남는다. */
+    let extra = '';
+    if (good && this.sowing) {
+      const plan = sowOnDropPlan();
+      if (plan) extra = plan.ok
+        ? ` · 새 시루 ${plan.spare}개 · 씨앗 ${plan.seedsNeeded}봉지`
+        : ` · ⚠ 씨앗 ${plan.seedsNeeded}봉지가 있어야 새 시루가 섭니다 (${plan.seeds}봉지)`;
+    }
+    lb.textContent = freePlace.label(hit, drag.what) + extra;
     lb.classList.toggle('ok', good); lb.classList.toggle('no', !good);
     freePlace.labelAt(ev.clientX, ev.clientY);
   },
@@ -4463,6 +4687,7 @@ const drag = {
     if (!this.on) return;
     const hit = this.best, sel = this.sel, what = this.what;
     this.on = false; this.what = null; this.sel = null; this.valid = []; this.best = null;
+    this.sowing = false;
     document.body.classList.remove('dragging');
     $('dragGhost').classList.remove('on', 'ok', 'no');
     freePlace.clear(); freePlace.rings(false); freePlace.grid(false);
@@ -4486,8 +4711,37 @@ function commitPlace(what, hit) {
        "어두운 자리에 잘 놓았다"를 밝은 자리에 놓은 사람에게 말하게 된다. */
   if (what === 'beansprout' || what === 'musun') {
     const k = what === 'musun' ? '새싹 재배판' : '열린 시루';
+    /* ★★ **산 시루는 여기서 판에 선다** (박사님 2026-08-08: "애초에 인벤에서 끌어서 배치하도록 해").
+       ══════════════════════════════════════════════════════════════════
+       `resowCrop` 한 번이 세 가지를 **한 동작으로** 한다: 재고에서 시루·씨앗을 빼고,
+       빈 시루를 무리에 붙이고, `opt.at` 으로 그 무리를 **놓은 자리에** 세운다
+       (state.js §resowCrop → first_play §resowBeansprout 끝줄의 placeCrop).
+       그래서 「샀는데 안 온다」도 「저절로 이상한 데 선다」도 같이 사라진다.
+       ★ 자리 모델은 **안 바꿨다.** 자리는 여전히 하나(`site.at`)고 시루는 그 위에 무리로 선다.
+         「끌어서 놓는다」는 무리를 **어디에 세울지**를 사람이 정한다는 뜻이지,
+         자리를 여러 개로 쪼갠다는 뜻이 아니다(multisiru §9 ㉰ 은 이 창 범위 밖이다).
+       ⚠ `resowCrop` 은 **거둔 시루도 같이** 다시 심는다 — 그래서 씨앗이 「거둔 것 + 새 것」만큼
+         든다. 모자라면 부르지 않는다(§sowOnDropPlan 이 그 이유를 적어 뒀다):
+         부르면 시루 재고만 빠지고 씨앗에서 던져 **산 시루가 사라진다.** */
+    const plan = what === 'beansprout' ? sowOnDropPlan() : null;
+    if (plan && plan.ok) {
+      try {
+        const r = resowCrop(S, { ...placeOpt(), kind: 'beansprout', at: atOf(hit),
+                                 sirus: cropCount('beansprout') + plan.spare });
+        banner('시루를 놓았습니다', `시루 ${r.sirus}개 · 씨앗 ${r.seedsUsed}봉지`);
+        unlockAfterFix();
+        dlgOpen('cropPlaced');
+      } catch (e) { return placeFailed(e); }
+      draw();
+      return;
+    }
     try {
       const r = setCropAt(S, atOf(hit), { ...placeOpt(), kind: what });
+      /* 씨앗이 모자라 산 시루를 못 세웠으면 **왜인지 남긴다** — 조용히 옮기기만 하면
+         "끌어다 놨는데 그대로네"가 된다. 시루는 가방에 그대로 있다(안 없어졌다). */
+      if (plan && !plan.ok)
+        pushLog(S, `⚠ 산 시루 ${plan.spare}개는 아직 못 세웠습니다 — ` +
+                   `콩 씨앗이 ${plan.seedsNeeded}봉지 있어야 합니다(지금 ${plan.seeds}봉지)`);
       pushLog(S, r.moved
         ? `${what === 'musun' ? '🌱' : '🥣'} ${k}을(를) 옮겼습니다 — 지금까지 받은 ${r.keptDays}일치 빛은 그대로입니다`
         : `${what === 'musun' ? '🌱' : '🥣'} ${k}을(를) 두었습니다`);
@@ -4645,6 +4899,62 @@ const picked = {
      ② 가구가 움직이면 그림자가 따라 움직인다 — 방 밝기가 실제로 바뀐다. 그게 이 기능의 뜻이다 */
 let lastRoomTap = 0;
 function roomTapped() { lastRoomTap = performance.now(); }
+
+/* ══ 가구 옆 메뉴 — 어디에 뜨나 (2026-08-08 · roomui-to-plan §4-1) ═══════════
+   좌표는 방뷰가 준다. **캔버스 기준** CSS 픽셀이라 캔버스 rect 를 더해야 마우스와 같은 자다.
+   ★ 프레임마다 `screenPosOf(uid)` 로 **다시 묻는다.** 시점을 돌리면 가구가 화면에서
+     움직이므로 메뉴도 따라가야 한다 — 말풍선(placeMarks)이 이미 같은 이유로 그렇게 한다.
+   ★ 처음 한 번은 `highlightFurniture` 가 주는 `h.top`(머리 위)을 쓸 수도 있지만 **안 쓴다.**
+     그러면 첫 프레임만 머리 위, 다음 프레임부터 발밑이 되어 메뉴가 한 번 튄다.
+     기준점은 한 곳이어야 한다 — `screenPosOf` 하나로 통일한다.
+   ⚠ 카메라 뒤로 넘어가면 `null` 이 온다. 그때는 **감춘다.** 0 으로 메꾸면 왼쪽 위 구석에
+     붙어 "왜 저기 있지"가 된다(placeMarks 가 같은 판단을 적어 뒀다). */
+const FURN_MENU_GAP = 16;              // 가구와 메뉴 사이 [px] — 가구를 안 가릴 만큼만
+function placeFurnMenu(p) {
+  const el = $('furnActions'); if (!el) return;
+  if (!p) { el.style.visibility = 'hidden'; return; }
+  const c = $('roomCanvas'); if (!c) return;
+  const r = c.getBoundingClientRect();
+  const x = r.left + p.x, y = r.top + p.y;
+  el.style.visibility = '';
+  /* 크기는 **잰다.** 버튼 개수가 [겨누기] 유무로 달라지므로 박아 두면 어긋난다 */
+  const w = el.offsetWidth || 150, h = el.offsetHeight || 120;
+  /* ★ 가두는 테두리는 **화면이 아니라 방 캔버스**다. 넓은 화면에서는 #app 이 가운데
+     420px 짜리 폰 틀이라(§#app 미디어쿼리) 화면 기준으로 물리면 메뉴가 틀 밖 회색
+     바탕으로 빠져나간다. 캔버스와 화면의 **겹치는 부분** 안에 둔다. */
+  const pad = 6;
+  const x0 = Math.max(8, r.left + pad), x1 = Math.min(innerWidth - 8, r.right - pad);
+  const y0 = Math.max(8, r.top + pad), y1 = Math.min(innerHeight - 8, r.bottom - pad);
+  /* 오른쪽에 두되 넘치면 왼쪽으로 넘긴다 — 잘라 붙이면 버튼이 반만 눌린다 */
+  let left = x + FURN_MENU_GAP;
+  if (left + w > x1) left = x - FURN_MENU_GAP - w;
+  left = Math.max(x0, Math.min(x1 - w, left));
+  /* 세로는 그 점을 **가운데**에 둔다. 발밑 좌표라 위로만 올리면 키 큰 가구에서 멀어진다 */
+  const top = Math.max(y0, Math.min(y1 - h, y - h / 2));
+  /* ★ 여기까지는 **화면 좌표**다. 넣을 때는 자리잡이(offsetParent = #stage) 기준으로 바꾼다 —
+     `position:absolute` 를 그대로 쓰는 이유는 위 CSS 주석(§offsetParent)에 있다. */
+  const host = el.offsetParent || $('stage');
+  const hr = host ? host.getBoundingClientRect() : { left: 0, top: 0 };
+  el.style.left = (left - hr.left) + 'px';
+  el.style.top = (top - hr.top) + 'px';
+}
+let furnMenuTick = null;
+/* 프레임마다 따라간다. **골라져 있을 때만** 돈다 — 노는 화면을 계속 깨우지 않는다
+   (drawMarks 의 markTick 과 같은 규칙이다). */
+function furnMenuFollow(on) {
+  if (on) {
+    if (furnMenuTick != null) return;
+    const tick = () => {
+      furnMenuTick = requestAnimationFrame(tick);
+      if (!furnPicked.uid) return;
+      let p = null; try { p = roomView && roomView.screenPosOf(furnPicked.uid); } catch { }
+      placeFurnMenu(p);
+    };
+    furnMenuTick = requestAnimationFrame(tick);
+  } else if (furnMenuTick != null) {
+    cancelAnimationFrame(furnMenuTick); furnMenuTick = null;
+  }
+}
 const furnPicked = {
   uid: null, mode: null, x0: 0, y0: 0, originX: 0, originY: 0, base: null, rot0: 0, ghost: null,
   tapX: null, tapY: null,
@@ -4665,9 +4975,23 @@ const furnPicked = {
     let range = null; try { range = io.light.aimRangeOf(f.uid); } catch { }
     $('furnAim').style.display = range ? '' : 'none';
     $('stage').classList.add('furnpicked');
+    /* ★ **가구를 살짝 밝힌다** (박사님 2026-08-08). 골라진 것은 메뉴가 아니라 가구다 —
+       메뉴만 뜨면 "무엇이 골라졌나"를 이름표로 읽어야 한다.
+       ⚠ 밝히기를 못 해도 메뉴는 떠야 한다. 밝기는 보여 주기고 메뉴는 조작이다. */
+    try { roomView && roomView.highlightFurniture(f.uid); } catch { }
+    /* 메뉴 자리는 **재서** 잡는다. 아래 한 번은 지금 프레임을 맞추고, 그 뒤는 tick 이 따라간다.
+       ⚠ `display` 가 방금 켜졌으므로 offsetWidth 를 읽으려면 이 순서여야 한다 */
+    let p = null; try { p = roomView && roomView.screenPosOf(f.uid); } catch { }
+    placeFurnMenu(p || { x: px - ($('roomCanvas').getBoundingClientRect().left),
+                         y: py - ($('roomCanvas').getBoundingClientRect().top) });
+    furnMenuFollow(true);
   },
   clear() {
     if (!this.uid && !this.mode) return;
+    /* ★ **반드시 끈다.** 안 끄면 가구가 계속 밝다(roomui-to-plan §4-1 ⚠).
+       원본 재질로 정확히 되돌아간다는 것은 저쪽이 재서 못 박아 뒀다(§2-2). */
+    try { roomView && roomView.highlightFurniture(null); } catch { }
+    furnMenuFollow(false);
     this.uid = null; this.mode = null; this.ghost = null;
     freePlace.grid(false);
     $('stage').classList.remove('furnpicked', 'furnmoving');
@@ -4697,16 +5021,61 @@ const furnPicked = {
       this.mode = 'lampmove'; this.beginLampMove(); return;
     }
     this.mode = 'move';
-    const r = $('roomCanvas').getBoundingClientRect();
-    this.originX = this.tapX ?? (r.left + r.width / 2);
-    this.originY = this.tapY ?? (r.top + r.height / 2);
+    this.setOrigin();
     $('stage').classList.add('furnmoving');
     hintAt(null);
     freePlace.grid(true, { uid: this.uid });
     /* ★마우스는 가구를 안 가린다 — 그러면 직접 집는 게 맞다(박사님 2026-08-06).
-       손가락은 가구를 가리니 예전대로 "아무 데나"다. 말도 그에 맞춰 갈라 준다. */
-    $('dropLabel').textContent = isMousePointer() ? '가구를 잡고 끌어 놓으세요'
-                                                  : '아무 데나 잡고 끌어 보세요';
+       손가락은 가구를 가리니 예전대로 "아무 데나"다. 말도 그에 맞춰 갈라 준다.
+       ★★ 상대 이동을 켰으면 **다른 말**을 한다 (2026-08-08). 그 모드에서는 잡은 자리가
+         어디든 상관이 없다 — "잡고 끌어 놓으세요"라고 하면 정확히 집으려 들게 된다. */
+    $('dropLabel').textContent =
+      pointerModeNow() === 'relative' ? '아무 데나 잡고 끈 만큼 움직입니다'
+      : isMousePointer() ? '가구를 잡고 끌어 놓으세요'
+      : '아무 데나 잡고 끌어 보세요';
+  },
+  /* ══ 끌기의 **기준점** — 어디를 원점으로 삼느냐가 곧 direct/relative 다 (2026-08-08) ══
+     direct(기본) = 손가락이 눌린 자리. 지금 그대로다.
+     relative     = 그 물건 제자리. 손가락을 안 움직이면 물건도 안 움직인다.
+     ⚠ `dragOrigin` 은 **뷰포트 좌표**를 받고 준다(clientX/clientY 와 같은 자).
+       `screenPosOf` 만 캔버스 기준이라는 예전 규약은 안 건드렸다(roomui-to-plan §3-3).
+     ⚠ 못 물으면 **예전 자리로 물러난다.** 기준점이 없으면 유령이 화면 밖을 가리킨다 —
+       실제로 겪은 사고다(bindPicked §잡기 실패). */
+  setOrigin() {
+    const r = $('roomCanvas').getBoundingClientRect();
+    const fx = this.tapX ?? (r.left + r.width / 2);
+    const fy = this.tapY ?? (r.top + r.height / 2);
+    let o = null;
+    try { o = roomView && roomView.dragOrigin && roomView.dragOrigin(this.uid, fx, fy); } catch { }
+    this.originX = o && Number.isFinite(o.x) ? o.x : fx;
+    this.originY = o && Number.isFinite(o.y) ? o.y : fy;
+    /* ★★ 기준점을 **방 좌표로도** 잡아 둔다 (2026-08-08 · 재서 고쳤다).
+       ══════════════════════════════════════════════════════════════════
+       ⚠ 화면 기준점만 갈아 끼우면 상대 이동이 **안 된다.** 아래 `dragTo` 는 그 점에서
+         화면을 다시 쏘아 맞은 면의 좌표를 그대로 쓰는데, 가구 발밑을 쏘면 그 광선이
+         **그 가구의 상판**에 먼저 맞는다. 그래서 손가락을 하나도 안 움직였는데도
+         침대가 0.48m 옆으로 섰다(재서 확인 · relative 인데 direct 와 다를 게 없었다).
+       ⇒ 기준점이 가리키는 **방 좌표**(W0)를 같이 재 둔다. 그러면 dragTo 가
+         「W0 에서 지금 점까지 움직인 만큼」을 제자리에 더할 수 있다 — 그게 「끈 만큼」이다.
+       ★ direct 에서는 안 잡는다(null). 그 모드는 「잡은 자리로 온다」가 뜻이므로
+         제자리에 더하면 **손가락 밑으로 오지 않는다** — 지금 손버릇이 통째로 바뀐다. */
+    this.originWorld = null;
+    if (o && o.from === 'object' && this.base && Number.isFinite(this.base.x)) {
+      /* ⚠ 물건 발밑을 그대로 쏘면 **제 몸에 막혀** 좌표가 안 나오는 것이 있다
+         (반지하 서랍장이 그랬다 — 다섯 중 하나). 그때는 조금 **아래**를 쏜다:
+         화면에서 아래쪽이 곧 앞쪽 바닥이라 몇 px 이면 몸을 벗어난다.
+         ★ 기준점을 그 점으로 **같이 옮긴다.** 재는 점과 기준점이 어긋나면 델타가 틀어진다 —
+           중요한 것은 「어느 점이냐」가 아니라 「그 점이 가리키는 방 좌표가 W0 냐」다. */
+      for (const dy of [0, 6, 12, 20, 30, 44]) {
+        const w = freePlace.surfaceAt(this.originX, this.originY + dy, 0, { grid: false });
+        if (w && Number.isFinite(w.x) && Number.isFinite(w.z)) {
+          this.originY += dy; this.originWorld = { x: w.x, z: w.z }; break;
+        }
+      }
+      /* 그래도 못 재면 **direct 로 물러난다.** 반쯤 도는 상대 이동보다 낫다 —
+         손가락 자리로 오는 것은 적어도 예전부터 아는 손버릇이다. */
+      if (!this.originWorld) { this.originX = fx; this.originY = fy; }
+    }
   },
   beginTurn() {
     if (!this.uid) return;
@@ -4737,11 +5106,13 @@ const furnPicked = {
      ★가구 옮기기와 **같은 손짓**이다: 끌면 유령이 따라오고 손을 떼면 그 자리에 놓인다.
        다른 것은 「어디에 놓이나」뿐 — 바닥이 아니라 **화분이 올라갈 수 있는 상판**이다. */
   beginLampMove() {
-    const r = $('roomCanvas').getBoundingClientRect();
-    this.originX = this.tapX ?? (r.left + r.width / 2);
-    this.originY = this.tapY ?? (r.top + r.height / 2);
+    /* ★ 가구 끌기와 **같은 기준점**을 쓴다 (2026-08-08 · §setOrigin).
+       손짓이 같은데 기준점만 다르면 등만 다르게 끌린다 — 그건 배울 것이 하나 느는 일이다. */
+    this.setOrigin();
     $('stage').classList.add('furnmoving');
-    $('dropLabel').textContent = '아무 데나 잡고 끌어 상판에 물리세요';
+    $('dropLabel').textContent = pointerModeNow() === 'relative'
+      ? '아무 데나 잡고 끈 만큼 움직여 상판에 물리세요'
+      : '아무 데나 잡고 끌어 상판에 물리세요';
     /* 물릴 수 있는 상판을 원으로 알린다 — 어디에 놓을 수 있는지 안 보이면 헤맨다 */
     try {
       const ids = (roomView.lampMounts() || []).flatMap(m => m.slots || []);
@@ -4756,10 +5127,13 @@ const furnPicked = {
        가구 끌기(`furnSel.dragTo`)가 이미 같은 이유로 grid:false 를 쓴다 — 손버릇을 맞춘다. */
     const hit = freePlace.surfaceAt(this.originX + dx, this.originY + dy, 0.2, { grid: false });
     const lb = $('dropLabel');
-    if (!hit) { try { roomView.previewLampAt(this.uid, null); } catch { } ; lb.textContent = '방 안 상판으로'; return; }
+    /* ★ 가구 끌기와 **같은 셈**으로 자리를 낸다 (2026-08-08 · §relTo).
+       relative 면 기준점에서 움직인 만큼을 등 제자리에 더한다. direct 면 맞은 점 그대로다. */
+    const at = this.relTo(hit);
+    if (!at) { try { roomView.previewLampAt(this.uid, null); } catch { } ; lb.textContent = '방 안 상판으로'; return; }
     let r = null;
-    try { r = roomView.previewLampAt(this.uid, { x: hit.x, z: hit.z, lift: 0 }); } catch { }
-    this.ghost = r && r.ok ? { x: hit.x, z: hit.z, lift: 0 } : null;
+    try { r = roomView.previewLampAt(this.uid, { x: at.x, z: at.z, lift: 0 }); } catch { }
+    this.ghost = r && r.ok ? { x: at.x, z: at.z, lift: 0 } : null;
     const ok = !!(r && r.ok);
     lb.textContent = ok ? '여기에 물립니다' : ((r && r.reason) || '여기엔 못 물립니다');
     lb.classList.toggle('ok', ok); lb.classList.toggle('no', !ok);
@@ -4797,8 +5171,21 @@ const furnPicked = {
     const gx = this.originX + dx, gy = this.originY + dy;
     const hit = freePlace.surfaceAt(gx, gy, 0, { grid: false });
     if (!hit) { $('dropLabel').textContent = '방 안으로 끌어 주세요'; return; }
-    this.ghost = { x: hit.x, z: hit.z, rot: this.base.rot, step: moveStep() };
+    const at = this.relTo(hit);
+    if (!at) { $('dropLabel').textContent = '방 안으로 끌어 주세요'; return; }
+    this.ghost = { x: at.x, z: at.z, rot: this.base.rot, step: moveStep() };
     this.paintGhost();
+  },
+  /* 맞은 점을 **놓을 자리**로 바꾼다 — 여기서 direct 와 relative 가 갈린다 (2026-08-08).
+       direct    맞은 점이 곧 놓을 자리다(지금 그대로).
+       relative  기준점에서 **움직인 만큼**을 제자리에 더한다. 안 움직이면 안 움직인다.
+     ★ 화면 픽셀을 미터로 환산하지 않는다 — 같은 광선으로 잰 두 방 좌표의 차이라
+       카메라 각도가 어떻든 저절로 맞는다(dragTo 주석의 그 판단을 그대로 잇는다). */
+  relTo(hit) {
+    if (!hit || !Number.isFinite(hit.x) || !Number.isFinite(hit.z)) return null;
+    if (!this.originWorld) return { x: hit.x, z: hit.z };
+    return { x: this.base.x + (hit.x - this.originWorld.x),
+             z: this.base.z + (hit.z - this.originWorld.z) };
   },
   paintGhost() {
     if (!this.ghost || !roomView || !roomView.previewFurnitureAt) return;
@@ -4918,15 +5305,26 @@ const furnPicked = {
 function bindFurnitureTap() {
   const c = $('roomCanvas');
   let sx = 0, sy = 0, st = 0, moved = false;
+  /* ★★ 「얼마나 오래 눌렀나」는 **이벤트가 만들어진 시각**으로 잰다 (2026-08-08 · 재서 고쳤다).
+     ══════════════════════════════════════════════════════════════════
+     ⚠ 예전에는 핸들러가 **도는 시각**(`performance.now()`)으로 쟀다. 그런데 방을 다시
+       조립하는 동안(시루를 놓은 직후가 그렇다) 본줄기가 막히면, 눌림과 뗌이 큐에 쌓였다가
+       한꺼번에 배달된다 — 실제로 재 보니 그 틈이 **8.3초**로 찍혔다. 손가락은 한 번
+       톡 눌렀는데 코드는 "8초를 끌었다 = 카메라 조작"으로 읽고 **가구 고르기를 통째로 버렸다.**
+       그래서 방이 바쁠 때마다 가구를 눌러도 아무 일이 없었다.
+     ⇒ `e.timeStamp` 는 브라우저가 그 입력을 **받은 시각**이다(같은 시계다). 본줄기가
+       늦게 돌아도 값이 안 부풀어, 손가락이 실제로 머문 시간만 잰다. */
   c.addEventListener('pointerdown', e => {
     lastPointerType = e.pointerType || '';        // 버튼을 누른 뒤에도 "손인지 마우스인지"를 안다
-    sx = e.clientX; sy = e.clientY; st = performance.now(); moved = false;
+    sx = e.clientX; sy = e.clientY; moved = false;
+    st = Number.isFinite(e.timeStamp) ? e.timeStamp : performance.now();
   });
   c.addEventListener('pointermove', e => {
     if (Math.hypot(e.clientX - sx, e.clientY - sy) > 6) moved = true;
   });
   c.addEventListener('pointerup', e => {
-    if (moved || performance.now() - st > 400) return;      // 끈 것은 카메라 조작이다
+    const held = (Number.isFinite(e.timeStamp) ? e.timeStamp : performance.now()) - st;
+    if (moved || held > 400) return;                        // 끈 것은 카메라 조작이다
     const x = e.clientX, y = e.clientY;
     setTimeout(() => {
       if (performance.now() - lastRoomTap < 60) return;      // 방 뷰가 이미 무언가를 잡았다
@@ -4940,10 +5338,31 @@ function bindFurnitureTap() {
 }
 
 function bindPicked() {
-  $('furnMove').onclick = () => furnPicked.beginMove();
-  $('furnTurn').onclick = () => furnPicked.beginTurn();
-  $('furnAim').onclick = () => furnPicked.beginAim();
-  $('furnClose').onclick = () => furnPicked.clear();
+  /* ══ ★★ 가구 메뉴는 **누르는 순간 확정한다** (2026-08-08) ═══════════════════
+     메뉴가 화면 바닥을 떠나 방 위에 떴다 — 가구를 따라다니는 **움직이는 표적**이 됐다.
+     `click` 은 누른 자리와 뗀 자리가 **같은 것 위**일 때만 난다. 그 사이 시점이 조금만
+     돌아도 안 난다 — 말풍선에서 이미 겪은 그것이다(§drawMarks 2026-08-08).
+     ⚠ 그리고 `pointerdown` 을 여기서 **먹어야** 밑의 캔버스가 눌림을 안 가져간다.
+       안 가로채면 메뉴를 누르는 손이 카메라 회전(room_view TAP_PX 12)으로 읽혀
+       화면이 돌고 메뉴가 미끄러진다 — 「눌렀는데 도망간다」의 정체가 그것이었다.
+     ★ `click` 도 남긴다 — 키보드·접근성은 그쪽으로 온다. 같은 누름이 두 번 돌지 않게,
+       방금 우리가 처리한 `pointerdown` 뒤에 오는 click 은 버린다(시간으로 가른다).
+     ⚠ `bindPicked` 는 방을 다시 지을 때마다 불린다. 그래서 **`on*` 대입**이어야 한다 —
+       addEventListener 로 바꾸면 이사 뒤 한 번 누를 때 핸들러가 두 번 돈다. */
+  const DOWN_CLICK_MS = 700;      // 이 안에 오는 click 은 방금 그 누름의 뒤끝이다
+  const tapOnce = (id, go) => {
+    const el = $(id); if (!el) return;
+    let at = 0;
+    el.onpointerdown = (e) => { e.preventDefault(); e.stopPropagation(); at = performance.now(); go(); };
+    el.onclick = (e) => { e.stopPropagation(); if (performance.now() - at > DOWN_CLICK_MS) go(); };
+  };
+  tapOnce('furnMove', () => furnPicked.beginMove());
+  tapOnce('furnTurn', () => furnPicked.beginTurn());
+  tapOnce('furnAim', () => furnPicked.beginAim());
+  tapOnce('furnClose', () => furnPicked.clear());
+  /* 메뉴 **바깥 테두리**(::before)를 눌러도 캔버스로 안 새게 막는다 — 아무 일도 안 한다.
+     이게 없으면 버튼 사이 5px 틈을 누를 때마다 카메라가 돈다. */
+  $('furnActions').onpointerdown = (e) => { e.stopPropagation(); };
   $('pickMove').onclick = () => picked.beginMove();
   $('pickTurn').onclick = () => picked.beginTurn();
   $('pickZoom').onclick = () => { const id = picked.slotId; window.__byeotZoom.open(id); picked.clear(); };
@@ -5267,18 +5686,13 @@ const reallyWaterPot = guard(() => {
 
 $('resow').onclick = guard(() => doAct('sow', () => reallySow()));
 const reallySow = guard(() => {
-  /* ★ 산 시루가 있으면 그만큼 **늘려서** 심는다 (drawSow §산 시루).
-     ⚠ `sirus` 를 안 넘기면 `resowCrop` 이 지금 개수를 그대로 써서 산 시루가 영영 안 쓰인다.
-     ⚠ 개수는 화면이 짓지 않는다 — 지금 몇 개인지는 `cropHarvestStatus` 가 안다. */
-  const spare = Number($('resow').dataset.spare || 0);
-  const opt = { slots: io.light.room.slots, size: io.light.room.size };
-  if (spare > 0) {
-    let had = 0; try { had = (cropHarvestStatus(S).sirus || 0); } catch { }
-    if (had > 0) opt.sirus = had + spare;
-  }
-  const r = resowCrop(S, opt);
-  banner(r.sirusAdded ? '콩나물 시루를 늘렸습니다' : '콩나물을 다시 심었습니다',
-         `시루 ${r.sirus}개 · 씨앗 ${r.seedsUsed}봉지`);
+  /* ★ **`sirus` 를 안 넘긴다** (2026-08-08). 안 넘기면 `resowCrop` 이 지금 개수를 그대로 써서
+     거둔 시루만 제자리에 다시 심는다 — 자리도 개수도 안 바뀐다. 그게 이 버튼의 전부다.
+     ⚠ 산 시루를 여기서 얹지 마라. 그러면 새 시루가 **놓인 자리에 저절로** 붙고,
+       그 자리 한도에 맞춰 무리가 통째로 찌그러진다(drawSow §산 시루가 그 이야기다).
+       산 시루는 끌어다 놓을 때 선다 — `commitPlace` §산 시루. */
+  const r = resowCrop(S, { slots: io.light.room.slots, size: io.light.room.size });
+  banner('콩나물을 다시 심었습니다', `시루 ${r.sirus}개 · 씨앗 ${r.seedsUsed}봉지`);
   draw();
 });
 
