@@ -489,6 +489,11 @@ function loadGLB(url) {
                   안 주면 이 모듈이 data/*.json 을 직접 읽어 혼자 짓는다.
      onSlotTap(slotId)   빈 자리를 눌렀다
      onPlantTap(slotId)  그 자리 화분을 눌렀다
+     onLampTap(uid, on, state)  ★ 등을 눌렀다 (2026-08-08).
+                  ⚠ **방뷰가 먼저 껐다 켠 뒤에** 부른다 — 손가락이 닿는 즉시 방이 밝아져야
+                    하기 때문이다. 호스트가 막을 일이면 setLampOn(uid, !on) 으로 되돌린다.
+                  on     누른 결과 켜졌나
+                  state  lampSwitches().lamps 한 줄과 같은 모양(watts·hours 포함)
      onSlotHover(slotId|null, type)  ★ PC 전용. 마우스가 자리 위에 올라왔다.
                   폰에서는 안 불린다(hover: hover 인 기기에서만). 이름·밝기 표시는 호스트 몫이다
      onCharacterTap(selected, tapped)  캐릭터를 눌렀다.
@@ -544,7 +549,31 @@ const BULB_K = 0.30, BULB_DECAY = 2.2, BULB_EMISSIVE = 0.14;
      기구 3개까지 끔(채움광만)      38.3   ← **기구가 92를 만들고 있었다**
      채움광까지 끔                  1.2
    그동안 BULB_K 만 조여 온 것이 헛손질이었던 이유다. 기구를 줄여야 밤이 밤이 된다. */
-const RIG_GROW = 0.20, RIG_LAMP = 0.55;
+/* ★ 식물등 세기 0.20 → 0.34 (2026-08-08 · 박사님 "등 켰을 때 밝기를 살짝만 올려줘")
+   ------------------------------------------------------------
+   눈으로 고른 값이 아니다. **화면 픽셀 밝기를 재서** 골랐다
+   (`tools/probe_lampswitch.mjs` · 반지하 · 390×844 dpr2 · 휘도 0..255 · 식물등 2개만 조작).
+
+     세기      화면평균   방바닥   등아래 두 자리      탄 픽셀(≥240)
+     ── 낮 t=0.50 ────────────────────────────────────────────────
+     0(끔)       74.65    106.83   103.2 / 78.2        0.65%
+     0.20        75.25    108.27   117.5 / 104.0       0.65%   ← 예전 값
+     **0.34**    75.63    109.21   126.0 / 118.6       0.65%   ← 지금
+     0.60        76.26    110.86   139.5 / 140.3       0.66%
+     1.00        77.09    113.13   155.7 / 164.0       0.66%
+     ── 밤 t=0.90 ────────────────────────────────────────────────
+     0(끔)       41.85     34.76    43.5 / 34.3        0%
+     0.20        42.72     37.29    67.8 / 70.3        0%
+     **0.34**    43.25     38.93    82.0 / 90.1        0%
+     1.00        45.29     45.56   129.2 / 149.4       0%
+
+   ⇒ 끔 → 0.34 은 **화면 전체로는 낮 +1.3% · 밤 +3.4%** 밖에 안 움직인다.
+     그런데 **등 바로 아래는 낮 +22~52% · 밤 +89~163%** 다. 그것이 「살짝」의 뜻이다 —
+     방을 통째로 들어 올리는 게 아니라 **등 밑에 웅덩이가 생기는 것**이다.
+     탄 픽셀은 0.65% 그대로 — 방이 하얘지지 않는다.
+   ⚠ 이 값은 **그림뿐**이다. 조도(DLI)는 lighting_sim.ppfdSum 이 따로 낸다 —
+     추천 자리 14곳 DLI 가 변경 전후로 **소수 넷째 자리까지 같다**(같은 도구가 같이 잰다). */
+const RIG_GROW = 0.34, RIG_LAMP = 0.55;
 /* ★ 접지 그림자 진하기 (2026-08-06 · §makeBlobShadow).
    ⚠ 이것은 **그림**이다. 조도(DLI)에 안 들어간다 — 값을 바꿔도 자리 판정은 안 바뀐다.
    ★ 왜 서로 다른가
@@ -585,6 +614,9 @@ export async function createRoomView(canvas, opts = {}) {
   const O = {
     roomId: 'banjiha', lightEngine: null,
     onSlotTap: null, onPlantTap: null, onSlotHover: null, onCharacterTap: null,
+    /* ★ 등을 눌렀다 (2026-08-08). **누르는 순간 방뷰가 이미 켜고 껐다** — 여기는 알림이다.
+       호스트는 이걸 받아 S.lamps 를 맞추고 조도 캐시를 비우면 된다(§등 스위치). */
+    onLampTap: null,
     onProgress: null, onReady: null, onError: null,
     orbit: true, maxPixelRatio: 1.75, deferPlantAssets: false, ...opts
   };
@@ -638,6 +670,11 @@ export async function createRoomView(canvas, opts = {}) {
   let focused = null;
   let daylightT = 0.5;
   let disposed = false;
+  /* ★ 등 스위치 — uid → true(켬)/false(끔). **없으면 「자동」**이다(§⑧-e).
+     applyDaylight 이 이 표를 읽으므로 선언이 그 위에 있어야 한다(let 은 안 끌어올려진다). */
+  let lampSw = new Map();
+  /* 켠 시간 장부 — uid → 게임 시간(h). 하루가 넘어가면 호스트가 resetLampHours() 로 닫는다 */
+  let lampClock = { t: null, h: new Map() };
   /* 플레이어가 돌려 놓은 화분 각도(Y축). ★ 화분이 다시 조립돼도 유지해야 한다 —
      안 그러면 며칠 지나 형태가 바뀔 때 방향이 저절로 되돌아간다. */
   let plantYaw = new Map();    // slotId → radian
@@ -833,6 +870,11 @@ export async function createRoomView(canvas, opts = {}) {
     if (!built || !built.room) throw new Error(`방 조립 결과가 비었습니다: ${id}`);
     dimRoomMaterials(built);
 
+    /* ★ 방을 갈아타면 등 스위치·시간 장부를 비운다 (2026-08-08 · §⑧-e).
+       uid 는 방마다 다르므로 들고 가면 남의 방 등을 가리키는 표가 된다.
+       ⚠ **같은 방을 다시 조립하는 것(가구·등 옮기기)은 안 비운다** — uid 가 그대로라
+         켜 둔 등이 가구 하나 옮겼다고 꺼지면 안 된다. */
+    if (roomId !== id) { lampSw = new Map(); lampClock = { t: null, h: new Map() }; }
     roomId = id;
     houseGroup.add(built.room);
     buildOutside(id);                       // 창밖 골목 (창 없는 방이면 조용히 아무것도 안 한다)
@@ -2425,6 +2467,27 @@ export async function createRoomView(canvas, opts = {}) {
     return pickPlantRay(cx, cy) || pickSlotFuzzy(cx, cy);
   }
 
+  /* ★ 등을 짚는다 — **광선으로 정확히** (2026-08-08 · §⑧-e).
+     퍼지(화면거리)로 안 잡는 이유: 등은 자리 바로 위에 달려 있다. 퍼지로 잡으면
+     선반 칸을 누르려는 손가락을 등이 계속 가로챈다. 「등 그림을 정확히 짚었을 때만」이다.
+     ⚠ 안 보이는 등(안 산 등·컷어웨이로 내려간 것)은 못 짚는다 — 화면에 없는 것을
+       누를 수는 없다. */
+  function pickLampRay(cx, cy) {
+    const rigs = (built && built.lightRigs) || [];
+    if (!rigs.length || !built.furniture) return null;
+    const nodes = [];
+    for (const r of rigs) { const g = lampNode(r.uid); if (g && g.visible) nodes.push(g); }
+    if (!nodes.length) return null;
+    ray.setFromCamera(ndcOf(cx, cy), ctx.cam);
+    for (const h of ray.intersectObjects(nodes, true)) {
+      if (!h.object.isMesh || hiddenInScene(h.object)) continue;
+      let o = h.object;
+      while (o && !(o.userData && o.userData.uid)) o = o.parent;
+      if (o && lampRig(o.userData.uid)) return { type: 'lamp', uid: o.userData.uid };
+    }
+    return null;
+  }
+
   /* ============================================================
      ⑤-b ★ 표면 레이캐스트 — surfaceAt (2026-08-03)
      ------------------------------------------------------------
@@ -2808,6 +2871,11 @@ export async function createRoomView(canvas, opts = {}) {
     if (c1) return { type: 'character', id: c1 };
     const p = pickPlantRay(cx, cy);
     if (p) return p;
+    /* ★ 등 (2026-08-08) — 화분 **뒤**, 퍼지 판정 **앞**이다.
+       화분보다 뒤: 잎이 등 밑까지 자라면 물 주려는 손이 등에 먹힌다.
+       퍼지보다 앞: 정확히 짚은 것이 대충 가까운 것을 이긴다(이 목록의 원칙 그대로). */
+    const lp = pickLampRay(cx, cy);
+    if (lp) return lp;
     const c2 = pickCharacterAt(cx, cy, true);
     if (c2) return { type: 'character', id: c2 };
     const s = pickSlotFuzzy(cx, cy);
@@ -3011,6 +3079,13 @@ export async function createRoomView(canvas, opts = {}) {
       } else if (hit.type === 'plant') {
         selectCharacter(null);
         O.onPlantTap && O.onPlantTap(hit.slotId);
+      } else if (hit.type === 'lamp') {
+        /* ★ **여기서 먼저 켜고 끈다** (2026-08-08 · §⑧-e).
+           호스트를 기다렸다 켜면 폰에서 한 박자 늦게 밝아진다 — 손끝의 물건은
+           손끝에서 반응해야 한다. 호스트가 막을 일이면 setLampOn 으로 되돌린다. */
+        selectCharacter(null);
+        const st = toggleLamp(hit.uid);
+        O.onLampTap && O.onLampTap(hit.uid, st.on, st);
       } else {
         selectCharacter(null);
         O.onSlotTap && O.onSlotTap(hit.slotId);
@@ -3043,7 +3118,10 @@ export async function createRoomView(canvas, opts = {}) {
   function onHover(e) {
     const hit = pickAt(e.clientX, e.clientY);
     const id = hit ? hit.slotId : null;
-    canvas.style.cursor = hit ? 'pointer' : '';
+    /* ★ 등 위에서도 손가락 커서가 떠야 "누를 수 있다"가 읽힌다 (2026-08-08).
+       ⚠ **onSlotHover 로는 안 보낸다** — 그 창구의 인자는 자리 id 다. 등 uid 를 실어 보내면
+         호스트가 없는 자리를 찾는다. 여기서 바뀌는 것은 커서뿐이다. */
+    canvas.style.cursor = (hit || pickLampRay(e.clientX, e.clientY)) ? 'pointer' : '';
     if (id === hoverId) return;
     hoverId = id;
     try { O.onSlotHover && O.onSlotHover(id, hit ? hit.type : null); } catch (err) { fail(err); }
@@ -3246,13 +3324,13 @@ export async function createRoomView(canvas, opts = {}) {
       ctx.scene.fog.near = Math.max(30, cam.dist * 1.35);
       ctx.scene.fog.far = Math.max(120, cam.dist * 4.5);
     }
-    /* 방에 놓인 조명 기구 — 어두우면 켠다. 화면 연출만이고 판정은 조도 엔진 몫이다.
+    /* 방에 놓인 조명 기구 — **손으로 켠 것**이 먼저고, 안 만진 등만 자동으로 돈다.
+       화면 연출만이고 판정은 조도 엔진 몫이다.
        그림자 없는 점광원이라도 개수가 늘면 셰이더가 무거워지니 4개에서 자른다. */
-    const lampsOn = daylightT < 0.30 || daylightT > 0.86;
     let on = 0;
     for (const r of (built && built.lightRigs) || []) {
       if (!r.light) continue;
-      const want = r.grow ? (r.schedule && r.schedule !== 'off') : lampsOn;
+      const want = lampIsOn(r.uid);
       r.light.intensity = (want && on < 4) ? (r.grow ? RIG_GROW : RIG_LAMP) : 0;
       /* ★ 기구도 방 크기에 맞춰 조인다 — 넓게 퍼지면 방 전체가 고르게 밝아 '웅덩이'가 안 생긴다.
          house.js 는 coverage_r×6(최대 수 m)로 두는데 그건 아파트 거실 기준이다. */
@@ -4477,6 +4555,154 @@ export async function createRoomView(canvas, opts = {}) {
      화면의 등과 계산의 등이 다른 높이에 있게 된다). 매달린 것은 여기 안 온다. */
   function lampEmitOffset(g) {
     return ((g && g.userData.size && g.userData.size.h) || 0.4) * 0.92;
+  }
+
+  /* ============================================================
+     ⑧-e ★ 등 스위치 — 손으로 켜고 끈다 · 켠 시간을 센다 (2026-08-08)
+     ------------------------------------------------------------
+     박사님: "등을 밤에만 자동으로 켜지는 게 아니라 **내가 등을 터치해서 켜고 끌 수 있게**
+             해줘. **전기세를 등 켜 둔 시간으로 하루에 부과되게** 해줘."
+
+     ★ 고치기 전에 무엇이 도는지 재서 알아낸 것 (tools/probe_lampswitch.mjs)
+       ① **식물등은 켜고 끄는 손이 아예 없었다.** 화면의 세기는
+          `r.schedule !== 'off'` 만 봤는데 그 값은 `data/house_rooms.json` 에 박힌
+          `photo12`·`photo16` 이라 **언제나 참**이었다. 즉 식물등은 항상 켜져 있었다.
+       ② `setGrowLights(n)` 은 **기구 메시만 숨긴다.** 광원 PointLight 는
+          house.js 가 `furnGroup`(방 전체 가구 컨테이너)에 넣지 개별 가구 그룹에 안 넣는다
+          (house.js §조명 기구 `furnGroup.add(L)`). 그래서 안 산 등도 계속 방을 밝히고 있었다.
+       ③ 그 둘이 겹쳐서, 등 2개를 켜도 **화면 평균 밝기가 75.23 → 75.26(+0.0%)** 이었다.
+          같은 조작으로 DLI 는 0.48 → 12.41 로 뛴다. 박사님이 "숫자만 바뀌고 눈에 안 든다"고
+          하신 것이 정확히 이것이다.
+
+     ★ 그래서 규칙을 하나로 모은다 — **`lampIsOn(uid)` 하나가 정본**이다.
+         손으로 만진 등   `lampSw` 의 값 그대로 (켬/끔)
+         안 만진 등       예전 자동 그대로 — 식물등은 schedule, 생활등은 밤에만
+         숨은 등          **무조건 꺼짐.** 안 산 등(setGrowLights 밖)은 안 켜진다
+       그리기도(applyDaylight) 시간 세기도 이 하나를 본다. 둘이 갈리면 "화면은 꺼졌는데
+       요금은 나오는" 상태가 생기고, 그건 아무도 못 찾는 유형의 고장이다.
+
+     ★ 상태를 어디에 두나 — **여기(방뷰)에 두고 표를 내준다.**
+       근거: `S.lamps` 는 코어 것이고(`src/game/state.js`) 지금 계약은 「앞에서부터 n개」라
+       **어느 등인지를 담을 칸이 없다**(light_adapter.rigsOn 이 `slice(0, count)` 다).
+       등마다 켜고 끄려면 uid 별 표가 필요한데 그 칸을 여기서 새로 파면 코어 세이브와
+       두 정본이 된다. 그래서 방뷰가 **들고만 있고 세이브는 호스트가 한다** —
+       `lampSwitches()` 로 읽고 `setLampSwitches()` 로 되돌린다(등 겨누기와 같은 규약).
+       ⇒ 코어가 할 일은 인계 문서에 적었다(`docs/handoff/lampswitch-to-plan.md`).
+
+     ⚠ **조도(DLI)는 여기서 한 줄도 안 바뀐다.** 등을 껐다고 계약의 밝기가 안 준다 —
+       그 값은 `S.lamps.count` 로 `light_adapter.rigsOn` 이 낸다. 그림과 계산은 다른 길이다
+       (test_ground §I 와 같은 규약). 화면만 끄고 계산이 남는 어긋남을 없애는 것은
+       코어가 `rigsOn` 을 uid 집합으로 받는 날이다.
+  ============================================================ */
+
+  /* 안 만진 등이 저 혼자 도는 규칙 — **예전 그대로**다. 여기서 바꾸면 회귀다. */
+  function lampAutoOn(rig) {
+    return rig.grow ? !!(rig.schedule && rig.schedule !== 'off')
+                    : (daylightT < 0.30 || daylightT > 0.86);
+  }
+
+  /* 지금 켜져 있나. 모르는 uid 는 false 다(그리기 루프가 매 프레임 부른다 — 못 찾았다고
+     던지면 방이 통째로 멈춘다. 던지는 것은 아래 setLampOn 쪽 일이다). */
+  function lampIsOn(uid) {
+    const rig = lampRig(uid);
+    if (!rig) return false;
+    const g = lampNode(uid);
+    if (g && !g.visible) return false;          // 안 산 등·숨긴 등은 안 켜진다
+    const sw = lampSw.get(uid);
+    return sw == null ? lampAutoOn(rig) : !!sw;
+  }
+
+  /* 그 등 한 줄 — 화면·호스트가 읽는 모양 하나다 */
+  function lampStateOf(rig) {
+    const g = lampNode(rig.uid);
+    const watts = (rig.fx && rig.fx.watts) || 0;
+    const hours = +(lampClock.h.get(rig.uid) || 0).toFixed(3);
+    return {
+      uid: rig.uid, preset: rig.id, name: lampName(rig.uid), grow: !!rig.grow,
+      watts, hours, wh: +(watts * hours).toFixed(3),
+      on: lampIsOn(rig.uid),
+      manual: lampSw.has(rig.uid),              // false = 아직 자동
+      shown: !!(g && g.visible)                 // 산 등인가(setGrowLights)
+    };
+  }
+
+  /* 켜고 끈다. on 이 null 이면 **자동으로 되돌린다.**
+     ⚠ 모르는 등이면 던진다 — 조용히 무시하면 화면은 손잡이를 보여 주는데 아무 일도 안 난다
+       (setLampAim 과 같은 규약). */
+  function setLampOn(uid, on) {
+    const rig = lampRig(uid);
+    if (!rig) throw new Error(`[등] 모르는 등입니다: ${uid} (방 ${roomId}). ` +
+      `켤 수 있는 등은 lampSwitches().lamps 에 있습니다.`);
+    if (on == null) lampSw.delete(uid); else lampSw.set(uid, !!on);
+    applyDaylight();                            // 손가락이 닿는 즉시 방이 밝아져야 한다
+    return lampStateOf(rig);
+  }
+
+  function toggleLamp(uid) { return setLampOn(uid, !lampIsOn(uid)); }
+
+  /* 세이브에서 읽은 표를 통째로 얹는다. **전부 검사한 뒤에 얹는다**(setLampAims 와 같은 규약) —
+     한 칸이라도 모르는 등이면 아무것도 안 바뀐 채로 던진다. */
+  function setLampSwitches(map) {
+    const next = new Map();
+    for (const [uid, v] of Object.entries(map || {})) {
+      if (v == null) continue;                  // null = 자동. 표에 안 담는다
+      if (!lampRig(uid)) throw new Error(`[등] 모르는 등입니다: ${uid} (방 ${roomId})`);
+      next.set(uid, !!v);
+    }
+    lampSw = next;
+    applyDaylight();
+    return lampSwitches();
+  }
+
+  /* ---- 켠 시간 장부 ----
+     ★ 세는 자는 **게임 시각(daylightT)** 이다. 실제 초가 아니다 —
+       빨리감기(하루 1.6초)와 평소(하루 144초)가 요금이 달라지면 안 되기 때문이다.
+       호스트가 setDaylight 를 부를 때마다 그 사이만큼 켜져 있던 등에 더한다.
+     ⚠ **되감기·건너뛰기는 안 센다.** 한 번에 6시간 넘게 뛰면 그건 시계가 흐른 게 아니라
+       누가 시각을 옮겨 놓은 것이다(검수 도구가 그렇게 한다). 세면 요금이 지어내진다. */
+  const LAMP_TICK_MAX = 0.25;                   // 한 번에 인정하는 최대 = 6시간
+
+  function tickLampClock(t01) {
+    const prev = lampClock.t;
+    lampClock.t = t01;
+    if (prev == null) return;
+    let d = t01 - prev;
+    if (d < 0) d += 1;                          // 자정을 넘었다
+    if (!(d > 0) || d > LAMP_TICK_MAX) return;
+    const h = d * 24;
+    for (const r of (built && built.lightRigs) || [])
+      if (lampIsOn(r.uid)) lampClock.h.set(r.uid, (lampClock.h.get(r.uid) || 0) + h);
+  }
+
+  /* 지금 상태 + 켠 시간. **이것이 전기세의 재료다.**
+       lamps      등마다 { uid, watts, hours, wh, on, manual, shown }
+       wh         전부 합친 와트시. 요금 = wh ÷ 1000 × 단가(원/kWh)
+       ⚠ **단가는 여기 없다.** 그 값은 `data/lighting_presets.json` 의 tariff 고
+         밸런스는 plan 소유다 — 방뷰가 요금을 지어내면 정본이 둘이 된다.
+       growLitHours  코어 계약(`S.lamps.litHours`)에 실을 한 값 —
+         **켠 식물등들의 시간 평균**이다. 등마다 다르게 켰으면 그 차이는 이 한 칸에
+         안 담긴다(계약이 스칼라라서다). 그것도 코어가 할 일로 인계에 적었다. */
+  function lampSwitches() {
+    const lamps = ((built && built.lightRigs) || []).map(lampStateOf);
+    const wh = +lamps.reduce((a, c) => a + c.wh, 0).toFixed(3);
+    const lit = lamps.filter(l => l.grow && l.hours > 0);
+    return {
+      room: roomId,
+      lamps,
+      switches: Object.fromEntries(lampSw),     // 세이브에 그대로 넣는 표
+      wh, kwh: +(wh / 1000).toFixed(6),
+      growWh: +lamps.filter(l => l.grow).reduce((a, c) => a + c.wh, 0).toFixed(3),
+      growLitHours: lit.length ? +(lit.reduce((a, c) => a + c.hours, 0) / lit.length).toFixed(3) : 0,
+      growOn: lamps.filter(l => l.grow && l.on).length
+    };
+  }
+
+  /* 하루를 닫는다 — 마지막 장부를 돌려주고 0 으로 되돌린다.
+     ★ 스위치는 **안 건드린다.** 켜 둔 등은 다음 날도 켜져 있는 게 맞다(그게 요금이 붙는 이유다). */
+  function resetLampHours() {
+    const closing = lampSwitches();
+    lampClock.h = new Map();
+    return closing;
   }
 
   /* 왜 못 옮기나 — 못 옮기면 **한국어 이유**, 옮길 수 있으면 null.
@@ -6488,7 +6714,9 @@ export async function createRoomView(canvas, opts = {}) {
        ⚠ 이 좌표는 buildHouse 가 조립 정의로 만든 것이라 조도 계산(ppfdSum)이 쓰는 것과 같다. */
     lightRigs() {
       return ((built && built.lightRigs) || []).map(r => ({
-        id: r.id, grow: !!r.grow, schedule: r.schedule,
+        /* ★ uid 를 같이 낸다 (2026-08-08) — 등 스위치(§⑧-e)가 uid 로 켜고 끈다.
+           id(프리셋 이름)만으로는 같은 종류가 둘일 때 못 가른다. */
+        uid: r.uid, id: r.id, grow: !!r.grow, schedule: r.schedule, on: lampIsOn(r.uid),
         pos: { x: +r.pos.x.toFixed(4), y: +r.pos.y.toFixed(4), z: +r.pos.z.toFixed(4) }
       }));
     },
@@ -6505,6 +6733,19 @@ export async function createRoomView(canvas, opts = {}) {
          여기 나오는 것은 무엇엔가 물려 있어 가구 목록에서 빠지는 등뿐이다(집게등).
        ⚠ **붙박이 등(바)은 목록에 안 나오고, 억지로 부르면 던진다.** 겨누기와 같은 규약. */
     lamps() { return lampList(); },
+
+    /* ── ★ 등 스위치 (2026-08-08 · 위 ⑧-e 주석) ──
+       ⚠ 여기 나오는 것은 **방에 달린 조명 전부**다(식물등·천장등·플로어 스탠드).
+         위 `lamps()`(옮기기 목록)와 다르다 — 못 옮기는 등도 켜고 끌 수는 있다.
+       ⚠ **조도(DLI)는 여기서 안 바뀐다.** 계약의 밝기는 `S.lamps.count` 가 낸다. */
+    lampOn(uid) { return lampIsOn(uid); },
+    setLampOn(uid, on) { try { return setLampOn(uid, on); } catch (e) { throw fail(e); } },
+    toggleLamp(uid) { try { return toggleLamp(uid); } catch (e) { throw fail(e); } },
+    setLampSwitches(map) { try { return setLampSwitches(map); } catch (e) { throw fail(e); } },
+    /* 지금 상태 + 켠 시간(게임 시간 h) + 와트시. 전기세의 재료다 */
+    lampSwitches() { return lampSwitches(); },
+    /* 하루를 닫는다 — 마지막 장부를 주고 시간을 0 으로. 스위치는 그대로 둔다 */
+    resetLampHours() { return resetLampHours(); },
     /* 물릴 수 있는 상판 — 화분이 올라갈 수 있는 상판이 곧 집게를 물릴 수 있는 상판이다.
        [{ mountId, uid, name, x, y, z, w, d, rot, slots }] · y 오름차순 */
     lampMounts() { return lampMounts(); },
@@ -6569,7 +6810,15 @@ export async function createRoomView(canvas, opts = {}) {
     /* 0..1 하루 시간대. 시간대 이름('아침'·'한낮'…)을 돌려준다.
        ★ 빨리감기는 이 함수를 하루에 한 바퀴 돌리는 것으로 표현한다 —
          해의 방향·색온도·창으로 든 빛 웅덩이가 같이 움직인다. */
-    setDaylight(t01) { daylightT = clamp(+t01 || 0, 0, 1); return applyDaylight(); },
+    /* ★ 켠 시간을 **먼저** 센다 (2026-08-08 · §⑧-e).
+       daylightT 를 바꾸기 전에 세야 지나간 구간의 켜짐 상태로 세어진다 —
+       뒤에 세면 밤이 된 뒤에야 "밤이라 켜져 있었다"가 되어 하루가 한 칸씩 밀린다. */
+    setDaylight(t01) {
+      const t = clamp(+t01 || 0, 0, 1);
+      tickLampClock(t);
+      daylightT = t;
+      return applyDaylight();
+    },
     get daylight() { return daylightT; },
     /* 그림자 예산 — 'lean'(기본) · 'full'(scene.js 기본) · 'none'. 측정·비교용이다. */
     setShadowBudget(mode) { shadowMode = mode; applyDaylight(); return shadowMode; },
@@ -6905,6 +7154,14 @@ export async function createRoomView(canvas, opts = {}) {
           if (g.userData && g.userData.uid === uid) g.visible = k < want;
         });
       });
+      /* ★ 광원까지 같이 꺼진다 (2026-08-08 · §⑧-e).
+         ------------------------------------------------------------
+         예전에는 여기서 **기구 메시만 숨겼다.** 광원 PointLight 는 house.js 가
+         개별 가구 그룹이 아니라 `furnGroup`(방 전체 컨테이너)에 넣기 때문에
+         (house.js §조명 기구 `furnGroup.add(L)`) 숨긴 뒤에도 계속 방을 밝히고 있었다.
+         그래서 등을 0개로 두든 2개로 두든 **화면 평균 밝기가 같았다**(75.23 vs 75.26).
+         지금은 lampIsOn 이 `g.visible` 을 보므로 applyDaylight 한 번으로 실제로 꺼진다. */
+      applyDaylight();
       needsRender = true;
       return want;
     },
