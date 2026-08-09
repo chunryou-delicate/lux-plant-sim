@@ -65,6 +65,7 @@ const RULES = firstPlayRulesFromBalance(CHARS);
 const DARK = 'banjiha-dresser:1';     // 콩나물 — 어두워야 하얗고 아삭
 const SILL = 'banjiha-sill:0';        // 몬스테라 · 무순 — 밝아야 한다
 const DESK = 'banjiha-desk:0';        // 무순 자리(콩나물과 달라야 한다 — 빛 요구가 정반대)
+const CYCLE_DAYS = 5;                 // 콩나물 한 회전(CROP_KINDS[0].harvestDays). 흩는 갈래 수다
 
 /* ★ 봄으로 갈아 끼운 규칙 사본. 저장소 값은 안 고친다. */
 const SPRING = Object.freeze({ ...TUTORIAL_RULES, startSeason: 'spring', startSeasonDay: 0 });
@@ -258,7 +259,26 @@ function play(op, seed = 1) {
        ⇒ 하루 순서를 [다음 날] → 수확 → 다시 심기 → 물주기 로 둔다. 손 셋이 **같은 하루 몫**이다. */
     /* ── ② 물주기 — 이 판의 「손 쓰는 법」이 여기서 갈린다 ─────────────────── */
     if (op.spread) {
-      try { if (waterCrop(S).watered) watered++; } catch {}          // 하루에 **하나**
+      /* ★★ 2026-08-09 정정 — **하루에 `ceil(시루/주기)` 개씩 시작한다.**
+         ------------------------------------------------------------
+         예전에는 `waterCrop(S)` 를 **하루에 딱 한 번**만 불렀다. 그러면 회전 시작이 하루 1개로
+         막혀서, 주기가 5일인 콩나물은 **다섯 갈래만 차고 나머지는 아예 안 돈다.**
+         시루 12개를 놓아도 7개가 놀고 있었고, 그래서 「시루를 늘려도 손이 4에서 안 는다」는
+         틀린 값이 나왔다(실제로는 12개에 6이다).
+         ⇒ 고르게 흩으려면 하루에 `N/주기` 개가 제 차례를 맞아야 한다.
+
+         ★★ **다음 사람을 위한 검산법** — 흩기가 됐는지 한 줄로 확인할 수 있다:
+             **시루 N개 판의 곳간절감이 시루 5개 판과 같으면 흩기가 안 된 것이다.**
+           12개 판이 5개 판과 똑같이 31일 75,000원을 냈고, 그 한 줄로 확정됐다.
+           고친 뒤에는 123,000원이 나온다. 「도는 중인 시루 수」 같은 걸 세지 말고 이걸 봐라 —
+           놓인 것과 도는 것은 다른 말이라 자릿수로는 안 잡힌다(실제로 못 잡았다). */
+      const cap = Number.isFinite(op.perDay) ? op.perDay : Math.ceil(op.siru / CYCLE_DAYS);
+      for (let k = 0; k < cap; k++) {
+        let ok = false;
+        try { ok = !!waterCrop(S).watered; } catch { break; }
+        if (!ok) break;
+        watered++;
+      }
     } else if (placedCropPots(bs).length + idleCropPots(bs).length >= op.siru) {
       /* ★ 「같은 날 운용」은 **다 모인 뒤에 한꺼번에 시작한다.** 시루가 하나씩 도착하는 대로
          물을 주면 저절로 어긋나 버려서 겹침이 안 일어난다 — 그러면 이 판이 ㉢ 과 같아진다.
@@ -427,18 +447,55 @@ if (!ONLY || ONLY === 'F') {
 
 /* ── §G 체력이 몇 개째에 모자라나 ──────────────────────────────────────── */
 if (!ONLY || ONLY === 'G') {
-  console.log('── §G ★체력 — 시루 몇 개째부터, 어느 날에 손이 모자라나 ──');
-  console.log('| 시루 | 분배: 하루 최대 체력 | 같은 날: 하루 최대 체력 | 같은 날에 손이 모자란 날 |');
-  console.log('|------|----------------------|-------------------------|--------------------------|');
-  for (const n of [1, 3, 5, 7, 8, 9, 10, 12]) {
+  console.log('── §G ★체력 — 시루 몇 개째부터, 어느 날에 손이 모자라나 (지금 코드) ──');
+  console.log(`  분배 = 하루에 ceil(N/${CYCLE_DAYS})개씩 시작 · 같은 날 = 다 모인 뒤 한꺼번에`);
+  console.log('  ⚠ 지금 코드는 **물주기만 시루마다 손이 든다.** 수확·심기는 익은 것을 한꺼번에');
+  console.log('     처리하고 손은 하나씩이다(loop.harvestCrop · state.resowCrop). 그래서 하루 손은');
+  console.log(`     물 k + 수확 1 + 심기 1 (+ 몬스테라 1) 이지 3k 가 아니다.`);
+  console.log('| 시루 | 분배: 하루 최대 손 | 분배: 평균 손 | 같은 날: 하루 최대 손 | 같은 날에 손이 바닥난 날 |');
+  console.log('|------|--------------------|---------------|-----------------------|--------------------------|');
+  for (const n of [1, 3, 5, 10, 12, 20, 30, 35, 40]) {
     const sp = play({ id: 'x', ko: 'x', siru: n, spread: true, musun: 0 });
     const sm = play({ id: 'x', ko: 'x', siru: n, spread: false, musun: 0 });
-    const spMax = Math.max(...sp.rows.map(x => x.staUsed));
+    const t = sp.rows.slice(19);
+    const spMax = Math.max(...t.map(x => x.staUsed));
+    const spAvg = (t.reduce((a, x) => a + x.staUsed, 0) / t.length).toFixed(1);
     const smMax = Math.max(...sm.rows.map(x => x.staUsed));
     const shortDays = sm.rows.filter(x => x.staLeft === 0).length;
-    console.log(`| ${String(n).padStart(4)} | ${String(spMax).padStart(20)} | ${String(smMax).padStart(23)} | ` +
+    const spShort = sp.rows.filter(x => x.staLeft === 0).length;
+    console.log(`| ${String(n).padStart(4)} | ${String(spMax).padStart(18)}${spShort ? ' ★' : '  '} | ` +
+      `${String(spAvg).padStart(13)} | ${String(smMax).padStart(21)} | ` +
       `${(shortDays ? shortDays + '일' : '없음').padStart(24)} |` + (smMax >= STAMINA_MAX ? '  ★' : ''));
   }
+  console.log('');
+}
+
+/* ── §H ★「셋 다 각개」로 바꾸면 — **아직 안 한 것을 미리 재 본다** ────────── */
+if (!ONLY || ONLY === 'H') {
+  console.log('── §H ★★ 물·수확·심기가 **전부 시루마다** 손을 쓴다면 (아직 안 한 것) ──');
+  console.log('  박사님 지시: *"체력은 물주기 수확하기 심기 할 때 다 소모되도록 하자고."*');
+  console.log('  ⚠ **코드를 안 고쳤다.** 위에서 실제로 일어난 동작 수(물·수확·심기·몬스테라 물주기)를');
+  console.log('    그대로 세어 「시루마다 한 손」으로 다시 매긴 값이다. 회전·수확량은 지금과 같다.');
+  console.log('| 시루 | 하루 시작 | 하루 최대 손 | 평균 손 | 체력 10 이면 | 체력 14 면 | 체력 18 이면 |');
+  console.log('|------|-----------|--------------|---------|--------------|------------|--------------|');
+  const cap = {};
+  for (const n of [1, 3, 5, 8, 10, 12, 14, 16, 18, 20, 25, 30]) {
+    const r = play({ id: 'x', ko: 'x', siru: n, spread: true, musun: 0 });
+    const t = r.rows.slice(19);                       // 회전이 다 자리잡은 뒤만 본다
+    const hands = t.map(x => x.watered + x.harvested + x.sown + x.pot);
+    const mx = Math.max(...hands);
+    const av = (hands.reduce((a, b) => a + b, 0) / hands.length).toFixed(1);
+    for (const lim of [10, 14, 18]) if (mx <= lim) cap[lim] = n;
+    console.log(`| ${String(n).padStart(4)} | ${String(Math.ceil(n / CYCLE_DAYS)).padStart(9)} | ` +
+      `${String(mx).padStart(12)} | ${String(av).padStart(7)} | ` +
+      `${(mx <= 10 ? '○' : '✕ 넘는다').padStart(12)} | ${(mx <= 14 ? '○' : '✕ 넘는다').padStart(10)} | ` +
+      `${(mx <= 18 ? '○' : '✕ 넘는다').padStart(12)} |`);
+  }
+  console.log('');
+  console.log(`  ★ 상한 — 체력 10 이면 **시루 ${cap[10] ?? '?'}개** · 14 면 **${cap[14] ?? '?'}개** · ` +
+              `18 이면 **${cap[18] ?? '?'}개**까지 돌릴 수 있다.`);
+  console.log('  ★ 박사님이 「일정 횟수 쓰면 레벨업해서 최대치가 는다」고 하셨으므로');
+  console.log('    이 세 칸이 곧 **성장 곡선의 눈금**이다 — 체력이 오르면 시루를 더 돌릴 수 있다.');
   console.log('');
 }
 console.log(`(${((Date.now() - T0) / 1000).toFixed(0)}초)`);

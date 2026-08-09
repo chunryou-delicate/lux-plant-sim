@@ -226,7 +226,23 @@ function play(opt = {}) {
        그래서 시루를 아무리 늘려도 잉여가 한 푼도 안 났다(첫 실측에서 실제로 0원이었다).
        `{ all: true }` 면 대기 중인 것을 전부 시작한다 — 같은 날 다 거둬 **겹치고**, 그 겹친 몫이
        잉여가 되어 팔린다. 체력도 한 번치(1)만 든다(stamina.ACT_COST.water). */
-    try { waterCrop(S, { all: !!opt.waterAll }); } catch { /* 아직 안 놓은 시루 · 이미 준 날 */ }
+    /* ★★ 2026-08-09 정정 — 「다량으로」에는 **두 가지 손놀림**이 있고 결과가 아주 다르다.
+         waterAll  한 버튼으로 다 준다 → 같은 날 거둔다 → 겹쳐서 3,000/2,000/1,000 으로 깎이고
+                   나머지는 잉여로 샌다
+         spread    하루에 `ceil(N/5)` 개씩 시작한다 → 거두는 날이 흩어진다 → 온전히 받는다
+       ⚠ 예전에는 `waterCrop(S)` 를 하루 **한 번**만 부르는 것을 「분배」라고 불렀는데, 그러면
+         회전 시작이 하루 1개로 막혀 **다섯 갈래만 차고 나머지 시루는 아예 안 돈다.**
+         ★ 검산법 — **시루 N개 판의 곳간절감이 시루 5개 판과 같으면 흩기가 안 된 것이다.** */
+    if (opt.spread) {
+      const cap = Math.ceil(sirus / 5);
+      for (let k = 0; k < cap; k++) {
+        let ok = false;
+        try { ok = !!waterCrop(S).watered; } catch { break; }
+        if (!ok) break;
+      }
+    } else {
+      try { waterCrop(S, { all: !!opt.waterAll }); } catch { /* 아직 안 놓은 시루 · 이미 준 날 */ }
+    }
     try { waterPot(S); } catch { /* 아직 없거나 안 놓은 화분 */ }
     const cashBefore = ts.cashWon;
     const turn = nextDay(S, io).turn;
