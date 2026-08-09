@@ -160,6 +160,28 @@ function standGrowth(seed) {
 
 /* ══ 확정 규칙의 예산 ══════════════════════════════════════════════════════ */
 const START_MAX = 5, LEVEL_CAP = 10, QUEST_BONUS = 1;
+/* ★★ 2026-08-09 박사님 — **10 위로 가는 길**: *"10에서 20까지는 ×10 체력을 소모하면 1씩
+   올라가는 식으로 하자"*. ⚠ 「×10」이 두 가지로 읽혀서 **둘 다 잰다**:
+     ⓧ 최대체력 × 10   — 10→11 에 100, 11→12 에 110 … 19→20 에 190 (누적 1,450)
+     ⓨ 앞 계단이 이어짐 — 10→11 에 60, 70 … 150 (누적 1,050. ⓐ 기본의 +10 씩을 그대로 잇는다)
+   ★ ⓧ 에는 좋은 성질이 있을 수 있다 — 필요 경험치가 체력에 비례하는데 **하루에 쌓이는
+     경험치도 곧 그날 쓴 체력**이라, 체력을 다 쓰면 레벨업 간격이 **체력과 무관하게 일정**해야 한다.
+     `(체력 × 10) ÷ (하루 쓴 체력) ≈ 10일`. 정말 그런지 §E 가 잰다. */
+const HI_CAP = 20;
+function hiSteps(mode, baseLast) {
+  const out = [];
+  for (let lv = 10; lv < HI_CAP; lv++)
+    out.push(mode === 'x' ? lv * 10 : baseLast + (lv - 9) * 10);
+  return out;
+}
+/* 기본 곡선(5→10)에 10→20 구간을 이어 붙인 누적표를 만든다 */
+function fullCurve(base, mode) {
+  const step = [...base.step, ...hiSteps(mode, base.step[base.step.length - 1])];
+  const cum = []; let a = 0;
+  for (const v of step) { a += v; cum.push(a); }
+  return { id: base.id + mode.toUpperCase(), ko: `${base.ko} + ${mode === 'x' ? 'ⓧ체력×10' : 'ⓨ계단이음'}`,
+           step, cum, hiMode: mode };
+}
 const QUEST_SIRUS = 5, QUEST_CYCLES = 5;
 
 /* ★★ 2026-08-09 박사님 정정 — **경험치 100 고정이 아니라 레벨마다 다르다.**
@@ -182,8 +204,9 @@ for (const c of CURVES) {
 function maxOf(sim, questInCap, curve) {
   let lv = START_MAX;
   for (const need of curve.cum) if (sim.xp >= need) lv++;
-  lv = Math.min(LEVEL_CAP, lv);
-  return questInCap ? Math.min(LEVEL_CAP, lv + (sim.quest ? QUEST_BONUS : 0))
+  const cap = START_MAX + curve.cum.length;          // 곡선이 닿는 데까지가 상한이다
+  lv = Math.min(cap, lv);
+  return questInCap ? Math.min(cap, lv + (sim.quest ? QUEST_BONUS : 0))
                     : lv + (sim.quest ? QUEST_BONUS : 0);
 }
 
@@ -193,6 +216,15 @@ const CASES = [
   { id: '㉢', ko: '시루 5개 · 같은 날', siru: 5, spread: false, musun: 0, quest: false },
   { id: '㉣', ko: '시루 5개 + 무순 3판', siru: 5, spread: true, musun: 3, quest: true }
 ];
+
+/* ★ 체력이 허락하는 **가장 큰 시루 수**. 한 시루가 제 차례에 3손을 쓰고 하루에
+   `ceil(N/주기)` 개가 차례를 맞으므로, `3 × ceil(N/주기) ≤ 최대체력` 이 되는 최대 N 이다.
+   ⚠ 몬스테라 물주기가 겹치는 날이 있어 실제로는 이보다 빡빡할 수 있다 — 그건 표가 보여 준다. */
+function siruForStamina(max, limit = 60) {
+  let best = 1;
+  for (let n = 1; n <= limit; n++) if (3 * Math.ceil(n / CYCLE_DAYS) <= max) best = n;
+  return best;
+}
 
 function play(cs, { questInCap = true, days = DAYS, curve = CURVES[0] } = {}) {
   const light = createProfileLight(structuredClone(BASE_PROFILE),
@@ -215,8 +247,10 @@ function play(cs, { questInCap = true, days = DAYS, curve = CURVES[0] } = {}) {
   for (let d = 1; d <= days; d++) {
     /* ── 사기 ─────────────────────────────────────────────────────────── */
     const bs = cropSiteOf(S.firstPlay, 'beansprout');
+    /* ★ `cs.grow` 면 **체력이 허락하는 만큼** 목표를 매일 올린다 — 이 설계가 그리는 플레이다 */
+    const target = cs.grow ? Math.max(cs.siru, siruForStamina(maxOf(sim, questInCap, curve))) : cs.siru;
     const have = (bs.pots || []).length + stockOf(S, 'siru') + incomingOf(S, 'siru');
-    if (have < cs.siru) { try { orderItem(S, 'siru', cs.siru - have); } catch {} }
+    if (have < target) { try { orderItem(S, 'siru', target - have); } catch {} }
     if (cs.musun) {
       const ms = cropSiteOf(S.firstPlay, 'musun');
       const haveT = ((ms && ms.pots) || []).length + stockOf(S, 'sprout_tray') + incomingOf(S, 'sprout_tray');
@@ -225,8 +259,8 @@ function play(cs, { questInCap = true, days = DAYS, curve = CURVES[0] } = {}) {
         try { orderItem(S, 'radish_seed', cs.musun); } catch {}
       }
     }
-    if (stockOf(S, 'bean_seed') + incomingOf(S, 'bean_seed') < cs.siru) {
-      try { orderItem(S, 'bean_seed', cs.siru - stockOf(S, 'bean_seed') - incomingOf(S, 'bean_seed')); } catch {}
+    if (stockOf(S, 'bean_seed') + incomingOf(S, 'bean_seed') < target) {
+      try { orderItem(S, 'bean_seed', target - stockOf(S, 'bean_seed') - incomingOf(S, 'bean_seed')); } catch {}
     }
 
     /* ── 하루 넘기기 ───────────────────────────────────────────────────── */
@@ -247,7 +281,7 @@ function play(cs, { questInCap = true, days = DAYS, curve = CURVES[0] } = {}) {
     const potDry = (() => { try { return !!(pot0(S) && waterPotStatus(S).needsWater); } catch { return false; } })();
 
     /* ★ 물 줄 시루는 운용이 정한다 — 분배는 하루 ceil(N/주기) 개, 같은 날은 전부 */
-    const waterCap = cs.spread ? Math.ceil(cs.siru / CYCLE_DAYS) : water.length;
+    const waterCap = cs.spread ? Math.ceil(target / CYCLE_DAYS) : water.length;
     const wantWater = water.slice(0, waterCap);
 
     const want = ready.length + resow.length + wantWater.length + (potDry ? 1 : 0);
@@ -280,12 +314,12 @@ function play(cs, { questInCap = true, days = DAYS, curve = CURVES[0] } = {}) {
     /* ★ **새 시루를 놓는 것도 「심기」다** — 한 손이 든다. `resowCrop` 은 `sirus` 를 올려야
        개수가 는다(potIds 로는 안 는다). 하나씩 올려서 하나에 한 손이 되게 한다.
        ⚠ 이걸 빼면 시루가 영영 1개라 「차례가 하루 1개」로만 찍힌다(처음에 그렇게 찍혔다). */
-    for (const [kindId, target, at] of [['beansprout', cs.siru, DARK], ['musun', cs.musun, DESK]]) {
-      if (!target) continue;
-      for (let g = 0; g < target; g++) {
+    for (const [kindId, tgt, at] of [['beansprout', target, DARK], ['musun', cs.musun, DESK]]) {
+      if (!tgt) continue;
+      for (let g = 0; g < tgt; g++) {
         const site = cropSiteOf(S.firstPlay, kindId);
         const now = ((site && site.pots) || []).length;
-        if (now >= target || stockOf(S, kindId === 'musun' ? 'sprout_tray' : 'siru') < 1) break;
+        if (now >= tgt || stockOf(S, kindId === 'musun' ? 'sprout_tray' : 'siru') < 1) break;
         if (!spend()) break;
         try { resowCrop(S, { kind: kindId, sirus: now + 1, at, slots: light.room.slots }); didG++; }
         catch { sim.left++; sim.xp--; break; }
@@ -293,7 +327,7 @@ function play(cs, { questInCap = true, days = DAYS, curve = CURVES[0] } = {}) {
     }
     /* ★ 새로 놓은 시루까지 보게 **다시 센다** — 위에서 목록을 뜬 뒤에 시루가 늘었을 수 있다 */
     const water2 = cropPotList(S.firstPlay, S.day).filter(p => p.needsWater);
-    const cap2 = cs.spread ? Math.ceil(cs.siru / CYCLE_DAYS) + (cs.musun ? 1 : 0) : water2.length;
+    const cap2 = cs.spread ? Math.ceil(target / CYCLE_DAYS) + (cs.musun ? 1 : 0) : water2.length;
     for (const p of water2.slice(0, cap2)) {
       if (!spend()) break;
       try { waterCrop(S, { kind: p.kind, potIds: [p.id] }); didW++; } catch { sim.left++; sim.xp--; }
@@ -317,6 +351,7 @@ function play(cs, { questInCap = true, days = DAYS, curve = CURVES[0] } = {}) {
       didH, didS, didW, didP, didG,
       savedWon: (t && t.savedWon) || 0,
       cashWon: ts.cashWon,
+      nSiru: ((bs.pots) || []).length, target,
       idle: (want + didG) === 0
     });
   }
@@ -443,4 +478,47 @@ if (!ONLY || ONLY === 'D') {
   console.log('  (● 할 일 있음 · · 빈 날 · ★ 손이 모자라 못 한 날)');
   console.log('');
 }
+
+/* ── §E ★★ 10 → 20 구간 — 박사님 「×10」 규칙 ──────────────────────────── */
+if (!ONLY || ONLY === 'E') {
+  console.log('── §E ★★ 최대체력 10 → 20 (박사님 "10에서 20까지는 ×10 체력을 소모하면 1씩") ──');
+  console.log('  ★ 시루 정책 — **체력이 허락하는 만큼 계속 늘린다**(3 × ceil(N/5) ≤ 최대체력).');
+  console.log('    체력 5→시루 5 · 7→10 · 10→15 · 13→20 · 15→25 · 18→30 · 21→35');
+  console.log('  ⚠ 표의 「시루」는 **그날 실제로 놓여 있던 수**다(목표가 아니다).');
+  console.log('');
+  const GOAL_SIRU = 31;                     // 식대 자립 (econ-to-plan §4-② · 약 31개)
+  for (const base of [CURVES[0], CURVES[2]]) {
+    for (const mode of ['x', 'y']) {
+      const cv = fullCurve(base, mode);
+      const run = play({ id: '★', ko: '성장', siru: 2, spread: true, musun: 0, quest: true, grow: true },
+                       { questInCap: true, curve: cv, days: DAYS });
+      console.log(`  ── ${base.ko} + ${mode === 'x' ? 'ⓧ 체력×10' : 'ⓨ 계단이음'} ` +
+                  `(10→20 누적 ${cv.cum[cv.cum.length - 1] - cv.cum[4]}) ──`);
+      console.log('| 최대체력 | 며칠째 | 그때 시루 | 앞 레벨과 간격 | 하루 쓴 체력(직전 10일) | 누적 현금 |');
+      console.log('|----------|--------|-----------|----------------|--------------------------|-----------|');
+      let prev = null;
+      for (const lv of [6, 8, 10, 12, 15, 18, 20]) {
+        const u = run.ups.find(u => u.to === lv);
+        if (!u) { console.log(`| ${String(lv).padStart(8)} | ${'★안 닿는다'.padStart(6)} | — | — | — | — |`); continue; }
+        const row = run.rows.find(r => r.day === u.levelUpAt) || {};
+        const w = run.rows.filter(r => r.day > u.levelUpAt - 10 && r.day <= u.levelUpAt);
+        const avg = w.length ? (w.reduce((a, r) => a + r.used, 0) / w.length).toFixed(1) : '—';
+        console.log(`| ${String(lv).padStart(8)} | ${(u.levelUpAt + '일').padStart(6)} | ` +
+          `${String((row.nSiru ?? 0) + '개').padStart(9)} | ${(prev ? (u.levelUpAt - prev) + '일' : '—').padStart(14)} | ` +
+          `${String(avg).padStart(24)} | ${won(row.cashWon).padStart(9)} |`);
+        prev = u.levelUpAt;
+      }
+      /* 식대 자립 — 시루 GOAL_SIRU 개에 닿는 날 */
+      const g = run.rows.find(r => (r.nSiru || 0) >= GOAL_SIRU);
+      const mx = Math.max(...run.rows.map(r => r.nSiru || 0));
+      console.log(`  ⇒ 시루 ${GOAL_SIRU}개(식대 자립) — ${g ? '**' + g.day + '일차**' : '★안 닿는다'}` +
+                  ` · ${DAYS}일 안에 닿은 최대 시루 **${mx}개** · 끝 최대체력 ${run.rows[run.rows.length - 1].max}` +
+                  ` · 끝 현금 ${won(run.rows[run.rows.length - 1].cashWon)}원`);
+      console.log('');
+    }
+  }
+  console.log('  ★ 이사 자금 ' + won(TUTORIAL_RULES.moveOutCostWon) + '원 — 위 「누적 현금」과 견주면 남은 몫이 나온다.');
+  console.log('');
+}
+
 console.log(`(${((Date.now() - T0) / 1000).toFixed(0)}초 · ${DAYS}일)`);
