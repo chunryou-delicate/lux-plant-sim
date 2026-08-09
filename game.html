@@ -14,7 +14,7 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <!-- 지금 보고 있는 판이 언제 것인지. 캐시가 의심되면 이걸 본다 -->
-<meta name="byeot-build" content="2026-08-06T10">
+<meta name="byeot-build" content="2026-08-09T-cells">
 <!-- ★★ 글씨 (2026-08-06 박사님: "글씨체가 이상해. 한글이 안 읽히네 뭔가. 잘 안 보여").
      Pretendard 를 **실제로 받아 온다.** 이름만 적어 두면 그 글씨가 깔린 기계에서만 보이고,
      안 깔린 기계에서는 조용히 system-ui 로 떨어진다 — 화면이 기계마다 달라진다.
@@ -959,13 +959,29 @@
   .siruhead{display:flex;align-items:baseline;gap:6px;justify-content:space-between}
   .siruhead b{font-size:12.5px;font-weight:700}
   .siruhead span{font-size:10.5px;color:rgba(255,255,255,.5)}
-  /* 게이지 — `.meter` 와 같은 옷이되 하루 안의 흐름까지 그린다(§게이지). */
-  .siru .meter{margin:6px 0 5px}
-  /* ★ 하루 안에서 차 오르는 몫은 **연하게** 덧댄다. 확정된 날(진한 것)과 아직 흐르는
-     중인 것(연한 것)이 눈으로 갈려야 "하루 넘기면 뭉텅이로 찬다"가 읽힌다. */
-  .siru .meter>i.soft{background:linear-gradient(90deg,rgba(143,211,111,.42),rgba(213,239,139,.42))}
-  .siru .meter{position:relative}
-  .siru .meter>i{position:absolute;left:0;top:0}
+  /* ══ 게이지는 **칸으로 갈린다** (2026-08-09 박사님: "5칸짜리 빈 게이지가 생기고
+       날이 지나면 1칸씩 차도록 직관적으로") ═════════════════════════════════
+     ★ 왜 칸인가 — 매끈한 막대는 "60%"를 말하지만 **"며칠 남았나"는 안 말한다.**
+       칸이면 안 찬 칸을 세는 것이 곧 남은 날이라 눈으로 바로 읽힌다.
+     ⚠ **칸 수는 작물마다 다르다.** 콩나물 5 · 무순 7 (`harvestDays`).
+       5를 박아 두면 무순이 7일인데 5칸으로 그려져 화면이 거짓말을 한다.
+       그래서 **CSS 는 칸 수를 아예 모른다** — `grid-auto-flow:column` 이 들어온 만큼
+       나눠 갖는다. 칸을 몇 개 넣을지는 `cellsHTML` 이 `harvestDays` 를 보고 정한다.
+     ⚠ `transform` 을 쓰지 않는다 — 전역 `#sheet .itemcard:active` 가 갈아 끼운다. */
+  .cells{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:3px;height:11px;margin:6px 0 5px}
+  .cells>i{position:relative;overflow:hidden;border-radius:3px;background:rgba(0,0,0,.34);
+    box-shadow:inset 0 0 0 1px rgba(255,255,255,.13)}
+  .cells>i.on{background:linear-gradient(90deg,#8fd36f,#d5ef8b);box-shadow:none}
+  /* ★ 하루 안에서 차 오르는 몫은 **지금 차는 그 칸 안에서만** 연하게 흐른다.
+     확정된 칸(진한 것)과 흐르는 칸(연한 것)이 갈려야 "하루 넘기면 한 칸 찬다"가 읽힌다. */
+  .cells>i>b{position:absolute;left:0;top:0;bottom:0;width:0;
+    background:linear-gradient(90deg,rgba(143,211,111,.45),rgba(213,239,139,.45))}
+  /* ★★ **물을 안 준 시루는 칸이 안 찬다** — 그 사실이 빈 게이지와 구별돼야 한다.
+     빈 칸만 두면 "심었는데 왜 안 차지"가 되고, 답이 화면에 없다.
+     ⇒ 빈 칸을 **물빛 테두리**로 두른다. 옆줄(`.siruline`)이 "물을 주면 시작합니다"라고 말한다. */
+  .cells.dry>i{background:rgba(143,216,234,.10);
+    box-shadow:inset 0 0 0 1px rgba(143,216,234,.45)}
+  .cells.done>i.on{background:linear-gradient(90deg,#ffd98f,#f0b45c)}
   .siruline{font-size:10.5px;color:rgba(255,255,255,.55);line-height:1.35}
   .sirubtns{display:flex;gap:6px;margin-top:7px}
   .sirubtns:empty{display:none}
@@ -1112,7 +1128,7 @@
 
   <!-- ══ 하단 액션 — 엄지로 누르는 자리 ═══════════════════════════════ -->
   <nav id="bottom">
-    <div class="quest" id="quest">가방의 열린 시루를 방 안 어두운 자리에 놓아 보세요.</div>
+    <div class="quest" id="quest">가방의 콩나물 시루를 방 안 어두운 자리에 놓아 보세요.</div>
     <!-- 오늘 식물이 자랐나 — 지금까지 검수 탭 개발 HUD 안에만 있어 아무도 못 봤다 -->
     <div id="plantToday"></div>
     <!-- ★물을 줘야 할 때만 나타난다 (박사님 2026-08-04: "물주기 정도는 넣자").
@@ -1246,7 +1262,9 @@
         <div class="itemcard" id="musunCard" data-ord="2" style="display:none">
           <div class="itemhead"><img class="thumb" id="musunThumb" alt="새싹 재배판">
             <div><b>무순 · 새싹 재배판</b><small id="musunState">아직 없음</small></div></div>
-          <div class="meter"><i id="musunMeter"></i></div><div class="itemline" id="musunInfo">밝은 자리일수록 알싸합니다</div>
+          <!-- ★ 게이지는 **칸**이다. 무순은 주기가 7일이라 **7칸**이다 — 콩나물(5칸)과 다르다.
+               칸 수는 `cropKindOf('musun').harvestDays` 에서 온다(drawMusun). 여기 안 박는다. -->
+          <div id="musunGauge"></div><div class="itemline" id="musunInfo">밝은 자리일수록 알싸합니다</div>
           <div class="dragcue">이 그림을 <b>끌어서</b> 방 안 <b>밝은</b> 자리에</div>
           <div class="place"><label for="musunSlot" class="sr-only">무순 자리</label><select id="musunSlot"></select><button id="placeMusun">두기</button></div>
           <button id="sowMusun" style="display:none">🌱 무순 심기</button>
@@ -1937,14 +1955,22 @@ function drawMusun() {
     : (have > 0 ? '🌱 무 씨앗이 필요합니다' : '🌱 새싹 재배판이 필요합니다');
   card.querySelector('.place').style.display = pots ? '' : 'none';
   card.querySelector('.dragcue').style.display = (pots && !(site.slotId || site.at)) ? '' : 'none';
-  if (pots) {
-    const days = site.harvestDays || 7;
-    const p01 = Math.max(0, Math.min(1, (site.ageDays || 0) / Math.max(1, days)));
-    $('musunMeter').style.width = Math.round(p01 * 100) + '%';
-    fillMusunSlots();
-  } else {
-    $('musunMeter').style.width = '0%';
+  /* ★★ 칸 게이지 — **주기가 곧 칸 수**다. 무순은 7일이니 7칸이다(콩나물은 5칸).
+     ⚠ `cropPotList` 가 낸 줄을 그대로 쓴다 — 여기서 growing·needsWater 를 또 판정하면
+       콩나물 줄과 두 벌이 되어 "물을 줬는데 마른 칸"처럼 조용히 어긋난다. */
+  const gauge = $('musunGauge');
+  if (gauge) {
+    let row = null;
+    try { row = cropPotList(S.firstPlay, S.day).find(r => r.kind === 'musun'); } catch { }
+    /* 아직 안 심었으면 **빈 칸만** 그린다 — 칸 수부터 보여야 "7일짜리"가 읽힌다 */
+    if (!row) {
+      let hd = 7; try { hd = cropKindOf('musun').harvestDays || 7; } catch { }
+      row = { harvestDays: hd, ageDays: 0, growing: false, needsWater: false,
+              ready: false, harvested: false };
+    }
+    gauge.innerHTML = cellsHTML(row, dayFrac());
   }
+  if (pots) fillMusunSlots();
 }
 
 /* ★ 개체 도착 경계. Day 4 선물과 개발 시나리오가 같은 원자적 생성 함수를 쓴다.
@@ -2173,20 +2199,34 @@ const detail = {
     };
   },
 
-  /* 아이템 — 이게 무엇이고, 지금 어떤 상태고, 어떻게 쓰나 */
+  /* ══ 아이템 — 이 카드는 **가방의 빈 시루**다 (2026-08-09 박사님 원문:
+       "가방에 열린 콩나물 시루가 있으면 안 되지. 콩나물시루 아이템만 있어서
+        그걸 드래그 하면 하나씩 따로따로 설치되게.") ═══════════════════════════
+     ⚠ 예전 이 창은 「열린 콩나물 시루 · 자란 날 1/5일 · 받은 빛 · 품질」을 냈다.
+       그건 **방에서 자라는 시루의 상태**다 — 가방 안에 심어진 시루가 들어 있는 그림이라
+       박사님이 "가방에 콩나물 시루가 자라고 있다"고 보신 그것이 정확히 이 창이었다.
+       (앞서 카드 **자리**만 고치고 이 창 **내용**은 안 고쳐서 증상이 그대로 남았다.)
+     ⇒ 여기가 말할 것은 둘뿐이다: **가방에 몇 개 남았나** · **어떻게 쓰나**.
+       자라는 중인 시루는 [식물] 탭의 `#siruBox` 가 시루마다 한 줄로 그린다(§drawSirus).
+     ⚠ `자란 날`·`받은 빛`·`품질` 을 여기 되살리지 말 것. 빈 용기에는 그런 값이 없다. */
   crop() {
-    const b = S.firstPlay.beansprout;
-    const days = (S.firstPlay.rules && S.firstPlay.rules.harvestDays) || 4;
-    const where = b.harvested ? '수확을 마침'
-                : b.at || b.slotId ? (b.slotId && !isFreeSlotId(b.slotId) ? slotLabel(b.slotId) + '에 있음' : '방에 놓여 있음')
-                : '가방에 있음';
+    const spare = spareSiru();
+    const standing = cropCount('beansprout');
+    /* 칸 수 = 그 작물의 주기다. **5를 박지 않는다** — 정본은 CROP_KINDS 다 */
+    let days = 0;
+    try { days = cropKindOf('beansprout').harvestDays || 0; } catch { }
+    if (!days) days = (S.firstPlay.rules && S.firstPlay.rules.harvestDays) || 5;
     return {
-      art: OPEN_SIRU.thumbnail, title: '열린 콩나물 시루', sub: where,
-      body: `<div class="row"><span>자란 날</span><b>${b.ageDays || 0} / ${days}일</b></div>`
-        + dliRow('받은 빛(평균)', b.avgDli, '— DLI')
-        + (b.quality ? `<div class="row"><span>품질</span><b>${b.quality}</b></div>` : '')
+      art: OPEN_SIRU.thumbnail, title: '콩나물 시루',
+      sub: spare > 0 ? `가방에 ${spare}개` : '가방에 없음',
+      body: `<div class="row"><span>가방에 남은 것</span><b>${spare}개</b></div>`
+        + (standing ? `<div class="row"><span>방에 서 있는 것</span><b>${standing}개</b></div>` : '')
+        + '<p>아직 아무것도 안 선 <b>빈 시루</b>다. 그림을 방으로 <b>끌어다</b> 놓으면 '
+        + '<b>한 개씩 따로</b> 선다 — 나머지는 가방에 남는다.</p>'
+        + `<p>세운 뒤 <b>물을 줘야</b> 시작한다. 그때 <b>${days}칸</b>짜리 게이지가 생기고 `
+        + '하루에 <b>한 칸</b>씩 찬다. 다 차면 거둘 때다.</p>'
         + '<p>콩나물은 <b>어두울수록</b> 잘 자란다. 빛을 보면 쓴맛이 난다 — 이 방에서 제일 어두운 자리를 찾으면 된다.</p>'
-        + '<p>가방의 그림을 방으로 <b>끌어다</b> 놓는다.</p>'
+        + (standing ? '<p>자라는 중인 시루는 <b>[식물] 탭</b>에서 하나씩 본다.</p>' : '')
     };
   },
   /* 무순 — 콩나물과 **같은 골격**이되 빛 방향이 정반대라 그 말만 뒤집는다 */
@@ -2199,11 +2239,18 @@ const detail = {
                 : (site.at || site.slotId) ? (site.slotId && !isFreeSlotId(site.slotId)
                     ? slotLabel(site.slotId) + '에 있음' : '방에 놓여 있음')
                 : '가방에 있음';
+    /* ★ 놓기 **전에는** 자란 날·빛·품질을 안 적는다 — 콩나물 카드와 같은 규칙이다
+       (§crop). 아직 아무 자리도 안 고른 판을 두고 "받은 빛"을 말하면 거짓말이다. */
+    const placed = !!(site && (site.at || site.slotId));
     return {
       art: './assets/crops/thumbs/container_tray_s.png', title: '무순 · 새싹 재배판', sub: where,
-      body: `<div class="row"><span>자란 날</span><b>${(site && site.ageDays) || 0} / ${days}일</b></div>`
-        + dliRow('받은 빛(평균)', site && site.avgDli != null ? site.avgDli : null, '— DLI')
-        + (site && site.quality ? `<div class="row"><span>품질</span><b>${site.quality}</b></div>` : '')
+      body: (placed
+          ? `<div class="row"><span>자란 칸</span><b>${(site && site.ageDays) || 0} / ${days}칸</b></div>`
+            + dliRow('받은 빛(평균)', site && site.avgDli != null ? site.avgDli : null, '— DLI')
+            + (site && site.quality ? `<div class="row"><span>품질</span><b>${site.quality}</b></div>` : '')
+          : `<div class="row"><span>한 회전</span><b>${days}칸 (${days}일)</b></div>`
+            + '<p>아직 안 놓은 <b>빈 재배판</b>이다. 끌어다 놓고 물을 주면 게이지 '
+            + `<b>${days}칸</b>이 하루에 하나씩 찬다 — 콩나물(5칸)보다 두 칸 길다.</p>`)
         + '<p>무순은 <b>밝을수록</b> 파릇하고 알싸하다 — 콩나물과 정반대다. 어두우면 웃자라 밍밍해진다.</p>'
         + '<p>죽지는 않는다. 자리가 값을 바꿀 뿐이다.</p>'
     };
@@ -3731,8 +3778,26 @@ function drawJourney() {
     : `${slotLabel(plant.slotId)} · ${gp ? Math.round(gp.progress01 * 100) + '%' : '준비 중'}`;
 
   const quest = {
-    place_beansprout: '가방의 열린 시루를 방 안 어두운 자리에 놓아 보세요.',
-    grow_beansprout: `콩나물이 자라는 중입니다. 수확까지 ${Math.max(0, crop.harvestDays - crop.ageDays)}일.`,
+    place_beansprout: '가방의 콩나물 시루를 방 안 어두운 자리에 놓아 보세요.',
+    /* ★★ 2026-08-09 — **물을 안 준 시루를 「자라는 중」이라고 말하지 않는다.**
+       놓자마자 이 줄이 "자라는 중입니다. 수확까지 5일."로 떴다. 그런데 게이지는 빈 칸이고
+       손가락은 "물을 주면 자라기 시작합니다"를 가리킨다 — **셋이 다른 말을 했다.**
+       그때 플레이어가 믿는 것은 글자라, 물을 안 준 채 [다음 날]을 눌러 하루를 버린다
+       (updateHint §③ 이 같은 사고를 손가락 쪽에서 이미 한 번 잡았다).
+       ⇒ 칸이 도는 시루가 하나도 없으면 **물부터 주라고 말한다.** 판정은 안 짓는다 —
+         `cropPotList` 가 낸 `growing` 을 셀 뿐이다. */
+    grow_beansprout: (() => {
+      let rows = [];
+      try { rows = cropPotList(S.firstPlay, S.day).filter(r => r.kind === 'beansprout' && r.placed); }
+      catch { }
+      const going = rows.filter(r => r.growing || r.ready);
+      if (rows.length && !going.length)
+        return `시루에 물을 주면 칸이 돌기 시작합니다 — ${crop.harvestDays}칸이 하루에 하나씩 찹니다.`;
+      const left = going.length ? Math.min(...going.map(r => r.daysLeft))
+                                : Math.max(0, crop.harvestDays - crop.ageDays);
+      return left > 0 ? `콩나물이 자라는 중입니다. 수확까지 ${left}일.`
+                      : '콩나물을 거둘 때가 됐습니다.';
+    })(),
     /* ★★ **몇 회전이 남았는지 말한다** (2026-08-05 · QA 워커가 잡았다).
        단계는 첫 수확에서 바로 `monstera_gift` 로 넘어가는데 도착 규칙은 3회전이다
        (`MONSTERA_ARRIVAL_RULE`). 그래서 6일차부터 22일차까지 열예닐곱 날 동안
@@ -3862,20 +3927,40 @@ function dayFrac() {
   const span = DAY_SWEEP_MS * IDLE_SWEEP_MULT;
   return Math.max(0, Math.min(0.995, (performance.now() - dayStartedAt) / span));
 }
+/* ══ 칸 게이지 (2026-08-09 · 박사님 "5칸짜리 빈 게이지 … 날이 지나면 1칸씩") ═════
+   ★ 칸 수 = 그 작물의 주기다. 콩나물 5 · 무순 7 — **여기서 숫자를 짓지 않는다.**
+     `cropPotList` 가 낸 `harvestDays` 를 그대로 쓴다(정본은 `CROP_KINDS[*].harvestDays`).
+   ★ 찬 칸 = `ageDays`. 하루가 지나면 정확히 한 칸이 는다.
+   ★ 흐르는 몫은 **지금 차는 칸 안에서만** 움직인다(§게이지) — 하루가 흐르고 있다는 표시일
+     뿐이고 생장 판정에는 안 들어간다. 물을 안 준 시루는 오늘이 가도 그 칸이 안 움직인다.
+   ⚠ 칸을 몇 개까지 그리나 — 주기가 길어도 한 줄에 다 넣는다. 폭은 grid 가 나눈다. */
+function cellsHTML(row, frac) {
+  const n = Math.max(1, Math.round(row.harvestDays || 1));
+  const full = Math.max(0, Math.min(n, Math.round(row.ageDays || 0)));
+  /* 물을 기다리는 중 — 칸이 안 찬다는 사실을 옷으로 말한다(§.cells.dry) */
+  const dry = !!row.needsWater && !row.harvested;
+  const done = !!(row.ready || row.harvested);
+  const pct = row.growing ? Math.round(Math.max(0, Math.min(1, frac)) * 100) : 0;
+  let out = `<div class="cells${dry ? ' dry' : ''}${done ? ' done' : ''}" `
+          + `role="img" aria-label="${full}/${n}칸">`;
+  for (let i = 0; i < n; i++) {
+    out += i < full ? '<i class="on"></i>'
+         : (i === full && row.growing) ? `<i><b style="width:${pct}%"></b></i>`
+         : '<i></i>';
+  }
+  return out + '</div>';
+}
 /* 시루 한 줄의 HTML. **판정은 하나도 안 만든다** — `cropPotList` 가 낸 사실만 옷을 입힌다 */
 function siruRowHTML(row, frac) {
-  const solid = Math.round(row.progress01 * 100);
-  /* 흐르는 몫은 **자라는 중인 시루에만** 붙는다. 물을 안 준 시루는 오늘이 가도 그대로다 */
-  const soft = row.growing
-    ? Math.round(Math.min(1, (row.ageDays + frac) / Math.max(1, row.harvestDays)) * 100)
-    : solid;
   const where = row.placed
     ? (row.slotId && !isFreeSlotId(row.slotId) ? slotLabel(row.slotId) : '방 안')
     : '가방';
+  /* ★ 글도 **칸으로** 말한다 — 게이지와 다른 자를 쓰면 둘이 서로 다른 말을 한다 */
   const state = row.harvested ? '거뒀습니다 — 다시 심으면 또 돕니다'
-              : row.ready     ? '거둘 때가 됐습니다'
-              : row.growing   ? `${row.ageDays}/${row.harvestDays}일 자람`
-              : row.placed    ? (row.idleDays ? `물을 기다립니다 (${row.idleDays}일째)` : '물을 주면 시작합니다')
+              : row.ready     ? `거둘 때가 됐습니다 · ${row.harvestDays}칸 다 참`
+              : row.growing   ? `${row.ageDays}/${row.harvestDays}칸 · ${row.daysLeft}일 남음`
+              : row.placed    ? (row.idleDays ? `물을 기다립니다 (${row.idleDays}일째) — 칸이 안 찹니다`
+                                              : `물을 주면 ${row.harvestDays}칸이 하루에 하나씩 찹니다`)
               :                 '아직 안 놓았습니다';
   const cls = row.harvested ? '' : row.ready ? ' ready' : row.needsWater ? ' thirsty' : '';
   const btn = [];
@@ -3887,7 +3972,7 @@ function siruRowHTML(row, frac) {
     ? ` · 받은 빛 ${row.dliSoFar.toFixed(2)} DLI` : '';
   return `<div class="siru${row.placed ? '' : ' bag'}${cls}" data-siru="${row.id}">`
     + `<div class="siruhead"><b>시루 ${row.ord}</b><span>${where}</span></div>`
-    + `<div class="meter"><i class="soft" style="width:${soft}%"></i><i style="width:${solid}%"></i></div>`
+    + cellsHTML(row, frac)
     + `<div class="siruline">${state}${row.quality ? ' · ' + row.quality : ''}${dli}</div>`
     + `<div class="sirubtns">${btn.join('')}</div></div>`;
 }
@@ -3916,10 +4001,11 @@ function repaintSiruGauges() {
   const frac = dayFrac();
   for (const row of rows) {
     if (!row.growing) continue;
-    const el = list.querySelector(`.siru[data-siru="${row.id}"] .meter > i.soft`);
+    /* ★ **지금 차는 칸 하나만** 다시 칠한다. 칸 개수·`.on` 은 안 건드린다 —
+       칸을 다시 그리면 하루가 안 갔는데 칸이 늘어난 것처럼 깜빡인다. */
+    const el = list.querySelector(`.siru[data-siru="${row.id}"] .cells > i > b`);
     if (!el) continue;
-    el.style.width =
-      Math.round(Math.min(1, (row.ageDays + frac) / Math.max(1, row.harvestDays)) * 100) + '%';
+    el.style.width = Math.round(Math.max(0, Math.min(1, frac)) * 100) + '%';
   }
 }
 /* ★ 한 줄 안의 버튼 — **위임으로** 받는다. 줄이 매번 새로 그려지므로 버튼마다 붙이면
@@ -4143,7 +4229,7 @@ function showFirstPlayEvents(turn) {
 
 $('next').onclick = guard(() => {
   if (!S.firstPlay.beansprout.slotId) {
-    const e = new Error('가방의 열린 시루를 먼저 방 안에 놓아 주세요');
+    const e = new Error('가방의 콩나물 시루를 먼저 방 안에 놓아 주세요');
     e.firstPlayInput = true;                 // 안내지 고장이 아니다 — 버튼을 잠그지 않는다
     throw e;
   }
