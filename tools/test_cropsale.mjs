@@ -44,8 +44,13 @@ const ok = (name) => { n++; console.log(`  ✓ ${name}`); };
    반환은 수확 결과와 그 fp. */
 function sameDayHarvest(pots, rules = RULES) {
   const fp = createFirstPlayState({ enabled: true, rules });
-  placeBeansprout(fp, 'dark-slot');
+  /* ★★ 2026-08-09 — **놓는 것이 먼저가 아니라 나중**이다(first_play §자리는 시루마다 따로다).
+     자리가 시루마다 생기면서 「안 놓인 시루는 안 자란다」가 규칙이 됐다. 손으로 만든 시루는
+     자리가 null 이라, 예전 순서(놓고 → 만들기)로는 둘째부터 물도 안 받고 자라지도 않는다.
+     ⇒ 다 만든 뒤에 한 번 놓는다. `placeBeansprout` 은 `potId` 를 안 주면 **그 자리의 시루
+       전부**를 옮기므로 넷이 한 자리에 선다 — 예전 판이 실제로 그랬던 그 모양이다. */
   for (let i = 2; i <= pots; i++) fp.beansprout.pots.push(makeCropPot('crop_01_0' + i));
+  placeBeansprout(fp, 'dark-slot');
   waterBeansprout(fp, 0, { all: true });
   for (let d = 1; d <= CYCLE; d++) advanceBeansproutDay(fp, DARK);
   const h = harvestBeansprout(fp, { day: CYCLE });

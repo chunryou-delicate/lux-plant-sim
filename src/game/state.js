@@ -16,11 +16,15 @@
 import { createFirstPlayState, placeBeansprout, placeCrop, resowBeansprout, waterBeansprout,
          beansproutWaterStatus, beansproutHarvestStatus, BEANSPROUT_ID,
          CROP_SITE_IDS, cropKindOf, cropSites, cropSiteOf,
-         cropSurplusQuote, takeCropSurplus } from './first_play.js';
+         cropSurplusQuote, takeCropSurplus,
+         /* ★ 2026-08-09 · 시루 개체화 (first_play §자리는 시루마다 따로다) */
+         ensureCropPots, syncCropLead, addCropPot, cropPotOf, adoptCropSpotToPots,
+         placedCropPots, idleCropPots, cropPotList } from './first_play.js';
 import { createTutorialState, yearDay0Of } from './tutorial.js';
 /* 체력 — 하루에 돌볼 수 있는 양. 규칙은 전부 그쪽 모듈이 갖는다(docs/stamina.md) */
 import { spend as spendStamina, canAct as canActStamina, createStaminaState } from './stamina.js';
-import { createShopState, useStock, assertStockAll, creditCropSurplus } from './shop.js';
+import { createShopState, useStock, assertStockAll, stockOf,
+         creditCropSurplus } from './shop.js';
 import { atFromSlot, isFreeSlotId, makeAt, resolvePlacement,
          inRoom, assertFurnitureAt } from './place.js';
 
@@ -317,10 +321,19 @@ export function migratePots(S, slots) {
   /* 아직 자리를 안 정한 시루(slotId 조차 없음)는 **마이그레이션 대상이 아니다** —
      빠뜨린 게 아니라 아직 안 놓은 것이라 건너뛴 사유 목록에도 넣지 않는다. */
   const fp = S.firstPlay;
-  /* ★ 2026-08-05 — 작물 자리가 **종류마다 하나**가 됐다(first_play §작물 자리). 전부 채운다 */
+  /* ★ 2026-08-05 — 작물 자리가 **종류마다 하나**가 됐다(first_play §작물 자리). 전부 채운다.
+     ★★ 2026-08-09 — 이제 자리는 **시루마다**다(first_play §자리는 시루마다 따로다).
+       그래서 시루 하나하나를 채운다. 자리 사본(site)은 `syncCropLead` 가 다시 세운다 —
+       사본을 먼저 채우면 정본과 사본에 서로 다른 좌표가 남는다. */
   if (fp && fp.enabled)
-    for (const site of cropSites(fp))
-      if (site.slotId) fill(site, CROP_SITE_IDS[site.kind || 'beansprout'] || BEANSPROUT_ID);
+    for (const site of cropSites(fp)) {
+      ensureCropPots(site);
+      /* ★ 자리에만 적혀 있고 시루는 모르는 옛 모양은 여기서 시루로 내려 준다.
+         `ensureCropPots` 는 pots 가 이미 있으면 손을 안 대므로 그 틈을 이것이 막는다. */
+      adoptCropSpotToPots(site);
+      for (const p of (site.pots || [])) if (p.slotId) fill(p, p.id);
+      syncCropLead(site);
+    }
   /* 몬스테라 쪽은 **사본**이라 값만 맞춰 둔다(정본은 위 S.pots 가 이미 채웠다) */
   if (fp && fp.enabled && fp.monstera && fp.monstera.arrived && fp.monstera.slotId)
     fill(fp.monstera, (pot0(S) && pot0(S).id) || 'monstera');
@@ -345,12 +358,21 @@ export function placedItems(S) {
   const out = [...(S.pots || [])];
   /* ★ 2026-08-05 — 작물 자리가 여럿이다. **놓인 자리는 전부** 계약에 실린다 —
      안 실으면 그 자리의 DLI 를 못 찾아 `cropDliFromReport` 가 던진다(무순이 그 경우다). */
+  /* ★★ 2026-08-09 — **시루 하나가 한 줄**이다(first_play §자리는 시루마다 따로다).
+     예전에는 자리마다 한 줄이라 시루 열두 개가 계약에 한 줄로 실렸다. 이제 시루마다
+     자리가 다르니 줄도 시루마다다 — 그래야 그 자리의 DLI 를 시루마다 찾을 수 있다.
+     ⚠ 열쇠는 **시루 id**(`crop_01_02`)다. 자리 id 하나를 나눠 쓰면 자유 좌표 열쇠가
+       `free:crop_01` 로 겹쳐 뒤엣것이 앞엣것을 덮는다(light_adapter.slotsFor 가 Map 이다).
+     ⚠ 아직 안 놓은(가방의) 시루는 안 싣는다 — 방에 없는 것은 자리를 안 차지한다. */
   if (S.firstPlay && S.firstPlay.enabled)
-    for (const b of cropSites(S.firstPlay))
-      if (b && (b.slotId || b.at))
-        out.push({ id: CROP_SITE_IDS[b.kind || 'beansprout'] || BEANSPROUT_ID,
-                   slotId: b.slotId, at: b.at || null,
-                   plantId: null, variegated: false, crop: true, crop_kind: b.kind || 'beansprout' });
+    for (const b of cropSites(S.firstPlay)) {
+      if (!b) continue;
+      for (const p of (b.pots || []))
+        if (p && (p.slotId || p.at))
+          out.push({ id: p.id, slotId: p.slotId, at: p.at || null,
+                     plantId: null, variegated: false, crop: true,
+                     crop_kind: b.kind || 'beansprout' });
+    }
   /* ★ 삽수도 자리를 차지한다 (2026-08-03) — 시루와 **같은 모양**으로 낸다.
      ⚠ `plantId: null` 인 이유는 시루와 같다: 뿌리내리는 동안 삽수는 빛과 무관하므로
        (docs/propagation.md §3) 그 자리에 몬스테라 밴드 판정을 걸 근거가 없다.
@@ -395,11 +417,85 @@ export function setCropAt(S, at, opt = {}) {
   const kindId = opt.kind || 'beansprout';
   /* ★ 놓는 날은 물을 준 날이다 (2026-08-04) — 심을 때 물을 붓는 것이 현실이고,
      그래야 "방금 놓았는데 오늘은 마른 날"이 안 생긴다. 날짜는 S 만 안다(§물주기). */
+  /* ★★ 2026-08-09 — `opt.potId` 를 주면 **그 시루 하나만** 옮긴다. 안 주면 예전 그대로
+     자리의 시루 전부가 함께 간다(first_play.placeCrop 이 그 갈림길을 갖는다). */
   const r = placeCrop(fp, kindId, at, { ...opt, day: S.day });
   const site = cropSiteOf(fp, kindId);
-  return { cropId: CROP_SITE_IDS[kindId], kind: kindId,
-           slotId: site.slotId, at: site.at,
+  const one = opt.potId ? cropPotOf(site, opt.potId) : null;
+  return { cropId: CROP_SITE_IDS[kindId], kind: kindId, potId: opt.potId || null,
+           slotId: one ? one.slotId : site.slotId, at: one ? one.at : site.at,
            snappedTo: r.snappedTo, dist: r.dist, moved: r.moved, keptDays: r.keptDays };
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   ★★★ **빈 시루 하나를 방에 세운다** (2026-08-09 · 박사님 지시)
+   ------------------------------------------------------------
+   원문: *"콩나물시루 아이템만 있어서 그걸 드래그 하면 하나씩 따로따로 설치되게 하고싶어."*
+
+   예전에는 끌어다 놓으면 `resowCrop(S, {sirus: 지금+가방전부, at})` 이 돌아
+   **가방에 있던 시루가 몽땅** 그 한 자리에 무리로 섰다. 이 함수는 **한 개만** 세운다.
+
+   ★ 어느 시루를 세우나 — 순서가 있다. 이 순서가 곧 「가방에는 빈 용기만」의 구현이다.
+     ① 이미 만들어져 있는데 아직 안 놓은 시루(처음 받은 하나가 그것이다) → 재고를 안 쓴다
+     ② 없으면 상점 재고에서 **용기 1 + 씨앗 1** 을 빼고 새 시루를 만든다
+
+   ⚠⚠ **빼기 전에 전부 묻는다.** `assertStockAll` 이 그 창구다(2026-08-09 신설).
+     순서를 어기면 용기만 빠지고 씨앗에서 던져 **산 시루가 그냥 사라진다.**
+     `tools/test_resow_atomic.mjs` 가 그 자리를 지킨다 — 금액은 그 파일이 정본이다
+     (여기 숫자를 적어 두면 값이 바뀔 때 조용히 거짓말이 된다. 실제로 한 번 그랬다).
+   ★ 씨앗값은 여기서 안 낸다 — 재고에서 뺄 뿐이다(살림은 tutorial.js 소유라는 규약 그대로).
+     opt.at / 자리 이름은 `at` 인자로 · opt 는 `setCropAt` 과 같다(size · slots · snapDist)
+   반환 { potId, kind, slotId, at, fromStock, seedsUsed, sirus, moved, keptDays } */
+export function placeSiru(S, at, opt = {}) {
+  const fp = S && S.firstPlay;
+  if (!fp || !fp.beansprout) throw new Error('[배치] 첫 플레이 상태가 없습니다 — 놓을 시루가 없습니다');
+  const kindId = opt.kind || 'beansprout';
+  const k = cropKindOf(kindId);
+  const site = cropSiteOf(fp, kindId);
+  if (!site) throw new Error(`[배치] ${k.ko} 상태가 없습니다`);
+  ensureCropPots(site);
+
+  const spare = idleCropPots(site);
+  let pot = spare[0] || null, fromStock = false, seedsUsed = 0;
+  if (!pot) {
+    /* ① **묻기만 한다.** 여기서는 한 톨도 안 뺀다 */
+    assertStockAll(S, [{ itemId: k.containerItemId, qty: 1 },
+                       { itemId: k.seedItemId, qty: 1 }]);
+    fromStock = true; seedsUsed = 1;
+    /* ② 시루 개체를 만든다. 아직 가방에 있는 빈 용기다 — 재고는 그대로다 */
+    pot = addCropPot(fp, kindId, { day: S.day });
+  }
+  /* ③ 놓는다. **여기가 던질 수 있는 유일한 자리**이고, 아직 재고를 안 뺐으므로
+     던져도 잃는 것이 없다. 만들어 둔 빈 시루만 도로 걷는다.
+     ⚠ 이 순서가 곧 `test_resow_atomic` 이 지키는 그 순서다 — 물건은 마지막에 뺀다. */
+  try {
+    placeCrop(fp, kindId, at, { ...opt, potId: pot.id, day: S.day });
+  } catch (e) {
+    if (fromStock) {
+      site.pots = (site.pots || []).filter(p => p !== pot);
+      syncCropLead(site);
+    }
+    throw e;
+  }
+  /* ④ 다 됐다. 이제 뺀다 — ①에서 물어 뒀으므로 여기서는 못 뺄 일이 없다 */
+  if (fromStock) {
+    useStock(S, k.containerItemId, 1);
+    useStock(S, k.seedItemId, 1);
+  }
+  pushLog(S, fromStock
+    ? `🥣 ${k.containerKo}를 하나 놓았습니다 — 씨앗 1봉지 (물을 줘야 시작합니다)`
+    : `🥣 ${k.containerKo}를 하나 놓았습니다 (물을 줘야 시작합니다)`);
+  return { potId: pot.id, kind: kindId, slotId: pot.slotId, at: pot.at,
+           fromStock, seedsUsed, sirus: placedCropPots(site).length,
+           spare: idleCropPots(site).length + (stockOf(S, k.containerItemId) || 0),
+           events: [{ id: 'siru_placed', ko: `${k.containerKo}를 놓았습니다`,
+                      kind: kindId, potId: pot.id }] };
+}
+
+/* ★ 시루 하나에만 물을 준다 — [물 주기] 버튼이 시루마다 붙는다(2026-08-09).
+   규칙은 아래 `waterCrop` 이 전부 갖는다. 여기는 **어느 시루인가**만 얹는다. */
+export function waterSiru(S, potId, opt = {}) {
+  return waterCrop(S, { ...opt, potIds: [potId] });
 }
 
 /* ★ 시루를 놓는 것과 **회전을 시작하는 것은 다른 동작**이다 (2026-08-04 새 규칙).
@@ -621,7 +717,10 @@ export function resowCrop(S, opt = {}) {
   const sirusAdded = Math.max(0, sirus - had);
   /* ★★ 거둔 시루만 다시 심는다 (2026-08-04 · first_play.js §다시 심는다).
      시차 판에서는 늘 일부만 거둬져 있다 — 전부를 요구하면 시차를 둔 판이 영영 못 심는다. */
-  const harvestedCount = pots.filter(p => p.harvested).length;
+  /* ★★ 2026-08-09 — `opt.potIds` 를 주면 **그 시루만** 다시 심는다(박사님 "각개 다시 심기").
+     씨앗도 그만큼만 든다 — 안 그러면 하나를 심는데 다섯 봉지가 나간다. */
+  const only = Array.isArray(opt.potIds) && opt.potIds.length ? new Set(opt.potIds) : null;
+  const harvestedCount = pots.filter(p => p.harvested && (!only || only.has(p.id))).length;
   if (!harvestedCount && !sirusAdded) {
     const e = new Error(`[${k.ko}] 아직 수확하지 않았습니다 — 거둔 뒤에 다시 심습니다`);
     e.tutorialInput = true;

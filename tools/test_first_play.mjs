@@ -203,9 +203,12 @@ function growCycle(dli) {
    3,000 → 2,000 → 1,000 → 0. 시차를 만들 이유가 이 표 하나다. */
 {
   const fp = createFirstPlayState({ rules: TEST_RULES });
-  placeBeansprout(fp, 'dark-slot');
-  /* 시루 넷을 **같은 날** 시작한다 — 넷 다 같은 날 익는다 */
+  /* 시루 넷을 **같은 날** 시작한다 — 넷 다 같은 날 익는다.
+     ★★ 2026-08-09 — **만든 뒤에 놓는다**(first_play §자리는 시루마다 따로다).
+       자리가 시루마다 생기면서 안 놓인 시루는 물도 안 받는다. `potId` 없이 놓으면
+       그 자리의 시루 전부가 함께 서므로 예전과 같은 「한 자리에 넷」이 된다. */
   for (let i = 2; i <= 4; i++) fp.beansprout.pots.push(makeCropPot('crop_01_0' + i));
+  placeBeansprout(fp, 'dark-slot');
   assert.equal(waterBeansprout(fp, 0, { all: true }).started, 4, '★[전부 주기]가 안 먹혔다');
   for (let d = 1; d <= CYCLE; d++) growDay(fp, 0.2);
 
@@ -219,8 +222,9 @@ function growCycle(dli) {
   /* ★ 시차를 두면 안 깎인다 — 같은 시루 넷을 **다른 날** 거두면 넷 다 3,000원이다.
      ★★ 이것이 박사님 그림이다: "5일 주기니까 5개까지 1일씩 안 겹치게 하면 매일 다 3,000". */
   const fp2 = createFirstPlayState({ rules: TEST_RULES });
-  placeBeansprout(fp2, 'dark-slot');
+  /* ★ 위와 같은 이유로 **만든 뒤에 놓는다** (2026-08-09 · §자리는 시루마다 따로다) */
   for (let i = 2; i <= 4; i++) fp2.beansprout.pots.push(makeCropPot('crop_01_0' + i));
+  placeBeansprout(fp2, 'dark-slot');
   const got = [];
   for (let d = 1; d <= CYCLE + 4; d++) {
     /* ★ 하루에 **한 시루씩** 시작한다 — 이게 플레이어가 [물 주기]를 하루씩 걸러 누르는 것이다.
@@ -260,8 +264,9 @@ function growCycle(dli) {
 {
   const one = growCycle(0.2).result;
   const fp = createFirstPlayState({ rules: TEST_RULES });
-  placeBeansprout(fp, 'dark-slot');
+  /* ★ 위와 같은 이유로 **만든 뒤에 놓는다** (2026-08-09 · §자리는 시루마다 따로다) */
   for (let i = 2; i <= 6; i++) fp.beansprout.pots.push(makeCropPot('crop_01_0' + i));
+  placeBeansprout(fp, 'dark-slot');
   waterBeansprout(fp, 0, { all: true });                // 여섯을 **같은 날** 시작한다
   for (let d = 1; d <= CYCLE; d++) growDay(fp, 0.2);
   const six = harvestBeansprout(fp, { day: CYCLE });

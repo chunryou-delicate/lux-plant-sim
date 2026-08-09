@@ -315,6 +315,15 @@ function cropPotsOf(b) {
   return ensureCropPots({ ...b, pots: null }).pots;
 }
 
+/* ★ 불러온 시루의 좌표를 **좌표 객체로** 되세운다 (2026-08-09 · 시루마다 자리).
+   세이브에서 온 `at` 은 그냥 JSON 이다. 화분(`S.pots`)·자리 사본이 `makeAt` 을 거치는 것과
+   같은 이유로 시루도 거쳐야 한다 — 안 거치면 좌표 불변식(방 안인가·가구 위인가)이
+   확인되지 않은 값이 상태에 그대로 앉는다. */
+function restoreCropPotAts(site) {
+  for (const p of (site && site.pots) || [])
+    if (p) p.at = p.at ? makeAt(p.at) : null;
+}
+
 /* 첫 플레이 — `rules` 는 **안 적는다.** 밸런스 정본(data/balance/characters.json)에서
    불러올 때 다시 유도한다. 세이브에 굳히면 밸런스를 고쳐도 옛 세이브만 옛 값으로 돈다. */
 /* ★★ 작물 자리 하나를 적는다 (2026-08-05 · first_play §작물 자리).
@@ -351,6 +360,17 @@ function packCropPot(p, w) {
   const o = needObj(p, w);
   return {
     id: needStr(o.id, `${w}.id`),
+    /* ★★ **시루마다의 자리** (2026-08-09 · first_play §자리는 시루마다 따로다).
+       ------------------------------------------------------------
+       ⚠ 안 적으면 저장 한 번에 시루들이 **한 자리로 뭉친다** — 불러올 때 `ensureCropPots` 가
+         자리 사본(대표 시루의 자리) 하나를 시루 전부에 베끼기 때문이다. 각개로 흩어 놓은
+         판이 통째로 되돌아간다.
+       ⚠ **옛 세이브에는 이 칸이 없다.** 그때는 둘 다 null 로 적히고, 불러오는 쪽에서
+         `ensureCropPots` 가 자리 사본을 시루마다 베껴 채운다 — 옛 판은 실제로 한 자리에
+         무리로 서 있었으므로 그것이 그때의 사실이다(지어낸 값이 아니다).
+       ★ 그래서 옛 세이브가 **각개 모양으로 열린다**: 자리는 겹쳐 있지만 하나씩 집어 옮길 수 있다. */
+    slotId: optStr(o.slotId, `${w}.slotId`),
+    at: packAt(o.at, `${w}.at`),
     startedOnDay: o.startedOnDay == null ? null
       : needInt(o.startedOnDay, `${w}.startedOnDay`, { min: 0 }),
     idleSinceDay: needInt(o.idleSinceDay ?? 0, `${w}.idleSinceDay`, { min: 0 }),
@@ -821,33 +841,40 @@ function reseat(S, room, report) {
      매일 `light_adapter.slotsFor` 가 던진다(게임이 통째로 멈춘다).
      ★ 2026-08-05 — **자리마다** 돈다. 콩나물 하나만 검사하면 무순 판이 방 밖 좌표로 남아
        같은 고장이 그대로 난다(자리가 종류마다 따로다 — first_play §작물 자리). */
+  /* ★★ 2026-08-09 — **시루 하나하나가 검사를 받는다**(first_play §자리는 시루마다 따로다).
+     자리 사본(site) 하나만 보면 대표 시루만 회수되고 나머지는 방 밖 좌표로 남아
+     `light_adapter.slotsFor` 가 매일 던진다 — 게임이 통째로 멈추는 그 고장이다. */
   const fp = S.firstPlay;
-  if (fp && fp.enabled) for (const b of cropSites(fp)) {
-    if (!b || !(b.slotId || b.at)) continue;
-    const kindId = b.kind || 'beansprout';
+  if (fp && fp.enabled) for (const site of cropSites(fp)) {
+    if (!site) continue;
+    ensureCropPots(site);
+    const kindId = site.kind || 'beansprout';
     const boxKo = cropKindOf(kindId).containerKo;
-    let why = null;
-    if (b.at) {
-      if (room.size && !inRoom(b.at, room.size)) why = '자리가 방 밖입니다';
-      else if (b.at.onUid && room.surfaces && !room.surfaces.has(b.at.onUid))
-        why = `받치던 ${b.at.onUid} 이(가) 사라졌습니다`;
-    } else if (b.slotId && !isFreeSlotId(b.slotId) &&
-               !(room.slots || []).some(s => s && s.slotId === b.slotId)) {
-      why = `슬롯 ${b.slotId} 이(가) 이 방에 없습니다`;
-    }
-    if (why) {
+    for (const p of (site.pots || [])) {
+      if (!p || !(p.slotId || p.at)) continue;
+      let why = null;
+      if (p.at) {
+        if (room.size && !inRoom(p.at, room.size)) why = '자리가 방 밖입니다';
+        else if (p.at.onUid && room.surfaces && !room.surfaces.has(p.at.onUid))
+          why = `받치던 ${p.at.onUid} 이(가) 사라졌습니다`;
+      } else if (p.slotId && !isFreeSlotId(p.slotId) &&
+                 !(room.slots || []).some(s => s && s.slotId === p.slotId)) {
+        why = `슬롯 ${p.slotId} 이(가) 이 방에 없습니다`;
+      }
+      if (!why) continue;
       const dest = (room.slots || [])[0] || null;
-      if (!b.harvested && dest) {
-        placeCrop(fp, kindId, dest.slotId, { slots: room.slots });
+      if (!p.harvested && dest) {
+        placeCrop(fp, kindId, dest.slotId, { slots: room.slots, potId: p.id });
         log(`${boxKo} 회수 — ${why} · ${dest.slotId} 로 옮겼습니다`);
       } else {
         /* 이미 수확했거나 갈 자리가 없으면 자리만 비운다 — 수확 결과는 이미 확정이라
            옮길 이유가 없고, 그대로 두면 계약이 방 밖 좌표를 실어 매일 던진다. */
-        b.at = null;
-        if (why.startsWith('슬롯')) b.slotId = null;
+        p.at = null;
+        if (why.startsWith('슬롯')) p.slotId = null;
         log(`${boxKo} 자리 해제 — ${why}`);
       }
     }
+    syncCropLead(site);
   }
 }
 
@@ -1006,6 +1033,7 @@ export function deserialize(raw, opt = {}) {
                   { at: saved.beansprout.at ? makeAt(saved.beansprout.at) : null });
     /* ★ 대표 칸(ageDays·harvested…)은 **pots 에서 다시 세운다** — 세이브에 두 정본이 있으면
        하나가 조용히 낡는다. pots 가 정본이므로 그쪽으로 맞춘다. */
+    restoreCropPotAts(fp.beansprout);
     ensureCropPots(fp.beansprout);
     syncCropLead(fp.beansprout);
     /* ★★ 2종째부터의 자리 (2026-08-05). **새 상태가 만든 자리에 덮어쓴다** —
@@ -1016,6 +1044,7 @@ export function deserialize(raw, opt = {}) {
       const site = (fp.crops || []).find(x => x.kind === s.kind);
       if (!site) continue;
       Object.assign(site, s, { at: s.at ? makeAt(s.at) : null });
+      restoreCropPotAts(site);
       syncCropLead(site);
     }
     Object.assign(fp.food, saved.food);

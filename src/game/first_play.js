@@ -390,6 +390,23 @@ export function firstPlayRulesFromBalance(balance) {
 export function makeCropPot(id, opt = {}) {
   return {
     id,                    // 'crop_01' … 표시·세이브의 안정 열쇠
+    /* ★★ **자리는 시루마다 따로다** (2026-08-09 박사님 지시 "각개 움직이고 각개 물주고").
+       ------------------------------------------------------------
+       위 §시루마다 자기 회전 이 "자리는 여전히 하나다"라고 적어 둔 그 줄이 여기서 뒤집혔다.
+       그때 든 근거 셋은 **하나씩 다 무너졌다**:
+         ① "시차는 시간의 축이지 자리의 축이 아니다" — 맞다. 그런데 자리를 쪼개도 시차는
+            그대로다(startedOnDay 는 시루마다 이미 따로다). 자리가 하나여서 얻은 것은 없었고,
+            잃은 것이 있었다: 시루 12개가 **한 덩어리로 붙어** 서서 자리 한도에 맞춰
+            통째로 찌그러졌다(multisiru §6 — 서랍장 위에서 시루 한 개가 10.4cm 가 됐다).
+         ② "조도 계약·방뷰·자유 배치가 slotId 하나를 전제한다" — 계약은 `placedItems(S)` 가
+            내는 목록이고, 목록에 시루를 **여러 줄** 싣는 것은 삽수가 이미 하고 있었다.
+            조도 엔진은 한 줄도 안 고친다. 목록이 길어질 뿐이다.
+         ③ "현실이 그렇다 — 시루 셋은 같은 선반에 나란히 둔다" — 그건 **놓는 사람의 선택**이지
+            규칙이 아니다. 나란히 두고 싶으면 나란히 놓으면 된다.
+       ⇒ `slotId` = 계약 열쇠 · `at` = 좌표 정본. 화분(S.pots[])과 **같은 두 칸**이다.
+       ⚠ 둘 다 null = **아직 안 놓았다(가방에 있다)**. 그 시루는 자라지 않고 계약에도 안 실린다. */
+    slotId: opt.slotId ?? null,
+    at: opt.at ?? null,
     /* ★★ **회전 시작일** (2026-08-04 새 규칙 · 아래 §물주기).
        물을 준 날이 곧 0일차다. null = 아직 물을 안 줘서 **시작하지 않았다.** */
     startedOnDay: opt.startedOnDay ?? null,
@@ -428,8 +445,14 @@ export function ensureCropPots(b) {
   const started = Number.isInteger(b.wateredOnDay) ? b.wateredOnDay : null;
   b.pots = [];
   for (let i = 0; i < n; i++) {
+    /* ★★ 옛 판의 시루들은 **자리 하나에 무리로** 서 있었다(§자리는 시루마다 따로다).
+       그래서 옛 자리를 시루마다 그대로 베낀다 — 지어내는 값이 아니라 **그때의 사실**이다.
+       ⚠ 좌표(`at`)도 같이 베낀다. 좌표만 빠지면 옛 판의 시루가 추천 자리로 순간이동한다.
+       ⚠ 무리가 겹쳐 서는 것은 맞다 — 옛 판이 실제로 그랬고, 옮기면 그때부터 갈라진다. */
     const p = makeCropPot(`${siteId}_${String(i + 1).padStart(2, '0')}`,
-                          { startedOnDay: started, cycle: b.cycle || 1 });
+                          { startedOnDay: started, cycle: b.cycle || 1,
+                            slotId: b.slotId ?? null,
+                            at: b.at ? { ...b.at } : null });
     /* 옛 한 칸의 진행을 그대로 옮긴다. `dliHist` 는 배열이라 시루마다 사본을 준다 */
     p.ageDays = Math.max(0, Math.round(b.ageDays || 0));
     p.dliHist = (b.dliHist || []).slice();
@@ -452,6 +475,40 @@ function potsOf(b) {
   if (!b) return [];
   if (Array.isArray(b.pots) && b.pots.length) return b.pots;
   return [];
+}
+
+/* ★ 그 시루가 방에 서 있나 — 자리(계약 열쇠)든 좌표든 하나라도 있으면 서 있는 것이다.
+   `game.html` 의 `sits()` 와 **같은 판정**이다. 두 곳이 어긋나면 화면과 규칙이 갈린다. */
+export function cropPotPlaced(p) { return !!(p && (p.slotId || p.at)); }
+/* 방에 실제로 서 있는 시루만 — 자라는 것도 · 물을 받는 것도 · 계약에 실리는 것도 이것뿐이다 */
+export function placedCropPots(b) { return potsOf(b).filter(cropPotPlaced); }
+/* ★ 아직 안 놓은 시루 — **가방에 있는 빈 용기**다 (2026-08-09).
+   ⚠ 이것과 상점 재고(`stockOf(S,'siru')`)는 **다른 물건이 아니다.** 둘 다 "가방의 빈 시루"이고,
+     이쪽은 처음에 받은 하나처럼 **이미 개체가 만들어진** 것뿐이다. 화면은 둘을 더해 센다. */
+export function idleCropPots(b) { return potsOf(b).filter(p => !cropPotPlaced(p) && !p.harvested); }
+/* id 로 시루 하나 찾기 — 없으면 null(모르는 id 를 묻는 것은 고장이 아니다) */
+export function cropPotOf(b, potId) {
+  return potsOf(b).find(p => p && p.id === potId) || null;
+}
+
+/* ★★ 자리 사본을 시루로 **내려 준다** (2026-08-09).
+   ------------------------------------------------------------
+   옛 모양(자리에만 `slotId`/`at` 이 적히고 시루는 자리를 모르는 상태)이 어느 길로 들어와도
+   정본(pots)이 비어 있지 않게 한다. `ensureCropPots` 는 pots 가 이미 있으면 손을 안 대므로
+   (두 번 불러도 안전해야 세이브·복원이 안 꼬인다) 그 틈을 이 함수가 막는다.
+   ⚠ **아무 시루도 안 놓여 있을 때만** 내려 준다. 하나라도 놓여 있으면 사본이 낡은 쪽이고,
+     그때 내려 주면 각개로 흩어 놓은 판이 한 자리로 뭉친다 — 정확히 이번에 없앤 그 증상이다. */
+export function adoptCropSpotToPots(site) {
+  if (!site) return site;
+  const pots = potsOf(site);
+  if (!pots.length) return site;
+  if (!(site.slotId || site.at)) return site;
+  if (pots.some(cropPotPlaced)) return site;
+  for (const p of pots) {
+    p.slotId = site.slotId ?? null;
+    p.at = site.at ? { ...site.at } : null;
+  }
+  return site;
 }
 
 /* ============================================================
@@ -600,11 +657,21 @@ export function syncCropLead(b) {
   const pots = potsOf(b);
   if (!pots.length) return b;
   const hd = b.harvestDays;
-  const lead = pots.slice().sort((x, y) => {
+  /* ★★ 대표는 **놓인 시루 중에서** 고른다 (2026-08-09 · §자리는 시루마다 따로다).
+     가방에 있는 빈 시루가 대표가 되면 `b.slotId` 가 null 이 되어 — 방에서 멀쩡히 자라는
+     시루가 있는데도 — 물주기·수확·하루 진행이 통째로 "자리를 먼저 정하세요"로 막힌다.
+     ⚠ 하나도 안 놓였을 때만 안 놓인 것이 대표다. 그때는 `b.slotId` 가 null 인 것이 맞다. */
+  const placed = pots.filter(cropPotPlaced);
+  const pool = placed.length ? placed : pots;
+  const lead = pool.slice().sort((x, y) => {
     const rx = potReady(x, hd) ? 1 : 0, ry = potReady(y, hd) ? 1 : 0;
     if (rx !== ry) return ry - rx;
     return (y.ageDays || 0) - (x.ageDays || 0);
   })[0];
+  /* ★ 자리도 사본으로 남긴다 — 옛 호출부(세이브·화면·빨리감기)가 `b.slotId` 로
+     "놓았나"를 묻는다. 정본은 `pots[].slotId` 다. */
+  b.slotId = lead.slotId ?? null;
+  b.at = lead.at ?? null;
   b.sirus = pots.length;
   b.ageDays = lead.ageDays;
   b.dliHist = lead.dliHist;
@@ -726,6 +793,11 @@ export function placeBeansprout(fp, target, opt = {}) {
 /* ★ 종류를 골라 놓는다 (2026-08-05). `placeBeansprout` 은 이 함수의 콩나물 전용 옛 이름이다.
    ★★ **자리는 종류마다 따로다** — 빛 요구가 정반대라 한 자리를 나눠 쓸 수 없다(§작물 자리).
      그래서 무순을 놓아도 콩나물 자리는 안 건드린다. */
+/* ★★ 2026-08-09 — `opt.potId` 를 주면 **그 시루 하나만** 움직인다 (§자리는 시루마다 따로다).
+     안 주면 예전 그대로 **자리의 시루 전부**가 함께 간다. 옛 호출부(추천 자리 드롭다운 ·
+     `resowBeansprout(opt.at)` · 옛 검사)가 그 뜻이었고, 그것을 깨면 무리째 옮기던 판이
+     시루 하나만 옮겨 놓고 나머지를 잃어버린 것처럼 보인다.
+   ⚠ 자리를 못 잡은(`at` 이 null 인) 시루도 계약 열쇠(slotId)는 갖는다 — 옛 규칙 그대로다. */
 export function placeCrop(fp, kindId, target, opt = {}) {
   const k = cropKindOf(kindId);
   const site = fp && cropSiteOf(fp, k.id);
@@ -733,20 +805,64 @@ export function placeCrop(fp, kindId, target, opt = {}) {
   if (target == null || target === '')
     throw new Error(`[첫 플레이] ${k.ko}을(를) 둘 자리를 골라 주세요`);
   ensureCropPots(site);
-  if (site.harvested)
-    throw new Error(`[첫 플레이] 이미 수확한 ${k.containerKo}는 옮길 수 없습니다`);
 
-  const spot = spotOf(target, { id: CROP_SITE_IDS[k.id], ...opt });
-  const moved = site.slotId != null && site.slotId !== spot.slotId;
-  site.slotId = spot.slotId;
-  /* 좌표를 못 세운 경우(얇은 슬롯 · 좌표 없는 헤드리스 표)는 **null 로 남긴다.** 지어내면
-     그 시루만 방 한가운데로 순간이동한다 — 그때는 예전처럼 slotId 로 돈다. */
-  site.at = spot.at;
+  /* 움직일 시루를 먼저 정한다 — **하나만인가 전부인가**가 이 함수의 유일한 갈림길이다 */
+  const one = opt.potId ? cropPotOf(site, opt.potId) : null;
+  if (opt.potId && !one)
+    throw new Error(`[첫 플레이] 모르는 ${k.containerKo}입니다: ${opt.potId}`);
+  const targets = one ? [one] : potsOf(site);
+  if (!targets.length) throw new Error(`[첫 플레이] 놓을 ${k.containerKo}가 없습니다`);
+
+  /* ★ 수확 잠금도 **시루마다**다. 예전에는 자리 사본(`site.harvested` = 하나라도 거뒀나)으로
+     막아서, 시루 셋 중 하나만 거둬도 **나머지 둘까지 못 움직였다.** */
+  for (const p of targets)
+    if (p.harvested)
+      throw new Error(`[첫 플레이] 이미 수확한 ${k.containerKo}는 옮길 수 없습니다`);
+
+  /* ★ 계약 열쇠는 **시루 id 로** 짓는다 — 자유 좌표면 `free:crop_01_02` 가 된다.
+     자리 id 하나(`crop_01`)를 쓰면 시루 둘이 같은 열쇠로 계약에 실려 뒤엣것이 앞엣것을 덮는다.
+     ⚠ 무리째 옮길 때도 시루마다 제 열쇠를 갖는다 — 같은 좌표에 겹쳐 서도 열쇠는 달라야 한다. */
+  let moved = false, keptDays = 0, spot = null;
+  for (const p of targets) {
+    spot = spotOf(target, { id: p.id, ...opt });
+    if (p.slotId != null && p.slotId !== spot.slotId) moved = true;
+    p.slotId = spot.slotId;
+    /* 좌표를 못 세운 경우(얇은 슬롯 · 좌표 없는 헤드리스 표)는 **null 로 남긴다.** 지어내면
+       그 시루만 방 한가운데로 순간이동한다 — 그때는 예전처럼 slotId 로 돈다. */
+    p.at = spot.at;
+    keptDays = Math.max(keptDays, (p.dliHist || []).length);
+  }
+  syncCropLead(site);
   /* 단계는 **콩나물이 정한다** — 첫 플레이의 안내 흐름은 콩나물 한 줄기다(§단계).
      무순은 튜토가 끝난 뒤에 들이는 것이라 안내 단계를 건드리면 흐름이 뒤로 되감긴다. */
   if (k.id === 'beansprout') fp.phase = 'grow_beansprout';
-  return { ...site, kind: k.id, moved, keptDays: (site.dliHist || []).length,
+  return { ...site, kind: k.id, potId: one ? one.id : null, moved, keptDays,
            snappedTo: spot.snappedTo, dist: spot.dist };
+}
+
+/* ★★ **빈 시루 하나를 새로 들인다** (2026-08-09 · 박사님 "하나씩 따로따로 설치").
+   ------------------------------------------------------------
+   가방에서 끌어다 놓을 때 부르는 창구다. 재고를 빼는 것은 **호출부**(state.placeSiru)가
+   한다 — 이 모듈은 지갑도 가방도 안 만진다(§다시 심는다 의 그 규약 그대로).
+     opt.at / opt.slotId  놓을 자리 (없으면 가방에 있는 채로 만들어진다)
+     opt.day              들인 날 (대기 시작일)
+   ⚠ 물은 안 준다. 놓는 것과 시작하는 것은 다른 동작이다(§물주기). */
+export function addCropPot(fp, kindId, opt = {}) {
+  const k = cropKindOf(kindId);
+  const site = fp && cropSiteOf(fp, k.id);
+  if (!site) throw new Error(`[첫 플레이] ${k.ko} 상태가 없습니다`);
+  ensureCropPots(site);
+  const day = Number.isInteger(opt.day) ? opt.day : 0;
+  /* ★ id 는 **안 겹치게** 짓는다. 개수로 세면 중간을 걷어낸 판에서 같은 id 가 두 번 난다 —
+     그 순간 세이브의 안정 열쇠가 무너진다(방뷰가 두 그루를 한 열쇠로 잡는다). */
+  const used = new Set(potsOf(site).map(p => p.id));
+  const base = CROP_SITE_IDS[k.id];
+  let n = potsOf(site).length + 1, id = '';
+  do { id = `${base}_${String(n).padStart(2, '0')}`; n++; } while (used.has(id));
+  const p = makeCropPot(id, { idleSinceDay: day });
+  site.pots.push(p);
+  syncCropLead(site);
+  return p;
 }
 
 function validDli(dli) {
@@ -815,8 +931,11 @@ export function cropDliFromReport(report, ref) {
 ============================================================ */
 
 /* 아직 시작 안 한 시루 — 놓여 있고 · 안 거뒀고 · 물을 안 줬다. 먼저 만든 순서대로 낸다. */
+/* ★ 2026-08-09 — **방에 선 것만** 센다(§자리는 시루마다 따로다). 가방의 빈 시루는
+   물을 기다리는 것이 아니라 **놓이기를** 기다리는 것이다. 섞으면 화면이
+   "물을 주세요"라고 말하는데 물 줄 시루가 방에 없는 판이 난다. */
 function idlePots(b) {
-  return potsOf(b).filter(p => !p.harvested && p.startedOnDay == null);
+  return placedCropPots(b).filter(p => !p.harvested && p.startedOnDay == null);
 }
 
 /* 물을 준다 = **회전을 시작한다**. 시작할 시루가 없으면 아무 일도 안 하고 조용히 지난다.
@@ -836,7 +955,10 @@ export function waterBeansprout(fp, day, opt = {}) {
   if (!Number.isInteger(day) || day < 0)
     throw new Error(`[물주기] 게임일이 0 이상의 정수가 아닙니다: ${day}`);
   const b = ensureCropPots(site);
-  const idle = idlePots(b);
+  /* ★★ 2026-08-09 — `opt.potIds` 를 주면 **그 시루만** 시작한다 (박사님 "각개 물주고").
+     안 주면 예전 그대로 먼저 만든 순서대로 하나(또는 `all`)를 시작한다. */
+  const only = Array.isArray(opt.potIds) && opt.potIds.length ? new Set(opt.potIds) : null;
+  const idle = only ? idlePots(b).filter(p => only.has(p.id)) : idlePots(b);
   if (!idle.length) {
     /* 줄 것이 없다. 고장이 아니라 안내다 — 던지지 않는다(두 번 눌러도 안전).
        `harvested` 는 **전부 거둬져 있나**다: 다시 심어야 물을 줄 것이 생긴다는 뜻이다. */
@@ -857,7 +979,9 @@ export function waterBeansprout(fp, day, opt = {}) {
   syncCropLead(b);
   return { watered: true, already: false, day, started: want, startedIds,
            kind: kindId, kindKo: k.ko, harvestDays: k.harvestDays,
-           waiting: idle.length - want, idleDays: 0, harvested: false };
+           /* ★ 남은 대기는 **다시 세어** 낸다 — `opt.potIds` 로 고른 판에서는
+              고른 목록의 나머지가 아니라 **자리 전체의 나머지**가 답이다 */
+           waiting: idlePots(b).length, idleDays: 0, harvested: false };
 }
 
 /* 며칠째 안 줬나 — 대기 중인 시루가 **가장 오래 기다린 날 수**다.
@@ -904,9 +1028,12 @@ function idleDaysOf(b, day) {
 /* 지금 거둘 수 있는 시루들. 먼저 시작한 순서대로 낸다 —
    ★ 순서가 곧 **겹침 순번**이다(§겹침): 먼저 심은 것이 먼저 곳간에 들어가 온전한 값을 받는다. */
 export function readyCropPots(b) {
-  if (!b || !b.slotId) return [];
+  if (!b) return [];
   const hd = b.harvestDays;
-  return potsOf(b).filter(p => potReady(p, hd))
+  /* ★ 2026-08-09 — 자리 검사가 **자리 하나**에서 **시루마다**로 내려왔다(§자리는 시루마다 따로다).
+     예전 `if (!b.slotId) return []` 을 그대로 두면 대표가 가방에 있는 판에서
+     방에서 다 자란 시루가 통째로 안 보인다. */
+  return placedCropPots(b).filter(p => potReady(p, hd))
     .sort((x, y) => (x.startedOnDay ?? 0) - (y.startedOnDay ?? 0));
 }
 
@@ -1050,6 +1177,61 @@ export function beansproutWaterStatus(fp, day) {
   };
 }
 
+/* ★★ **시루 하나하나의 상태** (2026-08-09 신설 · 박사님 "식물마다 게이지가 나와서").
+   ------------------------------------------------------------
+   화면이 시루마다 한 줄을 그리려면 시루마다의 사실이 필요하다. 예전에는 자리 하나의
+   대표값(`ageDays` 하나)뿐이라 화면이 `pots` 를 직접 뒤져야 했고, 그러면 **판정 규칙이
+   화면에도 한 벌 생긴다**(익었나 · 물이 필요한가 · 다시 심어야 하나). 여기서 한 번만 낸다.
+
+   ★ **한글 문장은 안 만든다.** 사실만 낸다 — 문장은 UI 몫이라는 이 파일의 규약 그대로다.
+   ★ 게이지(`progress01`)는 **자란 날 / 자라는 날**이다. 하루 안의 시각은 여기 없다 —
+     생장은 하루 단위이고(§advanceBeansproutDay) 시각은 그 하루를 **보여 주는** 것뿐이라
+     화면이 얹는다. 여기에 시각을 들이면 시각이 세 번째 축이 된다(§수확 ⚠ 와 같은 판단). */
+export function cropPotList(fp, day) {
+  const out = [];
+  for (const site of cropSites(fp || {})) {
+    const kindId = kindIdOfSite(site);
+    const k = cropKindOf(kindId);
+    const hd = site.harvestDays || k.harvestDays || 0;
+    let n = 0;
+    for (const p of potsOf(site)) {
+      n++;
+      const placed = cropPotPlaced(p);
+      const growing = placed && !p.harvested && p.startedOnDay != null && p.ageDays < hd;
+      const ready = potReady(p, hd);
+      out.push({
+        id: p.id, kind: kindId, kindKo: k.ko, containerKo: k.containerKo,
+        /* 사람이 부르는 이름 — "시루 2" 처럼 **그 자리 안의 순번**이다. id 는 안 보인다 */
+        ord: n,
+        slotId: p.slotId ?? null, at: p.at ?? null,
+        placed,
+        /* 가방에 있는 빈 용기인가 — 놓이지도 · 거둬지지도 않은 것 */
+        inBag: !placed && !p.harvested,
+        started: p.startedOnDay != null,
+        startedOnDay: p.startedOnDay ?? null,
+        idleSinceDay: p.idleSinceDay ?? null,
+        idleDays: (placed && !p.harvested && p.startedOnDay == null && Number.isInteger(day) &&
+                   Number.isInteger(p.idleSinceDay)) ? Math.max(0, day - p.idleSinceDay) : 0,
+        needsWater: placed && !p.harvested && p.startedOnDay == null,
+        growing, ready,
+        harvested: !!p.harvested,
+        needsResow: !!p.harvested,
+        ageDays: p.ageDays || 0,
+        harvestDays: hd,
+        daysLeft: Math.max(0, hd - (p.ageDays || 0)),
+        progress01: hd > 0 ? Math.max(0, Math.min(1, (p.ageDays || 0) / hd)) : 0,
+        cycle: p.cycle || 1,
+        quality: p.quality ?? null,
+        avgDli: p.avgDli ?? null,
+        /* 지금까지 받은 빛의 평균 — 아직 안 거둔 시루도 화면이 보여 줄 수 있게 */
+        dliSoFar: (p.dliHist || []).length
+          ? p.dliHist.reduce((a, v) => a + v, 0) / p.dliHist.length : null
+      });
+    }
+  }
+  return out;
+}
+
 /* 하루 공개 경계. 입력을 먼저 검증하고 나서만 상태를 바꾼다.
      dli   그날 그 자리의 조도 — 시루 전부가 **같은 자리**에 있으므로 한 값이다
    ★★ 2026-08-04 새 규칙 — `opt.watered` 가 사라졌다. **물을 준(=시작한) 시루만 나이를 먹는다.**
@@ -1071,6 +1253,8 @@ export function advanceBeansproutDay(fp, dli, opt = {}) {
   const perSite = (typeof dli === 'object' && dli !== null);
   if (!perSite && !validDli(dli))
     throw new Error(`[첫 플레이] 콩나물 DLI가 올바르지 않습니다: ${dli}`);
+  /* ★ 시루마다의 값 — `{ slotId: DLI }`. 없으면 자리 대표값 하나로 돈다(옛 뜻). */
+  const bySlot = (opt && typeof opt.dliBySlot === 'object' && opt.dliBySlot) || null;
 
   let grew = 0, justReady = 0, idle = 0;
   const b = ensureCropPots(fp.beansprout);
@@ -1085,13 +1269,22 @@ export function advanceBeansproutDay(fp, dli, opt = {}) {
     if (!validDli(v))
       throw new Error(`[첫 플레이] ${cropKindOf(kindId).ko} 자리의 DLI가 올바르지 않습니다: ${v}`);
     const hd = site.harvestDays;
-    for (const p of potsOf(site)) {
+    for (const p of placedCropPots(site)) {
       /* 거뒀거나 · 아직 시작 안 했거나 · 이미 다 자랐으면 오늘 아무 일도 안 난다 */
       if (p.harvested || p.startedOnDay == null || p.ageDays >= hd) continue;
+      /* ★★ 2026-08-09 — 빛은 **그 시루가 선 자리**의 값이다(§자리는 시루마다 따로다).
+         시루마다 자리가 다르니 자리마다 값이 다르다. `opt.dliBySlot` 이 그 표이고,
+         표에 없으면 자리 대표값(옛 뜻 그대로)으로 떨어진다 — 옛 호출부·옛 검사가 안 깨진다.
+         ⚠ **조도를 여기서 새로 재지 않는다.** 표는 하루치 계약(daily_light/1)이 낸 값을
+           `loop.js` 가 시루마다 뽑아 넘긴 것이다. 이 파일은 빛을 만들지 않는다. */
+      const dv = bySlot && p.slotId != null && bySlot[p.slotId] != null ? bySlot[p.slotId] : v;
+      if (!validDli(dv))
+        throw new Error(`[첫 플레이] ${cropKindOf(kindId).ko} ${p.id} 자리의 DLI가 ` +
+                        `올바르지 않습니다: ${dv}`);
       p.ageDays++;
       /* ★ 이력은 **자란 날의 빛**만 쌓는다 — 시작 안 한 시루의 하루는 그 콩나물의 하루가 아니다.
          이 한 줄이 "물이 품질(빛 축)을 못 건드린다"의 실제 구현이다. */
-      p.dliHist.push(v);
+      p.dliHist.push(dv);
       grew++;
       if (p.ageDays === hd) justReady++;
     }
@@ -1139,7 +1332,14 @@ export function harvestBeansprout(fp, opt = {}) {
   /* ★★ 2026-08-05 — **종류를 가리지 않고 익은 것을 다 거둔다.** 익은 것을 안 거둘 이유가
      없다는 것(§수확)은 작물이 늘어도 그대로다. 순서는 CROP_KINDS 순서 → 그 안에서 먼저 심은 순 —
      그 순서가 곧 겹침 순번이다. */
-  const ripeByKind = readyCropsByKind(fp);
+  /* ★★ 2026-08-09 — `opt.potIds` 를 주면 **그 시루들만** 거둔다 (박사님 "각개 수확").
+     안 주면 예전 그대로 익은 것을 **다 거둔다** — 빨리감기·자동수확이 그 뜻으로 부른다.
+     ⚠ 익지 않은 id 를 주면 조용히 빠진다(거를 뿐이지 던지지 않는다). 그러고도 남는 것이
+       없으면 아래 안내가 그대로 뜬다 — "왜 아무 일도 안 났나"를 말하는 자리는 하나면 된다. */
+  const only = Array.isArray(opt.potIds) && opt.potIds.length ? new Set(opt.potIds) : null;
+  const ripeByKind = readyCropsByKind(fp)
+    .map(g => only ? { ...g, pots: g.pots.filter(p => only.has(p.id)) } : g)
+    .filter(g => g.pots.length > 0);
   const ripe = ripeByKind.flatMap(x => x.pots);
   if (!ripe.length) {
     const growing = cropSites(fp).flatMap(s =>
@@ -1466,7 +1666,10 @@ export function resowBeansprout(fp, opt = {}) {
                     `${sirus}개는 못 놓습니다 (선반을 놓으면 늘어납니다)`);
 
   const added = Math.max(0, sirus - had);
-  const harvestedPots = potsOf(b).filter(p => p.harvested);
+  /* ★★ 2026-08-09 — `opt.potIds` 를 주면 **그 시루만** 다시 심는다 (박사님 "각개 다시 심기").
+     안 주면 예전 그대로 거둔 것을 **다 다시 심는다**. */
+  const only = Array.isArray(opt.potIds) && opt.potIds.length ? new Set(opt.potIds) : null;
+  const harvestedPots = potsOf(b).filter(p => p.harvested && (!only || only.has(p.id)));
   if (!harvestedPots.length && !added)
     throw new Error(`[${k.ko}] 아직 수확하지 않았습니다 — 수확한 뒤에 다시 심습니다`);
 
@@ -1488,10 +1691,13 @@ export function resowBeansprout(fp, opt = {}) {
     p.idleSinceDay = day;
     p.cycle = (p.cycle || 1) + 1;
   }
-  /* 시루를 더 샀으면 **빈 시루로** 붙는다 — 새 칸도 물을 줘야 시작한다 */
-  for (let i = 0; i < added; i++)
-    b.pots.push(makeCropPot(`${CROP_SITE_IDS[k.id]}_${String(had + i + 1).padStart(2, '0')}`,
-                            { idleSinceDay: day }));
+  /* 시루를 더 샀으면 **빈 시루로** 붙는다 — 새 칸도 물을 줘야 시작한다.
+     ★★ 2026-08-09 — 새 시루는 **가방에 있는 채로** 붙는다(자리가 null 이다). 예전에는
+       자리 사본 하나를 무리 전체가 나눠 써서 사자마자 방에 서 있었는데, 이제 자리는
+       시루마다이므로 「어디에 세울지」를 사람이 정해야 한다(§자리는 시루마다 따로다).
+       ⚠ `opt.at` 을 같이 주면 아래 `placeCrop` 이 **자리의 시루 전부**를 그리로 옮긴다 —
+         옛 호출부(무리째 놓기)가 그 뜻이었고 그대로 둔다. */
+  for (let i = 0; i < added; i++) addCropPot(fp, k.id, { day });
   /* 시루를 줄였으면 **거둔 것부터** 뺀다 — 자라는 중인 회전을 버리지 않는다 */
   if (sirus < had) {
     const keep = [...potsOf(b)].sort((x, y) => (y.ageDays || 0) - (x.ageDays || 0)).slice(0, sirus);

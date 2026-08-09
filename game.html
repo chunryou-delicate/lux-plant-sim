@@ -922,6 +922,40 @@
   .meter>i{display:block;height:100%;width:0;background:linear-gradient(90deg,#8fd36f,#d5ef8b);
     transition:width .35s}
   .itemline{font-size:10.5px;color:rgba(255,255,255,.55);min-height:26px;line-height:1.3}
+
+  /* ══ 시루 한 줄 (2026-08-09 · 박사님 "식물마다 게이지") ══════════════════
+     ★ 한 줄이 시루 하나다. 줄마다 게이지와 **그 시루에만 듣는 버튼**이 붙는다.
+     ⚠ 버튼은 `--tap`(44px)을 지킨다 — 시루가 늘면 줄이 늘고, 줄이 좁아지면
+       폰에서 못 누른다. 줄 수를 줄이려고 버튼을 작게 만들지 않는다.
+     ⚠ **`transform` 으로 자리를 잡지 않는다.** 전역 `#sheet .itemcard:active` 가
+       transform 을 갈아 끼우기 때문에 누르는 순간 튀어나간다(2026-08-08 에 며칠 태운 그것). */
+  .siru{padding:8px 9px;margin:0 0 7px;border-radius:12px;
+    background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.10)}
+  .siru:last-child{margin-bottom:0}
+  .siru.ready{border-color:rgba(255,200,110,.45);background:rgba(255,200,110,.09)}
+  .siru.thirsty{border-color:rgba(143,216,234,.42);background:rgba(143,216,234,.08)}
+  .siru.bag{opacity:.72;border-style:dashed}
+  .siruhead{display:flex;align-items:baseline;gap:6px;justify-content:space-between}
+  .siruhead b{font-size:12.5px;font-weight:700}
+  .siruhead span{font-size:10.5px;color:rgba(255,255,255,.5)}
+  /* 게이지 — `.meter` 와 같은 옷이되 하루 안의 흐름까지 그린다(§게이지). */
+  .siru .meter{margin:6px 0 5px}
+  /* ★ 하루 안에서 차 오르는 몫은 **연하게** 덧댄다. 확정된 날(진한 것)과 아직 흐르는
+     중인 것(연한 것)이 눈으로 갈려야 "하루 넘기면 뭉텅이로 찬다"가 읽힌다. */
+  .siru .meter>i.soft{background:linear-gradient(90deg,rgba(143,211,111,.42),rgba(213,239,139,.42))}
+  .siru .meter{position:relative}
+  .siru .meter>i{position:absolute;left:0;top:0}
+  .siruline{font-size:10.5px;color:rgba(255,255,255,.55);line-height:1.35}
+  .sirubtns{display:flex;gap:6px;margin-top:7px}
+  .sirubtns:empty{display:none}
+  .sirubtns button{flex:1;min-height:var(--tap);border-radius:11px;border:0;
+    font-weight:700;font-size:12.5px;box-shadow:0 3px 0 rgba(0,0,0,.25)}
+  .sirubtns button.water{background:linear-gradient(180deg,#8fd8ea,#5fb9d4);color:#0d2a33}
+  .sirubtns button.harvest{background:linear-gradient(180deg,#ffd98f,#f0b45c);color:#3a2708}
+  .sirubtns button.sow{background:linear-gradient(180deg,#a8e6a3,#78c97a);color:#12331a}
+  .sirubtns button.ghost{background:rgba(255,255,255,.08);color:rgba(255,255,255,.72);
+    box-shadow:none;font-weight:600}
+  #siruCount{font-weight:700;font-size:11.5px;color:var(--dim);letter-spacing:0}
   .place{display:flex;gap:5px;margin-top:7px}.place select{font-size:10px}.place button{padding:6px 8px;font-size:11px}
   .primary{width:100%;margin-top:9px;background-image:url(./assets/ui/button_plate_sage.png);color:#1d381c}
   .simresult{display:none;margin-top:8px;padding:8px 10px;border-radius:10px;font-size:11px;line-height:1.45;
@@ -1147,12 +1181,19 @@
         <div class="sub">어두운 자리도, 밝은 자리도 쓸모가 있습니다.</div>
         <div class="inventory" id="plantsHold">
         <!-- data-ord — [가방]↔[식물] 을 오갈 때 자리를 지킨다(holdCard) -->
+        <!-- ★★ 2026-08-09 — 이 카드는 이제 **가방의 빈 시루**다 (박사님: "가방에 열린 콩나물
+             시루가 있으면 안 되지. 콩나물시루 아이템만 있어서").
+             ------------------------------------------------------------
+             예전에는 이 카드 하나가 「가방의 시루」와 「방에서 자라는 콩나물」을 겸했다.
+             그래서 가방에 「1/5일 자람」이 진행바와 함께 떠 있었다 — 방에서 자라는 것이
+             가방에 있는 그림이다. 자라는 것은 아래 `#siruList` 가 시루마다 한 줄로 그린다.
+             ⚠ `#cropMeter` 를 없앴다. 빈 용기에는 진행이 없다 — 0%로 두면 "안 자란다"로 읽힌다. -->
         <div class="itemcard" id="cropCard" data-ord="1">
-          <div class="itemhead"><img class="thumb" id="cropThumb" alt="열린 콩나물 시루">
-            <div><b>열린 콩나물 시루</b><small id="cropState">가방에 있음</small></div></div>
-          <div class="meter"><i id="cropMeter"></i></div><div class="itemline" id="cropInfo">4일 뒤 첫 수확</div>
-          <div class="dragcue">이 그림을 <b>끌어서</b> 방 안에 놓으세요</div>
-          <div class="place"><label for="cropSlot" class="sr-only">콩나물 자리</label><select id="cropSlot"></select><button id="placeCrop">두기</button></div>
+          <div class="itemhead"><img class="thumb" id="cropThumb" alt="콩나물 시루">
+            <div><b>콩나물 시루</b><small id="cropState">가방에 있음</small></div></div>
+          <div class="itemline" id="cropInfo">4일 뒤 첫 수확</div>
+          <div class="dragcue">이 그림을 <b>끌어서</b> 방 안에 놓으세요 — <b>한 번에 하나씩</b> 섭니다</div>
+          <div class="place"><label for="cropSlot" class="sr-only">콩나물 자리</label><select id="cropSlot"></select><button id="placeCrop">하나 두기</button></div>
         </div>
         <!-- ★ 2종째 작물 — 몬스테라가 온 뒤에만 보인다(drawMusun). 콩나물 칸과 **같은 골격**이다:
              둘이 다르게 생기면 "같은 일"인 것이 화면에서 안 보인다. -->
@@ -1171,6 +1212,17 @@
         </div>
         </div><!-- /plantsHold -->
       </div><!-- /plantsBox -->
+
+      <!-- ══ ★★ 시루 하나하나 (2026-08-09 · 박사님 "각개 움직이고 각개 물주고") ═══════
+           원문: *"콩나물시루 하나하나가 각개 움직이고 각개 물주고 햇으면 좋겠어.
+                  그리고 식물마다 게이지가 나와서 자라는게 표현되면 좋겠어."*
+           ★ 한 줄이 시루 하나다. 자리·게이지·그 시루에만 듣는 버튼이 한 줄 안에 있다.
+           ★ 비어 있으면 상자째 숨는다 — 빈 상자는 "고장났나"로 읽힌다. -->
+      <div class="box" id="siruBox" style="display:none">
+        <h3>콩나물 시루 <span id="siruCount"></span></h3>
+        <div class="sub">시루마다 따로 놓고 · 따로 물을 주고 · 따로 거둡니다.</div>
+        <div id="siruList"></div>
+      </div>
 
       <!-- ══ 삽수(꺾꽂이) — 꾸준수입의 길 ══════════════════
            박사님 원문: "병에 수생으로 해서 하면 좀 빨리 자라되 다음 줄기 혹이 나면
@@ -1500,6 +1552,8 @@
 import { newState, SIM_MODES, pot0, pushLog, givePlant, hasPlant, ARRIVAL,
          setPotAt, setPotSlot, setCropAt, setFurniturePlacement, furnitureOverrides,
          resowCrop, waterCrop, cropWaterStatus, cropHarvestStatus,
+         /* ★ 2026-08-09 · 시루 각개 — 하나 놓기 · 하나에만 물주기 (state.js §placeSiru) */
+         placeSiru, waterSiru,
          waterPot, potWaterStatus,
          cropSurplusStatus, sellCropSurplus, reseatAllOnSlots } from './src/game/state.js';
 import { catalogList, orderItem, shopStatus, priceOf, sellPot, sellCutting,
@@ -1527,7 +1581,12 @@ import {
   cropSiteOf,
   cropKindOf,
   CROP_SITE_IDS,
-  BEANSPROUT_ID
+  BEANSPROUT_ID,
+  /* ★ 2026-08-09 · 시루 각개 — 시루 하나하나의 사실(first_play §cropPotList).
+     ⚠ 화면이 `pots` 를 직접 뒤지지 않는다. 뒤지면 「익었나·물이 필요한가」 판정이
+       화면에도 한 벌 생기고, 두 벌은 반드시 어긋난다. */
+  cropPotList,
+  cropPotPlaced
 } from './src/game/first_play.js';
 import { createLightEngine } from './src/game/light_adapter.js';
 import { createGrowthAdapter } from './src/game/growth_adapter.js';
@@ -1738,33 +1797,29 @@ function fillCropSlots() {
   $('cropSlot').innerHTML = list.map(s =>
     `<option value="${s.slotId}">${slotLabel(s.slotId)}</option>`).join('');
   if (S.firstPlay.beansprout.slotId) $('cropSlot').value = S.firstPlay.beansprout.slotId;
-  /* ★ 수확 전이면 언제든 옮길 수 있다 (2026-08-02 정정).
-     예전엔 하루라도 자라면 잠가서, 그 자리의 조도 계약이 깨지면 고칠 방법이 없었다. */
-  const locked = S.firstPlay.beansprout.harvested;
-  $('cropSlot').disabled = locked;
-  $('placeCrop').disabled = locked || !list.length;
+  /* ★★ 2026-08-09 — 이 드롭다운은 이제 **가방의 빈 시루 하나를 세우는** 창구다.
+     예전에는 「그 자리로 옮기기」였는데, 옮기는 것은 시루를 골라서 하는 일이 됐다(§siruPick).
+     ⇒ 잠그는 기준도 「거뒀나」가 아니라 **「세울 시루가 있나」**다. */
+  const canPlace = spareSiru() > 0;
+  $('cropSlot').disabled = !canPlace;
+  $('placeCrop').disabled = !canPlace || !list.length;
   /* ★★ 목록이 비면 **왜 비었는지 말한다** (2026-08-05 · multisiru).
      시루가 늘면 무리 지름이 커져서(12개면 0.97m) 반지하 가구 어디에도 안 들어간다.
      판정은 맞지만 빈 드롭다운만 두면 고장으로 읽힌다 — 무순에서 이미 겪은 구멍이다.
      ★ 그리고 여기서 **바닥을 알린다.** 바닥은 드래그로 실제로 놓이는데(surfaceAt 이 y=0 을 잡는다)
        추천 목록에는 가구 위 자리만 나와서 「못 놓는 줄」 안다 — 박사님이 짚으신 그것이다.
        반지하 바닥은 20 m² 이고 어두워서(DLI 0.00~0.26) **콩나물에는 최상 자리**다. */
-  const n = cropCount('beansprout');
+  /* ★★ 2026-08-09 — 「무리가 커서 안 올라간다」는 말이 없어졌다. 시루는 이제 각자 서므로
+     지름은 늘 한 개짜리(0.24m)다 — 열두 개를 놓아도 자리 하나가 받는 것은 한 개뿐이다.
+     ⇒ 그래서 「12개면 0.97m 라 가구 위엔 안 올라갑니다」가 통째로 사라졌다. 그것이
+       multisiru §9 ㉰ 이 남겨 둔 판단(자리를 여러 개로 쪼갠다)의 결과다. */
   const hint = $('cropInfo');
-  if (hint && !list.length) {
-    hint.textContent = n > 1
-      ? `시루 ${n}개가 한데 서면 ${potDOf('beansprout').toFixed(2)}m — 가구 위엔 안 올라갑니다. ` +
-        `그림을 끌어 바닥에 놓아 보세요 — 어두워서 콩나물엔 제일 좋습니다`
-      : '올라갈 자리가 없습니다 — 그림을 끌어 바닥에 놓아 보세요';
-  }
-  /* ★★ 산 시루가 가방에 남아 있으면 **무엇을 해야 하는지 여기서 말한다** (2026-08-08).
-     예전에는 [심기] 버튼이 알아서 심어 버려 말할 것이 없었다. 이제 사람이 놓아야 하므로
-     안 적으면 「샀는데 아무 데도 없다」가 된다 — 2026-08-06 에 고쳤던 그 증상이 되돌아온다.
-     ⚠ 위 두 줄보다 **뒤에** 쓴다. 자리가 없다는 말보다 이쪽이 지금 할 일이다. */
   const spare = spareSiru();
+  if (hint && !list.length)
+    hint.textContent = '올라갈 자리가 없습니다 — 그림을 끌어 바닥에 놓아 보세요';
   if (hint && spare > 0)
-    hint.textContent = `산 시루 ${spare}개가 가방에 있습니다 — 이 그림을 끌어 놓으면 ` +
-                       `${n + spare}개가 함께 섭니다`;
+    hint.textContent = `가방에 빈 시루 ${spare}개 — 끌어다 놓으면 **하나**가 섭니다`
+      .replace(/\*\*/g, '') + (spare > 1 ? ` (나머지 ${spare - 1}개는 가방에 남습니다)` : '');
 }
 
 /* ══ 무순 — 2종째 작물 (2026-08-05) ══════════════════════════════════════
@@ -2677,7 +2732,11 @@ function drawBag() {
      (끄는 것은 `#cropThumb` 이고 카드는 노드째 옮겨 다닌다 — §holdCard).
      ⚠ 가방 격자에도 「열린 시루 ×N」이 이미 뜬다. 그건 세는 칸이지 끄는 칸이 아니다 —
        둘이 같은 말을 하는 게 아니라 **세는 것과 잡는 것**이 다른 일이다. */
-  holdCard($('cropThumb').closest('.itemcard'), !!(b && (b.slotId || b.at)) && !spareSiru());
+  /* ★★ 2026-08-09 — 이 카드는 **늘 가방에 있다**. 카드가 곧 「가방의 빈 시루」이기 때문이다
+     (박사님: "가방에 열린 콩나물 시루가 있으면 안 되지. 콩나물시루 아이템만 있어서").
+     방에서 자라는 시루는 [식물]의 `#siruBox` 가 시루마다 한 줄로 그린다 — 그래서
+     카드가 두 탭을 오갈 이유가 없어졌다. 빈 시루가 없으면 카드째 숨는다(drawJourney). */
+  holdCard($('cropThumb').closest('.itemcard'), false);
   const ms = musunSite();
   holdCard($('musunCard'), !!(ms && (ms.slotId || ms.at)));
   holdCard($('plantCard'), true);              // 몬스테라는 늘 방에 온다(가방을 거치지 않는다)
@@ -3062,7 +3121,10 @@ function drawHarvest() {
   b.style.display = show ? '' : 'none';
   /* ⚠ 익은 것만 센다 — sirus 는 가진 시루 전부라 안 익은 것까지 세어 버린다 */
   const n = (st && st.readyCount) || 0;
-  if (show) b.textContent = n > 1 ? `🥣 콩나물 거두기 (${n}개)` : '🥣 콩나물 거두기';
+  /* ★ 2026-08-09 — 이 버튼은 **익은 것을 한꺼번에** 거둔다. 시루 하나만 거두려면
+     방의 말풍선이나 [식물]의 줄에서 한다(§cropMarks). 글자로 그 차이를 적어 둔다 —
+     같은 옷을 입은 두 동작이 말없이 다른 일을 하면 그게 「뭉태기」로 읽힌다. */
+  if (show) b.textContent = n > 1 ? `🥣 익은 콩나물 모두 거두기 (${n}개)` : '🥣 콩나물 거두기';
 }
 
 /* 다시 심어야 하나 — 거둔 시루가 있고 씨앗이 있을 때만 뜬다.
@@ -3170,8 +3232,11 @@ function drawWater() {
      `reallyWater` 가 고르는 것과 **같은 규칙**으로 고른다(첫 번째로 기다리는 종류). */
   const next = (st.byKind || []).find(k => k.needsWater);
   const ko = next ? next.kindKo : '콩나물';
+  /* ★★ 2026-08-09 — 「(N개 대기)」가 **한꺼번에 준다**는 뜻으로 읽혔다(박사님이 짚으신
+     「물 주기 3개」가 그것이다). 실은 예전에도 한 번에 하나였다 — 글자가 거짓말이었다.
+     ⇒ **하나씩**이라고 적는다. 시루를 골라 주고 싶으면 방의 말풍선이나 [식물]의 줄에서 한다. */
   b.textContent = st.needsWater
-    ? (wait > 1 ? `💧 ${ko}에 물 주기 (${wait}개 대기)`
+    ? (wait > 1 ? `💧 ${ko} 한 시루에 물 주기 (${wait}개 대기)`
        : st.idleDays > 0 ? `💧 ${ko}에 물 주기 (${st.idleDays}일째 대기)`
        : `💧 ${ko}에 물 주기`)
     : '💧 전부 자라는 중';
@@ -3334,44 +3399,50 @@ function cutMarks(urgent) {
   return out;
 }
 
+/* ★★★ 2026-08-09 — **말풍선도 시루마다다** (박사님 "각개 물주고").
+   ------------------------------------------------------------
+   예전에는 자리 하나에 말풍선 하나였고 글자가 「💧 물 주기 3개」였다. 그게 박사님이
+   보신 「뭉태기」의 마지막 조각이다 — 한 번 누르면 셋에 한꺼번에 갔다.
+   ⇒ 이제 시루마다 그 시루의 열쇠로 말풍선이 뜨고, 눌리는 것도 그 시루 하나다.
+   ★ 우선순위는 그대로다: ①거두기 → ②심기 → ③물주기. 다만 **시루마다** 정한다 —
+     한 시루가 익었다고 다른 시루의 물 말풍선을 감출 이유가 없다(그 둘은 다른 물건이다).
+   ⚠ 소음이 걱정되면 그건 시루 수의 문제다. 화면이 말을 줄이는 것보다
+     "다섯 개를 놓으면 다섯 개를 챙긴다"가 정직하다 — 그게 이 게임의 노동이다. */
 function cropMarks() {
   const out = [];
   const fp = S.firstPlay;
   if (!fp || !fp.enabled) return out;
-  const b = fp.beansprout;
-  if (!b || !(b.at || b.slotId)) return out;
-  const key = b.slotId || `free:${BEANSPROUT_ID}`;
-
-  /* ① 거둘 때가 됐다 — 수확이 손 동작이 된 뒤에만 뜬다(그 전에는 자동이라 뜰 일이 없다) */
-  let hv = null;
-  try { hv = typeof cropHarvestStatus === 'function' ? cropHarvestStatus(S) : null; } catch { }
-  if (hv && hv.canHarvest) {
-    out.push({ key, ko: hv.readyCount > 1 ? `🥣 거두기 ${hv.readyCount}개` : '🥣 거두기', tone: 'crop',
-               go: () => { const el = $('harvestCrop'); if (el) el.click(); } });
-    return out;                       /* 거둘 게 있으면 그것부터다. 여럿을 띄우면 소음이다 */
+  let rows = [];
+  try { rows = cropPotList(fp, S.day).filter(r => r.kind === 'beansprout' && r.placed); } catch { }
+  let seeds = 0;
+  try { seeds = (shopStatus(S).stock || {}).bean_seed || 0; } catch { }
+  for (const row of rows) {
+    const key = row.slotId || (row.at ? `free:${row.id}` : null);
+    if (!key) continue;                 // 방이 모르는 이름으로는 말풍선을 못 띄운다(§cropKey)
+    if (row.ready) {
+      out.push({ key, ko: '🥣 거두기', tone: 'crop', go: () => siruAct(row.id, 'harvest') });
+      continue;
+    }
+    if (row.harvested) {
+      if (seeds > 0)
+        out.push({ key, ko: '🌱 씨앗 심기', tone: 'crop', go: () => siruAct(row.id, 'sow') });
+      else
+        out.push({ key, ko: '🌱 씨앗이 없습니다', tone: 'warn',
+                   /* 씨앗이 없으면 갈 곳은 [상점]이다 — 주문 목록이 거기 있다 */
+                   go: () => { window.__byeotSheet.open(); window.__byeotSheet.tab && window.__byeotSheet.tab('shop'); } });
+      continue;
+    }
+    if (row.needsWater)
+      out.push({ key, ko: '💧 물 주기', tone: '', go: () => siruAct(row.id, 'water') });
   }
-
-  /* ② 다 거둔 빈 시루 — 씨앗을 심어야 한다 */
-  if (b.harvested) {
-    let seeds = 0;
-    try { seeds = (shopStatus(S).stock || {}).bean_seed || 0; } catch { }
-    if (seeds > 0)
-      out.push({ key, ko: '🌱 씨앗 심기', tone: 'crop',
-                 go: () => { const el = $('resow'); if (el && !el.disabled) el.click(); } });
-    else
-      out.push({ key, ko: '🌱 씨앗이 없습니다', tone: 'warn',
-                 /* 씨앗이 없으면 갈 곳은 [상점]이다 — 예전엔 [방]으로 보냈는데
-                    주문 목록이 거기 있어서였다. 목록이 옮겨졌으니 손도 따라간다 */
-                 go: () => { window.__byeotSheet.open(); window.__byeotSheet.tab && window.__byeotSheet.tab('shop'); } });
-    return out;
-  }
-
-  /* ③ 물을 줘야 한다 */
-  let w = null; try { w = cropWaterStatus(S); } catch { }
-  if (w && w.needsWater)
-    out.push({ key, ko: (w.waiting || 0) > 1 ? `💧 물 주기 ${w.waiting}개` : '💧 물 주기', tone: '',
-               go: () => $('waterCrop').click() });
   return out;
+}
+/* 말풍선이 부르는 손 — 시트의 줄 버튼과 **같은 함수**를 탄다(두 곳이 갈리면 한쪽만 고쳐진다) */
+function siruAct(id, act) {
+  const key = siruKey(id);
+  if (act === 'water')   return doAct('water',   () => siruWater(id),   { key });
+  if (act === 'harvest') return doAct('harvest', () => siruHarvest(id), { key });
+  if (act === 'sow')     return doAct('sow',     () => siruSow(id),     { key });
 }
 function placeMarks() {
   const box = $('marks');
@@ -3520,12 +3591,19 @@ function drawJourney() {
     if (fill) fill.style.width = `${Math.max(0, Math.min(100, sv.left / Math.max(1, sv.max) * 100))}%`;
   }
   drawTutorial(living);
-  $('cropMeter').style.width = `${Math.min(100, crop.ageDays / crop.harvestDays * 100)}%`;
-  $('cropState').textContent = crop.harvested ? `${crop.meals}끼 수확 완료`
-    : crop.slotId ? `${crop.ageDays}/${crop.harvestDays}일 자람` : '가방에 있음';
-  $('cropInfo').textContent = crop.harvested
-    ? `${crop.meals}끼 수확 · 곳간에 ${Math.round(food.pantryWon || 0).toLocaleString()}원 남음`
-    : crop.slotId ? `자리 ${slotLabel(crop.slotId)}` : `${crop.harvestDays || fp.rules.harvestDays}일 뒤 첫 수확`;
+  /* ★★ 2026-08-09 — 이 카드는 **가방의 빈 시루**만 말한다 (박사님: "가방에 열린 콩나물
+     시루가 있으면 안 되지"). 자라는 것은 아래 `drawSirus()` 가 시루마다 한 줄로 그린다.
+     ⚠ 예전 `#cropMeter` 는 없앴다 — 빈 용기에는 진행이 없다. */
+  {
+    const spare = spareSiru();
+    const card = $('cropThumb').closest('.itemcard');
+    /* 세울 시루가 하나도 없으면 카드째 숨는다 — 못 끄는 손잡이는 고장으로 읽힌다 */
+    if (card) card.style.display = spare > 0 ? '' : 'none';
+    $('cropState').textContent = spare > 0 ? `가방에 ${spare}개` : '가방에 없음';
+    $('cropInfo').textContent = spare > 0
+      ? '끌어다 놓으면 **하나**가 섭니다 — 나머지는 가방에 남습니다'.replace(/\*\*/g, '')
+      : '상점에서 시루를 주문하면 여기 담깁니다';
+  }
   /* 표시만 바꾼다 — 몬스테라 슬롯은 도착 전까지 빛이 죽어 있다 */
   $('plantCard').classList.toggle('locked', !plant.arrived);
 
@@ -3640,6 +3718,137 @@ function storyStarted() {
 addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') saveNow(); });
 addEventListener('pagehide', saveNow);
 
+/* ══════════════════════════════════════════════════════════════════════════
+   ★★★ 시루 하나하나 (2026-08-09 · 박사님 "각개 물주고 · 식물마다 게이지")
+   ------------------------------------------------------------
+   원문: *"콩나물시루 하나하나가 각개 움직이고 각개 물주고 햇으면 좋겠어. 그리고 식물마다
+          게이지가 나와서 자라는게 표현되면 좋겠어. 시간에 따라서 게이지가 차고,
+          하루 넘기면 뭉태기로 차있고"*
+
+   ★★ §게이지 — **생장 규칙은 한 톨도 안 바뀌었다.**
+     자라는 것은 여전히 하루 단위다(`advanceBeansproutDay` 가 하루에 `ageDays++`).
+     게이지가 하루 안에서 차 오르는 것은 **그 하루가 흐르고 있다는 표시**일 뿐이고,
+     `dliHist`·품질·수확 판정 어디에도 안 들어간다. 시각을 생장에 끌어들이면
+     빛(자리)·물(시작)에 이어 **세 번째 축**이 생겨 "왜 자랐는지"가 흐려진다.
+   ⇒ 그래서 확정된 몫(진한 것)과 흐르는 몫(연한 것)을 **색으로 가른다.**
+     [다음 날]을 누르면 연한 몫이 진한 몫으로 바뀌며 하루치가 뭉텅이로 찬다.
+
+   ★ 시각은 어디서 오나 — 방의 해가 도는 속도와 **같은 자**를 쓴다
+     (한 바퀴 `DAY_SWEEP_MS × IDLE_SWEEP_MULT` = 144초 · §idleClockStart).
+     새 시계를 만들면 화면의 해와 게이지가 서로 다른 시각을 말한다.
+   ⚠ 1 에 안 닿게 0.995 에서 멈춘다 — 꽉 찬 게이지는 "다 됐다"는 뜻인데
+     하루가 넘어가지도 않았는데 그렇게 보이면 거짓말이다.
+   ══════════════════════════════════════════════════════════════════════════ */
+let dayStartedAt = performance.now();
+let dayStartedOn = null;
+function dayFrac() {
+  if (dayStartedOn !== S.day) { dayStartedOn = S.day; dayStartedAt = performance.now(); }
+  const span = DAY_SWEEP_MS * IDLE_SWEEP_MULT;
+  return Math.max(0, Math.min(0.995, (performance.now() - dayStartedAt) / span));
+}
+/* 시루 한 줄의 HTML. **판정은 하나도 안 만든다** — `cropPotList` 가 낸 사실만 옷을 입힌다 */
+function siruRowHTML(row, frac) {
+  const solid = Math.round(row.progress01 * 100);
+  /* 흐르는 몫은 **자라는 중인 시루에만** 붙는다. 물을 안 준 시루는 오늘이 가도 그대로다 */
+  const soft = row.growing
+    ? Math.round(Math.min(1, (row.ageDays + frac) / Math.max(1, row.harvestDays)) * 100)
+    : solid;
+  const where = row.placed
+    ? (row.slotId && !isFreeSlotId(row.slotId) ? slotLabel(row.slotId) : '방 안')
+    : '가방';
+  const state = row.harvested ? '거뒀습니다 — 다시 심으면 또 돕니다'
+              : row.ready     ? '거둘 때가 됐습니다'
+              : row.growing   ? `${row.ageDays}/${row.harvestDays}일 자람`
+              : row.placed    ? (row.idleDays ? `물을 기다립니다 (${row.idleDays}일째)` : '물을 주면 시작합니다')
+              :                 '아직 안 놓았습니다';
+  const cls = row.harvested ? '' : row.ready ? ' ready' : row.needsWater ? ' thirsty' : '';
+  const btn = [];
+  if (row.needsWater) btn.push(`<button class="water" data-siru="${row.id}" data-act="water">💧 물 주기</button>`);
+  if (row.ready)      btn.push(`<button class="harvest" data-siru="${row.id}" data-act="harvest">🥣 거두기</button>`);
+  if (row.harvested)  btn.push(`<button class="sow" data-siru="${row.id}" data-act="sow">🌱 다시 심기</button>`);
+  if (row.placed)     btn.push(`<button class="ghost" data-siru="${row.id}" data-act="pick">📍 자리</button>`);
+  const dli = row.dliSoFar != null && showDli()
+    ? ` · 받은 빛 ${row.dliSoFar.toFixed(2)} DLI` : '';
+  return `<div class="siru${row.placed ? '' : ' bag'}${cls}" data-siru="${row.id}">`
+    + `<div class="siruhead"><b>시루 ${row.ord}</b><span>${where}</span></div>`
+    + `<div class="meter"><i class="soft" style="width:${soft}%"></i><i style="width:${solid}%"></i></div>`
+    + `<div class="siruline">${state}${row.quality ? ' · ' + row.quality : ''}${dli}</div>`
+    + `<div class="sirubtns">${btn.join('')}</div></div>`;
+}
+function drawSirus() {
+  const box = $('siruBox'), list = $('siruList');
+  if (!box || !list) return;
+  let rows = [];
+  try { rows = cropPotList(S.firstPlay, S.day).filter(r => r.kind === 'beansprout'); } catch { }
+  /* ★ 가방에 있는 빈 시루는 **여기 안 그린다.** 그건 [가방]의 카드가 맡는다 —
+     둘 다 그리면 같은 물건이 화면 두 곳에 있는 것으로 보인다(박사님이 짚으신 그 증상). */
+  rows = rows.filter(r => r.placed);
+  box.style.display = rows.length ? '' : 'none';
+  if (!rows.length) { list.innerHTML = ''; return; }
+  $('siruCount').textContent = `· ${rows.length}개`;
+  const frac = dayFrac();
+  list.innerHTML = rows.map(r => siruRowHTML(r, frac)).join('');
+}
+/* 게이지의 흐르는 몫만 다시 칠한다 — 상자를 통째로 다시 그리면 누르던 버튼이 사라진다
+   (누르는 순간 노드가 갈리면 클릭이 죽는다. 이 저장소가 말풍선에서 이미 겪었다). */
+function repaintSiruGauges() {
+  const list = $('siruList');
+  if (!list || !list.children.length) return;
+  let rows = [];
+  try { rows = cropPotList(S.firstPlay, S.day).filter(r => r.kind === 'beansprout' && r.placed); }
+  catch { return; }
+  const frac = dayFrac();
+  for (const row of rows) {
+    if (!row.growing) continue;
+    const el = list.querySelector(`.siru[data-siru="${row.id}"] .meter > i.soft`);
+    if (!el) continue;
+    el.style.width =
+      Math.round(Math.min(1, (row.ageDays + frac) / Math.max(1, row.harvestDays)) * 100) + '%';
+  }
+}
+/* ★ 한 줄 안의 버튼 — **위임으로** 받는다. 줄이 매번 새로 그려지므로 버튼마다 붙이면
+   붙이기 전에 사라진 노드에 붙는 날이 온다. 상자 하나에 한 번만 붙인다. */
+$('siruList').addEventListener('click', (ev) => {
+  const b = ev.target.closest('button[data-siru]');
+  if (!b) return;
+  const id = b.dataset.siru, act = b.dataset.act;
+  if (act === 'water')   return doAct('water',   () => siruWater(id),   { key: siruKey(id) });
+  if (act === 'harvest') return doAct('harvest', () => siruHarvest(id), { key: siruKey(id) });
+  if (act === 'sow')     return doAct('sow',     () => siruSow(id),     { key: siruKey(id) });
+  if (act === 'pick')    return siruPick(id);
+});
+/* 그 시루를 방에서 부르는 열쇠 — 자유 좌표면 `free:{시루 id}` 다(state.placedItems 와 같은 규칙) */
+function siruKey(id) {
+  const site = S.firstPlay && S.firstPlay.beansprout;
+  const p = ((site && site.pots) || []).find(x => x && x.id === id);
+  return p ? (p.slotId || null) : null;
+}
+const siruWater = guard((id) => {
+  const r = waterSiru(S, id);
+  if (r.watered) banner('물을 줬습니다', `오늘이 0일차입니다 — ${r.harvestDays || ''}일 뒤에 거둡니다`);
+  draw();
+});
+const siruHarvest = guard((id) => {
+  const r = harvestCrop(S, io, { potIds: [id] });
+  banners([{ title: '🥣 콩나물을 거뒀습니다',
+             sub: `${r.qualityKo || ''} · 곳간에 ${Math.round(r.savedWon || r.cycleSavedWon || 0).toLocaleString()}원` }]);
+  if (r.arrived) { arrivalSlotId = pot0(S) && pot0(S).slotId; fillSlots(false); }
+  if (r.events && r.events.length) dlgOpen(story.events(r.events));
+  draw();
+});
+const siruSow = guard((id) => {
+  const r = resowCrop(S, { potIds: [id], slots: io.light.room.slots, size: io.light.room.size });
+  banner('다시 심었습니다', `씨앗 ${r.seedsUsed}봉지 · 물을 줘야 시작합니다`);
+  draw();
+});
+/* 그 시루를 방에서 고른다 — 옮기기·돌리기는 예전 `picked` 가 그대로 맡는다 */
+function siruPick(id) {
+  const key = siruKey(id);
+  if (!key) return;
+  try { window.__byeotSheet.close(); } catch { }
+  try { picked.select(key); } catch { }
+}
+
 function draw() {
   saveSoon();
   renderHUD($('hud'), S, lastTurn, io);
@@ -3655,6 +3864,7 @@ function draw() {
   drawStamina();            /* 오늘 손이 얼마나 남았나 — 누르기 직전에 보는 값이다 */
   drawGrowGauge();          /* 확대 창 — 다음 단계까지 얼마나 왔나 (안 차면 왜인지도) */
   drawSow();                /* 다시 심어야 하나 */
+  try { drawSirus(); } catch (e) { console.warn('[시루]', e && e.message); }  /* 시루 하나하나 */
   drawShop();               /* 주문·다시 심기·팔기 */
   try { drawMusun(); } catch (e) { console.warn('[무순]', e && e.message); }  /* 2종째 작물 — 없으면 안 보인다 */
   /* ★ 가방은 **무순 다음**이다 — 무순 카드가 보이는지(display)를 읽어 「가방이 비었나」를 정한다.
@@ -3687,12 +3897,16 @@ $('lit').onchange = e => { S.lamps.litHours = Math.max(0, Math.min(24, +e.target
 /* 포인터 이동 방식 — 켠 값을 기억한다(§PTR_KEY). 게임 상태가 아니라 조작 취향이라 draw() 가 없다 */
 $('ptrMode').onchange = e => applyPointerMode(e.target.value);
 $('mode').onchange = e => { S.sim.mode = e.target.value; io.light.clearCache(); draw(); };
+/* ★★ 2026-08-09 — **빈 시루 하나를 그 자리에 세운다** (끌기와 같은 함수를 탄다).
+   예전에는 `placeBeansprout` 으로 자리의 시루 전부를 옮겼다. 옮기는 것은 이제
+   시루를 골라서 하는 일이고(§siruPick), 이 버튼은 「가방에서 하나 꺼내 세우기」다.
+   ⚠ 끌기와 다른 함수를 쓰면 재고를 빼는 순서가 두 벌이 된다 — 그 어긋남이 곧
+     "던졌는데 시루가 사라졌다"였다(tools/test_resow_atomic.mjs). */
 $('placeCrop').onclick = guard(() => {
   const target = $('cropSlot').value;
-  const r = placeBeansprout(S.firstPlay, target);
-  pushLog(S, r.moved
-    ? `🥣 열린 시루를 ${slotLabel(target)}(으)로 옮겼습니다 — 지금까지 받은 ${r.keptDays}일치 빛은 그대로입니다`
-    : `🥣 열린 시루를 ${slotLabel(target)}에 두었습니다`);
+  const r = placeSiru(S, target, { slots: io.light.room.slots, size: io.light.room.size });
+  pushLog(S, `🥣 시루를 ${slotLabel(target)}에 하나 두었습니다` +
+             (r.fromStock ? ' — 씨앗 1봉지를 썼습니다' : ''));
   unlockAfterFix();                    // 자리를 고쳤으니 다시 시도할 수 있다
   dlgOpen('cropPlaced');
   syncRoom();
@@ -4066,10 +4280,15 @@ async function bootRoomView() {
        ⇒ 어느 작물의 자리도 아니면 **false** 를 돌려준다. 그러면 아무것도 안 열린다. */
     window.__byeotCropDetail = (slotId) => {
       if (!slotId) return false;
-      /* 자유 좌표에 놓인 것은 `free:{자리 id}` 가 열쇠다(state.js §화분 자리) */
+      /* 자유 좌표에 놓인 것은 `free:{그 물건의 id}` 가 열쇠다(state.js §화분 자리).
+         ★★ 2026-08-09 — 콩나물은 **시루마다** 열쇠가 다르다(§자리는 시루마다 따로다).
+           자리 사본 하나만 보면 둘째·셋째 시루를 탭했을 때 아무것도 안 열린다. */
       const sits = (site, id) => !!(site && (site.slotId === slotId || slotId === `free:${id}`));
-      const which = sits(musunSite(), CROP_SITE_IDS.musun) ? 'musun'
-                  : sits(S.firstPlay && S.firstPlay.beansprout, BEANSPROUT_ID) ? 'crop'
+      const sitsPot = (site) => ((site && site.pots) || []).some(p =>
+        p && (p.slotId === slotId || slotId === `free:${p.id}`));
+      const which = (sits(musunSite(), CROP_SITE_IDS.musun) || sitsPot(musunSite())) ? 'musun'
+                  : (sits(S.firstPlay && S.firstPlay.beansprout, BEANSPROUT_ID) ||
+                     sitsPot(S.firstPlay && S.firstPlay.beansprout)) ? 'crop'
                   : null;
       if (!which) return false;                 // 빈 창턱·선반 — 열어 보일 것이 없다
       try { detail.open(which); return true; } catch { return false; }
@@ -4155,6 +4374,9 @@ let syncSeq = 0;
 const shownAt = { monstera: null, beansprout: null };
 /* 방에 실제로 세워 둔 삽수 id — 판 것·죽은 것을 걷어내려면 무엇을 세웠는지 알아야 한다 */
 const shownCuts = new Set();
+/* ★ 방에 실제로 세워 둔 **시루** id (2026-08-09 · 각개). 삽수와 같은 규칙이다 —
+   걷어낼 것을 알아야 없앤 시루가 유령으로 안 남는다. */
+const shownSirus = new Set();
 function clearIfMoved(kind, nowSlot, warn) {
   const was = shownAt[kind];
   if (was && was !== nowSlot) {
@@ -4175,7 +4397,9 @@ function syncRoom() {
   /* ★몬스테라는 이제 화분 id 로 잡는다 — setPlantAt 이 옛 자리를 알아서 걷는다.
      자리를 열쇠로 삼던 때는 옮길 때마다 옛 자리가 남아 두 개로 보였다. */
   if (!(p && p.at)) clearIfMoved('monstera', p && p.slotId, warn);
-  if (!(b && b.at)) clearIfMoved('beansprout', b && b.slotId, warn);
+  /* ★ 2026-08-09 — 콩나물 줄을 걷었다. 시루가 여럿이 되면서 「옛 자리 하나」라는 것이
+     없어졌고(시루마다 자리가 다르다), 걷어내는 일은 아래 `shownSirus` 가 시루마다 한다.
+     ⚠ 여기 남겨 두면 대표 시루의 자리를 「옛 자리」로 잘못 짚어 **멀쩡한 시루를 지운다.** */
   /* ★식물등은 **산 만큼만** 보인다 (박사님 2026-08-03: "등도 다 없애, 천장등만 빼고").
      아직 안 산 등이 방에 놓여 있으면 "이미 있는데 왜 또 사나"가 된다.
      ⚠ 조도 계산은 안 건드린다 — 안 켠 등은 어차피 빛을 안 낸다. 화면만 맞춘다. */
@@ -4206,19 +4430,36 @@ function syncRoom() {
       Promise.resolve(roomView.setPlantAt(p.id, p.at, potSpec)).catch(warn('몬스테라'));
     else if (p && p.slotId)
       Promise.resolve(roomView.setPlant(p.slotId, potSpec)).catch(warn('몬스테라'));
-    if (b && (b.at || b.slotId)) {
-      /* ★progress01 을 반드시 넘긴다. 안 넘기면 room_view 안에서 lerp(4,11,undefined)가
-         NaN 이 되어 **시루만 놓이고 콩나물이 0포기** 난다 — 빈 그릇만 보인다. */
-      const days = S.firstPlay.rules ? S.firstPlay.rules.harvestDays : 4;
-      const p01 = Math.max(0, Math.min(1, (b.ageDays || 0) / Math.max(1, days)));
-      /* ★ 시루 수를 넘긴다 — 안 넘기면 12개를 사도 **1그루만 선다**(계약상 count 없음 = 1).
-         7,000원짜리를 열두 개 사고 화면에서 하나만 보이던 것이 그것이다. */
-      const cropSpec = { kind: 'beansprout', progress01: p01,
-                         count: cropCount('beansprout'),
-                         potD: potDOf('beansprout'), potId: BEANSPROUT_ID };
-      Promise.resolve(b.at && roomView.setPlantAt
-        ? roomView.setPlantAt(BEANSPROUT_ID, b.at, cropSpec)
-        : roomView.setPlant(b.slotId, cropSpec)).catch(warn('콩나물'));
+    /* ★★★ 2026-08-09 — **시루 하나가 그루 하나**다 (박사님 "각개 움직이고").
+       ------------------------------------------------------------
+       예전에는 자리 하나에 `count: N` 을 줘서 방뷰가 무리를 지어 세웠다(multisiru §1).
+       그래서 시루 열두 개가 한 덩어리로 붙어 서고, 자리 한도에 걸리면 **통째로 찌그러졌다**
+       (서랍장 위에서 시루 한 개가 10.4cm — multisiru §6). 박사님이 보신 그 그림이다.
+       ⇒ 이제 시루마다 좌표가 있으므로 시루마다 `setPlantAt` 을 부른다. `count` 는 늘 1이라
+         무리 짓기 코드는 **안 쓰이고 안 지워진다**(옛 세이브·다른 호출부가 아직 쓸 수 있다).
+       ⚠ 걷어내는 것도 여기서 한다 — 안 걷으면 거둬 없앤 시루가 방에 유령으로 남는다
+         (삽수에서 이미 겪은 그것 — 아래 `shownCuts` 와 같은 규칙이다). */
+    {
+      const days = (S.firstPlay.rules ? S.firstPlay.rules.harvestDays : 4) || 4;
+      const want = new Set();
+      let rows = []; try { rows = cropPotList(S.firstPlay, S.day); } catch { }
+      for (const row of rows) {
+        if (row.kind !== 'beansprout' || !row.placed) continue;
+        /* ★progress01 을 반드시 넘긴다. 안 넘기면 room_view 안에서 lerp(4,11,undefined)가
+           NaN 이 되어 **시루만 놓이고 콩나물이 0포기** 난다 — 빈 그릇만 보인다. */
+        const p01 = Math.max(0, Math.min(1, (row.ageDays || 0) / Math.max(1, row.harvestDays || days)));
+        const spec = { kind: 'beansprout', progress01: p01, count: 1,
+                       potD: potDOf('beansprout'), potId: row.id };
+        want.add(row.id);
+        Promise.resolve(row.at && roomView.setPlantAt
+          ? roomView.setPlantAt(row.id, row.at, spec)
+          : roomView.setPlant(row.slotId, spec)).catch(warn('콩나물 ' + row.id));
+      }
+      for (const id of [...shownSirus]) if (!want.has(id)) {
+        shownSirus.delete(id);
+        try { if (roomView.removePlantOf) roomView.removePlantOf(id); } catch { }
+      }
+      for (const id of want) shownSirus.add(id);
     }
     /* ★ 무순 — 콩나물과 **같은 길**이다. 다른 것은 `kind` 와 `potD` 둘뿐이다
        (docs/handoff/musun-to-plan.md §1 의 시그니처 그대로).
@@ -4274,10 +4515,14 @@ function syncRoom() {
 /* ★ 지금 시루가 몇 개인가. **정본은 pots[] 다** — `sirus` 는 읽기용 사본이다(first_play §대표 칸).
    한 곳에서만 세는 이유: 끌기·판정·그리기가 서로 다른 수를 보면
    **놓을 때는 통과하고 그릴 때는 줄어든다**(또는 반대). 그 어긋남은 화면으로 못 잡는다. */
+/* ★★ 2026-08-09 — **방에 실제로 선 것만** 센다(first_play §자리는 시루마다 따로다).
+   예전에는 가진 시루 전부를 셌다. 그 수가 곧 「한 자리에 무리로 서는 수」였기 때문인데,
+   이제 시루는 각자 서므로 「가진 수」와 「선 수」가 다른 값이다 — 섞으면 가방에 있는 시루까지
+   방에 그리려 든다. */
 function cropCount(kind) {
   const site = kind === 'musun' ? musunSite() : (S.firstPlay && S.firstPlay.beansprout);
-  if (!site) return 1;
-  return Math.max(1, (site.pots || []).length || Math.round(site.sirus || 1));
+  if (!site) return 0;
+  return (site.pots || []).filter(p => cropPotPlaced(p)).length;
 }
 
 /* ══ 가방에 남은 **산 시루** (2026-08-08 · 박사님 "인벤에서 끌어서 배치") ═══════
@@ -4286,33 +4531,41 @@ function cropCount(kind) {
    ★ 품목 이름을 화면이 짓지 않는다. 용기 품목은 **작물이 안다**(first_play §작물 종류) —
      'siru' 를 여기 박아 두면 무순 쪽과 조용히 어긋난다(state.resowCrop 이 같은 말을 한다). */
 function spareContainerOf(kind) {
-  let itemId = null;
+  let itemId = null, stock = 0, idle = 0;
   try { itemId = cropKindOf(kind).containerItemId; } catch { return 0; }
-  try { return Math.max(0, Math.round(stockOf(S, itemId) || 0)); } catch { return 0; }
+  try { stock = Math.max(0, Math.round(stockOf(S, itemId) || 0)); } catch { }
+  /* ★★ 2026-08-09 — **아직 안 놓은 시루도 가방의 빈 용기다**(first_play §idleCropPots).
+     처음에 받는 시루 하나가 그것이다: 개체는 이미 만들어져 있지만 방에 없다.
+     이 둘을 안 더하면 첫 시루를 놓기 전에 「가방에 아무것도 없다」가 되어 못 끈다. */
+  try {
+    const site = kind === 'musun' ? musunSite() : (S.firstPlay && S.firstPlay.beansprout);
+    idle = ((site && site.pots) || []).filter(p => p && !cropPotPlaced(p) && !p.harvested).length;
+  } catch { }
+  return stock + idle;
 }
 const spareSiru = () => spareContainerOf('beansprout');
 
-/* 끌어다 놓으면 몇 개가 서나 — **지금 선 것 + 가방에 남은 것**.
-   ⚠ 이 수로 지름을 물어야 한다. 지금 개수로 물으면 「놓을 때는 통과하고 그릴 때는
-     줄어든다」가 난다(multisiru §1 이 못 박아 둔 그 어긋남이다). */
-const dropCount = (kind) => cropCount(kind) + spareContainerOf(kind);
+/* 끌어다 놓으면 몇 개가 서나 — **하나다** (2026-08-09 · 박사님 "하나씩 따로따로 설치").
+   ⚠ 예전에는 「지금 선 것 + 가방에 남은 것」이었다. 가방의 시루가 한 자리에 통째로
+     쏟아지던 것이 그 값이다. 이제 한 번 끌면 하나가 서므로 지름도 하나짜리다. */
+const dropCount = () => 1;
 
-/* 끌어다 놓는 순간 산 시루를 함께 심을 수 있나 — **재고를 미리 센다.**
-   ⚠ 그냥 `resowCrop` 을 불러 보고 실패를 받는 길로 가면 안 된다:
-     그 함수는 **시루 재고를 먼저 빼고 그 다음에 씨앗을 뺀다**(state.js §resowCrop).
-     씨앗에서 던지면 이미 빠진 시루가 그대로 사라진다 — 돈만 나가고 물건이 없어진다.
-     저쪽을 고치는 것은 저쪽 몫이고(인계 §다른 파일이 할 일), 여기서는 그 길로 안 들어간다.
-   반환 null = 얹을 산 시루가 없다(예전 경로 그대로 옮기기만 한다). */
+/* 끌어다 놓을 때 **가방에서 무엇이 나가나** — 미리 센다(놓기 전에 말해야 하므로).
+   ★ 안 놓은 시루가 남아 있으면 재고가 한 톨도 안 나간다. 이미 만들어진 것을 세우는 것이라
+     새로 사는 일이 아니다. 그때 `fromStock` 이 false 다.
+   ⚠ `state.placeSiru` 가 **묻고 나서 뺀다**(§placeSiru ①~④). 여기 값은 말하기 위한 것이지
+     막기 위한 것이 아니다 — 막는 것은 코어가 한다. 반환 null = 세울 시루가 아예 없다. */
 function sowOnDropPlan() {
-  const spare = spareSiru();
-  if (spare <= 0) return null;
-  let harvested = 0, seeds = 0, seedItem = null;
-  try { harvested = (cropHarvestStatus(S).harvestedCount || 0); } catch { }
-  try { seedItem = cropKindOf('beansprout').seedItemId; } catch { }
+  const site = S.firstPlay && S.firstPlay.beansprout;
+  const idle = ((site && site.pots) || []).filter(p => p && !cropPotPlaced(p) && !p.harvested).length;
+  let stock = 0, seeds = 0, seedItem = null, boxItem = null;
+  try { const k = cropKindOf('beansprout'); seedItem = k.seedItemId; boxItem = k.containerItemId; } catch { }
+  try { stock = boxItem ? (stockOf(S, boxItem) || 0) : 0; } catch { }
   try { seeds = seedItem ? (stockOf(S, seedItem) || 0) : 0; } catch { }
-  /* 씨앗은 **실제로 심는 시루 수**만큼 든다 — 거둔 것 + 새 것(state.js §resowCrop) */
-  const seedsNeeded = harvested + spare;
-  return { spare, harvested, seeds, seedsNeeded, ok: seeds >= seedsNeeded };
+  if (idle > 0) return { spare: idle + stock, fromStock: false, seedsNeeded: 0, seeds, ok: true };
+  if (stock <= 0) return null;
+  /* 재고에서 꺼내 세운다 — 시루 하나에 씨앗 한 봉지다 */
+  return { spare: stock, fromStock: true, seedsNeeded: 1, seeds, ok: seeds >= 1 };
 }
 
 /* 끌고 있는 것의 지름. ★방뷰에 묻는다 — 화면이 숫자를 또 적어 두면 자리표가 바뀔 때 조용히 어긋난다.
@@ -4321,9 +4574,11 @@ function sowOnDropPlan() {
      그 안으로 통째로 찌그러져 시루 한 개가 5.9cm 가 된다. */
 /* ★ `n` 을 주면 **그 수로** 묻는다 (2026-08-08). 안 주면 예전 그대로 지금 선 수다.
    끌 때는 「지금 선 것 + 가방에 남은 것」으로 물어야 한다 — 놓고 나면 그만큼 서기 때문이다. */
+/* ★★ 2026-08-09 — 콩나물 지름은 이제 **시루 한 개**의 것이다(각개로 서므로).
+   `n` 을 주면 그 수로 묻는 길은 남긴다 — 옛 호출부·재현이 무리 지름을 물을 수 있다. */
 function potDOf(what, n) {
   if (what === 'beansprout') {
-    const cnt = Math.max(1, Math.round(n || cropCount('beansprout')));
+    const cnt = Math.max(1, Math.round(n || 1));
     if (roomView && roomView.plantPotD) return roomView.plantPotD('beansprout', cnt);
     return OPEN_SIRU.diameterM;                 // 방뷰가 없으면 예전 값(한 개 기준)
   }
@@ -4675,8 +4930,11 @@ const drag = {
     let extra = '';
     if (good && this.sowing) {
       const plan = sowOnDropPlan();
+      /* ★ 2026-08-09 — **하나만 선다**고 말한다. 예전 문구("새 시루 2개")가
+         「가방에 있는 것이 통째로 온다」는 그 동작을 그대로 적은 것이었다. */
       if (plan) extra = plan.ok
-        ? ` · 새 시루 ${plan.spare}개 · 씨앗 ${plan.seedsNeeded}봉지`
+        ? ` · 시루 1개` + (plan.seedsNeeded ? ` · 씨앗 ${plan.seedsNeeded}봉지` : '') +
+          (plan.spare > 1 ? ` (가방에 ${plan.spare - 1}개 남음)` : '')
         : ` · ⚠ 씨앗 ${plan.seedsNeeded}봉지가 있어야 새 시루가 섭니다 (${plan.seeds}봉지)`;
     }
     lb.textContent = freePlace.label(hit, drag.what) + extra;
@@ -4703,7 +4961,7 @@ function atOf(hit) {
   return { x: hit.x, y: hit.y, z: hit.z, rotY: hit.rotY || 0,
            onUid: hit.onUid ?? null, occIdx: hit.occIdx ?? null };
 }
-function commitPlace(what, hit) {
+function commitPlace(what, hit, opt = {}) {
   /* ★ 작물은 종류만 갈아 끼우면 같은 길이다 (2026-08-05 · 무순).
      `setCropAt` 이 이미 `opt.kind` 를 받는다 — 화면이 규칙을 또 갖지 않는다.
      ⚠ 대사(`cropPlaced`)는 **콩나물 것**이다. 무순 대사는 아직 없어서 안 띄운다 —
@@ -4711,37 +4969,51 @@ function commitPlace(what, hit) {
        "어두운 자리에 잘 놓았다"를 밝은 자리에 놓은 사람에게 말하게 된다. */
   if (what === 'beansprout' || what === 'musun') {
     const k = what === 'musun' ? '새싹 재배판' : '열린 시루';
-    /* ★★ **산 시루는 여기서 판에 선다** (박사님 2026-08-08: "애초에 인벤에서 끌어서 배치하도록 해").
+    /* ★★★ 2026-08-09 — **한 번 끌면 하나가 선다** (박사님 "하나씩 따로따로 설치").
        ══════════════════════════════════════════════════════════════════
-       `resowCrop` 한 번이 세 가지를 **한 동작으로** 한다: 재고에서 시루·씨앗을 빼고,
-       빈 시루를 무리에 붙이고, `opt.at` 으로 그 무리를 **놓은 자리에** 세운다
-       (state.js §resowCrop → first_play §resowBeansprout 끝줄의 placeCrop).
-       그래서 「샀는데 안 온다」도 「저절로 이상한 데 선다」도 같이 사라진다.
-       ★ 자리 모델은 **안 바꿨다.** 자리는 여전히 하나(`site.at`)고 시루는 그 위에 무리로 선다.
-         「끌어서 놓는다」는 무리를 **어디에 세울지**를 사람이 정한다는 뜻이지,
-         자리를 여러 개로 쪼갠다는 뜻이 아니다(multisiru §9 ㉰ 은 이 창 범위 밖이다).
-       ⚠ `resowCrop` 은 **거둔 시루도 같이** 다시 심는다 — 그래서 씨앗이 「거둔 것 + 새 것」만큼
-         든다. 모자라면 부르지 않는다(§sowOnDropPlan 이 그 이유를 적어 뒀다):
-         부르면 시루 재고만 빠지고 씨앗에서 던져 **산 시루가 사라진다.** */
+       예전에는 `resowCrop(S, { sirus: 지금+가방전부, at })` 한 번이 가방의 시루를 **전부**
+       그 한 자리에 무리로 세웠다. 그래서 「4개가 함께 섭니다」였고, 방에는 덩어리가 섰다.
+       ⇒ `state.placeSiru` 가 하나만 세운다. 나머지는 가방에 그대로 남고, 또 끌면 또 하나가
+         **다른 자리에** 선다. 그것이 「각개」의 전부다.
+       ★ 재고를 언제 빼나 — `placeSiru` 가 **묻고 나서 뺀다**(§placeSiru ①~④).
+         화면이 미리 세는 것은 「무엇이 나갈지 말하기 위해서」이지 막기 위해서가 아니다. */
+    /* ★★ **옮기기**는 새로 세우는 것과 다른 일이다 (2026-08-09).
+       `opt.potId` 가 있으면 그 시루 하나를 그 자리로 옮긴다 — 재고도 씨앗도 안 나간다. */
+    if (opt.potId) {
+      try {
+        const r = setCropAt(S, atOf(hit), { ...placeOpt(), kind: what, potId: opt.potId });
+        pushLog(S, r.moved
+          ? `${what === 'musun' ? '🌱' : '🥣'} ${k} 하나를 옮겼습니다 — 지금까지 받은 ${r.keptDays}일치 빛은 그대로입니다`
+          : `${what === 'musun' ? '🌱' : '🥣'} ${k} 하나를 두었습니다`);
+        unlockAfterFix();
+      } catch (e) { return placeFailed(e); }
+      draw();
+      return;
+    }
     const plan = what === 'beansprout' ? sowOnDropPlan() : null;
     if (plan && plan.ok) {
       try {
-        const r = resowCrop(S, { ...placeOpt(), kind: 'beansprout', at: atOf(hit),
-                                 sirus: cropCount('beansprout') + plan.spare });
-        banner('시루를 놓았습니다', `시루 ${r.sirus}개 · 씨앗 ${r.seedsUsed}봉지`);
+        const r = placeSiru(S, atOf(hit), { ...placeOpt(), kind: 'beansprout' });
+        banner('시루를 하나 놓았습니다',
+               (r.fromStock ? '씨앗 1봉지 · ' : '') +
+               `방에 ${r.sirus}개` + (r.spare > 0 ? ` · 가방에 ${r.spare}개 남음` : ''));
         unlockAfterFix();
         dlgOpen('cropPlaced');
       } catch (e) { return placeFailed(e); }
       draw();
       return;
     }
+    /* ★★ 콩나물이 여기까지 왔다는 것은 **세울 시루가 없다**는 뜻이다 (2026-08-09).
+       예전에는 여기서 `setCropAt` 이 돌아 「자리 옮기기」가 됐는데, 이제 그건 **놓인 시루를
+       골라서** 하는 일이다(아래 §picked). 가방에서 끌었는데 옮기기가 일어나면
+       **다른 시루가 통째로 딸려 온다** — 각개가 그 자리에서 무너진다. 이유만 적고 멈춘다. */
+    if (what === 'beansprout') {
+      return placeFailed(new Error(
+        !plan ? '가방에 빈 시루가 없습니다 — 상점에서 시루를 주문해 주세요'
+              : `콩 씨앗이 ${plan.seedsNeeded}봉지 있어야 새 시루가 섭니다 (지금 ${plan.seeds}봉지)`));
+    }
     try {
       const r = setCropAt(S, atOf(hit), { ...placeOpt(), kind: what });
-      /* 씨앗이 모자라 산 시루를 못 세웠으면 **왜인지 남긴다** — 조용히 옮기기만 하면
-         "끌어다 놨는데 그대로네"가 된다. 시루는 가방에 그대로 있다(안 없어졌다). */
-      if (plan && !plan.ok)
-        pushLog(S, `⚠ 산 시루 ${plan.spare}개는 아직 못 세웠습니다 — ` +
-                   `콩 씨앗이 ${plan.seedsNeeded}봉지 있어야 합니다(지금 ${plan.seeds}봉지)`);
       pushLog(S, r.moved
         ? `${what === 'musun' ? '🌱' : '🥣'} ${k}을(를) 옮겼습니다 — 지금까지 받은 ${r.keptDays}일치 빛은 그대로입니다`
         : `${what === 'musun' ? '🌱' : '🥣'} ${k}을(를) 두었습니다`);
@@ -4773,26 +5045,36 @@ function placeFailed(e) {
      이걸로 같이 풀린다 — 일단 고른 뒤에는 **화면 아무 데나** 끌면 된다. */
 const picked = {
   slotId: null, mode: null,          // 'move' | 'turn'
+  potId: null,                       // ★ 옮기는 중인 시루 (2026-08-09 · 각개)
   yaw0: 0, x0: 0, y0: 0,
   originX: 0, originY: 0,            // 옮기기 시작할 때 그 화분이 화면에서 있던 자리
 
   /* 그 자리에 있는 게 무엇인가. 콩나물과 몬스테라는 규칙이 다르다. */
   /* 그 열쇠가 가리키는 게 무엇인가. 자유 배치가 되면서 열쇠가 자리 이름일 수도,
      `free:crop_01` 같은 개체 이름일 수도 있다 — 둘 다 본다. */
+  /* ★★ 2026-08-09 — 콩나물 열쇠는 **시루마다**다(§자리는 시루마다 따로다).
+     자리 사본 하나만 보면 둘째 시루를 고를 때 몬스테라로 읽혀 엉뚱한 것이 움직인다. */
+  potAt(slotId) {
+    const b = S.firstPlay && S.firstPlay.beansprout;
+    return ((b && b.pots) || []).find(p =>
+      p && (p.slotId === slotId || slotId === `free:${p.id}` || slotId === p.id)) || null;
+  },
   kindAt(slotId) {
     const b = S.firstPlay && S.firstPlay.beansprout;
     if (!b) return 'monstera';
     if (slotId === BEANSPROUT_ID || slotId === `free:${BEANSPROUT_ID}`) return 'beansprout';
+    if (this.potAt(slotId)) return 'beansprout';
     return b.slotId === slotId ? 'beansprout' : 'monstera';
   },
   select(slotId) {
     if (drag.on) return;
     this.slotId = slotId;
     const kind = this.kindAt(slotId);
-    const b = S.firstPlay && S.firstPlay.beansprout;
     /* ★수확한 시루는 못 옮긴다(first_play.md — 수확 전까지만 이동 자유).
-       예전엔 눌러도 아무 일이 없어 고장처럼 보였다. 이유를 버튼에 적는다. */
-    const locked = kind === 'beansprout' && b && b.harvested;
+       ★★ 2026-08-09 — **그 시루 하나**만 본다. 예전에는 자리 사본(`b.harvested` =
+         하나라도 거뒀나)으로 막아서, 셋 중 하나만 거둬도 나머지 둘까지 못 움직였다. */
+    const one = kind === 'beansprout' ? this.potAt(slotId) : null;
+    const locked = !!(one && one.harvested);
     $('pickedName').textContent = slotLabel(slotId);
     $('pickMove').disabled = !!locked;
     $('pickMove').title = locked ? '이미 수확한 시루는 옮길 수 없습니다' : '';
@@ -4800,7 +5082,7 @@ const picked = {
     if (roomView) roomView.highlightSlots([slotId]);
   },
   clear() {
-    this.slotId = null; this.mode = null;
+    this.slotId = null; this.mode = null; this.potId = null;
     $('stage').classList.remove('picked', 'moving');
     if (roomView) roomView.highlightSlots([]);
     $('dropLabel').classList.remove('ok', 'no');
@@ -4810,6 +5092,9 @@ const picked = {
     this.mode = 'move';
     /* 그 식물이 갈 수 있는 자리들 — 지금 있는 자리는 빼고 */
     const what = this.kindAt(this.slotId);
+    /* ★ 어느 시루를 옮기는지 붙들어 둔다 (2026-08-09 · §자리는 시루마다 따로다) */
+    const one = what === 'beansprout' ? this.potAt(this.slotId) : null;
+    this.potId = one ? one.id : null;
     const { sel, ids } = drag.slotsFor(what);
     drag.what = what; drag.sel = sel;
     drag.valid = ids.filter(id => id !== this.slotId);
@@ -4882,7 +5167,10 @@ const picked = {
       $('dragGhost').classList.remove('on', 'ok', 'no');
       freePlace.clear(); freePlace.rings(false); freePlace.grid(false);
       if (hit && hit.ok) {
-        commitPlace(what, hit);              /* 인벤에서 끌 때와 **같은 경로**를 탄다 */
+        /* ★★ 2026-08-09 — **고른 그 시루만** 옮긴다(§자리는 시루마다 따로다).
+           `potId` 를 안 넘기면 `commitPlace` 가 「가방에서 새로 하나 세우기」로 가서
+           옮기려던 시루는 그 자리에 남고 엉뚱한 것이 하나 더 선다. */
+        commitPlace(what, hit, { potId: this.potId || null });   /* 인벤에서 끌 때와 같은 경로 */
         this.clear(); return;
       }
     }
@@ -5552,6 +5840,10 @@ function idleClockStart() {
     const dt = Math.min(now - prev, 250);
     dayPhase = (dayPhase + dt / (DAY_SWEEP_MS * IDLE_SWEEP_MULT)) % 1; prev = now;
     try { paintWhen(roomView.setDaylight(dayPhase)); } catch { }
+    /* ★ 시루 게이지의 **흐르는 몫**도 같은 자로 움직인다 (2026-08-09 · §게이지).
+       ⚠ 여기서 `draw()` 를 부르면 안 된다 — 매 프레임 상자를 다시 그리면 누르던 버튼이
+         사라지고, 폰에서 프레임이 통째로 무너진다. 막대 너비만 갈아 끼운다. */
+    try { repaintSiruGauges(); } catch { }
     idleLoop = requestAnimationFrame(step);
   };
   idleLoop = requestAnimationFrame(step);

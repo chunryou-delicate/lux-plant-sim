@@ -267,10 +267,18 @@ function clearPlacements(S) {
   for (const p of S.pots || []) { p.at = null; p.slotId = null; out.pots++; }
   for (const c of S.cuttings || []) { c.at = null; c.slotId = null; out.cuttings++; }
   const fp = S.firstPlay;
+  /* ★★ 2026-08-09 — 자리의 정본이 **시루마다**로 내려왔다(first_play §자리는 시루마다 따로다).
+     자리 사본(site)만 비우면 시루들은 **떠나온 방의 좌표를 그대로 들고** 새 방으로 온다.
+     그러면 다음 하루에 `cropDliFromReport` 가 "그 자리가 오늘 계약에 없습니다"로 던져
+     이사한 판이 통째로 멈춘다 — `test_ending_flow` 가 그 자리에서 섰다. */
   if (fp && fp.enabled)
     for (const site of cropSites(fp)) {
-      if (!site || !(site.slotId || site.at)) continue;
-      site.at = null; site.slotId = null; out.crops++;
+      if (!site) continue;
+      for (const p of (site.pots || [])) {
+        if (!p || !(p.slotId || p.at)) continue;
+        p.at = null; p.slotId = null; out.crops++;
+      }
+      site.at = null; site.slotId = null;
     }
   return out;
 }
@@ -284,9 +292,16 @@ function reseatCrops(S, room, log) {
   if (!dest) return;
   for (const site of cropSites(fp)) {
     if (!site || site.harvested || site.slotId) continue;
+    /* ★ 아직 방에 있던 시루만 새 방에 앉힌다 — **가방에 있던 빈 시루는 가방에 그대로 둔다**
+       (2026-08-09). 이사 왔다고 안 놓은 시루가 저절로 서면 「가방에는 빈 용기만」이 깨진다.
+       ⚠ 어느 시루가 방에 있었는지는 위 `clearPlacements` 가 이미 지웠다. 그래서 여기서는
+         **자라는 중인 시루**(회전을 시작한 것)를 기준으로 삼는다 — 그것이 방에 있던 것이다. */
     const kindId = site.kind || 'beansprout';
+    const moving = (site.pots || []).filter(p => p && !p.harvested && p.startedOnDay != null);
+    if (!moving.length) continue;
     try {
-      placeCrop(fp, kindId, dest.slotId, { slots: room.slots });
+      for (const p of moving)
+        placeCrop(fp, kindId, dest.slotId, { slots: room.slots, potId: p.id });
       if (log) log(`${CROP_SITE_IDS[kindId] || kindId} 을(를) ${dest.slotId} 로 옮겼습니다`);
     } catch (e) {
       /* 못 놓으면 자리 없이 둔다 — 여기서 던지면 이사 자체가 무른다(돈은 이미 나갔다) */

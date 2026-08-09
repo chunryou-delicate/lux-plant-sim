@@ -571,15 +571,29 @@ export function nextDay(S, io) {
       /* ★★ 2026-08-05 — 작물 자리가 **종류마다 하나**라 DLI 도 자리마다 따로 잰다
          (first_play §작물 자리 — 콩나물은 어두워야 하고 무순은 밝아야 해서 한 자리에 못 선다).
          ⚠ 안 놓은 자리는 빼고 넘긴다. 표에 없는 열쇠를 넘기면 advance 가 던진다. */
-      const cropDli = {};
+      /* ★★★ 2026-08-09 — 이제 자리는 **시루마다**다(first_play §자리는 시루마다 따로다).
+         그래서 값도 시루마다 뽑는다. 자리 대표값(`cropDli`)은 옛 호출부·옛 검사가 읽으므로
+         그대로 같이 낸다 — 둘이 같은 계약에서 나오므로 어긋날 수 없다.
+         ⚠ **조도를 새로 재지 않는다.** `cropDliFromReport` 가 하루치 계약에서 꺼내 올 뿐이고,
+           그 계약은 `state.placedItems(S)` 가 시루 하나하나를 실어 만든 것이다.
+           조도 엔진(light_adapter · data/profiles)은 한 줄도 안 건드렸다. */
+      const cropDli = {}, cropDliBySlot = {};
       for (const site of cropSites(S.firstPlay)) {
+        for (const p of (site.pots || [])) {
+          if (!p || !p.slotId) continue;
+          if (check.badSlots && check.badSlots.has(p.slotId))
+            throw new Error(`[첫 플레이] ${cropKindOf(site.kind || 'beansprout').ko} 자리 ` +
+                            `${p.slotId}의 조도 계약이 잘못됐습니다`);
+          cropDliBySlot[p.slotId] = cropDliFromReport(report, p.slotId);
+        }
         if (!site.slotId) continue;
         if (check.badSlots && check.badSlots.has(site.slotId))
           throw new Error(`[첫 플레이] ${cropKindOf(site.kind || 'beansprout').ko} 자리 ` +
                           `${site.slotId}의 조도 계약이 잘못됐습니다`);
-        cropDli[site.kind || 'beansprout'] = cropDliFromReport(report, site.slotId);
+        cropDli[site.kind || 'beansprout'] = cropDliBySlot[site.slotId] != null
+          ? cropDliBySlot[site.slotId] : cropDliFromReport(report, site.slotId);
       }
-      firstPlayEvent = advanceBeansproutDay(S.firstPlay, cropDli);
+      firstPlayEvent = advanceBeansproutDay(S.firstPlay, cropDli, { dliBySlot: cropDliBySlot });
 
       /* ★★ 마른 날 알림이 사라졌다 (2026-08-04 새 규칙). 그 개념 자체가 없다 —
          물을 안 준 시루는 **아직 시작을 안 한 것**이지 벌을 받는 것이 아니다.
@@ -946,7 +960,9 @@ export function nextDay(S, io) {
      events 는 `turn.events` 와 **같은 모양**이라 그대로 `dialogue.scriptsForEvents` 에 넣으면 된다:
        beansprout_harvest → learn_harvest → learn_cropDark → monstera_arrived (EVENT_ORDER 가 정렬한다)
 ============================================================ */
-export function harvestCrop(S, io) {
+/* ★★ 2026-08-09 — `opt.potIds` 를 주면 **그 시루만** 거둔다(박사님 "각개 수확").
+   안 주면 예전 그대로 익은 것을 다 거둔다 — 빨리감기·자동수확이 그 뜻으로 부른다. */
+export function harvestCrop(S, io, opt = {}) {
   const fp = S && S.firstPlay;
   if (!fp || !fp.enabled || !fp.beansprout)
     throw new Error('[수확] 첫 플레이 상태가 없습니다 — 거둘 시루가 없습니다');
@@ -985,7 +1001,7 @@ export function harvestCrop(S, io) {
 
   let r = null, arrived = null, arrivalPhase = null;
   try {
-    r = harvestBeansprout(fp, { day: S.day });
+    r = harvestBeansprout(fp, { day: S.day, potIds: opt.potIds });
     /* 실제로 거뒀으니 손을 쓴다. **던진 뒤가 아니라 성공한 뒤**에 깎는다 —
        실패한 동작에 체력을 물리면 "아무 일도 안 났는데 오늘이 끝났다"가 된다. */
     spendStamina(S, 'harvest');

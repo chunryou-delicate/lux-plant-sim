@@ -112,20 +112,28 @@ const setStock = (siru, seed) => page.eval(`(()=>{ const S=window.__S();
   window.__redraw();
   return { siru:S.shop.stock.siru, seed:S.shop.stock.bean_seed }; })()`);
 
+/* ★★ 2026-08-09 — **선 시루 수를 세는 법이 바뀌었다**(first_play §자리는 시루마다 따로다).
+   예전에는 그루 하나에 `count: N` 이 실려 있어 그 수를 읽었다(무리 짓기). 이제 시루 하나가
+   그루 하나이므로 **그루를 센다.** 열쇠도 같이 모은다 — 각개의 증거는 「열쇠가 다르다」다. */
 const cropSnap = () => page.eval(`(()=>{ const S=window.__S();
   const b = S.firstPlay && S.firstPlay.beansprout;
   const rv = window.__rv;
-  let shown = 0;
-  try { for (const p of (rv.plants()||[])) if (p.kind==='beansprout') shown = Math.max(shown, p.count||1); } catch(e){}
+  let shown = 0; const keys = [];
+  try { for (const p of (rv.plants()||[])) if (p.kind==='beansprout') { shown++; keys.push(p.key); } } catch(e){}
   const card = document.getElementById('cropCard');
+  const pots = (b && b.pots) || [];
   return {
-    pots: (b && (b.pots||[]).length) || 0,
+    pots: pots.length,
+    placed: pots.filter(p=>p && (p.slotId||p.at)).length,
+    potSlots: pots.map(p=>p && p.slotId || null),
     at: b && b.at ? { x:+b.at.x.toFixed(4), z:+b.at.z.toFixed(4) } : null,
     slotId: b && b.slotId || null,
     stockSiru: (S.shop && S.shop.stock && S.shop.stock.siru) || 0,
     stockSeed: (S.shop && S.shop.stock && S.shop.stock.bean_seed) || 0,
-    shown,
+    shown, keys,
+    rows: document.querySelectorAll('#siruList .siru').length,
     cardHost: card && card.parentElement ? card.parentElement.id : null,
+    cardShown: card ? card.style.display !== 'none' : false,
     resowShown: document.getElementById('resow').style.display !== 'none',
     resowText: document.getElementById('resow').textContent
   }; })()`);
@@ -154,7 +162,14 @@ const dropAt = (x, y) => page.eval(`(()=>{
   window.__drag.end();
   return { began:true, label }; })()`);
 
-console.log('\n══ S. 산 시루 — 저절로 안 선다, 끌어야 선다 ══════════════════════');
+console.log('\n══ S. 산 시루 — 저절로 안 선다 · 끌면 **하나씩** 선다 ══════════════');
+/* ★★ 2026-08-09 재작성 (박사님 지시 "콩나물시루 하나하나가 각개 움직이고").
+   ------------------------------------------------------------
+   이 절이 지키던 옛 약속은 「끌어다 놓으면 가방의 시루가 **전부** 선다」였다.
+   그것이 바로 박사님이 폰에서 보신 「뭉태기로 설치」다 — 검사가 그 동작을 지키고 있었다.
+   ⇒ 새 약속: **한 번 끌면 하나가 서고, 나머지는 가방에 남는다.**
+     각개의 증거는 셋이다: ① 판에 선 수가 1씩 는다 ② 그루 열쇠가 시루마다 다르다
+     ③ 재고가 1씩만 빠진다. */
 
 /* 먼저 첫 시루를 방에 놓는다(사람이 하는 첫 일이다) */
 let spot = await pickFloor(0.24);
@@ -164,52 +179,63 @@ await dropAt(spot.x, spot.y);
 await sleep(1200); await skipTalk(); await sleep(400);
 
 let s = await cropSnap();
-ok('S-1 첫 시루가 방에 섰다 (1개)', s.pots === 1 && s.shown === 1, JSON.stringify(s));
-ok('S-2 놓은 뒤 카드는 [식물]로 간다', s.cardHost === 'plantsHold', s.cardHost);
+ok('S-1 첫 시루가 방에 섰다 (1개)', s.placed === 1 && s.shown === 1, JSON.stringify(s));
+ok('S-2 다 놓으면 가방 카드가 **사라진다** (빈 용기가 없으므로)',
+   s.cardHost === 'bagHold' && s.cardShown === false, `${s.cardHost} · shown=${s.cardShown}`);
+ok('S-2b [식물]에 그 시루 한 줄이 생겼다', s.rows === 1, s.rows);
 
 /* 시루 2개 · 씨앗 5봉지를 산 상태로 만든다 */
 await setStock(2, 5);
 await sleep(400);
 s = await cropSnap();
 ok('S-3 시루를 사도 판에 선 수는 그대로 1이다 (자동 배치가 없다)',
-   s.pots === 1 && s.shown === 1, JSON.stringify({ pots: s.pots, shown: s.shown }));
-ok('S-4 산 시루가 있으면 카드가 **가방으로 돌아온다**', s.cardHost === 'bagHold', s.cardHost);
+   s.placed === 1 && s.shown === 1, JSON.stringify({ placed: s.placed, shown: s.shown }));
+ok('S-4 산 시루가 있으면 카드가 **가방에서 다시 보인다**',
+   s.cardHost === 'bagHold' && s.cardShown === true, `${s.cardHost} · shown=${s.cardShown}`);
 ok('S-5 [심기] 버튼이 산 시루를 말하지 않는다', !/새 시루/.test(s.resowText), s.resowText);
 
 /* [심기]를 눌러도 산 시루가 안 나간다 — 이 버튼은 거둔 것만 다시 심는다 */
 await clickId('resow'); await sleep(600);
 s = await cropSnap();
 ok('S-6 [심기]를 눌러도 시루 재고가 안 줄고 판에도 안 선다',
-   s.stockSiru === 2 && s.pots === 1, JSON.stringify({ stock: s.stockSiru, pots: s.pots }));
+   s.stockSiru === 2 && s.placed === 1, JSON.stringify({ stock: s.stockSiru, placed: s.placed }));
 
-/* ★ 놓는 손 — 여기서 처음으로 산 시루가 판에 선다 */
-const potD3 = await page.eval(`window.__rv.plantPotD('beansprout',3)`);
-const spot3 = await pickFloor(potD3);
-ok('S-7 시루 3개 무리가 들어갈 바닥 점이 있다', !!spot3, `무리 지름 ${potD3}m`);
+/* ★ 놓는 손 — 여기서 처음으로 산 시루가 판에 선다. **한 개씩** 이다 */
+const potD1 = await page.eval(`window.__rv.plantPotD('beansprout',1)`);
+const spot3 = await pickFloor(potD1);
+ok('S-7 시루 한 개가 들어갈 바닥 점이 있다', !!spot3, `시루 지름 ${potD1}m`);
 const drop = spot3 ? await dropAt(spot3.x, spot3.y) : { began: false };
 ok('S-8 산 시루가 있으면 **끌기가 시작된다**', drop.began === true, JSON.stringify(drop));
-ok('S-9 놓기 전에 몇 개가 서고 씨앗이 몇 봉지 드는지 말한다',
-   !!(drop.label && /새 시루 2개/.test(drop.label) && /씨앗 2봉지/.test(drop.label)), drop.label);
+ok('S-9 놓기 전에 **하나가 선다**고 말한다 (씨앗 1봉지 · 가방에 1개 남음)',
+   !!(drop.label && /시루 1개/.test(drop.label) && /씨앗 1봉지/.test(drop.label)
+      && /1개 남음/.test(drop.label)), drop.label);
 await sleep(1400); await skipTalk(); await sleep(400);
 
 s = await cropSnap();
-ok('S-10 끌어다 놓으면 시루 3개가 판에 선다', s.pots === 3, s.pots);
-ok('S-11 방에도 3개가 **실제로 서 있다**(장면을 셌다)', s.shown === 3, s.shown);
-ok('S-12 시루 재고가 0이 된다', s.stockSiru === 0, s.stockSiru);
-ok('S-13 씨앗은 새로 심은 2봉지만 나간다 (5 → 3)', s.stockSeed === 3, s.stockSeed);
-const dist = spot3 && s.at ? Math.hypot(s.at.x - spot3.hx, s.at.z - spot3.hz) : Infinity;
+ok('S-10 끌어다 놓으면 **하나만** 는다 (1 → 2)', s.placed === 2, s.placed);
+ok('S-11 방에도 2개가 **각각** 서 있다 (열쇠가 다르다)',
+   s.shown === 2 && new Set(s.keys).size === 2, JSON.stringify(s.keys));
+ok('S-12 시루 재고가 **1개만** 빠진다 (2 → 1)', s.stockSiru === 1, s.stockSiru);
+ok('S-13 씨앗도 **1봉지만** 나간다 (5 → 4)', s.stockSeed === 4, s.stockSeed);
+ok('S-13b [식물]의 줄도 2개다', s.rows === 2, s.rows);
+/* ★ 떨군 자리에 선 것은 **방금 놓은 그 시루**다. 자리 사본(`b.at`)은 대표 시루 것이라
+   여기서 안 본다 — 대표가 방금 놓은 것이 아닐 수 있다. */
+const lastAt = await page.eval(`(()=>{ const b=window.__S().firstPlay.beansprout;
+  const p=(b.pots||[])[b.pots.length-1];
+  return p && p.at ? { x:+p.at.x.toFixed(4), z:+p.at.z.toFixed(4) } : null; })()`);
+const dist = spot3 && lastAt ? Math.hypot(lastAt.x - spot3.hx, lastAt.z - spot3.hz) : Infinity;
 ok('S-14 **떨군 자리**에 섰다 (0.05m 안)', dist <= 0.05,
-   `${dist.toFixed(4)}m · 무리 지름 ${(+potD3).toFixed(3)}m`);
+   `${dist.toFixed(4)}m · 시루 지름 ${(+potD1).toFixed(3)}m`);
 
 /* 씨앗이 모자라면 — 시루가 사라지지 않는다 */
 await setStock(2, 0);
 await sleep(300);
 const before = await cropSnap();
-const spot2 = await pickFloor(await page.eval(`window.__rv.plantPotD('beansprout',5)`));
+const spot2 = await pickFloor(potD1);
 if (spot2) { await dropAt(spot2.x, spot2.y); await sleep(1200); await skipTalk(); }
 s = await cropSnap();
 ok('S-15 씨앗이 모자라면 시루가 **안 없어진다**', s.stockSiru === 2, s.stockSiru);
-ok('S-16 그때 판에 선 수도 안 늘어난다', s.pots === before.pots, `${before.pots} → ${s.pots}`);
+ok('S-16 그때 판에 선 수도 안 늘어난다', s.placed === before.placed, `${before.placed} → ${s.placed}`);
 
 console.log('\n══ W. 물 주기 말풍선이 죽지 않는다 (QA 2026-08-08 §3-A) ══════════');
 /* ★★ 무엇을 재나 — **「말풍선이 떠 있는 동안 그 버튼이 잠겨 있지 않은가」**.

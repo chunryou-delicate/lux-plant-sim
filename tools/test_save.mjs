@@ -300,13 +300,22 @@ check('B 자유 좌표 화분·시루가 좌표(rotY·onUid·occIdx 포함)까�
   assert.equal(pot0(S2).at.rotY, 1.2, '바라보는 각을 잃었습니다');
 
   const b = S2.firstPlay.beansprout;
-  assert.equal(b.slotId, `free:${BEANSPROUT_ID}`, `시루 slotId 가 ${b.slotId}`);
+  /* ★★ 2026-08-09 — 계약 열쇠가 **자리 이름에서 시루 이름으로** 내려왔다
+     (first_play §자리는 시루마다 따로다). 예전에는 시루 열둘이 `free:crop_01` 하나를
+     나눠 썼는데, 그러면 `light_adapter.slotsFor` 의 Map 에서 뒤엣것이 앞엣것을 덮어
+     시루마다 다른 자리의 DLI 를 못 찾는다. 이제 `free:{시루 id}` = `free:crop_01_01` 이다.
+     ⚠ 옛 세이브는 안 깨진다 — 옛 판의 `free:crop_01` 은 시루의 slotId 로 그대로 옮겨지고,
+       `slotsFor` 가 이미 자유 열쇠를 그대로 쓴다(지어내지 않는다). */
+  const KEY = `free:${b.pots[0].id}`;
+  assert.equal(b.slotId, KEY, `시루 slotId 가 ${b.slotId}`);
   assert.deepEqual(b.at, S.firstPlay.beansprout.at, '시루 좌표가 달라졌습니다');
+  assert.deepEqual(b.pots.map(p => p.slotId), S.firstPlay.beansprout.pots.map(p => p.slotId),
+    '★시루마다의 자리가 세이브를 왕복하지 못했습니다 — 각개로 흩어 놓은 판이 뭉칩니다');
 
   /* 계약에도 둘 다 한 번씩 실린다 — 복원본으로 하루를 굴려 확인한다 */
   const ids = eng.daily(1, S2).report.slots.map(s => s.slotId);
   assert.equal(new Set(ids).size, ids.length, '복원 뒤 계약에 같은 자리가 두 번 실렸습니다');
-  assert.equal(ids.filter(i => i === `free:${BEANSPROUT_ID}`).length, 1, '시루가 계약에 없습니다');
+  assert.equal(ids.filter(i => i === KEY).length, 1, '시루가 계약에 없습니다');
 });
 
 /* ══ C · ★★ 가구를 옮긴 뒤 저장·복원하면 그 자리 DLI 가 같다 ═════════════ */
@@ -511,7 +520,13 @@ check('F 없어진 slotId · 방 밖 좌표 · 사라진 가구 — 회수하고
     const S = newState({ room: 'banjiha', mode: 'novice', firstPlay: true, firstPlayRules: FP_RULES });
     setCropAt(S, { x: -1.2, y: 0.9, z: -1.0 }, { size: eng.room.size });
     const raw = serialize(S);
+    /* ★★ 2026-08-09 — 좌표의 **정본이 시루 쪽으로** 내려왔다(first_play §자리는 시루마다 따로다).
+       `beansprout.at` 은 이제 대표 시루를 비추는 사본이라, 거기만 망가뜨리면
+       불러올 때 `syncCropLead` 가 정본에서 다시 세워 아무 일도 안 난다.
+       ⚠ 옛 세이브(pots 칸이 아예 없는 것)는 그대로 살아난다 — `ensureCropPots` 가
+         `beansprout.at` 을 시루마다 베끼므로 망가진 좌표도 정본으로 옮겨져 회수된다. */
     raw.state.firstPlay.beansprout.at.x = 9.9;
+    raw.state.firstPlay.beansprout.pots[0].at.x = 9.9;
     return deserialize(raw, { ...roomOpt(), firstPlayRules: FP_RULES });
   })();
   assert.equal(crop.firstPlay.beansprout.slotId, eng.room.slots[0].slotId, '방 밖 시루를 안 옮겼습니다');
