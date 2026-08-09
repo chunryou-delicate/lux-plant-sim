@@ -12,9 +12,11 @@ import { readFileSync } from 'node:fs';
 import { newState, waterCrop, resowCrop, cropWaterStatus } from '../src/game/state.js';
 import { nextDay, harvestCrop } from '../src/game/loop.js';
 import { firstPlayRulesFromBalance, CROP_KINDS, placeBeansprout,
-         placeCrop, cropSiteOf } from '../src/game/first_play.js';
+         placeCrop, cropSiteOf, addCropPot } from '../src/game/first_play.js';
 import { STAMINA_MAX, ACT_COST, costOf, canAct, spend, resetDay,
-         staminaOf, staminaView, createStaminaState } from '../src/game/stamina.js';
+         staminaOf, staminaView, createStaminaState,
+         /* ★ 2026-08-09 · 표에서 오는 규칙·경험치 */
+         staminaRulesFrom, xpNeededAt, gainXp, takeLevelUps } from '../src/game/stamina.js';
 
 let pass = 0, fail = 0;
 const ok = (name, cond, detail) => {
@@ -29,16 +31,38 @@ const RULES = firstPlayRulesFromBalance(bal);
 const mk = () => newState({ mode: 'novice', room: 'banjiha', firstPlay: true, firstPlayRules: RULES });
 
 /* ══ A · 숫자가 규칙에서 나오나 ═══════════════════════════════════════════ */
-check('A-1 ★최대치가 "완전 시차로 두 작물을 다 굴리는 하루"보다 여유가 있다', () => {
-  /* 완전 시차 = 거두는 날을 하루씩 어긋나게 두는 것(first_play §겹침).
-     그때 하루에 드는 손 = 종류마다 (물 1 + 수확 1 + 심기 1) + 몬스테라 물 1. */
-  const perKind = CROP_KINDS.length * 3;
-  const needed = perKind + 1;
-  assert.equal(needed, 7, `주기에서 나온 하루 손질이 ${needed}번입니다 — 문서(docs/stamina.md §2)는 7번입니다`);
-  assert.ok(STAMINA_MAX > needed,
-    `최대치 ${STAMINA_MAX} 가 하루 손질 ${needed} 보다 커야 합니다 — 딱 맞으면 실수 한 번이 그날을 망칩니다`);
-  assert.ok(STAMINA_MAX <= needed * 2,
-    `최대치 ${STAMINA_MAX} 가 하루 손질의 두 배를 넘으면 상한 노릇을 못 합니다`);
+check('A-1 ★시작 최대체력은 **표가 정하고**, 그 값은 하루를 다 돌보기에 **모자란다**', () => {
+  /* ★★ 2026-08-09 — 이 검사가 지키던 것이 **둘 다 뒤집혔다**(박사님 확정).
+       ① 예전 전제: 「하루 손질은 종류마다 3번, 합 7번」 — 이젠 아니다.
+         물·수확·심기가 **시루마다 1** 이라(박사님: *"체력은 물주기 수확하기 심기
+         할 때 다 소모되도록 하자고."*) 시루 5개면 거두는 데만 5가 든다.
+       ② 예전 결론: 「최대치는 그보다 여유가 있어야 한다(10)」 — 이젬 반대다.
+         시작 5 는 **모자라야 한다.** 모자라야 「오늘 무엇을 먼저 할까」가 생기고,
+         돌본 만큼 늘어나는 것(§경험치)이 보상이 된다.
+     ★ 그래서 이젠 지키는 것은 **숫자가 어디서 오느냐**다 — 코드가 아니라 표에서. */
+  const J = JSON.parse(readFileSync(new URL('../data/balance/stamina.json', import.meta.url), 'utf8'));
+  const R = staminaRulesFrom(J);
+  assert.equal(R.source, 'data/balance/stamina.json', '표를 안 읽고 밑값으로 돕니다');
+  assert.equal(R.startMax, J.startMax, '표의 startMax 와 규칙이 다릅니다');
+  assert.equal(STAMINA_MAX, R.startMax,
+    `코드 밑값(${STAMINA_MAX})과 표(${R.startMax})가 갈렸습니다 — 둘이 갈리면 밑값으로 도는 판만 다른 게임이 됩니다`);
+
+  /* ★ 첫 시루 하나는 반드시 굴려야 한다 — 물1+수형1+심기1 = 3 */
+  assert.ok(R.startMax >= 3,
+    `시작 ${R.startMax} 으로는 시루 하나의 한 회전도 못 돌립니다(물·수확·심기 = 3)`);
+  /* ★★ 그러나 「시루 5개 완전 시차」는 **못 받아야** 한다 — 그것이 상한의 뜻이다 */
+  const fullDay = 5 * 3;
+  assert.ok(R.startMax < fullDay,
+    `시작 ${R.startMax} 가 시루 5개 하루치(${fullDay})를 다 받아버리면 체력이 상한 노릅을 못 합니다`);
+  /* 오를 수 있어야 한다 — 안 오르면 그냥 낮춘 상한이지 성장이 아니다 */
+  /* ★★ 2026-08-09 — 상한이 **없어졌다**(박사님: "체력도 상한이 없이 계속 ×10 쓰면 1씩 오른다 치고").
+     그래서 `maxCap > startMax` 를 못 물어본다 — `null` 이다.
+     ⚠ 대신 **오를 수 있는가**를 직접 묻는다. 그것이 원래 재려던 것이고, 상한이 있건 없건 같은 말이다. */
+  assert.ok(xpNeededAt(R.startMax, R) != null,
+    '시작값에서 더 오를 데가 없습니다 — 그러면 성장이 아니라 고정값입니다');
+  assert.ok(R.maxCap == null || R.maxCap > R.startMax,
+    '상한을 둔 판이라면 시작값보다는 커야 합니다');
+  console.log(`      시작 ${R.startMax} · 천장 ${R.maxCap == null ? "없음" : R.maxCap} · 첫 칸 ${R.levelTable[R.startMax]}번 · 표=${R.source}`);
 });
 
 check('A-2 ★옮기기·돌리기·시간 보내기는 **공짜**다 (자리를 바꿔 보는 데 벌이 붙으면 안 된다)', () => {
@@ -70,7 +94,10 @@ check('B-2 canAct 는 **던지지 않고** 이유를 낸다 (안내지 고장이
   staminaOf(S).left = 0;
   const r = canAct(S, 'water');
   assert.equal(r.ok, false);
-  assert.ok(r.reason && /오늘은 여기까지/.test(r.reason), `이유가 ${r.reason}`);
+  /* ★ 2026-08-09 — 이유에 **숫자와 처방**이 들어갔다(0/5 · [다음 날]).
+     체력이 5 로 내려가 상한에 닿는 날이 실제로 생기므로 「여기까지」만으로는 모자란다 */
+  assert.ok(r.reason && /손이 다 떨어졌습니다/.test(r.reason), `이유가 ${r.reason}`);
+  assert.ok(/다음 날/.test(r.reason), `어떻게 하라는 말이 없습니다: ${r.reason}`);
   /* 공짜 동작은 바닥이어도 된다 */
   assert.equal(canAct(S, 'move').ok, true, '바닥인데 옮기기가 막혔습니다');
 });
@@ -111,7 +138,8 @@ check('C-2 ★바닥이면 물주기가 **막히고**, 그때 상태는 하나�
   placeBeansprout(S.firstPlay, 'banjiha-dresser:1');
   staminaOf(S).left = 0;
   const before = JSON.stringify(S.firstPlay.beansprout);
-  assert.throws(() => waterCrop(S), /오늘은 여기까지/);
+  /* ★ 2026-08-09 — 문구가 바뀜다: 왜 안 되는지와 **어떻게 하는지**를 같이 말한다 */
+  assert.throws(() => waterCrop(S), /손이 다 떨어졌습니다/);
   assert.equal(JSON.stringify(S.firstPlay.beansprout), before,
     '막혔는데 시루 상태가 바뀌었습니다 — 반쯤 준 물이 생겼습니다');
 });
@@ -216,14 +244,29 @@ check('F-1 ★손은 **부를 때마다** 1이다 — 시루 수가 늘어도 �
 });
 
 /* ★ 그러면 무엇이 손을 늘리나 — **종류 수**다. 그게 지금 체력이 실제로 재는 축이다. */
-check('F-2 손을 늘리는 것은 시루 수가 아니라 **종류 수**다', () => {
-  const perKind = 3;                                  // 물주기 · 수확 · 심기
-  const maxDay = CROP_KINDS.length * perKind;
-  console.log(`      작물 ${CROP_KINDS.length}종 × ${perKind}동작 = 하루 최대 **${maxDay}손** (체력 ${STAMINA_MAX})`);
-  assert.ok(maxDay <= STAMINA_MAX,
-    `하루 최대 ${maxDay}손이 체력 ${STAMINA_MAX} 을 넘습니다 — 두 작물을 다 못 굴립니다`);
-  assert.ok(STAMINA_MAX - maxDay >= 1,
-    '삽수를 자를 손이 안 남습니다 — 확정 무늬가 막혀 튜토가 안 끝납니다');
+check('F-2 ★손을 늘리는 것은 **시루 수**다 (2026-08-09 뒤집힘)', () => {
+  /* ★★ 이 검사가 지키던 말은 *「손을 늘리는 것은 시루 수가 아니라 종류 수다」* 였다.
+     박사님이 **반대로** 확정하셨다: *"체력은 물주기 수확하기 심기 할 때 다 소모되도록 하자고."*
+     ⇒ 물·수확·심기가 **시루마다 1** 이다.
+     ★ 왜 바뀜이 맞나 — 종류 수로 묶으면 시루를 늘릴수록 한 개당 손이 **싸진다.**
+       그러면 체력은 「많이 깔수록 이득」을 못 막고, 그것이 이 계통이 생긴 이유였다
+       (stamina.js 머리말: 「잉여를 팔 수 있으면 시루를 늘릴 이유가 무한해진다」).
+     ⚠ 그래서 옛 결론(「하루치가 최대치 안에 들어야 한다」)도 같이 버린다 —
+       이제는 **안 들어가는 것이 맞다.** 그것이 「오늘 무엇을 먼저 할까」를 만든다. */
+  const S = mk();
+  placeBeansprout(S.firstPlay, 'banjiha-dresser:1');
+  for (let i = 2; i <= 3; i++) addCropPot(S.firstPlay, 'beansprout', { day: 0 });
+  placeBeansprout(S.firstPlay, 'banjiha-dresser:1');     // 셋을 다 놓는다
+  const before = staminaOf(S).left;
+  waterCrop(S); waterCrop(S);                            // 시루 둘에 물
+  const used = before - staminaOf(S).left;
+  assert.equal(used, 2,
+    `시루 둘에 물을 줬는데 손이 ${used} 들었습니다 — 시루마다 1 이어야 합니다`);
+  /* ★ 그리고 시루 5개짜리 하루는 최대치를 **넘어야** 한다(상한이 물린다는 뜻) */
+  const fullDay = 5 * 3;
+  console.log(`      시루 3개 · 물 두 번 = 손 ${used} · 시루 5개 하루치 ${fullDay} > 시작 체력 ${STAMINA_MAX}`);
+  assert.ok(fullDay > STAMINA_MAX,
+    `시루 5개 하루치(${fullDay})가 체력 ${STAMINA_MAX} 안에 들어가면 상한이 아무것도 안 막습니다`);
 });
 
 console.log(`\nstamina: ${fail ? 'FAIL' : 'PASS'}  (${pass}/${pass + fail})`);

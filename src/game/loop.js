@@ -275,14 +275,41 @@ function headroomOfTurn(S, io, p) {
    **오류 없이 틀린 판정**이 된다(삽수만 조용히 안 자란다).
    ⚠ 못 재면 `null` 을 낸다 — 0 으로도 "자란다"로도 메꾸지 않는다. 모르면 안 자란다. */
 const NO_GROW_BANDS = new Set(['critical', 'poor', 'stagnant']);
+
+/* ══════════════════════════════════════════════════════════════════════════
+   ★★★ **자리의 밝기를 물을 때 넘기는 것** — 한 곳에서 짓는다 (2026-08-09)
+   ------------------------------------------------------------
+   ⚠⚠ 이게 없어서 사고가 났다. `io.light.dliOfSlot(ref, opt)` 는 `opt` 에서
+     **날씨·계절·등 개수·켜 둔 시간**을 받는다. 화분 쪽은 네 개를 다 넘겼는데
+     삽수 쪽은 `{}` 를 넘겼다(이 함수가 생기기 전 `loop.js:285`).
+     ⇒ **삽수와 그걸로 키운 새 모주는 식물등 빛을 아예 못 받았다.**
+       등 밑 선반(`banjiha-etagere:7`)이 DLI 11.82 인데 삽수한테는 0.48 로 재졌다 — **25배**.
+       몸스테라 최소 DLI 가 3 이니 등 밑에 두고도 영영 안 자랏다.
+
+   ★ 그래서 베끼지 않고 **한 곳에서 짓는다.** 두 부르는 데가 서로 다른 일을 하므로
+     (하나는 「오늘」, 하나는 「그 날씨라면」) 함수를 통째로 묶을 수는 없고,
+     **옵션을 짓는 일**을 묶는다. 날씨·계절만 밖에서 넣고 등은 상태가 넣는다.
+   ⚠ 칸을 하나 더 받게 되면 **여기만** 고치면 둔 곳이 같이 따라온다. 그것이 이 함수의 전부다. */
+export function lightOptsOf(S, sky) {
+  return {
+    weather: sky && sky.weather,
+    season: sky && sky.season,
+    lampCount: (S && S.lamps && S.lamps.count) || 0,
+    litHours: (S && S.lamps && S.lamps.litHours) || 0
+  };
+}
 function cuttingLightOf(S, io, report) {
   return (c) => {
     const key = c.at ? c : c.slotId;
     if (!key) return null;                       // 자리가 없는 삽수 — 빛을 잴 데가 없다
     let dli = null;
     try {
+      /* ★ 2026-08-09 — 화분과 **같은 것을** 넘긴다(§lightOptsOf).
+         예전엔 `{}` 를 넘겨 등·날씨·계절이 통째로 빠졌다.
+         ⚠ 오늘의 날씨·계절은 **오늘 계약이 쓴 그것**을 그대로 쓴다(`report.sky`) —
+           여기서 다시 굴리면 같은 하루에 날씨가 둘이 된다. */
       dli = c.at && io.light && typeof io.light.dliOfSlot === 'function'
-        ? io.light.dliOfSlot(c, {})
+        ? io.light.dliOfSlot(c, lightOptsOf(S, report && report.sky))
         : dliFromContract(report, c.slotId);
     } catch { return null; }
     if (typeof dli !== 'number' || !isFinite(dli)) return null;
@@ -1255,6 +1282,24 @@ export function stopFastForward(reason = 'stopped') {
   return true;
 }
 
+/* ══════════════════════════════════════════════════════════════════════════
+   ⚠⚠⚠ **화면은 이것을 안 부른다. 재현·측정 전용이다.** (2026-08-09 박사님 확정)
+   ------------------------------------------------------------
+   박사님: *"빨리감기는 없애. 하루넘기기만 살리자."*
+   그래서 `game.html` 에서 [빨리감기] 버튼과 그 배선을 통째로 걷어냈다.
+   플레이어가 날을 건너뛰는 손은 이제 **[다음 날] 하나뿐**이다.
+
+   ★ 그런데 **이 함수는 안 지웠다.** 지우면 같이 죽는 것이 있다:
+     ① `tools/test_fastforward.mjs` 20항목 — 「이벤트에서 선다 · 저광은 날짜만 간다 ·
+        중단하면 그 날에 선다 · 오류 턴에서 즉시 멈춘다 · 타이머가 안 남는다」.
+        그 다섯은 화면이 안 부른다고 없어지는 약속이 아니다 — **하루 루프의 계약**이다.
+     ② 밸런스 측정이 이 길로 돈다(90일치 경제를 재는 재현이 지금 그렇게 돈다).
+     ③ `test_balance_routes` · `test_oneroom` · `probe_tutorial_length` 이
+        `FAST_MODE_MAX_DAYS` · `JUMP_MAX_DAYS` · `timeModeOf` 를 상수로 빌려 쓴다.
+
+   ⇒ **화면에 다시 붙이지 마라.** 붙이면 「플레이어가 날을 건너뛴다」가 되살아나고,
+     그건 박사님이 없애라고 하신 바로 그것이다.
+   ══════════════════════════════════════════════════════════════════════════ */
 export function startFastForward(S, io, opt = {}) {
   if (RUN) throw new Error('[빨리감기] 이미 돌고 있습니다 — 먼저 멈춰 주세요');
 
@@ -1506,9 +1551,10 @@ export function expectedWeekStats(S, io, { season = 'summer', over = null, years
   if (!p || !p.slotId) return { mean: null, p10: null, p50: null, p90: null, weeks: 0, overPct: null };
   /* ★ 자유 좌표 화분은 slotId 만으로 못 찾는다(방 슬롯 목록에 없는 이름이다).
      그럴 때는 화분 자체를 넘긴다 — 조도 포트가 `at` 을 보고 그 좌표로 계산한다. */
-  const dliOf = (weather, s) => io.light.dliOfSlot(p.at ? p : p.slotId, {
-    weather, season: s, lampCount: S.lamps.count, litHours: S.lamps.litHours
-  });
+  /* ★ 2026-08-09 — 삽수와 **같은 짓기**를 쓴다(§lightOptsOf).
+     여기는 「그 날씨라면」을 묻는 자리라 날씨·계절을 밖에서 넣는다. 등은 상태가 넣는다. */
+  const dliOf = (weather, s) => io.light.dliOfSlot(p.at ? p : p.slotId,
+                                                  lightOptsOf(S, { weather, season: s }));
   const st = weekStats(dliOf, { season, over, years, seed: S.sim.seed });
 
   /* ★ 평균은 코어가 다시 낸다. (2026-08-01 현재도 유효)

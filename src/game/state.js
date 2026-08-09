@@ -147,7 +147,9 @@ export function newState(opt = {}) {
        ★ 넣은 이유 한 줄: 「잉여 채소를 판다」가 들어오면 시루를 늘릴 이유가 **무한**해진다.
          그전에는 끼니 상한 위가 버려져 저절로 멈췄는데, 팔 수 있으면 안 멈춘다.
          체력이 그 상한이고, 그 상한이 곧 박사님이 원하신 노가다다. */
-    stamina: createStaminaState(),
+    /* ★ 2026-08-09 — 규칙을 받아 꽂는다(`opt.staminaRules`). 안 주면 밑값으로 돌고,
+       값은 `data/balance/stamina.json` 이 정본이다 — 곱선이 아직 최종이 아니라 표로 둔다. */
+    stamina: createStaminaState(opt.staminaRules || undefined),
 
     /* 경제는 3단계다. 표시만 하고 차감하지 않는다. */
     ledger: { today: { in: 0, out: 0 }, total: 0, electricityWon: 0 },

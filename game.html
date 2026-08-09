@@ -1653,7 +1653,8 @@ import { moveIntoOneroom } from './src/game/oneroom.js';
 import { nextDay, runDays, avg, rollingAvg, harvestCrop } from './src/game/loop.js';
 import { renderHUD, renderLog, renderReport, renderSpark } from './src/game/ui.js';
 /* 체력 — 값만 읽는다. 규칙도 문구도 여기서 짓지 않는다(docs/stamina.md) */
-import { staminaView } from './src/game/stamina.js';
+import { staminaView, staminaRulesFrom, takeLevelUps, xpNeededAt,
+         applyStaminaRules, canAct as staminaCanAct } from './src/game/stamina.js';
 
 const ARRIVAL_POT_D = FIRST_PLAY_ASSETS.monsteraPotDiameterM;
 const $ = (id) => document.getElementById(id);
@@ -1690,6 +1691,12 @@ const io = {
   growth: createGrowthAdapter($('growth'))
 };
 
+/* ★★ 체력·경험치 표 (2026-08-09 · data/balance/stamina.json).
+   ⚠ **없어도 게임은 돌아야 한다** — `staminaRulesFrom(null)` 이 밑값을 낸다.
+     밸런스 파일 하나 때문에 방이 안 열리면 그것이 더 큰 고장이다. */
+const STAMINA_RULES_NOW = staminaRulesFrom(
+  await fetch('./data/balance/stamina.json').then(r => r.ok ? r.json() : null).catch(() => null));
+
 const balanceResponse = await fetch('./data/balance/characters.json');
 if (!balanceResponse.ok) throw new Error(`[첫 플레이] characters.json HTTP ${balanceResponse.status}`);
 const FIRST_RULES = firstPlayRulesFromBalance(await balanceResponse.json());
@@ -1699,7 +1706,8 @@ const OPEN_SIRU = openSiruContractFromManifest(await manifestResponse.json());
 /* ★ 수확 뒤에 썸네일을 콩나물 낱개(`crops/thumbs/beansprout_l`)로 바꿔 봤다가 되돌렸다 —
    낱개 원화는 거의 흰색 세로 막대라 46px 슬롯에서 흰 덩어리로만 읽혔다.
    반지하 저채도 톤에서 가장 밝은 물체가 되어 버려서, 시루 하나로 끝까지 간다. */
-let S = newState({ room: 'banjiha', mode: 'novice', firstPlay: true, firstPlayRules: FIRST_RULES });
+let S = newState({ room: 'banjiha', mode: 'novice', firstPlay: true, firstPlayRules: FIRST_RULES,
+                     staminaRules: STAMINA_RULES_NOW });
 let lastTurn = null;
 /* ★ 표시 전용 — 몬스테라가 **도착한** 자리. first_play 는 옮기면 slotId 를 덮어써서
    "아직 그 자리인가"를 나중에 물어볼 수 없다. 상태를 고치지 않고 화면 쪽에서 기억한다.
@@ -3177,7 +3185,13 @@ function drawHarvest() {
   /* ★ 2026-08-09 — 이 버튼은 **익은 것을 한꺼번에** 거둔다. 시루 하나만 거두려면
      방의 말풍선이나 [식물]의 줄에서 한다(§cropMarks). 글자로 그 차이를 적어 둔다 —
      같은 옷을 입은 두 동작이 말없이 다른 일을 하면 그게 「뭉태기」로 읽힌다. */
-  if (show) b.textContent = n > 1 ? `🥣 익은 콩나물 모두 거두기 (${n}개)` : '🥣 콩나물 거두기';
+  /* ★★★ 체력이 모자라면 **왜 안 되는지**를 글자로 말한다 (2026-08-09 · §staminaBlockNote).
+     ⚠ `disabled` 를 안 건드린다 — 잠긴 버튼은 말풍선의 `click()` 까지 삼킨다(2026-08-08 버그).
+       눌러 보면 코어가 `tutorialInput` 으로 안내한다. */
+  const noteH = staminaBlockNote('harvest');
+  if (show) b.textContent = noteH ? `🥣 ${noteH}`
+    : (n > 1 ? `🥣 콩나물 거두기 (익은 것 ${n}개 · 한 번에 하나)`
+             : '🥣 콩나물 거두기');
 }
 
 /* 다시 심어야 하나 — 거둔 시루가 있고 씨앗이 있을 때만 뜬다.
@@ -3217,7 +3231,9 @@ function drawSow() {
      회색으로 두고 사유를 말한다. */
   btn.textContent = seeds < need
     ? (seeds < 1 ? '🌱 콩 씨앗이 없습니다' : `🌱 콩 씨앗이 ${need}봉지 필요합니다 (${seeds}봉지 있음)`)
-    : (need > 1 ? `🌱 콩나물 다시 심기 (${need}개)` : '🌱 콩나물 다시 심기');
+    /* ★ 2026-08-09 — 이것도 **한 번에 하나**다(거두기와 같은 이유 · 체력은 시루마다 1) */
+    : (need > 1 ? `🌱 콩나물 다시 심기 (빈 시루 ${need}개 · 한 번에 하나)`
+                : '🌱 콩나물 다시 심기');
   btn.title = seeds < need ? '콩 씨앗을 먼저 주문하세요' : '';
 }
 
@@ -3225,6 +3241,36 @@ function drawSow() {
    ★ 문구를 여기서 만든다. `stamina.js` 는 값만 낸다 —
      규칙 모듈이 화면 말을 갖기 시작하면 두 곳이 갈린다.
    ★ 첫 플레이가 안 도는 판(검수)에서는 안 보여 준다 — 셈이 안 도는데 칸만 뜨면 소음이다. */
+/* ★★★ 레벨업을 **보여 준다** (2026-08-09 · 박사님 확정).
+   ------------------------------------------------------------
+   조용히 오르면 보상이 아니다. 다만 **배너가 쌓여 화면을 덮던 사고**가 있었으므로
+   그 상자 규칙(`banners` — 묶어서 세 줄까지·6초·누르면 닫힘)를 그대로 탄다.
+   ⚠ 코어가 쌓아 둔 것을 **가져가며 비운다**(`takeLevelUps`) — 두 번 보여 주지 않는다. */
+function drawLevelUps() {
+  let ups = [];
+  try { ups = takeLevelUps(S); } catch { return; }
+  if (!ups.length) return;
+  banners(ups.map(u => ({
+    title: `✨ 체력이 늘었습니다 — 하루 ${u.max}번`,
+    sub: u.quest ? '퀴스트 보상' : '돌본 만큼 늘었습니다'
+  })));
+  ups.forEach(u => pushLog(S, `✨ 체력이 ${u.max} 로 늘었습니다` +
+                              (u.quest ? ` (퀴스트 ${u.quest})` : '')));
+}
+
+/* ★★★ **체력이 모자라 못 하는 것은 「왜 안 되는지」가 보여야 한다** (2026-08-09).
+   ------------------------------------------------------------
+   물주기가 조용히 안 되던 것을 잡느라 며칠을 태운 적이 있다. 이젠 시작 체력이
+   5 로 내려가고 손이 시루마다 드므로 **상한에 닿는 날이 실제로 생긴다.**
+   그때 아무 말도 안 하면 예전과 똑같은 「눌러도 아무 일이 없다」가 된다.
+   ★ 문구의 정본은 `stamina.canAct().reason` 이다 — 화면이 다시 지어내지 않는다.
+   ⚠ `disabled` 를 안 건드린다 — 잠긴 버튼은 말풍선의 `click()` 까지 삼킨다
+     (2026-08-08 에 며칠 태운 그 버그). 눌러보면 코어가 `tutorialInput` 으로 안내한다. */
+function staminaBlockNote(kind) {
+  try { const st = staminaCanAct(S, kind); return (st && !st.ok) ? st.reason : null; }
+  catch { return null; }
+}
+
 function drawStamina() {
   const el = $('staBar');
   if (!el) return;
@@ -3238,10 +3284,20 @@ function drawStamina() {
   el.style.display = on ? '' : 'none';
   if (!on) return;
   el.classList.toggle('empty', v.empty);
-  /* 채운 점 = 남은 손. 빈 점 = 오늘 쓴 손. 열 칸이라 한눈에 세어진다 */
-  $('staDots').textContent = '●'.repeat(v.left) + '○'.repeat(Math.max(0, v.max - v.left));
+  /* 채운 점 = 남은 손. 빈 점 = 오늘 쓴 손. 열 칸쯤이면 한눈에 세어진다.
+     ★★ 2026-08-09 — **최대체력에 상한이 없어졌다**(박사님). 78 이 되면 점이 78개가 되어
+       한 줄이 통째로 무너진다 — 실제로 재서 확인했다(max 78 에서 점 78개).
+     ⇒ 셀 수 있는 데까지만 점으로 두고, 그 위는 **숫자로 바꾼다.**
+       점은 「한눈에 세어지는 것」이 값어치인데 스무 개를 넘으면 이미 못 센다. */
+  const DOT_MAX = 12;
+  $('staDots').textContent = v.max <= DOT_MAX
+    ? '●'.repeat(Math.max(0, v.left)) + '○'.repeat(Math.max(0, v.max - v.left))
+    : `${v.left}/${v.max}`;
+  /* ★ 2026-08-09 — 바닥난 줄에 **다음 칸까지 얼마남았는지**를 같이 적는다.
+     그때가 「오늘은 끝」이라 가장 맥빠지는 순간이고, 늘어나는 것이 보여야 다시 누른다. */
   $('staText').textContent = v.empty
-    ? '오늘은 여기까지 — [다음 날]을 누르면 다시 움직입니다'
+    ? '오늘은 여기까지 — [다음 날]을 누르면 다시 움직입니다' +
+      (v.atCap ? '' : ` · 다음 체력까지 ${Math.max(0, v.xpNeed - v.xp)}번`)
     : `오늘 손 ${v.left}/${v.max}`;
 }
 
@@ -3288,7 +3344,10 @@ function drawWater() {
   /* ★★ 2026-08-09 — 「(N개 대기)」가 **한꺼번에 준다**는 뜻으로 읽혔다(박사님이 짚으신
      「물 주기 3개」가 그것이다). 실은 예전에도 한 번에 하나였다 — 글자가 거짓말이었다.
      ⇒ **하나씩**이라고 적는다. 시루를 골라 주고 싶으면 방의 말풍선이나 [식물]의 줄에서 한다. */
-  b.textContent = st.needsWater
+  /* ★★★ 체력이 모자라면 **왜 안 되는지**를 글자로 말한다 (2026-08-09 · §staminaBlockNote) */
+  const noteW = staminaBlockNote('water');
+  b.textContent = noteW ? `💧 ${noteW}`
+    : st.needsWater
     ? (wait > 1 ? `💧 ${ko} 한 시루에 물 주기 (${wait}개 대기)`
        : st.idleDays > 0 ? `💧 ${ko}에 물 주기 (${st.idleDays}일째 대기)`
        : `💧 ${ko}에 물 주기`)
@@ -3639,6 +3698,9 @@ function drawJourney() {
   const staEl = $('resSta');
   if (staEl && sv) {
     staEl.textContent = `${sv.left}/${sv.max}`;
+    /* ★ 길게 누르면(title) 다음 칸까지가 보인다 — 칩은 좀아 숫자를 더 못 넣는다 */
+    staEl.title = sv.atCap ? `오늘 손 ${sv.left}/${sv.max} · 더 늘지 않습니다`
+      : `오늘 손 ${sv.left}/${sv.max} · 돌보면 늘어납니다 (${sv.xp}/${sv.xpNeed})`;
     staEl.parentElement.classList.toggle('empty', sv.empty);
     const fill = $('resStaFill');
     if (fill) fill.style.width = `${Math.max(0, Math.min(100, sv.left / Math.max(1, sv.max) * 100))}%`;
@@ -3744,7 +3806,8 @@ async function resumeSave() {
   let r;
   try {
     r = save.loadFrom(localStorage, save.SAVE_KEY,
-      { light: io.light, growth: io.growth, firstPlayRules: FIRST_RULES });
+      { light: io.light, growth: io.growth, firstPlayRules: FIRST_RULES,
+        staminaRules: STAMINA_RULES_NOW });
   } catch (e) { r = { ok: false, reason: e && e.saveReason, message: (e && e.message) || String(e) }; }
   if (!r.ok) {
     console.warn('[세이브] 못 읽었습니다 —', r.reason, r.message);
@@ -3915,6 +3978,7 @@ function draw() {
   drawWater();              /* 물을 줘야 하나 — 말풍선이 있으면 안 띄운다 */
   drawPotWater();           /* 몬스테라도 같은 규칙 */
   drawStamina();            /* 오늘 손이 얼마나 남았나 — 누르기 직전에 보는 값이다 */
+  drawLevelUps();           /* 체력이 올랐으면 말해 준다 — 조용히 오르면 보상이 아니다 */
   drawGrowGauge();          /* 확대 창 — 다음 단계까지 얼마나 왔나 (안 차면 왜인지도) */
   drawSow();                /* 다시 심어야 하나 */
   try { drawSirus(); } catch (e) { console.warn('[시루]', e && e.message); }  /* 시루 하나하나 */
@@ -6136,7 +6200,15 @@ $('harvestCrop').onclick = guard(() => doAct('harvest', () => reallyHarvest()));
 const reallyHarvest = guard(() => {
   /* ★거두기는 io 를 탄다 — 첫 수확에 몬스테라가 도착하고 그건 growth 창구를 쓴다.
      그래서 state 가 아니라 loop 가 맡는다(반환에 arrived 가 실려 온다). */
-  const r = harvestCrop(S, io);
+  /* ★★★ 2026-08-09 — **한 번에 한 시루만 거둔다** (박사님 확정).
+     예전에는 익은 것을 한꺼번에 거두면서 체력은 **1**만 썼다. 그 길이 남으면
+     시루를 늘릴수록 돌보는 것이 **싸지는** 셈이라 체력이 상한 노릅을 못 한다.
+     ⚠ 코어는 그대로다 — `potIds` 를 안 주면 여전히 다 거둔다(재현이 그 길을 쓴다).
+       **화면만** 하나씩 부른다. */
+  let ripeOne = null;
+  try { ripeOne = (cropPotList(S.firstPlay, S.day) || []).filter(x => x.ready)
+                   .sort((a, b) => (b.ageDays || 0) - (a.ageDays || 0))[0] || null; } catch { }
+  const r = harvestCrop(S, io, ripeOne ? { potIds: [ripeOne.id] } : {});
   lastTurn = lastTurn || null;
   banners([{ title: `🥣 콩나물을 거뒀습니다`,
              sub: `${r.qualityKo || ''} · 곳간에 ${Math.round(r.savedWon || r.cycleSavedWon || 0).toLocaleString()}원` }]);
@@ -6198,8 +6270,12 @@ const reallySow = guard(() => {
      ⚠ 산 시루를 여기서 얹지 마라. 그러면 새 시루가 **놓인 자리에 저절로** 붙고,
        그 자리 한도에 맞춰 무리가 통째로 찌그러진다(drawSow §산 시루가 그 이야기다).
        산 시루는 끌어다 놓을 때 선다 — `commitPlace` §산 시루. */
-  const r = resowCrop(S, { slots: io.light.room.slots, size: io.light.room.size });
-  banner('콩나물을 다시 심었습니다', `시루 ${r.sirus}개 · 씨앗 ${r.seedsUsed}봉지`);
+  /* ★★ 2026-08-09 — 거두기와 **같은 이유로** 한 시루만 심는다(체력은 시루마다 1) */
+  let sowOne = null;
+  try { sowOne = (cropPotList(S.firstPlay, S.day) || []).find(x => x.harvested) || null; } catch { }
+  const r = resowCrop(S, { slots: io.light.room.slots, size: io.light.room.size,
+                           ...(sowOne ? { potIds: [sowOne.id] } : {}) });
+  banner('콩나물을 다시 심었습니다', `시루 ${r.resown}개 · 씨앗 ${r.seedsUsed}봉지`);
   draw();
 });
 
@@ -6267,7 +6343,8 @@ $('prof').onclick = () => {
 
 $('reset').onclick = () => {
   const keep = { room: S.home.room, mode: S.sim.mode, lamps: { ...S.lamps } };
-  S = newState({ room: keep.room, mode: 'novice', firstPlay: true, firstPlayRules: FIRST_RULES });
+  S = newState({ room: keep.room, mode: 'novice', firstPlay: true, firstPlayRules: FIRST_RULES,
+                     staminaRules: STAMINA_RULES_NOW });
   S.lamps = keep.lamps;
   lastTurn = null;
   arrivalSlotId = null;
@@ -6371,7 +6448,8 @@ async function playFirstPlayScenario() {
   document.body.classList.add('scen-run');
   $('play').disabled = true; $('firstRun').disabled = true; $('stop').disabled = false;
 
-  S = newState({ room: 'banjiha', mode: 'novice', firstPlay: true, firstPlayRules: FIRST_RULES });
+  S = newState({ room: 'banjiha', mode: 'novice', firstPlay: true, firstPlayRules: FIRST_RULES,
+                     staminaRules: STAMINA_RULES_NOW });
   S.lamps.count = 0;
   lastTurn = null;
   arrivalSlotId = null;

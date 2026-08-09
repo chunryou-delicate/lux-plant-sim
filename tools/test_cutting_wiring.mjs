@@ -402,6 +402,61 @@ console.log(`    이어지는 속도는 ${won(cutLong)}/일 이고, 그 상한�
 /* ============================================================
    결과
 ============================================================ */
+/* ═══════════════════════════════════════════════════════════════════════════
+   J · ★★★ **삽수도 식물등 빛을 받는다** (2026-08-09 · 급한 버그 수정)
+   ------------------------------------------------------------
+   ⚠⚠ 무엇이 잘못됐나 — `loop.js` 가 삽수의 빛을 재는 데 **빈 옵션을 넘겼다**:
+       화분: dliOfSlot(ref, { weather, season, lampCount, litHours })   ← 네 개를 다 넘김
+       삽수: dliOfSlot(c, {})                                          ← 하나도 안 넘김
+     ⇒ 삽수와 그걸로 키운 새 모주가 **식물등 빛을 아예 못 받았다.**
+       등 밑 선반이 12.31 인데 0.48 로 재졌다(25.6배). 최소 DLI 3 이니 영영 안 자란다.
+   ★ 고친 방법 — 베끼지 않고 **옵션을 짓는 일을 한 곳으로** 묶었다(`loop.lightOptsOf`).
+     두 부르는 데가 하는 일은 다르다(「오늘」 vs 「그 날씨라면」) — 함수를 통째로 묶을 수는 없으므로
+     **같은 칸을 짓는 것**을 묶는다. 칸이 하나 늘어도 두 곳이 같이 따라온다.
+   ═══════════════════════════════════════════════════════════════════════════ */
+{
+  const { lightOptsOf } = await import('../src/game/loop.js');
+  const { createProfileLight } = await import('../src/game/room_profile.js');
+  const jj = (rp) => JSON.parse(fs.readFileSync(new URL(rp, import.meta.url), 'utf8'));
+  const light = createProfileLight(jj('../data/profiles/room_profile.banjiha.json'),
+    { lightTh: jj('../data/balance/light_thresholds.json'),
+      weatherBalance: jj('../data/balance/weather.json') });
+  const MIN = jj('../data/balance/light_thresholds.json').plants.monstera_deliciosa.min;
+  const S = { lamps: { count: 1, litHours: 12 } };
+  const sky = { weather: 'clear', season: 'summer' };
+  const opt = lightOptsOf(S, sky);
+
+  /* ① 짓는 칸이 화분 쪽이 넘기던 그것과 **띄어쓰기까지 같은가** */
+  const same = opt.weather === sky.weather && opt.season === sky.season
+            && opt.lampCount === S.lamps.count && opt.litHours === S.lamps.litHours;
+  results.push([same ? 'PASS' : 'FAIL',
+    'J-1 ★삽수와 화분이 **같은 칸**을 넘긴다 (날씨·계절·등·시간)', JSON.stringify(opt)]);
+
+  /* ② 빈 옵션과 고친 옵션의 차이 — 이것이 버그의 크기다 */
+  const KEY = 'banjiha-etagere:7';
+  const before = light.dliOfSlot(KEY, {});
+  const after = light.dliOfSlot(KEY, opt);
+  results.push([after > before * 5 ? 'PASS' : 'FAIL',
+    'J-2 ★★등 밑 선반의 빛이 **살아난다** (빈 옵션이면 잠긴다)',
+    `${before.toFixed(2)} → ${after.toFixed(2)} (${(after / Math.max(before, 1e-9)).toFixed(1)}배)`]);
+  results.push([before < MIN && after >= MIN ? 'PASS' : 'FAIL',
+    'J-3 ★그래서 등 밑에서 **실제로 자라기 시작한다** (최소 DLI 를 넘는다)',
+    `최소 ${MIN} · 전 ${before.toFixed(2)}(안 자람) → 후 ${after.toFixed(2)}(자란다)`]);
+
+  /* ③ 자리가 진짜 상한이다 — 등 1개에서 자라는 칸이 몇인가 */
+  const grow = light.room.slots.filter(s => light.dliOfSlot(s.slotId, opt) >= MIN).map(s => s.slotId);
+  results.push(['INFO', `  ★ 등 1개에서 몬스테라가 자라는 자리 ${grow.length}곳: ${grow.join(' · ')}`]);
+  results.push([grow.length > 0 ? 'PASS' : 'FAIL',
+    'J-4 고친 뒤에는 자라는 자리가 있다', `${grow.length}곳`]);
+
+  /* ④ ★ 등을 더 사도 거의 안 오른다 — 다음 사람이 헛돈 안 쓰게 적어 둔다 */
+  const l1 = light.dliOfSlot(KEY, lightOptsOf({ lamps: { count: 1, litHours: 12 } }, sky));
+  const l2 = light.dliOfSlot(KEY, lightOptsOf({ lamps: { count: 2, litHours: 12 } }, sky));
+  results.push(['INFO', `  ★ 등 1개 ${l1.toFixed(2)} → 2개 ${l2.toFixed(2)} ` +
+    `(${((l2 / l1 - 1) * 100).toFixed(1)}%) — 등을 더 사도 거의 안 오른다. ` +
+    `모주를 늘리려면 **가구가 밝은 칸을 만들어야** 한다`]);
+}
+
 console.log('');
 let fail = 0;
 for (const r of results) {

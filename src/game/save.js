@@ -684,7 +684,21 @@ export function serialize(S, opt = {}) {
          `spentToday` 도 안 싣는다. 표시용이고 날이 바뀌면 어차피 0 이다.
          ⚠ 옛 세이브에는 이 칸이 없다 — 그때는 **가득 찬 채로** 연다(아래 복원).
            0 으로 열면 "껐다 켰더니 오늘 아무것도 못 한다"가 된다. */
-      stamina: { left: needInt(((S.stamina || {}).left ?? STAMINA_MAX), 'stamina.left', { min: 0 }) },
+      /* ★★★ 2026-08-09 — **`max` 와 `xp` 를 같이 싣는다.**
+         위 주석이 *"`max` 는 규칙이지 판의 상태가 아니다"* 라고 적어 둔 것은 그때 맞았다 —
+         **누구나 10이었기 때문이다.** 이제 최대체력이 오른다(stamina.js §경험치).
+         그러므로 `max` 는 규칙이 아니라 **그 판이 쌓은 것**이다. 안 실으면 불러올 때마다
+         시작값으로 되돌아간다 — 레벨은 안 내려간다(박사님 확정).
+         ⚠ `spentToday`·`levelUps` 는 여전히 안 싣는다. 앞은 날이 바뀌면 0 이고,
+           뒤는 「아직 안 보여 준 것」이라 판의 사실이 아니라 화면의 사정이다. */
+      stamina: {
+        left: needInt(((S.stamina || {}).left ?? STAMINA_MAX), 'stamina.left', { min: 0 }),
+        max: needInt(((S.stamina || {}).max ?? STAMINA_MAX), 'stamina.max', { min: 1 }),
+        xp: needInt(((S.stamina || {}).xp ?? 0), 'stamina.xp', { min: 0 }),
+        totalSpent: needInt(((S.stamina || {}).totalSpent ?? 0), 'stamina.totalSpent', { min: 0 }),
+        questsTaken: needArr(((S.stamina || {}).questsTaken || []), 'stamina.questsTaken')
+          .map((q, i) => needStr(q, `stamina.questsTaken[${i}]`))
+      },
       /* ★ 자르지 않는다 — growth 복원의 입력이다(맨 위 §growth). null 은 '못 잰 날'이라 그대로 둔다. */
       dliHist: needArr(S.dliHist || [], 'dliHist')
         .map((v, i) => (v == null ? null : needNum(v, `dliHist[${i}]`))),
@@ -1081,9 +1095,21 @@ export function deserialize(raw, opt = {}) {
   /* 체력 — 없는(옛) 세이브면 **가득 찬 채로** 연다(위 §stamina).
      `max` 는 규칙에서 새로 오므로 최대치를 바꾸면 옛 판도 그 값으로 돈다.
      ⚠ 저장된 `left` 가 지금 최대치보다 크면 잘라 낸다 — 최대치를 낮춘 뒤 열면 그럴 수 있다. */
-  S.stamina = createStaminaState();
-  if (st.stamina && Number.isInteger(st.stamina.left))
-    S.stamina.left = Math.max(0, Math.min(S.stamina.max, st.stamina.left));
+  /* ★★ 2026-08-09 — `max`·`xp` 를 세이브에서 되찾는다. 안 되찾으면 키운 레벨이 불러올
+     때마다 사라진다 — 레벨은 안 내려간다(stamina.js §경험치).
+     ⚠ 칸이 아예 없는 옛 세이브는 **시작값으로 가득 찬 채** 열린다. 던지지 않는다. */
+  S.stamina = createStaminaState(opt.staminaRules || undefined);
+  if (st.stamina) {
+    if (Number.isInteger(st.stamina.max) && st.stamina.max > 0) S.stamina.max = st.stamina.max;
+    if (Number.isInteger(st.stamina.xp) && st.stamina.xp >= 0) S.stamina.xp = st.stamina.xp;
+    if (Number.isInteger(st.stamina.totalSpent) && st.stamina.totalSpent >= 0)
+      S.stamina.totalSpent = st.stamina.totalSpent;
+    if (Array.isArray(st.stamina.questsTaken))
+      S.stamina.questsTaken = st.stamina.questsTaken.filter(q => typeof q === 'string');
+    S.stamina.left = Number.isInteger(st.stamina.left)
+      ? Math.max(0, Math.min(S.stamina.max, st.stamina.left))
+      : S.stamina.max;
+  }
 
   /* ── 무결성 ──────────────────────────────────────────────── */
   const report = {

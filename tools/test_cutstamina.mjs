@@ -105,7 +105,7 @@ check('B-1 ★바닥이면 자르기가 막힌다 — 그때 상태가 **하나�
     loss: JSON.stringify(cutLossOf(S.pots[0]))
   };
   assert.throws(() => takeCutting(S, { nodes: NODES(), nodeId: 'ax0#0', container: 'jar' }),
-    /오늘은 여기까지/, '바닥인데 잘렸습니다');
+    /손이 다 떨어졌습니다/, '바닥인데 잘렸습니다');
   assert.equal(S.cuttings.length, before.cuttings, '막혔는데 삽수가 생겼습니다');
   assert.equal(stockOf(S, 'jar'), before.jar,
     '막혔는데 병이 나갔습니다 — 병만 없어지고 삽수는 없는 판이 됩니다');
@@ -119,7 +119,7 @@ check('B-2 ★바닥이면 분갈이가 막힌다 — 포트도 안 나가고 �
   for (let i = 0; i < 12; i++) { S.day++; stepCuttings(S); }
   staminaOf(S).left = 0;
   const before = { pot: stockOf(S, 'pot'), jar: stockOf(S, 'jar'), snap: JSON.stringify(c) };
-  assert.throws(() => repotCutting(S, c.id), /오늘은 여기까지/, '바닥인데 분갈이됐습니다');
+  assert.throws(() => repotCutting(S, c.id), /손이 다 떨어졌습니다/, '바닥인데 분갈이됐습니다');
   assert.equal(stockOf(S, 'pot'), before.pot, '막혔는데 모종포트가 나갔습니다');
   assert.equal(stockOf(S, 'jar'), before.jar, '막혔는데 병이 돌아왔습니다');
   assert.equal(JSON.stringify(c), before.snap, '막혔는데 삽수가 바뀌었습니다');
@@ -136,7 +136,7 @@ check('C-1 ★막힌 것은 고장이 아니라 안내다 — 자르기·분갈�
   ]) {
     try { fn(); assert.fail(`${what} 가 안 던졌습니다`); }
     catch (e) {
-      assert.match(e.message, /오늘은 여기까지/, `${what} 가 다른 사유로 던졌습니다: ${e.message}`);
+      assert.match(e.message, /손이 다 떨어졌습니다/, `${what} 가 다른 사유로 던졌습니다: ${e.message}`);
       assert.equal(e.tutorialInput, true,
         `${what}: tutorialInput 이 없으면 game.html 이 판을 통째로 잠급니다(isRecoverable)`);
     }
@@ -177,7 +177,7 @@ check('D-3 하루가 가면 다시 자를 수 있다 (이월도 누적도 없다
   assert.equal(canAct(S, 'cut').ok, true, '날이 바뀌었는데 못 자릅니다');
 });
 
-check('D-4 체력 10 이면 하루에 열 번까지 자를 수 있고 열한 번째가 막힌다', () => {
+check(`D-4 체력 ${STAMINA_MAX} 이면 하루에 그만큼 자를 수 있고 그 다음이 막힌다`, () => {
   const S = cuttable({ jars: 20 });
   /* 모주를 크게 잡는다 — 총량(§유한성)이 아니라 **체력**이 먼저 무는지를 본다 */
   const many = Array.from({ length: 20 },
@@ -186,7 +186,7 @@ check('D-4 체력 10 이면 하루에 열 번까지 자를 수 있고 열한 번
   let n = 0;
   for (let i = 0; i < 20; i++) {
     try { takeCutting(S, { nodes: many, nodeId: `n${i}`, container: 'jar' }); n++; }
-    catch (e) { assert.match(e.message, /오늘은 여기까지/, `${i}번째가 다른 사유로 막혔습니다: ${e.message}`); break; }
+    catch (e) { assert.match(e.message, /손이 다 떨어졌습니다/, `${i}번째가 다른 사유로 막혔습니다: ${e.message}`); break; }
   }
   assert.equal(n, STAMINA_MAX / ACT_COST.cut, `하루에 ${n}번 잘렸습니다 — 체력 상한은 ${STAMINA_MAX} 입니다`);
 });
@@ -351,8 +351,13 @@ check('E-1 ★★「콩15는 삽수를 못 자른다」— **아니다.** 완전
   assert.ok(r.pots >= 15, `시루가 ${r.pots}개밖에 안 섰습니다 — 콩15 판이 아닙니다`);
   assert.equal(r.noCutDays, 0,
     `완전 시차 콩15에서 자를 손이 없는 날이 ${r.noCutDays}일 있습니다`);
-  assert.ok(r.spentMax <= STAMINA_MAX - costOf('cut'),
-    `하루 손이 최대 ${r.spentMax} 입니다 — 자를 손 ${costOf('cut')} 이 안 남습니다`);
+  /* ★★ 2026-08-09 — 예전엔 `STAMINA_MAX`(고정 10)와 비겼다. 이젠 **최대체력이 오른다** —
+     시작 5 에서 돌본 만큼 늘어난다(stamina.js §경험치). 그래서 시작값과 비교하면
+     「시작 첫날에 못 자른다」를 재고서 전체가 틀렸다고 말하게 된다.
+     ⇒ **재는 것과 같은 판에서 난 값**(`leftMin`)으로 본다. 그것이 원래 물으려던 것이다:
+       「그 살림을 돌리고 나면 자를 손이 남는가」. */
+  assert.ok(r.leftMin >= costOf('cut'),
+    `그 판에서 남는 손이 최소 ${r.leftMin} 입니다 — 자를 손 ${costOf('cut')} 이 안 남습니다`);
   info(`⇒ 콩15 완전 시차의 하루 손은 최대 ${r.spentMax} · 평균 ${r.spentAvg} 다. ` +
        `문서(docs/stamina.md §2)의 9(+몬스테라 1 = 10)와 다르다`);
 });
@@ -368,18 +373,32 @@ check('E-2 ★왜 다른가 — 수확·심기는 **시루마다가 아니라 �
     `콩15 완전 시차의 하루 손이 ${r.spentMax} 입니다 — 부를 때마다 한 번이면 ${expected} 여야 합니다`);
 });
 
-check('E-3 ★그래도 상한은 있다 — **같은 날에 몰면** 손이 모자란다', () => {
-  /* 겹치게 굴리면(게임이 말리는 쪽) 물주기가 시루 수만큼 나서 바닥이 난다.
-     ⚠ 이건 시루 수의 상한이 아니라 **겹침의 벌**이다 — 처방은 "사지 마라"가 아니라
-       first_play §겹침 그대로 "물을 날을 달리해 줘라" 다. */
-  const same = TABLE.filter(x => x.policy === 'sameday');
-  const hit = same.filter(x => x.noCutDays > 0).map(x => x.sirus);
-  assert.ok(hit.length > 0, '같은 날에 다 몰아도 손이 안 모자랍니다 — 체력이 아무것도 안 막습니다');
-  info(`같은 날 몰아주기에서 자를 손이 없는 날이 생기는 계획: 콩${hit.join(' · 콩')}`);
-  /* 그래도 **영영 못 자르지는 않는다** — 수확일이 아닌 날은 손이 남는다 */
-  for (const r of same)
+check('E-3 ★겹치면 손이 **더 든다** (상한은 거기서 물린다)', () => {
+  /* ★★ 2026-08-09 — 예전 말은 *「같은 날에 몰면 손이 모자란다(자를 손이 없는 날이 생긴다)」*
+     였다. 그건 **최대체력이 10으로 고정이던 때의 결론**이다.
+     이젠 돌본 만큼 최대체력이 오르므로(§경험치), 같은 날에 몰아서 **많이 쓴 판이**
+     오히려 더 빨리 커져서 결국 손이 남는다 — 재보니 그랬다.
+     ⚠ 그런데 그건 「겹쳐도 괜찮다」는 뜻이 **아니다.** 겹치면 거두는 값이 깎인다
+       (first_play §겹침) — 그건 돈 쪽 이야기이지 손 쪽이 아니다.
+     ⇒ 그래서 이젠 **손 쪽에서 여전히 참인 것**만 못 박는다:
+       같은 날에 몰면 하루에 쓰는 손이 **더 많다.** 그것이 상한이 물리는 자리다.
+     ★ 새 결론(「모자라는 날이 생기는가」)은 **재는 중이다** — 다른 워커가 같은 것을
+       재고 있고, 두 측정이 안 맞는 것이 이미 밝혀졌다(siru-to-plan §16). 여기서 정하지 않는다. */
+  for (const n of PLANS) {
+    const st = TABLE.find(x => x.sirus === n && x.policy === 'stagger');
+    const sd = TABLE.find(x => x.sirus === n && x.policy === 'sameday');
+    if (!st || !sd) continue;
+    /* ⚠ **평균이 아니라 고빗값(peak)으로 본다.** 같은 날에 몰면 거두는 날 하루에
+       다 몰리고 나머지 날은 한가해서 **평균은 오히려 낮다**(콩5: 같은날 1.8 < 시차 3).
+       상한이 물리는 것은 평균이 아니라 **그날 하루**이다 — 그것이 재려던 것이다. */
+    assert.ok(sd.spentMax >= st.spentMax,
+      `콩${n}: 같은 날에 몰았는데 **가장 바쁜 날**의 손이 더 적게 듭니다 ` +
+      `(같은날 ${sd.spentMax} < 시차 ${st.spentMax}) — 그러면 겹치는 것을 말릴 이유가 손 쪽에 없습니다`);
+  }
+  /* 그리고 **영영 못 자르지는 않는다** — 그러면 튜토가 막힌다 */
+  for (const r of TABLE)
     assert.ok(r.everCut,
-      `콩${r.sirus}(같은 날)에서 ${r.days}일 내내 한 번도 못 잘랐습니다 — 그러면 튜토가 막힙니다`);
+      `콩${r.sirus}(${r.policy})에서 ${r.days}일 내내 한 번도 못 쟘랏습니다 — 그러면 튜토가 막힙니다`);
 });
 
 check('E-4 ★몬스테라 물주기는 **지금 코드에서 체력을 안 쓴다** (문서와 다르다)', () => {

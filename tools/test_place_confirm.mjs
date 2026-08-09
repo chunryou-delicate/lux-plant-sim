@@ -198,6 +198,30 @@ ok('③-3 트인 바닥에 놓은 시루는 **닿는다** (헛경고를 안 낸�
 ok('③-4 ★경고가 **막지 않는다** — 경고가 있든 없든 [확인]은 눌린다',
    await page.eval(`document.getElementById('placeOk').disabled === false`));
 
+console.log('\n══ ④ 체력이 커져도 화면이 안 깨진다 ════════════════════════════');
+/* ★★ 2026-08-09 — **최대체력에 상한이 없다**(박사님). 세 자리가 될 수 있다.
+   ⚠ 점을 한 개씩 찍던 줄(`#staDots`)이 max 78 에서 **점 78개**를 그려 한 줄이 통째로
+     무너졌다 — 재서 잡았다. 이젠 세어지는 데까지만 점이고 그 위는 숫자다. */
+const big = (max, left, xp) => page.eval(`(()=>{ const S=window.__S();
+  S.stamina.max=${max}; S.stamina.left=${left}; S.stamina.xp=${xp}; window.__redraw();
+  const chip=document.getElementById('resSta');
+  const cr=chip.getBoundingClientRect(), row=chip.parentElement.parentElement.getBoundingClientRect();
+  return { chip:chip.textContent, dots:(document.getElementById('staDots').textContent||'').length,
+           over: cr.right > row.right + 1, fill: document.getElementById('resStaFill').style.width }; })()`);
+/* ⚠ 아래 막대(`#staBar`)는 **손이 바닥났을 때만** 나온다(drawStamina) —
+   그래서 `left: 0` 으로 재야 점이 그려진다. 안 그러면 점 0개를 보고
+   「점이 안 나온다」고 잘못 읽는다(처음에 실제로 그랬다). */
+const b10 = await big(10, 0, 55);
+ok('④-1 두 자리까지는 점으로 보인다', b10.dots === 10 && !b10.over, JSON.stringify(b10));
+const b78 = await big(78, 0, 779);
+ok('④-2 ★두 자리가 커지면 **점 대신 숫자**다 (한 줄이 안 무너진다)',
+   b78.dots <= 8 && !b78.over, JSON.stringify(b78));
+const b999 = await big(999, 123, 99999);
+ok('④-3 ★세 자리도 칩을 안 넘긴다', b999.chip === '123/999' && !b999.over, JSON.stringify(b999));
+ok('④-4 진행바가 0~100% 안에 있다',
+   parseFloat(b999.fill) >= 0 && parseFloat(b999.fill) <= 100, b999.fill);
+await big(5, 5, 0);                       /* 되돌려 둔다 */
+
 console.log(`\n${seen}개 중 ${seen - bad}개 통과` + (bad ? ` · ${bad}개 실패` : ' — 전부 통과'));
 await page.close();
 process.exit(bad ? 1 : 0);
