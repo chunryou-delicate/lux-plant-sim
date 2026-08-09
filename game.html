@@ -642,6 +642,27 @@
   #furnActions .who{position:relative;display:block;padding:1px 4px 3px;
     font-weight:700;font-size:12.5px;color:var(--gold);
     white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  /* ★★ 놓은 것 옆의 [확인] 바 — `#furnActions` 와 **같은 옷·같은 자리잡이**다 (2026-08-09).
+     ⚠ `display:none` 이 기본이다. `visibility:hidden` 으로 두면 안 보이는 채로 포인터를
+       먹어 그 자리의 방이 안 눌린다(가구 메뉴는 `#stage.furnpicked` 로 켜지는 것과 같은 규칙). */
+  #placeConfirm{position:absolute;z-index:29;left:0;top:0;display:none;
+    flex-direction:column;gap:5px;align-items:stretch;
+    width:max-content;max-width:min(62vw,240px);padding:7px;border-radius:14px;
+    background:rgba(16,13,24,.92);border:1px solid rgba(255,180,84,.34);
+    box-shadow:0 8px 24px rgba(0,0,0,.55)}
+  /* 눌리는 자리를 보이는 것보다 넓게 — `#furnActions::before` 와 같은 손이다 */
+  #placeConfirm::before{content:'';position:absolute;inset:-12px;border-radius:22px}
+  #stage.confirming #placeConfirm{display:flex}
+  /* 옮기는 **중**에는 감춘다 — 잡이판(#moveCatcher) 위에 떠 있으면 끌다가 눌린다 */
+  #stage.moving #placeConfirm{display:none}
+  #placeConfirm button{position:relative;min-height:var(--tap);font-weight:700;font-size:14px;
+    border-radius:10px;white-space:nowrap;padding:0 14px}
+  #placeConfirm .who{position:relative;display:block;padding:1px 4px 3px;
+    font-weight:700;font-size:12.5px;color:var(--gold);white-space:nowrap}
+  /* ★ 「길이 막힌다」 경고 — **막지 않는다. 말만 한다**(박사님 2026-08-09:
+       "막는거 경고는 해주되, 막히면 뭐 재배치하면 되지 그 식물을") */
+  #placeConfirm .warn{position:relative;display:block;padding:2px 4px 4px;max-width:220px;
+    font-size:11.5px;line-height:1.4;color:#ffc98f;word-break:keep-all;white-space:normal}
   #moveCatcher{position:absolute;z-index:28;inset:0;display:none;touch-action:none}
   #stage.moving #moveCatcher{display:block}
   #stage.moving #plantActions,#stage.moving #furnActions{display:none}
@@ -1040,6 +1061,24 @@
       <button id="furnAim" class="ghost" style="display:none">겨누기</button>
       <button id="furnClose" class="ghost" aria-label="닫기">✕</button>
     </div>
+    <!-- ★★★ 놓은 것 옆에 뜨는 [확인] (2026-08-09 · 박사님: "놓으면 그 물품 옆으로
+         확인버튼이 떠서 그 확인을 누르면 거기로 일단 배치되는거고")
+         ------------------------------------------------------------
+         왜 필요한가 — 폰에서 가방에서 끌어 놓는 것이 힘들다고 하셨다. 재 보니
+         **가리는 것이 아니라 멀어서**였다: 끄는 손잡이가 화면 왼쪽 맨 아래 구석(40,685)이고
+         방 한가운데까지 309.5px 를 손가락으로 가로질러야 한다(그동안 손가락이 놓을 자리를 덮는다).
+         ⇒ 「눌러서 배치 → 이동 상태 → 상대이동으로 조금씩 → [확인]」이 그 둘을 다 푼다.
+           상대이동은 손가락이 물건에서 떨어져 있어도 되고, [확인]은 「한 번에 정확히」를
+           「놓고 나서 고치기」로 바꾼다.
+         ⚠ `#furnActions` 와 **같은 자리잡이**(placeFloatMenu)를 쓴다. 자리를 `transform` 으로
+           잡으면 전역 `:active` 가 그걸 갈아 끼워 누르는 순간 튄다 — 며칠 태운 그 버그다. -->
+    <div id="placeConfirm">
+      <span class="who" id="placeConfirmWho">여기에 둘까요?</span>
+      <span class="warn" id="placeConfirmWarn" style="display:none"></span>
+      <button id="placeOk" class="primary">확인</button>
+      <button id="placeAgain" class="ghost">다시 옮기기</button>
+      <button id="placeCancel" class="ghost">취소</button>
+    </div>
     <iframe id="growth" src="./plant_grow.html?embed=game" title="식물 확대"></iframe>
     <!-- ★★ 다음 단계까지 얼마나 왔나 (2026-08-06 박사님 · 베타테스터 "크는 게 안 보여 재미없다").
          ★ 확대 창 **위에 얹는다** — plant_grow.html 은 다른 창 소유라 안 건드린다.
@@ -1099,8 +1138,11 @@
          손이 남았나를 **누르기 직전에** 보는 것이 이 값의 쓸모다. -->
     <div id="staBar" style="display:none"><span id="staDots"></span><b id="staText"></b></div>
     <div class="actionbar">
+      <!-- ★★ 2026-08-09 — **[빨리감기]를 없앴다** (박사님: *"빨리감기는 없애.
+           하루넘기기만 살리자."*). 하루를 넘기는 손은 이제 이 버튼 하나다.
+           ⚠ 코어(`loop.startFastForward`)는 **안 지웠다** — 헤드리스 재현·밸런스 측정이
+             그 길로 돈다(`test_fastforward` 20항목이 그 계약을 지킨다). 화면에서만 걷었다. -->
       <button id="next" disabled>다음 날 ▸</button>
-      <button id="ff" class="ghost" disabled>▶▶ 빨리감기</button>
       <button id="openBag" class="ghost">가방</button>
       <!-- ★음악은 꺼진 채로 시작한다. 브라우저가 사용자 조작 없이는 소리를 안 내주기도 하고,
            무엇보다 소리를 원치 않는 자리에서 켜는 게임은 그 자리에서 닫힌다. -->
@@ -1193,6 +1235,10 @@
             <div><b>콩나물 시루</b><small id="cropState">가방에 있음</small></div></div>
           <div class="itemline" id="cropInfo">4일 뒤 첫 수확</div>
           <div class="dragcue">이 그림을 <b>끌어서</b> 방 안에 놓으세요 — <b>한 번에 하나씩</b> 섭니다</div>
+          <!-- ★★★ 폰에서는 끌기가 힘들다 (박사님 2026-08-09 · 실측 근거는 siru-to-plan §8).
+               누르면 방에 임시로 서고, 거기서부터 **상대이동**으로 조금씩 옮긴 뒤 [확인]한다.
+               ⚠ 끌기를 **없애지 않는다** — PC 에서는 그쪽이 빠르다. 둘 다 남긴다. -->
+          <button id="cropPlaceStart" class="primary">📍 방에 배치하기</button>
           <div class="place"><label for="cropSlot" class="sr-only">콩나물 자리</label><select id="cropSlot"></select><button id="placeCrop">하나 두기</button></div>
         </div>
         <!-- ★ 2종째 작물 — 몬스테라가 온 뒤에만 보인다(drawMusun). 콩나물 칸과 **같은 골격**이다:
@@ -1579,6 +1625,7 @@ import {
   monsteraArrivalLeft,
   /* 2종째 작물(무순). 자리 이름·종류표·자리 찾기 — 숫자를 화면이 또 갖지 않는다 */
   cropSiteOf,
+  cropSites,
   cropKindOf,
   CROP_SITE_IDS,
   BEANSPROUT_ID,
@@ -1586,7 +1633,8 @@ import {
      ⚠ 화면이 `pots` 를 직접 뒤지지 않는다. 뒤지면 「익었나·물이 필요한가」 판정이
        화면에도 한 벌 생기고, 두 벌은 반드시 어긋난다. */
   cropPotList,
-  cropPotPlaced
+  cropPotPlaced,
+  syncCropLead
 } from './src/game/first_play.js';
 import { createLightEngine } from './src/game/light_adapter.js';
 import { createGrowthAdapter } from './src/game/growth_adapter.js';
@@ -1597,9 +1645,12 @@ import { seasonAt, seasonDayAt, SEASON_KO, tutorialGoal, learningLeft,
 /* ★이사는 사건이 아니라 **이동**이다. moveOut 은 돈과 판정만 하고 방을 안 바꿨다 —
    moveIntoOneroom 이 그 위에서 S.home.room 과 자리를 옮긴다(oneroom.js 머리말). */
 import { moveIntoOneroom } from './src/game/oneroom.js';
-import { nextDay, runDays, avg, rollingAvg, harvestCrop,
-         startFastForward, stopFastForward, isFastForwarding, nextEventPreview,
-         timeModeOf, FAST_MODE_MAX_DAYS } from './src/game/loop.js';
+/* ★★ 2026-08-09 — 빨리감기 여섯(`startFastForward`·`stopFastForward`·`isFastForwarding`·
+   `nextEventPreview`·`timeModeOf`·`FAST_MODE_MAX_DAYS`)을 **안 들여온다**(박사님 지시로 화면에서
+   걷었다). loop.js 에는 그대로 있다 — 헤드리스 재현·밸런스 측정이 그 길로 돈다.
+   ⚠ `runDays` 는 **빨리감기가 아니다.** 타이머 없이 `nextDay` 를 n번 도는 동기 함수이고,
+     [검수]의 [30일 자동] 하나가 쓴다(플레이어 화면에 없다). 그래서 남긴다. */
+import { nextDay, runDays, avg, rollingAvg, harvestCrop } from './src/game/loop.js';
 import { renderHUD, renderLog, renderReport, renderSpark } from './src/game/ui.js';
 /* 체력 — 값만 읽는다. 규칙도 문구도 여기서 짓지 않는다(docs/stamina.md) */
 import { staminaView } from './src/game/stamina.js';
@@ -1959,7 +2010,6 @@ function buildGuide() {
     [$('stage'),    '방을 끌면 돌아갑니다 · 두 손가락으로 확대\n화분을 누르면 [이동] [회전]', 'mid'],
     [$('quest'),    '지금 할 일',                  'down'],
     [$('next'),     '하루를 보냅니다',              'down'],
-    [$('ff'),       '일이 생길 때까지 감습니다',      'down'],
     /* 좁은 화면엔 [가방] 버튼이, 넓은 화면엔 늘 펴진 시트 탭이 있다. 있는 쪽을 가리킨다 */
     [$('openBag'),  '가방 · 방 설정 · 살림',        'down'],
     [$('tabBag'),   '가방의 그림을 방으로 끌어다 놓습니다', 'up']
@@ -2220,7 +2270,7 @@ function updateHint() {
   const stage = $('stage'), sheetOpen = $('sheet').classList.contains('open');
   /* 지금 할 일이 이미 분명한 상황에서는 안내를 걷는다 */
   if (drag.on || picked.mode || stage.classList.contains('talking') ||
-      stage.classList.contains('zoom') || isFastForwarding()) return hintAt(null);
+      stage.classList.contains('zoom')) return hintAt(null);
   if (!fp || !fp.enabled) return hintAt(null);
 
   /* ★"시트가 열렸나"가 아니라 "그 요소가 실제로 보이나"로 고른다.
@@ -2288,8 +2338,9 @@ function updateHint() {
   /* ④ 첫 플레이가 끝났고 살림이 시작됐다 */
   if (fp.completed && ts && ts.enabled && !sheetOpen && onScreen($('openBag')))
     return hintAt($('openBag'), '가방에서 살림을 봅니다');
-  /* ⑤ 그 밖에는 하루를 진행한다 — 며칠 기다려야 할 때는 빨리감기가 낫다 */
-  if (!$('ff').disabled && plant.arrived && !fp.completed) return hintAt($('ff'), '며칠 감아 보세요');
+  /* ⑤ 그 밖에는 하루를 진행한다.
+     ★ 2026-08-09 — 예전에는 여기서 [빨리감기]를 가리켰다("며칠 감아 보세요").
+       그 버튼이 없어졌으므로(박사님 지시) 아래 [다음 날] 규칙 하나로 내려간다. */
   /* ★★ [다음 날]은 **첫 이틀만** 가리킨다 (2026-08-06 박사님:
        "자꾸 다음 날에 쓰잘데기없이 계속 가이드 손가락 유지된다").
      ⚠ 예전에는 조건이 `!$('next').disabled` 뿐이라, 오늘 할 일이 없는 날이면 **매일** 붙었다.
@@ -3064,8 +3115,10 @@ function doAct(kind, done, opt = {}) {
      ⚠ resolveKey 가 없는 옛 room_view 도 있으므로 **있을 때만** 묻는다 — 없으면 예전대로. */
   const keyResolves = !roomView || typeof roomView.resolveKey !== 'function'
     || !!(() => { try { return roomView.resolveKey(key); } catch { return null; } })();
+  /* ★ 2026-08-09 — `&& !isFastForwarding()` 을 뺐다. 빨리감기가 없어져 늘 거짓이던 항이다.
+     ⚠ 뜻이 바뀐 것은 없다 — 연출을 건너뛰던 유일한 까닭이 빨리감기였다. */
   const canAct = roomView && typeof roomView.actAt === 'function'
-    && key && keyResolves && !isFastForwarding();
+    && key && keyResolves;
   if (!canAct) { done(); return; }
   acting = true;
   actingKey = key;                  // 이 열쇠의 말풍선 위에 게이지가 찬다
@@ -3561,7 +3614,7 @@ function stageBusy() {
   const st = $('stage');
   return drag.on || picked.mode || furnPicked.mode
       || st.classList.contains('talking') || st.classList.contains('zoom')
-      || st.classList.contains('placing') || isFastForwarding();
+      || st.classList.contains('placing');
 }
 
 function drawJourney() {
@@ -3871,7 +3924,8 @@ function draw() {
      앞에 두면 한 프레임 늦은 값을 본다. 없어도 턴은 돌아야 하므로 감싼다. */
   try { drawBag(); } catch (e) { console.warn('[가방]', e && e.message); }
   drawCuttings();           /* ★삽수 — 자르기·분갈이·팔기 (분갈이가 없으면 삽수는 반드시 죽는다) */
-  ffHint();                 /* 상태가 바뀌면 "무엇까지 감는지"도 바뀐다 */
+  /* ★ 2026-08-09 — `ffHint()` 를 걷었다. [빨리감기] 버튼의 title 을 채우던 줄이고,
+     그 버튼이 없어졌다(박사님 지시). */
   syncRoom();               /* 방 전경도 같은 상태를 본다 — 화면이 둘로 갈리면 안 된다 */
   updateHint();             /* 다음에 무엇을 누르면 되는지 손가락으로 */
 }
@@ -3902,6 +3956,8 @@ $('mode').onchange = e => { S.sim.mode = e.target.value; io.light.clearCache(); 
    시루를 골라서 하는 일이고(§siruPick), 이 버튼은 「가방에서 하나 꺼내 세우기」다.
    ⚠ 끌기와 다른 함수를 쓰면 재고를 빼는 순서가 두 벌이 된다 — 그 어긋남이 곧
      "던졌는데 시루가 사라졌다"였다(tools/test_resow_atomic.mjs). */
+/* ★★★ [방에 배치하기] — 폰에서 끌기 대신 쓰는 길 (2026-08-09 · §placeConfirm) */
+$('cropPlaceStart').onclick = guard(() => startPhonePlace());
 $('placeCrop').onclick = guard(() => {
   const target = $('cropSlot').value;
   const r = placeSiru(S, target, { slots: io.light.room.slots, size: io.light.room.size });
@@ -4078,7 +4134,7 @@ const FACE_FILE = {
 };
 function dlgPaint() {
   const line = dlg.current();
-  if (!line) { $('stage').classList.remove('talking'); ffResume(); refreshOverlays(); return; }
+  if (!line) { $('stage').classList.remove('talking'); refreshOverlays(); return; }
   const sp = SPEAKERS[line.who] || { ko: line.who, portrait: false };
   const box = $('dlgBox');
   box.classList.toggle('noface', !sp.portrait);
@@ -4105,18 +4161,16 @@ function dlgPaint() {
      실제로 말풍선이 대화 뒤에 안 떴다. */
   refreshOverlays();
 }
-/* 대화가 뜨면 빨리감기를 세운다 — 말하는 동안 날짜가 계속 가면 대사와 화면이 어긋난다 */
-let ffWasRunning = false;
+/* ★ 2026-08-09 — 예전에는 여기서 빨리감기를 세웠다(말하는 동안 날짜가 가면 대사와 화면이
+   어긋나므로). 빨리감기가 없어져 세울 것이 없다 — [다음 날]은 한 번에 하루라 어긋날 틈이 없다. */
 function dlgOpen(scriptIds) {
   const ids = [].concat(scriptIds).filter(Boolean);
   let any = false;
   for (const id of ids) { try { if (dlg.push(id)) any = true; } catch (e) { console.warn(e.message); } }
   if (!any) return false;
-  if (isFastForwarding()) { ffWasRunning = true; stopFastForward('stopped'); }
   dlgPaint();
   return true;
 }
-function ffResume() { ffWasRunning = false; }     /* 자동 재개는 안 한다 — 읽고 나서 직접 누른다 */
 $('dlgBox').addEventListener('click', () => { dlg.next(); dlgPaint(); });
 $('dlgSkip').addEventListener('click', (e) => { e.stopPropagation(); dlg.skip(); dlgPaint(); });
 
@@ -4860,7 +4914,6 @@ const drag = {
     return best;
   },
   begin(what, thumbUrl, ev) {
-    if (isFastForwarding()) return;
     const { sel, ids } = this.slotsFor(what);
     /* ★★ **추천 자리가 없어도 끌 수 있다** (2026-08-08).
        ══════════════════════════════════════════════════════════════════
@@ -5083,6 +5136,10 @@ const picked = {
   },
   clear() {
     this.slotId = null; this.mode = null; this.potId = null;
+    /* ★ 확인 모드도 같이 푼다 (2026-08-09) — 안 풀면 다음에 아무 화분을 골라 옮겨도
+       [확인] 바가 뜬다. 고르기를 놓는 자리가 여기 하나뿐이라 여기서 푼다. */
+    this.confirming = false; this.before = null;
+    try { placeConfirm.hide(); } catch { }
     $('stage').classList.remove('picked', 'moving');
     if (roomView) roomView.highlightSlots([]);
     $('dropLabel').classList.remove('ok', 'no');
@@ -5171,7 +5228,22 @@ const picked = {
            `potId` 를 안 넘기면 `commitPlace` 가 「가방에서 새로 하나 세우기」로 가서
            옮기려던 시루는 그 자리에 남고 엉뚱한 것이 하나 더 선다. */
         commitPlace(what, hit, { potId: this.potId || null });   /* 인벤에서 끌 때와 같은 경로 */
-        this.clear(); return;
+        if (!this.confirming) { this.clear(); return; }
+      }
+      /* ★★★ 확인 모드면 **여기서 안 끝난다** (2026-08-09 · 박사님 「확인버튼」).
+         놓은 것 옆에 [확인]이 뜨고, 그걸 누를 때까지 계속 옮길 수 있다.
+         ⚠ **못 놓는 데 떨궈도 [확인]은 뜬다.** 그 시루는 이미 방에 서 있고(임시 자리),
+           여기서 조용히 끝내면 「배치하기를 눌렀는데 아무 일도 안 났다」가 된다 —
+           실제로 그렇게 났다(재서 확인). 확인/취소는 언제나 손에 잡혀 있어야 한다.
+         ⚠ 놓으면서 열쇠가 바뀔 수 있다(추천 자리 ↔ 자유 좌표) — 새 열쇠를 다시 잡는다.
+           안 그러면 [확인] 바가 옛 자리에 붙어 「왜 저기 있지」가 된다. */
+      if (this.confirming) {
+        this.mode = null;
+        $('stage').classList.remove('moving');
+        const key = this.potId ? siruKey(this.potId) : this.slotId;
+        if (key) this.slotId = key;
+        placeConfirm.show();
+        return;
       }
     }
     /* 돌리기는 끝나도 계속 고른 상태로 둔다 — 조금씩 맞추는 조작이라 */
@@ -5198,8 +5270,12 @@ function roomTapped() { lastRoomTap = performance.now(); }
    ⚠ 카메라 뒤로 넘어가면 `null` 이 온다. 그때는 **감춘다.** 0 으로 메꾸면 왼쪽 위 구석에
      붙어 "왜 저기 있지"가 된다(placeMarks 가 같은 판단을 적어 뒀다). */
 const FURN_MENU_GAP = 16;              // 가구와 메뉴 사이 [px] — 가구를 안 가릴 만큼만
-function placeFurnMenu(p) {
-  const el = $('furnActions'); if (!el) return;
+/* ★★ 2026-08-09 — **자리잡이를 둘이 나눠 쓴다.**
+   폰 배치의 [확인] 바(`#placeConfirm`)도 가구 메뉴와 똑같은 일을 한다 —
+   물건 옆에 뜨고, 시점을 돌리면 따라가고, 화면 밖으로 나가면 접힌다.
+   베끼면 한쪽만 고쳐지는 날이 온다(이 저장소가 여러 번 겪은 모양이다). */
+function placeFloatMenu(el, p) {
+  if (!el) return;
   if (!p) { el.style.visibility = 'hidden'; return; }
   const c = $('roomCanvas'); if (!c) return;
   const r = c.getBoundingClientRect();
@@ -5225,6 +5301,188 @@ function placeFurnMenu(p) {
   const hr = host ? host.getBoundingClientRect() : { left: 0, top: 0 };
   el.style.left = (left - hr.left) + 'px';
   el.style.top = (top - hr.top) + 'px';
+}
+function placeFurnMenu(p) { placeFloatMenu($('furnActions'), p); }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   ★★★ 폰 배치 — **눌러서 배치 → 상대이동 → [확인]** (2026-08-09 박사님 지시)
+   ------------------------------------------------------------
+   원문: *"폰에서는 가방드래그가 좀 힘든거같어. (…) 템을 눌러서 배치하기 누르면 그냥
+          빈칸으로 임시로 가있고 (배치 말고 이동상태고 상대이동 드래그 배치 가능하게)
+          거기서 드래그해서 놓고, 놓으면 그 물품 옆으로 확인버튼이 떠서 그 확인을 누르면
+          거기로 일단 배치되는거고"*
+
+   ★ 왜 이게 맞는 처방인가 — **재서 알았다**(siru-to-plan §8):
+     끄는 손잡이가 화면 왼쪽 맨 아래 구석(40, 685)이고 방 한가운데까지 **309.5px**를
+     손가락으로 가로질러야 한다. 그동안 손가락이 놓을 자리를 덮는다.
+     가방 시트는 끌기를 시작하면 **실제로 닫힌다**(재서 확인) — 그러니 가리는 것은 시트가
+     아니라 **손가락과 거리**다. 상대이동은 손가락이 물건에서 떨어져 있어도 되게 하고,
+     [확인]은 「한 번에 정확히 놓기」를 「놓고 나서 고치기」로 바꾼다.
+
+   ★ 무엇을 새로 만들었나 — **거의 없다.** 이동 상태·상대이동·자리잡이가 이미 다 있었다:
+     `picked.beginMove()`(상대이동) · `placeFloatMenu`(화면 밖으로 안 나가게 접는 셈) ·
+     `commitPlace(what, hit, {potId})`(그 시루만 옮기기). 여기서는 **[확인] 한 겹**만 얹는다.
+
+   ★ [취소]는 무엇을 되돌리나 — **자리만** 되돌린다.
+     ⚠ 재고를 도로 넣지 않는다(`shop.js` 는 이 창 소유가 아니라 넣을 창구가 없다).
+       대신 갓 꺼낸 시루면 **가방으로 되돌린다**(자리를 null 로) — 그 시루는 `spareSiru()` 가
+       다시 세므로 가방에 그대로 남는다. 잃는 것이 없다.
+   ══════════════════════════════════════════════════════════════════════════ */
+const placeConfirm = {
+  on: false,
+  show() {
+    this.on = true;
+    $('stage').classList.add('confirming');
+    this.paint();
+    this.follow(true);
+  },
+  hide() {
+    if (!this.on) return;
+    this.on = false;
+    $('stage').classList.remove('confirming');
+    this.follow(false);
+  },
+  /* 글자와 경고를 채운다. **경고는 막지 않는다** — 박사님 지시가 그렇다(③). */
+  paint() {
+    const who = $('placeConfirmWho');
+    if (who) who.textContent = picked.slotId && !isFreeSlotId(picked.slotId)
+      ? `${slotLabel(picked.slotId)}에 둘까요?` : '여기에 둘까요?';
+    const warn = $('placeConfirmWarn');
+    if (!warn) return;
+    const msg = reachWarningFor(picked.potId);
+    warn.textContent = msg || '';
+    warn.style.display = msg ? '' : 'none';
+  },
+  tick: null,
+  follow(on) {
+    if (on) {
+      if (this.tick != null) return;
+      const step = () => {
+        this.tick = requestAnimationFrame(step);
+        if (!this.on || !picked.slotId) return;
+        let p = null; try { p = roomView && roomView.screenPosOf(picked.slotId); } catch { }
+        placeFloatMenu($('placeConfirm'), p);
+      };
+      this.tick = requestAnimationFrame(step);
+    } else if (this.tick != null) {
+      cancelAnimationFrame(this.tick); this.tick = null;
+    }
+  }
+};
+
+/* ★ 「눌러서 배치」의 시작 — 빈 시루 하나를 **임시로** 세우고 곧바로 이동 상태로 들어간다.
+   ⚠ `placeSiru` 가 재고를 뺀다. [취소]하면 그 시루는 **가방으로 돌아간다**(자리만 null) —
+     개체는 남으므로 재고를 도로 넣을 필요가 없다(위 §[취소]). */
+function startPhonePlace() {
+  if (spareSiru() <= 0) { banner('가방에 빈 시루가 없습니다', '상점에서 시루를 주문해 주세요'); return; }
+  const spot = provisionalSpot();
+  if (!spot) { banner('놓을 자리를 못 찾았습니다', '방을 조금 돌린 뒤 다시 눌러 주세요'); return; }
+  let r = null;
+  try { r = placeSiru(S, spot, { slots: io.light.room.slots, size: io.light.room.size, snapDist: 0 }); }
+  catch (e) { banner('배치하지 못했습니다', (e && e.message) || ''); return; }
+  try { window.__byeotSheet.close(); } catch { }
+  draw();
+  /* 방에 실제로 서야 `screenPosOf` 가 풀린다 — 그린 **뒤에** 고른다 */
+  const key = siruKey(r.potId);
+  if (!key) { banner('시루를 놓았습니다', '방에서 눌러 옮길 수 있습니다'); return; }
+  picked.select(key);
+  picked.confirming = true;
+  /* 갓 꺼낸 것인지 기억한다 — [취소]가 가방으로 되돌릴지, 옛 자리로 되돌릴지의 근거 */
+  picked.before = { potId: r.potId, fresh: true, slotId: null, at: null };
+  picked.beginMove();
+  banner('자리를 고르세요', '화면 아무 데나 잡고 끌면 시루가 따라옵니다 · 놓으면 [확인]이 뜹니다');
+}
+
+/* 임시로 세울 자리 — **빈 추천 자리** 우선, 없으면 방 한가운데 바닥.
+   ★ 「빈칸으로 임시로 가있고」(박사님)의 그 빈칸이다. 어차피 곧 옮기므로 정확할 필요가 없다. */
+function provisionalSpot() {
+  const taken = new Set();
+  try { for (const it of placedItemsForRoom()) if (it.slotId) taken.add(it.slotId); } catch { }
+  let list = [];
+  try { list = cropCandidates(); } catch { }
+  for (const s of list) if (!taken.has(s.slotId)) return s.slotId;
+  /* 추천 자리가 다 찼거나 없다 — 방 한가운데 바닥을 쏘아 본다 */
+  try {
+    const c = $('roomCanvas').getBoundingClientRect();
+    const hit = freePlace.surfaceAt(c.left + c.width / 2, c.top + c.height * 0.72,
+                                    potDOf('beansprout'));
+    if (hit && hit.ok) return atOf(hit);
+  } catch { }
+  return list.length ? list[0].slotId : null;
+}
+/* ══════════════════════════════════════════════════════════════════════════
+   ★★★ ③ 놓기 전에 「길이 막힌다」를 말해 준다 (2026-08-09 박사님 지시)
+   ------------------------------------------------------------
+   원문: *"막는거 경고는 해주되, 막히면 뭐 재배치하면 되지 그 식물을."*
+
+   ⚠ **막지 않는다.** 놓게 해 주고 말만 한다 — 놓고 나서 옮기면 되기 때문이다.
+     다만 **알려는 준다.** 조용히 못 가게 되는 것이 이 저장소가 제일 싫어하는 모양이다
+     (`docs/silent_failures.md`).
+
+   ★ 판정은 방뷰가 한다(`roomView.unreachable()`). 여기서 길을 다시 세지 않는다 —
+     세면 화면이 말하는 것과 캐릭터가 실제로 걷는 길이 갈린다.
+   ★ 방뷰가 없거나(헤드리스) 사람이 없으면 **아무 말도 안 한다.** 근거가 없는데
+     경고를 지어내면 그 경고를 아무도 안 믿게 된다.
+   반환 null = 할 말이 없다. */
+function reachWarningFor(potId) {
+  if (!roomView || typeof roomView.unreachable !== 'function') return null;
+  let list = [];
+  try { list = roomView.unreachable() || []; } catch { return null; }
+  if (!list.length) return null;
+  /* 사람이 부르는 이름으로 바꾼다 — `crop_01_02` 는 플레이어의 말이 아니다 */
+  const nameOf = (row) => {
+    const id = row.potId || row.key;
+    try {
+      const r = cropPotList(S.firstPlay, S.day).find(x => x.id === id);
+      if (r) return `${r.containerKo} ${r.ord}`;
+    } catch { }
+    const p = pot0(S);
+    if (p && (id === p.id || row.key === p.slotId)) return '몬스테라';
+    return '식물';
+  };
+  /* 지금 놓는 그것부터 말한다 — 제 발등을 찍은 경우가 제일 잦다 */
+  const mine = potId ? list.find(r => r.potId === potId) : null;
+  if (mine) return `여기 두면 이 ${nameOf(mine)}에 **못 갑니다** — 물도 수확도 못 합니다`
+    .replace(/\*\*/g, '');
+  const others = list.map(nameOf);
+  const head = others.slice(0, 2).join(' · ');
+  return `여기 두면 ${head}${others.length > 2 ? ` 외 ${others.length - 2}개` : ''}에 못 갑니다 — ` +
+         `그래도 두시려면 [확인], 옮기려면 [다시 옮기기]`;
+}
+
+/* [확인] — 그 자리로 굳힌다. 상태는 이미 그렇게 돼 있으므로 **고르기만 푼다.**
+   ★ 경고가 떠 있어도 **막지 않는다**(박사님 2026-08-09: "막는거 경고는 해주되,
+     막히면 뭐 재배치하면 되지 그 식물을"). 경고는 알림이지 문이 아니다. */
+function placeConfirmOk() {
+  const warn = reachWarningFor(picked.potId);
+  if (warn) pushLog(S, '⚠ ' + warn);          // 눌러 넘긴 경고도 기록에는 남는다
+  picked.clear();
+  draw();
+}
+/* [취소] — 자리를 되돌린다. 갓 꺼낸 시루면 **가방으로** 돌아간다(개체는 안 없앤다). */
+function placeConfirmCancel() {
+  const b = picked.before;
+  if (b && b.potId) {
+    const site = S.firstPlay && S.firstPlay.beansprout;
+    const pot = ((site && site.pots) || []).find(x => x && x.id === b.potId);
+    if (pot) {
+      if (b.fresh) { pot.slotId = null; pot.at = null; }   // 가방으로
+      else { pot.slotId = b.slotId; pot.at = b.at; }       // 옛 자리로
+      try { syncCropLead(site); } catch { }
+      pushLog(S, b.fresh ? '🥣 시루를 가방에 도로 넣었습니다' : '🥣 시루를 원래 자리로 되돌렸습니다');
+    }
+  }
+  picked.clear();
+  draw();
+}
+/* 지금 방에서 자리를 차지한 것들 — 임시 자리를 고를 때 「빈칸」을 가리는 데만 쓴다 */
+function placedItemsForRoom() {
+  const out = [];
+  const p = pot0(S); if (p && p.slotId) out.push({ slotId: p.slotId });
+  try { for (const s of cropSites(S.firstPlay || {})) for (const q of (s.pots || []))
+    if (q && q.slotId) out.push({ slotId: q.slotId }); } catch { }
+  for (const c of cuttingsOf(S)) if (c && c.slotId) out.push({ slotId: c.slotId });
+  return out;
 }
 let furnMenuTick = null;
 /* 프레임마다 따라간다. **골라져 있을 때만** 돈다 — 노는 화면을 계속 깨우지 않는다
@@ -5655,6 +5913,14 @@ function bindPicked() {
   $('pickTurn').onclick = () => picked.beginTurn();
   $('pickZoom').onclick = () => { const id = picked.slotId; window.__byeotZoom.open(id); picked.clear(); };
   $('pickClose').onclick = () => picked.clear();
+  /* ★★★ 폰 배치의 [확인] 바 (2026-08-09 · §placeConfirm).
+     ⚠ `tapOnce` 를 쓴다 — 폰에서는 pointerdown 이 답이고, 그 뒤끝 click 이 밑
+       캡버스로 새는 것을 그 함수가 이미 막고 있다(가구 메뉴와 같은 손). */
+  tapOnce('placeOk', () => placeConfirmOk());
+  tapOnce('placeAgain', () => { if (picked.slotId) picked.beginMove(); });
+  tapOnce('placeCancel', () => placeConfirmCancel());
+  /* 메뉴 바깥 테두리(::before)를 눌러도 캔버스로 안 새게 막는다 */
+  $('placeConfirm').onpointerdown = (e) => { e.stopPropagation(); };
   /* 같은 잡이판을 화분과 가구가 나눠 쓴다 — 지금 무엇을 옮기는 중인지로 갈린다.
      둘이 동시에 옮겨지는 일은 없다(고르는 순간 서로 푼다). */
   const c = $('moveCatcher');
@@ -5744,14 +6010,17 @@ function bindDrag(thumbId, what) {
   el.addEventListener('pointercancel', () => drag.end());
 }
 
-/* ══ 빨리감기 — ★순간이동이 아니다 (박사님 2026-08-03) ═══════════════════
-   "점점 자라는 모습을 보여주면서 점핑하게." 하루씩 진짜로 돌면서 매일 그린다.
-   그래서 어두운 자리에 둔 채 감으면 **날짜만 가고 형태는 그대로 서 있다** —
-   그 대비가 이 게임이 가르치려는 것이라 빨리감기에서도 살아 있어야 한다. */
-let ffHandle = null;
-function ffStop(reason) {
-  stopFastForward(reason || 'stopped');
-}
+/* ══ 빨리감기 — **없앴다** (박사님 2026-08-09: *"빨리감기는 없애. 하루넘기기만 살리자."*)
+   ------------------------------------------------------------
+   여기 있던 것: `ffHandle` · `ffStop` · `ffPaint` · `ffHint` · `$('ff').onclick` ·
+   `pagehide` 에서 타이머 끄기 · `dayCycleStart/Stop`(빠른 해돌기).
+
+   ★ 코어(`loop.startFastForward`)는 **안 지웠다.** 헤드리스 재현·밸런스 측정이 그 길로 돌고
+     (`tools/test_fastforward.mjs` 20항목이 그 계약을 지킨다), 화면이 안 부르면 아무 일도 안 난다.
+     지우려면 그 검사가 무엇을 지키는지부터 정해야 한다 — 이 창이 혼자 정할 것이 아니다.
+   ★ **세이브는 안 건드렸다.** 시간 모드는 저장되는 값이 아니라 `timeModeOf(S)` 가
+     `firstPlay.enabled`·`completed` 에서 **매번 유도**하는 값이다(재서 확인).
+     그래서 「배속 상태로 저장된 옛 판」이라는 것이 애초에 없다 — 옛 세이브는 그대로 열린다. */
 /* ★빨리감기 중에는 창으로 드는 빛이 계속 돈다 (박사님 2026-08-03) —
    "시간이 빨리 가는 게 딱 느껴지게." 날짜 숫자만 올라가면 시간이 흐르는 감각이 없다.
 
@@ -5759,7 +6028,10 @@ function ffStop(reason) {
      한 바퀴를 1.6초로 두면 12일 감기(1.7초)에 대략 한 바퀴가 지나가고,
      아침→낮→저녁이 눈에 읽힌다. 날짜 수와 묶지 않는 것이 핵심이다. */
 const DAY_SWEEP_MS = 1600;
-let dayLoop = null, dayPhase = 0.28;       /* 0.28 ≈ 아침. 낮부터 시작하면 변화가 덜 보인다 */
+/* 0.28 ≈ 아침. 낮부터 시작하면 변화가 덜 보인다.
+   ★ 2026-08-09 — 짝이던 `dayLoop`(빨리감기 해돌기)는 걷었다. `dayPhase` 는 남는다 —
+     평소 시계와 시루 게이지(§게이지)가 이 값을 쓴다. */
+let dayPhase = 0.28;
 /* ★지금이 하루 중 언제인지를 화면에 적는다 (박사님 2026-08-03: "시간도 표기되면 좋겠고").
    창빛만으로도 느낌은 오지만, 밝기가 낮은 반지하에서는 아침과 저녁이 잘 안 갈린다.
    room_view 의 setDaylight 가 이미 시간대 이름을 돌려주므로 새 계산을 만들지 않는다. */
@@ -5773,18 +6045,10 @@ function paintWhen(label) {
   const mm = String(m % 60).padStart(2, '0');
   el.textContent = `${label || '—'} ${hh}:${mm}`;
 }
-function dayCycleStart() {
-  if (dayLoop || !roomView) return;
-  idleClockStop();                         /* 둘이 같이 돌면 해가 두 배로 간다 */
-  let prev = performance.now();
-  const step = (now) => {
-    if (!dayLoop) return;
-    dayPhase = (dayPhase + (now - prev) / DAY_SWEEP_MS) % 1; prev = now;
-    try { paintWhen(roomView.setDaylight(dayPhase)); } catch { /* 방이 없거나 실패해도 감기는 계속된다 */ }
-    dayLoop = requestAnimationFrame(step);
-  };
-  dayLoop = requestAnimationFrame(step);
-}
+/* ★ 2026-08-09 — `dayCycleStart`(빠른 해돌기)를 걷었다. 부르던 것은 `ffPaint` 하나뿐이었고
+   그 버튼이 없어졌다. 해는 아래 §평소 시계(`idleClockStart`)가 계속 돌린다.
+   ⚠ `DAY_SWEEP_MS`·`dayPhase`·`paintWhen` 은 남긴다 — 평소 시계와 시루 게이지(§게이지)가
+     그 자를 그대로 쓴다. 지우면 시계가 멈추고 게이지가 안 차오른다. */
 /* ★★ 빨리감기를 멈춰도 **시계는 계속 간다** (2026-08-06 박사님: "실시간으로 시간이 흐르는 게
    표현이 지금 되고 있나?").
    ------------------------------------------------------------
@@ -5806,11 +6070,8 @@ function dayCycleStart() {
    동안 볕이 한 뼘쯤 옮겨 가는 정도라, 흐르는 것은 보이되 쫓기지 않는다.
    ⚠ 빨리감기 속도(DAY_SWEEP_MS)는 안 건드린다 — 그건 "하루를 보여 주는" 속도라 다른 일이다. */
 const IDLE_SWEEP_MULT = 90;
-function dayCycleStop() {
-  if (!dayLoop) return;
-  cancelAnimationFrame(dayLoop); dayLoop = null;
-  idleClockStart();                        // 멈춘 자리에서 이어서 천천히 돈다
-}
+/* ★ 2026-08-09 — `dayCycleStop` 도 같이 걷었다(부르던 곳이 `ffPaint` 하나뿐이었다).
+   평소 시계는 방이 뜰 때 한 번 켜지고 그 뒤로 계속 돈다. */
 
 /* 평소 시계 — 해만 돈다. 날짜는 안 넘긴다. */
 let idleLoop = null;
@@ -5829,7 +6090,7 @@ function clockPaused() {
       || document.hidden;
 }
 function idleClockStart() {
-  if (idleLoop || dayLoop || !roomView) return;
+  if (idleLoop || !roomView) return;         /* ★ `dayLoop` 검사를 뺐다 — 그 루프가 없어졌다 */
   let prev = performance.now();
   const step = (now) => {
     if (!idleLoop) return;                 /* ⚠ 멈춤 검사보다 **먼저** — 안 그러면 멈춘 시계가 되살아난다 */
@@ -5852,57 +6113,11 @@ function idleClockStop() {
   if (!idleLoop) return;
   cancelAnimationFrame(idleLoop); idleLoop = null;
 }
-let ffNextWas = null;                      /* 빨리감기 전에 [다음 날]이 눌리는 상태였는지 */
-function ffPaint(on) {
-  const b = $('ff');
-  b.textContent = on ? '■ 멈추기' : '▶▶ 빨리감기';
-  b.classList.toggle('primary', on);
-  if (on) { ffNextWas = $('next').disabled; $('next').disabled = true; dayCycleStart(); }
-  else { dayCycleStop(); if (ffNextWas !== null) { $('next').disabled = ffNextWas; ffNextWas = null; } }
-}
-/* 버튼 밑에 "무엇까지 감는지"를 적어 둔다 — 어디로 가는지 모르고 누르면 불안하다.
-   loop 가 이미 다음 이벤트를 알고 있으므로(nextEventPreview) 코어에 새 계산을 만들지 않는다. */
-function ffHint() {
-  if (isFastForwarding()) return;
-  let p = null; try { p = nextEventPreview(S); } catch { /* 미리보기 실패로 버튼을 막지 않는다 */ }
-  $('ff').title = p ? `${p.ko} 까지` : '다음 일이 생길 때까지';
-}
-$('ff').onclick = guard(() => {
-  if (isFastForwarding()) { ffStop('stopped'); return; }
-  /* ★시루를 놓으라는 요구는 **첫 플레이 동안만**이다 (2026-08-05).
-     끝난 판에서까지 물으면 시루가 없는 살림에서 빨리감기가 영영 안 눌린다.
-     ★`at` 도 본다 — 자유 배치는 좌표만 있고 slotId 가 없다(cropKey 와 같은 규칙). */
-  const fpRunning = S.firstPlay && S.firstPlay.enabled && !S.firstPlay.completed;
-  const bs = S.firstPlay && S.firstPlay.beansprout;
-  if (fpRunning && bs && !(bs.slotId || bs.at)) {
-    const e = new Error('가방의 열린 시루를 먼저 방 안에 놓아 주세요');
-    e.firstPlayInput = true; throw e;
-  }
-  ffHandle = startFastForward(S, io, {
-    msPerDay: 140,                      /* 3D 를 실제로 다시 그리므로 계약값 120 보다 여유를 둔다 */
-    /* ★★ `maxDays` 를 반드시 넘긴다 (2026-08-05 · QA 워커가 잡았다).
-       첫 플레이가 끝나면 `timeModeOf` 가 **점핑에서 배속으로** 바뀌는데, 배속은 한도가 없으면
-       `loop.js:1044` 에서 **반드시 던진다**(「무한 진행은 없습니다」). 점핑은 한도를 안 주면
-       JUMP_MAX_DAYS 로 알아서 채우지만 배속은 안 채운다 — 그래서 완주한 판에서 [빨리감기]를
-       한 번 누르는 것만으로 게임 전체가 잠겼다(그리고 #side 버그 때문에 이유도 안 떴다).
-       ⇒ 배속일 때만 그 모드의 **자기 상한**(FAST_MODE_MAX_DAYS)을 넘긴다. 숫자를 새로 짓지 않는다.
-       ⚠ 「완주 뒤 한 번에 며칠을 감을 것인가」는 아직 박사님 판단입니다 — 지금은 한도(30일)를
-         그대로 씁니다. 어차피 이벤트를 만나면 그 전에 섭니다. */
-    maxDays: timeModeOf(S) === 'fast' ? FAST_MODE_MAX_DAYS : undefined,
-    onDay(turn) { lastTurn = turn; showFirstPlayEvents(turn); draw(); },   /* 대사도 같은 창구로 난다 — dlgOpen 이 알아서 빨리감기를 세운다 */
-    onStop(reason, info) {
-      ffPaint(false);
-      if (reason === 'event') return;   /* 이벤트에서 선 것은 정상이다 — 배너가 이미 떴다 */
-      if (reason === 'stopped' || reason === 'maxDays') return;
-      /* 나머지는 진짜 고장이다. 조용히 넘기지 않는다. */
-      banner('빨리감기를 멈췄습니다', reason + (info && info.blocked ? ' · ' + info.blocked : ''));
-    }
-  });
-  ffPaint(true);
-});
-/* ★페이지를 떠날 때 타이머를 반드시 끈다. loop.js 는 DOM 을 모르므로 여기서 붙인다 —
-   안 끄면 화면이 사라진 뒤에도 턴이 계속 돈다(유령 턴). */
-window.addEventListener('pagehide', () => ffStop('stopped'));
+/* ★★ 2026-08-09 — 빨리감기 묶음을 통째로 걷었다 (박사님 지시).
+   여기 있던 것: `ffNextWas` · `ffPaint` · `ffHint` · `$('ff').onclick` ·
+   페이지를 떠날 때 타이머를 끄던 `pagehide` 핸들러.
+   ★ 타이머가 남을 일이 이제 없다 — 타이머를 거는 것이 `startFastForward` 뿐이었고
+     화면이 그걸 안 부른다. 평소 시계(rAF)는 `pagehide` 와 무관하게 페이지와 같이 죽는다. */
 
 /* 식물등·이사 — 규칙은 tutorial.js 가 판정하고 여기서는 부르기만 한다.
    입력 실수(돈 부족·조건 미달)는 안내이지 고장이 아니므로 버튼을 잠그지 않는다. */
@@ -6335,7 +6550,7 @@ $('firstRun').onclick = confirmOnce('지금 판을 지웁니다?', () => playFir
    반쯤 도는 상태로 굴리면 '왜 안 자라지'가 계약 문제인지 빛 문제인지 못 가른다. */
 /* ★'ff' 도 여기 있어야 한다 — 계약이 깨졌을 때 [다음 날]만 잠그고 빨리감기를 열어 두면
    플레이어가 그쪽으로 우회해 고장난 상태로 며칠을 돌린다. 같이 잠기고 같이 열린다. */
-const GATED = ['next', 'run30', 'play', 'firstRun', 'ff'];
+const GATED = ['next', 'run30', 'play', 'firstRun'];
 try {
   $('room').value = S.home.room;
   $('mode').value = S.sim.mode;

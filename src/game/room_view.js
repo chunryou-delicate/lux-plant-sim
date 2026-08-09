@@ -878,8 +878,9 @@ export async function createRoomView(canvas, opts = {}) {
     roomId = id;
     houseGroup.add(built.room);
     buildOutside(id);                       // 창밖 골목 (창 없는 방이면 조용히 아무것도 안 한다)
-    /* 걸어 다닐 바닥을 다시 물린다 — 방이 바뀌면 벽도 가구도 다 다르다 */
-    nav.setWorld({ colliders: built.colliders || [], size: built.size });
+    /* 걸어 다닐 바닥을 다시 물린다 — 방이 바뀌면 벽도 가구도 다 다르다.
+       ★ 2026-08-09 — 놓인 그루도 같이 물린다(§놓은 것이 길을 막는다). */
+    nav.setWorld({ colliders: navColliders(), size: built.size });
 
     /* 창 확산광 — main.js 와 같은 방식으로 넓은 창은 토막 내서 넘긴다.
        창 하나를 점광원 하나로 두면 창 한가운데만 밝아진다(발코니 통창 문제). */
@@ -1629,6 +1630,36 @@ export async function createRoomView(canvas, opts = {}) {
     });
   }
 
+  /* ══════════════════════════════════════════════════════════════════════
+     ★★★ §놓은 것이 길을 막는다 (2026-08-09 · 박사님: "막는거 경고는 해주되,
+          막히면 뭐 재배치하면 되지 그 식물을")
+     ------------------------------------------------------------
+     ⚠ 그전까지 **놓인 화분·시루는 길찾기의 장애물이 아니었다.** `nav.setWorld` 가 받는 것은
+       방을 지을 때 나온 벽·가구(`built.colliders`)뿐이라, 시루를 아무리 깔아도 캐릭터가
+       그대로 **통과**했다. 시루 하나(24cm)일 때는 티가 안 났는데 각개로 열댓 개를 깔면
+       눈에 띈다(multisiru §9 ③ 이 "이 작업이 만든 것은 아니지만 드러나게 했다"고 적어 둔 그것).
+     ⇒ 놓인 그루를 상자로 바꿔 같이 물린다. 그러면 「여기 놓으면 저기 못 간다」가
+       **실제로 참인 말**이 된다 — 경고가 거짓말을 안 한다.
+
+     ★ 막지는 않는다. 이 파일은 **길을 계산할 뿐**이고, 무엇을 막을지·말지는 화면이 정한다.
+     ★ 상자 크기는 그루의 `potD`(회전무관 지름) 그대로다. 새 숫자를 안 만든다.
+     ⚠ 그루가 늘 때마다 격자를 다시 짓는다(`setWorld` 가 grid 를 비운다). 시루 16개에서
+       재 보면 한 번에 1ms 미만이라 하루 넘길 때 몇 번 도는 것은 값이 싸다. */
+  function navColliders() {
+    const base = (built && built.colliders) || [];
+    const out = base.slice();
+    for (const [, p] of plants) {
+      if (!p || !p.group) continue;
+      const d = Math.max(0.05, p.potD || 0.2);
+      out.push({ x: p.group.position.x, z: p.group.position.z, w: d, d, rot: 0, plant: true });
+    }
+    return out;
+  }
+  function refreshNavObstacles() {
+    if (!built) return;
+    nav.setWorld({ colliders: navColliders(), size: built.size });
+  }
+
   function removePlant(slotId) {
     const p = plants.get(slotId);
     if (!p) return;
@@ -1636,6 +1667,7 @@ export async function createRoomView(canvas, opts = {}) {
     disposeObject(p.group);
     dropPlantBlob(slotId);            // 접지 그림자는 그루 밖에 달려 있다 (§syncPlantBlob)
     plants.delete(slotId);
+    refreshNavObstacles();            // 걷어냈으니 그 자리 길이 다시 열린다
     needsRender = true;
   }
 
@@ -1954,6 +1986,7 @@ export async function createRoomView(canvas, opts = {}) {
                          potId: spec.potId || null, at: atOfSlot(s, g.rotation.y),
                          days, wantDays: days, builtAt: performance.now() });
     if (preview && (preview.fromId === slotId || preview.toId === slotId)) refreshPreview();
+    refreshNavObstacles();               /* ★ 놓인 그루는 길을 막는다(§놓은 것이 길을 막는다) */
     /* 새 화분이 놓이면 그 앞을 막고 선 사람이 생길 수 있다 — 그때 비켜선다 */
     nudgeIfOccluding();
     needsRender = true;
@@ -2032,6 +2065,7 @@ export async function createRoomView(canvas, opts = {}) {
         dropPlantBlob(old);
       }
       syncPlantBlob(key, prev.group, prev.potD);   // 그림자도 따라간다
+      refreshNavObstacles();                      /* ★ 옆으로 옴겼으면 막는 자리도 옴긴다 */
       plantYaw.set(key, A.rotY);
       moveHighlightRing(key, A);
       needsRender = true;
@@ -2063,6 +2097,7 @@ export async function createRoomView(canvas, opts = {}) {
                       potD: Math.min(d, limit === Infinity ? d : limit),
                       days, wantDays: days, builtAt: performance.now() });
     moveHighlightRing(key, A);
+    refreshNavObstacles();               /* ★ 자유 좌표로 선 그루도 길을 막는다 */
     nudgeIfOccluding();
     needsRender = true;
     return g;
@@ -5848,6 +5883,46 @@ export async function createRoomView(canvas, opts = {}) {
        서면 사람이 화분을 가린다. 둘 다 볼 게 안 보인다. 그래서 '살짝 앞의 옆'을 노린다
        (카메라 방향과 이루는 각의 cos 가 0.15 쯤인 자리). nudgeIfOccluding 이 재는
        가림과 같은 이야기를, 여기서는 **미리** 피하는 것이다. */
+  /* ★★★ **닿을 수 있나** — 놓기 전에 묻는 창구 (2026-08-09).
+     ------------------------------------------------------------
+     박사님: *"막는거 경고는 해주되, 막히면 뭐 재배치하면 되지 그 식물을."*
+     ★ 이 함수는 **판정만 한다. 막지 않는다.** 무엇을 막을지는 화면이 정한다.
+     ★ 재는 법은 `runAct` 가 실제로 걷는 방식 그대로다:
+       ① 그 그루 곁에 **설 자리**(`standNear`)가 있나
+       ② 지금 서 있는 데서 그 자리까지 **길이 잡히나**(`nav.path`)
+     ⚠ 이미 그 곁에 서 있으면 `nav.path` 가 빈 배열을 낸다 — 그건 「못 간다」가
+       아니라 「이미 와 있다」다(standNear 의 ⚠ 와 같은 함정). 거리로 먼저 가른다. */
+  function reachOf(key) {
+    const t = resolveKey(key);
+    if (!t) return { ok: false, reason: '모르는 자리입니다' };
+    const person = (() => {
+      const id = (selChar && chars.get(selChar) && chars.get(selChar).walkable ? selChar : null)
+                 || (chars.has('jachwi') ? 'jachwi' : null);
+      const c = id && chars.get(id);
+      return c && c.walkable ? c : null;
+    })();
+    /* 사람이 없으면 못 간다고 말할 근거가 없다 — 지어내지 않는다 */
+    if (!person || !person.root) return { ok: true, reason: null, unknown: true };
+    const here = { x: person.root.position.x, z: person.root.position.z };
+    const cands = standNear({ x: t.pos.x, z: t.pos.z }, here);
+    if (!cands.length) return { ok: false, reason: '곁에 설 자리가 없습니다' };
+    for (const c of cands.slice(0, 8)) {
+      if (Math.hypot(here.x - c.x, here.z - c.z) <= ACT_NEAR_ENOUGH) return { ok: true, reason: null };
+      if (nav.path(here.x, here.z, c.x, c.z).length) return { ok: true, reason: null };
+    }
+    return { ok: false, reason: '가는 길이 막혔습니다' };
+  }
+  /* 지금 **닿을 수 없는** 그루들. 화면이 「여기 놓으면 저 시루에 못 갑니다」를
+     말할 유일한 근거다. 비어 있으면 다 닿는다. */
+  function unreachablePlants() {
+    const out = [];
+    for (const [key, p] of plants) {
+      const r = reachOf(key);
+      if (!r.ok) out.push({ key, potId: (p && p.potId) || null, reason: r.reason });
+    }
+    return out;
+  }
+
   function standNear(t, from) {
     const camA = Math.atan2(ctx.cam.position.x - t.x, ctx.cam.position.z - t.z);
     const cand = [];
@@ -6897,6 +6972,12 @@ export async function createRoomView(canvas, opts = {}) {
        ⇒ 화면은 이 값을 **setPlantAt 의 spec.potD 와 surfaceAt 의 opt.potD 양쪽에** 넣는다.
          한쪽만 넣으면 놓을 때는 통과하고 그릴 때는 줄어든다(또는 그 반대다). */
     plantPotD(kind, count) { return potDOf(kind, count); },
+    /* ★★★ 닿을 수 있나 (2026-08-09 · §놓은 것이 길을 막는다).
+       `reach(key)`   → { ok, reason }   그 그루 곁으로 갈 수 있나
+       `unreachable()` → [{ key, potId, reason }]  지금 못 가는 그루 전부
+       ⚠ **막지 않는다.** 무엇을 막을지는 화면이 정한다(박사님 지시). */
+    reach(key) { return reachOf(key); },
+    unreachable() { return unreachablePlants(); },
     /* 이 방뷰가 그릴 줄 아는 종류들 — 화면이 "심을 수 있나"를 미리 물어보는 창구 */
     plantKinds() {
       return Object.keys(PLANT_KINDS).map(k => ({ kind: k, potD: PLANT_KINDS[k].potD,
