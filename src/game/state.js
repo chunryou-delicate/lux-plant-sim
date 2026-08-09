@@ -20,7 +20,7 @@ import { createFirstPlayState, placeBeansprout, placeCrop, resowBeansprout, wate
 import { createTutorialState, yearDay0Of } from './tutorial.js';
 /* 체력 — 하루에 돌볼 수 있는 양. 규칙은 전부 그쪽 모듈이 갖는다(docs/stamina.md) */
 import { spend as spendStamina, canAct as canActStamina, createStaminaState } from './stamina.js';
-import { createShopState, useStock, creditCropSurplus } from './shop.js';
+import { createShopState, useStock, assertStockAll, creditCropSurplus } from './shop.js';
 import { atFromSlot, isFreeSlotId, makeAt, resolvePlacement,
          inRoom, assertFurnitureAt } from './place.js';
 
@@ -637,6 +637,13 @@ export function resowCrop(S, opt = {}) {
     const st = canActStamina(S, 'sow');
     if (!st.ok) { const e = new Error(`[${k.ko}] ` + st.reason); e.tutorialInput = true; throw e; }
   }
+  /* ★★ 2026-08-09 — **묻는 것과 빼는 것을 갈랐다.**
+     예전에는 시루를 먼저 빼고 씨앗을 나중에 뺐다. 씨앗에서 던지면 이미 빠진 시루가
+     그대로 사라졌다(시루 하나 14,000원). 화면이 미리 세어 그 길을 피할 뿐이라
+     **규칙이 지키는 게 아니었다** — 재현·자동조작·다른 화면에서는 그냥 사라진다.
+     이제 둘 다 먼저 묻고, 통과한 뒤에만 뺀다. 던져도 재고는 손댄 적이 없다. */
+  assertStockAll(S, [{ itemId: k.containerItemId, qty: sirusAdded },
+                     { itemId: k.seedItemId,      qty: seedsUsed }]);
   if (sirusAdded > 0) useStock(S, k.containerItemId, sirusAdded);
   useStock(S, k.seedItemId, seedsUsed);            // 용기 하나에 씨앗 한 봉지
   spendStamina(S, 'sow');

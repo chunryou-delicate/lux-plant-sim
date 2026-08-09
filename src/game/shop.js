@@ -517,10 +517,17 @@ export function stepShop(S, opt = {}) {
   return { events, arrived };
 }
 
-/* 재고를 쓴다. 없으면 던진다 — 조용히 0으로 굴리면 "공짜로 무한히 나오는" 경제가 된다. */
-export function useStock(S, itemId, qty = 1) {
-  const shop = shopOf(S);
-  const have = shop.stock[itemId] || 0;
+/* ★★ 2026-08-09 신설 — **묻기만 한다. 아무것도 안 바꾼다.**
+   ------------------------------------------------------------
+   왜 따로 두나. 한 동작이 재고를 **둘 이상** 쓰면 `useStock` 을 줄줄이 부르는 것이
+   위험하다 — 첫째가 빠진 뒤 둘째가 던지면 첫째는 돌아오지 않는다.
+   (실제로 `resowCrop` 이 시루를 먼저 빼고 씨앗에서 던져 시루 14,000원이 사라졌다.)
+   그런 자리는 `assertStock` 으로 **전부 먼저 묻고**, 통과한 뒤에만 뺀다.
+
+   ⚠ 같은 품목을 두 몫으로 물으면 안 된다 — 3개+3개를 따로 물으면 5개뿐인 재고가 둘 다 통과한다.
+     한 동작이 같은 품목을 여러 번 쓰면 **합쳐서 한 번** 물어야 한다(`assertStockAll` 이 합쳐 준다). */
+export function assertStock(S, itemId, qty = 1) {
+  const have = shopOf(S).stock[itemId] || 0;
   if (have < qty) {
     const it = CATALOG[itemId];
     const inbound = incomingOf(S, itemId);
@@ -529,6 +536,25 @@ export function useStock(S, itemId, qty = 1) {
     e.tutorialInput = true;
     throw e;
   }
+  return have;
+}
+
+/* 여러 품목을 **한꺼번에** 묻는다. 같은 품목이 여러 번 오면 더해서 묻는다(위 ⚠).
+   needs: [{ itemId, qty }, …] — qty 가 0 이하면 안 묻는다(안 쓰는 몫이다). */
+export function assertStockAll(S, needs = []) {
+  const want = new Map();
+  for (const n of needs) {
+    if (!n || !n.itemId || !(n.qty > 0)) continue;
+    want.set(n.itemId, (want.get(n.itemId) || 0) + n.qty);
+  }
+  for (const [itemId, qty] of want) assertStock(S, itemId, qty);
+  return true;
+}
+
+/* 재고를 쓴다. 없으면 던진다 — 조용히 0으로 굴리면 "공짜로 무한히 나오는" 경제가 된다. */
+export function useStock(S, itemId, qty = 1) {
+  const shop = shopOf(S);
+  const have = assertStock(S, itemId, qty);
   shop.stock[itemId] = have - qty;
   return shop.stock[itemId];
 }
