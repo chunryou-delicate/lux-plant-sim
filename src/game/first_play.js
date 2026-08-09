@@ -59,16 +59,23 @@ import { spotOf } from './place.js';
 
    ★★ **3종은 안 넣었다.** 억지로 못 넣은 것이 아니라 **정본이 막는다** — 아래
      `firstPlayRulesFromBalance` 의 `dailyCropSaveWon` 이 `Math.min` 으로 끼니 상한을 지킨다:
-       2종 : 3,000 + 2,000 = 5,000원 = 끼니 상한(2끼 × 2,500원) **정확히 딱**
-       3종 : 3,000 + 2,000 + 1,000 = 6,000원 > 5,000원 → **상한이 이겨서 하루 저감이 안 는다**
+       2종 : 3,000 + 1,867 = 4,867원 ≤ 끼니 상한(2끼 × 2,500원 = 5,000원) — 아슬하게 안 걸린다
+       3종 : + 933 = 5,800원 > 5,000원 → **상한이 이겨서 하루 저감이 안 는다**
+     ⚠ 2026-08-09 무순 회전분이 2,000 → 2,800×2/3 = **1,867원**이 되면서 2종 합계가
+       5,000 에서 4,867 로 내려갔다. 예전 주석의 "정확히 딱"은 이제 틀린 말이다.
      3종째는 씨앗값·용기값만 더 나가고 절감은 한 푼도 안 는다. 재 봤고(tools/probe_crop_cases.mjs
      `--kinds3`), 그래서 안 넣는다. 표에는 1,000원 자리를 **그대로 남긴다** — 끼니 상한이
      올라가는 캐릭터(가장·주부는 household 4 라 상한이 20,000원이다)에서는 3종째가 살아난다.
 
    ★ 칸의 뜻
        harvestDays   한 회전이 자라는 날 (물을 준 날이 0일차)
-       seedWonPerPot 한 판/한 시루를 다시 심을 때 드는 씨앗 정가.
-                     ⚠ **지갑에서 나가는 값은 shop.CATALOG 쪽**이다 — 늘 같은 값이어야 한다
+       seedWonPerPot 한 판/한 시루를 다시 심을 때 드는 씨앗 **정가**.
+                     ★ 2026-08-09 — `shop.CATALOG` 가 **이 칸을 그대로 읽는다.** 값을 두 곳에
+                       적던 것을 한 곳으로 모았다(정본이 두 벌이라 넉 달째 갈려 있었다).
+                     ⚠ 지갑에서 나가는 값은 정가가 아니라 `shop.buyPriceOf` = 정가 × 1.4 를
+                       100원 단위로 올린 것이다. 350원 → **실구매 500원**.
+       savedWonPerCycle ★ 2026-08-09 신설 — 이 작물 한 회전이 내는 **작물 기본값**.
+                     질림이 **하나도 안 붙은** 값이다. 실제 절감은 여기에 §질림 배율을 곱한다.
        wantsLight    true = 밝아야 좋다(무순) · false = 어두워야 좋다(콩나물)
        quality       DLI 대역 → 품질. `minDli` 이상 · `maxDli` 이하일 때 그 대역이다.
                      ★ 두 작물이 **같은 눈금(0.3 · 1.0)을 반대 방향으로** 쓴다.
@@ -80,8 +87,13 @@ export const CROP_KINDS = Object.freeze([
     containerId: 'siru', containerKo: '시루',
     seedItemId: 'bean_seed', containerItemId: 'siru',
     harvestDays: 5,
-    /* ★실제 시세 700~1,200원의 아래쪽. 나물콩은 큰 봉지를 사 나누어 쓴다(§seedWonPerSiru) */
-    seedWonPerPot: 500,
+    /* ★★ 2026-08-09 박사님 확정 — **실구매 700 → 500원.**
+       ⚠ 이 칸은 **정가**다. 실구매가는 `shop.buyPriceOf` = ceil(정가 × 1.4 / 100) × 100 이라
+         실구매 500원을 만들려면 정가는 **350원**이다(500 → 정가 350 · 350×1.4 = 490 → 올림 500).
+         정가에 500 을 그대로 적으면 실구매가 700원이 되어 아무것도 안 바뀐다. */
+    seedWonPerPot: 350,
+    /* ★ 콩나물 한 회전의 작물 기본값 — 3,000원 그대로다(2026-08-04 확정 · plan §1 표). */
+    savedWonPerCycle: 3_000,
     wantsLight: false,
     quality: Object.freeze([
       Object.freeze({ minDli: 0, maxDli: 0.3, id: 'crisp_white', ko: '하얗고 아삭', meals: 3 }),
@@ -97,6 +109,12 @@ export const CROP_KINDS = Object.freeze([
     /* ★ 무씨 실제 시세 100g 1,758원 · 1kg 18,000원(=1,800원/100g). 한 판(20×30cm)에 20~30g 쓰므로
        350~530원이다. 그 한가운데인 **400원**으로 잡았다 — 콩(500원)보다 씨가 잘아 조금 덜 든다. */
     seedWonPerPot: 400,
+    /* ★★ 2026-08-09 박사님 확정 — 무순 한 회전의 작물 기본값 **2,800원.**
+       원문: *"무순이 좀 더 낮아서 그 회전분을 2800원 정도로."*
+       ⚠ 예전에는 이 값이 `cropKindSavedWon[1] = 2,000` 이었는데 그 표는 **겹침 벌**에도
+         같이 쓰였다 — 거기를 2,800 으로 고치면 콩나물 둘째까지 같이 세진다.
+         그래서 표를 「작물 기본값 × 질림 배율」로 갈랐다(아래 §질림). 질림은 여전히 한 표다. */
+    savedWonPerCycle: 2_800,
     wantsLight: true,
     /* ★ 콩나물 표를 **뒤집은 것**이다. 눈금(0.3 · 1.0)까지 같다 —
        같은 자리를 두 작물이 정반대로 읽어야 "어디에 무엇을 놓나"가 셈이 된다.
@@ -109,6 +127,80 @@ export const CROP_KINDS = Object.freeze([
   })
   /* 3종 자리 — 위 ★★ 참고. 끼니 상한이 막고 있어 지금은 비워 둔다. */
 ]);
+
+/* ============================================================
+   ★★★ 질림 배율 — **순번이 뒤로 갈수록 깎인다** (2026-08-09 · 표를 가른 자리)
+   ------------------------------------------------------------
+   예전에는 `cropKindSavedWon = [3,000 · 2,000 · 1,000]` **한 표**가 두 가지 일을 겸했다:
+     ① 작물 **종류** 순번 — 콩나물 다음에 들인 것은 2,000, 그다음은 1,000
+     ② 같은 날 거두는 **겹침** 순번 — 그날 둘째는 2,000, 셋째는 1,000
+   그래서 무순 회전분만 2,800 으로 내리려고 `[1]` 을 건드리면 **콩나물 겹침 벌까지** 같이
+   움직였다. 값 하나에 뜻이 둘이면 한쪽만 고칠 수가 없다.
+
+   ⇒ 값을 두 축으로 갈랐다:
+       작물 기본값   `CROP_KINDS[i].savedWonPerCycle`  — 콩나물 3,000 · 무순 2,800
+       질림 배율     아래 표                            — 첫째 1 · 둘째 2/3 · 셋째 1/3 · 넷째부터 0
+       실제 절감 = 작물 기본값 × 질림 배율 × (품질 끼니 / 3)
+
+   ★★ **질림은 여전히 한 표다.** 2026-08-04 박사님 확정 *"둘을 다른 표로 만들면 안 된다.
+     줄어드는 이유가 같기 때문이다 — 질림이다"* 가 안 깨진다. 가른 것은 「질림」이 아니라
+     「작물마다 다른 값」이다 — 그건 애초에 질림이 아니었는데 같은 표에 얹혀 있었다.
+     ★ 이 저장소는 이미 그 길로 갔다: `harvestDays` 와 `seedWonPerPot` 은 벌써
+       `CROP_KINDS` 로 옮겨져 있었고, 회전분만 안 옮겨져 있었다. 이제 셋이 같은 자리에 있다.
+
+   ⚠ **2/3 · 1/3 이지 0.667 · 0.333 이 아니다.** 인계에 적힌 0.667/0.333 은 소수로 적은 것이고,
+     그대로 곱하면 콩나물 둘째가 2,000 이 아니라 **2,001원**이 된다 — 2026-08-04 에 확정된
+     3,000/2,000/1,000 이 1원씩 어긋난다. 뜻한 값은 정확한 삼분의 이·삼분의 일이다.
+   ★ 배열 길이가 곧 "몇 번째까지 값이 붙나"다. 넷째부터는 0 — 질려서 더는 못 먹는다.
+     들고 오긴 왔는데 먹을 마음이 안 드는 것이라 셈이 0이다(버린 것과는 다르다).
+============================================================ */
+export const CROP_TIRED_MULTIPLIER = Object.freeze([1, 2 / 3, 1 / 3, 0]);
+
+/* 순번 → 질림 배율. 표 밖(넷째 이상)은 0 이다 — 없는 칸을 지어내지 않는다. */
+export function cropTiredMultiplier(rules, index) {
+  const t = (rules && rules.cropTiredMultiplier) || CROP_TIRED_MULTIPLIER;
+  const i = Math.max(0, Math.round(index || 0));
+  return i < t.length ? t[i] : 0;
+}
+
+/* 순번별 작물 기본값 표. 작물이 모자란 칸(3종째)은 **마지막 작물의 기본값**을 쓴다 —
+   그 칸이 실제로 쓰이는 곳은 「없는 3종째 작물」이 아니라 「무순을 같은 날 둘째로 거둠」이다. */
+function cropBases(defs = CROP_KINDS) {
+  const n = Math.max(defs.length, 3);
+  const out = [];
+  for (let i = 0; i < n; i++) {
+    const d = defs[i] || defs[defs.length - 1];
+    out.push((d && d.savedWonPerCycle) || 0);
+  }
+  return Object.freeze(out);
+}
+
+/* 옛 이름 `cropKindSavedWon` 이 가리키던 표를 **파생**으로 낸다 (화면·검사·재현이 읽는다).
+   칸 i = 기본값[i] × 질림배율[i]. */
+function derivedKindSavedWon(bases = cropBases(), tired = CROP_TIRED_MULTIPLIER) {
+  return Object.freeze(bases.map((b, i) => Math.round(b * (i < tired.length ? tired[i] : 0))));
+}
+
+/* 작물 기본값 — 질림이 **하나도 안 붙은** 한 회전분.
+   ★ 규칙 사본이 옛 표(`cropKindSavedWon`)를 **손으로 덮어썼으면** 거기서 되풀어 낸다.
+     그 표는 `기본값 × 질림배율` 이라 배율로 나누면 기본값이 돌아온다. 이 길이 있어야
+     회전분을 훑는 재현(`tools/probe_econ.mjs`·`probe_three_layers.mjs`)이 계속 듣는다 —
+     그 도구들은 `cropKindSavedWon` 을 갈아 끼워 회전분을 바꾼다.
+   ⚠ 덮어쓴 것이 아니라 **파생 그대로**면 되나누지 않는다. 파생표는 원 단위로 반올림돼 있어서
+     되나누면 2,800 이 **2,800.5** 로 돌아온다. 그래서 "이 표가 선언된 기본값에서 나온
+     그대로인가"를 먼저 본다 — 맞으면 기본값을 그냥 쓴다. */
+export function cropBaseSavedWonOf(rules, kindIndex = 0) {
+  const i = Math.max(0, Math.round(kindIndex || 0));
+  const bases = (rules && rules.cropBaseSavedWon) || FIRST_PLAY_RULES.cropBaseSavedWon;
+  const table = rules && rules.cropKindSavedWon;
+  if (Array.isArray(table) && Number.isFinite(table[i])) {
+    const m = cropTiredMultiplier(rules, i);
+    const b = bases[i];
+    if (Number.isFinite(b) && Math.round(b * m) === table[i]) return b;
+    return m > 0 ? table[i] / m : 0;
+  }
+  return bases[i] ?? 0;
+}
 
 /* 종류 표를 이름으로 · 순번으로 찾는다. **모르는 이름은 던진다** — 조용히 콩나물로 굴리면
    값이 3,000원으로 잘못 붙고 그 판이 통째로 틀린 살림이 된다. */
@@ -161,17 +253,22 @@ export const FIRST_PLAY_RULES = Object.freeze({
      ⚠ shop.CATALOG.bean_seed.listWon 과 **같은 값이어야 한다** — 지갑에 닿는 건 그쪽이다. */
   /* ★ 2026-08-05 — 정본은 `CROP_KINDS[0].seedWonPerPot` 이다(작물마다 씨앗값이 다르다). */
   seedWonPerSiru: CROP_KINDS[0].seedWonPerPot,
-  /* ★★ **순번별 한 회전이 내는 절감액**. 박사님 확정값 그대로다.
-     ⚠ 이 셋도 `data/balance/` 가 아니라 여기 있다 — 그 폴더는 이 창 소유가 아니다.
-       plan 에 `characters.json._meta.cropKindSavedWon` 으로 옮겨 달라고 요청한다(보고 ⑤).
-     ★ 배열 길이가 곧 "몇 번째까지 값이 붙나"다. 4번째부터는 0 — 질려서 더는 못 먹는다.
-
-     ★★ 이 표는 **두 곳에서 같이 쓴다** (2026-08-04 박사님 확정 · 아래 §겹침).
-       ① 작물 **종류**가 늘 때 — 콩나물 다음에 들인 것은 2,000, 그다음은 1,000
-       ② 거두는 **때가 겹칠** 때 — 곳간이 아직 안 빈 채로 또 거두면 둘째는 2,000, 셋째는 1,000
-     둘을 다른 표로 만들면 안 된다. 줄어드는 **이유가 같기 때문**이다 — 질림이다.
-     같은 것이 아직 남아 있는데 또 들어오는 것이나, 같은 것을 계속 먹는 것이나 한 가지다. */
-  cropKindSavedWon: Object.freeze([3_000, 2_000, 1_000]),
+  /* ★★ 질림 배율 — 순번이 뒤로 갈수록 깎인다. 정본은 위 §질림 이다.
+     이 표는 **두 곳에서 같이 쓴다**(2026-08-04 박사님 확정 · 아래 §겹침):
+       ① 작물 **종류**가 늘 때 — 콩나물 다음에 들인 것은 ×2/3, 그다음은 ×1/3
+       ② 거두는 **때가 겹칠** 때 — 같은 날 둘째는 ×2/3, 셋째는 ×1/3
+     둘을 다른 표로 만들면 안 된다. 줄어드는 **이유가 같기 때문**이다 — 질림이다. */
+  cropTiredMultiplier: CROP_TIRED_MULTIPLIER,
+  /* ★ 순번별 **작물 기본값** — 질림이 안 붙은 값. 정본은 `CROP_KINDS[i].savedWonPerCycle` 이고
+     여기 칸은 그것을 가리키는 사본이다(순번 표로 펴 둔 것뿐). [3,000 · 2,800 · 2,800] */
+  cropBaseSavedWon: cropBases(),
+  /* ★★ 옛 이름 — 이제 **파생값**이다 (2026-08-09 · 위 §질림).
+     [0]=콩나물 3,000 · [1]=무순 2,800×2/3=1,867 · [2]=(작물 없음)2,800×1/3=933.
+     ⚠ 여기 숫자를 손으로 고치지 마라. 회전분을 바꾸려면 `CROP_KINDS[i].savedWonPerCycle` 을,
+       깎이는 폭을 바꾸려면 위 `CROP_TIRED_MULTIPLIER` 를 고치는 것이다.
+     ★ 그래도 이 칸을 남긴 이유 — 화면(`game.html`)·검사·재현이 `cropKindSavedWon[0]` 을
+       「한 회전분」으로 읽고 있다. 이름을 없애면 그것들이 조용히 0 을 읽는다. */
+  cropKindSavedWon: derivedKindSavedWon(),
   /* 품질 배수의 분모. 최상 품질(3끼)이 그 종류의 기본값을 그대로 낸다.
      ★ 끼니는 **품질 라벨로 남는다** — "하얗고 아삭 3끼"라는 말이 절감액보다 눈에 잘 들어온다.
        값은 원으로 매기되 비율은 예전 그대로다(3 : 2 : 1 = 3,000 : 2,000 : 1,000원). */
@@ -184,9 +281,12 @@ export const FIRST_PLAY_RULES = Object.freeze({
   /* ============================================================
      ★★★ 잉여 채소를 넘기는 값 — **정가의 몇 %인가** (2026-08-06 신설 · 아래 §잉여 판매)
      ------------------------------------------------------------
-     ⚠⚠ **이 값은 아직 박사님이 안 정하셨다.** 0.70 은 econgap 이 「합격선을 넘는 조합」으로
-       권한 값일 뿐 확정이 아니다(`docs/handoff/econgap-to-plan.md §B-3`).
-       그래서 **여기 한 곳에만** 적는다 — 코드 어디에도 0.7 을 또 쓰지 않는다.
+     ★★ 2026-08-09 박사님 확정 — **0.70 → 0.85.**
+       정본은 `data/balance/characters.json._meta.cropSurplusSaleRate` 다. 여기 값은 그 파일을
+       못 읽는 판(순수 모듈·검사 하네스)을 위한 **폴백**이고, 둘이 같은지는
+       `tools/test_econ.mjs` 가 매번 확인한다 — 다르면 검사가 깨진다.
+     ★ 0.85 가 왜 위끝인가 — 1.00 을 넘기면 「밥으로 먹는 것보다 파는 게 낫다」가 되어 이 게임의
+       뼈대가 뒤집힌다. 0.85 는 그 아래이면서 「씨앗값보다는 살짝 이득」을 크게 넘긴다.
 
      ★ 값이 왜 여기 있나 — `data/balance/` 는 이 창 소유가 아니라 못 고친다.
        `cropKindSavedWon`(3,000/2,000/1,000)도 같은 이유로 여기 있고, 그 칸 바로 옆이
@@ -203,7 +303,7 @@ export const FIRST_PLAY_RULES = Object.freeze({
        ⇒ 「씨앗 비용보다는 살짝 이득」(박사님)이 70% 언저리에서 성립한다.
      ★ 서사로도 100% 가 아니어야 한다 — 이건 **떨이**다. 곳간이 못 받아 버릴 것을
        이웃·가게에 헐값으로 넘기는 것이라 제값을 못 받는 편이 앞뒤가 맞는다. */
-  cropSurplusSaleRate: 0.70
+  cropSurplusSaleRate: 0.85
 });
 
 export const FIRST_PLAY_ASSETS = Object.freeze({
@@ -258,11 +358,16 @@ export function openSiruContractFromManifest(manifest) {
    자리(빛)가 품질을 정하고 품질이 값을 정한다. 그 사슬은 예전 그대로이고, 끝만 끼니에서 원으로 바뀌었다.
      colspan  종류 순번(0 = 첫 작물). CROP_KINDS 의 자리와 같다.
      meals    품질표가 낸 끼니(3·2·1) — 여기서는 **배수**로만 쓴다 */
-export function cropCycleSavedWon(rules, meals, kindIndex = 0) {
-  const table = rules.cropKindSavedWon || FIRST_PLAY_RULES.cropKindSavedWon;
-  const base = table[kindIndex] ?? 0;
+/* ★★ 2026-08-09 — 인자가 **둘로 갈렸다**(위 §질림).
+     tiredIndex  질림 순번 = 종류 순번 + 그 종류의 그날 순번
+     kindIndex   어느 작물인가 (기본값은 tiredIndex — 옛 호출부는 둘이 같은 뜻이었다)
+   ⇒ 겹침을 셀 때는 **작물은 그대로인데 순번만 민다.** 예전에는 순번을 밀면 작물도 같이
+     밀려서, 콩나물 둘째가 「무순의 값」을 받고 있었다. 표가 하나였을 때는 그게 안 보였다. */
+export function cropCycleSavedWon(rules, meals, tiredIndex = 0, kindIndex = tiredIndex) {
   const maxMeals = rules.qualityMaxMeals || FIRST_PLAY_RULES.qualityMaxMeals;
-  return Math.round(base * Math.max(0, meals) / maxMeals);
+  return Math.round(cropBaseSavedWonOf(rules, kindIndex) *
+                    cropTiredMultiplier(rules, tiredIndex) *
+                    Math.max(0, meals) / maxMeals);
 }
 
 /* ============================================================
@@ -296,8 +401,9 @@ export function cropCycleSavedWon(rules, meals, kindIndex = 0) {
      버리는 것이 아니다 — 곳간에 안 들어가므로 쉬어서 버려지는 몫(spoiledWon)과도 다르다.
      들고 오긴 왔는데 **먹을 마음이 안 드는 것**이라 셈이 0이다.
 ============================================================ */
-export function overlapSavedWon(rules, meals, indexOnDay) {
-  return cropCycleSavedWon(rules, meals, Math.max(0, Math.round(indexOnDay || 0)));
+export function overlapSavedWon(rules, meals, indexOnDay, kindIndex = 0) {
+  const t = Math.max(0, Math.round(indexOnDay || 0));
+  return cropCycleSavedWon(rules, meals, kindIndex + t, kindIndex);
 }
 
 /* 경제값의 정본은 data/balance/characters.json._meta다. 코어는 그 값을 받아 1끼 값을
@@ -1395,9 +1501,11 @@ export function harvestBeansprout(fp, opt = {}) {
       const quality = cropQualityOf(kindId, avgDli);
       const overlapIndex = (onDayByKind[kindId] || 0);
       onDayByKind[kindId] = overlapIndex + 1;
-      /* 안 겹쳤을 때 이 작물이 낼 값 — 종류 순번은 그대로 붙는다(무순은 처음부터 2,000원이다) */
-      const fullWon = cropCycleSavedWon(rules, quality.meals, kindIndex);
-      const savedWon = cropCycleSavedWon(rules, quality.meals, kindIndex + overlapIndex);
+      /* 안 겹쳤을 때 이 작물이 낼 값 — 종류 순번은 그대로 붙는다(무순은 처음부터 ×2/3 다) */
+      /* ★ 2026-08-09 — **작물을 따로 넘긴다**(§질림). 넷째 인자가 없으면 순번을 밀 때
+         작물까지 같이 밀려, 콩나물 둘째가 「무순 기본값 × 2/3」을 받는다. */
+      const fullWon = cropCycleSavedWon(rules, quality.meals, kindIndex, kindIndex);
+      const savedWon = cropCycleSavedWon(rules, quality.meals, kindIndex + overlapIndex, kindIndex);
       /* 겹쳐서 못 받은 몫 — 화면이 "곳간이 안 비어 N원을 못 받았습니다"를 말할 근거다 */
       const lostWon = Math.max(0, fullWon - savedWon);
 

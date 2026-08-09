@@ -53,7 +53,7 @@ check('B 계절 — 시작 여름 · 45일 뒤 가을 · 135일 뒤 겨울', () 
      10,000(월세 몫) × 30 + 300,000(목돈) = 600,000. 하루 평균은 20,000원 = 월 60만이다.
    ⚠ `rentWon` 과 `dailySpendWon` 은 같이 움직인다 — 이 검사가 바로 그 짝을 지킨다.
      한쪽만 바꾸면 이 숫자가 안 움직이거나 두 배가 된다(2026-08-05 에 실제로 그랬다). */
-check('C 하루 지출 — 월세를 두 번 안 뗀다 · 30일 평균이 20,000원', () => {
+check('C 하루 지출 — 월세를 두 번 안 뗀다 · 30일 평균이 16,667원', () => {
   const ts = mk();
   const r0 = tutorialDay(ts, { firstPlayDone: true, mealsUsed: 0 });
   assert.equal(r0.spentWon, 10_000, `하루 현금 지출이 ${r0.spentWon} — 월세 몫을 뺀 10,000이어야 합니다`);
@@ -77,8 +77,13 @@ check('C 하루 지출 — 월세를 두 번 안 뗀다 · 30일 평균이 20,00
   for (let i = 0; i < 30; i++) tutorialDay(ts3, { firstPlayDone: true, mealsUsed: 0 });
   const after30 = ts3.cashWon;
   for (let i = 0; i < 30; i++) tutorialDay(ts3, { firstPlayDone: true, mealsUsed: 0 });
+  /* ★★ 2026-08-09 — **60만 → 50만원** (박사님 확정, 월세 30만 → **20만**).
+       월세 200,000 + 공과 75,000 + 식비 225,000 = **500,000원/월** = 하루 16,667원.
+     ★ 위 `r0.spentWon === 10,000` 은 **안 움직였다** — 하루 지출과 월세 몫이 같이 내려가
+       차액(하루 현금차감)이 그대로이기 때문이다. 그게 이 짝이 맞물려 있다는 증거다:
+       월세만 내리면 여기 500,000 이 안 내려가고, 하루치만 내리면 r0 가 어긋난다. */
   const spent = after30 - ts3.cashWon;
-  assert.equal(spent, 600_000, `한 달 지출이 ${spent.toLocaleString()}원 — 60만원이어야 합니다`);
+  assert.equal(spent, 500_000, `한 달 지출이 ${spent.toLocaleString()}원 — 50만원이어야 합니다`);
 });
 
 /* ══ C-2 · ★전기세가 **실제로 켠 것**을 따라간다 (2026-08-06) ══════════════
@@ -237,7 +242,16 @@ check('I 목표 — 배울 게 남으면 배움을, 다 배웠으면 돈을 말�
   const ts = mk();
   assert.equal(tutorialGoal(ts).id, 'learn', '처음엔 배움을 말해야 합니다');
   teachAll(ts);
-  assert.equal(tutorialGoal(ts).id, 'money', '다 배웠으면 돈을 말해야 합니다');
+  /* ★★★ 2026-08-09 — **지갑을 문턱 아래로 내려놓아야 「돈」 단계를 볼 수 있다.**
+     시작돈이 1,300,000 → 1,500,000원이 되면서 `moveOutCostWon`(1,500,000)과 **같아졌다.**
+     그래서 배움을 다 채우는 순간 곧바로 `ready` 다 — **「돈을 모으는 단계」가 아예 없다.**
+     ⚠ 이건 재현 편의가 아니라 판이 실제로 그렇다는 뜻이다. 튜토의 목표 줄이
+       「이사 자금 N원 남았습니다」를 한 번도 안 말한다. plan 판단 요청으로 인계에 적었다
+       (`docs/handoff/balance-to-plan.md §2` — 시작돈 = 이사비). */
+  assert.equal(tutorialGoal(ts).id, 'ready',
+    '★시작돈이 이사비와 같아 배움을 채우는 순간 바로 ready 여야 합니다');
+  ts.cashWon = TUTORIAL_RULES.moveOutCostWon - 1;
+  assert.equal(tutorialGoal(ts).id, 'money', '이사비에 못 미치면 돈을 말해야 합니다');
   ts.cashWon = TUTORIAL_RULES.moveOutCostWon;
   assert.equal(tutorialGoal(ts).id, 'ready');
 });

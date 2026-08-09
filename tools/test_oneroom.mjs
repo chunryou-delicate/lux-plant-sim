@@ -183,12 +183,25 @@ check('D-2 월세 — withOneroomRent 로 채우면 이사 뒤부터 그 값이 
        `dailySpendWon` 을 그대로 쓰고 월세 몫만 갈아 끼운다(tutorial.js §dailyCashOutWon 의 ⏸).
        그래서 **원룸 월세가 하루 15,000원을 넘으면 나머지 살림이 0원이 된다.**
        원룸 `dailySpendWon` 을 정할 때 반드시 같이 봐야 한다 — docs/oneroom.md §2. */
+  /* ★★★ 2026-08-09 — **기대값을 5,000 → 1,667원으로 내린다. 숫자를 안 바꾸고 뜻을 지킨다.**
+     ------------------------------------------------------------
+     반지하 월세가 300,000 → **200,000원**이 되어 하루 지출이 20,000 → **16,667원**이 됐다.
+     원룸 월세 450,000원의 하루 몫은 15,000원 그대로이므로 남는 하루치는
+       16,667 − 15,000 = **1,667원**.
+     ⚠⚠ **이 숫자가 이 검사의 결론이 아니라 경고다.** 남는 1,667원이 공과·전기·식비 전부다 —
+       식비만 7,500원인데. 즉 **원룸으로 이사하면 살림이 사실상 공짜가 된다.**
+       위 ⚠ 가 적어 둔 그 결함(`dailyCashOutWon` 이 원룸에서도 반지하의 `dailySpendWon` 을
+       그대로 쓰고 월세 몫만 갈아 끼운다)이 반지하 월세를 내리면서 **훨씬 심해졌다.**
+       예전 위험선은 「원룸 월세 하루 20,000원(=월 60만)」이었는데 이제 **하루 16,667원(=월 50만)**이다.
+       원룸 실제 월세가 450,000원(하루 15,000)이라 **여유가 1,667원밖에 안 남는다.**
+     ⇒ 원룸 `dailySpendWon` 을 따로 갖는 일이 이제 미룰 수 없다 — docs/oneroom.md §2 ·
+       docs/handoff/core-to-plan.md 에 판단 요청으로 적었다. */
   const rules = withOneroomRent(TUTORIAL_RULES, { rentWon: 450_000 });
   const S = readyToMove({ rules });
   assert.equal(rentWonOf(S.tutorial), TUTORIAL_RULES.rentWon, '이사 전인데 원룸 월세가 나옵니다');
   moveIntoOneroom(S, {});
   assert.equal(rentWonOf(S.tutorial), 450_000, '이사 뒤인데 원룸 월세가 안 나옵니다');
-  assert.equal(dailyCashOutWon(S.tutorial), 5_000, '하루치가 늘어난 월세 몫만큼 안 줄었습니다');
+  assert.equal(dailyCashOutWon(S.tutorial), 1_667, '하루치가 늘어난 월세 몫만큼 안 줄었습니다');
 
   /* 실제로 청구될 때도 그 값이어야 한다 */
   const ts = S.tutorial;

@@ -1154,6 +1154,24 @@ export function repotCutting(S, cuttingOrId, opt = {}) {
      이게 없으면 "죽는 길을 피하는 것"이 공짜가 되고, 물꽂이의 기한이 벌이 아니게 된다.
      ★ 빠져나온 병은 **돌아온다**(returnsOnSale 과 같은 이유 — 병은 소모품이 아니다). */
   const from = CONTAINERS[c.container] || null;
+
+  /* ★★★ 2026-08-09 — **자리를 먼저 정하고, 다 되면 그때 상태를 찍는다.**
+     ------------------------------------------------------------
+     예전에는 `potted = true` · `status = 'established'` 를 먼저 찍고 자리를 **나중에** 줬다.
+     자리 주기(`resolvePlacement`)가 던지면 삽수는 이미 「흙에 선」 것으로 바뀌어 있는데
+     `slotId` 가 없어 **빛이 null 이 된다.** 오류는 던져졌지만 판은 이미 바뀐 뒤라,
+     그 삽수는 살아 있고 죽지도 않으면서 **영영 안 자란다** — 조용한 실패다.
+     ⇒ 던질 수 있는 일을 **다 끝낸 뒤에** 상태를 바꾼다. 던지면 아무것도 안 바뀐다.
+     (같은 날 `state.resowCrop`·`state.placeSiru` 도 같은 병이었고 `shop.assertStockAll` 로
+      「묻고 나서 빼는」 순서를 세웠다. `tools/test_resow_atomic.mjs` 가 그 본보기다.)
+     ★ 왜 `resolvePlacement` 를 직접 부르나 — `setCuttingAt` 은 **재는 일과 쓰는 일**을
+       한 함수에 담고 있다. 재는 쪽만 먼저 부르면 순서를 가를 수 있다(그 함수는 순수하다). */
+  const spot = opt.at ? resolvePlacement(c.id, opt.at, opt) : null;
+
+  /* ⚠ 순서가 계약이다: ① **던질 수 있는 것을 다 던져 본다**(체력·자리) → ② 재고를 뺀다
+       → ③ 상태를 찍는다 → ④ 체력을 깎는다.
+     `useStock` 도 모자라면 던지지만 그때는 아직 상태를 안 찍었으므로 판이 안 바뀐다.
+     자리를 ② 뒤로 미루면 「포트만 빠지고 삽수는 병에 남는」 예전 병으로 돌아간다. */
   useStock(S, CONTAINERS.soil.itemId, 1);
   if (from && from.returnsOnSale && from.itemId) returnContainer(S, from.itemId);
 
@@ -1163,7 +1181,7 @@ export function repotCutting(S, cuttingOrId, opt = {}) {
   c.status = 'established';
   c.deadlineDay = null;
   c.pottedOnDay = S.day;
-  if (opt.at) setCuttingAt(S, c, opt.at, opt);
+  if (spot) { c.at = spot.at; c.slotId = spot.slotId; }
 
   /* ★ 성공한 뒤에 깎는다 (위 takeCutting 과 같은 규칙) */
   spendStamina(S, 'repot');

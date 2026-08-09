@@ -21,7 +21,7 @@
       "id": "banjiha",
       "room": "banjiha",
       "name_ko": "반지하",
-      "rent": 300000,
+      "rent": 200000,
       "deposit": 3000000,
       "moveCost": 0,
       "utility": 75000,
@@ -29,7 +29,7 @@
       "provided": false,
       "light_env": "빛 최악(식물등 의존)",
       "allowed_plants": "저광 관엽 · 무광 작물(콩나물)",
-      "notes": "자취자 시작. 13슬롯이 전부 어두워 콩나물 공장이 된다(food_economy.md §7). 관엽은 식물등 없이는 불가."
+      "notes": "자취자 시작. 13슬롯이 전부 어두워 콩나물 공장이 된다(food_economy.md §7). 관엽은 식물등 없이는 불가. ★2026-08-09 박사님 확정 — 월세 300,000 → 200,000원. 하루 지출이 20,000 → 16,667원(=200,000/30 + 75,000/30 + 7,500)으로 따라 내려간다. tutorial.banjihaRulesFrom 이 그 식으로 다시 셈하고 tools/test_econ.mjs 가 등식을 고정한다."
     },
     {
       "id": "oneroom",

@@ -60,11 +60,17 @@ export const CATALOG = Object.freeze({
        지갑에서 나가는 값이 갈린다 — 실제로 이 판이 그 상태였다.
      근거는 first_play.js §seedWonPerSiru 와 같다: 실제 나물콩 1시루분이 700~1,200원이고,
      1,500원이면 씨앗값이 절감의 70%를 먹어 순액이 하루 180원(지출의 0.9%)밖에 안 남았다. */
+  /* ★★★ 2026-08-09 — **정본을 한 자리로 모았다.** 값을 여기 안 적고 작물 표에서 읽는다.
+     예전에는 `CROP_KINDS[0].seedWonPerPot` 과 여기 두 곳에 같은 숫자가 있었고,
+     "늘 같은 값이어야 한다"는 주석만으로 지키게 되어 있었다 — 실제로 갈렸다.
+     이제 **가리키는 것**이라 갈릴 수가 없다. `tools/test_econ.mjs` 가 그 등식도 못 박는다.
+     ⚠ 여기는 **정가**(=파는 값)다. 실구매가는 `buyPriceOf` 가 ×1.4·100원 올림으로 낸다:
+       정가 350원 → **실구매 500원** (박사님 확정값은 실구매 쪽이다). */
   bean_seed: Object.freeze({
     id: 'bean_seed', ko: '콩 씨앗 (1시루분)', kind: 'seed',
-    listWon: 500, leadDays: 1,
-    note: 'docs/food_economy.md §3 — 실제 시세 700~1,200원의 한가운데. ' +
-          'first_play.FIRST_PLAY_RULES.seedWonPerSiru 와 **같은 값이어야 한다**'
+    listWon: CROP_KINDS[0].seedWonPerPot, leadDays: 1,
+    note: 'first_play.CROP_KINDS.beansprout.seedWonPerPot 이 정본이다(여기서 읽는다). ' +
+          '정가 350원 → 실구매 500원 (2026-08-09 박사님 확정)'
   }),
   /* ⚠ 콩 씨앗과 **더는 같은 값이 아니다** (2026-08-04). 예전 근거였던 "콩 1시루와 같은 값"은
      콩 쪽이 내려가면서 끊겼다 — 이 값은 sale_economy.md §3 가 직접 적은 1,500원으로 선다.
@@ -74,11 +80,18 @@ export const CATALOG = Object.freeze({
     listWon: 1_500, leadDays: 1,
     note: 'docs/sale_economy.md §3 가격표 — "몬스테라 씨앗 1립 1,500"'
   }),
+  /* ★★ 2026-08-09 박사님 확정 — **실구매 7,000 → 5,000원.**
+     ⚠ 여기는 정가라 5,000 을 그대로 적으면 실구매가 7,000원 그대로다.
+     ⚠⚠ **정가 3,500 이 아니다.** 3,500 × 1.4 = 4,900 인데 4,900 은 이미 100원 단위라
+       올림이 아무 일도 안 한다 — 실구매가 **4,900원**이 된다(재서 확인했다).
+       실구매 5,000원을 내는 정가는 3,500 < L ≤ 3,571 구간이고, 그 안의 고른 값이 **3,550원**이다
+       (3,550 × 1.4 = 4,970 → 100원 올림 5,000). `tools/test_econ.mjs §D` 가 이 값을 잰다. */
   siru: Object.freeze({
     id: 'siru', ko: '콩나물 시루 (차광 용기)', kind: 'container',
-    listWon: 5_000, leadDays: 2,
-    note: 'docs/shop.md §2 — 정본에 용기값이 없어 sale_economy.md §4 의 "묘목 5,000원"' +
-          '(정본에 있는 가장 싼 완제품)을 소품 가격대의 기준으로 삼았다. plan 확인 대기'
+    listWon: 3_550, leadDays: 2,
+    note: '2026-08-09 박사님 확정 — 정가 3,550원 → 실구매 5,000원. ' +
+          '예전 근거(sale_economy.md §4 "묘목 5,000원")는 정가 5,000원이었는데 ' +
+          '그러면 실구매가 7,000원이 된다 — 박사님이 정하신 것은 **실구매** 쪽이다'
   }),
   pot: Object.freeze({
     id: 'pot', ko: '검은 모종포트', kind: 'container',
@@ -91,14 +104,13 @@ export const CATALOG = Object.freeze({
     note: 'docs/propagation.md §4 CONTAINERS.jar (pot_glassjar.glb · 0.13m) — 같은 소품 가격대'
   }),
   /* ── 2종째 작물 무순 (2026-08-05 · first_play.js §작물 종류) ─────────────────
-     ⚠⚠ 콩 씨앗과 같은 규약이다 — **지갑에서 실제로 나가는 값은 여기다.**
-       `CROP_KINDS.musun.seedWonPerPot`(정가·표시용)와 늘 같은 값이어야 한다. */
+     ★ 콩 씨앗과 같은 규약이다 — 정본은 작물 표이고 여기서 **읽는다**(2026-08-09). */
   radish_seed: Object.freeze({
     id: 'radish_seed', ko: '무 씨앗 (1판분)', kind: 'seed',
-    listWon: 400, leadDays: 1,
+    listWon: CROP_KINDS[1].seedWonPerPot, leadDays: 1,
     note: '실제 무씨 시세 100g 1,758원 · 1kg 18,000원(=1,800원/100g). 한 판(20×30cm)에 ' +
-          '20~30g 쓰므로 350~530원 — 그 한가운데. 콩(500원)보다 씨가 잘아 조금 덜 든다. ' +
-          'first_play.CROP_KINDS.musun.seedWonPerPot 과 **같은 값이어야 한다**'
+          '20~30g 쓰므로 350~530원 — 그 한가운데. ' +
+          'first_play.CROP_KINDS.musun.seedWonPerPot 이 정본이다(여기서 읽는다)'
   }),
   sprout_tray: Object.freeze({
     id: 'sprout_tray', ko: '새싹 재배판', kind: 'container',
@@ -893,10 +905,10 @@ export function sellCutting(S, cuttingOrId, opt = {}) {
    `buyPriceOf`(정가 × 1.4 · 100원 올림)다. 한 회전이 낼 수 있는 최대는 최상 품질(3끼)의
    한 회전분이다. 그 둘의 비가 손익분기다.
 
-     콩나물  700원 / 3,000원 = **23.3%**
-     무순    600원 / 2,000원 = **30.0%**
+     콩나물  500원 / 3,000원 = **16.7%**   (2026-08-09 — 씨앗 실구매가 700 → 500원)
+     무순    600원 / 1,867원 = **32.1%**   (2026-08-09 — 무순 회전분 2,000 → 2,800×2/3)
 
-   ⚠ 정가(500·400원)로 셈하면 16.7% / 20.0% 가 나온다 — **틀린 값이다.**
+   ⚠ 정가(350·400원)로 셈하면 11.7% / 21.4% 가 나온다 — **틀린 값이다.**
      지갑에서 나가는 것은 정가가 아니다(econgap 이 실제로 그렇게 한 번 틀렸다).
    ★ 판매가를 여기서 막지 않는다. **재서 보여 줄 뿐**이다 — 손익분기 아래로 두는 것은
      고장이 아니라 판단이고, 그 판단은 박사님 것이다. */

@@ -64,8 +64,8 @@ import { firstPlayRulesFromBalance, placeBeansprout, placeCrop, moveMonstera,
          beansproutReady, cropSites, CROP_SITE_IDS } from '../src/game/first_play.js';
 import { seasonAt, buyLamp, canMoveOut, moveOut, varieView, TUTORIAL_RULES,
          dailyCashOutWon, lampElectricityWon, lampWattsOn, electricityWonOf } from '../src/game/tutorial.js';
-import { orderItem, stockOf, incomingOf, priceOf, sellCutting, sellPot,
-         SELLABLE_CUTTING_STATUS } from '../src/game/shop.js';
+import { orderItem, stockOf, incomingOf, priceOf, sellCutting, sellPot, buyPriceOf,
+         cropBreakEvenRate, SELLABLE_CUTTING_STATUS } from '../src/game/shop.js';
 import { takeCutting, cuttableNow, cutBudgetOf, motherStatsNow } from '../src/game/propagation.js';
 
 const T0 = Date.now();
@@ -89,7 +89,7 @@ const SILL = 'banjiha-sill:0';
 const R0 = TUTORIAL_RULES;
 const MOVE_OUT_WON = R0.moveOutCostWon;
 const DAILY_OUT = dailyCashOutWon({ rules: R0, movedOut: false });
-const SIRU_WON = 7_000;      // shop.CATALOG.siru — 아래 §2 가 실제 값을 다시 읽어 확인한다
+const SIRU_WON = buyPriceOf('siru');   // ★2026-08-09 — 7_000 이 손으로 박혀 있었다(지금 5,000원)
 
 /* ══ 헤드리스 생장 엔진 (probe_lamp_econ.mjs · test_balance_routes.mjs 와 같은 하네스) ══ */
 function makeThree() {
@@ -297,7 +297,14 @@ function play(opt = {}) {
       }
       for (const c of [...(S.cuttings || [])]) if (SELLABLE_CUTTING_STATUS.includes(c.status)) sell(c);
 
-      if (!ts.movedOut && pot0(S)) {
+      /* ★★★ 2026-08-09 — **배움이 다 끝난 뒤에만 모주를 판다.**
+         시작돈이 `moveOutCostWon` 과 같아지면서(둘 다 1,500,000원) 이 블록이 모주가 도착한
+         **그날** 걸렸다: 현금 1,492,700 + 어린 포기 12,000 ≥ 1,500,000. 그래서 재현이
+         막 받은 모주를 12,000원에 팔았고, 그 뒤로 삽수·확정 무늬·이사가 통째로 사라졌다
+         (§5 가 「못나감」· §6 이 「모주판매 12,000원」으로 찍힌 것이 그 자국이다).
+         `canMoveOut` 은 배움 넷을 다 채워야 열리므로, 배움이 남았는데 모주를 파는 것은
+         나갈 수도 없는데 나갈 밑천을 없애는 짓이다 — 사람이 하지 않는 선택이다. */
+      if (!ts.movedOut && pot0(S) && canMoveOut(ts).learningLeft.length === 0) {
         const v = viewOf(S, io);
         const potWon = v.stats && v.stats.leaves >= 1
           ? priceOf({ leaves: v.stats.leaves, variegatedLeaves: v.stats.variegatedLeaves }).won : 0;
@@ -442,20 +449,25 @@ console.log('    0 이상이면 「채소만으로 유지된다」. 음수면 �
 /* ── §3 회전 경제 — 씨앗값·시루값을 갚나 (계산) ─────────────────────────── */
 console.log('');
 console.log('── §3 ★잉여 판매가 후보 — 세 문턱을 순서대로 넘나 (계산) ───────────');
-console.log('  ① 한 회전 순익 > 0 (씨앗값을 넘나)  ② 시루값 7,000원을 N회전에 갚나');
+console.log('  ① 한 회전 순익 > 0 (씨앗값을 넘나)  ② 시루값을 N회전에 갚나');
 console.log('  ③ 그 뒤로 남나  ④ ⚠ 밥으로 먹는 것보다 파는 게 나아지면 뼈대가 뒤집힌다');
 {
-  const FULL = 3_000;                    // 콩나물 한 회전분 (cropKindSavedWon[0])
-  const SEED = 700;                      // buyPriceOf('bean_seed')
+  /* ★2026-08-09 — 셋 다 손으로 박혀 있었다. 값이 움직이면 표가 조용히 거짓말을 한다 */
+  const FULL = RULES.cropKindSavedWon[0];   // 콩나물 한 회전분
+  const SEED = buyPriceOf('bean_seed');     // 씨앗 실구매가 (700 → 500원)
   const SIRU = SIRU_WON;
   console.log('');
   console.log('| 판매가율 | 한 회전 현금 | 순익(−씨앗) | 시루값 회수 | 그게 며칠 | 밥(3,000) 대비 | 판정 |');
   console.log('|----------|--------------|-------------|-------------|-----------|----------------|------|');
-  for (const rate of [0.233, 0.35, 0.50, 0.70, 0.85, 1.00, 1.20]) {
+  /* ★2026-08-09 — 손익분기를 손으로 안 적는다. `shop.cropBreakEvenRate` 가 정본이다.
+     표본에 그 값 자체를 끼워 넣어 「±0 이 되는 자리」가 표에 늘 보이게 한다. */
+  const BE = cropBreakEvenRate('beansprout');
+  for (const rate of [BE, 0.233, 0.35, 0.50, 0.70, 0.85, 1.00, 1.20]) {
     const cash = Math.round(FULL * rate);
     const net = cash - SEED;
     const nCycles = net > 0 ? Math.ceil(SIRU / net) : null;
-    const verdict = rate < 0.234 ? '★씨앗값도 못 건진다'
+    const verdict = net < 0 ? '★씨앗값도 못 건진다'
+                  : net === 0 ? '★손익분기 — 딱 본전'
                   : rate >= 1.00 ? '⚠팔이 밥보다 낫다 — 뼈대가 뒤집힌다'
                   : '쓸 수 있다';
     console.log(`| ${(rate * 100).toFixed(1).padStart(7)}% | ${(won(cash) + '원').padStart(12)} | ` +
@@ -465,7 +477,8 @@ console.log('  ③ 그 뒤로 남나  ④ ⚠ 밥으로 먹는 것보다 파는 
       `${(rate * 100).toFixed(0).padStart(13)}% | ${verdict} |`);
   }
   console.log('');
-  console.log(`  손익분기 — 콩나물 ${(SEED / FULL * 100).toFixed(1)}% · 무순 ${(600 / 2000 * 100).toFixed(1)}%` +
+  console.log(`  손익분기 — 콩나물 ${(cropBreakEvenRate('beansprout') * 100).toFixed(1)}% · ` +
+              `무순 ${(cropBreakEvenRate('musun') * 100).toFixed(1)}%` +
               '  (씨앗 실구매가 ÷ 한 회전분. shop.cropBreakEvenRate 와 같은 식)');
   console.log('  ⚠ 이 표는 **잉여로 넘어간 몫**의 셈이다. 곳간 상한 안에 들어간 몫은 밥이지 돈이 아니다.');
 }

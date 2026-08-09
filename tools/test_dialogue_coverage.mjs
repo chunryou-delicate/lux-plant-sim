@@ -205,7 +205,17 @@ const A = play({
   }
 });
 
-/* B — 식물등을 사고 가을에 이사 */
+/* B — 식물등을 사고 가을에 이사
+   ★★★ 2026-08-09 — **등을 사기 전에는 안 나간다**는 줄이 새로 필요해졌다.
+     ------------------------------------------------------------
+     시작돈이 1,300,000 → **1,500,000원**이 되면서 `moveOutCostWon`(1,500,000)과 같아졌다.
+     그래서 `canMoveOut` 의 돈 조건이 **첫날부터 참**이고, 배움 넷만 채우면 곧바로 나간다 —
+     실측으로 B 가 **게임 48일(여름 62일째)** 에 이사해 버렸다. 식물등은 **가을**에 열리므로
+     (`lampUnlockSeason`) 등을 아예 못 사고, `lamp_bought` 대사가 영영 안 난다.
+   ⇒ 여기서는 **경로 B 를 경로 B 답게** 만든다: 등을 사려는 사람은 등을 사고 나간다.
+     ⚠ 다만 이건 재현을 고친 것이지 판을 고친 것이 아니다. **여름에 이사가 끝난다**는 사실은
+       그대로 남아 있고, 그건 가을·식물등·겨울 콘텐츠가 통째로 건너뛰어진다는 뜻이다
+       (plan-2026-08-09-decisions §4 가 막으려던 바로 그것). 인계에 판단 요청으로 적었다. */
 const B = play({
   cropSlot: DARK, plantSlot: SILL, incomeWon: 24_300, days: 90,
   onDay: ({ S, io }) => {
@@ -214,7 +224,7 @@ const B = play({
       out.push(...buyLamp(ts).events);
       S.lamps.count = ts.lamp.owned; io.light.clearCache();
     }
-    if (canMoveOut(ts).ok && !ts.movedOut) out.push(...moveOut(ts).events);
+    if (ts.lamp.owned >= 1 && canMoveOut(ts).ok && !ts.movedOut) out.push(...moveOut(ts).events);
     return out;
   }
 });

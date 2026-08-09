@@ -29,7 +29,7 @@ import { newState, pot0, setPotSlot, resowCrop, waterCrop, waterPot,
 import { nextDay, harvestCrop } from '../src/game/loop.js';
 import { firstPlayRulesFromBalance, placeBeansprout, moveMonstera, beansproutReady,
          FIRST_PLAY_RULES, CROP_KINDS } from '../src/game/first_play.js';
-import { seasonAt, seasonDayAt, buyLamp, canMoveOut, moveOut,
+import { seasonAt, seasonDayAt, buyLamp, canMoveOut, moveOut, TUTORIAL_RULES,
          varieView, varieGrantCheck, stepVarieGrant, varieGrantOpensDay } from '../src/game/tutorial.js';
 import { orderItem, stockOf, incomingOf, priceOf, varieLeavesNeededFor,
          sellCutting, sellPot, CATALOG, buyPriceOf, SELLABLE_CUTTING_STATUS } from '../src/game/shop.js';
@@ -329,7 +329,19 @@ function play(opt = {}) {
     }
 
     /* ── ④ 이사 — 팔 수 있는 것을 다 팔면 닿나 ─────────────────────────── */
-    if (!ts.movedOut && pot0(S)) {
+    /* ★★★ 2026-08-09 — **배움이 다 끝난 뒤에만 판다.** 이 한 줄이 없으면 재현이 무너진다.
+       ------------------------------------------------------------
+       시작돈이 1,300,000 → **1,500,000원**이 되면서 `moveOutCostWon`(1,500,000)과 **같아졌다.**
+       그러자 이 블록이 **몬스테라가 도착한 그날** 걸렸다: 현금 1,492,700 + 어린 포기 12,000
+       ≥ 1,500,000 이라, 재현이 **막 받은 모주를 12,000원에 팔아 버렸다.**
+       모주가 없으니 말린 새순도·삽수도·확정 무늬도 영영 안 오고, 첫 플레이가 안 끝나 **튜토
+       시계가 아예 안 돌았다**(달력 180일에 튜토 0일). 검사 D·P·H·G 가 한꺼번에 무너진 이유가 이것이다.
+       ⇒ 재는 자가 틀린 것이다. `canMoveOut` 은 **배움 넷을 다 채워야** 열리므로, 배움이 남았는데
+         모주를 파는 것은 사람이 하지 않을 선택이다 — 나갈 수도 없는데 나갈 밑천을 없애는 짓이다.
+       ★ 예전 판에서는 이 줄이 있으나 없으나 같았다. 현금이 문턱보다 한참 아래라 모주가 크게
+         자란 뒤에야(잎 3장 · 1,830,000원) 이 블록이 걸렸고, 그때는 배움이 이미 끝나 있었다.
+         **시작돈 = 이사비**가 되면서 비로소 갈렸다 — 그 사실 자체는 plan 이 판단할 것이다. */
+    if (!ts.movedOut && pot0(S) && canMoveOut(ts).learningLeft.length === 0) {
       const v = viewOf(S, io);
       const cut = cuttingValueOf(S);
       const potWon = v.stats && v.stats.leaves >= 1
@@ -586,7 +598,14 @@ check('C-2 자동으로 채워 주지 않는다 — 다시 심어도 어두운 �
 
 /* ══ D · 아무것도 안 하면 파산한다 (위험이 남아 있다) ═════════════════════ */
 check('D 아무것도 안 하면 파산한다 — 다만 게임이 끝나지는 않는다', () => {
-  const r = play({ seed: 2, days: 120, farm: false, propagate: false, cropSlot: DARK, plantSlot: SILL });
+  /* ★★ 2026-08-09 — **창을 달력 120 → 140일로 넓혔다.** 파산이 늦어졌기 때문이다.
+       시작돈 1,300,000 → 1,500,000원 · 하루 지출 20,000 → 16,667원(월세 30만 → 20만)
+       ⇒ 실측 파산일 **튜토 61일(달력 91일) → 튜토 91일(달력 121일)**.
+       달력 120일 창은 그 하루 전에서 끊겨 「파산 없음」으로 찍혔다 — 위험이 사라진 것이 아니라
+       **자가 짧아진 것**이다. 셈으로도 맞는다: 1,500,000 ÷ 16,667 ≒ 90일.
+     ⚠ 창을 넓히는 것으로 끝내지 않는다. 아래 `rows.length >= 100` 이 「파산해도 하루가
+       계속된다」를 재는데, 창이 파산일에 딱 붙으면 그것도 못 잰다. 140 이면 19일이 남는다. */
+  const r = play({ seed: 2, days: 140, farm: false, propagate: false, cropSlot: DARK, plantSlot: SILL });
   assert.equal(r.everBroke, true, '★아무것도 안 했는데 파산하지 않았습니다 — 위험이 사라졌습니다');
   const broke = r.rows.find(x => x.bankrupt);
   assert.equal(r.rows.length >= 100, true, '★파산으로 하루가 멈췄습니다 — 초보 모드는 죽지 않습니다');
@@ -738,7 +757,8 @@ check('P-3 ★용기값·시간을 빼고도 남는다 — 다만 하루 지출�
   info(`꾸준수입: 90일에 민무늬 삽수 ${P90.cuttingsSold}개 ${gross.toLocaleString()}원 − ` +
        `병값 ${P90.containerSpend.toLocaleString()}원 = 순 ${net.toLocaleString()}원 ` +
        `(하루 ${Math.round(net / 90).toLocaleString()}원)`);
-  info(`  ⤷ 하루 지출 20,000원의 ${(net / 90 / 20000 * 100).toFixed(1)}% — ` +
+  info(`  ⤷ 하루 지출 ${TUTORIAL_RULES.dailySpendWon.toLocaleString()}원의 ` +
+       `${(net / 90 / TUTORIAL_RULES.dailySpendWon * 100).toFixed(1)}% — ` +
        `**꾸준수입만으로는 반지하를 못 나간다**(sale_economy.md §0 과 같은 결론)`);
 });
 
@@ -758,6 +778,15 @@ check('H-1 확정 무늬는 **플레이어가 한 일**에 붙는다 — 조건 
   S.pots.push({ id: 'pot_01', slotId: SILL, at: null, plantId: 'monstera_deliciosa',
                 cuts: [{ day: 1, cuttingId: 'cut_01', nodeId: 'n0#2', stem: 'pink', leaves: 1 }],
                 pendingCutLoss: { leaves: 1, nodes: 1 } });
+
+  /* ★★★ 2026-08-09 — **지갑을 문턱 아래로 내려놓고 잰다.** 안 그러면 계절을 못 잰다.
+     시작돈이 1,500,000원이 되면서 `moveOutCostWon`(1,500,000)과 **같아졌다.** 그래서
+     아무것도 안 한 새 판이 이미 「다 팔면 이사 자금에 닿는 상태」이고, `varieGrantCheck` 가
+     계절을 보기도 전에 그 사유로 막는다. 여기서 재려는 것은 **계절 게이트**이므로
+     다른 게이트를 먼저 열어 둬야 한다 — 아래 §다 팔면 닿는 상태 검사가 이미 쓰는 수법이다.
+     ⚠ 이건 재현 편의가 아니라 **실제 게임에서 일어나는 일**이다: 시작돈 = 이사비라서
+       확정 무늬가 첫날부터 「필요 없음」으로 닫혀 있다. plan 이 판단할 것으로 인계에 적었다. */
+  S.tutorial.cashWon = MOVE_OUT_WON - 1;
 
   /* ★ 가을 게이트 (2026-08-03) — 배움·삽수를 다 채워도 **여름에는 안 온다.**
      이게 없으면 튜토가 여름 안에 끝나 가을·식물등·겨울 콘텐츠를 아무도 못 본다. */
