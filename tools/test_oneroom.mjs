@@ -173,15 +173,21 @@ check('D-2 월세 — withOneroomRent 로 채우면 이사 뒤부터 그 값이 
        되면서(박사님 확정 · 월세 30만 → 15만) 450,000(하루 15,000)은 **하루치를 통째로 먹어**
        `dailyCashOutWon` 이 0 이 된다 — 곧 공과·전기·식비가 공짜가 된다는 뜻이라 재현이 성립 안 한다.
        반지하 15만의 두 배인 30만이면 하루 몫 10,000, 남는 하루치 5,000 으로 뜻이 그대로다.
+     ★★ 2026-08-09 — **300,000 → 450,000 으로 되돌린다.** 위 ★★ 를 그대로 뒤집은 것이다:
+       반지하 월세가 30만으로 돌아가 하루 지출이 다시 20,000 이 됐다(박사님 확정 · econ-to-plan.md).
+       그러면 원룸 30만은 반지하와 **같은 값**이라 「이사 뒤에 하루치가 준다」를 못 잰다
+       (하루 몫이 10,000 그대로다). 450,000 이면 하루 몫 15,000, 남는 하루치 5,000 —
+       기대값 5,000 이 그대로 살고, 덤으로 **`homes.json` 의 실제 원룸 값**을 쓰게 된다.
+       ⇒ 이 숫자가 두 번 움직인 것은 검사가 흔들린 것이 아니라 **반지하 월세를 따라간 것**이다.
      ⚠ **이건 이 검사만의 문제가 아니다.** `dailyCashOutWon` 은 원룸에서도 반지하의
        `dailySpendWon` 을 그대로 쓰고 월세 몫만 갈아 끼운다(tutorial.js §dailyCashOutWon 의 ⏸).
        그래서 **원룸 월세가 하루 15,000원을 넘으면 나머지 살림이 0원이 된다.**
        원룸 `dailySpendWon` 을 정할 때 반드시 같이 봐야 한다 — docs/oneroom.md §2. */
-  const rules = withOneroomRent(TUTORIAL_RULES, { rentWon: 300_000 });
+  const rules = withOneroomRent(TUTORIAL_RULES, { rentWon: 450_000 });
   const S = readyToMove({ rules });
   assert.equal(rentWonOf(S.tutorial), TUTORIAL_RULES.rentWon, '이사 전인데 원룸 월세가 나옵니다');
   moveIntoOneroom(S, {});
-  assert.equal(rentWonOf(S.tutorial), 300_000, '이사 뒤인데 원룸 월세가 안 나옵니다');
+  assert.equal(rentWonOf(S.tutorial), 450_000, '이사 뒤인데 원룸 월세가 안 나옵니다');
   assert.equal(dailyCashOutWon(S.tutorial), 5_000, '하루치가 늘어난 월세 몫만큼 안 줄었습니다');
 
   /* 실제로 청구될 때도 그 값이어야 한다 */
@@ -189,7 +195,7 @@ check('D-2 월세 — withOneroomRent 로 채우면 이사 뒤부터 그 값이 
   ts.cashWon = 5_000_000;
   ts.rent.nextDueDay = ts.day + 1;
   const r = tutorialDay(ts, { firstPlayDone: true });
-  assert.equal(r.rentWon, 300_000, `청구액이 ${r.rentWon} 입니다`);
+  assert.equal(r.rentWon, 450_000, `청구액이 ${r.rentWon} 입니다`);
 });
 
 check('D-3 월세 — withOneroomRent 는 미확정을 지어내지 않는다', () => {

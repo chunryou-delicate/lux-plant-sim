@@ -198,6 +198,11 @@ function makeRules(ts, { prices, watts, kwhWon, lampHours }) {
     enumerable: true,
     get() { return prices[Math.min(ts.lamp.owned, prices.length - 1)]; }
   });
+  /* ★★ 2026-08-09 — `TUTORIAL_RULES` 가 **등 순서대로의 와트 표**를 갖게 됐다
+     (tutorial.js §lampWattsByOrder — 예전 `lampWatt: 12` 고정값을 대신한다).
+     후보값을 그 표로 그대로 준다. 아래 `lampWatt` 게터는 표가 없는 옛 경로를 위해 남긴다 —
+     `lampWattsOn` 이 표를 먼저 보므로 실제로 도는 것은 이 줄이다. */
+  R.lampWattsByOrder = [...watts];
   /* `lampElectricityWon` 이 `lampWatt × owned × litHours` 라, 합÷개수를 주면 곱이 합이 된다.
      0개면 0 이라 나누지 않는다(어차피 owned 를 곱해 0). */
   Object.defineProperty(R, 'lampWatt', {

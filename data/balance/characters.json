@@ -15,6 +15,18 @@
     "dailyFoodPerPerson": 7500,
     "cropMealCapPerPerson": 2,
     "mealsPerDayPerPerson": 3,
+    "cropSurplusSaleRate": 0.7,
+    "_cropSurplusSaleRate": [
+      "★ 잉여 채소를 넘기는 값 — **정가의 몇 %인가**. 2026-08-09 에 여기로 옮겼다(정본 자리).",
+      "   `first_play.js` 의 `FIRST_PLAY_RULES.cropSurplusSaleRate` 는 이제 폴백이다 —",
+      "   `firstPlayRulesFromBalance` 가 이 칸을 **먼저 읽는다**. 값은 안 바꿨다(0.70 그대로).",
+      "★ 잉여는 **곳간이 못 받은 몫**이다. 끼니 상한 안에 들어간 것은 밥이지 돈이 아니다.",
+      "★ 아래끝 — 손익분기(씨앗 실구매가 ÷ 한 회전분)는 콩나물 23.3% · 무순 30.0% 다.",
+      "   그 아래로 내리면 심는 것 자체가 손해가 된다(shop.cropBreakEvenRate 로 잰다).",
+      "★★ 위끝 — **1.00 을 넘기면 안 된다.** 넘는 순간 「밥으로 먹는 것보다 파는 게 낫다」가 되어",
+      "   이 게임의 뼈대(식물로 밥값을 아낀다)가 뒤집힌다. 실측·후보는 docs/handoff/econ-to-plan.md §3.",
+      "⚠ 0.70 은 아직 박사님 확정값이 아니다. 후보 표가 econ-to-plan.md §3 에 있다."
+    ],
     "fields": {
       "startCash": "시작 자금 [원]",
       "monthlyIncome": "고정 수입 [원/월] (0 = 식물팔이가 전부)",

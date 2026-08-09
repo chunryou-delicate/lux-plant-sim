@@ -28,7 +28,12 @@ export const TUTORIAL_RULES = Object.freeze({
   startSeason: 'summer',
   startSeasonDay: 45,
 
-  startCashWon: 1_000_000,        // game_flow.md — "없음"이 정체성이라 안 올린다
+  /* ★★ 2026-08-09 박사님 확정 — **1,000,000 → 1,300,000원.**
+     원문: *"시작돈을 130만원으로 일단하자."*
+     ⚠ 예전 주석은 *"「없음」이 정체성이라 안 올린다"* 였다. 그 판단이 바뀐 것이 아니라
+       **살림 값이 통째로 다시 짜인 것**이다 — 월세가 15만에서 30만으로 돌아가고
+       유예가 없어져 첫날 30만이 목돈으로 빠진다. 셋은 같이 움직이는 한 벌이다. */
+  startCashWon: 1_300_000,
   moveOutCostWon: 1_500_000,      // 원룸 보증금 + 첫 달 월세 + 이사비. 실비 근거가 있어 안 내린다
   /* ★★ 2026-08-05 박사님 확정 — **300,000 → 150,000원.**
      ------------------------------------------------------------
@@ -44,7 +49,13 @@ export const TUTORIAL_RULES = Object.freeze({
      ⚠ **`dailySpendWon` 을 같이 안 내리면 아무 일도 안 일어난다.** 그 값이 월세를 포함하고
        있어서(§dailyCashOutWon), 월세만 내리면 하루치에서 빼는 몫도 같이 줄어 총액이 그대로다.
        실제로 재서 확인했다 — 월세만 바꾸면 파산일이 81일 그대로다. */
-  rentWon: 150_000,               // 반지하 월세
+  /* ★★ 2026-08-09 박사님 확정 — **150,000 → 300,000원으로 되돌린다.**
+     원문: *"월세가 지금 30만원이잖아? 30일 기준으로 해서…"*
+     ⇒ 이 값의 정본은 원래부터 `data/balance/homes.json` 의 `banjiha.rent = 300,000` 이었다.
+       2026-08-05 에 여기서만 반으로 내렸고, 그래서 정본과 코드가 넉 달째 갈려 있었다
+       (`utility 75,000`/월 = 하루 2,500원도 그 파일 값이다). 이제 다시 같아졌다.
+     ⚠ 위 §startCashWon · 아래 §dailySpendWon 과 **셋이 한 벌**이다. 하나만 바꾸면 총액이 안 맞는다. */
+  rentWon: 300_000,               // 반지하 월세 — data/balance/homes.json §banjiha.rent
   /* ★★ ③ 원룸 월세 — **⏸ 미확정이라 자리만 둔다** (2026-08-05 · docs/oneroom.md §2).
      `null` 이면 이사한 뒤에도 반지하 월세로 돈다. 0 이 아니다 — 0 으로 두면 원룸이
      공짜인 방이 조용히 성립하고, 그게 미확정이었다는 것을 아무도 모른다.
@@ -52,7 +63,24 @@ export const TUTORIAL_RULES = Object.freeze({
      oneroom.oneroomRulesFromHomes(homes))` 가 이 칸을 채운 사본을 낸다 —
      살림 값의 정본은 `data/balance/homes.json`(plan 소유)이지 코어가 아니다. */
   oneroomRentWon: null,
-  rentGraceDays: 30,              // ★첫 달 유예. plan 권고 — 서사 장치이고 정체성을 안 건드린다
+  /* ★★ 2026-08-09 박사님 확정 — **첫 달 유예를 폐지한다.** `rentGraceDays: 30` → `rentFirstDueDay: 1`.
+     ------------------------------------------------------------
+     원문: *"30일 기준으로 해서, 바로 시작날이 바로 30일기준 마지막날인거야.
+            다음날 누르면 월세 30만원이 쓱 빠지게, 그리고 식대도 빠지게 해서
+            돈에 대한 설명을 먼저 하고 가는게 좋겠어."*
+
+     ★ 왜 이름을 바꿨나. `rentGraceDays` 는 「며칠을 봐 준다」는 뜻이라 값이 1 이면 말이 안 된다
+       (하루만 봐 준다?). 지금 이 숫자가 정하는 것은 **첫 청구일**이다. 뜻이 바뀌었으면 이름도
+       바뀌어야 한다 — 안 그러면 다음 사람이 「유예 1일」로 읽는다.
+     ★ 1 이지 0 이 아니다. `tutorialDay` 는 `ts.day += 1` 을 먼저 하므로 첫 [다음 날]이 1일이다.
+       0 으로 두면 그 뒤 주기가 30 · 60 이 되어 첫 달만 29일이 된다.
+
+     ⚠⚠ **「시작 첫날」이 어디인가는 이 파일이 못 정한다.** 튜토 시계는 첫 플레이가 끝나야 돈다
+       (`tutorialDay` 첫 줄 `if (!firstPlayDone) return`). 첫 플레이는 돈도 계절도 멈춘 16일이라
+       (`docs/first_play.md §0`), **여기서 말하는 1일차는 게임 17일쯤**이다.
+       박사님 말씀이 「게임을 켜고 처음 누르는 [다음 날]」이라면 그건 `first_play.js` 가
+       살림을 시작해야 하는 것이고 그 파일은 코어 소유다 — docs/handoff/econ-to-plan.md §1 에 적었다. */
+  rentFirstDueDay: 1,
   rentPeriodDays: 30,             // 월세 주기. 아래 dailyCashOutWon 이 이 값으로 하루치를 뗀다
 
   /* ★★ 하루 지출 합 — **월세를 포함한 값**이다 (food_economy.md §2 표 · story_arc.md §3).
@@ -61,10 +89,13 @@ export const TUTORIAL_RULES = Object.freeze({
        월세가 두 번 나간 셈이라 실제 지출이 하루 30,000원(월 90만)이었고, 그래서
        재현에서 42일에 파산했다. 지금은 하루치에서 월세 몫(rentWon/rentPeriodDays)을 빼고
        월세는 30일마다 목돈으로 낸다 — **평균은 그대로 20,000원/일**이고 유예도 그대로 산다. */
-  /* ★ 2026-08-05 — 월세를 반으로 내렸으므로 여기도 그만큼 내린다(위 §rentWon 의 ⚠).
-       월세 5,000 + 공과·전기 2,500 + 식비 7,500 = **15,000원/일** = 월 45만.
-     ⚠ 이 값과 `rentWon` 은 **같이 움직인다.** 한쪽만 바꾸면 총액이 안 바뀌거나 두 번 샌다. */
-  dailySpendWon: 15_000,
+  /* ★★ 2026-08-09 — 월세가 30만으로 돌아갔으므로 여기도 되돌린다(위 §rentWon).
+       월세 10,000 + 공과·전기 2,500 + 식비 7,500 = **20,000원/일** = 월 60만.
+       셋 다 `data/balance/homes.json`(rent 300,000 · utility 75,000)과
+       `data/balance/characters.json._meta`(dailyFoodPerPerson 7,500)에서 나온 값이다.
+     ⚠ 이 값과 `rentWon` 은 **같이 움직인다.** 한쪽만 바꾸면 총액이 안 바뀌거나 두 번 샌다
+       (2026-08-05 에 실제로 그랬다 — 월세만 내렸더니 파산일이 81일 그대로였다). */
+  dailySpendWon: 20_000,
   mealCostWon: 2_500,             // 한 끼. 콩나물 한 끼가 이만큼을 아낀다
 
   /* ★ 콩나물은 **버티는 수단이지 이사 자금이 아니다** (2026-08-03 박사님 확정).
@@ -75,11 +106,76 @@ export const TUTORIAL_RULES = Object.freeze({
   cropSirusForCap: 3,             // 표시·안내용. 판정에는 안 쓴다(끼니 상한이 알아서 막는다)
 
   /* 식물등 — 필수가 아니라 선택이다. 하루 지출보다 조금 커서 망설임이 생기고,
-     전기는 거의 공짜라 부담이 사는 순간 한 번뿐이다(story_arc.md §4). */
+     전기는 거의 공짜라 부담이 사는 순간 한 번뿐이다(story_arc.md §4).
+
+     ★★ 2026-08-09 — **전기세 숫자의 정본은 `data/balance/electricity.json` 이다.**
+     ------------------------------------------------------------
+     여기 남은 값은 그 파일을 못 읽는 판(순수 모듈·검사 하네스)을 위한 **기본값**이고,
+     둘이 같은지는 `tools/test_elec.mjs` 가 매번 확인한다. 다르면 검사가 깨진다 —
+     이 저장소는 정본이 두 벌이라 반복해서 사고가 났다(씨앗값·계절 달력).
+     읽어 꽂는 법은 아래 §electricityRulesFrom. */
   lampPriceWon: 25_000,
-  lampWatt: 12, lampHours: 12, kwhWon: 160,   // 12W × 12h × 160원/kWh = 23원/일
+  /* ★★ **와트가 두 벌이었다** (2026-08-09 정정).
+     예전에는 `lampWatt: 12` 하나였다 — 어떤 기구를 켜든 개당 12W 로 셌다.
+     그런데 방에 실제로 달린 기구는 **바 20W + 집게 12W** 이고(`data/lighting_presets.json`),
+     방 프로파일도 그렇게 굳혀 두었다(`room_profile.banjiha.json` §lampWatts = [0, 20, 32]).
+     ⇒ 등 2개를 24시간 켜면 프로파일은 123원인데 여기는 **92원**이었다. 「집게 전력으로 바를 켜는」 판이었다.
+     이제 **산 순서대로의 와트 표**를 갖는다. 순서(1개=바 · 2개=바+집게)는 프로파일이 정한 것이지
+     여기서 새로 정한 것이 아니다 — 사는 것은 붙박이를 **켤 권리**다(lampecon-to-plan.md §5-③).
+     ⚠ 표보다 많이 켜면 마지막 칸을 되쓴다. 없는 기구의 와트를 지어내지 않는다. */
+  lampWattsByOrder: Object.freeze([20, 12]),
+  lampHours: 12,
+  kwhWon: 160,                                // 원/kWh — 한국 가정용 평균가
+  /* ⏸ 누진 구간. `null` 이면 위 `kwhWon` 하나로 센다. 모양과 뜻은 electricity.json §_tiers.
+     0 이 아니라 null 인 이유는 「아직 안 켰다」와 「공짜다」가 다른 말이기 때문이다. */
+  tariffTiers: null,
+  baseKwhPerMonth: 0,                         // 누진을 켤 때만 쓰인다 — 집이 원래 쓰는 달 사용량
   lampUnlockSeason: 'autumn'                  // 가을 진입에 해금 — 겨울 전 선택지가 생긴다
 });
+
+/* ★ 정본(`data/balance/electricity.json`)을 읽어 전기세 값을 채운 **규칙 사본**을 낸다.
+   `oneroom.oneroomRulesFromHomes(homes)` 와 같은 모양이다 — 이 모듈은 파일을 안 읽는다
+   (DOM 도 타이머도 fs 도 모른다). 읽는 것은 부르는 쪽이고, 여기서는 **꽂기만** 한다.
+   ⚠ 규칙 객체 자체를 세이브에 적지 않는다(save.js §packTutorial) — 그래서 판을 만들 때마다
+     다시 꽂아야 하고, 안 꽂으면 위 기본값으로 돈다. 그래서 둘이 같아야 한다. */
+/* ★★ 반지하 살림 값을 정본(`data/balance/homes.json`)에서 읽어 채운 **규칙 사본**을 낸다.
+   ------------------------------------------------------------
+   2026-08-09 — 월세·공과가 여기와 그 파일에 **두 벌**로 있었고 실제로 갈려 있었다:
+   homes.json 은 `banjiha.rent = 300,000` · `utility = 75,000` 인데 여기는 150,000 이었다
+   (2026-08-05 에 여기서만 반으로 내렸다). 값은 이제 같지만, **같다는 것을 검사가 지켜야** 한다 —
+   `tools/test_econ.mjs` §A 가 그 등식을 고정한다.
+   ⇒ 하루 지출은 지어내지 않고 **더해서 낸다**: 월세/주기 + 공과/주기 + 식비.
+     식비는 `characters.json._meta.dailyFoodPerPerson` 이 정본이라 인자로 받는다. */
+export function banjihaRulesFrom(homes, opt = {}, rules = TUTORIAL_RULES) {
+  const R = { ...rules };
+  const rows = (homes && homes.homes) || [];
+  const row = rows.find(h => h && (h.id === 'banjiha' || h.room === 'banjiha'));
+  if (!row) return Object.freeze(R);
+  const period = R.rentPeriodDays || 30;
+  if (Number.isFinite(row.rent)) R.rentWon = row.rent;
+  const foodWon = Number.isFinite(opt.dailyFoodWon) ? opt.dailyFoodWon : null;
+  if (foodWon != null && Number.isFinite(row.utility))
+    R.dailySpendWon = Math.round(R.rentWon / period + row.utility / period + foodWon);
+  R.homesSource = 'data/balance/homes.json';
+  return Object.freeze(R);
+}
+
+export function electricityRulesFrom(json, rules = TUTORIAL_RULES) {
+  const R = { ...rules };
+  if (!json || typeof json !== 'object') return Object.freeze(R);
+  if (Number.isFinite(json.kwhWon)) R.kwhWon = json.kwhWon;
+  if (Array.isArray(json.tiers) && json.tiers.length) R.tariffTiers = Object.freeze(json.tiers.map(t => ({ ...t })));
+  else if (json.tiers === null) R.tariffTiers = null;
+  if (Number.isFinite(json.baseKwhPerMonth)) R.baseKwhPerMonth = json.baseKwhPerMonth;
+  const L = json.lamp || {};
+  if (Number.isFinite(L.hours)) R.lampHours = L.hours;
+  if (Number.isFinite(L.priceWon)) R.lampPriceWon = L.priceWon;
+  if (Array.isArray(L.wattsByOrder) && L.wattsByOrder.length &&
+      L.wattsByOrder.every(w => Number.isFinite(w) && w >= 0))
+    R.lampWattsByOrder = Object.freeze([...L.wattsByOrder]);
+  R.electricitySource = 'data/balance/electricity.json';
+  return Object.freeze(R);
+}
 
 /* ── 알림 시점 (2026-08-03) ────────────────────────────────────────────
    ★규칙이 아니라 **말이 나올 자리**다. 살림 수치(월세·등값)는 위 TUTORIAL_RULES 가 갖고,
@@ -108,7 +204,10 @@ export function createTutorialState(opt = {}) {
     /* 계절이 흐르기 시작하는 시점. 첫 플레이(novice·여름 고정) 동안은 멈춰 있다. */
     seasonRunning: false,
     lamp: { unlocked: false, owned: 0, litHours: R.lampHours },
-    rent: { paidCount: 0, nextDueDay: R.rentGraceDays },   // 첫 달은 유예라 30일 뒤부터
+    /* ★ 2026-08-09 — 첫 청구는 **첫날**이다(위 §rentFirstDueDay. 유예 폐지).
+       ⚠ 옛 세이브·옛 규칙 사본은 `rentGraceDays` 밖에 없다 — 없으면 그 값을 쓴다.
+         못 읽으면 조용히 0 이 되어 **없던 월세가 하루 일찍 빠지므로** 폴백을 남긴다. */
+    rent: { paidCount: 0, nextDueDay: R.rentFirstDueDay ?? R.rentGraceDays ?? 1 },
     /* 살림 장부 — 상점에 쓴 돈과 판 돈. 재배 자체(시루 나이·품질)는 first_play 소유이고,
        품목·가격·배송은 shop.js 소유다. 여기는 **합계만** 센다. */
     crop: { spentWon: 0, soldWon: 0 },
@@ -156,7 +255,9 @@ export const SEASON_KO = Object.freeze({ spring: '봄', summer: '여름', autumn
 /* ── 돈 ───────────────────────────────────────────────────────────────── */
 
 /* 하루 전기값. 식물등 몫만 실계산하고 나머지는 dailySpendWon 안에 상수로 들어 있다
-   (food_economy.md 의 결정 그대로 — 실측 23원/일이 월세 30만 옆에서 먼지가 되지 않게). */
+   (food_economy.md 의 결정 그대로 — 식물등 실측이 월세 옆에서 먼지가 되지 않게).
+   ⚠ 2026-08-09 — 예전 주석의 「23원/일」은 12W 고정값 시절의 숫자다. 실제 기구 와트로 세면
+     바 1개 12h 는 **38원**, 바+집게 24h 는 **123원**이다(§lampWattsByOrder). */
 export function lampElectricityWon(ts, opt = {}) {
   const R = ts.rules;
   /* ★★ **켠 만큼 낸다** (2026-08-06 · lampecon 창이 잡았다).
@@ -174,8 +275,55 @@ export function lampElectricityWon(ts, opt = {}) {
   const on = Number.isFinite(opt.count) ? Math.max(0, Math.min(owned, opt.count)) : owned;
   const hours = Number.isFinite(opt.litHours) ? Math.max(0, Math.min(24, opt.litHours))
                                               : ts.lamp.litHours;
-  const kwh = (R.lampWatt * on * hours) / 1000;
-  return Math.round(kwh * R.kwhWon);
+  /* ★ 와트 — **켠 등의 실제 와트 합**이다(위 §lampWattsByOrder). 개당 하나가 아니다.
+     ⚠ `opt.wattsOn` 은 방 조도 계약이 낸 값(`report.energy.watts`)을 그대로 받는 자리다.
+       그쪽과 여기가 같은 와트를 봐야 「화면에 뜨는 전기세」와 「지갑에서 빠지는 전기세」가 안 갈린다
+       (docs/handoff/elec-to-plan.md §장부 두 벌). 받아도 **산 등의 합을 못 넘는다** —
+       안 산 등의 요금을 물릴 수는 없다. */
+  const watts = Number.isFinite(opt.wattsOn)
+    ? Math.max(0, Math.min(opt.wattsOn, lampWattsOn(R, owned)))
+    : lampWattsOn(R, on);
+  return Math.round(electricityWonOf(R, watts * hours / 1000));
+}
+
+/* 등 n개를 켰을 때의 와트 합. 표가 없는 옛 규칙 사본은 `lampWatt × n` 으로 돈다 —
+   조용히 0원이 되는 것보다 옛 값으로 도는 편이 낫다. */
+export function lampWattsOn(rules, on) {
+  const n = Math.max(0, Math.round(on || 0));
+  if (!n) return 0;
+  const table = rules && Array.isArray(rules.lampWattsByOrder) && rules.lampWattsByOrder.length
+    ? rules.lampWattsByOrder : null;
+  if (!table) return Math.max(0, (rules && rules.lampWatt) || 0) * n;
+  let w = 0;
+  for (let i = 0; i < n; i++) w += table[Math.min(i, table.length - 1)] || 0;
+  return w;
+}
+
+/* ★★ 하루 kWh → 원. **단가를 읽는 곳은 여기 하나다.**
+   누진(`tariffTiers`)이 없으면 곱하기 하나이고, 있으면 **한계 단가**로 센다:
+   집이 원래 쓰는 몫(`baseKwhPerMonth`) 위에 식물등이 얹히므로, 식물등이 내는 것은
+   「base 까지의 요금」과 「base + 식물등까지의 요금」의 차다.
+   ⚠ base 자체를 여기서 또 물리면 두 번 낸다 — 그 몫은 이미 `dailySpendWon` 안의
+     공과·전기 2,500원이다(food_economy.md §2). 그래서 차를 쓴다. */
+export function electricityWonOf(rules, kwhPerDay) {
+  const R = rules || TUTORIAL_RULES;
+  const kwh = Math.max(0, kwhPerDay || 0);
+  const tiers = Array.isArray(R.tariffTiers) && R.tariffTiers.length ? R.tariffTiers : null;
+  if (!tiers) return kwh * (R.kwhWon || 0);
+  const days = R.rentPeriodDays || 30;          // 「한 달」의 정본은 월세 주기다. 새 값을 안 만든다
+  const base = Math.max(0, R.baseKwhPerMonth || 0);
+  return (tierCostWon(tiers, base + kwh * days) - tierCostWon(tiers, base)) / days;
+}
+/* 한 달 사용량(kWh) → 그 달 요금(원). 구간을 넘어간 몫만 다음 단가로 센다. */
+function tierCostWon(tiers, kwhPerMonth) {
+  let prev = 0, won = 0;
+  for (const t of tiers) {
+    const upto = Number.isFinite(t.uptoKwhPerMonth) ? t.uptoKwhPerMonth : Infinity;
+    won += Math.max(0, Math.min(kwhPerMonth, upto) - prev) * (t.won || 0);
+    prev = upto;
+    if (kwhPerMonth <= upto) break;
+  }
+  return won;
 }
 
 /* 콩나물이 아껴 준 오늘 식비. 끼니 하나가 mealCostWon 을 아낀다.
@@ -261,12 +409,17 @@ export function tutorialDay(ts, opt = {}) {
   const out = Math.max(0, base - saved) + power;
   ts.cashWon -= out;
 
-  /* ★유예가 끝나 간다 (2026-08-03 추가) — 월세가 **처음 돈으로 느껴지는 자리**다.
-     30일째에 30만 원이 그냥 빠지면 놀라기만 하고 준비할 기회가 없다. 이레 전에 알린다.
-     새 규칙이 아니라 이미 있는 nextDueDay 를 읽기만 한다 — 상태를 늘리지 않았다. */
-  if (ts.rent.paidCount === 0 && ts.day === ts.rent.nextDueDay - RENT_NOTICE_DAYS)
-    ev.push({ id: 'rent_soon', ko: '월세 유예가 ' + RENT_NOTICE_DAYS + '일 뒤 끝납니다',
-              dueDay: ts.rent.nextDueDay, rentWon: rentWonOf(ts) });
+  /* ★★ 2026-08-09 — 유예가 없어졌으므로 이 예고는 **둘째 달부터** 산다.
+     ------------------------------------------------------------
+     예전 조건은 `ts.rent.paidCount === 0` 이었다. 첫 청구가 1일로 당겨진 지금 그 조건은
+     「튜토 −6일」을 가리켜 **한 번도 안 터진다.** 죽은 코드로 남기지 않고 조건을 바꿨다:
+     이제 **매달** 이레 전에 알린다. 첫 달은 예고할 여지가 없으니(첫날 청구) 저절로 빠진다.
+     ⇒ 예고의 뜻도 같이 바뀐다. 예전에는 「봐 주던 것이 끝난다」였고 지금은 **「또 돌아온다」** 다.
+       한 번 맞아 본 뒤라야 그 말이 무게를 갖는다. 대사도 그래서 갈렸다(dialogue §rentSoon). */
+  if (ts.day > 0 && ts.day === ts.rent.nextDueDay - RENT_NOTICE_DAYS)
+    ev.push({ id: 'rent_soon', ko: '월세 ' + rentWonOf(ts).toLocaleString() + '원이 ' +
+                                   RENT_NOTICE_DAYS + '일 뒤 나갑니다',
+              dueDay: ts.rent.nextDueDay, rentWon: rentWonOf(ts), count: ts.rent.paidCount + 1 });
 
   /* 월세 — 첫 달은 유예다(집주인 사정·보증금 상계라는 서사 장치).
      ★ 액수는 **사는 방**이 정한다(rentWonOf) — 반지하와 원룸이 같을 이유가 없다. */
@@ -275,7 +428,7 @@ export function tutorialDay(ts, opt = {}) {
     rentPaid = rentWonOf(ts);
     ts.cashWon -= rentPaid;
     ts.rent.paidCount += 1;
-    ts.rent.nextDueDay += 30;
+    ts.rent.nextDueDay += R.rentPeriodDays || 30;   // ★주기의 정본은 규칙이다. 30 을 또 적지 않는다
     /* ★첫 달과 그 뒤는 다른 사건이다 — 첫 달은 유예가 끝난 날이고, 그 뒤는 반복이다.
        대사도 갈린다(dialogue.rentFirst / rentAgain). */
     ev.push({ id: 'rent', ko: '월세 ' + rentPaid.toLocaleString() + '원',

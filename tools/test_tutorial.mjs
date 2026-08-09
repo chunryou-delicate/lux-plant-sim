@@ -49,7 +49,11 @@ check('B 계절 — 시작 여름 · 45일 뒤 가을 · 135일 뒤 겨울', () 
      그 상태에서는 월세가 두 번 나가 실제 지출이 하루 30,000원(월 90만)이었다.
      지금은 하루치에서 월세 몫을 빼고(=10,000) 월세는 목돈으로 낸다 —
      **30일 평균은 그대로 20,000원**이고, 그것을 아래에서 직접 잰다. */
-check('C 하루 지출 — 월세를 두 번 안 뗀다 · 30일 평균이 15,000원', () => {
+/* ★★ 2026-08-09 — **45만 → 60만.** 월세가 15만에서 30만으로 되돌아갔다(박사님 확정).
+     10,000(월세 몫) × 30 + 300,000(목돈) = 600,000. 하루 평균은 20,000원 = 월 60만이다.
+   ⚠ `rentWon` 과 `dailySpendWon` 은 같이 움직인다 — 이 검사가 바로 그 짝을 지킨다.
+     한쪽만 바꾸면 이 숫자가 안 움직이거나 두 배가 된다(2026-08-05 에 실제로 그랬다). */
+check('C 하루 지출 — 월세를 두 번 안 뗀다 · 30일 평균이 20,000원', () => {
   const ts = mk();
   const r0 = tutorialDay(ts, { firstPlayDone: true, mealsUsed: 0 });
   assert.equal(r0.spentWon, 10_000, `하루 현금 지출이 ${r0.spentWon} — 월세 몫을 뺀 10,000이어야 합니다`);
@@ -74,7 +78,7 @@ check('C 하루 지출 — 월세를 두 번 안 뗀다 · 30일 평균이 15,00
   const after30 = ts3.cashWon;
   for (let i = 0; i < 30; i++) tutorialDay(ts3, { firstPlayDone: true, mealsUsed: 0 });
   const spent = after30 - ts3.cashWon;
-  assert.equal(spent, 450_000, `유예 뒤 한 달 지출이 ${spent.toLocaleString()}원 — 45만원이어야 합니다`);
+  assert.equal(spent, 600_000, `한 달 지출이 ${spent.toLocaleString()}원 — 60만원이어야 합니다`);
 });
 
 /* ══ C-2 · ★전기세가 **실제로 켠 것**을 따라간다 (2026-08-06) ══════════════
@@ -92,31 +96,51 @@ check('C-2 ★전기세 — 끄면 0원 · 오래 켜면 그만큼 · 안 산 �
   assert.ok(base > 0, '켰는데 요금이 0원입니다');
   assert.equal(lampElectricityWon(ts, { count: 0, litHours: 12 }), 0,
     '★껐는데 요금이 나갑니다 — 켜고 끄기가 돈에 안 닿습니다');
-  assert.equal(lampElectricityWon(ts, { count: 2, litHours: 12 }), base * 2,
-    '두 개를 켰는데 두 배가 아닙니다');
-  assert.equal(lampElectricityWon(ts, { count: 1, litHours: 24 }), base * 2,
+  /* ★★ 2026-08-09 — 「두 개면 두 배」를 **일부러 뺐다.** 등마다 와트가 다르다:
+     1개 = 바 20W, 2개 = 바+집게 32W 다(room_profile.banjiha §lampWatts). 두 배가 되면
+     그건 와트가 다시 한 벌로 뭉갠 것이다 — 그 상태가 바로 여기서 고친 버그다. */
+  const two = lampElectricityWon(ts, { count: 2, litHours: 12 });
+  assert.ok(two > base, '두 개를 켰는데 요금이 안 늘었습니다');
+  assert.ok(two < base * 2,
+    `★두 개가 정확히 두 배입니다(${two}) — 등마다 와트가 다른데 하나로 뭉개고 있습니다`);
+  /* 두 배로 오래 켜면 두 배. ⚠ 1원 안의 차는 반올림이다 — 20W·12h 는 38.4원이라
+     38 로 떨어지고 24h 는 76.8 → 77 이 된다. 옛 12W 에서는 23.04·46.08 이라 우연히 딱 맞았다. */
+  assert.ok(Math.abs(lampElectricityWon(ts, { count: 1, litHours: 24 }) - base * 2) <= 1,
     '★두 배로 오래 켰는데 요금이 그대로입니다');
   /* 켠 개수는 산 개수를 못 넘는다 */
-  assert.equal(lampElectricityWon(ts, { count: 9, litHours: 12 }), base * 2,
+  assert.equal(lampElectricityWon(ts, { count: 9, litHours: 12 }), two,
     '산 것보다 많이 켠 요금이 나갑니다');
+  /* ★ 와트를 직접 받아도(방 조도 계약의 report.energy.watts) 산 등의 합을 못 넘는다 */
+  assert.equal(lampElectricityWon(ts, { count: 2, litHours: 12, wattsOn: 9_999 }), two,
+    '안 산 등의 와트로 요금이 나갔습니다');
   /* 아무것도 안 넘기면 예전 그대로 — 옛 호출부가 안 깨진다 */
   assert.equal(lampElectricityWon(ts), lampElectricityWon(ts, { count: 2, litHours: ts.lamp.litHours }),
     '인자 없이 부른 값이 예전과 다릅니다');
 });
 
-/* ══ D · 월세 — 첫 달은 유예, 30일째부터 ═══════════════════════════════ */
-check('D 월세 — 30일 유예 뒤 첫 청구 · 그 뒤 30일마다', () => {
+/* ══ D · 월세 — 첫날 청구 · 그 뒤 30일마다 ═══════════════════════════ */
+/* ★★ 2026-08-09 — **[30, 60, 90] → [1, 31, 61, 91].** 첫 달 유예를 폐지했다(박사님 확정).
+   원문: *"바로 시작날이 바로 30일기준 마지막날인거야. 다음날 누르면 월세 30만원이 쓱 빠지게"*
+   ⇒ 첫 [다음 날]에 바로 청구되고, 그 뒤로도 정확히 30일 간격이다. 간격이 안 변한 것이
+     이 검사의 요점이다 — 첫날로 당기면서 주기가 29일이 되는 실수가 나기 쉬운 자리다. */
+check('D 월세 — 첫날 청구 · 그 뒤 30일마다 (유예 없음)', () => {
   const ts = mk();
   const due = [];
   for (let i = 1; i <= 95; i++) {
     const r = tutorialDay(ts, { firstPlayDone: true, mealsUsed: 3 });
     if (r.rentWon > 0) due.push(r.day);
   }
-  assert.deepEqual(due, [30, 60, 90], '월세 청구일이 ' + due.join(',') + ' 입니다');
+  assert.deepEqual(due, [1, 31, 61, 91], '월세 청구일이 ' + due.join(',') + ' 입니다');
 });
 
 /* ══ E · 식물등 — 가을에 해금 · 사면 돈이 빠지고 전기가 붙는다 ═══════════ */
-check('E 식물등 — 가을 해금 · 25,000원 · 전기 23원/일', () => {
+/* ★★ 2026-08-09 — **23원 → 38원.** 검사가 물러선 것이 아니라 **와트가 정정된 것**이다.
+   예전 `TUTORIAL_RULES.lampWatt` 는 12W 하나였다: 어떤 기구를 켜든 개당 12W 로 셌다.
+   그런데 방에 실제로 달린 첫 등은 **바 20W** 이고(data/lighting_presets.json ·
+   room_profile.banjiha.json §lampWatts [0, 20, 32]), 방 조도 계약(report.energy.won)은
+   내내 20W 로 세고 있었다. 즉 화면과 지갑이 서로 다른 와트를 보고 있었다.
+   ⇒ 20W × 12h × 160원/kWh = **38원**. 12 → 20 은 ×1.667 이고 23 × 1.667 = 38 이다. */
+check('E 식물등 — 가을 해금 · 25,000원 · 전기 38원/일(바 20W)', () => {
   const ts = mk();
   let unlockedAt = null;
   for (let i = 1; i <= 60 && !unlockedAt; i++) {
@@ -128,9 +152,9 @@ check('E 식물등 — 가을 해금 · 25,000원 · 전기 23원/일', () => {
   buyLamp(ts);
   assert.equal(ts.cashWon, before - TUTORIAL_RULES.lampPriceWon, '값이 안 빠졌습니다');
   assert.equal(ts.lamp.owned, 1);
-  assert.equal(lampElectricityWon(ts), 23, `전기가 ${lampElectricityWon(ts)}원/일 입니다`);
+  assert.equal(lampElectricityWon(ts), 38, `전기가 ${lampElectricityWon(ts)}원/일 입니다`);
   const r = tutorialDay(ts, { firstPlayDone: true, mealsUsed: 3 });
-  assert.equal(r.electricityWon, 23, '하루 전기가 안 붙었습니다');
+  assert.equal(r.electricityWon, 38, '하루 전기가 안 붙었습니다');
 });
 
 check('E-2 식물등 — 해금 전에는 못 산다', () => {
@@ -225,7 +249,7 @@ check('J 표준 진행 — 콩나물 3끼로 버티면 며칠 가나', () => {
   while (ts.cashWon > 0 && day < 400) { tutorialDay(ts, { firstPlayDone: true, mealsUsed: 3 }); day = ts.day; }
   /* game_flow.md 의 "월세 첫 달 유예 → 데드라인 73일" 과 자릿수가 맞는지만 본다.
      콩나물만으로는 흑자가 안 나므로(선반이 있어야 한다) 여기서는 버티는 날수를 잰다. */
-  results.push(['INFO', `  콩나물 3끼만으로 버티는 날: ${day}일 (게임 시작 자금 100만)`]);
+  results.push(['INFO', `  콩나물 3끼만으로 버티는 날: ${day}일 (게임 시작 자금 ${TUTORIAL_RULES.startCashWon.toLocaleString()})`]);
   assert.ok(day > 40 && day < 200, `버티는 날이 ${day}일 — 데드라인 자릿수(수십 일)와 어긋납니다`);
 });
 

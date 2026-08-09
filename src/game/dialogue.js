@@ -139,21 +139,31 @@ export const SCRIPTS = {
      ★몬이는 **대신 해 주지 않는다.** 돈 얘기에서 그게 제일 잘 드러난다 —
        세어 주기는 하지만 벌어 주지는 않는다. */
 
-  /* 유예 만료 7일 전. 첫 달 월세를 봐준다는 것이 서사 장치(story_arc.md §3)라
-     그 장치가 **끝난다는 것**을 여기서 처음 몸으로 안다. */
+  /* ★★ 2026-08-09 — **유예가 없어졌다.** 그래서 이 둘의 뜻이 통째로 바뀌었다.
+     ------------------------------------------------------------
+     예전: 첫 달을 봐 주고(유예 30일), 만료 이레 전에 `rentSoon` 이 「봐 주던 게 끝난다」고 알렸다.
+     지금: **첫 [다음 날]에 바로 30만 원이 빠진다**(tutorial.js §rentFirstDueDay).
+       박사님 원문 — *"다음날 누르면 월세 30만원이 쓱 빠지게, 그리고 식대도 빠지게 해서
+       돈에 대한 설명을 먼저 하고 가는게 좋겠어. 식비까지 하면 3달도 빠듯하겠다는 식으로."*
+     ⇒ 그래서 **`rentFirst` 가 이 게임의 「돈 설명」 자리**가 됐다. 규칙을 읊는 것이 아니라
+       한 번 맞아 본 직후에 셈을 같이 해 보는 모양으로 쓴다 — 몬이는 세어 주지만 벌어 주지 않는다.
+     ⚠ 숫자를 대사에 박지 않으려 했지만 「삼십만 원」은 예전 대사에도 있었고 지금 값과 같다
+       (`rentWon` 300,000 · `homes.json banjiha.rent`). 값이 바뀌면 이 줄도 같이 고쳐야 한다 —
+       `tools/test_econ.mjs` §D 가 그 짝이 어긋나면 깨진다. */
   rentSoon: [
-    { who: 'jachwi', face: 'worry', text: '달력에 동그라미 쳐 둔 날이 다가온다.' },
-    { who: 'jachwi', text: '집주인 아저씨가 첫 달은 봐준다고 했었지. 그 첫 달이 끝나 간다.' },
-    { who: 'moni',   face: 'curious', text: '얼마야?' },
-    { who: 'jachwi', face: 'tired', text: '삼십만 원.' },
-    { who: 'moni',   face: 'sad', text: '…그건 내가 못 도와줘.' },
-    { who: 'moni',   text: '대신 하루에 얼마 나가는지는 같이 세 줄게.' }
+    { who: 'jachwi', face: 'worry', text: '달력에 동그라미 쳐 둔 날이 또 다가온다.' },
+    { who: 'moni',   face: 'curious', text: '한 달이 벌써?' },
+    { who: 'jachwi', face: 'tired', text: '일주일 남았어. 삼십만 원.' },
+    { who: 'moni',   text: '그럼 지금부터 세자. 아직 일주일 있잖아.' }
   ],
   rentFirst: [
-    { who: 'jachwi', face: 'tired', text: '삼십만 원. 한 번에 빠져나갔다.' },
-    { who: 'moni',   face: 'sad', text: '한 달이 이렇게 빨리 가는구나.' },
-    { who: 'jachwi', text: '…그러게.' },
-    { who: 'moni',   text: '남은 걸로 뭘 할지는 네가 정해. 나는 세는 것만 할게.' }
+    { who: 'jachwi', face: 'tired', text: '삼십만 원. 들어오자마자 한 번에 빠져나갔다.' },
+    { who: 'moni',   face: 'curious', text: '오늘이 딱 그 날이었구나. 밥값도 나갔고.' },
+    { who: 'jachwi', text: '…남은 걸로 세 달은 될까.' },
+    { who: 'moni',   face: 'sad', text: '아니. 이대로면 두 달이야.' },
+    { who: 'moni',   text: '밥값을 얘들이 대신 내 주면 그때 세 달. 그것도 빠듯하고.' },
+    { who: 'jachwi', face: 'worry', text: '…세 달 안에 뭘 해야 한다는 소리네.' },
+    { who: 'moni',   text: '나는 세는 것만 할게. 뭘 할지는 네가 정해.' }
   ],
   /* 두 번째 달부터. ★반복 대사라 짧다 — 같은 무게를 두 번 주면 첫 달이 가벼워진다. */
   rentAgain: [
@@ -460,12 +470,15 @@ export const SCRIPTS = {
 /* ★어느 대사가 **다시 나올 수 있나.** 작은 말들과, **실제로 다시 일어나는 사건**만이다.
    나머지 사건 대사는 한 번뿐이다 — 두 번째 들으면 안내가 잔소리가 되고 사건도 가벼워진다.
      rentAgain            월세는 달마다 다시 온다
+     rentSoon             ★2026-08-09 추가 — 유예가 없어지면서 **예고도 달마다** 온다.
+                          예전에는 첫 달 유예가 끝나기 전 딱 한 번이라 한 번뿐인 대사였다.
+                          지금은 청구 이레 전마다 뜨므로(tutorial.js §rent_soon) 다시 나와야 한다.
      plantStalledAgain    멈춤은 다시 일어난다. 열흘마다 짚는다(loop.STALL_REPEAT_DAYS) —
      plantStalledWinter   한 번 말하고 마는 쪽을 골랐다가, 어두운 자리에 방치한 판이
                           190일 통째로 조용해졌다(2026-08-03 진단). */
 export const REPEATABLE = new Set(
   Object.keys(SCRIPTS).filter(k => k.startsWith('chat'))
-    .concat(['rentAgain', 'plantStalledAgain', 'plantStalledWinter'])
+    .concat(['rentSoon', 'rentAgain', 'plantStalledAgain', 'plantStalledWinter'])
 );
 
 /* ── 진행 ───────────────────────────────────────────────────────────── */
