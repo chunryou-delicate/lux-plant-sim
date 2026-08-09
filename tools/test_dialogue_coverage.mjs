@@ -196,9 +196,14 @@ function longestSilence(rows) {
 /* ══ 세 경로 ═══════════════════════════════════════════════════════════
    story_arc.md §2 의 A·B·C 를 그대로 굴린다. 수입만 갈라서 도착 시점을 만든다. */
 
+/* ⚠ 2026-08-09 — **90일 → 130일로 늘렸다.** 판을 고친 게 아니라 재현의 기한을 맞춘 것이다.
+   이사비가 150만 → **200만**이 되면서(하프문 하나로 넘는 자리) 주입 수입 24,300원/일 로는
+   90일 안에 못 닿는다 — 이사를 안 하니 `move_ready`·`moved_out` 대사가 영영 안 났다.
+   ⚠ **대사가 없어진 게 아니라 이사가 안 일어난 것**이었다. 재는 기한이 낡았던 자리다.
+   ⇒ 값을 또 올리면 여기도 같이 봐야 한다. `days` 는 이사비를 따라간다. */
 /* A — 식물등 없이 가을 안에 이사 */
 const A = play({
-  cropSlot: DARK, plantSlot: SILL, incomeWon: 24_300, days: 90,
+  cropSlot: DARK, plantSlot: SILL, incomeWon: 24_300, days: 130,
   onDay: ({ S }) => {
     const ts = S.tutorial;
     return (canMoveOut(ts).ok && !ts.movedOut) ? moveOut(ts).events : [];
@@ -217,7 +222,7 @@ const A = play({
        그대로 남아 있고, 그건 가을·식물등·겨울 콘텐츠가 통째로 건너뛰어진다는 뜻이다
        (plan-2026-08-09-decisions §4 가 막으려던 바로 그것). 인계에 판단 요청으로 적었다. */
 const B = play({
-  cropSlot: DARK, plantSlot: SILL, incomeWon: 24_300, days: 90,
+  cropSlot: DARK, plantSlot: SILL, incomeWon: 24_300, days: 130,
   onDay: ({ S, io }) => {
     const ts = S.tutorial, out = [];
     if (ts.lamp.unlocked && ts.lamp.owned === 0 && ts.cashWon >= ts.rules.lampPriceWon) {
