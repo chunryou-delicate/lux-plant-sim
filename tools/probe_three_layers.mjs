@@ -71,6 +71,11 @@ const DARK = 'banjiha-dresser:1';     // 콩나물 — 어두워야 하얗고 �
 const SILL = 'banjiha-sill:0';        // 몬스테라 — 반지하에서 제일 밝은 자리
 const DESK = 'banjiha-desk:0';        // 무순 — 빛 요구가 콩나물과 정반대다
 const CYCLE_DAYS = 5;
+/* ★★ 모주를 세울 자리 — **등 1개일 때 밝은 순서**다(room_profile.banjiha 의 ppfd[1]).
+   ⚠ 어두운 데 세우면 밴드가 막아 안 자란다. 그래서 밝은 자리 수가 곧 모주 수의 상한이다. */
+const MOTHER_SLOTS = ['banjiha-sill:0', 'banjiha-etagere:7', 'banjiha-etagere:6',
+                      'banjiha-etagere:8', 'banjiha-etagere:4', 'banjiha-etagere:3',
+                      'banjiha-etagere:5', 'banjiha-desk:0'];
 
 const REAL = TUTORIAL_RULES;                       // ★ 계절도 정본(여름 45일차)
 const DAILY_OUT = dailyCashOutWon({ rules: REAL, movedOut: false });
@@ -241,7 +246,7 @@ const VEGONLY = { id: '—', ko: '채소만', order: 'veg', vegShareOf: m => m }
 /* ══ 한 판 ════════════════════════════════════════════════════════════════ */
 function play(pol, { days = DAYS, veg = true, prop = true, seed = 1, jarCap = 24, lamps = 1,
                      rules = REAL, fpRules = RULES, siruFixed = null, musun = 0,
-                     staminaFree = false } = {}) {
+                     staminaFree = false, keepMothers = 0, motherSlots = null } = {}) {
   let lampDay = null, lastBand = null, lastSeason = null;
   const light = createProfileLight(structuredClone(BASE_PROFILE),
     { lightTh: LIGHT_TH, weatherBalance: WEATHER_BAL });
@@ -262,6 +267,19 @@ function play(pol, { days = DAYS, veg = true, prop = true, seed = 1, jarCap = 24
   let died = 0, cuts = 0, sold = 0, cutCash = 0, repots = 0;
   let jarSpend = 0, potSpend = 0, siruSpend = 0, seedSpend = 0, surplusCash = 0, lampSpend = 0;
   let minCash = Infinity, minCashDay = null, brokeDay = null, assetMoveDay = null, cashMoveDay = null;
+  /* ★★ 삽수를 안 팔고 키워 **모주로 쓰는** 갈래. motherIds 에 든 삽수는 안 판다. */
+  const motherIds = new Set();
+  const SLOTS = motherSlots || MOTHER_SLOTS;
+  let usedSlots = 1;                 // 0번은 원래 모주(SILL)가 쓴다
+  let dryDays = 0, growLit = 0, growDark = 0, cutsFromCuttings = 0;
+  /* ★★ **자르는 그 순간** 모주 후보로 찍는다. 뿌리내린 날 doProp 에 손이 없으면 그날 판매가
+     먼저 데려가 버려서, 400일을 돌려도 모주가 영영 1개였다(처음에 실제로 그랬다). */
+  const reserveMother = (c) => {
+    if (!c || keepMothers <= 0) return;
+    if (motherIds.size >= keepMothers) return;
+    if (usedSlots + motherIds.size >= SLOTS.length) return;   // ★ 밝은 자리가 상한이다
+    motherIds.add(c.id);
+  };
 
   for (let d = 1; d <= days; d++) {
     const bs = cropSiteOf(S.firstPlay, 'beansprout');
@@ -281,6 +299,12 @@ function play(pol, { days = DAYS, veg = true, prop = true, seed = 1, jarCap = 24
       if (haveT < musunN) { try { const o = orderItem(S, 'sprout_tray', musunN - haveT); siruSpend += o.totalWon; } catch {} }
       const nd = musunN - stockOf(S, 'radish_seed') - incomingOf(S, 'radish_seed');
       if (nd > 0) { try { const o = orderItem(S, 'radish_seed', nd); seedSpend += o.totalWon; } catch {} }
+    }
+    if (prop && keepMothers > 0 &&
+        stockOf(S, 'pot') + incomingOf(S, 'pot') < 1) {
+      /* ⚠ **미리** 시켜 둬야 한다(배송 2일). 안 그러면 뿌리내린 그날 판매가 먼저 데려가서
+         모주가 영영 안 는다 — 처음에 실제로 그랬다(모주 수가 400일 내내 1이었다). */
+      try { const o = orderItem(S, 'pot', 1); potSpend += o.totalWon; } catch {}
     }
     if (prop) {
       const want = Math.min(jarCap, (S.cuttings || []).length + 2);
@@ -377,6 +401,27 @@ function play(pol, { days = DAYS, veg = true, prop = true, seed = 1, jarCap = 24
         used++;
         try { repotCutting(S, c); didR++; repots++; } catch { sim.left++; sim.xp--; used--; }
       }
+      /* ★★ 모주 늘리기 — 뿌리내린 삽수를 **팔지 않고** 흙으로 옮겨 밝은 자리에 세운다.
+         그러면 stepCuttings 가 빛 든 날마다 잎을 키우고, 잎이 2장이 되면 **그 삽수에서
+         또 자를 수 있다**(takeCutting 의 motherCuttingId 길). 복리가 붙는 유일한 길이다.
+         ⚠ 자리가 없으면 안 늘린다 — 어두운 데 세우면 밴드가 막아 헛수고다. */
+      if (keepMothers > 0) {
+        for (const c of [...(S.cuttings || [])]) {
+          if (!motherIds.has(c.id) || c.potted) continue;
+          if (c.status !== 'rooted' && c.status !== 'node') continue;
+          if (usedSlots >= SLOTS.length) break;                  // ★ 밝은 자리가 상한이다
+          if (stockOf(S, 'pot') < 1) {
+            try { const o = orderItem(S, 'pot', 1); potSpend += o.totalWon; } catch {}
+            break;
+          }
+          if (used >= cap || !spend(cap - used)) break;
+          used++;
+          try { repotCutting(S, c, { at: SLOTS[usedSlots], slots: light.room.slots });
+                usedSlots++; didR++; repots++; }
+          catch { sim.left++; sim.xp--; used--; break; }
+        }
+      }
+      /* ★ 자르기 — 원래 모주(화분) 먼저, 그다음 **모주가 된 삽수들**에서 */
       for (let k = 0; k < 8; k++) {
         if (stockOf(S, 'jar') < 1) break;
         const v = viewOf(S, io);
@@ -384,8 +429,20 @@ function play(pol, { days = DAYS, veg = true, prop = true, seed = 1, jarCap = 24
         if (!node) break;
         if (used >= cap || !spend(cap - used)) break;
         used++;
-        try { takeCutting(S, { nodes: v.nodes, nodeId: node.nodeId, container: 'jar' }); didC++; cuts++; }
+        try { const nc = takeCutting(S, { nodes: v.nodes, nodeId: node.nodeId, container: 'jar' });
+              didC++; cuts++; reserveMother(nc); }
         catch { sim.left++; sim.xp--; used--; break; }
+      }
+      for (const id of [...motherIds]) {
+        if (stockOf(S, 'jar') < 1) break;
+        const mom = (S.cuttings || []).find(x => x.id === id);
+        if (!mom || mom.status === 'dead') continue;
+        if ((mom.leaves || 0) < 2) continue;      // 잎 한 장은 못 자른다(모주가 끝난다)
+        if (used >= cap || !spend(cap - used)) break;
+        used++;
+        try { const nc = takeCutting(S, { motherCuttingId: id, container: 'jar' });
+              didC++; cuts++; cutsFromCuttings++; reserveMother(nc); }
+        catch { sim.left++; sim.xp--; used--; }
       }
       return used;
     };
@@ -395,8 +452,21 @@ function play(pol, { days = DAYS, veg = true, prop = true, seed = 1, jarCap = 24
 
     /* ── 판매 — 손이 안 든다 ────────────────────────────────────────────── */
     for (const c of [...(S.cuttings || [])]) {
+      if (motherIds.has(c.id)) continue;                 // ★ 모주로 쓰기로 한 것은 안 판다
       if (!SELLABLE_CUTTING_STATUS.includes(c.status)) continue;
       try { const r = sellCutting(S, c.id); cutCash += r.won; sold++; } catch {}
+    }
+    /* ⚠ 마른 모주 · 안 자란 모주를 센다 — 지난번에 하네스가 모주를 말려 400일을 얼렸다 */
+    { const w0 = potWaterStatus(S, { band: lastBand, season: lastSeason });
+      if (w0 && w0.dry) dryDays++; }
+    for (const id of motherIds) {
+      const m = (S.cuttings || []).find(x => x.id === id);
+      if (!m) continue;
+      let dli = null;
+      try { dli = io.light.dliOfSlot(m, {}); } catch { dli = null; }
+      let band = null;
+      try { const b = io.growth.bandOf(dli, !!m.variegated); band = b && b.band; } catch { band = null; }
+      if (band && !['critical', 'poor', 'stagnant'].includes(band)) growLit++; else growDark++;
     }
 
     if (!sim.quest) {
@@ -423,6 +493,9 @@ function play(pol, { days = DAYS, veg = true, prop = true, seed = 1, jarCap = 24
   }
   const last = rows[rows.length - 1];
   return { pol, rows, ups, died, cuts, sold, cutCash, repots, lampDay,
+           motherN: motherIds.size, cutsFromCuttings, dryDays, growLit, growDark,
+           motherLeaves: [...motherIds].map(id => {
+             const m = (S.cuttings || []).find(x => x.id === id); return m ? (m.leaves || 0) : 0; }),
            jarSpend, potSpend, siruSpend, seedSpend, surplusCash, lampSpend,
            minCash, minCashDay, brokeDay, assetMoveDay, cashMoveDay,
            endCash: last.cashWon, endMax: last.max, endSiru: last.nSiru,
@@ -670,6 +743,60 @@ if (!ONLY || ONLY === 'F') {
   }
   console.log('');
   console.log('  ⚠ 이 값이 사람이 못 견딜 크기면 **숫자가 맞아도 통과가 아니다.**');
+  console.log('');
+}
+
+/* -- §G 삽수를 팔지 말고 키워 **모주로** 쓰면 ------------------------------ */
+if (!ONLY || ONLY === 'G') {
+  console.log('-- §G ★★ 삽수를 키워 **모주로** 쓰면 — 하루 230원이 뒤집히나 --');
+  console.log('  [ 켬/끔 — §A 와 같다(세 층 다 켬 · 모주 판매만 끔). 다른 것은 **모주 수 정책 하나**뿐이다.');
+  console.log('  | ㉠ 전부 판다(=§A 기준선) · ㉡ 처음 N개는 안 팔고 흙으로 옮겨 밝은 자리에 세운다');
+  console.log('  | 삽수→모주 : 분갈이(손 1 + 검은 모종포트 7,000원) → 흙 → 빛 든 날마다 잎 → 잎 2장이면 또 자른다');
+  console.log('  ] 모주 자리는 등 1개 기준 밝은 순서 — ' + MOTHER_SLOTS.slice(0, 4).join(' · '));
+  console.log('');
+  console.log('| 정책 | 모주 정책 | 실제 모주(그루) | 자른 것 | 그중 삽수에서 | 판 것 | 삽수 수입 | **하루 증식 수입** | 12,500 대비 |');
+  console.log('|------|-----------|-----------------|---------|---------------|-------|-----------|--------------------|-------------|');
+  const GG = [];
+  for (const [pol, keep] of [[POLICIES[0], 0], [POLICIES[0], 2], [POLICIES[0], 4], [POLICIES[0], 7],
+                             [POLICIES[1], 4], [POLICIES[2], 4]]) {
+    const r = play(pol, { days: DAYS, keepMothers: keep });
+    GG.push({ pol, keep, r });
+    const per = r.cutCash / r.rows.length;
+    console.log('| ' + (pol.id + ' ' + pol.ko).padEnd(12) + ' | ' +
+      String(keep === 0 ? '㉠ 전부 판다' : '㉡ ' + keep + '개').padStart(9) + ' | ' +
+      String(r.motherN + 1).padStart(15) + ' | ' + String(r.cuts).padStart(7) + ' | ' +
+      String(r.cutsFromCuttings).padStart(13) + ' | ' + String(r.sold).padStart(5) + ' | ' +
+      won(r.cutCash).padStart(9) + ' | ' + won(per).padStart(18) + ' | ' +
+      ((per / RENT_UTIL_PER_DAY * 100).toFixed(1) + '%').padStart(11) + ' |');
+  }
+  console.log('');
+  console.log('| 정책 | ⚠죽은 삽수 | ⚠모주 마른 날 | 모주×날(빛 듦) | 모주×날(어두움) | 모주 잎 | 끝 최대체력 | 최대 시루 | ★이사 자금(자산) |');
+  console.log('|------|-----------|---------------|-----------------|------------------|---------|-------------|-----------|------------------|');
+  for (const g of GG)
+    console.log('| ' + (g.pol.id + ' ' + (g.keep === 0 ? '전부판다' : g.keep + '개')).padEnd(12) + ' | ' +
+      String(g.r.died).padStart(9) + ' | ' + (g.r.dryDays + '일').padStart(13) + ' | ' +
+      String(g.r.growLit).padStart(15) + ' | ' + String(g.r.growDark).padStart(16) + ' | ' +
+      (g.r.motherLeaves.join(',') || '-').padStart(7) + ' | ' + String(g.r.endMax).padStart(11) + ' | ' +
+      (g.r.maxSiru + '개').padStart(9) + ' | ' +
+      String(g.r.assetMoveDay ? g.r.assetMoveDay + '일' : '★안 닿는다').padStart(16) + ' |');
+  console.log('');
+  console.log('  ⚠ 죽은 삽수·모주 마른 날이 0 이 아니면 그 줄은 못 믿는다.');
+  console.log('  ★ 「모주×날(어두움)」이 크면 세운 자리가 어두웠다는 뜻이다 — 그 모주는 아무 일도 안 한다.');
+  console.log('');
+  console.log('  -- 모주 자리의 밝기 (room_profile.banjiha · ppfd[등0/등1/등2] · DLI ≈ ppfd×12h×0.0036) --');
+  console.log('| 자리 | 등 0 | 등 1 | 등 2 | DLI(등1) | 생장 최소 3 을 넘나 | 화분 지름 한도 |');
+  console.log('|------|------|------|------|----------|---------------------|----------------|');
+  for (const id of MOTHER_SLOTS) {
+    const sl = BASE_PROFILE.slots.find(x => x.slotId === id);
+    if (!sl) continue;
+    const dli1 = sl.ppfd[1] * 12 * 0.0036;
+    console.log('| ' + id.padEnd(20) + ' | ' + String(sl.ppfd[0]).padStart(4) + ' | ' +
+      String(sl.ppfd[1]).padStart(4) + ' | ' + String(sl.ppfd[2]).padStart(4) + ' | ' +
+      dli1.toFixed(2).padStart(8) + ' | ' + (dli1 >= 3 ? '○' : '✕ 안 자란다').padStart(19) + ' | ' +
+      (sl.maxPotD + 'm').padStart(14) + ' |');
+  }
+  console.log('  ⚠ 창가(sill)는 등 1개에 1.84 인데 자연광이 더해져 3.36 이 된다(§A-④ 실측).');
+  console.log('    선반(etagere)은 자연광 비율이 3% 안팎이라 거의 등빨이다.');
   console.log('');
 }
 
