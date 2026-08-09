@@ -396,20 +396,31 @@ if (!ONLY || ONLY === 'B') {
 }
 
 /* ── §C 체력 5로 시루 몇 개까지 ──────────────────────────────────────────── */
+/* ★★ 2026-08-09 정정 — **레벨업을 꺼야 「체력 5」를 재는 것이다.**
+   예전에는 그냥 60일을 돌리고 10일차 뒤를 봤는데, 그때는 이미 경험치가 쌓여 최대체력이
+   **8~9로 올라 있었다.** 그 판을 「체력 5로 재 봤다」고 적었고, 그래서 「시루 10개까지
+   안 걸린다」는 틀린 값이 나왔다. 실제로는 **6개부터 걸린다.**
+   ⇒ 레벨이 안 오르는 곡선을 꽂아 최대체력을 5에 묶는다. */
+const NO_LEVEL = { id: '—', ko: '레벨업 없음', step: [], cum: [Infinity, Infinity, Infinity, Infinity, Infinity] };
 if (!ONLY || ONLY === 'C') {
-  console.log('── §C ★ 체력이 5일 때 시루 몇 개까지 굴러가나 ──');
-  console.log('| 시루 | 분배 | 하루 최대 차례 | 못 한 날 | 첫 「못 함」 | 같은 날: 하루 최대 차례 | 같은 날 못 한 날 |');
-  console.log('|------|------|----------------|----------|--------------|-------------------------|------------------|');
-  for (const n of [2, 3, 4, 5, 6, 7, 8, 10]) {
-    const sp = play({ id: 'x', ko: 'x', siru: n, spread: true, musun: 0, quest: false }, { days: 60 });
-    const sm = play({ id: 'x', ko: 'x', siru: n, spread: false, musun: 0, quest: false }, { days: 60 });
-    const spT = sp.rows.slice(9), smT = sm.rows.slice(9);
-    const spMiss = spT.filter(x => x.missed > 0), smMiss = smT.filter(x => x.missed > 0);
-    console.log(`| ${String(n).padStart(4)} | ${'분배'.padStart(4)} | ${String(Math.max(...spT.map(x => x.want))).padStart(14)} | ` +
-      `${String(spMiss.length + '일').padStart(8)} | ${(spMiss.length ? spMiss[0].day + '일차' : '—').padStart(12)} | ` +
-      `${String(Math.max(...smT.map(x => x.want))).padStart(23)} | ${String(smMiss.length + '일').padStart(16)} |` +
-      (spMiss.length ? '  ★' : ''));
+  console.log('── §C ★ 체력이 5일 때 시루 몇 개까지 굴러가나 (레벨업 끔) ──');
+  console.log('  한 시루가 제 차례를 맞으면 **수확 1 + 심기 1 + 물 1 = 3손**이 든다(물은 심은 그날 준다).');
+  console.log(`  주기가 ${CYCLE_DAYS}일이라 하루에 N/${CYCLE_DAYS} 개가 차례를 맞는다 — 그래서 하루 손은 대략 3×N/5 다.`);
+  console.log('| 시루 | 하루 차례(시루) | 하루 필요 손 | 못 한 날/50 | 첫 「못 함」 | 60일 곳간절감 |');
+  console.log('|------|------------------|--------------|-------------|--------------|---------------|');
+  for (const n of [3, 4, 5, 6, 7, 8, 10, 12]) {
+    const r = play({ id: 'x', ko: 'x', siru: n, spread: true, musun: 0, quest: false },
+                   { days: 60, curve: NO_LEVEL });
+    const t = r.rows.slice(9);
+    const turns = Math.max(...t.map(x => Math.max(x.nReady, x.nResow)));
+    const miss = t.filter(x => x.missed > 0);
+    console.log(`| ${String(n).padStart(4)} | ${String(turns).padStart(16)} | ` +
+      `${String(Math.max(...t.map(x => x.used + x.missed))).padStart(12)} | ` +
+      `${String(miss.length + '일').padStart(11)} | ${(miss.length ? miss[0].day + '일차' : '—').padStart(12)} | ` +
+      `${sum(r.rows, 'savedWon').toLocaleString().padStart(13)} |` + (miss.length ? '  ★' : ''));
   }
+  console.log('');
+  console.log('  ★ 검산 — 곳간절감이 시루마다 달라야 흩기가 된 것이다(같으면 안 돈 것이다).');
   console.log('');
 }
 
