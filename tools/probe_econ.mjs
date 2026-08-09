@@ -31,6 +31,23 @@
  *   ⇒ 그래서 시루를 늘리면 ①은 5,000원에서 막히고 **②만 늘어난다.**
  *     「다량으로 하면 유지된다」가 성립하는지는 전적으로 ②에 달려 있다. 그것을 잰다.
  *
+ * ══ ⚠⚠ 함정 — **달력일로 나누면 안 된다** (2026-08-09에 실제로 틀렸다) ══════
+ * 처음 이 도구는 「달력 90일」을 돌리고 그 90으로 나눠 하루 순현금을 냈다. **그게 틀렸다.**
+ *
+ * 살림(월세·식비)은 **튜토 시계가 돌 때만** 나간다. 튜토 시계는 첫 플레이가 끝나야 시작한다
+ * (`tutorial.tutorialDay` 첫 줄 — `if (!firstPlayDone) return`). 그런데 시루가 많을수록
+ * 첫 플레이가 길어져서, **같은 달력 90일 안에 든 튜토일이 시루 1개면 90일, 30개면 68일**이었다.
+ * ⇒ 분모가 후보마다 달랐다. 시루를 늘릴수록 이득이 짧은 기간에 눌려 담겨
+ *   **곡선이 납작해 보였다** — 시루 30개의 하루 순현금이 −12,049원인데 −17,569원으로 찍혔다.
+ *
+ * ★ 그래서 「시루를 늘려도 −19,740 → −17,569 밖에 안 간다, 천장에 막혔다」는 결론이 나왔다.
+ *   **그 결론이 통째로 틀렸다.** 천장은 없다. 기울기가 완만할 뿐이다(측정 261원/시루/일).
+ *   둘은 처방이 정반대다 — 「천장」이면 상한을 풀어야 하고, 「기울기」면 회전분·판매가·주기를
+ *   올려야 한다. 재는 자가 틀려서 처방이 뒤집힐 뻔했다.
+ *
+ * ⇒ **`play({ tutorialDays: N })` 을 써라.** 튜토 시계가 N일에 닿을 때까지 돈다.
+ *   달력일로 도는 것은 이사일을 재는 §5 뿐이다 — 거기서는 「며칠에 나가나」가 곧 답이라 분모가 없다.
+ *
  * ⚠ 코드를 안 고친다. 규칙 사본을 `S.tutorial.rules` 에 꽂을 뿐이다.
  *   하네스는 `tools/probe_elec.mjs`(= test_banjiha_routes) 것을 그대로 썼다.
  */
@@ -198,7 +215,11 @@ function play(opt = {}) {
   let cuttingCash = 0, potCash = 0, maxSirus = 0;
   const sell = c => { const r = sellCutting(S, c.id); cuttingCash += r.won; return r.won; };
 
-  for (let d = 1; d <= (opt.days || 300); d++) {
+  /* ★★ **튜토일로 멈춘다 — 달력일이 아니다** (2026-08-09 정정. 아래 머리말 §함정 참고).
+     `opt.tutorialDays` 를 주면 튜토 시계가 그 날에 닿을 때까지 돈다. 안 주면 예전처럼 달력으로 돈다
+     (이사일을 재는 §5 는 그쪽이 맞다 — 거기서는 「며칠에 나가나」가 곧 답이라 분모가 없다). */
+  const stopAt = Number.isFinite(opt.tutorialDays) ? opt.tutorialDays : Infinity;
+  for (let d = 1; d <= (opt.days || 300) && ts.day < stopAt; d++) {
     /* ★★ 「채소를 다량으로」는 **한 번 눌러 다 주는 것**이다.
        `waterCrop(S)` 는 시루 **하나**만 시작한다 — 하루에 하나씩 시작하면 거두는 날이 어긋나
        매일 3,000원(그날 첫째)이 들어오는 대신 **하루 한 회전이 처리 상한**이 된다.
@@ -287,6 +308,7 @@ function play(opt = {}) {
   return { movedOut: ts.movedOut, moveDay, lastDay: last.tday, brokeDay, lampDay,
            powerNominal, powerPaid, surplusCash, foodSaved, seedSpend, siruSpend, siruBought,
            cuttingCash, potCash, maxSirus, cashEnd: ts.cashWon, days: rows.length,
+           tutorialDays: ts.day,
            brokeDays: rows.filter(r => r.bankrupt).length,
            varieGrants: (ts.varieGrant || {}).count || 0 };
 }
@@ -302,7 +324,8 @@ function route(opt) {
            medSurplus: M('surplusCash'), medFood: M('foodSaved'), medSeed: M('seedSpend'),
            medSiruSpend: M('siruSpend'), medSiru: M('maxSirus'), medDays: M('days'),
            medCutting: M('cuttingCash'), medPowerNominal: M('powerNominal'), medPowerPaid: M('powerPaid'),
-           medBrokeDays: M('brokeDays'), medGrants: M('varieGrants') };
+           medBrokeDays: M('brokeDays'), medGrants: M('varieGrants'),
+           medTutorialDays: M('tutorialDays') };
 }
 
 const won = v => v == null ? '—' : Math.round(v).toLocaleString();
@@ -348,32 +371,57 @@ if (ONLY === '1') { console.log(`\n(${((Date.now() - T0) / 1000).toFixed(0)}초)
      `cropSurplusSaleRate` · `cropMealCapPerPerson` 을 **먼저 읽는다**(first_play.js §잉여 판매).
      즉 이 둘은 **`data/balance/characters.json` 만 고치면 바뀌는 값**이다. 여기서는 그 파일을
      메모리 위에서만 바꿔 넘긴다. */
-function fpRulesFor({ rate, capMeals } = {}) {
+function fpRulesFor({ rate, capMeals, fullWon } = {}) {
   const meta = { ...CHARS._meta };
   if (rate != null) meta.cropSurplusSaleRate = rate;
   if (capMeals != null) meta.cropMealCapPerPerson = capMeals;
-  return firstPlayRulesFromBalance({ ...CHARS, _meta: meta });
+  const R = firstPlayRulesFromBalance({ ...CHARS, _meta: meta });
+  if (fullWon == null) return R;
+  /* ★ 회전분(`cropKindSavedWon`)만은 `data/balance` 에서 못 읽는다 — first_play.js 안에 있다
+     (econ-to-plan.md §7 이 그 이동을 요청하고 있다). 여기서는 규칙 사본에 덮어쓴다:
+     `cropCycleSavedWon`·`overlapSavedWon` 이 둘 다 `rules.cropKindSavedWon` 을 **먼저** 보므로
+     이 한 줄로 실제 셈이 바뀐다. 파생값(합계·곳간 상한)도 같이 다시 낸다 — 안 그러면
+     한 회전분은 커졌는데 곳간이 옛 값으로 막는 반쪽짜리 판이 된다. */
+  const table = Object.freeze([fullWon, Math.round(fullWon * 2 / 3), Math.round(fullWon / 3)]);
+  const perCycle = table.slice(0, R.cropKinds).reduce((a, b) => a + b, 0);
+  return Object.freeze({ ...R, cropKindSavedWon: table, cropSavedWonPerCycle: perCycle,
+                         dailyCropSaveWon: Math.min(perCycle, R.cropMealCapWon),
+                         cropCapBinding: perCycle > R.cropMealCapWon });
 }
 
 /* ── §2 시루를 늘리면 — 「생존」 층 ─────────────────────────────────────── */
+const NEED = DAILY_OUT + R0.rentWon / R0.rentPeriodDays;     // 유지에 필요한 하루 벌이
+const TDAYS = 90;                                            // ★튜토일 고정 (머리말 §함정)
 console.log('');
 console.log('── §2 ★시루 수 — 「채소를 다량으로」가 유지를 만드나 (지금 값) ─────');
-console.log('  (몬스테라·삽수를 끄고 90일. 물은 한 번에 다 준다 = 한 버튼)');
-console.log('| 시루 | 놓임 | 식비절감 | 잉여판매 | 씨앗 | 시루값 | ★하루 순현금 | 파산일 |');
-console.log('|------|------|----------|----------|------|--------|--------------|--------|');
-const SIRU_CASES = [1, 3, 5, 10, 20, 30];
-const NEED = DAILY_OUT + R0.rentWon / R0.rentPeriodDays;     // 유지에 필요한 하루 벌이
+console.log(`  (몬스테라·삽수를 끄고 **튜토 ${TDAYS}일 고정**. 물은 한 번에 다 준다 = 한 버튼)`);
+console.log('| 시루 | 달력일 | 식비절감 | 잉여판매 | 씨앗 | 시루값 | 하루벌이 | ★하루 순현금 | ↑한 개당 | 0원날 |');
+console.log('|------|--------|----------|----------|------|--------|----------|--------------|----------|-------|');
+const SIRU_CASES = [1, 3, 5, 10, 20, 30, 40];
 const cropRows = [];
+let prevRow = null;
 for (const n of SIRU_CASES) {
-  const r = route({ sirus: n, propagate: false, days: 90, buyLamp: false, waterAll: true });
-  const net = (r.medFood + r.medSurplus - r.medSeed - r.medSiruSpend) / 90 - NEED;
-  cropRows.push({ n, r, net });
-  console.log(`| ${String(n).padStart(4)} | ${String(r.medSiru).padStart(4)} | ${won(r.medFood).padStart(8)} | ` +
+  const r = route({ sirus: n, propagate: false, days: 400, tutorialDays: TDAYS, buyLamp: false, waterAll: true });
+  const gain = (r.medFood + r.medSurplus - r.medSeed - r.medSiruSpend) / TDAYS;
+  const net = gain - NEED;
+  const dN = prevRow ? (net - prevRow.net) / (n - prevRow.n) : null;
+  cropRows.push({ n, r, net, gain });
+  console.log(`| ${String(n).padStart(4)} | ${String(r.medDays).padStart(6)} | ${won(r.medFood).padStart(8)} | ` +
     `${won(r.medSurplus).padStart(8)} | ${won(r.medSeed).padStart(4)} | ${won(r.medSiruSpend).padStart(6)} | ` +
-    `${((net >= 0 ? '+' : '') + won(net) + '원').padStart(12)} | ${String(r.medBroke ?? '—').padStart(6)} |`);
+    `${(won(gain) + '원').padStart(8)} | ${((net >= 0 ? '+' : '') + won(net) + '원').padStart(12)} | ` +
+    `${(dN == null ? '—' : (dN >= 0 ? '+' : '') + won(dN) + '원').padStart(8)} | ${String(r.medBrokeDays).padStart(5)} |`);
+  prevRow = { n, net };
 }
-console.log(`  ★하루 순현금 = (식비절감 + 잉여판매 − 씨앗 − 시루값) ÷ 90 − ${won(NEED)}원(하루 살림)`);
+console.log(`  ★하루 순현금 = (식비절감 + 잉여판매 − 씨앗 − 시루값) ÷ ${TDAYS} − ${won(NEED)}원(하루 살림)`);
 console.log('    0 이상이면 「채소만으로 유지된다」. 음수면 그만큼 매일 마른다.');
+{
+  const a = cropRows[0], b = cropRows[cropRows.length - 1];
+  const slope = (b.gain - a.gain) / (b.n - a.n);
+  console.log(`  ★★ 기울기 ${won(slope)}원/시루/일 — **꺾이는 데가 없다.** 천장이 있어서가 아니라`);
+  console.log(`     기울기가 완만해서 안 닿는 것이다. 0 이 되는 지점 = 시루 ` +
+              `**${Math.ceil(a.n + (NEED - a.gain) / slope)}개**`);
+  console.log('     ⚠ 앞쪽(시루 1~3)이 들쭉날쭉한 것은 천장이 아니라 **0원이라 씨앗을 못 산 것**이다.');
+}
 
 /* ── §3 회전 경제 — 씨앗값·시루값을 갚나 (계산) ─────────────────────────── */
 console.log('');
@@ -408,7 +456,7 @@ console.log('  ③ 그 뒤로 남나  ④ ⚠ 밥으로 먹는 것보다 파는 
 
 /* ── §4 후보 — 판매가율 × 끼니 상한을 실제로 굴려 본다 ───────────────────── */
 console.log('');
-console.log('── §4 ★후보 실측 — 판매가율 × 끼니 상한 (시루 20개 · 90일) ─────────');
+console.log(`── §4 ★후보 실측 — 판매가율 × 끼니 상한 (시루 20개 · 튜토 ${TDAYS}일) ────`);
 console.log('| 후보 | 판매가율 | 끼니상한 | 곳간상한원 | 식비절감 | 잉여판매 | ★하루 순현금 | 유지? | 파산일 |');
 console.log('|------|----------|----------|------------|----------|----------|--------------|-------|--------|');
 const CANDS = [
@@ -422,8 +470,9 @@ const CANDS = [
 const candRows = [];
 for (const c of CANDS) {
   const fp = fpRulesFor({ rate: c.rate, capMeals: c.cap });
-  const r = route({ sirus: 20, propagate: false, days: 90, buyLamp: false, waterAll: true, fpRules: fp });
-  const net = (r.medFood + r.medSurplus - r.medSeed - r.medSiruSpend) / 90 - NEED;
+  const r = route({ sirus: 20, propagate: false, days: 400, tutorialDays: TDAYS,
+                    buyLamp: false, waterAll: true, fpRules: fp });
+  const net = (r.medFood + r.medSurplus - r.medSeed - r.medSiruSpend) / TDAYS - NEED;
   candRows.push({ c, r, net, fp });
   console.log(`| ${c.id.padEnd(4)} | ${((fp.cropSurplusSaleRate * 100).toFixed(0) + '%').padStart(8)} | ` +
     `${(fp.dailyCropMealCap + '끼').padStart(8)} | ${(won(fp.cropMealCapWon) + '원').padStart(10)} | ` +
@@ -534,5 +583,113 @@ console.log(`    곳간 상한은 min(한 회전분 합계 ${won(RULES.cropSaved
 console.log('    지금 **이기고 있는 것은 끼니 상한이 아니라 「한 회전분 합계」**이고,');
 console.log('    그 값은 first_play.js 의 cropKindSavedWon [3,000 · 2,000 · 1,000] 이 정한다.');
 console.log('    ⇒ 그 표는 data/balance 에 없다. **거기부터 옮겨야 손잡이가 생긴다.**');
+
+
+/* ── §9 ★★ 기울기 손잡이 — 무엇을 얼마로 올리면 몇 칸에 닿나 ─────────────── */
+console.log('');
+console.log('── §9 ★★ 기울기 손잡이 — 박사님이 고르실 재료 ──────────────────────');
+console.log('  §2 가 보였듯 **천장은 없다. 기울기가 완만할 뿐이다**(지금 261원/시루/일).');
+console.log('  그러면 처방은 「상한을 푼다」가 아니라 **「기울기를 올린다」** 다. 손잡이는 셋이다.');
+console.log('');
+console.log(`  ⚠⚠ **시루 N개 = 방 자리 N칸이다.** 시루를 「무리」에서 「하나하나」로 바꾸는 작업이`);
+console.log(`     끝나면 시루 하나가 한 칸을 먹는다. 반지하는 **${(BASE_PROFILE.slots || []).length}칸**이고`);
+console.log('     그중 몬스테라·가구가 몇을 쓴다. 아래 「필요 칸」은 그 안에 들어와야 답이다.');
+console.log('');
+
+const SLOTS = (BASE_PROFILE.slots || []).length;
+const T_FOOD = RULES.dailyFoodWon;                 // 식대만 유지
+const T_ALL = NEED;                                // 월세+식대 유지
+
+/* 손잡이 하나를 꽂고 **기울기를 실측한다** — 시루 10개와 30개를 굴려 그 차를 잰다.
+   ★ 두 점 다 「0원이라 씨앗을 못 사는」 구간 밖이라(§2 0원날 참고) 기울기가 깨끗하다. */
+function slopeOf(fp) {
+  const lo = route({ sirus: 10, propagate: false, days: 400, tutorialDays: TDAYS,
+                     buyLamp: false, waterAll: true, fpRules: fp });
+  const hi = route({ sirus: 30, propagate: false, days: 400, tutorialDays: TDAYS,
+                     buyLamp: false, waterAll: true, fpRules: fp });
+  const g = r => (r.medFood + r.medSurplus - r.medSeed - r.medSiruSpend) / TDAYS;
+  const slope = (g(hi) - g(lo)) / 20;
+  return { slope, gainAt10: g(lo) };
+}
+const needSirus = (s, target) => s.slope > 0 ? Math.ceil(10 + (target - s.gainAt10) / s.slope) : null;
+const fits = n => n != null && n <= SLOTS;
+const cell = n => n == null ? '★불가' : `${n}칸${fits(n) ? ' ○' : ' ✕'}`;
+
+function leverRow(ko, fp, believable) {
+  const s = slopeOf(fp);
+  const a = needSirus(s, T_FOOD), b = needSirus(s, T_ALL);
+  console.log(`| ${ko.padEnd(24)} | ${(won(s.slope) + '원').padStart(9)} | ${cell(a).padStart(8)} | ` +
+    `${cell(b).padStart(8)} | ${believable} |`);
+  return { ko, slope: s.slope, food: a, all: b };
+}
+
+/* ══ 손잡이 ㉠ 회전분 — 한 시루가 한 회전에 내는 값 ═══════════════════════ */
+console.log('  ── ㉠ 회전분 (`cropKindSavedWon` 의 첫 값) ─────────────────────────');
+console.log('| 회전분 | 기울기 | 식대만 7,500 | 월세+식대 20,000 | 현실감 |');
+console.log('|--------|--------|--------------|------------------|--------|');
+for (const [full, believable] of [
+  [3_000,  '○ 지금. 콩나물 한 봉지 1,500~2,000원 × 두 봉지쯤'],
+  [4_500,  '○ 세 봉지쯤. 시루가 크다고 하면 된다'],
+  [6_000,  '△ 네 봉지. **여기가 위끝**이다'],
+  [10_000, '✕ 한 시루에 여섯 봉지 — **안 믿긴다**'],
+  [16_500, '✕✕ 열 봉지. 콩나물이 아니라 다른 물건이다']
+]) leverRow(`${won(full)}원`, fpRulesFor({ fullWon: full }), believable);
+
+/* ══ 손잡이 ㉡ 잉여 판매가율 ═══════════════════════════════════════════ */
+console.log('');
+console.log('  ── ㉡ 잉여 판매가율 (`cropSurplusSaleRate`) ────────────────────────');
+console.log('| 판매가율 | 기울기 | 식대만 7,500 | 월세+식대 20,000 | 현실감 |');
+console.log('|----------|--------|--------------|------------------|--------|');
+for (const [rate, believable] of [
+  [0.50, '○ 떨이. 손익분기 23.3% 위'],
+  [0.70, '○ 지금'],
+  [0.85, '○ 「씨앗값보다는 살짝 이득」의 위끝'],
+  [0.99, '△ 제값에 가깝다. 떨이라는 말이 무색해진다'],
+  [1.50, '✕✕ **밥으로 먹는 것보다 파는 게 낫다 — 뼈대가 뒤집힌다**']
+]) leverRow(`${(rate * 100).toFixed(0)}%`, fpRulesFor({ rate }), believable);
+
+/* ══ 손잡이 ㉢ 수확 주기 — ⚠ 유도값이다 ════════════════════════════════ */
+console.log('');
+console.log('  ── ㉢ 수확 주기 (`CROP_KINDS[0].harvestDays`, 지금 5일) ─────────────');
+console.log('  ⚠ **이것만 실측이 아니라 유도값이다.** 주기는 `CROP_KINDS` 에 얼어 있어');
+console.log('     규칙 사본으로 못 바꾼다(first_play.js:547 이 그 표에서 직접 읽는다).');
+console.log('     회전이 C일마다 돌면 처리량이 5/C 배가 되므로 기울기도 그 배다 — 그 셈이다.');
+console.log('| 주기 | 기울기(유도) | 식대만 7,500 | 월세+식대 20,000 | 현실감 |');
+console.log('|------|--------------|--------------|------------------|--------|');
+{
+  const base = slopeOf(fpRulesFor({}));
+  for (const [c, believable] of [
+    [7, '○ 무순이 그렇다'],
+    [5, '○ 지금. 콩나물 실제가 4~7일'],
+    [4, '○ 따뜻하게 키우면'],
+    [3, '△ 실제 콩나물의 아래끝'],
+    [2, '✕ **안 믿긴다**']
+  ]) {
+    const k = 5 / c;
+    const s = { slope: base.slope * k, gainAt10: base.gainAt10 * k };
+    const a = needSirus(s, T_FOOD), b = needSirus(s, T_ALL);
+    console.log(`| ${(c + '일').padStart(4)} | ${(won(s.slope) + '원').padStart(12)} | ${cell(a).padStart(8)} | ` +
+      `${cell(b).padStart(8)} | ${believable} |`);
+  }
+}
+
+/* ══ 손잡이를 같이 올리면 — ★현실감 안에 남는 길 ═══════════════════════ */
+console.log('');
+console.log('  ── ㉣ 둘을 같이 올리면 (현실감 ○ 인 값만 섞었다) ───────────────────');
+console.log('| 조합 | 기울기 | 식대만 7,500 | 월세+식대 20,000 | 현실감 |');
+console.log('|------|--------|--------------|------------------|--------|');
+for (const [ko, opt, believable] of [
+  ['회전분 4,500 + 85%',  { fullWon: 4_500, rate: 0.85 }, '○ 둘 다 위끝 안'],
+  ['회전분 6,000 + 85%',  { fullWon: 6_000, rate: 0.85 }, '△ 회전분이 위끝'],
+  ['회전분 6,000 + 99%',  { fullWon: 6_000, rate: 0.99 }, '△ 떨이가 제값이 된다'],
+  ['회전분 4,500 + 3종',  { fullWon: 4_500, capMeals: 4 }, '○ 끼니 상한을 같이 푼 것']
+]) leverRow(ko, fpRulesFor(opt), believable);
+
+console.log('');
+console.log(`  ★ 읽는 법 — ○ 는 반지하 ${SLOTS}칸 안에 들어온다는 뜻이고 ✕ 는 방을 넘는다는 뜻이다.`);
+console.log('  ★ 손잡이는 **곱해진다.** 회전분 4,500원 + 판매가율 85% 처럼 둘을 같이 올리면');
+console.log('    각각을 크게 올리지 않고도 닿는다 — 현실감이 깨지는 후보를 안 쓰는 길이 거기 있다.');
+console.log('  ⚠ 「월세+식대 유지」는 어느 손잡이도 **혼자서는 현실감 안에서 못 닿는다.**');
+console.log('    「식대만 유지」는 여러 후보가 방 안에 들어온다.');
 
 console.log(`(${((Date.now() - T0) / 1000).toFixed(0)}초 · 표본 ${SEED_N}판)`);
