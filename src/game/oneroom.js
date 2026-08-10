@@ -42,7 +42,10 @@
 ============================================================ */
 
 import { canMoveOut, moveOut as tutorialMoveOut, TUTORIAL_RULES } from './tutorial.js';
-import { cropSites, placeCrop, CROP_SITE_IDS } from './first_play.js';
+import { cropSites, placeCrop, syncCropLead, CROP_SITE_IDS } from './first_play.js';
+/* ★ 거둔 시루는 `placeCrop` 이 막는다(수확 잠금). 이사는 「손으로 옮기는 것」이 아니라
+   「방이 통째로 바뀌는 것」이라 그 잠금을 우회해야 자리를 지킬 수 있다 — 자리 두 칸만 짓는다. */
+import { spotOf } from './place.js';
 import { pot0, pushLog, rehomePot } from './state.js';
 import { rehomeCuttings } from './propagation.js';
 import { weatherE } from '../engine/weather.js';
@@ -284,29 +287,63 @@ function clearPlacements(S) {
 }
 
 /* 작물 자리를 새 방에 다시 앉힌다 — `save.js` 의 복원(reseat)과 **같은 규칙**이다.
-   ★ 아직 안 거둔 자리만 옮긴다. 이미 거둔 자리는 결과가 확정이라 옮길 이유가 없다. */
+   ★★ 2026-08-10 — 여기가 **자리 사본으로 자리를 통째로 건너뛰고 있었다.**
+     옛 줄: `if (!site || site.harvested || site.slotId) continue;`
+       · `site.harvested` 는 「**하나라도** 거뒀나」다. 시루 다섯 중 하나만 거뒀어도
+         **안 거둔 넷까지 같이** 안 옮겨졌고, `clearPlacements` 가 이미 자리를 비운 뒤라
+         그 넷은 그대로 **가방으로 갔다.** 그리고 아무 말도 안 했다.
+       · `site.slotId` 도 사본이라(first_play §makeCropSite) 여기 판단에 쓸 것이 아니다.
+     ⇒ 이제 **시루마다** 판단한다. 거둔 시루는 자리를 지키고, 안 거둔 시루도 자리를 지킨다.
+     ⚠ 정말로 못 옮긴 시루는 가방으로 가되 **반드시 말한다**(docs/silent_failures.md). */
 function reseatCrops(S, room, log) {
   const fp = S.firstPlay;
   if (!fp || !fp.enabled) return;
   const dest = ((room && room.slots) || [])[0] || null;
-  if (!dest) return;
+  if (!dest) {
+    /* ⚠ 새 방에 자리가 하나도 없으면 시루가 전부 가방에 남는다 — **조용히 넘기지 않는다** */
+    const n = cropSites(fp).reduce(
+      (a, s) => a + ((s && s.pots) || []).filter(p => p && (p.startedOnDay != null || p.harvested)).length, 0);
+    if (n && log) log(`⚠ 새 방에 놓을 자리가 없어 시루 ${n}개가 가방으로 들어갔습니다`);
+    return;
+  }
   for (const site of cropSites(fp)) {
-    if (!site || site.harvested || site.slotId) continue;
-    /* ★ 아직 방에 있던 시루만 새 방에 앉힌다 — **가방에 있던 빈 시루는 가방에 그대로 둔다**
+    if (!site) continue;
+    /* ★ 이사 전에 방에 서 있던 시루만 새 방에 앉힌다 — **가방에 있던 빈 시루는 가방에 그대로**
        (2026-08-09). 이사 왔다고 안 놓은 시루가 저절로 서면 「가방에는 빈 용기만」이 깨진다.
        ⚠ 어느 시루가 방에 있었는지는 위 `clearPlacements` 가 이미 지웠다. 그래서 여기서는
-         **자라는 중인 시루**(회전을 시작한 것)를 기준으로 삼는다 — 그것이 방에 있던 것이다. */
+         **한 번이라도 회전을 돈 시루**를 기준으로 삼는다 — 그것이 방에 있던 것이다.
+       ⚠⚠ 「회전을 시작했나」만 보면 **거둔 시루가 빠진다** — `harvestBeansprout` 이 거두면서
+         `startedOnDay` 를 지우기 때문이다(다음 회전을 위해). 그래서 `harvested` 도 같이 본다.
+       ★ 거둔 시루도 방에 서 있던 시루다. 「결과가 확정이라 옮길 이유가 없다」던 옛 근거는
+         **자리를 잃어도 된다는 뜻이 아니었다** — 다시 심으면 그 자리에서 이어져야 한다. */
     const kindId = site.kind || 'beansprout';
-    const moving = (site.pots || []).filter(p => p && !p.harvested && p.startedOnDay != null);
+    const name = CROP_SITE_IDS[kindId] || kindId;
+    const moving = (site.pots || []).filter(p => p && (p.startedOnDay != null || p.harvested));
     if (!moving.length) continue;
-    try {
-      for (const p of moving)
-        placeCrop(fp, kindId, dest.slotId, { slots: room.slots, potId: p.id });
-      if (log) log(`${CROP_SITE_IDS[kindId] || kindId} 을(를) ${dest.slotId} 로 옮겼습니다`);
-    } catch (e) {
-      /* 못 놓으면 자리 없이 둔다 — 여기서 던지면 이사 자체가 무른다(돈은 이미 나갔다) */
-      if (log) log(`${CROP_SITE_IDS[kindId] || kindId} 자리를 못 잡았습니다 — ${e.message}`);
+    let ok = 0;
+    const lost = [];
+    for (const p of moving) {
+      /* 시루 하나가 못 앉아도 **나머지는 앉힌다.** 통째로 포기하면 하나 때문에 전부 가방행이다.
+         ★ 거둔 시루는 `placeCrop` 이 막으므로(§수확 잠금) 자리 두 칸을 직접 적는다 —
+           같은 함수를 쓰려고 잠금을 풀면 「거둔 시루를 손으로 옮기는 것」까지 열린다. */
+      try {
+        if (p.harvested) {
+          const spot = spotOf(dest.slotId, { id: p.id, slots: room.slots });
+          p.slotId = spot.slotId; p.at = spot.at;
+        } else {
+          placeCrop(fp, kindId, dest.slotId, { slots: room.slots, potId: p.id });
+        }
+        ok++;
+      } catch (e) {
+        lost.push(`${p.id}(${e.message})`);
+      }
     }
+    syncCropLead(site);
+    if (ok && log) log(`${name} ${ok}개를 ${dest.slotId} 로 옮겼습니다`);
+    /* ⚠ 조용히 사라지지 않게 — 못 옮긴 것은 가방에 있고, 그 사실을 말한다 */
+    if (lost.length && log)
+      log(`⚠ ${name} ${lost.length}개는 새 방에 자리를 못 잡아 **가방으로 들어갔습니다** — ` +
+          `${lost.join(' · ')}`);
   }
 }
 

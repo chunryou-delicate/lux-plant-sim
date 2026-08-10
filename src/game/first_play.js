@@ -664,7 +664,14 @@ export function makeCropSite(kindId, opt = {}) {
   const k = cropKindOf(kindId);
   return {
     kind: k.id,
-    /* slotId = 계약 열쇠 · at = 좌표 정본. 화분(S.pots[])과 같은 두 칸이다. */
+    /* ★★ slotId · at 은 **읽기용 사본**이다 (2026-08-09 각개화 이후).
+       자리의 정본은 **시루마다**다 — `pots[i].slotId` / `pots[i].at`. 이 두 칸은
+       `syncCropLead` 가 대표 시루에서 베껴 놓는 것이고, 세이브(`save.js`)와 화면(`game.html`)이
+       옛 이름으로 읽기 때문에 남아 있다.
+       ⚠ **판단에 쓰지 마라.** 사본이 비어도 시루는 방에 서 있을 수 있다 — 그것을 판정에 쓰면
+         「시루가 서 있는데 안 놓았다」가 되어 하루가 멈추거나 작물이 조용히 안 자란다
+         (2026-08-09 Day 92 · 2026-08-10 에 코어 아홉 곳을 고쳤다 — `cropseat-to-plan.md`).
+       ⇒ 「놓였나」를 묻는 창구는 `placedCropPots(site)` · `cropPotList(fp, day)` 다. */
     slotId: opt.slotId ?? null,
     at: opt.at ?? null,
     /* ★ 자라는 날은 **작물이 정한다** — 콩나물 5일 · 무순 7일(§작물 종류) */
@@ -1197,7 +1204,9 @@ function harvestStatusOfSite(site) {
     ready: ripe.length > 0,
     readyCount: ripe.length,
     readyIds: ripe.map(p => p.id),
-    placed: !!site.slotId,
+    /* ★ 2026-08-10 — 「놓였나」는 **시루**가 정한다. 사본(site.slotId)으로 답하면
+       사본이 빈 판에서 화면이 「안 놓았다」고 말한다(그때도 시루는 방에 서 있다). */
+    placed: placedCropPots(site).length > 0,
     harvested: !!site.harvested,
     ageDays: site.ageDays || 0,
     harvestDays: hd,
@@ -1295,7 +1304,8 @@ export function beansproutWaterStatus(fp, day) {
        ⚠ 새 이름은 `idleDays` 다. 화면이 갈아타면 이 칸은 지운다. */
     dryRun: idleDays,
     ready: beansproutReady(fp),
-    placed: !!b.slotId,
+    /* ★ 2026-08-10 — 사본이 아니라 **방에 선 시루**로 답한다 (위 harvestStatusOfSite 와 같은 판정) */
+    placed: placedCropPots(b).length > 0,
     /* **전부** 거둬져 있나 = 다시 심어야 줄 것이 생긴다 (종류를 다 세어서) */
     harvested: (() => { const all = cropSites(fp).flatMap(potsOf);
                         return all.length > 0 && all.every(p => p.harvested); })(),
@@ -1369,7 +1379,18 @@ export function cropPotList(fp, day) {
    ★ **여기서 거두지 않는다.** 자라는 날이 차면 `ready:true` 로 서고,
      거두는 것은 `harvestBeansprout`(=[수확하기] 버튼)의 몫이다(위 §수확). */
 export function advanceBeansproutDay(fp, dli, opt = {}) {
-  if (!fp.beansprout.slotId) throw new Error('[첫 플레이] 콩나물 자리를 먼저 정해 주세요');
+  /* ★★ 2026-08-10 — 문지기가 **자리 사본**(`fp.beansprout.slotId`)을 보고 있었다.
+     사본은 대표 시루의 읽기용 복사본일 뿐이고(§syncCropLead) 정본은 `pots[].slotId`/`at` 이다.
+     그래서 시루 둘이 `slot-a`·`slot-b` 에 멀쩡히 서 있어도 사본만 비면 여기서 던졌고,
+     그 예외에 `firstPlayInput` 표가 없어 화면이 **복구 불가로 읽고 버튼을 전부 잠갔다**.
+     ⇒ 물어야 할 것은 「site 의 자리 하나」가 아니라 **「방에 선 시루가 하나라도 있나」**다.
+     ⇒ 표를 붙인다 — 안 놓은 판은 고장이 아니라 **안내**다(놓으면 그대로 이어진다). */
+  const anyPlaced = cropSites(fp).some(s => placedCropPots(ensureCropPots(s)).length > 0);
+  if (!anyPlaced) {
+    const e = new Error('[첫 플레이] 시루를 먼저 방 안에 놓아 주세요');
+    e.firstPlayInput = true;
+    throw e;
+  }
   const rules = fp.rules;
   if (!rules) throw new Error('[첫 플레이] 밸런스 계약이 없습니다');
 
@@ -1390,7 +1411,10 @@ export function advanceBeansproutDay(fp, dli, opt = {}) {
   for (const site of cropSites(fp)) {
     ensureCropPots(site);
     idle += idlePots(site).length;
-    if (!site.slotId) continue;
+    /* ★ 2026-08-10 — 여기도 사본이 아니라 **방에 선 시루**로 가른다. `site.slotId` 로 가르면
+       사본이 빈 자리는 시루가 서 있어도 통째로 건너뛰어 **조용히 안 자란다**.
+       ⚠ 안 놓은 자리를 건너뛰는 뜻 자체는 그대로다 — 무순 판을 아직 안 산 판이 정상이다. */
+    if (!placedCropPots(site).length) continue;
     const kindId = kindIdOfSite(site);
     const v = perSite ? dli[kindId] : dli;
     /* 자리는 놓였는데 그 자리의 값이 안 온 것은 **고장이다** — 조용히 0을 쓰면
@@ -1453,11 +1477,14 @@ export function harvestBeansprout(fp, opt = {}) {
   const b = fp.beansprout;
   const rules = fp.rules;
   if (!rules) throw new Error('[수확] 밸런스 계약이 없습니다');
-  if (!b.slotId) {
+  for (const s of cropSites(fp)) ensureCropPots(s);
+  /* ★ 2026-08-10 — 자리 사본(`b.slotId`)이 아니라 **방에 선 시루**로 묻는다.
+     ⚠ 콩나물 자리 하나가 아니라 **작물 전부**를 본다 — 아래에서 종류를 가리지 않고 거두므로
+       (§수확) 무순만 선 판에서 여기가 막으면 거둘 것이 있는데 못 거둔다. */
+  if (!cropSites(fp).some(s => placedCropPots(s).length)) {
     const e = new Error('[수확] 시루를 먼저 방 안에 놓아 주세요');
     e.tutorialInput = true; throw e;
   }
-  for (const s of cropSites(fp)) ensureCropPots(s);
   /* ★★ 2026-08-05 — **종류를 가리지 않고 익은 것을 다 거둔다.** 익은 것을 안 거둘 이유가
      없다는 것(§수확)은 작물이 늘어도 그대로다. 순서는 CROP_KINDS 순서 → 그 안에서 먼저 심은 순 —
      그 순서가 곧 겹침 순번이다. */

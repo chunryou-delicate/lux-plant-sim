@@ -544,7 +544,10 @@ export function waterCrop(S, opt = {}) {
   const k = cropKindOf(kindId);
   const site = cropSiteOf(fp, kindId);
   if (!site) throw new Error(`[물주기] ${k.ko} 상태가 없습니다`);
-  if (!site.slotId) {
+  /* ★ 2026-08-10 — 자리 사본(`site.slotId`)이 아니라 **방에 선 시루**로 묻는다.
+     사본은 대표 시루의 읽기용 복사본이라(first_play §makeCropSite) 비어도 시루는 서 있을 수 있다.
+     그때 여기서 막으면 「방에 있는데 물을 못 주는」 판이 된다. */
+  if (!placedCropPots(ensureCropPots(site)).length) {
     const e = new Error(`[물주기] ${k.containerKo}를 먼저 방 안에 놓아 주세요`);
     e.tutorialInput = true;                 // 안내지 고장이 아니다
     throw e;

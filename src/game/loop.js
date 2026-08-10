@@ -52,6 +52,8 @@ import {
   markMonsteraArrived,
   markMonsteraPhase,
   monsteraArrivalDue,
+  /* ★ 「방에 선 시루」를 묻는 유일한 창구 — 자리 사본(site.slotId)을 판단에 쓰지 않기 위한 것 */
+  placedCropPots,
   slotFitsDiameter
 } from './first_play.js';
 import { canMoveOut, createTutorialState, LEARNING, tutorialDay, noteLearning,
@@ -591,7 +593,14 @@ export function nextDay(S, io) {
   /* ★★ 시루가 여럿이 되면서 조건이 바뀌었다 (2026-08-04) — 예전 `!beansprout.harvested` 는
      "하나라도 거뒀나"라서, 시차 판에서 **첫 시루를 거두는 순간 나머지가 통째로 멈췄다.**
      이제 조건은 자리를 정했나 하나뿐이고, 어느 시루가 오늘 자라는지는 안에서 가른다. */
-  if (S.firstPlay && S.firstPlay.enabled && S.firstPlay.beansprout.slotId) {
+  /* ★★★ 2026-08-10 — 여기가 **콩나물 자리 사본 하나**로 작물 전체를 가르고 있었다.
+     `beansprout.slotId` 는 대표 시루의 읽기용 사본일 뿐이다(first_play §makeCropSite).
+       ① 사본이 빈 채로 하루가 가면 방에 선 작물이 **하나도 안 자란다**(조용히).
+       ② **무순만 놓은 판은 무순이 영영 안 자란다** — 콩나물 사본이 null 이라 블록째 건너뛴다.
+     ⇒ 묻는 것은 「콩나물 자리가 정해졌나」가 아니라 **「방에 선 시루가 하나라도 있나」**다. */
+  const anyCropPlaced = !!(S.firstPlay && S.firstPlay.enabled &&
+                           cropSites(S.firstPlay).some(s => placedCropPots(s).length > 0));
+  if (anyCropPlaced) {
     const before = structuredClone(S.firstPlay);
     const logLengthBefore = S.log.length;
     try {
@@ -613,12 +622,18 @@ export function nextDay(S, io) {
                             `${p.slotId}의 조도 계약이 잘못됐습니다`);
           cropDliBySlot[p.slotId] = cropDliFromReport(report, p.slotId);
         }
-        if (!site.slotId) continue;
-        if (check.badSlots && check.badSlots.has(site.slotId))
+        /* ★ 2026-08-10 — 자리 대표값도 **사본에 기대지 않는다.** 사본(`site.slotId`)이 비었거나
+           낡았으면 방에 선 첫 시루의 자리를 대표로 쓴다. 그러지 않으면 위 문지기를 고친 뒤
+           advance 가 「자리의 DLI가 올바르지 않습니다」로 던져 판이 그대로 멈춘다.
+           ⚠ 사본이 멀쩡한 보통의 판에서는 예전과 **한 글자도 다르지 않다**(첫 가지로 떨어진다). */
+        const lead = (site.slotId && cropDliBySlot[site.slotId] != null) ? site.slotId
+                   : ((site.pots || []).find(p => p && p.slotId) || {}).slotId || site.slotId;
+        if (!lead) continue;
+        if (check.badSlots && check.badSlots.has(lead))
           throw new Error(`[첫 플레이] ${cropKindOf(site.kind || 'beansprout').ko} 자리 ` +
-                          `${site.slotId}의 조도 계약이 잘못됐습니다`);
-        cropDli[site.kind || 'beansprout'] = cropDliBySlot[site.slotId] != null
-          ? cropDliBySlot[site.slotId] : cropDliFromReport(report, site.slotId);
+                          `${lead}의 조도 계약이 잘못됐습니다`);
+        cropDli[site.kind || 'beansprout'] = cropDliBySlot[lead] != null
+          ? cropDliBySlot[lead] : cropDliFromReport(report, lead);
       }
       firstPlayEvent = advanceBeansproutDay(S.firstPlay, cropDli, { dliBySlot: cropDliBySlot });
 
@@ -631,7 +646,9 @@ export function nextDay(S, io) {
                       !firstPlayEvent.ready;
       if (stalled !== S._lastCropStall) {
         if (stalled)
-          pushLog(S, `💧 물을 줘야 콩나물이 자라기 시작합니다 — 시루 ${firstPlayEvent.idle}개가 ` +
+          /* ★ 2026-08-10 — 「콩나물」을 뺐다. 무순만 놓은 판이 이제 실제로 도는데(위 §문지기)
+             그 판에서 이 줄은 거짓말이었다. 종류를 세는 줄이 아니므로 종류를 안 적는다. */
+          pushLog(S, `💧 물을 줘야 자라기 시작합니다 — 시루 ${firstPlayEvent.idle}개가 ` +
                      `기다리고 있습니다 (물을 준 날이 0일차입니다)`);
         S._lastCropStall = stalled;
       }
@@ -639,7 +656,9 @@ export function nextDay(S, io) {
       /* ★ 다 자란 날은 **바뀔 때만** 남긴다. 안 거두면 이 상태가 며칠이고 이어지는데
          매일 찍으면 기록이 그 줄로 덮인다. 안 거둬도 벌은 없다 — 회전이 멈출 뿐이다. */
       if (firstPlayEvent.justReady)
-        pushLog(S, `🥬 콩나물 ${firstPlayEvent.justReadyCount}시루를 거둘 때가 됐습니다 — ` +
+        /* ★ 2026-08-10 — 여기도 「콩나물」을 뺐다. `justReadyCount` 는 **종류를 가리지 않고**
+           센 값이라(advanceBeansproutDay), 무순만 놓은 판에서 콩나물이라 부르면 거짓말이다. */
+        pushLog(S, `🥬 ${firstPlayEvent.justReadyCount}시루를 거둘 때가 됐습니다 — ` +
                    `[수확하기]를 눌러 주세요 (거두기 전에는 그 시루의 다음 회전이 시작되지 않습니다)`);
     } catch (e) {
       /* 콩나물 하루가 터졌으면 날짜·상태를 통째로 되돌려 그날을 다시 밟을 수 있게 한다.
@@ -996,7 +1015,9 @@ export function harvestCrop(S, io, opt = {}) {
   if (!io || !io.light || !io.growth)
     throw new Error('[수확] 조도·생장 계약이 필요합니다 — nextDay 와 같은 io 를 넘겨 주세요');
   const b = fp.beansprout;
-  if (!b.slotId) {
+  /* ★ 2026-08-10 — 사본이 아니라 **방에 선 시루**로 묻는다(first_play.harvestBeansprout 과 같은 판정).
+     여기가 사본을 보면 무순만 선 판에서 [수확하기]가 통째로 막힌다. */
+  if (!cropSites(fp).some(s => placedCropPots(s).length)) {
     const e = new Error('[수확] 시루를 먼저 방 안에 놓아 주세요');
     e.tutorialInput = true; throw e;
   }
@@ -1055,7 +1076,15 @@ export function harvestCrop(S, io, opt = {}) {
          이게 없으면 둘째·셋째 수확에서 몬스테라가 또 온다. */
     if (!fp.monstera.arrived && monsteraArrivalDue(fp)) {
       /* 처음부터 정답 창턱에 놓지 않는다 — 도착 후 플레이어가 창가 높은 자리로 옮기는 것이
-         두 번째 학습이다. 그래서 **가장 어두운 자리**에 내려놓는다. */
+         두 번째 학습이다. 그래서 **안 자라는 자리**(빛이 최소 미만인 곳)에 내려놓는다.
+         ★★ 2026-08-10 — 그 자리를 「가장 어두운 자리」로 골랐더니 반지하에서 **서랍장**
+           (`banjiha-dresser:0` · DLI 0.08)이 나왔다. 박사님 설계는 **책상**이다
+           (원문: *"몬스테라 책상에 주고 한 10일 정도 지나면…"*).
+           ⇒ 규칙에 **예외를 하나 얹는다**: 방에 책상이 있으면 책상, 없으면 예전대로 가장 어두운 곳.
+           ⚠ 위 의도는 그대로다 — 반지하 책상은 0.61 이고 서랍장은 0.08 이라 **둘 다 최소 3 미만**,
+             즉 「도착 자리에서는 안 자란다 → 옮겨야 한다」는 유도가 한 글자도 안 바뀐다.
+           ⚠ 책상이 여럿이면 **첫 칸**(`…-desk:0`)이다. 책상이 없는 방·검사용 가짜 방에서는
+             예외가 안 걸리고 예전 규칙이 그대로 돈다. */
       const { report } = io.light.daily(S.day, S);
       const roomSlots = (io.light.room && io.light.room.slots) || [];
       const potDiameter = FIRST_PLAY_ASSETS.monsteraPotDiameterM;
@@ -1070,11 +1099,25 @@ export function harvestCrop(S, io, opt = {}) {
                         `(maxPotD 가 숫자로 있는 슬롯 0칸) — 방 데이터를 확인해 주세요`);
       /* ★ 2026-08-05 — 작물 자리가 **전부** 후보에서 빠진다. 예전에는 콩나물 자리 하나만
          뺐는데, 그러면 무순 판 위에 몬스테라가 내려앉는다(자리가 겹친다). */
-      const cropSlotIds = new Set(cropSites(fp).map(s => s.slotId).filter(Boolean));
-      const spot = [...(report.slots || [])]
+      /* ★ 2026-08-10 — 시루 자리도 **시루마다**라(§자리는 시루마다 따로다) 사본만 빼면
+         자리 사본이 빈 판에서 시루 위에 몬스테라가 내려앉는다. 시루 하나하나를 뺀다. */
+      const cropSlotIds = new Set(cropSites(fp)
+        .flatMap(s => [s.slotId, ...(s.pots || []).map(p => p && p.slotId)])
+        .filter(Boolean));
+      const cands = [...(report.slots || [])]
         .filter(s => s && !cropSlotIds.has(s.slotId) && canHoldPot.has(s.slotId) &&
-                     typeof s.dli === 'number' && isFinite(s.dli))
-        .sort((x, y) => x.dli - y.dli)[0];
+                     typeof s.dli === 'number' && isFinite(s.dli));
+      /* 책상 칸 — 가구 uid 는 `{방}-desk` 이고 슬롯 열쇠는 `{uid}:{칸}` 이다(house_rooms.json).
+         프로파일이 `owner:"desk"` 를 실어 주면 그것도 같이 본다. */
+      const isDesk = (slotId) => {
+        const uid = String(slotId).slice(0, String(slotId).lastIndexOf(':'));
+        if (uid.endsWith('-desk') || uid === 'desk') return true;
+        const rs = roomSlots.find(s => s && s.slotId === slotId);
+        return !!(rs && rs.owner === 'desk');
+      };
+      const desks = cands.filter(s => isDesk(s.slotId))
+                         .sort((x, y) => String(x.slotId).localeCompare(String(y.slotId)));
+      const spot = desks[0] || cands.sort((x, y) => x.dli - y.dli)[0];
       if (!spot) throw new Error('[첫 플레이] 몬스테라가 도착할 화분 자리를 찾지 못했습니다');
 
       arrived = givePlant(S, io, { slotId: spot.slotId });
@@ -1326,7 +1369,10 @@ export function startFastForward(S, io, opt = {}) {
   /* 시작하기 전에 막을 수 있는 입력 실수는 여기서 막는다 — 첫 턴에 예외로 터지면
      "빨리감기를 눌렀는데 오류만 떴다"가 된다. 고쳐서 다시 누를 수 있는 안내다. */
   const fp = S.firstPlay;
-  if (fp && fp.enabled && !fp.beansprout.slotId) {
+  /* ★ 2026-08-10 — 같은 문지기다. 자리 사본(`beansprout.slotId`) 대신 **방에 선 시루**를 센다
+     (위 §하루 진행과 같은 판정). 화면의 [빨리감기]는 걷혔지만 헤드리스 재현·밸런스 측정이
+     이 길로 돌기 때문에, 여기만 옛 사본을 보면 재는 자가 또 틀린다. */
+  if (fp && fp.enabled && !cropSites(fp).some(s => placedCropPots(s).length > 0)) {
     const e = new Error('[빨리감기] 열린 시루를 먼저 방 안에 놓아 주세요');
     e.firstPlayInput = true;
     throw e;
@@ -1405,7 +1451,8 @@ export function startFastForward(S, io, opt = {}) {
        `{all:true}` 로 주면 손보다 빨라져 그것이 지름길이 된다. 여기서는 안 준다. */
     if (autoWater) {
       const b = S.firstPlay && S.firstPlay.enabled ? S.firstPlay.beansprout : null;
-      if (b && b.slotId) waterBeansprout(S.firstPlay, S.day);
+      /* ★ 2026-08-10 — 여기도 사본이 아니라 방에 선 시루로 묻는다 */
+      if (b && placedCropPots(b).length) waterBeansprout(S.firstPlay, S.day);
       /* ★ 몬스테라도 **같은 표에 얹는다**(위 §물주기와 어떻게 맞물리나). 새 갈래를 만들면
          두 벌이 되고 두 벌은 어긋난다.
          ★ 밴드는 **어제 것**을 쓴다 — 오늘 빛은 아직 안 넣었다. 주기가 하루 어긋날 수는 있으나

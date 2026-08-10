@@ -483,6 +483,15 @@ function packFirstPlay(fp) {
       arrived: !!m.arrived,
       slotId: optStr(m.slotId, 'firstPlay.monstera.slotId'),
       at: packAt(m.at, 'firstPlay.monstera.at'),
+      /* ★ 2026-08-10 — 유도 카운터를 싣는다(growth-to-plan §㉢). 안 실으면 저장하고 다시 열 때마다
+         0 부터 다시 세어, 「10일이 지나도 그대로면 옮겨 보세요」가 저장할 때마다 뒤로 밀린다.
+         옛 세이브는 `guide` 가 없어 복원 때 기본값(newMonsteraGuide)이 그대로 남는다. */
+      guide: m.guide ? {
+        days:      optNum(m.guide.days,      'firstPlay.monstera.guide.days'),
+        moved:     !!m.guide.moved,
+        movedDays: optNum(m.guide.movedDays, 'firstPlay.monstera.guide.movedDays'),
+        grewOnce:  !!m.guide.grewOnce
+      } : null,
       /* ★ 단계 표시는 growth 가 낸 **관측 기록**이다. 판정에 안 쓰고 화면 문구로만 쓰므로
          그대로 적어 둔다 — 복원 직후 재생이 끝나기 전 화면이 빈칸이 되지 않게. */
       growthPhase: gp == null ? null : {
