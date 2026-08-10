@@ -145,7 +145,13 @@ ok('D-2 ★꺼진 상자는 포인터를 안 먹는다', e.pe === 'none' || e.di
    `pointer-events:${e.pe} · display:${e.display}`);
 
 console.log('\n══ E. 시루가 선 판에서는 하루가 간다 (자리 사본이 비어도) ════════');
-ok('E-0 [방에 배치하기] 를 누른다', await clickId('cropPlaceStart'));
+/* ★★ 2026-08-10 — [📍 방에 배치하기] 단추는 없어졌다. 그 손은 **가방 격자의 시루 칸**을
+     누르는 것으로 옮겨졌다(박사님 "콩나물 시루 ×4 된 걸 누르거나 드래그할 때마다 1개씩
+     배치"). 부르는 함수는 그대로 `startPhonePlace` 다 — 이 절이 재는 것(시루가 선 판에서
+     하루가 가나)은 한 톨도 안 바뀐다. */
+ok('E-0 가방 격자의 시루 칸을 누른다 (예전 [📍 방에 배치하기] 자리)',
+   await page.eval(`(()=>{const b=document.querySelector('.bagslot[data-place="beansprout"]');
+     if(!b) return false; b.click(); return true;})()`) === true);
 await until(`(window.__S().firstPlay.beansprout.pots||[]).some(p=>p&&(p.slotId||p.at))`, 25000);
 await clear();
 await clickId('placeOk');

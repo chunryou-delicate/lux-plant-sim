@@ -14,7 +14,7 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <!-- 지금 보고 있는 판이 언제 것인지. 캐시가 의심되면 이걸 본다 -->
-<meta name="byeot-build" content="2026-08-09T-cells">
+<meta name="byeot-build" content="2026-08-10T-bagone">
 <!-- ★★ 글씨 (2026-08-06 박사님: "글씨체가 이상해. 한글이 안 읽히네 뭔가. 잘 안 보여").
      Pretendard 를 **실제로 받아 온다.** 이름만 적어 두면 그 글씨가 깔린 기계에서만 보이고,
      안 깔린 기계에서는 조용히 system-ui 로 떨어진다 — 화면이 기계마다 달라진다.
@@ -328,6 +328,24 @@
     background:rgba(16,13,24,.92);border:1px solid rgba(255,180,84,.5);color:var(--gold);
     font-weight:700;font-size:11px;line-height:1.5}
   .bagslot .eta{display:block;margin-top:3px;font-size:9.5px;color:var(--gold);line-height:1.25}
+  /* ══ ★★ 끌 수 있는 칸 (2026-08-10 · 콩나물 시루 큰 카드를 대신한다) ══════════
+     박사님 원문: *"밑에 그냥 콩나물 시루 ×4 된 걸 누르거나 드래그할 때마다 1개씩 배치되면"*
+     ⚠ **잡을 수 있게 생겨야 한다.** 옆 칸(씨앗)과 똑같이 생기면 끌 수 있다는 것을
+       아무도 모른다 — 큰 카드에는 [📍 방에 배치하기] 단추가 그 말을 대신하고 있었다.
+       그래서 테두리를 살리고 손 모양 커서를 준다. */
+  .bagslot.act{cursor:pointer;border-color:rgba(255,180,84,.42);background:rgba(255,180,84,.07)}
+  .bagslot.act:hover{border-color:rgba(255,180,84,.7);background:rgba(255,180,84,.12)}
+  .bagslot.act:active{transform:scale(.96)}
+  .bagslot.act .art{cursor:grab}
+  /* ⓘ — 없어진 큰 카드의 상세 창으로 가는 문. 왼쪽 위(개수 배지는 오른쪽 위다) */
+  .bagslot .info{position:absolute;left:3px;top:3px;width:19px;height:19px;padding:0;
+    border-radius:999px;background:rgba(16,13,24,.92);border:1px solid rgba(255,255,255,.28);
+    color:rgba(255,255,255,.8);font-size:11px;font-weight:700;line-height:1;
+    display:grid;place-items:center;min-height:0;cursor:pointer;z-index:2}
+  .bagslot .info:hover{border-color:rgba(255,180,84,.7);color:var(--gold)}
+  /* 격자 아래 한 줄 안내 — 큰 카드의 `.dragcue` 가 여기로 왔다(§drawBag) */
+  #bagGrid .baghelp{margin:8px 2px 2px;font-size:10.5px;line-height:1.45;color:var(--dim);word-break:keep-all}
+  #bagGrid .baghelp b{color:rgba(255,255,255,.82)}
   /* 배송 중인 것 — 같은 격자에 흐리게. 「없다」와 「오는 중」은 다른 상태다 */
   .bagslot.coming{opacity:.5;border-style:dashed}
   .bagslot.coming .qty{border-color:rgba(255,255,255,.28);color:var(--dim)}
@@ -1245,9 +1263,21 @@
         <h3>가방 <span id="bagCount"></span></h3>
         <!-- 아직 안 놓은 용기 카드가 여기 선다. 놓으면 [식물]로 옮겨간다(drawBag) -->
         <div class="inventory" id="bagHold"></div>
-        <!-- 산 물건 격자. 용기·씨앗을 줄로 갈라 그린다(drawBag) -->
+        <!-- 산 물건 격자. 용기·씨앗을 줄로 갈라 그린다(drawBag)
+             ★★ 2026-08-10 — **이 격자가 곧 손잡이다** (박사님: "맨 위 콩나물 시루 큰 칸으로
+                된 저게 안 보이고, 밑에 그냥 콩나물 시루 ×4 된 걸 누르거나 드래그할 때마다
+                1개씩 배치되면 좋겠어").
+                예전 주석은 「격자는 **세는 칸**이지 **끄는 칸**이 아니다」였다. 그래서 같은
+                시루가 큰 카드와 격자 칸으로 **두 번** 떴고, 큰 카드가 폰 화면의 절반을 먹었다.
+                ⇒ 세는 칸이 곧 잡는 칸이다. 큰 카드(`#cropCard`)는 없앴다. -->
         <div id="bagGrid"></div>
         <div id="bagEmpty" class="ph">아직 가진 물건이 없습니다 — [상점]에서 주문해 보세요.</div>
+        <!-- ★ 콩나물 자리 후보 목록. **화면에 안 보이는 자료 칸**이다 (2026-08-10).
+             예전에는 [하나 두기] 드롭다운이었는데 그 길을 없앴다(길은 격자 칸 하나로 줄었다).
+             ⚠ 그래도 지우면 안 된다 — `drag.slotsFor('beansprout')` 가 이 `<option>` 들을
+               읽어 끌 때 빛나는 원(`valid`)과 되돌림 경로(`nearest`)를 잡는다. 지우면
+               끌기가 조용히 아무 자리도 못 밝힌다. 채우는 곳은 `fillCropSlots` 하나다. -->
+        <select id="cropSlot" hidden aria-hidden="true" tabindex="-1"></select>
       </div>
     </div><!-- /pageBag -->
 
@@ -1261,26 +1291,26 @@
         <div class="sub">어두운 자리도, 밝은 자리도 쓸모가 있습니다.</div>
         <div class="inventory" id="plantsHold">
         <!-- data-ord — [가방]↔[식물] 을 오갈 때 자리를 지킨다(holdCard) -->
-        <!-- ★★ 2026-08-09 — 이 카드는 이제 **가방의 빈 시루**다 (박사님: "가방에 열린 콩나물
-             시루가 있으면 안 되지. 콩나물시루 아이템만 있어서").
+        <!-- ★★★ 2026-08-10 — **콩나물 시루 큰 카드(`#cropCard`)를 없앴다.**
              ------------------------------------------------------------
-             예전에는 이 카드 하나가 「가방의 시루」와 「방에서 자라는 콩나물」을 겸했다.
-             그래서 가방에 「1/5일 자람」이 진행바와 함께 떠 있었다 — 방에서 자라는 것이
-             가방에 있는 그림이다. 자라는 것은 아래 `#siruList` 가 시루마다 한 줄로 그린다.
-             ⚠ `#cropMeter` 를 없앴다. 빈 용기에는 진행이 없다 — 0%로 두면 "안 자란다"로 읽힌다. -->
-        <div class="itemcard" id="cropCard" data-ord="1">
-          <div class="itemhead"><img class="thumb" id="cropThumb" alt="콩나물 시루">
-            <div><b>콩나물 시루</b><small id="cropState">가방에 있음</small></div></div>
-          <div class="itemline" id="cropInfo">4일 뒤 첫 수확</div>
-          <div class="dragcue">이 그림을 <b>끌어서</b> 방 안에 놓으세요 — <b>한 번에 하나씩</b> 섭니다</div>
-          <!-- ★★★ 폰에서는 끌기가 힘들다 (박사님 2026-08-09 · 실측 근거는 siru-to-plan §8).
-               누르면 방에 임시로 서고, 거기서부터 **상대이동**으로 조금씩 옮긴 뒤 [확인]한다.
-               ⚠ 끌기를 **없애지 않는다** — PC 에서는 그쪽이 빠르다. 둘 다 남긴다. -->
-          <button id="cropPlaceStart" class="primary">📍 방에 배치하기</button>
-          <div class="place"><label for="cropSlot" class="sr-only">콩나물 자리</label><select id="cropSlot"></select><button id="placeCrop">하나 두기</button></div>
-        </div>
-        <!-- ★ 2종째 작물 — 몬스테라가 온 뒤에만 보인다(drawMusun). 콩나물 칸과 **같은 골격**이다:
-             둘이 다르게 생기면 "같은 일"인 것이 화면에서 안 보인다. -->
+             박사님 원문: *"가방을 열었을 때 맨 위 콩나물 시루 큰 칸으로 된 저게 안 보이고,
+             밑에 그냥 콩나물 시루 ×4 된 걸 누르거나 드래그할 때마다 1개씩 배치되면 좋겠어."*
+
+             같은 시루가 **두 번** 떠 있었다 — 큰 카드(그림+설명+[📍 방에 배치하기])와
+             가방 격자의 「콩나물 시루 ×4」 칸. 큰 카드가 폰 화면 높이의 절반을 먹었다.
+             ⇒ 길을 하나로 줄였다. **격자 칸이 곧 손잡이다**(§bagSlotHTML · §drawBag).
+               · 끌면 — 예전 `#cropThumb` 이 하던 그대로. **id 를 격자 칸 그림으로 옮겼다**
+                 (끌기·손가락 안내·검사·probe 가 전부 그 id 하나를 붙잡고 있다).
+               · 누르면 — 예전 [📍 방에 배치하기]와 **같은 함수**(`startPhonePlace`).
+               · ⓘ 를 누르면 — 예전 카드를 누르면 뜨던 그 상세 창(`detail.crop`). 그대로 산다.
+             ⚠ 카드가 말하던 것 중 사라진 것은 없다:
+               「몇 개 남았나」→ 칸의 `×N` 배지 · 「끌어서 · 한 번에 하나씩」→ 용기 줄 안내
+               (§drawBag `.baghelp`) · 「0개가 되면 숨는다」→ 칸이 통째로 안 그려진다.
+             ⚠ **무순 카드는 그대로 둔다** — 규칙이 다르다. 재배판은 「심기」(재배판+씨앗)를
+               한 번 거쳐야 개체가 생기고, 그 개체는 **한 판뿐**이다(drawMusun `canSow = !pots`).
+               「누를 때마다 하나씩」이라는 말이 성립하지 않는다. 자세한 것은 handoff 참조.
+             ⚠ 몬스테라 카드도 그대로다 — 가방을 안 거치고 방으로 바로 온다. -->
+        <!-- ★ 2종째 작물 — 몬스테라가 온 뒤에만 보인다(drawMusun). -->
         <div class="itemcard" id="musunCard" data-ord="2" style="display:none">
           <div class="itemhead"><img class="thumb" id="musunThumb" alt="새싹 재배판">
             <div><b>무순 · 새싹 재배판</b><small id="musunState">아직 없음</small></div></div>
@@ -1801,15 +1831,18 @@ let lastTurn = null;
    그래서 옮긴 직후 한 프레임 동안 카드는 "창턱 화분받침"인데 퀘스트는 "옮겨 보세요"였다 —
    두 곳이 서로 다른 말을 하면 플레이어는 자기 선택이 먹혔는지 알 수 없다. */
 let arrivalSlotId = null;
-/* ★★ 가방 카드 머리 그림은 **뚜껑 덮인 빈 시루**다 (2026-08-10 · 계약은 growth 가 냈다).
-     카드 글은 "아직 아무것도 안 선 **빈 시루**"라고 말하는데 그림은 콩나물이 다 자란
+/* ★★ 가방의 시루 그림은 **뚜껑 덮인 빈 시루**다 (2026-08-10 · 계약은 growth 가 냈다).
+     글은 "아직 아무것도 안 선 **빈 시루**"라고 말하는데 그림은 콩나물이 다 자란
      열린 시루였다 — 글과 그림이 서로 다른 말을 했고, 그림이 먼저 읽힌다.
    ★ 근거: 콩나물 시루는 원래 **차광 용기**라 뚜껑을 덮어 기른다. 뚜껑 덮인 모습이
      「아직 안 심은 것」이고, 열린 시루는 「자라는 중」의 그림이다.
    ⚠ **방에 서는 시루는 그대로 열린 시루다**(3D `container_siru_open.glb`). 가방만 뚜껑이다.
-   ⚠ 이 줄이 곧 **끌기**다 — `bindDrag` 가 `el.src` 를 미리보기로 그대로 쓴다(§bindDrag).
-     그림만 바뀌고 끌기 경로는 안 바뀐다. 파일 이름을 여기 적지 않는다 — 계약 칸을 읽는다. */
-$('cropThumb').src = OPEN_SIRU.bagThumbnail;
+   ⚠ 이 그림이 곧 **끌기**다 — `bindDrag` 가 `el.src` 를 미리보기로 그대로 쓴다(§bindDrag).
+     그림만 바뀌고 끌기 경로는 안 바뀐다. 파일 이름을 여기 적지 않는다 — 계약 칸을 읽는다.
+   ★★ 2026-08-10 — 큰 카드가 없어져서 **격자 칸이 이 그림을 그린다**(§BAG_ART).
+     그래서 여기서 `$('cropThumb').src` 에 대입하지 않는다 — 그 칸은 `drawBag` 이 다시
+     그릴 때마다 새로 만들어지므로, 한 번 대입해 둔 값은 다음 그리기에 지워진다. */
+const BAG_SIRU_PIC = OPEN_SIRU.bagThumbnail;
 /* 무순 칸 그림 — 콩나물이 manifest 에서 오는 것과 같은 자리다.
    ⚠ 파일 이름을 여기 적는 것은 콩나물이 `openSiruContractFromManifest` 를 갖는 것과 달리
      무순엔 아직 계약 함수가 없어서다. 계약이 생기면 그때 갈아탄다(그때까지는 이 한 줄이 정본). */
@@ -1961,34 +1994,21 @@ function cropCandidates() {
     slotFitsDiameter(roomSlot.get(s.slotId) || s, potDOf('beansprout')));
 }
 
+/* ★★ 2026-08-10 — 이 함수는 이제 **보이는 것을 아무것도 안 그린다.**
+   ------------------------------------------------------------
+   예전에는 드롭다운([하나 두기])과 카드 안내줄(`#cropInfo`)을 같이 채웠다. 그 둘은
+   큰 카드와 함께 없어졌다(§가방 격자가 곧 손잡이다). 남은 일은 하나뿐이다 —
+   **끌기가 쓰는 자리 후보 목록**(`#cropSlot` 의 `<option>`)을 채우는 것.
+   ⚠ 지우면 안 된다: `drag.slotsFor('beansprout')` 가 이 목록을 읽어 끌 때 빛나는 원과
+     되돌림 경로를 잡는다. 비면 끌기가 조용히 아무 자리도 못 밝힌다.
+   ⚠ `disabled` 도 살려 둔다 — `drag.begin` 이 그 값을 본다(세울 시루가 없으면 잠긴다). */
 function fillCropSlots() {
   const list = cropCandidates().sort((a, b) => a.slotId.localeCompare(b.slotId));
   $('cropSlot').innerHTML = list.map(s =>
     `<option value="${s.slotId}">${slotLabel(s.slotId)}</option>`).join('');
   if (S.firstPlay.beansprout.slotId) $('cropSlot').value = S.firstPlay.beansprout.slotId;
-  /* ★★ 2026-08-09 — 이 드롭다운은 이제 **가방의 빈 시루 하나를 세우는** 창구다.
-     예전에는 「그 자리로 옮기기」였는데, 옮기는 것은 시루를 골라서 하는 일이 됐다(§siruPick).
-     ⇒ 잠그는 기준도 「거뒀나」가 아니라 **「세울 시루가 있나」**다. */
-  const canPlace = spareSiru() > 0;
-  $('cropSlot').disabled = !canPlace;
-  $('placeCrop').disabled = !canPlace || !list.length;
-  /* ★★ 목록이 비면 **왜 비었는지 말한다** (2026-08-05 · multisiru).
-     시루가 늘면 무리 지름이 커져서(12개면 0.97m) 반지하 가구 어디에도 안 들어간다.
-     판정은 맞지만 빈 드롭다운만 두면 고장으로 읽힌다 — 무순에서 이미 겪은 구멍이다.
-     ★ 그리고 여기서 **바닥을 알린다.** 바닥은 드래그로 실제로 놓이는데(surfaceAt 이 y=0 을 잡는다)
-       추천 목록에는 가구 위 자리만 나와서 「못 놓는 줄」 안다 — 박사님이 짚으신 그것이다.
-       반지하 바닥은 20 m² 이고 어두워서(DLI 0.00~0.26) **콩나물에는 최상 자리**다. */
-  /* ★★ 2026-08-09 — 「무리가 커서 안 올라간다」는 말이 없어졌다. 시루는 이제 각자 서므로
-     지름은 늘 한 개짜리(0.24m)다 — 열두 개를 놓아도 자리 하나가 받는 것은 한 개뿐이다.
-     ⇒ 그래서 「12개면 0.97m 라 가구 위엔 안 올라갑니다」가 통째로 사라졌다. 그것이
-       multisiru §9 ㉰ 이 남겨 둔 판단(자리를 여러 개로 쪼갠다)의 결과다. */
-  const hint = $('cropInfo');
-  const spare = spareSiru();
-  if (hint && !list.length)
-    hint.textContent = '올라갈 자리가 없습니다 — 그림을 끌어 바닥에 놓아 보세요';
-  if (hint && spare > 0)
-    hint.textContent = `가방에 빈 시루 ${spare}개 — 끌어다 놓으면 **하나**가 섭니다`
-      .replace(/\*\*/g, '') + (spare > 1 ? ` (나머지 ${spare - 1}개는 가방에 남습니다)` : '');
+  /* ★★ 2026-08-09 — 잠그는 기준은 「거뒀나」가 아니라 **「세울 시루가 있나」**다. */
+  $('cropSlot').disabled = spareSiru() <= 0;
 }
 
 /* ══ 무순 — 2종째 작물 (2026-08-05) ══════════════════════════════════════
@@ -2315,8 +2335,12 @@ const detail = {
       sub: spare > 0 ? `가방에 ${spare}개` : '가방에 없음',
       body: `<div class="row"><span>가방에 남은 것</span><b>${spare}개</b></div>`
         + (standing ? `<div class="row"><span>방에 서 있는 것</span><b>${standing}개</b></div>` : '')
-        + '<p>아직 아무것도 안 선 <b>빈 시루</b>다. 그림을 방으로 <b>끌어다</b> 놓으면 '
-        + '<b>한 개씩 따로</b> 선다 — 나머지는 가방에 남는다.</p>'
+        /* ★ 2026-08-10 — 「누르면」이 늘었다. 큰 카드가 없어지면서 가방 칸을 **누르는 것**이
+           예전 [📍 방에 배치하기]와 같은 길이 됐다(§bindDetail · §startPhonePlace).
+           폰에서는 끌기가 힘들다 — 두 길을 다 적어야 손이 막히지 않는다. */
+        + '<p>아직 아무것도 안 선 <b>빈 시루</b>다. 가방의 이 칸을 방으로 <b>끌거나</b> '
+        + '그냥 <b>누르면</b> <b>한 개씩 따로</b> 선다 — 나머지는 가방에 남는다.</p>'
+        + '<p>눌러서 세우면 빈자리에 임시로 서고, 화면을 끌어 옮긴 뒤 <b>[확인]</b>하면 굳는다.</p>'
         + `<p>세운 뒤 <b>물을 줘야</b> 시작한다. 그때 <b>${days}칸</b>짜리 게이지가 생기고 `
         + '하루에 <b>한 칸</b>씩 찬다. 다 차면 거둘 때다.</p>'
         + '<p>콩나물은 <b>어두울수록</b> 잘 자란다. 빛을 보면 쓴맛이 난다 — 이 방에서 제일 어두운 자리를 찾으면 된다.</p>'
@@ -2409,8 +2433,36 @@ function bindDetail() {
       detail.open(kind);
     });
   };
-  card($('cropThumb').closest('.itemcard'), 'crop');
   card($('plantCard'), 'monstera');
+  /* ★★ 2026-08-10 — 가방 격자 칸의 손 (콩나물 시루 큰 카드가 없어진 자리).
+     ------------------------------------------------------------
+     ⚠ **위임으로 건다.** 칸은 `drawBag` 이 그릴 때마다 새로 만들어지므로 칸에 직접 걸면
+       다음 그리기에 손이 사라진다. `#bagGrid` 는 안 바뀌므로 여기 한 번만 건다.
+     ★ 누르면 — 예전 [📍 방에 배치하기]와 **같은 함수**(startPhonePlace).
+       박사님 원문이 "누르거나 드래그할 때마다 1개씩 배치"라, 누름은 배치로 바로 간다.
+     ★ ⓘ 를 누르면 — 예전 「카드를 누르면 뜨던」 그 상세 창. 거기 「가방에 N개」와
+       쓰는 법이 적혀 있다 — 칸이 72px 이라 그 글이 안 들어간다. 없애지 않고 옮긴 것이다. */
+  const grid = $('bagGrid');
+  if (grid) grid.addEventListener('click', e => {
+    if (drag.on) return;                       /* 끄는 중이면 누름이 아니다 */
+    const info = e.target.closest('.bagslot .info');
+    if (info) { e.stopPropagation(); detail.open(info.dataset.detail); return; }
+    const cell = e.target.closest('.bagslot[data-place]');
+    if (!cell) return;
+    /* ⚠ 그림 위에서 끝난 손짓은 `bindDrag` 가 이미 처리했다 — 그 메아리로 또 세우면
+       한 번 끌었는데 두 개가 선다(§bindDrag ⚠). 칸의 **빈 곳**을 누른 것만 여기 온다. */
+    if (bagTapEcho()) return;
+    if (cell.dataset.place === 'beansprout') startPhonePlace();
+  });
+  /* 자판으로도 눌린다 — `role="button"` 인 칸은 Enter·Space 를 저절로 안 받는다.
+     PC 로 검수할 때 손이 막히면 그것도 고장이다. */
+  if (grid) grid.addEventListener('keydown', e => {
+    if (e.key !== 'Enter' && e.key !== ' ') return;
+    const cell = e.target.closest && e.target.closest('.bagslot[data-place]');
+    if (!cell || e.target.closest('button')) return;
+    e.preventDefault();
+    if (cell.dataset.place === 'beansprout') startPhonePlace();
+  });
 }
 
 window.__byeotHint = () => { try { updateHint(); } catch (e) { /* 안내가 게임을 막지 않는다 */ } };
@@ -2433,7 +2485,9 @@ function updateHint() {
   const crop = fp.beansprout, plant = fp.monstera;
   /* ① 시루를 아직 안 놓았다 */
   if (!crop.slotId) {
-    if (onScreen($('cropThumb'))) return hintAt($('cropThumb'), '끌어서 방 안 어두운 자리에');
+    /* ★ 2026-08-10 — 가리키는 것은 이제 **가방 격자의 시루 칸**이다(id 는 그대로 `cropThumb`).
+       칸이 없으면(빈 시루 0개) `onScreen(null)` 이 false 라 아래 [가방]으로 떨어진다. */
+    if (onScreen($('cropThumb'))) return hintAt($('cropThumb'), '끌거나 눌러서 방 안 어두운 자리에');
     if (onScreen($('openBag')))   return hintAt($('openBag'), '가방을 열어 보세요');
     return hintAt(null);
   }
@@ -2851,9 +2905,10 @@ function drawCuttings() {
      그 둘이 화면에서 같아 보이면 이미 시킨 것을 또 시킨다. */
 const BAG_ART = Object.freeze({
   /* ★ 상점에서 사서 가방에 쟁인 것도 **빈 용기**다 — 뚜껑 덮인 그림을 쓴다(2026-08-10).
-     ⚠ 격자는 계약 객체(`OPEN_SIRU`)가 없는 자리라 파일 이름을 적는다. 계약이 이 표까지
-       내주게 되면 그때 갈아탄다 — 지금 지어내면 두 곳이 서로 다른 정본이 된다. */
-  siru:          './assets/crops/thumbs/container_siru_closed.png',
+     ★★ 2026-08-10 — 파일 이름을 적던 자리를 **계약**(`OPEN_SIRU.bagThumbnail`)으로 바꿨다.
+       큰 카드가 없어지면서 이 칸이 시루 그림을 그리는 **유일한 자리**가 됐다. 정본이
+       하나뿐이어야 계약이 그림을 바꿀 때 화면이 저절로 따라온다. */
+  siru:          BAG_SIRU_PIC,
   sprout_tray:   './assets/crops/thumbs/container_tray_s.png',
   bean_seed:     './assets/crops/thumbs/seed_dicot.png',      // 콩은 쌍떡잎
   radish_seed:   './assets/crops/thumbs/seed_dicot.png',      // 무도 쌍떡잎
@@ -2870,9 +2925,30 @@ const BAG_GROUPS = Object.freeze([
   { kind: 'seed',      ko: '씨앗' }
 ]);
 
+/* ★★ 2026-08-10 — **끌 수 있는 칸**의 표 (박사님: "콩나물 시루 ×4 된 걸 누르거나
+     드래그할 때마다 1개씩 배치").
+   ------------------------------------------------------------
+   ⚠ `thumbId` 는 **새로 지은 이름이 아니다.** 없어진 큰 카드의 그림이 쓰던 그 id 를
+     칸으로 옮긴 것이다 — 끌기(`bindDrag`)·첫 플레이 손가락(`updateHint`)·검사·probe 가
+     전부 이 id 하나를 붙잡고 있어서, 이름을 지키면 그 배선이 통째로 따라온다.
+   ⚠ 무순(`sprout_tray`)은 **여기 없다.** 재배판은 「심기」(재배판+씨앗 → 개체)를 한 번
+     거쳐야 하고 그 개체는 한 판뿐이라(drawMusun `canSow = !pots`), 「누를 때마다 하나씩」이
+     성립하지 않는다. 그래서 무순은 아직 카드가 손잡이다. */
+const BAG_PLACEABLE = Object.freeze({
+  siru: { kind: 'beansprout', thumbId: 'cropThumb', detail: 'crop', ko: '콩나물 시루' }
+});
+/* ★ 칸의 「×N」이 세는 것 — **가방에 실제로 남은 것**이다 (2026-08-10).
+   ⚠ 예전에는 상점 재고(`stock`)만 셌다. 그런데 「아직 안 놓은 시루」는 개체가 이미
+     만들어져 있어 재고가 아니다(§spareContainerOf) — 첫 플레이가 들고 시작하는 시루가
+     바로 그것이다. 재고만 세면 **그 시루의 칸이 아예 안 그려져서** 첫 시루를 못 놓는다.
+     큰 카드가 있을 때는 카드가 그 수(`spareSiru`)를 따로 셌기 때문에 안 드러났다. */
+const BAG_SPARE_KIND = Object.freeze({ siru: 'beansprout', sprout_tray: 'musun' });
+
 function bagSlotHTML(it, have, coming) {
   const art = BAG_ART[it.id], ltr = BAG_LETTER[it.id];
-  const pic = art ? `<img src="${art}" alt="">`
+  const place = BAG_PLACEABLE[it.id] || null;
+  /* 끌 수 있는 칸이면 그림이 곧 **손잡이**다 — 없어진 큰 카드의 id 를 그대로 쓴다 */
+  const pic = art ? `<img${place ? ` id="${place.thumbId}"` : ''} src="${art}" alt="${place ? place.ko : ''}">`
     : `<b style="background:${(ltr || {}).bg || '#8d8a99'}">${(ltr || {}).ko || it.ko.slice(0, 1)}</b>`;
   const empty = have <= 0;                        // 0개인데 오는 중 — 흐리게 둔다
   const n = empty ? (coming ? coming.qty : 0) : have;
@@ -2882,15 +2958,25 @@ function bagSlotHTML(it, have, coming) {
   /* 칸 이름은 괄호를 뗀다 — 「콩나물 시루 (차광 용기)」가 80px 칸에서 넉 줄이 된다.
      뗀 말은 사라지지 않는다: 전체 이름은 title 로 남고, 상점 목록에는 그대로 있다. */
   const short = it.ko.replace(/\s*\([^)]*\)\s*$/, '');
-  return `<div class="bagslot${empty ? ' coming' : ''}" title="${it.ko}">` +
-    `<span class="qty">×${n}</span><span class="art">${pic}</span>` +
+  /* ★ ⓘ — 없어진 큰 카드의 **상세 창**으로 가는 문. 칸이 72px 이라 「끌어서 · 한 번에
+       하나씩」·「가방에 N개」가 안 들어간다. 글을 버리지 않고 이 문 뒤에 둔다.
+     ⚠ 오는 중(0개)인 칸에는 안 붙인다 — 아직 못 놓는 것에 놓는 법을 띄우면 거짓말이다. */
+  const info = (place && !empty)
+    ? `<button class="info" type="button" data-detail="${place.detail}" aria-label="${place.ko} 설명">i</button>` : '';
+  const live = !!(place && !empty);
+  const cls = `bagslot${empty ? ' coming' : ''}${live ? ' act' : ''}`;
+  const attrs = live ? ` data-place="${place.kind}" role="button" tabindex="0"` : '';
+  return `<div class="${cls}" title="${it.ko}"${attrs}>` +
+    `<span class="qty">×${n}</span>${info}<span class="art">${pic}</span>` +
     `<span class="nm">${short}</span>${eta}</div>`;
 }
 
 /* 카드를 [가방] ↔ [식물] 사이로 **노드째** 옮긴다.
-   ⚠ 두 벌을 만들지 않는다 — 끌기(bindDrag)·상세창(bindDetail)·안내(updateHint)가
-     전부 `#cropThumb` 같은 id 하나를 붙잡고 있다. 노드를 옮기면 그 배선이 그대로 따라온다.
-   `data-ord` 로 자리를 지킨다 — appendChild 만 하면 돌아올 때 순서가 뒤집힌다. */
+   ⚠ 두 벌을 만들지 않는다 — 끌기(bindDrag)·상세창(bindDetail)이 전부 `#musunThumb` 같은
+     id 하나를 붙잡고 있다. 노드를 옮기면 그 배선이 그대로 따라온다.
+   `data-ord` 로 자리를 지킨다 — appendChild 만 하면 돌아올 때 순서가 뒤집힌다.
+   ★ 2026-08-10 — 콩나물 시루는 이제 카드가 없어 여기 안 온다(가방 격자 칸이 그 일을 한다).
+     남은 손님은 무순 카드와 몬스테라 카드뿐이다. */
 function holdCard(card, inRoom) {
   if (!card) return;
   const host = $(inRoom ? 'plantsHold' : 'bagHold');
@@ -2900,6 +2986,8 @@ function holdCard(card, inRoom) {
   host.insertBefore(card, at || null);
 }
 const cardShown = (el) => !!el && el.style.display !== 'none';
+/* 지난번에 그린 격자의 글 — 같으면 다시 안 그린다(§drawBag ⚠ 끄는 중) */
+let bagGridHTML = null;
 
 function drawBag() {
   const grid = $('bagGrid'); if (!grid) return;
@@ -2911,35 +2999,53 @@ function drawBag() {
     c.qty += o.qty; c.days = Math.min(c.days, o.daysLeft);
     coming.set(o.itemId, c);
   }
-  let html = '', total = 0;
+  let html = '', total = 0, anyPlaceable = false;
   const cat = catalogList();
   for (const g of BAG_GROUPS) {
     const rows = cat.filter(it => it.kind === g.kind)
-      .map(it => ({ it, have: st.stock[it.id] || 0, c: coming.get(it.id) || null }))
+      /* ★ 「가방에 몇 개인가」 — 용기는 재고에 **아직 안 놓은 개체**를 더한다(§BAG_SPARE_KIND).
+           그 둘이 다 「가방 안의 빈 용기」다. 모르는 품목은 예전대로 재고만 센다. */
+      .map(it => {
+        const kind = BAG_SPARE_KIND[it.id];
+        let have = st.stock[it.id] || 0;
+        if (kind) { try { have = spareContainerOf(kind); } catch { } }
+        return { it, have, c: coming.get(it.id) || null };
+      })
       .filter(r => r.have > 0 || r.c);          // 0개이고 오지도 않는 것은 안 보인다
     if (!rows.length) continue;
     total += rows.reduce((n, r) => n + r.have, 0);
+    if (rows.some(r => BAG_PLACEABLE[r.it.id] && r.have > 0)) anyPlaceable = true;
     html += `<div class="grouphead">${g.ko}</div><div class="baggrid">` +
             rows.map(r => bagSlotHTML(r.it, r.have, r.c)).join('') + '</div>';
   }
-  grid.innerHTML = html;
+  /* ★★ 없어진 큰 카드의 안내줄(`.dragcue` — 「이 그림을 끌어서 방 안에 놓으세요 —
+       한 번에 하나씩 섭니다」)이 여기로 왔다 (2026-08-10).
+     ⚠ 없애면 안 된다: **처음 하는 사람은 칸을 끌 수 있다는 것을 모른다.** 칸은 72px 이라
+       그 글이 안 들어가서 격자 위 한 줄로 뺐다. 끌 수 있는 칸이 있을 때만 뜬다 —
+       못 끄는 판에 「끌어 보세요」가 떠 있으면 그게 고장으로 읽힌다. */
+  if (anyPlaceable)
+    html += '<div class="baghelp">시루 칸을 <b>끌거나 누르면</b> 방에 <b>한 번에 하나씩</b> 섭니다 ' +
+            '· <b>i</b> 를 누르면 자세히</div>';
+  /* ⚠ **끄는 중에는 다시 그리지 않는다.** 칸이 곧 손잡이라 `innerHTML` 로 갈아 끼우면
+       손가락이 잡고 있던 노드가 사라져 끌기가 도중에 끊긴다(예전 카드는 노드가 살아
+       있어서 이 문제가 없었다). 같은 글이면 아예 손을 안 대는 것도 같은 이유다. */
+  if (!drag.on && bagGridHTML !== html) {
+    bagGridHTML = html;
+    grid.innerHTML = html;
+    /* 칸이 새로 만들어졌으니 끌기를 다시 건다 — 노드가 바뀌면 리스너도 같이 사라진다.
+       ⚠ 겹치지 않는다: 새 노드에 처음 거는 것이다(부팅 때 한 번 거는 §bindDrag 와 다르다).
+       ★ 셋째 인자가 **누르기**다 — 안 움직이고 뗀 손은 「눌러서 배치」로 간다(§bindDrag). */
+    for (const id of Object.keys(BAG_PLACEABLE)) {
+      const p = BAG_PLACEABLE[id];
+      bindDrag(p.thumbId, p.kind, p.kind === 'beansprout' ? () => startPhonePlace() : null);
+    }
+  }
   $('bagCount').textContent = total ? `· ${total}개` : '';
 
   /* ★ 안 놓은 용기는 가방에, 놓은 것은 [식물]에. 「가방에 있음」이라고 적힌 시루가
-     정작 가방에 없으면 두 화면이 서로 다른 말을 한다 — 그래서 자리를 상태에 맞춘다. */
-  const fp = S.firstPlay;
-  const b = fp && fp.beansprout;
-  /* ★★ **산 시루가 남아 있으면 카드는 가방에 있다** (박사님 2026-08-08).
-     이미 놓은 자리가 있어도 마찬가지다 — 가방에 아직 안 선 시루가 있다는 사실을
-     화면이 말해야 하고, 그 카드가 곧 **끌어다 놓는 손잡이**이기 때문이다
-     (끄는 것은 `#cropThumb` 이고 카드는 노드째 옮겨 다닌다 — §holdCard).
-     ⚠ 가방 격자에도 「열린 시루 ×N」이 이미 뜬다. 그건 세는 칸이지 끄는 칸이 아니다 —
-       둘이 같은 말을 하는 게 아니라 **세는 것과 잡는 것**이 다른 일이다. */
-  /* ★★ 2026-08-09 — 이 카드는 **늘 가방에 있다**. 카드가 곧 「가방의 빈 시루」이기 때문이다
-     (박사님: "가방에 열린 콩나물 시루가 있으면 안 되지. 콩나물시루 아이템만 있어서").
-     방에서 자라는 시루는 [식물]의 `#siruBox` 가 시루마다 한 줄로 그린다 — 그래서
-     카드가 두 탭을 오갈 이유가 없어졌다. 빈 시루가 없으면 카드째 숨는다(drawJourney). */
-  holdCard($('cropThumb').closest('.itemcard'), false);
+     정작 가방에 없으면 두 화면이 서로 다른 말을 한다 — 그래서 자리를 상태에 맞춘다.
+     ★★ 2026-08-10 — 콩나물 시루 카드는 **없어졌다**(격자 칸이 그 일을 한다). 여기서
+       옮길 카드는 무순과 몬스테라뿐이다. */
   const ms = musunSite();
   holdCard($('musunCard'), !!(ms && (ms.slotId || ms.at)));
   holdCard($('plantCard'), true);              // 몬스테라는 늘 방에 온다(가방을 거치지 않는다)
@@ -3857,19 +3963,13 @@ function drawJourney() {
     if (fill) fill.style.width = `${Math.max(0, Math.min(100, sv.left / Math.max(1, sv.max) * 100))}%`;
   }
   drawTutorial(living);
-  /* ★★ 2026-08-09 — 이 카드는 **가방의 빈 시루**만 말한다 (박사님: "가방에 열린 콩나물
-     시루가 있으면 안 되지"). 자라는 것은 아래 `drawSirus()` 가 시루마다 한 줄로 그린다.
-     ⚠ 예전 `#cropMeter` 는 없앴다 — 빈 용기에는 진행이 없다. */
-  {
-    const spare = spareSiru();
-    const card = $('cropThumb').closest('.itemcard');
-    /* 세울 시루가 하나도 없으면 카드째 숨는다 — 못 끄는 손잡이는 고장으로 읽힌다 */
-    if (card) card.style.display = spare > 0 ? '' : 'none';
-    $('cropState').textContent = spare > 0 ? `가방에 ${spare}개` : '가방에 없음';
-    $('cropInfo').textContent = spare > 0
-      ? '끌어다 놓으면 **하나**가 섭니다 — 나머지는 가방에 남습니다'.replace(/\*\*/g, '')
-      : '상점에서 시루를 주문하면 여기 담깁니다';
-  }
+  /* ★★ 2026-08-10 — 여기 있던 **콩나물 시루 카드 칠하기**가 통째로 없어졌다.
+     카드가 없어졌기 때문이다(§가방 격자가 곧 손잡이다). 그 카드가 말하던 것은
+     전부 가방 격자로 갔다:
+       「가방에 N개」  → 칸의 `×N` 배지 (`drawBag` · 재고 + 아직 안 놓은 개체)
+       「끌어다 놓으면 하나」 → 격자 아래 한 줄 안내 (`.baghelp`) · ⓘ 상세 창
+       「빈 시루가 0개면 카드째 숨는다」 → 칸이 통째로 안 그려진다(0개는 격자에 안 선다)
+     ⚠ 되살리지 말 것. 되살리면 같은 시루가 다시 **두 번** 뜬다 — 그것이 이 고침의 원인이다. */
   /* 표시만 바꾼다 — 몬스테라 슬롯은 도착 전까지 빛이 죽어 있다 */
   $('plantCard').classList.toggle('locked', !plant.arrived);
 
@@ -4217,23 +4317,17 @@ $('lit').onchange = e => { S.lamps.litHours = Math.max(0, Math.min(24, +e.target
 /* 포인터 이동 방식 — 켠 값을 기억한다(§PTR_KEY). 게임 상태가 아니라 조작 취향이라 draw() 가 없다 */
 $('ptrMode').onchange = e => applyPointerMode(e.target.value);
 $('mode').onchange = e => { S.sim.mode = e.target.value; io.light.clearCache(); draw(); };
-/* ★★ 2026-08-09 — **빈 시루 하나를 그 자리에 세운다** (끌기와 같은 함수를 탄다).
-   예전에는 `placeBeansprout` 으로 자리의 시루 전부를 옮겼다. 옮기는 것은 이제
-   시루를 골라서 하는 일이고(§siruPick), 이 버튼은 「가방에서 하나 꺼내 세우기」다.
-   ⚠ 끌기와 다른 함수를 쓰면 재고를 빼는 순서가 두 벌이 된다 — 그 어긋남이 곧
-     "던졌는데 시루가 사라졌다"였다(tools/test_resow_atomic.mjs). */
-/* ★★★ [방에 배치하기] — 폰에서 끌기 대신 쓰는 길 (2026-08-09 · §placeConfirm) */
-$('cropPlaceStart').onclick = guard(() => startPhonePlace());
-$('placeCrop').onclick = guard(() => {
-  const target = $('cropSlot').value;
-  const r = placeSiru(S, target, { slots: io.light.room.slots, size: io.light.room.size });
-  pushLog(S, `🥣 시루를 ${slotLabel(target)}에 하나 두었습니다` +
-             (r.fromStock ? ' — 씨앗 1봉지를 썼습니다' : ''));
-  unlockAfterFix();                    // 자리를 고쳤으니 다시 시도할 수 있다
-  dlgOpen('cropPlaced');
-  syncRoom();
-  draw();
-});
+/* ★★★ 2026-08-10 — 콩나물 시루를 놓는 손잡이가 **여기 없다.**
+   ------------------------------------------------------------
+   여기 있던 것: `$('cropPlaceStart').onclick`([📍 방에 배치하기])와
+   `$('placeCrop').onclick`([하나 두기] 드롭다운). 둘 다 큰 카드에 달려 있었고
+   카드와 함께 없어졌다(박사님: "가방을 열었을 때 맨 위 (…) 큰 칸으로 된 저게 안 보이고").
+   ★ 하는 일은 안 없어졌다 — **가방 격자 칸**으로 갔다:
+       끌기  → `bindDrag('cropThumb', …)`  (칸의 그림이 그 id 를 그대로 쓴다)
+       누르기 → `startPhonePlace()`        ([📍 방에 배치하기]가 부르던 **바로 그 함수**)
+     거는 곳은 `bindDetail` 의 `#bagGrid` 위임 하나다.
+   ⚠ 드롭다운으로 놓던 세 번째 길은 **되살리지 않는다.** 길을 하나로 줄이는 것이
+     이 고침의 뜻이다. `#cropSlot` 은 남아 있지만 그건 끌기가 읽는 자리 목록일 뿐이다. */
 
 /* ── 무순 (2종째 작물) ── 콩나물과 같은 길이다. 규칙은 전부 코어 것을 부른다 */
 $('sowMusun').onclick = guard(() => {
@@ -4696,8 +4790,11 @@ async function bootRoomView() {
        드래그 한 번에 핸들러가 두 번 돈다 — 조용히 두 배로 움직인다. */
     if (!roomListenersBound) {
       roomListenersBound = true;
-      bindDrag('cropThumb', 'beansprout');
-      bindDrag('musunThumb', 'musun');        /* 2종째 작물도 같은 길로 끈다 */
+      /* ⚠ `cropThumb` 은 여기서 **안 건다** (2026-08-10). 그 그림은 이제 가방 격자 칸에
+         있고, `drawBag` 이 칸을 다시 그릴 때마다 노드가 새로 생겨 리스너가 같이 사라진다.
+         그래서 거는 자리는 `drawBag` 안이다 — 여기서도 걸면 그리기 전에 걸린 노드와
+         겹쳐 **끌기 한 번에 두 번** 돈다. 카드 시절과 달라진 점이 이것 하나다. */
+      bindDrag('musunThumb', 'musun');        /* 무순은 아직 카드가 손잡이라 여기서 건다 */
       bindDrag('plantThumb', 'monstera');
       addEventListener('resize', () => roomView && roomView.resize());
     }
@@ -6309,18 +6406,40 @@ document.addEventListener('visibilitychange', () => { if (document.hidden) cance
 /* 손가락·마우스가 창 밖에서 떨어진 경우도 같은 길이다 */
 addEventListener('pointerup', (e) => { if (e.target === document.documentElement) cancelAnyDrag('outside'); }, true);
 
-function bindDrag(thumbId, what) {
+/* ★★ 2026-08-10 — **끄는 것과 누르는 것이 한 그림 위에서 갈린다.**
+   ------------------------------------------------------------
+   가방 격자 칸이 손잡이가 되면서, 같은 그림이 두 가지 일을 받게 됐다 —
+   **끌면** 그 자리에 놓고, **누르면** 「눌러서 배치」로 간다(박사님 원문 그대로).
+   ⚠ 여기를 위임(click)에만 맡기면 안 된다. 끌기 한 번이 끝난 뒤에도 브라우저가
+     `click` 을 마저 쏘기 때문에 **한 번 끌었는데 두 개가 서는** 일이 난다.
+   ⇒ 그래서 손가락이 **움직였나**로 가른다. 8px 은 손 떨림이 넘지 않는 폭이다.
+     그리고 어느 쪽이든 뒤따라오는 `click` 은 **먹어 버린다**(§suppressBagTap) —
+     `preventDefault` 로 click 이 막히는지는 브라우저마다 달라서 그걸 못 믿는다. */
+const TAP_SLOP_PX = 8;
+let suppressBagTap = 0;
+function bindDrag(thumbId, what, onTap) {
   const el = $(thumbId); if (!el) return;
   el.classList.add('draggable');
+  let from = null;
   el.addEventListener('pointerdown', (e) => {
     e.preventDefault();
+    from = { x: e.clientX, y: e.clientY };
     drag.begin(what, el.src || el.currentSrc, e);
     if (drag.on) { try { el.setPointerCapture(e.pointerId); } catch { } }
   });
   el.addEventListener('pointermove', (e) => drag.move(e));
-  el.addEventListener('pointerup', () => drag.end());
-  el.addEventListener('pointercancel', () => drag.end());
+  el.addEventListener('pointerup', (e) => {
+    const moved = !from || Math.hypot(e.clientX - from.x, e.clientY - from.y) > TAP_SLOP_PX;
+    from = null;
+    suppressBagTap = Date.now();           // 뒤따라오는 click 은 이 손짓의 메아리다
+    drag.end();
+    /* 안 움직였으면 **누른 것**이다 — 끌기는 방 밖에서 끝나 아무것도 안 했다 */
+    if (!moved && typeof onTap === 'function') { try { onTap(); } catch (e2) { console.warn('[가방] 누르기', e2); } }
+  });
+  el.addEventListener('pointercancel', () => { from = null; drag.end(); });
 }
+/* 방금 손잡이 위에서 끝난 손짓인가 — 그 메아리(click)는 새 누름이 아니다 */
+const bagTapEcho = () => Date.now() - suppressBagTap < 700;
 
 /* ══ 빨리감기 — **없앴다** (박사님 2026-08-09: *"빨리감기는 없애. 하루넘기기만 살리자."*)
    ------------------------------------------------------------

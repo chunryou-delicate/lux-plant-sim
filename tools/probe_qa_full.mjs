@@ -178,8 +178,9 @@ async function closeSheet() {
   if (still) found('심각', '시트(가방)가 스크림을 눌러도 안 닫힘', `${VIEW}: [가방] → 시트 위쪽 어두운 곳 탭`);
   return still ? '안닫힘' : '닫힘';
 }
-/* 시루 카드는 **상태에 따라 [가방]과 [식물] 사이를 오간다**(game.html §holdCard).
-   그러니 어느 탭인지 정하지 말고 **찾는다.** */
+/* ★★ 2026-08-10 — 시루 손잡이는 **[가방]의 격자 칸**이다(큰 카드는 없앴다).
+   ⚠ id 는 그대로 `cropThumb` 이라 아래 길은 안 바뀐다. 탭을 훑는 것도 그대로 둔다 —
+     칸이 어느 탭에 사는지를 이 도구가 알아야 할 이유가 없다. */
 async function findCropThumb() {
   for (const tab of ['tabBag', 'tabPlants']) {
     await openSheet(tab);
@@ -321,26 +322,28 @@ await calm();
   let th = got.th;
   /* ★ 안 보이면 **왜** 안 보이는지 잰다 — 짐작하지 않는다 */
   if (!(th && th.vis && th.w > 0)) {
+    /* ⚠ `cropCard` 는 없어졌다(2026-08-10). 칸(`.bagslot`)을 대신 잰다 — 없어도 안 터지게 */
     const why = await page.eval(`(()=>{ const e=document.getElementById('cropThumb'); if(!e) return {없음:true};
-      const card=document.getElementById('cropCard'); const cs=getComputedStyle(card);
-      const r=e.getBoundingClientRect(), cr=card.getBoundingClientRect();
-      const page=document.getElementById('pagePlants'); const pr=page.getBoundingClientRect();
+      const card=e.closest('.bagslot'); const cs=card?getComputedStyle(card):null;
+      const r=e.getBoundingClientRect(), cr=card?card.getBoundingClientRect():{left:0,top:0,width:0,height:0};
+      const page=document.getElementById('pageBag'); const pr=page.getBoundingClientRect();
       const top=document.elementFromPoint(Math.max(1,r.left+r.width/2), Math.max(1,r.top+r.height/2));
       return { 썸네일:[+r.left.toFixed(0),+r.top.toFixed(0),+r.width.toFixed(0),+r.height.toFixed(0)],
         카드:[+cr.left.toFixed(0),+cr.top.toFixed(0),+cr.width.toFixed(0),+cr.height.toFixed(0)],
-        카드display:cs.display, 카드visibility:cs.visibility, 카드높이:cs.height,
+        칸display:cs?cs.display:null, 칸visibility:cs?cs.visibility:null, 칸높이:cs?cs.height:null,
         판:[+pr.left.toFixed(0),+pr.top.toFixed(0),+pr.width.toFixed(0),+pr.height.toFixed(0)],
         판보임:page.offsetParent!==null, 판클래스:page.className,
         맨위:top?(top.id||top.className||top.tagName):null,
         스크롤:[page.scrollTop,page.scrollHeight,page.clientHeight] }; })()`);
     log('  시루 썸네일이 안 보인다 — 왜 ' + fp(why));
     /* 스크롤해서 나오나 */
-    await page.eval(`(()=>{const c=document.getElementById('cropCard'); c&&c.scrollIntoView({block:'center'});})()`, false);
+    await page.eval(`(()=>{const e=document.getElementById('cropThumb');
+      const c=e&&e.closest('.bagslot'); c&&c.scrollIntoView({block:'center'});})()`, false);
     await sleep(500);
     th = await rectOf('cropThumb');
     log('  스크롤 뒤 ' + fp(th));
     if (!(th && th.vis && th.w > 0))
-      found('심각', '시트 어느 탭에서도 콩나물 시루 카드가 화면에 안 나옴', `${VIEW}: [가방]·[식물] 탭 둘 다 → cropThumb (${fp(why)})`);
+      found('심각', '시트 어느 탭에서도 콩나물 시루 칸이 화면에 안 나옴', `${VIEW}: [가방]·[식물] 탭 둘 다 → cropThumb (${fp(why)})`);
   }
   log('시루 썸네일 ' + fp(th));
   await page.shot(`${OUT}/${TAG}_02_bag.png`);
@@ -361,16 +364,19 @@ await calm();
   if (!s.시루) {
     /* 끌어서 안 되면 [두기] 버튼 길로 한 번 더 — 어느 길이 막혔는지 갈라 본다 */
     found('심각', '끌어다 놓기로 시루가 안 놓임', `${VIEW}: [${got.tab}] 탭 → 시루 썸네일을 방으로 끌기`);
-    /* 끌어서 안 되면 [두기] 버튼 길로 한 번 더 — 어느 길이 막혔는지 갈라 본다.
-       ★ [두기]는 카드 안에 있고 카드는 탭 사이를 옮겨 다닌다 — 카드를 다시 찾는다 */
+    /* ★★ 2026-08-10 — [두기] 드롭다운 길은 **없어졌다**(길을 하나로 줄였다).
+       남은 둘째 길은 **칸을 누르는 것**이다 — 끌기와 같은 손잡이의 다른 손짓이라,
+       어느 쪽이 막혔는지는 여전히 갈라 볼 수 있다(§startPhonePlace). */
     await findCropThumb();
     const sel = await page.eval(`(()=>{const s=document.getElementById('cropSlot');
-      if(!s) return null; const r=s.getBoundingClientRect();
-      return {vis:s.offsetParent!==null&&r.height>0, 값:s.value, 칸수:s.options.length};})()`);
-    const pc2 = await tap('placeCrop'); await sleep(2400); await calm();
+      if(!s) return null;
+      return {숨은자료칸:true, 값:s.value, 칸수:s.options.length};})()`);
+    const pc2 = await page.eval(`(()=>{const b=document.querySelector('.bagslot[data-place="beansprout"]');
+      if(!b) return false; b.click(); return true;})()`);
+    await sleep(2400); await calm();
     s = await snap();
-    log('  [두기] 버튼 길 자리고르개=' + fp(sel) + ' 버튼=' + fp(pc2) + ' → 시루=' + s.시루);
-    if (!s.시루) found('치명', '[두기] 버튼으로도 시루가 안 놓임', `${VIEW}: 시루 카드 → [두기] (버튼=${fp(pc2)})`);
+    log('  [칸 누르기] 길 자리고르개=' + fp(sel) + ' 눌림=' + fp(pc2) + ' → 시루=' + s.시루);
+    if (!s.시루) found('치명', '칸을 눌러도 시루가 안 놓임', `${VIEW}: 가방 격자의 시루 칸 → 누르기 (눌림=${fp(pc2)})`);
   }
   await closeSheet();
   await page.shot(`${OUT}/${TAG}_03_placed.png`);

@@ -62,7 +62,10 @@ const snap = () => page.eval(`(()=>{ const S=window.__S(); const b=S.firstPlay.b
     who: document.getElementById('placeConfirmWho').textContent,
     warn: warnEl.style.display==='none' ? null : warnEl.textContent,
     stockSiru:(S.shop&&S.shop.stock&&S.shop.stock.siru)||0,
-    spareCard: document.getElementById('cropCard').style.display !== 'none'
+    /* ★★ 2026-08-10 — 「가방 카드」가 없어졌다. 세울 시루가 남아 있다는 표시는 이제
+       **가방 격자의 시루 칸**이다(박사님 "콩나물 시루 ×4 된 걸 누르거나 드래그").
+       이 검사가 지키던 뜻은 그대로 — [취소]해도 시루를 안 잃는다는 것을 화면에서 본다. */
+    spareCard: !!document.querySelector('.bagslot[data-place="beansprout"]')
   }; })()`);
 
 console.log('\n══ ① [빨리감기]가 없다 — 하루를 넘기는 손은 하나다 ═══════════════');
@@ -87,7 +90,13 @@ ok('②-0 아직 아무것도 안 놓였고 가방에 시루가 있다',
 ok('②-1 [확인] 바는 처음엔 안 보인다 (display:none — 포인터를 안 먹는다)',
    s.barVisible === false);
 
-ok('②-2 [방에 배치하기] 버튼이 있다', await clickId('cropPlaceStart'));
+/* ★ 2026-08-10 — 누르는 자리가 [📍 방에 배치하기] 단추에서 **가방 격자의 시루 칸**으로
+     옮겨졌다. 부르는 함수는 같다(startPhonePlace) — 손잡이만 하나로 줄었다. */
+const tapSiruCell = () => page.eval(`(()=>{
+  const b = document.querySelector('.bagslot[data-place="beansprout"]');
+  if (!b) return false; b.click(); return true; })()`);
+ok('②-2 ★가방 격자의 시루 칸을 **누를 수 있다** (예전 [📍 방에 배치하기] 자리)',
+   await tapSiruCell() === true);
 await sleep(1600); await clear();
 s = await snap();
 ok('②-3 ★누르면 방에 **임시로 서고 곧바로 이동 상태**가 된다 (배치 확정이 아니다)',
@@ -132,7 +141,7 @@ await page.eval(`(()=>{const S=window.__S(); S.shop=S.shop||{};
   S.shop.stock={...(S.shop.stock||{}), siru:1, bean_seed:2}; window.__redraw();})()`, false);
 await sleep(500);
 const before2 = await snap();
-await clickId('cropPlaceStart');
+await tapSiruCell();
 await sleep(1600); await clear();
 await page.eval(`(()=>{ const c=document.getElementById('roomCanvas').getBoundingClientRect();
   const x=c.left+c.width*0.5, y=c.top+c.height*0.62;
@@ -146,7 +155,7 @@ await sleep(1200);
 s = await snap();
 ok('②-14 ★취소하면 **가방으로 되돌아간다** (판에서 빠진다)',
    s.placed === before2.placed, `${before2.placed} → ${s.placed}`);
-ok('②-15 ★그때 시루를 **안 잃는다** — 가방 카드가 다시 보인다',
+ok('②-15 ★그때 시루를 **안 잃는다** — 가방 격자의 시루 칸이 다시 보인다',
    s.spareCard === true && s.pots === before2.pots + 1,
    JSON.stringify({ card: s.spareCard, pots: s.pots }));
 

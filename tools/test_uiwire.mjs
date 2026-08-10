@@ -120,7 +120,12 @@ const cropSnap = () => page.eval(`(()=>{ const S=window.__S();
   const rv = window.__rv;
   let shown = 0; const keys = [];
   try { for (const p of (rv.plants()||[])) if (p.kind==='beansprout') { shown++; keys.push(p.key); } } catch(e){}
-  const card = document.getElementById('cropCard');
+  /* ★★ 2026-08-10 — 「가방 카드」가 없어졌다. 손잡이는 **가방 격자의 시루 칸**이다
+     (박사님: "맨 위 콩나물 시루 큰 칸으로 된 저게 안 보이고, 밑에 그냥 콩나물 시루 ×4
+     된 걸 누르거나 드래그할 때마다 1개씩 배치"). 이 검사가 지키던 뜻은 그대로다 —
+     **가방에 세울 시루가 있으면 손잡이가 보이고, 없으면 사라진다.** 보는 곳만 옮긴다. */
+  const cell = [...document.querySelectorAll('.bagslot[data-place="beansprout"]')]
+               .find(v=>/시루/.test(v.getAttribute('title')||'')) || null;
   const pots = (b && b.pots) || [];
   return {
     pots: pots.length,
@@ -132,8 +137,11 @@ const cropSnap = () => page.eval(`(()=>{ const S=window.__S();
     stockSeed: (S.shop && S.shop.stock && S.shop.stock.bean_seed) || 0,
     shown, keys,
     rows: document.querySelectorAll('#siruList .siru').length,
-    cardHost: card && card.parentElement ? card.parentElement.id : null,
-    cardShown: card ? card.style.display !== 'none' : false,
+    cellQty: cell ? (cell.querySelector('.qty')||{}).textContent : null,
+    cellHost: cell && cell.closest('#bagGrid') ? 'bagGrid' : null,
+    cellShown: !!cell,
+    /* 손잡이가 죽지 않았는지 — 끌기가 붙잡는 그 id 가 칸 안에 살아 있나 */
+    thumbInCell: !!(cell && cell.querySelector('#cropThumb')),
     resowShown: document.getElementById('resow').style.display !== 'none',
     resowText: document.getElementById('resow').textContent
   }; })()`);
@@ -180,8 +188,8 @@ await sleep(1200); await skipTalk(); await sleep(400);
 
 let s = await cropSnap();
 ok('S-1 첫 시루가 방에 섰다 (1개)', s.placed === 1 && s.shown === 1, JSON.stringify(s));
-ok('S-2 다 놓으면 가방 카드가 **사라진다** (빈 용기가 없으므로)',
-   s.cardHost === 'bagHold' && s.cardShown === false, `${s.cardHost} · shown=${s.cardShown}`);
+ok('S-2 다 놓으면 가방의 시루 칸이 **사라진다** (빈 용기가 없으므로)',
+   s.cellShown === false, `칸=${s.cellShown} · ×${s.cellQty}`);
 ok('S-2b [식물]에 그 시루 한 줄이 생겼다', s.rows === 1, s.rows);
 
 /* 시루 2개 · 씨앗 5봉지를 산 상태로 만든다 */
@@ -190,8 +198,9 @@ await sleep(400);
 s = await cropSnap();
 ok('S-3 시루를 사도 판에 선 수는 그대로 1이다 (자동 배치가 없다)',
    s.placed === 1 && s.shown === 1, JSON.stringify({ placed: s.placed, shown: s.shown }));
-ok('S-4 산 시루가 있으면 카드가 **가방에서 다시 보인다**',
-   s.cardHost === 'bagHold' && s.cardShown === true, `${s.cardHost} · shown=${s.cardShown}`);
+ok('S-4 산 시루가 있으면 칸이 **가방 격자에서 다시 보인다** (끌기 손잡이째로)',
+   s.cellHost === 'bagGrid' && s.cellShown === true && s.thumbInCell === true,
+   `${s.cellHost} · ${s.cellQty} · thumb=${s.thumbInCell}`);
 ok('S-5 [심기] 버튼이 산 시루를 말하지 않는다', !/새 시루/.test(s.resowText), s.resowText);
 
 /* [심기]를 눌러도 산 시루가 안 나간다 — 이 버튼은 거둔 것만 다시 심는다 */
