@@ -89,9 +89,31 @@ const openCrop = () => page.eval(`(()=>{
   }; })()`);
 const closeDetail = () => page.eval(`(()=>{document.getElementById('dClose').click();return true;})()`, false);
 
+/* ★ 그림도 같은 말을 해야 한다 (2026-08-10 신설).
+     글은 「빈 시루」라고 하는데 그림이 **콩나물이 다 자란 열린 시루**였다 —
+     B-1~B-7 이 글만 읽어서 그 어긋남을 통째로 놓쳤다. 그림은 글보다 먼저 읽힌다.
+   ⚠ `src` 가 아니라 `currentSrc`·`naturalWidth` 를 본다. src 는 문자열일 뿐이고,
+     파일이 없어도 통과한다 — **브라우저가 실제로 받아 그린 것**을 재야 한다.
+   ⚠ 방에 서는 시루는 그대로 **열린** 시루다(3D `container_siru_open.glb`). 가방만 뚜껑이다. */
+const BAG_PIC = 'container_siru_closed.png';   // 뚜껑 덮인 = 아직 안 심은 빈 용기
+const picOf = s => (s || '').replace(/^.*\//, '').replace(/\?.*$/, '');
+const headPic = await page.eval(`(()=>{const e=document.getElementById('cropThumb');
+  return e ? { pic:e.currentSrc||e.src, w:e.naturalWidth } : null;})()`);
+ok('B-a ★★ 가방 카드 머리 그림이 **뚜껑 덮인 시루**다',
+   picOf(headPic && headPic.pic) === BAG_PIC, picOf(headPic && headPic.pic));
+ok('B-b ★ 그 그림이 실제로 로드됐다 (깨진 경로가 아니다)',
+   (headPic && headPic.w) > 0, headPic && headPic.w);
+
 let d = await openCrop();
 ok('B-0 가방 카드를 누르면 상세 창이 뜬다', !!(d && d.on), JSON.stringify(d && d.title));
 await shot('bagcard_empty');
+const detPic = await page.eval(`(()=>{const a=document.getElementById('dArt');
+  return a ? { pic:a.currentSrc||a.src, w:a.naturalWidth } : null;})()`);
+ok('B-c ★ 상세 창 그림도 **뚜껑 덮인 시루**다',
+   picOf(detPic && detPic.pic) === BAG_PIC, picOf(detPic && detPic.pic));
+ok('B-d ★ 상세 창 그림도 로드됐다', (detPic && detPic.w) > 0, detPic && detPic.w);
+/* 가방 **격자**(BAG_ART) 칸은 맨 끝에서 본다 — §A. 상점 재고를 넣어야 그려지는데,
+   여기서 넣으면 뒤따르는 G·W·D 가 세는 개수가 같이 움직인다. */
 ok('B-1 제목이 「콩나물 시루」다 (「열린」이 안 붙는다)',
    d.title === '콩나물 시루', d.title);
 ok('B-2 ★ 「자란 날」이 **없다**', !/자란\s*날/.test(d.body), d.body.slice(0, 90));
@@ -230,6 +252,30 @@ ok('M-1 무순 칸에도 칸 게이지가 있다', !!m, JSON.stringify(m));
 ok('M-2 ★★ 무순은 **7칸**이다 (5를 박아 뒀으면 여기서 걸린다)', m && m.n === 7, m && m.n);
 ok('M-3 안 심었으면 찬 칸이 0이다', m && m.on === 0, m && m.on);
 await shot('cells_musun7');
+
+/* ══ A. 가방 **격자** 칸도 빈 용기다 ═══════════════════════════════════
+   상점에서 사서 쟁여 둔 것도 「아직 안 심은 것」이다 — 격자는 `BAG_ART` 를 읽는다.
+   ⚠ 격자는 **상점 재고가 있어야** 그려진다(`drawBag` 의 `have>0`). 첫 플레이가 들고
+     시작하는 시루는 상점 재고가 아니라서, 재고를 넣어야 이 칸이 화면에 선다.
+   ⚠ 그래서 **맨 끝**에 둔다 — 재고를 넣으면 앞의 개수 검사들이 같이 움직인다. */
+console.log('\n══ A. 가방 격자 칸도 **빈 용기**다 ════════════════════════════');
+await page.eval(`(()=>{ const S=window.__S();
+  S.shop = S.shop || {}; S.shop.stock = S.shop.stock || {};
+  S.shop.stock.siru = (S.shop.stock.siru||0) + 3;
+  window.__redraw();
+  try{ window.__byeotSheet.open(); window.__byeotSheet.tab && window.__byeotSheet.tab('bag'); }catch(e){}
+  const g=document.getElementById('bagGrid'); if(g) g.scrollIntoView({block:'center'});
+  return true; })()`, false);
+await sleep(1000);
+const slotPic = await page.eval(`(()=>{ const b=[...document.querySelectorAll('.bagslot')]
+    .find(v=>/시루/.test(v.getAttribute('title')||''));
+  if(!b) return null; const i=b.querySelector('img');
+  return i ? { pic:i.currentSrc||i.src, w:i.naturalWidth } : { pic:null, w:0 }; })()`);
+ok('A-1 가방 격자에 시루 칸이 섰다', !!slotPic, JSON.stringify(slotPic));
+ok('A-2 ★★ 격자 칸 그림도 **뚜껑 덮인 시루**다', !!slotPic && picOf(slotPic.pic) === BAG_PIC,
+   slotPic && picOf(slotPic.pic));
+ok('A-3 ★ 그 그림이 실제로 로드됐다', !!slotPic && slotPic.w > 0, slotPic && slotPic.w);
+await shot('baggrid_empty_siru');
 
 /* ══ 콘솔에 처리 안 된 예외가 없다 ═════════════════════════════════════ */
 console.log('');

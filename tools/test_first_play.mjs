@@ -98,7 +98,12 @@ function growCycle(dli) {
 {
   const fp = createFirstPlayState({ rules: TEST_RULES });
   assert.equal(fp.phase, 'place_beansprout');
-  assert.throws(() => growDay(fp, 0.2), /자리/);
+  /* ⚠ 2026-08-10 — 문구가 「자리」에서 「시루를 먼저 방 안에 놓아 주세요」로 바뀌었다(f26aeef).
+     문지기가 자리 사본이 아니라 **방에 선 시루**를 세게 되면서다. 지킬 것은 문구가 아니라
+     「안 놓았으면 하루가 안 간다 · 그것이 복구 가능한 안내다」이므로, 둘 다 받고
+     `firstPlayInput` 표를 같이 본다 — 표가 없으면 화면이 복구 불가로 읽고 버튼을 잠근다. */
+  assert.throws(() => growDay(fp, 0.2),
+    e => /자리|방 안에 놓/.test(e.message) && e.firstPlayInput === true);
 
   placeBeansprout(fp, 'banjiha-dresser:1');
   /* ★★ 물을 줘야 시작한다 — 놓기만 해서는 하루가 가도 안 자란다(§물주기) */

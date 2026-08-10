@@ -1801,7 +1801,15 @@ let lastTurn = null;
    그래서 옮긴 직후 한 프레임 동안 카드는 "창턱 화분받침"인데 퀘스트는 "옮겨 보세요"였다 —
    두 곳이 서로 다른 말을 하면 플레이어는 자기 선택이 먹혔는지 알 수 없다. */
 let arrivalSlotId = null;
-$('cropThumb').src = OPEN_SIRU.thumbnail;
+/* ★★ 가방 카드 머리 그림은 **뚜껑 덮인 빈 시루**다 (2026-08-10 · 계약은 growth 가 냈다).
+     카드 글은 "아직 아무것도 안 선 **빈 시루**"라고 말하는데 그림은 콩나물이 다 자란
+     열린 시루였다 — 글과 그림이 서로 다른 말을 했고, 그림이 먼저 읽힌다.
+   ★ 근거: 콩나물 시루는 원래 **차광 용기**라 뚜껑을 덮어 기른다. 뚜껑 덮인 모습이
+     「아직 안 심은 것」이고, 열린 시루는 「자라는 중」의 그림이다.
+   ⚠ **방에 서는 시루는 그대로 열린 시루다**(3D `container_siru_open.glb`). 가방만 뚜껑이다.
+   ⚠ 이 줄이 곧 **끌기**다 — `bindDrag` 가 `el.src` 를 미리보기로 그대로 쓴다(§bindDrag).
+     그림만 바뀌고 끌기 경로는 안 바뀐다. 파일 이름을 여기 적지 않는다 — 계약 칸을 읽는다. */
+$('cropThumb').src = OPEN_SIRU.bagThumbnail;
 /* 무순 칸 그림 — 콩나물이 manifest 에서 오는 것과 같은 자리다.
    ⚠ 파일 이름을 여기 적는 것은 콩나물이 `openSiruContractFromManifest` 를 갖는 것과 달리
      무순엔 아직 계약 함수가 없어서다. 계약이 생기면 그때 갈아탄다(그때까지는 이 한 줄이 정본). */
@@ -2285,7 +2293,9 @@ const detail = {
     try { days = cropKindOf('beansprout').harvestDays || 0; } catch { }
     if (!days) days = (S.firstPlay.rules && S.firstPlay.rules.harvestDays) || 5;
     return {
-      art: OPEN_SIRU.thumbnail, title: '콩나물 시루',
+      /* ★ 상세 창 그림도 **뚜껑 덮인 빈 시루**다 — 이 창이 말하는 것이 빈 용기다(위 ⚠).
+         머리 그림만 고치고 여기를 두면, 카드는 빈 시루인데 눌러서 연 창은 다 자란 시루가 된다. */
+      art: OPEN_SIRU.bagThumbnail, title: '콩나물 시루',
       sub: spare > 0 ? `가방에 ${spare}개` : '가방에 없음',
       body: `<div class="row"><span>가방에 남은 것</span><b>${spare}개</b></div>`
         + (standing ? `<div class="row"><span>방에 서 있는 것</span><b>${standing}개</b></div>` : '')
@@ -2824,7 +2834,10 @@ function drawCuttings() {
    ★ 배송 중인 것도 **같은 격자에** 흐리게 둔다. 「없다」와 「오는 중」은 다른 상태고,
      그 둘이 화면에서 같아 보이면 이미 시킨 것을 또 시킨다. */
 const BAG_ART = Object.freeze({
-  siru:          './assets/crops/thumbs/container_siru_open.png',
+  /* ★ 상점에서 사서 가방에 쟁인 것도 **빈 용기**다 — 뚜껑 덮인 그림을 쓴다(2026-08-10).
+     ⚠ 격자는 계약 객체(`OPEN_SIRU`)가 없는 자리라 파일 이름을 적는다. 계약이 이 표까지
+       내주게 되면 그때 갈아탄다 — 지금 지어내면 두 곳이 서로 다른 정본이 된다. */
+  siru:          './assets/crops/thumbs/container_siru_closed.png',
   sprout_tray:   './assets/crops/thumbs/container_tray_s.png',
   bean_seed:     './assets/crops/thumbs/seed_dicot.png',      // 콩은 쌍떡잎
   radish_seed:   './assets/crops/thumbs/seed_dicot.png',      // 무도 쌍떡잎

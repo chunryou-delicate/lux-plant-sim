@@ -147,12 +147,25 @@ data/balance/   plan  — 튜닝값
 **이게 고장처럼 보인다는 게 함정이다.** 2026-08-09 에 실제로 이걸 회귀로 착각해서,
 멀쩡한 코드를 의심하며 한참을 태웠다. 다섯 개가 "실패"로 찍혔는데 전부 서버가 없어서였다.
 
-포트는 전부 `BYEOT_URL` 로 덮인다. **서버 하나만 띄우고 그 주소를 넘기면 된다.**
+포트는 **`tools/test_boot_profile.mjs` 하나만 빼고** 전부 `BYEOT_URL` 로 덮인다.
+서버 하나만 띄우고 그 주소를 넘기면 된다.
+
+> ⚠ **예외는 `tools/test_boot_profile.mjs` 하나다 (2026-08-10 확인).**
+> 이 파일은 `BYEOT_URL` 을 **안 읽는다.** 기본 주소가 `http://localhost:8971/game.html` 로
+> 박혀 있고, 받는 손잡이는 **`--url=` 인자뿐**이다. 8963 에 서버를 띄우고 이것만 그냥 돌리면
+> 8971 을 두드리다 시간 초과하고, 그게 **회귀처럼 보인다** — 2026-08-09 에 여기서 헛돌았다.
+> 그러니 이 하나는 `--url=` 을 따로 넘긴다.
 
 ```bash
 python tools/serve.py 8963                       # 켜 두고
-export BYEOT_URL=http://localhost:8963           # 전 검사에 적용된다
-for f in tools/test_*.mjs; do node "$f" || echo "FAIL $f"; done
+export BYEOT_URL=http://localhost:8963           # 이것만으로 덮이지 않는 파일이 하나 있다
+for f in tools/test_*.mjs; do
+  case "$f" in
+    *test_boot_profile.mjs) node "$f" --url=http://localhost:8963 ;;   # ← 예외. --url 을 줘야 한다
+    *)                      node "$f" ;;
+  esac
+  [ $? -eq 0 ] || echo "FAIL $f"
+done
 ```
 
 - 전체는 10분을 넘긴다. **앞에서 자르지 말고 백그라운드로** 돌린다.
@@ -166,4 +179,5 @@ for f in tools/test_*.mjs; do node "$f" || echo "FAIL $f"; done
 | 찍힌 것 | 뜻 |
 |---|---|
 | `기다리다 지쳤습니다: !!window.view` | **거의 항상 서버·주소 문제다.** 코드를 의심하기 전에 위를 먼저 확인 |
+| `test_boot_profile` 만 시간 초과 | `--url=` 을 안 넘겼다. 이 파일은 `BYEOT_URL` 을 안 읽는다(위 예외) |
 | `ERR_ASSERTION` + actual/expected | 진짜 회귀다 |

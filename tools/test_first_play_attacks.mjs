@@ -291,7 +291,10 @@ function firstPlayState(slotId = 'dark') {
 /* ── 7. 미배치는 복구 가능한 안내다(상태를 건드리지 않는다) ── */
 {
   const fp = createFirstPlayState({ rules: RULES });
-  assert.throws(() => advanceBeansproutDay(fp, 0.2), /자리/);
+  /* ⚠ 2026-08-10 — 문구가 바뀌었다(f26aeef · 문지기가 방에 선 시루를 센다).
+     지킬 것은 문구가 아니라 「안 놓았으면 안 자라고, 그것이 복구 가능한 안내다」다. */
+  assert.throws(() => advanceBeansproutDay(fp, 0.2),
+    e => /자리|방 안에 놓/.test(e.message) && e.firstPlayInput === true);
   assert.equal(fp.beansprout.ageDays, 0);
   assert.equal(fp.beansprout.slotId, null);
   /* ★★ 놓기만 해서는 안 자란다 — 물이 **회전 시작**이다 (2026-08-04 새 규칙 · §물주기).
