@@ -892,6 +892,28 @@
   #report h4{font-weight:700;font-size:12px;margin-bottom:6px;color:#fff}
   .note{font-size:10.5px;color:rgba(255,255,255,.38);margin-top:7px;line-height:1.5}
   .err{padding:12px;background:rgba(255,90,70,.15);border-radius:10px;font-size:12px;line-height:1.6}
+  /* ══ 오류 상자 — **하나만 산다** (2026-08-10) ═══════════════════════════
+     박사님 사진: 같은 경고가 두 번씩 · 두 종류가 **네 개** 쌓여 무대와 버튼을 덮었다.
+     예전엔 `insertAdjacentHTML('afterbegin', …)` 로 **앞에 붙이기만 하고 안 지웠다.**
+     2026-08-08 에 배너(#event)에서 이미 고친 그 병이라 **같은 규칙을 그대로 쓴다**:
+       ① 같은 말은 한 번만(횟수만 ×N 으로 적는다) ② 많아야 셋, 나머지는 「…외 N개」
+       ③ 누르면 사라진다 ④ 높이 상한을 두고 넘으면 상자 안에서 스크롤
+     ⚠ ⑤ **꺼진 상자는 포인터를 안 먹는다.** 안 보이는 상자가 무대를 가로채면
+       아무것도 못 누른다 — 이 저장소에서 #dlg 로 한 번 겪은 그 고장이다(§대화 ★).
+     ⚠ 아래쪽 여백(bottom)은 **하단 액션바 높이만큼** 코드가 그때그때 잰다.
+       px 로 박으면 폰마다 바 높이가 달라 버튼을 덮는다. */
+  #errBox{position:fixed;left:50%;transform:translateX(-50%);z-index:60;
+    width:min(92vw,430px);bottom:20px;display:none;pointer-events:none;
+    flex-direction:column;gap:6px;
+    max-height:38dvh;overflow-y:auto;-webkit-overflow-scrolling:touch}
+  #errBox.on{display:flex;pointer-events:auto;cursor:pointer}
+  #errBox .err{background:rgba(96,22,16,.95);border:1px solid rgba(255,90,70,.45);
+    color:#ffd9d2;box-shadow:0 6px 22px rgba(0,0,0,.5)}
+  #errBox .err i{font-style:normal;color:#ff9c8c;font-weight:700}
+  /* 닫는 법을 적는 줄. **바탕을 준다** — 안 주면 뒤에 있는 게이지 글자와 겹쳐 안 읽힌다 */
+  #errBox .errclose{align-self:center;font-size:11px;color:rgba(255,255,255,.7);
+    padding:3px 12px;border-radius:999px;background:rgba(20,16,28,.92);
+    border:1px solid rgba(255,255,255,.12)}
   .sparkleg{display:flex;gap:9px;flex-wrap:wrap;font-size:10px;margin-top:3px}
   /* ★ 이벤트 배너 — 갈라짐이 켜지는 순간. v0가 증명하려는 것이 이 한 줄이다 */
   #event{position:absolute;left:50%;top:34px;transform:translate(-50%,-14px);z-index:9;
@@ -1681,12 +1703,58 @@ const $ = (id) => document.getElementById(id);
    guard() 가 오류를 적으려고 `side.insertAdjacentHTML` 을 부르는 순간 **거기서 또 터졌다.**
    잠그는 줄은 그 앞이라 **잠금만 걸리고 설명은 사라졌다** — 화면이 통째로 회색이 되는데
    아무 말도 안 뜨는 그 증상이 이것이다. 오류를 알리는 길이 오류로 끊기면 최악이다.
-   ⇒ 살아 있는 곳을 그때그때 고른다. `document.body` 는 언제나 있으므로 **null 이 될 수 없다.** */
-const side = {
-  insertAdjacentHTML(where, html) {
-    ($('side') || $('bottom') || document.body).insertAdjacentHTML(where, html);
+   ⇒ 살아 있는 곳을 그때그때 고른다. `document.body` 는 언제나 있으므로 **null 이 될 수 없다.**
+
+   ★★ 2026-08-10 — 그 뒤 **쌓이는 것**이 문제가 됐다(박사님 사진: 상자 넷이 무대를 덮었다).
+     `#side` 는 없으므로 오류가 전부 `#bottom`(하단 액션바) **앞에** 붙었고, 지우는 곳이
+     없어 누를 때마다 바가 자라 버튼을 밀어냈다. 이제 상자는 **하나만** 산다 —
+     규칙은 위 CSS §오류 상자 에 적었다(배너 #event 에서 세운 것과 같은 규칙이다). */
+const errBox = (() => {
+  /* 같은 말 → 몇 번 났나. Map 이라 **넣은 순서**가 유지된다 — 처음 난 것이 위에 남는다 */
+  const seen = new Map();
+  let el = null;
+  function box() {
+    if (el && el.isConnected) return el;
+    el = document.getElementById('errBox');
+    if (!el) {
+      el = document.createElement('div');
+      el.id = 'errBox';
+      /* 상자 어디를 눌러도 닫힌다 — 읽었으면 치울 수 있어야 한다 */
+      el.onclick = () => clear();
+      document.body.appendChild(el);
+    }
+    return el;
   }
-};
+  function clear() {
+    seen.clear();
+    const b = box();
+    b.classList.remove('on');
+    b.innerHTML = '';
+  }
+  /* html 은 이미 만들어진 상자 속 내용이다(제목<br>본문). 같으면 접는다. */
+  function push(html) {
+    seen.set(html, (seen.get(html) || 0) + 1);
+    const rows = [...seen.entries()];
+    const MAX = 3;
+    const shown = rows.slice(0, MAX);
+    const rest = rows.length - shown.length;
+    const b = box();
+    b.innerHTML =
+      shown.map(([h, n]) => `<div class="err">${h}${n > 1 ? ` <i>×${n}</i>` : ''}</div>`).join('') +
+      (rest > 0 ? `<div class="err">…외 ${rest}개</div>` : '') +
+      '<div class="errclose">눌러서 닫기</div>';
+    /* ⚠ 하단 액션바를 **덮지 않게** 그 높이만큼 띄운다. 바 높이는 폰마다·상태마다
+       달라(물주기 버튼이 떴다 사라졌다 한다) px 로 박으면 반드시 어긋난다. */
+    let up = 20;
+    try {
+      const nav = document.getElementById('bottom');
+      if (nav) up = Math.round(nav.getBoundingClientRect().height) + 10;
+    } catch { }
+    b.style.bottom = up + 'px';
+    b.classList.add('on');
+  }
+  return { push, clear };
+})();
 
 /* ---- 데이터 (house = 구조·에셋 / balance = plan 소유 튜닝값) ---- */
 const j = (p, fb) => fetch(p).then(r => r.json()).catch(() => fb);
@@ -3398,7 +3466,11 @@ function drawWater() {
     ? (wait > 1 ? `💧 ${ko} 한 시루에 물 주기 (${wait}개 대기)`
        : st.idleDays > 0 ? `💧 ${ko}에 물 주기 (${st.idleDays}일째 대기)`
        : `💧 ${ko}에 물 주기`)
-    : '💧 전부 자라는 중';
+    /* ★ 2026-08-10 — **주어를 적는다**(박사님 사진: 「물을 줬습니다 · 오늘이 0일차입니다」
+       배너 밑에서 이 줄이 「전부 자라는 중」이라 하고, 그 밑 몬스테라 줄은 「아직 촉촉합니다」라
+       해서 세 줄이 서로 딴 얘기를 하는 것처럼 보였다. 실은 **셋이 다른 식물 얘기**였다 —
+       주어가 빠져서 한 판을 두고 셋이 싸우는 것처럼 읽혔을 뿐이다). */
+    : '💧 작물은 전부 자라는 중';
 }
 
 /* ══ 몬스테라 물주기 (2026-08-07 박사님 확정) ═══════════════════════════
@@ -3438,7 +3510,10 @@ function drawPotWater() {
     ? `💧 몬스테라에 물 주기 (${st.dryDays - st.interval}일째 멈춰 있습니다)`
     : st.canWater
       ? '💧 몬스테라에 물 주기'
-      : `💧 아직 촉촉합니다 (${st.leftDays - 2}일 뒤)`;
+      /* ★ 2026-08-10 — 여기도 **주어를 적는다**(위 drawWater 의 같은 정정).
+         마른 줄·줄 수 있는 줄은 「몬스테라」라고 하는데 이 줄만 주어가 없어서,
+         작물 얘기로 읽혔다. 같은 판을 두고 화면이 딴말하는 것처럼 보이던 것이 이것이다. */
+      : `💧 몬스테라는 아직 촉촉합니다 (${st.leftDays - 2}일 뒤)`;
 }
 
 /* ══ 할 일 말풍선 (박사님 2026-08-04) ═══════════════════════════════════
@@ -4172,7 +4247,13 @@ function unlockAfterFix() {
 
 function guard(fn) {
   return (...a) => {
-    try { return fn(...a); }
+    try {
+      const r = fn(...a);
+      /* ★ 성공하면 옛 오류 상자를 치운다 (2026-08-10) — 고친 뒤에도 붉은 상자가 남아 있으면
+         플레이어는 여전히 막혀 있다고 읽는다. 무슨 일이 몇 번 났는지는 기록에 그대로 남는다. */
+      errBox.clear();
+      return r;
+    }
     catch (e) {
       const recoverable = isRecoverable(e);
       if (!recoverable) { GATED.forEach(id => { $(id).disabled = true; }); document.body.dataset.hardLock = '1'; }
@@ -4188,11 +4269,17 @@ function guard(fn) {
         growth_input_recorded: '날짜는 되감았지만 growth에 오늘 빛 입력이 남았을 수 있습니다',
         growth_advanced: 'growth는 하루 진행됐고 이 턴 결과만 받지 못했습니다',
         unknown: 'growth 진행 여부를 확인할 수 없어 상태를 잠갔습니다'
-      }[e.turnState] || (recoverable ? '고친 뒤 다시 [다음 날]을 누르면 됩니다'
+      }[e.turnState] || (recoverable ? '고친 뒤 다시 눌러 주세요'
                                      : '진행 상태를 확인할 수 없어 멈췄습니다');
-      side.insertAdjacentHTML('afterbegin',
-        `<div class="err">${recoverable ? '⚠ 오늘은 진행되지 않았습니다' : '⛔ 진행을 멈췄습니다'} — ` +
-        `${stateText}<br>${e.message}</div>`);
+      /* ★ 2026-08-10 — 머리말이 **하루 얘기를 하지 않는다.** `guard` 는 버튼 전부가 쓰는데
+         예전 머리말은 늘 「오늘은 진행되지 않았습니다 — 고친 뒤 다시 [다음 날]을 누르면 됩니다」였다.
+         그래서 [다시 심기]가 실패해도 화면이 **하루가 막혔다고 말했다** — 실제로는 안 막힌다.
+         박사님 사진에서 「다시 심기 실패」와 「하루 안 넘어감」이 같은 말로 읽힌 까닭이 이것이다.
+         ⚠ 무엇이 안 됐는지는 **`e.message` 가 이미 말한다**(「…다시 심습니다」·「…놓아 주세요」).
+           머리말은 「됐나 안 됐나」와 「고칠 수 있나」만 말한다. */
+      errBox.push(
+        `${recoverable ? '⚠ 안 됐습니다' : '⛔ 진행을 멈췄습니다'} — ` +
+        `${stateText}<br>${e.message}`);
       console.error(e);
     }
   };
@@ -4227,9 +4314,40 @@ function showFirstPlayEvents(turn) {
   if (ids.length) dlgOpen(ids);
 }
 
+/* ══ [다음 날] 문지기 — **방에 선 시루가 하나라도 있나** ══════════════════
+   ★★ 2026-08-10 · 박사님 Day 92 판이 여기서 멈췄다.
+   ------------------------------------------------------------
+   예전 조건은 `S.firstPlay.beansprout.slotId` **하나**였다. 시루가 각개가 되면서
+   자리의 정본은 **시루마다**(`pots[i].slotId` / `pots[i].at`)로 내려왔고,
+   `beansprout.slotId` 는 대표 시루의 **읽기용 사본**일 뿐이다
+   (first_play.js §자리는 시루마다 따로다 · §syncCropLead).
+   ⇒ 사본이 비면 방에 시루가 멀쩡히 서 있어도 하루가 안 넘어갔다.
+
+   고친 것 셋:
+     ① **시루를 센다.** 창구는 이미 있었다 — `cropPotList(fp, day)` 의 `placed`
+        (= `placedCropPots` 와 같은 판정). 자리 사본은 안 본다.
+     ② ⚠ **콩나물만 안 본다.** `cropPotList` 는 `cropSites` 전부를 훑으므로
+        무순만 놓은 판도 하루가 간다. 예전 문구는 늘 「콩나물 시루」라고 말해
+        무순 재배판을 놓은 사람에게 거짓말을 했다.
+     ③ ★ 세면서 **사본을 고쳐 놓는다**(`syncCropLead`). loop.js 가 아직
+        `beansprout.slotId` 로 「오늘 작물을 자라게 할까」를 가르기 때문이다
+        (src/game/loop.js:594). 사본이 빈 채로 넘기면 하루는 가는데 작물만 안 자라는,
+        더 조용한 고장이 된다. `syncCropLead` 는 pots 에서 사본을 다시 세울 뿐이라
+        (없으면 아무 일도 안 한다) 여러 번 불러도 안전하다.
+        ⚠ 그 세 줄(loop.js:594 · first_play.js §advanceBeansproutDay 첫 줄 · loop.js:1329)은 **코어 소유**라
+          손대지 않았다 — 붙일 코드까지 `docs/handoff/nextdaygate-to-plan.md` 에 적었다.
+          코어가 셋을 고치면 여기 `syncCropLead` 한 줄은 없어도 된다(지금은 보험이다).
+   ⚠ **하나도 안 놓았으면 계속 막는다.** 그건 옳은 안내다(첫날의 그 안내다). */
+function placedCropRows() {
+  const fp = S.firstPlay;
+  if (!fp || !fp.enabled) return [];
+  try { for (const site of cropSites(fp)) syncCropLead(site); } catch { }
+  try { return cropPotList(fp, S.day).filter(r => r.placed); } catch { return []; }
+}
+
 $('next').onclick = guard(() => {
-  if (!S.firstPlay.beansprout.slotId) {
-    const e = new Error('가방의 콩나물 시루를 먼저 방 안에 놓아 주세요');
+  if (S.firstPlay && S.firstPlay.enabled && !placedCropRows().length) {
+    const e = new Error('가방의 시루를 먼저 방 안에 놓아 주세요');
     e.firstPlayInput = true;                 // 안내지 고장이 아니다 — 버튼을 잠그지 않는다
     throw e;
   }
@@ -4511,6 +4629,9 @@ async function bootRoomView() {
        검사가 상태를 만들어 놓고 화면이 그걸 따라오는지 보려면 이 한 걸음이 필요하다.
        ⚠ 게임은 이걸 안 쓴다(draw() 를 직접 부른다). 밖에서만 쓰는 진단용이다. */
     window.__redraw = () => { try { draw(); } catch (e) { console.warn('[진단] 다시 그리기', e); } };
+    /* ★ 오류 상자 — 검사가 「같은 말이 접히나 · 눌러서 닫히나」를 밖에서 잴 수 있게
+       (tools/test_nextday_gate.mjs). 게임은 이 손잡이를 안 쓴다. */
+    window.__errBox = errBox;
     $('stage').classList.add('room-ok');     /* 방이 떴다 — 빈 무대 안내를 걷는다 */
     bootProgress(null);                      /* 진행 표시를 걷는다 */
     showGpuInfo();
@@ -6688,8 +6809,7 @@ $('play').onclick = () => playScenario(SCENARIOS.find(s => s.id === $('scen').va
     document.body.classList.remove('scen-run');
     if (!isRecoverable(e)) { GATED.forEach(id => { $(id).disabled = true; }); document.body.dataset.hardLock = '1'; }
     pushLog(S, '⛔ ' + e.message); renderLog($('log'), S);
-    side.insertAdjacentHTML('afterbegin',
-      `<div class="err">⛔ 시나리오를 멈췄습니다 — 상태 ${e.turnState || 'unknown'}<br>${e.message}</div>`);
+    errBox.push(`⛔ 시나리오를 멈췄습니다 — 상태 ${e.turnState || 'unknown'}<br>${e.message}`);
     console.error(e);
   });
 $('stop').onclick = () => { stopFlag = true; };
@@ -6703,7 +6823,7 @@ $('firstRun').onclick = confirmOnce('지금 판을 지웁니다?', () => playFir
   $('firstResult').className = 'simresult on fail';
   $('firstResult').dataset.status = 'fail';
   $('firstResult').textContent = `⛔ ${e.message}`;
-  side.insertAdjacentHTML('afterbegin', `<div class="err">⛔ 첫 플레이 시뮬레이션 실패<br>${e.message}</div>`);
+  errBox.push(`⛔ 첫 플레이 시뮬레이션 실패<br>${e.message}`);
   console.error(e);
 }));
 

@@ -886,10 +886,10 @@ GLB 원본 대각선 0.4327 로는 반지하 14칸 중 **책상 2칸**만 받았
 - ★★ **이사하면 거둔 적 있는 작물이 통째로 가방으로 간다** — `oneroom.js:288` `reseatCrops` 가
   `site.harvested`(=하나라도 거뒀나)로 자리 통째를 건너뛴다. 아무 말도 안 해서
   「이사했더니 판이 멈췄다」로 보인다. Day 92 가 이 길일 가능성이 높다
-- ★ `first_play.js:1349` `advanceBeansproutDay` 도 같은 문지기다. 이 예외에는 `firstPlayInput`
+- ★ `first_play.js` 의 `advanceBeansproutDay` 첫 줄도 같은 문지기다. 이 예외에는 `firstPlayInput`
   표가 없어서 화면이 **복구 불가로 읽고 버튼을 전부 잠근다**(hardLock). 재서 확인했다
 대기:
-- core — 위 세 줄(`loop.js:594` · `first_play.js:1349` · `loop.js:1329`). 붙일 코드는
+- core — 위 세 줄(`loop.js:594` · `first_play.js §advanceBeansproutDay 첫 줄` · `loop.js:1329`). 붙일 코드는
   `docs/handoff/nextdaygate-to-plan.md §다른 창이 알아야 할 것`
 판단필요:
 - ★ **이사 시 시루 회수를 시루마다 판단할까** (거둔 것만 가방 / 지금대로 두되 말은 하기)
