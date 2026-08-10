@@ -2481,11 +2481,26 @@ export async function createRoomView(canvas, opts = {}) {
   }
 
   /* 빈 슬롯은 점이라 광선으로는 손가락에 안 잡힌다 — 화면 거리로 가장 가까운 것.
-     하이라이트 중이면 그 자리들만 본다(놓기 모드에서 엉뚱한 자리가 잡히지 않게). */
+     하이라이트 중이면 그 자리들만 본다(놓기 모드에서 엉뚱한 자리가 잡히지 않게).
+
+     ★★ 2026-08-10 — **놓여 있는 그루도 이 그물에 넣는다** (박사님 "콩나물이 안 눌러진다").
+     ------------------------------------------------------------
+     ⚠ 예전 그물은 `slotById` 뿐이었다. 그런데 시루는 **자유 좌표**로 서므로
+       `slotById` 에 없다 — 즉 자유 좌표로 놓인 것은 `pickPlantRay` 의 **정확한 광선**
+       하나로만 잡혔고, 퍼지 30px 은 한 톨도 못 받았다.
+     ⚠ 재서 확인한 것(폰 390px · tools/probe_siru_tap.mjs):
+         시루 발밑 그대로 → 잡힌다 · 발밑에서 **위로 10px** → 안 잡힌다
+         **옆으로 8px** → 안 잡힌다.  즉 표적이 사실상 ±6px 이다(손가락은 40px 을 덮는다).
+       그러면서 **못 잡은 탭은 아무 신호도 안 낸다**(resolveTap 이 null 을 내면 호스트는
+       고르기를 그대로 둔다) — 그래서 화면에는 **직전에 고른 것이 계속 남는다.**
+       박사님이 보신 "계속 몬스테라만 지정됨"이 그 두 가지가 겹친 그림이다.
+     ⇒ 자유 좌표 그루도 슬롯과 **같은 30px** 을 받는다. 정확히 짚은 것이 먼저라는
+       원칙(§resolveTap)은 그대로다 — 광선이 앞이고 이 그물은 뒤다. */
   function pickSlotFuzzy(cx, cy) {
     const r = canvas.getBoundingClientRect();
     const px = cx - r.left, py = cy - r.top;
-    const pool = highlighted.size ? [...highlighted] : [...slotById.keys()];
+    const pool = highlighted.size ? [...highlighted]
+               : [...slotById.keys(), ...plants.keys()];
     let best = null, bestD = SLOT_HIT_PX;
     for (const id of pool) {
       /* ★ 빛낸 것 중에 자유 좌표 화분이 섞여 있을 수 있다 — 그것도 짚을 수 있어야 한다.

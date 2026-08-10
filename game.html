@@ -1868,9 +1868,25 @@ const FURN_KO = [
 function slotLabel(slotId) {
   /* ★자유 좌표에는 자리 이름이 없다 — `free:crop_01` 을 가구 이름으로 읽으면 "가구"가 된다.
      그 자리에 무엇이 서 있는지로 부른다. 좌표를 이름으로 부를 수는 없다. */
+  /* ★★ 2026-08-10 — **시루마다 이름이 따로다** (박사님 "콩나물이 계속 몬스테라로 지정됨").
+     ------------------------------------------------------------
+     ⚠ 예전 줄은 `id === BEANSPROUT_ID` 하나만 봤다. 그런데 2026-08-09 「각개」로
+       바뀌면서 방에 서는 것은 자리 사본(`crop_01`)이 아니라 **시루 개체**(`crop_01_01`,
+       `crop_01_02` …)다. 그래서 `free:crop_01_02` 가 그 비교에서 떨어져 **전부
+       "몬스테라"로 불렸다** — 시루를 제대로 눌러도 아래 메뉴에 「몬스테라」가 떴다.
+       (재서 확인 · tools/probe_siru_tap.mjs ⓒ — 시루 셋 다 "몬스테라"였다)
+     ⇒ 이름은 **코어 목록에서 가져온다**(cropPotList 가 containerKo·순번을 이미 낸다).
+       화면이 이름표를 새로 짓지 않는다 — 작물이 늘어도 여기가 안 는다. */
   if (isFreeSlotId(slotId)) {
     const id = String(slotId).slice(5);
-    return id === BEANSPROUT_ID ? '열린 시루' : '몬스테라';
+    try {
+      const row = cropPotList(S.firstPlay, S.day).find(r => r.id === id);
+      if (row) return row.ord > 1 ? `${row.containerKo} ${row.ord}` : row.containerKo;
+    } catch { /* 첫 플레이가 아직 없으면 아래로 떨어진다 */ }
+    if (id === BEANSPROUT_ID) return '열린 시루';
+    if (id === CROP_SITE_IDS.musun) return '새싹 재배판';
+    if ((S.cuttings || []).some(c => c && c.id === id)) return '삽수';
+    return '몬스테라';
   }
   const [uid, tier] = String(slotId || '').split(':');
   const key = uid.toLowerCase();
@@ -3905,11 +3921,23 @@ function drawJourney() {
     complete: '말린 새순이 나왔습니다! 어두운 자리와 밝은 자리를 모두 찾았습니다.'
   };
   /* ★ 옮긴 직후에도 "옮겨 보세요"가 남지 않게 한다 — 단계는 아직 move_monstera 지만
-     플레이어는 이미 옮겼다. 판정(새순이 오르는지)은 하루를 넘겨야 나오므로 그렇게 말해 준다. */
+     플레이어는 이미 옮겼다.
+     ★★ 2026-08-10 — **"[다음 날]을 눌러 새순이 오르는지 보세요"는 거짓말이었다.**
+       ------------------------------------------------------------
+       빛 판정은 **7일 평균**이다(sim.js §growthBlockReason · growth 의 calcMatureProb).
+       그래서 자리를 옮겨도 판정값은 그 날 안 바뀐다 — 책상(0.61)에서 창턱(4.80)으로
+       옮기면 평균이 문턱 3 을 넘는 데 **나흘**이 걸린다
+       (0.61 → 1.21 → 1.81 → 2.41 → 3.01. first_play.js §MONSTERA_LAMP_HINT_DAYS 가
+        같은 값을 실측해 적어 뒀다).
+       그 사흘 동안 화면은 「⏸ 오늘은 자라지 않았습니다 — 빛 부족 — 7일평균 0.61 < 최소 3」
+       을 계속 띄우는데, 안내는 "다음 날이면 된다"고 말한다 — **둘이 다른 말을 한다.**
+       그러면 플레이어는 옮긴 것이 안 먹혔다고 읽는다(박사님이 실제로 그렇게 읽으셨다).
+     ⇒ 날짜를 여기서 새로 세지 않는다. **판정이 평균이라는 사실**만 말한다. */
   const justMoved = fp.phase === 'move_monstera' && plant.arrived &&
                     arrivalSlotId != null && plant.slotId !== arrivalSlotId;
   $('quest').textContent = justMoved
-    ? `${slotLabel(plant.slotId)}(으)로 옮겼습니다. [다음 날]을 눌러 새순이 오르는지 보세요.`
+    ? `${slotLabel(plant.slotId)}(으)로 옮겼습니다. 빛 판정은 7일 평균이라 ` +
+      `나흘쯤 지나야 새 자리 값이 됩니다 — 하루씩 넘겨 보세요.`
     : (quest[fp.phase] || '첫 플레이를 진행하세요.');
   /* ★ [가방]에 있던 진행 안내가 [식물] 맨 위로 왔다 (2026-08-06).
      없애면 처음 하는 사람이 시트 안에서 길을 잃는다 — 아래 퀘스트 줄은 시트를 열면 가린다.
