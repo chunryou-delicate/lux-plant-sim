@@ -229,17 +229,45 @@ check('D ★slow 밴드(계수 1.0) — 루프가 엔진 직접 굴림과 한 �
 });
 
 /* ══ E · ★곡선 불변 — 첫 플레이 안전선 ═══════════════════════════════════ */
-check('E ★곡선 불변 — 143 → 3걸음 → 146 spear_furled (test_maturation G 와 같은 안전선)', () => {
+/* ★★ 2026-08-09 — **143·146 이 117·120 으로 움직였다.** 회귀가 아니라 박사님 확정이다.
+   잎 간격이 표가 됐다(`data/growth_tuning.json · leaf_interval.days` = 30·40·50·70·…) —
+   셋째 잎이 누적 30+40+50 = 유효 120일에 나고, 그 사흘 앞이 117 이다.
+   ★ 이 검사가 지키는 것은 그대로다: **코어는 곡선을 안 만진다.** 곡선은 여전히
+     「유효 생장일의 함수」이고, 코어가 정하는 것은 「며칠 만에 그 유효일에 닿나」뿐이다.
+     바뀐 것은 growth 창 안의 곡선 정본이지 그 경계선이 아니다.
+   ⚠ 표를 안 고쳤는데 이 검사가 깨지면 그때는 진짜 회귀다. */
+check('E ★곡선 안전선 — 117 → 3걸음 → 120 spear_furled (test_maturation G 와 같은 안전선)', () => {
   try { G.plantSeed(92158); } catch { /* 3D 무대 없음 — 씨앗은 세워진다 */ }
   G.matResetAll();
-  G.setGrowth(143); G.setDailyLightSteady(SAMPLE.slow);
-  assert.equal(G.growthPhase().phaseId, 'spear_ready', '143 이 spear_ready 가 아닙니다');
+  G.setGrowth(117); G.setDailyLightSteady(SAMPLE.slow);
+  assert.equal(G.growthPhase().phaseId, 'spear_ready', '117 이 spear_ready 가 아닙니다');
   const seen = [];
   for (let i = 0; i < 3; i++) { G.setDailyLightSteady(SAMPLE.slow); G.advanceTo(G.calendarDay() + 1);
                                 seen.push(G.growthPhase().phaseId); }
-  assert.equal(G.growthDays(), 146, `3걸음 뒤 유효 생장이 146 이 아닙니다: ${G.growthDays()}`);
-  assert.equal(seen[2], 'spear_furled', `146 이 spear_furled 가 아닙니다: ${seen[2]}`);
+  assert.equal(G.growthDays(), 120, `3걸음 뒤 유효 생장이 120 이 아닙니다: ${G.growthDays()}`);
+  assert.equal(seen[2], 'spear_furled', `120 이 spear_furled 가 아닙니다: ${seen[2]}`);
   info('곡선은 유효 생장일의 함수 그대로다 — 코어가 바꾼 것은 "며칠 만에 그 유효일에 닿나"뿐이다');
+});
+
+/* ══ E2 · ★잎 간격표가 실제로 그 날에 잎을 낸다 (2026-08-09 신설) ═════════
+   E 는 셋째 잎 하나만 못 박는다. 표 전체가 지켜지는지는 여기서 본다 —
+   표를 고치면 이 검사가 그 자리에서 갈라진다. */
+check('E2 ★잎 간격표대로 잎이 난다 — 누적 30·70·120·190·290·440·640·940', () => {
+  const days = (TUNING.leaf_interval && TUNING.leaf_interval.days) || null;
+  assert.ok(Array.isArray(days) && days.length,
+    'growth_tuning.json 에 leaf_interval.days 가 없습니다 — 잎 간격표가 정본입니다');
+  const want = [];
+  let acc = 0;
+  for (const d of days) { acc += d; want.push(acc); }
+  /* ★ 본줄기(생장점) 차례로 센다 — `axisTimeline` 이 그 정본이다.
+     ⚠ `topologyNow` 로 세지 않는다: 쌍혹(doubleBud 0.15)이 한 번에 가지 둘을 내므로
+       시드에 따라 같은 날 잎이 두 장 나기도 한다. 그건 **덤**이지 표가 어긋난 것이 아니다. */
+  /* ⚠ Array.from 으로 이 쪽 실행 영역의 배열로 옮긴다 — vm 안에서 만든 배열은
+     프로토타입이 달라 deepEqual 이 값이 같아도 실패한다(한 번 여기서 헤맸다). */
+  const got = Array.from(G.axisTimeline(20000)).map(a => Math.round(G.dayOfAge(a.leafBirth) * 1000) / 1000);
+  assert.deepEqual(got.slice(0, want.length), want,
+    `잎이 나는 날이 표와 다릅니다 — 표 ${want.join('·')} / 실측 ${got.slice(0, want.length).join('·')}`);
+  info(`잎 간격 ${days.join('·')} → 누적 ${want.join('·')} (유효 생장일)`);
 });
 
 /* ══ F · 밝으면 실제로 빨라진다 ═══════════════════════════════════════════ */

@@ -338,18 +338,36 @@ export function slotFitsDiameter(slot, diameterM) {
 }
 
 /* leaf 정본의 열린 시루를 이름이 아니라 상태로 찾는다. blocks_light는 "차광 기능 보유"이고
-   실제 적용 여부는 leaf-to-house 계약대로 lid_state가 closed일 때다. 첫 플레이는 open만 허용한다. */
+   실제 적용 여부는 leaf-to-house 계약대로 lid_state가 closed일 때다. 첫 플레이는 open만 허용한다.
+
+   ★★ 2026-08-09 — **가방 그림만 「뚜껑 덮인 시루」로 가른다** (박사님 지시).
+     가방 카드는 "아직 아무것도 안 선 **빈 시루**"라고 말하는데 그림은 콩나물이 다 자란
+     열린 시루였다 — 글과 그림이 서로 다른 말을 했다.
+     ★ 근거: 콩나물 시루는 원래 **차광 용기**라 뚜껑을 덮어 기른다. 그래서 뚜껑 덮인 모습이
+       「아직 안 심은 것」으로 자연스럽고, 열린 시루는 「자라는 중」의 그림이 된다.
+     ⚠ **방에 선 시루는 그대로 열린 시루다.** 바뀌는 것은 가방 칸의 그림 하나뿐이다 —
+       3D(room_view 의 container_siru_open.glb)도 `thumbnail` 도 안 건드린다.
+     ⚠ 자리·치수 판정도 **열린 시루 것을 그대로 쓴다**(diameterM · transmitsSlotDli).
+       뚜껑 덮인 에셋은 높이만 다르고(0.19 vs 0.109) 세울 물건은 여전히 열린 시루다. */
 export function openSiruContractFromManifest(manifest) {
   const items = Array.isArray(manifest) ? manifest : manifest && manifest.items;
-  const item = items && items.find(v => v && v.kind === 'siru' && v.crop === 'beansprout' &&
-    v.lid_state === 'open' && v.source_2d && v.size_m);
+  const of = lid => items && items.find(v => v && v.kind === 'siru' && v.crop === 'beansprout' &&
+    v.lid_state === lid && v.source_2d && v.size_m);
+  const item = of('open');
   if (!item || !item.size_m || !Number.isFinite(item.size_m.w) || !Number.isFinite(item.size_m.d) || !item.source_2d)
     throw new Error('[첫 플레이] 열린 콩나물 시루 에셋 계약이 올바르지 않습니다');
+  /* 뚜껑 덮인 짝이 없으면 **열린 그림으로 물러난다** — 그림 하나 때문에 첫 플레이가 못 열리면
+     안 된다. 대신 조용히 넘어가지 않게 사유를 실어 둔다(`bagLidState`). */
+  const closed = of('closed');
   return Object.freeze({
     id: item.id,
     lidState: item.lid_state,
     diameterM: Math.max(item.size_m.w, item.size_m.d),
     thumbnail: `./assets/crops/thumbs/${item.source_2d}`,
+    /* ★ 가방(빈 용기) 칸의 그림. 화면은 **이 칸을** 읽는다 — 파일 이름을 화면에 적지 않는다. */
+    bagThumbnail: closed ? `./assets/crops/thumbs/${closed.source_2d}`
+                         : `./assets/crops/thumbs/${item.source_2d}`,
+    bagLidState: closed ? 'closed' : 'open',
     transmitsSlotDli: item.lid_state === 'open'
   });
 }
@@ -872,7 +890,8 @@ export function createFirstPlayState(opt = {}) {
          튜토리얼 안내가 화분 배열을 뒤지지 않게 두려고 남긴다. 판정에는 쓰지 않는다. */
       slotId: null,
       at: null,
-      growthPhase: null
+      growthPhase: null,
+      guide: newMonsteraGuide()
     }
   };
 }
@@ -940,8 +959,12 @@ export function placeCrop(fp, kindId, target, opt = {}) {
   }
   syncCropLead(site);
   /* 단계는 **콩나물이 정한다** — 첫 플레이의 안내 흐름은 콩나물 한 줄기다(§단계).
-     무순은 튜토가 끝난 뒤에 들이는 것이라 안내 단계를 건드리면 흐름이 뒤로 되감긴다. */
-  if (k.id === 'beansprout') fp.phase = 'grow_beansprout';
+     무순은 튜토가 끝난 뒤에 들이는 것이라 안내 단계를 건드리면 흐름이 뒤로 되감긴다.
+     ★★ 2026-08-09 고침 — **몬스테라가 온 뒤에는 안 되감는다.** 회전이 도는 판에서
+       시루를 다시 심을 때마다 이 줄이 `move_monstera`(=옮겨 보세요)를 `grow_beansprout` 로
+       덮어써서, 도착 이틀 만에 몬스테라 안내가 화면에서 사라졌다(재현으로 확인).
+       콩나물 회전은 튜토가 끝난 뒤에도 계속 도는데 안내 단계는 앞으로만 가야 한다. */
+  if (k.id === 'beansprout' && !(fp.monstera && fp.monstera.arrived)) fp.phase = 'grow_beansprout';
   return { ...site, kind: k.id, potId: one ? one.id : null, moved, keptDays,
            snappedTo: spot.snappedTo, dist: spot.dist };
 }
@@ -1827,6 +1850,63 @@ export function resowBeansprout(fp, opt = {}) {
            slotId: b.slotId, at: b.at, wateredOnDay: b.wateredOnDay };
 }
 
+/* ============================================================
+   ★★ 몬스테라 유도 — **책상 → 창턱 → 등** (2026-08-09 박사님 확정)
+   ------------------------------------------------------------
+   원문: *"몬스테라 책상에 주고 한 10일 정도 지나면 몬이가 새순 안 나는 게 이상하다 하고
+          창턱에 두도록 유도하고 등 하나 설치하게 하면 될 듯."*
+
+   ★★ **두 걸음을 따로 가르친다.** 자리를 옮겨도 아직 안 나고, 그 다음에 등을 켜야 난다.
+     한 번에 알려 주면 「왜 등이 필요한지」를 못 배운다.
+
+   ══ ⚠ 「10일」은 **게임일**이다 (이 항목의 함정) ══
+     어두운 자리에서는 **유효 생장일이 한 칸도 안 오른다.** 그래서 유효일로 세면
+     그 말은 영영 안 나온다 — 안 자라는 것을 짚어 주려는 말인데 안 자라서 못 나오는 셈이다.
+     ⇒ 여기 카운터는 `markMonsteraPhase` 가 불릴 때마다 하나씩 오른다. 그 함수는
+       `loop.nextDay` 가 하루에 **딱 한 번** 부르므로(loop.js:930) 곧 게임일이다.
+
+   ══ ⚠ 지금 코드에서 두 번째 걸음이 안 뜰 수 있다 (실측 · 2026-08-09) ══
+     박사님 표에는 「창턱(등 없음) DLI 1.52 → 안 자람」이라고 돼 있는데,
+     지금 저장소 값으로 재면 **여름 반지하 창턱은 DLI 4.80 이라 등 없이도 자란다**
+     (`banjiha-sill:0` · 최소 3 · 옮기고 나흘이면 7일평균이 3 을 넘는다).
+     ⇒ 그래서 여름에 창턱으로 옮기면 등 없이 새순이 나고, 두 번째 걸음(등)은 안 뜬다.
+       이 규칙은 **틀린 것이 아니다** — 「옮겼는데도 여전히 안 자란다」가 참일 때만 뜬다.
+       가을·겨울이나 창턱이 아닌 밝기 어중간한 자리에서는 뜬다.
+     ⚠ 「창턱만으로는 안 자라야 한다」가 기획이라면 고칠 곳은 이 파일이 아니라 조도 쪽이다.
+       plan 판단 대기 — `docs/handoff/growth-to-plan.md §2026-08-09` 참고.
+
+   ══ ⚠ 세이브에 아직 안 실린다 ══
+     `save.js` 의 `packFirstPlay` 는 열쇠를 하나하나 적는 화이트리스트이고 이 창 소유가 아니다.
+     그래서 `monstera.guide` 는 저장하면 사라지고 불러오면 0 부터 다시 센다.
+     ⇒ 저장·복원을 끼면 안내가 그만큼 늦게 뜬다(대사 자체는 `seen` 이 한 번으로 막는다).
+     붙일 세 줄은 `docs/handoff/growth-to-plan.md §세이브` 에 적어 두었다. */
+/* 며칠 그대로면 「이상하다」고 말하나 — 게임일. 박사님 지시값 그대로 10 이다. */
+export const MONSTERA_HINT_DAYS = 10;
+/* 옮긴 뒤 며칠 더 그대로면 「등이 필요하다」고 말하나 — 게임일.
+   ⚠ 7일평균이 새 자리 값으로 차오르는 데 나흘쯤 걸린다(실측). 그보다 짧게 두면
+     "옮겼는데 아직 안 변했다"를 자리 탓으로 오해하게 만든다. 그래서 5 다. */
+export const MONSTERA_LAMP_HINT_DAYS = 5;
+
+function newMonsteraGuide() {
+  return {
+    days: 0,        // 형태가 그대로인 채 지난 게임일
+    moved: false,   // 도착 자리에서 한 번이라도 옮겼나
+    movedDays: 0,   // 옮긴 뒤 형태가 그대로인 채 지난 게임일
+    grewOnce: false // 한 번이라도 형태가 올랐나 — 오르면 유도는 끝이다
+  };
+}
+/* 지금 무슨 안내를 낼 상태인가. **순수 함수**다 — 상태를 안 건드린다.
+   ★ 순서가 계약이다: 자리를 먼저, 등은 그 다음. 옮기기 전에는 등 얘기를 꺼내지 않는다. */
+export function monsteraGuideOf(fp) {
+  const m = fp && fp.monstera;
+  if (!m || !m.arrived || (fp && fp.completed)) return { move: false, lamp: false };
+  const g = m.guide || newMonsteraGuide();
+  if (g.grewOnce) return { move: false, lamp: false };     // 자라기 시작하면 유도는 끝난다
+  const move = !g.moved && g.days >= MONSTERA_HINT_DAYS;
+  const lamp = g.moved && g.movedDays >= MONSTERA_LAMP_HINT_DAYS;
+  return { move, lamp };
+}
+
 /* 콩나물과 **같은 세 가지 입력**을 받는다(이름 · 좌표 · 화분 객체).
    loop.js 는 방금 만든 화분을 통째로 넘긴다 — 화분이 정본이므로 베끼는 게 가장 안 어긋난다. */
 export function markMonsteraArrived(fp, target, opt = {}) {
@@ -1837,6 +1917,7 @@ export function markMonsteraArrived(fp, target, opt = {}) {
   fp.monstera.arrived = true;
   fp.monstera.slotId = spot.slotId;
   fp.monstera.at = spot.at;
+  fp.monstera.guide = newMonsteraGuide();      // 도착한 날이 유도의 0일차다
   fp.phase = 'move_monstera';
   return fp.monstera;
 }
@@ -1846,6 +1927,10 @@ export function moveMonstera(fp, target, opt = {}) {
   if (target == null || target === '')
     throw new Error('[첫 플레이] 몬스테라를 옮길 자리를 골라 주세요');
   const spot = spotOf(target, { id: MONSTERA_POT_ID, ...opt });
+  /* ★ 「옮겼다」는 **자리가 실제로 달라진 것**이다. 같은 자리에 다시 놓는 것(좌표 미세 조정)은
+     옮긴 것이 아니다 — 그걸 옮김으로 세면 등 안내가 자리 안내보다 먼저 나온다. */
+  const g = fp.monstera.guide || (fp.monstera.guide = newMonsteraGuide());
+  if (fp.monstera.slotId !== spot.slotId) { g.moved = true; g.movedDays = 0; }
   fp.monstera.slotId = spot.slotId;
   fp.monstera.at = spot.at;
   return spot.slotId;
@@ -1866,6 +1951,7 @@ function phaseAdvanced(prev, now) {
 export function markMonsteraPhase(fp, phase) {
   if (!fp.monstera.arrived || !phase) return fp;
   const prev = fp.monstera.growthPhase;
+  const g = fp.monstera.guide || (fp.monstera.guide = newMonsteraGuide());
   fp.monstera.growthPhase = {
     phaseId: phase.phaseId,
     phaseKo: phase.phaseKo ?? phase.phaseId ?? null,
@@ -1881,6 +1967,13 @@ export function markMonsteraPhase(fp, phase) {
      반대로 다른 어두운 자리로 옮기면 진행이 0에서 멈추므로 안내는 그대로 남는다 — 그게 맞다. */
   if (fp.phase === 'move_monstera' && phaseAdvanced(prev, fp.monstera.growthPhase))
     fp.phase = 'grow_monstera';
+  /* ★★ 유도 카운터 (§몬스테라 유도). 이 함수는 하루에 한 번 불린다 = **게임일**이다.
+     ⚠ 도착 직후 첫 관측(prev == null)은 안 센다 — 비교 대상이 없어 `phaseAdvanced` 가
+       늘 false 라, 세면 도착한 날이 이미 "하루 그대로"가 된다. */
+  if (prev) {
+    if (phaseAdvanced(prev, fp.monstera.growthPhase)) { g.grewOnce = true; g.days = 0; g.movedDays = 0; }
+    else { g.days++; if (g.moved) g.movedDays++; }
+  }
   /* ★ 정확히 spear_furled 에서만 완료. 뒤 단계 포괄 성공 금지 — 위 상수 주석 참고. */
   if (phase.phaseId === FIRST_PLAY_COMPLETE_PHASE_ID) {
     fp.completed = true;
@@ -1924,6 +2017,9 @@ export function firstPlaySnapshot(fp) {
        빨리감기가 "물을 줄 수 있는데 안 준 시루가 새로 생겼나"를 여기로 본다(loop.js). */
     idle: cropSites(fp).reduce((a, s) => a + idlePots(s).length, 0),
     arrived: !!(fp.monstera && fp.monstera.arrived),
+    /* ★ 유도 두 걸음 (§몬스테라 유도) — **거짓 → 참**이 곧 사건이다 */
+    guideMove: monsteraGuideOf(fp).move,
+    guideLamp: monsteraGuideOf(fp).lamp,
     completed: !!fp.completed,
     cashFoodWon: fp.food ? fp.food.cashFoodWon : null,
     totalFoodSavedWon: fp.food ? fp.food.totalFoodSavedWon : null
@@ -1963,6 +2059,14 @@ export function firstPlayEventsOf(before, fp) {
                cashFoodWon: now.cashFoodWon, totalFoodSavedWon: now.totalFoodSavedWon });
   if (!before.arrived && now.arrived)
     out.push({ id: 'monstera_arrived', ko: '몬스테라 도착', slotId: fp.monstera.slotId });
+  /* ★★ 유도 두 걸음 (§몬스테라 유도). **자리를 먼저, 등은 그 다음.**
+     ⚠ 대사는 dialogue.js 소유이고 순서는 EVENT_ORDER 가 지킨다 — 여기서는 사건만 낸다. */
+  if (!before.guideMove && now.guideMove)
+    out.push({ id: 'monstera_no_spear', ko: '새순이 안 납니다',
+               days: fp.monstera.guide.days });
+  if (!before.guideLamp && now.guideLamp)
+    out.push({ id: 'monstera_needs_lamp', ko: '옮겼는데도 새순이 안 납니다',
+               days: fp.monstera.guide.movedDays });
   if (!before.completed && now.completed)
     out.push({ id: FIRST_PLAY_COMPLETE_PHASE_ID, ko: '말린 새순 등장' });
   return out;

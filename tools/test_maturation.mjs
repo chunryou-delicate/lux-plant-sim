@@ -207,16 +207,23 @@ check('F 3.77 vs 12.16 — 상시 중간잎 수가 어두운 쪽이 더 많다',
                         `밝음(12.16) 중간 ${bright.mid}·성숙 ${bright.mature}`]);
 });
 
-/* ══ G · ★안전선 — 첫 플레이가 안 깨진다 ════════════════════════════════ */
-check('G 안전선 — 143 → 적정광 3턴 → 146 spear_furled 그대로', () => {
+/* ══ G · ★안전선 — 첫 플레이가 안 깨진다 ════════════════════════════════
+   ★★ 2026-08-09 — **값이 143·146 에서 117·120 으로 움직였다.** 회귀가 아니라 확정이다.
+     박사님이 잎 간격을 표로 정하셨고(`data/growth_tuning.json · leaf_interval.days`
+     = 30·40·50·70·100·150·200·300), 시간 축이 그 표를 따르게 바뀌었다
+     (plant_grow.html §ageOf — timeCurve 거듭제곱 곡선을 대신한다).
+   ⇒ 셋째 잎은 누적 30+40+50 = **유효 120일**에 난다. 그 사흘 앞(SPEAR_READY_DAYS=3)이 117 이다.
+   ⇒ 옛 146 은 timeCurve 0.72 가 만들던 값이었다. 표를 지우면 그 값으로 되돌아간다.
+   ⚠ 이 검사가 다시 깨지면 **먼저 표를 봐라.** 표를 안 고쳤는데 깨졌으면 그때가 회귀다. */
+check('G 안전선 — 117 → 적정광 3턴 → 120 spear_furled (잎 간격표 누적 30+40+50)', () => {
   g.seedTo(92158); g.matResetAll();
-  g.setGrowth(143); g.setDailyLightSteady(3.77);
-  assert.equal(g.growthPhase().phaseId, 'spear_ready', '143 이 spear_ready 가 아닙니다');
+  g.setGrowth(117); g.setDailyLightSteady(3.77);
+  assert.equal(g.growthPhase().phaseId, 'spear_ready', '117 이 spear_ready 가 아닙니다');
   const seen = [];
   for (let i = 0; i < 3; i++) { g.setDailyLightSteady(3.77); g.advanceTo(g.calendarDay() + 1);
                                 seen.push(g.growthPhase().phaseId); }
-  assert.equal(g.growthDays(), 146, `3턴 뒤 유효 생장이 146 이 아닙니다: ${g.growthDays()}`);
-  assert.equal(seen[2], 'spear_furled', `146 이 spear_furled 가 아닙니다: ${seen[2]}`);
+  assert.equal(g.growthDays(), 120, `3턴 뒤 유효 생장이 120 이 아닙니다: ${g.growthDays()}`);
+  assert.equal(seen[2], 'spear_furled', `120 이 spear_furled 가 아닙니다: ${seen[2]}`);
 });
 
 /* ══ 부수 — 소급 뒤집힘이 사라졌는가 (고치기 전의 실제 동작) ═════════════ */

@@ -1011,6 +1011,18 @@ fetch('./data/growth_tuning.json').then(r=>{
   // ⚠ health.drop_enabled 는 불리언이라 num() 을 통과 못 한다 — 따로 받는다.
   if(j.health){ GT.health=Object.assign({}, GT.health, num(j.health));
     if(typeof j.health.drop_enabled==='boolean') GT.health.drop_enabled=j.health.drop_enabled; }
+  /* ★ 잎 간격표 (2026-08-09 박사님 확정 · §ageOf). 배열이라 num() 을 못 쓴다 — 따로 받는다.
+     ⚠ 모양이 틀리면 **안 받는다**. 반쯤 받은 표로 돌면 옛 곡선도 새 표도 아닌 것이 나온다. */
+  if(j.leaf_interval){
+    const ds=j.leaf_interval.days;
+    if(Array.isArray(ds) && ds.length && ds.every(v=>typeof v==='number' && isFinite(v) && v>0)){
+      LEAF_DAYS=ds.slice(); _leafMapKey=null;
+      if(typeof j.leaf_interval.tail_mult==='number' && j.leaf_interval.tail_mult>0)
+        LEAF_TAIL_MULT=j.leaf_interval.tail_mult;
+    } else {
+      console.error('[생장] leaf_interval.days 가 양수 배열이 아닙니다 — 코드값으로 돕니다');
+    }
+  }
   TH_LOADED=true;                              // ★검증·적용을 마친 여기서만 참이 된다
 }).catch(err=>{
   // ★여기 걸리는 것은 '정본을 읽고 쓰는 일'의 실패뿐이다 — fetch·HTTP·JSON 파싱.
@@ -1292,9 +1304,13 @@ function calcMatureProb(ctx){
      소급해서 갈라지고, 나빠지면 갈라졌던 잎이 도로 중간잎이 된다.** 고치기 전 실제 동작이었고,
      반지하 자연광이 문턱 아래라 확률이 계속 0 이어서 안 드러났을 뿐이다.
 
-   ⚠ 전역 생장 곡선은 건드리지 않는다 — GROWTH 의 +1 · 143 · 146 · spawnStep · matSpan · timeCurve 불변.
+   ⚠ 전역 생장 곡선은 건드리지 않는다 — GROWTH 의 +1 · spawnStep · matSpan 불변.
      첫 기회는 잎이 시간상 중간잎에 닿는 그 날 바로 온다(gauge 가 1 에서 시작).
-     그래서 **성공하는 경우의 일정은 이전과 같다.** 늦어지는 것은 실패한 잎뿐이다. */
+     그래서 **성공하는 경우의 일정은 이전과 같다.** 늦어지는 것은 실패한 잎뿐이다.
+   ★★ 예외 하나 (2026-08-09 박사님 지시) — **시간 축은 바뀌었다.** `timeCurve` 거듭제곱 곡선이
+     `data/growth_tuning.json · leaf_interval` 의 **잎 간격표**로 대체됐다(§ageOf).
+     격자(spawnStep·matSpan·seedEnd)는 그대로이고, 그 격자를 며칠에 걸쳐 걷는지만 표가 정한다.
+     ⇒ 그래서 143·146 같은 옛 날짜 상수는 더 이상 안 맞는다. 표를 지우면 옛 곡선으로 돌아간다. */
 const MAT_STATE=new Map();          // leafBirth → {gauge, matured, rolls, locked}
 
 /* ===== 잎 건강 — 바램과 낙엽 (박사님 지시 2026-08-03) ==========================
@@ -1973,9 +1989,71 @@ function drawLeafStage(pos, az, m, midType, canMature, stemDir, stemRad, varie, 
   addLeaf(pos, az, m, key, null, stemDir, stemRad, ownAx);
 }
 
-// 실제 일수 → 생장 나이. 끝점(GMAX)은 고정이므로 3년 뒤 최종 모습은 곡선과 무관하게 같다.
-function ageOf(d){ const k=P.timeCurve||1; if(k===1||d<=0) return d;
-  return GMAX*Math.pow(Math.min(1,d/GMAX), k); }
+/* ===== 실제 일수 ↔ 생장 나이 ==================================================
+   ★★ 2026-08-09 박사님 확정 — **잎 간격표가 이 변환을 정한다.**
+   원문: "1장 자랄 때랑 2장째 자랄 때랑 … 기본 필요 일수를 점점 늘리는 방향으로.
+          처음 30 그다음 40 그다음 50 그다음 70 그다음 100 150 200 300"
+
+   ⚠⚠ 여기가 「전역 생장 곡선은 한 글자도 안 건드린다」(아래 1295줄 · growth_tuning.json
+      growth_speed._doc)의 **명시된 예외**다. 박사님이 이번에 바꾸라고 하신 자리라서 바뀐 것이고,
+      되돌리려면 growth_tuning.json 의 leaf_interval 을 지우면 옛 timeCurve 곡선으로 돌아간다.
+      ⇒ 사고로 알고 되돌리지 말 것.
+
+   ★ 마디 격자(seedEnd·spawnStep·matSpan·stageYoung·petGrow·bumpGrow)는 **한 글자도 안 고쳤다.**
+     바뀐 것은 「생장나이 축을 며칠에 걸쳐 걷는가」뿐이다.
+
+   ══ 어떻게 맞추나 ══
+   잎 한 장 = 생장점(축) 하나다. 그 축들이 나는 **생장나이**는 axisTimeline 이 이미 알고 있다
+   (지금 값으로 36 · 136 · 256 · 376 … = 첫 잎 뒤로 120 씩). 그러니 새 숫자를 만들 필요가 없다 —
+   **그 나이들이 표가 말하는 날에 오도록 시간 축만 잡아당긴다.**
+     (0, 0) · (30, 36) · (70, 136) · (120, 256) · (190, 376) · … 를 지나는 꺾은선이 그것이다.
+   표를 다 쓴 뒤(9번째 잎부터)는 마지막 간격 × tail_mult 로 같은 기울기를 이어 간다.
+
+   ⚠ 표가 없거나 모양이 틀리면 **옛 거듭제곱 곡선(timeCurve)** 으로 돈다 — 조용히 멈추지 않는다. */
+let LEAF_DAYS=[30,40,50,70,100,150,200,300];   // 정본은 data/growth_tuning.json · leaf_interval.days
+let LEAF_TAIL_MULT=1.5;
+let _leafMapKey=null, _leafMap=null;
+/* 꺾은선의 꼭짓점 [실제일, 생장나이] 목록. 격자(P)나 표가 바뀌면 다시 세운다. */
+function leafDayMap(){
+  const days=LEAF_DAYS;
+  if(!Array.isArray(days) || days.length<1) return null;
+  const key=days.join(',')+'|'+LEAF_TAIL_MULT+'|'+P.seedEnd+'|'+P.spawnStep+'|'+P.matSpan+'|'
+           +P.stageYoung+'|'+P.petGrow+'|'+P.bumpGrow+'|'+P.stemTrans+'|'+P.maxLeaves;
+  if(_leafMapKey===key) return _leafMap;
+  // 표 검사 — 양수 · 유한. 하나라도 어긋나면 옛 곡선으로 물러난다(조용히 틀린 값으로 안 돈다).
+  for(const v of days) if(!(typeof v==='number' && isFinite(v) && v>0)){ _leafMapKey=key; return (_leafMap=null); }
+  // 잎이 나는 생장나이 — axisTimeline 이 정본이다. 여기서 120 같은 숫자를 새로 만들지 않는다.
+  const need=days.length;
+  const span=P.seedEnd+P.petGrow+(P.matSpan+3*Math.max(1,P.spawnStep))*(need+2);
+  const ages=axisTimeline(span).map(a=>a.leafBirth).filter(v=>isFinite(v)&&v>0).sort((a,b)=>a-b);
+  if(ages.length<need){ _leafMapKey=key; return (_leafMap=null); }
+  const pts=[[0,0]];
+  let day=0;
+  for(let i=0;i<need;i++){
+    day+=days[i];
+    const age=ages[i];
+    if(!(age>pts[pts.length-1][1]) || !(day>pts[pts.length-1][0])){ _leafMapKey=key; return (_leafMap=null); }
+    pts.push([day, age]);
+  }
+  const last=pts[pts.length-1], prev=pts[pts.length-2];
+  const tailDays=Math.max(1e-6, days[need-1]*(LEAF_TAIL_MULT>0?LEAF_TAIL_MULT:1));
+  // 표 밖의 기울기 — 「다음 잎 한 장」이 tailDays 걸린다고 보고 그 기울기를 그대로 편다.
+  const tail=(last[1]-prev[1])/tailDays;
+  _leafMapKey=key;
+  return (_leafMap={pts, tail:tail>0?tail:1e-6});
+}
+function ageOf(d){
+  if(d<=0) return 0;
+  const dd=Math.min(d, GMAX);
+  const m=leafDayMap();
+  if(!m){ const k=P.timeCurve||1; if(k===1) return dd;
+    return GMAX*Math.pow(Math.min(1,dd/GMAX), k); }
+  const p=m.pts;
+  for(let i=1;i<p.length;i++)
+    if(dd<=p[i][0]) return p[i-1][1]+(p[i][1]-p[i-1][1])*(dd-p[i-1][0])/(p[i][0]-p[i-1][0]);
+  const last=p[p.length-1];
+  return last[1]+(dd-last[0])*m.tail;
+}
 function clearGroup(g){ while(g.children.length){ const c=g.children[0]; g.remove(c); c.traverse&&c.traverse(o=>{ if(o.isMesh){ if(o.geometry) o.geometry.dispose();
   const ms=Array.isArray(o.material)?o.material:[o.material]; ms.forEach(m=>{ if(m&&m.userData&&m.userData.cloned) m.dispose(); }); } }); } }
 
@@ -2510,8 +2588,18 @@ function axisTimeline(gMax){
   return axes;
 }
 // ageOf 의 역함수 — 생장 나이를 실제 유효 생장일로 되돌린다. 단계 경계를 '며칠'로 말하려면 필요하다.
-function dayOfAge(g){ const k=P.timeCurve||1; if(k===1||g<=0) return Math.max(0,g);
-  return GMAX*Math.pow(Math.min(1, g/GMAX), 1/k); }
+// ★ ageOf 와 **같은 꺾은선**을 거꾸로 탄다. 두 벌을 따로 적으면 반드시 어긋난다.
+function dayOfAge(g){
+  if(g<=0) return 0;
+  const m=leafDayMap();
+  if(!m){ const k=P.timeCurve||1; if(k===1) return Math.max(0,g);
+    return GMAX*Math.pow(Math.min(1, g/GMAX), 1/k); }
+  const p=m.pts;
+  for(let i=1;i<p.length;i++)
+    if(g<=p[i][1]) return p[i-1][0]+(p[i][0]-p[i-1][0])*(g-p[i-1][1])/(p[i][1]-p[i-1][1]);
+  const last=p[p.length-1];
+  return last[0]+(g-last[1])/m.tail;
+}
 // 잎이 나기 전 구간을 둘로 가른다. 마지막 며칠이 '새순 직전 준비'다.
 //   3 은 확정 측정에서 온 표시 상수다 — 적정광 3턴 뒤에 말린 새순이 나온다(146일).
 //   ⚠ 첫 플레이 전용 오프셋이 아니다. 모든 새순 주기에 똑같이 적용된다.
@@ -2945,7 +3033,7 @@ const HELP={
   // ── 전체 성장
   growAmt:'다 자랐을 때 첫날 대비 몇 배가 되는지. 줄기 굵기·마디 길이·잎 크기·엽초에 같은 배율이 걸려서 맞춰둔 비율이 그대로 유지된다.\n0.8이면 최대 1.8배.',
   growSpan:'위 배율에 도달하기까지 걸리는 생장 나이(일). 이 날짜를 넘으면 더 커지지 않는다.\n실제 경과일이 아니라 나이 기준이라, 초반 빠르기를 낮추면 더 이른 날짜에 도달한다.',
-  timeCurve:'실제 경과일을 생장 나이로 바꾸는 곡선.\n1이면 등속. 낮출수록 초반이 빠르고 뒤로 갈수록 느려진다.\n0.72면 예전 83일치 모습이 30일에 나온다. 3년(1095일) 도달점은 곡선과 무관하게 같다.',
+  timeCurve:'⚠ 지금은 안 쓰인다 — 2026-08-09 부터 시간 축을 data/growth_tuning.json 의\n잎 간격표(leaf_interval.days)가 정한다.\n그 표를 지우면 이 곡선으로 돌아간다: 1이면 등속, 낮출수록 초반이 빠르다.',
   varieProb:'잎 하나가 무늬종이 될 확률. 어린잎 단계에서 잎마다 따로 판정하고, 한번 정해지면 중기·성숙까지 그 루트를 유지한다.\n확정값은 0.20이고 1.0은 튜닝용(모든 잎을 무늬로 만들어 보기 편하게).',
   alboMidPick:'0이면 중기 무늬를 랜덤으로 뽑는다. 1 이상이면 그 번호로 고정 — 한 종류만 띄워놓고 위치를 잡을 때 쓴다.\n번호는 우측 조정 목록의 고정번호와 같다.',
   matAlboPick:'성숙 무늬를 번호로 고정. 0이면 변이 트리대로(중기 무늬에 따라 결정).',

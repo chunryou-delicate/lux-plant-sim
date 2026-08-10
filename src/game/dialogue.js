@@ -109,6 +109,37 @@ export const SCRIPTS = {
     { who: 'moni', text: '빛이 모자라면 날짜만 가고 모양은 안 변해. 더 밝은 자리를 찾아 보자.' }
   ],
 
+  /* ═══ ★★ 유도 두 걸음 — 자리 → 등 (2026-08-09 박사님 확정) ══════════════
+     원문: *"몬스테라 책상에 주고 한 10일 정도 지나면 몬이가 새순 안 나는 게 이상하다 하고
+            창턱에 두도록 유도하고 등 하나 설치하게 하면 될 듯."*
+
+     ★★ **두 걸음을 따로 가르치는 것이 핵심이다.** 여기서 등 얘기를 미리 꺼내면
+       플레이어는 「왜 등이 필요한지」를 못 배우고 그냥 시키는 대로 두 개를 한다.
+       자리를 먼저 옮겨 보고 **그래도 안 되는 것을 눈으로 본 뒤에** 등이 나온다.
+     ⚠ 지금까지의 원칙은 「정답 자리를 불러 주지 않는다」였다(plantStalled · first_play.md §4).
+       박사님이 첫 학습에서만 그 원칙을 푸셨다 — **여기서는 창턱이라고 말한다.**
+       plantStalled(그 뒤의 멈춤들)는 그대로 안 불러 준다. 둘을 헷갈리지 말 것. */
+  monsteraGuideWindow: [
+    { who: 'jachwi', face: 'worry', text: '열흘이 지났는데… 아무 일도 안 일어난다.' },
+    { who: 'moni',   face: 'curious', text: '이상하지? 물도 줬고 날짜도 갔는데 새순이 안 나.' },
+    { who: 'moni',   text: '얘는 어두운 데선 아예 안 움직여. 날짜만 가는 거야.' },
+    { who: 'jachwi', text: '그럼 어디로.' },
+    /* ★자리를 불러 주되 **이유를 같이** 준다. 이름만 주면 다음 집에서 못 쓴다. */
+    { who: 'moni',   face: 'happy', text: '창턱. 이 방에서 해가 제일 오래 드는 자리야.' },
+    { who: 'moni',   text: '옮겨 놓고 며칠 기다려 봐. 바로는 안 변해.' }
+  ],
+  /* 창턱(또는 다른 데)으로 옮겼는데도 여전히 안 자랄 때.
+     ★ **여기서 처음으로 등이 나온다.** 「자리를 다 썼다」가 등의 이유다 —
+       그 벽을 먼저 만나야 이만오천 원이 고민할 만한 값이 된다.
+     ⚠ 자리가 충분히 밝으면 이 말은 안 나온다. 그게 맞다 — 안 필요한 물건을 권하지 않는다. */
+  monsteraGuideLamp: [
+    { who: 'jachwi', face: 'worry', text: '옮겼는데도 그대로다.' },
+    { who: 'moni',   face: 'sad', text: '자리는 맞아. 근데 이 방은 창턱까지 써도 모자랄 때가 있어.' },
+    { who: 'jachwi', text: '더 밝은 데가 없는데.' },
+    { who: 'moni',   face: 'curious', text: '없지. 그래서 이제부터는 **자리 말고 빛을 사는** 거야.' },
+    { who: 'moni',   text: '식물등 하나. 그 자리 위에 켜 두면 그 자리만 밝아져.' }
+  ],
+
   /* ★첫 플레이의 그 한 장면 — 말린 새순 */
   spearFurled: [
     { who: 'jachwi', face: 'surprise', text: '뭔가… 돌돌 말린 게 올라왔어.' },
@@ -532,6 +563,9 @@ export function createDialogue(seen = new Set()) {
 export const EVENT_SCRIPT = Object.freeze({
   beansprout_harvest:  'harvest',
   monstera_arrived:    'monsteraArrived',
+  /* ★ 유도 두 걸음 (2026-08-09) — first_play.firstPlayEventsOf 가 낸다 */
+  monstera_no_spear:   'monsteraGuideWindow',
+  monstera_needs_lamp: 'monsteraGuideLamp',
   spear_furled:        'spearFurled',
 
   learn_harvest:       'learnHarvest',
@@ -567,6 +601,11 @@ const EVENT_ORDER = [
   'beansprout_harvest', 'learn_harvest', 'learn_cropDark',
   'monstera_arrived',
   'spear_furled', 'learn_spear', 'learn_plantWindow',
+  /* ★ 유도 두 걸음은 **일반 멈춤 대사보다 앞**이다 (2026-08-09).
+     같은 날 `plant_stalled`("옮겨 보자")와 겹칠 수 있는데, 첫 학습에서는 자리를 불러 주는
+     쪽이 먼저 와야 한다. 뒤에 오면 "옮겨 보자" 다음에 "창턱으로" 가 붙어 두 번 말하는 꼴이 된다.
+     ⚠ 등 안내는 자리 안내보다 **뒤**다 — 두 걸음의 순서가 곧 이 학습의 내용이다. */
+  'monstera_no_spear', 'monstera_needs_lamp',
   'plant_resumed', 'plant_stalled', 'plant_stalled_again', 'plant_stalled_winter',
   'season_autumn', 'season_winter', 'winter_still',
   'lamp_unlocked', 'lamp_bought', 'lamp_skipped',

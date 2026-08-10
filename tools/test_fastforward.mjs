@@ -15,7 +15,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import {
   beansproutReady, firstPlayRulesFromBalance, firstPlayNextEvent, markMonsteraPhase,
-  MONSTERA_ARRIVAL_RULE, moveMonstera, placeBeansprout, resowBeansprout
+  MONSTERA_ARRIVAL_RULE, MONSTERA_HINT_DAYS, moveMonstera, placeBeansprout, resowBeansprout
 } from '../src/game/first_play.js';
 import {
   FAST_MODE_MAX_DAYS, JUMP_MAX_DAYS,
@@ -29,9 +29,12 @@ import { orderItem, stockOf, incomingOf } from '../src/game/shop.js';
    (tools/probe_arrival_stems.mjs · 화면 대조 docs/engine/shots/arrival/).
      ARR    도착 진행도. 정본은 state.ARRIVAL 이라 여기 안 베낀다 — 줄기 1개짜리다.
      SPEAR  그 뒤 첫 말린 새순이 나는 유효 생장일. 이건 곧 **2개째 줄기의 첫 잎**이다.
-   ⇒ 첫 플레이의 완료 신호와 "2개째가 자란다"가 같은 사건이 된다. */
+   ⇒ 첫 플레이의 완료 신호와 "2개째가 자란다"가 같은 사건이 된다.
+   ★★ 2026-08-09 — **61 → 70.** 박사님이 잎 간격을 표로 정하셨고(30·40·50·70·…)
+     둘째 잎이 누적 30+40 = 유효 70일에 난다(`data/growth_tuning.json · leaf_interval`).
+     ⚠ 이 파일의 growth 는 가짜라 이 상수가 곧 계약이다 — 표를 고치면 여기도 같이 고쳐야 한다. */
 const ARR = ARRIVAL.growthDays;
-const SPEAR = 61;
+const SPEAR = 70;
 const SPEAR_DAYS = SPEAR - ARR;
 
 const RULES = firstPlayRulesFromBalance(JSON.parse(
@@ -261,22 +264,35 @@ check('⑵ 어두운 자리 — 12일이 지나도 도착 진행도 그대로', 
   assert.equal(pot0(S).slotId, 'arrival', '몬스테라는 어두운 자리에 도착한다');
 
   const phaseBefore = JSON.stringify(S.firstPlay.monstera.growthPhase);
+  /* ★★ 2026-08-09 — **열흘째에 유도 대사가 끼어든다**(first_play §몬스테라 유도).
+     예전엔 어두운 자리에서 12일이 통째로 조용해서 한도(maxDays)에서 섰다. 박사님이
+     "10일쯤 지나면 몬이가 새순 안 나는 게 이상하다 하고 창턱에 두도록 유도" 하라고 하셨으므로
+     이제 그 날이 **사건**이고 점핑이 거기서 선다. ⇒ 이 검사는 그 자리를 못 박는다.
+     ⚠ 「형태는 안 늘었다」는 그대로다 — 말이 붙었을 뿐 지름길은 하나도 안 생겼다. */
   const run = drive(S, io, clock, { untilEvent: true, maxDays: 12 });
   clock.run();
 
-  assert.equal(run.stop.reason, 'maxDays', `이벤트가 안 오므로 한도에서 선다: ${run.stop.reason}`);
-  assert.equal(S.day, arrivalDay + 12, `★날짜는 갔다: ${S.day}`);
-  assert.equal(run.stop.days, 12);
+  assert.equal(run.stop.reason, 'event', `유도 사건에서 선다: ${run.stop.reason}`);
+  assert.equal(run.stop.days, MONSTERA_HINT_DAYS,
+    `★유도는 ${MONSTERA_HINT_DAYS}일째다(게임일) — 어두운 자리라 유효일은 안 오른다`);
+  assert.equal(S.day, arrivalDay + MONSTERA_HINT_DAYS, `★날짜는 갔다: ${S.day}`);
   assert.equal(growth.growthDays(), ARR, `★형태는 안 늘었다: ${growth.growthDays()}`);
   assert.equal(S.firstPlay.completed, false, '어두운 자리에서 말린 새순이 나오면 안 된다');
   assert.equal(JSON.stringify(S.firstPlay.monstera.growthPhase), phaseBefore, '단계도 그대로다');
   assert.ok(run.seen.every(x => x.turn.grew === false), '자란 턴이 하나도 없어야 한다');
   assert.ok(run.seen.every(x => x.info.blocked === '빛 부족'), '매일 정지 사유가 알림으로 나간다');
-  assert.equal(run.seen.length, 12, '그래도 12일은 하루씩 그렸다');
+  assert.equal(run.seen.length, MONSTERA_HINT_DAYS, '그날까지는 하루씩 다 그렸다');
   /* ★ 지름길 검사 — 빛 입력이 매일 실제로 들어갔나(계약을 건너뛰면 여기가 빈다) */
-  assert.equal(S.dliHist.length, 12);
+  assert.equal(S.dliHist.length, MONSTERA_HINT_DAYS);
   assert.ok(S.dliHist.every(v => v === 0.1));
   assert.equal(clock.pending(), 0);
+
+  /* 유도를 지나 이틀 더 — 이제는 아무 사건도 없으므로 한도에서 선다(예전의 그 성질이다) */
+  const more = drive(S, io, clock, { untilEvent: true, maxDays: 2 });
+  clock.run();
+  assert.equal(more.stop.reason, 'maxDays', `유도 뒤에는 다시 조용하다: ${more.stop.reason}`);
+  assert.equal(S.day, arrivalDay + MONSTERA_HINT_DAYS + 2);
+  assert.equal(growth.growthDays(), ARR, '★열이틀이 지나도 형태는 그대로다');
 });
 
 check('⑵-b 어두운 자리에서 stopOnBlock 을 켜면 첫 정지에서 선다(기본은 꺼짐)', () => {

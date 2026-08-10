@@ -11,7 +11,12 @@ import {
   openSiruContractFromManifest,
   markMonsteraArrived,
   markMonsteraPhase,
+  monsteraGuideOf,
+  firstPlaySnapshot,
+  firstPlayEventsOf,
   MONSTERA_ARRIVAL_RULE,
+  MONSTERA_HINT_DAYS,
+  MONSTERA_LAMP_HINT_DAYS,
   moveMonstera,
   placeBeansprout,
   waterBeansprout,
@@ -61,6 +66,16 @@ const OPEN_SIRU = openSiruContractFromManifest(JSON.parse(
 assert.equal(OPEN_SIRU.lidState, 'open');
 assert.equal(OPEN_SIRU.transmitsSlotDli, true);
 assert.equal(OPEN_SIRU.diameterM, 0.24);
+/* ★ 2026-08-09 — 가방(빈 용기) 칸만 **뚜껑 덮인 시루**다 (박사님 지시).
+   글은 "아직 아무것도 안 선 빈 시루"인데 그림은 다 자란 열린 시루였다.
+   ⚠ 방에 세울 물건은 그대로 열린 시루다 — thumbnail·치수·차광은 안 바뀐다. */
+assert.equal(OPEN_SIRU.bagLidState, 'closed',
+  '가방 그림이 뚜껑 덮인 시루가 아닙니다 — assets/manifest.json 에 lid_state:"closed" 짝이 있어야 합니다');
+assert.equal(OPEN_SIRU.bagThumbnail, './assets/crops/thumbs/container_siru_closed.png');
+assert.notEqual(OPEN_SIRU.bagThumbnail, OPEN_SIRU.thumbnail,
+  '★가방 그림과 방 그림이 같습니다 — 가른 이유가 사라졌습니다');
+assert.equal(OPEN_SIRU.thumbnail, './assets/crops/thumbs/container_siru_open.png',
+  '★방에 서는 시루 그림이 바뀌었습니다 — 여기는 열린 시루 그대로여야 합니다');
 
 /* ★★ 물은 **회전 시작**이다 (2026-08-04 새 규칙 · first_play.js §물주기).
    심고 물을 줘야 그날이 0일차이고, 그 뒤로는 매일 저절로 자란다 — 매일 안 준다.
@@ -313,6 +328,56 @@ function growCycle(dli) {
 
   markMonsteraPhase(fp, { phaseId: 'spear_furled', progress01: 0 });
   assert.equal(fp.phase, 'complete');
+}
+
+/* ★★ 유도 두 걸음 — 책상 → 창턱 → 등 (2026-08-09 박사님 확정 · first_play.js §몬스테라 유도)
+   ⚠ 「10일」은 **게임일**이다. 어두운 자리에서는 유효 생장일이 안 오르므로 유효일로 세면
+     영영 안 뜬다. 이 재현이 그 함정을 못 박는다 — 진행이 **0 그대로**인 관측만 먹인다. */
+{
+  const { fp } = growCycle(0.2);
+  fp.enabled = true;                             // firstPlaySnapshot 은 켜진 판만 뜬다
+  const stay = () => markMonsteraPhase(fp, { phaseId: 'spear_ready', progress01: 0 });
+  markMonsteraArrived(fp, 'arrival-slot');
+  stay();                                        // 도착 당일 첫 관측 — 안 센다(비교 대상 없음)
+  assert.equal(monsteraGuideOf(fp).move, false, '도착하자마자 유도가 뜨면 안 된다');
+
+  const before0 = firstPlaySnapshot(fp);
+  for (let i = 0; i < MONSTERA_HINT_DAYS - 1; i++) stay();
+  assert.equal(monsteraGuideOf(fp).move, false,
+    `${MONSTERA_HINT_DAYS - 1}일째에 이미 떴습니다 — 하루 일찍입니다`);
+  stay();
+  assert.equal(monsteraGuideOf(fp).move, true, `${MONSTERA_HINT_DAYS}일째에 안 떴습니다`);
+  assert.equal(monsteraGuideOf(fp).lamp, false, '★자리를 옮기기 전에 등 얘기가 나오면 안 된다');
+  const ev = firstPlayEventsOf(before0, fp).map(e => e.id);
+  assert.ok(ev.includes('monstera_no_spear'), `사건이 안 났습니다: ${ev.join(',')}`);
+  assert.ok(!ev.includes('monstera_needs_lamp'), '등 안내가 자리 안내와 같이 났습니다');
+
+  /* 옮겼다 — 그래도 안 자라면 그때 등이 나온다 */
+  const beforeMove = firstPlaySnapshot(fp);
+  moveMonstera(fp, 'window-slot');
+  for (let i = 0; i < MONSTERA_LAMP_HINT_DAYS - 1; i++) stay();
+  assert.equal(monsteraGuideOf(fp).lamp, false, '옮긴 다음 날 바로 등 얘기가 나오면 안 된다');
+  stay();
+  assert.equal(monsteraGuideOf(fp).lamp, true,
+    `옮기고 ${MONSTERA_LAMP_HINT_DAYS}일이 지나도 등 안내가 안 뜹니다`);
+  assert.ok(firstPlayEventsOf(beforeMove, fp).map(e => e.id).includes('monstera_needs_lamp'));
+
+  /* 자라기 시작하면 유도는 끝난다 — 잔소리로 남지 않는다 */
+  markMonsteraPhase(fp, { phaseId: 'spear_ready', progress01: 0.5 });
+  assert.deepEqual(monsteraGuideOf(fp), { move: false, lamp: false },
+    '자라기 시작했는데도 유도가 남아 있습니다');
+}
+
+/* ★ 안내 단계는 **뒤로 안 되감긴다** (2026-08-09 고침).
+   콩나물 회전은 몬스테라가 온 뒤에도 계속 도는데, 다시 심을 때마다 placeCrop 이
+   `move_monstera` 를 `grow_beansprout` 로 덮어써서 안내가 이틀 만에 사라졌다. */
+{
+  const { fp } = growCycle(0.2);
+  markMonsteraArrived(fp, 'arrival-slot');
+  assert.equal(fp.phase, 'move_monstera');
+  resowBeansprout(fp, { day: 1, at: 'dark-slot-2' });   // 회전은 몬스테라가 온 뒤에도 돈다
+  assert.equal(fp.phase, 'move_monstera',
+    '★시루를 다시 심자 몬스테라 안내가 콩나물 단계로 되감겼습니다');
 }
 
 {
