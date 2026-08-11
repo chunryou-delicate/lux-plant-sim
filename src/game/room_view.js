@@ -19,6 +19,8 @@
        setPlantAt(potId,at,spec) 그 좌표에 세운다. **옛 자리는 반드시 지운다**
        previewAt(at,{valid})    반투명 유령
        showSlotRings(on,{potD}) 추천 자리 원형 가이드 — 안내지 제약이 아니다
+                                ★ 2026-08-11 부터 **가구 윗면 전체 칸**도 같이 켠다(§guideCells)
+       guideCells({potD})       그 칸들의 상태(진단용). `slotRings()` 와 **다른 층**이다
      추천 자리(slotId) 경로는 그대로 남는다. 세이브·조도 계약이 그 이름을 쓴다.
 
    ★ 이 파일은 render3d/** 를 읽기만 한다. 고치지 않는다.
@@ -697,6 +699,14 @@ export async function createRoomView(canvas, opts = {}) {
   let guideFills = new Map();  // slotId → 그 안을 채우는 판(추천 자리 녹색 투명면)
   let guideMat = null, guideGeo = null;
   let guideNear = null;        // 지금 굵게 칠한 자리(커서에 제일 가까운 것)
+  /* ★★ 2026-08-11 — **가구 윗면 전체 칸** (박사님: "테이블이나 가구 위 전체 칸을 보여주던지해야지")
+     추천 자리(위 guideRings)와 **다른 층**이다. 아래 §guideCells 머리말을 읽어라.
+       cellRings  칸 열쇠 → 링 메시.  cellInfo  칸 열쇠 → { x,y,z, rect, uid, occIdx, maxPotD } */
+  let cellRings = new Map();
+  let cellInfo  = new Map();
+  let cellNear = null;
+  let tierRects = null;        // 상판 사각형 목록. 광선을 쏴서 캐므로 **한 번만** 만든다
+  let cellSpan = 0;            // 지금 깔아 둔 칸이 몇 칸짜리 물건 기준인가
   let furnGhost = null;        // { uid, group, mat, line, ok } — 가구 옮기기 유령
   let gridGroup = null;        // 바닥 격자. ★ 배치·이동 중에만 보인다(방을 보는 게 이 화면이다)
   let gridKey = '';            // 지금 그려 둔 격자가 어떤 조건으로 만들어졌나
@@ -1493,6 +1503,22 @@ export async function createRoomView(canvas, opts = {}) {
     tray.position.y -= bb.min.y;          // 판 바닥을 그루 원점에 맞춘다
     g.add(tray);
 
+    /* ★★ **아직 안 심은 판은 흙만 있다** (2026-08-11 · 박사님: "재배판 배치 후 무순 심기").
+       ------------------------------------------------------------
+       무순은 이제 **빈 판을 먼저 놓고** 방에서 [🌱 심기]를 누른다. 그 사이 동안 판은
+       화면에 서 있는데 싹은 아직 없다. 아래 최소 3포기 규칙을 그대로 태우면
+       **안 심은 판에 싹이 세 포기 나 있어** 화면이 거짓말을 한다.
+       ⚠ `progress01 === 0` 으로 가르지 **않는다.** 심어 놓고 물을 안 준 판도 0 이라
+         「안 심음」과 「물 안 줌」이 화면에서 안 갈린다 — 그 둘을 갈라 보이게 한 것이
+         이번 변경의 요지였다. 그래서 **말로 받는다**(`sown:false`).
+       ★ `undefined` 는 예전 그대로 「심은 것」이다 — 옛 호출부와 `test_musun_view ③-D`
+         (progress01 이 NaN·문자열이어도 빈 판이 안 나온다)가 안 깨진다. */
+    if (spec.sown === false) {
+      g.userData.kind = 'musun';
+      g.userData.leaves = [];
+      return g;
+    }
+
     const stage = p01 < 0.34 ? 's' : p01 < 0.7 ? 'm' : 'l';
     const body = await loadGLB(AT(`../../assets/crops/sprout_radish_${stage}.glb`));
     /* 몇 칸이 텄나 — 3칸에서 시작해 12칸(slot_count)까지 찬다.
@@ -1920,6 +1946,10 @@ export async function createRoomView(canvas, opts = {}) {
        이걸 빠뜨리면 시루를 산 그날은 화면이 안 바뀐다 — 고치려던 바로 그 증상이
        "하루 뒤에야 보인다"로 모습만 바꿔 남는다. */
     if (countOf(spec.kind, prev.spec.count) !== countOf(spec.kind, spec.count)) return true;
+    /* ★ 심었나가 바뀌면 **날이 안 가도** 다시 짓는다 (2026-08-11 · §buildMusun sown).
+       심는 것은 하루를 안 쓰는 동작이라, 이걸 빠뜨리면 [🌱 심기]를 눌러도 판이
+       빈 채로 남아 있다가 **다음 날에야** 싹이 돋는다 — 위 count 규칙과 같은 이유다. */
+    if ((prev.spec.sown === false) !== (spec.sown === false)) return true;
     if ((prev.days ?? null) !== days) {
       if (performance.now() - (prev.builtAt || 0) < REBUILD_MIN_MS) return false;
       return true;
@@ -2286,6 +2316,11 @@ export async function createRoomView(canvas, opts = {}) {
     /* 기하·재질은 **나눠 쓰는 것**이라 링 하나씩 버리면 안 된다. 아래에서 한 번만 버린다. */
     guideRings.clear();
     guideFills.clear();
+    cellRings.clear();
+    cellInfo.clear();
+    cellNear = null;
+    tierRects = null;
+    cellSpan = 0;
     if (guideGeo) { guideGeo.thin.dispose(); guideGeo.thick.dispose(); guideGeo.fill.dispose(); }
     if (guideMat) for (const k in guideMat) guideMat[k].dispose();
     guideGroup = null; guideGeo = null; guideMat = null; guideNear = null;
@@ -2340,6 +2375,161 @@ export async function createRoomView(canvas, opts = {}) {
     return guideRings.size;
   }
 
+  /* ============================================================
+     ④-c ★ 가구 윗면 **전체 칸** — guideCells (2026-08-11)
+     ------------------------------------------------------------
+     박사님: *"테이블이나 가구 위 전체 칸을 보여주던지해야지"*
+
+     ── 무엇이 문제였나 ──────────────────────────────────────────────
+     책상 상판은 1.20 × 0.60 m 인데 **노란 네모가 둘**이었다. 그 둘은
+     `furniture_pastel.tierSlots` 가 가로 한 줄에 박아 넣은 상수(`w>1.4?3:2`)이고,
+     깊이(d)는 아예 안 쓴다. 즉 「자리가 둘」은 상판의 성질이 아니라 **빌더의 상수**다.
+     그래서 화면이 「여기 둘뿐」이라고 거짓말을 하고 있었다.
+
+     ── 왜 슬롯을 늘리지 않았나 (★ 이게 이 절의 핵심이다) ─────────────
+     슬롯을 늘리면 `slotId = uid + ':' + i` 의 **번호 뜻이 바뀐다.** 그러면
+       · `save.js` 여섯 곳이 이름을 그대로 저장하므로 **옛 판의 화분이 조용히 다른 자리로 간다**
+       · `data/profiles/room_profile.*.json` 의 슬롯별 DLI 표가 통째로 어긋난다
+       · 검사 아홉 개가 「반지하 14칸」과 그 DLI 를 박아 두었다
+       · `game.html` 의 드롭다운(`fillSlots`/`fillMusunSlots`)이 자리마다 한 줄이라
+         14 → 60 이면 목록이 못 쓸 물건이 되고 `slotLabel` 이 「책상 37번 칸」이 된다
+     ⇒ 그래서 **계약(슬롯)은 한 톨도 안 건드리고 화면만 고친다.** 놓는 길은 이미
+       자유 좌표로 상판 전체를 받는다(`surfaceAt` → `snapOnSurface`, 2026-08-07).
+       없던 것은 **놓을 수 있다는 표시**뿐이었다.
+
+     ── 칸을 어디에 놓나 ────────────────────────────────────────────
+       크기  `place.GRID_CELL` 0.25 m — 창턱(house.SILL_GRID)·바닥 격자가 쓰는 눈금이다
+       원점  **그 상판 한가운데**. 칸 수 n = floor(면 길이 / 0.25) 로 가운데 정렬한다
+     ★ 이렇게 하면 칸 한가운데가 면 중심에서 `(i − (n−1)/2)·0.25` 인데, n 이 홀수면
+       0.25 의 배수이고 짝수면 0.125 + 0.25k 다 — **어느 쪽이든 0.125 의 배수**다.
+       놓는 걸음(`snapInSpan`)이 면 중심 기준 0.125 배수라 **칸 한가운데가 곧 놓이는 자리**다.
+       (재서 확인할 것: 아래 `guideCells()` 의 `snapErr` 가 그 어긋남을 그대로 낸다)
+
+     ── 큰 물건이 갈 곳을 잃지 않는다 ────────────────────────────────
+     칸을 잘게 나눠도 큰 화분은 **여러 칸을 차지하면 된다**(박사님). 칸 수가 짝수인
+     물건은 칸 **경계**에 앉고 홀수면 칸 **한가운데**에 앉는데, 걸음이 0.125 라 둘 다 있다.
+     그래서 이 표시가 늘어도 놓을 수 있는 자리가 줄지 않는다.
+
+     ── 추천 자리와 **다른 층**이다 ─────────────────────────────────
+       추천 자리(guideRings)  「여기가 좋다」 — 녹색 투명면 + 굵은 테두리. **14칸 그대로**
+       윗면 칸(cellRings)     「여기 놓을 수 있다」 — 얇은 테두리. 새로 생긴 것
+     `slotRings()` 는 예전대로 **추천 자리만** 낸다(검사 여럿이 그 수를 본다).
+     칸은 `guideCells()` 로 따로 묻는다.
+  ============================================================ */
+  const CELL_SAME = 0.09;      // 추천 자리와 이만큼 안이면 같은 칸으로 본다 — 네모를 겹쳐 그리지 않는다
+  const _cellDown = new THREE.Vector3(0, -1, 0);
+  const _cellFrom = new THREE.Vector3();
+
+  /* 그 슬롯이 앉은 **단의 상판 사각형**. 슬롯 바로 위에서 아래로 광선을 쏴서 찾는다 —
+     `surfaceAt` 이 쓰는 것과 **같은 자**(meshRect)라야 격자와 판정이 안 어긋난다.
+     못 찾으면 null 이다. 지어내지 않는다. */
+  function tierRectOf(slot) {
+    if (!built || !built.room) return null;
+    _cellFrom.set(slot.x, slot.y + 0.12, slot.z);
+    const near0 = ray.near, far0 = ray.far;
+    ray.set(_cellFrom, _cellDown);
+    ray.near = 0; ray.far = 0.26;
+    let hits = [];
+    try { hits = ray.intersectObject(built.room, true); } catch { hits = []; }
+    ray.near = near0; ray.far = far0;
+    for (const h of hits) {
+      if (!h.face || !h.object.isMesh || hiddenInScene(h.object)) continue;
+      if (Math.abs(h.point.y - slot.y) > 0.06) continue;
+      if (faceUpY(h) <= SURF_UP_MIN) continue;
+      const own = ownerOf(h.object);
+      if (!own) continue;
+      const rect = meshRect(h.object);
+      if (!rect || !(rect.w > 0) || !(rect.d > 0)) continue;
+      return { rect, own };
+    }
+    return null;
+  }
+
+  /* ★ 상판 사각형 → **span 칸짜리 물건이 앉을 수 있는 자리들**(면 좌표 u,v + 월드 x,z).
+     ------------------------------------------------------------
+     ⚠ 여기서 span 을 안 보면 표시가 거짓말을 한다. 재서 확인한 것:
+       새싹 재배판(0.4327m = 2칸)을 끌 때 칸 한가운데(v=±0.125)를 그렸더니,
+       실제로 앉는 자리는 두 칸의 **경계**(v=0) 라 **0.125m 어긋났다.**
+     칸 수가 짝수인 물건은 칸 경계에, 홀수면 칸 한가운데에 앉는다 — 걸음(0.125m)이
+     칸(0.25m)의 절반이라 둘 다 격자 위다. 그래서 span 을 받아 **묶음의 한가운데**를 낸다.
+     이것이 박사님 말씀의 "1개 반 2개 칸 4칸 차지하면 되잖아" 를 화면에 옮긴 것이다. */
+  function cellsOfRect(rect, span = 1) {
+    const nu = Math.max(1, Math.floor(rect.w / GRID_CELL + 1e-9));
+    const nv = Math.max(1, Math.floor(rect.d / GRID_CELL + 1e-9));
+    const su = Math.min(span, nu), sv = Math.min(span, nv);
+    const c = Math.cos(rect.rot || 0), s = Math.sin(rect.rot || 0);
+    const out = [];
+    for (let j = 0; j + sv <= nv; j++) for (let i = 0; i + su <= nu; i++) {
+      const u = (i + (su - 1) / 2 - (nu - 1) / 2) * GRID_CELL;
+      const v = (j + (sv - 1) / 2 - (nv - 1) / 2) * GRID_CELL;
+      out.push({ u, v, x: rect.x + u * c + v * s, z: rect.z - u * s + v * c });
+    }
+    return out;
+  }
+
+  /* 슬롯이 앉은 단들의 상판 사각형 — **방을 지을 때 한 번만** 캔다(광선을 쏘는 일이라 비싸다). */
+  function collectTierRects() {
+    const tiers = new Map();
+    for (const s of slotById.values()) {
+      const t = tierRectOf(s);
+      if (!t) continue;
+      /* ⚠ 열쇠에 **높이(y)를 넣어야 한다.** 3단 선반은 단마다 판때기가 같은 x·z·w·d 라
+         y 를 빼면 세 단이 한 단으로 뭉쳐 위 두 단의 칸이 통째로 사라진다(그렇게 만들어 봤다). */
+      const key = [t.own.userData.uid || 'x', s.y.toFixed(3),
+                   t.rect.x.toFixed(3), t.rect.z.toFixed(3),
+                   t.rect.w.toFixed(3), t.rect.d.toFixed(3), (t.rect.rot || 0).toFixed(4)].join('|');
+      if (!tiers.has(key)) tiers.set(key, { rect: t.rect, own: t.own, y: s.y, slots: [] });
+      tiers.get(key).slots.push(s);
+    }
+    return [...tiers.values()];
+  }
+
+  /* 칸 메시를 span 에 맞춰 다시 깐다. span 이 안 바뀌면 아무것도 안 한다. */
+  function layoutGuideCells(span) {
+    if (!guideGroup) return 0;
+    if (!tierRects) tierRects = collectTierRects();
+    if (cellSpan === span && cellRings.size) return cellRings.size;
+    for (const [, m] of cellRings) guideGroup.remove(m);
+    cellRings.clear(); cellInfo.clear(); cellNear = null;
+    cellSpan = span;
+    for (const t of tierRects) {
+      const u = t.own.userData || {};
+      /* 면이 정한 한도 — `surfaceAt` 이 자리 없는 점에 쓰는 것과 **같은 값**이다 */
+      const maxPotD = (u.tier_max_pot_d && u.tier_max_pot_d.length)
+        ? Math.max(...u.tier_max_pot_d) : null;
+      for (const c of cellsOfRect(t.rect, span)) {
+        /* 추천 자리와 사실상 같은 점이면 안 그린다 — 한 자리에 네모가 둘 겹친다 */
+        if (t.slots.some(s => Math.hypot(s.x - c.x, s.z - c.z) < CELL_SAME)) continue;
+        const id = '#cell:' + (u.uid || 'x') + ':' + t.y.toFixed(3) +
+                   ':' + c.u.toFixed(3) + ':' + c.v.toFixed(3);
+        if (cellRings.has(id)) continue;
+        const m = new THREE.Mesh(guideGeo.thin, guideMat.fit);
+        m.rotation.x = -Math.PI / 2;
+        m.position.set(c.x, t.y + 0.006, c.z);
+        m.renderOrder = 4;
+        m.userData.guideCellId = id;
+        guideGroup.add(m);
+        cellRings.set(id, m);
+        cellInfo.set(id, { x: c.x, y: t.y, z: c.z, u: c.u, v: c.v, span,
+                           uid: u.uid || null, occIdx: Number.isInteger(u.occIdx) ? u.occIdx : null,
+                           rect: t.rect, maxPotD });
+      }
+    }
+    return cellRings.size;
+  }
+
+  /* 지름 → 그 물건이 먹는 칸 수. **네모 크기(markerHalf/squareHalf)와 같은 자**다 —
+     여기서 다르게 세면 그린 네모와 앉는 자리가 또 어긋난다. */
+  const cellSpanFor = potD => Math.max(1, Math.round((Number.isFinite(potD) ? potD : 0.22) / GRID_CELL));
+
+  /* 그 칸에 이 지름이 올라가나 — `surfaceAt` 의 「자리 번호가 없는 가구 위」 가지와
+     **같은 두 판정**이다. 여기서 따로 만들면 표시와 실제가 또 어긋난다(§potFits 머리말). */
+  function cellHolds(potD, info) {
+    if (!info) return false;
+    if (Number.isFinite(info.maxPotD) && potD > info.maxPotD + 1e-9) return false;
+    return potFits(potD, { rect: info.rect, point: { x: info.x, z: info.z } }).ok;
+  }
+
   /* ★★ 자리 네모의 크기 — **끌고 있는 것**으로 잰다 (2026-08-08 버그 고침)
      ══════════════════════════════════════════════════════════════════
      박사님이 폰 사진으로 잡아 주셨다: *"책상이랑 서랍장 위에는 여전히 저래."*
@@ -2376,13 +2566,16 @@ export async function createRoomView(canvas, opts = {}) {
     if (!built) return 0;
     if (!on) {
       if (guideGroup) guideGroup.visible = false;
-      guideNear = null; needsRender = true;
+      guideNear = null; cellNear = null; needsRender = true;
       return 0;
     }
     if (!guideRings.size) buildGuideRings();
     /* ★ opt.count 를 주면 **무리 전체**로 잰다 — 시루 12개를 끌고 있는데 "한 개는
        들어갑니다"로 원을 밝히면, 놓는 순간 무리가 통째로 줄어든다(§clusterUnit) */
     const potD = Number.isFinite(opt.potD) ? opt.potD : potDOf(opt.plantId, opt.count);
+    /* ★ 가구 윗면 칸을 지금 끌고 있는 것의 **칸 수**에 맞춰 깐다 (§guideCells).
+       2칸짜리는 칸 경계에 앉으므로 칸 한가운데를 그리면 표시가 거짓말이 된다. */
+    layoutGuideCells(cellSpanFor(potD));
     let nearId = null, nearD = Infinity;
     if (opt.near && Number.isFinite(opt.near.x) && Number.isFinite(opt.near.z)) {
       for (const id of guideRings.keys()) {
@@ -2393,7 +2586,22 @@ export async function createRoomView(canvas, opts = {}) {
       }
       if (Number.isFinite(opt.nearMax) && nearD > opt.nearMax) nearId = null;
     }
+    /* ★ 윗면 칸 중에서도 제일 가까운 것을 찾는다. **추천 자리보다 확실히 가까울 때만**
+       칸이 이긴다 — 그래야 추천 자리를 정확히 겨눴을 때의 예전 동작이 한 톨도 안 바뀐다.
+       (검사 test_roomview_place E-3 이 그 동작을 지킨다) */
+    let cellNearId = null, cellNearD = Infinity;
+    if (cellRings.size && opt.near && Number.isFinite(opt.near.x) && Number.isFinite(opt.near.z)) {
+      for (const [id, info] of cellInfo) {
+        if (!cellHolds(potD, info)) continue;
+        const d = distanceXZ(opt.near, info);
+        if (d < cellNearD) { cellNearD = d; cellNearId = id; }
+      }
+      if (Number.isFinite(opt.nearMax) && cellNearD > opt.nearMax) cellNearId = null;
+      if (cellNearId && !(cellNearD < nearD)) cellNearId = null;
+      if (cellNearId) nearId = null;
+    }
     guideNear = nearId;
+    cellNear = cellNearId;
     /* ★★ 유령이 앉은 칸의 **네모만 감춘다** (박사님 2026-08-07 확정 · 3㉮).
        한 자리에 네모(어디에) + 유령(무엇이) + 라벨(어떻게 될지) 셋이 겹쳐 안 읽혔다.
        ★ 셋 다 하는 일이 달라서 **하나를 없애면 그 질문의 답이 사라진다** — 그래서
@@ -2430,6 +2638,23 @@ export async function createRoomView(canvas, opts = {}) {
         f.scale.setScalar(half);
       }
     }
+    /* ★★ 가구 윗면 **전체 칸** (§guideCells). 추천 자리와 다른 층이라 따로 돈다.
+       ⚠ 돌려주는 값(fits)에는 **안 섞는다** — 그 수를 검사 여럿이 「추천 자리 몇 칸」으로
+         읽고 있고(test_musun_view ①-C · test_multisiru ②-E), 뜻이 다른 것을 한 수로
+         합치면 그 검사들이 지키던 뜻이 사라진다. 칸은 `guideCells()` 로 따로 묻는다.
+       ★ 칸에는 **녹색 면을 안 깐다.** 초록은 「여기가 좋다」(추천)의 색이다 —
+         칸까지 초록이면 색이 뜻을 잃는다. 칸은 「놓을 수 있다」까지만 말한다. */
+    for (const [id, m] of cellRings) {
+      const info = cellInfo.get(id);
+      const holds = cellHolds(potD, info);
+      const isNear = id === cellNearId;
+      /* `opt.cells:false` — 칸 층만 끈다. 전/후를 같은 카메라로 찍어 견주려고 남긴 문이다. */
+      m.visible = opt.cells !== false;
+      m.material = isNear ? guideMat.near : (holds ? guideMat.fit : guideMat.ng);
+      m.geometry = isNear ? guideGeo.thick : guideGeo.thin;
+      m.scale.setScalar(half);
+      m.renderOrder = isNear ? 6 : 4;
+    }
     guideGroup.visible = true;
     needsRender = true;
     return fits;
@@ -2445,6 +2670,29 @@ export async function createRoomView(canvas, opts = {}) {
       half: +m.scale.x.toFixed(4),
       visible: !!(guideGroup && guideGroup.visible)
     }));
+  }
+
+  /* 검증·진단용 — 가구 윗면 칸이 어떤 상태인가 (§guideCells).
+     ★ `snapErr` 은 「이 칸 한가운데를 겨누면 화분이 실제로 여기 앉나」를 m 로 낸다.
+       놓는 걸음(snapOnSurface)에 그대로 물어서 잰다 — 표시와 실제가 어긋나면 여기서 보인다. */
+  function guideCellState(opt = {}) {
+    const potD = Number.isFinite(opt.potD) ? opt.potD : potDOf(opt.plantId, opt.count);
+    const step = placeStepOf(opt.step);
+    if (guideGroup) layoutGuideCells(cellSpanFor(potD));
+    return [...cellRings].map(([id, m]) => {
+      const info = cellInfo.get(id) || {};
+      const sn = info.rect ? snapOnSurface(info.x, info.z, potD, info.rect, step) : null;
+      return {
+        cellId: id, uid: info.uid || null, near: id === cellNear,
+        x: +(info.x || 0).toFixed(4), y: +(info.y || 0).toFixed(4), z: +(info.z || 0).toFixed(4),
+        u: info.u, v: info.v, maxPotD: info.maxPotD ?? null,
+        fits: cellHolds(potD, info),
+        snapErr: sn ? +Math.hypot(sn.x - info.x, sn.z - info.z).toFixed(6) : null,
+        color: '#' + m.material.color.getHexString(),
+        half: +m.scale.x.toFixed(4),
+        visible: !!(guideGroup && guideGroup.visible)
+      };
+    });
   }
 
   /* ============================================================
@@ -6720,6 +6968,9 @@ export async function createRoomView(canvas, opts = {}) {
        돌려주는 값은 이 화분이 올라갈 수 있는 자리 수. */
     showSlotRings(on, opt) { return showSlotRings(!!on, opt || {}); },
     slotRings() { return slotRingState(); },
+    /* ★ 가구 윗면 전체 칸 (§guideCells · 2026-08-11). `slotRings()` 와 **다른 층**이다 —
+       거기는 추천 자리 14칸, 여기는 상판을 0.25m 로 나눈 칸이다. 섞어 세지 마라. */
+    guideCells(opt) { return guideCellState(opt || {}); },
 
     /* ── 바닥 격자 (2026-08-03) ──
        ★ 배치·이동 중에만 켠다. 늘 켜 두면 방이 안 보인다.

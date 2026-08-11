@@ -1,0 +1,105 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>GLB → 썸네일</title>
+<!-- ============================================================
+  tools/glb_thumb.html — GLB 하나를 알파 있는 PNG 로 찍는다 (2026-08-11 신설)
+
+  왜 있나
+  ------
+  `assets/crops/thumbs/*.png` 는 GLB 를 찍은 **알파 있는 렌더**다
+  (`tools/make_thumbs.py` 머리글이 그렇게 적어 두었다). 그런데 찍는 도구가 저장소에 없어서
+  「싹 없는 빈 재배판」 한 장이 필요할 때 AI 로 다시 그리는 수밖에 없었다 —
+  그러면 판 모양이 GLB 와 미세하게 갈려 **가방 그림과 방 안 물건이 다른 물건**이 된다.
+
+  ★ `container_tray_s.glb` 는 **판 몸통뿐**이다(floor · 벽 넷 · soil). 싹은 방뷰가
+    절차적으로 세운다(§buildMusun). 그래서 이 GLB 를 그냥 찍으면 그것이 곧 **빈 재배판**이다.
+
+  쓰는 법
+  ------
+    python tools/serve.py 8963
+    node tools/glb_thumb.mjs assets/crops/container_tray_s.glb assets/crops/thumbs/container_tray_s_empty.png
+
+  ⚠ 카메라·빛은 지금 썸네일들의 결(3/4 내려보기 · 부드러운 반그림자 · 외곽선 없음)에 맞춘 값이다.
+    원본 렌더 설정은 저장소에 남아 있지 않아 **눈으로 맞춘 것**이다 — 픽셀 단위로 같지는 않다.
+============================================================ -->
+<style>
+  html, body { margin: 0; background: transparent; }
+  canvas { display: block; }
+</style>
+<script src="../vendor/three/three.min.js"></script>
+<script src="../vendor/three/GLTFLoader.js"></script>
+<script>
+/* 밖(node)에서 `window.__thumb(url)` 을 부르고 `window.__done` 을 기다린다 */
+window.__done = false;
+window.__err = null;
+
+const SIZE = 512;
+/* ⚠ 캔버스를 문서에 **안 붙인다.** 이 스크립트는 아직 <head> 안이라 `document.body` 가 null 이고
+   (한 번 여기서 죽었다), 어차피 `toDataURL` 은 화면에 안 붙어 있어도 나온다. */
+const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
+renderer.setPixelRatio(1);
+renderer.setSize(SIZE, SIZE);
+
+const scene = new THREE.Scene();
+/* ★★ **빛을 안 쓴다.** 이 폴더의 썸네일은 음영이 없는 **납작한 색**이다 — 재서 확인했다:
+     container_tray_s.png 의 색이 GLB 의 baseColorFactor 와 **한 값도 안 틀리고 같다**
+     (벽 #BEB4A2 · 흙 #5C4E42 · 바닥 #D6CEBE). 조명을 넣으면 면마다 밝기가 갈려
+     같은 물건인데 가방 그림만 다른 결이 된다.
+   ⚠ 배경도 **흰색 불투명**이다(crops/thumbs 넉 장 전수 확인 · 알파 0% ).
+     `make_thumbs.py` 머리글은 「알파 있는 렌더」라고 적어 두었는데 **지금 파일들은 아니다.** */
+scene.background = new THREE.Color(0xffffff);
+
+window.__thumb = function (url) {
+  const loader = new THREE.GLTFLoader();
+  loader.load(url, (gltf) => {
+    try {
+      const obj = gltf.scene;
+      /* 재질을 **납작한 것**으로 갈아 끼운다 — baseColor 를 그대로 내는 재질이다.
+         ⚠ 색은 GLB 것을 그대로 쓴다. 여기서 색을 지어내면 정본이 둘이 된다. */
+      obj.traverse(o => {
+        if (!o.isMesh || !o.material) return;
+        const src = Array.isArray(o.material) ? o.material : [o.material];
+        const flat = src.map(m => new THREE.MeshBasicMaterial({
+          color: m.color ? m.color.clone() : new THREE.Color(0xffffff),
+          side: m.side, transparent: m.transparent, opacity: m.opacity
+        }));
+        o.material = Array.isArray(o.material) ? flat : flat[0];
+      });
+      scene.add(obj);
+
+      /* 물건을 원점으로 옮기고 크기를 잰다 — GLB 마다 원점 규약이 달라 재는 쪽이 안전하다 */
+      const box = new THREE.Box3().setFromObject(obj);
+      const size = new THREE.Vector3(), center = new THREE.Vector3();
+      box.getSize(size); box.getCenter(center);
+      obj.position.sub(center);
+
+      /* 3/4 내려보기. 지금 썸네일이 대략 이 각이다 —
+         가로로 살짝 돌아가 있고 위에서 30° 남짓 내려다본다. */
+      const r = Math.max(size.x, size.y, size.z);
+      const cam = new THREE.PerspectiveCamera(28, 1, 0.01, 100);
+      const d = r * 3.1;
+      cam.position.set(-d * 0.62, d * 0.55, d * 0.72);
+      cam.lookAt(0, 0, 0);
+
+      /* 물건이 판 안에 꽉 차되 잘리지 않게 — 여덟 꼭짓점을 화면으로 던져 여백을 잰다 */
+      cam.updateMatrixWorld(); cam.updateProjectionMatrix();
+      let mx = 0;
+      const half = new THREE.Vector3(size.x / 2, size.y / 2, size.z / 2);
+      for (let i = 0; i < 8; i++) {
+        const p = new THREE.Vector3(
+          (i & 1 ? 1 : -1) * half.x, (i & 2 ? 1 : -1) * half.y, (i & 4 ? 1 : -1) * half.z);
+        p.project(cam);
+        mx = Math.max(mx, Math.abs(p.x), Math.abs(p.y));
+      }
+      /* 0.92 = 가장자리에 8% 숨을 남긴다. 0 여백이면 그림자가 잘려 네모나게 보인다 */
+      cam.position.multiplyScalar(mx / 0.92);
+      cam.lookAt(0, 0, 0);
+
+      renderer.render(scene, cam);
+      window.__png = renderer.domElement.toDataURL('image/png');
+      window.__size = { x: +size.x.toFixed(4), y: +size.y.toFixed(4), z: +size.z.toFixed(4) };
+      window.__done = true;
+    } catch (e) { window.__err = String(e && e.message || e); window.__done = true; }
+  }, undefined, (e) => { window.__err = 'GLB 를 못 읽었습니다: ' + (e && e.message || e); window.__done = true; });
+};
+</script>
