@@ -19,7 +19,9 @@ import { createFirstPlayState, placeBeansprout, placeCrop, resowBeansprout, wate
          cropSurplusQuote, takeCropSurplus,
          /* ★ 2026-08-09 · 시루 개체화 (first_play §자리는 시루마다 따로다) */
          ensureCropPots, syncCropLead, addCropPot, cropPotOf, adoptCropSpotToPots,
-         placedCropPots, idleCropPots, cropPotList } from './first_play.js';
+         placedCropPots, idleCropPots, cropPotList,
+         /* ★ 2026-08-11 · 놓기와 심기를 가른다 (first_play §sown) */
+         sowCropPot, cropPotSown } from './first_play.js';
 import { createTutorialState, yearDay0Of } from './tutorial.js';
 /* 체력 — 하루에 돌볼 수 있는 양. 규칙은 전부 그쪽 모듈이 갖는다(docs/stamina.md) */
 import { spend as spendStamina, canAct as canActStamina, createStaminaState } from './stamina.js';
@@ -463,7 +465,16 @@ export function setCropAt(S, at, opt = {}) {
      (여기 숫자를 적어 두면 값이 바뀔 때 조용히 거짓말이 된다. 실제로 한 번 그랬다).
    ★ 씨앗값은 여기서 안 낸다 — 재고에서 뺄 뿐이다(살림은 tutorial.js 소유라는 규약 그대로).
      opt.at / 자리 이름은 `at` 인자로 · opt 는 `setCropAt` 과 같다(size · slots · snapDist)
+     opt.sow  **false 면 씨앗을 안 쓴다** — 빈 용기만 세운다 (2026-08-11 · 아래 ★★)
    반환 { potId, kind, slotId, at, fromStock, seedsUsed, sirus, moved, keptDays } */
+/* ★★★ 2026-08-11 — `opt.sow:false` 가 왜 생겼나 (박사님 "재배판 배치 후 무순 심기").
+   ------------------------------------------------------------
+   콩나물 시루는 **놓기 = 심기**다 — 시루는 콩을 앉히는 용기라 놓는 순간이 곧 심는 순간이고,
+   그래서 여기서 용기와 씨앗을 한꺼번에 뺀다. 무순 재배판은 **씨앗을 뿌리는 판**이라 결이 다르다:
+   판을 먼저 놓고, 놓인 판에 뿌린다. 그래서 놓을 때는 용기 하나만 나가고 씨앗은
+   `state.sowCrop`(=[🌱 심기])이 뺀다.
+   ⚠ ①묻고 ②만들고 ③놓고 ④뺀다 **순서는 그대로다**(`tools/test_resow_atomic.mjs` 가 지킨다).
+     달라지는 것은 ①에서 묻는 목록과 ④에서 빼는 목록뿐이고, 둘은 **같은 목록**이다. */
 export function placeSiru(S, at, opt = {}) {
   const fp = S && S.firstPlay;
   if (!fp || !fp.beansprout) throw new Error('[배치] 첫 플레이 상태가 없습니다 — 놓을 시루가 없습니다');
@@ -472,16 +483,18 @@ export function placeSiru(S, at, opt = {}) {
   const site = cropSiteOf(fp, kindId);
   if (!site) throw new Error(`[배치] ${k.ko} 상태가 없습니다`);
   ensureCropPots(site);
+  const sow = opt.sow !== false;              // 안 주면 예전 그대로 놓으면서 심는다
 
   const spare = idleCropPots(site);
   let pot = spare[0] || null, fromStock = false, seedsUsed = 0;
   if (!pot) {
     /* ① **묻기만 한다.** 여기서는 한 톨도 안 뺀다 */
-    assertStockAll(S, [{ itemId: k.containerItemId, qty: 1 },
-                       { itemId: k.seedItemId, qty: 1 }]);
-    fromStock = true; seedsUsed = 1;
+    const need = [{ itemId: k.containerItemId, qty: 1 }];
+    if (sow) need.push({ itemId: k.seedItemId, qty: 1 });
+    assertStockAll(S, need);
+    fromStock = true; seedsUsed = sow ? 1 : 0;
     /* ② 시루 개체를 만든다. 아직 가방에 있는 빈 용기다 — 재고는 그대로다 */
-    pot = addCropPot(fp, kindId, { day: S.day });
+    pot = addCropPot(fp, kindId, { day: S.day, sown: sow });
   }
   /* ③ 놓는다. **여기가 던질 수 있는 유일한 자리**이고, 아직 재고를 안 뺐으므로
      던져도 잃는 것이 없다. 만들어 둔 빈 시루만 도로 걷는다.
@@ -498,12 +511,15 @@ export function placeSiru(S, at, opt = {}) {
   /* ④ 다 됐다. 이제 뺀다 — ①에서 물어 뒀으므로 여기서는 못 뺄 일이 없다 */
   if (fromStock) {
     useStock(S, k.containerItemId, 1);
-    useStock(S, k.seedItemId, 1);
+    if (sow) useStock(S, k.seedItemId, 1);
   }
-  pushLog(S, fromStock
-    ? `🥣 ${k.containerKo}를 하나 놓았습니다 — 씨앗 1봉지 (물을 줘야 시작합니다)`
-    : `🥣 ${k.containerKo}를 하나 놓았습니다 (물을 줘야 시작합니다)`);
+  pushLog(S, !sow
+    ? `🌱 빈 ${k.containerKo}를 하나 놓았습니다 (씨앗을 심어야 시작합니다)`
+    : fromStock
+      ? `🥣 ${k.containerKo}를 하나 놓았습니다 — 씨앗 1봉지 (물을 줘야 시작합니다)`
+      : `🥣 ${k.containerKo}를 하나 놓았습니다 (물을 줘야 시작합니다)`);
   return { potId: pot.id, kind: kindId, slotId: pot.slotId, at: pot.at,
+           sown: cropPotSown(pot),
            fromStock, seedsUsed, sirus: placedCropPots(site).length,
            spare: idleCropPots(site).length + (stockOf(S, k.containerItemId) || 0),
            events: [{ id: 'siru_placed', ko: `${k.containerKo}를 놓았습니다`,
@@ -514,6 +530,46 @@ export function placeSiru(S, at, opt = {}) {
    규칙은 아래 `waterCrop` 이 전부 갖는다. 여기는 **어느 시루인가**만 얹는다. */
 export function waterSiru(S, potId, opt = {}) {
   return waterCrop(S, { ...opt, potIds: [potId] });
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   ★★★ **놓인 용기에 씨앗을 뿌린다** (2026-08-11 · 박사님 지시)
+   ------------------------------------------------------------
+   원문: *"왜 가방에서 무순 심기를 해야 돼? 재배판 배치 후 무순 심기를 해야지?"*
+
+   `placeSiru` 와 **같은 결**이다: 규칙은 first_play(`sowCropPot`)가, 가방은 shop 이 갖고,
+   둘을 여기서 묶는다. 화면은 이 함수 하나만 부른다.
+   ⚠ **①묻고 ②심고 ③뺀다.** 순서를 뒤집으면 씨앗만 나가고 안 심기는 판이 난다
+     (`placeSiru` §①~④ 와 같은 이유다 — 이 저장소가 실제로 그 사고를 겪었다).
+   ★ **체력을 안 쓴다.** 콩나물은 「놓기 = 심기」인데 그 길(`placeSiru`)이 체력을 안 쓴다.
+     여기서 물리면 같은 결과를 내는 데 무순만 손이 하나 더 드는 셈이라 두 작물의 셈이
+     갈린다. ⚠ 이건 **판단**입니다 — 물리게 하려면 `resowCrop` 처럼 `canActStamina(S,'sow')`
+     한 줄이면 되고, 그때는 밸런스 창과 같이 정해야 합니다.
+     opt.kind  종류를 알면 넘긴다. 안 넘기면 그 potId 를 가진 자리를 찾아 정한다
+   반환 { potId, kind, seedsUsed, sown, events } */
+export function sowCrop(S, potId, opt = {}) {
+  const fp = S && S.firstPlay;
+  if (!fp || !fp.beansprout) throw new Error('[심기] 첫 플레이 상태가 없습니다 — 심을 용기가 없습니다');
+  /* 어느 종류의 용기인가 — 화면이 종류를 안 넘겨도 되게 여기서 찾는다.
+     ⚠ 지어내지 않는다. 못 찾으면 던진다(모르는 id 로 심으면 엉뚱한 씨앗이 나간다). */
+  let kindId = opt.kind || null;
+  if (!kindId) {
+    for (const site of cropSites(fp))
+      if (cropPotOf(ensureCropPots(site), potId)) { kindId = site.kind || 'beansprout'; break; }
+  }
+  if (!kindId) throw new Error(`[심기] 모르는 용기입니다: ${potId}`);
+  const k = cropKindOf(kindId);
+  /* ① **묻기만 한다.** 여기서는 한 톨도 안 뺀다 */
+  assertStockAll(S, [{ itemId: k.seedItemId, qty: 1 }]);
+  /* ② 심는다. 여기가 던질 수 있는 자리이고, 아직 재고를 안 뺐으므로 던져도 잃는 것이 없다 */
+  const r = sowCropPot(fp, kindId, potId, { day: S.day });
+  /* ③ 다 됐다. 이제 뺀다 */
+  useStock(S, k.seedItemId, 1);
+  pushLog(S, `🌱 ${k.containerKo}에 ${k.ko} 씨앗을 심었습니다 — 씨앗 1봉지 ` +
+             `(물을 줘야 ${k.harvestDays}일 회전이 시작됩니다)`);
+  return { ...r, seedsUsed: 1,
+           events: [{ id: 'crop_sown', ko: `${k.ko}을(를) 심었습니다`,
+                      kind: kindId, potId }] };
 }
 
 /* ★ 시루를 놓는 것과 **회전을 시작하는 것은 다른 동작**이다 (2026-08-04 새 규칙).

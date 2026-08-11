@@ -103,7 +103,16 @@ export const SCRIPTS = {
   ],
 
   /* 어두운 자리에 둔 채 며칠 지났을 때 — 빨리감기로 날짜만 가는 그 상황이다.
-     ★혼내지 않는다. 무엇을 보면 되는지만 알려 준다. */
+     ★혼내지 않는다. 무엇을 보면 되는지만 알려 준다.
+
+     ⛔ **2026-08-11 — 이 대사는 지금 아무 데서도 안 불린다.** 저장소 전체를 훑어 확인했다:
+       `EVENT_SCRIPT` 에도 `CHATTER` 에도 없고 `game.html` 도 `dlgOpen('monsteraStalled')` 를
+       안 한다. `tools/test_dialogue_coverage.mjs` 의 「쓰이지 않는 대사가 없다」 검사는
+       이 이름을 **`used` 목록에 손으로 박아 두어** 통과시키고 있다 — START-HERE §2 가
+       "제일 위험하다"고 적은 그 모양(고장난 상태를 검사가 정상으로 못 박아 둔 것)이다.
+     ★ 하는 일은 2026-08-09 에 들어온 `monsteraGuideWindow`(monstera_no_spear)가 이미 한다.
+       지우는 것이 맞아 보이지만 **검사 파일이 이 창 소유가 아니라** 손대지 않았다.
+       판단과 붙일 자리는 `docs/handoff/story2-to-plan.md` 에 적었다. */
   monsteraStalled: [
     { who: 'moni', face: 'sad', text: '며칠째 그대로야…' },
     { who: 'moni', text: '빛이 모자라면 날짜만 가고 모양은 안 변해. 더 밝은 자리를 찾아 보자.' }
@@ -148,7 +157,10 @@ export const SCRIPTS = {
   ],
 
   /* ═══ §2 배움 넷 — 체크리스트가 하나씩 채워지는 순간 ══════════════════════
-     ★한 줄씩이다. 이 넷은 다른 사건과 **같은 턴에 겹친다**(수확 날에 둘이 한꺼번에 켜진다).
+     ★짧다. 셋은 한 줄이고 `learnPlantWindow` 만 세 줄이다 — 거기서만 **"창턱이라서가 아니라
+       밝아서"** 를 한 번 짚어야 다음 집에서 쓸 수 있는 배움이 된다(2026-08-11 주석 정정:
+       예전 주석은 "한 줄씩이다"라고만 적어 데이터와 어긋나 있었다).
+     ★이 넷은 다른 사건과 **같은 턴에 겹친다**(수확 날에 둘이 한꺼번에 켜진다).
        길게 쓰면 Day 4 가 대사 열두 줄이 되어 아무도 안 읽는다.
      ★규칙을 다시 읊지 않는다. 방금 겪은 것을 **한 문장으로 접어 주는** 역할만 한다. */
   learnHarvest: [
@@ -188,11 +200,15 @@ export const SCRIPTS = {
        값이 움직였으므로 **대사도 같이 움직인다** — 안 그러면 몬이가 틀린 셈을 말한다.
      ⚠ 숫자를 대사에 박지 않으려 했지만 「이십만 원」은 값과 같아야 한다
        (`rentWon` 200,000 · `homes.json banjiha.rent`). 값이 또 바뀌면 이 줄도 같이 고쳐야 한다. */
+  /* ★ 2026-08-11 — 네 줄에서 세 줄로 줄이고 **누가 세는지를 되돌렸다.**
+     예전 둘째 줄이 몬이의 "한 달이 벌써?" 였는데, 이 대사는 **달마다 다시 나온다**(REPEATABLE).
+     세어 주는 것이 일인 몬이가 매달 달력을 처음 보는 사람이 된다 — 2026-08-11 화면 실측에서
+     Day 71 · Day 101 에 똑같이 놀랐다.
+     넷째 줄 "그럼 지금부터 세자"도 뺐다 — **없는 조작을 가리킨다.** 세는 화면이 없다. */
   rentSoon: [
     { who: 'jachwi', face: 'worry', text: '달력에 동그라미 쳐 둔 날이 또 다가온다.' },
-    { who: 'moni',   face: 'curious', text: '한 달이 벌써?' },
-    { who: 'jachwi', face: 'tired', text: '일주일 남았어. 이십만 원.' },
-    { who: 'moni',   text: '그럼 지금부터 세자. 아직 일주일 있잖아.' }
+    { who: 'moni',   face: 'curious', text: '이레 남았어. 이십만 원.' },
+    { who: 'jachwi', face: 'tired', text: '…알아. 나도 세고 있었어.' }
   ],
   rentFirst: [
     { who: 'jachwi', face: 'tired', text: '이십만 원. 들어오자마자 한 번에 빠져나갔다.' },
@@ -220,19 +236,30 @@ export const SCRIPTS = {
   /* ═══ §4 계절 · 식물등 ════════════════════════════════════════════════ */
 
   /* 가을 진입(Day 45). ★여기서 "자리를 더 못 올린다"는 벽을 처음 만난다 —
-     그래서 바로 다음에 식물등이 열리는 것이 말이 된다. */
+     그래서 바로 다음에 식물등이 열리는 것이 말이 된다.
+
+     ★★ 2026-08-11 — **측정을 주장하던 줄을 예고로 낮췄다.**
+     ------------------------------------------------------------
+     `story_arc.md §5 ★★` 가 잰 것: **계절이 화면에만 있고 빛에는 안 걸려 있다.**
+     튜토는 `novice` 로 돌아 계절계수가 1.0 이라, 화면이 "가을입니다"라고 말하는 날에도
+     창턱 DLI 는 여름과 **같은 값 그대로**다. 그런데 예전 셋째 줄은 "창턱이 예전만 못할 거야"
+     라고 **일어나지도 않은 변화를 일어난 것처럼** 말했다(2026-08-11 화면 실측 Day 92).
+     ⇒ 지금 참인 것(달력·해의 높이)만 말하게 두고, 밝기 주장은 앞날로 미룬다.
+     ⚠ 계절이 빛에 걸리는 날(story_arc §5 권고 ㉠) 이 줄은 **현재형으로 되돌려야** 한다.
+       그때까지 몬이는 겪지 않은 것을 겪은 것처럼 말하지 않는다. */
   autumnCame: [
     { who: 'jachwi', text: '창으로 드는 빛이… 각도가 달라졌나?' },
     { who: 'moni',   face: 'curious', text: '가을이야. 해가 조금씩 짧아져.' },
-    { who: 'moni',   text: '창턱이 예전만 못할 거야. 자리가 나빠진 게 아니라 **해가 낮아진** 거고.' },
+    { who: 'moni',   text: '겨울로 갈수록 창 하나로는 모자라져. 자리가 나빠지는 게 아니라 **해가 낮아지는** 거고.' },
     { who: 'jachwi', text: '그럼 더 밝은 데로 옮기면 되나?' },
     { who: 'moni',   face: 'sad', text: '이 방에서 창턱보다 밝은 데는 없어.' },
     { who: 'moni',   text: '여기서부터는 자리 말고 다른 게 필요해.' }
   ],
+  /* ★ 셋째 줄은 autumnCame 과 같은 이유로 단정을 뺐다(위 §계절 주석). */
   winterCame: [
     { who: 'jachwi', face: 'tired', text: '유리에 김이 서린다.' },
     { who: 'moni',   face: 'sad', text: '겨울이야. 반지하는 겨울이 길어.' },
-    { who: 'moni',   text: '해가 제일 낮은 계절이라, 창턱도 이제 창턱값을 못 해.' },
+    { who: 'moni',   text: '해가 제일 낮은 계절이야. 창턱 하나로 버티기엔 짧고.' },
     { who: 'jachwi', face: 'worry', text: '…아직 못 나갔네.' },
     /* ★실패가 아니라 더딘 것이다. 그 톤을 여기서 못 지키면 경로 C 가 벌처럼 읽힌다. */
     { who: 'moni',   text: '못 나간 게 아니라 아직 안 나간 거야. **늦은 거지 틀린 게 아니고.**' }
@@ -330,20 +357,29 @@ export const SCRIPTS = {
   /* ═══ §6 이사 — 조건이 하나씩 차고, 마침내 나간다 ═══════════════════════ */
 
   /* 배움은 다 됐고 돈이 모자랄 때. */
+  /* ★★ 2026-08-11 — **숫자가 틀려 있었다.** 「백오십만 원」은 이사비가 150만이던 시절 값이고,
+     2026-08-09 에 `tutorial.MOVE_RULES.moveOutCostWon` 이 **2,000,000** 으로 올랐다
+     (보증금 100만 + 첫 달 35만 + 이사비 65만 · START-HERE §6 · story_arc §3).
+     같은 날 `rentFirst`·`chatDailySpend` 는 갱신됐는데 이 줄만 안 따라와서, 화면에서
+     **몬이가 틀린 셈을 말하고 있었다**(2026-08-11 화면 실측 Day 48 에서 그대로 떴다).
+     ⚠ 숫자를 대사에 박은 자리다. `moveOutCostWon` 이 또 움직이면 이 줄도 같이 고쳐야 한다. */
   shortMoney: [
     { who: 'moni',   face: 'curious', text: '배울 건 다 배웠어. 남은 건 돈이야.' },
     { who: 'jachwi', face: 'tired', text: '…제일 안 되는 거네.' },
-    { who: 'moni',   text: '백오십만 원. 보증금이랑 첫 달 월세랑 이삿짐값.' },
+    { who: 'moni',   text: '이백만 원. 보증금이랑 첫 달 월세랑 이삿짐값.' },
     { who: 'jachwi', text: '한 번에 나가는구나.' },
     { who: 'moni',   text: '한 번만 나가면 돼. 그다음엔 이 방이 아니고.' }
   ],
   /* 돈은 됐는데 배움이 모자랄 때. ★말이 완전히 다르다 —
-     이쪽은 "왜 지금 못 나가냐"에 답해야 한다. */
+     이쪽은 "왜 지금 못 나가냐"에 답해야 한다.
+     ★ 2026-08-11 — 「나가는 건 되지」를 뺐다. **화면과 어긋나는 말**이었다 —
+       `tutorial.canMoveOut` 이 배움 넷을 요구해서 이사 버튼이 실제로 잠겨 있는데
+       몬이가 "나가는 건 된다"고 하면, 플레이어는 있지도 않은 버튼을 찾게 된다. */
   shortLearn: [
     { who: 'moni',   face: 'curious', text: '돈은 됐는데, 아직 안 해 본 게 있어.' },
     { who: 'jachwi', face: 'surprise', text: '돈이 됐으면 나가면 되는 거 아니야?' },
-    { who: 'moni',   text: '나가는 건 되지. 근데 다음 방도 창은 하나야.' },
-    { who: 'moni',   face: 'sad', text: '여기서 안 배우면 거기서 똑같이 헤매.' }
+    { who: 'moni',   text: '다음 방도 창은 하나야. 여기서 안 배우면 거기서 똑같이 헤매.' },
+    { who: 'moni',   face: 'sad', text: '그래서 짐은 아직 안 싸도 돼. 하나 남았어.' }
   ],
   moveReady: [
     { who: 'moni',   face: 'happy', text: '됐다. 둘 다 됐어.' },
@@ -373,6 +409,40 @@ export const SCRIPTS = {
     { who: 'moni',   face: 'happy', text: '가자. 다음 방은 창이 높대.' }
   ],
 
+  /* ★★ 2026-08-11 추가 — **③ 원룸의 첫 장면. 여기가 통째로 비어 있었다.**
+     ------------------------------------------------------------
+     `oneroom.moveIntoOneroom` 이 `moved_in_oneroom` 을 내고 game.html 이 그것을
+     `story.events(r.events)` 로 넘기는데 대사가 없어서 **조용히 지나갔다**
+     (`oneroom.js` 가 스스로 "⚠ 대사는 아직 없다"고 적어 둔 자리다).
+     2026-08-11 화면 실측: Day 125 에 이사가 끝나고 "가자. 다음 방은 창이 높대."를
+     마지막으로 **아무 말도 없이 새 방이 떴다.** 반지하의 마지막 대사가 다음 방을 가리키는데
+     그 방에 도착해서는 아무도 아무 말을 안 하는 상태였다.
+
+     쓰면서 지킨 것 넷:
+     ① **짧다.** `moved_out`(13줄)과 **같은 턴에 이어서 나온다** — 둘이 한 번에 열리므로
+        여기를 길게 쓰면 이사 장면이 스무 줄 넘는 덩어리가 된다. 여덟 줄로 끊는다.
+     ② **미화하지 않는다.** 원룸은 좋기만 한 방이 아니다. 재서 나온 사실 둘을 그대로 쓴다 —
+        슬롯이 **14칸 → 11칸으로 줄고**(story_arc §③), 월세가 **20만 → 35만으로 오른다**
+        (`homes.json`). 이사는 상이면서 동시에 부담이라는 것이 §3 의 확정이다.
+     ③ **그래도 하나는 진짜로 늘었다.** 원룸은 등 없이 `min 3.0` 을 넘는 자리가 **처음 생기는
+        집**이다(반지하 avg7 2.42 → 원룸 3.07 · story_arc §③ 권고2). 밝기를 자랑하지 않고
+        「한 칸 생겼다」로만 말한다 — 실제로 한 칸이다.
+     ④ **③단계의 규칙 전환을 여기서 알린다**(story_arc §4-1) — 확정 무늬가 끝나고
+        무늬는 빛으로만 난다. 새 규칙을 배우는 게 아니라 **이미 한 걸 반복하는 것**이라
+        마지막 줄을 주인공이 받는다.
+     ⚠ 숫자는 「서른다섯」 하나만 박았다. 남은 돈·칸수는 화면이 숫자로 말한다. */
+  movedInOneroom: [
+    { who: 'jachwi', face: 'surprise', text: '…창이 눈높이에 있네.' },
+    { who: 'moni',   face: 'happy',   text: '높지. 지나가는 사람 발만 보이지는 않아.' },
+    { who: 'jachwi', text: '박스를 푸니까 금방 찬다. 놓을 데는 저기가 더 많았나.' },
+    { who: 'moni',   face: 'curious', text: '줄었어. 대신 하나 늘었고 — 등 없이 자라는 자리.' },
+    { who: 'moni',   text: '저 방엔 한 칸도 없었어. 여긴 한 칸 있어.' },
+    { who: 'jachwi', face: 'tired',   text: '…월세는 서른다섯이 됐고.' },
+    { who: 'moni',   face: 'sad',     text: '응. 그건 오른 거 맞아.' },
+    { who: 'moni',   face: 'curious', text: '그리고 여기서부터 무늬는 아무도 안 줘. 어디에 두느냐로만 나와.' },
+    { who: 'jachwi', text: '…자리로 만드는 건 해 봤어.' }
+  ],
+
   /* ═══ §7 작은 말들 ═════════════════════════════════════════════════════
      ★매일 같은 말이면 안 읽는다. 조건으로 갈리고(계절·날씨·돈·식물 상태),
        고를 때는 **가장 오래 안 나온 것**부터 나온다(pickChatter).
@@ -389,6 +459,17 @@ export const SCRIPTS = {
     { who: 'moni',   face: 'happy', text: '봐. 빛 없이도 자라는 게 있어.' },
     { who: 'jachwi', text: '내일이면 먹는 건가.' },
     { who: 'moni',   text: '내일 아침에 열어 봐.' }
+  ],
+  /* ★★ 2026-08-11 추가 — **회전이 도는 구간의 같은 자리**를 채운다.
+     위 둘(chatCrop1·chatCrop2)은 「처음 보는 사람」의 말이라 첫 플레이 전용이다. 그런데 조건이
+     `!cropHarvested` 뿐이라 **다시 심을 때마다 되살아났다** — 2026-08-11 화면 실측에서
+     "콩나물이 진짜 자랄까"가 **Day 36 · Day 84** 에 다시 떴다. 열 번째 시루를 앞에 두고
+     처음 보는 사람처럼 말한 것이다. 그래서 위 둘에 `!firstPlayDone` 을 걸고, 비는 자리를
+     여기가 받는다. **같은 사실을 다른 사람이 말한다** — 그 사이에 겪은 것이 그 차이다. */
+  chatCropAgain: [
+    { who: 'jachwi', text: '오늘도 하얀 게 올라와 있다.' },
+    { who: 'moni',   face: 'curious', text: '이제 안 놀라네.' },
+    { who: 'jachwi', text: '놀랄 일은 아니지. 좋은 일이지.' }
   ],
 
   /* 여름 · 반지하 살림 */
@@ -590,13 +671,27 @@ export const EVENT_SCRIPT = Object.freeze({
   move_short_money:    'shortMoney',
   move_short_learn:    'shortLearn',
   move_ready:          'moveReady',
-  moved_out:           'movedOut'
+  moved_out:           'movedOut',
+  /* ★ 2026-08-11 — ③ 원룸의 첫 장면. `oneroom.moveIntoOneroom` 이 `moved_out` **다음에**
+     내는 사건이고, game.html 의 이사 버튼이 둘을 한 번에 `story.events` 로 넘긴다. */
+  moved_in_oneroom:    'movedInOneroom'
 });
 
 /* ★한 턴에 여러 사건이 겹칠 때의 **순서가 계약이다.**
    Day 4 는 수확·식비·배움 둘·식물신·도착이 한꺼번에 난다. 순서가 흔들리면
    "식물신이 도착 뒤에 말하는" 회차가 생긴다(first_play.md §2 가 금지한 것).
-   여기 없는 id 는 대사가 없는 사건이다 — food_cash 처럼 화면이 숫자로 말하는 것들. */
+   여기 없는 id 는 대사가 없는 사건이다 — food_cash 처럼 화면이 숫자로 말하는 것들.
+
+   ★★ 2026-08-11 — **`beansprout_harvest_again` 에 일부러 대사를 안 붙였다.** 적어 둔다:
+     회전이 5일이라 반지하 한 판(실측 게임 125일)에 **스무 번 넘게** 난다. 사건 대사를 붙이면
+     같은 말이 스무 번 나오고, 그렇다고 `REPEATABLE` 에서 빼면 두 번째부터는 storyteller 가
+     id 를 돌려주는데 대화 상자가 막아 **검사에는 "말한 날"로 잡히고 화면은 조용한** 상태가 된다
+     (START-HERE §2 가 경고한 그 모양이다). 그래서 그 자리는 작은 말(`chatCropAgain`)로 채웠다 —
+     작은 말은 조용한 날에만 나오므로 반복이 리듬이 된다.
+   ⚠ 아직 대사가 없고 **화면에도 안 붙은** 사건: `ending_ready` · `ending_home`(④ 내 집 마련).
+     `game.html` 이 `src/game/ending.js` 를 아예 안 읽는다(2026-08-11 확인). 목표 금액도
+     `ENDING_RULES.targetWon = null` 로 미확정이라(story_arc §4-2 ⏸) 여기서 대사를 지어 두면
+     안 뜨는 대사가 하나 더 늘 뿐이다. 화면과 금액이 정해질 때 같이 쓴다. */
 const EVENT_ORDER = [
   'beansprout_harvest', 'learn_harvest', 'learn_cropDark',
   'monstera_arrived',
@@ -614,7 +709,9 @@ const EVENT_ORDER = [
      월세 날에 겹치면 "삼십만 원이 나갔다" 다음에 이 잎이 오는 것이 맞고,
      이사 판정보다 앞이라야 "그래서 나갈 수 있게 됐다"가 그 뒤에 온다. */
   'varie_granted',
-  'move_short_learn', 'move_short_money', 'move_ready', 'moved_out'
+  /* ★ `moved_in_oneroom` 은 반드시 `moved_out` **뒤**다 — 나가는 장면과 도착 장면이
+     같은 턴에 한 번에 열린다. 순서가 뒤집히면 도착해서 인사하고 나서 짐을 싼다. */
+  'move_short_learn', 'move_short_money', 'move_ready', 'moved_out', 'moved_in_oneroom'
 ];
 
 /* 이벤트 하나 → 대사 id. 계절·월세처럼 **같은 id 안에서 갈리는** 것만 여기서 본다. */
@@ -660,8 +757,12 @@ export function scriptsForEvents(events = []) {
 export const CHATTER = [
   /* 첫 플레이 — 수확 전 사흘. ★날짜를 딱 집어 걸지 않는다(`===` 로 걸었더니
      조용한 날 세기와 어긋나 셋 다 못 나오는 날이 있었다). 둘 중 안 나온 쪽이 먼저 나온다. */
-  { id: 'chatCrop1', when: c => !c.cropHarvested && c.cropAgeDays >= 1 },
-  { id: 'chatCrop2', when: c => !c.cropHarvested && c.cropAgeDays >= 2 },
+  /* ★ 2026-08-11 — `!firstPlayDone` 을 걸었다. 이 둘은 **처음 보는 사람의 말**인데
+     조건이 `!cropHarvested` 뿐이라 다시 심을 때마다 되살아났다(§chatCropAgain 주석의 실측). */
+  { id: 'chatCrop1', when: c => !c.firstPlayDone && !c.cropHarvested && c.cropAgeDays >= 1 },
+  { id: 'chatCrop2', when: c => !c.firstPlayDone && !c.cropHarvested && c.cropAgeDays >= 2 },
+  /* 첫 플레이가 끝난 뒤의 같은 자리 — 회전이 도는 동안 */
+  { id: 'chatCropAgain', when: c => c.firstPlayDone && !c.cropHarvested && c.cropAgeDays >= 2 },
 
   /* 날씨 — 그날 하늘이 실제로 그래야 한다 */
   { id: 'chatRain',   when: c => c.weather === 'rain' },
@@ -672,7 +773,10 @@ export const CHATTER = [
   { id: 'chatGrowing2', when: c => c.grew === true },
   { id: 'chatWinterSlow', when: c => c.season === 'winter' && c.blocked },
 
-  /* 돈 — 한 달 치(60만) 아래로 내려가면 티가 난다 */
+  /* 돈 — ★ 2026-08-11 주석 정정. 예전 주석은 "한 달 치(60만)"라고 적었는데 코드는 30만이고,
+     60만은 하루 지출이 20,000원이던 시절의 한 달이다. 지금 하루 지출은 16,667원(월 50만)이라
+     30만은 **열여드레치**다. 값을 안 바꾸고 주석만 사실로 맞췄다 — 열여드레는
+     "슬슬 티가 나는" 자리로 알맞다(월세가 한 번 더 오면 못 낸다). */
   { id: 'chatLowCash1', when: c => c.cashWon != null && c.cashWon < 300_000 },
   { id: 'chatLowCash2', when: c => c.cashWon != null && c.cashWon < 300_000 },
 

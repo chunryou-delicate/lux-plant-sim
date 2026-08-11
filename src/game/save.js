@@ -374,6 +374,12 @@ function packCropPot(p, w) {
     startedOnDay: o.startedOnDay == null ? null
       : needInt(o.startedOnDay, `${w}.startedOnDay`, { min: 0 }),
     idleSinceDay: needInt(o.idleSinceDay ?? 0, `${w}.idleSinceDay`, { min: 0 }),
+    /* ★★ **씨앗을 뿌렸나** (2026-08-11 · first_play §sown).
+       ⚠ 안 적으면 껐다 켜는 순간 **안 심은 재배판이 심긴 판이 된다** — 씨앗 한 봉지를
+         안 쓰고 회전이 도는 판이고, 그 사고가 이 저장소에 이미 있다(`arrivalSlotId`).
+       ⚠ **옛 세이브에는 이 칸이 없다.** 그때는 「놓기 = 심기」였으므로 없는 것이 곧
+         심은 것이다 — 반대로 잡으면 돌아가던 판의 콩나물이 통째로 물을 못 받는다. */
+    sown: o.sown !== false,
     ageDays: needInt(o.ageDays ?? 0, `${w}.ageDays`, { min: 0 }),
     dliHist: needArr(o.dliHist || [], `${w}.dliHist`)
       .map((v, j) => needNum(v, `${w}.dliHist[${j}]`, { min: 0 })),

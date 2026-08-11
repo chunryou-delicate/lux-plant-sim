@@ -537,6 +537,23 @@ export function makeCropPot(id, opt = {}) {
     /* ★ **언제부터 시작을 기다리고 있나** — 벌이 아니라 화면이 말할 근거다(§물주기 ⚠).
        놓은 날(=게임 시작)이나 다시 심은 날이 여기 들어간다. 시작하면 뜻이 없어진다. */
     idleSinceDay: opt.idleSinceDay ?? 0,
+    /* ══ ★★★ **씨앗을 뿌렸나** (2026-08-11 · 박사님 "재배판 배치 후 무순 심기") ══════
+       ------------------------------------------------------------
+       원문: *"왜 가방에서 무순 심기를 해야 돼? 재배판 배치 후 무순 심기를 해야지?"*
+
+       ★ **왜 새 칸을 만들었나 — 유도가 안 된다.** 먼저 이미 있는 칸으로 되나 보았다:
+         `slotId`/`at` = 놓였나 · `startedOnDay` = 물을 줬나 · `ageDays`·`dliHist` = 얼마나 자랐나 ·
+         `harvested`·`cycle`·`harvestCount` = 몇 번 돌았나 · `idleSinceDay` = 언제부터 기다리나.
+         그런데 「놓았고 · 씨앗을 뿌렸고 · 아직 물은 안 줬다」와
+         「놓았고 · **씨앗을 안 뿌렸다**」가 저 칸 전부에서 **한 톨도 안 다르다**
+         (둘 다 startedOnDay=null · ageDays=0 · dliHist=[] · harvested=false).
+         두 상태가 같이 있어야 하는 것이 이번 지시의 뼈대라(뿌린 뒤에 물을 준다) 유도가 성립하지 않는다.
+       ★ **없으면 심은 것이다** (`opt.sown !== false`). 옛 세이브·옛 코드가 만든 칸에는 이 칸이
+         없는데, 그때는 「놓기 = 심기」였으므로 **없는 것이 곧 심은 것**이다. 반대로 잡으면
+         (없으면 안 심음) 돌아가던 판의 콩나물이 통째로 「안 심은 시루」가 되어 물을 못 준다.
+       ★ 콩나물은 늘 true 다 — 시루는 콩을 앉히는 용기라 놓는 순간이 곧 심는 순간이다
+         (`state.placeSiru` 가 그때 씨앗 한 봉지를 뺀다). false 가 되는 것은 지금은 재배판뿐이다. */
+    sown: opt.sown !== false,
     ageDays: 0,
     dliHist: [],
     harvested: false,
@@ -604,6 +621,11 @@ function potsOf(b) {
 /* ★ 그 시루가 방에 서 있나 — 자리(계약 열쇠)든 좌표든 하나라도 있으면 서 있는 것이다.
    `game.html` 의 `sits()` 와 **같은 판정**이다. 두 곳이 어긋나면 화면과 규칙이 갈린다. */
 export function cropPotPlaced(p) { return !!(p && (p.slotId || p.at)); }
+/* ★ 그 용기에 씨앗이 뿌려져 있나 (2026-08-11 · §sown). **없으면 심은 것이다** —
+   옛 세이브·옛 코드가 만든 칸에는 이 칸이 없고 그때는 「놓기 = 심기」였다. */
+export function cropPotSown(p) { return !(p && p.sown === false); }
+/* 놓였는데 아직 안 심은 용기 — 지금은 무순 재배판만 이렇게 될 수 있다(§sown) */
+export function unsownCropPots(b) { return placedCropPots(b).filter(p => !cropPotSown(p)); }
 /* 방에 실제로 서 있는 시루만 — 자라는 것도 · 물을 받는 것도 · 계약에 실리는 것도 이것뿐이다 */
 export function placedCropPots(b) { return potsOf(b).filter(cropPotPlaced); }
 /* ★ 아직 안 놓은 시루 — **가방에 있는 빈 용기**다 (2026-08-09).
@@ -982,6 +1004,8 @@ export function placeCrop(fp, kindId, target, opt = {}) {
    한다 — 이 모듈은 지갑도 가방도 안 만진다(§다시 심는다 의 그 규약 그대로).
      opt.at / opt.slotId  놓을 자리 (없으면 가방에 있는 채로 만들어진다)
      opt.day              들인 날 (대기 시작일)
+     opt.sown             false 면 **씨앗을 안 뿌린 빈 용기**로 만든다 (2026-08-11 · §sown).
+                          안 주면 예전 그대로 심긴 것으로 만든다 — 옛 호출부가 안 깨진다.
    ⚠ 물은 안 준다. 놓는 것과 시작하는 것은 다른 동작이다(§물주기). */
 export function addCropPot(fp, kindId, opt = {}) {
   const k = cropKindOf(kindId);
@@ -995,10 +1019,46 @@ export function addCropPot(fp, kindId, opt = {}) {
   const base = CROP_SITE_IDS[k.id];
   let n = potsOf(site).length + 1, id = '';
   do { id = `${base}_${String(n).padStart(2, '0')}`; n++; } while (used.has(id));
-  const p = makeCropPot(id, { idleSinceDay: day });
+  const p = makeCropPot(id, { idleSinceDay: day, sown: opt.sown !== false });
   site.pots.push(p);
   syncCropLead(site);
   return p;
+}
+
+/* ★★★ **놓인 용기에 씨앗을 뿌린다** (2026-08-11 · 박사님 "재배판 배치 후 무순 심기").
+   ------------------------------------------------------------
+   재고를 빼는 것은 **호출부**(state.sowCrop)가 한다 — 이 모듈은 지갑도 가방도 안 만진다
+   (`addCropPot`·§다시 심는다 의 그 규약 그대로).
+   ★ **방에 놓인 용기만** 심는다. 가방에 있는 판을 심게 두면 이번 지시가 다시 뒤집힌다
+     (「가방에서 심고 다 자란 판을 방으로 끈다」가 바로 그것이었다).
+   ⚠ 물은 안 준다. 심는 것과 시작하는 것은 다른 동작이다(§물주기) — 그래서 게이지는
+     심은 뒤에도 물을 줘야 돌기 시작한다.
+     opt.day  심은 날 (대기 시작일 = 이날부터 물을 기다린다)
+   반환 { potId, kind, sown, day } */
+export function sowCropPot(fp, kindId, potId, opt = {}) {
+  const k = cropKindOf(kindId);
+  const site = fp && cropSiteOf(fp, k.id);
+  if (!site) throw new Error(`[첫 플레이] ${k.ko} 상태가 없습니다`);
+  ensureCropPots(site);
+  const p = cropPotOf(site, potId);
+  if (!p) throw new Error(`[첫 플레이] 모르는 ${k.containerKo}입니다: ${potId}`);
+  if (!cropPotPlaced(p)) {
+    const e = new Error(`[첫 플레이] ${k.containerKo}를 먼저 방 안에 놓아 주세요`);
+    e.tutorialInput = true;                 // 안내지 고장이 아니다
+    throw e;
+  }
+  if (cropPotSown(p)) {
+    const e = new Error(`[첫 플레이] 이미 심은 ${k.containerKo}입니다`);
+    e.tutorialInput = true;
+    throw e;
+  }
+  const day = Number.isInteger(opt.day) ? opt.day : 0;
+  p.sown = true;
+  /* 심은 날부터 물을 기다린다 — 놓아 둔 날부터 세면 「3일째 물을 안 줬습니다」가
+     심기도 전부터 세어져 거짓말이 된다(§물주기 ⚠ idleSinceDay). */
+  p.idleSinceDay = day;
+  syncCropLead(site);
+  return { potId: p.id, kind: k.id, sown: true, day };
 }
 
 function validDli(dli) {
@@ -1070,8 +1130,10 @@ export function cropDliFromReport(report, ref) {
 /* ★ 2026-08-09 — **방에 선 것만** 센다(§자리는 시루마다 따로다). 가방의 빈 시루는
    물을 기다리는 것이 아니라 **놓이기를** 기다리는 것이다. 섞으면 화면이
    "물을 주세요"라고 말하는데 물 줄 시루가 방에 없는 판이 난다. */
+/* ★★ 2026-08-11 — **안 심은 용기는 물을 기다리는 것이 아니다**(§sown). 씨앗이 없는 판에
+   물을 주면 「물을 줬는데 아무것도 안 난다」가 되고, 회전이 시작돼 7칸이 돌기 시작한다. */
 function idlePots(b) {
-  return placedCropPots(b).filter(p => !p.harvested && p.startedOnDay == null);
+  return placedCropPots(b).filter(p => !p.harvested && p.startedOnDay == null && cropPotSown(p));
 }
 
 /* 물을 준다 = **회전을 시작한다**. 시작할 시루가 없으면 아무 일도 안 하고 조용히 지난다.
@@ -1338,6 +1400,9 @@ export function cropPotList(fp, day) {
       const placed = cropPotPlaced(p);
       const growing = placed && !p.harvested && p.startedOnDay != null && p.ageDays < hd;
       const ready = potReady(p, hd);
+      /* ★ 2026-08-11 — 씨앗을 뿌렸나(§sown). 안 뿌린 판은 물을 기다리는 것이 아니라
+         **심기를 기다린다** — 화면이 그 둘을 갈라 말할 유일한 근거다. */
+      const sown = cropPotSown(p);
       out.push({
         id: p.id, kind: kindId, kindKo: k.ko, containerKo: k.containerKo,
         /* 사람이 부르는 이름 — "시루 2" 처럼 **그 자리 안의 순번**이다. id 는 안 보인다 */
@@ -1349,9 +1414,13 @@ export function cropPotList(fp, day) {
         started: p.startedOnDay != null,
         startedOnDay: p.startedOnDay ?? null,
         idleSinceDay: p.idleSinceDay ?? null,
-        idleDays: (placed && !p.harvested && p.startedOnDay == null && Number.isInteger(day) &&
-                   Number.isInteger(p.idleSinceDay)) ? Math.max(0, day - p.idleSinceDay) : 0,
-        needsWater: placed && !p.harvested && p.startedOnDay == null,
+        idleDays: (placed && sown && !p.harvested && p.startedOnDay == null &&
+                   Number.isInteger(day) && Number.isInteger(p.idleSinceDay))
+          ? Math.max(0, day - p.idleSinceDay) : 0,
+        needsWater: placed && sown && !p.harvested && p.startedOnDay == null,
+        /* ★ 씨앗을 뿌려야 하나 — [🌱 심기] 단추의 유일한 근거다(2026-08-11 · §sown) */
+        sown,
+        needsSow: placed && !sown && !p.harvested,
         growing, ready,
         harvested: !!p.harvested,
         needsResow: !!p.harvested,

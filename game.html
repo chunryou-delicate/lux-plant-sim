@@ -995,6 +995,9 @@
   .siru:last-child{margin-bottom:0}
   .siru.ready{border-color:rgba(255,200,110,.45);background:rgba(255,200,110,.09)}
   .siru.thirsty{border-color:rgba(143,216,234,.42);background:rgba(143,216,234,.08)}
+  /* ★ 2026-08-11 — **안 심은 판**(§sown). 물 대기(물빛)와 **다른 색**이라야 한다 —
+     둘 다 칸이 0이라 색까지 같으면 화면에서 안 갈린다. 여기는 [심기] 단추와 같은 초록이다. */
+  .siru.unsown{border-color:rgba(168,230,163,.42);background:rgba(168,230,163,.07)}
   .siru.bag{opacity:.72;border-style:dashed}
   .siruhead{display:flex;align-items:baseline;gap:6px;justify-content:space-between}
   .siruhead b{font-size:12.5px;font-weight:700}
@@ -1319,7 +1322,14 @@
           <div id="musunGauge"></div><div class="itemline" id="musunInfo">밝은 자리일수록 알싸합니다</div>
           <div class="dragcue">이 그림을 <b>끌어서</b> 방 안 <b>밝은</b> 자리에</div>
           <div class="place"><label for="musunSlot" class="sr-only">무순 자리</label><select id="musunSlot"></select><button id="placeMusun">두기</button></div>
-          <button id="sowMusun" style="display:none">🌱 무순 심기</button>
+          <!-- ★★★ 2026-08-11 — **[🌱 무순 심기] 단추를 여기서 없앴다** (박사님 지시).
+               원문: *"왜 가방에서 무순 심기를 해야 돼? 재배판 배치 후 무순 심기를 해야지?"*
+               예전 순서: 가방에서 [🌱 무순 심기] → 다 자란 판을 방으로 끌기 → 물
+               지금 순서:  방으로 끌기(빈 재배판이 선다) → 놓인 판에 [🌱 심기] → [💧 물 주기]
+               ⇒ 심기 단추는 **방에 놓인 판의 줄**로 갔다(§siruRowHTML `data-act="plant"`).
+                 시루 줄이 시루마다 [물 주기]·[거두기]를 그리는 그 자리·그 방식 그대로다.
+               ⚠ 콩나물은 그대로다 — 시루는 **놓기 = 심기**(state.placeSiru)다. 재배판은
+                 씨앗을 뿌리는 판이고 시루는 콩을 앉히는 용기라 결이 다르다(박사님 확정). -->
         </div>
         <div class="itemcard locked" id="plantCard" data-ord="3">
           <div class="itemhead"><img class="thumb" id="plantThumb" src="./assets/ui/item_monstera.png" alt="몬스테라">
@@ -1334,9 +1344,12 @@
                   그리고 식물마다 게이지가 나와서 자라는게 표현되면 좋겠어."*
            ★ 한 줄이 시루 하나다. 자리·게이지·그 시루에만 듣는 버튼이 한 줄 안에 있다.
            ★ 비어 있으면 상자째 숨는다 — 빈 상자는 "고장났나"로 읽힌다. -->
+      <!-- ★ 2026-08-11 — 제목이 「콩나물 시루」로 못 박혀 있었다. 이 상자가 이제 **무순
+           재배판도** 그린다(§drawSirus) — 심기는 방에 놓인 판에서만 하고, 그 단추가 붙는
+           자리가 바로 이 줄이다. 제목은 서 있는 것에 따라 drawSirus 가 갈아 끼운다. -->
       <div class="box" id="siruBox" style="display:none">
-        <h3>콩나물 시루 <span id="siruCount"></span></h3>
-        <div class="sub">시루마다 따로 놓고 · 따로 물을 주고 · 따로 거둡니다.</div>
+        <h3><span id="siruBoxTitle">콩나물 시루</span> <span id="siruCount"></span></h3>
+        <div class="sub">하나하나 따로 놓고 · 따로 심고 · 따로 물을 주고 · 따로 거둡니다.</div>
         <div id="siruList"></div>
       </div>
 
@@ -1670,6 +1683,8 @@ import { newState, SIM_MODES, pot0, pushLog, givePlant, hasPlant, ARRIVAL,
          resowCrop, waterCrop, cropWaterStatus, cropHarvestStatus,
          /* ★ 2026-08-09 · 시루 각개 — 하나 놓기 · 하나에만 물주기 (state.js §placeSiru) */
          placeSiru, waterSiru,
+         /* ★ 2026-08-11 · 놓기와 심기를 가른다 — 놓인 재배판에 씨앗을 뿌린다 (state.js §sowCrop) */
+         sowCrop,
          waterPot, potWaterStatus,
          cropSurplusStatus, sellCropSurplus, reseatAllOnSlots } from './src/game/state.js';
 import { catalogList, orderItem, shopStatus, priceOf, sellPot, sellCutting,
@@ -1724,7 +1739,9 @@ import { nextDay, runDays, avg, rollingAvg, harvestCrop } from './src/game/loop.
 import { renderHUD, renderLog, renderReport, renderSpark } from './src/game/ui.js';
 /* 체력 — 값만 읽는다. 규칙도 문구도 여기서 짓지 않는다(docs/stamina.md) */
 import { staminaView, staminaRulesFrom, takeLevelUps, xpNeededAt,
-         applyStaminaRules, canAct as staminaCanAct } from './src/game/stamina.js';
+         applyStaminaRules, canAct as staminaCanAct,
+         /* 퀘스트 보상 창구 — 「무엇을 완주로 보나」만 화면이 정한다(아래 §퀘스트) */
+         grantStaminaQuest } from './src/game/stamina.js';
 
 const ARRIVAL_POT_D = FIRST_PLAY_ASSETS.monsteraPotDiameterM;
 const $ = (id) => document.getElementById(id);
@@ -2028,7 +2045,7 @@ function musunOpenNow() {
 function musunSite() { try { return cropSiteOf(S.firstPlay, 'musun'); } catch { return null; } }
 function fillMusunSlots() {
   const d = musunPotD();
-  if (!d) { $('musunSlot').innerHTML = ''; $('placeMusun').disabled = true; return; }
+  if (!d) { $('musunSlot').innerHTML = ''; return; }
   const preview = io.light.daily(S.day + 1, S).report;
   const roomSlot = new Map((io.light.room.slots || []).map(s => [s.slotId, s]));
   const list = [...preview.slots]
@@ -2038,8 +2055,9 @@ function fillMusunSlots() {
     `<option value="${s.slotId}">${slotLabel(s.slotId)}</option>`).join('');
   const site = musunSite();
   if (site && site.slotId) $('musunSlot').value = site.slotId;
-  $('musunSlot').disabled = !list.length;
-  $('placeMusun').disabled = !list.length;
+  /* ⚠ `disabled` 를 **안 건다.** `drag.begin` 이 `sel.disabled` 를 「끌지 마라」로 읽어
+     (§drag.begin) 자리 목록이 빈 방에서는 끌기 자체가 죽는다 — 바닥은 추천 자리가 아니라
+     자유 좌표라 목록이 비어도 끌어 놓는 것은 언제나 된다(§bagone §3). */
   /* ★ 올라갈 자리가 하나도 없으면 **왜 없는지 말한다.** 빈 드롭다운만 두면 고장으로 읽힌다.
      재배판이 0.43m 라 반지하에서 받는 자리가 책상뿐이다 — 그건 규칙이지 사고가 아니다. */
   $('musunInfo').textContent = list.length
@@ -2050,31 +2068,53 @@ function drawMusun() {
   const card = $('musunCard');
   if (!card) return;
   const open = musunOpenNow();
-  card.style.display = open ? '' : 'none';
-  if (!open) return;
-  const site = musunSite();
-  const have = stockOf(S, 'sprout_tray') || 0, seeds = stockOf(S, 'radish_seed') || 0;
-  const pots = (site && site.pots || []).length;
-  $('musunState').textContent = pots
-    ? (site.slotId || site.at ? '방에 있음' : '가방에 있음')
-    : (have ? '재배판 ' + have + '개 · 아직 안 심음' : '아직 없음');
-  /* 심기 — 재배판과 씨앗이 **둘 다** 있어야 한다. 하나만 있으면 무엇이 모자란지 말한다. */
-  const sow = $('sowMusun');
-  const canSow = !pots && have > 0 && seeds > 0;
-  sow.style.display = (!pots && (have > 0 || seeds > 0)) ? '' : 'none';
-  sow.disabled = !canSow;
-  sow.textContent = canSow ? '🌱 무순 심기'
-    : (have > 0 ? '🌱 무 씨앗이 필요합니다' : '🌱 새싹 재배판이 필요합니다');
-  card.querySelector('.place').style.display = pots ? '' : 'none';
-  card.querySelector('.dragcue').style.display = (pots && !(site.slotId || site.at)) ? '' : 'none';
+  const have = stockOf(S, 'sprout_tray') || 0;
+  /* ★★ 2026-08-11 — 「심음/안 심음」을 여기서 **판정하지 않는다.** `cropPotList` 가 낸
+     사실(`sown`)을 읽는다. 두 벌이 되면 카드와 줄이 서로 다른 말을 한다(§sown). */
+  let mrows = [];
+  try { mrows = cropPotList(S.firstPlay, S.day).filter(r => r.kind === 'musun'); } catch { }
+  const placedRows = mrows.filter(r => r.placed);
+  /* ★★★ 2026-08-11 — 이 카드는 이제 **가방 카드 하나**다. 방에 선 판은 [식물] 의
+     재배판 줄이 각자 그리므로(§drawSirus), 가방이 비고 판이 전부 방에 서 있으면
+     카드는 **통째로 걷는다** — 안 그러면 같은 물건이 화면 두 곳에 있다
+     (콩나물 칸이 0개에서 사라지는 것과 같은 규칙 — bagone §3).
+     ⚠ 가방에도 방에도 아무것도 없는 판(막 문이 열린 판)에서는 **남긴다.**
+       「아직 없음」이라고 말해 줄 자리가 그것뿐이다. */
+  const bagTrays = have + mrows.filter(r => r.inBag).length;
+  const hide = bagTrays === 0 && placedRows.length > 0;
+  card.style.display = (open && !hide) ? '' : 'none';
+  if (!open) return;                       // 문이 안 열렸으면 자리표도 안 센다(예전 그대로)
+  /* ⚠ 카드를 걷어도 **자리 목록은 채운다** — `drag.slotsFor('musun')` 이 그것을 읽는다.
+     걷힌 판에서도 [📍 자리]로 판을 옮기면 그 목록이 되돌림 경로가 된다. */
+  if (hide) { fillMusunSlots(); return; }
+  $('musunState').textContent = bagTrays
+    ? (have ? '가방에 재배판 ' + bagTrays + '개 · 방에 놓으면 심을 수 있습니다' : '가방에 있음')
+    : '아직 없음';
+  /* ★★★ 2026-08-11 — **[두기] 드롭다운을 화면에서 걷었다.**
+     ------------------------------------------------------------
+     이 줄은 `placeCrop(fp,'musun',자리)` 를 `potId` 없이 불렀다 — 그러면 **그 자리의 판이
+     전부 함께 움직인다**(first_play §placeCrop). 판이 하나뿐이던 시절에는 안 드러났는데,
+     이제 끌 때마다 빈 판이 하나씩 서므로 이 단추 한 번에 여러 판이 한 자리로 뭉친다.
+     ⇒ 놓는 길은 **끌기 하나**, 옮기는 길은 줄의 [📍 자리] 하나다 — 콩나물이 2026-08-10 에
+       간 그 길과 같다(§bagone 「길을 하나로」).
+     ⚠ `#musunSlot` 은 **남긴다.** 화면에 안 보이는 자료 칸이다 — 끌 때 빛나는 원과
+       되돌림 경로를 `drag.slotsFor('musun')` 이 그 `<option>` 목록에서 읽는다.
+       지우면 끌기가 조용히 아무 자리도 못 밝힌다(`#cropSlot` 과 같은 이유). */
+  card.querySelector('.place').style.display = 'none';
+  /* ★ 2026-08-11 — 「끌어서 놓으세요」는 **가방에 끌 것이 있을 때** 뜬다.
+     예전에는 「심어서 개체가 생긴 뒤」였다 — 이제 개체는 놓는 순간 생기므로
+     그 조건이면 안내가 영영 안 뜬다(끌 수 있게 된 순간에 안 보인다). */
+  card.querySelector('.dragcue').style.display = bagTrays > 0 ? '' : 'none';
   /* ★★ 칸 게이지 — **주기가 곧 칸 수**다. 무순은 7일이니 7칸이다(콩나물은 5칸).
      ⚠ `cropPotList` 가 낸 줄을 그대로 쓴다 — 여기서 growing·needsWater 를 또 판정하면
        콩나물 줄과 두 벌이 되어 "물을 줬는데 마른 칸"처럼 조용히 어긋난다. */
   const gauge = $('musunGauge');
   if (gauge) {
-    let row = null;
-    try { row = cropPotList(S.firstPlay, S.day).find(r => r.kind === 'musun'); } catch { }
-    /* 아직 안 심었으면 **빈 칸만** 그린다 — 칸 수부터 보여야 "7일짜리"가 읽힌다 */
+    /* ★ 카드는 **가방에 있는 판**의 얼굴이다 — 방에 선 판은 아래 시루 줄이 각자 그린다.
+       그래서 여기 게이지는 「7일짜리구나」를 보여 주는 빈 칸이 정본이다.
+       ⚠ 놓인 판이 하나뿐이던 시절에는 그 판의 진행을 여기 비췄다. 이제 여러 판이
+         설 수 있어 「어느 판의 게이지인가」가 성립을 안 한다. */
+    let row = mrows.find(r => r.inBag) || null;
     if (!row) {
       let hd = 7; try { hd = cropKindOf('musun').harvestDays || 7; } catch { }
       row = { harvestDays: hd, ageDays: 0, growing: false, needsWater: false,
@@ -2082,7 +2122,10 @@ function drawMusun() {
     }
     gauge.innerHTML = cellsHTML(row, dayFrac());
   }
-  if (pots) fillMusunSlots();
+  /* ★★ 2026-08-11 — **늘 채운다.** 예전에는 `if (pots)` 였다 — 개체가 심어져야 생기던
+     시절의 조건이고, 그래서 첫 판을 끌 때 `drag.slotsFor('musun')` 이 **빈 목록**을 읽어
+     놓을 수 있는 자리가 하나도 안 빛났다. 이제 끌기가 첫 걸음이라 목록이 먼저 있어야 한다. */
+  fillMusunSlots();
 }
 
 /* ★ 개체 도착 경계. Day 4 선물과 개발 시나리오가 같은 원자적 생성 함수를 쓴다.
@@ -2367,8 +2410,14 @@ const detail = {
             + dliRow('받은 빛(평균)', site && site.avgDli != null ? site.avgDli : null, '— DLI')
             + (site && site.quality ? `<div class="row"><span>품질</span><b>${site.quality}</b></div>` : '')
           : `<div class="row"><span>한 회전</span><b>${days}칸 (${days}일)</b></div>`
-            + '<p>아직 안 놓은 <b>빈 재배판</b>이다. 끌어다 놓고 물을 주면 게이지 '
-            + `<b>${days}칸</b>이 하루에 하나씩 찬다 — 콩나물(5칸)보다 두 칸 길다.</p>`)
+            /* ★ 2026-08-11 — 걸음이 **셋**이 됐다(박사님 "재배판 배치 후 무순 심기").
+               예전 글은 「끌어다 놓고 물을 주면」이라 심는 걸음을 빠뜨리고 있었다. */
+            + '<p>아직 안 놓은 <b>빈 재배판</b>이다. 걸음이 셋이다 — '
+            + '① <b>끌어다 놓고</b> ② 놓인 판에서 <b>[🌱 심기]</b>(무 씨앗 1봉지) '
+            + `③ <b>[💧 물 주기]</b>. 물을 준 날이 0일차이고 그때부터 <b>${days}칸</b>이 `
+            + '하루에 하나씩 찬다 — 콩나물(5칸)보다 두 칸 길다.</p>'
+            + '<p>콩나물 시루는 놓는 것이 곧 심는 것이지만, 재배판은 <b>씨앗을 뿌리는 판</b>이라 '
+            + '한 걸음이 더 있다.</p>')
         + '<p>무순은 <b>밝을수록</b> 파릇하고 알싸하다 — 콩나물과 정반대다. 어두우면 웃자라 밍밍해진다.</p>'
         + '<p>죽지는 않는다. 자리가 값을 바꿀 뿐이다.</p>'
     };
@@ -3046,8 +3095,11 @@ function drawBag() {
      정작 가방에 없으면 두 화면이 서로 다른 말을 한다 — 그래서 자리를 상태에 맞춘다.
      ★★ 2026-08-10 — 콩나물 시루 카드는 **없어졌다**(격자 칸이 그 일을 한다). 여기서
        옮길 카드는 무순과 몬스테라뿐이다. */
-  const ms = musunSite();
-  holdCard($('musunCard'), !!(ms && (ms.slotId || ms.at)));
+  /* ★★ 2026-08-11 — 무순 카드는 **늘 가방에 산다.** 방에 선 판은 [식물] 의 재배판 줄이
+     각자 그린다(§drawSirus). 예전 조건(「방에 놓였나」)이면 첫 판을 놓는 순간 카드가
+     [식물] 로 가서 둘째 판을 끌 손잡이가 사라졌다 — 재배판을 두 개 산 사람이 하나만
+     놓을 수 있게 된다. 가방이 비면 카드는 `drawMusun` 이 통째로 걷는다. */
+  holdCard($('musunCard'), false);
   holdCard($('plantCard'), true);              // 몬스테라는 늘 방에 온다(가방을 거치지 않는다)
 
   const held = [...$('bagHold').children].some(cardShown);
@@ -3153,9 +3205,17 @@ function drawShop() {
   sell.textContent = `몬스테라 팔기 (${won.toLocaleString()}원)`;
   /* ★"얼마가 모자란가"가 아니라 "무늬 잎이 몇 장이면 되나"를 말한다 —
      플레이어가 움직일 수 있는 손잡이는 자리(밝기)뿐이고, 그게 무늬를 만든다. */
-  const nd = varieLeavesNeededFor(1_500_000, { leaves: ls.leaves });
+  /* ⚠ 이사비를 **여기서 짓지 않는다** (2026-08-11 고침).
+     `1_500_000` 이 두 번 박혀 있었는데 이사비는 2026-08-09 에 **200만**이 됐다
+     (`tutorial.js §moveOutCostWon`). 그래서 이 안내가 **50만원 모자란 채로**
+     「지금 팔면 이사 자금이 됩니다」라고 말하고 있었다 — 그대로 팔면 못 나간다.
+     ★ 살림 화면이 §drawTutorial 에서 하는 것과 같이 **정본에서 읽는다.**
+       모르면 아무 말도 안 한다 — 지어낸 문턱으로 팔라고 하는 것이 더 나쁘다. */
+  const moveCost = S.tutorial && S.tutorial.rules && S.tutorial.rules.moveOutCostWon;
+  if (!moveCost) { hint.textContent = ''; return; }
+  const nd = varieLeavesNeededFor(moveCost, { leaves: ls.leaves });
   const n = nd && nd.needVarieLeaves;
-  hint.textContent = won >= 1_500_000
+  hint.textContent = won >= moveCost
     ? '지금 팔면 이사 자금이 됩니다'
     : `무늬 잎 ${ls.variegatedLeaves}/${ls.leaves}장 — ${n == null || n > ls.leaves
         ? '지금 잎 수로는 이사 자금에 못 미칩니다. 더 키우거나 삽수를 파세요'
@@ -3502,10 +3562,63 @@ function drawLevelUps() {
   if (!ups.length) return;
   banners(ups.map(u => ({
     title: `✨ 체력이 늘었습니다 — 하루 ${u.max}번`,
-    sub: u.quest ? '퀴스트 보상' : '돌본 만큼 늘었습니다'
+    sub: u.quest ? `퀘스트 — ${questKo(u.quest)}` : '돌본 만큼 늘었습니다'
   })));
   ups.forEach(u => pushLog(S, `✨ 체력이 ${u.max} 로 늘었습니다` +
-                              (u.quest ? ` (퀴스트 ${u.quest})` : '')));
+                              (u.quest ? ` (퀘스트 — ${questKo(u.quest)})` : '')));
+}
+
+/* ══ ★★★ 퀘스트 「시루 5개를 분배로 5주기 완주」 (2026-08-11) ═══════════════
+   ------------------------------------------------------------
+   창구(`grantStaminaQuest`)와 값(`quests.siru5_cycle5` = 최대체력 +1)은 코어에 **이미 있었다.**
+   없던 것은 **부르는 데**다 — 무엇을 「완주」로 볼지가 안 정해져 있었기 때문이다
+   (stamina.js §grantStaminaQuest · siru-to-plan §17-2).
+
+   ★ 여기서 정한 뜻 — **콩나물 시루 5개가 저마다 5회전을 돌았다**(`harvestCount ≥ 5` 인 시루가
+     5개 이상). 회전은 **시루마다** 센다 — 자리 사본 `beansprout.harvestCount` 는 시루들의
+     **합**이라 그걸 보면 시루 1개로 25번 돌려도 찬다. 「시루 5개로」가 그 순간 거짓말이 된다.
+
+   ══ ⚠⚠ 「분배로」를 **따로 안 잰다** — 재려다 틀릴 뻔했다. 그대로 적는다 ══
+   처음에는 겹침 순번(`overlapIndex === 0`)을 같이 봤다. 「그날 그 종류를 처음 거뒀다」는
+   뜻이니(first_play §겹침) 다섯이 다 0 이면 다섯이 다른 날에 혼자 거둬졌다고 읽은 것이다.
+   **틀렸다.** `resowBeansprout` 가 다시 심을 때 `p.overlapIndex = 0` 으로 **비운다**
+   (first_play.js §다시 심기). 거두고 바로 다시 심는 것이 정상 운용이라 이 칸은 **거의 늘 0**이고,
+   같은 날 다섯을 몰아 거둔 판도 그대로 통과했다 — 판정이 아니라 **재는 자가 고장**이었다.
+   ⇒ 지금 세이브에는 「분배로 돌렸나」를 말해 주는 칸이 **없다**(save.js §packCropPot).
+     제대로 재려면 회전마다 「혼자 거뒀나」를 세는 칸이 하나 필요하고, 그건 `first_play.js`·
+     `save.js` 의 일이라 이 창의 몫이 아니다.
+
+   ★ 그런데도 이 판정으로 두는 근거 — **체력이 이미 분배를 강요한다.** 재서 확인했다
+     (반지하 · 시루 5개 · 매일 거두고 심고 물 주는 부지런한 플레이 · 몬스테라 선물은 끔):
+       분배(하루에 하나씩 물)         → **29일째** 완주
+       같은 날(다섯을 한 날에 물)      → **49일째** 완주 (20일 늦다)
+       같은 날 + 체력을 40으로 올리면  → 25일째 (체력만 풀면 오히려 빠르다)
+     ⇒ 시작 체력 5 로는 다섯을 한 날에 거두고 심고 주는 것 자체가 안 된다(15손이 든다).
+       같은 날로 뭉쳐 돌리면 **더 늦게** 받는다 — 이름값은 체력이 지키고 있다.
+
+   ⚠ 5·5 라는 숫자의 **정본이 아직 없다.** 밸런스 파일에는 값(+1)만 있고 「몇 개로 몇 주기」는
+     퀘스트 **이름**에만 있었다. 빼야 할 자리는 `data/balance/stamina.json` 이다
+     (이 창은 `game.html` 만 든다 — 다른 워커가 같이 돈다). */
+/* ★ 화면에 뜨는 말은 **재는 것과 같아야 한다.** 「분배로」를 안 재므로 안 적는다 —
+   적어 두면 같은 날로 돌려 받은 사람에게 화면이 거짓말을 한 것이 된다. */
+const SIRU_QUEST = { id: 'siru5_cycle5', ko: '시루 5개로 5주기 완주',
+                     sirus: 5, cycles: 5 };
+/* 퀘스트 id 를 사람 말로 — 배너에 `siru5_cycle5` 가 그대로 뜨면 그건 안내가 아니다 */
+function questKo(id) { return id === SIRU_QUEST.id ? SIRU_QUEST.ko : id; }
+function siruQuestDone(S) {
+  const site = S && S.firstPlay && S.firstPlay.beansprout;
+  const pots = (site && site.pots) || [];
+  const done = pots.filter(p => p && (p.harvestCount || 0) >= SIRU_QUEST.cycles);
+  return done.length >= SIRU_QUEST.sirus;
+}
+/* ★ **거둔 직후에만** 부른다 — `harvestCount` 가 느는 자리가 거기뿐이다.
+   ⚠ 하루 넘김·물주기·분배(놓기)에는 안 붙였다. 하루가 갔다고 회전 수가 늘지는 않는다.
+   ⚠ 두 번 불러도 안전하다 — 같은 퀘스트는 `questsTaken` 이 막는다(stamina.js).
+   ★ **보여 주는 것은 여기서 안 한다.** 오른 것은 `levelUps` 에 쌓이고 `drawLevelUps` 가 낸다 —
+     보상 배너의 자리가 둘이 되면 같은 것이 화면에 두 번 뜬다. */
+function checkSiruQuest() {
+  try { if (siruQuestDone(S)) grantStaminaQuest(S, SIRU_QUEST.id); }
+  catch (e) { console.warn('[퀘스트]', e && e.message); }
 }
 
 /* ★★★ **체력이 모자라 못 하는 것은 「왜 안 되는지」가 보여야 한다** (2026-08-09).
@@ -4172,22 +4285,31 @@ function siruRowHTML(row, frac) {
     ? (row.slotId && !isFreeSlotId(row.slotId) ? slotLabel(row.slotId) : '방 안')
     : '가방';
   /* ★ 글도 **칸으로** 말한다 — 게이지와 다른 자를 쓰면 둘이 서로 다른 말을 한다 */
-  const state = row.harvested ? '거뒀습니다 — 다시 심으면 또 돕니다'
-              : row.ready     ? `거둘 때가 됐습니다 · ${row.harvestDays}칸 다 참`
-              : row.growing   ? `${row.ageDays}/${row.harvestDays}칸 · ${row.daysLeft}일 남음`
-              : row.placed    ? (row.idleDays ? `물을 기다립니다 (${row.idleDays}일째) — 칸이 안 찹니다`
-                                              : `물을 주면 ${row.harvestDays}칸이 하루에 하나씩 찹니다`)
-              :                 '아직 안 놓았습니다';
-  const cls = row.harvested ? '' : row.ready ? ' ready' : row.needsWater ? ' thirsty' : '';
+  /* ★★ 2026-08-11 — **「안 심음」이 「물 안 줌」보다 먼저다**(§sown). 둘 다 칸이 0인데
+     하는 일이 다르다 — 안 심은 판에 물을 줘 봤자 아무 일도 안 난다. 게이지도 갈린다:
+     물 대기는 `.cells.dry`(물빛 테두리) · 안 심음은 **맨 빈 칸**이다. */
+  const state = row.harvested  ? '거뒀습니다 — 다시 심으면 또 돕니다'
+              : row.ready      ? `거둘 때가 됐습니다 · ${row.harvestDays}칸 다 참`
+              : row.growing    ? `${row.ageDays}/${row.harvestDays}칸 · ${row.daysLeft}일 남음`
+              : row.needsSow   ? `아직 안 심었습니다 — 씨앗을 뿌려야 ${row.harvestDays}칸이 생깁니다`
+              : row.placed     ? (row.idleDays ? `물을 기다립니다 (${row.idleDays}일째) — 칸이 안 찹니다`
+                                               : `물을 주면 ${row.harvestDays}칸이 하루에 하나씩 찹니다`)
+              :                  '아직 안 놓았습니다';
+  const cls = row.harvested ? '' : row.ready ? ' ready'
+            : row.needsSow ? ' unsown' : row.needsWater ? ' thirsty' : '';
+  /* ★ 단추마다 **종류를 같이 실어 준다** — 한 상자에 콩나물과 무순이 같이 서므로
+     id 만으로는 어느 작물인지 모른다. 화면이 짐작하면 무순에 콩 씨앗이 나간다. */
+  const kd = ` data-siru="${row.id}" data-kind="${row.kind}"`;
   const btn = [];
-  if (row.needsWater) btn.push(`<button class="water" data-siru="${row.id}" data-act="water">💧 물 주기</button>`);
-  if (row.ready)      btn.push(`<button class="harvest" data-siru="${row.id}" data-act="harvest">🥣 거두기</button>`);
-  if (row.harvested)  btn.push(`<button class="sow" data-siru="${row.id}" data-act="sow">🌱 다시 심기</button>`);
-  if (row.placed)     btn.push(`<button class="ghost" data-siru="${row.id}" data-act="pick">📍 자리</button>`);
+  if (row.needsSow)   btn.push(`<button class="sow"${kd} data-act="plant">🌱 심기</button>`);
+  if (row.needsWater) btn.push(`<button class="water"${kd} data-act="water">💧 물 주기</button>`);
+  if (row.ready)      btn.push(`<button class="harvest"${kd} data-act="harvest">🥣 거두기</button>`);
+  if (row.harvested)  btn.push(`<button class="sow"${kd} data-act="sow">🌱 다시 심기</button>`);
+  if (row.placed)     btn.push(`<button class="ghost"${kd} data-act="pick">📍 자리</button>`);
   const dli = row.dliSoFar != null && showDli()
     ? ` · 받은 빛 ${row.dliSoFar.toFixed(2)} DLI` : '';
   return `<div class="siru${row.placed ? '' : ' bag'}${cls}" data-siru="${row.id}">`
-    + `<div class="siruhead"><b>시루 ${row.ord}</b><span>${where}</span></div>`
+    + `<div class="siruhead"><b>${row.containerKo} ${row.ord}</b><span>${where}</span></div>`
     + cellsHTML(row, frac)
     + `<div class="siruline">${state}${row.quality ? ' · ' + row.quality : ''}${dli}</div>`
     + `<div class="sirubtns">${btn.join('')}</div></div>`;
@@ -4196,12 +4318,21 @@ function drawSirus() {
   const box = $('siruBox'), list = $('siruList');
   if (!box || !list) return;
   let rows = [];
-  try { rows = cropPotList(S.firstPlay, S.day).filter(r => r.kind === 'beansprout'); } catch { }
-  /* ★ 가방에 있는 빈 시루는 **여기 안 그린다.** 그건 [가방]의 카드가 맡는다 —
+  /* ★★ 2026-08-11 — **종류로 안 거른다.** 예전에는 콩나물만 그렸다. 그래서 무순 재배판은
+     방에 서 있어도 제 줄이 없었고, 물주기는 화면 위쪽 공용 단추 하나가 「물을 기다리는
+     종류」를 골라 주는 길뿐이었다. 심기 단추가 붙을 자리도 없었다.
+     ⇒ 놓인 용기는 종류를 안 가리고 여기 한 줄씩 선다. 순서는 `cropPotList` 순서
+       (= CROP_KINDS 순서 = 겹침 순번)라 콩나물이 늘 위다. */
+  try { rows = cropPotList(S.firstPlay, S.day); } catch { }
+  /* ★ 가방에 있는 빈 용기는 **여기 안 그린다.** 그건 [가방]이 맡는다 —
      둘 다 그리면 같은 물건이 화면 두 곳에 있는 것으로 보인다(박사님이 짚으신 그 증상). */
   rows = rows.filter(r => r.placed);
   box.style.display = rows.length ? '' : 'none';
   if (!rows.length) { list.innerHTML = ''; return; }
+  /* 제목은 **서 있는 것**을 그대로 말한다 — 무순만 선 판에서 「콩나물 시루」는 거짓말이다 */
+  const kinds = [...new Set(rows.map(r => `${r.kindKo} ${r.containerKo}`))];
+  const t = $('siruBoxTitle');
+  if (t) t.textContent = kinds.length === 1 ? kinds[0] : '재배 중';
   $('siruCount').textContent = `· ${rows.length}개`;
   const frac = dayFrac();
   list.innerHTML = rows.map(r => siruRowHTML(r, frac)).join('');
@@ -4212,7 +4343,8 @@ function repaintSiruGauges() {
   const list = $('siruList');
   if (!list || !list.children.length) return;
   let rows = [];
-  try { rows = cropPotList(S.firstPlay, S.day).filter(r => r.kind === 'beansprout' && r.placed); }
+  /* ★ 2026-08-11 — 여기도 종류를 안 가린다(§drawSirus) — 무순 줄의 흐르는 몫도 같이 돈다 */
+  try { rows = cropPotList(S.firstPlay, S.day).filter(r => r.placed); }
   catch { return; }
   const frac = dayFrac();
   for (const row of rows) {
@@ -4230,32 +4362,50 @@ $('siruList').addEventListener('click', (ev) => {
   const b = ev.target.closest('button[data-siru]');
   if (!b) return;
   const id = b.dataset.siru, act = b.dataset.act;
-  if (act === 'water')   return doAct('water',   () => siruWater(id),   { key: siruKey(id) });
-  if (act === 'harvest') return doAct('harvest', () => siruHarvest(id), { key: siruKey(id) });
-  if (act === 'sow')     return doAct('sow',     () => siruSow(id),     { key: siruKey(id) });
+  /* ★ 종류는 **단추가 들고 온다**(§siruRowHTML). 화면이 짐작하면 무순에 콩 씨앗이 나간다 */
+  const kind = b.dataset.kind || 'beansprout';
+  if (act === 'plant')   return doAct('sow',     () => siruPlant(id, kind),   { key: siruKey(id) });
+  if (act === 'water')   return doAct('water',   () => siruWater(id, kind),   { key: siruKey(id) });
+  if (act === 'harvest') return doAct('harvest', () => siruHarvest(id, kind), { key: siruKey(id) });
+  if (act === 'sow')     return doAct('sow',     () => siruSow(id, kind),     { key: siruKey(id) });
   if (act === 'pick')    return siruPick(id);
 });
-/* 그 시루를 방에서 부르는 열쇠 — 자유 좌표면 `free:{시루 id}` 다(state.placedItems 와 같은 규칙) */
+/* 그 시루를 방에서 부르는 열쇠 — 자유 좌표면 `free:{시루 id}` 다(state.placedItems 와 같은 규칙).
+   ★ 2026-08-11 — **자리 전부를 뒤진다.** 콩나물 자리만 보면 무순 줄의 단추가 열쇠를 못 찾아
+     연출(걸어가기)이 통째로 빠진다(그래도 규칙은 도므로 조용히 어긋난다). */
 function siruKey(id) {
-  const site = S.firstPlay && S.firstPlay.beansprout;
-  const p = ((site && site.pots) || []).find(x => x && x.id === id);
-  return p ? (p.slotId || null) : null;
+  for (const site of (() => { try { return cropSites(S.firstPlay); } catch { return []; } })()) {
+    const p = ((site && site.pots) || []).find(x => x && x.id === id);
+    if (p) return p.slotId || null;
+  }
+  return null;
 }
-const siruWater = guard((id) => {
-  const r = waterSiru(S, id);
+/* ★★★ **놓인 판에 씨앗을 뿌린다** (2026-08-11 · 박사님 "재배판 배치 후 무순 심기").
+   규칙·재고는 전부 `state.sowCrop` 이 갖는다 — 화면은 어느 용기인지만 얹는다. */
+const siruPlant = guard((id, kind) => {
+  const r = sowCrop(S, id, { kind });
+  let ko = '', days = '';
+  try { const k = cropKindOf(r.kind); ko = k.ko; days = k.harvestDays; } catch { }
+  banner(`${ko} 씨앗을 심었습니다`, `씨앗 ${r.seedsUsed}봉지 · 물을 줘야 ${days}일 회전이 시작됩니다`);
+  syncRoom(); draw();
+});
+const siruWater = guard((id, kind) => {
+  const r = waterSiru(S, id, { kind });
   if (r.watered) banner('물을 줬습니다', `오늘이 0일차입니다 — ${r.harvestDays || ''}일 뒤에 거둡니다`);
   draw();
 });
-const siruHarvest = guard((id) => {
+const siruHarvest = guard((id, kind) => {
   const r = harvestCrop(S, io, { potIds: [id] });
-  banners([{ title: '🥣 콩나물을 거뒀습니다',
+  let ko = '콩나물'; try { ko = cropKindOf(kind).ko; } catch { }
+  banners([{ title: `🥣 ${ko}을(를) 거뒀습니다`,
              sub: `${r.qualityKo || ''} · 곳간에 ${Math.round(r.savedWon || r.cycleSavedWon || 0).toLocaleString()}원` }]);
   if (r.arrived) { arrivalSlotId = pot0(S) && pot0(S).slotId; fillSlots(false); }
   if (r.events && r.events.length) dlgOpen(story.events(r.events));
+  checkSiruQuest();         /* 회전이 하나 늘었다 — 완주했나 (§퀘스트). 배너는 draw 가 낸다 */
   draw();
 });
-const siruSow = guard((id) => {
-  const r = resowCrop(S, { potIds: [id], slots: io.light.room.slots, size: io.light.room.size });
+const siruSow = guard((id, kind) => {
+  const r = resowCrop(S, { kind, potIds: [id], slots: io.light.room.slots, size: io.light.room.size });
   banner('다시 심었습니다', `씨앗 ${r.seedsUsed}봉지 · 물을 줘야 시작합니다`);
   draw();
 });
@@ -4330,22 +4480,17 @@ $('mode').onchange = e => { S.sim.mode = e.target.value; io.light.clearCache(); 
      이 고침의 뜻이다. `#cropSlot` 은 남아 있지만 그건 끌기가 읽는 자리 목록일 뿐이다. */
 
 /* ── 무순 (2종째 작물) ── 콩나물과 같은 길이다. 규칙은 전부 코어 것을 부른다 */
-$('sowMusun').onclick = guard(() => {
-  /* `resowCrop` 이 재고(새싹 재배판·무 씨앗)까지 알아서 뺀다 — 화면이 품목 이름을 안 짓는다
-     (박아 두면 무순을 심을 때 콩 씨앗이 나간다. state.js §resowCrop 이 그 말을 적어 뒀다). */
-  const r = resowCrop(S, { kind: 'musun', sirus: 1 });
-  banner('무순을 심었습니다', '재배판을 밝은 자리에 놓고 물을 주면 시작됩니다');
-  syncRoom(); draw();
-  return r;
-});
-$('placeMusun').onclick = guard(() => {
-  const target = $('musunSlot').value;
-  const r = placeCrop(S.firstPlay, 'musun', target);
-  pushLog(S, r && r.moved
-    ? `🌱 새싹 재배판을 ${slotLabel(target)}(으)로 옮겼습니다`
-    : `🌱 새싹 재배판을 ${slotLabel(target)}에 두었습니다`);
-  syncRoom(); draw();
-});
+/* ★★★ 2026-08-11 — **`$('sowMusun').onclick` 이 여기 없다** (박사님 "재배판 배치 후 무순 심기").
+   여기 있던 것: `resowCrop(S, { kind:'musun', sirus:1 })` — 가방에서 재배판+씨앗을 한꺼번에
+   써서 **개체를 만들어 버리는** 길이었다. 그래서 방에 놓기도 전에 판이 다 심겨 있었다.
+   ⇒ 하는 일은 둘로 갈렸다:
+       놓기 → `commitPlace` 의 `placeSiru(S, at, { kind:'musun', sow:false })` (재배판 1개)
+       심기 → `siruPlant(id)` = `state.sowCrop(S, id)`                          (무 씨앗 1봉지)
+     단추는 **놓인 판의 줄**에 붙는다(§siruRowHTML `data-act="plant"`). */
+/* ★★★ 2026-08-11 — **`$('placeMusun').onclick`([두기] 드롭다운)도 여기 없다.**
+   그 길은 `placeCrop` 을 `potId` 없이 불러 **그 자리의 판을 전부 함께 옮겼다**.
+   판이 여럿 설 수 있게 된 지금은 단추 한 번에 판들이 한 자리로 뭉친다.
+   ⇒ 놓기는 끌기 하나 · 옮기기는 줄의 [📍 자리] 하나다(§drawMusun `.place` 를 걷었다). */
 
 /* loop.js 는 UI를 모른다 — S와 turn을 받아 화면을 그리는 건 여기 몫이다(헤드리스 시뮬 대비) */
 
@@ -4906,17 +5051,24 @@ function syncRoom() {
       const days = (S.firstPlay.rules ? S.firstPlay.rules.harvestDays : 4) || 4;
       const want = new Set();
       let rows = []; try { rows = cropPotList(S.firstPlay, S.day); } catch { }
+      /* ★★ 2026-08-11 — **종류를 안 가린다.** 무순 재배판도 여기서 판마다 선다.
+         예전에는 무순만 아래에서 자리 사본(`ms.at`) 하나로 그렸다 — 판이 여럿 서면
+         **첫 판만 보이고**, 열쇠도 `crop_02`(자리 이름)라 줄의 [자리]·[물 주기]가
+         찾는 열쇠(`시루 id`)와 어긋나 걸어가는 연출이 통째로 빠졌다. */
       for (const row of rows) {
-        if (row.kind !== 'beansprout' || !row.placed) continue;
+        if (!row.placed) continue;
         /* ★progress01 을 반드시 넘긴다. 안 넘기면 room_view 안에서 lerp(4,11,undefined)가
            NaN 이 되어 **시루만 놓이고 콩나물이 0포기** 난다 — 빈 그릇만 보인다. */
         const p01 = Math.max(0, Math.min(1, (row.ageDays || 0) / Math.max(1, row.harvestDays || days)));
-        const spec = { kind: 'beansprout', progress01: p01, count: 1,
-                       potD: potDOf('beansprout'), potId: row.id };
+        const pd = potDOf(row.kind);
+        /* 지름을 못 물으면(방뷰가 없거나 모르는 종류) **안 그린다** — 지어낸 지름으로 세우면
+           올라가지도 못할 자리에 놓인다(§musunPotD 와 같은 판단) */
+        if (!pd) continue;
+        const spec = { kind: row.kind, progress01: p01, count: 1, potD: pd, potId: row.id };
         want.add(row.id);
         Promise.resolve(row.at && roomView.setPlantAt
           ? roomView.setPlantAt(row.id, row.at, spec)
-          : roomView.setPlant(row.slotId, spec)).catch(warn('콩나물 ' + row.id));
+          : roomView.setPlant(row.slotId, spec)).catch(warn(row.kindKo + ' ' + row.id));
       }
       for (const id of [...shownSirus]) if (!want.has(id)) {
         shownSirus.delete(id);
@@ -4924,19 +5076,14 @@ function syncRoom() {
       }
       for (const id of want) shownSirus.add(id);
     }
-    /* ★ 무순 — 콩나물과 **같은 길**이다. 다른 것은 `kind` 와 `potD` 둘뿐이다
-       (docs/handoff/musun-to-plan.md §1 의 시그니처 그대로).
-       ⚠ `potD` 는 숫자를 베끼지 않고 방뷰에 묻는다 — 재배판은 네모라 폭이 아니라 **대각선**이고,
-         그 값을 화면이 또 적어 두면 방뷰가 판을 바꿀 때 조용히 어긋난다. */
-    const ms = musunSite(), mPotD = musunPotD();
-    if (ms && (ms.at || ms.slotId) && (ms.pots || []).length && mPotD) {
-      const mDays = ms.harvestDays || cropKindOf('musun').harvestDays;
-      const mP01 = Math.max(0, Math.min(1, (ms.ageDays || 0) / Math.max(1, mDays)));
-      const mSpec = { kind: 'musun', progress01: mP01, potD: mPotD, potId: CROP_SITE_IDS.musun };
-      Promise.resolve(ms.at && roomView.setPlantAt
-        ? roomView.setPlantAt(CROP_SITE_IDS.musun, ms.at, mSpec)
-        : roomView.setPlant(ms.slotId, mSpec)).catch(warn('무순'));
-    }
+    /* ⚠ 2026-08-11 — 여기 있던 **무순 전용 한 벌을 걷었다.** 위 시루 고리가 종류를 안 가리고
+       판마다 세운다(그 시그니처는 docs/handoff/musun-to-plan.md §1 그대로다 —
+       `kind`·`progress01`·`potD`·`potId` 넷). 두 벌을 두면 같은 판이 두 열쇠로 서서
+       하나가 유령으로 남는다.
+       ★★ **못 한 것 — 안 심은 판도 3D 에서는 싹이 나 있다.** `room_view.buildMusun` 이
+         `progress01` 0 에서도 3포기를 세운다(빈 판이 옛 NaN 사고와 눈으로 구별이 안 돼
+         일부러 그렇게 정한 것이다 — musun-to-plan §2). 「안 심음」을 3D 로 말하려면
+         빈 재배판 한 벌이 필요하고 `room_view.js` 는 이 창 소유가 아니라 못 고쳤다. */
     /* ★ 삽수도 방에 보인다 (2026-08-04).
        ------------------------------------------------------------
        ⚠ 안 그리면 **말풍선이 아예 안 뜬다** — roomView.screenPosOf / actAt 은
@@ -5113,10 +5260,14 @@ function syncPlantGlow() {
      어긋나면 없는 열쇠에 칠하게 되어 조용히 아무 일도 안 난다(syncRoom 과 같은 갈래). */
   const p = pot0(S);
   if (p && p.slotId) put(p.at ? p.id : p.slotId, 'monstera', p.slotId);
-  const b = S.firstPlay && S.firstPlay.beansprout;
-  if (b && b.slotId) put(b.at ? BEANSPROUT_ID : b.slotId, 'beansprout', b.slotId);
-  const ms = musunSite();
-  if (ms && ms.slotId) put(ms.at ? CROP_SITE_IDS.musun : ms.slotId, 'musun', ms.slotId);
+  /* ★★ 2026-08-11 — 작물은 **용기마다** 칠한다. 예전에는 자리 사본 하나로 `crop_01`·`crop_02`
+     라는 열쇠에 칠했는데, 방뷰는 08-09 부터 용기 하나를 **용기 id**(`crop_01_01`)로 세운다
+     (§syncRoom). 없는 열쇠라 조용히 아무 데도 안 칠해지고 있었다. */
+  let glowRows = []; try { glowRows = cropPotList(S.firstPlay, S.day); } catch { }
+  for (const row of glowRows) {
+    if (!row.placed || !row.slotId) continue;
+    put(row.at ? row.id : row.slotId, row.kind, row.slotId);
+  }
 }
 
 function rankSlots(what, ids) {
@@ -5465,6 +5616,22 @@ function commitPlace(what, hit, opt = {}) {
       draw();
       return;
     }
+    /* ★★★ 2026-08-11 — **무순은 빈 판이 선다** (박사님 "재배판 배치 후 무순 심기").
+       ------------------------------------------------------------
+       콩나물과 **같은 함수**(`state.placeSiru`)를 탄다. 다른 것은 `sow:false` 한 낱말이다 —
+       재배판 하나만 나가고 **무 씨앗은 안 나간다.** 씨앗은 놓인 판의 [🌱 심기]가 뺀다.
+       ⚠ 여기서 심으면 이번 지시가 그 자리에서 되돌아간다. 순서를 화면이 정하지 않는다. */
+    if (what === 'musun') {
+      try {
+        const r = placeSiru(S, atOf(hit), { ...placeOpt(), kind: 'musun', sow: false });
+        banner('빈 재배판을 놓았습니다',
+               '[🌱 심기]를 눌러 무 씨앗을 뿌리세요' +
+               (r.spare > 0 ? ` · 가방에 ${r.spare}개 남음` : ''));
+        unlockAfterFix();
+      } catch (e) { return placeFailed(e); }
+      draw();
+      return;
+    }
     /* ★★ 콩나물이 여기까지 왔다는 것은 **세울 시루가 없다**는 뜻이다 (2026-08-09).
        예전에는 여기서 `setCropAt` 이 돌아 「자리 옮기기」가 됐는데, 이제 그건 **놓인 시루를
        골라서** 하는 일이다(아래 §picked). 가방에서 끌었는데 옮기기가 일어나면
@@ -5474,16 +5641,14 @@ function commitPlace(what, hit, opt = {}) {
         !plan ? '가방에 빈 시루가 없습니다 — 상점에서 시루를 주문해 주세요'
               : `콩 씨앗이 ${plan.seedsNeeded}봉지 있어야 새 시루가 섭니다 (지금 ${plan.seeds}봉지)`));
     }
-    try {
-      const r = setCropAt(S, atOf(hit), { ...placeOpt(), kind: what });
-      pushLog(S, r.moved
-        ? `${what === 'musun' ? '🌱' : '🥣'} ${k}을(를) 옮겼습니다 — 지금까지 받은 ${r.keptDays}일치 빛은 그대로입니다`
-        : `${what === 'musun' ? '🌱' : '🥣'} ${k}을(를) 두었습니다`);
-      unlockAfterFix();                  // 자리를 고쳤으니 다시 시도할 수 있다
-      if (what === 'beansprout') dlgOpen('cropPlaced');
-    } catch (e) { return placeFailed(e); }
-    draw();
-    return;
+    /* ⚠ 2026-08-11 — 여기 있던 「아직 안 심었습니다 — 가방에서 [🌱 무순 심기]를 먼저
+       눌러 주세요」 안내를 **걷었다.** 그 단추가 없어졌고(§sowMusun), 이제는 안 심은 판이야말로
+       놓을 수 있는 것이다 — 그 자리에서 그 말은 정반대의 거짓말이 된다.
+       ⚠ 그 아래 있던 `setCropAt` 한 벌도 같이 걷었다. 콩나물은 §5567 에서, 무순은 §5552 에서
+         **반드시** 돌아가므로 여기는 닿을 수 없는 자리다(닿는 길이 있으면 그건 고장이고,
+         조용히 「자리 옮기기」로 새면 각개가 무너진다 — §5563 이 적어 둔 그 사고다).
+       무엇이 모자란지는 위 `placeSiru` 가 던지는 말(재고 부족)이 그대로 배너로 나온다. */
+    return placeFailed(new Error(`${k}을(를) 놓을 수 없습니다 — 가방을 다시 확인해 주세요`));
   }
   const p = pot0(S);
   if (!p) return;
@@ -5497,10 +5662,20 @@ function commitPlace(what, hit, opt = {}) {
   } catch (e) { return placeFailed(e); }
   draw();
 }
-/* 못 놓았으면 **왜** 못 놓았는지 그 자리에 적는다. 조용히 되돌리면 고장으로 읽힌다. */
+/* 못 놓았으면 **왜** 못 놓았는지 그 자리에 적는다. 조용히 되돌리면 고장으로 읽힌다.
+   ★★ 2026-08-11 — **배너로도 말한다.** 여기 적는 `#dropLabel` 은 `body.dragging` 일 때만
+     보이는데(§CSS `body.dragging #dropLabel`), `drag.end` 가 그 클래스를 **떼고 나서**
+     `commitPlace` 를 부른다(§end). 그래서 손을 뗀 뒤에 나는 실패는 이유를 적어 놓고도
+     **한 글자도 안 보였다** — 화면은 아무 일도 안 일어난 것처럼 굴었다.
+     박사님이 "무순 배치가 안되는듯"이라 하신 것이 이것이다(재현으로 확인:
+     떨굼표시에 글은 있고 `display:none` · `body.className` 은 이미 빈 문자열).
+   ⚠ `dropLabel` 에 적는 것은 **그대로 둔다** — 끌고 있는 중에 나는 실패는 거기가 제자리고
+     검사도 그 글을 읽는다. 배너에만 앞머리 딱지(`[첫 플레이]`)를 뗀다. */
 function placeFailed(e) {
-  $('dropLabel').textContent = (e && e.message) || '여기엔 놓을 수 없습니다';
+  const raw = (e && e.message) || '여기엔 놓을 수 없습니다';
+  $('dropLabel').textContent = raw;
   $('dropLabel').classList.add('no');
+  try { banner('놓지 못했습니다', String(raw).replace(/^\[[^\]]*\]\s*/, '')); } catch { }
 }
 /* ══ 놓인 식물 — 탭해서 고르고, 끌어서 옮기거나 돌린다 ═══════════════════
    ★"멀리서 잡아도 된다"가 핵심이다(박사님). 슬롯이 작아 정확히 못 집는 문제가
@@ -6582,6 +6757,7 @@ const reallyHarvest = guard(() => {
   if (r.arrived) { arrivalSlotId = pot0(S) && pot0(S).slotId; fillSlots(false); }
   /* 대사는 턴과 같은 창구로 낸다 — 수확 → 배움 → 식물신 → 도착 순서가 여기서 지켜진다 */
   if (r.events && r.events.length) dlgOpen(story.events(r.events));
+  checkSiruQuest();         /* 회전이 하나 늘었다 — 완주했나 (§퀘스트). 배너는 draw 가 낸다 */
   draw();
 });
 
@@ -6784,7 +6960,7 @@ function banners(events) {
   if (!list.length) return;
   const seen = new Set(), uniq = [];
   for (const e of list) {
-    const k = (e.title || '') + ' ' + (e.sub || '');
+    const k = (e.title || '') + '\u0000' + (e.sub || '');
     if (seen.has(k)) continue;
     seen.add(k); uniq.push(e);
   }
