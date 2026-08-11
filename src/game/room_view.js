@@ -2454,14 +2454,14 @@ export async function createRoomView(canvas, opts = {}) {
      칸(0.25m)의 절반이라 둘 다 격자 위다. 그래서 span 을 받아 **묶음의 한가운데**를 낸다.
      이것이 박사님 말씀의 "1개 반 2개 칸 4칸 차지하면 되잖아" 를 화면에 옮긴 것이다. */
   function cellsOfRect(rect, span = 1) {
-    const nu = Math.max(1, Math.floor(rect.w / GRID_CELL + 1e-9));
-    const nv = Math.max(1, Math.floor(rect.d / GRID_CELL + 1e-9));
+    const nu = Math.max(1, Math.floor(rect.w / TOP_CELL + 1e-9));
+    const nv = Math.max(1, Math.floor(rect.d / TOP_CELL + 1e-9));
     const su = Math.min(span, nu), sv = Math.min(span, nv);
     const c = Math.cos(rect.rot || 0), s = Math.sin(rect.rot || 0);
     const out = [];
     for (let j = 0; j + sv <= nv; j++) for (let i = 0; i + su <= nu; i++) {
-      const u = (i + (su - 1) / 2 - (nu - 1) / 2) * GRID_CELL;
-      const v = (j + (sv - 1) / 2 - (nv - 1) / 2) * GRID_CELL;
+      const u = (i + (su - 1) / 2 - (nu - 1) / 2) * TOP_CELL;
+      const v = (j + (sv - 1) / 2 - (nv - 1) / 2) * TOP_CELL;
       out.push({ u, v, x: rect.x + u * c + v * s, z: rect.z - u * s + v * c });
     }
     return out;
@@ -2485,7 +2485,7 @@ export async function createRoomView(canvas, opts = {}) {
   }
 
   /* 칸 메시를 span 에 맞춰 다시 깐다. span 이 안 바뀌면 아무것도 안 한다. */
-  function layoutGuideCells(span) {
+  function layoutGuideCells(span, potD) {
     if (!guideGroup) return 0;
     if (!tierRects) tierRects = collectTierRects();
     if (cellSpan === span && cellRings.size) return cellRings.size;
@@ -2497,11 +2497,27 @@ export async function createRoomView(canvas, opts = {}) {
       /* 면이 정한 한도 — `surfaceAt` 이 자리 없는 점에 쓰는 것과 **같은 값**이다 */
       const maxPotD = (u.tier_max_pot_d && u.tier_max_pot_d.length)
         ? Math.max(...u.tier_max_pot_d) : null;
-      for (const c of cellsOfRect(t.rect, span)) {
+      for (const c0 of cellsOfRect(t.rect, span)) {
+        /* ★★ **그린 자리가 곧 앉는 자리다** (2026-08-11 · 박사님 "더 쪼개").
+           ------------------------------------------------------------
+           칸을 반 칸(0.125)으로 잘게 깔았더니 그린 한가운데와 실제로 앉는 자리가
+           **최대 0.0625m 어긋났다**(재서 확인). 훑어 보니 앉는 자리는 0.125 간격이 맞는데
+           **위상이 상판 한가운데가 아니고**, 가장자리에서 한 번 더 붙어(clamp) 자투리 간격
+           (0.135 · 0.09 · 0.035)이 섞여 있었다. 격자 식을 아무리 고쳐도 그 둘은 안 만난다.
+           ⇒ 격자로 **후보만** 뽑고, 그 점을 `snapOnSurface` 에 그대로 물어 **돌아온 자리에** 그린다.
+             이러면 `snapErr` 이 계산이 아니라 **구조적으로** 0 이다.
+           ⚠ 같은 자리로 떨어진 후보는 하나로 합친다 — 안 그러면 가장자리에 네모가 겹쳐 쌓인다. */
+        let c = c0;
+        if (Number.isFinite(potD)) {
+          const sn = snapOnSurface(c0.x, c0.z, potD, t.rect, placeStepOf());
+          if (sn && Number.isFinite(sn.x) && Number.isFinite(sn.z)) c = { ...c0, x: sn.x, z: sn.z };
+        }
         /* 추천 자리와 사실상 같은 점이면 안 그린다 — 한 자리에 네모가 둘 겹친다 */
         if (t.slots.some(s => Math.hypot(s.x - c.x, s.z - c.z) < CELL_SAME)) continue;
+        /* 열쇠는 **앉는 자리**로 짓는다. 후보(u·v)로 지으면 같은 자리에 떨어진 둘이
+           다른 열쇠를 받아 겹쳐 그려진다. */
         const id = '#cell:' + (u.uid || 'x') + ':' + t.y.toFixed(3) +
-                   ':' + c.u.toFixed(3) + ':' + c.v.toFixed(3);
+                   ':' + c.x.toFixed(3) + ':' + c.z.toFixed(3);
         if (cellRings.has(id)) continue;
         const m = new THREE.Mesh(guideGeo.thin, guideMat.fit);
         m.rotation.x = -Math.PI / 2;
@@ -2520,7 +2536,22 @@ export async function createRoomView(canvas, opts = {}) {
 
   /* 지름 → 그 물건이 먹는 칸 수. **네모 크기(markerHalf/squareHalf)와 같은 자**다 —
      여기서 다르게 세면 그린 네모와 앉는 자리가 또 어긋난다. */
-  const cellSpanFor = potD => Math.max(1, Math.round((Number.isFinite(potD) ? potD : 0.22) / GRID_CELL));
+  /* ★★ 가구 윗면 칸의 눈금 — **놓는 걸음과 같은 값**이다 (2026-08-11 · 박사님 "더 쪼개").
+     ------------------------------------------------------------
+     처음엔 바닥·창턱과 같은 0.25 로 깔았는데, 그러면 책상 상판이 4×2 = 8칸이라 여전히 성기다.
+     ★ 얼마나 잘게 쪼갤 수 있나 — **놓는 걸음(`MOVE_STEP` 0.125m)이 바닥이다.**
+       물건은 그 걸음에만 앉으므로, 그보다 잘게 그리면 **칸 한가운데를 겨눠도 거기 안 앉는다** —
+       표시가 거짓말이 된다(그 어긋남이 `guideCells().snapErr` 다. 지금 값은 0 이다).
+       0.15 나 0.10 이 0.125 의 배수가 아니라 안 되는 것도 같은 이유다.
+     ⚠ 걸음 자체를 더 잘게 하는 것은 **박사님이 이미 물리신 길**이다 —
+       2026-08-07 "그 배치 스냅 간격이 너무 촘촘한 거 같아. 밑에 그리드의 절반 정도로 해줘".
+     ⚠ 바닥 격자·창턱(`GRID_CELL` 0.25)은 **안 건드린다.** 저쪽은 가구를 앉히는 눈금이라
+       뜻이 다르다 — 여기만 반 칸으로 나눠 쓴다. */
+  const TOP_CELL = MOVE_STEP;
+  /* 그 물건이 걸음 몇 개를 차지하나 — **올림**이다. 내림·반올림을 쓰면 0.4327m 짜리가
+     3칸(0.375m)으로 잡혀 그린 네모가 실물보다 작아진다. `place.snapSpan` 이 쓰는
+     `unitsFor`(= 올림)와 **같은 셈**이라야 그린 자리와 앉는 자리가 안 갈린다. */
+  const cellSpanFor = potD => Math.max(1, Math.ceil(((Number.isFinite(potD) ? potD : 0.22) / TOP_CELL) - 1e-9));
 
   /* 그 칸에 이 지름이 올라가나 — `surfaceAt` 의 「자리 번호가 없는 가구 위」 가지와
      **같은 두 판정**이다. 여기서 따로 만들면 표시와 실제가 또 어긋난다(§potFits 머리말). */
@@ -2575,7 +2606,7 @@ export async function createRoomView(canvas, opts = {}) {
     const potD = Number.isFinite(opt.potD) ? opt.potD : potDOf(opt.plantId, opt.count);
     /* ★ 가구 윗면 칸을 지금 끌고 있는 것의 **칸 수**에 맞춰 깐다 (§guideCells).
        2칸짜리는 칸 경계에 앉으므로 칸 한가운데를 그리면 표시가 거짓말이 된다. */
-    layoutGuideCells(cellSpanFor(potD));
+    layoutGuideCells(cellSpanFor(potD), potD);
     let nearId = null, nearD = Infinity;
     if (opt.near && Number.isFinite(opt.near.x) && Number.isFinite(opt.near.z)) {
       for (const id of guideRings.keys()) {
@@ -2678,7 +2709,7 @@ export async function createRoomView(canvas, opts = {}) {
   function guideCellState(opt = {}) {
     const potD = Number.isFinite(opt.potD) ? opt.potD : potDOf(opt.plantId, opt.count);
     const step = placeStepOf(opt.step);
-    if (guideGroup) layoutGuideCells(cellSpanFor(potD));
+    if (guideGroup) layoutGuideCells(cellSpanFor(potD), potD);
     return [...cellRings].map(([id, m]) => {
       const info = cellInfo.get(id) || {};
       const sn = info.rect ? snapOnSurface(info.x, info.z, potD, info.rect, step) : null;
