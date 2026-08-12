@@ -49,6 +49,12 @@ const scene = new THREE.Scene();
      `make_thumbs.py` 머리글은 「알파 있는 렌더」라고 적어 두었는데 **지금 파일들은 아니다.** */
 scene.background = new THREE.Color(0xffffff);
 
+/* 한 벌 찍기 — 앞 판을 지운다. 안 지우면 한 화면에 물건이 쌓여 둘 다 못 쓴다. */
+window.__reset = function () {
+  for (let i = scene.children.length - 1; i >= 0; i--) scene.remove(scene.children[i]);
+  window.__done = false; window.__err = null; window.__png = null; window.__size = null;
+};
+
 window.__thumb = function (url) {
   const loader = new THREE.GLTFLoader();
   loader.load(url, (gltf) => {
@@ -59,10 +65,28 @@ window.__thumb = function (url) {
       obj.traverse(o => {
         if (!o.isMesh || !o.material) return;
         const src = Array.isArray(o.material) ? o.material : [o.material];
-        const flat = src.map(m => new THREE.MeshBasicMaterial({
-          color: m.color ? m.color.clone() : new THREE.Color(0xffffff),
-          side: m.side, transparent: m.transparent, opacity: m.opacity
-        }));
+        /* ⚠ **무늬(map)는 가져온다.** `assets/pots/*` 는 `*_base_color.png` 를 물고 있어
+           색만 옮기면 무늬가 통째로 날아간다(콘크리트 결·유리 병·마크라메 짜임). */
+        const flat = src.map(m => {
+          const clear = !!m.transparent && (m.opacity ?? 1) < 0.95;
+          const col = m.color ? m.color.clone() : new THREE.Color(0xffffff);
+          /* ★ **투명한 물건은 흰 배경에서 사라진다.** 유리 수경병을 그냥 찍었더니
+             흰 바탕에 흰 실루엣이라 아무것도 안 보였다(재서 확인 · 파일 10KB).
+             그렇다고 배경을 회색으로 하면 이 폴더의 규약(흰 배경)이 깨진다.
+             ⇒ ① 색을 조금 눌러 바탕과 갈리게 하고 ② 뒷면도 그린다.
+               뒷면이 겹치는 **가장자리와 두꺼운 데가 저절로 진해져** 유리처럼 읽힌다.
+               ⚠ 이건 **보이게 하려는 표시상의 선택**이지 재질을 옮긴 것이 아니다. */
+          if (clear) col.multiplyScalar(0.82);
+          return new THREE.MeshBasicMaterial({
+            color: col,
+            map: m.map || null,
+            side: clear ? THREE.DoubleSide : m.side,
+            transparent: m.transparent,
+            opacity: clear ? Math.max(0.38, m.opacity ?? 1) : m.opacity,
+            alphaTest: m.alphaTest || 0,
+            depthWrite: clear ? false : true
+          });
+        });
         o.material = Array.isArray(o.material) ? flat : flat[0];
       });
       scene.add(obj);

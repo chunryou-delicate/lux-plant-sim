@@ -3029,14 +3029,19 @@ const BAG_ART = Object.freeze({
   sprout_tray:   MUSUN_TRAY_PIC,
   bean_seed:     './assets/crops/thumbs/seed_dicot.png',      // 콩은 쌍떡잎
   radish_seed:   './assets/crops/thumbs/seed_dicot.png',      // 무도 쌍떡잎
-  monstera_seed: './assets/crops/thumbs/seed_monocot.png'     // 몬스테라(천남성과)는 외떡잎
+  monstera_seed: './assets/crops/thumbs/seed_monocot.png',    // 몬스테라(천남성과)는 외떡잎
+  /* ★★ 2026-08-12 — **글자를 그림으로 바꿨다.** 이 둘은 원화가 없어 「포」·「병」이라는
+     글자 한 자로 서 있었다. 지어낸 그림을 넣은 것이 아니라 **이미 있던 GLB 를 찍었다**
+     (`tools/glb_thumb.mjs` · 다른 썸네일과 같은 규약: 512² · 흰 배경 · 납작한 색 + 무늬).
+     ⚠ 유리 수경병은 그냥 찍으면 **흰 바탕에 흰 실루엣**이라 안 보였다(재서 확인).
+       투명한 재질은 색을 조금 누르고 뒷면까지 그려서 가장자리가 진해지게 했다(§glb_thumb). */
+  pot:           './assets/pots/thumbs/pot_nursery_black.png',
+  jar:           './assets/pots/thumbs/pot_glassjar.png'
 });
-/* ★ 원화가 없는 둘은 **글자 한 자와 색**으로 세운다. 에셋을 새로 만들지 않는다 —
-   지어낸 그림은 나중에 진짜 그림이 왔을 때 어긋나고, 그때 고칠 사람이 없다. */
-const BAG_LETTER = Object.freeze({
-  pot: { ko: '포', bg: '#8d8a99' },      // 검은 모종포트 — 무채색 플라스틱
-  jar: { ko: '병', bg: '#9fd0e6' }       // 유리 수경병 — 맑은 유리
-});
+/* ★ 원화가 없는 품목은 **글자 한 자와 색**으로 세운다. 지어낸 그림은 나중에 진짜 그림이
+   왔을 때 어긋나기 때문이다. ⚠ 2026-08-12 현재 여기 남은 품목은 **없다** — 표는 남긴다.
+   품목이 늘 때 그림보다 이름이 먼저 정해지는 일이 흔하고, 그때 이 표가 받아 준다. */
+const BAG_LETTER = Object.freeze({});
 const BAG_GROUPS = Object.freeze([
   { kind: 'container', ko: '용기' },
   { kind: 'seed',      ko: '씨앗' }

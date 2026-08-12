@@ -141,6 +141,32 @@ for f in tools/test_*.mjs; do node "$f" || echo "FAIL $f"; done
 
 ---
 
+## 2.7 에셋 — GLB 를 찍어 썸네일을 만든다 (2026-08-12)
+
+**`tools/glb_thumb.mjs` 가 GLB 를 썸네일로 찍는다.** AI 로 다시 그리지 않는다 —
+다시 그리면 판 모양이 GLB 와 미세하게 갈려 **가방 그림과 방 안 물건이 다른 물건**이 된다.
+
+```bash
+python tools/serve.py 8963
+node tools/glb_thumb.mjs --all=assets/pots            # 폴더째 (있는 것은 건너뛴다)
+node tools/glb_thumb.mjs <glb> <png> --force          # 한 장
+```
+
+규약(재서 맞춘 것): **512×512 · 흰 배경 불투명 · 납작한 색 + 무늬(map)**.
+`assets/crops/thumbs` · `assets/furniture/thumbs` 가 이미 그렇다.
+⚠ `make_thumbs.py` 머리글은 「알파 있는 렌더」라고 적어 두었는데 **지금 파일들은 아니다**(알파 0%).
+
+⚠ **투명한 물건은 그냥 찍으면 사라진다** — 유리 수경병이 흰 바탕에 흰 실루엣이 됐다.
+  색을 조금 누르고 뒷면까지 그려 가장자리가 진해지게 했다.
+
+### 지금까지 찍은 것 · 남은 것
+- 찍었다 — `pots` 13 · `lighting` 6 · `items` 4 · `lamps` 3 · `house` 4 · 빈 재배판 1 = **31장**
+- **가방의 「포」·「병」 글자가 없어졌다** — `BAG_LETTER` 는 빈 표가 됐다(품목이 늘 때를 위해 표만 남김)
+- 남은 것 — `monstera/` 와 `monstera/skins/` 의 **잎·줄기 123장.** 화면 목록에 안 나오는
+  부품이라 급하지 않다. 무늬 등급 도구가 잎을 격자로 펼 때 필요해지면 그때 찍으면 된다
+
+---
+
 ## 3. 박사님 답을 기다리는 것
 
 | | 무엇 |
