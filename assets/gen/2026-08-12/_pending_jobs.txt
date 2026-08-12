@@ -1,1 +1,3 @@
-# 다시 넣을 것: 342 타이머 · 386 흙 스쿱 · 387 원예 앞치마
+# 아직 못 뽑은 것 (다음 창이 그대로 다시 넣으면 된다 · 대개 재시도하면 통과한다)
+101 mizuna_s      102 mizuna_m      109 watercress_l   110 mustard_s
+487 apron         498 shoe_rack     702 pot_crate
