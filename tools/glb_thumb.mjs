@@ -16,6 +16,8 @@ const flags = process.argv.slice(2).filter(a => a.startsWith('--'));
 const urlArg = flags.find(a => a.startsWith('--url='));
 const BASE = (urlArg && urlArg.slice(6)) || process.env.BYEOT_URL || 'http://localhost:8963';
 const FORCE = flags.includes('--force');
+/* 잎은 위에서 봐야 무늬가 읽힌다 — `--view=top` (§glb_thumb.html §보는 각) */
+const VIEW = (flags.find(a => a.startsWith('--view=')) || '--view=3q').slice(7);
 
 /* ★ 한 벌 찍기 — `--all <폴더>` 면 그 폴더의 GLB 를 전부 찍어 `<폴더>/thumbs/` 에 넣는다.
    ⚠ 브라우저를 **한 번만** 띄운다. GLB 마다 새로 띄우면 28개에 5분이 넘는다. */
@@ -49,7 +51,7 @@ for (const j of jobs) {
   /* 앞 판을 지우고 다시 시작한다 — 한 화면에 둘이 겹치면 둘 다 못 쓴다 */
   await page.eval(`window.__reset()`, false);
   const glbUrl = '/' + j.glb.replace(/\\/g, '/').replace(/^\.?\//, '');
-  await page.eval(`window.__thumb(${JSON.stringify(glbUrl)})`, false);
+  await page.eval(`window.__thumb(${JSON.stringify(glbUrl)}, ${JSON.stringify(VIEW)})`, false);
   await page.waitFor('window.__done === true', 120000, 150);
 
   const err = await page.eval(`window.__err`);

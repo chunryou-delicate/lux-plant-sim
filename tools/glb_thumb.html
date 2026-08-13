@@ -55,7 +55,12 @@ window.__reset = function () {
   window.__done = false; window.__err = null; window.__png = null; window.__size = null;
 };
 
-window.__thumb = function (url) {
+/* ★ 보는 각 — 물건마다 읽히는 각이 다르다 (2026-08-13).
+     '3q'  3/4 내려보기. 화분·가구·소품의 기본값이다
+     'top' **바로 위에서.** 잎이 그것이다 — 3/4 로 찍으면 잎이 옆으로 찌부러져
+           무늬(하프문·스페클)가 안 읽힌다. 무늬를 보여 주려고 찍는 그림인데
+           무늬가 안 보이면 찍은 뜻이 없다(하프문 잎을 그렇게 한 번 찍어 보고 알았다). */
+window.__thumb = function (url, view) {
   const loader = new THREE.GLTFLoader();
   loader.load(url, (gltf) => {
     try {
@@ -102,7 +107,13 @@ window.__thumb = function (url) {
       const r = Math.max(size.x, size.y, size.z);
       const cam = new THREE.PerspectiveCamera(28, 1, 0.01, 100);
       const d = r * 3.1;
-      cam.position.set(-d * 0.62, d * 0.55, d * 0.72);
+      if (view === 'top') {
+        /* 바로 위에서. 살짝 기울여야 잎자루가 점으로 안 뭉친다 */
+        cam.position.set(d * 0.06, d, d * 0.14);
+        cam.up.set(0, 0, -1);
+      } else {
+        cam.position.set(-d * 0.62, d * 0.55, d * 0.72);
+      }
       cam.lookAt(0, 0, 0);
 
       /* 물건이 판 안에 꽉 차되 잘리지 않게 — 여덟 꼭짓점을 화면으로 던져 여백을 잰다 */
