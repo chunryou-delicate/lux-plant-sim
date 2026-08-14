@@ -5862,7 +5862,7 @@ const freePlace = {
   },
   /* 추천 자리가 화면에서 코앞이면 거기 붙인다. 3D 거리가 아니라 **화면 거리**로 잰다 —
      같은 3D 거리라도 멀리 있는 자리는 화면에서 작게 보여 손가락 감각과 안 맞는다. */
-  snap(hit, px, py) {
+  snap(hit, px, py, opt = {}) {
     if (!hit || !hit.ok || !hit.nearest || !roomView.screenPosOf) return hit;
     let sp = null; try { sp = roomView.screenPosOf(hit.nearest.slotId); } catch { }
     if (!sp) return hit;
@@ -5870,8 +5870,31 @@ const freePlace = {
     if (Math.hypot(r.left + sp.x - px, r.top + sp.y - py) > SNAP_PX) return hit;
     const n = hit.nearest;
     if (n.maxPotD != null && hit.potD != null && n.maxPotD < hit.potD) return hit;  // 안 올라가는 자리엔 안 붙인다
+    /* ★★★ 2026-08-15 — **이미 찬 자리엔 안 붙인다** (점검에서 100% 재현으로 잡혔다).
+       ══════════════════════════════════════════════════════════════════
+       ⚠ 여기가 「올라가나」(`maxPotD`)만 보고 **「비었나」를 안 봤다.** 그래서
+         `banjiha-dresser:0` 한 자리에 시루 **셋**이 좌표까지 똑같이(1.700, 0.940) 섰다.
+       ⚠ 재현이 얄궂다 — 자리 **한가운데**에 겹쳐 놓으면 「다른 화분과 겹칩니다」로 제대로
+         막힌다. 그런데 **20px 비껴서** 놓으면 겹침 판정은 그 비낀 좌표로 통과하고,
+         **그 뒤에** 이 함수가 자리 한가운데로 끌어다 붙여 버린다. 즉 판정과 붙이기의
+         **순서**가 문제였지 판정이 틀린 게 아니었다.
+       ⇒ 붙이기 전에 여기서도 본다. 「자리마다 밝기가 다르다」가 이 게임의 축인데,
+         한 자리에 셋이 겹쳐 서면 그 축이 그 자리에서 무너진다.
+       ★ 「찼나」의 정본은 **방뷰**다(`room_view §slotOccupied`) — 슬롯 열쇠뿐 아니라
+         **그 점 위에 선 자유 좌표 화분까지** 본다. 화면이 또 세면 두 곳이 갈린다.
+       ⚠ `opt.fromSlotId` — **옮기는 중인 그 물건이 원래 있던 자리는 뺀다.**
+         안 빼면 제자리로 되돌려 놓는 것이 막힌다(자기 자신이 「찼다」로 잡힌다). */
+    if (n.slotId !== opt.fromSlotId && freePlace.slotTaken(n.slotId)) return hit;
     return { ...hit, ...n.pos, onUid: n.onUid ?? hit.onUid, occIdx: n.occIdx ?? hit.occIdx,
              snappedTo: n.slotId };
+  },
+  /* 그 추천 자리가 찼나 — **방뷰에 묻는다.** `roomView.slots()` 가 `occupied` 를 이미 낸다.
+     ⚠ 끌 때마다 불린다. 자리는 14칸 남짓이라 훑어도 싸고, 대신 **캐시를 안 만든다** —
+       캐시를 두면 놓자마자 그 자리가 아직 비었다고 답하는 순간이 생긴다. */
+  slotTaken(slotId) {
+    if (!slotId || !roomView || !roomView.slots) return false;
+    try { const s = roomView.slots().find(v => v.slotId === slotId); return !!(s && s.occupied); }
+    catch { return false; }
   },
   /* 놓을 자리를 반투명으로 보여 준다. 못 놓는 자리면 붉게. */
   preview(hit, potD, potId) {
@@ -6296,7 +6319,8 @@ const picked = {
     /* ★한 칸(또는 반 칸)씩 떨어지게 한다 (박사님 2026-08-06). 자리(slotId)가 지배하는
        점은 room_view 가 격자보다 먼저 자리로 보내므로 슬롯 좌표는 그대로다. */
     let hit = freePlace.surfaceAt(gx, gy, drag.potD, { step: moveStep() });
-    hit = freePlace.snap(hit, gx, gy);
+    /* ★ 옮기는 중이면 **원래 자리**를 넘긴다 — 안 넘기면 제자리로 되돌리는 것이 막힌다(§snap) */
+    hit = freePlace.snap(hit, gx, gy, { fromSlotId: this.slotId });
     const gh = $('dragGhost');
     gh.classList.add('on');
     gh.style.left = gx + 'px'; gh.style.top = gy + 'px';
