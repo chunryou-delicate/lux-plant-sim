@@ -40,7 +40,7 @@ import { buildHouse, updateShellVisibility } from '../render3d/house.js';
    무광원(MeshBasicMaterial) + castShadow/receiveShadow 없음이라
    sunLight·skyPortals·조도 엔진 어느 쪽도 이 기하를 보지 않는다.
    (그래서 이걸 켜고 꺼도 test_banjiha_profile 의 숫자는 한 자리도 안 움직인다) */
-import { buildOutsideAlley } from '../render3d/outside_alley.js';
+import { attachOutside } from './outside.js';
 import { winFromHouse } from '../engine/daylight_lux.js';
 /* BAND_LOOK 은 밴드별 색·처짐 표다. 조립본에도 같은 표를 쓴다 —
    방과 확대가 같은 그루라면 "빛이 나쁘다"는 표시도 같아야 한다. */
@@ -793,10 +793,21 @@ export async function createRoomView(canvas, opts = {}) {
      반지하는 눈높이가 지면이라 골목 바닥과 담벼락 아래쪽이 보인다 —
      그 한 장면이 "반지하에 산다"를 말한다.
 
-     ★ 빛은 절대 안 건드린다. render3d/outside_alley.js 머리말 참조 —
+     ★ 빛은 절대 안 건드린다. game/outside.js 머리말 참조 —
        무광원 재질에 그림자를 안 던지고 안 받는다. 조도 계산(winFromHouse ·
        daily_light)은 물론 렌더 조명도 이 기하를 보지 않는다.
      ★ 기본은 반지하만이다. 위층 방(아파트·온실)에 골목 바닥을 깔면 거짓말이 된다.
+
+     ★★ 2026-08-15 — 창밖이 **두 벌** 있었다. 여기서 부르던 render3d/outside_alley.js 와,
+       아무도 안 부르던 game/outside.js 다. 뒤엣것이 훨씬 자세한데 git 에도 없이
+       굴러다녔다. 둘 다 켜면 담벼락이 두 겹으로 서므로 **하나로 합쳤다** —
+       game/outside.js 만 남기고 outside_alley.js 는 지웠다.
+       바뀐 것 셋:
+         · 낮밤을 여기서 안 먹인다. outside.js 가 dayGet 콜백으로 스스로 읽는다
+           (그래야 그리기 직전에 색이 올라간다 — 그 파일 §updateMatrixWorld 참조)
+         · 벽 바깥 판정은 outside.updateCamera(camPos) 하나로 옮겼다
+         · 창 크기로 자르지 않는다. **거리로 푼다**(그 파일 머리글 ★★) —
+           그래서 축소하면 골목과 건너편 빌라가 방 뒤로 보인다
   ============================================================ */
   const OUTSIDE_ROOMS = new Set(['banjiha']);
   function outsideWanted(id) {
@@ -813,16 +824,26 @@ export async function createRoomView(canvas, opts = {}) {
     disposeOutside();
     if (!outsideWanted(id) || !built) return null;
     try {
-      outside = buildOutsideAlley(built, {});
+      /* ★ 씬에 **직접** 붙는다(houseGroup 이 아니다). houseGroup 은 방을 갈아 끼울 때
+         통째로 비우는 자리라, 거기에 두면 outside.js 가 쥔 손잡이와 씬의 실제 내용이
+         갈린다. 대신 dispose 를 반드시 먼저 부른다 — 위 disposeOutside 가 그것이다.
+         레이캐스트는 built.room 에만 쏘고, 그래도 mesh.raycast 를 비워 뒀다(두 겹). */
+      outside = attachOutside(ctx, built, id, () => daylightT);
     } catch (e) {
       /* 배경이 안 떠서 방이 안 뜨면 본말전도다 */
       console.warn('[방뷰] 창밖 골목을 못 지었습니다 — 창밖 없이 갑니다:', e.message);
       outside = null;
     }
-    /* ★ houseGroup 에 넣는다. 레이캐스트는 built.room 에만 쏘므로 배치·걷기와 안 부딪힌다
-       (그래도 mesh.raycast 를 비워 뒀다 — 두 겹으로 막는다). */
-    if (outside) houseGroup.add(outside.group);
+    if (outside) outside.updateCamera(ctx.cam.position);
     return outside;
+  }
+  /* 창밖이 선 벽 — outside.js 가 고르는 기준(제일 큰 벽창)과 같은 자다 */
+  function outsideWall() {
+    const ws = ((built && built.luxWins) || []).filter(w => w.wall && w.wall !== 'ceiling');
+    if (!ws.length) return null;
+    let big = ws[0], area = -1;
+    for (const w of ws) { const a = (w.w || 0) * (w.h || 0); if (a > area) { area = a; big = w; } }
+    return big.wall;
   }
 
   /* opt.prebuilt = { built, def, wins } — 이미 조립된 결과를 그대로 쓴다.
@@ -1263,8 +1284,8 @@ export async function createRoomView(canvas, opts = {}) {
     cam.look.y -= dist * tanV * FRAME_BIAS;
     ctx.cam.lookAt(cam.look);
     if (built) updateShellVisibility(built.shells, ctx.cam, 'auto', built.trims);
-    /* 벽이 밑동만 남으면(카메라가 그 벽 바깥이면) 골목이 방 옆에 판때기로 서 있게 된다 */
-    if (outside) outside.updateVisibility(ctx.cam.position);
+    /* 벽이 밑동만 남으면(카메라가 그 벽 바깥이면) 골목이 카메라와 방 사이에 끼어 방을 덮는다 */
+    if (outside) outside.updateCamera(ctx.cam.position);
   }
 
   /* ============================================================
@@ -3528,17 +3549,14 @@ export async function createRoomView(canvas, opts = {}) {
     }
   }
 
-  /* 창밖 골목의 색 — updateLight 바로 뒤에 부른다.
-     ★ 여기서 읽기만 한다. 조명 값을 **되돌려 쓰지 않는다** — 배경이 빛을 바꾸면
-       그 순간 배경이 조도의 일부가 된다. 방향은 한쪽뿐이다(빛 → 배경).
-     ★ 하늘색은 game 정책이 배경을 0x14101c 로 눌러 버리기 전에 집어야 한다. */
-  function tintOutside() {
-    if (!outside) return;
-    const sky = (ctx.scene.background && ctx.scene.background.isColor)
-      ? ctx.scene.background : null;
-    outside.setDaylight({ sunI: ctx.sunLight.intensity,
-                          sunColor: ctx.sunLight.color, sky });
-  }
+  /* 창밖 골목의 낮밤 — ★ **여기서 안 먹인다** (2026-08-15).
+     outside.js 가 dayGet 콜백으로 daylightT 를 직접 읽고, **그리기 직전**
+     (updateMatrixWorld)에 정점색을 갈아 끼운다. 왜 그 자리여야 하는지는 그 파일
+     §updateMatrixWorld 에 있다 — 여기서 미리 칠하면 한 프레임 늦게 반영되고,
+     이 게임은 "바뀔 때만 그리므로" 그 다음 프레임이 영영 안 오는 일이 흔하다
+     (그래서 예전에 낮/밤 창밖 색이 뒤바뀌어 찍혔다).
+     ⚠ 그래도 조명 값을 **되돌려 쓰지 않는다**는 원칙은 그대로다 — 방향은 한쪽뿐이다.
+     ⇒ 그래서 여기에 아무 함수도 없다. 찾다가 헛걸음하지 않도록 이 주석만 남긴다. */
 
   function applyDaylight() {
     /* ★천장등은 **낮에 아예 안 켠다** (박사님 2026-08-03: "낮에는 안 켜지게").
@@ -3551,7 +3569,6 @@ export async function createRoomView(canvas, opts = {}) {
       /* index.html(집 도구)과 **같은 그림**. scene.js 기본값 그대로 — 아무것도 안 누른다.
          비교용이라 그림자 예산만 게임과 같게 둔다(그건 밝기가 아니라 성능이다). */
       const l0 = updateLight(ctx, daylightT * 100, 0);
-      tintOutside();
       ctx.renderer.toneMappingExposure = 1.1;
       applyShadowBudget();
       if (ctx.sunLight.castShadow) ctx.sunLight.shadow.needsUpdate = true;
@@ -3559,7 +3576,6 @@ export async function createRoomView(canvas, opts = {}) {
       return l0;
     }
     const label = updateLight(ctx, daylightT * 100, isDay ? 2 : 0);
-    tintOutside();                 // ★ 배경을 눌러 어둡게 만들기 **전에** 하늘색을 집는다
 
     /* ★★ 밤은 **천장등 하나가 만드는 웅덩이**여야 한다 (2026-08-03 · 박사님 "밤에 등이 아직도 너무 밝다")
        ------------------------------------------------------------
@@ -7222,16 +7238,19 @@ export async function createRoomView(canvas, opts = {}) {
     setOutside(mode) {
       outsideMode = (mode === true || mode === false) ? mode : 'auto';
       buildOutside(roomId);
-      tintOutside();
-      if (outside) outside.updateVisibility(ctx.cam.position);
       needsRender = true;
       return outsideMode;
     },
-    /* 무엇이 얼마나 붙어 있나 — 삼각형·판때기·어느 벽. 없으면 null */
+    /* 무엇이 얼마나 붙어 있나 — 삼각형·드로우콜·어느 벽. 없으면 0 이다.
+       ★ walls 는 예전 계약(배열)을 지킨다. 지금 창밖은 **제일 큰 창 하나**에만 선다 —
+         벽마다 한 벌씩 세우던 옛 방식은 담이 방을 두 겹으로 둘러싸 보였다. */
     outsideInfo() {
-      return outside ? { mode: outsideMode, tris: outside.tris,
-                         quads: outside.quads, walls: [...outside.walls] }
-                     : { mode: outsideMode, tris: 0, quads: 0, walls: [] };
+      if (!outside) return { mode: outsideMode, tris: 0, quads: 0, walls: [], far: 0, calls: 0 };
+      const st = outside.stats;
+      return { mode: outsideMode, tris: st.triangles, quads: Math.round(st.triangles / 2),
+               near: st.nearTriangles, far: st.farTriangles, calls: st.drawCalls,
+               basement: st.basement, hidden: outside.hidden(),
+               walls: [outsideWall()] };
     },
     resize,
     /* 배치 UI 가 읽는다 */
