@@ -2675,6 +2675,17 @@ export async function createRoomView(canvas, opts = {}) {
          합치면 그 검사들이 지키던 뜻이 사라진다. 칸은 `guideCells()` 로 따로 묻는다.
        ★ 칸에는 **녹색 면을 안 깐다.** 초록은 「여기가 좋다」(추천)의 색이다 —
          칸까지 초록이면 색이 뜻을 잃는다. 칸은 「놓을 수 있다」까지만 말한다. */
+    /* ★★★ 2026-08-14 — **칸은 칸 크기로 그린다** (박사님 폰 사진: *"옮기기시 칸이 저렇게
+       이상하게나와"*).
+       ══════════════════════════════════════════════════════════════════
+       ⚠ 여기 있던 것: 칸도 추천 자리와 똑같이 `half`(= 끌고 있는 물건의 **발자국**)로 그렸다.
+         칸 간격이 0.25 이던 때는 그 둘이 같아서 안 드러났다. 그런데 08-13 에 칸을
+         **반 칸(0.125)** 으로 쪼개면서 간격만 줄고 네모 크기는 그대로라, 네모가
+         **가로세로 2배씩 겹쳐** 상판이 바둑판·줄무늬로 뭉갰다. 내가 쪼갤 때 같이 안 고쳤다.
+       ⇒ 보통 칸은 **칸 크기**로, 지금 **겨누고 있는 칸 하나만** 발자국 크기로 그린다.
+         그래야 「여기 놓을 수 있다」(잔 칸)와 「놓으면 이만큼 먹는다」(겨눈 칸)가 갈린다.
+       ★ 격자와 커서를 가르는 흔한 방식이고, 잔 칸이 겹치지 않으므로 무늬가 안 생긴다. */
+    const cellHalf = TOP_CELL / 2;
     for (const [id, m] of cellRings) {
       const info = cellInfo.get(id);
       const holds = cellHolds(potD, info);
@@ -2683,7 +2694,7 @@ export async function createRoomView(canvas, opts = {}) {
       m.visible = opt.cells !== false;
       m.material = isNear ? guideMat.near : (holds ? guideMat.fit : guideMat.ng);
       m.geometry = isNear ? guideGeo.thick : guideGeo.thin;
-      m.scale.setScalar(half);
+      m.scale.setScalar(isNear ? half : cellHalf);
       m.renderOrder = isNear ? 6 : 4;
     }
     guideGroup.visible = true;
