@@ -1537,6 +1537,26 @@
   /* ★폰은 느리다. 20초는 데스크톱 기준이었고 실제로 오탐이 났다 —
      3D 엔진 · 방 데이터 · plant_grow(211KB) · GLB 수십 장을 다 받아야 한다. */
   setTimeout(function () { say('40초 안에 부팅이 끝나지 않았습니다'); }, 40000);
+
+  /* ★★ 2026-08-14 — **「느린 것」과 「멈춘 것」을 화면에서 가른다** (박사님 폰 사진).
+     ------------------------------------------------------------
+     사진에서 「게임을 불러오는 중…」이 그대로였고 빨간 상자도 없었다. 즉 40초 전이라
+     감시 타이머가 아직 말을 안 한 참인데, **화면에는 살아 있다는 표시가 하나도 없어서**
+     느린 것인지 죽은 것인지 알 수가 없었다. 40초를 그냥 기다리게 두는 것은
+     「조용히 실패한다」와 사람 눈에 똑같다 — 오늘 놓기 실패에서 고친 그 병이다.
+     ⇒ 3초마다 몇 초째인지 적는다. 숫자가 오르면 살아 있는 것이고, 안 오르면 죽은 것이다.
+     ⚠ **모듈 밖 classic 스크립트**라 게임 코드가 아예 못 실려도 이 시계는 돈다. 그게 요점이다. */
+  var t0 = Date.now();
+  var tick = setInterval(function () {
+    if (window.__byeotBooted === true) { clearInterval(tick); return; }
+    var el = document.getElementById('bootMsg');
+    if (!el) { clearInterval(tick); return; }
+    var s = Math.round((Date.now() - t0) / 1000);
+    /* ⚠ 앞말은 **매번 지금 글에서 다시 딴다.** 한 번 기억해 두면 `bootProgress` 가
+       바꿔 쓴 말(「방을 준비하는 중…」)을 내가 도로 덮어써서, 어디까지 왔는지가 사라진다. */
+    var base = el.textContent.replace(/\s*·\s*\d+초째$/, '');
+    el.textContent = base + ' · ' + s + '초째';
+  }, 3000);
 })();
 </script>
 
