@@ -471,13 +471,38 @@ export const SCRIPTS = {
         ⇒ 그 자리를 **이사에서 한 번에 나간 목돈 이백만 원**으로 바꿨다. 이건 화면 사실이다
           (실측: 소지금 3,000,000 → 1,000,000). `shortMoney` 가 이미 깔아 둔 숫자이기도 하다.
         ⚠ `oneroomRentWon` 이 걸리는 날 「20만 → 35만」 대목을 여기 되살린다 —
-          붙일 자리와 문장은 `docs/handoff/story3-to-plan.md` §판단필요①. */
+          붙일 자리와 문장은 `docs/handoff/story3-to-plan.md` §판단필요①.
+
+     ═══ ★★ 2026-08-15 밤(story4) — **「다섯」이 또 틀린 자를 쓴 값이었다** ═══════
+     ------------------------------------------------------------
+     위 표(1칸 → 5칸)는 **avg7 = peak × weatherE('summer')(0.643)** 로 센 것이다.
+     그건 `oneroom.lightGateOf` 와 `test_oneroom_room` 이 쓰는 자이고, **날씨가 굴러가는
+     판(real)의 기댓값**이다. 그런데 **스토리는 `novice` 로만 돈다**(game.html 세 곳 전부
+     `mode: 'novice'`). `state.SIM_MODES` 머리말이 못 박은 것 —
+       *"novice 날씨·계절 계수를 1.0으로 고정한다. **맑음·여름에 못박히므로 peak가 곧
+         실제값이 되고**, peak 금지 규약이 적용되지 않는다."*
+     ⇒ 이 판에서 식물이 매일 받는 값은 **peak 그대로**다. 0.643 을 곱하면 안 된다.
+
+     실제로 굴려서 확인했다(실제 loop.nextDay · 실제 light_adapter · novice):
+       반지하 창턱  dli 4.80 · 밴드 **slow** ×1.0 · `slot.fenestrating` **false**
+       원룸  창턱  dli 6.69 · 밴드 **best** ×1.25 · `slot.fenestrating` **true**
+
+     ⇒ novice 로 다시 센 값(등 0개 · 맑음·여름 · 반올림 없음):
+       | | 반지하 | 원룸 |
+       |---|---|---|
+       | 몬스테라가 **자라는** 칸(≥3.0) | **1칸** | **8칸** ← 5칸이 아니다 |
+       | best 대역(5.0~11.0) ×1.25    | 0칸 | **4칸**(창턱 전부) |
+       | **갈라짐 문턱 6.0** 넘는 칸    | **0칸** | **4칸**(창턱 전부 6.16~6.69) |
+       | 어두운 칸(≤0.3)              | 9칸 | 1칸 |
+     ⇒ 「여긴 다섯이야」를 **「여덟이야」**로 고쳤다. 창턱 4 + 선반 4(4.90·4.46·3.22·3.00)다.
+     ⚠ `oneroom-shelf:6` 은 정확히 **3.0000** 이라 경계에 걸린다(`judgeDLI` 는 `<min` 만 뺀다).
+       방 데이터가 조금이라도 어두워지면 **여덟이 일곱이 된다.** 그때 이 줄도 같이 고쳐야 한다. */
   movedInOneroom: [
     { who: 'jachwi', face: 'surprise', text: '…창이 눈높이에 있네.' },
     { who: 'moni',   face: 'happy',   text: '높지. 지나가는 사람 발만 보이지는 않아.' },
     { who: 'jachwi', text: '박스를 푸니까 금방 찬다. 놓을 데는 저기랑 비슷한가.' },
     { who: 'moni',   face: 'curious', text: '한 칸 더 많아. 그건 별거 아니고 — 밝은 자리가 늘었어.' },
-    { who: 'moni',   text: '저 방은 등 없이 자라는 자리가 창턱 하나였잖아. 여긴 다섯이야.' },
+    { who: 'moni',   text: '저 방은 등 없이 자라는 자리가 창턱 하나였잖아. 여긴 여덟이야.' },
     { who: 'jachwi', face: 'tired',   text: '…대신 통장이 한 번에 얇아졌고.' },
     { who: 'moni',   face: 'sad',     text: '응. 이백만 원. 그건 나간 거 맞아.' },
     { who: 'moni',   face: 'curious', text: '그리고 여기서부터 무늬는 아무도 안 줘. 어디에 두느냐로만 나와.' },
@@ -568,10 +593,13 @@ export const SCRIPTS = {
     { who: 'jachwi', text: '하나쯤 창가에 두면 안 되나.' },
     { who: 'moni',   face: 'sad', text: '두면 초록이 되고 써. 그건 저 방에서 배웠잖아.' }
   ],
-  /* ★ 진짜로 늘어난 것 — 등 없이 자라는 자리가 1칸 → 5칸(창턱 4 + 선반 위 1). */
+  /* ★ 진짜로 늘어난 것 — 등 없이 자라는 자리가 **1칸 → 8칸**(창턱 4 + 선반 4).
+     ⚠ 2026-08-15 밤(story4) — 예전엔 「다섯」이었다. avg7 자로 센 값이었고 스토리는
+       novice 라 peak 가 실제값이다(위 §movedInOneroom 의 정정을 읽을 것).
+       선반 넷은 `oneroom-shelf:5·7·4·6` = 4.90 · 4.46 · 3.22 · **3.00**(경계) 이다. */
   chatOneroomBright: [
     { who: 'jachwi', text: '창을 가로질러 놓을 데가 넉 줄이나 있다.' },
-    { who: 'moni',   face: 'happy', text: '거기 넷하고 선반 위 하나. 등 없이 자라는 자리가 다섯이야.' },
+    { who: 'moni',   face: 'happy', text: '거기 넷하고 선반 위 넷. 등 없이 자라는 자리가 여덟이야.' },
     { who: 'jachwi', text: '저 방은 창턱 하나였고.' },
     { who: 'moni',   face: 'curious', text: '하나였지. 그 하나를 지키느라 백 일을 썼고.' }
   ],
@@ -591,24 +619,41 @@ export const SCRIPTS = {
     { who: 'moni',   face: 'happy', text: '채워질 거야. 화분으로.' }
   ],
   /* ★ 등을 사서 온 판. 「산 등이 이사를 따라온다」는 2026-08-06 에 방 데이터로 보장됐다
-     (`house_rooms.json` §oneroom-growlight-bar). ★ 여기서 **갈라진 잎을 처음 예고**한다 —
-     ③이 배우는 것이 그것이고(story_arc §4-1), 실측이 그 말을 받쳐 준다:
-     자연광 4.30 은 갈라짐 6.0 을 못 넘고 등 1개면 6.95 로 넘는다.
-     ⚠ 「갈라짐 문턱」 같은 말을 안 쓴다. 플레이어는 아직 갈라진 잎을 본 적이 없다. */
+     (`house_rooms.json` §oneroom-growlight-bar).
+
+     ═══ ★★ 2026-08-15 밤(story4) — **두 줄이 거짓이었다** ═══════════════════
+     예전 넷째 줄은 «창만으로는 안 되는 게 하나 남았어. 잎에 구멍이 나는 거.» 였다.
+     근거는 「자연광 4.30 은 갈라짐 6.0 을 못 넘는다」였는데, **4.30 은 avg7 값**이고
+     스토리(novice)에서 창턱이 실제로 내는 값은 **6.69** 다 — 문턱 6.0 을 **넘는다.**
+     실제로 굴려 확인했다: 원룸 창턱 `slot.fenestrating === true` · 밴드 best(등 0개).
+     ⇒ 창만으로 **된다.** 몬이가 안 되는 것을 안 된다고 말하고 있었다.
+
+     ★ 그럼 등은 무엇을 하나 — **얼마나 자주 갈라지느냐**를 바꾼다.
+       `growth_tuning.mature_prob` 은 문턱 아래를 0 이 아니라 바닥 0.1 로 두고,
+       문턱 6.0 → best_hi 11.0 사이를 0.1 → 0.9 로 선형 보간한다(`plant_grow §calcMatureProb`).
+         원룸 창턱 등0  6.69 → **0.21**
+         원룸 창턱 등1 10.81 → **0.87**   ← 등이 사는 값이 여기다
+         반지하 창턱 등0 4.80 / 등1 5.15 → 둘 다 **0.10**(바닥) — 저 방은 등을 켜도 못 넘었다
+       ⇒ 「되냐 안 되냐」가 아니라 「가끔이냐 자주냐」다. 대사도 그렇게 말한다.
+     ⚠ 「문턱」·「확률」 같은 말은 안 쓴다. 플레이어는 아직 갈라진 잎을 본 적이 없다. */
   chatOneroomLamp: [
     { who: 'jachwi', text: '저 방에서 산 등이 여기도 달려 있다.' },
-    { who: 'moni',   face: 'curious', text: '창턱 위에 붙어. 켤 수 있어.' },
-    { who: 'jachwi', text: '창이 이만큼 밝은데 켤 일이 있나.' },
-    { who: 'moni',   text: '창만으로는 안 되는 게 하나 남았어. 잎에 구멍이 나는 거.' },
-    { who: 'jachwi', face: 'surprise', text: '구멍?' },
-    { who: 'moni',   face: 'happy', text: '몬스테라잖아. 원래 그런 잎이야.' }
+    { who: 'moni',   face: 'curious', text: '창턱 위에 붙어. 근데 안 켜도 돼.' },
+    { who: 'jachwi', face: 'surprise', text: '네 입에서 그 말이 나오네.' },
+    { who: 'moni',   text: '이 창턱은 창만으로도 잎에 구멍이 나는 밝기야. 저 방은 아니었고.' },
+    { who: 'jachwi', text: '구멍?' },
+    { who: 'moni',   face: 'happy', text: '몬스테라잖아. 원래 그런 잎이야.' },
+    { who: 'moni',   face: 'curious', text: '등은 그걸 **더 자주** 나게 해. 그뿐이야.' }
   ],
-  /* 등을 안 사고 온 판. ★안 산 것을 나무라지 않는다(lampSkipped 와 같은 결). */
+  /* 등을 안 사고 온 판. ★안 산 것을 나무라지 않는다(lampSkipped 와 같은 결).
+     ★ 2026-08-15 밤(story4) — 마지막 줄이 «자라는 데까지는 그래. 그 위는 창이 못 하고.»
+       였는데 **거짓이다**(위 §chatOneroomLamp). 이 방 창턱은 창만으로 그 위까지 간다.
+       ⇒ 지금 참인 것으로 바꿨다: 원룸 창턱 6.69 > 반지하 창턱 4.80. */
   chatOneroomNoLamp: [
     { who: 'jachwi', text: '창턱 위에 등 걸이가 비어 있다.' },
     { who: 'moni',   face: 'curious', text: '저 방에서 안 샀으니까. 여기 걸이는 그대로 있어.' },
     { who: 'jachwi', text: '창이 밝으면 됐지.' },
-    { who: 'moni',   text: '자라는 데까지는 그래. 그 위는 창이 못 하고.' }
+    { who: 'moni',   face: 'happy', text: '됐어. 이 창턱은 등을 안 켜도 저 방 창턱보다 밝아.' }
   ],
   /* ★ ③ 의 규칙 전환을 살림 속에서 한 번 더 짚는다 — 확정 무늬는 이사에서 끝났다
      (`tutorial.stepVarieGrant` 가 `!ts.movedOut` 을 본다). 새 규칙을 가르치는 것이 아니라
@@ -629,6 +674,82 @@ export const SCRIPTS = {
     { who: 'moni',   face: 'curious', text: '저 방에서 겨울에 못 나갈까 봐 겁냈잖아.' },
     { who: 'jachwi', text: '…나갔지.' },
     { who: 'moni',   face: 'happy', text: '나갔지.' }
+  ],
+
+  /* ═══ ★★ 2026-08-15 밤(story4) — **③ 원룸에서 빈 채로 남아 있던 네 자리** ═══════
+     ------------------------------------------------------------
+     story3 이 채운 열 가지는 전부 **이사 직후 며칠**의 말이다(첫 아침 · 어두운 칸 ·
+     시루 · 밝은 자리 · 창 · 빈 방 · 등 · 무늬 · 겨울). 원룸을 150일 굴려 받아 적어 보니
+     **+30일부터는 새 말이 하나도 안 나온다** — 뜨는 것이 전부 되풀이다.
+     박사님이 짚으신 네 마디(이사 직후 · 첫 수확 · 살림이 빠듯할 때 · 몬스테라가 달라질 때)
+     중 **뒤 셋이 통째로 비어 있었다.** 여기가 그 자리다.
+
+     ★ 새 사건 id 를 여기서도 안 만들었다(story3 §3-4 와 같은 이유). 작은 말로 채운다.
+     ★★ 그리고 **숫자를 대사에 박는 대신 조건에 넣었다.** `chatOneroomFenestrate` 는
+        `turn.slot.fenestrating`(조도 계약이 오늘 내는 값)이 참일 때만 후보가 된다 —
+        방이 어두워지거나 문턱이 바뀌면 **대사가 거짓말을 하는 게 아니라 안 나온다.**
+        낡지 않는 유일한 방법이라 여기서 처음 써 본다. */
+
+  /* ★★ 이사 직후 — **몬스테라가 제일 어두운 칸에 내려앉는다.**
+     지어낸 장면이 아니다. `state.rehomePot` 이 갈 곳 잃은 화분을 `slots[0]` 으로 보내는데
+     (state.js:1046) 원룸의 `slots[0]` 이 **`oneroom-nightstand:0`(peak 0.00 · critical)** 이다.
+     실제로 굴려 확인했다 — `banjiha-sill:0 → oneroom-nightstand:0` 으로 옮겨지고,
+     **이사 나흘째에 `plant_stalled` 가 뜬다.** 그리고 플레이어가 안 옮기면 영영 멈춰 있다.
+     ⚠ 그 배선을 고치는 것은 이 창 일이 아니다(`state.js` 는 손대지 않는다).
+       다만 **일어나는 일에 말이 없는 것**은 이 창 일이라, 여기서 말하게 했다.
+     ★ 혼내지 않는다. 짐을 내려놓다 생긴 일이지 게으름이 아니다. */
+  chatOneroomPotDark: [
+    { who: 'jachwi', face: 'worry', text: '몬스테라가 며칠째 그대로다.' },
+    { who: 'moni',   face: 'curious', text: '어디 뒀는지 봐 봐.' },
+    { who: 'jachwi', text: '…이삿짐 내려놓은 데. 침대 옆.' },
+    { who: 'moni',   face: 'sad', text: '거긴 시루 자리야. 이 방에서 제일 어두운 칸.' },
+    { who: 'jachwi', face: 'tired', text: '밝은 방으로 와서 제일 어두운 데 놨네.' },
+    { who: 'moni',   text: '창턱으로 올려. 그건 저 방에서 해 봤잖아.' }
+  ],
+
+  /* ★ 원룸에서의 첫 수확. **밝아진 대가**를 한 번 더, 다만 뒤집어서 —
+     방이 통째로 바뀌었는데 이것만 그대로다. 어두운 것은 어디서나 어두워서. */
+  chatOneroomHarvest: [
+    { who: 'jachwi', text: '이 방에서 처음 거둔 콩나물이다.' },
+    { who: 'moni',   face: 'curious', text: '어때. 저 방 거랑 달라?' },
+    { who: 'jachwi', text: '똑같아. 그게 좀 이상해.' },
+    { who: 'moni',   face: 'happy', text: '이상할 거 없어. 어두운 건 어디서나 어두운 거야.' }
+  ],
+
+  /* ★ 살림이 빠듯할 때. **월세 얘기를 안 한다** — 정본은 35만인데 코드는 20만을 뗀다
+     (§movedInOneroom ⚠). 대신 **화면 사실**인 이사비 이백만 원만 말한다.
+     ⚠ 실측: 이사 버튼을 누른 직후 소지금이 거의 0 이 된다(굴려 본 판에서 6,800원).
+       그래서 이 말이 나올 자리는 반드시 생긴다.
+     ★ 몬이는 세어 주지만 벌어 주지 않는다(§3 의 규율). 마지막 줄이 그것이다. */
+  chatOneroomMoney: [
+    { who: 'jachwi', face: 'tired', text: '이사에 이백만 원이 한 번에 나갔다.' },
+    { who: 'moni',   face: 'curious', text: '통장이랑 방을 바꾼 거야.' },
+    { who: 'jachwi', text: '…남는 장사였나.' },
+    { who: 'moni',   text: '그건 몇 달 뒤에 세어 보자. 세는 건 내가 잘하잖아.' }
+  ],
+
+  /* ★★ **몬스테라가 달라질 때** — ③이 배우는 것이 갈라진 잎이다(story_arc §4-1).
+     ★ 이 대사의 조건은 **코드가 읽는다** — `turn.slot.fenestrating`. 화분이 실제로 놓인
+       자리의 오늘 빛이 갈라짐 문턱을 넘을 때만 후보가 된다. 그래서 숫자를 안 박아도 된다.
+     ⚠ 그래서 **화분을 어두운 데 둔 판에는 안 뜬다.** 그게 맞다 —
+       안 일어난 일을 말하지 않는다.
+     ⚠ 「잎이 갈라졌다」고 단정하지 않는다. 문턱을 넘어도 그 잎이 갈라지는 것은 굴림이다
+       (`mature_prob` 0.21). **밝기가 그 선을 넘었다**까지만 말한다. */
+  chatOneroomFenestrate: [
+    { who: 'moni',   face: 'curious', text: '지금 얘가 있는 자리 말이야. 잎이 갈라질 수 있는 밝기야.' },
+    { who: 'jachwi', text: '갈라져?' },
+    { who: 'moni',   face: 'happy', text: '몬스테라 잎에 구멍 뚫린 거 봤지. 그게 그냥 나는 게 아니야.' },
+    { who: 'jachwi', face: 'surprise', text: '저 방에선 한 번도 못 봤는데.' },
+    { who: 'moni',   text: '저 방은 창턱에서도 이 선을 못 넘었어. 여기가 처음이야.' }
+  ],
+
+  /* ★ 한참 뒤. 이 구간이 **가장 오래 비어 있었다** — +30일부터 되풀이만 돈다.
+     사건이 아니라 **시간이 지난 것 자체**를 말하는 자리라 짧게 끝낸다. */
+  chatOneroomSettled: [
+    { who: 'jachwi', text: '이 방에 산 지도 꽤 됐다.' },
+    { who: 'moni',   face: 'curious', text: '저 방 얘기 안 한 지 오래됐지.' },
+    { who: 'jachwi', text: '…그러네.' },
+    { who: 'moni',   face: 'happy', text: '그럼 된 거야.' }
   ],
 
   /* 여름 · 반지하 살림 */
@@ -930,15 +1051,39 @@ export const CHATTER = [
        **원룸의 첫 며칠이 원룸 얘기로 시작한다.** 뒤에 두면 첫 아침이 열흘 뒤에 온다.
      ★ 조건은 전부 `c.movedOut` 하나로 갈린다 — 새 신호를 만들지 않았다. */
   { id: 'chatOneroomMorning', when: c => c.movedOut && c.daysInOneroom != null && c.daysInOneroom <= 14 },
+  /* ★ 원룸에서의 **첫** 수확. `cropHarvested` 는 거둔 날부터 다시 심기 전까지 참이라
+     후보가 되는 날 자체가 드물다. 그래서 ① 목록에서 **거의 맨 앞**에 두고
+     ② 창을 **14일**로 좁혔다 — 콩나물 회전이 5일이라 이 안이면 아직 「처음」이라 부를 만하다.
+     ⚠ 넓게 잡으면 **열 번째 수확을 앞에 두고 「처음 거뒀다」고 말하게 된다.**
+       그 사고는 이미 한 번 났다(§chatCrop1 의 「열 번째 시루를 앞에 두고」).
+     ⚠ 대신 **못 뜨고 넘어가는 판이 생긴다.** 거짓말보다 침묵이 낫다고 보고 이쪽을 골랐다. */
+  { id: 'chatOneroomHarvest', when: c => c.movedOut && c.cropHarvested
+                                      && c.daysInOneroom != null && c.daysInOneroom <= 14 },
+  /* ★★ 2026-08-15 밤(story4) — **일어나는 일에 말이 없던 자리.** 이사가 화분을 이 방에서
+     제일 어두운 칸으로 보내고(state.rehomePot → slots[0]) 나흘째에 멈춘다.
+     ⚠ `c.blocked` 는 **빛 부족 정지**다(loop.turn.growthBlocked). 마름·머리공간은 다른 칸이라
+       안 걸린다 — 처방이 「옮겨라」인 경우에만 나와야 한다.
+     ★ 앞쪽에 둔다. 실제 멈춤(`plant_stalled`)이 나흘째에 뜨므로 그 언저리에 나와야 한다. */
+  { id: 'chatOneroomPotDark', when: c => c.movedOut && !!c.blocked
+                                      && c.daysInOneroom != null && c.daysInOneroom <= 30 },
   { id: 'chatOneroomDark',    when: c => c.movedOut },
+  /* ★ 이사비 이백만 원이 빠져나간 직후. 실측으로 이사 다음 날 소지금이 거의 0 이다 */
+  { id: 'chatOneroomMoney',   when: c => c.movedOut && c.cashWon != null && c.cashWon < 300_000
+                                      && c.daysInOneroom != null && c.daysInOneroom <= 45 },
   { id: 'chatOneroomSiru',    when: c => c.movedOut },
   { id: 'chatOneroomBright',  when: c => c.movedOut },
   { id: 'chatOneroomWindow',  when: c => c.movedOut },
   { id: 'chatOneroomEmpty',   when: c => c.movedOut && c.daysInOneroom != null && c.daysInOneroom <= 30 },
+  /* ★★ **조건을 코드가 읽는다** — 화분이 실제로 놓인 자리의 오늘 빛이 갈라짐 문턱을
+     넘을 때만. 숫자를 대사에 안 박았으므로 방이 바뀌어도 안 낡는다(안 뜰 뿐이다). */
+  { id: 'chatOneroomFenestrate', when: c => c.movedOut && c.fenestrating },
   { id: 'chatOneroomLamp',    when: c => c.movedOut && c.lampOwned >= 1 },
   { id: 'chatOneroomNoLamp',  when: c => c.movedOut && !c.lampOwned },
   { id: 'chatOneroomVarie',   when: c => c.movedOut },
   { id: 'chatOneroomWinter',  when: c => c.movedOut && c.season === 'winter' },
+  /* ★ 한참 뒤. 뒤쪽이 아니라 여기 둔다 — 조건이 이미 60일로 늦춰져 있어서
+     앞에 둬도 그날 전에는 후보가 안 된다. */
+  { id: 'chatOneroomSettled', when: c => c.movedOut && c.daysInOneroom != null && c.daysInOneroom >= 60 },
 
   /* 날씨 — 그날 하늘이 실제로 그래야 한다 */
   { id: 'chatRain',   when: c => c.weather === 'rain' },
@@ -1029,6 +1174,15 @@ export function chatterContext(turn = {}, S = null) {
     cropHarvested: !!(fp && fp.beansprout && fp.beansprout.harvested),
     grew: turn.grew ?? null,
     blocked: turn.growthBlocked || null,
+    /* ★★ 2026-08-15 밤(story4) — **숫자를 대사에 박지 않으려고 낸 창구.**
+       `turn.slot` 은 조도 계약이 오늘 낸 「화분이 놓인 그 자리」 한 줄이고,
+       `fenestrating` 은 거기 오늘 빛이 갈라짐 문턱을 넘었나다(engine/daily_light.judgeDLI).
+       ⇒ 대사가 「6.69 다 / 문턱이 6.0 이다」를 말하는 대신 **이 값이 참일 때만 나온다.**
+         방 데이터나 문턱이 바뀌면 대사가 거짓이 되는 게 아니라 **안 뜬다.**
+       ⚠ 하루 값 기준이라 날씨가 굴러가는 판(real)에서는 「오늘만 넘음」이 있을 수 있다.
+         스토리는 novice(맑음 고정)라 그 흔들림이 없다 — real 을 켜는 날 다시 봐야 한다
+         (`plant_grow §canFenestrate` 가 7일평균으로 보는 것과 같은 이유). */
+    fenestrating: !!(turn.slot && turn.slot.fenestrating),
     lampOwned: ts ? ts.lamp.owned : 0,
     movedOut: !!(ts && ts.movedOut)
   };
