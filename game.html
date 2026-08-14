@@ -5936,14 +5936,15 @@ const picked = {
     if (drag.on) return;
     this.slotId = slotId;
     const kind = this.kindAt(slotId);
-    /* ★수확한 시루는 못 옮긴다(first_play.md — 수확 전까지만 이동 자유).
-       ★★ 2026-08-09 — **그 시루 하나**만 본다. 예전에는 자리 사본(`b.harvested` =
-         하나라도 거뒀나)으로 막아서, 셋 중 하나만 거둬도 나머지 둘까지 못 움직였다. */
-    const one = kind === 'beansprout' ? this.potAt(slotId) : null;
-    const locked = !!(one && one.harvested);
+    /* ★★★ 2026-08-14 — **잠금을 걷었다** (박사님: *"씨앗이없는 상태에서 시루가안옮겨져"*).
+       여기 있던 것: 거둔 시루면 [옮기기]를 `disabled` 로 잠갔다.
+       ⚠ 박사님은 씨앗 탓으로 보셨는데 **씨앗과는 무관했다** — 거뒀느냐 하나로 잠겼다.
+         그런데 거둔 시루는 다시 심어야 풀리고, 씨앗이 없으면 다시 못 심는다.
+         ⇒ **영영 못 움직이는 시루**가 된다. 규칙 쪽(first_play §placeCrop)에서 걷었으니
+           여기서도 걷는다 — 한쪽만 걷으면 화면은 열어 놓고 코어가 던진다. */
     $('pickedName').textContent = slotLabel(slotId);
-    $('pickMove').disabled = !!locked;
-    $('pickMove').title = locked ? '이미 수확한 시루는 옮길 수 없습니다' : '';
+    $('pickMove').disabled = false;
+    $('pickMove').title = '';
     $('stage').classList.add('picked');
     if (roomView) roomView.highlightSlots([slotId]);
   },
