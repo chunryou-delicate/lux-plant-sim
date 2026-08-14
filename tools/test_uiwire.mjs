@@ -280,11 +280,22 @@ ok('W-2 말풍선이 떠 있어도 그 버튼은 **안 잠겨 있다**', w.disab
      가리켜 `.hintTarget` 이 붙으면 애니메이션이 `hintGlow` 로 바뀌어 **방패가 벗겨진다** —
      그 상태를 여기서 그대로 만든다(게임이 실제로 만드는 상태다 · hintAt §hintTarget).
    ★ 그리고 이 누름이 곧 아래 W-3 의 물 주기다 — 재는 김에 실제로 눌러 본다. */
-await page.eval(`(()=>{ const el=[...document.querySelectorAll('#marks .mark')].find(e=>/물/.test(e.textContent||''));
-  if (el) el.classList.add('hintTarget'); })()`, false);
-const markBox = () => page.eval(`(()=>{ const el=[...document.querySelectorAll('#marks .mark')].find(e=>/물/.test(e.textContent||''));
+/* ⚠⚠ 2026-08-15 — **글자로 노드를 찾지 않는다.** 이 두 줄이 원래는 매번
+   `find(e=>/물/…)` 로 말풍선을 다시 찾았는데, 그날부터 **누르는 순간 글자가 바뀐다**
+   (`💧 물 주기` → `🚶 가는 중…` — 말풍선이 3초 동안 대답을 안 하던 것을 고쳤다.
+    말풍선은 누를 때 확정되므로 `mousePressed` 만으로 이미 바뀐다).
+   그러면 두 번째 찾기가 **다른 시루의 말풍선**을 집어서, 안 움직인 말풍선을 두고
+   99.6px 이 움직였다고 적었다 — 움직인 것은 말풍선이 아니라 **자였다**.
+   ⇒ 뜻(「누르는 동안 그 말풍선이 제자리에 있나」)은 그대로다. **같은 노드**를
+     `data-key` 로 붙잡아 잰다. 글자가 아니라 물건으로 찾는다. */
+const markKey = await page.eval(`(()=>{ const el=[...document.querySelectorAll('#marks .mark')]
+  .find(e=>/물/.test(e.textContent||''));
+  if (el) { el.classList.add('hintTarget'); return el.dataset.key || null; } return null; })()`);
+const markBox = () => page.eval(`(()=>{ const el=[...document.querySelectorAll('#marks .mark')]
+    .find(e=>e.dataset.key === ${JSON.stringify(markKey)});
   if(!el) return null; const r=el.getBoundingClientRect();
   return { x:+(r.left+r.width/2).toFixed(1), y:+(r.top+r.height/2).toFixed(1),
+           ko:(el.querySelector('span')||{}).textContent||'',
            tf:getComputedStyle(el).transform }; })()`);
 const d0 = await markBox();
 ok('D-0 말풍선을 잡았다 (안내 손가락이 가리킨 상태)', !!d0, JSON.stringify(d0));
