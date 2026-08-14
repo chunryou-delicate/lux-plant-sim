@@ -255,14 +255,23 @@ export const SCRIPTS = {
     { who: 'moni',   face: 'sad', text: '이 방에서 창턱보다 밝은 데는 없어.' },
     { who: 'moni',   text: '여기서부터는 자리 말고 다른 게 필요해.' }
   ],
-  /* ★ 셋째 줄은 autumnCame 과 같은 이유로 단정을 뺐다(위 §계절 주석). */
+  /* ★ 셋째 줄은 autumnCame 과 같은 이유로 단정을 뺐다(위 §계절 주석).
+     ★★ 2026-08-15 — **이 대사는 대개 원룸에서 뜬다.** 그런데 반지하를 못 박고 있었다.
+     ------------------------------------------------------------
+     겨울은 튜토 135일에 오고(tutorial.seasonAt), 이사는 그보다 이르다
+     (story2 화면 실측: 게임 125·127일에 이사 = 튜토 78일쯤). 그런데 이 대사는
+     한 번뿐(REPEATABLE 아님)이라 **두 번째 겨울이 없다** — 즉 대개 원룸에서 한 번 뜨고 끝난다.
+     그 자리에서 «반지하는 겨울이 길어» · «…아직 못 나갔네» 는 **이미 나간 사람에게 하는 말**이 된다.
+     ⇒ 방을 안 가리는 말로 바꿨다. 반지하에서만 참인 말은 `winterStill` 이 갖는다 —
+       그쪽은 `!ts.movedOut` 로 잠겨 있어(tutorial.js §winter_still) 원룸에서는 안 뜬다.
+     ★ 「늦은 거지 틀린 게 아니고」는 지켰다. 이 구간의 톤을 그 한 줄이 잡는다. */
   winterCame: [
     { who: 'jachwi', face: 'tired', text: '유리에 김이 서린다.' },
-    { who: 'moni',   face: 'sad', text: '겨울이야. 반지하는 겨울이 길어.' },
-    { who: 'moni',   text: '해가 제일 낮은 계절이야. 창턱 하나로 버티기엔 짧고.' },
-    { who: 'jachwi', face: 'worry', text: '…아직 못 나갔네.' },
+    { who: 'moni',   face: 'sad', text: '겨울이야. 이 동네는 겨울이 길어.' },
+    { who: 'moni',   text: '해가 제일 낮은 계절이야. 창 하나로 버티기엔 짧고.' },
+    { who: 'jachwi', face: 'worry', text: '…겨울이 오면 셈이 급해진다.' },
     /* ★실패가 아니라 더딘 것이다. 그 톤을 여기서 못 지키면 경로 C 가 벌처럼 읽힌다. */
-    { who: 'moni',   text: '못 나간 게 아니라 아직 안 나간 거야. **늦은 거지 틀린 게 아니고.**' }
+    { who: 'moni',   text: '급할 건 없어. **늦은 거지 틀린 게 아니고.**' }
   ],
   /* 겨울 열흘째까지 반지하일 때. 위 winterCame 의 톤을 한 번 더 받쳐 준다. */
   winterStill: [
@@ -430,15 +439,47 @@ export const SCRIPTS = {
      ④ **③단계의 규칙 전환을 여기서 알린다**(story_arc §4-1) — 확정 무늬가 끝나고
         무늬는 빛으로만 난다. 새 규칙을 배우는 게 아니라 **이미 한 걸 반복하는 것**이라
         마지막 줄을 주인공이 받는다.
-     ⚠ 숫자는 「서른다섯」 하나만 박았다. 남은 돈·칸수는 화면이 숫자로 말한다. */
+     ⚠ 숫자는 「서른다섯」 하나만 박았다. 남은 돈·칸수는 화면이 숫자로 말한다.
+
+     ═══ ★★ 2026-08-15 — **세 줄이 사실과 달라서 다시 썼다** ═══════════════
+     위 ②③④ 의 근거는 `story_arc.md §③` 표(2026-08-05)였는데, 그 표는
+     **`data/profiles/room_profile.*.json` 옛 파일**에서 나온 값이다. 그 다음날
+     2026-08-06 `oneroomfix` 가 원룸에 **창턱 4칸과 식물등 기구 2개를 넣었고**,
+     같은 무렵 `lampaim` 의 BACK_REFLECT 가 반지하 창턱을 올렸다. 그래서 표가 낡았다.
+
+     지금 재서 나온 값(2026-08-15 · `light_adapter.createLightEngine` · 맑음·여름 ·
+     등 0개 · 판정 단위 7일평균. 게임은 novice 라 계절계수가 1.0 이므로 이 값이 사철 값이다):
+
+       | | 반지하 | 원룸 |
+       |---|---|---|
+       | 자리(room.slots)      | 14칸 | **15칸** ← **줄지 않았다. 한 칸 늘었다** |
+       | 제일 밝은 자리 7일평균 | 3.09 (`banjiha-sill:0`) | **4.30** (`oneroom-sill:1`) · +39% |
+       | min 3.0 넘는 칸        | **1칸** | **5칸** ← 「한 칸도 없었어」가 틀렸다 |
+       | 무늬종 min 4.2 넘는 칸 | 0칸 | 3칸 |
+       | 콩나물 자리(≤0.3)      | 9칸 | **1칸** |
+
+     ⇒ ② **«줄었어»를 뺐다.** 자리는 14 → 15 다. 화면으로도 확인했다
+        (`window.__io.light.room.slots.length === 15`).
+     ⇒ ③ **«저 방엔 한 칸도 없었어»를 뺐다.** 반지하도 여름 창턱 한 칸은 넘는다(3.09).
+        진짜로 달라진 것은 **1칸 → 5칸**이고, 그게 이 방이 주는 것이다.
+     ⇒ ④ **«월세는 서른다섯이 됐고»를 뺐다 — 지금 게임은 그 돈을 안 뗀다.**
+        `tutorial.TUTORIAL_RULES.oneroomRentWon` 이 `null` 이고 `game.html` 이
+        `oneroom.withOneroomRent`/`oneroomRulesFromHomes` 를 **한 번도 안 부른다**(2026-08-15 확인).
+        그래서 `rentWonOf(ts)` 가 이사한 뒤에도 반지하 월세 20만을 낸다 —
+        화면 실측(원룸 24·54·84일)에서 `rentSoon` 이 «이레 남았어. **이십만 원**.» 이라고 뜬다.
+        한 판 안에서 몬이가 서른다섯과 이십만을 같이 말하고 있었다.
+        ⇒ 그 자리를 **이사에서 한 번에 나간 목돈 이백만 원**으로 바꿨다. 이건 화면 사실이다
+          (실측: 소지금 3,000,000 → 1,000,000). `shortMoney` 가 이미 깔아 둔 숫자이기도 하다.
+        ⚠ `oneroomRentWon` 이 걸리는 날 「20만 → 35만」 대목을 여기 되살린다 —
+          붙일 자리와 문장은 `docs/handoff/story3-to-plan.md` §판단필요①. */
   movedInOneroom: [
     { who: 'jachwi', face: 'surprise', text: '…창이 눈높이에 있네.' },
     { who: 'moni',   face: 'happy',   text: '높지. 지나가는 사람 발만 보이지는 않아.' },
-    { who: 'jachwi', text: '박스를 푸니까 금방 찬다. 놓을 데는 저기가 더 많았나.' },
-    { who: 'moni',   face: 'curious', text: '줄었어. 대신 하나 늘었고 — 등 없이 자라는 자리.' },
-    { who: 'moni',   text: '저 방엔 한 칸도 없었어. 여긴 한 칸 있어.' },
-    { who: 'jachwi', face: 'tired',   text: '…월세는 서른다섯이 됐고.' },
-    { who: 'moni',   face: 'sad',     text: '응. 그건 오른 거 맞아.' },
+    { who: 'jachwi', text: '박스를 푸니까 금방 찬다. 놓을 데는 저기랑 비슷한가.' },
+    { who: 'moni',   face: 'curious', text: '한 칸 더 많아. 그건 별거 아니고 — 밝은 자리가 늘었어.' },
+    { who: 'moni',   text: '저 방은 등 없이 자라는 자리가 창턱 하나였잖아. 여긴 다섯이야.' },
+    { who: 'jachwi', face: 'tired',   text: '…대신 통장이 한 번에 얇아졌고.' },
+    { who: 'moni',   face: 'sad',     text: '응. 이백만 원. 그건 나간 거 맞아.' },
     { who: 'moni',   face: 'curious', text: '그리고 여기서부터 무늬는 아무도 안 줘. 어디에 두느냐로만 나와.' },
     { who: 'jachwi', text: '…자리로 만드는 건 해 봤어.' }
   ],
@@ -470,6 +511,124 @@ export const SCRIPTS = {
     { who: 'jachwi', text: '오늘도 하얀 게 올라와 있다.' },
     { who: 'moni',   face: 'curious', text: '이제 안 놀라네.' },
     { who: 'jachwi', text: '놀랄 일은 아니지. 좋은 일이지.' }
+  ],
+
+  /* ═══ ★★ 2026-08-15 추가 — **③ 원룸 안에서 사는 이야기** ═══════════════════
+     ------------------------------------------------------------
+     ★ 무엇이 비어 있었나 — 도착 대사(`movedInOneroom`)는 2026-08-11 에 붙었는데
+       **그 뒤가 통째로 반지하였다.** 화면 실측(2026-08-15 · 원룸에서 100일 · 말이 난 날 38일):
+       원룸에서 뜬 작은 말이 전부 반지하 것이었고 그중 둘은 **거짓말**이었다 —
+       원룸 4일째·40일째 «**반지하는** 여름에 덥고 겨울에 춥다», 7일째·43일째 «벽에서 눅눅한 냄새».
+       ⇒ 원룸이 조용했던 게 아니라 **저 방 얘기를 계속하고 있었다.** 그게 더 나쁘다.
+
+     ★ 왜 사건이 아니라 **작은 말**로 채우나 — 이 구간에 쓸 수 있는 사건 id 가 없다.
+       코어가 원룸에서 내는 것은 `rent_soon`·`rent`·`season`·`broke`·`plant_*` 뿐이고
+       (`winter_still`·`varie_granted` 는 `!ts.movedOut` 로 잠긴다) 전부 반지하와 같은 id 다.
+       `EVENT_SCRIPT` 에 없는 id 를 부르면 조용히 지나가므로(§머리말) **없는 사건을 지어낼 수 없다.**
+       작은 말은 `chatterContext` 가 이미 `movedOut` 을 내주고 있어 **여기서만으로 갈린다.**
+
+     ★ 재서 쓴 것(2026-08-15 · `light_adapter` · 맑음·여름·등0 · 7일평균.
+       게임은 novice 라 계절계수 1.0 이므로 이 값이 사철 값이다):
+         자리          반지하 14칸 → 원룸 **15칸**
+         제일 밝은 자리 3.09 → **4.30** (+39%)
+         min 3.0 넘는 칸 1칸 → **5칸** (창턱 4 + 선반 위 1)
+         콩나물 자리(≤0.3) 9칸 → **1칸** (`oneroom-nightstand:0` · 7일평균 0.00)
+         갈라짐 6.0     자연광 4.30 으로는 못 넘고 **등 1개면 6.95 로 넘는다**
+       ⇒ **밝아진 대가로 어두운 자리를 잃었다.** 이 게임에서 제일 좋은 이야깃거리인데
+         지금까지 아무도 말을 안 했다(박사님 지적). `chatOneroomDark` 가 그것이다.
+
+     ⚠ **월세 얘기를 안 썼다.** 정본은 35만인데(`homes.json` · START-HERE §6) 코드가 그 값을
+       안 쓴다 — `oneroomRentWon` 이 `null` 이라 원룸에서도 20만이 나간다(위 §movedInOneroom).
+       걸리기 전에 쓰면 「몬이가 틀린 셈을 말하는」 자리가 또 하나 생긴다. 걸리는 날 같이 쓴다. */
+
+  /* ★ 첫 아침. 오프닝 «…불도 잘 안 드는 방이네.» 와 이사 마지막 «불 끄고 가자.
+     어차피 잘 안 들어오던 불.» 이 여기서 닫힌다. **빛을 숫자로 말하지 않는다** —
+     4.30 이니 39% 니 하는 것은 몸으로 겪는 말이 아니다. */
+  chatOneroomMorning: [
+    { who: 'jachwi', text: '아침에 눈을 떴는데 방이 밝다.' },
+    { who: 'jachwi', face: 'surprise', text: '불을 안 켰는데.' },
+    { who: 'moni',   face: 'curious', text: '저 방은 낮에도 켜야 했지.' },
+    { who: 'jachwi', text: '…그랬지.' }
+  ],
+  /* ★★ 밝아진 대가 — 콩나물 자리가 아홉에서 하나가 됐다(실측).
+     몬이가 위로하지 않는다. 세어 주고 만다. */
+  chatOneroomDark: [
+    { who: 'jachwi', text: '시루 놓을 어두운 데를 찾는데 잘 안 보인다.' },
+    { who: 'moni',   face: 'curious', text: '한 칸 있어. 침대 옆에.' },
+    { who: 'jachwi', face: 'surprise', text: '한 칸?' },
+    { who: 'moni',   text: '저 방엔 아홉 칸이었어. 어두운 건 저 방이 제일 잘하던 거였고.' },
+    { who: 'jachwi', face: 'tired', text: '…밝아진 값을 콩나물로 내는구나.' }
+  ],
+  /* ★ 이사가 시루를 **한 자리에 몰아 앉힌다** — `oneroom.reseatCrops` 가 `room.slots[0]` 으로
+     보내고, 원룸의 `slots[0]` 이 마침 그 유일한 어두운 칸(`oneroom-nightstand:0`)이다(실측).
+     즉 화면에서 실제로 시루가 한 자리에 겹쳐 서 있고, 이 말은 그것을 가리킨다. */
+  chatOneroomSiru: [
+    { who: 'jachwi', text: '시루가 다 한 자리에 모여 있다.' },
+    { who: 'moni',   face: 'curious', text: '어두운 칸이 거기뿐이라 그래.' },
+    { who: 'jachwi', text: '하나쯤 창가에 두면 안 되나.' },
+    { who: 'moni',   face: 'sad', text: '두면 초록이 되고 써. 그건 저 방에서 배웠잖아.' }
+  ],
+  /* ★ 진짜로 늘어난 것 — 등 없이 자라는 자리가 1칸 → 5칸(창턱 4 + 선반 위 1). */
+  chatOneroomBright: [
+    { who: 'jachwi', text: '창을 가로질러 놓을 데가 넉 줄이나 있다.' },
+    { who: 'moni',   face: 'happy', text: '거기 넷하고 선반 위 하나. 등 없이 자라는 자리가 다섯이야.' },
+    { who: 'jachwi', text: '저 방은 창턱 하나였고.' },
+    { who: 'moni',   face: 'curious', text: '하나였지. 그 하나를 지키느라 백 일을 썼고.' }
+  ],
+  /* ★ 미화하지 않는다 — 원룸도 하늘을 다 보는 방은 아니다
+     (`house_rooms.json` §oneroom.skyViewK 1.18: *"골목 안 2층. 맞은편 건물이 아직 하늘의
+     상당 부분을 가린다"*). 그래도 반지하와의 차이는 진짜다. */
+  chatOneroomWindow: [
+    { who: 'jachwi', text: '창은 큰데 맞은편 건물이 걸린다.' },
+    { who: 'moni',   face: 'curious', text: '골목 안 이층이니까. 하늘을 다 보는 방은 아니야.' },
+    { who: 'jachwi', text: '그래도 발은 안 보이잖아.' },
+    { who: 'moni',   face: 'happy', text: '그건 큰 차이지.' }
+  ],
+  chatOneroomEmpty: [
+    { who: 'jachwi', text: '박스 네 개를 다 풀었는데 방이 안 찬다.' },
+    { who: 'moni',   face: 'curious', text: '넓어졌으니까.' },
+    { who: 'jachwi', text: '빈 데가 이렇게 많아도 되나.' },
+    { who: 'moni',   face: 'happy', text: '채워질 거야. 화분으로.' }
+  ],
+  /* ★ 등을 사서 온 판. 「산 등이 이사를 따라온다」는 2026-08-06 에 방 데이터로 보장됐다
+     (`house_rooms.json` §oneroom-growlight-bar). ★ 여기서 **갈라진 잎을 처음 예고**한다 —
+     ③이 배우는 것이 그것이고(story_arc §4-1), 실측이 그 말을 받쳐 준다:
+     자연광 4.30 은 갈라짐 6.0 을 못 넘고 등 1개면 6.95 로 넘는다.
+     ⚠ 「갈라짐 문턱」 같은 말을 안 쓴다. 플레이어는 아직 갈라진 잎을 본 적이 없다. */
+  chatOneroomLamp: [
+    { who: 'jachwi', text: '저 방에서 산 등이 여기도 달려 있다.' },
+    { who: 'moni',   face: 'curious', text: '창턱 위에 붙어. 켤 수 있어.' },
+    { who: 'jachwi', text: '창이 이만큼 밝은데 켤 일이 있나.' },
+    { who: 'moni',   text: '창만으로는 안 되는 게 하나 남았어. 잎에 구멍이 나는 거.' },
+    { who: 'jachwi', face: 'surprise', text: '구멍?' },
+    { who: 'moni',   face: 'happy', text: '몬스테라잖아. 원래 그런 잎이야.' }
+  ],
+  /* 등을 안 사고 온 판. ★안 산 것을 나무라지 않는다(lampSkipped 와 같은 결). */
+  chatOneroomNoLamp: [
+    { who: 'jachwi', text: '창턱 위에 등 걸이가 비어 있다.' },
+    { who: 'moni',   face: 'curious', text: '저 방에서 안 샀으니까. 여기 걸이는 그대로 있어.' },
+    { who: 'jachwi', text: '창이 밝으면 됐지.' },
+    { who: 'moni',   text: '자라는 데까지는 그래. 그 위는 창이 못 하고.' }
+  ],
+  /* ★ ③ 의 규칙 전환을 살림 속에서 한 번 더 짚는다 — 확정 무늬는 이사에서 끝났다
+     (`tutorial.stepVarieGrant` 가 `!ts.movedOut` 을 본다). 새 규칙을 가르치는 것이 아니라
+     **아무도 안 준다는 사실**을 받아들이는 장면이다. */
+  chatOneroomVarie: [
+    { who: 'jachwi', text: '새 잎이 나면 또 무늬가 있으려나.' },
+    { who: 'moni',   face: 'curious', text: '이제 아무도 안 정해 줘. 나도 몰라.' },
+    { who: 'jachwi', text: '그럼 뭘 하면 돼.' },
+    { who: 'moni',   text: '밝은 자리에 두고 기다리는 것. 그게 다야.' },
+    { who: 'jachwi', text: '…그게 다구나.' }
+  ],
+  /* 원룸에서 맞는 겨울. ★`winter_still` 은 `!ts.movedOut` 로 잠겨 여기까지 안 온다
+     (tutorial.js §winter_still) — 그 자리를 이 작은 말이 받는다.
+     ⚠ 「겨울이라 어두워졌다」고 말하지 않는다. novice 는 계절계수가 1.0 이라 **빛이 안 준다**
+       (story_arc §5 ★★ · autumnCame 주석과 같은 규율). */
+  chatOneroomWinter: [
+    { who: 'jachwi', face: 'tired', text: '여기서 맞는 첫 겨울이다.' },
+    { who: 'moni',   face: 'curious', text: '저 방에서 겨울에 못 나갈까 봐 겁냈잖아.' },
+    { who: 'jachwi', text: '…나갔지.' },
+    { who: 'moni',   face: 'happy', text: '나갔지.' }
   ],
 
   /* 여름 · 반지하 살림 */
@@ -764,6 +923,23 @@ export const CHATTER = [
   /* 첫 플레이가 끝난 뒤의 같은 자리 — 회전이 도는 동안 */
   { id: 'chatCropAgain', when: c => c.firstPlayDone && !c.cropHarvested && c.cropAgeDays >= 2 },
 
+  /* ═══ ★★ ③ 원룸 (2026-08-15) ══════════════════════════════════════════
+     ★ 이 묶음이 **목록 앞쪽**에 있는 이유 — `pickChatter` 는 「가장 오래 안 나온 것」을 고르고,
+       한 번도 안 나온 것끼리는 **목록 순서**로 갈린다(`rank` 가 둘 다 −1 이라 `<` 가 거짓).
+       이사한 날 이 아홉은 전부 −1 이고 반지하 것들은 대개 한 번씩 나온 뒤라, 앞에 두면
+       **원룸의 첫 며칠이 원룸 얘기로 시작한다.** 뒤에 두면 첫 아침이 열흘 뒤에 온다.
+     ★ 조건은 전부 `c.movedOut` 하나로 갈린다 — 새 신호를 만들지 않았다. */
+  { id: 'chatOneroomMorning', when: c => c.movedOut && c.daysInOneroom != null && c.daysInOneroom <= 14 },
+  { id: 'chatOneroomDark',    when: c => c.movedOut },
+  { id: 'chatOneroomSiru',    when: c => c.movedOut },
+  { id: 'chatOneroomBright',  when: c => c.movedOut },
+  { id: 'chatOneroomWindow',  when: c => c.movedOut },
+  { id: 'chatOneroomEmpty',   when: c => c.movedOut && c.daysInOneroom != null && c.daysInOneroom <= 30 },
+  { id: 'chatOneroomLamp',    when: c => c.movedOut && c.lampOwned >= 1 },
+  { id: 'chatOneroomNoLamp',  when: c => c.movedOut && !c.lampOwned },
+  { id: 'chatOneroomVarie',   when: c => c.movedOut },
+  { id: 'chatOneroomWinter',  when: c => c.movedOut && c.season === 'winter' },
+
   /* 날씨 — 그날 하늘이 실제로 그래야 한다 */
   { id: 'chatRain',   when: c => c.weather === 'rain' },
   { id: 'chatCloudy', when: c => c.weather === 'cloudy' },
@@ -787,15 +963,23 @@ export const CHATTER = [
   { id: 'chatWinterCold',   when: c => c.season === 'winter' },
   { id: 'chatWinterWindow', when: c => c.season === 'winter' },
 
-  /* 살림 — 계절을 안 가린다. 아무것도 안 걸릴 때 여기서 나온다. */
-  { id: 'chatSummerHeat', when: c => c.season === 'summer' },
-  { id: 'chatSummerDamp', when: c => c.season === 'summer' },
+  /* 살림 — 계절을 안 가린다. 아무것도 안 걸릴 때 여기서 나온다.
+     ★★ 2026-08-15 — 셋에 `!c.movedOut` 을 걸었다. **원룸에서 반지하 얘기를 하고 있었다.**
+       화면 실측(원룸 100일)에서 실제로 뜬 것들이다:
+         `chatSummerHeat` 원룸 4·40일째 — «**반지하는** 여름에 덥고 겨울에 춥다»
+         `chatSummerDamp` 원룸 7·43일째 — «벽에서 눅눅한 냄새가 난다» (반지하 결로 얘기)
+         `chatLandlord`   원룸 27·76일째 — «집주인 아저씨가 «학생, 아직 있었네»» (저 방 집주인이다)
+       ⚠ 나머지(`chatMorning`·`chatQuiet`·`chatMoniName`·`chatParents`·`chatNeighbor`·
+         `chatDailySpend`)는 방을 안 가리는 말이라 그대로 둔다. 하루 지출 「만 육천 원」도
+         원룸에서 그대로 참이다 — `dailySpendWon` 이 이사로 안 바뀐다(tutorial.js §dailyCashOutWon ⏸). */
+  { id: 'chatSummerHeat', when: c => c.season === 'summer' && !c.movedOut },
+  { id: 'chatSummerDamp', when: c => c.season === 'summer' && !c.movedOut },
   { id: 'chatDailySpend', when: c => c.living },
   { id: 'chatMorning',    when: c => c.living },
   { id: 'chatQuiet',      when: c => c.living },
   { id: 'chatMoniName',   when: c => c.living },
   { id: 'chatParents',    when: c => c.living },
-  { id: 'chatLandlord',   when: c => c.living },
+  { id: 'chatLandlord',   when: c => c.living && !c.movedOut },
   { id: 'chatNeighbor',   when: c => c.living },
   /* ★맨 끝 그물 — 첫 플레이가 길어져 위가 전부 안 걸리는 날을 위해 둔다.
      이게 없으면 어두운 자리에 방치한 판이 며칠이고 통째로 조용해진다(진단에서 46일). */
@@ -825,7 +1009,15 @@ export function chatterContext(turn = {}, S = null) {
   const ts = (S && S.tutorial) || null;
   const fp = (S && S.firstPlay) || null;
   const t = turn.tutorial && !turn.tutorial.skipped ? turn.tutorial : null;
+  /* ★ 2026-08-15 — **원룸에 들어온 지 며칠인가.** 「첫 아침」·「박스를 다 풀었는데」 같은 말은
+     이사한 지 두 달 뒤에 나오면 안 된다. 새 값을 만들지 않았다 —
+     `S.story.movedInOnDay`(oneroom.createStoryState)와 `turn.day` 의 차다. */
+  const st = (S && S.story) || null;
+  const movedInOnDay = st && st.movedInOnDay != null ? st.movedInOnDay : null;
+  const dayNow = turn.day ?? null;
   return {
+    movedInOnDay,
+    daysInOneroom: (movedInOnDay != null && dayNow != null) ? dayNow - movedInOnDay : null,
     day: turn.day ?? null,
     weather: (turn.sky && turn.sky.weather) || null,
     season: t ? t.season : (turn.sky && turn.sky.season) || null,
