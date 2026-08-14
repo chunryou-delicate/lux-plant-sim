@@ -113,8 +113,12 @@ console.log('\nE. 빛이 다르면 다르게 자란다');
   ok(dark.gauge === 0, `어두우면 성숙 기회 자체가 안 온다 (게이지 걸음 ${dark.gauge})`);
 }
 
-/* ── F. 가지의 발아 순서 — ★캐논과 어긋난다. 걸지 않고 찍어만 준다 ── */
-console.log('\nF. (표시만) 가지의 발아 순서 — ⚠ 캐논과 어긋나 있다');
+/* ── F. 가지의 발아 순서 — ★2026-08-17 고침. 이제 진짜로 건다 ──
+   전에는 여기서 재서 찍어만 주었다. 가지 축이 격자 밖(격자+bumpGrow)에서 태어나는데
+   마디는 격자에서만 나서, 잎(축+petGrow)이 첫 마디보다 4일 먼저 났기 때문이다.
+   지금은 축이 나는 그 날 첫 마디를 같이 심는다 — 밑동(§A)과 **같은 규칙**이다.
+   ⇒ 캐논이 지켜지므로 검사로 올렸다. 실측 전/후는 docs/handoff/monsterabranch-to-plan.md */
+console.log('\nF. 가지의 발아 순서 — 눈 → 잎자루 먼저 → 그 끝에서 새순 (§A 와 같은 순서)');
 {
   const r = await page.eval(`(()=>{
     const out=[];
@@ -126,13 +130,37 @@ console.log('\nF. (표시만) 가지의 발아 순서 — ⚠ 캐논과 어긋�
                 seg:a.segs.filter(s=>s.birth<=g).length, leaf:g>=a.leafBirth});
     }
     return JSON.stringify(out); })()`).then(JSON.parse);
-  const bad = r.filter(x => x.leaf && x.seg === 0);
   for (const x of r) console.log('    ' + JSON.stringify(x));
-  console.log(bad.length
-    ? `    ⚠ 잎자루(마디)가 0개인데 새순이 먼저 나는 구간이 있다 — ${bad.map(x => 'g' + x.g).join(', ')}\n` +
-      `      캐논은 「눈 → 가는 잎자루 먼저(새순 없이) → 그 끝에서 새순」이다.\n` +
-      `      고치려면 생장 격자·난수 스트림이 움직인다 → docs/handoff/monstera-to-plan.md §3`
-    : `    (지금은 어긋나지 않는다 — 고쳐졌으면 이 절을 검사로 올려라)`);
+  ok(r.filter(x => x.leaf && x.seg === 0).length === 0,
+     `새순이 났는데 잎자루(마디)가 0개인 나이가 없다`);
+
+  /* 축 하나하나가 밑동과 같은 규칙을 따르는가 — 첫 마디는 제 생일에, 잎은 그 뒤 petGrow 일에 */
+  const s = await page.eval(`(()=>{
+    const bad=[], seen=[];
+    for(const seed of [92158, 12345, 55555]){
+      plantSeed(seed);
+      for(const a of topologyNow(600)){
+        if(!a.segs.length) continue;                       // 갓 난 축(아직 이 날에 안 닿음)은 건너뛴다
+        seen.push(1);
+        if(a.segs[0].birth !== a.birth) bad.push({seed, br:!!a.from, birth:a.birth, seg0:a.segs[0].birth});
+        if(a.leafBirth !== a.birth+${P.petGrow}) bad.push({seed, leafBirth:a.leafBirth, birth:a.birth});
+      }
+    }
+    plantSeed(92158);                                      // ⚠ 뒤 절이 기본 시드로 잰다. 반드시 되돌린다
+    return JSON.stringify({bad, n:seen.length}); })()`).then(JSON.parse);
+  ok(s.bad.length === 0,
+     `축 ${s.n}개(시드 3개) 전부 「첫 마디 = 제 생일 · 잎 = 그 뒤 ${P.petGrow}일」 ${JSON.stringify(s.bad).slice(0, 200)}`);
+
+  /* 나이를 하루씩 걸어도 어긋나는 날이 없는가 — 어긋남은 4일짜리라 띄엄띄엄 재면 놓친다 */
+  const w = await page.eval(`(()=>{ const bad=[];
+    for(let g=${P.seedEnd}; g<=400; g++)
+      for(const a of topologyNow(g)){
+        if(g < a.leafBirth) continue;
+        if(a.segs.filter(x=>x.birth<=g).length===0) bad.push({g, br:!!a.from, leafBirth:a.leafBirth});
+      }
+    return JSON.stringify({n:bad.length, head:bad.slice(0,6)}); })()`).then(JSON.parse);
+  ok(w.n === 0, `나이 ${P.seedEnd}~400 을 하루씩 걸어도 잎자루 없는 새순이 없다 ` +
+                `(어긋난 날 ${w.n}${w.n ? ' ' + JSON.stringify(w.head) : ''})`);
 }
 
 /* ── G. 방 조립기가 정본 상태를 받아 그리나 ── */

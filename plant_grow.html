@@ -760,7 +760,9 @@ function stretchGLB(key, p0, p1, radius, color, flatAz){
   mesh.scale.set(fx, len, fz);                             // 비균등 스케일 = 가장 안쪽(회전 영향 없음)
   rot.rotation.set(N(a.rx,0), N(a.ry,0), N(a.rz,0));       // 강체 회전 = 스케일 바깥 → 안 찌그러짐
   rot.position.set(N(a.ox,0)*fx, N(a.oy,0)*len, N(a.oz,0)*fz);   // 오프셋은 이전과 같은 체감 크기 유지
-  g.position.copy(p0); g.userData.assetKey=key; if(color) tintObj(g,color); plantGroup.add(g);
+  g.position.copy(p0); g.userData.assetKey=key;
+  if(color){ KEEP_TEX_STEM.has(key)? tintKeepTex(g,color) : tintObj(g,color); }
+  plantGroup.add(g);
   USE_COUNT[key]=(USE_COUNT[key]||0)+1; return true;
 }
 // (제거됨) addStemSeg — 마디별 GLB 이어붙이기. 줄기를 튜브로 생성하면서 호출부 0개가 됨
@@ -1571,6 +1573,21 @@ const adjOf=k=>ADJ[ADJ_ALIAS[k]||k]||{};      // ★ADJ 조회는 항상 이걸�
 const KEEP_TEX=new Set(['leaf_young_albo','leaf_mid_albo1','leaf_mid_albo2','leaf_mid_albo3','leaf_mid_albo4','leaf_mid_albo5','leaf_mid_albo6','leaf_mid_albo7','leaf_mid_albo8','leaf_mid_albo9','leaf_mid_albo10','leaf_mid_albo11','leaf_mid_albo12','leaf_mid_albo13','leaf_mid_albo14','leaf_mid_albo15','leaf_mid_albo16','leaf_mid_albo17','leaf_mid_albo18','leaf_mid_albo19','leaf_mid_albo20','leaf_mid_albo21','leaf_mid_albo22','leaf_mid_albo23','leaf_mid_albo24','leaf_mid_albo25','leaf_mid_albo26','leaf_mid_albo27','leaf_mid_albo28','leaf_mid_albo29','leaf_mid_albo30','leaf_mid_albo31',
   'leaf_mid_albo32','leaf_mid_albo33','leaf_mid_albo34','leaf_mid_albo35','leaf_mid_albo36','leaf_mid_albo37','leaf_mid_albo38','leaf_mid_albo39','leaf_mid_albo40','leaf_mid_albo41','leaf_mid_albo42',
   'leaf_mat1','leaf_mat2','leaf_mat3','leaf_mat4','leaf_mat5','leaf_mat6','leaf_mat7','leaf_mat8','leaf_mat9','leaf_mat10','leaf_mat11','leaf_mat12','leaf_mat13','leaf_mat14','leaf_mat15','leaf_mat16','leaf_mat17','leaf_mat18','leaf_mat19','leaf_mat20','leaf_mat21','leaf_mat22','leaf_mat23','leaf_mat24','leaf_mat25','leaf_mat26','leaf_mat27','leaf_mat28','leaf_mat29','leaf_mat30','leaf_mat31','leaf_mat32','leaf_mat33','leaf_mat34','leaf_mat35','leaf_mat36','leaf_mat37','leaf_mat38','leaf_mat39','leaf_mat40','leaf_mat41','leaf_mat42','leaf_mat43','leaf_mat44','leaf_mat45','leaf_mat46','leaf_mat47','leaf_mat48','leaf_mat49','leaf_mat50','leaf_mat51','leaf_mat52','leaf_mat53','leaf_mat54','leaf_mat55','leaf_mat56','leaf_mat57']);
+/* ★혹(눈)은 캐논이 *"살색 + 빨간 점 = 눈. 여기서 가지가 남"* 이라 정한 부품이다.
+   그 빨간 점은 GLB 텍스처에 그려져 있다(실측 2026-08-17: stem_thick·stem_main 둘 다 2048×2048 map).
+   그런데 stretchGLB 가 tintObj 를 거는데 tintObj 는 **map 을 지운다** — 그래서 혹이 줄기와
+   똑같은 초록 한 덩어리가 되어 화면에서 「여기서 가지가 난다」를 읽을 수 없었다.
+   ⇒ 혹 계열만 텍스처를 남기고 색을 **곱한다**(무늬잎에 이미 쓰는 fadeObj 와 같은 사고).
+     three.js 는 map 에 material.color 를 곱하므로, 색을 넣어도 무늬가 살아 있다.
+   ⚠ 잎자루·엽초는 그대로 tintObj 다 — 그쪽은 텍스처가 무늬가 아니라 결이라 개체 색이 우선이다. */
+const KEEP_TEX_STEM=new Set(['stem_thick','stem_main']);
+function tintKeepTex(obj, color){
+  obj.traverse(o=>{ if(o.isMesh&&o.material){
+    const ms=Array.isArray(o.material)?o.material:[o.material];
+    const nm=ms.map(m=>{ const c=m.clone(); c.color=color.clone(); c.userData={cloned:true}; return c; });
+    o.material=Array.isArray(o.material)?nm:nm[0];
+  }});
+}
 function tintObj(obj, color){
   obj.traverse(o=>{ if(o.isMesh&&o.material){
     const ms=Array.isArray(o.material)?o.material:[o.material];
@@ -2164,7 +2181,14 @@ function growTopology(g){
           for(let i=0;i<nb;i++){                                         // 혹에서 줄기_초기가 나와 자람
             const s2=a0+(nb===2? i*Math.PI : 0);
             const bd=new THREE.Vector3(Math.sin(s2)*P.branchSpread, 1, Math.cos(s2)*P.branchSpread).normalize();
-            mkAxis({ax:c.ax, idx:c.i}, bd, T+P.bumpGrow);                // 혹이 다 돋은 뒤에 가지가 남(순서도 #12→#14)
+            const nax=mkAxis({ax:c.ax, idx:c.i}, bd, T+P.bumpGrow);      // 혹이 다 돋은 뒤에 가지가 남(순서도 #12→#14)
+            // ★★캐논(2026-08-17 고침): 눈에서도 **가는 잎자루가 먼저**(새순 없이) 나고
+            //   그 끝에서 새순이 난다 — 씨앗 발아와 **같은 순서**다(byeot_growth_chart_인계.md §3).
+            //   전에는 마디가 전역 격자(T=20,60,100,140…)에서만 났는데 가지 축은 격자+bumpGrow 에
+            //   태어나므로, 잎(축+petGrow=136)이 첫 마디(140)보다 **먼저** 나서 새순이 혹 위에
+            //   그대로 떠 있었다. ⇒ 축이 나는 그 날 첫 마디를 같이 심는다. 밑동 축이
+            //   t0 에 나면서 t0 에 첫 마디를 얻는 것과 정확히 같은 규칙이다.
+            addSeg(nax, nax.birth);
           }
         }
       }
@@ -2172,6 +2196,10 @@ function growTopology(g){
       for(const ax of axes){
         if(ax.birth>T || ax.segs.length>=P.maxLeaves) continue;
         if(ax.triggered && ax.grew) continue;                            // 중간잎 지난 축은 사이클당 1마디
+        // ★마디는 STEP 보다 촘촘히 나지 않는다. 갓 난 가지는 첫 마디를 제 생일(격자+bumpGrow)에
+        //   이미 심었으므로, 바로 다음 격자점(20일 뒤)에 또 심으면 그 축만 마디가 하나 더 는다.
+        //   밑동 축은 마디 간격이 언제나 정확히 STEP 이라 이 줄에 걸리지 않는다.
+        if(ax.segs.length && T-ax.segs[ax.segs.length-1].birth < STEP) continue;
         addSeg(ax,T); ax.grew=true;
       }
     }
@@ -2577,11 +2605,15 @@ function axisTimeline(gMax){
       trig.triggered=true; axes.forEach(a=>a.grew=false);
       let cand=null;
       for(const ax of axes) for(const s of ax.segs) if(!s.activated && T-s.birth>=P.stemTrans){ cand=s; break; }
-      if(cand){ cand.activated=true; axes.push(mk(T+P.bumpGrow)); }   // 혹이 다 돋은 뒤 가지가 난다
+      if(cand){ cand.activated=true;                                 // 혹이 다 돋은 뒤 가지가 난다
+        const nax=mk(T+P.bumpGrow); axes.push(nax);
+        nax.segs.push({birth:nax.birth, activated:false});           // ★가지도 제 생일에 첫 마디(잎자루) — growTopology 와 같은 규칙
+      }
     }
     for(const ax of axes){
       if(ax.birth>T || ax.segs.length>=P.maxLeaves) continue;
       if(ax.triggered && ax.grew) continue;
+      if(ax.segs.length && T-ax.segs[ax.segs.length-1].birth < STEP) continue;   // 마디는 STEP 보다 촘촘히 안 난다
       ax.segs.push({birth:T, activated:false}); ax.grew=true;
     }
   }
