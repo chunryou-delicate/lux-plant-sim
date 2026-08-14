@@ -210,8 +210,33 @@ if (floor) {
     window.__drag.end();})()`, false);
   await sleep(1600); await clear();
 }
-const afterNav = floor ? await page.eval(`(()=>{const h=window.__rv.surfaceAt(${floor.x},${floor.y},{potD:0.24});
-  return {ok:h&&h.ok, reason:(h&&h.reason)||null};})()`) : null;
+/* ★★ 2026-08-15 밤 — **같은 화면 점을 다시 묻지 않는다. 같은 「자리」를 다시 묻는다.**
+   ══════════════════════════════════════════════════════════════════════
+   ⚠ 놓는 사이에 **카메라가 움직인다.** 시루를 놓으면 아래 띠에 [💧 물 주기]가 붙어
+     띠가 112 → 185px 이 되고, 무대가 그만큼 짧아지면 `frameRoom` 이 다시 맞춘다
+     (실측: 카메라 거리 8.078 → 7.244 · 방위·상하각은 그대로).
+     그러면 **아까 그 화면 점은 이제 다른 세계 좌표**다. 방 앞쪽 끝을 골랐던 판에서는
+     그 점이 방 밖으로 떨어져 `surfaceAt` 이 「놓을 수 있는 면이 없습니다」를 냈다 —
+     규칙이 깨진 게 아니라 **가리키던 손가락이 옮겨 간 것**이다.
+   ★ 그래서 놓인 그루의 **지금 화면 자리**(`screenPosOf`)를 다시 받아서 묻는다.
+     세계 좌표로는 아까 그 바닥 그대로다 — 끌어 놓기가 거기에 세웠으니까.
+     단언은 **한 글자도 안 무르게** 뒀다: 여전히 `ok === false` 이고 사유가 「가구·벽」이어야 한다.
+   ⚠ 자리 이름이 붙은 그루(가구 위)는 빼고 **자유 좌표 그루**만 본다 — ②에서 놓은
+     서랍장 위 시루가 아니라 방금 바닥에 놓은 그것이어야 한다.
+   ⚠⚠ 이 주석은 **템플릿 문자열 밖**이다(안에 백틱을 쓰면 문자열이 끊긴다). */
+const afterNav = floor ? await page.eval(`(()=>{const rv=window.__rv;
+  const c=document.getElementById('roomCanvas').getBoundingClientRect();
+  let best=null, bestD=Infinity;
+  for (const p of (rv.plants()||[])) {
+    if (p.kind!=='beansprout' || p.slotId) continue;              // 자유 좌표 그루만
+    let sp=null; try{ sp=rv.screenPosOf('free:'+p.potId); }catch(e){}
+    if(!sp) continue;
+    const d=Math.hypot(c.left+sp.x-${floor.x}, c.top+sp.y-${floor.y});
+    if(d<bestD){ bestD=d; best={potId:p.potId, x:c.left+sp.x, y:c.top+sp.y}; }
+  }
+  if(!best) return {ok:null, reason:'놓인 자유 그루를 못 찾았다'};
+  const h=rv.surfaceAt(best.x,best.y,{potD:0.24});
+  return {ok:h&&h.ok, reason:(h&&h.reason)||null, potId:best.potId, moved:Math.round(bestD)};})()`) : null;
 ok('③-1 ★놓은 뒤에는 그 바닥이 **길 판정에서 막힌다** (예전엔 그대로 통과했다)',
    !!afterNav && afterNav.ok === false && /가구·벽/.test(afterNav.reason || ''),
    JSON.stringify(afterNav));

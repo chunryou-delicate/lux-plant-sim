@@ -1,0 +1,1091 @@
+[
+ {
+  "size": "360x780",
+  "scenes": [
+   {
+    "scene": "A-day0",
+    "screen": [
+     360,
+     780
+    ],
+    "dpr": 2,
+    "topbar": {
+     "x": 0,
+     "y": 0,
+     "w": 360,
+     "h": 65.1
+    },
+    "stage": {
+     "x": 0,
+     "y": 65.1,
+     "w": 360,
+     "h": 602.7
+    },
+    "canvas": {
+     "x": 0,
+     "y": 65.1,
+     "w": 360,
+     "h": 602.7
+    },
+    "bottom": {
+     "x": 0,
+     "y": 667.8,
+     "w": 360,
+     "h": 112.3
+    },
+    "navbar": {
+     "x": 8,
+     "y": 73.1,
+     "w": 48,
+     "h": 182
+    },
+    "stats": {
+     "fps": 7,
+     "frames": 0,
+     "drawn": 62,
+     "last": 9225.399999976158,
+     "worstMs": 148.09999999403954,
+     "navPaths": 0,
+     "nudges": 0,
+     "idleFps": 10,
+     "reduced": "서 있는 상한 10",
+     "pixelRatio": 1.75,
+     "plants": 0,
+     "slots": 14,
+     "fpsCap": {
+      "idle": 10,
+      "busy": 30,
+      "move": 60
+     },
+     "idleCap": {
+      "now": 10,
+      "floor": 10,
+      "anim": 18,
+      "skeletal": true,
+      "backedOff": true,
+      "forced": null
+     },
+     "level": 1,
+     "triangles": 32956,
+     "calls": 69
+    }
+   },
+   {
+    "scene": "B-siru",
+    "placed": "ok",
+    "pots": 1,
+    "screen": [
+     360,
+     780
+    ],
+    "dpr": 2,
+    "topbar": {
+     "x": 0,
+     "y": 0,
+     "w": 360,
+     "h": 65.1
+    },
+    "stage": {
+     "x": 0,
+     "y": 65.1,
+     "w": 360,
+     "h": 529.4
+    },
+    "canvas": {
+     "x": 0,
+     "y": 65.1,
+     "w": 360,
+     "h": 529.4
+    },
+    "bottom": {
+     "x": 0,
+     "y": 594.5,
+     "w": 360,
+     "h": 185.5
+    },
+    "navbar": {
+     "x": 8,
+     "y": 73.1,
+     "w": 48,
+     "h": 182
+    },
+    "stats": {
+     "fps": 10,
+     "frames": 0,
+     "drawn": 150,
+     "last": 9225.399999976158,
+     "worstMs": 148.09999999403954,
+     "navPaths": 0,
+     "nudges": 1,
+     "idleFps": 10,
+     "reduced": "픽셀비 1.25",
+     "pixelRatio": 1.25,
+     "plants": 1,
+     "slots": 14,
+     "fpsCap": {
+      "idle": 10,
+      "busy": 30,
+      "move": 60
+     },
+     "idleCap": {
+      "now": 10,
+      "floor": 10,
+      "anim": 18,
+      "skeletal": true,
+      "backedOff": true,
+      "forced": null
+     },
+     "level": 0,
+     "triangles": 34398,
+     "calls": 85
+    }
+   },
+   {
+    "scene": "C-monstera",
+    "grew": "ok",
+    "screen": [
+     360,
+     780
+    ],
+    "dpr": 2,
+    "topbar": {
+     "x": 0,
+     "y": 0,
+     "w": 360,
+     "h": 65.1
+    },
+    "stage": {
+     "x": 0,
+     "y": 65.1,
+     "w": 360,
+     "h": 529.4
+    },
+    "canvas": {
+     "x": 0,
+     "y": 65.1,
+     "w": 360,
+     "h": 529.4
+    },
+    "bottom": {
+     "x": 0,
+     "y": 594.5,
+     "w": 360,
+     "h": 185.5
+    },
+    "navbar": {
+     "x": 8,
+     "y": 73.1,
+     "w": 48,
+     "h": 182
+    },
+    "stats": {
+     "fps": 10,
+     "frames": 0,
+     "drawn": 203,
+     "last": 9225.399999976158,
+     "worstMs": 664.1999999880791,
+     "navPaths": 0,
+     "nudges": 2,
+     "idleFps": 10,
+     "reduced": "픽셀비 1.25",
+     "pixelRatio": 1.25,
+     "plants": 2,
+     "slots": 14,
+     "fpsCap": {
+      "idle": 10,
+      "busy": 30,
+      "move": 60
+     },
+     "idleCap": {
+      "now": 10,
+      "floor": 10,
+      "anim": 18,
+      "skeletal": true,
+      "backedOff": true,
+      "forced": null
+     },
+     "level": 0,
+     "triangles": 71537,
+     "calls": 105
+    }
+   },
+   {
+    "scene": "D-slots",
+    "slots": {
+     "n": 14,
+     "xmin": 182,
+     "xmax": 295,
+     "ymin": 182,
+     "ymax": 359,
+     "off": [],
+     "ps": [
+      {
+       "id": "banjiha-sill:0",
+       "x": 248,
+       "y": 182
+      },
+      {
+       "id": "banjiha-desk:0",
+       "x": 256,
+       "y": 244
+      },
+      {
+       "id": "banjiha-desk:1",
+       "x": 295,
+       "y": 271
+      },
+      {
+       "id": "banjiha-dresser:0",
+       "x": 209,
+       "y": 335
+      },
+      {
+       "id": "banjiha-dresser:1",
+       "x": 182,
+       "y": 359
+      },
+      {
+       "id": "banjiha-etagere:0",
+       "x": 215,
+       "y": 224
+      },
+      {
+       "id": "banjiha-etagere:1",
+       "x": 224,
+       "y": 230
+      },
+      {
+       "id": "banjiha-etagere:2",
+       "x": 233,
+       "y": 237
+      },
+      {
+       "id": "banjiha-etagere:3",
+       "x": 216,
+       "y": 212
+      },
+      {
+       "id": "banjiha-etagere:4",
+       "x": 225,
+       "y": 218
+      },
+      {
+       "id": "banjiha-etagere:5",
+       "x": 234,
+       "y": 225
+      },
+      {
+       "id": "banjiha-etagere:6",
+       "x": 216,
+       "y": 199
+      },
+      {
+       "id": "banjiha-etagere:7",
+       "x": 226,
+       "y": 206
+      },
+      {
+       "id": "banjiha-etagere:8",
+       "x": 235,
+       "y": 212
+      }
+     ]
+    }
+   },
+   {
+    "scene": "R-roomonly",
+    "screen": [
+     360,
+     780
+    ],
+    "dpr": 2,
+    "topbar": {
+     "x": 0,
+     "y": 0,
+     "w": 360,
+     "h": 65.1
+    },
+    "stage": {
+     "x": 0,
+     "y": 65.1,
+     "w": 360,
+     "h": 529.4
+    },
+    "canvas": {
+     "x": 0,
+     "y": 65.1,
+     "w": 360,
+     "h": 529.4
+    },
+    "bottom": {
+     "x": 0,
+     "y": 594.5,
+     "w": 360,
+     "h": 185.5
+    },
+    "navbar": {
+     "x": 8,
+     "y": 73.1,
+     "w": 48,
+     "h": 182
+    },
+    "stats": {
+     "fps": 10,
+     "frames": 0,
+     "drawn": 249,
+     "last": 9225.399999976158,
+     "worstMs": 664.1999999880791,
+     "navPaths": 0,
+     "nudges": 2,
+     "idleFps": 10,
+     "reduced": "픽셀비 1.25",
+     "pixelRatio": 1.25,
+     "plants": 2,
+     "slots": 14,
+     "fpsCap": {
+      "idle": 10,
+      "busy": 30,
+      "move": 60
+     },
+     "idleCap": {
+      "now": 10,
+      "floor": 10,
+      "anim": 18,
+      "skeletal": true,
+      "backedOff": true,
+      "forced": null
+     },
+     "level": 0,
+     "triangles": 70691,
+     "calls": 103
+    }
+   }
+  ]
+ },
+ {
+  "size": "390x844",
+  "scenes": [
+   {
+    "scene": "A-day0",
+    "screen": [
+     390,
+     844
+    ],
+    "dpr": 2,
+    "topbar": {
+     "x": 0,
+     "y": 0,
+     "w": 390,
+     "h": 65.1
+    },
+    "stage": {
+     "x": 0,
+     "y": 65.1,
+     "w": 390,
+     "h": 666.7
+    },
+    "canvas": {
+     "x": 0,
+     "y": 65.1,
+     "w": 390,
+     "h": 666.7
+    },
+    "bottom": {
+     "x": 0,
+     "y": 731.8,
+     "w": 390,
+     "h": 112.3
+    },
+    "navbar": {
+     "x": 8,
+     "y": 73.1,
+     "w": 48,
+     "h": 182
+    },
+    "stats": {
+     "fps": 8,
+     "frames": 0,
+     "drawn": 55,
+     "last": 9583.800000011921,
+     "worstMs": 160.09999999403954,
+     "navPaths": 0,
+     "nudges": 0,
+     "idleFps": 10,
+     "reduced": "서 있는 상한 10",
+     "pixelRatio": 1.75,
+     "plants": 0,
+     "slots": 14,
+     "fpsCap": {
+      "idle": 10,
+      "busy": 30,
+      "move": 60
+     },
+     "idleCap": {
+      "now": 10,
+      "floor": 10,
+      "anim": 18,
+      "skeletal": true,
+      "backedOff": true,
+      "forced": null
+     },
+     "level": 1,
+     "triangles": 32956,
+     "calls": 69
+    }
+   },
+   {
+    "scene": "B-siru",
+    "placed": "ok",
+    "pots": 1,
+    "screen": [
+     390,
+     844
+    ],
+    "dpr": 2,
+    "topbar": {
+     "x": 0,
+     "y": 0,
+     "w": 390,
+     "h": 65.1
+    },
+    "stage": {
+     "x": 0,
+     "y": 65.1,
+     "w": 390,
+     "h": 593.4
+    },
+    "canvas": {
+     "x": 0,
+     "y": 65.1,
+     "w": 390,
+     "h": 593.4
+    },
+    "bottom": {
+     "x": 0,
+     "y": 658.5,
+     "w": 390,
+     "h": 185.5
+    },
+    "navbar": {
+     "x": 8,
+     "y": 73.1,
+     "w": 48,
+     "h": 182
+    },
+    "stats": {
+     "fps": 10,
+     "frames": 0,
+     "drawn": 139,
+     "last": 9583.800000011921,
+     "worstMs": 160.09999999403954,
+     "navPaths": 0,
+     "nudges": 1,
+     "idleFps": 10,
+     "reduced": "픽셀비 1.25",
+     "pixelRatio": 1.25,
+     "plants": 1,
+     "slots": 14,
+     "fpsCap": {
+      "idle": 10,
+      "busy": 30,
+      "move": 60
+     },
+     "idleCap": {
+      "now": 10,
+      "floor": 10,
+      "anim": 18,
+      "skeletal": true,
+      "backedOff": true,
+      "forced": null
+     },
+     "level": 0,
+     "triangles": 34398,
+     "calls": 85
+    }
+   },
+   {
+    "scene": "C-monstera",
+    "grew": "ok",
+    "screen": [
+     390,
+     844
+    ],
+    "dpr": 2,
+    "topbar": {
+     "x": 0,
+     "y": 0,
+     "w": 390,
+     "h": 65.1
+    },
+    "stage": {
+     "x": 0,
+     "y": 65.1,
+     "w": 390,
+     "h": 593.4
+    },
+    "canvas": {
+     "x": 0,
+     "y": 65.1,
+     "w": 390,
+     "h": 593.4
+    },
+    "bottom": {
+     "x": 0,
+     "y": 658.5,
+     "w": 390,
+     "h": 185.5
+    },
+    "navbar": {
+     "x": 8,
+     "y": 73.1,
+     "w": 48,
+     "h": 182
+    },
+    "stats": {
+     "fps": 10,
+     "frames": 0,
+     "drawn": 192,
+     "last": 9583.800000011921,
+     "worstMs": 706.7999999821186,
+     "navPaths": 0,
+     "nudges": 2,
+     "idleFps": 10,
+     "reduced": "픽셀비 1.25",
+     "pixelRatio": 1.25,
+     "plants": 2,
+     "slots": 14,
+     "fpsCap": {
+      "idle": 10,
+      "busy": 30,
+      "move": 60
+     },
+     "idleCap": {
+      "now": 10,
+      "floor": 10,
+      "anim": 18,
+      "skeletal": true,
+      "backedOff": true,
+      "forced": null
+     },
+     "level": 0,
+     "triangles": 71537,
+     "calls": 105
+    }
+   },
+   {
+    "scene": "D-slots",
+    "slots": {
+     "n": 14,
+     "xmin": 197,
+     "xmax": 320,
+     "ymin": 206,
+     "ymax": 398,
+     "off": [],
+     "ps": [
+      {
+       "id": "banjiha-sill:0",
+       "x": 269,
+       "y": 206
+      },
+      {
+       "id": "banjiha-desk:0",
+       "x": 278,
+       "y": 274
+      },
+      {
+       "id": "banjiha-desk:1",
+       "x": 320,
+       "y": 303
+      },
+      {
+       "id": "banjiha-dresser:0",
+       "x": 227,
+       "y": 373
+      },
+      {
+       "id": "banjiha-dresser:1",
+       "x": 197,
+       "y": 398
+      },
+      {
+       "id": "banjiha-etagere:0",
+       "x": 233,
+       "y": 252
+      },
+      {
+       "id": "banjiha-etagere:1",
+       "x": 243,
+       "y": 259
+      },
+      {
+       "id": "banjiha-etagere:2",
+       "x": 253,
+       "y": 266
+      },
+      {
+       "id": "banjiha-etagere:3",
+       "x": 234,
+       "y": 239
+      },
+      {
+       "id": "banjiha-etagere:4",
+       "x": 244,
+       "y": 246
+      },
+      {
+       "id": "banjiha-etagere:5",
+       "x": 254,
+       "y": 253
+      },
+      {
+       "id": "banjiha-etagere:6",
+       "x": 235,
+       "y": 225
+      },
+      {
+       "id": "banjiha-etagere:7",
+       "x": 245,
+       "y": 232
+      },
+      {
+       "id": "banjiha-etagere:8",
+       "x": 255,
+       "y": 239
+      }
+     ]
+    }
+   },
+   {
+    "scene": "R-roomonly",
+    "screen": [
+     390,
+     844
+    ],
+    "dpr": 2,
+    "topbar": {
+     "x": 0,
+     "y": 0,
+     "w": 390,
+     "h": 65.1
+    },
+    "stage": {
+     "x": 0,
+     "y": 65.1,
+     "w": 390,
+     "h": 593.4
+    },
+    "canvas": {
+     "x": 0,
+     "y": 65.1,
+     "w": 390,
+     "h": 593.4
+    },
+    "bottom": {
+     "x": 0,
+     "y": 658.5,
+     "w": 390,
+     "h": 185.5
+    },
+    "navbar": {
+     "x": 8,
+     "y": 73.1,
+     "w": 48,
+     "h": 182
+    },
+    "stats": {
+     "fps": 10,
+     "frames": 0,
+     "drawn": 241,
+     "last": 9583.800000011921,
+     "worstMs": 706.7999999821186,
+     "navPaths": 0,
+     "nudges": 2,
+     "idleFps": 10,
+     "reduced": "픽셀비 1.25",
+     "pixelRatio": 1.25,
+     "plants": 2,
+     "slots": 14,
+     "fpsCap": {
+      "idle": 10,
+      "busy": 30,
+      "move": 60
+     },
+     "idleCap": {
+      "now": 10,
+      "floor": 10,
+      "anim": 18,
+      "skeletal": true,
+      "backedOff": true,
+      "forced": null
+     },
+     "level": 0,
+     "triangles": 70691,
+     "calls": 103
+    }
+   }
+  ]
+ },
+ {
+  "size": "430x932",
+  "scenes": [
+   {
+    "scene": "A-day0",
+    "screen": [
+     430,
+     932
+    ],
+    "dpr": 2,
+    "topbar": {
+     "x": 0,
+     "y": 0,
+     "w": 430,
+     "h": 65.1
+    },
+    "stage": {
+     "x": 0,
+     "y": 65.1,
+     "w": 430,
+     "h": 754.7
+    },
+    "canvas": {
+     "x": 0,
+     "y": 65.1,
+     "w": 430,
+     "h": 754.7
+    },
+    "bottom": {
+     "x": 0,
+     "y": 819.8,
+     "w": 430,
+     "h": 112.3
+    },
+    "navbar": {
+     "x": 8,
+     "y": 73.1,
+     "w": 48,
+     "h": 182
+    },
+    "stats": {
+     "fps": 7,
+     "frames": 0,
+     "drawn": 45,
+     "last": 10064,
+     "worstMs": 365.40000000596046,
+     "navPaths": 0,
+     "nudges": 0,
+     "idleFps": 10,
+     "reduced": "서 있는 상한 10",
+     "pixelRatio": 1.75,
+     "plants": 0,
+     "slots": 14,
+     "fpsCap": {
+      "idle": 10,
+      "busy": 30,
+      "move": 60
+     },
+     "idleCap": {
+      "now": 10,
+      "floor": 10,
+      "anim": 18,
+      "skeletal": true,
+      "backedOff": true,
+      "forced": null
+     },
+     "level": 1,
+     "triangles": 32956,
+     "calls": 69
+    }
+   },
+   {
+    "scene": "B-siru",
+    "placed": "ok",
+    "pots": 1,
+    "screen": [
+     430,
+     932
+    ],
+    "dpr": 2,
+    "topbar": {
+     "x": 0,
+     "y": 0,
+     "w": 430,
+     "h": 65.1
+    },
+    "stage": {
+     "x": 0,
+     "y": 65.1,
+     "w": 430,
+     "h": 701.7
+    },
+    "canvas": {
+     "x": 0,
+     "y": 65.1,
+     "w": 430,
+     "h": 701.7
+    },
+    "bottom": {
+     "x": 0,
+     "y": 766.8,
+     "w": 430,
+     "h": 165.3
+    },
+    "navbar": {
+     "x": 8,
+     "y": 73.1,
+     "w": 48,
+     "h": 182
+    },
+    "stats": {
+     "fps": 10,
+     "frames": 0,
+     "drawn": 126,
+     "last": 10064,
+     "worstMs": 365.40000000596046,
+     "navPaths": 0,
+     "nudges": 1,
+     "idleFps": 10,
+     "reduced": "픽셀비 1.25",
+     "pixelRatio": 1.25,
+     "plants": 1,
+     "slots": 14,
+     "fpsCap": {
+      "idle": 10,
+      "busy": 30,
+      "move": 60
+     },
+     "idleCap": {
+      "now": 10,
+      "floor": 10,
+      "anim": 18,
+      "skeletal": true,
+      "backedOff": true,
+      "forced": null
+     },
+     "level": 0,
+     "triangles": 34398,
+     "calls": 85
+    }
+   },
+   {
+    "scene": "C-monstera",
+    "grew": "ok",
+    "screen": [
+     430,
+     932
+    ],
+    "dpr": 2,
+    "topbar": {
+     "x": 0,
+     "y": 0,
+     "w": 430,
+     "h": 65.1
+    },
+    "stage": {
+     "x": 0,
+     "y": 65.1,
+     "w": 430,
+     "h": 701.7
+    },
+    "canvas": {
+     "x": 0,
+     "y": 65.1,
+     "w": 430,
+     "h": 701.7
+    },
+    "bottom": {
+     "x": 0,
+     "y": 766.8,
+     "w": 430,
+     "h": 165.3
+    },
+    "navbar": {
+     "x": 8,
+     "y": 73.1,
+     "w": 48,
+     "h": 182
+    },
+    "stats": {
+     "fps": 10,
+     "frames": 0,
+     "drawn": 182,
+     "last": 10064,
+     "worstMs": 709.5999999940395,
+     "navPaths": 0,
+     "nudges": 2,
+     "idleFps": 10,
+     "reduced": "픽셀비 1.25",
+     "pixelRatio": 1.25,
+     "plants": 2,
+     "slots": 14,
+     "fpsCap": {
+      "idle": 10,
+      "busy": 30,
+      "move": 60
+     },
+     "idleCap": {
+      "now": 10,
+      "floor": 10,
+      "anim": 18,
+      "skeletal": true,
+      "backedOff": true,
+      "forced": null
+     },
+     "level": 0,
+     "triangles": 71537,
+     "calls": 105
+    }
+   },
+   {
+    "scene": "D-slots",
+    "slots": {
+     "n": 14,
+     "xmin": 217,
+     "xmax": 353,
+     "ymin": 249,
+     "ymax": 461,
+     "off": [],
+     "ps": [
+      {
+       "id": "banjiha-sill:0",
+       "x": 297,
+       "y": 249
+      },
+      {
+       "id": "banjiha-desk:0",
+       "x": 307,
+       "y": 324
+      },
+      {
+       "id": "banjiha-desk:1",
+       "x": 353,
+       "y": 357
+      },
+      {
+       "id": "banjiha-dresser:0",
+       "x": 250,
+       "y": 434
+      },
+      {
+       "id": "banjiha-dresser:1",
+       "x": 217,
+       "y": 461
+      },
+      {
+       "id": "banjiha-etagere:0",
+       "x": 258,
+       "y": 300
+      },
+      {
+       "id": "banjiha-etagere:1",
+       "x": 269,
+       "y": 308
+      },
+      {
+       "id": "banjiha-etagere:2",
+       "x": 280,
+       "y": 315
+      },
+      {
+       "id": "banjiha-etagere:3",
+       "x": 258,
+       "y": 285
+      },
+      {
+       "id": "banjiha-etagere:4",
+       "x": 269,
+       "y": 293
+      },
+      {
+       "id": "banjiha-etagere:5",
+       "x": 281,
+       "y": 301
+      },
+      {
+       "id": "banjiha-etagere:6",
+       "x": 259,
+       "y": 270
+      },
+      {
+       "id": "banjiha-etagere:7",
+       "x": 270,
+       "y": 278
+      },
+      {
+       "id": "banjiha-etagere:8",
+       "x": 282,
+       "y": 286
+      }
+     ]
+    }
+   },
+   {
+    "scene": "R-roomonly",
+    "screen": [
+     430,
+     932
+    ],
+    "dpr": 2,
+    "topbar": {
+     "x": 0,
+     "y": 0,
+     "w": 430,
+     "h": 65.1
+    },
+    "stage": {
+     "x": 0,
+     "y": 65.1,
+     "w": 430,
+     "h": 701.7
+    },
+    "canvas": {
+     "x": 0,
+     "y": 65.1,
+     "w": 430,
+     "h": 701.7
+    },
+    "bottom": {
+     "x": 0,
+     "y": 766.8,
+     "w": 430,
+     "h": 165.3
+    },
+    "navbar": {
+     "x": 8,
+     "y": 73.1,
+     "w": 48,
+     "h": 182
+    },
+    "stats": {
+     "fps": 10,
+     "frames": 0,
+     "drawn": 234,
+     "last": 10064,
+     "worstMs": 709.5999999940395,
+     "navPaths": 0,
+     "nudges": 2,
+     "idleFps": 10,
+     "reduced": "픽셀비 1.25",
+     "pixelRatio": 1.25,
+     "plants": 2,
+     "slots": 14,
+     "fpsCap": {
+      "idle": 10,
+      "busy": 30,
+      "move": 60
+     },
+     "idleCap": {
+      "now": 10,
+      "floor": 10,
+      "anim": 18,
+      "skeletal": true,
+      "backedOff": true,
+      "forced": null
+     },
+     "level": 0,
+     "triangles": 70691,
+     "calls": 103
+    }
+   }
+  ]
+ }
+]

@@ -129,7 +129,23 @@ const PHONE = { w: 390, h: 844 };
 const FOV_PORTRAIT = 38;     // 세로일 때 수직 화각[도]. 방 전경이 화면 폭을 채우는 값
 const FOV_LANDSCAPE = 34;    // 가로/정사각이면 scene.js 기본값과 같게
 const FIT_MARGIN = 1.03;     // 방이 화면 끝에 딱 붙지 않게 하는 여유
-const FRAME_BIAS = 0.07;     // 방을 화면 한가운데보다 살짝 위에 둔다(아래는 UI 자리)
+/* ★ 방을 화면 세로 어디에 두나. `look` 점을 내리면 방이 **위로** 밀린다(양수 = 위).
+   ------------------------------------------------------------
+   ⚠ 넓은 화면과 폰 세로는 **아래 띠의 성격이 다르다.**
+     넓은 화면 `#bottom{position:absolute;bottom:0}` 이라 아래 띠가 무대를 **덮는다** →
+                방을 위로 밀어야 띠에 안 가린다. 그래서 +0.07 그대로 둔다.
+     폰 세로   아래 띠가 무대 **밖**(flex 형제)이다. 덮지 않는다 → 위로 밀 이유가 없는데
+                밀고 있었다. 그 결과 방 밑에 배경색뿐인 띠가 남았다.
+
+   ★ 재서 고른 값이다(2026-08-15 · 390×844 dpr2 실측).
+     방은 **가로에 걸려 있다** — 방 상자의 좌우 꼭짓점이 FIT_MARGIN 턱에 딱 닿고
+     세로는 절반(0.56)밖에 안 쓴다. 그래서 **캔버스를 세로로 늘려도 방은 한 픽셀도 안 커진다.**
+     남는 세로는 없앨 수 없고 **위로 옮길 수만** 있다 — 위는 창밖(골목)이 채우고 아래는 배경색뿐이라,
+     옮기면 그만큼이 그림이 된다.
+     −0.20 은 아래 빈 띠를 390×844 에서 167 → 103px 로 줄이면서, 제일 좁은 360×780 에
+     시루를 놓은 판(캔버스 529px)에서도 방 밑에 58px 이 남는 값이다(잘리지 않는다). */
+const FRAME_BIAS = 0.07;              // 넓은 화면·가로
+const FRAME_BIAS_PORTRAIT = -0.20;    // 폰 세로
 const TAP_PX = 12;           // 이만큼 안 움직이면 탭 (손가락)
 /* ★ 마우스는 누르는 동안 늘 몇 px 이 흔들린다 — 12 는 손가락 기준이라 마우스에서는
    그냥 누른 것도 회전으로 읽힌다. 28 은 「손목 떨림」이지 「끌려는 뜻」이 아니다. */
@@ -1135,6 +1151,8 @@ export async function createRoomView(canvas, opts = {}) {
   }
 
   const defaultEl = () => (ctx.cam.aspect < 0.95 ? BASE_EL_PORTRAIT : BASE_EL_LANDSCAPE);
+  /* 방을 화면 세로 어디에 두나 — §FRAME_BIAS. 가르는 문턱은 FOV·기본 상하각과 **같은 0.95** 다 */
+  const frameBias = () => (ctx.cam.aspect < 0.95 ? FRAME_BIAS_PORTRAIT : FRAME_BIAS);
 
   /* 창이 있는 벽을 마주 보는 방위각. 창이 게임의 주인공이라 창이 보여야 한다. */
   function windowAzimuth() {
@@ -1174,7 +1192,7 @@ export async function createRoomView(canvas, opts = {}) {
     const look = new THREE.Vector3();
     const fits = d => {
       _probe.position.copy(target).addScaledVector(dir, d);
-      look.copy(target); look.y -= d * tanV * FRAME_BIAS;      // 화면에서 위로 밀어 둔 만큼
+      look.copy(target); look.y -= d * tanV * frameBias();     // 화면에서 밀어 둔 만큼
       _probe.lookAt(look);
       _probe.updateMatrixWorld(true);
       _probe.updateProjectionMatrix();
@@ -1281,11 +1299,11 @@ export async function createRoomView(canvas, opts = {}) {
       cam.target.x + dist * Math.cos(el) * Math.sin(az),
       cam.target.y + dist * Math.sin(el),
       cam.target.z + dist * Math.cos(el) * Math.cos(az));
-    /* 화면 한가운데보다 살짝 위에 방을 둔다 — 아래쪽은 UI 자리다.
-       카메라를 옮기는 대신 보는 점을 내린다(방은 위로 밀린다). */
+    /* 방을 화면 세로 어디에 둘지 — §FRAME_BIAS. 카메라를 옮기는 대신 **보는 점**을 올리거나
+       내린다(내리면 방이 위로 밀린다). 넓은 화면은 위로, 폰 세로는 아래로 민다. */
     const tanV = Math.tan(THREE.MathUtils.degToRad(ctx.cam.fov) / 2);
     cam.look.copy(cam.target);
-    cam.look.y -= dist * tanV * FRAME_BIAS;
+    cam.look.y -= dist * tanV * frameBias();
     ctx.cam.lookAt(cam.look);
     if (built) updateShellVisibility(built.shells, ctx.cam, 'auto', built.trims);
     /* 벽이 밑동만 남으면(카메라가 그 벽 바깥이면) 골목이 카메라와 방 사이에 끼어 방을 덮는다 */
