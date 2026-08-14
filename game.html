@@ -180,7 +180,7 @@
 
   /* ── 하단 액션 ─────────────────────────────────────────────────────── */
   /* 버튼 글자를 접지 않는다 — '빨리감 / 기' 로 나뉘어 읽힐이 안 됐다 */
-  #bottom .actionbar button{white-space:nowrap}
+  #bottom .actionbar button,#bottom .navbar button{white-space:nowrap}
   #bottom{flex:0 0 auto;padding:10px calc(var(--safe-r) + 12px) calc(var(--safe-b) + 10px) calc(var(--safe-l) + 12px);
           background:linear-gradient(0deg,rgba(20,16,28,.97) 55%,rgba(20,16,28,.80) 100%);
           border-top:1px solid rgba(255,255,255,.07);position:relative;z-index:20}
@@ -226,10 +226,24 @@
   /* ★엄지로 누르는 자리. 44px 밑으로 내리지 말 것 */
   .actionbar button{flex:1;min-height:var(--tap);font-weight:700;font-size:14px;border-radius:12px}
   .actionbar button#next{flex:1.5}
-  /* 음악 단추는 좁게 — 매 턴 누르는 것이 아니라 한 번 켜 두는 것이다 */
-  .actionbar button#btnMusic{flex:0 0 var(--tap);font-size:17px;opacity:.5}
-  .actionbar button#btnMusic[aria-pressed=true]{opacity:1;color:var(--leaf)}
   .actionbar button:disabled{opacity:.42}
+  /* ── 늘 보이는 탭 띠 (2026-08-14 · 기획 §C) ────────────────────────────
+     ★ 다섯 칸이 폰 세로에서 손가락 최소(--tap=44px)를 넘는지가 이 띠의 유일한 걸림돌이다.
+       390px 실측값은 `docs/handoff/guidenav-to-plan.md` 에 적었다.
+     ★ 글자를 접지 않는다 — '가 / 방' 으로 나뉘면 읽기 전에 못 알아본다.
+     ★ 지금 열린 탭은 `.cur` 로 표시한다. `aria-selected` 를 안 쓰는 이유:
+       그건 role=tab 의 것이고 시트 안 `.sheettabs` 가 이미 그 역할을 갖고 있다.
+       한 패널을 두 tablist 가 가리키면 보조기기가 둘 중 어느 것을 정본으로 볼지 모른다. */
+  .navbar{display:flex;gap:6px;margin-top:7px}
+  .navbar button{flex:1;min-width:0;min-height:var(--tap);font-weight:700;font-size:12.5px;
+    border-radius:12px;padding:0 2px;white-space:nowrap}
+  /* 음악 단추는 좁게 — 매 턴 누르는 것이 아니라 한 번 켜 두는 것이다 */
+  .navbar button#btnMusic{flex:0 0 var(--tap);font-size:17px;opacity:.5}
+  .navbar button#btnMusic[aria-pressed=true]{opacity:1;color:var(--leaf)}
+  /* 열려 있는 탭 — 시트 안 탭(.sheettabs)과 **같은 금색**이다. 두 곳이 다른 색으로
+     같은 것을 말하면 같은 것으로 안 읽힌다. */
+  .navbar button.cur{background-image:none;background:rgba(255,180,84,.18);
+    border:1px solid rgba(255,180,84,.46);color:var(--gold);filter:none}
 
   /* ── 바텀시트 (가방·자리·설정) ───────────────────────────────────── */
   #sheet{position:fixed;z-index:40;left:0;right:0;bottom:0;max-height:78dvh;
@@ -393,7 +407,10 @@
            box-shadow:none}
     #sheet .grip{display:none}
     #sheetScrim{display:none}
-    #openBag{display:none}                 /* 늘 보이므로 여는 버튼이 필요 없다 */
+    /* 시트가 늘 펴져 있고 그 안에 탭 띠가 있다 — 여는 손잡이가 필요 없다.
+       ★ 음악 단추(`#btnMusic`)는 남긴다. 그건 탭이 아니라 설정이라 시트 안에 없다. */
+    .navbar button[data-tab]{display:none}
+    .navbar{max-width:420px;margin:7px auto 0}
     .sheetbody{padding:2px 14px 20px}
     /* 넓으니 라벨을 다시 가로로 — 폰에서 세로로 세운 건 폭이 없어서였다 */
     #sheet label{flex-direction:row;align-items:center}
@@ -1205,7 +1222,23 @@
            ⚠ 코어(`loop.startFastForward`)는 **안 지웠다** — 헤드리스 재현·밸런스 측정이
              그 길로 돈다(`test_fastforward` 20항목이 그 계약을 지킨다). 화면에서만 걷었다. -->
       <button id="next" disabled>다음 날 ▸</button>
-      <button id="openBag" class="ghost">가방</button>
+    </div>
+    <!-- ★★★ 2026-08-14 — **늘 보이는 탭 띠** (기획 §C · 박사님 *"가방/식물/상점/방/메뉴 를
+         밑이나 좌우에 나열"*).
+         ══════════════════════════════════════════════════════════════
+         예전에는 [가방] 하나뿐이라, 상점에 가려면 **가방을 열고 → 상점 탭을 또 누르는**
+         두 걸음이었다. 시트도 탭도 이미 있으니 새로 지을 것이 없다 —
+         **여는 손잡이만 늘린다**(`window.__byeotSheet.tab(...)`).
+       ★ [다음 날]은 **줄을 혼자 쓴다.** 제일 많이 누르는 단추라 다섯으로 쪼개면 안 된다.
+       ★ [가방]은 id 를 `openBag` 그대로 둔다 — 손가락 안내(`updateHint`)·조작 안내판·
+         검사(`test_uiwire` F-4b)가 그 이름으로 이 단추를 가리킨다. 이름을 바꾸면
+         가리키는 쪽이 조용히 허공을 가리킨다.
+       ⚠ 폰 세로 390px 에서 다섯 칸이다. 실측은 `docs/handoff/guidenav-to-plan.md`. -->
+    <div class="navbar" id="navbar">
+      <button id="openBag"   class="ghost" data-tab="bag">가방</button>
+      <button id="navPlants" class="ghost" data-tab="plants">식물</button>
+      <button id="navShop"   class="ghost" data-tab="shop">상점</button>
+      <button id="navRoom"   class="ghost" data-tab="room">방</button>
       <!-- ★음악은 꺼진 채로 시작한다. 브라우저가 사용자 조작 없이는 소리를 안 내주기도 하고,
            무엇보다 소리를 원치 않는 자리에서 켜는 게임은 그 자리에서 닫힌다. -->
       <button id="btnMusic" class="ghost" aria-pressed="false" title="배경 음악">♪</button>
@@ -1574,13 +1607,46 @@
     sheet.classList.add('open'); scrim.classList.add('open');
     sheet.setAttribute('aria-hidden', 'false');
     if (tab) selectTab(tab);
+    syncNav();
   }
   function closeSheet() {
     sheet.classList.remove('open'); scrim.classList.remove('open');
     sheet.setAttribute('aria-hidden', 'true');
+    syncNav();
   }
-  $('openBag').addEventListener('click', function () { openSheet('tabBag');
-    setTimeout(function(){ if (window.__byeotHint) window.__byeotHint(); }, 340); });
+
+  /* ── 늘 보이는 탭 띠 (2026-08-14 · 기획 §C) ─────────────────────────────
+     ★ 새로 짓는 것이 하나도 없다. 아래 띠의 단추가 **시트를 그 탭으로 연다** —
+       예전 [가방]이 하던 일(열기)과 시트 안 탭이 하던 일(고르기)을 한 번에 한다.
+     ★ 같은 탭을 다시 누르면 **닫는다.** 폰에서 시트가 방을 덮는데, 닫는 길이
+       스크림과 손잡이뿐이면 방을 다시 보려고 화면 위쪽을 더듬게 된다.
+     ★ 손가락 안내는 시트가 열리고 닫힐 때마다 다시 정해야 한다 — 시트가 덮은
+       단추를 가리키면 죽은 손가락이 된다(`updateHint` 가 `sheetOpen` 을 본다). */
+  function syncNav() {
+    var nav = $('navbar'); if (!nav) return;
+    var open = sheet.classList.contains('open');
+    var btns = nav.querySelectorAll('button[data-tab]');
+    for (var i = 0; i < btns.length; i++) {
+      var t = TAB_ALIAS[btns[i].getAttribute('data-tab')];
+      var on = open && !!t && $(t) && $(t).getAttribute('aria-selected') === 'true';
+      btns[i].classList.toggle('cur', !!on);
+      if (on) btns[i].setAttribute('aria-current', 'true');
+      else btns[i].removeAttribute('aria-current');
+    }
+  }
+  (function () {
+    var nav = $('navbar'); if (!nav) return;
+    nav.addEventListener('click', function (ev) {
+      var b = ev.target.closest ? ev.target.closest('button[data-tab]') : null;
+      if (!b) return;
+      var name = b.getAttribute('data-tab');
+      var tabId = TAB_ALIAS[name] || name;
+      if (sheet.classList.contains('open') &&
+          $(tabId) && $(tabId).getAttribute('aria-selected') === 'true') closeSheet();
+      else openSheet(name);
+      setTimeout(function () { if (window.__byeotHint) window.__byeotHint(); }, 340);
+    });
+  })();
   scrim.addEventListener('click', function(){ closeSheet();
     setTimeout(function(){ if (window.__byeotHint) window.__byeotHint(); }, 340); });
 
@@ -1626,10 +1692,13 @@
       $(TABS[t]).classList.toggle('on', on);
     });
     var body = sheet.querySelector('.sheetbody'); if (body) body.scrollTop = 0;
+    /* 아래 띠도 같이 칠한다 — 시트 안에서 탭을 갈아도 아래가 옛 탭을 가리키면 둘이 갈린다 */
+    syncNav();
   }
   Object.keys(TABS).forEach(function (t) {
     $(t).addEventListener('click', function () { selectTab(t); });
   });
+  syncNav();                 /* 첫 그림 — 시트가 닫힌 채로 시작하므로 아무 칸도 안 켜진다 */
 
   /* ── 확대 오버레이 ─────────────────────────────────────────────────
      방에서 화분을 탭하면 열린다. 지금은 방 3D 가 붙기 전이라 무대 탭으로도 열린다 —
@@ -2268,14 +2337,31 @@ function buildGuide() {
     [$('stage'),    '방을 끌면 돌아갑니다 · 두 손가락으로 확대\n화분을 누르면 [이동] [회전]\n★자리마다 밝기가 다릅니다\n어두운 자리도, 밝은 자리도 쓸모가 있습니다', 'mid'],
     [$('quest'),    '지금 할 일',                  'down'],
     [$('next'),     '하루를 보냅니다',              'down'],
-    /* 좁은 화면엔 [가방] 버튼이, 넓은 화면엔 늘 펴진 시트 탭이 있다. 있는 쪽을 가리킨다 */
-    [$('openBag'),  '가방 · 방 설정 · 살림',        'down'],
+    /* ★ 2026-08-14 — [가방] 하나가 아니라 **띠 전체**를 설명한다(기획 §C).
+       예전 글은 「가방 · 방 설정 · 살림」이었는데, 이제 그 셋이 각각 제 단추를 갖는다.
+       좁은 화면엔 이 띠가, 넓은 화면엔 늘 펴진 시트 탭이 있다 — 있는 쪽만 가리킨다
+       (`buildGuide` 가 폭 0 인 줄을 건너뛴다). */
+    [($('openBag') && $('openBag').offsetParent) ? $('navbar') : null,
+                    '가방 · 식물 · 상점 · 방 — 바로 열립니다', 'down'],
     [$('tabBag'),   '가방의 그림을 방으로 끌어다 놓습니다', 'up'],
     /* ★ 2026-08-11 — 설명이 없던 둘. `buildGuide` 는 `if (!el) continue` 라
        id 가 없으면 그 줄만 조용히 빠진다. */
     [$('btnMusic'), '배경 음악 켜고 끄기',            'down'],
     [$('meChip'),   '나 — 누르면 지금 상태를 봅니다', 'up']
   ];
+  /* ★★ 2026-08-14 — [알겠어요]를 **재서** 아래 띠 위에 올린다.
+     ------------------------------------------------------------
+     CSS 는 `bottom: 96px` 로 박혀 있었고 주석은 "액션바 **위**로 올린다"고 적어 두었다.
+     그런데 아래 띠에 탭 한 줄이 늘면서(기획 §C) 띠가 **112 → 163px** 이 됐다 —
+     96px 는 그 안이라 단추가 [다음 날] 위에 얹혔고, 그러면 [다음 날] 설명이 갈 데를
+     잃어 143px 밖으로 밀려났다(`probe_guide_fit` 실측 · 세 크기 모두).
+     ⇒ 숫자를 새로 박지 않는다. 띠 높이는 고정이 아니다 — 퀘스트 줄이 두 줄이 되거나
+       물주기 단추가 뜨면 또 커진다. **그때그때 잰다.** */
+  try {
+    const bh = $('bottom').getBoundingClientRect().height || 0;
+    const cb = $('guideClose');
+    if (cb && bh) cb.style.bottom = `calc(var(--safe-b) + ${Math.round(bh + 12)}px)`;
+  } catch { }
   /* 안내판 자신의 글자(제목·부제·[알겠어요])도 자리를 차지한다 — 미리 넣어 두면
      아래 밀어내기가 이것들도 피해 간다. 실제로 부제와 상단 설명이 겹쳐 둘 다 안 읽혔다. */
   const placed = ['gtitle', 'gsub', 'guideClose']
@@ -2675,6 +2761,11 @@ function updateHint() {
      ★★ 2026-08-11 — 말을 **[방]으로 고쳤다.** [가방] 단추는 늘 [가방] 탭을 여는데
        살림 상자(`#tutBox`)는 [방] 탭에 있다 — 「가방에서 살림을 봅니다」를 따라가면
        재고 목록이 나오고 끝난다(실측 Day 51). */
+  /* ★ 2026-08-14 — 이제 **[방] 단추가 아래 띠에 있다**(기획 §C). 예전에는 [가방]을 가리키며
+     「[방] 탭에서 봅니다」라고 말했다 — 가리키는 곳과 가라는 곳이 달랐다.
+     ⇒ 가리킬 것을 그 단추로 옮긴다. 없으면(넓은 화면) 예전대로 [가방]으로 떨어진다. */
+  if (fp.completed && ts && ts.enabled && !sheetOpen && onScreen($('navRoom')))
+    return hintAt($('navRoom'), '여기서 살림을 봅니다');
   if (fp.completed && ts && ts.enabled && !sheetOpen && onScreen($('openBag')))
     return hintAt($('openBag'), '[방] 탭에서 살림을 봅니다');
   /* ⑤ 그 밖에는 하루를 진행한다.
@@ -4191,6 +4282,28 @@ function stageBusy() {
       || st.classList.contains('placing');
 }
 
+/* ★★ 2026-08-14 — **이번 수확이 곳간에 넣은 값** (기획 §A ①).
+   아래 한 줄이 「식비 N원을 아꼈습니다」라고 말할 유일한 근거다.
+   ⚠ 숫자를 여기서 만들지 않는다. 거둘 때 코어가 낸 `cycleSavedWon` 을 그대로 들고 있고,
+     그것이 없으면(앱을 껐다 켠 판) 시루에 남아 있는 `savedWon` 을 더한다 — 둘 다 코어 값이다.
+   ⚠ 「한 회전분 3,000원」 같은 **규칙값으로 메꾸지 않는다.** 밝은 자리에서 거두면 실제로
+     덜 받는데 그때 규칙값을 적으면 화면이 거짓말을 한다. 못 세면 0을 내고 그 문구를 안 쓴다. */
+let lastHarvest = null;                 // { day, won } — 그날 하루만 쓴다
+function lastHarvestSavedWon() {
+  if (lastHarvest && lastHarvest.day === S.day) return lastHarvest.won;
+  let sum = 0;
+  try {
+    for (const site of cropSites(S.firstPlay))
+      for (const p of ((site && site.pots) || []))
+        if (p && p.harvested) sum += Math.round(p.savedWon || 0);
+  } catch { }
+  return sum;
+}
+function noteHarvest(r) {
+  try { lastHarvest = { day: S.day, won: Math.round(r.cycleSavedWon || r.savedWon || 0) }; }
+  catch { lastHarvest = null; }
+}
+
 function drawJourney() {
   const fp = S.firstPlay;
   if (!fp || !fp.enabled) return;
@@ -4275,11 +4388,61 @@ function drawJourney() {
          길을 여는 것은 `🌱 씨앗이 없습니다` 말풍선 하나뿐이었다(실측 Day 7·15·23·31).
          ⚠ 재고를 여기서 새로 세지 않는다 — `shopStatus`·`cropHarvestStatus` 가 낸 값을 읽을 뿐이다.
          ⚠ 거둔 시루가 있을 때만 말한다. 아직 안 거뒀으면 씨앗이 0이어도 할 일이 아니다. */
+      /* ★★★ 2026-08-14 — **거둔 뒤의 한 회전을 걸음마다 말한다** (기획 §A).
+         ------------------------------------------------------------
+         예전에는 이 자리가 두 마디뿐이었다: 「N번 더 거두면 화분이 옵니다」와 「씨앗이 없습니다」.
+         그래서 ① **거둔 그 순간이 아무 말도 안 했고**(주기가 며칠인지 · 얼마를 아꼈는지),
+         ② 다시 심은 뒤에 「자리를 옮겨도 된다」를 말하는 화면이 축하 배너 한 장뿐이었다
+         (`guide-to-plan` P-03). 그런데 **자리마다 밝기가 다르다**가 이 게임의 핵심이고,
+         회전이 두 번째로 돌 때가 그 말을 할 제일 좋은 때다 — 첫 판은 튜토가 자리를 정해 주지만
+         둘째 판부터는 자리가 플레이어의 선택이다.
+         ⇒ 네 걸음을 **상태로** 가른다. 한 번에 하나만 낸다:
+             ① 오늘 거뒀다 · 아직 다시 안 심음   주기와 아낀 값
+             ② 거둔 시루가 있고 씨앗이 0         주문해라 (이미 주문했으면 기다리라고 말한다)
+             ③ 거둔 시루가 있고 씨앗이 있다      다시 심어라
+             ④ 다시 심었고 물 전                ★ 자리를 옮겨도 된다 · 어두울수록 잘 큰다
+             ⑤ 그 밖                            예전 그대로 (남은 회전 수)
+         ⚠ **값을 문구에 박지 않는다.** 주기(5일)는 `crop.harvestDays`, 배송(하루)은 상점
+           카탈로그의 `leadDays`, 아낀 값은 실제로 곳간에 들어간 값에서 읽는다. 이 저장소는
+           낡은 주석·박힌 상수가 「재는 자」가 된 사고를 열두 번 냈다(START-HERE §2.6).
+         ⚠ ②③ 가 ④ 보다 앞이다 — ④ 는 **해도 되는 일**이고 ②③ 은 **해야 하는 일**이다. */
       let seeds = 0, harvested = 0;
-      try { seeds = (shopStatus(S).stock || {}).bean_seed || 0; } catch { }
+      const seedId = (() => { try { return cropKindOf('beansprout').seedItemId; }
+                              catch { return 'bean_seed'; } })();
+      let onTheWay = 0;
+      try {
+        const ss = shopStatus(S);
+        seeds = (ss.stock || {})[seedId] || 0;
+        onTheWay = (ss.orders || [])
+          .filter(o => o.itemId === seedId && o.daysLeft >= 0)
+          .reduce((a, o) => a + (o.qty || 0), 0);
+      } catch { }
       try { harvested = (cropHarvestStatus(S) || {}).harvestedCount || 0; } catch { }
-      if (harvested > 0 && seeds <= 0)
-        return '콩 씨앗이 없습니다. [상점]에서 주문하면 하루 뒤에 옵니다.';
+      /* 다시 심고 **물을 기다리는** 콩나물 시루 — ④ 의 유일한 근거다 */
+      let waiting = 0;
+      try {
+        waiting = cropPotList(fp, S.day)
+          .filter(r => r.kind === 'beansprout' && r.placed && r.needsWater).length;
+      } catch { }
+
+      /* ① 거둔 그 순간. `food.harvestDay` 는 코어가 적어 둔 「마지막으로 거둔 날」이다 */
+      if (food && food.harvestDay === S.day && !waiting) {
+        const days = crop.harvestDays || (fp.rules && fp.rules.harvestDays) || 0;
+        const won = lastHarvestSavedWon();
+        if (days && won)
+          return `${days}일이면 한 판입니다 · 식비 ${won.toLocaleString()}원을 아꼈습니다`;
+      }
+      if (harvested > 0 && seeds <= 0) {
+        /* 주문해 뒀는데 또 주문하라고 하면 두 번 산다 — 「오는 중」을 갈라 말한다 */
+        if (onTheWay > 0) return '콩 씨앗이 오는 중입니다. 도착하면 다시 심습니다.';
+        let lead = 0;
+        try { lead = (catalogList().find(x => x.id === seedId) || {}).leadDays || 0; } catch { }
+        return lead ? `씨앗을 주문하세요 — [상점]에서 ${lead}일 뒤에 옵니다.`
+                    : '씨앗을 주문하세요 — [상점]에 있습니다.';
+      }
+      if (harvested > 0) return '씨앗이 왔습니다. 시루에 다시 심으세요.';
+      /* ④ ★ 이 게임의 핵심을 대놓고 말하는 자리 */
+      if (waiting) return '자리를 옮겨도 됩니다 — 콩나물은 어두울수록 잘 큽니다.';
       return n ? `콩나물을 수확했습니다. ${n}번 더 거두면 새로운 화분이 옵니다.`
                : '콩나물을 수확했습니다. 새로운 화분이 옵니다.';
     })(),
@@ -4579,6 +4742,7 @@ const siruWater = guard((id, kind) => {
 });
 const siruHarvest = guard((id, kind) => {
   const r = harvestCrop(S, io, { potIds: [id] });
+  noteHarvest(r);           /* 아래 한 줄이 「얼마를 아꼈나」를 말할 근거 (§A ①) */
   let ko = '콩나물'; try { ko = cropKindOf(kind).ko; } catch { }
   banners([{ title: `🥣 ${ko}을(를) 거뒀습니다`,
              sub: `${r.qualityKo || ''} · 곳간에 ${Math.round(r.savedWon || r.cycleSavedWon || 0).toLocaleString()}원` }]);
@@ -6986,6 +7150,7 @@ const reallyHarvest = guard(() => {
   try { ripeOne = (cropPotList(S.firstPlay, S.day) || []).filter(x => x.ready)
                    .sort((a, b) => (b.ageDays || 0) - (a.ageDays || 0))[0] || null; } catch { }
   const r = harvestCrop(S, io, ripeOne ? { potIds: [ripeOne.id] } : {});
+  noteHarvest(r);           /* 아래 한 줄이 「얼마를 아꼈나」를 말할 근거 (§A ①) */
   lastTurn = lastTurn || null;
   banners([{ title: `🥣 콩나물을 거뒀습니다`,
              sub: `${r.qualityKo || ''} · 곳간에 ${Math.round(r.savedWon || r.cycleSavedWon || 0).toLocaleString()}원` }]);

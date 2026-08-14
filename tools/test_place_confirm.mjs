@@ -174,7 +174,23 @@ const floor = await page.eval(`(()=>{ const rv=window.__rv;
   for (const fy of [0.80,0.74,0.68,0.86,0.62]) for (const fx of [0.5,0.38,0.62,0.28,0.72]) {
     const x=c.left+c.width*fx, y=c.top+c.height*fy;
     let h=null; try{ h=rv.surfaceAt(x,y,{potD:0.24}); }catch(e){}
-    if(h&&h.ok&&!h.onUid) return {x,y};
+    if(!h||!h.ok||h.onUid) continue;
+    /* ★★ 2026-08-15 — **추천 자리에서 44px 밖인 점만 고른다.**
+       ══════════════════════════════════════════════════════════════
+       ⚠ 이 방패가 없어서 3-1 이 화면 기하에 기대고 있었다. 아래 띠가 한 줄 늘어
+         방이 51px 짧아지자, 여기서 고른 바닥 점이 banjiha-dresser:0 에서 31.6px
+         안으로 들어갔다. 그러면 끌기가 **그 추천 자리에 붙어** 시루가 서랍장 위에 서고,
+         고른 바닥은 여전히 비어 있어 「놓은 뒤에는 그 바닥이 막힌다」가 거짓이 된다.
+       ★ **규칙은 멀쩡했다** — 붙기만 막고 다시 재니 free:crop_01_01 에 서고
+         그 바닥이 「가구·벽에 걸립니다」로 제대로 막혔다.
+       ★ 형제 검사 test_uiwire.mjs 의 pickFloor 에는 **이 방패가 원래 있었다.**
+         같은 함정을 거기서 먼저 겪고 막아 둔 것이다. 여기로 옮겨 온다.
+       ⚠ 이건 검사를 무르게 하는 것이 **아니다.** 단언(3-1)은 그대로 돌고,
+         고르는 점만 「끌기가 안 붙는 곳」으로 바로잡는다.
+       ⚠⚠ 이 주석은 **템플릿 문자열 안**이다. 백틱을 쓰면 문자열이 끊긴다(한 번 그랬다). */
+    if (h.nearest) { let sp=null; try{ sp=rv.screenPosOf(h.nearest.slotId); }catch(e){}
+      if (sp && Math.hypot(c.left+sp.x-x, c.top+sp.y-y) <= 44) continue; }
+    return {x,y};
   }
   for (const fy of [0.80,0.74,0.68]) for (const fx of [0.5,0.38,0.62]) {
     const x=c.left+c.width*fx, y=c.top+c.height*fy;
