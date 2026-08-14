@@ -5015,11 +5015,43 @@ function bootProgress(p) {
   msg.textContent = p.ko || '준비하는 중…';
   bar.firstElementChild.style.width = (BOOT_STEP[key] || 10) + '%';
 }
+/* ★★ 2026-08-14 — **방이 안 뜨면 가방으로라도 놀게 한다** (박사님: *"방전경이 계속안나온다.
+   폰으로하는중"*).
+   ------------------------------------------------------------
+   이 게임에는 「3D 없이 가방으로 자리를 고른다」는 대비책이 **이미** 있다
+   (§bootRoomView 의 import 실패 가지 · `__byeotRoomFallback`). 그런데 그것은
+   **던질 때만** 켜진다. 폰에서 WebGL 이 안 뜨거나 GLB 를 못 받아 **그냥 멈추면**
+   아무도 던지지 않으므로 대비책이 영영 안 켜지고, 화면은 부팅 그림 그대로 남는다.
+   ⇒ 시간으로도 켠다. 30초 안에 방이 안 서면 대비책을 켜서 **게임은 하게 한다.**
+   ⚠ **취소가 아니다.** 방뷰는 계속 만들어지고, 늦게라도 서면 `roomWatch.clear()` 가
+     대비책을 걷는다 — 느린 폰에서 30초에 화면을 뺏으면 그게 더 나쁘다. */
+const roomWatch = {
+  t: null,
+  fired: false,
+  start() {
+    this.t = setTimeout(() => {
+      this.fired = true;
+      if ($('stage').classList.contains('room-ok')) return;   // 이미 떴으면 가만둔다
+      window.__byeotRoomFallback(
+        '방 전경이 이 기기에서 안 뜹니다.<br>그래도 <b>게임은 됩니다</b> — 아래 <b>가방</b>에서 자리를 골라 놓으세요.');
+    }, 30000);
+  },
+  clear() {
+    clearTimeout(this.t);
+    /* 늦게 떴으면 덮개를 걷는다 — 방이 뒤에 멀쩡히 서 있는데 안내가 덮고 있으면 그게 거짓말이다 */
+    if (this.fired && $('stage').classList.contains('room-ok')) {
+      const fb = $('roomFallback'); if (fb) fb.style.display = 'none';
+      $('stage').classList.remove('room-loading');
+    }
+  }
+};
 async function bootRoomView() {
   bootProgress({ phase: 'start', ko: '방을 준비하는 중…' });
+  roomWatch.start();
   let mod = null;
   try { mod = await import('./src/game/room_view.js'); }
   catch {
+    roomWatch.clear();
     bootProgress(null);
     window.__byeotRoomFallback(
       '방 전경은 아직 준비 중입니다.<br>화분을 탭하는 대신 아래 <b>가방</b>에서 자리를 고를 수 있습니다.');
@@ -5044,6 +5076,7 @@ async function bootRoomView() {
         else console.warn('[방]', msg);
       }
     });
+    roomWatch.clear();                       /* 방이 떴다 — 아래 감시는 할 일이 없다 */
     /* 진단용 손잡이. 브라우저 콘솔에서 방 상태를 볼 수 있게 낸다 —
        읽기용이고 게임은 이걸 안 쓴다(밖에서 켜면 검증이 장식이 되는 것과 같은 이유로 세터는 없다). */
     window.__rv = roomView; window.__picked = picked; window.__drag = drag;
@@ -5126,6 +5159,7 @@ async function bootRoomView() {
     }
   } catch (e) {
     bootProgress(null);
+    roomWatch.clear();
     window.__byeotRoomFallback('방을 그리지 못했습니다 — ' + (e && e.message || e));
   }
 }
