@@ -885,6 +885,14 @@ export function createFirstPlayState(opt = {}) {
       /* ★ 곳간은 **원**으로 센다 (2026-08-04). 예전에는 끼니였는데, 한 회전 절감이
          3,000원이라 1끼(2,500원) 단위로는 안 떨어진다. 끼니는 품질 라벨로만 남는다. */
       pantryWon: 0,
+      /* ★★ 곳간을 이루는 **꾸러미 목록** (2026-08-15 · 아래 §곳간 판매).
+         한 꾸러미 = **한 번의 수확**이다 — 시루 하나를 거두면 하나가 생긴다.
+         ⚠ **정본은 위 `pantryWon`(총액)이고, 여기는 「그 총액이 무엇으로 이루어졌나」다.**
+           둘이 어긋나면 총액이 이긴다(`pantryLotsOf` 가 맞춰 준다). 그래서 먹기·쉬기·한도의
+           셈은 **한 글자도 안 바뀌었다** — 꾸러미는 그 위에 얹힌 설명이지 새 규칙이 아니다.
+         ★ 왜 목록이 필요한가 — 박사님이 *"누르면 몇 개 팔지"* 를 원하셨다. 원(돈)에는
+           개수도 순서도 없다. 꾸러미가 있어야 「2판 팔기」가 거짓말이 아닌 말이 된다. */
+      pantryLots: [],
       /* ★ 겹침을 세는 두 칸 (2026-08-04 · §겹침) — "그날 몇 번째로 거두나"의 기억이다.
          날이 바뀌면 `harvestDay` 가 안 맞아 저절로 0부터 다시 센다. */
       harvestDay: null,
@@ -911,7 +919,11 @@ export function createFirstPlayState(opt = {}) {
            한 번에 끝난다. 중간 상태가 있으면 그 사이에 저장하는 판이 생긴다. */
       surplusWon: 0,
       lastSurplusWon: 0,             // 직전 수확이 낸 잉여 (표시용)
-      totalSurplusSoldWon: 0         // 지금까지 실제로 받은 돈 (판매가를 곱한 뒤의 값)
+      totalSurplusSoldWon: 0,        // 지금까지 실제로 받은 돈 (판매가를 곱한 뒤의 값)
+      /* ★ 곳간 채소를 팔아 받은 돈 누계 (2026-08-15 · §곳간 판매).
+         잉여(`totalSurplusSoldWon`)와 **갈라 센다** — 잉여는 버릴 것을 넘긴 것이고
+         이쪽은 **밥을 팔아치운 것**이라, 살림을 볼 때 뜻이 다르다. */
+      totalPantrySoldWon: 0
     },
     monstera: {
       arrived: false,
@@ -1605,6 +1617,11 @@ export function harvestBeansprout(fp, opt = {}) {
        순간 대부분이 쉬어서 버려져 **겹침 체감이 재기도 전에 상한이 먼저 잘라 버린다.** */
   const capWon = pantryCapWon(fp);
 
+  /* ★ 꾸러미 목록을 **먼저 총액에 맞춰 둔다** (2026-08-15 · §곳간 판매).
+     여기서 한 번 맞춰 놓고 아래에서 밀어 넣는다 — 넣은 뒤에 맞추면 방금 넣은 몫이
+     「기록 없는 옛 몫」으로 한 번 더 채워져 꾸러미가 두 배가 된다. */
+  const lots = pantryLotsOf(fp);
+
   /* ★★ 겹침 순번은 **그날 몇 번째로 거두는가**다(§겹침).
      [수확하기]는 익은 시루를 한 번에 다 거두므로 보통 이 한 번의 셈으로 끝난다. 그래도
      같은 날 두 번 불릴 수 있으니(자동수확 보상·화면 두 번 누름) **게임일로 이어 센다** —
@@ -1647,6 +1664,12 @@ export function harvestBeansprout(fp, opt = {}) {
       const spoiledWon = Math.max(0, pantry - capWon);
       pantry -= spoiledWon;
       fp.food.pantryWon = pantry;
+      /* ★ 꾸러미 한 개를 뒤에 붙인다 (2026-08-15 · §곳간 판매).
+         **총액은 위에서 이미 정해졌다** — 여기서 하는 일은 「방금 든 몫이 무엇이었나」를
+         적어 두는 것뿐이라 셈이 안 움직인다. 쉬어서 빠진 몫은 곳간에 안 들어갔으므로
+         꾸러미에도 안 들어간다(`savedWon - spoiledWon`). */
+      const lotWon = Math.max(0, Math.round(savedWon - spoiledWon));
+      if (lotWon > 0) lots.push({ kind: kindId, day, won: lotWon, meals: quality.meals });
 
       p.harvested = true;
       p.avgDli = avgDli;
@@ -1796,6 +1819,10 @@ export function eatFromPantry(fp) {
     return { ...zero, cashFoodWon: fp.food.cashFoodWon };
   }
   fp.food.pantryWon -= use;
+  /* ★ 먹은 만큼 꾸러미를 **앞에서부터** 덜어 낸다 (2026-08-15 · §곳간 판매).
+     먼저 거둔 것부터 먹는다(FIFO) — 총액은 위에서 이미 줄었고, 이 줄은 「어느 꾸러미가
+     줄었나」를 맞출 뿐이라 절감액이 안 움직인다. */
+  pantryLotsOf(fp);
   fp.food.lastFoodSavedWon = use;
   fp.food.totalFoodSavedWon += use;
   fp.food.cashFoodWon = rules.dailyFoodWon - use;
@@ -1880,6 +1907,126 @@ export function takeCropSurplus(fp) {
   fp.food.surplusWon = 0;
   fp.food.totalSurplusSoldWon = Math.round((fp.food.totalSurplusSoldWon || 0) + q.won);
   return q;
+}
+
+/* ============================================================
+   ★★★ §곳간 판매 — **밥으로 쓸 것도 판다** (2026-08-15 신설)
+   ------------------------------------------------------------
+   박사님 확정(2026-08-15): *"채소는 상점에서 판매 가능하게 해줘. 누르면 몇개팔지 나오게도
+   해주고."* 이어서 ㉯(곳간 것도 팔게)를 고르시며 *"어차피 체력이 막고있어서 괜찮을거랴"*.
+
+   ## ⚠⚠ 이 절은 위 §잉여 판매의 약속 하나를 **일부러 깬다**
+   §잉여 판매는 *"파는 함수는 곳간을 한 번도 안 만진다 — 그래서 「끼니는 안 팔린다」가
+   검사로 지키는 약속이 아니라 **구조**다"* 라고 적어 두었다. 이 절의 `takePantryCrop` 은
+   **곳간을 만진다.** 그 구조적 보장이 여기서 사라진다.
+   ⇒ **그러면 무엇이 대신 지키나 — 값이 지킨다.**
+     곳간 1원은 밥값 1원인데 팔면 **0.85원**이다. 즉 **팔면 늘 손해**다. 이득을 보려고 파는
+     길이 애초에 없으므로 「식물로 밥값을 아낀다」가 「식물을 판다」로 안 바뀐다.
+     파는 것은 **급전이 필요할 때 손해를 무는 선택**이 된다.
+   ★ 그 위끝의 이유는 이미 이 파일에 적혀 있다(§firstPlayRulesFromBalance):
+     *"1.00 을 넘기면 「밥으로 먹는 것보다 파는 게 낫다」가 되어 이 게임의 뼈대가 뒤집힌다."*
+     **0.85 는 그 아래**라 뼈대가 안 뒤집힌다. ⇒ 값을 새로 만들지 않았다. `cropSurplusSaleRate`
+     하나를 잉여와 **같이 쓴다.** 값이 둘이 되면 「어느 쪽이 이득인가」라는 없던 셈이 생긴다.
+   ★ 그리고 **손해를 화면이 반드시 말해야 한다.** 구조가 못 지키게 된 것을 말이 지킨다 —
+     `pantrySaleQuote` 가 `lossWon` 을 같이 내는 이유가 그것이다.
+
+   ## 무엇을 파는가 — **꾸러미(한 번의 수확) 단위**
+   `fp.food.pantryLots` 가 `{ kind, day, won, meals }` 의 줄이다. 먼저 거둔 것이 앞이다.
+   파는 것도 **앞에서부터**(FIFO) — 먹는 순서와 같다. 순서를 갈라 두면 「먹을 것만 남기고
+   좋은 것을 판다」는 손장난이 생기고, 그건 이 게임이 재는 축이 아니다.
+
+   ## ★ 총액과 목록 중 어느 쪽이 정본인가 — **총액(`pantryWon`)이다**
+   목록은 「그 총액이 무엇으로 이루어졌나」를 적은 것이고, 어긋나면 `pantryLotsOf` 가
+   총액에 맞춰 목록을 고친다. 이렇게 둔 까닭 셋:
+     ㉠ 먹기·한도·쉬기의 셈이 **한 글자도 안 바뀐다** — 경제 표를 다시 안 재도 된다
+     ㉡ 옛 세이브(목록이 없는 판)가 저절로 열린다 — 총액을 하루치씩 쪼개 채운다
+     ㉢ 검사·하네스가 `fp.food.pantryWon` 에 직접 값을 넣는 데가 여러 곳인데(예:
+        `test_cropsale` 이 한도까지 채운다), 목록이 정본이면 그 줄들이 조용히 거짓이 된다
+   ⚠ 그 대가로 **하루 몫(3,000원)이 꾸러미 경계에 안 맞으면 꾸러미가 잘린다.**
+     2,000원짜리 둘에서 3,000원을 먹으면 앞은 사라지고 뒤가 1,000원으로 남는다.
+     그건 「반 판」이 아니라 **먹다 남은 판**이고, 화면은 판마다 제 값을 적으므로 안 속인다.
+============================================================ */
+
+/* 옛 세이브의 곳간(원)을 꾸러미로 쪼갤 때의 한 덩이 — **콩나물 한 회전분**이다.
+   ⚠ 새 값이 아니다. `rules.cropKindSavedWon[0]`(정본)을 그대로 읽는다. */
+function pantryLotChunkWon(fp) {
+  const rules = fp && fp.rules;
+  const table = (rules && rules.cropKindSavedWon) || FIRST_PLAY_RULES.cropKindSavedWon;
+  const v = Math.round((table && table[0]) || 0);
+  return v > 0 ? v : 1;
+}
+
+/* ★ 꾸러미 목록을 **총액에 맞춰** 낸다. 목록이 없거나 어긋나면 여기서 고쳐진다.
+   ⚠ 상태를 고치기는 하지만 **총액(`pantryWon`)은 한 푼도 안 건드린다.** */
+export function pantryLotsOf(fp) {
+  if (!fp || !fp.food) return [];
+  const total = Math.max(0, Math.round(fp.food.pantryWon || 0));
+  const lots = (Array.isArray(fp.food.pantryLots) ? fp.food.pantryLots : [])
+    .filter(l => l && Number.isFinite(l.won) && Math.round(l.won) > 0)
+    .map(l => ({
+      kind: typeof l.kind === 'string' ? l.kind : null,
+      day: Number.isInteger(l.day) ? l.day : null,
+      won: Math.max(0, Math.round(l.won)),
+      meals: Number.isFinite(l.meals) ? Math.round(l.meals) : 0
+    }));
+  let have = lots.reduce((a, l) => a + l.won, 0);
+  if (have > total) {
+    /* 총액이 더 적다 — **앞(먼저 거둔 것)부터** 덜어 낸다. 먹는 순서가 그렇다 */
+    let over = have - total;
+    while (over > 0 && lots.length) {
+      if (lots[0].won <= over) { over -= lots[0].won; lots.shift(); }
+      else { lots[0].won -= over; over = 0; }
+    }
+  } else if (have < total) {
+    /* 총액이 더 많다 — 꾸러미 기록이 없는 몫이다(옛 세이브). 하루치씩 쪼개 **뒤에** 붙인다.
+       ⚠ `kind: null` 이다. 무엇을 거둔 것인지 **모른다** — 지어내지 않는다. */
+    let rest = total - have;
+    const chunk = pantryLotChunkWon(fp);
+    while (rest > 0) {
+      const w = Math.min(chunk, rest);
+      lots.push({ kind: null, day: null, won: w, meals: 0 });
+      rest -= w;
+    }
+  }
+  fp.food.pantryLots = lots;
+  return lots;
+}
+
+/* 곳간을 몇 판 팔면 얼마인가 — **상태를 안 바꾼다**(단, 목록을 총액에 맞추기는 한다).
+   count 를 안 주면 **전부**다.
+   반환 { lots · maxLots · pendingWon(곳간에서 나갈 원) · rate · won(받을 돈) ·
+          lossWon(손해) · pantryWon(지금 곳간) · picked[] · canSell } */
+export function pantrySaleQuote(fp, count) {
+  const lots = pantryLotsOf(fp);
+  const maxLots = lots.length;
+  const n = Number.isFinite(count)
+    ? Math.max(0, Math.min(maxLots, Math.floor(count)))
+    : maxLots;
+  const picked = lots.slice(0, n);
+  const pendingWon = picked.reduce((a, l) => a + l.won, 0);
+  const rate = cropSurplusRateOf(fp);
+  const won = Math.round(pendingWon * rate);
+  return {
+    lots: n, maxLots, pendingWon, rate, won,
+    /* ★ 손해를 **여기서 세어 준다.** 화면이 다시 세면 반올림이 갈려 두 수가 어긋난다 */
+    lossWon: Math.max(0, pendingWon - won),
+    pantryWon: Math.max(0, Math.round(fp && fp.food ? fp.food.pantryWon || 0 : 0)),
+    picked: picked.map(l => ({ ...l })),
+    canSell: n > 0 && pendingWon > 0 && won > 0
+  };
+}
+
+/* 곳간에서 앞의 n 판을 덜어 내고 받을 값을 낸다. **지갑은 안 만진다**
+   (§잉여 판매의 마지막 줄과 같은 규칙 — 돈으로 바꾸는 것은 `state.sellPantryCrop`). */
+export function takePantryCrop(fp, count) {
+  if (!fp || !fp.food) throw new Error('[곳간] 첫 플레이 상태가 없습니다');
+  const q = pantrySaleQuote(fp, count);
+  if (q.lots <= 0 || q.pendingWon <= 0) return { ...q, won: 0, lossWon: 0 };
+  const lots = pantryLotsOf(fp);
+  fp.food.pantryLots = lots.slice(q.lots);
+  fp.food.pantryWon = Math.max(0, Math.round((fp.food.pantryWon || 0) - q.pendingWon));
+  fp.food.totalPantrySoldWon = Math.round((fp.food.totalPantrySoldWon || 0) + q.won);
+  return { ...q, pantryWon: fp.food.pantryWon };
 }
 
 /* ★ 다시 심는다 — **막다른 길을 없애는 함수** (2026-08-03 신설).

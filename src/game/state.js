@@ -17,6 +17,8 @@ import { createFirstPlayState, placeBeansprout, placeCrop, resowBeansprout, wate
          beansproutWaterStatus, beansproutHarvestStatus, BEANSPROUT_ID,
          CROP_SITE_IDS, cropKindOf, cropSites, cropSiteOf,
          cropSurplusQuote, takeCropSurplus,
+         /* ★ 2026-08-15 · 곳간 채소 판매 (first_play §곳간 판매) */
+         pantrySaleQuote, takePantryCrop, pantryLotsOf,
          /* ★ 2026-08-09 · 시루 개체화 (first_play §자리는 시루마다 따로다) */
          ensureCropPots, syncCropLead, addCropPot, cropPotOf, adoptCropSpotToPots,
          placedCropPots, idleCropPots, cropPotList,
@@ -887,6 +889,79 @@ export function cropSurplusStatus(S) {
   const fp = S && S.firstPlay;
   if (!fp || !fp.enabled) return { pendingWon: 0, rate: 0, won: 0, canSell: false };
   return cropSurplusQuote(fp);
+}
+
+/* ★★ 곳간 채소를 판다 — **몇 판인지 골라서** (2026-08-15 신설 · first_play §곳간 판매).
+   ------------------------------------------------------------
+   `sellCropSurplus` 와 같은 결이다: 규칙은 first_play, 지갑은 shop, 묶는 것은 여기.
+   ⚠ 다른 점 하나가 전부다 — **이건 곳간(끼니)을 판다.** 잉여는 어차피 버릴 것을 넘기는
+     것이라 잃는 게 없었지만, 이쪽은 **먹을 것을 파는 것**이라 판 만큼 밥이 준다.
+     그래서 로그가 손해를 반드시 적는다(아래 pushLog). 화면도 같은 말을 한다.
+   ★ 값은 잉여와 **같은 `cropSurplusSaleRate`(0.85)** 다. 새 값을 안 만들었다 —
+     둘이 갈리면 「어느 쪽으로 파는 게 이득인가」라는, 이 게임이 재지 않는 셈이 생긴다.
+   ★ 체력을 안 쓴다 — 파는 일에 체력을 물린 적이 없다(`sellPot`·`sellCutting`·잉여 넘기기).
+     박사님이 *"어차피 체력이 막고있어서 괜찮을거랴"* 라 하신 것은 **채소를 만드는 쪽**의
+     체력이다. 파는 손에 체력을 새로 물리는 것은 이 작업이 정할 일이 아니다.
+
+   count 를 안 주면 **전부**다. 반환 { won, pendingWon, lossWon, lots, rate, pantryWon, ... } */
+export function sellPantryCrop(S, count, opt = {}) {
+  const fp = S && S.firstPlay;
+  if (!fp || !fp.enabled)
+    throw new Error('[곳간] 첫 플레이 상태가 없습니다 — 팔 채소가 없습니다');
+  const q = pantrySaleQuote(fp, count);
+  if (q.maxLots <= 0) {
+    const e = new Error('[곳간] 곳간이 비어 있습니다 — 거둬서 채운 뒤에 팔 수 있습니다');
+    e.tutorialInput = true;                 // 안내지 고장이 아니다
+    throw e;
+  }
+  if (q.lots <= 0) {
+    const e = new Error('[곳간] 몇 판을 팔지 골라 주세요 (지금 0판입니다)');
+    e.tutorialInput = true;
+    throw e;
+  }
+  if (q.won <= 0) {
+    const e = new Error(`[곳간] 지금 팔면 0원입니다 — 넘기는 값이 정가의 ` +
+                        `${Math.round(q.rate * 100)}% 입니다`);
+    e.tutorialInput = true;
+    throw e;
+  }
+  const taken = takePantryCrop(fp, count);
+  /* 무엇을 팔았나 — 종류별로 센다. 「콩나물 2판」처럼 적으려고 */
+  const byKind = new Map();
+  for (const l of taken.picked) {
+    const ko = l.kind ? cropKindOf(l.kind).ko : '곳간에 있던 것';
+    byKind.set(ko, (byKind.get(ko) || 0) + 1);
+  }
+  const whatKo = [...byKind].map(([ko, n]) => `${ko} ${n}판`).join(' · ') || `${taken.lots}판`;
+  const r = creditCropSurplus(S, taken.won);
+  /* ⚠ `opt.log` 를 안 넘긴다 — 아래에서 한 줄을 적는다(두 줄이 되면 더 나쁘다) */
+  pushLog(S, `💰 곳간 채소를 팔았습니다 — ${whatKo}(밥값 ${taken.pendingWon.toLocaleString()}원어치)을 ` +
+             `${Math.round(taken.rate * 100)}% 에 넘겨 ${taken.won.toLocaleString()}원 ` +
+             `(${taken.lossWon.toLocaleString()}원 손해 · 곳간에 ${taken.pantryWon.toLocaleString()}원 남음)`);
+  return { ...r, lots: taken.lots, picked: taken.picked, whatKo,
+           pendingWon: taken.pendingWon, rate: taken.rate, won: taken.won,
+           lossWon: taken.lossWon, pantryWon: taken.pantryWon,
+           totalSoldWon: fp.food.totalPantrySoldWon,
+           events: [{ id: 'pantry_crop_sold', ko: '곳간 채소를 팔았습니다',
+                      won: taken.won, pendingWon: taken.pendingWon,
+                      lossWon: taken.lossWon, lots: taken.lots, rate: taken.rate }] };
+}
+
+/* 곳간에 몇 판이 있고 n 판을 팔면 얼마인가 — **상태를 안 바꾼다.**
+   ⚠ 꾸러미 목록을 총액에 맞추기는 한다(옛 세이브를 여는 길이라 피할 수 없다). */
+export function pantrySaleStatus(S, count) {
+  const fp = S && S.firstPlay;
+  if (!fp || !fp.enabled)
+    return { lots: 0, maxLots: 0, pendingWon: 0, rate: 0, won: 0, lossWon: 0,
+             pantryWon: 0, picked: [], list: [], canSell: false };
+  const q = pantrySaleQuote(fp, count);
+  return {
+    ...q,
+    /* 화면이 「콩나물 3,000원 (7일차)」를 적을 수 있게 이름을 붙여 낸다 */
+    list: pantryLotsOf(fp).map(l => ({
+      ...l, kindKo: l.kind ? cropKindOf(l.kind).ko : '곳간에 있던 것'
+    }))
+  };
 }
 
 /* 추천 자리에 놓는다(예전 경로). 좌표까지 같이 세운다. */

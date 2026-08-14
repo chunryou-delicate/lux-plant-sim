@@ -1511,11 +1511,40 @@
         <div id="shopPending" class="itemline"></div>
         <div class="btns">
           <!-- ★잉여 채소 넘기기 (2026-08-06 · docs/handoff/cropsale-to-plan.md).
-               팔 것이 있을 때만 뜬다 — 늘 띄우면 "왜 회색이지"가 된다. -->
+               팔 것이 있을 때만 뜬다 — 늘 띄우면 "왜 회색이지"가 된다.
+               ⚠ 2026-08-15 재확인 — **그대로 둔다.** 「파는 길이 있다」는 바로 아래
+                 [곳간 채소 팔기]가 늘 보이며 말해 준다(비면 회색 + 까닭 한 줄).
+                 회색 단추를 둘로 늘릴 이유가 없고, 잉여는 **겹쳐 거뒀을 때만 생기는
+                 예외 몫**이라 늘 보이면 정상적인 길처럼 읽힌다. -->
           <button id="sellSurplus" class="ghost" style="display:none">잉여 채소 넘기기</button>
           <button id="sellPlant" class="ghost" disabled>몬스테라 팔기</button>
         </div>
         <div id="surplusHint" class="itemline"></div>
+        <!-- ══ ★곳간 채소 팔기 (2026-08-15 · docs/handoff/pantrysale-to-plan.md) ══════
+             박사님: *"채소는 상점에서 판매 가능하게 해줘. 누르면 몇개팔지 나오게도 해주고."*
+             ★ 잉여와 **다른 단추**다. 잉여는 어차피 버릴 몫이고 이쪽은 **먹을 것**이라,
+               한 단추로 묶으면 「무엇을 파는지」가 화면에서 사라진다.
+             ★★ 그래서 이 자리는 **손해를 반드시 말한다** — 곳간 1원은 밥값 1원인데
+               팔면 0.85원이다. 안 말하면 모르고 팔고 나서 뒤늦게 안다. -->
+        <div class="btns">
+          <button id="sellPantry" class="ghost" disabled>곳간 채소 팔기</button>
+        </div>
+        <div id="pantryHint" class="itemline"></div>
+        <div id="pantryPanel" class="box" style="display:none;margin:6px 0">
+          <div class="sub2">몇 판을 팔까요 — 먼저 거둔 것부터 나갑니다</div>
+          <div id="pantryList" class="itemline"></div>
+          <div class="btns">
+            <button id="pantryMinus" class="ghost">−</button>
+            <button id="pantryCount" class="ghost" disabled>1판</button>
+            <button id="pantryPlus" class="ghost">＋</button>
+            <button id="pantryAll" class="ghost">전부</button>
+          </div>
+          <div id="pantryQuote" class="quest" style="margin:8px 0"></div>
+          <div class="btns">
+            <button id="pantryGo">이 값에 팔기</button>
+            <button id="pantryCancel" class="ghost">그만두기</button>
+          </div>
+        </div>
         <div id="sellHint" class="itemline"></div>
       </div>
       <div id="shopClosed" class="ph">아직 주문할 수 있는 것이 없습니다.</div>
@@ -1869,7 +1898,9 @@ import { newState, SIM_MODES, pot0, pushLog, givePlant, hasPlant, ARRIVAL,
          /* ★ 2026-08-11 · 놓기와 심기를 가른다 — 놓인 재배판에 씨앗을 뿌린다 (state.js §sowCrop) */
          sowCrop,
          waterPot, potWaterStatus,
-         cropSurplusStatus, sellCropSurplus, reseatAllOnSlots } from './src/game/state.js';
+         cropSurplusStatus, sellCropSurplus,
+         /* ★ 2026-08-15 · 곳간 채소 팔기 (state.js §곳간 판매) */
+         pantrySaleStatus, sellPantryCrop, reseatAllOnSlots } from './src/game/state.js';
 import { catalogList, orderItem, shopStatus, priceOf, sellPot, sellCutting,
          stockOf, SELLABLE_CUTTING_STATUS, varieLeavesNeededFor } from './src/game/shop.js';
 /* ★ 삽수 — 규칙과 수치는 전부 propagation.js 것이다. 여기서는 부르기만 한다
@@ -3484,8 +3515,11 @@ function drawShop() {
   /* ── 잉여 채소 넘기기 (2026-08-06) ──
      ★ 파는 것은 **곳간이 못 받은 몫**뿐이다 — 겹쳐서 깎인 차액과 넘쳐서 쉰 몫.
        둘 다 정의상 곳간 밖이라 밥이 될 길이 없다. 끼니로 쓸 것은 안 팔린다.
-     ⚠ 값(정가의 몇 %)은 **아직 미확정**이다. 지금은 70% 로 돌고 있고, 그 사실을
-       화면이 말해 준다 — 안 말하면 확정된 값처럼 읽힌다. */
+     ⚠⚠ **2026-08-15 정정 — 여기 「값은 아직 미확정, 지금은 70%」라고 적혀 있던 것은
+       낡은 주석이었다.** 정본은 `characters.json._meta.cropSurplusSaleRate = 0.85` 고
+       화면도 처음부터 85% 라 말하고 있었다(guideaudit §4-5 가 화면으로 확인했다).
+       주석만 틀린 채 남아 「화면이 틀렸다」는 진단을 두 번 낳았다 — START-HERE §2.6 그대로다.
+     ★ 값은 화면이 그때그때 `sq.rate` 에서 읽는다. 여기에 숫자를 다시 적지 않는다. */
   let sq = null; try { sq = cropSurplusStatus(S); } catch { }
   const sBtn = $('sellSurplus'), sHint = $('surplusHint');
   const hasSurplus = !!(sq && sq.pendingWon > 0);
@@ -3494,9 +3528,11 @@ function drawShop() {
     sBtn.textContent = hasSurplus ? `잉여 채소 넘기기 (${sq.won.toLocaleString()}원)` : '잉여 채소 넘기기';
   }
   if (sHint) sHint.textContent = hasSurplus
-    ? `겹쳐서 못 받거나 쉰 몫 ${sq.pendingWon.toLocaleString()}원 — ` +
-      `${Math.round(sq.rate * 100)}%에 넘깁니다 (끼니로 쓸 몫은 안 팔립니다)`
+    ? `같은 날 겹쳐 거두거나 넘쳐서 쉰 몫 ${sq.pendingWon.toLocaleString()}원 — ` +
+      `${Math.round(sq.rate * 100)}%에 넘깁니다 (어차피 버릴 몫이라 잃는 것이 없습니다)`
     : '';
+
+  drawPantrySale();
 
   const pend = st.orders.filter(o => o.daysLeft >= 0);
   $('shopPending').textContent = pend.length
@@ -7378,6 +7414,91 @@ const reallySow = guard(() => {
 $('sellSurplus').onclick = guard(() => {
   const r = sellCropSurplus(S);
   banner('잉여 채소를 넘겼습니다', `${r.won.toLocaleString()}원`);
+  draw();
+});
+
+/* ══ ★★ 곳간 채소 팔기 — **몇 판인지 고르고 나서** 판다 (2026-08-15) ═══════════════
+   박사님: *"채소는 상점에서 판매 가능하게 해줘. 누르면 몇개팔지 나오게도 해주고."*
+
+   ★★ 이 자리가 지켜야 할 것은 **손해를 말하는 것** 하나다.
+     곳간 1원은 밥값 1원인데 팔면 0.85원이다. 잉여([잉여 채소 넘기기])는 어차피 버릴 몫이라
+     잃는 것이 없었지만 **이쪽은 먹을 것을 파는 것**이다. 예전에는 「파는 함수가 곳간을 안
+     만진다」가 **구조**로 그 경계를 지켰는데(first_play §잉여 판매), 곳간을 열면서 그 보장이
+     사라졌다. ⇒ 그래서 **화면이 대신 말한다** — 받을 돈만이 아니라 **얼마를 잃는지**를 적는다.
+   ★ 값을 여기서 세지 않는다. 손해도 받을 돈도 `pantrySaleStatus` 가 낸 것을 그대로 적는다 —
+     화면이 다시 반올림하면 여기 적힌 수와 실제로 들어온 돈이 어긋난다. */
+/* ⚠ `var` 다 — `drawShop` 이 이 줄들보다 **위**에 있어서 `let` 으로 두면 부팅 순서가
+   조금만 바뀌어도 TDZ(초기화 전 접근)로 화면 전체가 멎는다. 이 파일에서 화면이 멎는 사고는
+   전에도 났다(START-HERE §0). 값 두 개를 위로 올리는 것보다 이쪽이 안전하다. */
+var pantrySellOpen = false;
+var pantrySellN = 1;
+
+function drawPantrySale() {
+  const btn = $('sellPantry'), hint = $('pantryHint'), panel = $('pantryPanel');
+  if (!btn || !panel) return;
+  let ps = null;
+  try { ps = pantrySaleStatus(S, pantrySellN); } catch { }
+  const max = ps ? ps.maxLots : 0;
+
+  /* ★ 곳간이 비어도 **단추를 안 감춘다** (2026-08-15 판단 · guideaudit §1-8 ②).
+     잉여 단추는 팔 것이 없으면 통째로 사라져서 「파는 길이 있다」를 배울 자리가 아예
+     없었다. 늘 회색으로 두면 「왜 회색이지」가 된다던 원래 걱정은, **까닭을 바로 밑에
+     적어 주면** 안 생긴다. 그래서 이쪽은 회색으로 남기고 이유를 쓴다. */
+  btn.disabled = max <= 0;
+  btn.textContent = max > 0 ? `곳간 채소 팔기 (${max}판)` : '곳간 채소 팔기';
+  if (max <= 0) { pantrySellOpen = false; }
+  if (hint) hint.textContent = max > 0
+    ? `곳간에 ${ps.pantryWon.toLocaleString()}원어치 ${max}판이 있습니다 — ` +
+      `밥으로 먹을 몫입니다. 팔면 ${Math.round(ps.rate * 100)}%만 받습니다`
+    : '곳간이 비어 있습니다 — 거둔 채소가 쌓이면 여기서 팔 수 있습니다 (밥으로 먹는 편이 이득입니다)';
+
+  panel.style.display = (pantrySellOpen && max > 0) ? '' : 'none';
+  if (!pantrySellOpen || max <= 0) return;
+
+  pantrySellN = Math.max(1, Math.min(max, pantrySellN));
+  try { ps = pantrySaleStatus(S, pantrySellN); } catch { return; }
+
+  /* 무엇이 몇 판 있는지 — 먼저 거둔 것이 앞이다. 나갈 판에 표시를 남긴다 */
+  $('pantryList').textContent = ps.list
+    .map((l, i) => `${i < ps.lots ? '▶ ' : ''}${l.kindKo} ${l.won.toLocaleString()}원` +
+                   `${l.day == null ? '' : ` (${l.day}일차)`}`)
+    .join(' · ');
+  $('pantryCount').textContent = `${ps.lots}판`;
+  $('pantryMinus').disabled = ps.lots <= 1;
+  $('pantryPlus').disabled = ps.lots >= max;
+  /* ★★ 손해를 **문장 한가운데**에 둔다 — 꼬리에 달면 안 읽힌다 */
+  $('pantryQuote').textContent =
+    `${ps.pendingWon.toLocaleString()}원어치를 ${ps.won.toLocaleString()}원에 넘깁니다 ` +
+    `— ${ps.lossWon.toLocaleString()}원 손해입니다. ` +
+    `판 만큼 밥값을 못 아낍니다 (곳간에 ${(ps.pantryWon - ps.pendingWon).toLocaleString()}원 남음)`;
+  $('pantryGo').disabled = !ps.canSell;
+}
+
+$('sellPantry').onclick = guard(() => {
+  /* ★ 누르면 바로 안 판다 — **고르는 자리가 먼저 뜬다**(박사님 요청) */
+  pantrySellOpen = !pantrySellOpen;
+  pantrySellN = 1;
+  drawPantrySale();
+});
+$('pantryMinus').onclick = guard(() => { pantrySellN -= 1; drawPantrySale(); });
+$('pantryPlus').onclick  = guard(() => { pantrySellN += 1; drawPantrySale(); });
+$('pantryAll').onclick   = guard(() => {
+  let ps = null; try { ps = pantrySaleStatus(S); } catch { }
+  pantrySellN = ps ? ps.maxLots : 1;
+  drawPantrySale();
+});
+$('pantryCancel').onclick = guard(() => { pantrySellOpen = false; drawPantrySale(); });
+/* ★ 되묻지 않는다 — **고르는 자리 자체가 되묻기**이고, 그 자리가 손해를 이미 말했다.
+   여기서 한 번 더 물으면 손해를 적은 문장을 지나쳐 [예]만 누르게 된다. */
+$('pantryGo').onclick = guard(() => {
+  /* ⚠ 고르는 자리가 닫혀 있으면 안 판다. 사람은 이 단추를 볼 수 없지만(패널 안에 있다),
+     밖에서 부르는 길이 있으면 「손해를 말한 화면을 안 보고 파는 길」이 생긴다. */
+  if (!pantrySellOpen) { drawPantrySale(); return; }
+  const r = sellPantryCrop(S, pantrySellN);
+  pantrySellOpen = false;
+  pantrySellN = 1;
+  banner('곳간 채소를 팔았습니다',
+         `${r.whatKo} · ${r.won.toLocaleString()}원 (${r.lossWon.toLocaleString()}원 손해)`);
   draw();
 });
 

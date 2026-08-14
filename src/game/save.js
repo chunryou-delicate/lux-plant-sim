@@ -451,6 +451,25 @@ function packFirstPlay(fp) {
       pantryWon: needNum(
         f.pantryWon ?? (Number.isFinite(f.pantryMeals) ? f.pantryMeals * 2_500 : 0),
         'firstPlay.food.pantryWon', { min: 0 }),
+      /* ★★ 곳간을 이루는 꾸러미 목록 (2026-08-15 · first_play §곳간 판매).
+         ⚠ **정본은 바로 위 `pantryWon`(총액)이다.** 여기는 그 총액이 무엇으로 이루어졌나를
+           적는 칸이라, 어긋나거나 아예 없어도 판이 안 깨진다 — 불러온 뒤 `pantryLotsOf` 가
+           총액에 맞춰 다시 세운다(옛 세이브가 바로 그 길로 열린다: 없음 → `[]` → 하루치씩 쪼갬).
+         ★ 그래서 이 칸을 안 적어도 **잃는 진행이 없다.** 잃는 것은 「어느 날 무엇을 거뒀나」
+           라는 이야기뿐이고, 안 적으면 팔 때 「곳간에 있던 것」으로만 뜬다.
+         ⚠ 선례 — `pantryMeals → pantryWon`(바로 위)이 스키마를 올려 통째로 막는 대신
+           **여기서 한 번 환산**했다. 이번도 같은 자리에 같은 방식으로 붙인다. */
+      pantryLots: needArr(f.pantryLots || [], 'firstPlay.food.pantryLots')
+        .map((l, i) => {
+          const o = needObj(l, `firstPlay.food.pantryLots[${i}]`);
+          return {
+            kind: optStr(o.kind, `firstPlay.food.pantryLots[${i}].kind`),
+            day: o.day == null ? null
+               : needInt(o.day, `firstPlay.food.pantryLots[${i}].day`, { min: 0 }),
+            won: needNum(o.won ?? 0, `firstPlay.food.pantryLots[${i}].won`, { min: 0 }),
+            meals: needInt(o.meals ?? 0, `firstPlay.food.pantryLots[${i}].meals`, { min: 0 })
+          };
+        }),
       /* ★ 겹침을 세는 기억 (2026-08-04 · first_play.js §겹침). 안 남기면 저장 한 번에
          "오늘 이미 둘을 거뒀다"가 사라져, 불러온 뒤 셋째가 온전한 값을 받는다. */
       harvestDay: f.harvestDay == null ? null
@@ -483,7 +502,10 @@ function packFirstPlay(fp) {
       surplusWon: needNum(f.surplusWon ?? 0, 'firstPlay.food.surplusWon', { min: 0 }),
       lastSurplusWon: needNum(f.lastSurplusWon ?? 0, 'firstPlay.food.lastSurplusWon', { min: 0 }),
       totalSurplusSoldWon: needNum(f.totalSurplusSoldWon ?? 0,
-                                   'firstPlay.food.totalSurplusSoldWon', { min: 0 })
+                                   'firstPlay.food.totalSurplusSoldWon', { min: 0 }),
+      /* ★ 곳간 채소를 팔아 받은 돈 누계 (2026-08-15 · §곳간 판매). 옛 세이브엔 없다 → 0 */
+      totalPantrySoldWon: needNum(f.totalPantrySoldWon ?? 0,
+                                  'firstPlay.food.totalPantrySoldWon', { min: 0 })
     },
     monstera: {
       arrived: !!m.arrived,
