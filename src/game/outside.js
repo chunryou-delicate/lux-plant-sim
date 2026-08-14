@@ -195,8 +195,21 @@ function makeBuilder(toWorld) {
       return B;
     },
 
-    /* n각 기둥. 전봇대·나무줄기(axis 'y', cy 가 **밑동**) · 바퀴(axis 'u', cy 가 **바퀴축**) */
-    prism(cu, cy, ct, r, len, n, axis, color, colorNight) {
+    /* n각 기둥. 세 가지로 눕는다 — **축이 어느 쪽인가**로 고른다.
+         'y'  전봇대·나무줄기 (cy 가 **밑동**)
+         'u'  축이 길 방향     — 원판이 (y,t) 면에 선다
+         't'  축이 길을 가로지름 — 원판이 (u,y) 면에 선다. ★ **바퀴는 이쪽이다**
+
+       ★★ 2026-08-15 — **바퀴가 'u' 로 서 있었다.** 박사님이 화면을 보고 짚으셨다.
+         축이 길 방향이면 원판이 차 옆구리가 아니라 **앞뒤 얼굴**에 붙는다 —
+         굴러가는 방향이 90° 틀린 것이고, 화면에서는 둥글게 안 보이고
+         차체에서 삐져나온 **까만 탭** 두 개로 보인다(그렇게 보였다).
+         바퀴 축은 진행 방향에 **직각**이어야 한다.
+       ⚠ 'u' 를 지운 게 아니라 남겨 뒀다 — 축이 길 방향인 물건(가로대 따위)이 나중에 나온다.
+
+       capLow  마감면을 e1(기본) 이 아니라 **e0** 쪽에 붙인다. 바퀴는 **바깥쪽**이 보이는데
+               가까운 쪽 바퀴는 그 바깥이 −t(=e0) 라서 필요하다. 안 그러면 뚫려 보인다. */
+    prism(cu, cy, ct, r, len, n, axis, color, colorNight, capLow) {
       const cN = colorNight == null ? color : colorNight;
       const P = [];
       for (let i = 0; i < n; i++) {
@@ -208,17 +221,22 @@ function makeBuilder(toWorld) {
       const pt = (i, e) => {
         const [p, q] = P[i % n];
         if (axis === 'y') return [cu + p, cy + e, ct + q];
-        return [cu + e, cy + p, ct + q];                 // 가로로 누운 원기둥(바퀴)
+        if (axis === 't') return [cu + p, cy + q, ct + e];  // 축이 길을 가로지름(바퀴)
+        return [cu + e, cy + p, ct + q];                    // 축이 길 방향
       };
       for (let i = 0; i < n; i++) {
-        /* 옆면 — 창 쪽을 향한 쪽을 밝게 둬서 둥글게 보이게 한다 */
+        /* 옆면 — 한쪽을 밝게 둬서 둥글게 보이게 한다.
+           'u'·'y' 는 창 쪽(−t)을, 't' 는 **위(+y)** 를 밝힌다. 바퀴는 위에서 내려다보므로
+           창 쪽을 밝히면 아무 데도 안 밝다 — 원판이 서 있는 면이 다르기 때문이다. */
         const a = (i / n) * Math.PI * 2;
-        const k = 0.76 + 0.26 * Math.max(0, -Math.sin(a));
+        const k = axis === 't' ? 0.76 + 0.26 * Math.max(0, Math.sin(a))
+                               : 0.76 + 0.26 * Math.max(0, -Math.sin(a));
         B.quad(pt(i, e0), pt(i + 1, e0), pt(i + 1, e1), pt(i, e1), shade(color, k), shade(cN, k));
       }
       /* 마감면 — 보이는 쪽 하나만. 반대쪽은 땅에 붙거나 차체에 묻힌다 */
+      const ec = capLow ? e0 : e1;
       for (let i = 1; i < n - 1; i++)
-        B.tri(pt(0, e1), pt(i, e1), pt(i + 1, e1), shade(color, 1.12), shade(cN, 1.12));
+        B.tri(pt(0, ec), pt(i, ec), pt(i + 1, ec), shade(color, 1.12), shade(cN, 1.12));
       return B;
     },
 
@@ -358,8 +376,14 @@ function buildBasement(B, W, seed) {
         shade(P.carD, 1.22), shade(P.carD, 0.78), shade(P.carN, 1.18), shade(P.carN, 0.82)); // 캐빈
   B.box(cu0 + 0.10, cu1 - 0.10, gy + 0.22, gy + 0.32, ct0 + 0.04, ct1 - 0.04,
         shade(P.carD, 0.70), shade(P.carD, 0.70), shade(P.carN, 0.74), shade(P.carN, 0.74)); // 스커트
-  for (const wu of [cu0 + 0.72, cu1 - 0.72])
-    B.prism(wu, gy + 0.30, ct0 + 0.14, 0.30, 0.22, 10, 'u', P.tireD, P.tireN);
+  /* 바퀴 넷 — ★ 축은 길을 **가로지른다**('t'). 2026-08-15 박사님이 화면 보고 짚으심.
+     예전엔 축이 길 방향('u')이라 원판이 차 앞뒤 얼굴에 붙었다 — 굴러가는 방향이 90° 틀렸고
+     화면에서는 차체에서 삐져나온 까만 탭 둘로 보였다. 그리고 **두 개뿐**이었다.
+     ⚠ 마감면은 **바깥쪽**에 붙인다(가까운 쪽 바퀴는 −t 가 바깥이라 capLow=true).
+       안 그러면 위에서 내려다볼 때 바퀴 안이 뚫려 보인다. */
+  for (const wu of [cu0 + 0.78, cu1 - 0.78])
+    for (const [wt, capLow] of [[ct0 + 0.12, true], [ct1 - 0.12, false]])
+      B.prism(wu, gy + 0.30, wt, 0.30, 0.22, 10, 't', P.tireD, P.tireN, capLow);
 
   /* 전봇대 — 창 앞 보도. 창으로는 밑동만 보이고, 위에서는 기둥이 보인다.
      ★ 2026-08-15 — 키를 2.5m 에서 **9m** 로 올렸다. 참고 사진의 뒷골목은 전봇대와 전선이
