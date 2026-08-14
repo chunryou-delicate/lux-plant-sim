@@ -1,0 +1,32 @@
+{
+ "note": "tools/glb_thumb.mjs 가 만든다. 손으로 고치지 말 것. GLB 이름 -> 썸네일 이름 · GLB 자체 크기",
+ "sizeMeans": "GLB 원본 바운딩박스. 실제 미터 = 이 값 × manifest.scale_to_real",
+ "tool": "tools/glb_thumb.mjs",
+ "updated": "2026-08-14",
+ "thumbs": {
+  "item_fertilizerbag.glb": {
+   "png": "item_fertilizerbag.png",
+   "m": null,
+   "view": null
+  },
+  "item_pruningshears.glb": {
+   "png": "item_pruningshears.png",
+   "m": null,
+   "view": null
+  },
+  "item_spraybottle.glb": {
+   "png": "item_spraybottle.png",
+   "m": null,
+   "view": null
+  },
+  "item_trowel.glb": {
+   "png": "item_trowel.png",
+   "m": {
+    "x": 2,
+    "z": 0.5404,
+    "y": 0.4249
+   },
+   "view": "3q"
+  }
+ }
+}

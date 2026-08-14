@@ -1,0 +1,183 @@
+{
+ "note": "tools/glb_thumb.mjs 가 만든다. 손으로 고치지 말 것. GLB 이름 -> 썸네일 이름 · GLB 자체 크기",
+ "sizeMeans": "GLB 원본 바운딩박스. 실제 미터 = 이 값 × manifest.scale_to_real",
+ "tool": "tools/glb_thumb.mjs",
+ "updated": "2026-08-14",
+ "thumbs": {
+  "basil_l.glb": {
+   "png": "basil_l.png",
+   "m": null,
+   "view": null
+  },
+  "basil_m.glb": {
+   "png": "basil_m.png",
+   "m": null,
+   "view": null
+  },
+  "basil_s.glb": {
+   "png": "basil_s.png",
+   "m": null,
+   "view": null
+  },
+  "beansprout_l.glb": {
+   "png": "beansprout_l.png",
+   "m": null,
+   "view": null
+  },
+  "beansprout_m.glb": {
+   "png": "beansprout_m.png",
+   "m": null,
+   "view": null
+  },
+  "beansprout_s.glb": {
+   "png": "beansprout_s.png",
+   "m": null,
+   "view": null
+  },
+  "chive_l.glb": {
+   "png": "chive_l.png",
+   "m": null,
+   "view": null
+  },
+  "chive_m.glb": {
+   "png": "chive_m.png",
+   "m": null,
+   "view": null
+  },
+  "chive_s.glb": {
+   "png": "chive_s.png",
+   "m": null,
+   "view": null
+  },
+  "container_siru_closed.glb": {
+   "png": "container_siru_closed.png",
+   "m": null,
+   "view": null
+  },
+  "container_siru_open.glb": {
+   "png": "container_siru_open.png",
+   "m": null,
+   "view": null
+  },
+  "container_tray_l.glb": {
+   "png": "container_tray_l.png",
+   "m": null,
+   "view": null
+  },
+  "container_tray_s_empty.glb": {
+   "png": "container_tray_s_empty.png",
+   "m": null,
+   "view": null
+  },
+  "container_tray_s.glb": {
+   "png": "container_tray_s.png",
+   "m": null,
+   "view": null
+  },
+  "flower_white.glb": {
+   "png": "flower_white.png",
+   "m": null,
+   "view": null
+  },
+  "fruit_strawberry_l.glb": {
+   "png": "fruit_strawberry_l.png",
+   "m": null,
+   "view": null
+  },
+  "fruit_strawberry_m.glb": {
+   "png": "fruit_strawberry_m.png",
+   "m": null,
+   "view": null
+  },
+  "fruit_strawberry_s.glb": {
+   "png": "fruit_strawberry_s.png",
+   "m": null,
+   "view": null
+  },
+  "fruit_tomato_m.glb": {
+   "png": "fruit_tomato_m.png",
+   "m": null,
+   "view": null
+  },
+  "lettuce_l.glb": {
+   "png": "lettuce_l.png",
+   "m": null,
+   "view": null
+  },
+  "lettuce_m.glb": {
+   "png": "lettuce_m.png",
+   "m": null,
+   "view": null
+  },
+  "lettuce_s.glb": {
+   "png": "lettuce_s.png",
+   "m": null,
+   "view": null
+  },
+  "scallion_l.glb": {
+   "png": "scallion_l.png",
+   "m": null,
+   "view": null
+  },
+  "scallion_m.glb": {
+   "png": "scallion_m.png",
+   "m": null,
+   "view": null
+  },
+  "scallion_s.glb": {
+   "png": "scallion_s.png",
+   "m": null,
+   "view": null
+  },
+  "seed_dicot.glb": {
+   "png": "seed_dicot.png",
+   "m": null,
+   "view": null
+  },
+  "seed_monocot.glb": {
+   "png": "seed_monocot.png",
+   "m": null,
+   "view": null
+  },
+  "sprout_dicot.glb": {
+   "png": "sprout_dicot.png",
+   "m": null,
+   "view": null
+  },
+  "sprout_monocot.glb": {
+   "png": "sprout_monocot.png",
+   "m": null,
+   "view": null
+  },
+  "sprout_radish_l.glb": {
+   "png": "sprout_radish_l.png",
+   "m": null,
+   "view": null
+  },
+  "sprout_radish_m.glb": {
+   "png": "sprout_radish_m.png",
+   "m": null,
+   "view": null
+  },
+  "sprout_radish_s.glb": {
+   "png": "sprout_radish_s.png",
+   "m": null,
+   "view": null
+  },
+  "strawberry_l.glb": {
+   "png": "strawberry_l.png",
+   "m": null,
+   "view": null
+  },
+  "strawberry_m.glb": {
+   "png": "strawberry_m.png",
+   "m": null,
+   "view": null
+  },
+  "strawberry_s.glb": {
+   "png": "strawberry_s.png",
+   "m": null,
+   "view": null
+  }
+ }
+}

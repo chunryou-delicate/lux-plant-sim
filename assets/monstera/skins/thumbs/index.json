@@ -1,0 +1,528 @@
+{
+ "note": "tools/glb_thumb.mjs 가 만든다. 손으로 고치지 말 것. GLB 이름 -> 썸네일 이름 · GLB 자체 크기",
+ "sizeMeans": "GLB 원본 바운딩박스. 실제 미터 = 이 값 × manifest.scale_to_real",
+ "tool": "tools/glb_thumb.mjs",
+ "updated": "2026-08-14",
+ "thumbs": {
+  "_gw_standing.glb": {
+   "png": "_gw_standing.png",
+   "m": null,
+   "view": null
+  },
+  "heart_albo_2672_3_v1.glb": {
+   "png": "heart_albo_2672_3_v1.png",
+   "m": null,
+   "view": null
+  },
+  "heart_albo_2672_3_v2.glb": {
+   "png": "heart_albo_2672_3_v2.png",
+   "m": null,
+   "view": null
+  },
+  "heart_albo_2672_3.glb": {
+   "png": "heart_albo_2672_3.png",
+   "m": null,
+   "view": null
+  },
+  "heart_halfmoon_v2_stem_v1.glb": {
+   "png": "heart_halfmoon_v2_stem_v1.png",
+   "m": null,
+   "view": null
+  },
+  "heart_halfmoon_v2_stem_v2.glb": {
+   "png": "heart_halfmoon_v2_stem_v2.png",
+   "m": null,
+   "view": null
+  },
+  "heart_halfmoon_v2_stem.glb": {
+   "png": "heart_halfmoon_v2_stem.png",
+   "m": null,
+   "view": null
+  },
+  "heart_lime_2672_0_v1.glb": {
+   "png": "heart_lime_2672_0_v1.png",
+   "m": null,
+   "view": null
+  },
+  "heart_lime_2672_0_v2.glb": {
+   "png": "heart_lime_2672_0_v2.png",
+   "m": null,
+   "view": null
+  },
+  "heart_lime_2672_0.glb": {
+   "png": "heart_lime_2672_0.png",
+   "m": null,
+   "view": null
+  },
+  "heart_marble_2652_v1.glb": {
+   "png": "heart_marble_2652_v1.png",
+   "m": null,
+   "view": null
+  },
+  "heart_marble_2652_v2.glb": {
+   "png": "heart_marble_2652_v2.png",
+   "m": null,
+   "view": null
+  },
+  "heart_marble_2652.glb": {
+   "png": "heart_marble_2652.png",
+   "m": null,
+   "view": null
+  },
+  "heart_speckle_2657_v1.glb": {
+   "png": "heart_speckle_2657_v1.png",
+   "m": null,
+   "view": null
+  },
+  "heart_speckle_2657_v2.glb": {
+   "png": "heart_speckle_2657_v2.png",
+   "m": null,
+   "view": null
+  },
+  "heart_speckle_2657.glb": {
+   "png": "heart_speckle_2657.png",
+   "m": null,
+   "view": null
+  },
+  "mon_charcoal_v1.glb": {
+   "png": "mon_charcoal_v1.png",
+   "m": null,
+   "view": null
+  },
+  "mon_charcoal_v2.glb": {
+   "png": "mon_charcoal_v2.png",
+   "m": null,
+   "view": null
+  },
+  "mon_charcoal.glb": {
+   "png": "mon_charcoal.png",
+   "m": null,
+   "view": null
+  },
+  "mon_fullalbo_v1.glb": {
+   "png": "mon_fullalbo_v1.png",
+   "m": null,
+   "view": null
+  },
+  "mon_fullalbo_v2.glb": {
+   "png": "mon_fullalbo_v2.png",
+   "m": null,
+   "view": null
+  },
+  "mon_fullalbo.glb": {
+   "png": "mon_fullalbo.png",
+   "m": null,
+   "view": null
+  },
+  "mon_galaxy_darkteal_v1.glb": {
+   "png": "mon_galaxy_darkteal_v1.png",
+   "m": null,
+   "view": null
+  },
+  "mon_galaxy_darkteal_v2.glb": {
+   "png": "mon_galaxy_darkteal_v2.png",
+   "m": null,
+   "view": null
+  },
+  "mon_galaxy_darkteal.glb": {
+   "png": "mon_galaxy_darkteal.png",
+   "m": null,
+   "view": null
+  },
+  "mon_galaxy_tealgold_v1.glb": {
+   "png": "mon_galaxy_tealgold_v1.png",
+   "m": null,
+   "view": null
+  },
+  "mon_galaxy_tealgold_v2.glb": {
+   "png": "mon_galaxy_tealgold_v2.png",
+   "m": null,
+   "view": null
+  },
+  "mon_galaxy_tealgold.glb": {
+   "png": "mon_galaxy_tealgold.png",
+   "m": null,
+   "view": null
+  },
+  "mon_green_lemonpatch_v1.glb": {
+   "png": "mon_green_lemonpatch_v1.png",
+   "m": null,
+   "view": null
+  },
+  "mon_green_lemonpatch_v2.glb": {
+   "png": "mon_green_lemonpatch_v2.png",
+   "m": null,
+   "view": null
+  },
+  "mon_green_lemonpatch.glb": {
+   "png": "mon_green_lemonpatch.png",
+   "m": null,
+   "view": null
+  },
+  "mon_green_yellow_v1.glb": {
+   "png": "mon_green_yellow_v1.png",
+   "m": null,
+   "view": null
+  },
+  "mon_green_yellow_v2.glb": {
+   "png": "mon_green_yellow_v2.png",
+   "m": null,
+   "view": null
+  },
+  "mon_green_yellow.glb": {
+   "png": "mon_green_yellow.png",
+   "m": null,
+   "view": null
+  },
+  "mon_halfmoon_greencream_v1.glb": {
+   "png": "mon_halfmoon_greencream_v1.png",
+   "m": null,
+   "view": null
+  },
+  "mon_halfmoon_greencream_v2.glb": {
+   "png": "mon_halfmoon_greencream_v2.png",
+   "m": null,
+   "view": null
+  },
+  "mon_halfmoon_greencream.glb": {
+   "png": "mon_halfmoon_greencream.png",
+   "m": null,
+   "view": null
+  },
+  "mon_halfmoon_greenwhite_v1.glb": {
+   "png": "mon_halfmoon_greenwhite_v1.png",
+   "m": null,
+   "view": null
+  },
+  "mon_halfmoon_greenwhite_v2.glb": {
+   "png": "mon_halfmoon_greenwhite_v2.png",
+   "m": null,
+   "view": null
+  },
+  "mon_halfmoon_greenwhite.glb": {
+   "png": "mon_halfmoon_greenwhite.png",
+   "m": null,
+   "view": null
+  },
+  "mon_mauve_v1.glb": {
+   "png": "mon_mauve_v1.png",
+   "m": null,
+   "view": null
+  },
+  "mon_mauve_v2.glb": {
+   "png": "mon_mauve_v2.png",
+   "m": null,
+   "view": null
+  },
+  "mon_mauve.glb": {
+   "png": "mon_mauve.png",
+   "m": null,
+   "view": null
+  },
+  "mon_neon_lime_v1.glb": {
+   "png": "mon_neon_lime_v1.png",
+   "m": null,
+   "view": null
+  },
+  "mon_neon_lime_v2.glb": {
+   "png": "mon_neon_lime_v2.png",
+   "m": null,
+   "view": null
+  },
+  "mon_neon_lime.glb": {
+   "png": "mon_neon_lime.png",
+   "m": null,
+   "view": null
+  },
+  "mon_rose_pink_v1.glb": {
+   "png": "mon_rose_pink_v1.png",
+   "m": null,
+   "view": null
+  },
+  "mon_rose_pink_v2.glb": {
+   "png": "mon_rose_pink_v2.png",
+   "m": null,
+   "view": null
+  },
+  "mon_rose_pink.glb": {
+   "png": "mon_rose_pink.png",
+   "m": null,
+   "view": null
+  },
+  "mon_speckle_greencream_v1.glb": {
+   "png": "mon_speckle_greencream_v1.png",
+   "m": null,
+   "view": null
+  },
+  "mon_speckle_greencream_v2.glb": {
+   "png": "mon_speckle_greencream_v2.png",
+   "m": null,
+   "view": null
+  },
+  "mon_speckle_greencream.glb": {
+   "png": "mon_speckle_greencream.png",
+   "m": null,
+   "view": null
+  },
+  "mon_star_greenwhite_v1.glb": {
+   "png": "mon_star_greenwhite_v1.png",
+   "m": null,
+   "view": null
+  },
+  "mon_star_greenwhite_v2.glb": {
+   "png": "mon_star_greenwhite_v2.png",
+   "m": null,
+   "view": null
+  },
+  "mon_star_greenwhite.glb": {
+   "png": "mon_star_greenwhite.png",
+   "m": null,
+   "view": null
+  },
+  "mon_star_greenyellow_v1.glb": {
+   "png": "mon_star_greenyellow_v1.png",
+   "m": null,
+   "view": null
+  },
+  "mon_star_greenyellow_v2.glb": {
+   "png": "mon_star_greenyellow_v2.png",
+   "m": null,
+   "view": null
+  },
+  "mon_star_greenyellow.glb": {
+   "png": "mon_star_greenyellow.png",
+   "m": null,
+   "view": null
+  },
+  "mon_star_palegreen_v1.glb": {
+   "png": "mon_star_palegreen_v1.png",
+   "m": null,
+   "view": null
+  },
+  "mon_star_palegreen_v2.glb": {
+   "png": "mon_star_palegreen_v2.png",
+   "m": null,
+   "view": null
+  },
+  "mon_star_palegreen.glb": {
+   "png": "mon_star_palegreen.png",
+   "m": null,
+   "view": null
+  },
+  "mon_star_pinkmint_v1.glb": {
+   "png": "mon_star_pinkmint_v1.png",
+   "m": null,
+   "view": null
+  },
+  "mon_star_pinkmint_v2.glb": {
+   "png": "mon_star_pinkmint_v2.png",
+   "m": null,
+   "view": null
+  },
+  "mon_star_pinkmint.glb": {
+   "png": "mon_star_pinkmint.png",
+   "m": null,
+   "view": null
+  },
+  "mon_variegata_gold_v1.glb": {
+   "png": "mon_variegata_gold_v1.png",
+   "m": null,
+   "view": null
+  },
+  "mon_variegata_gold_v2.glb": {
+   "png": "mon_variegata_gold_v2.png",
+   "m": null,
+   "view": null
+  },
+  "mon_variegata_gold.glb": {
+   "png": "mon_variegata_gold.png",
+   "m": null,
+   "view": null
+  },
+  "mon_variegata_greenwhite_stem.glb": {
+   "png": "mon_variegata_greenwhite_stem.png",
+   "m": null,
+   "view": null
+  },
+  "mon_variegata_pink_v1.glb": {
+   "png": "mon_variegata_pink_v1.png",
+   "m": null,
+   "view": null
+  },
+  "mon_variegata_pink_v2.glb": {
+   "png": "mon_variegata_pink_v2.png",
+   "m": null,
+   "view": null
+  },
+  "mon_variegata_pink.glb": {
+   "png": "mon_variegata_pink.png",
+   "m": null,
+   "view": null
+  },
+  "mon_zebra_v1.glb": {
+   "png": "mon_zebra_v1.png",
+   "m": null,
+   "view": null
+  },
+  "mon_zebra_v2.glb": {
+   "png": "mon_zebra_v2.png",
+   "m": null,
+   "view": null
+  },
+  "mon_zebra.glb": {
+   "png": "mon_zebra.png",
+   "m": null,
+   "view": null
+  },
+  "monstera_leaf_fullalbo_v1.glb": {
+   "png": "monstera_leaf_fullalbo_v1.png",
+   "m": null,
+   "view": null
+  },
+  "monstera_leaf_fullalbo_v2.glb": {
+   "png": "monstera_leaf_fullalbo_v2.png",
+   "m": null,
+   "view": null
+  },
+  "monstera_leaf_fullalbo.glb": {
+   "png": "monstera_leaf_fullalbo.png",
+   "m": null,
+   "view": null
+  },
+  "monstera_leaf_young_albo.glb": {
+   "png": "monstera_leaf_young_albo.png",
+   "m": null,
+   "view": null
+  },
+  "pothos_cream_marble_v1.glb": {
+   "png": "pothos_cream_marble_v1.png",
+   "m": null,
+   "view": null
+  },
+  "pothos_cream_marble_v2.glb": {
+   "png": "pothos_cream_marble_v2.png",
+   "m": null,
+   "view": null
+  },
+  "pothos_cream_marble.glb": {
+   "png": "pothos_cream_marble.png",
+   "m": null,
+   "view": null
+  },
+  "pothos_cream_vein_v1.glb": {
+   "png": "pothos_cream_vein_v1.png",
+   "m": null,
+   "view": null
+  },
+  "pothos_cream_vein_v2.glb": {
+   "png": "pothos_cream_vein_v2.png",
+   "m": null,
+   "view": null
+  },
+  "pothos_cream_vein.glb": {
+   "png": "pothos_cream_vein.png",
+   "m": null,
+   "view": null
+  },
+  "pothos_marble_greenyellow_v1.glb": {
+   "png": "pothos_marble_greenyellow_v1.png",
+   "m": null,
+   "view": null
+  },
+  "pothos_marble_greenyellow_v2.glb": {
+   "png": "pothos_marble_greenyellow_v2.png",
+   "m": null,
+   "view": null
+  },
+  "pothos_marble_greenyellow.glb": {
+   "png": "pothos_marble_greenyellow.png",
+   "m": null,
+   "view": null
+  },
+  "pothos_marble_whitegreen_v1.glb": {
+   "png": "pothos_marble_whitegreen_v1.png",
+   "m": null,
+   "view": null
+  },
+  "pothos_marble_whitegreen_v2.glb": {
+   "png": "pothos_marble_whitegreen_v2.png",
+   "m": null,
+   "view": null
+  },
+  "pothos_marble_whitegreen.glb": {
+   "png": "pothos_marble_whitegreen.png",
+   "m": null,
+   "view": null
+  },
+  "pothos_mint_dot_34_v1.glb": {
+   "png": "pothos_mint_dot_34_v1.png",
+   "m": null,
+   "view": null
+  },
+  "pothos_mint_dot_34_v2.glb": {
+   "png": "pothos_mint_dot_34_v2.png",
+   "m": null,
+   "view": null
+  },
+  "pothos_mint_dot_34.glb": {
+   "png": "pothos_mint_dot_34.png",
+   "m": null,
+   "view": null
+  },
+  "pothos_mint_dot_v1.glb": {
+   "png": "pothos_mint_dot_v1.png",
+   "m": null,
+   "view": null
+  },
+  "pothos_mint_dot_v2.glb": {
+   "png": "pothos_mint_dot_v2.png",
+   "m": null,
+   "view": null
+  },
+  "pothos_mint_dot.glb": {
+   "png": "pothos_mint_dot.png",
+   "m": null,
+   "view": null
+  },
+  "pothos_mint_simple.glb": {
+   "png": "pothos_mint_simple.png",
+   "m": null,
+   "view": null
+  },
+  "pothos_silver_droplet_v1.glb": {
+   "png": "pothos_silver_droplet_v1.png",
+   "m": null,
+   "view": null
+  },
+  "pothos_silver_droplet_v2.glb": {
+   "png": "pothos_silver_droplet_v2.png",
+   "m": null,
+   "view": null
+  },
+  "pothos_silver_droplet.glb": {
+   "png": "pothos_silver_droplet.png",
+   "m": null,
+   "view": null
+  },
+  "pothos_variegated.glb": {
+   "png": "pothos_variegated.png",
+   "m": null,
+   "view": null
+  },
+  "pothos_whitegreen_29_v1.glb": {
+   "png": "pothos_whitegreen_29_v1.png",
+   "m": null,
+   "view": null
+  },
+  "pothos_whitegreen_29_v2.glb": {
+   "png": "pothos_whitegreen_29_v2.png",
+   "m": null,
+   "view": null
+  },
+  "pothos_whitegreen_29.glb": {
+   "png": "pothos_whitegreen_29.png",
+   "m": null,
+   "view": null
+  }
+ }
+}

@@ -1,0 +1,118 @@
+{
+ "note": "tools/glb_thumb.mjs 가 만든다. 손으로 고치지 말 것. GLB 이름 -> 썸네일 이름 · GLB 자체 크기",
+ "sizeMeans": "GLB 원본 바운딩박스. 실제 미터 = 이 값 × manifest.scale_to_real",
+ "tool": "tools/glb_thumb.mjs",
+ "updated": "2026-08-14",
+ "thumbs": {
+  "leaf_sheath.glb": {
+   "png": "leaf_sheath.png",
+   "m": null,
+   "view": null
+  },
+  "monstera_bud_furled.glb": {
+   "png": "monstera_bud_furled.png",
+   "m": null,
+   "view": null
+  },
+  "monstera_bud_opening2.glb": {
+   "png": "monstera_bud_opening2.png",
+   "m": null,
+   "view": null
+  },
+  "monstera_leaf_mature_v1.glb": {
+   "png": "monstera_leaf_mature_v1.png",
+   "m": null,
+   "view": null
+  },
+  "monstera_leaf_mature_v2.glb": {
+   "png": "monstera_leaf_mature_v2.png",
+   "m": null,
+   "view": null
+  },
+  "monstera_leaf_mature.glb": {
+   "png": "monstera_leaf_mature.png",
+   "m": null,
+   "view": null
+  },
+  "monstera_leaf_mid1_v1.glb": {
+   "png": "monstera_leaf_mid1_v1.png",
+   "m": null,
+   "view": null
+  },
+  "monstera_leaf_mid1_v2.glb": {
+   "png": "monstera_leaf_mid1_v2.png",
+   "m": null,
+   "view": null
+  },
+  "monstera_leaf_mid1.glb": {
+   "png": "monstera_leaf_mid1.png",
+   "m": null,
+   "view": null
+  },
+  "monstera_leaf_mid2_v1.glb": {
+   "png": "monstera_leaf_mid2_v1.png",
+   "m": null,
+   "view": null
+  },
+  "monstera_leaf_mid2_v2.glb": {
+   "png": "monstera_leaf_mid2_v2.png",
+   "m": null,
+   "view": null
+  },
+  "monstera_leaf_mid2.glb": {
+   "png": "monstera_leaf_mid2.png",
+   "m": null,
+   "view": null
+  },
+  "monstera_leaf_young.glb": {
+   "png": "monstera_leaf_young.png",
+   "m": null,
+   "view": null
+  },
+  "pot_c1.glb": {
+   "png": "pot_c1.png",
+   "m": null,
+   "view": null
+  },
+  "pot_c2.glb": {
+   "png": "pot_c2.png",
+   "m": null,
+   "view": null
+  },
+  "pot.glb": {
+   "png": "pot.png",
+   "m": null,
+   "view": null
+  },
+  "stem_early.glb": {
+   "png": "stem_early.png",
+   "m": null,
+   "view": null
+  },
+  "stem_knob.glb": {
+   "png": "stem_knob.png",
+   "m": null,
+   "view": null
+  },
+  "stem_late_bump.glb": {
+   "png": "stem_late_bump.png",
+   "m": null,
+   "view": null
+  },
+  "stem_late_double.glb": {
+   "png": "stem_late_double.png",
+   "m": null,
+   "view": null
+  },
+  "stem_mid_1.glb": {
+   "png": "stem_mid_1.png",
+   "m": null,
+   "view": null
+  },
+  "stem_mid_2.glb": {
+   "png": "stem_mid_2.png",
+   "m": null,
+   "view": null
+  }
+ }
+}
