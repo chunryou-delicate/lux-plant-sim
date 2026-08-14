@@ -29,10 +29,23 @@
 
    한계 (정직하게)
    ------------------------------------------------------------
-   · **무늬종(variegata) 스킨은 안 싣는다.** assets/monstera/skins/ 가 104장 428MB 다.
-     방에 그대로 실을 수 없다. 원본 pickLeafKey/drawLeafStage 는 `if(ASSETS[k])` 로
-     스킨이 없으면 기본잎으로 내려앉게 되어 있어서, 방에서는 **구조·단계·잎 수는 같고
-     무늬만 기본**으로 보인다. 필요해지면 preloadKeys 로 몇 장만 지정해 실을 수 있다.
+   · **무늬종(variegata) 스킨은 안 싣는다.** 실측(2026-08-16): `ASSET_FILES` 113개 중
+     `skins/` 가 **100장 443.4MB**, 나머지 기본 13장이 14.4MB 다. 방에 그대로 실을 수 없다.
+     원본 pickLeafKey/drawLeafStage 는 `if(ASSETS[k])` 로 스킨이 없으면 기본잎으로
+     내려앉으므로, 무늬가 **났더라도** 방에서는 민무늬로 그려진다.
+     필요해지면 preloadKeys 로 몇 장만 지정해 실을 수 있다.
+
+   · ★★ **이 인스턴스는 「빛 이력」이 없다. 그래서 스스로 굴리면 답이 정해져 있다.**
+     `setDailyLight` 을 한 번도 안 부르므로 `dli7()` 이 늘 null 이고, 그 결과
+       - `calcVarieProb()` = **0** → `varieRoll` 이 **언제나 false** (무늬가 날 수 없다)
+       - `calcMatureProb()` = 하한(roll_lo) → `matCatchUp` 이 잎마다 **딱 한 번 10%**
+     실측(seed 92158 · 2026-08-16): 방 조립은 **유효 1000일에도 갈라진 잎 0장**이었다.
+     같은 시드를 확대창에서 하루씩 걸으면 DLI 4.8(반지하 창턱)에서도 유효 300일에
+     잎 5장 중 2장, 1000일에 8장 중 7장이 갈라진다.
+     ⇒ **방이 자기 굴림으로 그리면 확대창과 다른 그루가 된다.** 그래서 아래
+       `assemble({ leafState })` 로 **정본이 정한 잎별 상태를 받아** 그린다.
+       안 주면 예전 그대로 굴린다(옛 호출부가 안 깨진다).
+
    · plant_grow.html 의 localStorage 튜닝 저장본(mcfg_default)은 안 읽는다.
      그 창에서 슬라이더를 만져 저장해 둔 상태는 방에 반영되지 않는다(기본값+ADJ_TUNED).
 ============================================================ */
@@ -111,6 +124,35 @@ const TAIL = `
   __setPlantGroup(g){ plantGroup = g; },
   /* 방의 창 방향 = 이 그루가 받는 빛의 방향. 굴광성이 그쪽으로 기울게 한다. */
   __setLight(az, photo){ if(az!=null) LIGHT_AZ = az; if(photo!=null) PHOTO = photo; },
+  /* ★★ 정본이 정한 **잎별 상태**를 이 인스턴스에 그대로 앉힌다 (2026-08-16).
+     ------------------------------------------------------------
+     ⚠ 이 블록은 템플릿 문자열 안이다 — **역따옴표를 쓰지 마라**(문자열이 그 자리에서 끝난다).
+     ⚠ 이것은 "밖에서 성숙을 켜는 세터"가 아니다. 원본이 세터를 안 둔 이유는
+       *굴림이 장식이 되지 않게*였고, 그 대상은 **판정을 하는 그루**(확대창)다.
+       여기 인스턴스는 판정을 하면 안 되는 **그리개**다 — 빛 이력이 없어서 굴리면
+       무늬 0 · 갈라짐 거의 0 으로 답이 정해져 있다(위 §한계). 그러니 여기서 굴리는 것이
+       오히려 "두 벌"이고, 정본을 받아 그리는 것이 한 벌로 되돌리는 일이다.
+     ★ rolls:1 을 박아 두는 이유: matCatchUp 이 rolls>0 인 잎을 건너뛴다.
+       목록에 든 잎은 이 인스턴스가 **다시 굴리지 않는다.**
+     ★ 아직 안 성숙한 잎에 locked:true 를 주는 것도 같은 뜻이다 —
+       "이 잎은 중간잎이다"를 정본이 이미 정했다는 표시지, 새 규칙이 아니다.
+     반환: 실제로 앉힌 잎 수 */
+  __setLeafState(list){
+    matResetAll();
+    if(!Array.isArray(list)) return 0;
+    let n = 0;
+    for(const it of list){
+      const lb = it && it.leafBirth;
+      if(typeof lb !== 'number' || !isFinite(lb)) continue;
+      VARIE_STATE.set(lb, !!it.varie);
+      MAT_STATE.set(lb, { gauge: it.matured ? 0 : 1, matured: !!it.matured,
+                          rolls: 1, locked: !it.matured });
+      const f = Math.max(0, Math.min(1, Number(it.fade) || 0));
+      if(f > 0 || it.dropped) LEAF_HEALTH.set(lb, { fade: f, dropped: !!it.dropped, hold: 0 });
+      n++;
+    }
+    return n;
+  },
   __params(){ return { seedEnd:P.seedEnd, sproutEnd:P.sproutEnd, spawnStep:P.spawnStep,
                        matSpan:P.matSpan, stageYoung:P.stageYoung, stageMid:P.stageMid }; }
 };`;
@@ -277,10 +319,16 @@ async function build(opt) {
     },
 
     /**
-     * assemble({ growthDays, seed, potD, lightAz, photo }) → THREE.Group
+     * assemble({ growthDays, seed, potD, lightAz, photo, leafState }) → THREE.Group
      *   바닥 y=0 기준. 화분 지름이 potD[m] 가 되도록 통째로 줄인다.
      *   ★ 동기 함수다. GLB 는 이미 다 실려 있다 — 진행도가 바뀔 때마다
      *     네트워크를 타면 빨리감기에서 프레임이 끊긴다.
+     *
+     *   leafState  ★ **정본(확대창)이 정한 잎별 상태.** 형태는 여기서 짓지만 상태는 안 짓는다.
+     *              `[{ leafBirth, varie, matured, fade, dropped }]`
+     *              growth 쪽 `varieStateAll()`·`matStateAll()`·`leafHealthAll()` 을
+     *              leafBirth 로 합치면 그대로 이 모양이다.
+     *              **안 주면 예전 그대로** — 이 인스턴스가 스스로 굴린다(위 §한계 참고).
      */
     assemble(o = {}) {
       const days = Math.max(0, Math.min(G.GMAX, Math.round(o.growthDays ?? 0)));
@@ -288,13 +336,22 @@ async function build(opt) {
       const potD = o.potD ?? 0.20;
       const az = o.lightAz ?? Math.PI * 0.5;
       const photo = o.photo ?? 0.5;
+      const leafState = Array.isArray(o.leafState) ? o.leafState : null;
 
-      const key = `${days}|${seed}|${az.toFixed(3)}|${photo.toFixed(2)}`;
+      /* 잎 상태도 열쇠에 넣는다 — 안 넣으면 「같은 날인데 갈라짐만 바뀐」 하루가 안 그려진다 */
+      const stateKey = leafState
+        ? leafState.map(s => `${s.leafBirth}${s.varie ? 'v' : ''}${s.matured ? 'm' : ''}` +
+                             `${s.dropped ? 'x' : ''}${s.fade ? '.' + Math.round(s.fade * 10) : ''}`).join(',')
+        : '';
+      const key = `${days}|${seed}|${az.toFixed(3)}|${photo.toFixed(2)}|${stateKey}`;
       if (key !== lastKey) {
         G.__setLight(az, photo);
         /* 씨앗이 바뀌면 성숙 이력을 버린다(원본 plantSeed 가 하는 일 그대로).
            그리기는 어차피 아래에서 다시 하므로 여기서 난 예외는 삼킨다. */
         try { G.plantSeed(seed); } catch (e) { /* plantSeed 안의 buildPlant 실패 — 바로 아래에서 다시 짓는다 */ }
+        /* ★ plantSeed 뒤 · setGrowth 앞이라야 한다. 앞이면 plantSeed 의 matResetAll 이 지우고,
+           뒤면 setGrowth 안의 matCatchUp 이 이미 제 굴림을 해 버린 뒤다. */
+        if (leafState) G.__setLeafState(leafState);
         const r = G.setGrowth(days);        // 원본 경로 그대로: matCatchUp → buildPlant
         if (!r || !r.drawn) throw new Error(`몬스테라 조립 실패: ${(r && r.drawError) || '알 수 없음'}`);
         lastKey = key;

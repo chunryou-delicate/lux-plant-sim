@@ -191,6 +191,46 @@ export function createGrowthAdapter(iframe) {
       return (s && typeof s === 'object' && !Array.isArray(s)) ? s : null;
     },
 
+    /* ★★ 잎별 상태 — **방이 확대창과 같은 그루를 그리게 하는 값** (2026-08-16).
+       반환 `[{ leafBirth, varie, matured, fade, dropped }]` 또는 접근자가 없으면 **null**.
+
+       ══ 왜 필요한가 (실측) ══════════════════════════════════════════════════
+       방(`render3d/plant_assemble.js`)은 plant_grow 의 본문을 **다른 인스턴스로** 돌려
+       형태를 짓는다. 그런데 그 인스턴스에는 `setDailyLight` 이 한 번도 안 들어가므로
+       `dli7()` 이 늘 null 이고, 그래서
+         · `calcVarieProb()` = 0     → 무늬가 **날 수 없다**
+         · `calcMatureProb()` = 하한 → 잎마다 딱 한 번 10%
+       실측(seed 92158): 방 조립은 **유효 1000일에도 갈라진 잎 0장**이었다. 같은 시드를
+       확대창에서 하루씩 걸으면 반지하 창턱(DLI 4.8)에서도 유효 300일에 5장 중 2장,
+       1000일에 8장 중 7장이 갈라진다.
+       ⇒ **형태만 방이 짓고, 상태는 정본이 정한 것을 넘긴다.** 그 창구가 이 함수다.
+
+       ⚠ 여기서 값을 지어내지 않는다 — 세 접근자를 leafBirth 로 합치기만 한다.
+         하나라도 없으면 그 칸을 비운다(0 으로 안 메꾼다). 셋 다 없으면 null 이다.
+       ⚠ 바램(`fade`)은 **유효 생장일이 멈춘 채로도 움직인다**(어두운 자리). 그래서
+         호출부는 `growthDays` 가 그대로여도 이 값을 매일 다시 넘겨야 한다 —
+         방뷰의 `needsRebuild` 가 그 변화를 보고 다시 짓는다. */
+    leafState() {
+      const fv = fn('varieStateAll'), fm = fn('matStateAll'), fh = fn('leafHealthAll');
+      if (!fv && !fm && !fh) return null;
+      const out = new Map();
+      const row = (lb) => {
+        if (!Number.isFinite(lb)) return null;
+        let r = out.get(lb);
+        if (!r) { r = { leafBirth: lb, varie: false, matured: false, fade: 0, dropped: false }; out.set(lb, r); }
+        return r;
+      };
+      try { for (const v of (fv ? fv() : [])) { const r = row(v && v.leafBirth); if (r) r.varie = !!v.varie; } } catch { }
+      try { for (const m of (fm ? fm() : [])) { const r = row(m && m.leafBirth); if (r) r.matured = !!m.matured; } } catch { }
+      try {
+        for (const h of (fh ? fh() : [])) {
+          const r = row(h && h.leafBirth);
+          if (r) { r.fade = Number.isFinite(h.fade) ? h.fade : 0; r.dropped = !!h.dropped; }
+        }
+      } catch { }
+      return [...out.values()].sort((a, b) => a.leafBirth - b.leafBirth);
+    },
+
     /* 표시·대조 전용(판정에 안 쓴다) — 없으면 화면에 '—' 로 두면 되므로 던지지 않는다. */
     dli7()   { const f = fn('dli7');   return f ? f() : null; },
     dliCV()  { const f = fn('dliCV');  return f ? f() : null; },

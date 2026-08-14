@@ -30,6 +30,10 @@
        roomId:'banjiha', lightEngine, onSlotTap, onPlantTap, onReady, onError });
      view.setPlant('banjiha-sill:0', { kind:'monstera', progress01:0.4, band:'good' });
 
+   ★ 몬스테라 명세에 **`leafState`** 를 같이 넘기면 갈라짐·무늬·바램이 정본과 같아진다
+     (없으면 방이 스스로 굴리는데, 그 굴림은 빛 이력이 없어 **갈라짐이 거의 안 난다** —
+      실측: 유효 1000일에도 0장. `growth_adapter.leafState()` 가 그 목록을 낸다).
+
    좌표계는 house.js 그대로다 — 방은 원점 중심, 바닥 y=0.
 ============================================================ */
 
@@ -1411,7 +1415,17 @@ export async function createRoomView(canvas, opts = {}) {
     const asm = await assembler();
     if (asm) {
       try {
+        /* ★★ 잎별 상태(갈라짐·무늬·바램)는 **방이 안 정한다** (2026-08-16).
+           ------------------------------------------------------------
+           조립기는 빛 이력이 없는 인스턴스라 스스로 굴리면 답이 정해져 있다 —
+           실측(seed 92158): 방 조립은 **유효 1000일에도 갈라진 잎 0장**, 무늬 0장.
+           같은 시드를 확대창에서 하루씩 걸으면 창턱(DLI 4.8)에서도 유효 300일에
+           5장 중 2장이 갈라진다(plant_assemble.js §한계에 표가 있다).
+           ⇒ 호출부가 정본의 잎 상태를 넘겨 주면 그대로 그린다. 안 넘기면 예전 그대로다.
+           ⚠ 무늬는 상태를 넘겨도 방에서 **민무늬로** 그려진다 — skins/ 100장(443MB)을
+             안 싣기 때문이고, 그건 에셋 결정이라 여기서 못 고친다. */
         const g = asm.assemble({ growthDays: days, seed: spec.seed, potD,
+                                 leafState: spec.leafState,
                                  lightAz: lightAzimuth(), photo: 0.5 });
         g.userData.growthDays = days;
         return g;
@@ -1960,6 +1974,13 @@ export async function createRoomView(canvas, opts = {}) {
           ★ 60ms 다. 빨리감기 최고 배속이 하루 140ms 라 **한 턴도 안 빠진다**
             (조립은 재 보니 3~12ms). 이보다 크게 잡으면 빨리감기에서 하루가 통째로 씹힌다. */
   const REBUILD_MIN_MS = 60;
+  /* 잎 상태 한 줄 요약 — 같으면 같은 그림이다. 바램은 0.1 칸까지만 본다(0.05 씩 움직여
+     매일 다시 짓게 하면 이득 없이 비싸다. 눈에 띄는 변화가 0.1 보다 잘다). */
+  function leafStateKey(list) {
+    if (!Array.isArray(list) || !list.length) return '';
+    return list.map(s => `${s.leafBirth}${s.varie ? 'v' : ''}${s.matured ? 'm' : ''}` +
+                         `${s.dropped ? 'x' : ''}${s.fade ? '.' + Math.round(s.fade * 10) : ''}`).join(',');
+  }
   function needsRebuild(prev, spec, days) {
     if (!prev) return true;
     if ((prev.spec.kind || 'monstera') !== (spec.kind || 'monstera')) return true;
@@ -1971,6 +1992,11 @@ export async function createRoomView(canvas, opts = {}) {
        심는 것은 하루를 안 쓰는 동작이라, 이걸 빠뜨리면 [🌱 심기]를 눌러도 판이
        빈 채로 남아 있다가 **다음 날에야** 싹이 돋는다 — 위 count 규칙과 같은 이유다. */
     if ((prev.spec.sown === false) !== (spec.sown === false)) return true;
+    /* ★ 잎 상태가 바뀌면 **날이 안 가도** 다시 짓는다 (2026-08-16 · §leafState).
+       위 둘과 같은 함정이다. 특히 **바램**은 유효 생장일이 멈춘 채로 움직인다 —
+       어두운 자리에 둔 그루는 GROWTH 가 안 오르므로(실측: 서랍장에서 70일 동안 +0),
+       days 만 보면 잎이 노랗게 바래도 화면이 영영 안 바뀐다. */
+    if (leafStateKey(prev.spec.leafState) !== leafStateKey(spec.leafState)) return true;
     if ((prev.days ?? null) !== days) {
       if (performance.now() - (prev.builtAt || 0) < REBUILD_MIN_MS) return false;
       return true;
