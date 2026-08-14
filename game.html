@@ -180,7 +180,9 @@
 
   /* ── 하단 액션 ─────────────────────────────────────────────────────── */
   /* 버튼 글자를 접지 않는다 — '빨리감 / 기' 로 나뉘어 읽힐이 안 됐다 */
-  #bottom .actionbar button,#bottom .navbar button{white-space:nowrap}
+  /* ★ 2026-08-15 — `#bottom .navbar button` 을 걷었다. 탭 줄이 `#stage` 로 옮겨 가서
+     아래 띠 안에 `.navbar` 가 없다 — 아무것도 안 고르는 선택자다(줄 자신은 제 규칙을 갖는다). */
+  #bottom .actionbar button{white-space:nowrap}
   #bottom{flex:0 0 auto;padding:10px calc(var(--safe-r) + 12px) calc(var(--safe-b) + 10px) calc(var(--safe-l) + 12px);
           background:linear-gradient(0deg,rgba(20,16,28,.97) 55%,rgba(20,16,28,.80) 100%);
           border-top:1px solid rgba(255,255,255,.07);position:relative;z-index:20}
@@ -227,26 +229,89 @@
   .actionbar button{flex:1;min-height:var(--tap);font-weight:700;font-size:14px;border-radius:12px}
   .actionbar button#next{flex:1.5}
   .actionbar button:disabled{opacity:.42}
-  /* ── 늘 보이는 탭 띠 (2026-08-14 · 기획 §C) ────────────────────────────
-     ★ 다섯 칸이 폰 세로에서 손가락 최소(--tap=44px)를 넘는지가 이 띠의 유일한 걸림돌이다.
-       390px 실측값은 `docs/handoff/guidenav-to-plan.md` 에 적었다.
-     ★ 글자를 접지 않는다 — '가 / 방' 으로 나뉘면 읽기 전에 못 알아본다.
+  /* 음악 단추는 좁게 — 매 턴 누르는 것이 아니라 한 번 켜 두는 것이다 */
+  .actionbar button#btnMusic{flex:0 0 var(--tap);font-size:17px;opacity:.5;padding:0}
+  .actionbar button#btnMusic[aria-pressed=true]{opacity:1;color:var(--leaf)}
+
+  /* ── 늘 보이는 탭 줄 — **방 위에 세로로 떠 있다** (2026-08-15) ──────────
+     ══════════════════════════════════════════════════════════════════════
+     박사님: *"난 저렇게 뒤에 게임화면 보이면서 저렇게 보이는거 얘기한거야.
+              그래서 좌 나 우 얘기한거고."*
+     ★ 값이 있는 결정이다 — 아래 띠에 두면 띠가 51px 두꺼워져 방이 그만큼 짧아진다
+       (2026-08-14 실측: 390px 에서 무대 667 → 615.7). 방 **위**에 얹으면 방은
+       원래 길이 그대로고, 줄은 방이 안 쓰는 **왼쪽 위 삼각형 여백**에 앉는다.
+     ★ 왼쪽인 이유 — 오른쪽 위에는 이미 [?](`#guideOpen`)가 있고, 놓을 자리(가구)가
+       화면 오른쪽 아래로 몰려 있다(실측: 슬롯 13개가 전부 x 197~320 · y 301~474, 390px).
+     ★ 반투명인 이유 — 뒤로 방이 비쳐야 「화면 위에 떠 있는 것」으로 읽힌다.
+       불투명하면 화면을 잘라 먹은 띠와 구별되지 않는다. 그게 박사님 그림의 요점이다.
+     ★★ **끌어 놓기를 막지 않는다** — 이게 이 줄의 제일 큰 위험이었다. 셋으로 막았다:
+       ① 통(`#navbar`)은 `pointer-events:none` 이고 **단추만** 눌림을 받는다.
+          칸 사이 틈·줄 바깥은 그대로 방이 받는다(시점 돌리기·화분 탭).
+       ② 끄는 중(`body.dragging`)에는 줄이 통째로 눌림을 안 받고 흐려진다 —
+          아래 띠(`body.dragging #bottom`)가 이미 같은 규칙을 쓴다.
+       ③ 놓기 판정은 애초에 `freePlace.surfaceAt` 이 **캔버스를 쏘아** 한다.
+          DOM 이 위에 있어도 광선을 안 막는다 — `elementFromPoint` 를 안 쓴다.
      ★ 지금 열린 탭은 `.cur` 로 표시한다. `aria-selected` 를 안 쓰는 이유:
        그건 role=tab 의 것이고 시트 안 `.sheettabs` 가 이미 그 역할을 갖고 있다.
-       한 패널을 두 tablist 가 가리키면 보조기기가 둘 중 어느 것을 정본으로 볼지 모른다. */
-  .navbar{display:flex;gap:6px;margin-top:7px}
-  .navbar button{flex:1;min-width:0;min-height:var(--tap);font-weight:700;font-size:12.5px;
-    border-radius:12px;padding:0 2px;white-space:nowrap}
-  /* 음악 단추는 좁게 — 매 턴 누르는 것이 아니라 한 번 켜 두는 것이다 */
-  .navbar button#btnMusic{flex:0 0 var(--tap);font-size:17px;opacity:.5}
-  .navbar button#btnMusic[aria-pressed=true]{opacity:1;color:var(--leaf)}
+       한 패널을 두 tablist 가 가리키면 보조기기가 둘 중 어느 것을 정본으로 볼지 모른다.
+     ★★ **칸을 안 띄우고 한 덩이로 붙였다.** 이건 멋이 아니라 **잰 결과**다 —
+       띄우면(칸 사이 6px) 줄이 194px 이 되어 360px 화면에서 맨 아래 [방] 칸이
+       **방 왼쪽 모서리를 42픽셀 먹었다**(실측). 붙이면 182px 이라 안 먹는다.
+       ⇒ 같은 자리에 넷을 넣으면서 칸은 오히려 커졌다(44×44 → 46×45). */
+  /* ★★ 2026-08-15 — z-index 41 은 **스크림(39)·시트(40) 위**다. 재고 나서 올렸다.
+     ─────────────────────────────────────────────────────────────────────
+     처음엔 22 로 뒀는데, 시트가 열리면 `#sheetScrim{inset:0}` 이 화면을 통째로 덮어
+     줄이 **보이는데 안 눌렸다**(실측: [상점]을 연 뒤 [방]을 눌러도 `pageShop` 그대로).
+     ⚠ 이건 이번에 생긴 것이 아니라 **아래 띠에 있을 때부터 그랬다** — `#bottom` 이
+       z-index 20 이라 시트·스크림 밑이다. 다만 그때는 시트가 띠를 **덮어 안 보이기라도**
+       했다. 위로 올라오니 「보이는데 안 눌리는 단추」가 되어 더 나쁘다.
+     ⇒ 이 줄의 존재 이유가 「한 번에 그 탭으로 간다」인데 시트를 먼저 닫아야 하면
+       다시 두 걸음이다. 그래서 스크림 위로 올린다. */
+  #navbar{position:absolute;z-index:41;pointer-events:none;box-sizing:border-box;
+    left:calc(var(--safe-l) + 8px);top:8px;width:48px;
+    display:flex;flex-direction:column;overflow:hidden;border-radius:15px;
+    background:rgba(20,16,28,.50);border:1px solid rgba(255,255,255,.14);
+    -webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px);
+    box-shadow:0 3px 14px rgba(0,0,0,.38)}
+  /* ★ 46×45 — 가로세로 **둘 다** 손가락 최소(--tap=44px)를 넘는다 */
+  #navbar button{pointer-events:auto;width:100%;height:45px;min-height:45px;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;
+    padding:3px 0 4px;border:0;border-top:1px solid rgba(255,255,255,.10);border-radius:0;
+    background:none;box-shadow:none;filter:none;
+    color:var(--ink);font-weight:700;font-size:9.5px;line-height:1;white-space:nowrap}
+  #navbar button:first-child{border-top:0}
+  /* 그림 + 짧은 글자. 그림만 두면 「무엇인지」를 배워야 하고, 글자만 두면 눈에 안 든다 */
+  #navbar .ni{display:block;width:21px;height:21px;object-fit:contain;
+    font-size:17px;font-style:normal;line-height:21px;text-align:center}
+  #navbar button span{display:block}
   /* 열려 있는 탭 — 시트 안 탭(.sheettabs)과 **같은 금색**이다. 두 곳이 다른 색으로
      같은 것을 말하면 같은 것으로 안 읽힌다. */
-  .navbar button.cur{background-image:none;background:rgba(255,180,84,.18);
-    border:1px solid rgba(255,180,84,.46);color:var(--gold);filter:none}
+  #navbar button.cur{background:rgba(255,180,84,.30);color:var(--gold)}
+  /* ★ 손가락이 가리키는 칸 — 바깥으로 퍼지는 고리(`.hintTarget`)는 통의 `overflow:hidden`
+     에 잘려 **아래쪽 금색 줄 하나로만** 보였다(실측 사진). 안쪽으로 그린다. */
+  #navbar button.hintTarget{animation:hintGlowIn 1.4s ease-in-out infinite}
+  @keyframes hintGlowIn{0%,100%{box-shadow:inset 0 0 0 0 rgba(255,180,84,0)}
+                        50%{box-shadow:inset 0 0 0 3px rgba(255,180,84,.55)}}
+  /* 방을 통째로 쓰는 순간에는 걷는다 — 대사·확대·배치 중에는 줄이 방해만 된다 */
+  #stage.talking #navbar,#stage.zoom #navbar,#stage.placing #navbar{opacity:0;pointer-events:none}
+  /* ⚠ 통에만 걸면 안 된다 — 단추가 `pointer-events:auto` 를 **제 이름으로** 갖고 있어
+     부모의 none 을 되살린다. 실측: 끄는 중에 줄 한가운데를 물으면 `navShop` 이 나왔다.
+     (끌기는 `setPointerCapture` 로 손잡이가 붙잡고 있어 그래도 안 새지만,
+      손을 뗀 뒤 따라오는 `click` 이 남의 단추에 떨어지는 길은 막아 둔다) */
+  body.dragging #navbar,body.dragging #navbar button{opacity:.2;pointer-events:none;transition:opacity .15s}
 
   /* ── 바텀시트 (가방·자리·설정) ───────────────────────────────────── */
-  #sheet{position:fixed;z-index:40;left:0;right:0;bottom:0;max-height:78dvh;
+  /* ★★ 2026-08-15 — 높이 상한에 **두 번째 자**를 걸었다.
+     ─────────────────────────────────────────────────────────────────────
+     78dvh 만 있을 때 390×844 에서 시트 윗변이 **186px** 까지 올라온다(실측).
+     방 왼쪽 위 탭 줄은 255px 에서 끝나므로 시트가 줄의 아래 두 칸을 덮었다 —
+     그러면 [상점]을 연 순간 정작 [상점] 칸의 「지금 여기」 표시가 안 보인다.
+     ⇒ 줄 아래로만 올라오게 막는다. 264px = 상단 띠(65) + 줄 위 여백(8)
+       + 줄 높이(182) + 사이 9. 노치 폰은 상단 띠가 그만큼 내려가므로 --safe-t 를 뺀다.
+     ⚠ 값어치를 치른다 — 상점 쪽이 390px 에서 78px 짧아진다. 시트 안은 **구르는 칸**이라
+       못 보게 되는 것은 없고, 손이 더 구르는 것뿐이다. 안 보이는 표시보다 낫다. */
+  #sheet{position:fixed;z-index:40;left:0;right:0;bottom:0;
+         max-height:min(78dvh, calc(100dvh - var(--safe-t) - 264px));
          transform:translateY(101%);transition:transform .3s cubic-bezier(.22,.9,.3,1);
          background:linear-gradient(180deg,#213326 0,#18241d 42%,#171421 100%);
          border-top:1px solid rgba(255,255,255,.12);border-radius:18px 18px 0 0;
@@ -408,9 +473,12 @@
     #sheet .grip{display:none}
     #sheetScrim{display:none}
     /* 시트가 늘 펴져 있고 그 안에 탭 띠가 있다 — 여는 손잡이가 필요 없다.
-       ★ 음악 단추(`#btnMusic`)는 남긴다. 그건 탭이 아니라 설정이라 시트 안에 없다. */
-    .navbar button[data-tab]{display:none}
-    .navbar{max-width:420px;margin:7px auto 0}
+       ★ 2026-08-15 — 이제 이 줄은 **방 위에 떠 있는 세로 줄**이라 통째로 걷는다.
+         예전에는 `button[data-tab]` 만 감췄는데, 그때는 같은 줄에 음악 단추가 있었다.
+         지금 음악은 아래 띠(`.actionbar`)에 있으므로 줄에 남는 것이 없다 —
+         빈 통을 남겨 두면 `pointer-events:none` 이라 안 보여도 `buildGuide` 가
+         **폭 있는 요소로 세어** 허공에 설명을 단다(그 함수는 사각형만 본다). */
+    #navbar{display:none}
     .sheetbody{padding:2px 14px 20px}
     /* 넓으니 라벨을 다시 가로로 — 폰에서 세로로 세운 건 폭이 없어서였다 */
     #sheet label{flex-direction:row;align-items:center}
@@ -773,6 +841,19 @@
   #hint .say{display:block;padding:5px 11px;border-radius:999px;white-space:nowrap;
     font-weight:700;font-size:12.5px;background:rgba(255,180,84,.94);color:#2a1c06;
     box-shadow:0 4px 12px rgba(0,0,0,.45)}
+  /* ★★ 2026-08-15 — **옆에서 가리키는 자세**. 탭 줄이 방 왼쪽 **위**로 올라가면서
+     생긴 문제다: 위에 놓을 자리가 없으면 `Math.max(4, …)` 가 글을 상단 자원칩 위로
+     밀어 올렸고(실측: 「가방을 열어 보세요」가 `아침 06:49` 를 덮었다),
+     `translateX(-50%)` 때문에 왼쪽 가장자리 대상에서는 글이 화면 **밖으로** 나갔다.
+     ⇒ 위가 막히면 옆으로 선다. 손가락도 그때는 옆을 가리킨다 —
+       아래를 가리키는 손(👇)을 옆에 두면 다시 「반대를 가리키는」 그 사고가 난다. */
+  #hint.side{transform:translate(0,-50%);display:none;align-items:center;gap:1px}
+  #hint.side.on{display:flex}
+  #hint.side .hand{margin-top:0;font-size:26px;animation:handBobXR 1.1s ease-in-out infinite}
+  #hint.side.toRight{flex-direction:row-reverse}   /* 대상이 왼쪽 — 손이 왼쪽에서 가리킨다 */
+  #hint.side.toRight .hand{animation:handBobXL 1.1s ease-in-out infinite}
+  @keyframes handBobXL{0%,100%{transform:translateX(0)}50%{transform:translateX(-5px)}}
+  @keyframes handBobXR{0%,100%{transform:translateX(0)}50%{transform:translateX(5px)}}
   /* 가리키는 대상이 눈에 띄게 — 테두리가 한 번씩 숨쉰다 */
   /* ══ 조작 안내판 (박사님 2026-08-03: "각 버튼마다 가이드해줘") ══════════
      한 번에 하나만 가리키는 손가락과는 다른 것이다. 이건 **모든 조작을 한 화면에**
@@ -1187,6 +1268,28 @@
         <span id="dlgNext">▼ 탭</span>
       </div>
     </div>
+
+    <!-- ══ 늘 보이는 탭 줄 — **방 위에 세로로 떠 있다** ═══════════════════
+         (2026-08-15 박사님: *"난 저렇게 뒤에 게임화면 보이면서 저렇게 보이는거
+          얘기한거야. 그래서 좌 나 우 얘기한거고."*)
+         ══════════════════════════════════════════════════════════════
+       ★ 하루 전에는 이 줄을 **아래 띠에 두 번째 줄로** 깔았다. 그러면 띠가 51px 두꺼워지고
+         그만큼 방이 짧아진다(390px 에서 667 → 615.7 실측). 방 위에 얹으면 방이 **원래
+         길이 그대로**고, 줄은 **아무도 안 쓰던 왼쪽 위 여백**에 앉는다.
+       ★ 반투명이다. 뒤로 방이 비쳐야 「게임 화면 위에 떠 있는 것」이지, 안 비치면
+         그냥 화면을 잘라 먹은 띠다 — 박사님이 말씀하신 그 그림이 바로 이 점이다.
+       ★ 그림은 `assets/ui/` 에 있던 것을 쓴다. 새로 그리지 않았다.
+         ⚠ **가방 그림만 없다** — 저장소 전체에 배낭·주머니 2D/GLB 가 하나도 없어서
+           이모지 🎒 로 뒀다. 원화가 생기면 여기 `<img>` 한 줄만 바꾸면 된다.
+       ★ id 는 `navbar` 그대로다. `syncNav`·`buildGuide`·`updateHint`·검사가 그 이름으로
+         이 줄을 찾는다. 옮기면서 이름까지 바꾸면 가리키는 쪽이 조용히 허공을 가리킨다.
+       ⚠ `#btnMusic` 은 여기 안 넣고 **아래 띠에 남겼다** — 이유는 CSS 주석에 적었다. -->
+    <div class="navbar" id="navbar">
+      <button id="openBag"   data-tab="bag"><i class="ni">🎒</i><span>가방</span></button>
+      <button id="navPlants" data-tab="plants"><img class="ni" src="./assets/ui/item_monstera.png" alt=""><span>식물</span></button>
+      <button id="navShop"   data-tab="shop"><img class="ni" src="./assets/ui/icon_coin.png" alt=""><span>상점</span></button>
+      <button id="navRoom"   data-tab="room"><img class="ni" src="./assets/ui/icon_window.png" alt=""><span>방</span></button>
+    </div>
   </main>
 
   <!-- ══ 하단 액션 — 엄지로 누르는 자리 ═══════════════════════════════ -->
@@ -1222,25 +1325,13 @@
            ⚠ 코어(`loop.startFastForward`)는 **안 지웠다** — 헤드리스 재현·밸런스 측정이
              그 길로 돈다(`test_fastforward` 20항목이 그 계약을 지킨다). 화면에서만 걷었다. -->
       <button id="next" disabled>다음 날 ▸</button>
-    </div>
-    <!-- ★★★ 2026-08-14 — **늘 보이는 탭 띠** (기획 §C · 박사님 *"가방/식물/상점/방/메뉴 를
-         밑이나 좌우에 나열"*).
-         ══════════════════════════════════════════════════════════════
-         예전에는 [가방] 하나뿐이라, 상점에 가려면 **가방을 열고 → 상점 탭을 또 누르는**
-         두 걸음이었다. 시트도 탭도 이미 있으니 새로 지을 것이 없다 —
-         **여는 손잡이만 늘린다**(`window.__byeotSheet.tab(...)`).
-       ★ [다음 날]은 **줄을 혼자 쓴다.** 제일 많이 누르는 단추라 다섯으로 쪼개면 안 된다.
-       ★ [가방]은 id 를 `openBag` 그대로 둔다 — 손가락 안내(`updateHint`)·조작 안내판·
-         검사(`test_uiwire` F-4b)가 그 이름으로 이 단추를 가리킨다. 이름을 바꾸면
-         가리키는 쪽이 조용히 허공을 가리킨다.
-       ⚠ 폰 세로 390px 에서 다섯 칸이다. 실측은 `docs/handoff/guidenav-to-plan.md`. -->
-    <div class="navbar" id="navbar">
-      <button id="openBag"   class="ghost" data-tab="bag">가방</button>
-      <button id="navPlants" class="ghost" data-tab="plants">식물</button>
-      <button id="navShop"   class="ghost" data-tab="shop">상점</button>
-      <button id="navRoom"   class="ghost" data-tab="room">방</button>
       <!-- ★음악은 꺼진 채로 시작한다. 브라우저가 사용자 조작 없이는 소리를 안 내주기도 하고,
-           무엇보다 소리를 원치 않는 자리에서 켜는 게임은 그 자리에서 닫힌다. -->
+           무엇보다 소리를 원치 않는 자리에서 켜는 게임은 그 자리에서 닫힌다.
+         ★★ 2026-08-15 — **옆 줄에 안 넣고 여기 남겼다.** 옆 줄은 「어느 탭을 보는가」를
+           말하는 자리다. 음악은 탭이 아니라 설정이라 거기 끼면 줄이 두 가지를 말하게 된다.
+           게다가 옆 줄은 **방 위에 얹혀 있어** 칸이 하나 늘 때마다 방을 그만큼 더 가린다 —
+           띠에서 옮겨 온 이유가 「방을 안 줄이려고」인데 거기서 방을 갉으면 뜻이 뒤집힌다.
+         ⚠ 44px 고정이라 [다음 날]은 이 줄의 나머지를 통째로 쓴다(실측은 인계 문서). -->
       <button id="btnMusic" class="ghost" aria-pressed="false" title="배경 음악">♪</button>
     </div>
   </nav>
@@ -2306,14 +2397,41 @@ function hintAt(el, say) {
   if (!el) { h.classList.remove('on'); hintTargetEl = null; return; }
   const r = el.getBoundingClientRect();
   if (!r.width || !r.height) { h.classList.remove('on'); return; }   // 안 보이는 것은 안 가리킨다
+  const hand = h.querySelector('.hand');
   h.querySelector('.say').textContent = say;
+  h.classList.remove('side', 'toRight');
+  hand.textContent = '👇';
   h.style.left = (r.left + r.width / 2) + 'px';
+  h.style.top = '-999px';                      /* 재는 동안은 화면 밖 — 깜빡임을 안 만든다 */
   h.classList.add('on');
   /* ★클러스터 높이를 **실측해서** 손가락 끝이 대상 바로 위에 닿게 놓는다.
      예전엔 62px 를 어림으로 뺐다 — 글이 길거나 짧으면 그만큼 떠서,
      폰에서 손가락이 버튼이 아니라 그 위 빈 곳을 가리키고 있었다(박사님 스크린샷). */
-  const hh = h.getBoundingClientRect().height || 62;
-  h.style.top = Math.max(4, r.top - hh + 4) + 'px';
+  let hb = h.getBoundingClientRect();
+  const hh = hb.height || 62;
+  /* ★★ 2026-08-15 — **위가 막혔으면 옆에서 가리킨다.**
+     탭 줄이 방 왼쪽 위로 올라가면서 「위에 놓을 자리」가 없는 대상이 처음 생겼다.
+     예전 식(`Math.max(4, …)`)은 그때 글을 **상단 자원칩 위로** 밀어 올렸고
+     (실측: 「가방을 열어 보세요」가 `아침 06:49` 를 덮었다),
+     `translateX(-50%)` 라 왼쪽 가장자리 대상에서는 글이 화면 **밖으로** 나갔다.
+     ⇒ 위가 자원칩 띠에 물리면 옆으로 세운다. 한계는 박지 않고 띠를 **잰다.** */
+  let lim = 4; try { lim = Math.max(4, $('topbar').getBoundingClientRect().bottom + 4); } catch { }
+  if (r.top - hh + 4 < lim) {
+    h.classList.add('side');
+    hb = h.getBoundingClientRect();
+    /* 오른쪽에 자리가 있으면 오른쪽. 없으면 왼쪽 — 손 방향도 같이 뒤집는다 */
+    const toRight = r.right + 8 + hb.width <= innerWidth - 8 || r.left - 8 - hb.width < 8;
+    h.classList.toggle('toRight', toRight);
+    hand.textContent = toRight ? '👈' : '👉';
+    h.style.left = (toRight ? r.right + 8 : Math.max(8, r.left - 8 - hb.width)) + 'px';
+    h.style.top = Math.min(innerHeight - 8 - hb.height / 2,
+                  Math.max(hb.height / 2 + 8, r.top + r.height / 2)) + 'px';
+  } else {
+    /* 위에 선다. ★가로도 물린다 — 가장자리 대상에서 글이 화면 밖으로 나갔다 */
+    h.style.left = Math.min(innerWidth - 8 - hb.width / 2,
+                   Math.max(hb.width / 2 + 8, r.left + r.width / 2)) + 'px';
+    h.style.top = (r.top - hh + 4) + 'px';
+  }
   el.classList.add('hintTarget');
   hintTargetEl = el;
 }
@@ -2337,12 +2455,15 @@ function buildGuide() {
     [$('stage'),    '방을 끌면 돌아갑니다 · 두 손가락으로 확대\n화분을 누르면 [이동] [회전]\n★자리마다 밝기가 다릅니다\n어두운 자리도, 밝은 자리도 쓸모가 있습니다', 'mid'],
     [$('quest'),    '지금 할 일',                  'down'],
     [$('next'),     '하루를 보냅니다',              'down'],
-    /* ★ 2026-08-14 — [가방] 하나가 아니라 **띠 전체**를 설명한다(기획 §C).
-       예전 글은 「가방 · 방 설정 · 살림」이었는데, 이제 그 셋이 각각 제 단추를 갖는다.
-       좁은 화면엔 이 띠가, 넓은 화면엔 늘 펴진 시트 탭이 있다 — 있는 쪽만 가리킨다
-       (`buildGuide` 가 폭 0 인 줄을 건너뛴다). */
+    /* ★ 2026-08-14 — [가방] 하나가 아니라 **줄 전체**를 설명한다(기획 §C).
+       예전 글은 「가방 · 방 설정 · 살림」이었는데, 이제 그 넷이 각각 제 단추를 갖는다.
+       좁은 화면엔 이 줄이, 넓은 화면엔 늘 펴진 시트 탭이 있다 — 있는 쪽만 가리킨다
+       (`buildGuide` 가 폭 0 인 줄을 건너뛴다).
+     ★ 2026-08-15 — 방향을 `down` → `mid` 로 바꿨다. 줄이 아래 띠에서 **방 왼쪽 위**로
+       옮겨 갔는데 `down` 은 설명을 대상 **위**(`r.top - 40`)에 놓는다. 그 자리는
+       상단 자원칩이라 설명이 거기 얹혔다. `mid` 는 줄 옆 높이에 놓는다. */
     [($('openBag') && $('openBag').offsetParent) ? $('navbar') : null,
-                    '가방 · 식물 · 상점 · 방 — 바로 열립니다', 'down'],
+                    '가방 · 식물 · 상점 · 방 — 바로 열립니다', 'mid'],
     [$('tabBag'),   '가방의 그림을 방으로 끌어다 놓습니다', 'up'],
     /* ★ 2026-08-11 — 설명이 없던 둘. `buildGuide` 는 `if (!el) continue` 라
        id 가 없으면 그 줄만 조용히 빠진다. */
@@ -2710,6 +2831,11 @@ function updateHint() {
       const h = $('hint');
       /* ★ 2026-08-11 — 「창가」를 「창턱」으로. 자리 이름이 `창턱 화분받침` 이다 */
       h.querySelector('.say').textContent = '탭 → 옮기기 → 창턱으로';
+      /* ★ 2026-08-15 — `side`·`toRight` 를 걷는다. `hintAt` 이 붙일 수 있는 클래스인데
+         이 갈래는 `hintAt` 을 안 거치고 직접 놓는다 — 안 걷으면 앞 대상의 자세가 남아
+         손가락이 옆을 가리킨 채 화분 위에 선다. */
+      h.classList.remove('side', 'toRight');
+      h.querySelector('.hand').textContent = '👇';
       h.style.left = (box.left + 24) + 'px';
       h.style.top = Math.max(4, box.top - 62) + 'px';
       h.classList.add('on');
