@@ -33,8 +33,14 @@ import { firstPlayRulesFromBalance, placeBeansprout, moveMonstera, beansproutRea
          cropCycleSavedWon } from '../src/game/first_play.js';
 import { seasonAt, seasonDayAt, buyLamp, canMoveOut, moveOut, TUTORIAL_RULES,
          varieView, varieGrantCheck, stepVarieGrant, varieGrantOpensDay } from '../src/game/tutorial.js';
+/* ★★ 2026-08-17 — `sellCutting`·`sellPot` 이 **없어졌다**(shop.js §⑦-0).
+   몬스테라 것은 상점이 안 사고 **중고 거래**로만 나간다: 올리고 → 1~7일 뒤 연락 → 거래.
+   ⇒ 이 재현이 지키던 약속 하나가 바뀐다 — 예전에는 「팔 수 있으면 그 날 돈이 됐다」였다.
+     지금은 **연락을 기다리는 날**이 끼므로 이사에 닿는 날이 뒤로 밀린다. 그 밀림을 재는 것이
+     이번 개편의 핵심 실측이다(§B·§H 의 날짜). 지름길로 메우지 않는다. */
 import { orderItem, stockOf, incomingOf, priceOf, varieLeavesNeededFor,
-         sellCutting, sellPot, CATALOG, buyPriceOf, SELLABLE_CUTTING_STATUS } from '../src/game/shop.js';
+         listCutting, listPot, dealListing, marketStatus, marketGate, listingFor,
+         CATALOG, buyPriceOf, SELLABLE_CUTTING_STATUS } from '../src/game/shop.js';
 import { takeCutting, cuttableNow, cutBudgetOf, motherStatsNow, METHODS,
          WATER_LEAF_MAX } from '../src/game/propagation.js';
 
@@ -230,12 +236,35 @@ function play(opt = {}) {
   let cuttingIncome = 0, varieIncome = 0, potIncome = 0, containerSpend = 0, cuttingsSold = 0;
   let firstCutDay = null, firstSellDay = null;
 
+  /* ══ ★★ 중고 거래 — **올리는 것과 돈이 되는 것이 다른 날이다** (2026-08-17) ═══════
+     예전 `sell(c)` 한 줄이 둘 다 했다. 이제 갈라진다:
+       `sell(c)`   올린다. **돈이 안 들어온다**
+       `dealAll()` 연락 온 것을 그날 전부 거래한다 — 사람이 [상점]에서 하는 그 손짓이다
+     ⚠ 어느 갈래(무늬/민무늬)였는지는 **올릴 때** 알아 두어야 한다 — 거래할 때는 삽수가
+       이미 목록에서 나가므로 `c.source` 를 못 본다. */
+  const listedKind = new Map();          // listingId → 'varie' | 'plain'
   const sell = (c) => {
+    /* ★ **이미 올려 둔 것은 다시 안 올린다.** 화면에서도 그 자리는 [내리기]로 바뀐다
+       (game.html §drawCuttings). 안 막으면 재현이 매일 같은 삽수를 올리려다 던진다. */
+    if (listingFor(S, c)) return null;
     const varie = c.source.variegatedLeaves > 0;
-    const r = sellCutting(S, c.id);
-    cuttingsSold++;
-    if (varie) varieIncome += r.won; else cuttingIncome += r.won;
+    const r = listCutting(S, c.id);
+    listedKind.set(r.listing.listingId, varie ? 'varie' : 'plain');
     return r;
+  };
+  /* 연락 온 것을 전부 거래한다. ★ **[다음 날] 바로 뒤에 부른다** — 연락은 아침에 오고
+     사람은 그날 [상점]을 열어 거래한다. 미루면 재현이 사람보다 게을러진다. */
+  const dealAll = () => {
+    let ms = null; try { ms = marketStatus(S); } catch { return; }
+    for (const l of ms.contacted) {
+      let r; try { r = dealListing(S, l.listingId); } catch { continue; }
+      if (r.kind === 'pot') potIncome += r.won;
+      else {
+        cuttingsSold++;
+        if (listedKind.get(l.listingId) === 'varie') varieIncome += r.won;
+        else cuttingIncome += r.won;
+      }
+    }
   };
 
   for (let d = 1; d <= (opt.days || 240); d++) {
@@ -251,6 +280,13 @@ function play(opt = {}) {
     let turn;
     try { turn = nextDay(S, io).turn; }
     catch (e) { throw new Error(`Day ${S.day} 에서 턴이 터졌습니다 — ${e.message}`); }
+
+    /* ★ 중고 거래의 문을 연다 — **화면이 하는 것과 같은 일**이다(`game.html §drawShop` 이
+       매번 `marketGate(S, { leaves })` 를 부른다). 잎 수는 growth 소유라 여기서도 받아 넘긴다.
+       ⚠ 지어내지 않는다 — 그루가 없으면 안 부른다(이미 열려 있으면 그대로다). */
+    if (pot0(S)) { try { marketGate(S, { leaves: io.growth.leafStats().leaves }); } catch { } }
+    /* ★ 연락 온 것을 그날 거래한다 — 여기가 **돈이 들어오는 유일한 자리**다 */
+    dealAll();
 
     /* ★★ 수확 (2026-08-04) — **[수확하기] 를 눌러야 곳간에 들어간다**(first_play.js §수확).
        재현이 자동으로 거두게 두면 **검사가 게임과 다른 것을 재게 된다.** 그래서 여기서
@@ -363,9 +399,11 @@ function play(opt = {}) {
       if (ts.cashWon + cut.won + potWon >= MOVE_OUT_WON) {
         for (const c of [...(S.cuttings || [])])
           if (SELLABLE_CUTTING_STATUS.includes(c.status)) sell(c);
+        /* ★ 그루도 **올릴 뿐**이다. 돈은 연락이 온 날 `dealAll` 이 넣는다(potIncome 도 거기서).
+           ⚠ 이미 올려 뒀으면 다시 안 올린다 — `listPot` 이 던지므로 감싼다. */
         if (potWon && ts.cashWon < MOVE_OUT_WON) {
-          sellPot(S, { leaves: v.stats.leaves, variegatedLeaves: v.stats.variegatedLeaves });
-          potIncome += potWon;
+          try { listPot(S, { leaves: v.stats.leaves, variegatedLeaves: v.stats.variegatedLeaves }); }
+          catch { /* 이미 올렸거나 문이 아직 안 열렸다 */ }
         }
       }
     }

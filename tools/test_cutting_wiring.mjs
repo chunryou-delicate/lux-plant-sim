@@ -85,6 +85,10 @@ const PIECE = 'n0#1';
 function tick(S, log) {
   S.day++;
   SH.stepShop(S, { log });
+  /* ★ 2026-08-17 — **중고 거래 연락도 하루의 일이다**(loop.nextDay 가 stepShop 바로 뒤에서
+     부른다 · shop.js §⑦-1). 여기 없으면 이 하네스에서는 연락이 영영 안 와서
+     「올려 두면 팔린다」가 하네스 안에서만 거짓이 된다 — 실제로 그렇게 한 번 헛짚었다. */
+  SH.stepMarket(S, { log });
   return P.stepCuttings(S, { log });
 }
 
@@ -172,17 +176,35 @@ check('E ★용기가 없으면 못 자른다 — 이게 파산 잠김의 정체
        `물꽂이 한 개를 살리려면 ${won(SH.buyPriceOf('jar') + SH.buyPriceOf('pot'))} 가 든다`);
 });
 
-check('F ★탈출구 — 포트를 못 사도 혹 난 삽수를 팔면 돈이 된다', () => {
+/* ══ ★★★ F — **파산 탈출구가 이제 하루 만에 안 돈다** (2026-08-17 고쳐 씀) ═══════
+   ------------------------------------------------------------
+   ⚠ 예전 이 절은 `SH.sellCutting(S, c.id)` 한 줄이었고, **그 한 줄이 「혹 난 삽수는 누르면
+     그 자리에서 돈이 된다」를 못 박고 있었다.** 그것이 이번에 바뀐 약속이다 — 몬스테라 것은
+     중고 거래로만 나가고, 연락은 **1~7일** 뒤에 온다(shop.js §⑦-0).
+   ★★ 그래서 이 절이 재는 것이 하나 늘었다: **기다리는 동안 삽수가 안 죽나.**
+     혹 난 삽수는 분갈이 유예 안에 안 고치면 시든다 — 초보 16일 · 자유 8일이고,
+     연락은 아무리 늦어도 7일이다. **둘 다 7일보다 길어 탈출구가 닫히지 않는다.**
+     ⇒ 그 여유가 사라지는 날(유예를 줄이거나 대기를 늘리는 날) 이 검사가 먼저 깨진다. */
+check('F ★탈출구 — 포트를 못 사도 혹 난 삽수를 내놓으면 돈이 된다 (기다리는 동안 안 죽는다)', () => {
   const S = newGame({ cash: 0 }); give(S, 'jar');
   const c = P.takeCutting(S, { nodes: mother(6), nodeId: PIECE, container: 'jar' });
   while (c.status !== 'node') tick(S);
   assert.ok(SH.SELLABLE_CUTTING_STATUS.includes('node'), '혹 난 삽수를 못 팝니다');
-  const r = SH.sellCutting(S, c.id);
+  SH.marketGate(S, { leaves: SH.MARKET_MIN_LEAVES });      // 문 — 하네스에 growth 가 없다
+  const l = SH.listCutting(S, c.id).listing;
+  /* ★ 지름길이 없다 — **하루씩 실제로 흘린다.** 그 사이 시들면 거기서 잡힌다. */
+  let waited = 0;
+  while (SH.marketStatus(S).contacted.length === 0 && waited < 30) { tick(S); waited++; }
+  assert.ok((S.cuttings || []).some(x => x.id === c.id),
+    `★연락을 ${waited}일 기다리는 사이에 삽수가 시들었습니다 — 파산 탈출구가 닫혔습니다 ` +
+    `(유예 ${P.graceDaysOf('water', false)}일 · 자유 모드)`);
+  const r = SH.dealListing(S, l.listingId);
   assert.ok(r.won >= SH.buyPriceOf('pot'),
     `혹 난 삽수를 팔아도 ${won(r.won)} 뿐이라 포트(${won(SH.buyPriceOf('pot'))})를 못 삽니다`);
   assert.equal(SH.stockOf(S, 'jar'), 1, '판 뒤에 병이 안 돌아왔습니다');
-  info(`  잎 ${c.source.leaves}장 삽수를 혹 단계에서 팔면 ${won(r.won)} · 병도 돌아온다 ` +
-       `⇒ 포트값 ${won(SH.buyPriceOf('pot'))} 를 못 대도 길이 안 막힌다`);
+  info(`  잎 ${c.source.leaves}장 삽수를 혹 단계에서 내놓으면 ${waited}일 뒤 연락 → ${won(r.won)} · ` +
+       `병도 돌아온다 ⇒ 포트값 ${won(SH.buyPriceOf('pot'))} 를 못 대도 길이 안 막힌다 ` +
+       `(분갈이 유예 ${P.graceDaysOf('water', false)}일 > 최대 대기 ${SH.MARKET_CONTACT_DAYS.max}일)`);
 });
 
 check('G 값 — 잎 수와 무늬 잎 수', () => {
@@ -310,10 +332,17 @@ function runCuttings({ days = 30, dli = 3.77, container = 'jar', repot = false,
     for (const c of [...S.cuttings]) {
       if (repot && c.status === 'node') { try { P.repotCutting(S, c.id); } catch { } }
     }
+    /* ★★ 2026-08-17 — 파는 것이 **두 걸음**이다(shop.js §⑦-0): 올리고 → 연락 → 거래.
+       ⚠ 지름길이 없다. 이 재현이 재는 것이 **꾸준수입**이라, 기다리는 날을 건너뛰면
+         「하루에 얼마 버나」가 그만큼 부풀려진다. 날짜는 위 ②에서 실제로 흐른다. */
+    SH.marketGate(S, { leaves: SH.MARKET_MIN_LEAVES });    // 문 — 하네스에 growth 창구가 없다
     for (const c of [...S.cuttings]) {
-      if (SH.SELLABLE_CUTTING_STATUS.includes(c.status)) {
-        try { const q = SH.sellCutting(S, c.id); sold++; soldWon += q.won; } catch { }
-      }
+      if (!SH.SELLABLE_CUTTING_STATUS.includes(c.status)) continue;
+      if (SH.listingFor(S, c)) continue;                   // 이미 올려 뒀다
+      try { SH.listCutting(S, c.id); } catch { }
+    }
+    for (const l of SH.marketStatus(S).contacted) {
+      try { const q = SH.dealListing(S, l.listingId); sold++; soldWon += q.won; } catch { }
     }
   }
   return { cuts, sold, soldWon, spent, net: soldWon - spent, died, days,

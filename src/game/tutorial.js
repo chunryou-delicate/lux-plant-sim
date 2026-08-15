@@ -262,7 +262,8 @@ export function createVarieGrantState() {
    원문: *"탈출 조건을 **2개**로 하지. **돈**이랑 **무늬 삽수 팔기.**"*
 
    ══ ★★ 판정 근거는 하나다 — **「무늬로 값이 매겨져 팔린 삽수」** ═══════════
-   `shop.sellCutting` 이 매긴 값에 **무늬 잎이 한 장이라도 실려 있으면** 그 판매를 센다:
+   `shop.dealListing`(중고 거래가 성사되는 자리)이 매긴 값에 **무늬 잎이 한 장이라도**
+   실려 있으면 그 판매를 센다:
 
        price.variegatedLeaves >= 1
 
@@ -295,7 +296,12 @@ export function createVarieGrantState() {
      옮기는 길은 `save.js §무늬 삽수 판매 이관` 에 있다.
 
    ══ ⚠ 누가 적나 ════════════════════════════════════════════════════════
-   파는 자리는 `shop.sellCutting` 하나뿐이고, 거기서 `ts.varieSale` 에 바로 적는다
+   ★★ 2026-08-17 — 파는 자리가 **`shop.dealListing`** 으로 옮겼다(`sellCutting` 은 없어졌다).
+   몬스테라 것이 상점이 아니라 **중고 거래**로 나가면서 판매가 두 걸음이 됐기 때문이다:
+   「올리기(listCutting)」와 「거래(dealListing)」. **깃발은 뒤엣것에서 선다** —
+   앞에서 서면 올렸다 내리기만 해도 문이 열려 「팔았나」라는 이름이 거짓이 된다
+   (까닭 전문은 `shop.js §⑦-2`). ⚠ 옛 세이브의 이미 선 깃발은 아무도 안 지운다.
+   파는 자리는 그 하나뿐이고, 거기서 `ts.varieSale` 에 바로 적는다
    (`ts.crop.soldWon` 을 적는 것과 같은 방식이다). shop 이 이 파일을 import 하면
    **순환**이 된다 — 이 파일이 `shop.priceOf` 를 쓰기 때문이다. 그래서 뜻은 여기가 갖고
    손은 shop 이 댄다. 둘이 갈리지 않게 검사가 등식을 고정한다(tools/test_escapecut.mjs §B).

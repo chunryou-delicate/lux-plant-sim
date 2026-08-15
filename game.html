@@ -483,6 +483,20 @@
   .cutRow .nm small{display:block;font-size:10.5px;color:var(--dim);margin-top:1px}
   .cutRow .won{font-weight:700;font-size:12.5px;color:var(--gold);white-space:nowrap}
   .cutRow button{min-height:34px;padding:0 10px;border-radius:9px;font-size:11.5px;flex:0 0 auto}
+  /* ══ ★ 중고 거래 줄 — **줄바꿈한다** (2026-08-17 · 화면에서 깨진 것을 보고 고쳤다) ══
+     ------------------------------------------------------------
+     이 줄은 삽수 줄과 달리 **넷**이 들어간다: 이름 · 값 · [거래하기] · [내리기].
+     그대로 두면 `.primary`(시트 안 기본이 폭 100%)가 자리를 다 먹고 이름 칸이
+     **한 글자씩 세로로 눌린다** — 실측 사진으로 봤다(`shots/market/contacted_390.png` 옛 판).
+     ⇒ 이름을 **제 줄**로 올리고 값·단추를 아랫줄에 둔다. 360 에서도 안 넘친다.
+     ★ 단추는 여기서만 **44px**로 키운다 — 지시가 못 박은 위끝이다.
+       (삽수 줄의 34px 은 예전부터 그런 것이라 이 일에서 안 건드렸다 — 보고서에 적었다) */
+  #marketList .cutRow{flex-wrap:wrap}
+  #marketList .cutRow .nm{flex:1 1 100%}
+  #marketList .cutRow .won{margin-right:auto}
+  #marketList .cutRow button{width:auto;flex:0 0 auto;min-height:44px;padding:0 14px;font-size:12.5px}
+  #marketHint:empty{display:none}
+  #marketHint{margin-top:6px;color:var(--dim)}
   #cutHint:empty{display:none}
   #cutHint{margin-top:6px;color:var(--dim)}
 
@@ -1792,6 +1806,27 @@
          ★ [방]에서 통째로 빠져나왔다 — 이 목록이 방 탭의 대부분을 차지해서
            방이 상점처럼 읽혔다(박사님 2026-08-06). -->
     <div class="sheetpage" id="pageShop" role="tabpanel">
+      <!-- ⚠⚠ **자리가 맨 위인 것이 일부러다** (2026-08-17 실측으로 옮겼다).
+           처음에는 이 칸을 [인터넷 주문] **아래**에 뒀는데, 품목이 여덟 줄이라
+           **화면(844px)에서는 안 보였다** — 올려 놓고 [상점]을 열면 카탈로그만 보인다.
+           `sellpopup-to-plan §1` 이 적은 그 병(「눌러도 화면 밖에 떴다」)과 같은 자리다.
+           ★ 늘 위에 있어도 방해가 안 된다 — **올린 것이 없으면 통째로 숨는다.** -->
+      <!-- ══ ★★★ 중고 거래 — 내놓은 것 (2026-08-17 · shop.js §⑦-0) ═══════════════
+           박사님: *"일주일 정도 안에 랜덤으로 연락 와서 거래하게."*
+           ★★ **이 칸이 있는 까닭 하나**: 올리고 나서 화면이 조용하면 「올렸는데 아무 일도
+             안 일어난다」가 된다(`quiet-to-plan §1` — 이 저장소가 제일 자주 앓는 병).
+             그래서 올린 것이 있으면 **늘 여기 서 있고**, 연락이 오면 [상점] 단추에 점이 붙는다.
+           ★ 올린 것이 하나도 없으면 통째로 숨는다 — 늘 띄우면 「왜 비어 있지」가 된다.
+           ⚠ **며칠 남았는지 안 적는다**(shop.js §marketWaitKo). 랜덤이라는 것이 요점이다. -->
+      <div class="box" id="marketBox" style="display:none">
+        <h3>중고 거래 <span id="marketCount"></span>
+          <!-- ★ 까닭은 상세 창이 맡는다(§detail.market) — 여기 다 적으면 칸이 길어져
+               연락 온 줄이 화면 밖으로 밀린다. 있는 결(ⓘ)에 얹는다. -->
+          <button class="info" id="marketInfo" type="button" data-detail="market" aria-label="중고 거래 설명">i</button></h3>
+        <div class="sub">올려 두면 일주일 안에 연락이 옵니다. 그때 거래하면 돈이 들어옵니다.</div>
+        <div id="marketList"></div>
+        <div id="marketHint" class="itemline"></div>
+      </div>
       <div class="box" id="shopBox" style="display:none">
         <h3>인터넷 주문 <span id="shopCash"></span></h3>
         <div class="sub">주문하면 하루 이틀 뒤에 옵니다. 취소는 안 됩니다.</div>
@@ -1805,7 +1840,13 @@
                  회색 단추를 둘로 늘릴 이유가 없고, 잉여는 **겹쳐 거뒀을 때만 생기는
                  예외 몫**이라 늘 보이면 정상적인 길처럼 읽힌다. -->
           <button id="sellSurplus" class="ghost" style="display:none">잉여 채소 넘기기</button>
-          <button id="sellPlant" class="ghost" disabled>몬스테라 팔기</button>
+          <!-- ★★ 2026-08-17 — **[몬스테라 팔기]가 아니라 [몬스테라 내놓기]**다.
+               박사님: *"판매는 상점에 파는 게 아니라 당근 같은 곳에 올려서 판다는 개념으로."*
+               ⇒ 이 단추는 **돈을 안 만든다.** 값을 매겨 중고 거래에 올릴 뿐이고, 돈은
+                 연락이 온 뒤 아래 중고 거래 칸의 [거래하기]에서 들어온다.
+               ⚠ 글자를 「팔기」로 되돌리지 마라 — 누르면 팔린다고 읽히는 순간
+                 「눌렀는데 돈이 안 들어온다」가 된다. -->
+          <button id="sellPlant" class="ghost" disabled>몬스테라 내놓기</button>
         </div>
         <div id="surplusHint" class="itemline"></div>
         <!-- ══ ★곳간 채소 팔기 (2026-08-15 · docs/handoff/pantrysale-to-plan.md) ══════
@@ -1823,6 +1864,7 @@
              칸의 맨 아래(실측 y=1211 · 화면 844)라 **눌러도 화면 밖에 떴다.** -->
         <div id="sellHint" class="itemline"></div>
       </div>
+
       <div id="shopClosed" class="ph">아직 주문할 수 있는 것이 없습니다.</div>
     </div><!-- /pageShop -->
 
@@ -2185,7 +2227,13 @@ import { newState, SIM_MODES, pot0, pushLog, givePlant, hasPlant, ARRIVAL,
          pantrySaleStatus, sellPantryCrop,
          /* ★ 2026-08-16 · 오늘 밥상 — 곳간에서 몇 g 을 쓸지 고른다 (state.js §밥상) */
          mealPlanStatus, planMeal, reseatAllOnSlots } from './src/game/state.js';
-import { catalogList, orderItem, shopStatus, priceOf, sellPot, sellCutting,
+/* ★★ 2026-08-17 — **`sellPot`·`sellCutting` 은 더 안 부른다.** 몬스테라 것은 상점이 안 산다.
+   중고 거래(§⑦-0)로만 나간다: `listPot`/`listCutting` 으로 올리고 → [다음 날]이 `stepMarket`
+   으로 연락을 가져오고 → `dealListing` 에서 돈이 들어온다. 채소(`sellPantryCrop` ·
+   `sellCropSurplus`)는 **그대로 상점이다** — 식료품이라 상점이 맞다. */
+import { catalogList, orderItem, shopStatus, priceOf,
+         listPot, listCutting, dealListing, cancelListing,
+         marketGate, marketStatus, listingFor, marketWaitKo, MARKET_MIN_LEAVES,
          stockOf, SELLABLE_CUTTING_STATUS, varieLeavesNeededFor } from './src/game/shop.js';
 /* ★ 삽수 — 규칙과 수치는 전부 propagation.js 것이다. 여기서는 부르기만 한다
    (날짜를 여기서 다시 세면 화면과 코어가 갈라진다). */
@@ -3083,6 +3131,40 @@ const detail = {
         + '<p>죽지는 않는다. 자리가 값을 바꿀 뿐이다.</p>'
     };
   },
+  /* ══ ★★★ 중고 거래 — **가이드가 사는 자리** (2026-08-17) ═══════════════════════
+     ------------------------------------------------------------
+     지시: *"가이드로 정보를 준다. ★ 새 가이드 계통을 만들지 마라 — 있는 결에 얹어라."*
+     ⇒ **새 창을 안 만들었다.** 이 게임에서 긴 설명이 사는 곳은 이 상세 창(`#detail`)
+       하나이고(§detail 머리말), 새 대목은 여기 카드 한 장으로 붙는다.
+     ★ 짧은 말은 이미 세 군데가 나눠 말한다 — [상점] 탭 머리글(`.sub`) · 중고 거래 칸의
+       한 줄(`#marketHint`) · [내놓기] 밑의 한 줄(`#sellHint`). 이 카드는 **까닭**을 맡는다.
+     ⚠ 숫자를 손으로 안 적는다 — 기다리는 날은 `marketWaitKo()`, 문턱은 `MARKET_MIN_LEAVES`,
+       값은 `priceOf` 다(START-HERE §2.8 이 그 사고다). */
+  market() {
+    let ms = null; try { ms = marketStatus(S); } catch { }
+    let ls = null; try { ls = io.growth.leafStats && io.growth.leafStats(); } catch { }
+    const gate = marketGate(S, ls ? { leaves: ls.leaves } : {});
+    const n = (ms && ms.count) || 0, on = (ms && ms.contactedCount) || 0;
+    const r2 = (ko, v) => `<div class="row"><span>${ko}</span><b>${v}</b></div>`;
+    return {
+      art: './assets/ui/item_monstera.png', title: '중고 거래',
+      sub: gate.open ? (n ? `올린 것 ${n}건${on ? ` · 연락 ${on}건` : ''}` : '열려 있음')
+                     : `잎 ${MARKET_MIN_LEAVES}장이면 열림`,
+      body: r2('올린 것', `${n}건`) + (on ? r2('연락 온 것', `${on}건`) : '')
+        + `<p><b>몬스테라는 상점이 안 산다.</b> 그루도 삽수도 <b>중고 거래</b>에 내놓고 `
+        + `사려는 사람의 연락을 기다린다. 채소는 그대로 상점에 판다 — 먹는 것이라 그렇다.</p>`
+        + `<p>순서는 셋이다. <b>[내놓기]</b>로 값을 매겨 올리고 → <b>${marketWaitKo()}</b> → `
+        + `<b>[거래하기]</b>를 누르면 그때 물건이 나가고 돈이 들어온다.</p>`
+        + `<p>올려 둔 것은 <b>그대로 방에 있다.</b> 거래가 되어야 나가므로 언제든 `
+        + `<b>[내리기]</b>로 무를 수 있다 — 내려도 아무 일도 없던 것이 된다.</p>`
+        + `<p>값은 <b>올릴 때 매긴 값 그대로</b>다. 깎이지도, 오르지도 않는다. `
+        + `대신 올린 뒤에는 그 그루를 <b>자를 수 없다</b> — 잎을 떼어 팔고도 통째 값을 받는 일이 되기 때문이다.</p>`
+        + `<p>연락이 온 날은 <b>배너</b>가 뜨고, 거래할 때까지 <b>[상점] 단추에 점</b>이 남는다.</p>`
+        + `<p><b>잎이 ${MARKET_MIN_LEAVES}장</b>이 되면 열린다. 우연이 아니다 — 몬스테라는 `
+        + `<b>${MARKET_MIN_LEAVES}장째 잎부터 무늬가 난다.</b> 팔 만한 것이 처음 생기는 날에 파는 길이 열린다.</p>`
+        + (gate.open ? '' : `<p>${gate.reason}</p>`)
+    };
+  },
   monstera() {
     const p = pot0(S);
     if (!p) return { art: './assets/ui/item_monstera.png', title: '몬스테라', sub: '아직 만나지 못함',
@@ -3144,6 +3226,8 @@ function bindDetail() {
     });
   };
   card($('plantCard'), 'monstera');
+  /* ★ 중고 거래 ⓘ — 가방 격자와 달리 이 단추는 다시 안 그려지므로 직접 건다 */
+  { const mi = $('marketInfo'); if (mi) mi.onclick = e => { e.stopPropagation(); detail.open('market'); }; }
   /* ★★ 2026-08-10 — 가방 격자 칸의 손 (콩나물 시루 큰 카드가 없어진 자리).
      ------------------------------------------------------------
      ⚠ **위임으로 건다.** 칸은 `drawBag` 이 그릴 때마다 새로 만들어지므로 칸에 직접 걸면
@@ -3949,13 +4033,16 @@ const reallyRepot = guard((id) => {
 /* ③ 팔기 — 이사비 150만을 모으는 꾸준수입 경로다.
    ★걸어가지 않는다 — 파는 것은 인터넷 주문과 같은 창구이고(몬스테라 팔기도 그렇다),
      손 동작을 붙이면 파는 데만 연출이 둘(자르기·팔기) 걸리게 된다. */
-const doSellCutting = guard((id) => {
+/* ★★ 2026-08-17 — **[팔기]가 [내놓기]가 됐다.** 여기서 돈이 안 들어온다.
+   돈은 연락이 온 뒤 [상점] 탭의 중고 거래 칸 [거래하기](§doDeal)에서 들어온다.
+   ⚠ 「무늬 삽수를 판 적이 있다」 깃발(반지하 탈출의 둘째 축)도 **거기서** 선다 —
+     여기서 서면 올렸다 내리기만 해도 문이 열린다(shop.js §⑦-2 가 그 판단을 적어 두었다). */
+const doListCutting = guard((id) => {
   let r;
-  try { r = sellCutting(S, id, { log: m => pushLog(S, m) }); }
+  try { r = listCutting(S, id, { log: m => pushLog(S, m) }); }
   catch (e) { e.tutorialInput = true; throw e; }
-  banner('삽수를 팔았습니다',
-         r.price.won.toLocaleString() + '원' +
-         (r.containerReturned ? ' · 유리병은 남습니다' : ''));
+  banner('삽수를 내놓았습니다',
+         r.price.won.toLocaleString() + '원 · ' + marketWaitKo());
   syncRoom(); draw();
 });
 
@@ -3972,6 +4059,8 @@ function drawCuttings() {
 
   let st = null; try { st = shopStatus(S); } catch { return; }
   const novice = isNoviceMode(S);
+  /* ★ 모주가 중고 거래에 올라가 있나 — 올라가 있으면 자르기가 막힌다(아래 §내놓은 그루) */
+  let potListing = null; try { potListing = p ? listingFor(S, p) : null; } catch { }
 
   /* ── 자를 수 있는 마디 ── */
   const { nodes, ok } = cutNodesNow();
@@ -3998,6 +4087,13 @@ function drawCuttings() {
          이제 propagation.cutBlockedReason 이 그 사유까지 낸다 — **한 곳에서** 묻는다. */
       let why = null;
       try { why = cutBlockedReason(S, nodes, n.nodeId, { potId: p.id }); } catch { }
+      /* ══ ★★ 내놓은 그루는 못 자른다 (2026-08-17 · shop.js §⑦-0 §값은 올릴 때 얼린다) ══
+         값이 올릴 때 얼기 때문에, 올려 둔 그루에서 잎을 떼어 내면 **잎을 따로 팔고도
+         통째 값을 그대로 받는다** — `priceOf` §증명이 없앤 「떼어 팔기 이득」이 되돌아온다.
+         ⚠⚠ **여기는 화면이다.** 코어가 막아야 맞고, 막을 자리는 `propagation.cutBlockedReason`
+           인데 그 파일이 이번 창의 쓰기 영역 밖이다. 붙일 코드는 보고서에 그대로 적어 두었다
+           (`docs/handoff/market-to-plan.md §못 한 것`). ⇒ 그때까지는 이 한 줄이 유일한 문이다. */
+      if (!why && potListing) why = '중고 거래에 내놓은 그루입니다 — 먼저 게시글을 내려 주세요';
       const btn = (cid) => {
         const item = containerItemOf(cid);
         const have = item ? (st.stock[item] || 0) : 0;
@@ -4028,34 +4124,52 @@ function drawCuttings() {
     const dying = v.status === 'node';
     const canSell = SELLABLE_CUTTING_STATUS.includes(v.status);
     const havePot = (st.stock.pot || 0) > 0;
-    const why = v.status === 'rooting'
-      ? (METHODS[c.method].rootDays + '일짜리 · ' + v.days + '일째')
-      : v.statusKo;
-    mine.push('<div class="cutRow' + (dying ? ' warn' : '') + '"><div class="nm">' +
+    /* ★ 올려 둔 삽수 — **목록에서 안 사라진다.** 분갈이도 그대로 된다(값이 안 바뀌므로
+       막을 까닭이 없고, 막으면 혹 난 삽수가 올려 둔 채로 시들어 게시글까지 내려간다). */
+    let lst = null; try { lst = listingFor(S, c); } catch { }
+    const why = lst
+      ? (lst.status === 'contacted' ? '📩 연락이 왔습니다 — [상점]에서 거래하세요'
+                                    : '중고 거래에 내놓았습니다 · ' + marketWaitKo())
+      : (v.status === 'rooting'
+          ? (METHODS[c.method].rootDays + '일짜리 · ' + v.days + '일째')
+          : v.statusKo);
+    mine.push('<div class="cutRow' + (dying || (lst && lst.status === 'contacted') ? ' warn' : '') +
+      '"><div class="nm">' +
       v.containerKo + ' · 잎 ' + v.leaves + '장' + (v.variegated ? ' · 무늬' : '') +
       '<small>' + why + (dying && v.daysLeft != null ? ' · ★분갈이까지 ' + v.daysLeft + '일' : '') +
       '</small></div>' +
       (dying ? '<button class="primary" data-repot="' + c.id + '"' +
                (havePot ? '' : ' disabled title="검은 모종포트를 먼저 주문하세요"') +
                '>분갈이</button>' : '') +
-      (canSell ? '<button class="ghost" data-sell="' + c.id + '">팔기 ' +
-                 sellWon.toLocaleString() + '원</button>' : '') + '</div>');
+      /* ★★ 2026-08-17 — **[팔기]가 [내놓기]다.** 누르면 돈이 아니라 게시글이 생긴다.
+         이미 올린 것은 [내리기]로 바뀐다 — 같은 자리에서 되돌릴 수 있어야 갇히지 않는다. */
+      (lst ? '<div class="won">' + lst.won.toLocaleString() + '원</div>' +
+             '<button class="ghost" data-unlist="' + lst.listingId + '">내리기</button>'
+           : (canSell ? '<button class="ghost" data-list="' + c.id + '">내놓기 ' +
+                        sellWon.toLocaleString() + '원</button>' : '')) + '</div>');
   }
   $('cutList').innerHTML = mine.length ? mine.join('')
     : '<div class="cutRow"><div class="nm">가진 삽수가 없습니다<small>위에서 마디를 하나 잘라 보세요</small></div></div>';
   for (const b of $('cutList').querySelectorAll('[data-repot]'))
     b.onclick = guard(() => doRepot(b.dataset.repot));
-  for (const b of $('cutList').querySelectorAll('[data-sell]'))
-    b.onclick = guard(() => doSellCutting(b.dataset.sell));
+  for (const b of $('cutList').querySelectorAll('[data-list]'))
+    b.onclick = guard(() => doListCutting(b.dataset.list));
+  for (const b of $('cutList').querySelectorAll('[data-unlist]'))
+    b.onclick = guard(() => doUnlist(b.dataset.unlist));
 
   /* ── 한 줄 안내 — ★죽는 규칙과 **파산 탈출구**를 같이 적는다 ──
      탈출구를 모르면 "포트 살 돈이 없으니 삽수는 죽는다"가 된다.
      재서 확인했다(test_cutting_wiring 검사 F): 혹 난 삽수 12,000원 > 포트 7,000원. */
   const dyingN = list.filter(c => c.status === 'node').length;
+  /* ⚠⚠ 2026-08-17 — **파산 탈출구가 이제 하루 만에 안 돈다.** 팔려면 중고 거래에 올리고
+     연락을 기다려야 한다(최대 7일). 그래서 「그 전에 팔아도 됩니다」를 **「그 전에 내놓아야
+     합니다」**로 고쳤다 — 재서 확인한 것: 초보 유예 16일 · 자유 8일이라 둘 다 7일보다 길어
+     탈출구가 **닫히지는 않는다.** 다만 **미루면 못 판다** — 그 말을 화면이 해야 한다. */
   $('cutHint').textContent = dyingN
     ? ('⚠ 분갈이를 기다리는 삽수 ' + dyingN + '개 — 유예 ' +
        graceDaysOf('water', novice) + '일을 넘기면 시들어 사라집니다. ' +
-       '포트를 못 사면 그 전에 팔아도 됩니다 — 삽수 값이 포트값보다 높습니다.')
+       '포트를 못 사면 그 전에 중고 거래에 내놓으세요 — 삽수 값이 포트값보다 높습니다. ' +
+       '연락은 ' + marketWaitKo() + ', 미루면 시드는 쪽이 빠릅니다.')
     : ('물꽂이(병)는 ' + METHODS.water.rootDays + '일에 뿌리가 나고 ' +
        METHODS.water.nodeDays + '일에 혹이 납니다 — 그때 분갈이를 해야 삽니다. ' +
        '흙에 바로 심으면 ' + METHODS.pot.rootDays + '일로 느리지만 죽지 않습니다.');
@@ -4407,14 +4521,39 @@ function drawShop() {
         + ` (${o.daysLeft <= 0 ? '오늘' : o.daysLeft + '일 뒤'})`).join(' · ')
     : '';
 
-  /* 팔기 — 잎은 growth 소유라 leafStats 로 읽는다. 없으면 열지 않는다(값을 지어내지 않는다) */
+  drawMarket();
+
+  /* 내놓기 — 잎은 growth 소유라 leafStats 로 읽는다. 없으면 열지 않는다(값을 지어내지 않는다) */
   let ls = null; try { ls = io.growth.leafStats && io.growth.leafStats(); } catch { }
   const sell = $('sellPlant'), hint = $('sellHint');
   if (!ls || !pot0(S)) { sell.disabled = true; hint.textContent = ''; return; }
+
+  /* ══ ★★ 문 — **잎 2장** (2026-08-17 박사님 확정 · shop.js §marketGate) ═══════════
+     ⚠ **왜 2장인지 화면이 말해야 한다.** 안 그러면 「왜 안 팔리지」가 된다.
+       그리고 그 까닭이 진짜로 있다 — 프롤로그가 **잎 2·3장에 무늬를 보장**하므로
+       (`44c208d` · loop.js §prologueVarie) 잎이 2장이 되는 날이 곧 **무늬가 처음 나는 날**이다.
+       즉 「팔 만한 것이 처음 생기는 날」에 파는 길이 열린다. 겹침이 우연이 아니다.
+     ⚠ 문턱 숫자를 손으로 안 적는다 — `marketGate` 가 낸 문장을 그대로 쓴다(§2.8). */
+  const gate = marketGate(S, { leaves: ls.leaves });
+  const listed = listingFor(S, pot0(S));
+  if (listed) {
+    sell.disabled = true;
+    sell.textContent = '몬스테라 내놓는 중';
+    hint.textContent = `이미 중고 거래에 올렸습니다 — ${listed.won.toLocaleString()}원 · ` +
+      (listed.status === 'contacted' ? '연락이 왔습니다. 아래에서 거래하세요'
+                                     : marketWaitKo() + ' (아래에서 내릴 수 있습니다)');
+    return;
+  }
+  if (!gate.open) {
+    sell.disabled = true;
+    sell.textContent = '몬스테라 내놓기';
+    hint.textContent = gate.reason;
+    return;
+  }
   /* ⚠ priceOf 는 숫자가 아니라 {won, leaves, variegatedLeaves, v} 를 낸다 */
   const won = priceOf({ leaves: ls.leaves, variegatedLeaves: ls.variegatedLeaves }).won;
   sell.disabled = false;
-  sell.textContent = `몬스테라 팔기 (${won.toLocaleString()}원)`;
+  sell.textContent = `몬스테라 내놓기 (${won.toLocaleString()}원)`;
   /* ★"얼마가 모자란가"가 아니라 "무늬 잎이 몇 장이면 되나"를 말한다 —
      플레이어가 움직일 수 있는 손잡이는 자리(밝기)뿐이고, 그게 무늬를 만든다. */
   /* ⚠ 이사비를 **여기서 짓지 않는다** (2026-08-11 고침).
@@ -4428,9 +4567,9 @@ function drawShop() {
   const nd = varieLeavesNeededFor(moveCost, { leaves: ls.leaves });
   const n = nd && nd.needVarieLeaves;
   hint.textContent = won >= moveCost
-    ? '지금 팔면 이사 자금이 됩니다'
+    ? '지금 내놓으면 이사 자금이 됩니다 — 연락이 온 뒤 거래해야 돈이 들어옵니다'
     : `무늬 잎 ${ls.variegatedLeaves}/${ls.leaves}장 — ${n == null || n > ls.leaves
-        ? '지금 잎 수로는 이사 자금에 못 미칩니다. 더 키우거나 삽수를 파세요'
+        ? '지금 잎 수로는 이사 자금에 못 미칩니다. 더 키우거나 삽수를 내놓으세요'
         : `${n}장이 무늬면 이사 자금이 됩니다`}`;
 }
 
@@ -6167,8 +6306,20 @@ function syncNavDots() {
     else { delete b.dataset.dot; b.removeAttribute('title'); }
   };
   let sq = null; try { sq = cropSurplusStatus(S); } catch { }
-  put('navShop', !!(sq && sq.pendingWon > 0),
-      sq ? `넘길 잉여 채소가 ${sq.pendingWon.toLocaleString()}원어치 있습니다` : '');
+  /* ★★ 2026-08-17 — [상점] 점에 **연락 온 중고 거래**가 하나 더 붙었다.
+     ------------------------------------------------------------
+     ⚠ 점을 늘린 것이 아니라 **같은 점이 말하는 까닭을 하나 더 받는 것**이다(점은 여전히 둘).
+     ★ 이 점이 이 기능의 **안전장치**다 — 연락이 온 날 배너는 6초 뒤 사라진다. 그 배너를
+       놓치면 「올렸는데 아무 일도 없다」로 돌아가는데, 점은 거래할 때까지 남는다.
+     ⚠ 「기다리는 중」으로는 안 찍는다 — 며칠씩 이어지는 데다 **눌러도 할 일이 없다.**
+       점은 「저기에 **할 일**이 있다」여야 한다(잉여·배송이 그랬다). */
+  let mkOn = 0, mkWon = 0;
+  try { const ms = marketStatus(S); mkOn = ms.contactedCount; mkWon = ms.contactedWon; } catch { }
+  const shopWhy = [
+    sq && sq.pendingWon > 0 ? `넘길 잉여 채소가 ${sq.pendingWon.toLocaleString()}원어치 있습니다` : null,
+    mkOn > 0 ? `중고 거래 연락 ${mkOn}건 — ${mkWon.toLocaleString()}원 · 거래할 수 있습니다` : null
+  ].filter(Boolean);
+  put('navShop', shopWhy.length > 0, shopWhy.join(' · '));
   let coming = 0, soonest = null;
   try {
     for (const o of ((shopStatus(S).orders) || [])) {
@@ -6365,6 +6516,17 @@ function showFirstPlayEvents(turn) {
     const what = arrived.map(o => `${koOf(o.itemId)}${o.qty > 1 ? ` ${o.qty}개` : ''}`).join(' · ');
     events.push({ title: '📦 주문한 것이 왔습니다', sub: `${what} — [가방]에 들어왔습니다` });
   }
+  /* ══ ★★ 중고 거래 연락 — **온 날 화면이 말한다** (2026-08-17 · shop.js §⑦-1) ═══════
+     배송과 **똑같은 자리**다. 「올렸는데 아무 일도 안 일어난다」를 막는 것이 이 기능의
+     제일 큰 위험이라(§marketBox) 연락은 반드시 배너로 뜬다.
+     ★ 「기다리는 중」(상태)은 배너로 말하지 않는다 — [상점] 단추의 점과 중고 거래 칸이 말한다.
+     ⚠ 문구를 여기서 짓지 않는다 — 코어가 낸 `e.ko` 를 그대로 쓴다(§2.8 사고 방지). */
+  const mk = (turn && turn.market) || null;
+  for (const l of (mk && mk.contacted) || [])
+    events.push({ title: '📩 연락이 왔습니다',
+                  sub: `${l.buyerKo} — ${l.ko} ${l.won.toLocaleString()}원 · [상점]에서 거래하세요` });
+  for (const l of (mk && mk.withdrawn) || [])
+    events.push({ title: '📭 중고 게시글이 내려갔습니다', sub: `${l.ko} — 팔 물건이 없어졌습니다` });
   if (ev && ev.harvested) {
     events.push({ title: `🥣 콩나물 ${ev.meals}끼 수확!`,
       sub: `오늘 식비 ${ev.cashFoodWon.toLocaleString()}원 · ${ev.foodSavedWon.toLocaleString()}원 절감` });
@@ -9263,16 +9425,85 @@ $('pantryGo').onclick = guard(() => {
        ⚠ 막으면 「팔 수 있는 물건인데 지금은 안 된다」를 또 설명해야 하고, 그 설명이 늘 낡는다.
      ⚠ 그래도 **말은 해야 한다** — 아래 설명 줄이 "지금 잎 수로는 이사 자금에 못 미칩니다"라고
        이미 말리고 있다. 그 줄을 지우지 마라. 막는 대신 **말하는 것**이 이 저장소의 결이다. */
-$('sellPlant').onclick = confirmOnce('정말 팝니까?', guard(() => {
+/* ★★ 2026-08-17 — **[팔기]가 [내놓기]가 됐다.** 여기서는 돈이 한 푼도 안 움직인다.
+   ⚠ 되묻기는 **그대로 둔다.** 「내놓기」가 되돌릴 수 있는 일이 되었는데도 남긴 까닭 둘:
+     ① 되묻기가 막던 것은 「잘못 눌러 판이 날아가는 것」인데, 지금도 잘못 누르면
+        그루가 **팔릴 준비 상태**가 되고 그 다음 손짓 하나가 진짜로 판을 끝낸다.
+     ② [거래하기]에서 또 묻지 않기 위해서다 — 되묻기를 두 걸음 다 두면 네 번을 누른다.
+   ★ 그루가 팔리는 순간은 이제 §doDeal 이다. */
+$('sellPlant').onclick = confirmOnce('중고 거래에 내놓습니까?', guard(() => {
   let ls = null; try { ls = io.growth.leafStats(); } catch { }
-  if (!ls) { const e = new Error('아직 팔 수 없습니다 — 식물 상태를 못 읽었습니다'); e.tutorialInput = true; throw e; }
-  const r = sellPot(S, { leaves: ls.leaves, variegatedLeaves: ls.variegatedLeaves,
+  if (!ls) { const e = new Error('아직 내놓을 수 없습니다 — 식물 상태를 못 읽었습니다'); e.tutorialInput = true; throw e; }
+  const r = listPot(S, { leaves: ls.leaves, variegatedLeaves: ls.variegatedLeaves,
                          log: m => pushLog(S, m) });
-  banner('몬스테라를 팔았습니다', `${r.price.won.toLocaleString()}원`);
-  if (r.growthNeedsReset) { try { io.growth.reset(); } catch { } }
+  banner('몬스테라를 내놓았습니다',
+         `${r.price.won.toLocaleString()}원 · ${marketWaitKo()} — 그때 [상점]에서 거래합니다`);
   syncRoom();
   draw();
 }));
+
+/* ══ ★★★ 중고 거래 칸 — **올린 것 · 연락 온 것** (2026-08-17) ═══════════════════════
+   ------------------------------------------------------------
+   ★ 이 칸이 지켜야 할 것 하나: **올린 뒤 화면이 조용하지 않을 것.**
+     올린 것이 있으면 이 칸이 서고, 연락이 오면 [상점] 단추에 점이 붙고(§syncNavDots)
+     그 날 배너가 뜬다(§showFirstPlayEvents). 셋이 겹쳐야 「아무 일도 없다」가 안 생긴다.
+   ⚠ **며칠 남았는지 안 적는다** — 랜덤이라는 것이 이 기능의 요점이다(shop.js §marketWaitKo).
+     대신 「올린 지 며칠」(`sinceDays`)을 적는다. 지난 일은 말해도 앞날은 안 흘린다.
+   ⚠ 값을 여기서 안 센다 — `marketStatus` 가 낸 것을 적을 뿐이다. */
+function drawMarket() {
+  const box = $('marketBox'); if (!box) return;
+  let ms = null; try { ms = marketStatus(S); } catch { }
+  const list = (ms && ms.listings) || [];
+  box.style.display = list.length ? '' : 'none';
+  if (!list.length) return;
+
+  $('marketCount').textContent = ms.contactedCount
+    ? `연락 ${ms.contactedCount}건` : `${list.length}건 기다리는 중`;
+
+  /* 연락 온 것을 **위로** 올린다 — 지금 누를 수 있는 것이 먼저다 */
+  const rows = [...list].sort((a, b) => (b.contacted ? 1 : 0) - (a.contacted ? 1 : 0));
+  $('marketList').innerHTML = rows.map(l => {
+    const varie = l.variegatedLeaves ? ` · 무늬 ${l.variegatedLeaves}장` : '';
+    const head = `${l.ko} · 잎 ${l.leaves}장${varie} · ${l.gradeKo}`;
+    const sub = l.contacted
+      ? `📩 ${l.buyerKo} — 사고 싶다고 연락했습니다`
+      : `올린 지 ${l.sinceDays}일 · ${marketWaitKo()}`;
+    return '<div class="cutRow' + (l.contacted ? ' warn' : '') + '"><div class="nm">' + head +
+      '<small>' + sub + '</small></div>' +
+      '<div class="won">' + l.won.toLocaleString() + '원</div>' +
+      (l.contacted ? '<button class="primary" data-deal="' + l.listingId + '">거래하기</button>' : '') +
+      '<button class="ghost" data-unlist="' + l.listingId + '">내리기</button></div>';
+  }).join('');
+  for (const b of $('marketList').querySelectorAll('[data-deal]'))
+    b.onclick = guard(() => doDeal(b.dataset.deal));
+  for (const b of $('marketList').querySelectorAll('[data-unlist]'))
+    b.onclick = guard(() => doUnlist(b.dataset.unlist));
+
+  $('marketHint').textContent = ms.contactedCount
+    ? '거래하면 그 자리에서 돈이 들어옵니다. 내리면 아무 일도 없던 것이 됩니다.'
+    : '내놓은 것은 그대로 방에 있습니다 — 거래가 되어야 나갑니다. 내리면 아무 일도 없던 것이 됩니다.';
+}
+
+/* ★★★ 거래 — **이 게임에서 몬스테라 값이 지갑에 닿는 유일한 자리다.**
+   ⚠ 되묻지 않는다 — 되묻기는 [내놓기]에서 이미 했다(§sellPlant). 두 번 물으면 네 번 누른다. */
+const doDeal = guard((listingId) => {
+  let r;
+  try { r = dealListing(S, listingId, { log: m => pushLog(S, m) }); }
+  catch (e) { e.tutorialInput = true; throw e; }
+  banner(r.kind === 'pot' ? '몬스테라를 팔았습니다' : '삽수를 팔았습니다',
+         `${r.price.won.toLocaleString()}원` +
+         (r.containerReturned ? ' · 유리병은 남습니다' : ''));
+  /* ★ 그루가 사라졌다 — growth 3D 는 코어가 못 지우므로 신호를 받아 화면이 정리한다 */
+  if (r.growthNeedsReset) { try { io.growth.reset(); } catch { } }
+  syncRoom(); draw();
+});
+
+/* ★ 내리기 — **한 푼도 안 움직인다.** 물건은 애초에 안 나갔다(shop.js §cancelListing) */
+const doUnlist = guard((listingId) => {
+  const r = cancelListing(S, listingId, { log: m => pushLog(S, m) });
+  banner('게시글을 내렸습니다', `${r.listing.ko} — 그대로 남아 있습니다`);
+  syncRoom(); draw();
+});
 
 $('moveOut').onclick = guard(() => {
   /* ★moveOut 이 아니라 moveIntoOneroom 이다 — 전자는 돈과 판정만 하고 방을 안 바꿨다.

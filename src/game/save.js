@@ -255,7 +255,11 @@ function packPot(p, i) {
     pendingCutLoss: p.pendingCutLoss == null ? null : {
       leaves: needInt(p.pendingCutLoss.leaves ?? 0, `${path}.pendingCutLoss.leaves`, { min: 0 }),
       nodes: needInt(p.pendingCutLoss.nodes ?? 0, `${path}.pendingCutLoss.nodes`, { min: 0 })
-    }
+    },
+    /* ★★ 중고 거래에 올려 둔 게시글 id (2026-08-17 · shop.js §⑦-0).
+       ⚠ 안 적으면 저장 한 번에 **올려 둔 그루가 「안 올린 것」이 된다** — 게시글은 남아
+         연락까지 오는데 그루 쪽은 아무 표시가 없어 화면이 [올리기]를 또 내민다. */
+    listing: optStr(p.listing, `${path}.listing`)
   };
 }
 
@@ -340,7 +344,12 @@ function packCutting(c, i) {
     pottedOnDay: c.pottedOnDay == null ? null : needInt(c.pottedOnDay, `${path}.pottedOnDay`, { min: 0 }),
     deadlineDay: c.deadlineDay == null ? null : needInt(c.deadlineDay, `${path}.deadlineDay`, { min: 0 }),
     warned: needArr(c.warned || [], `${path}.warned`).map((w, j) => needStr(w, `${path}.warned[${j}]`)),
-    potted: !!c.potted
+    potted: !!c.potted,
+    /* ★★ 중고 거래에 올려 둔 게시글 id (2026-08-17 · shop.js §⑦-0).
+       ⚠ **한 벌로 적어야 한다** — 게시글(`shop.listings`)만 적고 이 표를 안 적으면,
+         열었을 때 「게시글은 있는데 아무 삽수도 자기가 올라간 줄 모르는」 판이 된다.
+         ⇒ 그래서 `unpack` 이 열자마자 둘을 맞춰 본다(아래 §reconcileMarket). */
+    listing: optStr(c.listing, `${path}.listing`)
   };
 }
 
@@ -785,8 +794,74 @@ function packShop(shop) {
     earnedBy: SALE_KINDS.reduce((o, k) => {
       o[k] = needNum((shop.earnedBy || {})[k] ?? 0, `shop.earnedBy.${k}`, { min: 0 });
       return o;
-    }, {})
+    }, {}),
+    /* ★★ 중고 거래 게시글 (2026-08-17 · shop.js §⑦-0) — **주문과 같은 무게의 칸이다.**
+       ------------------------------------------------------------
+       ⚠ 안 적으면 저장 한 번에 **올려 둔 물건이 통째로 사라진다.** 물건 자체는 안 없어지지만
+         (게시글은 표만 붙인다) 연락도 값도 없어져서 「올렸는데 아무 일도 안 일어난다」가 된다.
+       ★ 게시글은 **전부 숫자와 짧은 글자**다 — 물건을 안 담기 때문이다(§⑦-0 §물건을 안 치운다).
+         그래서 이 함수가 통째로 검증할 수 있다. 물건을 담았다면 그럴 수 없었다.
+       ★ `contactOnDay` 는 **절대 게임일**이다(`orders.arrivesOnDay` 와 같은 규약) —
+         상대 일수로 적으면 복원 뒤 연락이 오는 날이 밀린다. */
+    listings: needArr(shop.listings || [], 'shop.listings').map((l, i) => {
+      const path = `shop.listings[${i}]`;
+      needObj(l, path);
+      return {
+        listingId: needStr(l.listingId, `${path}.listingId`),
+        kind: needStr(l.kind, `${path}.kind`),
+        refId: needStr(l.refId, `${path}.refId`),
+        ko: needStr(l.ko, `${path}.ko`),
+        won: needNum(l.won ?? 0, `${path}.won`, { min: 0 }),
+        leaves: needInt(l.leaves ?? 0, `${path}.leaves`, { min: 0 }),
+        variegatedLeaves: needInt(l.variegatedLeaves ?? 0, `${path}.variegatedLeaves`, { min: 0 }),
+        grade: needStr(l.grade || 'plain', `${path}.grade`),
+        gradeKo: needStr(l.gradeKo || '무지', `${path}.gradeKo`),
+        listedOnDay: needInt(l.listedOnDay ?? 0, `${path}.listedOnDay`, { min: 0 }),
+        contactOnDay: needInt(l.contactOnDay ?? 0, `${path}.contactOnDay`, { min: 0 }),
+        waitDays: needInt(l.waitDays ?? 0, `${path}.waitDays`, { min: 0 }),
+        buyerKo: needStr(l.buyerKo || '동네 이웃', `${path}.buyerKo`),
+        status: needStr(l.status || 'waiting', `${path}.status`),
+        contactedOnDay: l.contactedOnDay == null
+          ? null : needInt(l.contactedOnDay, `${path}.contactedOnDay`, { min: 0 })
+      };
+    }),
+    listSeq: needInt(shop.listSeq ?? 0, 'shop.listSeq', { min: 0 }),
+    /* ★ 문이 열린 날. **열린 사실 자체가 저장돼야 한다** — 그루를 판 뒤에는 잎이 0장이라
+       이 칸이 없으면 옛 판을 열 때 문이 도로 닫힌다(shop.js §marketGate ★한 번 열리면). */
+    marketOpenedOnDay: shop.marketOpenedOnDay == null
+      ? null : needInt(shop.marketOpenedOnDay, 'shop.marketOpenedOnDay', { min: 0 })
   };
+}
+
+/* ★★ 게시글 ↔ 물건 맞추기 — **한쪽만 남은 판을 고친다** (2026-08-17)
+   ------------------------------------------------------------
+   게시글은 `shop.listings` 에, 표는 물건(`pot.listing`·`cutting.listing`)에 있다.
+   **둘 다 저장하므로 정상 판에서는 늘 맞는다.** 그래도 맞춰 보는 까닭은 셋이다.
+
+     ① **옛 세이브**에는 둘 다 없다 → 아무 일도 안 일어난다(빈 목록 · 표 없음). 안전하다.
+     ② **판을 손으로 고친 판**(하네스·검사·개발용) 에서는 갈릴 수 있다.
+     ③ ★ **삽수가 시들면 물건이 사라진다.** `stepMarket` 이 그 게시글을 내리지만,
+        시든 그 날 저장하고 [다음 날]을 안 누른 채 다시 열면 게시글만 남는다.
+
+   ⇒ 고치는 방향은 **한 가지뿐이다: 물건이 없는 게시글은 내린다.**
+     반대로 물건에 붙은 표가 가리키는 게시글이 없으면 **표를 뗀다.**
+   ⚠ 게시글을 **만들어 내지 않는다.** 표만 있고 게시글이 없을 때 게시글을 지어내면
+     연락 날짜와 값을 지어내야 하고, 그건 세이브가 없는 값을 만드는 일이다.
+   반환 { dropped, untagged } — 0/0 이면 아무 일도 안 했다는 뜻이다. */
+function reconcileMarket(S) {
+  const shop = S.shop;
+  if (!shop || !Array.isArray(shop.listings)) return { dropped: 0, untagged: 0 };
+  const pots = S.pots || [], cuttings = S.cuttings || [];
+  const alive = l => l.kind === 'pot'
+    ? pots.some(p => p.id === l.refId)
+    : cuttings.some(c => c.id === l.refId && c.status !== 'dead');
+  const before = shop.listings.length;
+  shop.listings = shop.listings.filter(alive);
+  const ids = new Set(shop.listings.map(l => l.listingId));
+  let untagged = 0;
+  for (const it of [...pots, ...cuttings])
+    if (it.listing && !ids.has(it.listing)) { delete it.listing; untagged++; }
+  return { dropped: before - shop.listings.length, untagged };
 }
 
 /* ★★ 판 돈 갈래 이관 — **옛 판에서 돈이 사라진 것처럼 보이면 안 된다** (2026-08-13)
@@ -1383,6 +1458,16 @@ export function deserialize(raw, opt = {}) {
     if (moved > 0)
       pushLog(S, `📒 예전 판이라 판 돈의 종류를 모릅니다 — ${moved.toLocaleString()}원을 ` +
                  `「종류 모름」으로 옮겼습니다`);
+  }
+  /* ★ 중고 거래 게시글과 물건을 맞춘다(위 §게시글 ↔ 물건 맞추기).
+     ⚠ **화분·삽수가 다 선 뒤에** 불러야 한다 — 여기가 그 자리다(S.pots·S.cuttings 는 위에서 섰다).
+     옛 판에서는 아무 일도 안 한다(둘 다 비어 있다). 무슨 일이 일어났으면 **말한다.** */
+  {
+    const m = reconcileMarket(S);
+    if (m.dropped > 0)
+      pushLog(S, `📭 팔 물건이 없어진 중고 게시글 ${m.dropped}건을 내렸습니다`);
+    if (m.untagged > 0)
+      pushLog(S, `🔧 올라간 적 없는 표시 ${m.untagged}개를 지웠습니다`);
   }
 
   /* 보상 — 없는(옛) 세이브면 전부 꺼진 채로 연다. 지어내지 않는다(state.js §perks). */

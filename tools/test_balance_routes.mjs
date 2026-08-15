@@ -30,7 +30,11 @@ import { nextDay, harvestCrop, DEFAULT_MS_PER_DAY, FAST_MODE_MAX_DAYS, JUMP_MAX_
 import { firstPlayRulesFromBalance, placeBeansprout, moveMonstera, beansproutReady } from '../src/game/first_play.js';
 import { seasonAt, seasonDayAt, buyLamp, canMoveOut, moveOut, varieView,
          varieGrantOpensDay, TUTORIAL_RULES } from '../src/game/tutorial.js';
-import { orderItem, stockOf, incomingOf, priceOf, sellCutting, sellPot,
+/* ★★ 2026-08-17 — `sellCutting`·`sellPot` 이 **없어졌다**(shop.js §⑦-0). 몬스테라 것은
+   중고 거래로만 나간다: 올리고 → 1~7일 뒤 연락 → 거래. 이 재현은 **손 횟수(taps)**도 재므로
+   손이 하나 는 것이 그대로 값에 실린다 — [내놓기]와 [거래하기]가 각각 한 번이다. */
+import { orderItem, stockOf, incomingOf, priceOf,
+         listCutting, listPot, dealListing, marketStatus, marketGate, listingFor,
          buyPriceOf, SELLABLE_CUTTING_STATUS } from '../src/game/shop.js';
 import { takeCutting, cuttableNow, cutBudgetOf, motherStatsNow } from '../src/game/propagation.js';
 
@@ -183,10 +187,23 @@ function play(opt = {}) {
   const rows = [];
   let lampDay = null, taps = 0, ffStops = 0, ffDays = 0, jumpDays = 0;
   let cuttingIncome = 0, varieIncome = 0, potIncome = 0, containerSpend = 0, sold = 0;
+  /* ★ 올리는 것과 돈이 되는 것이 **다른 날**이다(shop.js §⑦-0). 갈래는 올릴 때 적어 둔다 —
+     거래할 때는 삽수가 이미 목록에서 나가 `c.source` 를 못 본다. */
+  const listedKind = new Map();
   const sell = c => {
+    if (listingFor(S, c)) return;              // 이미 올려 뒀다
     const varie = c.source.variegatedLeaves > 0;
-    const r = sellCutting(S, c.id); sold++; taps++;
-    if (varie) varieIncome += r.won; else cuttingIncome += r.won;
+    const r = listCutting(S, c.id); taps++;    // [내놓기] 한 번
+    listedKind.set(r.listing.listingId, varie ? 'varie' : 'plain');
+  };
+  const dealAll = () => {
+    let ms = null; try { ms = marketStatus(S); } catch { return; }
+    for (const l of ms.contacted) {
+      let r; try { r = dealListing(S, l.listingId); } catch { continue; }
+      taps++;                                   // [거래하기] 한 번
+      if (r.kind === 'pot') potIncome += r.won;
+      else { sold++; if (listedKind.get(l.listingId) === 'varie') varieIncome += r.won; else cuttingIncome += r.won; }
+    }
   };
 
   for (let d = 1; d <= (opt.days || 300); d++) {
@@ -200,6 +217,10 @@ function play(opt = {}) {
 
     const turn = nextDay(S, io).turn;
     if (S.firstPlay.completed) ffDays++; else jumpDays++;
+
+    /* ★ 중고 거래 — 문을 열고(화면이 `drawShop` 에서 하는 일과 같다) 연락 온 것을 거래한다 */
+    if (pot0(S)) { try { marketGate(S, { leaves: io.growth.leafStats().leaves }); } catch { } }
+    dealAll();
 
     let harvested = null;
     if (beansproutReady(S.firstPlay.beansprout)) { harvested = harvestCrop(S, io); taps++; ffStops++; }
@@ -251,9 +272,10 @@ function play(opt = {}) {
           cut += priceOf({ leaves: c.source.leaves, variegatedLeaves: c.source.variegatedLeaves }).won;
       if (ts.cashWon + cut + potWon >= MOVE_OUT_WON) {
         for (const c of [...(S.cuttings || [])]) if (SELLABLE_CUTTING_STATUS.includes(c.status)) sell(c);
+        /* ★ 그루도 **올릴 뿐**이다 — 돈은 연락이 온 날 `dealAll` 이 넣는다 */
         if (potWon && ts.cashWon < MOVE_OUT_WON) {
-          sellPot(S, { leaves: v.stats.leaves, variegatedLeaves: v.stats.variegatedLeaves });
-          potIncome += potWon; taps++;
+          try { listPot(S, { leaves: v.stats.leaves, variegatedLeaves: v.stats.variegatedLeaves }); taps++; }
+          catch { /* 이미 올렸거나 문이 아직 안 열렸다 */ }
         }
       }
     }

@@ -34,7 +34,11 @@ import { fileURLToPath } from 'node:url';
 import { newState, pot0, setPotSlot, resowCrop, waterCrop, waterPot, ARRIVAL } from '../src/game/state.js';
 import { nextDay, harvestCrop } from '../src/game/loop.js';
 import { firstPlayRulesFromBalance, placeBeansprout, moveMonstera, beansproutReady } from '../src/game/first_play.js';
-import { orderItem, stockOf, incomingOf, sellCutting, sellPot, priceOf,
+/* ★★ 2026-08-17 — `sellCutting`·`sellPot` 이 **없어졌다**(shop.js §⑦-0). 몬스테라 것은
+   중고 거래로만 나간다. 이 재현이 재는 것은 「끝까지 도는가」라 **날짜는 실제로 흘린다** —
+   하루 루프가 `stepMarket` 을 돌리므로 연락은 저절로 온다. */
+import { orderItem, stockOf, incomingOf, listCutting, listPot, dealListing,
+         marketStatus, marketGate, listingFor, MARKET_MIN_LEAVES, priceOf,
          UNIT_WON, SELLABLE_CUTTING_STATUS } from '../src/game/shop.js';
 import { canMoveOut, varieView, TUTORIAL_RULES } from '../src/game/tutorial.js';
 import { takeCutting, repotCutting, cuttableNow, cutBudgetOf, motherStatsNow,
@@ -243,6 +247,8 @@ function playToEnding(opt = {}) {
     nextDay(S, io);
     const ts = S.tutorial;
     const moved = stageOf(S) !== STAGES.banjiha;
+    /* ★ 중고 거래의 문 — 화면(`drawShop`)이 하는 일과 같다. 그루가 없으면 안 부른다 */
+    try { if (S.pots && S.pots.length) marketGate(S, { leaves: io.growth.leafStats().leaves }); } catch { }
 
     /* ── ② 작물 살림 (반지하에서만 — 원룸에서는 삽수가 벌이다) ── */
     if (!moved) {
@@ -292,8 +298,14 @@ function playToEnding(opt = {}) {
         for (const c of [...cuttingsOf(S)]) {
           if (!SELLABLE_CUTTING_STATUS.includes(c.status)) continue;
           if ((c.variegatedLeaves || 0) < 1) continue;
+          if (listingFor(S, c)) continue;                 // 이미 올려 뒀다
+          try { listCutting(S, c.id); } catch { }
+        }
+        /* ★ 올린 것 중 연락 온 무늬 삽수를 거래한다 — **돈이 들어오는 그 순간**에 ②가 열린다 */
+        for (const l of marketStatus(S).contacted) {
+          if (l.kind !== 'cutting' || l.variegatedLeaves < 1) continue;
           try {
-            const r = sellCutting(S, c.id);
+            const r = dealListing(S, l.listingId);
             trace.varieSoldInBanjiha++; trace.varieSoldOnDay = trace.varieSoldOnDay ?? S.day;
             trace.varieSoldWon += r.won;
           } catch { }
@@ -303,8 +315,15 @@ function playToEnding(opt = {}) {
       if (moved) {
         for (const c of [...cuttingsOf(S)]) {
           if (!SELLABLE_CUTTING_STATUS.includes(c.status)) continue;
+          if (listingFor(S, c)) continue;
+          try { listCutting(S, c.id); } catch { }
+        }
+        /* ★ 돈이 되는 것은 **거래**다 — `firstSellDay` 도 여기서 선다(「마지막 행동이
+           삽수를 판 것」을 재는 A-2 가 그 날을 본다. 올린 날이 아니라 판 날이 맞다) */
+        for (const l of marketStatus(S).contacted) {
+          if (l.kind !== 'cutting') continue;
           try {
-            const r = sellCutting(S, c.id);
+            const r = dealListing(S, l.listingId);
             trace.cuttingsSold++; trace.cuttingIncomeWon += r.won;
             if (trace.firstSellDay == null) trace.firstSellDay = S.day;
           } catch { }

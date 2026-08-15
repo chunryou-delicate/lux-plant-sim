@@ -65,7 +65,7 @@ import { canMoveOut, createTutorialState, LEARNING, tutorialDay, noteLearning,
 import { dliFromContract } from './growth_adapter.js';
 import { headroomCheck, PLANT_POT_D_REF } from './headroom.js';
 import { rehomeCuttings, stepCuttings, cuttableNow } from './propagation.js';
-import { stepShop } from './shop.js';
+import { stepShop, stepMarket } from './shop.js';
 /* 체력 — 하루에 돌볼 수 있는 양. 규칙은 전부 그쪽 모듈이 갖는다(docs/stamina.md) */
 import { resetDay, spend as spendStamina, canAct as canActStamina } from './stamina.js';
 import { weekStats, WEATHER_P } from '../engine/weather.js';
@@ -608,6 +608,9 @@ function attachEvents(S, turn, fpBefore) {
   push(firstPlayEventsOf(fpBefore, S.firstPlay));
   /* 상점 도착도 사건이다 — 안 실으면 "시켰는데 왔는지 아무도 말 안 하는" 날이 생긴다 */
   if (turn.shop) push(turn.shop.events);
+  /* ★ 중고 거래 연락도 같은 자리다 — **올린 뒤 화면이 조용하면 「아무 일도 없다」가 된다**
+     (`quiet-to-plan §1` — 사건은 배너). 게시글이 내려간 것도 여기로 나간다. */
+  if (turn.market) push(turn.market.events);
   const t = turn.tutorial;
   if (t && !t.error) { push(t.events); push(t.storyEvents); }
   turn.events = out;
@@ -874,6 +877,12 @@ export function nextDay(S, io) {
   /* ★ 상점 배송 — **날짜를 올린 뒤에** 받는다. 그래야 "하루 뒤 도착"이 다음 날 아침이 된다.
      조도·생장보다 먼저 두는 이유는 그날 도착한 씨앗을 그날 심을 수 있어야 하기 때문이다. */
   const shop = stepShop(S, { log: m => pushLog(S, m) });
+  /* ★ 중고 거래 — **연락이 온다** (2026-08-17 · shop.js §⑦-1).
+     배송 바로 뒤에 둔다: 둘 다 「날짜가 오르면 저절로 일어나는 바깥일」이고,
+     둘 다 그날 안에 손을 쓸 수 있어야 한다(온 씨앗은 그날 심고, 온 연락은 그날 거래한다).
+     ⚠ 이 한 줄이 없으면 올린 물건이 **영영 연락을 안 받는다** — 조용히 그렇게 된다.
+       그래서 `tools/test_market.mjs §G` 가 이 배선을 못 박는다. */
+  const market = stepMarket(S, { log: m => pushLog(S, m) });
 
   let firstPlayEvent = null;
   /* ★ 2026-08-04 — **여기서 거두지 않는다.** 하루가 하는 일은 "자라게 하는 것"까지고,
@@ -1005,7 +1014,7 @@ export function nextDay(S, io) {
       cropJustReady: !!(firstPlayEvent && firstPlayEvent.justReady),
       cropHarvest: beansproutHarvestStatus(S.firstPlay),
       cropWater: beansproutWaterStatus(S.firstPlay, S.day),
-      cuttings, shop
+      cuttings, shop, market
     };
     /* ★이 경로도 튜토리얼을 돌려야 한다 (2026-08-03).
        몬스테라가 오기 전(그리고 도착하는 그 날)은 여기서 일찍 반환된다 —
@@ -1083,7 +1092,7 @@ export function nextDay(S, io) {
     cropJustReady: !!(firstPlayEvent && firstPlayEvent.justReady),
     cropHarvest: beansproutHarvestStatus(S.firstPlay),
     cropWater: beansproutWaterStatus(S.firstPlay, S.day),
-    cuttings, shop
+    cuttings, shop, market
   };
 
   /* ★ 순서가 계약이다 (2026-08-02 정정).

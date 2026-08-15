@@ -21,8 +21,33 @@ import { newState } from '../src/game/state.js';
 import { createTutorialState } from '../src/game/tutorial.js';
 import {
   SALE_KINDS, createShopState, shopOf, shopStatus, saleLedgerOf, earnedByOf,
-  sellPot, sellCutting, creditCropSurplus, priceOf
+  listPot, listCutting, stepMarket, dealListing, marketGate, MARKET_MIN_LEAVES,
+  creditCropSurplus, priceOf
 } from '../src/game/shop.js';
+
+/* ══ ★★ 2026-08-17 — **파는 것이 두 걸음이 됐다** (shop.js §⑦-0) ═══════════════════
+   ------------------------------------------------------------
+   예전에는 이 파일이 `sellCutting(S, id)` · `sellPot(S, …)` 한 줄로 팔았고,
+   **그 한 줄이 「누르면 그 자리에서 돈이 들어온다」를 못 박고 있었다.** 그것이 이번에
+   바뀐 약속이다 — 몬스테라 것은 상점이 안 사고 중고 거래로만 나간다.
+   ⇒ 여기가 재는 것은 **「어느 통에 담기나」**이지 「며칠 걸리나」가 아니므로
+     (그건 `test_market` · `test_banjiha_routes` 가 잰다) 날짜만 앞으로 밀어 거래까지 간다.
+   ⚠ **지름길이다. 그래서 적는다.** 밀고 나서 되돌린다 — 이 검사의 다른 절이 날짜를 안 본다. */
+/* ⚠ **문을 손으로 연다.** 중고 거래는 모주 잎이 2장이 되면 열리는데(shop.js §marketGate),
+   이 하네스에는 growth 가 없어 잎을 세어 줄 창구가 없다 — 마디 목록(`nodes()`)을 손으로
+   지어내는 것과 **같은 지름길**이다. 화면에서는 `drawShop` 이 매번 잎 수를 넘겨 연다. */
+const openMarket = (S) => marketGate(S, { leaves: MARKET_MIN_LEAVES });
+
+function dealNow(S, listing) {
+  const back = S.day;
+  S.day = Math.max(S.day, listing.contactOnDay);
+  stepMarket(S);
+  const r = dealListing(S, listing.listingId);
+  S.day = back;
+  return r;
+}
+const sellCuttingNow = (S, id) => (openMarket(S), dealNow(S, listCutting(S, id).listing));
+const sellPotNow = (S, opt) => (openMarket(S), dealNow(S, listPot(S, opt).listing));
 import { takeCutting, stepCuttings } from '../src/game/propagation.js';
 import { serialize, deserialize as _deserialize } from '../src/game/save.js';
 
@@ -56,9 +81,9 @@ function sellAllThree() {
   give(S, 'jar');
   const c = takeCutting(S, { nodes: nodes(), nodeId: 'n0#1', container: 'jar' });
   for (let i = 0; i < 400 && c.status === 'rooting'; i++) { S.day += 1; stepCuttings(S); }
-  const cutWon = sellCutting(S, c.id).won;
+  const cutWon = sellCuttingNow(S, c.id).won;
   const cropWon = creditCropSurplus(S, 3_000).won;
-  const potWon = sellPot(S, { leaves: 3, variegatedLeaves: 0 }).won;
+  const potWon = sellPotNow(S, { leaves: 3, variegatedLeaves: 0 }).won;
   return { S, potWon, cutWon, cropWon };
 }
 

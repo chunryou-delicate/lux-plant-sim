@@ -27,7 +27,29 @@ import {
   noteVarieCuttingSale, hasSoldVarieCutting, createVarieSaleState, noteLearning
 } from '../src/game/tutorial.js';
 import { takeCutting, stepCuttings } from '../src/game/propagation.js';
-import { sellCutting, shopOf, priceOf } from '../src/game/shop.js';
+import { listCutting, stepMarket, dealListing, cancelListing, marketGate, MARKET_MIN_LEAVES,
+         shopOf, priceOf } from '../src/game/shop.js';
+
+/* ══ ★★ 2026-08-17 — **파는 것이 두 걸음이 됐다** (shop.js §⑦-0) ═══════════════════
+   ------------------------------------------------------------
+   예전 이 파일은 `sellCutting(S, c.id)` 한 줄로 팔았고, **그 한 줄이 「누르면 그 자리에서
+   돈이 들어오고 그때 깃발이 선다」를 못 박고 있었다.** 그것이 이번에 바뀐 약속이다.
+   ★★ 이 검사에 **새 절이 하나 늘었다** — B-2. 깃발이 **어느 걸음**에서 서는지를 못 박는다:
+     올리기만 해서는 **안 선다**(올렸다 내리면 아무 일도 없어야 한다) · 거래에서 선다.
+   ⚠ 여기서 재는 것은 **조건의 모양**이지 며칠 걸리나가 아니므로 날짜만 밀어 거래까지 간다
+     (그건 `test_market` · `test_banjiha_routes` 가 잰다). **지름길이라 적는다.**
+   ⚠ **문을 손으로 연다** — 이 하네스에는 growth 가 없어 잎을 세어 줄 창구가 없다
+     (마디 목록 `nodesOf` 를 손으로 지어내는 것과 같은 지름길이다). */
+const openMarket = (S) => marketGate(S, { leaves: MARKET_MIN_LEAVES });
+function dealNow(S, listing) {
+  const back = S.day;
+  S.day = Math.max(S.day, listing.contactOnDay);
+  stepMarket(S);
+  const r = dealListing(S, listing.listingId);
+  S.day = back;
+  return r;
+}
+const sellCutting = (S, id) => (openMarket(S), dealNow(S, listCutting(S, id).listing));
 import { serialize, deserialize as _deserialize } from '../src/game/save.js';
 
 /* ★ 형태(growth)는 여기서 재는 것이 아니다 — 화분이 있는 세이브라 창을 요구하는데,
@@ -107,7 +129,7 @@ check('A-2 ★배움 넷은 조건에서만 빠졌다 — 계통은 그대로 �
 });
 
 /* ══ B · 뜻과 손이 안 갈린다 ═══════════════════════════════════════════
-   ⚠ 적는 곳이 둘이다 — 뜻은 `tutorial.noteVarieCuttingSale`, 손은 `shop.sellCutting` 안의
+   ⚠ 적는 곳이 둘이다 — 뜻은 `tutorial.noteVarieCuttingSale`, 손은 `shop.dealListing` 안의
      여섯 줄(순환 import 를 피하려고 그렇게 뒀다 · tutorial.js §누가 적나).
      **둘이 갈리면 조용히 틀린다.** 그래서 여기서 등식을 고정한다. */
 check('B ★파는 자리(shop)와 뜻을 가진 자리(tutorial)가 같은 값을 적는다', () => {
@@ -126,6 +148,46 @@ check('B ★파는 자리(shop)와 뜻을 가진 자리(tutorial)가 같은 값�
       firstDay: byCore.varieSale.firstDay },
     '★shop 이 적은 것과 tutorial 이 적는 것이 다릅니다 — 두 곳이 갈렸습니다');
   info(`무늬 삽수 한 장 ${r.won.toLocaleString()}원 (잎 ${r.price.leaves}장 중 무늬 ${r.price.variegatedLeaves}장)`);
+});
+
+/* ══ B-2 · ★★★ **깃발은 어느 걸음에서 서나** (2026-08-17 신설) ═══════════════════
+   판매가 두 걸음이 되면서(shop.js §⑦-0) 이 질문이 새로 생겼다: 올리는 순간인가,
+   돈이 들어오는 순간인가. **돈이 들어오는 순간**으로 정했고(§⑦-2), 여기서 못 박는다.
+   ⚠ 안 박아 두면 언젠가 「올리기」 쪽으로 옮겨 붙고, 그러면 **올렸다 내리기만 해도**
+     반지하 문이 열린다 — 「무늬 삽수를 판 적이 있다」가 그 자리에서 거짓이 된다. */
+check('B-2 ★★올리기만으로는 안 열린다 — 돈이 들어오는 순간에 선다', () => {
+  const S = newGame();
+  openMarket(S);
+  give(S, 'jar');
+  const c = takeCutting(S, { nodes: nodesOf(3, 1), nodeId: 'n0#1', container: 'jar' });
+  growUntilSellable(S, c);
+  const l = listCutting(S, c.id).listing;
+  assert.equal(hasSoldVarieCutting(S.tutorial), false,
+    '★올리기만 했는데 축이 열렸습니다 — 올렸다 내리면 아무 일도 없어야 합니다');
+  /* 연락이 와도 아직이다 — 「연락」은 사건이지 판매가 아니다 */
+  S.day = l.contactOnDay; stepMarket(S);
+  assert.equal(hasSoldVarieCutting(S.tutorial), false, '★연락만 왔는데 축이 열렸습니다');
+  const r = dealListing(S, l.listingId);
+  assert.equal(hasSoldVarieCutting(S.tutorial), true, '★거래했는데 축이 안 열립니다');
+  info(`올림 → 연락 → 거래 ${r.won.toLocaleString()}원 — 축은 **마지막 걸음**에서만 열린다`);
+});
+
+/* ★ 내렸다 다시 올려도 판 것이 아니다 — 취소가 값을 만들지 않는다 */
+check('B-3 ★내리면 아무 일도 없던 것이 된다 — 지갑도 축도 안 움직인다', () => {
+  const S = newGame();
+  openMarket(S);
+  give(S, 'jar');
+  const c = takeCutting(S, { nodes: nodesOf(3, 1), nodeId: 'n0#1', container: 'jar' });
+  growUntilSellable(S, c);
+  const cash0 = S.tutorial.cashWon, earned0 = shopOf(S).earnedWon;
+  const l = listCutting(S, c.id).listing;
+  S.day = l.contactOnDay; stepMarket(S);
+  cancelListing(S, l.listingId);
+  assert.equal(S.tutorial.cashWon, cash0, '★내렸는데 지갑이 움직였습니다');
+  assert.equal(shopOf(S).earnedWon, earned0, '★내렸는데 판 돈이 늘었습니다');
+  assert.equal(hasSoldVarieCutting(S.tutorial), false, '★내렸는데 축이 열렸습니다');
+  assert.ok((S.cuttings || []).some(x => x.id === c.id), '★내렸는데 삽수가 사라졌습니다');
+  info('내리기 — 지갑 0원 · 판 돈 0원 · 삽수 그대로');
 });
 
 /* ══ C · 판정 근거 하나 ════════════════════════════════════════════════ */
