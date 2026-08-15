@@ -43,11 +43,16 @@ import { firstPlayRulesFromBalance, placeBeansprout, moveMonstera,
          beansproutReady } from '../src/game/first_play.js';
 import {
   SCRIPTS, SPEAKERS, CHATTER, REPEATABLE, EVENT_SCRIPT,
+  /* ★ 2026-08-17 — 퀘스트 대사 두 지도 (dialogue §5.5) */
+  QUEST_OPEN_SCRIPT, QUEST_DONE_SCRIPT,
   createDialogue, createStoryteller, scriptsForEvents, pickChatter
 } from '../src/game/dialogue.js';
 import { seasonAt, seasonDayAt, buyLamp, canMoveOut, moveOut,
          varieGrantOpensDay, varieView } from '../src/game/tutorial.js';
-import { orderItem, stockOf, incomingOf, sellCutting,
+/* ★★ 2026-08-17 — 몬스테라 것은 상점이 안 산다(shop.js §⑦-0). 올리고 → 연락 → 거래다.
+   이 재현은 하루 루프를 돌리므로 연락은 `stepMarket` 이 저절로 가져온다. */
+import { orderItem, stockOf, incomingOf, listCutting, dealListing,
+         marketStatus, marketGate, listingFor, MARKET_MIN_LEAVES,
          SELLABLE_CUTTING_STATUS } from '../src/game/shop.js';
 import { cuttableNow, takeCutting, cuttingsOf } from '../src/game/propagation.js';
 
@@ -232,21 +237,46 @@ function runCuttingCycle(S, io) {
     if (pick) try { takeCutting(S, { nodes: v.nodes, nodeId: pick.nodeId, container: 'jar' }); }
               catch { /* 규칙대로 막힌 것이다 */ }
   }
-  /* 뿌리내린 무늬 삽수는 판다 — 그 판매가 탈출의 둘째 축을 연다(shop.sellCutting) */
+  /* 뿌리내린 무늬 삽수는 **내놓는다** — 그리고 연락이 온 것을 거래한다.
+     ★ 탈출의 둘째 축이 열리는 자리는 **거래**다(shop.js §⑦-2 · tutorial.js §누가 적나).
+     ⚠ 문은 손으로 안 연다 — 모주 잎 수를 넘겨 화면과 같은 길로 연다. */
+  try { if (S.pots && S.pots.length) marketGate(S, { leaves: MARKET_MIN_LEAVES }); } catch { }
   for (const c of [...cuttingsOf(S)]) {
     if (!SELLABLE_CUTTING_STATUS.includes(c.status)) continue;
     if ((c.variegatedLeaves || 0) < 1) continue;
-    try { sellCutting(S, c.id); } catch { /* 아직 못 판다 */ }
+    if (listingFor(S, c)) continue;
+    try { listCutting(S, c.id); } catch { /* 아직 못 올린다 */ }
+  }
+  for (const l of marketStatus(S).contacted) {
+    if (l.kind !== 'cutting') continue;
+    try { dealListing(S, l.listingId); } catch { }
   }
 }
 
 /* A — 식물등 없이 가을 안에 이사 */
 const A = play({
-  cropSlot: DARK, plantSlot: SILL, incomeWon: 24_300, days: 130,
+  /* ⚠ 2026-08-17 — **130 → 145일.** 늘린 까닭은 밸런스가 아니라 **길이**다:
+     몬스테라 것이 중고 거래로만 팔리게 되면서(shop.js §⑦-0) 무늬 삽수 한 장을 돈으로
+     바꾸는 데 **1~7일**이 더 든다. 130일 안에서는 `move_short_money`·`move_ready` 가
+     날 자리까지 못 가서 「대사가 없다」로 잡혔다 — 대사가 없어진 것이 아니라
+     **재현이 짧아진 것**이다(실측: 대기를 0일로 눌러 보니 130일에 그대로 났다). */
+/* ⚠⚠ 2026-08-17 — **하루 늦게 나간다.** 고친 것은 판이 아니라 **재현의 손 순서**다.
+     ------------------------------------------------------------
+     `move_ready`(「이사할 수 있게 됐다」)와 `move_short_money`(「돈이 모자란다」)는
+     `nextDay` 안의 튜토 걸음이 **상태가 뒤집히는 것을 봤을 때** 내는 사건이다.
+     그런데 이 재현은 같은 날 안에서 「팔아서 조건을 참으로 만들고 → 곧바로 나가버려서」
+     그 뒤집힘을 아무도 못 보게 만들고 있었다. 몬스테라 것이 중고 거래로만 팔리면서
+     (shop.js §⑦-0) 조건이 참이 되는 날이 밀렸고, 그 바람에 이 구멍이 드러났다.
+     ⇒ **어제 이미 참이었을 때만 나간다.** 사람이 하는 것도 그렇다 — 화면이
+       「이사할 수 있습니다」라고 말하는 것을 보고 나서 [이사]를 누른다.
+     ⚠ 대기를 0일로 눌러 재 보니 **옛 순서로도 130일에 두 사건이 다 났다** — 즉 사건이
+       없어진 것이 아니라 이 재현이 그 순간을 안 보고 있었다(tools/_probe_dlg_nowait.mjs). */
+  cropSlot: DARK, plantSlot: SILL, incomeWon: 24_300, days: 145,
   onDay: ({ S, io }) => {
     const ts = S.tutorial;
+    const wasOk = canMoveOut(ts).ok;        // ★ 어제까지의 상태 — 오늘 판 것은 안 센다
     runCuttingCycle(S, io);
-    return (canMoveOut(ts).ok && !ts.movedOut) ? moveOut(ts).events : [];
+    return (wasOk && !ts.movedOut) ? moveOut(ts).events : [];
   }
 });
 
@@ -262,15 +292,17 @@ const A = play({
        그대로 남아 있고, 그건 가을·식물등·겨울 콘텐츠가 통째로 건너뛰어진다는 뜻이다
        (plan-2026-08-09-decisions §4 가 막으려던 바로 그것). 인계에 판단 요청으로 적었다. */
 const B = play({
-  cropSlot: DARK, plantSlot: SILL, incomeWon: 24_300, days: 130,
+  /* ⚠ 130 → 145일 — 중고 거래 대기(1~7일)만큼 재현을 늘렸다. 값은 안 건드렸다 */
+  cropSlot: DARK, plantSlot: SILL, incomeWon: 24_300, days: 145,
   onDay: ({ S, io }) => {
     const ts = S.tutorial, out = [];
+    const wasOk = canMoveOut(ts).ok;        // ★ 위 ⚠⚠ 와 같은 규칙 — 어제까지의 상태로 나간다
     runCuttingCycle(S, io);                 // ★ 둘째 축 — 위 §삽수 한 바퀴
     if (ts.lamp.unlocked && ts.lamp.owned === 0 && ts.cashWon >= ts.rules.lampPriceWon) {
       out.push(...buyLamp(ts).events);
       S.lamps.count = ts.lamp.owned; io.light.clearCache();
     }
-    if (ts.lamp.owned >= 1 && canMoveOut(ts).ok && !ts.movedOut) out.push(...moveOut(ts).events);
+    if (ts.lamp.owned >= 1 && wasOk && !ts.movedOut) out.push(...moveOut(ts).events);
     return out;
   }
 });
@@ -509,10 +541,19 @@ check('데이터 — 이벤트 표가 가리키는 대사가 전부 있다', () 
     assert.ok(SCRIPTS[id], `이벤트 ${ev} → 없는 대사 '${id}'`);
   for (const c of CHATTER) assert.ok(SCRIPTS[c.id], `작은 말 목록에 없는 대사 '${c.id}'`);
   for (const id of REPEATABLE) assert.ok(SCRIPTS[id], `다시 나올 수 있다고 적힌 없는 대사 '${id}'`);
+  /* ★ 2026-08-17 — 퀘스트 두 지도도 같이 본다 */
+  for (const [q, id] of Object.entries(QUEST_OPEN_SCRIPT))
+    assert.ok(SCRIPTS[id], `퀘스트 ${q} 열림 → 없는 대사 '${id}'`);
+  for (const [q, id] of Object.entries(QUEST_DONE_SCRIPT))
+    assert.ok(SCRIPTS[id], `퀘스트 ${q} 완료 → 없는 대사 '${id}'`);
 });
 check('데이터 — 쓰이지 않는 대사가 없다', () => {
   const used = new Set([
     ...Object.values(EVENT_SCRIPT), ...CHATTER.map(c => c.id),
+    /* ★ 2026-08-17 — **손으로 안 적는다.** 퀘스트 대사는 지도에서 읽는다 —
+       손으로 적으면 줄이 늘 때마다 이 목록이 낡고, 그게 START-HERE §2 가 "제일 위험하다"고
+       적은 모양(검사가 고장난 상태를 정상으로 못 박는 것)의 씨앗이다. */
+    ...Object.values(QUEST_OPEN_SCRIPT), ...Object.values(QUEST_DONE_SCRIPT),
     'god1', 'intro', 'cropPlaced', 'monsteraMoved', 'monsteraStalled',
     'rentFirst', 'rentAgain', 'autumnCame', 'winterCame'   // scriptOf 가 id 안에서 가른다
   ]);

@@ -428,6 +428,132 @@ export const SCRIPTS = {
     { who: 'moni',   face: 'happy',    text: '응. 그거 하나가 여기서 나가는 값이야.' }
   ],
 
+  /* ═══ ★★★ §5.5 퀘스트 — **「지금 뭘 하지?」에 답하는 다섯 줄** (2026-08-17) ═══════
+     ------------------------------------------------------------
+     ★ 왜 생겼나 — 재서 나온 것 하나. 반지하 한 판을 굴려 **날마다 무슨 말이 나오는지
+       전부 받아 적었다**(`quest2-to-plan §실측`). 예상과 다른 값이 나왔다:
+
+         **조용한 구간은 없다(최장 2일). 그런데 「지금 뭘 해라」를 말하는 줄이
+           첫 33일에 몰려 있고 그 뒤로 0 이다.**
+
+       Day 33~77 **44일 동안** 나온 말이 전부 작은 말이었다 — 「반지하는 여름에 덥고」·
+       「집주인 아저씨가」·「몬이는 왜 몬이야?」. 사람들이 *"목적성이 부족하다"* 고 한 것이
+       **조용해서가 아니라 「할 말은 있는데 시킬 일이 없어서」**였다.
+     ⇒ 그래서 이 묶음은 **대사를 늘리는 것이 아니라 「할 일」에 말을 붙이는 것**이다.
+
+     ★★ 지킨 것 넷
+       ① **숫자를 대사에 안 박는다.** 「시루 다섯 개」·「이백만 원」 같은 수는 전부
+          `quest.QUESTS` 의 정의에서 나와 **아래 한 줄**(`#quest`)이 말한다.
+          여기서는 **왜 그 일을 하는지**만 말한다 — 그러면 값이 움직여도 안 낡는다
+          (`story4` 가 `fenestrating` 으로 처음 쓴 그 수법의 형제다).
+       ② **몬이가 훈계하지 않는다.** 다섯 줄 중 넷이 주인공의 물음으로 시작한다 —
+          「가르쳐 준다」가 아니라 「물어봐서 대답한다」의 모양이다.
+       ③ **끝냈을 때는 짧다**(3~4줄). 열 때가 안내고 닫을 때는 확인이라서다.
+       ④ ★ **보상을 대사가 짚는다.** 체력이 오른 것을 배너만 말하면 「조용히 오른 것」이 된다
+          (`stamina.js §경험치` 가 금지한 그것). `questDoneCropMix` 마지막 줄이 그 자리다.
+
+     ⚠ 순서는 `quest.QUESTS` 의 정의 순서와 **같다.** 갈리면 배우는 순서가 둘이 된다. */
+
+  /* ① 첫 플레이가 끝나는 그날 열린다 — 실측으로 **빈 구간의 첫날**이다(Day 33).
+     ★ 이 한 줄이 확정문 `crop-balance §3` 을 통째로 진다: 콩나물은 어두운 데 ·
+       무순은 밝은 데 · **같은 것을 두 몫 먹으면 둘째가 반값**(2,500 → 1,200원).
+     ⚠ 그 반값을 **숫자로 안 말한다** — 「반값밖에 안 쳐 줘」로 족하다. 값이 움직여도
+       그 문장은 참이다(위끝·아래끝을 지키는 것이 그 표의 전부라서 · `crop-balance §3 ★`). */
+  questCropMix: [
+    { who: 'jachwi', text: '이제 뭘 하지.' },
+    { who: 'moni',   face: 'curious', text: '콩나물만 먹고 있잖아. 매일.' },
+    { who: 'jachwi', text: '나오는 게 그거니까.' },
+    { who: 'moni',   text: '같은 걸 두 번 먹으면 둘째 그릇은 반값밖에 안 쳐 줘.' },
+    { who: 'jachwi', face: 'surprise', text: '…밥에도 값이 매겨져 있어?' },
+    { who: 'moni',   face: 'happy', text: '다른 걸 하나 더 길러 봐. **무순.** 걔는 **밝은 데** 두는 애야.' }
+  ],
+  /* ★ 마지막 줄이 **체력이 오른 것**을 짚는다. 배너만 말하면 조용히 오른 것이 된다 */
+  questDoneCropMix: [
+    { who: 'jachwi', text: '오늘 밥상에 두 가지가 올라왔어.' },
+    { who: 'moni',   face: 'happy', text: '봐. 같은 걸 두 번 먹는 것보다 낫지.' },
+    { who: 'jachwi', face: 'tired', text: '손이 두 배로 가는데.' },
+    { who: 'moni',   face: 'curious', text: '그래서 손이 늘었잖아. 방금.' }
+  ],
+
+  /* ② ★ **이미 있던 퀘스트**다(`siru5_cycle5` · 2026-08-11). 값도 판정도 안 바꿨다 —
+     **말이 없던 것에 말을 붙였을 뿐**이다. 전에는 다 하고 나서야 배너로 알았다.
+     ★ 「체력이 천장이다」를 여기서 처음이자 유일하게 말한다 — 실측으로 `dialogue.js` 안에
+       「체력」이라는 말이 **한 번도 없었다**(0건). */
+  questSiru5: [
+    { who: 'moni',   face: 'curious', text: '이제 늘려 볼 때야. 시루 하나로는 하루가 안 메꿔져.' },
+    { who: 'jachwi', text: '늘리면 되는 거야?' },
+    { who: 'moni',   text: '되는데, 손이 모자랄걸.' },
+    { who: 'jachwi', text: '손?' },
+    { who: 'moni',   face: 'happy', text: '하루에 물 줄 수 있는 횟수. **그게 이 방에서 제일 모자란 거야.**' }
+  ],
+  questDoneSiru5: [
+    { who: 'moni',   face: 'happy', text: '다섯 개가 다섯 바퀴. 이제 이 방이 밥값은 내네.' },
+    { who: 'jachwi', face: 'tired', text: '손이 모자라던데.' },
+    { who: 'moni',   face: 'curious', text: '그래서 하나 늘려 놨어.' }
+  ],
+
+  /* ③ 모주 잎이 둘이 된 날 열린다 — `varieSecond` 가 말한 「이제 됐다」의 손 쪽이다.
+     ★ 가르치는 것은 **잎 1장이라야 물꽂이**(확정문 `cutting §2-②`). 확률이 아니라 조건이다. */
+  questFirstCut: [
+    { who: 'jachwi', face: 'surprise', text: '잎이 두 장이 됐어.' },
+    { who: 'moni',   face: 'curious', text: '그럼 하나는 떼도 돼. 하나는 남으니까.' },
+    { who: 'jachwi', text: '떼서 뭐 해.' },
+    { who: 'moni',   text: '물에 꽂아. 뿌리가 나와.' },
+    { who: 'jachwi', text: '아무거나 꽂으면 돼?' },
+    { who: 'moni',   face: 'happy', text: '**잎 한 장짜리라야** 꽂혀. 여러 장이면 흙에만 심어.' }
+  ],
+  questDoneFirstCut: [
+    { who: 'jachwi', face: 'surprise', text: '뿌리가 났어. 진짜로.' },
+    { who: 'moni',   face: 'happy', text: '났지. 한 그루가 두 그루가 된 거야.' },
+    { who: 'jachwi', text: '자르는 게 늘리는 거였구나.' }
+  ],
+
+  /* ④ ★★ **빛이 등급을 정한다** (확정문 `varie-grade §3` · `cutting §2-③`).
+     ⚠ 퍼센트를 안 읊는다 — 몬이는 규칙을 말하지 숫자를 말하지 않는다(`varieSecond` 와 같은 규율).
+     ⚠ 등급 이름(산반·하프문·풀문)도 아직 안 쓴다. 플레이어가 본 적이 없다. */
+  questVarieBright: [
+    { who: 'moni',   face: 'curious', text: '무늬 삽수는 **어디 두느냐**가 중요해.' },
+    { who: 'jachwi', text: '뿌리는 어디서든 나잖아.' },
+    { who: 'moni',   text: '뿌리는 그래. 근데 무늬는 아니야.' },
+    { who: 'jachwi', face: 'surprise', text: '무늬가 자리를 타?' },
+    { who: 'moni',   face: 'happy', text: '밝은 데서 뿌리내린 애가 더 좋은 무늬를 내. 어두우면 흔한 게 나오고.' }
+  ],
+  questDoneVarieBright: [
+    { who: 'moni',   face: 'curious', text: '그 자리에서 뿌리내렸네.' },
+    { who: 'jachwi', text: '그래서?' },
+    { who: 'moni',   face: 'happy', text: '값이 달라져. 얼마나 다른지는 내놔 보면 알아.' }
+  ],
+
+  /* ⑤ ★★★ **이 게임에서 제일 중요한 대사다.** 안 말하면 영영 모른다.
+     ------------------------------------------------------------
+     탈출 조건은 **돈 × 무늬 삽수를 판 적**이다(`tutorial.canMoveOut` · escapecut 확정).
+     그런데 실측으로 **둘 중 하나도 못 찬 판에서는 그 말이 한 번도 안 나온다** —
+     `loop.js §③` 이 `state = c.varie ? 'money' : c.money ? 'varie' : null` 이라
+     **둘 다 멀면 `null`(할 말이 없다)** 이다. 200일을 굴려도 `move_short_*` 가 0건이었다.
+     아래 한 줄(`tutorialGoal`)만이 「무늬 삽수를 잘라 뿌리내려 팔아 봐야 합니다」를 말하는데
+     그 줄은 **무엇을만 말하고 왜·어떻게를 안 말한다.**
+     ⇒ 여기가 그 자리다. 다섯 줄 중 유일하게 여덟 줄인 까닭이 그것이다.
+     ⚠ 이사비 금액을 안 박았다 — `shortMoney` 가 이미 「이백만 원」을 말하고, 두 곳이
+       같은 수를 말하면 값이 움직일 때 한쪽만 낡는다(2026-08-11 에 실제로 그랬다). */
+  questSellVarie: [
+    { who: 'moni',   face: 'curious', text: '이제 이 방을 **나가는 얘기**를 하자.' },
+    { who: 'jachwi', face: 'surprise', text: '돈만 모으면 되는 거 아니야?' },
+    { who: 'moni',   text: '아니야. 둘이야.' },
+    { who: 'moni',   text: '이사비 한 번, 그리고 **무늬 삽수를 팔아 본 적.**' },
+    { who: 'jachwi', text: '팔아 본 적? 갖고만 있으면 안 돼?' },
+    { who: 'moni',   face: 'sad', text: '안 돼. **값이 매겨져 봐야 그게 값이야.**' },
+    { who: 'jachwi', text: '…한 장을 떼야 한다는 소리네.' },
+    { who: 'moni',   face: 'happy', text: '응. 그게 이 방의 마지막 문이야.' }
+  ],
+  /* ★ 마지막 줄이 **다음 판을 가리킨다** — 한 번 팔아 봤으면 그 길을 다시 걸으면 된다.
+     이 구간에서 「그래서 이제 뭘 하지」가 다시 나오지 않게 하는 유일한 줄이다. */
+  questDoneSellVarie: [
+    { who: 'jachwi', text: '팔렸다.' },
+    { who: 'moni',   face: 'curious', text: '이제 남은 건 돈뿐이야.' },
+    { who: 'jachwi', face: 'tired', text: '그건 제일 안 되는 건데.' },
+    { who: 'moni',   face: 'happy', text: '아까 그거 한 번 더 하면 돼. **길은 이제 알잖아.**' }
+  ],
+
   /* ═══ §6 이사 — 조건이 하나씩 차고, 마침내 나간다 ═══════════════════════ */
 
   /* 배움은 다 됐고 돈이 모자랄 때. */
@@ -1028,6 +1154,29 @@ export const EVENT_SCRIPT = Object.freeze({
   moved_in_oneroom:    'movedInOneroom'
 });
 
+/* ★★ 퀘스트 — **id 하나에 다섯 갈래**라 `EVENT_SCRIPT` 에 못 넣는다 (2026-08-17).
+   `quest.stepQuests` 가 내는 사건은 `{ id: 'quest_opened'|'quest_done', questId }` 하나뿐이고
+   어느 줄인지는 `questId` 가 말한다 — `season`·`rent` 가 갈리는 것과 **같은 모양**이라
+   `scriptOf` 가 여기서 고른다.
+   ⚠ 여기 없는 `questId` 는 **조용히 지나간다.** 그게 맞다 — 퀘스트 표(`quest.QUESTS`)에
+     줄이 늘었는데 대사를 안 썼으면, 없는 대사를 부르다 던지는 것보다 안 뜨는 편이 낫다.
+   ★ `tools/test_quest.mjs` 가 **표와 이 두 지도가 어긋나지 않는지**를 못 박는다 —
+     둘이 갈리면 「퀘스트는 열리는데 화면이 조용한」 상태가 되고, 그게 이 저장소의 지병이다. */
+export const QUEST_OPEN_SCRIPT = Object.freeze({
+  crop_mix:     'questCropMix',
+  siru5_cycle5: 'questSiru5',
+  first_cut:    'questFirstCut',
+  varie_bright: 'questVarieBright',
+  sell_varie:   'questSellVarie'
+});
+export const QUEST_DONE_SCRIPT = Object.freeze({
+  crop_mix:     'questDoneCropMix',
+  siru5_cycle5: 'questDoneSiru5',
+  first_cut:    'questDoneFirstCut',
+  varie_bright: 'questDoneVarieBright',
+  sell_varie:   'questDoneSellVarie'
+});
+
 /* ★한 턴에 여러 사건이 겹칠 때의 **순서가 계약이다.**
    Day 4 는 수확·식비·배움 둘·식물신·도착이 한꺼번에 난다. 순서가 흔들리면
    "식물신이 도착 뒤에 말하는" 회차가 생긴다(first_play.md §2 가 금지한 것).
@@ -1066,6 +1215,12 @@ const EVENT_ORDER = [
      (첫 장 도착 뒤 36일 · 둘째 장 91일), 겹친다면 「났다」가 「두 장이 됐다」보다 먼저다. */
   'varie_lucky', 'varie_lucky2',
   'varie_granted',
+  /* ★★ 퀘스트는 **끝난 것이 먼저, 열린 것이 나중**이다 (2026-08-17).
+     한 판에서 「①을 끝냈다 → 그래서 ②가 열린다」가 같은 날 난다(`siru5_cycle5` 의 여는
+     조건이 `crop_mix` 완료라서). 순서가 뒤집히면 **열리고 나서 끝난 것을 축하한다.**
+   ⚠ 그리고 둘 다 **이사 판정보다 앞**이다 — `sell_varie` 를 끝낸 날이 곧 `move_ready` 인데,
+     그 순서라야 「팔렸다 → 그래서 나갈 수 있다」가 된다. 뒤집히면 이유가 결과 뒤에 온다. */
+  'quest_done', 'quest_opened',
   /* ★ `moved_in_oneroom` 은 반드시 `moved_out` **뒤**다 — 나가는 장면과 도착 장면이
      같은 턴에 한 번에 열린다. 순서가 뒤집히면 도착해서 인사하고 나서 짐을 싼다. */
   'move_short_learn', 'move_short_money', 'move_ready', 'moved_out', 'moved_in_oneroom'
@@ -1078,9 +1233,15 @@ function scriptOf(ev) {
   if (id === 'season') return ev.season === 'autumn' ? 'autumnCame'
                             : ev.season === 'winter' ? 'winterCame' : null;
   if (id === 'rent') return ev.first ? 'rentFirst' : 'rentAgain';
+  /* ★ 퀘스트는 `questId` 로 갈린다 (2026-08-17 · 위 §QUEST_OPEN_SCRIPT) */
+  if (id === 'quest_opened') return QUEST_OPEN_SCRIPT[ev && ev.questId] || null;
+  if (id === 'quest_done')   return QUEST_DONE_SCRIPT[ev && ev.questId] || null;
   return EVENT_SCRIPT[id] || null;
 }
-/* 정렬용 열쇠 — season·rent 는 갈린 뒤의 이름으로 줄을 선다. */
+/* 정렬용 열쇠 — season·rent 는 갈린 뒤의 이름으로 줄을 선다.
+   ⚠ 퀘스트는 **갈리기 전 이름**으로 줄을 선다. 다섯 줄이 같은 날 겹칠 일이 규칙상 없고
+     (여는 조건이 서로 다른 사건에 걸려 있다), 겹친다 해도 순서는 정의 순서 그대로가 맞다 —
+     `scriptsForEvents` 가 `sort` 를 안정적으로 쓰므로 넘어온 차례가 유지된다. */
 function orderKey(ev) {
   const id = typeof ev === 'string' ? ev : (ev && ev.id);
   if (id === 'season') return 'season_' + (ev.season || '');
