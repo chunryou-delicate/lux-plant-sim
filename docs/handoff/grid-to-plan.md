@@ -242,12 +242,20 @@ X-3 ★그리는 칸 수는 안 늘었다 (벽 옆 자투리 줄을 안 만든�
 | `test_place_confirm` | PASS (31/31) |
 | `test_outside` | PASS (0 실패 · 27개) |
 
-⚠⚠ **`test_uiwire` 가 5개 실패한다 — 내 것이 아니다.**
+| `test_quiet` | PASS (26/26) |
+| `test_snap` | PASS (13/13) |
+| `test_free_place` | PASS |
+| `test_bagcell` | PASS (54개 · 어긋난 것 0) |
+| `test_headroom` | PASS |
+
+⚠⚠ **`test_uiwire` 5개 · `test_pots` 1개가 실패한다 — 둘 다 내 것이 아니다.**
 `git stash` 로 내 변경을 **통째로 걷어 내고 다시 돌려도 똑같이 5개 실패**한다.
 그때 `git status` 를 보니 **다른 창이 `game.html` · `first_play.js` · `loop.js` ·
 `save.js` · `state.js` 를 편집 중**이었다(내 ⛔ 금지 구역이다). 실패 내용도 씨앗·시루
 개수라 격자와 무관하다(`S-9 · S-13 · S-15 · S-16 · W-4`).
-⇒ **손대지 않았다.** 그 창이 끝나면 다시 돌려야 한다.
+`test_pots` 는 `E-6 손익분기 — 씨앗값과 회전분이 움직인 만큼만 움직였다` 하나다.
+그 파일은 `room_view.js` 를 **import 조차 안 한다**(자리 수 14칸을 재는 `C-0`~`C-2` 는 전부 통과).
+⇒ **손대지 않았다.** 그 창이 끝나면 둘 다 다시 돌려야 한다.
 
 ---
 
