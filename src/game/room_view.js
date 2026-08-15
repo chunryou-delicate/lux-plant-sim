@@ -1547,6 +1547,26 @@ export async function createRoomView(canvas, opts = {}) {
     g.add(pots);
     g.userData.potPart = pots;
 
+    /* ★★ **아직 안 심은 시루는 빈 용기다** (2026-08-16 · 박사님: "콩나물 시루가 콩씨앗이
+       없어도 설치되게 … 용기에 씨 심기 해서 심도록").
+       ------------------------------------------------------------
+       콩나물도 이제 **빈 시루를 먼저 놓고** 방에서 [🌱 심기]를 누른다. 그 사이 동안 시루는
+       화면에 서 있는데 콩나물은 아직 없다. 아래 `lerp(4, 11, p01)` 을 그대로 태우면
+       **안 심은 시루에 콩나물이 네 포기 나 있어** 화면이 거짓말을 한다.
+       ⚠ `progress01 === 0` 으로 가르지 **않는다.** 심어 놓고 물을 안 준 시루도 0 이라
+         「안 심음」과 「물 안 줌」이 화면에서 안 갈린다 — 그 둘을 갈라 보이게 한 것이
+         이번 변경의 요지였다. 그래서 **말로 받는다**(`sown:false`).
+       ★ `undefined` 는 예전 그대로 「심은 것」이다 — 옛 호출부·옛 세이브가 안 깨진다.
+       ★ §buildMusun 의 `spec.sown === false` 가지와 **같은 규칙·같은 자리**다.
+       ⚠ 넣는 자리가 중요하다 — `potPart` 대입 **뒤**여야 한다. 앞에 넣으면 무리 지름이
+         시루 하나 것으로 나온다(`__potPart` 가 무리 전체를 못 찾는다). */
+    if (spec.sown === false) {
+      g.userData.kind = 'beansprout';
+      g.userData.leaves = [];
+      g.userData.containerCount = cl.offs.length;
+      return g;
+    }
+
     const stage = p01 < 0.34 ? 's' : p01 < 0.7 ? 'm' : 'l';
     const body = await loadGLB(AT(`../../assets/crops/beansprout_${stage}.glb`));
     const n = Math.round(lerp(4, 11, p01));

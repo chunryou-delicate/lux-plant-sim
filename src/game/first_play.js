@@ -1442,6 +1442,13 @@ function harvestStatusOfSite(site) {
     idleCount: idlePots(site).length,
     /* 이 자리에 놓인 용기 수. 콩나물은 시루 · 무순은 재배판이다 */
     sirus: pots.length,
+    /* ★★ 2026-08-16 — **놓였는데 아직 안 심은 용기가 있나** (§sown).
+       화면이 「물 단추가 왜 잠겼나」를 두 가지로 말해야 해서 여기까지 올린다 —
+       「다 자라는 중」과 「아직 안 심음」은 **다른 까닭**인데 한 가지로만 말하고 있었다.
+       (빈 시루를 놓은 첫 화면에서 안내는 "심어야 5칸이 생깁니다"라 하고 아래 줄은
+        "작물은 전부 자라는 중"이라 해서 두 줄이 서로 딴말을 했다.)
+       ⚠ 칸별(`cropRows`)에는 `needsSow` 가 이미 있었다. 없던 것은 **자리별 합계**다. */
+    needsSow: unsownCropPots(site).length > 0,
     cycle: site.cycle || 1
   };
 }
@@ -1497,6 +1504,11 @@ export function beansproutWaterStatus(fp, day) {
     return {
       kind: kindId, kindKo: cropKindOf(kindId).ko,
       needsWater: !!s.slotId && id.length > 0,
+      /* ★★ 2026-08-16 — **놓였는데 아직 안 심은 용기가 있나** (§sown).
+         ⚠ 이 함수는 `byKind` 를 **제 손으로 따로 만든다**(`harvestStatusOfSite` 를 안 쓴다).
+           그래서 저쪽에만 칸을 붙이면 여기서는 `undefined` 다 — 내가 그걸로 한 번 헛짚었다.
+           같은 이름의 목록이 두 벌이라는 것을 기억해라. */
+      needsSow: unsownCropPots(s).length > 0,
       waiting: id.length,
       idleIds: id.map(p => p.id),
       idleDays: idleDaysOf(s, day),
@@ -1520,6 +1532,9 @@ export function beansproutWaterStatus(fp, day) {
     /* 놓았고 · 아직 시작 안 한 시루가 있으면 줄 것이 있다.
        ⚠ **다 자란 시루는 애초에 대기가 아니다** — 물은 회전당 한 번이라 이미 줬다(§물주기). */
     needsWater: byKind.some(x => x.needsWater),
+    /* ★ 놓였는데 안 심은 용기가 하나라도 있나 (2026-08-16 · §sown). 물 단추가 잠긴 까닭을
+       「다 자라는 중」과 갈라 말하는 데 쓴다 — 까닭이 다르면 글자도 달라야 한다. */
+    needsSow: byKind.some(x => x.needsSow),
     /* 몇 개가 시작을 기다리나 — 화면이 "시루 2개가 아직 안 자랍니다"를 말할 근거 */
     waiting: idle.length,
     idleIds: idle.map(p => p.id),
