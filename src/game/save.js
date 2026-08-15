@@ -883,6 +883,10 @@ function reseat(S, room, report) {
     pushLog(S, `🔧 복원 — 옛 세이브 좌표 ${mig.filled.length}건을 슬롯에서 채웠습니다`);
   for (const s of mig.skipped)
     pushLog(S, `⚠ 복원 — ${s.id} 의 좌표를 못 채웠습니다: ${s.why}`);
+  /* ★★ 2026-08-17 — **자리가 움직인 판**(state §migratePots resnap). 조용히 넘기지 않는다 —
+     그 화분의 밝기가 조금 달라질 수 있고, 말 없이 바뀌면 다음 사람이 코드에서 까닭을 찾는다. */
+  if (mig.resnapped && mig.resnapped.length)
+    pushLog(S, `🔧 복원 — 자리가 움직여 ${mig.resnapped.length}개를 그 자리로 다시 앉혔습니다`);
 
   /* 화분 — 없어진 슬롯·사라진 가구·방 밖 좌표는 state.rehomePot 규칙으로 회수한다.
      v0 는 한 그루라 rehomePot 이 pot0 만 본다(코어 규약). */

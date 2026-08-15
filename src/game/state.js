@@ -31,7 +31,7 @@ import { createTutorialState, yearDay0Of } from './tutorial.js';
 import { spend as spendStamina, canAct as canActStamina, createStaminaState } from './stamina.js';
 import { createShopState, useStock, assertStockAll, stockOf,
          creditCropSurplus } from './shop.js';
-import { atFromSlot, isFreeSlotId, makeAt, resolvePlacement,
+import { atFromSlot, isFreeSlotId, makeAt, resolvePlacement, samePoint,
          inRoom, assertFurnitureAt } from './place.js';
 
 export const SCHEMA = 'game_state/1';
@@ -342,9 +342,33 @@ export function modeOf(S) { return SIM_MODES[S.sim.mode] || SIM_MODES.real; }
      시루만 좌표 없이 남으면 옛 세이브에서 시루가 계약에는 실리는데 방뷰에는 못 서거나,
      자유 배치 UI 가 "지금 어디 있는지"를 물었을 때 답이 없다. */
 export function migratePots(S, slots) {
-  const filled = [], skipped = [];
+  const filled = [], skipped = [], resnapped = [];
+  /* ★★★ 2026-08-17 — **자리가 움직이면 그 자리에 앉은 것도 따라와야 한다.**
+     ══════════════════════════════════════════════════════════════════
+     박사님 폰에서 옛 판(Day 13)이 안 열렸다:
+       `[조도] crop_01_01 의 자리가 어긋납니다 — slotId=banjiha-desk:0 는 (0.82,0.74,-1.35)
+        인데 at 은 (0.79,0.74,-1.41) 입니다`
+     그날 `furniture_pastel.tierSlots` 의 여백을 고쳐 **추천 자리를 칸 한가운데로 옮겼다.**
+     세이브에는 **옛 좌표**가 `at` 으로 굳어 있고 `slotId` 는 그대로라, 불변식
+     「slotId 가 가리키는 자리 = at」이 깨져 `light_adapter.slotsFor` 가 던진다.
+     ⇒ 게임이 통째로 멈춘다. 아래 `fill` 은 `at` 이 **없을 때만** 채우므로 이걸 못 잡았다.
+
+     ★ 옳은 뜻은 하나뿐이다 — **그 화분은 그 자리에 있었다.** 자리가 움직였으면 화분도 옮긴다.
+     ⚠ 자유 좌표(`free:*`)는 건드리지 않는다. 그건 「자리에 안 앉은 것」이라 뜻이 다르다.
+     ⚠ 조용히 하지 않는다 — 옮겼으면 기록에 남긴다(`resnapped`). 밝기가 조금 달라질 수 있고,
+       말 없이 바뀌면 다음 사람이 「왜 값이 다르지」를 코드에서 찾게 된다. */
+  const resnap = (o, id) => {
+    if (!o || !o.at || !o.slotId || isFreeSlotId(o.slotId)) return;
+    const s = (slots || []).find(x => x && x.slotId === o.slotId);
+    if (!s || ![s.x, s.y, s.z].every(v => typeof v === 'number' && Number.isFinite(v))) return;
+    if (samePoint(s, o.at)) return;
+    const was = { x: o.at.x, y: o.at.y, z: o.at.z };
+    o.at = atFromSlot(s);
+    resnapped.push({ id, slotId: o.slotId, was, now: o.at });
+  };
   const fill = (o, id) => {
-    if (!o || o.at) return;
+    if (!o) return;
+    if (o.at) { resnap(o, id); return; }
     if (!o.slotId) { skipped.push({ id, why: 'slotId 가 없습니다' }); return; }
     if (isFreeSlotId(o.slotId)) { skipped.push({ id, why: '자유 좌표인데 at 이 없습니다' }); return; }
     const s = (slots || []).find(x => x && x.slotId === o.slotId);
@@ -378,7 +402,7 @@ export function migratePots(S, slots) {
   if (fp && fp.enabled && fp.monstera && fp.monstera.arrived && fp.monstera.slotId)
     fill(fp.monstera, (pot0(S) && pot0(S).id) || 'monstera');
 
-  return { filled, skipped };
+  return { filled, skipped, resnapped };
 }
 
 /* ★ 지금 방 안에서 **자리를 차지하고 있는 것 전부** (2026-08-03).
