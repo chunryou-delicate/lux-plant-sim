@@ -1401,16 +1401,84 @@ const LEAF_HEALTH=new Map();        // leafBirth → {fade 0..1, dropped, hold}
      난수 스트림도 마디·가지·잎의 형태도 한 글자도 안 움직이고, 바뀌는 것은
      "그 굴림을 언제 확정하느냐" 하나뿐이다. */
 const VARIE_STATE=new Map();        // leafBirth → true|false (한 번 정하면 안 바뀐다)
+
+/* ===== ★★ 프롤로그 보장 — 「N번째 잎」 딱 한 장만 참으로 못 박는다 (2026-08-13 박사님 확정) =====
+   ------------------------------------------------------------------------------
+   박사님 원문: *"프롤로그니까 약간 치트성으로 이때만 확정적으로 가이드겸해서 20프로지만
+   운좋게 나오는 거로 하면… 2번째 잎일 때 나와서 탈출하는 게 안 늘어지고 좋을 거 같긴 해서"*
+
+   ══ ★ 확률을 안 건드린다 ═══════════════════════════════════════════════
+   `P.varieProb`(0.20)은 캐논이다(byeot_growth_chart_인계 — *"변이는 잎마다 독립 판정"*).
+   여기서 하는 일은 확률을 올리는 것이 **아니라**, 굴림이 진 뒤에 **그 한 잎만** 참으로
+   덮는 것이다. 그래서 세 가지가 지켜진다:
+     ① 다른 잎은 전부 20% 그대로다 — 3번째 잎부터는 이 코드를 아예 안 지난다
+     ② `calcVarieProb`·`fLight`·`fStable` 한 줄도 안 움직인다(빛 규칙이 그대로 산다)
+     ③ 난수 스트림이 안 바뀐다 — `rng()` 은 예전과 똑같은 자리에서 똑같이 뽑힌다
+        (호출부는 `varieRoll(birth+P.petGrow, rng())` 그대로다)
+
+   ══ 기본은 **꺼짐**이다 ════════════════════════════════════════════════
+   `leafNo = 0` 이 기본이라 **아무도 켜지 않으면 아무 일도 안 일어난다.**
+   단독 확대창(튜닝 도구)·`plant_assemble`(방 조립)은 이 함수를 안 부르므로 캐논 그대로 돈다.
+   켜는 것은 게임 경계(`growth_adapter`) 하나뿐이고, 켜지는 순간은 **개체 도착(setGrowth)**
+   — 판마다 딱 한 번, 프롤로그에서만 일어나는 사건이다.
+
+   ══ 안 주는 경우 셋 ════════════════════════════════════════════════════
+     · 이미 한 번 줬다 (`used`)                     — 두 번 주면 프롤로그가 아니다
+     · 이미 무늬 잎이 하나라도 나 있다              — 운으로 이미 났으면 덤을 안 준다
+     · 이 잎이 N번째가 아니다                       — 자리를 옮겨 주지 않는다
+   ⚠ 씨앗이 바뀌면(plantSeed → matResetAll) **다른 개체**라 `used` 도 같이 푼다.
+     안 풀면 새 개체가 이유 없이 보장을 못 받는다(VARIE_STATE 를 비우는 것과 같은 사정이다). */
+const PROLOGUE_VARIE={ leafNo:0, used:false, leafBirth:null };
+/* n = 몇 번째 잎을 못 박나(1부터). 0·null 이면 끈다. 반환은 지금 상태. */
+function setPrologueVarieLeaf(n){
+  const v=Math.max(0, Math.round(Number(n)||0));
+  if(v!==PROLOGUE_VARIE.leafNo){ PROLOGUE_VARIE.leafNo=v; PROLOGUE_VARIE.used=false; PROLOGUE_VARIE.leafBirth=null; }
+  return prologueVarieState();
+}
+/* 지금 상태. ★ `shown` 은 **그 잎이 무늬로 그려지고 있나** — 화면이 「운이 좋았다」를
+   말해도 되는 순간이다. 잎이 세어지는 때(leafBirth)와 무늬가 보이는 때는 다르다:
+   `drawLeafStage` 는 성숙도 0.22 아래를 **말린 새순·펴지는 중**으로 그려서 무늬가 안 보인다.
+   실측(seed 92158 · DLI 4.8): 잎이 세어지는 유효 70 → 무늬 스킨이 실제로 붙는 유효 90.
+   그 20일 사이에 말하면 몬이가 **아직 안 보이는 무늬**를 보고 놀란다.
+   ⚠ 0.22 를 새로 만든 숫자가 아니다 — `drawLeafStage` 의 그 값 그대로다. */
+const PROLOGUE_SHOW_M=0.22;
+function prologueVarieState(){
+  const lb=PROLOGUE_VARIE.leafBirth;
+  const m = lb==null ? null : (ageOf(GROWTH)-lb)/P.matSpan;
+  return {...PROLOGUE_VARIE, m: m==null? null : +m.toFixed(4),
+          shown: m!=null && m>=PROLOGUE_SHOW_M};
+}
+/* 이 잎에 보장을 줄 것인가. **참을 돌려줄 때만** 장부를 적는다(굴림에 진 잎에만 부른다). */
+function prologueVarieHit(leafBirth){
+  const G=PROLOGUE_VARIE;
+  if(!G.leafNo || G.used) return false;
+  for(const v of VARIE_STATE.values()) if(v) return false;      // 이미 무늬가 났다 — 또 안 준다
+  let rank=1;                                                   // 이 잎이 몇 번째인가
+  for(const lb of VARIE_STATE.keys()) if(lb<leafBirth) rank++;
+  if(rank!==G.leafNo) return false;
+  G.used=true; G.leafBirth=leafBirth;
+  return true;
+}
+
 function varieRoll(leafBirth, roll){
   let v=VARIE_STATE.get(leafBirth);
-  if(v===undefined){ v = roll < calcVarieProb(lightCtx()); VARIE_STATE.set(leafBirth, v); }
+  if(v===undefined){
+    v = roll < calcVarieProb(lightCtx());
+    /* ★ 굴림이 **진 뒤에만** 본다 — 이겼으면 그냥 이긴 것이고 보장은 안 쓴다(§프롤로그 보장) */
+    if(!v && prologueVarieHit(leafBirth)) v = true;
+    VARIE_STATE.set(leafBirth, v);
+  }
   return v;
 }
-function varieStateAll(){ return [...VARIE_STATE.entries()].map(([leafBirth,varie])=>({leafBirth,varie})); }
+/* ★ `prologue` 칸은 **표시·검사용**이다. 코어(growth_adapter.leafState)는 leafBirth·varie 만 읽는다. */
+function varieStateAll(){ return [...VARIE_STATE.entries()].map(([leafBirth,varie])=>
+  ({leafBirth, varie, prologue: leafBirth===PROLOGUE_VARIE.leafBirth})); }
 
 // 성숙 이력과 잎 건강은 같은 개체의 같은 이력이다 — 하나를 버리면 둘 다 버려야 어긋나지 않는다.
 // ★무늬 이력도 같다. 씨앗이 바뀌면(plantSeed) leafBirth 가 겹쳐 옛 개체의 무늬가 새 개체로 샌다.
-function matResetAll(){ MAT_STATE.clear(); LEAF_HEALTH.clear(); VARIE_STATE.clear(); }
+function matResetAll(){ MAT_STATE.clear(); LEAF_HEALTH.clear(); VARIE_STATE.clear();
+  // ★ 프롤로그 보장도 개체 이력이다 — 개체가 갈리면 「이미 줬다」도 같이 푼다(§프롤로그 보장)
+  PROLOGUE_VARIE.used=false; PROLOGUE_VARIE.leafBirth=null; }
 function leafHealthEntry(leafBirth){
   let e=LEAF_HEALTH.get(leafBirth);
   if(!e){ e={fade:0, dropped:false, hold:0}; LEAF_HEALTH.set(leafBirth, e); }

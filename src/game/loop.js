@@ -340,6 +340,33 @@ function stepCuttingsOfTurn(S, io, report) {
    여기서는 **growth 가 낸 값을 그대로 넘겨주기만** 한다 — 루프가 무늬 규칙을 또 갖지 않게.
    ⚠ growth 가 접근자를 안 내면(옛 plant_grow · sim.nullGrowth) 아무것도 안 한다.
      코어가 마디를 지어내면 그 순간 "실제 자란 것을 자른다"가 거짓이 된다. */
+/* ★ 프롤로그 보장이 붙은 그 날 딱 한 번 사건을 낸다. 없으면 null.
+   ★ 상태를 안 만든다 — growth 가 `leafBirth` 를 들고 있으므로 코어는 「이미 말했나」 한 칸만 든다
+     (`S._varieLuckySaid` · `S._growthCredit` 와 같은 코어 임시 칸이다).
+   ⚠ 접근자가 없는 옛 plant_grow·헤드리스 하네스에서는 조용히 아무 일도 안 한다 —
+     확정 무늬(cuttableNodes)와 같은 규약이다. 지어내지 않는다. */
+function prologueVarieEvent(S, io, stats) {
+  if (!S || S._varieLuckySaid) return null;
+  const f = io && io.growth && io.growth.prologueVarie;
+  if (typeof f !== 'function') return null;
+  let g = null;
+  try { g = f.call(io.growth); } catch { return null; }
+  if (!g || g.leafBirth == null) return null;
+  /* ★★ **무늬가 화면에 보이는 날**을 기다린다 (2026-08-13 · 두 번 재서 고쳤다).
+       ① 보장이 붙는 순간은 그 잎의 무늬가 **정해지는** 때(생장점이 생길 때)라
+          실측 seed 7 에서 **14일 앞서** 말했다(정해진 날 26 · 잎이 난 날 40).
+       ② 잎이 세어지는 날(leafStats)도 아직 이르다 — 그때는 **말린 새순**이라 무늬가
+          안 보인다. 실측(seed 92158 · DLI 4.8): 세어지는 유효 70 → 무늬 스킨이 붙는 유효 90.
+     ⇒ growth 가 `shown` 으로 그 순간을 낸다(plant_grow §프롤로그 보장). 코어가 성숙도를
+       다시 세지 않는다 — 0.22 라는 문턱은 `drawLeafStage` 의 것이고 growth 소유다.
+     ⚠ `shown` 을 안 내는 옛 growth 면 잎이 세어진 날로 떨어진다(조용히 안 말하지는 않는다). */
+  if ('shown' in g ? !g.shown : !(stats && (stats.variegatedLeaves || 0) > 0)) return null;
+  S._varieLuckySaid = true;
+  pushLog(S, '✨ 새로 난 잎에 흰 무늬가 섞였습니다 — ' +
+             '무늬 그루를 잘라 물에 꽂으면 그 삽수도 무늬를 물려받습니다');
+  return { id: 'varie_lucky', ko: '두 번째 잎에 무늬가 났습니다', leafBirth: g.leafBirth };
+}
+
 function stepVarieGrantOfTurn(S, io) {
   const ts = S.tutorial;
   if (!ts || !ts.enabled || ts.movedOut) return null;
@@ -365,6 +392,14 @@ function stepVarieGrantOfTurn(S, io) {
       pushLog(S, `✨ 새 잎 한 장이 무늬로 나왔습니다 — ${r.nodeId} (잘라서 뿌리내리면 팔 수 있습니다)`);
       r.events = [{ id: 'varie_granted', ko: '무늬 잎이 나왔습니다', nodeId: r.nodeId }];
     }
+    /* ★★ 프롤로그 보장(두 번째 잎)이 실제로 붙은 날을 **말하게** 한다 (2026-08-13).
+       ⚠ 위 `varie_granted` 와 **다른 사건**이다. 저쪽은 코어 장부(tutorial.varieGrant)이고,
+         이쪽은 growth 안에서 그 잎이 **진짜로 무늬로 난 것**이라 코어는 물어보기만 한다
+         (growth_adapter.prologueVarie → plant_grow §프롤로그 보장).
+       ★ 여기서 규칙을 다시 짜지 않는다 — 「줬나 안 줬나」는 growth 가 이미 알고 있고
+         코어가 세면 두 곳에서 세는 것이 된다(이 파일 §확정 무늬와 같은 규칙). */
+    const lucky = prologueVarieEvent(S, io, stats);
+    if (lucky) r.events = [...(r.events || []), lucky];
     return r;
   } catch (e) {
     pushLog(S, '⚠ 확정 무늬 판정 실패 — ' + e.message);

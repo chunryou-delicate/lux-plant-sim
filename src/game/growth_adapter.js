@@ -9,6 +9,12 @@
      활력(vigor)은 표시 취소·구현 보류라(2026-08-02) **훅조차 두지 않는다** — 아래 참고.
 ============================================================ */
 
+/* ★★ 프롤로그에서 **몇 번째 잎**을 무늬로 못 박나 (2026-08-13 박사님 확정).
+   *"2번째 잎일 때 나와서 탈출하는 게 안 늘어지고 좋을 거 같긴 해서"*
+   ⚠ 이것은 **확률이 아니다.** 캐논의 20%(`plant_grow.P.varieProb`)는 한 글자도 안 바뀌고,
+     이 값이 가리키는 잎 한 장만 굴림에 진 뒤에 참으로 덮인다(plant_grow §프롤로그 보장). */
+export const PROLOGUE_VARIE_LEAF_NO = 2;
+
 /* 계약 객체에서 이 화분 자리의 DLI를 코어가 직접 꺼낸다.
 
    ★ 왜 setDailyLight(계약, slotId) 를 안 쓰나
@@ -46,6 +52,8 @@ export function createGrowthAdapter(iframe) {
     return w && typeof w[name] === 'function' ? w[name] : null;
   };
   let setGrowthCalls = 0;          // ★ 일일 루프에서 0회여야 한다(감시용)
+  /* 프롤로그 보장(아래 setGrowth 참고) — 자동으로 한 번만 켠다 · 호스트가 직접 켜면 손을 뗀다 */
+  let prologueArmed = false, prologueExplicit = false;
 
   /* iframe 안의 스크립트가 다 돌 때까지 기다린다(three.js·GLB 로드가 있어 몇 초 걸린다) */
   function missing() { return REQUIRED_GROWTH_FNS.filter(n => !fn(n)); }
@@ -142,8 +150,38 @@ export function createGrowthAdapter(iframe) {
        도착은 성공/실패가 갈려야 하는 원자적 사건이다(state.givePlant 참고). */
     /* 반환 { growth, calDay, drawn, drawError, hudError } — 도착(개체 생성)이 이걸 쓴다.
        `drawn` 을 안 보면 "화분은 있는데 화면엔 없는" 개체가 생긴다(state.givePlant 참고). */
-    setGrowth(days) { const f = must('setGrowth'); setGrowthCalls++; return f(days); },
+    setGrowth(days) {
+      const f = must('setGrowth'); setGrowthCalls++;
+      const r = f(days);
+      /* ★★ 프롤로그 보장을 **여기서** 켠다 (2026-08-13 · plant_grow §프롤로그 보장).
+         ------------------------------------------------------------
+         박사님 확정: *"프롤로그니까 … 이때만 확정적으로 … 2번째 잎일 때 나와서"*.
+         ★ 왜 이 자리인가 — `setGrowth` 는 **개체 도착 한 번**뿐이다(위 주석·state.givePlant·
+           save.js §growth). 그 한 번이 곧 프롤로그이고, 그 뒤 하루 진행은 전부 `advanceTo` 라
+           여기를 다시 안 지난다. 그래서 「첫 플레이에서만」이 배선 하나로 성립한다.
+         ★ 확률은 안 건드린다. 켜지는 것은 **그 한 잎만 참으로 덮는 장부**이고,
+           3번째 잎부터는 캐논대로 잎마다 20% 다.
+         ⚠ 세이브를 다시 불러도 같은 답이다 — 재생이 도착부터 되밟으므로(save.js) 같은 잎이
+           같은 자리에서 다시 덮인다. 굴리는 것이 아니라 **못 박는** 것이라 그렇다.
+         ⚠ `explicit` 이 서 있으면 안 건드린다 — 호스트가 직접 정한 값이 항상 이긴다. */
+      if (!prologueExplicit && !prologueArmed) {
+        prologueArmed = true;
+        const g = fn('setPrologueVarieLeaf');
+        if (g) { try { g(PROLOGUE_VARIE_LEAF_NO); } catch { prologueArmed = false; } }
+      }
+      return r;
+    },
     setGrowthCalls: () => setGrowthCalls,
+
+    /* ★ 프롤로그 보장을 직접 켜고 끈다. `n = 0` 이면 끈다(정식 모드·튜닝 도구의 기본값).
+       호스트가 한 번이라도 부르면 위 자동 배선은 손을 뗀다. */
+    setPrologueVarieLeaf(n) {
+      prologueExplicit = true;
+      const f = fn('setPrologueVarieLeaf');
+      return f ? f(n) : null;                 // 옛 plant_grow 면 null — 지어내지 않는다
+    },
+    /* 지금 상태 { leafNo, used, leafBirth } · 접근자가 없으면 null */
+    prologueVarie() { const f = fn('prologueVarieState'); return f ? f() : null; },
 
     /* ★ 갈라짐 표시는 반드시 이걸 쓴다 (growth 요청, 2026-08-01).
        `bandOf(오늘값).fenestrating` 은 넘긴 하루 값 기준이라 오늘만 반짝 넘어도 true다.
