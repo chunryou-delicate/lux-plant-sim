@@ -24,6 +24,7 @@
      G 방 조립기가 `leafState` 를 받으면 정본과 같은 잎을 그린다
      H 방 조립기는 **받은 유효일 그대로** 그린다 (도착 45일이 365일로 안 커진다)
      I 무늬는 **쓸 때 받는다** — 부팅 때 skins/ 를 안 받고, 나면 그 장만 받아 실제로 그린다
+     J **방(3D)에도 무늬 잎이 난다** — 정본이 무늬라 한 잎만, 원본 텍스처 그대로
 ============================================================ */
 import { launch, sleep } from './test_cdp.mjs';
 
@@ -191,6 +192,9 @@ console.log('\nG. 방 조립기 — leafState 를 받으면 정본과 같은 잎
   const cnt = await page.eval(`(async()=>{
     const m = await import('/src/render3d/plant_assemble.js');
     const asm = await m.getPlantAssembler({});
+    /* ★ 조립기를 **연 직후** 몇 장 받았나 — §J 가 "부팅 때 0장"을 여기서 가져다 쓴다.
+       (싱글턴이라 §J 에서는 다시 열 수가 없다. 여는 순간을 지나치면 못 잰다) */
+    if (window.__asmBoot0 == null) window.__asmBoot0 = asm.skinsLoaded();
     const count = (g)=>{ let mat=0, leaf=0;
       g.traverse(o=>{ const k=o.userData&&o.userData.assetKey; if(!k) return;
         if(/^leaf_/.test(k)) leaf++; if(/^leaf_mature|^leaf_mat\\d/.test(k)) mat++; });
@@ -281,6 +285,78 @@ console.log('\nI. 무늬는 쓸 때 받는다 — 부팅 때 안 받고, 나면 
      `무늬 텍스처가 살아 있고 단색으로 안 덮인다 ${JSON.stringify(r.tex.slice(0, 3))}`);
 
   await page.eval(`(()=>{ P.varieProb=0.20; plantSeed(92158); matResetAll(); resetDailyLight(); })()`, false);
+}
+
+/* ── J. 방(3D)에도 무늬 잎이 난다 ──
+   ★ 2026-08-18 — 그전까지 무늬는 **확대창에서만** 보였다. 방은 `leafState` 로 `varie` 칸을
+     이미 받고 있었는데, 조립기가 `skins/` 를 ASSET_FILES 에서 통째로 지우고 열어서
+     `ensureSkin` 이 그 자리에서 거짓을 돌려주었다 — 무늬 잎이 조용히 기본잎으로 앉았다.
+   ⚠⚠ 여기서 거는 것은 넷이다. 넷째가 제일 중요하다.
+     ① 무늬가 난 잎이 있으면 방이 그 무늬를 **받아서 그린다**
+     ② **무늬가 하나도 안 난 그루는 한 장도 안 받는다** — 캐논: 변이는 잎마다 독립이다.
+        그루째 무늬로 칠하면 여기가 깨진다
+     ③ 한 그루가 받는 무늬는 100장이 아니라 그 그루가 쓰는 몇 장뿐이다
+     ④ **무늬 텍스처는 원본 그대로다** — 재질색 #ffffff · map 살아 있음(단색 틴트 금지) */
+console.log('\nJ. 방(3D)에도 무늬 잎이 난다 — 난 잎만 · 원본 텍스처 그대로');
+{
+  /* 정본에서 「모든 잎이 무늬」인 잎 상태를 만든다. varieProb 1.0 은 §I 와 같은 튜닝용 값이다. */
+  const truth = await page.eval(`(()=>{
+    P.varieProb=1; plantSeed(92158); matResetAll(); resetDailyLight();
+    setGrowth(0); setDailyLightSteady(8);
+    for(let d=1; d<=400; d++) advanceTo(d);
+    const v=new Map(varieStateAll().map(x=>[x.leafBirth,x.varie]));
+    const h=new Map(leafHealthAll().map(x=>[x.leafBirth,x]));
+    const seen=new Set(), out=[];
+    for(const m of matStateAll()){ seen.add(m.leafBirth);
+      out.push({leafBirth:m.leafBirth, varie:!!v.get(m.leafBirth), matured:!!m.matured,
+                fade:(h.get(m.leafBirth)||{}).fade||0, dropped:!!(h.get(m.leafBirth)||{}).dropped}); }
+    for(const [lb,varie] of v) if(!seen.has(lb))
+      out.push({leafBirth:lb, varie:!!varie, matured:false, fade:0, dropped:false});
+    P.varieProb=0.20;                       // ⚠ 반드시 되돌린다(밸런스 값이다)
+    return JSON.stringify({days:growthDays(), st:leafStats(), leafState:out}); })()`).then(JSON.parse);
+
+  const r = await page.eval(`(async()=>{
+    const m = await import('/src/render3d/plant_assemble.js');
+    const asm = await m.getPlantAssembler({});
+    const D=${truth.days}, LS=${JSON.stringify(truth.leafState)};
+    const PLAIN = LS.map(s=>({...s, varie:false}));
+    const look = (g)=>{ const keys=new Set(); let mesh=0; const tex=[];
+      g.traverse(o=>{ const k=o.userData&&o.userData.assetKey;
+        if(k && /albo|^leaf_mat\\d/.test(k)) keys.add(k);
+        if(o.isMesh && o.userData.varieSkin){ mesh++;
+          if(o.material) tex.push(['#'+o.material.color.getHexString(), !!o.material.map]); } });
+      return { keys:[...keys], mesh, tex }; };
+    const settle = async ()=>{ for(let i=0;i<600 && asm.skinsPending()>0;i++) await new Promise(r=>setTimeout(r,100)); };
+
+    const first  = look(asm.assemble({growthDays:D, seed:92158, potD:0.20, leafState:LS}));
+    const asked  = asm.skinsPending();
+    await settle();
+    const after  = look(asm.assemble({growthDays:D, seed:92158, potD:0.20, leafState:LS}));
+    const loaded = asm.skinsLoaded();
+
+    /* 무늬 판정이 하나도 없는 같은 그루 — 여기서 한 장이라도 더 받으면 그루째 칠한 것이다 */
+    const plain  = look(asm.assemble({growthDays:D, seed:92158, potD:0.20, leafState:PLAIN}));
+    const plainAsked = asm.skinsPending();
+    await settle();
+    return JSON.stringify({ boot: window.__asmBoot0, first, asked, after, loaded,
+                            plain, plainAsked, added: asm.skinsLoaded()-loaded }); })()`).then(JSON.parse);
+
+  console.log(`    조립기를 연 직후 무늬 ${r.boot}장 · 첫 조립에서 ${r.asked}장을 청했다`);
+  console.log(`    받은 뒤 방이 그린 무늬: ${r.after.keys.join(', ') || '없음'} (메시 ${r.after.mesh}개 · 받은 무늬 ${r.loaded}장)`);
+  console.log(`    무늬 판정 없는 같은 그루: 무늬 ${r.plain.keys.length}종 · 더 받은 것 ${r.added}장`);
+
+  ok(r.boot === 0, `방 조립기도 **열 때는** 무늬를 한 장도 안 받는다 (${r.boot}장)`);
+  ok(r.first.keys.length === 0 && r.asked > 0,
+     `처음엔 기본잎으로 그리고 그 자리에서 ${r.asked}장을 청한다 (늦게 받는다)`);
+  ok(r.after.keys.length > 0 && r.after.mesh > 0,
+     `무늬가 도착하면 방이 **실제로 그린다** — ${r.after.keys.length}종 · 메시 ${r.after.mesh}개`);
+  ok(r.after.mesh === truth.st.leaves,
+     `무늬 표가 붙은 메시가 잎 수와 같다 — ${r.after.mesh} = 잎 ${truth.st.leaves}장 (엽초까지 물들지 않는다)`);
+  ok(r.loaded < 40, `그 그루가 쓰는 것만 받는다 — 100장이 아니라 ${r.loaded}장`);
+  ok(r.plain.keys.length === 0 && r.plainAsked === 0 && r.added === 0,
+     `무늬가 안 난 그루는 한 장도 안 받고 한 장도 안 그린다 (그루째 칠하지 않는다)`);
+  ok(r.after.tex.length > 0 && r.after.tex.every(t => t[0] === '#ffffff' && t[1]),
+     `방의 무늬 텍스처가 **원본 그대로**다 — ${JSON.stringify(r.after.tex.slice(0, 3))}`);
 }
 
 await page.close();

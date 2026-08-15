@@ -1441,6 +1441,98 @@ export async function createRoomView(canvas, opts = {}) {
     return asmPromise;
   }
 
+  /* ══════════════════════════════════════════════════════════════════════
+     ★★ §방에도 무늬 잎이 난다 (2026-08-18 · 박사님: "방에 무늬 보여주기 OK")
+     ------------------------------------------------------------
+     그전까지 무늬는 **확대창에서만** 보였다. 방은 `spec.leafState` 로 정본의 잎 상태를
+     이미 받고 있었고(`varie` 칸까지 들어 있었다) 조립기도 그 칸을 읽고 있었는데,
+     조립기가 `skins/` 를 ASSET_FILES 에서 **통째로 지우고** 열어서 `ensureSkin` 이
+     그 자리에서 거짓을 돌려주었다 — 그래서 무늬 잎이 조용히 기본잎으로 내려앉았다.
+
+     ⚠ 그 「지우기」는 **부팅을 가볍게 하려던 것**이었는데, 2026-08-17 부터는 원본
+       `loadAssets` 가 skins/ 를 스스로 건너뛴다. 즉 지우기는 무게에 아무 몫이 없고
+       「무늬를 받을 수 없게」만 하고 있었다(plant_assemble.js §한계에 실측이 있다).
+
+     ★ 늦게 오는 것이 문제다 — 무늬는 그 잎이 처음 그려질 때 요청되므로, **처음 한 번은
+       기본잎으로 그려진다.** 도착하면 그 그루만 다시 짓는다. 그 사이 화면이 조용하면
+       「무늬가 안 나온다」와 구별이 안 되므로(이 저장소의 지병) 한 마디 띄운다. */
+  const SKIN_TIP_DELAY_MS = 400;   // 이보다 빨리 오면 아무 말도 안 한다(깜빡임이 더 시끄럽다)
+  let skinOff = null, skinTipEl = null, skinTipT = null, skinRebuildT = null;
+
+  function hasVarieLeaf(list) {
+    return Array.isArray(list) && list.some(s => s && s.varie);
+  }
+
+  /* 무늬가 도착할 때마다 부른다. 조립기 하나에 한 번만 건다. */
+  function watchSkins(asm) {
+    if (skinOff || !asm || typeof asm.onSkinChange !== 'function') return;
+    skinOff = asm.onSkinChange(() => { noteSkinTip(asm); rebuildVariePlants(); });
+  }
+
+  /* 「🎨 무늬 잎을 받는 중…」 — 확대창(plant_grow.html §noteSkinLoading)과 같은 말투다.
+     ⚠ 자리를 **오른쪽 위(? 단추 아래)** 로 잡았다. 왼쪽 아래에 뒀더니 게임에서 **[다음 날]
+       단추를 덮었다**(실측 그림 varie_room/ingame_loading.png 의 첫 판). 누를 것을 가리는
+       알림은 알림이 아니라 방해다. 왼쪽 위는 확대창 것이 쓰고, 왼쪽 아래·아래 가운데는
+       게임 단추가 쓴다 — 남는 곳이 여기다.
+     ⚠ 400ms 안에 끝나면 안 띄운다 — 로컬에서는 대개 그렇다(실측은 보고서에 적었다). */
+  function noteSkinTip(asm) {
+    let n = 0;
+    try { n = asm.skinsPending(); } catch (e) { n = 0; }
+    if (!n) {
+      if (skinTipT) { clearTimeout(skinTipT); skinTipT = null; }
+      if (skinTipEl) skinTipEl.style.display = 'none';
+      return;
+    }
+    if (skinTipEl) { skinTipEl.textContent = `🎨 무늬 잎을 받는 중… (${n}장)`; return; }
+    if (skinTipT) return;
+    skinTipT = setTimeout(() => {
+      skinTipT = null;
+      let m = 0;
+      try { m = asm.skinsPending(); } catch (e) { m = 0; }
+      if (!m || disposed) return;
+      try {
+        const el = document.createElement('div');
+        el.id = 'rvSkinTip';
+        el.style.cssText = 'position:fixed;right:10px;top:124px;z-index:60;pointer-events:none;' +
+          'font:600 12px/1.4 system-ui,-apple-system,sans-serif;color:#e9e2d4;' +
+          'background:rgba(24,20,16,.78);border:1px solid rgba(255,255,255,.14);' +
+          'border-radius:999px;padding:5px 11px;backdrop-filter:blur(3px)';
+        el.textContent = `🎨 무늬 잎을 받는 중… (${m}장)`;
+        (document.body || document.documentElement).appendChild(el);
+        skinTipEl = el;
+      } catch (e) { /* 화면이 없는 자리(검사)에서는 알릴 데가 없다 */ }
+    }, SKIN_TIP_DELAY_MS);
+  }
+
+  function dropSkinTip() {
+    if (skinTipT) { clearTimeout(skinTipT); skinTipT = null; }
+    if (skinRebuildT) { clearTimeout(skinRebuildT); skinRebuildT = null; }
+    if (skinOff) { try { skinOff(); } catch (e) { } skinOff = null; }
+    if (skinTipEl) { try { skinTipEl.remove(); } catch (e) { } skinTipEl = null; }
+  }
+
+  /* 무늬가 온 그루만 다시 짓는다.
+     ⚠ **무늬가 난 잎이 있는 그루만** 본다 — 무늬가 안 난 그루는 다시 지어도 그림이 같다.
+     ⚠ 여러 장이 잇달아 오므로 한 번에 모아서 짓는다(잎마다 지으면 한 프레임에 여러 번이다). */
+  function rebuildVariePlants() {
+    if (disposed || skinRebuildT) return;
+    skinRebuildT = setTimeout(async () => {
+      skinRebuildT = null;
+      if (disposed) return;
+      for (const [key, rec] of [...plants]) {
+        if ((rec.spec.kind || 'monstera') !== 'monstera') continue;
+        if (!hasVarieLeaf(rec.spec.leafState)) continue;
+        rec.skinDirty = true;                       // needsRebuild 가 이 표를 본다
+        try {
+          if (rec.potId && key === freeSlotId(rec.potId)) await setPlantAt(rec.potId, rec.at, rec.spec);
+          else await setPlant(key, rec.spec);
+        } catch (e) {
+          console.warn('[방뷰] 무늬 잎이 온 뒤 그루를 다시 못 지었습니다:', e && e.message);
+        }
+      }
+    }, 90);
+  }
+
   /* 창이 있는 방향(라디안). 굴광성이 그쪽으로 기울어야 방과 확대가 같은 그루가 된다. */
   function lightAzimuth() {
     const ws = (built && built.luxWins || []).filter(w => w.wall && w.wall !== 'ceiling');
@@ -1500,12 +1592,15 @@ export async function createRoomView(canvas, opts = {}) {
            같은 시드를 확대창에서 하루씩 걸으면 창턱(DLI 4.8)에서도 유효 300일에
            5장 중 2장이 갈라진다(plant_assemble.js §한계에 표가 있다).
            ⇒ 호출부가 정본의 잎 상태를 넘겨 주면 그대로 그린다. 안 넘기면 예전 그대로다.
-           ⚠ 무늬는 상태를 넘겨도 방에서 **민무늬로** 그려진다 — skins/ 100장(443MB)을
-             안 싣기 때문이고, 그건 에셋 결정이라 여기서 못 고친다. */
+           ★ **무늬도 이제 방에 나온다** (2026-08-18 · §방에도 무늬 잎이 난다).
+             그 잎이 그 무늬를 쓸 때 한 장씩 온다 — 처음 한 번은 기본잎으로 그려지고,
+             도착하면 이 그루만 다시 짓는다. */
+        watchSkins(asm);
         const g = asm.assemble({ growthDays: days, seed: spec.seed, potD,
                                  leafState: spec.leafState,
                                  lightAz: lightAzimuth(), photo: 0.5 });
         g.userData.growthDays = days;
+        if (g.userData.skinsPending) noteSkinTip(asm);
         return g;
       } catch (e) {
         if (!asmWarned) { asmWarned = true; console.warn('[방뷰] 몬스테라 조립 실패 — 옛 샘플로 그립니다:', e.message); }
@@ -1732,6 +1827,19 @@ export async function createRoomView(canvas, opts = {}) {
         /* ⚠ 접지 그림자는 그루가 아니다 — 밴드 색을 입히면 **검은 판이 밝은 원판**이 된다
            (색이 0x000000 이라 tint 로 55% 끌면 그대로 회색 접시가 나온다) */
         if (o.userData.isBlobShadow) return;
+        /* ⚠⚠ **무늬 잎은 안 덮는다** (캐논 · 2026-08-18).
+           "무늬 텍스처는 그 자체가 무늬이므로 절대 단색 틴트를 씌우지 않는다."
+           확대창은 `KEEP_TEX` 로 그 잎을 tintObj 에서 빼 둔다. 방에는 그 위에 **밴드 색**이
+           한 겹 더 얹히는데, 그것까지 걸면 흰 무늬가 밴드색 한 덩어리가 되어
+           캐논이 방에서만 깨진다(그리고 화면으로는 "무늬가 안 나온다"와 구별이 안 된다).
+           표는 plant_assemble 이 단다(§markSkin).
+           ⚠ 그래도 **원색은 여기서 되돌린다.** 아래 시듦이 색을 곱하는데, 되돌리지 않으면
+             applyLook 이 불릴 때마다 곱이 쌓여 무늬가 점점 까매진다(같은 그루에 여러 번 불린다). */
+        if (o.userData.varieSkin) {
+          if (!o.userData.baseColor) o.userData.baseColor = o.material.color.clone();
+          o.material.color.copy(o.userData.baseColor);
+          return;
+        }
         if (!o.userData.baseColor) o.userData.baseColor = o.material.color.clone();
         o.material.color.copy(o.userData.baseColor);
         if (k > 0) o.material.color.lerp(tint, k);
@@ -1746,6 +1854,13 @@ export async function createRoomView(canvas, opts = {}) {
       const dry = new THREE.Color(0x8a7350);
       group.traverse(o => {
         if (o.userData.isBlobShadow) return;          // 그림자는 시들지 않는다
+        /* ★ 무늬 잎은 **덮지 않고 곱한다** — 확대창의 `fadeObj` 와 같은 사고다.
+           three.js 는 map 에 material.color 를 곱하므로 어두워지되 무늬는 살아 있다.
+           lerp 로 마른 색을 향해 끌면 흰 무늬가 통째로 갈색이 된다. */
+        if (o.userData.varieSkin) {
+          if (o.isMesh && o.material && o.material.color) o.material.color.multiplyScalar(1 - fade * 0.35);
+          return;
+        }
         if (o.isMesh && o.material && o.material.color) o.material.color.lerp(dry, fade * 0.8);
       });
       for (const pivot of (group.userData.leaves || [])) {
@@ -2081,6 +2196,9 @@ export async function createRoomView(canvas, opts = {}) {
   }
   function needsRebuild(prev, spec, days) {
     if (!prev) return true;
+    /* ★ 무늬 잎 GLB 가 늦게 도착했다 — 날도 상태도 안 바뀌었지만 **그림이 달라진다**
+       (2026-08-18 · §방에도 무늬 잎이 난다). 이걸 빠뜨리면 받아 놓고 안 그린다. */
+    if (prev.skinDirty) return true;
     if ((prev.spec.kind || 'monstera') !== (spec.kind || 'monstera')) return true;
     /* ★ 용기 수가 바뀌면 **날이 안 가도** 다시 짓는다 (2026-08-05 · §clusterUnit).
        이걸 빠뜨리면 시루를 산 그날은 화면이 안 바뀐다 — 고치려던 바로 그 증상이
@@ -7885,6 +8003,7 @@ export async function createRoomView(canvas, opts = {}) {
       disposed = true;
       /* ★ 화면이 죽으면 논리도 안 돈다 — 하던 동작을 먼저 취소한다(반쯤 준 물은 없다) */
       cancelAct('방이 사라졌습니다');
+      dropSkinTip();                       /* 무늬 알림·구독을 걷는다 (§방에도 무늬 잎이 난다) */
       cancelAnimationFrame(raf);
       canvas.removeEventListener('mousedown', onDown);
       canvas.removeEventListener('touchstart', onDown);

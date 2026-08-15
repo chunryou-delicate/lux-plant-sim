@@ -29,11 +29,22 @@
 
    한계 (정직하게)
    ------------------------------------------------------------
-   · **무늬종(variegata) 스킨은 안 싣는다.** 실측(2026-08-16): `ASSET_FILES` 113개 중
-     `skins/` 가 **100장 443.4MB**, 나머지 기본 13장이 14.4MB 다. 방에 그대로 실을 수 없다.
-     원본 pickLeafKey/drawLeafStage 는 `if(ASSETS[k])` 로 스킨이 없으면 기본잎으로
-     내려앉으므로, 무늬가 **났더라도** 방에서는 민무늬로 그려진다.
-     필요해지면 preloadKeys 로 몇 장만 지정해 실을 수 있다.
+   · ★★ **무늬종(variegata) 스킨은 「쓸 때 한 장」씩 받는다** (2026-08-18. 그전에는 아예 안 받았다)
+     ------------------------------------------------------------
+     실측(2026-08-16): `ASSET_FILES` 113개 중 `skins/` 가 **100장 443.4MB** 다.
+     그래서 예전에는 여기서 `skins/` 를 **ASSET_FILES 에서 통째로 지우고** 원본 loadAssets 를
+     불렀다. 무늬가 **났더라도** 방에서는 민무늬로 그려졌다(캐논이 깨진 채였다).
+
+     2026-08-17 에 원본이 바뀌었다 — `loadAssets` 는 이제 **skins/ 를 스스로 건너뛰고**,
+     그 잎이 실제로 그 무늬를 쓸 때 `ensureSkin(k)` 이 **그 한 장만** 받는다.
+     ⇒ 그때부터 여기서 목록을 지우는 일은 **「안 받게 하는 것」이 아니라 「받을 수 없게 하는 것」**
+       하나만 하고 있었다(`ensureSkin` 은 `ASSET_FILES[k]` 가 없으면 그 자리에서 거짓을 준다).
+     ⇒ 그래서 지우지 않는다. **부팅 때 받는 양은 한 바이트도 안 늘고**(loadAssets 가 안 받는다),
+       무늬가 난 잎이 그려질 때만 그 한 장이 온다.
+
+     ⚠ 늦게 오므로 **처음 한 번은 기본잎으로 그려진다.** 도착하면 다시 그려야 한다 —
+       `onSkinChange(cb)` 로 알린다(호출부 room_view.js 가 그 그루만 다시 짓는다).
+     ⚠ `opt.lazySkins:false` 를 주면 옛 동작(통째로 지우기)으로 돌아간다.
 
    · ★★ **이 인스턴스는 「빛 이력」이 없다. 그래서 스스로 굴리면 답이 정해져 있다.**
      `setDailyLight` 을 한 번도 안 부르므로 `dli7()` 이 늘 null 이고, 그 결과
@@ -120,6 +131,9 @@ const TAIL = `
   buildPlant, setGrowth, plantSeed, growthPhase, phaseAt, ageOf, dayOfAge,
   growthDays, calendarDay, matResetAll, setDailyLightSteady, resetDailyLight,
   loadAssets, thLoaded, GMAX, ASSET_FILES, ASSETS,
+  /* ★ 무늬 한 장 늦게 받기 (2026-08-18) — 원본이 2026-08-17 에 낸 손잡이를 그대로 낸다.
+     여기에 로직을 쓰지 않는다. 쓰는 순간 두 벌이 된다. */
+  ensureSkin, skinsPending, skinsLoaded, isSkinKey,
   /* 원본의 3D 무대는 init() 이 만든다. 그걸 걷어냈으니 담을 그릇만 밖에서 준다. */
   __setPlantGroup(g){ plantGroup = g; },
   /* 방의 창 방향 = 이 그루가 받는 빛의 방향. 굴광성이 그쪽으로 기울게 한다. */
@@ -229,13 +243,17 @@ async function build(opt) {
   G.__setPlantGroup(stage);
 
   /* ── GLB ──
-     ASSET_FILES 는 const 지만 **객체는 열려 있다.** skins/ 104장(428MB)을 지우고
-     부른다 — 원본 loadAssets 를 그대로 쓰면서 실을 것만 고르는 유일한 자리다. */
+     ★ 원본 `loadAssets` 는 **skins/ 를 스스로 건너뛴다**(2026-08-17 §ensureSkin).
+       그러니 여기서 목록을 지울 이유가 없다 — 지우면 부팅이 가벼워지는 게 아니라
+       **나중에 한 장 받는 길까지 막힌다.** 목록에 남겨 두고, 그 잎이 그 무늬를 쓸 때 받는다.
+     ⚠ `opt.lazySkins:false` 면 옛 동작(통째로 지우기)이다. 무늬가 절대 안 나온다. */
   const want = new Set(opt.preloadKeys || []);
+  const skinKeys = new Set();                        // 이 목록에 든 assetKey = 무늬 스킨이다
   const dropped = [];
   for (const [k, v] of Object.entries(G.ASSET_FILES)) {
-    if (want.has(k)) continue;
-    if (String(v).startsWith('skins/')) { dropped.push(k); delete G.ASSET_FILES[k]; }
+    if (!String(v).startsWith('skins/')) continue;
+    skinKeys.add(k);
+    if (opt.lazySkins === false && !want.has(k)) { dropped.push(k); delete G.ASSET_FILES[k]; }
   }
 
   const t0 = performance.now();
@@ -243,6 +261,12 @@ async function build(opt) {
     const to = setTimeout(() => rej(new Error('몬스테라 GLB 로딩이 너무 오래 걸립니다')), opt.timeoutMs ?? 45000);
     G.loadAssets(() => { clearTimeout(to); res(); });
   });
+  /* ⚠ `preloadKeys` 로 지정한 무늬는 **loadAssets 가 안 싣는다**(그쪽은 skins/ 를 건너뛴다).
+     지정한 뜻은 "여는 동안 받아 둬라"이므로 여기서 받고 기다린다. 안 그러면 이 옵션이
+     조용히 아무 일도 안 하는 손잡이가 된다. */
+  const preSkins = [...want].filter(k => skinKeys.has(k) && G.ASSET_FILES[k]);
+  if (preSkins.length) await Promise.all(preSkins.map(k =>
+    new Promise(res => { if (!G.ensureSkin(k, () => res())) res(); })));
   const loadMs = Math.round(performance.now() - t0);
 
   /* ★ 원본(ASSETS) 이 들고 있는 기하 목록.
@@ -251,13 +275,42 @@ async function build(opt) {
      다시 올려야 한다(매일 다시 짓는 화면에서는 그대로 프레임 값이 된다).
      어느 기하가 공유본인지 여기서 표시해 둔다 — 판단은 호출부가 한다. */
   const protoGeo = new Set();
-  for (const k in G.ASSETS) {
-    const p = G.ASSETS[k];
-    if (p && p.traverse) p.traverse(o => { if (o.isMesh && o.geometry) protoGeo.add(o.geometry.uuid); });
+  function scanProtoGeo() {
+    for (const k in G.ASSETS) {
+      const p = G.ASSETS[k];
+      if (p && p.traverse) p.traverse(o => { if (o.isMesh && o.geometry) protoGeo.add(o.geometry.uuid); });
+    }
   }
+  scanProtoGeo();
+  /* ⚠⚠ 무늬는 **여기 이후에** 온다. 그때 다시 훑지 않으면 새로 온 무늬의 기하가 이 목록에
+     없어서, 호출부가 화분을 치울 때 `dispose()` 로 **원본 무늬를 GPU 에서 내려 버린다** —
+     다음에 같은 무늬를 그리면 빈 잎이 된다. 받은 장수가 바뀌면 다시 훑는다(§skinScan). */
+  let skinScan = G.skinsLoaded();
 
   /* 마지막으로 조립한 값 — 같은 값이면 두 번 안 짓는다 */
   let lastKey = null, lastResult = null;
+
+  /* ── ★ 무늬가 도착하면 알린다 (2026-08-18) ──
+     ------------------------------------------------------------
+     `ensureSkin` 은 원본 안에서 `redraw()` 로 **원본의 그루**를 다시 그린다. 그런데 방의
+     그루는 `assemble()` 이 이미 stage 에서 **꺼내 간 뒤**라 그 redraw 가 방에는 안 닿는다.
+     ⇒ 호출부가 그 그루를 다시 지을 수 있게 여기서 알린다.
+     ⚠ 원본에 훅을 달 수 없다(plant_grow.html 은 다른 창 것이다). 그래서 **밖에서 지켜본다** —
+       받는 중일 때만 도는 시계라, 받을 것이 없으면 한 번도 안 돈다. */
+  const skinSubs = new Set();
+  let skinTimer = null, lastLoaded = G.skinsLoaded();
+  function watchSkins() {
+    if (skinTimer) return;
+    skinTimer = setInterval(() => {
+      const pend = G.skinsPending(), loaded = G.skinsLoaded();
+      const changed = loaded !== lastLoaded;
+      lastLoaded = loaded;
+      if (!pend) { clearInterval(skinTimer); skinTimer = null; }
+      if (!changed && pend) return;
+      if (!changed && !pend) return;                 // 다 실패했다 — 알릴 그림이 없다
+      for (const f of skinSubs) { try { f({ loaded, pending: pend }); } catch (e) { console.warn('[생장모듈] 무늬 알림 실패', e); } }
+    }, 150);
+  }
 
   /* ── 단계 이름 → 유효 생장일 ──
      ------------------------------------------------------------
@@ -297,7 +350,17 @@ async function build(opt) {
 
   const assembler = {
     /* 진단용 — 무엇을 얼마나 실었나 */
-    info: { loadMs, loadedKeys: Object.keys(G.ASSET_FILES).length, skippedSkins: dropped.length },
+    info: { loadMs, loadedKeys: Object.keys(G.ASSET_FILES).length, skippedSkins: dropped.length,
+            lazySkins: opt.lazySkins !== false, skinKeys: skinKeys.size },
+
+    /* ★ 무늬 — 지금 몇 장 받는 중인가 · 몇 장 받았나 (2026-08-18) */
+    skinsPending() { return G.skinsPending(); },
+    skinsLoaded() { return G.skinsLoaded(); },
+    /* 무늬가 한 장 도착할 때마다 부른다. 되돌려 주는 것은 **끊는 함수**다.
+       ⚠ 여기서 다시 assemble 을 부르는 것은 **호출부 몫**이다 — 어느 그루가 그 무늬를
+         쓰는지는 여기가 모른다(이 인스턴스는 그루를 한 벌만 기억한다). */
+    onSkinChange(cb) { skinSubs.add(cb); return () => skinSubs.delete(cb); },
+
     GMAX: G.GMAX,
     params: G.__params(),
 
@@ -337,6 +400,9 @@ async function build(opt) {
       const az = o.lightAz ?? Math.PI * 0.5;
       const photo = o.photo ?? 0.5;
       const leafState = Array.isArray(o.leafState) ? o.leafState : null;
+
+      /* 무늬가 새로 왔으면 「원본과 나눠 쓰는 기하」 목록을 다시 훑는다 (§skinScan) */
+      { const sl = G.skinsLoaded(); if (sl !== skinScan) { skinScan = sl; scanProtoGeo(); } }
 
       /* 잎 상태도 열쇠에 넣는다 — 안 넣으면 「같은 날인데 갈라짐만 바뀐」 하루가 안 그려진다 */
       const stateKey = leafState
@@ -396,12 +462,42 @@ async function build(opt) {
       /* room_view.applyLook 이 밴드·시듦을 얹을 때 쓴다. 원본은 잎을 pivot 으로
          묶지 않으므로(마디 트리다) 처짐은 그룹 전체에 못 준다 — 색만 얹는다. */
       g.userData.leaves = [];
+      /* ★ 무늬 잎에 표를 단다 (2026-08-18).
+         ------------------------------------------------------------
+         ⚠⚠ **무늬 텍스처에 단색 틴트를 씌우면 안 된다**(캐논 — 무늬가 곧 텍스처다).
+           원본은 `KEEP_TEX` 로 그 잎을 tintObj 에서 빼 두었는데, 방에는 그 위에 **밴드 색**과
+           **시듦 색**을 얹는 층이 하나 더 있다(room_view.applyLook). 그 층이 무늬를 덮으면
+           캐논이 방에서만 깨진다 — 화면으로는 "무늬가 안 나온다"와 구별이 안 된다.
+         ⇒ 잎 홀더의 assetKey 가 skins/ 것이고 **그 메시가 텍스처를 들고 있으면** 표를 단다.
+         ★ 위에서 아래로 훑는다 — 잎몸 메시에는 assetKey 가 없고 홀더에만 있다.
+         ★★ **`map` 이 있는 메시만** 단다. 같은 홀더 안에는 엽초도 들어 있는데(addSheathLocal)
+           그쪽은 원본이 `tintObj` 로 줄기색을 칠하면서 map 을 지운 것이라 **무늬가 아니다.**
+           통째로 달면 엽초가 밴드 색을 안 받아 잎만 시들고 엽초는 새것인 그루가 된다.
+           실측(2026-08-18): 홀더 아래 메시 11개 중 map 이 있는 것은 5개(=잎몸)뿐이었다. */
+      const varieKeys = new Set();
+      (function markSkin(o, on) {
+        const k = o.userData && o.userData.assetKey;
+        const here = on || (k ? skinKeys.has(k) : false);
+        if (here) {
+          if (k && skinKeys.has(k)) varieKeys.add(k);
+          const mats = o.isMesh ? (Array.isArray(o.material) ? o.material : (o.material ? [o.material] : [])) : [];
+          if (mats.some(m => m && m.map)) o.userData.varieSkin = true;
+        }
+        for (const c of o.children) markSkin(c, here);
+      })(g, false);
+      g.userData.varieLeafKeys = [...varieKeys];
+
       g.traverse(oo => {
         if (!oo.isMesh) return;
         oo.castShadow = true; oo.receiveShadow = true;
         /* 원본과 나눠 쓰는 기하는 버리면 안 된다 — 호출부가 이 표시를 보고 건너뛴다 */
         if (oo.geometry && protoGeo.has(oo.geometry.uuid)) oo.userData.sharedGeometry = true;
       });
+
+      /* ★ 이 그루가 아직 못 받은 무늬가 있으면 지금 받는 중이다 — 도착하면 다시 지어야 한다 */
+      g.userData.skinsPending = G.skinsPending();
+      if (g.userData.skinsPending) watchSkins();
+
       lastResult = g;
       return g;
     }
