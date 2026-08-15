@@ -5639,8 +5639,11 @@ function drawMealPanel() {
   panel.setAttribute('aria-hidden', (mealOpen && can) ? 'false' : 'true');
   if (!mealOpen || !can) { if (!can) mealOpen = false; return; }
 
+  /* ⚠ 2026-08-17 — `capGrams` 는 이제 **「오늘 최선껏 먹으면 쓰는 g」**이다(몫 규칙이 정한다).
+     「하루에 300g까지」라는 고정된 수가 아니다 — 콩나물만 있으면 300g, 무순까지 있으면 500g 이다.
+     그래서 「…까지」라고 적으면 곳간이 바뀔 때마다 그 수가 흔들려 규칙처럼 안 읽힌다. */
   $('mealTitle').textContent =
-    `오늘 밥상 — 곳간에 ${formatGram(ms.pantryGrams)} · 하루에 ${formatGram(ms.capGrams)}까지`;
+    `오늘 밥상 — 곳간에 ${formatGram(ms.pantryGrams)} · 오늘 쓸 수 있는 것 ${formatGram(ms.capGrams)}`;
   /* 무엇이 언제 거둔 것인지 — 먼저 거둔 것부터 나간다(먹는 순서) */
   $('mealLots').textContent = ms.list
     .map(l => `${l.kindKo} ${formatGram(l.g)}${l.day == null ? '' : ` (${l.day}일차)`}`)
@@ -5652,23 +5655,39 @@ function drawMealPanel() {
   $('mealNone').disabled = ms.grams <= 0;
 
   const say = $('mealSay');
-  if (ms.useWon <= 0) {
+  /* ⚠⚠⚠ 2026-08-17 밤 — **여기서 읽던 칸이 바뀌었다** (`first_play §몫` · 확정문 §1).
+     옛 줄: `식비 ${'${ms.useWon}'}원을 아낍니다`
+     `useWon` 은 이제 **곳간에서 빠지는 물건 값**(g × 10원)이고, **아끼는 밥값은 `savedWon`** 이다.
+     둘이 갈린 까닭 — 확정문이 밥을 「몫」으로 정했다: 콩나물 한 몫은 **300g 에 2,500원**이라
+     곳간에서는 3,000원이 빠지는데 밥값은 2,500원만 준다.
+     ⚠ 옛 줄을 그대로 두면 화면이 **자기 모순**을 말한다 — 실제로 그랬다:
+       `식비 3,000원을 아낍니다 (오늘 지갑에서 5,000원)` ← 7,500 − 3,000 = 4,500 인데 5,000.
+     ★ 숫자를 여기 손으로 적지 않는다 — 몫 값도 몫 수도 전부 `ms` 에서 읽는다(§2.8). */
+  if (ms.savedWon <= 0) {
     /* ★ 0g 은 고를 수 있어야 한다(모아서 파는 길). 다만 **밥값이 그대로 나간다**는 것을
        그 자리에서 말한다 — 안 말하면 「아꼈다」로 오해한다. */
     say.textContent = `오늘은 곳간을 안 씁니다 — 식비 ${ms.dailyFoodWon.toLocaleString()}원이 ` +
                       `그대로 나갑니다. ${formatGram(ms.restGrams)}이 곳간에 그대로 쌓입니다.`;
     say.className = 'pquote warn';
   } else {
-    /* ★★ **남는 것을 반드시 말한다**(박사님: *"300G 까지는 당일 쓸 수 있는 거고 남는 거
-       팔아먹든 하는 거"*). 남는 것이 버려지는 줄 알면 급하게 팔거나 시루를 안 늘린다. */
+    /* ★★ **몫 내역을 먼저 말한다.** 「왜 400g 을 다 안 먹나」가 여기서만 설명된다 —
+       한 몫은 콩나물 300g · 무순 200g 이고, 같은 것으로 둘째 몫을 채우면 값이 절반 밑이라
+       파는 편이 낫다(확정문 §3). 그 사실을 화면이 안 말하면 「덜 먹는다」로 읽힌다.
+       ★★ **남는 것도 반드시 말한다**(박사님: *"남는 거 팔아먹든 하는 거"*) —
+       버려지는 줄 알면 급하게 팔거나 시루를 안 늘린다. */
+    const parts = (ms.portions || []).map(p =>
+      `${p.kindKo} ${formatGram(p.grams)}` +
+      (p.fill < 0.999 ? ` (몫의 ${Math.round(p.fill * 100)}%)` : '') +
+      ` → ${p.won.toLocaleString()}원` + (p.same ? ' (같은 것이라 덜 칩니다)' : ''));
     say.textContent =
-      `${formatGram(ms.grams)} → 식비 ${ms.useWon.toLocaleString()}원을 아낍니다 ` +
+      (parts.length ? parts.join(' + ') + ' = ' : '') +
+      `식비 ${ms.savedWon.toLocaleString()}원을 아낍니다 ` +
       `(오늘 지갑에서 ${ms.cashFoodWon.toLocaleString()}원)` +
       (ms.restGrams > 0
         ? ` · 남는 ${formatGram(ms.restGrams)}은 곳간에 그대로 쌓입니다 (팔 수 있습니다)`
         : '') +
-      (ms.grams < ms.capGrams && ms.grams >= ms.maxGrams
-        ? ` · 하루에 ${formatGram(ms.capGrams)}까지 쓸 수 있는데 곳간이 그만큼 없습니다`
+      (ms.savedWon < ms.capWon
+        ? ` · 하루에 ${ms.capWon.toLocaleString()}원까지 아낄 수 있는데 곳간이 그만큼 없습니다`
         : '');
     say.className = 'pquote';
   }
