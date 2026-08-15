@@ -1469,8 +1469,10 @@
   </div>
 </div>
 
-<!-- ══ ★★★ 고르개 팝업 둘 — **같은 틀, 같은 손버릇** (2026-08-17) ═══════════════
-     박사님: *"금액 설정이 팝업으로 떳으면 좋겠어"*
+<!-- ══ ★★★ 고르개 팝업 셋 — **같은 틀, 같은 손버릇** (2026-08-17 · 2026-08-18) ═══════
+     박사님: *"금액 설정이 팝업으로 떳으면 좋겠어"* · *"상점 주문시 개수 입력창 뜨게"*
+     ★ 2026-08-18 에 **주문 개수**(`#buyPanel`)가 셋째로 들어왔다. 틀은 그대로다 —
+       `.pop`/`.popcard` 하나를 셋이 나눠 쓴다. 새 틀을 지으면 손버릇이 갈린다.
 
      ⚠ **자리가 중요하다 — `#sheet`·`#bottom` 밖, body 바로 밑이다.**
        시트는 `transform:translateY` 로 미끄러지는데 변형된 조상 안에서는
@@ -1502,7 +1504,35 @@
   </div>
 </div>
 
-<!-- ② [다음 날] — 오늘 밥상에 몇 g 을 쓸지
+<!-- ② 상점 — **몇 개 주문할지** (2026-08-18 · 박사님: *"상점 주문시 개수 입력창 뜨게.
+     개수는 직전 주문량이 디폴트로"*)
+     ★★ **틀을 새로 안 지었다** — 위 `#pantryPanel` 과 **같은 `.pop`/`.popcard`** 다.
+       한 게임 안에 팝업이 두 모양이면 그것이 더 나쁘다(sellpopup §2-1).
+     ★ 예전에는 `confirmOnce('정말 주문?')` 로 **단추 글자가 바뀌고 한 개**만 나갔다.
+       개수를 고르는 자리가 아예 없었다.
+     ★ 돈이 모자라도 **이 창은 뜬다.** 예전에는 단추가 `disabled` + `title` 뿐이라
+       폰에서는 「왜 회색인지」를 볼 길이 없었다 — 까닭은 이 창 안에서 말한다. -->
+<div id="buyPanel" class="pop" aria-hidden="true">
+  <div class="popcard" role="dialog" aria-modal="true" aria-labelledby="buyTitle">
+    <div class="ptitle" id="buyTitle">몇 개 주문할까요</div>
+    <div class="psub" id="buySub"></div>
+    <div id="buyHave" class="plots"></div>
+    <div class="prow">
+      <button id="buyMinus" class="ghost" type="button">−</button>
+      <button id="buyCount" class="ghost pcount" type="button" disabled>1개</button>
+      <button id="buyPlus" class="ghost" type="button">＋</button>
+      <button id="buyAll" class="ghost" type="button">전부</button>
+    </div>
+    <!-- ★★ 총액과 「언제 오나」를 적는 자리. 돈이 모자라면 여기가 그 까닭을 말한다 -->
+    <div id="buyQuote" class="pquote"></div>
+    <div class="pbtns">
+      <button id="buyGo" class="go" type="button">주문</button>
+      <button id="buyCancel" class="ghost" type="button">그만두기</button>
+    </div>
+  </div>
+</div>
+
+<!-- ③ [다음 날] — 오늘 밥상에 몇 g 을 쓸지
      ★ **막는 창이 아니다.** 예전에는 [다음 날]을 한 번 더 눌러 넘어갔는데, 팝업이
        화면을 덮으면 그 단추에 손이 안 닿는다. ⇒ **같은 손짓을 창 안으로 옮겼다** —
        [이대로 다음 날 ▸]. 누르는 횟수는 예전과 똑같이 둘이다(열기 + 넘기기).
@@ -3173,9 +3203,13 @@ function drawTutorial(living) {
 }
 
 /* ══ 되돌릴 수 없는 것은 한 번 되묻는다 (2026-08-05 · QA 워커가 잡았다) ═══════
-   주문은 결제가 즉시고 취소가 없다. 그런데 [주문] 버튼이 **56px 간격으로 일곱 줄**,
-   전부 같은 x 에 있다 — 폰에서 옆줄을 잘못 누르면 7,000원이 그냥 나간다.
-   머리글에 "취소는 안 됩니다"라고 써 두긴 했지만 그건 경고지 확인이 아니다.
+   되돌릴 수 없는 일이 [주문] 말고도 있다 — [몬스테라 팔기] · [지금 판을 지웁니다].
+   폰에서 옆줄을 잘못 누르면 그대로 나간다. 머리글에 "취소는 안 됩니다"라고 써 두긴
+   했지만 그건 경고지 확인이 아니다.
+   ⚠⚠ **2026-08-18 — [주문]은 더는 이 길이 아니다.** 개수를 고르는 팝업(`#buyPanel`)이
+     그 자리를 이어받았다 — 창이 총액·도착일을 적어 놓고 [N개 주문]을 눌러야 나가므로
+     되묻기가 없어진 것이 아니라 **더 무거워졌다**(팔기 팝업과 같은 판단 · §pantryGo).
+     남은 손님은 [몬스테라 팔기]와 [지금 판을 지웁니다] 둘이다.
 
    ★모달을 새로 만들지 않는다. **버튼 자신이 두 걸음이 된다** —
      첫 탭이 「정말?」로 바뀌고, 둘째 탭이 실행한다. 폰에서 손가락 하나로 끝나고,
@@ -3763,14 +3797,21 @@ function drawShop() {
   box.style.display = open ? '' : 'none';
   /* 상점 탭이 통째로 빈 채로 열리면 고장으로 읽힌다 — 왜 비었는지 한 줄 남긴다 */
   const closed = $('shopClosed'); if (closed) closed.style.display = open ? 'none' : '';
+  /* ★ 2026-08-18 — 상점이 닫히면 주문 개수 창도 같이 닫는다. 살 데가 없는데 고르개만
+     떠 있으면 그건 갇힌 화면이다. `drawBuyPanel` 은 **여기 위에서** 부른다 —
+     아래에 두면 이 `return` 에 걸려 창이 열린 채 남는다. */
+  if (!open) buyOpen = false;
+  drawBuyPanel();
   if (!open) return;
 
   let st; try { st = shopStatus(S); } catch { return; }
   const cash = ts.cashWon || 0;
   /* ★소지금을 여기 적는다 (2026-08-05 · QA 워커가 잡았다).
      첫 플레이 동안 상단 칩은 「첫 수확일 식비」만 보여 줘서, **살 수 있는지 없는지 모르고**
-     7,000원짜리 [주문]을 누르게 돼 있었다. 돈이 모자라면 버튼이 회색이 되긴 하지만
-     그때도 "왜 회색인지"가 화면에 없다. 값을 새로 세지 않는다 — ts.cashWon 을 그대로 적는다. */
+     7,000원짜리 [주문]을 누르게 돼 있었다. 값을 새로 세지 않는다 — ts.cashWon 을 그대로 적는다.
+     ★ 2026-08-18 — 「돈이 모자라면 버튼이 회색이 되는데 왜 회색인지가 화면에 없다」고
+       적혀 있던 자리다. **회색을 걷었다** — 이제 창이 떠서 얼마가 모자란지를 말한다
+       (§주문 개수). 소지금은 여기와 창 두 곳에 적히는데 둘 다 `ts.cashWon` 한 값을 읽는다. */
   $('shopCash').textContent = `· 소지금 ${cash.toLocaleString()}원`;
   /* ══ ★★ 2종째 작물은 **콩나물을 굴려 본 뒤에** 나온다 (2026-08-05 박사님 확정) ══════
      박사님: *"튜토에서 콩나물 몇 개 이후에 다음 단계 등장으로 하자."*
@@ -3792,27 +3833,22 @@ function drawShop() {
   const MUSUN_ITEMS = new Set(['radish_seed', 'sprout_tray']);
   $('shopList').innerHTML = catalogList().filter(it => musunOpen || !MUSUN_ITEMS.has(it.id)).map(it => {
     const have = st.stock[it.id] || 0;
-    const short = cash < it.buyWon;
     return `<div class="shopRow">
       <div class="nm">${it.ko}<small>${it.leadDays}일 뒤 도착</small></div>
       <div class="have">${have ? '보유 ' + have : ''}</div>
       <div class="won">${it.buyWon.toLocaleString()}원</div>
-      <button class="ghost" data-buy="${it.id}"${short ? ' disabled title="돈이 모자랍니다"' : ''}>주문</button>
+      <button class="ghost" data-buy="${it.id}">주문</button>
     </div>`;
   }).join('');
   for (const b of $('shopList').querySelectorAll('[data-buy]')) {
-    /* ★한 번 되묻는다 — 결제는 즉시고 취소가 없다(위 §confirmOnce) */
-    b.onclick = confirmOnce('정말 주문?', guard(() => {
-      const r = orderItem(S, b.dataset.buy, 1, { log: m => pushLog(S, m) });
-      /* ★ 이름은 **품목 표에서 찾는다** (2026-08-08 · QA §3-B).
-         ⚠ `orderItem` 의 반환에는 `ko` 가 없다(`{orderId,itemId,qty,unitWon,totalWon,
-           orderedOnDay,arrivesOnDay}` + cashWon·events). 그래서 배너가 늘
-           **「주문했습니다undefined」**로 떴다 — 무엇을 샀는지를 화면이 못 말했다.
-         ⚠ 이름을 여기서 짓지 않는다. `koOf` 가 이미 그 표를 본다(§koOf) —
-           `r.events[0].ko` 를 캐는 길도 있지만, 그건 사건의 문장이지 품목 이름이 아니다. */
-      banner('주문했습니다', `${koOf(r.itemId)} · ${r.arrivesOnDay - S.day}일 뒤 도착`);
-      draw();
-    }));
+    /* ★★ 2026-08-18 — 누르면 **개수를 고르는 창**이 뜬다(§주문 개수).
+       ⚠ `confirmOnce('정말 주문?')` 를 걷었다. 되묻기가 없어진 것이 아니라 **창 자체가
+         되묻기**다 — 총액과 도착일을 적어 놓고 [N개 주문]을 눌러야 돈이 나간다.
+         팔기 쪽이 이미 같은 판단을 했다(§pantryGo *"고르는 자리 자체가 되묻기"*).
+       ⚠ **`disabled` 도 걷었다.** 돈이 모자랄 때 회색 단추 + `title` 뿐이었는데
+         폰에는 `title` 이 안 뜬다 — 「눌러도 아무 일이 없다」와 구별이 안 됐다
+         (quiet §1 *하는 중은 그 자리*). 이제 창이 떠서 **얼마가 모자란지**를 말한다. */
+    b.onclick = guard(() => openBuyPanel(b.dataset.buy));
   }
   /* ── 잉여 채소 넘기기 (2026-08-06) ──
      ★ 파는 것은 **곳간이 못 받은 몫**뿐이다.
@@ -3875,6 +3911,187 @@ function drawShop() {
         ? '지금 잎 수로는 이사 자금에 못 미칩니다. 더 키우거나 삽수를 파세요'
         : `${n}장이 무늬면 이사 자금이 됩니다`}`;
 }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   ★★★ **주문 개수** — 몇 개 시킬지 고르고 나서 시킨다 (2026-08-18)
+   ------------------------------------------------------------
+   박사님: *"상점 주문시 개수 입력창 뜨게. 개수는 직전 주문량이 디폴트로"*
+
+   ══ 무엇이 없었나 ═══════════════════════════════════════════════════════
+   [주문]은 `confirmOnce('정말 주문?')` 로 **단추 글자만 바뀌고 한 개**가 나갔다.
+   씨앗 다섯 시루분을 시키려면 **열 번**을 눌러야 했고(되묻기가 있으니 두 번씩),
+   그 사이 총액이 화면 어디에도 안 적혔다.
+
+   ══ ★ 셈을 한 줄도 새로 안 만들었다 ═════════════════════════════════════
+   값은 `catalogList()` 의 `buyWon`(= `shop.buyPriceOf` 가 낸 것), 배송은 같은 표의
+   `leadDays`, 주문은 `orderItem(S, id, qty, …)` 이다 — **저쪽이 이미 개수를 받는다.**
+   여기서 새로 세는 것은 「소지금으로 몇 개까지인가」 하나뿐이고 그것도 `buyMaxQty`
+   **한 자리**에서만 센다(두 벌로 적으면 [＋]와 [전부]가 갈린다).
+
+   ══ ★★ 디폴트를 **어디에 기억하나** — 재서 골랐다 ══════════════════════════
+   길이 셋이었다.
+
+     ㉮ 세이브(`S.shop`)      ⛔ **스키마가 바뀐다.** `save.js` 는 이 창의 쓰기 영역 밖이고,
+                                옛 판을 여는 길(`loadFrom`)까지 건드려야 한다. 게다가
+                                이건 **살림이 아니라 손버릇**이다 — 판을 지우면 사라져야
+                                할 값이 아니다
+     ㉯ 화면 변수만           ⛔ 새로고침 한 번에 사라진다. *"직전 주문량"* 이 그 판 안에서만
+                                사는 값이 되면 박사님이 시키신 것의 절반만 된다
+     ㉰ **localStorage**      ★ **채택.** 이 파일이 이미 같은 결의 값을 여기 둔다 —
+                                `byeot.pointerMode`(§PTR_KEY) · 음악 켜짐(§MUSIC_KEY) ·
+                                안내판 본 것(§GUIDE_SEEN). 그 주석이 이유를 적어 두었다:
+                                *"판을 지우거나 새로 시작해도 남아야 하는 조작 취향이지
+                                게임 진행이 아니다"* — 주문 개수가 정확히 그 자리다.
+
+   ⚠⚠ **품목마다 따로 기억한다.** 한 칸에 담으면 씨앗 5개를 시킨 뒤 시루에 5가 뜬다 —
+     시루는 5,000원짜리라 25,000원이 디폴트가 된다. 그래서 `{itemId: qty}` 표다.
+   ⚠ 기억한 값이 지금 소지금으로 못 살 만큼 크면 **살 수 있는 데까지 내려서** 연다.
+     그리고 그 사실을 창이 말한다(아래 `#buyQuote`) — 조용히 줄이면 「내가 5를 시켰는데
+     3이 나갔다」가 된다.
+   ⚠ 기억은 **주문이 실제로 나간 뒤에** 적는다. 고르다 그만둔 값은 손버릇이 아니다.
+══════════════════════════════════════════════════════════════════════════ */
+/* ⚠ `var` 다 — `drawShop` 이 이 줄들보다 **위**에서 `buyOpen` 을 읽는다(§pantrySellOpen 과
+   같은 자리 · `let` 이면 부팅 순서가 조금만 바뀌어도 TDZ 로 화면 전체가 멎는다). */
+var buyOpen = false;
+var buyItemId = null;
+var buyQty = 1;
+
+const BUY_QTY_KEY = 'byeot.lastOrderQty';
+/* 못 읽어도 화면이 멎으면 안 된다 — 모르면 빈 표다(그러면 디폴트가 1 이 된다) */
+function lastOrderQtyMap() {
+  let raw = null;
+  try { raw = localStorage.getItem(BUY_QTY_KEY); } catch { }
+  if (!raw) return {};
+  try { const o = JSON.parse(raw); return (o && typeof o === 'object') ? o : {}; }
+  catch { return {}; }
+}
+function lastOrderQtyOf(itemId) {
+  const v = lastOrderQtyMap()[itemId];
+  return Number.isInteger(v) && v >= 1 ? v : 1;          /* 처음이면 1 */
+}
+function rememberOrderQty(itemId, qty) {
+  if (!itemId || !Number.isInteger(qty) || qty < 1) return;
+  const m = lastOrderQtyMap();
+  m[itemId] = qty;
+  try { localStorage.setItem(BUY_QTY_KEY, JSON.stringify(m)); } catch { }
+}
+
+/* 품목 한 줄. 모르는 id 면 null 이다 — 지어내지 않는다 */
+const buyItemOf = (id) => (id ? catalogList().find(x => x.id === id) : null) || null;
+/* ★ 소지금으로 몇 개까지 살 수 있나. **이 셈은 여기 한 곳에만 있다** —
+   [＋]가 멈추는 자리와 [전부]가 가는 자리와 「왜 못 올리나」가 전부 이 값을 본다. */
+function buyMaxQty(it) {
+  if (!it) return 0;
+  const cash = (S.tutorial && S.tutorial.cashWon) || 0;
+  return Math.floor(cash / it.buyWon);
+}
+
+function drawBuyPanel() {
+  const panel = $('buyPanel');
+  if (!panel) return;
+  const it = buyOpen ? buyItemOf(buyItemId) : null;
+  /* `.pop` 의 기본이 `none` 이라 클래스 하나로 스크림과 카드가 **같이** 켜지고 꺼진다 */
+  panel.classList.toggle('on', !!it);
+  panel.setAttribute('aria-hidden', it ? 'false' : 'true');
+  if (!it) { buyOpen = false; return; }
+
+  const cash = (S.tutorial && S.tutorial.cashWon) || 0;
+  const unitWon = it.buyWon;
+  const maxQty = buyMaxQty(it);
+  /* 손잡이는 1 아래로 안 내려간다. 한 개도 못 살 때도 1 을 보여 주고 **까닭**을 적는다 —
+     0 개를 고르게 하면 [주문]이 무엇을 하는 단추인지가 흐려진다. */
+  buyQty = Math.max(1, Math.min(buyQty, Math.max(1, maxQty)));
+  const totalWon = unitWon * buyQty;
+
+  $('buyTitle').textContent = `${it.ko} — 몇 개 주문할까요`;
+  /* ⚠ 배송 일수는 **품목마다 다르다**(씨앗 1일 · 용기 2일). 「언제 오나」가 사는 판단에 든다 */
+  $('buySub').textContent =
+    `한 개 ${unitWon.toLocaleString()}원 · ${it.leadDays}일 뒤 도착 · 소지금 ${cash.toLocaleString()}원`;
+
+  /* 이미 가진 것과 오는 중인 것 — 안 적으면 「이미 시켰는데 또 시키는」 실수가 난다 */
+  let st; try { st = shopStatus(S); } catch { st = { stock: {}, orders: [] }; }
+  const have = (st.stock && st.stock[it.id]) || 0;
+  const coming = (st.orders || []).reduce((n, o) => n + (o.itemId === it.id ? o.qty : 0), 0);
+  const parts = [];
+  if (have) parts.push(`가방에 ${have}개`);
+  if (coming) parts.push(`${coming}개가 오는 중`);
+  $('buyHave').textContent = parts.length ? parts.join(' · ') : '가방에 없습니다';
+
+  $('buyCount').textContent = `${buyQty}개`;
+  $('buyMinus').disabled = buyQty <= 1;
+  $('buyPlus').disabled = buyQty >= maxQty;
+  $('buyAll').disabled = maxQty < 1 || buyQty >= maxQty;
+
+  /* ★★ 총액과 「언제 오나」와 「왜 더 못 올리나」가 한 자리에 있다 (§조용한 실패) */
+  const q = $('buyQuote');
+  if (maxQty < 1) {
+    q.className = 'pquote warn';
+    q.textContent =
+      `돈이 모자랍니다 — 한 개에 ${unitWon.toLocaleString()}원인데 소지금이 ` +
+      `${cash.toLocaleString()}원입니다 (${(unitWon - cash).toLocaleString()}원 모자랍니다). ` +
+      `채소를 팔거나 며칠 지나야 시킬 수 있습니다.`;
+  } else {
+    q.className = 'pquote';
+    q.textContent =
+      `${unitWon.toLocaleString()}원 × ${buyQty}개 = ${totalWon.toLocaleString()}원 · ` +
+      `${it.leadDays}일 뒤에 옵니다 · 주문하면 ${(cash - totalWon).toLocaleString()}원이 남습니다` +
+      (buyQty >= maxQty
+        ? ` — 소지금으로는 ${maxQty}개까지입니다 (더 시키려면 돈이 더 있어야 합니다)`
+        : '');
+  }
+  /* ★ 단추가 **얼마가 나가는지**를 그대로 적는다 — 누르기 직전에 보는 값이다 */
+  $('buyGo').disabled = maxQty < 1;
+  $('buyGo').textContent = maxQty < 1
+    ? '주문' : `${buyQty}개 주문 · ${totalWon.toLocaleString()}원`;
+}
+
+function openBuyPanel(itemId) {
+  const it = buyItemOf(itemId);
+  if (!it) return;
+  /* ⚠ 같은 탭에 사는 고르개가 둘이다 — 겹쳐 뜨면 어느 창이 무엇을 묻는지 안 잡힌다 */
+  if (pantrySellOpen) { pantrySellOpen = false; try { drawPantrySale(); } catch { } }
+  buyItemId = itemId;
+  buyOpen = true;
+  /* ★★ 디폴트는 **그 품목을 직전에 몇 개 시켰나**다(처음이면 1).
+     `drawBuyPanel` 이 소지금으로 살 수 있는 데까지 내려 주고, 내렸으면 그 까닭도 적는다. */
+  buyQty = lastOrderQtyOf(itemId);
+  drawBuyPanel();
+}
+function closeBuyPanel() { buyOpen = false; buyItemId = null; drawBuyPanel(); }
+
+/* ± 는 한 개씩이다 — 시루·화분은 한두 개를 시키고 씨앗도 시루 수만큼이라 자릿수가 작다.
+   [전부]가 위끝으로 한 번에 데려다 준다. */
+$('buyMinus').onclick = guard(() => { buyQty = Math.max(1, buyQty - 1); drawBuyPanel(); });
+$('buyPlus').onclick  = guard(() => { buyQty += 1; drawBuyPanel(); });   /* 위끝은 draw 가 자른다 */
+$('buyAll').onclick   = guard(() => {
+  buyQty = Math.max(1, buyMaxQty(buyItemOf(buyItemId)));
+  drawBuyPanel();
+});
+$('buyCancel').onclick = guard(() => { closeBuyPanel(); });
+
+/* ★ 돈이 나가는 길은 이 단추 하나뿐이다. 닫는 세 길(뒤 누르기 · [그만두기] · Esc)로는
+   한 푼도 안 나간다 — 팔기 팝업과 같은 규약이다(§팝업을 닫는 길). */
+$('buyGo').onclick = guard(() => {
+  /* ⚠ 창이 닫혀 있으면 안 시킨다. 밖에서 부르는 길이 있으면 「총액을 안 보고 사는 길」이 생긴다 */
+  if (!buyOpen || !buyItemId) { drawBuyPanel(); return; }
+  const id = buyItemId, qty = buyQty;
+  const r = orderItem(S, id, qty, { log: m => pushLog(S, m) });
+  /* ★ 기억은 **코어가 받은 개수**로 적는다(`r.qty`). 화면이 든 값으로 적으면 언젠가 갈린다 */
+  rememberOrderQty(id, r.qty);
+  buyOpen = false; buyItemId = null;
+  /* ★ 이름은 **품목 표에서 찾는다** (2026-08-08 · QA §3-B).
+     ⚠ `orderItem` 의 반환에는 `ko` 가 없다(`{orderId,itemId,qty,unitWon,totalWon,
+       orderedOnDay,arrivesOnDay}` + cashWon·events). 그래서 배너가 늘
+       **「주문했습니다undefined」**로 떴다 — 무엇을 샀는지를 화면이 못 말했다.
+     ★★ 2026-08-18 — **개수와 총액을 배너가 말한다.** 예전 배너는 이름과 도착일만
+       적었는데, 개수를 고를 수 있게 된 지금 그대로 두면 5개를 시켜도 화면은
+       「콩 씨앗 · 1일 뒤 도착」이라 말한다 — 무엇이 나갔는지를 못 말하는 배너가 된다.
+       ⚠ 수는 전부 `r` 에서 읽는다. 손으로 안 적는다(§2.8). */
+  banner('주문했습니다',
+         `${koOf(r.itemId)} ${r.qty}개 · ${r.totalWon.toLocaleString()}원 · ` +
+         `${r.arrivesOnDay - S.day}일 뒤 도착`);
+  draw();
+});
 
 /* ══ 오늘 식물이 자랐나 (박사님 2026-08-03: "식물 자라는 게 안 보이던데") ══════
    ★자란 것은 맞는데 **눈에 안 보인다.** 실측: 유효 143일에서 하루에 0.5mm 안팎이라
@@ -8355,7 +8572,8 @@ $('pantryCancel').onclick = guard(() => { closePantryPanel(); });
    ⚠ 뒤 누르기는 `e.target === 팝업 자신` 일 때만이다. 카드 안을 누른 것이 위로 올라와
      닫히면 ± 를 누를 때마다 창이 사라진다. */
 function closePantryPanel() { pantrySellOpen = false; pantrySellN = 1; drawPantrySale(); }
-for (const [id, close] of [['pantryPanel', closePantryPanel], ['mealPanel', closeMealPanel]]) {
+for (const [id, close] of [['pantryPanel', closePantryPanel], ['mealPanel', closeMealPanel],
+                           ['buyPanel', closeBuyPanel]]) {
   const el = $(id);
   if (el) el.addEventListener('click', e => { if (e.target === el) guard(close)(); });
 }
@@ -8366,6 +8584,8 @@ window.__byeotPopClose = () => {
      **건너뛴다** — 무를 수는 없다. 이미 흐른 시간을 되돌릴 방법이 없고, 되돌리는 시늉을
      하면 시계가 거짓말을 시작한다(§goNextDay 의 까닭 ③). */
   if (dayAnimRunning)  { skipDayAnim();     return true; }
+  /* ★ 2026-08-18 — 주문 개수 창. 셋 다 **돈이 안 나간다** */
+  if (buyOpen)        { closeBuyPanel();    return true; }
   if (pantrySellOpen) { closePantryPanel(); return true; }
   if (mealOpen)       { closeMealPanel();   return true; }
   return false;

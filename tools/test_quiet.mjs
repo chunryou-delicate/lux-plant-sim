@@ -189,8 +189,15 @@ console.log('\n== E. ★★ 겹쳐 눌러도 「가지는 못했습니다」가 
 console.log('\n== A·B. ★ 배송이 도착한 날 화면이 말하나 ==');
 {
   await openTab('shop');
-  await page.eval(`(()=>{const b=document.querySelector('[data-buy="bean_seed"]');
-    b.click(); b.click();})()`, false);
+  /* ⚠⚠ 2026-08-18 — **여기서 두 번 누르던 것을 고쳤다.**
+     예전에는 [주문]이 `confirmOnce('정말 주문?')` 라 같은 단추를 두 번 눌러 한 개가 나갔다.
+     지금은 **개수를 고르는 팝업**이 뜬다(`#buyPanel` · buypopup-to-plan). 그대로 두면
+     첫 누름이 창을 열고 둘째 누름이 그 창을 다시 열 뿐이라 **주문이 한 건도 안 나간다** —
+     그러면 이 절이 재려던 「배송」이 아니라 「주문이 되나」에서 멎는다.
+     ★ 이 절이 재는 것은 배송이므로 개수는 디폴트(1개) 그대로 두고 [주문]만 누른다. */
+  await page.eval(`(()=>{document.querySelector('[data-buy="bean_seed"]').click();})()`, false);
+  await sleep(300);
+  await page.eval(`(()=>{document.getElementById('buyGo').click();})()`, false);
   await sleep(700);
   const d1 = await dot('openBag');
   ok('★ 오는 중이면 [가방] 단추에 점이 찍힌다', !!(d1 && d1.on), d1 && d1.title);
