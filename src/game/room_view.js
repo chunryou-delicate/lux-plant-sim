@@ -2564,16 +2564,17 @@ export async function createRoomView(canvas, opts = {}) {
      칸 수가 짝수인 물건은 칸 경계에, 홀수면 칸 한가운데에 앉는다 — 걸음(0.125m)이
      칸(0.25m)의 절반이라 둘 다 격자 위다. 그래서 span 을 받아 **묶음의 한가운데**를 낸다.
      이것이 박사님 말씀의 "1개 반 2개 칸 4칸 차지하면 되잖아" 를 화면에 옮긴 것이다. */
-  function cellsOfRect(rect, span = 1) {
-    const nu = Math.max(1, Math.floor(rect.w / TOP_CELL + 1e-9));
-    const nv = Math.max(1, Math.floor(rect.d / TOP_CELL + 1e-9));
-    const su = Math.min(span, nu), sv = Math.min(span, nv);
+  /* 면을 칸으로 남김없이 나눈다 — 칸 하나가 곧 「이 물건 하나가 갈 수 있는 자리」다.
+     ★ 「몇 칸을 먹나」를 따로 세지 않는다. 칸이 이미 물건보다 크거나 같기 때문이다(§surfaceAxis).
+       그래서 칸이 겹치지도, 사이가 벌어지지도 않는다 — 상판을 **딱** 채운다. */
+  function cellsOfRect(rect, potD) {
+    const U = surfaceAxis(rect.w, potD), V = surfaceAxis(rect.d, potD);
     const c = Math.cos(rect.rot || 0), s = Math.sin(rect.rot || 0);
     const out = [];
-    for (let j = 0; j + sv <= nv; j++) for (let i = 0; i + su <= nu; i++) {
-      const u = (i + (su - 1) / 2 - (nu - 1) / 2) * TOP_CELL;
-      const v = (j + (sv - 1) / 2 - (nv - 1) / 2) * TOP_CELL;
-      out.push({ u, v, x: rect.x + u * c + v * s, z: rect.z - u * s + v * c });
+    for (let j = 0; j < V.n; j++) for (let i = 0; i < U.n; i++) {
+      const u = U.at(i), v = V.at(j);
+      out.push({ u, v, x: rect.x + u * c + v * s, z: rect.z - u * s + v * c,
+                 cw: U.cell, cd: V.cell });
     }
     return out;
   }
@@ -2599,16 +2600,22 @@ export async function createRoomView(canvas, opts = {}) {
   function layoutGuideCells(span, potD) {
     if (!guideGroup) return 0;
     if (!tierRects) tierRects = collectTierRects();
-    if (cellSpan === span && cellRings.size) return cellRings.size;
+    /* ⚠ 열쇠를 **potD 로** 잡는다. 예전엔 span(=ceil(potD/0.25))이었는데, 칸이 면마다
+       달라진 뒤로는 span 이 같아도 칸 배치가 다르다 — 서랍장 칸 0.225 에서
+       0.20 은 한 칸, 0.24 는 두 칸이다. span 으로 캐시하면 그 둘이 서로의 칸을 쓴다. */
+    const cellKey = span + ':' + (Number.isFinite(potD) ? potD.toFixed(4) : 'x');
+    if (cellSpan === cellKey && cellRings.size) return cellRings.size;
     for (const [, m] of cellRings) guideGroup.remove(m);
     cellRings.clear(); cellInfo.clear(); cellNear = null;
-    cellSpan = span;
+    cellSpan = cellKey;
     for (const t of tierRects) {
       const u = t.own.userData || {};
       /* 면이 정한 한도 — `surfaceAt` 이 자리 없는 점에 쓰는 것과 **같은 값**이다 */
       const maxPotD = (u.tier_max_pot_d && u.tier_max_pot_d.length)
         ? Math.max(...u.tier_max_pot_d) : null;
-      for (const c0 of cellsOfRect(t.rect, span)) {
+      /* ★ 칸 무리는 **면마다** 다르다 — 여기서 통짜 span 을 넘기지 않고 potD 를 넘긴다.
+         span 은 이제 「다시 깔아야 하나」를 가리는 열쇠로만 쓴다(§surfaceAxis). */
+      for (const c0 of cellsOfRect(t.rect, potD)) {
         /* ★★ **그린 자리가 곧 앉는 자리다** (2026-08-11 · 박사님 "더 쪼개").
            ------------------------------------------------------------
            칸을 반 칸(0.125)으로 잘게 깔았더니 그린 한가운데와 실제로 앉는 자리가
@@ -2631,13 +2638,19 @@ export async function createRoomView(canvas, opts = {}) {
                    ':' + c.x.toFixed(3) + ':' + c.z.toFixed(3);
         if (cellRings.has(id)) continue;
         const m = new THREE.Mesh(guideGeo.thin, guideMat.fit);
-        m.rotation.x = -Math.PI / 2;
+        /* ★ 칸을 **상판과 같이 돌린다.** 전에는 `rotation.x` 만 줬는데, 칸이 정사각형이던
+           때는 티가 안 났고 지금은 축마다 크기가 달라(0.24 × 0.30) 안 돌리면 어긋난다.
+           order 를 YXZ 로 두면 Y(방위) → X(눕히기) 차례라 상판 방위가 그대로 먹는다. */
+        m.rotation.order = 'YXZ';
+        m.rotation.set(-Math.PI / 2, t.rect.rot || 0, 0);
         m.position.set(c.x, t.y + 0.006, c.z);
         m.renderOrder = 4;
         m.userData.guideCellId = id;
         guideGroup.add(m);
         cellRings.set(id, m);
         cellInfo.set(id, { x: c.x, y: t.y, z: c.z, u: c.u, v: c.v, span,
+                           /* 이 칸이 실제로 덮는 넓이 — 그림도 이 값으로 그린다(§surfaceAxis) */
+                           cw: c.cw, cd: c.cd,
                            uid: u.uid || null, occIdx: Number.isInteger(u.occIdx) ? u.occIdx : null,
                            rect: t.rect, maxPotD });
       }
@@ -2668,6 +2681,54 @@ export async function createRoomView(canvas, opts = {}) {
        `(i − (n−1)/2)·0.25` 라 **늘 0.125 의 배수**이고, 놓는 걸음이 0.125 라
        **칸 한가운데가 곧 앉는 자리**다. (`guideCells().snapErr` 가 그 어긋남을 낸다. 0 이다.) */
   const TOP_CELL = GRID_CELL;
+
+  /* ★★★ 면 한 축을 **딱 나눠 덮는다** (2026-08-15 · 박사님이 화면 보고 두 번 짚으심)
+     ══════════════════════════════════════════════════════════════════
+     박사님: *"칸수가 더 엉망이 됬는데 저게 어려워? 좀 잘해줘."*
+
+     ■ 무엇이 잘못돼 있었나
+     칸이 0.25m **고정**이고 개수가 `floor(면길이/0.25)` 였다. 책상 상판 1.20 × 0.60 이면
+     4 × 2 = 8칸이고 칸이 덮는 것은 **1.00 × 0.50** 이다 — 가장자리 0.10/0.05 가 빈다.
+     ⚠ 그 빈 자리가 **낭비였던 것은 아니다.** 놓는 자리를 `snapInSpan` 이
+       `kMax = floor((span/2 − potD/2)/step)` 로 잘랐고 책상 가로면 `(0.60−0.12)/0.125 = 3.84 → 3`
+       이라 갈 수 있는 제일 바깥이 0.375 였다. 즉 **칸은 갈 수 있는 자리를 하나도 안 빠뜨리고
+       다 그리고 있었다.** 남는 가장자리는 「화분이 상판 밖으로 나가서 못 가는 자리」였다.
+     ⇒ 그러니 **칸만 더 그리면 표시가 거짓말이 된다.** 고쳐야 하는 것은 **놓는 자리 쪽**이다.
+
+     ■ 그래서 뒤집었다 — **칸이 정본이고 놓는 자리가 칸 한가운데다**
+         n    = max(1, round(면길이 / 0.25))     ← floor 가 아니라 **round**
+         cell = 면길이 / n                        ← 면을 **딱** 채운다
+         한가운데 = (i + 0.5)·cell − 면길이/2
+     책상 가로 `round(1.20/0.25) = 5` → cell 0.24 · 한가운데 ±0.48 · ±0.24 · 0.
+     바깥 칸 ±0.48 에 0.24 짜리를 놓으면 0.36~0.60 — **상판에 딱 들어간다.**
+     세로 `round(0.60/0.25) = 2` → cell 0.30 · ±0.15 · 화분이 0.03~0.27 로 들어간다.
+     ⇒ 버려지던 가장자리가 **쓸 수 있는 자리로 살아난다.** 책상이 5 × 2 다.
+       (박사님이 처음에 빨갛게 그려 보내신 그림이 정확히 그것이었다)
+
+     ⚠ **칸이 정사각형이 아니게 된다**(책상 0.24 × 0.30). 마커를 축마다 따로 늘린다.
+     ⚠ 이 자는 **면이 있을 때만**이다. 바닥은 방 원점 0.125 격자가 정본이라 안 건드린다
+       (`snapOnSurface` 가 `frame` 없으면 예전 길로 간다).
+     ⚠⚠ **round 만으로는 안 됐다 — 재서 알았다.**
+       서랍장 상판 0.90 은 `round(0.90/0.25) = 4` → 칸 0.225 인데 **시루가 0.24** 다.
+       칸보다 물건이 크니 가장자리 칸에 놓으면 상판 밖으로 나가고, 그 칸이 후보에서 빠져
+       놓을 자리가 **3 → 2 로 줄었다.** 「칸을 채우려다 자리를 뺏은」 것이다.
+     ⇒ 규칙을 하나 더 얹는다: **칸은 그 물건보다 작아지지 않는다.**
+           n = min( round(면길이/0.25),  floor(면길이/물건지름) )
+       서랍장이면 `min(4, floor(0.90/0.24)=3) = 3` → 칸 0.30 · 한가운데 ±0.30 · 0 — **3칸 그대로**이고
+       이번엔 상판을 **남김없이** 덮는다. 책상은 `min(5, floor(1.20/0.24)=5) = 5` 라 5칸 그대로다.
+     ★★ 이 규칙 하나로 **버려지는 칸이 없어진다.** 칸 한가운데의 제일 바깥값이
+       `(면길이 − 칸)/2` 이고 칸 ≥ 물건이므로 `≤ (면길이 − 물건)/2` — 즉 **모든 칸이 늘 들어간다.**
+       그래서 「그려 놓고 못 앉는 칸」이 구조적으로 생길 수 없다(snapErr 0 과 같은 결의 보장이다).
+     ⚠ 칸은 **끌고 있는 물건마다 다시 깔린다.** 시루(0.24)와 몬스테라(0.20)가 서랍장에서
+       각각 3칸·4칸이 된다. 「칸 = 이 물건이 갈 수 있는 자리」니까 그게 맞다. */
+  function surfaceAxis(len, potD) {
+    const L = Number.isFinite(len) && len > 0 ? len : TOP_CELL;
+    let n = Math.max(1, Math.round(L / TOP_CELL));
+    const P = Number.isFinite(potD) && potD > 0 ? potD : 0;
+    if (P > 0) n = Math.min(n, Math.max(1, Math.floor(L / P + 1e-9)));
+    const cell = L / n;
+    return { n, cell, len: L, at: i => (i + 0.5) * cell - L / 2 };
+  }
   /* 그 물건이 걸음 몇 개를 차지하나 — **올림**이다. 내림·반올림을 쓰면 0.4327m 짜리가
      3칸(0.375m)으로 잡혀 그린 네모가 실물보다 작아진다. `place.snapSpan` 이 쓰는
      `unitsFor`(= 올림)와 **같은 셈**이라야 그린 자리와 앉는 자리가 안 갈린다. */
@@ -2805,7 +2866,9 @@ export async function createRoomView(canvas, opts = {}) {
        ⇒ 보통 칸은 **칸 크기**로, 지금 **겨누고 있는 칸 하나만** 발자국 크기로 그린다.
          그래야 「여기 놓을 수 있다」(잔 칸)와 「놓으면 이만큼 먹는다」(겨눈 칸)가 갈린다.
        ★ 격자와 커서를 가르는 흔한 방식이고, 잔 칸이 겹치지 않으므로 무늬가 안 생긴다. */
-    const cellHalf = TOP_CELL / 2;
+    /* ★ 칸 크기는 이제 **면마다 다르다**(§surfaceAxis). 축마다 따로 늘린다 —
+       `setScalar` 하나로 두면 0.24 × 0.30 짜리 칸이 정사각형으로 그려져
+       가로로는 겹치고 세로로는 틈이 벌어진다(그렇게 그려 봤다). */
     for (const [id, m] of cellRings) {
       const info = cellInfo.get(id);
       const holds = cellHolds(potD, info);
@@ -2814,7 +2877,9 @@ export async function createRoomView(canvas, opts = {}) {
       m.visible = opt.cells !== false;
       m.material = isNear ? guideMat.near : (holds ? guideMat.fit : guideMat.ng);
       m.geometry = isNear ? guideGeo.thick : guideGeo.thin;
-      m.scale.setScalar(isNear ? half : cellHalf);
+      if (isNear) m.scale.set(half, half, 1);
+      else m.scale.set((info && info.cw ? info.cw : TOP_CELL) / 2,
+                       (info && info.cd ? info.cd : TOP_CELL) / 2, 1);
       m.renderOrder = isNear ? 6 : 4;
     }
     guideGroup.visible = true;
@@ -2848,6 +2913,11 @@ export async function createRoomView(canvas, opts = {}) {
         cellId: id, uid: info.uid || null, near: id === cellNear,
         x: +(info.x || 0).toFixed(4), y: +(info.y || 0).toFixed(4), z: +(info.z || 0).toFixed(4),
         u: info.u, v: info.v, maxPotD: info.maxPotD ?? null,
+        /* 이 칸이 덮는 넓이와 그 면의 크기 — 「칸이 면을 딱 채우나」를 밖에서 검산할 수 있게 */
+        cw: Number.isFinite(info.cw) ? +info.cw.toFixed(4) : null,
+        cd: Number.isFinite(info.cd) ? +info.cd.toFixed(4) : null,
+        rectW: info.rect ? +info.rect.w.toFixed(4) : null,
+        rectD: info.rect ? +info.rect.d.toFixed(4) : null,
         fits: cellHolds(potD, info),
         snapErr: sn ? +Math.hypot(sn.x - info.x, sn.z - info.z).toFixed(6) : null,
         color: '#' + m.material.color.getHexString(),
@@ -3116,12 +3186,25 @@ export async function createRoomView(canvas, opts = {}) {
   /* 원점 기준 걸음 격자에 앉힌다. span 을 주면 **그 안**으로만 앉힌다(상판).
      span 이 없으면 범위를 안 본다 — 면 크기를 모르는 곳에서 지어내지 않는다(바닥). */
   function snapInSpan(v, potD, step, span) {
-    const k = Math.round(v / step);
-    if (!Number.isFinite(span)) return k * step;
-    /* 화분이 면 안에 다 들어오는 마지막 칸 번호. 0 이하면 한 칸도 없다 → 면 한가운데 */
-    const kMax = Math.floor((span / 2 - potD / 2) / step + 1e-9);
-    if (!(kMax > 0)) return 0;
-    return Math.max(-kMax, Math.min(kMax, k)) * step;
+    /* ── 바닥 — 방 원점 걸음 격자. **예전 그대로다**(여기는 안 건드린다) ── */
+    if (!Number.isFinite(span)) return Math.round(v / step) * step;
+    /* ── 면 — 그 면을 딱 나눠 덮는 칸의 **한가운데**다 (2026-08-15 · §surfaceAxis) ──
+       ★ 뒤집힌 것이 이것이다. 전에는 「0.125 격자 위의 점」이 정본이고 칸이 그걸 따라 그려졌다.
+         이제 **칸이 정본이고 놓는 자리가 칸 한가운데**다. 그래서 칸이 면을 남김없이 덮는다.
+       ⚠ 화분이 면 밖으로 나가는 칸은 **후보에서 뺀다** — 「그린 자리 = 앉는 자리」를 지키려면
+         못 앉는 칸으로 끌어당기면 안 된다. 하나도 없으면 면 한가운데(0)다(예전과 같다). */
+    const A = surfaceAxis(span, potD);
+    /* 칸이 물건보다 크거나 같으므로 **모든 칸이 들어간다**(§surfaceAxis ★★).
+       그래도 걸러는 둔다 — 물건이 면보다 큰 경우(n=1·cell<potD)가 남아 있다. */
+    const lim = span / 2 - potD / 2;
+    let best = null, bestD = Infinity;
+    for (let i = 0; i < A.n; i++) {
+      const c = A.at(i);
+      if (Math.abs(c) > lim + 1e-9) continue;
+      const d = Math.abs(c - v);
+      if (d < bestD) { bestD = d; best = c; }
+    }
+    return best == null ? 0 : best;
   }
 
   const SLOT_GOVERN_R = 0.04;   // 자리 중심에서 이 안이면 그 자리로 본다[m]
@@ -3263,6 +3346,15 @@ export async function createRoomView(canvas, opts = {}) {
     /* 이 자리를 낸 격자를 그대로 알린다 — 화면이 칸을 그릴 때도, 검사가 걸음을 잴 때도
        같은 값을 봐야 한다. surface 는 상판 격자의 원점·크기다(바닥이면 null). */
     out.cells = { i: unitsFor(potD), j: unitsFor(potD), unit: GRID_UNIT, step };
+    /* ★ 상판이면 **그 면의 칸**도 같이 낸다 (2026-08-15 · §surfaceAxis).
+       ⚠ `step` 은 이제 상판에서 「앉는 간격」이 아니다 — 바닥의 걸음이다. 상판의 간격은
+         면마다 다른 `cw`·`cd` 이고, 그걸 안 내주면 밖에서는 낡은 `step` 을 보고
+         「좌표가 걸음 배수가 아니다」라고 잘못 읽게 된다(실제로 검사가 그렇게 읽었다). */
+    if (frame) {
+      const AU = surfaceAxis(frame.w, potD), AV = surfaceAxis(frame.d, potD);
+      out.cells.nu = AU.n; out.cells.nv = AV.n;
+      out.cells.cw = +AU.cell.toFixed(6); out.cells.cd = +AV.cell.toFixed(6);
+    }
     out.surface = frame ? { x: +frame.x.toFixed(4), z: +frame.z.toFixed(4),
                             w: +frame.w.toFixed(4), d: +frame.d.toFixed(4),
                             rot: +frame.rot.toFixed(6) } : null;
@@ -4706,10 +4798,37 @@ export async function createRoomView(canvas, opts = {}) {
     const sp = gridSpan();
     const g = new THREE.Group();
     const nx = sp.nx, nz = sp.nz, gx0 = sp.x0, gz0 = sp.z0;
+
+    /* ★★ 격자 **바깥 테두리를 벽 안쪽 면에 붙인다** (2026-08-15 · 박사님:
+       *"방 바닥 자체 그리드도 끝선에 맞춰서 해줘"*)
+       ══════════════════════════════════════════════════════════════════
+       재 보니 격자가 x ±2.25 · z −1.75~**+2.00** 에서 끝났다. 벽 안쪽 면은 ±2.30 / ±1.80 이다.
+         · x 는 양쪽 다 **0.05 모자랐다** — 벽에 걸치는 칸을 통째로 버리기 때문이다(위 ★)
+         · z 는 **한쪽만 0.20 넘쳤다** — 문 자리에는 벽 조각이 없어 그 칸이 살아남고,
+           그 칸이 문지방 너머 z=2.00(방 **바깥** 면)까지 뻗는다. 그게 「z 가 비대칭」의 정체다.
+           ⇒ **문 때문이 맞다.** 짐작이 아니라 벽 조각 목록으로 확인했다.
+
+       ⚠ **칸을 더 만들어 채우지는 않는다.** 벽 안쪽 면까지 칸을 깔면 0.05 짜리 자투리 줄이
+         생기고, 거기엔 아무것도 안 들어가므로 **전부 붉게** 칠해진다 —
+         그게 바로 2026-08-08 에 없앤 「벽을 따라 도는 붉은 띠」다. 되돌리면 안 된다.
+       ⇒ 그래서 이렇게 한다 — **칸은 한 개도 안 늘리고**:
+         ㉮ 0.25 눈금은 **그대로 둔다**(놓는 자리와 같은 눈금이라 옮기면 표시가 거짓말이 된다)
+         ㉯ 거기에 **벽 안쪽 면 네모를 한 겹 두른다** — 그것이 「끝선」이다
+         ㉰ 눈금선·붉은 네모가 그 밖으로 나가면 잘라 낸다(문 자리 칸이 문지방을 넘었다)
+       ⇒ 결과: 격자 테두리가 벽에 닿고, z 가 **좌우 대칭**(±1.90)이 되고,
+         `gridSpan().cells` 도 막힌 칸 수도 놓는 자리도 **한 톨도 안 바뀐다.**
+       ⚠ 테두리와 마지막 눈금선 사이가 0.15 짜리 자투리 띠로 남는다. 그건 **벽과 격자 사이의
+         실제 빈틈**이다 — 0.25 눈금은 방 원점에 매여 있고 벽 안쪽 면(±2.40)은 0.25 배수가
+         아니기 때문이다(±2.40 은 0.125 배수도 아니다). 없애려면 방 치수나 벽 두께를
+         건드려야 하고 그건 조도가 흔들리는 일이다 — 보고서 §판단필요에 적었다. */
+    const inner = sp.inner;
+    const fitX = v => Math.min(Math.max(v, inner.x0), inner.x1);
+    const fitZ = v => Math.min(Math.max(v, inner.z0), inner.z1);
+
     /* ① 눈금선 — 그리는 칸의 테두리만. 이어지는 선은 한 토막으로 합친다
        (칸마다 네 변을 따로 쏘면 큰 방에서 선 토막이 수천 개가 된다). */
     const pts = [];
-    const line = (x1, z1, x2, z2) => pts.push(x1, 0, z1, x2, 0, z2);
+    const line = (x1, z1, x2, z2) => pts.push(fitX(x1), 0, fitZ(z1), fitX(x2), 0, fitZ(z2));
     for (let i = 0; i <= nx; i++) {                    // 세로선: 좌우 두 칸 중 하나라도 그리면 긋는다
       let run = -1;
       for (let j = 0; j <= nz; j++) {
@@ -4728,6 +4847,12 @@ export async function createRoomView(canvas, opts = {}) {
                                     gx0 + i * GRID_CELL, gz0 + j * GRID_CELL); run = -1; }
       }
     }
+    /* ㉯ 끝선 — 벽 안쪽 면에 두르는 네모 한 겹. 격자가 여기서 끝난다는 표시다 */
+    line(inner.x0, inner.z0, inner.x1, inner.z0);
+    line(inner.x0, inner.z1, inner.x1, inner.z1);
+    line(inner.x0, inner.z0, inner.x0, inner.z1);
+    line(inner.x1, inner.z0, inner.x1, inner.z1);
+
     const lg = new THREE.BufferGeometry();
     lg.setAttribute('position', new THREE.Float32BufferAttribute(pts, 3));
     const lines = new THREE.LineSegments(lg, new THREE.LineBasicMaterial({
@@ -4755,8 +4880,10 @@ export async function createRoomView(canvas, opts = {}) {
       if (!bad) { free++; continue; }
       blocked++;
       const k = pos.length / 3;
-      pos.push(cx - half, 0, cz - half, cx + half, 0, cz - half,
-               cx + half, 0, cz + half, cx - half, 0, cz + half);
+      /* 붉은 네모도 테두리를 넘지 않게 자른다 — 문 자리 칸이 문지방 밖으로 삐져나온다 */
+      const ax = fitX(cx - half), bx = fitX(cx + half);
+      const az = fitZ(cz - half), bz = fitZ(cz + half);
+      pos.push(ax, 0, az, bx, 0, az, bx, 0, bz, ax, 0, bz);
       idx.push(k, k + 2, k + 1, k, k + 3, k + 2);
     }
     if (pos.length) {

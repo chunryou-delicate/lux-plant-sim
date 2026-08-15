@@ -133,7 +133,9 @@ async function main() {
         if (!t.ok || t.onUid !== f.uid || t.snappedTo || !t.surface) continue;
         const L = window.__local(t);
         hits.push({ x: t.x, z: t.z, u: +L.u.toFixed(5), v: +L.v.toFixed(5),
-                    w: L.w, d: L.d, step: t.cells.step });
+                    w: L.w, d: L.d, step: t.cells.step,
+                    /* ★ 그 면의 칸 — 2026-08-15 부터 상판은 면마다 칸이 다르다 */
+                    cw: t.cells.cw, cd: t.cells.cd, nu: t.cells.nu, nv: t.cells.nv });
       }
       if (hits.length) out[f.uid] = hits;
     }
@@ -145,15 +147,39 @@ async function main() {
      topUids.length > 0 && allTop.length > 0,
      `가구 ${topUids.length}개 · 자리 ${allTop.length}곳 — ${topUids.join(', ')}`);
 
+  /* ★★ 2026-08-15 — **이 검사의 뜻이 바뀌었다. 값만 갈아 끼운 게 아니다.**
+     ── 예전에 지키던 것 ──
+       "상판 좌표는 **면 중심 기준 0.125 배수**다" — 칸(0.25 고정)이 걸음 격자 위에 얹히니
+       칸 한가운데가 곧 앉는 자리라는 뜻이었다.
+     ── 왜 못 쓰게 됐나 ──
+       그 규약은 **칸이 면을 안 덮는다**는 대가를 치르고 있었다. 책상 1.20×0.60 에
+       0.25 칸을 floor 로 깔면 4×2 이고 덮이는 것은 1.00×0.50 — 가장자리가 빈다.
+       박사님이 화면을 보고 두 번 짚으셨다("칸수가 더 엉망이 됬는데").
+     ── 지금 지키는 것 ──
+       "상판 좌표는 **그 면을 n등분한 칸의 한가운데**다" — `(i+0.5)·cell − 면길이/2`.
+       칸 크기 `cell` 은 면마다 다르고 `surfaceAt` 이 `cells.cw/cd` 로 알려 준다.
+     ★ 뜻은 살아 있다: **그린 칸 한가운데가 곧 앉는 자리**. 눈금이 「방 원점」에서
+       「그 면」으로 옮겨졌을 뿐이다. 바닥은 안 바뀌었다(P-2·P-3 가 그걸 지킨다).
+     ⚠ `h.step`(0.125)은 이제 **바닥의 걸음**이다. 상판 간격이 아니다 — 그래서 안 본다. */
   const offGrid = allTop.filter(h => {
-    const ku = h.u / h.step, kv = h.v / h.step;
-    return Math.abs(ku - Math.round(ku)) * h.step > MULT_EPS
-        || Math.abs(kv - Math.round(kv)) * h.step > MULT_EPS;
+    if (!Number.isFinite(h.cw) || !Number.isFinite(h.cd)) return true;   // 안 알려 주면 실패다
+    const iu = (h.u + h.w / 2) / h.cw - 0.5, iv = (h.v + h.d / 2) / h.cd - 0.5;
+    return Math.abs(iu - Math.round(iu)) * h.cw > MULT_EPS
+        || Math.abs(iv - Math.round(iv)) * h.cd > MULT_EPS
+        || Math.round(iu) < 0 || Math.round(iu) > h.nu - 1
+        || Math.round(iv) < 0 || Math.round(iv) > h.nv - 1;
   });
-  ok('Q-2 상판 좌표도 같은 걸음 배수다 — 원점은 **그 가구 한가운데**다',
-     allTop.length > 0 && offGrid.length === 0 && allTop.every(h => h.step === 0.125),
-     `${allTop.length - offGrid.length}/${allTop.length} · 어긋난 것 ` +
-     JSON.stringify(offGrid.slice(0, 3)));
+  /* ★ 그리고 **칸이 면을 남김없이 덮어야** 한다 — 이게 박사님이 짚으신 바로 그것이다 */
+  /* ⚠ 여유를 1e-6 로 잡았더니 27개가 걸렸다 — 값이 아니라 **자릿수** 때문이다.
+     `cells.cw` 는 소수 6자리로 반올림해 내주므로 0.227333 × 3 = 0.681999 (참값 0.682) 가 된다.
+     ★ 「실패가 났을 때 코드보다 재는 자를 먼저 의심하라」의 작은 예다. 1e-4 면 넉넉하다. */
+  const notFull = allTop.filter(h => Math.abs(h.cw * h.nu - h.w) > 1e-4
+                                  || Math.abs(h.cd * h.nv - h.d) > 1e-4);
+  ok('Q-2 상판 좌표가 **그 면을 n등분한 칸 한가운데**다 · 칸이 면을 딱 덮는다',
+     allTop.length > 0 && offGrid.length === 0 && notFull.length === 0,
+     `${allTop.length - offGrid.length}/${allTop.length} 칸 한가운데 · ` +
+     `면을 못 덮는 상판 ${notFull.length}개 · 어긋난 것 ` +
+     JSON.stringify(offGrid.slice(0, 3)) + JSON.stringify(notFull.slice(0, 2)));
 
   /* 한 상판에서 **서로 다른 자리**가 몇 곳 나오나 — ③ 「다양한 위치」가 이 숫자다.
      추천 자리(slots)만 있던 때는 가구 하나에 2~4칸뿐이었다. */
@@ -337,6 +363,81 @@ async function main() {
   })()`);
   ok('V-1 벽 안쪽 면보다 방 안으로 튀어나온 바닥 턱이 없다',
      ledge.length === 0, `${ledge.length}조각 — ` + JSON.stringify(ledge.slice(0, 3)));
+
+  /* ══ W ★★ 그린 칸 자체를 잰다 — **이걸 지키는 검사가 하나도 없었다** ═══════════
+     `room_view.js` 가 두 군데(§guideCells · §surfaceAxis)에서 「`guideCells().snapErr` 이 0 이다」를
+     계약으로 선언해 놓았는데, 그걸 재는 검사가 저장소에 **없었다**(2026-08-15 확인).
+     그래서 칸이 조용히 접히거나 어긋나도 아무도 안 잡는다 — 실제로 그렇게 됐다.
+     여기서 셋을 잰다:
+       W-1 그린 칸 한가운데를 겨누면 물건이 **정말 거기 앉는다**(snapErr 전부 0)
+       W-2 칸이 그 면을 **남김없이 덮는다** (칸 크기 × 칸 수 = 면 길이)
+       W-3 칸이 **물건보다 작지 않다** — 작으면 가장자리 칸이 못 쓰는 칸이 된다 */
+  const cellRep = await page.eval(`(() => {
+    const v = window.view, out = {};
+    for (const potD of [0.202, 0.24, 0.57]) {
+      v.showSlotRings(true, { potD });
+      out[potD] = v.guideCells({ potD }).map(c => ({
+        uid: c.uid, snapErr: c.snapErr, cw: c.cw, cd: c.cd, w: c.rectW, d: c.rectD, fits: c.fits }));
+    }
+    v.showSlotRings(false);
+    return out;
+  })()`);
+  const allCells = Object.values(cellRep).flat();
+  const badSnap = allCells.filter(c => !(Math.abs(c.snapErr || 0) < 1e-6));
+  ok('W-1 ★그린 칸 한가운데가 곧 앉는 자리다 (guideCells().snapErr 이 전부 0)',
+     allCells.length > 0 && badSnap.length === 0,
+     `칸 ${allCells.length}개(지름 3가지) · 어긋난 칸 ${badSnap.length}개 ` +
+     JSON.stringify(badSnap.slice(0, 3)));
+
+  /* 칸 크기 × 칸 수 = 면 길이. 칸 수는 면 길이 ÷ 칸 크기로 되짚는다(칸 수를 안 내주므로) */
+  const notCover = allCells.filter(c => {
+    if (!Number.isFinite(c.cw) || !Number.isFinite(c.w)) return true;
+    const nu = c.w / c.cw, nv = c.d / c.cd;
+    return Math.abs(nu - Math.round(nu)) > 1e-3 || Math.abs(nv - Math.round(nv)) > 1e-3;
+  });
+  ok('W-2 ★칸이 그 면을 남김없이 덮는다 (칸 크기 × 정수 = 면 길이)',
+     allCells.length > 0 && notCover.length === 0,
+     `못 덮는 칸 ${notCover.length}개 ` + JSON.stringify(notCover.slice(0, 3)));
+
+  const tooSmall = [];
+  for (const potD of Object.keys(cellRep))
+    for (const c of cellRep[potD])
+      /* 면 자체가 물건보다 좁으면 어쩔 수 없다(칸 하나로 접힌다) — 그때는 안 센다 */
+      if (c.cw + 1e-6 < +potD && c.w + 1e-6 >= +potD) tooSmall.push({ potD, ...c });
+  ok('W-3 ★칸이 물건보다 작지 않다 (작으면 가장자리 칸이 못 쓰는 칸이 된다)',
+     tooSmall.length === 0, `${tooSmall.length}개 ` + JSON.stringify(tooSmall.slice(0, 3)));
+
+  /* ══ X ★ 바닥 격자가 **벽 안쪽 면까지** 간다 (2026-08-15 · 박사님:
+       *"방 바닥 자체 그리드도 끝선에 맞춰서 해줘"*) ═══════════════════════ */
+  const fg = await page.eval(`(() => {
+    const v = window.view;
+    v.showGrid(true, { potD: 0.24 });
+    const S = v.three.scene;
+    let seg = null;
+    S.traverse(o => { if (o.isLineSegments && !seg) seg = o; });
+    if (!seg) return null;
+    const p = seg.geometry.attributes.position.array;
+    let x0=1e9,x1=-1e9,z0=1e9,z1=-1e9;
+    for (let i=0;i<p.length;i+=3){ x0=Math.min(x0,p[i]); x1=Math.max(x1,p[i]);
+      z0=Math.min(z0,p[i+2]); z1=Math.max(z1,p[i+2]); }
+    const g = v.grid();
+    v.showGrid(false);
+    return { x0:+x0.toFixed(4), x1:+x1.toFixed(4), z0:+z0.toFixed(4), z1:+z1.toFixed(4),
+             inner: g.room.inner, cells: g.room.cells, free: g.free, blocked: g.blocked };
+  })()`);
+  const EDGE = 1e-3;
+  ok('X-1 ★바닥 격자가 벽 안쪽 면에 닿는다 (네 변 모두)',
+     !!fg && Math.abs(fg.x0 - fg.inner.x0) < EDGE && Math.abs(fg.x1 - fg.inner.x1) < EDGE
+          && Math.abs(fg.z0 - fg.inner.z0) < EDGE && Math.abs(fg.z1 - fg.inner.z1) < EDGE,
+     fg ? `격자 x ${fg.x0}~${fg.x1} · z ${fg.z0}~${fg.z1} / 벽 안쪽 면 x ${fg.inner.x0}~${fg.inner.x1} · z ${fg.inner.z0}~${fg.inner.z1}` : '격자를 못 찾았다');
+  /* ★ z 가 좌우 대칭인가 — 예전에는 −1.75 ↔ +2.00 이었다(문 자리 칸이 문지방을 넘었다) */
+  ok('X-2 ★격자가 앞뒤로 대칭이다 (문 자리 칸이 문지방을 안 넘는다)',
+     !!fg && Math.abs(fg.z0 + fg.z1) < EDGE, fg ? `z ${fg.z0} ↔ ${fg.z1}` : '');
+  /* ⚠ 칸은 한 개도 안 늘었어야 한다 — 늘면 벽 옆 자투리 줄이 생기고 그건 전부 붉어진다
+     (2026-08-08 에 없앤 「벽을 따라 도는 붉은 띠」다) */
+  ok('X-3 ★그리는 칸 수는 안 늘었다 (벽 옆 자투리 줄을 안 만든다)',
+     !!fg && fg.cells === 255 && fg.free + fg.blocked === fg.cells,
+     fg ? `칸 ${fg.cells} = 빈 칸 ${fg.free} + 막힌 칸 ${fg.blocked}` : '');
 
   ok('H 콘솔에 처리 안 된 예외가 없다', errs.length === 0, errs.slice(0, 3).join(' | '));
 
