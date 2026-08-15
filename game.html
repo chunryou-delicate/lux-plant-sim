@@ -5402,7 +5402,13 @@ function questSnapshotNow(turn) {
     cropPots, mealKinds, motherLeaves, motherVarieLeaves,
     cuttings: cuts,
     /* ★ 무늬 삽수를 판 횟수 — `tutorial.js §varieSale` 이 정본이다(escapecut 확정) */
-    varieSaleCount: (ts.varieSale && ts.varieSale.count) || 0
+    varieSaleCount: (ts.varieSale && ts.varieSale.count) || 0,
+    /* ★★ 식물등 — `tutorial.js §lamp` 이 정본이다. 퀘스트 ④(`buy_lamp`)가 이 둘로 판정한다.
+       ⚠ `S.lamps`(화면이 켜는 것)가 아니라 **`ts.lamp`(산 것)** 이다. 둘은 다른 칸이고,
+         2026-08-06 에 그 둘이 어긋나서 「등을 꺼도 요금이 나가는」 사고가 났다
+         (`tutorial.js §lampElectricityWon` 의 ★★). 여기서 묻는 것은 **샀나**다. */
+    lampUnlocked: !!(ts.lamp && ts.lamp.unlocked),
+    lampOwned: (ts.lamp && ts.lamp.owned) || 0
   };
 }
 
@@ -5469,7 +5475,9 @@ function drawQuestPanel() {
   $('questTitle').textContent = `할 일 ${done}/${total}`;
   $('questSub').textContent = v.next
     ? `지금 할 것 — ${v.next.ko}`
-    : (done >= total ? '다섯 가지를 다 배웠습니다' : '지금 열린 것이 없습니다 — 기다리면 열립니다');
+    /* ⚠ 수를 글자로 박지 마라 — 2026-08-16 에 줄이 다섯에서 여섯이 됐고 이 줄만 낡았다.
+       `total` 은 `quest.QUESTS` 에서 오므로 줄이 늘면 저절로 따라온다(§2.8). */
+    : (done >= total ? `${total}가지를 다 배웠습니다` : '지금 열린 것이 없습니다 — 기다리면 열립니다');
   /* 띠와 수는 **같은 값**을 말한다. 다르면 어느 쪽이 참인지 물어야 한다 */
   $('questBar').firstElementChild.style.width = `${total ? Math.round(done / total * 100) : 0}%`;
 

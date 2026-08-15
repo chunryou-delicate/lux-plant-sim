@@ -68,11 +68,14 @@ export const QUEST_SCHEMA = 'quest/1';
      motherVarieLeaves   그중 무늬 잎 수
      cuttings            [{ method, status, varieFromCut, varieLightBand }]
      varieSaleCount      무늬 삽수를 판 횟수          (ts.varieSale.count)
+     lampUnlocked        식물등을 살 수 있게 됐나     (ts.lamp.unlocked · 가을 진입)
+     lampOwned           갖고 있는 식물등 개수        (ts.lamp.owned)
    ══════════════════════════════════════════════════════════════════════ */
 export function emptySnapshot() {
   return { day: null, firstPlayDone: false, cropHarvestTotal: 0, cropPots: [],
            mealKinds: [], motherLeaves: 0, motherVarieLeaves: 0,
-           cuttings: [], varieSaleCount: 0 };
+           cuttings: [], varieSaleCount: 0,
+           lampUnlocked: false, lampOwned: 0 };
 }
 function snapOf(s) { return { ...emptySnapshot(), ...(s && typeof s === 'object' ? s : {}) }; }
 
@@ -152,7 +155,36 @@ export const QUESTS = Object.freeze([
     done:  s => arr(s.cuttings).some(c => c && c.method === 'water' && isRooted(c))
   }),
 
-  /* ④ ★★ **무늬가 난 뒤**에 열린다. 가르치는 것은 하나인데 이 게임의 뼈대다 —
+  /* ④ ★★★ **등을 산다** — 2026-08-16 박사님 확정으로 생긴 줄이다.
+     ------------------------------------------------------------
+     ★ 왜 퀘스트라야 하나. 재는 자를 고치고 이사 성공률을 다시 쟀더니(`bcd29d7`)
+       **A 등 없이 38% · B 등 사고 60% · C 늦게 100%** 였다. A 로 못 나간 25판은 **전부 파산**이다.
+       박사님 확정: *"지금 좋은 거 같어, **등은 지금 확정이잖아**. 퀘스트든 가이드든으로"*
+       ⇒ **A 를 이길 수 있게 값을 고치지 않는다.** 등은 선택지가 아니라 **길**이고,
+         못 사서 파산하는 것은 밸런스 사고가 아니라 **안 배운 결과**다.
+     ⚠ 그런데 지금 등을 알려 주는 것은 `tutorial.js §LAMP_NUDGE_DAY` 하나뿐이고,
+       그건 **가을 이레째에 한 번 지나가는 말**이다. 놓치면 영영 모른다.
+       이 줄이 그 자리를 맡는다 — 살 때까지 「지금 할 일」에 남는다.
+     ★ 보상이 체력이 아니다. **밝은 자리가 생기는 것**이 보상이다 —
+       그리고 그 밝은 자리가 있어야 다음 줄(⑤ 밝은 데서 뿌리내리기)이 성립한다.
+       ⇒ ⑤ 앞에 두는 까닭이 그것이다. 순서가 곧 배우는 순서다.
+     ⚠ 「가을」·「25,000원」을 여기 적지 않는다 — 둘 다 `tutorial.js` 것이라
+       여기 적으면 수가 두 벌이 되고 한쪽이 반드시 낡는다(§2.8). */
+  Object.freeze({
+    id: 'buy_lamp',
+    ko: '볕을 사 온다',
+    /* ★ 체력이 0 인 까닭이 곧 이 이름이다 — 보상은 **밝은 자리 그 자체**다 */
+    reward: '밝은 자리가 생깁니다',
+    teaches: ['등이 곧 밝은 자리다', '반지하는 등 없이 못 나간다'],
+    why: '반지하에는 밝은 칸이 거의 없습니다. 등을 켜야 그 자리가 생깁니다.',
+    todo: () => '식물등을 사서 밝은 자리를 만드세요',
+    /* ⚠ 「살 수 있게 된 순간」에 연다 — `ts.lamp.unlocked` 가 정본이다(가을 진입).
+       그 전에 열면 살 수 없는 것을 시키는 꼴이 된다. */
+    opens: s => !!s.lampUnlocked,
+    done:  s => num(s.lampOwned) >= 1
+  }),
+
+  /* ⑤ ★★ **무늬가 난 뒤**에 열린다. 가르치는 것은 하나인데 이 게임의 뼈대다 —
      **빛이 등급을 정한다**(확정문 `plan-2026-08-17-varie-grade §3` · `-cutting §2-③`).
      ⚠ 보상이 체력이 아니다. **등급 자체가 보상**이다(산반 35만 → 풀문 115만).
        체력을 얹으면 진짜 보상이 가려진다.
@@ -170,7 +202,7 @@ export const QUESTS = Object.freeze([
     done:  s => arr(s.cuttings).some(c => c && c.varieFromCut && c.varieLightBand === 'bright')
   }),
 
-  /* ⑤ ★★★ **탈출의 둘째 축이다.** 이것을 안 가르치면 영영 모른다.
+  /* ⑥ ★★★ **탈출의 둘째 축이다.** 이것을 안 가르치면 영영 모른다.
      ------------------------------------------------------------
      `tutorial.canMoveOut` 은 **돈 200만 × 무늬 삽수를 판 적**을 본다(escapecut 확정).
      그런데 실측으로, **둘 중 하나도 못 찬 판에서는 그 말이 한 번도 안 나온다** —

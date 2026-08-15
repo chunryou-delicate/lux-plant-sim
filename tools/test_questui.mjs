@@ -17,7 +17,7 @@
         퀘스트를 말하고, 끝내면 **보상이 실제로 들어온다**
      B ★★ **Day 0 에 ③이 안 열린다** — 회귀. 확정문 코드를 그대로 붙였더니 첫날부터
         「잎 1장짜리 마디를 잘라 물에 꽂으세요」가 떴다(생장 창의 시연용 그루 때문)
-     C ★★ **할 일 창** — 팝업 틀 · 진행도 · 다섯 줄 · 도장 · 보상 · 닫는 길 넷
+     C ★★ **할 일 창** — 팝업 틀 · 진행도 · 여섯 줄 · 도장 · 보상 · 닫는 길 넷
      D ★★★ **밥상 창의 표현** — 몫이 보이나 · **두 수의 관계**가 보이나 ·
         ⚠ **거짓말을 안 하나**(곳간이 남았는데 「곳간이 없습니다」라고 하던 그 줄)
      E ★★ **콩나물+무순이 같이 있을 때** — 제일 헷갈릴 자리다
@@ -27,6 +27,11 @@
      여기는 **화면이 그 값을 어떻게 말하는가**만 본다.
 ============================================================ */
 import { launch, sleep } from './test_cdp.mjs';
+/* ★★ 2026-08-16 — **줄 수를 이 파일에 안 박는다.** 이날 다섯이 여섯이 됐고(`buy_lamp`),
+   박아 둔 `=== 5` 넷이 한꺼번에 낡아 「고장」으로 읽혔다. 표가 정본이다(START-HERE §2.8).
+   ⚠ 여기서 재야 하는 것은 「몇 줄인가」가 아니라 **「표에 있는 만큼 화면에 나오는가」**다. */
+import { QUESTS } from '../src/game/quest.js';
+const NQ = QUESTS.length;
 
 const BASE = process.env.BYEOT_URL || 'http://localhost:8963';
 let bad = 0, seen = 0;
@@ -78,8 +83,8 @@ console.log('\n══ B. ★★ 첫날 — 아직 아무것도 안 열린다 ═
   const v = await page.eval(`JSON.stringify(window.__questView())`);
   const s = await page.eval(`JSON.stringify(window.__questSnap())`);
   const view = JSON.parse(v), snap = JSON.parse(s);
-  ok('B-1 ★ 화면이 퀘스트 상태를 낸다 (창구가 살아 있다)', !!view && view.all.length === 5,
-     `줄 ${view && view.all.length}개`);
+  ok('B-1 ★ 화면이 퀘스트 상태를 낸다 (창구가 살아 있다)', !!view && view.all.length === NQ,
+     `줄 ${view && view.all.length}개 / 표 ${NQ}개`);
   ok('B-2 ★★★ 몬스테라가 안 왔으면 **모주 잎이 0** 이다 ' +
      '(생장 창의 시연용 그루를 모주로 읽으면 안 된다)',
      snap.motherLeaves === 0, `잎 ${snap.motherLeaves} · 화분 ${JSON.stringify(snap.cropPots.length)}개`);
@@ -90,7 +95,7 @@ console.log('\n══ B. ★★ 첫날 — 아직 아무것도 안 열린다 ═
 }
 
 /* ══ C. 할 일 창 ═══════════════════════════════════════════════════════════ */
-console.log('\n══ C. ★★ 할 일 창 — 팝업 틀 · 진행도 · 다섯 줄 · 도장 ════════');
+console.log('\n══ C. ★★ 할 일 창 — 팝업 틀 · 진행도 · 여섯 줄 · 도장 ════════');
 {
   /* 사람이 쓰는 길로 연다 — [가방] 안의 단추다 */
   await page.eval(`(()=>{ window.__byeotSheet.open(); window.__byeotSheet.tab('bag'); })()`, false);
@@ -124,16 +129,17 @@ console.log('\n══ C. ★★ 할 일 창 — 팝업 틀 · 진행도 · 다�
       scroll: c.scrollHeight > c.clientHeight+1,
       btnH: Math.round(document.getElementById('questGo').getBoundingClientRect().height) });})()`);
   const B = JSON.parse(box);
-  ok('C-5 ★★ **다섯 줄이 다 있다** (접기·탭 없이 한 화면)', B.rows === 5, `${B.rows}줄`);
-  ok('C-6 ★★ 진행도를 **수로** 말한다', /\d+\s*\/\s*5/.test(B.title), B.title);
+  ok(`C-5 ★★ **${NQ}줄이 다 있다** (접기·탭 없이 한 화면)`, B.rows === NQ, `${B.rows}줄`);
+  /* ⚠ 템플릿 문자열 안에서는 `\d` 가 그냥 `d` 가 된다 — 정규식으로 쓰려면 **두 번 젖혀야** 한다 */
+  ok('C-6 ★★ 진행도를 **수로** 말한다', new RegExp(`\\d+\\s*/\\s*${NQ}`).test(B.title), B.title);
   ok('C-7 ★ 진행도 **띠**도 같은 값을 말한다', /^\d+%$/.test(B.bar), B.bar);
-  ok('C-8 ★★★ **보상이 다섯 줄에 다 보인다** (하나도 빈칸이 아니다)',
-     B.rew.length === 5 && B.rew.every(r => r && r.trim() && r.trim() !== '—'), JSON.stringify(B.rew));
+  ok(`C-8 ★★★ **보상이 ${NQ}줄에 다 보인다** (하나도 빈칸이 아니다)`,
+     B.rew.length === NQ && B.rew.every(r => r && r.trim() && r.trim() !== '—'), JSON.stringify(B.rew));
   ok('C-9 ★★ 보상 문구를 화면이 안 지어냈다 — 체력 값이 **정의에서** 나온다',
      B.rew.filter(r => /체력 \+\d/.test(r)).length === 3 &&
      B.rew.some(r => /무늬 등급/.test(r)) && B.rew.some(r => /이사/.test(r)),
      JSON.stringify(B.rew));
-  ok('C-10 ★★ 카드가 화면 안이고 **안 구른다** (다섯 줄이 한눈에)',
+  ok('C-10 ★★ 카드가 화면 안이고 **안 구른다** (모든 줄이 한눈에)',
      B.inView && B.scroll === false, `inView ${B.inView} · scroll ${B.scroll}`);
   ok('C-11 ★ 단추가 44px 이상', B.btnH >= 44, `${B.btnH}px`);
 
@@ -325,7 +331,7 @@ for (const w of [360, 390, 430]) {
       overflow: document.documentElement.scrollWidth > innerWidth, cut,
       closeH: Math.round(document.getElementById('questClose').getBoundingClientRect().height) });})()`);
   const q = JSON.parse(Q);
-  ok(`W-${w} ★★ 할 일 창 — 다섯 줄이 **한 화면에** · 안 잘린다`,
+  ok(`W-${w} ★★ 할 일 창 — ${NQ}줄이 **한 화면에** · 안 잘린다`,
      q.inView && !q.scroll && !q.overflow && !q.cut, Q);
   ok(`W-${w} ★ [✕]가 44px 이상`, q.closeH >= 44, `${q.closeH}px`);
   await page.eval(`window.__byeotPopClose()`, false);

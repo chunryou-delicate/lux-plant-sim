@@ -508,7 +508,32 @@ export const SCRIPTS = {
     { who: 'jachwi', text: '자르는 게 늘리는 거였구나.' }
   ],
 
-  /* ④ ★★ **빛이 등급을 정한다** (확정문 `varie-grade §3` · `cutting §2-③`).
+  /* ④ ★★★ **등을 산다** (2026-08-16 박사님 확정 · `quest.js §buy_lamp`).
+     ------------------------------------------------------------
+     ⚠⚠ 이 줄은 **광고가 아니라 경고**다. 실측으로 등 없이 가는 길은 38% 만 나가고
+       나머지는 **전부 파산**한다(`bcd29d7`). 그런데 지금까지 그 사실을 말하는 자리가
+       `tutorial.js §LAMP_NUDGE_DAY` — **가을 이레째에 한 번 지나가는 말** 하나뿐이었다.
+     ⚠ 금액(25,000원)도 계절(가을)도 **안 읊는다** — 둘 다 `tutorial.js` 것이고,
+       여기 적으면 값이 움직일 때 대사만 낡는다(2026-08-11 에 실제로 그랬다).
+     ★ 몬이는 「사라」가 아니라 **「왜 여기가 어두운가」**를 말한다. 그게 이 게임의 주제다. */
+  questBuyLamp: [
+    { who: 'jachwi', face: 'tired', text: '해가 짧아졌어.' },
+    { who: 'moni',   face: 'curious', text: '여긴 원래 해가 잘 안 들잖아. 이제 더 안 들 거야.' },
+    { who: 'jachwi', text: '그럼 어떡해.' },
+    { who: 'moni',   text: '**볕을 사 오면 돼.**' },
+    { who: 'jachwi', face: 'surprise', text: '볕을 사?' },
+    { who: 'moni',   face: 'happy', text: '식물등. 켜 놓은 자리는 밝은 자리가 돼. 여기서 밝은 칸을 만드는 방법은 그거 하나야.' }
+  ],
+  /* ★ 끝난 뒤에 **다음 줄을 가리킨다** — 밝은 자리가 생겼으니 ⑤(밝은 데서 뿌리내리기)가 열린다.
+     ⚠ 여기서 「무늬 등급이 오른다」까지 말하지 않는다. 그건 ⑤ 가 할 말이고,
+       미리 말하면 ⑤ 가 열릴 때 할 말이 없어진다. */
+  questDoneBuyLamp: [
+    { who: 'jachwi', text: '켰어. 생각보다 안 밝네.' },
+    { who: 'moni',   face: 'curious', text: '사람 눈엔 그래. 식물한텐 아니야.' },
+    { who: 'moni',   face: 'happy', text: '이제 이 방에도 **밝은 자리**가 있어. 뭘 거기 둘지 잘 골라.' }
+  ],
+
+  /* ⑤ ★★ **빛이 등급을 정한다** (확정문 `varie-grade §3` · `cutting §2-③`).
      ⚠ 퍼센트를 안 읊는다 — 몬이는 규칙을 말하지 숫자를 말하지 않는다(`varieSecond` 와 같은 규율).
      ⚠ 등급 이름(산반·하프문·풀문)도 아직 안 쓴다. 플레이어가 본 적이 없다. */
   questVarieBright: [
@@ -1166,6 +1191,7 @@ export const QUEST_OPEN_SCRIPT = Object.freeze({
   crop_mix:     'questCropMix',
   siru5_cycle5: 'questSiru5',
   first_cut:    'questFirstCut',
+  buy_lamp:     'questBuyLamp',
   varie_bright: 'questVarieBright',
   sell_varie:   'questSellVarie'
 });
@@ -1173,6 +1199,7 @@ export const QUEST_DONE_SCRIPT = Object.freeze({
   crop_mix:     'questDoneCropMix',
   siru5_cycle5: 'questDoneSiru5',
   first_cut:    'questDoneFirstCut',
+  buy_lamp:     'questDoneBuyLamp',
   varie_bright: 'questDoneVarieBright',
   sell_varie:   'questDoneSellVarie'
 });
