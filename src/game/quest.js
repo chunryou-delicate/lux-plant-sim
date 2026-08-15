@@ -87,6 +87,11 @@ const isRooted = c => !!c && ROOTED.includes(c.status);
 /* ══ 다섯 줄 ═══════════════════════════════════════════════════════════
    각 줄이 갖는 것:
      ko      이름 — 화면 배너·기록이 쓴다
+     reward  ★ **세상이 주는 보상**의 이름 (2026-08-18 신설 · 할 일 창이 쓴다).
+             ⚠ 체력은 **여기 안 적는다** — 값이 `data/balance/stamina.json` 것이라
+               여기 적으면 수가 두 벌이 되고 한쪽이 반드시 낡는다(§2.8).
+               체력을 주는 셋은 이 칸이 **없고**, 화면이 `stamina.rulesOf(S).quests[id]`
+               에서 읽어 「체력 +N」을 짓는다. 이 칸이 있는 것은 **체력이 0 인 둘**뿐이다.
      todo    ★ **아래 한 줄이 그대로 쓸 「지금 할 일」.** 28자 이하다
              (`docs/player_guide.md §0` 실측 — 폰 360px 에서 한 줄이 26자)
      why     몬이가 말하지 않는 「왜」. 안내판·기록이 쓴다
@@ -156,6 +161,8 @@ export const QUESTS = Object.freeze([
   Object.freeze({
     id: 'varie_bright',
     ko: '밝은 데서 뿌리내리기',
+    /* ★ 체력이 0 인 까닭이 곧 이 이름이다 — 보상은 **등급 자체**다(위 ⚠) */
+    reward: '무늬 등급이 오릅니다',
     teaches: ['빛이 무늬 등급을 정한다'],
     why: '어두운 자리는 산반이 흔하고, 밝은 자리는 하프문·풀문이 납니다.',
     todo: () => '무늬 삽수를 밝은 자리에서 뿌리내리세요',
@@ -175,6 +182,8 @@ export const QUESTS = Object.freeze([
   Object.freeze({
     id: 'sell_varie',
     ko: '무늬를 값으로 만든다',
+    /* ★ 이것이 이 게임의 마지막 문이다. 체력을 얹으면 그 사실이 가려진다 */
+    reward: '이사가 열립니다',
     teaches: ['탈출 = 돈 + 무늬 삽수를 판 적'],
     why: '이 방을 나가는 조건은 둘입니다 — 이사비, 그리고 무늬 삽수를 판 적이 있는 것.',
     todo: () => '무늬 삽수를 내놓아 팔아 보세요',
@@ -216,6 +225,8 @@ export function questView(S, snapshot) {
     if (!isDone) { try { isOpen = !!q.opens(s, { ...ctx, q }); } catch { isOpen = false; } }
     if (isOpen) open.push(q.id);
     all.push({ id: q.id, ko: q.ko, todo: questTodo(q), why: q.why, teaches: q.teaches,
+               /* ★ 체력이 아닌 보상의 이름. 없으면 화면이 stamina 에서 「체력 +N」을 짓는다 */
+               reward: q.reward || null,
                state: isDone ? 'done' : isOpen ? 'open' : 'locked' });
   }
   /* ★ 「지금 할 일」은 **하나만** 보여 준다. 목록을 내면 심부름 목록이 된다.
