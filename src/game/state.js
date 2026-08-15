@@ -183,6 +183,44 @@ export function newState(opt = {}) {
 export function pot0(S) { return S.pots[0] || null; }
 export function hasPlant(S) { return S.pots.length > 0; }
 
+/* ============================================================
+   ★★ 여러 그루 — 화분 ↔ 생장 창의 그루를 잇는 이름 (2026-08-15)
+   ------------------------------------------------------------
+   생장 창(plant_grow.html)은 그루를 **id 로** 들고 있다(§다개체 등록부).
+   코어는 화분마다 그 id 를 하나씩 들고 다니며 「이 화분의 그루를 꽂아라」라고 부른다.
+
+   ★ 선물로 온 첫 그루는 `__main__` 이다 — 생장 창이 부팅 때부터 갖고 있던 **바로 그 그루**다.
+     새 id 를 주면 옛 판을 열 때 빈 그루가 하나 더 생기고, 화면의 몬스테라는 아무도 안 굴린다.
+   ⚠ 그래서 `growthId` 는 **화분에 적어 두고 세이브에도 싣는다.** 순서(pots[0])로 정하면
+     첫 화분을 팔거나 옮기는 날 이름이 통째로 밀린다. */
+export const MAIN_GROWTH_ID = '__main__';
+export function growthIdOf(pot) {
+  if (!pot) return null;
+  return pot.growthId || MAIN_GROWTH_ID;
+}
+
+/* ★★ 빛 이력의 정본은 **화분마다**다 (2026-08-15 다개체).
+   `S.dliHist` 는 그 첫 화분의 **대표 칸**이다 — 작물(`firstPlay.beansprout`)이 시루 여럿으로
+   갈릴 때 쓴 규약과 같다(first_play §syncCropLead). 사본이 아니라 **같은 배열**을 가리키므로
+   둘이 어긋날 수가 없다. 세이브도 화면도 옛 이름을 그대로 읽는다.
+   ⚠ 화분 목록이 바뀌면(도착·심기·판매·복원) 반드시 이걸 다시 부른다. */
+export function syncPotLead(S) {
+  if (!S) return S;
+  const p = pot0(S);
+  if (!p) return S;
+  if (!Array.isArray(p.dliHist)) p.dliHist = Array.isArray(S.dliHist) ? S.dliHist : [];
+  S.dliHist = p.dliHist;
+  return S;
+}
+/* 이 화분의 빛 이력(정본). 없으면 만들어 준다 — 옛 세이브·옛 화분도 여기로 들어온다. */
+export function potHist(S, pot) {
+  const p = pot || pot0(S);
+  if (!p) return null;
+  if (!Array.isArray(p.dliHist)) p.dliHist = [];
+  if (p === pot0(S)) S.dliHist = p.dliHist;
+  return p.dliHist;
+}
+
 /* ★★ 도착 진행도 — **줄기 1개짜리로 온다** (2026-08-04 박사님 확정)
    ------------------------------------------------------------
    원문: *"몬스테라 줄기 1개일 때 줘서 2개째 자라는 걸로 하자"*
@@ -313,9 +351,16 @@ export function givePlant(S, io, opt = {}) {
        **온 날을 채운다.** null 로 두면 선물로 온 화분이 도착하자마자 목말라 있다 —
        받자마자 벌이 된다. 첫 주기는 도착일부터 센다. */
     wateredOnDay: S.day,
-    arrivalGrowthDays: growthDays
+    arrivalGrowthDays: growthDays,
+    /* ★ 생장 창의 어느 그루냐 (2026-08-15 다개체). 선물은 **부팅 때부터 있던 그 그루**다 —
+       새 id 를 주면 빈 그루가 하나 더 생기고 화면의 몬스테라는 아무도 안 굴린다. */
+    growthId: MAIN_GROWTH_ID,
+    /* ★ 이 그루가 받은 빛 이력(정본). `S.dliHist` 는 이것의 대표 칸이다(§syncPotLead).
+       도착 시점의 `S.dliHist` 를 **그대로 가리킨다** — 새 배열을 만들면 그 순간 둘이 갈린다. */
+    dliHist: Array.isArray(S.dliHist) ? S.dliHist : []
   };
   S.pots.push(pot);
+  syncPotLead(S);
   pushLog(S, `🪴 몬스테라가 도착했습니다 — 이미 ${growthDays}일 자란 개체입니다`);
   return pot;
 }
@@ -755,7 +800,9 @@ export function waterIntervalOf(band, season) {
      opt.season  'spring'|'summer'|'autumn'|'winter'
    반환 { dryDays, interval, leftDays, dry, canWater, wateredOnDay } */
 export function potWaterStatus(S, opt = {}) {
-  const p = pot0(S);
+  /* ★ `opt.pot` — **어느 그루냐** (2026-08-15 다개체). 안 주면 예전처럼 첫 화분이다.
+     루프가 화분마다 따로 재야 하는데, 자리마다 밝기가 달라 주기(밴드)도 그루마다 다르다. */
+  const p = opt.pot || pot0(S);
   if (!p || !S) return null;
   /* 없는 칸은 **오늘 준 것으로 읽는다.** 0 으로 읽으면 300일째 세이브가 열리자마자
      "물 준 지 300일"이 되어 그 판의 몬스테라가 영영 안 자란다. */
@@ -780,7 +827,7 @@ export function potWaterStatus(S, opt = {}) {
    ★ 돈이 안 든다. `waterCrop` 과 같은 판단이다.
    반환 { watered, already, dryDays, interval, leftDays, events } */
 export function waterPot(S, opt = {}) {
-  const p = pot0(S);
+  const p = opt.pot || pot0(S);          // ★ opt.pot — 어느 그루냐(다개체). 안 주면 첫 화분
   if (!p) { const e = new Error('[물주기] 아직 몬스테라가 없습니다'); e.tutorialInput = true; throw e; }
   if (!p.slotId && !p.at) {
     const e = new Error('[물주기] 화분을 먼저 방 안에 놓아 주세요');

@@ -123,6 +123,43 @@ export function createGrowthAdapter(iframe) {
     ready, missing, assertContract,
     has: (name) => !!fn(name),
 
+    /* ════════════════════════════════════════════════════════════════════
+       ★★ 여러 그루 (2026-08-15 · plant_grow §다개체 등록부)
+       ────────────────────────────────────────────────────────────────────
+       아래의 `setDailyLight`·`advanceTo`·`leafStats`… 는 **지금 꽂혀 있는 그루**의 것이다.
+       그루를 고르는 것은 `select(id)` 하나뿐이고, 그 뒤의 모든 창구가 그 그루를 가리킨다.
+       ⇒ 그래서 42개 함수의 모양이 한 글자도 안 바뀌었다(설계 §전역 교체).
+
+       ★ 첫 그루의 id 는 `__main__` 이다 — plant_grow 가 부팅 때부터 갖고 있던 그 그루다.
+         한 그루짜리 판에서 `select('__main__')` 은 **아무 일도 안 한다**(이미 그것이라서).
+       ⚠ 옛 plant_grow 에는 이 창구가 없다. 그때는 `multi()` 가 false 다 —
+         호출부는 그루가 둘 이상이면 **열지 말아야 한다**(조용히 한 그루에 겹쳐 쓰면
+         두 화분이 같은 형태를 공유하는, 제일 늦게 발견되는 사고가 난다). */
+    multi()      { return !!fn('selectPlant') && !!fn('addPlant'); },
+    plantIds()   { const f = fn('plantIds'); return f ? f() : null; },
+    current()    { const f = fn('currentPlant'); return f ? f() : null; },
+    plantInfo(id){ const f = fn('plantInfo'); return f ? f(id) : null; },
+
+    /* 이 그루를 꽂는다. **없으면 던진다** — 조용히 딴 그루를 굴리면 그 화분은 영영 안 자란다. */
+    select(id) {
+      const f = fn('selectPlant');
+      if (!f) throw new Error(
+        `[생장] plant_grow 에 selectPlant 가 없습니다 — 여러 그루를 굴릴 수 없습니다 (요청: ${id})`);
+      return f(id);
+    },
+    /* 새 그루를 등록한다(꽂지는 않는다). `{ id, seed, day, calDay, slotId }` */
+    addPlant(spec) {
+      const f = fn('addPlant');
+      if (!f) throw new Error('[생장] plant_grow 에 addPlant 가 없습니다 — 새 그루를 만들 수 없습니다');
+      return f(spec);
+    },
+    /* 그루를 거둔다. 기본 그루는 못 지운다(plant_grow 가 던진다). */
+    removePlant(id) {
+      const f = fn('removePlant');
+      if (!f) throw new Error('[생장] plant_grow 에 removePlant 가 없습니다');
+      return f(id);
+    },
+
     /* 하루치 빛 — 숫자로 넘긴다. ★ null 도 반드시 넘긴다(어제 값이 남으면 안 된다). */
     setDailyLight(dli) { return must('setDailyLight')(dli); },
 
