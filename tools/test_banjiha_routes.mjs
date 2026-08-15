@@ -1172,6 +1172,9 @@ check('H-3 저장·복원을 해도 확정 무늬가 두 번 나지 않는다', 
 const SEEDS = Array.from({ length: 40 }, (_, i) => i + 1);
 function runRoute(name, opt) {
   const runs = SEEDS.map(seed => play({ ...opt, seed }));
+  /* ★ 어느 경로의 판인지를 판마다 적어 둔다 — 여러 경로를 합쳐 볼 때
+     「이 판이 어디 것이냐」를 나중에 못 물어보면 짐작으로 답하게 된다(§2 규칙 3) */
+  for (const r of runs) r.route = (name.match(/경로 \S+/) || [name])[0];
   const ok = runs.filter(r => r.movedOut);
   const days = ok.map(r => r.lastDay);
   const rate = ok.length / runs.length;
@@ -1333,6 +1336,17 @@ check('G-2b ★세 경로가 중앙값 안에 성립한다', () => {
 check('G-2c ★세 경로가 여름을 넘겨 끝난다 — 가을·식물등·겨울 콘텐츠를 실제로 만난다', () => {
   const all = [...A.ok, ...B.ok, ...C.ok];
   const summer = all.filter(r => r.season === 'summer');
+  /* ★★ 2026-08-16 — **재는 것을 assert 앞으로 옮겼다.** 뒤에 두면 실패하는 순간
+     `assert` 가 던져서 **정작 알고 싶은 내역이 한 줄도 안 찍힌다.**
+     빨간 줄이 뜨는 판일수록 「어떤 판이냐」가 궁금한 법인데 그때만 입을 다물고 있었다. */
+  if (summer.length) {
+    info(`★여름에 끝난 ${summer.length}판 — ` + summer.map(r =>
+      `${r.route || '?'}/튜토${r.lastDay}일(확정무늬 ${r.grantDay == null ? '안 받음' : r.grantDay + '일'}` +
+      `·삽수 ${r.cuttingsSold}개·잎 ${r.maxHeldLeaves ?? '?'})`).join(' · '));
+    const noGrant = summer.filter(r => r.grantDay == null).length;
+    info(`  ⤷ 그중 확정 무늬를 **안 받고** 나간 판 ${noGrant}/${summer.length} — ` +
+         `안 받았다면 프롤로그 보장 잎(2·3번째)을 잘라 판 것이다`);
+  }
   assert.equal(summer.length, 0,
     `★이사한 판 ${all.length}개 중 ${summer.length}개가 아직 여름에 끝납니다 ` +
     `(가장 빠른 것 튜토 ${Math.min(...summer.map(r => r.lastDay))}일) — ` +

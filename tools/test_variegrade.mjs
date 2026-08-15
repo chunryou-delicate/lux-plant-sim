@@ -387,7 +387,10 @@ t('G-3 ★ 등급 ↔ 스킨 키를 양쪽으로 물어볼 수 있다 (화면이
   assert.equal(gradeOfMatNum(1).id, 'fullmoon', 'leaf_mat1(핑크-로즈핑크)');
   assert.equal(gradeOfSkinAsset('speckle_greencream').id, 'sanban');
   const keys = skinKeysOfGrade('fullmoon');
-  assert.equal(keys.length, 5 * 3, `풀문 스킨 키가 ${keys.length}개다 (5갈래 × 3판)`);
+  /* ⚠ 갈래 수를 **박지 마라** — 2026-08-16 에 차콜이 풀문에 들어가 5 → 6 이 됐고
+     이 줄만 낡아 「고장」으로 읽혔다. 표에서 읽으면 갈래가 늘어도 안 낡는다(§2.8). */
+  const fullN = VARIE_GRADES.find(g => g.id === 'fullmoon').assets.length;
+  assert.equal(keys.length, fullN * 3, `풀문 스킨 키가 ${keys.length}개다 (${fullN}갈래 × 3판)`);
   assert.ok(keys.includes('leaf_mat55'), 'fullalbo 대표가 빠졌다');
   return `풀문 스킨 키 ${keys.length}개 · 하프문 ${skinKeysOfGrade('halfmoon').length}개 · 산반 ${skinKeysOfGrade('sanban').length}개`;
 });

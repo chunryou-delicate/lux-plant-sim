@@ -781,7 +781,12 @@ const VARIE_GRADES_FALLBACK = Object.freeze({
       { id: 'variegata_gold', ko: '오로레아-골드',     matNum: 16 },
       { id: 'rose_pink',      ko: '핑크-로즈',         matNum: 43 },
       { id: 'mauve',          ko: '모브-라벤더그레이', matNum: 37 },
-      { id: 'fullalbo',       ko: '알보-전체흰',       matNum: 55 }
+      { id: 'fullalbo',       ko: '알보-전체흰',       matNum: 55 },
+      /* ★ 2026-08-16 — 차콜을 여기 넣었다(박사님: *"3은 니가 정해"*).
+         눈으로 안 정하고 **섬네일을 재서** 정했다: 으뜸색 (21,25,25) · 색 1,480가지로
+         초록 기미가 없고 잎 전체가 한 색이다 — 모브·알보와 같은 무리다.
+         자세한 것은 `data/balance/varie_grades.json` §_unassignedDoc. */
+      { id: 'charcoal',       ko: '차콜-다크그린',     matNum: 49 }
     ] }
   ],
   sale: { cuttingMult: 1.0, potMult: 1.4, synergy: { 0: 1.0, 1: 1.0, 2: 1.25, 3: 1.5 } },
@@ -797,7 +802,8 @@ const VARIE_GRADES_FALLBACK = Object.freeze({
   },
   legacyGradeId: 'sanban',
   prologueGrades: { 1: 'plain', 2: 'sanban', 3: 'halfmoon' },
-  unassignedAssets: [{ id: 'charcoal', ko: '차콜-다크그린', matNum: 49 }]
+  /* ✅ 2026-08-16 — 비었다. 차콜을 풀문에 넣어 19갈래가 다 자리를 잡았다(위 ★). */
+  unassignedAssets: []
 });
 
 /* 파일 한 장 → 쓸 수 있는 규칙 한 벌. **파일이 이기고 없는 칸은 밑값**(stamina 규약).
