@@ -207,6 +207,9 @@ check('F ★탈출구 — 포트를 못 사도 혹 난 삽수를 내놓으면 �
        `(분갈이 유예 ${P.graceDaysOf('water', false)}일 > 최대 대기 ${SH.MARKET_CONTACT_DAYS.max}일)`);
 });
 
+/* 민무늬 잎 한 장 값 — 정본에서 읽는다(수를 박지 않는다) */
+const LEAF1 = SH.priceOf({ leaves: 1, variegatedLeaves: 0 }).won;
+
 check('G 값 — 잎 수와 무늬 잎 수', () => {
   const rows = [];
   for (const [l, v] of [[1, 0], [1, 1], [2, 0], [2, 1], [3, 0], [3, 1], [6, 0], [6, 2]]) {
@@ -214,8 +217,19 @@ check('G 값 — 잎 수와 무늬 잎 수', () => {
     rows.push(`잎${l}·무늬${v} ${won(q.won)}(${q.grade})`);
   }
   info('  ' + rows.join(' · '));
-  /* 잎 1~2장은 삽수 단가 12,000 · 3장부터 성체 단가 10,000 — 작게 잘라 파는 쪽이 잎당 유리하다 */
-  assert.ok(SH.priceOf({ leaves: 1, variegatedLeaves: 0 }).won === 12_000);
+  /* ★★ 2026-08-16 — **박아 둔 12,000 이 낡았다.** 옛 사다리는 「잎 1~2장은 삽수 단가 12,000 ·
+     3장부터 성체 10,000」이라 **작게 잘라 파는 쪽이 잎당 유리했다.** 무늬 등급 확정문이
+     그 축을 걷었다 — 잎당 값은 어디서나 같고, 삽수와 그루는 **파는 길**(×1.0 대 ×1.4)이 가른다.
+     ⇒ 재야 하는 것은 「12,000 인가」가 아니라 **「쪼개는 쪽이 이득이 아닌가」**다.
+     ⚠ 값을 임의로 낮춘 것이 아니다. 무지 1잎은 정본(`varie_grades.json`)의 20,000원이다. */
+  const one = SH.priceOf({ leaves: 1, variegatedLeaves: 0 }).won;
+  assert.ok(one > 0, '민무늬 잎1 값이 0 입니다');
+  assert.ok(SH.priceOf({ leaves: 2, variegatedLeaves: 0 }).won >= one * 2,
+    '★잎 2장을 1+1 로 쪼개는 쪽이 이득입니다 — 잘 키운 벌이 돌아왔습니다');
+  /* ★ 그루가 삽수보다 비싸다 — 「키워서 통째로 판다」가 성립하는 근거다 */
+  assert.ok(SH.priceOf({ leaves: 3, variegatedLeaves: 0, form: 'pot' }).won >
+            SH.priceOf({ leaves: 3, variegatedLeaves: 0, form: 'cutting' }).won,
+    '★그루가 삽수보다 안 비쌉니다');
 });
 
 /* ============================================================
@@ -386,8 +400,9 @@ for (const dli of [1.5, 3.77, 6, 12]) {
   for (let i = 0; i < 60; i++) { G.setDailyLightSteady(dli); G.advanceTo(G.calendarDay() + 1); }
   const c = G.leafStats().leaves;
   console.log(`  DLI ${String(dli).padEnd(5)} | 143일 ${a}장 → 173일 ${b}장 → 233일 ${c}장 · ` +
-              `30일 새 잎 ${b - a}장 ⇒ 삽수 수입 상한 ${won((b - a) * 12_000)}/30일 ` +
-              `(하루 ${won((b - a) * 12_000 / 30)})`);
+              /* ⚠ 잎당 값도 박지 마라 — 정본(`varie_grades.json`)에서 읽는다(위 ★★) */
+              `30일 새 잎 ${b - a}장 ⇒ 삽수 수입 상한 ${won((b - a) * LEAF1)}/30일 ` +
+              `(하루 ${won((b - a) * LEAF1 / 30)})`);
 }
 console.log('  ⤷ ★병을 3개 사도 30일 매출이 24,000원 그대로다 — 자를 잎이 없기 때문이다.');
 console.log('    용기를 늘리는 것은 수입을 늘리지 않는다.');

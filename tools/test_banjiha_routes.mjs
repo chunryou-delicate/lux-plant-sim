@@ -38,7 +38,12 @@ import { seasonAt, seasonDayAt, buyLamp, canMoveOut, moveOut, TUTORIAL_RULES,
    ⇒ 이 재현이 지키던 약속 하나가 바뀐다 — 예전에는 「팔 수 있으면 그 날 돈이 됐다」였다.
      지금은 **연락을 기다리는 날**이 끼므로 이사에 닿는 날이 뒤로 밀린다. 그 밀림을 재는 것이
      이번 개편의 핵심 실측이다(§B·§H 의 날짜). 지름길로 메우지 않는다. */
-import { orderItem, stockOf, incomingOf, priceOf, varieLeavesNeededFor,
+/* ⚠ 2026-08-16 — `priceOf` 를 맨몸으로 부르면 **그루를 삽수 값(×1.0)으로** 세고
+   무늬 잎을 **전부 산반**으로 읽는다. 재현이 그 어림으로 「모주를 내놓을까」를 정하는데,
+   그 때문에 이사 성공률이 A 38→13% 로 떨어져 보였다(값은 오히려 두 배가 됐는데도).
+   ⇒ 그루는 `potPriceOf`, 삽수는 `cuttingPriceOf` 로 부르고 **등급을 반드시 넘긴다.** */
+import { orderItem, stockOf, incomingOf, priceOf, potPriceOf, cuttingPriceOf,
+         potLeafGradeListOf, prologueLeafGradeListOf, varieLeavesNeededFor,
          listCutting, listPot, dealListing, marketStatus, marketGate, listingFor,
          CATALOG, buyPriceOf, SELLABLE_CUTTING_STATUS } from '../src/game/shop.js';
 import { takeCutting, cuttableNow, cutBudgetOf, motherStatsNow, METHODS,
@@ -239,7 +244,8 @@ function cuttingValueOf(S) {
   for (const c of S.cuttings || []) {
     if (!SELLABLE_CUTTING_STATUS.includes(c.status)) continue;
     const st = cuttingStatsNow(c);
-    won += priceOf({ leaves: st.leaves, variegatedLeaves: st.variegatedLeaves }).won;
+    won += cuttingPriceOf({ leaves: st.leaves, variegatedLeaves: st.variegatedLeaves,
+                            leafGrades: c.leafGrade }).won;
     n++;
   }
   return { won, n };
@@ -484,8 +490,12 @@ function play(opt = {}) {
     if (!ts.movedOut && pot0(S) && canMoveOut(ts).learningLeft.length === 0) {
       const v = viewOf(S, io);
       const cut = cuttingValueOf(S);
+      /* ★ 그루다 — ×1.4 로 세고 등급을 넘긴다(위 ⚠). 장부가 비면 프롤로그 다리가 세운다 */
       const potWon = v.stats && v.stats.leaves >= 1
-        ? priceOf({ leaves: v.stats.leaves, variegatedLeaves: v.stats.variegatedLeaves }).won : 0;
+        ? potPriceOf({ leaves: v.stats.leaves, variegatedLeaves: v.stats.variegatedLeaves,
+            leafGrades: potLeafGradeListOf(pot0(S), v.stats.leaves, v.stats.variegatedLeaves)
+                     || prologueLeafGradeListOf(S, pot0(S), v.stats.leaves, v.stats.variegatedLeaves) }).won
+        : 0;
       if (ts.cashWon + cut.won + potWon >= MOVE_OUT_WON) {
         /* ★ 여기가 ㉡ 의 **출구**다 — 키우던 무늬 삽수도 이때는 판다.
            ⚠ 안 팔면 `canMoveOut` 의 둘째 축(무늬 삽수를 판 적이 있다)이 영영 안 열려
@@ -899,21 +909,41 @@ check('D-2 콩나물을 돌리면 돈이 덜 준다 — 그게 콩나물의 값�
    ★ 2026-08-04 전면 개편. 옛 공식(`× (1+60·v²)`, v=무늬 잎 **비율**)은 잎이 적을수록 값이
      올라서 **잘 키우는 것이 손해**였다 — 잎 1장짜리 무늬 삽수가 732,000원이었다.
      여기서 재는 것은 그 병이 실제로 뒤집혔나다. */
-check('E 값 — 잎 2장 이하로는 이사비가 안 된다 · 키워서 팔기가 떼어 팔기보다 이득이다', () => {
-  assert.equal(priceOf({ leaves: 1, variegatedLeaves: 0 }).won, 12_000, '민무늬 삽수 잎1');
-  /* ★ 정본(sale_economy.md)이 원래 적어 둔 「몬스테라 삽수(알보) 80,000」 그 값이다.
-     옛 공식은 같은 물건을 732,000원으로 읽었다 — 정본에 없던 값이었다. */
-  assert.equal(priceOf({ leaves: 1, variegatedLeaves: 1 }).won, 80_000, '무늬 삽수 잎1 (산반)');
-  /* ★ 2026-08-09 — **1,830,000 → 2,133,333원.** 하프문 배수를 61 → 640/9(≈71.11) 로 올려서다.
-     ⚠ 값이 오른 게 아니라 **사다리가 제 모양이 된 것**이다 — 산반 8 과 섹터 320/9 는 실제
-       시장가인데 하프문 61 만 옛 공식의 상한(`1+60·1²`)을 물려받은 값이었고, 그래서
-       산반→섹터가 4.4배 뛰는데 섹터→하프문은 1.7배뿐이었다. 이제 섹터의 정확히 두 배다.
-     ⚠ 왜 지금 올렸나 — **이사비 200만을 하프문 하나로 넘기기 위해서다.** 61 이면 191만이라
-       9만원이 모자라 `G-3` 이 이사 성공 0/40 으로 잡았다. */
-  assert.equal(priceOf({ leaves: 3, variegatedLeaves: 3 }).won, 2_133_333, '무늬 성체 잎3(하프문)');
-  /* ★ 잎 2장은 아무리 무늬여도 이사비에 못 닿는다 — 「마지막 한 장이 이사를 만든다」의 근거다 */
-  assert.ok(priceOf({ leaves: 2, variegatedLeaves: 2 }).won < TUTORIAL_RULES.moveOutCostWon,
-    '★잎 2장(섹터)으로 이사비에 닿습니다 — 하프문이 필요 없어집니다');
+check('E 값 — 등급이 값을 정한다 · 키워서 팔기가 떼어 팔기보다 이득이다', () => {
+  /* ★★ 2026-08-16 — **이 검사가 통째로 낡아 있었다.** 확정문
+     `plan-2026-08-17-varie-grade.md` 가 등급의 축을 바꿨기 때문이다:
+       옛것 — 등급 = 무늬 잎 **장수**(0/1/2/3장) · 갈래 넷(무지·산반·섹터·하프문)
+       지금 — 등급 = 무늬의 **종류**(산반/하프문/풀문) · 갈래 셋 · **섹터는 없앴다**
+     ⇒ 박아 둔 세 값(12,000 · 80,000 · 2,133,333)은 **옛 사다리의 눈금**이라 그대로 못 쓴다.
+     ⚠ 값을 임의로 낮춘 것이 아니다. 확정문 §2 의 표를 그대로 옮겨 적는다. */
+  const won = (n, v, form, grades) =>
+    priceOf({ leaves: n, variegatedLeaves: v, form, leafGrades: grades }).won;
+
+  /* ① 확정문 §2 의 「잎 1장 값(삽수 기준)」 넷 — 정본은 `data/balance/varie_grades.json` 이다 */
+  assert.equal(won(1, 0, 'cutting'),                       20_000, '무지 삽수 잎1');
+  assert.equal(won(1, 1, 'cutting', ['sanban']),          350_000, '산반 삽수 잎1');
+  assert.equal(won(1, 1, 'cutting', ['halfmoon']),        750_000, '하프문 삽수 잎1');
+  assert.equal(won(1, 1, 'cutting', ['fullmoon']),      1_150_000, '풀문 삽수 잎1');
+
+  /* ② ★ **그루가 삽수보다 비싸다** — 확정문 §2 의 ×1.4. 옛것에는 이 축이 아예 없었고,
+     대신 `CUTTING_GRADE_CAP`(삽수는 산반까지)이 그 일을 했다. 그 뚜껑은 걷었다 —
+     근거였던 「삽수는 무늬가 유지될지 모른다」가 2026-08-17 삽수 단순화로 사라져서다. */
+  for (const [n, v, g] of [[1, 0, null], [1, 1, ['sanban']], [3, 2, ['plain', 'sanban', 'halfmoon']]])
+    assert.ok(won(n, v, 'pot', g) > won(n, v, 'cutting', g),
+      `★잎 ${n}장(무늬 ${v})에서 그루가 삽수보다 안 비쌉니다 — 뿌리·수형의 값이 사라졌습니다`);
+
+  /* ③ ★★★ **프롤로그 그루가 1,960,000원**이다 — 확정문 §2 가 못 박은 그 수다.
+     잎1 무지 + 잎2 산반 + 잎3 하프문 = 1,120,000 → 그루 ×1.4 → 시너지 ×1.25.
+     ⚠ 이사비 2,000,000원에 **40,000원 모자란다. 그게 의도다** —
+       박사님: *"나머지는 채소로 벌거나 추가 몬스테라 변이로 나거나"*. */
+  assert.equal(won(3, 2, 'pot', ['plain', 'sanban', 'halfmoon']), 1_960_000, '프롤로그 그루');
+  assert.ok(won(3, 2, 'pot', ['plain', 'sanban', 'halfmoon']) < TUTORIAL_RULES.moveOutCostWon,
+    '★프롤로그 그루 하나로 이사비가 채워집니다 — 받은 것만 팔면 끝나는 판이 됩니다');
+
+  /* ⚠ **「잎 2장으로는 이사비가 안 된다」는 이제 안 잰다.** 확정문 §2 ⚠ 가 잎 수 뚜껑을
+     걷었고, 삽수인지 그루인지는 **잎 수가 아니라 파는 길**(×1.0 대 ×1.4)이 가른다.
+     실제로 잎 2장 전부 풀문인 그루는 3,220,000원이라 이사비를 넘는다 — **그것이 맞다.**
+     풀문 둘을 만드는 것은 밝은 자리에서 15%를 두 번 뚫은 것이고, 그만한 값을 받아야 한다. */
 
   /* ★★ ① 잎 수에 우상향이다 — 잎이 늘어서 값이 **주는** 자리가 하나도 없어야 한다 */
   for (let v = 0; v <= 6; v++)
@@ -957,8 +987,11 @@ check('E 값 — 잎 2장 이하로는 이사비가 안 된다 · 키워서 팔�
   for (const n of [1, 2, 3, 6, 9, 12]) {
     const r = varieLeavesNeededFor(MOVE_OUT_WON, { leaves: n });
     rows.push(`잎${n}:${r.needVarieLeaves === null ? '불가' : r.needVarieLeaves + '장'}`);
-    if (n <= 2) assert.equal(r.needVarieLeaves, null, `★잎 ${n}장 삽수로 150만이 나왔습니다`);
-    else assert.ok(r.wonAtNeed >= MOVE_OUT_WON, `잎 ${n}장 역산이 목표에 못 미칩니다`);
+    /* ⚠ 「잎 1~2장으로는 불가」 단정을 걷었다 — 위 ⚠ 와 같은 까닭이다.
+       `varieLeavesNeededFor` 는 등급을 안 받아 **전부 산반**으로 어림잡으므로
+       여기서 재는 것은 「닿았다면 정말 목표를 넘는가」뿐이다. */
+    if (r.needVarieLeaves !== null)
+      assert.ok(r.wonAtNeed >= MOVE_OUT_WON, `잎 ${n}장 역산이 목표에 못 미칩니다`);
   }
   info('150만 역산 — ' + rows.join(' · '));
 });

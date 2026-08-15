@@ -322,14 +322,22 @@ check('G ★loop.nextDay 가 stepMarket 을 부른다 (배선이 사라지면 �
 /* ══ H · ★ 값은 안 흔들린다 ══════════════════════════════════════════ */
 check('H ★★올릴 때 매긴 값이 **그대로** 들어온다 — 깎는 사람이 없다', () => {
   const S = newGame(); openMarket(S);
-  const want = priceOf({ leaves: 11, variegatedLeaves: 3 }).won;
+  /* ★★ 2026-08-16 — **여기서 재는 자가 낡아 있었다.** 무늬 등급이 붙으면서
+     `priceOf` 가 `form` 과 `leafGrades` 를 받게 됐는데, 이 줄은 둘 다 안 넘겨서
+     **그루를 삽수 값(×1.0)으로 · 무늬 잎을 전부 산반으로** 어림잡고 있었다.
+     그래서 `listPot` 이 제값(그루 ×1.4 · 등급별)을 매기자 「값이 달라졌다」고 울었다.
+     ⚠ 값이 흔들린 게 아니다 — **자가 딴 것을 재고 있었다**(START-HERE §2.9-④와 같은 결).
+   ⇒ 이 검사가 재야 하는 것은 「얼마인가」가 아니라 **「올릴 때와 받을 때가 같은가」**다.
+     그러니 기댓값을 **올린 게시글에서** 가져온다 — 그러면 값이 움직여도 안 낡는다. */
   const r = listPot(S, { leaves: 11, variegatedLeaves: 3 });
-  assert.equal(r.listing.won, want, '★올리는 자리에서 값이 달라졌습니다');
+  const want = r.price.won;
+  assert.ok(want > 0, '★올린 값이 0 입니다');
+  assert.equal(r.listing.won, want, '★게시글에 적힌 값이 매긴 값과 다릅니다');
   while (marketStatus(S).contacted.length === 0) tick(S);
   const d = dealListing(S, r.listing.listingId);
   assert.equal(d.won, want, '★거래에서 값이 달라졌습니다 — 화면이 적은 값과 들어온 돈이 갈립니다');
   assert.equal(S.tutorial.cashWon, want, '★지갑에 들어온 값이 다릅니다');
-  info(`하프문(잎 11장 중 무늬 3장) ${won(want)} — 올릴 때와 받을 때가 **한 원도** 안 다르다`);
+  info(`그루(잎 11장 중 무늬 3장 · ${r.price.gradesFrom}) ${won(want)} — 올릴 때와 받을 때가 **한 원도** 안 다르다`);
   info(`⇒ 이사비 2,000,000원까지 여유 ${won(want - 2_000_000)} (${((want / 2e6 - 1) * 100).toFixed(1)}%) — ` +
        `**값을 ±10% 흔들면 탈출이 동전던지기가 된다.** 그래서 안 흔들었다`);
 });

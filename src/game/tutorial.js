@@ -13,7 +13,9 @@
  */
 
 import { seasonOf, DAYS_PER_SEASON } from '../engine/weather.js';
-import { priceOf } from './shop.js';
+/* ⚠ `priceOf` 를 **맨몸으로 부르지 마라** — 기본이 삽수(`form:'cutting'`)이고 등급을 안 준다.
+   그 둘 때문에 2026-08-16 에 `sellableWonOf` 가 그루를 절반 이하로 셌다(§sellableWonOf 의 ★★). */
+import { potPriceOf, cuttingPriceOf, potLeafGradeListOf, prologueLeafGradeListOf } from './shop.js';
 
 /* weather.js 는 **연중 절대 일수**를 받는다(0~359, 봄→여름→가을→겨울 각 90일).
    "여름 45일째"를 그 축으로 옮기려면 여름이 시작하는 90 을 더해야 한다 —
@@ -696,6 +698,21 @@ export function learningLeft(ts) {
      현금 + 살아 있는 삽수 값 + 모주 값(확정 무늬를 덧씌우고, 잘라낸 잎은 뺀 값)
    ⚠ 뿌리내리는 중인 삽수도 센다. 12일 뒤면 팔리는 물건이라 "가진 것"이 맞고,
      안 세면 자르자마자 무늬를 또 주게 된다. */
+/* ★★ 2026-08-16 — **이 함수가 그루를 절반 이하로 세고 있었다.** 재서 적는다.
+   ------------------------------------------------------------
+   무늬 등급(산반/하프문/풀문)이 붙으면서 `priceOf` 가 둘을 더 받게 됐는데
+   여기서는 **둘 다 안 넘기고 있었다**:
+     ① `form` — 기본이 `'cutting'`(×1.0)이라 **그루를 삽수 값으로** 셌다
+     ② `leafGrades` — 없으면 무늬 잎을 **전부 산반**(제일 싼 무늬)으로 읽는다
+   반지하 탈출판(잎 11장 중 무늬 3장)으로 재면 **1,210,000원** 대 실제 **2,817,500원**이다.
+
+   ⚠⚠ 그런데 이 어림값이 **문을 연다** — `varieGrantCheck` 가 이걸로 「확정 무늬를 그만 줄까」를
+     정하고, 재현이 이걸로 「모주를 내놓을까」를 정한다. 어림이 200만에 못 닿으니
+     **모주를 영영 안 내놓고**, 안 내놓으니 못 나가고, 못 나간 채 하루 16,667원이 나가 파산했다.
+     실측: 이사 성공률 A 38→13% · B 60→13% · C 100→28%.
+   ★ **값이 낮아진 게 아니다.** 같은 판의 잭팟 총액 중앙값은 오히려 2,225,333 → 4,482,500원으로
+     **올랐다.** 파는 값은 두 배가 됐는데 **게임이 그 사실을 몰랐다.**
+   ⇒ START-HERE §2 그대로다 — 숫자가 이상하면 코드가 아니라 **재는 자**를 먼저 의심하라. */
 export function sellableWonOf(S, ctx = {}) {
   const ts = S.tutorial;
   let won = ts.cashWon;
@@ -707,18 +724,26 @@ export function sellableWonOf(S, ctx = {}) {
     const leaves = Number.isInteger(c.leaves) ? c.leaves : (c.source && c.source.leaves);
     const varie = Number.isInteger(c.variegatedLeaves)
       ? c.variegatedLeaves : ((c.source && c.source.variegatedLeaves) || 0);
+    /* 삽수는 `form` 기본이 이미 맞다(×1.0). 그래도 **등급은 넘겨야** 한다 —
+       안 넘기면 하프문 잎이 산반 값을 받는다. 장부(`c.leafGrade`)가 정본이다. */
     if (Number.isInteger(leaves) && leaves >= 1)
-      won += priceOf({ leaves, variegatedLeaves: varie }).won;
+      won += cuttingPriceOf({ leaves, variegatedLeaves: varie, leafGrades: c.leafGrade }).won;
   }
   const v = varieView(S, ctx);
   const st = v.stats;
   if (st && Number.isInteger(st.leaves)) {
     /* 모주는 **잘라낸 만큼을 뺀다** — growth 는 잘린 것을 모른다(propagation.js §유한성).
        여기서 안 빼면 이미 팔아 버린 잎을 또 가진 것으로 센다. */
-    const lost = (((S.pots || [])[0] || {}).pendingCutLoss || {}).leaves || 0;
+    const p0 = (S.pots || [])[0];
+    const lost = ((p0 || {}).pendingCutLoss || {}).leaves || 0;
     const leaves = Math.max(0, st.leaves - lost);
     const varie = Math.min(leaves, Math.max(0, st.variegatedLeaves || 0));
-    if (leaves >= 1) won += priceOf({ leaves, variegatedLeaves: varie }).won;
+    /* ★ 그루다 — `potPriceOf`(×1.4)로 센다. 등급은 장부에서 읽고,
+       장부가 아직 비었으면 프롤로그 다리(`prologueLeafGradeListOf`)가 §4 대로 세워 준다. */
+    if (leaves >= 1)
+      won += potPriceOf({ leaves, variegatedLeaves: varie,
+        leafGrades: potLeafGradeListOf(p0, leaves, varie)
+                 || prologueLeafGradeListOf(S, p0, leaves, varie) }).won;
   }
   return won;
 }
