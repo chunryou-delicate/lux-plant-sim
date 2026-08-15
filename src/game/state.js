@@ -365,6 +365,140 @@ export function givePlant(S, io, opt = {}) {
   return pot;
 }
 
+/* ══════════════════════════════════════════════════════════════════════════
+   ★★★ 씨앗을 심는다 — **두 번째 그루가 생기는 유일한 길** (2026-08-15 · 걸음 3)
+   ──────────────────────────────────────────────────────────────────────────
+   박사님 지시: *"여러 그루를 굴릴 수 있도록 하자. 어차피 보상으로 주는 거보다는 느리잖아?"*
+
+   ★ 그 말씀이 곧 밸런스의 답이다 — **선물 몬스테라는 유효 45일짜리로 오고, 씨앗은 0일부터**다.
+     돈으로 병렬화해도 느리다. 그래서 열어도 판이 안 무너진다.
+
+   ══ 왜 이 함수가 없으면 안 되나 ═══════════════════════════════════════════
+   `monstera_seed` 는 상점에 있고 살 수도 있는데 **그 씨앗을 쓰는 코드가 한 줄도 없었다.**
+   사면 가방에 쌓이기만 하고 화면이 아무 말도 안 한다 — 이 저장소가 제일 싫어하는 조용한 실패다.
+
+   ══ 순서가 계약이다 (givePlant · repotCutting 과 **같은 규칙**) ════════════
+     ① 던질 수 있는 것을 다 던져 본다 — 체력 · 재고 · 자리 · **형태 세우기**
+     ② 다 됐으면 재고를 뺀다
+     ③ 화분을 남긴다
+     ④ 체력을 깎는다
+   ⇒ 중간에 던지면 **아무것도 안 바뀐다.** 씨앗만 사라지고 화분은 안 생기는 일이 없다.
+
+   ★ 형태를 **먼저** 세운다(생장 창에 그루를 만들고 0일로 그린다). 못 그리면 화분을 안 만든다 —
+     "화분은 있는데 화면엔 없는 개체"를 막는 그 규칙 그대로다(givePlant §도착).
+
+     opt.potItemId  심을 그릇(상점 id). 기본 `nursery_pot`(검은 모종포트)
+     opt.at·slots·size  자리. 안 주면 화분만 만들고 자리는 나중에 setPotAt 으로 준다
+     opt.seed       생장 창에 줄 씨앗(모양·색). 안 주면 이 판에서 만든다
+     opt.log        기록 함수
+   반환 화분 객체
+   ⚠ 화면(단추·그루 고르기)은 여기 없다 — `docs/handoff/multiplant-to-plan.md` 에 코드째로 적었다.
+══════════════════════════════════════════════════════════════════════════ */
+export const SEED_ITEM_ID = 'monstera_seed';
+/* 심을 그릇 — 상점의 `pot`(검은 모종포트)다. 삽수 분갈이가 쓰는 그 그릇이고
+   (`propagation.CONTAINERS.soil.itemId`), 여기서 새 품목을 만들지 않는다. */
+export const SEED_POT_ITEM_ID = 'pot';
+/* 씨앗에서 난 그루의 도착 진행도. **0 이다** — 그것이 이 길이 느린 이유의 전부다.
+   ⚠ 여기에 숫자를 하나 올리는 순간 「사면 빨라진다」가 된다. 올리려면 기획이 정할 것. */
+export const SEED_START_GROWTH_DAYS = 0;
+
+export function plantMonsteraSeed(S, io, opt = {}) {
+  const log = typeof opt.log === 'function' ? opt.log : (m => pushLog(S, m));
+  const g = io && io.growth;
+  if (!g || typeof g.setGrowth !== 'function')
+    throw new Error('[심기] 생장 창이 준비되지 않았습니다 — 형태를 세울 수 없어 심지 않습니다');
+  /* ★ 그루를 못 고르는 생장 창이면 **여기서 막는다.** 심고 나서 알면 이미 늦다 —
+     그 판은 화분 둘에 그루 하나가 되어 매일 던진다. */
+  if (typeof g.multi !== 'function' || !g.multi())
+    throw new Error('[심기] 이 생장 창은 그루를 하나만 굴립니다 — 두 번째 그루를 심을 수 없습니다 ' +
+                    '(plant_grow 에 selectPlant/addPlant 가 있는지 확인해 주세요)');
+
+  const potItemId = opt.potItemId || SEED_POT_ITEM_ID;
+  /* ① 체력 — **아무것도 바꾸기 전에** 묻는다. 심기는 `sow` 와 같은 손이다(새 비용을 안 만든다). */
+  {
+    const st = canActStamina(S, 'sow');
+    if (!st.ok) { const e = new Error('[심기] ' + st.reason); e.tutorialInput = true; throw e; }
+  }
+  /* ① 재고 — 씨앗 한 립 + 그릇 하나. **묻기만 하고 아직 안 뺀다.** */
+  assertStockAll(S, [{ itemId: SEED_ITEM_ID, qty: 1 }, { itemId: potItemId, qty: 1 }]);
+
+  /* ① 자리 — 줬으면 여기서 재 본다(던질 수 있다). 아직 화분에 안 쓴다. */
+  const potId = opt.id || nextPotId(S);
+  const spot = opt.at ? resolvePlacement(potId, opt.at, opt) : null;
+
+  /* ① 형태 — 생장 창에 그루를 만들고 0일로 세운다. 못 그리면 여기서 끝난다. */
+  const growthId = `g:${potId}`;
+  const growthSeed = Number.isInteger(opt.seed) ? (opt.seed >>> 0) : newGrowthSeed(S, potId);
+  g.addPlant({ id: growthId, seed: growthSeed, day: SEED_START_GROWTH_DAYS });
+  let res = null;
+  try {
+    g.select(growthId);
+    res = g.setGrowth(SEED_START_GROWTH_DAYS);
+  } catch (e) {
+    try { g.removePlant(growthId); } catch { /* 치우다 또 터지면 그건 생장 창 몫이다 */ }
+    throw e;
+  }
+  if (res && res.drawn === false) {
+    try { g.removePlant(growthId); } catch { }
+    const err = new Error(`[심기] 새 그루를 화면에 그리지 못했습니다` +
+                          `${res.drawError ? ` — ${res.drawError}` : ''}. 씨앗은 그대로 있습니다`);
+    err.drawError = res.drawError ?? null;
+    err.recoverable = true;
+    throw err;
+  }
+
+  /* ② 재고를 뺀다 — 여기부터는 되돌릴 일이 없다 */
+  useStock(S, SEED_ITEM_ID, 1);
+  useStock(S, potItemId, 1);
+
+  /* ③ 화분을 남긴다 */
+  const pot = {
+    id: potId,
+    slotId: spot ? spot.slotId : null,
+    at: spot ? spot.at : null,
+    plantId: ARRIVAL.plantId,
+    potAsset: ARRIVAL.potAsset,
+    variegated: false,
+    daysPlanted: 0,
+    fedDays: 0,
+    arrivedOnDay: S.day,
+    /* 심는 날은 물을 준 날이다 — 심을 때 물을 붓는 것이 현실이고, 그래야
+       "방금 심었는데 오늘은 마른 날"이 안 생긴다(setCropAt 과 같은 판단). */
+    wateredOnDay: S.day,
+    arrivalGrowthDays: SEED_START_GROWTH_DAYS,
+    growthId, growthSeed,
+    dliHist: [],
+    /* ★ 씨앗에서 났다는 표시. 계통(gen)은 **0 이다** — 삽수가 아니라 실생이다. */
+    fromSeed: true, gen: 0
+  };
+  S.pots.push(pot);
+  syncPotLead(S);
+
+  /* ④ 성공한 뒤에 깎는다 */
+  spendStamina(S, 'sow');
+  log(`🌱 몬스테라 씨앗을 심었습니다 — ${potId} (0일부터 시작합니다. 선물로 온 그루보다 느립니다)`);
+  return pot;
+}
+
+/* 다음 화분 이름. `pot_01`(선물) 다음부터 빈 번호를 찾는다 — 팔고 다시 심어도 안 겹친다. */
+function nextPotId(S) {
+  const used = new Set((S.pots || []).map(p => p && p.id));
+  for (let i = 2; i < 1000; i++) {
+    const id = `pot_${String(i).padStart(2, '0')}`;
+    if (!used.has(id)) return id;
+  }
+  throw new Error('[심기] 화분 이름이 바닥났습니다');
+}
+/* 새 그루의 씨앗. **판마다 다르고 그 판 안에서는 다시 나온다** — `S.sim.seed` 와
+   화분 이름에서 만든다. 이 값은 화분에 적히고 세이브에 실린다(save §growthSeed).
+   ⚠ `Math.random()` 을 쓰지 않는다. 그러면 저장·복원 사이에 얼굴이 바뀐다. */
+function newGrowthSeed(S, potId) {
+  let h = (Number.isInteger(S.sim && S.sim.seed) ? S.sim.seed : 0) ^ 0x9e3779b9;
+  const s = `${potId}|${S.day}`;
+  for (let i = 0; i < s.length; i++) h = Math.imul(h ^ s.charCodeAt(i), 0x01000193) >>> 0;
+  return h >>> 0;
+}
+
 export function modeOf(S) { return SIM_MODES[S.sim.mode] || SIM_MODES.real; }
 
 /* ============================================================

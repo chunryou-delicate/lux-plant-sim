@@ -142,6 +142,79 @@ console.log('\nD. shown — 무늬가 실제로 그려지는 날을 낸다');
   ok(shown && shown[0] >= 90, `무늬가 보이기 전에 참이 되지 않는다 (유효 ${shown && shown[0]})`);
 }
 
+/* ── E. ★★ 두 장 보장 (2026-08-15 박사님 확정 — 잎 2·3) ──
+   ★ 한 장이면 어느 쪽으로도 못 간다: 모주에 두면 탈출이 안 열리고, 떼면 모주가 0 등급이 된다.
+     두 장이라야 「한 장은 잘라 꽂고 한 장은 남긴다」가 성립한다.
+   ⚠ 여기서도 재는 것은 **캐논이 안 깨졌는가**다 — 확률·난수 스트림·잎 수가 그대로여야 한다. */
+console.log('\nE. 두 장 보장 — 잎 2·3 (seed 92158 · DLI 8 · 400일)');
+{
+  const r = await page.eval(`(()=>{
+    const probBefore = P.varieProb;
+    plantSeed(92158); matResetAll(); resetDailyLight(); setPrologueVarieLeaf(0);
+    setGrowth(0); setDailyLightSteady(8); for(let d=1; d<=400; d++) advanceTo(d);
+    const plain = varieStateAll().map(x=>[x.leafBirth, x.varie, x.prologue]);
+    plantSeed(92158); matResetAll(); resetDailyLight(); setPrologueVarieLeaf([2,3]);
+    setGrowth(0); setDailyLightSteady(8); for(let d=1; d<=400; d++) advanceTo(d);
+    const armed = varieStateAll().map(x=>[x.leafBirth, x.varie, x.prologue]);
+    const st = prologueVarieState(), probAfter = P.varieProb;
+    setPrologueVarieLeaf(0);
+    return JSON.stringify({ plain, armed, st, probBefore, probAfter }); })()`).then(JSON.parse);
+
+  console.log(`    보장 없이: ${JSON.stringify(r.plain)}`);
+  console.log(`    2·3 보장: ${JSON.stringify(r.armed)}`);
+  console.log(`    장부: leafNos ${JSON.stringify(r.st.leafNos)} · 준 잎 ` +
+              `${JSON.stringify(r.st.leaves.map(l => [l.leafNo, l.leafBirth]))}`);
+  ok(r.probBefore === 0.20 && r.probAfter === 0.20,
+     `두 장을 켜도 확률 정본이 그대로다 — ${r.probBefore} → ${r.probAfter}`);
+  ok(r.plain.length === r.armed.length,
+     `잎 수가 같다 — ${r.plain.length}장 (난수 스트림이 안 밀렸다)`);
+  ok(JSON.stringify(r.st.leafNos) === JSON.stringify([2, 3]), '목록이 2·3 이다');
+
+  const varied = r.armed.filter(x => x[1]).length;
+  ok(varied >= 2, `무늬 잎이 **두 장 이상**이다 — ${varied}장 (한 장이면 여기서 못 나간다)`);
+  const marked = r.armed.map((x, i) => x[2] ? i + 1 : 0).filter(Boolean);
+  ok(marked.length > 0 && marked.every(n => n === 2 || n === 3),
+     `보장 표식이 2·3번째 잎에만 붙는다 — ${JSON.stringify(marked)}`);
+  /* ★ 제일 센 자 — 두 판에서 달라진 잎이 **보장 준 그 잎들뿐**이라야 한다 */
+  const diff = r.armed.filter((x, i) => r.plain[i] && r.plain[i][1] !== x[1]).map(x => x[0]);
+  const givenBirths = r.st.leaves.map(l => l.leafBirth);
+  ok(diff.every(b => givenBirths.includes(b)),
+     `보장 말고는 한 잎도 안 바뀐다 — 달라진 잎 ${JSON.stringify(diff)} · 준 잎 ${JSON.stringify(givenBirths)}`);
+  ok(r.armed.slice(3).every(x => !x[2]),
+     `네 번째 잎부터는 안 붙는다 — 뒤 ${Math.max(0, r.armed.length - 3)}장 전부 굴림`);
+}
+
+/* ── F. 두 장을 켜도 「이미 다 났으면」 안 준다 ── */
+console.log('\nF. 두 장 보장 — 운으로 이미 두 장이 났으면 덤을 안 준다');
+{
+  const r = await page.eval(`(()=>{
+    P.varieProb = 1;                                   /* 첫 잎부터 무조건 무늬(튜닝용) */
+    plantSeed(92158); matResetAll(); resetDailyLight(); setPrologueVarieLeaf([2,3]);
+    setGrowth(0); setDailyLightSteady(8); for(let d=1; d<=200; d++) advanceTo(d);
+    const all = varieStateAll(), st = prologueVarieState();
+    P.varieProb = 0.20; setPrologueVarieLeaf(0);
+    plantSeed(92158); matResetAll(); resetDailyLight();
+    return JSON.stringify({ marked: all.filter(x=>x.prologue).length, leaves: all.length, st }); })()`)
+    .then(JSON.parse);
+  ok(r.marked === 0,
+     `이미 두 장이 난 그루에는 덤을 안 준다 — 잎 ${r.leaves}장 중 보장 ${r.marked}장`);
+  ok(r.st.leaves.length === 0, '장부도 안 적힌다');
+}
+
+/* ── G. 한 장짜리 옛 호출(숫자 하나)이 그대로 산다 ── */
+console.log('\nG. 옛 호출부 — setPrologueVarieLeaf(2) 가 예전과 같다');
+{
+  const r = await page.eval(`(()=>{
+    plantSeed(92158); matResetAll(); resetDailyLight();
+    const one = setPrologueVarieLeaf(2);
+    const two = setPrologueVarieLeaf([2,3]);
+    setPrologueVarieLeaf(0);
+    return JSON.stringify({ one, two }); })()`).then(JSON.parse);
+  ok(JSON.stringify(r.one.leafNos) === JSON.stringify([2]) && r.one.leafNo === 2,
+     `숫자 하나를 넘기면 한 장이다 — leafNos ${JSON.stringify(r.one.leafNos)} · 옛 이름 leafNo ${r.one.leafNo}`);
+  ok(r.two.leafNo === 2, `옛 이름(leafNo)은 **첫 장**을 낸다 — ${r.two.leafNo}`);
+}
+
 await page.close();
 console.log(fails ? `\nprologue_varie: FAIL ${fails}건` : '\nprologue_varie: PASS');
 process.exit(fails ? 1 : 0);
