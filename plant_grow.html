@@ -1129,7 +1129,9 @@ function num(o){ const r={}; for(const k in o) if(typeof o[k]==='number') r[k]=o
 //    다만 '어느 슬롯의 값을 쓸지'는 지금부터 슬롯 id로 받아두면, 그때 손댈 곳이 줄어든다.
 let PLANT_SLOT=null;        // 이 그루가 놓인 슬롯 id (null이면 가장 밝은 자리)
 let PLANT_DLI=null;         // 가장 최근 하루의 DLI
-const DLI_HIST=[];          // 최근 며칠치 (뒤가 최신)
+/* ★ let 이다(2026-08-15 다개체). 그루를 갈아 끼울 때 **참조만 바꾼다** — 배열을 통째로
+   복사하면 두 벌이 되고, 한쪽만 자라는 날이 온다. 안의 값을 만지는 코드는 그대로 산다. */
+let DLI_HIST=[];            // 최근 며칠치 (뒤가 최신)
 const DLI_KEEP=14;          // 이동평균에 쓸 만큼만 남긴다
 
 // 하루치 빛을 넘긴다. 계약 객체 daily_light/1을 통째로 줘도 되고 숫자만 줘도 된다.
@@ -1371,7 +1373,7 @@ function calcMatureProb(ctx){
      `data/growth_tuning.json · leaf_interval` 의 **잎 간격표**로 대체됐다(§ageOf).
      격자(spawnStep·matSpan·seedEnd)는 그대로이고, 그 격자를 며칠에 걸쳐 걷는지만 표가 정한다.
      ⇒ 그래서 143·146 같은 옛 날짜 상수는 더 이상 안 맞는다. 표를 지우면 옛 곡선으로 돌아간다. */
-const MAT_STATE=new Map();          // leafBirth → {gauge, matured, rolls, locked}
+let MAT_STATE=new Map();            // leafBirth → {gauge, matured, rolls, locked}  ★let: 그루 교체(§다개체)
 
 /* ===== 잎 건강 — 바램과 낙엽 (박사님 지시 2026-08-03) ==========================
    ⚠ 이 항목은 2026-08-02 에 **활력(vigor) 취소·보류** 로 내려갔던 것이다. 박사님이 되살렸다.
@@ -1387,7 +1389,7 @@ const MAT_STATE=new Map();          // leafBirth → {gauge, matured, rolls, loc
      < survive(1.2)             바랜다 → (상위 모드에서만) 떨어진다
    ★ 초보는 바랜 채로 유지된다. 안 떨어지고 안 죽는다(박사님 확정 2026-08-03).
      낙엽 경로는 코드로 넣되 drop_enabled=false 로 꺼 둔다 — 나중에 켜기만 하면 된다. */
-const LEAF_HEALTH=new Map();        // leafBirth → {fade 0..1, dropped, hold}
+let LEAF_HEALTH=new Map();          // leafBirth → {fade 0..1, dropped, hold}  ★let: 그루 교체(§다개체)
 
 /* ===== 무늬 이력 — 잎마다 한 번 정하고 **기억한다** (2026-08-03 정정) ==========
    ★ MAT_STATE 와 정확히 같은 사고였다. 무늬는 `varie:rng()<calcVarieProb(...)` 한 줄로
@@ -1400,7 +1402,7 @@ const LEAF_HEALTH=new Map();        // leafBirth → {fade 0..1, dropped, hold}
    ★ 생장 로직은 안 바뀐다. `rng()` 은 **여전히 같은 자리에서 같은 횟수로** 뽑아 넘긴다 —
      난수 스트림도 마디·가지·잎의 형태도 한 글자도 안 움직이고, 바뀌는 것은
      "그 굴림을 언제 확정하느냐" 하나뿐이다. */
-const VARIE_STATE=new Map();        // leafBirth → true|false (한 번 정하면 안 바뀐다)
+let VARIE_STATE=new Map();          // leafBirth → true|false (한 번 정하면 안 바뀐다)  ★let: 그루 교체(§다개체)
 
 /* ===== ★★ 프롤로그 보장 — 「N번째 잎」 딱 한 장만 참으로 못 박는다 (2026-08-13 박사님 확정) =====
    ------------------------------------------------------------------------------
@@ -1428,7 +1430,7 @@ const VARIE_STATE=new Map();        // leafBirth → true|false (한 번 정하�
      · 이 잎이 N번째가 아니다                       — 자리를 옮겨 주지 않는다
    ⚠ 씨앗이 바뀌면(plantSeed → matResetAll) **다른 개체**라 `used` 도 같이 푼다.
      안 풀면 새 개체가 이유 없이 보장을 못 받는다(VARIE_STATE 를 비우는 것과 같은 사정이다). */
-const PROLOGUE_VARIE={ leafNo:0, used:false, leafBirth:null };
+let PROLOGUE_VARIE={ leafNo:0, used:false, leafBirth:null };   // ★let: 그루 교체(§다개체)
 /* n = 몇 번째 잎을 못 박나(1부터). 0·null 이면 끈다. 반환은 지금 상태. */
 function setPrologueVarieLeaf(n){
   const v=Math.max(0, Math.round(Number(n)||0));
@@ -2715,6 +2717,156 @@ function growthBlocked(){ return growthBlockReason(); }   // 왜 안 자라나(�
 // 임계값 정본이 실렸는가(읽기 전용). 코어가 "서버로 안 열었네"를 화면에 띄울 수 있게 낸다.
 // ⚠ 세터는 두지 않는다 — 밖에서 켤 수 있으면 로딩 게이트가 그 순간 장식이 된다.
 function thLoaded(){ return TH_LOADED; }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   ★★★ 여러 그루 — 전역 교체(context swap)          (2026-08-15)
+   설계 정본: docs/handoff/growth-multiplant-design.md §방식
+   ───────────────────────────────────────────────────────────────────────────
+   개체 상태를 만지는 함수가 마흔 개가 넘는다. 전부 인자를 받게 고치면 큰 수술이고
+   그만큼 버그가 들어온다. 그럴 필요가 없다 — **생장은 동기 처리**라서
+   「한 번에 한 그루씩」 전역에 꽂아 두고 굴리면 된다.
+   `buildPlant()` 는 원래부터 "지금 전역에 꽂힌 그루"를 그린다. 그루를 바꿔 꽂을 뿐이다.
+
+   ★ 아무도 `addPlant`·`selectPlant` 를 안 부르면 **이 블록은 한 줄도 안 돈다.**
+     `PLANTS` 가 비어 있고 `CUR_PLANT` 가 null 이라, 옛 한 그루 판은 예전과 비트 단위로 같다.
+
+   ★ 무엇이 그루마다인가 (전수 조사, 2026-08-15 다시 셈 — 설계 문서의 8개는 낡았다)
+       SEED · GROWTH · CAL_DAY · PLANT_SLOT · PLANT_DLI · DLI_HIST · PROP_MODE
+       MAT_STATE · LEAF_HEALTH · VARIE_STATE · PROLOGUE_VARIE · plantGroup
+     ⇒ 열둘이다. 설계 당시엔 성숙·무늬·잎건강 이력(2026-08-03)과 프롤로그 보장(2026-08-13)이
+       아직 없었다. 이 넷을 빠뜨리면 **그루끼리 잎 이력이 샌다** — 조용히 틀리는 유형이다.
+
+   ★ 무엇이 공용인가 — ASSETS·PET_COLOR·PET_AXIS·SHEATH_* 캐시(에셋 단위라 그루와 무관),
+     P·ADJ·GT·TH_MONSTERA(튜닝 정본), TUNING_MODE, scene·cam·renderer.
+     PLANT_HUE·PLANT_SAT·PLANT_MID·PLANT_AGE·PLANT_GROW·SOIL_Y·PLACED·STEMS·USE_COUNT 은
+     **파생값**이다 — `buildPlant()` 도입부가 SEED·GROWTH 에서 매번 다시 만든다. 옮기면 두 벌이 된다.
+
+   ⚠ 참조만 바꾼다. `DLI_HIST`·`MAT_STATE` 따위를 **복사**하면 두 벌이 되고,
+     한쪽만 자라는 날이 온다. 그래서 저 넷을 const 에서 let 으로 바꿨다.
+   ⚠ 그룹은 **scene 에 계속 둔다.** 뗐다 붙이면 다른 그루가 화면에서 사라진다.
+     대신 지금 고른 그루만 `visible` 로 둔다 — 확대창은 「그 그루의 창」이기 때문이다.
+     ★ 그루가 하나뿐이면 그 하나가 늘 보인다(옛 판과 같다).
+   ⚠ 진짜 동시 실행은 안 된다(비동기 중간에 다른 그루를 꽂으면 깨진다). 지금 구조에
+     비동기 생장은 없다. 생기면 그때 파일을 모듈 팩토리로 가른다(설계 문서 §C).
+═══════════════════════════════════════════════════════════════════════════ */
+const PLANTS=new Map();               // id → 개체 기록
+const MAIN_PLANT='__main__';          // 옛 한 그루 판이 쓰던 그 그루
+let CUR_PLANT=null;                   // null = 아직 아무도 다개체를 안 썼다
+
+/* 지금 전역에 꽂혀 있는 것을 그대로 기록으로 만든다(사본이 아니라 **같은 것**을 가리킨다) */
+function _plantRecordNow(id){
+  return { id, seed:SEED, growth:GROWTH, calDay:CAL_DAY,
+           slot:PLANT_SLOT, dli:PLANT_DLI, dliHist:DLI_HIST, propMode:PROP_MODE,
+           mat:MAT_STATE, health:LEAF_HEALTH, varie:VARIE_STATE, prologue:PROLOGUE_VARIE,
+           group:plantGroup };
+}
+function _ensureMain(){
+  if(!PLANTS.has(MAIN_PLANT)) PLANTS.set(MAIN_PLANT, _plantRecordNow(MAIN_PLANT));
+  if(CUR_PLANT==null) CUR_PLANT=MAIN_PLANT;
+  const m=PLANTS.get(MAIN_PLANT);
+  if(!m.group && plantGroup) m.group=plantGroup;   // init() 이 그릇을 늦게 만든 경우
+  return m;
+}
+/* 전역 → 기록. 스칼라만 옮긴다(컬렉션은 이미 같은 것을 가리키고 있다). */
+function _plantCapture(){
+  const p=PLANTS.get(CUR_PLANT); if(!p) return;
+  p.seed=SEED; p.growth=GROWTH; p.calDay=CAL_DAY;
+  p.slot=PLANT_SLOT; p.dli=PLANT_DLI; p.propMode=PROP_MODE;
+  p.dliHist=DLI_HIST; p.mat=MAT_STATE; p.health=LEAF_HEALTH;
+  p.varie=VARIE_STATE; p.prologue=PROLOGUE_VARIE; p.group=plantGroup;
+}
+/* 기록 → 전역. ★ rng 도 같이 되세운다 — buildPlant 가 매번 다시 만들지만,
+   그 사이에 rng 을 읽는 코드가 옛 그루의 흐름을 이어받으면 안 된다. */
+function _plantInstall(p){
+  SEED=p.seed>>>0; rng=mulberry32(SEED);
+  GROWTH=p.growth; CAL_DAY=p.calDay;
+  PLANT_SLOT=p.slot; PLANT_DLI=p.dli; PROP_MODE=p.propMode;
+  DLI_HIST=p.dliHist; MAT_STATE=p.mat; LEAF_HEALTH=p.health;
+  VARIE_STATE=p.varie; PROLOGUE_VARIE=p.prologue;
+  plantGroup=p.group;
+}
+function _plantShow(id){
+  const one=PLANTS.size<=1;
+  for(const [k,v] of PLANTS) if(v.group) v.group.visible = one ? true : (k===id);
+  requestRender();
+}
+
+/* 새 그루를 등록한다. **꽂지는 않는다** — 고르는 것은 selectPlant 다.
+     addPlant({ id, seed, day, calDay, slotId })
+   ⚠ 3D 무대(scene)가 있어야 한다. init() 뒤에 부를 것. */
+function addPlant(o){
+  o=o||{};
+  _ensureMain();
+  const id=String(o.id!=null? o.id : ('plant'+PLANTS.size));
+  if(PLANTS.has(id)) return plantInfo(id);
+  if(!scene) throw new Error('[생장] 3D 무대가 아직 없습니다 — addPlant 는 init() 뒤에 부르세요');
+  const g=new THREE.Group(); scene.add(g);
+  const day=Math.max(0, Math.min(GMAX, Math.round(Number(o.day)||0)));
+  PLANTS.set(id, { id,
+    seed: (o.seed!=null && isFinite(o.seed)) ? (o.seed>>>0) : ((Math.random()*4294967296)>>>0),
+    growth: day,
+    calDay: Math.max(0, Math.min(GMAX, Math.round(o.calDay!=null? Number(o.calDay) : day))),
+    slot: (o.slotId!=null? o.slotId : null),
+    dli: null, dliHist: [], propMode: 'batch',
+    mat:new Map(), health:new Map(), varie:new Map(),
+    prologue:{ leafNo:0, used:false, leafBirth:null },
+    group: g });
+  _plantShow(CUR_PLANT);
+  return plantInfo(id);
+}
+/* 이 그루를 전역에 꽂는다. 이 뒤의 setDailyLight·advanceTo·leafStats… 는 전부 이 그루의 것이다.
+   ★ 여기서 다시 그리지 않는다 — 그루마다 그룹이 따로라 마지막에 그린 모습이 그대로 서 있다.
+     매 교체마다 buildPlant 를 부르면 그루 수만큼 그리기가 늘어난다(부팅·하루가 그만큼 무거워진다). */
+function selectPlant(id){
+  _ensureMain();
+  const key=(id==null)? MAIN_PLANT : String(id);
+  const rec=PLANTS.get(key);
+  if(!rec) throw new Error('[생장] 모르는 그루입니다: '+key+
+                           ' (있는 것: '+[...PLANTS.keys()].join(', ')+')');
+  if(key===CUR_PLANT) return key;
+  _plantCapture();
+  CUR_PLANT=key;
+  _plantInstall(rec);
+  _plantShow(key);
+  return key;
+}
+/* 잠깐 그 그루로 굴리고 **반드시 되돌린다**(예외가 나도). */
+function usePlant(id, fn){
+  _ensureMain();
+  const prev=CUR_PLANT;
+  selectPlant(id);
+  try { return typeof fn==='function' ? fn(PLANTS.get(CUR_PLANT)) : null; }
+  finally { try{ selectPlant(prev); }catch(e){ console.error('[생장] 그루 되돌리기 실패', e); } }
+}
+/* 그루를 거둔다. 기본 그루(__main__)는 못 지운다 — 지우면 꽂을 것이 없어진다. */
+function removePlant(id){
+  _ensureMain();
+  const key=String(id);
+  if(key===MAIN_PLANT) throw new Error('[생장] 기본 그루는 지울 수 없습니다');
+  const rec=PLANTS.get(key); if(!rec) return false;
+  if(CUR_PLANT===key) selectPlant(MAIN_PLANT);
+  if(rec.group){ clearGroup(rec.group); if(scene) scene.remove(rec.group); }
+  PLANTS.delete(key);
+  _plantShow(CUR_PLANT);
+  return true;
+}
+function plantIds(){ return [...PLANTS.keys()]; }
+function plantCount(){ return PLANTS.size; }
+function currentPlant(){ _ensureMain(); return CUR_PLANT; }
+/* 읽기용 요약. 지금 꽂힌 그루는 **전역에서** 읽는다 — 기록은 교체할 때만 갱신되기 때문이다. */
+function plantInfo(id){
+  const key=(id==null)? CUR_PLANT : String(id);
+  const p=PLANTS.get(key); if(!p) return null;
+  const cur=(key===CUR_PLANT);
+  return { id:key, current:cur,
+           seed: cur? SEED : p.seed,
+           growth: cur? GROWTH : p.growth,
+           calDay: cur? CAL_DAY : p.calDay,
+           slotId: cur? PLANT_SLOT : p.slot,
+           dli: cur? PLANT_DLI : p.dli,
+           dliDays: (cur? DLI_HIST : p.dliHist).length,
+           leaves: (cur? VARIE_STATE : p.varie).size };
+}
 
 // ===== 형태 단계 (표시 전용) =====
 // 코어가 143·146 같은 숫자를 갖지 않게, 이름과 0..1 만 낸다. 경계는 growth 소유다.

@@ -1,6 +1,61 @@
 # 다개체 리팩터 설계 — growth 창
 
-**2026-08-01 · 설계만. 착수는 core 요청 시점.**
+**2026-08-01 설계 · 2026-08-15 착수.**
+
+---
+
+## ▶ 진행 상황 (2026-08-15)
+
+| 걸음 | 무엇 | 상태 |
+|---|---|---|
+| 1 | 엔진(`plant_grow.html`)이 여러 그루를 담는다 | **끝** |
+| 2 | 어댑터·코어가 그루를 골라 부른다 | — |
+| 3 | 씨앗을 심어 새 그루를 만든다 | — |
+| 4 | 삽수를 화분으로 승격(`promoteToPot`) | 다른 창이 `propagation.js` 를 쥐고 있어 **미착수** |
+
+### 걸음 1 — 실제로 한 것
+
+`plant_grow.html` 에 `PLANTS` 등록부와 `selectPlant`/`usePlant` 를 넣었다.
+방식은 아래 §전역 교체 그대로다 — **함수를 하나도 안 고쳤다.**
+
+★ **설계 당시의 「진짜 지속 상태 8개」는 낡았다.** 다시 세니 **열둘**이다:
+
+```
+SEED · GROWTH · CAL_DAY · PLANT_SLOT · PLANT_DLI · DLI_HIST · PROP_MODE
+MAT_STATE · LEAF_HEALTH · VARIE_STATE · PROLOGUE_VARIE · plantGroup
+```
+
+설계를 쓴 2026-08-01 에는 잎 이력 셋(`MAT_STATE`·`LEAF_HEALTH`·`VARIE_STATE`, 2026-08-03)과
+프롤로그 보장(`PROLOGUE_VARIE`, 2026-08-13)이 **아직 없었다.** `CAL_DAY` 는 그냥 빠져 있었다.
+이 넷을 빠뜨렸으면 **그루끼리 잎 이력이 새는** 조용한 버그가 났다.
+`vigor` 는 반대로 **아직 안 생겼다** — 그래서 목록에 없다.
+
+바꾼 선언은 다섯 줄뿐이다(`const` → `let`): `DLI_HIST`·`MAT_STATE`·`LEAF_HEALTH`·
+`VARIE_STATE`·`PROLOGUE_VARIE`. 참조를 갈아 끼우기 위해서다 —
+**복사하면 두 벌이 되고 한쪽만 자라는 날이 온다.**
+
+### 걸음 1 — 낸 창구
+
+| 함수 | 하는 일 |
+|---|---|
+| `addPlant({id, seed, day, calDay, slotId})` | 그루를 **등록**만 한다(안 꽂는다). 그룹을 만들어 scene 에 붙인다 |
+| `selectPlant(id)` | 그 그루를 전역에 꽂는다. **다시 그리지 않는다**(그루마다 그룹이 따로라 그대로 서 있다) |
+| `usePlant(id, fn)` | 잠깐 꽂고 굴린 뒤 **반드시 되돌린다**(예외가 나도) |
+| `removePlant(id)` | 거둔다. 기본 그루(`__main__`)는 못 지운다 |
+| `plantIds()`·`plantCount()`·`currentPlant()`·`plantInfo(id)` | 읽기 |
+
+★ **아무도 안 부르면 이 블록은 한 줄도 안 돈다.** `PLANTS` 가 비어 있고 `CUR_PLANT` 가
+`null` 이라, 옛 한 그루 판은 예전과 같은 길을 지난다.
+
+### 걸음 1 — 잰 것
+
+`tools/test_multiplant.mjs` (새 검사) · 한 그루 골든 전부 초록:
+`test_monstera_canon` · `test_maturation` · `test_growth_speed` · `test_prologue_varie` ·
+`test_multisiru` · `test_musun_view` · `test_save` · `test_first_play`
+
+부팅 무게 **13 GLB · 14.71MB** — 걸음 1 전과 같다(그루를 안 만들면 아무것도 안 는다).
+
+---
 
 `plant_grow.html`을 여러 그루가 각자 다른 슬롯 DLI를 받도록 바꾸는 방법.
 core가 어댑터 형태를 협의하자고 했으므로 먼저 구조를 확정해 둔다.
