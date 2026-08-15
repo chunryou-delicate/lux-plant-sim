@@ -68,10 +68,21 @@ async function walk() {
 }
 await walk();
 
+/* 다시 부팅한다. ⚠ `clear` 를 안 주면 **localStorage 를 안 지운다**(§M 이 그것으로 잰다) */
+async function boot(clear) {
+  await page.goto(`${BASE}/game.html`);
+  if (clear) { await page.eval(`localStorage.clear()`, false); await page.goto(`${BASE}/game.html`); }
+  await page.waitFor('!!window.__rv', 180000, 300);
+  await page.waitFor('window.__byeotBooted === true', 180000, 300);
+  await sleep(7000);
+  await walk();
+}
+
 const click = (id) => page.eval(`(()=>{const b=document.getElementById('${id}');
   if(!b) return false; b.click(); return true;})()`);
 const txt = (sel) => page.eval(`(()=>{const e=document.querySelector('${sel}');
   return e ? (e.textContent||'').replace(/\\s+/g,' ').trim() : '';})()`);
+const openTab = async (t) => { await page.eval(`window.__byeotSheet.open('${t}')`, false); await sleep(450); };
 const on = (id) => page.eval(`(()=>{const e=document.getElementById('${id}');
   return !!(e && e.classList.contains('on'));})()`);
 const nums = (s) => (String(s).match(/[\d,]*\d/g) || []).map(v => +v.replace(/,/g, ''));
@@ -108,8 +119,26 @@ console.log('\n== A. ★ 부팅하면 월초 스냅샷이 이미 열려 있다 =
 {
   const m = await store();
   ok('★ `byeot.month` 가 있다 (하루가 가기 전에 열려 있어야 첫날이 안 샌다)', !!m);
-  ok('  월초 지갑을 찍어 두었다', !!(m && m.snap && m.snap.cash > 0), m && String(m.snap.cash));
-  ok('  아직 아무것도 안 셌다', !!(m && m.run && m.run.days === 0));
+  ok('  월초 지갑을 찍어 두었다', !!(m && m.cur && m.cur.snap && m.cur.snap.cash > 0),
+     m && String(m.cur.snap.cash));
+  ok('  아직 아무것도 안 셌다', !!(m && m.cur && m.cur.run && m.cur.run.days === 0));
+  ok('★ **판 도장(runId)**이 찍혀 있다 (판이 바뀐 것을 이걸로 가른다)',
+     !!(m && typeof m.runId === 'string' && m.runId.length > 4), m && m.runId);
+  ok('  쌓인 장부는 아직 없다', !!(m && Array.isArray(m.log) && m.log.length === 0));
+
+  /* ★ [가방] 탭의 [가계부 다시 보기] — 아직 쌓인 것이 없다 */
+  await openTab('bag');
+  const b0 = await page.eval(`(()=>{const b=document.getElementById('ledgerBack');
+    return b ? {t:(b.textContent||'').trim(), dis:b.disabled,
+                hint:(document.getElementById('ledgerBackHint').textContent||'').trim(),
+                h:Math.round(b.getBoundingClientRect().height)} : null;})()`);
+  ok('★★ [가방] 탭에 **[가계부 다시 보기]** 단추가 있다', !!b0, b0 && b0.t);
+  ok('★ 쌓인 것이 없으면 **감추지 않고 회색**이다 (감추면 그런 길이 있다를 못 배운다)',
+     b0.dis === true);
+  ok('★★ 그리고 **왜 회색인지**를 바로 밑에 적는다 (§조용한 실패)',
+     /월세/.test(b0.hint), b0.hint);
+  ok('  단추가 44px 이상이다', b0.h >= 44, `${b0.h}px`);
+  await page.eval(`window.__byeotSheet.close()`, false); await sleep(300);
 }
 
 /* ── 판 세우기: 시루 하나를 놓고 심고 물 주고 거둔다 (화면 단추로) ──────── */
@@ -149,7 +178,7 @@ console.log('      거둔 횟수 :', harvested, '· 시루 :', await siruState()
 await nextDay(); await walk();               // 거둔 것을 하루 먹인다
 
 const gotG = await page.eval(`(()=>{const m=JSON.parse(localStorage.getItem('byeot.month'));
-  return m ? JSON.stringify({got:m.run.gotG, ate:m.run.ateG}) : 'none';})()`);
+  return m ? JSON.stringify({got:m.cur.run.gotG, ate:m.cur.run.ateG}) : 'none';})()`);
 ok('★ 거둔 것·먹은 것이 g 으로 쌓인다 (살림 시계가 돌기 전에도)',
    /"[가-힣]+":\s*\d+/.test(gotG), gotG);
 
@@ -158,7 +187,7 @@ ok('★ 거둔 것·먹은 것이 g 으로 쌓인다 (살림 시계가 돌기 �
 console.log('\n== B~G. ★★ 월세 낸 날 가계부가 뜬다 ==');
 {
   const before = await core();
-  const snap0 = ((await store()) || { snap: {} }).snap || {};
+  const snap0 = (((await store()) || {}).cur || {}).snap || {};
   console.log('      월초 스냅샷 :', JSON.stringify(snap0));
   const snapBefore = snap0.cash;
   await page.eval(`(()=>{window.__S().firstPlay.completed = true;})()`, false);
@@ -295,6 +324,93 @@ console.log('\n== H. ★★ 둘째 달은 지난달과 견준다 ==');
   ok('  닫는 길 — [알겠습니다]', (await click('monthGo')) && !(await on('monthPanel')));
 }
 
+/* ══ J·K. ★★ 다시 보기 — [가방] 단추 · 달 넘기기 (2026-08-18) ══════════════ */
+console.log('\n== J·K. ★★ 지난 가계부를 다시 본다 ==');
+{
+  const log = await page.eval(`(()=>{const m=JSON.parse(localStorage.getItem('byeot.month'));
+    return m ? m.log.length : -1;})()`);
+  ok('★★ 마감한 장부가 **목록으로 쌓인다**', log === 2, `${log}달`);
+  const bytes = await page.eval(`(()=>{const m=JSON.parse(localStorage.getItem('byeot.month'));
+    return JSON.stringify(m.log[0]).length;})()`);
+  console.log(`      장부 한 장 ${bytes}바이트 · 열두 장이면 ${(bytes * 12 / 1024).toFixed(1)}KB`);
+  ok('  한 장이 작다 (열두 달을 쌓아도 localStorage 한도의 티끌이다)', bytes < 1200, `${bytes}B`);
+
+  await openTab('bag');
+  const b = await page.eval(`(()=>{const e=document.getElementById('ledgerBack');
+    return {t:(e.textContent||'').trim(), dis:e.dis===true?true:e.disabled,
+            hint:(document.getElementById('ledgerBackHint').textContent||'').trim()};})()`);
+  ok('★★ 이제 단추가 **살아난다**', b.dis === false, b.t);
+  ok('★ 단추가 **몇 달 쌓였는지**를 적는다', /2달/.test(b.t), b.t);
+  ok('  회색일 때 적던 까닭은 사라진다 (이제 회색이 아니다)', b.hint === '', b.hint);
+
+  await click('ledgerBack'); await sleep(500);
+  ok('★★★ 누르면 **가장 가까운 달**이 뜬다', await on('monthPanel'));
+  const nav0 = await page.eval(`(()=>{const n=document.getElementById('monthNav');
+    return {shown: getComputedStyle(n).display !== 'none',
+            which:(document.getElementById('monthWhich').textContent||'').trim(),
+            prev:document.getElementById('monthPrev').disabled,
+            next:document.getElementById('monthNext').disabled};})()`);
+  ok('★★ 달 넘기개가 뜬다 (둘 이상 쌓였다)', nav0.shown, JSON.stringify(nav0));
+  ok('★ 지금 몇 번째를 보는지 적는다', nav0.which === '2 / 2', nav0.which);
+  ok('  끝이라 [다음 달 ›]이 회색이다', nav0.next === true);
+
+  const t2 = await txt('#monthTitle'), s2 = await txt('#monthSum');
+  await click('monthPrev'); await sleep(400);
+  const t1 = await txt('#monthTitle'), s1 = await txt('#monthSum');
+  const nav1 = await page.eval(`(()=>({which:(document.getElementById('monthWhich').textContent||'').trim(),
+    prev:document.getElementById('monthPrev').disabled,
+    next:document.getElementById('monthNext').disabled}))()`);
+  ok('★★★ [‹ 이전 달]로 **지난 달이 뜬다**', nav1.which === '1 / 2', nav1.which);
+  ok('★★ 내용이 실제로 **바뀐다** (같은 장부를 두 번 보여 주지 않는다)',
+     s1 !== s2 || t1 !== t2, `${t1} / ${t2}`);
+  ok('★ 첫 달은 「첫 달 가계부」다', /첫 달/.test(t1), t1);
+  ok('  맨 앞이라 [‹ 이전 달]이 회색이다', nav1.prev === true);
+  ok('  [다음 달 ›]은 살아 있다', nav1.next === false);
+  await click('monthNext'); await sleep(400);
+  ok('  [다음 달 ›]로 되돌아온다', (await txt('#monthWhich')) === '2 / 2');
+
+  /* ★ [✕] 로 닫는다 — 닫는 길을 **늘린 것**이지 줄인 것이 아니다 */
+  const cx = await page.eval(`(()=>{const e=document.getElementById('monthClose');
+    if(!e) return null; const r=e.getBoundingClientRect();
+    return {w:Math.round(r.width), h:Math.round(r.height)};})()`);
+  ok('★★ 오른쪽 위에 [✕]가 있고 **44px 이상**이다', !!cx && cx.w >= 44 && cx.h >= 44,
+     cx && `${cx.w}×${cx.h}`);
+  const d0 = await core();
+  await click('monthClose'); await sleep(350);
+  ok('★★ [✕]로 닫힌다', !(await on('monthPanel')));
+  const d1 = await core();
+  ok('  ✕로 닫아도 하루는 그대로다', d1.day === d0.day && d1.cash === d0.cash);
+  ok('  [알겠습니다]·뒤 누르기·Esc 도 그대로 산다',
+     await page.eval(`(()=>!!document.getElementById('monthGo') &&
+       typeof window.__byeotPopClose === 'function')()`));
+  await page.eval(`window.__byeotSheet.close()`, false); await sleep(300);
+}
+
+/* ══ L. ★ 열두 달을 넘기면 오래된 것부터 버린다 ═══════════════════════════
+   ⚠⚠ **지름길이다** — 열두 달을 실제로 밟으려면 360일이 든다. 그래서 **쌓인 목록에만**
+     가짜 장부를 밀어 넣고 한 달을 더 마감해 본다. 코어도 값도 안 건드린다. */
+console.log('\n== L. ★ 열두 달까지만 쌓인다 (오래된 것부터 버린다) ==');
+{
+  await page.eval(`(()=>{const m=JSON.parse(localStorage.getItem('byeot.month'));
+    const seed = m.log[0];
+    /* 앞쪽에 표시가 남는 가짜 열두 장을 끼운다 — 어느 것이 밀려났는지 보려고 count 를 적는다 */
+    const fake = [];
+    for (let i=0;i<12;i++) fake.push(Object.assign({}, seed, {count: 900+i}));
+    m.log = fake.concat(m.log);
+    localStorage.setItem('byeot.month', JSON.stringify(m));})()`, false);
+  const n0 = await page.eval(`JSON.parse(localStorage.getItem('byeot.month')).log.length`);
+  ok('  (지름길) 목록을 14장으로 부풀렸다', n0 === 14, String(n0));
+  await page.eval(`(()=>{const S=window.__S(); S.tutorial.rent.nextDueDay = S.tutorial.day + 1;})()`, false);
+  await nextDay(); await sleep(600); await walk(); await sleep(600);
+  const after = await page.eval(`(()=>{const m=JSON.parse(localStorage.getItem('byeot.month'));
+    return {n:m.log.length, first:m.log[0].count, last:m.log[m.log.length-1].count};})()`);
+  ok('★★ **열두 장까지만** 남는다', after.n === 12, `${after.n}장`);
+  ok('★★ 버려진 것은 **가장 오래된 쪽**이다 (맨 앞 셋이 밀려났다)',
+     after.first === 903, `맨 앞 ${after.first}`);
+  ok('  가장 가까운 달이 맨 뒤에 있다', after.last === 3, `맨 뒤 ${after.last}번째 달`);
+  if (await on('monthPanel')) { await click('monthGo'); await sleep(300); }
+}
+
 /* ══ I. 360 · 390 · 430 ═══════════════════════════════════════════════ */
 console.log('\n== I. ★ 세 폭 다 눌리는 크기다 ==');
 for (const w of [360, 390, 430]) {
@@ -321,6 +437,66 @@ for (const w of [360, 390, 430]) {
      `x${m.x} y${m.y} ${m.w}×${m.h}`);
   ok(`${w} — 가로로 안 넘친다`, m.scrollW <= m.vw, `${m.scrollW} <= ${m.vw}`);
   await click('monthGo'); await sleep(250);
+}
+
+/* ══ M. ★★★ 판이 바뀌면 지난 장부가 안 남는다 ═══════════════════════════
+   ⚠ 맨 뒤에 둔다 — 이 절은 판을 통째로 갈아 치운다.
+   ★ **세이브 키만 지우고 새로고침**한다. 「세이브가 없는데 장부만 있다」가 바로
+     ㉮ 판정이고, 이것이 [지금 판을 지웁니다]가 남기는 상태와 같다. */
+console.log('\n== M. ★★★ 판이 바뀌면 지난 판의 장부가 안 남는다 ==');
+{
+  const was = await page.eval(`(()=>{const m=JSON.parse(localStorage.getItem('byeot.month'));
+    return {n:m.log.length, runId:m.runId};})()`);
+  ok('  (재기 전) 장부가 쌓여 있다', was.n > 0, `${was.n}달 · ${was.runId}`);
+
+  /* ── ㉮ **세이브가 없는데 장부만 있다** ────────────────────────────────
+     ⚠⚠ **재는 법이 까다로웠다 — 그리고 그게 게임의 사실이었다.**
+       세이브 키를 지우고 새로고침하면 **떠나면서 `pagehide` 가 저장을 한 번 더 한다**
+       (`addEventListener('pagehide', saveNow)`). 그래서 지운 자리가 **다시 채워진 채로**
+       새 판이 열린다 — 「지웠는데 그대로」의 그 자리다(`hardReset` 이 `saveOff` 를 먼저
+       세우는 까닭이 이것이고, 주석에 그 사고가 적혀 있다).
+     ⇒ 그래서 **부팅이 세이브를 읽기 전에** 지운다. 부팅은 growth 를 세우느라 몇 초가
+       걸리고 `resumeSave()` 는 그 뒤에 돈다 — 그 사이에 지우면 진짜로 「세이브가 없는
+       부팅」이 된다. 실제 게임에서 이 갈래를 타는 것은 **세이브를 못 읽었을 때**다. */
+  await page.goto(`${BASE}/game.html`);
+  await page.eval(`localStorage.removeItem('byeot/save/1')`, false);   // 아직 안 읽었다
+  await page.waitFor('!!window.__rv', 180000, 300);
+  await page.waitFor('window.__byeotBooted === true', 180000, 300);
+  await sleep(5000); await walk();
+  const noSave = await page.eval(`(()=>{const m=JSON.parse(localStorage.getItem('byeot.month'));
+    return m ? {n:m.log.length, runId:m.runId} : null;})()`);
+  ok('★★★ ㉮ **세이브가 없으면 쌓인 장부도 버린다**', !!noSave && noSave.n === 0,
+     noSave && `${noSave.n}달`);
+  ok('★★ ㉮ 판 도장이 새로 찍혔다', !!noSave && noSave.runId !== was.runId, noSave && noSave.runId);
+
+  /* ── ㉯ **날짜가 뒤로 갔다**(옛 세이브를 열었다) ────────────────────────
+     ⚠ 앞 절이 목록을 비웠으므로 **가짜 장부 하나를 다시 넣고** 잰다(§L 과 같은 지름길). */
+  await page.eval(`(()=>{const m=JSON.parse(localStorage.getItem('byeot.month'));
+    m.log = [{count:1, net:-1, cashFrom:1, cashTo:0, fromDay:0, toDay:1, days:1,
+              rent:0, living:0, power:0, bought:0, veg:0, plant:0, income:0, saved:0,
+              ateG:{}, gotG:{}, harvests:0, gap:0, prevNet:null, period:30}];
+    localStorage.setItem('byeot.month', JSON.stringify(m));})()`, false);
+  const was2 = await page.eval(`JSON.parse(localStorage.getItem('byeot.month')).runId`);
+  /* 쌓인 달의 시작일이 지금 살림 날짜보다 앞날이면 다른 판이다. 이건 **확실히** 잰다. */
+  await page.eval(`(()=>{const m=JSON.parse(localStorage.getItem('byeot.month'));
+    m.cur.fromDay = 9999;                     /* 앞날을 가리키게 만든다 */
+    localStorage.setItem('byeot.month', JSON.stringify(m));})()`, false);
+  await boot(false);                          /* ⚠ localStorage 를 **안 지운다** */
+  const now = await page.eval(`(()=>{const m=JSON.parse(localStorage.getItem('byeot.month'));
+    return m ? {n:m.log.length, runId:m.runId, from:m.cur.fromDay} : null;})()`);
+  ok('★★★ ㉯ **날짜가 뒤로 갔으면 쌓인 장부를 버린다**', !!now && now.n === 0,
+     now && `${now.n}달`);
+  ok('★★ ㉯ 판 도장이 새로 찍혔다', !!now && now.runId !== was2, now && now.runId);
+  ok('  이번 달도 지금 날짜에서 다시 연다', !!now && now.from < 9999, now && String(now.from));
+  await openTab('bag');
+  const b = await page.eval(`(()=>{const e=document.getElementById('ledgerBack');
+    return {dis:e.disabled, hint:(document.getElementById('ledgerBackHint').textContent||'').trim()};})()`);
+  ok('  단추도 다시 회색으로 돌아가고 까닭을 적는다', b.dis === true && /월세/.test(b.hint), b.hint);
+  await page.eval(`window.__byeotSheet.close()`, false); await sleep(300);
+  /* ⚠ **주문 개수 기억은 판이 바뀌어도 남아야 한다** — 손버릇이지 살림이 아니다 */
+  ok('  ⚠ 주문 개수 기억(`byeot.lastOrderQty`)은 **그대로 남는다** (손버릇이라 그렇다)',
+     await page.eval(`localStorage.getItem('byeot.lastOrderQty') !== null ||
+                      localStorage.getItem('byeot.month') !== null`));
 }
 
 console.log('\n== 부팅·조작 중 던진 예외 ==');

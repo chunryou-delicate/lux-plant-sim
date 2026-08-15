@@ -273,6 +273,37 @@ console.log('\n== B-3. ★ [전부]는 「살 수 있는 최대」다 ==');
   await click('buyCancel'); await sleep(300);
 }
 
+/* ══ J. ★ 누른 채로 있으면 개수가 빨리 오른다 (2026-08-18) ═══════════════
+   ⚠ **±10 단추를 안 넣은 자리**다 — 360px 에서 여섯 칸이 되면 42.8px 로 44px 아래가 된다.
+     그래서 **자리를 안 먹는 길**을 골랐다. 이 절이 그것이 실제로 도는지를 잰다. */
+console.log('\n== J. ★ [＋]를 누른 채로 있으면 빨라진다 (±10 단추가 못 들어가서 고른 길) ==');
+{
+  await buy('bean_seed'); await sleep(400);
+  const before = countOf(await popRead());
+  await page.eval(`(()=>{document.getElementById('buyPlus')
+    .dispatchEvent(new PointerEvent('pointerdown',{bubbles:true}));})()`, false);
+  await sleep(1200);
+  const held = countOf(await popRead());
+  ok('★★ 누르고 있는 동안 개수가 오른다 (한 번도 안 뗐다)', held - before >= 5,
+     `${before}개 → ${held}개 (1.2초)`);
+  /* 손을 뗀다 — ⚠ 뗄 때 오는 클릭이 **한 번 더 세면 안 된다** */
+  await page.eval(`(()=>{const b=document.getElementById('buyPlus');
+    b.dispatchEvent(new PointerEvent('pointerup',{bubbles:true})); b.click();})()`, false);
+  await sleep(400);
+  const after = countOf(await popRead());
+  ok('★★ 손을 뗄 때 **하나가 더 안 붙는다** (화면에 뜬 수를 보고 뗐는데 늘면 고른 수가 아니다)',
+     after === held, `뗄 때 ${held}개 → ${after}개`);
+  /* 다음 한 번 누르기는 정상으로 는다 — 「먹은 클릭」이 다음 것까지 먹으면 안 된다 */
+  await click('buyPlus'); await sleep(300);
+  ok('  그 다음 한 번 누르기는 정상으로 는다', countOf(await popRead()) === after + 1);
+  await click('buyCancel'); await sleep(300);
+  /* ⚠ 이 절이 기억을 더럽히지 않게 — 주문을 안 했으므로 기억은 그대로다(§B-2 가 뒤에 온다) */
+  await buy('bean_seed'); await sleep(400);
+  ok('  ⚠ 고르다 그만둔 값은 **기억에 안 남는다**', countOf(await popRead()) === 3,
+     (await popRead()).count);
+  await click('buyCancel'); await sleep(250);
+}
+
 /* ══ C. 새로고침해도 디폴트가 남는다 ══════════════════════════════════ */
 console.log('\n== C. ★★ 새로고침해도 「직전 주문량」이 남는다 ==');
 {
