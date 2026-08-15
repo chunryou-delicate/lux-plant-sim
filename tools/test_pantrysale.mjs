@@ -29,7 +29,10 @@ import {
   firstPlayRulesFromBalance, createFirstPlayState,
   placeBeansprout, waterBeansprout, advanceBeansproutDay, harvestBeansprout,
   makeCropPot, eatFromPantry, dailyCropSaveWonOf, cropSurplusRateOf,
-  pantryLotsOf, pantrySaleQuote, takePantryCrop
+  pantryLotsOf, pantrySaleQuote, takePantryCrop,
+  /* ★ 2026-08-16 · 그램 셈 (first_play §그램) */
+  cropCycleSavedWon, pantryLotsWithGrams, pantryGramsOf, formatGram,
+  mealPlanQuote, planMealGrams
 } from '../src/game/first_play.js';
 import { newState, sellPantryCrop, pantrySaleStatus,
          sellCropSurplus, cropSurplusStatus } from '../src/game/state.js';
@@ -61,19 +64,38 @@ const stateWith = (fp) => {
   return S;
 };
 const sumLots = (fp) => pantryLotsOf(fp).reduce((a, l) => a + l.won, 0);
+/* ★★ 2026-08-16 — 이 파일에 3,000 / 2,000 / 1,000 / 6,000 이 박혀 있었다. 그것이 이 검사가
+   지키던 옛 약속이다: 「콩나물 최상 품질 한 회전 = 3,000원」. g 셈이 들어와 400 / 300 / 200g
+   = 4,000 / 3,000 / 2,000원이 됐다(first_play §그램). ⇒ 규칙에서 읽는다. */
+const OVER4 = [0, 1, 2, 3].map(t => cropCycleSavedWon(RULES, 3, t, 0));  // 같은 날 넷을 거두면
+const SUM4 = OVER4.reduce((a, v) => a + v, 0);                          // 곳간에 든 몫
+const LOST4 = 4 * OVER4[0] - SUM4;                                      // 겹쳐서 못 받은 몫
+/* 옛 세이브(원만 있는 판)를 쪼개는 한 덩이 — `cropKindSavedWon[0]`(중간 품질)이 정본이다 */
+const CHUNK = RULES.cropKindSavedWon[0];
+const splitByChunk = (won) => {
+  const out = [];
+  for (let rest = won; rest > 0; rest -= CHUNK) out.push(Math.min(CHUNK, rest));
+  return out;
+};
 
 console.log('\n== A. ★개수가 어림수가 아니다 — 판을 더하면 곳간과 딱 맞는다 ==');
 {
   const { fp } = sameDayHarvest(4);
-  /* 같은 날 넷을 거두면 3,000 / 2,000 / 1,000 / 0 — 0원짜리는 꾸러미가 안 된다 */
+  /* 같은 날 넷을 거두면 4,000 / 2,670 / 1,330 / 0 — 0원짜리는 꾸러미가 안 된다 */
   const lots = pantryLotsOf(fp);
   assert.equal(lots.length, 3, `★판 수가 3이 아니다: ${lots.length}`);
-  assert.deepEqual(lots.map(l => l.won), [3000, 2000, 1000]);
+  assert.deepEqual(lots.map(l => l.won), OVER4.slice(0, 3));
+  /* ★ 2026-08-16 — 꾸러미마다 g 이 붙어 나온다(§그램). 낱개를 더한 것이 곧 곳간의 g 이다 */
+  const gs = pantryLotsWithGrams(fp);
+  assert.deepEqual(gs.map(l => l.g), OVER4.slice(0, 3).map(w => Math.round(w / 10)),
+    '★꾸러미 g 이 원과 어긋난다 — 10원 = 1g 이 깨졌다');
+  assert.equal(pantryGramsOf(fp), gs.reduce((a, l) => a + l.g, 0),
+    '★★곳간 g 합계가 낱개의 합이 아니다 — 화면에 적힌 것을 더하면 안 맞게 된다');
   assert.equal(sumLots(fp), fp.food.pantryWon,
     '★★판을 다 더해도 곳간 총액이 안 된다 — 화면의 「N판」이 거짓말이 된다');
   assert.ok(lots.every(l => l.kind === 'beansprout'), '★작물 이름을 안 적었다');
   assert.ok(lots.every(l => l.day === CYCLE), '★거둔 날을 안 적었다');
-  ok(`곳간 ${fp.food.pantryWon.toLocaleString()}원 = 3,000 + 2,000 + 1,000 (3판)`);
+  ok(`곳간 ${fp.food.pantryWon.toLocaleString()}원 = ${OVER4.slice(0, 3).join(' + ')} (3판 · ${pantryGramsOf(fp)}g)`);
 }
 
 console.log('\n== B. ★★팔면 늘 손해다 — 이 부등호가 이 계통의 뼈대다 ==');
@@ -82,34 +104,34 @@ console.log('\n== B. ★★팔면 늘 손해다 — 이 부등호가 이 계통�
   const { fp } = sameDayHarvest(4);
   const q = pantrySaleQuote(fp);                       // 안 주면 전부
   assert.equal(q.maxLots, 3);
-  assert.equal(q.pendingWon, 6000);
+  assert.equal(q.pendingWon, SUM4);
   assert.equal(q.rate, RATE);
-  assert.equal(q.won, Math.round(6000 * RATE));
+  assert.equal(q.won, Math.round(SUM4 * RATE));
   assert.equal(q.lossWon, q.pendingWon - q.won, '★손해를 안 세어 준다');
   assert.ok(q.won < q.pendingWon, '★★파는 값이 곳간값 이상이다');
   /* 견적은 **상태를 안 바꾼다** */
-  assert.equal(fp.food.pantryWon, 6000, '★견적만 냈는데 곳간이 줄었다');
-  ok(`6,000원어치 → ${q.won.toLocaleString()}원 (${q.lossWon.toLocaleString()}원 손해 · ${Math.round(RATE * 100)}%)`);
+  assert.equal(fp.food.pantryWon, SUM4, '★견적만 냈는데 곳간이 줄었다');
+  ok(`${SUM4.toLocaleString()}원어치 → ${q.won.toLocaleString()}원 (${q.lossWon.toLocaleString()}원 손해 · ${Math.round(RATE * 100)}%)`);
 }
 
 console.log('\n== C. ★몇 판을 팔지 고른다 — 고른 만큼만 나간다 ==');
 {
   const { fp } = sameDayHarvest(4);
   const S = stateWith(fp);
-  /* 1판만 — 먼저 거둔 3,000원짜리가 나간다 */
+  /* 1판만 — **먼저 거둔** 판이 나간다 */
   const st1 = pantrySaleStatus(S, 1);
   assert.equal(st1.lots, 1);
-  assert.equal(st1.pendingWon, 3000);
-  assert.equal(st1.won, Math.round(3000 * RATE));
+  assert.equal(st1.pendingWon, OVER4[0]);
+  assert.equal(st1.won, Math.round(OVER4[0] * RATE));
   assert.equal(st1.list.length, 3, '★목록이 세 판이 아니다');
   assert.equal(st1.list[0].kindKo, '콩나물', '★이름을 안 붙여 낸다');
 
   const r = sellPantryCrop(S, 1);
   assert.equal(r.lots, 1);
-  assert.equal(r.pendingWon, 3000);
-  assert.equal(r.won, Math.round(3000 * RATE));
-  assert.equal(fp.food.pantryWon, 3000, '★★고른 것보다 많이/적게 나갔다');
-  assert.deepEqual(pantryLotsOf(fp).map(l => l.won), [2000, 1000],
+  assert.equal(r.pendingWon, OVER4[0]);
+  assert.equal(r.won, Math.round(OVER4[0] * RATE));
+  assert.equal(fp.food.pantryWon, SUM4 - OVER4[0], '★★고른 것보다 많이/적게 나갔다');
+  assert.deepEqual(pantryLotsOf(fp).map(l => l.won), OVER4.slice(1, 3),
     '★★먼저 거둔 판이 아니라 다른 판이 나갔다');
   assert.equal(sumLots(fp), fp.food.pantryWon, '★판 뒤에 판과 총액이 어긋났다');
   assert.equal(fp.food.totalPantrySoldWon, r.won, '★누계가 안 쌓인다');
@@ -133,8 +155,15 @@ console.log('\n== D. ★먼저 거둔 것부터 — 파는 순서와 먹는 순�
   eatFromPantry(fp);
   const after = pantryLotsOf(fp);
   assert.equal(sumLots(fp), fp.food.pantryWon, '★먹은 뒤 판과 총액이 어긋났다');
-  assert.ok(after.length < 3, '★★먹었는데 판이 하나도 안 줄었다');
-  assert.equal(after[after.length - 1].won, 1000,
+  /* ⚠ 2026-08-16 — 여기 `after.length < 3` 이 박혀 있었다. 하루 몫이 4,867원일 때는
+     첫 판(3,000)이 통째로 사라졌기 때문이다. 이제 하루 몫이 **300g(3,000원)** 이고
+     첫 판이 **4,000원**이라, 먹어도 판 수는 안 준다 — 첫 판이 **깎일 뿐**이다.
+     ⇒ 재는 것을 「판이 줄었나」에서 **「앞에서부터 줄었나」**(=FIFO)로 바로잡는다. */
+  assert.ok(after.length <= 3, '★먹었는데 판이 늘었다');
+  assert.ok(after.length < 3 || after[0].won < OVER4[0],
+    '★★먹었는데 맨 앞 판이 한 푼도 안 줄었다');
+  assert.equal(sumLots(fp) + daily, SUM4, '★먹은 만큼 정확히 안 줄었다');
+  assert.equal(after[after.length - 1].won, OVER4[2],
     '★★맨 뒤(제일 나중에 거둔) 판이 먼저 깎였다 — FIFO 가 아니다');
   /* 다 먹을 때까지 돌리면 판이 남지 않는다 */
   for (let d = 0; d < 10 && fp.food.pantryWon > 0; d++) eatFromPantry(fp);
@@ -167,13 +196,13 @@ console.log('\n== E. ★옛 세이브 — 꾸러미 기록이 없어도 열리�
   delete fp.food.pantryLots;
   delete fp.food.totalPantrySoldWon;
   const lots = pantryLotsOf(fp);
-  assert.equal(sumLots(fp), 6000, '★옛 판의 곳간이 판으로 안 쪼개진다');
-  assert.deepEqual(lots.map(l => l.won), [3000, 3000], '★하루치씩 안 쪼갰다');
+  assert.equal(sumLots(fp), SUM4, '★옛 판의 곳간이 판으로 안 쪼개진다');
+  assert.deepEqual(lots.map(l => l.won), splitByChunk(SUM4), '★하루치씩 안 쪼갰다');
   assert.ok(lots.every(l => l.kind === null),
     '★★무엇을 거둔 것인지 모르는데 작물 이름을 지어냈다');
   const S = stateWith(fp);
   const r = sellPantryCrop(S, 1);
-  assert.equal(r.pendingWon, 3000);
+  assert.equal(r.pendingWon, CHUNK);
   assert.equal(r.whatKo, '곳간에 있던 것 1판', `★모르는 것을 아는 척한다: ${r.whatKo}`);
   ok('옛 판(원만 있는 판)도 하루치씩 쪼개져 팔린다 — 작물 이름은 지어내지 않는다');
 }
@@ -184,7 +213,7 @@ console.log('\n== F. ★★잉여 창구는 예전 그대로 — 곳간을 한 �
   const S = stateWith(fp);
   const before = fp.food.pantryWon;
   const lotsBefore = pantryLotsOf(fp).map(l => l.won);
-  assert.equal(cropSurplusStatus(S).pendingWon, 6000);
+  assert.equal(cropSurplusStatus(S).pendingWon, LOST4);
   const rs = sellCropSurplus(S);
   assert.equal(fp.food.pantryWon, before,
     '★★잉여를 넘겼더니 곳간이 줄었다 — 두 창구가 섞였다');
@@ -205,7 +234,7 @@ console.log('\n== G. ★같은 값 하나를 쓴다 — 새 판매가를 안 만
   assert.equal(cropSurplusRateOf(fp), 0.4);
   assert.equal(pantrySaleQuote(fp).rate, 0.4,
     '★★곳간 판매가 잉여와 다른 값을 쓴다 — 「어느 쪽으로 파는 게 이득인가」가 생긴다');
-  assert.equal(pantrySaleQuote(fp).won, Math.round(6000 * 0.4));
+  assert.equal(pantrySaleQuote(fp).won, Math.round(fp.food.pantryWon * 0.4));
   ok('곳간 판매가 = 잉여 판매가 = cropSurplusSaleRate 한 곳');
 }
 
@@ -230,6 +259,65 @@ console.log('\n== H. ★세이브 — 판 목록이 저장되고, 안 실려도 
   assert.equal(pantrySaleStatus(S3).pendingWon, fp.food.pantryWon,
     '★★판 목록이 없는 파일에서 팔 것이 사라졌다');
   ok('판 목록이 저장을 넘고, 없는 파일도 총액에서 다시 세워진다');
+}
+
+console.log('\n== I. 그램 표기 — 한 함수가 만들고, 낱개를 더한 것과 합계가 맞는다 ==');
+{
+  /* 박사님: *"우측아래 G으로 나오다가 1000G 이상되면 1KG 으로 표현되게해줘"* */
+  assert.equal(formatGram(0), '0g', '★0 을 빈칸으로 두면 「고장」으로 읽힌다');
+  assert.equal(formatGram(400), '400g');
+  assert.equal(formatGram(999), '999g', '★999g 까지는 g 이다');
+  assert.equal(formatGram(1000), '1kg', '★1,000g 부터 kg 이다');
+  assert.equal(formatGram(1200), '1.2kg', '★뒤 0 을 안 뗐다');
+  /* ★★ **소수 두 자리**여야 낱개를 더한 것과 안 어긋난다.
+     한 자리면 1,250g 이 `1.3kg` 가 되는데 그 판의 낱개는 400+400+450 이라 화면이
+     스스로 모순된다. 두 자리면 콩나물(늘 10g 단위)에서는 반올림이 **아예 안 일어난다**. */
+  assert.equal(formatGram(1250), '1.25kg', '★★kg 소수 두 자리가 아니다 — 합계가 낱개와 어긋난다');
+  assert.equal(formatGram(12500), '12.5kg');
+  assert.equal(formatGram(400 * 3), '1.2kg', '★낱개 셋을 더한 것과 합계가 다르다');
+  ok(`formatGram — ${[0, 400, 999, 1000, 1200, 1250, 12500].map(formatGram).join(' · ')}`);
+}
+
+console.log('\n== J. ★★오늘 밥상 — 300g 까지 쓰고 남는 것은 쌓인다 (2026-08-16 박사님 확정) ==');
+{
+  /* 박사님: *"400G 가 오면 300G 까지는 당일 쓸 수 있는 거고 남는 거 팔아먹든 하는 거"* */
+  const { fp } = sameDayHarvest(1);                 // 어두운 자리 한 시루 = 400g
+  assert.equal(pantryGramsOf(fp), 400, '★한 시루가 400g 을 안 냈다');
+  const q = mealPlanQuote(fp);
+  assert.equal(q.defaultGrams, 300, '★디폴트가 300g 이 아니다');
+  assert.equal(q.maxGrams, 300, '★★하루에 300g 보다 많이 쓸 수 있다 — 상한이 안 걸렸다');
+  assert.equal(q.useWon, 3_000, '★300g 이 3,000원이 아니다 (10원 = 1g)');
+  assert.equal(q.restGrams, 100, '★★남는 100g 을 안 세고 있다');
+  /* 곳간이 300g 보다 적으면 **있는 만큼**이 디폴트다(박사님 괄호 그대로) */
+  const small = { ...fp, food: { ...fp.food, pantryWon: 1_200, pantryLots: [] } };
+  assert.equal(mealPlanQuote(small).defaultGrams, 120, '★곳간이 적을 때 디폴트가 있는 만큼이 아니다');
+
+  /* ★ 고른 값이 실제로 먹히나 — 0g 을 고르면 **한 푼도 안 먹는다** */
+  planMealGrams(fp, 0);
+  const none = eatFromPantry(fp);
+  assert.equal(none.savedWon, 0, '★★0g 을 골랐는데 먹었다 — 모아서 파는 길이 막힌다');
+  assert.equal(fp.food.pantryWon, 4_000, '★안 먹었는데 곳간이 줄었다');
+  assert.equal(fp.food.mealPlanWon, null, '★★고른 값을 안 지웠다 — 내일도 0g 을 먹는다');
+  /* 안 고르면 예전 그대로 상한까지 먹는다(= 300g) */
+  const full = eatFromPantry(fp);
+  assert.equal(full.savedWon, dailyCropSaveWonOf(fp), '★안 골랐는데 상한까지 안 먹었다');
+  assert.equal(full.savedGrams, 300);
+  assert.equal(fp.food.pantryWon, 1_000, '★★남는 100g 이 사라졌다 — 쌓여야 한다');
+  ok('400g 이 오면 300g 을 쓰고 100g 이 곳간에 남는다 · 0g 도 고를 수 있다');
+}
+
+console.log('\n== K. ★세이브 — 「안 골랐다(null)」와 「0g 을 골랐다(0)」가 갈린다 ==');
+{
+  const S2 = newState({ firstPlay: true, firstPlayRules: RULES });
+  S2.firstPlay = sameDayHarvest(1).fp;
+  planMealGrams(S2.firstPlay, 0);
+  const back = deserialize(JSON.stringify(serialize(S2)), { firstPlayRules: RULES });
+  assert.equal(back.firstPlay.food.mealPlanWon, 0,
+    '★★0g 을 골랐는데 저장을 못 넘겼다 — 새로고침 한 번에 3,000원을 먹는다');
+  planMealGrams(S2.firstPlay, null);
+  const back2 = deserialize(JSON.stringify(serialize(S2)), { firstPlayRules: RULES });
+  assert.equal(back2.firstPlay.food.mealPlanWon, null, '★안 고른 것이 0 으로 바뀌었다');
+  ok('null(안 골랐다)과 0(안 먹기로 골랐다)이 저장을 넘어서도 갈린다');
 }
 
 console.log(`\n★ tools/test_pantrysale.mjs — ${n}벌 전부 통과\n`);

@@ -92,8 +92,29 @@ export const CROP_KINDS = Object.freeze([
          실구매 500원을 만들려면 정가는 **350원**이다(500 → 정가 350 · 350×1.4 = 490 → 올림 500).
          정가에 500 을 그대로 적으면 실구매가 700원이 되어 아무것도 안 바뀐다. */
     seedWonPerPot: 350,
-    /* ★ 콩나물 한 회전의 작물 기본값 — 3,000원 그대로다(2026-08-04 확정 · plan §1 표). */
+    /* ★ 콩나물 한 회전의 작물 기본값 — 3,000원 그대로다(2026-08-04 확정 · plan §1 표).
+       ★★ 2026-08-16 — 이 값의 **뜻이 바뀌었다**: 예전에는 「최상 품질 회전분」이었고
+         지금은 「**중간 품질**(살짝 초록 · 2끼) 회전분」이다. 값(3,000)은 안 움직였다.
+         박사님: *"하루 소모량은 3000원 기준 300G로 잡고"* — 즉 300g ↔ 3,000원이 기준점이다.
+         ⇒ 최상 품질은 400g = 4,000원으로 **올라갔다**(아래 §그램). 그 차이가 이번의 밸런스 이동이다. */
     savedWonPerCycle: 3_000,
+    /* ══ ★★★ **그램(g) 표** (2026-08-16 · 박사님 확정) ═══════════════════════════
+       원문: *"콩나물 수확기준을 300그램으로 잡자. 적당히 중간빛에서 300G고 좀더 어두울수록
+              +-100G 왔다갔다 하도록 해줘."*
+       ★ **어두울수록 많다.** 콩나물은 차광 용기에서 기르는 작물이고, 이 파일의 품질표가
+         이미 그렇게 뒤집혀 있다(`quality` — 어두운 대역이 3끼다). 그 표의 세 칸에 g 을 얹었다.
+         새 밝기 표를 만들지 않았다 — 판정은 여전히 `cropQualityOf` 하나다.
+           하얗고 아삭(3끼) 400g · 살짝 초록(2끼) 300g · 초록·쓴맛(1끼) 200g
+       ★ `gramsMidMeals` 가 **기준점의 끼니**다. 「중간빛 = 2끼 = 300g」을 그대로 적은 것이고,
+         여기서 한 칸 좋아질 때마다 `gramsPerQualityStep` 만큼 는다.
+       ⚠ 무순에는 이 칸이 **없다.** 없으면 옛 비율 셈(기본값 × 끼니/3)이 그대로 돌고,
+         g 은 원을 10 으로 나눈 **표시**가 된다(§그램). 박사님이 정하신 것은 콩나물뿐이라
+         무순 살림을 한 푼도 안 움직이려고 이렇게 갈랐다 — 무순 회전분 1,867원은
+         10 으로 안 나누어떨어져서, g 을 정본으로 삼는 순간 1,870원이 되어
+         하루 몫 4,867원이 조용히 4,870원이 된다(START-HERE §2.8 이 겪은 그 사고다). */
+    gramsPerCycle: 300,
+    gramsMidMeals: 2,
+    gramsPerQualityStep: 100,
     wantsLight: false,
     quality: Object.freeze([
       Object.freeze({ minDli: 0, maxDli: 0.3, id: 'crisp_white', ko: '하얗고 아삭', meals: 3 }),
@@ -382,10 +403,103 @@ export function openSiruContractFromManifest(manifest) {
    ⇒ 겹침을 셀 때는 **작물은 그대로인데 순번만 민다.** 예전에는 순번을 밀면 작물도 같이
      밀려서, 콩나물 둘째가 「무순의 값」을 받고 있었다. 표가 하나였을 때는 그게 안 보였다. */
 export function cropCycleSavedWon(rules, meals, tiredIndex = 0, kindIndex = tiredIndex) {
+  /* ★ 2026-08-16 — 그램 표를 가진 작물은 **g 이 정본**이다(§그램). 10원 = 1g 이 정확한
+     정수 환산이라 여기서 원으로 되돌려도 한 푼도 안 새어 나간다. */
+  const g = cropCycleGramsExact(rules, meals, tiredIndex, kindIndex);
+  if (g != null) return Math.round(g * WON_PER_GRAM);
   const maxMeals = rules.qualityMaxMeals || FIRST_PLAY_RULES.qualityMaxMeals;
   return Math.round(cropBaseSavedWonOf(rules, kindIndex) *
                     cropTiredMultiplier(rules, tiredIndex) *
                     Math.max(0, meals) / maxMeals);
+}
+
+/* ============================================================
+   ★★★ §그램 — **채소를 g 으로 센다** (2026-08-16 · 박사님 확정)
+   ------------------------------------------------------------
+   원문: *"콩나물 수확기준을 300그램으로 잡자 … 하루 소모량은 3000원 기준 300G로 잡고
+          계산하면될거같어."*  ⇒ **10원 = 1g** 이다.
+
+   ## ★ 어느 쪽이 정본인가 — **원(원화)이 정본이고 g 은 그 위에 얹혀 있다**
+   곳간의 정본이 `pantryWon` 인 구조는 어젯밤(2026-08-15)에 까닭이 있어 그렇게 세웠다
+   (§곳간 판매 ㉠㉡㉢ — 먹기·한도·쉬기 셈이 안 바뀌고, `pantryWon` 에 직접 값을 넣는
+   검사·하네스 12곳이 그대로 산다). 그 구조를 뒤집지 않았다. 대신:
+     ① **환산이 정확한 정수**다(10원 = 1g). 그래서 두 단위가 어긋날 여지가 애초에 없다 —
+        「약 몇 g」이 아니다.
+     ② 수확량을 정하는 자리(콩나물)는 **g 이 먼저**고 원이 뒤다(`cropCycleSavedWon` 첫 줄).
+        박사님이 정하신 숫자가 g 이므로, 원에서 g 을 유도하면 반올림이 그 숫자를 갉는다.
+     ③ **화면은 g 으로 말한다.** 가방·상점·밥상 창·기록이 전부 `formatGram` 하나를 부른다.
+   ⚠ 무순처럼 그램 표가 없는 작물은 **원이 정본이고 g 이 표시**다(1,867원 → 187g).
+     10 으로 안 나누어떨어지는 값이라 g 을 정본으로 삼으면 회전분이 1,870원이 되고
+     하루 몫 4,867원이 4,870원으로 조용히 밀린다 — START-HERE §2.8 이 겪은 그 사고다.
+
+   ## ⚠ 낱개를 반올림하고 **합계는 낱개를 더해서** 낸다
+   1,867원짜리 꾸러미 둘은 화면에 `187g` 씩 뜨고 합계는 `374g` 이다(373.4 를 반올림한
+   373 이 아니다). 안 그러면 **적힌 것을 더했는데 합계와 안 맞는** 화면이 된다.
+============================================================ */
+
+/* ★ 환산 — **10원 = 1g**. 박사님이 주신 두 수(300g ↔ 3,000원)에서 그대로 나온다.
+   ⚠ 이 값을 화면에 적지 마라. 화면은 g 만 말하고 환산은 여기 한 줄이다. */
+export const WON_PER_GRAM = 10;
+
+/* ★★★ **하루에 쓸 수 있는 양** — 300g (2026-08-16 박사님 확정 · §dailyCropSaveWon).
+   *"400G 가 오면 300G 까지는 당일 쓸 수 있는 거고 남는 거 팔아먹든 하는 거"*
+   ⚠ **작물을 통틀어**다. 콩나물 300g + 무순 300g 이 아니다 — 사람이 하루에 먹는 양이다. */
+export const DAILY_CROP_GRAMS = 300;
+
+/* 원 → g. **반올림한다**(내림이 아니다) — 그램 표를 가진 작물은 늘 정확히 떨어지고,
+   안 떨어지는 것은 무순뿐이라 가장 가까운 정수가 제일 덜 거짓말한다. */
+export function gramsOfWon(won) {
+  return Math.max(0, Math.round((Number(won) || 0) / WON_PER_GRAM));
+}
+/* g → 원. 고르개가 낸 g 을 살림의 단위로 되돌릴 때 쓴다. */
+export function wonOfGrams(g) {
+  return Math.max(0, Math.round((Number(g) || 0) * WON_PER_GRAM));
+}
+
+/* ★★★ **g 을 사람이 읽는 글자로** (2026-08-16 · 박사님: *"우측아래 G으로 나오다가
+     1000G 이상되면 1KG 으로 표현되게해줘"*).
+   ------------------------------------------------------------
+   ⚠ **이 함수 하나만 쓴다.** 가방 칸·상점 고르개·밥상 창·기록이 전부 여기를 부른다.
+     자리마다 손으로 적으면 반드시 한쪽만 낡는다(이 저장소의 지병이다).
+   ★ **kg 은 소수 두 자리**다. 한 자리로 하면 1,250g 이 `1.3kg` 가 되어
+     **낱개를 더한 것과 화면이 안 맞는다**(400g+400g+450g 인데 합계가 1.3kg). 두 자리면
+     10g 단위가 그대로 보이므로 콩나물(늘 10g 단위)에서는 **반올림이 아예 안 일어난다.**
+     세 자리는 1,187g → `1.187kg` 라 눈금이 잡음이 된다.
+   ★ **0 은 `0g` 이라 적는다.** 빈칸으로 두면 「칸이 고장났다」로 읽힌다 — 0 인 것과
+     모르는 것은 다른 상태다. (아예 없는 것은 칸 자체를 안 그리는 쪽이 맡는다.)
+   ⚠ 뒤 0 은 뗀다 — `1.20kg` 이 아니라 `1.2kg`. */
+export function formatGram(g) {
+  const v = Math.max(0, Math.round(Number(g) || 0));
+  if (v < 1000) return `${v}g`;
+  const kg = Math.round(v / 10) / 100;       // 두 자리까지
+  return `${kg}kg`;
+}
+
+/* 그 작물이 그램 표를 갖고 있나 — 없으면 null(옛 비율 셈으로 떨어진다).
+   ★ 표의 정본은 `CROP_KINDS[i]` 이고, 규칙 사본(`rules.cropKindDefs`)이 있으면 그쪽을 먼저
+     본다 — 재현·검사가 종류 표를 갈아 끼울 수 있어야 한다. */
+function cropGramSpecOf(rules, kindIndex = 0) {
+  const defs = (rules && rules.cropKindDefs) || CROP_KINDS;
+  const d = defs[Math.max(0, Math.round(kindIndex || 0))] || defs[defs.length - 1];
+  return (d && Number.isFinite(d.gramsPerCycle)) ? d : null;
+}
+
+/* 그램 표가 있는 작물의 한 회전 수확량(g). 없으면 **null** — 「모른다」와 「0」을 가른다. */
+function cropCycleGramsExact(rules, meals, tiredIndex = 0, kindIndex = tiredIndex) {
+  const spec = cropGramSpecOf(rules, kindIndex);
+  if (!spec) return null;
+  const mid = Number.isFinite(spec.gramsMidMeals) ? spec.gramsMidMeals : 2;
+  const step = Number.isFinite(spec.gramsPerQualityStep) ? spec.gramsPerQualityStep : 0;
+  const base = spec.gramsPerCycle + (Math.max(0, meals) - mid) * step;
+  return Math.max(0, Math.round(base * cropTiredMultiplier(rules, tiredIndex)));
+}
+
+/* ★ 한 회전이 내는 수확량(g) — **어느 작물이든 답을 낸다.**
+   그램 표가 있으면 그 표가, 없으면 원 셈을 10 으로 나눈 값이 답이다(§그램 ⚠). */
+export function cropCycleGrams(rules, meals, tiredIndex = 0, kindIndex = tiredIndex) {
+  const g = cropCycleGramsExact(rules, meals, tiredIndex, kindIndex);
+  if (g != null) return g;
+  return gramsOfWon(cropCycleSavedWon(rules, meals, tiredIndex, kindIndex));
 }
 
 /* ============================================================
@@ -457,42 +571,47 @@ export function firstPlayRulesFromBalance(balance) {
     dailyFoodWon,
     mealWon: dailyFoodWon / mealsPerDay,
     dailyCropMealCap,
-    /* ★ 지금 도는 작물 전부가 **한 회전에** 내는 절감 합계(최상 품질 기준). 곳간 한도이기도 하다 —
-       한 회전분보다 많이 쌓일 수 없다(그 이상은 쉬어서 버린다. 콩나물은 냉장 3~4일이다). */
+    /* ★ 지금 도는 작물 전부가 **한 회전에** 내는 절감 합계(중간 품질 기준).
+       ⚠ 2026-08-16 — 여기 *"곳간 한도이기도 하다"* 라고 적혀 있었다. **아니다.**
+         곳간 한도는 없어졌고(§pantryCapWon) 하루 몫도 이 값을 안 본다(§dailyCropSaveWon).
+         지금 이 값이 쓰이는 데는 「작물을 늘리면 회전분 합이 얼마가 되나」를 보는 자리뿐이다. */
     cropSavedWonPerCycle,
-    /* ★★ 하루에 곳간에서 꺼내 쓸 수 있는 상한 — **한 회전분**이다 (2026-08-04 다시 정함).
+    /* ══ ★★★ 하루에 곳간에서 쓸 수 있는 양 — **300g** 이다 (2026-08-16 박사님 확정) ══════
        ------------------------------------------------------------
-       박사님: *"5일 주기니까 5개까지 1일씩 안 겹치게 하면 저감량이 매일 다 3000 아녀?"*
+       원문: *"일전에 내가 바로 감해주는게 아니라 인벤으로 채소가 들어오고 하루지날때
+       소모되는 식으로 반자동 하기로 했자나. **400G 가 오면 300G 까지는 당일 쓸 수 있는 거고
+       남는 거 팔아먹든 하는 거**라고"*
 
-       ★ 예전에는 `한 회전분 ÷ 회전 일수` = 600원이었다. 그 값이 **박사님 그림을 막고 있었다**:
-         완전 시차로 매일 3,000원이 들어와도 600원씩만 꺼내 쓰면 곳간에 쌓이다 버려진다.
-         상한이 "고르게 펴는 일"을 넘어 **총량을 막는 두 번째 규칙**이 되어 있었던 것이다.
-         (실측: 시루를 몇 개로 늘려도 20일 총저감이 9,000원으로 똑같았다.)
+           거두면   → 곳간(인벤)에 **g 이 쌓인다**       (어두운 자리 콩나물 400g)
+           하루가 감 → 거기서 **최대 300g** 을 쓴다        (식비 3,000원 절감)
+           남은 것   → **곳간에 그대로 남는다**            (100g — 팔거나 모아 둔다)
 
-       ★ 그래서 상한을 **한 회전분**으로 올린다. 근거 셋:
-         ① ★**천장이 주기 길이에서 저절로 나온다.** 5일 주기면 시루 5개까지 매일 하나씩 거둘 수
-            있고, 그때 하루 저감이 딱 한 회전분이다. 6개째부터는 반드시 어느 날과 겹쳐
-            2,000 → 1,000 → 0 으로 깎인다 — **상한을 따로 박을 필요가 없다.**
-         ② 정본에 이미 천장이 있다 — `characters.json._meta.cropMealCapPerPerson`(자취생 2끼).
-            원으로 5,000원이고, 한 회전분은 그 아래다. 아래 `Math.min` 이 그 정본을 지킨다.
-            작물 종류가 늘어 한 회전분 합계가 5,000원을 넘으면 **끼니 상한이 이긴다.**
-         ③ 하루 식비의 절반 언저리다. 그 위로 가면 "하루 세 끼를 콩나물로만"이 되어 현실이 아니다.
-       ⚠⚠ **2026-08-15 정정 — 여기 ②③ 에 「3,000원」·「40%」가 박혀 있었는데 둘 다 낡았다.**
-         그건 작물이 콩나물 하나뿐이던 때 값이다. 무순이 둘째로 들어오면서 회전분이
-         **4,867원**(= 3,000 + 2,800×2/3)이 되어 식비의 **65%**다. 결론(상한 아래다)은 살아 있지만
-         여유는 133원뿐이다 — ★ **셋째 작물이 들어오는 순간 끼니 상한이 이긴다.**
-         ⇒ 숫자를 다시 안 적는다. 재려면 `firstPlayRulesFromBalance()` 의
-           `cropSavedWonPerCycle` · `cropMealCapWon` · `cropCapBinding` 을 읽어라.
-       ⚠ 그래서 시루 1개짜리는 저감이 **고르지 않다**: 거둔 날 3,000원, 나머지 나흘 0원.
-         총액은 예전과 같고(5일에 3,000원), 오히려 "거둔 날에 밥값이 준다"가 또렷해진다. */
-    dailyCropSaveWon: Math.min(cropSavedWonPerCycle, dailyCropMealCap * (dailyFoodWon / mealsPerDay)),
+       ⚠⚠ **여기 있던 「한 회전분」 상한이 이 줄로 바뀌었다.** 옛 값은
+         `min(도는 작물의 한 회전 합, 끼니 상한)` = 4,867원(487g)이었다(START-HERE §2.8).
+         ⇒ **하루 절감이 4,867 → 3,000원으로 준다.** 대신 남는 것이 **안 버려지고 팔린다**
+           (아래 §pantryCapWon — 곳간 한도와 「쉰 몫」을 같이 걷었다).
+         ⇒ 총합이 어떻게 되는지는 `tools/probe_crop_grams.mjs` 가 판을 굴려서 잰다.
+
+       ★ **작물을 통틀어 300g 이다.** 작물마다 300g 이 아니다 — 이 값이 재는 것은
+         「사람이 하루에 먹는 채소의 양」이고, 그건 콩나물이든 무순이든 한 배에 들어간다.
+         ⇒ 그래서 `cropSavedWonPerCycle`(작물별 회전분의 합)을 **안 본다.**
+       ★ 끼니 상한(`characters.json._meta.cropMealCapPerPerson`)은 **그대로 지킨다** —
+         가장·주부처럼 식구가 많은 캐릭터에서 300g 이 상한 아래인지 위인지는 정본이 정한다.
+         지금 자취생은 300g(3,000원) < 5,000원이라 g 쪽이 이긴다. */
+    dailyCropGrams: DAILY_CROP_GRAMS,
+    dailyCropSaveWon: Math.min(DAILY_CROP_GRAMS * WON_PER_GRAM,
+                               dailyCropMealCap * (dailyFoodWon / mealsPerDay)),
     cropKinds: kinds,
     /* ★★ **끼니 상한이 지금 이기고 있나** (2026-08-05 신설).
        종류를 늘려도 하루 저감이 안 느는 순간이 여기다. 숫자를 재는 자(probe)와 화면이
        "왜 안 늘었나"를 말할 근거가 있어야 억지로 상한을 뚫는 일이 안 생긴다.
        자취생(1인)은 2종에서 5,000 = 5,000 으로 **딱 맞고**, 3종째부터 막힌다.
        가장·주부(4인)는 상한이 20,000원이라 3종째도 그대로 산다. */
-    cropCapBinding: cropSavedWonPerCycle > dailyCropMealCap * (dailyFoodWon / mealsPerDay),
+    /* ⚠ 2026-08-16 — 뜻이 바뀌었다. 예전에는 「작물이 늘어 회전분 합이 끼니 상한을 넘었나」였는데,
+       이제 하루 몫은 회전분 합을 안 본다(위 §dailyCropGrams). 지금 이 값이 참이 되는 것은
+       **300g 이 끼니 상한보다 클 때**뿐이다 — 그때는 g 이 아니라 끼니가 천장이다. */
+    cropCapBinding: DAILY_CROP_GRAMS * WON_PER_GRAM >
+                    dailyCropMealCap * (dailyFoodWon / mealsPerDay),
     cropMealCapWon: dailyCropMealCap * (dailyFoodWon / mealsPerDay),
     /* 종류 표를 규칙에 실어 준다 — 부르는 쪽이 first_play 를 또 import 하지 않아도 되게 */
     cropKindDefs: CROP_KINDS
@@ -557,8 +676,13 @@ export function makeCropPot(id, opt = {}) {
        ★ **없으면 심은 것이다** (`opt.sown !== false`). 옛 세이브·옛 코드가 만든 칸에는 이 칸이
          없는데, 그때는 「놓기 = 심기」였으므로 **없는 것이 곧 심은 것**이다. 반대로 잡으면
          (없으면 안 심음) 돌아가던 판의 콩나물이 통째로 「안 심은 시루」가 되어 물을 못 준다.
-       ★ 콩나물은 늘 true 다 — 시루는 콩을 앉히는 용기라 놓는 순간이 곧 심는 순간이다
-         (`state.placeSiru` 가 그때 씨앗 한 봉지를 뺀다). false 가 되는 것은 지금은 재배판뿐이다. */
+       ⚠⚠ **2026-08-16 — 여기 적혀 있던 *"콩나물은 늘 true 다"* 는 이제 틀렸다.**
+         박사님이 *"콩나물 시루(차광용기)가 콩씨앗이 없어도 설치되게 해줘. 그리고 용기에
+         씨 심기 해서 심도록"* 이라 하셨다. ⇒ **콩나물도 false 가 될 수 있다.**
+         `game.html §commitPlace` 가 `placeSiru(..., { sow:false })` 로 놓고,
+         씨앗은 놓인 시루의 [🌱 심기](`state.sowCrop`)가 뺀다 — 무순과 **같은 길**이다.
+       ★ 「없으면 심은 것」이라는 위 규칙은 **그대로다.** 옛 세이브·옛 코드가 만든 칸에는
+         이 칸이 없고 그때는 「놓기 = 심기」였다 — 그 사실은 안 바뀐다. */
     sown: opt.sown !== false,
     ageDays: 0,
     dliHist: [],
@@ -630,7 +754,9 @@ export function cropPotPlaced(p) { return !!(p && (p.slotId || p.at)); }
 /* ★ 그 용기에 씨앗이 뿌려져 있나 (2026-08-11 · §sown). **없으면 심은 것이다** —
    옛 세이브·옛 코드가 만든 칸에는 이 칸이 없고 그때는 「놓기 = 심기」였다. */
 export function cropPotSown(p) { return !(p && p.sown === false); }
-/* 놓였는데 아직 안 심은 용기 — 지금은 무순 재배판만 이렇게 될 수 있다(§sown) */
+/* 놓였는데 아직 안 심은 용기 (§sown).
+   ⚠ 2026-08-16 — 여기 *"지금은 무순 재배판만"* 이라고 적혀 있었다. **콩나물 시루도 그렇다** —
+     박사님이 두 작물의 손짓을 하나로 맞추셨다(놓기 → 심기 → 물 → 거두기). */
 export function unsownCropPots(b) { return placedCropPots(b).filter(p => !cropPotSown(p)); }
 /* 방에 실제로 서 있는 시루만 — 자라는 것도 · 물을 받는 것도 · 계약에 실리는 것도 이것뿐이다 */
 export function placedCropPots(b) { return potsOf(b).filter(cropPotPlaced); }
@@ -899,6 +1025,10 @@ export function createFirstPlayState(opt = {}) {
          ★ 왜 목록이 필요한가 — 박사님이 *"누르면 몇 개 팔지"* 를 원하셨다. 원(돈)에는
            개수도 순서도 없다. 꾸러미가 있어야 「2판 팔기」가 거짓말이 아닌 말이 된다. */
       pantryLots: [],
+      /* ★★ **오늘 곳간에서 얼마를 쓸지 골라 둔 값**(원) (2026-08-16 · §eatFromPantry).
+         null = **안 골랐다** → 예전 그대로 상한까지 먹는다. 0 = **안 먹기로 골랐다.**
+         ⚠ 둘을 한 칸에 섞으면 「안 먹고 모아 판다」가 아예 불가능해진다. */
+      mealPlanWon: null,
       /* ★ 겹침을 세는 두 칸 (2026-08-04 · §겹침) — "그날 몇 번째로 거두나"의 기억이다.
          날이 바뀌면 `harvestDay` 가 안 맞아 저절로 0부터 다시 센다. */
       harvestDay: null,
@@ -1616,11 +1746,10 @@ export function harvestBeansprout(fp, opt = {}) {
   }
 
   /* ★ 곳간에 넣고 **매일 조금씩** 꺼내 먹는다(eatFromPantry). 수확한 날 몰아 쓰지 않는다.
-     ★ 남는 것은 **버려진다. 팔지 않는다.** 콩나물은 냉장 3~4일이면 쉬는 채소라 쌓이지 않는다
-       (docs/food_economy.md 머리말 — 지출 방어이지 수입이 아니다).
-     ⚠ 한도는 **시루 수 × 한 회전분**이다 (2026-08-04). 시루 n개면 도는 회전이 n개이므로
-       곳간에 들어올 수 있는 것도 n회전분이다. 예전처럼 한 회전분으로 두면 시루를 늘리는
-       순간 대부분이 쉬어서 버려져 **겹침 체감이 재기도 전에 상한이 먼저 잘라 버린다.** */
+     ⚠⚠ **2026-08-16 — 여기 적혀 있던 「남는 것은 버려진다. 팔지 않는다」가 뒤집혔다.**
+       박사님: *"400G 가 오면 300G 까지는 당일 쓸 수 있는 거고 **남는 거 팔아먹든 하는 거**"*
+       ⇒ 곳간은 이제 **재고**다. 넘치지 않고 쉬지 않는다(§pantryCapWon).
+       ⇒ `spoiledWon` 은 늘 0 이다. 칸을 안 지운 이유는 §pantryCapWon 에 적었다. */
   const capWon = pantryCapWon(fp);
 
   /* ★ 꾸러미 목록을 **먼저 총액에 맞춰 둔다** (2026-08-15 · §곳간 판매).
@@ -1676,6 +1805,9 @@ export function harvestBeansprout(fp, opt = {}) {
          꾸러미에도 안 들어간다(`savedWon - spoiledWon`). */
       const lotWon = Math.max(0, Math.round(savedWon - spoiledWon));
       if (lotWon > 0) lots.push({ kind: kindId, day, won: lotWon, meals: quality.meals });
+      /* ★ 2026-08-16 — g 은 **안 적어 둔다.** 꾸러미는 먹기·팔기로 잘려 나가는데
+         그때마다 두 칸을 같이 맞추면 반드시 한쪽이 낡는다. `pantryLotsOf` 가 읽을 때
+         원에서 낸다(§그램 — 10원 = 1g 이라 유도가 정확하다). */
 
       p.harvested = true;
       p.avgDli = avgDli;
@@ -1694,7 +1826,12 @@ export function harvestBeansprout(fp, opt = {}) {
       onDayTotal++;
       perPot.push({ id: p.id, kind: kindId, kindKo: cropKindOf(kindId).ko,
                     avgDli, quality: quality.id, qualityKo: quality.ko,
-                    meals: quality.meals, overlapIndex, savedWon, fullWon, lostWon, spoiledWon });
+                    meals: quality.meals, overlapIndex, savedWon, fullWon, lostWon, spoiledWon,
+                    /* ★ 2026-08-16 — 화면이 「400g 을 거뒀습니다」라고 말할 근거(§그램).
+                       `fullGrams` 는 겹침이 안 물렸을 때의 수확량이라 「겹쳐서 얼마를
+                       못 받았나」도 g 으로 말할 수 있다. */
+                    grams: gramsOfWon(savedWon), fullGrams: gramsOfWon(fullWon),
+                    lostGrams: gramsOfWon(lostWon), spoiledGrams: gramsOfWon(spoiledWon) });
     }
     syncCropLead(group.site);
   }
@@ -1740,6 +1877,8 @@ export function harvestBeansprout(fp, opt = {}) {
        예전 `wastedSirus`(시루를 늘려도 안 늘어난 몫)를 대신한다. 이제 손해는 시루 수가 아니라
        **거두는 때가 겹친 것**에서 온다(§겹침). */
     overlapLostWon: lostTotal,
+    /* ★ 2026-08-16 — 겹쳐서 못 챙긴 몫도 g 으로 말할 수 있게(§그램) */
+    lostGrams: perPot.reduce((a, x) => a + (x.lostGrams || 0), 0),
     overlapCount: perPot.filter(x => x.overlapIndex > 0).length,
     spoiledWon: spoiledTotal,
     /* ★ 이번 수확이 낸 잉여(정가) · 아직 안 넘긴 잉여 누적(정가) — 화면이 [잉여 팔기]를
@@ -1759,20 +1898,39 @@ export function harvestBeansprout(fp, opt = {}) {
   };
 }
 
-/* 곳간 한도 — **용기 하나가 한 회전에 낼 수 있는 값의 합**.
-   ★ 2026-08-05 — 종류마다 회전값이 다르므로(콩나물 3,000 · 무순 2,000) 자리마다 따로 세어
-     더한다. 예전처럼 `한 회전분 합계 × 시루 수`로 두면 무순 판을 하나 사는 것만으로
-     콩나물 한도가 1.67배로 뛴다 — 사지도 않은 절감이 곳간에 자리를 만든다. */
+/* ══ ★★★ 곳간 한도 — **없다** (2026-08-16 박사님 확정) ═══════════════════════════
+   ------------------------------------------------------------
+   원문: *"400G 가 오면 300G 까지는 당일 쓸 수 있는 거고 **남는 거 팔아먹든 하는 거**라고"*
+   그리고 2026-08-14: *"유통기한 그냥 없는걸로"*.
+
+   ⚠⚠ **여기 있던 한도(시루 수 × 한 회전분)를 걷었다.** 그 한도는 「넘으면 쉬어서 버린다」의
+     근거였고, 박사님 그림과 **정면으로 어긋난다** — 남는 것이 팔 물건인데 버려지고 있었다.
+     ⇒ 곳간은 **재고**다. 쌓이는 것을 막지 않는다.
+
+   ★ **함수를 안 지웠다. `Infinity` 를 낸다.** 까닭 셋:
+     ㉠ `spoiledWon = max(0, 곳간 - 한도)` 가 그대로 **0**이 된다 — 수확 셈을 안 건드린다.
+     ㉡ 이 이름을 읽는 데가 코어·검사·재현에 여럿이다. 지우면 그 줄들이 조용히 죽는다.
+     ㉢ 「한도가 없다」를 **숫자로 말할 수 있다** — 큰 수를 박으면 그건 또 낡을 값이다.
+   ⚠ 화면에 그대로 적으면 「Infinity원」이 뜬다. 곳간을 적는 자리는 **남은 양**을 적지
+     한도를 안 적는다(가방·상점·밥상 창 셋 다 그렇다).
+   ⚠ 검사가 `fp.food.pantryWon = pantryCapWon(fp)` 로 곳간을 채우던 줄이 있다
+     (`test_cropsale §J`). 그건 「쉬는 판을 만든다」는 뜻이었고, **그 약속이 이번에 없어졌다.** */
 export function pantryCapWon(fp) {
   const rules = fp && fp.rules;
-  if (!rules) return 0;
+  /* ★ 한도를 **되살릴 수 있는 문**을 하나 남겼다 — `rules.pantryCapEnabled === true`.
+     ⚠ 게임은 이 문을 안 연다(어디에서도 참으로 안 만든다). 있는 까닭 둘:
+       ㉠ **옛 셈과 새 셈을 같은 엔진으로 나란히 재려고** — 손으로 쓴 모의 계산으로 재면
+          그것이 곧 「자가 딴 세상 것」이 된다(START-HERE §2.9 ④). `probe_crop_grams` 가 쓴다.
+       ㉡ 캐릭터마다 냉장고 크기가 생기는 날 이 줄이 그대로 살아난다. */
+  if (!rules || rules.pantryCapEnabled !== true) return Infinity;
   const table = rules.cropKindSavedWon || FIRST_PLAY_RULES.cropKindSavedWon;
+  const maxMeals = rules.qualityMaxMeals || FIRST_PLAY_RULES.qualityMaxMeals;
   let cap = 0;
   for (const s of cropSites(fp)) {
     const n = potsOf(s).length;
-    cap += (table[cropKindIndexOf(kindIdOfSite(s))] ?? 0) * n;
+    const i = cropKindIndexOf(kindIdOfSite(s));
+    cap += Math.max(table[i] ?? 0, cropCycleSavedWon(rules, maxMeals, i, i)) * n;
   }
-  /* 시루가 아직 하나도 없는 판(옛 세이브 복원 도중)은 한 회전분을 바닥값으로 준다 */
   return cap > 0 ? cap : rules.cropSavedWonPerCycle;
 }
 
@@ -1785,6 +1943,64 @@ export function pantryCapWon(fp) {
 export function dailyCropSaveWonOf(fp) {
   const rules = fp && fp.rules;
   return rules ? rules.dailyCropSaveWon : 0;
+}
+
+/* ★★★ **오늘 밥상 — 몇 g 을 쓸까** (2026-08-16 · 박사님 확정 · §eatFromPantry)
+   ------------------------------------------------------------
+   박사님: *"하루지날떄 그때 소모량 반자동으로 소요되도록 … 창이 떠서 몇 G 쓸지
+   조정가능하도록 해줘. 디폴트는 300G로 해주고. (300G보다 낮으면 그 최대 낮은값이 디폴트로 뜨게)"*
+   그리고: *"400G 가 오면 300G 까지는 당일 쓸 수 있는 거고 남는 거 팔아먹든 하는 거"*
+
+   ⇒ **300g 은 디폴트이면서 동시에 상한이다.** 위끝이 곧 처음 자리다.
+     그래서 고르개로 할 수 있는 일은 **덜 쓰는 것** 하나다 — 모아 두었다가 팔려는 사람을
+     위해서다(0g 도 고를 수 있다).
+   ★ 곳간이 300g 보다 적으면 **있는 만큼**이 위끝이자 디폴트다(박사님 괄호 그대로). */
+export const MEAL_DEFAULT_GRAMS = DAILY_CROP_GRAMS;
+
+/* 오늘 g 만큼 쓰면 어떻게 되나 — **상태를 안 바꾼다**(꾸러미를 총액에 맞추기는 한다).
+   grams 를 안 주면 **디폴트**(하루 몫, 곳간이 그보다 적으면 있는 만큼)다. */
+export function mealPlanQuote(fp, grams) {
+  const rules = (fp && fp.rules) || FIRST_PLAY_RULES;
+  const capWon = Math.max(0, Math.round(dailyCropSaveWonOf(fp)));
+  const pantryWon = Math.max(0, Math.round((fp && fp.food && fp.food.pantryWon) || 0));
+  const pantryGrams = pantryGramsOf(fp);
+  const maxWon = Math.min(capWon, pantryWon);
+  const maxG = gramsOfWon(maxWon);
+  /* ★ 디폴트 = 위끝이다(위 ⇒). 「300g 보다 낮으면 그 최대 낮은값」이 이 한 줄이다 */
+  const defaultG = maxG;
+  const wantG = Number.isFinite(grams) ? Math.max(0, Math.min(maxG, Math.round(grams))) : defaultG;
+  /* ⚠ 원으로 한 번 더 자른다 — g 은 낱개 반올림이라 위끝에서 몇 원이 튈 수 있고,
+     **살림의 단위는 여전히 원**이다(§그램). */
+  const useWon = Math.min(maxWon, wonOfGrams(wantG));
+  const dailyFoodWon = rules.dailyFoodWon || 0;
+  const grams2 = gramsOfWon(useWon);
+  return {
+    grams: grams2, wantGrams: wantG,
+    maxGrams: maxG, defaultGrams: defaultG,
+    /* 하루에 쓸 수 있는 양 자체 — 곳간이 모자라 못 채웠나를 화면이 가를 근거다 */
+    capGrams: gramsOfWon(capWon), capWon,
+    useWon,
+    pantryWon, pantryGrams,
+    /* ★★ **오늘 쓰고 남는 것** — 이것이 이번 셈의 핵심이다. 버려지지 않고 쌓인다 */
+    restGrams: Math.max(0, pantryGrams - grams2),
+    restWon: Math.max(0, pantryWon - useWon),
+    /* 오늘 지갑에서 나갈 밥값 — 안 먹으면 하루 식비가 통째로 나간다 */
+    cashFoodWon: Math.max(0, dailyFoodWon - useWon),
+    dailyFoodWon,
+    lots: pantryLotsWithGrams(fp),
+    /* 위끝까지 안 쓰면 얼마를 덜 아끼나 (0 이면 다 쓴 것이다) */
+    lessThanCapWon: Math.max(0, maxWon - useWon)
+  };
+}
+
+/* 오늘 쓸 g 을 적어 둔다. **먹지는 않는다** — 먹는 것은 하루가 갈 때 `eatFromPantry` 다.
+   grams 가 null 이면 골랐던 것을 **지운다**(= 예전 그대로 상한까지 먹는다). */
+export function planMealGrams(fp, grams) {
+  if (!fp || !fp.food) throw new Error('[밥상] 첫 플레이 상태가 없습니다');
+  if (grams == null) { fp.food.mealPlanWon = null; return mealPlanQuote(fp); }
+  const q = mealPlanQuote(fp, grams);
+  fp.food.mealPlanWon = q.useWon;
+  return q;
 }
 
 /* ★ 오늘의 밥 — 곳간에서 하루치만 꺼내 쓴다 (2026-08-03 신설 · 2026-08-04 원 단위로).
@@ -1820,15 +2036,30 @@ export function dailyCropSaveWonOf(fp) {
      「짜임새」가 아무 일도 안 하게 된다. 천장은 주기 길이가 정한다.
    ⚠ 헷갈리지 마라 — **시루 수에 비례하는 것은 「곳간 한도」(`pantryCapWon`)** 이고,
      여기서 말하는 「하루 몫」(`dailyCropSaveWon`)은 **안 비례한다.** 둘은 다른 값이다. */
+/* ★★★ 2026-08-16 — **오늘 얼마나 먹을지 고를 수 있다** (박사님: *"창이 떠서 몇 G 쓸지
+     조정가능하도록 해줘. 디폴트는 300G로"*).
+   ------------------------------------------------------------
+   ⚠⚠ **상한(`dailyCropSaveWon` = 4,867원)은 한 톨도 안 건드렸다.** 바뀐 것은
+     「상한까지 늘 먹는다」가 「상한 **안에서** 고른다」가 된 것뿐이다.
+   ★ **안 고르면 예전 그대로** 상한까지 먹는다(`mealPlanWon` 이 null 일 때). 그래서 이 함수를
+     직접 부르는 검사·재현·빨리감기가 한 줄도 안 바뀐다 — 고르는 것은 화면의 일이다.
+   ★ 고른 값은 **한 번 쓰고 지운다.** 남겨 두면 어제 0g 을 골랐던 판이 오늘도 조용히
+     0g 을 먹는다 — 「매일 뜨는 창」이라는 이 기능의 뼈대와 어긋난다.
+   ⚠ 0 은 **고른 값이다.** null(안 골랐다)과 갈라야 한다 — 안 먹고 모아 파는 길이 막힌다. */
 export function eatFromPantry(fp) {
-  const zero = { savedWon: 0, foodSavedWon: 0, mealsUsed: 0 };
+  const zero = { savedWon: 0, foodSavedWon: 0, mealsUsed: 0, savedGrams: 0, planned: false };
   if (!fp || !fp.enabled || !fp.rules || !fp.food) return zero;
   const rules = fp.rules;
-  const use = Math.min(dailyCropSaveWonOf(fp), Math.max(0, Math.round(fp.food.pantryWon || 0)));
+  const cap = dailyCropSaveWonOf(fp);
+  const plan = fp.food.mealPlanWon;
+  const planned = Number.isFinite(plan);
+  fp.food.mealPlanWon = null;                 // ★ 한 번 쓰고 지운다
+  const want = planned ? Math.max(0, Math.round(plan)) : cap;
+  const use = Math.min(cap, want, Math.max(0, Math.round(fp.food.pantryWon || 0)));
   if (use <= 0) {
     fp.food.lastFoodSavedWon = 0;
     fp.food.cashFoodWon = rules.dailyFoodWon;
-    return { ...zero, cashFoodWon: fp.food.cashFoodWon };
+    return { ...zero, planned, cashFoodWon: fp.food.cashFoodWon };
   }
   fp.food.pantryWon -= use;
   /* ★ 먹은 만큼 꾸러미를 **앞에서부터** 덜어 낸다 (2026-08-15 · §곳간 판매).
@@ -1840,6 +2071,9 @@ export function eatFromPantry(fp) {
   fp.food.cashFoodWon = rules.dailyFoodWon - use;
   return {
     savedWon: use,
+    /* ★ 2026-08-16 — 화면이 「300g 을 먹었습니다」라고 말할 근거(§그램) */
+    savedGrams: gramsOfWon(use),
+    planned,
     /* 옛 이름도 같이 낸다 — `noteLearning`·화면이 `foodSavedWon` 을 읽는다 */
     foodSavedWon: use,
     /* 표시용 끼니 환산(내림). 판정에는 안 쓴다 — 값의 정본은 원이다. */
@@ -1983,7 +2217,11 @@ export function pantryLotsOf(fp) {
       won: Math.max(0, Math.round(l.won)),
       meals: Number.isFinite(l.meals) ? Math.round(l.meals) : 0
     }));
+  /* ⚠ 2026-08-16 — **총액이 수가 아니면 목록을 안 건드린다.** 곳간 한도가 `Infinity` 가
+     되면서(§pantryCapWon) `pantryWon` 에 그 값을 넣는 옛 하네스가 생길 수 있는데,
+     그러면 아래 「모자란 만큼 쪼개 붙인다」가 **영영 돈다**(실측: 힙이 터졌다). */
   let have = lots.reduce((a, l) => a + l.won, 0);
+  if (!Number.isFinite(total)) { fp.food.pantryLots = lots; return lots; }
   if (have > total) {
     /* 총액이 더 적다 — **앞(먼저 거둔 것)부터** 덜어 낸다. 먹는 순서가 그렇다 */
     let over = have - total;
@@ -2006,6 +2244,17 @@ export function pantryLotsOf(fp) {
   return lots;
 }
 
+/* ★ 꾸러미마다 g 을 붙여 낸다 — **읽는 쪽 전부가 이걸 쓴다**(가방·상점·밥상 창).
+   ⚠ g 은 꾸러미마다 반올림하고 합계는 **낱개를 더해서** 낸다(§그램 ⚠). 총액을 한 번에
+     나누면 화면에 적힌 낱개를 더한 것과 합계가 달라진다. */
+export function pantryLotsWithGrams(fp) {
+  return pantryLotsOf(fp).map(l => ({ ...l, g: gramsOfWon(l.won) }));
+}
+/* 곳간에 몇 g 이 있나 — **낱개의 합**이다(§그램 ⚠). */
+export function pantryGramsOf(fp) {
+  return pantryLotsWithGrams(fp).reduce((a, l) => a + l.g, 0);
+}
+
 /* 곳간을 몇 판 팔면 얼마인가 — **상태를 안 바꾼다**(단, 목록을 총액에 맞추기는 한다).
    count 를 안 주면 **전부**다.
    반환 { lots · maxLots · pendingWon(곳간에서 나갈 원) · rate · won(받을 돈) ·
@@ -2020,12 +2269,18 @@ export function pantrySaleQuote(fp, count) {
   const pendingWon = picked.reduce((a, l) => a + l.won, 0);
   const rate = cropSurplusRateOf(fp);
   const won = Math.round(pendingWon * rate);
+  /* ★ 2026-08-16 — g 도 같이 낸다(§그램). **낱개를 더해서** 낸다 — 화면에 줄마다 적힌
+     g 을 손으로 더한 값과 합계가 같아야 한다. */
+  const pickedG = picked.map(l => gramsOfWon(l.won));
+  const pendingGrams = pickedG.reduce((a, v) => a + v, 0);
   return {
     lots: n, maxLots, pendingWon, rate, won,
     /* ★ 손해를 **여기서 세어 준다.** 화면이 다시 세면 반올림이 갈려 두 수가 어긋난다 */
     lossWon: Math.max(0, pendingWon - won),
     pantryWon: Math.max(0, Math.round(fp && fp.food ? fp.food.pantryWon || 0 : 0)),
-    picked: picked.map(l => ({ ...l })),
+    pendingGrams,
+    pantryGrams: pantryGramsOf(fp),
+    picked: picked.map((l, i) => ({ ...l, g: pickedG[i] })),
     canSell: n > 0 && pendingWon > 0 && won > 0
   };
 }
@@ -2040,7 +2295,8 @@ export function takePantryCrop(fp, count) {
   fp.food.pantryLots = lots.slice(q.lots);
   fp.food.pantryWon = Math.max(0, Math.round((fp.food.pantryWon || 0) - q.pendingWon));
   fp.food.totalPantrySoldWon = Math.round((fp.food.totalPantrySoldWon || 0) + q.won);
-  return { ...q, pantryWon: fp.food.pantryWon };
+  /* ⚠ `q.pantryGrams` 는 **덜어 내기 전** 값이라 그대로 내면 거짓말이 된다. 다시 센다 */
+  return { ...q, pantryWon: fp.food.pantryWon, pantryGrams: pantryGramsOf(fp) };
 }
 
 /* ★ 다시 심는다 — **막다른 길을 없애는 함수** (2026-08-03 신설).

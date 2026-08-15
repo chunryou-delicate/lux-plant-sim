@@ -19,6 +19,8 @@ import { createFirstPlayState, placeBeansprout, placeCrop, resowBeansprout, wate
          cropSurplusQuote, takeCropSurplus,
          /* ★ 2026-08-15 · 곳간 채소 판매 (first_play §곳간 판매) */
          pantrySaleQuote, takePantryCrop, pantryLotsOf,
+         /* ★ 2026-08-16 · 그램(g) · 오늘 밥상 고르개 (first_play §그램 · §eatFromPantry) */
+         mealPlanQuote, planMealGrams, pantryLotsWithGrams, gramsOfWon, formatGram,
          /* ★ 2026-08-09 · 시루 개체화 (first_play §자리는 시루마다 따로다) */
          ensureCropPots, syncCropLead, addCropPot, cropPotOf, adoptCropSpotToPots,
          placedCropPots, idleCropPots, cropPotList,
@@ -122,8 +124,24 @@ export function newState(opt = {}) {
 
     /* 인터넷 주문 상점 — 배송 중인 주문과 도착한 재고 (2026-08-03).
        규칙·값·배송일은 src/game/shop.js 가 갖는다(docs/shop.md 가 정본).
-       ★첫 콩나물 시루는 **공짜로 준 것**이라 재고에 안 들어간다. 그 뒤부터 주문이다. */
-    shop: createShopState(),
+       ★첫 콩나물 시루는 **공짜로 준 것**이라 재고에 안 들어간다. 그 뒤부터 주문이다.
+       ★★★ 2026-08-16 — `opt.startSeeds` 로 **콩 씨앗을 들려 보낼 수 있다**
+         (박사님: *"콩나물 시루가 콩씨앗이 없어도 설치되게 … 용기에 씨 심기 해서 심도록 해
+         **처음에 순서가**"*).
+         ⚠ 이걸 안 주면 튜토리얼 첫 걸음이 **막힌다**: 놓기는 되는데 심을 씨앗이 없어서
+           빈 시루가 방에 선 채로 하루가 흐른다(실측 — 재고 bean_seed 0).
+         ⚠ **공짜로 더 준 것이 아니다.** 예전에는 시루에 콩이 이미 앉아 있었고(놓기 = 심기)
+           그 콩값을 아무도 안 냈다. 그 콩이 이제 봉지로 손에 들려 있는 것뿐이라
+           살림이 한 푼도 안 움직인다.
+         ⚠ **기본값은 0 이다.** 검사·재현이 「재고 없이 심어지나」를 재고 있는데
+           (`test_banjiha_routes §A-2`), 여기서 말없이 하나를 주면 그 줄들이 조용히 거짓이 된다.
+           게임 화면(`game.html`)이 새 판을 세울 때만 1 을 넘긴다. */
+    shop: (() => {
+      const sh = createShopState();
+      const seeds = Math.max(0, Math.round(opt.startSeeds || 0));
+      if (seeds > 0) sh.stock[cropKindOf('beansprout').seedItemId] = seeds;
+      return sh;
+    })(),
 
     /* 코어가 따로 쌓는 DLI 이력. 용도는 두 가지뿐:
          ① growth의 dli7()과 대조(어긋나면 배선이 틀린 것)
@@ -471,10 +489,15 @@ export function setCropAt(S, at, opt = {}) {
    반환 { potId, kind, slotId, at, fromStock, seedsUsed, sirus, moved, keptDays } */
 /* ★★★ 2026-08-11 — `opt.sow:false` 가 왜 생겼나 (박사님 "재배판 배치 후 무순 심기").
    ------------------------------------------------------------
-   콩나물 시루는 **놓기 = 심기**다 — 시루는 콩을 앉히는 용기라 놓는 순간이 곧 심는 순간이고,
-   그래서 여기서 용기와 씨앗을 한꺼번에 뺀다. 무순 재배판은 **씨앗을 뿌리는 판**이라 결이 다르다:
-   판을 먼저 놓고, 놓인 판에 뿌린다. 그래서 놓을 때는 용기 하나만 나가고 씨앗은
-   `state.sowCrop`(=[🌱 심기])이 뺀다.
+   콩나물 시루는 **놓기 = 심기**였다 — 시루는 콩을 앉히는 용기라 놓는 순간이 곧 심는
+   순간이라고 보았다. 무순 재배판은 **씨앗을 뿌리는 판**이라 결이 달라서, 놓을 때는 용기
+   하나만 나가고 씨앗은 `state.sowCrop`(=[🌱 심기])이 뺀다.
+   ⚠⚠ **2026-08-16 — 콩나물도 이 길로 왔다.** 박사님: *"콩나물 시루(차광용기)가 콩씨앗이
+     없어도 설치되게 해줘. 그리고 용기에 씨 심기 해서 심도록 해 처음에 순서가."*
+     ⇒ `game.html §commitPlace` 와 `startPhonePlace` 가 둘 다 `sow:false` 로 부른다.
+       이 함수는 **한 글자도 안 고쳤다** — 갈림길이 이미 여기 있었다.
+     ⚠ `opt.sow` 를 안 주면 예전 그대로 씨앗까지 뺀다. 그 길은 검사·재현이 아직 쓴다
+       (`test_siru_each` 가 「재고에서 꺼내면 씨앗도 나간다」를 그 기본값으로 잰다).
    ⚠ ①묻고 ②만들고 ③놓고 ④뺀다 **순서는 그대로다**(`tools/test_resow_atomic.mjs` 가 지킨다).
      달라지는 것은 ①에서 묻는 목록과 ④에서 빼는 목록뿐이고, 둘은 **같은 목록**이다. */
 export function placeSiru(S, at, opt = {}) {
@@ -515,6 +538,16 @@ export function placeSiru(S, at, opt = {}) {
     useStock(S, k.containerItemId, 1);
     if (sow) useStock(S, k.seedItemId, 1);
   }
+  /* ★★★ 2026-08-16 — **가방에 있던 빈 용기도 「안 심은 것」으로 세운다.**
+     ------------------------------------------------------------
+     `spare[0]`(이미 만들어져 있던 시루 — 첫 플레이가 들고 시작하는 그 하나가 그것이다)는
+     `makeCropPot` 기본값대로 `sown:true` 로 만들어져 있다. 그 기본값은 **옛 세이브를 위한
+     것**이고(§sown — 「없으면 심은 것」), 「가방에 있는 빈 용기」에는 맞지 않는다.
+     ⇒ 놓는 쪽이 `sow:false` 라고 말했으면 **그 시루는 빈 시루다.** 안 고치면 첫 시루만
+       놓자마자 심긴 것이 되어 [🌱 심기] 단추가 안 뜬다(실측으로 잡았다).
+     ⚠ 안 놓였고·안 시작했고·안 거둔 용기에만 건다 — 방에서 자라던 것을 되돌리지 않는다.
+     ⚠ ③(놓기)이 성공한 **뒤**다. 앞에 두면 놓기가 던진 판에서 가방의 시루가 조용히 바뀐다. */
+  if (!sow && pot.startedOnDay == null && !pot.harvested) pot.sown = false;
   pushLog(S, !sow
     ? `🌱 빈 ${k.containerKo}를 하나 놓았습니다 (씨앗을 심어야 시작합니다)`
     : fromStock
@@ -932,13 +965,16 @@ export function sellPantryCrop(S, count, opt = {}) {
     const ko = l.kind ? cropKindOf(l.kind).ko : '곳간에 있던 것';
     byKind.set(ko, (byKind.get(ko) || 0) + 1);
   }
+  /* ★ 2026-08-16 — 무게도 같이 적는다(§그램). 「콩나물 2판」만으로는 얼마나 나갔는지 모른다 */
   const whatKo = [...byKind].map(([ko, n]) => `${ko} ${n}판`).join(' · ') || `${taken.lots}판`;
+  const whatG = formatGram(taken.pendingGrams);
   const r = creditCropSurplus(S, taken.won);
   /* ⚠ `opt.log` 를 안 넘긴다 — 아래에서 한 줄을 적는다(두 줄이 되면 더 나쁘다) */
-  pushLog(S, `💰 곳간 채소를 팔았습니다 — ${whatKo}(밥값 ${taken.pendingWon.toLocaleString()}원어치)을 ` +
+  pushLog(S, `💰 곳간 채소를 팔았습니다 — ${whatKo} ${whatG}(밥값 ${taken.pendingWon.toLocaleString()}원어치)을 ` +
              `${Math.round(taken.rate * 100)}% 에 넘겨 ${taken.won.toLocaleString()}원 ` +
              `(${taken.lossWon.toLocaleString()}원 손해 · 곳간에 ${taken.pantryWon.toLocaleString()}원 남음)`);
-  return { ...r, lots: taken.lots, picked: taken.picked, whatKo,
+  return { ...r, lots: taken.lots, picked: taken.picked, whatKo, whatG,
+           pendingGrams: taken.pendingGrams, pantryGrams: taken.pantryGrams,
            pendingWon: taken.pendingWon, rate: taken.rate, won: taken.won,
            lossWon: taken.lossWon, pantryWon: taken.pantryWon,
            totalSoldWon: fp.food.totalPantrySoldWon,
@@ -957,11 +993,37 @@ export function pantrySaleStatus(S, count) {
   const q = pantrySaleQuote(fp, count);
   return {
     ...q,
-    /* 화면이 「콩나물 3,000원 (7일차)」를 적을 수 있게 이름을 붙여 낸다 */
-    list: pantryLotsOf(fp).map(l => ({
+    /* 화면이 「콩나물 400g (7일차)」를 적을 수 있게 이름을 붙여 낸다
+       ★ 2026-08-16 — `g` 도 같이 실린다(`pantryLotsWithGrams`). 화면이 원을 나누지 않는다 */
+    list: pantryLotsWithGrams(fp).map(l => ({
       ...l, kindKo: l.kind ? cropKindOf(l.kind).ko : '곳간에 있던 것'
     }))
   };
+}
+
+/* ══ ★★ 오늘 밥상 — 곳간에서 몇 g 을 쓸까 (2026-08-16 · first_play §eatFromPantry) ══════
+   박사님: *"하루지날떄 그때 소모량 반자동으로 소요되도록 … 창이 떠서 몇 G 쓸지 조정가능하도록"*
+   `sellPantryCrop` 과 같은 결이다: 규칙은 first_play, 묶는 것은 여기, 화면은 부르기만 한다.
+   ★ **먹지 않는다.** 적어 둘 뿐이고 실제로 먹는 것은 [다음 날]의 `eatFromPantry` 다 —
+     여기서 먹으면 하루에 두 번 먹는 날이 생긴다(§수확이 겪은 그 함정 그대로). */
+export function mealPlanStatus(S, grams) {
+  const fp = S && S.firstPlay;
+  if (!fp || !fp.enabled)
+    return { grams: 0, wantGrams: 0, maxGrams: 0, defaultGrams: 0, useWon: 0,
+             capWon: 0, capGrams: 0, pantryWon: 0, pantryGrams: 0,
+             cashFoodWon: 0, dailyFoodWon: 0, lots: [], lessThanCapWon: 0, list: [] };
+  const q = mealPlanQuote(fp, grams);
+  return { ...q, list: q.lots.map(l => ({
+    ...l, kindKo: l.kind ? cropKindOf(l.kind).ko : '곳간에 있던 것' })) };
+}
+
+/* 오늘 쓸 g 을 적어 둔다(null 이면 지운다 = 예전 그대로 상한까지 먹는다) */
+export function planMeal(S, grams) {
+  const fp = S && S.firstPlay;
+  if (!fp || !fp.enabled) throw new Error('[밥상] 첫 플레이 상태가 없습니다');
+  const q = planMealGrams(fp, grams);
+  return { ...q, list: q.lots.map(l => ({
+    ...l, kindKo: l.kind ? cropKindOf(l.kind).ko : '곳간에 있던 것' })) };
 }
 
 /* 추천 자리에 놓는다(예전 경로). 좌표까지 같이 세운다. */

@@ -28,7 +28,9 @@ import { newState, pot0, setPotSlot, resowCrop, waterCrop, waterPot,
          cropWaterStatus, ARRIVAL } from '../src/game/state.js';
 import { nextDay, harvestCrop } from '../src/game/loop.js';
 import { firstPlayRulesFromBalance, placeBeansprout, moveMonstera, beansproutReady,
-         FIRST_PLAY_RULES, CROP_KINDS } from '../src/game/first_play.js';
+         FIRST_PLAY_RULES, CROP_KINDS,
+         /* ★ 2026-08-16 · 그램 셈 (first_play §그램) */
+         cropCycleSavedWon } from '../src/game/first_play.js';
 import { seasonAt, seasonDayAt, buyLamp, canMoveOut, moveOut, TUTORIAL_RULES,
          varieView, varieGrantCheck, stepVarieGrant, varieGrantOpensDay } from '../src/game/tutorial.js';
 import { orderItem, stockOf, incomingOf, priceOf, varieLeavesNeededFor,
@@ -500,7 +502,12 @@ check('B 콩나물 — 다시 심을 수 있고 회전이 이어진다 · 절감
      ★ 옛 검사가 지키려던 것은 **"거둔 것이 곳간에서 안 새 나가나"** 다. 그건 그대로 잰다:
        거둔 값의 합 = 이미 먹은 것 + 곳간에 남은 것 + 쉬어서 버린 것. 한 푼도 안 새야 한다. */
   const fpS = r.S.firstPlay;
-  const cycleWon = fpS.rules.cropKindSavedWon[0];
+  /* ⚠⚠ 2026-08-16 — 여기서 읽던 `cropKindSavedWon[0]` 의 **뜻이 바뀌었다.**
+     예전에는 「콩나물 최상 품질 한 회전분」이었는데, g 셈이 들어오면서 그 표는
+     **중간 품질**(300g · 3,000원)을 가리키게 됐다. 이 판은 어두운 자리(DARK)라
+     최상 품질이 나오므로 400g = 4,000원이다(first_play §그램).
+     ⇒ 「그 시루가 실제로 낸 값」을 묻는다 — 품질을 화면 밖에서 짐작하지 않는다. */
+  const cycleWon = cropCycleSavedWon(fpS.rules, fpS.rules.qualityMaxMeals, 0, 0);
   const gotWon = b.harvestCount * cycleWon;                 // 시루 하나 = 겹칠 일이 없다
   const eaten = fpS.food.totalFoodSavedWon;
   assert.ok(eaten + fpS.food.pantryWon >= gotWon * 0.99 &&

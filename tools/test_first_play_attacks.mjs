@@ -10,7 +10,9 @@ import {
   createFirstPlayState, firstPlayRulesFromBalance,
   FIRST_PLAY_ASSETS, FIRST_PLAY_COMPLETE_PHASE_ID,
   markMonsteraArrived, markMonsteraPhase, placeBeansprout, slotFitsDiameter,
-  waterBeansprout
+  waterBeansprout,
+  /* ★ 2026-08-16 · 그램 셈 — 숫자를 박지 않고 규칙에서 읽는다(first_play §그램) */
+  cropCycleSavedWon
 } from '../src/game/first_play.js';
 import { nextDay, harvestCrop, phaseSchemaError } from '../src/game/loop.js';
 import { newState, givePlant, pot0, waterCrop, waterPot, resowCrop, ARRIVAL } from '../src/game/state.js';
@@ -354,11 +356,15 @@ function firstPlayState(slotId = 'dark') {
   assert.equal(grow(0.3).meals, 3);
   assert.equal(grow(0.7).meals, 2);
   assert.equal(grow(1.2).meals, 1);
-  /* ★ 값은 이제 **원**으로 매긴다 — 한 회전 3,000원이 5일에 걸쳐 600원씩 나간다
-     (2026-08-04 · first_play.js §작물 종류). 끼니는 품질 라벨로만 남는다. */
-  assert.equal(grow(0.2).cycleSavedWon, 3000);
-  assert.equal(grow(0.7).cycleSavedWon, 2000);
-  assert.equal(grow(1.2).cycleSavedWon, 1000);
+  /* ★ 값은 이제 **원**으로 매긴다(2026-08-04 · §작물 종류). 끼니는 품질 라벨로만 남는다.
+     ⚠⚠ 2026-08-16 — 여기 3,000 / 2,000 / 1,000 이 박혀 있었다. 그것이 이 줄이 지키던
+       옛 약속이다. g 셈이 들어와 **400 / 300 / 200g = 4,000 / 3,000 / 2,000원**이 됐다
+       (first_play §그램). ⇒ 규칙에서 읽는다 — 숫자를 다시 박지 않는다. */
+  assert.deepEqual([grow(0.2), grow(0.7), grow(1.2)].map(r => r.cycleSavedWon),
+    [3, 2, 1].map(m => cropCycleSavedWon(RULES, m, 0, 0)));
+  /* ★ 그리고 g 이 원과 정확히 10 배로 맞물린다 */
+  assert.deepEqual([grow(0.2), grow(0.7), grow(1.2)].map(r => r.perPot[0].grams),
+    [400, 300, 200]);
 }
 
 /* ── 11. 도착 → 말린 새순: 완료는 spear_furled 에서만 ── */
@@ -656,8 +662,11 @@ const BAD_PHASES = [
     '★거둔 날에 곳간을 열었습니다');
   /* ★ 2026-08-05 — 재는 값을 **콩나물 한 회전분**으로 바로잡았다(test_first_play.mjs 와 같은 이유).
      `cropSavedWonPerCycle` 은 "도는 작물 전부의 한 회전 합계"라 2종째가 들어오며 5,000이 됐다.
-     여기서 거둔 것은 콩나물 한 시루뿐이므로 3,000이 맞다. */
-  assert.equal(S.firstPlay.food.pantryWon, foodAtThrow.pantryWon + RULES.cropKindSavedWon[0],
+     ⚠⚠ 2026-08-16 — 그 자리에 쓰던 `cropKindSavedWon[0]` 의 **뜻이 바뀌었다**: 이제 그 표는
+       **중간 품질**(300g · 3,000원)이다. 이 판은 어두운 자리(0.2)라 최상 품질이므로 4,000원이다.
+       ⇒ 「최상 품질 한 회전분」을 묻는 창구로 바꾼다(first_play §그램). */
+  assert.equal(S.firstPlay.food.pantryWon,
+    foodAtThrow.pantryWon + cropCycleSavedWon(RULES, RULES.qualityMaxMeals, 0, 0),
     '★되돌린 수확이 곳간에 두 번 들어갔습니다');
 }
 

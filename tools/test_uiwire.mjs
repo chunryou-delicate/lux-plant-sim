@@ -215,8 +215,12 @@ const spot3 = await pickFloor(potD1);
 ok('S-7 시루 한 개가 들어갈 바닥 점이 있다', !!spot3, `시루 지름 ${potD1}m`);
 const drop = spot3 ? await dropAt(spot3.x, spot3.y) : { began: false };
 ok('S-8 산 시루가 있으면 **끌기가 시작된다**', drop.began === true, JSON.stringify(drop));
-ok('S-9 놓기 전에 **하나가 선다**고 말한다 (씨앗 1봉지 · 가방에 1개 남음)',
-   !!(drop.label && /시루 1개/.test(drop.label) && /씨앗 1봉지/.test(drop.label)
+/* ⚠⚠ 2026-08-16 — 여기 `/씨앗 1봉지/` 가 박혀 있었다. 그것이 이 줄이 지키던 옛 약속이다:
+   **놓을 때 씨앗이 같이 나간다.** 박사님이 순서를 바꾸시면서(놓기 → [🌱 심기] → 물)
+   놓을 때는 **용기 하나만** 나간다. 지킬 것은 「몇 개가 서는지 미리 말하나」이므로
+   그 뜻만 남기고 씨앗 자리는 뺀다. */
+ok('S-9 놓기 전에 **빈 시루 하나가 선다**고 말한다 (가방에 1개 남음)',
+   !!(drop.label && /빈 시루 1개/.test(drop.label) && !/씨앗 1봉지/.test(drop.label)
       && /1개 남음/.test(drop.label)), drop.label);
 await sleep(1400); await skipTalk(); await sleep(400);
 
@@ -225,7 +229,9 @@ ok('S-10 끌어다 놓으면 **하나만** 는다 (1 → 2)', s.placed === 2, s.
 ok('S-11 방에도 2개가 **각각** 서 있다 (열쇠가 다르다)',
    s.shown === 2 && new Set(s.keys).size === 2, JSON.stringify(s.keys));
 ok('S-12 시루 재고가 **1개만** 빠진다 (2 → 1)', s.stockSiru === 1, s.stockSiru);
-ok('S-13 씨앗도 **1봉지만** 나간다 (5 → 4)', s.stockSeed === 4, s.stockSeed);
+/* ⚠⚠ 2026-08-16 — 여기 `stockSeed === 4` 가 박혀 있었다(놓기 = 심기). **이제 안 나간다** —
+   씨앗은 놓인 시루의 [🌱 심기]가 뺀다. 그것이 이번에 바뀐 약속이다. */
+ok('S-13 ★씨앗은 **안 나간다** (5 그대로 — 심을 때 나간다)', s.stockSeed === 5, s.stockSeed);
 ok('S-13b [식물]의 줄도 2개다', s.rows === 2, s.rows);
 /* ★ 떨군 자리에 선 것은 **방금 놓은 그 시루**다. 자리 사본(`b.at`)은 대표 시루 것이라
    여기서 안 본다 — 대표가 방금 놓은 것이 아닐 수 있다. */
@@ -236,15 +242,20 @@ const dist = spot3 && lastAt ? Math.hypot(lastAt.x - spot3.hx, lastAt.z - spot3.
 ok('S-14 **떨군 자리**에 섰다 (0.05m 안)', dist <= 0.05,
    `${dist.toFixed(4)}m · 시루 지름 ${(+potD1).toFixed(3)}m`);
 
-/* 씨앗이 모자라면 — 시루가 사라지지 않는다 */
+/* ⚠⚠ 2026-08-16 — 이 절이 지키던 약속이 **뒤집혔다.**
+     옛 이름: 「씨앗이 모자라면 시루가 안 없어진다 · 판에 선 수도 안 늘어난다」.
+     박사님: *"콩나물 시루(차광용기)가 **콩씨앗이 없어도 설치되게** 해줘."*
+   ⇒ 씨앗이 0 이어도 **빈 시루가 선다.** 씨앗은 그 뒤 [🌱 심기]가 묻는다.
+   ★ 옛 뜻(재고가 반쯤 나가고 물건이 사라지지 않는다)은 `test_resow_atomic` 이 계속 지킨다. */
 await setStock(2, 0);
 await sleep(300);
 const before = await cropSnap();
 const spot2 = await pickFloor(potD1);
 if (spot2) { await dropAt(spot2.x, spot2.y); await sleep(1200); await skipTalk(); }
 s = await cropSnap();
-ok('S-15 씨앗이 모자라면 시루가 **안 없어진다**', s.stockSiru === 2, s.stockSiru);
-ok('S-16 그때 판에 선 수도 안 늘어난다', s.placed === before.placed, `${before.placed} → ${s.placed}`);
+ok('S-15 ★씨앗이 없어도 **빈 시루가 선다** (용기만 나간다)', s.stockSiru === 1, s.stockSiru);
+ok('S-16 그때 판에 선 수가 하나 는다', s.placed === before.placed + 1,
+   `${before.placed} → ${s.placed}`);
 
 console.log('\n══ W. 물 주기 말풍선이 죽지 않는다 (QA 2026-08-08 §3-A) ══════════');
 /* ★★ 무엇을 재나 — **「말풍선이 떠 있는 동안 그 버튼이 잠겨 있지 않은가」**.
@@ -266,6 +277,31 @@ const tapWaterMark = () => page.eval(`(()=>{
   return true; })()`);
 const watered = () => page.eval(`(()=>{ const b=window.__S().firstPlay.beansprout;
   return ((b.pots)||[]).some(p=>p.startedOnDay != null); })()`);
+
+/* ★★★ 2026-08-16 — **씨앗을 심고 나서 물을 준다**(박사님이 순서를 바꾸셨다).
+   놓기 → [🌱 심기] → [💧 물]. 이 절이 재는 것은 「물 말풍선이 죽지 않나」라 **그대로**이고,
+   앞에 심는 걸음 하나가 붙는다.
+   ⚠ 바로 위 §S-15 가 씨앗을 0 으로 만들어 두었다 — 다시 채우고 심는다. */
+await setStock(2, 5);
+await sleep(300);
+const sowAllPlaced = async () => {
+  for (let round = 0; round < 6; round++) {
+    const clicked = await page.eval(`(()=>{
+      const b = document.querySelector('#siruList .siru button[data-act="plant"]');
+      if (!b) return false; b.click(); return true; })()`);
+    if (!clicked) return;
+    for (let i = 0; i < 40; i++) {
+      await sleep(300); await skipTalk();
+      const left = await page.eval(`document.querySelectorAll('#siruList .siru button[data-act="plant"]').length`);
+      if (left < round + 1 || left === 0) break;
+    }
+  }
+};
+await page.eval(`(()=>{ try{ window.__byeotSheet.open(); window.__byeotSheet.tab && window.__byeotSheet.tab('plants'); }catch(e){} })()`, false);
+await sleep(500);
+await sowAllPlaced();
+await page.eval(`(()=>{ try{ window.__byeotSheet.close(); }catch(e){} })()`, false);
+await sleep(700);
 
 let w = await waterSnap();
 ok('W-1 물 주기 말풍선이 떠 있다', /물/.test(w.mark), w.mark || '(없음)');

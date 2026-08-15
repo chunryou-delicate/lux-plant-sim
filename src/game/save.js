@@ -470,6 +470,13 @@ function packFirstPlay(fp) {
             meals: needInt(o.meals ?? 0, `firstPlay.food.pantryLots[${i}].meals`, { min: 0 })
           };
         }),
+      /* ★★ 오늘 밥상에서 고른 몫 (2026-08-16 · first_play §eatFromPantry).
+         ⚠ **null 과 0 을 갈라서 싣는다.** null = 안 골랐다(상한까지 먹는다) ·
+           0 = 안 먹기로 골랐다. 한 칸으로 뭉개면 「모아서 팔려고 0g 을 고른 판」이
+           새로고침 한 번에 4,867원을 먹어 치운다 — `sown` 칸과 같은 종류의 사고다
+           (musunsow §2: 화이트리스트에 안 적으면 저장 한 번에 사라진다). */
+      mealPlanWon: f.mealPlanWon == null ? null
+        : needNum(f.mealPlanWon, 'firstPlay.food.mealPlanWon', { min: 0 }),
       /* ★ 겹침을 세는 기억 (2026-08-04 · first_play.js §겹침). 안 남기면 저장 한 번에
          "오늘 이미 둘을 거뒀다"가 사라져, 불러온 뒤 셋째가 온전한 값을 받는다. */
       harvestDay: f.harvestDay == null ? null

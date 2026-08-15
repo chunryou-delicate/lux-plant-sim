@@ -252,8 +252,27 @@ await sleep(1400); await skipTalk(); await sleep(600);
 await page.eval(`(()=>{ try{ window.__byeotSheet.open(); window.__byeotSheet.tab && window.__byeotSheet.tab('plants'); }catch(e){} })()`, false);
 await sleep(600);
 
+/* ★★★ 2026-08-16 — **놓기와 심기가 갈렸다** (박사님: *"콩나물 시루가 콩씨앗이 없어도
+   설치되게 해줘. 그리고 용기에 씨 심기 해서 심도록"*). 그래서 이 절 앞에 **심는 걸음**이
+   하나 붙는다 — 예전에는 놓으면 곧 심긴 것이라 바로 물 대기였다.
+   ⚠ 이 절이 재는 것은 「게이지가 칸인가 · 하루에 한 칸인가」이지 「언제 심는가」가 아니다.
+     그래서 지키던 뜻은 한 글자도 안 무르고, 앞에 손 하나를 더 밟는다.
+   ⚠ 걸음이 있다(doAct — 자취생이 시루까지 걸어간다). 시간을 박지 않고 **기다린다**. */
+const sowFirst = () => page.eval(`(()=>{
+  const b = document.querySelector('#siruList .siru button[data-act="plant"]');
+  if (!b) return false; b.click(); return true; })()`);
+ok('G-0 ★ 놓은 시루에 [🌱 심기] 단추가 있다 (씨앗은 놓은 뒤에 뿌린다)',
+   await sowFirst() === true, '');
+for (let i = 0; i < 40; i++) {
+  await sleep(400); await skipTalk();
+  await page.eval(`(()=>{ try{ window.__byeotSheet.open(); window.__byeotSheet.tab && window.__byeotSheet.tab('plants'); }catch(e){} })()`, false);
+  const sown = await page.eval(`(()=>{const b=window.__S().firstPlay.beansprout;
+    return ((b.pots)||[]).some(p=>p.sown !== false && (p.slotId||p.at));})()`);
+  if (sown) break;
+}
+
 let g = await cellsOf('#siruList .siru .cells');
-ok('G-1 놓으면 게이지가 **칸으로** 생긴다', !!g, JSON.stringify(g));
+ok('G-1 심으면 게이지가 **칸으로** 생긴다', !!g, JSON.stringify(g));
 ok('G-2 ★ 콩나물은 **5칸**이다 (주기 5일)', g && g.n === 5, g && g.n);
 ok('G-3 심자마자는 **빈 칸 5개**다 (찬 칸 0)', g && g.on === 0, g && g.on);
 

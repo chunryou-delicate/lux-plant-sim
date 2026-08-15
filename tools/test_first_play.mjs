@@ -21,7 +21,9 @@ import {
   placeBeansprout,
   waterBeansprout,
   makeCropPot,
-  resowBeansprout
+  resowBeansprout,
+  /* ★ 2026-08-16 · 그램 셈 — 숫자를 박지 않고 규칙에서 읽는다(first_play §그램) */
+  cropCycleSavedWon
 } from '../src/game/first_play.js';
 import { nextDay, harvestCrop } from '../src/game/loop.js';
 import { newState, pot0, waterCrop, waterPot, cropHarvestStatus, resowCrop, ARRIVAL } from '../src/game/state.js';
@@ -60,6 +62,13 @@ const rotateUntilArrival = (S, io, at) => {
 const TEST_RULES = firstPlayRulesFromBalance(JSON.parse(
   readFileSync(new URL('../data/balance/characters.json', import.meta.url), 'utf8')
 ));
+/* ★★ 2026-08-16 — **최상 품질 한 회전이 얼마인가를 읽어 온다**(first_play §그램).
+   숫자를 박으면 셈이 바뀔 때 이 파일이 조용히 거짓이 된다 — 실제로 3,000원이 그렇게 낡았다. */
+const BEST_CYCLE_WON = cropCycleSavedWon(TEST_RULES, TEST_RULES.qualityMaxMeals, 0, 0);
+/* 같은 날 첫째·둘째·셋째·넷째로 거둘 때의 값(§겹침). 넷째는 0 — 표 길이가 셋이라서다 */
+const OVERLAP_WON = [0, 1, 2, 3].map(t => cropCycleSavedWon(TEST_RULES, TEST_RULES.qualityMaxMeals, t, 0));
+/* 품질 세 칸(3·2·1끼)의 회전분 — 자리(빛)가 값을 가르는 그 표다 */
+const QUALITY_WON = [3, 2, 1].map(m => cropCycleSavedWon(TEST_RULES, m, 0, 0));
 const OPEN_SIRU = openSiruContractFromManifest(JSON.parse(
   readFileSync(new URL('../assets/manifest.json', import.meta.url), 'utf8')
 ));
@@ -152,7 +161,11 @@ function growCycle(dli) {
       meals: harvest.meals,
       quality: harvest.quality,
       /* ★ 절감은 **곳간에 들어간다** — 거둔 날 몰아 쓰지 않는다(first_play.js §eatFromPantry).
-         한 회전 3,000원이 5일에 걸쳐 600원씩 나간다. */
+         ⚠⚠ 2026-08-16 — 여기 **3,000원이 박혀 있었다.** 그것이 이 줄이 지키던 옛 약속이다:
+           「최상 품질 한 회전 = 3,000원」. 박사님이 g 으로 셈을 정하시면서
+           최상 품질(하얗고 아삭)이 **400g = 4,000원**이 됐다(first_play §그램).
+           3,000원은 이제 **중간 품질**(살짝 초록 300g)의 값이다.
+         ⇒ 숫자를 다시 박지 않는다. **규칙에서 읽는다**(START-HERE §2.8 의 그 사고를 피한다). */
       cycleSavedWon: harvest.cycleSavedWon,
       pantryWon: fp.food.pantryWon,
       phase: fp.phase
@@ -161,14 +174,14 @@ function growCycle(dli) {
       harvested: true,
       meals: 3,
       quality: 'crisp_white',
-      cycleSavedWon: 3000,
-      pantryWon: 3000,
+      cycleSavedWon: BEST_CYCLE_WON,
+      pantryWon: BEST_CYCLE_WON,
       phase: 'monstera_gift'
     }
   );
   /* 두 번 눌러도 두 번 안 거둬진다 */
   assert.throws(() => harvestBeansprout(fp), /이미 거둔/);
-  assert.equal(fp.food.pantryWon, 3000, '★두 번째 누름이 곳간에 또 들어갔다');
+  assert.equal(fp.food.pantryWon, BEST_CYCLE_WON, '★두 번째 누름이 곳간에 또 들어갔다');
 }
 
 /* ★ 덜 자란 시루는 못 거둔다 — 안내지 고장이 아니다 */
@@ -215,7 +228,7 @@ function growCycle(dli) {
   const last = harvestBeansprout(fp, { day: 15 });
   assert.equal(last.harvested, true, '★물을 준 뒤에도 회전이 안 돌았다');
   assert.equal(last.quality, 'crisp_white', '★물주기가 품질을 바꿨다 — 축이 겹쳤다');
-  assert.equal(last.cycleSavedWon, 3000, '★늦게 시작한 것이 절감액 자체를 깎았다');
+  assert.equal(last.cycleSavedWon, BEST_CYCLE_WON, '★늦게 시작한 것이 절감액 자체를 깎았다');
   assert.equal(last.harvestedPots, 1);
 }
 
@@ -234,10 +247,11 @@ function growCycle(dli) {
 
   const h = harvestBeansprout(fp, { day: CYCLE });
   assert.equal(h.harvestedPots, 4, '★한 번에 다 안 거둬졌다 — 시루마다 누르게 되어 있다');
-  assert.deepEqual(h.perPot.map(p => p.savedWon), [3000, 2000, 1000, 0],
+  assert.deepEqual(h.perPot.map(p => p.savedWon), OVERLAP_WON,
     '★같은 날 거둔 것이 안 깎였다 — 겹침이 안 물린다');
-  assert.equal(h.cycleSavedWon, 6000);
-  assert.equal(h.overlapLostWon, 1000 + 2000 + 3000, '겹쳐서 못 받은 몫이 안 맞는다');
+  assert.equal(h.cycleSavedWon, OVERLAP_WON.reduce((a, v) => a + v, 0));
+  assert.equal(h.overlapLostWon,
+    OVERLAP_WON.reduce((a, v) => a + (BEST_CYCLE_WON - v), 0), '겹쳐서 못 받은 몫이 안 맞는다');
 
   /* ★ 시차를 두면 안 깎인다 — 같은 시루 넷을 **다른 날** 거두면 넷 다 3,000원이다.
      ★★ 이것이 박사님 그림이다: "5일 주기니까 5개까지 1일씩 안 겹치게 하면 매일 다 3,000". */
@@ -258,7 +272,7 @@ function growCycle(dli) {
       resowBeansprout(fp2, { day: d });                     // 거둔 것만 다시 심는다
     }
   }
-  assert.deepEqual(got, [3000, 3000, 3000, 3000],
+  assert.deepEqual(got, [BEST_CYCLE_WON, BEST_CYCLE_WON, BEST_CYCLE_WON, BEST_CYCLE_WON],
     '★하루씩 어긋나게 거뒀는데 깎였다 — 시차가 값을 못 지킨다');
 }
 
@@ -270,9 +284,13 @@ function growCycle(dli) {
   assert.equal(medium.meals, 2);
   assert.equal(bright.meals, 1);
   /* ★ 자리(빛)가 값을 가른다 — 끼니 라벨이 원으로 그대로 옮겨졌다 */
-  assert.equal(low.cycleSavedWon, 3000);
-  assert.equal(medium.cycleSavedWon, 2000);
-  assert.equal(bright.cycleSavedWon, 1000);
+  /* ⚠⚠ 2026-08-16 — 여기 3,000 / 2,000 / 1,000 이 박혀 있었다. 그것이 이 줄이 지키던
+     옛 약속이다(「최상 3,000원 · 끼니 비례」). 이제 400 / 300 / 200g = 4,000 / 3,000 / 2,000원이다
+     (first_play §그램 — 중간빛 300g 을 기준점으로 ±100g). 숫자는 규칙에서 읽는다. */
+  assert.deepEqual([low.cycleSavedWon, medium.cycleSavedWon, bright.cycleSavedWon], QUALITY_WON);
+  /* ★ g 이 정본인 작물이라 원이 정확히 10 의 배수다 — 「약 몇 g」이 아니다 */
+  assert.deepEqual([low.perPot[0].grams, medium.perPot[0].grams, bright.perPot[0].grams],
+    QUALITY_WON.map(w => w / 10), '★수확량(g)이 원과 어긋난다 — 10원 = 1g 이 깨졌다');
 }
 
 /* ★★ 시루를 늘려도 **같은 날 거두면** 안 는다 (2026-08-04 재정정 · first_play.js §겹침)
@@ -291,11 +309,11 @@ function growCycle(dli) {
   for (let d = 1; d <= CYCLE; d++) growDay(fp, 0.2);
   const six = harvestBeansprout(fp, { day: CYCLE });
   assert.equal(six.harvestedPots, 6);
-  assert.deepEqual(six.perPot.map(p => p.savedWon), [3000, 2000, 1000, 0, 0, 0],
+  assert.deepEqual(six.perPot.map(p => p.savedWon), [...OVERLAP_WON, 0, 0],
     '★같은 날 거둔 넷째부터가 0원이 아니다 — 천장이 규칙에서 안 나온다');
-  assert.equal(six.cycleSavedWon, 6000);
+  assert.equal(six.cycleSavedWon, OVERLAP_WON.reduce((a, v) => a + v, 0));
   assert.equal(six.cycleSavedWon, one.cycleSavedWon * 2,
-    '★여섯 시루를 같은 날 거둔 값이 한 시루의 두 배(3,000+2,000+1,000)가 아니다');
+    '★여섯 시루를 같은 날 거둔 값이 한 시루의 두 배가 아니다 (첫째+둘째+셋째)');
   assert.equal(six.overlapCount, 5, '겹친 시루 수를 안 세고 있다');
 }
 
@@ -472,7 +490,11 @@ console.log('first_play: PASS');
      예전에는 `cropSavedWonPerCycle` 로 쟀는데 그 값은 "지금 도는 작물 **전부**가 한 회전에
      내는 합계"다. 작물이 콩나물뿐이던 동안에는 둘이 우연히 같았지만(3,000),
      2종째(무순)가 들어오면서 5,000이 되어 갈라졌다 — 여기서 거둔 것은 콩나물 한 시루뿐이다. */
-  assert.equal(S.firstPlay.food.pantryWon, TEST_RULES.cropKindSavedWon[0],
+  /* ⚠⚠ 2026-08-16 — 여기서 읽던 `cropKindSavedWon[0]` 의 **뜻이 바뀌었다.**
+     예전에는 「콩나물 최상 품질 한 회전분」이었는데, g 셈이 들어오면서 그 표는
+     **중간 품질**(300g · 3,000원)을 가리키게 됐다. 이 판은 어두운 자리라 최상 품질이므로
+     4,000원이 맞다. ⇒ 「최상 품질 한 회전분」을 묻는 창구로 바꾼다. */
+  assert.equal(S.firstPlay.food.pantryWon, BEST_CYCLE_WON,
     '곳간에 들어간 몫이 안 맞습니다');
 
   /* ★수확한 날의 배움이 실제로 적혔는가 (2026-08-03 재발 방지 · 2026-08-04 자리 이동).

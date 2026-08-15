@@ -224,6 +224,22 @@
   #staDots{letter-spacing:2px;font-size:13px;line-height:1;color:var(--leaf)}
   #staBar.empty #staDots{color:#e8615a}
   #staBar.empty b{color:#e8615a}
+  /* ══ ★★★ 오늘 밥상 — [다음 날]을 누르면 뜨는 고르개 (2026-08-16 박사님 확정) ══════
+     원문: *"하루지날떄 그때 소모량 반자동으로 소요되도록 … 창이 떠서 몇 G 쓸지
+            조정가능하도록 해줘. 디폴트는 300G로 해주고."*
+     ★ **자리는 [다음 날] 바로 위**다. 시트(가방·상점) 안에 넣으면 매일 탭을 열어야 하고,
+       화면 한가운데 덮개로 띄우면 하루가 갈 때마다 방이 가려진다. 누를 것 바로 위가 제자리다.
+     ★ **매일 뜨는 창이라 손이 적어야 한다** — [다음 날]을 한 번 더 누르면 그대로 넘어간다.
+       그래서 이 창은 **막는 것이 아니라 보여 주는 것**이다(기획 §B). */
+  #mealPanel{margin:0 0 9px;padding:9px 11px;border-radius:11px;
+    background:rgba(159,220,134,.08);border:1px solid rgba(159,220,134,.26)}
+  #mealPanel .mtitle{font-size:12.5px;font-weight:700;color:var(--leaf);margin-bottom:5px}
+  #mealPanel .mlots{font-size:10.5px;line-height:1.5;color:var(--dim);word-break:keep-all;margin-bottom:6px}
+  #mealPanel .mrow{display:flex;gap:6px;align-items:center}
+  #mealPanel .mrow button{flex:1;min-height:36px;font-size:13px;font-weight:700;border-radius:10px;padding:0}
+  #mealPanel .mrow #mealCount{flex:1.4;opacity:1}
+  #mealPanel .msay{margin-top:7px;font-size:12px;line-height:1.5;color:var(--ink);word-break:keep-all}
+  #mealPanel .msay.warn{color:#ffb454}
   .actionbar{display:flex;gap:7px}
   /* ★엄지로 누르는 자리. 44px 밑으로 내리지 말 것 */
   .actionbar button{flex:1;min-height:var(--tap);font-weight:700;font-size:14px;border-radius:12px}
@@ -420,6 +436,20 @@
     background:rgba(16,13,24,.92);border:1px solid rgba(255,180,84,.5);color:var(--gold);
     font-weight:700;font-size:11px;line-height:1.5}
   .bagslot .eta{display:block;margin-top:3px;font-size:9.5px;color:var(--gold);line-height:1.25}
+  /* ══ ★★ 무게 배지 — **오른쪽 아래** (2026-08-16 박사님: *"콩나물 아이템창은 우측아래
+       G으로 나오다가 1000G 이상되면 1KG 으로 표현되게해줘"*) ══════════════════════
+     ⚠ 개수 배지(`.qty`)는 **오른쪽 위**다. 둘을 같은 자리에 두면 「몇 개」와 「몇 g」이
+       겹쳐서 어느 쪽인지 못 읽는다. 거둔 채소는 개수가 없고 무게만 있으므로 아래를 쓴다.
+     ★ 글자는 `formatGram` 이 만든다 — 화면이 g/kg 을 안 정한다(§그램). */
+  .bagslot .gram{position:absolute;right:3px;bottom:3px;padding:1px 5px;border-radius:999px;
+    background:rgba(16,13,24,.92);border:1px solid rgba(159,220,134,.5);color:var(--leaf);
+    font-weight:700;font-size:11px;line-height:1.5}
+  /* 거둔 채소 칸 — 초록 쪽으로 물들인다. 「살 것」과 「거둔 것」이 한 격자에 서므로 */
+  .bagslot.crop{border-color:rgba(159,220,134,.34);background:rgba(159,220,134,.07)}
+  #bagGrid .lotline{margin:6px 2px 0;font-size:10.5px;line-height:1.5;color:var(--dim);word-break:keep-all}
+  #bagGrid .lotline b{color:rgba(255,255,255,.82);font-weight:700}
+  #bagGrid .lotbtns{margin:7px 2px 2px}
+  #bagGrid .lotbtns button{min-height:34px;font-size:12px;padding:0 12px}
   /* ══ ★★ 끌 수 있는 칸 (2026-08-10 · 콩나물 시루 큰 카드를 대신한다) ══════════
      박사님 원문: *"밑에 그냥 콩나물 시루 ×4 된 걸 누르거나 드래그할 때마다 1개씩 배치되면"*
      ⚠ **잡을 수 있게 생겨야 한다.** 옆 칸(씨앗)과 똑같이 생기면 끌 수 있다는 것을
@@ -1307,7 +1337,7 @@
 
   <!-- ══ 하단 액션 — 엄지로 누르는 자리 ═══════════════════════════════ -->
   <nav id="bottom">
-    <div class="quest" id="quest">가방의 콩나물 시루를 방 안 어두운 자리에 놓아 보세요.</div>
+    <div class="quest" id="quest">가방의 콩나물 시루를 방 안 어두운 자리에 놓아 보세요. 씨앗은 놓은 뒤에 심습니다.</div>
     <!-- 오늘 식물이 자랐나 — 지금까지 검수 탭 개발 HUD 안에만 있어 아무도 못 봤다 -->
     <div id="plantToday"></div>
     <!-- ★물을 줘야 할 때만 나타난다 (박사님 2026-08-04: "물주기 정도는 넣자").
@@ -1332,6 +1362,21 @@
          그 줄은 이미 폰 세로에서 두 줄로 접힌다(QA 2026-08-05).
          손이 남았나를 **누르기 직전에** 보는 것이 이 값의 쓸모다. -->
     <div id="staBar" style="display:none"><span id="staDots"></span><b id="staText"></b></div>
+    <!-- ══ ★★ 오늘 밥상 (2026-08-16) — 곳간에서 몇 g 을 쓸지 고른다 ═══════════
+         ★ 값도 글도 여기서 안 짓는다. `mealPlanStatus` 가 낸 것을 그대로 적는다 —
+           화면이 다시 세면 「적힌 것」과 「실제로 먹은 것」이 갈린다. -->
+    <div id="mealPanel" style="display:none">
+      <div class="mtitle" id="mealTitle">오늘 밥상</div>
+      <div class="mlots" id="mealLots"></div>
+      <div class="mrow">
+        <button id="mealMinus" class="ghost" type="button">−</button>
+        <button id="mealCount" class="ghost" type="button" disabled>300g</button>
+        <button id="mealPlus" class="ghost" type="button">＋</button>
+        <button id="mealAll" class="ghost" type="button">최대</button>
+        <button id="mealNone" class="ghost" type="button">0g</button>
+      </div>
+      <div class="msay" id="mealSay"></div>
+    </div>
     <div class="actionbar">
       <!-- ★★ 2026-08-09 — **[빨리감기]를 없앴다** (박사님: *"빨리감기는 없애.
            하루넘기기만 살리자."*). 하루를 넘기는 손은 이제 이 버튼 하나다.
@@ -1913,7 +1958,9 @@ import { newState, SIM_MODES, pot0, pushLog, givePlant, hasPlant, ARRIVAL,
          waterPot, potWaterStatus,
          cropSurplusStatus, sellCropSurplus,
          /* ★ 2026-08-15 · 곳간 채소 팔기 (state.js §곳간 판매) */
-         pantrySaleStatus, sellPantryCrop, reseatAllOnSlots } from './src/game/state.js';
+         pantrySaleStatus, sellPantryCrop,
+         /* ★ 2026-08-16 · 오늘 밥상 — 곳간에서 몇 g 을 쓸지 고른다 (state.js §밥상) */
+         mealPlanStatus, planMeal, reseatAllOnSlots } from './src/game/state.js';
 import { catalogList, orderItem, shopStatus, priceOf, sellPot, sellCutting,
          stockOf, SELLABLE_CUTTING_STATUS, varieLeavesNeededFor } from './src/game/shop.js';
 /* ★ 삽수 — 규칙과 수치는 전부 propagation.js 것이다. 여기서는 부르기만 한다
@@ -1946,7 +1993,12 @@ import {
        화면에도 한 벌 생기고, 두 벌은 반드시 어긋난다. */
   cropPotList,
   cropPotPlaced,
-  syncCropLead
+  syncCropLead,
+  /* ★★ 2026-08-16 · 그램(g) — **화면이 g 을 손으로 안 적는다**(first_play §그램).
+     `formatGram` 하나가 g/kg 을 정하고, 가방·상점·밥상 창·기록이 전부 그것을 부른다. */
+  formatGram,
+  pantryLotsWithGrams,
+  pantryGramsOf
 } from './src/game/first_play.js';
 import { createLightEngine } from './src/game/light_adapter.js';
 import { createGrowthAdapter } from './src/game/growth_adapter.js';
@@ -2067,7 +2119,10 @@ const OPEN_SIRU = openSiruContractFromManifest(await manifestResponse.json());
    낱개 원화는 거의 흰색 세로 막대라 46px 슬롯에서 흰 덩어리로만 읽혔다.
    반지하 저채도 톤에서 가장 밝은 물체가 되어 버려서, 시루 하나로 끝까지 간다. */
 let S = newState({ room: 'banjiha', mode: 'novice', firstPlay: true, firstPlayRules: FIRST_RULES,
-                     staminaRules: STAMINA_RULES_NOW });
+                     staminaRules: STAMINA_RULES_NOW,
+                     /* ★ 2026-08-16 — 첫 시루에 넣을 **콩 씨앗 한 봉지**(state.js §startSeeds).
+                        놓기와 심기가 갈리면서 씨앗 없이는 첫 걸음이 막힌다. */
+                     startSeeds: 1 });
 let lastTurn = null;
 /* ★★ 2026-08-11 — **빛이 막혀 멈춘 날을 여기서 따로 센다.**
    ------------------------------------------------------------
@@ -2821,6 +2876,17 @@ function bindDetail() {
     if (drag.on) return;                       /* 끄는 중이면 누름이 아니다 */
     const info = e.target.closest('.bagslot .info');
     if (info) { e.stopPropagation(); detail.open(info.dataset.detail); return; }
+    /* ★ 2026-08-16 — 가방에서 **바로 팔기**로 상점 고르개를 연다(§거둔 채소).
+       ⚠ 파는 셈은 **한 글자도 새로 안 만들었다** — 상점의 [곳간 채소 팔기] 고르개를
+         그대로 연다(`sellPantryCrop`). 손이 짧아질 뿐 길은 하나다. */
+    if (e.target.closest('#bagSellCrop')) {
+      e.stopPropagation();
+      pantrySellOpen = true; pantrySellN = 1;
+      try { window.__byeotSheet.tab('shop'); } catch { }
+      draw();
+      try { $('pantryPanel').scrollIntoView({ block: 'center' }); } catch { }
+      return;
+    }
     const cell = e.target.closest('.bagslot[data-place]');
     if (!cell) return;
     /* ⚠ 그림 위에서 끝난 손짓은 `bindDrag` 가 이미 처리했다 — 그 메아리로 또 세우면
@@ -3025,6 +3091,10 @@ const koOf = (id) => (catalogList().find(x => x.id === id) || {}).ko || id;
    "일자별 나가는 식비, 콩나물시루 1개당 줄어드는 식비 같은 식으로"
    ★시루를 더 살지는 **산수**로 정해지는 문제다. 그런데 그 산수가 화면에 없어
      감으로 정해야 했다. 하루 상한까지 있어서 무작정 사면 그냥 낭비다. */
+/* 곳간의 g — **낱개를 더해서** 낸다(§그램 ⚠). 못 읽으면 0 이다(살림 표가 멎으면 안 된다) */
+function pantryGramsSafe() {
+  try { return pantryGramsOf(S.firstPlay); } catch { return 0; }
+}
 function drawLedger() {
   const el = $('ledger');
   if (!el) return;
@@ -3044,7 +3114,12 @@ function drawLedger() {
   let ws = null, hs = null;
   try { ws = cropWaterStatus(S); hs = cropHarvestStatus(S); } catch { }
   const sirus = Math.max(0, Math.round((hs && hs.sirus) || 0));
-  const cycleWon = R.cropKindSavedWon ? R.cropKindSavedWon[0] : 0;   // 한 회전분
+  /* ⚠⚠ 2026-08-16 — `cropKindSavedWon[0]` 의 **뜻이 바뀌었다**(first_play §그램):
+     예전에는 「콩나물 최상 품질 한 회전분」이었고 지금은 **중간 품질**(300g · 3,000원)이다.
+     여기 살림 표에서는 「보통 한 번 거두면 얼마」를 말하는 자리라 중간값이 오히려 맞다 —
+     대신 화면이 그렇게 **말하게** 한다(아래 §한 번 거두면). */
+  const cycleWon = R.cropKindSavedWon ? R.cropKindSavedWon[0] : 0;   // 한 회전분(중간 품질)
+  let cycleG = 0; try { cycleG = Math.round(cycleWon / 10); } catch { }
   const maxSirus = R.harvestDays;                                    // 천장 = 주기 길이
   const waiting = (ws && ws.waiting) || 0;
   const idleDays = (ws && ws.idleDays) || 0;
@@ -3068,9 +3143,11 @@ function drawLedger() {
     + row('콩나물로 아낌', savedToday ? '−' + won(savedToday) : '—', 'save')
     + row('오늘 실제로 나가는 돈', won(Math.max(0, daily - savedToday)), 'net')
     + row('보유금', won(ts.cashWon || 0), 'cash')
-    + row('곳간에 남은 것', pantryWon ? won(pantryWon) : '없음')
+    /* ★ 2026-08-16 — 곳간은 **물건**이라 g 으로 적는다. 원은 괄호 안에 남긴다(§그램) */
+    + row('곳간에 남은 것',
+          pantryWon ? `${formatGram(pantryGramsSafe())} (${won(pantryWon)})` : '없음')
     + row('시루', sirus ? `${sirus}개` + (waiting ? ` (${waiting}개 대기)` : '') : '없음')
-    + row('한 번 거두면', won(cycleWon))
+    + row('한 번 거두면', `${formatGram(cycleG)} 안팎 (${won(cycleWon)})`)
     + `<div class="tip">${tip}</div>`;
 }
 
@@ -3374,6 +3451,68 @@ function bagSlotHTML(it, have, coming) {
     `<span class="nm">${short}</span>${eta}</div>`;
 }
 
+/* ══════════════════════════════════════════════════════════════════════════
+   ★★★ **거둔 채소가 가방에 보인다** (2026-08-16 · 박사님 지적)
+   ------------------------------------------------------------
+   원문: *"수확하면 채소가 인벤에 들어와야되는데 안들어오네."*
+
+   ⚠ 이건 **「없는 기능」이지 「고장」이 아니었다.** 거두면 채소는 곳간
+   (`fp.food.pantryWon` · `pantryLots`)에 제대로 들어갔고, 다만 그 곳간이 화면에서
+   **상점 탭에만** 보였다(pantrysale §7-3 이 「곳간이 조용하다」로 남겨 둔 그 자리다).
+
+   ★★ **새 저장 계통을 안 만들었다.** `pantryLots`(2026-08-15 · §곳간 판매)를 **읽어서**
+     그린다. 물건을 두 곳에 두면 반드시 어긋난다 — 이 저장소가 여러 번 겪은 일이다.
+   ★★ **양은 g 으로 적는다**(§그램). 곳간은 원으로 도는데 가방에 「3,000원」이라 적으면
+     **물건이 아니라 돈으로 읽힌다.** 박사님이 g 으로 셈을 정하신 뒤로는 g 이 곧 물건의 자다.
+     ⇒ 칸의 **오른쪽 아래**에 `formatGram` 이 만든 글자를 얹는다(박사님 지시 자리).
+   ★ 칸은 **작물마다 하나**다. 꾸러미마다 칸을 세우면 하루 걸러 거두는 판에서 칸이
+     열 개가 넘어가는데, 사람이 세고 싶은 것은 「콩나물이 몇 g 있나」다.
+     ⇒ **언제 거둔 것인지**는 칸 아래 한 줄(`.lotline`)이 꾸러미 순서대로 적는다.
+   ⚠ **[먹기] 단추는 안 만들었다.** 먹는 셈은 하루가 갈 때 도는 것이고(§밥상 창),
+     자동/반자동/수동은 아직 안 정해졌다(plan-2026-08-14 §B). 여기는 **보여 주는 자리**다. */
+const HARVEST_ART = Object.freeze({
+  beansprout: './assets/crops/thumbs/beansprout_l.png',
+  musun:      './assets/crops/thumbs/sprout_radish_l.png'
+});
+function harvestedCropHTML() {
+  const fp = S.firstPlay;
+  if (!fp || !fp.enabled) return '';
+  let lots = [];
+  try { lots = pantryLotsWithGrams(fp); } catch { }
+  if (!lots.length) return '';
+  /* 작물마다 묶는다 — **g 은 낱개를 더해서** 낸다(§그램 ⚠). 총액을 한 번에 나누면
+     아래 줄에 적힌 낱개를 더한 것과 배지가 안 맞는다. */
+  const byKind = new Map();
+  for (const l of lots) {
+    const key = l.kind || '';
+    const cur = byKind.get(key) || { kind: l.kind, g: 0, lots: 0, kindKo: '' };
+    cur.g += l.g; cur.lots += 1;
+    byKind.set(key, cur);
+  }
+  let cells = '';
+  for (const c of byKind.values()) {
+    let ko = '거둔 채소';
+    try { if (c.kind) ko = cropKindOf(c.kind).ko; } catch { }
+    const art = HARVEST_ART[c.kind];
+    const pic = art ? `<img src="${art}" alt="${ko}">`
+                    : `<b style="background:#9fdc86">채</b>`;
+    cells += `<div class="bagslot crop" title="${ko} · ${c.lots}판" data-crop="${c.kind || ''}">` +
+      `<span class="art">${pic}</span><span class="nm">${ko}</span>` +
+      `<span class="gram">${formatGram(c.g)}</span></div>`;
+  }
+  /* 언제 거둔 것인지 — **먼저 거둔 것이 앞**이다(먹는 순서·파는 순서와 같다) */
+  const line = lots.map(l => {
+    let ko = '곳간에 있던 것';
+    try { if (l.kind) ko = cropKindOf(l.kind).ko; } catch { }
+    return `<b>${ko} ${formatGram(l.g)}</b>${l.day == null ? '' : ` (${l.day}일차)`}`;
+  }).join(' · ');
+  let totalG = 0; try { totalG = pantryGramsOf(fp); } catch { }
+  return `<div class="grouphead">거둔 채소 · ${formatGram(totalG)}</div>` +
+    `<div class="baggrid">${cells}</div>` +
+    `<div class="lotline">${line}<br>먼저 거둔 것부터 밥이 됩니다 — 하루가 갈 때 몇 g 을 쓸지 고릅니다.</div>` +
+    `<div class="lotbtns"><button class="ghost" id="bagSellCrop" type="button">상점에서 팔기</button></div>`;
+}
+
 /* 카드를 [가방] ↔ [식물] 사이로 **노드째** 옮긴다.
    ⚠ 두 벌을 만들지 않는다 — 끌기(bindDrag)·상세창(bindDetail)이 전부 `#musunThumb` 같은
      id 하나를 붙잡고 있다. 노드를 옮기면 그 배선이 그대로 따라온다.
@@ -3429,6 +3568,8 @@ function drawBag() {
   if (anyPlaceable)
     html += '<div class="baghelp">시루 칸을 <b>끌거나 누르면</b> 방에 <b>한 번에 하나씩</b> 섭니다 ' +
             '· <b>i</b> 를 누르면 자세히</div>';
+  /* ★★★ **거둔 채소** (2026-08-16 · 박사님: *"수확하면 채소가 인벤에 들어와야되는데 안들어오네"*) */
+  html += harvestedCropHTML();
   /* ⚠ **끄는 중에는 다시 그리지 않는다.** 칸이 곧 손잡이라 `innerHTML` 로 갈아 끼우면
        손가락이 잡고 있던 노드가 사라져 끌기가 도중에 끊긴다(예전 카드는 노드가 살아
        있어서 이 문제가 없었다). 같은 글이면 아예 손을 안 대는 것도 같은 이유다. */
@@ -3491,8 +3632,10 @@ function drawShop() {
      ★ **문을 여는 값을 새로 짓지 않았다.** 몬스테라 도착 조건(`MONSTERA_ARRIVAL_RULE`
        = 콩나물 3회전)을 그대로 문턱으로 쓴다. 그 순간이 이미 게임이 "한 단계 넘었다"고
        말하는 자리라, 거기에 얹으면 단계가 둘로 안 갈린다.
-     ★ 왜 감추나 — 무순의 값어치는 **하루 저감 상한을 3,000 → 5,000원으로 올리는 것**이다
-       (`rules.dailyCropSaveWon`. 3,000+2,000 이 정확히 자취생 2끼 = 5,000원이다).
+     ★ 왜 감추나 — 무순의 값어치는 **하루 저감 상한을 올리는 것**이다(`rules.dailyCropSaveWon`).
+       ⚠⚠ 2026-08-15 정정 — 여기 「3,000 → 5,000원」이라 적혀 있었는데 **둘 다 낡았다.**
+         지금은 콩나물 3,000 + 무순 1,867 = **4,867원**이다(START-HERE §2.8).
+         숫자를 다시 적지 마라 — `dailyCropSaveWonOf(fp)` 로 **읽어라.**
        콩나물 상한도 아직 못 채운 사람에게 그걸 팔면 **천장이 안 올라가고 돈만 나간다.**
        실제로 그게 QA 가 잡은 「사면 돈만 없어진다」의 절반이었다.
      ⚠ 상점이 무엇을 파는지는 `shop.js` 가 정한다. 여기서는 **지금 보여 줄지**만 고른다 —
@@ -3526,8 +3669,12 @@ function drawShop() {
     }));
   }
   /* ── 잉여 채소 넘기기 (2026-08-06) ──
-     ★ 파는 것은 **곳간이 못 받은 몫**뿐이다 — 겹쳐서 깎인 차액과 넘쳐서 쉰 몫.
-       둘 다 정의상 곳간 밖이라 밥이 될 길이 없다. 끼니로 쓸 것은 안 팔린다.
+     ★ 파는 것은 **곳간이 못 받은 몫**뿐이다.
+     ⚠⚠ 2026-08-16 — 그 몫이 **하나로 줄었다.** 예전에는 「겹쳐서 깎인 차액」과 「넘쳐서 쉰
+       몫」 둘이었는데, 박사님이 곳간 한도를 걷으시면서(*"남는 거 팔아먹든 하는 거"*)
+       **쉰 몫이 아예 안 생긴다**(§pantryCapWon). 남은 것은 질림(겹침)뿐이다.
+       ⇒ ☐ **판단필요**: 「안 챙긴 것을 판다」가 이제 앞뒤가 맞나. 예전에는 「거두긴 했는데
+         곳간이 못 받았다」라 팔 물건이 손에 있었다. 지금은 애초에 덜 거둔 것이다.
      ⚠⚠ **2026-08-15 정정 — 여기 「값은 아직 미확정, 지금은 70%」라고 적혀 있던 것은
        낡은 주석이었다.** 정본은 `characters.json._meta.cropSurplusSaleRate = 0.85` 고
        화면도 처음부터 85% 라 말하고 있었다(guideaudit §4-5 가 화면으로 확인했다).
@@ -3540,9 +3687,11 @@ function drawShop() {
     sBtn.style.display = hasSurplus ? '' : 'none';
     sBtn.textContent = hasSurplus ? `잉여 채소 넘기기 (${sq.won.toLocaleString()}원)` : '잉여 채소 넘기기';
   }
+  /* ⚠ 2026-08-16 — 「넘쳐서 쉰 몫」을 뺐다. 곳간은 이제 안 넘친다(§pantryCapWon).
+     남은 까닭은 **같은 날 거듭 거둔 질림** 하나뿐이다. */
   if (sHint) sHint.textContent = hasSurplus
-    ? `같은 날 겹쳐 거두거나 넘쳐서 쉰 몫 ${sq.pendingWon.toLocaleString()}원 — ` +
-      `${Math.round(sq.rate * 100)}%에 넘깁니다 (어차피 버릴 몫이라 잃는 것이 없습니다)`
+    ? `같은 것을 같은 날 거듭 거둬 못 챙긴 몫 ${sq.pendingWon.toLocaleString()}원어치 — ` +
+      `${Math.round(sq.rate * 100)}%에 넘깁니다 (곳간에 안 들어간 몫이라 밥이 안 줍니다)`
     : '';
 
   drawPantrySale();
@@ -4334,8 +4483,10 @@ function cutMarks(urgent) {
    [식물] 탭 재배판 줄에만 [🌱 심기]가 있는데 그 탭을 열 이유를 아무도 안 말한다.
    ⇒ 종류로 안 거른다. 걸음(심기·물·거두기)은 두 작물이 같고, 다른 것은 **씨앗 이름**뿐이라
      그건 종류표(`cropKindOf`)에서 읽는다 — 화면이 짐작하면 무순에 콩 씨앗이 나간다.
-   ⚠ `needsSow`(놓았는데 아직 안 심음)는 **콩나물엔 안 뜬다.** 시루는 놓기가 곧 심기라
-     그 상태가 아예 없다(`state.placeSiru`). 한 벌로 써도 콩나물 화면은 안 바뀐다. */
+   ⚠⚠ 2026-08-16 — 여기 *"`needsSow` 는 콩나물엔 안 뜬다"* 라고 적혀 있었다. **이제 뜬다.**
+     박사님이 콩나물도 「놓고 나서 심기」로 바꾸라 하셨고(*"콩나물 시루가 콩씨앗이 없어도
+     설치되게 … 용기에 씨 심기 해서 심도록"*), `commitPlace` 가 `sow:false` 로 놓는다.
+     ⇒ 이제 **두 작물이 같은 걸음을 밟는다** — 놓기 → 심기 → 물 → 거두기. */
 function cropMarks() {
   const out = [];
   const fp = S.firstPlay;
@@ -4580,7 +4731,9 @@ function drawJourney() {
     : `${slotLabel(plant.slotId)} · ${gp ? Math.round(gp.progress01 * 100) + '%' : '준비 중'}`;
 
   const quest = {
-    place_beansprout: '가방의 콩나물 시루를 방 안 어두운 자리에 놓아 보세요.',
+    /* ★ 2026-08-16 — 「씨앗은 놓은 뒤에」를 붙였다(박사님: 콩나물도 놓고 나서 심는다).
+       안 붙이면 첫 걸음을 밟은 사람이 곧바로 [물 주기]를 찾는데 그 단추가 없다. */
+    place_beansprout: '가방의 콩나물 시루를 방 안 어두운 자리에 놓아 보세요. 씨앗은 놓은 뒤에 심습니다.',
     /* ★★ 2026-08-09 — **물을 안 준 시루를 「자라는 중」이라고 말하지 않는다.**
        놓자마자 이 줄이 "자라는 중입니다. 수확까지 5일."로 떴다. 그런데 게이지는 빈 칸이고
        손가락은 "물을 주면 자라기 시작합니다"를 가리킨다 — **셋이 다른 말을 했다.**
@@ -4593,6 +4746,20 @@ function drawJourney() {
       try { rows = cropPotList(S.firstPlay, S.day).filter(r => r.kind === 'beansprout' && r.placed); }
       catch { }
       const going = rows.filter(r => r.growing || r.ready);
+      /* ★★★ 2026-08-16 — **「안 심음」이 「물 안 줌」보다 먼저다** (박사님: 콩나물도 놓고 나서
+         심는다). 안 심은 시루에 「물을 주면 칸이 돕니다」라 적으면 그 줄이 거짓말이 된다 —
+         2026-08-09 에 「물을 안 준 시루를 자라는 중이라 말하던」 것과 **같은 종류의 사고**다.
+         ⇒ 줄 문구(§siruRowHTML)·말풍선(§cropMarks)이 이미 지키는 차례를 여기서도 지킨다.
+         ⚠ 씨앗이 없으면 갈 곳이 [상점]이라는 것까지 말한다 — 안 말하면 「심으세요」만
+           보고 심을 것이 없어 그 자리에 선다. */
+      const unsown = rows.filter(r => r.needsSow);
+      if (unsown.length) {
+        let seeds = 0;
+        try { seeds = (shopStatus(S).stock || {})[cropKindOf('beansprout').seedItemId] || 0; } catch { }
+        return seeds > 0
+          ? `놓은 시루에 [🌱 심기]를 눌러 콩 씨앗을 뿌려 주세요 — 심어야 ${crop.harvestDays}칸이 생깁니다.`
+          : '콩 씨앗이 없습니다 — [상점]에서 주문하면 시루에 심을 수 있습니다.';
+      }
       if (rows.length && !going.length)
         return `시루에 물을 주면 칸이 돌기 시작합니다 — ${crop.harvestDays}칸이 하루에 하나씩 찹니다.`;
       const left = going.length ? Math.min(...going.map(r => r.daysLeft))
@@ -5080,6 +5247,9 @@ function draw() {
   drawCuttings();           /* ★삽수 — 자르기·분갈이·팔기 (분갈이가 없으면 삽수는 반드시 죽는다) */
   /* ★ 2026-08-09 — `ffHint()` 를 걷었다. [빨리감기] 버튼의 title 을 채우던 줄이고,
      그 버튼이 없어졌다(박사님 지시). */
+  /* ★ 2026-08-16 — 오늘 밥상 고르개. 열려 있을 때만 그린다(§오늘 밥상).
+     ⚠ `drawShop` 뒤에 둔다 — 곳간을 팔면 고를 수 있는 g 이 바로 줄어야 한다. */
+  try { drawMealPanel(); } catch (e) { console.warn('[밥상]', e && e.message); }
   syncRoom();               /* 방 전경도 같은 상태를 본다 — 화면이 둘로 갈리면 안 된다 */
   updateHint();             /* 다음에 무엇을 누르면 되는지 손가락으로 */
 }
@@ -5279,12 +5449,115 @@ function placedCropRows() {
   try { return cropPotList(fp, S.day).filter(r => r.placed); } catch { return []; }
 }
 
+/* ══════════════════════════════════════════════════════════════════════════
+   ★★★ **오늘 밥상** — [다음 날]을 누르면 몇 g 을 쓸지 고른다 (2026-08-16)
+   ------------------------------------------------------------
+   박사님: *"하루지날떄 그때 소모량 반자동으로 소요되도록 한다고 했자나? 창이 떠서 몇 G
+   쓸지 조정가능하도록 해줘. 디폴트는 300G로 해주고. (300G보다 낮으면 그 최대 낮은값이
+   디폴트로 뜨게)"*
+
+   ★★ **막는 창이 아니다.** [다음 날]을 한 번 더 누르면 그대로 넘어간다 — 매일 뜨는
+     창이라 손이 하나 더 드는 것 자체가 벌이 된다(손이 하루 다섯 개뿐이다 · 기획 §B).
+     ⇒ 첫 누름 = 「이만큼 쓸 겁니다, 고치시겠습니까」 · 둘째 누름 = 「그대로 갑니다」.
+   ★ 곳간이 비어 있으면 **아예 안 뜬다.** 고를 것이 없는데 창이 뜨면 그건 그냥 문지기다.
+   ⚠ 값도 문장도 여기서 안 짓는다 — `mealPlanStatus` 가 낸 것을 그대로 적는다(§그램).
+
+   ★ 상한은 **안 건드렸다.** `dailyCropSaveWon`(실측 4,867원 = 487g) 그대로이고,
+     달라진 것은 **손잡이의 처음 자리가 300g** 이라는 것뿐이다.
+     ⇒ 그래서 **디폴트대로 두면 하루 절감이 준다.** 그 사실을 창이 말한다(아래 §msay). */
+var mealOpen = false;
+var mealG = null;              // null = 아직 안 골랐다(디폴트를 쓴다)
+
+function drawMealPanel() {
+  const panel = $('mealPanel');
+  if (!panel) return;
+  let ms = null;
+  try { ms = mealPlanStatus(S, mealG == null ? undefined : mealG); } catch { }
+  const can = !!(ms && ms.maxGrams > 0);
+  panel.style.display = (mealOpen && can) ? '' : 'none';
+  if (!mealOpen || !can) { if (!can) mealOpen = false; return; }
+
+  $('mealTitle').textContent =
+    `오늘 밥상 — 곳간에 ${formatGram(ms.pantryGrams)} · 하루에 ${formatGram(ms.capGrams)}까지`;
+  /* 무엇이 언제 거둔 것인지 — 먼저 거둔 것부터 나간다(먹는 순서) */
+  $('mealLots').textContent = ms.list
+    .map(l => `${l.kindKo} ${formatGram(l.g)}${l.day == null ? '' : ` (${l.day}일차)`}`)
+    .join(' · ') || '곳간이 비어 있습니다';
+  $('mealCount').textContent = formatGram(ms.grams);
+  $('mealMinus').disabled = ms.grams <= 0;
+  $('mealPlus').disabled = ms.grams >= ms.maxGrams;
+  $('mealAll').disabled = ms.grams >= ms.maxGrams;
+  $('mealNone').disabled = ms.grams <= 0;
+
+  const say = $('mealSay');
+  if (ms.useWon <= 0) {
+    /* ★ 0g 은 고를 수 있어야 한다(모아서 파는 길). 다만 **밥값이 그대로 나간다**는 것을
+       그 자리에서 말한다 — 안 말하면 「아꼈다」로 오해한다. */
+    say.textContent = `오늘은 곳간을 안 씁니다 — 식비 ${ms.dailyFoodWon.toLocaleString()}원이 ` +
+                      `그대로 나갑니다. ${formatGram(ms.restGrams)}이 곳간에 그대로 쌓입니다.`;
+    say.className = 'msay warn';
+  } else {
+    /* ★★ **남는 것을 반드시 말한다**(박사님: *"300G 까지는 당일 쓸 수 있는 거고 남는 거
+       팔아먹든 하는 거"*). 남는 것이 버려지는 줄 알면 급하게 팔거나 시루를 안 늘린다. */
+    say.textContent =
+      `${formatGram(ms.grams)} → 식비 ${ms.useWon.toLocaleString()}원을 아낍니다 ` +
+      `(오늘 지갑에서 ${ms.cashFoodWon.toLocaleString()}원)` +
+      (ms.restGrams > 0
+        ? ` · 남는 ${formatGram(ms.restGrams)}은 곳간에 그대로 쌓입니다 (팔 수 있습니다)`
+        : '') +
+      (ms.grams < ms.capGrams && ms.grams >= ms.maxGrams
+        ? ` · 하루에 ${formatGram(ms.capGrams)}까지 쓸 수 있는데 곳간이 그만큼 없습니다`
+        : '');
+    say.className = 'msay';
+  }
+}
+/* 고른 값을 상태에 적는다 — **먹지는 않는다**(먹는 것은 하루가 갈 때다) */
+function setMealG(g) {
+  let ms = null;
+  try { ms = mealPlanStatus(S); } catch { return; }
+  mealG = Math.max(0, Math.min(ms.maxGrams, Math.round(g)));
+  try { planMeal(S, mealG); } catch { }
+  drawMealPanel();
+}
+/* ± 는 100g 씩 — 박사님이 정하신 눈금(300g 기준 ±100g)과 같은 자다.
+   ⚠ 1g 씩이면 487g 까지 다섯 번을 누르는 대신 백 번을 눌러야 한다. */
+const MEAL_STEP_G = 100;
+$('mealMinus').onclick = guard(() => {
+  let ms = null; try { ms = mealPlanStatus(S, mealG == null ? undefined : mealG); } catch { return; }
+  setMealG(ms.grams - MEAL_STEP_G);
+});
+$('mealPlus').onclick = guard(() => {
+  let ms = null; try { ms = mealPlanStatus(S, mealG == null ? undefined : mealG); } catch { return; }
+  setMealG(ms.grams + MEAL_STEP_G);
+});
+$('mealAll').onclick  = guard(() => {
+  let ms = null; try { ms = mealPlanStatus(S); } catch { return; }
+  setMealG(ms.maxGrams);
+});
+$('mealNone').onclick = guard(() => setMealG(0));
+
 $('next').onclick = guard(() => {
   if (S.firstPlay && S.firstPlay.enabled && !placedCropRows().length) {
     const e = new Error('가방의 시루를 먼저 방 안에 놓아 주세요');
     e.firstPlayInput = true;                 // 안내지 고장이 아니다 — 버튼을 잠그지 않는다
     throw e;
   }
+  /* ★ 첫 누름이면 밥상 창을 연다 — **막는 것이 아니라 보여 주는 것**이라 한 번 더 누르면 간다 */
+  if (!mealOpen) {
+    let ms = null;
+    try { ms = mealPlanStatus(S); } catch { }
+    if (ms && ms.maxGrams > 0) {
+      mealOpen = true;
+      mealG = null;                          // 디폴트(300g · 곳간이 적으면 있는 만큼)로 연다
+      try { planMeal(S, ms.defaultGrams); } catch { }
+      drawMealPanel();
+      return;
+    }
+  }
+  /* ⚠ 창은 하루가 가기 **전에** 닫는다. `eatFromPantry` 가 고른 값을 쓰고 지우므로,
+     닫는 것을 뒤로 미루면 어제 값을 오늘 창이 다시 보여 준다. */
+  mealOpen = false; mealG = null;
+  drawMealPanel();
   noteTurn(nextDay(S, io).turn);
   showFirstPlayEvents(lastTurn);
   draw();
@@ -5765,7 +6038,12 @@ function syncRoom() {
         /* ★ 안 심은 판은 3D 에서도 **흙만** 서야 한다 (2026-08-11 · room_view §buildMusun sown).
            `cropPotList` 가 내는 값을 그대로 넘긴다 — 화면이 「심었나」를 또 판정하지 않는다.
            ⚠ `progress01 === 0` 으로 가르면 **심어 놓고 물을 안 준 판**도 0 이라 둘이 안 갈린다.
-           콩나물은 이 값이 늘 참이라 예전 그대로다(`cropPotSown` — 없으면 심은 것). */
+           ⚠⚠ 2026-08-16 — 여기 *"콩나물은 이 값이 늘 참이라 예전 그대로다"* 라고 적혀 있었다.
+             **이제 콩나물도 false 가 온다**(박사님이 순서를 바꾸셨다). 값은 제대로 넘어가는데
+             `room_view.buildBeansprout` 이 아직 `spec.sown` 을 **안 본다** — 그래서 지금은
+             **안 심은 시루가 콩나물이 난 채로 그려진다.** 붙일 코드는
+             `docs/handoff/bagcrop-to-plan.md §못 한 것` 에 그대로 적어 두었다
+             (`room_view.js` 는 이 창 소유가 아니다). */
         const spec = { kind: row.kind, progress01: p01, count: 1, potD: pd, potId: row.id,
                        sown: row.sown };
         want.add(row.id);
@@ -5868,6 +6146,15 @@ const dropCount = () => 1;
      새로 사는 일이 아니다. 그때 `fromStock` 이 false 다.
    ⚠ `state.placeSiru` 가 **묻고 나서 뺀다**(§placeSiru ①~④). 여기 값은 말하기 위한 것이지
      막기 위한 것이 아니다 — 막는 것은 코어가 한다. 반환 null = 세울 시루가 아예 없다. */
+/* ★★★ 2026-08-16 — **씨앗은 이제 놓을 때 안 나간다** (박사님: *"콩나물 시루(차광용기)가
+     콩씨앗이 없어도 설치되게 해줘. 그리고 용기에 씨 심기 해서 심도록 해"*).
+   ------------------------------------------------------------
+   2026-08-11 에 무순이 간 길(`musunsow-to-plan.md`)을 콩나물도 그대로 탄다:
+     놓기 → 빈 시루가 선다(용기 1개만 나감) → 놓인 시루의 [🌱 심기](콩 씨앗 1봉지) → [💧 물]
+   ⇒ 그래서 이 함수는 이제 **씨앗을 안 본다.** `seedsNeeded` 는 늘 0 이고 `ok` 는
+     「세울 시루가 있나」 하나뿐이다. 씨앗 재고는 심기 단추가 묻는다(state.sowCrop).
+   ⚠ `seeds` 칸은 **남긴다** — 떨굼표시가 「씨앗이 몇 봉지 있으니 바로 심을 수 있다」를
+     말할 근거이고, 없애면 씨앗이 0인 사람이 빈 시루만 잔뜩 세우고 나서야 그걸 안다. */
 function sowOnDropPlan() {
   const site = S.firstPlay && S.firstPlay.beansprout;
   const idle = ((site && site.pots) || []).filter(p => p && !cropPotPlaced(p) && !p.harvested).length;
@@ -5877,8 +6164,8 @@ function sowOnDropPlan() {
   try { seeds = seedItem ? (stockOf(S, seedItem) || 0) : 0; } catch { }
   if (idle > 0) return { spare: idle + stock, fromStock: false, seedsNeeded: 0, seeds, ok: true };
   if (stock <= 0) return null;
-  /* 재고에서 꺼내 세운다 — 시루 하나에 씨앗 한 봉지다 */
-  return { spare: stock, fromStock: true, seedsNeeded: 1, seeds, ok: seeds >= 1 };
+  /* 재고에서 꺼내 세운다 — **용기 하나만** 나간다(씨앗은 심을 때다) */
+  return { spare: stock, fromStock: true, seedsNeeded: 0, seeds, ok: true };
 }
 
 /* 끌고 있는 것의 지름. ★방뷰에 묻는다 — 화면이 숫자를 또 적어 두면 자리표가 바뀔 때 조용히 어긋난다.
@@ -6278,10 +6565,11 @@ const drag = {
       const plan = sowOnDropPlan();
       /* ★ 2026-08-09 — **하나만 선다**고 말한다. 예전 문구("새 시루 2개")가
          「가방에 있는 것이 통째로 온다」는 그 동작을 그대로 적은 것이었다. */
-      if (plan) extra = plan.ok
-        ? ` · 시루 1개` + (plan.seedsNeeded ? ` · 씨앗 ${plan.seedsNeeded}봉지` : '') +
-          (plan.spare > 1 ? ` (가방에 ${plan.spare - 1}개 남음)` : '')
-        : ` · ⚠ 씨앗 ${plan.seedsNeeded}봉지가 있어야 새 시루가 섭니다 (${plan.seeds}봉지)`;
+      /* ★ 2026-08-16 — **씨앗은 여기서 안 나간다**(§sowOnDropPlan). 대신 씨앗이 없으면
+         「놓고 나서 심을 것이 없다」를 미리 말한다 — 놓고 나서야 알면 손이 한 번 헛돈다. */
+      if (plan) extra = ` · 빈 시루 1개` +
+        (plan.spare > 1 ? ` (가방에 ${plan.spare - 1}개 남음)` : '') +
+        (plan.seeds >= 1 ? '' : ' · ⚠ 콩 씨앗이 없습니다 (놓은 뒤 심으려면 필요합니다)');
     }
     lb.textContent = freePlace.label(hit, drag.what) + extra;
     lb.classList.toggle('ok', good); lb.classList.toggle('no', !good);
@@ -6356,13 +6644,18 @@ function commitPlace(what, hit, opt = {}) {
       draw();
       return;
     }
+    /* ★★★ 2026-08-16 — **콩나물도 빈 시루가 선다** (박사님: *"콩나물 시루가 콩씨앗이
+       없어도 설치되게 … 용기에 씨 심기 해서 심도록"*). 무순과 **같은 함수·같은 낱말**이다
+       (`sow:false`) — 2026-08-11 에 무순이 간 길을 그대로 쓴다(§musunsow).
+       ⚠ 예전에는 여기서 씨앗 한 봉지가 같이 나갔고, 씨앗이 없으면 **아예 못 놓았다.**
+         그 막음이 아래 `placeFailed` 한 줄이었는데 이제 그 줄이 닿을 수 없는 자리가 됐다. */
     const plan = what === 'beansprout' ? sowOnDropPlan() : null;
     if (plan && plan.ok) {
       try {
-        const r = placeSiru(S, atOf(hit), { ...placeOpt(), kind: 'beansprout' });
-        banner('시루를 하나 놓았습니다',
-               (r.fromStock ? '씨앗 1봉지 · ' : '') +
-               `방에 ${r.sirus}개` + (r.spare > 0 ? ` · 가방에 ${r.spare}개 남음` : ''));
+        const r = placeSiru(S, atOf(hit), { ...placeOpt(), kind: 'beansprout', sow: false });
+        banner('빈 시루를 하나 놓았습니다',
+               '[🌱 심기]를 눌러 콩 씨앗을 뿌리세요' +
+               ` · 방에 ${r.sirus}개` + (r.spare > 0 ? ` · 가방에 ${r.spare}개 남음` : ''));
         unlockAfterFix();
         dlgOpen('cropPlaced');
       } catch (e) { return placeFailed(e); }
@@ -6389,10 +6682,11 @@ function commitPlace(what, hit, opt = {}) {
        예전에는 여기서 `setCropAt` 이 돌아 「자리 옮기기」가 됐는데, 이제 그건 **놓인 시루를
        골라서** 하는 일이다(아래 §picked). 가방에서 끌었는데 옮기기가 일어나면
        **다른 시루가 통째로 딸려 온다** — 각개가 그 자리에서 무너진다. 이유만 적고 멈춘다. */
+    /* ⚠ 2026-08-16 — 여기 있던 「콩 씨앗이 N봉지 있어야 새 시루가 섭니다」를 **걷었다.**
+       이제 씨앗 없이도 빈 시루가 서므로(위 §sow:false) 그 자리에서 그 말은 거짓말이 된다.
+       남는 실패는 **세울 시루가 아예 없다** 하나뿐이다. */
     if (what === 'beansprout') {
-      return placeFailed(new Error(
-        !plan ? '가방에 빈 시루가 없습니다 — 상점에서 시루를 주문해 주세요'
-              : `콩 씨앗이 ${plan.seedsNeeded}봉지 있어야 새 시루가 섭니다 (지금 ${plan.seeds}봉지)`));
+      return placeFailed(new Error('가방에 빈 시루가 없습니다 — 상점에서 시루를 주문해 주세요'));
     }
     /* ⚠ 2026-08-11 — 여기 있던 「아직 안 심었습니다 — 가방에서 [🌱 무순 심기]를 먼저
        눌러 주세요」 안내를 **걷었다.** 그 단추가 없어졌고(§sowMusun), 이제는 안 심은 판이야말로
@@ -6717,7 +7011,10 @@ function startPhonePlace() {
   const spot = provisionalSpot();
   if (!spot) { banner('놓을 자리를 못 찾았습니다', '방을 조금 돌린 뒤 다시 눌러 주세요'); return; }
   let r = null;
-  try { r = placeSiru(S, spot, { slots: io.light.room.slots, size: io.light.room.size, snapDist: 0 }); }
+  /* ★ 2026-08-16 — 끌어 놓기와 **같은 낱말**(`sow:false`)이라야 두 손이 같은 일을 한다.
+     안 넘기면 누르기만 씨앗을 먹어서, 같은 물건이 손버릇에 따라 다른 값이 든다. */
+  try { r = placeSiru(S, spot, { slots: io.light.room.slots, size: io.light.room.size,
+                                 snapDist: 0, sow: false }); }
   catch (e) { banner('배치하지 못했습니다', (e && e.message) || ''); return; }
   try { window.__byeotSheet.close(); } catch { }
   draw();
@@ -7623,8 +7920,10 @@ function drawPantrySale() {
   btn.disabled = max <= 0;
   btn.textContent = max > 0 ? `곳간 채소 팔기 (${max}판)` : '곳간 채소 팔기';
   if (max <= 0) { pantrySellOpen = false; }
+  /* ★ 2026-08-16 — **g 으로 말한다**(§그램). 원은 「팔면 얼마」를 말할 때만 쓴다 —
+     곳간에 있는 것은 돈이 아니라 물건이고, 물건의 자는 g 이다. */
   if (hint) hint.textContent = max > 0
-    ? `곳간에 ${ps.pantryWon.toLocaleString()}원어치 ${max}판이 있습니다 — ` +
+    ? `곳간에 ${formatGram(ps.pantryGrams)} · ${max}판이 있습니다 — ` +
       `밥으로 먹을 몫입니다. 팔면 ${Math.round(ps.rate * 100)}%만 받습니다`
     : '곳간이 비어 있습니다 — 거둔 채소가 쌓이면 여기서 팔 수 있습니다 (밥으로 먹는 편이 이득입니다)';
 
@@ -7636,7 +7935,7 @@ function drawPantrySale() {
 
   /* 무엇이 몇 판 있는지 — 먼저 거둔 것이 앞이다. 나갈 판에 표시를 남긴다 */
   $('pantryList').textContent = ps.list
-    .map((l, i) => `${i < ps.lots ? '▶ ' : ''}${l.kindKo} ${l.won.toLocaleString()}원` +
+    .map((l, i) => `${i < ps.lots ? '▶ ' : ''}${l.kindKo} ${formatGram(l.g)}` +
                    `${l.day == null ? '' : ` (${l.day}일차)`}`)
     .join(' · ');
   $('pantryCount').textContent = `${ps.lots}판`;
@@ -7644,9 +7943,10 @@ function drawPantrySale() {
   $('pantryPlus').disabled = ps.lots >= max;
   /* ★★ 손해를 **문장 한가운데**에 둔다 — 꼬리에 달면 안 읽힌다 */
   $('pantryQuote').textContent =
-    `${ps.pendingWon.toLocaleString()}원어치를 ${ps.won.toLocaleString()}원에 넘깁니다 ` +
-    `— ${ps.lossWon.toLocaleString()}원 손해입니다. ` +
-    `판 만큼 밥값을 못 아낍니다 (곳간에 ${(ps.pantryWon - ps.pendingWon).toLocaleString()}원 남음)`;
+    `${formatGram(ps.pendingGrams)}(밥값 ${ps.pendingWon.toLocaleString()}원어치)을 ` +
+    `${ps.won.toLocaleString()}원에 넘깁니다 — ${ps.lossWon.toLocaleString()}원 손해입니다. ` +
+    `판 만큼 밥값을 못 아낍니다 (곳간에 ` +
+    `${formatGram(Math.max(0, ps.pantryGrams - ps.pendingGrams))} 남음)`;
   $('pantryGo').disabled = !ps.canSell;
 }
 
@@ -7674,7 +7974,7 @@ $('pantryGo').onclick = guard(() => {
   pantrySellOpen = false;
   pantrySellN = 1;
   banner('곳간 채소를 팔았습니다',
-         `${r.whatKo} · ${r.won.toLocaleString()}원 (${r.lossWon.toLocaleString()}원 손해)`);
+         `${r.whatKo} ${r.whatG} · ${r.won.toLocaleString()}원 (${r.lossWon.toLocaleString()}원 손해)`);
   draw();
 });
 
@@ -7734,7 +8034,7 @@ $('prof').onclick = () => {
 $('reset').onclick = () => {
   const keep = { room: S.home.room, mode: S.sim.mode, lamps: { ...S.lamps } };
   S = newState({ room: keep.room, mode: 'novice', firstPlay: true, firstPlayRules: FIRST_RULES,
-                     staminaRules: STAMINA_RULES_NOW });
+                     staminaRules: STAMINA_RULES_NOW, startSeeds: 1 });
   S.lamps = keep.lamps;
   noteTurn(null);
   arrivalSlotId = null;
@@ -7839,7 +8139,10 @@ async function playFirstPlayScenario() {
   $('play').disabled = true; $('firstRun').disabled = true; $('stop').disabled = false;
 
   S = newState({ room: 'banjiha', mode: 'novice', firstPlay: true, firstPlayRules: FIRST_RULES,
-                     staminaRules: STAMINA_RULES_NOW });
+                     staminaRules: STAMINA_RULES_NOW,
+                     /* ★ 2026-08-16 — 첫 시루에 넣을 **콩 씨앗 한 봉지**(state.js §startSeeds).
+                        놓기와 심기가 갈리면서 씨앗 없이는 첫 걸음이 막힌다. */
+                     startSeeds: 1 });
   S.lamps.count = 0;
   noteTurn(null);
   arrivalSlotId = null;

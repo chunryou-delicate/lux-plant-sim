@@ -37,6 +37,15 @@ const rulesAt = (rate) => firstPlayRulesFromBalance(
   rate == null ? BALANCE : { ...BALANCE, _meta: { ...BALANCE._meta, cropSurplusSaleRate: rate } });
 const RULES = rulesAt(null);
 const CYCLE = RULES.harvestDays;
+/* ★★ 2026-08-16 — 이 파일에 3,000 / 2,000 / 1,000 / 6,000 이 박혀 있었다. 그것이
+   이 검사가 지키던 옛 약속이다: 「콩나물 최상 품질 한 회전 = 3,000원 · 끼니에 비례」.
+   g 셈이 들어와 400 / 300 / 200g = 4,000 / 3,000 / 2,000원이 됐다(first_play §그램).
+   ⇒ **숫자를 다시 박지 않는다. 규칙에서 읽는다.** 값이 또 바뀌어도 이 파일은 안 낡는다. */
+const W = (t = 0) => cropCycleSavedWon(RULES, 3, t, 0);   // 겹침 순번 t 로 거둘 때
+const W0 = W(0);                                          // 온전한 한 회전분
+const OVER4 = [0, 1, 2, 3].map(W);                        // 같은 날 넷을 거두면
+const SUM4 = OVER4.reduce((a, v) => a + v, 0);            // 그중 곳간에 든 몫
+const LOST4 = 4 * W0 - SUM4;                              // 겹쳐서 못 받은 몫
 const DARK = 0.2;                       // 콩나물 최상 품질(하얗고 아삭 3끼)이 나오는 빛
 
 let n = 0;
@@ -87,7 +96,13 @@ console.log('\n== B. 손익분기 — 지갑에서 나가는 씨앗값으로 잰
   assert.equal(buyPriceOf('radish_seed'), 600, '★무 씨앗의 지갑값이 600원이 아니다');
   const bean = cropBreakEvenRate('beansprout');
   const musun = cropBreakEvenRate('musun');
-  assert.equal(bean.toFixed(3), '0.167', `★콩나물 손익분기가 16.7%가 아니다: ${bean}`);
+  /* ⚠⚠ 2026-08-16 — 여기 **16.7%가 박혀 있었다.** 그것이 이 줄이 지키던 옛 약속이다:
+       「콩 씨앗 500원 / 콩나물 한 회전분 3,000원」. g 셈이 들어오면서 콩나물 최상 품질
+       한 회전분이 **4,000원**(400g)이 되어 손익분기가 **12.5%** 로 내려갔다
+       (first_play §그램 — 중간빛 300g 기준 ±100g).
+     ★ 무순은 그램 표가 없어 값이 한 푼도 안 움직였다 — 32.1% 그대로다.
+       ⇒ 두 작물이 또 갈렸다. 한 값만 보고 「다 내려갔다」로 읽으면 안 된다(2026-08-09 과 같은 함정). */
+  assert.equal(bean.toFixed(3), '0.125', `★콩나물 손익분기가 12.5%가 아니다: ${bean}`);
   assert.equal(musun.toFixed(3), '0.321', `★무순 손익분기가 32.1%가 아니다: ${musun}`);
   /* ★ 정가로 셈하면 11.7%가 나온다 — 그 값이 아님을 못 박는다 */
   assert.notEqual(bean.toFixed(3), '0.117', '★손익분기를 정가로 셈하고 있다');
@@ -98,10 +113,10 @@ console.log('\n== C. ★끼니로 쓸 수 있는 것은 안 팔린다 ==');
 {
   /* 시루 하나 — 겹치지도 넘치지도 않는다. 3,000원이 통째로 **밥**이다 */
   const { fp, h } = sameDayHarvest(1);
-  assert.equal(h.cycleSavedWon, 3000, '★한 시루가 온전한 한 회전분을 안 냈다');
+  assert.equal(h.cycleSavedWon, W0, '★한 시루가 온전한 한 회전분을 안 냈다');
   assert.equal(h.overlapLostWon, 0);
   assert.equal(h.spoiledWon, 0);
-  assert.equal(fp.food.pantryWon, 3000, '★곳간에 안 들어갔다');
+  assert.equal(fp.food.pantryWon, W0, '★곳간에 안 들어갔다');
   assert.equal(h.surplusWon, 0, '★겹치지도 넘치지도 않았는데 잉여가 생겼다');
   assert.equal(cropSurplusQuote(fp).canSell, false, '★★밥이 될 몫을 팔 수 있다고 한다');
 
@@ -111,7 +126,7 @@ console.log('\n== C. ★끼니로 쓸 수 있는 것은 안 팔린다 ==');
     '★팔 것이 없는데 안 막았다');
   /* 그리고 그 3,000원은 **여전히 밥으로 나온다** */
   const bite = eatFromPantry(fp);
-  assert.equal(bite.savedWon, Math.min(dailyCropSaveWonOf(fp), 3000),
+  assert.equal(bite.savedWon, Math.min(dailyCropSaveWonOf(fp), W0),
     '★파는 창구가 생기면서 밥이 줄었다');
   ok('시루 하나짜리 판에는 팔 것이 아예 없다 — 곳간에 든 몫은 손도 못 댄다');
 }
@@ -120,18 +135,18 @@ console.log('\n== D. 잉여의 정의 — 곳간이 못 받은 몫, 그 둘뿐 =
 {
   const { fp, h } = sameDayHarvest(4);
   /* 같은 날 넷을 거두면 3,000 → 2,000 → 1,000 → 0 으로 깎인다(§겹침) */
-  assert.deepEqual(h.perPot.map(p => p.savedWon), [3000, 2000, 1000, 0]);
-  assert.equal(h.cycleSavedWon, 6000, '★곳간에 들어간 몫이 안 맞는다');
-  assert.equal(h.overlapLostWon, 6000, '★겹쳐서 못 받은 몫이 안 맞는다');
-  assert.equal(h.spoiledWon, 0, '★한도(시루 4개 × 3,000원) 안인데 쉬었다');
+  assert.deepEqual(h.perPot.map(p => p.savedWon), OVER4);
+  assert.equal(h.cycleSavedWon, SUM4, '★곳간에 들어간 몫이 안 맞는다');
+  assert.equal(h.overlapLostWon, LOST4, '★겹쳐서 못 받은 몫이 안 맞는다');
+  assert.equal(h.spoiledWon, 0, '★한도(시루 4개 × 한 회전분) 안인데 쉬었다');
   assert.equal(h.surplusWon, h.overlapLostWon + h.spoiledWon,
     '★★잉여가 「겹쳐서 못 받은 몫 + 쉰 몫」이 아니다 — 정의가 새고 있다');
-  assert.equal(h.surplusPendingWon, 6000);
+  assert.equal(h.surplusPendingWon, LOST4);
   /* ★ 잉여 + 곳간 = 온전한 값의 합. 어느 쪽도 서로를 갉아먹지 않는다 */
   assert.equal(h.cycleSavedWon + h.surplusWon, 4 * cropCycleSavedWon(RULES, 3, 0),
     '★잉여와 곳간을 더해도 온전한 값이 안 된다');
-  assert.equal(fp.food.pantryWon, 6000);
-  ok('잉여 6,000원 · 곳간 6,000원 — 같은 수확이 둘로 정확히 갈린다');
+  assert.equal(fp.food.pantryWon, SUM4);
+  ok(`잉여 ${LOST4.toLocaleString()}원 · 곳간 ${SUM4.toLocaleString()}원 — 같은 수확이 둘로 정확히 갈린다`);
 }
 
 console.log('\n== E. ★파는 것이 곳간을 한 푼도 안 건드린다 ==');
@@ -142,16 +157,16 @@ console.log('\n== E. ★파는 것이 곳간을 한 푼도 안 건드린다 ==')
   S.firstPlay = fp;
   const r = sellCropSurplus(S);
   assert.equal(fp.food.pantryWon, before, '★★팔았더니 곳간이 줄었다 — 끼니를 팔았다');
-  assert.equal(r.pendingWon, 6000);
-  assert.equal(r.won, Math.round(6000 * RULES.cropSurplusSaleRate));
+  assert.equal(r.pendingWon, LOST4);
+  assert.equal(r.won, Math.round(LOST4 * RULES.cropSurplusSaleRate));
   /* 다 팔고 나서도 밥은 그대로 나온다 — 5일에 걸쳐 6,000원이 다 나온다 */
   let ate = 0;
   for (let d = 0; d < CYCLE; d++) ate += eatFromPantry(fp).savedWon;
-  assert.equal(ate, 6000, '★판 뒤에 먹을 몫이 줄었다');
+  assert.equal(ate, SUM4, '★판 뒤에 먹을 몫이 줄었다');
   /* 두 번은 못 판다 */
   assert.throws(() => sellCropSurplus(S), (e) => e.tutorialInput === true,
     '★같은 잉여를 두 번 팔았다');
-  ok('판 뒤에도 곳간 6,000원이 그대로 밥이 된다 · 두 번은 못 판다');
+  ok(`판 뒤에도 곳간 ${SUM4.toLocaleString()}원이 그대로 밥이 된다 · 두 번은 못 판다`);
 }
 
 console.log('\n== F. 판매가를 바꾸면 결과가 따라 움직인다 ==');
@@ -161,15 +176,15 @@ console.log('\n== F. 판매가를 바꾸면 결과가 따라 움직인다 ==');
     const rules = rulesAt(rate);
     const { fp } = sameDayHarvest(4, rules);
     const q = cropSurplusQuote(fp);
-    assert.equal(q.pendingWon, 6000, '★판매가가 잉여의 양을 바꿨다 — 값과 양이 섞였다');
-    assert.equal(q.won, Math.round(6000 * rate), `★${rate} 에서 받는 값이 안 맞는다`);
+    assert.equal(q.pendingWon, LOST4, '★판매가가 잉여의 양을 바꿨다 — 값과 양이 섞였다');
+    assert.equal(q.won, Math.round(LOST4 * rate), `★${rate} 에서 받는 값이 안 맞는다`);
     const taken = takeCropSurplus(fp);
     assert.equal(fp.food.totalSurplusSoldWon, taken.won);
     rows.push([rate, q.won]);
   }
   /* 0%면 한 푼도 안 들어오고, 제값이면 정가 그대로다 — 사이는 단조증가 */
   assert.equal(rows[0][1], 0, '★0%인데 돈이 들어왔다');
-  assert.equal(rows[rows.length - 1][1], 6000, '★100%인데 정가가 안 들어왔다');
+  assert.equal(rows[rows.length - 1][1], LOST4, '★100%인데 정가가 안 들어왔다');
   for (let i = 1; i < rows.length; i++)
     assert.ok(rows[i][1] > rows[i - 1][1], '★판매가를 올렸는데 안 늘었다');
   ok('판매가 ' + rows.map(([r, w]) => `${Math.round(r * 100)}%→${w.toLocaleString()}원`).join(' · '));
@@ -191,20 +206,23 @@ console.log('\n== G. ★손익분기 아래에서는 손해다 ==');
     const dSurplus = cropSurplusQuote(b.fp).won - cropSurplusQuote(a.fp).won;
     return dSurplus - SEED;            // 그 시루 한 회전의 순액
   };
-  /* ★★ 2026-08-09 — **표본 판매가를 손익분기 둘레로 다시 잡았다.**
-     씨앗 실구매가가 700 → 500원이 되어 손익분기가 23.3% → **16.7%** 로 내려갔다.
-     예전 표본(20% 손해 · 25% 이득)은 23.3% 를 사이에 두고 고른 값이라 이제 둘 다 이득 쪽이다 —
-     검사가 「아래는 손해」를 못 재게 된다. 그래서 새 분기점을 사이에 두고 다시 고른다:
-       10% 손해 · 11.7%(정가 기준) 손해 · 16.7% ±0 · 20% 이득 · 85%(박사님 확정) 이득 */
+  /* ★★ 2026-08-16 — **표본을 또 다시 잡았다.** g 셈이 들어와 한 회전분이 3,000 → 4,000원이
+     되면서 손익분기가 16.7% → **12.5%** 로 내려갔다(씨앗값 500원은 그대로다).
+     예전 표본(10% 손해 · 11.7% 손해)은 16.7% 아래를 재던 값인데, 12.5% 아래는 10% 뿐이라
+     11.7% 는 이제 **이득 쪽**이다 — 그대로 두면 검사가 「아래는 손해」를 거꾸로 못 박는다.
+     ⇒ 분기점을 사이에 두고 다시 고른다: 8.75%(정가 기준) 손해 · 10% 손해 · 12.5% ±0 ·
+       20% 이득 · 85%(박사님 확정) 이득. ★ 순액은 **재서 적는다**(손으로 세지 않는다). */
   const be = cropBreakEvenRate('beansprout');
+  /* 정가(350원)로 씨앗값을 셈하면 나오는 분기점 — 그 값에서 이득이 나면 정가로 세고 있는 것이다 */
+  const beList = 350 / W0;
   assert.ok(marginOf(0.10) < 0, `★10%인데 손해가 아니다 (${marginOf(0.10)}원)`);
-  assert.ok(marginOf(0.117) < 0, '★정가 기준 손익분기(11.7%)에서 이득이 났다 — 씨앗값을 정가로 셈하고 있다');
+  assert.ok(marginOf(beList) < 0,
+    `★정가 기준 손익분기(${(beList * 100).toFixed(1)}%)에서 이득이 났다 — 씨앗값을 정가로 셈하고 있다`);
   assert.equal(marginOf(be), 0, '★손익분기에서 ±0 이 아니다');
   assert.ok(marginOf(0.20) > 0, '★20%인데 이득이 아니다');
-  assert.equal(marginOf(0.20), 100, '★20%의 회전당 순액이 +100원이 아니다');
-  assert.equal(marginOf(0.85), 2050, '★85%(박사님 확정)의 회전당 순액이 +2,050원이 아니다');
+  assert.ok(marginOf(0.85) > marginOf(0.20), '★판매가를 올렸는데 순액이 안 늘었다');
   ok(`씨앗 ${SEED.toLocaleString()}원 · 10%→${marginOf(0.10)}원 · ` +
-     `${(be * 100).toFixed(1)}%→0원 · 20%→+100원 · 85%→+2,050원`);
+     `${(be * 100).toFixed(1)}%→0원 · 20%→${marginOf(0.20)}원 · 85%→${marginOf(0.85)}원`);
 }
 
 console.log('\n== H. 쌓아 뒀다 한 번에 넘겨도 총액이 같다 ==');
@@ -215,18 +233,18 @@ console.log('\n== H. 쌓아 뒀다 한 번에 넘겨도 총액이 같다 ==');
   waterBeansprout(fp, CYCLE, { all: true });
   for (let d = 1; d <= CYCLE; d++) advanceBeansproutDay(fp, DARK);
   const h2 = harvestBeansprout(fp, { day: CYCLE * 2 });
-  assert.equal(h2.surplusWon, 6000, '★둘째 회전의 잉여가 안 맞는다');
-  assert.equal(h2.surplusPendingWon, 12000, '★★잉여가 안 쌓였다 — 안 넘기면 사라진다');
+  assert.equal(h2.surplusWon, LOST4, '★둘째 회전의 잉여가 안 맞는다');
+  assert.equal(h2.surplusPendingWon, LOST4 * 2, '★★잉여가 안 쌓였다 — 안 넘기면 사라진다');
 
   const S = newState({ firstPlay: true, firstPlayRules: RULES });
   S.firstPlay = fp;
   const st = cropSurplusStatus(S);
-  assert.equal(st.pendingWon, 12000);
-  assert.equal(fp.food.surplusWon, 12000, '★상태를 보는 함수가 장부를 비웠다');
+  assert.equal(st.pendingWon, LOST4 * 2);
+  assert.equal(fp.food.surplusWon, LOST4 * 2, '★상태를 보는 함수가 장부를 비웠다');
   const r = sellCropSurplus(S);
-  assert.equal(r.won, Math.round(12000 * RULES.cropSurplusSaleRate));
+  assert.equal(r.won, Math.round(LOST4 * 2 * RULES.cropSurplusSaleRate));
   assert.equal(cropSurplusStatus(S).pendingWon, 0);
-  ok(`두 회전을 모아 12,000원어치를 한 번에 → ${r.won.toLocaleString()}원`);
+  ok(`두 회전을 모아 ${(LOST4 * 2).toLocaleString()}원어치를 한 번에 → ${r.won.toLocaleString()}원`);
 }
 
 console.log('\n== I. 지갑에 실제로 들어간다 — 그루·삽수와 같은 문으로 ==');
@@ -254,20 +272,34 @@ console.log('\n== I. 지갑에 실제로 들어간다 — 그루·삽수와 같�
   ok('지갑 · 상점 장부 · 파산 해제가 그루·삽수와 같은 문으로 돈다');
 }
 
-console.log('\n== J. 곳간이 넘쳐 쉰 몫도 잉여다 ==');
+console.log('\n== J. **곳간은 이제 안 넘친다 — 쌓인다** (2026-08-16 박사님 확정) ==');
 {
-  /* 시루 하나로 한도를 채운 뒤 또 거두면 넘친다 — `spoiledWon` 이 그 몫이다 */
+  /* ⚠⚠ **이 절이 지키던 약속이 통째로 바뀌었다.**
+       옛 이름: 「곳간이 넘쳐 쉰 몫도 잉여다」. 옛 줄은 `fp.food.pantryWon = pantryCapWon(fp)`
+       로 곳간을 한도까지 채운 뒤 또 거둬 `spoiledWon` 이 나는 것을 못 박았다.
+     박사님: *"400G 가 오면 300G 까지는 당일 쓸 수 있는 거고 **남는 거 팔아먹든 하는 거**"*
+       (그리고 2026-08-14 *"유통기한 그냥 없는걸로"*)
+     ⇒ 곳간에 **한도가 없다**(`pantryCapWon` → Infinity). 남는 것은 버려지는 몫이 아니라
+       **재고**다. ⇒ 이 절은 이제 「안 쉰다 · 다 쌓인다」를 못 박는다. */
+  assert.equal(pantryCapWon({ rules: RULES }), Infinity, '★곳간에 아직 한도가 있다');
   const fp = createFirstPlayState({ enabled: true, rules: RULES });
   placeBeansprout(fp, 'dark-slot');
-  fp.food.pantryWon = pantryCapWon(fp);              // 한도까지 찬 곳간
-  waterBeansprout(fp, 0);
-  for (let d = 1; d <= CYCLE; d++) advanceBeansproutDay(fp, DARK);
-  const h = harvestBeansprout(fp, { day: CYCLE });
-  assert.equal(h.overlapLostWon, 0, '★겹치지 않았는데 깎였다');
-  assert.equal(h.spoiledWon, 3000, '★넘친 몫이 안 맞는다');
-  assert.equal(h.surplusWon, 3000, '★★쉰 몫이 잉여로 안 잡혔다');
-  assert.equal(fp.food.pantryWon, pantryCapWon(fp), '★한도를 넘어 곳간에 들어갔다');
-  ok('한도를 넘어 쉴 몫이 그대로 팔 몫이 된다 — 버리는 것을 안 버린다');
+  /* 여섯 회전을 쌓는다 — 옛 규칙이면 첫 회전 뒤로는 전부 쉬어서 버려졌을 양이다 */
+  let total = 0;
+  for (let cycle = 0; cycle < 6; cycle++) {
+    for (const p of fp.beansprout.pots) {
+      p.harvested = false; p.ageDays = 0; p.dliHist = []; p.startedOnDay = null;
+    }
+    waterBeansprout(fp, cycle * CYCLE, { all: true });
+    for (let d = 1; d <= CYCLE; d++) advanceBeansproutDay(fp, DARK);
+    const h = harvestBeansprout(fp, { day: (cycle + 1) * CYCLE });
+    assert.equal(h.spoiledWon, 0, `★${cycle + 1}회전째에 쉰 몫이 났다 — 곳간이 아직 넘친다`);
+    assert.equal(h.surplusWon, 0, '★안 겹치고 안 넘쳤는데 잉여가 났다');
+    total += h.cycleSavedWon;
+  }
+  assert.equal(fp.food.pantryWon, total,
+    '★★거둔 것이 곳간에 다 안 쌓였다 — 남는 것이 어디론가 사라진다');
+  ok(`여섯 회전 ${total.toLocaleString()}원어치가 한 푼도 안 쉬고 곳간에 쌓인다`);
 }
 
 console.log(`\n★ tools/test_cropsale.mjs — ${n}벌 전부 통과\n`);

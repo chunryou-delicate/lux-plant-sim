@@ -20,7 +20,9 @@ import assert from 'node:assert';
 import fs from 'node:fs';
 import { TUTORIAL_RULES, banjihaRulesFrom } from '../src/game/tutorial.js';
 import { CROP_KINDS, CROP_TIRED_MULTIPLIER, FIRST_PLAY_RULES, firstPlayRulesFromBalance,
-         cropCycleSavedWon, cropBaseSavedWonOf, overlapSavedWon } from '../src/game/first_play.js';
+         cropCycleSavedWon, cropBaseSavedWonOf, overlapSavedWon,
+         /* ★ 2026-08-16 · 그램 셈 (first_play §그램) */
+         cropCycleGrams, pantryCapWon } from '../src/game/first_play.js';
 import { CATALOG, buyPriceOf, BUY_MARKUP } from '../src/game/shop.js';
 
 const J = p => JSON.parse(fs.readFileSync(new URL(p, import.meta.url), 'utf8'));
@@ -96,7 +98,11 @@ check('E 확정 골든값 — 시작돈 · 월세 · 회전분 · 판매가율',
   assert.equal(BANJIHA.rent, 200_000, '반지하 월세');
   assert.equal(TUTORIAL_RULES.dailySpendWon, 16_667, '하루 지출');
   assert.equal(CHARS._meta.cropSurplusSaleRate, 0.85, '잉여 판매가율');
-  assert.equal(CROP_KINDS[0].savedWonPerCycle, 3_000, '콩나물 회전분');
+  /* ⚠ 2026-08-16 — 값(3,000)은 그대로인데 **뜻이 바뀌었다**: 「최상 품질」이 아니라
+     「중간 품질(300g)」이다. 최상은 400g = 4,000원이다(§그램). */
+  assert.equal(CROP_KINDS[0].savedWonPerCycle, 3_000, '콩나물 회전분(중간 품질 300g)');
+  assert.equal(CROP_KINDS[0].gramsPerCycle, 300, '콩나물 기준 수확량(g)');
+  assert.equal(CROP_KINDS[0].gramsPerQualityStep, 100, '품질 한 칸당 ±g');
   assert.equal(CROP_KINDS[1].savedWonPerCycle, 2_800, '무순 회전분');
 });
 
@@ -105,10 +111,17 @@ check('E 확정 골든값 — 시작돈 · 월세 · 회전분 · 판매가율',
    때문이다 — 질림이다."* 가른 것은 「작물마다 다른 값」이지 질림이 아니다. */
 check('F ★질림 배율은 한 표다 — 종류 체감과 겹침 체감이 같은 눈금을 쓴다', () => {
   assert.deepEqual([...CROP_TIRED_MULTIPLIER], [1, 2 / 3, 1 / 3, 0], '질림 배율표');
-  /* 콩나물을 같은 날 넷 거둔다 — 3,000 / 2,000 / 1,000 / 0 */
+  /* ⚠⚠ 2026-08-16 — 여기 **3,000 / 2,000 / 1,000 / 0 이 박혀 있었다.** 그것이 이 줄이
+     지키던 옛 약속이다. g 셈이 들어와 콩나물 최상 품질이 400g = 4,000원이 되면서
+     **4,000 / 2,670 / 1,330 / 0** 이 됐다(first_play §그램).
+     ★ 이 절이 진짜로 지키는 것은 숫자가 아니라 **배율이 한 표인가**다 ⇒ 배율로 잰다. */
   const bean = [0, 1, 2, 3].map(i => overlapSavedWon(RULES, 3, i, 0));
-  assert.deepEqual(bean, [3_000, 2_000, 1_000, 0],
-    `콩나물 겹침이 ${bean.join('/')} 입니다 — 3000/2000/1000/0 이어야 합니다`);
+  /* ⚠ **반올림은 g 에서 일어난다** — 400g × 2/3 = 266.67 → 267g → 2,670원이다.
+     원에서 반올림하면 2,667원이 나오는데 그건 「0.7g 짜리 콩나물」이라 물건이 안 된다. */
+  const beanG = [0, 1, 2, 3].map(i => cropCycleGrams(RULES, 3, i, 0));
+  assert.deepEqual(beanG, CROP_TIRED_MULTIPLIER.map(m => Math.round(beanG[0] * m)),
+    `콩나물 겹침이 ${beanG.join('/')}g 입니다 — 질림 배율표를 그대로 따라야 합니다`);
+  assert.deepEqual(bean, beanG.map(g => g * 10), '★원과 g 이 10배로 안 맞물린다');
   /* 무순은 2종째라 한 칸 밀려 시작한다 — 2,800 × 2/3 = 1,867 */
   assert.equal(cropCycleSavedWon(RULES, 3, 1, 1), 1_867, '무순 한 회전(2종째)');
   /* 넷째부터 0 — 표 밖은 지어내지 않는다 */
@@ -122,10 +135,16 @@ check('G ★무순 회전분만 움직였다 — 콩나물 겹침 벌은 그대�
   assert.equal(cropBaseSavedWonOf(RULES, 0), 3_000, '콩나물 기본값');
   assert.equal(cropBaseSavedWonOf(RULES, 1), 2_800, '무순 기본값');
   /* 콩나물 둘째는 「콩나물 기본값 × 2/3」이지 「무순 기본값」이 아니다 */
-  assert.equal(overlapSavedWon(RULES, 3, 1, 0), 2_000,
+  /* ⚠ 2026-08-16 — 「콩나물 둘째 = 2,000원」이 박혀 있었다. 이제 4,000 × 2/3 = 2,670원이다.
+     지킬 것은 「**콩나물** 기본값에 질림이 걸리는가」이지 그 수가 아니다. */
+  assert.equal(overlapSavedWon(RULES, 3, 1, 0),
+    Math.round(cropCycleGrams(RULES, 3, 0, 0) * (2 / 3)) * 10,
     '콩나물 둘째가 무순 값을 받고 있습니다 — 표가 아직 하나입니다');
-  /* 품질이 내려가면 그만큼 준다 — 배수는 끼니/3 이다 */
-  assert.equal(overlapSavedWon(RULES, 2, 0, 0), 2_000, '콩나물 첫째 · 2끼 품질');
+  /* ⚠ 2026-08-16 — 품질 배수가 **끼니/3 에서 「중간빛 300g ±100g」으로 바뀌었다**(§그램).
+     2끼(살짝 초록)는 300g = 3,000원이다 — 예전 2,000원이 아니다. */
+  assert.equal(overlapSavedWon(RULES, 2, 0, 0), 3_000, '콩나물 첫째 · 2끼 품질 = 300g');
+  assert.equal(overlapSavedWon(RULES, 3, 0, 0), 4_000, '콩나물 첫째 · 3끼 품질 = 400g');
+  assert.equal(overlapSavedWon(RULES, 1, 0, 0), 2_000, '콩나물 첫째 · 1끼 품질 = 200g');
   /* ★ 무순은 2종째라 **질림 순번이 1에서 시작한다.** 그날 첫 무순도 이미 ×2/3 다 —
      「그날 첫째」와 「질림 순번 0」은 다른 말이다. 여기 헷갈리면 표를 잘못 읽는다. */
   assert.equal(overlapSavedWon(RULES, 3, 0, 1), 1_867, '무순 그날 첫째 · 3끼 = 2,800 × 2/3');
@@ -133,16 +152,26 @@ check('G ★무순 회전분만 움직였다 — 콩나물 겹침 벌은 그대�
     '무순 그날 첫째 · 1끼 품질 = 2,800 × 2/3 × 1/3');
 });
 
-/* ══ H · 곳간 상한 — 유도가 살아 있는가 ════════════════════════════════════ */
-check('H 하루 저감 상한 = min(도는 작물의 한 회전 합, 끼니 상한)', () => {
+/* ══ H · 하루 몫 — **300g** 인가 (2026-08-16 박사님 확정) ══════════════════
+   ⚠⚠ **이 절이 지키던 옛 약속이 바뀌었다.** 예전 제목은 「하루 저감 상한 =
+     min(도는 작물의 한 회전 합, 끼니 상한)」이었고 값은 **4,867원**이었다.
+     박사님: *"400G 가 오면 300G 까지는 당일 쓸 수 있는 거고 남는 거 팔아먹든 하는 거"*
+     ⇒ 하루 몫은 **작물을 통틀어 300g(3,000원)** 이고, 회전분 합계를 안 본다.
+     ⇒ 대신 **남는 것이 안 버려지고 곳간에 쌓인다**(곳간 한도를 걷었다). */
+check('H 하루 몫 = 300g (작물 통틀어) · 끼니 상한 아래', () => {
   const mealCap = CHARS._meta.cropMealCapPerPerson *
                   (CHARS._meta.dailyFoodPerPerson / CHARS._meta.mealsPerDayPerPerson);
-  const perCycle = 3_000 + 1_867;                    // 콩나물 첫째 + 무순(2종째)
+  const perCycle = 3_000 + 1_867;                    // 콩나물(중간 품질) + 무순(2종째)
   assert.equal(RULES.cropSavedWonPerCycle, perCycle,
     `한 회전 합계가 ${RULES.cropSavedWonPerCycle} 입니다 — ${perCycle} 이어야 합니다`);
-  assert.equal(RULES.dailyCropSaveWon, Math.min(perCycle, mealCap), '하루 저감 상한');
+  assert.equal(RULES.dailyCropGrams, 300, '하루 몫(g)');
+  assert.equal(RULES.dailyCropSaveWon, Math.min(300 * 10, mealCap), '하루 몫(원)');
+  assert.equal(RULES.dailyCropSaveWon, 3_000, '하루 몫이 3,000원이 아니다');
   assert.equal(RULES.cropCapBinding, false,
-    '★끼니 상한이 이기고 있습니다 — 2종 합계 4,867원은 상한 5,000원 아래라야 합니다');
+    '★끼니 상한이 이기고 있습니다 — 300g(3,000원)은 상한 5,000원 아래라야 합니다');
+  /* ★★ **곳간은 이제 안 넘친다** — 쌓아 두었다가 팔 수 있어야 하기 때문이다 */
+  assert.equal(pantryCapWon({ rules: RULES }), Infinity,
+    '★곳간에 한도가 남아 있습니다 — 남는 것이 쉬어서 버려집니다');
 });
 
 console.log(fail ? `\n✕ ${fail}개 실패` : '\n✓ 전부 통과');

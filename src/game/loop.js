@@ -41,6 +41,8 @@ import {
   harvestBeansprout,
   waterBeansprout,
   eatFromPantry,
+  /* ★ 2026-08-16 · 그램 표기는 한 곳에서만 만든다 (first_play §그램) */
+  formatGram,
   cropDliFromReport,
   cropKindOf,
   cropSites,
@@ -1056,8 +1058,12 @@ export function harvestCrop(S, io, opt = {}) {
     /* ★ 2026-08-05 — 종류가 늘어 "콩나물 수확"이 늘 맞는 말이 아니다. 거둔 것을 그대로 적는다 */
     const what = (r.byKind || []).map(g => `${g.kindKo} ${g.pots}개`).join(' · ') ||
                  `시루 ${r.harvestedPots}개`;
-    pushLog(S, `🥣 수확 — ${what} · ${r.qualityKo} · ${r.meals}끼 상당 · ` +
-               `${r.cycleSavedWon.toLocaleString()}원`);
+    /* ★ 2026-08-16 — **거둔 양을 g 으로 적는다**(first_play §그램). 「3,000원」만 적으면
+       거둔 것이 물건이 아니라 돈으로 읽힌다 — 가방·상점·밥상 창이 전부 g 으로 말한다.
+       ⚠ g 은 `perPot` 이 낸 낱개를 더한다. 총액을 한 번에 나누면 화면 곳곳의 낱개 합과 갈린다. */
+    const harvestG = (r.perPot || []).reduce((a, x) => a + (x.grams || 0), 0);
+    pushLog(S, `🥣 수확 — ${what} · ${r.qualityKo} · ${formatGram(harvestG)} · ` +
+               `밥값 ${r.cycleSavedWon.toLocaleString()}원어치`);
     /* ★★ 겹침 (2026-08-04 · first_play.js §겹침) — 예전 "시루를 늘려도 안 는다"를 대신한다.
        손해의 이유가 시루 수가 아니라 **거두는 때가 겹친 것**이라, 처방도 달라진다:
        "사지 마라"가 아니라 **"물을 날을 달리해 줘라"** 다. */
@@ -1071,10 +1077,17 @@ export function harvestCrop(S, io, opt = {}) {
          상점이 그때그때 읽어 말한다 — 여기에 베끼면 낡은 숫자가 하나 더 생긴다. */
     const sellTail = ' 못 받은 몫은 **[상점]에서 넘길 수 있습니다**';
     if (r.overlapLostWon > 0)
-      pushLog(S, `🥱 곳간이 안 비어 있어 ${r.overlapLostWon.toLocaleString()}원을 못 받았습니다 ` +
+      /* ⚠ 2026-08-16 — 「곳간이 안 비어 있어」는 이제 **틀린 까닭**이다. 곳간은 안 찬다
+         (한도를 걷었다 · §pantryCapWon). 남은 까닭은 **질림** 하나뿐이다 —
+         같은 날 같은 것을 거듭 거두면 그만큼 덜 챙긴다(first_play §겹침). */
+      pushLog(S, `🥱 같은 것을 같은 날 거듭 거둬 ${formatGram(r.lostGrams || 0)}` +
+                 `(밥값 ${r.overlapLostWon.toLocaleString()}원어치)을 덜 챙겼습니다 ` +
                  `(시루 ${r.overlapCount}개가 겹쳤습니다) — 물을 **날을 달리해** 주면 ` +
                  `거두는 날이 어긋나 온전히 받습니다.` + sellTail);
-    /* ⚠ 겹침 줄이 이미 말했으면 여기서는 안 말한다 — 한 수확에 같은 안내가 두 번 뜬다 */
+    /* ⚠⚠ 2026-08-16 — 「곳간이 넘쳐 쉬었습니다」 줄은 **닿을 수 없는 자리**가 됐다.
+       박사님이 곳간 한도를 걷으셨다(*"남는 거 팔아먹든 하는 거"* · first_play §pantryCapWon)
+       — `spoiledWon` 은 이제 늘 0 이다. **줄을 지우지 않고 남긴다**: 한도가 다시 생기는
+       날(캐릭터별 냉장고 크기 같은 것) 이 줄이 그대로 살아난다. 지금은 안 뜬다. */
     if (r.spoiledWon > 0)
       pushLog(S, `🗑 곳간이 넘쳐 ${r.spoiledWon.toLocaleString()}원어치가 쉬었습니다.` +
                  (r.overlapLostWon > 0 ? '' : sellTail));
