@@ -28,7 +28,9 @@ import {
 } from '../src/game/ending.js';
 import {
   TUTORIAL_RULES, createTutorialState, tutorialDay, noteLearning, canMoveOut, moveOut,
-  rentWonOf, dailyCashOutWon
+  rentWonOf, dailyCashOutWon,
+  /* ★ 2026-08-13 — 탈출의 둘째 축(무늬 삽수 판매) */
+  noteVarieCuttingSale
 } from '../src/game/tutorial.js';
 import { isNoviceMode, graceDaysOf } from '../src/game/propagation.js';
 import { serialize, deserialize } from '../src/game/save.js';
@@ -50,13 +52,18 @@ const teachAll = (ts) => noteLearning(ts, {
   plantDli7: 3.8, plantMinDli: 3.0, spearFurled: true
 });
 
-/* 이사할 수 있는 판 하나. 첫 플레이는 안 켠다(밸런스 계약이 필요하고 여기서 재는 것이 아니다). */
+/* 이사할 수 있는 판 하나. 첫 플레이는 안 켠다(밸런스 계약이 필요하고 여기서 재는 것이 아니다).
+   ★★ 2026-08-13 — **탈출의 둘째 축이 「배움 넷」에서 「무늬 삽수 판매」로 바뀌었다**
+     (박사님 확정 · tutorial.js §두 축). 그래서 여기도 그 축을 채운다.
+   ⚠ 배움 넷(`teachAll`)은 **안 지웠다** — 조건에서만 빠졌고 안내·확정 무늬가 여전히 읽는다.
+     이 파일이 재는 것은 ③ 원룸이지 ②의 조건이 아니므로, 둘 다 채워 두고 문을 연다. */
 function readyToMove({ rules = TUTORIAL_RULES, cash = null } = {}) {
   const S = newState({ room: 'banjiha', mode: 'real' });
   S.day = 60;
   S.tutorial = createTutorialState({ enabled: true, rules });
   S.tutorial.day = 60;
   teachAll(S.tutorial);
+  noteVarieCuttingSale(S.tutorial, { variegatedLeaves: 1, won: 80_000 });
   S.tutorial.cashWon = cash == null ? rules.moveOutCostWon : cash;
   return S;
 }

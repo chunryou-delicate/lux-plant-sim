@@ -361,6 +361,18 @@ function play(opt = {}) {
         }
       }
     }
+    /* ★★ 2026-08-13 — **모주를 판 뒤에도 삽수는 판다.**
+       ------------------------------------------------------------
+       위 블록은 통째로 `pot0(S)` 안에 있다. 모주를 파는 순간 그 조건이 거짓이 되어
+       **손에 남은 삽수를 다시는 안 팔았다.** 옛 조건(돈 × 배움)에서는 모주만 팔면 문이
+       열려서 이 구멍이 안 보였는데, 둘째 축이 「무늬 삽수를 판 적이 있다」로 바뀌자
+       그대로 드러났다 — 뿌리내리는 중이던 무늬 삽수가 손에 남아 **영영 못 나가는 판**이 됐다.
+       ⚠ 실측으로 그 구멍이 이 재현의 성공률을 A 78% → 20% 로 끌어내렸다.
+         **판이 그런 것이 아니라 재는 자가 그랬다**(START-HERE §2). 고치면 되돌아온다. */
+    if (!ts.movedOut && !pot0(S)) {
+      for (const c of [...(S.cuttings || [])])
+        if (SELLABLE_CUTTING_STATUS.includes(c.status)) sell(c);
+    }
     if (!ts.movedOut && canMoveOut(ts).ok) moveOut(ts);
 
     rows.push({ day: S.day, tday: ts.day, season: seasonAt(ts, ts.day),

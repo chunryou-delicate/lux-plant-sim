@@ -572,6 +572,19 @@ function packTutorial(ts) {
       lastDay: (ts.varieGrant || {}).lastDay == null ? null
         : needInt(ts.varieGrant.lastDay, 'tutorial.varieGrant.lastDay', { min: 0 })
     },
+    /* ★★ 무늬 삽수를 판 적이 있나 (2026-08-13) — **반지하 탈출의 둘째 축**이다.
+       뜻은 `tutorial.js §무늬 삽수를 판 적이 있다` 가 갖는다. 안 적으면 저장 한 번에
+       「판 적 있다」가 없던 일이 되어 **이미 판 사람이 방에 갇힌다.**
+       ⚠ 옛 세이브에는 이 칸이 아예 없다 — 아래 §무늬 삽수 판매 이관 이 옮긴다. */
+    varieSale: {
+      count: needInt((ts.varieSale || {}).count ?? 0, 'tutorial.varieSale.count', { min: 0 }),
+      firstDay: (ts.varieSale || {}).firstDay == null ? null
+        : needInt(ts.varieSale.firstDay, 'tutorial.varieSale.firstDay', { min: 0 }),
+      wonTotal: needNum((ts.varieSale || {}).wonTotal ?? 0, 'tutorial.varieSale.wonTotal', { min: 0 }),
+      /* 옛 세이브에서 옮겨 온 것이면 그 사유가 남는다 — 「실제로 판 것」과 갈라 읽으려고 */
+      migrated: (ts.varieSale || {}).migrated == null ? null
+        : needStr(String(ts.varieSale.migrated), 'tutorial.varieSale.migrated')
+    },
     /* 살림 장부 — 상점에 쓴 돈·판 돈. 안 적으면 "얼마 벌었나"가 저장 왕복에서 사라진다. */
     crop: {
       spentWon: needNum((ts.crop || {}).spentWon ?? 0, 'tutorial.crop.spentWon', { min: 0 }),
@@ -580,6 +593,48 @@ function packTutorial(ts) {
     movedOut: !!ts.movedOut,
     bankrupt: !!ts.bankrupt
   };
+}
+
+/* ★★ 무늬 삽수 판매 이관 — **옛 세이브가 방에 갇히지 않게** (2026-08-13)
+   ------------------------------------------------------------
+   탈출의 둘째 축이 「배움 넷」에서 「무늬 삽수를 판 적이 있다」로 바뀌었다
+   (`tutorial.js §두 축`). 그런데 **옛 세이브에는 그 칸이 없다** — 그대로 열면
+   이미 무늬 삽수를 팔았던 사람도 `count = 0` 이 되어 **[이사]가 도로 잠긴다.**
+   ⚠ 값을 지어내면 안 되지만, **약속을 뺏어서도 안 된다.** 그래서 세이브에 **이미 적혀 있는
+     사실**만으로 판단하고, 판단이 갈리면 **관대한 쪽**으로 연다. 조건을 새로 만든 쪽이
+     증명 책임을 지는 것이 맞다(선례: 위 §pantryMeals → pantryWon 환산 · §wateredOnDay).
+
+   ★ 여는 사유 셋 — 전부 세이브에 적혀 있는 값이다:
+     ㄱ `movedOut` 이 참이다 — **이미 나간 판**이다. 되돌리면 방이 두 개가 된다
+     ㄴ **옛 조건이 이미 참이었다**(돈 ≥ 이사비 · 배움 넷) — 저장된 그 순간 [이사] 단추가
+        실제로 열려 있던 판이다. 새 축을 소급해 닫는 것은 그 사람에게서 이미 준 것을 뺏는 일이다
+     ㄷ **확정 무늬 마디를 잘라냈는데 그 삽수가 지금 없다** —
+        `varieGrant.count − varieGrant.nodeIds.length` 가 잘려 나간 무늬 마디 수이고,
+        그보다 **살아 있는 무늬 삽수가 적으면** 그 차이만큼은 손을 떠났다는 뜻이다.
+        판 것인지 시든 것인지는 세이브에 안 적혀 있다 — 그래서 **판 것으로 친다**(관대한 쪽).
+   ⚠ 셋 다 아니면 **안 연다.** 그 판은 아직 무늬 삽수를 만져 본 적이 없는 판이고,
+     지금부터 잘라 팔면 된다 — 잃는 진행이 없다.
+   ★ 옮겨 온 것은 `migrated` 에 사유가 남는다. 「실제로 판 것」과 갈라서 읽을 수 있어야
+     나중에 이 줄이 왜 참인지를 다시 셀 수 있다. */
+function migrateVarieSale(S, ts) {
+  const v = ts.varieSale;
+  if ((v.count || 0) > 0) return null;                    // 이미 값이 있으면 손대지 않는다
+  const g = ts.varieGrant || {};
+  const cutAwayVarie = Math.max(0, (g.count || 0) - ((g.nodeIds || []).length));
+  const liveVarie = (S.cuttings || [])
+    .filter(c => c && c.status !== 'dead' && (c.variegatedLeaves || 0) >= 1).length;
+  const why = ts.movedOut ? 'moved-out'
+            : (ts.cashWon >= ts.rules.moveOutCostWon &&
+               Object.values(ts.learned).every(Boolean)) ? 'old-gate'
+            : cutAwayVarie > liveVarie ? 'varie-cut-gone'
+            : null;
+  if (!why) return null;
+  v.count = 1;
+  /* ⚠ **판 날은 세이브에 없다.** 지어내지 않고 「그 판의 오늘」로 채운다 —
+     위 §wateredOnDay 가 쓴 것과 같은 사상이다(잃는 쪽이 아니라 안전한 쪽). */
+  v.firstDay = ts.day;
+  v.migrated = why;
+  return why;
 }
 
 /* ★ 스토리 ③④ (2026-08-05) — 원룸에 들어온 날과 엔딩을 본 날.
@@ -1124,8 +1179,14 @@ export function deserialize(raw, opt = {}) {
     ts.rent = { ...ts.rent, ...t.rent };
     for (const k of Object.keys(ts.learned)) if (k in t.learned) ts.learned[k] = t.learned[k];
     ts.varieGrant = { ...ts.varieGrant, ...t.varieGrant };
+    ts.varieSale = { ...ts.varieSale, ...t.varieSale };
     ts.crop = { ...ts.crop, ...t.crop };
     ts.movedOut = t.movedOut; ts.bankrupt = t.bankrupt;
+    /* ★★ 옛 세이브에는 `varieSale` 칸이 **아예 없다** — 위 §무늬 삽수 판매 이관.
+       ⚠ 「없다」와 「0건이다」는 다른 말이다. 그래서 `t.varieSale`(없으면 0으로 채워진다)이
+         아니라 **날 세이브에 그 칸이 있었는지**를 본다. 뭉개면 실제로 0건인 판까지
+         매번 다시 이관돼 「판 적 없는데 열린」 방이 된다. */
+    if (st.tutorial.varieSale == null) migrateVarieSale(S, ts);
     S.tutorial = ts;
   }
 

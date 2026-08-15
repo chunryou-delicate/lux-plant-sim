@@ -241,6 +241,8 @@ export function createTutorialState(opt = {}) {
     learned: LEARNING_KEYS.reduce((o, k) => (o[k] = false, o), {}),
     /* ★ 튜토 확정 무늬 — 아래 §확정 무늬. 정식 모드에는 이 칸 자체가 없다(튜토 상태다). */
     varieGrant: createVarieGrantState(),
+    /* ★★ 탈출의 둘째 축 — 아래 §무늬 삽수를 판 적이 있다 (2026-08-13 박사님 확정) */
+    varieSale: createVarieSaleState(),
     movedOut: false,
     bankrupt: false
   };
@@ -252,6 +254,80 @@ export function createVarieGrantState() {
     count: 0,            // 튜토 전체에서 몇 번 줬나 (표시·재현용)
     lastDay: null        // 마지막으로 준 튜토 일자
   };
+}
+
+/* ============================================================
+   ★★ 「무늬 삽수를 판 적이 있다」 — 탈출의 둘째 축 (2026-08-13 박사님 확정)
+   ------------------------------------------------------------
+   원문: *"탈출 조건을 **2개**로 하지. **돈**이랑 **무늬 삽수 팔기.**"*
+
+   ══ ★★ 판정 근거는 하나다 — **「무늬로 값이 매겨져 팔린 삽수」** ═══════════
+   `shop.sellCutting` 이 매긴 값에 **무늬 잎이 한 장이라도 실려 있으면** 그 판매를 센다:
+
+       price.variegatedLeaves >= 1
+
+   ★ 왜 계통(`propagation.lineage`)으로 안 거나 — **셋 다 이유가 있다.**
+     ① 계통은 **뿌리를 내려야 드러난다**(`lineageKnown`). 판정을 거기 걸면 「판 적이 있다」가
+        판 순간이 아니라 그 전에 정해지고, 화면이 값을 매길 때 쓴 것과 다른 것을 보게 된다.
+     ② **옛 세이브에는 `lineage` 칸이 아예 없다**(propagation.js §뿌리내림: 없으면 그때 굴린다).
+        조건을 거기 걸면 옛 판에서 조용히 틀린다.
+     ③ 플레이어가 화면에서 본 것은 **값**이다 — 「잎 1장 중 무늬 1장 · 80,000원」.
+        판정 근거가 그 화면과 같은 값이라야 「왜 안 열리나」를 설명할 수 있다.
+
+   ══ ★★ 고스트도 「무늬 삽수」로 치나 — **친다** ════════════════════════════
+   실측(prologuevarie-to-plan §3-2)으로 **지금 나는 무늬 삽수는 전부 고스트다** —
+   씨앗 6개·200일·무늬 삽수 15건 전부 `w = 1.00`, 전부 `lineage: ghost` 였다.
+   무늬 잎이 한 장뿐인 그루에서 그 잎을 떼면 `w=1` 이라 고스트가 확정이기 때문이다(키메라 세 갈래).
+
+   ⇒ 고스트를 빼면 **지금은 아무도 이 조건을 못 연다.** 조건의 모양만 바꾸는 이번 일에서
+     「아무도 못 나가는 판」을 만드는 것은 값을 바꾸는 것보다 큰 변경이다.
+   ⇒ 그리고 위 판정 근거를 쓰면 **고스트를 따로 봐 줄 필요가 없다.** 고스트도 무늬 잎을
+     달고 있어 무늬 값(80,000원)으로 팔린다 — 「무늬로 값이 매겨졌다」가 그대로 참이다.
+     계통이 아니라 **값**으로 재기 때문에 예외 조항이 한 줄도 안 생긴다.
+   ⚠ 다만 고스트는 32일 뒤 시들고 계통이 끊긴다. 그래서 이 조건은 「무늬를 이어받았다」가
+     아니라 **「무늬를 값으로 만들어 봤다」**를 묻는 것이다. 그 뜻으로 못 박는다.
+   ⏸ 「유지(chimera)만 친다」로 좁히려면 무늬 잎이 **두 장** 있어야 하고, 그건 프롤로그
+     보장을 두 장으로 늘리는 밸런스 결정이다(prologuevarie-to-plan §5-①). plan 몫이다.
+
+   ══ ★ 어디에 적나 ═══════════════════════════════════════════════════════
+   `ts.varieSale` — 튜토 상태다. 세이브에 남는다(save.js §packTutorial).
+   ⚠ **옛 세이브에는 이 칸이 없다.** 이미 판 사람이 못 나가면 안 된다 —
+     옮기는 길은 `save.js §무늬 삽수 판매 이관` 에 있다.
+
+   ══ ⚠ 누가 적나 ════════════════════════════════════════════════════════
+   파는 자리는 `shop.sellCutting` 하나뿐이고, 거기서 `ts.varieSale` 에 바로 적는다
+   (`ts.crop.soldWon` 을 적는 것과 같은 방식이다). shop 이 이 파일을 import 하면
+   **순환**이 된다 — 이 파일이 `shop.priceOf` 를 쓰기 때문이다. 그래서 뜻은 여기가 갖고
+   손은 shop 이 댄다. 둘이 갈리지 않게 검사가 등식을 고정한다(tools/test_escapecut.mjs §B).
+============================================================ */
+export function createVarieSaleState() {
+  return {
+    count: 0,            // 무늬로 값이 매겨져 팔린 삽수가 몇 건인가
+    firstDay: null,      // 처음 판 튜토 일자 (안내·기록용)
+    wonTotal: 0,         // 그렇게 번 돈 합계 (안내·기록용)
+    migrated: null       // 옛 세이브에서 옮겨 온 것이면 그 사유 (save.js §이관)
+  };
+}
+
+/* 무늬 삽수를 팔았다고 적는다. **부르는 쪽은 shop.sellCutting 하나다.**
+     sale.variegatedLeaves  그 판매에 실린 무늬 잎 수 (shop.priceOf 가 낸 값)
+     sale.won               판 값
+   ★ 무늬가 안 실린 판매는 **아무 일도 안 한다** — 여기가 「친다/안 친다」의 유일한 문이다. */
+export function noteVarieCuttingSale(ts, sale = {}) {
+  if (!ts || !ts.enabled) return null;
+  const varie = Math.max(0, Math.round(sale.variegatedLeaves || 0));
+  if (varie < 1) return null;
+  const v = ts.varieSale || (ts.varieSale = createVarieSaleState());
+  v.count += 1;
+  v.wonTotal += Math.max(0, Math.round(sale.won || 0));
+  if (v.firstDay == null) v.firstDay = ts.day;
+  return { count: v.count, firstDay: v.firstDay, wonTotal: v.wonTotal, first: v.count === 1 };
+}
+
+/* 판 적이 있나. ★읽는 곳이 여럿이라 함수 하나로 둔다 — `.count > 0` 을 여기저기 적으면
+   옛 세이브(칸 없음)에서 조용히 터진다. */
+export function hasSoldVarieCutting(ts) {
+  return !!(ts && ts.varieSale && (ts.varieSale.count || 0) > 0);
 }
 
 /* ── 계절 ─────────────────────────────────────────────────────────────── */
@@ -783,16 +859,50 @@ export function varieView(S, io = {}) {
 
 /* ── 이사 ─────────────────────────────────────────────────────────────── */
 
-/* 종료 조건은 **두 축을 함께** 본다(story_arc.md §1).
-   돈만 모으면 자동으로 끝나는 구조를 피하되, 돈을 아예 빼지도 않는다. */
+/* ★★ 종료 조건은 **두 축을 함께** 본다(story_arc.md §1).
+   돈만 모으면 자동으로 끝나는 구조를 피하되, 돈을 아예 빼지도 않는다.
+
+   ══ ★★ 2026-08-13 박사님 확정 — 둘째 축이 **배움 넷 → 무늬 삽수 판매** 로 바뀌었다 ══
+   원문: *"탈출 조건을 **2개**로 하지. **돈**이랑 **무늬 삽수 팔기.**"*
+
+       탈출 = 돈(이사비) **AND** 무늬 삽수를 판 적이 있다
+
+   ★ 왜 바꿨나(escapecut 지시문 그대로 — 지어낸 것이 아니다). 채소 편차를 넓히면서
+     **채소만으로 판이 닫히는 문턱이 시루 12개**로 내려왔다(cropspread-to-plan).
+     그러면 **식물을 안 키워도 탈출한다.** 둘째 축을 삽수로 두면 식물이 필수가 되고,
+     프롤로그의 「잎 2에 무늬 확정」이 그 사슬의 첫 고리가 된다.
+
+   ★★ **배움 넷을 지우지 않았다.** 조건에서만 뺐다 —
+     `LEARNING` · `ts.learned` · `noteLearning` · `learningLeft` 는 그대로 돈다.
+     ① `varieGrantCheck`(확정 무늬)의 조건 ②가 여전히 그 값을 읽는다. 지우면 튜토의
+        마지막 장면이 통째로 사라진다.
+     ② 화면 체크리스트(`game.html §drawTutorial`)와 대사(`learn_*`)가 그 값으로 돈다.
+     ③ 그래서 아래도 `learningLeft` 를 **계속 낸다** — 다만 `ok` 는 안 본다. 읽는 쪽이
+        「안내」로 쓰는 것과 「문」으로 쓰는 것이 여기서 갈린다.
+   ⚠ 배움 넷은 조건에서 빠졌어도 **길에서 빠지지는 않는다** — 무늬 삽수를 손에 넣는
+     유일한 길인 확정 무늬가 배움 넷을 요구하기 때문이다(§확정 무늬 조건 ②).
+
+   반환에 `why` 를 실은 이유: 화면이 「왜 잠겼나」를 문구로 다시 짓지 않게 하려고다.
+   축이 둘이 되면서 `shortWon > 0` 하나로는 사유가 안 갈린다(돈은 됐는데 삽수가 없는 판). */
 export function canMoveOut(ts) {
   const need = ts.rules.moveOutCostWon;
   const money = ts.cashWon >= need;
+  const varie = hasSoldVarieCutting(ts);
   const left = learningLeft(ts);
+  const shortWon = Math.max(0, need - ts.cashWon);
   return {
-    ok: money && left.length === 0,
-    money, needWon: need, haveWon: ts.cashWon, shortWon: Math.max(0, need - ts.cashWon),
-    learningLeft: left
+    ok: money && varie,
+    money,
+    varie,                                   // ★ 둘째 축
+    varieSaleCount: (ts.varieSale || {}).count || 0,
+    needWon: need, haveWon: ts.cashWon, shortWon,
+    /* ⚠ **판정에는 안 쓴다.** 안내·퀘스트가 읽는 값이라 남긴다(위 §배움 넷) */
+    learningLeft: left,
+    why: money && varie ? null
+       : !money && !varie ? `이사 자금이 ${shortWon.toLocaleString()}원 모자라고, ` +
+                            '무늬 삽수를 아직 못 팔았습니다'
+       : !money ? `이사 자금이 ${shortWon.toLocaleString()}원 모자랍니다`
+       : '무늬 삽수를 아직 못 팔았습니다'
   };
 }
 
@@ -804,10 +914,9 @@ export function canMoveOut(ts) {
 export function moveOut(ts) {
   const c = canMoveOut(ts);
   if (!c.ok) {
-    const why = !c.money
-      ? '이사 자금이 ' + c.shortWon.toLocaleString() + '원 모자랍니다'
-      : '아직 못 해 본 것이 있습니다 — ' + c.learningLeft.map(x => x.ko).join(' · ');
-    const e = new Error('[튜토] ' + why);
+    /* ★ 사유를 여기서 다시 짓지 않는다 — `canMoveOut.why` 가 정본이다(위 §두 축).
+       두 곳에서 지으면 축이 또 바뀔 때 한쪽만 따라온다(실제로 그랬다). */
+    const e = new Error('[튜토] ' + c.why);
     e.tutorialInput = true;
     throw e;
   }
@@ -825,6 +934,12 @@ export function tutorialGoal(ts) {
   if (ts.movedOut) return { id: 'done', ko: '원룸으로 이사했습니다' };
   const c = canMoveOut(ts);
   if (c.ok) return { id: 'ready', ko: '원룸으로 이사할 수 있습니다' };
+  /* ★ 순서가 뜻이다 — **먼저 할 수 있는 것**을 말한다.
+     ① 배움이 남았으면 그것부터(조건은 아니지만 무늬 삽수로 가는 길의 첫 걸음이다.
+        확정 무늬가 배움 넷을 요구한다 — §확정 무늬 조건 ②).
+     ② 그다음이 무늬 삽수. 돈은 하루하루 저절로 줄어드는 것이라 **마지막**에 말한다 —
+       먼저 말하면 「기다리세요」가 되어 할 일이 안 보인다. */
   if (c.learningLeft.length) return { id: 'learn', ko: c.learningLeft[0].ko };
+  if (!c.varie) return { id: 'varie', ko: '무늬 삽수를 잘라 뿌리내려 팔아 봐야 합니다' };
   return { id: 'money', ko: '이사 자금 ' + c.shortWon.toLocaleString() + '원이 더 필요합니다' };
 }

@@ -892,6 +892,23 @@ export function sellCutting(S, cuttingOrId, opt = {}) {
     const shop = shopOf(S);
     shop.stock[returned] = (shop.stock[returned] || 0) + 1;
   }
+  /* ★★ 「무늬 삽수를 판 적이 있다」 — **반지하 탈출의 둘째 축**이다 (2026-08-13 박사님 확정).
+     ------------------------------------------------------------
+     ⚠ 뜻과 규칙은 여기가 아니라 **`tutorial.js §무늬 삽수를 판 적이 있다`** 가 갖는다.
+       여기서 직접 적는 이유는 하나뿐이다: `tutorial.js` 가 이 파일의 `priceOf` 를 쓰므로
+       거꾸로 import 하면 **순환**이 된다. 그래서 `ts.crop.soldWon` 을 적는 것과 **같은 방식**으로
+       (import 없이 튜토 상태에 한 줄 적는다) 손만 여기서 댄다.
+     ★ 판정 근거는 **매긴 값에 무늬 잎이 실렸나** 하나다 — 계통(ghost/chimera/revert)은 안 본다.
+       계통은 뿌리내려야 드러나고 옛 세이브에는 칸 자체가 없다. 까닭은 tutorial.js 에 다 적혀 있다.
+     ⚠ 옛 세이브에는 `ts.varieSale` 칸이 없다 — `save.js §무늬 삽수 판매 이관` 이 옮긴다.
+       여기서도 없으면 만들어 쓴다(옛 판을 그 자리에서 깨뜨리지 않는다). */
+  const ts = S.tutorial && S.tutorial.enabled ? S.tutorial : null;
+  if (ts && q.variegatedLeaves >= 1) {
+    const v = ts.varieSale || (ts.varieSale = { count: 0, firstDay: null, wonTotal: 0, migrated: null });
+    v.count = (v.count || 0) + 1;
+    v.wonTotal = (v.wonTotal || 0) + q.won;
+    if (v.firstDay == null) v.firstDay = ts.day;
+  }
   if (typeof opt.log === 'function')
     opt.log(`💰 삽수 ${c.id} 를 팔았습니다 — 잎 ${q.leaves}장 중 무늬 ${q.variegatedLeaves}장 ` +
             `(v ${q.v.toFixed(3)}) · ${q.won.toLocaleString()}원` +

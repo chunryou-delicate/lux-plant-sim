@@ -46,9 +46,10 @@ import {
   createDialogue, createStoryteller, scriptsForEvents, pickChatter
 } from '../src/game/dialogue.js';
 import { seasonAt, seasonDayAt, buyLamp, canMoveOut, moveOut,
-         varieGrantOpensDay } from '../src/game/tutorial.js';
-import { orderItem, stockOf, incomingOf } from '../src/game/shop.js';
-import { cuttableNow, takeCutting } from '../src/game/propagation.js';
+         varieGrantOpensDay, varieView } from '../src/game/tutorial.js';
+import { orderItem, stockOf, incomingOf, sellCutting,
+         SELLABLE_CUTTING_STATUS } from '../src/game/shop.js';
+import { cuttableNow, takeCutting, cuttingsOf } from '../src/game/propagation.js';
 
 const U = p => new URL(p, import.meta.url);
 const J = p => JSON.parse(readFileSync(U(p), 'utf8'));
@@ -201,11 +202,50 @@ function longestSilence(rows) {
    90일 안에 못 닿는다 — 이사를 안 하니 `move_ready`·`moved_out` 대사가 영영 안 났다.
    ⚠ **대사가 없어진 게 아니라 이사가 안 일어난 것**이었다. 재는 기한이 낡았던 자리다.
    ⇒ 값을 또 올리면 여기도 같이 봐야 한다. `days` 는 이사비를 따라간다. */
+/* ★★ 2026-08-13 — **삽수 한 바퀴를 실제로 돈다** (탈출의 둘째 축).
+   ------------------------------------------------------------
+   박사님 확정으로 탈출 조건이 「돈 × 배움 넷」에서 **「돈 × 무늬 삽수를 판 적이 있다」**로
+   바뀌었다(tutorial.js §두 축). 그래서 A·B 도 **잘라서 · 뿌리내려서 · 판다** —
+   안 하면 `move_ready`·`moved_out` 대사가 영영 안 난다.
+   ⚠ 지름길을 안 쓴다: 병을 **주문해서** 사고, 코어 API 로 자르고, 뿌리내린 뒤에 판다.
+     ⇒ 순서가 곧 규칙이다. ① 아무 마디나 한 번 잘라야 확정 무늬가 열리고(§확정 무늬 조건 ③),
+       ② 확정 무늬가 붙은 마디를 다시 잘라야 **무늬 삽수**가 되고,
+       ③ 12일 뒤 뿌리를 내려야 팔린다.
+   ★ 코어가 준 확정 무늬는 growth 의 날 마디에는 안 붙어 있다 — `varieView` 로 덧씌워 읽어야
+     `takeCutting` 이 무늬를 실어 준다(tutorial.js §덧씌워 읽기). */
+function runCuttingCycle(S, io) {
+  const pot = pot0(S);
+  if (!pot) return;
+  if (stockOf(S, 'jar') + incomingOf(S, 'jar') === 0) {
+    try { orderItem(S, 'jar', 1); } catch { /* 돈이 모자라면 다음 날 */ }
+  }
+  if (stockOf(S, 'jar') >= 1) {
+    const v = varieView(S, { nodes: io.growth.cuttableNodes(), stats: io.growth.leafStats() });
+    const nodes = cuttableNow(S, v.nodes);
+    /* 무늬가 붙은 마디가 있으면 그것부터. 없으면 잎 1장짜리로 **첫 자르기**를 채운다 */
+    const pick = nodes.find(n => (n.variegatedLeaves || 0) >= 1)
+              || ((pot.cuts || []).length ? null : nodes.find(n => n.leaves === 1));
+    /* ⚠ `takeCutting` 에는 **거르지 않은 전체 목록**을 넘긴다. 거른 목록을 넘기면
+       `motherLeavesOf(nodes)` 가 그 목록의 최댓값을 모주 잎 수로 보고
+       (propagation §cutBudgetOf), 잎 1장짜리 하나만 남은 목록에서는 **모주가 잎 1장짜리**가
+       되어 「모주에 0장만 남았습니다」로 막힌다. 실제로 여기서 그 함정을 밟았다. */
+    if (pick) try { takeCutting(S, { nodes: v.nodes, nodeId: pick.nodeId, container: 'jar' }); }
+              catch { /* 규칙대로 막힌 것이다 */ }
+  }
+  /* 뿌리내린 무늬 삽수는 판다 — 그 판매가 탈출의 둘째 축을 연다(shop.sellCutting) */
+  for (const c of [...cuttingsOf(S)]) {
+    if (!SELLABLE_CUTTING_STATUS.includes(c.status)) continue;
+    if ((c.variegatedLeaves || 0) < 1) continue;
+    try { sellCutting(S, c.id); } catch { /* 아직 못 판다 */ }
+  }
+}
+
 /* A — 식물등 없이 가을 안에 이사 */
 const A = play({
   cropSlot: DARK, plantSlot: SILL, incomeWon: 24_300, days: 130,
-  onDay: ({ S }) => {
+  onDay: ({ S, io }) => {
     const ts = S.tutorial;
+    runCuttingCycle(S, io);
     return (canMoveOut(ts).ok && !ts.movedOut) ? moveOut(ts).events : [];
   }
 });
@@ -225,6 +265,7 @@ const B = play({
   cropSlot: DARK, plantSlot: SILL, incomeWon: 24_300, days: 130,
   onDay: ({ S, io }) => {
     const ts = S.tutorial, out = [];
+    runCuttingCycle(S, io);                 // ★ 둘째 축 — 위 §삽수 한 바퀴
     if (ts.lamp.unlocked && ts.lamp.owned === 0 && ts.cashWon >= ts.rules.lampPriceWon) {
       out.push(...buyLamp(ts).events);
       S.lamps.count = ts.lamp.owned; io.light.clearCache();

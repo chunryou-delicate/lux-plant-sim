@@ -226,6 +226,8 @@ function playToEnding(opt = {}) {
   const trace = { movedInOnDay: null, firstCutDay: null, firstSellDay: null,
                   reachedOnDay: null, doneOnDay: null, endedOnDay: null,
                   cutsTaken: 0, cuttingsSold: 0, cuttingIncomeWon: 0, cashBeforePayWon: null,
+                  /* ★ 2026-08-13 — 반지하에서 판 **무늬 삽수**(탈출 둘째 축). ④ 자금과 갈라서 센다 */
+                  varieSoldInBanjiha: 0, varieSoldOnDay: null, varieSoldWon: 0,
                   stepEndingCalls: 0, readyEvents: 0, homeEvents: 0,
                   builtRooms: null, oneroomCash: [] };
   const R = opt.rules || ENDING_RULES;
@@ -278,6 +280,25 @@ function playToEnding(opt = {}) {
       for (const c of [...cuttingsOf(S)]) {
         if (c.status === 'node' && stockOf(S, 'pot') >= 1) { try { repotCutting(S, c.id); } catch { } }
       }
+      /* ★★ 2026-08-13 — **반지하에서는 「무늬 삽수」만 판다.**
+         ------------------------------------------------------------
+         탈출의 둘째 축이 「무늬 삽수를 판 적이 있다」로 바뀌었다(박사님 확정 · tutorial.js §두 축).
+         안 팔면 ②가 영영 안 열려 이 재현이 320일을 반지하에서 보낸다.
+         ⚠ **민무늬까지 팔면 안 된다** — 아래 A-2 가 *"마지막 행동이 삽수를 판 것"* 을 재는데
+           (`firstSellDay >= movedInOnDay`), 반지하에서 아무거나 팔면 그 계약이 깨진다.
+           그래서 여기서 파는 것은 **②의 문을 여는 그 한 장**뿐이고, 장부(`cuttingsSold` ·
+           `firstSellDay`)도 안 건드린다 — ④ 의 자금은 여전히 원룸에서 판 것만으로 센다. */
+      if (!moved) {
+        for (const c of [...cuttingsOf(S)]) {
+          if (!SELLABLE_CUTTING_STATUS.includes(c.status)) continue;
+          if ((c.variegatedLeaves || 0) < 1) continue;
+          try {
+            const r = sellCutting(S, c.id);
+            trace.varieSoldInBanjiha++; trace.varieSoldOnDay = trace.varieSoldOnDay ?? S.day;
+            trace.varieSoldWon += r.won;
+          } catch { }
+        }
+      }
       /* 원룸에서는 **판다** — ④ 는 현금 판정이라 팔아야 닿는다(story_arc §0 ④ 문장 그대로) */
       if (moved) {
         for (const c of [...cuttingsOf(S)]) {
@@ -294,7 +315,10 @@ function playToEnding(opt = {}) {
     /* ── ④ ② 탈출 — 조건이 되면 **방까지** 옮긴다 ─────────────── */
     if (!moved) {
       const c = canMoveOut(ts);
-      if (!c.ok && c.learningLeft.length === 0 && opt.assistMove && c.shortWon > 0 && S.day >= (opt.assistFromDay || 100)) {
+      /* ★ 하네스 보조는 **돈 축만** 채운다. 2026-08-13 부터 조건이 「돈 × 무늬 삽수」라
+         `learningLeft` 는 더 이상 문이 아니다 — 대신 **둘째 축이 실제로 참일 때만** 보조한다.
+         그래야 「보조 때문에 열린 문」과 「삽수를 팔아 열린 문」이 안 섞인다. */
+      if (!c.ok && c.varie && opt.assistMove && c.shortWon > 0 && S.day >= (opt.assistFromDay || 100)) {
         ts.cashWon += c.shortWon;
         assists.push(`day ${S.day}: 이사 자금 ${c.shortWon.toLocaleString()}원 보조 (하네스)`);
       }

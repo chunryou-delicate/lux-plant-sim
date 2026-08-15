@@ -468,16 +468,32 @@ function narrativeEvents(S, turn, ts, learnedBefore, day) {
     if (run >= STALL_DAYS) { ts._stalledOnce = true; ts._resumedNoted = false; }
   }
 
-  /* ③ 이사 두 축 — ★모자란 쪽이 바뀔 때만 말한다. 매일 말하면 잔소리다. */
+  /* ③ 이사 두 축 — ★모자란 쪽이 바뀔 때만 말한다. 매일 말하면 잔소리다.
+     ══ ★★ 2026-08-13 — 둘째 축이 **배움 넷 → 무늬 삽수 판매**로 바뀌었다 ═══════════
+     박사님 확정: *"탈출 조건을 2개로 하지. 돈이랑 무늬 삽수 팔기."*
+     규칙과 사유 문구는 전부 `tutorial.canMoveOut` 이 갖는다 — 여기서 다시 짓지 않는다.
+     ⚠ 그래서 판정도 `c.learningLeft` 가 아니라 **`c.varie`** 를 본다. 배움은 이제
+       조건이 아니다(안내로만 남는다 — tutorial.js §두 축).
+
+     ⚠⚠ **사건 id 는 `move_short_learn` 그대로 둔다.** 뜻은 바뀌었는데 이름이 안 바뀐
+       자리라 적어 둔다 — `src/game/dialogue.js` 는 이번 창의 쓰기 영역이 아니고, id 를
+       갈면 그 파일의 대사표(`EVENT_SCRIPT` · `EVENT_ORDER`)에 없는 id 가 되어
+       **사건은 나는데 화면이 조용해진다**(START-HERE §2 가 경고한 그 모양이다).
+       ★ 다행히 대사(`shortLearn`)의 첫 줄이 *"돈은 됐는데, 아직 안 해 본 게 있어"* 라
+         새 뜻에도 그대로 맞는다. 전용 대사가 필요하면 escapecut-to-plan §화면 에
+         `move_short_varie` 로 갈 때의 dialogue.js 패치를 코드째 적어 두었다.
+       ⇒ 그때까지 **무엇이 모자란지는 `axis` 가 말한다** — 화면·검사는 그 칸을 본다. */
   const c = canMoveOut(ts);
   const state = ts.movedOut ? 'done'
               : c.ok ? 'ready'
-              : c.learningLeft.length === 0 ? 'money'
-              : c.money ? 'learn' : null;      // null = 둘 다 멀었다. 아직 할 말이 없다
+              : c.varie ? 'money'              // 삽수는 팔았고 돈만 남았다
+              : c.money ? 'varie' : null;      // null = 둘 다 멀었다. 아직 할 말이 없다
   if (state && state !== ts._moveState) {
     ts._moveState = state;
-    if (state === 'money') ev.push({ id: 'move_short_money', ko: '이사 자금이 모자랍니다', shortWon: c.shortWon });
-    if (state === 'learn') ev.push({ id: 'move_short_learn', ko: '아직 안 해 본 것이 있습니다', left: c.learningLeft });
+    if (state === 'money') ev.push({ id: 'move_short_money', ko: '이사 자금이 모자랍니다',
+                                     axis: 'money', shortWon: c.shortWon });
+    if (state === 'varie') ev.push({ id: 'move_short_learn', ko: '무늬 삽수를 아직 못 팔았습니다',
+                                     axis: 'varie', why: c.why, left: c.learningLeft });
     if (state === 'ready') ev.push({ id: 'move_ready', ko: '원룸으로 이사할 수 있습니다' });
   } else if (state) ts._moveState = state;
 

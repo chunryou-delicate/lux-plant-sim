@@ -6,7 +6,9 @@ import assert from 'node:assert';
 import {
   TUTORIAL_RULES, createTutorialState, tutorialDay, seasonAt, seasonDayAt,
   noteLearning, learningLeft, canMoveOut, moveOut, buyLamp,
-  lampElectricityWon, foodSavedWon, tutorialGoal
+  lampElectricityWon, foodSavedWon, tutorialGoal,
+  /* ★ 2026-08-13 — 탈출의 둘째 축(무늬 삽수 판매). tutorial.js §무늬 삽수를 판 적이 있다 */
+  noteVarieCuttingSale, hasSoldVarieCutting
 } from '../src/game/tutorial.js';
 
 const results = [];
@@ -193,33 +195,48 @@ check('F 배움 — 품질로 콩나물 배치를 · DLI 로 몬스테라 자리
   assert.equal(learningLeft(ts).length, 0, '★배운 것이 되돌려졌습니다');
 });
 
-/* ══ G · 이사 — 두 축을 함께 본다 ══════════════════════════════════════ */
-check('G 이사 — 돈만으로도, 배움만으로도 안 된다', () => {
+/* ══ G · 이사 — 두 축을 함께 본다 ══════════════════════════════════════
+   ★★ 2026-08-13 박사님 확정으로 **둘째 축이 갈렸다** — 「배움 넷」 → 「무늬 삽수 판매」.
+       원문: *"탈출 조건을 2개로 하지. 돈이랑 무늬 삽수 팔기."*
+   ⚠ 여기 있던 옛 계약을 적어 둔다(START-HERE §2: 검사가 무엇을 지키고 있었는지):
+       예전 G 는 `canMoveOut(ts).ok === money && learningLeft.length === 0` 을 못 박고 있었고,
+       `moveOut` 이 던지는 사유가 「못 해 본 것」이라는 것까지 고정하고 있었다.
+       그 둘이 이번에 바뀌는 약속이다. **배움 넷 자체는 안 지웠으므로**(안내로 남는다)
+       아래에서 `learningLeft` 가 여전히 살아 있는 것도 같이 잰다. */
+check('G 이사 — 돈만으로도, 무늬 삽수만으로도 안 된다', () => {
   const ts = mk();
   ts.cashWon = TUTORIAL_RULES.moveOutCostWon;      // 돈은 충분
+  teachAll(ts);                                     // ★배움을 다 채워도 그것만으로는 안 열린다
   let c = canMoveOut(ts);
-  assert.equal(c.ok, false, '★돈만으로 이사가 됐습니다');
+  assert.equal(c.ok, false, '★돈(+배움)만으로 이사가 됐습니다');
   assert.equal(c.money, true);
-  assert.equal(c.learningLeft.length, 4);
-  assert.throws(() => moveOut(ts), /못 해 본 것/);
+  assert.equal(c.varie, false);
+  assert.equal(c.learningLeft.length, 0, '배움 계통이 사라졌습니다 — 조건에서만 빼기로 했습니다');
+  assert.throws(() => moveOut(ts), /무늬 삽수/);
 
   const ts2 = mk();
-  teachAll(ts2);
-  ts2.cashWon = 100;                                // 배움은 완료, 돈은 없음
+  noteVarieCuttingSale(ts2, { variegatedLeaves: 1, won: 80_000 });
+  ts2.cashWon = 100;                                // 삽수는 팔았고, 돈은 없음
   c = canMoveOut(ts2);
-  assert.equal(c.ok, false, '★배움만으로 이사가 됐습니다');
-  assert.equal(c.learningLeft.length, 0);
+  assert.equal(c.ok, false, '★무늬 삽수만으로 이사가 됐습니다');
+  assert.equal(c.varie, true);
   assert.ok(c.shortWon > 0, '모자란 금액이 안 나옵니다');
   assert.throws(() => moveOut(ts2), /자금이/);
 
+  /* ★ 무늬가 **안 실린** 판매는 안 쳐진다 — 판정 근거가 「무늬로 값이 매겨졌나」 하나라는 것 */
   const ts3 = mk();
-  teachAll(ts3);
-  ts3.cashWon = TUTORIAL_RULES.moveOutCostWon;
-  assert.equal(canMoveOut(ts3).ok, true, '둘 다 됐는데 이사가 안 됩니다');
-  const r = moveOut(ts3);
+  noteVarieCuttingSale(ts3, { variegatedLeaves: 0, won: 12_000 });
+  assert.equal(hasSoldVarieCutting(ts3), false, '★민무늬 삽수를 팔았는데 조건이 열렸습니다');
+
+  const ts4 = mk();
+  noteVarieCuttingSale(ts4, { variegatedLeaves: 1, won: 80_000 });
+  ts4.cashWon = TUTORIAL_RULES.moveOutCostWon;
+  assert.equal(canMoveOut(ts4).ok, true, '둘 다 됐는데 이사가 안 됩니다');
+  assert.equal(canMoveOut(ts4).why, null, '열렸는데 잠긴 사유가 남아 있습니다');
+  const r = moveOut(ts4);
   assert.equal(r.movedOut, true);
-  assert.equal(ts3.cashWon, 0, '이사비가 안 빠졌습니다');
-  assert.equal(tutorialGoal(ts3).id, 'done');
+  assert.equal(ts4.cashWon, 0, '이사비가 안 빠졌습니다');
+  assert.equal(tutorialGoal(ts4).id, 'done');
 });
 
 /* ══ H · ★파산해도 안 죽는다 (스토리 전체가 초보 모드) ═══════════════════ */
@@ -257,8 +274,15 @@ check('I 목표 — 배울 게 남으면 배움을, 다 배웠으면 돈을 말�
        「돈」을 말해야 한다. 값이 또 바뀌어도 이 줄은 그대로 유효하다. */
   assert.ok(TUTORIAL_RULES.startCashWon < TUTORIAL_RULES.moveOutCostWon,
     '★시작돈이 이사비 이상입니다 — 첫날부터 이사 조건이 참이라 「돈을 모으는 단계」가 사라집니다');
+  /* ★★ 2026-08-13 — **단계가 하나 늘었다.** 배움을 다 채우면 이제 「무늬 삽수」를 말한다.
+     ⚠ 옛 검사는 여기서 곧바로 `money` 를 못 박고 있었다. 그게 이번에 바뀌는 약속이다.
+     ★ 왜 돈보다 삽수를 먼저 말하나 — 돈은 하루하루 저절로 **줄어드는** 것이라 먼저 말하면
+       「기다리세요」가 되고, 할 일이 안 보인다. 삽수는 지금 손으로 할 수 있는 일이다. */
+  assert.equal(tutorialGoal(ts).id, 'varie',
+    '★배움을 다 채웠는데 무늬 삽수를 안 말합니다 — 남은 목표가 안 보입니다');
+  noteVarieCuttingSale(ts, { variegatedLeaves: 1, won: 80_000 });
   assert.equal(tutorialGoal(ts).id, 'money',
-    '★배움을 다 채웠는데 돈을 안 말합니다 — 남은 목표가 안 보입니다');
+    '★삽수를 팔았는데 돈을 안 말합니다 — 남은 목표가 안 보입니다');
   ts.cashWon = TUTORIAL_RULES.moveOutCostWon - 1;
   assert.equal(tutorialGoal(ts).id, 'money', '이사비에 못 미치면 돈을 말해야 합니다');
   ts.cashWon = TUTORIAL_RULES.moveOutCostWon;
