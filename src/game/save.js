@@ -49,7 +49,7 @@ import { createFirstPlayState, placeBeansprout, placeCrop, cropSites, cropKindOf
 import { createTutorialState } from './tutorial.js';
 import { inRoom, isFreeSlotId, makeAt } from './place.js';
 import { PROPAGATION_SCHEMA, rehomeCuttings, syncCuttingLeaves } from './propagation.js';
-import { SHOP_SCHEMA, createShopState } from './shop.js';
+import { SHOP_SCHEMA, createShopState, SALE_KINDS } from './shop.js';
 /* 체력 — 규칙(최대치)은 저쪽 것이다. 세이브는 남은 양만 싣는다(docs/stamina.md) */
 import { STAMINA_MAX, createStaminaState } from './stamina.js';
 import { STORY_SCHEMA, createStoryState } from './oneroom.js';
@@ -682,8 +682,36 @@ function packShop(shop) {
     }),
     stock,
     spentWon: needNum(shop.spentWon ?? 0, 'shop.spentWon', { min: 0 }),
-    earnedWon: needNum(shop.earnedWon ?? 0, 'shop.earnedWon', { min: 0 })
+    earnedWon: needNum(shop.earnedWon ?? 0, 'shop.earnedWon', { min: 0 }),
+    /* ★★ 갈래별 판 돈 (2026-08-13 · shop.js §판 돈은 갈래별로).
+       안 적으면 저장 한 번에 「무엇을 팔아 번 돈인가」가 통째로 사라지고, 가계부가
+       다시 뺄셈으로 돌아간다. ⚠ 합계(`earnedWon`)는 **그대로 둔다** — 지우면
+       save.js:685 를 읽는 game.html 의 월 장부가 그 자리에서 깨진다.
+       ⚠ 옛 세이브에는 이 칸이 없다 → 아래 §판 돈 갈래 이관 이 옮긴다. */
+    earnedBy: SALE_KINDS.reduce((o, k) => {
+      o[k] = needNum((shop.earnedBy || {})[k] ?? 0, `shop.earnedBy.${k}`, { min: 0 });
+      return o;
+    }, {})
   };
+}
+
+/* ★★ 판 돈 갈래 이관 — **옛 판에서 돈이 사라진 것처럼 보이면 안 된다** (2026-08-13)
+   ------------------------------------------------------------
+   옛 세이브에는 `shop.earnedBy` 칸이 없다. 그대로 열면 **갈래별 합이 `earnedWon` 보다 작다** —
+   가계부에서 번 돈이 통째로 증발한 것처럼 보이고, 「합계 = 갈래별 합」 검사도 깨진다.
+   ⇒ 모자란 몫을 **`unknown`(예전 판 · 종류 모름)** 에 담는다. 0 으로 두거나 조용히 지우지 않는다.
+   ★ 이 함수는 **차이만** 본다. 그래서 두 경우를 한 길로 다룬다:
+       ① 옛 세이브(칸 자체가 없다)          → 전액이 `unknown` 으로 간다
+       ② 어쩌다 갈래 합이 합계와 어긋난 판  → 그 차이만 `unknown` 으로 간다
+     ⚠ 반대로 갈래 합이 **더 큰** 경우는 안 만진다 — 그건 누가 `earnedWon` 을 직접 깎았다는
+       뜻이라 조용히 맞춰 주면 원인이 묻힌다. `saleLedgerOf().balanced` 가 거짓으로 남아 드러난다. */
+function migrateEarnedBy(shop) {
+  const by = shop.earnedBy || (shop.earnedBy = {});
+  for (const k of SALE_KINDS) if (!Number.isFinite(by[k])) by[k] = 0;
+  const sum = SALE_KINDS.reduce((n, k) => n + by[k], 0);
+  const gap = Math.round(shop.earnedWon || 0) - sum;
+  if (gap > 0) by.unknown += gap;
+  return gap > 0 ? gap : 0;
 }
 
 /* 가구 자리표 — `{ uid: {x, z, rot, y?} }`. rot 는 도(°)다(place.validateFurnitureAt 규약). */
@@ -1197,6 +1225,14 @@ export function deserialize(raw, opt = {}) {
 
   /* 상점 — 쓸 때와 **같은 검증**을 읽을 때도 태운다. 없는(옛) 세이브면 빈 상점으로 연다. */
   S.shop = st.shop ? { ...createShopState(), ...packShop(st.shop) } : createShopState();
+  /* ★★ 갈래별 판 돈 — 옛 판은 이 칸이 없어 합이 모자란다. 그 몫을 「예전 판 · 종류 모름」에
+     담는다(위 §판 돈 갈래 이관). 조용히 지우면 번 돈이 사라진 것처럼 보인다. */
+  {
+    const moved = migrateEarnedBy(S.shop);
+    if (moved > 0)
+      pushLog(S, `📒 예전 판이라 판 돈의 종류를 모릅니다 — ${moved.toLocaleString()}원을 ` +
+                 `「종류 모름」으로 옮겼습니다`);
+  }
 
   /* 보상 — 없는(옛) 세이브면 전부 꺼진 채로 연다. 지어내지 않는다(state.js §perks). */
   if (st.perks) S.perks.autoHarvest = !!st.perks.autoHarvest;

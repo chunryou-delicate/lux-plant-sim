@@ -422,6 +422,42 @@ export function canSwapPot(S, asset, opt = {}) {
 /* ============================================================
    ③ 상태
 ============================================================ */
+/* ============================================================
+   ★★ 판 돈은 **갈래별로** 쌓는다 (2026-08-13 박사님 확정)
+   ------------------------------------------------------------
+   원문(「식물 판 것이 뺄셈으로만 나온다 — 주석만 달까 / 통을 나눌까」에 대한 답):
+   *"㉯ 로 하자. 그리고 **미리 해 둬, 다양해질 테니**"*
+
+   ══ 무엇이 문제였나 ═════════════════════════════════════════════════════
+   `earnedWon` **한 칸**에 판 돈이 전부 몰려 있었다. 그래서 가계부가 「식물 판 것」을
+   **뺄셈**으로 구했다 — `전체 − 채소 판 것`(`game.html §monthCloseNow`).
+   ⇒ **파는 갈래가 하나 늘면 그것이 조용히 「식물 판 것」에 섞인다.** 합이 여전히 맞아서
+     대차로도 안 잡히고, 화면은 아무 말도 안 한다.
+
+   ══ 그래서 둘을 뒀다 ════════════════════════════════════════════════════
+     earnedWon        합계. **안 지운다** — save.js:685 가 저장하고 game.html:3499 가 읽는다
+     earnedBy[kind]   갈래별. ★ **합은 늘 earnedWon 과 같다**(tools/test_saleledger.mjs 가 고정)
+
+   ══ ★ 「미리 해 둔다」가 무슨 뜻인가 — **모르는 갈래는 던진다** ══════════
+   `credit` 이 `SALE_KINDS` 에 없는 이름을 받으면 **그 자리에서 던진다.**
+   새 판매를 만드는 사람이 이름을 여기 올리게 강제하는 것이 요점이다 — 안 그러면
+   그 돈이 어느 통엔가 조용히 섞이고, 그게 바로 방금 고친 병이다.
+============================================================ */
+export const SALE_KINDS = Object.freeze([
+  'pot',          // 그루째 (sellPot)
+  'cutting',      // 삽수 (sellCutting)
+  'crop',         // 잉여 채소 (state.sellCropSurplus → creditCropSurplus)
+  /* ⏸ 곳간 채소 — **아직 아무도 안 쓴다.** 지금은 잉여와 함께 `crop` 으로 들어온다.
+     가르려면 `state.sellPantryCrop` 이 `creditCropSurplus(S, won, { kind: 'cropPantry' })`
+     로 불러야 하는데 `state.js` 가 이번 창의 쓰기 영역 밖이다 — 받는 쪽만 미리 뚫어 둔다.
+     ⚠ 그 둘의 **정본은 이미 따로 있다**: `firstPlay.food.totalPantrySoldWon` ·
+       `totalSurplusSoldWon`. 그래서 지금도 가계부는 둘을 가를 수 있다(escapecut-to-plan §판 돈 통). */
+  'cropPantry',
+  /* ★ 옛 세이브에서 온 몫 — 「예전 판 · 종류 모름」. 아래 §migrateEarnedBy(save.js) */
+  'unknown'
+]);
+const EMPTY_EARNED_BY = () => SALE_KINDS.reduce((o, k) => (o[k] = 0, o), {});
+
 export function createShopState() {
   return {
     schema: SHOP_SCHEMA,
@@ -431,7 +467,34 @@ export function createShopState() {
     /* 도착해서 방에 쌓여 있는 것. `{ itemId: 개수 }` */
     stock: {},
     spentWon: 0,
-    earnedWon: 0
+    earnedWon: 0,
+    /* ★ 갈래별 판 돈 — 위 §판 돈은 갈래별로. 합이 곧 `earnedWon` 이다 */
+    earnedBy: EMPTY_EARNED_BY()
+  };
+}
+
+/* 갈래 칸을 늘 있는 모양으로 만들어 낸다. 옛 세이브·옛 하네스가 만든 상점에도
+   이 칸이 없을 수 있어서, 읽는 자리마다 `|| 0` 을 흩뿌리지 않고 여기서 한 번 세운다. */
+export function earnedByOf(S) {
+  const shop = shopOf(S);
+  if (!shop.earnedBy || typeof shop.earnedBy !== 'object') shop.earnedBy = EMPTY_EARNED_BY();
+  for (const k of SALE_KINDS) if (!Number.isFinite(shop.earnedBy[k])) shop.earnedBy[k] = 0;
+  return shop.earnedBy;
+}
+
+/* ★ 가계부가 한 번에 읽는 값 — **화면이 뺄셈을 안 하게** 하려고 낸다.
+   반환 { byKind, plantWon, cropWon, unknownWon, totalWon, earnedWon, balanced } */
+export function saleLedgerOf(S) {
+  const by = { ...earnedByOf(S) };
+  const shop = shopOf(S);
+  const plantWon = by.pot + by.cutting;
+  const cropWon = by.crop + by.cropPantry;
+  const totalWon = SALE_KINDS.reduce((n, k) => n + by[k], 0);
+  return {
+    byKind: by, plantWon, cropWon, unknownWon: by.unknown, totalWon,
+    earnedWon: shop.earnedWon,
+    /* ★ 이 값이 거짓이면 어딘가가 `earnedWon` 을 직접 만졌다는 뜻이다. 숨기지 않는다. */
+    balanced: totalWon === Math.round(shop.earnedWon || 0)
   };
 }
 
@@ -795,12 +858,29 @@ export function varieLeavesNeededFor(targetWon, { species = 'monstera', leaves }
 ============================================================ */
 
 function credit(S, won, kind) {
+  /* ★ 모르는 갈래는 **여기서 던진다** — 위 §판 돈은 갈래별로.
+     새 판매를 만드는 사람이 `SALE_KINDS` 에 이름을 올리게 강제하는 자리다.
+     조용히 「기타」로 받아 주면 그 돈이 어느 통엔가 섞이고, 그게 이번에 고친 병이다. */
+  if (!SALE_KINDS.includes(kind))
+    throw new Error(`[상점] 모르는 판매 갈래입니다: ${kind} — ` +
+      `src/game/shop.js §SALE_KINDS 에 먼저 이름을 올려 주세요 (지금: ${SALE_KINDS.join(', ')})`);
   const ts = S.tutorial && S.tutorial.enabled ? S.tutorial : null;
   const shop = shopOf(S);
   shop.earnedWon += won;
+  /* ★ 합계와 갈래는 **같은 줄에서** 오른다. 떨어뜨려 두면 언젠가 한쪽만 오른다 */
+  earnedByOf(S)[kind] += won;
   if (ts) {
     ts.cashWon += won;
     if (!ts.crop) ts.crop = { spentWon: 0, soldWon: 0 };
+    /* ⚠⚠ **이름이 거짓말을 한다 — 재서 적어 둔다** (2026-08-13).
+       `ts.crop.soldWon` 은 이름이 「채소」인데 **판 것 전부**가 들어온다(그루·삽수·채소).
+       짝인 `ts.crop.spentWon` 도 마찬가지로 **산 것 전부**를 받는다(§orderItem — 병·포트까지).
+       ⇒ 이 칸의 실제 뜻은 「채소」가 아니라 **「상점 총 장부」**다. `tutorial.js §crop` 의
+         주석(*"여기는 합계만 센다"*)이 원래 그 뜻이었고, 이름만 안 따라온 것이다.
+       ★ **값은 안 건드렸다.** 뜻을 좁히면 `tools/test_banjiha_routes.mjs:544`(「씨앗·시루값」으로
+         읽는 자리)와 `test_cropsale.mjs:329` 의 숫자가 같이 움직인다 — 그건 값을 바꾸는 일이고
+         이번 일(「어느 통에 담느냐」)의 범위 밖이다. 갈래별 통은 위 `shop.earnedBy` 가 갖는다.
+       ⇒ 이 칸을 「채소만」으로 좁힐지 이름을 고칠지는 plan 판단이다(escapecut-to-plan §판 돈 통). */
     ts.crop.soldWon += won;
     if (ts.bankrupt && ts.cashWon > 0) ts.bankrupt = false;
   }
@@ -957,11 +1037,18 @@ export function cropBreakEvenRate(kindId = 'beansprout') {
 /* 잉여를 넘긴 값을 지갑에 넣는다. **얼마인지는 여기서 안 정한다** —
    `first_play.takeCropSurplus` 가 낸 값을 그대로 받는다(값의 정본을 둘로 만들지 않는다).
    ⚠ 이 함수는 장부를 안 비운다. 비우는 것은 그쪽이고 묶는 것은 `state.sellCropSurplus` 다. */
+/* ★ 2026-08-13 — `opt.kind` 를 **받을 수 있게** 뚫어 뒀다(기본은 예전 그대로 `'crop'`).
+   지금 이 함수를 부르는 데가 둘인데(`state.sellCropSurplus` 잉여 · `state.sellPantryCrop` 곳간)
+   **둘 다 `'crop'` 으로 들어온다** — 실측으로 확인했다. 가르려면 곳간 쪽이
+   `{ kind: 'cropPantry' }` 를 넘기면 되고, `state.js` 는 이번 창의 쓰기 영역 밖이라 안 고쳤다.
+   ⚠ 그렇다고 지금 가계부가 둘을 **못 가르는 것은 아니다** — 그 둘의 정본은
+     `firstPlay.food.totalPantrySoldWon` · `totalSurplusSoldWon` 으로 이미 따로 있다.
+     여기서 또 나누면 **정본이 두 벌**이 된다. 그래서 받는 쪽만 뚫고 값은 안 나눴다. */
 export function creditCropSurplus(S, won, opt = {}) {
   const v = Math.round(won);
   if (!Number.isFinite(v) || v < 0)
     throw new Error(`[상점] 잉여 판매액이 올바르지 않습니다: ${won}`);
-  const r = credit(S, v, 'crop');
+  const r = credit(S, v, opt.kind || 'crop');
   if (typeof opt.log === 'function')
     opt.log(`💰 잉여 채소를 넘겼습니다 — ${v.toLocaleString()}원`);
   return r;
@@ -995,6 +1082,9 @@ export function shopStatus(S) {
     stock: { ...shop.stock },
     orders: shop.orders.map(o => ({ ...o, daysLeft: o.arrivesOnDay - S.day })),
     spentWon: shop.spentWon,
-    earnedWon: shop.earnedWon
+    earnedWon: shop.earnedWon,
+    /* ★ 2026-08-13 — 갈래별 판 돈(§판 돈은 갈래별로). 화면이 「식물 판 것」을
+       **뺄셈으로 구하지 않아도** 되게 여기서 같이 낸다. `earnedWon` 은 그대로 남는다. */
+    sales: saleLedgerOf(S)
   };
 }

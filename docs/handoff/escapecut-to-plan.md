@@ -1,6 +1,6 @@
 # escapecut → plan — 탈출의 둘째 축을 「무늬 삽수를 팔았다」로 바꿨다
 
-START 19:45:16 · END (아래 §END)
+START 19:45:16 · END 20:30:11 · 커밋 둘
 
 > 한 줄로: **조건의 모양은 바꿨고, 화면·세이브·옛 판까지 실제로 확인했다.**
 > 다만 **밸런스가 눈에 띄게 나빠졌다** — 재현 성공률이 78% → 20% 로 떨어졌다(§4).
@@ -261,5 +261,167 @@ F   잠긴 까닭이 두 축으로 갈려서 나온다
 - 임시 도구 `tools/_probe_dlgvarie.mjs` · `_probe_escapeboot.mjs` · `_probe_escapeui.mjs` 는 **전부 지웠다.**
 
 ---
+---
 
-END (아래에 적는다)
+# §판 돈 통 — 판 돈을 **갈래별로** 나눠 센다 (같은 창에서 이어서)
+
+박사님: *"㉯ 로 하자. 그리고 **미리 해 둬, 다양해질 테니**"*
+
+> 한 줄로: **`earnedWon` 한 칸을 안 지우고, 그 옆에 갈래별 통을 뒀다.**
+> 합계 = 갈래별 합이 늘 참이고, 옛 판의 돈은 **「종류 모름」**으로 열린다. **총액은 한 원도 안 변했다.**
+
+## L-1. ★ 먼저 재라 — `kind` 가 정말 셋뿐인가
+
+`credit(S, won, kind)` 를 부르는 데는 **셋**이다: `'pot'`(sellPot) · `'cutting'`(sellCutting) ·
+`'crop'`(creditCropSurplus). 그리고 **`creditCropSurplus` 를 부르는 데가 둘**이다:
+
+| 부르는 곳 | 무엇 | 지금 kind |
+|---|---|---|
+| `state.js:934` `sellCropSurplus` | 잉여 채소 | `'crop'` |
+| `state.js:995` `sellPantryCrop` | **곳간 채소** | **`'crop'`** ← 같다 |
+
+⇒ **둘은 지금 한 통이다.** 검사로 그 사실을 못 박아 뒀다(`test_saleledger §F`).
+
+### ⇒ **가르지 않기로 했다. 까닭 둘**
+1. **정본이 이미 따로 있다** — `firstPlay.food.totalPantrySoldWon` · `totalSurplusSoldWon`.
+   가계부(`monthSnapNow`)가 이미 그 둘을 각각 찍고 있다. 여기서 또 나누면 **정본이 두 벌**이 되고,
+   두 벌은 반드시 어긋난다(이 저장소가 열 번 겪은 그 사고).
+2. **가르려면 `state.js` 를 고쳐야 한다** — `sellPantryCrop` 이 kind 를 넘겨야 하는데
+   그 파일이 이번 창의 ⛔ 목록이다.
+⇒ 대신 **받는 쪽만 뚫어 뒀다**: `creditCropSurplus(S, won, { kind: 'cropPantry' })`.
+  갈래 이름 `cropPantry` 도 미리 올려 뒀다. 나중에 가를 때 **한 줄**이면 된다:
+
+```js
+/* src/game/state.js §sellPantryCrop — creditCropSurplus 부르는 줄만 */
+  const r = creditCropSurplus(S, taken.won, { kind: 'cropPantry' });
+```
+
+## L-2. 바뀐 것
+
+### `src/game/shop.js`
+- **`SALE_KINDS`** — `pot · cutting · crop · cropPantry · unknown`. **얼려서 export**
+- `createShopState().earnedBy = {갈래: 0}` · **`earnedWon` 은 그대로 둔다**(합계로 계속 쓴다)
+- `credit` — ★ **모르는 갈래는 그 자리에서 던진다.** 「미리 해 둬」의 알맹이가 이것이다.
+  새 판매를 만드는 사람이 이름을 올리게 **강제**한다 — 조용히 「기타」로 받아 주면
+  그 돈이 어느 통엔가 섞이고, 그게 방금 고친 병이다
+- `credit` 이 **합계와 갈래를 같은 줄에서** 올린다(떨어뜨리면 언젠가 한쪽만 오른다)
+- **`saleLedgerOf(S)`** 신설 — `{ byKind, plantWon, cropWon, unknownWon, totalWon, earnedWon, balanced }`.
+  ★ `plantWon = pot + cutting` — **화면이 뺄셈을 안 해도 된다**
+- `shopStatus(S).sales` 에 실어 낸다 (화면이 새로 import 할 것이 없다)
+
+### `src/game/save.js`
+- `packShop` 에 `earnedBy` 추가
+- **`migrateEarnedBy(shop)`** 신설 — 갈래 합이 `earnedWon` 보다 **모자란 만큼**을 `unknown` 에 담는다
+  - 옛 세이브(칸 자체가 없다) → **전액이 `unknown`**
+  - 어쩌다 어긋난 판 → **그 차이만**
+  - ⚠ 갈래 합이 **더 큰** 경우는 **안 만진다** — 누가 `earnedWon` 을 직접 깎았다는 뜻이라
+    조용히 맞춰 주면 원인이 묻힌다. `saleLedgerOf().balanced` 가 거짓으로 남아 드러난다
+- 옮긴 날에는 로그가 남는다: `📒 예전 판이라 판 돈의 종류를 모릅니다 — 33,000원을 「종류 모름」으로 옮겼습니다`
+
+## L-3. 실측 — **총액이 한 원도 안 달라졌다**
+
+`game.html` 을 헤드리스로 띄우고 세이브를 넣어 두 판을 열었다(지름길 명시 · 폰 390×844).
+
+| 판 | 넣은 것 | 다시 저장된 것 |
+|---|---|---|
+| ① 지금 판 | `pot 30,000 · crop 3,000` | `earnedWon 33,000` · `earnedBy {pot:30000, crop:3000}` |
+| ② **옛 판**(`earnedBy` 칸을 통째로 지운 것) | 같음 | `earnedWon 33,000` · **`earnedBy {unknown:33000}`** |
+
+★ **`earnedWon` 은 두 판 다 33,000원 그대로다.** ★ **부팅 예외 0건.**
+★ 옛 판은 로그로 **말한다** — 조용히 지우지 않았다.
+
+`tools/test_saleledger.mjs`(새 검사) **전부 통과**:
+```
+A ★★합계(earnedWon) = 갈래별 합 — 세 갈래를 실제로 팔아 본다
+    그루 30,000원 · 삽수 12,000원 · 채소 3,000원 ⇒ 식물 42,000원 · 합계 45,000원
+B 지갑에 들어온 총액 = 판 값의 합 (통을 나눠도 한 원도 안 달라진다)
+C ★모르는 갈래는 던진다        아는 갈래 — pot · cutting · crop · cropPantry · unknown
+D / D-2 / D-3 ★★옛 세이브 이관 — 전액 · 지금 판은 그대로 · 모자란 차이만
+E ★갈래 합이 더 큰 판은 조용히 맞추지 않는다 — 드러나게 둔다
+F ⏸곳간과 잉여는 지금 같은 통이다 — 받는 쪽은 뚫려 있다
+```
+지시된 검사도 전부 통과: `test_save` · `test_tutorial` · `test_econ` · `test_cropsale` ·
+`test_pantrysale` · `test_cuttable` · `test_cutting_wiring` · `test_first_play` · `test_escapecut`.
+그리고 `test_banjiha_routes:990`(**재현이 센 수입 == `shop.earnedWon`**)이 그대로 통과한다 —
+200일 판에서도 총액이 안 움직였다는 뜻이다.
+
+## L-4. ⚠⚠ 딸린 발견 — **`ts.crop.soldWon` 은 이름이 거짓말을 한다**
+
+재 보라고 하셔서 쟀다. **그렇다.**
+
+| 칸 | 이름이 말하는 것 | 실제로 들어오는 것 |
+|---|---|---|
+| `ts.crop.soldWon` | 채소 판 돈 | **판 것 전부** (그루·삽수·채소) — `shop.credit` |
+| `ts.crop.spentWon` | 채소에 쓴 돈 | **산 것 전부** (씨앗·시루·**병·포트까지**) — `shop.orderItem` |
+
+⇒ 이 칸의 실제 뜻은 「채소」가 아니라 **「상점 총 장부」**다.
+`tutorial.js §crop` 의 주석(*"여기는 합계만 센다"*)이 원래 그 뜻이었고 **이름만 안 따라왔다.**
+
+⚠ **값은 안 건드렸다.** 뜻을 좁히면 숫자가 같이 움직인다:
+- `tools/test_banjiha_routes.mjs:544` 가 `crop.spentWon` 을 **「씨앗·시루값」**이라고 적어 낸다 —
+  지금 그 줄은 **병·포트값까지 더해서** 말하고 있다(그 자체가 이미 틀린 말이다)
+- `tools/test_cropsale.mjs:329` 가 채소 한 건으로 그 등식을 고정한다(그 한 건만으로는 안 갈린다)
+
+⇒ **판단필요**: ㉮ 이름을 `ts.shopLedger` 로 고친다 · ㉯ 뜻을 「채소만」으로 좁힌다
+(그러면 위 두 검사의 숫자가 바뀐다) · ㉰ 갈래별 통이 생겼으니 **이 칸을 아예 걷는다**.
+★ 나는 **㉰ 이 맞아 보인다** — `shop.earnedBy` 가 더 정확한 같은 것을 갖고, 읽는 데도
+저 검사 둘뿐이다. 다만 세이브 칸을 없애는 일이라 plan 판단이다.
+
+## L-5. ★ `game.html` 에 붙일 것 — **뺄셈을 걷는다** (코드째로)
+
+⛔ `game.html` 은 다른 워커가 쥐고 있어 안 고쳤다. 붙일 자리는 `§monthSnapNow`(3493) 와
+`§monthCloseNow`(3597) 둘이고, **새 import 가 필요 없다**(`shopStatus` 는 이미 들여와 있다).
+
+```js
+/* ① monthSnapNow — 갈래별 통을 같이 찍는다 (shop.js §판 돈은 갈래별로) */
+function monthSnapNow() {
+  const food = (S.firstPlay && S.firstPlay.food) || {};
+  const shop = S.shop || {}, ts = S.tutorial || {};
+  /* ★ 2026-08-13 — 판 돈이 갈래별로 쌓인다. 「식물 판 것」을 더는 뺄셈으로 안 구한다 */
+  let sales = null; try { sales = shopStatus(S).sales; } catch { }
+  return {
+    cash: Math.round(ts.cashWon || 0),
+    shopSpent: Math.round(shop.spentWon || 0),
+    shopEarned: Math.round(shop.earnedWon || 0),
+    /* ★ 새 칸 셋. 옛 장부(localStorage)에는 없어 `undefined` 인데, 아래에서 그때는
+       예전 뺄셈으로 떨어진다 — 이번 달 하나만 그렇고 다음 달부터 제대로 돈다 */
+    shopPlant: sales ? Math.round(sales.plantWon) : undefined,
+    shopCrop: sales ? Math.round(sales.cropWon) : undefined,
+    shopUnknown: sales ? Math.round(sales.unknownWon) : undefined,
+    pantrySold: Math.round(food.totalPantrySoldWon || 0),
+    surplusSold: Math.round(food.totalSurplusSoldWon || 0),
+    foodSaved: Math.round(food.totalFoodSavedWon || 0)
+  };
+}
+
+/* ② monthCloseNow — 뺄셈을 걷는다 */
+  const now = monthSnapNow(), s = m.cur.snap, r = m.cur.run;
+  /* ★ 2026-08-13 — `shop.earnedBy` 가 갈래별로 쌓는다(shop.js §SALE_KINDS).
+     ⚠ 옛 장부에는 새 칸이 없다 — 그때만 예전 뺄셈으로 떨어진다. 그 한 달만 예전과 같다. */
+  const hasKinds = Number.isFinite(s.shopPlant) && Number.isFinite(now.shopPlant);
+  const veg   = hasKinds ? (now.shopCrop - s.shopCrop)
+                         : (now.pantrySold - s.pantrySold) + (now.surplusSold - s.surplusSold);
+  const plant = hasKinds ? (now.shopPlant - s.shopPlant)
+                         : (now.shopEarned - s.shopEarned) - veg;
+  /* ★ 예전 판에서 온 몫 — 종류를 모르는 돈이다. 식물로도 채소로도 안 센다 */
+  const unknownSold = hasKinds ? (now.shopUnknown - s.shopUnknown) : 0;
+  ...
+  const inSum = veg + plant + unknownSold + r.income;
+```
+그리고 보고서 객체(`rep`)에 `unknownSold` 를 실어 한 줄로 적으면 된다 —
+문구는 **「예전 판 · 종류 모름」**(`shop.js §SALE_KINDS` 의 그 이름)이 그대로 맞다.
+⚠ 곳간·잉여를 따로 적고 싶으면 지금처럼 `pantrySold`/`surplusSold` 를 쓰면 된다 —
+  그 둘의 정본은 여전히 `firstPlay.food` 다(§L-1).
+
+## L-6. 못 한 것 (판 돈 통)
+
+- **`state.js` 의 곳간 판매를 `cropPantry` 로 안 갈랐다** — 쓰기 영역 밖. 한 줄 패치는 §L-1.
+- **`game.html` 의 뺄셈을 안 걷었다** — 쓰기 영역 밖. 패치는 §L-5 에 코드째.
+- **`ts.crop.soldWon` 은 안 건드렸다** — 값이 움직이는 일이다. §L-4 가 판단필요.
+- ⚠ `tools/test_monthly.mjs` 는 **`ReferenceError: boot is not defined`** 로 끝까지 안 돈다
+  (§M 절). 그 파일은 **커밋 안 된 다른 창의 것**이라(`git status` 에 `??`) 손 안 댔다.
+  ⇒ 그 창에 알려야 한다. 내 변경과 무관하다(검사 §A~§L 은 다 통과하고 §M 에서 죽는다).
+
+---
+
+END 20:30:11
