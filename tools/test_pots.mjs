@@ -351,9 +351,13 @@ console.log('\n══ E  ★★ 회귀 — 화분 하나였던 판이 그대로�
        ★ 그리고 `shop.cropBreakEvenRate` 가 `cropCycleSavedWon` 을 **인자 셋**으로 부르며
          작물 순번을 질림 축으로도 넘기고 있었다 — 그걸 넷째 인자로 갈랐다(그 파일 주석 참고).
        ⚠ 콩나물은 이번에 **한 푼도 안 움직였다**(12.5% 그대로). 또 한쪽만 움직인 판이다. */
+  /* ⚠⚠ 2026-08-18 — 여기 **500/4000 · 600/3000** 이 박혀 있었다(최상 품질 400g · 300g).
+     박사님이 수확량 눈금을 넓히셔서(*"200-500"* · first_play §그램) 최상이 500g · 400g 이 됐다.
+     ★ 이 줄이 지키는 것은 값이 아니라 **「씨앗값과 회전분이 움직인 만큼만 움직였다」**이므로
+       분자(씨앗값 500·600)는 그대로 두고 분모만 새 최상 수확량으로 바꾼다. */
   ok('E-6 손익분기 — 씨앗값과 회전분이 움직인 만큼만 움직였다',
-     near(cropBreakEvenRate('beansprout'), 500 / 4000, 1e-12)
-     && near(cropBreakEvenRate('musun'), 600 / 3000, 1e-12),
+     near(cropBreakEvenRate('beansprout'), 500 / 5000, 1e-12)
+     && near(cropBreakEvenRate('musun'), 600 / 4000, 1e-12),
      `${cropBreakEvenRate('beansprout')} / ${cropBreakEvenRate('musun')}`);
 
   /* 도착 자체 — 화분이 예전과 같은 모양으로 생긴다 */

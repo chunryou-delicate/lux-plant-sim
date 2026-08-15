@@ -202,12 +202,28 @@ console.log('\n== D-2. ⚠ 하루 몫이 판 경계에 안 맞으면 — 「먹�
   assert.equal(sumLots(fp), chunkWon + 1000, '★옛 판이 판으로 안 쪼개진다');
   eatFromPantry(fp);                             // 한 몫을 먹는다
   assert.equal(fp.food.pantryWon, 1000);
-  assert.deepEqual(pantryLotsOf(fp).map(l => l.won), [1000],
+  /* ⚠⚠ 2026-08-18 — 여기 `[1000]`(판 하나)이 **손으로 박혀 있었다.** 그것이 이 줄이 지키던
+     옛 약속이다: 쪼개는 덩이(`CHUNK` = `cropKindSavedWon[0]`)가 3,000원이었을 때는
+     4,000원이 [3,000 · 1,000] 으로 갈리고 한 몫(3,000)을 먹으면 딱 [1,000] 이 남았다.
+     수확량 눈금이 넓어져 `CHUNK` 가 **3,500원**이 되면서 4,000원이 [3,500 · 500] 으로 갈리고,
+     한 몫을 먹으면 **[500 · 500]** 이 남는다.
+     ★ 이 절이 지키려던 것은 **판 수도 값도 아니라** *"먹다 남은 판은 「반 판」이 아니라
+       제 값을 그대로 적는다"* 이다 ⇒ 기대값을 **쪼개는 규칙에서 유도**해서 잰다.
+       숫자를 손으로 다시 적으면 다음에 `CHUNK` 가 움직일 때 또 깨진다(START-HERE §2.8). */
+  const want = splitByChunk(chunkWon + 1000);    // 넣을 때 이렇게 갈렸고
+  for (let rest = chunkWon; rest > 0 && want.length; ) {   // 앞에서부터 한 몫을 먹는다(FIFO)
+    const take = Math.min(want[0], rest);
+    want[0] -= take; rest -= take;
+    if (want[0] === 0) want.shift();
+  }
+  assert.deepEqual(pantryLotsOf(fp).map(l => l.won), want,
     '★남은 판이 제 값을 못 적는다');
+  assert.equal(want.reduce((a, v) => a + v, 0), 1000, '★남은 총액이 1,000원이 아니다');
   const q = pantrySaleQuote(fp, 1);
-  assert.equal(q.pendingWon, 1000, '★★남은 판을 온전한 한 판 값으로 판다 — 화면이 거짓말한다');
-  assert.equal(q.won, Math.round(1000 * RATE));
-  ok('먹다 남은 판은 「반 판」이 아니라 제 값(1,000원)을 그대로 적는다');
+  assert.equal(q.pendingWon, want[0],
+    '★★남은 판을 온전한 한 판 값으로 판다 — 화면이 거짓말한다');
+  assert.equal(q.won, Math.round(want[0] * RATE));
+  ok(`먹다 남은 판은 「반 판」이 아니라 제 값(${want.join(' · ')}원)을 그대로 적는다`);
 }
 
 console.log('\n== E. ★옛 세이브 — 꾸러미 기록이 없어도 열리고 팔린다 ==');
@@ -335,14 +351,22 @@ console.log('\n== I. 그램 표기 — 한 함수가 만들고, 낱개를 더한
 
 console.log('\n== J. ★★오늘 밥상 — 300g 까지 쓰고 남는 것은 쌓인다 (2026-08-16 박사님 확정) ==');
 {
-  /* 박사님: *"400G 가 오면 300G 까지는 당일 쓸 수 있는 거고 남는 거 팔아먹든 하는 거"* */
-  const { fp } = sameDayHarvest(1);                 // 어두운 자리 한 시루 = 400g
-  assert.equal(pantryGramsOf(fp), 400, '★한 시루가 400g 을 안 냈다');
+  /* 박사님: *"400G 가 오면 300G 까지는 당일 쓸 수 있는 거고 남는 거 팔아먹든 하는 거"*
+     ══ ⚠⚠ 2026-08-18 — **그 400g 이 500g 이 됐다** (박사님 *"콩나물은 200-500"*) ═════════
+       이 절이 지키는 것은 「400」이라는 수가 아니라 *"한 시루가 낸 것 중 **한 몫만** 쓰고
+       나머지는 곳간에 남는다"* 이다. 수확량 눈금이 넓어져 어두운 자리 한 시루가 **500g** 이고
+       남는 것이 100 → **200g** 이 됐다. ⇒ 지키던 뜻이 오히려 더 잘 보이는 판이 됐다.
+       ★ 그래서 수확량 쪽은 **엔진에서 읽고**(`W0`), 몫 쪽(300g · 3,000원)은 안 움직였으므로
+         그대로 손으로 적어 둔다 — 그 대비가 이 절이 재는 것이다. */
+  const { fp } = sameDayHarvest(1);                 // 어두운 자리 한 시루 = 최상 품질 한 회전
+  const cycleG = Math.round(W0 / 10);               // 500g (2026-08-18 · 전에는 400g)
+  assert.equal(pantryGramsOf(fp), cycleG, `★한 시루가 ${cycleG}g 을 안 냈다`);
+  assert.equal(cycleG, 500, '★콩나물 최상 품질이 500g 이 아니다 (확정 눈금 200-500)');
   const q = mealPlanQuote(fp);
   assert.equal(q.defaultGrams, 300, '★디폴트가 300g 이 아니다');
   assert.equal(q.maxGrams, 300, '★★하루에 300g 보다 많이 쓸 수 있다 — 상한이 안 걸렸다');
   assert.equal(q.useWon, 3_000, '★300g 이 3,000원이 아니다 (10원 = 1g)');
-  assert.equal(q.restGrams, 100, '★★남는 100g 을 안 세고 있다');
+  assert.equal(q.restGrams, cycleG - 300, `★★남는 ${cycleG - 300}g 을 안 세고 있다`);
   /* 곳간이 300g 보다 적으면 **있는 만큼**이 디폴트다(박사님 괄호 그대로) */
   const small = { ...fp, food: { ...fp.food, pantryWon: 1_200, pantryLots: [] } };
   assert.equal(mealPlanQuote(small).defaultGrams, 120, '★곳간이 적을 때 디폴트가 있는 만큼이 아니다');
@@ -351,7 +375,7 @@ console.log('\n== J. ★★오늘 밥상 — 300g 까지 쓰고 남는 것은 �
   planMealGrams(fp, 0);
   const none = eatFromPantry(fp);
   assert.equal(none.savedWon, 0, '★★0g 을 골랐는데 먹었다 — 모아서 파는 길이 막힌다');
-  assert.equal(fp.food.pantryWon, 4_000, '★안 먹었는데 곳간이 줄었다');
+  assert.equal(fp.food.pantryWon, W0, '★안 먹었는데 곳간이 줄었다');   // ⚠ 08-18 · 4,000 → 5,000
   assert.equal(fp.food.mealPlanWon, null, '★★고른 값을 안 지웠다 — 내일도 0g 을 먹는다');
   /* 안 고르면 **몫 규칙이 최선껏** 짠다 — 콩나물만 있으므로 첫 몫 하나(300g)다.
      ⚠⚠ 2026-08-17 — 옛 줄은 `full.savedWon === dailyCropSaveWonOf(fp)` 였다. 그 값의
@@ -363,8 +387,9 @@ console.log('\n== J. ★★오늘 밥상 — 300g 까지 쓰고 남는 것은 �
   assert.equal(full.pantryUsedWon, 3_000, '★곳간에서 빠진 물건 값이 300g 어치가 아니다');
   assert.notEqual(full.savedWon, full.pantryUsedWon,
     '★밥값과 물건 값이 아직 같은 수다 — 두 단위가 안 갈렸다(§몫)');
-  assert.equal(fp.food.pantryWon, 1_000, '★★남는 100g 이 사라졌다 — 쌓여야 한다');
-  ok('400g 이 오면 300g 을 쓰고 100g 이 곳간에 남는다 · 0g 도 고를 수 있다');
+  assert.equal(fp.food.pantryWon, W0 - 3_000,
+    `★★남는 ${cycleG - 300}g 이 사라졌다 — 쌓여야 한다`);
+  ok(`${cycleG}g 이 오면 300g 을 쓰고 ${cycleG - 300}g 이 곳간에 남는다 · 0g 도 고를 수 있다`);
 }
 
 /* ══ J-2. ★★ **몫** — 확정문 §1 을 그대로 밟는다 (2026-08-17 신설) ═══════════════ */

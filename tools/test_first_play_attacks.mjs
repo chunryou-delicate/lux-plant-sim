@@ -362,9 +362,17 @@ function firstPlayState(slotId = 'dark') {
        (first_play §그램). ⇒ 규칙에서 읽는다 — 숫자를 다시 박지 않는다. */
   assert.deepEqual([grow(0.2), grow(0.7), grow(1.2)].map(r => r.cycleSavedWon),
     [3, 2, 1].map(m => cropCycleSavedWon(RULES, m, 0, 0)));
-  /* ★ 그리고 g 이 원과 정확히 10 배로 맞물린다 */
+  /* ★ 그리고 g 이 원과 정확히 10 배로 맞물린다
+     ⚠⚠ 2026-08-18 — 여기 **[400, 300, 200]** 이 박혀 있었다. 그것이 이 줄이 지키던 옛 값이다.
+       박사님이 수확량 눈금을 넓히셔서(*"콩나물은 200-500"* · first_play §그램)
+       **[500, 350, 200]** 이 됐다(아래끝 200g 만 그대로다).
+     ★ 이 줄이 지키는 것은 세 수가 아니라 **「g 과 원이 10배로 맞물린다」**이므로
+       바로 위에서 잰 원 값에서 유도한다 — 숫자를 세 번째로 박지 않는다(§2.8). */
   assert.deepEqual([grow(0.2), grow(0.7), grow(1.2)].map(r => r.perPot[0].grams),
-    [400, 300, 200]);
+    [3, 2, 1].map(m => cropCycleSavedWon(RULES, m, 0, 0) / 10));
+  /* ⇒ 지금 값이 확정 눈금(200-500)과 맞는지는 여기서 한 번 못 박는다 */
+  assert.deepEqual([grow(0.2), grow(0.7), grow(1.2)].map(r => r.perPot[0].grams),
+    [500, 350, 200]);
 }
 
 /* ── 11. 도착 → 말린 새순: 완료는 spear_furled 에서만 ── */

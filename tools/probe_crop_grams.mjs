@@ -73,7 +73,16 @@ const OLD = Object.freeze({
 const OLD_DAILY = 4_867;                                  // 3,000 + 1,867 (2026-08-16 실측값)
 const OLD_RULES = Object.freeze({ ...OLD, dailyCropSaveWon: OLD_DAILY });
 assert.equal(cropCycleSavedWon(OLD_RULES, 3, 0, 0), 3000, '옛 회전분이 3,000원이 아니다');
-assert.equal(cropCycleSavedWon(NEW, 3, 0, 0), 4000, '새 회전분이 4,000원이 아니다');
+/* ⚠⚠ 2026-08-18 — 여기 **4000** 이 박혀 있었다(콩나물 최상 400g · 2026-08-16 의 그 값).
+   박사님이 수확량 눈금을 넓히셔서(*"콩나물은 200-500"* · first_play §그램) 최상이 **500g** 이다.
+   ★ 이 줄이 지키는 것은 「4,000」이 아니라 **「옛 셈과 새 셈이 서로 안 섞였다」**이다 —
+     옛 쪽(3,000)이 안 움직이는 것이 이 두 줄의 요지다. 그래서 새 쪽은 **엔진에서 읽는다.**
+   ⚠ 그러니 **아래 표의 「후」는 2026-08-16 의 후가 아니다**(이 파일 머리말이 경계한 그것) —
+     지금 규칙의 값이다. 08-16 의 전·후를 다시 보려면 그날 커밋에서 이 도구를 돌려라. */
+const NEW_FULL = cropCycleSavedWon(NEW, 3, 0, 0);
+assert.equal(NEW_FULL, NEW.cropKindDefs[0].gramsPerCycle * 10 +
+                       NEW.cropKindDefs[0].gramsPerQualityStep * 10,
+  `새 회전분(${NEW_FULL}원)이 콩나물 그램 표와 안 맞는다`);
 
 /* ══ 한 판을 days 일 굴린다 ═══════════════════════════════════════════════
    ★ **시차를 둔다** — 시루 n개를 하루씩 걸러 물을 준다(박사님 그림 · §겹침).
@@ -188,8 +197,13 @@ table(['품질', '옛(원)', '새(g)', '새(원)', '차'],
    ══════════════════════════════════════════════════════════════════════ */
 const PEN = Object.freeze({ ...NEW, cropOverlapTiredEnabled: true });   // 전(벌 있음)
 const NOPEN = NEW;                                                     // 후(벌 없음 · 지금 게임)
-assert.equal(overlapSavedWon(PEN, 3, 1, 0), 2670, '문을 열었는데 옛 겹침 셈이 안 돌아온다');
-assert.equal(overlapSavedWon(NOPEN, 3, 1, 0), 4000, '벌이 아직 물린다');
+/* ⚠ 2026-08-18 — 여기 **2670 · 4000** 이 박혀 있었다(최상 400g 시절: 400 × 2/3 = 267g).
+   최상이 500g 이 되면서 3,330 · 5,000 이다. ★ 이 두 줄이 지키는 것은 두 수가 아니라
+   **「문을 열면 벌이 돌아오고, 닫으면 안 물린다」**이므로 그 관계로 잰다(§2.8). */
+const FULL1 = overlapSavedWon(NOPEN, 3, 0, 0);            // 그날 첫째 — 온전한 한 회전분
+assert.equal(overlapSavedWon(PEN, 3, 1, 0), Math.round(FULL1 / 10 * 2 / 3) * 10,
+  '문을 열었는데 옛 겹침 셈이 안 돌아온다');
+assert.equal(overlapSavedWon(NOPEN, 3, 1, 0), FULL1, '벌이 아직 물린다');
 
 console.log('\n\n' + '═'.repeat(78));
 console.log('★★★ 2026-08-17 — 겹침의 벌을 걷은 전·후');
