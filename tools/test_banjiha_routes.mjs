@@ -42,7 +42,12 @@ import { orderItem, stockOf, incomingOf, priceOf, varieLeavesNeededFor,
          listCutting, listPot, dealListing, marketStatus, marketGate, listingFor,
          CATALOG, buyPriceOf, SELLABLE_CUTTING_STATUS } from '../src/game/shop.js';
 import { takeCutting, cuttableNow, cutBudgetOf, motherStatsNow, METHODS,
-         WATER_LEAF_MAX } from '../src/game/propagation.js';
+         repotCutting, cuttingStatsNow, WATER_LEAF_MAX } from '../src/game/propagation.js';
+/* ★★ 2026-08-18 — **프롤로그 보장의 정본을 코어에서 읽는다.**
+   이 재현은 지금껏 `setPrologueVarieLeaf` 를 한 번도 안 불렀다 ⇒ 잎 2·3 무늬 보장이
+   **한 판도 안 돌았다**(multiplant-to-plan §3 이 그 사실을 적어 두었다).
+   여기서 숫자 [2,3] 을 손으로 베끼지 않는다 — 정본이 바뀌면 재현이 조용히 옛 값에 남는다. */
+import { PROLOGUE_VARIE_LEAVES } from '../src/game/growth_adapter.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const U = p => new URL(p, import.meta.url);
@@ -72,6 +77,14 @@ const SILL = 'banjiha-sill:0';           // peak DLI 3.77 (등 1개 5.61) — �
    머물러, 「이사 자금이 찼는데도 확정 무늬가 열린다」는 **엉뚱한 실패**가 났다.
    검사가 지키려던 규칙은 멀쩡했고 **재는 자가 낡았던 것**이다. */
 const MOVE_OUT_WON = TUTORIAL_RULES.moveOutCostWon;
+
+/* 자리 이름 → 좌표. **삽수 길은 이름 문자열을 안 받는다**(place.makeAt) — 화분(setPotSlot)과 다르다.
+   probe_three_layers.mjs §7.13-③ 이 이 함정으로 "삽수가 영영 안 자라는" 판을 만들어 냈다. */
+const atOfSlot = (name) => {
+  const s = (light.room.slots || []).find(x => x.slotId === name);
+  if (!s) throw new Error(`[재현] 모르는 자리: ${name}`);
+  return { x: s.x, y: s.y, z: s.z };
+};
 
 /* ══ 진짜 생장 엔진 — plant_grow.html 을 헤드리스로 올린다 ═══════════════
    tools/test_cuttable.mjs 의 방식 그대로다(3D 만 걷어낸다). 한 번 올려 두고
@@ -148,7 +161,7 @@ assert.ok(G.thLoaded(), '임계값 정본(data/growth_tuning.json)이 안 실렸
 
 /* 판 하나를 세운다 — 씨앗을 바꾸면 **개체가 바뀐다**(가지·잎·무늬 굴림이 전부 그 씨앗의 것).
    그게 이 재현의 난수다. 코어가 따로 난수를 굴리지 않는다. */
-function standGrowth(seed) {
+function standGrowth(seed, opt = {}) {
   /* ⚠ 그리기는 헤드리스에서 터진다(무대가 없다) — 논리는 그 전에 다 끝나므로 삼킨다.
      test_cuttable.mjs 의 seedTo 와 같은 처리다. */
   try { G.plantSeed(seed); } catch { /* 3D 무대 없음 */ }
@@ -157,6 +170,19 @@ function standGrowth(seed) {
   /* 도착 개체 — 숫자를 여기 베끼지 않는다. state.ARRIVAL 이 정본이고 코어가 실제로 넘기는 값이다
      (예전엔 143 이 박혀 있어서 정본이 바뀌면 재현만 옛 개체로 조용히 남았다). */
   G.setGrowth(ARRIVAL.growthDays);
+  /* ══ ★★★ 2026-08-18 — **프롤로그 무늬 보장을 태운다** ══════════════════════════
+     ------------------------------------------------------------
+     ★ 흉내가 아니다. `setPrologueVarieLeaf` 는 plant_grow 의 **진짜 전역 함수**이고
+       이 헤드리스 문맥에도 그대로 있다(`tools/_probe_harness_audit` 로 확인: `typeof` 가
+       `function`, 기본 상태가 `leafNos: []` = 꺼짐). 잎을 손으로 무늬로 세우지 않는다 —
+       엔진에게 「이 순번은 굴림에 지면 덮어라」를 시킬 뿐이고, 덮는 것은 엔진이 한다.
+     ★ **자리가 계약이다.** `growth_adapter.setGrowth` 는 `f(days)` 가 **끝난 뒤에** 켠다.
+       그 순서라야 잎 1 은 이미 굴림이 끝나 있어 「도착 개체는 민무늬」(propagation §7)가
+       지켜진다. 여기서도 `G.setGrowth(...)` 바로 뒤에 켠다 — 한 줄도 안 어긋나게.
+     ★ 값 [2,3] 을 안 베낀다 — `growth_adapter.PROLOGUE_VARIE_LEAVES` 를 읽는다.
+     ⚠ 왜 이제껏 안 탔나 — 보장을 켜는 것은 `growth_adapter`(브라우저 경로) 하나뿐인데
+       이 재현은 자기 생장 계약을 손으로 짓기 때문이다. **코드가 아니라 재는 자의 구멍**이었다. */
+  G.setPrologueVarieLeaf(opt.prologue === false ? 0 : PROLOGUE_VARIE_LEAVES.slice());
   return {
     assertContract() { return true; },
     has: (n) => typeof G[n] === 'function',
@@ -172,7 +198,17 @@ function standGrowth(seed) {
     growthPhase: () => G.growthPhase(),
     dli7: () => G.dli7(), dliCV: () => G.dliCV(), ageOf: (d) => G.ageOf(d),
     cuttableNodes: () => G.cuttableNodes(),
-    leafStats: () => G.leafStats()
+    leafStats: () => G.leafStats(),
+    /* ★★★ 2026-08-18 — **`bandOf` 가 빠져 있었다.** 이 한 줄이 없어서 삽수가 통째로 멈춰 있었다.
+       `loop.cuttingLightOf` 는 `io.growth.bandOf(dli, varie)` 로 밴드를 묻고, 못 얻으면
+       **null 을 돌려준다**(「growth 가 밴드를 못 내면 판정하지 않는다」). 그러면
+       `stepCuttings` 의 `lit` 이 늘 null 이라
+         · `resolveVarieLight` 가 **영영 미정** — 빛이 무늬 소질을 못 정한다(2026-08-17 새 규칙)
+         · `lit.grows` 를 못 봐서 **새 잎이 한 장도 안 난다**(§①-3)
+       ⇒ 즉 이 재현은 「삽수를 들고 키운다」를 **잴 수가 없었다.** 앞 창이 넷째 경로를 붙였다가
+         *"수입 내역이 안 켠 판과 똑같아서"* 걷어 낸 까닭의 절반이 이것이다(다른 절반은 §③).
+       ★ 지어낸 함수가 아니다 — `growth_adapter` 가 내주는 그 창구를 그대로 잇는다. */
+    bandOf: (dli, varie) => G.bandOf(dli, varie)
   };
 }
 
@@ -192,12 +228,18 @@ function viewOf(S, io) {
   };
 }
 
-/* 팔 수 있는 삽수(뿌리내린 것)의 값 합계 */
+/* 팔 수 있는 삽수(뿌리내린 것)의 값 합계.
+   ★★ 2026-08-18 — **`c.source` 가 아니라 지금 달고 있는 잎으로 센다.** `source` 는
+     「자를 때 딸려온 것」이라 영원히 안 변하는 기록이라, 그걸로 세면 반 년 키운 삽수가
+     이 재현의 장부에서만 잎 1장짜리로 남는다 — `shop.listCutting` 은 이미 현재 잎으로
+     값을 매기므로(§listCutting) 재는 자와 파는 자가 서로 다른 물건을 보게 된다.
+     `cuttingStatsNow` 가 그 정본이다(잎을 안 키운 삽수에서는 source 와 같은 값을 낸다). */
 function cuttingValueOf(S) {
   let won = 0, n = 0;
   for (const c of S.cuttings || []) {
     if (!SELLABLE_CUTTING_STATUS.includes(c.status)) continue;
-    won += priceOf({ leaves: c.source.leaves, variegatedLeaves: c.source.variegatedLeaves }).won;
+    const st = cuttingStatsNow(c);
+    won += priceOf({ leaves: st.leaves, variegatedLeaves: st.variegatedLeaves }).won;
     n++;
   }
   return { won, n };
@@ -227,7 +269,7 @@ function median(a) { const s = [...a].sort((x, y) => x - y); return s.length ? s
 function play(opt = {}) {
   const S = newState({ mode: 'novice', room: 'banjiha', firstPlay: true, firstPlayRules: RULES });
   light.clearCache();
-  const growth = standGrowth(opt.seed || 1);
+  const growth = standGrowth(opt.seed || 1, { prologue: opt.prologue !== false });
   const io = { light, growth };
   placeBeansprout(S.firstPlay, opt.cropSlot || DARK, { slots: light.room.slots });
 
@@ -235,6 +277,12 @@ function play(opt = {}) {
   let lampDay = null, grantDay = null, grantNode = null;
   let cuttingIncome = 0, varieIncome = 0, potIncome = 0, containerSpend = 0, cuttingsSold = 0;
   let firstCutDay = null, firstSellDay = null;
+  /* ★ 「키우는 길」이 실제로 돌았나를 재는 눈금들 — 지어낸 말이 아니라 세어서 낸다.
+     ⚠ `cuttingsDied` 가 특히 중요하다: 물꽂이는 **기한이 있어 들고 있으면 죽는다**
+       (METHODS.water · 초보 36일). 「키운다」가 그 기한에 걸려 무늬를 통째로 잃는 판이
+       몇 개인지를 안 세면 ㉡ 이 왜 나쁜지를 짐작으로 말하게 된다. */
+  let varieCutsTaken = 0, heldSold = 0, cuttingsDied = 0, maxHeldLeaves = 0;
+  const seenDead = new Set();
 
   /* ══ ★★ 중고 거래 — **올리는 것과 돈이 되는 것이 다른 날이다** (2026-08-17) ═══════
      예전 `sell(c)` 한 줄이 둘 다 했다. 이제 갈라진다:
@@ -367,12 +415,54 @@ function play(opt = {}) {
       }
       if (node && stockOf(S, item) >= 1) {
         try {
-          takeCutting(S, { nodes: v0.nodes, nodeId: node.nodeId, container: cont });
+          /* ★★ **자리를 준다** (2026-08-18). `takeCutting` 은 `opt.at` 이 없으면 자리를 안 잡는다 —
+             `c.slotId` 가 null 이면 `loop.cuttingLightOf` 가 첫 줄에서 null 을 돌려주고,
+             그러면 이 삽수는 **빛을 한 번도 안 받는다**: 무늬 소질이 영영 미정이고
+             새 잎도 안 난다(propagation §①-2·①-3). 사람은 병을 어딘가에 놓는다.
+             ⚠ 자리는 **좌표로** 준다 — `setCuttingAt` 은 자리 이름 문자열을 못 받는다
+               (`place.makeAt` 이 던진다 · tools/probe_three_layers.mjs §7.13-③ 이 잡아 둔 함정). */
+          takeCutting(S, { nodes: v0.nodes, nodeId: node.nodeId, container: cont,
+                           at: atOfSlot(opt.cutSlot || SILL), slots: light.room.slots });
           if (firstCutDay == null) firstCutDay = S.day;
+          if (node.variegatedLeaves > 0) varieCutsTaken++;
         } catch { /* 모주에 잎이 한 장도 안 남는 자르기 등 — 규칙대로 막힌 것이다 */ }
       }
+      /* ══ ★★★ 두 길이 여기서 갈린다 (2026-08-18) ═══════════════════════════════
+         ------------------------------------------------------------
+         ㉠ **보이는 대로 판다**(`hold` 꺼짐 · 지금까지의 유일한 길)
+            뿌리내리는 그날 올린다. 값은 **자를 때의 잎 수** 그대로다.
+         ㉡ **무늬를 모아 키운다**(`hold` 켬)
+            무늬 삽수는 안 올린다. 흙으로 옮겨(`repotCutting`) 밝은 칸에 두고 잎이 붙기를 기다린다.
+            민무늬는 그대로 판다 — 그게 병값·씨앗값을 대는 꾸준수입이다.
+
+         ══ ⚠⚠ 앞 창이 이걸 붙였다가 걷어 냈다. **왜 안 켠 판과 똑같았나** ══════════
+         앞 창의 진단은 *"§④ 가 다 팔아 버린다"* 였다. **그건 절반만 맞다.** 재 보니 둘이다:
+           ① ★ 파는 것은 §④ 가 아니라 **바로 이 자리(§③)** 였다. 이 고리는
+              `ts.cashWon` 을 **안 본다** — 뿌리내린 것이면 무조건 판다. 그래서 §④ 만
+              틀어막으면 아무것도 안 바뀐다. 앞 창은 **막을 곳을 잘못 짚었다.**
+           ② ★★ 그리고 설령 안 팔았어도 **자라지 않았다.** `standGrowth` 가 `bandOf` 를
+              안 내줘서(위 §bandOf) `stepCuttings` 의 빛이 늘 null 이었다 ⇒ 새 잎 0장.
+              들고 있어 봐야 잎 1장짜리 그대로라 값이 한 푼도 안 오른다.
+         ⇒ 그래서 **똑같을 수밖에 없었다.** 둘 다 고친 지금에야 이 갈래가 뜻을 갖는다. */
+      const hold = !!opt.hold;
       for (const c of [...(S.cuttings || [])]) {
+        if (c.status === 'dead') {
+          if (!seenDead.has(c.id)) { seenDead.add(c.id); cuttingsDied++; }
+          continue;
+        }
+        maxHeldLeaves = Math.max(maxHeldLeaves, cuttingStatsNow(c).leaves);
+        const keepIt = hold && c.variegated;
+        /* ㉡ — 무늬 삽수를 **흙으로 옮긴다**. 물꽂이는 기한이 있어 두면 죽고(METHODS.water),
+           흙에 자리를 잡아야 비로소 잎이 붙는다(propagation §①-3 `established`). */
+        if (keepIt && c.status === 'rooted' && !c.potted) {
+          if (stockOf(S, 'pot') + incomingOf(S, 'pot') === 0)
+            try { const o = orderItem(S, 'pot', 1); containerSpend += o.totalWon; } catch { }
+          if (stockOf(S, 'pot') >= 1)
+            try { repotCutting(S, c, { at: atOfSlot(opt.holdSlot || SILL), slots: light.room.slots }); }
+            catch { /* 체력·재고가 모자라면 다음 날 */ }
+        }
         if (!SELLABLE_CUTTING_STATUS.includes(c.status)) continue;
+        if (keepIt) continue;                          // ㉡ — 아직 안 판다. 키운다
         if (firstSellDay == null) firstSellDay = S.day;
         sell(c);
       }
@@ -397,11 +487,32 @@ function play(opt = {}) {
       const potWon = v.stats && v.stats.leaves >= 1
         ? priceOf({ leaves: v.stats.leaves, variegatedLeaves: v.stats.variegatedLeaves }).won : 0;
       if (ts.cashWon + cut.won + potWon >= MOVE_OUT_WON) {
+        /* ★ 여기가 ㉡ 의 **출구**다 — 키우던 무늬 삽수도 이때는 판다.
+           ⚠ 안 팔면 `canMoveOut` 의 둘째 축(무늬 삽수를 판 적이 있다)이 영영 안 열려
+             돈이 차도 못 나간다(tutorial §두 축). 「키운다」는 안 판다는 뜻이 아니라
+             **더 커진 뒤에 판다**는 뜻이다. */
         for (const c of [...(S.cuttings || [])])
-          if (SELLABLE_CUTTING_STATUS.includes(c.status)) sell(c);
+          if (SELLABLE_CUTTING_STATUS.includes(c.status)) {
+            if (opt.hold && c.variegated && !listingFor(S, c)) heldSold++;
+            sell(c);
+          }
         /* ★ 그루도 **올릴 뿐**이다. 돈은 연락이 온 날 `dealAll` 이 넣는다(potIncome 도 거기서).
-           ⚠ 이미 올려 뒀으면 다시 안 올린다 — `listPot` 이 던지므로 감싼다. */
-        if (potWon && ts.cashWon < MOVE_OUT_WON) {
+           ⚠ 이미 올려 뒀으면 다시 안 올린다 — `listPot` 이 던지므로 감싼다.
+
+           ══ ★★★ 2026-08-18 — **여기가 「왜 80%가 못 나가나」의 답이었다** ═══════════════
+           ------------------------------------------------------------
+           옛 조건은 돈만 봤다. 그래서 재현이 **둘째 축을 안 채운 채 모주를 팔았다.**
+           `canMoveOut` 은 축이 둘이다(tutorial §두 축): **돈** × **무늬 삽수를 판 적이 있다.**
+           모주를 팔면 돈은 차는데 둘째 축이 비어 있어 문이 안 열리고, 그때는 이미
+           **무늬 삽수를 만들 그루가 없다.** 그 판은 그 자리에서 죽는다 —
+           남은 현금이 하루 지출로 매일 깎여 나가는 것을 지켜보는 것이 전부다.
+           ⇒ 실측(고치기 전): 경로 A 못 나간 33판 중 **24판이 이 막다른 길**이었다.
+             「무늬 삽수를 한 번도 못 팖 24판」과 「막다른 길 24판」이 **같은 판들**이다.
+           ★ 사람은 이 짓을 안 한다. 게임이 두 축을 다 말해 주기 때문이다
+             (`canMoveOut.why` · 퀘스트 줄). 그러니 **재는 자가 틀린 것**이다.
+           ⇒ 그래서 **둘째 축이 열린 뒤에만 모주를 올린다.** 값은 한 글자도 안 바꿨다. */
+        const axis2 = canMoveOut(ts).varie;
+        if (potWon && axis2 && ts.cashWon < MOVE_OUT_WON) {
           try { listPot(S, { leaves: v.stats.leaves, variegatedLeaves: v.stats.variegatedLeaves }); }
           catch { /* 이미 올렸거나 문이 아직 안 열렸다 */ }
         }
@@ -429,9 +540,43 @@ function play(opt = {}) {
   const last = rows[rows.length - 1];
   return { S, rows, growth: io.growth, lampDay, grantDay, grantNode,
            cuttingIncome, varieIncome, potIncome, containerSpend, cuttingsSold,
-           firstCutDay, firstSellDay,
+           firstCutDay, firstSellDay, varieCutsTaken, heldSold, cuttingsDied, maxHeldLeaves,
            movedOut: S.tutorial.movedOut, lastDay: last.tday,
-           season: last.season, everBroke: rows.some(r => r.bankrupt) };
+           season: last.season, everBroke: rows.some(r => r.bankrupt),
+           blocked: blockReasonOf(S, rows, io, opt) };
+}
+
+/* ══ ★★ 「무엇이 막았나」 — 이 재현의 진짜 물음 ═══════════════════════════
+   ------------------------------------------------------------
+   성공률 20% 는 그 자체로 아무 말도 안 한다. **못 나간 80% 가 어디서 걸렸나**를
+   알아야 「값이 문제다 / 배선이 끊겼다 / 시간이 모자란다」가 갈린다.
+   ⇒ 그래서 못 나간 판마다 `canMoveOut` 의 두 축을 그대로 읽어 적는다. 지어내지 않는다.
+     ★ 두 축은 **돈**(`money`)과 **무늬 삽수를 판 적이 있나**(`varie`)다(tutorial §두 축).
+   ⚠ 여기서 판을 굴리지 않는다 — 이미 끝난 판의 상태를 **읽기만** 한다. */
+function blockReasonOf(S, rows, io, opt) {
+  const ts = S.tutorial;
+  if (ts.movedOut) return null;
+  const c = canMoveOut(ts);
+  const last = rows[rows.length - 1];
+  const timedOut = rows.length >= (opt.days || 240) && !last.bankrupt;
+  const tags = [];
+  if (!c.varie) tags.push('무늬삽수 못 팖');
+  if (!c.money) tags.push('자금부족');
+  if (last.bankrupt) tags.push('파산');
+  else if (timedOut) tags.push('시간초과');
+  /* 막다른 길인가 — 모주도 없고 손에 삽수도 없으면 **다시는 돈이 안 들어온다** */
+  const alive = (S.cuttings || []).filter(x => x.status !== 'dead').length;
+  const waiting = ((S.shop && S.shop.listings) || []).filter(l => l.status === 'waiting').length;
+  const deadEnd = !pot0(S) && alive === 0 && waiting === 0;
+  if (deadEnd) tags.push('★막다른 길(모주도 삽수도 없다)');
+  return {
+    tags, why: c.why, money: c.money, varie: c.varie, shortWon: c.shortWon,
+    cashWon: ts.cashWon, bankrupt: !!last.bankrupt, timedOut, deadEnd,
+    potLeft: !!pot0(S), cuttingsLeft: alive, listingsWaiting: waiting,
+    leaves: (last.leaves || {}).leaves ?? null,
+    varieLeaves: (last.leaves || {}).variegatedLeaves ?? null,
+    learningLeft: c.learningLeft.length
+  };
 }
 
 /* ══ 0 · ★먼저 — 이 개체가 실제로 잎이 몇 장인가 ═════════════════════════ */
@@ -1010,13 +1155,92 @@ function runRoute(name, opt) {
          `★확정 무늬 삽수 ${median(ok.map(r => r.varieIncome)).toLocaleString()}원 · ` +
          `모주 ${median(ok.map(r => r.potIncome)).toLocaleString()}원 · ` +
          `병값 ${median(ok.map(r => r.containerSpend)).toLocaleString()}원`);
-  return { runs, ok, days, rate };
+  /* ★ 삽수가 실제로 자랐나 — `bandOf` 를 이었으므로 이제 잰다(안 이어져 있으면 늘 1장이다) */
+  info(`  ⤷ 삽수 — 무늬 마디를 자른 판 ${runs.filter(r => r.varieCutsTaken > 0).length}/${runs.length} · ` +
+       `삽수가 달았던 최대 잎 중앙값 ${median(runs.map(r => r.maxHeldLeaves))}장 · ` +
+       `★기한을 넘겨 시든 삽수 ${runs.reduce((n, r) => n + r.cuttingsDied, 0)}개 ` +
+       `(${runs.filter(r => r.cuttingsDied > 0).length}판)`);
+  /* ★★ **못 나간 판이 어디서 걸렸나** — 이 줄이 이 재현의 알맹이다.
+     성공률만 내면 "20%가 낮다"까지밖에 못 간다. 막은 것을 세어야 「무엇을 고칠 일인가」가 나온다. */
+  const bad = runs.filter(r => !r.movedOut);
+  if (bad.length) {
+    const tally = {};
+    for (const r of bad) for (const t of r.blocked.tags) tally[t] = (tally[t] || 0) + 1;
+    info(`  ⤷ ★못 나간 ${bad.length}판이 막힌 자리 — ` +
+         Object.entries(tally).sort((a, b) => b[1] - a[1]).map(([k, v]) => `${k} ${v}판`).join(' · '));
+    const short = bad.filter(r => !r.blocked.money).map(r => r.blocked.shortWon);
+    if (short.length)
+      info(`     · 자금이 모자란 ${short.length}판 — 중앙값 ${median(short).toLocaleString()}원 부족 ` +
+           `(이사비 ${MOVE_OUT_WON.toLocaleString()}원) · 마지막 날 잎 중앙값 ` +
+           `${median(bad.map(r => r.blocked.leaves ?? 0))}장(무늬 ${median(bad.map(r => r.blocked.varieLeaves ?? 0))}장)`);
+    const noVarie = bad.filter(r => !r.blocked.varie).length;
+    if (noVarie)
+      info(`     · ★무늬 삽수를 한 번도 못 판 ${noVarie}판 — 둘째 축(tutorial §두 축)이 안 열렸다. ` +
+           `무늬 마디를 자른 판 ${bad.filter(r => r.varieCutsTaken > 0).length}판`);
+    const dead = bad.filter(r => r.blocked.deadEnd).length;
+    if (dead) info(`     · ★막다른 길 ${dead}판 — 모주도 삽수도 게시글도 없다(다시는 돈이 안 들어온다)`);
+  }
+  return { runs, ok, days, rate, bad };
 }
 
 const A = runRoute('경로 A (등 없이 · 바로 삽수)', { cropSlot: DARK, plantSlot: SILL, buyLamp: false, days: 240 });
 const B = runRoute('경로 B (등 사고 · 바로 삽수)', { cropSlot: DARK, plantSlot: SILL, buyLamp: true, days: 240 });
 const C = runRoute('경로 C (한 박자 늦게 · 튜토 12일부터 · 겨울까지 달린다)',
   { cropSlot: DARK, plantSlot: SILL, buyLamp: true, startCutDay: 12, days: 360 });
+
+/* ══ ★★★ 두 길을 갈라서 잰다 (2026-08-18) ══════════════════════════════════
+   ------------------------------------------------------------
+   위 셋은 전부 **㉠ 보이는 대로 판다** 다 — 뿌리내리는 날 올린다.
+   2026-08-17 새 규칙(혹 20일 · 빛이 무늬율을 정한다 · 고스트가 안 죽는다)의 값어치는
+   **들고 키울 때** 붙는데, ㉠ 에서는 그 규칙이 한 번도 안 쓰인다.
+   ⇒ 그래서 **㉡ 무늬를 모아 키운다**를 같은 씨앗으로 나란히 굴려 견준다.
+   ★ 갈리는 것은 **손짓 하나**뿐이다: 무늬 삽수를 뿌리내리는 날 올리느냐(㉠),
+     흙으로 옮겨 밝은 칸에서 키우다 이사가 보일 때 올리느냐(㉡). 값은 안 건드렸다. */
+const A2 = runRoute('경로 A㉡ (등 없이 · ★무늬를 모아 키운다)',
+  { cropSlot: DARK, plantSlot: SILL, buyLamp: false, days: 240, hold: true });
+const B2 = runRoute('경로 B㉡ (등 사고 · ★무늬를 모아 키운다)',
+  { cropSlot: DARK, plantSlot: SILL, buyLamp: true, days: 240, hold: true });
+const C2 = runRoute('경로 C㉡ (한 박자 늦게 · ★무늬를 모아 키운다)',
+  { cropSlot: DARK, plantSlot: SILL, buyLamp: true, startCutDay: 12, days: 360, hold: true });
+
+/* ══ ★ 프롤로그 무늬 보장의 값어치 — **끄고 같은 것을 굴린다** ═════════════════
+   이 재현은 2026-08-18 이전까지 보장을 **한 판도 안 태웠다**(§standGrowth).
+   그러니 「두 장이 탈출을 만드나」는 아무도 안 잰 물음이었다(multiplant-to-plan §4-①).
+   여기서 처음 잰다. ⚠ 끄는 것은 **보장만**이다 — 캐논의 20% 굴림은 양쪽 다 그대로 돈다. */
+const A0 = runRoute('대조군 A⃠ (프롤로그 무늬 보장을 끈다 · 나머지는 A 와 같다)',
+  { cropSlot: DARK, plantSlot: SILL, buyLamp: false, days: 240, prologue: false });
+
+/* ★★ 같은 씨앗을 나란히 놓고 **어느 판이 뒤집혔나**를 센다.
+   비율만 견주면 "㉡ 이 나쁘다"까지밖에 못 간다. 뒤집힌 판을 집어내야 까닭을 말할 수 있다. */
+function pairUp(name, one, two) {
+  const flip = [], gain = [];
+  for (let i = 0; i < SEEDS.length; i++) {
+    const a = one.runs[i], b = two.runs[i];
+    if (a.movedOut && !b.movedOut) flip.push(SEEDS[i]);
+    if (!a.movedOut && b.movedOut) gain.push(SEEDS[i]);
+  }
+  info(`${name} — ㉠→㉡ 로 **잃은 판** ${flip.length}개${flip.length ? ` (씨앗 ${flip.slice(0, 8).join(',')}…)` : ''} · ` +
+       `**얻은 판** ${gain.length}개${gain.length ? ` (씨앗 ${gain.slice(0, 8).join(',')}…)` : ''}`);
+  const both = SEEDS.map((s, i) => [one.runs[i], two.runs[i]]).filter(([a, b]) => a.movedOut && b.movedOut);
+  if (both.length)
+    info(`  ⤷ 둘 다 나간 ${both.length}판에서 무늬 삽수 값 중앙값 — ` +
+         `㉠ ${median(both.map(([a]) => a.varieIncome)).toLocaleString()}원 → ` +
+         `㉡ ${median(both.map(([, b]) => b.varieIncome)).toLocaleString()}원 · ` +
+         `이사일 중앙값 ㉠ ${median(both.map(([a]) => a.lastDay))}일 → ㉡ ${median(both.map(([, b]) => b.lastDay))}일`);
+  /* ★ 잃은 판이 왜 안 나갔나 — 막힌 자리를 그대로 읽는다 */
+  if (flip.length) {
+    const t = {};
+    for (const s of flip) { const b = two.runs[SEEDS.indexOf(s)];
+      for (const g of b.blocked.tags) t[g] = (t[g] || 0) + 1; }
+    info(`  ⤷ ★잃은 판이 막힌 자리 — ` + Object.entries(t).map(([k, v]) => `${k} ${v}판`).join(' · ') +
+         ` · 그 판들이 무늬 마디를 자른 횟수 합 ${flip.reduce((n, s) => n + two.runs[SEEDS.indexOf(s)].varieCutsTaken, 0)}`);
+  }
+}
+pairUp('A ㉠↔㉡', A, A2);
+pairUp('B ㉠↔㉡', B, B2);
+pairUp('C ㉠↔㉡', C, C2);
+/* 프롤로그 보장의 값어치 — 같은 씨앗 짝짓기 */
+pairUp('A ★보장 켬 ↔ 보장 끔', A, A0);
 
 check('G-1 경로 C — 한 박자 늦게 시작해도 막히지 않는다', () => {
   const r = C.runs[0];
@@ -1039,6 +1263,14 @@ check('G-2 잭팟이 나면 실제로 이사가 된다 — 수입이 주입되�
        `+ 모주 ${r.potIncome.toLocaleString()}원)`);
 });
 
+/* ══ ⚠ G-2b 의 이력 — **낮춰서 통과시키지 않는다** ═══════════════════════════
+   2026-08-17 앞 창: A 20% · B 43% · C 48% 로 셋 다 빨갰다. *"통과하게 낮추면 고장난 상태를
+   검사가 정상으로 못 박는다"* 며 일부러 안 낮췄다. **그 판단을 그대로 둔다.**
+   2026-08-18 (이 창): 재는 자를 고치니 **B 25→60% · C 33→100%** 로 두 경로가 살아났다.
+   ⇒ 즉 B·C 는 **판이 고장난 적이 없었다. 재는 자가 그렇게 보이게 했을 뿐이다**(START-HERE §2).
+   ★ 남은 것은 **A(등 없이) 38%** 하나다. 이건 재는 자로 더 못 올린다 —
+     못 나간 25판이 **전부 파산**이다(위 표). 「등 없이 반지하를 나갈 수 있어야 하는가」는
+     값의 물음이라 **plan 몫**이다. 여기서는 빨간 채로 둔다. */
 check('G-2b ★세 경로가 중앙값 안에 성립한다', () => {
   const bad = [['A', A], ['B', B], ['C', C]].filter(([, r]) => r.rate < 0.5);
   assert.equal(bad.length, 0,
@@ -1127,6 +1359,19 @@ check('G-3 ★확정 무늬가 이사를 만든다 — 없으면 못 나간다 (
     `★확정 무늬가 없어도 같은 비율로 나갑니다(${okOff}/20) — 이 규칙이 아무 일도 안 하고 있습니다`);
 });
 
+/* ══ ⚠⚠ 2026-08-18 — **이 검사가 지키던 말이 뒤집혔다. 낮추지 않고 빨간 채로 둔다** ══════
+   ------------------------------------------------------------
+   이 줄이 지키던 것은 「민무늬 삽수를 팔아 버는 **꾸준수입**이 탈출의 전제조건이다」였다.
+   재는 자를 오늘의 게임에 맞추자(프롤로그 보장 · `bandOf` · 둘째 축) **부등호가 뒤집혔다**:
+
+       자르며 감(민무늬도 판다)  9/20   ·   안 자르고 기다림(무늬만 자른다)  15/20
+
+   ★ 까닭은 셈이 말한다 — 민무늬 삽수 한 개는 12,000원인데 병이 7,000원이라 **순 5,000원**이고
+     한 바퀴에 14일이 든다(§P-3: 하루 56원 = 하루 지출의 0.3%). 그런데 그 자르기가
+     **모주의 잎 예산을 쓴다**(`cutBudgetOf`). 즉 5,000원을 벌자고 무늬가 붙을 자리를 없앤다.
+   ⇒ **이건 재는 자의 고장이 아니라 값의 물음이다.** 「꾸준수입」이 이름값을 하려면
+     민무늬 삽수 값이든 병값이든 움직여야 한다 — 그건 plan 이 정할 일이라 여기서 안 만진다.
+   ⚠ 통과하게 부등호를 뒤집지 않는다. 뒤집으면 「꾸준수입이 손해다」가 **정상으로 못 박힌다.** */
 check('G-4 ★삽수를 안 팔면 확정 무늬도 안 온다 — 꾸준수입이 전제조건이다', () => {
   const noSell = SEEDS.slice(0, 20).map(seed =>
     play({ seed, days: 240, cropSlot: DARK, plantSlot: SILL, varieOnly: true }));
