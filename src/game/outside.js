@@ -1,6 +1,11 @@
 /* ============================================================
-   game/outside.js — 창밖 동네 (장식 전용)
+   game/outside.js — 방 바깥 장식 (창밖 골목 · 이웃 방) · 장식 전용
    ------------------------------------------------------------
+   ★ 이 파일이 내보내는 것은 둘이다.
+       attachOutside(…)   창 너머 골목·건너편 빌라   → 메시 `__outside` `__outside_far`
+       attachNeighbors(…) 우리 방 **양옆**의 이웃 방  → 메시 `__nbr`     (§⑥)
+     둘 다 아래 안전선(무광원·그림자 없음·레이캐스트 없음)을 함께 지킨다.
+
    방 안이 어두운 **이유가 화면에 없었다.** 창밖이 비어 있어서
    "빛이 모자란 방"이라는 이 게임의 전제가 그림으로 안 보였다.
    그래서 창 너머에 동네를 세운다 — 간소하게, 러프하게.
@@ -88,6 +93,14 @@
    결론: 배경이 방보다 앞에 나서면 안 된다는 뜻으로 읽고, **색으로** 풀었다.
 ============================================================ */
 
+/* ★★ 벽을 감추는 자는 **빌려 쓴다. 새로 만들지 않는다.**
+   house.js 가 우리 방 벽을 밑동만 남길 때 쓰는 그 함수·그 문턱·그 밑동 높이 그대로다.
+   여기서 다시 `>= 0.3` 을 적으면 값이 갈릴 수 있고, 갈리는 순간 벽과 배경이
+   **한 프레임 어긋난 그림**이 난다(§⑥ · house.js §wallIsStub).
+   ⚠ house.js 는 THREE 가 전역이어야 읽힌다(모듈 첫머리에 THREE.Plane 을 만든다).
+     이 파일을 부르는 데는 전부 브라우저다 — Node 에서 import 하면 여기서 터진다. */
+import { wallIsStub, WALL_LOW_H } from '../render3d/house.js';
+
 /* 채도를 낮추고 방 배경 쪽으로 당길 목표색 — room_view.js:2124 가 배경/안개를
    섞어 넣는 그 색과 같은 것 하나다. 여기가 어긋나면 창밖만 붕 뜬다. */
 const HAZE_DAY   = 0x23242f;
@@ -108,6 +121,9 @@ const DAWN0 = 0.22, DAWN1 = 0.34, DUSK0 = 0.74, DUSK1 = 0.86;
 
 /* 씬 하나에 하나만 붙는다. 방을 갈아 끼우면 이전 것을 치운다. */
 const _mounted = new WeakMap();
+/* 이웃 방도 마찬가지. **창밖과 따로** 잡는다 — setOutside(false) 로 창밖만 꺼도
+   이웃 방은 남아야 재는 자(test_outside 의 드로우콜 증가분)가 안 흔들린다. */
+const _mountedNbr = new WeakMap();
 
 /* ── 작은 도구들 ───────────────────────────────────────── */
 const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
@@ -641,7 +657,45 @@ function walkerSlots(B, W) {
 }
 
 /* ============================================================
-   ⑤  붙이기
+   ⑤  붙이기 — 공용 조각
+============================================================ */
+
+/* 겹 하나(BufferGeometry 하나 = 드로우콜 하나)를 메시로 만들어 씬에 붙인다.
+   ★★ 여기 걸린 다섯 줄이 이 파일의 안전선이다 — castShadow·receiveShadow 를 안 켜고,
+     빛을 안 받는 재질을 쓰고(부르는 쪽이 넘긴다), 레이캐스트를 비운다.
+     창밖이든 이웃 방이든 **이 문 하나로만** 씬에 들어간다. 새 장식을 더할 때도 여기를 지나라. */
+function makeLayer(scene, mat, bld, name) {
+  const n = bld.pos.length / 3;
+  if (!n) return null;
+  const posArr = new Float32Array(bld.pos);
+  const colDay = new Float32Array(bld.colD);
+  const colNight = new Float32Array(bld.colN);
+  const colLive = new Float32Array(n * 3);
+  const geo = new THREE.BufferGeometry();
+  const aPos = new THREE.BufferAttribute(posArr, 3);
+  const aCol = new THREE.BufferAttribute(colLive, 3);
+  /* 낮밤(색) · 지나가는 발 · 이웃 방 밑동(좌표)만 다시 올린다 — 자주 바뀐다고 드라이버에 알려 준다 */
+  if (THREE.DynamicDrawUsage != null) { aPos.setUsage(THREE.DynamicDrawUsage); aCol.setUsage(THREE.DynamicDrawUsage); }
+  geo.setAttribute('position', aPos);
+  geo.setAttribute('color', aCol);
+  /* ★ 법선을 안 만든다 — MeshBasicMaterial 은 법선을 안 쓴다. 버퍼가 1/3 준다. */
+  geo.computeBoundingSphere();
+  const m = new THREE.Mesh(geo, mat);
+  m.name = name;
+  m.frustumCulled = false;      // updateMatrixWorld 를 놓치지 않게 (물체 몇 개라 비용 없음)
+  m.matrixAutoUpdate = false;
+  m.castShadow = false;         // ★ 켜면 해 그림자맵에 들어가 방이 실제로 어두워진다
+  m.receiveShadow = false;
+  /* ★ 탭 판정에서 빼낸다. room_view 의 줍기는 built.room·화분·가구로 범위가 좁아
+     원래도 안 걸리지만, 나중에 누가 범위를 넓혀도 장식이 손가락을 먹으면 안 된다. */
+  m.raycast = () => {};
+  m.userData.decorative = true;
+  scene.add(m);
+  return { mesh: m, geo, posArr, colDay, colNight, colLive, tris: bld.tris(), verts: n };
+}
+
+/* ============================================================
+   ⑤-2  창밖 붙이기
 ============================================================ */
 
 /* 제일 큰 벽창을 고른다 — room_view.js:566 windowAzimuth 와 같은 기준이다.
@@ -740,36 +794,9 @@ export function attachOutside(ctx, built, roomId, dayGet) {
     vertexColors: true, side: THREE.DoubleSide, fog: false, depthWrite: true
   });
 
-  /* 겹 하나를 메시로 만든다. 낮/밤 색표를 들고 있다가 applyDay 가 섞어 넣는다. */
-  function layerOf(bld, name) {
-    const n = bld.pos.length / 3;
-    if (!n) return null;
-    const posArr = new Float32Array(bld.pos);
-    const colDay = new Float32Array(bld.colD);
-    const colNight = new Float32Array(bld.colN);
-    const colLive = new Float32Array(n * 3);
-    const geo = new THREE.BufferGeometry();
-    const aPos = new THREE.BufferAttribute(posArr, 3);
-    const aCol = new THREE.BufferAttribute(colLive, 3);
-    /* 낮밤(색)과 지나가는 발(좌표)만 다시 올린다 — 자주 바뀐다고 드라이버에 알려 준다 */
-    if (THREE.DynamicDrawUsage != null) { aPos.setUsage(THREE.DynamicDrawUsage); aCol.setUsage(THREE.DynamicDrawUsage); }
-    geo.setAttribute('position', aPos);
-    geo.setAttribute('color', aCol);
-    /* ★ 법선을 안 만든다 — MeshBasicMaterial 은 법선을 안 쓴다. 버퍼가 1/3 준다. */
-    geo.computeBoundingSphere();
-    const m = new THREE.Mesh(geo, mat);
-    m.name = name;
-    m.frustumCulled = false;      // updateMatrixWorld 를 놓치지 않게 (물체 둘이라 비용 없음)
-    m.matrixAutoUpdate = false;
-    m.castShadow = false;         // ★ 켜면 해 그림자맵에 들어가 방이 실제로 어두워진다
-    m.receiveShadow = false;
-    /* ★ 탭 판정에서 빼낸다. room_view 의 줍기는 built.room·화분·가구로 범위가 좁아
-       원래도 안 걸리지만, 나중에 누가 범위를 넓혀도 창밖이 손가락을 먹으면 안 된다. */
-    m.raycast = () => {};
-    m.userData.decorative = true;
-    scene.add(m);
-    return { mesh: m, geo, posArr, colDay, colNight, colLive, tris: bld.tris(), verts: n };
-  }
+  /* 겹 하나를 메시로 만든다. 낮/밤 색표를 들고 있다가 applyDay 가 섞어 넣는다.
+     ★ 이웃 방(attachNeighbors)도 같은 것을 쓴다 — 아래 makeLayer 하나뿐이다. */
+  const layerOf = (bld, name) => makeLayer(scene, mat, bld, name);
 
   const near = layerOf(B, '__outside');
   if (!near) { mat.dispose(); return null; }
@@ -930,5 +957,258 @@ export function attachOutside(ctx, built, roomId, dayGet) {
   _mounted.set(scene, handle);
   /* 재는 도구가 밖에서 잡을 수 있게 — 게임 코드는 이걸 안 쓴다 */
   ctx.outside = handle;
+  return handle;
+}
+
+/* ============================================================
+   ⑥  이웃 방 — 우리 방 **양옆**
+   ------------------------------------------------------------
+   박사님 말씀(2026-08-15): *"집 주변에도 집을 몇개더 배치하자.
+   물론 그 바라보는 방향은 투명되게해서 .. 뭔지알지?"*
+   화면에 빨간 네모 둘을 그려 보내셨다 — 우리 방 왼쪽·오른쪽, 방과 같은 높이, 방만 한 크기.
+   지금 거기가 텅 빈 배경이라 **방 하나가 허공에 떠 있는 것처럼** 보인다.
+
+   ★ 「바라보는 방향은 투명」이 무슨 뜻인가
+     우리 방이 이미 그렇게 되어 있다 — house.js 가 **카메라를 향한 벽을 밑동(10cm)만
+     남기고 감춰서** 인형의 집처럼 속이 보인다. 이웃 방도 같은 대접을 한다.
+     안 하면 옆에 벽 덩어리 둘이 서서 「방이 떠 있다」가 「방이 갇혀 있다」로 바뀔 뿐이다.
+   ⇒ **자를 새로 만들지 않았다.** house.js 의 `wallIsStub` · `WALL_LOW_H` 를 그대로 부른다.
+
+   ★★ 어떻게 드로우콜 **하나**로 벽을 껐다 켰다 하나
+     벽마다 메시를 따로 두면(이웃 둘 × 벽 셋) 드로우콜이 여섯 는다. 그래서 안 나눴다.
+     대신 벽 조각마다 **정점 두 벌**(온전한 높이 · 밑동)을 미리 떠 두고, 감춰야 할 때
+     그 구간의 좌표만 갈아 끼운다. 색은 안 건드리므로 그대로 맞는다.
+     ⇒ 이웃 방 전체가 **드로우콜 1 · 재질 1** 이다. 「지나가는 발」이 쓰는 수법과 같다.
+
+   ★★★ 어디까지 물건을 놓을 수 있나 — **재서 정했다**(짐작이 아니다)
+     카메라가 제일 낮게 눕는 각은 EL_MIN = 0.28rad(16°)이고, 그때 옆으로 돌아서면
+     카메라 → 우리 방 바닥 모서리 광선의 기울기가 tan(16°) = 0.287 이다
+     (멀수록 이 값에 붙는다. 즉 **이게 제일 나쁜 값**이다).
+     검사가 재는 표본점은 방 안 x = ±0.42·w · y = 0.06·h 이므로, 우리 방 바깥면에서
+     d[m] 떨어진 자리에서 그 광선의 높이는
+
+         yLim(d) = 0.06·h + 0.287·( d + (0.5 − 0.42)·w )
+
+     이고 **그보다 낮은 것만** 우리 방을 안 가린다. 반지하(w 5 · h 2.3)면
+         yLim(0) = 0.25m · yLim(1) = 0.54 · yLim(2.6) = 1.00 · yLim(4) = 1.40
+     ⇒ 우리 방에 붙은 자리에는 25cm 짜리도 못 놓는다. **안쪽 절반은 비워 둔다.**
+       가구는 전부 d ≥ 2.5 에 놓고 높이는 0.9m 를 안 넘긴다.
+     ⚠ 벽은 이 자를 안 지켜도 된다 — 벽은 카메라 쪽을 보는 순간 밑동이 되기 때문이다.
+       그래서 **안쪽 벽(우리 방과 맞닿는 쪽)만은 아예 안 세운다** — 그 벽은 카메라가
+       옆에 있을 때 카메라를 **등지므로** 밑동이 안 되고, 그대로 우리 방을 막는다.
+       그 자리는 어차피 우리 방의 좌·우 벽이 이미 채우고 있다.
+
+   ⚠⚠ 빛은 한 톨도 안 건드린다. 조도 엔진은 3D 장면을 **안 본다**(가림은 house_rooms.json).
+     이웃 방은 makeLayer 를 지나므로 MeshBasicMaterial · castShadow/receiveShadow 꺼짐 ·
+     raycast 비움이 자동으로 걸린다. **가림막으로 절대 넣지 않는다.**
+   ⚠ 창밖 골목과 겹치지 않는다 — 골목은 전부 창 벽 바깥(z ≤ −d/2)이고 이웃 방은
+     z ∈ [−d/2, +d/2] 다. 좌표로 갈린다(붙어 있을 뿐 뚫고 지나가지 않는다).
+============================================================ */
+/* 이웃은 **우리 방보다 어두워야 한다.** 주인공이 우리 방이다.
+   ① 색 자체를 우리 방보다 어둡게 고르고 ② hazeRaw 로 배경색 쪽으로 더 당긴다.
+   당기는 목표색은 창밖과 같은 HAZE_DAY/NIGHT 다 — 배경 한 벌로 읽히게. */
+const PAL_N = {
+  floorD: 0x6a6058, floorN: 0x383442,      // 이웃 바닥(장판)
+  wallD:  0x7c776f, wallN:  0x3f3f4c,      // 이웃 벽 안쪽
+  wtopD:  0x8d877d, wtopN:  0x4b4a56,      // 벽 윗면(위에서 내려다보면 이게 테두리다)
+  winD:   0x3c414a, winN:   0x2a2a34,      // 이웃 창 — 낮엔 검은 띠
+  winLitN: 0x6a5c3e,                       // 밤에 켠 집
+  bedD:   0x7a6a62, bedN:   0x3f3846,      // 침대
+  deskD:  0x6d6154, deskN:  0x3a3441,      // 책상
+  boxD:   0x6a6a63, boxN:   0x383840       // 서랍장
+};
+/* ★ 밤 색이 낮 색보다 **덜 어둡게** 보이는 것은 착시가 아니다 — 처음엔 낮과 같은 비율로
+   눌러 두었더니(0x20 대) 밤에 이웃이 **배경보다 어두운 구멍**이 됐다. 찍어 보고 올렸다.
+   밤에 이웃이 사라지면 「방이 허공에 떠 있다」가 밤마다 되돌아온다. 실측은 보고서 §밝기. */
+/* 얼마나 배경색 쪽으로 당길까 — 클수록 어둡고 묻힌다. 찍어 보고 정한다(§보고서 실측) */
+const NBR_HAZE_FLOOR = 0.62, NBR_HAZE_WALL = 0.55, NBR_HAZE_WIN = 0.40, NBR_HAZE_FURN = 0.58;
+/* 카메라가 제일 낮게 눕는 각 — room_view.js:193 EL_MIN 과 같은 값이어야 한다.
+   여기가 실제보다 크면 「가려도 된다」고 잘못 재게 된다. */
+const NBR_EL_MIN = 0.28;
+
+/**
+ * 우리 방 양옆에 이웃 방을 세운다. **장식이다. 조도에 0을 더한다.**
+ * @param {object} ctx      room_view 의 렌더 컨텍스트. scene 만 쓴다
+ * @param {object} built    buildHouse 결과 — size 만 읽는다. **안 고친다**
+ * @param {string} roomId   되풀이 난수 씨앗
+ * @param {function} dayGet () => daylightT (0..1)
+ * @returns {object|null}   { stats, updateCamera, dispose } · 못 세우면 null
+ */
+export function attachNeighbors(ctx, built, roomId, dayGet) {
+  if (typeof THREE === 'undefined') return null;
+  const scene = ctx && ctx.scene;
+  if (!scene || !built || !built.size) return null;
+
+  const old = _mountedNbr.get(scene);
+  if (old) { try { old.dispose(); } catch (e) { /* 치우다 난 오류로 새 방을 못 세우면 안 된다 */ } }
+  _mountedNbr.delete(scene);
+
+  const S = built.size;
+  if (!(S.w > 0 && S.d > 0 && S.h > 0)) return null;
+  const HW = S.w / 2, HD = S.d / 2, H = S.h;
+  const WT = 0.2;                      // house.js 의 벽 두께와 같은 값(거기 상수는 안 내보낸다)
+  const LOW = WALL_LOW_H;              // house.js 가 남기는 밑동 높이(0.10)
+
+  /* ★ 이웃은 **월드 좌표를 그대로** 쓴다 — 창 기준 국소계(u,y,t)가 아니다.
+     ⚠ 그래서 B.haze(t) 를 쓰면 안 된다(t 를 「깊이」로 읽는데 여기서는 월드 z 다).
+       아래는 전부 hazeRaw 다. */
+  const world = (x, y, z) => [x, y, z];
+  const B = makeBuilder(world);
+  const scratch = makeBuilder(world);   // 밑동 모양만 뜨고 버린다(색은 안 쓴다)
+
+  /* 벽 조각 하나 = 「접을 수 있는 정점 구간」. draw(builder, stub) 는 두 번 불리는데
+     **정점 개수가 같아야** 한다 — y 값만 눌러서 그린다. */
+  const parts = [];
+  function wallPart(name, normal, center, draw) {
+    const start = B.mark();
+    draw(B, false);
+    const count = B.mark() - start;
+    const s0 = scratch.mark();
+    draw(scratch, true);
+    const stub = new Float32Array(scratch.pos.slice(s0 * 3, scratch.mark() * 3));
+    if (!count || stub.length !== count * 3) return;   // 두 벌이 어긋나면 조용히 안 쓴다
+    parts.push({ name, start, count, normal, center, stubbed: false,
+                 full: new Float32Array(B.pos.slice(start * 3, (start + count) * 3)), stub });
+  }
+
+  /* 머리글 ★★★ 의 자. d = 우리 방 바깥면에서 떨어진 거리[m] */
+  const yLim = d => 0.06 * H + Math.tan(NBR_EL_MIN) * (d + (0.5 - 0.42) * S.w);
+
+  let seed = 0;
+  const rid = String(roomId || 'room');
+  for (let i = 0; i < rid.length; i++) seed = (seed * 31 + rid.charCodeAt(i)) >>> 0;
+
+  const over = [];                     // 자를 어긴 덩어리 — 있으면 안 놓고 보고한다
+  const P = PAL_N;
+
+  for (const side of [-1, 1]) {
+    const R = rng(seed + (side > 0 ? 131 : 217));
+    const inner = side * HW, outer = side * (HW + S.w);
+    const x0 = Math.min(inner, outer), x1 = Math.max(inner, outer);
+    const cx = (x0 + x1) / 2;
+    const fz = side > 0 ? 1 : -1;      // 두 방이 거울처럼 똑같으면 복사한 티가 난다
+
+    /* ── 바닥 ── 우리 방 바닥과 같은 높이다(같은 층이니까). 늘 보인다 */
+    B.hazeRaw(NBR_HAZE_FLOOR).slab(x0, x1, -HD, HD, 0, P.floorD, P.floorN);
+
+    /* ── 벽 셋 ── 안쪽 벽은 안 세운다(머리글 ⚠) */
+    const yq = stub => v => (stub ? Math.min(v, LOW) : v);
+    /* 창 — 우리 창과 같은 높이·같은 띠(banjiha: 창턱 1.495 · 높이 0.55) */
+    const ww = S.w * 0.44, wy0 = H * 0.65, wy1 = H * 0.65 + 0.55;
+    const lit = R() < 0.5;
+
+    wallPart(`back${side}`, [0, 0, -1], [cx, H / 2, -HD], (b, stub) => {
+      const y = yq(stub);
+      b.hazeRaw(NBR_HAZE_WALL)
+       .box(x0, x1, 0, y(H), -HD, -HD + WT, P.wtopD, P.wallD, P.wtopN, P.wallN);
+      /* 골목 쪽 얼굴의 창 — 이게 있어야 「우리 방이 있는 그 건물」로 읽힌다.
+         밑동일 때는 y 가 눌려 **넓이 0** 이 되어 저절로 사라진다(정점 수는 그대로다) */
+      b.hazeRaw(NBR_HAZE_WIN)
+       .quad([cx - ww / 2, y(wy0), -HD - 0.006], [cx + ww / 2, y(wy0), -HD - 0.006],
+             [cx + ww / 2, y(wy1), -HD - 0.006], [cx - ww / 2, y(wy1), -HD - 0.006],
+             P.winD, lit ? P.winLitN : P.winN);
+    });
+
+    wallPart(`front${side}`, [0, 0, 1], [cx, H / 2, HD], (b, stub) => {
+      const y = yq(stub);
+      b.hazeRaw(NBR_HAZE_WALL)
+       .box(x0, x1, 0, y(H), HD - WT, HD, P.wtopD, P.wallD, P.wtopN, P.wallN);
+    });
+
+    const ox0 = Math.min(outer, outer - side * WT), ox1 = Math.max(outer, outer - side * WT);
+    wallPart(`outer${side}`, [side, 0, 0], [outer, H / 2, 0], (b, stub) => {
+      const y = yq(stub);
+      b.hazeRaw(NBR_HAZE_WALL)
+       .box(ox0, ox1, 0, y(H), -HD, HD, P.wtopD, P.wallD, P.wtopN, P.wallN);
+    });
+
+    /* ── 덩어리 몇 개 ── 침대·책상·서랍장. 전부 **바깥쪽 절반**에만 놓는다(머리글 ★★★)
+       d 는 우리 방 바깥면에서의 거리다. 아래 값은 yLim 으로 검산하고 넣었다. */
+    const blob = (d0, d1, z0, z1, h, cd, cn, what) => {
+      if (h >= yLim(d0)) { over.push({ what, side, d0, h, lim: +yLim(d0).toFixed(2) }); return; }
+      const a = inner + side * d0, b2 = inner + side * d1;
+      B.hazeRaw(NBR_HAZE_FURN)
+       .box(Math.min(a, b2), Math.max(a, b2), 0, h,
+            Math.min(z0 * fz, z1 * fz), Math.max(z0 * fz, z1 * fz),
+            shade(cd, 1.12), cd, shade(cn, 1.12), cn);
+    };
+    const j = () => (R() - 0.5) * 0.22;
+    const o1 = j(), o2 = j(), o3 = j();
+    blob(2.62 + o1, 4.50 + o1, -1.52, -0.42, 0.42, P.bedD,  P.bedN,  '침대');
+    blob(2.70 + o2, 3.90 + o2,  0.86,  1.52, 0.72, P.deskD, P.deskN, '책상');
+    blob(3.60 + o3, 4.38 + o3,  0.10,  0.72, 0.88, P.boxD,  P.boxN,  '서랍장');
+  }
+  if (over.length) console.warn('[이웃 방] 자를 어겨 안 놓은 덩어리:', JSON.stringify(over));
+
+  /* ★ 재질 하나. 창밖과 같은 규약이다 — 빛을 안 받고(MeshBasic) 안개도 안 탄다.
+     창밖 재질을 나눠 쓰지 않는다: 창밖은 setOutside(false) 로 통째로 사라질 수 있고
+     그때 재질까지 dispose 되면 이웃 방이 같이 죽는다. */
+  const mat = new THREE.MeshBasicMaterial({
+    vertexColors: true, side: THREE.DoubleSide, fog: false, depthWrite: true
+  });
+  const L = makeLayer(scene, mat, B, '__nbr');
+  if (!L) { mat.dispose(); return null; }
+
+  /* ── 낮밤 ── 창밖과 같은 시각표를 쓴다(DAWN/DUSK). 배경이 따로 놀면 안 된다 */
+  let lastK = -1;
+  function applyDay(k) {
+    if (Math.abs(k - lastK) < 0.004) return;
+    lastK = k;
+    for (let i = 0; i < L.colLive.length; i++)
+      L.colLive[i] = L.colNight[i] + (L.colDay[i] - L.colNight[i]) * k;
+    L.geo.attributes.color.needsUpdate = true;
+  }
+  const dayK = () => {
+    const t = dayGet ? clamp(+dayGet() || 0, 0, 1) : 0.5;
+    return Math.min(smooth(DAWN0, DAWN1, t), 1 - smooth(DUSK0, DUSK1, t));
+  };
+  applyDay(dayK());
+
+  /* 그리기 직전에 색을 올린다 — 왜 onBeforeRender 가 아닌지는 위 attachOutside 참조 */
+  const _umw = THREE.Object3D.prototype.updateMatrixWorld;
+  L.mesh.updateMatrixWorld = function (force) { _umw.call(this, force); applyDay(dayK()); };
+
+  /* ============================================================
+     카메라를 따라가는 것 — **house.js 와 같은 자, 같은 순간**
+     벽마다 wallIsStub 을 물어 보고, 답이 바뀐 조각만 좌표를 갈아 끼운다.
+     ⚠ 통째로 감추지 않는다 — 이웃 방은 카메라가 어디로 돌아도 화면에 남아야 한다.
+       방위 여덟 중 셋(135°·180°·225°)에서 화면 절반이 빈 회색이던 그 자리를
+       메우는 것이 이 계통의 목적이다(gfx-to-plan §판단필요 3).
+  ============================================================ */
+  function updateCamera(camPos) {
+    if (!camPos) return false;
+    let dirty = false;
+    for (const p of parts) {
+      const stub = wallIsStub(camPos, p.center, p.normal);
+      if (stub === p.stubbed) continue;
+      p.stubbed = stub;
+      L.posArr.set(stub ? p.stub : p.full, p.start * 3);
+      dirty = true;
+    }
+    if (dirty) L.geo.attributes.position.needsUpdate = true;
+    return dirty;
+  }
+
+  const handle = {
+    stats: { triangles: B.tris(), vertices: L.verts, drawCalls: 1, materials: 1,
+             rooms: 2, walls: parts.length, room: roomId,
+             /* 재는 도구가 검산할 수 있게 자도 같이 낸다 */
+             lowH: LOW, elMin: NBR_EL_MIN,
+             yLim: { d0: +yLim(0).toFixed(3), d1: +yLim(1).toFixed(3),
+                     d2_6: +yLim(2.6).toFixed(3), d4: +yLim(4).toFixed(3) },
+             skipped: over },
+    updateCamera,
+    /* 검사용 — 지금 어느 벽이 밑동인가 */
+    stubbed() { return parts.filter(p => p.stubbed).map(p => p.name); },
+    partNames() { return parts.map(p => p.name); },
+    dayK,
+    dispose() {
+      L.mesh.updateMatrixWorld = _umw;
+      scene.remove(L.mesh); L.geo.dispose(); mat.dispose();
+      if (_mountedNbr.get(scene) === handle) _mountedNbr.delete(scene);
+    }
+  };
+  _mountedNbr.set(scene, handle);
+  ctx.neighbors = handle;
   return handle;
 }

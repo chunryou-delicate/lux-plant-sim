@@ -1139,6 +1139,23 @@ const LOW_H = 0.10;                       // 남길 밑동 높이 [m]
 /* y <= LOW_H 만 그린다. normal·p + constant >= 0 → -y + 0.10 >= 0 */
 const STUB_PLANE = new THREE.Plane(new THREE.Vector3(0,-1,0), LOW_H);
 
+/* ★★ 「이 벽이 지금 시야를 막고 있나」 — **자는 여기 하나뿐이다** (2026-08-15)
+   ------------------------------------------------------------
+   벽의 **바깥 법선**이 카메라 쪽을 향하면(내적 ≥ 0.3) 그 벽은 카메라와 방 사이에 서 있다.
+   그때 벽을 밑동(10cm)만 남긴다 — 인형의 집처럼 속이 보이는 그림이 이 규칙 하나로 난다.
+   ⚠ 이 자를 쓰는 데가 셋이다:
+     ① 이 파일의 updateShellVisibility (우리 방 벽)
+     ② game/outside.js 의 updateCamera (창밖 골목 — 창 벽 바깥으로 나가면 통째로 감춘다)
+     ③ game/outside.js 의 attachNeighbors (이웃 방 벽 — ①과 똑같이 밑동만 남긴다)
+   전에는 셋이 각자 `>= 0.3` 을 적어 두고 "house.js 와 같은 값"이라 주석만 달아 놨다.
+   값을 한쪽에서만 옮기면 **벽과 배경이 한 프레임 어긋난 그림**이 난다. 그래서 내보낸다. */
+export const WALL_STUB_EPS = 0.3;
+export const WALL_LOW_H = LOW_H;
+export function wallIsStub(camPos, center, normal, eps = WALL_STUB_EPS){
+  return (camPos.x-center[0])*normal[0] + (camPos.y-center[1])*normal[1]
+       + (camPos.z-center[2])*normal[2] >= eps;
+}
+
 export function updateShellVisibility(shells, cam, mode='auto', trims=null){
   const cp=cam.position;
   for(const key in shells){
@@ -1166,9 +1183,8 @@ export function updateShellVisibility(shells, cam, mode='auto', trims=null){
       const camA = plane.axis==='x' ? cp.x : cp.z;
       stub = (plane.at > 0 && camA > plane.at + 0.3) ||
              (plane.at < 0 && camA < plane.at - 0.3);
-    }else{                // 외벽: 바깥 법선이 카메라를 향하면
-      const dot=(cp.x-center[0])*normal[0]+(cp.y-center[1])*normal[1]+(cp.z-center[2])*normal[2];
-      stub = dot >= 0.3;
+    }else{                // 외벽: 바깥 법선이 카메라를 향하면 (자는 위 wallIsStub 하나뿐이다)
+      stub = wallIsStub(cp, center, normal);
     }
 
     if(sh.userData._stub === stub) continue;     // 바뀔 때만 손댄다

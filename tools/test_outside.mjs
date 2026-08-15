@@ -93,18 +93,22 @@ async function driveCam(page, elWant, zoomK) {
 /* ★ 방을 가리나 — **광선으로 직접 잰다.**
    카메라에서 방 안 여러 점으로 광선을 쏘아 그 사이에 창밖 삼각형이 끼는지 본다.
    ⚠ 창밖 메시는 raycast 를 비워 뒀다(손가락이 안 걸리게). 재는 동안만 되살린다. */
-const COVER = `(() => {
+const COVER = `((names) => {
   const v = window.view, ctx = v.three, S = ctx.scene;
   /* ★ **안 보이는 겹은 빼고 잰다.** THREE 의 Raycaster 는 visible 을 보지 않는다 —
      그래서 카메라가 창 벽 바깥으로 가 창밖을 감춘 각에서도 "27점이 가려졌다"가 나왔다.
-     화면에 없는 것이 방을 가릴 수는 없다. 재는 자를 화면에 맞춘다. */
-  const ms = ['__outside', '__outside_far'].map(n => S.getObjectByName(n))
+     화면에 없는 것이 방을 가릴 수는 없다. 재는 자를 화면에 맞춘다.
+     ⚠ 이웃 방(__nbr)은 통째로 감추지 않는다 — 벽마다 정점을 밑동으로 눌러 접는다.
+       그러니 이 자가 그대로 맞는다(접힌 벽은 광선이 스쳐도 밑동 10cm 뿐이다). */
+  const ms = (names || ['__outside', '__outside_far']).map(n => S.getObjectByName(n))
                .filter(m => m && m.visible);
   if (!ms.length) return { meshes: 0, points: 0, hits: 0, worst: null, allHidden: true };
   const saved = ms.map(m => m.raycast);
   for (const m of ms) m.raycast = THREE.Mesh.prototype.raycast;
   const b = v.roomSize();
-  /* 방 안의 표본 — 바닥 네 귀퉁이 · 한가운데 · 창턱 · 천장 아래 */
+  /* 방 안의 표본 — 바닥 네 귀퉁이 · 한가운데 · 창턱 · 천장 아래
+     ⚠ 0.42 를 넘기지 마라. 방 안쪽 면은 x ±(w/2−0.2) · z ±(d/2−0.2) 라
+       0.46 을 쓰면 z 표본이 **앞뒤 벽 속**에 박힌다 — 벽 속을 가렸다고 세게 된다. */
   const P = [];
   for (const sx of [-0.42, 0, 0.42]) for (const sz of [-0.42, 0, 0.42])
     for (const sy of [0.06, 0.5, 0.92]) P.push(new THREE.Vector3(sx * b.w, sy * b.h, sz * b.d));
@@ -122,7 +126,7 @@ const COVER = `(() => {
   }
   ms.forEach((m, i) => { m.raycast = saved[i]; });
   return { meshes: ms.length, points: P.length, hits, worst };
-})()`;
+})`;
 
 /* ★ 지붕 위 빈 곳이 정말로 찼나 — 화면 픽셀로 잰다.
    방 지붕선 **위쪽** 띠에서 창밖을 껐을 때와 켰을 때의 색이 몇 %나 달라지나. */
@@ -263,7 +267,7 @@ async function main() {
     for (const [zn, zv] of [['당김', 0.58], ['기본', 1.0], ['멀리', 1.15]]) {
       const c = await driveCam(page, ev, zv);
       await page.eval(`window.view.redraw()`, false);
-      const cov = await page.eval(COVER);
+      const cov = await page.eval(COVER + `(null)`);
       poses.push({ pose: `${en}·${zn}`, el: (c.el * 180 / Math.PI).toFixed(0), dist: c.dist.toFixed(1),
                    hits: cov.hits, points: cov.points, worst: cov.worst });
     }
@@ -305,7 +309,7 @@ async function main() {
     await page.eval(`window.view.redraw()`, false);
     const c = await page.eval(`window.view.camera()`);
     const hid = await page.eval(`window.view.outsideInfo().hidden`);
-    const cov = await page.eval(COVER);
+    const cov = await page.eval(COVER + `(null)`);
     poses.push({ pose: `방위 ${Math.round(((c.az - c.baseAz) * 180 / Math.PI + 720) % 360)}°${hid ? '(숨음)' : ''}`,
                  el: (c.el * 180 / Math.PI).toFixed(0), dist: c.dist.toFixed(1),
                  hits: cov.hits, points: cov.points, worst: cov.worst });
@@ -315,6 +319,233 @@ async function main() {
                 + (p.worst ? '  ' + JSON.stringify(p.worst) : ''));
   ok('not_covering_yaw', poses.slice(9).every(p => p.hits === 0),
      `방위 여덟 자리에서 창밖에 막힌 점 ${poses.slice(9).reduce((a, b) => a + b.hits, 0)}개`);
+
+  /* ============================================================
+     ⑧ ★ 이웃 방 — 우리 방 양옆 (2026-08-15)
+     ------------------------------------------------------------
+     박사님: *"집 주변에도 집을 몇개더 배치하자. 물론 그 바라보는 방향은 투명되게해서"*
+     증명할 것이 창밖과 **같은 넷**이다 — 붙는가 · 얼마나 비싼가 · 빛을 안 건드리나 ·
+     우리 방을 안 가리나. 거기에 이웃만의 것 둘을 더한다:
+       ⓐ 카메라를 향한 벽이 **정말로 밑동이 되나**(house.js 와 같은 자를 쓰나)
+       ⓑ 이웃이 우리 방보다 **어두운가** — 화면 픽셀로 잰다
+  ============================================================ */
+  await page.eval(`window.view.setRoom('banjiha').then(()=>1)`, true, 120000);
+  await sleep(600);
+  await page.eval(`window.view.setOutside('auto')`);
+  await page.eval(`window.view.setNeighbors('auto')`);
+  await page.eval(`window.view.setDaylight(0.50)`);
+
+  const nb = await page.eval(`window.view.neighborInfo()`);
+  ok('nbr_built', nb.tris > 0 && nb.rooms === 2 && nb.walls.length === 6,
+     `삼각형 ${nb.tris} · 방 ${nb.rooms}개 · 벽 ${nb.walls.length}장 [${nb.walls}]`);
+  /* ★ 드로우콜 하나. 벽마다 메시를 나누면 여섯이 되는데, 그 대신 정점을 눌러 접는다 */
+  ok('nbr_one_call', nb.calls === 1 && nb.materials === 1,
+     `드로우콜 ${nb.calls} · 재질 ${nb.materials} — 벽 여섯 장을 한 버퍼에서 접는다`);
+  ok('nbr_budget', nb.tris <= 300, `이웃 삼각형 ${nb.tris} ≤ 300 (폰에서 도는 게임이다)`);
+  /* 자를 어겨 안 놓은 덩어리가 있으면 그림에 구멍이 난 것이다 — 값을 고쳐야 한다 */
+  ok('nbr_no_skipped', (nb.skipped || []).length === 0,
+     `yLim 을 어겨 빠진 덩어리 ${(nb.skipped || []).length}개 · 자 d0 ${nb.yLim.d0} · d2.6 ${nb.yLim.d2_6}`);
+
+  const nCost = async (on) => {
+    await page.eval(`window.view.setNeighbors(${on === null ? "'auto'" : on})`);
+    await page.eval(`window.view.redraw()`, false);
+    await page.eval(`window.view.redraw()`, false);
+    return page.eval(`(()=>{const i=window.view.three.renderer.info;
+      return {tris:i.render.triangles, calls:i.render.calls, tex:i.memory.textures};})()`);
+  };
+  const nOff = await nCost(false), nOn = await nCost(true);
+  console.log(`      이웃 끔      삼각형 ${nOff.tris}  드로우콜 ${nOff.calls}  텍스처 ${nOff.tex}`);
+  console.log(`      이웃 켬      삼각형 ${nOn.tris}  드로우콜 ${nOn.calls}  텍스처 ${nOn.tex}` +
+              `   (+${nOn.tris - nOff.tris} · +${nOn.calls - nOff.calls} · +${nOn.tex - nOff.tex})`);
+  ok('nbr_cost', nOn.calls - nOff.calls === 1 && nOn.tris - nOff.tris <= 300 && nOn.tex === nOff.tex,
+     `한 장당 +${nOn.tris - nOff.tris} 삼각형 · +${nOn.calls - nOff.calls} 드로우콜 · +${nOn.tex - nOff.tex} 텍스처`);
+
+  /* ★★ 빛 — 이웃을 켜고 끈 두 벌이 **글자 하나까지** 같아야 한다 */
+  const nSnap = {};
+  for (const t of [0.25, 0.50, 0.78, 0.95]) {
+    await page.eval(`window.view.setNeighbors(false)`);
+    await page.eval(`window.view.setDaylight(${t})`);
+    const a = await page.eval(LIGHT_SNAP);
+    await page.eval(`window.view.setNeighbors(true)`);
+    await page.eval(`window.view.setDaylight(${t})`);
+    const b = await page.eval(LIGHT_SNAP);
+    nSnap[t] = JSON.stringify(a) === JSON.stringify(b);
+    if (!nSnap[t]) { console.log('   off', JSON.stringify(a)); console.log('   on ', JSON.stringify(b)); }
+  }
+  ok('nbr_light_untouched', Object.values(nSnap).every(Boolean),
+     `t=${Object.keys(nSnap).join('/')} 네 시각에서 조명값 완전 일치`);
+
+  const nGuard = await page.eval(`(() => {
+    const m = window.view.three.scene.getObjectByName('__nbr');
+    if (!m) return null;
+    return { type: m.material.type, lit: !!m.material.lights, cast: m.castShadow,
+             recv: m.receiveShadow, noRay: m.raycast.toString().length < 40,
+             deco: !!m.userData.decorative };
+  })()`);
+  ok('nbr_no_light_path', nGuard && nGuard.type === 'MeshBasicMaterial' && !nGuard.lit &&
+       !nGuard.cast && !nGuard.recv && nGuard.noRay && nGuard.deco, JSON.stringify(nGuard));
+
+  /* ⑧-ⓐ 벽이 정말로 접히나 — 방위를 돌려 가며 「지금 밑동인 벽」이 바뀌는지 본다.
+     ⚠ 「코드가 있다」와 「화면이 그렇다」는 다른 말이다. 목록을 실제로 읽는다. */
+  await page.eval(`window.view.setDaylight(0.50)`);
+  await driveCam(page, 0.86, 1.0);
+  const stubSets = new Set();
+  const nposes = [];
+  for (let i = 0; i < 8; i++) {
+    await page.eval(yawDrag(180), false); await sleep(520);
+    await page.eval(`window.view.redraw()`, false);
+    const c = await page.eval(`window.view.camera()`);
+    const st = await page.eval(`window.view.neighborInfo().stubbed`);
+    const cov = await page.eval(COVER + `(['__nbr'])`);
+    stubSets.add(st.slice().sort().join(','));
+    nposes.push({ yaw: Math.round(((c.az - c.baseAz) * 180 / Math.PI + 720) % 360),
+                  el: (c.el * 180 / Math.PI).toFixed(0), st, hits: cov.hits, points: cov.points,
+                  worst: cov.worst });
+  }
+  for (const p of nposes)
+    console.log(`      방위 ${String(p.yaw).padStart(3)}°  밑동 [${p.st.join(' ')}]`.padEnd(56) +
+                ` 방 안 ${p.points}점 중 이웃에 막힌 점 ${p.hits}` + (p.worst ? '  ' + JSON.stringify(p.worst) : ''));
+  ok('nbr_stub_follows_camera', stubSets.size >= 3,
+     `방위 여덟에서 밑동이 되는 벽 조합이 ${stubSets.size}가지 — 카메라를 따라 바뀐다`);
+  ok('nbr_not_covering_yaw', nposes.every(p => p.hits === 0),
+     `방위 여덟 × 방 안 27점 = ${nposes.length * 27} 광선, 이웃에 막힌 것 ${nposes.reduce((a, b) => a + b.hits, 0)}개`);
+
+  /* 상하각·배율도 — 제일 나쁜 각은 **제일 낮게 눕힌 각**이다(그때 광선이 옆으로 눕는다) */
+  const nposes2 = [];
+  for (const [en, ev] of [['16°', 0.28], ['49°', 0.86], ['54°', 0.95]])
+    for (const [zn, zv] of [['당김', 0.58], ['기본', 1.0], ['멀리', 1.15]]) {
+      const c = await driveCam(page, ev, zv);
+      await page.eval(`window.view.redraw()`, false);
+      const cov = await page.eval(COVER + `(['__nbr'])`);
+      nposes2.push({ pose: `${en}·${zn}`, el: (c.el * 180 / Math.PI).toFixed(0), hits: cov.hits, worst: cov.worst });
+    }
+  for (const p of nposes2) if (p.hits) console.log(`      ${p.pose} 상하각 ${p.el}° 막힌 점 ${p.hits} ${JSON.stringify(p.worst)}`);
+  ok('nbr_not_covering', nposes2.every(p => p.hits === 0),
+     `아홉 시점 × 27점 = 243 광선, 이웃에 막힌 것 ${nposes2.reduce((a, b) => a + b.hits, 0)}개`);
+
+  /* ⑧-ⓑ 이웃이 우리 방보다 어두운가 — **화면 픽셀**로 잰다.
+     ★ 우리 방이 주인공이다. 이웃이 더 밝으면 눈이 그쪽으로 간다.
+     ⚠⚠ 처음엔 점 하나씩(이웃 한가운데)만 찍었다. 그런데 그 각에서 그 점이 화면 **밖**이라
+       `null` 이 나왔고, 「null 이면 넘어간다」로 짜 놓아 두 검사가 **아무것도 안 재고 통과**했다.
+       START-HERE §2.9-① 그대로다 — **안 나온 것을 「없다」로 읽으면 안 된다.**
+       ⇒ 이웃 바닥을 격자로 훑고, **화면에 든 표본이 모자라면 방위를 돌려 다시 잰다.**
+         그래도 모자라면 **실패**다(못 쟀으면 못 쟀다고 한다). */
+  const LUM = `((pts) => {
+    const cv = document.getElementById('roomCanvas');
+    window.view.redraw();
+    const c2 = document.createElement('canvas');
+    c2.width = cv.width; c2.height = cv.height;
+    const g = c2.getContext('2d'); g.drawImage(cv, 0, 0);
+    const cam = window.view.three.cam;
+    const acc = {};
+    for (const [name, wp] of pts) {
+      const q = new THREE.Vector3(wp[0], wp[1], wp[2]).project(cam);
+      if (q.z > 1) continue;                                   // 카메라 뒤
+      const x = Math.round((q.x * 0.5 + 0.5) * c2.width), y = Math.round((-q.y * 0.5 + 0.5) * c2.height);
+      if (x < 5 || y < 5 || x >= c2.width - 5 || y >= c2.height - 5) continue;
+      const d = g.getImageData(x - 3, y - 3, 7, 7).data;
+      let s = 0, n = 0;
+      for (let i = 0; i < d.length; i += 4) { s += 0.2126*d[i] + 0.7152*d[i+1] + 0.0722*d[i+2]; n++; }
+      (acc[name] = acc[name] || []).push(s / n);
+    }
+    const out = {};
+    for (const k in acc) out[k] = { n: acc[k].length,
+                                    avg: +(acc[k].reduce((a, b) => a + b, 0) / acc[k].length).toFixed(1) };
+    return out;
+  })`;
+  const b0 = await page.eval(`window.view.roomSize()`);
+  /* 바닥을 격자로 — 우리 방은 안쪽, 이웃은 제 방 한가운데 쪽만(벽에 안 걸리게) */
+  const lp = [];
+  for (const fx of [-0.3, 0, 0.3]) for (const fz of [-0.3, 0, 0.3]) {
+    lp.push(['ours', [fx * b0.w, 0.02, fz * b0.d]]);
+    lp.push(['nbr', [b0.w * (1 + fx * 0.5), 0.02, fz * b0.d]]);
+    lp.push(['nbr', [-b0.w * (1 + fx * 0.5), 0.02, fz * b0.d]]);
+  }
+  const lumPts = JSON.stringify(lp);
+  const lum = {};
+  for (const t of [0.50, 0.92]) {
+    await page.eval(`window.view.setDaylight(${t})`);
+    let m = null;
+    for (let try_ = 0; try_ < 7; try_++) {
+      await driveCam(page, 0.86, 1.15);
+      m = await page.eval(LUM + `(${lumPts})`);
+      if (m.ours && m.ours.n >= 4 && m.nbr && m.nbr.n >= 4) break;
+      await page.eval(yawDrag(180), false); await sleep(520);   // 화면 밖이면 돌려서 다시 잰다
+    }
+    lum[t] = m;
+    console.log(`      t=${t}  우리 방 바닥 ${m.ours ? m.ours.avg + '(' + m.ours.n + '점)' : '못 쟀다'}` +
+                ` · 이웃 바닥 ${m.nbr ? m.nbr.avg + '(' + m.nbr.n + '점)' : '못 쟀다'}`);
+  }
+  const measured = Object.values(lum).every(L => L.ours && L.ours.n >= 4 && L.nbr && L.nbr.n >= 4);
+  ok('nbr_lum_measurable', measured, '낮·밤 둘 다 우리 방 4점 이상 · 이웃 4점 이상을 실제로 쟀다');
+  ok('nbr_darker_than_room', measured && Object.values(lum).every(L => L.nbr.avg < L.ours.avg),
+     `낮 ${lum[0.5].nbr.avg} < ${lum[0.5].ours.avg} · 밤 ${lum[0.92].nbr.avg} < ${lum[0.92].ours.avg}`);
+  /* 그래도 **까맣게 사라지면 안 된다** — 사라지면 밤마다 「방이 떠 있다」가 되돌아온다 */
+  ok('nbr_not_a_void', measured && Object.values(lum).every(L => L.nbr.avg > 4),
+     `밤 이웃 휘도 ${lum[0.92].nbr.avg} > 4 (배경보다 어두운 구멍이 아니다)`);
+
+  /* ⑧-ⓒ ★ **화면이 정말 달라지나** — 방 옆 띠의 화소를 센다.
+     「코드가 바뀐 것」과 「화면이 바뀐 것」은 다른 말이다(START-HERE §2).
+     ⚠⚠ 이 자를 게임(game.html)에서 대면 **거짓말을 한다** — 게임은 시계가 돌아서
+       두 장 사이에 해가 움직이고, 그러면 화소가 88.9% 달라진 것으로 나온다(실제로 그렇게 나왔다).
+       그래서 **시각을 못박고 다시 그리기를 끈 데모**에서만 잰다.
+     띠는 방 상자를 화면에 투영한 **좌·우 바깥쪽**이다 — 이웃이 설 자리가 거기다. */
+  const SIDE = `(() => {
+    const cv = document.getElementById('roomCanvas');
+    window.view.redraw();
+    const c2 = document.createElement('canvas');
+    c2.width = cv.width; c2.height = cv.height;
+    const g = c2.getContext('2d'); g.drawImage(cv, 0, 0);
+    const v = window.view, b = v.roomSize(), cam = v.three.cam;
+    let x0 = 1e9, x1 = -1e9, y0 = 1e9, y1 = -1e9;
+    for (const sx of [-0.5, 0.5]) for (const sy of [0, 1]) for (const sz of [-0.5, 0.5]) {
+      const q = new THREE.Vector3(sx * b.w, sy * b.h, sz * b.d).project(cam);
+      const px = (q.x * 0.5 + 0.5) * c2.width, py = (-q.y * 0.5 + 0.5) * c2.height;
+      x0 = Math.min(x0, px); x1 = Math.max(x1, px); y0 = Math.min(y0, py); y1 = Math.max(y1, py);
+    }
+    /* ⚠ 「방 상자의 좌·우 바깥」으로 잡았더니 표본이 **0점**이었다 — 방 가로가 이미 화면 폭의
+       95.6% 라 상자 옆은 화면 밖이다(frame-to-plan §). 그래서 **상자 밖 전부**를 훑는다.
+       상자 안은 안 센다: 거기는 안 바뀌어야 정상이고, 세면 「안 바뀐 화소」로 값이 묽어진다. */
+    const out = [];
+    for (let i = 0; i < 300; i++) {
+      const x = Math.round(c2.width * (0.03 + 0.94 * ((i * 37) % 300) / 300));
+      const y = Math.round(c2.height * (0.09 + 0.86 * ((i * 61) % 300) / 300));
+      const inBox = x > x0 - 3 && x < x1 + 3 && y > y0 - 3 && y < y1 + 3;
+      if (inBox || x < 1 || y < 1 || x >= c2.width - 1 || y >= c2.height - 1) { out.push(-1, -1, -1); continue; }
+      const d = g.getImageData(x, y, 1, 1).data;
+      out.push(d[0], d[1], d[2]);
+    }
+    return { box: [Math.round(x0), Math.round(x1), Math.round(y0), Math.round(y1)], px: out };
+  })`;
+  await page.eval(`window.view.setDaylight(0.50)`);
+  await driveCam(page, 0.86, 1.15);
+  /* ★ **창밖을 끄고 잰다.** 켜 두면 골목이 이미 그 자리를 상당히 덮고 있어서
+     「이웃이 채운 몫」이 방위에 따라 16%~ 로 오르락내리락한다 — 문턱을 어디 둬도 흔들린다.
+     여기서 알고 싶은 것은 **이웃 하나가 빈 배경을 얼마나 채우나**다. 그래서 골목을 뺀다. */
+  await page.eval(`window.view.setOutside(false)`);
+  await page.eval(`window.view.setNeighbors(false)`);
+  await page.eval(`window.view.redraw()`, false); await sleep(160);
+  const sOff = await page.eval(SIDE + `()`);
+  await page.eval(`window.view.setNeighbors(true)`);
+  await page.eval(`window.view.redraw()`, false); await sleep(160);
+  const sOn = await page.eval(SIDE + `()`);
+  await page.eval(`window.view.setOutside('auto')`);
+  let sDiff = 0, sSeen = 0;
+  for (let i = 0; i < sOff.px.length; i += 3) {
+    if (sOff.px[i] < 0 || sOn.px[i] < 0) continue;
+    sSeen++;
+    if (Math.abs(sOff.px[i] - sOn.px[i]) + Math.abs(sOff.px[i+1] - sOn.px[i+1])
+      + Math.abs(sOff.px[i+2] - sOn.px[i+2]) > 12) sDiff++;
+  }
+  const sPct = sSeen ? Math.round(sDiff / sSeen * 100) : 0;
+  /* ★ 문턱 10%. 실측은 16% 인데 딱 붙여 두면 방위가 조금만 달라져도 흔들린다 —
+     이 검사가 잡아야 하는 것은 「이웃이 화면에서 사라졌다」(0%)이지 「16%가 15%가 됐다」가 아니다.
+     ⚠ 표본 자리가 방 상자 **밖 전부**라 대부분은 이웃과 상관없는 먼 배경이다. 16% 는 그래서 낮다. */
+  ok('nbr_fills_side', sSeen >= 60 && sPct >= 10,
+     `창밖을 끈 채 · 방 상자 **밖**(화면 [${sOn.box}] 제외) 표본 ${sSeen}점 중 ${sDiff}점(${sPct}%)이 달라졌다 — 10% 이상이어야 "옆이 찼다"`);
+
+  await page.eval(`window.view.setDaylight(0.50)`);
+  await page.eval(`window.view.setNeighbors('auto')`);
 
   /* ── ② 위층 방에는 안 붙는다 ─────────────────────────────────── */
   await page.eval(`window.view.setOutside('auto')`);

@@ -44,7 +44,7 @@ import { buildHouse, updateShellVisibility } from '../render3d/house.js';
    무광원(MeshBasicMaterial) + castShadow/receiveShadow 없음이라
    sunLight·skyPortals·조도 엔진 어느 쪽도 이 기하를 보지 않는다.
    (그래서 이걸 켜고 꺼도 test_banjiha_profile 의 숫자는 한 자리도 안 움직인다) */
-import { attachOutside } from './outside.js';
+import { attachOutside, attachNeighbors } from './outside.js';
 import { winFromHouse } from '../engine/daylight_lux.js';
 /* BAND_LOOK 은 밴드별 색·처짐 표다. 조립본에도 같은 표를 쓴다 —
    방과 확대가 같은 그루라면 "빛이 나쁘다"는 표시도 같아야 한다. */
@@ -684,6 +684,10 @@ export async function createRoomView(canvas, opts = {}) {
   let outside = null;
   /* 'auto'(반지하만) · true(어느 방이든) · false(끔). opts.outside 로 덮어쓸 수 있다 */
   let outsideMode = (O.outside === undefined ? 'auto' : O.outside);
+  /* 이웃 방(우리 방 양옆). ★ 창밖과 **따로** 산다 — setOutside(false) 로 골목만 꺼도
+     이웃은 남는다. 그래야 「창밖이 얼마나 무거운가」를 재는 자가 안 흔들린다. */
+  let neighbors = null;
+  let neighborsMode = (O.neighbors === undefined ? 'auto' : O.neighbors);
   let slotById = new Map();    // slotId → 슬롯(월드좌표)
   let plants = new Map();      // slotId → { group, spec, potD, days }
   let rings = new Map();       // slotId → 하이라이트 링 메시
@@ -857,6 +861,43 @@ export async function createRoomView(canvas, opts = {}) {
     if (outside) outside.updateCamera(ctx.cam.position);
     return outside;
   }
+  /* ============================================================
+     ①-3 이웃 방 — 우리 방 양옆
+     ------------------------------------------------------------
+     박사님(2026-08-15): *"집 주변에도 집을 몇개더 배치하자. 물론 그 바라보는 방향은
+     투명되게해서 .. 뭔지알지?"* — 지금 방 양옆이 텅 빈 배경이라 방이 허공에 떠 있다.
+
+     ★ 「투명」은 house.js 가 우리 방 벽에 하는 것과 **같은 것**이다 — 카메라를 향한 벽을
+       밑동만 남기고 감춘다. 이웃 방도 같은 함수(house.js §wallIsStub)를 쓴다.
+     ★ 빛은 안 건드린다. 창밖과 같은 문(outside.js §makeLayer)을 지나므로
+       무광원 · 그림자 없음 · 레이캐스트 없음이 자동으로 걸린다.
+     ⚠ 방을 갈아 끼울 때마다 다시 짓는다 — 방 크기가 바뀌면 이웃 자리도 바뀐다.
+  ============================================================ */
+  const NEIGHBOR_ROOMS = new Set(['banjiha']);
+  function neighborsWanted(id) {
+    if (neighborsMode === false) return false;
+    if (neighborsMode === true) return true;
+    return NEIGHBOR_ROOMS.has(id);
+  }
+  function disposeNeighbors() {
+    if (!neighbors) return;
+    try { neighbors.dispose(); } catch (e) { console.warn('[방뷰] 이웃 방을 치우다 났습니다:', e.message); }
+    neighbors = null;
+  }
+  function buildNeighbors(id) {
+    disposeNeighbors();
+    if (!neighborsWanted(id) || !built) return null;
+    try {
+      neighbors = attachNeighbors(ctx, built, id, () => daylightT);
+    } catch (e) {
+      /* 배경이 안 떠서 방이 안 뜨면 본말전도다 */
+      console.warn('[방뷰] 이웃 방을 못 지었습니다 — 이웃 없이 갑니다:', e.message);
+      neighbors = null;
+    }
+    if (neighbors) neighbors.updateCamera(ctx.cam.position);
+    return neighbors;
+  }
+
   /* 창밖이 선 벽 — outside.js 가 고르는 기준(제일 큰 벽창)과 같은 자다 */
   function outsideWall() {
     const ws = ((built && built.luxWins) || []).filter(w => w.wall && w.wall !== 'ceiling');
@@ -889,6 +930,7 @@ export async function createRoomView(canvas, opts = {}) {
     clearRings();
     clearGuideRings();
     disposeOutside();               // 방마다 다시 짓는다 — 창 자리가 다르다
+    disposeNeighbors();             // 이웃 방도 방 크기를 따라간다
     while (houseGroup.children.length) houseGroup.remove(houseGroup.children[0]);
 
     /* 가구 한글 이름표는 가볍다(수십 KB). lightEngine 을 받아 방을 안 짓는 경우에도
@@ -929,6 +971,7 @@ export async function createRoomView(canvas, opts = {}) {
     roomId = id;
     houseGroup.add(built.room);
     buildOutside(id);                       // 창밖 골목 (창 없는 방이면 조용히 아무것도 안 한다)
+    buildNeighbors(id);                     // 양옆 이웃 방 (기본은 반지하만)
     /* 걸어 다닐 바닥을 다시 물린다 — 방이 바뀌면 벽도 가구도 다 다르다.
        ★ 2026-08-09 — 놓인 그루도 같이 물린다(§놓은 것이 길을 막는다). */
     nav.setWorld({ colliders: navColliders(), size: built.size });
@@ -1308,6 +1351,9 @@ export async function createRoomView(canvas, opts = {}) {
     if (built) updateShellVisibility(built.shells, ctx.cam, 'auto', built.trims);
     /* 벽이 밑동만 남으면(카메라가 그 벽 바깥이면) 골목이 카메라와 방 사이에 끼어 방을 덮는다 */
     if (outside) outside.updateCamera(ctx.cam.position);
+    /* 이웃 방 벽도 우리 방 벽과 **같은 순간에** 밑동이 된다(같은 wallIsStub 을 쓴다).
+       한쪽만 늦으면 옆방 벽이 우리 방을 막은 프레임이 한 장 나온다 */
+    if (neighbors) neighbors.updateCamera(ctx.cam.position);
   }
 
   /* ============================================================
@@ -7304,6 +7350,22 @@ export async function createRoomView(canvas, opts = {}) {
                near: st.nearTriangles, far: st.farTriangles, calls: st.drawCalls,
                basement: st.basement, hidden: outside.hidden(),
                walls: [outsideWall()] };
+    },
+    /* ★ 이웃 방 — true · false · 'auto'(반지하만, 기본).
+       창밖과 따로 켜고 끈다. 「이웃이 얼마나 무거운가」를 따로 재기 위해서다. */
+    setNeighbors(mode) {
+      neighborsMode = (mode === true || mode === false) ? mode : 'auto';
+      buildNeighbors(roomId);
+      needsRender = true;
+      return neighborsMode;
+    },
+    neighborInfo() {
+      if (!neighbors) return { mode: neighborsMode, tris: 0, calls: 0, rooms: 0, walls: [], stubbed: [] };
+      const st = neighbors.stats;
+      return { mode: neighborsMode, tris: st.triangles, calls: st.drawCalls,
+               materials: st.materials, rooms: st.rooms, verts: st.vertices,
+               lowH: st.lowH, elMin: st.elMin, yLim: st.yLim, skipped: st.skipped,
+               walls: neighbors.partNames(), stubbed: neighbors.stubbed() };
     },
     resize,
     /* 배치 UI 가 읽는다 */
