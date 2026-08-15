@@ -309,9 +309,21 @@ export function createGrowthAdapter(iframe) {
        ⚠ 바램(`fade`)은 **유효 생장일이 멈춘 채로도 움직인다**(어두운 자리). 그래서
          호출부는 `growthDays` 가 그대로여도 이 값을 매일 다시 넘겨야 한다 —
          방뷰의 `needsRebuild` 가 그 변화를 보고 다시 짓는다. */
-    leafState() {
+    /* ★★ 2026-08-17 — `opt.grades` 를 주면 줄마다 **무늬 등급**(`grade`)을 얹어 낸다.
+       ------------------------------------------------------------
+       확정문 §5 가 *"`leafState` · 세이브 · 3D 스킨 고르기가 **같은 값 하나**를 봐야 한다"*
+       고 못 박았다. 그런데 growth 의 `varieStateAll()` 은 **참·거짓**만 낸다 — 종류가 없다.
+       (`plant_grow.html` 의 `VARIE_STATE` 가 그 모양이고 그 파일은 이 창 것이 아니다.)
+       ⇒ 그래서 **종류는 코어 장부**(`pot.leafGrades` · shop.js §⑥-3)가 들고, 여기서 **합친다.**
+         합치는 자리가 하나라야 방(room_view)과 값(shop)이 같은 줄을 본다.
+       ⚠ 여기서 등급을 **지어내지 않는다.** 장부에 없는 잎은 `grade: null` 이다 —
+         「무늬인데 등급은 아직 모른다」가 실제로 있는 상태다(빛을 못 잰 자리).
+       ⚠ 안 주면 예전 그대로다(`grade` 칸 자체가 안 붙는다). 옛 호출부가 안 깨진다.
+         grades  `{ [leafBirth]: 'sanban'|'halfmoon'|'fullmoon' }` */
+    leafState(opt = {}) {
       const fv = fn('varieStateAll'), fm = fn('matStateAll'), fh = fn('leafHealthAll');
       if (!fv && !fm && !fh) return null;
+      const grades = (opt && opt.grades && typeof opt.grades === 'object') ? opt.grades : null;
       const out = new Map();
       const row = (lb) => {
         if (!Number.isFinite(lb)) return null;
@@ -327,7 +339,11 @@ export function createGrowthAdapter(iframe) {
           if (r) { r.fade = Number.isFinite(h.fade) ? h.fade : 0; r.dropped = !!h.dropped; }
         }
       } catch { }
-      return [...out.values()].sort((a, b) => a.leafBirth - b.leafBirth);
+      const list = [...out.values()].sort((a, b) => a.leafBirth - b.leafBirth);
+      /* ★ 등급을 얹는다. **무늬가 아닌 잎에는 안 얹는다** — 민무늬 잎에 등급이 붙어 있으면
+         화면이 그것을 그리려 들고, 그러면 값과 화면이 그 자리에서 갈린다. */
+      if (grades) for (const r of list) r.grade = (r.varie && grades[r.leafBirth]) || null;
+      return list;
     },
 
     /* 표시·대조 전용(판정에 안 쓴다) — 없으면 화면에 '—' 로 두면 되므로 던지지 않는다. */

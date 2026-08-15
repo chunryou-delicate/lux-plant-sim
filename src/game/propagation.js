@@ -25,7 +25,11 @@
      화분·콩나물 시루와 **같은 불변식**이다(추천 자리 위면 안정 id, 벗어나면 `free:{id}`).
 ============================================================ */
 import { resolvePlacement, atFromSlot, isFreeSlotId, inRoom } from './place.js';
-import { useStock, shopOf, CATALOG } from './shop.js';
+import { useStock, shopOf, CATALOG,
+/* ★★ 2026-08-17 — 무늬 **등급**(종류)은 전부 shop 이 읽는다.
+   ⚠ 정본은 `data/balance/varie_grades.json` 이고 읽는 자리는 `shop.js` 한 곳이다.
+     여기서 갈래 이름('sanban' 등)이나 확률을 다시 적지 않는다(확정문 §5 ★). */
+         varieGradeFromLight, varieLightStepOfBand, varieGradeRules } from './shop.js';
 /* ★ 체력 — 하루에 돌볼 수 있는 양. **규칙도 값도 전부 그쪽 모듈이 갖는다**(docs/stamina.md).
    여기서 새 비용을 만들지 않는다 — `ACT_COST.cut` · `ACT_COST.repot` 을 그대로 쓴다.
    ⚠ 이 import 는 한 방향이다: propagation → stamina. stamina 는 아무것도 안 부른다. */
@@ -351,15 +355,15 @@ export const VARIE_LIGHT = Object.freeze({ dark: 0.20, mid: 0.50, bright: 0.80 }
 export const VARIE_LIGHT_KO = Object.freeze({ dark: '어두움', mid: '중간', bright: '밝음' });
 
 /* 몬스테라 밴드(daily_light.judgeDLI) → 셋. **새 문턱이 아니라 있는 이름을 묶은 것**이다.
-   ⚠ 여기 없는 밴드('unknown' 등)는 `null` 이다 — 모르면 안 정한다. */
-export const VARIE_LIGHT_BANDS = Object.freeze({
-  critical: 'dark', poor: 'dark', stagnant: 'dark',
-  slow: 'mid',
-  best: 'bright', good: 'bright', over: 'bright'
-});
+   ⚠ 여기 없는 밴드('unknown' 등)는 `null` 이다 — 모르면 안 정한다.
+   ★★ 2026-08-17 — **표를 여기 안 적는다.** 무늬 등급 확률(확정문 §3)이 같은 밝기 셋을
+     쓰므로 두 곳에 적으면 반드시 갈린다. 정본은 `data/balance/varie_grades.json` 의
+     `lightBands` 이고 여기서는 **가리킨다** — `CATALOG.bean_seed` 가 작물 표를 가리키는
+     것과 같은 규약이다(shop.js §② ★★★ "가리키는 것이라 갈릴 수가 없다"). */
+export const VARIE_LIGHT_BANDS = Object.freeze({ ...varieGradeRules().lightBands });
 
 export function varieLightStepOf(band) {
-  return (band && VARIE_LIGHT_BANDS[band]) || null;
+  return varieLightStepOfBand(band);
 }
 
 /* ★★ 손잡이 — 나중에 「대마다 오르게」를 켤 수 있게 남긴 문 (박사님 ④).
@@ -542,9 +546,31 @@ export function cutPlanOf(S, node, container, opt = {}) {
   const lightTable = Object.keys(VARIE_LIGHT).map(step => ({
     step, ko: VARIE_LIGHT_KO[step], chance: VARIE_LIGHT[step]
   }));
+  /* ★★ 2026-08-17 — 자리가 정하는 것이 **둘**이 됐다 (확정문 §3).
+       ① 새 잎이 무늬로 나나 (`lightTable` · 20/50/80%)
+       ② 그 무늬가 **어느 등급**이 되나 (`gradeTable` · 산반/하프문/풀문)
+     ★ 둘 다 숨기지 않는다. 확률이 아니라 **선택지 표**라 숨길 이유가 없다(§cutPlanOf 머리말).
+     ⚠ 숫자를 문구에 손으로 안 적는다 — 전부 정본(varie_grades.json)에서 읽어 짓는다. */
+  const GR = varieGradeRules();
+  const gradeTable = Object.keys(GR.lightGrade).map(step => ({
+    step, ko: VARIE_LIGHT_KO[step] || step,
+    expectedWon: Object.entries(GR.lightGrade[step])
+      .reduce((n, [gid, pr]) => n + pr * ((GR.byId.get(gid) || {}).leafWon || 0), 0),
+    grades: Object.entries(GR.lightGrade[step]).map(([gid, pr]) => ({
+      grade: gid, ko: (GR.byId.get(gid) || {}).ko || gid, chance: pr,
+      leafWon: (GR.byId.get(gid) || {}).leafWon || 0
+    }))
+  }));
+  /* 이 마디를 자르면 **딸려가는 잎의 등급**. 화면이 「하프문 잎이 따라간다」를 말할 수 있게 */
+  const carried = Array.isArray(node && node.leafGrades)
+    ? node.leafGrades.filter(Boolean).map(gid => ({
+        grade: gid, ko: (GR.byId.get(gid) || {}).ko || gid,
+        leafWon: (GR.byId.get(gid) || {}).leafWon || 0 }))
+    : [];
   const p = (x) => Math.round(x * 100) + '%';
   return {
     ok: !why, why: why || null,
+    gradeTable, carriedGrades: carried,
     method: cont ? cont.method : null, methodKo: m ? m.ko : null,
     rootDays: m ? m.rootDays : null, nodeDays: m ? m.nodeDays : null,
     canDie: !!(m && m.canDie),
@@ -803,10 +829,28 @@ export function cutBlockedReason(S, nodes, nodeId, opt = {}) {
      (docs/handoff/cutting2-to-plan.md §실측). */
 export const CUTTING_LEAF_DAYS = METHODS.water.nodeDays;
 
+/* ★★ 2026-08-17 — 잎마다 **등급**도 같이 들고 있다 (확정문 §5).
+   `c.leafGrade[i]` 는 `c.leafVarie[i]` 와 **같은 자리의 같은 잎**이다.
+   ⚠ 배열 둘을 따로 두면 언젠가 길이가 갈린다 — 그래서 `syncCuttingLeaves` 한 곳에서만
+     손대고, 여기가 **길이를 맞추는 유일한 자리**다(길이는 늘 `leafVarie` 가 정한다).
+   ⚠ 옛 세이브에는 `leafGrade` 가 없다. 그때 무늬 잎은 **산반으로 읽는다**(확정문 §5) —
+     지어내는 것이 아니라 확정문이 정해 준 규칙이고, `save.js §migrateVarieGrades` 가 기록에 남긴다. */
 export function syncCuttingLeaves(c) {
   const arr = Array.isArray(c.leafVarie) ? c.leafVarie : [];
+  const g = Array.isArray(c.leafGrade) ? c.leafGrade : [];
+  const known = varieGradeRules().byId;
+  c.leafGrade = arr.map((v, i) => {
+    if (!v) return null;                                   // 민무늬 잎은 등급이 없다
+    const row = known.get(g[i]);
+    /* ⚠ 모르는 것을 **여기서 산반으로 굳히지 않는다.** `null` 로 남긴다 —
+       「아직 모른다」와 「산반으로 정해졌다」는 다른 말이고, 굳히면 나중에 빛으로
+       정할 기회가 사라진다. 값을 매길 때만 `shop.leafGradeListOf` 가 산반으로 편다. */
+    return (row && row.varie) ? g[i] : null;
+  });
   c.leaves = arr.length;
   c.variegatedLeaves = arr.reduce((n, v) => n + (v ? 1 : 0), 0);
+  /* ⚠ 민무늬 자리는 `null` 이다 — 민무늬 등급 id 를 적어 두지 않는다.
+     `shop.leafGradeListOf` 가 null 자리를 민무늬로 편다(세이브 칸을 늘리지 않는다). */
   return c;
 }
 
@@ -814,13 +858,26 @@ export function syncCuttingLeaves(c) {
    영원히 안 변하는 기록이고, 지금 값은 자란 만큼 다르다. 둘을 섞으면 자란 삽수를 팔 때
    안 자란 값을 받는다. 옛 세이브(배열이 없는 것)는 source 로 되메운다. */
 export function cuttingStatsNow(c) {
-  if (!c) return { leaves: 0, variegatedLeaves: 0 };
+  if (!c) return { leaves: 0, variegatedLeaves: 0, leafGrades: [] };
   if (Array.isArray(c.leafVarie)) {
+    const known = varieGradeRules().byId;
+    const g = Array.isArray(c.leafGrade) ? c.leafGrade : [];
     return { leaves: c.leafVarie.length,
-             variegatedLeaves: c.leafVarie.reduce((n, v) => n + (v ? 1 : 0), 0) };
+             variegatedLeaves: c.leafVarie.reduce((n, v) => n + (v ? 1 : 0), 0),
+             /* ★ 값을 매기는 자리(`shop.listCutting`)에 **그대로 넘길 수 있는 모양**이다.
+                ⚠ 등급을 모르는 무늬 잎은 `null` 이다 — 산반으로 펴는 것은 `priceOf` 몫이다.
+                  여기서 펴면 화면이 「산반이다」라고 단정하게 된다(사실은 미정이다). */
+             leafGrades: c.leafVarie.map((v, i) => {
+               if (!v) return null;
+               const row = known.get(g[i]);
+               return (row && row.varie) ? g[i] : null;
+             }) };
   }
+  /* 옛 세이브 — 배열이 아예 없다. 무늬 잎이 몇 장이었나만 안다(등급은 미정이다) */
   const s = c.source || {};
-  return { leaves: s.leaves || 0, variegatedLeaves: s.variegatedLeaves || 0 };
+  const n = s.leaves || 0, v = s.variegatedLeaves || 0;
+  return { leaves: n, variegatedLeaves: v,
+           leafGrades: Array.from({ length: n }, () => null) };
 }
 
 /* 삽수에서 자를 수 있는 마디. **코어가 지어내는 것이 아니라 자기가 가진 잎을 읽는 것**이다.
@@ -831,6 +888,7 @@ export function cuttingStatsNow(c) {
      와 같은 자리이고, 코어가 새 등급을 만들지 않는다. */
 export function cuttableNodesOfCutting(c) {
   const arr = (c && Array.isArray(c.leafVarie)) ? c.leafVarie : [];
+  const grades = (c && Array.isArray(c.leafGrade)) ? c.leafGrade : [];
   const out = [];
   for (let i = 1; i < arr.length; i++) {
     const carried = arr.slice(i);
@@ -839,6 +897,11 @@ export function cuttableNodesOfCutting(c) {
       stem: 'pink',
       leaves: carried.length,
       variegatedLeaves: carried.reduce((n, v) => n + (v ? 1 : 0), 0),
+      /* ★★ 딸려가는 잎의 **등급**도 같이 낸다 (확정문 §5) — 하프문 잎을 자르면 하프문이
+         따라가야 한다. 개수만 넘기면 그 자리에서 산반으로 떨어져 값이 반으로 준다.
+         ⚠ `assertCutNode` 는 이 칸을 요구하지 않는다 — 화분 마디(growth 가 내는 것)에는
+           아직 없는 칸이라 필수로 만들면 자르기가 통째로 막힌다. */
+      leafGrades: carried.map((v, k) => (v ? (grades[i + k] || null) : null)),
       growthDays: null
     });
   }
@@ -1027,6 +1090,18 @@ export function takeCutting(S, opt = {}) {
             tools/probe_varie_lineage.mjs 가 「2000판 전부 원복」으로 잡았다. */
     leafVarie: Array.from({ length: node.leaves },
                           (_, i) => i >= node.leaves - node.variegatedLeaves),
+    /* ★★ 딸려온 잎의 **등급** (2026-08-17 확정문 §5). 출처가 셋이고 우선순위가 그 순서다:
+         ① `opt.leafGrades`  부르는 쪽이 준 것 (화면이 모주 장부 `pot.leafGrades` 에서 읽어 넘긴다)
+         ② `node.leafGrades` 마디가 들고 온 것 (모주가 삽수면 `cuttableNodesOfCutting` 이 채운다)
+         ③ 없으면          `legacyVarieGradeId()`(산반) — `syncCuttingLeaves` 가 편다
+       ⚠ ③ 은 **지어내는 값이 아니다.** 확정문 §5 가 「등급을 모르는 무늬 잎은 산반으로 읽는다」로
+         정했고, 그 자리를 옛 세이브와 똑같이 쓴다. 대신 어디서 왔는지가 아래 `leafGradeSrc` 에 남는다. */
+    leafGrade: (() => {
+      const src = Array.isArray(opt.leafGrades) ? opt.leafGrades
+                : Array.isArray(node.leafGrades) ? node.leafGrades : null;
+      return Array.from({ length: node.leaves }, (_, i) =>
+        (i >= node.leaves - node.variegatedLeaves ? ((src && src[i]) || null) : null));
+    })(),
     leafDays: 0,                 // 빛이 든 날만 쌓인다. CUTTING_LEAF_DAYS 마다 잎 한 장
     grewLeaves: 0,               // 자기가 낸 잎 수(딸려온 것 제외) — 재현·표시용
     method,
@@ -1078,6 +1153,8 @@ export function takeCutting(S, opt = {}) {
   if (momCut) {
     const at = Number(String(node.nodeId).split('#')[1]);
     momCut.leafVarie = (momCut.leafVarie || []).slice(0, at);   // 그 마디 위가 통째로 떨어져 나갔다
+    /* ★ 등급 배열도 **같은 자리에서** 자른다. 길이가 갈리면 남은 잎의 등급이 한 칸씩 밀린다 */
+    momCut.leafGrade = (momCut.leafGrade || []).slice(0, at);
     syncCuttingLeaves(momCut);
     /* ⚠ 삽수 모주에는 `cuts` 장부를 안 남긴다. 화분의 그것은 **아직 안 반영된 손실**을 적어 두는
        것이라 뜻이 있는데(growth 가 형태를 못 깎으므로), 삽수는 잎이 바로 위에서 빠져서
@@ -1321,14 +1398,30 @@ export function stepCuttings(S, opt = {}) {
           /* 새 잎의 무늬 — **물려받은 소질**이 여기서 쓰인다. 잎마다 따로, 한 번만 굴린다
              (growth 의 `varieRoll` 과 같은 사고 — 한 번 정하면 안 바뀐다). */
           const idx = (c.leafVarie || []).length;
-          const roll = cuttingHash((S.sim && S.sim.seed) || 0, `${c.id}L${idx}`, 4);
+          const seed = (S.sim && S.sim.seed) || 0;
+          const roll = cuttingHash(seed, `${c.id}L${idx}`, 4);
           const varie = roll < (c.varieChance || 0);
+          /* ★★ 무늬가 났으면 **어느 등급인가**를 그 자리에서 정한다 (확정문 §3).
+             ------------------------------------------------------------
+             ⚠ **소금(salt)을 따로 쓴다**(4 → 5). 같은 난수로 「났나」와 「무엇인가」를 둘 다
+               정하면 둘이 붙어 버린다 — 무늬가 겨우 난 잎(roll 이 문턱 바로 아래)은 언제나
+               제일 흔한 등급이 되고, 「어두운 데서도 아주 드물게 풀문」이 원리적으로 사라진다.
+             ⚠ 못 재면(빛 미정) **`null` 로 둔다.** `syncCuttingLeaves` 가 값을 매길 때만
+               산반으로 편다 — 「모른다」와 「산반으로 정해졌다」는 다른 말이다.
+             ★ 어느 밝기로 굴리나 — 이 삽수의 `varieLightBand`(뿌리내린 날 정해진 것)를 먼저 보고,
+               없으면 오늘 그 자리의 밴드를 쓴다. 두 벌의 빛 축을 만들지 않는다. */
+          const step = c.varieLightBand || varieLightStepOf(lit && lit.band);
+          const grade = varie && step
+            ? varieGradeFromLight(step, cuttingHash(seed, `${c.id}G${idx}`, 5))
+            : null;
           c.leafVarie = [...(c.leafVarie || []), varie];
+          c.leafGrade = [...(c.leafGrade || []), grade];
           c.grewLeaves = (c.grewLeaves || 0) + 1;
           syncCuttingLeaves(c);
           grewLeaves++;
-          const e = { id: 'cutting_leaf', cuttingId: c.id, variegated: varie,
-                      ko: `삽수 ${c.id} — 새 잎이 났습니다${varie ? ' (무늬!)' : ''} · ` +
+          const gko = grade ? (varieGradeRules().byId.get(grade) || {}).ko : null;
+          const e = { id: 'cutting_leaf', cuttingId: c.id, variegated: varie, grade: grade || null,
+                      ko: `삽수 ${c.id} — 새 잎이 났습니다${varie ? ` (무늬 — ${gko || '등급 미정'}!)` : ''} · ` +
                           `잎 ${c.leaves}장 중 무늬 ${c.variegatedLeaves}장` };
           events.push(e);
           if (log) log((varie ? '🌟 ' : '🍃 ') + e.ko);

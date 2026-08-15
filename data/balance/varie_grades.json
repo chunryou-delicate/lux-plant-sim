@@ -1,0 +1,142 @@
+{
+  "schema": "varie_grades/1",
+  "_doc": [
+    "무늬 등급 — **개수가 아니라 종류**다 (2026-08-17 박사님 확정 · docs/handoff/plan-2026-08-17-varie-grade.md).",
+    "",
+    "★ 이 파일이 정본이다. 코드(src/game/shop.js)는 **읽기만** 한다.",
+    "  갈래를 옮기고 싶으면 grades[].assets 에서 이름을 빼서 다른 등급에 넣으면 된다.",
+    "  값을 고치고 싶으면 grades[].leafWon 을, 확률을 고치고 싶으면 lightGrade 를 고친다.",
+    "  ⚠ 코드를 고칠 필요가 없다. 그게 이 파일의 존재 이유다(START-HERE §2.8).",
+    "",
+    "══ 값이 어떻게 매겨지나 ══════════════════════════════════════════════",
+    "  잎 값 합 = Σ(그 잎 등급의 leafWon)",
+    "  삽수    = 잎 값 합 × sale.cuttingMult (1.0 — 위 표가 곧 삽수 값이다)",
+    "  그루    = 잎 값 합 × sale.potMult    (1.4 — 뿌리·수형이 있는 완성체)",
+    "  시너지  = 서로 다른 **무늬** 등급이 몇 종인가 → sale.synergy[종수]",
+    "  ⇒ 삽수냐 그루냐는 **잎 수가 아니라 파는 길**이 정한다(listCutting / listPot).",
+    "     「잎 3장 미만이면 등급 뚜껑」(옛 CUTTING_GRADE_CAP)은 2026-08-17 에 걷혔다.",
+    "",
+    "══ 검산 — 프롤로그 그루 ══════════════════════════════════════════════",
+    "  잎1 무지 20,000 + 잎2 산반 350,000 + 잎3 하프문 750,000 = 1,120,000",
+    "  × potMult 1.4 = 1,568,000 · × synergy[2] 1.25 = **1,960,000원**",
+    "  (이사비 2,000,000원에 40,000원 모자란다 — 확정문 §2 그대로다)"
+  ],
+
+  "grades": [
+    {
+      "id": "plain",
+      "ko": "무지",
+      "varie": false,
+      "leafWon": 20000,
+      "_doc": "민무늬. 「무지 잎」은 알보의 값을 깎는 말로 쓰인다. 무늬가 아니므로 시너지 종수에 안 센다.",
+      "assets": []
+    },
+    {
+      "id": "sanban",
+      "ko": "산반",
+      "varie": true,
+      "leafWon": 350000,
+      "_doc": "점박이·반점이 흩어진 것. 제일 흔하고, 옛 세이브의 무늬 잎이 여기로 읽힌다(legacyGradeId).",
+      "assets": [
+        { "id": "speckle_greencream", "ko": "스페클-그린크림",   "matNum": 13 },
+        { "id": "zebra",              "ko": "제브라-그린흰",     "matNum": 31 },
+        { "id": "star_greenwhite",    "ko": "별무늬-그린흰",     "matNum": 46 },
+        { "id": "star_greenyellow",   "ko": "별무늬-그린옐로우", "matNum": 40 },
+        { "id": "star_palegreen",     "ko": "별무늬-페일그린",   "matNum": 4  },
+        { "id": "green_yellow",       "ko": "오로레아-그린옐로우", "matNum": 22 },
+        { "id": "green_lemonpatch",   "ko": "라임-레몬패치",     "matNum": 25 },
+        { "id": "neon_lime",          "ko": "네온-라임",         "matNum": 28 }
+      ]
+    },
+    {
+      "id": "halfmoon",
+      "ko": "하프문",
+      "varie": true,
+      "leafWon": 750000,
+      "_doc": "특이색 + 반반으로 갈린 것. 식테크의 정점이고 경매 최고가가 여기서 나온다.",
+      "assets": [
+        { "id": "halfmoon_greenwhite", "ko": "하프문-그린흰",   "matNum": 34 },
+        { "id": "halfmoon_greencream", "ko": "하프문-그린크림", "matNum": 52 },
+        { "id": "galaxy_tealgold",     "ko": "갤럭시-틸골드",   "matNum": 10 },
+        { "id": "galaxy_darkteal",     "ko": "갤럭시-다크틸",   "matNum": 19 },
+        { "id": "star_pinkmint",       "ko": "별무늬-핑크민트", "matNum": 7  }
+      ]
+    },
+    {
+      "id": "fullmoon",
+      "ko": "풀문",
+      "varie": true,
+      "leafWon": 1150000,
+      "_doc": "완전 특수색(분홍·금·라벤더·전백). 확정문이 새로 만든 등급이다.",
+      "assets": [
+        { "id": "variegata_pink", "ko": "핑크-로즈핑크",     "matNum": 1  },
+        { "id": "variegata_gold", "ko": "오로레아-골드",     "matNum": 16 },
+        { "id": "rose_pink",      "ko": "핑크-로즈",         "matNum": 43 },
+        { "id": "mauve",          "ko": "모브-라벤더그레이", "matNum": 37 },
+        { "id": "fullalbo",       "ko": "알보-전체흰",       "matNum": 55 }
+      ]
+    }
+  ],
+
+  "sale": {
+    "cuttingMult": 1.0,
+    "potMult": 1.4,
+    "_doc_synergy": "열쇠는 **서로 다른 무늬 등급의 종수**다(무지는 안 센다). 표에 없는 종수는 1.0.",
+    "synergy": { "0": 1.0, "1": 1.0, "2": 1.25, "3": 1.5 }
+  },
+
+  "_doc_lightGrade": [
+    "무늬가 **나기로 정해진 뒤**, 그 잎이 어느 등급이 되나. 자리 밝기 셋을 그대로 쓴다.",
+    "★ 무늬가 나나 마나(20%)는 캐논이라 여기서 안 건드린다 — 여기 있는 것은 **난 뒤의 등급**뿐이다.",
+    "⚠ 각 줄의 합은 1 이라야 한다(tools/test_variegrade.mjs 검사 A 가 고정한다).",
+    "",
+    "무늬 1장 기대값 — 어두움 394,000 · 중간 490,000 · 밝음 **630,000**원.",
+    "⚠⚠ 확정문 §3 은 밝음을 632,500 이라 적었는데 **산술이 어긋난다**:",
+    "   0.45×350,000 + 0.40×750,000 + 0.15×1,150,000 = 157,500+300,000+172,500 = 630,000.",
+    "   어두움·중간은 확정문 값과 한 원도 안 다르다 — 밝음 한 줄만 오타다.",
+    "   ⇒ 「밝은 자리가 어두운 자리의 1.6배」라는 결론은 그대로 선다(630,000/394,000 = 1.599)."
+  ],
+  "lightGrade": {
+    "dark":   { "sanban": 0.90, "halfmoon": 0.09, "fullmoon": 0.01 },
+    "mid":    { "sanban": 0.70, "halfmoon": 0.25, "fullmoon": 0.05 },
+    "bright": { "sanban": 0.45, "halfmoon": 0.40, "fullmoon": 0.15 }
+  },
+
+  "_doc_lightBands": [
+    "몬스테라 밴드(engine/daily_light.judgeDLI) → 밝기 셋. **새 문턱이 아니라 있는 이름을 묶은 것**이다.",
+    "loop.js §NO_GROW_BANDS 가 critical·poor·stagnant 를 「안 자라는 빛」으로 이미 묶어 두었고 그 금을 그대로 쓴다.",
+    "⚠ 여기 없는 밴드('unknown' 등)는 null 이다 — 모르면 안 정한다."
+  ],
+  "lightBands": {
+    "critical": "dark", "poor": "dark", "stagnant": "dark",
+    "slow": "mid",
+    "best": "bright", "good": "bright", "over": "bright"
+  },
+
+  "_doc_legacy": [
+    "옛 세이브에는 등급이 없다. 무늬 잎이 있는 옛 판은 **산반으로 읽는다**(제일 흔한 것).",
+    "확정문 §5 가 그렇게 정했고, save.js §migrateVarieGrades 가 **기록에 남긴다**(조용히 안 한다).",
+    "★ 등급을 모르는 새 잎(빛을 못 잰 자리)도 값을 매길 때만 이 등급으로 떨어진다 —",
+    "  ledger 에는 안 적는다. 「모른다」와 「산반으로 정해졌다」는 다른 말이다."
+  ],
+  "legacyGradeId": "sanban",
+
+  "_doc_prologue": [
+    "프롤로그 한 그루만 등급을 못 박는다(확정문 §4). 잎 번호는 1부터.",
+    "잎1 무지 — 도착 때 빛 이력이 0 이라 원리적으로 무늬가 못 된다",
+    "잎2 산반 — 처음 보는 무늬라 흔한 것이 자연스럽다",
+    "잎3 하프문 — 「두 장째는 다르다」가 값으로 드러난다 · 196만이 여기서 나온다"
+  ],
+  "prologueGrades": { "1": "plain", "2": "sanban", "3": "halfmoon" },
+
+  "_doc_unassigned": [
+    "★★ 어느 등급에도 안 들어간 에셋 갈래. **조용히 빼지 않는다.**",
+    "확정문 §1 은 「18갈래」라 적었는데 plant_grow.html 의 mon_* 성숙 무늬는 **19갈래**다.",
+    "차콜-다크그린 하나가 표에서 빠져 있었다 — 확정문을 쓸 때 못 본 것이다.",
+    "⇒ 값을 매길 때는 legacyGradeId(산반)로 떨어진다. 어느 등급인지는 **박사님 판단**이다.",
+    "   (초록이 짙어 「완전 특수색」은 아니고, 반반도 아니라서 산반이 자연스럽기는 하다)"
+  ],
+  "unassignedAssets": [
+    { "id": "charcoal", "ko": "차콜-다크그린", "matNum": 49 }
+  ]
+}

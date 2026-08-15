@@ -686,76 +686,231 @@ export function useStock(S, itemId, qty = 1) {
      따라서 `쪼갠 합 ≤ 통째 값` 이고, 등호는 무늬 잎이 한쪽에 몰릴 때뿐이다.
      ⇒ **"키워서 팔기"가 언제나 같거나 이득이다.**
 
-   ══ 등급 — 실제 한국 시장 용어를 쓴다 (조사 2026-08-04) ══════════════════════
-   무늬 등급 이름은 지어내지 않고 한국 무늬식물 시장에서 실제로 쓰는 말을 가져왔다.
-   선호 순서도 시장이 매긴 그대로다 — **무지 < 산반 < 섹터 < 하프문**.
+   ══ ★★★ 2026-08-17 — 등급이 **장수에서 종류로** 바뀌었다 ════════════════════
+   박사님 확정문: `docs/handoff/plan-2026-08-17-varie-grade.md`.
+   박사님과 코드가 **다른 축을 보고 있었다.** 박사님은 처음부터 *무늬의 종류(패턴)* 를
+   말씀하셨고, 코드는 *무늬 잎이 몇 장인가* 로 등급을 매기고 있었다.
+   박사님 원문: *"어쩐지 산반이 너무 싸더라고."* — 코드에서 산반은 9만원이었다.
 
-     무지(민무늬)  무늬가 없다. 「무지 잎」은 알보의 값을 깎는 말로 쓰인다
-     산반(散斑)    잎 전체에 붓으로 튀긴 듯 잘게 흩뿌려진 무늬. 마블(marble)과 같은 말.
-                   ★시장이 산반을 권하는 이유가 **생리적 안전**이다 — 초록(광합성)과
-                     흰색(광합성 불가)이 고르게 섞여 있어 그루가 버틴다
-     섹터          흰 부분이 큼직한 덩어리로 앉은 것(sectoral). 산반보다 위
-     하프문        잎이 주맥에서 반으로 갈려 한쪽이 흰 것. **식테크의 정점**이고
-                   경매 최고가가 여기서 나온다. 줄기까지 반반으로 갈리면 더 오른다
+   ⇒ 아래 §VARIE_GRADES 이후는 전부 **`data/balance/varie_grades.json` 이 정본**이다.
+     여기 코드는 읽기만 한다. 갈래 이름도 숫자도 코드에 안 박는다(§2.8 사고의 원인).
 
-   ★ **고스트(전백)는 이 사다리에 없다.** 잎 전체가 흰 것을 한국 시장은 「고스트」라 부르는데,
-     값의 꼭대기가 아니라 **경고**로 읽는다 — 고스트 잎이 연달아 나면 성장점 안의 정상 세포가
-     죽었다는 뜻이고 그루가 결국 죽는다. 그래서 고스트는 **등급이 아니라 죽음**이고,
-     `propagation.js` §키메라가 그것을 다룬다. 값을 매기는 자리에는 아예 안 나온다.
-     ★★ 이게 곧 **천장**이다. 「가장 흰 것이 가장 비싸다」가 아니므로 무늬를 끝까지 밀어붙이는
-       길이 값으로 보상받지 않는다 — 상한을 규칙으로 박지 않아도 사다리 자체가 거기서 끝난다.
+   ══ ⛔ 없앤 것 ① — **「섹터」 갈래** ════════════════════════════════════════
+   옛 사다리는 넷이었다(무지 < 산반 < 섹터 < 하프문). 확정문은 **셋**이다
+   (산반 · 하프문 · **풀문**). 섹터는 갈 곳이 없어 지운다.
+   ★ 지우면서 **왜 지웠는지와 그 값이 어디서 왔는지**를 남긴다 — 근거가 사라지면
+     다음 사람이 "이 값 어디서 왔지" 로 다시 헤맨다(§2.6 「낡은 주석이 재는 자가 된다」).
 
-   ⚠ 조사가 같이 알려 준 것: 이 이름들은 원래 **잎 한 장의 무늬 모양**을 가리키는 말이다.
-     그루 단위 축은 시장에서 「엽수 + 성장점 상태」로 따로 말한다. 그런데 코어는 잎 하나하나의
-     무늬 모양을 모른다 — growth 가 내주는 것은 `variegatedLeaves`(무늬 잎이 **몇 장인가**)뿐이다.
-     그래서 여기서는 그 이름들을 **그루의 무늬가 어디까지 굳었나**에 붙여 쓴다.
-     잎마다 다른 무늬 모양을 값에 넣으려면 growth 가 잎별 무늬 종류를 내줘야 한다
-     (`docs/handoff/core-to-growth.md` 에 요청을 적어 두었다). 지금 없는 것을 지어내지 않는다.
-
-   ══ 배수는 어디서 왔나 — **셋 다 이미 있던 값이다** ═════════════════════════════
-   셋 다 **성체 잎당 단가에 대한 비**로 통일했다(위 ★★ 무늬 잎은 성체 단가를 쓴다).
      산반  8             `sale_economy.md` 「몬스테라 삽수(알보) 80,000」 ÷ 10,000
-     섹터  320/9 ≈ 35.556 `sale_economy.md` 「포토스 희귀무늬 성체 800,000」 ÷ (3,750×6)
-     하프문 61             옛 공식의 상한 `1 + 60·1²` — 값의 꼭대기를 안 올렸다는 뜻이다
-   ★ 새 숫자를 하나도 만들지 않았다. 바뀐 것은 **그 배수가 언제 붙느냐**뿐이다:
-     예전에는 잎 비율이 높으면 붙었고(그래서 잎 1장이 제일 유리했다),
-     이제는 **무늬 잎 장수**가 쌓여야 붙는다(그래서 잘 큰 그루라야 한다).
+     ⛔섹터 320/9 ≈ 35.556 `sale_economy.md` 「포토스 희귀무늬 성체 800,000」 ÷ (3,750×6)
+                          ★ **실제 시장가에서 나온 값**이었다. 지어낸 수가 아니다 —
+                            그래서 2026-08-09 에 「산반 8 과 섹터 320/9 는 못 건드린다」고
+                            적어 두었고, 하프문만 640/9 로 올렸다.
+                          ⇒ 그럼에도 지운다. 값이 틀려서가 아니라 **축이 바뀌어서**다:
+                            섹터는 「무늬 잎 2장」이라는 장수 칸에 붙어 있던 이름이고,
+                            종류 축에는 대응하는 에셋 갈래가 없다(`mon_*` 열아홉 중 어느 것도
+                            「흰 덩어리가 큼직하게 앉은 것」이 아니다. 하프문이 그 자리를 먹는다).
+     하프문 640/9 ≈ 71.11  옛 공식 상한 61 의 후계. 「섹터의 정확히 두 배」로 정했었다
+                          ⇒ 이 배수도 없어졌다. 지금은 **잎 한 장 750,000원**이라는 절대값이다.
+
+   ══ ⛔ 없앤 것 ② — **`CUTTING_GRADE_CAP`(삽수 등급 뚜껑)** ═══════════════════
+   *"잎 3장 미만이면 산반까지"* 라는 뚜껑이 있었다. 그 뚜껑의 근거는 하나였다 —
+   *"삽수는 그 무늬가 유지될지 아직 아무도 모른다"*(원복·고스트가 뿌리내린 뒤에 갈렸다).
+   ★ **그 근거가 2026-08-17 삽수 단순화로 사라졌다.** 원복도 고스트도 걷혔다
+     (`propagation.js` §③ — 박사님 *"이건 게임이니까 좀 단순화하자"*).
+   ⇒ 남은 뜻 「삽수는 싸다」는 **×1.0 대 ×1.4** 가 대신한다(확정문 §2).
+     즉 삽수냐 그루냐는 **잎 수가 아니라 파는 길**(`listCutting`/`listPot`)이 정한다.
+     ★ 덤 — 잎 3장짜리 삽수가 뚜껑을 빠져나가던 구멍도 같이 막힌다.
+
+   ══ ★ 고스트(전백)는 여전히 이 사다리에 **없다** ════════════════════════════
+   잎 전체가 흰 것을 한국 시장은 「고스트」라 부르는데 값의 꼭대기가 아니라 **경고**로 읽는다.
+   ⇒ 「가장 흰 것이 가장 비싸다」가 아니므로 무늬를 끝까지 밀어붙이는 길이 값으로 보상받지 않는다.
+   ⚠ **`fullalbo`(알보-전체흰) 에셋은 풀문에 들어 있다.** 모순이 아니다 — 저건 잎 한 장의
+     무늬 모양(전백 잎)이고, 「고스트」는 *그루의 성장점이 죽었다* 는 진단이다. 축이 다르다.
 ============================================================ */
 
-/* ★ 등급 — 무늬 잎 **장수**로만 정한다. 비율로 정하면 민무늬 잎이 한 장 나는 순간
-   등급이 내려가 **잘 키운 벌**이 된다(그게 옛 공식의 병이었다). 장수는 늘기만 하므로
-   값이 잎 수에 대해 절대 안 꺾인다. 위 ★증명이 성립하는 것도 이 성질 때문이다. */
-export const VARIE_GRADES = Object.freeze([
-  Object.freeze({ id: 'plain',    ko: '무지',   minVarieLeaves: 0, leafMult: 1 }),
-  Object.freeze({ id: 'sanban',   ko: '산반',   minVarieLeaves: 1, leafMult: 8 }),
-  Object.freeze({ id: 'sector',   ko: '섹터',   minVarieLeaves: 2, leafMult: 320 / 9 }),
-  /* ★★ 2026-08-09 박사님 확정 — **61 → 640/9 (≈71.11).** 「섹터의 정확히 두 배」다.
-     ------------------------------------------------------------
-     ★ 왜 하프문만 올릴 수 있나. 산반 8 과 섹터 320/9 는 **실제 시장가에서 나온 값**이라
-       못 건드린다. 그런데 하프문 61 은 조사값이 아니라 **옛 공식의 상한 `1 + 60·1²`** 을
-       그대로 물려받은 것이다(위 「배수는 어디서 왔나」). 근거가 제일 약한 자리였다.
-     ★ 그리고 비율이 이상했다 — 산반 → 섹터가 **4.4배** 뛰는데 섹터 → 하프문은 **1.7배**뿐이다.
-       하프문이 「식테크의 정점」이고 경매 최고가가 거기서 나온다면서 프리미엄이 더 작았다.
-       섹터의 두 배(640/9)가 그 사다리를 제 모양으로 만든다.
-     ⚠ 왜 지금 올리나 — **이사비 200만원을 하프문 하나로 넘기기 위해서다.**
-       61 이면 잎 11장 중 무늬 3장이 191만원이라 **9만원이 모자라 아무도 못 나갔다**
-       (`test_banjiha_routes` 가 이사 성공 0/40 으로 잡았다). 640/9 면 221만원이 된다.
-     ⚠ 분수로 두는 것도 일부러다 — 섹터가 `320/9` 라 소수로 쓰면 「두 배」가 안 맞는다. */
-  Object.freeze({ id: 'halfmoon', ko: '하프문', minVarieLeaves: 3, leafMult: 640 / 9 })
-]);
-
-/* ★★ 삽수에는 등급을 안 붙인다 — 산반까지다.
+/* ============================================================
+   ⑥-0 ★★ 등급표를 **파일에서 읽는다** — `data/balance/varie_grades.json`
    ------------------------------------------------------------
-   왜. **삽수는 그 무늬가 유지될지 아직 아무도 모른다.** 조사에서 확인한 그대로다 —
-   삽수는 원복(무늬 퇴화)할 수도, 고스트로 죽을 수도 있고, 그 판정은 뿌리내린 뒤에 난다
-   (`propagation.js` §키메라). 시장이 값을 쳐 주는 것은 **무늬가 굳은 것이 확인된 그루**다.
-   그래서 잎 1~2장짜리 조각은 무늬가 아무리 많아도 「산반」 값을 받는다.
+   ★ 박사님이 코드를 안 고치고 갈래를 옮길 수 있어야 한다(확정문 §1 ★★ · 박사님 요청 1).
+     그래서 갈래 묶음(§1) · 값과 배수(§2) · 빛별 확률(§3) 이 **전부 그 파일**에 있고,
+     이 파일은 **읽는 자리 하나**다.
 
-   ★ 이 한 줄이 박사님의 *"무늬 삽수 가격 자체를 낮춰"* 를 실제로 성립시킨다.
-     이게 없으면 잎 2장 전부 무늬인 삽수가 섹터 등급을 받아 854,400원이 된다 —
-     고친 병이 그대로 돌아온다. 지금은 160,000원이 상한이다. */
-export const CUTTING_GRADE_CAP = 'sanban';
+   ★ 규약은 `stamina.js §staminaRulesFrom` 과 같다 — **파일이 이기고, 없는 칸은 밑값이 채운다.**
+     던지지 않는다: 밸런스 파일 하나 때문에 게임이 안 열리면 안 된다.
 
+   ⚠⚠ **밑값(`FALLBACK`)이 왜 여기 있나 — 그리고 왜 위험하지 않은가.**
+     §2.8 이 가르친 사고가 「같은 숫자가 두 곳에 있다가 갈리는 것」이라 밑값은 원래 위험하다.
+     그런데 값이 아예 없으면 파일을 못 읽는 순간 **값이 0원이 되거나 던진다.**
+     ⇒ 그래서 밑값을 두되 **`tools/test_variegrade.mjs` 검사 A 가 파일과 밑값이 같은지를
+       한 줄도 안 봐주고 못 박는다.** 갈리면 검사가 그 자리에서 깨진다 — 조용히 갈릴 수 없다.
+
+   ★ 읽는 길이 셋이다. 셋 다 같은 표로 수렴한다:
+     ① **저절로** — 이 모듈이 열릴 때 한 번 읽어 본다(아래 top-level await).
+        브라우저면 `fetch`, node 면 `node:fs`. 실패하면 조용히 밑값으로 돈다.
+     ② **꽂아 준다** — `installVarieGrades(json)`. game.html 이 다른 밸런스 파일처럼
+        한 줄로 꽂고 싶을 때 쓴다(`staminaRulesFrom` 과 같은 모양).
+     ③ **밑값** — 위 둘이 다 안 되면.
+============================================================ */
+
+/* 밑값. ⚠ **정본이 아니다.** 정본은 `data/balance/varie_grades.json` 이고
+   이 표는 그 파일을 못 읽었을 때만 산다(검사 A 가 둘이 같은지 고정한다). */
+const VARIE_GRADES_FALLBACK = Object.freeze({
+  schema: 'varie_grades/1',
+  grades: [
+    { id: 'plain',    ko: '무지',   varie: false, leafWon:    20_000, assets: [] },
+    { id: 'sanban',   ko: '산반',   varie: true,  leafWon:   350_000, assets: [
+      { id: 'speckle_greencream', ko: '스페클-그린크림',     matNum: 13 },
+      { id: 'zebra',              ko: '제브라-그린흰',       matNum: 31 },
+      { id: 'star_greenwhite',    ko: '별무늬-그린흰',       matNum: 46 },
+      { id: 'star_greenyellow',   ko: '별무늬-그린옐로우',   matNum: 40 },
+      { id: 'star_palegreen',     ko: '별무늬-페일그린',     matNum: 4 },
+      { id: 'green_yellow',       ko: '오로레아-그린옐로우', matNum: 22 },
+      { id: 'green_lemonpatch',   ko: '라임-레몬패치',       matNum: 25 },
+      { id: 'neon_lime',          ko: '네온-라임',           matNum: 28 }
+    ] },
+    { id: 'halfmoon', ko: '하프문', varie: true,  leafWon:   750_000, assets: [
+      { id: 'halfmoon_greenwhite', ko: '하프문-그린흰',   matNum: 34 },
+      { id: 'halfmoon_greencream', ko: '하프문-그린크림', matNum: 52 },
+      { id: 'galaxy_tealgold',     ko: '갤럭시-틸골드',   matNum: 10 },
+      { id: 'galaxy_darkteal',     ko: '갤럭시-다크틸',   matNum: 19 },
+      { id: 'star_pinkmint',       ko: '별무늬-핑크민트', matNum: 7 }
+    ] },
+    { id: 'fullmoon', ko: '풀문',   varie: true,  leafWon: 1_150_000, assets: [
+      { id: 'variegata_pink', ko: '핑크-로즈핑크',     matNum: 1 },
+      { id: 'variegata_gold', ko: '오로레아-골드',     matNum: 16 },
+      { id: 'rose_pink',      ko: '핑크-로즈',         matNum: 43 },
+      { id: 'mauve',          ko: '모브-라벤더그레이', matNum: 37 },
+      { id: 'fullalbo',       ko: '알보-전체흰',       matNum: 55 }
+    ] }
+  ],
+  sale: { cuttingMult: 1.0, potMult: 1.4, synergy: { 0: 1.0, 1: 1.0, 2: 1.25, 3: 1.5 } },
+  lightGrade: {
+    dark:   { sanban: 0.90, halfmoon: 0.09, fullmoon: 0.01 },
+    mid:    { sanban: 0.70, halfmoon: 0.25, fullmoon: 0.05 },
+    bright: { sanban: 0.45, halfmoon: 0.40, fullmoon: 0.15 }
+  },
+  lightBands: {
+    critical: 'dark', poor: 'dark', stagnant: 'dark',
+    slow: 'mid',
+    best: 'bright', good: 'bright', over: 'bright'
+  },
+  legacyGradeId: 'sanban',
+  prologueGrades: { 1: 'plain', 2: 'sanban', 3: 'halfmoon' },
+  unassignedAssets: [{ id: 'charcoal', ko: '차콜-다크그린', matNum: 49 }]
+});
+
+/* 파일 한 장 → 쓸 수 있는 규칙 한 벌. **파일이 이기고 없는 칸은 밑값**(stamina 규약).
+   ⚠ 던지지 않는다. 대신 어디서 왔는지를 `source` 에 적는다(화면·검사가 물을 수 있게). */
+export function varieGradesFrom(json) {
+  const F = VARIE_GRADES_FALLBACK;
+  const j = (json && typeof json === 'object') ? json : null;
+  const rows = Array.isArray(j && j.grades) && j.grades.length ? j.grades : F.grades;
+  const grades = rows.map(g => Object.freeze({
+    id: String(g.id),
+    ko: String(g.ko ?? g.id),
+    /* ★ 「무늬인가」는 **적힌 대로** 읽는다. id 로 짐작하지 않는다 —
+       박사님이 갈래를 늘리시면 짐작이 그 자리에서 거짓이 된다. */
+    varie: !!g.varie,
+    leafWon: Number.isFinite(g.leafWon) ? g.leafWon : 0,
+    assets: Object.freeze((Array.isArray(g.assets) ? g.assets : []).map(a => Object.freeze({
+      id: String(a.id), ko: String(a.ko ?? a.id),
+      matNum: Number.isInteger(a.matNum) ? a.matNum : null
+    })))
+  }));
+  const sale = (j && j.sale) || F.sale;
+  const synRaw = (sale && sale.synergy) || F.sale.synergy;
+  const synergy = {};
+  for (const [k, v] of Object.entries(synRaw)) {
+    const n = Number(k);
+    if (Number.isInteger(n) && n >= 0 && Number.isFinite(v) && v > 0) synergy[n] = v;
+  }
+  const lg = (j && j.lightGrade) || F.lightGrade;
+  const lightGrade = {};
+  for (const [step, row] of Object.entries(lg)) {
+    if (!row || typeof row !== 'object') continue;
+    const clean = {};
+    for (const [gid, p] of Object.entries(row)) if (Number.isFinite(p) && p > 0) clean[gid] = p;
+    lightGrade[step] = Object.freeze(clean);
+  }
+  const lb = (j && j.lightBands) || F.lightBands;
+  const lightBands = {};
+  for (const [band, step] of Object.entries(lb))
+    if (typeof step === 'string' && lightGrade[step]) lightBands[band] = step;
+  const pg = (j && j.prologueGrades) || F.prologueGrades;
+  const prologueGrades = {};
+  for (const [k, v] of Object.entries(pg)) {
+    const n = Number(k);
+    if (Number.isInteger(n) && n >= 1 && grades.some(g => g.id === v)) prologueGrades[n] = v;
+  }
+  const byId = new Map(grades.map(g => [g.id, g]));
+  const legacyGradeId = byId.has(j && j.legacyGradeId) ? j.legacyGradeId : F.legacyGradeId;
+  /* 에셋 갈래 이름·`leaf_mat` 번호 → 등급. **3D 스킨과 값이 같은 것을 보게 하는 표다** */
+  const assetIndex = new Map(), matIndex = new Map();
+  for (const g of grades) for (const a of g.assets) {
+    assetIndex.set(a.id, g);
+    if (a.matNum != null) matIndex.set(a.matNum, g);
+  }
+  return Object.freeze({
+    schema: (j && typeof j.schema === 'string') ? j.schema : F.schema,
+    grades: Object.freeze(grades),
+    plainId: (grades.find(g => !g.varie) || grades[0]).id,
+    varieGrades: Object.freeze(grades.filter(g => g.varie)),
+    byId,
+    sale: Object.freeze({
+      cuttingMult: Number.isFinite(sale.cuttingMult) ? sale.cuttingMult : F.sale.cuttingMult,
+      potMult: Number.isFinite(sale.potMult) ? sale.potMult : F.sale.potMult,
+      synergy: Object.freeze(synergy)
+    }),
+    lightGrade: Object.freeze(lightGrade),
+    lightBands: Object.freeze(lightBands),
+    legacyGradeId,
+    prologueGrades: Object.freeze(prologueGrades),
+    unassignedAssets: Object.freeze(
+      (Array.isArray(j && j.unassignedAssets) ? j.unassignedAssets : F.unassignedAssets)
+        .map(a => Object.freeze({ ...a }))),
+    assetIndex, matIndex,
+    source: j ? 'data/balance/varie_grades.json' : '(밑값 · src/game/shop.js)'
+  });
+}
+
+let _VARIE = varieGradesFrom(null);
+
+/* ★ 등급 목록. **옛 이름을 그대로 쓴다**(화면·재현이 이 이름으로 표를 그린다).
+   ⚠ 모양이 바뀌었다: 옛 `{ minVarieLeaves, leafMult }` 가 **없다.**
+     지금은 `{ id, ko, varie, leafWon, assets }` 다 — 장수가 아니라 **잎 한 장 값**이다.
+   ★ `const` 가 아니라 `let` 인 까닭: 정본을 꽂으면 이 이름이 새 표를 가리켜야 하고,
+     ESM 의 산 바인딩이라 **이미 import 해 간 쪽도 같이 바뀐다**(사본이 안 생긴다). */
+export let VARIE_GRADES = _VARIE.grades;
+
+/* ★ 지금 도는 등급표. **읽는 자리는 여기 하나다.** */
+export function varieGradeRules() { return _VARIE; }
+
+/* 정본 한 장을 꽂는다. game.html 이 `staminaRulesFrom` 처럼 한 줄로 쓸 수 있게.
+   ⚠ `null` 을 주면 밑값으로 되돌린다(검사가 그렇게 쓴다). */
+export function installVarieGrades(json) {
+  _VARIE = varieGradesFrom(json);
+  VARIE_GRADES = _VARIE.grades;
+  return _VARIE;
+}
+
+/* ★ 저절로 한 번 읽어 본다 — **배선이 없어도 정본이 실제로 닿게** 하는 자리다.
+   ⚠ 실패해도 아무 일도 안 난다(밑값이 이미 서 있다). 그래서 `catch` 가 조용하다.
+   ⚠ 브라우저는 `fetch`, node 는 `node:fs` 다 — node 에서 `fetch('file:…')` 는 던진다.
+     프로토콜로 갈라서 각자 되는 길을 쓴다. */
+const VARIE_GRADES_URL = new URL('../../data/balance/varie_grades.json', import.meta.url);
+try {
+  const j = VARIE_GRADES_URL.protocol === 'file:'
+    ? JSON.parse((await import('node:fs')).readFileSync(VARIE_GRADES_URL, 'utf8'))
+    : await fetch(VARIE_GRADES_URL.href).then(r => (r.ok ? r.json() : null));
+  if (j) installVarieGrades(j);
+} catch { /* 밑값으로 돈다 — 위 ⚠ */ }
+
+/* ⏸ **2026-08-17 부터 값에 안 쓴다.** 잎 한 장 값은 이제 등급표(`leafWon`)가 갖는다.
+   ⚠ 지우지 않은 까닭 둘 — ① `tools/test_ending_flow.mjs` 가 재현용 목표액으로 이 이름을
+     읽는다(`UNIT_WON.monstera.cutting`) ② 「예전에 잎 한 장이 얼마였나」는 사실이라
+     지우면 값이 왜 이렇게 뛰었는지를 설명할 근거가 사라진다(민무늬 잎 10,000 → 20,000).
+   ⚠ 새 코드에서 이 표로 값을 매기지 마라. `varieGradeRules().byId.get(id).leafWon` 이다. */
 export const UNIT_WON = Object.freeze({
   monstera: Object.freeze({ cutting: 12_000, adult: 10_000 }),   // propagation.md §6 표 (숫자를 안 바꿨다)
   pothos:   Object.freeze({ cutting:  3_000, adult:  3_750 })
@@ -776,13 +931,17 @@ export const UNIT_WON = Object.freeze({
      그건 용기값 7,000원보다 작다 — **실비를 못 넘기므로 실제로는 손해다.**
      (게다가 초보에서는 모주를 끝내는 자르기가 막혀 있어 그 수 자체가 없다.)
      하한을 0 으로 없애면 이득이 정확히 0 이 되지만, 그러면 정본의 「몬스테라 삽수 12,000」이
-     깨지고 꾸준수입이 17% 준다. **정본을 지키면서 실질 이득을 없애는 쪽**을 골랐다. */
+     깨지고 꾸준수입이 17% 준다. **정본을 지키면서 실질 이득을 없애는 쪽**을 골랐다.
+
+   ⏸ **2026-08-17 부터 값에 안 걸린다.** 제일 싼 잎(무지)이 20,000원이라 12,000원 하한은
+     원리적으로 못 걸린다. 이름은 남기되 `priceOf` 는 더 이상 안 부른다 —
+     죽은 규칙이 살아 있는 척하면 다음 사람이 그것으로 진단한다(§2.6 「낡은 주석이 재는 자」). */
 export const minSaleWonOf = (species) => (UNIT_WON[species] || {}).cutting || 0;
 
 /* 잎 몇 장부터 성체로 보나 — propagation.md §6: "잎 1~2장이면 삽수, 3장부터 성체".
-   ★ 이제 이 값이 가르는 것은 **단가가 아니라 등급 상한**이다(잎당 값은 어디서나 같다).
-   ★ 삽수가 자라게 되면서(2026-08-04) 뜻이 하나 늘었다 — **자라서 잎 3장이 된 삽수는
-     그 순간부터 등급 상한이 풀린다.** "키우면 값이 붙는다"가 여기서도 같은 규칙이다. */
+   ⏸ **2026-08-17 부터 값을 안 가른다.** 등급 뚜껑이 걷혔으므로(§⑥ ⛔ 없앤 것 ②)
+     이 값이 정하는 것은 `priceOf().size` 라는 **표시 이름 하나**뿐이다.
+     삽수냐 그루냐는 이제 `form`(파는 길)이 정한다. */
 export const ADULT_MIN_LEAVES = 3;
 
 /* 무늬 잎 비율. **값에는 더 이상 안 쓴다**(위 §병폐) — 화면 표시·기록용으로만 남긴다.
@@ -798,63 +957,369 @@ export function varieRatio(leaves, variegatedLeaves) {
   return variegatedLeaves / leaves;
 }
 
-/* 무늬 잎 장수 → 등급. 삽수(잎 1~2장)면 상한을 건다.
-   반환 VARIE_GRADES 의 한 줄(얼려 둔 객체 그대로) */
-export function varieGradeOf(variegatedLeaves, { isCutting = false } = {}) {
-  let g = VARIE_GRADES[0];
-  for (const row of VARIE_GRADES) if (variegatedLeaves >= row.minVarieLeaves) g = row;
-  if (isCutting) {
-    const capIdx = VARIE_GRADES.findIndex(r => r.id === CUTTING_GRADE_CAP);
-    const myIdx = VARIE_GRADES.indexOf(g);
-    if (myIdx > capIdx) g = VARIE_GRADES[capIdx];
-  }
-  return g;
+/* ============================================================
+   ⑥-1 ★★ 등급을 다루는 자 넷 — **이름·번호·빛·옛 판**
+============================================================ */
+
+/* 등급 한 줄. 모르는 id 면 `null`(던지지 않는다 — 화면이 매 프레임 물어볼 수 있다). */
+export function varieGradeOf(gradeId) {
+  return _VARIE.byId.get(gradeId) || null;
+}
+/* 민무늬 등급의 id. 코드에 'plain' 을 박지 않는다 — 파일이 이름을 바꿀 수 있다. */
+export const plainGradeId = () => _VARIE.plainId;
+/* 등급을 모를 때 값이 떨어지는 자리(확정문 §5 — 옛 판의 무늬 잎은 산반으로 읽는다). */
+export const legacyVarieGradeId = () => _VARIE.legacyGradeId;
+
+/* ★★ 3D 스킨과 **같은 값을 보게 하는 표** (확정문 §5 ⚠).
+   ------------------------------------------------------------
+   `plant_grow.html` 은 성숙 무늬를 `leaf_mat{n}` 키로 고르고(`pickLeafKey` → `matFromMid`),
+   그 n 은 `skins/mon_*.glb` 한 장을 가리킨다. 대표 번호는 1,4,7,… 이고 그 뒤 둘은
+   **같은 메시의 리텍스처본(-쨍/-차분)** 이라 같은 갈래다.
+   ⇒ 그래서 등급표는 갈래마다 **대표 번호(matNum)** 를 들고 있고, 여기서 셋을 다 낸다.
+   ⚠ 화면에 분홍이 떠 있는데 값은 산반이면 그게 제일 나쁜 거짓말이다(확정문 §5). */
+export function gradeOfMatNum(n) {
+  if (!Number.isInteger(n) || n < 1) return null;
+  /* 대표로 접는다 — 2·3 은 1 의 -쨍/-차분이다(plant_grow §ADJ_ALIAS 와 같은 규칙) */
+  return _VARIE.matIndex.get(n - ((n - 1) % 3)) || null;
+}
+export function gradeOfSkinAsset(assetId) { return _VARIE.assetIndex.get(assetId) || null; }
+/* 그 등급이 쓸 수 있는 `leaf_mat` 키들. 대표 + -쨍 + -차분. */
+export function skinKeysOfGrade(gradeId) {
+  const g = _VARIE.byId.get(gradeId);
+  if (!g) return [];
+  const out = [];
+  for (const a of g.assets)
+    if (a.matNum != null) out.push(`leaf_mat${a.matNum}`, `leaf_mat${a.matNum + 1}`, `leaf_mat${a.matNum + 2}`);
+  return out;
 }
 
-/* 값을 매긴다. 순수 함수라 화면이 "지금 팔면 얼마"를 미리 보여줄 수 있다.
-     species 'monstera' | 'pothos'
-   반환 { won, v, leaves, variegatedLeaves, plainLeaves, size, grade, gradeKo,
-          gradeCapped, unitWon, leafMult, multiplier } */
-export function priceOf({ species = 'monstera', leaves, variegatedLeaves = 0 } = {}) {
-  const unit = UNIT_WON[species];
-  if (!unit) throw new Error(`[상점] 모르는 종입니다: ${species} (아는 것: ${Object.keys(UNIT_WON).join(', ')})`);
-  const v = varieRatio(leaves, variegatedLeaves);          // 검사도 여기서 같이 한다
-  const size = leaves >= ADULT_MIN_LEAVES ? 'adult' : 'cutting';
-  const g = varieGradeOf(variegatedLeaves, { isCutting: size === 'cutting' });
-  const raw = varieGradeOf(variegatedLeaves);
-  const plainLeaves = leaves - variegatedLeaves;
-  /* 잎당 값은 **어디서나 같다**(위 ★★ 소품 하한). 그래서 잎을 어떻게 나눠도 합이 안 커진다 */
-  const raw$ = plainLeaves * unit.adult + variegatedLeaves * unit.adult * g.leafMult;
-  const floorWon = minSaleWonOf(species);
-  const won = Math.round(Math.max(raw$, floorWon));
+/* ★★ 빛 → 등급 (확정문 §3). `step` 은 'dark'|'mid'|'bright', `roll` 은 0~1.
+   ------------------------------------------------------------
+   ⚠ **여기서 「무늬가 나나 마나」를 굴리지 않는다.** 그건 캐논의 20% 이고 growth 소유다.
+     이 함수가 정하는 것은 **난 뒤의 등급**뿐이다.
+   ⚠ 못 재면 `null` 이다 — 모르는 것으로 벌하지도 상 주지도 않는다(propagation §③ 규약).
+   ★ 확률은 파일이 갖는다. 순서는 표에 적힌 순서 그대로다(누적으로 자른다). */
+export function varieGradeFromLight(step, roll) {
+  const row = _VARIE.lightGrade[step];
+  if (!row) return null;
+  const r = Math.max(0, Math.min(1, Number.isFinite(roll) ? roll : 0));
+  let acc = 0;
+  let last = null;
+  for (const [gid, p] of Object.entries(row)) {
+    last = gid;
+    acc += p;
+    if (r < acc) return gid;
+  }
+  return last;                 // 확률 합이 1 에 살짝 못 미쳐도 표 밖으로 안 새게
+}
+/* 몬스테라 밴드 이름 → 밝기 셋. 여기 없는 밴드는 `null`(모르면 안 정한다). */
+export function varieLightStepOfBand(band) {
+  return (band && _VARIE.lightBands[band]) || null;
+}
+/* 그 자리의 무늬 잎 한 장 기대값 — 화면이 「밝은 데 두면 얼마나 이득인가」를 말할 때. */
+export function varieGradeExpectedWon(step) {
+  const row = _VARIE.lightGrade[step];
+  if (!row) return null;
+  let won = 0;
+  for (const [gid, p] of Object.entries(row)) {
+    const g = _VARIE.byId.get(gid);
+    if (g) won += p * g.leafWon;
+  }
+  return won;
+}
+
+/* ★ 잎 등급 목록을 늘 같은 모양으로 편다. **여기가 옛 판을 받는 유일한 문이다.**
+     leaves            전체 잎 수
+     variegatedLeaves  그중 무늬 잎 수 (등급을 모를 때)
+     leafGrades        잎별 등급 id 배열 (알 때). 길이가 모자라면 위 둘로 메운다
+   ⚠ 등급을 모르는 무늬 잎은 `legacyGradeId`(산반)로 **값을 매길 때만** 떨어진다.
+     ledger 에 적지 않는다 — 「모른다」와 「산반으로 정해졌다」는 다른 말이다(확정문 §5). */
+export function leafGradeListOf({ leaves, variegatedLeaves = 0, leafGrades = null } = {}) {
+  if (!Number.isInteger(leaves) || leaves < 0)
+    throw new Error(`[상점] 잎 수가 0 이상의 정수가 아닙니다: ${leaves}`);
+  const plain = _VARIE.plainId, legacy = _VARIE.legacyGradeId;
+  if (Array.isArray(leafGrades) && leafGrades.length) {
+    const out = [];
+    let unknownVarie = Math.max(0, variegatedLeaves - leafGrades.filter(
+      g => g && _VARIE.byId.get(g) && _VARIE.byId.get(g).varie).length);
+    for (let i = 0; i < leaves; i++) {
+      const g = leafGrades[i];
+      if (g && _VARIE.byId.has(g)) { out.push(g); continue; }
+      /* ⚠⚠ **모르는 이름은 던진다.** `null`(모른다)과 「없는 갈래 이름」은 다르다 —
+         후자는 상태가 깨졌다는 뜻이고, 조용히 민무늬로 세면 하프문 잎이 20,000원이 된다.
+         `credit` 이 모르는 판매 갈래에 대해 하는 것과 같은 방식이다(어디를 고칠지 말한다). */
+      if (typeof g === 'string' && g)
+        throw new Error(`[상점] 모르는 무늬 등급입니다: ${g} — ` +
+          `data/balance/varie_grades.json 에 없는 이름입니다 ` +
+          `(아는 것: ${[..._VARIE.byId.keys()].join(', ')})`);
+      /* 배열이 짧거나 빈 칸이면 — 남은 무늬 잎을 먼저 채우고 나머지는 민무늬다 */
+      if (unknownVarie > 0) { out.push(legacy); unknownVarie--; } else out.push(plain);
+    }
+    return out;
+  }
+  if (!Number.isInteger(variegatedLeaves) || variegatedLeaves < 0)
+    throw new Error(`[상점] 무늬 잎 수가 0 이상의 정수가 아닙니다: ${variegatedLeaves}`);
+  if (variegatedLeaves > leaves)
+    throw new Error(`[상점] 무늬 잎 ${variegatedLeaves}장이 전체 잎 ${leaves}장보다 많습니다`);
+  return Array.from({ length: leaves }, (_, i) => (i >= leaves - variegatedLeaves ? legacy : plain));
+}
+
+/* ============================================================
+   ⑥-2 ★★★ 값 — **잎 등급의 합 × 파는 길 × 시너지** (확정문 §2)
+   ------------------------------------------------------------
+       잎 값 합 = Σ(그 잎 등급의 leafWon)
+       삽수     = 잎 값 합 × 1.0        ← 등급표가 곧 삽수 값이다
+       그루     = 잎 값 합 × 1.4        ← 뿌리·수형이 있는 완성체
+       시너지   = 서로 다른 **무늬** 등급이 2종이면 ×1.25 · 3종이면 ×1.50
+
+   ★ 앞 공식의 좋은 성질 셋이 **그대로 남는다** (형태가 여전히 「잎별 합」이라서다):
+     ① **잎 수에 우상향** — 잎이 늘면 값이 반드시 는다(비율이 안 들어간다)
+     ② **떼어 팔기가 이득일 수 없다** — 쪼개면 ㉮ 그루 ×1.4 가 삽수 ×1.0 이 되고
+        ㉯ 등급 종수가 갈려 시너지가 내려간다. 합은 같은데 곱만 작아진다
+     ③ **잘 키우는 것이 언제나 낫다**
+   ⚠ 옛 「소품 하한 12,000원」은 **없어졌다.** 하한의 뜻은 *"작아도 최소 이만큼"* 이었는데
+     이제 제일 싼 잎(무지)이 20,000원이라 하한이 원리적으로 안 걸린다. 죽은 규칙을 남기면
+     다음 사람이 그것으로 진단한다(§2.6).
+
+     species  'monstera' | 'pothos' — ⏸ 지금 등급표는 몬스테라 것 하나뿐이다.
+              포토스는 게임에 없고(`UNIT_WON` 에만 남아 있다) 등급표도 없다.
+     form     'cutting'(×1.0 · 기본) | 'pot'(×1.4)
+     ⚠ **기본이 'cutting' 인 까닭**: 확정문 §2 가 *"위 표가 곧 삽수 값이다"* 라고 못 박았다.
+       그루를 매길 때는 부르는 쪽이 `form: 'pot'` 을 **줘야 한다**(listPot 이 그렇게 부른다).
+   반환 { won, leaves, variegatedLeaves, plainLeaves, leafGrades, byGrade, leafSumWon,
+          form, formMult, varieKinds, synergy, grade, gradeKo, v, size, multiplier } */
+export function priceOf({ species = 'monstera', leaves, variegatedLeaves = 0,
+                          leafGrades = null, form = 'cutting' } = {}) {
+  if (!UNIT_WON[species])
+    throw new Error(`[상점] 모르는 종입니다: ${species} (아는 것: ${Object.keys(UNIT_WON).join(', ')})`);
+  if (form !== 'cutting' && form !== 'pot')
+    throw new Error(`[상점] 모르는 파는 길입니다: ${form} (아는 것: cutting, pot)`);
+  const list = leafGradeListOf({ leaves, variegatedLeaves, leafGrades });
+  const byGrade = {};
+  let leafSumWon = 0, varie = 0;
+  const kinds = new Set();
+  for (const gid of list) {
+    const g = _VARIE.byId.get(gid);
+    if (!g) throw new Error(`[상점] 모르는 무늬 등급입니다: ${gid} ` +
+      `(아는 것: ${[..._VARIE.byId.keys()].join(', ')} — data/balance/varie_grades.json)`);
+    byGrade[gid] = (byGrade[gid] || 0) + 1;
+    leafSumWon += g.leafWon;
+    if (g.varie) { varie++; kinds.add(gid); }
+  }
+  const formMult = form === 'pot' ? _VARIE.sale.potMult : _VARIE.sale.cuttingMult;
+  const synergy = _VARIE.sale.synergy[kinds.size] ?? 1;
+  const won = Math.round(leafSumWon * formMult * synergy);
+  /* 「제일 높은 등급」 하나 — 화면이 한 마디로 말할 때 쓴다(값은 위 합이 정한다) */
+  let top = _VARIE.byId.get(_VARIE.plainId);
+  for (const gid of kinds) {
+    const g = _VARIE.byId.get(gid);
+    if (g && g.leafWon > top.leafWon) top = g;
+  }
   return {
     won,
-    v, leaves, variegatedLeaves, plainLeaves, size,
-    grade: g.id, gradeKo: g.ko, gradeCapped: g.id !== raw.id,
-    unitWon: unit.adult, floorWon, floored: raw$ < floorWon, leafMult: g.leafMult,
-    /* 옛 이름과의 다리 — 「민무늬 잎 한 장 값의 몇 배인가」. 화면이 배수 하나로 말할 때 쓴다 */
-    multiplier: won / (unit.adult * leaves)
+    leaves: list.length, variegatedLeaves: varie, plainLeaves: list.length - varie,
+    leafGrades: list, byGrade, leafSumWon,
+    form, formMult, varieKinds: kinds.size, synergy,
+    grade: top.id, gradeKo: top.ko,
+    /* ── 옛 이름들. 화면·재현이 읽던 칸이라 남긴다(값의 뜻은 위에 있다) ── */
+    v: list.length ? varie / list.length : 0,
+    size: list.length >= ADULT_MIN_LEAVES ? 'adult' : 'cutting',
+    gradeCapped: false,                    // ⛔ 등급 뚜껑이 없어졌다(§⑥ ⛔ 없앤 것 ②)
+    multiplier: list.length ? won / (UNIT_WON[species].adult * list.length) : 0
   };
 }
 
-/* ★ 150만원(원룸 이사 자금)을 만들려면 무늬 잎이 몇 장이라야 하나 — **역산**.
-   `docs/shop.md` §1 의 표를 내는 함수다. 화면이 "이 그루를 몇 장 더 무늬로 만들면 되나"를
-   말할 수 있게 코어가 셈을 갖는다(문서와 코드가 갈리지 않게).
-   ★ 공식이 등급 계단이라 닫힌 역함수가 없다 — **한 장씩 올려 보고 처음 넘는 장수**를 낸다.
-     계단이 몇 개 안 되고 잎 수도 작아서 이게 가장 정직하다(근사식을 쓰면 경계에서 어긋난다).
-   반환 { leaves, size, needVarieLeaves, wonAtNeed, maxWon } · 불가능하면 needVarieLeaves = null */
-export function varieLeavesNeededFor(targetWon, { species = 'monstera', leaves } = {}) {
+/* 짧은 이름 둘 — 부르는 쪽이 `form` 을 빠뜨려 **그루를 1.4배 싸게 매기는** 실수를 막는다 */
+export const potPriceOf = (opt = {}) => priceOf({ ...opt, form: 'pot' });
+export const cuttingPriceOf = (opt = {}) => priceOf({ ...opt, form: 'cutting' });
+
+/* ★ 목표액(이사비 등)을 만들려면 무늬 잎이 몇 장이라야 하나 — **역산**.
+   ★★ 2026-08-17 — 등급이 종류가 되면서 **답이 하나가 아니다.** 「무늬 잎 3장」이라 해도
+     산반 셋과 하프문 셋의 값이 두 배 넘게 다르다. 그래서 등급마다 따로 낸다.
+     ⚠ 옛 반환칸(`needVarieLeaves`)은 **어느 등급으로 셌는지를 같이 봐야 뜻이 선다.**
+       기본은 `legacyGradeId`(산반 · 제일 흔한 것)라 「최소한 이만큼」이 아니라
+       「흔한 무늬로만 채우면 이만큼」이다 — 화면 문구가 그렇게 말해야 한다.
+     opt.grade  어느 등급으로 채워 볼 것인가 (기본 legacyGradeId)
+     opt.form   'cutting'(기본) | 'pot'
+   반환 { leaves, size, form, grade, needVarieLeaves, wonAtNeed, maxWon, byGrade } */
+export function varieLeavesNeededFor(targetWon, { species = 'monstera', leaves,
+                                                  grade = null, form = 'cutting' } = {}) {
   if (!UNIT_WON[species]) throw new Error(`[상점] 모르는 종입니다: ${species}`);
   if (!Number.isInteger(leaves) || leaves < 1)
     throw new Error(`[상점] 잎 수가 1 이상의 정수가 아닙니다: ${leaves}`);
-  const size = leaves >= ADULT_MIN_LEAVES ? 'adult' : 'cutting';
-  const maxWon = priceOf({ species, leaves, variegatedLeaves: leaves }).won;
-  for (let n = 0; n <= leaves; n++) {
-    const q = priceOf({ species, leaves, variegatedLeaves: n });
-    if (q.won >= targetWon)
-      return { leaves, size, needVarieLeaves: n, wonAtNeed: q.won, grade: q.grade, maxWon };
+  const plain = _VARIE.plainId;
+  const fill = (gid, n) =>
+    Array.from({ length: leaves }, (_, i) => (i >= leaves - n ? gid : plain));
+  const one = (gid) => {
+    const maxWon = priceOf({ species, leaves, leafGrades: fill(gid, leaves), form }).won;
+    for (let n = 0; n <= leaves; n++) {
+      const q = priceOf({ species, leaves, leafGrades: fill(gid, n), form });
+      if (q.won >= targetWon)
+        return { needVarieLeaves: n, wonAtNeed: q.won, maxWon };
+    }
+    return { needVarieLeaves: null, wonAtNeed: null, maxWon };
+  };
+  const byGrade = {};
+  for (const g of _VARIE.varieGrades) byGrade[g.id] = one(g.id);
+  const gid = (grade && _VARIE.byId.has(grade)) ? grade : _VARIE.legacyGradeId;
+  const r = byGrade[gid] || one(gid);
+  return {
+    leaves, form, grade: gid,
+    size: leaves >= ADULT_MIN_LEAVES ? 'adult' : 'cutting',
+    needVarieLeaves: r.needVarieLeaves, wonAtNeed: r.wonAtNeed, maxWon: r.maxWon,
+    byGrade
+  };
+}
+
+/* ============================================================
+   ⑥-3 ★★★ 잎마다 등급을 **기억한다** — `pot.leafGrades` (확정문 §5)
+   ------------------------------------------------------------
+   확정문 §5 의 첫 줄이 이것이다: *"잎마다 등급을 기억해야 한다. 지금은 `varie: true/false`
+   뿐이다. `leafState` · 세이브 · 3D 스킨 고르기가 **같은 값 하나**를 봐야 한다."*
+
+   ══ 왜 **코어**가 들고 있나 (재서 정했다) ═══════════════════════════════════
+   먼저 정직하게: 원래 자리는 growth 다. 무늬가 나는 것도, 어느 무늬로 그릴지 고르는 것도
+   `plant_grow.html` 이 한다(`VARIE_STATE` · `matFromMid` → `leaf_mat{n}`).
+   ⚠ 그런데 **`VARIE_STATE` 는 참·거짓 한 칸**이다. 종류가 안 들어간다.
+     그 파일은 이번 창의 쓰기 영역 밖이라 칸을 늘릴 수가 없다.
+   ⇒ 그래서 **코어가 잎별 등급 장부를 든다.** 열쇠는 `leafBirth` — growth 가 이미 잎마다
+     들고 다니는 이름이고(`growth_adapter.leafState()` 가 그것으로 줄을 맞춘다),
+     코어가 새로 짓는 이름이 아니다.
+   ⚠ **잎 수를 코어가 세는 것이 아니다.** 목록은 받고, 등급만 적는다(머리말 ② 그대로다).
+
+   ══ ⚠ 아직 안 닿은 곳 — 3D ═════════════════════════════════════════════════
+   `skinKeysOfGrade(id)` 로 **어느 스킨이 그 등급인지**는 낼 수 있게 해 뒀다(§⑥-1).
+   그런데 `plant_grow.html` 의 무늬 고르기는 **잎마다가 아니라 그루 한 벌**(`P.matAlboPick`)
+   이라, 잎별로 강제하려면 그 파일에 손잡이가 하나 있어야 한다.
+   ⇒ **못 한 것으로 보고한다.** 지금 값과 화면이 어긋날 수 있고, 안 어긋난 척하지 않는다
+     (`docs/handoff/variegrade-to-plan.md §화면이 뭘 불러야 하나`).
+============================================================ */
+
+/* 장부를 늘 있는 모양으로. (`earnedByOf`·`marketOf` 와 같은 규약) */
+export function potLeafGradesOf(pot) {
+  if (!pot) return {};
+  if (!pot.leafGrades || typeof pot.leafGrades !== 'object' || Array.isArray(pot.leafGrades))
+    pot.leafGrades = {};
+  return pot.leafGrades;
+}
+
+/* ★ 장부 → `priceOf` 가 받는 잎별 등급 배열. 장부가 비었으면 `null`(옛 판 규칙으로 떨어진다).
+   ⚠ 아는 것만 채우고 **모르는 칸은 `null` 로 둔다** — `leafGradeListOf` 가 거기서
+     「등급을 모르는 무늬 잎」을 산반으로 편다. 모르는 것을 민무늬로 세면 값을 깎게 된다. */
+export function potLeafGradeListOf(pot, leaves, variegatedLeaves = 0) {
+  const led = pot && pot.leafGrades;
+  if (!led || !Number.isInteger(leaves) || leaves < 1) return null;
+  const known = Object.keys(led)
+    .map(k => ({ lb: Number(k), gid: led[k] }))
+    .filter(x => Number.isFinite(x.lb) && _VARIE.byId.get(x.gid) && _VARIE.byId.get(x.gid).varie)
+    .sort((a, b) => a.lb - b.lb)
+    .map(x => x.gid);
+  if (!known.length) return null;
+  /* 무늬 잎은 **위쪽(최근)** 에 있다 — propagation §leafVarie 가 같은 규약이다.
+     장부가 지금 달린 무늬 잎보다 많으면(잘라 냈다·떨어졌다) 최근 것부터 센다. */
+  const take = known.slice(-Math.max(0, Math.min(variegatedLeaves, leaves)));
+  const out = new Array(leaves).fill(null);
+  for (let i = 0; i < take.length; i++) out[leaves - take.length + i] = take[i];
+  return out;
+}
+
+/* ★★★ **배선이 오기 전의 다리** — 프롤로그 그루의 등급을 장부 없이도 세운다 (확정문 §4)
+   ------------------------------------------------------------
+   ⚠⚠ 이 함수가 왜 있는지를 재서 적는다. 없으면 **판이 실제로 망가진다.**
+
+   장부(`pot.leafGrades`)는 `assignPotLeafGrades` 가 채우는데, 그것을 부르는 자리는
+   화면(`game.html` 턴 끝)이다. 그 파일은 이번 창의 ⛔ 목록이라 못 건드린다.
+   ⇒ 배선이 오기 전까지 장부가 **늘 비어 있고**, 그러면 확정문 §5 의 옛 판 규칙이 걸려
+     **무늬 잎이 전부 산반**(제일 싼 무늬)으로 읽힌다.
+
+   ══ 그 값이 얼마나 나쁜가 — 재서 적는다 ═══════════════════════════════════
+   반지하 탈출판(잎 11장 중 무늬 3장)의 그루값
+     · 장부 없이 전부 산반   8×20,000 + 3×350,000 = 1,210,000 → ×1.4 = **1,694,000원**
+     · §4 를 세우면          8×20,000 + 산반+하프문+산반      → ×1.4×1.25 = **2,817,500원**
+   이사비가 2,000,000원이라 **앞의 값으로는 아무도 못 나간다.**
+   실제로 `test_banjiha_routes` 가 이 다리 없이 A 13% · B 13% · C 28% 로 주저앉았다
+   (다리 전 기준선 A 38% · B 60% · C 100%).
+
+   ══ ★ 이것은 「지어내기」가 아니다 ════════════════════════════════════════
+   확정문 §4 가 **프롤로그 한 그루의 등급을 못 박았다**(잎1 무지 · 잎2 산반 · 잎3 하프문).
+   프롤로그는 잎 2·3 에 무늬를 **보장**하므로(`loop.js §prologueVarie`), 그 그루에서
+   **제일 오래된 무늬 잎 둘이 곧 잎2·잎3** 이다. 그래서 잎 번호를 몰라도 정해진다.
+   ⚠ 그 밖의 무늬 잎(4번째부터)은 **안 정한다** — 그건 빛이 정할 몫이라 산반으로 떨어진다.
+   ⚠ 장부가 한 칸이라도 있으면 **이 다리는 안 탄다.** 배선이 오면 저절로 죽는 코드다.
+   ⚠ 프롤로그 그루가 아니면(튜토가 꺼졌거나 둘째 화분이면) 안 탄다.
+   반환 잎별 등급 배열 · 안 걸리면 `null` */
+export function prologueLeafGradeListOf(S, pot, leaves, variegatedLeaves = 0) {
+  const pots = (S && S.pots) || [];
+  if (!pot || !pots[0] || pot.id !== pots[0].id) return null;
+  if (!(S.tutorial && S.tutorial.enabled)) return null;
+  if (!Number.isInteger(leaves) || leaves < 1 || !(variegatedLeaves > 0)) return null;
+  const led = pot.leafGrades;
+  if (led && typeof led === 'object' && Object.keys(led).length) return null;   // 장부가 이긴다
+  /* 잎 번호 순서대로 못박힌 **무늬** 등급만 뽑는다(잎1 무지는 무늬가 아니라 빠진다) */
+  const fixed = Object.keys(_VARIE.prologueGrades)
+    .map(Number).sort((a, b) => a - b)
+    .map(n => _VARIE.prologueGrades[n])
+    .filter(gid => { const g = _VARIE.byId.get(gid); return g && g.varie; });
+  if (!fixed.length) return null;
+  /* 무늬 잎은 위쪽(최근)에 모아 센다 — `leafGradeListOf` 와 같은 규약.
+     그중 **제일 아래(오래된) 것부터** 못박힌 등급을 앉힌다. */
+  const out = new Array(leaves).fill(null);
+  const base = leaves - Math.min(variegatedLeaves, leaves);
+  for (let i = 0; i < fixed.length && base + i < leaves; i++) out[base + i] = fixed[i];
+  return out;
+}
+
+/* ★★ 무늬가 난 잎에 **등급을 정해 적는다.** 하루에 한 번(턴 끝) 부르면 된다.
+     opt.pot / opt.potId  (없으면 S.pots[0])
+     opt.leafState  `growth_adapter.leafState()` 가 낸 목록  ★필수
+     opt.band       그 자리의 몬스테라 밴드 이름  (또는 opt.step 으로 'dark'|'mid'|'bright')
+     opt.seed       (기본 S.sim.seed) — 같은 세이브면 같은 답이 나와야 한다
+     opt.prologue   프롤로그 못박기를 쓸 것인가 (기본: 튜토가 켜져 있고 첫 화분이면 쓴다)
+   ★ **한 번 정하면 안 바뀐다.** 이미 적힌 잎은 건드리지 않는다(growth 의 `varieRoll` 과 같은 사고).
+   ⚠ **빛을 못 재면 안 정한다.** 다음 날 다시 묻는다 — 0 으로도 「중간」으로도 안 메꾼다
+     (`propagation.resolveVarieLight` 와 같은 규약).
+   ⚠ 프롤로그 못박기(확정문 §4)는 **빛과 무관하게** 먼저 걸린다. 그래야 「첫 판은 늘 같은 그림」이 된다.
+   반환 { grades, assigned:[{leafBirth,leafNo,grade,gradeKo,why}], pending, step, events } */
+export function assignPotLeafGrades(S, opt = {}) {
+  const pots = (S && S.pots) || [];
+  const pot = opt.pot || (opt.potId ? pots.find(p => p.id === opt.potId) : pots[0]);
+  const rows = Array.isArray(opt.leafState) ? opt.leafState : null;
+  const step = opt.step || varieLightStepOfBand(opt.band);
+  const grades = potLeafGradesOf(pot);
+  const assigned = [], events = [];
+  let pending = 0;
+  if (!pot || !rows) return { grades, assigned, pending, step: step || null, events };
+
+  const usePrologue = opt.prologue != null
+    ? !!opt.prologue
+    : !!(S.tutorial && S.tutorial.enabled && pots[0] && pot.id === pots[0].id);
+  const seed = Number.isFinite(opt.seed) ? opt.seed : ((S.sim && S.sim.seed) || 0);
+  const sorted = [...rows].filter(r => r && Number.isFinite(r.leafBirth))
+                          .sort((a, b) => a.leafBirth - b.leafBirth);
+
+  for (let i = 0; i < sorted.length; i++) {
+    const r = sorted[i];
+    if (!r.varie) continue;                       // 무늬가 아닌 잎은 등급이 없다
+    if (grades[r.leafBirth]) continue;            // 이미 정해졌다 — 안 바꾼다
+    const leafNo = i + 1;
+    const fixed = usePrologue ? _VARIE.prologueGrades[leafNo] : null;
+    let gid = null, why = null;
+    if (fixed && _VARIE.byId.get(fixed) && _VARIE.byId.get(fixed).varie) {
+      gid = fixed; why = 'prologue';
+    } else if (step) {
+      gid = varieGradeFromLight(step, marketHash(seed, `LG${pot.id}#${r.leafBirth}`, 21));
+      why = 'light';
+    }
+    if (!gid) { pending++; continue; }            // 못 쟀다 — 내일 다시(모르면 안 정한다)
+    grades[r.leafBirth] = gid;
+    const g = _VARIE.byId.get(gid);
+    assigned.push({ leafBirth: r.leafBirth, leafNo, grade: gid, gradeKo: g.ko, why });
+    events.push({ id: 'leaf_grade', leafBirth: r.leafBirth, leafNo, grade: gid,
+                  ko: `${leafNo}번째 잎의 무늬는 **${g.ko}**입니다 — 잎 한 장 ` +
+                      `${g.leafWon.toLocaleString()}원` +
+                      (why === 'light' ? ` (${step === 'bright' ? '밝은' : step === 'mid' ? '중간' : '어두운'} 자리)` : '') });
   }
-  return { leaves, size, needVarieLeaves: null, wonAtNeed: null, grade: null, maxWon };
+  return { grades, assigned, pending, step: step || null, events };
 }
 
 /* ============================================================
@@ -1141,9 +1606,20 @@ export function listPot(S, opt = {}) {
   if (p.listing && listingOf(S, p.listing)) {
     const e = new Error(`[중고] ${p.id} 은(는) 이미 올려 두었습니다`); e.tutorialInput = true; throw e;
   }
-  const q = priceOf({ species: opt.species || 'monstera',
-                      leaves: opt.leaves,
-                      variegatedLeaves: opt.variegatedLeaves || 0 });
+  /* ★★ **그루는 `form:'pot'`(×1.4)이다.** 안 주면 삽수 값(×1.0)으로 매겨져 1.4배 싸진다 —
+     그래서 `potPriceOf` 라는 이름으로 부른다(§⑥-2 ⚠ 기본이 'cutting' 인 까닭).
+     ★ 잎별 등급은 **코어 장부**(`pot.leafGrades`)가 갖는다(§⑥-3). 없으면 옛 판 규칙으로
+       무늬 잎이 전부 산반으로 떨어진다 — 조용히가 아니라 확정문 §5 가 정한 대로다. */
+  const varieN = opt.variegatedLeaves || 0;
+  /* 등급을 어디서 얻나 — **셋을 순서대로 본다.** 어느 길로 왔는지는 게시글에 적는다(`gradesFrom`) */
+  const fromOpt = Array.isArray(opt.leafGrades) ? opt.leafGrades : null;
+  const fromLedger = fromOpt ? null : potLeafGradeListOf(p, opt.leaves, varieN);
+  const fromPrologue = (fromOpt || fromLedger) ? null
+                     : prologueLeafGradeListOf(S, p, opt.leaves, varieN);   // §배선이 오기 전의 다리
+  const q = potPriceOf({ species: opt.species || 'monstera',
+                         leaves: opt.leaves, variegatedLeaves: varieN,
+                         leafGrades: fromOpt || fromLedger || fromPrologue });
+  q.gradesFrom = fromOpt ? 'opt' : fromLedger ? 'ledger' : fromPrologue ? 'prologue' : 'legacy';
   const l = pushListing(S, { kind: 'pot', refId: p.id, ko: '몬스테라', price: q });
   p.listing = l.listingId;
   if (typeof opt.log === 'function')
@@ -1209,7 +1685,11 @@ export function listCutting(S, cuttingOrId, opt = {}) {
   const leaves = Number.isInteger(c.leaves) ? c.leaves : c.source.leaves;
   const varieLeaves = Number.isInteger(c.variegatedLeaves)
     ? c.variegatedLeaves : c.source.variegatedLeaves;
-  const q = priceOf({ species: opt.species || 'monstera', leaves, variegatedLeaves: varieLeaves });
+  /* ★ 잎별 등급은 삽수가 **자기가 들고 있다**(`c.leafGrade` · propagation §삽수가 자란다).
+     옛 세이브에는 그 칸이 없다 — 그때는 `leafGradeListOf` 가 무늬 잎을 산반으로 편다(확정문 §5). */
+  const q = cuttingPriceOf({ species: opt.species || 'monstera', leaves,
+                             variegatedLeaves: varieLeaves,
+                             leafGrades: Array.isArray(c.leafGrade) ? c.leafGrade : null });
   const l = pushListing(S, { kind: 'cutting', refId: c.id, ko: '몬스테라 삽수', price: q });
   c.listing = l.listingId;
   if (typeof opt.log === 'function')

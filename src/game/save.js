@@ -256,6 +256,30 @@ function packPot(p, i) {
       leaves: needInt(p.pendingCutLoss.leaves ?? 0, `${path}.pendingCutLoss.leaves`, { min: 0 }),
       nodes: needInt(p.pendingCutLoss.nodes ?? 0, `${path}.pendingCutLoss.nodes`, { min: 0 })
     },
+    /* ★★★ 잎별 **무늬 등급 장부** (2026-08-17 · 확정문 §5 · shop.js §⑥-3).
+       ------------------------------------------------------------
+       `{ [leafBirth]: 'sanban'|'halfmoon'|'fullmoon' }` — 열쇠는 growth 가 잎마다 들고 다니는
+       `leafBirth` 다(코어가 새로 짓는 이름이 아니다. `growth_adapter.leafState()` 가 그것으로 줄을 맞춘다).
+       ⚠⚠ **왜 화분에 적나.** growth 의 `VARIE_STATE` 는 참·거짓 한 칸뿐이라 종류가 안 들어간다.
+         `plant_grow.html` 은 이 창의 쓰기 영역 밖이라 칸을 늘릴 수가 없다 —
+         그래서 **등급만** 코어가 든다(잎 수는 여전히 growth 가 센다).
+       ⚠ 안 적으면 저장 한 번에 **프롤로그 그루의 하프문 잎이 산반이 되어 196만원짜리가
+         147만원이 된다**(재서 확인했다). 이사비 200만을 넘기는 판이 통째로 바뀐다.
+       ⚠ 무늬가 아직 안 정해진 잎은 **아예 안 적는다**(칸이 없는 것이 「모른다」다).
+         빈 장부는 `null` 이 아니라 `{}` 로 적는다 — 옛 세이브(칸 없음)와 새 판(무늬 없음)이
+         같은 모양이라 굳이 가를 것이 없다. */
+    leafGrades: (() => {
+      const src = p.leafGrades;
+      if (!src || typeof src !== 'object' || Array.isArray(src)) return {};
+      const out = {};
+      for (const [k, v] of Object.entries(src)) {
+        const n = Number(k);
+        if (!Number.isFinite(n)) throw fail('corrupt', `${path}.leafGrades 의 열쇠가 숫자가 아닙니다: ${k}`);
+        if (v == null) continue;                       // 「모른다」는 칸을 안 만든다
+        out[String(k)] = needStr(v, `${path}.leafGrades[${k}]`);
+      }
+      return out;
+    })(),
     /* ★★ 중고 거래에 올려 둔 게시글 id (2026-08-17 · shop.js §⑦-0).
        ⚠ 안 적으면 저장 한 번에 **올려 둔 그루가 「안 올린 것」이 된다** — 게시글은 남아
          연락까지 오는데 그루 쪽은 아무 표시가 없어 화면이 [올리기]를 또 내민다. */
@@ -308,6 +332,24 @@ function packCutting(c, i) {
         : Array.from({ length: (c.source && c.source.leaves) || 0 },
                      (_, i) => i < ((c.source && c.source.variegatedLeaves) || 0)),
       `${path}.leafVarie`).map(v => !!v),
+    /* ★★★ 잎별 **무늬 등급** (2026-08-17 · 확정문 §5 — 「무늬는 개수가 아니라 종류다」).
+       ------------------------------------------------------------
+       `leafGrade[i]` 는 `leafVarie[i]` 와 **같은 자리의 같은 잎**이다.
+         · 민무늬 잎     → `null`
+         · 등급이 정해진 무늬 잎 → 'sanban'|'halfmoon'|'fullmoon' (정본은 varie_grades.json)
+         · 아직 못 정한 무늬 잎  → `null` ★ **산반으로 굳히지 않는다**
+       ⚠⚠ 안 적으면 **저장 한 번에 하프문 잎이 산반이 된다** — 값이 반 넘게 준다
+         (잎 한 장 750,000 → 350,000). `leafVarie` 를 안 적으면 잎이 사라지던 것과 같은 무게다.
+       ⚠ **길이를 `leafVarie` 에 맞춘다.** 옛 세이브에는 이 칸이 아예 없어 전부 `null` 이 되고,
+         그 판의 무늬 잎은 값을 매길 때 산반으로 읽힌다(확정문 §5). 그 사실은 조용히 넘기지
+         않고 `migrateVarieGrades` 가 기록에 남긴다.
+       ⚠ 문자열 검사를 한다 — 모르는 갈래 이름이 세이브에서 상태로 새어 들어오면
+         `priceOf` 가 그 자리에서 던진다(값 매기기가 통째로 막힌다). */
+    leafGrade: needArr(
+      Array.isArray(c.leafVarie)
+        ? c.leafVarie.map((v, k) => (v && Array.isArray(c.leafGrade) ? (c.leafGrade[k] ?? null) : null))
+        : [],
+      `${path}.leafGrade`).map((g, k) => (g == null ? null : needStr(g, `${path}.leafGrade[${k}]`))),
     leafDays: needInt(c.leafDays ?? 0, `${path}.leafDays`, { min: 0 }),
     grewLeaves: needInt(c.grewLeaves ?? 0, `${path}.grewLeaves`, { min: 0 }),
     /* ★★ 2026-08-17 — **빛이 정한 무늬 소질** (propagation.js §③).
@@ -405,6 +447,45 @@ export function migrateCuttingRules(S) {
              `${Math.round(VARIE_LIGHT.bright * 100)}%(천장)로 맞췄습니다`);
   if (marked)
     out.push(`예전 판의 무늬 삽수 ${marked}건은 놓인 자리의 빛이 새 잎 무늬율을 정합니다`);
+  return out;
+}
+
+/* ============================================================
+   ★★★ 옛 판의 무늬 잎을 **산반으로 읽는다** — 그리고 그 사실을 남긴다 (2026-08-17)
+   ------------------------------------------------------------
+   확정문 §5: *"옛 세이브에는 등급이 없다. 무늬 잎이 있는 옛 판은 **산반으로 읽는다**
+   (제일 흔한 것). ★ 조용히 하지 말고 **기록에 남겨라**."*
+
+   ★ 이 함수는 **아무 값도 안 바꾼다.** 세는 것과 말하는 것이 전부다.
+     ⇒ 등급을 여기서 채워 넣으면 「모른다」가 「산반으로 정해졌다」로 굳어 버리고,
+       그 뒤로는 그 잎이 빛으로 다시 정해질 길이 영영 막힌다. 값을 매길 때만
+       `shop.leafGradeListOf` 가 산반으로 편다 — 되돌릴 수 있는 자리에만 둔다.
+
+   ⚠ **「옛 판이다」의 표시**는 `raw` 에 `leafGrade`·`leafGrades` 칸이 **아예 없다**는 것이다.
+     비어 있는 것(`{}` · 전부 null)과 없는 것은 다르다 — 새 판도 무늬가 나기 전에는 비어 있다.
+     그래서 정리된 상태가 아니라 **세이브에서 온 날것**을 본다
+     (`migrateVarieSale` 이 「칸이 없다」와 「0건이다」를 가른 것과 같은 규칙).
+   반환 사람이 읽을 로그 줄들(없으면 빈 배열). */
+export function migrateVarieGrades(S, raw) {
+  const out = [];
+  const rawPots = (raw && Array.isArray(raw.pots)) ? raw.pots : [];
+  const rawCuts = (raw && Array.isArray(raw.cuttings)) ? raw.cuttings : [];
+
+  let oldCuts = 0, oldCutLeaves = 0;
+  (S.cuttings || []).forEach((c, i) => {
+    if (!c || rawCuts[i] == null || rawCuts[i].leafGrade !== undefined) return;
+    const v = (c.leafVarie || []).reduce((n, x) => n + (x ? 1 : 0), 0);
+    if (v > 0) { oldCuts++; oldCutLeaves += v; }
+  });
+  const oldPots = (S.pots || []).filter((p, i) => p && rawPots[i] != null &&
+                                                  rawPots[i].leafGrades === undefined).length;
+
+  if (oldCuts)
+    out.push(`예전 판의 삽수 ${oldCuts}개(무늬 잎 ${oldCutLeaves}장)에 등급이 없습니다 — ` +
+             `값을 매길 때 **산반**으로 읽습니다(확정문 §5)`);
+  if (oldPots)
+    out.push(`예전 판의 그루 ${oldPots}개에 잎별 등급 장부가 없습니다 — ` +
+             `이미 난 무늬 잎은 **산반**으로 읽고, 앞으로 나는 잎부터 자리의 빛이 등급을 정합니다`);
   return out;
 }
 
@@ -1369,8 +1450,20 @@ export function deserialize(raw, opt = {}) {
        두 벌로 저장하면 언젠가 어긋나고, 어긋난 쪽이 값(shop.sellCutting)으로 새어 나간다. */
     return syncCuttingLeaves({ ...q, at: q.at ? makeAt(q.at) : null });
   });
-  /* ★★ 옛 삽수 이관 — **2026-08-17 규칙 교체**(propagation.js §③). 아래 §migrateCuttingRules */
-  for (const m of migrateCuttingRules(S)) pushLog(S, '✂ ' + m);
+  /* ══ ⚠⚠ 이관 알림은 **여기서 못 적는다** — 아래 `S.log = …` 가 통째로 덮어쓴다 ══════
+     ★★ 2026-08-17 재서 잡았다. `migrateCuttingRules` 는 2026-08-17 에 붙으면서
+       `pushLog(S, '✂ ' + m)` 을 **바로 여기서** 불렀는데, 그 아래 `S.log = needArr(st.log …)`
+       가 로그 배열을 **세이브에서 온 것으로 갈아 끼운다.** 그래서 그 알림은 **한 번도 화면에
+       뜬 적이 없다.** 「말한다」고 적혀 있는 줄이 실제로는 말하지 않고 있었다.
+       (START-HERE §2 — 「고쳤다」를 화면 확인 없이 쓰지 않는다. 그 반대쪽 사고다.)
+     ⇒ 이관은 **여기서 돌리고**(상태를 실제로 고쳐야 하니까) **알림만 모아 두었다가**
+       `S.log` 가 선 뒤에 적는다. 아래 §이관 알림. */
+  const migrateNotes = [
+    ...migrateCuttingRules(S).map(m => '✂ ' + m),
+    /* ★★★ 옛 판의 무늬 잎을 **산반으로 읽는다** — 확정문 §5 가 「기록에 남기라」고 했다.
+       ⚠ `st`(날것)를 같이 넘긴다 — 「칸이 없다」와 「비어 있다」를 가르려면 정리 전 값이 필요하다 */
+    ...migrateVarieGrades(S, st).map(m => '🎨 ' + m)
+  ];
   S.dliHist = needArr(st.dliHist || [], 'state.dliHist')
     .map((v, i) => (v == null ? null : needNum(v, `state.dliHist[${i}]`)));
   /* ★★ 빛 이력을 화분에 되돌린다 (2026-08-15 다개체 · state §syncPotLead).
@@ -1392,6 +1485,9 @@ export function deserialize(raw, opt = {}) {
   };
   S.log = needArr(st.log || [], 'state.log')
     .map((e, i) => ({ day: needInt(e.day ?? 0, `state.log[${i}].day`, { min: 0 }), msg: String(e.msg ?? '') }));
+  /* ★ §이관 알림 — 로그가 선 **뒤에** 적는다. 위 §이관 알림의 ⚠⚠ 를 읽어라.
+     ⚠ 이 자리를 위로 되돌리면 알림이 다시 조용히 사라진다. */
+  for (const m of migrateNotes) pushLog(S, m);
   if (st.desync) S.desync = { ...st.desync };
 
   /* 첫 플레이 — 규칙은 **지금 정본**에서 오고, 진행 상태만 세이브에서 온다 */
