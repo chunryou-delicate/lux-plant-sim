@@ -42,13 +42,16 @@
 ============================================================ */
 
 import {
-  SCHEMA, SIM_MODES, ARRIVAL, newState, pot0, pushLog, migratePots, rehomePot
+  SCHEMA, SIM_MODES, ARRIVAL, newState, pot0, pushLog, migratePots, rehomePot,
+  /* ★ 여러 그루 (2026-08-15) — 화분마다 제 그루 이름과 제 빛 이력을 갖는다 */
+  MAIN_GROWTH_ID, growthIdOf, syncPotLead
 } from './state.js';
 import { createFirstPlayState, placeBeansprout, placeCrop, cropSites, cropKindOf,
          ensureCropPots, syncCropLead } from './first_play.js';
 import { createTutorialState } from './tutorial.js';
 import { inRoom, isFreeSlotId, makeAt } from './place.js';
-import { PROPAGATION_SCHEMA, rehomeCuttings, syncCuttingLeaves } from './propagation.js';
+import { PROPAGATION_SCHEMA, rehomeCuttings, syncCuttingLeaves,
+         VARIE_LIGHT } from './propagation.js';
 import { SHOP_SCHEMA, createShopState, SALE_KINDS } from './shop.js';
 /* 체력 — 규칙(최대치)은 저쪽 것이다. 세이브는 남은 양만 싣는다(docs/stamina.md) */
 import { STAMINA_MAX, createStaminaState } from './stamina.js';
@@ -211,6 +214,25 @@ function packPot(p, i) {
       ? null : needInt(p.wateredOnDay, `${path}.wateredOnDay`, { min: 0 }),
     arrivalGrowthDays: needInt(p.arrivalGrowthDays ?? ARRIVAL.growthDays,
                                `${path}.arrivalGrowthDays`, { min: 0 }),
+    /* ★★ 여러 그루 (2026-08-15 · state §MAIN_GROWTH_ID) — **생장 창의 어느 그루냐.**
+       순서(pots[0])로 정하면 첫 화분을 파는 날 이름이 통째로 밀려 모든 화분이 남의 형태를
+       되세운다. 그래서 화분이 제 이름을 들고 다닌다.
+       ⚠ 옛 세이브에는 이 칸이 없다 — 그때는 화분이 하나뿐이었으므로 `__main__` 이 사실이다. */
+    growthId: optStr(p.growthId, `${path}.growthId`) || MAIN_GROWTH_ID,
+    /* ★ 그 그루의 씨앗(모양·색). **안 적으면 열 때마다 다른 모양의 그루가 선다.**
+       ⚠ 첫 그루(선물)는 null 이다 — 그 씨앗은 생장 창이 자기 것으로 들고 있고(맨 위 §growth),
+         코어가 여기서 덮어쓰면 그 판의 몬스테라가 세이브 왕복에 얼굴이 바뀐다. */
+    growthSeed: p.growthSeed == null ? null
+      : needInt(p.growthSeed, `${path}.growthSeed`, { min: 0 }),
+    /* ★★ 이 그루가 받은 빛 이력 — **첫 화분만 예외다.**
+       첫 화분의 이력은 맨 위 `dliHist` 에 있다(대표 칸 · 옛 이름 그대로). 여기 또 적으면
+       같은 배열이 세이브에 두 번 들어가고, 둘이 갈리는 날 어느 쪽이 정본인지 알 수 없게 된다.
+       ⇒ 그래서 **한 그루짜리 판의 세이브는 예전과 한 글자도 다르지 않다.**
+       ★ 자르지 않는다 — 표시용이 아니라 growth 복원의 유일한 입력이다(맨 위 §growth). */
+    ...(i === 0 ? {} : {
+      dliHist: needArr(p.dliHist || [], `${path}.dliHist`)
+        .map((v, j) => (v == null ? null : needNum(v, `${path}.dliHist[${j}]`)))
+    }),
     /* ★ 번식 흔적 (2026-08-03) — **반드시 같이 적는다.**
        `cuts`·`pendingCutLoss` 는 "이 모주에서 무엇을 잘라냈나"이고, growth 가 다개체 리팩터에서
        형태에 반영할 때까지 코어가 들고 있는 유일한 기록이다. 안 적으면 저장 한 번에
@@ -284,11 +306,28 @@ function packCutting(c, i) {
       `${path}.leafVarie`).map(v => !!v),
     leafDays: needInt(c.leafDays ?? 0, `${path}.leafDays`, { min: 0 }),
     grewLeaves: needInt(c.grewLeaves ?? 0, `${path}.grewLeaves`, { min: 0 }),
-    /* ★ 계통 갈래(원복·유지·고스트). 자를 때 정해진 것이라 **다시 굴리면 안 된다** —
-       세이브를 다시 불러 다른 답이 나오면 그 자리에서 결정성이 깨진다. */
+    /* ★★ 2026-08-17 — **빛이 정한 무늬 소질** (propagation.js §③).
+       `varieLightBand` 가 `null` 이면 **아직 안 정해졌다**는 뜻이고, 정해지면
+       'dark'|'mid'|'bright' 가 적힌다. ⚠ 이 칸을 안 적으면 저장 한 번에 「이미 정해진 것」이
+       미정으로 돌아가 **밝은 데서 정한 80% 가 다음 자리의 빛으로 다시 정해진다.**
+       `varieFromCut` 은 「무늬 마디에서 떴나」 — 빛 판정을 기다리는 대상인지의 정본이다. */
+    varieLightBand: optStr(c.varieLightBand, `${path}.varieLightBand`),
+    /* ⚠ 옛 세이브에는 이 칸이 **없다.** 0/false 로 메꾸면 옛 무늬 삽수가 빛 판정에서 통째로
+       빠져 「무늬 삽수인데 소질이 영영 모주 값」이 된다. 그래서 **세이브에 적혀 있는 것으로
+       되메운다** — 자를 때 무늬 잎이 딸려왔나(`source.variegatedLeaves`). 지어낸 값이 아니고,
+       바로 위 `leafVarie` 가 옛 세이브를 되메우는 방식과 같다. */
+    varieFromCut: c.varieFromCut == null
+      ? ((c.source && c.source.variegatedLeaves) || 0) >= 1
+      : !!c.varieFromCut,
+    /* ⏸ 계통 갈래(원복·유지·고스트) — **2026-08-17 에 규칙에서 빠졌다.**
+       ⚠ 그래도 **계속 적고 계속 읽는다.** 옛 판에 적혀 있는 칸이고, 안 읽으면 그 판이 안 열린다.
+         새 삽수는 언제나 `null` 이라 이 칸이 조용히 비어 간다(그게 맞는 모습이다). */
     lineage: optStr(c.lineage, `${path}.lineage`),
     lineageKnown: !!c.lineageKnown,
     cutW: c.cutW == null ? null : needNum(c.cutW, `${path}.cutW`, { min: 0 }),
+    /* ⏸ 고스트 기한 — 규칙에서 빠졌다(고스트로 안 죽는다). 칸은 읽되 `migrateCuttingRules`
+       가 열 때 지운다. 여기서 지우지 않는 이유: 이 함수는 **쓸 때도 읽을 때도 같은 것**이라
+       여기서 지우면 「저장했더니 값이 달라졌다」가 된다(save.js 머리말 규칙). */
     ghostDeadlineDay: c.ghostDeadlineDay == null
       ? null : needInt(c.ghostDeadlineDay, `${path}.ghostDeadlineDay`, { min: 0 }),
     motherCuttingId: optStr(c.motherCuttingId, `${path}.motherCuttingId`),
@@ -303,6 +342,61 @@ function packCutting(c, i) {
     warned: needArr(c.warned || [], `${path}.warned`).map((w, j) => needStr(w, `${path}.warned[${j}]`)),
     potted: !!c.potted
   };
+}
+
+/* ============================================================
+   ★★ 옛 삽수 이관 — 「키메라 세 갈래」로 만들어진 판을 연다 (2026-08-17)
+   ------------------------------------------------------------
+   2026-08-17 에 박사님이 삽수 규칙을 갈아엎으셨다(propagation.js §③). 옛 세이브에는
+   그 전 규칙이 실제로 적혀 있다 — `lineage`(revert/chimera/ghost) · `ghostDeadlineDay` ·
+   그리고 그 규칙이 정한 `varieChance`. **그 판이 안 열리면 이번 일이 실패다.**
+
+   ★ 이 함수가 하는 일은 셋뿐이고, **전부 「없어진 규칙의 흔적을 끄는 것」**이다.
+     지어내는 값이 하나도 없다.
+
+     ① **고스트 시계를 끈다**(`ghostDeadlineDay → null`).
+        고스트로 죽는 규칙이 없어졌다. 안 끄면 그 판의 삽수가 **없어진 규칙으로 죽는다.**
+     ② **고스트의 `varieChance = 1` 을 천장(0.80)으로 낮춘다.**
+        1 은 「흰 조직만 남았다」를 뜻하던 값이지 무늬율이 아니었다. 그대로 두면
+        새 잎이 **100% 무늬**로 나서 새 규칙의 천장(박사님 *"천정 80%"*)을 넘는다.
+        ⚠ **뺏는 쪽이 아니라 맞추는 쪽이다** — 그 삽수는 원래 죽을 것이었는데 이제 산다.
+     ③ **말한다.** 옛 무늬 삽수는 이제 「놓인 자리의 빛이 소질을 정한다」로 바뀌었다.
+        ⚠ `varieFromCut` 되메우기는 **`packCutting` 이 한다**(위 §varieFromCut) — 쓸 때와
+          읽을 때가 같아야 하는 칸이라 그쪽이 맞는 자리다. 여기서는 세기만 한다.
+        ★ 그리고 `varieLightBand` 는 **안 채운다.** 그 판은 빛을 잰 적이 없고, 잰 척하면
+          거짓말이 된다. 미정으로 두면 다음 하루에 그 자리의 빛으로 정해진다.
+
+   ★ 「옛 판이다」의 표시로 **`lineage` 가 적혀 있나**를 쓴다. 새 삽수는 그 칸이 언제나 null 이라
+     (propagation.js §takeCutting) 지금 판이 여기 걸리는 일이 없다.
+
+   ⚠ **`lineage` 는 안 지운다.** 「예전 판에서 무엇이었나」는 사실이고, 지우면 그 사실이
+     사라진다. 규칙에서만 뺐다(propagation.js §⏸ 키메라와 같은 사상).
+   ⚠ **이미 새 규칙으로 도는 판은 안 건드린다** — `varieLightBand` 가 적혀 있거나
+     `lineage` 가 없으면 손대지 않는다. 뭉개면 저장할 때마다 값이 흔들린다
+     (`migrateVarieSale` 이 「칸이 없다」와 「0건이다」를 가른 것과 같은 규칙).
+   반환 사람이 읽을 로그 줄들(없으면 빈 배열). */
+export function migrateCuttingRules(S) {
+  const out = [];
+  let ghostClocks = 0, ceiled = 0, marked = 0;
+  for (const c of (S && S.cuttings) || []) {
+    if (!c) continue;
+    if (c.ghostDeadlineDay != null) { c.ghostDeadlineDay = null; ghostClocks++; }
+    if (!c.lineage) continue;                         // 새 삽수 — 옛 규칙의 흔적이 없다
+    if (c.lineage === 'ghost' && Number.isFinite(c.varieChance) && c.varieChance > VARIE_LIGHT.bright) {
+      c.varieChance = VARIE_LIGHT.bright;
+      ceiled++;
+    }
+    if (c.varieFromCut && !c.varieLightBand) marked++;
+  }
+  if (ghostClocks)
+    out.push(`예전 판의 고스트 기한 ${ghostClocks}건을 껐습니다 — ` +
+             `2026-08-17 부터 고스트로 시들지 않습니다`);
+  if (ceiled)
+    out.push(`예전 판의 고스트 삽수 ${ceiled}건의 새 잎 무늬율을 ` +
+             `${Math.round(VARIE_LIGHT.bright * 100)}%(천장)로 맞췄습니다`);
+  if (marked)
+    out.push(`예전 판의 무늬 삽수 ${marked}건은 놓인 자리의 빛이 새 잎 무늬율을 정합니다`);
+  return out;
 }
 
 /* ★★ 옛 세이브 이전 — **한 칸짜리 옛 상태를 시루 목록으로** (2026-08-04).
@@ -1027,10 +1121,11 @@ function reseat(S, room, report) {
      growth  growth_adapter(브라우저) 또는 같은 계약의 스텁(sim.nullGrowth)
    반환 { needed, method, jumpTo, replayedDays, calendarDay, growthDays, blocked, warnings } */
 export function restoreGrowth(S, growth, opt = {}) {
-  const p = pot0(S);
+  const pots = (S && S.pots) || [];
   const warnings = [];
-  if (!p) return { needed: false, method: null, jumpTo: null, replayedDays: 0,
-                   calendarDay: null, growthDays: null, blocked: null, warnings };
+  if (!pots.length) return { needed: false, method: null, jumpTo: null, replayedDays: 0,
+                             calendarDay: null, growthDays: null, blocked: null,
+                             plants: [], warnings };
 
   for (const n of ['setGrowth', 'setDailyLight', 'advanceTo'])
     if (typeof growth?.[n] !== 'function')
@@ -1039,13 +1134,63 @@ export function restoreGrowth(S, growth, opt = {}) {
      growth_adapter.assertContract 가 그걸 본다 — 있으면 먼저 묻는다. */
   if (typeof growth.assertContract === 'function') growth.assertContract();
 
+  /* ★★ 여러 그루 (2026-08-15) — 화분마다 **제 이력을 제 그루에** 다시 건다.
+     ⚠ 그루를 못 고르는 생장 창에 화분 둘을 물리면 **던진다.** 조용히 한 그루에 겹쳐 걸면
+       마지막 화분의 형태만 남고 나머지는 그 형태를 자기 것이라 믿는다. */
+  const canMulti = typeof growth.multi === 'function' && growth.multi();
+  if (pots.length > 1 && !canMulti)
+    throw fail('needs_growth',
+      `화분이 ${pots.length}개인 세이브인데 생장 창이 그루를 하나만 굴립니다 — ` +
+      `plant_grow 에 selectPlant/addPlant 가 있는지 확인해 주세요`);
+
+  const per = pots.map((p, i) => restoreOnePlant(S, growth, p, i, pots.length, canMulti));
+  for (const r of per) warnings.push(...r.warnings);
+  if (S.desync)
+    warnings.push(`어긋난 상태에서 저장된 세이브입니다(${S.desync.reason || '사유 미상'}) — ` +
+                  `형태가 하루 어긋날 수 있습니다`);
+
+  /* ★ 옛 칸은 **첫 화분의 것**이다 — 화면·검사가 그 이름을 읽고 있고, 한 그루짜리 판에서는
+     그것이 곧 그 판의 전부다. 그루마다의 값은 `plants` 에 있다. */
+  const lead = per[0];
+  const out = { needed: true, method: 'replay',
+                jumpTo: lead.jumpTo, replayedDays: lead.replayedDays,
+                calendarDay: lead.calendarDay, growthDays: lead.growthDays,
+                blocked: lead.blocked, plants: per, warnings };
+  for (const r of per)
+    pushLog(S, `🌿 복원 — ${pots.length > 1 ? `[${r.potId}] ` : ''}` +
+               `도착 ${r.jumpTo}일로 점프한 뒤 빛 이력 ${r.replayedDays}일을 다시 걸었습니다` +
+               (r.growthDays == null ? '' : ` (유효 ${r.growthDays}일)`));
+  for (const w of warnings) pushLog(S, '⚠ 복원 — ' + w);
+  return out;
+}
+
+/* 화분 하나를 되세운다. 규칙은 예전과 한 줄도 안 다르다 — **무엇에 대고 하느냐**만 달라졌다.
+   반환 { potId, growthId, jumpTo, replayedDays, calendarDay, growthDays, blocked, warnings } */
+function restoreOnePlant(S, growth, p, i, total, canMulti) {
+  const warnings = [];
+  const growthId = growthIdOf(p);
+  /* ★ 첫 그루(`__main__`)는 생장 창이 부팅 때부터 갖고 있다 — 만들지 않는다.
+     ★ 화분이 하나뿐이고 그것이 기본 그루면 `select` 조차 안 부른다(옛 길 그대로). */
+  if (growthId !== MAIN_GROWTH_ID) {
+    /* 씨앗을 같이 넘긴다 — 안 넘기면 열 때마다 **다른 모양의 그루**가 선다.
+       `growthSeed` 가 없는 화분은 생장 창이 알아서 고른다(그 판에서만 흔들린다). */
+    growth.addPlant({ id: growthId, day: 0,
+                      ...(Number.isInteger(p.growthSeed) ? { seed: p.growthSeed } : {}) });
+  }
+  if (total > 1 || growthId !== MAIN_GROWTH_ID) growth.select(growthId);
+
   let jumpTo = p.arrivalGrowthDays;
   if (!Number.isInteger(jumpTo) || jumpTo < 0) {
     jumpTo = ARRIVAL.growthDays;
     warnings.push(`화분에 도착 진행도가 없어 코어 기본값(${jumpTo}일)으로 세웠습니다`);
   }
+  if (!Number.isInteger(jumpTo) || jumpTo < 0) {
+    jumpTo = ARRIVAL.growthDays;
+    warnings.push(`화분에 도착 진행도가 없어 코어 기본값(${jumpTo}일)으로 세웠습니다`);
+  }
 
-  const hist = S.dliHist || [];
+  /* ★ 이력의 정본은 **화분마다**다(state §syncPotLead). 첫 화분의 것이 곧 `S.dliHist` 다. */
+  const hist = (Array.isArray(p.dliHist) ? p.dliHist : (i === 0 ? S.dliHist : null)) || [];
   /* 교차검증 — 이 둘은 loop.js 에서 같은 자리에서 늘어난다. 다르면 중간에 턴이 깨진 것이라
      재생 길이가 실제와 다를 수 있다. 조용히 넘기지 않는다.
      ★★ 재는 대상은 `daysPlanted`(돌본 날)가 아니라 **`fedDays`(먹인 날)**다 (2026-08-05).
@@ -1054,11 +1199,8 @@ export function restoreGrowth(S, growth, opt = {}) {
      ⚠ 옛 세이브는 `fedDays` 가 없어 `daysPlanted` 로 떨어진다(그 시절엔 둘이 같았다). */
   const fed = Number.isInteger(p.fedDays) ? p.fedDays : p.daysPlanted;
   if (hist.length !== fed)
-    warnings.push(`빛 이력 ${hist.length}일 ≠ growth 에 먹인 날 ${fed}일 — ` +
+    warnings.push(`${total > 1 ? `[${p.id}] ` : ''}빛 이력 ${hist.length}일 ≠ growth 에 먹인 날 ${fed}일 — ` +
                   `중간에 깨진 턴이 있어 형태가 그만큼 어긋날 수 있습니다`);
-  if (S.desync)
-    warnings.push(`어긋난 상태에서 저장된 세이브입니다(${S.desync.reason || '사유 미상'}) — ` +
-                  `형태가 하루 어긋날 수 있습니다`);
 
   /* ① 도착 지점으로 점프. givePlant 와 같은 사상 — 못 그렸으면 거기서 멈춘다. */
   const jump = growth.setGrowth(jumpTo);
@@ -1077,17 +1219,14 @@ export function restoreGrowth(S, growth, opt = {}) {
   }
   /* 재생 도중의 그리기 실패는 화면에 안 남는다 — 다음 날이 덮어 그리기 때문이다.
      그래도 몇 번 났는지는 남긴다(전부 실패했으면 마지막 화면도 낡은 것이다). */
-  if (drawFails) warnings.push(`재생 중 그리기 실패 ${drawFails}일 (마지막 사유: ${lastDrawError})`);
+  if (drawFails) warnings.push(`${total > 1 ? `[${p.id}] ` : ''}재생 중 그리기 실패 ${drawFails}일 ` +
+                               `(마지막 사유: ${lastDrawError})`);
 
   const growthDays = typeof growth.growthDays === 'function' ? growth.growthDays() : null;
   const blocked = typeof growth.growthBlocked === 'function' ? growth.growthBlocked() : null;
 
-  const out = { needed: true, method: 'replay', jumpTo, replayedDays: hist.length,
-                calendarDay: cal, growthDays, blocked, warnings };
-  pushLog(S, `🌿 복원 — 도착 ${jumpTo}일로 점프한 뒤 빛 이력 ${hist.length}일을 다시 걸었습니다` +
-             (growthDays == null ? '' : ` (유효 ${growthDays}일)`));
-  for (const w of warnings) pushLog(S, '⚠ 복원 — ' + w);
-  return out;
+  return { potId: p.id, growthId, jumpTo, replayedDays: hist.length,
+           calendarDay: cal, growthDays, blocked, warnings };
 }
 
 /* ★ 저장 객체 → S.
@@ -1155,8 +1294,20 @@ export function deserialize(raw, opt = {}) {
        두 벌로 저장하면 언젠가 어긋나고, 어긋난 쪽이 값(shop.sellCutting)으로 새어 나간다. */
     return syncCuttingLeaves({ ...q, at: q.at ? makeAt(q.at) : null });
   });
+  /* ★★ 옛 삽수 이관 — **2026-08-17 규칙 교체**(propagation.js §③). 아래 §migrateCuttingRules */
+  for (const m of migrateCuttingRules(S)) pushLog(S, '✂ ' + m);
   S.dliHist = needArr(st.dliHist || [], 'state.dliHist')
     .map((v, i) => (v == null ? null : needNum(v, `state.dliHist[${i}]`)));
+  /* ★★ 빛 이력을 화분에 되돌린다 (2026-08-15 다개체 · state §syncPotLead).
+     첫 화분의 이력은 맨 위 `dliHist`(대표 칸)에 있고, 둘째부터는 제 칸에 있다.
+     ⚠ **사본을 만들지 않는다** — 첫 화분은 `S.dliHist` 와 같은 배열을 가리켜야 한다.
+       사본이면 하루가 갈 때마다 둘이 갈리고, 저장할 때 어느 쪽을 적었는지에 따라
+       복원한 형태가 조용히 달라진다. */
+  S.pots.forEach((q, i) => {
+    if (i === 0) { q.dliHist = S.dliHist; return; }
+    if (!Array.isArray(q.dliHist)) q.dliHist = [];
+  });
+  syncPotLead(S);
   const led = needObj(st.ledger || {}, 'state.ledger');
   S.ledger = {
     today: { in: needNum((led.today || {}).in ?? 0, 'state.ledger.today.in'),

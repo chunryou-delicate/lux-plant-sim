@@ -32,7 +32,9 @@
      S는 제자리에서 바뀌고 그대로 반환된다. 호출부는 반환값을 쓰면 된다.
 ============================================================ */
 import { givePlant, pot0, rehomePot, reseatAllOnSlots, pushLog,
-         potWaterStatus, waterPot } from './state.js';
+         potWaterStatus, waterPot,
+         /* ★ 여러 그루 (2026-08-15) — 화분 ↔ 생장 창의 그루를 잇는 이름과 화분별 빛 이력 */
+         growthIdOf, MAIN_GROWTH_ID, potHist, syncPotLead } from './state.js';
 import {
   advanceBeansproutDay,
   beansproutHarvestStatus,
@@ -152,7 +154,11 @@ export function growthSpeedOf(dli7, th) {
 /* 오늘 몇 걸음인가. 소수점은 `S._growthCredit` 에 쌓아 두고 1 이 모이는 날 한 걸음 더 간다.
    ⚠ `_` 로 시작한다 = **세이브에 안 남는다**(save.js 화이트리스트와 같은 규칙).
      다시 켜면 0 부터 모으므로 최대 한 걸음이 늦어질 뿐 어긋나지는 않는다. */
-function growthStepsOf(S, mult) {
+/* ★ 적립통은 **그루마다**다 (2026-08-15 다개체). 예전엔 `S._growthCredit` 하나였는데,
+   그러면 밝은 그루가 모은 소수점으로 **어두운 그루가 한 걸음 더 가는** 일이 난다.
+   한 그루짜리 판에서는 값이 놓인 자리만 바뀔 뿐 계산은 한 글자도 안 달라진다. */
+function growthStepsOf(holder, mult) {
+  const S = holder;                       // 적립통을 든 것(화분). 옛 호출부는 S 를 넘겼다
   const credit = (S._growthCredit || 0) + mult;
   const steps = Math.min(GROWTH_STEPS_MAX, Math.floor(credit + 1e-9));
   S._growthCredit = credit - steps;
@@ -277,7 +283,14 @@ function headroomOfTurn(S, io, p) {
    그 자리 DLI 는 조도 계약이 갖고, "그 빛이면 자라나"는 growth 의 밴드가 갖는다.
    코어는 둘을 이어 주기만 한다. 밴드 이름을 코어가 베끼면 growth 가 문턱을 바꾸는 날
    **오류 없이 틀린 판정**이 된다(삽수만 조용히 안 자란다).
-   ⚠ 못 재면 `null` 을 낸다 — 0 으로도 "자란다"로도 메꾸지 않는다. 모르면 안 자란다. */
+   ⚠ 못 재면 `null` 을 낸다 — 0 으로도 "자란다"로도 메꾸지 않는다. 모르면 안 자란다.
+
+   ★★ 2026-08-17 — **이 밴드가 하는 일이 하나 늘었다.** 예전에는 「오늘 잎이 자라나」만
+     정했는데, 이제 **무늬 삽수의 새 잎 무늬율(20/50/80%)도 이 밴드가 정한다**
+     (`propagation.js §③` · `VARIE_LIGHT_BANDS`). 판정은 여전히 저쪽이 하고 여기는 밴드만
+     넘긴다 — 코어가 문턱을 베끼지 않는다는 규칙은 그대로다.
+   ★ 아래 `NO_GROW_BANDS` 세 이름이 그쪽 「어두움」과 **같은 묶음**이다. 새 문턱을 안 만들려고
+     일부러 같은 금을 썼다. ⚠ 여기를 고치면 무늬 확률도 같이 움직인다. */
 const NO_GROW_BANDS = new Set(['critical', 'poor', 'stagnant']);
 
 /* ══════════════════════════════════════════════════════════════════════════
@@ -345,13 +358,32 @@ function stepCuttingsOfTurn(S, io, report) {
      (`S._varieLuckySaid` · `S._growthCredit` 와 같은 코어 임시 칸이다).
    ⚠ 접근자가 없는 옛 plant_grow·헤드리스 하네스에서는 조용히 아무 일도 안 한다 —
      확정 무늬(cuttableNodes)와 같은 규약이다. 지어내지 않는다. */
-function prologueVarieEvent(S, io, stats) {
-  if (!S || S._varieLuckySaid) return null;
+/* ★★ 2026-08-15 — 보장이 **두 장**이 되면서 이 함수도 여러 장을 낸다(박사님 확정).
+   ★ 한 장만 나면 어느 쪽으로 가도 막힌다: 모주에 두면 탈출이 안 열리고, 떼면 모주가 0 이 된다.
+     두 장이라야 「한 장은 잘라 꽂고 한 장은 남긴다」가 성립한다 — 그래서 **두 번째 장이
+     보이는 날은 다른 사건**이다. 같은 말을 두 번 하면 몬이가 두 번 놀라 어색하다.
+   ⚠ 코어는 **이미 말한 잎**만 기억한다(`S._varieLuckySaid` = leafBirth 목록).
+     「몇 장이 났나」는 growth 가 안다 — 여기서 다시 세지 않는다. */
+function prologueVarieEvents(S, io, stats) {
+  if (!S) return [];
   const f = io && io.growth && io.growth.prologueVarie;
-  if (typeof f !== 'function') return null;
+  if (typeof f !== 'function') return [];
   let g = null;
-  try { g = f.call(io.growth); } catch { return null; }
-  if (!g || g.leafBirth == null) return null;
+  try { g = f.call(io.growth); } catch { return []; }
+  if (!g) return [];
+  /* 옛 growth 는 `leaves` 를 안 낸다 — 그때는 옛 칸(첫 장)으로 떨어진다. 지어내지 않는다. */
+  const leaves = Array.isArray(g.leaves) && g.leaves.length
+    ? g.leaves
+    : (g.leafBirth == null ? []
+       : [{ leafNo: g.leafNo, leafBirth: g.leafBirth,
+            shown: ('shown' in g ? g.shown
+                    : !!(stats && (stats.variegatedLeaves || 0) > 0)) }]);
+  if (!leaves.length) return [];
+  if (!Array.isArray(S._varieLuckySaid)) S._varieLuckySaid = [];
+  const said = S._varieLuckySaid;
+  const out = [];
+  for (const l of leaves) {
+    if (!l || l.leafBirth == null) continue;
   /* ★★ **무늬가 화면에 보이는 날**을 기다린다 (2026-08-13 · 두 번 재서 고쳤다).
        ① 보장이 붙는 순간은 그 잎의 무늬가 **정해지는** 때(생장점이 생길 때)라
           실측 seed 7 에서 **14일 앞서** 말했다(정해진 날 26 · 잎이 난 날 40).
@@ -360,11 +392,25 @@ function prologueVarieEvent(S, io, stats) {
      ⇒ growth 가 `shown` 으로 그 순간을 낸다(plant_grow §프롤로그 보장). 코어가 성숙도를
        다시 세지 않는다 — 0.22 라는 문턱은 `drawLeafStage` 의 것이고 growth 소유다.
      ⚠ `shown` 을 안 내는 옛 growth 면 잎이 세어진 날로 떨어진다(조용히 안 말하지는 않는다). */
-  if ('shown' in g ? !g.shown : !(stats && (stats.variegatedLeaves || 0) > 0)) return null;
-  S._varieLuckySaid = true;
-  pushLog(S, '✨ 새로 난 잎에 흰 무늬가 섞였습니다 — ' +
-             '무늬 그루를 잘라 물에 꽂으면 그 삽수도 무늬를 물려받습니다');
-  return { id: 'varie_lucky', ko: '두 번째 잎에 무늬가 났습니다', leafBirth: g.leafBirth };
+    if ('shown' in l ? !l.shown : !(stats && (stats.variegatedLeaves || 0) > 0)) continue;
+    if (said.includes(l.leafBirth)) continue;
+    said.push(l.leafBirth);
+    /* ★ 첫 장은 「운이 좋았다」, 둘째 장은 **「이제 자를 수 있다」**다.
+       둘째 장에서 또 놀라면 어색하고, 무엇보다 그 순간에 달라진 것은 운이 아니라
+       **할 수 있는 일**이다 — 한 장은 잘라 꽂고 한 장은 그루에 남는다. */
+    if (said.length === 1) {
+      pushLog(S, '✨ 새로 난 잎에 흰 무늬가 섞였습니다 — ' +
+                 '무늬 그루를 잘라 물에 꽂으면 그 삽수도 무늬를 물려받습니다');
+      out.push({ id: 'varie_lucky', ko: '두 번째 잎에 무늬가 났습니다', leafBirth: l.leafBirth });
+    } else if (said.length === 2) {
+      pushLog(S, '✨ 무늬 잎이 두 장이 됐습니다 — ' +
+                 '한 장은 잘라서 꽂고 한 장은 그루에 남길 수 있습니다');
+      out.push({ id: 'varie_lucky2', ko: '무늬 잎이 두 장이 됐습니다', leafBirth: l.leafBirth });
+    }
+    /* 셋째 장부터는 **말하지 않는다** — 보장은 두 장까지고, 그 뒤는 캐논의 20% 라
+       「특별한 일」이 아니다. 화면이 매번 놀라면 그 놀람이 값을 잃는다. */
+  }
+  return out;
 }
 
 function stepVarieGrantOfTurn(S, io) {
@@ -398,8 +444,8 @@ function stepVarieGrantOfTurn(S, io) {
          (growth_adapter.prologueVarie → plant_grow §프롤로그 보장).
        ★ 여기서 규칙을 다시 짜지 않는다 — 「줬나 안 줬나」는 growth 가 이미 알고 있고
          코어가 세면 두 곳에서 세는 것이 된다(이 파일 §확정 무늬와 같은 규칙). */
-    const lucky = prologueVarieEvent(S, io, stats);
-    if (lucky) r.events = [...(r.events || []), lucky];
+    const lucky = prologueVarieEvents(S, io, stats);
+    if (lucky.length) r.events = [...(r.events || []), ...lucky];
     return r;
   } catch (e) {
     pushLog(S, '⚠ 확정 무늬 판정 실패 — ' + e.message);
@@ -568,6 +614,188 @@ function attachEvents(S, turn, fpBefore) {
   return turn;
 }
 
+/* ============================================================
+   ★★★ 여러 그루 — 화분 하나의 하루               (2026-08-15)
+   ------------------------------------------------------------
+   설계 정본: docs/handoff/growth-multiplant-design.md
+
+   예전에는 이 코드가 `nextDay` 안에 그냥 펼쳐져 있었다 — 화분이 하나뿐이라 그럴 수 있었다.
+   화분이 여럿이 되면서 **그루마다 한 번씩** 돌아야 하므로 그대로 들어냈다.
+
+   ⚠ **규칙은 한 줄도 안 바꿨다.** 바뀐 것은 「무엇에 대고 하느냐」뿐이다:
+       S.dliHist        → 그 화분의 빛 이력      (potHist)
+       S._growthCredit  → 그 화분의 적립통       (밝기 속도의 소수점)
+       S._lastHeadBlock · _lastDry · _lastBlock → 그 화분의 「바뀔 때만」 기억
+     이 넷을 옛 자리에 두면 그루끼리 서로의 값을 덮어쓴다 — 조용히 틀리는 유형이다.
+
+   반환 { pot, growthId, error, calBefore, calAfter, lightInputRecorded, fields }
+     fields  turn 에 실릴 이 그루의 칸들(옛 turn 의 그 이름 그대로)
+============================================================ */
+function stepPlantDay(S, io, p, ctx) {
+  const { report, sky, check } = ctx;
+  /* ★ **제일 먼저 그루를 꽂는다.** 안 꽂으면 아래의 setDailyLight·advanceTo·leafStats 가
+     통째로 옆 그루의 것이 된다 — 오류가 안 나므로 아무도 모른다. */
+  const growthId = selectPlantFor(S, io, p);
+
+  const slot = (report.slots || []).find(s => s.slotId === p.slotId) || null;
+  const dli = check.badSlots.has(p.slotId)
+    ? null
+    : dliFromContract(report, p.slotId, m => pushLog(S, '⚠ ' + m));
+  /* ★ 빛 이력의 정본은 **화분마다**다(state §syncPotLead). 첫 화분의 것이 곧 `S.dliHist` 다. */
+  const hist = potHist(S, p);
+
+  /* ★ 오늘 빛은 **매일 반드시** 넘긴다 — null 도 넘긴다 (2026-08-02).
+     예전처럼 `if (dli != null)` 로 건너뛰면 growth 안의 PLANT_DLI 에 어제 값이 남아
+     "빛이 없는데 어제 빛으로 자라는" 상태가 된다. 조용히 틀리는 유형이라 호출을 생략하지 않는다. */
+  /* ★ 여기서부터는 **코어 혼자 되감을 수 없는** 구간이다 (2026-08-02 정정).
+     `advanceTo` 안에서 growth 가 `CAL_DAY`·`GROWTH` 를 먼저 올리고 그다음 `buildPlant()` 를 부른다.
+     렌더에서 터지면 **growth 는 이미 하루 간 상태로 예외만 나온다.** 그때 코어가 날짜를 되감으면
+     오히려 두 쪽이 어긋난다(코어 N일 / growth N+1일).
+     그래서 되감기 전에 **growth 에게 어디까지 갔는지 물어본다.** */
+  /* ★ 머리공간 — advanceTo 를 부르기 **전에** 본다 (2026-08-03).
+     오늘 키가 이미 그 자리 천장을 채웠으면 형태를 하루도 더 안 올린다. 죽지는 않는다. */
+  const headroom = headroomOfTurn(S, io, p);
+  const headBlocked = !!(headroom && headroom.blocked);
+
+  const calBefore = io.growth.calendarDay();
+  let step;
+  let lightInputRecorded = false;
+  let speed = { band: null, mult: 1, source: 'default' };
+  /* ★ 물 — **오늘이 하루로 세어지나** (2026-08-07 · state.js §몬스테라 물주기).
+     빛 부족(growthBlocked)·머리공간(headroomBlocked)과 **다른 칸**이다. 셋을 섞으면
+     처방이 뒤섞인다: 등을 켜라 / 자리를 옮겨라 / **물을 줘라**.
+     ⚠ 주기가 밴드에 걸려 있어(밝을수록 빨리 마른다) 오늘 빛을 넣은 **뒤에** 잰다. */
+  let water = null;
+  let dryBlocked = false;
+  /* 오늘 growth 에게 실제로 넘긴 하루의 수. **이 화분의 이력에 이만큼 쌓인다** — 그 짝이
+     세이브 재생의 입력이라(save.js §growth) 여기서 어긋나면 복원한 형태가 조용히 달라진다. */
+  let fedDays = 0;
+  const th = io.light && typeof io.light.thresholdsOf === 'function'
+    ? io.light.thresholdsOf(p.plantId, p.variegated) : null;
+  try {
+    /* ★★ 흙이 말랐나 — **먹이기 전에** 판정한다 (2026-08-07).
+       밴드(밝기)와 계절이 주기를 정한다. 6일(여름·창가) ~ 15일(겨울·구석).
+
+       ⚠⚠ **왜 먹인 뒤가 아니라 먹기 전인가** — 처음에 뒤에 뒀다가 세이브가 깨졌다.
+         `dliHist` 한 칸 = `advanceTo` 한 번이 세이브 재생의 계약이다(save.js §growth).
+         먹인 뒤에 막으면 이력에는 한 칸이 쌓이는데 걸음은 안 걸어서, 복원한 개체가
+         **저장 때보다 더 자란 채로 선다.** `test_save` H 가 정확히 그것을 잡았다.
+       ⇒ 마른 날은 growth 에게 **하루를 통째로 안 넘긴다.**
+       ★ 밴드는 **어제까지의 7일평균**으로 잰다(오늘을 아직 안 넣었다). */
+    water = potWaterStatus(S, {
+      pot: p,
+      band: growthSpeedOf(typeof io.growth.dli7 === 'function' ? io.growth.dli7() : null, th).band,
+      season: sky && sky.season
+    });
+    dryBlocked = !!(water && water.dry);
+
+    if (!dryBlocked) {
+    /* ★ 빛은 막혔어도 넘긴다 — DLI 이력은 사실이어야 한다. 안 넘기면 growth 의 7일평균이
+       코어와 갈라지고, 자리를 옮긴 뒤 "왜 아직 안 자라지"가 된다. */
+    io.growth.setDailyLight(dli);
+    lightInputRecorded = true;
+    fedDays = 1;
+
+    /* ★ 걷는 속도는 **오늘 빛을 넣은 뒤에** 잰다 — dli7 에 오늘이 들어가야 엔진과 같은 값이 된다 */
+    speed = growthSpeedOf(
+      typeof io.growth.dli7 === 'function' ? io.growth.dli7() : null, th);
+
+    /* ★ 하루 진행은 advanceTo 만 쓴다. setGrowth(점프)는 도착 때 한 번뿐이다.
+       ★ 머리공간이 막혔으면 **아예 안 부른다.**
+       ★★ 밝기 속도 — 밝은 자리는 **한 걸음 더 간다**(§걷는 속도). 소수점은 적립해 두고,
+         1 이 모인 날 `setDailyLight` + `advanceTo` 를 **한 벌 더** 돈다.
+         ⚠ 적립통은 **화분의 것**이다 — S 에 두면 밝은 그루가 모은 소수점으로
+           어두운 그루가 한 걸음 더 간다. */
+    if (!headBlocked) {
+      const engineBlocked = !!(typeof io.growth.growthBlocked === 'function' && io.growth.growthBlocked());
+      const steps = engineBlocked ? 1 : growthStepsOf(p, speed.mult);
+      for (let i = 0; i < steps; i++) {
+        if (i > 0) { io.growth.setDailyLight(dli); fedDays++; }   // 한 벌 = 빛 한 칸 + 하루 한 걸음
+        step = io.growth.advanceTo(calBefore + i + 1);
+      }
+    }
+    }   /* ← if (!dryBlocked) */
+  } catch (e) {
+    let calAfter = null;
+    try { calAfter = io.growth.calendarDay(); } catch { /* 계약까지 끊긴 경우 */ }
+    /* ★ 여기서 던지지 않는다 — **나머지 화분도 하루를 가야 하기 때문**이다(nextDay §실패 판정).
+       판정과 되감기는 모든 화분을 돈 뒤에 한 곳에서 한다. */
+    return { pot: p, growthId, error: e, calBefore, calAfter, lightInputRecorded,
+             fields: { slot, dli } };
+  }
+  p.daysPlanted++;                                   // 플레이어가 돌본 날 (형태와 별개 축)
+
+  /* ★ null 을 0으로 바꾸지 않는다 (2026-08-02).
+     0은 "쟀더니 암흑"이고 null 은 "못 쟀다"다. */
+  /* ★★ growth 에게 넘긴 만큼 쌓는다 — **1:1 이 계약이다**(save.js §growth). */
+  /* ★ 마른 날은 **0 이다** — growth 에게 하루를 안 넘겼으므로 이력에도 안 쌓는다. */
+  const fedToday = dryBlocked ? 0 : Math.max(1, fedDays);
+  for (let i = 0; i < fedToday; i++) hist.push(dli);
+  /* ★★ **먹인 날을 따로 센다** (2026-08-05 · save.js §fedDays). `dliHist` 와 1:1 인 값이다.
+     이 줄과 위 push 는 **같이 움직여야 한다.** */
+  p.fedDays = (Number.isInteger(p.fedDays) ? p.fedDays : 0) + fedToday;
+
+  const phaseAfter = phaseOf(io, S);          // ★ 한 번만 읽는다 (지금 꽂힌 그루의 것)
+  return {
+    pot: p, growthId, error: null, calBefore,
+    calAfter: step ? step.calDay : calBefore, lightInputRecorded,
+    fields: {
+      slot, dli,
+      daysPlanted: p.daysPlanted,
+      /* ★ 실제 growth 상태 — 빈 값으로 숨기지 않는다 */
+      growthCalendarDay: step ? step.calDay : io.growth.calendarDay(),
+      effectiveGrowthDays: step ? step.growth : io.growth.growthDays(),
+      grew: (headBlocked || dryBlocked) ? false : (step ? step.grew : null),
+      growthBlocked: step ? step.blocked : io.growth.growthBlocked(),
+      /* ★ 밝기 속도 — 빛 부족 정지·머리공간과 **다른 칸**이다. 아무것도 막힌 상태가 아니다. */
+      growthSpeed: speed,
+      growthSteps: fedDays,
+      /* ★ 머리공간 정지 — 빛 부족(growthBlocked)과 **다른 칸**이다. */
+      headroom,
+      headroomBlocked: headBlocked ? headroom.reason : null,
+      /* ★ 물 — 빛 부족·머리공간과 **다른 칸**이다(위 §water). */
+      potWater: water,
+      potDry: dryBlocked
+        ? `흙이 말랐습니다 — ${water.dryDays}일째입니다 (주기 ${water.interval}일)`
+        : null,
+      growthAge: io.growth.ageOf ? io.growth.ageOf(step ? step.growth : 0) : null,
+      dli7Growth: io.growth.dli7(),      // growth가 실제로 쓴 7일 평균
+      dli7Core: avg(hist, 7),            // 코어가 센 값 — 둘이 어긋나면 배선이 틀린 것
+      sample: sample(hist, 7),           // 표본 상태(결측 며칠인지)
+      cv: io.growth.dliCV(),
+      /* growth 렌더 신호 — 옛 growth 는 안 내므로 undefined 다(= 정보 없음, 실패 아님). */
+      drawn: step ? step.drawn : undefined,
+      drawError: step ? (step.drawError ?? null) : null,
+      hudError: step ? (step.hudError ?? null) : null,
+      growthPhase: phaseAfter.phase,
+      growthPhaseError: phaseAfter.error
+    }
+  };
+}
+
+/* ★ 기록 문구 앞에 붙일 그루 이름. **한 그루뿐이면 빈 문자열이다** —
+   옛 판의 기록이 한 글자도 안 달라져야 하기 때문이다(이 일의 첫째 규칙). */
+function potTag(S, p) {
+  return (S.pots.length > 1 && p) ? `[${p.id}] ` : '';
+}
+
+/* ★★ 이 화분의 그루를 생장 창에 꽂는다.
+   ------------------------------------------------------------
+   ★ 화분이 하나뿐이고 그것이 기본 그루면 **아무것도 안 부른다.** 옛 판은 이 함수를
+     지나가기만 하고 예전 길 그대로 돈다(다개체 장치가 잠들어 있는 것과 같은 사정).
+   ⚠ 옛 생장 창(selectPlant 이 없는 것)에 화분 둘을 물리면 **던진다.** 조용히 넘어가면
+     두 화분이 같은 형태를 공유하는, 제일 늦게 발견되는 사고가 난다. */
+function selectPlantFor(S, io, p) {
+  const id = growthIdOf(p);
+  if (S.pots.length <= 1 && id === MAIN_GROWTH_ID) return id;
+  if (!io.growth || typeof io.growth.multi !== 'function' || !io.growth.multi())
+    throw new Error(
+      `[생장] 이 생장 창은 그루를 하나만 굴립니다 — 화분 ${S.pots.length}개를 열 수 없습니다. ` +
+      `plant_grow 에 selectPlant/addPlant 가 있는지 확인해 주세요`);
+  io.growth.select(id);
+  return id;
+}
+
 export function nextDay(S, io) {
   const p = pot0(S);
   /* ★첫 플레이 신호는 **앞뒤 스냅샷의 차이**로 낸다(first_play.js 주석 참고).
@@ -598,14 +826,22 @@ export function nextDay(S, io) {
   /* ★ 단계 읽기도 **하루를 시작하기 전에** 확인한다 (2026-08-02 정정).
      끝난 뒤에야 알면 "진행은 됐는데 말린 새순 경계를 못 본" 회차가 생긴다 —
      첫 플레이가 증명하려는 게 딱 그 경계라 조용히 건너뛰면 안 된다. */
+  /* ★ 여러 그루면 **전부** 물어본다 (2026-08-15). 하나라도 못 읽으면 오늘을 시작하지 않는다 —
+     한 그루만 보고 열면 나머지가 못 읽는 채로 하루를 가고, 그 사실을 아무도 모른다. */
   if (p && io.growth.growthPhase) {
-    const pre = phaseOf(io, S);
-    if (pre.error) {
-      const e = new Error(`[생장] 단계를 읽을 수 없어 오늘을 시작하지 않았습니다 — ${pre.error}`);
-      e.turnState = 'not_started';
-      throw e;
+    for (const pot of S.pots) {
+      selectPlantFor(S, io, pot);
+      const pre = phaseOf(io, S);
+      if (pre.error) {
+        const e = new Error(`[생장] ${potTag(S, pot)}단계를 읽을 수 없어 오늘을 시작하지 않았습니다 — ${pre.error}`);
+        e.turnState = 'not_started';
+        throw e;
+      }
     }
   }
+  /* ★ 빛 이력의 대표 칸을 첫 화분에 다시 맞춘다(state §syncPotLead) — 옛 세이브·판매로
+     화분 목록이 바뀌어 있어도 `S.dliHist` 가 늘 첫 화분의 그것을 가리키게 한다. */
+  syncPotLead(S);
 
   S.day++;
   /* ★ 하루가 갔으니 체력이 **가득 찬다** (2026-08-05 · docs/stamina.md §4).
@@ -780,185 +1016,66 @@ export function nextDay(S, io) {
     return { S, turn: attachEvents(S, earlyTurn, fpBefore) };
   }
 
-  const slot = (report.slots || []).find(s => s.slotId === p.slotId) || null;
-  const dli = check.badSlots.has(p.slotId)
-    ? null
-    : dliFromContract(report, p.slotId, m => pushLog(S, '⚠ ' + m));
+  /* ★★★ 여러 그루 (2026-08-15) — **화분마다 제 자리의 빛으로 제 하루를 간다.**
+     ------------------------------------------------------------
+     예전에는 이 자리에 `pot0` 한 그루의 코드가 그대로 펼쳐져 있었다. 그루가 여럿이 되면서
+     `stepPlantDay` 로 들어냈고, 여기서는 **돌기만 한다.**
+     ⚠ 하루가 안 가는 유령을 만들지 않는다 — 중간에서 멈추지 않고 **모든 화분을 돈 뒤에**
+       실패를 판정한다. 한 그루가 터졌다고 나머지가 하루를 안 가면 그 판은 영영 어긋난다
+       (`promoteToPot` 이 둘째 화분을 막고 있던 이유가 정확히 이것이다). */
+  const plants = [];
+  for (const pot of S.pots) plants.push(stepPlantDay(S, io, pot, { report, sky, check }));
 
-  /* ★ 오늘 빛은 **매일 반드시** 넘긴다 — null 도 넘긴다 (2026-08-02).
-     예전처럼 `if (dli != null)` 로 건너뛰면 growth 안의 PLANT_DLI 에 어제 값이 남아
-     "빛이 없는데 어제 빛으로 자라는" 상태가 된다. 조용히 틀리는 유형이라 호출을 생략하지 않는다. */
-  /* ★ 여기서부터는 **코어 혼자 되감을 수 없는** 구간이다 (2026-08-02 정정).
-     `advanceTo` 안에서 growth 가 `CAL_DAY`·`GROWTH` 를 먼저 올리고 그다음 `buildPlant()` 를 부른다.
-     렌더에서 터지면 **growth 는 이미 하루 간 상태로 예외만 나온다.** 그때 코어가 날짜를 되감으면
-     오히려 두 쪽이 어긋난다(코어 N일 / growth N+1일).
-     그래서 되감기 전에 **growth 에게 어디까지 갔는지 물어본다.**
-     ⚠ 코어는 growth 내부 상태를 복원하지 못한다 — 그건 growth 소유다.
-       `buildPlant()` 를 렌더 경계로 감싸 달라고 요청해 뒀다(core-to-growth). */
-  /* ★ 머리공간 — advanceTo 를 부르기 **전에** 본다 (2026-08-03).
-     오늘 키가 이미 그 자리 천장을 채웠으면 형태를 하루도 더 안 올린다. 죽지는 않는다. */
-  const headroom = headroomOfTurn(S, io, p);
-  const headBlocked = !!(headroom && headroom.blocked);
+  /* 전기요금은 **하루에 한 번**이다 — 그루 수와 무관하다(그루마다 더하면 두 배가 된다) */
+  S.ledger.electricityWon += (report.energy && report.energy.won) || 0;   // 표시만. 차감 없음
 
-  const calBefore = io.growth.calendarDay();
-  let step;
-  let lightInputRecorded = false;
-  let speed = { band: null, mult: 1, source: 'default' };
-  /* ★ 물 — **오늘이 하루로 세어지나** (2026-08-07 · state.js §몬스테라 물주기).
-     빛 부족(growthBlocked)·머리공간(headroomBlocked)과 **다른 칸**이다. 셋을 섞으면
-     처방이 뒤섞인다: 등을 켜라 / 자리를 옮겨라 / **물을 줘라**.
-     ⚠ 주기가 밴드에 걸려 있어(밝을수록 빨리 마른다) 오늘 빛을 넣은 **뒤에** 잰다. */
-  let water = null;
-  let dryBlocked = false;
-  /* 오늘 growth 에게 실제로 넘긴 하루의 수. **dliHist 에 이만큼 쌓인다** — 그 짝이 세이브 재생의
-     입력이라(save.js §growth) 여기서 어긋나면 복원한 형태가 조용히 달라진다. */
-  let fedDays = 0;
-  const th = io.light && typeof io.light.thresholdsOf === 'function'
-    ? io.light.thresholdsOf(p.plantId, p.variegated) : null;
-  try {
-    /* ★★ 흙이 말랐나 — **먹이기 전에** 판정한다 (2026-08-07).
-       밴드(밝기)와 계절이 주기를 정한다. 6일(여름·창가) ~ 15일(겨울·구석).
-
-       ⚠⚠ **왜 먹인 뒤가 아니라 먹기 전인가** — 처음에 뒤에 뒀다가 세이브가 깨졌다.
-         `dliHist` 한 칸 = `advanceTo` 한 번이 세이브 재생의 계약이다(save.js §growth).
-         먹인 뒤에 막으면 이력에는 한 칸이 쌓이는데 걸음은 안 걸어서, 복원한 개체가
-         **저장 때보다 더 자란 채로 선다.** `test_save` H 가 정확히 그것을 잡았다.
-       ⇒ 마른 날은 growth 에게 **하루를 통째로 안 넘긴다.** setDailyLight 도 안 부르고
-         `dliHist` 에도 안 쌓는다. `dliHist` 의 뜻이 「실제로 넘긴 빛」이므로 이게 사실이다.
-       ⚠ 그래서 머리공간 정지와는 **모양이 다르다** — 그쪽은 빛은 넘기고 걸음만 안 걷는다.
-         두 정지가 다른 이유는 하나뿐이다: 머리공간은 「빛은 받았는데 못 큰 날」이고,
-         마름은 「하루가 아예 안 세어진 날」이다. 이 계통의 한 문장이 그것이다.
-
-       ★ 밴드는 **어제까지의 7일평균**으로 잰다(오늘을 아직 안 넣었다).
-         흙이 마르는 속도는 지난 주가 정하는 것이라 뜻으로도 이쪽이 맞다. */
-    water = potWaterStatus(S, {
-      band: growthSpeedOf(typeof io.growth.dli7 === 'function' ? io.growth.dli7() : null, th).band,
-      season: sky && sky.season
-    });
-    dryBlocked = !!(water && water.dry);
-
-    if (!dryBlocked) {
-    /* ★ 빛은 막혔어도 넘긴다 — DLI 이력은 사실이어야 한다. 안 넘기면 growth 의 7일평균이
-       코어와 갈라지고, 자리를 옮긴 뒤 "왜 아직 안 자라지"가 된다. */
-    io.growth.setDailyLight(dli);
-    lightInputRecorded = true;
-    fedDays = 1;
-
-    /* ★ 걷는 속도는 **오늘 빛을 넣은 뒤에** 잰다 — dli7 에 오늘이 들어가야 엔진과 같은 값이 된다 */
-    speed = growthSpeedOf(
-      typeof io.growth.dli7 === 'function' ? io.growth.dli7() : null, th);
-
-    /* ★ 하루 진행은 advanceTo 만 쓴다. setGrowth(점프)는 도착 때 한 번뿐이다.
-       달력은 하루 가고, 형태(유효 생장)는 빛이 될 때만 쌓인다 — 저광이면 여기서 멈춘다.
-       ★ 머리공간이 막혔으면 **아예 안 부른다.** 유효 생장일이 안 오르는 것이 이 규칙의 전부다.
-
-       ★★ 밝기 속도 (2026-08-05) — 밝은 자리는 **한 걸음 더 간다**(위 §걷는 속도).
-         `advanceTo` 는 하루(delta 1)만 받으므로 "1.5일치"를 한 번에 넘길 방법이 없다.
-         그래서 소수점은 적립해 두고, 1 이 모인 날 `setDailyLight` + `advanceTo` 를 **한 벌 더** 돈다.
-         한 벌씩 도는 것이 중요하다 — 빛 한 칸에 하루 한 걸음이라야 세이브 재생이 같아진다.
-         ⚠ 엔진이 막는 날(빛 부족)은 어차피 형태가 안 오르므로 한 걸음으로 끝난다.
-           그 날도 `advanceTo` 는 반드시 부른다 — 안 부르면 `stepLeafHealth` 가 안 돌아
-           **어두운 자리에서 잎이 안 바래는** 정반대 결과가 난다. */
-    if (!headBlocked) {
-      const engineBlocked = !!(typeof io.growth.growthBlocked === 'function' && io.growth.growthBlocked());
-      const steps = engineBlocked ? 1 : growthStepsOf(S, speed.mult);
-      for (let i = 0; i < steps; i++) {
-        if (i > 0) { io.growth.setDailyLight(dli); fedDays++; }   // 한 벌 = 빛 한 칸 + 하루 한 걸음
-        step = io.growth.advanceTo(calBefore + i + 1);
-      }
-    }
-    }   /* ← if (!dryBlocked) */
-  } catch (e) {
-    let calAfter = null;
-    try { calAfter = io.growth.calendarDay(); } catch { /* 계약까지 끊긴 경우 */ }
-
-    if (calAfter === calBefore) {
+  /* ── 실패 판정 ────────────────────────────────────────────────────────
+     ★ 되감기는 **아무 그루도 달력을 안 옮겼을 때만** 할 수 있다. 하나라도 갔으면
+       코어만 되감는 것이 오히려 어긋남을 만든다(2026-08-02 정정의 그 사정 그대로). */
+  const failed = plants.filter(r => r.error);
+  if (failed.length) {
+    const advancedAny = plants.some(r => r.calAfter != null && r.calAfter > r.calBefore);
+    const first = failed[0];
+    const e = first.error;
+    const recorded = failed.some(r => r.lightInputRecorded);
+    if (!advancedAny && first.calAfter === first.calBefore) {
       S.day--;
       e.coreRolledBack = true;
-      e.turnState = lightInputRecorded ? 'growth_input_recorded' : 'core_rolled_back';
-      if (lightInputRecorded) {
-        S.desync = { coreDay: S.day, growthCalendar: calAfter, reason: e.message,
+      e.turnState = recorded ? 'growth_input_recorded' : 'core_rolled_back';
+      if (recorded) {
+        S.desync = { coreDay: S.day, growthCalendar: first.calAfter, reason: e.message,
                      note: '달력은 되감았지만 오늘 DLI 입력은 growth 이력에 남았을 수 있음' };
       }
-    } else if (calAfter > calBefore && calAfter <= calBefore + GROWTH_STEPS_MAX) {
+    } else if (first.calAfter != null && first.calAfter > first.calBefore &&
+               first.calAfter <= first.calBefore + GROWTH_STEPS_MAX) {
       /* growth 는 갔는데 예외만 나왔다(렌더 오류 등). 되감지 않는다 — 날짜는 맞춰 두고,
-         이 턴의 결과(형태·정지 사유)를 못 받았다는 사실을 상태에 남긴다.
-         ★ 밝은 날은 한 턴에 두 걸음까지 가므로 여기가 `+1` 이 아니라 범위다(§걷는 속도).
-           GROWTH_STEPS_MAX 가 1 이면 예전 `calAfter === calBefore + 1` 과 완전히 같다. */
-      S.desync = { coreDay: S.day, growthCalendar: calAfter, reason: e.message };
-      pushLog(S, `⚠ 이 턴의 결과를 못 받았습니다 — growth 달력 ${calAfter}, 코어 ${S.day}일. ` +
+         이 턴의 결과를 못 받았다는 사실을 상태에 남긴다. */
+      S.desync = { coreDay: S.day, growthCalendar: first.calAfter, reason: e.message };
+      pushLog(S, `⚠ 이 턴의 결과를 못 받았습니다 — growth 달력 ${first.calAfter}, 코어 ${S.day}일. ` +
                  `날짜는 맞췄지만 형태 결과는 화면에 반영되지 않았습니다`);
       e.coreRolledBack = false;
       e.turnState = 'growth_advanced';
     } else {
       /* null·역행·2일 이상 점프는 진행 여부를 확정할 근거가 없다. 거짓으로 되감거나
          "날짜를 맞췄다"고 하지 않고 잠근 뒤 불확정 상태를 그대로 남긴다. */
-      S.desync = { coreDay: S.day, growthCalendar: calAfter, reason: e.message,
+      S.desync = { coreDay: S.day, growthCalendar: first.calAfter, reason: e.message,
                    note: 'growth 달력을 확인할 수 없거나 예상한 하루 범위를 벗어남' };
       e.coreRolledBack = false;
       e.turnState = 'unknown';
     }
     throw e;
   }
-  p.daysPlanted++;                                   // 플레이어가 돌본 날 (형태와 별개 축)
 
-  /* ★ null 을 0으로 바꾸지 않는다 (2026-08-02).
-     0은 "쟀더니 암흑"이고 null 은 "못 쟀다"다. 0으로 넣으면 평균이 아래로 끌려가
-     계약 누락이 '어두운 날'로 둔갑한다 — 날짜 자리는 지키되 값은 null 로 남긴다.
-     평균·문턱 판정은 아래 avg()·weekOverPct() 가 null 을 걸러서 본다. */
-  /* ★★ growth 에게 넘긴 만큼 쌓는다 — **1:1 이 계약이다**(save.js §growth).
-     밝은 날은 `setDailyLight` 를 두 번 불렀으므로 여기도 두 칸이다. 한 칸만 쌓으면
-     복원한 형태가 저장 때보다 덜 자란 채로 선다(그게 처음 설계가 깨진 자리였다). */
-  /* ★ 마른 날은 **0 이다** — growth 에게 하루를 안 넘겼으므로 이력에도 안 쌓는다.
-     `Math.max(1, …)` 를 그대로 두면 안 넘긴 빛이 이력에 한 칸 생겨 세이브 재생이 어긋난다. */
-  const fedToday = dryBlocked ? 0 : Math.max(1, fedDays);
-  for (let i = 0; i < fedToday; i++) S.dliHist.push(dli);
-  /* ★★ **먹인 날을 따로 센다** (2026-08-05 · save.js §fedDays).
-     `daysPlanted` 는 "플레이어가 돌본 날"이라 하루에 1 만 는다. 그런데 밝은 날은 여기서
-     두 칸을 쌓으므로 그 둘이 갈린다 — 세이브가 그 짝을 `daysPlanted` 로 재고 있어서
-     멀쩡한 판이 「깨진 턴」으로 경고됐다. 재생은 정확했고, **재는 자가 틀렸던 것**이다.
-     ⇒ `dliHist` 와 1:1 인 값을 화분에 남긴다. 이 줄과 위 push 는 **같이 움직여야 한다.** */
-  p.fedDays = (Number.isInteger(p.fedDays) ? p.fedDays : 0) + fedToday;
-  S.ledger.electricityWon += (report.energy && report.energy.won) || 0;   // 표시만. 차감 없음
-
-  const phaseAfter = phaseOf(io, S);          // ★ 한 번만 읽는다
+  /* ── 턴 ──────────────────────────────────────────────────────────────
+     ★ 옛 칸은 **첫 화분의 것**이다. 화면·검사·세이브가 전부 그 이름을 읽고 있고,
+       한 그루짜리 판에서는 그것이 곧 그 판의 전부다. 그루마다의 값은 `turn.plants` 에 있다. */
+  const lead = plants[0];
   const turn = {
-    day: S.day, sky, report, slot, dli,
+    day: S.day, sky, report,
     check,
-    daysPlanted: p.daysPlanted,
-    /* ★ 실제 growth 상태 — 빈 값으로 숨기지 않는다 */
-    growthCalendarDay: step ? step.calDay : io.growth.calendarDay(),
-    effectiveGrowthDays: step ? step.growth : io.growth.growthDays(),
-    grew: (headBlocked || dryBlocked) ? false : (step ? step.grew : null),
-    growthBlocked: step ? step.blocked : io.growth.growthBlocked(),
-    /* ★ 밝기 속도 — 빛 부족 정지(growthBlocked)와도 머리공간(headroomBlocked)과도 **다른 칸**이다.
-       셋을 섞으면 처방이 뒤섞인다: 빛 부족은 "등을 켜라", 머리공간은 "자리를 옮겨라",
-       여기는 "지금도 자라고 있고, 밝을수록 빠르다"이다. 아무것도 막힌 상태가 아니다.
-       `growthSteps` = 오늘 실제로 간 걸음 수(=넘긴 빛 칸 수). 1 이면 예전과 같은 하루다. */
-    growthSpeed: speed,
-    growthSteps: fedDays,
-    /* ★ 머리공간 정지 — 빛 부족(growthBlocked)과 **다른 칸**이다. 한 칸에 섞으면
-       화면이 "빛이 모자랍니다"라고 말하고 플레이어는 등을 하나 더 산다(정반대 처방). */
-    headroom,
-    headroomBlocked: headBlocked ? headroom.reason : null,
-    /* ★ 물 — 빛 부족·머리공간과 **다른 칸**이다(위 §water). 화면이 처방을 가르는 근거다.
-       `potWater` 는 늘 실리고(며칠 남았나를 버튼이 읽는다), `potDry` 는 **막힌 날만** 문장이다. */
-    potWater: water,
-    potDry: dryBlocked
-      ? `흙이 말랐습니다 — ${water.dryDays}일째입니다 (주기 ${water.interval}일)`
-      : null,
-    growthAge: io.growth.ageOf ? io.growth.ageOf(step ? step.growth : 0) : null,
-    dli7Growth: io.growth.dli7(),      // growth가 실제로 쓴 7일 평균
-    dli7Core: avg(S.dliHist, 7),       // 코어가 센 값 — 둘이 어긋나면 배선이 틀린 것
-    sample: sample(S.dliHist, 7),      // 표본 상태(결측 며칠인지) — 평균만 보면 못 판단한다
-    cv: io.growth.dliCV(),
-    /* growth 렌더 신호 — 논리 진행과 화면을 가른 뒤로 이게 유일한 "그림이 살아있나" 창구다.
-       옛 growth 는 안 내므로 undefined 다(= 정보 없음, 실패 아님). */
-    drawn: step ? step.drawn : undefined,
-    drawError: step ? (step.drawError ?? null) : null,
-    hudError: step ? (step.hudError ?? null) : null,
-    growthPhase: phaseAfter.phase,
-    growthPhaseError: phaseAfter.error,
+    ...lead.fields,
+    /* ★★ 그루마다의 하루 — 여기가 다개체의 정본이다. 첫 칸은 위 옛 칸들과 **같은 값**이다. */
+    plants: plants.map(r => ({ potId: r.pot.id, growthId: r.growthId, ...r.fields })),
     firstPlayEvent,
     /* ★ 물주기·수확 — earlyTurn 과 같은 칸. 반환구가 둘이면 둘 다 챙긴다(이 파일의 오랜 함정). */
     cropWatered, cropIdle: (firstPlayEvent && firstPlayEvent.idle) || 0,
@@ -973,61 +1090,72 @@ export function nextDay(S, io) {
      ① 그림이 죽었으면 **단계를 반영하기 전에** 멈춘다 — 안 그러면 화면엔 아무 변화가 없는데
         completed=true 가 되어 "말린 새순을 봤다"가 거짓이 된다.
      ② 단계를 못 읽었으면 그것도 fail-loud — 조용히 경계를 건너뛰지 않는다.
-     둘 다 논리 진행(달력·유효 생장·이력·돌본 날)은 이미 기록했고 되감지 않는다. */
-  if (turn.drawn === false) {
-    S.desync = { coreDay: S.day, growthCalendar: turn.growthCalendarDay,
-                 reason: turn.drawError || '3D 그리기 실패',
-                 note: '논리 진행은 양쪽 모두 하루 갔다. 화면의 식물만 낡았다' };
-    pushLog(S, `⛔ 화면을 다시 그리지 못했습니다 — ${turn.drawError || '사유 미상'} ` +
-               `(유효 ${turn.effectiveGrowthDays}일까지 진행은 됐습니다)`);
-    const err = new Error(`[생장] 3D 를 다시 그리지 못했습니다 — ${turn.drawError || '사유 미상'}. ` +
-                          `하루는 진행됐고 화면만 낡았습니다`);
-    err.turnState = 'growth_advanced';
-    err.coreRolledBack = false;
-    err.turn = turn;
-    throw err;
+     둘 다 논리 진행(달력·유효 생장·이력·돌본 날)은 이미 기록했고 되감지 않는다.
+     ★ 여러 그루면 **먼저 난 것 하나**로 멈춘다 — 하루는 모두가 이미 갔다(위 §실패 판정). */
+  for (const r of plants) {
+    const f = r.fields, tag = potTag(S, r.pot);
+    if (f.drawn === false) {
+      S.desync = { coreDay: S.day, growthCalendar: f.growthCalendarDay,
+                   reason: f.drawError || '3D 그리기 실패',
+                   note: '논리 진행은 양쪽 모두 하루 갔다. 화면의 식물만 낡았다' };
+      pushLog(S, `⛔ ${tag}화면을 다시 그리지 못했습니다 — ${f.drawError || '사유 미상'} ` +
+                 `(유효 ${f.effectiveGrowthDays}일까지 진행은 됐습니다)`);
+      const err = new Error(`[생장] ${tag}3D 를 다시 그리지 못했습니다 — ${f.drawError || '사유 미상'}. ` +
+                            `하루는 진행됐고 화면만 낡았습니다`);
+      err.turnState = 'growth_advanced';
+      err.coreRolledBack = false;
+      err.turn = turn;
+      throw err;
+    }
+    if (f.growthPhaseError) {
+      S.desync = { coreDay: S.day, growthCalendar: f.growthCalendarDay,
+                   reason: f.growthPhaseError,
+                   note: '하루는 진행됐지만 단계를 읽지 못해 경계를 확인할 수 없다' };
+      pushLog(S, `⛔ ${tag}단계를 읽지 못했습니다 — ${f.growthPhaseError} (하루 진행은 됐습니다)`);
+      const err = new Error(`[생장] ${tag}단계를 읽지 못했습니다 — ${f.growthPhaseError}. ` +
+                            `하루는 진행됐고 말린 새순 경계를 확인하지 못했습니다`);
+      err.turnState = 'growth_advanced';
+      err.coreRolledBack = false;
+      err.turn = turn;
+      throw err;
+    }
   }
-  if (turn.growthPhaseError) {
-    S.desync = { coreDay: S.day, growthCalendar: turn.growthCalendarDay,
-                 reason: turn.growthPhaseError,
-                 note: '하루는 진행됐지만 단계를 읽지 못해 경계를 확인할 수 없다' };
-    pushLog(S, `⛔ 단계를 읽지 못했습니다 — ${turn.growthPhaseError} (하루 진행은 됐습니다)`);
-    const err = new Error(`[생장] 단계를 읽지 못했습니다 — ${turn.growthPhaseError}. ` +
-                          `하루는 진행됐고 말린 새순 경계를 확인하지 못했습니다`);
-    err.turnState = 'growth_advanced';
-    err.coreRolledBack = false;
-    err.turn = turn;
-    throw err;
-  }
+  /* ★ 첫 플레이가 보는 것은 **선물로 온 그 그루**다(첫 화분). 씨앗으로 심은 그루가
+     프롤로그 경계를 대신 넘어 주면 안 된다 — 그 판의 이야기가 딴 그루에서 끝난다. */
   if (S.firstPlay && S.firstPlay.enabled && turn.growthPhase) markMonsteraPhase(S.firstPlay, turn.growthPhase);
 
-  /* ★ HUD 실패는 3D 실패와 등급이 다르다 — 형태는 그려졌고 growth 쪽 숫자판만 죽은 것이라 경고만 한다. */
-  if (turn.hudError) {
-    console.warn(`[생장] growth HUD 갱신 실패(3D 는 그려짐) — ${turn.hudError}`);
-    pushLog(S, `⚠ growth HUD 갱신 실패 — ${turn.hudError} (형태는 그려졌습니다)`);
-  }
-  /* ★ 머리공간 정지·경고도 **바뀔 때만** 남긴다. 문구에 '빛'이라는 말을 넣지 않는다 —
-     플레이어가 처방을 헷갈리면 이 규칙은 그냥 "안 자라는 버그"가 된다. */
-  const headMsg = turn.headroomBlocked || (turn.headroom && turn.headroom.warn ? turn.headroom.reason : null);
-  if (headMsg !== S._lastHeadBlock) {
-    if (headMsg) pushLog(S, `📏 ${headMsg}`);
-    else if (S._lastHeadBlock !== undefined && S._lastHeadBlock !== null)
-      pushLog(S, `▶ 위가 트였습니다 — 다시 자랍니다 (유효 진행 ${turn.effectiveGrowthDays}일)`);
-    S._lastHeadBlock = headMsg;
-  }
-  /* ★ 마름 정지 — 머리공간과 **같은 모양**으로 바뀔 때만 남긴다.
-     문구에 '빛'을 넣지 않는다: 처방이 「물을 줘라」지 「등을 켜라」가 아니다. */
-  if (turn.potDry !== S._lastDry) {
-    if (turn.potDry) pushLog(S, `⏸ ${turn.potDry} — 물을 주면 다시 자랍니다`);
-    else if (S._lastDry !== undefined && S._lastDry !== null)
-      pushLog(S, `▶ 흙이 촉촉합니다 — 다시 자랍니다 (유효 진행 ${turn.effectiveGrowthDays}일)`);
-    S._lastDry = turn.potDry;
-  }
-  /* 정지 사유는 바뀔 때만 남긴다 — 매일 찍으면 기록이 같은 줄로 덮인다 */
-  if (turn.growthBlocked !== S._lastBlock) {
-    if (turn.growthBlocked) pushLog(S, `⏸ 형태 정지 — ${turn.growthBlocked}`);
-    else if (S._lastBlock !== undefined) pushLog(S, `▶ 다시 자랍니다 (유효 진행 ${turn.effectiveGrowthDays}일)`);
-    S._lastBlock = turn.growthBlocked;
+  for (const r of plants) {
+    const f = r.fields, q = r.pot, tag = potTag(S, q);
+    /* ★ HUD 실패는 3D 실패와 등급이 다르다 — 형태는 그려졌고 growth 쪽 숫자판만 죽은 것이라 경고만 한다. */
+    if (f.hudError) {
+      console.warn(`[생장] growth HUD 갱신 실패(3D 는 그려짐) — ${f.hudError}`);
+      pushLog(S, `⚠ ${tag}growth HUD 갱신 실패 — ${f.hudError} (형태는 그려졌습니다)`);
+    }
+    /* ★ 머리공간 정지·경고도 **바뀔 때만** 남긴다. 문구에 '빛'이라는 말을 넣지 않는다 —
+       플레이어가 처방을 헷갈리면 이 규칙은 그냥 "안 자라는 버그"가 된다.
+       ⚠ 「바뀔 때만」의 기억은 **그루마다**다. 한 칸으로 두면 두 그루가 번갈아 막힐 때
+         서로의 기록을 지워 아무 말도 안 하는 날이 생긴다. */
+    const headMsg = f.headroomBlocked || (f.headroom && f.headroom.warn ? f.headroom.reason : null);
+    if (headMsg !== q._lastHeadBlock) {
+      if (headMsg) pushLog(S, `📏 ${tag}${headMsg}`);
+      else if (q._lastHeadBlock !== undefined && q._lastHeadBlock !== null)
+        pushLog(S, `▶ ${tag}위가 트였습니다 — 다시 자랍니다 (유효 진행 ${f.effectiveGrowthDays}일)`);
+      q._lastHeadBlock = headMsg;
+    }
+    /* ★ 마름 정지 — 머리공간과 **같은 모양**으로 바뀔 때만 남긴다.
+       문구에 '빛'을 넣지 않는다: 처방이 「물을 줘라」지 「등을 켜라」가 아니다. */
+    if (f.potDry !== q._lastDry) {
+      if (f.potDry) pushLog(S, `⏸ ${tag}${f.potDry} — 물을 주면 다시 자랍니다`);
+      else if (q._lastDry !== undefined && q._lastDry !== null)
+        pushLog(S, `▶ ${tag}흙이 촉촉합니다 — 다시 자랍니다 (유효 진행 ${f.effectiveGrowthDays}일)`);
+      q._lastDry = f.potDry;
+    }
+    /* 정지 사유는 바뀔 때만 남긴다 — 매일 찍으면 기록이 같은 줄로 덮인다 */
+    if (f.growthBlocked !== q._lastBlock) {
+      if (f.growthBlocked) pushLog(S, `⏸ ${tag}형태 정지 — ${f.growthBlocked}`);
+      else if (q._lastBlock !== undefined) pushLog(S, `▶ ${tag}다시 자랍니다 (유효 진행 ${f.effectiveGrowthDays}일)`);
+      q._lastBlock = f.growthBlocked;
+    }
   }
 
   turn.tutorial = stepTutorial(S, turn, io);

@@ -4,7 +4,7 @@
    기존 tools/test_propagation.mjs 는 규칙(propagation.js)이 맞는지를 본다.
    여기는 다른 것을 본다 — **그 규칙을 손으로 굴릴 수 있나**, 그리고 **굴리면 얼마가 되나.**
 
-     A  물꽂이 한살이 — 12일 뿌리 · 32일 혹 · 기한 40일(초보 48일)
+     A  물꽂이 한살이 — 12일 뿌리 · **20일 혹** · 기한 28일(초보 36일)  ← 2026-08-17
      B  ★분갈이 안 하면 죽는다 — 그리고 죽기 전에 경고가 몇 번 나가나
      C  분갈이하면 산다 — 죽기 하루 전에 해도 산다
      D  직삽 24일 — 기한도 죽음도 없다
@@ -91,16 +91,20 @@ function tick(S, log) {
 /* ============================================================
    A~D  한살이
 ============================================================ */
-check('A 물꽂이 — 12일에 뿌리 · 32일에 혹 · 기한이 그때 선다', () => {
+check('A 물꽂이 — 12일에 뿌리 · 20일에 혹 · 기한이 그때 선다', () => {
   const S = newGame(); give(S, 'jar');
   const c = P.takeCutting(S, { nodes: mother(6), nodeId: PIECE, container: 'jar' });
   assert.equal(c.status, 'rooting');
   const seen = {};
   for (let i = 0; i < 40; i++) { tick(S); if (!seen[c.status]) seen[c.status] = c.days; }
   assert.equal(seen.rooted, 12, `뿌리가 ${seen.rooted}일에 났습니다 (12일이라야 합니다)`);
-  assert.equal(seen.node, 32, `혹이 ${seen.node}일에 났습니다 (32일이라야 합니다)`);
-  /* 초보는 유예 16일이라 32+16 = 48일. 자른 날이 Day 1 이므로 기한은 Day 48 이다 */
-  assert.equal(c.deadlineDay, 1 + 32 + 16, `기한이 Day ${c.deadlineDay} 입니다`);
+  /* ⚠⚠ 2026-08-17 — 혹이 32 → **20** 으로 당겨졌다(박사님). 유예는 그대로라
+     기한이 48 → **36**(초보) 이 됐다. 숫자를 박지 않고 정본에서 읽는다. */
+  assert.equal(P.METHODS.water.nodeDays, 20, '혹이 20일이 아닙니다');
+  assert.equal(seen.node, P.METHODS.water.nodeDays,
+    `혹이 ${seen.node}일에 났습니다 (${P.METHODS.water.nodeDays}일이라야 합니다)`);
+  assert.equal(c.deadlineDay, 1 + P.METHODS.water.nodeDays + P.METHODS.water.graceDaysNovice,
+    `기한이 Day ${c.deadlineDay} 입니다`);
 });
 
 check('B ★분갈이를 안 하면 죽는다 — 그리고 죽기 전에 경고가 나간다', () => {
@@ -115,7 +119,8 @@ check('B ★분갈이를 안 하면 죽는다 — 그리고 죽기 전에 경고
     }
     const grace = novice ? 16 : 8;
     assert.ok(died, `${novice ? '초보' : '자유'}: 분갈이를 안 했는데 안 죽었습니다`);
-    assert.equal(died, 1 + 32 + grace, `${novice ? '초보' : '자유'}: Day ${died} 에 죽었습니다`);
+    assert.equal(died, 1 + P.METHODS.water.nodeDays + grace,
+      `${novice ? '초보' : '자유'}: Day ${died} 에 죽었습니다`);
     assert.ok(warns >= (novice ? 5 : 2),
       `${novice ? '초보' : '자유'}: 경고가 ${warns}번뿐입니다 — 조용히 죽었습니다`);
     assert.equal(S.cuttings.length, 0, '죽은 삽수가 배열에 남아 있습니다');
@@ -126,7 +131,8 @@ check('B ★분갈이를 안 하면 죽는다 — 그리고 죽기 전에 경고
 check('C 분갈이하면 산다 — 기한 하루 전에 해도 산다', () => {
   const S = newGame(); give(S, 'jar'); give(S, 'pot');
   const c = P.takeCutting(S, { nodes: mother(6), nodeId: PIECE, container: 'jar' });
-  while (S.day < c.cutOnDay + 32 + 15) tick(S);       // 기한(48) 하루 전
+  /* 기한 하루 전 — 혹(20) + 초보 유예(16) − 1 */
+  while (S.day < c.cutOnDay + P.METHODS.water.nodeDays + P.METHODS.water.graceDaysNovice - 1) tick(S);
   assert.equal(c.status, 'node');
   P.repotCutting(S, c.id);
   assert.equal(c.status, 'established');

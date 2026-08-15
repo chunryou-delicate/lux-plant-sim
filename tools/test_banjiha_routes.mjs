@@ -35,7 +35,8 @@ import { seasonAt, seasonDayAt, buyLamp, canMoveOut, moveOut, TUTORIAL_RULES,
          varieView, varieGrantCheck, stepVarieGrant, varieGrantOpensDay } from '../src/game/tutorial.js';
 import { orderItem, stockOf, incomingOf, priceOf, varieLeavesNeededFor,
          sellCutting, sellPot, CATALOG, buyPriceOf, SELLABLE_CUTTING_STATUS } from '../src/game/shop.js';
-import { takeCutting, cuttableNow, cutBudgetOf, motherStatsNow, METHODS } from '../src/game/propagation.js';
+import { takeCutting, cuttableNow, cutBudgetOf, motherStatsNow, METHODS,
+         WATER_LEAF_MAX } from '../src/game/propagation.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const U = p => new URL(p, import.meta.url);
@@ -315,15 +316,22 @@ function play(opt = {}) {
          비어 있는데 자를 것이 있을 때만 시킨다 — 미리 쟁여 두면 병값이 순액을 갉아먹는다. */
       const v0 = pot0(S) ? viewOf(S, io) : null;
       const node = v0 ? pickNode(v0.nodes, { varieOnly: !!opt.varieOnly, keep: opt.keep ?? 1 }, v0.budget) : null;
-      /* 병은 **돌아온다**. 진행 중인 삽수가 없고 재고도 배송도 없을 때만 산다 — 쟁이지 않는다. */
+      /* ★★ 2026-08-17 — **용기를 잎 수가 정한다.** 물꽂이는 잎 1장짜리만 받고
+         (propagation §WATER_LEAF_MAX), 여러 장은 흙으로 간다.
+         ⚠ 예전에는 무조건 'jar' 였다. 그대로 두면 잎 2장짜리 무늬 마디가 **조용히 안 잘린다**
+           (아래 try/catch 가 삼킨다). 그러면 그 수입이 통째로 사라져 재는 것 자체가 거짓말이 된다. */
+      const cont = node ? (node.leaves <= WATER_LEAF_MAX ? 'jar' : 'soil') : null;
+      const item = cont === 'jar' ? 'jar' : 'pot';
+      /* 병은 **돌아온다**. 진행 중인 삽수가 없고 재고도 배송도 없을 때만 산다 — 쟁이지 않는다.
+         ⚠ 포트(soil)는 **안 돌아온다** — 그래도 사는 까닭은 그 마디가 이사 자금이기 때문이다. */
       if (node && (S.cuttings || []).length === 0 &&
-          stockOf(S, 'jar') + incomingOf(S, 'jar') === 0) {
-        try { const o = orderItem(S, 'jar', 1); containerSpend += o.totalWon; }
+          stockOf(S, item) + incomingOf(S, item) === 0) {
+        try { const o = orderItem(S, item, 1); containerSpend += o.totalWon; }
         catch { /* 돈이 모자라면 다음 날 */ }
       }
-      if (node && stockOf(S, 'jar') >= 1) {
+      if (node && stockOf(S, item) >= 1) {
         try {
-          takeCutting(S, { nodes: v0.nodes, nodeId: node.nodeId, container: 'jar' });
+          takeCutting(S, { nodes: v0.nodes, nodeId: node.nodeId, container: cont });
           if (firstCutDay == null) firstCutDay = S.day;
         } catch { /* 모주에 잎이 한 장도 안 남는 자르기 등 — 규칙대로 막힌 것이다 */ }
       }
@@ -998,6 +1006,22 @@ check('G-2b ★세 경로가 중앙값 안에 성립한다', () => {
   assert.equal(bad.length, 0,
     `중앙값으로 이사하지 못하는 경로: ${bad.map(([n, r]) => `${n} ${(r.rate * 100).toFixed(0)}%`).join(' · ')}`);
 });
+
+/* ══ ⏸ 2026-08-17 — **「키우는 길」은 이 재현으로 못 잰다** (재 보고 걷었다) ══
+   ------------------------------------------------------------
+   새 규칙(혹 20일 · 빛이 무늬율을 정한다 · 고스트가 안 죽는다)의 값어치는 삽수를 **키울 때**
+   나온다. 그래서 「무늬 삽수를 안 팔고 밝은 칸에서 키우는」 넷째 경로를 붙여 재 봤는데,
+   **이 재현으로는 못 잰다.** 까닭이 위 §④ 에 있다:
+
+     `if (ts.cashWon + cut.won + potWon >= MOVE_OUT_WON) { 삽수를 전부 판다 }`
+
+   모주 하나가 이미 2,133,333원이라 **그 문턱이 삽수가 자라기 전에 먼저 걸린다.** 그러면
+   재현이 잎 1장짜리 무늬 삽수를 80,000원에 팔아 버려서, 키우는 길을 켜도 안 켠 것과 같아진다.
+   (실측: 켠 판의 수입 내역이 안 켠 판과 **똑같았다** — 확정 무늬 삽수 80,000원.)
+   ⇒ **재는 자를 고쳐야 재진다.** 고치는 곳은 §④ 한 줄이고, 그건 「사람이 어떻게 파나」를
+     바꾸는 일이라 밸런스 판단이다 — 내가 정할 것이 아니라 plan 몫이다.
+   ★ 그 사이 새 규칙의 값어치는 **삽수 하나만 따로 굴려서** 쟀다:
+     docs/handoff/cutting2-to-plan.md §실측 (잎 1장 무늬 마디 → 밝은 칸 → 60일에 이사비). */
 
 /* ★★ [해결 2026-08-03] 예전에는 셋 다 **여름 안에** 끝나서 WARN(판단필요)으로 남겨 두었다.
    확정 무늬에 **가을 게이트**를 걸어(tutorial.varieGrantOpensDay) 해결했다 —
