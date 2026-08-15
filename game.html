@@ -825,12 +825,25 @@
        그래서 물건을 고르는 동안 [다음 날]·[빨리감기]가 통째로 사라졌다.
      ⇒ `--pickLift` 만큼 띄운다. 값은 JS 가 #bottom 을 **실제로 재서** 넣는다 —
        높이를 CSS 에 박아 두면 글씨 크기나 안전영역이 바뀔 때마다 어긋난다. */
+  /* ★★ 2026-08-18 — **요약이 제 줄을 갖는다** (박사님: *"클릭했을 때 하단 요약에
+       생장정보가 요약돼서 뜨도록"*).
+     ------------------------------------------------------------
+     예전에는 이름표와 단추 넷이 **한 줄**에 나란히 섰다. 그런데 이름표는 `flex:0 0 auto`
+     라 줄어들지 않고 단추는 `min-width:auto` 라 글자 밑으로 못 줄어든다 —
+     즉 이름표가 길어지면 **띠가 통째로 넘친다.** 360px 에서 재 보니 **11글자**가 끝이고
+     12글자부터 2px 씩 넘쳤다(실측 · 인계 문서 §아래 한 줄). 「시루 2 · 4/5칸 · 1일 남음」은
+     거기 못 들어간다.
+     ⇒ `flex-wrap` 을 켜고 이름표를 `flex:1 0 100%` 로 둔다 — **요약이 윗줄, 단추가 아랫줄**.
+       띠는 위로 자라므로(아래는 `--pickLift` 로 고정) [다음 날] 줄을 안 가린다.
+     ⚠ `white-space:nowrap` 을 **안 건다.** 넘치면 잘리는 대신 두 줄이 되게 둔다 —
+       잘린 줄은 거짓말이 되고, 이 게임에서 제일 나쁜 것이 그것이다. */
   #plantActions{position:absolute;z-index:27;left:12px;right:12px;bottom:var(--pickLift,12px);display:none;
-    gap:7px;align-items:stretch}
+    gap:7px;align-items:stretch;flex-wrap:wrap}
   #stage.picked #plantActions{display:flex}
   #plantActions button{flex:1;min-height:var(--tap);font-weight:700;font-size:14px;border-radius:12px}
-  #plantActions .who{flex:0 0 auto;display:flex;align-items:center;padding:0 12px;border-radius:12px;
-    font-size:12.5px;color:var(--dim);background:rgba(16,13,24,.86);border:1px solid rgba(255,255,255,.12)}
+  #plantActions .who{flex:1 0 100%;display:flex;align-items:center;padding:6px 12px;border-radius:12px;
+    font-size:12.5px;line-height:1.4;color:var(--dim);word-break:keep-all;
+    background:rgba(16,13,24,.86);border:1px solid rgba(255,255,255,.12)}
   /* ★이동 모드 — 화면 아무 데나 끌어도 잡힌다.
      투명 판이 3D 위를 덮어 카메라 회전을 막는다(끌다가 방이 돌면 조작이 망가진다). */
   /* ══ 가구 고름 — **가구 옆에 뜨는 팝오버** (박사님 2026-08-08) ═══════════════
@@ -2378,6 +2391,10 @@ const BAG_SIRU_PIC = OPEN_SIRU.bagThumbnail;
      2026-08-09 에 콩나물 썸네일에서 겪은 그 사고와 같은 모양이다.
      ⚠ 새 그림은 `container_tray_s.glb` 를 그대로 찍은 것이다(tools/glb_thumb). */
 const MUSUN_TRAY_PIC = './assets/crops/thumbs/container_tray_s_empty.png';
+/* ★ 2026-08-18 — **싹이 난 판**의 그림. 위 빈 판의 짝이고 같은 GLB 를 찍은 두 장이다.
+   쓰는 데는 한 곳뿐이다 — 방에 서서 **이미 심긴** 판의 [자세히] 카드(§detail.siru).
+   ⚠ 가방·상점 칸은 그대로 빈 판이다(거기 있는 것은 언제나 안 심은 판이다). */
+const MUSUN_TRAY_GROWN_PIC = './assets/crops/thumbs/container_tray_s.png';
 $('musunThumb').src = MUSUN_TRAY_PIC;
 
 /* ---- 셀렉트 채우기 ---- */
@@ -2885,11 +2902,14 @@ function bindGuide() {
      틀 하나에 내용만 갈아 끼우고, 여는 손버릇(탭 → 뜸 → 아무 데나 눌러 닫음)은 하나로 둔다. */
 const won = n => (n == null ? '—' : Math.round(n).toLocaleString('ko-KR') + '원');
 const detail = {
-  open(kind) {
+  /* ★ 2026-08-18 — `arg` 가 늘었다. 카드가 **어느 한 대**를 말해야 할 때 쓴다
+     (`open('siru', { id: 'crop_01_02' })`). 옛 부름(`open('me')`)은 한 글자도 안 바뀐다 —
+     `arg` 를 안 주면 `undefined` 가 그대로 넘어가고 그 창들은 인자를 안 본다. */
+  open(kind, arg) {
     const d = $('detail');
     const view = this[kind];
     if (!view) return;
-    const v = view.call(this);
+    const v = view.call(this, arg);
     $('dArt').src = v.art; $('dArt').alt = '';
     $('dTitle').textContent = v.title;
     $('dSub').textContent = v.sub || '';
@@ -2978,6 +2998,56 @@ const detail = {
         + '하루에 <b>한 칸</b>씩 찬다. 다 차면 거둘 때다.</p>'
         + '<p>콩나물은 <b>어두울수록</b> 잘 자란다. 빛을 보면 쓴맛이 난다 — 이 방에서 제일 어두운 자리를 찾으면 된다.</p>'
         + (standing ? '<p>자라는 중인 시루는 <b>[식물] 탭</b>에서 하나씩 본다.</p>' : '')
+    };
+  },
+  /* ══ ★★ 그 시루 **한 대** (2026-08-18 · 박사님: *"콩나물 시루를 클릭하고 자세히 누르면
+       내용에 그 [식물] 탭에 있는 그 시루 번호의 생장정보도 같이 뜨도록 해 줘"*) ═══════
+     ------------------------------------------------------------
+     ⚠ 위 `crop()`·아래 `musun()` 은 **가방의 빈 용기** 카드다(§crop 의 ⚠). 방에서 자라는
+       시루의 상태를 거기 되살리면 2026-08-09 의 그 사고(「가방에 콩나물이 자라고 있다」)가
+       다시 난다. 그래서 **창을 따로 낸다** — 빈 용기 카드는 한 글자도 안 건드렸다.
+     ★ 값은 전부 `cropPotList` 가 낸 **그 줄**이다. [식물] 탭이 읽는 것과 같은 줄이고
+       문장도 `siruStateKo` 하나에서 온다 ⇒ 두 곳이 어긋날 수가 없다.
+     ★ 제목이 **몇 번 시루인지** 말한다 — 방에 여러 대가 서 있어서 그것부터 있어야 한다.
+     ⚠ 줄은 **있는 것만** 그린다(물 기다린 날·회전·품질·빛). 없는 줄을 「—」로 채우면
+       카드가 길어져 폰에서 밀리고, 빈 값은 *모르는 것*이지 *0* 이 아니다. */
+  siru(arg) {
+    const id = arg && arg.id;
+    let row = null;
+    try { row = cropPotList(S.firstPlay, S.day).find(r => r.id === id) || null; } catch { }
+    /* 못 찾으면 예전 카드로 물러난다 — 아무것도 안 열리는 것보다 낫다 */
+    if (!row) return (arg && arg.kind === 'musun') ? this.musun() : this.crop();
+    const where = row.slotId && !isFreeSlotId(row.slotId) ? slotLabel(row.slotId)
+                : row.placed ? '방 안' : '가방';
+    const r2 = (ko, v) => `<div class="row"><span>${ko}</span><b>${v}</b></div>`;
+    /* 빛 방향은 작물이 정한다 — 콩나물과 무순이 정반대다(§crop · §musun 과 같은 말) */
+    const light = row.kind === 'musun'
+      ? '무순은 <b>밝을수록</b> 파릇하고 알싸하다 — 어두우면 웃자라 밍밍해진다.'
+      : '콩나물은 <b>어두울수록</b> 잘 자란다. 빛을 보면 쓴맛이 난다.';
+    return {
+      /* 심긴 것은 **열린/싹 난** 그림, 안 심긴 것은 빈 그림 — 글과 그림이 같은 말을 한다 */
+      art: row.kind === 'musun' ? (row.sown ? MUSUN_TRAY_GROWN_PIC : MUSUN_TRAY_PIC)
+                                : (row.sown ? OPEN_SIRU.thumbnail : OPEN_SIRU.bagThumbnail),
+      title: `${row.kindKo} ${siruNameKo(row)}`,
+      sub: where,
+      body: r2('자란 칸', `${row.ageDays} / ${row.harvestDays}칸`)
+        + (row.growing ? r2('남은 날', `${row.daysLeft}일`) : '')
+        + (row.idleDays ? r2('물을 기다린 날', `${row.idleDays}일째`) : '')
+        + (row.cycle > 1 ? r2('회전', `${row.cycle}바퀴째`) : '')
+        + (row.quality ? r2('품질', row.quality) : '')
+        /* 받은 빛은 첫 플레이 **동안은 줄째** 안 뜬다(§showDli) — 감춘 자리는 조용해야 한다 */
+        + dliRow('받은 빛(평균)', row.dliSoFar != null ? row.dliSoFar : null, '아직 없음')
+        /* ★ 자라는 중일 때는 이 문장을 **안 적는다.** 그 문장(「4/5칸 · 1일 남음」)이
+           바로 위 두 줄과 **같은 말**이라 카드가 같은 것을 두 번 말하게 된다.
+           나머지 상태에서는 이 문장만이 **까닭과 다음 손짓**을 갖는다
+           (「— 씨앗을 뿌려야 5칸이 생깁니다」 · 「— 칸이 안 찹니다」 · 「다시 심으면 또 돕니다」).
+           ⇒ 짧은 요약(아래 한 줄)과 자세한 카드의 결이 갈리는 자리가 여기다. */
+        + (row.growing ? '' : `<p><b>${siruStateKo(row)}</b></p>`)
+        + `<p>${light}</p>`,
+      /* 이 카드에는 손이 없다(심기·물·거두기는 줄 단추가 갖는다). 그 자리로 가는 길만 낸다 —
+         카드에 손을 또 만들면 같은 동작이 두 벌이 되고, 한쪽이 반드시 낡는다. */
+      btns: [{ ko: '[식물] 탭에서 돌보기', primary: true,
+               go: () => { try { window.__byeotSheet.open('tabPlants'); } catch { } } }]
     };
   },
   /* 무순 — 콩나물과 **같은 골격**이되 빛 방향이 정반대라 그 말만 뒤집는다 */
@@ -5879,22 +5949,61 @@ function cellsHTML(row, frac) {
   }
   return out + '</div>';
 }
+/* ══ 시루 한 대의 「지금 어떤가」 — **한 곳에서만 짓는다** (2026-08-18) ═══════════
+   ------------------------------------------------------------
+   이 문장을 지금 **세 곳**이 나눠 쓴다:
+     ① [식물] 탭 줄(`siruRowHTML`)  ② 방에서 고른 **아래 한 줄**(`picked.select`)
+     ③ 그 시루의 **[자세히] 카드**(`detail.siru`)
+   ⚠ 세 곳이 따로 지으면 반드시 갈린다 — 이 저장소가 「두 곳이 따로 센다」로
+     여러 번 앓았다(START-HERE §2). 그래서 문장 짓는 자리를 여기 하나로 모은다.
+   ⚠ **판정도 숫자도 여기서 안 만든다.** `cropPotList` 가 낸 사실에 옷만 입힌다.
+   ★ 이름은 [식물] 탭 머리(`${containerKo} ${ord}`)와 **같은 말**이다 —
+     박사님이 말씀하신 「그 시루 번호」가 이것이다. */
+function siruNameKo(row) { return `${row.containerKo} ${row.ord}`; }
+/* 긴 것 — 시트 줄과 카드가 쓴다(까닭·다음 손짓까지 적는다) */
+function siruStateKo(row) {
+  /* ★ 글도 **칸으로** 말한다 — 게이지와 다른 자를 쓰면 둘이 서로 다른 말을 한다 */
+  /* ★★ 2026-08-11 — **「안 심음」이 「물 안 줌」보다 먼저다**(§sown). 둘 다 칸이 0인데
+     하는 일이 다르다 — 안 심은 판에 물을 줘 봤자 아무 일도 안 난다. 게이지도 갈린다:
+     물 대기는 `.cells.dry`(물빛 테두리) · 안 심음은 **맨 빈 칸**이다. */
+  return row.harvested  ? '거뒀습니다 — 다시 심으면 또 돕니다'
+       : row.ready      ? `거둘 때가 됐습니다 · ${row.harvestDays}칸 다 참`
+       : row.growing    ? `${row.ageDays}/${row.harvestDays}칸 · ${row.daysLeft}일 남음`
+       : row.needsSow   ? `아직 안 심었습니다 — 씨앗을 뿌려야 ${row.harvestDays}칸이 생깁니다`
+       : row.placed     ? (row.idleDays ? `물을 기다립니다 (${row.idleDays}일째) — 칸이 안 찹니다`
+                                        : `물을 주면 ${row.harvestDays}칸이 하루에 하나씩 찹니다`)
+       :                  '아직 안 놓았습니다';
+}
+/* ★ 짧은 것 — **방에서 고른 아래 한 줄**이 쓴다.
+   ⚠ 여기는 한 줄이고 폭이 360px 에서 336px 뿐이다(실측). 긴 것을 그대로 쓰면 두 줄이
+     되거나 잘린다 — **잘린 줄은 거짓말이 된다.** 그래서 까닭 절(「— 씨앗을 뿌려야…」)을
+     떼고 **사실만** 남긴다. 까닭은 [자세히] 카드가 말한다(한 줄과 카드의 결을 가른 자리다).
+   ⚠ 여기서도 숫자를 새로 안 만든다 — 위 긴 것과 **같은 값**을 짧게 부를 뿐이다. */
+function siruBriefKo(row) {
+  const s = row.harvested  ? '거뒀습니다'
+          : row.ready      ? '거둘 때가 됐습니다'
+          : row.growing    ? `${row.ageDays}/${row.harvestDays}칸 · ${row.daysLeft}일 남음`
+          : row.needsSow   ? '아직 안 심었습니다'
+          : row.placed     ? (row.idleDays ? `물을 기다립니다 (${row.idleDays}일째)`
+                                           : '물을 주면 칸이 돕니다')
+          :                  '아직 안 놓았습니다';
+  return `${siruNameKo(row)} · ${s}`;
+}
+/* 그 열쇠가 가리키는 시루 줄. 자리 이름으로도 · 자유 좌표(`free:{id}`)로도 찾는다
+   (§__byeotCropDetail 이 쓰는 것과 **같은 규칙**이다 — 두 벌로 적으면 한쪽이 낡는다) */
+function siruRowAt(slotId) {
+  if (!slotId) return null;
+  try {
+    return cropPotList(S.firstPlay, S.day)
+      .find(r => r.placed && (r.slotId === slotId || slotId === `free:${r.id}`)) || null;
+  } catch { return null; }
+}
 /* 시루 한 줄의 HTML. **판정은 하나도 안 만든다** — `cropPotList` 가 낸 사실만 옷을 입힌다 */
 function siruRowHTML(row, frac) {
   const where = row.placed
     ? (row.slotId && !isFreeSlotId(row.slotId) ? slotLabel(row.slotId) : '방 안')
     : '가방';
-  /* ★ 글도 **칸으로** 말한다 — 게이지와 다른 자를 쓰면 둘이 서로 다른 말을 한다 */
-  /* ★★ 2026-08-11 — **「안 심음」이 「물 안 줌」보다 먼저다**(§sown). 둘 다 칸이 0인데
-     하는 일이 다르다 — 안 심은 판에 물을 줘 봤자 아무 일도 안 난다. 게이지도 갈린다:
-     물 대기는 `.cells.dry`(물빛 테두리) · 안 심음은 **맨 빈 칸**이다. */
-  const state = row.harvested  ? '거뒀습니다 — 다시 심으면 또 돕니다'
-              : row.ready      ? `거둘 때가 됐습니다 · ${row.harvestDays}칸 다 참`
-              : row.growing    ? `${row.ageDays}/${row.harvestDays}칸 · ${row.daysLeft}일 남음`
-              : row.needsSow   ? `아직 안 심었습니다 — 씨앗을 뿌려야 ${row.harvestDays}칸이 생깁니다`
-              : row.placed     ? (row.idleDays ? `물을 기다립니다 (${row.idleDays}일째) — 칸이 안 찹니다`
-                                               : `물을 주면 ${row.harvestDays}칸이 하루에 하나씩 찹니다`)
-              :                  '아직 안 놓았습니다';
+  const state = siruStateKo(row);
   const cls = row.harvested ? '' : row.ready ? ' ready'
             : row.needsSow ? ' unsown' : row.needsWater ? ' thirsty' : '';
   /* ★ 단추마다 **종류를 같이 실어 준다** — 한 상자에 콩나물과 무순이 같이 서므로
@@ -5909,7 +6018,7 @@ function siruRowHTML(row, frac) {
   const dli = row.dliSoFar != null && showDli()
     ? ` · 받은 빛 ${row.dliSoFar.toFixed(2)} DLI` : '';
   return `<div class="siru${row.placed ? '' : ' bag'}${cls}" data-siru="${row.id}">`
-    + `<div class="siruhead"><b>${row.containerKo} ${row.ord}</b><span>${where}</span></div>`
+    + `<div class="siruhead"><b>${siruNameKo(row)}</b><span>${where}</span></div>`
     + cellsHTML(row, frac)
     + `<div class="siruline">${state}${row.quality ? ' · ' + row.quality : ''}${dli}</div>`
     + `<div class="sirubtns">${btn.join('')}</div></div>`;
@@ -6098,6 +6207,9 @@ function draw() {
   drawGrowGauge();          /* 확대 창 — 다음 단계까지 얼마나 왔나 (안 차면 왜인지도) */
   drawSow();                /* 다시 심어야 하나 */
   try { drawSirus(); } catch (e) { console.warn('[시루]', e && e.message); }  /* 시루 하나하나 */
+  /* ★ 2026-08-18 — 고른 시루의 아래 한 줄도 같이 갱신한다. 안 하면 골라 둔 채로
+     [다음 날]을 눌렀을 때 「4/5칸」이 그대로 남아 **화면이 옛 사실을 말한다.** */
+  try { picked.refreshLabel(); } catch (e) { console.warn('[고른 것]', e && e.message); }
   drawShop();               /* 주문·다시 심기·팔기 */
   try { drawMusun(); } catch (e) { console.warn('[무순]', e && e.message); }  /* 2종째 작물 — 없으면 안 보인다 */
   /* ★ 가방은 **무순 다음**이다 — 무순 카드가 보이는지(display)를 읽어 「가방이 비었나」를 정한다.
@@ -6800,7 +6912,19 @@ async function bootRoomView() {
                      sitsPot(S.firstPlay && S.firstPlay.beansprout)) ? 'crop'
                   : null;
       if (!which) return false;                 // 빈 창턱·선반 — 열어 보일 것이 없다
-      try { detail.open(which); return true; } catch { return false; }
+      /* ★★ 2026-08-18 — **그 시루 한 대의 카드**를 연다 (박사님: *"그 [식물] 탭에 있는
+           그 시루 번호의 생장정보도 같이 뜨도록"*).
+         ⚠ 예전에는 `detail.open('crop')` 이었다. 그건 **가방의 빈 시루** 카드라
+           「가방에 1개 · 방에 3개」만 말했다 — 누른 그 시루에 대해서는 한 글자도 없었다.
+           방에 시루가 셋 서 있으면 셋을 눌러도 **같은 글**이 떴다(실측).
+         ⇒ 어느 줄인지를 열쇠로 찾아 그 줄을 넘긴다. 못 찾으면 예전 카드 그대로다
+           (자리 사본만 맞고 개체가 없는 옛 판 — 아무것도 안 열리는 것보다 낫다). */
+      const row = siruRowAt(slotId);
+      try {
+        if (row) detail.open('siru', { id: row.id, kind: row.kind });
+        else detail.open(which);
+        return true;
+      } catch { return false; }
     };
     window.__byeotIsPlantSlot = (id) => {
       const p = pot0(S);
@@ -7721,11 +7845,30 @@ const picked = {
          그런데 거둔 시루는 다시 심어야 풀리고, 씨앗이 없으면 다시 못 심는다.
          ⇒ **영영 못 움직이는 시루**가 된다. 규칙 쪽(first_play §placeCrop)에서 걷었으니
            여기서도 걷는다 — 한쪽만 걷으면 화면은 열어 놓고 코어가 던진다. */
-    $('pickedName').textContent = slotLabel(slotId);
+    /* ★★ 2026-08-18 — **고른 것이 시루면 그 시루의 요약을 적는다**
+         (박사님: *"클릭했을 때 하단 요약에 생장정보가 요약돼서 뜨도록. 지금은 남은 일수만"*).
+       ------------------------------------------------------------
+       예전 줄은 `slotLabel(slotId)` 하나였다 — 자리에 앉은 시루는 **자리 이름**(「서랍장
+       2번 칸」)만 냈다. 어느 시루인지도, 며칠차인지도 없었다(실측).
+       ⇒ 시루면 **몇 번 시루인가 + 지금 어떤가**를 적는다. 문장은 [식물] 탭 줄과
+         **같은 함수**(`siruBriefKo`)가 짓는다 — 두 곳이 따로 세면 반드시 어긋난다.
+       ⚠ 자리 이름은 여기서 **뺐다.** 한 줄에 둘 다 넣으면 360px 에서 두 줄이 된다(실측
+         30자 > 26자). 자리는 [자세히] 카드가 말하고, 방에서는 고른 자리가 밝아진다 —
+         방금 누른 그 물건이라 「어디에 있나」는 이미 눈앞에 있다.
+       ⚠ 시루가 아니면(몬스테라·삽수) **예전 그대로** 자리 이름이다. */
+    this.refreshLabel();
     $('pickMove').disabled = false;
     $('pickMove').title = '';
     $('stage').classList.add('picked');
     if (roomView) roomView.highlightSlots([slotId]);
+  },
+  /* ★ 골라 둔 채로 하루가 가거나 물을 주면 요약이 낡는다 — **그리기마다** 다시 적는다.
+     ⚠ 고르기를 새로 하는 것이 아니다(하이라이트·모드·[옮기기] 잠금은 안 건드린다).
+       `select` 를 다시 부르면 방뷰 하이라이트가 매 프레임 다시 걸린다. */
+  refreshLabel() {
+    if (!this.slotId) return;
+    const r = siruRowAt(this.slotId);
+    $('pickedName').textContent = r ? siruBriefKo(r) : slotLabel(this.slotId);
   },
   clear() {
     this.slotId = null; this.mode = null; this.potId = null;
