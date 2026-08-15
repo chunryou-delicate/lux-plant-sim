@@ -22,6 +22,8 @@
      E 빛이 다르면 다르게 자란다 — 어두우면 유효 생장일이 **안 오른다**
      F (표시만) 가지의 발아 순서 — 잎자루보다 새순이 먼저 나온다
      G 방 조립기가 `leafState` 를 받으면 정본과 같은 잎을 그린다
+     H 방 조립기는 **받은 유효일 그대로** 그린다 (도착 45일이 365일로 안 커진다)
+     I 무늬는 **쓸 때 받는다** — 부팅 때 skins/ 를 안 받고, 나면 그 장만 받아 실제로 그린다
 ============================================================ */
 import { launch, sleep } from './test_cdp.mjs';
 
@@ -39,6 +41,13 @@ await page.goto(`${BASE}/plant_grow.html?embed=game`);
 await page.waitFor('typeof window.setGrowth === "function"', 180000, 300);
 await page.waitFor('window.thLoaded() === true', 180000, 300);
 await sleep(2000);
+
+/* ★ 부팅 직후의 짐 — **여기서 재야 한다.** 아래 절들이 빛 8 로 키우면서 무늬를 받게 되므로,
+   나중에 재면 「부팅 때 안 받았다」를 확인할 수가 없다(§I 가 이 값을 쓴다). */
+const BOOT = await page.eval(`JSON.stringify({
+  glb: performance.getEntriesByType('resource').filter(r=>/\\.glb$/.test(r.name)).length,
+  mb: +(performance.getEntriesByType('resource').reduce((a,r)=>a+(r.transferSize||0),0)/1048576).toFixed(2),
+  skins: (typeof skinsLoaded==='function') ? skinsLoaded() : null })`).then(JSON.parse);
 
 const P = await page.eval(`JSON.stringify(leafStageParams())`).then(JSON.parse);
 console.log(`격자: seedEnd ${P.seedEnd} · petGrow ${P.petGrow} · spawnStep ${P.spawnStep} · ` +
@@ -197,6 +206,81 @@ console.log('\nG. 방 조립기 — leafState 를 받으면 정본과 같은 잎
      `leafState 를 넘기면 방의 갈라진 잎 수가 정본과 같다 (${cnt.on.mat} = ${truth.st.matureLeaves})`);
   ok(cnt.off.mat < truth.st.matureLeaves,
      `안 넘기면 모자란다 — 방이 자기 굴림으로는 ${cnt.off.mat}장밖에 못 낸다(빛 이력이 없어서)`);
+}
+
+/* ── H. 방 조립기는 받은 유효일 그대로 그린다 ──
+   ★ 2026-08-17 — 「방에서는 크고 확대하면 작다」가 여기서 났다. 방이 유효일을 **못 받으면**
+     room_view 가 데모 기본값(365일)으로 짐작해 그린다. 도착(유효 45일) 순간과 세이브를
+     다시 연 직후가 그랬다 — 잎 한 장짜리 대신 다섯 장짜리가 섰다
+     (실측·그림 docs/handoff/monsterasize-to-plan.md §2).
+   ⚠ 짐작하는 자리는 room_view.js 라 이 창이 못 고쳤다. 여기서는 **조립기 쪽 계약**을 건다 —
+     「받은 날짜대로 그린다」가 깨지면 그때는 조립기가 범인이다. */
+console.log('\nH. 방 조립기 — 받은 유효일 그대로 그린다');
+{
+  const truth = await page.eval(`(()=>{ plantSeed(92158); matResetAll(); resetDailyLight();
+    const out={}; for(const d of [45,150,365]){ setGrowth(d); out[d]=leafStats().leaves; }
+    return JSON.stringify(out); })()`).then(JSON.parse);
+  const room = await page.eval(`(async()=>{
+    const m = await import('/src/render3d/plant_assemble.js');
+    const asm = await m.getPlantAssembler({});
+    const out={};
+    for(const d of [45,150,365]){
+      const g = asm.assemble({growthDays:d, seed:92158, potD:0.20});
+      let leaf=0; g.traverse(o=>{ const k=o.userData&&o.userData.assetKey;
+        if(k && /^leaf_/.test(k)) leaf++; });
+      const bb=new THREE.Box3().setFromObject(g);
+      out[d]={ days:g.userData.growthDays, leaf, h:+(bb.max.y-bb.min.y).toFixed(4) };
+    }
+    return JSON.stringify(out); })()`).then(JSON.parse);
+  for (const d of [45, 150, 365])
+    console.log(`    유효 ${d}일 — 정본 잎 ${truth[d]} · 방 잎 ${room[d].leaf} · 방 키 ${room[d].h}m`);
+  ok([45, 150, 365].every(d => room[d].days === d), `방이 받은 날짜를 그대로 적는다`);
+  ok([45, 150, 365].every(d => room[d].leaf === truth[d]),
+     `방의 잎 수가 정본과 같다 (${[45, 150, 365].map(d => room[d].leaf + '/' + truth[d]).join(' · ')})`);
+  ok(room[45].h < room[365].h * 0.55,
+     `도착(45일) 그루가 한 해(365일) 그루보다 확실히 작다 — ${room[45].h}m vs ${room[365].h}m`);
+}
+
+/* ── I. 무늬는 쓸 때 받는다 ──
+   ★ 2026-08-17 — 부팅 때 이 창(확대 iframe)이 GLB 113장 436.7MB 를 받고 있었다.
+     그중 skins/ 100장이 422MB 고, **첫 화면에는 한 장도 안 쓰인다.**
+     이제 그 잎이 실제로 그 무늬를 쓸 때 한 장씩 받는다(plant_grow.html §ensureSkin).
+   ⚠⚠ **안 받고 안 그리면 그건 고친 게 아니라 지운 것이다.** 그래서 여기서
+     「무늬가 실제로 화면에 나오는가」까지 본다. */
+console.log('\nI. 무늬는 쓸 때 받는다 — 부팅 때 안 받고, 나면 그 장만 받아 그린다');
+{
+  console.log(`    부팅 직후: GLB ${BOOT.glb}장 · ${BOOT.mb}MB · 무늬 ${BOOT.skins}장`);
+  ok(BOOT.skins === 0, `부팅 때는 무늬를 한 장도 안 받는다 (${BOOT.skins}장)`);
+  ok(BOOT.glb <= 20, `부팅 GLB 가 스무 장 안쪽이다 (${BOOT.glb}장 · ${BOOT.mb}MB)`);
+
+  /* varieProb 1.0 은 **튜닝용 값**이다(plant_grow.html §varieProb 설명) — 모든 잎을 무늬로
+     만들어 「나면 나오나」를 보기 위한 것이지 밸런스를 바꾸는 것이 아니다. 끝나고 되돌린다. */
+  await page.eval(`(()=>{ P.varieProb=1; plantSeed(92158); matResetAll(); resetDailyLight();
+    setGrowth(0); setDailyLightSteady(8); for(let d=1; d<=400; d++) advanceTo(d); })()`, false);
+  await page.waitFor('skinsPending() === 0', 180000, 200);
+  await sleep(1500);
+  const r = await page.eval(`(()=>{
+    const keys={}, tex=[];
+    plantGroup.traverse(o=>{ const k=o.userData&&o.userData.assetKey; if(!k) return;
+      keys[k]=(keys[k]||0)+1;
+      if(!/^leaf_mat\\d|albo/.test(k)) return;
+      o.traverse(m=>{ if(!m.isMesh||!m.material||!m.material.map) return;
+        tex.push([k, '#'+m.material.color.getHexString()]); }); });
+    const varieMesh=Object.keys(keys).filter(k=>/^leaf_mat\\d|albo/.test(k)).length;
+    return JSON.stringify({ varieMesh, tex, skins:skinsLoaded(),
+      glb: performance.getEntriesByType('resource').filter(r=>/\\.glb$/.test(r.name)).length,
+      mb: +(performance.getEntriesByType('resource').reduce((a,r)=>a+(r.transferSize||0),0)/1048576).toFixed(2) }); })()`)
+    .then(JSON.parse);
+  console.log(`    무늬를 켜고 400일: 무늬 잎 ${r.varieMesh}종 · 받은 무늬 ${r.skins}장 · ` +
+              `누적 GLB ${r.glb}장 ${r.mb}MB`);
+  ok(r.varieMesh > 0 && r.skins > 0,
+     `무늬가 나면 그 장을 받아 **실제로 그린다** (무늬 잎 ${r.varieMesh}종 · 받은 무늬 ${r.skins}장)`);
+  ok(r.skins < 40, `그래도 100장을 다 받지는 않는다 — 그 그루가 쓰는 것만 ${r.skins}장`);
+  /* 캐논: 무늬 텍스처에 단색 틴트 금지. 텍스처가 살아 있고 색이 흰색(=안 덮음)이어야 한다 */
+  ok(r.tex.length > 0 && r.tex.every(t => t[1] === '#ffffff'),
+     `무늬 텍스처가 살아 있고 단색으로 안 덮인다 ${JSON.stringify(r.tex.slice(0, 3))}`);
+
+  await page.eval(`(()=>{ P.varieProb=0.20; plantSeed(92158); matResetAll(); resetDailyLight(); })()`, false);
 }
 
 await page.close();
