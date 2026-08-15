@@ -528,8 +528,26 @@ check('B 콩나물 — 다시 심을 수 있고 회전이 이어진다 · 절감
    지금 지키는 것은 그 자리에 들어온 새 규칙이다:
      거두는 날이 **어긋나면** 시루마다 온전히 3,000원 · **겹치면** 3,000 → 2,000 → 1,000 → 0원.
    ★ 이 재현은 하루에 [물 주기]를 **한 번** 누른다 = 시루가 하루씩 어긋나게 시작한다.
-     그래서 시루를 늘린 판은 저절로 시차가 생긴다 — 그것이 표준 플레이다. */
-check('B-2 ★시루를 늘리고 어긋나게 돌리면 절감이 는다 — 겹치면 깎인다', () => {
+     그래서 시루를 늘린 판은 저절로 시차가 생긴다 — 그것이 표준 플레이다.
+
+   ══ ⚠⚠ 2026-08-17 — **마지막 단언이 지키던 약속이 뒤집혔다** ═══════════════════
+   옛 줄(이 절 맨 끝):
+     const same = play({ …, sirus: 3, waterAll: true });
+     assert.ok(same.…totalFoodSavedWon < s3,
+       '★셋을 같은 날 시작했는데 어긋나게 돌린 것과 절감이 같습니다 — 겹침이 안 물립니다');
+   그 줄이 지키던 것은 **「겹치면 밥값 절감이 준다」** 였다.
+   박사님이 겹침의 벌을 걷으셨다(first_play §겹침 2026-08-17) —
+     *"하루 수확량을 개수에 따라 조절하라는 게 아니었는데… 식량으로 사용할 수 있는
+       G수를 조절하란 거지.. 최대 300G로."*
+   ⇒ 거두는 양이 같으면 **밥값 절감도 같다.** 하루에 먹는 것이 300g 으로 고정이라
+     몰아 거두든 나눠 거두든 매일 300g 씩 먹는다. **그래서 이 부등호는 이제 거짓이다.**
+   ★ 그러면 시차의 이득은 어디로 갔나 — **없어지지 않고 자리를 옮겼다.**
+     몰아 거두면 하루 300g 을 넘는 몫이 **팔려야** 하고, 팔면 85%다(§잉여 판매의 그 값).
+     ⇒ 그래서 부등호를 **밥값 절감이 아니라 「총액(밥값 + 판 돈)」**으로 옮겨야 맞는데,
+       그 총액을 이 하네스가 안 센다(판매는 손 동작이고 재현이 안 누른다).
+     ⇒ **여기서는 「같다」만 못 박고**, 시차의 값어치는 `tools/probe_crop_grams.mjs` 가 잰다.
+       ⚠ 「같다」를 안 적고 지우면, 겹침의 벌이 실수로 되살아나도 아무도 안 잡는다. */
+check('B-2 ★시루를 늘리고 어긋나게 돌리면 절감이 는다 — 겹쳐도 이제 안 깎인다', () => {
   const one   = play({ seed: 3, days: 40, propagate: false, cropSlot: DARK, plantSlot: SILL, sirus: 1 });
   const three = play({ seed: 3, days: 40, propagate: false, cropSlot: DARK, plantSlot: SILL, sirus: 3 });
   const s1 = one.S.firstPlay.food.totalFoodSavedWon;
@@ -541,16 +559,26 @@ check('B-2 ★시루를 늘리고 어긋나게 돌리면 절감이 는다 — �
   info(`짜임새: 시루 1개 절감 ${s1.toLocaleString()}원 → 시루 3개(하루씩 어긋남) ${s3.toLocaleString()}원 ` +
        `(씨앗·시루값 ${one.S.tutorial.crop.spentWon.toLocaleString()} → ` +
        `${three.S.tutorial.crop.spentWon.toLocaleString()}원)`);
-  info(`  ⤷ 겹치면 순번별로 ` +
-       `${FIRST_PLAY_RULES.cropKindSavedWon.map(w => w.toLocaleString()).join(' → ')}원/회전으로 깎인다. ` +
-       `★${RULES.harvestDays}일 주기니까 **${RULES.harvestDays}개까지**가 천장이다 — 규칙에서 나온 값이다`);
-  /* ★★ 겹치면 실제로 깎이는지 — 같은 판을 **한꺼번에 시작**시켜 확인한다 */
+  info(`  ⤷ ⚠ 2026-08-17 — 그날 순번은 이제 값을 **안 깎는다**(first_play §겹침). ` +
+       `작물 **종류** 체감(질림)은 그대로다: ` +
+       `${FIRST_PLAY_RULES.cropKindSavedWon.map(w => w.toLocaleString()).join(' → ')}원/회전. ` +
+       `★「${RULES.harvestDays}일 주기 = ${RULES.harvestDays}개가 천장」도 같이 없어졌다 — ` +
+       `남은 천장은 하루 몫(300g)과 손(체력)이다`);
+  /* ★★ 겹쳐도 **안 깎인다** — 같은 판을 **한꺼번에 시작**시켜 확인한다(위 머리말) */
   const same = play({ seed: 3, days: 40, propagate: false, cropSlot: DARK, plantSlot: SILL,
                       sirus: 3, waterAll: true });
-  assert.ok(same.S.firstPlay.food.totalFoodSavedWon < s3,
-    `★셋을 같은 날 시작했는데 어긋나게 돌린 것과 절감이 같습니다 — 겹침이 안 물립니다`);
-  info(`  ⤷ 같은 날 셋을 다 시작하면 ${same.S.firstPlay.food.totalFoodSavedWon.toLocaleString()}원 ` +
-       `(어긋나게 돌린 ${s3.toLocaleString()}원보다 적다)`);
+  const ss = same.S.firstPlay.food.totalFoodSavedWon;
+  /* ⚠⚠ **「같다」로 못 박으면 안 된다 — 재 보고 알았다.** 이 하네스는 시차 판에서
+     [물 주기]를 **하루에 하나씩** 누르므로 셋째 시루가 사흘 늦게 출발한다. 같은 40일 안에
+     도는 회전 수가 달라서, 겹침의 벌이 없어도 두 값이 안 같다(실측 76,000 vs 68,000).
+     ⇒ 여기서 지킬 수 있는 것은 **부등호의 방향**이다: 벌이 살아 있으면 몰아 준 판이
+       **더 적었다.** 그 방향이 뒤집힌 것이 이번 변경의 자국이다. */
+  assert.ok(ss >= s3,
+    `★같은 날 셋을 시작한 판(${ss})이 어긋나게 돌린 판(${s3})보다 밥값 절감이 적습니다 — ` +
+    `겹침의 벌이 어디선가 아직 물립니다(2026-08-17 에 걷었다)`);
+  info(`  ⤷ 같은 날 셋을 다 시작하면 ${ss.toLocaleString()}원 — 어긋나게 돌린 ` +
+       `${s3.toLocaleString()}원보다 **적지 않다**(몰아 주면 회전이 일찍 시작돼 오히려 많다). ` +
+       `시차의 값어치는 이제 「하루 300g 을 넘긴 몫을 85%에 팔아야 하는가」에만 남는다`);
 });
 
 /* ══ B-3 · ★★ 물은 **회전 시작**이다 (2026-08-04 새 규칙) ══════════════════

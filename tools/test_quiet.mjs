@@ -16,10 +16,12 @@
      D  ★ 끝나면 글자가 **제자리로 돌아온다** — 안 돌아오면 반대 방향의 거짓말이 된다
      E  ★★ 걷는 중에 다른 것을 눌러도 **「가지는 못했습니다」가 안 뜬다**
         (일은 다 되는데 화면만 못했다고 말하던 자리다. **막는 것이 아니라** 안 헷갈리게 한다)
-     F  ★★ 잉여가 생긴 날 **배너가 뜨고**, 그 값이 코어 값과 **맞는다**
-     G  ★ 수확 기록이 **파는 길**을 말한다 — `[상점]에서 넘길 수 있습니다`
-     H  ★ 잉여가 남아 있으면 [상점] 단추에 **점**이 찍힌다
-     I  ★ 화면에 **별표가 그대로 안 뜬다** (`**날을 달리해**` → `<b>`)
+     F·G·H·I  ⚠⚠ **2026-08-17 에 뒤집혔다.** 옛 넷은 「잉여가 생긴 날 화면이 말하나」였다:
+        F 배너가 뜨고 값이 코어와 맞는다 · G 수확 기록이 파는 길을 말한다 ·
+        H [상점] 단추에 점이 찍힌다 · I 별표가 굵게로 풀린다.
+        박사님이 겹침의 벌을 걷으셔서(first_play §겹침) **잉여가 늘 0** 이다.
+        ⇒ 이제 재는 것은 **「조용한 것이 맞나」**다 — 잉여 계통이 한 마디도 안 하고,
+          **그런데 거둔 것은 온전히 들어왔나**. 자세한 것은 그 절 머리말에 적었다.
      J  ★★ **못 놓는 자리에 떨구면 말한다** — 그런데 방 **밖**에 떨구는 것(물리기)은 조용하다
         (2026-08-11 에 「끌어 놓기 실패가 말을 하게」 고쳤다는데, `placeFailed` 를 타는
          길만 고쳐졌고 제일 흔한 「벽에 떨구기」는 `drag.end` 에서 조용히 끝났다)
@@ -204,10 +206,33 @@ console.log('\n== A·B. ★ 배송이 도착한 날 화면이 말하나 ==');
   ok('★ 도착하면 [가방] 점이 사라진다', !(d2 && d2.on), d2 && String(d2.on));
 }
 
-/* ══ F·G·H·I. 잉여 ═══════════════════════════════════════════════════ */
-console.log('\n== F·G·H·I. ★★ 잉여가 생긴 날 화면이 말하나 ==');
+/* ══ F·G·H·I. 잉여 ═══════════════════════════════════════════════════
+   ⚠⚠⚠ **2026-08-17 — 이 네 절이 지키던 약속이 통째로 없어졌다.**
+   ------------------------------------------------------------
+   무엇을 지키던 절이었나(머리말 F·G·H·I 그대로):
+     F  잉여가 생긴 날 **배너가 뜨고** 그 값이 코어 값과 맞는다
+     G  수확 기록이 **파는 길**을 말한다 — `[상점]에서 넘길 수 있습니다`
+     H  잉여가 남아 있으면 **[상점] 단추에 점**이 찍히고, 넘기면 사라진다
+     I  화면에 **별표가 그대로 안 뜬다** (`**날을 달리해**` → `<b>`)
+   이 넷은 전부 **「겹쳐 거두면 못 받은 몫이 생긴다」**를 바닥으로 깔고 있었다.
+   박사님이 그 벌을 걷으셨다(first_play §겹침 2026-08-17):
+     *"하루 수확량을 개수에 따라 조절하라는 게 아니었는데… 식량으로 사용할 수 있는
+       G수를 조절하란 거지.. 최대 300G로."*
+   ⇒ `surplusWon` 이 **늘 0** 이라 배너도 점도 그 기록 줄도 **영영 안 뜬다.**
+
+   ★★ **그래서 재는 것을 뒤집었다.** 「말하나」가 아니라 **「조용한 것이 맞나」**다.
+     이 파일의 이름이 `test_quiet`(조용한 실패를 잡는다)인데, 여기서는 **조용한 것이
+     정답**인 드문 자리다. 그래서 조용함을 **두 가지로 갈라** 잰다:
+       ㉠ 잉여 계통이 조용하다 — 배너·점·단추 셋 다 안 뜬다 (**틀린 값을 말하지도 않는다**)
+       ㉡ ★ 그런데 **거둔 것은 온전히 들어왔다** — 곳간이 늘었고 수확 배너가 떴다.
+          이게 없으면 「조용하다」가 「아무 일도 안 났다」와 구별이 안 된다.
+     ⇒ 겹침의 벌이 실수로 되살아나면 ㉠ 이 깨지고, 수확이 망가지면 ㉡ 이 깨진다.
+   ⚠ 「별표가 굵게로 풀리나」(옛 I)는 이 줄로는 더 못 잰다 — 그 문구가 안 뜨기 때문이다.
+     같은 규칙을 쓰는 다른 줄이 이 파일 위쪽(A·C)에 이미 있어 계통 자체는 지켜진다.
+   ══════════════════════════════════════════════════════════════════ */
+console.log('\n== F·G·H·I. ★★ 겹쳐 거둬도 안 깎인다 — 잉여 계통이 조용한가 (2026-08-17) ==');
 {
-  /* 같은 날 물을 몰아 준 시루들이 같은 날 익는다 = 겹침 벌 */
+  /* 같은 날 물을 몰아 준 시루들이 같은 날 익는다 — 예전에는 여기서 겹침 벌이 났다 */
   await openTab('plants');
   for (let i = 0; i < 4; i++) {
     await freeHands(); await redraw();
@@ -217,46 +242,41 @@ console.log('\n== F·G·H·I. ★★ 잉여가 생긴 날 화면이 말하나 ==
   for (let d = 0; d < 6; d++) await nextDay();
   await openTab('plants'); await redraw();
 
-  let surplusEv = '', firstEv = '';
-  let coreSurplus = 0;
+  const before = await fp();
+  let harvestEv = '', surplusEv = '', harvested = 0;
   for (let i = 0; i < 4; i++) {
     await freeHands(); await redraw();
     if (!await siruBtn('harvest', 0)) break;
     await sleep(4500); await walk();
+    harvested++;
     const t = await evText();
-    if (!firstEv) firstEv = t;
-    if (/못 받은 몫/.test(t)) { surplusEv = t; coreSurplus = (await fp()).surplus; }
+    if (/거뒀습니다/.test(t)) harvestEv = t;
+    if (/못 받은 몫/.test(t)) surplusEv = t;
   }
-  ok('★★ 잉여가 생긴 날 배너가 뜬다', surplusEv !== '', surplusEv);
-  if (surplusEv) {
-    /* ⚠ 숫자를 여기서 짓지 않는다 — 코어가 든 잉여 누계가 배너 문장 안에 있어야 한다 */
-    const won = coreSurplus.toLocaleString();
-    ok('★ 배너의 값이 코어의 잉여 누계와 같다',
-       surplusEv.includes(won), `배너「${surplusEv}」 vs 코어 ${won}원`);
-    ok('★ 「[상점]」으로 가는 길을 말한다', /\[상점\]/.test(surplusEv), surplusEv);
-    ok('  거둔 배너와 **같이** 뜬다(배너를 새로 안 부른다)',
-       /거뒀습니다/.test(surplusEv) && /못 받은 몫/.test(surplusEv), surplusEv);
-  }
+  const after = await fp();
+  /* ㉡ 먼저 — **일이 실제로 났나.** 이걸 안 재면 아래 「조용하다」가 공허해진다 */
+  ok('★★ 같은 날 여럿을 실제로 거뒀다', harvested >= 2, `${harvested}개`);
+  ok('★★ 거둔 것이 곳간에 **온전히** 들어왔다', after.pantry > before.pantry,
+     `${before.pantry} → ${after.pantry}원`);
+  /* ⚠ **기록(#log)으로 잰다. 배너로 재면 안 된다** — 배너는 저절로 사라지는 것이라
+     느린 판에서는 읽기 전에 이미 꺼져 있다(실제로 한 번 그렇게 헛 FAIL 이 났다).
+     기록은 안 사라지므로 「수확이 화면에 남았나」의 정본은 이쪽이다. 배너는 참고로만 찍는다. */
+  ok('  수확이 기록에 남는다', /🥣 수확/.test(await logText()), harvestEv || '(배너는 이미 꺼졌다)');
+  /* ㉠ 그리고 잉여 계통은 **한 마디도 안 한다** */
+  ok('★★ 잉여가 한 푼도 안 쌓였다 (코어)', after.surplus === 0, `${after.surplus}원`);
+  ok('★★ 「못 받은 몫」 배너가 안 뜬다', surplusEv === '', surplusEv);
   const lg = await logText();
-  ok('★ 수확 기록이 파는 길을 말한다',
-     /못 받은 몫은 \[상점\]에서 넘길 수 있습니다/.test(lg),
-     (lg.split('\n').find(l => /못 받았습니다/.test(l)) || '(그 줄 없음)').slice(0, 120));
-  const html = await logHTML();
-  ok('★ 화면에 별표가 그대로 안 뜬다(굵게로 풀린다)',
-     !/\*\*/.test(lg) && /<b>날을 달리해<\/b>/.test(html));
+  ok('★ 수확 기록에 「덜 챙겼습니다」 줄이 없다', !/덜 챙겼습니다/.test(lg),
+     (lg.split('\n').find(l => /덜 챙겼습니다/.test(l)) || '').slice(0, 120));
   const d3 = await dot('navShop');
-  ok('★ 잉여가 남아 있으면 [상점] 단추에 점이 찍힌다', !!(d3 && d3.on), d3 && d3.title);
-  const cur = (await fp()).surplus;
-  ok('  그 점이 얼마인지 말한다(title)',
-     !!(d3 && d3.title.includes(cur.toLocaleString())), d3 && d3.title);
-
-  /* 넘기면 점이 사라진다 — 「할 일이 남았다」의 뜻이 지켜지나 */
+  ok('★ [상점] 단추에 점이 안 찍힌다', !(d3 && d3.on), d3 && d3.title);
   await openTab('shop');
-  await page.eval(`(()=>{const b=document.getElementById('sellSurplus');
-    if(b && getComputedStyle(b).display!=='none') b.click();})()`, false);
-  await sleep(900);
-  const d4 = await dot('navShop');
-  ok('★ 넘기고 나면 [상점] 점이 사라진다', !(d4 && d4.on), d4 && String(d4.on));
+  const sBtn = await page.eval(`(()=>{const b=document.getElementById('sellSurplus');
+    return b ? getComputedStyle(b).display : '(없음)';})()`);
+  ok('★ [잉여 채소 넘기기] 단추가 화면에 없다', sBtn === 'none' || sBtn === '(없음)', sBtn);
+  const sHint = await page.eval(`(()=>{const h=document.getElementById('surplusHint');
+    return h ? h.textContent.trim() : '';})()`);
+  ok('  그 자리에 **빈 설명**도 안 남는다', sHint === '', sHint);
 }
 
 console.log('\n== 예외 ==');

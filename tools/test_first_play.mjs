@@ -23,7 +23,11 @@ import {
   makeCropPot,
   resowBeansprout,
   /* ★ 2026-08-16 · 그램 셈 — 숫자를 박지 않고 규칙에서 읽는다(first_play §그램) */
-  cropCycleSavedWon
+  cropCycleSavedWon,
+  /* ★ 2026-08-17 · 겹침 — 「그날 N번째로 거두면 얼마인가」를 묻는 창구(first_play §겹침) */
+  overlapSavedWon,
+  /* ★ 2026-08-17 — 「거둔 양이 늘어도 **먹는 몫**은 하루 300g 그대로다」를 재려고 */
+  eatFromPantry
 } from '../src/game/first_play.js';
 import { nextDay, harvestCrop } from '../src/game/loop.js';
 import { newState, pot0, waterCrop, waterPot, cropHarvestStatus, resowCrop, ARRIVAL } from '../src/game/state.js';
@@ -65,8 +69,18 @@ const TEST_RULES = firstPlayRulesFromBalance(JSON.parse(
 /* ★★ 2026-08-16 — **최상 품질 한 회전이 얼마인가를 읽어 온다**(first_play §그램).
    숫자를 박으면 셈이 바뀔 때 이 파일이 조용히 거짓이 된다 — 실제로 3,000원이 그렇게 낡았다. */
 const BEST_CYCLE_WON = cropCycleSavedWon(TEST_RULES, TEST_RULES.qualityMaxMeals, 0, 0);
-/* 같은 날 첫째·둘째·셋째·넷째로 거둘 때의 값(§겹침). 넷째는 0 — 표 길이가 셋이라서다 */
-const OVERLAP_WON = [0, 1, 2, 3].map(t => cropCycleSavedWon(TEST_RULES, TEST_RULES.qualityMaxMeals, t, 0));
+/* ══ ★★ 2026-08-17 — **이 두 표가 갈렸다** (first_play §겹침 2026-08-17) ══════════
+   ------------------------------------------------------------
+   ⚠ **여기 한 표가 두 뜻을 지고 있었다.** 예전 이 줄은 이렇게 적혀 있었다:
+       const OVERLAP_WON = [0,1,2,3].map(t => cropCycleSavedWon(RULES, maxMeals, t, 0));
+       // "같은 날 첫째·둘째·셋째·넷째로 거둘 때의 값(§겹침). 넷째는 0"
+     그 한 줄이 **질림 축(작물 종류)** 을 읽어 놓고 **겹침(그날 개수)** 이라고 불렀다.
+     박사님이 겹침의 벌만 걷으신 지금, 그 둘은 서로 다른 답을 낸다. 그래서 표를 갈랐다.
+   ★ 숫자는 여전히 **안 박는다.** 둘 다 규칙에서 읽는다 — 문이 열리면 저절로 옛 값이 된다. */
+/* ① 겹침 — 같은 날 첫째·둘째·셋째·넷째로 거둘 때. **이제 넷이 다 같은 값**이다 */
+const OVERLAP_WON = [0, 1, 2, 3].map(i => overlapSavedWon(TEST_RULES, TEST_RULES.qualityMaxMeals, i, 0));
+/* ② 질림 — 작물 **종류** 순번 0·1·2·3. 이쪽은 **그대로 깎인다**(1 · 2/3 · 1/3 · 0) */
+const TIRED_WON = [0, 1, 2, 3].map(t => cropCycleSavedWon(TEST_RULES, TEST_RULES.qualityMaxMeals, t, 0));
 /* 품질 세 칸(3·2·1끼)의 회전분 — 자리(빛)가 값을 가르는 그 표다 */
 const QUALITY_WON = [3, 2, 1].map(m => cropCycleSavedWon(TEST_RULES, m, 0, 0));
 const OPEN_SIRU = openSiruContractFromManifest(JSON.parse(
@@ -232,8 +246,34 @@ function growCycle(dli) {
   assert.equal(last.harvestedPots, 1);
 }
 
-/* ★★ 겹침 — **같은 날 거둔 둘째·셋째는 깎인다** (2026-08-04 · first_play.js §겹침)
-   3,000 → 2,000 → 1,000 → 0. 시차를 만들 이유가 이 표 하나다. */
+/* ★★ 겹침 — **같은 날 거둬도 안 깎인다** (2026-08-17 박사님 확정 · first_play §겹침)
+   ------------------------------------------------------------
+   ⚠⚠ **이 블록이 지키던 약속이 뒤집혔다. 무엇을 지키던 줄이었는지 적어 둔다:**
+     옛 머리말 — *"겹침 — 같은 날 거둔 둘째·셋째는 깎인다(2026-08-04). 3,000 → 2,000 →
+                  1,000 → 0. 시차를 만들 이유가 이 표 하나다."*
+     옛 단언 셋 — `perPot.map(savedWon)` 이 [3000,2000,1000,0] 이다 ·
+                  `cycleSavedWon` 이 그 합이다 · `overlapLostWon` 이 그 차액의 합이다.
+   박사님: *"하루 수확량을 개수에 따라 조절하라는 게 아니었는데… 식량으로 사용할 수 있는
+   G수를 조절하란 거지.. 최대 300G로."*
+   ⇒ **수확은 온전히 들어온다.** 막는 것은 먹는 쪽(하루 300g) 하나다.
+   ★ 그래서 이 블록이 **새로 지키는 것**은 셋이다:
+     ① 같은 날 넷을 거둬도 넷 다 온전한 값이다  ② 못 받은 몫이 **0** 이다
+     ③ ★ **질림은 안 걷혔다** — 작물 종류 축은 여전히 1 · 2/3 · 1/3 · 0 으로 깎인다 */
+{
+  /* ★★ ③ 먼저 **둘이 갈렸는지**부터 못 박는다. 이게 이번 변경의 핵심이라
+     여기가 무너지면 나머지 단언은 「무엇을 잰 것인지」를 잃는다. */
+  assert.deepEqual(OVERLAP_WON, [BEST_CYCLE_WON, BEST_CYCLE_WON, BEST_CYCLE_WON, BEST_CYCLE_WON],
+    '★그날 순번이 아직 값을 깎고 있다 — 겹침의 벌이 안 걷혔다');
+  /* ⚠ **반올림은 g 에서 일어난다**(first_play §질림 — 400 × 2/3 = 266.67 → 267g → 2,670원).
+     원끼리 비율로 재면 0.6675 가 나와 2/3 과 안 맞는다. 그래서 g 으로 재고, 기대값도
+     같은 자리에서 반올림한다 — 「자를 딴 단위로 대는」 사고를 안 내려고 그렇다. */
+  assert.deepEqual(TIRED_WON.map(w => w / 10),
+    [1, 2 / 3, 1 / 3, 0].map(m => Math.round((BEST_CYCLE_WON / 10) * m)),
+    '★질림(작물 종류 체감)이 같이 걷혔다 — 그건 걷으면 안 되는 축이다');
+  /* 무순은 2종째라 **처음부터 한 칸 밀려** 있다. 그 밀림이 그대로 남아 있나 */
+  assert.equal(overlapSavedWon(TEST_RULES, 3, 0, 1), cropCycleSavedWon(TEST_RULES, 3, 1, 1),
+    '★무순의 종류 순번(2종째 = ×2/3)이 사라졌다');
+}
 {
   const fp = createFirstPlayState({ rules: TEST_RULES });
   /* 시루 넷을 **같은 날** 시작한다 — 넷 다 같은 날 익는다.
@@ -248,13 +288,25 @@ function growCycle(dli) {
   const h = harvestBeansprout(fp, { day: CYCLE });
   assert.equal(h.harvestedPots, 4, '★한 번에 다 안 거둬졌다 — 시루마다 누르게 되어 있다');
   assert.deepEqual(h.perPot.map(p => p.savedWon), OVERLAP_WON,
-    '★같은 날 거둔 것이 안 깎였다 — 겹침이 안 물린다');
+    '★같은 날 거둔 것이 깎였다 — 겹침의 벌이 아직 물린다');
   assert.equal(h.cycleSavedWon, OVERLAP_WON.reduce((a, v) => a + v, 0));
-  assert.equal(h.overlapLostWon,
-    OVERLAP_WON.reduce((a, v) => a + (BEST_CYCLE_WON - v), 0), '겹쳐서 못 받은 몫이 안 맞는다');
+  /* ★★ 2026-08-17 — 옛 줄은 「차액의 합이 맞나」를 물었다. 이제 **차액 자체가 없다.**
+     0 을 못 박는 이유: 이 값을 근거로 삼던 것들(잉여·배너·[잉여 채소 넘기기])이
+     조용히 살아나는지를 여기서 잡는다(first_play §잉여 판매 맨 아래). */
+  assert.equal(h.overlapLostWon, 0, '★겹쳐서 못 받은 몫이 생겼다 — 벌이 어디선가 다시 물린다');
+  assert.equal(h.lostGrams, 0, '★못 받은 몫(g)이 0 이 아니다');
+  assert.equal(h.surplusWon, 0, '★잉여가 쌓였다 — 겹침·쉼이 둘 다 0 인데 어디서 났나');
+  /* ★ 그날 순번 자체는 **계속 센다** — 벌이 아니라 사실이고 세이브·화면이 읽는다 */
+  assert.deepEqual(h.perPot.map(p => p.overlapIndex), [0, 1, 2, 3],
+    '★그날 순번을 안 세고 있다 — 문을 다시 열면 0부터 시작해 규칙이 샌다');
+  assert.equal(h.overlapCount, 3, '★겹친 시루 수를 안 세고 있다');
+  /* ★★ **거둔 양이 온전하다** — 400g 짜리 넷이면 1.6kg 이다. 이것이 박사님 그림이다 */
+  assert.equal(h.perPot.reduce((a, p) => a + p.grams, 0), 4 * (BEST_CYCLE_WON / 10),
+    '★같은 날 넷을 거뒀는데 수확량(g)이 넷 몫이 아니다');
 
-  /* ★ 시차를 두면 안 깎인다 — 같은 시루 넷을 **다른 날** 거두면 넷 다 3,000원이다.
-     ★★ 이것이 박사님 그림이다: "5일 주기니까 5개까지 1일씩 안 겹치게 하면 매일 다 3,000". */
+  /* ★ 시차를 둬도 **같은 값**이다 — 예전에는 이것이 「시차의 이득」이었는데 이제 같다.
+     ⚠ 시차가 무의미해진 것은 아니다: 하루에 먹을 수 있는 것은 300g 이라 몰아 거두면
+       나머지를 **85%에 팔아야** 한다. 그 차이는 살림 프로브가 잰다(probe_crop_grams). */
   const fp2 = createFirstPlayState({ rules: TEST_RULES });
   /* ★ 위와 같은 이유로 **만든 뒤에 놓는다** (2026-08-09 · §자리는 시루마다 따로다) */
   for (let i = 2; i <= 4; i++) fp2.beansprout.pots.push(makeCropPot('crop_01_0' + i));
@@ -293,15 +345,25 @@ function growCycle(dli) {
     QUALITY_WON.map(w => w / 10), '★수확량(g)이 원과 어긋난다 — 10원 = 1g 이 깨졌다');
 }
 
-/* ★★ 시루를 늘려도 **같은 날 거두면** 안 는다 (2026-08-04 재정정 · first_play.js §겹침)
+/* ★★ 시루를 늘리면 **같은 날 거둬도 는다** (2026-08-17 박사님 확정 · first_play §겹침)
    ------------------------------------------------------------
-   옛 검사는 "시루를 늘려도 절감이 아예 안 는다"였다. 그 규칙은 시루를 살 이유를 없앴다.
-   지금 지키는 것은 그 자리에 들어온 새 규칙이다: **겹치면 깎이고, 어긋나면 온전히 받는다.**
-   그래서 여섯 시루를 같은 날 거두면 3,000+2,000+1,000 이고 넷째부터는 0원이다 —
-   ★천장(5일 주기 = 5개)이 규칙에서 나온다는 것이 이 줄로 확인된다. */
+   ⚠⚠ **이 블록의 약속이 두 번째로 뒤집혔다. 무엇을 지키던 줄이었나:**
+     2026-08-04 이전 — *"시루를 늘려도 절감이 아예 안 는다"* (시루를 살 이유가 없어졌다)
+     2026-08-04~16  — *"겹치면 깎이고 어긋나면 온전히 받는다. 여섯을 같은 날 거두면
+                        3,000+2,000+1,000 이고 넷째부터 0원. **천장(5일 주기 = 5개)이
+                        규칙에서 나온다**"*  ← 옛 단언 셋이 이걸 못 박고 있었다:
+                        `perPot.map(savedWon) === [...OVERLAP_WON, 0, 0]` ·
+                        `cycleSavedWon === 한 시루의 두 배` · `overlapCount === 5`
+     2026-08-17     — **수확은 온전히 들어온다.** 여섯이면 여섯 몫이 다 들어온다.
+   ⚠⚠ ★ **그래서 「천장이 규칙에서 나온다」가 여기서 없어졌다.** 남은 천장은 둘이고
+     여기서 재는 것이 아니다 — ① 먹는 쪽(하루 300g) ② 손(체력 5 · 5일 주기 = 25개).
+     ⇒ 이 블록이 이제 지키는 것은 **「늘린 만큼 그대로 들어온다」** 하나다. */
 {
   const one = growCycle(0.2).result;
-  const fp = createFirstPlayState({ rules: TEST_RULES });
+  /* ⚠ `enabled: true` 로 만든다 — `eatFromPantry` 가 꺼진 판에서는 **0 을 내고 만다**
+     (먹는 계통 자체가 안 도는 것이지 「먹을 게 없다」가 아니다). 그걸 모르고 재면
+     「상한이 지켜졌다」가 **아무 일도 안 일어난 것**을 보고 참이라 우긴다. */
+  const fp = createFirstPlayState({ enabled: true, rules: TEST_RULES });
   /* ★ 위와 같은 이유로 **만든 뒤에 놓는다** (2026-08-09 · §자리는 시루마다 따로다) */
   for (let i = 2; i <= 6; i++) fp.beansprout.pots.push(makeCropPot('crop_01_0' + i));
   placeBeansprout(fp, 'dark-slot');
@@ -309,12 +371,17 @@ function growCycle(dli) {
   for (let d = 1; d <= CYCLE; d++) growDay(fp, 0.2);
   const six = harvestBeansprout(fp, { day: CYCLE });
   assert.equal(six.harvestedPots, 6);
-  assert.deepEqual(six.perPot.map(p => p.savedWon), [...OVERLAP_WON, 0, 0],
-    '★같은 날 거둔 넷째부터가 0원이 아니다 — 천장이 규칙에서 안 나온다');
-  assert.equal(six.cycleSavedWon, OVERLAP_WON.reduce((a, v) => a + v, 0));
-  assert.equal(six.cycleSavedWon, one.cycleSavedWon * 2,
-    '★여섯 시루를 같은 날 거둔 값이 한 시루의 두 배가 아니다 (첫째+둘째+셋째)');
-  assert.equal(six.overlapCount, 5, '겹친 시루 수를 안 세고 있다');
+  assert.deepEqual(six.perPot.map(p => p.savedWon), new Array(6).fill(BEST_CYCLE_WON),
+    '★같은 날 거둔 것이 깎였다 — 겹침의 벌이 아직 물린다');
+  assert.equal(six.cycleSavedWon, one.cycleSavedWon * 6,
+    '★여섯 시루를 같은 날 거둔 값이 한 시루의 여섯 배가 아니다');
+  assert.equal(six.overlapCount, 5, '겹친 시루 수를 안 세고 있다 — 세는 것 자체는 안 걷었다');
+  assert.equal(six.overlapLostWon, 0, '★못 받은 몫이 생겼다');
+  /* ★ 그런데 **먹는 것은 하루 300g 그대로다** — 늘어난 것은 「손에 들어온 양」이지
+     「밥값 절감」이 아니다. 그 문지기가 아직 서 있는지 여기서 같이 잰다. */
+  const eaten = eatFromPantry(fp);
+  assert.equal(eaten.savedWon, TEST_RULES.dailyCropSaveWon,
+    '★여섯을 거뒀다고 하루에 먹는 몫이 늘었다 — 300g 상한이 무너졌다');
 }
 
 {

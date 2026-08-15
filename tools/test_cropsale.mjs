@@ -18,6 +18,21 @@
 
    ⚠ 이 검사는 숫자를 하나도 안 지어낸다. 씨앗값은 `shop.buyPriceOf`, 한 회전분은
      `first_play.cropCycleSavedWon`, 손익분기는 `shop.cropBreakEvenRate` 에서 읽는다.
+
+   ══ ⚠⚠⚠ 2026-08-17 — **이 파일이 재던 물건이 게임에서 사라졌다** ═══════════════
+   박사님이 겹침의 벌을 걷으셨다(first_play §겹침 2026-08-17):
+     *"하루 수확량을 개수에 따라 조절하라는 게 아니었는데… 식량으로 사용할 수 있는
+       G수를 조절하란 거지.. 최대 300G로."*
+   ⇒ `overlapLostWon` 이 0 이 되고, `spoiledWon` 은 2026-08-16 에 이미 0 이 됐다.
+     **둘을 더한 것이 잉여**이므로 **잉여가 늘 0** 이다. 「팔 잉여」가 아예 안 생긴다.
+
+   ★ 그래서 이 파일을 **둘로 갈랐다.** 지우지 않은 까닭은 §K 에 적었다.
+     ① **§K(신설)** — 게임이 실제로 도는 규칙에서 **잉여가 0** 임을 못 박는다. ★ 이게 새 약속이다
+     ② **§D~I** — 잉여를 만드는 계통(값·손익분기·지갑·누적)은 **문을 열고** 잰다:
+        `rules.cropOverlapTiredEnabled = true` (first_play §겹침 이 남긴 문).
+        ⚠ 이 절들이 재는 것은 이제 **「게임에서 이런 일이 난다」가 아니라
+          「그 계통이 아직 성하다」**다. 뜻이 바뀌었으므로 각 절 머리에 적어 두었다.
+     ⇒ ★ 문이 없었다면 이 절들은 **지울 수밖에** 없었고, 되살릴 때 아무 근거도 안 남았다.
 ============================================================ */
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
@@ -25,7 +40,9 @@ import {
   FIRST_PLAY_RULES, firstPlayRulesFromBalance, createFirstPlayState,
   placeBeansprout, waterBeansprout, advanceBeansproutDay, harvestBeansprout,
   makeCropPot, eatFromPantry, pantryCapWon, dailyCropSaveWonOf,
-  cropCycleSavedWon, cropSurplusQuote, cropSurplusRateOf, takeCropSurplus
+  cropCycleSavedWon, cropSurplusQuote, cropSurplusRateOf, takeCropSurplus,
+  /* ★ 2026-08-17 · §K — 「잉여가 0 이 됐어도 **곳간에서 파는 길**은 살아 있다」를 잰다 */
+  pantrySaleQuote
 } from '../src/game/first_play.js';
 import { newState, sellCropSurplus, cropSurplusStatus } from '../src/game/state.js';
 import { buyPriceOf, cropBreakEvenRate, shopStatus } from '../src/game/shop.js';
@@ -36,14 +53,22 @@ const BALANCE = JSON.parse(
 const rulesAt = (rate) => firstPlayRulesFromBalance(
   rate == null ? BALANCE : { ...BALANCE, _meta: { ...BALANCE._meta, cropSurplusSaleRate: rate } });
 const RULES = rulesAt(null);
+/* ★★ 2026-08-17 — **겹침의 벌을 되살린 사본**(first_play §겹침 이 남긴 문).
+   §D~I 가 「잉여를 만드는 계통이 아직 성한가」를 재려면 잉여가 나는 판이 필요하다.
+   ⚠ **게임은 이 문을 안 연다.** 게임 규칙(문 닫힘)에서 무슨 일이 나는지는 §K 가 잰다. */
+const penalty = (rules) => Object.freeze({ ...rules, cropOverlapTiredEnabled: true });
+const PEN = penalty(RULES);
+const penAt = (rate) => penalty(rulesAt(rate));
 const CYCLE = RULES.harvestDays;
 /* ★★ 2026-08-16 — 이 파일에 3,000 / 2,000 / 1,000 / 6,000 이 박혀 있었다. 그것이
    이 검사가 지키던 옛 약속이다: 「콩나물 최상 품질 한 회전 = 3,000원 · 끼니에 비례」.
    g 셈이 들어와 400 / 300 / 200g = 4,000 / 3,000 / 2,000원이 됐다(first_play §그램).
    ⇒ **숫자를 다시 박지 않는다. 규칙에서 읽는다.** 값이 또 바뀌어도 이 파일은 안 낡는다. */
-const W = (t = 0) => cropCycleSavedWon(RULES, 3, t, 0);   // 겹침 순번 t 로 거둘 때
+const W = (t = 0) => cropCycleSavedWon(RULES, 3, t, 0);   // 질림 순번 t 로 거둘 때
 const W0 = W(0);                                          // 온전한 한 회전분
-const OVER4 = [0, 1, 2, 3].map(W);                        // 같은 날 넷을 거두면
+/* ⚠ 2026-08-17 — 아래 셋은 **문을 연 판**(PEN)의 값이다. 게임에서는 넷 다 W0 이고
+   `LOST4` 는 0 이다(§K). 이름은 그대로 두되 뜻이 갈렸으므로 여기 적어 둔다. */
+const OVER4 = [0, 1, 2, 3].map(W);                        // 같은 날 넷을 거두면(문 열림)
 const SUM4 = OVER4.reduce((a, v) => a + v, 0);            // 그중 곳간에 든 몫
 const LOST4 = 4 * W0 - SUM4;                              // 겹쳐서 못 받은 몫
 const DARK = 0.2;                       // 콩나물 최상 품질(하얗고 아삭 3끼)이 나오는 빛
@@ -131,10 +156,12 @@ console.log('\n== C. ★끼니로 쓸 수 있는 것은 안 팔린다 ==');
   ok('시루 하나짜리 판에는 팔 것이 아예 없다 — 곳간에 든 몫은 손도 못 댄다');
 }
 
-console.log('\n== D. 잉여의 정의 — 곳간이 못 받은 몫, 그 둘뿐 ==');
+console.log('\n== D. 잉여의 정의 — 곳간이 못 받은 몫, 그 둘뿐 (★문을 연 판) ==');
 {
-  const { fp, h } = sameDayHarvest(4);
-  /* 같은 날 넷을 거두면 3,000 → 2,000 → 1,000 → 0 으로 깎인다(§겹침) */
+  /* ⚠ 2026-08-17 — **뜻이 바뀐 절이다.** 예전에는 「게임에서 이런 일이 난다」였고
+     이제는 「잉여를 만드는 계통이 아직 성하다」다. 게임 규칙에서는 §K 처럼 잉여가 0 이다. */
+  const { fp, h } = sameDayHarvest(4, PEN);
+  /* 같은 날 넷을 거두면 4,000 → 2,670 → 1,330 → 0 으로 깎인다(§겹침 · 문 열림) */
   assert.deepEqual(h.perPot.map(p => p.savedWon), OVER4);
   assert.equal(h.cycleSavedWon, SUM4, '★곳간에 들어간 몫이 안 맞는다');
   assert.equal(h.overlapLostWon, LOST4, '★겹쳐서 못 받은 몫이 안 맞는다');
@@ -149,11 +176,11 @@ console.log('\n== D. 잉여의 정의 — 곳간이 못 받은 몫, 그 둘뿐 =
   ok(`잉여 ${LOST4.toLocaleString()}원 · 곳간 ${SUM4.toLocaleString()}원 — 같은 수확이 둘로 정확히 갈린다`);
 }
 
-console.log('\n== E. ★파는 것이 곳간을 한 푼도 안 건드린다 ==');
+console.log('\n== E. ★파는 것이 곳간을 한 푼도 안 건드린다 (★문을 연 판) ==');
 {
-  const { fp } = sameDayHarvest(4);
+  const { fp } = sameDayHarvest(4, PEN);
   const before = fp.food.pantryWon;
-  const S = newState({ firstPlay: true, firstPlayRules: RULES });
+  const S = newState({ firstPlay: true, firstPlayRules: PEN });
   S.firstPlay = fp;
   const r = sellCropSurplus(S);
   assert.equal(fp.food.pantryWon, before, '★★팔았더니 곳간이 줄었다 — 끼니를 팔았다');
@@ -173,7 +200,7 @@ console.log('\n== F. 판매가를 바꾸면 결과가 따라 움직인다 ==');
 {
   const rows = [];
   for (const rate of [0, 0.233, 0.25, 0.5, 0.7, 1.0]) {
-    const rules = rulesAt(rate);
+    const rules = penAt(rate);            // ★ 2026-08-17 · 문을 연 판(§머리말)
     const { fp } = sameDayHarvest(4, rules);
     const q = cropSurplusQuote(fp);
     assert.equal(q.pendingWon, LOST4, '★판매가가 잉여의 양을 바꿨다 — 값과 양이 섞였다');
@@ -199,7 +226,7 @@ console.log('\n== G. ★손익분기 아래에서는 손해다 ==');
      그 시루를 한 회전 돌리는 데 지갑에서 나가는 것은 씨앗 한 봉지값뿐이다. */
   const SEED = buyPriceOf('bean_seed');
   const marginOf = (rate) => {
-    const rules = rulesAt(rate);
+    const rules = penAt(rate);            // ★ 2026-08-17 · 문을 연 판(§머리말)
     const a = sameDayHarvest(3, rules), b = sameDayHarvest(4, rules);
     assert.equal(b.h.cycleSavedWon - a.h.cycleSavedWon, 0,
       '★넷째 시루가 저감을 늘렸다 — 「잉여만 내는 시루」가 아니다');
@@ -225,9 +252,9 @@ console.log('\n== G. ★손익분기 아래에서는 손해다 ==');
      `${(be * 100).toFixed(1)}%→0원 · 20%→${marginOf(0.20)}원 · 85%→${marginOf(0.85)}원`);
 }
 
-console.log('\n== H. 쌓아 뒀다 한 번에 넘겨도 총액이 같다 ==');
+console.log('\n== H. 쌓아 뒀다 한 번에 넘겨도 총액이 같다 (★문을 연 판) ==');
 {
-  const { fp } = sameDayHarvest(4);
+  const { fp } = sameDayHarvest(4, PEN);
   /* 거둔 것을 그대로 두고 한 회전 더 돌린다 — 잉여가 이어서 쌓인다 */
   for (const p of fp.beansprout.pots) { p.harvested = false; p.ageDays = 0; p.dliHist = []; p.startedOnDay = null; }
   waterBeansprout(fp, CYCLE, { all: true });
@@ -236,7 +263,7 @@ console.log('\n== H. 쌓아 뒀다 한 번에 넘겨도 총액이 같다 ==');
   assert.equal(h2.surplusWon, LOST4, '★둘째 회전의 잉여가 안 맞는다');
   assert.equal(h2.surplusPendingWon, LOST4 * 2, '★★잉여가 안 쌓였다 — 안 넘기면 사라진다');
 
-  const S = newState({ firstPlay: true, firstPlayRules: RULES });
+  const S = newState({ firstPlay: true, firstPlayRules: PEN });
   S.firstPlay = fp;
   const st = cropSurplusStatus(S);
   assert.equal(st.pendingWon, LOST4 * 2);
@@ -247,10 +274,10 @@ console.log('\n== H. 쌓아 뒀다 한 번에 넘겨도 총액이 같다 ==');
   ok(`두 회전을 모아 ${(LOST4 * 2).toLocaleString()}원어치를 한 번에 → ${r.won.toLocaleString()}원`);
 }
 
-console.log('\n== I. 지갑에 실제로 들어간다 — 그루·삽수와 같은 문으로 ==');
+console.log('\n== I. 지갑에 실제로 들어간다 — 그루·삽수와 같은 문으로 (★문을 연 판) ==');
 {
-  const { fp } = sameDayHarvest(4);
-  const S = newState({ firstPlay: true, firstPlayRules: RULES });
+  const { fp } = sameDayHarvest(4, PEN);
+  const S = newState({ firstPlay: true, firstPlayRules: PEN });
   S.firstPlay = fp;
   const cashBefore = S.tutorial.cashWon;
   const earnedBefore = shopStatus(S).earnedWon;
@@ -264,8 +291,8 @@ console.log('\n== I. 지갑에 실제로 들어간다 — 그루·삽수와 같�
   assert.equal(r.events[0].id, 'crop_surplus_sold');
   assert.equal(r.events[0].won, r.won);
   /* 파산 중이었다면 풀린다 — sellPot·sellCutting 과 같은 규칙이다 */
-  const S2 = newState({ firstPlay: true, firstPlayRules: RULES });
-  S2.firstPlay = sameDayHarvest(4).fp;
+  const S2 = newState({ firstPlay: true, firstPlayRules: PEN });
+  S2.firstPlay = sameDayHarvest(4, PEN).fp;
   S2.tutorial.cashWon = 0; S2.tutorial.bankrupt = true;
   sellCropSurplus(S2);
   assert.equal(S2.tutorial.bankrupt, false, '★잉여를 팔았는데 파산이 안 풀렸다');
@@ -300,6 +327,48 @@ console.log('\n== J. **곳간은 이제 안 넘친다 — 쌓인다** (2026-08-1
   assert.equal(fp.food.pantryWon, total,
     '★★거둔 것이 곳간에 다 안 쌓였다 — 남는 것이 어디론가 사라진다');
   ok(`여섯 회전 ${total.toLocaleString()}원어치가 한 푼도 안 쉬고 곳간에 쌓인다`);
+}
+
+console.log('\n== K. ★★★ **게임 규칙에서는 잉여가 아예 안 생긴다** (2026-08-17 박사님 확정) ==');
+{
+  /* ★★ **이 절이 이 파일의 새 중심이다.** 위 §D~I 는 「계통이 성한가」를 문을 열고 재고,
+     여기서는 **게임이 실제로 도는 규칙**으로 잰다.
+     박사님: *"하루 수확량을 개수에 따라 조절하라는 게 아니었는데… 식량으로 사용할 수 있는
+     G수를 조절하란 거지.. 최대 300G로."*  ⇒ 거두는 것은 온전히 들어온다. */
+  assert.notEqual(RULES.cropOverlapTiredEnabled, true, '★게임 규칙이 겹침의 벌을 켜 두었다');
+
+  /* ① 같은 날 여섯을 거둬도 **여섯 몫이 다 들어온다** */
+  const { fp, h } = sameDayHarvest(6);
+  assert.deepEqual(h.perPot.map(p => p.savedWon), new Array(6).fill(W0),
+    '★같은 날 거둔 것이 깎였다 — 겹침의 벌이 아직 물린다');
+  assert.equal(h.overlapLostWon, 0, '★못 받은 몫이 났다');
+  assert.equal(h.spoiledWon, 0, '★쉰 몫이 났다');
+  assert.equal(h.surplusWon, 0, '★잉여가 났다 — 두 항이 다 0 인데 어디서 왔나');
+  assert.equal(h.surplusPendingWon, 0, '★잉여 장부에 쌓였다');
+  assert.equal(fp.food.pantryWon, 6 * W0, '★거둔 것이 곳간에 다 안 들어갔다');
+
+  /* ② 그래서 **팔 잉여가 없다.** 상점 창구가 「없습니다」로 막는다 —
+        「0원짜리를 팔 수 있다」고 하면 화면에 빈 단추가 뜬다 */
+  assert.equal(cropSurplusQuote(fp).canSell, false, '★잉여가 0 인데 팔 수 있다고 한다');
+  const S = newState({ firstPlay: true, firstPlayRules: RULES });
+  S.firstPlay = fp;
+  assert.equal(cropSurplusStatus(S).pendingWon, 0, '★상점이 잉여가 있다고 말한다');
+  assert.throws(() => sellCropSurplus(S), (e) => e.tutorialInput === true,
+    '★팔 것이 없는데 안 막았다');
+
+  /* ③ ★ 그런데 **거둔 것을 팔 길 자체는 살아 있다** — 곳간에서 판다(§곳간 판매).
+        「남는 거 팔아먹든 하는 거」라는 박사님 그림이 안 죽었음을 여기서 못 박는다.
+        ⚠ 이게 없으면 「잉여가 0 이다」가 「팔 수 없게 됐다」로 잘못 읽힌다. */
+  const q = pantrySaleQuote(fp, 1);
+  assert.equal(q.canSell, true, '★★곳간에 6회전이 쌓였는데 팔 길이 없다 — 그림이 통째로 막혔다');
+  assert.equal(q.won, Math.round(W0 * RULES.cropSurplusSaleRate),
+    '★곳간 한 판을 넘긴 값이 판매가와 안 맞는다');
+
+  /* ④ 그리고 **먹는 몫은 하루 300g 그대로다** — 늘어난 것은 손에 든 양이지 밥값이 아니다 */
+  assert.equal(eatFromPantry(fp).savedWon, dailyCropSaveWonOf(fp),
+    '★여섯을 거뒀다고 하루에 먹는 몫이 늘었다 — 300g 상한이 무너졌다');
+  ok(`여섯을 같은 날 거둬도 ${(6 * W0).toLocaleString()}원어치가 온전히 곳간에 든다 · 잉여 0 · 하루 몫은 ` +
+     `${dailyCropSaveWonOf(fp).toLocaleString()}원 그대로 · 남는 것은 곳간에서 팔린다`);
 }
 
 console.log(`\n★ tools/test_cropsale.mjs — ${n}벌 전부 통과\n`);

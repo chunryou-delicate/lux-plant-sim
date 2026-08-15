@@ -67,9 +67,20 @@ const sumLots = (fp) => pantryLotsOf(fp).reduce((a, l) => a + l.won, 0);
 /* ★★ 2026-08-16 — 이 파일에 3,000 / 2,000 / 1,000 / 6,000 이 박혀 있었다. 그것이 이 검사가
    지키던 옛 약속이다: 「콩나물 최상 품질 한 회전 = 3,000원」. g 셈이 들어와 400 / 300 / 200g
    = 4,000 / 3,000 / 2,000원이 됐다(first_play §그램). ⇒ 규칙에서 읽는다. */
-const OVER4 = [0, 1, 2, 3].map(t => cropCycleSavedWon(RULES, 3, t, 0));  // 같은 날 넷을 거두면
-const SUM4 = OVER4.reduce((a, v) => a + v, 0);                          // 곳간에 든 몫
-const LOST4 = 4 * OVER4[0] - SUM4;                                      // 겹쳐서 못 받은 몫
+/* ══ ⚠⚠ 2026-08-17 — **이 표가 지키던 것이 또 바뀌었다** (first_play §겹침 2026-08-17) ══
+   옛 줄: `const OVER4 = [0,1,2,3].map(t => cropCycleSavedWon(RULES,3,t,0))`
+          // "같은 날 넷을 거두면" → 4,000 / 2,670 / 1,330 / 0 · 판 **3개** · 못 받은 몫 4,000
+   박사님이 겹침의 벌을 걷으셨다 — *"하루 수확량을 개수에 따라 조절하라는 게 아니었는데…
+   식량으로 사용할 수 있는 G수를 조절하란 거지.. 최대 300G로."*
+   ⇒ 같은 날 넷을 거두면 **넷 다 온전한 값**이고 판이 **4개**다. 못 받은 몫은 **0**이다.
+   ★ 그래서 이 파일의 판 수·FIFO 단언이 3 → 4 로 움직인다. 숫자는 여전히 규칙에서 읽는다. */
+const W0 = cropCycleSavedWon(RULES, 3, 0, 0);                           // 온전한 한 회전분
+const LOTS4 = new Array(4).fill(W0);                                    // 같은 날 넷을 거두면
+const SUM4 = LOTS4.reduce((a, v) => a + v, 0);                          // 곳간에 든 몫
+const LOST4 = 0;                                                        // 겹쳐서 못 받은 몫 — 이제 없다
+/* ★ 겹침의 벌을 되살린 사본 — §F 가 「두 창구가 안 섞인다」를 재려면 잉여가 나야 한다.
+   ⚠ 게임은 이 문을 안 연다(first_play §겹침). */
+const PEN = Object.freeze({ ...RULES, cropOverlapTiredEnabled: true });
 /* 옛 세이브(원만 있는 판)를 쪼개는 한 덩이 — `cropKindSavedWon[0]`(중간 품질)이 정본이다 */
 const CHUNK = RULES.cropKindSavedWon[0];
 const splitByChunk = (won) => {
@@ -81,13 +92,14 @@ const splitByChunk = (won) => {
 console.log('\n== A. ★개수가 어림수가 아니다 — 판을 더하면 곳간과 딱 맞는다 ==');
 {
   const { fp } = sameDayHarvest(4);
-  /* 같은 날 넷을 거두면 4,000 / 2,670 / 1,330 / 0 — 0원짜리는 꾸러미가 안 된다 */
+  /* ⚠ 2026-08-17 — 예전에는 4,000 / 2,670 / 1,330 / 0 이라 **판이 셋**이었다(0원은 꾸러미가
+     안 된다). 이제 넷 다 4,000 이라 **판이 넷**이다(§겹침 2026-08-17). */
   const lots = pantryLotsOf(fp);
-  assert.equal(lots.length, 3, `★판 수가 3이 아니다: ${lots.length}`);
-  assert.deepEqual(lots.map(l => l.won), OVER4.slice(0, 3));
+  assert.equal(lots.length, 4, `★판 수가 4가 아니다: ${lots.length}`);
+  assert.deepEqual(lots.map(l => l.won), LOTS4);
   /* ★ 2026-08-16 — 꾸러미마다 g 이 붙어 나온다(§그램). 낱개를 더한 것이 곧 곳간의 g 이다 */
   const gs = pantryLotsWithGrams(fp);
-  assert.deepEqual(gs.map(l => l.g), OVER4.slice(0, 3).map(w => Math.round(w / 10)),
+  assert.deepEqual(gs.map(l => l.g), LOTS4.map(w => Math.round(w / 10)),
     '★꾸러미 g 이 원과 어긋난다 — 10원 = 1g 이 깨졌다');
   assert.equal(pantryGramsOf(fp), gs.reduce((a, l) => a + l.g, 0),
     '★★곳간 g 합계가 낱개의 합이 아니다 — 화면에 적힌 것을 더하면 안 맞게 된다');
@@ -95,7 +107,7 @@ console.log('\n== A. ★개수가 어림수가 아니다 — 판을 더하면 �
     '★★판을 다 더해도 곳간 총액이 안 된다 — 화면의 「N판」이 거짓말이 된다');
   assert.ok(lots.every(l => l.kind === 'beansprout'), '★작물 이름을 안 적었다');
   assert.ok(lots.every(l => l.day === CYCLE), '★거둔 날을 안 적었다');
-  ok(`곳간 ${fp.food.pantryWon.toLocaleString()}원 = ${OVER4.slice(0, 3).join(' + ')} (3판 · ${pantryGramsOf(fp)}g)`);
+  ok(`곳간 ${fp.food.pantryWon.toLocaleString()}원 = ${LOTS4.join(' + ')} (4판 · ${pantryGramsOf(fp)}g)`);
 }
 
 console.log('\n== B. ★★팔면 늘 손해다 — 이 부등호가 이 계통의 뼈대다 ==');
@@ -103,7 +115,7 @@ console.log('\n== B. ★★팔면 늘 손해다 — 이 부등호가 이 계통�
   assert.ok(RATE < 1, `★★판매가가 1.00 이상이다(${RATE}) — 「밥으로 먹는 것보다 파는 게 낫다」가 된다`);
   const { fp } = sameDayHarvest(4);
   const q = pantrySaleQuote(fp);                       // 안 주면 전부
-  assert.equal(q.maxLots, 3);
+  assert.equal(q.maxLots, 4);                          // ⚠ 2026-08-17 · 3 → 4 (§겹침)
   assert.equal(q.pendingWon, SUM4);
   assert.equal(q.rate, RATE);
   assert.equal(q.won, Math.round(SUM4 * RATE));
@@ -121,17 +133,17 @@ console.log('\n== C. ★몇 판을 팔지 고른다 — 고른 만큼만 나간�
   /* 1판만 — **먼저 거둔** 판이 나간다 */
   const st1 = pantrySaleStatus(S, 1);
   assert.equal(st1.lots, 1);
-  assert.equal(st1.pendingWon, OVER4[0]);
-  assert.equal(st1.won, Math.round(OVER4[0] * RATE));
-  assert.equal(st1.list.length, 3, '★목록이 세 판이 아니다');
+  assert.equal(st1.pendingWon, LOTS4[0]);
+  assert.equal(st1.won, Math.round(LOTS4[0] * RATE));
+  assert.equal(st1.list.length, 4, '★목록이 네 판이 아니다');   // ⚠ 2026-08-17 · 3 → 4
   assert.equal(st1.list[0].kindKo, '콩나물', '★이름을 안 붙여 낸다');
 
   const r = sellPantryCrop(S, 1);
   assert.equal(r.lots, 1);
-  assert.equal(r.pendingWon, OVER4[0]);
-  assert.equal(r.won, Math.round(OVER4[0] * RATE));
-  assert.equal(fp.food.pantryWon, SUM4 - OVER4[0], '★★고른 것보다 많이/적게 나갔다');
-  assert.deepEqual(pantryLotsOf(fp).map(l => l.won), OVER4.slice(1, 3),
+  assert.equal(r.pendingWon, LOTS4[0]);
+  assert.equal(r.won, Math.round(LOTS4[0] * RATE));
+  assert.equal(fp.food.pantryWon, SUM4 - LOTS4[0], '★★고른 것보다 많이/적게 나갔다');
+  assert.deepEqual(pantryLotsOf(fp).map(l => l.won), LOTS4.slice(1),
     '★★먼저 거둔 판이 아니라 다른 판이 나갔다');
   assert.equal(sumLots(fp), fp.food.pantryWon, '★판 뒤에 판과 총액이 어긋났다');
   assert.equal(fp.food.totalPantrySoldWon, r.won, '★누계가 안 쌓인다');
@@ -141,7 +153,7 @@ console.log('\n== C. ★몇 판을 팔지 고른다 — 고른 만큼만 나간�
     (e) => e.tutorialInput === true && /골라/.test(e.message), '★0판을 안 막았다');
   /* 있는 것보다 많이 부르면 **있는 만큼**이다(던지지 않는다 — ＋ 를 오래 눌러도 안 깨진다) */
   const all = pantrySaleQuote(fp, 99);
-  assert.equal(all.lots, 2, '★있는 것보다 많이 팔린다');
+  assert.equal(all.lots, 3, '★있는 것보다 많이 팔린다');       // ⚠ 2026-08-17 · 2 → 3
   ok('1판만 팔면 1판만 나가고, 남은 판·총액이 서로 맞는다');
 }
 
@@ -159,11 +171,11 @@ console.log('\n== D. ★먼저 거둔 것부터 — 파는 순서와 먹는 순�
      첫 판(3,000)이 통째로 사라졌기 때문이다. 이제 하루 몫이 **300g(3,000원)** 이고
      첫 판이 **4,000원**이라, 먹어도 판 수는 안 준다 — 첫 판이 **깎일 뿐**이다.
      ⇒ 재는 것을 「판이 줄었나」에서 **「앞에서부터 줄었나」**(=FIFO)로 바로잡는다. */
-  assert.ok(after.length <= 3, '★먹었는데 판이 늘었다');
-  assert.ok(after.length < 3 || after[0].won < OVER4[0],
+  assert.ok(after.length <= 4, '★먹었는데 판이 늘었다');       // ⚠ 2026-08-17 · 3 → 4
+  assert.ok(after.length < 4 || after[0].won < LOTS4[0],
     '★★먹었는데 맨 앞 판이 한 푼도 안 줄었다');
   assert.equal(sumLots(fp) + daily, SUM4, '★먹은 만큼 정확히 안 줄었다');
-  assert.equal(after[after.length - 1].won, OVER4[2],
+  assert.equal(after[after.length - 1].won, LOTS4[3],
     '★★맨 뒤(제일 나중에 거둔) 판이 먼저 깎였다 — FIFO 가 아니다');
   /* 다 먹을 때까지 돌리면 판이 남지 않는다 */
   for (let d = 0; d < 10 && fp.food.pantryWon > 0; d++) eatFromPantry(fp);
@@ -207,13 +219,18 @@ console.log('\n== E. ★옛 세이브 — 꾸러미 기록이 없어도 열리�
   ok('옛 판(원만 있는 판)도 하루치씩 쪼개져 팔린다 — 작물 이름은 지어내지 않는다');
 }
 
-console.log('\n== F. ★★잉여 창구는 예전 그대로 — 곳간을 한 푼도 안 만진다 ==');
+console.log('\n== F. ★★잉여 창구는 예전 그대로 — 곳간을 한 푼도 안 만진다 (★문을 연 판) ==');
 {
-  const { fp } = sameDayHarvest(4);
-  const S = stateWith(fp);
+  /* ⚠⚠ 2026-08-17 — **게임에서는 이 절이 잴 것이 없다.** 잉여가 늘 0 이라
+     `cropSurplusStatus().pendingWon` 이 0 이고 `sellCropSurplus` 는 던진다.
+     그래도 두 창구가 안 섞이는지는 여전히 지켜야 할 계약이라, **문을 열어**(§머리말 PEN)
+     잉여가 나는 판을 만들어 잰다. 게임 규칙에서 잉여가 0 인 것은 `test_cropsale §K` 가 못 박는다. */
+  const { fp } = sameDayHarvest(4, PEN);
+  const S = newState({ firstPlay: true, firstPlayRules: PEN });
+  S.firstPlay = fp;
   const before = fp.food.pantryWon;
   const lotsBefore = pantryLotsOf(fp).map(l => l.won);
-  assert.equal(cropSurplusStatus(S).pendingWon, LOST4);
+  assert.ok(cropSurplusStatus(S).pendingWon > 0, '★문을 열었는데 잉여가 안 났다');
   const rs = sellCropSurplus(S);
   assert.equal(fp.food.pantryWon, before,
     '★★잉여를 넘겼더니 곳간이 줄었다 — 두 창구가 섞였다');

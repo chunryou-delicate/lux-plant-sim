@@ -174,6 +174,13 @@ export const CROP_KINDS = Object.freeze([
      3,000/2,000/1,000 이 1원씩 어긋난다. 뜻한 값은 정확한 삼분의 이·삼분의 일이다.
    ★ 배열 길이가 곧 "몇 번째까지 값이 붙나"다. 넷째부터는 0 — 질려서 더는 못 먹는다.
      들고 오긴 왔는데 먹을 마음이 안 드는 것이라 셈이 0이다(버린 것과는 다르다).
+
+   ══ ⚠⚠ 2026-08-17 — **위 ② 가 이 표를 안 읽게 됐다** (아래 §겹침 2026-08-17) ═════
+   박사님이 **겹침(그날 개수 순번)의 벌만** 걷으셨다. **표도 값도 안 움직였다** —
+   읽는 축이 ① **작물 종류** 하나로 줄었을 뿐이다.
+   ★ 그러니 위 *"값 하나에 뜻이 둘이면 한쪽만 고칠 수가 없다"* 가 **또 쓰였다**:
+     2026-08-09 에 갈라 둔 덕분에 이번에 **겹침만** 걷고 질림을 그대로 둘 수 있었다.
+     안 갈라 뒀으면 겹침을 걷는 순간 무순 회전분(×2/3)까지 같이 날아갔을 것이다.
 ============================================================ */
 export const CROP_TIRED_MULTIPLIER = Object.freeze([1, 2 / 3, 1 / 3, 0]);
 
@@ -275,10 +282,15 @@ export const FIRST_PLAY_RULES = Object.freeze({
   /* ★ 2026-08-05 — 정본은 `CROP_KINDS[0].seedWonPerPot` 이다(작물마다 씨앗값이 다르다). */
   seedWonPerSiru: CROP_KINDS[0].seedWonPerPot,
   /* ★★ 질림 배율 — 순번이 뒤로 갈수록 깎인다. 정본은 위 §질림 이다.
-     이 표는 **두 곳에서 같이 쓴다**(2026-08-04 박사님 확정 · 아래 §겹침):
+     이 표는 **두 곳에서 같이 썼다**(2026-08-04 박사님 확정 · 아래 §겹침):
        ① 작물 **종류**가 늘 때 — 콩나물 다음에 들인 것은 ×2/3, 그다음은 ×1/3
        ② 거두는 **때가 겹칠** 때 — 같은 날 둘째는 ×2/3, 셋째는 ×1/3
-     둘을 다른 표로 만들면 안 된다. 줄어드는 **이유가 같기 때문**이다 — 질림이다. */
+     둘을 다른 표로 만들면 안 된다. 줄어드는 **이유가 같기 때문**이다 — 질림이다.
+   ⚠⚠ **2026-08-17 — ② 가 이 표를 안 읽는다**(아래 §겹침 2026-08-17 절).
+     박사님이 겹침의 벌을 걷으셨다. **표는 그대로 하나이고 값도 안 움직였다** —
+     읽는 자리가 ① 하나로 줄었을 뿐이다. `rules.cropOverlapTiredEnabled` 를 켜면 ② 가 돌아온다.
+     ⇒ 그래서 위 문장을 지우지 않고 「같이 썼다」로만 고쳤다. ② 의 뜻이 죽은 것이 아니라
+       **지금 안 걸려 있는 것**이고, 그 차이를 지우면 문을 열었을 때 근거가 사라진다. */
   cropTiredMultiplier: CROP_TIRED_MULTIPLIER,
   /* ★ 순번별 **작물 기본값** — 질림이 안 붙은 값. 정본은 `CROP_KINDS[i].savedWonPerCycle` 이고
      여기 칸은 그것을 가리키는 사본이다(순번 표로 펴 둔 것뿐). [3,000 · 2,800 · 2,800] */
@@ -532,10 +544,66 @@ export function cropCycleGrams(rules, meals, tiredIndex = 0, kindIndex = tiredIn
    ★ 넷째부터 0인 것은 표 길이가 셋이기 때문이고, 3종째까지만 값이 붙는 것과 **같은 이유**다.
      버리는 것이 아니다 — 곳간에 안 들어가므로 쉬어서 버려지는 몫(spoiledWon)과도 다르다.
      들고 오긴 왔는데 **먹을 마음이 안 드는 것**이라 셈이 0이다.
+
+   ══ ★★★ 2026-08-17 — **그날 순번의 벌을 걷었다** (박사님 확정) ═════════════
+   원문: *"내가 수확할 때 300G을 기준으로 하라는 건 **하루 수확량을 개수에 따라 조절하라는 게
+   아니었는데**… 식량으로 사용할 수 있는 G수를 조절하란 거지.. 최대 300G로. (그 300G는
+   하루 3000원을 아끼기 위한 하루 필요 최대 G값으로 하라는 거였는데)"*
+
+   ⇒ **수확은 온전히 들어온다.** 같은 날 다섯을 거두면 400g 이 다섯 = **2kg** 이 곳간에 든다.
+     막는 것은 **먹는 쪽 하나**다 — 하루 `dailyCropSaveWon`(300g). 남는 것은 쌓이고 팔린다.
+     (곳간 한도는 이미 없다 — §pantryCapWon. 그래서 「덜 거둔다」가 없어져도 안 버려진다.)
+
+   ⚠⚠ **값 하나가 뜻 둘을 지고 있었다. 그중 하나만 걷었다.**
+       | 무엇 | 어느 축 | 이번에 |
+       |---|---|---|
+       | **질림** | 작물 **종류** 순번 `kindIndex` — 콩나물 1 · 무순 2/3 · 셋째 1/3 | ★ **그대로 둔다** |
+       | **겹침** | 그날 **개수** 순번 `indexOnDay` — 첫째 1 · 둘째 2/3 · 셋째 1/3 | ★ **걷는다** |
+     *"같은 것만 먹으면 물린다"* 는 뜻은 **종류** 쪽에 살아 있다. 개수 쪽은 뜻이 겹쳐 얹혀
+     있었을 뿐이고, `bagcrop-to-plan §7-2` 가 *"질림과 하루 300g 상한이 같은 일을 두 번 한다"*
+     로 이미 짚어 두었다. 위 §질림 머리말의 *"값 하나에 뜻이 둘이면 한쪽만 못 고친다"* 를
+     또 밟지 않으려고, **인자(`tiredIndex`·`kindIndex`)는 한 글자도 안 건드렸다** —
+     바뀐 것은 「그날 순번을 `tiredIndex` 에 더하느냐」 **한 곳뿐**이다(아래 `cropOverlapTiredIndex`).
+
+   ★ **되살릴 문을 하나 남겼다** — `rules.cropOverlapTiredEnabled === true`.
+     §pantryCapWon 이 쓴 것과 **같은 수법·같은 까닭**이다:
+       ㉠ 옛 셈과 새 셈을 **같은 엔진으로** 나란히 잰다(`tools/probe_crop_grams.mjs` 가 쓴다).
+          손으로 쓴 모의 계산은 그 자리에서 「자가 딴 세상 것」이 된다(START-HERE §2.9 ④).
+       ㉡ 「벌이 없다」를 **값으로 물을 수 있다.** 지우면 그 사실을 확인할 데가 없어진다.
+     ⚠ 게임은 이 문을 안 연다 — 어디에서도 참으로 안 만든다.
+
+   ⚠⚠ **딸려서 늘 0 이 되는 것들** — 죽은 길을 조용히 안 남기려고 여기에 적어 둔다:
+       `lostWon` · `overlapLostWon` · `lostGrams`   겹쳐서 못 받은 몫 → **늘 0**
+       `fp.food.surplusWon`(잉여 누적)              쉰 몫도 0 이므로 → **늘 0**
+     ⇒ 잉여 계통(§잉여 판매 · 상점 [잉여 채소 넘기기] · 「🥱 못 받은 몫」 배너 · 탭 점)은
+       **값이 0 이라 저절로 잠긴다.** 안 지운 까닭과 되살아나는 조건은 §잉여 판매 에 적었다.
+   ★ 그런데 `overlapIndex`(그날 몇 번째로 거뒀나)는 **계속 센다.** 그건 벌이 아니라 **사실**이고,
+     세이브(`fp.food.harvestedOnDayByKind`)·화면·검사가 그 사실을 읽는다. 세는 것을 멈추면
+     문을 다시 열었을 때 순번이 0부터 시작해 규칙이 조용히 새어 나간다.
+
+   ⚠ **위 「천장이 주기 길이에서 나온다」가 반쪽이 됐다.** 이제 시루를 6개째 늘려도
+     수확량은 안 깎인다. 남은 천장은 둘이다:
+       ① **먹는 쪽** — 하루 300g. 그 위는 팔아야 하고 팔면 85%다(§잉여 판매).
+       ② **손** — 물은 한 번에 하나고 체력이 5라 하루 5개까지만 시작한다.
+          5일 주기 × 하루 5개 = **25개**가 실제 천장이다.
+          ⚠ 25개까지 회전이 **한 번도 안 밀리는 것**은 쟀다(200일에 39 × 시루 수 · overlap 보고 §3-2).
+            **26개 위는 안 재 봤다** — 산수로만 그렇다.
+     ⇒ 「짜임새를 산다」는 그림은 **약해졌다.** 시차의 이득이 「수확량」에서 「85% 손해를
+       덜 본다」로 옮겨 갔을 뿐 사라지지는 않았다. ☐ 판단필요로 보고에 올렸다.
 ============================================================ */
-export function overlapSavedWon(rules, meals, indexOnDay, kindIndex = 0) {
+
+/* 그날 순번을 질림 축에 **얼마나 미느냐** — 기본은 **0**(안 민다).
+   문(`rules.cropOverlapTiredEnabled`)이 열려 있을 때만 예전처럼 순번만큼 민다.
+   ⚠ 이 함수가 보는 것은 **그날 순번 하나**다. 작물 종류 순번(`kindIndex`)은 여기 안 온다 —
+     그쪽이 질림이고, 질림은 안 걷었다. */
+export function cropOverlapTiredIndex(rules, indexOnDay) {
   const t = Math.max(0, Math.round(indexOnDay || 0));
-  return cropCycleSavedWon(rules, meals, kindIndex + t, kindIndex);
+  return (rules && rules.cropOverlapTiredEnabled === true) ? t : 0;
+}
+
+export function overlapSavedWon(rules, meals, indexOnDay, kindIndex = 0) {
+  return cropCycleSavedWon(rules, meals,
+                           kindIndex + cropOverlapTiredIndex(rules, indexOnDay), kindIndex);
 }
 
 /* 경제값의 정본은 data/balance/characters.json._meta다. 코어는 그 값을 받아 1끼 값을
@@ -1806,8 +1874,16 @@ export function harvestBeansprout(fp, opt = {}) {
       /* ★ 2026-08-09 — **작물을 따로 넘긴다**(§질림). 넷째 인자가 없으면 순번을 밀 때
          작물까지 같이 밀려, 콩나물 둘째가 「무순 기본값 × 2/3」을 받는다. */
       const fullWon = cropCycleSavedWon(rules, quality.meals, kindIndex, kindIndex);
-      const savedWon = cropCycleSavedWon(rules, quality.meals, kindIndex + overlapIndex, kindIndex);
-      /* 겹쳐서 못 받은 몫 — 화면이 "곳간이 안 비어 N원을 못 받았습니다"를 말할 근거다 */
+      /* ★★★ 2026-08-17 — **그날 순번은 이제 값을 안 민다**(§겹침 2026-08-17 절).
+         `cropOverlapTiredIndex` 가 기본으로 **0** 을 내므로 아래 두 줄은 같은 값이 된다.
+         ⚠ 그래도 **줄을 합치지 않는다.** 둘이 갈려 있어야 ① 문을 열면 옛 셈이 그대로
+           돌아오고 ② 「온전한 값」과 「실제로 받은 값」이 각각 이름을 갖는다.
+         ⚠ `kindIndex` 는 **그대로 더한다** — 질림(작물 종류 체감)은 안 걷었다. */
+      const savedWon = cropCycleSavedWon(
+        rules, quality.meals,
+        kindIndex + cropOverlapTiredIndex(rules, overlapIndex), kindIndex);
+      /* 겹쳐서 못 받은 몫 — **이제 늘 0 이다**(문을 안 열면). 계산을 지우지 않은 까닭은
+         §겹침 에 적었다: 문이 열리면 이 값이 그대로 살아나고, 「0 이다」를 물을 데가 남는다. */
       const lostWon = Math.max(0, fullWon - savedWon);
 
       let pantry = (fp.food.pantryWon || 0) + savedWon;
@@ -1858,7 +1934,10 @@ export function harvestBeansprout(fp, opt = {}) {
   /* ★★ 잉여를 장부에 적는다 (2026-08-06 · 아래 §잉여 판매).
      **셈은 한 글자도 안 바뀐다** — 곳간에 들어간 값(savedTotal)도, 쉰 값(spoiledTotal)도
      예전 그대로다. 여기서 하는 일은 「버려질 몫이 얼마였나」를 **기억해 두는 것뿐**이다.
-     ⇒ 그래서 이 줄은 기존 검사·재현을 못 건드린다. 파는 것은 뒤의 손 동작이다. */
+     ⇒ 그래서 이 줄은 기존 검사·재현을 못 건드린다. 파는 것은 뒤의 손 동작이다.
+   ⚠⚠ **2026-08-17 — 이 합은 이제 늘 0 이다.** 두 항이 둘 다 0 이 됐다:
+     `lostTotal` 겹침의 벌을 걷었다(§겹침 2026-08-17) · `spoiledTotal` 곳간 한도를 걷었다
+     (2026-08-16 · §pantryCapWon). 줄을 지우지 않은 까닭 넷은 §잉여 판매 맨 아래에 적었다. */
   const surplusWon = lostTotal + spoiledTotal;
   fp.food.lastSurplusWon = surplusWon;
   fp.food.surplusWon = Math.max(0, Math.round((fp.food.surplusWon || 0) + surplusWon));
@@ -2141,6 +2220,27 @@ export function eatFromPantry(fp) {
    이 모듈의 오랜 규칙 그대로다(§다시 심는다: *"씨앗값은 호출부가 낸다"*).
    `takeCropSurplus` 는 장부를 비우고 **얼마인지만** 낸다. 돈으로 바꾸는 것은
    `state.sellCropSurplus(S)` 이고, 지갑에 넣는 것은 `shop.creditCropSurplus` 다.
+
+   ══ ⚠⚠⚠ 2026-08-17 — **잉여는 이제 늘 0 이다. 이 절 전체가 잠겼다** ═══════════
+   위 두 값이 **둘 다** 없어졌다:
+     ㉠ `overlapLostWon`  2026-08-17 겹침의 벌을 걷었다(§겹침) → **늘 0**
+     ㉡ `spoiledWon`      2026-08-16 곳간 한도를 걷었다(§pantryCapWon) → **늘 0**
+   ⇒ `fp.food.surplusWon` 은 **한 푼도 안 쌓인다.** `cropSurplusQuote().canSell` 이 늘 거짓이라
+     [잉여 채소 넘기기] 단추·「🥱 못 받은 몫」 배너·[상점] 탭의 점이 **전부 안 뜬다.**
+
+   ★★ **그런데 계통을 안 지웠다.** 「죽은 길을 조용히 남기지 마라」에 대한 답은 **지우는 것이
+     아니라 여기 적는 것**으로 골랐다. 까닭 넷:
+     ㉠ **지금 팔리는 것이 이 길이 아니다.** 남는 채소는 이제 **곳간에 그대로 있고**
+        `pantrySaleQuote`/`takePantryCrop`(§곳간 판매)이 판다 — 그쪽이 산 길이다.
+        즉 「팔 수 있다」는 박사님 그림은 **안 죽었다.** 죽은 것은 **잉여라는 이름** 하나다.
+     ㉡ **두 문 중 하나라도 열리면 그날로 되살아난다** — `pantryCapEnabled`(냉장고 크기) ·
+        `cropOverlapTiredEnabled`(겹침 벌). 둘 다 남겨 둔 문이라 이 길도 같이 남긴다.
+     ㉢ **세이브가 이 칸을 저장한다**(`save.js §firstPlay.food.surplusWon`). 지우면 옛 판이
+        깨진다 — 잉여를 쌓아 둔 채 저장한 판이 실제로 있다.
+     ㉣ **값이 0 이라 화면이 저절로 조용하다.** 모든 자리가 `pendingWon > 0` 로 잠겨 있어
+        「안 뜨는 단추」가 되지, 「틀린 값을 말하는 단추」가 되지 않는다(재서 확인했다).
+   ⚠ **이름은 이제 거짓말이다.** 「잉여」가 가리키던 물건(못 챙긴 몫)이 없어졌으므로,
+     이 계통을 되살릴 일이 생기면 **이름부터 다시 정해야 한다.** ☐ 판단필요로 보고에 올렸다.
 ============================================================ */
 
 /* 지금 판매가 — 정본은 `rules.cropSurplusSaleRate`(= _meta 아니면 FIRST_PLAY_RULES). */
