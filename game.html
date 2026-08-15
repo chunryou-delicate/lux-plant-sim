@@ -3497,6 +3497,11 @@ function monthSnapNow() {
     cash: Math.round(ts.cashWon || 0),
     shopSpent: Math.round(shop.spentWon || 0),
     shopEarned: Math.round(shop.earnedWon || 0),
+    /* ★★ 2026-08-17 밤 — **갈래별 판 돈**(`shop.js §SALE_KINDS`). 아래 §monthCloseNow 의
+       뺄셈을 없애려고 뜬다. `earnedBy` 가 없는 옛 판은 0 이 되고, 그때는 뺄셈으로 되돌아간다. */
+    earnPot: Math.round((shop.earnedBy && shop.earnedBy.pot) || 0),
+    earnCut: Math.round((shop.earnedBy && shop.earnedBy.cutting) || 0),
+    hasBy: !!(shop.earnedBy && typeof shop.earnedBy === 'object'),
     pantrySold: Math.round(food.totalPantrySoldWon || 0),
     surplusSold: Math.round(food.totalSurplusSoldWon || 0),
     foodSaved: Math.round(food.totalFoodSavedWon || 0)
@@ -3597,16 +3602,21 @@ function monthNoteDay(turn) {
 function monthCloseNow(m) {
   const now = monthSnapNow(), s = m.cur.snap, r = m.cur.run;
   const veg   = (now.pantrySold - s.pantrySold) + (now.surplusSold - s.surplusSold);
-  /* ⚠⚠ **이 뺄셈은 「식물 판 것」 칸이 없어서 하는 것이다** — `shop.earnedWon` 한 칸이
-       판매 **넷**(그루·삽수·잉여·곳간)을 다 받는다(`shop.js §credit`). 그래서 채소 둘을 빼서
-       남는 것을 식물로 친다.
-     ⚠⚠ **판매 갈래가 하나만 늘면 이 줄이 조용히 틀린다** — 늘어난 그 갈래를 「식물 판 것」으로
-       세고, 화면은 아무 말도 안 한다(합이 여전히 맞아서 대차로도 안 잡힌다).
-       예: 「씨앗 되팔기」·「가구 팔기」가 생기면 그날부터 식물값이 부풀어 있다.
-     ⇒ 고치는 자리는 여기가 아니라 `shop.credit` 이다(갈래별로 쌓으면 이 뺄셈이 없어진다).
-       ⛔ `shop.js` 는 이 창의 쓰기 영역 밖이라 **안 고쳤다** — 붙일 코드는
-       `docs/handoff/buypopup-to-plan.md §M-6 ㉱` 에 코드째로 적어 두었다. */
-  const plant = (now.shopEarned - s.shopEarned) - veg;
+  /* ★★★ 2026-08-17 밤 — **뺄셈을 걷었다.** 박사님: *"㉯ 로 하자. 그리고 미리 해 둬,
+       다양해질 테니."*
+     ══════════════════════════════════════════════════════════════════
+     여기 있던 것: `식물 판 것 = (판 것 전부) − (채소 판 것)`.
+     `shop.earnedWon` 한 칸이 판매 넷을 다 받아서 그렇게 구할 수밖에 없었다.
+     ⚠ 그러면 **판매 갈래가 하나만 늘어도 그것이 조용히 「식물」로 세어진다.**
+       합은 여전히 맞아서 **대차로도 안 잡힌다** — 화면이 아무 말도 안 한다.
+     ⇒ `shop.js` 가 `earnedBy` 로 갈래별로 쌓게 됐다(`§SALE_KINDS`). **그래서 그냥 읽는다.**
+     ★ 새 갈래를 만드는 사람은 `SALE_KINDS` 에 이름을 올려야 하고, 안 올리면 `credit` 이
+       **그 자리에서 던진다.** 조용히 섞이는 길이 막혔다.
+     ⚠ **옛 판에는 `earnedBy` 가 없다**(`hasBy:false`). 그때는 예전 뺄셈으로 돌아간다 —
+       0 으로 두면 「식물 판 것 0원」이라 거짓말이 된다. 지우는 대신 **떨어질 자리를 남긴다.** */
+  const plant = (now.hasBy && s.hasBy)
+    ? (now.earnPot - s.earnPot) + (now.earnCut - s.earnCut)
+    : (now.shopEarned - s.shopEarned) - veg;
   const bought = now.shopSpent - s.shopSpent;
   /* ★ `spentWon` 은 「하루 지출(식비+공과+월세몫) − 절감 + 전기」다. 전기를 빼면 살림비다 */
   const living = Math.max(0, r.out - r.power);
