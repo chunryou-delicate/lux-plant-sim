@@ -81,9 +81,72 @@ function addSlots(g, slots, tiers, tierDepths){
   }
   return g;
 }
-/* 한 단(y)에 n개 슬롯을 폭 w 안에 균등 배치 */
-function tierSlots(w, y, n, z=0, margin=0.09){
-  const out=[], usable=w-margin*2;
+/* ============================================================
+   ★★ 상판의 «칸» — 추천 자리는 칸 한가운데에 앉는다 (2026-08-15)
+   ------------------------------------------------------------
+   ── 무엇이 문제였나 ──────────────────────────────────────────
+   `tierSlots` 는 상판 가장자리에서 **0.09m** 떨어진 곳에 자리를 냈다. 상수 하나였다.
+   상판 길이도, 올릴 화분 지름도 안 봤다. 그래서 두 가지가 같이 틀어졌다:
+
+     ① 화면이 그리는 «칸»(room_view §guideCells)과 **우연히만** 겹쳤다.
+        책상 자리는 칸 한가운데에서 0.0671m 어긋나 있었는데, 그 값은
+        `SLOT_GOVERN_R` 0.04 보다 커서 **네모를 겨눠도 자리로 안 붙는 거리**다.
+     ② 0.09 는 콩나물 시루 반지름 0.12 **보다 작다.** 그래서 가장자리 자리에
+        시루를 올리면 상판 밖으로 정확히 3cm 나갔다 — 14칸 중 10칸이 그랬다.
+
+   ── 어떻게 고쳤나 ────────────────────────────────────────────
+   가장자리 여백을 상수로 두지 않고 **칸 반쪽**으로 잡는다. 곧, 상판을 칸으로
+   나눈 뒤 **칸 한가운데**에 자리를 낸다. 칸 크기가 늘 화분 지름 이상이므로
+   (아래 `topAxis` 의 floor 항) ②도 같이 사라진다 — 자리에 놓은 시루가 상판 밖으로
+   못 나간다.
+
+   ── ⚠ 기준 화분은 **콩나물 시루 0.24m** 다 ────────────────────
+   칸 격자는 **끌고 있는 물건마다 달라진다.** 서랍장(0.90)은 시루면 3칸(0.30),
+   몬스테라(0.202)면 4칸(0.225)이고 두 격자의 한가운데는 **교집합이 없다.**
+   자리는 상수 하나라 둘 다에 맞출 수 없다. 시루 쪽으로 정한다 —
+   반지하의 어두운 자리(서랍장·선반)가 실제로 **콩나물 자리**로 쓰이기 때문이다
+   (`house_rooms.json` §darkest_slot 이 `banjiha-dresser:1` 에 열린 시루 0.24 를 앉힌다).
+
+   ⚠⚠ 이 셈은 `game/room_view.js` 의 `surfaceAxis` 와 **같아야 한다.** 지금은 두 벌이다
+      (render3d 가 game 을 import 하면 층이 뒤집힌다). 한쪽만 고치면 자리와 칸이 다시
+      갈린다 — 고칠 때 **둘 다** 고쳐라. 갈렸는지는 `guideCells().snapErr` 과
+      「자리↔칸 한가운데 거리」로 잰다. */
+const TOP_CELL_M = 0.25;      // 화면에 그리는 칸(place.GRID_CELL)과 같은 눈금
+const SLOT_REF_POT_D = 0.24;  // 기준 화분 = 열린 콩나물 시루
+
+/* 길이 len 인 면을 칸으로 나눈다 — room_view.surfaceAxis(len, 0.24) 와 같은 셈이다 */
+function topAxis(len){
+  const L = (Number.isFinite(len) && len>0) ? len : TOP_CELL_M;
+  const n = Math.max(1, Math.min(Math.round(L/TOP_CELL_M),
+                                 Math.max(1, Math.floor(L/SLOT_REF_POT_D + 1e-9))));
+  return { n, cell: L/n, at: i => (i+0.5)*(L/n) - L/2 };
+}
+/* 면의 **앞줄 칸 한가운데** — 깊이(z)를 칸에 맞출 때 쓴다 */
+function frontCellZ(d){ const A = topAxis(d); return +A.at(A.n-1).toFixed(3); }
+
+/* 한 단(y)에 n개 슬롯을 폭 w 안에 배치한다.
+   margin 을 안 주면 **칸 한가운데**에 앉힌다(위 머리말). 첫 칸부터 마지막 칸까지
+   고르게 골라 쓴다 — 자리가 2개면 양끝 칸, 3개면 양끝과 가운데다.
+   ⚠ margin 을 명시하면 예전 셈(균등 배치) 그대로다. 칸보다 촘촘히 놓아야 하는
+     가구(창턱 확장 선반 4칸 등)가 그것을 쓴다. */
+function tierSlots(w, y, n, z=0, margin=null){
+  const out=[];
+  const A = topAxis(w);
+  /* n===1 은 예전대로 한가운데다. 칸이 홀수면 그것이 곧 칸 한가운데고,
+     짝수면 칸 경계인데 — 걸음(0.125)이 칸의 절반이라 경계도 앉을 수 있는 자리다.
+     여기서 한쪽 칸으로 밀면 창턱 받침 같은 「한가운데가 뜻인」 자리가 틀어진다. */
+  if(margin==null && n>1 && A.n>=n){
+    for(let i=0;i<n;i++) out.push({ x:+A.at(Math.round(i*(A.n-1)/(n-1))).toFixed(3), y:+y.toFixed(3), z });
+    return out;
+  }
+  /* 자리가 칸보다 많을 때(상판이 좁아 시루 n개가 나란히 못 앉는다) — 칸 한가운데라는 말이
+     성립하지 않으므로 예전처럼 고르게 편다.
+     ⚠ 여백을 그냥 `A.cell/2` 로 두면 **자리들이 한 점에 겹친다** — 카트 선반(폭 0.46)이
+       칸 1개라 여백 0.23 이 되어 2자리가 x=0 에 포개졌다(재서 확인하고 고쳤다).
+       그래서 여백을 **시루 반지름**으로 막는다. 그러면 겹치지도 않고, 자리에 놓은 시루가
+       상판 밖으로 나가지도 않는다(가장자리에 딱 맞게 선다). */
+  const m = (margin==null) ? Math.min(A.cell/2, SLOT_REF_POT_D/2) : margin;
+  const usable=Math.max(0, w-m*2);
   for(let i=0;i<n;i++) out.push({ x:+(-usable/2+usable*(n===1?0.5:i/(n-1))).toFixed(3), y:+y.toFixed(3), z });
   return out;
 }
@@ -120,7 +183,9 @@ B.desk=(o)=>{
   g.add(panel(w,t,d,m,0,h-t/2,0,0.02));
   legs4(g,w,d,h-t,furnMat(o.accent??'#cbbfae','satin'),0.026,0.06);
   g.userData.size={w,h,d};
-  return addSlots(g, tierSlots(w, h, w>1.4?3:2, d*0.15), [h]);   // 책상 위 화분 자리
+  /* ★ 깊이도 칸에 맞춘다 — 예전 `d*0.15`(0.6 짜리면 0.09)는 앞줄 칸 한가운데 0.15 에서
+     0.06 어긋나 있었다. 가로 0.03 과 합쳐 0.0671 이 그 어긋남의 전부였다. */
+  return addSlots(g, tierSlots(w, h, w>1.4?3:2, frontCellZ(d)), [h]);   // 책상 위 화분 자리
 };
 
 /* 의자 */

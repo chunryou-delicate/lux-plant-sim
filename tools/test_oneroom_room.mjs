@@ -101,26 +101,44 @@ const info = (s) => results.push(['INFO', '  ' + s]);
      구조상 안 바뀌어야 한다. "안 바뀌어야 한다"를 믿지 않고 잰다.
    ⚠ 값은 2026-08-06 main(729109c, 등 옮기기까지) 에서 뜬 것이다. tools/test_lampaim.mjs
      ①(안 겨눈 등 회귀)과 같은 판을 다른 각도에서 한 번 더 잠근다. */
+/* ★★ 2026-08-15 갱신 — 추천 자리를 칸 한가운데로 옮겼다(박사님 허락).
+   까닭과 폭은 `tools/test_floorlight.mjs` §① 머리말에 한 벌만 적어 두었다. 여기는 값만 둔다.
+   다시 뽑는 문: `BYEOT_REGEN=1 node tools/test_oneroom_room.mjs`
+   옛 값(2026-08-06 main): sill [4.80,5.15,5.19] · desk:0 [0.61,1.10,1.86] · desk:1 [0.17,0.32,1.32] ·
+     dresser:0 [0.08,0.14,0.19] · dresser:1 [0.05,0.10,0.13] ·
+     etagere:0~2 [0.13,0.89,0.95]/[0.14,0.95,1.04]/[0.13,0.88,0.99] ·
+     etagere:3~5 [0.23,1.94,2.01]/[0.22,2.27,2.37]/[0.21,1.92,2.05] ·
+     etagere:6~8 [0.51,5.98,6.06]/[0.48,12.31,12.41]/[0.48,5.95,6.10] */
 const BANJIHA_FROZEN = {
   /* slotId              [등0,   등1,   등2  ] */
-  'banjiha-sill:0':      [4.80,  5.15,  5.19],
+  'banjiha-sill:0':      [ 4.80,  5.15,  5.19],
   'banjiha-bed:0':       null,   // 침대는 슬롯을 안 낸다 — 아래에서 "없어야 한다"로 쓴다
-  'banjiha-desk:0':      [0.61,  1.10,  1.86],
-  'banjiha-desk:1':      [0.17,  0.32,  1.32],
-  'banjiha-dresser:0':   [0.08,  0.14,  0.19],
-  'banjiha-dresser:1':   [0.05,  0.10,  0.13],
-  'banjiha-etagere:0':   [0.13,  0.89,  0.95],
-  'banjiha-etagere:1':   [0.14,  0.95,  1.04],
-  'banjiha-etagere:2':   [0.13,  0.88,  0.99],
-  'banjiha-etagere:3':   [0.23,  1.94,  2.01],
-  'banjiha-etagere:4':   [0.22,  2.27,  2.37],
-  'banjiha-etagere:5':   [0.21,  1.92,  2.05],
-  'banjiha-etagere:6':   [0.51,  5.98,  6.06],
-  'banjiha-etagere:7':   [0.48, 12.31, 12.41],
-  'banjiha-etagere:8':   [0.48,  5.95,  6.10]
+  'banjiha-desk:0':      [ 0.60,  1.06,  1.85],
+  'banjiha-desk:1':      [ 0.19,  0.34,  1.38],
+  'banjiha-dresser:0':   [ 0.07,  0.14,  0.19],
+  'banjiha-dresser:1':   [ 0.05,  0.10,  0.13],
+  'banjiha-etagere:0':   [ 0.13,  0.90,  0.97],
+  'banjiha-etagere:1':   [ 0.14,  0.95,  1.04],
+  'banjiha-etagere:2':   [ 0.13,  0.90,  1.00],
+  'banjiha-etagere:3':   [ 0.22,  1.99,  2.07],
+  'banjiha-etagere:4':   [ 0.22,  2.27,  2.37],
+  'banjiha-etagere:5':   [ 0.21,  1.98,  2.11],
+  'banjiha-etagere:6':   [ 0.51,  6.68,  6.77],
+  'banjiha-etagere:7':   [ 0.48, 12.31, 12.41],
+  'banjiha-etagere:8':   [ 0.48,  6.66,  6.80]
 };
 
 const BJ = tableOf('banjiha', [0, 1, 2]);
+
+/* 새 값을 뽑을 때 쓴다: BYEOT_REGEN=1 node tools/test_oneroom_room.mjs
+   ⚠ 손으로 적지 마라. 침대 줄(null)은 그대로 두고 나온 줄만 갈아 끼워라. */
+if (process.env.BYEOT_REGEN) {
+  for (const [id, v] of BJ.out)
+    console.log(`  '${id}':${' '.repeat(Math.max(0, 22 - id.length))}` +
+                `[${v.map(x => x.toFixed(2).padStart(5)).join(', ')}],`);
+  process.exit(0);
+}
+
 check('⑥ 회귀 — 반지하 14칸 DLI 가 정확히 같다 (반올림 허용치 없음)', () => {
   assert.equal(BJ.room.slots.length, 14, `반지하 슬롯 수가 14 가 아닙니다 (${BJ.room.slots.length})`);
   assert.equal(BJ.room.growRigs.length, 2, '반지하 식물등 기구가 2개가 아닙니다');

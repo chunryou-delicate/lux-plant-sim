@@ -95,22 +95,41 @@ const dli = (slotId, n) => eng.dliOfSlot(slotId, { ...SKY, lampCount: n });
 /* ══ ① 회귀 ═══════════════════════════════════════════════════════════════
    test_lampaim.mjs §① 과 **글자 그대로 같은 표**다. 두 검사가 같은 값을 지킨다 —
    한쪽만 고쳐서 통과시키는 길을 막으려고 일부러 두 벌을 둔다. */
+/* ★★ 2026-08-15 갱신 — 추천 자리를 칸 한가운데로 옮겼다(박사님 허락).
+   까닭·폭은 `test_floorlight` §① 머리말, 「등 물리는 안 건드렸다」의 증거는
+   `test_lampaim` §BEFORE 머리말에 적어 두었다. 여기는 값만 둔다.
+   다시 뽑는 문: `BYEOT_REGEN=1 node tools/test_lampmove.mjs` (lampaim 것과 같은 표가 나와야 한다) */
 const BEFORE = {
   'banjiha-sill:0':     { ppfd: [0, 8.195413, 9.068633],     dli: [4.8, 5.15, 5.19] },
-  'banjiha-desk:0':     { ppfd: [0, 11.45266, 28.997637],    dli: [0.61, 1.1, 1.86] },
-  'banjiha-desk:1':     { ppfd: [0, 3.500658, 26.6363],      dli: [0.17, 0.32, 1.32] },
-  'banjiha-dresser:0':  { ppfd: [0, 1.497063, 2.675664],     dli: [0.08, 0.14, 0.19] },
-  'banjiha-dresser:1':  { ppfd: [0, 1.081963, 1.79312],      dli: [0.05, 0.1, 0.13] },
-  'banjiha-etagere:0':  { ppfd: [0, 17.485103, 19.052515],   dli: [0.13, 0.89, 0.95] },
+  'banjiha-desk:0':     { ppfd: [0, 10.660643, 29.003899],   dli: [0.6, 1.06, 1.85] },
+  'banjiha-desk:1':     { ppfd: [0, 3.565306, 27.619401],    dli: [0.19, 0.34, 1.38] },
+  'banjiha-dresser:0':  { ppfd: [0, 1.455611, 2.579889],     dli: [0.07, 0.14, 0.19] },
+  'banjiha-dresser:1':  { ppfd: [0, 1.110425, 1.848864],     dli: [0.05, 0.1, 0.13] },
+  'banjiha-etagere:0':  { ppfd: [0, 17.758409, 19.366252],   dli: [0.13, 0.9, 0.97] },
   'banjiha-etagere:1':  { ppfd: [0, 18.867116, 20.85616],    dli: [0.14, 0.95, 1.04] },
-  'banjiha-etagere:2':  { ppfd: [0, 17.485103, 20.061482],   dli: [0.13, 0.88, 0.99] },
-  'banjiha-etagere:3':  { ppfd: [0, 39.495924, 41.213474],   dli: [0.23, 1.94, 2.01] },
+  'banjiha-etagere:2':  { ppfd: [0, 17.758409, 20.259313],   dli: [0.13, 0.9, 1] },
+  'banjiha-etagere:3':  { ppfd: [0, 40.923135, 42.689764],   dli: [0.22, 1.99, 2.07] },
   'banjiha-etagere:4':  { ppfd: [0, 47.3445, 49.588241],     dli: [0.22, 2.27, 2.37] },
-  'banjiha-etagere:5':  { ppfd: [0, 39.495924, 42.530647],   dli: [0.21, 1.92, 2.05] },
-  'banjiha-etagere:6':  { ppfd: [0, 126.779329, 128.591455], dli: [0.51, 5.98, 6.06] },
+  'banjiha-etagere:5':  { ppfd: [0, 40.923135, 43.852098],   dli: [0.21, 1.98, 2.11] },
+  'banjiha-etagere:6':  { ppfd: [0, 142.980784, 144.847794], dli: [0.51, 6.68, 6.77] },
   'banjiha-etagere:7':  { ppfd: [0, 273.707829, 276.11858],  dli: [0.48, 12.31, 12.41] },
-  'banjiha-etagere:8':  { ppfd: [0, 126.779329, 130.135417], dli: [0.48, 5.95, 6.1] }
+  'banjiha-etagere:8':  { ppfd: [0, 142.980784, 146.207098], dli: [0.48, 6.66, 6.8] }
 };
+
+/* 새 값을 뽑을 때 쓴다: BYEOT_REGEN=1 node tools/test_lampmove.mjs
+   ⚠ 손으로 숫자를 적지 마라. 이 표는 `test_lampaim` §① 과 **글자 그대로 같아야** 한다 —
+     둘 다 이 문으로 뽑아라. */
+if (process.env.BYEOT_REGEN) {
+  reset();
+  for (const s of eng.room.slots) {
+    const pt = { x: s.x, y: s.y, z: s.z };
+    const pp = [0, 1, 2].map(n => +ppfdSum(eng.room.growRigs.slice(0, n), pt).toFixed(6));
+    const dd = [0, 1, 2].map(n => +dli(s.slotId, n).toFixed(6));
+    console.log(`  '${s.slotId}':${' '.repeat(Math.max(0, 21 - s.slotId.length))}` +
+                `{ ppfd: [${pp.join(', ')}], dli: [${dd.join(', ')}] },`);
+  }
+  process.exit(0);
+}
 
 function regressionDiff() {
   reset();

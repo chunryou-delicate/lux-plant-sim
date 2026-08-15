@@ -47,13 +47,31 @@ const lightTh = JSON.parse(readFileSync(
    옛 값(tau 0.55, 2026-08-02): sill 3.77 · desk:0 0.48 · desk:1 0.13 ·
      dresser:0 0.06 · dresser:1 0.04 · etagere:0~2 0.10/0.11/0.10 ·
      etagere:3~5 0.18/0.18/0.17 · etagere:6~8 0.40/0.38/0.38 */
+/* ★★ **2026-08-15 갱신 — 추천 자리를 칸 한가운데로 옮겼다**(박사님 허락).
+   ------------------------------------------------------------
+   또 **입력이 바뀌어서** 다시 뜬 표다. `furniture_pastel.tierSlots` 의 가장자리 여백
+   상수 0.09 를 **칸 반쪽**으로 바꿨다(까닭·폭은 `tools/test_floorlight.mjs` §① 머리말).
+   자리 열 곳의 **월드 좌표가 움직였고**, 밝기는 좌표에서 나오므로 같이 움직였다.
+
+   ⚠⚠ **이 검사는 그 움직임을 못 잡는다.** 정적 프로필의 ratio 와 아래 LIVE 표를 견줄 뿐
+     집을 조립하지 않기 때문이다. 둘 다 낡으면 오차 0.00000 으로 그냥 통과한다.
+     ⇒ 「live_vs_static 0.00000」을 **「빛이 안 바뀌었다」로 읽으면 안 된다.**
+       빛이 바뀌었는지는 `test_floorlight` ① · `test_lampaim` ① · `test_oneroom_room` ⑥ 이 잡는다.
+
+   ★ 값은 **손으로 적지 않았다.** 정적 프로필과 이 표를 같은 도구가 한 번에 뽑는다:
+       node tools/gen_room_profile.mjs --write
+     (스텁 DOM 위에서 집을 실제로 조립해 `light_adapter.profile` + `dliOfSlot` 을 부른다.
+      예전에는 브라우저로 `_profile_gen.html` 을 열어 손으로 옮겨 적었고, 그래서
+      `banjiha-sill:0` 의 등 PPFD 가 2026-08-06 반사광 도입 뒤 42.62 로 **9일간 낡아 있었다**.)
+   옛 값(2026-08-06 main): desk:0 0.61 · desk:1 0.17 · dresser:0 0.08 · etagere:3 0.23.
+     나머지 열 칸은 그대로다. 창턱 4.80 은 한 톨도 안 움직였다. */
 const LIVE = {
   best: 'banjiha-sill:0',
   dli: {
-    'banjiha-sill:0': 4.8, 'banjiha-desk:0': 0.61, 'banjiha-desk:1': 0.17,
-    'banjiha-dresser:0': 0.08, 'banjiha-dresser:1': 0.05,
+    'banjiha-sill:0': 4.8, 'banjiha-desk:0': 0.6, 'banjiha-desk:1': 0.19,
+    'banjiha-dresser:0': 0.07, 'banjiha-dresser:1': 0.05,
     'banjiha-etagere:0': 0.13, 'banjiha-etagere:1': 0.14, 'banjiha-etagere:2': 0.13,
-    'banjiha-etagere:3': 0.23, 'banjiha-etagere:4': 0.22, 'banjiha-etagere:5': 0.21,
+    'banjiha-etagere:3': 0.22, 'banjiha-etagere:4': 0.22, 'banjiha-etagere:5': 0.21,
     'banjiha-etagere:6': 0.51, 'banjiha-etagere:7': 0.48, 'banjiha-etagere:8': 0.48
   }
 };

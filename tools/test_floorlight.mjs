@@ -133,18 +133,53 @@ const check = (name, fn) => { try { fn(); results.push(['PASS', name]); }
 const info = (s) => results.push(['INFO', '  ' + s]);
 
 /* ══ ① 반지하 회귀 ═══════════════════════════════════════════════════════
-   ⚠ 값은 2026-08-06 main(등 옮기기까지) 에서 뜬 것이다. `test_lampaim` ①(안 겨눈 등 회귀)와
-     `test_oneroom_room` ⑥ 이 같은 판을 다른 각도에서 잠근다. 셋이 다 같은 표를 본다. */
+   ⚠ `test_lampaim` ①(안 겨눈 등 회귀)와 `test_oneroom_room` ⑥ 이 같은 판을 다른 각도에서
+     잠근다. 셋이 다 같은 표를 본다.
+
+   ★★ **2026-08-15 갱신 — 추천 자리를 칸 한가운데로 옮겼다**(박사님 허락).
+   ------------------------------------------------------------
+   검사가 무르익어서 고친 것이 아니라 **입력(자리 좌표)이 바뀌어서** 다시 뜬 것이다.
+   `render3d/furniture_pastel.tierSlots` 의 가장자리 여백이 상수 0.09 였는데, 그것이
+     ① 화면이 그리는 칸과 최대 0.0671m 어긋나 있었고(SLOT_GOVERN_R 0.04 를 넘는다)
+     ② 시루 반지름 0.12 보다 작아 **14칸 중 10칸이 시루를 상판 밖으로 3cm 내보냈다**
+   ⇒ 여백을 **칸 반쪽**으로 바꿔 자리를 칸 한가운데에 앉혔다. 14칸 전부 어긋남 0.000 ·
+     상판을 넘는 칸 0개다. 자리가 움직였으니 그 자리의 밝기도 움직인다.
+
+   ★ 값은 지어낸 것이 아니라 **다시 뽑은 것**이다: `BYEOT_REGEN=1 node tools/test_floorlight.mjs`
+   ★ 창턱(4.80/5.19)은 **한 톨도 안 움직였다** — 자리가 1칸뿐이라 어긋남이 0 이었다.
+     tau 0.70 · 창턱 4.80 · 등2 5.19 에 걸린 밸런스는 그대로다.
+   ⚠ 움직인 폭: 등 0개는 최대 0.02(desk:1 0.17→0.19). 등을 켜면 최대 **0.71**
+     (etagere:6 6.06→6.77 · :8 6.10→6.80) — 선반 양끝 자리가 바 등 쪽으로 3cm 다가섰다.
+   옛 값(2026-08-06 main): sill [4.80,5.19] · desk:0 [0.61,1.86] · desk:1 [0.17,1.32] ·
+     dresser:0 [0.08,0.19] · dresser:1 [0.05,0.13] · etagere:0~2 [0.13,0.95]/[0.14,1.04]/[0.13,0.99] ·
+     etagere:3~5 [0.23,2.01]/[0.22,2.37]/[0.21,2.05] · etagere:6~8 [0.51,6.06]/[0.48,12.41]/[0.48,6.10] */
 const BANJIHA_FROZEN = {
-  'banjiha-sill:0':    [4.80,  5.19], 'banjiha-desk:0':    [0.61,  1.86],
-  'banjiha-desk:1':    [0.17,  1.32], 'banjiha-dresser:0': [0.08,  0.19],
-  'banjiha-dresser:1': [0.05,  0.13], 'banjiha-etagere:0': [0.13,  0.95],
-  'banjiha-etagere:1': [0.14,  1.04], 'banjiha-etagere:2': [0.13,  0.99],
-  'banjiha-etagere:3': [0.23,  2.01], 'banjiha-etagere:4': [0.22,  2.37],
-  'banjiha-etagere:5': [0.21,  2.05], 'banjiha-etagere:6': [0.51,  6.06],
-  'banjiha-etagere:7': [0.48, 12.41], 'banjiha-etagere:8': [0.48,  6.10]
+  'banjiha-sill:0':      [4.80, 5.19],
+  'banjiha-desk:0':      [0.60, 1.85],
+  'banjiha-desk:1':      [0.19, 1.38],
+  'banjiha-dresser:0':   [0.07, 0.19],
+  'banjiha-dresser:1':   [0.05, 0.13],
+  'banjiha-etagere:0':   [0.13, 0.97],
+  'banjiha-etagere:1':   [0.14, 1.04],
+  'banjiha-etagere:2':   [0.13, 1.00],
+  'banjiha-etagere:3':   [0.22, 2.07],
+  'banjiha-etagere:4':   [0.22, 2.37],
+  'banjiha-etagere:5':   [0.21, 2.11],
+  'banjiha-etagere:6':   [0.51, 6.77],
+  'banjiha-etagere:7':   [0.48, 12.41],
+  'banjiha-etagere:8':   [0.48, 6.80]
 };
 const BJ = scan('banjiha');
+
+/* 새 값을 뽑을 때 쓴다: BYEOT_REGEN=1 node tools/test_floorlight.mjs
+   ⚠ 손으로 적지 마라 — §2 넷째 규칙("고친 값도 재라")이 여기서 깨졌던 자리다. */
+if (process.env.BYEOT_REGEN) {
+  for (let i = 0; i < BJ.ids.length; i++)
+    console.log(`  '${BJ.ids[i]}':${' '.repeat(Math.max(0, 20 - BJ.ids[i].length))}` +
+                `[${BJ.d0[i].toFixed(2)}, ${BJ.dn[i].toFixed(2)}],`);
+  process.exit(0);
+}
+
 check('① 회귀 — 반지하 14칸이 skyViewK 를 붙인 뒤에도 한 톨도 안 바뀐다', () => {
   assert.equal(BJ.slots, 14);
   assert.equal(BJ.skyViewK, 1, '★ 반지하에 skyViewK 가 붙었습니다 — 반지하는 기준(1.00)이라 못 건드립니다');
@@ -165,6 +200,49 @@ check('① 회귀 — 반지하 14칸이 skyViewK 를 붙인 뒤에도 한 톨�
       `BACK_REFLECT 0.18 이 없다). main 위에서 다시 돌려 보십시오.`);
   }
   info(`반지하 등0 최고 ${BJ.daylightBest} (7일평균 ${BJ.daylightAvg7}) · 등2 최고 ${BJ.fullBest} (${BJ.fullAvg7})`);
+});
+
+/* ★★ ①-1 자리가 칸 한가운데에 앉아 있나 (2026-08-15 신설)
+   ------------------------------------------------------------
+   위 ① 은 **값**을 잠근다. 값이 왜 그 값이어야 하는지는 안 잠근다 —— 그래서 자리가
+   조용히 어긋나 있어도 「그 어긋난 값이 정상」으로 굳는 사고가 났다(0.09 상수, 아홉 달).
+   여기서는 **뜻**을 잠근다: 자리는 상판을 시루(0.24)로 나눈 칸의 한가운데에 앉고,
+   자리에 놓은 시루는 상판 밖으로 안 나간다.
+
+   ⚠ 자는 **엔진이 낸 차폐 상자**(built.occluders)다. `furniture_pastel` 의 셈을 여기로
+     베껴 오면 틀려도 0 이 나온다 — 일부러 다른 데서 가져온다.
+   ⚠ 이 검사는 **반지하만** 본다. 다른 방에는 상판 = 발자국이 아닌 가구(사다리형 등)가 있어
+     이 자로 재면 거짓 실패가 난다. 그건 그 방을 정비할 때 함께 볼 일이다. */
+check('①-1 ★ 반지하 14칸이 칸 한가운데에 앉는다 · 시루가 상판 밖으로 안 나간다', () => {
+  const CELL = 0.25, POT = 0.24;                 // place.GRID_CELL · 열린 콩나물 시루
+  const ax = (L) => {
+    const n = Math.max(1, Math.min(Math.round(L / CELL), Math.max(1, Math.floor(L / POT + 1e-9))));
+    return { n, cell: L / n, at: i => (i + 0.5) * (L / n) - L / 2 };
+  };
+  const r = eng.build('banjiha');
+  let worst = 0, worstId = null, over = [];
+  for (const s of r.slots) {
+    const o = r.built.occluders[s.occIdx];
+    assert.ok(o, `${s.slotId}: 차폐 상자를 못 찾았습니다`);
+    /* occluders 의 x·z 는 **최소 모서리**다(재서 확인: 책상 0.70/-1.80 = 1.30∓0.60/0.30) */
+    const dx = s.x - (o.x + o.w / 2), dz = s.z - (o.z + o.d / 2);
+    const c = Math.cos(o.rot || 0), si = Math.sin(o.rot || 0);
+    const u = dx * c - dz * si, v = dx * si + dz * c;      // 가구 로컬(면) 좌표
+    const U = ax(o.w), V = ax(o.d);
+    const nu = U.at(Math.max(0, Math.min(U.n - 1, Math.round((u + o.w / 2) / U.cell - 0.5))));
+    const nv = V.at(Math.max(0, Math.min(V.n - 1, Math.round((v + o.d / 2) / V.cell - 0.5))));
+    const err = Math.hypot(u - nu, v - nv);
+    if (err > worst) { worst = err; worstId = s.slotId; }
+    const ou = Math.abs(u) + POT / 2 - o.w / 2, ov = Math.abs(v) + POT / 2 - o.d / 2;
+    if (ou > 1e-6 || ov > 1e-6) over.push(`${s.slotId} +${Math.max(ou, ov).toFixed(3)}m`);
+  }
+  assert.ok(worst < 1e-6,
+    `★ 자리가 칸 한가운데에서 벗어났습니다 — 최대 ${worst.toFixed(4)}m @ ${worstId}\n` +
+    `  ⚠ SLOT_GOVERN_R 0.04 를 넘으면 그 자리 네모를 겨눠도 자리로 안 붙습니다.\n` +
+    `  고칠 곳: src/render3d/furniture_pastel.js §tierSlots (여백은 칸 반쪽이어야 한다)`);
+  assert.equal(over.length, 0,
+    `★ 자리에 놓은 시루가 상판 밖으로 나갑니다: ${over.join(' · ')}`);
+  info(`반지하 14칸 어긋남 0 · 상판 넘침 0 (칸 기준: 시루 ${POT}m)`);
 });
 
 check('① -2 skyViewK 1.00 은 아무것도 안 바꾼다 — 안 적은 방과 같다', () => {
