@@ -510,11 +510,22 @@ check('B 콩나물 — 다시 심을 수 있고 회전이 이어진다 · 절감
   const cycleWon = cropCycleSavedWon(fpS.rules, fpS.rules.qualityMaxMeals, 0, 0);
   const gotWon = b.harvestCount * cycleWon;                 // 시루 하나 = 겹칠 일이 없다
   const eaten = fpS.food.totalFoodSavedWon;
-  assert.ok(eaten + fpS.food.pantryWon >= gotWon * 0.99 &&
-            eaten + fpS.food.pantryWon <= gotWon + 1,
-    `거둔 ${gotWon}원 중 먹은 ${eaten}원 + 곳간 ${fpS.food.pantryWon}원 — 어디론가 샜습니다`);
-  /* 회전이 5일이므로 40일이면 대략 (40−5)/5 × 3,000원이 실제로 밥값에서 빠져야 한다 */
-  const expectMin = cycleWon * Math.floor((40 - fpS.rules.harvestDays) / fpS.rules.harvestDays) * 0.9;
+  /* ⚠⚠ 2026-08-17 — **이 줄이 지키던 등식이 깨졌다.** 옛 줄은
+       `먹은 밥값 + 곳간 ≈ 거둔 값` 이었고, 그건 **밥값과 물건 값이 같은 수**일 때만 성립한다.
+     확정문 §1 이 둘을 갈랐다(first_play §몫) — 콩나물 300g 은 곳간에서 3,000원이 빠지고
+     밥값은 2,500원이 준다. ⇒ 지키려던 것(**거둔 것이 어디로도 안 샌다**)은 그대로 잰다.
+     자를 **물건 값**으로 바꾸고, 밥값이 그 g 에 몫 값으로 정확히 맞물리는지를 같이 본다. */
+  const drainedWon = gotWon - fpS.food.pantryWon;           // 곳간에서 빠진 물건 값
+  assert.ok(drainedWon >= 0 && drainedWon <= gotWon,
+    `거둔 ${gotWon}원 · 곳간 ${fpS.food.pantryWon}원 — 곳간이 거둔 것보다 많습니다`);
+  const perGram = fpS.rules.cropMealPortionWon / fpS.rules.dailyCropGrams;   // 8.33원/g
+  const expectSaved = (drainedWon / 10) * perGram;
+  assert.ok(Math.abs(eaten - expectSaved) <= 50,
+    `곳간에서 ${drainedWon}원어치가 빠졌는데 밥값은 ${eaten}원입니다 ` +
+    `(몫 규칙대로면 ${Math.round(expectSaved)}원) — 어디론가 샜습니다`);
+  /* 회전이 5일이므로 40일이면 대략 (40−5)/5 번의 **첫 몫**이 밥값에서 빠져야 한다 */
+  const expectMin = fpS.rules.cropMealPortionWon *
+    Math.floor((40 - fpS.rules.harvestDays) / fpS.rules.harvestDays) * 0.9;
   assert.ok(eaten > expectMin,
     `총 절감이 ${eaten}원 (기대 ${Math.round(expectMin)}원 이상) — 회전이 안 걸리고 있습니다`);
   info(`회전: 40일에 수확 ${b.harvestCount}번 · 총 절감 ${r.S.firstPlay.food.totalFoodSavedWon.toLocaleString()}원 ` +
@@ -559,8 +570,8 @@ check('B-2 ★시루를 늘리고 어긋나게 돌리면 절감이 는다 — �
   info(`짜임새: 시루 1개 절감 ${s1.toLocaleString()}원 → 시루 3개(하루씩 어긋남) ${s3.toLocaleString()}원 ` +
        `(씨앗·시루값 ${one.S.tutorial.crop.spentWon.toLocaleString()} → ` +
        `${three.S.tutorial.crop.spentWon.toLocaleString()}원)`);
-  info(`  ⤷ ⚠ 2026-08-17 — 그날 순번은 이제 값을 **안 깎는다**(first_play §겹침). ` +
-       `작물 **종류** 체감(질림)은 그대로다: ` +
+  info(`  ⤷ ⚠ 2026-08-17 — 그날 순번도 작물 종류 순번도 값을 **안 깎는다**(first_play §겹침·§질림). ` +
+       `질림은 §몫 의 「같은 작물 둘째 몫 1,200원」이 대신한다. 작물별 한 회전분: ` +
        `${FIRST_PLAY_RULES.cropKindSavedWon.map(w => w.toLocaleString()).join(' → ')}원/회전. ` +
        `★「${RULES.harvestDays}일 주기 = ${RULES.harvestDays}개가 천장」도 같이 없어졌다 — ` +
        `남은 천장은 하루 몫(300g)과 손(체력)이다`);

@@ -32,7 +32,9 @@ import {
   pantryLotsOf, pantrySaleQuote, takePantryCrop,
   /* ★ 2026-08-16 · 그램 셈 (first_play §그램) */
   cropCycleSavedWon, pantryLotsWithGrams, pantryGramsOf, formatGram,
-  mealPlanQuote, planMealGrams
+  mealPlanQuote, planMealGrams,
+  /* ★ 2026-08-17 · §몫 · §판매 — 파는 값이 작물마다 다르다(확정문 §1) */
+  CROP_KINDS, cropMealPlan
 } from '../src/game/first_play.js';
 import { newState, sellPantryCrop, pantrySaleStatus,
          sellCropSurplus, cropSurplusStatus } from '../src/game/state.js';
@@ -162,9 +164,14 @@ console.log('\n== D. ★먼저 거둔 것부터 — 파는 순서와 먹는 순�
   const { fp } = sameDayHarvest(4);
   /* ⚠ 하루 몫을 여기서 숫자로 적지 않는다 — 계약에서 읽는다.
      (기본 계약에서는 4,867원이다: 콩나물 3,000 + 무순 1,867. 「3,000원」은 콩나물만 있을 때 값이다) */
+  /* ⚠⚠ 2026-08-17 — `dailyCropSaveWonOf` 의 **단위가 바뀌었다**(first_play §몫):
+     이제 「곳간에서 빠지는 물건 값」이 아니라 **「아낄 수 있는 밥값」**이다.
+     곳간이 얼마나 줄었나를 재려면 `bite.pantryUsedWon` 을 읽어야 한다. */
   const daily = dailyCropSaveWonOf(fp);
   assert.ok(daily > 0);
-  eatFromPantry(fp);
+  const bite = eatFromPantry(fp);
+  const drained = bite.pantryUsedWon;
+  assert.ok(drained > 0, '★곳간이 한 푼도 안 줄었다');
   const after = pantryLotsOf(fp);
   assert.equal(sumLots(fp), fp.food.pantryWon, '★먹은 뒤 판과 총액이 어긋났다');
   /* ⚠ 2026-08-16 — 여기 `after.length < 3` 이 박혀 있었다. 하루 몫이 4,867원일 때는
@@ -174,7 +181,7 @@ console.log('\n== D. ★먼저 거둔 것부터 — 파는 순서와 먹는 순�
   assert.ok(after.length <= 4, '★먹었는데 판이 늘었다');       // ⚠ 2026-08-17 · 3 → 4
   assert.ok(after.length < 4 || after[0].won < LOTS4[0],
     '★★먹었는데 맨 앞 판이 한 푼도 안 줄었다');
-  assert.equal(sumLots(fp) + daily, SUM4, '★먹은 만큼 정확히 안 줄었다');
+  assert.equal(sumLots(fp) + drained, SUM4, '★먹은 만큼 정확히 안 줄었다');
   assert.equal(after[after.length - 1].won, LOTS4[3],
     '★★맨 뒤(제일 나중에 거둔) 판이 먼저 깎였다 — FIFO 가 아니다');
   /* 다 먹을 때까지 돌리면 판이 남지 않는다 */
@@ -187,11 +194,13 @@ console.log('\n== D. ★먼저 거둔 것부터 — 파는 순서와 먹는 순�
 console.log('\n== D-2. ⚠ 하루 몫이 판 경계에 안 맞으면 — 「먹다 남은 판」이 남는다 ==');
 {
   const { fp } = sameDayHarvest(4);
-  const daily = dailyCropSaveWonOf(fp);
+  /* ⚠ 2026-08-17 — 여기서 쓰던 `dailyCropSaveWonOf`(하루 몫 · 원)가 이제 **밥값**이라
+     곳간에 그대로 못 넣는다. 곳간에서 빠지는 것은 **한 몫의 g** 이다(§몫). */
+  const chunkWon = RULES.dailyCropGrams * 10;    // 콩나물 한 몫(300g)의 물건 값
   fp.food.pantryLots = [];                       // 꾸러미 기록을 지우고
-  fp.food.pantryWon = daily + 1000;              // 하루 몫보다 딱 1,000원 많게
-  assert.equal(sumLots(fp), daily + 1000, '★옛 판이 판으로 안 쪼개진다');
-  eatFromPantry(fp);                             // 하루 몫을 먹는다
+  fp.food.pantryWon = chunkWon + 1000;           // 한 몫보다 딱 1,000원 많게
+  assert.equal(sumLots(fp), chunkWon + 1000, '★옛 판이 판으로 안 쪼개진다');
+  eatFromPantry(fp);                             // 한 몫을 먹는다
   assert.equal(fp.food.pantryWon, 1000);
   assert.deepEqual(pantryLotsOf(fp).map(l => l.won), [1000],
     '★남은 판이 제 값을 못 적는다');
@@ -243,16 +252,45 @@ console.log('\n== F. ★★잉여 창구는 예전 그대로 — 곳간을 한 �
   ok('잉여(버릴 몫)와 곳간(밥)이 서로 다른 창구·다른 누계로 남는다');
 }
 
-console.log('\n== G. ★같은 값 하나를 쓴다 — 새 판매가를 안 만들었다 ==');
+/* ══ ⚠⚠ 2026-08-17 — **이 절이 지키던 약속이 뒤집혔다** ═══════════════════════
+     옛 약속 — *"곳간 판매가 = 잉여 판매가 = `cropSurplusSaleRate` **한 곳**. 값이 둘이 되면
+       「어느 쪽으로 파는 게 이득인가」라는 없던 셈이 생긴다."*
+     옛 단언 — `_meta` 에 0.4 를 넣으면 `pantrySaleQuote(fp).rate === 0.4` 다.
+   박사님 확정문 §1 이 파는 값을 **작물마다** 정했다(콩나물 7원/g · 무순 8원/g).
+   ⇒ 값이 하나일 수가 없다. 그런데 **원래 지키려던 것은 안 죽었다** — 걱정하던 것은
+     「같은 물건을 두 창구가 다른 값에 산다」였고, 그건 여전히 안 일어난다.
+   ⇒ 그래서 재는 자리를 옮겼다: **같은 작물이면 어느 창구로 가도 같은 값**인가 ·
+     **작물이 다르면 다른 값**인가 · 섞이면 **낱개의 합**인가. */
+console.log('\n== G. ★파는 값은 작물이 정한다 — 창구마다 갈리지는 않는다 ==');
 {
-  const rules4 = firstPlayRulesFromBalance(
-    { ...BALANCE, _meta: { ...BALANCE._meta, cropSurplusSaleRate: 0.4 } });
-  const { fp } = sameDayHarvest(4, rules4);
-  assert.equal(cropSurplusRateOf(fp), 0.4);
-  assert.equal(pantrySaleQuote(fp).rate, 0.4,
-    '★★곳간 판매가 잉여와 다른 값을 쓴다 — 「어느 쪽으로 파는 게 이득인가」가 생긴다');
-  assert.equal(pantrySaleQuote(fp).won, Math.round(fp.food.pantryWon * 0.4));
-  ok('곳간 판매가 = 잉여 판매가 = cropSurplusSaleRate 한 곳');
+  const { fp } = sameDayHarvest(4);
+  const perG = CROP_KINDS[0].sellWonPerGram;
+  const q1 = pantrySaleQuote(fp, 1);
+  assert.equal(q1.won, q1.pendingGrams * perG,
+    '★곳간 한 판 값이 작물 표(원/g)와 안 맞는다');
+  assert.equal(q1.picked[0].wonPerGram, perG, '★줄에 실린 원/g 이 작물 표와 다르다');
+  /* ★ 작물이 다르면 값도 다르다 — 그게 확정문이 정한 것이다 */
+  assert.notEqual(CROP_KINDS[0].sellWonPerGram, CROP_KINDS[1].sellWonPerGram,
+    '★두 작물의 파는 값이 같다 — 확정문 §1 이 7원/g · 8원/g 으로 갈랐다');
+  /* ★★ 섞인 판 — 총액에 한 비율을 곱하지 않고 **낱개를 더한다**(§판매 ⚠) */
+  const mixed = createFirstPlayState({ enabled: true, rules: RULES });
+  mixed.food.pantryLots = [{ kind: 'beansprout', day: 1, won: 4000, meals: 3 },
+                           { kind: 'musun', day: 1, won: 3000, meals: 3 }];
+  mixed.food.pantryWon = 7000;
+  const qm = pantrySaleQuote(mixed);
+  assert.equal(qm.won, 400 * CROP_KINDS[0].sellWonPerGram + 300 * CROP_KINDS[1].sellWonPerGram,
+    '★★섞인 판을 한 비율로 곱했다 — 줄마다 적힌 값의 합과 화면이 어긋난다');
+  assert.ok(qm.rate > CROP_KINDS[0].sellWonPerGram / 10 &&
+            qm.rate < CROP_KINDS[1].sellWonPerGram / 10,
+    '★섞인 판의 실효 비율이 두 값 사이에 안 떨어진다');
+  /* ★ 작물을 **모르는** 꾸러미(옛 세이브)는 전역 폴백을 쓴다 — 첫 작물 값이다 */
+  const old = createFirstPlayState({ enabled: true, rules: RULES });
+  old.food.pantryLots = [{ kind: null, day: null, won: 3000, meals: 0 }];
+  old.food.pantryWon = 3000;
+  assert.equal(pantrySaleQuote(old).won, Math.round(3000 * RULES.cropSurplusSaleRate),
+    '★작물을 모르는 옛 꾸러미가 폴백 값으로 안 팔린다');
+  ok(`파는 값은 작물 표 한 곳에 있다 — 콩나물 ${CROP_KINDS[0].sellWonPerGram}원/g · ` +
+     `무순 ${CROP_KINDS[1].sellWonPerGram}원/g · 모르는 것은 폴백`);
 }
 
 console.log('\n== H. ★세이브 — 판 목록이 저장되고, 안 실려도 판이 안 깨진다 ==');
@@ -315,12 +353,52 @@ console.log('\n== J. ★★오늘 밥상 — 300g 까지 쓰고 남는 것은 �
   assert.equal(none.savedWon, 0, '★★0g 을 골랐는데 먹었다 — 모아서 파는 길이 막힌다');
   assert.equal(fp.food.pantryWon, 4_000, '★안 먹었는데 곳간이 줄었다');
   assert.equal(fp.food.mealPlanWon, null, '★★고른 값을 안 지웠다 — 내일도 0g 을 먹는다');
-  /* 안 고르면 예전 그대로 상한까지 먹는다(= 300g) */
+  /* 안 고르면 **몫 규칙이 최선껏** 짠다 — 콩나물만 있으므로 첫 몫 하나(300g)다.
+     ⚠⚠ 2026-08-17 — 옛 줄은 `full.savedWon === dailyCropSaveWonOf(fp)` 였다. 그 값의
+       단위가 「곳간에서 빠지는 물건 값(3,000원)」에서 **「아낄 수 있는 밥값(5,000원)」**으로
+       바뀌었다(§몫). 300g 을 먹으면 곳간은 3,000원 줄고 밥값은 **2,500원** 준다. */
   const full = eatFromPantry(fp);
-  assert.equal(full.savedWon, dailyCropSaveWonOf(fp), '★안 골랐는데 상한까지 안 먹었다');
+  assert.equal(full.savedWon, RULES.cropMealPortionWon, '★안 골랐는데 첫 몫을 안 먹었다');
   assert.equal(full.savedGrams, 300);
+  assert.equal(full.pantryUsedWon, 3_000, '★곳간에서 빠진 물건 값이 300g 어치가 아니다');
+  assert.notEqual(full.savedWon, full.pantryUsedWon,
+    '★밥값과 물건 값이 아직 같은 수다 — 두 단위가 안 갈렸다(§몫)');
   assert.equal(fp.food.pantryWon, 1_000, '★★남는 100g 이 사라졌다 — 쌓여야 한다');
   ok('400g 이 오면 300g 을 쓰고 100g 이 곳간에 남는다 · 0g 도 고를 수 있다');
+}
+
+/* ══ J-2. ★★ **몫** — 확정문 §1 을 그대로 밟는다 (2026-08-17 신설) ═══════════════ */
+console.log('\n== J-2. ★★몫 — 첫 몫 2,500 · 다른 작물 둘째 몫 2,500 · 같은 작물 1,200 ==');
+{
+  const seed = (lots) => {
+    const fp = createFirstPlayState({ enabled: true, rules: RULES });
+    fp.food.pantryLots = lots.map(l => ({ ...l }));
+    fp.food.pantryWon = lots.reduce((a, l) => a + l.won, 0);
+    return fp;
+  };
+  const BEAN = (won) => ({ kind: 'beansprout', day: 1, won, meals: 3 });
+  const MUSUN = (won) => ({ kind: 'musun', day: 1, won, meals: 3 });
+  /* ① 첫 몫 — 콩나물 300g = 2,500원 */
+  assert.equal(cropMealPlan(seed([BEAN(4000)])).savedWon, 2_500, '★콩나물 첫 몫');
+  /* ② 둘째 몫이 **다른 작물**이면 또 2,500원 — 하루 최대 5,000원에 딱 닿는다 */
+  const two = cropMealPlan(seed([BEAN(4000), MUSUN(3000)]));
+  assert.equal(two.savedWon, 5_000, '★다른 작물로 채운 둘째 몫이 2,500원이 아니다');
+  assert.equal(two.usedGrams, 500, '★콩나물 300g + 무순 200g 이 아니다');
+  assert.equal(two.savedWon, RULES.cropMealCapWon, '★하루 최대가 끼니 상한과 안 맞는다');
+  /* ③ 둘째 몫이 **같은 작물**이면 1,200원인데, 그건 파는 값보다 싸서 **안 먹는다**(§3) */
+  const same = cropMealPlan(seed([BEAN(4000), BEAN(4000)]));
+  assert.equal(same.portions.length, 1, '★같은 작물로 둘째 몫까지 먹었다 — 파는 게 낫다');
+  assert.equal(same.savedWon, 2_500);
+  /* ④ ★ **못 채운 몫은 비례로** — 150g 이면 그 절반(확정문 §1 ★) */
+  const half = cropMealPlan(seed([BEAN(1500)]));
+  assert.equal(half.savedWon, 1_250, '★못 채운 몫이 비례로 안 쳐진다 — 절벽이 생겼다');
+  assert.equal(half.usedGrams, 150);
+  const musunHalf = cropMealPlan(seed([MUSUN(1000)]));   // 무순 100g = 몫의 절반
+  assert.equal(musunHalf.savedWon, 1_250, '★무순 쪽 비례가 안 맞는다');
+  /* ⑤ 무순만 있어도 첫 몫은 온전하다 — 200g 에 2,500원(12.50원/g) */
+  assert.equal(cropMealPlan(seed([MUSUN(3000)])).savedWon, 2_500, '★무순 첫 몫');
+  assert.equal(cropMealPlan(seed([MUSUN(3000)])).usedGrams, 200, '★무순 한 몫이 200g 이 아니다');
+  ok('첫 몫 2,500 · 다른 작물 둘째 2,500 · 같은 작물 둘째는 파는 게 나아 안 먹는다 · 비례 성립');
 }
 
 console.log('\n== K. ★세이브 — 「안 골랐다(null)」와 「0g 을 골랐다(0)」가 갈린다 ==');

@@ -79,7 +79,9 @@ const BEST_CYCLE_WON = cropCycleSavedWon(TEST_RULES, TEST_RULES.qualityMaxMeals,
    ★ 숫자는 여전히 **안 박는다.** 둘 다 규칙에서 읽는다 — 문이 열리면 저절로 옛 값이 된다. */
 /* ① 겹침 — 같은 날 첫째·둘째·셋째·넷째로 거둘 때. **이제 넷이 다 같은 값**이다 */
 const OVERLAP_WON = [0, 1, 2, 3].map(i => overlapSavedWon(TEST_RULES, TEST_RULES.qualityMaxMeals, i, 0));
-/* ② 질림 — 작물 **종류** 순번 0·1·2·3. 이쪽은 **그대로 깎인다**(1 · 2/3 · 1/3 · 0) */
+/* ② 질림 — 작물 **종류** 순번 0·1·2·3.
+   ⚠⚠ 2026-08-17 **밤** — 이쪽도 **안 깎인다**(확정문 §6 · first_play §질림).
+     이 줄에 *"이쪽은 그대로 깎인다(1 · 2/3 · 1/3 · 0)"* 라 적혀 있던 자리다. */
 const TIRED_WON = [0, 1, 2, 3].map(t => cropCycleSavedWon(TEST_RULES, TEST_RULES.qualityMaxMeals, t, 0));
 /* 품질 세 칸(3·2·1끼)의 회전분 — 자리(빛)가 값을 가르는 그 표다 */
 const QUALITY_WON = [3, 2, 1].map(m => cropCycleSavedWon(TEST_RULES, m, 0, 0));
@@ -258,21 +260,41 @@ function growCycle(dli) {
    ⇒ **수확은 온전히 들어온다.** 막는 것은 먹는 쪽(하루 300g) 하나다.
    ★ 그래서 이 블록이 **새로 지키는 것**은 셋이다:
      ① 같은 날 넷을 거둬도 넷 다 온전한 값이다  ② 못 받은 몫이 **0** 이다
-     ③ ★ **질림은 안 걷혔다** — 작물 종류 축은 여전히 1 · 2/3 · 1/3 · 0 으로 깎인다 */
+     ③ ★ 종류 순번도 값을 안 민다(아래 ⚠⚠ 2026-08-17 밤)
+
+   ══ ⚠⚠ 2026-08-17 **밤** — 여기 있던 셋째 약속이 **또 뒤집혔다** ═══════════════
+   아침에 적은 ③ 은 *"질림은 안 걷혔다 — 작물 종류 축은 여전히 1 · 2/3 · 1/3 · 0 으로
+   깎인다"* 였고, 단언 둘이 그것을 못 박고 있었다:
+     `TIRED_WON.map(w => w/10)` 이 배율표를 따른다 ·
+     `overlapSavedWon(RULES,3,0,1) === cropCycleSavedWon(RULES,3,1,1)` (무순이 한 칸 밀려 있다)
+   ⇒ 박사님 확정문 §6 이 그 축을 걷었다: *"질림은 「둘째 몫」 규칙이 **대신한다.**
+     두 벌로 두지 마라."* 「같은 것만 먹으면 물린다」는 이제 **밥상에서** 잰다
+     (first_play §몫 — 같은 작물로 채운 둘째 몫은 2,500 이 아니라 1,200원이다).
+   ★ 그래서 위 두 단언을 **없애지 않고 뒤집었다** — 「안 깎인다」를 못 박는다.
+     안 그러면 어디선가 질림이 되살아나도 아무도 안 잡는다.
+   ★ 배율표(`CROP_TIRED_MULTIPLIER`)를 여전히 읽는 곳이 하나 있다 —
+     `cropOverlapTiredEnabled` 문. 그건 `test_econ §F` 가 잰다.
+   ⚠ 그래서 `TIRED_WON`(표를 **직접** 읽은 값)은 여전히 깎인 값이 나온다. 걷힌 것은
+     **수확이 그 표를 읽지 않게 된 것**이다 — 그 사실은 아래 무순 단언과 §시루 여섯이 잰다. */
 {
-  /* ★★ ③ 먼저 **둘이 갈렸는지**부터 못 박는다. 이게 이번 변경의 핵심이라
+  /* ★★ ③ 먼저 **두 축이 다 걷혔는지**부터 못 박는다. 이게 이번 변경의 핵심이라
      여기가 무너지면 나머지 단언은 「무엇을 잰 것인지」를 잃는다. */
   assert.deepEqual(OVERLAP_WON, [BEST_CYCLE_WON, BEST_CYCLE_WON, BEST_CYCLE_WON, BEST_CYCLE_WON],
     '★그날 순번이 아직 값을 깎고 있다 — 겹침의 벌이 안 걷혔다');
-  /* ⚠ **반올림은 g 에서 일어난다**(first_play §질림 — 400 × 2/3 = 266.67 → 267g → 2,670원).
-     원끼리 비율로 재면 0.6675 가 나와 2/3 과 안 맞는다. 그래서 g 으로 재고, 기대값도
-     같은 자리에서 반올림한다 — 「자를 딴 단위로 대는」 사고를 안 내려고 그렇다. */
+  /* ★ 배율표 **자체**는 아직 산다(문이 읽는다) — 그래서 여기서는 「표가 성한가」만 잰다.
+     ⚠ **반올림은 g 에서 일어난다**(400 × 2/3 = 266.67 → 267g → 2,670원). 원끼리 비율로
+       재면 0.6675 가 나와 2/3 과 안 맞는다 — 「자를 딴 단위로 대는」 사고를 피한다. */
   assert.deepEqual(TIRED_WON.map(w => w / 10),
     [1, 2 / 3, 1 / 3, 0].map(m => Math.round((BEST_CYCLE_WON / 10) * m)),
-    '★질림(작물 종류 체감)이 같이 걷혔다 — 그건 걷으면 안 되는 축이다');
-  /* 무순은 2종째라 **처음부터 한 칸 밀려** 있다. 그 밀림이 그대로 남아 있나 */
-  assert.equal(overlapSavedWon(TEST_RULES, 3, 0, 1), cropCycleSavedWon(TEST_RULES, 3, 1, 1),
-    '★무순의 종류 순번(2종째 = ×2/3)이 사라졌다');
+    '★질림 배율표가 없어졌다 — `cropOverlapTiredEnabled` 문이 읽을 것이 사라진다');
+  /* ★ 무순은 이제 **자기 표대로** 난다 — 「2종째라 한 칸 밀려 있다」가 없어졌다.
+     ⚠ 숫자를 안 박는다: 무순 최상은 종류 순번 0 으로 읽은 값과 **같아야** 한다. */
+  assert.equal(overlapSavedWon(TEST_RULES, 3, 0, 1), cropCycleSavedWon(TEST_RULES, 3, 0, 1),
+    '★무순이 아직 종류 순번만큼 깎인다 — 질림이 어디선가 다시 물린다');
+  /* ★ 그리고 **둘째 몫 규칙이 그 자리를 대신 맡았는지**를 같이 잰다(확정문 §6).
+     이게 없으면 「질림을 걷었다」가 「물리는 일이 아예 없어졌다」와 구별이 안 된다. */
+  assert.ok(TEST_RULES.cropSecondMealSameWon < TEST_RULES.cropMealPortionWon,
+    '★같은 작물로 채운 둘째 몫이 첫 몫과 같은 값이다 — 물리는 일이 사라졌다');
 }
 {
   const fp = createFirstPlayState({ rules: TEST_RULES });
@@ -377,11 +399,22 @@ function growCycle(dli) {
     '★여섯 시루를 같은 날 거둔 값이 한 시루의 여섯 배가 아니다');
   assert.equal(six.overlapCount, 5, '겹친 시루 수를 안 세고 있다 — 세는 것 자체는 안 걷었다');
   assert.equal(six.overlapLostWon, 0, '★못 받은 몫이 생겼다');
-  /* ★ 그런데 **먹는 것은 하루 300g 그대로다** — 늘어난 것은 「손에 들어온 양」이지
-     「밥값 절감」이 아니다. 그 문지기가 아직 서 있는지 여기서 같이 잰다. */
+  /* ★ 그런데 **먹는 것은 한 몫뿐이다** — 늘어난 것은 「손에 들어온 양」이지
+     「밥값 절감」이 아니다. 그 문지기가 아직 서 있는지 여기서 같이 잰다.
+   ⚠⚠ **2026-08-17 밤 — 이 줄이 재던 값이 바뀌었다.** 옛 줄은
+     `eaten.savedWon === TEST_RULES.dailyCropSaveWon`(= 3,000원 = 300g)이었다.
+     이제 하루 몫이 **「몫」으로 갈렸다**(확정문 §1 · first_play §몫):
+       콩나물만 있는 판에서는 **첫 몫 하나(2,500원 · 300g)** 만 먹는다.
+       둘째 몫은 같은 작물이라 1,200원(4.00원/g)인데 파는 값이 7원/g 이라 **안 먹는다.**
+     ⇒ 확정문 §3 의 *"콩나물은 첫 300g만 먹고 나머지는 판다"* 가 여기서 그대로 나온다.
+   ★ 숫자를 안 박는다 — 규칙에서 읽는다. */
   const eaten = eatFromPantry(fp);
-  assert.equal(eaten.savedWon, TEST_RULES.dailyCropSaveWon,
-    '★여섯을 거뒀다고 하루에 먹는 몫이 늘었다 — 300g 상한이 무너졌다');
+  assert.equal(eaten.savedWon, TEST_RULES.cropMealPortionWon,
+    '★여섯을 거뒀다고 하루에 먹는 몫이 늘었다 — 몫 상한이 무너졌다');
+  assert.equal(eaten.savedGrams, TEST_RULES.dailyCropGrams,
+    '★콩나물 한 몫(300g)보다 많이/적게 먹었다');
+  assert.ok(eaten.savedWon < TEST_RULES.dailyCropSaveWon,
+    '★둘째 몫까지 먹었다 — 같은 작물 둘째 몫은 파는 것이 나아서 안 먹어야 한다(확정문 §3)');
 }
 
 {

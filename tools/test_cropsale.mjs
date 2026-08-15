@@ -127,8 +127,13 @@ console.log('\n== B. 손익분기 — 지갑에서 나가는 씨앗값으로 잰
        (first_play §그램 — 중간빛 300g 기준 ±100g).
      ★ 무순은 그램 표가 없어 값이 한 푼도 안 움직였다 — 32.1% 그대로다.
        ⇒ 두 작물이 또 갈렸다. 한 값만 보고 「다 내려갔다」로 읽으면 안 된다(2026-08-09 과 같은 함정). */
+  /* ⚠⚠ 2026-08-17 — **무순 쪽이 또 움직였다. 32.1% 가 여기 박혀 있었다.**
+     ① 질림(×2/3)을 걷어서 무순 최상 회전분이 1,867 → 3,000원(300g)이 됐다(확정문 §6)
+     ② `shop.cropBreakEvenRate` 가 인자 셋으로 부르며 **작물 순번을 질림 축으로도 넘기고**
+        있었다 — 그대로 두면 없는 벌이 계속 걸린다. 넷째 인자로 갈라 넘기게 고쳤다.
+     ⇒ 600 / 3,000 = **20.0%**. 콩나물은 한 푼도 안 움직였다(12.5%). */
   assert.equal(bean.toFixed(3), '0.125', `★콩나물 손익분기가 12.5%가 아니다: ${bean}`);
-  assert.equal(musun.toFixed(3), '0.321', `★무순 손익분기가 32.1%가 아니다: ${musun}`);
+  assert.equal(musun.toFixed(3), '0.200', `★무순 손익분기가 20.0%가 아니다: ${musun}`);
   /* ★ 정가로 셈하면 11.7%가 나온다 — 그 값이 아님을 못 박는다 */
   assert.notEqual(bean.toFixed(3), '0.117', '★손익분기를 정가로 셈하고 있다');
   ok(`손익분기 콩나물 ${(bean * 100).toFixed(1)}% · 무순 ${(musun * 100).toFixed(1)}%`);
@@ -150,9 +155,17 @@ console.log('\n== C. ★끼니로 쓸 수 있는 것은 안 팔린다 ==');
   assert.throws(() => sellCropSurplus(S), (e) => e.tutorialInput === true && /넘길 잉여가 없습니다/.test(e.message),
     '★팔 것이 없는데 안 막았다');
   /* 그리고 그 3,000원은 **여전히 밥으로 나온다** */
+  /* ⚠⚠ 2026-08-17 — 여기서 재던 것이 바뀌었다. 옛 줄은
+       `bite.savedWon === min(dailyCropSaveWonOf(fp), W0)` = **4,000원**(한 회전분 통째)였다.
+     확정문 §1 이 밥을 「몫」으로 바꿨다 — 콩나물 400g 은 **첫 몫 300g** 을 채우고 100g 이
+     남는다. 그 100g 은 둘째 몫을 못 채우고, 채워도 같은 작물이라 4.00원/g 이라 **판다**.
+     ⇒ 밥값은 **한 몫 = 2,500원**이고 곳간에서는 3,000원(300g)이 빠진다. 두 수가 다르다. */
   const bite = eatFromPantry(fp);
-  assert.equal(bite.savedWon, Math.min(dailyCropSaveWonOf(fp), W0),
-    '★파는 창구가 생기면서 밥이 줄었다');
+  assert.equal(bite.savedWon, RULES.cropMealPortionWon, '★첫 몫이 온전히 안 들어왔다');
+  assert.equal(bite.savedGrams, RULES.dailyCropGrams, '★콩나물 한 몫이 300g 이 아니다');
+  assert.equal(bite.pantryUsedWon, RULES.dailyCropGrams * 10,
+    '★곳간에서 빠진 물건 값이 300g 어치가 아니다');
+  assert.equal(fp.food.pantryWon, W0 - bite.pantryUsedWon, '★남는 100g 이 곳간에 안 남았다');
   ok('시루 하나짜리 판에는 팔 것이 아예 없다 — 곳간에 든 몫은 손도 못 댄다');
 }
 
@@ -186,10 +199,20 @@ console.log('\n== E. ★파는 것이 곳간을 한 푼도 안 건드린다 (★
   assert.equal(fp.food.pantryWon, before, '★★팔았더니 곳간이 줄었다 — 끼니를 팔았다');
   assert.equal(r.pendingWon, LOST4);
   assert.equal(r.won, Math.round(LOST4 * RULES.cropSurplusSaleRate));
-  /* 다 팔고 나서도 밥은 그대로 나온다 — 5일에 걸쳐 6,000원이 다 나온다 */
-  let ate = 0;
-  for (let d = 0; d < CYCLE; d++) ate += eatFromPantry(fp).savedWon;
-  assert.equal(ate, SUM4, '★판 뒤에 먹을 몫이 줄었다');
+  /* 다 팔고 나서도 곳간의 것은 **그대로 밥이 된다** — 며칠에 걸쳐 다 나간다.
+     ⚠⚠ 2026-08-17 — 옛 줄은 `ate === SUM4`(밥값 합계 = 곳간 총액)였다. 확정문 §1 이
+       두 단위를 갈라서(§몫) **더는 같은 수가 아니다** — 곳간 300g(3,000원)이 밥값
+       2,500원이 된다. ⇒ 재는 자리를 **곳간에서 빠진 물건 값**으로 옮긴다. 그게 이 절이
+       원래 지키려던 것(「판 것이 곳간을 안 갉았다」)에 정확히 맞는 자다. */
+  let ate = 0, drained = 0;
+  for (let d = 0; d < CYCLE + 2; d++) {
+    const b = eatFromPantry(fp);
+    ate += b.savedWon; drained += b.pantryUsedWon;
+  }
+  assert.equal(drained, SUM4, '★판 뒤에 곳간에서 먹을 것이 줄었다');
+  assert.equal(fp.food.pantryWon, 0, '★곳간이 안 비었다');
+  assert.ok(ate > 0 && ate < SUM4,
+    '★밥값이 곳간 총액과 같다 — 두 단위가 안 갈렸다(§몫)');
   /* 두 번은 못 판다 */
   assert.throws(() => sellCropSurplus(S), (e) => e.tutorialInput === true,
     '★같은 잉여를 두 번 팔았다');
@@ -364,11 +387,17 @@ console.log('\n== K. ★★★ **게임 규칙에서는 잉여가 아예 안 생
   assert.equal(q.won, Math.round(W0 * RULES.cropSurplusSaleRate),
     '★곳간 한 판을 넘긴 값이 판매가와 안 맞는다');
 
-  /* ④ 그리고 **먹는 몫은 하루 300g 그대로다** — 늘어난 것은 손에 든 양이지 밥값이 아니다 */
-  assert.equal(eatFromPantry(fp).savedWon, dailyCropSaveWonOf(fp),
-    '★여섯을 거뒀다고 하루에 먹는 몫이 늘었다 — 300g 상한이 무너졌다');
-  ok(`여섯을 같은 날 거둬도 ${(6 * W0).toLocaleString()}원어치가 온전히 곳간에 든다 · 잉여 0 · 하루 몫은 ` +
-     `${dailyCropSaveWonOf(fp).toLocaleString()}원 그대로 · 남는 것은 곳간에서 팔린다`);
+  /* ④ 그리고 **먹는 몫은 한 몫 그대로다** — 늘어난 것은 손에 든 양이지 밥값이 아니다.
+     ⚠⚠ 2026-08-17 — 옛 줄은 `savedWon === dailyCropSaveWonOf(fp)`(= 3,000원 = 300g)였다.
+       확정문 §1 이 밥을 「몫」으로 바꿨고, 이 판은 **콩나물만** 있으므로 첫 몫 하나뿐이다.
+       둘째 몫은 같은 작물이라 1,200원(4.00원/g) < 파는 값 7원/g 이라 **안 먹고 판다**(§3). */
+  const bite6 = eatFromPantry(fp);
+  assert.equal(bite6.savedWon, RULES.cropMealPortionWon,
+    '★여섯을 거뒀다고 하루에 먹는 몫이 늘었다 — 몫 상한이 무너졌다');
+  assert.equal(bite6.portions.length, 1,
+    '★같은 작물로 둘째 몫까지 먹었다 — 파는 것이 나은데 먹고 있다(확정문 §3)');
+  ok(`여섯을 같은 날 거둬도 ${(6 * W0).toLocaleString()}원어치가 온전히 곳간에 든다 · 잉여 0 · ` +
+     `밥은 첫 몫 ${RULES.cropMealPortionWon.toLocaleString()}원뿐 · 남는 것은 곳간에서 팔린다`);
 }
 
 console.log(`\n★ tools/test_cropsale.mjs — ${n}벌 전부 통과\n`);

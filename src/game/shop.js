@@ -926,8 +926,13 @@ export function sellCutting(S, cuttingOrId, opt = {}) {
      고장이 아니라 판단이고, 그 판단은 박사님 것이다. */
 export function cropBreakEvenRate(kindId = 'beansprout') {
   const k = CROP_KINDS[cropKindIndexOf(kindId)];
+  /* ⚠⚠ 2026-08-17 — **셋째 인자를 0 으로 못 박았다.** 예전에는 `cropCycleSavedWon(R, 3, i)`
+     처럼 인자 셋으로 불렀고, 그러면 넷째(`kindIndex`)가 셋째(`tiredIndex`)를 따라가
+     **무순에 질림 배율 ×2/3 이 같이 걸렸다.** 질림이 걷힌 지금(first_play §질림 2026-08-17)
+     그 곱은 없는 벌이라, 무순 손익분기가 20.0% 대신 32.1% 로 **잘못 나온다.**
+     ⇒ 「어느 작물인가」와 「몇 번째로 거뒀나」는 다른 축이다. 넷째 인자로 갈라서 넘긴다. */
   const fullWon = cropCycleSavedWon(FIRST_PLAY_RULES, FIRST_PLAY_RULES.qualityMaxMeals,
-                                    cropKindIndexOf(kindId));
+                                    0, cropKindIndexOf(kindId));
   if (!(fullWon > 0)) throw new Error(`[상점] ${kindId} 의 한 회전분이 0원입니다`);
   return buyPriceOf(k.seedItemId) / fullWon;
 }

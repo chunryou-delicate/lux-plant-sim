@@ -58,12 +58,25 @@ check('A ★하루 지출 = 월세/주기 + 공과/주기 + 식비 (월세를 �
 });
 
 /* ══ B · 잉여 판매가율 — 정본(JSON)과 폴백(코드)이 같은가 ═══════════════════ */
-check('B 잉여 판매가율 — characters.json 정본 = first_play 폴백', () => {
-  const meta = CHARS._meta.cropSurplusSaleRate;
-  assert.equal(FIRST_PLAY_RULES.cropSurplusSaleRate, meta,
-    `폴백(${FIRST_PLAY_RULES.cropSurplusSaleRate})이 정본(${meta})과 갈렸습니다`);
-  assert.equal(RULES.cropSurplusSaleRate, meta, 'firstPlayRulesFromBalance 가 정본을 안 읽었습니다');
-  assert.ok(meta <= 1, '★1.00 을 넘기면 「밥보다 파는 게 낫다」가 되어 뼈대가 뒤집힙니다');
+/* ⚠⚠ **2026-08-17 — 이 절이 지키던 약속이 뒤집혔다.**
+     옛 약속 — *"판매가율의 **정본은 `characters.json._meta.cropSurplusSaleRate`(0.85)** 이고
+       `FIRST_PLAY_RULES` 는 폴백이다. 둘이 같아야 한다."*
+   박사님 확정문 §1 이 파는 값을 **작물마다** 정했다(콩나물 7원/g · 무순 8원/g).
+   ⇒ 한 값으로는 못 적으므로 정본이 **작물 표**로 옮겨 갔고, `_meta` 칸은 **지웠다.**
+     그 칸이 살아 있으면 `firstPlayRulesFromBalance` 가 그것을 먼저 읽어 작물 표를 덮어쓴다.
+   ⇒ 이 절이 이제 지키는 것 셋: ① `_meta` 에 그 칸이 **없다** ② 전역값이 숫자를 안 갖고
+     `CROP_KINDS[0]` 을 가리킨다 ③ 위끝(1.00)은 그대로다. */
+check('B 판매가 — 정본은 작물 표다 (_meta 의 한 값이 아니다)', () => {
+  assert.equal(CHARS._meta.cropSurplusSaleRate, undefined,
+    '★characters.json 에 cropSurplusSaleRate 가 살아 있습니다 — 작물 표를 덮어씁니다(확정문 §1)');
+  const fallback = CROP_KINDS[0].sellWonPerGram / 10;
+  assert.equal(FIRST_PLAY_RULES.cropSurplusSaleRate, fallback,
+    `전역 폴백(${FIRST_PLAY_RULES.cropSurplusSaleRate})이 콩나물 값(${fallback})과 갈렸습니다`);
+  assert.equal(RULES.cropSurplusSaleRate, fallback,
+    'firstPlayRulesFromBalance 가 폴백을 안 읽었습니다');
+  for (const k of CROP_KINDS)
+    assert.ok(k.sellWonPerGram / 10 <= 1,
+      `★${k.ko} 파는 값이 물건 값(10원/g)을 넘습니다 — 뼈대가 뒤집힙니다`);
 });
 
 /* ══ C · ★씨앗값 정본이 한 벌인가 — 이게 넉 달째 갈려 있던 그 자리다 ═══════
@@ -97,13 +110,30 @@ check('E 확정 골든값 — 시작돈 · 월세 · 회전분 · 판매가율',
   assert.equal(TUTORIAL_RULES.startCashWon, 1_500_000, '시작돈');
   assert.equal(BANJIHA.rent, 200_000, '반지하 월세');
   assert.equal(TUTORIAL_RULES.dailySpendWon, 16_667, '하루 지출');
-  assert.equal(CHARS._meta.cropSurplusSaleRate, 0.85, '잉여 판매가율');
   /* ⚠ 2026-08-16 — 값(3,000)은 그대로인데 **뜻이 바뀌었다**: 「최상 품질」이 아니라
      「중간 품질(300g)」이다. 최상은 400g = 4,000원이다(§그램). */
   assert.equal(CROP_KINDS[0].savedWonPerCycle, 3_000, '콩나물 회전분(중간 품질 300g)');
   assert.equal(CROP_KINDS[0].gramsPerCycle, 300, '콩나물 기준 수확량(g)');
   assert.equal(CROP_KINDS[0].gramsPerQualityStep, 100, '품질 한 칸당 ±g');
-  assert.equal(CROP_KINDS[1].savedWonPerCycle, 2_800, '무순 회전분');
+  /* ══ ★★ 2026-08-17 박사님 확정문 §1 의 표 — **이것이 정본이다** ═══════════════
+     ⚠ 여기 `CROP_KINDS[1].savedWonPerCycle` 에 **2,800** 이 박혀 있었다. 그 값은
+       「질림(×2/3)이 붙기 전의 기본값」이었고 실제 곳간에 들던 것은 1,867원이었다.
+       질림을 걷으면서(확정문 §6) 기본값이 곧 곳간 값이 되므로 확정문 표대로 2,000 이다. */
+  assert.equal(CROP_KINDS[1].savedWonPerCycle, 2_000, '무순 회전분(중간 품질 200g)');
+  assert.equal(CROP_KINDS[1].gramsPerCycle, 200, '무순 기준 수확량(g)');
+  assert.equal(CROP_KINDS[1].harvestDays, 7, '무순 주기');
+  assert.equal(CROP_KINDS[0].mealPortionGrams, 300, '콩나물 몫당 필요량');
+  assert.equal(CROP_KINDS[1].mealPortionGrams, 200, '무순 몫당 필요량');
+  assert.equal(CROP_KINDS[0].sellWonPerGram, 7, '콩나물 파는 값(원/g)');
+  assert.equal(CROP_KINDS[1].sellWonPerGram, 8, '무순 파는 값(원/g)');
+  assert.equal(RULES.cropMealPortionWon, 2_500, '첫 몫');
+  assert.equal(RULES.cropSecondMealSameWon, 1_200, '둘째 몫(같은 작물)');
+  assert.equal(RULES.cropMealCapWon, 5_000, '하루 최대');
+  /* ★ 빛 경계 — 확정문 §1. 무순만 움직였다(콩나물은 0.3 · 1.0 그대로) */
+  assert.equal(CROP_KINDS[1].quality[0].minDli, 0.35, '무순 최상 경계');
+  assert.equal(CROP_KINDS[1].quality[1].minDli, 0.15, '무순 중간 경계');
+  assert.equal(CROP_KINDS[0].quality[0].maxDli, 0.3, '콩나물 최상 경계');
+  assert.equal(CROP_KINDS[0].quality[1].maxDli, 1.0, '콩나물 중간 경계');
 });
 
 /* ══ F · ★질림은 한 표인가 — 표를 가르고 나서도 그 사상이 사나 ═════════════
@@ -117,10 +147,16 @@ check('E 확정 골든값 — 시작돈 · 월세 · 회전분 · 판매가율',
      *"하루 수확량을 개수에 따라 조절하라는 게 아니었는데… 식량으로 사용할 수 있는
        G수를 조절하란 거지.. 최대 300G로."*
    ⇒ **표는 여전히 하나다. 다만 그 표를 읽는 축이 하나로 줄었다** — 작물 **종류**뿐이다.
-   ⇒ 그래서 이 절이 이제 재는 것은 둘이다:
-       ① 표(종류 축)가 배율을 그대로 따르나 — **예전 그대로**
-       ② 그날 순번은 표를 **안 건드리나** — ★ 이번에 새로 지키는 것 */
-check('F ★질림 배율은 한 표다 — 그 표를 읽는 축은 이제 **작물 종류** 하나다', () => {
+
+   ══ ⚠⚠ 2026-08-17 **밤** — 그 하나마저 없어졌다 (확정문 §6) ════════════════════
+   *"질림은 「둘째 몫」 규칙이 **대신한다.** 두 벌로 두지 마라."*
+   ⇒ **작물 종류 축도 표를 안 읽는다.** 「같은 것만 먹으면 물린다」는 이제 **밥상에서**
+     잰다(first_play §몫 — 같은 작물로 채운 둘째 몫은 2,500 이 아니라 1,200원).
+   ⇒ 그래서 이 절이 이제 재는 것은 셋이다:
+       ① 배율표 **자체**는 성한가 — `cropOverlapTiredEnabled` 문이 아직 읽는다
+       ② 두 축(그날 순번 · 작물 종류)이 **표를 안 건드리나** — 이번에 새로 지키는 것
+       ③ 문을 열면 옛 겹침 셈이 그대로 돌아오나 */
+check('F ★질림 배율표는 살아 있다 — 그런데 그것을 읽는 축이 하나도 안 남았다', () => {
   assert.deepEqual([...CROP_TIRED_MULTIPLIER], [1, 2 / 3, 1 / 3, 0], '질림 배율표');
   /* ⚠⚠ 2026-08-16 — 여기 **3,000 / 2,000 / 1,000 / 0 이 박혀 있었다.** 그것이 이 줄이
      지키던 옛 약속이다. g 셈이 들어와 콩나물 최상 품질이 400g = 4,000원이 되면서
@@ -141,9 +177,13 @@ check('F ★질림 배율은 한 표다 — 그 표를 읽는 축은 이제 **�
   const PEN = Object.freeze({ ...RULES, cropOverlapTiredEnabled: true });
   assert.deepEqual([0, 1, 2, 3].map(i => overlapSavedWon(PEN, 3, i, 0)), beanG.map(g => g * 10),
     '★문(cropOverlapTiredEnabled)을 열었는데 옛 겹침 셈이 안 돌아온다');
-  /* 무순은 2종째라 한 칸 밀려 시작한다 — 2,800 × 2/3 = 1,867 */
-  assert.equal(cropCycleSavedWon(RULES, 3, 1, 1), 1_867, '무순 한 회전(2종째)');
-  /* 넷째부터 0 — 표 밖은 지어내지 않는다 */
+  /* ★★ ② 작물 **종류** 축도 표를 안 건드린다 (2026-08-17 밤 · 확정문 §6).
+     ⚠ 이 자리에 *"무순은 2종째라 한 칸 밀려 시작한다 — 2,800 × 2/3 = **1,867**"* 이
+       박혀 있었다. 그것이 이 줄이 지키던 옛 약속이다. 이제 무순은 자기 표대로 난다. */
+  assert.equal(overlapSavedWon(RULES, 3, 0, 1), cropCycleGrams(RULES, 3, 0, 1) * 10,
+    '★무순이 아직 종류 순번만큼 깎입니다 — 질림이 어디선가 다시 물립니다');
+  assert.equal(cropCycleGrams(RULES, 3, 0, 1), 300, '무순 최상 품질 300g (확정문 §1)');
+  /* 넷째부터 0 — 표 밖은 지어내지 않는다 (문을 열었을 때의 이야기다) */
   assert.equal(cropCycleSavedWon(RULES, 3, 9, 0), 0, '표 밖 순번');
 });
 
@@ -154,25 +194,30 @@ check('F ★질림 배율은 한 표다 — 그 표를 읽는 축은 이제 **�
      `overlapSavedWon(RULES, 3, 1, 0)`(콩나물 **그날 둘째**)로 재고 있었다.
      겹침의 벌이 걷혔으므로 그 자리는 **작물 종류 축**(`cropCycleSavedWon(…, 1, 0)`)으로
      옮긴다 — 지키려던 것(「콩나물 칸에 무순 값이 새어 들지 않는다」)은 그대로다. */
-check('G ★무순 회전분만 움직였다 — 콩나물 질림 표는 그대로다', () => {
+check('G ★두 작물의 값이 서로 안 샌다 — 각자 자기 표대로 난다', () => {
   assert.equal(cropBaseSavedWonOf(RULES, 0), 3_000, '콩나물 기본값');
-  assert.equal(cropBaseSavedWonOf(RULES, 1), 2_800, '무순 기본값');
-  /* 콩나물 둘째 칸은 「콩나물 기본값 × 2/3」이지 「무순 기본값」이 아니다 */
-  /* ⚠ 2026-08-16 — 「콩나물 둘째 = 2,000원」이 박혀 있었다. 이제 4,000 × 2/3 = 2,670원이다.
-     지킬 것은 「**콩나물** 기본값에 질림이 걸리는가」이지 그 수가 아니다. */
-  assert.equal(cropCycleSavedWon(RULES, 3, 1, 0),
-    Math.round(cropCycleGrams(RULES, 3, 0, 0) * (2 / 3)) * 10,
-    '콩나물 둘째 칸이 무순 값을 받고 있습니다 — 표가 아직 하나입니다');
+  /* ⚠⚠ 2026-08-17 — 여기 **2,800** 이 박혀 있었다(질림이 붙기 전의 기본값).
+     확정문 §1 이 무순 중간 품질을 200g 으로 정했으므로 2,000 이다. */
+  assert.equal(cropBaseSavedWonOf(RULES, 1), 2_000, '무순 기본값');
   /* ⚠ 2026-08-16 — 품질 배수가 **끼니/3 에서 「중간빛 300g ±100g」으로 바뀌었다**(§그램).
      2끼(살짝 초록)는 300g = 3,000원이다 — 예전 2,000원이 아니다. */
-  assert.equal(overlapSavedWon(RULES, 2, 0, 0), 3_000, '콩나물 첫째 · 2끼 품질 = 300g');
-  assert.equal(overlapSavedWon(RULES, 3, 0, 0), 4_000, '콩나물 첫째 · 3끼 품질 = 400g');
-  assert.equal(overlapSavedWon(RULES, 1, 0, 0), 2_000, '콩나물 첫째 · 1끼 품질 = 200g');
-  /* ★ 무순은 2종째라 **질림 순번이 1에서 시작한다.** 그날 첫 무순도 이미 ×2/3 다 —
-     「그날 첫째」와 「질림 순번 0」은 다른 말이다. 여기 헷갈리면 표를 잘못 읽는다. */
-  assert.equal(overlapSavedWon(RULES, 3, 0, 1), 1_867, '무순 그날 첫째 · 3끼 = 2,800 × 2/3');
-  assert.equal(overlapSavedWon(RULES, 1, 0, 1), Math.round(2_800 * (2 / 3) / 3),
-    '무순 그날 첫째 · 1끼 품질 = 2,800 × 2/3 × 1/3');
+  assert.equal(overlapSavedWon(RULES, 2, 0, 0), 3_000, '콩나물 · 2끼 품질 = 300g');
+  assert.equal(overlapSavedWon(RULES, 3, 0, 0), 4_000, '콩나물 · 3끼 품질 = 400g');
+  assert.equal(overlapSavedWon(RULES, 1, 0, 0), 2_000, '콩나물 · 1끼 품질 = 200g');
+  /* ★ 무순 — 확정문 §1 의 300 / 200 / 100g.
+     ⚠⚠ 옛 줄은 *"무순은 2종째라 **질림 순번이 1에서 시작한다.** 그날 첫 무순도 이미 ×2/3 다"*
+       라고 적고 1,867 · 622 를 못 박고 있었다. 그 밀림이 이번에 없어졌다(확정문 §6). */
+  assert.equal(overlapSavedWon(RULES, 3, 0, 1), 3_000, '무순 · 3끼 품질 = 300g');
+  assert.equal(overlapSavedWon(RULES, 2, 0, 1), 2_000, '무순 · 2끼 품질 = 200g');
+  assert.equal(overlapSavedWon(RULES, 1, 0, 1), 1_000, '무순 · 1끼 품질 = 100g');
+  /* ★ 그리고 **한쪽을 고쳐도 다른 쪽이 안 따라 움직이는지**를 여기서 잰다 —
+     이 절이 원래 지키던 그것이다. 무순 표를 갈아 끼운 사본에서 콩나물이 안 움직여야 한다. */
+  const swapped = Object.freeze({ ...RULES, cropKindDefs: Object.freeze(
+    RULES.cropKindDefs.map((d, i) => i === 1 ? Object.freeze({ ...d, gramsPerCycle: 999 }) : d)) });
+  assert.equal(cropCycleGrams(swapped, 3, 0, 0), cropCycleGrams(RULES, 3, 0, 0),
+    '★무순 표를 고쳤는데 콩나물이 같이 움직였습니다 — 표가 아직 하나입니다');
+  assert.notEqual(cropCycleGrams(swapped, 3, 0, 1), cropCycleGrams(RULES, 3, 0, 1),
+    '★무순 표를 고쳤는데 무순이 안 움직였습니다 — 표를 안 읽고 있습니다');
 });
 
 /* ══ H · 하루 몫 — **300g** 인가 (2026-08-16 박사님 확정) ══════════════════
@@ -181,20 +226,57 @@ check('G ★무순 회전분만 움직였다 — 콩나물 질림 표는 그대�
      박사님: *"400G 가 오면 300G 까지는 당일 쓸 수 있는 거고 남는 거 팔아먹든 하는 거"*
      ⇒ 하루 몫은 **작물을 통틀어 300g(3,000원)** 이고, 회전분 합계를 안 본다.
      ⇒ 대신 **남는 것이 안 버려지고 곳간에 쌓인다**(곳간 한도를 걷었다). */
-check('H 하루 몫 = 300g (작물 통틀어) · 끼니 상한 아래', () => {
+/* ══ ⚠⚠ 2026-08-17 밤 — **이 절이 지키던 약속이 또 바뀌었다** ════════════════════
+     08-15 까지 — 「하루 저감 상한 = min(회전분 합, 끼니 상한)」 = **4,867원**
+     08-16     — 「작물 통틀어 **300g**(3,000원)」
+     08-17 밤  — ★ **「몫」이다** (확정문 §1). 하루에 몫 둘까지 · 첫 몫 2,500 ·
+                 둘째 몫은 다른 작물이면 2,500 · 같은 작물이면 1,200 · 하루 최대 5,000.
+   ⇒ `dailyCropSaveWon` 의 **단위가 바뀌었다** — 곳간에서 빠지는 물건 값이 아니라
+     **아낄 수 있는 밥값**이다. 그래서 이제 `cropMealCapWon` 과 같은 수다. */
+check('H 하루 몫 = 「몫」이다 (확정문 §1) · 하루 최대는 끼니 상한 그대로', () => {
   const mealCap = CHARS._meta.cropMealCapPerPerson *
                   (CHARS._meta.dailyFoodPerPerson / CHARS._meta.mealsPerDayPerPerson);
-  const perCycle = 3_000 + 1_867;                    // 콩나물(중간 품질) + 무순(2종째)
+  const perCycle = 3_000 + 2_000;                    // 콩나물 + 무순 (둘 다 중간 품질)
   assert.equal(RULES.cropSavedWonPerCycle, perCycle,
     `한 회전 합계가 ${RULES.cropSavedWonPerCycle} 입니다 — ${perCycle} 이어야 합니다`);
-  assert.equal(RULES.dailyCropGrams, 300, '하루 몫(g)');
-  assert.equal(RULES.dailyCropSaveWon, Math.min(300 * 10, mealCap), '하루 몫(원)');
-  assert.equal(RULES.dailyCropSaveWon, 3_000, '하루 몫이 3,000원이 아니다');
+  assert.equal(RULES.dailyCropGrams, CROP_KINDS[0].mealPortionGrams, '콩나물 한 몫(g)');
+  /* ★★ **새 상한을 안 만들었다** — 하루 최대 5,000원은 끼니 상한 그 값이다 */
+  assert.equal(RULES.dailyCropSaveWon, mealCap, '하루 최대가 끼니 상한과 다릅니다');
+  assert.equal(RULES.cropMealPortions, 2, '하루에 채울 수 있는 몫 수');
+  assert.equal(RULES.cropMealPortions * RULES.cropMealPortionWon, RULES.cropMealCapWon,
+    '★몫 수 × 첫 몫이 하루 최대와 안 맞습니다 — 상한이 두 벌이 됐습니다');
   assert.equal(RULES.cropCapBinding, false,
-    '★끼니 상한이 이기고 있습니다 — 300g(3,000원)은 상한 5,000원 아래라야 합니다');
+    '★끼니 상한이 둘째 몫을 막고 있습니다 — 자취생은 2끼라 두 몫이 서야 합니다');
   /* ★★ **곳간은 이제 안 넘친다** — 쌓아 두었다가 팔 수 있어야 하기 때문이다 */
   assert.equal(pantryCapWon({ rules: RULES }), Infinity,
     '★곳간에 한도가 남아 있습니다 — 남는 것이 쉬어서 버려집니다');
+});
+
+/* ══ I · ★★★ 위끝·아래끝 — **확정문 §3 이 게임의 뼈대다** ══════════════════════
+   확정문 §3: *"위끝·아래끝을 지키는 것이 이 표의 전부다."*
+     **위끝** — 첫 몫은 **파는 값보다 비싸다** (안 그러면 「먹느니 판다」가 되어 뼈대가 뒤집힌다)
+     **아래끝** — 둘째 몫(같은 작물)은 **파는 값보다 싸다** (안 그러면 남는 것을 팔 이유가 없다)
+   ⚠ 이 절은 **작물마다** 잰다. 값이 작물마다 갈렸으므로 한 작물만 재면 다른 쪽이 조용히
+     뒤집혀도 안 잡힌다. 지시서가 「검사로 못 박아라」라고 지목한 자리다. */
+check('I ★★위끝·아래끝 — 첫 몫은 파는 값보다 비싸고, 같은 작물 둘째 몫은 싸다', () => {
+  for (let i = 0; i < CROP_KINDS.length; i++) {
+    const k = CROP_KINDS[i];
+    const first = RULES.cropMealPortionWon / k.mealPortionGrams;      // 첫 몫의 원/g
+    const second = RULES.cropSecondMealSameWon / k.mealPortionGrams;  // 둘째(같은 것)의 원/g
+    const sell = k.sellWonPerGram;
+    assert.ok(first > sell,
+      `★위끝이 깨졌습니다 — ${k.ko} 첫 몫 ${first.toFixed(2)}원/g 이 파는 값 ${sell}원/g 보다 싸다`);
+    assert.ok(second < sell,
+      `★아래끝이 깨졌습니다 — ${k.ko} 둘째 몫 ${second.toFixed(2)}원/g 이 파는 값 ${sell}원/g 보다 비싸다`);
+  }
+  /* ★ 확정문 §2 의 본전선 1.40 — 무순 밥 효율이 콩나물의 1.40배**보다는** 커야
+     「7일이나 걸리는」 무순을 심을 이유가 생긴다(밝은 칸 하나를 두고 다투므로). */
+  const eff = i => RULES.cropMealPortionWon / CROP_KINDS[i].mealPortionGrams;
+  const ratio = eff(1) / eff(0);
+  assert.ok(ratio > 1.40,
+    `★무순 밥 효율이 콩나물의 ${ratio.toFixed(2)}배입니다 — 본전선(1.40)을 넘어야 심을 이유가 있습니다`);
+  assert.ok(ratio < 2.0,
+    `★무순이 콩나물의 ${ratio.toFixed(2)}배입니다 — 너무 세면 「무순만 심으면 됨」이 됩니다`);
 });
 
 console.log(fail ? `\n✕ ${fail}개 실패` : '\n✓ 전부 통과');

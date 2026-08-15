@@ -16,6 +16,14 @@
      돌린다 — 규칙 사본만 갈아 끼운다. 그래야 「자가 딴 세상 것」이 안 된다
      (START-HERE §2.9 ④ 가 그 사고다).
 
+   ══ ⚠⚠⚠ 2026-08-17 밤 — **이 프로브가 재는 「후」는 이제 그날의 후가 아니다** ═════════
+   확정문(`docs/handoff/plan-2026-08-17-crop-balance.md`)이 붙으면서 밥이 **「몫」**으로 바뀌었다
+   (첫 몫 2,500 · 같은 작물 둘째 1,200 · 하루 최대 5,000). 이 파일의 「후」 칸은 **지금 엔진**을
+   그대로 돌리므로 그 새 규칙으로 나온다 — 즉 이 표의 전·후 차이에는 **두 변경이 섞여 있다.**
+   ⇒ **지금 셈의 살림 표는 `tools/probe_crop_balance.mjs` 가 정본이다.** 이 파일은
+     2026-08-16·17 두 날의 기록으로 남긴다(옛 규칙 사본은 아래에 값으로 박아 뒀다).
+   ⇒ 아래 「85%」·「하루 300g」 같은 머리말 문구도 그날의 값이다. 지금 값이 아니다.
+
    옛 셈을 어떻게 되살렸나 — 규칙 사본 셋을 바꾼다:
      ① `cropKindDefs`   그램 표를 뺀 사본 → 회전분이 옛 비율 셈(3,000/2,000/1,000)으로 돌아간다
      ② `dailyCropSaveWon` 4,867원(= min(회전분 합, 끼니 상한))
@@ -43,23 +51,27 @@ const RATE = NEW.cropSurplusSaleRate;
 const CYCLE = NEW.harvestDays;
 const DARK = 0.2;            // 콩나물 최상 품질(하얗고 아삭)이 나오는 어두운 자리
 
-/* 옛 셈 — 그램 표를 뺀 종류 사본 + 옛 하루 몫 + 곳간 한도 */
-const OLD_DEFS = NEW.cropKindDefs.map(d => {
+/* 옛 셈 — 그램 표를 뺀 종류 사본 + 옛 하루 몫 + 곳간 한도
+   ⚠⚠ **2026-08-17 밤 — 이 「옛 셈」을 유도로 못 세우게 됐다.** 확정문(§1·§6)이 붙으면서
+     ① 무순 회전분이 2,800 → 2,000 이 되고 ② 질림(×2/3)이 걷혀서, 지금 규칙에서 옛 식을
+     다시 돌리면 4,867 이 아니라 5,000 이 나온다.
+   ⇒ **2026-08-16 당시의 값을 그대로 박는다.** 이 표는 그날의 전·후를 재는 **역사 기록**이고,
+     지금 규칙에서 유도하면 「자가 딴 세상 것」이 된다(START-HERE §2.9 ④).
+   ★ 지금 셈의 살림 표는 여기가 아니라 `tools/probe_crop_balance.mjs` 가 낸다. */
+const OLD_DEFS = NEW.cropKindDefs.map((d, i) => {
   const { gramsPerCycle, gramsMidMeals, gramsPerQualityStep, ...rest } = d;
-  return Object.freeze(rest);
+  /* 2026-08-16 당시의 작물 기본값 — 콩나물 3,000 · 무순 **2,800**(질림 전) */
+  return Object.freeze({ ...rest, savedWonPerCycle: i === 1 ? 2_800 : 3_000 });
 });
 const OLD = Object.freeze({
   ...NEW,
   cropKindDefs: Object.freeze(OLD_DEFS),
-  dailyCropSaveWon: Math.min(NEW.cropSavedWonPerCycle,
-                             NEW.dailyCropMealCap * (NEW.dailyFoodWon / NEW.mealsPerDayPerPerson || 1)),
+  cropBaseSavedWon: Object.freeze([3_000, 2_800, 2_800]),
+  cropKindSavedWon: Object.freeze([3_000, 1_867, 933]),   // 기본값 × 질림 (그때 셈)
   pantryCapEnabled: true
 });
-/* ⚠ 위 `dailyCropSaveWon` 을 **재서 확인한다** — 옛 값이 4,867원이 아니면 이 표가 통째로 거짓이다 */
-const OLD_DAILY = Math.min(NEW.cropSavedWonPerCycle,
-                           NEW.dailyCropMealCap * (NEW.dailyFoodWon / 2));
+const OLD_DAILY = 4_867;                                  // 3,000 + 1,867 (2026-08-16 실측값)
 const OLD_RULES = Object.freeze({ ...OLD, dailyCropSaveWon: OLD_DAILY });
-assert.equal(OLD_RULES.dailyCropSaveWon, 4867, `옛 하루 몫이 4,867원이 아니다: ${OLD_RULES.dailyCropSaveWon}`);
 assert.equal(cropCycleSavedWon(OLD_RULES, 3, 0, 0), 3000, '옛 회전분이 3,000원이 아니다');
 assert.equal(cropCycleSavedWon(NEW, 3, 0, 0), 4000, '새 회전분이 4,000원이 아니다');
 

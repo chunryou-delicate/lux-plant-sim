@@ -76,11 +76,30 @@ import { spotOf } from './place.js';
                        100원 단위로 올린 것이다. 350원 → **실구매 500원**.
        savedWonPerCycle ★ 2026-08-09 신설 — 이 작물 한 회전이 내는 **작물 기본값**.
                      질림이 **하나도 안 붙은** 값이다. 실제 절감은 여기에 §질림 배율을 곱한다.
+       gramsPerCycle · gramsMidMeals · gramsPerQualityStep
+                     ★ 한 회전 수확량(g)의 표. 기준점(`gramsMidMeals` 끼니)에서 한 칸
+                       좋아질 때마다 `gramsPerQualityStep` 만큼 는다(§그램).
+       mealPortionGrams ★★ 2026-08-17 신설 — **한 「몫」을 채우는 g**(아래 §몫).
+                     콩나물 300g · 무순 200g. 몫 하나가 곧 한 끼(2,500원)다.
+       sellWonPerGram   ★★ 2026-08-17 신설 — **팔 때 g 당 받는 원.** 콩나물 7 · 무순 8.
+                     ⚠ 예전에는 `cropSurplusSaleRate` **한 값**(0.85)이 두 작물을 같이 덮었다.
+                       확정문 §1 이 7원/g · 8원/g 으로 갈랐으므로 값도 갈랐다(§판매).
        wantsLight    true = 밝아야 좋다(무순) · false = 어두워야 좋다(콩나물)
        quality       DLI 대역 → 품질. `minDli` 이상 · `maxDli` 이하일 때 그 대역이다.
-                     ★ 두 작물이 **같은 눈금(0.3 · 1.0)을 반대 방향으로** 쓴다.
-                       한쪽이 3끼인 자리가 다른 쪽은 1끼다 — 그래야 자리가 진짜 선택이 된다.
+                     ★ 두 작물이 **한 눈금을 반대 방향으로** 쓴다 — 한쪽이 3끼인 자리가
+                       다른 쪽은 1끼다. 그래야 자리가 진짜 선택이 된다.
+                     ⚠ 2026-08-17 — 무순 쪽 눈금이 **0.35 · 0.15** 로 내려왔다(확정문 §4).
+                       콩나물(0.3 · 1.0)과 더는 같은 수가 아니다. 까닭은 무순 표 옆에 적었다.
 ============================================================ */
+/* ★ 환산 — **10원 = 1g**. 박사님이 주신 두 수(300g ↔ 3,000원)에서 그대로 나온다.
+   ⚠ 이 값을 화면에 적지 마라. 화면은 g 만 말하고 환산은 여기 한 줄이다.
+   ★★ 이것은 **「물건 값」**이다 — 곳간이 무엇을 얼마나 갖고 있나를 세는 단위.
+     **밥 효율(8.33 · 12.50원/g)도 파는 값(7 · 8원/g)도 이 값과 별개다**(확정문 §1 아래 ⚠).
+     셋을 한 값으로 묶는 순간 「먹느니 파는 게 낫다」가 작물마다 제멋대로 뒤집힌다.
+   ⚠ 선언이 여기 위에 있는 까닭 — 아래 `CROP_KINDS`·`FIRST_PLAY_RULES` 가 이 값을 읽는다.
+     상세한 머리말은 아래 §그램 에 있다. */
+export const WON_PER_GRAM = 10;
+
 export const CROP_KINDS = Object.freeze([
   Object.freeze({
     id: 'beansprout', ko: '콩나물',
@@ -115,6 +134,19 @@ export const CROP_KINDS = Object.freeze([
     gramsPerCycle: 300,
     gramsMidMeals: 2,
     gramsPerQualityStep: 100,
+    /* ══ ★★★ **몫당 필요량 · 파는 값** (2026-08-17 박사님 확정 · §몫) ═══════════════
+       정본은 `docs/handoff/plan-2026-08-17-crop-balance.md §1` 의 표다. 여기 두 칸이 그 표다.
+         mealPortionGrams  한 「몫」(끼니 하나)을 채우는 데 드는 g. 콩나물 **300g**
+         sellWonPerGram    팔 때 g 당 받는 원. 콩나물 **7원/g**
+       ⚠ **10원 = 1g(`WON_PER_GRAM`)은 「물건 값」이고 밥 효율은 그것과 별개다**(확정문 §1 아래).
+         콩나물 한 몫은 300g 에 2,500원이라 **8.33원/g** 이고, 파는 값은 **7원/g** 이다.
+         셋을 한 값으로 묶으면 「먹느니 파는 게 낫다」가 작물마다 제멋대로 뒤집힌다.
+       ★ 위끝·아래끝(확정문 §3)이 이 두 칸의 관계로 지켜진다 —
+           첫 몫 8.33 > 파는 값 7.0   ⇒ **먹는 것이 낫다**(게임의 뼈대)
+           둘째 몫(같은 것) 4.00 < 7.0 ⇒ **파는 것이 낫다**(남는 것을 팔 이유)
+         `tools/test_econ.mjs §I` 가 두 부등호를 못 박는다. */
+    mealPortionGrams: 300,
+    sellWonPerGram: 7,
     wantsLight: false,
     quality: Object.freeze([
       Object.freeze({ minDli: 0, maxDli: 0.3, id: 'crisp_white', ko: '하얗고 아삭', meals: 3 }),
@@ -130,19 +162,50 @@ export const CROP_KINDS = Object.freeze([
     /* ★ 무씨 실제 시세 100g 1,758원 · 1kg 18,000원(=1,800원/100g). 한 판(20×30cm)에 20~30g 쓰므로
        350~530원이다. 그 한가운데인 **400원**으로 잡았다 — 콩(500원)보다 씨가 잘아 조금 덜 든다. */
     seedWonPerPot: 400,
-    /* ★★ 2026-08-09 박사님 확정 — 무순 한 회전의 작물 기본값 **2,800원.**
-       원문: *"무순이 좀 더 낮아서 그 회전분을 2800원 정도로."*
-       ⚠ 예전에는 이 값이 `cropKindSavedWon[1] = 2,000` 이었는데 그 표는 **겹침 벌**에도
-         같이 쓰였다 — 거기를 2,800 으로 고치면 콩나물 둘째까지 같이 세진다.
-         그래서 표를 「작물 기본값 × 질림 배율」로 갈랐다(아래 §질림). 질림은 여전히 한 표다. */
-    savedWonPerCycle: 2_800,
+    /* ⚠⚠ **2026-08-17 — 2,800 → 2,000원.** 박사님 확정문 §1 이 무순 수확량을
+       **300 / 200 / 100g** 으로 정했다. 이 칸은 「중간 품질 한 회전분」이므로 200g = 2,000원이다.
+       ★ 값이 내려간 것이 아니라 **뜻이 옮겨 갔다.** 2,800원은 「질림(×2/3)이 붙기 전의 기본값」
+         이었고 실제로 곳간에 들던 것은 1,867원이었다. 이제 질림이 안 붙으므로(아래 §질림
+         2026-08-17) 이 칸이 곧 곳간에 드는 값이다: **1,867 → 2,000원으로 오히려 올랐다.**
+       ⚠ 옛 주석(*"무순이 좀 더 낮아서 그 회전분을 2800원 정도로"* · 2026-08-09)은
+         **질림이 붙던 시절의 값**이다. 그 뜻(무순이 콩나물보다 g 당 덜 난다)은 살아 있다 —
+         중간 품질에서 콩나물 300g · 무순 200g 이다. */
+    savedWonPerCycle: 2_000,
+    /* ══ ★★★ **그램(g) 표** (2026-08-17 · 박사님 확정문 §1) ═══════════════════════
+         최상 300g · 중간 200g · 최하 100g   (기준점 = 중간 2끼 200g · 한 칸에 ±100g)
+       ⚠⚠ **여기 「무순에는 이 칸이 없다」고 적혀 있던 자리다.** 없앤 까닭은 2026-08-16 에
+         적어 둔 것 — *"무순 회전분 1,867원은 10 으로 안 나누어떨어져서 g 을 정본으로 삼으면
+         하루 몫이 조용히 밀린다"* — 이 **그 1,867원과 함께 사라졌기 때문**이다.
+         질림을 걷으니 무순도 2,000원(=200g)으로 딱 떨어진다. 이제 두 작물이 같은 자리에서
+         같은 방식으로 g 을 낸다 — 갈라 둘 이유가 없어졌다. */
+    gramsPerCycle: 200,
+    gramsMidMeals: 2,
+    gramsPerQualityStep: 100,
+    /* ★★ 몫당 필요량 **200g** · 파는 값 **8원/g** (확정문 §1).
+       ⇒ 무순 한 몫은 200g 에 2,500원이라 **12.50원/g** — 콩나물(8.33)의 **1.50배**다.
+       ★ 왜 1.50 인가(확정문 §2) — 밝은 칸 하나를 두고 둘이 다툰다. 그 칸에서 콩나물은
+         중간(300g/5일 = 60.0 g/일)이고 무순은 최상(300g/7일 = 42.9 g/일 = 0.71배)이다.
+         ⇒ 무순 g 당 값이 **1/0.71 = 1.40배**면 딱 비긴다. 1.50 은 그 본전보다 조금 위라
+           「무순이 살짝 낫다」이지 「무순만 심으면 됨」이 아니다(밝은 칸 값 1.28배).
+       ⚠ 파는 값 8원/g 도 12.50 보다 낮다 — 무순도 **먹는 것이 낫다**(1.56배 · 확정문 §3). */
+    mealPortionGrams: 200,
+    sellWonPerGram: 8,
     wantsLight: true,
-    /* ★ 콩나물 표를 **뒤집은 것**이다. 눈금(0.3 · 1.0)까지 같다 —
-       같은 자리를 두 작물이 정반대로 읽어야 "어디에 무엇을 놓나"가 셈이 된다.
-       ⚠ 어두워도 **죽지 않는다**(콩나물과 같은 사상). 웃자라 밍밍해질 뿐이다. */
+    /* ★ 콩나물 표를 **뒤집은 것**이다 — 같은 자리를 두 작물이 정반대로 읽어야
+       "어디에 무엇을 놓나"가 셈이 된다.
+       ⚠ 어두워도 **죽지 않는다**(콩나물과 같은 사상). 웃자라 밍밍해질 뿐이다.
+       ══ ★★★ 2026-08-17 — **눈금이 1.0 · 0.3 에서 0.35 · 0.15 로 내려왔다** (확정문 §1·§4)
+       예전에는 콩나물과 **같은 눈금(0.3 · 1.0)** 을 쓰는 것이 이 표의 자랑이었는데,
+       그 눈금으로는 **반지하 14칸 어디에서도 무순이 최상이 안 난다** — 창턱(4.80)을 빼면
+       제일 밝은 칸이 0.60 이라 전부 「덜 파랗다」다. 자리 고르기가 사라진다.
+       ★ 0.35 / 0.15 를 고른 까닭(확정문 §4): 반지하의 실제 DLI 가 **0.22 와 0.48 사이에
+         크게 비어 있다.** 그 틈 어디를 골라도 같은 결과가 나온다 —
+         **경계가 흔들려도 안 뒤집히는 자리**다.
+       ⇒ 어두운 9칸(0.05~0.22) 최하·중간 · 밝은 4칸(0.48~0.60) **최상** · 창턱 최상.
+       ⚠ `minDli` 는 **이상**이다(`>=`). 확정문이 적은 `≥0.35` · `≥0.15` 가 그대로 이 두 줄이다. */
     quality: Object.freeze([
-      Object.freeze({ minDli: 1.0, maxDli: Infinity, id: 'green_crisp', ko: '파릇하고 알싸', meals: 3 }),
-      Object.freeze({ minDli: 0.3, maxDli: Infinity, id: 'pale_green', ko: '덜 파랗다', meals: 2 }),
+      Object.freeze({ minDli: 0.35, maxDli: Infinity, id: 'green_crisp', ko: '파릇하고 알싸', meals: 3 }),
+      Object.freeze({ minDli: 0.15, maxDli: Infinity, id: 'pale_green', ko: '덜 파랗다', meals: 2 }),
       Object.freeze({ minDli: 0, maxDli: Infinity, id: 'leggy_bland', ko: '웃자라 밍밍', meals: 1 })
     ])
   })
@@ -175,12 +238,35 @@ export const CROP_KINDS = Object.freeze([
    ★ 배열 길이가 곧 "몇 번째까지 값이 붙나"다. 넷째부터는 0 — 질려서 더는 못 먹는다.
      들고 오긴 왔는데 먹을 마음이 안 드는 것이라 셈이 0이다(버린 것과는 다르다).
 
-   ══ ⚠⚠ 2026-08-17 — **위 ② 가 이 표를 안 읽게 됐다** (아래 §겹침 2026-08-17) ═════
+   ══ ⚠⚠ 2026-08-17 아침 — **위 ② 가 이 표를 안 읽게 됐다** (아래 §겹침 2026-08-17) ═════
    박사님이 **겹침(그날 개수 순번)의 벌만** 걷으셨다. **표도 값도 안 움직였다** —
    읽는 축이 ① **작물 종류** 하나로 줄었을 뿐이다.
    ★ 그러니 위 *"값 하나에 뜻이 둘이면 한쪽만 고칠 수가 없다"* 가 **또 쓰였다**:
-     2026-08-09 에 갈라 둔 덕분에 이번에 **겹침만** 걷고 질림을 그대로 둘 수 있었다.
-     안 갈라 뒀으면 겹침을 걷는 순간 무순 회전분(×2/3)까지 같이 날아갔을 것이다.
+     2026-08-09 에 갈라 둔 덕분에 그때 **겹침만** 걷고 질림을 그대로 둘 수 있었다.
+
+   ══ ★★★ 2026-08-17 밤 — **① 도 이 표를 안 읽는다. 질림이 수확에서 걷혔다** ═════════
+   확정문 §6: *"**질림**(둘째 작물 ×2/3)은 위 「둘째 몫」 규칙이 **대신한다.** 두 벌로 두지
+   마라 — 값 하나에 뜻이 둘이면 한쪽만 못 고친다."*
+
+   ## 왜 걷었나 — **두 벌이 같은 일을 하고 있었고, 확정문이 뒤를 골랐다**
+   「같은 것만 먹으면 물린다」를 재던 자리가 둘이었다:
+     ㉠ **질림**(이 표)      — 콩나물 다음 작물의 **수확량 자체**를 ×2/3 로 깎았다
+     ㉡ **둘째 몫**(§몫)     — 같은 작물로 둘째 끼니를 채우면 2,500 → **1,200원**만 친다
+   ㉠ 은 「물린다」를 **밭에서** 재고 ㉡ 은 **밥상에서** 잰다. 물리는 것은 밥상의 일이다 —
+   무순을 두 번째로 들였다고 무가 덜 자랄 까닭이 없다. ⇒ ㉡ 을 남기고 ㉠ 을 걷었다.
+
+   ## ⚠⚠ 이것이 움직인 값 — **무순이 1,867 → 2,000원**
+   `cropKindSavedWon` 은 `기본값 × 질림배율` 이었고 무순 칸이 `2,800 × 2/3 = 1,867원` 이었다.
+   질림을 걷으면 그 곱이 사라지므로 **기본값이 곧 곳간에 드는 값**이 된다.
+   확정문 §1 이 무순 수확량을 300/200/100g 으로 정했으므로 기본값을 2,000(=중간 200g)으로
+   내렸고, 결과는 **1,867 → 2,000원**이다(오른다). 두 변경이 같은 칸에서 만난 것이라
+   **한쪽만 하면 안 된다** — 질림만 걷으면 2,800원, 표만 고치면 1,333원이 된다.
+   ⇒ 그 파장은 `docs/handoff/cropbalance-to-plan.md §실측` 에 재서 적었다.
+
+   ## ★ 그런데 **표는 안 지웠다**
+   `cropOverlapTiredEnabled`(겹침 벌을 되살리는 문 · §겹침)가 아직 이 표를 읽는다.
+   지우면 그 문이 조용히 죽어 「옛 셈과 나란히 재기」가 없어진다.
+   ⇒ 지금 이 표를 읽는 곳은 **그 문 하나뿐**이다. 게임은 어디에서도 안 읽는다.
 ============================================================ */
 export const CROP_TIRED_MULTIPLIER = Object.freeze([1, 2 / 3, 1 / 3, 0]);
 
@@ -203,30 +289,27 @@ function cropBases(defs = CROP_KINDS) {
   return Object.freeze(out);
 }
 
-/* 옛 이름 `cropKindSavedWon` 이 가리키던 표를 **파생**으로 낸다 (화면·검사·재현이 읽는다).
-   칸 i = 기본값[i] × 질림배율[i]. */
-function derivedKindSavedWon(bases = cropBases(), tired = CROP_TIRED_MULTIPLIER) {
-  return Object.freeze(bases.map((b, i) => Math.round(b * (i < tired.length ? tired[i] : 0))));
+/* 옛 이름 `cropKindSavedWon` 이 가리키던 표.
+   ⚠⚠ **2026-08-17 밤 — 곱하기가 없어졌다.** 예전에는 `기본값[i] × 질림배율[i]` 였고
+     그래서 [3,000 · 1,867 · 933] 이었다. 질림이 작물 종류 축에서 걷히면서(위 §질림)
+     이 표는 이제 **기본값 그대로**다: [3,000 · 2,000 · 2,000].
+   ★ 그래도 이름과 칸을 남긴 까닭은 예전과 같다 — 화면(`game.html`)·검사·재현이
+     `cropKindSavedWon[0]` 을 「한 회전분」으로 읽고 있다. */
+function derivedKindSavedWon(bases = cropBases()) {
+  return Object.freeze(bases.map(b => Math.round(b)));
 }
 
-/* 작물 기본값 — 질림이 **하나도 안 붙은** 한 회전분.
-   ★ 규칙 사본이 옛 표(`cropKindSavedWon`)를 **손으로 덮어썼으면** 거기서 되풀어 낸다.
-     그 표는 `기본값 × 질림배율` 이라 배율로 나누면 기본값이 돌아온다. 이 길이 있어야
-     회전분을 훑는 재현(`tools/probe_econ.mjs`·`probe_three_layers.mjs`)이 계속 듣는다 —
-     그 도구들은 `cropKindSavedWon` 을 갈아 끼워 회전분을 바꾼다.
-   ⚠ 덮어쓴 것이 아니라 **파생 그대로**면 되나누지 않는다. 파생표는 원 단위로 반올림돼 있어서
-     되나누면 2,800 이 **2,800.5** 로 돌아온다. 그래서 "이 표가 선언된 기본값에서 나온
-     그대로인가"를 먼저 본다 — 맞으면 기본값을 그냥 쓴다. */
+/* 작물 기본값 — 한 회전분(중간 품질 기준).
+   ★ 규칙 사본이 `cropKindSavedWon` 을 **손으로 덮어썼으면 그쪽이 이긴다.** 회전분을 훑는
+     재현(`tools/probe_econ.mjs`·`probe_three_layers.mjs`)이 그 표를 갈아 끼워 값을 바꾼다.
+   ⚠⚠ **2026-08-17 밤 — 되나누기를 지웠다.** 예전에는 덮어쓴 표에서 질림 배율로 **되나눠**
+     기본값을 복원했다(`table[i] / m`). 질림이 걷힌 지금 그 나눗셈은 없는 곱하기를 되돌리는
+     것이라 **2,000 을 3,000 으로 부풀린다.** 표와 기본값이 이제 같은 눈금이므로 그냥 읽는다. */
 export function cropBaseSavedWonOf(rules, kindIndex = 0) {
   const i = Math.max(0, Math.round(kindIndex || 0));
-  const bases = (rules && rules.cropBaseSavedWon) || FIRST_PLAY_RULES.cropBaseSavedWon;
   const table = rules && rules.cropKindSavedWon;
-  if (Array.isArray(table) && Number.isFinite(table[i])) {
-    const m = cropTiredMultiplier(rules, i);
-    const b = bases[i];
-    if (Number.isFinite(b) && Math.round(b * m) === table[i]) return b;
-    return m > 0 ? table[i] / m : 0;
-  }
+  if (Array.isArray(table) && Number.isFinite(table[i])) return table[i];
+  const bases = (rules && rules.cropBaseSavedWon) || FIRST_PLAY_RULES.cropBaseSavedWon;
   return bases[i] ?? 0;
 }
 
@@ -281,25 +364,26 @@ export const FIRST_PLAY_RULES = Object.freeze({
      ⚠ shop.CATALOG.bean_seed.listWon 과 **같은 값이어야 한다** — 지갑에 닿는 건 그쪽이다. */
   /* ★ 2026-08-05 — 정본은 `CROP_KINDS[0].seedWonPerPot` 이다(작물마다 씨앗값이 다르다). */
   seedWonPerSiru: CROP_KINDS[0].seedWonPerPot,
-  /* ★★ 질림 배율 — 순번이 뒤로 갈수록 깎인다. 정본은 위 §질림 이다.
+  /* ★★ 질림 배율 — 정본은 위 §질림 이다.
      이 표는 **두 곳에서 같이 썼다**(2026-08-04 박사님 확정 · 아래 §겹침):
        ① 작물 **종류**가 늘 때 — 콩나물 다음에 들인 것은 ×2/3, 그다음은 ×1/3
        ② 거두는 **때가 겹칠** 때 — 같은 날 둘째는 ×2/3, 셋째는 ×1/3
-     둘을 다른 표로 만들면 안 된다. 줄어드는 **이유가 같기 때문**이다 — 질림이다.
-   ⚠⚠ **2026-08-17 — ② 가 이 표를 안 읽는다**(아래 §겹침 2026-08-17 절).
-     박사님이 겹침의 벌을 걷으셨다. **표는 그대로 하나이고 값도 안 움직였다** —
-     읽는 자리가 ① 하나로 줄었을 뿐이다. `rules.cropOverlapTiredEnabled` 를 켜면 ② 가 돌아온다.
-     ⇒ 그래서 위 문장을 지우지 않고 「같이 썼다」로만 고쳤다. ② 의 뜻이 죽은 것이 아니라
-       **지금 안 걸려 있는 것**이고, 그 차이를 지우면 문을 열었을 때 근거가 사라진다. */
+   ⚠⚠ **2026-08-17 — 둘 다 이 표를 안 읽는다.** 아침에 ②(겹침)를, 밤에 ①(질림)을 걷었다.
+     **표도 값도 안 움직였다** — 읽는 자리가 없어졌을 뿐이다.
+     지금 이 표를 되살리는 문은 하나다: `rules.cropOverlapTiredEnabled` 를 켜면 ② 가 돌아온다.
+     ⇒ 위 두 줄을 지우지 않는 까닭 — ①②의 뜻이 죽은 것이 아니라 **다른 자리로 옮겨 갔다**
+       (① 은 §몫 의 「둘째 몫 같은 작물 1,200원」이 대신한다). 그 자취를 지우면
+       「왜 없앴나」를 물을 데가 없어진다. */
   cropTiredMultiplier: CROP_TIRED_MULTIPLIER,
-  /* ★ 순번별 **작물 기본값** — 질림이 안 붙은 값. 정본은 `CROP_KINDS[i].savedWonPerCycle` 이고
-     여기 칸은 그것을 가리키는 사본이다(순번 표로 펴 둔 것뿐). [3,000 · 2,800 · 2,800] */
+  /* ★ 순번별 **작물 기본값**. 정본은 `CROP_KINDS[i].savedWonPerCycle` 이고
+     여기 칸은 그것을 가리키는 사본이다(순번 표로 펴 둔 것뿐). [3,000 · 2,000 · 2,000] */
   cropBaseSavedWon: cropBases(),
-  /* ★★ 옛 이름 — 이제 **파생값**이다 (2026-08-09 · 위 §질림).
-     [0]=콩나물 3,000 · [1]=무순 2,800×2/3=1,867 · [2]=(작물 없음)2,800×1/3=933.
-     ⚠ 여기 숫자를 손으로 고치지 마라. 회전분을 바꾸려면 `CROP_KINDS[i].savedWonPerCycle` 을,
-       깎이는 폭을 바꾸려면 위 `CROP_TIRED_MULTIPLIER` 를 고치는 것이다.
-     ★ 그래도 이 칸을 남긴 이유 — 화면(`game.html`)·검사·재현이 `cropKindSavedWon[0]` 을
+  /* ★★ 옛 이름 — 이제 **기본값 표 그대로**다 (2026-08-17 · 위 §질림).
+     [0]=콩나물 3,000(300g) · [1]=무순 2,000(200g) · [2]=(작물 없음)2,000.
+     ⚠⚠ 2026-08-09~17 사이에는 여기에 질림이 곱해져 [3,000 · 1,867 · 933] 이었다.
+       옛 문서·옛 검사가 **1,867** 을 적고 있으면 그건 그 시절의 값이다.
+     ⚠ 여기 숫자를 손으로 고치지 마라. `CROP_KINDS[i].savedWonPerCycle` 이 정본이다.
+     ★ 이 칸을 남긴 이유 — 화면(`game.html`)·검사·재현이 `cropKindSavedWon[0]` 을
        「한 회전분」으로 읽고 있다. 이름을 없애면 그것들이 조용히 0 을 읽는다. */
   cropKindSavedWon: derivedKindSavedWon(),
   /* 품질 배수의 분모. 최상 품질(3끼)이 그 종류의 기본값을 그대로 낸다.
@@ -335,8 +419,20 @@ export const FIRST_PLAY_RULES = Object.freeze({
        econgap 실측: 시작 140만 + 콩13 에서 50%면 여유 +1일 · 60%면 +3일 · **70%면 +9일**.
        ⇒ 「씨앗 비용보다는 살짝 이득」(박사님)이 70% 언저리에서 성립한다.
      ★ 서사로도 100% 가 아니어야 한다 — 이건 **떨이**다. 곳간이 못 받아 버릴 것을
-       이웃·가게에 헐값으로 넘기는 것이라 제값을 못 받는 편이 앞뒤가 맞는다. */
-  cropSurplusSaleRate: 0.85
+       이웃·가게에 헐값으로 넘기는 것이라 제값을 못 받는 편이 앞뒤가 맞는다.
+
+     ══ ★★★ 2026-08-17 — **값이 작물마다 갈렸다. 이 칸은 폴백으로 물러났다** ═══════
+     확정문 §1: 파는 값이 **콩나물 7원/g · 무순 8원/g** 이다. 값 하나로는 못 적는다.
+     ⇒ 정본은 `CROP_KINDS[i].sellWonPerGram` 이다(§판매). 이 칸이 하는 일은 **하나**로 줄었다 —
+       **작물을 모르는 꾸러미**(`lot.kind === null` · 꾸러미 기록이 없는 옛 세이브)의 값.
+     ★ 그래서 이 칸에 숫자를 안 적는다. `CROP_KINDS[0]` 을 가리킨다 —
+       옛 세이브의 총액을 쪼갤 때 쓰는 덩이(`pantryLotChunkWon`)도 **콩나물 회전분**이라
+       「모르는 것은 콩나물로 본다」가 이 파일 안에서 이미 한 규칙이다. 두 곳이 같은 말을 한다.
+     ⚠ 손으로 0.70 을 적으면 **값이 두 곳**이 된다(확정문이 경계한 그것). 가리키게 둔다.
+     ⚠⚠ `characters.json._meta.cropSurplusSaleRate`(0.85)를 **지웠다.** 그 칸이 살아 있으면
+       `firstPlayRulesFromBalance` 가 그것을 먼저 읽어 **작물 표를 덮어쓴다** — 모르는 꾸러미가
+       8.5원/g 에 팔려 콩나물 밥 효율(8.33)보다 비싸지고, 확정문 §3 의 **위끝이 뒤집힌다.** */
+  cropSurplusSaleRate: CROP_KINDS[0].sellWonPerGram / WON_PER_GRAM
 });
 
 export const FIRST_PLAY_ASSETS = Object.freeze({
@@ -449,9 +545,8 @@ export function cropCycleSavedWon(rules, meals, tiredIndex = 0, kindIndex = tire
    373 이 아니다). 안 그러면 **적힌 것을 더했는데 합계와 안 맞는** 화면이 된다.
 ============================================================ */
 
-/* ★ 환산 — **10원 = 1g**. 박사님이 주신 두 수(300g ↔ 3,000원)에서 그대로 나온다.
-   ⚠ 이 값을 화면에 적지 마라. 화면은 g 만 말하고 환산은 여기 한 줄이다. */
-export const WON_PER_GRAM = 10;
+/* ★ 환산(`WON_PER_GRAM` = 10원/g)의 선언은 **이 파일 맨 위**로 옮겼다 —
+   `CROP_KINDS` 와 `FIRST_PLAY_RULES` 가 그 값을 읽기 때문이다(TDZ). 까닭은 그 자리에 적었다. */
 
 /* ★★★ **하루에 쓸 수 있는 양** — 300g (2026-08-16 박사님 확정 · §dailyCropSaveWon).
    *"400G 가 오면 300G 까지는 당일 쓸 수 있는 거고 남는 거 팔아먹든 하는 거"*
@@ -512,6 +607,187 @@ export function cropCycleGrams(rules, meals, tiredIndex = 0, kindIndex = tiredIn
   const g = cropCycleGramsExact(rules, meals, tiredIndex, kindIndex);
   if (g != null) return g;
   return gramsOfWon(cropCycleSavedWon(rules, meals, tiredIndex, kindIndex));
+}
+
+/* ============================================================
+   ★★★ §몫 — **하루 밥은 「몫」으로 센다** (2026-08-17 박사님 확정 · 확정문 §1)
+   ------------------------------------------------------------
+   ```
+   하루 최대            5,000원 (= 끼니 상한 2끼. 밥값 7,500 중 2,500 은 늘 나간다)
+   첫 몫                2,500원   — 콩나물 300g  또는  무순 200g
+   둘째 몫  다른 작물   2,500원
+            같은 작물   1,200원
+   ★ 못 채운 몫은 **비례로** 친다 (150g 만 있으면 그 절반). 절벽을 만들지 않는다.
+   ```
+
+   ## ⚠⚠ 무엇이 바뀌었나 — **하루 몫이 「원 한 덩이」에서 「몫 목록」이 됐다**
+   2026-08-16~17 에는 하루 몫이 `dailyCropSaveWon`(3,000원) **한 값**이었고,
+   `eatFromPantry` 는 곳간에서 그만큼을 그냥 덜어 냈다. 그 셈에는 **작물이 없었다** —
+   콩나물 300g 과 무순 300g 이 똑같이 3,000원이었다.
+   확정문은 「몫당 필요량」을 작물마다 다르게 정했으므로(300g · 200g) 그 한 값으로는 못 센다.
+
+   ## ★★ 그래서 **두 단위를 갈랐다** (확정문 §1 아래 ⚠ 가 경계한 그것)
+       곳간에서 빠지는 것   **물건 값** — g × 10원(`WON_PER_GRAM`). 작물이 뭐든 같다
+       지갑이 아끼는 것     **밥값**   — 몫 값(2,500 · 1,200). 작물마다 g 이 다르다
+     ⇒ 콩나물 300g 을 먹으면 곳간이 **3,000원** 줄고 밥값은 **2,500원** 준다. 두 수가 다르다.
+     ⇒ 무순 200g 을 먹으면 곳간이 **2,000원** 줄고 밥값은 **2,500원** 준다.
+     예전에는 이 둘이 늘 같은 수였다. **`eatFromPantry` 의 반환값에서도 갈렸다** —
+     `savedWon`(밥값) 과 `pantryUsedWon`(곳간에서 빠진 물건 값).
+
+   ## ★ 몫을 고르는 순서 — **덜 벌리는 쪽을 안 고른다**
+   하루에 몫이 둘(`rules.cropMealPortions`)이고 후보는 작물 수만큼이다. 몫마다:
+     ① 그 작물이 채울 수 있는 비율 fill = min(1, 남은 g / 몫당 필요량)
+     ② 그 몫의 값 = (첫 몫이거나 **앞 몫과 다른 작물**이면 2,500) 아니면 1,200
+     ③ 얻는 밥값 = 값 × fill  (★ 비례 — 확정문의 「못 채운 몫은 비례로」)
+     ④ ★★ **그 g 을 팔면 받을 돈보다 적으면 그 몫을 안 먹는다.**
+   ⇒ 값이 큰 쪽을 고른다. 같으면 **먼저 거둔 것**(FIFO)이 이긴다 — 먹는 순서는 예전 그대로다.
+
+   ## ★★★ ④ 가 이 규칙의 핵심이다 — 확정문 §3 을 **코드가 그대로 밟는다**
+   확정문: *"콩나물은 첫 300g만 먹고 나머지는 판다. 무순은 먹는다.
+   **억지로 시키지 않아도 그게 최선이라 그렇게 된다.** 그리고 「한 가지를 600g까지 우겨
+   먹기」는 손해가 되어 **저절로 사라진다.**"*
+     콩나물 첫 몫    2,500 / 300g = 8.33원/g  >  파는 값 7.0  ⇒ **먹는다**
+     콩나물 둘째(같은 것) 1,200 / 300g = 4.00원/g  <  7.0     ⇒ **안 먹는다. 판다**
+     무순 첫 몫      2,500 / 200g = 12.50원/g >  8.0          ⇒ **먹는다**
+   ⚠ ④ 를 안 넣으면 「저절로 사라진다」가 안 일어난다 — 엔진이 **손해 보는 쪽을 기본값으로**
+     밟게 되고(300g 을 1,200원에 먹느니 2,100원에 파는 게 낫다), 살림 표가 그만큼 낮게 나온다.
+   ⚠ ④ 는 **「팔 수 있다」를 전제로 한다.** 상점에 한 번도 안 들르는 사람에게는 그 g 이
+     그냥 쌓인다(밥도 안 되고 돈도 안 된다). ☐ 판단필요로 보고에 올렸다.
+   ★ 사람이 직접 고르면(`planMealGrams`) ④ 를 넘어설 수 있다 — 고르개는 **덜 먹는 쪽**으로만
+     움직이므로 ④ 가 막는 것을 뚫지는 못한다. 이 규칙은 「안 고르면 이렇게 된다」다.
+
+   ## ⚠ 작물을 모르는 꾸러미(`lot.kind === null`)는 **첫 작물로 본다**
+   꾸러미 기록이 없는 옛 세이브의 총액을 쪼갤 때 쓰는 덩이도 콩나물 회전분이다
+   (`pantryLotChunkWon`). 두 곳이 같은 말을 하게 맞춰 둔다 — 지어내는 값이 아니라
+   **이 파일이 이미 갖고 있던 규칙**이다.
+============================================================ */
+
+/* ★ 같은 작물로 채운 **둘째 몫**의 값 — 1,200원 (확정문 §1).
+   ⚠ 2,500 의 어떤 분수도 아니다(0.48). 확정문이 정한 값이라 그대로 적는다.
+   ★ 이 값이 하는 일은 하나다 — **아래끝을 지킨다.** 1,200/300g = 4.00원/g 이 파는 값
+     7원/g 보다 **싸야** 「남는 것을 팔 이유」가 생긴다(확정문 §3). 올리면 그 이유가 사라진다. */
+export const CROP_SECOND_MEAL_SAME_WON = 1200;
+
+/* 규칙 사본이 실어 준 종류 표(없으면 정본). 재현·검사가 표를 갈아 끼울 수 있어야 한다. */
+function cropDefsOf(rules) {
+  return (rules && rules.cropKindDefs) || CROP_KINDS;
+}
+/* 작물 이름 → 순번. **모르는 이름·없는 이름은 0(첫 작물)** 이다 — 위 §몫 ⚠ 참고.
+   ⚠ `cropKindIndexOf` 와 다르다. 그쪽은 던진다(작물을 지어내면 살림이 통째로 틀린다).
+     여기는 **꾸러미의 기록**을 읽는 자리라 「모른다」가 정상적인 값이다. */
+function lotKindIndexOf(rules, kind) {
+  if (typeof kind !== 'string') return 0;
+  const i = cropDefsOf(rules).findIndex(d => d && d.id === kind);
+  return i < 0 ? 0 : i;
+}
+/* 한 몫을 채우는 g — 작물 표가 정본이다(확정문 §1). */
+export function cropMealPortionGrams(rules, kindIndex = 0) {
+  const defs = cropDefsOf(rules);
+  const d = defs[Math.max(0, Math.round(kindIndex || 0))] || defs[defs.length - 1];
+  const g = d && d.mealPortionGrams;
+  return Number.isFinite(g) && g > 0 ? Math.round(g) : 0;
+}
+/* 팔 때 g 당 받는 원 — 작물 표가 정본이다(§판매). */
+export function cropSellWonPerGram(rules, kindIndex = 0) {
+  const defs = cropDefsOf(rules);
+  const d = defs[Math.max(0, Math.round(kindIndex || 0))] || defs[defs.length - 1];
+  const v = d && d.sellWonPerGram;
+  if (Number.isFinite(v) && v >= 0) return v;
+  /* 표에 없는 작물 — 옛 전역 비율로 물러난다(§판매 ⚠) */
+  const r = rules && rules.cropSurplusSaleRate;
+  return (Number.isFinite(r) && r >= 0 ? r : FIRST_PLAY_RULES.cropSurplusSaleRate) * WON_PER_GRAM;
+}
+
+/* ★★★ **오늘 몫을 어떻게 짤까** — 상태를 안 바꾼다(꾸러미를 총액에 맞추기는 한다).
+   opt.grams 를 주면 **그 g 안에서만** 짠다(사람이 고른 값 · 덜 먹는 쪽으로만 움직인다).
+   반환 { portions[] · savedWon(밥값) · usedGrams · usedWon(곳간에서 빠질 물건 값) } */
+export function cropMealPlan(fp, opt = {}) {
+  const rules = (fp && fp.rules) || FIRST_PLAY_RULES;
+  const defs = cropDefsOf(rules);
+  const maxPortions = Math.max(0, Math.round(rules.cropMealPortions ?? 2));
+  const fullWon = Math.max(0, Math.round(rules.cropMealPortionWon ?? rules.mealWon ?? 0));
+  const sameWon = Math.max(0, Math.round(rules.cropSecondMealSameWon ?? CROP_SECOND_MEAL_SAME_WON));
+  const capWon = Math.max(0, Math.round(rules.cropMealCapWon ?? (fullWon * maxPortions)));
+  /* ★ 사람이 고른 g 이 있으면 그것이 예산이다. 없으면 무제한(몫 규칙이 알아서 막는다) */
+  const budgetG = Number.isFinite(opt.grams) ? Math.max(0, Math.round(opt.grams)) : Infinity;
+  /* ⚠ **꾸러미 사본으로 센다** — 이 함수는 상태를 안 바꾼다 */
+  const lots = pantryLotsOf(fp).map(l => ({ ...l, g: gramsOfWon(l.won),
+                                            ki: lotKindIndexOf(rules, l.kind) }));
+  /* 작물마다 남은 g · 제일 먼저 거둔 순서(FIFO 동점 처리용) */
+  const left = [], firstAt = [];
+  for (let i = 0; i < defs.length; i++) { left.push(0); firstAt.push(Infinity); }
+  lots.forEach((l, idx) => {
+    if (l.ki >= left.length) return;
+    left[l.ki] += l.g;
+    if (idx < firstAt[l.ki]) firstAt[l.ki] = idx;
+  });
+
+  const portions = [];
+  let savedWon = 0, usedGrams = 0, prevKind = null;
+  for (let n = 0; n < maxPortions; n++) {
+    let best = null;
+    for (let k = 0; k < defs.length; k++) {
+      const need = cropMealPortionGrams(rules, k);
+      if (!(need > 0) || !(left[k] > 0)) continue;
+      const room = Math.min(need, budgetG - usedGrams);
+      if (!(room > 0)) continue;
+      const g = Math.min(left[k], room);
+      if (!(g > 0)) continue;
+      const same = prevKind != null && prevKind === k;
+      const base = (n === 0 || !same) ? fullWon : sameWon;
+      /* ★ 비례 — 못 채운 몫은 채운 만큼만 친다(확정문 §1 ★) */
+      let won = Math.round(base * g / need);
+      won = Math.min(won, Math.max(0, capWon - savedWon));
+      /* ★★ 팔면 받을 돈. 이보다 못 벌 몫은 **안 먹는다**(위 §몫 ④) */
+      const sellWon = Math.round(g * cropSellWonPerGram(rules, k));
+      if (!(won > sellWon)) continue;
+      if (!best || won > best.won || (won === best.won && firstAt[k] < firstAt[best.k]))
+        best = { k, g, won, need, same, base };
+    }
+    if (!best) break;
+    left[best.k] -= best.g;
+    usedGrams += best.g;
+    savedWon += best.won;
+    prevKind = best.k;
+    portions.push({
+      kind: defs[best.k] && defs[best.k].id, kindKo: defs[best.k] && defs[best.k].ko,
+      kindIndex: best.k, grams: best.g, needGrams: best.need,
+      fill: best.need > 0 ? best.g / best.need : 0,
+      won: best.won, baseWon: best.base, second: portions.length > 0, same: best.same
+    });
+  }
+  return {
+    portions, savedWon,
+    usedGrams, usedWon: wonOfGrams(usedGrams),
+    capWon, maxPortions,
+    /* 아직 안 쓴 밥값 여유 — 화면이 「하나만 더 있으면」을 말할 근거다 */
+    restCapWon: Math.max(0, capWon - savedWon)
+  };
+}
+
+/* 짜 놓은 몫대로 **실제로 곳간에서 덜어 낸다.** 꾸러미를 앞(FIFO)에서부터 자른다. */
+function consumePlan(fp, plan) {
+  const rules = (fp && fp.rules) || FIRST_PLAY_RULES;
+  const lots = pantryLotsOf(fp);
+  let usedWon = 0;
+  for (const p of plan.portions) {
+    let want = p.grams;
+    for (const l of lots) {
+      if (want <= 0) break;
+      if (lotKindIndexOf(rules, l.kind) !== p.kindIndex) continue;
+      const lg = gramsOfWon(l.won);
+      if (lg <= 0) continue;
+      const take = Math.min(lg, want);
+      l.won = Math.max(0, Math.round(l.won - wonOfGrams(take)));
+      want -= take;
+      usedWon += wonOfGrams(take);
+    }
+  }
+  fp.food.pantryLots = lots.filter(l => l.won > 0);
+  fp.food.pantryWon = Math.max(0, Math.round((fp.food.pantryWon || 0) - usedWon));
+  /* 총액과 목록을 다시 맞춘다 — 반올림이 어긋나면 여기서 잡힌다 */
+  pantryLotsOf(fp);
+  return usedWon;
 }
 
 /* ============================================================
@@ -601,9 +877,14 @@ export function cropOverlapTiredIndex(rules, indexOnDay) {
   return (rules && rules.cropOverlapTiredEnabled === true) ? t : 0;
 }
 
+/* ⚠⚠ **2026-08-17 밤 — `kindIndex` 를 질림 축에 안 더한다.**
+   예전에는 `표[종류순번 + 그날순번]` 이라 무순이 처음부터 한 칸 밀려 시작했다(×2/3).
+   질림이 걷혀서(위 §질림) 종류 순번은 **작물을 고르는 데만** 쓰인다.
+   ★ 인자는 그대로 둔다 — 부르는 쪽이 여럿이고, 문(`cropOverlapTiredEnabled`)을 열면
+     그날 순번은 예전처럼 그대로 민다. */
 export function overlapSavedWon(rules, meals, indexOnDay, kindIndex = 0) {
   return cropCycleSavedWon(rules, meals,
-                           kindIndex + cropOverlapTiredIndex(rules, indexOnDay), kindIndex);
+                           cropOverlapTiredIndex(rules, indexOnDay), kindIndex);
 }
 
 /* 경제값의 정본은 data/balance/characters.json._meta다. 코어는 그 값을 받아 1끼 값을
@@ -663,23 +944,41 @@ export function firstPlayRulesFromBalance(balance) {
        ★ **작물을 통틀어 300g 이다.** 작물마다 300g 이 아니다 — 이 값이 재는 것은
          「사람이 하루에 먹는 채소의 양」이고, 그건 콩나물이든 무순이든 한 배에 들어간다.
          ⇒ 그래서 `cropSavedWonPerCycle`(작물별 회전분의 합)을 **안 본다.**
-       ★ 끼니 상한(`characters.json._meta.cropMealCapPerPerson`)은 **그대로 지킨다** —
-         가장·주부처럼 식구가 많은 캐릭터에서 300g 이 상한 아래인지 위인지는 정본이 정한다.
-         지금 자취생은 300g(3,000원) < 5,000원이라 g 쪽이 이긴다. */
-    dailyCropGrams: DAILY_CROP_GRAMS,
-    dailyCropSaveWon: Math.min(DAILY_CROP_GRAMS * WON_PER_GRAM,
-                               dailyCropMealCap * (dailyFoodWon / mealsPerDay)),
+
+       ══ ⚠⚠⚠ 2026-08-17 밤 — **「하루 300g 한 덩이」가 「몫」으로 갈렸다** (확정문 §1) ══
+       *"첫 몫 2,500 · 둘째 몫 = 다른 작물 2,500 / 같은 작물 1,200 · 못 채운 몫은 비례 ·
+         하루 최대 5,000"*
+       ⇒ 하루에 쓸 수 있는 양이 **작물마다 다르다**(콩나물 한 몫 300g · 무순 한 몫 200g).
+         한 숫자로는 못 적는다. 정본은 아래 §몫 이고, 여기 세 칸은 그 규칙의 재료다:
+             cropMealPortionWon    한 몫 = **한 끼**(2,500원) — `mealWon` 을 가리킨다
+             cropSecondMealSameWon 같은 작물로 채운 둘째 몫 — **1,200원**(확정문 §1)
+             cropMealPortions      하루에 채울 수 있는 몫 수 = 끼니 상한 ÷ 한 끼 = **2**
+         ★ **하루 최대 5,000원은 새 값이 아니다** — `cropMealCapWon`(끼니 상한) 그대로다.
+           그래서 몫 수를 그 값에서 나눠 낸다. 상한을 두 벌로 두지 않는다. */
+    /* ⚠⚠ **옛 이름 둘의 뜻이 바뀌었다.** 화면(`game.html`)이 이 둘을 읽고 있다:
+         dailyCropGrams   300 → **콩나물 한 몫**(`CROP_KINDS[0].mealPortionGrams`)을 가리킨다.
+                          값은 그대로 300 이지만 「하루 전체」가 아니라 「한 몫」이다.
+                          하루에 실제로 들어갈 수 있는 최대 g 은 `cropMealMaxGrams` 다.
+         dailyCropSaveWon 3,000 → **5,000원**(= 끼니 상한). 이제 이 값은 「곳간에서 빠지는
+                          물건 값」이 아니라 **「하루에 아낄 수 있는 밥값의 최대」**다.
+                          ⚠ 둘은 이제 **다른 단위**다 — 콩나물 300g 은 곳간에서 3,000원(물건 값)이
+                            빠지고 밥값은 2,500원이 준다. 예전에는 둘이 같은 수였다. */
+    dailyCropGrams: CROP_KINDS[0].mealPortionGrams,
+    cropMealPortionWon: dailyFoodWon / mealsPerDay,
+    cropSecondMealSameWon: CROP_SECOND_MEAL_SAME_WON,
+    cropMealPortions: Math.max(1, Math.floor(
+      (dailyCropMealCap * (dailyFoodWon / mealsPerDay)) / (dailyFoodWon / mealsPerDay))),
+    /* 하루에 곳간에서 빠질 수 있는 최대 g — 몫 수 × 제일 큰 몫당 필요량. 화면이 쓸 어림수다 */
+    cropMealMaxGrams: Math.max(1, Math.floor(
+      (dailyCropMealCap * (dailyFoodWon / mealsPerDay)) / (dailyFoodWon / mealsPerDay))) *
+      Math.max(...CROP_KINDS.map(k => k.mealPortionGrams || 0)),
+    dailyCropSaveWon: dailyCropMealCap * (dailyFoodWon / mealsPerDay),
     cropKinds: kinds,
     /* ★★ **끼니 상한이 지금 이기고 있나** (2026-08-05 신설).
-       종류를 늘려도 하루 저감이 안 느는 순간이 여기다. 숫자를 재는 자(probe)와 화면이
-       "왜 안 늘었나"를 말할 근거가 있어야 억지로 상한을 뚫는 일이 안 생긴다.
-       자취생(1인)은 2종에서 5,000 = 5,000 으로 **딱 맞고**, 3종째부터 막힌다.
-       가장·주부(4인)는 상한이 20,000원이라 3종째도 그대로 산다. */
-    /* ⚠ 2026-08-16 — 뜻이 바뀌었다. 예전에는 「작물이 늘어 회전분 합이 끼니 상한을 넘었나」였는데,
-       이제 하루 몫은 회전분 합을 안 본다(위 §dailyCropGrams). 지금 이 값이 참이 되는 것은
-       **300g 이 끼니 상한보다 클 때**뿐이다 — 그때는 g 이 아니라 끼니가 천장이다. */
-    cropCapBinding: DAILY_CROP_GRAMS * WON_PER_GRAM >
-                    dailyCropMealCap * (dailyFoodWon / mealsPerDay),
+       ⚠ 2026-08-17 — 뜻이 또 바뀌었다. 이제 참이 되는 것은 **끼니 상한이 둘째 몫을 막을 때**다
+         (`cropMealPortions < 2`). 자취생은 2끼라 딱 두 몫이 서고, 1끼짜리 캐릭터가 생기면
+         그때 이 값이 참이 되어 「왜 둘째 몫이 안 서나」를 화면이 말할 수 있다. */
+    cropCapBinding: Math.floor(dailyCropMealCap) < 2,
     cropMealCapWon: dailyCropMealCap * (dailyFoodWon / mealsPerDay),
     /* 종류 표를 규칙에 실어 준다 — 부르는 쪽이 first_play 를 또 import 하지 않아도 되게 */
     cropKindDefs: CROP_KINDS
@@ -1848,13 +2147,13 @@ export function harvestBeansprout(fp, opt = {}) {
   /* ★★ 겹침은 **종류마다 따로 센다** (2026-08-05). 근거는 이 규칙의 이유 그 자체다 —
      깎이는 까닭이 **질림**이라(§겹침) 콩나물을 세 번 거둔 것과 콩나물·무순을 한 번씩 거둔 것은
      같은 일이 아니다. 다른 것을 먹는 것은 질리는 일이 아니다.
-   ★★ 그러면 종류 순번은 어디서 오나 — **더한다.** `표[종류순번 + 그 종류의 그날 순번]`.
-     콩나물 1개      = 표[0+0] = 3,000
-     콩나물 3개 같은날 = 3,000 / 2,000 / 1,000
-     무순 1판        = 표[1+0] = 2,000        ← 2종째라 한 칸 밀려 시작한다
-     무순 2판 같은날  = 2,000 / 1,000
-     ⇒ 두 규칙(종류 체감 · 겹침 체감)이 **한 표 위에서 한 눈금으로** 만난다. 표를 둘로
-       나누면 줄어드는 이유가 같은데 셈이 갈린다(§겹침이 이미 그 말을 적어 뒀다). */
+   ⚠⚠ **2026-08-17 — 여기 있던 「종류 순번을 더한다」가 없어졌다.** 옛 글은 이랬다:
+     *"종류 순번은 어디서 오나 — **더한다.** `표[종류순번 + 그 종류의 그날 순번]`.
+       콩나물 1개 = 표[0+0] = 3,000 · 무순 1판 = 표[1+0] = 2,000 ← 2종째라 한 칸 밀려 시작한다.
+       두 규칙(종류 체감 · 겹침 체감)이 한 표 위에서 한 눈금으로 만난다."*
+     ⇒ 두 축이 **둘 다 걷혔다**(아침에 겹침 · 밤에 질림 · §질림 2026-08-17).
+       이제 두 순번은 **값을 한 푼도 안 민다.** 그래도 **세는 것은 계속한다** —
+       그날 몇 번째로 거뒀나는 **사실**이고 세이브·화면·문(`cropOverlapTiredEnabled`)이 읽는다. */
   const onDayByKind = (day != null && fp.food.harvestDay === day && fp.food.harvestedOnDayByKind)
     ? { ...fp.food.harvestedOnDayByKind } : {};
 
@@ -1873,15 +2172,16 @@ export function harvestBeansprout(fp, opt = {}) {
       /* 안 겹쳤을 때 이 작물이 낼 값 — 종류 순번은 그대로 붙는다(무순은 처음부터 ×2/3 다) */
       /* ★ 2026-08-09 — **작물을 따로 넘긴다**(§질림). 넷째 인자가 없으면 순번을 밀 때
          작물까지 같이 밀려, 콩나물 둘째가 「무순 기본값 × 2/3」을 받는다. */
-      const fullWon = cropCycleSavedWon(rules, quality.meals, kindIndex, kindIndex);
+      const fullWon = cropCycleSavedWon(rules, quality.meals, 0, kindIndex);
       /* ★★★ 2026-08-17 — **그날 순번은 이제 값을 안 민다**(§겹침 2026-08-17 절).
          `cropOverlapTiredIndex` 가 기본으로 **0** 을 내므로 아래 두 줄은 같은 값이 된다.
          ⚠ 그래도 **줄을 합치지 않는다.** 둘이 갈려 있어야 ① 문을 열면 옛 셈이 그대로
            돌아오고 ② 「온전한 값」과 「실제로 받은 값」이 각각 이름을 갖는다.
-         ⚠ `kindIndex` 는 **그대로 더한다** — 질림(작물 종류 체감)은 안 걷었다. */
+         ⚠⚠ **2026-08-17 밤 — `kindIndex` 도 더하지 않는다.** 질림(작물 종류 체감)을 걷었다
+           (§질림 2026-08-17 밤). 무순이 「둘째 작물이라」 ×2/3 되던 그 자리다. */
       const savedWon = cropCycleSavedWon(
         rules, quality.meals,
-        kindIndex + cropOverlapTiredIndex(rules, overlapIndex), kindIndex);
+        cropOverlapTiredIndex(rules, overlapIndex), kindIndex);
       /* 겹쳐서 못 받은 몫 — **이제 늘 0 이다**(문을 안 열면). 계산을 지우지 않은 까닭은
          §겹침 에 적었다: 문이 열리면 이 값이 그대로 살아나고, 「0 이다」를 물을 데가 남는다. */
       const lostWon = Math.max(0, fullWon - savedWon);
@@ -2023,17 +2323,22 @@ export function pantryCapWon(fp) {
   for (const s of cropSites(fp)) {
     const n = potsOf(s).length;
     const i = cropKindIndexOf(kindIdOfSite(s));
-    cap += Math.max(table[i] ?? 0, cropCycleSavedWon(rules, maxMeals, i, i)) * n;
+    /* ⚠ 2026-08-17 — 셋째 인자가 `i` 에서 **0** 이 됐다. 질림을 걷어서(§질림) 종류 순번은
+       더 이상 값을 밀지 않는다 — `i` 를 그대로 두면 무순 한도가 ×2/3 로 잘못 잡힌다. */
+    cap += Math.max(table[i] ?? 0, cropCycleSavedWon(rules, maxMeals, 0, i)) * n;
   }
   return cap > 0 ? cap : rules.cropSavedWonPerCycle;
 }
 
-/* 하루에 곳간에서 꺼낼 수 있는 상한 — **시루 수와 무관한 한 값**이다 (2026-08-04).
-   ★ 값의 정본은 `rules.dailyCropSaveWon`(= 한 회전분, 끼니 상한이 이기면 그 값)이고
-     근거는 firstPlayRulesFromBalance 의 주석에 있다. 시루 수에 안 비례하는 이유:
-     **비례시키면 겹침이 물리지 않는다.** 시루 5개를 같은 날 다 거둬도 상한이 5배면
-     깎인 값(3,000+2,000+1,000)을 전부 다 먹어 버려 "짜임새"가 아무 일도 안 하게 된다.
-     천장은 주기 길이가 정하고(§겹침), 그 천장이 곧 하루 한 회전분이다. */
+/* 하루에 아낄 수 있는 **밥값**의 상한 — 시루 수와 무관한 한 값이다 (2026-08-04).
+   ⚠⚠ **2026-08-17 밤 — 이 값의 뜻이 바뀌었다.**
+       옛 뜻  「하루에 **곳간에서 꺼낼 수 있는 물건 값**」 3,000원(= 300g × 10원)
+       새 뜻  「하루에 **아낄 수 있는 밥값**」 5,000원(= 끼니 상한 `cropMealCapWon`)
+     두 단위가 갈렸기 때문이다(§몫 ★★). 곳간에서 빠지는 g 은 이제 작물이 정하고,
+     이 값은 그 결과인 밥값에만 걸린다.
+   ★ 하루 최대 5,000원은 **새 상한이 아니다** — 끼니 상한 그대로다(확정문 §1).
+   ⚠ 곳간에서 몇 g 이 빠지는지를 알고 싶으면 `cropMealPlan(fp).usedGrams` 를 읽어라.
+     이 값을 10 으로 나누지 마라 — 그 나눗셈이 맞던 시절은 지났다. */
 export function dailyCropSaveWonOf(fp) {
   const rules = fp && fp.rules;
   return rules ? rules.dailyCropSaveWon : 0;
@@ -2048,47 +2353,64 @@ export function dailyCropSaveWonOf(fp) {
    ⇒ **300g 은 디폴트이면서 동시에 상한이다.** 위끝이 곧 처음 자리다.
      그래서 고르개로 할 수 있는 일은 **덜 쓰는 것** 하나다 — 모아 두었다가 팔려는 사람을
      위해서다(0g 도 고를 수 있다).
-   ★ 곳간이 300g 보다 적으면 **있는 만큼**이 위끝이자 디폴트다(박사님 괄호 그대로). */
+   ★ 곳간이 300g 보다 적으면 **있는 만큼**이 위끝이자 디폴트다(박사님 괄호 그대로).
+
+   ══ ⚠⚠ 2026-08-17 밤 — **위끝을 「몫」이 정한다** (§몫) ═══════════════════════
+   *"덜 쓰는 것 하나"* 는 그대로다. 바뀐 것은 위끝을 무엇이 정하느냐다:
+     옛  `min(하루 몫 3,000원, 곳간)` 을 10 으로 나눈 g — **작물이 없는 셈**이었다
+     새  `cropMealPlan(fp)` 이 짠 몫들이 쓰는 g — 콩나물 300g · 무순 200g · 둘 다면 500g
+   ★ **디폴트가 여전히 위끝이다.** 「안 고르면 최선껏 먹는다」가 안 바뀌었다.
+   ⚠ 고르개 눈금이 **g 한 줄**이라 「어느 작물을 먹을까」는 못 고른다. 몫 규칙이 고른다
+     (먹는 순서는 §몫 ★ 참고). ☐ 작물마다 따로 고르는 창은 화면 일이라 보고에 올렸다. */
 export const MEAL_DEFAULT_GRAMS = DAILY_CROP_GRAMS;
 
 /* 오늘 g 만큼 쓰면 어떻게 되나 — **상태를 안 바꾼다**(꾸러미를 총액에 맞추기는 한다).
-   grams 를 안 주면 **디폴트**(하루 몫, 곳간이 그보다 적으면 있는 만큼)다. */
+   grams 를 안 주면 **디폴트**(몫 규칙이 최선껏 짠 것)다.
+   ⚠ 반환값의 `useWon` 은 **곳간에서 빠지는 물건 값**이고 `savedWon` 이 **아낀 밥값**이다.
+     2026-08-17 전에는 두 수가 같아서 칸이 하나였다(§몫 ★★). */
 export function mealPlanQuote(fp, grams) {
   const rules = (fp && fp.rules) || FIRST_PLAY_RULES;
   const capWon = Math.max(0, Math.round(dailyCropSaveWonOf(fp)));
   const pantryWon = Math.max(0, Math.round((fp && fp.food && fp.food.pantryWon) || 0));
   const pantryGrams = pantryGramsOf(fp);
-  const maxWon = Math.min(capWon, pantryWon);
-  const maxG = gramsOfWon(maxWon);
-  /* ★ 디폴트 = 위끝이다(위 ⇒). 「300g 보다 낮으면 그 최대 낮은값」이 이 한 줄이다 */
+  /* ★ 위끝 = 안 고르고 최선껏 먹었을 때 쓰는 g */
+  const best = cropMealPlan(fp);
+  const maxG = best.usedGrams;
   const defaultG = maxG;
   const wantG = Number.isFinite(grams) ? Math.max(0, Math.min(maxG, Math.round(grams))) : defaultG;
-  /* ⚠ 원으로 한 번 더 자른다 — g 은 낱개 반올림이라 위끝에서 몇 원이 튈 수 있고,
-     **살림의 단위는 여전히 원**이다(§그램). */
-  const useWon = Math.min(maxWon, wonOfGrams(wantG));
+  const plan = wantG === maxG ? best : cropMealPlan(fp, { grams: wantG });
+  const useWon = plan.usedWon;
   const dailyFoodWon = rules.dailyFoodWon || 0;
-  const grams2 = gramsOfWon(useWon);
+  const grams2 = plan.usedGrams;
   return {
     grams: grams2, wantGrams: wantG,
     maxGrams: maxG, defaultGrams: defaultG,
-    /* 하루에 쓸 수 있는 양 자체 — 곳간이 모자라 못 채웠나를 화면이 가를 근거다 */
-    capGrams: gramsOfWon(capWon), capWon,
+    /* 하루에 아낄 수 있는 밥값 자체 — 곳간이 모자라 못 채웠나를 화면이 가를 근거다 */
+    capGrams: best.usedGrams, capWon,
+    /* ★ 곳간에서 빠지는 물건 값(원). 세이브(`mealPlanWon`)에 적히는 것도 이 값이다 */
     useWon,
+    /* ★★ 2026-08-17 신설 — **아낀 밥값.** 화면이 「식비 2,500원을 아낍니다」를 말할 근거 */
+    savedWon: plan.savedWon,
+    /* ★ 몫 내역 — 화면이 「콩나물 300g 한 몫 · 무순 200g 한 몫」을 말할 근거(§몫) */
+    portions: plan.portions,
     pantryWon, pantryGrams,
-    /* ★★ **오늘 쓰고 남는 것** — 이것이 이번 셈의 핵심이다. 버려지지 않고 쌓인다 */
+    /* ★★ **오늘 쓰고 남는 것** — 버려지지 않고 쌓인다 */
     restGrams: Math.max(0, pantryGrams - grams2),
     restWon: Math.max(0, pantryWon - useWon),
-    /* 오늘 지갑에서 나갈 밥값 — 안 먹으면 하루 식비가 통째로 나간다 */
-    cashFoodWon: Math.max(0, dailyFoodWon - useWon),
+    /* 오늘 지갑에서 나갈 밥값 — 안 먹으면 하루 식비가 통째로 나간다.
+       ⚠ 빼는 것은 **밥값**(savedWon)이지 물건 값(useWon)이 아니다 */
+    cashFoodWon: Math.max(0, dailyFoodWon - plan.savedWon),
     dailyFoodWon,
     lots: pantryLotsWithGrams(fp),
     /* 위끝까지 안 쓰면 얼마를 덜 아끼나 (0 이면 다 쓴 것이다) */
-    lessThanCapWon: Math.max(0, maxWon - useWon)
+    lessThanCapWon: Math.max(0, best.savedWon - plan.savedWon)
   };
 }
 
 /* 오늘 쓸 g 을 적어 둔다. **먹지는 않는다** — 먹는 것은 하루가 갈 때 `eatFromPantry` 다.
-   grams 가 null 이면 골랐던 것을 **지운다**(= 예전 그대로 상한까지 먹는다). */
+   grams 가 null 이면 골랐던 것을 **지운다**(= 안 고른 것 · 최선껏 먹는다).
+   ⚠ 적히는 값은 **곳간에서 꺼낼 물건 값**(원)이다. 세이브(`save.js §mealPlanWon`)가
+     그 칸을 그대로 저장하므로 단위를 안 바꿨다 — 옛 판이 안 깨진다. */
 export function planMealGrams(fp, grams) {
   if (!fp || !fp.food) throw new Error('[밥상] 첫 플레이 상태가 없습니다');
   if (grams == null) { fp.food.mealPlanWon = null; return mealPlanQuote(fp); }
@@ -2139,38 +2461,56 @@ export function planMealGrams(fp, grams) {
      직접 부르는 검사·재현·빨리감기가 한 줄도 안 바뀐다 — 고르는 것은 화면의 일이다.
    ★ 고른 값은 **한 번 쓰고 지운다.** 남겨 두면 어제 0g 을 골랐던 판이 오늘도 조용히
      0g 을 먹는다 — 「매일 뜨는 창」이라는 이 기능의 뼈대와 어긋난다.
-   ⚠ 0 은 **고른 값이다.** null(안 골랐다)과 갈라야 한다 — 안 먹고 모아 파는 길이 막힌다. */
+   ⚠ 0 은 **고른 값이다.** null(안 골랐다)과 갈라야 한다 — 안 먹고 모아 파는 길이 막힌다.
+
+   ══ ★★★ 2026-08-17 밤 — **「몫」으로 먹는다** (확정문 §1 · 위 §몫) ═══════════════
+   ⚠⚠ **한 덩이를 덜어 내던 셈이 없어졌다.** 옛 줄은 이랬다:
+       `const use = min(하루 몫, 고른 값, 곳간); fp.food.pantryWon -= use;`
+     한 줄에 뜻이 셋이었다 — 곳간에서 빠지는 물건 값 · 아낀 밥값 · 상한. 셋이 같은 수였다.
+   ⇒ 이제 갈렸다(§몫 ★★):
+       `plan.usedWon`   곳간에서 빠지는 **물건 값**(g × 10원)
+       `plan.savedWon`  아낀 **밥값**(몫 값의 합 · 끼니 상한에 걸린다)
+     콩나물 300g 은 곳간에서 3,000원이 빠지고 밥값은 **2,500원**이 준다.
+   ★ 반환값에서도 갈랐다 — `savedWon`(밥값 · 옛 이름 그대로) 옆에 `pantryUsedWon` 을 뒀다.
+     ⚠ 옛 이름의 뜻을 안 바꾼 이유: `loop.js`·화면·튜토리얼이 `savedWon`/`foodSavedWon` 을
+       **지갑에서 뺄 값**으로 읽는다. 그 자리에 물건 값을 넣으면 살림이 조용히 틀어진다. */
 export function eatFromPantry(fp) {
-  const zero = { savedWon: 0, foodSavedWon: 0, mealsUsed: 0, savedGrams: 0, planned: false };
+  const zero = { savedWon: 0, foodSavedWon: 0, mealsUsed: 0, savedGrams: 0,
+                 pantryUsedWon: 0, portions: [], planned: false };
   if (!fp || !fp.enabled || !fp.rules || !fp.food) return zero;
   const rules = fp.rules;
-  const cap = dailyCropSaveWonOf(fp);
-  const plan = fp.food.mealPlanWon;
-  const planned = Number.isFinite(plan);
+  const planWon = fp.food.mealPlanWon;
+  const planned = Number.isFinite(planWon);
   fp.food.mealPlanWon = null;                 // ★ 한 번 쓰고 지운다
-  const want = planned ? Math.max(0, Math.round(plan)) : cap;
-  const use = Math.min(cap, want, Math.max(0, Math.round(fp.food.pantryWon || 0)));
-  if (use <= 0) {
+  /* ★ 고른 값은 **곳간에서 꺼낼 물건 값**이라 g 으로 되돌려 예산으로 쓴다(§몫) */
+  const plan = planned
+    ? cropMealPlan(fp, { grams: gramsOfWon(Math.max(0, Math.round(planWon))) })
+    : cropMealPlan(fp);
+  if (!(plan.savedWon > 0) || !(plan.usedGrams > 0)) {
     fp.food.lastFoodSavedWon = 0;
     fp.food.cashFoodWon = rules.dailyFoodWon;
     return { ...zero, planned, cashFoodWon: fp.food.cashFoodWon };
   }
-  fp.food.pantryWon -= use;
-  /* ★ 먹은 만큼 꾸러미를 **앞에서부터** 덜어 낸다 (2026-08-15 · §곳간 판매).
-     먼저 거둔 것부터 먹는다(FIFO) — 총액은 위에서 이미 줄었고, 이 줄은 「어느 꾸러미가
-     줄었나」를 맞출 뿐이라 절감액이 안 움직인다. */
-  pantryLotsOf(fp);
+  /* ★ 짠 대로 곳간에서 덜어 낸다 — 꾸러미를 **앞에서부터**(FIFO). 먼저 거둔 것부터 먹는다 */
+  const usedWon = consumePlan(fp, plan);
+  const use = plan.savedWon;
   fp.food.lastFoodSavedWon = use;
   fp.food.totalFoodSavedWon += use;
   fp.food.cashFoodWon = rules.dailyFoodWon - use;
   return {
     savedWon: use,
-    /* ★ 2026-08-16 — 화면이 「300g 을 먹었습니다」라고 말할 근거(§그램) */
-    savedGrams: gramsOfWon(use),
+    /* ★ 2026-08-16 — 화면이 「300g 을 먹었습니다」라고 말할 근거(§그램).
+       ⚠ 2026-08-17 — `savedWon / 10` 이 **아니다.** 밥값과 g 이 갈렸다(§몫) */
+    savedGrams: plan.usedGrams,
+    /* ★★ 2026-08-17 신설 — 곳간에서 실제로 빠진 **물건 값** */
+    pantryUsedWon: usedWon,
+    /* ★ 몫 내역 — 화면·기록이 「콩나물 한 몫 · 무순 한 몫」을 말할 근거 */
+    portions: plan.portions,
     planned,
     /* 옛 이름도 같이 낸다 — `noteLearning`·화면이 `foodSavedWon` 을 읽는다 */
     foodSavedWon: use,
-    /* 표시용 끼니 환산(내림). 판정에는 안 쓴다 — 값의 정본은 원이다. */
+    /* 표시용 끼니 환산(내림). 판정에는 안 쓴다 — 값의 정본은 원이다.
+       ★ 이제 이 값이 곧 **채운 몫의 수**와 거의 같다(한 몫 = 한 끼) */
     mealsUsed: Math.floor(use / rules.mealWon),
     cashFoodWon: fp.food.cashFoodWon
   };
@@ -2243,7 +2583,29 @@ export function eatFromPantry(fp) {
      이 계통을 되살릴 일이 생기면 **이름부터 다시 정해야 한다.** ☐ 판단필요로 보고에 올렸다.
 ============================================================ */
 
-/* 지금 판매가 — 정본은 `rules.cropSurplusSaleRate`(= _meta 아니면 FIRST_PLAY_RULES). */
+/* ============================================================
+   ★★★ §판매 — **파는 값이 작물마다 다르다** (2026-08-17 확정문 §1)
+   ------------------------------------------------------------
+       콩나물 **7원/g**  ·  무순 **8원/g**
+   ⚠⚠ 2026-08-06~17 에는 `cropSurplusSaleRate` **한 값**(0.85)이 두 작물을 같이 덮었다.
+     확정문이 두 값을 정했으므로 갈랐다. **어디에 두었나 — 작물 표(`CROP_KINDS`)다.**
+     까닭 셋:
+       ㉠ **이미 그 표가 작물마다 다른 값을 다 갖고 있다** — 주기·씨앗값·품질표·회전분·
+          몫당 필요량. 파는 값만 딴 데 두면 「무순 값을 고치려면 두 파일을 연다」가 된다.
+       ㉡ **값을 두 곳에 안 적는다.** 전역 칸(`rules.cropSurplusSaleRate`)은 숫자를 안 갖고
+          `CROP_KINDS[0]` 을 가리킨다(§FIRST_PLAY_RULES). 그 칸이 하는 일은 하나로 줄었다 —
+          **작물을 모르는 꾸러미**(`lot.kind === null` · 꾸러미 기록이 없는 옛 세이브).
+       ㉢ **원/g 으로 적는다. 비율(%)이 아니다.** 확정문이 원/g 으로 정했고, 비율로 적으면
+          「무엇의 몇 %인가」에 물건 값(10원/g)이 다시 끼어들어 세 값이 한 줄에 얽힌다.
+   ★ 위끝·아래끝(확정문 §3)이 이 값과 몫 값의 관계로 지켜진다 — §몫 ★★★ 참고.
+   ⚠ **꾸러미마다 따로 반올림하고 합계는 낱개를 더한다.** 총액에 한 비율을 곱하면
+     콩나물·무순이 섞인 판에서 화면에 적힌 줄들의 합과 총액이 안 맞는다(§그램 ⚠와 같은 규칙).
+============================================================ */
+
+/* 작물을 **모르는** 꾸러미의 판매 비율 — 정본은 `rules.cropSurplusSaleRate`.
+   ⚠ 2026-08-17 — 이 함수는 이제 **폴백 하나**다. 작물을 아는 자리는
+     `cropSellWonPerGram(rules, kindIndex)`(§몫)를 읽어라.
+   ★ 이름을 안 바꾼 이유 — (죽은) 잉여 계통과 검사·재현 여럿이 이 이름을 읽는다. */
 export function cropSurplusRateOf(fp) {
   const rules = fp && fp.rules;
   const r = rules ? rules.cropSurplusSaleRate : FIRST_PLAY_RULES.cropSurplusSaleRate;
@@ -2375,6 +2737,7 @@ export function pantryGramsOf(fp) {
    반환 { lots · maxLots · pendingWon(곳간에서 나갈 원) · rate · won(받을 돈) ·
           lossWon(손해) · pantryWon(지금 곳간) · picked[] · canSell } */
 export function pantrySaleQuote(fp, count) {
+  const rules = (fp && fp.rules) || FIRST_PLAY_RULES;
   const lots = pantryLotsOf(fp);
   const maxLots = lots.length;
   const n = Number.isFinite(count)
@@ -2382,12 +2745,18 @@ export function pantrySaleQuote(fp, count) {
     : maxLots;
   const picked = lots.slice(0, n);
   const pendingWon = picked.reduce((a, l) => a + l.won, 0);
-  const rate = cropSurplusRateOf(fp);
-  const won = Math.round(pendingWon * rate);
   /* ★ 2026-08-16 — g 도 같이 낸다(§그램). **낱개를 더해서** 낸다 — 화면에 줄마다 적힌
      g 을 손으로 더한 값과 합계가 같아야 한다. */
   const pickedG = picked.map(l => gramsOfWon(l.won));
   const pendingGrams = pickedG.reduce((a, v) => a + v, 0);
+  /* ★★ 2026-08-17 — **꾸러미마다 그 작물의 값으로** 센다(§판매). 총액에 한 비율을 곱하지
+     않는다 — 콩나물(7원/g)과 무순(8원/g)이 섞이면 그 곱이 어느 쪽도 아닌 값을 낸다. */
+  const pickedWonPerG = picked.map(l => cropSellWonPerGram(rules, lotKindIndexOf(rules, l.kind)));
+  const pickedWon = picked.map((l, i) => Math.round(pickedG[i] * pickedWonPerG[i]));
+  const won = pickedWon.reduce((a, v) => a + v, 0);
+  /* ★ 실효 비율 — 화면이 「85%에 넘깁니다」를 말하던 자리다. 섞인 판에서는 두 값 사이에
+     떨어진다. ⚠ 이 값으로 다시 곱하지 마라(위 `won` 이 정본이다) */
+  const rate = pendingWon > 0 ? won / pendingWon : cropSurplusRateOf(fp);
   return {
     lots: n, maxLots, pendingWon, rate, won,
     /* ★ 손해를 **여기서 세어 준다.** 화면이 다시 세면 반올림이 갈려 두 수가 어긋난다 */
@@ -2395,7 +2764,10 @@ export function pantrySaleQuote(fp, count) {
     pantryWon: Math.max(0, Math.round(fp && fp.food ? fp.food.pantryWon || 0 : 0)),
     pendingGrams,
     pantryGrams: pantryGramsOf(fp),
-    picked: picked.map((l, i) => ({ ...l, g: pickedG[i] })),
+    /* ★ 줄마다 g · 받을 돈 · 그 작물의 원/g 을 같이 싣는다 — 화면이 다시 안 세게 */
+    picked: picked.map((l, i) => ({ ...l, g: pickedG[i],
+                                    won: l.won, saleWon: pickedWon[i],
+                                    wonPerGram: pickedWonPerG[i] })),
     canSell: n > 0 && pendingWon > 0 && won > 0
   };
 }
