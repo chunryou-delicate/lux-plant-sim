@@ -3240,7 +3240,14 @@ function drawLedger() {
      대신 화면이 그렇게 **말하게** 한다(아래 §한 번 거두면). */
   const cycleWon = R.cropKindSavedWon ? R.cropKindSavedWon[0] : 0;   // 한 회전분(중간 품질)
   let cycleG = 0; try { cycleG = Math.round(cycleWon / 10); } catch { }
-  const maxSirus = R.harvestDays;                                    // 천장 = 주기 길이
+  const maxSirus = R.harvestDays;                                    // 매일 거두게 되는 개수 = 주기 길이
+  /* ★ 2026-08-17 — **진짜 천장은 손이다.** 물은 한 번에 하나라 하루에 줄 수 있는 수가
+     체력이고, 주기 길이만큼 돌아가므로 `체력 × 주기` 가 넘어서면 소용없는 개수다.
+     ⚠ 값을 여기 손으로 적지 않는다 — 체력은 레벨업으로 **자란다**(§drawLevelUps).
+       적어 두면 5 로 굳어 다음 날 거짓말이 된다(§2.8 사고와 같은 결). */
+  let maxWaterPerDay = 5;
+  try { const sv = staminaView(S); if (sv && sv.max > 0) maxWaterPerDay = sv.max; } catch { }
+  const handCap = maxWaterPerDay * R.harvestDays;
   const waiting = (ws && ws.waiting) || 0;
   const idleDays = (ws && ws.idleDays) || 0;
 
@@ -3251,12 +3258,31 @@ function drawLedger() {
     tip = `시루 <b>${waiting}개</b>가 아직 물을 안 받았습니다`
         + (idleDays ? ` (${idleDays}일째)` : '')
         + ` — <b>물을 준 날이 0일차</b>입니다. ${R.harvestDays}일 뒤에 거둡니다.`;
+  /* ★★ 2026-08-17 — **여기 있던 두 줄이 거짓말이 됐다.**
+     ------------------------------------------------------------
+     예전 문구: *"주기 길이만큼 찼습니다. ★더 사도 거둘 날이 겹쳐 깎입니다
+                 (3,000원 → 2,000원 → …)"*
+     겹침 벌을 걷었으므로(`first_play §겹침` · `overlap-to-plan.md`) **이제 안 깎인다.**
+     박사님: *"300G은 하루 수확량을 개수에 따라 조절하라는 게 아니라 **식량으로 쓸 수 있는
+     G수**를 조절하란 거였는데"* — 수확은 온전히 들어오고 **먹는 것만** 상한에 걸린다.
+
+     ⇒ 그래서 「주기 길이(5개)」는 이제 **깎이는 문턱이 아니다.** 진짜 천장은 둘로 갈렸다:
+       ① **먹는 것** — 하루 몫을 넘게 거두면 남는다(버려지지 않는다. 쌓였다가 팔린다)
+       ② **손** — 물은 한 번에 하나고 체력이 5 라 하루 5개까지만 시작한다
+          ⇒ 주기 5일 × 5개 = **25개**가 진짜 천장이다
+     ⚠ 그 천장이 **규칙에서 안 나오고 화면 어디에도 안 적혀 있었다**(overlap-to-plan §3-2).
+       여기서 말한다 — 다른 데 또 적지 마라. 낡으면 두 곳이 갈린다. */
   else if (sirus < maxSirus)
     tip = `시루 <b>${sirus}개</b> — ${R.harvestDays}일 주기라 <b>${maxSirus}개</b>까지는`
-        + ` 하루씩 어긋나게 돌리면 매일 ${won(cycleWon)}을 온전히 받습니다.`;
+        + ` 하루씩 어긋나게 돌리면 <b>매일</b> 거둡니다.`;
+  else if (sirus < handCap)
+    tip = `시루 <b>${sirus}개</b> — 이제 매일 거둡니다. 하루 몫을 넘게 거둔 것은`
+        + ` <b>안 버려지고</b> 곳간에 쌓였다가 [상점]에서 팔립니다.<br>`
+        + `★물은 한 번에 하나라 <b>하루 ${maxWaterPerDay}개</b>까지 시작할 수 있습니다`
+        + ` — 그래서 <b>${handCap}개</b>가 천장입니다.`;
   else
-    tip = `시루 <b>${sirus}개</b> — 주기 길이만큼 찼습니다.<br>`
-        + `★더 사도 거둘 날이 겹쳐 깎입니다 (${won(cycleWon)} → ${won(cycleWon * 2 / 3)} → …).`;
+    tip = `시루 <b>${sirus}개</b> — <b>천장입니다.</b><br>`
+        + `★더 사도 물 줄 손이 없습니다 (하루 ${maxWaterPerDay}개 × ${R.harvestDays}일 주기).`;
 
   el.innerHTML =
       row('하루 식비', won(daily))
