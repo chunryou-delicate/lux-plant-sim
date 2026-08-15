@@ -5986,8 +5986,22 @@ function syncRoom() {
       progress01: lastTurn && lastTurn.growthPhase && lastTurn.growthPhase.progress01,
       /* ★유효 생장일을 그대로 넘긴다. 이게 없으면 방이 phaseId+progress01 로 날짜를
          되짚어야 하는데, spear_furled 는 축마다 되풀이돼서 어림이 섞인다(±1일).
-         코어는 이미 이 값을 갖고 있으므로 안 넘길 이유가 없다. */
-      growthDays: lastTurn && lastTurn.effectiveGrowthDays,
+         코어는 이미 이 값을 갖고 있으므로 안 넘길 이유가 없다.
+
+         ★★ 2026-08-16 — **`lastTurn` 이 없을 때 방이 365일짜리를 그렸다.**
+         박사님: *"몬스테라가 짱큰거로왔어 근데 자세히 눌러보면 작어. 버그야"*
+         ------------------------------------------------------------
+         몬스테라는 **[거두기]에서 온다.** 그 순간엔 `lastTurn` 이 아직 없어서 이 칸이
+         `null` 로 갔고, 받는 쪽 `room_view.growthDaysOf` 가 **데모용 셋째 길**
+         `clamp(progress01 ?? 1) * 365` 로 떨어졌다. 그래서 도착 직후 방은 **유효 365일 ·
+         잎 5장 · 키 0.668m** 를 그리는데 확대창은 **유효 45일 · 잎 1장**을 그렸다.
+         ★ 도착 때만이 아니다 — **세이브를 다시 열 때마다** 그렇다. 그 얼굴이 더 자주 보인다.
+         ⇒ turn 이 없으면 **코어에게 직접 묻는다.** 작은 쪽이 맞다 —
+           `ARRIVAL.growthDays` · `pot.arrivalGrowthDays` · 코어 · 확대창 · 대사
+           **다섯이 45를 가리킨다**(도착 대사가 *"작은 걸 하나 줄 테니"* 다).
+         ⚠ `||` 가 아니라 **`??`** 여야 한다 — `||` 로 두면 **유효 0일(갓 심은 것)이 덮인다.** */
+      growthDays: (lastTurn && lastTurn.effectiveGrowthDays) ??
+                  (() => { try { return io.growth.growthDays(); } catch { return null; } })(),
       /* ★turn 에는 band 가 없다 — judgeDLI 결과는 turn.slot 안에 있다.
          지금까지 undefined 가 가서 방 화면의 밴드 색이 안 붙고 있었다. */
       band: lastTurn && lastTurn.slot && lastTurn.slot.band,
