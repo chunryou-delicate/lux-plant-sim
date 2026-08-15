@@ -2322,7 +2322,9 @@ import { newState, SIM_MODES, pot0, pushLog, givePlant, hasPlant, ARRIVAL,
 import { catalogList, orderItem, shopStatus, priceOf,
          listPot, listCutting, dealListing, cancelListing,
          marketGate, marketStatus, listingFor, marketWaitKo, MARKET_MIN_LEAVES,
-         stockOf, SELLABLE_CUTTING_STATUS, varieLeavesNeededFor } from './src/game/shop.js';
+         stockOf, SELLABLE_CUTTING_STATUS, varieLeavesNeededFor,
+         /* ★★ 무늬 등급 (2026-08-16 · plan-2026-08-17-varie-grade.md 확정) */
+         installVarieGrades, assignPotLeafGrades } from './src/game/shop.js';
 /* ★ 삽수 — 규칙과 수치는 전부 propagation.js 것이다. 여기서는 부르기만 한다
    (날짜를 여기서 다시 세면 화면과 코어가 갈라진다). */
 import { takeCutting, repotCutting, cuttableNow, cutBudgetOf, cutBlockedReason,
@@ -2475,6 +2477,15 @@ const io = {
 const STAMINA_RULES_NOW = staminaRulesFrom(
   await fetch('./data/balance/stamina.json').then(r => r.ok ? r.json() : null).catch(() => null));
 
+/* ★★ 무늬 등급 표 (2026-08-16 · data/balance/varie_grades.json).
+   갈래 묶음(산반/하프문/풀문) · 잎 1장 값 · 빛이 정하는 확률이 전부 저기 있다 —
+   ★ 박사님이 **표만 고치면** 되도록 확정문 §1 이 그렇게 정했다. 코드에 갈래 이름을 안 박는다.
+   ⚠ 위 체력 표와 같은 규율이다 — **없어도 게임은 돌아야 한다.**
+     `shop.js` 가 열릴 때 스스로 한 번 읽어 보므로 이 줄은 「다른 밸런스 파일과 같은 자리에
+     보이게」 하는 값어치가 크다. 못 읽으면 밑값으로 돈다. */
+installVarieGrades(
+  await fetch('./data/balance/varie_grades.json').then(r => r.ok ? r.json() : null).catch(() => null));
+
 const balanceResponse = await fetch('./data/balance/characters.json');
 if (!balanceResponse.ok) throw new Error(`[첫 플레이] characters.json HTTP ${balanceResponse.status}`);
 const FIRST_RULES = firstPlayRulesFromBalance(await balanceResponse.json());
@@ -2504,6 +2515,48 @@ let stuckDays = 0;
 function noteTurn(t) {
   lastTurn = t;
   stuckDays = (t && (t.growthBlocked || t.headroomBlocked)) ? stuckDays + 1 : 0;
+  noteLeafGrades(t);
+}
+
+/* ══ ★★★ 무늬 등급 — 새로 난 무늬 잎이 **어떤 무늬인가**를 정한다 (2026-08-16) ══
+   ------------------------------------------------------------
+   확정문 `plan-2026-08-17-varie-grade.md`:
+     등급은 무늬 잎 **장수**가 아니라 무늬의 **종류**(산반/하프문/풀문)다.
+     그리고 **어느 종류가 되는지는 그 잎이 난 자리의 밝기가 정한다**(§3).
+       어두움 산반 90% · 하프문 9% · 풀문 1%
+       중간   산반 70% · 하프문 25% · 풀문 5%
+       밝음   산반 45% · 하프문 40% · 풀문 15%   ← 어두운 자리의 1.6배
+   ⇒ 그래서 **몬스테라를 어디 두느냐가 값을 정한다.** 이 게임의 뼈대다.
+
+   ★★ **왜 여기(`noteTurn`)인가.** 턴이 지나는 목이 여기 하나뿐이라서다.
+     `nextDay` 는 화면 여러 곳에서 부르는데(빨리 감기·수확·자동 진행) 전부 `noteTurn` 을
+     거친다. 한 자리에 붙이면 **어느 길로 들어와도 빠지지 않는다** —
+     여러 자리에 붙이면 언젠가 한 곳이 빠지고, 그러면 어떤 판에서만 등급이 안 붙는다.
+   ⚠ 하루에 여러 번 불려도 안전하다 — 이미 정해진 잎은 안 건드리고(`shop.js` 검사 E-3),
+     빛을 못 재면 **아무것도 안 정한다**(E-2 — 「모르면 미룬다」. 0 으로 안 메꾼다).
+
+   ⚠⚠ **`priceOf` 를 맨몸으로 부르지 마라.** 기본이 삽수(`form:'cutting'` ×1.0)라
+     그루를 매기면서 빠뜨리면 값이 1.4배 싸진다. 2026-08-16 에 `tutorial.sellableWonOf`
+     가 정확히 그것으로 이사 성공률을 A 60→13% 로 죽였다. 그루는 `potPriceOf` 다. */
+function noteLeafGrades(t) {
+  if (!hasPlant(S)) return;
+  try {
+    /* 잎 상태의 정본은 growth 다 — 화면이 잎을 세지 않는다 */
+    const ls = io.growth && io.growth.leafState && io.growth.leafState();
+    if (!ls) return;
+    /* ★ 밴드는 **이 턴 것**을 넘긴다. 코어가 그 값으로 자랐으니 등급도 같은 값을 봐야 한다 —
+       지난 턴 것을 넘기면 「어제 자리」가 오늘 난 잎의 등급을 정하게 된다. */
+    const band = (t && t.growthSpeed && t.growthSpeed.band) || null;
+    const r = assignPotLeafGrades(S, { leafState: ls, band });
+    /* ⚠ 새로 정해진 잎이 없으면 **조용히 지나간다.** 매 턴 「아직 산반입니다」를 말하면
+       그건 안내가 아니라 잔소리다(quest-to-plan 의 규율과 같은 결).
+       ⚠ 대사가 아니라 **배너**다 — `dialogue.js` 는 `leaf_grade` 를 모르고, 알 필요도 없다.
+         `ko` 가 이미 사람 말이라(shop.js §assignPotLeafGrades) 그대로 띄운다. */
+    for (const a of (r && r.assigned) || [])
+      banner(`✨ ${a.leafNo}번째 잎 — ${a.gradeKo}`,
+             (((r.events || []).find(e => e.leafBirth === a.leafBirth) || {}).ko || '')
+               .replace(/\*\*/g, ''));
+  } catch (e) { console.warn('[무늬 등급]', e && e.message); }
 }
 /* ★ 표시 전용 — 몬스테라가 **도착한** 자리. first_play 는 옮기면 slotId 를 덮어써서
    "아직 그 자리인가"를 나중에 물어볼 수 없다. 상태를 고치지 않고 화면 쪽에서 기억한다.
@@ -7428,6 +7481,17 @@ async function bootRoomView() {
        밖에서 잴 수 있게. **읽기 전용**이다(`stepQuests` 는 안 내준다 — 보상이 걸려 있다). */
     window.__questSnap = () => questSnapshotNow(lastTurn);
     window.__questView = () => questView(S, questSnapshotNow(lastTurn));
+    /* ★★ 무늬 등급 — 검사가 「배선이 실제로 등급을 붙이나」를 밖에서 잴 수 있게.
+       ⚠ **읽기 전용이 아니다** — `noteLeafGrades` 는 등급을 정한다(굴림이 들어 있다).
+         그래도 내주는 까닭: 이 배선은 **200일을 굴려야 처음 걸리는 자리**라
+         그것 말고는 화면에서 확인할 길이 없고, 그러면 「고쳤다」를 못 쓴다(START-HERE §2).
+       ★ 두 번 불러도 안전하다 — 이미 정해진 잎은 안 건드린다(shop.js 검사 E-3). */
+    window.__leafGrades = () => {
+      noteLeafGrades(lastTurn);
+      const p = pot0(S);
+      return { grades: (p && p.leafGrades) || null, potId: p && p.id,
+               band: (lastTurn && lastTurn.growthSpeed && lastTurn.growthSpeed.band) || null };
+    };
     /* ★ 고른 가구 — `__picked`(화분)와 같은 결의 **읽기용** 손잡이다.
        검사가 "무엇이 골라졌나 · 지금 옮기는 중인가"를 화면 클래스가 아니라 상태로 볼 수 있다. */
     window.__furn = furnPicked;
