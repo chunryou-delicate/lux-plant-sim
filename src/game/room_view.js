@@ -728,6 +728,20 @@ export async function createRoomView(canvas, opts = {}) {
        cellRings  칸 열쇠 → 링 메시.  cellInfo  칸 열쇠 → { x,y,z, rect, uid, occIdx, maxPotD } */
   let cellRings = new Map();
   let cellInfo  = new Map();
+  /* ★★ 2026-08-16 — **추천 자리가 앉아 있는 칸의 크기** (slotId → {cw, cd}).
+     박사님 사진: *"책상은 얼추 된거같은데, 사이드 쪽 2개가 이상하고. 서랍장은 여전히 안되고."*
+     ------------------------------------------------------------
+     칸과 추천 자리는 **다른 층**인데 **다른 자로 그리고 있었다** —
+       칸      `info.cw × info.cd`  (그 상판을 나눈 실제 칸 크기. 책상 0.24 × 0.30)
+       추천 자리 `markerHalf(potD)`   (끌고 있는 **물건의 발자국**. 0.25 정사각)
+     그래서 상판을 한 줄로 훑으면 대부분은 칸 크기인데 **추천 자리 자리만 크기가 달라**
+     튀어 보인다. 책상은 추천 자리가 둘이라 「사이드 쪽 2개가 이상」했고,
+     서랍장은 칸이 3개뿐인데 그중 둘이 추천 자리라 **성한 칸이 하나만 남아** 아예 안 맞아 보였다.
+     ⇒ 추천 자리도 **자기가 앉은 칸의 크기**로 그린다. 그러면 한 상판의 네모가 전부 같은 자다.
+     ★ 초록 면(「여기가 좋다」)은 그대로다 — 뜻을 지우는 게 아니라 **크기만** 맞춘다.
+     ⚠ 겨누고 있는 자리(isNear)는 예전대로 **발자국 크기**다. 「놓으면 이만큼 먹는다」는
+       다른 말이고, 그 둘을 가른 것이 2026-08-14 의 요지였다. */
+  let slotCellSize = new Map();
   let cellNear = null;
   let tierRects = null;        // 상판 사각형 목록. 광선을 쏴서 캐므로 **한 번만** 만든다
   let cellSpan = 0;            // 지금 깔아 둔 칸이 몇 칸짜리 물건 기준인가
@@ -2449,6 +2463,7 @@ export async function createRoomView(canvas, opts = {}) {
     guideFills.clear();
     cellRings.clear();
     cellInfo.clear();
+    slotCellSize.clear();
     cellNear = null;
     tierRects = null;
     cellSpan = 0;
@@ -2626,7 +2641,7 @@ export async function createRoomView(canvas, opts = {}) {
     const cellKey = span + ':' + (Number.isFinite(potD) ? potD.toFixed(4) : 'x');
     if (cellSpan === cellKey && cellRings.size) return cellRings.size;
     for (const [, m] of cellRings) guideGroup.remove(m);
-    cellRings.clear(); cellInfo.clear(); cellNear = null;
+    cellRings.clear(); cellInfo.clear(); slotCellSize.clear(); cellNear = null;
     cellSpan = cellKey;
     for (const t of tierRects) {
       const u = t.own.userData || {};
@@ -2635,7 +2650,21 @@ export async function createRoomView(canvas, opts = {}) {
         ? Math.max(...u.tier_max_pot_d) : null;
       /* ★ 칸 무리는 **면마다** 다르다 — 여기서 통짜 span 을 넘기지 않고 potD 를 넘긴다.
          span 은 이제 「다시 깔아야 하나」를 가리는 열쇠로만 쓴다(§surfaceAxis). */
-      for (const c0 of cellsOfRect(t.rect, potD)) {
+      /* ★★ 2026-08-16 — **이 상판의 칸 크기를 그 위 추천 자리 전부에 먼저 알려 준다.**
+         ------------------------------------------------------------
+         처음엔 「칸이 추천 자리와 겹쳐 안 그려질 때만」 넘겼는데, 그러면 겹치지 **않는**
+         추천 자리는 여전히 발자국 크기로 남는다. 실제로 그랬다 —
+           potD 0.202 서랍장 : 칸 0.225 인데 추천 자리만 0.25
+           potD 0.97  책상   : 칸 1.20×0.60(상판 통째로 한 칸)인데 추천 자리는 1.00×1.00
+         ⇒ **겹치든 말든 상판마다 한 번** 기록한다. 한 상판 위의 네모는 전부 같은 자여야 한다.
+         ★ 칸이 하나도 안 나오는 상판(물건이 너무 커서)은 기록하지 않는다 —
+           그때는 예전대로 발자국 크기가 맞다. 없는 칸의 크기를 지어내지 않는다. */
+      const rectCells = cellsOfRect(t.rect, potD);
+      if (rectCells.length) {
+        const cw = rectCells[0].cw, cd = rectCells[0].cd;
+        for (const s of t.slots) if (s.slotId) slotCellSize.set(s.slotId, { cw, cd });
+      }
+      for (const c0 of rectCells) {
         /* ★★ **그린 자리가 곧 앉는 자리다** (2026-08-11 · 박사님 "더 쪼개").
            ------------------------------------------------------------
            칸을 반 칸(0.125)으로 잘게 깔았더니 그린 한가운데와 실제로 앉는 자리가
@@ -2650,7 +2679,8 @@ export async function createRoomView(canvas, opts = {}) {
           const sn = snapOnSurface(c0.x, c0.z, potD, t.rect, placeStepOf());
           if (sn && Number.isFinite(sn.x) && Number.isFinite(sn.z)) c = { ...c0, x: sn.x, z: sn.z };
         }
-        /* 추천 자리와 사실상 같은 점이면 안 그린다 — 한 자리에 네모가 둘 겹친다 */
+        /* 추천 자리와 사실상 같은 점이면 안 그린다 — 한 자리에 네모가 둘 겹친다
+           (크기는 위 §slotCellSize 가 이미 상판 단위로 알려 줬다) */
         if (t.slots.some(s => Math.hypot(s.x - c.x, s.z - c.z) < CELL_SAME)) continue;
         /* 열쇠는 **앉는 자리**로 짓는다. 후보(u·v)로 지으면 같은 자리에 떨어진 둘이
            다른 열쇠를 받아 겹쳐 그려진다. */
@@ -2854,7 +2884,11 @@ export async function createRoomView(canvas, opts = {}) {
       const isNear = id === nearId;
       m.material = isNear ? guideMat.near : (holds ? guideMat.fit : guideMat.ng);
       m.geometry = isNear ? guideGeo.thick : guideGeo.thin;
-      m.scale.setScalar(half);
+      /* ★★ 2026-08-16 — **자기가 앉은 칸 크기로 그린다**(§slotCellSize).
+         겨누고 있을 때(isNear)만 발자국 크기다 — 「놓으면 이만큼 먹는다」는 다른 말이다. */
+      const cz = !isNear && slotCellSize.get(id);
+      if (cz) m.scale.set(cz.cw / 2, cz.cd / 2, 1);
+      else m.scale.setScalar(half);
       m.renderOrder = isNear ? 6 : 4;
       /* ★★ 추천 자리에 **녹색 투명면**을 깐다 (박사님 2026-08-08:
          "옮기기 눌렀을 때 격자들 중 추천 지점은 살짝 녹색 투명면이 보였으면 좋겠어").
@@ -2867,7 +2901,9 @@ export async function createRoomView(canvas, opts = {}) {
       if (f) {
         f.visible = holds && id !== hideId;
         f.material = isNear ? guideMat.fillNear : guideMat.fill;
-        f.scale.setScalar(half);
+        /* 초록 면도 네모와 **같은 크기**여야 한다 — 안 맞추면 초록이 테두리 밖으로 삐져나온다 */
+        if (cz) f.scale.set(cz.cw / 2, cz.cd / 2, 1);
+        else f.scale.setScalar(half);
       }
     }
     /* ★★ 가구 윗면 **전체 칸** (§guideCells). 추천 자리와 다른 층이라 따로 돈다.
@@ -2913,8 +2949,12 @@ export async function createRoomView(canvas, opts = {}) {
       slotId: id, near: id === guideNear,
       fits: m.material === guideMat.fit || m.material === guideMat.near,
       color: '#' + m.material.color.getHexString(),
-      /* 네모 반너비[m] — 크기가 자리(maxPotD)를 타는지 물건(potD)을 타는지 검사가 이걸로 잰다 */
+      /* 네모 반너비[m] — 크기가 자리(maxPotD)를 타는지 물건(potD)을 타는지 검사가 이걸로 잰다.
+         ★ 2026-08-16 — 네모가 **정사각이 아닐 수 있다**(자기가 앉은 칸 크기로 그린다 ·
+           §slotCellSize). 그래서 세로 반너비를 `halfV` 로 따로 낸다 — 하나로만 내면
+           「한 상판 안에서 다 같은 크기인가」를 재는 검사가 세로 어긋남을 못 본다. */
       half: +m.scale.x.toFixed(4),
+      halfV: +m.scale.y.toFixed(4),
       visible: !!(guideGroup && guideGroup.visible)
     }));
   }

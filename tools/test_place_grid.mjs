@@ -328,13 +328,59 @@ async function main() {
   const wantHalf = potD => Math.max(1, Math.round(potD / 0.25)) * 0.25 / 2;
   const badMark = marks.filter(m => m.halves.length !== 1
                                  || Math.abs(m.halves[0] - wantHalf(m.potD)) > 1e-6);
-  ok('U-1 자리 네모 크기가 **끌고 있는 것**으로 정해진다 (자리마다 다르지 않다)',
-     marks.length === 3 && badMark.length === 0,
-     marks.map(m => `${m.potD} → ${JSON.stringify(m.halves)} (기대 ${wantHalf(m.potD)})`).join(' | '));
-  ok('U-2 시루 한 개(0.24m)면 한 칸 · 무리(0.97m)면 네 칸이다',
-     marks[0] && marks[1] && marks[2] &&
-     marks[1].halves[0] === 0.125 && marks[2].halves[0] === 0.5,
-     marks.map(m => `${m.potD} → 반너비 ${m.halves[0]}m`).join(' · '));
+  /* ★★★ 2026-08-16 — **이 두 줄이 지키던 약속이 바뀌었다.** 무엇을 지키던 것인지 남긴다.
+     ══════════════════════════════════════════════════════════════════
+     옛 U-1 : 「네모 반너비 = `round(potD/0.25)·0.125` 하나뿐 · 자리마다 다르지 않다」
+     옛 U-2 : 「0.24 → 0.125 · 0.97 → 0.5」
+     이것이 막던 진짜 사고는 **크기를 그 자리의 `maxPotD` 로 재던 것**이다
+     (책상 0.57 → 네모 한 변 0.75m → 상판을 통째로 덮었다. 박사님 2026-08-07).
+
+     ⚠ 그런데 그 뒤로 **자가 두 번 바뀌었다.**
+       2026-08-14  칸은 **칸 크기**로, 겨누는 칸 하나만 발자국 크기로 그린다
+       2026-08-16  칸이 상판을 **정확히 나눠 덮는다** ⇒ 칸 크기가 **상판마다 다르다**
+                   (책상 0.24 × 0.30 · 서랍장 0.30 × 0.45)
+     그 상태에서 추천 자리만 발자국(0.25 정사각)으로 그리니 한 상판 안에서 그 자리들만 튀었다.
+     박사님: *"책상은 얼추 된거같은데, **사이드 쪽 2개가 이상**하고. **서랍장은 여전히 안되고.**"*
+     — 책상은 추천 자리가 둘이라 둘만 이상했고, 서랍장은 칸 셋 중 둘이 추천 자리라 다 어긋났다.
+
+     ⇒ 이제 추천 자리도 **자기가 앉은 칸의 크기**로 그린다(room_view §slotCellSize).
+       「자리마다 다르지 않다」는 더 못 건다 — **상판마다 다른 것이 이제 맞다.**
+     ★ 그래서 **막던 사고를 직접 건다**: ① 크기가 `maxPotD` 에서 오지 않는다(책상 0.75 금지)
+       ② **한 상판 안에서는 네모가 전부 같은 크기다** ← 박사님이 짚으신 바로 그것 */
+  const uni = await page.eval(`(() => {
+    const v = window.view, out = [];
+    for (const potD of [0.202, 0.24, 0.97]) {
+      v.showSlotRings(true, { potD });
+      const per = {};
+      for (const c of (v.guideCells({ potD }) || []))
+        (per[c.uid || '?'] = per[c.uid || '?'] || new Set()).add(c.cw + 'x' + c.cd);
+      for (const r of v.slotRings())
+        if (r.half != null && r.slotId) {
+          const uid = String(r.slotId).split(':')[0];
+          if (per[uid]) per[uid].add(+(r.half * 2).toFixed(6) + 'x' + +((r.halfV != null ? r.halfV : r.half) * 2).toFixed(6));
+        }
+      out.push({ potD, per: Object.fromEntries(Object.entries(per).map(([k, s]) => [k, [...s]])),
+                 maxHalf: Math.max(0, ...v.slotRings().map(r => r.half || 0)) });
+    }
+    v.showSlotRings(false);
+    return out;
+  })()`);
+  /* ① 옛 사고가 안 돌아왔나 — **작은 물건**을 끌 때 네모가 크면 안 된다.
+     그것이 2026-08-07 의 사고다(시루 0.24 를 끄는데 책상 네모가 한 변 0.75m).
+     ⚠ **큰 물건은 다르다.** 시루 무리(0.97)는 어느 상판에도 한 자리뿐이라 칸이 상판
+       통째(책상 1.20 × 0.60)가 되는 것이 **맞다** — 그건 「자리가 여기 하나뿐」이라는 참말이다.
+       그래서 큰 물건에는 이 문턱을 안 건다. 여기서 0.5 를 걸었다가 그 참말을 거짓이라 했다. */
+  const SMALL_MAX_HALF = 0.30;                    // 작은 물건 기준 네모 한 변 0.6m 까지
+  const huge = uni.filter(u => u.potD <= 0.5 && u.maxHalf > SMALL_MAX_HALF + 1e-6);
+  ok('U-1 작은 물건을 끌 때 네모가 커지지 않는다 (책상 0.75m 사고가 안 돌아왔다)',
+     uni.length === 3 && huge.length === 0,
+     uni.map(u => `${u.potD} → 최대 반너비 ${u.maxHalf}` + (u.potD > 0.5 ? ' (큰 물건 — 안 건다)' : '')).join(' | '));
+  /* ② 한 상판 안에서는 전부 같은 자 — 박사님이 "사이드 쪽 2개가 이상" 이라 하신 그것 */
+  const mixed = uni.flatMap(u => Object.entries(u.per)
+    .filter(([, sizes]) => sizes.length !== 1)
+    .map(([uid, sizes]) => `${u.potD}:${uid}=${sizes.join('/')}`));
+  ok('U-2 한 상판 안의 네모는 추천 자리까지 **전부 같은 크기**다',
+     uni.length === 3 && mixed.length === 0, mixed.slice(0, 4).join(' | ') || '섞인 상판 없음');
 
   /* ══ V 바닥 턱(걸레받이) ══════════════════════════════════════════════
      ★ 박사님 2026-08-07: *"저 바닥에 턱을 좀 없애줄래? 가구가 박혀버리네."*
