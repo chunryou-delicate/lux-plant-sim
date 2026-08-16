@@ -1215,13 +1215,43 @@ export async function createRoomView(canvas, opts = {}) {
   let spanCache = null;                 // 방마다 한 번만 센다(방을 다시 지으면 assemble 이 버린다)
   function gridSpan() {
     if (spanCache) return spanCache;
-    const b = roomBox();
-    const nx = Math.round(b.w / GRID_CELL), nz = Math.round(b.d / GRID_CELL);
-    const x0 = -b.w / 2, z0 = -b.d / 2;
+    /* ★★ 2026-08-16 — **격자를 바깥 상자가 아니라 「안쪽 벽」 기준으로 깐다.**
+       ------------------------------------------------------------
+       박사님: *"방 사이즈 밑 그리드랑 가구 옮길 수 있는 위치랑 매칭이 정확히 안 돼."*
+               *"방의 사이즈를 조절해서 아다리 맞춰. 키우든 줄이든."*
+
+       예전에는 바깥 상자(5.0×4.0)에 격자를 깔고 벽에 닿는 칸을 버렸다. 그런데
+       벽이 0.1m 라 **안쪽이 4.8×3.8** 이고 4.8/0.25 = 19.2 — **칸에 안 떨어진다.**
+       그래서 가장자리마다 0.15m 가 남거나 잘려 격자와 방이 어긋나 보였다.
+       ⇒ 두 가지를 같이 고쳤다:
+         ① 방을 **5.2×4.2** 로 키웠다(`data/house_rooms.json`) → **안쪽이 정확히 5.0×4.0**
+         ② 격자를 **안쪽 기준**으로 깐다 → **20×16 = 320칸이 벽에서 벽까지 딱 떨어진다**
+       ⚠ 안쪽이 이미 격자에 떨어지므로 아래 벽 걷어내기는 이제 **아무것도 안 버린다.**
+         그래도 남겨 둔다 — 다른 방(원룸 등)은 아직 안 떨어질 수 있고, 그때 이 줄이 지킨다. */
+    const inner0 = roomInner();
+    const nx = Math.round(inner0.w / GRID_CELL), nz = Math.round(inner0.d / GRID_CELL);
+    const x0 = inner0.x0, z0 = inner0.z0;
     /* 바깥 벽은 축에 나란한 것만 골라 왔으므로(perimeterWalls) 겹침은 구간 두 개면 끝난다.
        SAT(rectOverlap)까지 쓸 일이 아니다 — 방마다 칸 수천 개 × 벽 조각 수십 개를 돈다. */
+    /* ★★ 2026-08-16 — **벽을 한 칸씩 부풀리던 것을 걷었다.**
+       ------------------------------------------------------------
+       박사님: *"방 사이즈 밑 그리드랑 가구 옮길 수 있는 위치랑 매칭이 정확히 안 돼.
+                 **반 칸씩 더 붙이고 추가 한 칸을 살려서** 만들면 방바닥에 딱 맞게 떨어질 것 같은데?"*
+
+       예전 식 `hx = (c.w + GRID_CELL)/2` 는 벽 반너비에 **반 칸(0.125m)을 더** 얹었다.
+       그러면 벽에 **조금이라도 닿는 칸이 통째로** 버려진다. 실측(반지하 5.0×4.0):
+         벽 두께 0.1m · 벽 중심 x=±2.45 · 맨 바깥 칸 중심 x=∓2.375
+         옛 문턱 0.175 > 거리 0.075  ⇒ **버려진다**
+       그 칸은 0.25m 중 **0.10m 만 벽**이고 나머지 0.15m 는 진짜 바닥이다.
+       가장자리 네 줄에서 그만큼이 통째로 사라져 **격자가 방보다 안쪽으로 물러나 보였다.**
+
+       ⇒ 이제 **칸 중심이 벽 안에 들어간 것만** 버린다(부풀리지 않는다).
+         박사님 말씀의 「추가 한 칸을 살려서」가 이 한 줄이다.
+       ⚠ 그래도 「벽에 걸친 칸」에 물건이 반쯤 박히지는 않는다 — 놓을 때는
+         `snapSpan`·`cellBox` 가 발자국 전체로 다시 판정한다(§place.js). 여기서 정하는 것은
+         **격자를 어디까지 그리나**뿐이다. */
     const walls = perimeterWalls().map(c => ({ x: c.x, z: c.z,
-                                               hx: (c.w + GRID_CELL) / 2, hz: (c.d + GRID_CELL) / 2 }));
+                                               hx: c.w / 2, hz: c.d / 2 }));
     const keep = new Uint8Array(nx * nz);
     let cells = 0;
     for (let i = 0; i < nx; i++) {
@@ -7484,7 +7514,10 @@ export async function createRoomView(canvas, opts = {}) {
                   실제로 그리는 칸 수는 room.cells 다 — 바깥 벽에 물리는 칸을 뺀 수다.
                   free+blocked 은 cols*rows 가 아니라 **cells** 와 같다(2026-08-08).
                   inner 는 벽 안쪽 면이 만드는 사각형 — 「방 안쪽이 몇 m 냐」를 재는 자다. */
-               room: b ? { w: b.w, d: b.d, cols: Math.round(b.w / GRID_CELL), rows: Math.round(b.d / GRID_CELL),
+               /* ⚠ 2026-08-16 — cols·rows 는 **안쪽 기준**이다(격자를 안쪽에 깔므로).
+                  바깥 상자로 세면 화면에 깔린 칸 수와 안 맞아 「자가 딴 걸 잰다」가 된다. */
+               room: b ? { w: b.w, d: b.d, cols: sp ? sp.nx : Math.round(b.w / GRID_CELL),
+                           rows: sp ? sp.nz : Math.round(b.d / GRID_CELL),
                            cells: sp.cells,
                            inner: { w: sp.inner.w, d: sp.inner.d,
                                     x0: +sp.inner.x0.toFixed(4), x1: +sp.inner.x1.toFixed(4),
