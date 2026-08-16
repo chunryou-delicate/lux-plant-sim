@@ -862,6 +862,12 @@ export async function createRoomView(canvas, opts = {}) {
 
   const cam = { az: 0, el: BASE_EL_PORTRAIT, dist: 8, target: new THREE.Vector3(0, 1, 0), look: new THREE.Vector3() };
   let tween = null;            // { from, to, t0, ms }
+  /* ★★ 휠이 겨눈 거리 (2026-08-16 · §onWheel ⓒ). null 이면 아무것도 안 돌고 있다.
+     휠은 **한 칸씩 뚝뚝 끊겨** 들어오는 입력이다. 그 값을 cam.dist 에 곧바로 쓰면
+     한 칸이 곧 한 번의 순간이동이 된다. 그래서 「겨눈 자리」만 적어 두고 —
+     실제로 다가가는 것은 stepZoom 이 프레임마다 조금씩 한다. */
+  let zoomTo = null;
+  let zoomAt = 0;              // stepZoom 이 마지막으로 돈 시각
   /* 플레이어가 만져 놓은 시점 — 방을 바꾸거나 화면이 돌아가도 유지한다 */
   let userYaw = 0;             // 기본 방위에서 튼 각(스냅되어 45° 배수)
   let userEl = null;           // 상하각. null 이면 화면 비율에 맞춘 기본값을 쓴다
@@ -1441,9 +1447,15 @@ export async function createRoomView(canvas, opts = {}) {
 
   /* 손을 떼면 **턱만** 되돌린다. 방위는 놓은 자리에 그대로 선다(아래 ★★, 2026-08-06) */
   function settleCam() {
+    /* ★ 휠이 겨눠 둔 자리가 아직 남아 있으면 **그 자리를 목표로 삼는다** (2026-08-16).
+       안 그러면 정돈 트윈이 「가는 중인 거리」를 목적지로 못박아, 굴린 만큼 다 안 가고
+       중간에 멈춘다. 남은 몫은 아래 setCam 트윈이 이어서 부드럽게 데려간다 —
+       그래서 여기서 zoomTo 를 비워도 화면은 안 끊긴다. */
+    const dEff = zoomTo != null ? zoomTo : cam.dist;
+    zoomTo = null;
     if (focused) {                       // 자리에 들어가 있을 땐 스냅하지 않는다
       const [lo, hi] = [0.5, 3.6];
-      const el = clamp(cam.el, EL_MIN, EL_MAX), dist = clamp(cam.dist, lo, hi);
+      const el = clamp(cam.el, EL_MIN, EL_MAX), dist = clamp(dEff, lo, hi);
       if (Math.abs(el - cam.el) > 1e-3 || Math.abs(dist - cam.dist) > 1e-3)
         setCam({ az: cam.az, el, dist, target: cam.target }, false, SNAP_MS);
       return;
@@ -1461,7 +1473,7 @@ export async function createRoomView(canvas, opts = {}) {
     const base = windowAzimuth() + YAW_OFFSET;
     const el = clamp(cam.el, EL_MIN, EL_MAX);
     const [lo, hi] = zoomRange();
-    const dist = clamp(cam.dist, lo, hi);
+    const dist = clamp(dEff, lo, hi);
     userYaw = snapped - base;
     userEl = el;
     zoomK = dist / (fitDist || dist);
@@ -1473,6 +1485,9 @@ export async function createRoomView(canvas, opts = {}) {
   }
 
   function setCam(goal, snap, ms) {
+    /* ★ 여기부터는 목적지가 확정된 것이다 — 굴러가던 휠 목표는 여기서 끝난다.
+       (settleCam 은 위에서 그 값을 goal 에 이미 넘겨받았다) */
+    zoomTo = null;
     if (snap) {
       cam.az = goal.az; cam.el = goal.el; cam.dist = goal.dist; cam.target.copy(goal.target);
       tween = null;
@@ -1482,6 +1497,35 @@ export async function createRoomView(canvas, opts = {}) {
                 t0: performance.now(), ms: ms || CAM_TWEEN_MS };
     }
     needsRender = true;
+  }
+
+  /* ★★★ 2026-08-16 — **휠 한 칸을 여러 장에 나눠 그린다** (§onWheel ⓒ)
+     ══════════════════════════════════════════════════════════════════
+     휠은 손가락 끌기와 다르다. 끌기는 값이 **줄줄이** 들어오지만 휠은 **뚝뚝 끊겨서**
+     들어온다 — 크롬은 한 칸에 deltaY 100 을 한 번 던지고 만다. 그 한 번을 cam.dist 에
+     곧바로 쓰면 **화면이 8% 를 한 장 만에 건너뛴다.** 그게 「턱」이다.
+     ⇒ 잰 값(고치기 전 · game.html 1440×900): 마우스를 100ms 마다 한 칸씩 굴리면
+       그려진 장의 **중앙 변화량이 7.4%**(= 한 칸 통째)이고, **그린 장의 55% 는 한 톨도
+       안 움직인 장**이었다. 뛰고-멎고-뛰고-멎고 — 사람 눈에는 이게 턱턱거림이다.
+
+     고치는 법은 값을 바로 쓰지 않는 것이다. 「어디까지 가고 싶은가」만 적어 두고
+     프레임마다 그 자리로 **기하급수적으로** 다가간다. 한 칸이 여러 장에 나뉘고,
+     칸이 연달아 오면 목표가 갱신되며 자연스럽게 이어진다(트랙패드가 특히 그렇다).
+
+     ⚠ 시간상수(TAU)는 **응답을 늦추는 값이 아니다** — 첫 장은 여전히 다음 프레임에 움직인다.
+       늦어지는 것은 「다 도착하는 시각」뿐이고, 그 사이 화면은 계속 움직이고 있다. */
+  const ZOOM_TAU_MS = 110;
+  /* 카메라가 목표에서 뒤처져도 되는 최대치(ln). 0.18 ≈ 20% ≈ 휠 두 칸 반 (§onWheel ⓕ) */
+  const ZOOM_LAG_MAX = 0.18;
+  function stepZoom(now) {
+    if (zoomTo == null) return false;
+    const dt = clamp(now - (zoomAt || now), 0, 64);   // 탭이 잠들었다 깨면 dt 가 몇 초다
+    zoomAt = now;
+    const d = zoomTo - cam.dist;
+    /* 0.15% 안쪽이면 도착으로 친다 — 남은 티끌을 좇느라 프레임을 계속 태우지 않는다 */
+    if (!(Math.abs(d) > zoomTo * 0.0015)) { cam.dist = zoomTo; zoomTo = null; return true; }
+    cam.dist += d * (1 - Math.exp(-dt / ZOOM_TAU_MS));
+    return true;
   }
 
   function stepTween(now) {
@@ -4388,6 +4432,9 @@ export async function createRoomView(canvas, opts = {}) {
         /* ★ 2026-08-16 — 휠과 같은 까닭으로 **돌던 트윈을 끊는다**(§onWheel ⓐ).
            두 손가락으로 벌리는데 카메라가 도로 끌려가면 그게 「턱」이다. */
         tween = null;
+        /* ★ 휠이 겨눠 둔 자리도 버린다 — 두 손가락이 잡은 거리가 지금의 뜻이다.
+           안 버리면 stepZoom 과 여기가 같은 cam.dist 를 서로 밀어 화면이 떤다. */
+        zoomTo = null;
         const [lo, hi] = focused ? [0.5, 3.6] : zoomRange();
         cam.dist = softClamp(cam.dist * (1 - (dd - pinch) * 0.004), lo, hi);
         needsRender = true;
@@ -4510,14 +4557,55 @@ export async function createRoomView(canvas, opts = {}) {
          ⚠ 끌기(`onDragMove`)는 이미 `tween = null` 을 하고 있었다. **휠·핀치만 빠져 있었다.**
        ⓑ **굴린 양을 안 봤다.** `Math.sign(e.deltaY)` 라 **한 번에 무조건 8%** 였다.
          트랙패드는 작은 값을 잘게 여러 번 보내는데 그 하나하나가 8% 계단이 된다.
-       ⇒ 트윈을 끊고, 굴린 양에 비례시키되 한 번에 너무 크지 않게 자른다. */
+       ⇒ 트윈을 끊고, 굴린 양에 비례시키되 한 번에 너무 크지 않게 자른다.
+
+       ★★★ **그런데도 남아 있었다** (박사님 2026-08-16: "휠이 아직 턱턱 막힘"). 재서 찾은 둘:
+       ⓒ **한 칸을 한 장에 다 써 버렸다.** ⓑ 는 트랙패드만 고친 것이다. 마우스 휠은
+         원래 뚝뚝 끊겨 오는 입력이라(크롬은 한 칸에 deltaY 100 을 한 번) 「비례」시켜도
+         여전히 **한 칸 = 한 장에 8% 순간이동**이다. 실측으로 그려진 장의 중앙 변화량이
+         7.4%(한 칸 통째)였고 **그린 장의 55% 는 안 움직인 장**이었다.
+         ⇒ 값을 바로 쓰지 않고 **겨눈 자리(zoomTo)만 적는다.** 다가가는 건 stepZoom 이다.
+       ⓓ **한계에서 고무줄이 튕겼다.** `softClamp` 는 턱 너머로 28% 를 내주고 settleCam 이
+         260ms 트윈으로 되잡는다. **손을 떼는 순간이 있는 끌기**에는 맞는 감각이지만,
+         휠에는 「뗀다」가 없다 — 굴리는 내내 나갔다 되돌아오기를 되풀이한다.
+         실측: 한계에 붙여 놓고 열 칸을 굴리니 화면이 **±2.8% 로 계속 튕겼다**(턱배율 12.1).
+         ⇒ 휠은 **딱 잘라 세운다**(clamp). 끝에 닿으면 그냥 안 움직인다.
+       ⓔ **끊은 트윈이 데려가던 몫을 버리고 있었다** — ⓒ 를 넣고 나서야 드러난 것이다.
+         160ms 쉬면 `settleCam` 이 남은 줌을 **트윈에게 넘긴다**(§settleCam). 그런데 다음 칸이
+         그 트윈을 `tween = null` 로 끊으면서 **지금 있는 자리**부터 다시 셌다 — 트윈이
+         아직 안 데려다준 몫이 통째로 사라진다. 예전엔 값을 즉시 썼으니 없던 일이고,
+         나눠 그리기 시작하면서 생긴 일이다.
+         실측: 이걸 안 고치면 한 칸이 **46% 만** 먹힌다(22칸을 굴려도 10칸만 간다).
+         ⇒ 끊을 때는 **트윈이 가려던 곳**에서 이어 센다. 굴린 것은 하나도 안 버린다.
+
+       ⚠⚠ 이 주석을 고칠 때 — **`ⓐ`~`ⓔ` 는 자바스크립트에서 진짜 식별자다**(유니코드 Ll).
+         한글도 그렇다. 그래서 이 덩이가 주석 밖으로 새어 나가면 `node --check` 는
+         **말짱하다고 답하고** 게임은 실행 중에 ReferenceError 로 죽는다. 실제로 그랬다. */
+    /* ★ 아래 세 자리 중 「이미 약속된 목적지」를 골라 거기서 잇는다:
+       ① 아직 다 못 간 휠 목표 ② 정돈 트윈이 가려던 거리 ③ 아무것도 없으면 지금 자리 */
+    const from = zoomTo != null ? zoomTo : (tween ? tween.to.dist : cam.dist);
     tween = null;
     const [lo, hi] = focused ? [0.5, 3.6] : zoomRange();
     /* 줄 단위(deltaMode 1)로 오는 브라우저가 있다 — 그때는 한 줄을 16px 로 친다 */
     const px = e.deltaY * (e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? 400 : 1);
     /* 100px(휠 한 칸)이 8% 가 되게 맞추고, 한 번에 25% 를 넘지 않게 자른다 */
     const k = clamp(px * 0.0008, -0.25, 0.25);
-    cam.dist = softClamp(cam.dist * (1 + k), lo, hi);
+    /* 겹쳐 쌓는다 — 연달아 굴린 칸이 서로를 잡아먹으면 「굴려도 안 간다」가 된다 */
+    zoomTo = clamp(from * (1 + k), lo, hi);
+    /* ★★ **너무 뒤처지게 두지 않는다** (ⓕ · 느린 기계에서만 생기는 일)
+       ------------------------------------------------------------
+       트랙패드는 16ms 마다 값을 던진다. 화면이 60장을 그리는 기계에서는 stepZoom 이
+       매번 따라잡아 뒤처짐이 한 칸도 안 된다. 그런데 **화면이 15장밖에 못 그리는 기계**
+       에서는 던지는 쪽이 훨씬 빨라 목표가 저 앞으로 달아나고, 굴리기를 멈춘 뒤
+       `settleCam` 트윈이 그 밀린 몫을 **몇 장 만에 한꺼번에** 데려간다.
+       실측(헤드리스 15fps): 그때 한 장이 11.3% 를 건너뛰었다 — 고치기 전(4.0%)보다 나쁘다.
+       ⇒ 뒤처짐에 뚜껑을 씌운다. 넘치는 만큼은 **그 자리에서 즉시** 반영한다.
+         넘치는 양은 이벤트 하나치라 아주 작고, 나중에 목돈으로 튀지 않는다.
+       ⚠ 굴린 것을 **버리는 게 아니다** — 목표(zoomTo)는 그대로 두고 카메라만 끌어당긴다. */
+    const lag = Math.log(zoomTo / cam.dist);
+    if (Math.abs(lag) > ZOOM_LAG_MAX)
+      cam.dist = zoomTo / Math.exp(Math.sign(lag) * ZOOM_LAG_MAX);
+    zoomAt = performance.now();
     needsRender = true;
     clearTimeout(onWheel._t);
     onWheel._t = setTimeout(() => { if (!disposed) settleCam(); }, 160);
@@ -4876,7 +4964,10 @@ export async function createRoomView(canvas, opts = {}) {
     /* ★ 무언가 하는 중(actAt)도 몸이 움직인다 — 모션과 물줄기가 여기 걸린다.
        끝나면 이펙트를 통째로 치우므로 곧바로 노는 화면(10fps)으로 돌아간다. */
     if (actBusy()) return LV_MOVE;
-    if (needsRender || tween || pendingDrag || walkDrag || rings.size) return LV_BUSY;
+    /* ★ zoomTo 를 빠뜨리면 안 된다 (2026-08-16) — 휠 한 칸을 나눠 그리는 동안
+       needsRender 는 첫 장에서 꺼지고 tween 도 없다. 그러면 **노는 중(10fps)** 으로
+       읽혀 나머지 장이 96ms 씩 벌어진다. 나눠 그리는 뜻이 통째로 사라진다. */
+    if (needsRender || tween || zoomTo != null || pendingDrag || walkDrag || rings.size) return LV_BUSY;
     return LV_IDLE;
   }
   /* 그 단계에서 한 장 사이의 최소 간격[ms]. 4ms 여유는 예전 값 그대로다
@@ -4922,7 +5013,7 @@ export async function createRoomView(canvas, opts = {}) {
       const d = pendingDrag; pendingDrag = null;
       if (d === walkDrag) d.target = showWalkGhost(walkTargetAt(d.px, d.py));
     }
-    const moving = stepTween(now) | pulseRings(now) | stepCharacters(now, false, level);
+    const moving = stepZoom(now) | stepTween(now) | pulseRings(now) | stepCharacters(now, false, level);
     if (!needsRender && !moving && !forceContinuous) {
       /* ★ 노는 동안은 fps 를 세지 않는다. 여기서 세면 "가만히 있어서 1초에 두 장만
          그렸다"가 "1초에 두 장밖에 못 그린다"로 읽혀 화질을 멋대로 떨어뜨린다.
