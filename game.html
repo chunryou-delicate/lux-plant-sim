@@ -171,6 +171,24 @@
   #stage.zoom #stageEmpty{display:none}
 
   /* 배치 모드 안내 — 3D 위에 얇게 뜬다 */
+  /* ★★ 할 일 — 폰 왼쪽 위 뜬 단추 (2026-08-16 박사님 요청).
+     ⚠ 44px 이상이라야 한다(이 저장소의 손가락 규격 — `test_questui` 가 잰다).
+     ⚠ `#placeHint` 가 같은 자리에 뜨므로 z-index 를 **그것보다 낮게** 둔다 —
+       놓는 중에는 안내가 이겨야 한다(안내는 그때만 뜨고, 단추는 늘 있다). */
+  #questFab{position:absolute;z-index:22;left:10px;top:10px;
+          min-width:44px;height:44px;padding:0 10px;border-radius:14px;
+          display:flex;align-items:center;gap:5px;
+          background:rgba(20,16,28,.82);border:1px solid rgba(255,255,255,.14);
+          color:var(--ink);font-size:13px;font-weight:700;line-height:1;
+          backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+  #questFab .qf-ico{font-style:normal;font-size:17px;line-height:1}
+  #questFab b{font-weight:700;font-size:12px;color:var(--dim)}
+  /* 새로 열린 줄이 있으면 점 — [가방] 단추와 **같은 신호**다(questNewSeen 하나가 정본) */
+  #questFab[data-dot]::after{content:'';position:absolute;top:5px;right:5px;
+          width:8px;height:8px;border-radius:99px;background:var(--gold);
+          box-shadow:0 0 0 2px rgba(20,16,28,.82)}
+  /* ⚠ 방이 아직 안 떴거나 놓는 중이면 감춘다 — 그때 누를 것이 아니다 */
+  #stage.room-loading #questFab, #stage.placing #questFab{display:none}
   #placeHint{position:absolute;z-index:25;left:12px;right:12px;top:10px;display:none;
           padding:9px 12px;border-radius:12px;background:rgba(20,16,28,.86);
           border:1px solid rgba(255,180,84,.30);font-size:13px;color:var(--ink);text-align:center;
@@ -673,6 +691,9 @@
          빈 통을 남겨 두면 `pointer-events:none` 이라 안 보여도 `buildGuide` 가
          **폭 있는 요소로 세어** 허공에 설명을 단다(그 함수는 사각형만 본다). */
     #navbar{display:none}
+    /* ★ 2026-08-16 — PC 에서는 뜬 단추를 감춘다. 오른쪽 패널의 [할 일] 탭이 그 일을 한다.
+       둘 다 두면 같은 것을 여는 문이 둘이 되어 어느 쪽이 참인지 헷갈린다. */
+    #questFab{display:none}
     .sheetbody{padding:2px 14px 20px}
     /* 넓으니 라벨을 다시 가로로 — 폰에서 세로로 세운 건 폭이 없어서였다 */
     #sheet label{flex-direction:row;align-items:center}
@@ -1402,6 +1423,13 @@
       <span id="bootMsg">게임을 불러오는 중…</span>
       <div id="bootBar"><i style="width:6%"></i></div>
     </div></div>
+    <!-- ★★ 할 일 — 폰 왼쪽 위 뜬 단추 (2026-08-16 박사님 요청)
+         *"퀘스트(할 일)도 모바일버전은 좌측 상단에 새 버튼으로 추가해 줘"*
+         ⚠ PC 에서는 **숨긴다** — 그쪽은 오른쪽 패널의 [할 일] 탭이 같은 일을 한다.
+           둘 다 띄우면 같은 것을 여는 문이 둘이 되어 어느 쪽이 참인지 헷갈린다. -->
+    <button id="questFab" aria-label="할 일">
+      <i class="qf-ico">📜</i><b id="questFabNum"></b>
+    </button>
     <div id="placeHint"></div>
     <div id="dropLabel"></div>
     <!-- ★해야 할 일이 있는 물건 위에 말풍선을 띄운다 (박사님 2026-08-04).
@@ -1760,6 +1788,11 @@
     <button role="tab" id="tabPlants" aria-selected="false" aria-controls="pagePlants">식물</button>
     <button role="tab" id="tabShop"   aria-selected="false" aria-controls="pageShop">상점</button>
     <button role="tab" id="tabRoom"   aria-selected="false" aria-controls="pageRoom">방</button>
+    <!-- ★★ 2026-08-16 박사님: *"피씨버전도 탭을 하나 더 만들어 주고.. 따로"*
+         폰은 왼쪽 위 뜬 단추(`#questFab`)로 열고, PC 는 **이 탭**으로 연다.
+         ⚠ 목록을 두 벌 짓지 않는다 — `drawQuestPanel` 이 팝업과 이 탭을 **같은 함수로**
+           채운다. 두 벌이 되면 한쪽이 반드시 낡는다(이 저장소가 열여섯 번 밟은 그것). -->
+    <button role="tab" id="tabQuest"  aria-selected="false" aria-controls="pageQuest">할 일</button>
     <button role="tab" id="tabDev"    aria-selected="false" aria-controls="pageDev">검수</button>
   </div>
   <div class="sheetbody">
@@ -1958,6 +1991,17 @@
 
     <!-- ══ 방 — 집·자리에 관한 것만 ══════════════════════════════════════ -->
     <div class="sheetpage" id="pageRoom" role="tabpanel">
+      <!-- ★★ 화면 밝기 (2026-08-16 박사님: *"낮이고 불도 켰는데 방이 너무 어두워 까매"*
+             — 그리고 *"폰에서만 그래, PC 는 괜찮음"*).
+           ⚠ 값이 틀린 게 아니라 **기기마다 다르다.** 한 값으로 둘 다 못 맞춘다.
+             그래서 코드가 아니라 사람이 정한다. 밑값 100%는 지금까지와 한 톨도 안 다르다. -->
+      <div class="box" id="brightBox">
+        <h3>화면 밝기 <span id="brightNow" class="dim"></span></h3>
+        <input type="range" id="brightRange" min="60" max="220" step="5" value="100"
+               aria-label="화면 밝기">
+        <div class="plots" id="brightHint">폰에서 방이 까맣게 보이면 올려 보세요. 이 기기에만 저장됩니다.</div>
+      </div>
+
       <!-- ══ 반지하 살림 — 첫 플레이가 끝나면 열린다 ══════════════════════ -->
       <div class="box" id="tutBox" style="display:none">
         <h3>반지하 살림</h3>
@@ -2006,6 +2050,19 @@
         </details>
       </div>
     </div><!-- /pageRoom -->
+
+    <!-- ══ 할 일 — ★ PC 탭 (2026-08-16 박사님 요청) ═══════════════════════
+         ⚠ 여기에 줄을 **손으로 적지 않는다.** `drawQuestPanel` 이 팝업(`#questList`)과
+           이 자리(`#questListTab`)를 **같은 값으로** 채운다. 정본은 `quest.js §QUESTS` 다. -->
+    <div class="sheetpage" id="pageQuest" role="tabpanel">
+      <div class="box">
+        <h3 id="questTabTitle">할 일</h3>
+        <div id="questBarTab"><i></i></div>
+        <div id="questSubTab" class="plots"></div>
+        <div id="questListTab"></div>
+        <div id="questNoteTab" class="plots"></div>
+      </div>
+    </div><!-- /pageQuest -->
 
     <div class="sheetpage" id="pageDev" role="tabpanel">
     <details class="box dev" id="scbox">
@@ -2206,9 +2263,11 @@
        고장이 조용해서 아무도 안 봤다. 이름을 하나로 통일하는 대신 **둘 다 받는다** —
        바깥에서 부르는 이름을 화면 구조가 정해야 할 이유가 없다. */
   var TABS = { tabBag: 'pageBag', tabPlants: 'pagePlants', tabShop: 'pageShop',
-               tabRoom: 'pageRoom', tabDev: 'pageDev' };
+               tabRoom: 'pageRoom', tabQuest: 'pageQuest', tabDev: 'pageDev' };
   var TAB_ALIAS = { bag: 'tabBag', plants: 'tabPlants', plant: 'tabPlants',
-                    shop: 'tabShop', room: 'tabRoom', dev: 'tabDev' };
+                    shop: 'tabShop', room: 'tabRoom', dev: 'tabDev',
+                    /* ★ 2026-08-16 — 「할 일」 탭. 부르는 이름 셋을 다 받는다(§TAB_ALIAS 규율) */
+                    quest: 'tabQuest', todo: 'tabQuest', quests: 'tabQuest' };
   function selectTab(tabId) {
     var want = TABS[tabId] ? tabId : (TAB_ALIAS[tabId] || tabId);
     if (!TABS[want]) return;                 /* 모르는 이름이면 지금 탭을 그대로 둔다 */
@@ -4081,7 +4140,33 @@ $('ledgerBack').onclick = guard(() => { monthOpenAt(monthLogList().length - 1); 
 /* ★★ [가방] 탭의 [할 일] — 다섯 줄을 한 화면에 편다(§questPanel).
    ⚠ 이 창은 **읽는 창**이라 아무것도 안 움직인다. 닫는 길은 넷이다:
      [알겠습니다] · [✕] · 뒤 누르기 · `Esc` (팝업 다섯이 쓰는 그 규율 그대로) */
+/* ★★ 화면 밝기 슬라이더 (2026-08-16) — 값은 room_view 가 갖고 여기서는 **묻고 넘길 뿐**이다.
+   ⚠ 밝기를 화면이 따로 기억하지 마라. 두 벌이 되면 한쪽이 반드시 낡는다. */
+(function bindBrightness() {
+  const r = $('brightRange'), now = $('brightNow');
+  if (!r) return;
+  const show = (v) => { if (now) now.textContent = `${Math.round(v * 100)}%`; };
+  /* 지금 값을 읽어 슬라이더를 세운다 — 방이 아직 안 떴으면 나중에 다시 세운다 */
+  const sync = () => {
+    try {
+      const b = roomView && roomView.brightness && roomView.brightness();
+      if (!b) return false;
+      r.min = String(Math.round(b.min * 100)); r.max = String(Math.round(b.max * 100));
+      r.value = String(Math.round(b.value * 100)); show(b.value);
+      return true;
+    } catch { return false; }
+  };
+  if (!sync()) { let n = 0; const t = setInterval(() => { if (sync() || ++n > 40) clearInterval(t); }, 500); }
+  r.addEventListener('input', () => {
+    const v = Math.max(0.6, Math.min(2.2, (+r.value || 100) / 100));
+    show(v);
+    try { roomView && roomView.brightness && roomView.brightness(v); } catch (e) { console.warn('[밝기]', e && e.message); }
+  });
+})();
+
 $('questBack').onclick  = guard(() => { openQuestPanel(); });
+/* ★ 폰 왼쪽 위 뜬 단추 — [가방] 안의 것과 **같은 문**을 연다(2026-08-16) */
+if ($('questFab')) $('questFab').onclick = guard(() => { openQuestPanel(); });
 $('questGo').onclick    = guard(() => { closeQuestPanel(); });
 $('questClose').onclick = guard(() => { closeQuestPanel(); });
 /* ★ 검사·재현이 쓰는 창구. 사람이 쓰는 길은 [가방] → [할 일] 이다 */
@@ -4573,6 +4658,10 @@ function drawBag() {
   $('bagBox').classList.toggle('empty', !html && !held);
   /* ★ 2026-08-18 — [할 일]. 진행도가 단추 글자에 뜬다(§drawBagQuestBtn) */
   try { drawBagQuestBtn(); } catch (e) { console.warn('[할 일]', e && e.message); }
+  /* ★ 2026-08-16 — 폰 뜬 단추와 PC 탭도 같은 걸음에서 그린다.
+     ⚠ 셋을 한 줄에 묶지 마라 — 하나가 던지면 나머지가 통째로 안 그려진다. */
+  try { drawQuestFab(); } catch (e) { console.warn('[할 일 단추]', e && e.message); }
+  try { drawQuestTab(); } catch (e) { console.warn('[할 일 탭]', e && e.message); }
   /* ★ 2026-08-18 — [가계부 다시 보기]. 쌓인 달 수가 단추 글자에 뜬다(§drawLedgerBackBtn) */
   try { drawLedgerBackBtn(); } catch (e) { console.warn('[가계부]', e && e.message); }
 }
@@ -5518,6 +5607,10 @@ function drawQuestPanel() {
   if (!panel) return;
   panel.classList.toggle('on', questOpen);
   panel.setAttribute('aria-hidden', questOpen ? 'false' : 'true');
+  /* ★★ 2026-08-16 — **탭은 팝업이 닫혀 있어도 그려야 한다** (박사님: PC 는 탭으로).
+     예전에는 여기서 바로 돌아갔는데, 그러면 PC 오른쪽 패널의 「할 일」 탭이
+     **영영 빈 칸**이 된다 — 팝업을 한 번도 안 열면 그리는 코드가 안 돌기 때문이다. */
+  drawQuestTab();
   if (!questOpen) return;
 
   let v = null;
@@ -5535,14 +5628,30 @@ function drawQuestPanel() {
   $('questBar').firstElementChild.style.width = `${total ? Math.round(done / total * 100) : 0}%`;
 
   /* ⚠ `textContent` 로 넣을 수 없어 innerHTML 을 쓴다. 넣는 값이 전부 **우리 표**에서
-     나온 것이라(사람이 친 글자가 하나도 없다) 그대로 둔다 — 그래도 꺾쇠는 막는다. */
+     나온 것이라(사람이 친 글자가 하나도 없다) 그대로 둔다 — 꺾쇠는 `questRowsHtml` 이 막는다.
+     ★ 2026-08-16 — 줄 짓는 일을 `questRowsHtml` 로 뺐다. **탭이 같은 조각을 쓴다.** */
+  $('questList').innerHTML = questRowsHtml(v);
+
+  /* ⚠ 「왜 잠겨 있나」를 한 번은 말해 둔다 — 안 말하면 자물쇠 넷이 고장으로 읽힌다 */
+  $('questNote').textContent = v.all.some(q => q.state === 'locked')
+    ? '잠긴 줄은 때가 되면 저절로 열립니다 — 앞의 것을 끝내거나, 식물이 자라면 열립니다.'
+    : '';
+}
+
+/* ══ ★ PC 「할 일」 탭 · 폰 왼쪽 위 뜬 단추 (2026-08-16 박사님 요청) ══════════
+   박사님: *"퀘스트(할 일)도 모바일버전은 좌측 상단에 새 버튼으로 추가해 줘"*
+           *"피씨버전도 탭을 하나 더 만들어 주고.. 따로"*
+
+   ★★ **줄을 두 벌 짓지 않는다.** 팝업(`#questList`)과 탭(`#questListTab`)이
+     **같은 값**을 그린다. 두 벌이 되면 한쪽이 반드시 낡는다 — 이 저장소가 열여섯 번
+     밟은 그 모양이고, 오늘도 `test_questui` 의 「5」가 그래서 낡았다.
+   ⚠ 그래서 이 함수는 위 `drawQuestPanel` 과 **같은 조각을 쓴다**(`questRowsHtml`).
+   ⚠ 탭은 **팝업이 닫혀 있어도** 그린다 — PC 는 팝업을 한 번도 안 열 수 있다. */
+function questRowsHtml(v) {
   const esc = s => String(s == null ? '' : s).replace(/[&<>]/g, c =>
     ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
-  $('questList').innerHTML = v.all.map(q => {
-    /* 도장 — 끝낸 줄은 ✓, 지금 할 줄은 ▶, 아직인 줄은 자물쇠 */
+  return v.all.map(q => {
     const mark = q.state === 'done' ? '✓' : q.state === 'open' ? '▶' : '🔒';
-    /* ★ 아직 안 열린 줄은 **할 일을 안 적는다.** 적으면 다섯 개짜리 심부름 목록이 된다
-       (확정문 §7 이 걱정한 그것). 이름과 보상까지만 보여 「앞에 뭐가 있다」를 말한다. */
     const body =
       q.state === 'locked' ? '<div class="qwhy">아직 열리지 않았습니다</div>'
       : q.state === 'done' ? `<div class="qtodo">끝냈습니다</div>` +
@@ -5553,15 +5662,40 @@ function drawQuestPanel() {
            `<div class="qbody"><div class="qko">${esc(q.ko)}</div>${body}</div>` +
            `<div class="qrew">${esc(questRewardKo(q))}</div></div>`;
   }).join('');
+}
 
-  /* ⚠ 「왜 잠겨 있나」를 한 번은 말해 둔다 — 안 말하면 자물쇠 넷이 고장으로 읽힌다 */
-  $('questNote').textContent = v.all.some(q => q.state === 'locked')
+function drawQuestTab() {
+  const list = $('questListTab');
+  if (!list) return;                       /* 옛 화면 — 탭이 없으면 조용히 지나간다 */
+  let v = null;
+  try { v = questView(S, questSnapshotNow(lastTurn)); } catch { v = null; }
+  if (!v) { list.textContent = '지금은 할 일을 읽을 수 없습니다'; return; }
+  const total = v.all.length, done = v.done.length;
+  $('questTabTitle').textContent = `할 일 ${done}/${total}`;
+  $('questSubTab').textContent = v.next
+    ? `지금 할 것 — ${v.next.ko}`
+    : (done >= total ? `${total}가지를 다 배웠습니다` : '지금 열린 것이 없습니다 — 기다리면 열립니다');
+  $('questBarTab').firstElementChild.style.width = `${total ? Math.round(done / total * 100) : 0}%`;
+  list.innerHTML = questRowsHtml(v);
+  $('questNoteTab').textContent = v.all.some(q => q.state === 'locked')
     ? '잠긴 줄은 때가 되면 저절로 열립니다 — 앞의 것을 끝내거나, 식물이 자라면 열립니다.'
     : '';
 }
 
+/* ★ 폰 왼쪽 위 뜬 단추 — 몇 개 남았나를 글자에 적고, 새 줄이 열리면 점을 켠다 */
+function drawQuestFab() {
+  const b = $('questFab');
+  if (!b) return;
+  let v = null;
+  try { v = questView(S, questSnapshotNow(lastTurn)); } catch { v = null; }
+  const done = v ? v.done.length : 0, total = v ? v.all.length : 0;
+  const n = $('questFabNum');
+  if (n) n.textContent = total ? `${done}/${total}` : '';
+  if (!questNewSeen) b.dataset.dot = '1'; else delete b.dataset.dot;
+}
+
 /* 열면 점이 꺼진다 — 「봤다」가 점을 끄는 유일한 길이다 */
-function openQuestPanel() { questOpen = true; questNewSeen = true; drawQuestPanel(); syncNavDots(); drawBagQuestBtn(); }
+function openQuestPanel() { questOpen = true; questNewSeen = true; drawQuestPanel(); syncNavDots(); drawBagQuestBtn(); drawQuestFab(); }
 function closeQuestPanel() { questOpen = false; drawQuestPanel(); }
 
 /* [가방]의 [할 일] 단추 — 몇 개 남았나를 글자에 적는다(가계부 단추와 같은 결) */

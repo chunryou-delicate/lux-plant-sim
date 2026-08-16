@@ -562,6 +562,22 @@ const SUN_BOOST = 4.20, PORTAL_BOOST = 4.20;
 const DAY_FILL_CUT = { hemi: 0.50, amb: 0.55 };
 const NIGHT_HEMI_MIN = 0.055, NIGHT_AMB_MIN = 0.020;
 const GAME_EXPOSURE = 0.72;
+/* ★★ 2026-08-16 — **화면 밝기(사람이 맞추는 값).** 위 0.72 에 곱해진다.
+   ------------------------------------------------------------
+   박사님(2026-08-16): *"낮이고 불도 켰는데 방이 너무 어두워 까매"* — 그리고
+   *"폰에서만 그래, PC 는 괜찮음."*
+   ⚠ 값이 틀린 게 아니다. 0.72 는 2026-08-03 에 박사님이 *"방이 너무 밝다"* 하셔서
+     **폰으로 재서** 내린 값이다. 그때 폰과 지금 폰이 다르다 — 기기·화면·주변 밝기가 다르면
+     같은 노출이 다르게 보인다. **한 값으로 둘 다 맞출 수 없다.**
+   ⇒ 그래서 코드가 정하지 않고 **사람이 맞춘다.** 이 배수는 `localStorage` 에 남는다.
+   ★ 밑값 1.0 = 지금까지와 **한 톨도 안 다르다**. 안 만진 사람에게는 아무것도 안 바뀐다. */
+const BRIGHT_KEY = 'byeot.brightness';
+const BRIGHT_MIN = 0.6, BRIGHT_MAX = 2.2;
+let userBright = 1;
+try {
+  const v = parseFloat(localStorage.getItem(BRIGHT_KEY));
+  if (Number.isFinite(v)) userBright = Math.min(BRIGHT_MAX, Math.max(BRIGHT_MIN, v));
+} catch { /* 사생활 모드 등 — 못 읽으면 밑값 */ }
 /* 밤 광원 — 화면 연출값이다. 판정(PPFD·DLI)은 조도 엔진 몫이고 여기서 안 건드린다.
    ★ 재서 정했다: 이 값들이 크면 "밤이 낮보다 밝은" 화면이 된다(실제로 166% 였다).
 
@@ -3999,7 +4015,7 @@ export async function createRoomView(canvas, opts = {}) {
        노출을 내리면 **재질을 안 건드리고** 전체가 한 단계 가라앉는다. ACESFilmic 이라
        밝은 쪽이 먼저 눌리므로, 흰 벽이 타는 것부터 잡히고 그림자는 덜 뭉갠다.
        ⚠ scene.js 기본값(1.1)은 그대로 둔다 — 방 도구는 검수 화면이라 밝아야 한다. */
-    ctx.renderer.toneMappingExposure = GAME_EXPOSURE;
+    ctx.renderer.toneMappingExposure = GAME_EXPOSURE * userBright;
 
     /* ★방 **바깥**을 어둡게 한다. 화면의 절반쯤이 배경인데 scene.js 는 그걸 하늘색으로
        칠한다 — 방 도구에서는 맞지만(바깥에서 방을 들여다보는 화면이다), 게임에서는
@@ -7641,6 +7657,16 @@ export async function createRoomView(canvas, opts = {}) {
     get daylight() { return daylightT; },
     /* 그림자 예산 — 'lean'(기본) · 'full'(scene.js 기본) · 'none'. 측정·비교용이다. */
     setShadowBudget(mode) { shadowMode = mode; applyDaylight(); return shadowMode; },
+    /* ★ 화면 밝기 — 사람이 맞추는 배수(위 §BRIGHT_KEY). 넣으면 바로 보이고 저장된다.
+       ⚠ 인자 없이 부르면 **지금 값을 읽기만** 한다. 화면이 슬라이더 초기값을 그걸로 세운다. */
+    brightness(v) {
+      if (Number.isFinite(v)) {
+        userBright = Math.min(BRIGHT_MAX, Math.max(BRIGHT_MIN, v));
+        try { localStorage.setItem(BRIGHT_KEY, String(userBright)); } catch { }
+        applyDaylight();               /* 노출은 여기서만 바뀐다 — 두 곳에서 쓰면 갈린다 */
+      }
+      return { value: userBright, min: BRIGHT_MIN, max: BRIGHT_MAX, base: GAME_EXPOSURE };
+    },
     /* ★ 조명 정책 — 'game'(기본) · 'house'(scene.js 기본 = index.html 과 같은 그림).
        밝기를 만질 때 **먼저 재기 위한 자**다. 재질 눌림까지 같이 되돌린다.
        (tools/probe_room_light.mjs 가 이걸로 두 그림을 같은 카메라에서 번갈아 찍는다) */
