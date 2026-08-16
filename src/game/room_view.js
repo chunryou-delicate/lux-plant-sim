@@ -1569,6 +1569,96 @@ export async function createRoomView(canvas, opts = {}) {
     { x:  0.108, y: 0.026, z: -0.06 }, { x:  0.108, y: 0.026, z: 0 }, { x:  0.108, y: 0.026, z: 0.06 }
   ]);
 
+  /* ══ ★★ 삽수(꺾꽂이) — **유리 수경병**과 **검은 모종포트** (2026-08-16) ═══════════════
+     ------------------------------------------------------------
+     박사님: *"삽수 결과가 드래그 안 해도 자동으로 화분으로 옮겨져서 추가 화분이 생겨버렸네.
+              저렇게 되면 안 되지. **유리수경병으로 보여야지.**"*
+
+     그전까지 game.html 은 삽수를 세울 때 `kind:'monstera'` 를 넘겼다. 까닭이 그쪽 주석에
+     적혀 있다 — *"buildPlantGroup 은 모르는 kind 를 던지고, 그 파일은 다른 작업자 것이라
+     손대지 않는다."* 그래서 **삽수가 작은 몬스테라 화분으로 보였다.** 이제 두 갈래를 둔다.
+
+       cutjar  유리 수경병 — 병 + 물 + 잘린 줄기 + (뿌리가 났으면) 물속의 흰 뿌리
+       cutpot  검은 모종포트 — 포트 + 흙 + 잘린 줄기
+
+     ★ 크기는 **코어가 정한 것**이다 — `propagation.CONTAINERS[*].realMaxM`.
+       ⚠ 그런데 이 파일은 그 모듈을 **안 읽는다.** propagation.js 는 shop.js·stamina.js 를
+         끌고 오는 **규칙·경제** 모듈이고, 이 파일 머리말이 "게임 규칙·경제·성장은 하나도
+         모른다"고 못 박아 두었다. 그림 하나 때문에 그 금을 넘으면 방뷰가 상점 카탈로그를
+         들고 다니게 된다.
+       ⇒ 그래서 값을 **여기 적어 두고, 두 곳이 갈리는지는 재는 자가 본다** —
+         `tools/probe_cutjar.mjs` 가 `plantKinds()` 와 `CONTAINERS` 를 맞대 본다.
+         §2.6 이 경고한 "낡은 주석이 재는 자가 된다"를 검사로 막아 둔 셈이다.
+       ★ 게다가 화면은 실제로 이 기본값을 안 쓴다 — game.html 이 `spec.potD` 에
+         `CONTAINERS[c.container].realMaxM` 을 그대로 넣어 준다. 기본값은 안 줬을 때의 몫이다.
+     ⚠ 이 값은 **회전무관 지름**으로 읽는다. 이 파일의 자리 계약이 그것 하나뿐이기
+       때문이다(§rotationSafeDiameter). manifest 의 `real_max_m` 은 「제일 긴 변」이라 뜻이
+       조금 다른데, 병을 지름 0.13 으로 세우면 높이가 0.174m 가 된다 — 실물 수경병 범위
+       안이고, 무엇보다 **지금 그 자리에 서 있는 것(몬스테라 그루)보다 한참 낮다.**
+       즉 이 읽기로 자리·머리 위 계약이 더 헐거워질 뿐 빡빡해지지 않는다. */
+  const CUT_JAR_D = 0.13;    // = propagation.CONTAINERS.jar.realMaxM  (유리 수경병)
+  const CUT_POT_D = 0.12;    // = propagation.CONTAINERS.soil.realMaxM (검은 모종포트)
+  /* 이 그림이 받아 주는 잎 수의 상한. **코어는 더 좁다** —
+     `propagation.METHODS.water.maxLeaves` 가 1 이라 병에는 잎이 한 장뿐이다.
+     여기서 2 까지 받는 것은 흙 포트(제한 없음)와 옛 세이브를 위해서다. */
+  const CUT_LEAVES_MAX = 2;
+
+  /* ★★ 그림은 **있는 GLB 를 쓴다.** 없는 것만 그 자리에서 만든다 (§2.7 "그림이 없다고
+     하기 전에 GLB 부터 찾아라"). 넷 다 manifest 에 등록된 것이다.
+       pot_glassjar.glb              유리 수경병 — 노드가 `glass` · `water` 둘이다.
+                                     360삼각형 · 텍스처 0장 · **물까지 들어 있다**
+       pot_nursery_black.glb         검은 모종포트 — 3,591삼각형
+       monstera_leaf_young.glb       어린 잎 (plant_grow 의 `leaf_young` 과 **같은 파일**)
+       skins/monstera_leaf_young_albo.glb  무늬 어린 잎 (`leaf_young_albo` 와 같은 파일)
+     ⚠ **잘린 줄기와 뿌리는 에셋이 없다.** `stem_early.glb` 는 뿌리에서 올라오는 온전한
+       줄기라 «자른 자리»가 없고 951KB 다. 2cm 짜리 조각에서 그 차이는 안 보인다 —
+       원기둥으로 그 자리에서 만든다. 물뿌리개가 쓰는 것과 같은 사고다(§ensureCanAsset). */
+  const CUT_JAR_URL   = '../../assets/pots/pot_glassjar.glb';
+  const CUT_POT_URL   = '../../assets/pots/pot_nursery_black.glb';
+  const CUT_LEAF_URL  = '../../assets/monstera/monstera_leaf_young.glb';
+  const CUT_LEAF_VARIE_URL = '../../assets/monstera/skins/monstera_leaf_young_albo.glb';
+
+  /* ★★ 유리를 어떻게 그리나 — **`transmission` 을 안 쓴다.** 골라 놓고 까닭을 적는다.
+     ------------------------------------------------------------
+     `MeshPhysicalMaterial.transmission` 은 진짜 굴절이지만, three 가 그걸 그리려면
+     **장면을 한 번 더 그린다**(transmissionRenderTarget). 프레임마다 방 전체가 두 번
+     그려진다는 뜻이다. 이 저장소는 **폰 390px** 를 기준으로 재고, 놀 때는 프레임을
+     10~24 로 눌러 배터리를 아끼는 파일이다(§idleCap). 2cm 짜리 병 하나 때문에 방을
+     두 번 그리는 것은 값이 안 맞는다.
+     ⇒ **투명 + 불투명도**로 간다. 그런데 그것도 새로 짤 것이 없다 —
+       `pot_glassjar.glb` 의 재질이 이미 `alphaMode:BLEND` 라서 GLTFLoader 가
+       `transparent:true · opacity 0.36(유리) / 0.59(물)` 로 실어 준다. 우리는 겹쳐 그릴 때
+       서로를 가리지 않게 `depthWrite` 만 끈다(줄기·뿌리는 불투명이라 이미 먼저 그려진다).
+     ⚠ 「무거우면」이 아니라 **재고 골랐다**: 재는 자가 두 길을 같이 잰다
+       (tools/probe_cutjar.mjs §유리 두 길). */
+  const CUT_GLASS_TRANSMISSION = false;
+
+  /* 줄기·뿌리 치수[m] — 실물 몬스테라 삽수 기준. 병 크기와 따로 논다(줄기는 병을 안 따라
+     줄어든다 — 무순 포기가 판을 안 따라 줄어드는 것과 같은 사고다. §buildMusun bodyK). */
+  const CUT_STEM_R    = 0.006;   // 줄기 반지름 (지름 1.2cm)
+  /* ★ **용기 아가리 위로** 서는 길이다(물·흙 면 위가 아니다). 처음에 물 면 기준으로
+     잡았더니 병 안에서 줄기가 끝나 **잎이 병목을 뚫고 나왔다** — 찍어 보고 알았다
+     (docs/handoff/img/cutjar_1_jar.png 의 첫 판). 아가리 높이는 GLB 에 물어서 쓴다. */
+  const CUT_STEM_UP   = 0.055;
+  const CUT_STEM_SOAK = 0.045;   // 물에 잠기는 길이 (흙 포트는 안 쓴다)
+  const CUT_STEM_TILT = 0.16;    // 곧게 서면 막대로 읽힌다. 조금 기운다
+  const CUT_ROOT_N    = 6;       // 뿌리 가닥
+  /* ★★ 잎은 **실물보다 작게 그린다** — manifest 의 어린 잎은 `real_max_m 0.18` 이다.
+     그대로 세우면 잎(0.18)이 병(0.13)보다 커서 **화면에서 병이 안 읽힌다.**
+     박사님이 보고 싶다고 하신 것은 «유리 수경병»이다. 그래서 병 지름 언저리로 줄여 그린다.
+     ⇒ 무순 재배판을 0.4327 → 0.20 으로 줄여 그린 것과 **같은 사고**다(§MUSUN_D):
+       에셋은 안 건드리고 **그릴 때** 줄인다. */
+  const CUT_LEAF_M    = 0.12;
+  const CUT_STEM_COLOR = 0x6f8f57;   // 줄기 초록
+  const CUT_ROOT_COLOR = 0xf2efe2;   // 물뿌리 흰빛
+  /* ⚠ 흙은 **눈으로 고른 색보다 어둡게** 적는다. 흙 윗면은 해를 정면으로 받는 면이라
+     0x4b3a2c 로 뒀더니 화면에서 크림색으로 날아갔다(사진으로 봤다). 잎은 세워져 있어
+     같은 빛에서도 안 날아간다 — 같은 색이라도 **면이 어디를 보느냐**가 다르다. */
+  const CUT_SOIL_COLOR = 0x33261b;   // 모종포트 흙
+
+  /* 이 종류가 삽수인가 — needsRebuild 가 삽수에서만 한 줄 더 보게 하는 문지기다 */
+  const isCutKind = k => k === 'cutjar' || k === 'cutpot';
+
   function slotOrThrow(slotId) {
     const s = slotById.get(slotId);
     if (!s) throw new Error(`모르는 슬롯: ${slotId} (방 ${roomId})`);
@@ -1973,12 +2063,226 @@ export async function createRoomView(canvas, opts = {}) {
     return g;
   }
 
+  /* ══ ★ 삽수 조립 — 병과 포트가 **같은 조각**을 나눠 쓴다 (2026-08-16 · §삽수) ════════
+     ------------------------------------------------------------
+     spec 에서 읽는 칸은 셋뿐이고 **전부 없어도 된다**(코어가 안 주는 칸은 조용히 기본값).
+       leaves      0~2. 없으면 **1**  — 잎 없는 조각이 기본이면 «자른 자리»가 안 읽힌다
+       variegated  참이면 무늬 잎 GLB 로 그린다. 없으면 거짓
+       rooted      참이면 병 속에 흰 뿌리가 보인다. 없으면 거짓
+     ⚠ 던지지 않는다. 삽수는 **코어가 아직 다 안 굳은 계통**이라(propagation.js §②)
+       칸 하나가 늦게 붙는 일이 흔하다. 그때 방이 통째로 안 서면 원인이 안 보인다. */
+  const cutLeafCountOf = s =>
+    Number.isFinite(s.leaves) ? clamp(Math.round(s.leaves), 0, CUT_LEAVES_MAX) : 1;
+
+  /* 잎 한 장. 무늬면 무늬 GLB 를 쓰고, 그게 없으면 기본잎으로 **조용히** 내려앉는다
+     — 무늬 잎은 `skins/` 라 원본 loadAssets 가 안 싣는 갈래다(§방에도 무늬 잎이 난다).
+     ⚠ 내려앉은 것을 아무도 모르면 "무늬가 안 나온다"의 원인을 못 찾는다. 한 번 경고한다. */
+  let cutVarieWarned = false;
+  async function cutLeafGLB(varie) {
+    if (varie) {
+      try { return { obj: await loadGLB(AT(CUT_LEAF_VARIE_URL)), varie: true }; }
+      catch (e) {
+        if (!cutVarieWarned) {
+          cutVarieWarned = true;
+          console.warn(`[방뷰] 무늬 삽수 잎을 못 실었습니다 (${CUT_LEAF_VARIE_URL}) — 기본잎으로 그립니다:`, e.message);
+        }
+      }
+    }
+    return { obj: await loadGLB(AT(CUT_LEAF_URL)), varie: false };
+  }
+
+  /* 잘린 줄기 + 잎 + (물속이면) 뿌리를 g 에 얹는다.
+       surfaceY  물·흙 윗면의 y[m] (그루 원점 기준)
+       soak      그 면 아래로 잠기는 길이[m]. 0 이면 아무것도 안 잠긴다
+       rimY      용기 아가리 높이[m]. 줄기는 **여기보다 CUT_STEM_UP 만큼 더** 올라간다
+       roots     뿌리를 **보여 주나** — 물속에서만 참이다. 흙 속 뿌리는 원래 안 보인다 */
+  async function addCutStem(g, spec, surfaceY, soak, rimY, roots) {
+    const n = cutLeafCountOf(spec);
+    /* 밑동(surfaceY − soak)에서 «아가리 + CUT_STEM_UP» 까지. 병이 깊어도 잎이 늘 밖에 있다 */
+    const H = Math.max(soak + CUT_STEM_UP, (rimY + CUT_STEM_UP) - (surfaceY - soak));
+
+    /* 기울기는 **밑동을 축으로** 준다. 몸통 한가운데를 돌리면 밑동이 물 밖으로 나온다 */
+    const pivot = new THREE.Object3D();
+    pivot.position.set(0, surfaceY - soak, 0);
+    pivot.rotation.z = CUT_STEM_TILT;
+    g.add(pivot);
+
+    const stemMat = new THREE.MeshStandardMaterial({ color: CUT_STEM_COLOR, roughness: 0.85 });
+    const stem = new THREE.Mesh(new THREE.CylinderGeometry(CUT_STEM_R * 0.88, CUT_STEM_R, H, 8), stemMat);
+    stem.position.y = H / 2;
+    pivot.add(stem);
+    /* 자른 자리 — 위쪽 마구리를 살짝 밝게 해서 «잘렸다»가 읽히게 한다.
+       원기둥은 뚜껑이 있으므로 판을 덧대지 않고 색만 얹은 얇은 원반 하나면 된다. */
+    const cutFace = new THREE.Mesh(new THREE.CircleGeometry(CUT_STEM_R * 0.88, 8),
+      new THREE.MeshStandardMaterial({ color: 0xcfd9b4, roughness: 0.9 }));
+    cutFace.rotation.x = -Math.PI / 2;
+    cutFace.position.y = H + 0.0004;
+    pivot.add(cutFace);
+
+    /* 뿌리 — 물속에서만. 난수를 안 쓴다(하루마다 다시 짓는데 그때마다 바뀌면 들썩인다). */
+    if (roots && soak > 0) {
+      const rootMat = new THREE.MeshStandardMaterial({ color: CUT_ROOT_COLOR, roughness: 0.7 });
+      for (let i = 0; i < CUT_ROOT_N; i++) {
+        const a = i * 2.39996;                                  // 황금각 (§buildMusun 과 같은 이유)
+        const len = soak * (0.72 + 0.14 * (i % 3));
+        const r = new THREE.Mesh(new THREE.CylinderGeometry(0.0018, 0.0026, len, 5), rootMat);
+        r.position.set(Math.cos(a) * soak * 0.30, len * 0.45, Math.sin(a) * soak * 0.30);
+        r.rotation.set(Math.cos(a) * 0.72, 0, -Math.sin(a) * 0.72);
+        pivot.add(r);
+      }
+    }
+
+    /* 잎 — 줄기 끝에 붙는다. 잎 피벗은 `userData.leaves` 에 넣어 둔다(시들면 처지는 길이
+       그 목록을 탄다 · §applyLook fade). ⚠ `potPart` 를 따로 못 박으므로 potPartOf 는 안 헷갈린다. */
+    const pivots = [];
+    for (let i = 0; i < n; i++) {
+      const { obj, varie } = await cutLeafGLB(!!spec.variegated);
+      const bb = new THREE.Box3().setFromObject(obj);
+      const cur = Math.max(bb.max.y - bb.min.y, bb.max.x - bb.min.x, bb.max.z - bb.min.z) || 1;
+      obj.scale.setScalar(CUT_LEAF_M / cur);
+      /* 잎자루 밑동을 원점에 맞춘다 — 기본잎은 y0 이 밑이고 무늬잎은 **가운데**다.
+         베끼지 않고 재서 맞춘다(둘의 원점이 다른 것이 실제로 그렇다). */
+      obj.position.y = -bb.min.y * (CUT_LEAF_M / cur);
+      /* 무늬 잎은 시들 때 **덮지 않고 곱한다** — 확대창·방의 무늬 규칙과 같은 표시다 */
+      if (varie) obj.traverse(o => { o.userData.varieSkin = true; });
+
+      const lp = new THREE.Object3D();
+      /* 자른 자리(마구리)는 잎보다 **위**다 — 마디를 자르면 잎 위로 줄기가 조금 남는다.
+         그래서 잎은 끝에서 조금 내려 붙인다. 끝에 붙이면 흰 마구리가 잎에 파묻힌다. */
+      lp.position.y = H * 0.88;
+      lp.rotation.y = i * 2.0944 + 0.6;              // 두 장이면 서로 등지게
+      lp.rotation.x = -0.38 - 0.14 * i;              // 바깥으로 눕는다(늘어지지는 않게)
+      lp.add(obj);
+      pivot.add(lp);
+      pivots.push(lp);
+    }
+    g.userData.leaves = pivots;
+    return pivot;
+  }
+
+  /* ★ 유리·물을 겹쳐 그릴 때 서로를 안 가리게 한다 (§CUT_GLASS_TRANSMISSION).
+     GLB 가 이미 BLEND 라 `transparent`·`opacity` 는 GLTFLoader 가 넣어 준다 —
+     여기서 하는 일은 **깊이 쓰기를 끄는 것 하나**다. 줄기·뿌리는 불투명이라
+     three 가 이미 먼저 그리므로 병 안이 비지 않는다. */
+  function makeGlassy(root) {
+    root.traverse(o => {
+      if (!o.isMesh || !o.material) return;
+      for (const m of (Array.isArray(o.material) ? o.material : [o.material])) {
+        if (!m) continue;
+        m.transparent = true;
+        m.depthWrite = false;
+        if (!(m.opacity < 1)) m.opacity = 0.42;     // BLEND 가 아닌 GLB 로 바뀌어도 유리로 보이게
+        /* ★ 재는 자가 이 재질을 찾아 **두 길(투명 ↔ transmission)을 맞대 보라고** 다는 표다.
+           게임은 이 칸을 안 읽는다 — tools/probe_cutjar.mjs §유리 두 길 하나가 쓴다. */
+        m.userData = { ...(m.userData || {}), cutGlass: true };
+      }
+    });
+  }
+
+  /* ══ ★ cutjar — 유리 수경병 ═══════════════════════════════════════════════ */
+  async function buildCutJar(spec, limit) {
+    const g = new THREE.Group();
+    const want = Math.min(CUT_JAR_D, limit === Infinity ? CUT_JAR_D : limit);
+
+    let jar = null;
+    try { jar = await loadGLB(AT(CUT_JAR_URL)); }
+    catch (e) { console.warn(`[방뷰] 수경병 GLB 를 못 실었습니다 (${CUT_JAR_URL}) — 원기둥으로 그립니다:`, e.message); }
+
+    let waterTop, rimY;
+    if (jar) {
+      /* fitPotToLimit 이 나중에 쓰는 것과 **같은 자**로 잰다(§buildMusun cur) */
+      const cur = rotationSafeDiameter(jar, jar) || want;
+      jar.scale.setScalar(want / cur);
+      const bb = new THREE.Box3().setFromObject(jar);
+      jar.position.y -= bb.min.y;                     // 병 바닥을 그루 원점에 맞춘다
+      rimY = bb.max.y - bb.min.y;
+      /* 물 높이는 **GLB 에 물어본다** — `water` 노드가 실제로 들어 있다. 숫자를 안 짓는다. */
+      const w = jar.getObjectByName('water');
+      if (w) { const wb = new THREE.Box3().setFromObject(w); waterTop = wb.max.y; }
+      else waterTop = rimY * 0.55;
+      makeGlassy(jar);
+    } else {
+      /* 대비책 — GLB 를 못 실었을 때만. 화면을 빈 채로 두지 않는다(§ensureCanAsset 과 같은 결) */
+      const h = want * 1.34;
+      jar = new THREE.Mesh(new THREE.CylinderGeometry(want / 2, want / 2, h, 16, 1, true),
+        new THREE.MeshStandardMaterial({ color: 0xe8f2f4, transparent: true, opacity: 0.42,
+                                         depthWrite: false, side: THREE.DoubleSide, roughness: 0.15 }));
+      jar.position.y = h / 2;
+      rimY = h; waterTop = h * 0.55;
+    }
+    g.add(jar);
+    /* ⚠ `potPart` 를 못 박는다 — 안 그러면 「잎이 아닌 첫 자식」 규칙이 줄기를 화분으로 읽어
+       병 지름이 1.2cm 로 나온다. 어떤 자리든 통과하는, 티가 안 나는 종류의 거짓말이다. */
+    g.userData.potPart = jar;
+
+    /* 잠기는 길이는 **물 높이를 넘지 않는다.** 넘기면 밑동이 병 바닥을 뚫는다. */
+    const soak = Math.min(CUT_STEM_SOAK, Math.max(0.004, waterTop * 0.8));
+    await addCutStem(g, spec, waterTop, soak, rimY, !!spec.rooted);
+    g.userData.kind = 'cutjar';
+    g.userData.cut = { leaves: cutLeafCountOf(spec), variegated: !!spec.variegated,
+                       rooted: !!spec.rooted, rimY };
+    return g;
+  }
+
+  /* ══ ★ cutpot — 검은 모종포트 ═══════════════════════════════════════════════
+     ⚠ **`rooted` 가 그림을 안 바꾼다.** 흙 포트의 뿌리는 흙 속이라 원래 안 보인다.
+       안 보이는 것을 보여 주면 화면이 거짓말을 한다 — 그 자리를 비워 두는 것이 사실이다. */
+  async function buildCutPot(spec, limit) {
+    const g = new THREE.Group();
+    const want = Math.min(CUT_POT_D, limit === Infinity ? CUT_POT_D : limit);
+
+    let pot = null;
+    try { pot = await loadGLB(AT(CUT_POT_URL)); }
+    catch (e) { console.warn(`[방뷰] 모종포트 GLB 를 못 실었습니다 (${CUT_POT_URL}) — 원기둥으로 그립니다:`, e.message); }
+
+    let topY;
+    if (pot) {
+      const cur = rotationSafeDiameter(pot, pot) || want;
+      pot.scale.setScalar(want / cur);
+      const bb = new THREE.Box3().setFromObject(pot);
+      pot.position.y -= bb.min.y;
+      topY = bb.max.y - bb.min.y;
+    } else {
+      const h = want * 0.76;
+      pot = new THREE.Mesh(new THREE.CylinderGeometry(want / 2, want * 0.36, h, 14),
+        new THREE.MeshStandardMaterial({ color: 0x24262a, roughness: 0.9 }));
+      pot.position.y = h / 2;
+      topY = h;
+    }
+    g.add(pot);
+    g.userData.potPart = pot;
+
+    /* 흙 — 포트는 빈 그릇이라 흙을 얹어야 «심었다»가 읽힌다.
+       ⚠⚠ **아가리보다 조금 높게 얹는다.** 처음에 5mm 아래, 다음에 1.4mm 아래, 그다음
+         아가리에 딱 맞춰 뒀는데 **세 판 다** 화면에는 «흰 흙»이 담긴 검은 포트가 섰다.
+         까닭은 이 GLB 가 **실사 스캔이라 안쪽 바닥이 크림색으로 막혀 있고, 그 뚜껑이
+         bbox 꼭대기와 같은 높이**여서다(장면에서 메시를 훑어 재고 알았다 — 짐작이 아니다).
+         같은 높이면 z-싸움이 나고 크림이 이겼다.
+       ⇒ 흙을 **아가리 위로 조금 봉긋하게** 올린다. 실물 모종포트도 흙이 조금 봉긋하다. */
+    const soil = new THREE.Mesh(new THREE.CylinderGeometry(want * 0.43, want * 0.38, want * 0.10, 16),
+      new THREE.MeshStandardMaterial({ color: CUT_SOIL_COLOR, roughness: 1 }));
+    const soilTop = topY + want * 0.04;
+    soil.position.y = soilTop - want * 0.05;
+    g.add(soil);
+
+    await addCutStem(g, spec, soilTop, 0, soilTop, false);
+    g.userData.kind = 'cutpot';
+    g.userData.cut = { leaves: cutLeafCountOf(spec), variegated: !!spec.variegated,
+                       rooted: !!spec.rooted, rimY: topY };
+    return g;
+  }
+
   const PLANT_KINDS = Object.freeze({
     monstera:   { potD: MONSTERA_POT_D, growthByDays: true,  clustered: false, build: buildMonstera },
     /* ★ 2026-08-16 — 빈 화분(위 §buildEmptyPot). 자라지 않으므로 `growthByDays` 는 거짓이다 */
     emptypot:   { potD: MONSTERA_POT_D, growthByDays: false, clustered: false, build: buildEmptyPot },
     beansprout: { potD: SIRU_D,         growthByDays: false, clustered: true,  build: buildBeansprout },
-    musun:      { potD: MUSUN_D,        growthByDays: false, clustered: false, build: buildMusun }
+    musun:      { potD: MUSUN_D,        growthByDays: false, clustered: false, build: buildMusun },
+    /* ★ 2026-08-16 — 삽수 두 갈래(위 §삽수). 날이 아니라 **잎·무늬·뿌리**가 그림을 정하므로
+       `growthByDays` 는 거짓이다. 그리고 한 자리에 하나가 한 자리라 `clustered` 도 거짓이다 —
+       조각을 여러 개 잘랐으면 조각마다 제 자리를 잡는다(game.html §cutPlaceOpt). */
+    cutjar:     { potD: CUT_JAR_D,      growthByDays: false, clustered: false, build: buildCutJar },
+    cutpot:     { potD: CUT_POT_D,      growthByDays: false, clustered: false, build: buildCutPot }
   });
   /* ★ 그 종류가 실제로 세울 용기 수. **무리를 못 짓는 종류는 무조건 1 이다** —
      여기서 count 를 그냥 믿으면 몬스테라에 count:3 을 준 호출부가 3배 넓은 자리를
@@ -2377,6 +2681,13 @@ export async function createRoomView(canvas, opts = {}) {
     return list.map(s => `${s.leafBirth}${s.varie ? 'v' : ''}${s.matured ? 'm' : ''}` +
                          `${s.dropped ? 'x' : ''}${s.fade ? '.' + Math.round(s.fade * 10) : ''}`).join(',');
   }
+  /* 삽수 그림 한 줄 요약 (§삽수). **삽수가 아니면 빈 문자열**이라 다른 종류는 안 탄다.
+     ⚠ `kind` 가 없으면 몬스테라다 — setPlant 쪽 spec 은 kind 를 안 채워 넣을 수 있어서
+       `plantId` 까지 같이 본다(setPlantAt 이 kind 로 승격시키는 그 칸이다). */
+  const cutLookKey = s => {
+    if (!s || !isCutKind(s.kind || s.plantId)) return '';
+    return `${cutLeafCountOf(s)}|${s.variegated ? 1 : 0}|${s.rooted ? 1 : 0}`;
+  };
   function needsRebuild(prev, spec, days) {
     if (!prev) return true;
     /* ★ 무늬 잎 GLB 가 늦게 도착했다 — 날도 상태도 안 바뀌었지만 **그림이 달라진다**
@@ -2395,6 +2706,12 @@ export async function createRoomView(canvas, opts = {}) {
        위 둘과 같은 함정이다. 특히 **바램**은 유효 생장일이 멈춘 채로 움직인다 —
        어두운 자리에 둔 그루는 GROWTH 가 안 오르므로(실측: 서랍장에서 70일 동안 +0),
        days 만 보면 잎이 노랗게 바래도 화면이 영영 안 바뀐다. */
+    /* ★ 삽수는 **날짜로 안 자란다** — 잎이 늘어도·무늬가 밝혀져도·뿌리가 나도 `days` 는
+       그대로다(progress01 이 없으니 늘 100 이다). 위 규칙만으로는 **영영 다시 안 짓는다.**
+       ⇒ 12일 뒤 뿌리가 났는데 병 속이 그대로인 채로 남는다 — §buildMusun 의 `sown`,
+         §clusterUnit 의 `count` 와 **정확히 같은 함정**이라 같은 자리에 같은 식으로 막는다.
+       ⚠ 삽수가 아닌 종류에서는 양쪽이 늘 '' 라 **한 줄도 안 바뀐다.** */
+    if (cutLookKey(prev.spec) !== cutLookKey(spec)) return true;
     if (leafStateKey(prev.spec.leafState) !== leafStateKey(spec.leafState)) return true;
     if ((prev.days ?? null) !== days) {
       if (performance.now() - (prev.builtAt || 0) < REBUILD_MIN_MS) return false;
@@ -3131,7 +3448,8 @@ export async function createRoomView(canvas, opts = {}) {
   /* on=false 면 감춘다(지우지 않는다).
        opt.potD     이 화분 지름. 못 올라가는 자리는 어둡게 칠한다
        opt.plantId  potD 를 안 줄 때 쓰는 종류 이름. 지름은 PLANT_KINDS 표가 정한다
-                    ('beansprout' → 시루 0.24 · 'musun' → 재배판 0.20 · 그 밖 → 0.20)
+                    ('beansprout' → 시루 0.20 · 'musun' → 재배판 0.20 ·
+                     'cutjar' → 수경병 0.13 · 'cutpot' → 모종포트 0.12 · 그 밖 → 0.20)
        opt.near     { x, z } 커서 위치. 제일 가까운 자리를 굵고 밝게
        opt.nearMax  이 거리를 넘으면 아무것도 굵게 하지 않는다[m]
      돌려주는 값은 '올라갈 수 있는 자리 수' 다. */
@@ -8388,7 +8706,8 @@ export async function createRoomView(canvas, opts = {}) {
     /* ★ 그 종류가 차지하는 **회전무관 지름[m]** — 화면(game.html)이 potD 자리에 넣을 값이다.
        ------------------------------------------------------------
        숫자를 화면 쪽에 베껴 두면 두 곳이 갈린다. 여기가 정본이고 화면은 물어서 쓴다.
-         'monstera' 0.20 · 'beansprout' 0.24(시루) · 'musun' 0.20(재배판 — 0.4327 에서 줄였다. §MUSUN_D)
+         'monstera' 0.20 · 'beansprout' 0.20(시루) · 'musun' 0.20(재배판 — 0.4327 에서 줄였다. §MUSUN_D)
+         ★ 삽수 'cutjar' 0.13 · 'cutpot' 0.12 — 코어의 `CONTAINERS[*].realMaxM` 과 같은 값이다(§삽수)
        모르는 이름은 몬스테라 화분 지름으로 떨어진다(예전 삼항의 else 와 같은 값).
        ⚠ 무순이 폭 0.36 이 아니라 0.4327 인 이유는 §buildMusun 머리말에 있다.
 
