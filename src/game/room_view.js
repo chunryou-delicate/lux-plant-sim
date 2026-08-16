@@ -1598,10 +1598,51 @@ export async function createRoomView(canvas, opts = {}) {
        즉 이 읽기로 자리·머리 위 계약이 더 헐거워질 뿐 빡빡해지지 않는다. */
   const CUT_JAR_D = 0.13;    // = propagation.CONTAINERS.jar.realMaxM  (유리 수경병)
   const CUT_POT_D = 0.12;    // = propagation.CONTAINERS.soil.realMaxM (검은 모종포트)
-  /* 이 그림이 받아 주는 잎 수의 상한. **코어는 더 좁다** —
-     `propagation.METHODS.water.maxLeaves` 가 1 이라 병에는 잎이 한 장뿐이다.
-     여기서 2 까지 받는 것은 흙 포트(제한 없음)와 옛 세이브를 위해서다. */
-  const CUT_LEAVES_MAX = 2;
+  /* 이 그림이 받아 주는 잎 수의 상한.
+     ★★ 2026-08-16 저녁 — **2 → 6.** 삽수는 자란다(`propagation §삽수가 자란다` ·
+       흙에 자리를 잡으면 20일에 한 장씩). 2 에 묶어 두면 넉 장 달린 삽수가 두 장으로 그려진다.
+     ⚠ 왜 무한이 아닌가 — **잎 한 장이 4천 삼각형**이다(실측). 여섯 장이면 2만 4천이라
+       반지하 방 전체(3만 1천)와 맞먹는다. 그 위는 폰에서 값이 안 맞는다.
+     ⚠⚠ 그래서 여섯을 넘으면 **화면이 거짓말을 한다.** 실제로 그런 삽수가 생기면 그때
+       다시 봐야 한다 — `userData.cut.leavesTrue` 에 **진짜 수**를 적어 두었고,
+       재는 자가 그 둘이 갈리면 말한다. 지금은 넘을 길이 사실상 없다
+       (물꽂이는 잎 1장이 상한이고, 흙 삽수도 여섯 장이면 120일 넘게 키운 것이다). */
+  const CUT_LEAVES_MAX = 6;
+
+  /* ══ ★★ 「자른 그 가지를 그대로」 (2026-08-16 저녁 · 박사님) ═══════════════════════
+     ------------------------------------------------------------
+     박사님: *"삽수 시, **기존에 자랐던 거 가지 그대로 잘라서 넣어줄래?** 안 그러면 이상한 듯."*
+
+     그전까지 병 속 잎은 **방뷰가 새로 지은 것**이었다. 그래서 모주에서 하프문 잎이 달린
+     마디를 잘랐는데 병 속에는 **딴 잎**이 들어 있었다. 그것이 「이상하다」의 정체다.
+
+     ⇒ 코어가 이미 들고 있는 것을 **받아서 그린다. 지어내지 않는다.**
+       `c.leafVarie[]`  아래(오래된 잎) → 위(생장점) 로 늘어놓은 참/거짓. **길이가 잎 수의 정본**
+       `c.leafGrade[]`  같은 자리의 같은 잎의 무늬 등급(민무늬 자리는 null)
+       `shop.leafSkinsFor(...)` 가 등급에서 고른 **그림 열쇠** — 화분이 쓰는 그 길 그대로
+
+     ══ 등급·열쇠를 어떻게 파일로 푸나 — **표를 안 베낀다** ═══════════════════════
+     열쇠(`leaf_mat34`)와 파일(`skins/mon_halfmoon_greenwhite.glb`)의 짝은 `plant_grow.html`
+     의 `ASSET_FILES` 에만 있고, 그 표는 조립기 안에 갇혀 있다(공개 창구에 안 나온다).
+     57줄을 여기 베끼면 **두 벌**이 되고, 이 저장소에서 두 벌은 반드시 갈린다.
+
+     ★ 그럴 필요가 없었다. `data/balance/varie_grades.json` 이 이미 갖고 있다:
+         grades[].assets[]    = { id, ko, matNum }   → `skins/mon_{id}.glb` · +1 `_v1` · +2 `_v2`
+         grades[].midAssets[] = { id, midNums[3] }   → `skins/{id}.glb` · `_v1` · `_v2`
+       **이 규약이 실제로 맞는지 세어 봤다 — 성숙잎 57/57, 중간잎 42/42 가 어긋남 0 이다.**
+       (`tools/probe_cutjar.mjs §⑧` 이 매번 다시 센다. 규약이 깨지면 그 줄이 빨개진다.)
+     ⇒ 방뷰는 **데이터 파일 하나만 읽는다.** shop.js·propagation.js 를 안 읽는 것은 그대로다. */
+  const CUT_GRADE_URL = '../../data/balance/varie_grades.json';
+
+  /* ★ 줄기 굵기 — `c.source.stem` (pink · thick · main).
+     ------------------------------------------------------------
+     순서는 **재서 정했다** — 그 세 줄기의 GLB 굵기/높이 비다:
+       pink(stem_early) 0.090 · thick(stem_late_bump) 0.561 · main(stem_late_double) 0.605
+     ⚠ 그 비를 그대로 쓰지는 않았다. 후기 줄기 GLB 의 폭에는 **혹(마디)** 이 들어 있어
+       줄기 자체보다 훨씬 굵게 나온다 — 그대로 태우면 pink 가 1.7mm 가 되어 실이 된다.
+     ⇒ **순서만 쓰고, 크기는 실물 몬스테라 삽수 줄기의 범위(0.9~1.5cm)에 눌러 담았다.**
+     ★ 모르는 값·없는 값은 `thick` 과 같다 — 지금까지 그린 굵기 그대로라 옛 세이브가 안 바뀐다. */
+  const CUT_STEM_R_BY = Object.freeze({ pink: 0.0045, thick: 0.006, main: 0.0075 });
 
   /* ★★ 그림은 **있는 GLB 를 쓴다.** 없는 것만 그 자리에서 만든다 (§2.7 "그림이 없다고
      하기 전에 GLB 부터 찾아라"). 넷 다 manifest 에 등록된 것이다.
@@ -2065,30 +2106,123 @@ export async function createRoomView(canvas, opts = {}) {
 
   /* ══ ★ 삽수 조립 — 병과 포트가 **같은 조각**을 나눠 쓴다 (2026-08-16 · §삽수) ════════
      ------------------------------------------------------------
-     spec 에서 읽는 칸은 셋뿐이고 **전부 없어도 된다**(코어가 안 주는 칸은 조용히 기본값).
-       leaves      0~2. 없으면 **1**  — 잎 없는 조각이 기본이면 «자른 자리»가 안 읽힌다
-       variegated  참이면 무늬 잎 GLB 로 그린다. 없으면 거짓
-       rooted      참이면 병 속에 흰 뿌리가 보인다. 없으면 거짓
+     spec 에서 읽는 칸은 아래뿐이고 **전부 없어도 된다**(코어가 안 주는 칸은 조용히 기본값).
+
+       ── 잎: 잘라 온 그 잎 그대로 (§자른 그 가지를 그대로) ──
+       leafVarie   [참/거짓] 아래(오래된 잎)→위(생장점). **길이가 잎 수의 정본**이다
+       leafGrades  [등급id|null] 같은 자리의 같은 잎. 'halfmoon'·'sanban'·…
+       leafSkins   [그림열쇠|null] 같은 자리. shop.leafSkinsFor(...).midSkin·matSkin
+                   ('leaf_mid_albo29' · 'leaf_mat34'). **있으면 이게 이긴다** —
+                   화분이 그 잎에 쓰는 바로 그 그림이라 모주와 삽수가 같은 잎이 된다
+       ── 없을 때의 옛 길 (옛 세이브·간단한 호출부) ──
+       leaves      잎 수. `leafVarie` 가 있으면 안 본다. 둘 다 없으면 **1**
+       variegated  `leafVarie` 가 없을 때만 본다 — 참이면 잎 전부를 어린 무늬잎으로
+       ── 그 밖 ──
+       rooted      참이면 병 속에 흰 뿌리가 보인다. 없으면 거짓 (흙 포트는 안 보인다)
+       stem        'pink'·'thick'·'main' — 잘라 온 줄기. 굵기가 달라진다(§CUT_STEM_R_BY)
+
      ⚠ 던지지 않는다. 삽수는 **코어가 아직 다 안 굳은 계통**이라(propagation.js §②)
        칸 하나가 늦게 붙는 일이 흔하다. 그때 방이 통째로 안 서면 원인이 안 보인다. */
-  const cutLeafCountOf = s =>
-    Number.isFinite(s.leaves) ? clamp(Math.round(s.leaves), 0, CUT_LEAVES_MAX) : 1;
+  /* 잎 수의 정본은 **`leafVarie` 의 길이**다 (§자른 그 가지를 그대로).
+     그 배열이 없을 때만 `leaves` 숫자로 떨어지고, 그것도 없으면 1 이다. */
+  const cutLeafListOf = s => {
+    const v = Array.isArray(s.leafVarie) ? s.leafVarie : null;
+    const n = v ? v.length
+              : (Number.isFinite(s.leaves) ? Math.max(0, Math.round(s.leaves)) : 1);
+    const grades = Array.isArray(s.leafGrades) ? s.leafGrades : [];
+    const skins  = Array.isArray(s.leafSkins)  ? s.leafSkins  : [];
+    const out = [];
+    for (let i = 0; i < Math.min(n, CUT_LEAVES_MAX); i++)
+      out.push({
+        /* 배열이 없으면 예전 규칙 — 「이 삽수가 무늬냐」 하나로 잎 전부를 칠한다 */
+        varie: v ? !!v[i] : !!s.variegated,
+        grade: grades[i] || null,
+        skin:  skins[i] || null
+      });
+    return { list: out, trueCount: n };
+  };
+  const cutLeafCountOf = s => cutLeafListOf(s).list.length;
 
-  /* 잎 한 장. 무늬면 무늬 GLB 를 쓰고, 그게 없으면 기본잎으로 **조용히** 내려앉는다
-     — 무늬 잎은 `skins/` 라 원본 loadAssets 가 안 싣는 갈래다(§방에도 무늬 잎이 난다).
-     ⚠ 내려앉은 것을 아무도 모르면 "무늬가 안 나온다"의 원인을 못 찾는다. 한 번 경고한다. */
-  let cutVarieWarned = false;
-  async function cutLeafGLB(varie) {
-    if (varie) {
-      try { return { obj: await loadGLB(AT(CUT_LEAF_VARIE_URL)), varie: true }; }
-      catch (e) {
-        if (!cutVarieWarned) {
-          cutVarieWarned = true;
-          console.warn(`[방뷰] 무늬 삽수 잎을 못 실었습니다 (${CUT_LEAF_VARIE_URL}) — 기본잎으로 그립니다:`, e.message);
+  /* ★ 등급표를 **한 번만** 읽는다. 무늬 등급이 실제로 오는 삽수를 그릴 때만 부른다 —
+     민무늬 삽수 하나 때문에 16KB 를 받지 않는다. 못 읽으면 null 로 떨어지고
+     아래 `cutLeafGLB` 가 예전 그림(어린 무늬잎)으로 내려앉는다. */
+  let _cutSkinTable = null;
+  function cutSkinTable() {
+    if (!_cutSkinTable) _cutSkinTable = loadJSON(AT(CUT_GRADE_URL)).then(j => {
+      const matGrade = new Map();   // 34 → 'halfmoon'  (성숙잎 번호 → 어느 등급인가)
+      const byMid = new Map();      // 29 → 'skins/heart_halfmoon_v2_stem.glb'
+      const byGrade = new Map();    // 'halfmoon' → 대표 중간잎
+      const sfx = ['', '_v1', '_v2'];
+      for (const g of (j.grades || [])) {
+        if (!g || !g.varie) continue;
+        let mid = null;
+        for (const a of (g.assets || [])) {
+          if (!Number.isFinite(a.matNum)) continue;
+          sfx.forEach((s, k) => matGrade.set(a.matNum + k, g.id));
         }
+        for (const a of (g.midAssets || [])) {
+          (a.midNums || []).forEach((n, k) => byMid.set(n, `skins/${a.id}${sfx[k] || ''}.glb`));
+          if (!mid && (a.midNums || []).length) mid = `skins/${a.id}.glb`;
+        }
+        byGrade.set(g.id, mid);
       }
+      return { matGrade, byMid, byGrade };
+    }).catch(e => {
+      console.warn(`[방뷰] 무늬 등급표를 못 읽었습니다 (${CUT_GRADE_URL}) — 삽수 잎을 등급 없이 그립니다:`, e.message);
+      return null;
+    });
+    return _cutSkinTable;
+  }
+
+  /* 그림 열쇠(`leaf_mat34` · `leaf_mid_albo29`) 또는 등급 id → 파일. 모르면 null.
+
+     ⚠⚠ **성숙잎(`mon_*.glb`)은 그대로 안 쓴다 — 찍어 보고 물렸다.**
+       `leaf_mat55`(풀문 성숙잎)를 받은 대로 세웠더니 잎이 **검게 구겨진 덩어리**로 섰다
+       (docs/handoff/img/cutjar_8_two.png 의 첫 판). 까닭은 성숙잎 GLB 마다 **제 향이 달라서**
+       plant_grow 가 열쇠별 조정표(`{sxz, rx, ry, rz, ox, oy, …}` 57줄)로 돌려 세우기 때문이다.
+       그 표를 여기 베끼면 **두 벌**이 되고, 이 저장소에서 두 벌은 반드시 갈린다.
+     ⇒ 성숙잎 열쇠는 **그 등급의 중간잎 대표로 옮겨 그린다.** 잃는 것이 거의 없다:
+       ① 중간잎 갈래는 이미 이 파일이 쓰는 어린 무늬잎과 **같은 모양 계열**이라 향이 안 틀어진다
+          (하프문을 그렇게 그리니 반반으로 갈린 잎이 제대로 섰다 — cutjar_8_halfmoon.png)
+       ② 삽수 잎은 **성숙잎보다 중간잎에 가깝다.** 12cm 짜리 조각에 다 자란 구멍잎을 다는 것이
+          오히려 «자른 가지»로 안 읽힌다
+       ③ **등급은 그대로 지켜진다** — 하프문을 자르면 병 속 잎도 하프문이다. 박사님 요구는 그것이다
+     ★ 파일 이름을 통째로 준 길만 예외다. 화면이 더 정확한 것을 알 때는 그것이 이긴다. */
+  async function cutLeafFileOf(one) {
+    if (!one.skin && !one.grade) return null;
+    const T = await cutSkinTable();
+    if (!T) return null;
+    let grade = one.grade || null;
+    if (one.skin) {
+      /* 열쇠가 아니라 파일 이름을 그대로 준 길 — 그대로 쓴다 */
+      if (/\.glb$/i.test(one.skin)) return one.skin;
+      let m = /^leaf_mid_albo(\d+)$/.exec(one.skin);
+      if (m) { const f = T.byMid.get(+m[1]); if (f) return f; }
+      m = /^leaf_mat(\d+)$/.exec(one.skin);
+      if (m) grade = T.matGrade.get(+m[1]) || grade;      // ★ 성숙잎 → 그 등급으로 옮긴다
     }
-    return { obj: await loadGLB(AT(CUT_LEAF_URL)), varie: false };
+    return (grade && T.byGrade.get(grade)) || null;
+  }
+
+  /* 잎 한 장. 등급 그림 → 어린 무늬잎 → 기본잎 순으로 **조용히** 내려앉는다.
+     ⚠ 내려앉은 것을 아무도 모르면 "무늬가 안 나온다"의 원인을 못 찾는다. 갈래마다 한 번 경고한다. */
+  const cutWarned = new Set();
+  function warnOnce(k, msg, e) {
+    if (cutWarned.has(k)) return;
+    cutWarned.add(k);
+    console.warn(msg, e && e.message);
+  }
+  async function cutLeafGLB(one) {
+    const file = await cutLeafFileOf(one);
+    if (file) {
+      try { return { obj: await loadGLB(AT('../../assets/monstera/' + file)), varie: true, file }; }
+      catch (e) { warnOnce('skin:' + file, `[방뷰] 삽수 잎 무늬를 못 실었습니다 (${file}) — 기본 무늬잎으로 그립니다:`, e); }
+    }
+    if (one.varie) {
+      try { return { obj: await loadGLB(AT(CUT_LEAF_VARIE_URL)), varie: true, file: CUT_LEAF_VARIE_URL }; }
+      catch (e) { warnOnce('albo', `[방뷰] 무늬 삽수 잎을 못 실었습니다 (${CUT_LEAF_VARIE_URL}) — 기본잎으로 그립니다:`, e); }
+    }
+    return { obj: await loadGLB(AT(CUT_LEAF_URL)), varie: false, file: CUT_LEAF_URL };
   }
 
   /* 잘린 줄기 + 잎 + (물속이면) 뿌리를 g 에 얹는다.
@@ -2097,9 +2231,12 @@ export async function createRoomView(canvas, opts = {}) {
        rimY      용기 아가리 높이[m]. 줄기는 **여기보다 CUT_STEM_UP 만큼 더** 올라간다
        roots     뿌리를 **보여 주나** — 물속에서만 참이다. 흙 속 뿌리는 원래 안 보인다 */
   async function addCutStem(g, spec, surfaceY, soak, rimY, roots) {
-    const n = cutLeafCountOf(spec);
+    const { list, trueCount } = cutLeafListOf(spec);
+    const n = list.length;
     /* 밑동(surfaceY − soak)에서 «아가리 + CUT_STEM_UP» 까지. 병이 깊어도 잎이 늘 밖에 있다 */
     const H = Math.max(soak + CUT_STEM_UP, (rimY + CUT_STEM_UP) - (surfaceY - soak));
+    /* 굵기는 **잘라 온 줄기**가 정한다(§CUT_STEM_R_BY). 모르면 예전 굵기 그대로다 */
+    const R = CUT_STEM_R_BY[spec.stem] || CUT_STEM_R;
 
     /* 기울기는 **밑동을 축으로** 준다. 몸통 한가운데를 돌리면 밑동이 물 밖으로 나온다 */
     const pivot = new THREE.Object3D();
@@ -2108,12 +2245,12 @@ export async function createRoomView(canvas, opts = {}) {
     g.add(pivot);
 
     const stemMat = new THREE.MeshStandardMaterial({ color: CUT_STEM_COLOR, roughness: 0.85 });
-    const stem = new THREE.Mesh(new THREE.CylinderGeometry(CUT_STEM_R * 0.88, CUT_STEM_R, H, 8), stemMat);
+    const stem = new THREE.Mesh(new THREE.CylinderGeometry(R * 0.88, R, H, 8), stemMat);
     stem.position.y = H / 2;
     pivot.add(stem);
     /* 자른 자리 — 위쪽 마구리를 살짝 밝게 해서 «잘렸다»가 읽히게 한다.
        원기둥은 뚜껑이 있으므로 판을 덧대지 않고 색만 얹은 얇은 원반 하나면 된다. */
-    const cutFace = new THREE.Mesh(new THREE.CircleGeometry(CUT_STEM_R * 0.88, 8),
+    const cutFace = new THREE.Mesh(new THREE.CircleGeometry(R * 0.88, 8),
       new THREE.MeshStandardMaterial({ color: 0xcfd9b4, roughness: 0.9 }));
     cutFace.rotation.x = -Math.PI / 2;
     cutFace.position.y = H + 0.0004;
@@ -2135,8 +2272,12 @@ export async function createRoomView(canvas, opts = {}) {
     /* 잎 — 줄기 끝에 붙는다. 잎 피벗은 `userData.leaves` 에 넣어 둔다(시들면 처지는 길이
        그 목록을 탄다 · §applyLook fade). ⚠ `potPart` 를 따로 못 박으므로 potPartOf 는 안 헷갈린다. */
     const pivots = [];
+    const files = [];
     for (let i = 0; i < n; i++) {
-      const { obj, varie } = await cutLeafGLB(!!spec.variegated);
+      /* ★ **자리마다 다른 잎이다.** `leafVarie[i]`·`leafGrade[i]`·`leafSkins[i]` 는
+         전부 같은 자리의 같은 잎을 가리킨다(propagation §leafGrade). 아래(0)가 오래된 잎이다. */
+      const { obj, varie, file } = await cutLeafGLB(list[i]);
+      files.push(file);
       const bb = new THREE.Box3().setFromObject(obj);
       const cur = Math.max(bb.max.y - bb.min.y, bb.max.x - bb.min.x, bb.max.z - bb.min.z) || 1;
       obj.scale.setScalar(CUT_LEAF_M / cur);
@@ -2148,15 +2289,20 @@ export async function createRoomView(canvas, opts = {}) {
 
       const lp = new THREE.Object3D();
       /* 자른 자리(마구리)는 잎보다 **위**다 — 마디를 자르면 잎 위로 줄기가 조금 남는다.
-         그래서 잎은 끝에서 조금 내려 붙인다. 끝에 붙이면 흰 마구리가 잎에 파묻힌다. */
-      lp.position.y = H * 0.88;
-      lp.rotation.y = i * 2.0944 + 0.6;              // 두 장이면 서로 등지게
-      lp.rotation.x = -0.38 - 0.14 * i;              // 바깥으로 눕는다(늘어지지는 않게)
+         그래서 잎은 끝에서 조금 내려 붙인다. 끝에 붙이면 흰 마구리가 잎에 파묻힌다.
+         ★ 여러 장이면 **오래된 잎이 아래**다(배열 차례 그대로). 한 장일 때는 예전 자리 그대로라
+           이미 찍어서 확인한 그림이 안 바뀐다. */
+      lp.position.y = n > 1 ? H * (0.50 + 0.42 * (i / (n - 1))) : H * 0.88;
+      lp.rotation.y = i * 2.0944 + 0.6;              // 여러 장이면 서로 등지게
+      lp.rotation.x = -0.38 - 0.10 * (i % 3);        // 바깥으로 눕는다(늘어지지는 않게)
       lp.add(obj);
       pivot.add(lp);
       pivots.push(lp);
     }
     g.userData.leaves = pivots;
+    /* ★ 재는 자가 **무엇을 실제로 그렸는지** 볼 창구다. 게임은 안 읽는다.
+       ⚠ `leavesTrue` 가 `leaves` 보다 크면 **화면이 잎을 덜 그린 것**이다(§CUT_LEAVES_MAX). */
+    g.userData.cutLeaves = { leaves: n, leavesTrue: trueCount, files, stemR: R };
     return pivot;
   }
 
@@ -2219,8 +2365,8 @@ export async function createRoomView(canvas, opts = {}) {
     const soak = Math.min(CUT_STEM_SOAK, Math.max(0.004, waterTop * 0.8));
     await addCutStem(g, spec, waterTop, soak, rimY, !!spec.rooted);
     g.userData.kind = 'cutjar';
-    g.userData.cut = { leaves: cutLeafCountOf(spec), variegated: !!spec.variegated,
-                       rooted: !!spec.rooted, rimY };
+    g.userData.cut = { ...(g.userData.cutLeaves || {}), variegated: !!spec.variegated,
+                       rooted: !!spec.rooted, stem: spec.stem || null, rimY };
     return g;
   }
 
@@ -2267,8 +2413,8 @@ export async function createRoomView(canvas, opts = {}) {
 
     await addCutStem(g, spec, soilTop, 0, soilTop, false);
     g.userData.kind = 'cutpot';
-    g.userData.cut = { leaves: cutLeafCountOf(spec), variegated: !!spec.variegated,
-                       rooted: !!spec.rooted, rimY: topY };
+    g.userData.cut = { ...(g.userData.cutLeaves || {}), variegated: !!spec.variegated,
+                       rooted: !!spec.rooted, stem: spec.stem || null, rimY: topY };
     return g;
   }
 
@@ -2686,7 +2832,12 @@ export async function createRoomView(canvas, opts = {}) {
        `plantId` 까지 같이 본다(setPlantAt 이 kind 로 승격시키는 그 칸이다). */
   const cutLookKey = s => {
     if (!s || !isCutKind(s.kind || s.plantId)) return '';
-    return `${cutLeafCountOf(s)}|${s.variegated ? 1 : 0}|${s.rooted ? 1 : 0}`;
+    /* ★ 잎별 칸까지 전부 넣는다 (2026-08-16 저녁 · §자른 그 가지를 그대로).
+       개수만 보면 **「두 장인데 위 잎만 무늬가 됐다」가 화면에 안 온다** — 삽수가 자라면서
+       실제로 일어나는 일이다. 배열은 짧으니 통째로 이어 붙이는 것이 제일 싸고 안 샌다. */
+    const j = a => (Array.isArray(a) ? a.map(v => (v == null ? '-' : v === true ? '1' : v === false ? '0' : v)).join(',') : '');
+    return `${cutLeafCountOf(s)}|${s.variegated ? 1 : 0}|${s.rooted ? 1 : 0}|${s.stem || '-'}` +
+           `|${j(s.leafVarie)}|${j(s.leafGrades)}|${j(s.leafSkins)}`;
   };
   function needsRebuild(prev, spec, days) {
     if (!prev) return true;

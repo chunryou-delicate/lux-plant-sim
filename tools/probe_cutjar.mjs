@@ -177,7 +177,13 @@ await page.eval(`window.__C = (() => {
            kinds: () => rv.plantKinds(),
            slots: () => rv.slots(),
            focus: (k) => { try { rv.focusSlot(k, true); return true; } catch (e) { return String(e.message); } },
-           plants: () => rv.plants().map(p => p.key) };
+           plants: () => rv.plants().map(p => p.key),
+           /* ★ **무엇을 실제로 그렸나.** spec 을 되읽는 게 아니라 장면이 스스로 적어 둔 값이다 */
+           drew: (key) => { let out = null;
+             rv.three.scene.traverse(o => {
+               if (out || !o.userData || o.userData.plantSlotId !== key) return;
+               if (o.userData.cut) out = o.userData.cut; });
+             return out; } };
 })(); 1`, false);
 
 const J = async (e) => JSON.parse(await page.eval(`JSON.stringify(${e})`));
@@ -369,6 +375,109 @@ console.log(`   transmission    렌더 중앙값 ${msB} ms · 드로우콜 ${cal
               `${d.pct > NOISE.pct * 3 + 0.02 ? '달라졌다' : '⛔ **안 달라졌다**'}`);
 }
 console.log(`   ★ **드로우콜이 자다** — 시간은 SwiftShader라 폰과 다르지만 콜 수는 GPU와 무관하다.`);
+
+/* ══ ⑧ ★★ 자른 그 가지를 그대로 담나 (2026-08-16 저녁) ════════════════════════ */
+console.log(`\n══ ⑧ 「자른 그 가지 그대로」 ══════════════════════════════════`);
+
+/* ⑧-0 파일 이름 규약 — 등급표(varie_grades.json)와 plant_grow 의 ASSET_FILES 가 **같은 짝**인가.
+   방뷰는 이 규약으로 등급을 파일로 푼다. 깨지면 무늬 잎이 조용히 기본잎으로 내려앉는다. */
+{
+  const r = await Ja(`await (async () => {
+    const vg = await (await fetch('${BASE}/data/balance/varie_grades.json')).json();
+    const html = await (await fetch('${BASE}/plant_grow.html')).text();
+    const mat = {}, mid = {};
+    for (const m of html.matchAll(/leaf_mat(\\d+):'([^']+)'/g)) if (m[2].endsWith('.glb')) mat[m[1]] = m[2];
+    for (const m of html.matchAll(/leaf_mid_albo(\\d+):'([^']+)'/g)) if (m[2].endsWith('.glb')) mid[m[1]] = m[2];
+    const sfx = ['', '_v1', '_v2'];
+    let okM = 0, okD = 0; const bad = [];
+    for (const g of (vg.grades || [])) {
+      for (const a of (g.assets || [])) sfx.forEach((s, k) => {
+        const got = mat[String(a.matNum + k)], want = 'skins/mon_' + a.id + s + '.glb';
+        if (got === want) okM++; else bad.push(a.id + s + ' → ' + got); });
+      for (const a of (g.midAssets || [])) (a.midNums || []).forEach((n, k) => {
+        const got = mid[String(n)], want = 'skins/' + a.id + (sfx[k] || '') + '.glb';
+        if (got === want) okD++; else bad.push(a.id + (sfx[k] || '') + ' → ' + got); });
+    }
+    return { okM, okD, bad: bad.slice(0, 6), n: bad.length };
+  })()`);
+  console.log(`\n── ⑧-0 등급표 ↔ plant_grow 파일 이름 규약 ──`);
+  console.log(`   성숙잎 ${r.okM}/${r.okM + r.bad.filter(x => x.startsWith('mon')).length || r.okM} · 중간잎 ${r.okD} · ` +
+              `어긋난 것 ${r.n}  ${r.n === 0 ? '✔ 규약이 산다' : '⛔ 규약이 깨졌다: ' + r.bad.join(' / ')}`);
+}
+
+/* ⑧-1 등급을 바꿔 가며 세운다 — 하프문과 민무늬가 다른 그림인가 */
+const put1 = (extra) => Ja(`await __C.put('cut_jar', ${AT(0)}, ` +
+  `{kind:'cutjar', potId:'cut_jar', potD:${core.jar}, rooted:true, ${extra}})`);
+await page.eval(`__C.drop('cut_pot')`, false);
+await page.eval(`__C.focus('free:cut_jar')`, false);
+await sleep(400);
+
+console.log(`\n── ⑧-1 잎 한 장: 민무늬 ↔ 하프문 ↔ 산반 ──`);
+const grades = [
+  ['plain',    `leafVarie:[false], leafGrades:[null]`],
+  ['halfmoon', `leafVarie:[true],  leafGrades:['halfmoon']`],
+  ['sanban',   `leafVarie:[true],  leafGrades:['sanban']`]
+];
+const gshots = {};
+for (const [ko, spec] of grades) {
+  const r = await put1(spec);
+  await sleep(1600);                       // skins/ 는 그때그때 받아 온다
+  const drew = await J(`__C.drew('free:cut_jar')`);
+  const f = `cutjar_8_${ko}.png`;
+  await shot(page, f); gshots[ko] = f;
+  console.log(`   ${ko.padEnd(9)} → ${r.ok ? '✔' : '⛔ ' + r.err} · 그린 잎 ${drew && drew.leaves} · ` +
+              `그림 ${drew && (drew.files || []).map(x => String(x).split('/').pop()).join(', ')}`);
+}
+for (const [a, b] of [['plain', 'halfmoon'], ['plain', 'sanban'], ['halfmoon', 'sanban']]) {
+  const d = pixelDiff(IM[gshots[a]], IM[gshots[b]]);
+  console.log(`   ${a} ↔ ${b}: 화소 차이 ${d.pct}% (잡음 ${NOISE.pct}%)  ` +
+              `${d.pct > NOISE.pct * 3 + 0.02 ? '✔ 다른 그림이다' : '⛔ 같은 그림이다'}`);
+}
+
+/* ⑧-2 잎 두 장 — 자리마다 다른 잎인가 · 실제로 두 장 서는가 */
+console.log(`\n── ⑧-2 잎 두 장 (아래 민무늬 · 위 풀문) ──`);
+{
+  const r = await put1(`leafVarie:[false,true], leafGrades:[null,'fullmoon'], leafSkins:[null,'leaf_mat55']`);
+  await sleep(1800);
+  const drew = await J(`__C.drew('free:cut_jar')`);
+  await shot(page, 'cutjar_8_two.png');
+  console.log(`   ${r.ok ? '✔ 섰다' : '⛔ ' + r.err} · 그린 잎 **${drew && drew.leaves}장** (정본 ${drew && drew.leavesTrue}장)`);
+  console.log(`   그림: ${drew && (drew.files || []).map(x => String(x).split('/').pop()).join('  |  ')}`);
+  console.log(`   ⇒ 위 잎만 무늬 그림이면 **자리마다 다른 잎**이다`);
+  const d = pixelDiff(IM[gshots.plain], IM['cutjar_8_two.png']);
+  console.log(`   한 장(민무늬) ↔ 두 장: 화소 차이 ${d.pct}%  ${d.pct > NOISE.pct * 3 + 0.02 ? '✔ 달라졌다' : '⛔ 그대로다'}`);
+}
+
+/* ⑧-3 줄기 굵기 */
+console.log(`\n── ⑧-3 줄기(source.stem) 가 굵기를 바꾸나 ──`);
+for (const s of ['pink', 'thick', 'main', null]) {
+  await put1(`leafVarie:[false]${s ? `, stem:'${s}'` : ''}`);
+  await sleep(500);
+  const drew = await J(`__C.drew('free:cut_jar')`);
+  console.log(`   stem ${String(s).padEnd(6)} → 줄기 반지름 ${drew && drew.stemR} m${s ? '' : '  (안 주면 thick 과 같다)'}`);
+}
+
+/* ⑧-4 옛 세이브처럼 칸이 없을 때 · 이상한 값일 때 — 안 던지나 */
+console.log(`\n── ⑧-4 칸이 없거나 이상해도 안 던지나 (옛 세이브) ──`);
+const odd = [
+  ['칸이 아예 없다',            `{kind:'cutjar', potId:'cut_jar'}`],
+  ['옛 길 (leaves+variegated)', `{kind:'cutjar', potId:'cut_jar', leaves:2, variegated:true}`],
+  ['leafVarie 만 있다',         `{kind:'cutjar', potId:'cut_jar', leafVarie:[true,false]}`],
+  ['모르는 등급',               `{kind:'cutjar', potId:'cut_jar', leafVarie:[true], leafGrades:['nosuchgrade']}`],
+  ['모르는 그림 열쇠',          `{kind:'cutjar', potId:'cut_jar', leafVarie:[true], leafSkins:['leaf_mat999']}`],
+  ['배열 길이가 안 맞다',       `{kind:'cutjar', potId:'cut_jar', leafVarie:[true,true,true], leafGrades:['halfmoon']}`],
+  ['leafVarie 가 빈 배열',      `{kind:'cutjar', potId:'cut_jar', leafVarie:[]}`],
+  ['배열이 아니라 숫자',        `{kind:'cutjar', potId:'cut_jar', leafVarie:3, leafGrades:'halfmoon'}`],
+  ['잎이 상한을 넘는다(8장)',   `{kind:'cutjar', potId:'cut_jar', leafVarie:[0,0,0,0,0,0,0,1].map(Boolean)}`]
+];
+for (const [ko, spec] of odd) {
+  const r = await Ja(`await __C.put('cut_jar', ${AT(0)}, ${spec})`);
+  await sleep(900);
+  const drew = await J(`__C.drew('free:cut_jar')`);
+  console.log(`   ${ko.padEnd(24)} → ${r.ok ? '✔ 섰다' : '⛔ 던졌다: ' + r.err}` +
+              (drew ? ` · 그린 잎 ${drew.leaves}장 (정본 ${drew.leavesTrue}장)` +
+                      (drew.leavesTrue > drew.leaves ? '  ⚠ 화면이 덜 그렸다' : '') : ''));
+}
 
 /* ══ ⑥ 세웠다 지웠다 해도 안 새나 ═══════════════════════════════ */
 console.log(`\n── ⑥ 12번 세웠다 지운다 (샘) ──`);
