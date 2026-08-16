@@ -7148,6 +7148,20 @@ function drawJourney() {
         if (days && won)
           return `${days}일이면 한 판입니다 · 식비 ${won.toLocaleString()}원을 아꼈습니다`;
       }
+      /* ★★ 2026-08-16 — **처음에도 말한다** (박사님: *"초기 상점 씨앗 구매 가이드 안 들어가 있어."*).
+         ⚠ 아래 줄은 `harvested > 0` 이라 **한 번이라도 거둔 뒤에만** 나왔다.
+           그런데 첫 판은 씨앗 한 봉지로 시작해서(`startSeeds: 1`) 시루를 늘리는 순간
+           **거두기도 전에 씨앗이 바닥난다.** 그때 화면이 조용했다 —
+           「시루는 놓았는데 심을 게 없다」에서 갈 곳을 아무도 안 알려 줬다.
+         ⇒ **거두기 전이라도** 씨앗이 없으면 상점을 가리킨다. 「오는 중」은 아래와 같이 가른다. */
+      if (harvested <= 0 && seeds <= 0 && onTheWay <= 0) {
+        let lead = 0;
+        try { lead = (catalogList().find(x => x.id === seedId) || {}).leadDays || 0; } catch { }
+        return lead ? `콩 씨앗이 없습니다 — [상점]에서 주문하세요 · ${lead}일 뒤에 옵니다.`
+                    : '콩 씨앗이 없습니다 — [상점]에서 주문하세요.';
+      }
+      if (harvested <= 0 && seeds <= 0 && onTheWay > 0)
+        return '콩 씨앗이 오는 중입니다. 도착하면 시루에 심습니다.';
       if (harvested > 0 && seeds <= 0) {
         /* 주문해 뒀는데 또 주문하라고 하면 두 번 산다 — 「오는 중」을 갈라 말한다 */
         if (onTheWay > 0) return '콩 씨앗이 오는 중입니다. 도착하면 다시 심습니다.';
@@ -10552,7 +10566,18 @@ function bindDrag(thumbId, what, onTap) {
      ⇒ 그림이 없으면 **같은 갈래를 가진 칸**을 찾아 건다. 미리보기 그림은 없어도
        끌기는 되어야 한다 — 그림은 꾸밈이고 손잡이는 기능이다. */
   let el = $(thumbId);
-  if (!el) el = document.querySelector(`.bagslot[data-place="${what}"]`);
+  /* ★★ 2026-08-16 — **숨은 것에 걸면 안 먹는다** (박사님: *"새싹 재배판 드래그 안 먹어 설치"*).
+     ⚠ `musunThumb` 은 방금 감춘 **큰 카드의 그림**이다. `display:none` 이라 **지워진 게 아니라
+       살아 있어서** `$()` 가 그것을 찾아 준다 — 그러고는 손이 안 닿는다.
+       그래서 「끌어도 아무 일이 없다」가 됐다. 오류는 한 줄도 안 난다.
+     ⇒ **크기가 0 이면 없는 것으로 본다.** 그때는 같은 갈래를 가진 **가방 칸**을 손잡이로 삼는다.
+     ★ 배운 것과 같은 결이다 — 「있다」와 「쓸 수 있다」는 다르다. */
+  const usable = (n) => {
+    if (!n) return false;
+    const r = n.getBoundingClientRect();
+    return r.width > 0 && r.height > 0;
+  };
+  if (!usable(el)) el = document.querySelector(`.bagslot[data-place="${what}"]`);
   if (!el) return;
   el.classList.add('draggable');
   let from = null;
