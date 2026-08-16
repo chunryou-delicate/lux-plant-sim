@@ -81,11 +81,10 @@ export const DLI_HIST_KEEP = null;
    조용히 안 저장되는 칸이 생기는 것이 제일 나쁘다. */
 const KNOWN_STATE_KEYS = Object.freeze([
   'schema', 'day', 'timeScale', 'sim', 'home', 'lamps',
-  /* ★ 2026-08-17 — `cutContainers`(삽수 용기 · state.js §cutContainers · propagation §⑤-2).
-     ⚠ 이 목록에 안 적으면 아래 문지기가 잡아 검사를 빨갛게 만든다. 그게 이 배열의 존재
-       이유다 — 안 잡히면 **방에 놓은 병이 저장 한 번에 조용히 사라지는** 세이브가 된다
-       (`emptyPots` 때 실제로 그 장치가 잡아 줬다). */
-  'pots', 'emptyPots', 'cuttings', 'cutContainers', 'firstPlay', 'story', 'tutorial', 'shop', 'perks', 'stamina', 'dliHist', 'ledger', 'log'
+  /* ⚠ 2026-08-17 — 한때 `cutContainers` 를 여기 넣었다가 **하루 만에 뺐다.** 박사님이
+     「용도로 그릇을 가르지 마라」로 물리셨고 빈 그릇 목록이 `emptyPots` 하나가 됐다.
+     칸이 는 것이 아니라 **줄었다** — 아래 §emptyPots 가 갈래(`container`)를 같이 싣는다. */
+  'pots', 'emptyPots', 'cuttings', 'firstPlay', 'story', 'tutorial', 'shop', 'perks', 'stamina', 'dliHist', 'ledger', 'log'
 ]);
 
 /* ---------------------------------------------------------------
@@ -362,9 +361,9 @@ function packCutting(c, i) {
        ⚠ 옛 세이브에는 언제나 값이 있다 — `optStr` 은 그 값을 그대로 통과시킨다. */
     method: optStr(c.method, `${path}.method`),
     container: optStr(c.container, `${path}.container`),
-    /* 방의 어느 그릇에 들어앉아 있나(`S.cutContainers[].id`). 가방이면 null.
-       ⚠ 안 적으면 저장 한 번에 **삽수와 병의 연결이 끊긴다** — 병은 「비었다」고 하고
-         삽수는 그 자리에 서 있는 판이 되어 회수 단추가 엉뚱한 그릇을 비운다. */
+    /* **어느 그릇에서 왔나**(`state.emptyPots[].id`). 가방이면 null.
+       ⚠ 안 적으면 저장 한 번에 그 이름이 사라져, 회수했을 때 **다른 이름의 그릇**이 선다.
+         방뷰는 이름으로 3D 를 잡으므로 그 순간 병 하나가 사라지고 새 병이 튀어나온다. */
     inContainerId: optStr(c.inContainerId, `${path}.inContainerId`),
     /* ★★ 시계의 기준일 — **「자른 날」이 아니라 「용기에 들어간 날」**(propagation §clockDayOf).
        ⚠ 안 적으면 열 때마다 `cutOnDay` 로 되돌아가 **가방에 오래 뒀던 삽수의 기한이
@@ -1131,31 +1130,21 @@ export function serialize(S, opt = {}) {
         return {
           id: needStr(p.id, `${path}.id`),
           itemId: needStr(p.itemId, `${path}.itemId`),
+          /* ★★ 2026-08-17 — **무슨 그릇인가**(검은 모종포트 · 유리 수경병). 박사님이
+             「용도로 가르지 마라」 하셔서 빈 그릇이 한 목록으로 합쳐졌고, 그러면서
+             갈래를 줄마다 들고 있어야 한다.
+             ⚠ 옛 세이브에는 이 칸이 없다 — 그때는 `itemId` 로 읽는다
+               (`propagation.containerKindOf`). 지어내는 값이 아니라 **되읽는 것**이다. */
+          container: optStr(p.container, `${path}.container`),
+          /* ★★ 한 번이라도 무언가 들어앉았나 — 걷을 때 재고로 돌아오나가 이 칸으로 갈린다.
+             ⚠ 안 적으면 저장 한 번에 **쓴 포트가 새것이 된다**(「심고 빼고 걷고」가 공짜가 된다). */
+          usedOnDay: p.usedOnDay == null ? null : needInt(p.usedOnDay, `${path}.usedOnDay`, { min: 0 }),
           slotId: optStr(p.slotId, `${path}.slotId`),
           at: packAt(p.at, `${path}.at`),
           placedOnDay: needInt(p.placedOnDay ?? 0, `${path}.placedOnDay`, { min: 0 })
         };
       }),
       cuttings: needArr(S.cuttings || [], 'cuttings').map(packCutting),
-      /* ★★ 2026-08-17 — **삽수 용기**(놓았지만 아직 안 넣은 그릇 · propagation §⑤-2).
-         ⚠ 그루도 삽수도 없는 물건이라 `packCutting` 을 안 쓴다. 여덟 칸뿐이고,
-           그 여덟이 없으면 방에서 자리를 잃거나(at·slotId) **든 삽수와 끊긴다**(cuttingId).
-         ★ `usedOnDay` 를 같이 적는 이유 — 걷을 때 재고로 돌아오나가 이 칸으로 갈린다
-           (검은 모종포트는 한 번 쓰면 안 돌아온다). 안 적으면 저장 한 번에 새것이 된다. */
-      cutContainers: needArr(S.cutContainers || [], 'cutContainers').map((t, i) => {
-        const path = `cutContainers[${i}]`;
-        needObj(t, path);
-        return {
-          id: needStr(t.id, `${path}.id`),
-          container: needStr(t.container, `${path}.container`),
-          itemId: optStr(t.itemId, `${path}.itemId`),
-          slotId: optStr(t.slotId, `${path}.slotId`),
-          at: packAt(t.at, `${path}.at`),
-          placedOnDay: needInt(t.placedOnDay ?? 0, `${path}.placedOnDay`, { min: 0 }),
-          cuttingId: optStr(t.cuttingId, `${path}.cuttingId`),
-          usedOnDay: t.usedOnDay == null ? null : needInt(t.usedOnDay, `${path}.usedOnDay`, { min: 0 })
-        };
-      }),
       firstPlay: packFirstPlay(S.firstPlay),
       story: packStory(S.story),
       tutorial: packTutorial(S.tutorial),
@@ -1551,10 +1540,33 @@ export function deserialize(raw, opt = {}) {
   S.emptyPots = needArr(st.emptyPots || [], 'state.emptyPots').map((p, i) => ({
     id: needStr(p.id, `state.emptyPots[${i}].id`),
     itemId: needStr(p.itemId, `state.emptyPots[${i}].itemId`),
+    /* ★ 옛 줄에는 `container` 가 없다 — **0 으로 메꾸듯 'soil' 을 박지 않는다.**
+       `null` 로 두면 `propagation.containerKindOf` 가 `itemId` 로 읽어 준다(되읽기지 지어내기가 아니다). */
+    container: p.container == null ? null : String(p.container),
+    usedOnDay: Number.isFinite(p.usedOnDay) ? p.usedOnDay : null,
     slotId: p.slotId == null ? null : String(p.slotId),
     at: p.at ? { x: +p.at.x, y: +p.at.y, z: +p.at.z } : null,
     placedOnDay: Number.isFinite(p.placedOnDay) ? p.placedOnDay : 0
   }));
+  /* ══ ⚠ 2026-08-17 — **하루 살았던 `cutContainers` 를 되받는다** ═══════════════════
+     그날 아침에 「삽수용 그릇」을 따로 낸 판이 있었고, 저녁에 박사님이 그 구분을 물리셨다.
+     그 사이에 저장한 판이 있으면 **방에 놓은 병이 통째로 사라진다.** 그래서 읽어서
+     `emptyPots` 로 옮긴다 — 지어내는 값이 하나도 없다(칸 이름이 그대로 겹친다).
+     ★ 그때 「삽수가 들어 있던」 줄(`cuttingId` 가 적힌 것)은 **안 옮긴다.** 지금 규약에서는
+       든 그릇을 삽수가 지고 있으므로(`c.container`) 옮기면 그릇이 둘이 된다. */
+  for (const t of (Array.isArray(st.cutContainers) ? st.cutContainers : [])) {
+    if (!t || t.cuttingId) continue;
+    if (S.emptyPots.some(p => p.id === t.id)) continue;
+    S.emptyPots.push({
+      id: needStr(t.id, 'state.cutContainers[].id'),
+      itemId: t.itemId == null ? 'pot' : String(t.itemId),
+      container: t.container == null ? null : String(t.container),
+      usedOnDay: Number.isFinite(t.usedOnDay) ? t.usedOnDay : null,
+      slotId: t.slotId == null ? null : String(t.slotId),
+      at: t.at ? { x: +t.at.x, y: +t.at.y, z: +t.at.z } : null,
+      placedOnDay: Number.isFinite(t.placedOnDay) ? t.placedOnDay : 0
+    });
+  }
   S.pots = needArr(st.pots || [], 'state.pots').map((p, i) => {
     const q = packPot(p, i);
     /* 좌표는 place.makeAt 를 통과시켜 정본 모양으로 세운다(방 경계는 아래 회수 단계에서 본다) */
@@ -1571,21 +1583,6 @@ export function deserialize(raw, opt = {}) {
        두 벌로 저장하면 언젠가 어긋나고, 어긋난 쪽이 값(shop.sellCutting)으로 새어 나간다. */
     return syncCuttingLeaves({ ...q, at: q.at ? makeAt(q.at) : null });
   });
-  /* ★ 삽수 용기를 되세운다. **옛 세이브에는 이 칸이 없다** — 그때는 빈 배열이 맞다
-     (그 판에는 「방에 놓인 빈 병」이라는 것 자체가 없었다). 위 `emptyPots` 와 같은 규약이다.
-     ⚠ 쓸 때와 **같은 검증**을 태운다 — 다른 자를 쓰면 「저장은 되는데 못 여는」 판이 생긴다. */
-  S.cutContainers = needArr(st.cutContainers || [], 'state.cutContainers').map((t, i) => ({
-    id: needStr(t.id, `state.cutContainers[${i}].id`),
-    container: needStr(t.container, `state.cutContainers[${i}].container`),
-    itemId: t.itemId == null ? null : String(t.itemId),
-    slotId: t.slotId == null ? null : String(t.slotId),
-    at: t.at ? makeAt({ x: +t.at.x, y: +t.at.y, z: +t.at.z,
-                        rotY: t.at.rotY ?? 0, onUid: t.at.onUid ?? null,
-                        occIdx: t.at.occIdx ?? null }) : null,
-    placedOnDay: Number.isFinite(t.placedOnDay) ? t.placedOnDay : 0,
-    cuttingId: t.cuttingId == null ? null : String(t.cuttingId),
-    usedOnDay: Number.isFinite(t.usedOnDay) ? t.usedOnDay : null
-  }));
   /* ══ ⚠⚠ 이관 알림은 **여기서 못 적는다** — 아래 `S.log = …` 가 통째로 덮어쓴다 ══════
      ★★ 2026-08-17 재서 잡았다. `migrateCuttingRules` 는 2026-08-17 에 붙으면서
        `pushLog(S, '✂ ' + m)` 을 **바로 여기서** 불렀는데, 그 아래 `S.log = needArr(st.log …)`

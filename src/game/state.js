@@ -576,8 +576,10 @@ export function plantInto(S, io, containerId, pick, opt = {}) {
   /* 씨앗 — **놓인 그 자리·그 그릇**에 심는다. 자리를 다시 고르지 않는다
      (다시 고르면 「놓은 데가 아닌 데」에 나서 손이 두 번 헛돈다 — game.html §sowEmptyPot).
      ⚠ 심은 **뒤에** 목록에서 뺀다. 먼저 빼면 심기가 던졌을 때 그릇이 사라진다. */
+  /* ⚠ `usePot:false` — **그릇은 놓을 때 이미 나갔다**(§usePot · 2026-08-17 박사님 제보로
+     다른 창이 잡은 그 사고다). 안 주면 화분 하나짜리 판은 놓고 나면 영영 못 심는다. */
   const pot = plantMonsteraSeed(S, io, {
-    ...opt, at: ct.at, potItemId: ct.itemId, id: ct.id
+    ...opt, at: ct.at, potItemId: ct.itemId, id: ct.id, usePot: false
   });
   removeEmptyPot(S, ct.id);
   return { kind: 'seed', containerId: ct.id, potId: pot.id };

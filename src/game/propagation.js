@@ -155,17 +155,29 @@ export function methodLeafBlock(method, leaves) {
    ⏸ 물꽂이 트레이(batch · 6칸 · 등급 ×0.8)는 **에셋이 없어서 이번 범위 밖**이다
       (docs/propagation.md §4 ⏸ — `container_tray_s.glb` 재사용 가능 여부가 leaf 판단 대기).
       규칙(capacity·gradeMult)은 여기 적어 두되 `takeCutting` 이 막는다 — 자리만 잡아 둔 것이다. */
+/* ★★★ 2026-08-17 — **`accepts` 가 늘었다: 그 그릇에 무엇이 들어갈 수 있나.**
+   ------------------------------------------------------------
+   박사님: *"용도가 아니라 **거기 심어지는 거**에 따라 나뉘어야지."*
+   ⇒ 그릇에 「삽수용/씨앗용」 딱지를 붙이지 않는다. 대신 **그릇마다 받는 것**을 적어 두고,
+     [심기] 팝업의 목록을 그 규칙이 좁힌다(`state.plantableInto`).
+       검은 모종포트 : 씨앗도 삽수도 들어간다 — 흙 그릇이니 당연하다
+       유리 수경병   : **삽수만** — 물에 씨앗을 넣을 수는 없다. 그래서 그 팝업엔 삽수만 뜬다
+   ★ 이건 새 규칙이 아니라 **원래 그랬던 것을 적은 것**이다. 지금까지는 「씨앗은 화분,
+     삽수는 병」이 코드 두 군데에 나뉘어 있었고 표에 없었다. 표에 있어야 화면이 물어볼 수 있다. */
 export const CONTAINERS = Object.freeze({
   jar:  Object.freeze({ id: 'jar',  ko: '유리 수경병',   method: 'water', capacity: 1,
                         gradeMult: 1.0, assetId: 'pots/pot_glassjar.glb', realMaxM: 0.13, ready: true,
                         /* 상점 품목 열쇠 · 팔 때 돌아오나 (아래 ★용기값 참고) */
-                        itemId: 'jar',  returnsOnSale: true }),
+                        itemId: 'jar',  returnsOnSale: true,
+                        accepts: Object.freeze(['cutting']) }),
   tray: Object.freeze({ id: 'tray', ko: '물꽂이 트레이', method: 'water', capacity: 6,
                         gradeMult: 0.8, assetId: null,                    realMaxM: 0.36, ready: false,
-                        itemId: null,   returnsOnSale: false }),
+                        itemId: null,   returnsOnSale: false,
+                        accepts: Object.freeze(['cutting']) }),
   soil: Object.freeze({ id: 'soil', ko: '검은 모종포트', method: 'pot',   capacity: 1,
                         gradeMult: 1.0, assetId: null,                    realMaxM: 0.12, ready: true,
-                        itemId: 'pot',  returnsOnSale: false })
+                        itemId: 'pot',  returnsOnSale: false,
+                        accepts: Object.freeze(['seed', 'cutting']) })
 });
 
 /* ============================================================
@@ -1187,9 +1199,9 @@ export function takeCutting(S, opt = {}) {
          물꽂이인 척하고 하루가 흘러 기한이 붙는다. `null` 이라야 `stepCuttings` 가 건너뛴다. */
     method,
     container: cont ? cont.id : null,
-    /* 지금 들어앉아 있는 **방의 용기** id(`S.cutContainers[].id`). 가방에 있으면 null.
-       ⚠ `container` 는 「무슨 그릇이냐」(갈래)이고 이 칸은 「방의 어느 그릇이냐」(개체)다.
-         옛 길(자르면서 담기)은 갈래만 있고 개체가 없다 — 그래서 여기가 null 일 수 있다. */
+    /* **어느 그릇에서 왔나** — 되돌릴 때(`takeCuttingOut`) 같은 이름·같은 자리로 세우려는 것.
+       ⚠ `container` 는 「무슨 그릇이냐」(갈래)이고 이 칸은 「그 그릇의 이름」(개체)이다.
+         옛 길(자르면서 담기)은 갈래만 있고 이름이 없다 — 그래서 여기가 null 일 수 있다. */
     inContainerId: null,
     /* 시계의 기준일 — §clockDayOf. 담긴 채로 났으면 자른 날이 곧 기준일이다. */
     clockOnDay: cont ? S.day : null,
@@ -1307,11 +1319,8 @@ export function setCuttingAt(S, cuttingOrId, at, opt = {}) {
   const r = resolvePlacement(c.id, at, opt);
   c.at = r.at;
   c.slotId = r.slotId;
-  /* ★ 방의 용기 안에 들어 있으면 **용기도 같이 간다.** 삽수만 옮기면 병은 제자리에 남고
-     삽수는 허공에 서는데, 3D 는 병을 그리므로 **화면과 상태가 갈린다.**
-     자리 규약을 여기서 또 쓰지 않는다 — 이미 잰 값을 그대로 옮겨 적는다. */
-  const ct = cutContainerOf(S, c.inContainerId);
-  if (ct) { ct.at = r.at; ct.slotId = r.slotId; }
+  /* ★ 그릇은 따로 안 옮긴다 — **삽수가 그릇을 지고 있다**(§⑤-2 ★★). 든 그릇은 빈 그릇
+     목록에 없으므로 옮길 줄 자체가 없고, 그래서 「병만 제자리에 남는」 어긋남이 원리적으로 없다. */
   return { cuttingId: c.id, slotId: r.slotId, at: r.at, snappedTo: r.snappedTo, dist: r.dist };
 }
 
@@ -1336,51 +1345,82 @@ export function setCuttingAt(S, cuttingOrId, at, opt = {}) {
        ② 다 됐으면 재고를 뺀다   ③ 목록에 남긴다
      중간에 던지면 아무것도 안 바뀐다.
 
-   ══ 왜 `state.js` 가 아니라 여기인가 (판단 · 까닭을 적으라 하셨다) ═══════════
-   `state.placeEmptyPot` 을 본으로 삼았지만 **삽수 용기는 그 목록에 못 들어간다.** 넷이다:
-     ① **규칙이 여기 있다.** 어느 갈래가 어느 방식인지(`method`) · 몇 개까지 드는지
-        (`capacity`) · 팔 때 돌아오는지(`returnsOnSale`) · 에셋이 정해졌는지(`ready`) —
-        전부 `CONTAINERS` 다. state 에 두면 그 표를 **거꾸로 import** 해야 하고
-        (지금 state → propagation 은 화살표가 아예 없다), 안 하면 표가 두 벌이 된다.
-     ② **`emptyPots` 와 뜻이 다르다.** 거기 든 그릇은 「씨앗을 심을 그릇」이라
-        `plantMonsteraSeed` 가 씨앗을 넣는다. 삽수 용기를 같은 칸에 섞으면
-        **유리 수경병에 몬스테라 씨앗이 심긴다.** 물음이 다른 목록은 안 합친다.
-     ③ **딸린 창구가 전부 여기 있다** — `putCuttingIn` 은 `S.cuttings` 와
-        `methodLeafBlock`·`METHODS` 를 한 자리에서 만져야 한다.
-     ④ 이 파일이 이미 `place.resolvePlacement` 와 `shop.useStock` 을 쓴다. 새로 열 문이 없다.
-   ⚠ **겹치는 것이 하나 있고 숨기지 않는다**: `CONTAINERS.soil.itemId` 는 `'pot'` 이라
-     `state.SEED_POT_ITEM_ID` 와 **같은 상점 품목**이다. 재고 하나를 둘이 나눠 쓴다(그건 맞다 —
-     실제로 같은 검은 모종포트다). 다만 **놓고 나면 목록이 갈린다** — 화면이 [빈 화분]을
-     어느 쪽으로 놓을지 정해야 한다. 그 판단은 화면(`game.html`) 몫이라 보고서에 적었다.
+   ══ ★★★ 2026-08-17 고쳐 씀 — **용기는 한 갈래다** (박사님이 물리셨다) ═══════════
+   ⚠ 처음에 나는 `S.cutContainers`(삽수용)와 `state.emptyPots`(씨앗용)를 **갈라 두었다.**
+     박사님이 그 구분을 통째로 물리셨다. 원문:
+       *"**삽수 꽂기가 뭐야? 용도가 아니라 거기 심어지는 거에 따라 나뉘어야지.**
+         지금 채소 씨앗 심는 거랑은 다르게. **씨앗심기 누르면 심을 수 있는 인벤 템 리스트가
+         팝업으로 나와서 고르도록** 하자."*
+   ⇒ **「삽수용 포트」와 「씨앗용 화분」이라는 구분이 없다.** 놓을 때는 그냥 빈 그릇이고,
+     **거기 무엇이 들어가느냐는 「심을 때」 고른다.** 규칙이 목록을 좁힐 뿐이다 —
+     유리 수경병은 삽수만 받으므로(`accepts`) 그 팝업에는 삽수만 뜬다.
 
-   ══ 담은 그릇의 모양 (`S.cutContainers[]`) ═══════════════════════════════
-     id           `cont_01` … 방에서 이 그릇을 가리키는 이름
-     container    'jar' | 'soil'  (CONTAINERS 의 열쇠)
-     itemId       상점 품목 열쇠 — 걷을 때 이 이름으로 돌려준다
-     at · slotId  자리. 화분·시루와 **같은 규약**(place.resolvePlacement)
-     placedOnDay  놓은 날
-     cuttingId    안에 든 삽수 id. 비었으면 null (**한 그릇에 하나** — capacity 1)
+   ══ 그래서 목록이 **하나**다 — `S.emptyPots` ═════════════════════════════
+   `S.cutContainers` 를 **통째로 걷었다**(하루 살았다). 방에 놓인 빈 그릇은 전부
+   `S.emptyPots` 한 줄기로 산다. 뜻은 예전과 **똑같다** — *"놓았지만 아직 아무것도 안 들어간 그릇"*.
+     한 줄 = { id, container, itemId, at, slotId, placedOnDay, usedOnDay }
+       id           `pot_02` … 방에서 이 그릇을 가리키는 이름.
+                    ⚠ 씨앗을 심으면 **이 id 가 그대로 화분 id 가 된다**(state.plantMonsteraSeed
+                      가 `opt.id` 로 받는다). 그래서 `S.pots` 와 이름이 겹치면 안 된다.
+       container    'jar' | 'soil'  (CONTAINERS 의 열쇠). **옛 줄에는 없다** → itemId 로 읽는다
+       itemId       상점 품목 열쇠 — 걷을 때 이 이름으로 돌려준다
+       at · slotId  자리. 화분·시루와 **같은 규약**(place.resolvePlacement)
+       usedOnDay    한 번이라도 무언가 들어앉았나 — **걷을 때 돌아오나**가 이 칸으로 갈린다
+
+   ★★ **`cuttingId` 칸이 없다.** 이 목록에는 **빈 그릇만** 산다:
+        · 씨앗이 들어가면  → `S.pots` 로 승격되고 이 줄은 빠진다 (예전 그대로)
+        · 삽수가 들어가면  → **삽수가 그릇을 지고 간다**(`c.container`·`c.at`·`c.slotId`) 이 줄은 빠진다
+        · 삽수를 도로 빼면 → 그 그릇이 **이 목록으로 돌아온다**(같은 id·같은 자리)
+     ⇒ 양쪽에서 서로를 가리키는 칸이 없으므로 **어긋날 곳이 없다.** 그리고 화면은
+       「이 그릇이 어느 목록 것인가」를 영영 안 물어도 된다 — 그것이 박사님이 물리신 그 물음이다.
+
+   ══ 왜 이 파일이 그 목록을 만지나 (판단) ═════════════════════════════════
+   칸은 `state.js` 가 내고(`newState`) 화면이 읽는 이름도 그쪽 것인데, 쓰는 함수는 여기 있다.
+     ① **규칙이 여기 있다** — 어느 갈래가 어느 방식인지(`method`) · 무엇을 받는지(`accepts`) ·
+        팔 때 돌아오는지(`returnsOnSale`) · 에셋이 정해졌는지(`ready`). 전부 `CONTAINERS` 다.
+     ② **거꾸로는 순환이다.** `state.js` 가 `plantableInto`·`plantInto` 를 내려면
+        여기를 import 해야 한다(state → propagation). 그러면 여기서 state 를 못 부른다.
+        ⇒ 그래서 이 파일은 `S.emptyPots` 를 **직접** 만진다. 이 저장소가 이미 쓰는 수법이다
+          (`shop.js` 가 `ts.varieSale` 을 직접 적는다 — *"거꾸로 import 하면 순환이 된다"*).
+     ③ `state.placeEmptyPot`·`removeEmptyPot` 은 **그대로 산다** — 아래 창구로 넘길 뿐이다.
+        화면(`game.html`)이 부르던 이름이 하나도 안 바뀐다.
 ============================================================ */
 
-export function cutContainersOf(S) { return (S && S.cutContainers) || []; }
+/* 방에 놓인 **빈 그릇** 목록. 이름은 `state.js §emptyPots` 것이다(위 ★★ 참고). */
+export function emptyContainersOf(S) { return (S && S.emptyPots) || []; }
 
-export function cutContainerOf(S, id) {
+export function containerRowOf(S, id) {
   if (!id) return null;
-  return cutContainersOf(S).find(x => x && x.id === id) || null;
+  return emptyContainersOf(S).find(x => x && x.id === id) || null;
 }
 
-/* 이 삽수를 담고 있는 방의 그릇. 없으면 null(가방에 있거나 옛 길로 담겼다) */
-export function containerHolding(S, cuttingOrId) {
-  const id = typeof cuttingOrId === 'string' ? cuttingOrId : (cuttingOrId && cuttingOrId.id);
-  if (!id) return null;
-  return cutContainersOf(S).find(x => x && x.cuttingId === id) || null;
+/* 상점 품목 → 용기 갈래. **옛 줄에는 `container` 칸이 없다** — 그때 읽는 길이다.
+   ⚠ 지어내지 않는다. 표에 없으면 `null` 이고, 부르는 쪽이 기본값을 정한다. */
+export function containerKindOfItem(itemId) {
+  if (!itemId) return null;
+  for (const k of Object.keys(CONTAINERS))
+    if (CONTAINERS[k].itemId === itemId) return k;
+  return null;
 }
 
-function nextCutContainerId(S) {
-  let n = 1;
-  const used = new Set(cutContainersOf(S).map(x => x.id));
-  while (used.has(`cont_${String(n).padStart(2, '0')}`)) n++;
-  return `cont_${String(n).padStart(2, '0')}`;
+/* 이 줄이 무슨 그릇인가. 적혀 있으면 그것, 없으면 품목으로 읽고, 그래도 모르면 흙이다
+   (옛 `emptyPots` 는 전부 `itemId:'pot'` 이라 흙으로 읽히는 것이 맞다). */
+export function containerKindOf(row) {
+  if (!row) return null;
+  return row.container || containerKindOfItem(row.itemId) || 'soil';
+}
+
+/* ★ 이름은 **화분과 같은 우물**에서 뽑는다. 씨앗을 심으면 이 id 가 그대로 화분 id 가 되므로
+   (`state.plantMonsteraSeed(opt.id)`) `S.pots` 와 겹치면 자리·세이브·방뷰가 갈린다.
+   ⚠ `state.nextPotId` 와 **같은 식**이다. 두 벌이 된 것은 순환 import 를 피하려는 것뿐이고,
+     둘이 갈리면 이름이 겹치므로 한쪽을 고치면 다른 쪽도 고쳐야 한다(검사가 그 겹침을 본다). */
+function nextContainerId(S) {
+  const used = new Set([...(S.pots || []), ...(S.emptyPots || [])].map(p => p && p.id));
+  for (let i = 2; i < 1000; i++) {
+    const id = `pot_${String(i).padStart(2, '0')}`;
+    if (!used.has(id)) return id;
+  }
+  throw new Error('[용기] 그릇 이름이 바닥났습니다');
 }
 
 /* 빈 용기 하나를 방에 놓는다. **여기서 재고가 빠진다**(§용기값 — 깎는 자리는 한 곳이다).
@@ -1400,53 +1440,60 @@ export function placeCutContainer(S, container, at, opt = {}) {
   if (!cont.itemId)
     throw new Error(`[용기] ${cont.ko} 는 상점 품목이 없어 놓을 수 없습니다`);
 
-  /* ① **묻기만 한다.** 여기서는 한 톨도 안 뺀다 (state.placeEmptyPot 과 같은 순서) */
+  /* ① **묻기만 한다.** 여기서는 한 톨도 안 뺀다 (state.placeEmptyPot 이 쓰던 그 순서) */
   assertStockAll(S, [{ itemId: cont.itemId, qty: 1 }]);
-  const id = opt.id || nextCutContainerId(S);
+  const id = opt.id || nextContainerId(S);
   /* ② 자리 — 여기서 재 본다(던질 수 있다). 아직 아무것도 안 썼다 */
   const spot = resolvePlacement(id, at, opt);
   /* ③ 다 됐다. 이제 뺀다 */
   useStock(S, cont.itemId, 1);
-  if (!Array.isArray(S.cutContainers)) S.cutContainers = [];
+  if (!Array.isArray(S.emptyPots)) S.emptyPots = [];
   const row = { id, container: cont.id, itemId: cont.itemId,
-                at: spot.at, slotId: spot.slotId, placedOnDay: S.day, cuttingId: null,
-                /* ★ 한 번이라도 삽수가 들어앉았나 — **걷을 때 돌아오나**가 여기서 갈린다.
+                at: spot.at, slotId: spot.slotId, placedOnDay: S.day,
+                /* ★ 한 번이라도 무언가 들어앉았나 — **걷을 때 돌아오나**가 여기서 갈린다.
                    검은 모종포트는 흙째 쓰는 소모품이라(`returnsOnSale:false`) 한 번 쓰면
                    안 돌아오고, 유리 수경병은 소모품이 아니라 언제나 돌아온다.
                    ⚠ 이 칸이 없으면 「심고 → 빼고 → 걷고」로 포트가 공짜가 된다(경제가 샌다). */
-                usedOnDay: null };
-  S.cutContainers.push(row);
+                usedOnDay: opt.usedOnDay == null ? null : opt.usedOnDay };
+  S.emptyPots.push(row);
   const log = typeof opt.log === 'function' ? opt.log : null;
-  if (log) log(`🫙 빈 ${cont.ko}를 놓았습니다 — 가방의 삽수를 넣으면 ` +
-               `${METHODS[cont.method].ko}가 시작됩니다`);
-  return { ...row, containerKo: cont.ko, left: S.cutContainers.length };
+  if (log) log(`🫙 빈 ${cont.ko}를 놓았습니다 — [🌱 심기]를 눌러 ` +
+               `${cont.accepts.includes('seed') ? '씨앗이나 삽수를' : '삽수를'} 골라 주세요`);
+  return { ...row, containerKo: cont.ko, accepts: cont.accepts, left: S.emptyPots.length };
 }
 
-/* 빈 용기를 방에서 걷어 **재고로 돌려준다.**
-   ⚠ 안에 삽수가 들어 있으면 **던진다** — 먼저 빼야 한다(박사님 ⑥ 의 순서 그대로).
-     `tutorialInput` 을 붙인다: 고장이 아니라 안내다(빼고 다시 누르면 된다).
+/* 빈 용기를 방에서 걷어 **재고로 돌려준다** (박사님 ⑥).
+   ★ 이 목록에는 **빈 그릇만** 있으므로(§⑤-2 머리말) 「안에 뭐가 들었나」를 물을 것이 없다.
+     삽수가 든 그릇은 애초에 이 목록에 없다 — 삽수가 지고 있다. 화면이 그 그릇을 누르면
+     **삽수 팝업**이 뜨고 거기 [가방으로](`takeCuttingOut`)가 있다. 그것이 「먼저 빼야 한다」다.
    ★ 돌려주는 것은 `returnContainer` 다 — 상점이 「판 것」으로 안 세게(돌아온 것은 수입이 아니다). */
 export function removeContainer(S, containerId, opt = {}) {
-  const ct = cutContainerOf(S, containerId);
-  if (!ct) throw new Error(`[용기] 모르는 용기입니다: ${containerId}`);
-  if (ct.cuttingId) {
-    const e = new Error(`[용기] ${(CONTAINERS[ct.container] || {}).ko || ct.container} 에 ` +
-      `삽수 ${ct.cuttingId} 가 들어 있습니다 — 먼저 삽수를 가방으로 빼 주세요`);
-    e.tutorialInput = true; throw e;
+  const ct = containerRowOf(S, containerId);
+  if (!ct) {
+    /* ⚠ 못 찾은 까닭이 「삽수가 들고 있다」일 수 있다. 그러면 **그렇게 말해 준다** —
+       「모르는 용기」라고만 하면 화면이 왜 안 되는지를 못 말한다(조용한 실패의 사촌이다). */
+    const held = (S.cuttings || []).find(c => c && c.inContainerId === containerId);
+    if (held) {
+      const e = new Error(`[용기] 그 그릇에는 삽수 ${held.id} 가 들어 있습니다 — ` +
+        `먼저 삽수를 가방으로 빼 주세요(takeCuttingOut)`);
+      e.tutorialInput = true; throw e;
+    }
+    throw new Error(`[용기] 모르는 용기입니다: ${containerId}`);
   }
-  S.cutContainers = cutContainersOf(S).filter(x => x !== ct);
+  S.emptyPots = emptyContainersOf(S).filter(x => x !== ct);
   /* ★ 돌아오나 — **`CONTAINERS` 가 정한다**(여기서 갈래 이름을 다시 적지 않는다).
        유리 수경병 : 소모품이 아니다 → 언제나 돌아온다
-       검은 모종포트 : 흙째 쓴다 → **한 번이라도 삽수가 들어앉았으면 안 돌아온다**
+       검은 모종포트 : 흙째 쓴다 → **한 번이라도 들어앉았던 것이 있으면 안 돌아온다**
      ⚠ 안 쓴 채로 걷는 것은 「잘못 놓았다」를 되돌리는 일이라 둘 다 돌아온다. */
-  const cont = CONTAINERS[ct.container] || {};
+  const kind = containerKindOf(ct);
+  const cont = CONTAINERS[kind] || {};
   const returns = !!ct.itemId && (cont.returnsOnSale === true || ct.usedOnDay == null);
   if (returns) returnContainer(S, ct.itemId, 1);
   const log = typeof opt.log === 'function' ? opt.log : null;
-  if (log) log(`📦 ${cont.ko || ct.container} 를 걷었습니다` +
+  if (log) log(`📦 ${cont.ko || kind} 를 걷었습니다` +
                (returns ? ' — 가방으로 돌아왔습니다' : ' (한 번 쓴 것이라 돌아오지 않습니다)'));
-  return { id: ct.id, container: ct.container, itemId: ct.itemId, returned: returns,
-           left: cutContainersOf(S).length };
+  return { id: ct.id, container: kind, itemId: ct.itemId, returned: returns,
+           left: emptyContainersOf(S).length };
 }
 
 /* ★★ 넣기 — 가방의 삽수를 방에 놓인 용기에 넣는다. **여기서 시계가 시작된다.**
@@ -1473,16 +1520,26 @@ export function putCuttingIn(S, cuttingOrId, containerId, opt = {}) {
       `먼저 가방으로 빼 주세요`);
     e.tutorialInput = true; throw e;
   }
-  const ct = cutContainerOf(S, containerId);
-  if (!ct) throw new Error(`[삽수] 모르는 용기입니다: ${containerId} — ` +
-    `방에 놓인 용기라야 합니다(placeCutContainer)`);
-  if (ct.cuttingId) {
-    const e = new Error(`[삽수] ${(CONTAINERS[ct.container] || {}).ko || ct.container} 에 ` +
-      `이미 삽수 ${ct.cuttingId} 가 들어 있습니다 — 용기 하나에 삽수 하나입니다`);
+  const ct = containerRowOf(S, containerId);
+  if (!ct) {
+    /* ⚠ 이미 삽수가 든 그릇이면 **그렇게 말해 준다**(빈 그릇만 목록에 있으므로 못 찾는다) */
+    const held = (S.cuttings || []).find(x => x && x.inContainerId === containerId);
+    const e = new Error(held
+      ? `[삽수] 그 그릇에는 이미 삽수 ${held.id} 가 들어 있습니다 — 그릇 하나에 하나입니다`
+      : `[삽수] 모르는 용기입니다: ${containerId} — 방에 놓인 빈 그릇이라야 합니다`);
+    if (held) e.tutorialInput = true;
+    throw e;
+  }
+  const kind = containerKindOf(ct);
+  const cont = CONTAINERS[kind];
+  if (!cont) throw new Error(`[삽수] 용기 ${ct.id} 의 갈래가 이상합니다: ${kind}`);
+  /* ★ **그 그릇이 삽수를 받나** — 「용도」가 아니라 그릇의 규칙이다(§accepts).
+     지금은 셋 다 삽수를 받으므로 이 줄이 안 걸린다. 그래도 적어 둔다 — 씨앗만 받는
+     그릇이 생기는 날 말없이 새지 않게. */
+  if (!cont.accepts.includes('cutting')) {
+    const e = new Error(`[삽수] ${cont.ko} 에는 삽수를 못 넣습니다`);
     e.tutorialInput = true; throw e;
   }
-  const cont = CONTAINERS[ct.container];
-  if (!cont) throw new Error(`[삽수] 용기 ${ct.id} 의 갈래가 이상합니다: ${ct.container}`);
 
   /* ⚠ 잎 수 — 사유를 내는 곳은 `methodLeafBlock` 한 곳이다(위 ★) */
   {
@@ -1490,8 +1547,15 @@ export function putCuttingIn(S, cuttingOrId, containerId, opt = {}) {
     if (lb) { const e = new Error(`[삽수] ${c.id} — ${lb}`); e.tutorialInput = true; throw e; }
   }
 
+  /* ★★ 그릇이 **목록에서 빠진다** — 이제 이 그릇은 삽수가 지고 다닌다(§⑤-2 머리말 ★★).
+     ⚠ 여기서 빼야 「빈 그릇 목록」이 정말로 빈 것만 담는다. 안 빼면 화면이 그 그릇에
+       또 [심기]를 내밀고, 방뷰가 빈 그릇과 든 그릇을 **두 번** 그린다. */
+  S.emptyPots = emptyContainersOf(S).filter(x => x !== ct);
+
   c.container = cont.id;
   c.method = cont.method;
+  /* ★ 어느 그릇에서 왔나 — **되돌릴 때 같은 이름·같은 자리로 세우기 위한 것**이다.
+     ⚠ 「지금 어느 목록에 있나」가 아니다. 그 그릇은 지금 목록에 없다. */
   c.inContainerId = ct.id;
   c.status = 'rooting';
   c.days = 0;
@@ -1503,8 +1567,6 @@ export function putCuttingIn(S, cuttingOrId, containerId, opt = {}) {
   c.potted = false;
   c.at = ct.at;
   c.slotId = ct.slotId;
-  ct.cuttingId = c.id;
-  if (ct.usedOnDay == null) ct.usedOnDay = S.day;      // 걷을 때 돌아오나 — §removeContainer
 
   const log = typeof opt.log === 'function' ? opt.log : null;
   if (log) {
@@ -1516,6 +1578,30 @@ export function putCuttingIn(S, cuttingOrId, containerId, opt = {}) {
           : ` (${m.rootDays}일 뒤 자리를 잡고 ${m.nodeDays}일 뒤 혹 — 기한도 죽음도 없습니다)`));
   }
   return c;
+}
+
+/* ★★ 삽수가 지고 있던 그릇을 **빈 그릇 목록에 도로 세운다.**
+   ------------------------------------------------------------
+   부르는 데가 둘이다 — **회수**(`takeCuttingOut`)와 **죽음**(`stepCuttings §④`).
+   ★ 왜 죽을 때도 세우나: **유리병은 안 시든다.** 삽수가 말라 죽었다고 병까지 없어지면
+     아무도 말 안 한 7,000원짜리 벌이 하나 붙는 것이고, 그건 이 파일이 §③ 에서 금지한
+     「조용히 사라지는 것」이다. 그릇은 남고 안에 든 것만 사라진다 — 그게 실제 그림이다.
+   ⚠ **`usedOnDay` 를 적는다.** 한 번 무언가 들어앉았던 그릇이다 — 안 적으면
+     「심고 → 죽고 → 걷고」로 모종포트가 새것이 되어 돌아온다(경제가 샌다).
+   ⚠ 왔던 이름(`inContainerId`)을 그대로 쓰되, 그 이름이 이미 쓰이고 있으면 새로 뽑는다 —
+     겹친 이름을 밀어 넣으면 자리·세이브·방뷰가 서로 다른 것을 가리킨다. */
+function putContainerBack(S, c) {
+  const cont = CONTAINERS[c.container] || null;
+  if (!Array.isArray(S.emptyPots)) S.emptyPots = [];
+  const wantId = c.inContainerId && !containerRowOf(S, c.inContainerId) &&
+                 !(S.pots || []).some(p => p && p.id === c.inContainerId)
+    ? c.inContainerId : nextContainerId(S);
+  const ct = { id: wantId, container: c.container || null,
+               itemId: cont ? cont.itemId : null,
+               at: c.at || null, slotId: c.slotId || null,
+               placedOnDay: S.day, usedOnDay: S.day };
+  S.emptyPots.push(ct);
+  return ct;
 }
 
 /* ★★ 회수 — 삽수를 가방으로 되돌린다. **용기는 방에 빈 채로 남는다**(박사님 ④).
@@ -1536,9 +1622,12 @@ export function putCuttingIn(S, cuttingOrId, containerId, opt = {}) {
      *"혹이 나면 성장이 멈추되 기한은 그대로"*). 회수는 그 기한을 **피하는 또 하나의 길**이고,
      대신 시계가 처음으로 돌아가므로 값을 치른다.
 
-   ★ 옛 길로 담긴 삽수(자르면서 바로 병에 꽂은 것 · `inContainerId` 가 없다)도 뺄 수 있다.
-     그때는 **그 자리에 빈 용기를 세워 준다** — 병은 물리적으로 거기 있었으니 그대로 남는 것이
-     맞고, 재고는 안 건드린다(놓을 때 이미 냈다). 안 그러면 회수가 병 하나를 조용히 없앤다.
+   ★ **그릇을 목록에 도로 세운다** — 왔던 이름(`inContainerId`)과 지금 자리 그대로.
+     옛 길로 담긴 삽수(자르면서 바로 병에 꽂은 것 · `inContainerId` 가 없다)도 마찬가지로
+     그 자리에 세워 준다 — 병은 물리적으로 거기 있었으니 남는 것이 맞고, 재고는 안 건드린다
+     (놓을 때 이미 냈다). 안 그러면 회수가 병 하나를 조용히 없앤다.
+   ⚠ **`usedOnDay` 를 적는다.** 이 그릇에는 삽수가 들어앉아 있었다 — 안 적으면
+     「심고 → 빼고 → 걷고」로 모종포트가 새것이 되어 돌아온다(경제가 샌다).
    반환 { cuttingId, containerId, container } */
 export function takeCuttingOut(S, cuttingOrId, opt = {}) {
   const c = typeof cuttingOrId === 'string'
@@ -1551,22 +1640,10 @@ export function takeCuttingOut(S, cuttingOrId, opt = {}) {
     e.tutorialInput = true; throw e;
   }
 
-  let ct = cutContainerOf(S, c.inContainerId) || containerHolding(S, c.id);
-  if (!ct) {
-    /* 옛 길 — 용기가 삽수에 붙어만 있었다. 그 자리에 그릇을 세워 준다(위 ★) */
-    const cont = CONTAINERS[c.container] || null;
-    if (!Array.isArray(S.cutContainers)) S.cutContainers = [];
-    ct = { id: nextCutContainerId(S), container: c.container,
-           itemId: cont ? cont.itemId : null,
-           at: c.at || null, slotId: c.slotId || null,
-           /* ⚠ **쓴 것으로 적는다.** 이 그릇에는 이미 삽수가 들어앉아 있었다 —
-              안 적으면 옛 판의 모종포트가 회수 한 번으로 새것이 되어 돌아온다. */
-           placedOnDay: S.day, cuttingId: c.id, usedOnDay: S.day };
-    S.cutContainers.push(ct);
-  }
-
-  const contKo = (CONTAINERS[ct.container] || {}).ko || ct.container;
-  ct.cuttingId = null;
+  const kind = c.container || null;
+  const cont = CONTAINERS[kind] || null;
+  const ct = putContainerBack(S, c);
+  const contKo = (cont && cont.ko) || kind;
   c.container = null;
   c.method = null;
   c.inContainerId = null;
@@ -1584,7 +1661,7 @@ export function takeCuttingOut(S, cuttingOrId, opt = {}) {
   const log = typeof opt.log === 'function' ? opt.log : null;
   if (log) log(`🎒 삽수 ${c.id} 를 ${contKo} 에서 꺼내 가방에 넣었습니다 — ` +
                `${contKo} 는 방에 빈 채로 남습니다 (다시 넣으면 처음부터 시작합니다)`);
-  return { cuttingId: c.id, containerId: ct.id, container: ct.container };
+  return { cuttingId: c.id, containerId: ct.id, container: kind };
 }
 
 /* ★ 자리를 잃은 삽수를 회수한다 — 화분(state.rehomePot)과 **같은 두 경우**만 본다.
@@ -1593,11 +1670,11 @@ export function takeCuttingOut(S, cuttingOrId, opt = {}) {
    자리가 없다고 죽이면 방을 옮겼다는 이유로 삽수가 사라진다(유령의 반대쪽 사고). */
 export function rehomeCuttings(S, room, log) {
   const out = [];
-  /* ★★ 2026-08-17 — **빈 용기도 같이 본다**(§⑤-2). 삽수가 든 그릇은 아래 삽수 쪽에서
-     같이 옮겨지지만, 빈 그릇은 아무도 안 봐서 **받치던 가구가 사라지면 허공에 남는다.**
+  /* ★★ 2026-08-17 — **빈 그릇(`S.emptyPots`)도 같이 본다.** 삽수가 든 그릇은 삽수가 지고
+     있어서 아래에서 같이 옮겨지지만, 빈 그릇은 **아무도 안 봤다** — 받치던 가구가 사라지면
+     허공에 남는다. 빈 화분이 생긴 2026-08-16 부터 있던 구멍이고 여기서 같이 막는다.
      ⚠ 규칙을 새로 짓지 않는다 — 아래 삽수와 **똑같은 두 경우**(가구가 사라졌다 · 방 밖이다)다. */
-  for (const ct of cutContainersOf(S)) {
-    if (ct.cuttingId) continue;                       // 든 것은 삽수 쪽에서 같이 간다
+  for (const ct of emptyContainersOf(S)) {
     let why = null;
     if (ct.at) {
       if (room && room.size && !inRoom(ct.at, room.size)) why = '자리가 방 밖입니다';
@@ -1645,9 +1722,7 @@ export function rehomeCuttings(S, room, log) {
       c.at = null; c.slotId = null;
       if (log) log(`삽수 ${c.id} 자리 해제 — ${why} (삽수는 살아 있습니다)`);
     }
-    /* ★ 담고 있던 그릇도 같이 간다 — 안 옮기면 병만 옛 자리에 남아 화면과 갈린다 */
-    const ct = cutContainerOf(S, c.inContainerId) || containerHolding(S, c.id);
-    if (ct) { ct.at = c.at; ct.slotId = c.slotId; }
+    /* ★ 그릇은 따로 안 옮긴다 — 삽수가 지고 있다(§⑤-2 ★★) */
     out.push({ id: c.id, why });
   }
   return out;
@@ -1888,9 +1963,14 @@ export function stepCuttings(S, opt = {}) {
           log(`⛔ 삽수 ${c.id} 가 경고 없이 기한을 넘겼습니다 — 경고 배선을 확인해 주세요`);
         c.status = 'dead';
         c.diedOnDay = S.day;
-        const e = { id: 'cutting_died', cuttingId: c.id,
+        /* ★★ 2026-08-17 — **그릇은 안 죽는다.** 빈 그릇으로 방에 남는다(§putContainerBack).
+           ⚠ 이 줄이 없으면 유리병이 삽수와 같이 조용히 사라진다 — 말 안 한 벌이 하나 붙는다. */
+        const back = c.container ? putContainerBack(S, c) : null;
+        const e = { id: 'cutting_died', cuttingId: c.id, containerId: back ? back.id : null,
                     ko: `삽수 ${c.id} 가 시들어 사라졌습니다 — ` +
-                        `혹이 난 뒤 ${grace}일 안에 분갈이하지 않았습니다` };
+                        `혹이 난 뒤 ${grace}일 안에 분갈이하지 않았습니다` +
+                        (back ? ` (${(CONTAINERS[back.container] || {}).ko || back.container} 는 ` +
+                                `방에 빈 채로 남습니다)` : '') };
         events.push(e); died.push(c);
         if (log) log('💀 ' + e.ko);
         continue;                                     // 살아남은 목록에 넣지 않는다 = 사라진다
@@ -1959,16 +2039,13 @@ export function repotCutting(S, cuttingOrId, opt = {}) {
      `useStock` 도 모자라면 던지지만 그때는 아직 상태를 안 찍었으므로 판이 안 바뀐다.
      자리를 ② 뒤로 미루면 「포트만 빠지고 삽수는 병에 남는」 예전 병으로 돌아간다. */
   useStock(S, CONTAINERS.soil.itemId, 1);
-  /* ★★ 2026-08-17 — **병이 방에 서 있으면 재고로 돌려주지 않는다.**
-     ------------------------------------------------------------
-     ⚠ 예전에는 늘 돌려줬다. 그 판에서는 병이 「삽수에 붙은 것」이라 삽수가 흙으로 가면
-       병이 갈 데가 없었기 때문이다. 이제는 병이 **방에 놓인 물건**(§⑤-2)이라, 그대로
-       돌려주면 **병 하나가 둘이 된다** — 방에도 서 있고 가방에도 생긴다.
-     ⇒ 방에 있으면 **그 자리에 빈 채로 남긴다**(회수와 같은 그림). 걷고 싶으면
-       `removeContainer` 를 누르면 되고, 유리병은 그때 돌아온다(소모품이 아니므로). */
-  const roomJar = cutContainerOf(S, c.inContainerId) || containerHolding(S, c.id);
-  if (roomJar) roomJar.cuttingId = null;
-  else if (from && from.returnsOnSale && from.itemId) returnContainer(S, from.itemId);
+  /* ★ 병은 **예전 그대로 재고로 돌아온다** — 물꽂이는 병에서 뽑아 옮겨 심는다(§용기값).
+     ★★ 2026-08-17 — 한때 「방에 서 있는 병이 둘이 된다」를 걱정해 이 줄을 갈랐었다.
+       **목록을 하나로 합치면서 그 걱정이 사라졌다**: 삽수가 든 그릇은 빈 그릇 목록에
+       애초에 없다(삽수가 지고 있다). 그러니 여기서 돌려줘도 겹칠 그릇이 없다.
+       ⇒ 손에 남은 병을 가방에 넣는 것이고, 그것이 플레이어가 실제로 하는 일이다.
+     ⚠ 그래서 이 줄은 2026-08-17 이전과 **한 글자도 안 다르다**(검사 C 가 그것을 잰다). */
+  if (from && from.returnsOnSale && from.itemId) returnContainer(S, from.itemId);
 
   c.potted = true;
   c.inContainerId = null;
@@ -2007,7 +2084,7 @@ export function cuttingSnapshot(S, c) {
   return {
     id: c.id, method: c.method, methodKo: m.ko || c.method,
     container: c.container, containerKo: (CONTAINERS[c.container] || {}).ko || c.container,
-    /* ★★ 2026-08-17 — 방의 어느 그릇에 들어 있나 · 가방에 있나 (§⑤-2).
+    /* ★★ 2026-08-17 — 어느 그릇에서 왔나 · 가방에 있나 (§⑤-2).
        화면이 [가방으로] 단추와 [넣기] 단추를 가르는 근거가 이 두 칸이다. */
     inContainerId: c.inContainerId || null,
     inBag: c.status === 'bag' || !c.method,

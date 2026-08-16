@@ -148,19 +148,19 @@ check('② 빈 용기를 놓으면 재고가 깎이고, 걷으면 돌아온다 (
     const t = P.placeCutContainer(S, kind, AT());
     assert.equal(stock(S, itemId), before - 1,
       `${kind}: 놓았는데 재고가 안 깎였습니다 (${before} → ${stock(S, itemId)})`);
-    assert.equal(P.cutContainersOf(S).length, 1, `${kind}: 방에 안 놓였습니다`);
+    assert.equal(P.emptyContainersOf(S).length, 1, `${kind}: 방에 안 놓였습니다`);
     assert.ok(t.at && t.slotId, `${kind}: 자리가 안 잡혔습니다`);
     const r = P.removeContainer(S, t.id);
     assert.equal(r.returned, true, `${kind}: 안 쓴 용기를 걷었는데 안 돌아왔습니다`);
     assert.equal(stock(S, itemId), before, `${kind}: 걷었는데 재고가 안 돌아왔습니다`);
-    assert.equal(P.cutContainersOf(S).length, 0, `${kind}: 걷었는데 방에 남아 있습니다`);
+    assert.equal(P.emptyContainersOf(S).length, 0, `${kind}: 걷었는데 방에 남아 있습니다`);
   }
 });
 
 check('② 재고가 없으면 못 놓는다 — 그리고 **아무것도 안 바뀐다**', () => {
   const S = newGame();
   assert.throws(() => P.placeCutContainer(S, 'jar', AT()), /유리 수경병|재고|주문/);
-  assert.equal(P.cutContainersOf(S).length, 0, '못 놓았는데 목록에 남았습니다');
+  assert.equal(P.emptyContainersOf(S).length, 0, '못 놓았는데 목록에 남았습니다');
 });
 
 /* ============================================================
@@ -176,7 +176,9 @@ check('③ 넣으면 물꽂이가 그때부터 돈다 — days 가 넣은 날 �
   assert.equal(c.status, 'rooting');
   assert.equal(c.days, 0, '넣었는데 days 가 0 이 아닙니다');
   assert.equal(c.clockOnDay, putDay, '시계 기준일이 넣은 날이 아닙니다');
-  assert.equal(t.id, P.containerHolding(S, c.id).id, '용기가 삽수를 안 물고 있습니다');
+  assert.equal(c.inContainerId, t.id, '삽수가 어느 그릇에서 왔는지를 안 적었습니다');
+  assert.equal(P.containerRowOf(S, t.id), null,
+    '★든 그릇이 아직 **빈 그릇 목록**에 있습니다 — 화면이 그 그릇에 또 [심기]를 내밉니다');
   assert.deepEqual({ at: c.at, slotId: c.slotId }, { at: t.at, slotId: t.slotId },
     '삽수가 용기 자리로 안 갔습니다');
   const seen = {};
@@ -200,7 +202,7 @@ check('③ 한 용기에 하나 — 이미 든 병에 또 넣으면 던진다', 
   assert.ok(err, '한 병에 둘이 들어갔습니다');
   assert.ok(err.tutorialInput, '입력 오류인데 tutorialInput 이 안 붙었습니다 — 화면이 판을 잠급니다');
   assert.equal(b.status, 'bag', '실패했는데 둘째 삽수가 바뀌었습니다');
-  assert.equal(P.containerHolding(S, a.id).id, t.id, '실패가 첫째를 밀어냈습니다');
+  assert.equal(a.inContainerId, t.id, '실패가 첫째를 밀어냈습니다');
 });
 
 /* ============================================================
@@ -272,8 +274,9 @@ check('⑤ 기한(죽는 것)이 **그대로 돈다** — 혹이 나면 멈추�
       `${novice ? '초보' : '자유'}: Day ${died} 에 죽었습니다 ` +
       `(넣은 날 ${putDay} + 혹 ${P.METHODS.water.nodeDays} + 유예 ${grace} 라야 합니다)`);
     assert.ok(warns >= (novice ? 5 : 2), `${novice ? '초보' : '자유'}: 경고가 ${warns}번뿐입니다`);
-    /* ★ 병은 남는다 — 삽수만 시들었다 */
-    assert.equal(P.cutContainersOf(S).length, 1, '삽수가 죽으면서 병까지 사라졌습니다');
+    /* ★ 병은 남는다 — 삽수만 시들었다. **빈 그릇으로 목록에 돌아온다**(§putContainerBack) */
+    assert.equal(P.emptyContainersOf(S).length, 1, '삽수가 죽으면서 병까지 사라졌습니다');
+    assert.equal(P.emptyContainersOf(S)[0].usedOnDay != null, true, '죽어서 남은 병에 쓴 표시가 없습니다');
     info(`  ${novice ? '초보' : '자유'} — 넣은 날 ${putDay} · 유예 ${grace}일 · Day ${died} 사망 · 경고 ${warns}회`);
   }
 });
@@ -306,8 +309,8 @@ check('⑥ 회수하면 가방으로 가고 **용기는 방에 빈 채로 남는
   assert.equal(c.container, null); assert.equal(c.method, null);
   assert.equal(c.deadlineDay, null, '가방에 기한이 남았습니다 — 죽을 수 있습니다');
   assert.equal(c.at, null, '가방에 있는데 자리가 남았습니다');
-  assert.equal(P.cutContainersOf(S).length, 1, '★용기가 같이 사라졌습니다');
-  assert.equal(P.cutContainerOf(S, r.containerId).cuttingId, null, '용기가 아직 물고 있습니다');
+  assert.equal(P.emptyContainersOf(S).length, 1, '★용기가 같이 사라졌습니다');
+  assert.equal(P.containerRowOf(S, r.containerId).cuttingId, null, '용기가 아직 물고 있습니다');
   assert.equal(stock(S, 'jar'), jarBefore, '회수했는데 병이 재고로 갔습니다 — 방에 남아야 합니다');
   /* 그리고 안 죽는다 */
   for (let i = 0; i < 60; i++) tick(S);
@@ -342,15 +345,20 @@ check('⑦ 삽수가 든 용기를 걷으려 하면 **던진다** — 먼저 빼
   const c = P.takeCutting(S, { nodes: mother(6), nodeId: PIECE });
   const t = P.placeCutContainer(S, 'jar', AT());
   P.putCuttingIn(S, c.id, t.id);
+  /* ★ 든 그릇은 **빈 그릇 목록에 아예 없다**(삽수가 지고 있다) — 그래서 목록이 0 이다.
+     그 상태에서 걷으려 하면 「모르는 용기」가 아니라 **왜 안 되는지**를 말해야 한다. */
+  assert.equal(P.emptyContainersOf(S).length, 0, '든 그릇이 빈 그릇 목록에 남아 있습니다');
   const before = stock(S, 'jar');
   let err = null;
   try { P.removeContainer(S, t.id); } catch (e) { err = e; }
   assert.ok(err, '삽수가 든 병이 걷혔습니다');
   assert.ok(err.tutorialInput, '안내가 아니라 사고로 났습니다 — 화면이 판을 잠급니다');
-  assert.equal(P.cutContainersOf(S).length, 1, '던졌는데 목록에서 빠졌습니다');
+  assert.ok(/삽수/.test(err.message), `사유가 「왜 안 되나」를 말 안 합니다: ${err.message}`);
   assert.equal(stock(S, 'jar'), before, '던졌는데 재고가 늘었습니다');
-  /* 빼면 걷힌다 */
-  P.takeCuttingOut(S, c.id);
+  /* 빼면 목록에 돌아오고, 그때 걷힌다 */
+  const r = P.takeCuttingOut(S, c.id);
+  assert.equal(P.emptyContainersOf(S).length, 1, '빼도 그릇이 목록에 안 돌아왔습니다');
+  assert.equal(r.containerId, t.id, '★같은 이름으로 안 돌아왔습니다 — 방뷰가 다른 것을 가리킵니다');
   P.removeContainer(S, t.id);
   assert.equal(stock(S, 'jar'), before + 1, '빼고 걷었는데 병이 안 돌아왔습니다');
 });
@@ -379,7 +387,7 @@ check('⑧ 옛 호출부(자르면서 용기를 정한다)가 **그대로 돈다
     assert.equal(c.container, kind);
     assert.equal(stock(S, itemId), before - 1, `${kind}: 옛 길인데 재고가 안 깎였습니다`);
     assert.equal(c.clockOnDay, c.cutOnDay, `${kind}: 옛 길인데 기준일이 자른 날과 다릅니다`);
-    assert.equal(P.cutContainersOf(S).length, 0, `${kind}: 옛 길이 방에 그릇을 세웠습니다`);
+    assert.equal(P.emptyContainersOf(S).length, 0, `${kind}: 옛 길이 방에 그릇을 세웠습니다`);
   }
   /* 옛 길로 담긴 물꽂이의 기한이 예전 값 그대로인가 (test_cutting_wiring 검사 A 와 같은 식) */
   const S = newGame(); give(S, 'jar');
@@ -396,9 +404,9 @@ check('⑧ 옛 길로 담긴 것도 회수된다 — **그 자리에 빈 병이 
   const before = stock(S, 'jar');
   const r = P.takeCuttingOut(S, c.id);
   assert.equal(c.status, 'bag');
-  assert.equal(P.cutContainersOf(S).length, 1, '★옛 길의 병이 조용히 사라졌습니다');
+  assert.equal(P.emptyContainersOf(S).length, 1, '★옛 길의 병이 조용히 사라졌습니다');
   assert.equal(stock(S, 'jar'), before, '회수가 재고를 만들어 냈습니다');
-  const t = P.cutContainerOf(S, r.containerId);
+  const t = P.containerRowOf(S, r.containerId);
   assert.equal(t.container, 'jar');
   assert.equal(t.cuttingId, null);
 });
@@ -424,14 +432,15 @@ check('⑧ 세이브 왕복 — 가방 삽수 · 빈 용기 · 든 용기가 그
   assert.equal(j2.days, inJar.days, `날 수가 ${j2.days} 로 달라졌습니다 (${inJar.days} 라야 합니다)`);
   assert.equal(j2.clockOnDay, inJar.clockOnDay, '시계 기준일이 안 실렸습니다');
   assert.equal(j2.inContainerId, t1.id, '삽수와 병의 연결이 끊겼습니다');
-  assert.equal(P.cutContainersOf(S2).length, 2, `방의 용기가 ${P.cutContainersOf(S2).length}개로 열렸습니다`);
-  assert.equal(P.cutContainerOf(S2, t1.id).cuttingId, inJar.id, '병이 삽수를 안 물고 있습니다');
-  assert.equal(P.cutContainerOf(S2, t2.id).cuttingId, null, '빈 병이 뭔가를 물고 있습니다');
-  assert.equal(P.cutContainerOf(S2, t1.id).usedOnDay != null, true, '쓴 표시가 안 실렸습니다');
-  assert.equal(P.cutContainerOf(S2, t2.id).usedOnDay, null, '안 쓴 병에 쓴 표시가 붙었습니다');
+  /* ★ 든 그릇(t1)은 목록에 없다 — 삽수가 지고 있다. 남는 것은 빈 병 하나(t2)뿐이다 */
+  assert.equal(P.emptyContainersOf(S2).length, 1,
+    `빈 그릇이 ${P.emptyContainersOf(S2).length}개로 열렸습니다 (빈 병 하나라야 합니다)`);
+  assert.equal(P.containerRowOf(S2, t1.id), null, '든 그릇이 빈 그릇 목록에 있습니다');
+  assert.equal(P.containerRowOf(S2, t2.id).container, 'jar', '갈래가 안 실렸습니다');
+  assert.equal(P.containerRowOf(S2, t2.id).usedOnDay, null, '안 쓴 병에 쓴 표시가 붙었습니다');
   /* 두 번 왕복해도 안 흔들린다 */
   const raw2 = JSON.parse(JSON.stringify(SV.serialize(S2)));
-  assert.deepEqual(raw2.state.cutContainers, raw.state.cutContainers, '두 번 저장하니 용기가 흔들립니다');
+  assert.deepEqual(raw2.state.emptyPots, raw.state.emptyPots, '두 번 저장하니 그릇이 흔들립니다');
   assert.deepEqual(raw2.state.cuttings, raw.state.cuttings, '두 번 저장하니 삽수가 흔들립니다');
 });
 
@@ -441,11 +450,10 @@ check('⑧ **옛 세이브**(용기를 정해 자른 판 · 새 칸이 통째로
   for (let i = 0; i < 15; i++) tick(S);
   const raw = JSON.parse(JSON.stringify(SV.serialize(S)));
   /* ★ 옛 판을 흉내 낸다 — 2026-08-17 에 생긴 칸을 **지운다**(세이브에 아예 없던 상태) */
-  delete raw.state.cutContainers;
   for (const q of raw.state.cuttings) { delete q.inContainerId; delete q.clockOnDay; }
   const S2 = SV.deserialize(raw, { allowMissingGrowth: true });
   const c2 = S2.cuttings[0];
-  assert.equal(S2.cutContainers.length, 0, '옛 판에 없던 용기가 생겼습니다');
+  assert.equal(S2.emptyPots.length, 0, '옛 판에 없던 그릇이 생겼습니다');
   assert.equal(c2.container, 'jar', '옛 판의 용기가 사라졌습니다');
   assert.equal(c2.method, 'water');
   assert.equal(c2.days, c.days, `옛 판의 날 수가 ${c2.days} 로 달라졌습니다`);
@@ -495,10 +503,165 @@ check('⑩ 잎 여러 장짜리는 **병에는 안 들어가고 화분에는 들
   assert.ok(err, `잎 2장짜리가 병에 들어갔습니다 (물꽂이는 ${P.WATER_LEAF_MAX}장까지)`);
   assert.ok(err.tutorialInput, '안내가 아니라 사고로 났습니다');
   assert.equal(c.status, 'bag', '던졌는데 삽수가 바뀌었습니다');
-  assert.equal(P.cutContainerOf(S, jar.id).cuttingId, null, '던졌는데 병이 물었습니다');
+  assert.equal(P.containerRowOf(S, jar.id).cuttingId, null, '던졌는데 병이 물었습니다');
   P.putCuttingIn(S, c.id, soil.id);
   assert.equal(c.method, 'pot', '잎 2장짜리가 화분에 안 들어갔습니다');
   info(`  물꽂이는 잎 ${P.WATER_LEAF_MAX}장까지 · 여러 장짜리는 화분으로 — 사유: ${err.message.slice(0, 70)}…`);
+});
+
+/* ============================================================
+   ⑪ ★★★ **용기는 한 갈래다** — 놓을 때 용도를 안 묻는다 (2026-08-17 박사님 확정)
+   ------------------------------------------------------------
+   *"삽수 꽂기가 뭐야? 용도가 아니라 거기 심어지는 거에 따라 나뉘어야지.
+     … 씨앗심기 누르면 심을 수 있는 인벤 템 리스트가 팝업으로 나와서 고르도록 하자."*
+============================================================ */
+/* 생장 창 흉내 — `plantMonsteraSeed` 가 요구하는 넷만 낸다(형태는 안 그린다) */
+function fakeGrowth() {
+  const plants = new Map();
+  let cur = null;
+  return { growth: {
+    multi: () => true,
+    addPlant: ({ id, seed, day }) => { plants.set(id, { seed, day }); },
+    select: (id) => { if (!plants.has(id)) throw new Error('없는 그루: ' + id); cur = id; },
+    removePlant: (id) => { plants.delete(id); },
+    setGrowth: (d) => { plants.get(cur).day = d; return { drawn: true }; },
+    growthDays: () => (plants.get(cur) || {}).day ?? 0
+  } };
+}
+
+check('⑪ 빈 그릇은 **한 목록**에 산다 — 유리병도 화분도 `S.emptyPots` 다', () => {
+  const S = newGame(); give(S, 'pot'); give(S, 'jar');
+  const a = ST.placeEmptyPot(S, AT(1));                          // 갈래를 안 주면 흙
+  const b = ST.placeEmptyPot(S, AT(2), { container: 'jar' });
+  assert.equal(a.container, 'soil', `기본 갈래가 ${a.container} 입니다`);
+  assert.equal(b.container, 'jar');
+  assert.equal(S.emptyPots.length, 2, '한 목록에 안 들어갔습니다');
+  assert.equal(S.cutContainers, undefined, '★따로 둔 목록이 아직 있습니다');
+  /* 옛 호출부(품목만 주는 것)도 그대로 돈다 */
+  give(S, 'pot');
+  const c = ST.placeEmptyPot(S, AT(3), { potItemId: 'pot' });
+  assert.equal(c.container, 'soil', '옛 호출부가 갈래를 못 읽었습니다');
+  assert.notEqual(a.id, b.id); assert.notEqual(b.id, c.id);
+  info(`  빈 그릇 ${S.emptyPots.length}개 — ${S.emptyPots.map(p => `${p.id}:${p.container}`).join(' · ')}`);
+});
+
+check('⑪ [심기] 목록 — **씨앗과 삽수가 한 목록**으로 나온다', () => {
+  const S = newGame(); give(S, 'pot'); give(S, 'monstera_seed', 2);
+  const one = P.takeCutting(S, { nodes: mother(6), nodeId: PIECE });          // 잎 1장
+  const two = P.takeCutting(S, { nodes: mother(6, 2), nodeId: PIECE2, id: 'cut_09' }); // 잎 2장
+  const t = ST.placeEmptyPot(S, AT());
+  const r = ST.plantableInto(S, t.id);
+  assert.deepEqual(r.accepts, ['seed', 'cutting'], '흙이 받는 것이 잘못 적혔습니다');
+  assert.equal(r.rows.length, 3, `줄이 ${r.rows.length}개입니다 (씨앗 1 + 삽수 2)`);
+  const seed = r.rows.find(x => x.kind === 'seed');
+  assert.ok(seed && seed.can, '씨앗이 회색입니다');
+  assert.equal(seed.count, 2, `씨앗 수가 ${seed.count} 입니다`);
+  for (const id of [one.id, two.id]) {
+    const row = r.rows.find(x => x.kind === 'cutting' && x.id === id);
+    assert.ok(row, `삽수 ${id} 가 목록에 없습니다`);
+    assert.ok(row.can, `흙인데 ${id} 가 회색입니다: ${row.why}`);
+    assert.ok(row.sub && /잎 \d+장/.test(row.sub), `부제가 없습니다: ${row.sub}`);
+  }
+  info(`  흙 팝업 — ${r.rows.map(x => `${x.ko}(${x.can ? '됨' : '회색'})`).join(' · ')}`);
+});
+
+check('⑪ 유리병 목록에는 **씨앗이 아예 안 뜨고**, 못 넣는 삽수는 **회색 + 까닭**이다', () => {
+  const S = newGame(); give(S, 'jar'); give(S, 'monstera_seed', 2);
+  const one = P.takeCutting(S, { nodes: mother(6), nodeId: PIECE });
+  const two = P.takeCutting(S, { nodes: mother(6, 2), nodeId: PIECE2, id: 'cut_09' });
+  const t = ST.placeEmptyPot(S, AT(), { container: 'jar' });
+  const r = ST.plantableInto(S, t.id);
+  assert.deepEqual(r.accepts, ['cutting'], '병이 받는 것이 잘못 적혔습니다');
+  assert.equal(r.rows.some(x => x.kind === 'seed'), false,
+    '★유리 수경병 목록에 씨앗이 떴습니다 — 갈래가 안 받는 것은 목록에 안 냅니다');
+  const okRow = r.rows.find(x => x.id === one.id);
+  const noRow = r.rows.find(x => x.id === two.id);
+  assert.ok(okRow.can, `잎 1장짜리가 회색입니다: ${okRow.why}`);
+  assert.equal(noRow.can, false, '★잎 2장짜리가 병에 들어갑니다');
+  assert.ok(noRow.why && /1장/.test(noRow.why), `까닭이 없습니다: ${noRow.why}`);
+  assert.ok(r.rows.includes(noRow), '★못 넣는 줄을 목록에서 뺐습니다 — 회색으로 남겨야 합니다');
+  info(`  병 팝업 — ${r.rows.map(x => `${x.ko}(${x.can ? '됨' : '회색: ' + x.why.slice(0, 22) + '…'})`).join(' · ')}`);
+});
+
+check('⑪ 고르면 심긴다 — **씨앗이든 삽수든 같은 문**(plantInto)', () => {
+  /* ㉮ 삽수 */
+  {
+    const S = newGame(); give(S, 'jar');
+    const c = P.takeCutting(S, { nodes: mother(6), nodeId: PIECE });
+    const t = ST.placeEmptyPot(S, AT(), { container: 'jar' });
+    const r = ST.plantInto(S, null, t.id, { kind: 'cutting', id: c.id });
+    assert.equal(r.kind, 'cutting');
+    assert.equal(c.status, 'rooting', `삽수가 ${c.status} 입니다`);
+    assert.equal(c.container, 'jar');
+    assert.equal(S.emptyPots.length, 0, '★심었는데 그릇이 빈 그릇 목록에 남았습니다');
+    assert.equal(S.pots.length, 1, '삽수를 심었는데 화분이 늘었습니다');
+  }
+  /* ㉯ 씨앗 — 놓인 **그 자리·그 그릇**에 심긴다 */
+  {
+    const S = newGame(); give(S, 'pot'); give(S, 'monstera_seed');
+    const io = fakeGrowth();
+    const t = ST.placeEmptyPot(S, AT(4));
+    const before = S.pots.length;
+    const r = ST.plantInto(S, io, t.id, { kind: 'seed', id: 'monstera_seed' });
+    assert.equal(r.kind, 'seed');
+    assert.equal(r.potId, t.id, '★놓은 그릇이 아닌 새 화분에 심겼습니다');
+    assert.equal(S.pots.length, before + 1, '화분이 안 늘었습니다');
+    assert.equal(S.emptyPots.length, 0, '심었는데 빈 그릇으로 남아 있습니다');
+    const pot = S.pots.find(p => p.id === t.id);
+    assert.deepEqual({ x: pot.at.x, y: pot.at.y, z: pot.at.z }, AT(4),
+      '놓은 자리가 아닌 데 심겼습니다');
+    assert.equal(stock(S, 'monstera_seed'), 0, '씨앗이 안 나갔습니다');
+  }
+  /* ㉰ 갈래가 안 받는 것은 **안내로** 막는다 */
+  {
+    const S = newGame(); give(S, 'jar'); give(S, 'monstera_seed');
+    const t = ST.placeEmptyPot(S, AT(), { container: 'jar' });
+    let err = null;
+    try { ST.plantInto(S, fakeGrowth(), t.id, { kind: 'seed', id: 'monstera_seed' }); }
+    catch (e) { err = e; }
+    assert.ok(err, '★유리 수경병에 씨앗이 심겼습니다');
+    assert.ok(err.tutorialInput, '안내가 아니라 사고로 났습니다');
+    assert.equal(S.emptyPots.length, 1, '던졌는데 그릇이 사라졌습니다');
+    assert.equal(stock(S, 'monstera_seed'), 1, '던졌는데 씨앗이 나갔습니다');
+  }
+});
+
+check('⑪ **옛 세이브의 빈 화분**(container 칸이 없다)이 그대로 열리고 심긴다', () => {
+  const S = newGame(); give(S, 'pot'); give(S, 'monstera_seed');
+  ST.placeEmptyPot(S, AT());
+  const raw = JSON.parse(JSON.stringify(SV.serialize(S)));
+  for (const p of raw.state.emptyPots) { delete p.container; delete p.usedOnDay; }
+  const S2 = SV.deserialize(raw, { allowMissingGrowth: true });
+  assert.equal(S2.emptyPots.length, 1, '옛 빈 화분이 사라졌습니다');
+  const row = S2.emptyPots[0];
+  assert.equal(row.container, null, '없던 갈래가 지어내졌습니다');
+  assert.equal(P.containerKindOf(row), 'soil', '★품목으로 갈래를 못 읽었습니다');
+  const r = ST.plantableInto(S2, row.id);
+  assert.equal(r.container, 'soil');
+  assert.ok(r.rows.some(x => x.kind === 'seed'), '옛 빈 화분에 씨앗을 못 심습니다');
+});
+
+check('⑪ 하루 살았던 `cutContainers` 세이브를 되받는다 (병이 안 사라진다)', () => {
+  const S = newGame(); give(S, 'pot');
+  ST.placeEmptyPot(S, AT(1));
+  const raw = JSON.parse(JSON.stringify(SV.serialize(S)));
+  /* ★ 2026-08-17 아침 판 흉내 — 빈 병 하나가 그 칸에 적혀 있었다 */
+  raw.state.cutContainers = [
+    { id: 'cont_01', container: 'jar', itemId: 'jar', slotId: 'free:cont_01',
+      at: { x: 2, y: 0.8, z: 1, rotY: 0, onUid: null, occIdx: null },
+      placedOnDay: 1, cuttingId: null, usedOnDay: null },
+    /* 삽수가 들어 있던 줄은 **안 옮긴다** — 지금은 삽수가 그릇을 지고 있다 */
+    { id: 'cont_02', container: 'jar', itemId: 'jar', slotId: null, at: null,
+      placedOnDay: 1, cuttingId: 'cut_01', usedOnDay: 1 }
+  ];
+  const S2 = SV.deserialize(raw, { allowMissingGrowth: true });
+  assert.equal(S2.emptyPots.length, 2, `빈 그릇이 ${S2.emptyPots.length}개로 열렸습니다 (화분1 + 병1)`);
+  assert.ok(S2.emptyPots.some(p => p.id === 'cont_01' && p.container === 'jar'),
+    '★옛 판의 빈 병이 사라졌습니다');
+  assert.equal(S2.emptyPots.some(p => p.id === 'cont_02'), false,
+    '삽수가 들어 있던 줄까지 옮겨 그릇이 둘이 됐습니다');
+  assert.equal(S2.cutContainers, undefined, '걷은 칸이 되살아났습니다');
+  info(`  하루짜리 옛 판 — 빈 병 1개를 emptyPots 로 옮겼고 든 줄은 안 옮겼다`);
 });
 
 /* ============================================================
