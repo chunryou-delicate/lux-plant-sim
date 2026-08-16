@@ -67,6 +67,27 @@ export const REQUIRED_GROWTH_FNS =
    함수가 있다고 준비된 게 아니다 — 임계값 정본은 비동기로 실린다(2026-08-02 브라우저에서 잡힘). */
 export const REQUIRED_GROWTH_STATE = ['thLoaded'];
 
+/* ★★ 잎 이름표 색인 — `leafBirth` → 그 값을 나눠 쓰는 잎들의 축 경로 (2026-08-17).
+   `plant_grow §leafAxisKeys()` 가 낸 줄을 묶기만 한다. **여기서 이름을 짓지 않는다** —
+   짓는 자리는 `plant_grow §axisPathsOf` 하나고, 두 벌로 지으면 언젠가 갈린다.
+   ⚠ 접근자가 없는 옛 `plant_grow` 면 **null** 이다(빈 Map 이 아니다 — 「이름표가 없다」와
+     「이름표가 하나도 안 붙은 그루다」는 다른 말이고, 뒤엣것은 거짓말이 된다).
+   ★ 경로는 정렬해서 낸다. 안 하면 같은 그루인데 부를 때마다 `leafKey` 가 딴 잎을 가리킬 수 있다. */
+function leafKeyIndex(fn) {
+  const f = fn('leafAxisKeys');
+  if (!f) return null;
+  let rows = null;
+  try { rows = f(); } catch { return null; }
+  if (!Array.isArray(rows)) return null;
+  const m = new Map();
+  for (const r of rows) {
+    if (!r || !Number.isFinite(r.leafBirth) || typeof r.leafKey !== 'string' || !r.leafKey) continue;
+    const a = m.get(r.leafBirth); if (a) a.push(r.leafKey); else m.set(r.leafBirth, [r.leafKey]);
+  }
+  for (const a of m.values()) a.sort();
+  return m;
+}
+
 export function createGrowthAdapter(iframe) {
   const win = () => (iframe && iframe.contentWindow) || null;
   const fn = (name) => {
@@ -384,6 +405,33 @@ export function createGrowthAdapter(iframe) {
          「무늬인데 등급은 아직 모른다」가 실제로 있는 상태다(빛을 못 잰 자리).
        ⚠ 안 주면 예전 그대로다(`grade` 칸 자체가 안 붙는다). 옛 호출부가 안 깨진다.
          grades  `{ [leafBirth]: 'sanban'|'halfmoon'|'fullmoon' }` */
+    /* ★★★ 2026-08-17 — 줄마다 **잎의 유일한 이름표**가 붙는다 (박사님 *"각각 따로 자라야지"*).
+       ──────────────────────────────────────────────────────────────────────
+       ── 설명 먼저 ──────────────────────────────────────────────────────────
+       잎은 **이미 각각 따로 자란다**(축이 따로고 무늬 굴림도 따로다). 문제는 **이름표**였다.
+       이 함수가 합치는 세 접근자가 전부 `leafBirth` 로만 적혀 있어서, **쌍혹**(혹 하나에서
+       가지가 둘 나는 것)에서 같은 날 난 두 잎이 **한 줄을 나눠 쓴다.** 그 줄에 「잘렸다」를
+       찍으면 **안 자른 쌍둥이까지 사라진다**(실측 56판 중 25판 · cutleaf-to-plan §5).
+       ⇒ `plant_grow §leafAxisKeys()` 가 내는 축 경로를 여기서 **줄에 얹는다.**
+         그 값은 `cuttableNodes().leafKeys` 와 **같은 값**이다(같은 `axisPathsOf` 가 짓는다).
+
+       ── 붙는 칸 둘 (기존 칸은 하나도 안 없앴다) ────────────────────────────
+         `leafKeys: string[]`  이 줄을 나눠 쓰는 잎들의 이름표 **전부**. 보통 길이 1,
+                               **쌍혹이면 2 이상**이다. 아직 안 난 잎이면 **빈 배열**이다.
+         `leafKey:  string|null`  줄이 잎 한 장을 가리킬 때 그 이름표. **못 가르면 `null`** —
+                               `null` 은 「이 줄 하나로는 어느 잎인지 모른다」는 정직한 답이다.
+                               0 이나 아무 값으로 메꾸지 않는다(이 파일의 규약).
+       ⚠ **줄 수는 안 바뀐다**(기본값). 늘리면 `shop.js §assignPotLeafGrades` 가 줄 **차례**로
+         잎 번호를 매기므로(`leafNo = i + 1`) 프롤로그 못박기가 통째로 밀린다 —
+         그루 값이 조용히 달라진다. 그래서 **늘리는 것은 `opt.perLeaf` 로만** 연다.
+
+       ── `opt.perLeaf` — **잎 한 장에 한 줄** ───────────────────────────────
+         `leafState({ perLeaf:true })` 면 쌍혹 줄이 잎 수만큼 갈라지고 `leafKey` 가 **전부 유일**하다.
+         갈라진 줄은 나머지 칸(`varie`·`matured`·`fade`·`dropped`·`grade`)을 **그대로 복사**한다 —
+         정본 장부가 `leafBirth` 로만 적혀 있어 쌍둥이별 값이 **애초에 없기 때문**이다.
+         지어내지 않고 「같은 값을 나눠 쓰고 있다」를 있는 그대로 낸다.
+       ⚠ 이름표를 못 내는 옛 `plant_grow`(=`leafAxisKeys` 가 없다)면 `perLeaf` 는 **null** 이다.
+         빈 배열도 옛 모양도 아니다 — 갈라 달라고 했는데 못 갈랐으면 그렇다고 말해야 한다. */
     leafState(opt = {}) {
       const fv = fn('varieStateAll'), fm = fn('matStateAll'), fh = fn('leafHealthAll');
       if (!fv && !fm && !fh) return null;
@@ -407,7 +455,23 @@ export function createGrowthAdapter(iframe) {
       /* ★ 등급을 얹는다. **무늬가 아닌 잎에는 안 얹는다** — 민무늬 잎에 등급이 붙어 있으면
          화면이 그것을 그리려 들고, 그러면 값과 화면이 그 자리에서 갈린다. */
       if (grades) for (const r of list) r.grade = (r.varie && grades[r.leafBirth]) || null;
-      return list;
+
+      /* ★★ 이름표를 얹는다 (위 §leafKey). 못 내는 옛 plant_grow 면 칸 자체가 안 붙는다. */
+      const keysOf = leafKeyIndex(fn);
+      if (keysOf) for (const r of list) {
+        const a = keysOf.get(r.leafBirth) || [];
+        r.leafKeys = a.slice();
+        r.leafKey = a.length === 1 ? a[0] : null;   // 쌍둥이거나 아직 안 난 잎이면 못 가른다
+      }
+      if (!opt.perLeaf) return list;
+      if (!keysOf) return null;                     // 갈라 달라고 했는데 못 가른다 — 지어내지 않는다
+      const per = [];
+      for (const r of list) {
+        const a = r.leafKeys || [];
+        if (!a.length) { per.push(r); continue; }   // 아직 안 난 잎 — 축이 없어 이름표도 없다
+        for (const k of a) per.push({ ...r, leafKey: k });
+      }
+      return per;
     },
 
     /* 표시·대조 전용(판정에 안 쓴다) — 없으면 화면에 '—' 로 두면 되므로 던지지 않는다. */

@@ -9273,6 +9273,13 @@ function syncRoom() {
        하나라도 애매하면 **손을 안 댄다.** 「모르면 안 한다」가 이 저장소의 규약이다.
    ⚠ 열쇠 칸이 없는 옛 `plant_grow` 면 `null` 이 온다 — 그때도 손을 안 댄다. */
 function leafStateForRoom(p) {
+  /* ★★★ 2026-08-17 — **줄마다 잎의 이름표가 붙었다**(growth_adapter §leafState `leafKeys`).
+     ------------------------------------------------------------
+     그전까지 이 함수는 `leafBirth` 로 **세어서** 「잘라 낸 장수와 화면에 있는 장수가 같을
+     때만」 지웠다. 세는 길이었던 까닭은 하나다 — 줄에 유일한 이름이 없었기 때문이다.
+     이제 있다(`plant_grow §leafAxisKeys` → 어댑터가 얹는다). 그래서 **세지 않고 짚는다.**
+     ⇒ 아래 길 ①. 세는 길(길 ②)은 **이름표가 없는 옛 `plant_grow`** 에서만 탄다.
+     ⚠ 지우는 것은 화면이 **안 그리는 것**이다. 잎을 실제로 없애지 않는다. */
   let ls = null;
   try { ls = io.growth.leafState && io.growth.leafState(); } catch { return null; }
   if (!Array.isArray(ls) || !ls.length) return ls;
@@ -9281,6 +9288,41 @@ function leafStateForRoom(p) {
   let k = null;
   try { k = io.growth.leafKeysOfNodes && io.growth.leafKeysOfNodes(ids); } catch { }
   if (!k || !Array.isArray(k.leafBirths) || !k.leafBirths.length) return ls;
+
+  /* ══ 길 ① — **이름표로 짚는다** ══════════════════════════════════════════
+     줄이 품은 이름표가 **전부** 잘린 이름표면 그 줄을 지운다. 세는 것이 아니라 짚는 것이라
+     「장수가 우연히 같아서 남의 잎이 지워지는」 일이 없다.
+     ⚠⚠ **한쪽만 잘린 쌍둥이는 여전히 손을 안 댄다.** 이름표는 여기까지 왔지만
+       **그 뒤 길이 아직 `leafBirth` 로 좁혀진다** — 방으로 넘어간 줄은
+       `render3d/plant_assemble.js §__setLeafState` 가 `LEAF_HEALTH.set(leafBirth, …)` 로
+       앉히고, 그리기는 `leafDroppedOf(leafBirth)` 로 본다. 두 잎이 같은 칸을 나눠 쓰므로
+       **한 장만 안 그리게 할 창구가 아직 없다.** 여기서 지우면 쌍둥이가 같이 사라진다 —
+       반대 방향의 거짓말이라 안 한다. 뚫을 자리는 그 파일 한 줄이고, 이 창의 몫이 아니다
+       (`docs/handoff/twinleaf-to-plan.md` §못 한 것). */
+  const keyed = Array.isArray(k.leafKeys) && k.leafKeys.length === k.leafBirths.length
+                && ls.some(r => r && Array.isArray(r.leafKeys));
+  if (keyed) {
+    const cut = new Set(k.leafKeys);
+    const split = [];
+    const out = ls.map(r => {
+      if (!r || r.dropped || !Array.isArray(r.leafKeys) || !r.leafKeys.length) return r;
+      let n = 0;
+      for (const key of r.leafKeys) if (cut.has(key)) n++;
+      if (!n) return r;                                   // 이 줄의 잎은 안 잘렸다
+      if (n === r.leafKeys.length) return { ...r, dropped: true };   // 전부 잘렸다 — 정확하다
+      split.push(`${r.leafBirth}[${r.leafKeys.filter(x => cut.has(x)).join('·')} / ${r.leafKeys.join('·')}]`);
+      return r;
+    });
+    if (split.length && !leafDropWarned) {
+      leafDropWarned = true;
+      console.warn('[잘린 잎] 쌍혹의 한쪽만 잘렸습니다 — 지금 그리기는 leafBirth 한 칸으로만 ' +
+                   '「안 그리기」를 받아서 그 잎만 빼지 못합니다(plant_assemble §__setLeafState). ' +
+                   '쌍둥이가 같이 사라지지 않게 그 마디는 화면에서 안 지웠습니다 —', split.join(', '));
+    }
+    return out;
+  }
+
+  /* ══ 길 ② — **이름표가 없는 옛 `plant_grow`** · 예전 그대로 「딱 맞을 때만」 ══════ */
   /* 지우려는 장수 */
   const want = new Map();
   for (const b of k.leafBirths) { const n = +b; want.set(n, (want.get(n) || 0) + 1); }

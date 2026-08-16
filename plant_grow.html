@@ -3210,6 +3210,48 @@ function cuttableNodes(){
   return out;
 }
 
+/* ===== ★★ 잎마다 **유일한 이름표** (2026-08-17 · 박사님 "각각 따로 자라야지") =====
+   ------------------------------------------------------------
+   ── 먼저 설명 ─────────────────────────────────────────────────
+   잎은 **이미 각각 따로 자란다.** 축(생장점)이 따로고 무늬 굴림도 따로다.
+   문제는 자라는 것이 아니라 **이름표**였다. 잎별 상태를 밖으로 내는 줄
+   (`varieStateAll`·`matStateAll`·`leafHealthAll` → growth_adapter §leafState)이
+   **`leafBirth` 하나로만 적혀** 있어서, 쌍혹(혹 하나에서 가지가 둘 · growTopology ④ ·
+   `P.doubleBud`)에서 같은 날 난 두 잎이 **같은 줄을 나눠 쓴다.**
+   그래서 삽수로 한쪽만 잘라도 그 값으로 지우면 **안 자른 쌍둥이까지 사라진다.**
+   실측: 56판 중 **25판**에서 겹쳤고 그 수가 쌍혹 판 수와 정확히 같았다
+   (`docs/handoff/cutleaf-to-plan.md` §5).
+
+   ⇒ 그 이름표를 여기서 낸다. **유일한 이름은 이미 있다** — `cuttableNodes()` 가 내는
+     `leafKeys`(축 경로 `n0`·`n0.1`·`n0.1:1`)다. 짓는 자리도 이미 `axisPathsOf` 하나로
+     모여 있다. 이 함수는 **그 이름을 짓지 않는다. 같은 함수를 불러 쓴다** —
+     두 벌로 지으면 언젠가 갈리고, 갈리는 순간 「자른 그 잎」이 딴 잎이 된다.
+
+   반환 `[{ leafBirth, leafKey }, …]` — **잎 한 장에 한 줄**
+     leafBirth  그 잎의 생장 나이. `leafState()` 줄의 옛 열쇠와 **같은 값**(겹칠 수 있다)
+     leafKey    그 잎이 달린 축의 경로. `cuttableNodes().leafKeys` 와 **같은 값**이고 유일하다
+
+   ★ 「난 잎」의 기준은 `leafStats`·`cuttableNodes` 와 **같다** — 가지가 났고(`birth<=g`)
+     잎이 폈다(`g>=leafBirth`). 다만 **떨어진 잎도 낸다**: 이 함수는 이름표를 내는 것이지
+     무엇이 보이나를 정하는 것이 아니고, 떨어졌나는 `leafHealthAll()` 이 이미 낸다.
+     (여기서 또 걸러 내면 「누가 무엇을 거르나」가 두 군데가 된다.)
+   ★ 아직 안 난 잎은 **안 낸다.** `leafState()` 는 장부가 미리 굴려 둔 잎까지 줄로 내는데
+     (cutleaf §3-E2) 그 잎은 축이 없어 경로가 없다 — 없는 이름을 지어내지 않는다.
+   ⚠ **읽기 전용이다.** `topologyNow` 가 난수를 쓰고 반드시 되돌린다. 형태·확률·캐논 숫자를
+     한 개도 안 건드린다. 잎을 지우지도 않는다. */
+function leafAxisKeys(){
+  const day=Math.max(0, Math.min(GMAX, GROWTH)), g=ageOf(day);
+  if(g<P.seedEnd) return [];                       // 씨앗 — 아직 잎이 없다
+  const axes=topologyNow(g);
+  const {pathOf}=axisPathsOf(axes);                // ★이름 짓는 자리는 여기 하나다
+  const out=[];
+  for(const ax of axes){
+    if(ax.birth>g || g<ax.leafBirth) continue;     // 아직 안 난 가지 · 아직 안 편 잎
+    out.push({ leafBirth:ax.leafBirth, leafKey:'n'+pathOf.get(ax) });
+  }
+  return out;
+}
+
 /* ===== 판매·표시용 잎 집계 (코어 요청 2026-08-03) =====
    가격 공식 '단위기본가 × 크기 × (1+60·v²)' 의 크기(잎 수)와 v(무늬 잎 비율)를
    코어가 읽는 창구다 (docs/propagation.md §6 — "값은 보이는 것으로만 매긴다").
