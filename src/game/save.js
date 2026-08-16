@@ -81,7 +81,7 @@ export const DLI_HIST_KEEP = null;
    조용히 안 저장되는 칸이 생기는 것이 제일 나쁘다. */
 const KNOWN_STATE_KEYS = Object.freeze([
   'schema', 'day', 'timeScale', 'sim', 'home', 'lamps',
-  'pots', 'cuttings', 'firstPlay', 'story', 'tutorial', 'shop', 'perks', 'stamina', 'dliHist', 'ledger', 'log'
+  'pots', 'emptyPots', 'cuttings', 'firstPlay', 'story', 'tutorial', 'shop', 'perks', 'stamina', 'dliHist', 'ledger', 'log'
 ]);
 
 /* ---------------------------------------------------------------
@@ -1044,6 +1044,23 @@ export function serialize(S, opt = {}) {
         aim: packLampAims(lamps.aim)
       },
       pots: needArr(S.pots || [], 'pots').map(packPot),
+      /* ★★ 2026-08-16 — **빈 화분**(놓았지만 아직 안 심은 것 · `state.js §emptyPots`).
+         ⚠ 그루가 없으므로 `packPot` 을 안 쓴다 — 빛 이력도 생장 창도 없는 물건이다.
+           네 칸뿐이고, 그 넷이 없으면 방에서 자리를 잃는다.
+         ★ 세이브 계통이 **이 칸을 안 적으면 던지게** 돼 있어서 여기 붙였다
+           (실측: `state.js 에 새 칸이 생겼습니다: emptyPots` 로 검사 셋이 빨개졌다).
+           그 장치가 없었으면 **화분만 조용히 사라지는 세이브**가 됐다. */
+      emptyPots: needArr(S.emptyPots || [], 'emptyPots').map((p, i) => {
+        const path = `emptyPots[${i}]`;
+        needObj(p, path);
+        return {
+          id: needStr(p.id, `${path}.id`),
+          itemId: needStr(p.itemId, `${path}.itemId`),
+          slotId: optStr(p.slotId, `${path}.slotId`),
+          at: packAt(p.at, `${path}.at`),
+          placedOnDay: needInt(p.placedOnDay ?? 0, `${path}.placedOnDay`, { min: 0 })
+        };
+      }),
       cuttings: needArr(S.cuttings || [], 'cuttings').map(packCutting),
       firstPlay: packFirstPlay(S.firstPlay),
       story: packStory(S.story),
@@ -1434,6 +1451,16 @@ export function deserialize(raw, opt = {}) {
     litHours: needNum((st.lamps || {}).litHours ?? 12, 'state.lamps.litHours', { min: 0 }),
     aim: packLampAims((st.lamps || {}).aim)
   };
+  /* ★ 빈 화분을 되세운다. **옛 세이브에는 이 칸이 없다** — 그때는 빈 배열이 맞다
+     (그 판에는 빈 화분이라는 것 자체가 없었다). 조용히 0 으로 메꾸는 것이 아니라
+     **없던 것이 없는 것**이다. */
+  S.emptyPots = needArr(st.emptyPots || [], 'state.emptyPots').map((p, i) => ({
+    id: needStr(p.id, `state.emptyPots[${i}].id`),
+    itemId: needStr(p.itemId, `state.emptyPots[${i}].itemId`),
+    slotId: p.slotId == null ? null : String(p.slotId),
+    at: p.at ? { x: +p.at.x, y: +p.at.y, z: +p.at.z } : null,
+    placedOnDay: Number.isFinite(p.placedOnDay) ? p.placedOnDay : 0
+  }));
   S.pots = needArr(st.pots || [], 'state.pots').map((p, i) => {
     const q = packPot(p, i);
     /* 좌표는 place.makeAt 를 통과시켜 정본 모양으로 세운다(방 경계는 아래 회수 단계에서 본다) */

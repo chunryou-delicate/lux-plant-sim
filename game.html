@@ -181,6 +181,30 @@
   #stage.placing #placeHint{display:block}
   #placeHint b{color:var(--gold)}
 
+  /* ══ ★★★ 첫걸음 쪽지 — 「할 수 있는 것」을 **그 손이 닿은 순간에** 한 번만 (2026-08-16 · §A) ══
+     ------------------------------------------------------------
+     ★ 왜 새 자리를 하나 만들었나 — 이미 있는 통로가 전부 **할 일**을 말하는 자리다:
+         `#quest` 아래 한 줄 = 「지금 할 일 하나」 · 손가락 `#hint` = 「다음에 누를 것 하나」
+         말풍선 = 「이 물건이 지금 요구하는 일」 · 배너 = 「방금 일어난 일」
+       그런데 자유 이동·가구 옮기기·상대 이동은 **해야 하는 일이 아니라 할 수 있는 일**이다.
+       그 셋을 위 통로에 넣으면 진짜 할 일을 밀어낸다(손가락은 한 칸뿐이고, `#quest` 도 한 줄이다).
+     ★★ **겹치지 않는 것이 이 조각의 전부다.** 지키는 법 넷 — 전부 구조로 막는다:
+         ① 한 번에 하나. 큐가 아니라 덮어쓰기다(가장 최근 손짓이 이긴다).
+         ② 쪽지가 떠 있는 동안 **손가락을 걷는다**(`updateHint` 첫 줄). 둘이 같이 못 뜬다.
+         ③ 대사·확대·끌기·안내판·시트가 열리면 그 자리에서 사라진다.
+         ④ **한 번 보면 다시 안 뜬다**(localStorage `byeot.coach`). 두 번째부터는 잔소리다.
+     ⚠ 배너와 같은 순간에 뜨지 않게 부르는 자리를 골랐다 — 놓은 **직후**가 아니라
+       놓인 것을 **처음 누른 순간**이다(배너는 놓은 직후에 뜬다). */
+  #coach{position:absolute;z-index:27;left:12px;right:12px;top:10px;display:none;
+          padding:10px 12px;border-radius:12px;background:rgba(18,14,26,.93);
+          border:1px solid rgba(255,180,84,.42);box-shadow:0 6px 18px rgba(0,0,0,.45);
+          font-size:12.5px;line-height:1.5;color:var(--ink);word-break:keep-all}
+  #coach.on{display:block}
+  #coach b{color:var(--gold)}
+  #coach .ct{display:block;font-weight:800;font-size:13px;margin-bottom:2px}
+  #coach .cx{position:absolute;right:6px;top:6px;width:26px;height:26px;border:0;border-radius:50%;
+          background:rgba(255,255,255,.07);color:var(--dim);font-size:13px;line-height:1}
+
   /* ── 하단 액션 ─────────────────────────────────────────────────────── */
   /* 버튼 글자를 접지 않는다 — '빨리감 / 기' 로 나뉘어 읽힐이 안 됐다 */
   /* ★ 2026-08-15 — `#bottom .navbar button` 을 걷었다. 탭 줄이 `#stage` 로 옮겨 가서
@@ -1418,6 +1442,11 @@
       <div id="bootBar"><i style="width:6%"></i></div>
     </div></div>
     <div id="placeHint"></div>
+    <!-- ★ 첫걸음 쪽지 — 「할 수 있는 것」을 그 손이 닿은 순간에 한 번만 (§coach · CSS 주석에 규율) -->
+    <div id="coach" role="status" aria-live="polite">
+      <button class="cx" id="coachClose" type="button" aria-label="닫기">✕</button>
+      <span class="ct" id="coachTitle"></span><span id="coachBody"></span>
+    </div>
     <div id="dropLabel"></div>
     <!-- ★해야 할 일이 있는 물건 위에 말풍선을 띄운다 (박사님 2026-08-04).
          물 줘야 하는 시루 · 씨앗을 심어야 하는 빈 시루 · 거둘 때가 된 시루.
@@ -1445,6 +1474,16 @@
       <!-- ★식물등만 뜬다 — 겨눌 수 있는 등에서만(io.light.lampList().aimable).
            바 등은 선반 밑 붙박이라 안 뜬다(docs/growlight_aim.md §2). -->
       <button id="furnAim" class="ghost" style="display:none">겨누기</button>
+      <!-- ★★★ 옮기고 **난 뒤**의 두 단추 (2026-08-16 · B-4 · 박사님: "옮긴 다음 팝업이
+           [옮기기]가 있어서 헷갈림 — [확정]/[취소] 버튼 나오게")
+           ------------------------------------------------------------
+           옮기기가 끝나면 같은 메뉴에 [옮기기]가 또 떠 있어 "아직 안 옮겨졌나"로 읽혔다.
+           ⇒ 옮긴 뒤에는 [옮기기]·[돌리기]·[겨누기]를 감추고 이 둘만 남긴다.
+             [확정] 고르기를 푼다(옮긴 그대로 둔다) · [취소] **옮기기 전 자리로 되돌린다**
+           ⚠ 같은 `#furnActions` 안에 둔다 — 자리잡이(placeFurnMenu)가 하나여야
+             가구를 따라다니는 메뉴가 둘로 갈리지 않는다. -->
+      <button id="furnOk" class="primary" style="display:none">확정</button>
+      <button id="furnUndo" class="ghost" style="display:none">취소</button>
       <button id="furnClose" class="ghost" aria-label="닫기">✕</button>
     </div>
     <!-- ★★★ 놓은 것 옆에 뜨는 [확인] (2026-08-09 · 박사님: "놓으면 그 물품 옆으로
@@ -2379,6 +2418,8 @@ import { newState, SIM_MODES, pot0, pushLog, givePlant, hasPlant, ARRIVAL,
          pantrySaleStatus, sellPantryCrop,
          /* ★ 2026-08-16 · 오늘 밥상 — 곳간에서 몇 g 을 쓸지 고른다 (state.js §밥상) */
          mealPlanStatus, planMeal, reseatAllOnSlots,
+         /* ★ 2026-08-16 · B-5 — 자유 좌표로 가구 위에 얹힌 것도 가구를 따라간다 (state.js §followFreeOnFurniture) */
+         followFreeOnFurniture,
          /* ★★ 2026-08-16 — **씨앗으로 몬스테라를 심는 길.** 코어에 다 있는데
             화면이 한 번도 안 불렀다 — 그래서 씨앗과 화분을 사도 심을 길이 없었다
             (박사님: *"몬스테라 직접 심는 거 아직 안 된다는데?"* → *"화분 놓는 게 안 됨"*). */
@@ -2392,7 +2433,9 @@ import { catalogList, orderItem, shopStatus, priceOf,
          marketGate, marketStatus, listingFor, marketWaitKo, MARKET_MIN_LEAVES,
          stockOf, SELLABLE_CUTTING_STATUS, varieLeavesNeededFor,
          /* ★★ 무늬 등급 (2026-08-16 · plan-2026-08-17-varie-grade.md 확정) */
-         installVarieGrades, assignPotLeafGrades } from './src/game/shop.js';
+         installVarieGrades, assignPotLeafGrades,
+         /* ★ 2026-08-16 — 잎별 무늬 그림(중간잎·성숙잎을 등급으로 확정 · midalbo-to-plan) */
+         potLeafSkinsOf } from './src/game/shop.js';
 /* ★ 삽수 — 규칙과 수치는 전부 propagation.js 것이다. 여기서는 부르기만 한다
    (날짜를 여기서 다시 세면 화면과 코어가 갈라진다). */
 import { takeCutting, repotCutting, cuttableNow, cutBudgetOf, cutBlockedReason,
@@ -2622,6 +2665,20 @@ function noteLeafGrades(t) {
        그건 안내가 아니라 잔소리다(quest-to-plan 의 규율과 같은 결).
        ⚠ 대사가 아니라 **배너**다 — `dialogue.js` 는 `leaf_grade` 를 모르고, 알 필요도 없다.
          `ko` 가 이미 사람 말이라(shop.js §assignPotLeafGrades) 그대로 띄운다. */
+    /* ★★ 2026-08-16 — **잎별 무늬 그림을 생장 창에 넘긴다** (박사님: *"중간잎 말고
+       성숙잎 가는 것도 그럼 확정으로 해야겠네. 둘 다."*).
+       ⚠ 등급만 정하고 그림을 안 넘기면 **중간에 점박이였다가 다 자라니 반반**이 된다.
+         캐논이 *"성숙 특수무늬는 앞선 mid 의 특수 형태를 따라 그룹핑 — 미구현, 향후"* 라
+         남겨 둔 그 자리다.
+       ⚠ 창구가 없으면 조용히 지나간다 — 옛 생장 창에서도 게임은 돌아야 한다. */
+    try {
+      const w = document.getElementById('growth').contentWindow;
+      if (w && typeof w.setLeafSkins === 'function') {
+        const p0 = pot0(S);
+        if (p0) w.setLeafSkins(Object.entries(potLeafSkinsOf(S, p0) || {})
+          .map(([lb, v]) => ({ leafBirth: +lb, ...v })));
+      }
+    } catch (e) { console.warn('[무늬 그림]', e && e.message); }
     for (const a of (r && r.assigned) || [])
       banner(`✨ ${a.leafNo}번째 잎 — ${a.gradeKo}`,
              (((r.events || []).find(e => e.leafBirth === a.leafBirth) || {}).ko || '')
@@ -2922,6 +2979,38 @@ function drawMusun() {
      예전에는 「심어서 개체가 생긴 뒤」였다 — 이제 개체는 놓는 순간 생기므로
      그 조건이면 안내가 영영 안 뜬다(끌 수 있게 된 순간에 안 보인다). */
   card.querySelector('.dragcue').style.display = bagTrays > 0 ? '' : 'none';
+  /* ══ ★★★ A-5 「무순 배치 가이드」 (2026-08-16 박사님) ═══════════════════════════
+     ------------------------------------------------------------
+     ★ 무엇이 없었나 — 이 줄은 **첫 걸음 하나**만 말하고 있었다(「끌어서 밝은 자리에」).
+       그런데 무순은 **콩나물과 손짓이 다르다**: 시루는 놓기 = 심기지만, 재배판은
+         ① 방으로 끌어 **빈 판**을 세우고 → ② 놓인 판 줄의 [🌱 심기] → ③ [💧 물]
+       세 걸음이다(2026-08-11 에 순서를 뒤집은 그 규칙 · START-HERE §5).
+       ②③ 을 말하는 자리가 카드에 없어서, 판을 놓은 사람이 가방으로 되돌아와
+       「심기」를 찾다가 멈춘다 — 그 단추는 [식물] 탭의 줄에 있다.
+     ★ **걸음마다 다른 말**을 한다. 셋을 한꺼번에 적으면 넉 줄이 되고 아무도 안 읽는다.
+     ⚠ 판정을 여기서 새로 짓지 않는다 — `cropPotList` 가 낸 `sown`·`needsWater` 를 읽는다
+       (§drawMusun 머리말의 그 규율. 두 벌이 되면 카드와 줄이 다른 말을 한다).
+     ⚠ **누르기는 안 만들었다.** 재배판 칸에는 누르기 배치가 없다(`BAG_PLACEABLE` 에 없고
+       `bindDrag('musunThumb','musun')` 도 셋째 인자가 없다) — 그러니 「누르면」이라 적으면
+       거짓말이다. 없는 손짓을 안내가 지어내지 않는다. 그 배선은 이 창 몫이 아니다. */
+  {
+    const cue = card.querySelector('.dragcue');
+    const unsown = placedRows.filter(r => !r.sown);
+    const thirsty = placedRows.filter(r => r.sown && r.needsWater);
+    if (cue) {
+      if (unsown.length)                                     /* ② 판은 섰는데 안 심었다 */
+        cue.style.display = '';
+      if (unsown.length)
+        cue.innerHTML = '빈 재배판이 <b>' + unsown.length + '개</b> 서 있습니다 — ' +
+                        '<b>[식물]</b> 탭의 그 판 줄에서 <b>[🌱 심기]</b> 를 누르세요';
+      else if (thirsty.length) {                             /* ③ 심었는데 물 전 */
+        cue.style.display = '';
+        cue.innerHTML = '심었습니다 — <b>[💧 물]</b> 을 줘야 칸이 돌기 시작합니다';
+      } else if (bagTrays > 0)                               /* ① 아직 안 놓았다 */
+        cue.innerHTML = '이 그림을 <b>끌어서</b> 방 안 <b>밝은</b> 자리에 — ' +
+                        '빈 판이 서면 그 줄에서 <b>[🌱 심기]</b> 를 누릅니다';
+    }
+  }
   /* ★★ 칸 게이지 — **주기가 곧 칸 수**다. 무순은 7일이니 7칸이다(콩나물은 5칸).
      ⚠ `cropPotList` 가 낸 줄을 그대로 쓴다 — 여기서 growing·needsWater 를 또 판정하면
        콩나물 줄과 두 벌이 되어 "물을 줬는데 마른 칸"처럼 조용히 어긋난다. */
@@ -3079,7 +3168,17 @@ function buildGuide() {
        조각 일곱이 전부 「어느 단추가 무엇인지」였고, 정작 「자리마다 밝기가 다르다」는
        Day 50 의 축하 배너에서 처음 나왔다(실측). 배우고 난 뒤에 말해 주는 셈이었다.
        ⚠ `white-space:nowrap` 이라 안 접힌다 — \n 으로 직접 줄을 나눈다. */
-    [$('stage'),    '방을 끌면 돌아갑니다 · 두 손가락으로 확대\n화분을 누르면 [이동] [회전]\n★자리마다 밝기가 다릅니다\n어두운 자리도, 밝은 자리도 쓸모가 있습니다', 'mid'],
+    /* ★★ 2026-08-16 — 줄 셋을 고치고 하나를 더했다 (§A-1·A-2).
+       ⓐ **없는 단추 이름을 대고 있었다** — 「[이동] [회전]」이라 적었는데 화면의 단추는
+          [옮기기]·[돌리기]다(`#pickMove`·`#pickTurn`·`#furnMove`·`#furnTurn`). 안내판이
+          없는 것을 가리키면 그 자리에서 안내가 아니라 소음이 된다.
+       ⓑ **가구가 빠져 있었다.** 화분만 적혀 있어서 「가구도 눌러 옮길 수 있다」를
+          말하는 자리가 저장소 전체에 없었다(박사님 §A-2).
+       ⓒ **사람을 눌러 걸어가는 것**도 없었다(§A-1). 처음 한 번은 쪽지(`#coach`)가 짚고,
+          잊었을 때 다시 볼 자리가 여기다 — 쪽지는 한 번뿐이라 되찾을 데가 있어야 한다.
+       ⚠ `white-space:nowrap` 이라 안 접힌다. 한 줄을 길게 쓰면 폰에서 화면 밖으로 나간다 —
+         **짧은 줄 다섯**으로 나눴다(`tools/probe_guide_fit.mjs` 로 재서 확인). */
+    [$('stage'),    '방을 끌면 돌아갑니다 · 두 손가락으로 확대\n화분·가구를 누르면 [옮기기] [돌리기]\n사람을 누르면 → 바닥을 눌러 걸어갑니다\n★자리마다 밝기가 다릅니다\n어두운 자리도, 밝은 자리도 쓸모가 있습니다', 'mid'],
     [$('quest'),    '지금 할 일',                  'down'],
     [$('next'),     '하루를 보냅니다',              'down'],
     /* ★ 2026-08-14 — [가방] 하나가 아니라 **줄 전체**를 설명한다(기획 §C).
@@ -3186,6 +3285,8 @@ function closeGuide() {
   updateHint();
 }
 function bindGuide() {
+  /* 첫걸음 쪽지 — [✕] 로 닫는다. 눌러 닫으면 다시 안 뜬다(이미 `coach()` 가 표시해 뒀다) */
+  { const cx = $('coachClose'); if (cx) cx.onclick = (e) => { e.stopPropagation(); coachHide(); }; }
   $('guideOpen').onclick = openGuide;
   $('guideClose').onclick = closeGuide;
   $('guide').onclick = closeGuide;              /* 아무 데나 눌러도 닫힌다 */
@@ -3529,8 +3630,97 @@ function bindDetail() {
   });
 }
 
+/* ══ ★★★ 첫걸음 쪽지 — §A 「안내가 없어서 못 하는 것」 셋 (2026-08-16) ════════════
+   ------------------------------------------------------------
+   ★ 지금 있는 안내를 먼저 셌다. 아홉 통로였고 **전부 「할 일」을 말하는 자리**다:
+     ① `#quest` 아래 한 줄   지금 할 일 하나        늘 뜸 (퀘스트 > 살림목표 > 첫플레이 단계)
+     ② 손가락 `#hint`        다음에 **누를 것** 하나  첫 플레이 중 · 한 칸
+     ③ 말풍선 `.mark`        그 물건이 요구하는 일    물건이 그 상태일 때
+     ④ 대사 상자             사건·퀘스트·작은 말      [다음 날] 뒤
+     ⑤ 배너                  방금 일어난 일           사건 순간
+     ⑥ 안내판 `#guide` [?]   어느 단추가 무엇인지      [?] 눌렀을 때만
+     ⑦ `.baghelp`            가방 칸을 어떻게 쓰나     가방 탭
+     ⑧ `#dropLabel`          **옮기는 동안** 어떻게 끄나  끌기·옮기기 모드
+     ⑨ `#placeHint`          배치 모드에서 어디에 놓나  `stage.placing`
+   ⇒ 「캐릭터를 눌러 걸어간다」·「가구를 옮긴다」·「놓인 것을 다시 옮긴다」는 **할 일이 아니다.**
+     ①②에 넣으면 진짜 할 일을 밀어내고(둘 다 한 칸뿐이다), ⑧⑨는 **이미 그 모드에 들어간 사람**
+     에게만 보인다 — 들어가는 법을 모르는 사람에게는 영영 안 보인다. 그 틈이 이 셋이다.
+
+   ★★ **겹침을 구조로 막는다** (이 저장소가 제일 자주 앓는 병이라 값이 아니라 구조로 막았다):
+     ⓐ 한 번에 하나. 큐가 없다 — 새 쪽지가 옛 쪽지를 덮는다.
+     ⓑ 쪽지가 떠 있으면 **손가락을 걷는다**(`updateHint` 첫 줄). 둘이 같이 못 뜬다.
+     ⓒ 대사·확대·끌기·안내판·상세창·시트가 열리면 그 자리에서 사라진다(`coachTick`).
+     ⓓ **한 번 보면 끝.** 두 번째부터는 안내가 아니라 잔소리다.
+   ⚠ 부르는 자리는 「놓은 직후」가 아니라 「놓인 것을 **처음 누른 순간**」이다 —
+     놓은 직후에는 배너가 이미 말하고 있다(§commitPlace). 그 자리에 또 띄우면 둘 다 안 읽는다. */
+const COACH_KEY = 'byeot.coach';
+const COACH_MS = 10000;
+const COACH_NOTES = Object.freeze({
+  /* A-1 캐릭터를 눌러 자유 이동 — 저장소 전체에 이 말을 하는 자리가 **하나도 없었다** */
+  walk: { ko: '사람을 골랐습니다',
+          say: '이제 <b>방바닥을 누르면</b> 거기로 걸어갑니다. 사람을 <b>잡고 끌어도</b> 됩니다 · ' +
+               '한 번 더 누르면 고르기가 풀립니다.' },
+  /* A-2 가구 이동 — 「가구를 누르면 메뉴가 뜬다」를 아무도 안 말했다 */
+  furn: { ko: '가구를 골랐습니다',
+          say: '<b>[옮기기]</b> 를 누르고 화면 <b>아무 데나</b> 잡고 끄세요 — <b>끈 만큼만</b> 움직입니다. ' +
+               '놓을 수 있는 자리가 칸으로 보입니다 · <b>[돌리기]</b> 는 좌우로 끕니다.' },
+  /* A-3 놓인 식물을 다시 옮기기(상대 이동) */
+  pot:  { ko: '놓인 것을 골랐습니다',
+          say: '<b>[옮기기]</b> 를 누르면 자리를 다시 고릅니다. 화면 <b>아무 데나</b> 잡고 <b>끈 만큼</b> ' +
+               '움직이므로 작은 화분을 정확히 짚지 않아도 됩니다.' }
+});
+let coachTimer = null, coachNow = null;
+function coachSeen() {
+  try { const v = JSON.parse(localStorage.getItem(COACH_KEY) || '[]'); return new Set(Array.isArray(v) ? v : []); }
+  catch { return new Set(); }
+}
+function coachMark(id) {
+  try { const s = coachSeen(); s.add(id); localStorage.setItem(COACH_KEY, JSON.stringify([...s])); } catch { }
+}
+/* 지금 쪽지를 띄워도 되는 상황인가 — **다른 말이 하나라도 떠 있으면 안 된다** */
+function coachClear() {
+  const st = $('stage');
+  if (!st) return false;
+  if (st.classList.contains('talking') || st.classList.contains('zoom')) return false;
+  /* ⚠ `picked`·`furnPicked` 는 이 줄보다 **아래에서** 선언된다(const · TDZ).
+     부팅이 끝난 뒤에만 불리므로 실제로는 안 걸리지만, 부르는 자리가 하나 늘 때마다
+     그 보장이 약해진다 — 안내 하나 때문에 화면이 죽지 않게 감싼다. */
+  try { if (drag.on || picked.mode || furnPicked.mode) return false; } catch { return false; }
+  if ($('guide') && $('guide').classList.contains('on')) return false;
+  if ($('detail') && $('detail').classList.contains('on')) return false;
+  if ($('sheet') && $('sheet').classList.contains('open')) return false;
+  return true;
+}
+function coachHide() {
+  coachNow = null;
+  if (coachTimer != null) { clearTimeout(coachTimer); coachTimer = null; }
+  const el = $('coach'); if (el) el.classList.remove('on');
+}
+/* 한 번만 뜬다. 이미 본 것이면 아무 일도 안 한다(돌려주는 값 = 실제로 띄웠나) */
+function coach(id) {
+  const n = COACH_NOTES[id];
+  if (!n || !coachClear() || coachSeen().has(id)) return false;
+  const el = $('coach'); if (!el) return false;
+  $('coachTitle').textContent = n.ko;
+  $('coachBody').innerHTML = n.say;
+  el.classList.add('on');
+  coachNow = id;
+  coachMark(id);
+  if (coachTimer != null) clearTimeout(coachTimer);
+  coachTimer = setTimeout(coachHide, COACH_MS);
+  try { updateHint(); } catch { }        /* 손가락을 그 자리에서 걷는다(ⓑ) */
+  return true;
+}
+/* 그리는 김에 한 번 본다 — 뜬 뒤에 대사·확대·시트가 열렸으면 걷는다 */
+function coachTick() { if (coachNow && !coachClear()) coachHide(); }
+window.__byeotCoach = { show: coach, hide: coachHide, now: () => coachNow,
+                        seen: () => [...coachSeen()], notes: () => Object.keys(COACH_NOTES) };
+
 window.__byeotHint = () => { try { updateHint(); } catch (e) { /* 안내가 게임을 막지 않는다 */ } };
 function updateHint() {
+  coachTick();
+  /* ★ 쪽지가 떠 있으면 손가락은 쉰다 — 같은 순간에 두 안내가 뜨면 둘 다 안 읽힌다(§coach ⓑ) */
+  if (coachNow) return hintAt(null);
   const fp = S.firstPlay, ts = S.tutorial;
   const stage = $('stage'), sheetOpen = $('sheet').classList.contains('open');
   /* 지금 할 일이 이미 분명한 상황에서는 안내를 걷는다 */
@@ -4657,6 +4847,51 @@ const cardShown = (el) => !!el && el.style.display !== 'none';
 /* 지난번에 그린 격자의 글 — 같으면 다시 안 그린다(§drawBag ⚠ 끄는 중) */
 let bagGridHTML = null;
 
+/* ══ ★★★ 가방 한 줄 — **상황에 따라 갈아 끼운다** (2026-08-16 · §A-3 · §A-4) ═══════
+   ------------------------------------------------------------
+   ★ 새 자리를 안 만들었다. 여기는 없어진 큰 카드의 안내줄이 옮겨 온 자리고(§drawBag),
+     **시트 안**이라 방 위 안내(쪽지·손가락·말풍선·배너)와 물리적으로 겹칠 수가 없다.
+     그래서 「배치를 어떻게 하나」는 전부 이 한 줄이 맡는다.
+   ★ 한 번에 **한 마디만** 낸다. 셋을 다 적으면 넉 줄이 되어 아무도 안 읽는다 —
+     지금 판이 어디쯤인가로 갈라서 그때 필요한 말 하나를 고른다.
+
+   ★★ A-3 「그냥 눌러 배치하면 아무 자리로나 간다」 (박사님)
+     재서 확인한 사실이다 — 누르기는 `provisionalSpot()` 이 **빈 자리 중 첫째**를 집는다
+     (`cropCandidates()` 순서 그대로. 책상이 앞이면 책상이다). 그게 잘못은 아니고
+     **화면이 그 사실을 말한 적이 없는 것**이 문제다. 그래서 갈라 적는다:
+       누르면 — 자리는 게임이 고르고, 곧바로 **고르는 화면**으로 들어간다(`startPhonePlace`)
+       끌면   — 손가락이 놓은 자리에 선다
+   ⚠ 화분(`startPhonePlacePot`)은 고르는 화면으로 **안** 들어간다 — 그 길은 놓고 끝난다.
+     그래서 「놓은 뒤 눌러서 [옮기기]」를 같이 적는다(쪽지 `pot` 과 같은 말이지만,
+     쪽지는 **한 번뿐**이라 되찾을 자리가 있어야 한다).
+
+   ★★ A-4 「초기 콩나물 시루 넷쯤」 (박사님)
+     ⚠ 개수를 **여기서 새로 정하지 않는다.** 퀘스트 `siru5_cycle5` 가 다섯을 요구하고
+       (`quest.QUESTS`), 하루 밥값은 `dailyCropSaveWon` 이 정한다. 여기서 「넷」이라 못박으면
+       값이 움직일 때 이 줄만 낡는다 — 이 저장소가 열두 번 겪은 그 사고다(START-HERE §2.6).
+     ⇒ **가방에 남은 만큼**을 말한다. 「가방에 셋 남았습니다 — 자리를 갈라 놓아 보세요」는
+       값이 어떻게 바뀌어도 참이다.
+   ⚠ 첫 시루를 아직 안 놓은 사람에게는 이 말을 안 한다. 그 사람의 할 일은 **하나를 놓는 것**이고
+     `#quest` 한 줄이 이미 그것을 말하고 있다(place_beansprout). */
+function bagHelpHTML() {
+  const tail = ' · <b>i</b> 를 누르면 자세히';
+  let placed = 0, spare = 0;
+  try { placed = cropPotList(S.firstPlay, S.day).filter(r => r.kind === 'beansprout' && r.placed).length; } catch { }
+  try { spare = spareSiru(); } catch { }
+  /* ① 아직 하나도 안 놓았다 — 첫 걸음. 「어떻게 놓나」만 말한다 */
+  if (placed <= 0)
+    return '<div class="baghelp">칸을 <b>끌면</b> 손가락이 놓은 자리에 · ' +
+           '<b>누르면</b> 빈 자리 하나를 골라 세운 뒤 <b>자리를 고르는 화면</b>으로 갑니다' + tail + '</div>';
+  /* ② 하나는 놓았고 가방에 더 있다 — **여러 개를 갈라 놓는 것**이 다음 걸음이다(§A-4) */
+  if (spare > 0)
+    return '<div class="baghelp">가방에 시루가 <b>' + spare + '개</b> 더 있습니다 — ' +
+           '누를 때마다 <b>하나씩</b> 섭니다. 한 자리에 몰지 말고 <b>어두운 칸을 갈라</b> 놓으면 ' +
+           '하루 밥값이 그만큼 돕니다' + tail + '</div>';
+  /* ③ 가방이 비었다 — 이제 알아야 할 것은 **놓은 것을 다시 옮기는 법**이다(§A-3) */
+  return '<div class="baghelp">방에 놓인 것은 <b>눌러서 [옮기기]</b> 로 자리를 다시 고릅니다 — ' +
+         '화면 아무 데나 잡고 <b>끈 만큼</b> 움직입니다' + tail + '</div>';
+}
+
 function drawBag() {
   const grid = $('bagGrid'); if (!grid) return;
   let st; try { st = shopStatus(S); } catch { st = { stock: {}, orders: [] }; }
@@ -4691,9 +4926,7 @@ function drawBag() {
      ⚠ 없애면 안 된다: **처음 하는 사람은 칸을 끌 수 있다는 것을 모른다.** 칸은 72px 이라
        그 글이 안 들어가서 격자 위 한 줄로 뺐다. 끌 수 있는 칸이 있을 때만 뜬다 —
        못 끄는 판에 「끌어 보세요」가 떠 있으면 그게 고장으로 읽힌다. */
-  if (anyPlaceable)
-    html += '<div class="baghelp">시루 칸을 <b>끌거나 누르면</b> 방에 <b>한 번에 하나씩</b> 섭니다 ' +
-            '· <b>i</b> 를 누르면 자세히</div>';
+  if (anyPlaceable) html += bagHelpHTML();
   /* ★★★ **거둔 채소** (2026-08-16 · 박사님: *"수확하면 채소가 인벤에 들어와야되는데 안들어오네"*) */
   html += harvestedCropHTML();
   /* ⚠ **끄는 중에는 다시 그리지 않는다.** 칸이 곧 손잡이라 `innerHTML` 로 갈아 끼우면
@@ -5419,8 +5652,82 @@ function clearActing(why) {
   sfx.stopAll();          /* ★ 걸음도 게이지도 끝났다 — 소리도 여기서 함께 멎는다 */
   acting = false; actingKey = null; actBar(false);
   if (why) console.warn('[동작] 잠금을 풀었습니다 —', why);
+  walkSfxOff();           /* ★ 재는 쪽도 같이 끈다 — 안 끄면 다음 틱이 도로 켠다(§E-3) */
   return true;
 }
+
+/* ══ ★★★ §E-3 — **자유 이동에도 발소리** (2026-08-16 박사님) ══════════════════════
+   ------------------------------------------------------------
+   ★ 소리는 이미 있다(`sfx.walk(true/false)`). 문제는 **켜는 자리가 하나뿐**이었다는 것이다 —
+     `doAct` 의 `onProgress(p,'walk')`. 그런데 캐릭터를 눌러 바닥으로 보내는 길은
+     `doAct` 를 **안 탄다**: 방뷰가 탭을 받아 제 안에서 `c.goTo(...)` 를 부르고 끝난다
+     (`room_view §onUp → doWalk`). 그래서 물 주러 갈 때는 저벅저벅이 나고 그냥 걸을 때는
+     조용했다 — 같은 걸음인데 소리가 갈렸다.
+
+   ★★ **왜 이벤트가 아니라 「재기」인가** — `room_view.js` 는 이 창 몫이 아니다(창구를 못 만든다).
+     밖에서 알 수 있는 것은 `roomView.characters()[].walking` 하나뿐이라 그것을 센다.
+     ⇒ 그게 오히려 **안전하다.** 이벤트는 「켬」과 「끔」이 짝이 맞아야 하고 한쪽을 놓치면
+       발소리가 영영 난다. 재기는 **매 틱 사실에서 다시 정한다** — 짝이 어긋날 수가 없다.
+
+   ⚠⚠ **끝나는 길을 전부 세었다.** 「켜 놓고 안 끄는 길」이 하나라도 있으면 안 된다:
+     ① 도착      `c.walking` 이 거짓이 된다                      → 다음 틱에 꺼짐 ✔
+     ② 도중 취소  `stopWalk`·`abortAct`·다른 동작이 끊음          → 같음 ✔
+     ③ 사람이 사라짐(이사·방 다시 짓기) `characters()` 에서 빠짐  → 같음 ✔
+     ④ 방뷰가 통째로 없어짐  `roomView` 가 null 이거나 던짐        → catch → 꺼짐 ✔
+     ⑤ **확대창(화분 자세히)** `setPaused(true)` — 사람은 멈추는데 `walking` 은 **참 그대로다.**
+        재서 확인해야 하는 자리라 `isPaused()` 를 같이 본다 ✔
+     ⑥ **탭이 뒤로 감(document.hidden)** rAF 가 멎어 사람이 얼어붙는데 `walking` 은 참이다.
+        게다가 `setInterval` 은 그때 1초로 늦춰져 최대 1초를 더 운다 ⇒ **그 자리에서 끈다** ✔
+     ⑦ **창이 흐려짐(blur)** — 보이기는 하므로 rAF 는 도는데, 다른 창을 보는 사람에게
+        발소리가 나는 것은 소음이다 ⇒ 끈다. 되돌아오면 다음 틱이 알아서 되켠다 ✔
+     ⑧ **페이지를 떠남(pagehide)** ✔
+     ⑨ `doAct` 가 도는 동안 — 그쪽이 이미 켜고 끈다. 두 곳이 같은 스위치를 잡으면
+        한쪽이 끈 것을 다른 쪽이 도로 켠다 ⇒ **`acting` 이면 이 틱은 손을 뗀다** ✔
+     ⑩ 소리를 끈 판(`sfx.setEnabled(false)`) — `sfx` 쪽이 `stopAll` 로 이미 멎힌다 ✔
+   ⚠ `sfx.walk(on)` 은 **같은 값이면 아무 일도 안 한다**(`looper.set` 이 먼저 걸러낸다).
+     그래도 여기서 한 번 더 거른다 — 걸러 두면 「지금 켜져 있나」를 검사가 물을 수 있다. */
+const WALK_SFX_MS = 120;
+let walkSfxOn = false;
+/* ★★ **끄는 것만으로는 모자란다** (2026-08-16 · 재서 알았다).
+   창이 흐려졌을 때 그냥 `sfx.walk(false)` 만 부르면, **120ms 뒤 다음 틱이 도로 켠다** —
+   사람은 여전히 걷고 있기 때문이다. 재기는 「매 틱 사실에서 다시 정한다」가 장점인데
+   그 장점이 여기서는 그대로 약점이 된다.
+   ⇒ 「입을 막았다」를 **걸쇠로** 잡는다. 풀리는 것은 창이 돌아올 때(focus)뿐이다. */
+let walkSfxMuted = false;
+function walkSfxOff() {
+  if (!walkSfxOn) return;
+  walkSfxOn = false;
+  try { sfx.walk(false); } catch (e) { console.warn('[효과음] walk', e && e.message); }
+}
+function walkSfxMute(on) { walkSfxMuted = !!on; if (walkSfxMuted) walkSfxOff(); }
+function walkSfxTick() {
+  if (acting) return;                    /* ⑨ doAct 의 onProgress 가 잡고 있다 */
+  let walking = false;
+  try {
+    if (!walkSfxMuted                                                          /* ⑥⑦⑧ */
+        && roomView && typeof roomView.characters === 'function'
+        && !(typeof roomView.isPaused === 'function' && roomView.isPaused())   /* ⑤ */
+        && !document.hidden) {                                                 /* ⑥ */
+      for (const c of roomView.characters()) if (c && c.walking) { walking = true; break; }
+    }
+  } catch { walking = false; }           /* ④ 방뷰가 없거나 던졌다 — 조용한 쪽으로 */
+  if (walking === walkSfxOn) return;
+  walkSfxOn = walking;
+  try { sfx.walk(walking); } catch (e) { console.warn('[효과음] walk', e && e.message); }
+}
+/* ★ 쪽지 걷기도 **같은 틱**에 붙인다 (§coach).
+   ⚠ 예전엔 `updateHint`(= 그릴 때) 안에서만 봤다. 그런데 [옮기기]로 들어가는 길은
+     `hintAt(null)` 만 부르고 `draw()` 를 안 부른다 — 그래서 쪽지가 떠 있는 채로
+     떨굼표시가 같이 떴다(재서 잡았다 · test_guide_notes ②-c). 통로가 둘이 되는 순간이다. */
+setInterval(() => { try { walkSfxTick(); } catch { } try { coachTick(); } catch { } }, WALK_SFX_MS);
+addEventListener('blur',  () => walkSfxMute(true));                            /* ⑦ */
+addEventListener('focus', () => walkSfxMute(false));
+addEventListener('pagehide', () => walkSfxMute(true));                         /* ⑧ */
+document.addEventListener('visibilitychange', () => walkSfxMute(document.hidden));  /* ⑥ */
+/* 재는 도구가 「지금 발소리가 나나」를 물을 수 있게 낸다 — 귀로 못 재는 것을 숫자로 잰다 */
+window.__byeotWalkSfx = () => ({ on: walkSfxOn, acting: !!acting, muted: walkSfxMuted,
+                                 sfxWalking: (() => { try { return sfx.isEnabled(); } catch { return null; } })() });
+
 function doAct(kind, done, opt = {}) {
   /* ⚠ 막혀 있으면 **조용히 돌아가지 않는다.** 예전에는 여기서 그냥 return 이라
      눌러도 아무 일이 없었고, 그게 곧 「버튼이 안 먹힌다」였다. */
@@ -7736,7 +8043,13 @@ async function bootRoomView() {
     roomView = await mod.createRoomView($('roomCanvas'), {
       roomId: S.home.room, lightEngine: io.light,   /* ★S.room 이 아니다 — state.js 는 home.room 에 둔다 */
       onProgress: bootProgress,                     /* 무엇을 기다리는지 화면에 */
-      onCharacterTap: (id) => { roomTapped(); roomView && roomView.selectCharacter(id); },
+      /* ★ 첫 인자는 **누른 결과 골라진 것**이다(해제됐으면 null · room_view §onUp).
+         ⇒ 골라졌을 때만 쪽지를 낸다 — 푸는 손짓에 「이제 걸어갑니다」가 뜨면 거짓말이다(§A-1) */
+      onCharacterTap: (id) => {
+        roomTapped();
+        roomView && roomView.selectCharacter(id);
+        if (id) { try { coach('walk'); } catch (e) { console.warn('[안내]', e && e.message); } }
+      },
       /* 탭은 **고르기**다. 바로 확대로 넘어가면 옮기거나 돌릴 기회가 없다 —
          고른 뒤에 [옮기기] [돌리기] [자세히] 중에서 고른다. */
       onPlantTap: (slotId) => { roomTapped(); furnPicked.clear(); picked.select(slotId); },
@@ -8817,6 +9130,11 @@ const picked = {
     $('stage').classList.add('picked');
     if (roomView) roomView.highlightSlots([slotId]);
     plantMenuFollow(true);          /* ★ 그 물건 옆에 붙어 따라다닌다(2026-08-16) */
+    /* ★ A-3 「놓은 자리가 마음에 안 들면」 — **처음 한 번만**(§coach).
+       ⚠ 놓은 **직후**에는 안 낸다. 그 순간에는 배너가 이미 말하고 있다(§commitPlace).
+         `startPhonePlace` 는 놓자마자 여기를 지나 옮기기 모드로 들어가는데, 그때는
+         `confirming` 이 참이라 「자리를 고르세요」 배너가 떠 있다 — 그 자리를 비운다. */
+    if (!this.confirming) { try { coach('pot'); } catch (e) { console.warn('[안내]', e && e.message); } }
   },
   /* ★ 골라 둔 채로 하루가 가거나 물을 주면 요약이 낡는다 — **그리기마다** 다시 적는다.
      ⚠ 고르기를 새로 하는 것이 아니다(하이라이트·모드·[옮기기] 잠금은 안 건드린다).
@@ -9159,8 +9477,13 @@ function startPhonePlace() {
   /* 방에 실제로 서야 `screenPosOf` 가 풀린다 — 그린 **뒤에** 고른다 */
   const key = siruKey(r.potId);
   if (!key) { banner('시루를 놓았습니다', '방에서 눌러 옮길 수 있습니다'); return; }
-  picked.select(key);
+  /* ★ 2026-08-16 — **`confirming` 을 고르기 앞으로 옮겼다**(§coach A-3).
+     이 길은 놓자마자 옮기기 모드로 들어가고 아래에서 「자리를 고르세요」 배너를 낸다.
+     `picked.select` 안의 첫걸음 쪽지는 `confirming` 이 거짓일 때만 뜨므로, 뒤에 세우면
+     그 한 프레임에 쪽지와 배너가 **같이** 뜬다 — 그것이 이 저장소의 지병이다.
+     ⚠ `select` 는 `confirming` 을 안 읽고 안 건드린다(§picked.select). 뜻은 안 바뀐다. */
   picked.confirming = true;
+  picked.select(key);
   /* 갓 꺼낸 것인지 기억한다 — [취소]가 가방으로 되돌릴지, 옛 자리로 되돌릴지의 근거 */
   picked.before = { potId: r.potId, fresh: true, slotId: null, at: null };
   picked.beginMove();
@@ -9278,6 +9601,21 @@ function furnMenuFollow(on) {
 const furnPicked = {
   uid: null, mode: null, x0: 0, y0: 0, originX: 0, originY: 0, base: null, rot0: 0, ghost: null,
   tapX: null, tapY: null,
+  /* ★ B-4 — 옮기고 **난 뒤**의 상태. `from` 이 있으면 [확정]/[취소] 가 떠 있는 중이다.
+     `from` 은 **옮기기 직전 자리**(commitFurnitureAt 이 돌려준 그 값)라 되돌리기가 곧 재이동이다. */
+  undoFrom: null, aimable: false,
+
+  /* [옮기기]·[돌리기]·[겨누기] ⇄ [확정]·[취소] 를 갈아 끼운다.
+     ⚠ [겨누기]는 원래 **등에서만** 보인다 — 되돌릴 때 그 규칙을 지우지 않게 aimable 로 기억해 둔다. */
+  showConfirm(on) {
+    const set = (id, v) => { const el = $(id); if (el) el.style.display = v; };
+    set('furnMove', on ? 'none' : '');
+    set('furnTurn', on ? 'none' : '');
+    set('furnAim', on ? 'none' : (this.aimable ? '' : 'none'));
+    set('furnOk', on ? '' : 'none');
+    set('furnUndo', on ? '' : 'none');
+    if (!on) this.undoFrom = null;
+  },
 
   select(f, px, py) {
     /* ★고르는 중인 화분이 있으면 **풀고 가구를 고른다.** 예전엔 조용히 아무 일도 안 났다 —
@@ -9293,7 +9631,10 @@ const furnPicked = {
     /* ★겨눌 수 있는 등에서만 [겨누기]를 보여 준다 — 방뷰가 아니라 **조도 창**이 답을 안다
        (`aimable` 은 프리셋의 adjustable_height 에서 온다. 바 등은 붙박이라 false). */
     let range = null; try { range = io.light.aimRangeOf(f.uid); } catch { }
-    $('furnAim').style.display = range ? '' : 'none';
+    this.aimable = !!range;
+    /* ★ B-4 — 새로 고른 것이니 **[확정]/[취소] 는 걷는다.** 안 걷으면 앞 가구의 되돌리기가
+       다음 가구의 메뉴에 남아 엉뚱한 것을 되돌린다. (이 한 줄이 [겨누기] 규칙도 다시 세운다) */
+    this.showConfirm(false);
     $('stage').classList.add('furnpicked');
     /* ★ **가구를 살짝 밝힌다** (박사님 2026-08-08). 골라진 것은 메뉴가 아니라 가구다 —
        메뉴만 뜨면 "무엇이 골라졌나"를 이름표로 읽어야 한다.
@@ -9305,6 +9646,9 @@ const furnPicked = {
     placeFurnMenu(p || { x: px - ($('roomCanvas').getBoundingClientRect().left),
                          y: py - ($('roomCanvas').getBoundingClientRect().top) });
     furnMenuFollow(true);
+    /* ★ A-2 가구 이동 안내 — **처음 한 번만.** 메뉴가 뜬 그 순간이 이 말이 필요한 순간이다.
+       (`#dropLabel` 은 이미 [옮기기]를 누른 사람에게만 보인다 — 누를 줄 모르면 영영 안 보인다) */
+    try { coach('furn'); } catch (e) { console.warn('[안내]', e && e.message); }
   },
   clear() {
     if (!this.uid && !this.mode) return;
@@ -9313,6 +9657,7 @@ const furnPicked = {
     try { roomView && roomView.highlightFurniture(null); } catch { }
     furnMenuFollow(false);
     this.uid = null; this.mode = null; this.ghost = null;
+    this.showConfirm(false);           /* ★ B-4 — 메뉴를 닫으면 [확정]/[취소] 도 같이 걷는다 */
     freePlace.grid(false);
     $('stage').classList.remove('furnpicked', 'furnmoving');
     try { roomView && roomView.clearFurniturePreview && roomView.clearFurniturePreview(); } catch { }
@@ -9592,31 +9937,63 @@ const furnPicked = {
     freePlace.grid(false);
     if (!mode || !uid || !to) { if (uid) $('stage').classList.add('furnpicked'); return; }
     try {
-      await roomView.commitFurnitureAt(uid, to);
-      /* ★옮긴 가구 하나만 적으면 안 된다 — 책상에 물린 클립등도 같이 갔는데 그건 안 적혀서,
-         새로고침하면 책상만 옮겨가고 등은 제자리에 남는다. 조도 엔진이 들고 있는
-         **자리표 전체**를 그대로 옮겨 적는다. 정본이 둘이 되지 않게. */
-      const map = io.light.furnitureOverrides();
-      for (const [id, at] of Object.entries(map)) setFurniturePlacement(S, id, at, { size: io.light.room.size });
-      /* ★ 그 위에 얹힌 것들의 좌표를 다시 뜬다 — 안 하면 자리와 `at` 이 어긋나 판이 잠긴다
-         (위 §reseatOnMovedFurniture. 베타테스터가 실제로 겪은 그것이다). */
-      /* ★ 그 위에 얹힌 것들의 좌표를 다시 뜬다 — 안 하면 자리와 `at` 이 어긋나 판이 잠긴다
-         (state.js §reseatOnSlot. 베타테스터가 실제로 겪은 그것이다).
-         ⚠ 규칙은 코어가 갖는다 — 화면이 같은 셈을 또 쓰면 두 곳이 갈린다.
-           `loop.nextDay` 도 날마다 같은 함수를 부른다(옛 세이브를 그때 고친다). */
-      const reseated = reseatAllOnSlots(S, io.light.room.slots);
-      if (reseated) pushLog(S, `🪴 위에 얹힌 ${reseated}개도 같이 옮겼습니다`);
+      const r = await roomView.commitFurnitureAt(uid, to);
+      this.afterMove(r, `🪑 ${$('furnName').textContent}을(를) 옮겼습니다 — 빛이 드는 자리가 달라집니다`);
       this.base = { ...to };
-      pushLog(S, `🪑 ${$('furnName').textContent}을(를) 옮겼습니다 — 빛이 드는 자리가 달라집니다`);
-      io.light.clearCache();
-      fillSlots();
-      draw();
+      /* ★★ B-4 — 옮기고 나면 메뉴를 **[확정]/[취소]** 로 바꾼다.
+         `r.from` 이 옮기기 직전 자리다(방뷰가 재서 준 값이라 여기서 지어내지 않는다). */
+      if (r && r.from) { this.undoFrom = { ...r.from }; this.showConfirm(true); }
     } catch (e) {
       $('dropLabel').textContent = (e && e.message) || '여기엔 놓을 수 없습니다';
       $('dropLabel').classList.add('no');
       try { roomView.clearFurniturePreview(); } catch { }
     }
     if (this.uid) $('stage').classList.add('furnpicked');
+  },
+
+  /* 옮긴 결과를 **세이브·조도에 반영한다** — 옮기기와 되돌리기가 같은 한 곳을 쓴다.
+     (두 벌이 되면 되돌릴 때만 얹힌 것이 안 따라오는 식으로 조용히 갈린다) */
+  afterMove(r, log) {
+    /* ★★ B-5 — **자유 좌표로 얹힌 것부터** 따라 옮긴다 (2026-08-16).
+       ⚠ 순서가 중요하다: `setFurniturePlacement` 보다 **먼저** 해야 한다면 아니고,
+         `from`·`to` 를 방뷰가 이미 재서 줬으므로 순서와 무관하다. 다만 `reseatAllOnSlots`
+         (추천 자리 몫)와 **겹치지 않는다** — 저쪽은 free 를, 이쪽은 slot 을 각각 뺀다.
+       ⚠ `r.from`·`r.to` 가 없으면 아무 일도 안 한다. 좌표를 지어내지 않는다. */
+    if (r && r.uid && r.from && r.to) {
+      const followed = followFreeOnFurniture(S, r.uid, r.from, r.to);
+      if (followed) pushLog(S, `🪴 위에 놓인 ${followed}개도 같이 옮겼습니다`);
+    }
+    /* ★옮긴 가구 하나만 적으면 안 된다 — 책상에 물린 클립등도 같이 갔는데 그건 안 적혀서,
+       새로고침하면 책상만 옮겨가고 등은 제자리에 남는다. 조도 엔진이 들고 있는
+       **자리표 전체**를 그대로 옮겨 적는다. 정본이 둘이 되지 않게. */
+    const map = io.light.furnitureOverrides();
+    for (const [id, at] of Object.entries(map)) setFurniturePlacement(S, id, at, { size: io.light.room.size });
+    /* ★ 그 위에 얹힌 것들의 좌표를 다시 뜬다 — 안 하면 자리와 `at` 이 어긋나 판이 잠긴다
+       (state.js §reseatOnSlot. 베타테스터가 실제로 겪은 그것이다).
+       ⚠ 규칙은 코어가 갖는다 — 화면이 같은 셈을 또 쓰면 두 곳이 갈린다.
+         `loop.nextDay` 도 날마다 같은 함수를 부른다(옛 세이브를 그때 고친다). */
+    const reseated = reseatAllOnSlots(S, io.light.room.slots);
+    if (reseated) pushLog(S, `🪴 위에 얹힌 ${reseated}개도 같이 옮겼습니다`);
+    if (log) pushLog(S, log);
+    io.light.clearCache();
+    fillSlots();
+    draw();
+  },
+
+  /* ★ B-4 [취소] — **옮기기 전 자리로 되돌린다.** 옮기는 것과 같은 길(commitFurnitureAt)을
+     그대로 타므로 얹힌 등·화분도 같이 돌아온다. 못 되돌리면 이유를 그 자리에 적는다. */
+  async undoMove() {
+    const uid = this.uid, from = this.undoFrom;
+    this.showConfirm(false);
+    if (!uid || !from) return;
+    try {
+      const r = await roomView.commitFurnitureAt(uid, { x: from.x, z: from.z, rot: from.rot, y: from.y });
+      this.afterMove(r, `↩ ${$('furnName').textContent}을(를) 옮기기 전 자리로 되돌렸습니다`);
+      this.base = { x: from.x, z: from.z, rot: from.rot || 0 };
+    } catch (e) {
+      $('dropLabel').textContent = (e && e.message) || '되돌리지 못했습니다';
+      $('dropLabel').classList.add('no');
+    }
   }
 };
 /* 방을 탭했는데 화분도 자리도 캐릭터도 아니면 — 가구를 골라 본다.
@@ -9679,6 +10056,9 @@ function bindPicked() {
   tapOnce('furnMove', () => furnPicked.beginMove());
   tapOnce('furnTurn', () => furnPicked.beginTurn());
   tapOnce('furnAim', () => furnPicked.beginAim());
+  /* ★ B-4 — 옮긴 뒤의 두 단추. [확정]은 그대로 두고 고르기를 푼다 · [취소]는 되돌린다 */
+  tapOnce('furnOk', () => furnPicked.clear());
+  tapOnce('furnUndo', () => { furnPicked.undoMove().then(() => furnPicked.clear()); });
   tapOnce('furnClose', () => furnPicked.clear());
   /* 메뉴 **바깥 테두리**(::before)를 눌러도 캔버스로 안 새게 막는다 — 아무 일도 안 한다.
      이게 없으면 버튼 사이 5px 틈을 누를 때마다 카메라가 돈다. */
