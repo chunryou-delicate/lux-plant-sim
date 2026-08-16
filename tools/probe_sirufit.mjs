@@ -1,0 +1,16 @@
+import { launch, sleep } from './test_cdp.mjs';
+const BASE = process.env.BYEOT_URL || 'http://localhost:8963';
+const page = await launch({ width: 1280, height: 900, dpr: 1, mobile: false });
+await page.goto(`${BASE}/game.html`);
+await page.eval(`localStorage.clear()`, false);
+await page.goto(`${BASE}/game.html`);
+await page.waitFor('!!window.__rv', 180000, 300);
+await page.waitFor('window.__byeotBooted === true', 180000, 300);
+await sleep(7000);
+const out = await page.eval(`(()=>{ const rv=window.__rv;
+  const d = { 시루: rv.plantPotD('beansprout'), 무순: rv.plantPotD('musun'), 몬스테라: rv.plantPotD('monstera') };
+  const slots=(window.__io.light.room.slots)||[];
+  const rows=slots.map(s=>({ slotId:s.slotId, maxPotD:s.maxPotD }));
+  return JSON.stringify({ d, rows }); })()`);
+console.log(out);
+await page.close();

@@ -734,6 +734,8 @@ export async function createRoomView(canvas, opts = {}) {
   ctx.sunLight.shadow.mapSize.set(1024, 1024);
   ctx.ceilingBulb.shadow.mapSize.set(512, 512);
   ctx.renderer.shadowMap.type = THREE.PCFShadowMap;   // Soft 는 폰에서 눈에 띄게 비싸다
+  try { window.__sunShadow = ctx.sunLight.shadow; window.__sunLight = ctx.sunLight;
+        window.__cam = ctx.cam; window.__ctxDbg = ctx; } catch {}
 
   /* ── 상태 ── */
   const houseGroup = new THREE.Group();
@@ -1484,7 +1486,19 @@ export async function createRoomView(canvas, opts = {}) {
      ③ 화분
   ============================================================ */
   const MONSTERA_POT_D = 0.20;    // assets/monstera/pot.glb 회전무관 지름 0.202
-  const SIRU_D = 0.24;            // 열린 콩나물 시루
+  /* ══ ★★ 콩나물 시루 지름 — **0.24 → 0.20** (2026-08-16 박사님 확정) ═══════════════
+     박사님: *"시루 이동이 3단 테이블에 왜 안 올라감? **시루 사이즈가 커서 못 올라가면
+             시루 사이즈를 줄여서 올라가도록** 해 주고."*
+     ★ 재서 확인했다 — 시루 **0.24m** · 3단 선반 한도 **0.22m** · 창턱 한도 **0.21m**.
+       **2~3cm 가 모자라** 밝은 자리 열 곳(선반 아홉 + 창턱)에 통째로 못 올라갔다.
+       ⇒ 콩나물은 **어두운 데 두는 작물**이지만, 그렇다고 「못 올리는 자리」가
+         열 곳이나 되면 그건 규칙이 아니라 **막힌 길**이다.
+     ⇒ 무순과 **같은 0.20** 으로 맞춘다. 그러면 창턱(0.21)·선반(0.22) 둘 다 올라간다.
+     ⚠ 이것은 **그림 크기**다 — 조도·수확량·자리 판정에 쓰는 값이 아니다.
+       그래도 `maxPotD` 판정에 쓰이므로 **어디에 올라가나**는 바뀐다. 그게 이 고침의 목적이다.
+     ⚠ 무리(여러 개)의 지름은 이 값 × 무리 폭이라 **같이 줄어든다** — 시루를 늘려도
+       가구 위 자리가 덜 사라진다(multisiru §6 이 걱정한 그것이 완화된다). */
+  const SIRU_D = 0.20;            // 열린 콩나물 시루 (무순 재배판과 같은 폭)
 
   /* ★ 새싹 재배판(소) — assets/crops/container_tray_s.glb (manifest id 441)
      ------------------------------------------------------------
