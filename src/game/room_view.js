@@ -1263,14 +1263,22 @@ export async function createRoomView(canvas, opts = {}) {
        예전에는 바깥 상자(5.0×4.0)에 격자를 깔고 벽에 닿는 칸을 버렸다. 그런데
        벽이 0.1m 라 **안쪽이 4.8×3.8** 이고 4.8/0.25 = 19.2 — **칸에 안 떨어진다.**
        그래서 가장자리마다 0.15m 가 남거나 잘려 격자와 방이 어긋나 보였다.
-       ⇒ 두 가지를 같이 고쳤다:
-         ① 방을 **5.2×4.2** 로 키웠다(`data/house_rooms.json`) → **안쪽이 정확히 5.0×4.0**
-         ② 격자를 **안쪽 기준**으로 깐다 → **20×16 = 320칸이 벽에서 벽까지 딱 떨어진다**
-       ⚠ 안쪽이 이미 격자에 떨어지므로 아래 벽 걷어내기는 이제 **아무것도 안 버린다.**
-         그래도 남겨 둔다 — 다른 방(원룸 등)은 아직 안 떨어질 수 있고, 그때 이 줄이 지킨다. */
+       ⇒ **격자를 안쪽 벽 기준으로 깐다.** 안쪽이 칸에 안 떨어지면 **칸 수를 내림**하고
+         남는 자투리를 양쪽에 **반씩** 나눠 가운데로 민다. 4.8m 면 19칸(4.75m)이 서고
+         양쪽에 2.5cm 씩 남는다 — 4.8m 에 견주면 **0.5%** 라 눈에 안 띈다.
+
+       ⚠⚠ **2026-08-16 밤 — 방을 5.2×4.2 로 키웠다가 되돌렸다.**
+         안쪽을 5.0×4.0 으로 만들면 딱 떨어지지만, **벽만 밖으로 가고 가구·자리는
+         제자리에 남았다.** 그래서 창턱이 창에서 0.15m 멀어졌고
+         **자연광이 4.80 → 3.68 로 23% 내려앉았다**(실측 `probe_lamphome`).
+         빛이 이 게임의 전부인데 격자 눈금 때문에 그것을 깎을 수는 없다.
+       ★ 되돌린 뒤 다시 재서 **4.80 으로 돌아온 것을 확인했다.** */
     const inner0 = roomInner();
-    const nx = Math.round(inner0.w / GRID_CELL), nz = Math.round(inner0.d / GRID_CELL);
-    const x0 = inner0.x0, z0 = inner0.z0;
+    /* ★ 안 떨어지면 **내림**하고 남는 것을 양쪽에 반씩 나눈다 — 격자가 방 가운데 앉는다 */
+    const nx = Math.max(1, Math.floor(inner0.w / GRID_CELL + 1e-6));
+    const nz = Math.max(1, Math.floor(inner0.d / GRID_CELL + 1e-6));
+    const x0 = inner0.x0 + (inner0.w - nx * GRID_CELL) / 2;
+    const z0 = inner0.z0 + (inner0.d - nz * GRID_CELL) / 2;
     /* 바깥 벽은 축에 나란한 것만 골라 왔으므로(perimeterWalls) 겹침은 구간 두 개면 끝난다.
        SAT(rectOverlap)까지 쓸 일이 아니다 — 방마다 칸 수천 개 × 벽 조각 수십 개를 돈다. */
     /* ★★ 2026-08-16 — **벽을 한 칸씩 부풀리던 것을 걷었다.**
@@ -5063,6 +5071,34 @@ export async function createRoomView(canvas, opts = {}) {
   /* 가구를 격자에 앉힌다. 회전은 90° 단위(place.snapAngleDeg 의 근거 참고).
      ★ furnitureFit 안에서는 안 한다 — 그러면 "지금 자리 그대로" 물었을 때도 좌표가 흔들려
        제자리 불변식을 스스로 깬다. 스냅은 **놓는 길**(미리보기·커밋)에서만 한다. */
+  /* ★★ 방 안쪽 **턱** — 격자 끝에서 막는다 (2026-08-16 · B-2)
+     ══════════════════════════════════════════════════════════════════
+     박사님: *"방 가구이동 등 할때 **내부 그리드 끝에서 스냅, 턱 막히게** 옆방으로 안 가게"*
+
+     ■ 무엇이 잘못돼 있었나 — 재서 확인했다
+       `snapFurniture` 는 격자에만 앉히고 **방 경계를 한 번도 안 봤다.** 그래서
+       손가락을 벽 너머로 끌면 광선이 이웃 방 바닥·바깥 지면을 맞고, 그 좌표가 그대로
+       유령 자리가 됐다. 실측: 침대를 (−9, 0) 으로 끌면 **앉는 자리도 (−9, 0)** 이고
+       판정만 "벽 밖으로 나갑니다"로 붉어졌다 — 물건이 옆방까지 따라간다.
+     ⇒ 자리를 **안쪽 벽 면 안으로 물린다.** 그러면 벽에 닿는 순간 유령이 멈춘다(턱).
+       판정(furnitureFit)은 한 줄도 안 바꾼다 — 여기서 막는 것은 **어디에 서느냐**뿐이다.
+
+     ⚠ 격자에 앉힌 **뒤** 물린다. 물리고 나서 다시 앉히면 반 칸이 튄다.
+       그래서 걸음 단위로만 안쪽으로 민다 — 밀고 나서도 격자 위다.
+     ⚠ 물건이 그 축으로 방보다 크면 못 물린다. 그때는 **가운데**에 둔다(그리고 판정이 거절한다).
+       억지로 물려서 「들어간다」고 말하지 않는다. */
+  function clampAxis(v, half, lo, hi, step) {
+    if (!(hi - lo > 1e-9)) return (lo + hi) / 2;              // 벽 사이가 물건보다 좁다
+    const min = lo + half, max = hi - half;
+    if (min > max) return (lo + hi) / 2;                      // 이 축으로 물건이 방보다 크다
+    let out = v;
+    if (out < min - 1e-9) out += Math.ceil((min - out) / step - 1e-9) * step;
+    if (out > max + 1e-9) out -= Math.ceil((out - max) / step - 1e-9) * step;
+    /* 걸음으로 밀다가 반대쪽으로 넘어갔다면 걸음보다 좁은 방이다 — 그때만 한가운데다 */
+    if (out < min - 1e-9 || out > max + 1e-9) return (min + max) / 2;
+    return out;
+  }
+
   function snapFurniture(uid, pos) {
     const g = furnNode(uid);
     if (!g) throw new Error(`못 옮기는 가구입니다: ${uid}`);
@@ -5073,7 +5109,14 @@ export async function createRoomView(canvas, opts = {}) {
     const w = swap ? sz.d : sz.w, d = swap ? sz.w : sz.d;
     /* pos.step 은 **옮기는 길**만 준다(반 칸 0.125m). 안 주면 예전대로 0.05 다. */
     const step = stepOf(pos.step);
-    return { x: +snapSpanStep(pos.x, w, step).toFixed(4), z: +snapSpanStep(pos.z, d, step).toFixed(4), rot,
+    let x = snapSpanStep(pos.x, w, step), z = snapSpanStep(pos.z, d, step);
+    /* ★ 턱 — 안쪽 벽 면 안으로 물린다 (위 머리말). 방을 아직 못 지었으면 안 물린다. */
+    if (built) {
+      const inn = roomInner();
+      x = clampAxis(x, w / 2, inn.x0, inn.x1, step);
+      z = clampAxis(z, d / 2, inn.z0, inn.z1, step);
+    }
+    return { x: +x.toFixed(4), z: +z.toFixed(4), rot,
              cells: { i: unitsFor(w), j: unitsFor(d), unit: GRID_UNIT, step } };
   }
 
@@ -5183,9 +5226,45 @@ export async function createRoomView(canvas, opts = {}) {
     lines.renderOrder = 3;
     g.add(lines);
 
-    /* ② 막힌 칸 — 한 덩어리로 합쳐 그린다(칸마다 메시를 만들면 수천 개가 된다) */
+    /* ② 막힌 칸 — 한 덩어리로 합쳐 그린다(칸마다 메시를 만들면 수천 개가 된다)
+
+       ★★ 2026-08-16 — **가구를 옮길 때 붉은 칸의 뜻을 바꿨다** (B-3 · 박사님:
+          *"가구이동시 나오는 그리드 빨간색 이상"*)
+       ══════════════════════════════════════════════════════════════════
+       ■ 무엇이 이상했나 — 재서 확인했다(tools/probe_place_b.mjs)
+         예전에는 「그 칸 한가운데에 **가구 중심**을 두면 놓을 수 있나」로 칠했다.
+         그러면 발자국이 큰 물건일수록 벽에서 반너비만큼이 통째로 붉어진다. 실측:
+           침대 1×2   → 320칸 중 **243칸(76%)** 붉음
+           책상 1.25×0.5 → 204칸 · 서랍장 → 197칸 · **의자 0.5×0.5 조차 173칸**
+         화면은 「방바닥이 거의 다 막혔다」고 말하는데 실제로는 방이 텅 비어 있다.
+         그건 2026-08-08 에 화분 격자에서 없앤 **「벽을 따라 도는 붉은 띠」와 같은 거짓말**이다
+         (그때 결론: "여기 놓지 마세요"가 아니라 "여기는 벽입니다" — 뜻이 다르면 색이 다르다).
+       ■ 그래서 뜻을 이렇게 세운다 — **붉은 칸 = 이미 무언가가 서 있는 칸**
+         다른 가구의 발자국 · 창턱 같은 붙박이. 벽 속 칸은 애초에 안 그린다(위 ★).
+       ★ 「여기 놓으면 되나 안 되나」는 **유령**이 이미 말한다(파랑/빨강 + `dropLabel`).
+         그리고 2026-08-16 부터 벽 너머로는 아예 안 나간다(§턱 · snapFurniture).
+         ⇒ 색이 두 가지 뜻을 겹쳐 말하지 않게 갈랐다. 판정(furnitureFit)은 한 줄도 안 바꿨다.
+       ⚠ 화분 격자(opt.uid 없이 potD 로 부르는 길)는 **예전 그대로**다 — 거기는 발자국이
+         작아 nav.blocked 가 곧 「그 자리에 못 선다」이고, 실제로 그렇게 읽힌다. */
     const r = opt.uid ? null : potD / 2;
     const gu = opt.uid ? furnNode(opt.uid) : null;
+    /* 가구를 옮길 때 쓸 장애물 목록 — **자기 자신은 뺀다**(옮겨 갈 물건이다) */
+    const obs = [];
+    if (gu) {
+      for (const n of furnNodes()) {
+        if (n === gu) continue;
+        const s2 = n.userData.size;
+        if (!s2 || s2.h <= 0.05) continue;             // 러그처럼 납작한 것 위로는 지나간다
+        obs.push({ x: n.position.x, z: n.position.z, w: s2.w, d: s2.d, rot: n.rotation.y || 0 });
+      }
+      /* 붙박이(창턱)·칸막이도 장애물이다. 바깥 벽은 같은 kind('wall')지만 **그리는 칸 밖**에
+         있어 저절로 안 걸린다 — 격자를 안쪽 면에 깔기 때문이다(§gridSpan).
+         그래서 kind 로 거르지 않는다. 거르면 칸막이가 있는 방에서 칸막이가 안 붉어진다. */
+      for (const c of (built.colliders || [])) {
+        if (c.kind === 'furn') continue;                 // 움직이는 가구는 위에서 이미 넣었다
+        obs.push({ x: c.x, z: c.z, w: c.w, d: c.d, rot: c.rot || 0 });
+      }
+    }
     const half = GRID_CELL / 2 - 0.012;
     const pos = [], idx = [];
     let free = 0, blocked = 0;
@@ -5194,8 +5273,8 @@ export async function createRoomView(canvas, opts = {}) {
       const cx = gx0 + (i + 0.5) * GRID_CELL, cz = gz0 + (j + 0.5) * GRID_CELL;
       let bad;
       if (gu) {
-        const sz = gu.userData.size;
-        bad = !furnitureFit(opt.uid, { x: cx, z: cz, rot: (gu.rotation.y || 0) * 180 / Math.PI }).ok;
+        const cell = { x: cx, z: cz, w: GRID_CELL, d: GRID_CELL, rot: 0 };
+        bad = obs.some(o => rectOverlap(cell, o, -0.02));   // 스치는 것은 봐 준다
       } else {
         bad = nav.blocked(cx, cz, r);
       }
