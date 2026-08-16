@@ -236,6 +236,50 @@ export function atFromSlot(slot, opt = {}) {
 }
 
 /* ------------------------------------------------------------------
+   2-1. ★ 가구를 따라간다 — followFurnitureAt (2026-08-16 · B-5)
+------------------------------------------------------------------ */
+/* 박사님: *"가구 옮길 때 위에 식물들도 같이 옮겨지기 및 돌리기도"*
+
+   ■ 무엇이 잘못돼 있었나 — 재서 확인했다(tools/probe_place_b5.mjs)
+     추천 자리(slotId) 위 화분은 `state.reseatAllOnSlots` 가 따라가게 해 준다.
+     그런데 **자유 좌표 화분**(`free:…` · `at.onUid` 로 가구 위에 얹힌 것)은 아무도 안 옮겼다.
+     `reseatOnSlot` 이 첫 줄에서 `isFreeSlotId` 를 그냥 빼고 있었기 때문이다.
+     실측(책상을 x 1.30 → 0.75 로):
+       방뷰(3D)  화분 x 0.80 → **0.25** — 잘 따라간다(room_view.followFurniture)
+       세이브    `at.x` **0.80 그대로** — 안 따라간다
+       상태로 다시 그리면 화분이 **0.80** 으로 되돌아간다 = 책상 밖 허공
+     ⇒ 화면만 따라가고 정본은 제자리였다. 새로고침 한 번이면 도로 어긋난다.
+
+   ■ 이 함수가 정본이다
+     `room_view.moveWithFurniture` 와 **같은 식**이다(house.js 좌표 규약:
+       X = x0 + u·cos + v·sin · Z = z0 − u·sin + v·cos).
+     THREE 가 없어 상태 쪽에서도 그대로 쓴다 — 두 벌로 두면 화면과 세이브가 또 갈린다.
+   ⚠ from·to 의 `rot` 은 **도(°)** 다(가구 규약). `at.rotY` 는 **라디안**이다(화분 규약).
+     섞으면 57배 돌아간다 — place.js 머리말의 그 경고와 같은 자리다. */
+export function followFurnitureAt(at, from, to) {
+  if (!at || !from || !to) throw new TypeError('[배치] followFurnitureAt: at·from·to 가 필요합니다');
+  for (const k of ['x', 'z']) {
+    if (!isNum(from[k]) || !isNum(to[k]))
+      throw new RangeError(`[배치] followFurnitureAt: 가구 ${k} 가 유한하지 않습니다`);
+  }
+  const fr = (isNum(from.rot) ? from.rot : 0) * Math.PI / 180;
+  const tr = (isNum(to.rot) ? to.rot : 0) * Math.PI / 180;
+  const c = Math.cos(fr), s = Math.sin(fr);
+  const dx = at.x - from.x, dz = at.z - from.z;
+  const u = dx * c - dz * s, v = dx * s + dz * c;
+  const c2 = Math.cos(tr), s2 = Math.sin(tr);
+  const fy = isNum(from.y) ? from.y : 0;
+  const ty = isNum(to.y) ? to.y : fy;
+  return {
+    ...at,
+    x: +(to.x + u * c2 + v * s2).toFixed(6),
+    z: +(to.z - u * s2 + v * c2).toFixed(6),
+    y: +((at.y || 0) + (ty - fy)).toFixed(6),
+    rotY: (at.rotY || 0) + (tr - fr)
+  };
+}
+
+/* ------------------------------------------------------------------
    3. 거리·가까운 추천 자리
 ------------------------------------------------------------------ */
 export function distance(a, b) {

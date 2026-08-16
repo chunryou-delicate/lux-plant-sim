@@ -32,7 +32,7 @@ import { spend as spendStamina, canAct as canActStamina, createStaminaState } fr
 import { createShopState, useStock, assertStockAll, stockOf,
          creditCropSurplus } from './shop.js';
 import { atFromSlot, isFreeSlotId, makeAt, resolvePlacement, samePoint,
-         inRoom, assertFurnitureAt } from './place.js';
+         inRoom, assertFurnitureAt, followFurnitureAt } from './place.js';
 
 export const SCHEMA = 'game_state/1';
 
@@ -1332,6 +1332,37 @@ export function reseatAllOnSlots(S, slots) {
   if (S.firstPlay && S.firstPlay.enabled)
     for (const site of cropSites(S.firstPlay)) if (reseatOnSlot(site, slots)) n++;
   for (const c of (S.cuttings || [])) if (reseatOnSlot(c, slots)) n++;
+  return n;
+}
+
+/* ★★ 자유 좌표로 **가구 위에 얹힌 것**을 그 가구와 함께 옮긴다 (2026-08-16 · B-5)
+   ------------------------------------------------------------
+   박사님: *"가구 옮길 때 위에 식물들도 같이 옮겨지기 및 돌리기도"*
+
+   위 `reseatOnSlot` 은 **추천 자리 위**의 것만 맡는다(자유 좌표는 첫 줄에서 뺀다).
+   그런데 2026-08-11 에 가구 윗면 전체가 칸이 되면서, 플레이어가 놓는 것은 대개
+   **자유 좌표 + at.onUid** 다. 그래서 「책상을 옮기면 화분이 허공에 남는」 구멍이 났다.
+   3D 는 이미 따라갔다(room_view.followFurniture) — 갈린 것은 **세이브**다.
+   실측표는 `docs/handoff/place-to-plan.md §B-5`.
+
+   ⚠ 좌표 규약은 `place.followFurnitureAt` 하나만 쓴다. 여기서 식을 또 쓰면 두 벌이 된다.
+   ⚠ 추천 자리 위(`slotId` 가 free 가 아닌 것)는 **안 건드린다** — 그건 reseatOnSlot 몫이고
+     둘 다 손대면 같은 것을 두 번 옮긴다.
+   ⚠ from·to 는 **가구 규약(도°)** 이다. 부르는 쪽이 room_view.commitFurnitureAt 의
+     `{from, to}` 를 그대로 넘기면 된다 — 그것이 실제로 방을 움직인 값이다. */
+export function followFreeOnFurniture(S, uid, from, to) {
+  if (!S || !uid || !from || !to) return 0;
+  let n = 0;
+  const move = (o) => {
+    if (!o || !o.at || o.at.onUid !== uid) return;
+    if (o.slotId && !isFreeSlotId(o.slotId)) return;      // 추천 자리 위 — reseatOnSlot 몫이다
+    o.at = followFurnitureAt(o.at, from, to);
+    n++;
+  };
+  for (const p of (S.pots || [])) move(p);
+  for (const p of (S.emptyPots || [])) move(p);
+  for (const c of (S.cuttings || [])) move(c);
+  if (S.firstPlay && S.firstPlay.enabled) for (const site of cropSites(S.firstPlay)) move(site);
   return n;
 }
 

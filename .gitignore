@@ -149,3 +149,11 @@ vite.config.ts.timestamp-*
 # python cache
 __pycache__/
 *.pyc
+
+# ★★ 2026-08-16 — 배포에서 걷는다(게임이 안 열리던 원인).
+# 코드가 한 줄도 안 읽는데 1.06GB 라 GitHub Pages 가 버거워하고,
+# 모듈 하나가 503 한 번만 나도 게임이 6%% 에서 영영 멈춘다(실측).
+# ⚠ 지우는 것이 아니라 **깃 추적에서만 뺀다** — 디스크에는 그대로 있고 히스토리에도 남는다.
+assets/monstera/skins/_orig/
+assets/monstera/skins/_rejected/
+assets/monstera/skins/*.png
