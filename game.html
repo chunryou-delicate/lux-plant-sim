@@ -1928,6 +1928,11 @@
       <div class="box journey" id="plantsBox">
         <h3>방에 있는 것</h3>
         <div class="sub">어두운 자리도, 밝은 자리도 쓸모가 있습니다.</div>
+        <!-- ★★★ 2026-08-16 — **빛 분포 겹쳐 보기** (박사님: *"식물 탭에서 버튼 누르면
+             빛 분포 볼 수 있게 해줘. 그리드 살리면서 … 그리드 수치도 작은 숫자로."*)
+             ⚠ 켤 때만 잰다(285칸 × 20ms). 켜 둔 채 매 프레임 다시 칠하면 폰이 멎는다. -->
+        <button id="lightHeat" class="ghost" type="button" aria-pressed="false">🔆 빛 분포 보기</button>
+        <div id="lightHeatNote" class="sub" style="display:none"></div>
         <div class="inventory" id="plantsHold">
         <!-- data-ord — [가방]↔[식물] 을 오갈 때 자리를 지킨다(holdCard) -->
         <!-- ★★★ 2026-08-10 — **콩나물 시루 큰 카드(`#cropCard`)를 없앴다.**
@@ -7772,6 +7777,58 @@ function siruRowHTML(row, frac) {
     + `<div class="siruline">${state}${row.quality ? ' · ' + row.quality : ''}${dli}</div>`
     + `<div class="sirubtns">${btn.join('')}</div></div>`;
 }
+/* ══════════════════════════════════════════════════════════════════════════
+   ★★★ **빛 분포 겹쳐 보기** (2026-08-16 · 박사님)
+   ──────────────────────────────────────────────────────────────────────────
+   원문: *"식물 탭에서 **버튼 누르면 빛 분포** 볼 수 있게 해줘. **그리드 살리면서** 약간
+          그 일전에 시뮬레이터 결과처럼 보이게. … **그리드 수치도 작은 숫자로** 보이고."*
+   그리고: *"**화분 높이를 기본**으로 하고 **표면 높이를 보여줘.** 특히 가구가 있는 위치는
+          바닥이 아닌 **가구 위 식물 두는 곳**의 빛 결과가 보여야지. **가구 이동하면
+          이동한 거에 맞춰서** 보여주고."*
+
+   ★ 셈도 그림도 방 뷰가 한다(`room_view.setLightHeatmap` · lightview-to-plan).
+     여기는 **켜고 끄는 손잡이**와 **지금 어떤 조건으로 쟀나**를 적는 자리다.
+   ⚠ **조건을 화면이 지어내지 않는다** — 날씨·계절은 지난 턴이 낸 것, 등은 지금 켠 수를
+     그대로 넘긴다. 안 넘기면 방이 맑음·여름·등 0개로 재고 **그 사실을 머리글에 적는다.**
+   ⚠ 켤 때만 잰다. 켜 둔 채 매 프레임 285칸을 다시 칠하면 폰이 멎는다. */
+function lightHeatOpts() {
+  return {
+    weather: (lastTurn && lastTurn.sky && lastTurn.sky.weather) || null,
+    season: (lastTurn && lastTurn.sky && lastTurn.sky.season) || null,
+    lampCount: (S.lamps && S.lamps.count) || 0,
+    litHours: (S.lamps && S.lamps.litHours) || 0
+  };
+}
+function drawLightHeatBtn() {
+  const b = $('lightHeat'), note = $('lightHeatNote');
+  if (!b) return;
+  let st = null;
+  try { st = roomView && roomView.lightHeatmap ? roomView.lightHeatmap() : null; } catch { }
+  const on = !!(st && st.on);
+  b.setAttribute('aria-pressed', on ? 'true' : 'false');
+  b.textContent = on ? '🔆 빛 분포 끄기' : '🔆 빛 분포 보기';
+  b.classList.toggle('primary', on);
+  if (!note) return;
+  /* ⚠ 켜져 있을 때만 말한다 — 꺼 놓고 「몇 칸을 쟀다」를 적으면 그게 거짓말이다 */
+  note.style.display = on ? '' : 'none';
+  if (on) note.textContent =
+    '칸마다 그 칸의 표면에서 잰 값입니다 — 가구 위는 가구 윗면, 없으면 바닥입니다.'
+    + (st.onFurniture ? ` (가구 위 ${st.onFurniture}칸)` : '');
+}
+if ($('lightHeat')) $('lightHeat').onclick = guard(() => {
+  if (!roomView || !roomView.setLightHeatmap) {
+    banner('빛 분포를 못 켭니다', '방 화면이 아직 안 떴습니다');
+    return;
+  }
+  let on = false;
+  try { on = !!(roomView.lightHeatmap() || {}).on; } catch { }
+  try { roomView.setLightHeatmap(!on, on ? undefined : lightHeatOpts()); }
+  catch (e) { banner('빛 분포를 못 켰습니다', (e && e.message) || ''); return; }
+  drawLightHeatBtn();
+  /* 켜면 방이 보여야 한다 — 시트를 닫는다. 끌 때는 그대로 둔다(다시 누를 수 있게) */
+  if (!on) { try { window.__byeotSheet.close(); } catch { } }
+});
+
 function drawSirus() {
   const box = $('siruBox'), list = $('siruList');
   if (!box || !list) return;
@@ -7978,6 +8035,7 @@ function draw() {
   drawGrowGauge();          /* 확대 창 — 다음 단계까지 얼마나 왔나 (안 차면 왜인지도) */
   drawSow();                /* 다시 심어야 하나 */
   try { drawSirus(); } catch (e) { console.warn('[시루]', e && e.message); }  /* 시루 하나하나 */
+  try { drawLightHeatBtn(); } catch (e) { console.warn('[빛 분포]', e && e.message); }
   /* ★ 2026-08-16 — 놓았지만 아직 안 심은 화분(§emptyPots). 따로 감싼다 —
      하나가 던져도 나머지가 안 그려지면 그게 더 큰 고장이다. */
   try { drawEmptyPots(); } catch (e) { console.warn('[빈 화분]', e && e.message); }
