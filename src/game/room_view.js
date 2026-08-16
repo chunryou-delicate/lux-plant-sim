@@ -5589,8 +5589,13 @@ export async function createRoomView(canvas, opts = {}) {
      ⚠ 받칠 상판을 못 찾은 것(벽에 붙은 바 등처럼)은 **키로 가른다** — 내 상판보다 위에
        떠 있는 것은 내 위에 얹힌 것이 아니다. 반지하 바 등이 그 경우다(y 2.15 · 선반 top 0.79):
        예전에는 XZ 만 겹쳐도 따라와서, **선반을 서랍장에 올리면 식물등이 같이 끌려 올라간다.**
-       그러면 G-16 이 재서 앉힌 창턱 7.07 이 무너진다. 재서 확인하고 조였다. */
-  function ridersOf(g) {
+       그러면 G-16 이 재서 앉힌 창턱 7.07 이 무너진다. 재서 확인하고 조였다.
+
+     ★★★ 2026-08-16 (G-13) — **한 겹만 보던 것을 사슬 전체로 넓혔다.**
+       여기(`directRiders`)는 **바로 위 한 겹**만 낸다. 그 위에 또 얹힌 것까지 데려가는 것은
+       아래 `ridersOf` 가 이 자를 되풀이해서 한다. 둘을 가른 까닭은 하나다 —
+       **한 겹을 재는 자와 사슬을 따라가는 자를 섞으면 고리가 생겼을 때 무한이 된다.** */
+  function directRiders(g) {
     if (!built || !built.furniture || !g || !g.userData.size) return [];
     const sz = g.userData.size;
     const base = { x: g.position.x, z: g.position.z, w: sz.w, d: sz.d, rot: g.rotation.y || 0 };
@@ -5605,10 +5610,60 @@ export async function createRoomView(canvas, opts = {}) {
                                rot: n.rotation.y || 0 }, 0.05)) continue;
       const sup = supportNodeOf(n);
       if (sup) { if (sup !== g) continue; }     // 남의 상판에 얹힌 이웃이다
-      else if (n.position.y > g.position.y + (sz.h || 0) + SUPPORT_TOL) continue;  // 내 위로 떠 있다
+      else {
+        /* ★★ 2026-08-16 (G-13) — **받칠 상판을 못 찾은 것**(집게등처럼 발자국이 상판의
+           60%를 못 채우는 것)을 여기서 가른다. 예전에는 「내 윗면보다 위로 떠 있지만
+           않으면 데려간다」였다. 가구가 하나씩 서 있을 때는 그걸로 맞았다.
+           ⚠ **탑을 쌓는 순간 거짓말이 된다** — 책상(윗면 0.74) 위에 협탁, 그 위에 의자를
+             올리면 책상에 물린 집게등(y 0.75)이 **협탁의 rider 이자 의자의 rider** 로도
+             잡힌다(둘 다 「내 윗면보다 아래」다). 그러면 **탑 꼭대기를 끄는 것만으로
+             집게등이 1.4m 위로 끌려 올라간다.** 실측으로 잡았다(probe_stack2 §B-1).
+           ⇒ 그 물건 밑에서 **제일 가까운 상판**(내 y 이하 중 제일 높은 윗면)을 찾아,
+             **그것이 나일 때만** 데려간다. 못 찾으면(선반 단 밑에 붙은 바처럼 상판이
+             아예 없는 것) 예전 자를 그대로 쓴다 — 그걸 지우면 바가 선반을 안 따라간다. */
+        const host = nearestTopUnder(n);
+        if (host) { if (host !== g) continue; }
+        else if (n.position.y > g.position.y + (sz.h || 0) + SUPPORT_TOL) continue;  // 내 위로 떠 있다
+      }
       out.push(n);
     }
     return out;
+  }
+
+  /* ============================================================
+     ★★ 얹힌 것 **전부** — 사슬을 끝까지 따라간다 (2026-08-16 · G-13)
+     ------------------------------------------------------------
+     박사님: *"가구 **2단 쌓는 것**도 완료했어?"*
+
+     ■ 무엇이 막고 있었나
+       `directRiders` 는 **바로 위 한 겹**만 낸다. 책상 위에 서랍장을 올리고 그 위에 또
+       무언가를 올린 뒤 **책상을 옮기면**, 서랍장은 따라오는데 그 위의 것은 제자리에 남아
+       **허공에 뜬다.** 앞 창(G-12)이 두 겹을 안 연 까닭이 바로 이것이다.
+     ⇒ 한 겹씩 따라 올라가며 **더 나올 것이 없을 때까지** 넓힌다(너비 우선).
+
+     ⚠ **본 것을 기억한다**(`seen`). 어쩌다 고리가 생기면 여기가 무한이 되는 자리다.
+       고리 자체는 `supportCandidates` 가 막지만(아래 ★), 자를 두 겹으로 지킨다 —
+       막는 자가 하나뿐이면 그 자가 뚫리는 날 화면이 멎는다.
+     ⚠ 순서는 **밑에서 위로**다. 옮길 때 그대로 쓰면 밑동부터 앉는다.
+  ============================================================ */
+  function ridersOf(g) {
+    if (!g) return [];
+    const seen = new Set([g]);
+    const out = [], queue = [g];
+    while (queue.length) {
+      for (const n of directRiders(queue.shift())) {
+        if (seen.has(n)) continue;
+        seen.add(n); out.push(n); queue.push(n);
+      }
+    }
+    return out;
+  }
+  /* 나와 **내 위에 얹힌 것 전부** — 상판 후보에서 뺄 것들이다(고리 막기 · 아래 ★).
+     ⚠ 여기에 안 넣으면 「자기 탑 위에 자기를 올리는」 길이 열려 무한 고리가 난다. */
+  function stackSubtree(g) {
+    const s = new Set(ridersOf(g));
+    if (g) s.add(g);
+    return s;
   }
 
   /* ============================================================
@@ -5634,18 +5689,33 @@ export async function createRoomView(canvas, opts = {}) {
     const oz = Math.min(a.z1, b.z1) - Math.max(a.z0, b.z0);
     return ox > 0 && oz > 0 ? ox * oz : 0;
   }
-  /* 상판 노릇을 할 수 있는 가구 — **바닥에 서 있는 것**만이다.
-     ⚠ 올려 놓은 가구 위에 또 올리는 것(두 겹 쌓기)은 안 한다: 따라가는 사슬이 길어지면
-       `ridersOf` 가 한 겹만 보는 지금 구조에서 조용히 어긋난다. 못 하면 못 한다고 적는다. */
-  function supportCandidates(exclude) {
-    return floorNodes().filter(n => n !== exclude && n.userData.size && n.userData.size.h > 0.05);
+  /* ★★★ 상판 노릇을 할 수 있는 가구 — **올려 놓은 가구도 상판이 된다** (2026-08-16 · G-13)
+     ══════════════════════════════════════════════════════════════════
+     예전에는 `floorNodes()`(바닥에 선 가구)로 한정했다. 그래서 「서랍장 위 선반」 위에는
+     아무것도 못 올렸다 — 그것이 두 겹 쌓기를 막고 있던 **단 한 줄**이다.
+     ⇒ `furnNodes()` 로 넓힌다. 올려 놓은 가구(stacked)도 그 위에 무언가를 받칠 수 있다.
+       ⚠ 물린 것(집게등·벽걸이)은 `furnNodes` 에 애초에 없다 — **가구가 아니다**(§attachedNode).
+         그 규약은 여기서 한 톨도 안 흐린다. 등 위에 가구를 올리는 길은 여전히 없다.
+
+     ⚠⚠ **고리(cycle)를 막는 곳이 여기다.** 넓히기만 하면 「A 위에 B, B 위에 A」가 열린다.
+       그러면 `supportNodeOf` 가 서로를 가리키고 `ridersOf` 가 영영 안 끝난다.
+     ⇒ `blocked` 에 **나와 내 위에 얹힌 것 전부**(`stackSubtree`)를 받아 후보에서 뺀다.
+       즉 **자기 탑의 어느 층에도 자기를 못 올린다.** 놓는 길(snap·fit·preview)이 전부
+       이 자를 거치므로 고리가 만들어질 문이 없다.
+     ⚠ `supportNodeOf`(지금 상태를 되묻는 길)는 `blocked` 를 안 준다 — 줄 필요가 없다.
+       거기는 `maxTop = 내 밑동 + TOL` 로 잘라 보므로 **나보다 위에 있는 것은 애초에 후보가
+       아니고**, 내 위에 얹힌 것은 반드시 나보다 위다(키 0.05 하한 + TOL 0.06). 따라서
+       지금 상태의 받침 관계는 **높이가 단조로 줄어드는 사슬**이라 구조적으로 고리가 없다. */
+  function supportCandidates(exclude, blocked) {
+    return furnNodes().filter(n => n !== exclude && n.userData.size && n.userData.size.h > 0.05
+      && !(blocked && blocked.has(n)));
   }
   /* 그 발자국을 받치는 상판. 없으면 null. 여럿이면 **제일 높은 것**이 받친다. */
-  function supportUnder(me, exclude, maxTop = Infinity) {
+  function supportUnder(me, exclude, maxTop = Infinity, blocked = null) {
     const meBox = footAABB(me);
     if (!(meBox.area > 0)) return null;
     let best = null;
-    for (const n of supportCandidates(exclude)) {
+    for (const n of supportCandidates(exclude, blocked)) {
       const s = n.userData.size;
       const top = n.position.y + s.h;
       if (top > maxTop + 1e-6 || top <= RAISED_Y) continue;
@@ -5664,6 +5734,28 @@ export async function createRoomView(canvas, opts = {}) {
     const sup = supportUnder({ x: n.position.x, z: n.position.z, w: s.w, d: s.d,
                                rot: n.rotation.y || 0 }, n, n.position.y + SUPPORT_TOL);
     return sup && Math.abs(sup.y - n.position.y) <= SUPPORT_TOL ? sup.node : null;
+  }
+  /* ★ 그 물건 **밑에서 제일 가까운 상판** — 발자국 비율(SUPPORT_MIN)은 안 본다 (G-13).
+     `supportUnder` 와 무엇이 다른가: 저쪽은 「가구가 얹힐 수 있나」(60% 규칙)를 묻고,
+     이쪽은 「집게등처럼 작은 것이 **어느 상판 것인가**」를 묻는다. 집게등은 발자국이
+     작아 60% 를 못 채우므로 저쪽으로는 영영 null 이다 — 그래서 자가 따로 있어야 한다.
+     ⚠ XZ 가 겹치는 것만 본다(부르는 쪽이 이미 쓰는 그 판정과 같은 자·같은 여유 0.05). */
+  function nearestTopUnder(n) {
+    if (!n || !n.userData || !n.userData.size) return null;
+    const s = n.userData.size;
+    const me = { x: n.position.x, z: n.position.z, w: s.w, d: s.d, rot: n.rotation.y || 0 };
+    let best = null;
+    for (const m of furnNodes()) {
+      if (m === n) continue;
+      const s2 = m.userData.size;
+      if (!s2 || s2.h <= 0.05) continue;
+      const top = m.position.y + s2.h;
+      if (top > n.position.y + SUPPORT_TOL || top <= RAISED_Y) continue;
+      if (!rectOverlap(me, { x: m.position.x, z: m.position.z, w: s2.w, d: s2.d,
+                             rot: m.rotation.y || 0 }, 0.05)) continue;
+      if (!best || top > best.top) best = { top, node: m };
+    }
+    return best ? best.node : null;
   }
   function furnNode(uid) { return furnNodes().find(g => g.userData.uid === uid) || null; }
   /* 그 uid 가 지금 이 방에 있나 — 붙박이(창턱)까지 본다. 화분 회수 판정이 쓴다. */
@@ -5825,12 +5917,21 @@ export async function createRoomView(canvas, opts = {}) {
     if (!Number.isFinite(y0) || y0 < -1e-6)
       return { ok: false, reason: `높이가 올바르지 않습니다: ${pos.y}` };
     const stacked = y0 > RAISED_Y;
+    /* ★ 2026-08-16 (G-13) — 나와 내 위에 얹힌 것 전부. 상판 후보에서도 빼고(고리 막기),
+       장애물에서도 뺀다(같이 움직이는 것은 나를 막지 않는다). */
+    const mine = stackSubtree(g);
     if (stacked) {
       /* ① 받쳐 주는 상판이 있어야 한다 — 없으면 공중에 뜬다 */
-      const sup = supportUnder(me, g, y0 + SUPPORT_TOL);
+      const sup = supportUnder(me, g, y0 + SUPPORT_TOL, mine);
       if (!sup || Math.abs(sup.y - y0) > SUPPORT_TOL)
         return { ok: false, reason: '받쳐 주는 상판이 없습니다 — 가구 위로 올려 주세요' };
-      /* ② 천장을 뚫으면 안 된다 */
+      /* ② 천장을 뚫으면 안 된다.
+         ★★ 2026-08-16 (G-13) — **몇 겹까지 쌓을 수 있나 = 천장이 곧 한도다.**
+           겹 수로 세지 않는다. 「세 겹까지」 같은 수는 어디서도 안 나온 지어낸 값이고,
+           같은 세 겹이라도 침대(0.45)·책상(0.74)·서랍장(0.80) 을 섞으면 키가 딴판이다.
+           방이 이미 갖고 있는 한도(`size.h`)로 재면 **지어낸 수가 하나도 안 는다.**
+           그리고 여기서 막히면 화면이 「천장에 닿습니다 (2.33m > 2.30m)」라고 **까닭을 말한다** —
+           겹 수로 막으면 「세 겹까지만」이라는, 플레이어가 방을 봐서는 알 수 없는 말이 된다. */
       const ch = (built.size && built.size.h) || 2.3;
       if (y0 + (sz.h || 0) > ch + 1e-6)
         return { ok: false, reason: `천장에 닿습니다 (${(y0 + sz.h).toFixed(2)}m > ${ch.toFixed(2)}m)` };
@@ -5862,7 +5963,14 @@ export async function createRoomView(canvas, opts = {}) {
     /* ★ 2026-08-16 (G-12) — 겹침은 이제 **칸(XZ) 과 높이(Y) 가 둘 다 겹칠 때**다.
        예전에는 XZ 만 봤다. 그래도 맞았던 것은 옮길 수 있는 가구가 전부 바닥에 서 있어서다
        (얹힌 것은 furnNodes 에 아예 없었다). 이제 올려 놓은 가구가 목록에 들어오므로,
-       높이를 안 보면 **책상 위 선반이 바닥 가구를 막는다.** */
+       높이를 안 보면 **책상 위 선반이 바닥 가구를 막는다.**
+     ★ 2026-08-16 (G-13) — **나를 따라올 것들(mine)도 장애물이 아니다.** 예전에는 자기 자신만
+       뺐고, 얹힌 것은 「상판 바로 위에 딱 붙어 있어 높이가 안 겹친다」로 우연히 통과했다.
+       두 겹이 되면 그 우연이 깨진다 — 서랍장을 바닥에서 책상 위로 올리면 **그 위의 의자**와
+       내 새 높이가 겹친다. 같이 움직이는 것을 장애물로 세면 자기 짐 때문에 못 움직인다.
+     ⚠ 대신 **따라오는 것이 도착지에서 부딪히는지는 아직 안 본다** — 앞 창(G-12)도 그랬다.
+       실제로 부딪히려면 「내 상판 위 물건이 남의 가구 속으로 들어가는」 자리라야 하는데,
+       그 자리는 대개 내 발자국부터 막힌다. 못 잰 것으로 보고서에 적었다. */
     const myTop = y0 + (sz.h || 0);
     const vClear = n => {
       const s2 = n.userData.size;
@@ -5870,7 +5978,7 @@ export async function createRoomView(canvas, opts = {}) {
       return myTop <= b0 + 1e-6 || b1 <= y0 + 1e-6;      // 위아래로 갈렸다 = 안 부딪힌다
     };
     if (!flatMe) for (const n of furnNodes()) {
-      if (n === g) continue;                             // ★ 자기 자신은 장애물이 아니다
+      if (mine.has(n)) continue;                         // ★ 자기 자신 · 나를 따라올 것들
       const s2 = n.userData.size;
       if (!s2 || s2.h <= 0.05) continue;                 // 러그처럼 납작한 것 위로는 지나가도 된다
       /* 물린 것(클립등·바 등)은 furnNodes 에 없다 — 애초에 장애물이 아니다 */
@@ -5945,7 +6053,10 @@ export async function createRoomView(canvas, opts = {}) {
        ⚠ 앉히는 곳은 여기 하나다. 미리보기와 커밋이 **같은 함수**를 타야 "파란 유령을
          봤는데 딴 데 놓인다"가 안 생긴다(§commitFurnitureAt 머리말과 같은 까닭).
        ⚠ `pos.y` 를 주면 그대로 쓴다 — 되돌리기(grid:false 길)와 검사가 쓰는 문이다. */
-    const sup = supportUnder({ x, z, w: sz.w, d: sz.d, rot: rot * Math.PI / 180 }, g);
+    /* ★ 2026-08-16 (G-13) — 상판 후보에서 **나와 내 위에 얹힌 것**을 뺀다(고리 막기).
+       안 빼면 서랍장 위 선반을 끌 때 「자기가 이고 있는 선반 위」가 상판으로 잡힌다. */
+    const sup = supportUnder({ x, z, w: sz.w, d: sz.d, rot: rot * Math.PI / 180 },
+                             g, Infinity, stackSubtree(g));
     const y = Number.isFinite(pos.y) ? pos.y : (sup ? sup.y : 0);
     return { x: +x.toFixed(4), z: +z.toFixed(4), y: +y.toFixed(4), rot,
              on: sup ? sup.uid : null,
@@ -6318,7 +6429,7 @@ export async function createRoomView(canvas, opts = {}) {
        (여기서 좌표를 다시 재지 않는다. 이미 앉힌 자리로 되묻는다) */
     const on = y > RAISED_Y
       ? supportUnder({ x: sn.x, z: sn.z, w: g.userData.size.w, d: g.userData.size.d,
-                       rot: rot * Math.PI / 180 }, g, y + SUPPORT_TOL) : null;
+                       rot: rot * Math.PI / 180 }, g, y + SUPPORT_TOL, stackSubtree(g)) : null;
     return { uid, x: sn.x, z: sn.z, rot, y, cells: sn.cells, ok: fit.ok, reason: fit.reason,
              on: on ? on.uid : null, onName: on ? furnInfo(on.node).name : null };
   }
@@ -6419,6 +6530,10 @@ export async function createRoomView(canvas, opts = {}) {
        `moves` 에서만 빼고 있었다. 등(commitLampAt)은 예전부터 넣고 있었다 — 가구 길만
        안 넣었다. 넣으면 house.js 가 `yBase` 로 받아 **그림자 상자(occluders.y0)와
        화분 자리(plantSlots.y)가 같이 올라간다.** 그래서 빛이 따라온다. */
+    /* ★★ 2026-08-16 (G-13) — `ridersOf` 가 이제 **사슬 전체**를 낸다(책상 → 서랍장 → 의자).
+       한 벌의 `from → to` 로 전부 옮기는 것이 맞다 — 탑은 통째로 움직이는 한 덩어리이고,
+       `moveWithFurniture` 는 각자의 **지금 자리**를 그 한 벌로 옮기므로 층수와 무관하다.
+       (층마다 따로 계산하면 반올림이 층수만큼 쌓인다) */
     const moves = { [uid]: { x: to.x, z: to.z, rot: to.rot, y: to.y } };
     const riders = [];
     for (const n of ridersOf(g)) {
@@ -9008,7 +9123,9 @@ export async function createRoomView(canvas, opts = {}) {
     pointerMode() { return ptrMode; },
     pointerModes() { return [...POINTER_MODES]; },
     dragOrigin(id, tapX, tapY) { try { return dragOrigin(id, tapX, tapY); } catch (e) { throw fail(e); } },
-    /* 그 가구에 얹히거나 물려 있는 것들(클립등 등) — 옮기면 같이 간다 */
+    /* 그 가구에 얹히거나 물려 있는 것들(클립등 등) — 옮기면 같이 간다.
+       ★ 2026-08-16 (G-13) 부터 **사슬 전체**다 — 「책상 위 서랍장 위 의자」면 셋 다 나온다.
+         차례는 **밑에서 위로**(너비 우선). 한 겹만 보던 때와 값이 달라진 유일한 창구다. */
     ridersOf(uid) {
       const g = furnNode(uid);
       return g ? ridersOf(g).map(n => n.userData.uid) : [];
