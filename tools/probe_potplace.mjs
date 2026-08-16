@@ -25,7 +25,7 @@ for (const id of POTS) {
     S.shop.stock['monstera_seed']=1; S.shop.stock[${JSON.stringify(id)}]=1;
     if (S.stamina) S.stamina.usedToday=0; window.__redraw&&window.__redraw(); })()`, false);
   await sleep(500);
-  const before = await page.eval(`window.__S().pots.length`);
+  const before = await page.eval(`(window.__S().pots.length + (window.__S().emptyPots||[]).length)`);
   const r = await page.eval(`(()=>{ try {
     window.__byeotSheet.open(); window.__byeotSheet.tab('bag');
     const cell=[...document.querySelectorAll('.bagslot[data-place]')]
@@ -56,9 +56,9 @@ for (const id of POTS) {
     return (b.textContent||'').replace(/\s+/g,' ').trim().slice(-200); })()`);
   console.log('   배너:', ban);
   const dir = await page.eval(`JSON.stringify(window.__placePot('monsteraSeed:${id}'))`);
-  console.log('   직접:', dir, '· 화분', await page.eval(`window.__S().pots.length`));
+  console.log('   직접:', dir, '· 화분', await page.eval(`(window.__S().pots.length + (window.__S().emptyPots||[]).length)`));
   await sleep(1400);
-  const after = await page.eval(`window.__S().pots.length`);
+  const after = await page.eval(`(window.__S().pots.length + (window.__S().emptyPots||[]).length)`);
   const potAsset = await page.eval(`(()=>{ const S=window.__S(); const p=S.pots[S.pots.length-1];
     return p ? JSON.stringify({ potAsset:p.potAsset, fromSeed:!!p.fromSeed, slotId:p.slotId }) : 'none'; })()`);
   console.log(`${id.padEnd(21)} ${r} · 화분 ${before} → ${after}  ${after>before?'✔ 심어짐':'✘ 안 됨'}  ${potAsset}`);
