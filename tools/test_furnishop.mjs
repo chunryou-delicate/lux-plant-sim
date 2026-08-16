@@ -73,9 +73,13 @@ console.log('\nA. 크기 — 빌더가 내는 값과 size_m 이 같은가');
     ['w', 'd', 'h'].some(k => p[k] != null && Math.abs(p[k] - p.size_m[k]) > 1e-9));
   ok(`w·d·h 와 size_m 이 다른 프리셋이 있다 (그래서 size_m 이 필요하다)`, drift.length > 0,
      `지금 ${drift.map(([id]) => id).join(', ')}`);
-  const noWDH = Object.entries(PRESETS.presets).filter(([, p]) => p.w == null && p.d == null && p.h == null);
-  ok(`w·d·h 가 아예 없는 프리셋이 ${noWDH.length}개 — 부피로 값을 매기려면 size_m 이라야 한다`,
-     noWDH.length > 0);
+  /* ⚠⚠ **여기 숫자를 박지 마라.** 2026-08-17 에 딴 창이 발자국(`w`·`d`)을 정수 칸에 물리면서
+     117개 전부에 `w`·`d` 를 채웠고, 그 순간 「셋 다 없는 것 28개」라고 박아 둔 줄이 빨개졌다.
+     ⇒ 세는 것은 **`h`** 다 — 키는 대개 빌더가 계산해서 내므로(의자 `sh+0.45`) 앞으로도
+       프리셋에 안 적힌다. 몇 개인지는 **찍기만** 하고 「0보다 크다」만 못 박는다. */
+  const noH = Object.entries(PRESETS.presets).filter(([, p]) => p.h == null);
+  ok(`키(h)가 프리셋에 없는 것이 ${noH.length}개 — 부피로 값을 매기려면 size_m 이라야 한다`,
+     noH.length > 0);
 }
 
 /* ════════════════════════════════════════════════════════════
