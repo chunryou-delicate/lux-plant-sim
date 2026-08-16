@@ -182,7 +182,9 @@ console.log('\n══ C. ★★ 할 일 창 — 팝업 틀 · 진행도 · 여�
   const mismatch = shownIds.map((id, i) => {
     const n = staOf(id), r = String(B.rew[i] || '');
     if (!id) return null;                       // 접힘 줄
-    if (n > 0) return new RegExp(`체력 \+${n}`).test(r) ? null : `${id}: 체력 +${n} 인데 «${r}»`;
+    /* ⚠ 템플릿 문자열 안에서는 `\+` 가 그냥 `+` 가 된다 — 정규식으로 쓰려면 **두 번 젖혀야** 한다.
+       (같은 함정이 C-6 주석에 이미 적혀 있는데 또 밟았다.) */
+    if (n > 0) return new RegExp('체력 \\+' + n).test(r) ? null : `${id}: 체력 +${n} 인데 «${r}»`;
     return /체력 \+\d/.test(r) ? `${id}: 체력 0 인데 «${r}»` : null;
   }).filter(Boolean);
   ok('C-9 ★★ 보상 문구를 화면이 안 지어냈다 — 체력 값이 **정의에서** 나온다',
