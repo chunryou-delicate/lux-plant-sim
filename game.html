@@ -3503,7 +3503,17 @@ const detail = {
     const d = $('detail');
     const view = this[kind];
     if (!view) return;
-    const v = view.call(this, arg);
+    /* ★★ 2026-08-17 — **던지면 앞 카드가 그대로 남는다.** 그러면 화면은 아무 일 없이
+       *다른 물건의 값*을 보여 준다 — 이 저장소가 제일 무서워하는 종류의 거짓말이다.
+       ⇒ 삼키지 말고 **카드에 적는다.** 무엇이 안 그려졌는지 사람이 볼 수 있어야 한다. */
+    let v;
+    try { v = view.call(this, arg); }
+    catch (err) {
+      console.error('[상세]', kind, err);
+      v = { art: './assets/ui/item_monstera.png', title: '이 카드를 못 그렸습니다',
+            sub: kind, body: `<p>안쪽에서 막혔습니다 — <b>${String(err && err.message || err)}</b></p>`
+                            + '<p>앞서 보던 카드가 남지 않도록 이 자리를 대신 채웠습니다.</p>' };
+    }
     $('dArt').src = v.art; $('dArt').alt = '';
     $('dTitle').textContent = v.title;
     $('dSub').textContent = v.sub || '';
@@ -3745,23 +3755,67 @@ const detail = {
       btns
     };
   },
-  monstera() {
-    const p = pot0(S);
+  /* ★★★ 2026-08-17 — **누른 그 그루를 보여 준다** (박사님: *"오늘 받은 빛에 충분히
+       받았다고 되어 있잖아"* — 그런데 그것은 **창턱에 있는 첫 그루** 값이었다).
+     ══════════════════════════════════════════════════════════════════
+     ⚠⚠ 이 카드는 늘 `pot0(S)` 만 봤다. 그루가 여럿이 되면서 **어느 줄의 [자세히]를 눌러도
+       첫 그루 값**이 떴다 — 3단 선반의 그루를 눌러도 창턱의 3.68 이 보인다.
+       그러면 「빛은 충분한데 왜 안 자라지」가 **오류 없이** 성립한다.
+     ★ 턴은 **그루마다 값을 이미 싣고 있다**(`loop.js` 의 `turn.plants[] = {potId, slot, dli}`).
+       화면이 안 읽고 있었을 뿐이다 — 새로 세지 않고 **그 줄을 골라 읽는다.**
+     ⚠ 물도 `pot` 을 넘긴다 — 어제 같은 자리에서 `potId` 를 넘겨 첫 그루 값이 오던 버그가 있었다. */
+  monstera(arg) {
+    /* ⚠ 이 상자 안에는 `esc` 가 없다 — `drawPlantMore` 안의 것은 그 함수의 지역 변수다.
+       처음 그걸 모르고 부르자 카드가 **던졌고**, `guard` 가 삼켜 **앞 그루 카드가 그대로
+       남았다.** 화면에는 아무 표시가 없어 「아직 안 고쳐졌다」로만 보였다 —
+       실제로 그렇게 한 시간을 잃었다(§2.9 ⑤ 자가 딴 것을 재고 있다). */
+    const esc = v => String(v == null ? '' : v).replace(/[&<>"]/g, c =>
+      ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+    const pots = S.pots || [];
+    const p = (arg && arg.id ? pots.find(x => x && x.id === arg.id) : null) || pot0(S);
     if (!p) return { art: './assets/ui/item_monstera.png', title: '몬스테라', sub: '아직 만나지 못함',
                      body: '<p>콩나물을 첫 수확하면 찾아온다.</p>' };
-    const dli = lastTurn && lastTurn.dli;
+    /* ★ 그 그루의 턴 줄 — 없으면 「모른다」로 두고 지어내지 않는다 */
+    const tp = (() => { try { return (lastTurn && lastTurn.plants || []).find(r => r && r.potId === p.id) || null; }
+                        catch { return null; } })();
+    const dli = tp ? tp.dli : (pots.length > 1 ? null : (lastTurn && lastTurn.dli));
+    const idx = pots.indexOf(p);
     return {
-      art: './assets/ui/item_monstera.png', title: '몬스테라',
+      art: './assets/ui/item_monstera.png',
+      title: pots.length > 1 && idx >= 0 ? `몬스테라 ${idx + 1}` : '몬스테라',
       sub: p.slotId && !isFreeSlotId(p.slotId) ? slotLabel(p.slotId) + '에 있음' : '방에 놓여 있음',
-      body: `<div class="row"><span>지금 단계</span><b>${(lastTurn && lastTurn.growthPhase && lastTurn.growthPhase.phaseKo) || '—'}</b></div>`
+      body: `<div class="row"><span>지금 단계</span><b>${((tp && tp.growthPhase && tp.growthPhase.phaseKo)
+             || (pots.length > 1 ? null : (lastTurn && lastTurn.growthPhase && lastTurn.growthPhase.phaseKo))) || '—'}</b></div>`
         + dliRow('오늘 받은 빛', dli, '아직 없음')
-        + `<div class="row"><span>상태</span><b>${(lastTurn && lastTurn.slot && lastTurn.slot.ko) || '아직 없음'}</b></div>`
+        /* ★★ 2026-08-17 — **「왜 안 자라나」를 여기 적는다.**
+           박사님: *"새로 심은 몬스테라는 안 자라는 거 같어, 53%에서 멈춰 있어… 광량은 2.9인데."*
+           빛 줄에 「충분히 받았다」가 뜨는데 눈금은 안 움직이니 카드가 거짓말로 보인다.
+           ⚠ 막는 까닭은 **빛 부족 · 머리공간 · 마른 흙 셋이 서로 다른 칸**이다(loop.js §fields).
+             하나로 뭉개면 어제처럼 「빛은 되는데 왜」가 또 나온다 — 그래서 갈라 적는다.
+           ★ 새로 세지 않는다. 턴이 이미 실어 보낸 칸을 **그대로 읽는다.** */
+        + (() => {
+            if (!tp) return '';
+            const why = tp.potDry || tp.headroomBlocked
+              || (tp.growthBlocked ? (typeof tp.growthBlocked === 'string' ? tp.growthBlocked : '빛이 모자라 자라기를 멈췄습니다') : null);
+            if (why) return `<div class="row"><span>지금 막힌 것</span><b style="color:#f0a35f">${esc(String(why))}</b></div>`;
+            /* ★ 밴드 이름을 사람 말로. 값은 `data/growth_tuning.json` 의 `by_band` 가 정본이고
+                 여기서는 **이름만** 옮긴다 — 배수를 여기 또 적으면 두 벌이 된다(§2.8). */
+            const KO = { critical: '멈췄습니다 — 너무 어둡습니다', poor: '멈췄습니다 — 빛이 모자랍니다',
+                         stagnant: '멈췄습니다 — 빛이 문턱에 못 미칩니다', slow: '느리게 자랍니다',
+                         good: '잘 자랍니다', best: '가장 잘 자랍니다', over: '느리게 자랍니다 — 빛이 셉니다' };
+            const b = tp.growthSpeed && tp.growthSpeed.band;
+            if (!b || !KO[b]) return '';
+            const stop = (tp.growthSpeed.mult === 0);
+            return `<div class="row"><span>자라는 속도</span><b${stop ? ' style="color:#f0a35f"' : ''}>${KO[b]}</b></div>`;
+          })()
+        + `<div class="row"><span>상태</span><b>${(tp && tp.slot && tp.slot.ko)
+             || (pots.length > 1 ? '아직 없음' : ((lastTurn && lastTurn.slot && lastTurn.slot.ko) || '아직 없음'))}</b></div>`
         + `<div class="row"><span>돌본 날</span><b>${p.daysPlanted || 0}일</b></div>`
         /* ★ 물 — **DLI 줄과 달리 첫 플레이에도 보인다.** 숨기는 것은 놓기 *전*에 답을 주는
            숫자(§showDli)이고, 이것은 이미 놓은 자리가 **되돌려주는 결과**다.
            오히려 이 줄이 「밝은 자리는 물이 자주 필요하다」를 가르치는 자리다. */
         + (() => {
-            const w = potWaterNow();
+            const w = potWaterNow(p);      /* ⚠ 그 그루의 물이다 */
             if (!w) return '';
             return `<div class="row"><span>물 준 지</span><b>${w.dryDays} / ${w.interval}일`
                  + (w.dry ? ' · <span style="color:#f0a35f">말랐습니다</span>' : '') + '</b></div>';
@@ -8045,7 +8099,7 @@ function drawPlantMore() {
            `<span class="rowbtns">${btns}</span></div>`;
   }).join('');
   for (const b of list.querySelectorAll('[data-plantzoom]'))
-    b.onclick = guard(() => { try { detail.open('monstera'); } catch { } });
+    b.onclick = guard(() => { try { detail.open('monstera', { id: b.dataset.plantzoom }); } catch { } });
   for (const b of list.querySelectorAll('[data-plantwater]'))
     b.onclick = guard(() => waterPotOf(b.dataset.plantwater));
 }
@@ -9177,6 +9231,10 @@ async function bootRoomView() {
        검사가 상태를 만들어 놓고 화면이 그걸 따라오는지 보려면 이 한 걸음이 필요하다.
        ⚠ 게임은 이걸 안 쓴다(draw() 를 직접 부른다). 밖에서만 쓰는 진단용이다. */
     window.__redraw = () => { try { draw(); } catch (e) { console.warn('[진단] 다시 그리기', e); } };
+    /* ★ 상세 창을 밖에서 연다 — **화면이 부르는 바로 그 함수**다(다른 길을 만들지 않는다).
+       검사가 「어느 그루의 카드가 뜨나」를 단추 없이도 가릴 수 있게 하는 진단용 손잡이. */
+    window.__detailOpen = (kind, arg) => { try { detail.open(kind, arg); return true; }
+                                           catch (e) { return String(e && e.message || e); } };
     /* ★ 오류 상자 — 검사가 「같은 말이 접히나 · 눌러서 닫히나」를 밖에서 잴 수 있게
        (tools/test_nextday_gate.mjs). 게임은 이 손잡이를 안 쓴다. */
     window.__errBox = errBox;
