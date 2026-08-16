@@ -31,6 +31,13 @@ import { createTutorialState, yearDay0Of } from './tutorial.js';
 import { spend as spendStamina, canAct as canActStamina, createStaminaState } from './stamina.js';
 import { createShopState, useStock, assertStockAll, stockOf,
          creditCropSurplus } from './shop.js';
+/* ★★ 2026-08-17 — 삽수 용기. **화살표는 한 방향이다**(state → propagation).
+   그쪽은 이 파일을 안 부르므로 순환이 안 생긴다(propagation 은 place·shop·stamina 만 쓴다).
+   ⚠ 들여오는 까닭 하나: 「이 그릇에 무엇을 심을 수 있나」는 씨앗(여기)과 삽수(그쪽)를
+     둘 다 알아야 답할 수 있고, 둘을 아는 자리는 여기뿐이다(§plantableInto). */
+import { CONTAINERS, placeCutContainer, containerRowOf, containerKindOf,
+         containerKindOfItem, putCuttingIn, methodLeafBlock,
+         cuttingStatsNow } from './propagation.js';
 import { atFromSlot, isFreeSlotId, makeAt, resolvePlacement, samePoint,
          inRoom, assertFurnitureAt, followFurnitureAt } from './place.js';
 
@@ -100,7 +107,21 @@ export function newState(opt = {}) {
          전부 **그루가 하나 있다**를 전제로 돈다(하루 진행 · 조도 · 세이브 · 생장 창 고르기).
          빈 화분을 거기 끼우면 하루 진행이 통째로 흔들린다 — 그래서 **따로 둔다.**
        ★ 시루와 같은 결이다: 시루도 `firstPlay.cropSites` 에 따로 있지 `pots` 에 없다.
-       한 줄 = { id, itemId, at, slotId } — 그루가 없으므로 빛 이력도 생장 창도 안 갖는다. */
+
+       ══ ★★★ 2026-08-17 — **여기에 유리 수경병도 산다** (박사님 확정) ══════════════
+       박사님: *"**삽수 꽂기가 뭐야? 용도가 아니라 거기 심어지는 거에 따라 나뉘어야지.**
+         … **씨앗심기 누르면 심을 수 있는 인벤 템 리스트가 팝업으로 나와서 고르도록** 하자."*
+       ⇒ 「씨앗용 화분」과 「삽수용 포트」라는 **용도 구분이 없다.** 놓을 때는 그냥 빈 그릇이고,
+         **무엇이 들어가느냐는 심을 때 고른다**(`plantableInto` → `plantInto`).
+       ⇒ 그래서 목록도 **하나**다. 하루 있었던 `S.cutContainers` 는 여기로 합쳐 없앴다.
+       한 줄 = { id, container, itemId, at, slotId, placedOnDay, usedOnDay }
+         container  'soil'(검은 모종포트) | 'jar'(유리 수경병). **옛 줄에는 없다** —
+                    그때는 `itemId` 로 읽는다(`propagation.containerKindOf`)
+         usedOnDay  한 번이라도 무언가 들어앉았나 — 걷을 때 돌아오나가 이 칸으로 갈린다
+       ⚠ **빈 것만 산다.** 씨앗이 들어가면 `S.pots` 로 가고, 삽수가 들어가면 삽수가 그릇을
+         지고 간다(`c.container`). 어느 쪽이든 이 줄은 빠지고, 삽수를 도로 빼면 돌아온다.
+       ★ 쓰는 창구는 `propagation.js §⑤-2` 가 갖는다(용기 표가 거기 있어서다). 아래
+         `placeEmptyPot`·`removeEmptyPot` 은 그 창구로 넘기는 문이고 이름이 안 바뀌었다. */
     emptyPots: [],
 
     /* ★ 삽수 — 잘라서 물꽂이·화분에 담아 둔 조각들 (2026-08-03).
@@ -109,21 +130,6 @@ export function newState(opt = {}) {
        ⚠ 화분(S.pots)이 아니다. 삽수는 growth 를 안 쓴다(한 그루 전용) — 논리로만 돈다.
          승격은 다개체 리팩터 뒤다(propagation.promoteToPot 이 그 자리에서 던진다). */
     cuttings: [],
-
-    /* ══ ★★★ 삽수 용기 — **놓았지만 아직 안 넣은 그릇** (2026-08-17 박사님 확정) ══════
-       박사님: *"유리병을 먼저 가구처럼 배치하고 거기다 넣고 싶은 삽수를 드래그해서 배치"*
-       그리고: *"삽수 후 수경 안 하고 바로 화분 심는 것도 가능하도록 하자 **동일하게**."*
-       ⇒ 유리 수경병(jar)도 검은 모종포트(soil)도 **똑같이** 「놓고 → 넣는다」 두 걸음이다.
-
-       ★ 위 `emptyPots` 와 **같은 결**이고 그 결이 이 저장소의 손버릇이다
-         (시루·재배판·화분이 전부 「빈 그릇을 놓고 → 심는다」).
-       ⚠⚠ 그런데 `emptyPots` 에 **합치지 않는다.** 거기 든 그릇은 「몬스테라 씨앗을 심을
-         그릇」이라 `plantMonsteraSeed` 가 씨앗을 넣는다 — 합치면 **유리 수경병에 씨앗이
-         심긴다.** 물음이 다른 목록은 안 합친다(위 `pots` ↔ `emptyPots` 와 같은 이유).
-       ★ 규칙·창구는 전부 `src/game/propagation.js §⑤-2` 가 갖는다(용기 표가 거기 있다).
-         여기는 **칸만** 낸다 — 세이브가 이 칸을 보고 저장 방법을 묻게 하려는 것이다.
-       한 줄 = { id, container, itemId, at, slotId, placedOnDay, cuttingId, usedOnDay } */
-    cutContainers: [],
 
     /* Day 0 콩나물 → Day 4 첫 수확·선물 → 몬스테라 말린 새순.
        정식 작물 목록이나 경제 장부가 아니라 첫 재미 검증 한 흐름만 담는다. */
@@ -425,28 +431,36 @@ export const SEED_POT_ITEM_ID = 'pot';
    ⚠ 여기에 숫자를 하나 올리는 순간 「사면 빨라진다」가 된다. 올리려면 기획이 정할 것. */
 export const SEED_START_GROWTH_DAYS = 0;
 
-/* ══ ★★★ 빈 화분을 놓는다 — **씨앗은 안 쓴다** (2026-08-16 박사님 확정) ═══════════
-   박사님: *"씨앗이 자동으로 안 들어가고 화분만 놓이게 해 줘."*
+/* ══ ★★★ 빈 그릇을 놓는다 — **아무것도 안 넣는다** (2026-08-16 → 2026-08-17 넓힘) ══════
+   박사님(08-16): *"씨앗이 자동으로 안 들어가고 화분만 놓이게 해 줘."*
+   박사님(08-17): *"**용도가 아니라 거기 심어지는 거에 따라 나뉘어야지.**"*
    ★ 시루와 같은 결이다 — 놓기와 심기가 두 걸음이다(`placeSiru(sow:false)` → `sowCrop`).
-   ⚠ 그릇 하나만 쓴다. 씨앗은 **심을 때** 나간다(`plantMonsteraSeed`).
+   ⚠ 그릇 하나만 쓴다. 씨앗도 삽수도 **심을 때** 들어간다(`plantInto`).
    ⚠ `S.pots` 에 안 넣는다 — 거기는 그루가 있는 것만 사는 자리다(§emptyPots).
-   반환 { id, itemId, at, slotId, left } */
+
+   ★★ 2026-08-17 — **유리 수경병도 이 문으로 놓는다.** 갈래는 `opt.container` 로 고른다:
+       placeEmptyPot(S, at, { container: 'soil' })   검은 모종포트 (기본)
+       placeEmptyPot(S, at, { container: 'jar'  })   유리 수경병
+     ⚠ 옛 호출부(`opt.potItemId` 만 주는 것)가 **그대로 돈다** — 품목에서 갈래를 읽는다.
+     ★ 속은 `propagation.placeCutContainer` 다. 규칙표(`CONTAINERS`)가 거기 있어서고,
+       여기서 다시 쓰면 두 벌이 된다. 이름을 안 바꾼 것은 화면(`game.html`)이 이 이름을
+       부르고 있기 때문이다 — 문은 그대로 두고 속만 옮겼다.
+   반환 { id, container, containerKo, itemId, at, slotId, left } */
 export function placeEmptyPot(S, at, opt = {}) {
-  const itemId = opt.potItemId || SEED_POT_ITEM_ID;
-  /* ① 재고 — 그릇 하나. 없으면 여기서 던진다(화면이 미리 안 막는다) */
-  assertStockAll(S, [{ itemId, qty: 1 }]);
-  const id = opt.id || nextPotId(S);
-  /* ② 자리 — 여기서 재 본다(던질 수 있다). 아직 아무것도 안 썼다 */
-  const spot = resolvePlacement(id, at, opt);
-  /* ③ 재고를 뺀다 — 여기부터는 되돌릴 일이 없다 */
-  useStock(S, itemId, 1);
-  if (!Array.isArray(S.emptyPots)) S.emptyPots = [];
-  S.emptyPots.push({ id, itemId, at: spot.at, slotId: spot.slotId, placedOnDay: S.day });
-  pushLog(S, `🪴 빈 화분을 놓았습니다 — [🌱 심기]를 눌러 몬스테라 씨앗을 심으세요`);
-  return { id, itemId, at: spot.at, slotId: spot.slotId, left: (S.emptyPots || []).length };
+  const kind = opt.container ||
+               (opt.potItemId ? containerKindOfItem(opt.potItemId) : null) ||
+               containerKindOfItem(SEED_POT_ITEM_ID) || 'soil';
+  const r = placeCutContainer(S, kind, at, { ...opt, log: null });
+  pushLog(S, r.accepts && r.accepts.includes('seed')
+    ? `🪴 빈 ${r.containerKo}를 놓았습니다 — [🌱 심기]를 눌러 씨앗이나 삽수를 골라 주세요`
+    : `🫙 빈 ${r.containerKo}를 놓았습니다 — [🌱 심기]를 눌러 삽수를 골라 주세요`);
+  return r;
 }
 
-/* 그 빈 화분을 목록에서 뺀다 — 심었거나 치웠을 때. 없으면 조용히 지나간다(두 번 불러도 안전) */
+/* 그 빈 그릇을 목록에서 뺀다 — 심었거나 치웠을 때. 없으면 조용히 지나간다(두 번 불러도 안전).
+   ⚠ **재고를 안 돌려준다.** 여기는 「목록에서 지운다」이고, 걷어서 가방에 넣는 것은
+     `propagation.removeContainer` 다(그쪽이 돌아오나 마나를 `CONTAINERS` 로 정한다).
+     둘을 한 함수로 묶으면 `plantMonsteraSeed` 가 심을 때마다 화분이 재고로 하나 생긴다. */
 export function removeEmptyPot(S, id) {
   if (!Array.isArray(S.emptyPots)) return null;
   const i = S.emptyPots.findIndex(p => p && p.id === id);
@@ -456,6 +470,117 @@ export function removeEmptyPot(S, id) {
 
 export function emptyPotOf(S, id) {
   return (S.emptyPots || []).find(p => p && p.id === id) || null;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   ★★★ **[🌱 심기] 팝업** — 「이 그릇에 심을 수 있는 것」 (2026-08-17 박사님 확정)
+   --------------------------------------------------------------------------
+   박사님 원문: *"**씨앗심기 누르면 심을 수 있는 인벤 템 리스트가 팝업으로 나와서 고르도록**
+   하자."*
+
+   ★ 이 두 함수가 이 창의 뼈대다. 화면은 **그릇 하나만** 알면 되고, 「이 그릇이 씨앗용인가
+     삽수용인가」를 영영 안 묻는다 — 그 물음이 박사님이 물리신 그것이다.
+       `plantableInto(S, containerId)`  → 목록 (회색 줄까지 **다 낸다**)
+       `plantInto(S, io, containerId, pick)` → 고른 것을 심는다
+
+   ══ 왜 여기(state.js)인가 ═════════════════════════════════════════════════
+   심을 수 있는 것이 **둘**인데 주인이 다르다 — 씨앗은 여기(`plantMonsteraSeed`),
+   삽수는 `propagation`(`putCuttingIn`). 둘을 아는 자리는 여기뿐이다. 이 파일의 손버릇이
+   원래 그것이다(`sowCrop` 머리말 — *"규칙은 first_play 가, 가방은 shop 이 갖고, 둘을 여기서 묶는다"*).
+   ⚠ 화살표는 한 방향이다: state → propagation. 그쪽은 여기를 안 부른다(순환이 안 생긴다).
+
+   ══ 못 넣는 것을 **목록에서 빼지 않는다** ═════════════════════════════════
+   회색으로 두고 `why` 를 적는다. 이 저장소의 지병이 조용한 실패다 —
+   「왜 안 되나」를 화면이 말할 수 있어야 한다.
+   ⚠ 다만 **갈래 자체가 안 들어가는 것은 아예 안 낸다**(유리 수경병 × 씨앗).
+     그건 「이 개체가 안 된다」가 아니라 **그 그릇이 받는 것이 아니다**라, 목록에 두면
+     플레이어가 될 수도 있는 줄로 읽는다. 그 금은 `CONTAINERS[*].accepts` 가 긋는다.
+════════════════════════════════════════════════════════════════════════════ */
+
+/* 이 그릇에 심을 수 있는 것 — 가방의 씨앗과 삽수를 **한 목록**으로 낸다.
+   줄 = { kind:'seed'|'cutting', id, ko, sub, can, why, count }
+     kind   'seed' 면 `id` 는 상점 품목(`monstera_seed`) · 'cutting' 이면 삽수 id
+     ko     화면에 찍을 이름       sub  부제(잎 수·무늬·등급 같은 것. 없으면 null)
+     can    넣을 수 있나          why  못 넣으면 까닭(사람이 읽는 말). 넣을 수 있으면 null
+     count  씨앗 몇 립(삽수는 늘 1)
+   ⚠ 사유를 여기서 새로 짓지 않는다 — `propagation.methodLeafBlock` 이 낸 말을 그대로 쓴다.
+   반환 { containerId, container, containerKo, accepts, rows } */
+export function plantableInto(S, containerId) {
+  const ct = containerRowOf(S, containerId);
+  if (!ct) throw new Error(`[심기] 모르는 그릇입니다: ${containerId} — ` +
+    `방에 놓인 빈 그릇이라야 합니다`);
+  const kind = containerKindOf(ct);
+  const cont = CONTAINERS[kind];
+  if (!cont) throw new Error(`[심기] 그릇 ${ct.id} 의 갈래가 이상합니다: ${kind}`);
+  const rows = [];
+
+  /* ① 씨앗 — 그 그릇이 씨앗을 받을 때만 낸다(§accepts).
+     ⚠ 가방에 없어도 **줄은 낸다.** 「씨앗이 없습니다」를 회색 줄이 말해 주는 편이,
+       줄이 아예 없어서 「왜 못 심나」를 모르는 것보다 낫다(상점 [주문]이 쓰는 그 판단). */
+  if (cont.accepts.includes('seed')) {
+    const n = stockOf(S, SEED_ITEM_ID) || 0;
+    rows.push({
+      kind: 'seed', id: SEED_ITEM_ID, count: n,
+      ko: '몬스테라 씨앗', sub: n > 0 ? `${n}립` : null,
+      can: n > 0,
+      why: n > 0 ? null : '가방에 몬스테라 씨앗이 없습니다 — 상점에서 주문해 주세요'
+    });
+  }
+
+  /* ② 삽수 — **가방에 있는 것만**(이미 어딘가 들어앉은 것은 심을 대상이 아니다) */
+  if (cont.accepts.includes('cutting')) {
+    for (const c of (S.cuttings || [])) {
+      if (!c || c.status !== 'bag' || c.method) continue;
+      const now = cuttingStatsNow(c);
+      /* ⚠ 사유는 `methodLeafBlock` 한 곳에서 온다 — 물꽂이는 잎 1장까지다 */
+      const block = methodLeafBlock(cont.method, now.leaves);
+      const varie = now.variegatedLeaves
+        ? ` · 무늬 ${now.variegatedLeaves}장` : '';
+      rows.push({
+        kind: 'cutting', id: c.id, count: 1,
+        ko: `삽수 ${c.id}`, sub: `잎 ${now.leaves}장${varie}`,
+        can: !block, why: block || null
+      });
+    }
+  }
+  return { containerId: ct.id, container: kind, containerKo: cont.ko,
+           accepts: [...cont.accepts], rows };
+}
+
+/* 고른 것을 그 그릇에 심는다. **씨앗이든 삽수든 같은 문**이다.
+     io    생장 창 — **씨앗일 때만 쓴다**(형태를 세워야 한다). 삽수면 안 본다
+     pick  { kind:'seed'|'cutting', id } — `plantableInto` 가 낸 줄을 그대로 넘기면 된다
+   ⚠ 던지는 사유는 전부 **플레이어 입력**이다(`tutorialInput`) — 고장이 아니다.
+     ⚠ 다만 씨앗 쪽에서 「생장 창이 없다·못 그렸다」는 진짜 고장이라 그대로 올려 보낸다.
+   반환 { kind, containerId, potId? , cuttingId? } */
+export function plantInto(S, io, containerId, pick, opt = {}) {
+  const ct = containerRowOf(S, containerId);
+  if (!ct) throw new Error(`[심기] 모르는 그릇입니다: ${containerId}`);
+  const kind = containerKindOf(ct);
+  const cont = CONTAINERS[kind] || {};
+  const what = typeof pick === 'string' ? { kind: 'cutting', id: pick } : (pick || {});
+  if (!what.kind || !what.id)
+    throw new Error('[심기] 무엇을 심을지 안 골랐습니다 — plantableInto 의 줄을 넘겨 주세요');
+  if (!(cont.accepts || []).includes(what.kind)) {
+    const e = new Error(`[심기] ${cont.ko || kind} 에는 ` +
+      `${what.kind === 'seed' ? '씨앗' : '삽수'}를 못 심습니다`);
+    e.tutorialInput = true; throw e;
+  }
+
+  if (what.kind === 'cutting') {
+    /* 삽수 — 그릇을 삽수가 지고 간다. `putCuttingIn` 이 목록에서 그 줄을 뺀다 */
+    const c = putCuttingIn(S, what.id, ct.id, { log: m => pushLog(S, m) });
+    return { kind: 'cutting', containerId: ct.id, cuttingId: c.id };
+  }
+
+  /* 씨앗 — **놓인 그 자리·그 그릇**에 심는다. 자리를 다시 고르지 않는다
+     (다시 고르면 「놓은 데가 아닌 데」에 나서 손이 두 번 헛돈다 — game.html §sowEmptyPot).
+     ⚠ 심은 **뒤에** 목록에서 뺀다. 먼저 빼면 심기가 던졌을 때 그릇이 사라진다. */
+  const pot = plantMonsteraSeed(S, io, {
+    ...opt, at: ct.at, potItemId: ct.itemId, id: ct.id
+  });
+  removeEmptyPot(S, ct.id);
+  return { kind: 'seed', containerId: ct.id, potId: pot.id };
 }
 
 export function plantMonsteraSeed(S, io, opt = {}) {
@@ -475,8 +600,19 @@ export function plantMonsteraSeed(S, io, opt = {}) {
     const st = canActStamina(S, 'sow');
     if (!st.ok) { const e = new Error('[심기] ' + st.reason); e.tutorialInput = true; throw e; }
   }
-  /* ① 재고 — 씨앗 한 립 + 그릇 하나. **묻기만 하고 아직 안 뺀다.** */
-  assertStockAll(S, [{ itemId: SEED_ITEM_ID, qty: 1 }, { itemId: potItemId, qty: 1 }]);
+  /* ★★★ 2026-08-17 — **이미 놓인 화분에 심을 때는 그릇을 또 안 쓴다** (박사님 실측 제보:
+       *"화분 배치는 되는데 몬스테라 씨앗을 못 심네."*)
+     ══════════════════════════════════════════════════════════════════
+     ⚠⚠ 놓기·심기가 두 걸음이 되면서(`placeEmptyPot` → 여기) **그릇은 놓을 때 이미 나갔다.**
+       그런데 이 줄이 그릇을 **한 번 더** 요구해서, 화분이 하나뿐인 판은 놓고 나면
+       **영영 못 심었다.** 재고가 둘이면 모르고 지나가고 하나면 막히는, 조용한 사고다.
+     ⇒ `opt.usePot === false` 면 **씨앗만** 묻는다. 놓인 화분에 심는 길(`sowEmptyPot`)이 그것이다.
+     ⚠ 한 걸음으로 심는 옛 길(자리부터 새로 잡는 길)은 **그대로 둘을 다 쓴다** — 그 길에서는
+       그릇이 아직 안 나갔다. 기본값을 바꾸지 않는 까닭이 그것이다. */
+  const usePot = opt.usePot !== false;
+  assertStockAll(S, usePot
+    ? [{ itemId: SEED_ITEM_ID, qty: 1 }, { itemId: potItemId, qty: 1 }]
+    : [{ itemId: SEED_ITEM_ID, qty: 1 }]);
 
   /* ① 자리 — 줬으면 여기서 재 본다(던질 수 있다). 아직 화분에 안 쓴다. */
   const potId = opt.id || nextPotId(S);
@@ -505,7 +641,7 @@ export function plantMonsteraSeed(S, io, opt = {}) {
 
   /* ② 재고를 뺀다 — 여기부터는 되돌릴 일이 없다 */
   useStock(S, SEED_ITEM_ID, 1);
-  useStock(S, potItemId, 1);
+  if (usePot) useStock(S, potItemId, 1);   /* ★ 놓인 화분이면 그릇은 이미 나갔다(위 §usePot) */
 
   /* ③ 화분을 남긴다 */
   const pot = {
@@ -1375,11 +1511,10 @@ export function followFreeOnFurniture(S, uid, from, to) {
     n++;
   };
   for (const p of (S.pots || [])) move(p);
+  /* ★ 2026-08-17 — 이 줄이 유리 수경병까지 같이 옮긴다. 빈 그릇은 갈래를 안 가리고
+     **한 목록**에 살기 때문이다(§emptyPots). 삽수가 든 그릇은 삽수가 지고 있어서
+     바로 아래 줄이 옮긴다 — 그래서 둘이 갈릴 곳이 없다. */
   for (const p of (S.emptyPots || [])) move(p);
-  /* ★ 2026-08-17 — 삽수 용기도 가구를 따라간다(propagation §⑤-2).
-     ⚠ 안 넣으면 책상을 옮겼을 때 **병만 허공에 남는다** — 든 삽수는 바로 아래에서
-       따라가므로 둘이 갈린다(그게 이 목록을 여기 적는 유일한 이유다). */
-  for (const t of (S.cutContainers || [])) move(t);
   for (const c of (S.cuttings || [])) move(c);
   if (S.firstPlay && S.firstPlay.enabled) for (const site of cropSites(S.firstPlay)) move(site);
   return n;

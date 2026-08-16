@@ -1925,14 +1925,19 @@
            없애면 처음 하는 사람이 길을 잃는다 — 자리를 옮겼을 뿐이다. -->
     <div class="sheetpage" id="pagePlants" role="tabpanel">
       <div class="quest" id="sheetQuest"></div>
+      <!-- ★★★ **빛 분포 겹쳐 보기** (2026-08-16 · 박사님)
+           ⚠⚠ 2026-08-17 — **「방에 있는 것」 상자 밖으로 뺐다** (박사님: *"빛 분포를 따로
+             위로 뺐으면 해, **몬스테라에만 해당되는 게 아니잖아.**"*). 그 상자 안에 있으면
+             몬스테라 딸린 기능으로 읽힌다 — 이건 **방 전체**를 보는 자다.
+           ⚠ 켤 때만 잰다(285칸 × 20ms). 켜 둔 채 매 프레임 다시 칠하면 폰이 멎는다. -->
+      <div class="box" id="lightHeatBox">
+        <button id="lightHeat" class="ghost" type="button" aria-pressed="false">🔆 빛 분포 보기</button>
+        <div id="lightHeatNote" class="sub" style="display:none"></div>
+      </div>
       <div class="box journey" id="plantsBox">
         <h3>방에 있는 것</h3>
         <div class="sub">어두운 자리도, 밝은 자리도 쓸모가 있습니다.</div>
-        <!-- ★★★ 2026-08-16 — **빛 분포 겹쳐 보기** (박사님: *"식물 탭에서 버튼 누르면
-             빛 분포 볼 수 있게 해줘. 그리드 살리면서 … 그리드 수치도 작은 숫자로."*)
-             ⚠ 켤 때만 잰다(285칸 × 20ms). 켜 둔 채 매 프레임 다시 칠하면 폰이 멎는다. -->
-        <button id="lightHeat" class="ghost" type="button" aria-pressed="false">🔆 빛 분포 보기</button>
-        <div id="lightHeatNote" class="sub" style="display:none"></div>
+
         <div class="inventory" id="plantsHold">
         <!-- data-ord — [가방]↔[식물] 을 오갈 때 자리를 지킨다(holdCard) -->
         <!-- ★★★ 2026-08-10 — **콩나물 시루 큰 카드(`#cropCard`)를 없앴다.**
@@ -1978,6 +1983,12 @@
           <div class="meter"><i id="plantMeter"></i></div><div class="itemline" id="plantInfo">콩나물 첫 수확 뒤 도착</div>
         </div>
         </div><!-- /plantsHold -->
+        <!-- ★★★ 2026-08-17 — **그루가 여럿이면 여럿 다 보인다** (박사님: *"몬스테라 식물
+             정보가 지금 하나만 대표로 나오는데 수정해야 되지 않아?"*)
+             ⚠ 위 `#plantCard` 는 **선물 몬스테라(첫 그루)** 것이다 — 첫 플레이가 그 카드를
+               붙들고 돌아서(끌기 손잡이·잠금·안내) 없애면 첫 판이 깨진다.
+             ⇒ **둘째 그루부터** 여기에 줄로 선다. 씨앗으로 심은 그루가 그것이다. -->
+        <div id="plantMoreList"></div>
       </div><!-- /plantsBox -->
 
       <!-- ══ ★★ 시루 하나하나 (2026-08-09 · 박사님 "각개 움직이고 각개 물주고") ═══════
@@ -1991,15 +2002,17 @@
       <div class="box" id="siruBox" style="display:none">
         <h3><span id="siruBoxTitle">콩나물 시루</span> <span id="siruCount"></span></h3>
         <div class="sub">하나하나 따로 놓고 · 따로 심고 · 따로 물을 주고 · 따로 거둡니다.</div>
-        <!-- ★★ 놓았지만 아직 안 심은 화분 (2026-08-16 · §emptyPots).
-             박사님: *"씨앗이 자동으로 안 들어가고 화분만 놓이게 해 줘."*
-             ⇒ 시루와 **같은 자리·같은 모양**이다 — 놓인 것에 [🌱 심기]가 붙는다. -->
-        <div id="emptyPotBox" class="box" style="display:none">
-          <h3>빈 화분 <span id="emptyPotCount"></span></h3>
-          <div class="sub">몬스테라 씨앗을 심으면 그루가 됩니다.</div>
-          <div id="emptyPotList"></div>
-        </div>
         <div id="siruList"></div>
+      </div>
+
+      <!-- ★★ 놓았지만 아직 안 심은 화분 (2026-08-16 · §emptyPots).
+           ⚠⚠ 2026-08-17 — **시루 상자 「밖」으로 뺐다** (박사님: *"화분이 시루 정보 안으로
+             들어가 버렸어."*). 안에 있으면 「콩나물 시루 8개」라는 제목 밑에 화분이 들어앉아
+             **화분이 시루의 일부처럼** 읽힌다. 둘은 다른 물건이고 다른 상자가 맞다. -->
+      <div id="emptyPotBox" class="box" style="display:none">
+        <h3>빈 화분 <span id="emptyPotCount"></span></h3>
+        <div class="sub">눌러서 씨앗이나 삽수를 심습니다.</div>
+        <div id="emptyPotList"></div>
       </div>
 
       <!-- ══ 삽수(꺾꽂이) — 꾸준수입의 길 ══════════════════
@@ -7829,6 +7842,47 @@ if ($('lightHeat')) $('lightHeat').onclick = guard(() => {
   if (!on) { try { window.__byeotSheet.close(); } catch { } }
 });
 
+/* ══════════════════════════════════════════════════════════════════════════
+   ★★★ **그루가 여럿이면 여럿 다 보인다** (2026-08-17 · 박사님)
+   ──────────────────────────────────────────────────────────────────────────
+   원문: *"몬스테라 식물정보가 지금 **하나만 대표로** 나오는데 수정해야 되지 않아?"*
+
+   ★ 씨앗으로 심으면 그루가 는다(`state.plantMonsteraSeed` · 2026-08-15 다개체). 그런데
+     [식물] 탭에는 **카드가 하나뿐**이라, 둘째부터는 방에 서 있어도 화면에 없었다.
+   ⚠ 위 `#plantCard` 는 **선물 몬스테라(첫 그루)** 것이다 — 첫 플레이가 그 카드를 붙들고
+     돈다(끌기 손잡이 `plantThumb` · `locked` · 안내 문구). 없애면 첫 판이 깨진다.
+     ⇒ **둘째 그루부터** 여기에 줄로 세운다. 시루 줄과 같은 결이다.
+   ⚠ **값을 화면이 짓지 않는다** — 자리 이름은 `slotLabel`, 물은 `potWaterStatus` 가 낸다.
+     잎 수는 growth 소유라 **그 그루를 고른 뒤에** 물어야 하는데, 고르는 것은 화면이 함부로
+     할 일이 아니다(선택이 바뀌면 방·확대창이 딴 그루를 그린다) — 그래서 **안 적는다.**
+     모르는 것을 지어내지 않는다. */
+function drawPlantMore() {
+  const box = $('plantMoreList');
+  if (!box) return;
+  const pots = (S.pots || []).slice(1);          // 첫 그루는 위 카드가 그린다
+  if (!pots.length) { box.innerHTML = ''; return; }
+  const esc = v => String(v == null ? '' : v).replace(/[&<>"]/g, c =>
+    ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  box.innerHTML = pots.map((p, i) => {
+    const where = p.slotId && !isFreeSlotId(p.slotId) ? slotLabel(p.slotId)
+                : (p.at ? '방 안' : '아직 안 놓음');
+    /* 물 — 코어가 낸 것을 그대로 적는다(주기도 남은 날도 코어 것이다) */
+    let water = '';
+    try {
+      const w = potWaterStatus(S, { band: (lastTurn && lastTurn.growthSpeed && lastTurn.growthSpeed.band) || null,
+                                    season: (lastTurn && lastTurn.sky && lastTurn.sky.season) || null,
+                                    potId: p.id });
+      if (w) water = w.dry ? ` · 💧 <b>말랐습니다</b>` : ` · 물 준 지 ${w.dryDays}/${w.interval}일`;
+    } catch { }
+    const days = Number.isFinite(p.daysPlanted) ? ` · 돌본 날 ${p.daysPlanted}일` : '';
+    return `<div class="siruRow"><div class="nm">몬스테라 ${i + 2}` +
+           `<small>${esc(where)}${days}${water}</small></div>` +
+           `<button class="ghost" data-plantzoom="${esc(p.id)}">📋 자세히</button></div>`;
+  }).join('');
+  for (const b of box.querySelectorAll('[data-plantzoom]'))
+    b.onclick = guard(() => { try { detail.open('monstera'); } catch { } });
+}
+
 function drawSirus() {
   const box = $('siruBox'), list = $('siruList');
   if (!box || !list) return;
@@ -8036,6 +8090,7 @@ function draw() {
   drawSow();                /* 다시 심어야 하나 */
   try { drawSirus(); } catch (e) { console.warn('[시루]', e && e.message); }  /* 시루 하나하나 */
   try { drawLightHeatBtn(); } catch (e) { console.warn('[빛 분포]', e && e.message); }
+  try { drawPlantMore(); } catch (e) { console.warn('[그루 목록]', e && e.message); }
   /* ★ 2026-08-16 — 놓았지만 아직 안 심은 화분(§emptyPots). 따로 감싼다 —
      하나가 던져도 나머지가 안 그려지면 그게 더 큰 고장이다. */
   try { drawEmptyPots(); } catch (e) { console.warn('[빈 화분]', e && e.message); }
@@ -10466,8 +10521,11 @@ function sowEmptyPot(id) {
   const ep = emptyPotOf(S, id);
   if (!ep) { banner('그 화분을 못 찾았습니다', '방을 다시 열어 주세요'); return; }
   try {
+    /* ⚠ `usePot:false` — 그릇은 **놓을 때 이미 나갔다**(state §usePot). 안 주면 하나를
+       더 요구해서, 화분이 하나뿐인 판은 놓고 나면 영영 못 심는다(박사님 실측 제보). */
     plantMonsteraSeed(S, io, { slots: io.light.room.slots, size: io.light.room.size,
-                               snapDist: 0, at: ep.at, potItemId: ep.itemId, id: ep.id });
+                               snapDist: 0, at: ep.at, potItemId: ep.itemId, id: ep.id,
+                               usePot: false });
   } catch (e) { banner('심지 못했습니다', (e && e.message) || ''); return; }
   removeEmptyPot(S, id);
   banner('🪴 몬스테라를 심었습니다', '씨앗부터라 오래 걸립니다 — 물을 주고 밝은 자리에 두세요');
