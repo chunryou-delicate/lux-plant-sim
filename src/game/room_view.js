@@ -45,7 +45,11 @@ import { buildHouse, updateShellVisibility } from '../render3d/house.js';
    sunLight·skyPortals·조도 엔진 어느 쪽도 이 기하를 보지 않는다.
    (그래서 이걸 켜고 꺼도 test_banjiha_profile 의 숫자는 한 자리도 안 움직인다) */
 import { attachOutside, attachNeighbors } from './outside.js';
-import { winFromHouse } from '../engine/daylight_lux.js';
+/* ★ WEATHER·SEASON 은 **말 표**다(`ko`). 머리글에 한글로 적으려고 가져온다 —
+   여기서 '맑음' 을 새로 적으면 표가 두 벌이 되고 두 벌은 반드시 어긋난다. */
+import { winFromHouse, WEATHER, SEASON } from '../engine/daylight_lux.js';
+/* ★ 빛 분포 겹쳐 보기 (2026-08-16) — 판·숫자는 저쪽이 그린다. 여기는 값과 높이만 낸다. */
+import { attachLightHeatmap } from '../render3d/light_grid_labels.js';
 /* BAND_LOOK 은 밴드별 색·처짐 표다. 조립본에도 같은 표를 쓴다 —
    방과 확대가 같은 그루라면 "빛이 나쁘다"는 표시도 같아야 한다. */
 import { createPlantSample, applyBand, BAND_LOOK } from '../render3d/plant_sample.js';
@@ -1132,6 +1136,13 @@ export async function createRoomView(canvas, opts = {}) {
     frameRoom(true);
     applyDaylight();
     needsRender = true;
+
+    /* ★ 빛 분포를 켜 둔 채 방을 다시 지었으면 **다시 잰다** (2026-08-16).
+       가구를 옮기면 높이 지도(책상이 있던 칸이 바닥이 된다)와 그림자가 같이 바뀐다.
+       안 하면 화면이 **옮기기 전 방의 밝기**를 그대로 보여 준다 — 조용히 틀리는 유형이다.
+       ⚠ 꺼져 있으면 아무 일도 안 한다. 그림 하나 때문에 방 조립이 느려지면 안 된다. */
+    try { refreshLightHeatmap(); }
+    catch (e) { console.warn('[빛분포] 방을 다시 지은 뒤 못 쟀습니다 —', e.message); }
 
     /* 있던 사람은 새 방에도 세운다. 자리는 새 방 기준으로 다시 고른다.
        기다리지 않는다 — 캐릭터를 싣느라 방이 안 뜨면 안 된다.
@@ -6128,6 +6139,119 @@ export async function createRoomView(canvas, opts = {}) {
     return free;
   }
 
+  /* ============================================================
+     ★ 빛 분포 겹쳐 보기 (2026-08-16 · 박사님 "버튼 누르면 빛 분포 볼 수 있게")
+     ------------------------------------------------------------
+     배치 격자와 **같은 칸**에 조도(DLI)를 칠하고 칸마다 작은 숫자를 얹는다.
+     showGrid 바로 옆에 둔다 — **같은 격자를 쓰는 두 그림**이라 한자리에 있어야
+     나중에 누가 격자를 손댈 때 둘 다 눈에 들어온다.
+
+     ★★ 칸마다 **높이가 다르다** (박사님 2026-08-16 두 번째 지시)
+       *"화분 높이를 기본으로 하고, 표면 높이를 보여줘. 특히 가구가 있는 위치는 바닥이
+         아닌 가구 위 식물 두는 곳의 빛 결과가 보여야지. 가구 이동하면 이동한 거에 맞춰서."*
+       한 높이로 재면 반지하는 온 방이 DLI 0.0~0.3 이라 통째로 파랗다. 사람이 화분을 놓는
+       곳은 바닥이 아니라 **창턱·책상·서랍장 위**인데 그 자리가 화면에 아예 안 나온다.
+       ⇒ 칸마다 「그 칸의 표면」을 찾아 거기서 재고, **색칠도 그 높이에 얹는다.**
+
+     ⚠ **끈 상태가 기본이고 켤 때만 잰다.** 켜 놓고 매 프레임 다시 재면 폰이 멎는다.
+     ⚠ 값은 여기서 지어내지 않는다 — `lightEngine.dliAt` 이 낸다. 게임이 바닥을 눌렀을 때
+       "여기 놓으면 얼마"를 내는 그 함수 그대로다(game.html §surfaceAt→dliAt).
+       그래서 화면 숫자와 손가락으로 눌러 본 숫자가 못 갈린다.
+  ============================================================ */
+
+  /* 그 칸의 **표면** — 가구가 있으면 그 윗면, 없으면 바닥.
+     ------------------------------------------------------------
+     ★ 위에서 아래로 광선을 쏜다. `surfaceAt`(화면 좌표) 이 쓰는 판정과 **같은 자들**을
+       쓴다 — `faceUpY`·`SURF_UP_MIN`·`hiddenInScene`·`ownerOf`·`surfaceKindOf`·`FLOOR_Y`.
+       가구 상자(userData.size)로 어림잡지 않는 이유: 3단 선반처럼 단이 여럿인 것도,
+       돌려 놓은 책상도, 상판에 구멍이 난 것도 **눈에 보이는 그 면**을 그대로 집는다.
+     ★ 무엇을 넘겨받아 재나 — `occIdx`(자가차폐 제외 번호)를 같이 낸다. 이걸 안 넘기면
+       서랍장이 **제 상판에 제 그림자를 던져** 가구 위가 통째로 어둡게 나온다.
+       (light_adapter.dliAt 이 `occIdx` 로 그 가구를 차폐 목록에서 뺀다) */
+  const _srfRay = new THREE.Raycaster();
+  const _srfDown = new THREE.Vector3(0, -1, 0);
+  const _srfFrom = new THREE.Vector3();
+  function surfaceTopAt(x, z) {
+    const flat = { y: 0, onUid: null, occIdx: null };
+    if (!built || !built.furniture) return flat;
+    const b = roomBox();
+    _srfFrom.set(x, b.h + 0.5, z);
+    _srfRay.set(_srfFrom, _srfDown);
+    const hits = _srfRay.intersectObject(built.furniture, true);
+    for (const h of hits) {
+      if (!h.face || !h.object.isMesh) continue;
+      if (h.object.userData && h.object.userData.isPreview) continue;   // 유령은 면이 아니다
+      if (hiddenInScene(h.object)) continue;
+      const m = Array.isArray(h.object.material) ? h.object.material[0] : h.object.material;
+      if (m && (m.colorWrite === false || (m.transparent && m.opacity < 0.95))) continue;
+      if (faceUpY(h) <= SURF_UP_MIN) continue;
+      const own = ownerOf(h.object);
+      if (!own) continue;
+      if (surfaceKindOf(own)) continue;              // 매달린 조명·자리 없는 벽걸이는 면이 아니다
+      const sz = own.userData.size;
+      /* 러그처럼 **납작하고 또 바닥 높이인 것** 위는 그냥 바닥이다(surfaceAt 과 같은 규약) */
+      if (sz && sz.h <= 0.06 && h.point.y < FLOOR_Y) continue;
+      return { y: +h.point.y.toFixed(4), onUid: own.userData.uid || null,
+               occIdx: Number.isInteger(own.userData.occIdx) ? own.userData.occIdx : null };
+    }
+    return flat;
+  }
+
+  let heatView = null, heatOpt = null;
+  function heatProbe(opt) {
+    const c = { weather: opt.weather || 'clear', season: opt.season || 'summer',
+                lampCount: opt.lampCount | 0,
+                litHours: opt.litHours == null ? 12 : opt.litHours };
+    /* 표면에서 얼마나 더 올려서 잴 것인가. **기본은 0 이다.**
+       ⚠ 박사님이 "화분 높이를 기본으로" 라 하셨는데, 이 저장소에 **화분 키 상수는 없다**
+         (MONSTERA_POT_D 0.20 은 지름이다). 그리고 게임이 이미 쓰는 규약이 있다 —
+         바닥·상판을 눌렀을 때 `surfaceAt` 이 내는 `y`(= 표면 높이) 를 그대로
+         `io.light.dliAt` 에 넣는다(game.html). 화분 자리(plantSlots)의 `y` 도 상판 높이다.
+         여기서 임의로 12cm 를 더하면 **화면 숫자가 손가락으로 눌러 본 숫자와 갈린다.**
+         ⇒ 없는 숫자를 지어내지 않는다. 「화분 높이」= 화분이 서는 면의 높이로 읽는다.
+         정말 잎 높이에서 보고 싶으면 `{ lift: 0.12 }` 로 부르면 되게 손잡이만 남긴다. */
+    const lift = Number.isFinite(opt.lift) ? opt.lift : 0;
+    return (x, z) => {
+      const s = surfaceTopAt(x, z);
+      const p = { x, y: +(s.y + lift).toFixed(4), z };
+      return { value: O.lightEngine.dliAt(p, { ...c, occIdx: s.occIdx }).dli,
+               y: s.y, onUid: s.onUid };
+    };
+  }
+  function heatLabel(opt) {
+    const w = (WEATHER[opt.weather || 'clear'] || {}).ko || opt.weather || '';
+    const s = (SEASON[opt.season || 'summer'] || {}).ko || opt.season || '';
+    const n = opt.lampCount | 0;
+    return `${w} · ${s} · 등 ${n}개`;
+  }
+  function setLightHeatmap(on, opt = {}) {
+    if (!on) { heatOpt = null; if (heatView) heatView.set(false); return false; }
+    if (!built) throw new Error('[빛분포] 방이 아직 안 지어졌습니다');
+    if (!O.lightEngine || typeof O.lightEngine.dliAt !== 'function')
+      throw new Error('[빛분포] 조도 엔진이 없습니다 — createRoomView 에 lightEngine 을 넘기십시오');
+    heatOpt = opt;
+    const probeAt = heatProbe(opt);
+    const unit = opt.unit || 'DLI mol/m²·d · 표면';
+    const extra = opt.extra || heatLabel(opt);
+    if (!heatView) heatView = attachLightHeatmap(view, {
+      canvas, probeAt, unit, extra,
+      /* 벽 속 칸은 안 칠한다 — 배치 격자가 안 그리는 그 칸이다(§gridSpan) */
+      keep: (i, j) => gridSpan().at(i, j),
+      captionPos: opt.captionPos, fontPx: opt.fontPx, minGapPx: opt.minGapPx
+    });
+    else heatView.refresh({ probeAt, unit, extra });
+    heatView.set(true);
+    return true;
+  }
+  /* 방을 다시 지었다 → **켜져 있을 때만** 다시 잰다.
+     ⚠ 가구를 옮기면 ⓐ 높이 지도 ⓑ 그림자가 같이 바뀐다. 둘 다 여기서 따라간다.
+     ⚠ 끄는 **동안**에는 안 부른다 — commitFurnitureAt(손 뗄 때 한 번)만 여기로 온다. */
+  function refreshLightHeatmap() {
+    if (!heatView || !heatView.isOn() || !heatOpt) return false;
+    heatView.refresh({ probeAt: heatProbe(heatOpt) });
+    return true;
+  }
+
   function disposeFurnGhost() {
     if (!furnGhost) return;
     houseGroup.remove(furnGhost.group);
@@ -8808,6 +8932,35 @@ export async function createRoomView(canvas, opts = {}) {
                free: gridGroup ? gridGroup.userData.free : null,
                blocked: gridGroup ? gridGroup.userData.blocked : null };
     },
+    /* ── ★ 빛 분포 겹쳐 보기 (2026-08-16) ──
+       roomView.setLightHeatmap(true, { weather, season, lampCount, litHours })
+       roomView.setLightHeatmap(false)
+       roomView.refreshLightHeatmap()     조건은 그대로 두고 다시 재기(켜져 있을 때만)
+       roomView.lightHeatmap()            지금 상태·잰 값·라벨 수 (검증용)
+
+       ★ 칸마다 **그 칸의 표면**(가구 윗면 · 없으면 바닥)에서 잰다. 가구를 옮기면 저절로
+         따라간다(assemble 끝에서 다시 잰다).
+       ⚠ 버튼은 game.html 몫이다. 여기는 켜고 끄는 창구만 낸다.
+       ⚠ 조건(날씨·계절·등 개수)은 **호출부가 준다.** 안 주면 맑음·여름·등 0개로 재고
+         그 사실을 머리글에 그대로 적는다 — 화면이 조건을 숨기지 않는다. */
+    setLightHeatmap(on, opt) {
+      try { return setLightHeatmap(!!on, opt || {}); } catch (e) { throw fail(e); }
+    },
+    refreshLightHeatmap() {
+      try { return refreshLightHeatmap(); } catch (e) { throw fail(e); }
+    },
+    lightHeatmap() {
+      return heatView ? heatView.stats() : { on: false, cells: 0, onFurniture: 0, labels: null };
+    },
+    /* 화면이 칠한 칸 **전부**(검증용) — [{ i, j, x, y, z, onUid, value }]
+       ★ `y` 가 그 칸의 **표면 높이**다. `onUid` 가 있으면 가구 위 칸이다. */
+    lightHeatmapCells() { return heatView ? heatView.cells() : []; },
+    /* 숫자를 적은 칸만 — 글자까지 같이 낸다 */
+    lightHeatmapLabels() { return heatView ? heatView.readback() : []; },
+    /* 그 자리의 **표면 높이** — 빛 분포가 쓰는 높이 지도를 한 점만 물어본다.
+       { y, onUid, occIdx } · 가구가 없으면 y=0·onUid=null */
+    surfaceTopAt(x, z) { try { return surfaceTopAt(x, z); } catch (e) { throw fail(e); } },
+
     /* 길이[m] → 칸 수(올림). UI 가 "책상 24×12칸" 같은 표시를 만들 때 쓴다 */
     cellsOf(m) { return unitsFor(m); },
     /* ★ 옮길 때의 걸음[m] — 화면이 surfaceAt·previewFurnitureAt 에 그대로 넣는다.
@@ -9381,6 +9534,8 @@ export async function createRoomView(canvas, opts = {}) {
       disposeFurnGhost();
       clearFurnHighlight();
       clearGuideRings();
+      /* ★ 빛 분포 — 감쌌던 renderer.render 를 되돌리고 숫자 <div> 를 DOM 에서 걷는다 */
+      if (heatView) { heatView.dispose(); heatView = null; heatOpt = null; }
       clearGrid();
       clearFurnitureBlobs();
       disposeWalkGhost();

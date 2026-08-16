@@ -128,12 +128,16 @@ export function createLightGridLabels(o = {}) {
     return { x: (v3.x * 0.5 + 0.5) * box.w, y: (-v3.y * 0.5 + 0.5) * box.h };
   }
 
+  /* 숫자를 띄우는 높이 — **그 칸의 표면 위**다(칸마다 다르다). o.lift 만큼 더 든다. */
+  const lift = o.lift ?? 0.02;
+  const yOf = (i, j) => (grid && typeof grid.yAt === 'function' ? grid.yAt(i, j) : 0) + lift;
+
   /* 지금 화면에서 한 칸이 몇 px 인가 — 격자 한가운데의 이웃 두 칸으로 잰다 */
   function cellPx() {
     if (!grid) return 0;
-    const i = Math.floor(grid.nx / 2), j = Math.floor(grid.nz / 2);
-    const a = grid.centerOf(i, j), b = grid.centerOf(Math.min(grid.nx - 1, i + 1), j);
-    const pa = project(a.x, o.y ?? 0.02, a.z), pb = project(b.x, o.y ?? 0.02, b.z);
+    const i = Math.floor(grid.nx / 2), j = Math.floor(grid.nz / 2), i2 = Math.min(grid.nx - 1, i + 1);
+    const a = grid.centerOf(i, j), b = grid.centerOf(i2, j);
+    const pa = project(a.x, yOf(i, j), a.z), pb = project(b.x, yOf(i2, j), b.z);
     if (!pa || !pb) return 0;
     return Math.hypot(pb.x - pa.x, pb.y - pa.y);
   }
@@ -148,10 +152,56 @@ export function createLightGridLabels(o = {}) {
     /* 가장자리에 치우치지 않게 가운데 정렬로 고른다 */
     const si = Math.floor(((grid.nx - 1) % step) / 2), sj = Math.floor(((grid.nz - 1) % step) / 2);
     const next = [];
+    /* ★ 겹침을 막는 최소 거리 — **글자 폭**이 기준이다. 「몇 px 떨어져라」를 지어내면
+       글자가 그보다 넓을 때 그대로 겹친다(첫 판: 최소 거리 26px 인데 글자 폭이 28px 이었다).
+       한글·숫자가 아니라 등폭 글꼴이므로 폭은 글자 수 × 약 0.62em 로 정확히 어림된다. */
+    const maxLen = format(grid.max).length;
+    const gapMin = Math.max(minGapPx * 0.6, fontPx * 0.62 * maxLen + 2);
     for (let i = si; i < grid.nx; i += step) for (let j = sj; j < grid.nz; j += step) {
       if (!grid.has(i, j)) continue;
       const c = grid.centerOf(i, j);
       next.push({ i, j, x: c.x, z: c.z, el: null });
+    }
+    /* ★ 가구 위 칸은 **건너뛰지 않는다** (2026-08-16 · 박사님 "가구 위 식물 두는 곳").
+       서랍장 상판은 두세 칸뿐이라 「3칸마다」에 걸리면 통째로 빠진다 — 그러면 이번 변경의
+       핵심이 화면에 안 나온다. 가구마다 **제일 밝은 칸 하나**를 반드시 적는다.
+       ⚠ 그 칸이 이미 뽑혀 있으면 또 넣지 않는다(같은 자리에 숫자가 두 겹으로 찍힌다).
+       ⚠⚠ **화면 거리로도 막는다.** 칸 번호가 달라도 화면에서는 붙어 있을 수 있다 —
+         첫 판(surface_s2)에서 `0.63` 옆에 `0.58` 이 겹쳐 찍혀 둘 다 안 읽혔다.
+         가구 위 값이 아무리 중요해도 **겹쳐서 못 읽으면 없는 것과 같다.** */
+    if (typeof grid.ownerAt === 'function') {
+      const picked = new Set(next.map(s => s.j * grid.nx + s.i));
+      const spots = [];
+      for (const s of next) { const p = project(s.x, yOf(s.i, s.j), s.z); if (p) spots.push(p); }
+      const near = p => spots.some(q => Math.hypot(q.x - p.x, q.y - p.y) < gapMin);
+      const best = new Map();
+      for (let i = 0; i < grid.nx; i++) for (let j = 0; j < grid.nz; j++) {
+        const uid = grid.has(i, j) ? grid.ownerAt(i, j) : null;
+        if (!uid) continue;
+        const v = grid.value(i, j), b = best.get(uid);
+        if (!b || v > b.v) best.set(uid, { i, j, v });
+      }
+      /* 밝은 가구부터 자리를 준다 — 자리가 모자라면 어두운 쪽이 양보하는 것이 맞다 */
+      for (const b of [...best.values()].sort((a, c) => c.v - a.v)) {
+        if (picked.has(b.j * grid.nx + b.i)) continue;
+        const c = grid.centerOf(b.i, b.j);
+        const p = project(c.x, yOf(b.i, b.j), c.z);
+        if (!p || near(p)) continue;
+        spots.push(p);
+        next.push({ i: b.i, j: b.j, x: c.x, z: c.z, el: null });
+      }
+    }
+    /* ★ 남은 겹침도 걷는다 — 격자 숫자끼리도 시점에 따라 붙는다(바닥·가구 위가 화면에서
+       같은 자리에 겹치는 경우). 화면 거리로 한 번 더 훑어 늦게 온 쪽을 뺀다. */
+    {
+      const kept = [], pts = [];
+      for (const s of next) {
+        const p = project(s.x, yOf(s.i, s.j), s.z);
+        if (!p) { kept.push(s); continue; }              // 화면 밖은 update 가 감춘다
+        if (pts.some(q => Math.hypot(q.x - p.x, q.y - p.y) < gapMin)) continue;
+        pts.push(p); kept.push(s);
+      }
+      next.length = 0; next.push(...kept);
     }
     /* 남는 <span> 은 지우지 않고 감춰 둔다 — 껐다 켰다 열 번에 DOM 이 늘면 안 된다 */
     for (let k = 0; k < next.length; k++) {
@@ -200,9 +250,8 @@ export function createLightGridLabels(o = {}) {
       /* 줌이 30% 넘게 달라졌으면 몇 칸마다 적을지부터 다시 고른다 */
       if (px > 0.5 && (fitPx <= 0.5 || px / fitPx > 1.3 || fitPx / px > 1.3)) refit();
       let n = 0;
-      const yy = o.y ?? 0.02;
       for (const s of shown) {
-        const p = project(s.x, yy, s.z);
+        const p = project(s.x, yOf(s.i, s.j), s.z);
         if (!p || p.x < -20 || p.y < -20 || p.x > box.w + 20 || p.y > box.h + 20) {
           s.el.style.visibility = 'hidden';
           continue;
@@ -213,11 +262,26 @@ export function createLightGridLabels(o = {}) {
       }
       return n;
     },
-    /* 재는 창구 — 「몇 개를 그렸나 · 글자가 몇 px 인가」 */
+    /* 재는 창구 — 「몇 개를 그렸나 · 글자가 몇 px 인가 · 제일 붙은 둘이 몇 px 인가」 */
     stats() {
       const first = shown.find(s => s.el && s.el.style.visibility !== 'hidden');
       const r = first ? first.el.getBoundingClientRect() : null;
+      /* ★ 겹쳤나를 **화면에서 직접** 잰다 — 「3칸마다」 같은 규칙만 보면 시점에 따라
+         붙어 버린 것을 못 잡는다(첫 판이 그랬다). 그린 것끼리의 최소 거리다. */
+      let closest = Infinity;
+      const ps = [];
+      for (const s of shown) {
+        if (!s.el || s.el.style.visibility === 'hidden') continue;
+        const p = project(s.x, yOf(s.i, s.j), s.z);
+        if (!p) continue;
+        for (const q of ps) {
+          const d = Math.hypot(q.x - p.x, q.y - p.y);
+          if (d < closest) closest = d;
+        }
+        ps.push(p);
+      }
       return {
+        closestPx: ps.length > 1 ? +closest.toFixed(1) : 0,
         visible, step, cellPx: +fitPx.toFixed(2), fontPx,
         labels: shown.length,
         drawn: shown.filter(s => s.el && s.el.style.visibility !== 'hidden').length,
@@ -228,10 +292,15 @@ export function createLightGridLabels(o = {}) {
         captionPx: +cap.getBoundingClientRect().height.toFixed(2)
       };
     },
-    /* 화면이 실제로 들고 있는 값 — 엔진 값과 대조할 때 쓴다(화면이 거짓말하나) */
+    /* 화면이 실제로 들고 있는 값 — 엔진 값과 대조할 때 쓴다(화면이 거짓말하나).
+       ★ **높이와 가구 uid 도 같이 낸다** — 「가구 위 점」으로 대조하려면 그 y 로 물어야 한다. */
     readback() {
-      return shown.map(s => ({ i: s.i, j: s.j, x: +s.x.toFixed(4), z: +s.z.toFixed(4),
-                               text: s.el.textContent, value: grid.value(s.i, s.j) }));
+      return shown.map(s => ({
+        i: s.i, j: s.j, x: +s.x.toFixed(4), z: +s.z.toFixed(4),
+        y: +(typeof grid.yAt === 'function' ? grid.yAt(s.i, s.j) : 0).toFixed(4),
+        onUid: typeof grid.ownerAt === 'function' ? grid.ownerAt(s.i, s.j) : null,
+        text: s.el.textContent, value: grid.value(s.i, s.j)
+      }));
     },
     dispose() {
       root.remove();
@@ -246,10 +315,10 @@ export function createLightGridLabels(o = {}) {
    ------------------------------------------------------------
    view   room_view 의 공개 객체. 여기서 쓰는 것은 **공개 API 뿐**이다
           (three · grid() · roomSize() · redraw()). 내부에 손을 안 댄다.
-   opt.valueAt  (x, z) => 값     ★ 필수. 조도 엔진이 내는 값을 그대로 받는다.
+   opt.probeAt  (x, z) => { value, y, onUid }   ★ 필수. **값도 높이도 방이 낸다.**
+                여기서 지어내는 것은 없다 — 그래야 화면과 판정이 못 갈린다.
    opt.unit     '(DLI) mol/m²·d' 처럼 **무슨 값인지**. 필수 — 화면이 단위를 지어내지 않는다.
-   opt.extra    조건 한 줄('맑음·여름·등 0개') — 무엇을 켜고 껐는지 화면이 말한다
-   opt.y        값을 재는 높이[m]. 기본 0(바닥). 화면 라벨은 그보다 살짝 위에 뜬다.
+   opt.extra    조건 한 줄('맑음 · 여름 · 등 0개') — 무엇을 켜고 껐는지 화면이 말한다
 
    ★ 끈 상태가 기본이고, **켤 때만 잰다.** off 면 판도 숫자도 아무 일을 안 한다.
 ============================================================ */
@@ -280,43 +349,42 @@ export function attachLightHeatmap(view, opt = {}) {
     unwrap = () => { r.render = orig; unwrap = null; };
   }
 
-  function build() {
-    const G = geom();
-    const k = `${G.roomId}|${G.nx}x${G.nz}|${G.cell}`;
-    if (mesh && key === k) return G;
-    drop();
-    key = k;
-    /* opt.keep 을 주면 **벽 속 칸을 안 칠한다**(room_view 의 gridSpan().at 을 그대로 넘기면 된다).
-       안 주면 네모 전체를 칠한다 — 공개 API 만으로 붙일 때는 그 표를 못 얻는다. */
-    const has = opt.keep ? ((i, j) => !!opt.keep(i, j)) : (() => true);
-    mesh = buildCellHeatmap({ nx: G.nx, nz: G.nz, x0: G.x0, z0: G.z0, cell: G.cell, has },
-                            { y: opt.y3d ?? 0.0022, opacity: opt.opacity ?? 0.45,
-                              renderOrder: opt.renderOrder ?? 1, depthTest: opt.depthTest });
-    mesh.visible = false;
-    ctx.scene.add(mesh);
-    labels = createLightGridLabels({ canvas, camera: ctx.cam,
-                                     fontPx: opt.fontPx, minGapPx: opt.minGapPx,
-                                     captionPos: opt.captionPos,
-                                     format: opt.format, y: (opt.y ?? 0) + 0.02 });
-    return G;
-  }
-
   function drop() {
     if (mesh) { ctx.scene.remove(mesh); mesh.geometry.dispose(); mesh.material.dispose(); mesh = null; }
     if (labels) { labels.dispose(); labels = null; }
     gridData = null; key = '';
   }
 
-  /* 실제로 잰다 — 여기가 유일하게 엔진을 부르는 자리다 */
+  /* 실제로 잰다 — 여기가 유일하게 방·엔진을 부르는 자리다.
+     ⚠ **재고 나서 판을 짓는다.** 칸마다 높이가 다르므로 격자를 모르면 판을 못 짓는다.
+       칸 수가 그대로면 판은 다시 안 짓고 높이·색만 갈아 끼운다(가구를 옮겼을 때). */
   function measure() {
-    if (typeof opt.valueAt !== 'function')
-      throw new Error('[빛분포] valueAt 이 없습니다 — 값은 조도 엔진이 냅니다');
-    const G = build();
+    if (typeof opt.probeAt !== 'function')
+      throw new Error('[빛분포] probeAt 이 없습니다 — 값도 높이도 방이 냅니다');
+    const G = geom();
+    const k = `${G.roomId}|${G.nx}x${G.nz}|${G.cell}`;
     const t0 = (typeof performance !== 'undefined' ? performance.now() : Date.now());
-    gridData = sampleLightGrid({ nx: G.nx, nz: G.nz, x0: G.x0, z0: G.z0, cell: G.cell,
-                                 valueAt: opt.valueAt, keep: opt.keep });
+    /* ⚠ **먼저 지역 변수에 받는다.** 아래 drop() 이 gridData 를 비우므로, 여기서 바로
+       gridData 에 넣으면 판을 지을 때 null 을 넘기게 된다(실제로 그렇게 터졌다). */
+    const g = sampleLightGrid({ nx: G.nx, nz: G.nz, x0: G.x0, z0: G.z0, cell: G.cell,
+                                probeAt: opt.probeAt, keep: opt.keep });
     lastMs = (typeof performance !== 'undefined' ? performance.now() : Date.now()) - t0;
-    lastCells = gridData.count;
+    lastCells = g.count;
+    if (!mesh || key !== k) {
+      const wasVisible = !!(mesh && mesh.visible);
+      drop();
+      key = k;
+      mesh = buildCellHeatmap(g,
+                              { y: opt.y3d ?? 0.0022, opacity: opt.opacity ?? 0.45,
+                                renderOrder: opt.renderOrder ?? 1, depthTest: opt.depthTest });
+      mesh.visible = wasVisible;
+      ctx.scene.add(mesh);
+      labels = createLightGridLabels({ canvas, camera: ctx.cam,
+                                       fontPx: opt.fontPx, minGapPx: opt.minGapPx,
+                                       captionPos: opt.captionPos,
+                                       format: opt.format, lift: opt.labelLift });
+    }
+    gridData = g;
     updateCellHeatmap(mesh, gridData);
     labels.set(gridData, { unit: opt.unit, extra: opt.extra });
     return gridData;
@@ -342,9 +410,9 @@ export function attachLightHeatmap(view, opt = {}) {
       labels.update();
       return on;
     },
-    /* 조건이 바뀌었다(날이 갔다·등을 켰다·가구를 옮겼다) → 다시 잰다. 꺼져 있으면 아무 일도 안 한다. */
+    /* 조건이 바뀌었다(날이 갔다·등을 켰다) → 다시 잰다. 꺼져 있으면 아무 일도 안 한다. */
     refresh(next = {}) {
-      if (next.valueAt) opt.valueAt = next.valueAt;
+      if (next.probeAt) opt.probeAt = next.probeAt;
       if (next.unit) opt.unit = next.unit;
       if (next.extra !== undefined) opt.extra = next.extra;
       if (!on) return false;
@@ -359,23 +427,47 @@ export function attachLightHeatmap(view, opt = {}) {
     /* 한 장 그린 뒤 숫자 자리를 다시 잡는다. 기본은 renderer.render 를 감싸 저절로 돌지만,
        호스트가 `hookRender:false` 로 끄고 자기 루프에서 부르고 싶으면 이것을 쓴다. */
     tick() { return (on && labels) ? labels.update() : 0; },
-    /* 방을 다시 지었다(가구를 옮겼다·방을 갈아탔다) → 판을 버리고 다시 짓는다.
-       ⚠ 격자 칸 수가 그대로여도 **차폐가 달라져 값이 바뀐다.** 켜져 있으면 다시 잰다. */
-    rebuild() { const was = on; drop(); if (was) { measure(); mesh.visible = true;
-                                                   labels.setVisible(true); view.redraw(); labels.update(); }
-                return was; },
+    /* 방을 다시 지었다(**가구를 옮겼다**·방을 갈아탔다) → 다시 잰다.
+       ⚠ 두 가지가 같이 바뀐다 — ⓐ 높이 지도(책상이 있던 칸이 바닥이 된다)
+         ⓑ 그림자(차폐가 움직인다). 그래서 색만이 아니라 **판의 높이까지** 다시 잡아야 한다.
+       ⚠ 꺼져 있으면 **아무 일도 안 한다.** 옮길 때마다 재면 폰이 멎는다.
+       ⚠ 판은 버리지 않는다 — 칸 수가 같으면 높이·색만 갈아 끼운다(지오메트리가 안 샌다). */
+    rebuild() {
+      if (!on) return false;
+      measure();
+      mesh.visible = true;
+      labels.setVisible(true);
+      view.redraw();
+      labels.update();
+      return true;
+    },
     stats() {
       return {
         on, key,
         cells: lastCells, ms: +lastMs.toFixed(1),
         min: gridData ? +gridData.min.toFixed(3) : null,
         max: gridData ? +gridData.max.toFixed(3) : null,
+        /* 높이 지도가 실제로 도는지 재는 자가 보는 두 값 */
+        onFurniture: gridData ? gridData.onFurniture : 0,
+        yMax: gridData ? +gridData.yMax.toFixed(3) : 0,
         tris: mesh ? mesh.geometry.index.count / 3 : 0,
         labels: labels ? labels.stats() : null
       };
     },
-    /* 화면이 들고 있는 값 그대로 — 엔진과 대조할 때 쓴다 */
+    /* 숫자를 적은 칸만 — 「글자가 값을 옳게 줄였나」를 재는 자가 쓴다 */
     readback() { return labels ? labels.readback() : []; },
+    /* ★ 칠한 칸 **전부** — 자리·표면 높이·가구 uid·값. 화면이 거짓말하나를 여기서 대조한다. */
+    cells() {
+      if (!gridData) return [];
+      const out = [];
+      for (let i = 0; i < gridData.nx; i++) for (let j = 0; j < gridData.nz; j++) {
+        if (!gridData.has(i, j)) continue;
+        const c = gridData.centerOf(i, j);
+        out.push({ i, j, x: +c.x.toFixed(4), y: +gridData.yAt(i, j).toFixed(4), z: +c.z.toFixed(4),
+                   onUid: gridData.ownerAt(i, j), value: gridData.value(i, j) });
+      }
+      return out;
+    },
     valueAtCell(i, j) { return gridData ? gridData.value(i, j) : null; },
     grid() { return gridData; },
     dispose() { on = false; if (unwrap) unwrap(); drop(); }

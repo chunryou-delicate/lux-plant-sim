@@ -140,20 +140,26 @@ async function bootGame(page) {
   await sleep(600);
 }
 
-/* 페이지 안에 창구를 심는다 — room_view 를 못 고치는 동안은 **공개 API 로만** 붙인다.
-   (room_view.js 는 지금 다른 창이 들고 있다. 붙일 코드는 보고서에 적었다) */
-const INSTALL = `(async () => {
-  const mod = await import('/src/render3d/light_grid_labels.js');
+/* 페이지 안에 창구를 심는다 — **room_view 의 공개 API 를 그대로 쓴다**(game.html 이 부를 그 길).
+   ⚠ 자기가 붙인 것을 자기가 재면 안 된다. 여기서 재는 것은 `roomView.setLightHeatmap` 이다. */
+const INSTALL = `(() => {
   const rv = window.__rv, io = window.__io, S = window.__S();
   const sky = io.light.skyFor(S.day, S.sim);
   window.__lightCond = { weather: sky.weather, season: sky.season,
                          lampCount: S.lamps.count, litHours: S.lamps.litHours };
-  window.__dliAt = (x, z) => io.light.dliAt({ x, y: 0, z }, window.__lightCond).dli;
-  window.__heat = mod.attachLightHeatmap(rv, {
-    valueAt: (x, z) => window.__dliAt(x, z),
-    unit: 'DLI mol/m²·d · 바닥',
-    extra: sky.weather + '·' + sky.season + '·등 ' + S.lamps.count + '개'
-  });
+  /* 엔진에 직접 묻는 길 — 화면 값과 대조할 때 쓴다. **그 칸의 표면 높이**로 물어야 한다.
+     (surfaceTopAt 이 occIdx 도 낸다 — 안 넘기면 가구가 제 상판에 제 그림자를 던진다) */
+  window.__dliAt = (x, z) => {
+    const s = rv.surfaceTopAt(x, z);
+    return io.light.dliAt({ x, y: s.y, z }, { ...window.__lightCond, occIdx: s.occIdx }).dli;
+  };
+  window.__heat = {
+    set: on => rv.setLightHeatmap(on, window.__lightCond),
+    refresh: () => rv.refreshLightHeatmap(),
+    stats: () => rv.lightHeatmap(),
+    cells: () => rv.lightHeatmapCells(),
+    labels: () => rv.lightHeatmapLabels()
+  };
   const r = rv.three.renderer;
   window.__info = () => ({ tris: r.info.render.triangles, calls: r.info.render.calls,
                            geo: r.info.memory.geometries, tex: r.info.memory.textures,
@@ -177,13 +183,42 @@ await bootGame(page);
 await page.eval(INSTALL);
 await sleep(500);
 
-async function shot(name) {
+/* ⚠⚠ **죽은 사진 문턱은 3,000색이다** (§2.9-③ · 첫 판에서 여기 걸렸다).
+   200색으로 두었더니 **방이 통째로 새까만 프레임**(UI 만 그려진 것)이 1,939색으로
+   통과해서, 그 위에서 「끄고 켠 차이 77%」라는 숫자를 낼 뻔했다. 그건 히트맵 이야기가
+   아니라 「방이 아직 안 그려졌다」였다. 문헌 그대로 3,000색을 문턱으로 삼고 다시 찍는다. */
+const ALIVE = 3000;
+async function shot(name, tries = 5) {
   const f = `${IMG}/${name}_${TAG}.png`;
-  await page.shot(f);
-  let im = pngPixels(f), c = colorsOf(im);
-  if (c < 200) { await sleep(1500); await page.shot(f); im = pngPixels(f); c = colorsOf(im); }
+  let im = null, c = -1;
+  for (let k = 0; k < tries; k++) {
+    await page.shot(f);
+    im = pngPixels(f); c = colorsOf(im);
+    if (c >= ALIVE) break;
+    await sleep(2000);
+  }
+  if (c < ALIVE) console.log(`  ⚠ ${f} 가 ${c}색뿐이다 — 방이 안 그려진 프레임일 수 있다`);
   return { file: f, im, colors: c };
 }
+/* 방이 실제로 보일 때까지 기다린다 — Day 0 은 **새벽 06:0x 에 시작**해서 방이 아직 캄캄하다.
+   해가 뜨기를 기다리지 않고 재면 위 ⚠ 의 사고가 난다. */
+async function waitRoomLit(maxMs = 180000) {
+  const t0 = Date.now();
+  let last = 0;
+  while (Date.now() - t0 < maxMs) {
+    await page.shot(`${IMG}/_wait_${TAG}.png`);
+    last = colorsOf(pngPixels(`${IMG}/_wait_${TAG}.png`));
+    if (last >= ALIVE + 2000) break;
+    await sleep(3000);
+  }
+  try { fs.unlinkSync(`${IMG}/_wait_${TAG}.png`); } catch { }
+  const clock = await page.eval(`(()=>{const e=document.querySelector('#hudTime,#timePill,.hud .time');
+    return e ? e.textContent.trim() : '';})()`);
+  console.log(`  ☀ 방이 보이기까지 ${Math.round((Date.now() - t0) / 1000)}초 · 색 ${last}가지${clock ? ' · ' + clock : ''}`);
+  return last;
+}
+
+await waitRoomLit();
 
 /* ── ① 켜면 화면이 달라지나 ───────────────────────────────────────
    ⚠⚠ **대조군을 먼저 찍는다** (§2 재는 자를 먼저 의심하라).
@@ -224,8 +259,10 @@ console.log(`  칸 간격 ${L.cellPx}px · ${L.step}칸마다 · 라벨 ${L.labe
 ok('글자 높이 ≥ 10px', L.textPx >= 10, `${L.textPx}px (font ${L.fontPx}px)`);
 ok('숫자를 실제로 그렸다 (≥ 8개)', L.drawn >= 8, `${L.drawn}개`);
 ok('다 안 적는다 (칸 수보다 훨씬 적다)', L.labels < st.cells, `${L.labels} / ${st.cells}칸`);
-ok('숫자끼리 안 겹친다 (칸 간격×건너뛴 칸 ≥ 글자폭)',
-   L.cellPx * L.step >= L.textWidthPx, `${(L.cellPx * L.step).toFixed(1)}px ≥ ${L.textWidthPx}px`);
+/* ⚠ 규칙(「3칸마다」)이 아니라 **화면에서 제일 붙은 둘**을 잰다. 규칙만 보면 가구 위에
+   따로 찍는 숫자가 격자 숫자와 겹친 것을 못 잡는다(첫 판에서 0.63 위에 0.58 이 겹쳤다). */
+ok('숫자끼리 안 겹친다 (제일 붙은 둘 ≥ 글자폭)',
+   L.closestPx >= L.textWidthPx, `제일 붙은 둘 ${L.closestPx}px ≥ 글자폭 ${L.textWidthPx}px`);
 ok('머리글이 단위를 말한다', /DLI/.test(await page.eval(
    `document.querySelector('.byeot-lightgrid > div').textContent`)), '');
 
@@ -235,15 +272,14 @@ ok('머리글이 단위를 말한다', /DLI/.test(await page.eval(
      그래서 **켰을 때 화소가 실제로 바뀐 칸**(= 눈에 보이는 칸) 중에서 고른다. */
 console.log('\n⑤ 밝은 자리와 어두운 자리가 화면에서 다른 색인가');
 const allCells = await page.eval(`(() => {
-  const g = window.__heat.grid(), cam = window.__rv.three.cam;
+  const cam = window.__rv.three.cam;
   const cv = document.getElementById('roomCanvas'), r = cv.getBoundingClientRect();
   const out = [];
-  for (let i = 0; i < g.nx; i++) for (let j = 0; j < g.nz; j++) {
-    if (!g.has(i, j)) continue;
-    const c = g.centerOf(i, j);
-    const p = new THREE.Vector3(c.x, 0.003, c.z).project(cam);
+  for (const c of window.__heat.cells()) {
+    const p = new THREE.Vector3(c.x, c.y + 0.004, c.z).project(cam);
     if (p.z > 1) continue;
-    out.push({ i, j, v: g.value(i, j), wx: +c.x.toFixed(3), wz: +c.z.toFixed(3),
+    out.push({ i: c.i, j: c.j, v: c.value, onUid: c.onUid,
+               wx: +c.x.toFixed(3), wy: +c.y.toFixed(3), wz: +c.z.toFixed(3),
                x: r.left + (p.x * .5 + .5) * r.width, y: r.top + (-p.y * .5 + .5) * r.height });
   }
   return { cells: out, dpr: window.devicePixelRatio };
@@ -258,37 +294,44 @@ const spotLo = seen[0], spotHi = seen[seen.length - 1];
 const pHi = pixAt(after.im, spotHi.x * D, spotHi.y * D);
 const pLo = pixAt(after.im, spotLo.x * D, spotLo.y * D);
 const cdist = Math.abs(pHi[0] - pLo[0]) + Math.abs(pHi[1] - pLo[1]) + Math.abs(pHi[2] - pLo[2]);
-console.log(`  밝은 칸 (${spotHi.wx}, ${spotHi.wz}) DLI ${spotHi.v.toFixed(2)} → 화소 rgb(${pHi})`);
-console.log(`  어두운 칸 (${spotLo.wx}, ${spotLo.wz}) DLI ${spotLo.v.toFixed(2)} → 화소 rgb(${pLo})`);
+console.log(`  밝은 칸 (${spotHi.wx}, ${spotHi.wz}) y=${spotHi.wy}${spotHi.onUid ? ' [' + spotHi.onUid + ']' : ' [바닥]'}` +
+            ` DLI ${spotHi.v.toFixed(2)} → 화소 rgb(${pHi})`);
+console.log(`  어두운 칸 (${spotLo.wx}, ${spotLo.wz}) y=${spotLo.wy}${spotLo.onUid ? ' [' + spotLo.onUid + ']' : ' [바닥]'}` +
+            ` DLI ${spotLo.v.toFixed(2)} → 화소 rgb(${pLo})`);
 ok('값이 실제로 갈린다 (최대 ≥ 최소 + 0.1)', spotHi.v >= spotLo.v + 0.1,
    `${spotHi.v.toFixed(2)} vs ${spotLo.v.toFixed(2)}`);
 ok('화면 색이 다르다 (rgb 합 차 ≥ 90)', cdist >= 90, `${cdist}`);
 ok('밝은 쪽이 빨간 끝이다 (R > B)', pHi[0] > pHi[2], `R ${pHi[0]} > B ${pHi[2]}`);
 ok('어두운 쪽이 파란 끝이다 (B > R)', pLo[2] > pLo[0], `B ${pLo[2]} > R ${pLo[0]}`);
 
-/* ── ④ 화면 값 == 엔진 값인가 ───────────────────────────────────── */
+/* ── ④ 화면 값 == 엔진 값인가 ─────────────────────────────────────
+   ★ **가구 위 점으로도 대조한다** — 이번 변경의 핵심이 거기다. 바닥 점만 맞춰 보면
+     높이 지도가 통째로 틀려도 통과한다. */
 console.log('\n④ 화면이 들고 있는 값이 엔진 값과 같은가');
 const truth = await page.eval(`(() => {
-  const rb = window.__heat.readback();
-  const pick = [];
-  const step = Math.max(1, Math.floor(rb.length / 12));
-  for (let k = 0; k < rb.length; k += step) pick.push(rb[k]);
-  return pick.map(p => {
+  const all = window.__heat.cells();
+  const floor = all.filter(c => !c.onUid), furn = all.filter(c => c.onUid);
+  const take = (arr, n) => { const out = [], st = Math.max(1, Math.floor(arr.length / n));
+    for (let k = 0; k < arr.length && out.length < n; k += st) out.push(arr[k]); return out; };
+  return [...take(floor, 10), ...take(furn, 10)].map(p => {
     const engine = window.__dliAt(p.x, p.z);
-    return { i: p.i, j: p.j, x: p.x, z: p.z, screen: p.value, text: p.text,
-             engine, d: Math.abs(p.value - engine) };
+    return { i: p.i, j: p.j, x: p.x, y: p.y, z: p.z, onUid: p.onUid,
+             screen: p.value, engine, d: Math.abs(p.value - engine) };
   });
 })()`);
 const worst = truth.reduce((a, b) => (b.d > a.d ? b : a), truth[0]);
-for (const t of truth.slice(0, 6))
-  console.log(`  (${String(t.i).padStart(2)},${String(t.j).padStart(2)}) 화면 ${t.screen.toFixed(4)} ` +
-              `· 엔진 ${t.engine.toFixed(4)} · 글자 '${t.text}'`);
-ok(`엔진과 한 톨도 안 다르다 (${truth.length}점)`, worst.d < 1e-9,
-   `최대 차이 ${worst.d.toExponential(2)}`);
+const onFurn = truth.filter(t => t.onUid);
+for (const t of [...truth.filter(t => !t.onUid).slice(0, 3), ...onFurn.slice(0, 4)])
+  console.log(`  (${String(t.i).padStart(2)},${String(t.j).padStart(2)}) y=${t.y.toFixed(3)} ` +
+              `${t.onUid ? '[' + t.onUid + ']' : '[바닥]'} 화면 ${t.screen.toFixed(4)} · 엔진 ${t.engine.toFixed(4)}`);
+ok(`엔진과 한 톨도 안 다르다 (바닥 ${truth.length - onFurn.length}점 + 가구 위 ${onFurn.length}점)`,
+   worst.d < 1e-9, `최대 차이 ${worst.d.toExponential(2)}`);
+ok('가구 위 점으로도 대조했다', onFurn.length >= 5, `${onFurn.length}점`);
 /* 글자가 값을 제대로 줄였나 — 반올림 오차를 넘어서면 안 된다 */
-const badText = truth.filter(t => Math.abs(parseFloat(t.text) - t.engine) > 0.06);
+const lab = await page.eval(`window.__heat.labels()`);
+const badText = lab.filter(t => Math.abs(parseFloat(t.text) - t.value) > 0.06);
 ok('글자가 값을 옳게 줄였다 (오차 ≤ 0.06)', badText.length === 0,
-   badText.length ? `${badText.length}개 어긋남` : `${truth.length}개 다 맞음`);
+   badText.length ? `${badText.length}개 어긋남` : `${lab.length}개 다 맞음`);
 
 /* ── ③ 껐다 켰다 열 번 ─────────────────────────────────────────── */
 console.log('\n③ 껐다 켰다 열 번 — 새는 것이 있나');
@@ -361,12 +404,120 @@ console.log(`  🔬 대조군(같은 상태 두 장) ${gCtrl}% · 격자를 켜�
 ok('히트맵 위에서도 격자 눈금이 보인다 (대조군의 2배 넘게 바뀐다)',
    dGrid > Math.max(1.5, gCtrl * 2), `${dGrid}% (대조군 ${gCtrl}%)`);
 const gs = await page.eval(`window.__rv.grid()`);
+const hcells = await page.eval(`window.__heat.stats().cells`);
 console.log(`  격자 ${gs.room.cols}×${gs.room.rows}칸 · 한 칸 ${gs.cell}m · 그리는 칸 ${gs.room.cells} · ` +
-            `히트맵 칸 ${st.cells} ⇒ ${gs.room.cols === (await page.eval('window.__heat.grid().nx')) ? '같은 격자다' : '⚠ 다른 격자다'}`);
-ok('히트맵 칸 = 배치 격자 칸', gs.room.cols === (await page.eval(`window.__heat.grid().nx`)) &&
-   gs.room.rows === (await page.eval(`window.__heat.grid().nz`)),
-   `${gs.room.cols}×${gs.room.rows}`);
-await page.eval(`window.__rv.showGrid(false); window.__heat.set(false)`);
+            `히트맵 칸 ${hcells}`);
+ok('히트맵 칸 = 배치 격자가 그리는 칸', hcells === gs.room.cells, `${hcells} = ${gs.room.cells}`);
+await page.eval(`window.__rv.showGrid(false)`);
+
+/* ── ⑨ ★ 높이 지도 — 칸마다 「그 칸의 표면」에서 재는가 ────────────
+   박사님: *"가구가 있는 위치는 바닥이 아닌 가구 위 식물 두는 곳의 빛 결과가 보여야지."*
+   ⚠ 「가구 위 칸이 몇 개다」만 세면 안 된다 — 높이만 올려 두고 **값을 바닥 것으로**
+     내고 있어도 통과한다. 그래서 **바로 옆 바닥 칸과 값이 다른지**를 같이 잰다. */
+console.log('\n⑨ 칸마다 그 칸의 표면에서 재는가');
+const hm = await page.eval(`window.__heat.stats()`);
+console.log(`  칸 ${hm.cells} 중 가구 위 **${hm.onFurniture}칸** · 제일 높은 표면 ${hm.yMax}m`);
+ok('가구 위 칸이 있다', hm.onFurniture >= 8, `${hm.onFurniture}칸`);
+ok('표면 높이가 바닥이 아니다', hm.yMax > 0.3, `${hm.yMax}m`);
+
+const pairs = await page.eval(`(() => {
+  const all = window.__heat.cells();
+  const key = (i, j) => i + ',' + j;
+  const m = new Map(all.map(c => [key(c.i, c.j), c]));
+  const out = [];
+  for (const c of all) {
+    if (!c.onUid) continue;
+    for (const [di, dj] of [[1,0],[-1,0],[0,1],[0,-1]]) {
+      const n = m.get(key(c.i + di, c.j + dj));
+      if (!n || n.onUid) continue;
+      out.push({ uid: c.onUid, up: c.value, upY: c.y, down: n.value,
+                 x: c.x, z: c.z, d: c.value - n.value });
+      break;
+    }
+  }
+  return out;
+})()`);
+const dsort = [...pairs].sort((a, b) => Math.abs(b.d) - Math.abs(a.d));
+const same = pairs.filter(p => Math.abs(p.d) < 1e-9).length;
+console.log(`  가구 위 ↔ 바로 옆 바닥 짝 ${pairs.length}개 · 값이 똑같은 짝 ${same}개`);
+for (const p of dsort.slice(0, 4))
+  console.log(`    [${p.uid}] (${p.x.toFixed(2)}, ${p.z.toFixed(2)}) y=${p.upY.toFixed(2)}m ` +
+              `위 ${p.up.toFixed(2)} vs 옆 바닥 ${p.down.toFixed(2)} (차 ${p.d >= 0 ? '+' : ''}${p.d.toFixed(2)})`);
+ok('가구 위 값이 그 옆 바닥과 다르다 (짝의 80% 넘게)',
+   pairs.length > 0 && same / pairs.length < 0.2, `같은 짝 ${same}/${pairs.length}`);
+
+const byUid = await page.eval(`(() => {
+  const m = new Map();
+  for (const c of window.__heat.cells()) {
+    if (!c.onUid) continue;
+    const b = m.get(c.onUid);
+    if (!b || c.value > b.value) m.set(c.onUid, c);
+  }
+  return [...m.values()].sort((a, b) => b.value - a.value);
+})()`);
+console.log('  가구마다 제일 밝은 칸 (밝은 차례):');
+for (const c of byUid)
+  console.log(`    ${String(c.onUid).padEnd(22)} y=${c.y.toFixed(2)}m (${c.x.toFixed(2)}, ${c.z.toFixed(2)}) DLI ${c.value.toFixed(2)}`);
+ok('가구 위끼리도 밝기가 갈린다 (제일 밝은 가구 ≥ 제일 어두운 가구 + 0.1)',
+   byUid.length >= 2 && byUid[0].value >= byUid[byUid.length - 1].value + 0.1,
+   byUid.length >= 2 ? `${byUid[0].value.toFixed(2)} vs ${byUid[byUid.length - 1].value.toFixed(2)}` : '가구가 하나뿐');
+const hshot = await shot('surface');
+console.log(`  📷 표면 히트맵 ${hshot.file} 색 ${hshot.colors}가지`);
+
+/* ── ⑩ ★ 가구를 옮기면 따라오나 ───────────────────────────────────
+   박사님: *"가구 이동하면 이동한 거에 맞춰서 보여주고."*
+   두 가지가 같이 바뀌어야 한다 — ⓐ 높이 지도(있던 칸이 바닥이 된다) ⓑ 그림자. */
+console.log('\n⑩ 가구를 옮기면 값이 따라오나');
+const mv = await page.eval(`(async () => {
+  const rv = window.__rv;
+  /* 칸을 제일 많이 내는 가구를 고른다 — 옮기면 표가 크게 움직인다 */
+  const cnt = new Map();
+  for (const c of rv.lightHeatmapCells()) if (c.onUid) cnt.set(c.onUid, (cnt.get(c.onUid) || 0) + 1);
+  const uid = [...cnt.entries()].sort((a, b) => b[1] - a[1])[0][0];
+  const f = rv.furniture().find(x => x.uid === uid);
+  if (!f) return { err: '옮길 수 있는 가구 목록에 없습니다: ' + uid };
+  const before = rv.lightHeatmapCells().filter(c => c.onUid === uid)
+                   .map(c => ({ i: c.i, j: c.j, x: c.x, y: c.y, z: c.z, v: c.value }));
+  /* 갈 수 있는 자리를 찾는다 — 방을 훑어 furnitureFit 이 ok 라 하고 지금 자리에서 먼 곳 */
+  const b = rv.roomSize();
+  let to = null, far = 0;
+  for (let x = -b.w / 2 + 0.5; x <= b.w / 2 - 0.5; x += 0.25)
+    for (let z = -b.d / 2 + 0.5; z <= b.d / 2 - 0.5; z += 0.25) {
+      const fit = rv.furnitureFit(uid, { x: +x.toFixed(3), z: +z.toFixed(3), rot: f.rot });
+      if (!fit.ok) continue;
+      const d = Math.hypot(x - f.x, z - f.z);
+      if (d > far) { far = d; to = { x: +x.toFixed(3), z: +z.toFixed(3), rot: f.rot }; }
+    }
+  if (!to) return { err: '갈 수 있는 자리를 못 찾았습니다' };
+  const t0 = performance.now();
+  await rv.commitFurnitureAt(uid, to);
+  const ms = performance.now() - t0;
+  const after = rv.lightHeatmapCells();
+  const amap = new Map(after.map(c => [c.i + ',' + c.j, c]));
+  const moved = before.map(p => { const a = amap.get(p.i + ',' + p.j) || {};
+    return { i: p.i, j: p.j, x: p.x, y0: p.y, y1: a.y, v0: p.v, v1: a.value, on1: a.onUid || null }; });
+  const nowOn = after.filter(c => c.onUid === uid).length;
+  return { uid, from: { x: f.x, z: f.z }, to, dist: +far.toFixed(2), ms: +ms.toFixed(1),
+           moved, nowOn, stats: rv.lightHeatmap() };
+})()`);
+if (mv.err) { ok('가구를 옮겨서 재기', false, mv.err); }
+else {
+  console.log(`  [${mv.uid}] (${mv.from.x}, ${mv.from.z}) → (${mv.to.x}, ${mv.to.z}) · ${mv.dist}m ` +
+              `· 옮기고 다시 재기까지 ${mv.ms}ms (그중 격자 재기 ${mv.stats.ms}ms)`);
+  const yFell = mv.moved.filter(m => m.y1 != null && m.y1 < m.y0 - 0.05).length;
+  const vChanged = mv.moved.filter(m => m.v1 != null && Math.abs(m.v1 - m.v0) > 1e-9).length;
+  for (const m of mv.moved.slice(0, 4))
+    console.log(`    칸(${m.i},${m.j}) 높이 ${m.y0.toFixed(2)} → ${m.y1 == null ? '?' : m.y1.toFixed(2)}m · ` +
+                `DLI ${m.v0.toFixed(2)} → ${m.v1 == null ? '?' : m.v1.toFixed(2)}`);
+  ok('옮긴 자리의 표면이 바닥으로 내려앉았다', yFell >= mv.moved.length * 0.6,
+     `${yFell}/${mv.moved.length}칸`);
+  ok('옮긴 자리의 값이 바뀌었다', vChanged >= mv.moved.length * 0.6,
+     `${vChanged}/${mv.moved.length}칸`);
+  ok('새 자리에 가구 위 칸이 생겼다', mv.nowOn >= 1, `${mv.nowOn}칸`);
+  ok('다시 재는 데 1초를 안 넘는다', mv.stats.ms < 1000, `${mv.stats.ms}ms`);
+  const mshot = await shot('moved');
+  console.log(`  📷 옮긴 뒤 ${mshot.file} 색 ${mshot.colors}가지`);
+}
 
 /* ── ⑧ 시점을 움직여도 숫자가 따라오나 · 몇 칸마다를 다시 고르나 ────
    숫자는 HTML 이라 3D 와 저절로 같이 움직이지 않는다. 그래서 **그린 뒤마다** 자리를 다시
