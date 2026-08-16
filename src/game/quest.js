@@ -140,6 +140,44 @@ export const QUESTS = Object.freeze([
       .length >= ctx.q.need.sirus
   }),
 
+  /* ②-b ★★★ **시루를 늘린다** (2026-08-16 박사님 확정) ═══════════════════════════
+     박사님: *"100일째 정도 되니 **돈이 0원** 되어 버리네."* →
+            *"퀘스트로 만들어야 될 듯. 그 개수 달성하도록 (**체력도 1 주고**)"*
+
+     ★ **문턱을 재서 정했다.** 반지하 수확량 ×2 에서(§first_play 수확량 배수):
+         하루 지출 16,667원 · 밥으로 아낄 최대 4,867원 ⇒ 나머지는 파는 수밖에 없다
+         시루  8개 → 10,047원/일 (−6,620)
+         시루 12개 → 13,687원/일 (−2,980)
+         ★ 시루 **16개** → **17,327원/일 (+660)** ← 여기서 본전을 넘는다
+     ⇒ 그래서 **여덟과 열여섯**이다. 여덟은 「늘리면 는다」를 느끼는 자리고,
+       열여섯은 **살림이 실제로 흑자로 도는 자리**다. 지어낸 수가 아니다.
+     ⚠ 무순은 **개수가 아니라 있고 없고**다 — 밥 상한(4,867원)을 채우는 몫이라
+       한두 판이면 족하고, 그건 ①「한 상에 두 가지」가 이미 가르친다.
+     ⚠ 체력은 여기 안 적는다 — 값은 `data/balance/stamina.json` 것이다(§2.8). */
+  Object.freeze({
+    id: 'siru8',
+    ko: '여덟까지 늘린다',
+    teaches: ['시루를 늘리면 하루가 는다'],
+    why: '시루 하나가 하루 900원쯤을 만듭니다. 늘린 만큼 그대로 늘어납니다.',
+    need: Object.freeze({ sirus: 8 }),
+    todo: q => `콩나물 시루를 ${q.need.sirus}개까지 늘리세요`,
+    /* ★ ②를 끝낸 뒤에 연다 — 다섯 바퀴를 돌려 봐야 「늘린다」가 무슨 뜻인지 안다 */
+    opens: (s, ctx) => !!(ctx && ctx.doneIds.includes('siru5_cycle5')),
+    done:  (s, ctx) => arr(s.cropPots).filter(p => p && p.kind === 'beansprout').length >= ctx.q.need.sirus
+  }),
+
+  /* ②-c ★★★ **본전이 되는 자리** — 열여섯이다(위 ②-b 의 실측). */
+  Object.freeze({
+    id: 'siru16',
+    ko: '열여섯이면 버틴다',
+    teaches: ['열여섯이 살림의 본전이다'],
+    why: '여기서부터 하루가 마이너스에서 플러스로 돕니다. 그 전까지는 조금씩 깎입니다.',
+    need: Object.freeze({ sirus: 16 }),
+    todo: q => `콩나물 시루를 ${q.need.sirus}개까지 늘리세요`,
+    opens: (s, ctx) => !!(ctx && ctx.doneIds.includes('siru8')),
+    done:  (s, ctx) => arr(s.cropPots).filter(p => p && p.kind === 'beansprout').length >= ctx.q.need.sirus
+  }),
+
   /* ③ ★ **자를 수 있게 된 순간**에 열린다 — 모주 잎이 둘이 된 날이다.
      한 장뿐일 때 자르면 그루에 잎이 안 남는다(`varieSecond` 가 말하는 그것).
      가르치는 것: **잎 1장이라야 물꽂이**(확정문 `plan-2026-08-17-cutting §2-②`).

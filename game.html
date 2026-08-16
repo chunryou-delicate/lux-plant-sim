@@ -5065,11 +5065,15 @@ function drawBag() {
      사는 마음이 다른 물건이라 한 줄에 두면 고르기가 어렵다 — 그래서 셋으로 가른다.
    ★ **순서가 곧 배우는 순서다** — 씨앗 → 기르는 그릇 → 화분.
    ⚠ 이름을 화면 markup 에 안 적는다. 이 표가 정본이고 `drawShopGroups` 가 짓는다. */
+/* ⚠ 2026-08-16 — **[전체]를 맨 뒤로** 옮겼다(박사님: *"상점 세부 탭 순서 중 전체를 맨 뒤로"*).
+   ★ 앞에 두면 **처음 여는 사람이 제일 먼저 만나는 것이 「전부 섞인 목록」**이 된다.
+     갈래를 만든 까닭이 고르기 쉬우라는 것인데 그 첫인상이 그것을 지운다.
+   ★ 순서는 그대로 **배우는 순서**다 — 씨앗 → 기르는 그릇 → 화분 → (전체). */
 const SHOP_GROUPS = Object.freeze([
-  { id: 'all',   ko: '전체' },
   { id: 'seed',  ko: '씨앗' },
   { id: 'grow',  ko: '기르는 그릇' },
-  { id: 'pot',   ko: '화분' }
+  { id: 'pot',   ko: '화분' },
+  { id: 'all',   ko: '전체' }
 ]);
 /* 「보여 주는 화분」 — 카탈로그가 갈래를 안 갖고 있어 **id 로 가른다.**
    ⚠ 새 화분을 카탈로그에 넣을 때 여기도 늘려야 한다. 안 늘리면 [기르는 그릇]에 섞인다
@@ -5161,6 +5165,19 @@ function drawShop() {
      ⚠ 왜 감추나 — 유리 수경병은 **삽수를 꽂는 그릇**이다. 자를 줄 모르는 사람에게 팔면
        쓸 데가 없는 물건에 돈만 나간다(무순을 미리 팔던 그 병과 같은 결).
      ⚠ 첫 플레이가 꺼진 판(검수)에서는 안 감춘다 — 검수는 다 보여야 한다. */
+  /* ══ ★★ 몬스테라 것은 **선물이 온 뒤에** 보인다 (2026-08-16 박사님 확정) ═════════
+     박사님: *"몬스테라가 온 뒤에 신규 몬스테라를 심을 수 있게 하려면, **애초에 상점에서
+             안 보이게 했다가 그 이후 보이게** 해서 설명하든지 하자."*
+     ⚠ 지금은 **보이는데 못 심는다** — 사고 나서 놓으려 하면 「아직 심을 수 없습니다」가 뜬다
+       (첫 플레이 단계 기계가 선물 몬스테라를 축으로 돌아서다 · §commitPlace).
+       살 수 있는데 못 쓰는 물건은 **돈만 없어지는 함정**이다.
+     ⇒ 아예 안 보이게 한다. 선물이 오면 그때 나타나고, 그 순간이 곧 설명 자리다.
+     ★ 무순을 콩나물 3회전 뒤에 여는 것과 **같은 결**이다 — 쓸 수 있을 때 보인다.
+     ⚠ 첫 플레이가 꺼진 판(검수)에서는 안 감춘다. */
+  const MONSTERA_ITEMS = new Set(['monstera_seed', 'pot', 'pot_concrete_round',
+                                  'pot_terracotta', 'pot_ceramic', 'pot_concrete_square']);
+  const monsteraOpen = !(fp && fp.enabled) || !!(fp.monstera && fp.monstera.arrived);
+
   const CUT_ITEMS = new Set(['jar']);
   let cutOpen = !(fp && fp.enabled);
   if (!cutOpen) {
@@ -5172,6 +5189,7 @@ function drawShop() {
   }
   const shown = catalogList()
     .filter(it => musunOpen || !MUSUN_ITEMS.has(it.id))
+    .filter(it => monsteraOpen || !MONSTERA_ITEMS.has(it.id))
     .filter(it => cutOpen || !CUT_ITEMS.has(it.id));
   /* ★ 하부 탭 — 지금 화면에 있는 것만으로 짓는다. 빈 갈래는 안 만든다(누르면 빈 칸이 된다) */
   drawShopGroups(shown);
@@ -8700,7 +8718,20 @@ const placeMode = {
        **가구 메뉴가 영영 안 떴다** — 박사님이 *"의자 침대 책상은 저렇게 잘 뜨는데
        나머지 3단 거치대랑 서랍장은 안 뜨네"* 라 하신 그것이다. */
   pick(slotId) {
-    if (!this.target) { window.__byeotZoom.open(slotId); return true; }   // 배치 중이 아니면 그냥 상세
+    if (!this.target) {
+      /* ★★ 2026-08-16 — **빈 자리를 눌렀으면 탭을 안 먹는다** (박사님: *"3단이랑 창틀 받침은
+         가구인데 클릭해도 뭐가 안 뜨네?"*).
+         ⚠ 예전에는 **무조건 `true`** 를 냈다 — 빈 자리를 눌러도 「먹었다」고 해서
+           `pickFurnitureAt` 이 막혔고, **가구 메뉴가 영영 안 떴다.**
+           3단 선반은 윗칸이 아홉이라 어디를 눌러도 빈 자리에 맞는다. 그래서 그것만 안 됐다.
+         ⇒ 그 자리에 **실제로 뭔가 서 있을 때만** 상세를 열고 탭을 먹는다.
+           비었으면 그대로 흘려보내 가구 메뉴가 열리게 한다. */
+      let has = false;
+      try { has = (placedItemsForRoom() || []).some(it => it && it.slotId === slotId); } catch { has = false; }
+      if (!has) return false;
+      window.__byeotZoom.open(slotId);
+      return true;
+    }
     const sel = this.target === 'beansprout' ? $('cropSlot')
               : this.target === 'musun'      ? $('musunSlot') : $('slot');
     sel.value = slotId;

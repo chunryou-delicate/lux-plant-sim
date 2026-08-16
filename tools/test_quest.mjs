@@ -127,10 +127,16 @@ const steps = [
   /* 4  ② 가 열린 뒤 시루를 늘려 돌린다 — 아직 모자란다 */
   { ...S0, day: 60, firstPlayDone: true, motherLeaves: 1,
     cropPots: Array.from({ length: 5 }, () => ({ kind: 'beansprout', harvestCount: 4 })) },
+  /* 4-b ★ 시루를 여덟까지 늘린다 — ②-b 완료 (2026-08-16 신설) */
+  { ...S0, day: 64, firstPlayDone: true, lampUnlocked: false,
+    cropPots: Array.from({ length: 8 }, () => ({ kind: 'beansprout', harvestCount: 5 })) },
+  /* 4-c ★ 열여섯까지 — ②-c 완료. 여기서 살림이 본전을 넘는다(실측) */
+  { ...S0, day: 66, firstPlayDone: true,
+    cropPots: Array.from({ length: 16 }, () => ({ kind: 'beansprout', harvestCount: 5 })) },
   /* 5  ② 완료 · 모주 잎이 둘이 됐다 → ③ 열림.
         ★ 가을이 왔다 — 식물등이 풀린다(`ts.lamp.unlocked`) → ④ 열림 */
   { ...S0, day: 70, firstPlayDone: true, motherLeaves: 2, lampUnlocked: true,
-    cropPots: Array.from({ length: 5 }, () => ({ kind: 'beansprout', harvestCount: 5 })) },
+    cropPots: Array.from({ length: 16 }, () => ({ kind: 'beansprout', harvestCount: 5 })) },
   /* 6  물꽂이가 뿌리를 냈다 — ③ 완료. ★ 등을 샀다 — ④ 완료.
         무늬 잎이 났다 → ⑤ 열림 */
   { ...S0, day: 84, firstPlayDone: true, motherLeaves: 3, motherVarieLeaves: 1,
@@ -151,13 +157,13 @@ const steps = [
 ];
 steps.forEach((s, i) => step(i + 1, s));
 
-check('⑵ 여섯 줄이 전부 열린다', () => {
+check('⑵ 여덟 줄이 전부 열린다', () => {
   const got = openedAt.map(([id]) => id);
   for (const id of QUEST_IDS)
     assert.ok(got.includes(id), `'${id}' 가 한 번도 안 열렸습니다 — 없는 것과 같습니다`);
   info(`열린 차례 — ${openedAt.map(([id, n]) => `${n}걸음 ${id}`).join(' · ')}`);
 });
-check('⑵ 여섯 줄이 전부 끝난다', () => {
+check('⑵ 여덟 줄이 전부 끝난다', () => {
   const got = doneAt.map(([id]) => id);
   for (const id of QUEST_IDS) assert.ok(got.includes(id), `'${id}' 가 안 끝났습니다`);
   info(`끝난 차례 — ${doneAt.map(([id, n]) => `${n}걸음 ${id}`).join(' · ')}`);
@@ -198,7 +204,7 @@ check('⑸ ★ 세이브에 새 칸을 안 만들었다', () => {
 });
 
 /* ══ ⑹ 말이 실제로 나온다 ═══════════════════════════════════════════ */
-check('⑹ 열두 가지 대사가 전부 화면까지 나온다', () => {
+check('⑹ 열여섯 가지 대사가 전부 화면까지 나온다', () => {
   for (const id of [...Object.values(QUEST_OPEN_SCRIPT), ...Object.values(QUEST_DONE_SCRIPT)])
     assert.ok(said.includes(id), `'${id}' 가 사건은 났는데 대사가 안 나왔습니다`);
   info(`나온 대사 ${said.length}가지`);

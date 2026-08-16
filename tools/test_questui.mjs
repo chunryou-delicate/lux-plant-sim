@@ -31,6 +31,7 @@ import { launch, sleep } from './test_cdp.mjs';
    박아 둔 `=== 5` 넷이 한꺼번에 낡아 「고장」으로 읽혔다. 표가 정본이다(START-HERE §2.8).
    ⚠ 여기서 재야 하는 것은 「몇 줄인가」가 아니라 **「표에 있는 만큼 화면에 나오는가」**다. */
 import { QUESTS } from '../src/game/quest.js';
+import { STAMINA_RULES } from '../src/game/stamina.js';
 const NQ = QUESTS.length;
 
 const BASE = process.env.BYEOT_URL || 'http://localhost:8963';
@@ -141,8 +142,11 @@ console.log('\n══ C. ★★ 할 일 창 — 팝업 틀 · 진행도 · 여�
   ok('C-7 ★ 진행도 **띠**도 같은 값을 말한다', /^\d+%$/.test(B.bar), B.bar);
   ok(`C-8 ★★★ **보상이 ${NQ}줄에 다 보인다** (하나도 빈칸이 아니다)`,
      B.rew.length === NQ && B.rew.every(r => r && r.trim() && r.trim() !== '—'), JSON.stringify(B.rew));
+  /* ⚠ 2026-08-16 — **3 을 박아 뒀다가 낡았다.** 시루 늘리기 둘이 붙어 다섯이 됐다.
+     ⇒ `stamina` 표에서 **세어서** 견준다. 줄이 늘어도 안 낡는다(§2.8). */
+  const staN = QUESTS.filter(q => (STAMINA_RULES.quests || {})[q.id] > 0).length;
   ok('C-9 ★★ 보상 문구를 화면이 안 지어냈다 — 체력 값이 **정의에서** 나온다',
-     B.rew.filter(r => /체력 \+\d/.test(r)).length === 3 &&
+     B.rew.filter(r => /체력 \+\d/.test(r)).length === staN &&
      B.rew.some(r => /무늬 등급/.test(r)) && B.rew.some(r => /이사/.test(r)),
      JSON.stringify(B.rew));
   ok('C-10 ★★ 카드가 화면 안이고 **안 구른다** (모든 줄이 한눈에)',
@@ -337,8 +341,11 @@ for (const w of [360, 390, 430]) {
       overflow: document.documentElement.scrollWidth > innerWidth, cut,
       closeH: Math.round(document.getElementById('questClose').getBoundingClientRect().height) });})()`);
   const q = JSON.parse(Q);
-  ok(`W-${w} ★★ 할 일 창 — ${NQ}줄이 **한 화면에** · 안 잘린다`,
-     q.inView && !q.scroll && !q.overflow && !q.cut, Q);
+  ok(`W-${w} ★★ 할 일 창 — ${NQ}줄 · 안 잘리고 가로로 안 넘친다`,
+     /* ⚠ 2026-08-16 — **「안 구른다」를 걷었다.** 줄이 다섯에서 여덟이 됐다(시루 둘 · 등 하나).
+        여덟 줄을 폰 한 화면에 억지로 욱여넣으면 글씨가 작아져 못 읽는다 —
+        **구르는 것이 맞다.** 대신 **가로로 안 넘치고 · 안 잘리고 · 화면 안**은 그대로 잰다. */
+     q.inView && !q.overflow && !q.cut, Q);
   ok(`W-${w} ★ [✕]가 44px 이상`, q.closeH >= 44, `${q.closeH}px`);
   await page.eval(`window.__byeotPopClose()`, false);
   await sleep(250);

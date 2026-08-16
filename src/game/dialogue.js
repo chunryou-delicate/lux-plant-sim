@@ -494,6 +494,33 @@ export const SCRIPTS = {
 
   /* ③ 모주 잎이 둘이 된 날 열린다 — `varieSecond` 가 말한 「이제 됐다」의 손 쪽이다.
      ★ 가르치는 것은 **잎 1장이라야 물꽂이**(확정문 `cutting §2-②`). 확률이 아니라 조건이다. */
+  /* ②-b ★★★ **시루를 늘린다** (2026-08-16 박사님) — 실측 문턱 여덟·열여섯.
+     ⚠ 숫자를 대사에 안 박는다. 몬이는 **왜 늘리나**를 말하고, 몇 개인지는
+       할 일 줄(`quest.js §todo`)이 말한다 — 값이 움직여도 대사가 안 낡는다. */
+  questSiru8: [
+    { who: 'jachwi', face: 'tired', text: '다섯 개로는 티가 잘 안 나네.' },
+    { who: 'moni',   face: 'curious', text: '시루 하나가 하루치를 조금씩 만들어. 그게 개수만큼 늘어.' },
+    { who: 'jachwi', text: '늘리면 늘어난다는 소리네.' },
+    { who: 'moni',   face: 'happy', text: '응. 여기선 그게 제일 정직한 길이야.' }
+  ],
+  questDoneSiru8: [
+    { who: 'jachwi', face: 'surprise', text: '확실히 곳간이 빨리 찬다.' },
+    { who: 'moni',   text: '아직 본전은 아니야. 조금 더 가야 해.' }
+  ],
+  /* ②-c ★ **본전이 되는 자리.** 이 줄이 「살림이 돈다」를 처음 말한다 */
+  questSiru16: [
+    { who: 'moni',   face: 'curious', text: '조금만 더 늘리면 **하루가 안 깎여.**' },
+    { who: 'jachwi', text: '지금까진 계속 줄고 있었구나.' },
+    { who: 'moni',   face: 'sad', text: '응. 조금씩. 그래서 티가 안 났어.' },
+    { who: 'moni',   face: 'happy', text: '거기까지 가면 처음으로 **버는 쪽**이 돼.' }
+  ],
+  questDoneSiru16: [
+    { who: 'jachwi', face: 'happy', text: '…줄지 않는다. 오늘 처음이야.' },
+    { who: 'moni',   face: 'happy', text: '여기서부터는 모으는 거야. 버티는 게 아니라.' },
+    /* ★ 다음 축을 가리킨다 — 채소는 노가다고, 큰 것은 몬스테라다(박사님 확정) */
+    { who: 'moni',   text: '근데 이 속도로 이사비를 모으려면 한참이야. 그건 다른 길이 있어.' }
+  ],
+
   questFirstCut: [
     { who: 'jachwi', face: 'surprise', text: '잎이 두 장이 됐어.' },
     { who: 'moni',   face: 'curious', text: '그럼 하나는 떼도 돼. 하나는 남으니까.' },
@@ -1190,6 +1217,9 @@ export const EVENT_SCRIPT = Object.freeze({
 export const QUEST_OPEN_SCRIPT = Object.freeze({
   crop_mix:     'questCropMix',
   siru5_cycle5: 'questSiru5',
+  /* ★ 2026-08-16 — 시루 늘리기 둘(실측 문턱 여덟·열여섯 · quest.js §②-b·②-c) */
+  siru8:        'questSiru8',
+  siru16:       'questSiru16',
   first_cut:    'questFirstCut',
   buy_lamp:     'questBuyLamp',
   varie_bright: 'questVarieBright',
@@ -1198,6 +1228,8 @@ export const QUEST_OPEN_SCRIPT = Object.freeze({
 export const QUEST_DONE_SCRIPT = Object.freeze({
   crop_mix:     'questDoneCropMix',
   siru5_cycle5: 'questDoneSiru5',
+  siru8:        'questDoneSiru8',
+  siru16:       'questDoneSiru16',
   first_cut:    'questDoneFirstCut',
   buy_lamp:     'questDoneBuyLamp',
   varie_bright: 'questDoneVarieBright',
