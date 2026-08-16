@@ -94,6 +94,14 @@ export function newState(opt = {}) {
        앱을 열었다고 Day 0부터 식물이 있으면 안 된다 — 도착 이벤트(Day 4 선물, 이번 범위 밖)나
        테스트 초기화 경계(givePlant)가 만들 때 생긴다. v0는 1개 (growth가 한 그루 전용). */
     pots: [],
+    /* ══ ★★ 빈 화분 — **놓았지만 아직 안 심은 것** (2026-08-16 박사님 확정) ══════════
+       박사님: *"씨앗이 자동으로 안 들어가고 **화분만 놓이게** 해 줘."*
+       ⚠⚠ **`pots` 에 넣지 않는다.** `S.pots` 를 도는 자리가 여덟 군데이고
+         전부 **그루가 하나 있다**를 전제로 돈다(하루 진행 · 조도 · 세이브 · 생장 창 고르기).
+         빈 화분을 거기 끼우면 하루 진행이 통째로 흔들린다 — 그래서 **따로 둔다.**
+       ★ 시루와 같은 결이다: 시루도 `firstPlay.cropSites` 에 따로 있지 `pots` 에 없다.
+       한 줄 = { id, itemId, at, slotId } — 그루가 없으므로 빛 이력도 생장 창도 안 갖는다. */
+    emptyPots: [],
 
     /* ★ 삽수 — 잘라서 물꽂이·화분에 담아 둔 조각들 (2026-08-03).
        규칙과 수치는 src/game/propagation.js 가 갖는다(docs/propagation.md 가 정본).
@@ -402,6 +410,39 @@ export const SEED_POT_ITEM_ID = 'pot';
    ⚠ 여기에 숫자를 하나 올리는 순간 「사면 빨라진다」가 된다. 올리려면 기획이 정할 것. */
 export const SEED_START_GROWTH_DAYS = 0;
 
+/* ══ ★★★ 빈 화분을 놓는다 — **씨앗은 안 쓴다** (2026-08-16 박사님 확정) ═══════════
+   박사님: *"씨앗이 자동으로 안 들어가고 화분만 놓이게 해 줘."*
+   ★ 시루와 같은 결이다 — 놓기와 심기가 두 걸음이다(`placeSiru(sow:false)` → `sowCrop`).
+   ⚠ 그릇 하나만 쓴다. 씨앗은 **심을 때** 나간다(`plantMonsteraSeed`).
+   ⚠ `S.pots` 에 안 넣는다 — 거기는 그루가 있는 것만 사는 자리다(§emptyPots).
+   반환 { id, itemId, at, slotId, left } */
+export function placeEmptyPot(S, at, opt = {}) {
+  const itemId = opt.potItemId || SEED_POT_ITEM_ID;
+  /* ① 재고 — 그릇 하나. 없으면 여기서 던진다(화면이 미리 안 막는다) */
+  assertStockAll(S, [{ itemId, qty: 1 }]);
+  const id = opt.id || nextPotId(S);
+  /* ② 자리 — 여기서 재 본다(던질 수 있다). 아직 아무것도 안 썼다 */
+  const spot = resolvePlacement(id, at, opt);
+  /* ③ 재고를 뺀다 — 여기부터는 되돌릴 일이 없다 */
+  useStock(S, itemId, 1);
+  if (!Array.isArray(S.emptyPots)) S.emptyPots = [];
+  S.emptyPots.push({ id, itemId, at: spot.at, slotId: spot.slotId, placedOnDay: S.day });
+  pushLog(S, `🪴 빈 화분을 놓았습니다 — [🌱 심기]를 눌러 몬스테라 씨앗을 심으세요`);
+  return { id, itemId, at: spot.at, slotId: spot.slotId, left: (S.emptyPots || []).length };
+}
+
+/* 그 빈 화분을 목록에서 뺀다 — 심었거나 치웠을 때. 없으면 조용히 지나간다(두 번 불러도 안전) */
+export function removeEmptyPot(S, id) {
+  if (!Array.isArray(S.emptyPots)) return null;
+  const i = S.emptyPots.findIndex(p => p && p.id === id);
+  if (i < 0) return null;
+  return S.emptyPots.splice(i, 1)[0] || null;
+}
+
+export function emptyPotOf(S, id) {
+  return (S.emptyPots || []).find(p => p && p.id === id) || null;
+}
+
 export function plantMonsteraSeed(S, io, opt = {}) {
   const log = typeof opt.log === 'function' ? opt.log : (m => pushLog(S, m));
   const g = io && io.growth;
@@ -482,7 +523,9 @@ export function plantMonsteraSeed(S, io, opt = {}) {
 
 /* 다음 화분 이름. `pot_01`(선물) 다음부터 빈 번호를 찾는다 — 팔고 다시 심어도 안 겹친다. */
 function nextPotId(S) {
-  const used = new Set((S.pots || []).map(p => p && p.id));
+  /* ⚠ 2026-08-16 — **빈 화분도 같이 센다.** 안 세면 빈 화분과 심은 화분이 같은 이름을 갖고,
+     그 순간 자리·세이브·방뷰가 서로 다른 것을 가리킨다. */
+  const used = new Set([...(S.pots || []), ...(S.emptyPots || [])].map(p => p && p.id));
   for (let i = 2; i < 1000; i++) {
     const id = `pot_${String(i).padStart(2, '0')}`;
     if (!used.has(id)) return id;

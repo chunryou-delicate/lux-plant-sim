@@ -1894,8 +1894,33 @@ export async function createRoomView(canvas, opts = {}) {
        clustered     true = 한 자리에 용기 **여럿**을 늘어놓을 수 있다(spec.count · §clusterUnit)
        build         실제 조립. 던지는 것은 buildPlantGroup 한 곳뿐이다
      ⚠ 없는 이름의 기본값은 **예전 그대로**다 — 지름은 몬스테라 화분, 생장은 progress01. */
+  /* ══ ★★ 빈 화분 — **놓기와 심기가 두 걸음이 됐다** (2026-08-16 박사님) ═══════════
+     박사님: *"씨앗이 자동으로 안 들어가고 **화분만 놓이게** 해 줘."*
+     ⚠ 예전에는 화분을 놓는 순간 씨앗이 같이 나갔다. 시루·재배판은 이미 두 걸음인데
+       (놓기 → [🌱 심기]) 화분만 한 걸음이라 **같은 손짓에 다른 규칙**이었다.
+     ★ 그림은 몬스테라 화분 GLB **그대로**다. 흙만 보이고 아무것도 안 자란 모습이다 —
+       새 에셋을 안 만들었다. 「심기 전」이 곧 그 그림이다. */
+  async function buildEmptyPot(spec, limit) {
+    const g = new THREE.Group();
+    const want = Math.min(MONSTERA_POT_D, limit === Infinity ? MONSTERA_POT_D : limit);
+    const pot = await loadGLB(AT('../../assets/monstera/pot.glb'));
+    const bb = new THREE.Box3().setFromObject(pot);
+    const cur = Math.max(bb.max.x - bb.min.x, bb.max.z - bb.min.z) || MONSTERA_POT_D;
+    pot.scale.setScalar(want / cur);
+    const bb2 = new THREE.Box3().setFromObject(pot);
+    pot.position.y = -bb2.min.y;               /* 바닥에 앉힌다 */
+    g.add(pot);
+    /* ⚠ `potPart` 를 못 박는다 — 안 그러면 「잎이 아닌 첫 자식」 규칙이 엉뚱한 것을 잡는다 */
+    g.userData.potPart = pot;
+    g.userData.kind = 'emptypot';
+    g.userData.leaves = [];
+    return g;
+  }
+
   const PLANT_KINDS = Object.freeze({
     monstera:   { potD: MONSTERA_POT_D, growthByDays: true,  clustered: false, build: buildMonstera },
+    /* ★ 2026-08-16 — 빈 화분(위 §buildEmptyPot). 자라지 않으므로 `growthByDays` 는 거짓이다 */
+    emptypot:   { potD: MONSTERA_POT_D, growthByDays: false, clustered: false, build: buildEmptyPot },
     beansprout: { potD: SIRU_D,         growthByDays: false, clustered: true,  build: buildBeansprout },
     musun:      { potD: MUSUN_D,        growthByDays: false, clustered: false, build: buildMusun }
   });
