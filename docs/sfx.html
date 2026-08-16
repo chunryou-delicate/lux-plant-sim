@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>볕 — 효과음 들어 보기</title>
+<!-- ============================================================
+     docs/sfx.html — 여섯 효과음을 **귀로** 확인하는 낱장 (2026-08-16)
+     ------------------------------------------------------------
+     tools/test_sfx.mjs 는 소리가 「난다」를 숫자로 잽니다. 이 쪽은 「어떻게 들리나」입니다.
+     둘 다 있어야 합니다 — 숫자는 무음을 잡고, 귀는 싸구려를 잡습니다.
+
+       python tools/serve.py 8963
+       http://localhost:8963/docs/sfx.html
+
+     ⚠ 브라우저는 **처음 한 번 누르기 전에는 소리를 안 냅니다.** 그래서 첫 누름이
+       곧 해금입니다 — 첫 단추가 조용하면 한 번 더 눌러 보십시오.
+============================================================ -->
+<style>
+  :root{ --bg:#14171a; --fg:#e8ece9; --dim:#9aa6a0; --leaf:#9fdc86; --line:rgba(255,255,255,.12); }
+  *{box-sizing:border-box}
+  body{margin:0;padding:20px 16px 60px;background:var(--bg);color:var(--fg);
+       font:15px/1.65 -apple-system,BlinkMacSystemFont,'Malgun Gothic','맑은 고딕',sans-serif}
+  .wrap{max-width:760px;margin:0 auto}
+  h1{font-size:21px;margin:0 0 4px}
+  p.sub{color:var(--dim);margin:0 0 22px;font-size:13.5px}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(228px,1fr));gap:12px}
+  .card{border:1px solid var(--line);border-radius:14px;padding:14px;background:rgba(255,255,255,.03)}
+  .card b{display:block;font-size:17px;margin-bottom:2px}
+  .card i{display:block;font-style:normal;color:var(--dim);font-size:12.5px;line-height:1.5;min-height:56px}
+  button{width:100%;margin-top:10px;padding:12px;border-radius:10px;border:1px solid var(--line);
+         background:rgba(159,220,134,.14);color:var(--leaf);font:600 15px/1 inherit;cursor:pointer}
+  button:active{background:rgba(159,220,134,.28)}
+  button.on{background:rgba(159,220,134,.32);color:#fff}
+  .bar{display:flex;gap:10px;align-items:center;margin:0 0 18px;flex-wrap:wrap}
+  .bar button{width:auto;margin:0;padding:9px 14px}
+  .note{margin-top:26px;padding:14px;border:1px solid var(--line);border-radius:12px;color:var(--dim);font-size:13px}
+  code{background:rgba(255,255,255,.07);padding:1px 5px;border-radius:5px;font-size:12.5px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>효과음 여섯 — 들어 보기</h1>
+  <p class="sub">파일이 아니라 <b>그 자리에서 만드는 소리</b>입니다. 받을 바이트가 0 이고 로딩이 없습니다.<br>
+     ⚠ 처음 한 번은 브라우저가 막습니다 — 조용하면 한 번 더 눌러 주세요.</p>
+
+  <div class="bar">
+    <button id="mute">🔇 소리 끄기</button>
+    <span id="state" style="color:var(--dim);font-size:13px"></span>
+  </div>
+
+  <div class="grid" id="grid"></div>
+
+  <div class="note">
+    <b style="color:var(--fg)">되풀이되는 둘</b>은 켜고 끕니다 —
+    <code>저벅저벅</code>은 걷는 동안만, <code>사각사각</code>은 게이지가 차는 동안만 납니다.
+    한 번 더 누르면 멈춥니다.<br><br>
+    숫자로 재는 쪽은 <code>node tools/test_sfx.mjs</code> 입니다.
+    자세한 것은 <code>docs/handoff/sfx-to-plan.md</code>.
+  </div>
+</div>
+
+<script type="module">
+import { sfx, SPEC } from '../src/game/sfx.js';
+
+const WHY = {
+  tap:    '단추 · 창 열림 · 대사 넘김. 밴드패스 잡음과 짧은 삼각파 틱을 겹쳤습니다 — 사인만이면 「삐」, 잡음만이면 「치익」이 됩니다.',
+  scrape: '심을 때 · 거둘 때 게이지가 차는 동안. 잡음 덩이가 **둘**이라 「사각-사각」이 됩니다. 하나면 「슥」입니다.',
+  water:  '물을 뿌릴 때. 중심이 올라가는 잡음(밝아지는 쉭)에 물방울 셋을 얹었습니다. 잡음만이면 바람 소리입니다.',
+  step:   '걸어갈 때. 몸이 닿는 저음 + 바닥을 쓰는 눌린 잡음. 좌우 발을 조금 다르게 냅니다.',
+  chime:  '선물 · 이벤트. 배경 음악과 안 부딪히게 music.js 와 같은 5음 음계(A C E A)에서 뽑았습니다.',
+  thud:   '인벤에서 방으로 놓을 때. 저벅보다 낮게 시작해 더 빨리 죽고, 380Hz 좁은 울림이 「가구 위」로 만듭니다.'
+};
+const LOOPY = { step: 'walk', scrape: 'gauge' };
+
+const grid = document.getElementById('grid');
+for (const [name, s] of Object.entries(SPEC)) {
+  const card = document.createElement('div');
+  card.className = 'card';
+  const loop = LOOPY[name];
+  card.innerHTML = `<b>${s.ko}</b><i>${WHY[name] || ''}</i>`;
+  const b = document.createElement('button');
+  b.textContent = loop ? `▶ ${s.ko} 켜기` : `▶ ${s.ko}`;
+  let on = false;
+  b.onclick = () => {
+    try {
+      if (!loop) { sfx[name]({ force: true }); return; }
+      on = !on;
+      sfx[loop](on);
+      b.classList.toggle('on', on);
+      b.textContent = `${on ? '■' : '▶'} ${s.ko} ${on ? '끄기' : '켜기'}`;
+    } catch (e) { console.warn(e); }
+    paint();
+  };
+  card.appendChild(b);
+  grid.appendChild(card);
+}
+
+const mute = document.getElementById('mute');
+mute.onclick = () => { sfx.setEnabled(!sfx.isEnabled()); paint(); };
+function paint() {
+  mute.textContent = sfx.isEnabled() ? '🔇 소리 끄기' : '🔊 소리 켜기';
+  document.getElementById('state').textContent =
+    (sfx.isOpen() ? '소리가 열렸습니다' : '아직 안 열렸습니다 — 아무 단추나 눌러 주세요')
+    + (sfx.isEnabled() ? '' : ' · 지금은 꺼져 있습니다');
+}
+paint();
+</script>
+</body>
+</html>
