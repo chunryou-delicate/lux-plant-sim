@@ -1014,7 +1014,15 @@ function ensureLeafShape(){                                // 값이 바뀐 잎�
 
 // 몬스테라 임계값. data/light_thresholds.json 의 monstera_deliciosa 와 같은 값이다.
 // (이 파일은 fetch 없이 단독 실행돼야 해서 복사해 둔다. 저기를 고치면 여기도 고칠 것)
-let TH_MONSTERA={die:0.5, survive:1.2, min:3.0, fenestrate:6.0, best_lo:5.0, best_hi:11.0, max:16.0};
+let TH_MONSTERA={die:0.5, survive:1.2, min:2.7, fenestrate:6.0, best_lo:5.0, best_hi:11.0, max:16.0};
+// ★ 2026-08-17 박사님 확정 — min 3.0 → 2.7 (`data/balance/light_thresholds.json` 과 같이 고쳤다).
+//   까닭: 가구를 창가로 옮겨 두 겹으로 쌓으면 그 위가 2.7~2.9 인데 3.0 에 0.1 이 모자라
+//   「거의 되는데 안 되는 자리」였다. 반지하 자리 열다섯을 전부 재서 2.7~3.0 구간에 있는
+//   자리가 **하나도 없음**을 확인하고 내렸다(창턱 3.68 다음이 책상 0.58).
+//   ⇒ 기본 배치는 하나도 안 열리고 **사람이 옮겨 만든 자리**에만 값이 붙는다.
+// ⚠⚠ 이 값이 두 곳에 있다는 것이 이번에 실제로 물렸다 — 저기만 고쳤더니 코어는 'slow',
+//   생장 창은 'stagnant' 로 갈렸고 `test_growth_speed C` 가 그것을 잡았다.
+//   **한쪽만 고치지 마라.** 그 검사가 이 짝을 지킨다.
 // ★ 무늬종 광량 계수. 흰 조직은 광합성을 안 하므로 요구 광량이 전 구간 1.4배다.
 //   max(과광 한계)에는 곱하지 않는다 — 흰 조직이 오히려 더 잘 타므로 위쪽 여유는
 //   늘어나면 안 된다. daily_light.js·light_thresholds.json 의 variegated.need_mult 와 같은 값.
@@ -1384,8 +1392,8 @@ let MAT_STATE=new Map();            // leafBirth → {gauge, matured, rolls, loc
      상태가 나쁘면 되돌아가는 게 아니라 **색이 바래고, 그 잎만 잃는다.**
 
    밴드는 기존 것을 그대로 쓴다 — 새 숫자를 만들지 않았다.
-     7일평균 ≥ min(3.0)         정상 — 바랜 잎이 되돌아온다
-     survive(1.2) ~ min(3.0)    정지 — 자라지도, 잃지도 않는다
+     7일평균 ≥ min(2.7)         정상 — 바랜 잎이 되돌아온다
+     survive(1.2) ~ min(2.7)    정지 — 자라지도, 잃지도 않는다
      < survive(1.2)             바랜다 → (상위 모드에서만) 떨어진다
    ★ 초보는 바랜 채로 유지된다. 안 떨어지고 안 죽는다(박사님 확정 2026-08-03).
      낙엽 경로는 코드로 넣되 drop_enabled=false 로 꺼 둔다 — 나중에 켜기만 하면 된다. */

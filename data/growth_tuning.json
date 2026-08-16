@@ -12,10 +12,10 @@
   ],
   "version": 1,
   "thresholds": {
-    "_doc": "DLI 밴드 하한. light_thresholds.json 의 monstera_deliciosa 사본.",
+    "_doc": "DLI 밴드 하한. light_thresholds.json 의 monstera_deliciosa 사본. ★ 2026-08-17 min 3 → 2.7 (박사님 확정). 이 값이 **세 곳**에 있다는 것이 그날 실제로 물렸다 — data/balance/light_thresholds.json · plant_grow.html 의 TH_MONSTERA · 여기. 앞의 둘만 고쳤더니 코어는 'slow', 생장 창은 'stagnant' 로 갈렸고 tools/test_growth_speed C 가 그것을 잡았다. 한 곳만 고치지 마라.",
     "die": 0.5,
     "survive": 1.2,
-    "min": 3,
+    "min": 2.7,
     "fenestrate": 6,
     "best_lo": 5,
     "best_hi": 11,
