@@ -23,6 +23,8 @@ for (const id of POTS) {
   /* 재고를 넣고 체력을 푼다 */
   await page.eval(`(()=>{ const S=window.__S();
     S.shop.stock['monstera_seed']=1; S.shop.stock[${JSON.stringify(id)}]=1;
+    /* ★ 선물 몬스테라가 온 뒤 상태로 만든다 — 그 전에는 일부러 막혀 있다(§commitPlace) */
+    if (S.firstPlay && S.firstPlay.monstera) S.firstPlay.monstera.arrived = true;
     if (S.stamina) S.stamina.usedToday=0; window.__redraw&&window.__redraw(); })()`, false);
   await sleep(500);
   const before = await page.eval(`(window.__S().pots.length + (window.__S().emptyPots||[]).length)`);

@@ -2488,7 +2488,13 @@ import { newState, SIM_MODES, pot0, pushLog, givePlant, hasPlant, ARRIVAL,
          /* ★★ 2026-08-16 — **씨앗으로 몬스테라를 심는 길.** 코어에 다 있는데
             화면이 한 번도 안 불렀다 — 그래서 씨앗과 화분을 사도 심을 길이 없었다
             (박사님: *"몬스테라 직접 심는 거 아직 안 된다는데?"* → *"화분 놓는 게 안 됨"*). */
-         plantMonsteraSeed, SEED_POT_ITEM_ID } from './src/game/state.js';
+         plantMonsteraSeed, SEED_POT_ITEM_ID,
+         /* ★★ 2026-08-16 — 빈 화분(놓기·심기 두 걸음 · state.js §emptyPots).
+            ⚠ 이 줄이 **한 번 사라져서** 화분이 통째로 안 놓였다(박사님: *"몬스테라 빈 화분
+              안 놔지는데"*). 쓰는 곳은 넷인데 들여오기만 없어 `placeEmptyPot is not defined`
+              가 났고, 그 오류는 **누를 때만** 나므로 부팅 검사에 안 걸렸다.
+            ⇒ `tools/probe_potplace.mjs` 가 이제 그 자리를 지킨다. */
+         placeEmptyPot, removeEmptyPot, emptyPotOf } from './src/game/state.js';
 /* ★★ 2026-08-17 — **`sellPot`·`sellCutting` 은 더 안 부른다.** 몬스테라 것은 상점이 안 산다.
    중고 거래(§⑦-0)로만 나간다: `listPot`/`listCutting` 으로 올리고 → [다음 날]이 `stepMarket`
    으로 연락을 가져오고 → `dealListing` 에서 돈이 들어온다. 채소(`sellPantryCrop` ·
