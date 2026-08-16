@@ -65,14 +65,24 @@ const lightTh = JSON.parse(readFileSync(
       `banjiha-sill:0` 의 등 PPFD 가 2026-08-06 반사광 도입 뒤 42.62 로 **9일간 낡아 있었다**.)
    옛 값(2026-08-06 main): desk:0 0.61 · desk:1 0.17 · dresser:0 0.08 · etagere:3 0.23.
      나머지 열 칸은 그대로다. 창턱 4.80 은 한 톨도 안 움직였다. */
+/* ★★ 2026-08-17 (G-14) 갱신 — **두 가지가 한꺼번에 들어 있다. 갈라 적는다.**
+     ① 반지하에 **협탁**이 들어와 자리가 14 → 15 칸이 됐다
+        (`data/house_rooms.json §banjiha-nightstand`). 새 줄은 `banjiha-nightstand:0` 하나다.
+     ② ⚠ **이 표는 그 전부터 이미 빨갰다.** `desk:0` 0.6 · `desk:1` 0.19 ·
+        `dresser:0` 0.07 · `dresser:1` 0.05 는 **B-1·B-6**(가구를 모서리로 붙이고 상판
+        자리를 칸 한가운데로 옮긴 것 · `d1986cd`)이 낸 값인데 이 표가 안 따라와서,
+        협탁 전에 돌려도 `banjiha-desk:0: static 0.61 vs live 0.6` 로 터졌다(재서 확인).
+        여기서 같이 바로잡는다 — **내 변경이 낸 값이 아니다.**
+   ★ 값은 손으로 안 적었다: `node tools/gen_room_profile.mjs` 가 이 표를 그대로 찍어 준다. */
 const LIVE = {
   best: 'banjiha-sill:0',
   dli: {
-    'banjiha-sill:0': 4.8, 'banjiha-desk:0': 0.6, 'banjiha-desk:1': 0.19,
-    'banjiha-dresser:0': 0.07, 'banjiha-dresser:1': 0.05,
+    'banjiha-sill:0': 4.8, 'banjiha-desk:0': 0.61, 'banjiha-desk:1': 0.18,
+    'banjiha-dresser:0': 0.06, 'banjiha-dresser:1': 0.04,
     'banjiha-etagere:0': 0.13, 'banjiha-etagere:1': 0.14, 'banjiha-etagere:2': 0.13,
     'banjiha-etagere:3': 0.22, 'banjiha-etagere:4': 0.22, 'banjiha-etagere:5': 0.21,
-    'banjiha-etagere:6': 0.51, 'banjiha-etagere:7': 0.48, 'banjiha-etagere:8': 0.48
+    'banjiha-etagere:6': 0.51, 'banjiha-etagere:7': 0.48, 'banjiha-etagere:8': 0.48,
+    'banjiha-nightstand:0': 0.29
   }
 };
 
@@ -83,17 +93,17 @@ assert.ok(profile.roomRev && /\S/.test(profile.roomRev), 'roomRev 가 실려 있
 const port = createProfileLight(profile, { lightTh });   // throw 하면 여기서 실패
 console.log(`load: PASS (uidStable · roomRev="${profile.roomRev}")`);
 
-/* ── ② 안정 ID: 14칸 고유 · TEMP~ 없음 · 중복 없음 ── */
+/* ── ② 안정 ID: 15칸 고유 · TEMP~ 없음 · 중복 없음 ── */
 const ids = profile.slots.map(s => s.slotId);
-assert.equal(ids.length, 14, '반지하 슬롯 14칸');
-assert.equal(new Set(ids).size, 14, 'slotId 는 전부 고유해야 한다');
+assert.equal(ids.length, 15, '반지하 슬롯 15칸');
+assert.equal(new Set(ids).size, 15, 'slotId 는 전부 고유해야 한다');
 assert.equal(ids.filter(id => String(id).startsWith('TEMP~')).length, 0, 'TEMP~ 임시 uid 가 없어야 한다');
-console.log('stable_ids: PASS (14/14 고유 · TEMP 0)');
+console.log('stable_ids: PASS (15/15 고유 · TEMP 0)');
 
 /* ── ③ maxPotD 결측 0칸 ── */
 const noDim = profile.slots.filter(s => !Number.isFinite(s.maxPotD));
 assert.equal(noDim.length, 0, `maxPotD 결측 슬롯이 있으면 안 된다: ${noDim.map(s => s.slotId)}`);
-console.log('maxPotD_present: PASS (14/14)');
+console.log('maxPotD_present: PASS (15/15)');
 
 /* ── ④ 첫 플레이 두 화분이 지정 자리에 올라간다 ── */
 const slotOf = id => profile.slots.find(s => s.slotId === id) || assert.fail(`슬롯 없음: ${id}`);

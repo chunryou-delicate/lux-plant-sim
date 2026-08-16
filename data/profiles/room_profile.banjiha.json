@@ -307,6 +307,22 @@
         10.14,
         13.41
       ]
+    },
+    {
+      "slotId": "banjiha-nightstand:0",
+      "owner": "nightstand",
+      "point": {
+        "x": 0.425,
+        "y": 0.48,
+        "z": -1.675
+      },
+      "maxPotD": 0.33,
+      "ratio": 0.0187161,
+      "ppfd": [
+        0,
+        6.35,
+        12.72
+      ]
     }
   ],
   "generatedAt": "2026-08-16",

@@ -152,7 +152,13 @@ const BEFORE = {
      반지하에서 삽수·모주를 여러 개 굴리던 유일한 자리였다(test_cutting_wiring J-3·J-4).
      되살리려면 둘째 등(집게)을 선반 상판에 물려야 한다 — 그건 플레이어의 손짓이다. */
   'banjiha-etagere:7':  { ppfd: [0, 9.51673, 11.927482],   dli: [0.48, 0.89, 1] },
-  'banjiha-etagere:8':  { ppfd: [0, 10.140864, 13.409602], dli: [0.48, 0.92, 1.06] }
+  'banjiha-etagere:8':  { ppfd: [0, 10.140864, 13.409602], dli: [0.48, 0.92, 1.06] },
+  /* ★ 2026-08-17 (G-14) — **자리가 하나 늘었다.** 반지하에 협탁을 넣었다
+     (`data/house_rooms.json §banjiha-nightstand`). 이 방에 낮은 가구가 하나도 없어서
+     가구 두 겹 쌓기가 안 서던 것을 푼 것이다 — 등은 한 톨도 안 건드렸다.
+     ⚠ **위 14줄은 글자 하나 안 바뀌었다**(`BYEOT_REGEN=1` 로 다시 뽑아 대조했다).
+       늘어난 것은 이 한 줄뿐이다. 등 물리가 움직였다면 14줄이 다 움직였어야 한다. */
+  'banjiha-nightstand:0': { ppfd: [0, 6.34696, 12.722602], dli: [0.29, 0.56, 0.84] }
 };
 
 /* 새 값을 뽑을 때 쓴다: BYEOT_REGEN=1 node tools/test_lampaim.mjs */
@@ -168,9 +174,9 @@ if (process.env.BYEOT_REGEN) {
   process.exit(0);
 }
 
-check('① 회귀 — 안 겨눈 14칸 PPFD·DLI 가 옛 값과 정확히 같다', () => {
+check('① 회귀 — 안 겨눈 15칸 PPFD·DLI 가 옛 값과 정확히 같다', () => {
   unaimed();
-  assert.equal(room.slots.length, 14, '반지하 슬롯 14칸');
+  assert.equal(room.slots.length, 15, '반지하 슬롯 15칸');   // 2026-08-17 협탁이 들어와 14 → 15
   for (const s of room.slots) {
     const want = BEFORE[s.slotId];
     assert.ok(want, `옛 값 표에 ${s.slotId} 가 없습니다 — 방이 바뀌었습니다`);

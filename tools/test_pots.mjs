@@ -12,7 +12,7 @@
      A  지름은 **잰 값이다.** GLB 를 직접 열어 `2 × max √(x²+z²)` 를 재고
         매니페스트의 `scale_to_real` 을 곱해 0.1mm 로 올린다. 그 값이 shop.POT_KINDS 와 같다
      B  색 판(민트·핑크)은 **지오메트리가 같아 지름이 같다** — 색은 자리를 못 바꾼다
-     C  자리 — 반지하 14칸에서 종류마다 몇 칸에 올라가나. **네모 화분만 4칸이다**
+     C  자리 — 반지하 15칸에서 종류마다 몇 칸에 올라가나. **네모 화분만 5칸이다**
      D  바꿔 끼기 규칙 — 재고·자리·같은 화분·색 바꾸기
      E  ★★ **회귀.** 옛 판(화분 하나)이 한 톨도 안 바뀐다. 이게 제일 중요하다
 
@@ -211,21 +211,24 @@ console.log('\n══ B  색 — 다시 칠한 판은 지오메트리가 같다 
      !knowsPotAsset('pots/pot_macrame_hanging.glb') && !knowsPotAsset('pots/pot_glassjar.glb'));
 }
 
-/* ══ C 자리 — 반지하 14칸 ══════════════════════════════════════════════════ */
+/* ══ C 자리 — 반지하 15칸 ══════════════════════════════════════════════════ */
 console.log('\n══ C  자리 — 지름이 바뀌면 놓을 수 있는 자리가 바뀐다 ═══════════════');
 const PROFILE = JSON.parse(fs.readFileSync(
   path.join(ROOT, 'data', 'profiles', 'room_profile.banjiha.json'), 'utf8'));
 const SLOTS = PROFILE.slots;
 {
-  ok('C-0 반지하 프로파일이 14칸이고 전부 maxPotD 를 갖고 있다',
-     SLOTS.length === 14 && SLOTS.every(s => Number.isFinite(s.maxPotD)),
+  /* ★ 2026-08-17 (G-14) — 반지하에 협탁이 들어와 14 → 15 칸이 됐다
+     (`data/house_rooms.json §banjiha-nightstand`). 협탁 상판 한도는 0.33m 라
+     **네모 화분(0.2755)이 올라가는 자리가 4 → 5 칸**으로 는다 — 아래 EXPECT 가 그 값이다. */
+  ok('C-0 반지하 프로파일이 15칸이고 전부 maxPotD 를 갖고 있다',
+     SLOTS.length === 15 && SLOTS.every(s => Number.isFinite(s.maxPotD)),
      `${SLOTS.length}칸`);
   const limits = {};
   for (const s of SLOTS) limits[s.maxPotD] = (limits[s.maxPotD] || 0) + 1;
   info('한도별 칸 수: ' + Object.entries(limits).map(([d, n]) => `${d}m ×${n}`).join(' · '));
 
   /* ★ 못 박는 표. 숫자를 여기 지어내지 않았다 — 위 A 가 잰 지름과 프로파일의 maxPotD 로만 난다. */
-  const EXPECT = { nursery: 14, concrete_round: 14, terracotta: 14, ceramic: 14, concrete_square: 4 };
+  const EXPECT = { nursery: 15, concrete_round: 15, terracotta: 15, ceramic: 15, concrete_square: 5 };
   for (const k of Object.values(POT_KINDS)) {
     const n = potSlotCount(k.diameterM, SLOTS);
     ok(`C-1 ${k.ko}(${k.diameterM}m) 가 올라가는 자리 ${EXPECT[k.id]}칸`,
@@ -235,7 +238,7 @@ const SLOTS = PROFILE.slots;
   ok('C-2 ★ 창턱(0.21m · 이 방에서 제일 밝은 자리)을 잃는 것은 네모 화분뿐이다',
      Object.values(POT_KINDS).filter(k => !slotFitsDiameter(sill, k.diameterM))
        .map(k => k.id).join(',') === 'concrete_square');
-  info('★ 지금 있는 에셋으로는 자리 수가 14 아니면 4 둘뿐이다 — ' +
+  info('★ 지금 있는 에셋으로는 자리 수가 15 아니면 5 둘뿐이다 — ' +
        '창턱만 잃는 중간(13칸·지름 0.21~0.25)에 해당하는 화분이 없다');
 }
 
@@ -258,15 +261,15 @@ console.log('\n══ D  바꿔 끼기 — 무엇을 막고 무엇을 허용하�
   const r1 = canSwapPot(S1, 'pots/pot_concrete_round.glb', { slots: SLOTS });
   ok('D-2 재고가 있고 가늘어지는 쪽이면 창턱에서도 바꾼다', r1.ok === true, r1.reason);
   ok('D-2b 어디로 가는지도 같이 말한다 (지름·자리 수)',
-     r1.diameterM === 0.1801 && r1.holdCount === 14 && r1.fromDiameterM === 0.202);
+     r1.diameterM === 0.1801 && r1.holdCount === 15 && r1.fromDiameterM === 0.202);
 
   const S2 = mk('banjiha-sill:0');
   give(S2, 'pot_concrete_square');
   const r2 = canSwapPot(S2, 'pots/pot_concrete_square.glb', { slots: SLOTS });
   ok('D-3 ★ 창턱에서 네모 화분으로는 **못 바꾼다** (몰래 옮기지도 않는다)',
-     r2.ok === false && r2.wider === true && r2.holdCount === 4, JSON.stringify(r2));
+     r2.ok === false && r2.wider === true && r2.holdCount === 5, JSON.stringify(r2));
   ok('D-3b 왜 안 되는지와 어디에는 되는지를 같이 말한다',
-     /안 올라갑니다/.test(r2.reason) && /4칸/.test(r2.reason), r2.reason);
+     /안 올라갑니다/.test(r2.reason) && /5칸/.test(r2.reason), r2.reason);
   ok('D-3c ★ 자리는 안 건드린다 — 판정만 하고 상태를 안 바꾼다',
      pot0(S2).potAsset === DEFAULT_POT_ASSET && pot0(S2).slotId === 'banjiha-sill:0');
 
@@ -367,9 +370,9 @@ console.log('\n══ E  ★★ 회귀 — 화분 하나였던 판이 그대로�
   ok('E-7 갓 도착한 화분이 예전 그대로다 (에셋·자리·지름)',
      p.potAsset === 'monstera/pot.glb' && p.slotId === 'banjiha-sill:0'
      && potDiameterOf(p.potAsset) === 0.202);
-  ok('E-8 ★ 화분이 하나뿐인 판에서 자리 수가 예전과 같다 (14칸)',
-     potSlotCount(potDiameterOf(p.potAsset), SLOTS) === 14
-     && SLOTS.filter(s => slotFitsDiameter(s, FIRST_PLAY_ASSETS.monsteraPotDiameterM)).length === 14);
+  ok('E-8 ★ 화분이 하나뿐인 판에서 자리 수가 예전과 같다 (15칸)',
+     potSlotCount(potDiameterOf(p.potAsset), SLOTS) === 15
+     && SLOTS.filter(s => slotFitsDiameter(s, FIRST_PLAY_ASSETS.monsteraPotDiameterM)).length === 15);
 
   /* 화분 넷을 늘렸다고 **재고가 저절로 생기지 않는다** — 새 판은 예전처럼 빈손이다 */
   ok('E-9 새 판의 재고가 그대로 비어 있다',
@@ -383,7 +386,7 @@ console.log('\n══ 화분 표 (잰 값) ════════════�
 console.log('종류 | 한글 이름 | 잰 지름[m] | 표의 지름[m] | 살 때 | 반지하 자리 | 색');
 for (const k of potKindList())
   console.log(`${k.id} | ${k.ko} | ${k.measuredM.toFixed(6)} | ${k.diameterM} | ` +
-    `${k.buyWon.toLocaleString()}원 | ${potSlotCount(k.diameterM, SLOTS)}/14칸 | ` +
+    `${k.buyWon.toLocaleString()}원 | ${potSlotCount(k.diameterM, SLOTS)}/15칸 | ` +
     k.colors.map(c => c.ko).join('·'));
 
 console.log(`\npots: ${fail ? 'FAIL' : 'PASS'}  (${pass}/${pass + fail})`);

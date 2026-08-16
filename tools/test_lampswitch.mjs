@@ -281,7 +281,8 @@ async function main() {
   await sleep(150);
   const f0b = await page.eval(DLI(0));
   const f1b = await page.eval(DLI(grow.length));
-  ok('F-1 추천 자리가 14칸이다', f0.length === 14, String(f0.length));
+  /* 2026-08-17 (G-14) — 반지하에 협탁이 들어와 14 → 15 (data/house_rooms.json §banjiha-nightstand) */
+  ok('F-1 추천 자리가 15칸이다', f0.length === 15, String(f0.length));
   ok('F-2 등을 꺼도 등0 DLI 가 그대로', JSON.stringify(f0) === JSON.stringify(f0b));
   ok('F-3 등을 꺼도 등2 DLI 가 그대로', JSON.stringify(f1) === JSON.stringify(f1b));
   ok('F-4 등을 켜면 DLI 는 원래 계통대로 오른다', f1.some((v, i) => v > f0[i] + 0.01));

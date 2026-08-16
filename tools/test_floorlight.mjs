@@ -178,7 +178,13 @@ const BANJIHA_FROZEN = {
   'banjiha-etagere:5':   [0.21, 0.61],
   'banjiha-etagere:6':   [0.51, 0.95],
   'banjiha-etagere:7':   [0.48, 1.00],
-  'banjiha-etagere:8':   [0.48, 1.06]
+  'banjiha-etagere:8':   [0.48, 1.06],
+  /* ★ 2026-08-17 (G-14) — **자리가 하나 늘었다.** 반지하에 협탁(0.42×0.36×0.48)을 넣었다
+     (`data/house_rooms.json §banjiha-nightstand`). 이 방에 낮은 가구가 하나도 없어서
+     가구 두 겹 쌓기가 안 서던 것을 푼 것이다. ⚠ **위 14줄은 한 톨도 안 바뀌었다** —
+     `BYEOT_REGEN=1` 로 다시 뽑아 글자 단위로 대조했다. 늘어난 것은 이 한 줄뿐이다.
+     (`gen_room_profile.mjs` 도 같은 답을 냈다 — 자가 둘인데 둘 다 14칸 그대로다) */
+  'banjiha-nightstand:0':[0.29, 0.84]
 };
 const BJ = scan('banjiha');
 
@@ -191,8 +197,8 @@ if (process.env.BYEOT_REGEN) {
   process.exit(0);
 }
 
-check('① 회귀 — 반지하 14칸이 skyViewK 를 붙인 뒤에도 한 톨도 안 바뀐다', () => {
-  assert.equal(BJ.slots, 14);
+check('① 회귀 — 반지하 15칸이 skyViewK 를 붙인 뒤에도 한 톨도 안 바뀐다', () => {
+  assert.equal(BJ.slots, 15);   // 2026-08-17 협탁이 들어와 14 → 15 (위 얼린 표 머리말)
   assert.equal(BJ.skyViewK, 1, '★ 반지하에 skyViewK 가 붙었습니다 — 반지하는 기준(1.00)이라 못 건드립니다');
   /* ★ 2026-08-07 — `undefined` 에서 **`=== 1` 로 좁혔다.**
      반지하가 기준 1.00 인 것이 파일에 안 적혀 암묵이었는데(안 적으면 house.js 가 1 로 읽는다),
@@ -224,7 +230,7 @@ check('① 회귀 — 반지하 14칸이 skyViewK 를 붙인 뒤에도 한 톨�
      베껴 오면 틀려도 0 이 나온다 — 일부러 다른 데서 가져온다.
    ⚠ 이 검사는 **반지하만** 본다. 다른 방에는 상판 = 발자국이 아닌 가구(사다리형 등)가 있어
      이 자로 재면 거짓 실패가 난다. 그건 그 방을 정비할 때 함께 볼 일이다. */
-check('①-1 ★ 반지하 14칸이 칸 한가운데에 앉는다 · 시루가 상판 밖으로 안 나간다', () => {
+check('①-1 ★ 반지하 15칸이 칸 한가운데에 앉는다 · 시루가 상판 밖으로 안 나간다', () => {
   const CELL = 0.25, POT = 0.24;                 // place.GRID_CELL · 열린 콩나물 시루
   const ax = (L) => {
     const n = Math.max(1, Math.min(Math.round(L / CELL), Math.max(1, Math.floor(L / POT + 1e-9))));
@@ -253,7 +259,7 @@ check('①-1 ★ 반지하 14칸이 칸 한가운데에 앉는다 · 시루가 �
     `  고칠 곳: src/render3d/furniture_pastel.js §tierSlots (여백은 칸 반쪽이어야 한다)`);
   assert.equal(over.length, 0,
     `★ 자리에 놓은 시루가 상판 밖으로 나갑니다: ${over.join(' · ')}`);
-  info(`반지하 14칸 어긋남 0 · 상판 넘침 0 (칸 기준: 시루 ${POT}m)`);
+  info(`반지하 15칸 어긋남 0 · 상판 넘침 0 (칸 기준: 시루 ${POT}m)`);
 });
 
 check('① -2 skyViewK 1.00 은 아무것도 안 바꾼다 — 안 적은 방과 같다', () => {

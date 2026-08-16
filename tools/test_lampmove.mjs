@@ -4,7 +4,7 @@
    증명 대상 (docs/handoff/lampmove-to-plan.md):
 
      1부 · 조도 (헤드리스, 브라우저 없이)
-       ① 회귀    아무것도 안 옮기면 반지하 14칸 × 등 0/1/2개의 PPFD·DLI 가
+       ① 회귀    아무것도 안 옮기면 반지하 15칸 × 등 0/1/2개의 PPFD·DLI 가
                  **한 톨도 안 바뀐다**(test_lampaim 의 표와 같은 값, 허용치 없음)
        ② 물림    집게등을 창턱에 물리면 **창턱 DLI 가 무늬종 문턱 8.4 를 넘는다**
                  — 이 작업이 푸는 문제가 이 한 줄이다
@@ -125,7 +125,11 @@ const BEFORE = {
   'banjiha-etagere:5':  { ppfd: [0, 6.300717, 9.264352],   dli: [0.21, 0.49, 0.61] },
   'banjiha-etagere:6':  { ppfd: [0, 8.419273, 10.267717],  dli: [0.51, 0.87, 0.95] },
   'banjiha-etagere:7':  { ppfd: [0, 9.51673, 11.927482],   dli: [0.48, 0.89, 1] },
-  'banjiha-etagere:8':  { ppfd: [0, 10.140864, 13.409602], dli: [0.48, 0.92, 1.06] }
+  'banjiha-etagere:8':  { ppfd: [0, 10.140864, 13.409602], dli: [0.48, 0.92, 1.06] },
+  /* ★ 2026-08-17 (G-14) — 반지하에 협탁이 들어와 자리가 14 → 15 가 됐다
+     (`data/house_rooms.json §banjiha-nightstand`). ⚠ **위 14줄은 글자 하나 안 바뀌었다** —
+     `BYEOT_REGEN=1` 로 다시 뽑아 대조했고 `test_lampaim` ① 과도 같은 표다. */
+  'banjiha-nightstand:0': { ppfd: [0, 6.34696, 12.722602], dli: [0.29, 0.56, 0.84] }
 };
 
 /* 새 값을 뽑을 때 쓴다: BYEOT_REGEN=1 node tools/test_lampmove.mjs
@@ -163,7 +167,7 @@ function regressionDiff() {
 console.log('── 1부 · 조도 (헤드리스) ─────────────────────────────────');
 {
   const bad = regressionDiff();
-  ok('① 회귀 — 아무것도 안 옮기면 14칸 × 등 0/1/2 가 한 톨도 안 바뀐다',
+  ok('① 회귀 — 아무것도 안 옮기면 15칸 × 등 0/1/2 가 한 톨도 안 바뀐다',
      bad.length === 0, bad.slice(0, 4).join(' / '));
 }
 
@@ -343,8 +347,10 @@ if (!BASE) {
 
     const mounts = JSON.parse(await page.eval('JSON.stringify(window.view.lampMounts())'));
     const ids = mounts.map(m => m.mountId);
-    ok(`B 물림자리 — 상판이 ${mounts.length}군데 나온다 (창턱·책상·서랍장·선반 3단)`,
-       mounts.length === 6 && ids.some(i => i.startsWith('banjiha-sill@'))
+    ok(`B 물림자리 — 상판이 ${mounts.length}군데 나온다 (창턱·책상·협탁·서랍장·선반 3단)`,
+       /* ★ 2026-08-17 (G-14) — 협탁이 들어와 상판이 6 → 7 군데가 됐다(협탁 윗면 0.480). */
+       mounts.length === 7 && ids.some(i => i.startsWith('banjiha-nightstand@'))
+       && ids.some(i => i.startsWith('banjiha-sill@'))
        && ids.some(i => i.startsWith('banjiha-desk@'))
        && ids.filter(i => i.startsWith('banjiha-etagere@')).length === 3,
        ids.join(', '));
