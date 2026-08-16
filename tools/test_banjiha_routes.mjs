@@ -1357,6 +1357,25 @@ check('G-2c ★세 경로가 여름을 넘겨 끝난다 — 가을·식물등·�
          [10, 20, 30].map(d => `튜토${d}일 ${(at(one, d) || 0).toLocaleString()}원`).join(' → ') +
          ` → 판 날 ${(one.S.tutorial.cashWon).toLocaleString()}원`);
     info(`  ⤷ 마지막 날 모주 잎 ${JSON.stringify(one.rows[one.rows.length - 1].leaves)}`);
+    /* ★★ 2026-08-16 — 박사님: *"처음에 무지, 두 번째 산반, 세 번째 하프문이면
+       한참 지나 있는 시기 아닌가."* **맞는 의심이고 내가 안 쟀다.**
+       ⇒ 잎이 **며칠에 몇 장이 됐는지**를 그대로 찍는다. 어림하지 않는다. */
+    const seen = new Map();
+    for (const row of one.rows) {
+      const n = (row.leaves && row.leaves.leaves) || 0;
+      if (!seen.has(n)) seen.set(n, row);
+    }
+    /* ⚠⚠ **달력일을 같이 찍는다.** 「튜토 1일에 잎 3장」이라 읽고 내가 「재현이 거짓말한다」고
+       했는데, `ts.day`(튜토 일)는 **첫 플레이가 끝나기 전에는 안 움직인다**
+       (`tutorial.tutorialDay` — 그 구간은 배우는 구간이지 살림 구간이 아니다).
+       즉 「튜토 0일 → 1일」 사이에 **달력은 서른 날 넘게 흐른다.** 튜토일만 보면
+       하루 만에 잎이 3장이 된 것처럼 보인다. ⇒ **둘을 같이 안 찍으면 반드시 헛짚는다.** */
+    info(`  ⤷ ★잎이 언제 났나 — ` + [...seen.entries()].sort((a, b) => a[0] - b[0])
+      .map(([n, row]) => `${n}장:달력${row.day}일/튜토${row.tday}일(유효 ${row.leaves.growthDays}일` +
+        `·무늬 ${row.leaves.variegatedLeaves}장)`).join(' → '));
+    const lastRow = one.rows[one.rows.length - 1];
+    info(`  ⤷ 마지막 날 — 달력 ${lastRow.day}일 / 튜토 ${lastRow.tday}일 ` +
+         `⇒ 「튜토 33일」은 **달력 ${lastRow.day}일**이다`);
     const noGrant = summer.filter(r => r.grantDay == null).length;
     info(`  ⤷ 그중 확정 무늬를 **안 받고** 나간 판 ${noGrant}/${summer.length} — ` +
          `안 받았다면 프롤로그 보장 잎(2·3번째)을 잘라 판 것이다`);
