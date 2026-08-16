@@ -1,6 +1,6 @@
 # 안내(가이드) 창 → plan — 2026-08-16
 
-> START **15:43** · END **16:45** (KST · `date` 로 찍은 값이다. 짐작이 아니다)
+> START **15:43** · END **16:46** (KST · `date` 로 찍은 값이다. 짐작이 아니다)
 > 몫: `FIXLIST-2026-08-16.md` §A 다섯 · §D 둘 · §E-3 하나
 > 검사: `tools/test_guide_notes.mjs` **33/33** · `test_outside` 통과 · `test_quiet` 26/26 ·
 > `test_questui` 54/54 · `test_bagcell` 55/55 · **game.html 부팅 예외 0건**
