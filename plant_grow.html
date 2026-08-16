@@ -3082,12 +3082,20 @@ function growthPhase(){
      박사님 확정 "삽수는 실제 자랐던 거를 각각 잘라서" 가 여기서 문자 그대로 성립한다.
      추정값이 섞이는 순간 이 기능의 존재 이유가 사라지므로, 여기서 새로 굴리는 난수는 없다.
 
-   반환 [{ nodeId, stem, leaves, variegatedLeaves, growthDays }, ...] — 마디 하나당 한 줄
+   반환 [{ nodeId, stem, leaves, variegatedLeaves, leafBirths, leafKeys, growthDays }, ...] — 마디 하나당 한 줄
      nodeId            그 마디를 다시 가리키는 이름(아래 ★)
      stem              캐논 등급 petiole / pink / thick / main (docs/propagation.md §1)
      leaves            그 마디를 자르면 딸려 나올 잎 수 = 그 마디 위 전부 + 거기서 난 가지 전부
      variegatedLeaves  그중 이미 무늬로 난 잎 수(물리적으로 같은 잎이 딸려간다)
+     leafBirths        ★ 그 잎들의 `leafBirth` 값 — `leafState()` 가 내는 줄과 맞물리는 열쇠
+     leafKeys          ★ 그 잎들의 축 경로(`n0`·`n0.1`·`n0.1:1`) — 잎마다 **유일하다**
      growthDays        그 조각이 자란 유효 생장일
+   ★★ 왜 열쇠를 둘 내나 (2026-08-17) — **자른 마디가 방에서도 잘려 보이게** 하려면
+     "어느 잎이 딸려 갔나"를 부르는 쪽이 알아야 한다. 방은 `leafState()` 의 줄을
+     `leafBirth` 로 찾아 앉히므로(render3d/plant_assemble §__setLeafState) 그 값이 곧 창구다.
+     그런데 `leafBirth` 는 **쌍혹에서 두 잎이 나눠 쓴다**(위 carried 주석 · 아래 실측).
+     그래서 유일한 열쇠(`leafKeys`)를 나란히 낸다. 둘은 자리로 짝이다.
+   ⚠ 이 함수는 **잎을 지우지 않는다.** 열쇠를 내줄 뿐이고, 지우는 것은 부르는 쪽 몫이다.
    자를 수 있나(pink 이상인가)는 코어가 stem 으로 판정한다 — 목록은 마디를 다 낸다.
 
    ★★ nodeId 는 자리가 아니라 "뿌리에서 그 마디까지 온 길"이다.
@@ -3121,14 +3129,24 @@ function cuttableNodes(){
   // 그 축이 지금 달고 있는 잎(생장점의 잎 1장). 떨어진 잎을 빼는 것까지 buildPlant 과 같은 기준이다
   const hasLeaf=(ax)=> g>=ax.leafBirth && !leafDroppedOf(ax.leafBirth);
   // fromIdx 번 마디부터 위로 딸려 나올 잎 — 자기 잎 + fromIdx 이상 마디에서 난 가지의 전부
+  // ★ 잎 '수'만이 아니라 **그 잎을 다시 가리킬 열쇠**도 같은 걸음에서 모은다 (2026-08-17).
+  //   지금까지 여기서 나가는 것은 개수뿐이라, 자른 뒤에 "어느 잎이 딸려 갔나"를
+  //   아무도 몰랐다. 그래서 장부에서는 잎이 줄었는데 방에 선 그루는 그대로였다.
+  //     births  그 잎의 `leafBirth` — leafState() 가 쓰는 바로 그 칸이다(줄을 맞물릴 열쇠)
+  //     keys    그 잎이 달린 **축의 경로**(`n0`·`n0.1`·`n0.1:1`) — 잎마다 유일하다
+  //   ⚠ 왜 둘인가: `leafBirth` 는 **쌍혹에서 겹친다.** 혹 하나에서 가지가 둘 날 때
+  //     (growTopology ④ · doubleBud) 두 축의 birth 가 같은 날이라 leafBirth 도 같다.
+  //     그러니 leafBirth 하나로는 그 두 잎을 못 가른다 — 유일한 열쇠는 keys 쪽이다.
+  //   두 배열은 **자리로 짝**이다(births[i] 의 잎이 keys[i]).
   const carried=(ax, fromIdx)=>{
-    let n=0, v=0;
-    if(hasLeaf(ax)){ n++; if(ax.varie) v++; }
+    let n=0, v=0; const births=[], keys=[];
+    if(hasLeaf(ax)){ n++; if(ax.varie) v++; births.push(ax.leafBirth); keys.push('n'+pathOf.get(ax)); }
     for(const c of (kidsOf.get(ax)||[])){
       if(c.idx<fromIdx || c.ax.birth>g) continue;
       const r=carried(c.ax, 0); n+=r.n; v+=r.v;
+      for(let k=0;k<r.births.length;k++){ births.push(r.births[k]); keys.push(r.keys[k]); }
     }
-    return {n, v};
+    return {n, v, births, keys};
   };
   // 캐논 등급. 예비혹(pink)은 stemTrans 만큼 묵으면, 혹(thick/main)은 실제로 돋은 뒤부터 —
   // 둘 다 buildPlant 이 후보를 고르고 혹 GLB 를 얹는 기준 그대로다(새 숫자를 안 만들었다).
@@ -3144,6 +3162,7 @@ function cuttableNodes(){
       const r=carried(ax, i);
       out.push({ nodeId:'n'+pathOf.get(ax)+'#'+i, stem:stemOf(s),
                  leaves:r.n, variegatedLeaves:r.v,
+                 leafBirths:r.births, leafKeys:r.keys,   // ★ 딸려 나갈 잎들의 열쇠(위 carried 주석)
                  // 마디가 난 '생장 나이'를 실제 생장일로 되돌려 뺀다(ageOf 의 역함수 dayOfAge)
                  growthDays:Math.max(0, Math.round(day-dayOfAge(s.birth))) });
     }

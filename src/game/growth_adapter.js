@@ -251,7 +251,16 @@ export function createGrowthAdapter(iframe) {
     canFenestrate(varie) { const f = fn('canFenestrate'); return f ? f(!!varie) : null; },
 
     /* ★ 삽수용 — 모주의 **자를 수 있는 마디 목록** (2026-08-03).
-       반환 `[{ nodeId, stem, leaves, variegatedLeaves, growthDays }]` 또는 **null**.
+       반환 `[{ nodeId, stem, leaves, variegatedLeaves, leafBirths, leafKeys, growthDays }]` 또는 **null**.
+
+       ★★ 2026-08-17 — 줄마다 **딸려 나갈 잎의 열쇠**가 붙었다(plant_grow §cuttableNodes).
+         `leafBirths: number[]`  그 잎들의 `leafBirth` — `leafState()` 가 내는 줄의 열쇠와 같은 칸
+         `leafKeys:   string[]`  그 잎들의 축 경로(`n0`·`n0.1`·`n0.1:1`) — 잎마다 **유일하다**
+         두 배열은 자리로 짝이고 길이는 `leaves` 와 같다.
+       ⚠ `leafBirth` 는 **잎마다 유일하지 않다** — 쌍혹(가지 둘이 같은 날 나는 것)이면 두 잎이
+         한 값을 나눠 쓴다. 그 값으로 잎을 지우면 **둘 다** 지워진다. 유일한 것은 `leafKeys` 다.
+       ⚠ 이 어댑터는 이 칸을 **그대로 통과**시킨다(배열을 손대지 않는다).
+         옛 plant_grow 는 이 칸이 아예 없다 — 그때는 `undefined` 다. 빈 배열로 메꾸지 않는다.
 
        ★ [처리됨 2026-08-03 growth 창] 접근자가 붙었다. 이제 실제 목록이 온다.
          plant_grow.html 이 `buildPlant` 이 그리던 마디 트리 시뮬을 `growTopology()` 로 꺼내
@@ -270,6 +279,61 @@ export function createGrowthAdapter(iframe) {
       if (!f) return null;
       const list = f();
       return Array.isArray(list) ? list : null;
+    },
+
+    /* ★★ 마디 여럿에 딸린 **잎 열쇠**를 한 벌로 모아 준다 (2026-08-17).
+       ------------------------------------------------------------
+       ══ 왜 있나 ═══════════════════════════════════════════════════════════
+       삽수를 자르면 코어 장부에서는 잎이 준다(`propagation §motherLeafStats` 가 `lostLeaves`
+       를 뺀다). 그런데 **방에 선 그루는 잎을 그대로 달고 있었다** — 형태의 정본이
+       `plant_grow` 이고 거기에 「이 마디를 잘랐다」를 알려 줄 창구가 없었기 때문이다.
+       방은 이미 `leafState()` 를 받아 그리므로(`plant_assemble §__setLeafState`), 없던 것은
+       **「어느 잎이 잘려 나갔나」를 잇는 열쇠**뿐이다. 그 열쇠를 여기서 모아 낸다.
+
+       인자   nodeIds  `cuttableNodes()` 의 `nodeId` 하나 또는 배열
+       반환   `{ nodeIds, leafBirths, leafKeys, missing, twins }` 또는 **null**
+         leafBirths  딸려 나갈 잎들의 `leafBirth` (leafState 의 줄과 맞물리는 값)
+         leafKeys    같은 잎들의 유일한 열쇠(축 경로). `leafBirths[i]` 와 자리로 짝이다
+         missing     못 찾은 nodeId · 열쇠 칸이 없는 마디 — **빈 값으로 안 메꾼다**
+         twins       `leafBirths` 안에서 **겹치는 값**(쌍혹). 이 값으로 지우면 둘 다 지워진다
+       ★ 여러 마디를 주면 **겹치는 잎은 한 번만** 낸다(`leafKeys` 로 추린다). 위·아래 마디를
+         같이 고르면 위쪽 잎이 두 번 세어져 「지운 잎보다 더 많이 사라지는」 일이 난다.
+       ⚠ 접근자가 없거나 옛 plant_grow(열쇠 칸이 없는 것)면 **null 이다.**
+         0 이나 빈 배열로 메꾸지 않는다 — 빈 배열은 「딸려 갈 잎이 없다」는 **거짓말**이고,
+         그러면 호출부가 아무 잎도 안 지운 채 「지웠다」고 여긴다(이 파일의 규약, cuttableNodes 참고).
+       ⚠ 삽수를 모주로 자를 때(`propagation.cuttableNodesOfCutting`)의 마디는 여기 없다 —
+         그 마디는 코어가 자기 장부에서 만든 것이고 growth 의 트리에 없다. `missing` 으로 나온다. */
+    leafKeysOfNodes(nodeIds) {
+      const f = fn('cuttableNodes');
+      if (!f) return null;
+      let list = null;
+      try { list = f(); } catch { return null; }
+      if (!Array.isArray(list)) return null;
+      /* 열쇠 칸을 내는 plant_grow 인가. 하나도 없으면 옛 파일이다 — 지어내지 않고 null. */
+      const hasKeys = (n) => !!n && Array.isArray(n.leafBirths) && Array.isArray(n.leafKeys)
+        && n.leafBirths.length === n.leafKeys.length;
+      if (!list.some(hasKeys)) return null;
+
+      const want = (Array.isArray(nodeIds) ? nodeIds : [nodeIds])
+        .filter(x => typeof x === 'string' && x);
+      const byId = new Map();
+      for (const n of list) if (n && typeof n.nodeId === 'string') byId.set(n.nodeId, n);
+
+      const leafBirths = [], leafKeys = [], missing = [], seen = new Set();
+      for (const id of want) {
+        const n = byId.get(id);
+        if (!hasKeys(n)) { missing.push(id); continue; }
+        for (let i = 0; i < n.leafKeys.length; i++) {
+          const k = n.leafKeys[i];
+          if (seen.has(k)) continue;                 // 겹치는 마디를 같이 골랐다 — 잎은 한 장이다
+          seen.add(k);
+          leafKeys.push(k); leafBirths.push(n.leafBirths[i]);
+        }
+      }
+      const cnt = new Map();
+      for (const b of leafBirths) cnt.set(b, (cnt.get(b) || 0) + 1);
+      const twins = [...cnt.entries()].filter(([, c]) => c > 1).map(([b]) => b);
+      return { nodeIds: want, leafBirths, leafKeys, missing, twins };
     },
 
     /* ★ 판매·표시용 — 지금 이 그루의 잎 집계 (2026-08-03).
