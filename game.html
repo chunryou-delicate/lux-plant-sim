@@ -444,6 +444,14 @@
          background:rgba(255,255,255,.28)}
   .sheettabs{flex:0 0 auto;display:flex;gap:5px;padding:4px 12px 8px;overflow-x:auto;scrollbar-width:none}
   .sheettabs::-webkit-scrollbar{display:none}
+  /* ══ ⚠⚠ 상점 하부 탭만 **줄을 접는다** (2026-08-16 §G-15) ═══════════════════
+     갈래가 넷에서 **다섯**이 됐다(식물등). 폰 세로 390px 에서 다섯을 한 줄에 세우면
+     마지막 칸이 줄 밖으로 밀리는데, **처음 여는 사람의 기본값이 바로 그 [전체]** 다
+     (§SHOP_GROUPS — [전체]는 맨 뒤다). 고른 칸이 화면 밖에 있으면 「어디가 켜졌는지」를
+     알 길이 없다 — 가로 스크롤은 「밀린 것이 있다」를 화면이 안 말하기 때문이다.
+     ⇒ 이 줄만 접어서 **다섯을 다 보인다.** 한 줄이 늘지만 아래 목록은 어차피 구른다.
+     ⚠ 시트 위쪽 큰 탭(`.sheettabs` 일반)은 **안 건드렸다** — 거기는 다섯이 한 줄에 들어간다. */
+  #shopGroups{flex-wrap:wrap;overflow-x:visible;row-gap:5px}
   .sheettabs button{flex:0 0 auto;min-height:36px;padding:0 14px;border-radius:999px;font-size:13px;
          background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.10);color:var(--dim);
          background-image:none}
@@ -855,6 +863,32 @@
      ★화분은 화면에서 작다. 정확히 짚게 하면 조작이 고문이 된다 —
        말풍선을 오브젝트보다 크게 만들어 그걸 누르게 한다. */
   #marks{position:absolute;z-index:25;inset:0;pointer-events:none}
+  /* ══ ★★★ 뜨는 글자 — 거둔 순간 **그 시루 위에** (2026-08-16 §G-11) ═══════════
+     박사님: *"거두기 끝났을 때 그 시루 위치 위에 `+OOOg 수확` 이렇게 초록색 글자가
+     다른 게임 데미지 표시처럼 나타났다가 위로 올라가면서 페이드아웃되게"*
+     ★ 말풍선(`#marks`)과 **같은 자리 계통**이다 — `screenPosOf` 로 캔버스 좌표를 받아
+       프레임마다 다시 묻는다(§markTick). 그래야 시점을 돌려도 그 시루를 따라간다.
+     ⚠ 손을 안 받는다(`pointer-events:none`) — 거둔 자리 위에 3초쯤 떠 있는데
+       그것이 말풍선·시루를 가로채면 다음 손짓이 막힌다.
+     ⚠ 올라가는 것은 **transform 애니메이션**이고 JS 는 `left/top` 만 만진다. 둘을 한
+       속성에 겹치면 프레임마다 애니메이션이 처음으로 되감긴다(글자가 제자리에서 떤다). */
+  #floats{position:absolute;z-index:26;inset:0;pointer-events:none}
+  .float{position:absolute;font-weight:800;font-size:15px;letter-spacing:-.2px;
+    color:#7ef0a0;white-space:nowrap;will-change:transform,opacity;
+    text-shadow:0 2px 6px rgba(0,0,0,.85),0 0 3px rgba(0,0,0,.9);
+    transform:translate(-50%,-100%);animation:floatUp 1.6s cubic-bezier(.22,.61,.36,1) forwards}
+  @keyframes floatUp{
+      0%{opacity:0;transform:translate(-50%,-100%) translateY(10px) scale(.86)}
+     14%{opacity:1;transform:translate(-50%,-100%) translateY(0) scale(1.06)}
+     26%{transform:translate(-50%,-100%) translateY(-4px) scale(1)}
+     72%{opacity:1}
+    100%{opacity:0;transform:translate(-50%,-100%) translateY(-54px) scale(1)}
+  }
+  /* 움직임을 줄여 달라는 기기에서는 **올라가지 않고 사라지기만** 한다(글자는 그대로 읽힌다) */
+  @media (prefers-reduced-motion:reduce){
+    .float{animation:floatFade 1.6s linear forwards}
+    @keyframes floatFade{0%{opacity:0}12%{opacity:1}70%{opacity:1}100%{opacity:0}}
+  }
   /* 동작 게이지 — 화면 아래쪽 가운데. 캐릭터를 안 가린다 */
   #actBar{position:absolute;z-index:29;left:50%;transform:translateX(-50%);
     bottom:14px;width:min(74%,300px);pointer-events:none;text-align:center}
@@ -1460,6 +1494,8 @@
          ★오브젝트보다 크게 만든다 — 화분은 화면에서 작아서 정확히 짚기가 어렵다.
            말풍선이 곧 버튼이라 무엇을 해야 하는지와 어디를 눌러야 하는지가 한 번에 잡힌다. -->
     <div id="marks"></div>
+    <!-- ★ 뜨는 글자 — 거둔 순간 그 시루 위에 `+400g 수확` (§G-11 · CSS 주석에 규율) -->
+    <div id="floats" aria-hidden="true"></div>
     <!-- ★동작 게이지 — 캐릭터가 가서 하는 동안 얼마나 됐나.
          3D 링이 아니라 화면 띠다: 시점을 돌리면 링이 기울고, 폰에서 40px 캐릭터
          발밑 링은 손가락에 가린다. -->
@@ -2008,7 +2044,7 @@
           <!-- ★잉여 채소 넘기기 (2026-08-06 · docs/handoff/cropsale-to-plan.md).
                팔 것이 있을 때만 뜬다 — 늘 띄우면 "왜 회색이지"가 된다.
                ⚠ 2026-08-15 재확인 — **그대로 둔다.** 「파는 길이 있다」는 바로 아래
-                 [곳간 채소 팔기]가 늘 보이며 말해 준다(비면 회색 + 까닭 한 줄).
+                 [보유 채소 팔기]가 늘 보이며 말해 준다(비면 회색 + 까닭 한 줄).
                  회색 단추를 둘로 늘릴 이유가 없고, 잉여는 **겹쳐 거뒀을 때만 생기는
                  예외 몫**이라 늘 보이면 정상적인 길처럼 읽힌다. -->
           <button id="sellSurplus" class="ghost" style="display:none">잉여 채소 넘기기</button>
@@ -2021,14 +2057,18 @@
           <button id="sellPlant" class="ghost" disabled>몬스테라 내놓기</button>
         </div>
         <div id="surplusHint" class="itemline"></div>
-        <!-- ══ ★곳간 채소 팔기 (2026-08-15 · docs/handoff/pantrysale-to-plan.md) ══════
+        <!-- ══ ★보유 채소 팔기 (2026-08-15 · docs/handoff/pantrysale-to-plan.md) ══════
              박사님: *"채소는 상점에서 판매 가능하게 해줘. 누르면 몇개팔지 나오게도 해주고."*
              ★ 잉여와 **다른 단추**다. 잉여는 어차피 버릴 몫이고 이쪽은 **먹을 것**이라,
                한 단추로 묶으면 「무엇을 파는지」가 화면에서 사라진다.
-             ★★ 그래서 이 자리는 **손해를 반드시 말한다** — 곳간 1원은 밥값 1원인데
-               팔면 0.85원이다. 안 말하면 모르고 팔고 나서 뒤늦게 안다. -->
+             ★★ 그래서 이 자리는 **손해를 반드시 말한다** — 보유 채소 1원은 밥값 1원인데
+               팔면 0.85원이다. 안 말하면 모르고 팔고 나서 뒤늦게 안다.
+             ⚠⚠ 2026-08-16 §G-13 — 화면 글자에서 **「곳간」이라는 말을 걷었다**(박사님:
+               *"「곳간」이라는 말 없애기, 다른 용어… 그냥 보유 채소"*). **코드 이름
+               (`pantry…`·`pantryWon`·`pantryLots`)은 한 글자도 안 바꿨다** — 세이브·검사·
+               문서가 그 이름을 쓴다. 바뀐 것은 **사람이 읽는 글자**뿐이다. -->
         <div class="btns">
-          <button id="sellPantry" class="ghost" disabled>곳간 채소 팔기</button>
+          <button id="sellPantry" class="ghost" disabled>보유 채소 팔기</button>
         </div>
         <div id="pantryHint" class="itemline"></div>
         <!-- ★ 「몇 판 팔지」 고르개는 **여기 없다.** 2026-08-17 에 팝업으로 옮겼다 —
@@ -2062,8 +2102,11 @@
         <div id="ledger"></div>
         <div class="quest" id="tutGoal" style="margin:8px 0"></div>
         <div id="tutCheck" class="itemline"></div>
+        <!-- ⚠⚠ 2026-08-16 §G-15 — **[식물등 사기]가 여기 없다.** [상점]의 새 하부 탭
+             [식물등]으로 옮겼다(박사님: *"식물등 구매 위치가 상점으로, 새 탭 생성"*).
+             ★ 사는 규칙(`tutorial.buyLamp`)은 한 글자도 안 바꿨다 — **누르는 자리만** 옮겼다.
+             ⚠ 여기에 되살리지 마라. 두 자리가 되면 「어디서 사는 것인가」를 두 번 배운다. -->
         <div class="btns">
-          <button id="buyLamp" class="ghost" disabled>식물등 사기</button>
           <button id="moveOut" class="primary" disabled style="width:auto;margin-top:0">원룸으로 이사</button>
         </div>
       </div>
@@ -3910,12 +3953,10 @@ function drawTutorial(living) {
     ? '남은 것 — ' + left.map(x => x.ko).join(' · ')
     : '배울 것은 다 해 봤습니다';
 
-  const lamp = $('buyLamp');
-  lamp.disabled = !ts.lamp.unlocked || ts.cashWon < R.lampPriceWon;
-  lamp.textContent = !ts.lamp.unlocked
-    ? `식물등 (가을에 열림)`
-    : `식물등 사기 · ${R.lampPriceWon.toLocaleString()}원`;
-
+  /* ⚠ 2026-08-16 §G-15 — 여기 있던 [식물등 사기] 다섯 줄이 **[상점]으로 갔다**(§식물등 줄).
+     그 줄은 잠긴 채로 「식물등 (가을에 열림)」이라 적혀 늘 회색으로 서 있었는데,
+     상점 쪽은 **풀리기 전에는 아예 안 보인다** — 살 수 없는 물건을 안 띄우는 이 저장소의
+     규칙(무순·수경병)에 맞췄다. `R.lampPriceWon` 도 거기서 읽는다. */
   const mv = $('moveOut'), c = canMoveOut(ts);
   mv.disabled = !c.ok || ts.movedOut;
   mv.textContent = ts.movedOut ? '이사 완료' : '원룸으로 이사';
@@ -4031,7 +4072,7 @@ function drawLedger() {
         + ` 하루씩 어긋나게 돌리면 <b>매일</b> 거둡니다.`;
   else if (sirus < handCap)
     tip = `시루 <b>${sirus}개</b> — 이제 매일 거둡니다. 하루 몫을 넘게 거둔 것은`
-        + ` <b>안 버려지고</b> 곳간에 쌓였다가 [상점]에서 팔립니다.<br>`
+        + ` <b>안 버려지고</b> **보유 채소**로 쌓였다가 [상점]에서 팔립니다.<br>`
         + `★물은 한 번에 하나라 <b>하루 ${maxWaterPerDay}개</b>까지 시작할 수 있습니다`
         + ` — 그래서 <b>${handCap}개</b>가 천장입니다.`;
   else
@@ -4043,8 +4084,8 @@ function drawLedger() {
     + row('콩나물로 아낌', savedToday ? '−' + won(savedToday) : '—', 'save')
     + row('오늘 실제로 나가는 돈', won(Math.max(0, daily - savedToday)), 'net')
     + row('보유금', won(ts.cashWon || 0), 'cash')
-    /* ★ 2026-08-16 — 곳간은 **물건**이라 g 으로 적는다. 원은 괄호 안에 남긴다(§그램) */
-    + row('곳간에 남은 것',
+    /* ★ 2026-08-16 — 보유 채소는 **물건**이라 g 으로 적는다. 원은 괄호 안에 남긴다(§그램) */
+    + row('보유 채소',
           pantryWon ? `${formatGram(pantryGramsSafe())} (${won(pantryWon)})` : '없음')
     + row('시루', sirus ? `${sirus}개` + (waiting ? ` (${waiting}개 대기)` : '') : '없음')
     + row('한 번 거두면', `${formatGram(cycleG)} 안팎 (${won(cycleWon)})`)
@@ -5083,31 +5124,48 @@ function drawBag() {
 
 /* ══ ★★ 상점 하부 탭 (2026-08-16 박사님: *"종류별로 리스팅되게 해 줘"*) ══════════
    ⚠ 갈래를 **카탈로그의 `kind` 하나로만** 가르지 않는다. `container` 가 여덟인데
-     그 안에 「기르는 그릇(시루·재배판·수경병·모종포트)」과 「보여 주는 화분」이 섞여 있다.
-     사는 마음이 다른 물건이라 한 줄에 두면 고르기가 어렵다 — 그래서 셋으로 가른다.
-   ★ **순서가 곧 배우는 순서다** — 씨앗 → 기르는 그릇 → 화분.
+     그 안에 「채소를 키우는 그릇」과 「몬스테라 쪽 그릇」이 섞여 있다.
+     사는 마음이 다른 물건이라 한 줄에 두면 고르기가 어렵다 — 그래서 갈랐다.
+   ★ **순서가 곧 배우는 순서다** — 씨앗 → 채소 키우는 그릇 → 화분 → 식물등.
    ⚠ 이름을 화면 markup 에 안 적는다. 이 표가 정본이고 `drawShopGroups` 가 짓는다. */
 /* ⚠ 2026-08-16 — **[전체]를 맨 뒤로** 옮겼다(박사님: *"상점 세부 탭 순서 중 전체를 맨 뒤로"*).
    ★ 앞에 두면 **처음 여는 사람이 제일 먼저 만나는 것이 「전부 섞인 목록」**이 된다.
-     갈래를 만든 까닭이 고르기 쉬우라는 것인데 그 첫인상이 그것을 지운다.
-   ★ 순서는 그대로 **배우는 순서**다 — 씨앗 → 기르는 그릇 → 화분 → (전체). */
+     갈래를 만든 까닭이 고르기 쉬우라는 것인데 그 첫인상이 그것을 지운다. */
+/* ══ ⚠⚠ 2026-08-16 §G-14 — 「기르는 그릇」 → **「채소 키우는 그릇」** ═════════════
+   박사님: *"「기르는 그릇」을 「채소 키우는 그릇」으로 해서 **채소용 그릇만**"*
+   ★★ **이름만 바꾸면 거짓말이 되는 자리였다 — 재서 확인했다.**
+     그 갈래에 들어 있던 것은 셋이다: 콩나물 시루 · 새싹 재배판 · **유리 수경병**.
+     앞의 둘은 채소지만 **유리 수경병은 몬스테라 삽수를 꽂는 그릇**이다
+     (`shop.js §jar` — *"docs/propagation.md §4 CONTAINERS.jar"* · [식물] 탭의 삽수 계통이
+      쓴다). 이름만 「채소 키우는 그릇」으로 바꾸면 그 안에 채소가 아닌 것이 서게 된다.
+   ⇒ 수경병을 **[화분]으로 옮겼다.** 박사님이 같은 줄에서 *"화분은 몬스테라용"*이라
+     하셨고, 수경병은 정확히 그 몬스테라 쪽 그릇이다. 검은 모종포트가 `12dedf9` 에
+     같은 까닭으로 그리로 간 것과 **같은 결**이다.
+   ⚠ 그래서 갈래는 「무엇에 쓰나」로 갈린다 — 채소 쪽 / 몬스테라 쪽. 「생김새」가 아니다. */
+/* ★ §G-15 — **식물등**이 넷째 갈래다. 물건이 아니라 [방] 탭의 단추였다(아래 §식물등 줄). */
 const SHOP_GROUPS = Object.freeze([
   { id: 'seed',  ko: '씨앗' },
-  { id: 'grow',  ko: '기르는 그릇' },
+  { id: 'grow',  ko: '채소 키우는 그릇' },
   { id: 'pot',   ko: '화분' },
+  { id: 'lamp',  ko: '식물등' },
   { id: 'all',   ko: '전체' }
 ]);
-/* 「보여 주는 화분」 — 카탈로그가 갈래를 안 갖고 있어 **id 로 가른다.**
-   ⚠ 새 화분을 카탈로그에 넣을 때 여기도 늘려야 한다. 안 늘리면 [기르는 그릇]에 섞인다
+/* 「몬스테라 쪽 그릇」 — 카탈로그가 갈래를 안 갖고 있어 **id 로 가른다.**
+   ⚠ 새 화분을 카탈로그에 넣을 때 여기도 늘려야 한다. 안 늘리면 [채소 키우는 그릇]에 섞인다
      (조용히 틀리지는 않는다 — 눈에 바로 보인다). */
 /* ⚠ 2026-08-16 — `pot`(검은 모종포트)도 여기 넣는다. 박사님: *"검은 모종포트는
    몬스테라 심는 거야? 그럼 화분 쪽에 옮겨."* — 맞다. 모종포트는 **몬스테라를 심는 그릇**이고
    시루·재배판(채소를 기르는 그릇)과 사는 마음이 다르다. */
 const SHOP_DECOR_POTS = /^pot(_|$)/;
+/* ★ 화분은 아닌데 **몬스테라 쪽**인 그릇 — 유리 수경병(삽수를 꽂는다 · §G-14) */
+const SHOP_MONSTERA_VESSELS = new Set(['jar']);
+/* ★ 식물등 — 카탈로그에 없는 **가짜 품목**의 id (아래 §식물등 줄이 짓는다) */
+const SHOP_LAMP_ID = '__lamp__';
 function shopGroupOf(it) {
   if (!it) return 'grow';
+  if (it.id === SHOP_LAMP_ID) return 'lamp';
   if (it.kind === 'seed') return 'seed';
-  if (SHOP_DECOR_POTS.test(it.id)) return 'pot';
+  if (SHOP_DECOR_POTS.test(it.id) || SHOP_MONSTERA_VESSELS.has(it.id)) return 'pot';
   return 'grow';
 }
 let shopGroup = 'all';
@@ -5213,9 +5271,39 @@ function drawShop() {
     .filter(it => musunOpen || !MUSUN_ITEMS.has(it.id))
     .filter(it => monsteraOpen || !MONSTERA_ITEMS.has(it.id))
     .filter(it => cutOpen || !CUT_ITEMS.has(it.id));
+  /* ══ ★★★ §식물등 줄 — **[방]에 있던 단추를 상점으로 옮겼다** (2026-08-16 §G-15) ══════
+     박사님: *"식물등 구매 위치가 상점으로, 새 탭 생성"*
+     ★★ **사는 규칙은 한 글자도 안 바꿨다.** `tutorial.buyLamp` 가 그대로 판정하고
+       그대로 지갑을 깎는다(§식물등 사기 handler). 옮긴 것은 **누르는 자리**뿐이다.
+     ⚠ 그래서 이것은 카탈로그 품목이 **아니다.** 상점 재고·주문·배송 계통을 안 탄다
+       (사면 그 자리에서 켜진다 — `leadDays` 가 없다). 화면에만 세우는 **가짜 줄**이고,
+       `SHOP_LAMP_ID` 하나로 그 사실을 표시한다.
+     ⚠⚠ **가을에 풀리기 전에는 아예 안 보인다**(`ts.lamp.unlocked`). 살 수 없는 물건을
+       띄우면 「돈만 없어지는 함정」이 된다 — 무순·수경병이 이미 그 규칙이다(§무순·§삽수).
+       ⇒ 잠긴 채로 회색 단추를 띄우던 옛 [방] 탭의 손버릇을 **여기로 안 가져온다.**
+     ⚠ 첫 플레이가 꺼진 판(검수)에서는 안 감춘다 — 다른 갈래와 같은 규약이다. */
+  const lampOpen = !(fp && fp.enabled) || !!(ts && ts.lamp && ts.lamp.unlocked);
+  const lampRow = lampOpen && ts && ts.rules ? {
+    id: SHOP_LAMP_ID, ko: '식물등', kind: 'lamp',
+    buyWon: ts.rules.lampPriceWon, leadDays: 0,
+    have: (ts.lamp && ts.lamp.owned) || 0
+  } : null;
+  if (lampRow) shown.push(lampRow);
   /* ★ 하부 탭 — 지금 화면에 있는 것만으로 짓는다. 빈 갈래는 안 만든다(누르면 빈 칸이 된다) */
   drawShopGroups(shown);
   $('shopList').innerHTML = shown.filter(it => shopGroupOf(it) === shopGroup || shopGroup === 'all').map(it => {
+    /* ★ 식물등은 배송이 없고 **바로 켜진다** — 「N일 뒤 도착」을 적으면 거짓말이 된다.
+       ⚠ 그리고 단추 이름이 [주문]이 아니라 [사기]다. 주문은 기다리는 일이고 이건 아니다. */
+    if (it.id === SHOP_LAMP_ID) {
+      const short = (ts.cashWon || 0) < it.buyWon;
+      return `<div class="shopRow">
+        <div class="nm">${it.ko}<small>사면 바로 켜집니다</small></div>
+        <div class="have">${it.have ? '보유 ' + it.have : ''}</div>
+        <div class="won">${it.buyWon.toLocaleString()}원</div>
+        <button class="ghost" id="buyLamp"${short ? ' disabled' : ''} data-lamp="1"
+          >${short ? '돈이 모자랍니다' : '사기'}</button>
+      </div>`;
+    }
     const have = st.stock[it.id] || 0;
     return `<div class="shopRow">
       <div class="nm">${it.ko}<small>${it.leadDays}일 뒤 도착</small></div>
@@ -5224,6 +5312,8 @@ function drawShop() {
       <button class="ghost" data-buy="${it.id}">주문</button>
     </div>`;
   }).join('');
+  /* ★ 줄이 매번 다시 지어지므로 손잡이도 매번 다시 건다 — `data-buy` 와 같은 규약이다 */
+  for (const b of $('shopList').querySelectorAll('[data-lamp]')) b.onclick = guard(doBuyLamp);
   for (const b of $('shopList').querySelectorAll('[data-buy]')) {
     /* ★★ 2026-08-18 — 누르면 **개수를 고르는 창**이 뜬다(§주문 개수).
        ⚠ `confirmOnce('정말 주문?')` 를 걷었다. 되묻기가 없어진 것이 아니라 **창 자체가
@@ -6396,6 +6486,52 @@ function drawWater() {
     : '💧 작물은 전부 자라는 중';
 }
 
+/* ══════════════════════════════════════════════════════════════════════════
+   ★★★ **[다음 날]이 「며칠 남았나」를 말한다** (2026-08-16 §G-18)
+   ------------------------------------------------------------
+   박사님: *"콩나물 시루 나는 거 하려면 **계속 날짜 보내기 하라고 계속 가이딩**해 주든지
+   하자"* · *"초반에 **5일 넘기는 것도 가이드** 좀 잘 해 주고"*
+
+   ══ ★ 얹기 전에 **지금 있는 안내를 세었다** (`tools/probe_terms.mjs` · 화면 실측) ═══════
+     물을 주고 나서 「수확까지 며칠」을 지금 무엇이 말하나 — 통로 열을 다 대 봤다:
+       ① `#quest`      **말한다** — 「콩나물이 자라는 중입니다. 수확까지 3일.」
+                        ⚠ 다만 **첫 플레이 단계(`grow_beansprout`)일 때만**이다.
+                          퀘스트가 열리면 `questGoal` 이 그 줄을 이겨서(§drawJourney)
+                          그 뒤로는 이 말이 화면에서 사라진다
+       ② 손가락        안 말한다 (첫 이틀만 [다음 날]을 가리키고 그 뒤로 걷힌다 —
+                        2026-08-06 박사님이 *"쓰잘데기없이 계속 유지된다"* 며 물리신 길이다)
+       ③ 말풍선        **없다** — 자라는 중에는 할 일이 없어 하나도 안 뜬다
+       ④⑤ 대사·배너   그날의 사건만. 자라는 동안은 조용하다
+       ⑥⑦⑧⑨⑩        열어야 보이거나(안내판·가방) 그 모드에 들어가야 보인다
+       시트 시루 줄    말한다 — 「2/5칸 · 3일 남음」 ⚠ **시트를 열어야** 보인다
+       **[다음 날] 단추  「다음 날 ▸」 — 아무 말도 안 한다** ← ★ 여기가 빈 자리였다
+
+   ⇒ 그래서 **새 통로를 안 만들었다.** 누를 단추가 스스로 말하게 했다.
+     ★ 이 자리가 맞는 까닭 셋:
+       ① 「계속 눌러라」를 말할 자리는 **그 단추**다. 다른 데 적으면 읽고 나서 눈을 옮겨야 한다
+       ② 늘 보이고(방 화면 아래 띠) 시트를 안 열어도 된다
+       ③ **손가락을 되살리지 않는다** — 박사님이 물리신 길을 안 되밟는다
+     ★ 물주기·거두기 단추가 이미 제 상태를 글자로 말한다(§drawWater 「2개 대기」).
+       같은 결이라 배울 것이 하나도 안 는다.
+   ⚠ **오늘 손이 갈 일이 있으면 아무 말도 안 얹는다.** 거둘 것이 익었는데 「수확까지」를
+     적으면 두 안내가 서로 다른 곳을 가리킨다 — 그게 이 저장소가 제일 자주 앓는 병이다.
+   ⚠ **수를 여기서 세지 않는다.** `cropPotList` 가 낸 `daysLeft` 를 읽는다. 주기가 바뀌어도
+     안 낡는다(START-HERE §2.8 이 「문구에 박은 수」로 겪은 그 사고). */
+const NEXT_KO = '다음 날 ▸';
+function drawNext() {
+  const b = $('next');
+  if (!b) return;
+  let rows = [];
+  try { rows = cropPotList(S.firstPlay, S.day).filter(r => r.placed); } catch { }
+  const todo = rows.some(r => r.ready || r.needsWater || r.needsSow);
+  const going = rows.filter(r => r.growing && Number.isFinite(r.daysLeft) && r.daysLeft > 0);
+  if (todo || !going.length) { b.textContent = NEXT_KO; b.removeAttribute('title'); return; }
+  const left = Math.min(...going.map(r => r.daysLeft));
+  b.textContent = `${NEXT_KO} · 수확까지 ${left}일`;
+  /* 긴 말은 길게 누를 때만 — 단추 한 줄에 다 적으면 좁은 화면에서 잘린다(= 거짓말이 된다) */
+  b.title = `하루씩 넘기면 ${left}일 뒤에 거둡니다`;
+}
+
 /* ══ 몬스테라 물주기 (2026-08-07 박사님 확정) ═══════════════════════════
    규칙·숫자는 전부 `state.js` §몬스테라 물주기 것이다. 여기서는 **묻기만** 한다 —
    주기를 화면에서 다시 세면 코어가 막는 날과 화면이 말하는 날이 갈린다.
@@ -6647,6 +6783,69 @@ function placeMarks() {
     el.style.top = Math.max(24, sp.y - 46) + 'px';
   }
 }
+/* ══════════════════════════════════════════════════════════════════════════
+   ★★★ **뜨는 글자** — 거둔 순간 그 시루 위에 `+400g 수확` (2026-08-16 §G-11)
+   ------------------------------------------------------------
+   박사님: *"거두기 끝났을 때 그 시루 위치 위에 `+OOOg 수확` 이렇게 초록색 글자가 다른
+   게임 데미지 표시처럼 나타났다가 위로 올라가면서 페이드아웃되게 해 줄래?"*
+
+   ★★ **말풍선과 같은 자를 쓴다.** 자리는 `roomView.screenPosOf(열쇠)` 하나가 정하고
+     프레임마다 다시 묻는다(§markTick 이 「시점을 돌리면 미끄러진다」로 이미 겪은 그것).
+     기준점을 새로 만들면 같은 시루를 두 계통이 서로 다른 자리라고 말하게 된다.
+   ★ 말풍선보다 **46px 더 위**에 띄운다 — 거둔 직후 그 자리에는 [🌱 다시 심기] 말풍선이
+     바로 서므로, 같은 높이에 두면 둘이 겹쳐 둘 다 안 읽힌다.
+   ⚠ **수를 여기서 만들지 않는다.** 코어가 낸 `perPot[].grams` 를 `formatGram` 에 그대로
+     넘긴다 — g/kg 을 정하는 것은 그 함수 하나다(§그램).
+   ⚠ 사라지는 것은 CSS 애니메이션이 맡고, 지우는 것은 `animationend` 다. 타이머로 지우면
+     탭이 뒤로 갔을 때(애니메이션이 멎는다) 글자가 남는다. 안전줄로 타이머도 같이 건다. */
+let floatTick = null;
+function placeFloats() {
+  const box = $('floats');
+  if (!box || !box.children.length) return;
+  if (!roomView || !roomView.screenPosOf) return;
+  for (const el of box.children) {
+    const key = el.dataset.key;
+    let sp = null; try { sp = roomView.screenPosOf(key); } catch { }
+    /* 화면 밖·카메라 뒤면 감춘다 — 0 으로 메꾸면 구석에 붙어 「저기서 거뒀나」로 읽힌다 */
+    if (!sp) { el.style.visibility = 'hidden'; continue; }
+    el.style.visibility = '';
+    el.style.left = sp.x + 'px';
+    el.style.top = Math.max(18, sp.y - 92) + 'px';
+  }
+}
+function floatTickOn() {
+  const box = $('floats');
+  if (box && box.children.length) {
+    if (floatTick == null) {
+      const tick = () => { floatTick = requestAnimationFrame(tick); placeFloats(); };
+      floatTick = requestAnimationFrame(tick);
+    }
+  } else if (floatTick != null) { cancelAnimationFrame(floatTick); floatTick = null; }
+}
+/* 열쇠(자리 이름) 위에 글자 하나를 띄운다. 열쇠가 안 풀리면 **아무 일도 안 한다** —
+   갈 곳이 없는 글자를 화면 구석에 세우지 않는다. */
+function floatUp(key, text) {
+  const box = $('floats');
+  if (!box || !key || !text) return;
+  if (!roomView || !roomView.screenPosOf) return;
+  let sp = null; try { sp = roomView.screenPosOf(key); } catch { }
+  if (!sp) return;
+  const el = document.createElement('div');
+  el.className = 'float';
+  el.dataset.key = key;
+  el.textContent = text;
+  const done = () => {
+    if (!el.parentNode) return;
+    el.remove();
+    floatTickOn();
+  };
+  el.addEventListener('animationend', done);
+  setTimeout(done, 3000);              /* 안전줄 — 탭이 숨어 애니메이션이 멎어도 걷힌다 */
+  box.appendChild(el);
+  placeFloats();
+  floatTickOn();
+}
+
 /* ★갉화면만 다시 그린다. draw() 전체를 부르면 저장·방 동기화까지 같이 돌아
    대사 한 줄 넘길 때마다 그러면 낭비다. — 보이는 것만 맞춘다.
    ★보이는 것 하나가 망가져도 턴은 돌아야 한다 — 각각 감싼다. */
@@ -6675,6 +6874,9 @@ function refreshOverlays() {
   try { drawHarvest(); } catch (e) { console.warn('[거두기]', e && e.message); }
   try { drawSow(); }     catch (e) { console.warn('[심기]', e && e.message); }
   try { drawWater(); }  catch (e) { console.warn('[물주기]', e && e.message); }
+  /* ★ §G-18 — [다음 날]이 「며칠 남았나」를 말한다. 물주기·거두기 **뒤**에 둔다:
+     오늘 할 일이 있으면 아무 말도 안 얹는데, 그 판정이 위 둘과 같은 사실을 봐야 한다 */
+  try { drawNext(); }   catch (e) { console.warn('[다음 날]', e && e.message); }
   try { drawPotWater(); } catch (e) { console.warn('[몬스테라 물주기]', e && e.message); }
   try { drawCuttings(); } catch (e) { console.warn('[삽수]', e && e.message); }
   try { updateHint(); } catch (e) { console.warn('[안내]', e && e.message); }
@@ -6772,6 +6974,17 @@ function lastHarvestSavedWon() {
 function noteHarvest(r) {
   try { lastHarvest = { day: S.day, won: Math.round(r.cycleSavedWon || r.savedWon || 0) }; }
   catch { lastHarvest = null; }
+  /* ★★ 2026-08-16 §G-11 — **거둔 시루 위에 `+400g 수확`** (§뜨는 글자).
+     ⚠ 부르는 자리가 여기인 까닭: 거두는 길이 **둘**이다(방의 말풍선 · 아래 [거두기] 단추).
+       두 길이 다 이 함수를 지나므로 여기 한 번만 얹으면 두 길이 안 갈린다.
+     ⚠ 시루마다 하나씩 — 한 번에 여럿을 거두면 각자의 자리 위에 뜬다. 합쳐 적으면
+       「어느 시루가 얼마를 냈나」가 사라지고, 그것이 이 게임에서 자리를 고르는 근거다. */
+  try {
+    for (const p of ((r && r.perPot) || [])) {
+      const g = Math.round(p && p.grams || 0);
+      if (g > 0) floatUp(siruKey(p.id), `+${formatGram(g)} 수확`);
+    }
+  } catch (e) { console.warn('[뜨는 글자]', e && e.message); }
   /* ★ 2026-08-18 — 한 달 가계부의 「거둔 것」. **수확은 턴 밖**이라 여기서만 셀 수 있다
      (하루 결산에는 그날 거둔 g 이 안 실린다). 두 수확 길이 다 이 함수를 지난다. */
   try { monthNoteHarvest(r); } catch (e) { console.warn('[가계부]', e && e.message); }
@@ -7337,7 +7550,7 @@ const siruHarvest = guard((id, kind) => {
   noteHarvest(r);           /* 아래 한 줄이 「얼마를 아꼈나」를 말할 근거 (§A ①) */
   let ko = '콩나물'; try { ko = cropKindOf(kind).ko; } catch { }
   banners([{ title: `🥣 ${ko}을(를) 거뒀습니다`,
-             sub: `${r.qualityKo || ''} · 곳간에 ${Math.round(r.savedWon || r.cycleSavedWon || 0).toLocaleString()}원` },
+             sub: `${r.qualityKo || ''} · 밥값 ${Math.round(r.savedWon || r.cycleSavedWon || 0).toLocaleString()}원어치` },
            ...surplusBannerOf(r)]);
   if (r.arrived) { arrivalSlotId = pot0(S) && pot0(S).slotId; fillSlots(false); }
   if (r.events && r.events.length) dlgOpen(story.events(r.events));
@@ -7427,6 +7640,7 @@ function draw() {
   try { drawMarks(); } catch (e) { console.warn('[말풍선]', e && e.message); }
   drawHarvest();            /* 거둘 때가 됐나 */
   drawWater();              /* 물을 줘야 하나 — 말풍선이 있으면 안 띄운다 */
+  try { drawNext(); } catch (e) { console.warn('[다음 날]', e && e.message); }  /* §G-18 */
   drawPotWater();           /* 몬스테라도 같은 규칙 */
   drawStamina();            /* 오늘 손이 얼마나 남았나 — 누르기 직전에 보는 값이다 */
   drawLevelUps();           /* 체력이 올랐으면 말해 준다 — 조용히 오르면 보상이 아니다 */
@@ -7711,11 +7925,11 @@ function drawMealPanel() {
      ★★ 2026-08-18 — 이 수를 **제목에서 부제로 내렸다.** 제목에 붙였더니 360px 에서 두 줄로
        접혔고(실측), 접히고도 「왜 500g 인가」를 안 말했다. 그 까닭은 아래 몫 줄이 말한다. */
   $('mealSub').textContent =
-    `곳간 ${formatGram(ms.pantryGrams)} 가운데 ${formatGram(ms.capGrams)}이 오늘 상에 오릅니다` +
+    `보유 채소 ${formatGram(ms.pantryGrams)} 가운데 ${formatGram(ms.capGrams)}이 오늘 상에 오릅니다` +
     ' · 먼저 거둔 것부터 밥이 됩니다';
   /* 무엇이 언제 거둔 것인지 — 먼저 거둔 것부터 나간다(먹는 순서) */
   /* ★ 2026-08-16 — 날짜별 가르기를 걷었다(§lotsBriefKo) */
-  $('mealLots').textContent = lotsBriefKo(ms.list) || '곳간이 비어 있습니다';
+  $('mealLots').textContent = lotsBriefKo(ms.list) || '보유 채소가 없습니다';
   $('mealCount').textContent = formatGram(ms.grams);
   $('mealMinus').disabled = ms.grams <= 0;
   $('mealPlus').disabled = ms.grams >= ms.maxGrams;
@@ -7758,7 +7972,7 @@ function drawMealPanel() {
             (p.fill < 0.999 ? ` (한 몫 ${formatGram(p.needGrams)}의 ${Math.round(p.fill * 100)}%)` : '') +
             (p.same ? ' · 같은 것이라 덜 칩니다' : ''),
             won(p.won), 'save')).join('')
-        : row('오늘은 곳간을 안 씁니다', '0원', 'dim'))
+        : row('오늘은 보유 채소를 안 씁니다', '0원', 'dim'))
     + head('오늘 밥값')
     + row('밥으로 아끼는 식비', won(ms.savedWon), 'save')
     + row('지갑에서 나가는 밥값', won(ms.cashFoodWon), 'cash')
@@ -7766,7 +7980,7 @@ function drawMealPanel() {
     + why(`하루 식비 ${won(ms.dailyFoodWon)}에서 아낀 ${won(ms.savedWon)}을 뺀 것입니다`)
     /* ★★ **남는 것을 반드시 말한다**(박사님: *"남는 거 팔아먹든 하는 거"*) —
        버려지는 줄 알면 급하게 팔거나 시루를 안 늘린다. */
-    + row('곳간에 남는 것', formatGram(ms.restGrams), ms.restGrams > 0 ? '' : 'dim')
+    + row('남는 보유 채소', formatGram(ms.restGrams), ms.restGrams > 0 ? '' : 'dim')
     + (ms.restGrams > 0 ? why('버려지지 않습니다 — 그대로 쌓이고 [상점]에서 팔 수 있습니다') : '');
 
   /* ══ ★ 「왜 이 값인가」 한 줄 — **네 갈래를 갈라 말한다** ═══════════════════════
@@ -7775,8 +7989,8 @@ function drawMealPanel() {
   if (ms.savedWon <= 0) {
     /* ★ 0g 은 고를 수 있어야 한다(모아서 파는 길). 다만 **밥값이 그대로 나간다**는 것을
        그 자리에서 말한다 — 안 말하면 「아꼈다」로 오해한다. */
-    say.textContent = `오늘은 곳간을 안 씁니다 — 하루 식비 ${won(ms.dailyFoodWon)}이 ` +
-                      `그대로 나갑니다. ${formatGram(ms.restGrams)}은 곳간에 그대로 쌓입니다.`;
+    say.textContent = `오늘은 보유 채소를 안 씁니다 — 하루 식비 ${won(ms.dailyFoodWon)}이 ` +
+                      `그대로 나갑니다. ${formatGram(ms.restGrams)}은 그대로 쌓입니다.`;
     say.className = 'pquote warn';
   } else if (ms.lessThanCapWon > 0) {
     /* 사람이 손잡이를 내린 판 — 남 탓을 하면 안 된다. **내가 줄인 것**이라고 말한다 */
@@ -7786,13 +8000,13 @@ function drawMealPanel() {
   } else if (ms.savedWon < ms.capWon && ms.restGrams > 0) {
     /* ★★★ 여기가 옛 화면이 거짓말하던 자리다(위 ㉠). 곳간은 남아 있다 — **규칙이 안 올린다** */
     say.textContent =
-      `곳간이 ${formatGram(ms.restGrams)} 남았는데 더 안 올립니다 — 한 몫에 드는 g 은 ` +
+      `보유 채소가 ${formatGram(ms.restGrams)} 남았는데 더 안 올립니다 — 한 몫에 드는 g 은 ` +
       `작물마다 정해져 있고, 둘째 몫을 같은 작물로 채우면 그 몫이 파는 값보다 못합니다. ` +
-      `남는 것은 곳간에 그대로 쌓입니다 — 파는 편이 낫습니다.`;
+      `남는 것은 그대로 쌓입니다 — 파는 편이 낫습니다.`;
     say.className = 'pquote';
   } else if (ms.savedWon < ms.capWon) {
     /* 진짜로 곳간이 모자란 판 — 이때만 곳간을 탓한다 */
-    say.textContent = `곳간이 모자라 오늘 아낄 수 있는 ${won(ms.capWon)}을 다 못 채웠습니다.`;
+    say.textContent = `보유 채소가 모자라 오늘 아낄 수 있는 ${won(ms.capWon)}을 다 못 채웠습니다.`;
     say.className = 'pquote warn';
   } else {
     say.textContent = `오늘 아낄 수 있는 만큼 다 아꼈습니다 (하루 상한 ${won(ms.capWon)}).`;
@@ -10611,8 +10825,14 @@ function runDayAnim(done) {
      화면이 그걸 안 부른다. 평소 시계(rAF)는 `pagehide` 와 무관하게 페이지와 같이 죽는다. */
 
 /* 식물등·이사 — 규칙은 tutorial.js 가 판정하고 여기서는 부르기만 한다.
-   입력 실수(돈 부족·조건 미달)는 안내이지 고장이 아니므로 버튼을 잠그지 않는다. */
-$('buyLamp').onclick = guard(() => {
+   입력 실수(돈 부족·조건 미달)는 안내이지 고장이 아니므로 버튼을 잠그지 않는다.
+   ══ ⚠ 2026-08-16 §G-15 — **단추가 [방]에서 [상점]으로 옮겨 갔다**(§식물등 줄) ═══════
+     상점 줄은 그릴 때마다 다시 지어지므로 `onclick` 을 여기서 한 번 걸 수가 없다.
+     ⇒ **하는 일을 이름 붙인 함수로 빼** 두고 `drawShop` 이 매번 건다.
+     ⚠ **함수 선언이라야 한다**(hoisting) — `drawShop` 은 이 줄보다 **위**에 있고,
+       `const doBuyLamp = …` 로 두면 첫 그리기에서 TDZ 로 던진다.
+     ⚠⚠ **사는 규칙(`tutorial.buyLamp`)은 한 글자도 안 건드렸다.** 몸통이 그대로다. */
+function doBuyLamp() {
   const r = buyLamp(S.tutorial);
   S.lamps.count = S.tutorial.lamp.owned;      /* 조도 계산이 보는 곳에도 반영한다 */
   io.light.clearCache();
@@ -10620,7 +10840,7 @@ $('buyLamp').onclick = guard(() => {
   banner('식물등을 샀습니다', '자리가 나쁘면 등을 켜도 소용없습니다');
   dlgOpen(story.events(r.events));   /* 하루를 기다리면 산 순간이 조용해진다 */
   fillSlots(); draw();
-});
+}
 
 $('harvestCrop').onclick = guard(() => doAct('harvest', () => reallyHarvest()));
 /* ★guard(fn) 은 **함수를 돌려준다.** 한 겹 더 감싸면 불러도 안 도는 함수만 나온다 */
@@ -10639,7 +10859,7 @@ const reallyHarvest = guard(() => {
   noteHarvest(r);           /* 아래 한 줄이 「얼마를 아꼈나」를 말할 근거 (§A ①) */
   lastTurn = lastTurn || null;
   banners([{ title: `🥣 콩나물을 거뒀습니다`,
-             sub: `${r.qualityKo || ''} · 곳간에 ${Math.round(r.savedWon || r.cycleSavedWon || 0).toLocaleString()}원` },
+             sub: `${r.qualityKo || ''} · 밥값 ${Math.round(r.savedWon || r.cycleSavedWon || 0).toLocaleString()}원어치` },
            ...surplusBannerOf(r)]);
   if (r.arrived) { arrivalSlotId = pot0(S) && pot0(S).slotId; fillSlots(false); }
   /* 대사는 턴과 같은 창구로 낸다 — 수확 → 배움 → 식물신 → 도착 순서가 여기서 지켜진다 */
@@ -10746,7 +10966,7 @@ function lotsBriefKo(list, fallbackKo) {
   const sum = new Map();
   for (const l of (list || [])) {
     const ko = l.kindKo || (() => { try { return l.kind ? cropKindOf(l.kind).ko : null; } catch { return null; } })()
-             || (fallbackKo || '곳간에 있던 것');
+             || (fallbackKo || '보유 채소');
     sum.set(ko, (sum.get(ko) || 0) + (l.g || 0));
   }
   return [...sum.entries()].map(([ko, g]) => `${ko} ${formatGram(g)}`).join(' · ');
@@ -10764,14 +10984,14 @@ function drawPantrySale() {
      없었다. 늘 회색으로 두면 「왜 회색이지」가 된다던 원래 걱정은, **까닭을 바로 밑에
      적어 주면** 안 생긴다. 그래서 이쪽은 회색으로 남기고 이유를 쓴다. */
   btn.disabled = max <= 0;
-  btn.textContent = max > 0 ? `곳간 채소 팔기 (${max}판)` : '곳간 채소 팔기';
+  btn.textContent = max > 0 ? `보유 채소 팔기 (${max}판)` : '보유 채소 팔기';
   if (max <= 0) { pantrySellOpen = false; }
   /* ★ 2026-08-16 — **g 으로 말한다**(§그램). 원은 「팔면 얼마」를 말할 때만 쓴다 —
      곳간에 있는 것은 돈이 아니라 물건이고, 물건의 자는 g 이다. */
   if (hint) hint.textContent = max > 0
-    ? `곳간에 ${formatGram(ps.pantryGrams)} · ${max}판이 있습니다 — ` +
+    ? `보유 채소 ${formatGram(ps.pantryGrams)} · ${max}판이 있습니다 — ` +
       `밥으로 먹을 몫입니다. 팔면 ${Math.round(ps.rate * 100)}%만 받습니다`
-    : '곳간이 비어 있습니다 — 거둔 채소가 쌓이면 여기서 팔 수 있습니다 (밥으로 먹는 편이 이득입니다)';
+    : '보유 채소가 없습니다 — 거둔 채소가 쌓이면 여기서 팔 수 있습니다 (밥으로 먹는 편이 이득입니다)';
 
   /* ★ 2026-08-17 — 팝업이 됐다(`.pop.on`). 예전에는 시트 안 구르는 칸에 붙어 있어
      **눌러도 화면 밖(실측 y=1211 · 화면 844)에 떴다.** 스크림과 카드가 한 요소라
@@ -10789,7 +11009,7 @@ function drawPantrySale() {
   $('pantryList').textContent = ps.list
     .map((l, i) => `${i < ps.lots ? '▶ ' : ''}${l.kindKo} ${formatGram(l.g)}`)
     .join(' · ');
-  $('pantryTitle').textContent = `몇 판을 팔까요 — 곳간에 ${formatGram(ps.pantryGrams)} · ${max}판`;
+  $('pantryTitle').textContent = `몇 판을 팔까요 — 보유 채소 ${formatGram(ps.pantryGrams)} · ${max}판`;
   $('pantryCount').textContent = `${ps.lots}판`;
   $('pantryMinus').disabled = ps.lots <= 1;
   $('pantryPlus').disabled = ps.lots >= max;
@@ -10797,7 +11017,7 @@ function drawPantrySale() {
   $('pantryQuote').textContent =
     `${formatGram(ps.pendingGrams)}(밥값 ${ps.pendingWon.toLocaleString()}원어치)을 ` +
     `${ps.won.toLocaleString()}원에 넘깁니다 — ${ps.lossWon.toLocaleString()}원 손해입니다. ` +
-    `판 만큼 밥값을 못 아낍니다 (곳간에 ` +
+    `판 만큼 밥값을 못 아낍니다 (남는 것 ` +
     `${formatGram(Math.max(0, ps.pantryGrams - ps.pendingGrams))} 남음)`;
   $('pantryGo').disabled = !ps.canSell;
 }
@@ -10857,7 +11077,7 @@ $('pantryGo').onclick = guard(() => {
   const r = sellPantryCrop(S, pantrySellN);
   pantrySellOpen = false;
   pantrySellN = 1;
-  banner('곳간 채소를 팔았습니다',
+  banner('보유 채소를 팔았습니다',
          `${r.whatKo} ${r.whatG} · ${r.won.toLocaleString()}원 (${r.lossWon.toLocaleString()}원 손해)`);
   draw();
 });

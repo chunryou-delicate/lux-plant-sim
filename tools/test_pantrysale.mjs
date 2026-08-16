@@ -240,7 +240,10 @@ console.log('\n== E. ★옛 세이브 — 꾸러미 기록이 없어도 열리�
   const S = stateWith(fp);
   const r = sellPantryCrop(S, 1);
   assert.equal(r.pendingWon, CHUNK);
-  assert.equal(r.whatKo, '곳간에 있던 것 1판', `★모르는 것을 아는 척한다: ${r.whatKo}`);
+  /* ⚠ 2026-08-16 §G-13 — 박사님이 화면 글자에서 「곳간」을 걷으셨다(→ 「보유 채소」).
+     코드 이름(`pantry…`)은 안 바꿨고 **사람이 읽는 글자만** 바뀌었다. 이 줄이 재는 것은
+     여전히 「모르는 것을 아는 척하지 않는다」이고, 그 이름이 바뀐 것뿐이다. */
+  assert.equal(r.whatKo, '보유 채소 1판', `★모르는 것을 아는 척한다: ${r.whatKo}`);
   ok('옛 판(원만 있는 판)도 하루치씩 쪼개져 팔린다 — 작물 이름은 지어내지 않는다');
 }
 

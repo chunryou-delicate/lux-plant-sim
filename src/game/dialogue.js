@@ -504,7 +504,7 @@ export const SCRIPTS = {
     { who: 'moni',   face: 'happy', text: '응. 여기선 그게 제일 정직한 길이야.' }
   ],
   questDoneSiru8: [
-    { who: 'jachwi', face: 'surprise', text: '확실히 곳간이 빨리 찬다.' },
+    { who: 'jachwi', face: 'surprise', text: '확실히 채소가 빨리 쌓인다.' },
     { who: 'moni',   text: '아직 본전은 아니야. 조금 더 가야 해.' }
   ],
   /* ②-c ★ **본전이 되는 자리.** 이 줄이 「살림이 돈다」를 처음 말한다 */

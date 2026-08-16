@@ -1141,7 +1141,7 @@ export function sellCropSurplus(S, opt = {}) {
     throw new Error('[잉여] 첫 플레이 상태가 없습니다 — 넘길 잉여가 없습니다');
   const q = cropSurplusQuote(fp);
   if (q.pendingWon <= 0) {
-    const e = new Error('[잉여] 넘길 잉여가 없습니다 — 곳간이 받은 것은 밥으로 씁니다 ' +
+    const e = new Error('[잉여] 넘길 잉여가 없습니다 — 보유 채소로 들어간 것은 밥으로 씁니다 ' +
                         '(겹쳐서 못 받거나 넘쳐서 쉰 몫만 넘길 수 있습니다)');
     e.tutorialInput = true;                 // 안내지 고장이 아니다
     throw e;
@@ -1158,7 +1158,7 @@ export function sellCropSurplus(S, opt = {}) {
   const r = creditCropSurplus(S, taken.won);
   pushLog(S, `💰 잉여 채소를 넘겼습니다 — 정가 ${taken.pendingWon.toLocaleString()}원어치를 ` +
              `${Math.round(taken.rate * 100)}% 에 넘겨 ${taken.won.toLocaleString()}원 ` +
-             `(곳간에 든 몫은 그대로 밥입니다)`);
+             `(보유 채소로 들어간 몫은 그대로 밥입니다)`);
   return { ...r, pendingWon: taken.pendingWon, rate: taken.rate, won: taken.won,
            totalSoldWon: fp.food.totalSurplusSoldWon,
            events: [{ id: 'crop_surplus_sold', ko: '잉여 채소를 넘겼습니다',
@@ -1188,20 +1188,20 @@ export function cropSurplusStatus(S) {
 export function sellPantryCrop(S, count, opt = {}) {
   const fp = S && S.firstPlay;
   if (!fp || !fp.enabled)
-    throw new Error('[곳간] 첫 플레이 상태가 없습니다 — 팔 채소가 없습니다');
+    throw new Error('[보유 채소] 첫 플레이 상태가 없습니다 — 팔 채소가 없습니다');
   const q = pantrySaleQuote(fp, count);
   if (q.maxLots <= 0) {
-    const e = new Error('[곳간] 곳간이 비어 있습니다 — 거둬서 채운 뒤에 팔 수 있습니다');
+    const e = new Error('[보유 채소] 가진 채소가 없습니다 — 거둬서 채운 뒤에 팔 수 있습니다');
     e.tutorialInput = true;                 // 안내지 고장이 아니다
     throw e;
   }
   if (q.lots <= 0) {
-    const e = new Error('[곳간] 몇 판을 팔지 골라 주세요 (지금 0판입니다)');
+    const e = new Error('[보유 채소] 몇 판을 팔지 골라 주세요 (지금 0판입니다)');
     e.tutorialInput = true;
     throw e;
   }
   if (q.won <= 0) {
-    const e = new Error(`[곳간] 지금 팔면 0원입니다 — 넘기는 값이 정가의 ` +
+    const e = new Error(`[보유 채소] 지금 팔면 0원입니다 — 넘기는 값이 정가의 ` +
                         `${Math.round(q.rate * 100)}% 입니다`);
     e.tutorialInput = true;
     throw e;
@@ -1210,7 +1210,7 @@ export function sellPantryCrop(S, count, opt = {}) {
   /* 무엇을 팔았나 — 종류별로 센다. 「콩나물 2판」처럼 적으려고 */
   const byKind = new Map();
   for (const l of taken.picked) {
-    const ko = l.kind ? cropKindOf(l.kind).ko : '곳간에 있던 것';
+    const ko = l.kind ? cropKindOf(l.kind).ko : '보유 채소';
     byKind.set(ko, (byKind.get(ko) || 0) + 1);
   }
   /* ★ 2026-08-16 — 무게도 같이 적는다(§그램). 「콩나물 2판」만으로는 얼마나 나갔는지 모른다 */
@@ -1218,15 +1218,15 @@ export function sellPantryCrop(S, count, opt = {}) {
   const whatG = formatGram(taken.pendingGrams);
   const r = creditCropSurplus(S, taken.won);
   /* ⚠ `opt.log` 를 안 넘긴다 — 아래에서 한 줄을 적는다(두 줄이 되면 더 나쁘다) */
-  pushLog(S, `💰 곳간 채소를 팔았습니다 — ${whatKo} ${whatG}(밥값 ${taken.pendingWon.toLocaleString()}원어치)을 ` +
+  pushLog(S, `💰 보유 채소를 팔았습니다 — ${whatKo} ${whatG}(밥값 ${taken.pendingWon.toLocaleString()}원어치)을 ` +
              `${Math.round(taken.rate * 100)}% 에 넘겨 ${taken.won.toLocaleString()}원 ` +
-             `(${taken.lossWon.toLocaleString()}원 손해 · 곳간에 ${taken.pantryWon.toLocaleString()}원 남음)`);
+             `(${taken.lossWon.toLocaleString()}원 손해 · ${taken.pantryWon.toLocaleString()}원어치 남음)`);
   return { ...r, lots: taken.lots, picked: taken.picked, whatKo, whatG,
            pendingGrams: taken.pendingGrams, pantryGrams: taken.pantryGrams,
            pendingWon: taken.pendingWon, rate: taken.rate, won: taken.won,
            lossWon: taken.lossWon, pantryWon: taken.pantryWon,
            totalSoldWon: fp.food.totalPantrySoldWon,
-           events: [{ id: 'pantry_crop_sold', ko: '곳간 채소를 팔았습니다',
+           events: [{ id: 'pantry_crop_sold', ko: '보유 채소를 팔았습니다',
                       won: taken.won, pendingWon: taken.pendingWon,
                       lossWon: taken.lossWon, lots: taken.lots, rate: taken.rate }] };
 }
@@ -1244,7 +1244,7 @@ export function pantrySaleStatus(S, count) {
     /* 화면이 「콩나물 400g (7일차)」를 적을 수 있게 이름을 붙여 낸다
        ★ 2026-08-16 — `g` 도 같이 실린다(`pantryLotsWithGrams`). 화면이 원을 나누지 않는다 */
     list: pantryLotsWithGrams(fp).map(l => ({
-      ...l, kindKo: l.kind ? cropKindOf(l.kind).ko : '곳간에 있던 것'
+      ...l, kindKo: l.kind ? cropKindOf(l.kind).ko : '보유 채소'
     }))
   };
 }
@@ -1262,7 +1262,7 @@ export function mealPlanStatus(S, grams) {
              cashFoodWon: 0, dailyFoodWon: 0, lots: [], lessThanCapWon: 0, list: [] };
   const q = mealPlanQuote(fp, grams);
   return { ...q, list: q.lots.map(l => ({
-    ...l, kindKo: l.kind ? cropKindOf(l.kind).ko : '곳간에 있던 것' })) };
+    ...l, kindKo: l.kind ? cropKindOf(l.kind).ko : '보유 채소' })) };
 }
 
 /* 오늘 쓸 g 을 적어 둔다(null 이면 지운다 = 예전 그대로 상한까지 먹는다) */
@@ -1271,7 +1271,7 @@ export function planMeal(S, grams) {
   if (!fp || !fp.enabled) throw new Error('[밥상] 첫 플레이 상태가 없습니다');
   const q = planMealGrams(fp, grams);
   return { ...q, list: q.lots.map(l => ({
-    ...l, kindKo: l.kind ? cropKindOf(l.kind).ko : '곳간에 있던 것' })) };
+    ...l, kindKo: l.kind ? cropKindOf(l.kind).ko : '보유 채소' })) };
 }
 
 /* 추천 자리에 놓는다(예전 경로). 좌표까지 같이 세운다. */

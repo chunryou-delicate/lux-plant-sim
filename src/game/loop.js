@@ -1287,7 +1287,7 @@ export function harvestCrop(S, io, opt = {}) {
        — `spoiledWon` 은 이제 늘 0 이다. **줄을 지우지 않고 남긴다**: 한도가 다시 생기는
        날(캐릭터별 냉장고 크기 같은 것) 이 줄이 그대로 살아난다. 지금은 안 뜬다. */
     if (r.spoiledWon > 0)
-      pushLog(S, `🗑 곳간이 넘쳐 ${r.spoiledWon.toLocaleString()}원어치가 쉬었습니다.` +
+      pushLog(S, `🗑 보유 채소가 넘쳐 ${r.spoiledWon.toLocaleString()}원어치가 쉬었습니다.` +
                  (r.overlapLostWon > 0 ? '' : sellTail));
 
     /* ── 선물은 **콩나물을 충분히 겪은 뒤** 한 번만 온다 (2026-08-04) ──
