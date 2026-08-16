@@ -998,7 +998,8 @@ export async function createRoomView(canvas, opts = {}) {
     /* 캐릭터도 이 그룹에 들어 있다. 그냥 비우면 치워지지 않은 채 씬에서만 사라져
        mixer 와 GLB 가 그대로 남는다 — 방을 몇 번 바꾸면 그게 그대로 메모리다.
        치우되 **누가 있었는지는 기억해** 새 방에 다시 세운다. */
-    const wasHere = [...chars.keys()];
+    /* ★ 사람을 먼저 적는다 — 몬이는 사람 뒤에 서므로 사람이 먼저 세워져야 제자리다 */
+    const wasHere = [...chars.keys()].sort((a, b) => (a === 'moni') - (b === 'moni'));
     for (const [, c] of chars) { try { c.dispose(); } catch (e) { /* 나머지는 계속 치운다 */ } }
     chars.clear();
     clearPlants();
@@ -1091,9 +1092,18 @@ export async function createRoomView(canvas, opts = {}) {
     needsRender = true;
 
     /* 있던 사람은 새 방에도 세운다. 자리는 새 방 기준으로 다시 고른다.
-       기다리지 않는다 — 캐릭터를 싣느라 방이 안 뜨면 안 된다. */
-    for (const k of wasHere)
-      setCharacter(k).catch(e => console.warn('[방뷰] 방을 바꾼 뒤 캐릭터를 다시 못 세웠습니다:', e.message));
+       기다리지 않는다 — 캐릭터를 싣느라 방이 안 뜨면 안 된다.
+       ★ 다만 **서로는 줄을 세운다** (2026-08-16). 예전에는 여기서 둘을 한꺼번에 던졌고,
+         그 때문에 자취생이 방 재조립마다 사라졌다(§setCharacter 의 ★★ 를 읽어라).
+         순번을 자리마다 세도록 고쳐서 이제는 겹쳐 불러도 안 죽지만, 순서는 여전히 뜻이 있다 —
+         **몬이는 사람 뒤에 선다.** 사람이 아직 없을 때 몬이가 서면 첫 자리를 화분 옆에 잡고
+         거기서부터 걸어와야 한다. 사람부터 세우면 처음부터 제자리다. */
+    (async () => {
+      for (const k of wasHere) {
+        try { await setCharacter(k); }
+        catch (e) { console.warn('[방뷰] 방을 바꾼 뒤 캐릭터를 다시 못 세웠습니다:', e.message); }
+      }
+    })();
   }
 
   /* ============================================================
@@ -6534,6 +6544,44 @@ export async function createRoomView(canvas, opts = {}) {
     let t = 0;
     const pos = new THREE.Vector3(h.x, MON.floatHeight, h.z);
 
+    /* ★★ 몬이가 **바라보면서** 따라온다 (2026-08-16)
+       ══════════════════════════════════════════════════════════════════
+       박사님: *"일전에는 몬이가 캐릭을 바라보면서 이동했는데 지금은 위치 고정인 거 같아."*
+
+       ⚠ 「되살렸다」가 아니라 **새로 만들었다.** git 을 뒤져 보니 방 뷰의 몬이는
+         처음 붙은 날(`2dde74d`)부터 줄곧 `rotation.y → π` 한 줄이었다 — 즉
+         **게임 안에서 몬이가 무언가를 바라본 적은 한 번도 없다.**
+         박사님이 보신 「바라보면서 이동」은 `assets/characters/mascot_follow_preview.html`
+         (원안 미리보기)다. 거기서는 `monPivot.rotation.y = atan2(vel.x, vel.z)` 로
+         **가는 쪽**을 봤다. 그 뜻을 방 뷰에 처음으로 옮긴 것이 이 코드다.
+
+       ★ 앞이 어느 쪽인지는 **재서** 정했다 — 짐작하지 않았다.
+         `tools/_moni_face.html` 로 몬이를 yaw 0·90·180·-90 로 나란히 세워 +Z 에서 찍었다
+         (`docs/handoff/img/char/_moni_yaw_grid.png`). **yaw 0 에서 얼굴이 보인다** —
+         즉 몬이의 앞도 사람과 똑같이 **+Z** 이고, `yawTo(dx,dz)` 를 그대로 쓰면 된다.
+         ⇒ 그러니 예전의 π 는 **뒤통수를 보여 주던 값**이었다. 되돌리지 마라.
+
+       무엇을 보나 — 사람이 있으면 **사람**, 없으면 **가는 쪽**, 둘 다 없으면 카메라.
+       ⚠ 사람이 코앞이면(0.06m 안) 각이 홱홱 뒤집힌다 — 그때는 보던 쪽을 유지한다.
+       ⚠ 홱 돌지 않는다. 사람의 TURN_RATE 9 보다 느린 6 이다 — 몬이는 둥둥 떠 있어서
+         빠르게 돌면 튄다(사람은 발이 땅에 붙어 있어 9 가 자연스럽다). */
+    const MONI_TURN_RATE = 6;
+    const MONI_LOOK_MIN = 0.06;     // 이보다 가까우면 각을 새로 안 잡는다[m]
+    const MONI_MOVE_EPS = 0.25;     // 「가는 쪽」으로 치는 속력[m/s]
+    const TAU = Math.PI * 2;
+    /* 처음부터 제자리를 본다 — 세우자마자 한 바퀴 도는 것이 제일 어색하다 */
+    const firstLook = (() => {
+      const person = chars.get('jachwi');
+      if (person) {
+        const dx = person.root.position.x - h.x, dz = person.root.position.z - h.z;
+        if (Math.hypot(dx, dz) > MONI_LOOK_MIN) return yawTo(dx, dz);
+      }
+      return faceCameraYaw(h.x, h.z);
+    })();
+    let mYaw = firstLook;
+    root.rotation.y = mYaw;
+    let prevX = h.x, prevZ = h.z;
+
     return {
       kind: 'mascot', assetId: 'mascot_sprout', root, walkable: false,
       get pickTarget() { return pick; },
@@ -6551,7 +6599,26 @@ export async function createRoomView(canvas, opts = {}) {
         root.position.x = pos.x; root.position.z = pos.z;
         root.position.y = MON.floatHeight + Math.sin(t * Math.PI * 2 / MON.bobPeriod_sec) * MON.bobAmplitude;
         root.rotation.z = Math.sin(t * Math.PI * 2 / MON.bobPeriod_sec) * (MON.tiltDegrees * Math.PI / 180);
-        root.rotation.y += (Math.PI - root.rotation.y) * Math.min(1, dt * 2);
+        /* ── 어디를 보나 (위 ★★ 몬이가 바라보면서 따라온다) ── */
+        const vx = pos.x - prevX, vz = pos.z - prevZ;
+        const speed = Math.hypot(vx, vz) / Math.max(dt, 1e-4);
+        prevX = pos.x; prevZ = pos.z;
+        let want = null;
+        const person = chars.get('jachwi');
+        if (person) {
+          const dx = person.root.position.x - pos.x, dz = person.root.position.z - pos.z;
+          if (Math.hypot(dx, dz) > MONI_LOOK_MIN) want = yawTo(dx, dz);
+        } else if (speed > MONI_MOVE_EPS) {
+          want = yawTo(vx, vz);
+        } else if (!plants.size) {
+          want = faceCameraYaw(pos.x, pos.z);          // 혼자 남았고 갈 데도 없으면 플레이어를 본다
+        }
+        if (want != null) {
+          /* 최단각으로 돈다 — 안 그러면 359° 를 도느라 한 바퀴 빙 돈다 */
+          const d = ((want - mYaw + Math.PI) % TAU + TAU) % TAU - Math.PI;
+          mYaw += d * Math.min(1, dt * MONI_TURN_RATE);
+          root.rotation.y = mYaw;
+        }
         /* 링은 바닥에 있어야 한다 — root 가 위아래로 흔들리므로 그만큼 되돌린다.
            (안 하면 링이 몬이를 따라 공중에서 같이 출렁인다) */
         ring.position.y = -root.position.y + 0.02;
@@ -7374,16 +7441,38 @@ export async function createRoomView(canvas, opts = {}) {
   }
 
   /* 놓기·치우기. 자리·포즈는 안에서 정한다 — 밖에서 좌표를 주지 않는다. */
-  let charSeq = 0;
+  /* ★★ 순번은 **자리(key)마다** 센다 — 하나로 세면 둘 중 하나가 조용히 죽는다 (2026-08-16)
+     ══════════════════════════════════════════════════════════════════
+     박사님: *"한번씩 캐릭이 사라져."* 사진에는 몬이만 있고 자취생이 없었다.
+
+     예전에는 `charSeq` 가 **하나**였다. 「나보다 나중에 부른 게 있으면 내 것은 버린다」는
+     뜻인데, 자취생과 몬이는 **서로 다른 자리**라 나중 것이 앞 것을 무를 이유가 없다.
+     그런데 `assemble()` 이 방을 다시 지을 때 있던 사람을 **await 없이 둘 다** 부른다
+     (§assemble 아래 `for (const k of wasHere)`). 그러면
+       setCharacter('jachwi') → my=1,  setCharacter('moni') → my=2, charSeq=2
+     가 되고, 자취생 GLB 가 다 실린 뒤 `my !== charSeq` 가 **반드시 참**이라
+     **자취생만 조용히 버려진다.** 실패가 아니라 성공한 뒤에 버리는 것이라
+     `.catch` 에도 안 걸리고 콘솔에도 아무 말이 없었다.
+
+     ⇒ 재서 확인했다(`tools/probe_char_moni.mjs` C절): **가구를 한 칸 옮기면**
+       (= 방 재조립) `jachwi·moni → moni` 로 100% 사라졌다. 「한 번씩」의 정체가 이것이다.
+     ⇒ 그리고 이게 ㉡ 「몬이가 안 따라온다」의 뿌리이기도 하다 — 사람이 없으면
+       몬이의 homeXZ 가 화분(없으면 standSpot) 옆으로 떨어지고, 그건 안 움직인다.
+       실측 D2절: 사람이 사라진 뒤 몬이 자리 **가짓수 1**. 정말로 못 박혀 있었다.
+     ⚠ 되돌리지 마라. 순번을 하나로 합치면 같은 사고가 그대로 돌아온다. */
+  const charSeq = new Map();          // key → 그 자리에 대한 최신 요청 번호
+  const bumpSeq = key => { const n = (charSeq.get(key) || 0) + 1; charSeq.set(key, n); return n; };
   async function setCharacter(who, opt = {}) {
-    const my = ++charSeq;
     if (who == null) {                                  // null 이면 놓인 것을 전부 치운다
+      /* 오는 중인 것까지 무른다 — 안 그러면 치운 직후에 도착한 GLB 가 빈 방에 선다 */
+      for (const k of ['jachwi', 'moni']) bumpSeq(k);
       for (const [k, c] of [...chars]) { c.dispose(); chars.delete(k); }
       selectCharacter(null);
       needsRender = true;
       return null;
     }
     const key = who === 'moni' ? 'moni' : 'jachwi';
+    const my = bumpSeq(key);
     const old = chars.get(key);
     if (old) { old.dispose(); chars.delete(key); if (selChar === key) selectCharacter(null); needsRender = true; }
     let c;
@@ -7393,7 +7482,7 @@ export async function createRoomView(canvas, opts = {}) {
     } catch (e) {
       throw fail(new Error(`캐릭터를 못 놓았습니다 (${who}): ${e.message}`));
     }
-    if (disposed || my !== charSeq) { c.dispose(); return null; }
+    if (disposed || my !== charSeq.get(key)) { c.dispose(); return null; }
     chars.set(key, c);
     progress('character_done:' + key, '캐릭터 준비 완료');
     needsRender = true;

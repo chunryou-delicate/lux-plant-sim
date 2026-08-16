@@ -1,0 +1,43 @@
+<!doctype html><meta charset="utf-8">
+<title>몬이 앞이 어느 쪽인가</title>
+<!-- ★ 재는 자다. 몬이 GLB 의 rotation.y=0 일 때 **얼굴이 어느 축을 보나**를 눈으로 확인한다.
+     room_view 는 몬이를 늘 rotation.y=π 로 세워 놓았는데, 그 π 가 「앞」인지 「뒤」인지
+     아무도 잰 적이 없었다. 짐작으로 방향 코드를 쓰면 몬이가 등을 돌린 채 따라온다. -->
+<style>body{margin:0;background:#eee;font:12px/1.4 sans-serif}
+canvas{display:block}#tag{position:fixed;left:8px;top:8px;background:#fff;padding:4px 8px;border:1px solid #999}</style>
+<div id="tag">…</div>
+<script src="../vendor/three/three.min.js"></script>
+<script src="../vendor/three/GLTFLoader.js"></script>
+<script>
+const W = 800, H = 220;
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setSize(W, H); renderer.setPixelRatio(1);
+renderer.setClearColor(0xeeeeee);
+document.body.appendChild(renderer.domElement);
+const scene = new THREE.Scene();
+/* 카메라는 **+Z 쪽**에서 원점을 본다. 그러니 화면에서 얼굴이 보이면
+   그 yaw 에서 몬이의 앞이 +Z 를 가리키는 것이다. */
+const cam = new THREE.PerspectiveCamera(28, W / H, 0.05, 20);
+cam.position.set(0, 0.22, 1.6); cam.lookAt(0, 0.19, 0);
+scene.add(new THREE.HemisphereLight(0xffffff, 0x777788, 1.4));
+const d = new THREE.DirectionalLight(0xffffff, 0.9); d.position.set(0.6, 1.2, 1.4); scene.add(d);
+
+const YAWS = [0, Math.PI / 2, Math.PI, -Math.PI / 2];
+const LBL = ['yaw 0', 'yaw +90°', 'yaw 180°', 'yaw -90°'];
+new THREE.GLTFLoader().load('../assets/characters/3d/lq/char_mascot_sprout.glb', g => {
+  /* 넷을 나란히 세운다 — 한 장에 다 담겨야 비교가 된다 */
+  YAWS.forEach((y, i) => {
+    const m = g.scene.clone(true);
+    m.traverse(o => { if (o.isMesh) o.frustumCulled = false; });
+    const root = new THREE.Group();
+    root.add(m); root.rotation.y = y;
+    root.position.x = (i - 1.5) * 0.42;
+    scene.add(root);
+  });
+  cam.position.set(0, 0.22, 2.2); cam.lookAt(0, 0.19, 0);
+  renderer.render(scene, cam);
+  document.getElementById('tag').textContent =
+    '카메라는 +Z 에 있다 · 왼쪽부터 ' + LBL.join(' | ');
+  window.__ready = true;
+}, undefined, e => { document.getElementById('tag').textContent = 'GLB 못 읽음: ' + e; window.__ready = 'err'; });
+</script>

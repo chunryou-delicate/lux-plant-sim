@@ -1,0 +1,96 @@
+{
+  "tag": "before",
+  "at": "2026-08-16T05:56:55.470Z",
+  "boot": [
+    {
+      "id": "jachwi",
+      "pos": {
+        "x": -1.6600000000000001,
+        "y": 0,
+        "z": 1.6399999999999997
+      },
+      "yawDeg": 56.4
+    },
+    {
+      "id": "moni",
+      "pos": {
+        "x": -2.304761718464396,
+        "y": 0.2462387755788323,
+        "z": 1.2117963960884504
+      },
+      "yawDeg": 180
+    }
+  ],
+  "follow": {
+    "frames": 20,
+    "moniPosVariants": 20,
+    "moniYawVariants": 1,
+    "moniYawDeg": [
+      180
+    ],
+    "offAbsMax": 165.3,
+    "offAbsMin": 49.4
+  },
+  "rebuildByFurniture": {
+    "call": "ok banjiha-bed → (-1.425,-0.500)",
+    "before": [
+      "jachwi",
+      "moni"
+    ],
+    "after": [
+      "moni"
+    ],
+    "lost": [
+      "jachwi"
+    ]
+  },
+  "concurrentSetCharacter": {
+    "was": [
+      "moni"
+    ],
+    "now": [
+      "moni"
+    ],
+    "lost": []
+  },
+  "moniAlone": {
+    "present": [
+      "moni"
+    ],
+    "samples": [
+      {
+        "x": -1.66,
+        "z": 1.64,
+        "yaw": 180
+      },
+      {
+        "x": -1.66,
+        "z": 1.64,
+        "yaw": 180
+      },
+      {
+        "x": -1.66,
+        "z": 1.64,
+        "yaw": 180
+      },
+      {
+        "x": -1.66,
+        "z": 1.64,
+        "yaw": 180
+      },
+      {
+        "x": -1.66,
+        "z": 1.64,
+        "yaw": 180
+      },
+      {
+        "x": -1.66,
+        "z": 1.64,
+        "yaw": 180
+      }
+    ],
+    "posVariants": 1,
+    "personGone": true
+  },
+  "errors": 0
+}
