@@ -2500,6 +2500,8 @@ import { newState, SIM_MODES, pot0, pushLog, givePlant, hasPlant, ARRIVAL,
    으로 연락을 가져오고 → `dealListing` 에서 돈이 들어온다. 채소(`sellPantryCrop` ·
    `sellCropSurplus`)는 **그대로 상점이다** — 식료품이라 상점이 맞다. */
 import { catalogList, orderItem, shopStatus, priceOf,
+         /* ★ 그루 값은 **묻는다** — 화면이 다시 세면 코어와 갈린다(shop.js §quotePot) */
+         quotePot,
          listPot, listCutting, dealListing, cancelListing,
          marketGate, marketStatus, listingFor, marketWaitKo, MARKET_MIN_LEAVES,
          stockOf, SELLABLE_CUTTING_STATUS, varieLeavesNeededFor,
@@ -5394,10 +5396,22 @@ function drawShop() {
     hint.textContent = gate.reason;
     return;
   }
-  /* ⚠ priceOf 는 숫자가 아니라 {won, leaves, variegatedLeaves, v} 를 낸다 */
-  const won = priceOf({ leaves: ls.leaves, variegatedLeaves: ls.variegatedLeaves }).won;
+  /* ★★★ 2026-08-16 — **여기가 코어와 갈려 있었다** (박사님: *"그루째로 팔 때 … 75만원이야.
+       저러면 안 되잖아."*).
+     ══════════════════════════════════════════════════════════════════
+     예전 줄: `priceOf({ leaves, variegatedLeaves }).won`
+       ① `form` 을 안 줘서 **삽수 값(×1.0)** 이 됐다 — 그루는 ×1.4 다
+       ② `leafGrades` 를 안 줘서 무늬 잎이 **전부 산반**으로 떨어졌다 — 하프문 75만이 사라진다
+     ⇒ 단추는 **720,000원**, 실제로 올리면 **1,960,000원**. 2.7배를 화면이 깎아 말했다.
+       바로 위 §noteLeafGrades 의 ⚠⚠ 가 「맨몸으로 부르지 마라」라고 적혀 있는데
+       이 줄이 그것이었다 — **경고를 적어 두는 것만으로는 안 막힌다.**
+     ⇒ 이제 **올릴 때와 같은 함수**(`quotePot`)에 묻는다. 값을 정하는 곳이 하나면 못 갈린다. */
+  let q = null;
+  try { q = quotePot(S, { leaves: ls.leaves, variegatedLeaves: ls.variegatedLeaves }); } catch { }
+  /* ⚠ 못 매기면 **값을 지어내지 않는다** — 단추는 열되 숫자를 안 적는다 */
   sell.disabled = false;
-  sell.textContent = `몬스테라 내놓기 (${won.toLocaleString()}원)`;
+  sell.textContent = q ? `몬스테라 내놓기 (${q.won.toLocaleString()}원)` : '몬스테라 내놓기';
+  const won = q ? q.won : 0;
   /* ★"얼마가 모자란가"가 아니라 "무늬 잎이 몇 장이면 되나"를 말한다 —
      플레이어가 움직일 수 있는 손잡이는 자리(밝기)뿐이고, 그게 무늬를 만든다. */
   /* ⚠ 이사비를 **여기서 짓지 않는다** (2026-08-11 고침).

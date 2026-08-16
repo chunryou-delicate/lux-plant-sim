@@ -1848,6 +1848,44 @@ export function marketStatus(S) {
   };
 }
 
+/* ══════════════════════════════════════════════════════════════════════════
+   ★★★ 그루 값을 **묻기만** 한다 — 올리지 않는다 (2026-08-16 · 박사님)
+   ──────────────────────────────────────────────────────────────────────────
+   박사님: *"그루째로 팔 때 웃돈 주고 파는 당근이 75만원이야… 저러면 안 되잖아."*
+
+   ★ 재 보니 **화면과 코어가 서로 다른 값을 세고 있었다.**
+     화면 단추(`game.html §drawShop`)는 `priceOf({leaves, variegatedLeaves})` 를 불렀다 —
+       ① `form` 을 안 줘서 **삽수 값(×1.0)** 으로 매겨졌다(그루는 ×1.4)
+       ② `leafGrades` 를 안 줘서 무늬 잎이 **전부 산반**으로 떨어졌다(하프문 75만이 사라진다)
+     그런데 실제로 올리는 `listPot` 은 `potPriceOf` + 장부 등급을 쓴다. 잰 값:
+       화면 단추 **720,000원**  ·  진짜 값 **1,960,000원**  (2.7배)
+     ⇒ 사람은 「그루째 파는 게 삽수 한 대와 비슷하네」로 읽는다. 실제로는 세 배다.
+
+   ★★ **왜 함수를 새로 파나.** 등급을 얻는 길이 셋(넘겨받은 것 → 장부 → 프롤로그 다리)인데,
+     그 순서를 화면이 따로 적으면 **또 갈린다.** 갈린 것을 고치면서 갈릴 자리를 남기지 않는다.
+     ⇒ 값을 정하는 곳은 **여기 하나**다. `listPot` 도 이것을 부른다.
+   ⚠ 아무것도 안 바꾼다(순수). 문(`marketGate`)도 안 본다 — 문은 올릴 때 보는 것이지
+     값을 묻는 데 필요한 것이 아니다. 「얼마짜리인가」는 못 팔 때도 답이 있다.
+   반환 priceOf 의 반환에 `gradesFrom` 한 칸을 더한 것 */
+export function quotePot(S, opt = {}) {
+  const pots = S.pots || [];
+  const p = opt.potId ? pots.find(x => x.id === opt.potId) : pots[0];
+  if (!p) throw new Error('[중고] 값을 매길 그루가 없습니다 — 화분이 비어 있습니다');
+  if (!Number.isInteger(opt.leaves))
+    throw new Error('[중고] 잎 수(opt.leaves)를 주세요 — 잎 수는 growth 소유라 코어가 지어내지 않습니다');
+  const varieN = opt.variegatedLeaves || 0;
+  const fromOpt = Array.isArray(opt.leafGrades) ? opt.leafGrades : null;
+  const fromLedger = fromOpt ? null : potLeafGradeListOf(p, opt.leaves, varieN);
+  const fromPrologue = (fromOpt || fromLedger) ? null
+                     : prologueLeafGradeListOf(S, p, opt.leaves, varieN);
+  const q = potPriceOf({ species: opt.species || 'monstera',
+                         leaves: opt.leaves, variegatedLeaves: varieN,
+                         leafGrades: fromOpt || fromLedger || fromPrologue });
+  q.gradesFrom = fromOpt ? 'opt' : fromLedger ? 'ledger' : fromPrologue ? 'prologue' : 'legacy';
+  q.potId = p.id;
+  return q;
+}
+
 /* ★ 그루를 중고 거래에 올린다. **아직 팔린 것이 아니다** — 돈은 `dealListing` 이 낸다.
      opt.leaves            growth 가 센 잎 수            ★필수
      opt.variegatedLeaves  그중 무늬 잎 수                ★필수
@@ -1867,20 +1905,10 @@ export function listPot(S, opt = {}) {
   if (p.listing && listingOf(S, p.listing)) {
     const e = new Error(`[중고] ${p.id} 은(는) 이미 올려 두었습니다`); e.tutorialInput = true; throw e;
   }
-  /* ★★ **그루는 `form:'pot'`(×1.4)이다.** 안 주면 삽수 값(×1.0)으로 매겨져 1.4배 싸진다 —
-     그래서 `potPriceOf` 라는 이름으로 부른다(§⑥-2 ⚠ 기본이 'cutting' 인 까닭).
-     ★ 잎별 등급은 **코어 장부**(`pot.leafGrades`)가 갖는다(§⑥-3). 없으면 옛 판 규칙으로
-       무늬 잎이 전부 산반으로 떨어진다 — 조용히가 아니라 확정문 §5 가 정한 대로다. */
-  const varieN = opt.variegatedLeaves || 0;
-  /* 등급을 어디서 얻나 — **셋을 순서대로 본다.** 어느 길로 왔는지는 게시글에 적는다(`gradesFrom`) */
-  const fromOpt = Array.isArray(opt.leafGrades) ? opt.leafGrades : null;
-  const fromLedger = fromOpt ? null : potLeafGradeListOf(p, opt.leaves, varieN);
-  const fromPrologue = (fromOpt || fromLedger) ? null
-                     : prologueLeafGradeListOf(S, p, opt.leaves, varieN);   // §배선이 오기 전의 다리
-  const q = potPriceOf({ species: opt.species || 'monstera',
-                         leaves: opt.leaves, variegatedLeaves: varieN,
-                         leafGrades: fromOpt || fromLedger || fromPrologue });
-  q.gradesFrom = fromOpt ? 'opt' : fromLedger ? 'ledger' : fromPrologue ? 'prologue' : 'legacy';
+  /* ★★ 값은 **`quotePot` 하나가 정한다**(2026-08-16). 여기서 다시 세지 않는다 —
+     화면이 따로 세다가 720,000 vs 1,960,000 으로 갈렸던 자리다(§quotePot).
+     그루는 `form:'pot'`(×1.4)이고, 잎별 등급은 넘겨받은 것 → 코어 장부 → 프롤로그 다리 순으로 얻는다. */
+  const q = quotePot(S, { ...opt, potId: p.id });
   const l = pushListing(S, { kind: 'pot', refId: p.id, ko: '몬스테라', price: q });
   p.listing = l.listingId;
   if (typeof opt.log === 'function')
