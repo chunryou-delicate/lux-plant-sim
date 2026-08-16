@@ -153,21 +153,32 @@ const info = (s) => results.push(['INFO', '  ' + s]);
    옛 값(2026-08-06 main): sill [4.80,5.19] · desk:0 [0.61,1.86] · desk:1 [0.17,1.32] ·
      dresser:0 [0.08,0.19] · dresser:1 [0.05,0.13] · etagere:0~2 [0.13,0.95]/[0.14,1.04]/[0.13,0.99] ·
      etagere:3~5 [0.23,2.01]/[0.22,2.37]/[0.21,2.05] · etagere:6~8 [0.51,6.06]/[0.48,12.41]/[0.48,6.10] */
+/* ★★★ 2026-08-16 갱신 — **G-16 · 첫 등을 몬스테라 위로 옮겼다** (박사님 지시).
+   ------------------------------------------------------------
+   `banjiha-growlight-bar` 가 3단 선반 밑(y 1.02)에서 **창 위 벽**(0, 2.15, -1.85)으로 갔다.
+   ⇒ 등2 열이 통째로 움직인다. **창턱 5.19 → 7.11 · 선반 맨 윗칸 12.41 → 1.00.**
+     그것이 이 변경의 전부이자 맞바꿈이다(까닭·표는 `data/house_rooms.json §banjiha-growlight-bar`).
+   ⚠⚠ **등0 열도 조금 움직였는데 그건 내 것이 아니다** — `desk:0` 0.60→0.61 ·
+     `desk:1` 0.19→0.18 · `dresser:*` 는 **B-1·B-6**(가구를 모서리로 붙이고 상판 자리를
+     칸 한가운데로 옮긴 것 · `d1986cd`)이 낸 값이고, 이 표는 그때 안 갱신돼 **이미 빨갰다.**
+     내 변경 전에 재서 확인했다(`docs/handoff/midlamp-to-plan.md §검사 전·후`).
+   ★ 값은 지어낸 것이 아니라 다시 뽑았다: `BYEOT_REGEN=1 node tools/test_floorlight.mjs`
+   옛 값(G-16 전): sill [4.80,5.19] · etagere:6 [0.51,6.77] · :7 [0.48,12.41] · :8 [0.48,6.80] */
 const BANJIHA_FROZEN = {
-  'banjiha-sill:0':      [4.80, 5.19],
-  'banjiha-desk:0':      [0.60, 1.85],
-  'banjiha-desk:1':      [0.19, 1.38],
-  'banjiha-dresser:0':   [0.07, 0.19],
-  'banjiha-dresser:1':   [0.05, 0.13],
-  'banjiha-etagere:0':   [0.13, 0.97],
-  'banjiha-etagere:1':   [0.14, 1.04],
-  'banjiha-etagere:2':   [0.13, 1.00],
-  'banjiha-etagere:3':   [0.22, 2.07],
-  'banjiha-etagere:4':   [0.22, 2.37],
-  'banjiha-etagere:5':   [0.21, 2.11],
-  'banjiha-etagere:6':   [0.51, 6.77],
-  'banjiha-etagere:7':   [0.48, 12.41],
-  'banjiha-etagere:8':   [0.48, 6.80]
+  'banjiha-sill:0':      [4.80, 7.11],
+  'banjiha-desk:0':      [0.61, 1.65],
+  'banjiha-desk:1':      [0.18, 1.32],
+  'banjiha-dresser:0':   [0.06, 0.16],
+  'banjiha-dresser:1':   [0.04, 0.11],
+  'banjiha-etagere:0':   [0.13, 0.37],
+  'banjiha-etagere:1':   [0.14, 0.40],
+  'banjiha-etagere:2':   [0.13, 0.42],
+  'banjiha-etagere:3':   [0.22, 0.54],
+  'banjiha-etagere:4':   [0.22, 0.58],
+  'banjiha-etagere:5':   [0.21, 0.61],
+  'banjiha-etagere:6':   [0.51, 0.95],
+  'banjiha-etagere:7':   [0.48, 1.00],
+  'banjiha-etagere:8':   [0.48, 1.06]
 };
 const BJ = scan('banjiha');
 

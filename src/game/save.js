@@ -280,6 +280,26 @@ function packPot(p, i) {
       }
       return out;
     })(),
+    /* ★★ 잎별 **드러남 장부** (2026-08-16 · shop.js §⑥-4b · 박사님 *"성숙 때 확률적으로 분류"*).
+       `{ [leafBirth]: true }` — 「그 잎의 등급을 **화면이 이미 말했다**」는 표시다.
+       ⚠⚠ 위 `leafGrades` 와 뜻이 다르다. 저것은 「값이 얼마인가」(잎이 날 때 정해진다)이고
+         이것은 「플레이어가 아는가」(잎이 **성숙할 때** 알려 준다)다. 두 시점이 갈라졌으므로
+         칸도 갈라야 한다 — 한 칸에 섞으면 「값은 정해졌는데 아직 안 알려 줬다」를 적을 데가 없다.
+       ⚠ 안 적으면 저장 한 번에 **이미 본 알림이 다시 뜬다.** 등급이 바뀌는 것은 아니라
+         값이 흔들리지는 않지만, 배너가 되풀이되면 그것을 새 잎으로 읽게 된다.
+       ⚠ 옛 세이브에는 이 칸이 없다 — 빈 표로 열린다. 그 판의 이미 성숙한 무늬 잎은
+         다음 턴에 한 번 더 알림이 뜬다. **없던 표시를 지어내지 않는다.** */
+    leafGradesSeen: (() => {
+      const src = p.leafGradesSeen;
+      if (!src || typeof src !== 'object' || Array.isArray(src)) return {};
+      const out = {};
+      for (const k of Object.keys(src)) {
+        const n = Number(k);
+        if (!Number.isFinite(n)) throw fail('corrupt', `${path}.leafGradesSeen 의 열쇠가 숫자가 아닙니다: ${k}`);
+        if (src[k]) out[String(k)] = true;        // 거짓은 칸을 안 만든다(「안 알렸다」가 곧 없음이다)
+      }
+      return out;
+    })(),
     /* ★★ 중고 거래에 올려 둔 게시글 id (2026-08-17 · shop.js §⑦-0).
        ⚠ 안 적으면 저장 한 번에 **올려 둔 그루가 「안 올린 것」이 된다** — 게시글은 남아
          연락까지 오는데 그루 쪽은 아무 표시가 없어 화면이 [올리기]를 또 내민다. */

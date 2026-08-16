@@ -6,7 +6,7 @@
      1부 · 조도 (헤드리스, 브라우저 없이)
        ① 회귀    아무것도 안 옮기면 반지하 14칸 × 등 0/1/2개의 PPFD·DLI 가
                  **한 톨도 안 바뀐다**(test_lampaim 의 표와 같은 값, 허용치 없음)
-       ② 물림    집게등을 창턱에 물리면 **창턱 DLI 가 문턱 6.0 을 넘는다**
+       ② 물림    집게등을 창턱에 물리면 **창턱 DLI 가 무늬종 문턱 8.4 를 넘는다**
                  — 이 작업이 푸는 문제가 이 한 줄이다
        ③ 높이    `adjustable_height` 가 살아 있다 — 들어 올리면 값이 실제로 움직인다
        ④ 되돌림  덮어쓰기를 지우면 ① 표로 **정확히** 복귀한다
@@ -84,7 +84,16 @@ eng.build('banjiha');
 const CLIP = 'banjiha-growlight-clip', BAR = 'banjiha-growlight-bar';
 const SILL = 'banjiha-sill:0';
 const SKY = { weather: 'clear', season: 'summer', litHours: 12 };
-const THRESHOLD = 6.0;                       // 창턱이 살았다고 할 문턱 (docs/growlight_aim.md)
+/* ★★★ 2026-08-16 (G-16) — **문턱이 6.0 에서 8.4 로 올라갔다. 값이 아니라 자리가 바뀌어서다.**
+   박사님이 첫 등을 「몬스테라 위쪽으로」 옮기라 하셔서 `banjiha-growlight-bar` 가
+   3단 선반 밑 → 창 위 벽으로 갔다(`data/house_rooms.json`). 그래서 **붙박이 등만으로도
+   창턱이 7.07** 이 되어 초록형 문턱 6.0 을 이미 넘는다.
+   ⇒ 「등을 옮기면 창턱이 산다」를 재려면 이제 **무늬종 문턱 8.4**(6.0 × need_mult 1.4)를
+     봐야 한다. 문턱을 낮춰 통과시키는 것이 아니라, **이 검사가 증명하던 그 일**
+     (「옮겨야 넘는 선이 있다」)이 한 칸 위로 옮겨 간 것이다.
+   ⚠ 6.0 을 그대로 두면 ② 가 「옮기기 전에 이미 넘었다」로 빨개지고, 그걸 통과시키려고
+     옮기기 로직을 건드리면 **고장 안 난 것을 고치게 된다.** */
+const THRESHOLD = 6.0 * 1.4;                 // 무늬종 갈라짐 8.4 (growth_tuning §variegated.need_mult)
 const rigOf = (uid) => eng.room.built.lightRigs.find(r => r.uid === uid);
 const reset = () => { eng.setFurnitureOverrides({}); eng.setLampAims({}); eng.clearCache(); };
 /* ⚠ 겨누기도 같이 지운다 — 안 지우면 앞 검사가 돌려 놓은 각도가 다음 검사에 새어 든다
@@ -99,21 +108,24 @@ const dli = (slotId, n) => eng.dliOfSlot(slotId, { ...SKY, lampCount: n });
    까닭·폭은 `test_floorlight` §① 머리말, 「등 물리는 안 건드렸다」의 증거는
    `test_lampaim` §BEFORE 머리말에 적어 두었다. 여기는 값만 둔다.
    다시 뽑는 문: `BYEOT_REGEN=1 node tools/test_lampmove.mjs` (lampaim 것과 같은 표가 나와야 한다) */
+/* ★★★ 2026-08-16 갱신 — **G-16. 첫 등을 몬스테라 위로 옮겼다.**
+   까닭·갈라 적은 어긋남(어디까지가 G-16 이고 어디부터가 B-1·B-6 인지)은
+   `test_lampaim` §BEFORE 머리말에 있다. 여기는 값만 둔다 — 두 표는 글자 그대로 같아야 한다. */
 const BEFORE = {
-  'banjiha-sill:0':     { ppfd: [0, 8.195413, 9.068633],     dli: [4.8, 5.15, 5.19] },
-  'banjiha-desk:0':     { ppfd: [0, 10.660643, 29.003899],   dli: [0.6, 1.06, 1.85] },
-  'banjiha-desk:1':     { ppfd: [0, 3.565306, 27.619401],    dli: [0.19, 0.34, 1.38] },
-  'banjiha-dresser:0':  { ppfd: [0, 1.455611, 2.579889],     dli: [0.07, 0.14, 0.19] },
-  'banjiha-dresser:1':  { ppfd: [0, 1.110425, 1.848864],     dli: [0.05, 0.1, 0.13] },
-  'banjiha-etagere:0':  { ppfd: [0, 17.758409, 19.366252],   dli: [0.13, 0.9, 0.97] },
-  'banjiha-etagere:1':  { ppfd: [0, 18.867116, 20.85616],    dli: [0.14, 0.95, 1.04] },
-  'banjiha-etagere:2':  { ppfd: [0, 17.758409, 20.259313],   dli: [0.13, 0.9, 1] },
-  'banjiha-etagere:3':  { ppfd: [0, 40.923135, 42.689764],   dli: [0.22, 1.99, 2.07] },
-  'banjiha-etagere:4':  { ppfd: [0, 47.3445, 49.588241],     dli: [0.22, 2.27, 2.37] },
-  'banjiha-etagere:5':  { ppfd: [0, 40.923135, 43.852098],   dli: [0.21, 1.98, 2.11] },
-  'banjiha-etagere:6':  { ppfd: [0, 142.980784, 144.847794], dli: [0.51, 6.68, 6.77] },
-  'banjiha-etagere:7':  { ppfd: [0, 273.707829, 276.11858],  dli: [0.48, 12.31, 12.41] },
-  'banjiha-etagere:8':  { ppfd: [0, 142.980784, 146.207098], dli: [0.48, 6.66, 6.8] }
+  'banjiha-sill:0':     { ppfd: [0, 52.604525, 53.477745], dli: [4.8, 7.07, 7.11] },
+  'banjiha-desk:0':     { ppfd: [0, 6.464065, 24.159566],  dli: [0.61, 0.89, 1.65] },
+  'banjiha-desk:1':     { ppfd: [0, 3.261011, 26.510409],  dli: [0.18, 0.32, 1.32] },
+  'banjiha-dresser:0':  { ppfd: [0, 1.216627, 2.266042],   dli: [0.06, 0.11, 0.16] },
+  'banjiha-dresser:1':  { ppfd: [0, 0.901646, 1.544899],   dli: [0.04, 0.08, 0.11] },
+  'banjiha-etagere:0':  { ppfd: [0, 3.94717, 5.541377],    dli: [0.13, 0.3, 0.37] },
+  'banjiha-etagere:1':  { ppfd: [0, 4.172122, 6.161167],   dli: [0.14, 0.32, 0.4] },
+  'banjiha-etagere:2':  { ppfd: [0, 4.287694, 6.813442],   dli: [0.13, 0.31, 0.42] },
+  'banjiha-etagere:3':  { ppfd: [0, 5.591329, 7.341375],   dli: [0.22, 0.46, 0.54] },
+  'banjiha-etagere:4':  { ppfd: [0, 6.054186, 8.297927],   dli: [0.22, 0.48, 0.58] },
+  'banjiha-etagere:5':  { ppfd: [0, 6.300717, 9.264352],   dli: [0.21, 0.49, 0.61] },
+  'banjiha-etagere:6':  { ppfd: [0, 8.419273, 10.267717],  dli: [0.51, 0.87, 0.95] },
+  'banjiha-etagere:7':  { ppfd: [0, 9.51673, 11.927482],   dli: [0.48, 0.89, 1] },
+  'banjiha-etagere:8':  { ppfd: [0, 10.140864, 13.409602], dli: [0.48, 0.92, 1.06] }
 };
 
 /* 새 값을 뽑을 때 쓴다: BYEOT_REGEN=1 node tools/test_lampmove.mjs

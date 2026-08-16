@@ -471,7 +471,8 @@ console.log(`    이어지는 속도는 ${won(cutLong)}/일 이고, 그 상한�
   const light = createProfileLight(jj('../data/profiles/room_profile.banjiha.json'),
     { lightTh: jj('../data/balance/light_thresholds.json'),
       weatherBalance: jj('../data/balance/weather.json') });
-  const MIN = jj('../data/balance/light_thresholds.json').plants.monstera_deliciosa.min;
+  const TH = jj('../data/balance/light_thresholds.json').plants.monstera_deliciosa;
+  const MIN = TH.min, FEN = TH.fenestrate;
   const S = { lamps: { count: 1, litHours: 12 } };
   const sky = { weather: 'clear', season: 'summer' };
   const opt = lightOptsOf(S, sky);
@@ -482,16 +483,25 @@ console.log(`    이어지는 속도는 ${won(cutLong)}/일 이고, 그 상한�
   results.push([same ? 'PASS' : 'FAIL',
     'J-1 ★삽수와 화분이 **같은 칸**을 넘긴다 (날씨·계절·등·시간)', JSON.stringify(opt)]);
 
-  /* ② 빈 옵션과 고친 옵션의 차이 — 이것이 버그의 크기다 */
-  const KEY = 'banjiha-etagere:7';
-  const before = light.dliOfSlot(KEY, {});
-  const after = light.dliOfSlot(KEY, opt);
-  results.push([after > before * 5 ? 'PASS' : 'FAIL',
-    'J-2 ★★등 밑 선반의 빛이 **살아난다** (빈 옵션이면 잠긴다)',
-    `${before.toFixed(2)} → ${after.toFixed(2)} (${(after / Math.max(before, 1e-9)).toFixed(1)}배)`]);
-  results.push([before < MIN && after >= MIN ? 'PASS' : 'FAIL',
-    'J-3 ★그래서 등 밑에서 **실제로 자라기 시작한다** (최소 DLI 를 넘는다)',
-    `최소 ${MIN} · 전 ${before.toFixed(2)}(안 자람) → 후 ${after.toFixed(2)}(자란다)`]);
+  /* ② 빈 옵션과 고친 옵션의 차이 — 이것이 버그의 크기다.
+     ★★ 2026-08-16 (G-16) — **자리를 이름으로 박지 않는다.** 첫 등이 3단 선반 밑에서
+       창 위로 옮겨졌다(`data/house_rooms.json`). 옛 코드는 `banjiha-etagere:7` 을 박아
+       두었는데, 그 칸은 이제 등을 켜도 0.89 다. **박아 둔 이름이 곧 낡은 자다.**
+       ⇒ 「등 몫이 제일 큰 칸」을 그 자리에서 골라 잰다 — 등이 어디로 가든 참이다. */
+  const gains = light.room.slots.map(s => ({
+    slotId: s.slotId, before: light.dliOfSlot(s.slotId, {}), after: light.dliOfSlot(s.slotId, opt)
+  })).map(r => ({ ...r, gain: r.after - r.before }));
+  const top = gains.reduce((a, b) => (b.gain > a.gain ? b : a));
+  const KEY = top.slotId, before = top.before, after = top.after;
+  results.push([after > before ? 'PASS' : 'FAIL',
+    'J-2 ★★등 몫이 **살아난다** (빈 옵션이면 잠긴다)',
+    `${KEY} ${before.toFixed(2)} → ${after.toFixed(2)} (+${top.gain.toFixed(2)})`]);
+  /* ★ 등이 사는 것은 이제 「최소 DLI」가 아니라 **「갈라짐 문턱」**이다 —
+     첫 등이 창턱을 맡으면서 그 칸은 자연광만으로도 이미 min 3 을 넘고 있다(4.80).
+     그래서 등이 무엇을 바꾸는지는 6.0 에서 잰다. 문턱을 낮춘 것이 아니라 **잴 선이 올라갔다.** */
+  results.push([before < FEN && after >= FEN ? 'PASS' : 'FAIL',
+    'J-3 ★그래서 등을 사면 **잎이 갈라진다** (갈라짐 문턱을 넘는다)',
+    `문턱 ${FEN} · 전 ${before.toFixed(2)}(안 갈라짐) → 후 ${after.toFixed(2)}(갈라진다) @ ${KEY}`]);
 
   /* ③ 자리가 진짜 상한이다 — 등 1개에서 자라는 칸이 몇인가 */
   const grow = light.room.slots.filter(s => light.dliOfSlot(s.slotId, opt) >= MIN).map(s => s.slotId);

@@ -59,12 +59,13 @@
         "peak_summer": 0.04,
         "avg7_summer": 0.02,
         "point": {
-          "x": 1.7,
+          "x": 2.025,
           "y": 0.8,
-          "z": 1.66
+          "z": 1.775
         },
         "maxPotD": 0.42,
-        "_note": "열린 콩나물 시루(413, 지름 0.24m) 배치 가능. 첫 플레이의 '어두운 자리'."
+        "_note": "열린 콩나물 시루(413, 지름 0.24m) 배치 가능. 첫 플레이의 '어두운 자리'.",
+        "_moved_2026_08_16": "★ 좌표가 (1.7, 0.8, 1.66) 에서 여기로 옮겨졌다. 까닭 둘 — ① B-6 서랍장을 모서리로 붙였다 ② B-1 상판 자리를 칸 한가운데(깊이축)로 옮겼다. 라이브 DLI 실측(맑음·여름·등 0개): dresser:0 0.08→0.06 · dresser:1 0.05→0.04. **나머지 12칸은 한 톨도 안 바뀌었다**(창턱 4.80 그대로). 어두운 자리가 조금 더 어두워졌고 콩나물에는 그 편이 맞다. 표는 docs/handoff/place-to-plan.md §2·§7."
       },
       "_slotid_note": "★ 반지하는 가구마다 uid 를 데이터에 못 박아 house.js 경로와 light_adapter 경로가 같은 slotId 를 낸다. 다른 방은 아직 light_adapter 가 로드 시점에 seq 로 붙이므로 편집만 해도 바뀐다(core-to-house 보고)."
     },
@@ -95,88 +96,88 @@
       "ratio": 0.312051,
       "ppfd": [
         0,
-        8.2,
-        9.07
+        52.6,
+        53.48
       ]
     },
     {
       "slotId": "banjiha-desk:0",
       "owner": "desk",
       "point": {
-        "x": 0.82,
+        "x": 0.8,
         "y": 0.74,
-        "z": -1.35
+        "z": -1.375
       },
-      "maxPotD": 0.57,
-      "ratio": 0.0390135,
+      "maxPotD": 0.47,
+      "ratio": 0.0395112,
       "ppfd": [
         0,
-        10.66,
-        29
+        6.46,
+        24.16
       ]
     },
     {
       "slotId": "banjiha-desk:1",
       "owner": "desk",
       "point": {
-        "x": 1.78,
+        "x": 1.8,
         "y": 0.74,
-        "z": -1.35
+        "z": -1.375
       },
-      "maxPotD": 0.57,
-      "ratio": 0.0121748,
+      "maxPotD": 0.47,
+      "ratio": 0.0116122,
       "ppfd": [
         0,
-        3.57,
-        27.62
+        3.26,
+        26.51
       ]
     },
     {
       "slotId": "banjiha-dresser:0",
       "owner": "dresser",
       "point": {
-        "x": 1.7,
+        "x": 2.025,
         "y": 0.8,
-        "z": 1
+        "z": 1.025
       },
-      "maxPotD": 0.42,
-      "ratio": 0.00479335,
+      "maxPotD": 0.47,
+      "ratio": 0.00402582,
       "ppfd": [
         0,
-        1.46,
-        2.58
+        1.22,
+        2.27
       ]
     },
     {
       "slotId": "banjiha-dresser:1",
       "owner": "dresser",
       "point": {
-        "x": 1.7,
+        "x": 2.025,
         "y": 0.8,
-        "z": 1.6
+        "z": 1.775
       },
-      "maxPotD": 0.42,
-      "ratio": 0.00331143,
+      "maxPotD": 0.47,
+      "ratio": 0.00265734,
       "ppfd": [
         0,
-        1.11,
-        1.85
+        0.9,
+        1.54
       ]
     },
     {
       "slotId": "banjiha-etagere:0",
       "owner": "shelf_etagere",
       "point": {
-        "x": -0.59,
+        "x": -0.6,
         "y": 0.03,
         "z": -1.72
       },
-      "maxPotD": 0.25,
-      "ratio": 0.00859785,
+      "maxPotD": 0.22,
+      "ratio": 0.00857381,
       "ppfd": [
         0,
-        17.76,
-        19.37
+        3.95,
+        5.54
       ]
     },
     {
@@ -187,44 +188,44 @@
         "y": 0.03,
         "z": -1.72
       },
-      "maxPotD": 0.25,
+      "maxPotD": 0.22,
       "ratio": 0.00900752,
       "ppfd": [
         0,
-        18.87,
-        20.86
+        4.17,
+        6.16
       ]
     },
     {
       "slotId": "banjiha-etagere:2",
       "owner": "shelf_etagere",
       "point": {
-        "x": -0.11,
+        "x": -0.1,
         "y": 0.03,
         "z": -1.72
       },
-      "maxPotD": 0.25,
-      "ratio": 0.00832646,
+      "maxPotD": 0.22,
+      "ratio": 0.00833002,
       "ppfd": [
         0,
-        17.76,
-        20.26
+        4.29,
+        6.81
       ]
     },
     {
       "slotId": "banjiha-etagere:3",
       "owner": "shelf_etagere",
       "point": {
-        "x": -0.59,
+        "x": -0.6,
         "y": 0.412,
         "z": -1.72
       },
-      "maxPotD": 0.25,
-      "ratio": 0.0144703,
+      "maxPotD": 0.22,
+      "ratio": 0.0144376,
       "ppfd": [
         0,
-        40.92,
-        42.69
+        5.59,
+        7.34
       ]
     },
     {
@@ -235,44 +236,44 @@
         "y": 0.412,
         "z": -1.72
       },
-      "maxPotD": 0.25,
+      "maxPotD": 0.22,
       "ratio": 0.0145456,
       "ppfd": [
         0,
-        47.34,
-        49.59
+        6.05,
+        8.3
       ]
     },
     {
       "slotId": "banjiha-etagere:5",
       "owner": "shelf_etagere",
       "point": {
-        "x": -0.11,
+        "x": -0.1,
         "y": 0.412,
         "z": -1.72
       },
-      "maxPotD": 0.25,
-      "ratio": 0.0139847,
+      "maxPotD": 0.22,
+      "ratio": 0.0139833,
       "ppfd": [
         0,
-        40.92,
-        43.85
+        6.3,
+        9.26
       ]
     },
     {
       "slotId": "banjiha-etagere:6",
       "owner": "shelf_etagere",
       "point": {
-        "x": -0.59,
+        "x": -0.6,
         "y": 0.794,
         "z": -1.72
       },
-      "maxPotD": 0.25,
-      "ratio": 0.0330374,
+      "maxPotD": 0.22,
+      "ratio": 0.0329852,
       "ppfd": [
         0,
-        142.98,
-        144.85
+        8.42,
+        10.27
       ]
     },
     {
@@ -283,31 +284,31 @@
         "y": 0.794,
         "z": -1.72
       },
-      "maxPotD": 0.25,
+      "maxPotD": 0.22,
       "ratio": 0.0313144,
       "ppfd": [
         0,
-        273.71,
-        276.12
+        9.52,
+        11.93
       ]
     },
     {
       "slotId": "banjiha-etagere:8",
       "owner": "shelf_etagere",
       "point": {
-        "x": -0.11,
+        "x": -0.1,
         "y": 0.794,
         "z": -1.72
       },
-      "maxPotD": 0.25,
-      "ratio": 0.0311879,
+      "maxPotD": 0.22,
+      "ratio": 0.0311424,
       "ppfd": [
         0,
-        142.98,
-        146.21
+        10.14,
+        13.41
       ]
     }
   ],
-  "generatedAt": "2026-08-15",
+  "generatedAt": "2026-08-16",
   "generatedBy": "tools/gen_room_profile.mjs (light_adapter.profile)"
 }

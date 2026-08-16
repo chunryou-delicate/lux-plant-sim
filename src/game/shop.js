@@ -806,6 +806,8 @@ const VARIE_GRADES_FALLBACK = Object.freeze({
       { id: 'charcoal',       ko: '차콜-다크그린',     matNum: 49 }
     ] }
   ],
+  /* ★★ 2026-08-16 박사님 확정 — 중간잎은 **등급과 상관없이 한 갈래**에서 뽑는다(§⑥-4b) */
+  midCommon: { enabled: true, fromGrade: 'halfmoon' },
   sale: { cuttingMult: 1.0, potMult: 1.4, synergy: { 0: 1.0, 1: 1.0, 2: 1.25, 3: 1.5 } },
   lightGrade: {
     dark:   { sanban: 0.90, halfmoon: 0.09, fullmoon: 0.01 },
@@ -874,6 +876,22 @@ export function varieGradesFrom(json) {
   }
   const byId = new Map(grades.map(g => [g.id, g]));
   const legacyGradeId = byId.has(j && j.legacyGradeId) ? j.legacyGradeId : F.legacyGradeId;
+  /* ★★ 중간잎 통일 (2026-08-16 · §⑥-4b). **켠 것도 끈 것도 파일이 정한다.**
+     ⚠ `fromGrade` 가 모르는 이름이거나 그 등급에 중간잎이 없으면 **안 켠다.**
+       조용히 다른 갈래로 떨어지면 화면이 왜 그 그림인지 아무도 못 밝힌다. */
+  const mcRaw = (j && j.midCommon) || F.midCommon;
+  const mcFrom = (mcRaw && typeof mcRaw.fromGrade === 'string') ? mcRaw.fromGrade : null;
+  const mcGrade = mcFrom ? byId.get(mcFrom) : null;
+  const midCommon = Object.freeze({
+    enabled: !!(mcRaw && mcRaw.enabled && mcGrade && mcGrade.midAssets.length),
+    fromGrade: (mcGrade && mcGrade.midAssets.length) ? mcGrade.id : null,
+    /* 왜 안 켜졌는지를 남긴다 — 「켰는데 안 먹는다」를 화면·검사가 물을 수 있게 */
+    why: !mcRaw || !mcRaw.enabled ? '꺼져 있다'
+       : !mcFrom ? 'fromGrade 가 없다'
+       : !mcGrade ? `모르는 등급이다: ${mcFrom}`
+       : !mcGrade.midAssets.length ? `${mcFrom} 에 중간잎 갈래가 없다`
+       : null
+  });
   /* 에셋 갈래 이름·`leaf_mat` 번호 → 등급. **3D 스킨과 값이 같은 것을 보게 하는 표다** */
   const assetIndex = new Map(), matIndex = new Map(), midIndex = new Map();
   for (const g of grades) for (const a of g.assets) {
@@ -899,6 +917,7 @@ export function varieGradesFrom(json) {
     }),
     lightGrade: Object.freeze(lightGrade),
     lightBands: Object.freeze(lightBands),
+    midCommon,
     legacyGradeId,
     prologueGrades: Object.freeze(prologueGrades),
     unassignedAssets: Object.freeze(
@@ -1058,10 +1077,54 @@ export function midSkinKeysOfGrade(gradeId) {
   for (const a of g.midAssets) for (const n of a.midNums) out.push(`leaf_mid_albo${n}`);
   return out;
 }
-/* `leaf_mid_albo{n}` 의 n → 등급. 모르면 `null`(던지지 않는다). */
+/* `leaf_mid_albo{n}` 의 n → **표가 그 번호를 적어 둔 등급**. 모르면 `null`(던지지 않는다).
+   ⚠⚠ 2026-08-16 부터 이것은 **「그 잎의 등급」이 아니다.** 중간잎 통일(§⑥-4b)이 켜져 있으면
+     산반 잎도 하프문 갈래의 중간잎을 쓴다 — 그림에서 등급을 되읽으면 **거짓말이 된다.**
+     이 함수는 표를 검사·정리할 때 쓰는 것이지 판정에 쓰는 것이 아니다.
+     잎의 등급은 장부(`pot.leafGrades`) 하나가 정본이다. */
 export function gradeOfMidNum(n) {
   if (!Number.isInteger(n) || n < 1) return null;
   return _VARIE.midIndex.get(n) || null;
+}
+
+/* ============================================================
+   ⑥-4b ★★★ **중간잎은 한 갈래다** — 등급은 성숙 때 드러난다 (2026-08-16 박사님 확정)
+   ------------------------------------------------------------
+   박사님: *"**중간잎은 하프문만 있는 걸로 그냥 ㄱ**, **성숙 때 확률적으로 분류**되는 걸로."*
+
+   ══ 무엇이 문제였나 ═══════════════════════════════════════════════════════
+   §⑥-4 는 중간잎도 **등급별로** 뽑게 했다. 그러면 그림이 등급을 미리 말한다 —
+   풀문이 될 잎은 중간부터 전백이고, 하프문이 될 잎은 늘 하프문-크림민트다
+   (중간잎 하프문이 **한 갈래뿐**이라 특히 티가 난다 · `midalbo-to-plan.md §9-①`).
+   ⇒ 잎이 나는 순간에 등급이 화면에 드러나 「자라 봐야 안다」가 사라진다.
+
+   ══ 무엇을 옮겼고 무엇을 안 옮겼나 ═══════════════════════════════════════
+   ★ **옮긴 것: 드러나는 시점.** 중간잎은 등급과 무관하게 한 갈래(`midCommon.fromGrade`)
+     에서 뽑고, **성숙잎에서 비로소 등급대로** 갈린다.
+   ★ **안 옮긴 것: 정하는 시점.** 등급은 여전히 **잎이 날 때** 정한다(§⑥-3).
+     ⚠⚠ 재서 그렇게 정했다. 장부 쓰기를 성숙 때로 미루면 **프롤로그 그루가
+       1,960,000 → 1,008,000 원**이 된다(`tools/probe_midreveal.mjs` 실측):
+       잎2 만 성숙하고 잎3 이 아직이면 장부에 한 칸이 생겨 `prologueLeafGradeListOf`
+       다리가 꺼지고(그 다리는 **장부가 비었을 때만** 산다), 등급 없는 잎3 이
+       `legacyGradeId`(산반)로 떨어져 하프문 750,000원이 통째로 사라진다.
+       확정문 §2 의 「196만 · 이사비에 4만 모자란다」가 그 자리에서 깨진다.
+   ⇒ 값은 잎이 날 때 조용히 정하고, **드러나는 것(그림·알림)만** 성숙 때로 미룬다.
+     알림 쪽은 §⑥-3 `assignPotLeafGrades` 의 `revealed` 가 맡는다.
+
+   ⚠ 표(`midAssets` 42키)는 **한 줄도 안 지웠다.** 지우면 잰 근거가 사라진다 —
+     `midCommon.enabled` 를 false 로 하면 그 자리에서 예전 동작으로 돌아간다.
+============================================================ */
+
+/* 지금 중간잎 통일이 켜져 있나. `{ enabled, fromGrade, why }` — `why` 는 **안 켜진 까닭**이다. */
+export function midCommonRule() { return _VARIE.midCommon; }
+
+/* ★ **그 잎이 실제로 쓸** 중간잎 키들. 통일이 켜져 있으면 등급을 안 본다.
+   ⚠ `midSkinKeysOfGrade` 와 가른 이유 — 저것은 **표가 무엇을 적어 뒀나**이고
+     이것은 **화면이 무엇을 그리나**다. 둘을 한 함수로 두면 검사가 표를 못 잰다. */
+export function midSkinPoolOf(gradeId) {
+  const mc = _VARIE.midCommon;
+  if (mc.enabled) return midSkinKeysOfGrade(mc.fromGrade);
+  return midSkinKeysOfGrade(gradeId);
 }
 
 /* ★★ 빛 → 등급 (확정문 §3). `step` 은 'dark'|'mid'|'bright', `roll` 은 0~1.
@@ -1274,6 +1337,22 @@ export function potLeafGradesOf(pot) {
   return pot.leafGrades;
 }
 
+/* ★★ **드러난 잎 장부** — `pot.leafGradesSeen` (2026-08-16 · §⑥-4b)
+   ------------------------------------------------------------
+   `{ [leafBirth]: true }` — 「이 잎의 등급을 **화면이 이미 말했다**」는 표시다.
+   ⚠⚠ 등급 장부(`leafGrades`)와 **뜻이 다르다.** 저것은 「값이 얼마인가」이고
+     이것은 「플레이어가 아는가」다. 두 시점이 갈라졌으므로 칸도 갈라야 한다 —
+     한 칸에 둘을 섞으면 「값은 정해졌는데 아직 안 알려 줬다」를 적을 데가 없다.
+   ⚠ 안 적으면 저장 한 번에 **이미 본 알림이 다시 뜬다**(`save.js §화분 한 칸` 에 같이 넣었다).
+   ⚠ 옛 세이브에는 이 칸이 없다 — 그때는 빈 표가 맞다. 다만 그 판의 이미 성숙한 잎은
+     다음 턴에 한 번 알림이 뜬다(없던 표시를 지어내지 않는다). */
+export function potLeafGradesSeenOf(pot) {
+  if (!pot) return {};
+  if (!pot.leafGradesSeen || typeof pot.leafGradesSeen !== 'object' || Array.isArray(pot.leafGradesSeen))
+    pot.leafGradesSeen = {};
+  return pot.leafGradesSeen;
+}
+
 /* ★ 장부 → `priceOf` 가 받는 잎별 등급 배열. 장부가 비었으면 `null`(옛 판 규칙으로 떨어진다).
    ⚠ 아는 것만 채우고 **모르는 칸은 `null` 로 둔다** — `leafGradeListOf` 가 거기서
      「등급을 모르는 무늬 잎」을 산반으로 편다. 모르는 것을 민무늬로 세면 값을 깎게 된다. */
@@ -1350,16 +1429,31 @@ export function prologueLeafGradeListOf(S, pot, leaves, variegatedLeaves = 0) {
    ⚠ **빛을 못 재면 안 정한다.** 다음 날 다시 묻는다 — 0 으로도 「중간」으로도 안 메꾼다
      (`propagation.resolveVarieLight` 와 같은 규약).
    ⚠ 프롤로그 못박기(확정문 §4)는 **빛과 무관하게** 먼저 걸린다. 그래야 「첫 판은 늘 같은 그림」이 된다.
-   반환 { grades, assigned:[{leafBirth,leafNo,grade,gradeKo,why}], pending, step, events } */
+
+   ══ ★★ 2026-08-16 — **정하는 것과 드러내는 것을 갈랐다** (§⑥-4b · 박사님 확정) ══════
+   박사님: *"성숙 때 확률적으로 분류되는 걸로."*
+   ⇒ 등급은 여전히 **잎이 날 때** 정해 장부에 적는다(값 계통이 그 위에 서 있다 — 옮기면
+     프롤로그 그루가 196만 → 100.8만이 된다. §⑥-4b 의 ⚠⚠ 를 읽어라).
+     드러나는 것만 **잎이 성숙할 때**로 미뤘다. 그래서 반환이 둘로 갈린다:
+       `graded`   이번에 **장부에 적힌** 잎 (조용하다 · 값이 여기서 선다)
+       `assigned` 이번에 **화면에 드러난** 잎 (성숙했고 아직 안 알린 잎 · 배너는 이것을 쓴다)
+   ⚠ `assigned` 의 뜻이 바뀌었다 — 예전에는 「막 적힌 잎」이었다. 부르는 자리(game.html
+     `noteLeafGrades`)는 **한 글자도 안 고쳐도** 배너가 성숙 때로 미뤄진다. 그것이 이 모양을
+     고른 까닭이다(`game.html` 은 이번 창의 ⛔ 목록이다).
+   ⚠ 「이미 알렸다」는 `pot.leafGradesSeen` 에 적는다(§potLeafGradesSeenOf).
+     `leafState` 줄에 `matured` 가 없으면(옛 접근자) 아무것도 안 드러난다 — 지어내지 않는다.
+   반환 { grades, seen, graded, assigned, revealed, pending, step, events } */
 export function assignPotLeafGrades(S, opt = {}) {
   const pots = (S && S.pots) || [];
   const pot = opt.pot || (opt.potId ? pots.find(p => p.id === opt.potId) : pots[0]);
   const rows = Array.isArray(opt.leafState) ? opt.leafState : null;
   const step = opt.step || varieLightStepOfBand(opt.band);
   const grades = potLeafGradesOf(pot);
-  const assigned = [], events = [];
+  const seen = potLeafGradesSeenOf(pot);
+  const graded = [], assigned = [], events = [];
   let pending = 0;
-  if (!pot || !rows) return { grades, assigned, pending, step: step || null, events };
+  if (!pot || !rows)
+    return { grades, seen, graded, assigned, revealed: assigned, pending, step: step || null, events };
 
   const usePrologue = opt.prologue != null
     ? !!opt.prologue
@@ -1371,31 +1465,50 @@ export function assignPotLeafGrades(S, opt = {}) {
   for (let i = 0; i < sorted.length; i++) {
     const r = sorted[i];
     if (!r.varie) continue;                       // 무늬가 아닌 잎은 등급이 없다
-    if (grades[r.leafBirth]) continue;            // 이미 정해졌다 — 안 바꾼다
     const leafNo = i + 1;
-    const fixed = usePrologue ? _VARIE.prologueGrades[leafNo] : null;
-    let gid = null, why = null;
-    if (fixed && _VARIE.byId.get(fixed) && _VARIE.byId.get(fixed).varie) {
-      gid = fixed; why = 'prologue';
-    } else if (step) {
-      gid = varieGradeFromLight(step, marketHash(seed, `LG${pot.id}#${r.leafBirth}`, 21));
-      why = 'light';
+    /* ── ㉠ 정하기 (조용하다) ─────────────────────────────────────────── */
+    if (!grades[r.leafBirth]) {                   // 이미 정해졌으면 안 바꾼다
+      const fixed = usePrologue ? _VARIE.prologueGrades[leafNo] : null;
+      let gid = null, why = null;
+      if (fixed && _VARIE.byId.get(fixed) && _VARIE.byId.get(fixed).varie) {
+        gid = fixed; why = 'prologue';
+      } else if (step) {
+        gid = varieGradeFromLight(step, marketHash(seed, `LG${pot.id}#${r.leafBirth}`, 21));
+        why = 'light';
+      }
+      if (!gid) { pending++; continue; }          // 못 쟀다 — 내일 다시(모르면 안 정한다)
+      grades[r.leafBirth] = gid;
+      graded.push({ leafBirth: r.leafBirth, leafNo, grade: gid,
+                    gradeKo: _VARIE.byId.get(gid).ko, why });
     }
-    if (!gid) { pending++; continue; }            // 못 쟀다 — 내일 다시(모르면 안 정한다)
-    grades[r.leafBirth] = gid;
+    /* ── ㉡ 드러내기 (성숙한 잎만 · 한 번만) ──────────────────────────── */
+    if (!r.matured) continue;                     // 아직 중간잎이다 — 티 내지 않는다
+    if (seen[r.leafBirth]) continue;              // 이미 알렸다
+    const gid = grades[r.leafBirth];
     const g = _VARIE.byId.get(gid);
-    /* ★ 등급이 정해지는 **그 자리에서 그림 두 벌도 같이 정해진다**(§⑥-4).
-       ⚠ 적어 두지 않는다 — 등급에서 되뽑는다. 두 벌 장부가 갈리는 것을 원리적으로 막는 길이다. */
+    if (!g) continue;
+    seen[r.leafBirth] = true;
+    /* ★ 그림 두 벌은 **적어 두지 않고 등급에서 되뽑는다**(§⑥-4).
+       중간잎은 통일 갈래에서, 성숙잎만 등급대로 나온다(§⑥-4b). */
     const skins = leafSkinsFor(gid, seed, pot.id, r.leafBirth);
-    assigned.push({ leafBirth: r.leafBirth, leafNo, grade: gid, gradeKo: g.ko, why,
+    /* ★ 「왜 그 등급인가」 — 이번에 적힌 잎이면 적힌 그대로, 예전에 적힌 잎이면 **되짚는다.**
+       ⚠ 되짚기는 짐작이라 못 박지 않는다(장부에 사유 칸이 없다). 화면 문구에만 쓴다. */
+    const justNow = graded.find(x => x.leafBirth === r.leafBirth);
+    const fixedNow = usePrologue ? _VARIE.prologueGrades[leafNo] : null;
+    const why = justNow ? justNow.why
+      : (fixedNow && _VARIE.byId.get(fixedNow) && _VARIE.byId.get(fixedNow).varie) ? 'prologue' : 'light';
+    assigned.push({ leafBirth: r.leafBirth, leafNo, grade: gid, gradeKo: g.ko, why, matured: true,
                     midSkin: skins && skins.midSkin, matSkin: skins && skins.matSkin });
     events.push({ id: 'leaf_grade', leafBirth: r.leafBirth, leafNo, grade: gid,
                   midSkin: skins && skins.midSkin, matSkin: skins && skins.matSkin,
-                  ko: `${leafNo}번째 잎의 무늬는 **${g.ko}**입니다 — 잎 한 장 ` +
+                  ko: `${leafNo}번째 잎이 다 자랐습니다 — 무늬는 **${g.ko}**, 잎 한 장 ` +
                       `${g.leafWon.toLocaleString()}원` +
-                      (why === 'light' ? ` (${step === 'bright' ? '밝은' : step === 'mid' ? '중간' : '어두운'} 자리)` : '') });
+                      /* ⚠ 자리 이야기는 **빛을 실제로 잰 턴에만** 붙인다. `step` 이 없는데
+                         「어두운 자리」라 적으면 그것이 곧 재는 자의 거짓말이다. */
+                      (why === 'light' && step
+                        ? ` (${step === 'bright' ? '밝은' : step === 'mid' ? '중간' : '어두운'} 자리)` : '') });
   }
-  return { grades, assigned, pending, step: step || null, events };
+  return { grades, seen, graded, assigned, revealed: assigned, pending, step: step || null, events };
 }
 
 /* ============================================================
@@ -1429,7 +1542,8 @@ export const LEAF_SKIN_SALT = Object.freeze({ grade: 21, mid: 23, mat: 29 });
 export function leafSkinsFor(gradeId, seed, potId, leafBirth) {
   const g = _VARIE.byId.get(gradeId);
   if (!g || !g.varie) return null;
-  const mids = midSkinKeysOfGrade(gradeId);
+  /* ★ 2026-08-16 — 중간잎은 **통일 갈래**에서 뽑는다(§⑥-4b). 성숙잎만 등급대로 갈린다. */
+  const mids = midSkinPoolOf(gradeId);
   const mats = skinKeysOfGrade(gradeId);
   const pick = (arr, salt) => {
     if (!arr.length) return null;
