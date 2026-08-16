@@ -1,6 +1,8 @@
 # 중간잎 무늬를 등급으로 묶었다 — 잰 표와 배선
 
-> **START** 2026-08-16 15:2x · **END** 2026-08-16 16:0x (KST)
+> **START** 2026-08-16 ~15:25 · **END** 2026-08-16 16:05 (KST)
+> ⚠ START 는 **정확히 못 적는다** — 창을 연 시각을 안 찍어 뒀다. 첫 산출물
+> (`tools/probe_midalbo.mjs`)의 mtime 이 15:44 이고, 그 앞의 읽기·재현이 20분쯤이었다.
 > 워커창 `midalbo` · 건드린 파일: `data/balance/varie_grades.json` · `src/game/shop.js` ·
 > `plant_grow.html`(무늬 고르는 자리만) · `tools/test_variegrade.mjs` · `tools/probe_midalbo.mjs`(신설) ·
 > `docs/handoff/img/midalbo/**`
