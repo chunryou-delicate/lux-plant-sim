@@ -1076,7 +1076,23 @@ export function takeCutting(S, opt = {}) {
       stem: node.stem,
       leaves: node.leaves,
       variegatedLeaves: node.variegatedLeaves,
-      growthDays: Number.isFinite(node.growthDays) ? node.growthDays : null
+      growthDays: Number.isFinite(node.growthDays) ? node.growthDays : null,
+      /* ★★★ 2026-08-16 — **자를 때 모주가 며칠짜리였나** (박사님: *"줄기 기존 자랐던 거
+         그대로 쓰라고"*).
+         ══════════════════════════════════════════════════════════════════
+         ★ 방이 「자른 그 가지」를 그리려면 **그때의 모주를 그대로 다시 지어야** 한다
+           (`plant_assemble.branchOf` — 같은 씨앗·같은 유효 생장일이면 같은 형태가 나온다).
+           그런데 그 날짜가 세이브 어디에도 없었다:
+             · `source.growthDays` 는 **그 조각이 자란 날**이지 모주 것이 아니다
+             · `cutOnDay` 는 **달력 날**이라 유효 생장일과 다르다(마른 날은 안 세어진다)
+             · 되짚을 수도 없다 — 지난 빛 이력을 다시 굴려야 한다
+         ⇒ **자르는 그 자리에서 적어 둔다.** 형태의 정본은 growth 이므로 코어가 세지 않고
+           부르는 쪽이 준 값을 그대로 받는다(`io.growth.growthDays()`).
+         ⚠ 안 주면 `null` 이다. **0 으로 메꾸지 않는다** — 0 은 「갓 심은 그루」라는 뜻이라
+           그걸로 다시 지으면 **씨앗 한 톨**이 병에 들어앉는다. `null` 이면 방이 옛 길로 간다.
+         ⚠ 씨앗도 같이 적는다. 씨앗이 다르면 같은 날짜라도 **다른 그루**가 나온다. */
+      motherGrowthDays: Number.isFinite(opt.motherGrowthDays) ? opt.motherGrowthDays : null,
+      motherSeed: Number.isFinite(opt.motherSeed) ? opt.motherSeed : null
     },
     /* ★ 지금 달고 있는 잎. 아래(오래된 것)부터 위(생장점)로.
        ★★ 딸려온 무늬 잎을 **위쪽에** 둔다. growth 는 「무늬 잎이 몇 장인가」만 주고 어느 자리인지는

@@ -4674,8 +4674,18 @@ const reallyCut = guard((nodeId, container) => {
      고장이 아니므로 안내로 내려 잡는다(안 그러면 한 번의 오탭에 판이 통째로 잠긴다). */
   let c;
   try {
+    /* ★★★ 2026-08-16 — **자를 때의 모주를 적어 둔다**(propagation §motherGrowthDays).
+       방이 「자른 그 가지」를 그리려면 그때의 모주를 그대로 다시 지어야 하고, 그러려면
+       **유효 생장일과 씨앗**이 필요하다. 둘 다 코어가 못 세는 값이라(형태는 growth 소유)
+       여기서 물어 넘긴다. ⚠ 못 물으면 안 넘긴다 — 코어가 `null` 로 두고 방은 옛 길로 간다.
+       **0 으로 메꾸면 씨앗 한 톨이 병에 들어앉는다.** */
+    let momDays = null;
+    try { const d = io.growth.growthDays(); if (Number.isFinite(d)) momDays = d; } catch { }
+    const momSeed = (S.sim && Number.isFinite(S.sim.seed)) ? S.sim.seed : null;
     c = takeCutting(S, { potId: pot0(S).id, nodes, nodeId, container,
                          at: pl.at, size: pl.size, slots: pl.slots, snapDist: pl.snapDist,
+                         ...(momDays != null ? { motherGrowthDays: momDays } : {}),
+                         ...(momSeed != null ? { motherSeed: momSeed } : {}),
                          log: m => pushLog(S, m) });
   } catch (e) { e.tutorialInput = true; throw e; }
   const m = METHODS[c.method];
