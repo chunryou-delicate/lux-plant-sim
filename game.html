@@ -3176,7 +3176,14 @@ function hintFollowLoop(on) {
     if (hintTick != null) return;
     const tick = () => {
       hintTick = requestAnimationFrame(tick);
-      if (!hintFollow || !hintFollow.el || !hintFollow.el.isConnected) return;
+      /* ⚠⚠ 2026-08-16 §E-2 — **가리키던 것이 사라지면 손가락도 꺼야 한다.**
+         여기 있던 것은 `return` 한 줄이었다. 그러면 고리는 계속 도는데 아무것도 안 하고,
+         손가락은 **옛 자리에 그대로 켜진 채** 남는다. 다시 그리는 계기가 없으면 영영이다.
+         ⇒ 말풍선(`.mark`)은 `drawMarks` 가 **노드째 다시 만든다** — 그 순간 옛 노드는
+           `isConnected` 가 거짓이 된다. 박사님이 보신 「다른 것을 눌렀는데 손화살표가
+           안 없어진다」가 이 길이다.
+         ⇒ 막대(§actBarTick)와 **같은 처방**이다: 없는 것을 가리킬 수는 없다. 사실로 되돌린다. */
+      if (!hintFollow || !hintFollow.el || !hintFollow.el.isConnected) { hintAt(null); return; }
       /* ⚠ 다시 **놓기만** 한다. `hintAt` 을 통째로 다시 부르면 대상 표시(`hintTarget`)를
          뗐다 붙였다 하며 깜빡인다. */
       placeHintAt(hintFollow.el, hintFollow.say);
