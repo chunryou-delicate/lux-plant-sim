@@ -224,8 +224,11 @@ check('①-b 합격선 — 창턱 자연광 3.68(정체선 3.0 위) · 첫 등�
   unaimed();
   const d0 = dli('banjiha-sill:0', 0), d1 = dli('banjiha-sill:0', 1);
   assert.equal(d0, 3.68, '창턱 자연광이 3.68 이 아닙니다');
-  assert.ok(d0 >= 3.0,
-    `창턱이 몬스테라 정체선 3.0 아래입니다(${d0}) — 등 없이는 새 잎이 안 납니다`);
+  /* ⚠ 정체선은 **읽는다.** 2026-08-17 에 3.0 → 2.7 로 바뀌었다(박사님 확정) —
+     박아 두면 이 줄이 없는 세상을 잰다(START-HERE §2.9-⑥). */
+  const MIN = dataOf('balance/light_thresholds.json').plants.monstera_deliciosa.min;
+  assert.ok(d0 >= MIN,
+    `창턱이 몬스테라 정체선 ${MIN} 아래입니다(${d0}) — 등 없이는 새 잎이 안 납니다`);
   assert.ok(d1 >= 6.0,
     `창턱이 첫 등으로 갈라짐 문턱을 못 넘습니다(${d1}) — 이만오천 원이 화면에서 아무 일도 안 합니다`);
   assert.ok(d1 < 6.0 * 1.4,
