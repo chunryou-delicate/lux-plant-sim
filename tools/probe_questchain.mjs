@@ -38,7 +38,7 @@ import {
   cropSites, cropPotPlaced, cropPotSown
 } from '../src/game/first_play.js';
 import { STAMINA_RULES, createStaminaState, grantStaminaQuest } from '../src/game/stamina.js';
-import { QUESTS, QUEST_IDS, FIRST_PLAY_CHAIN_IDS, questView, stepQuests,
+import { QUESTS, QUEST_IDS, FIRST_PLAY_CHAIN_IDS, SLOW_QUEST_IDS, questView, stepQuests,
          questTodo, emptySnapshot, QUEST_PREVIEW } from '../src/game/quest.js';
 
 let bad = 0, seen = 0;
@@ -142,17 +142,29 @@ const W = makeWalker(B1);
   harvestBeansprout(fp);
   shot('첫 수확');
 
-  /* ⑦ 몬스테라가 온다 (게임에서는 loop 가 부른다) */
-  markMonsteraArrived(fp, 'banjiha-desk:0');
-  leaves = 1;
-  shot('몬스테라 도착 (책상 · 잎 1장)');
+  /* ⑦ 아직 몬스테라는 안 온다 — 문턱은 **총 3회전**이다
+     (`first_play.MONSTERA_ARRIVAL_RULE.harvestCount = 3`).
+     ⚠ 2026-08-17 정정 — 예전에는 여기서 바로 `markMonsteraArrived` 를 불렀다. 그건 실제
+       문턱보다 두 회전 이른 것이었고, `crop_mix` 가 도착을 보게 된 지금은 그 틀림이
+       **첫 플레이 중반에 본 줄기가 열리는** 모양으로 드러난다. 실제 자리로 옮겼다. */
+  shot('아직 한 바퀴 — 몬스테라는 세 바퀴째에 온다');
 
-  /* ⑧ 씨앗을 사서 다시 심는다 → 두 바퀴째 */
+  /* ⑧ 씨앗을 사서 다시 심는다 → 두 바퀴째. ★ 여기서 갖고 있던 씨앗 한 봉지가 다 나간다 */
   resowBeansprout(fp, { day });
   waterBeansprout(fp, day);
   for (let i = 0; i < RULES.harvestDays; i++) { day++; advanceBeansproutDay(fp, DLI); }
   harvestBeansprout(fp);
   shot('다시 심어 두 바퀴째를 거뒀다');
+
+  /* ⑧-b ★ 2026-08-17 신설 — **주문한 씨앗이 와서 세 바퀴째**.
+     `order_seed` 가 여기서 끝나고, 총 3회전이라 **몬스테라도 이때 온다** */
+  resowBeansprout(fp, { day });
+  waterBeansprout(fp, day);
+  for (let i = 0; i < RULES.harvestDays; i++) { day++; advanceBeansproutDay(fp, DLI); }
+  harvestBeansprout(fp);
+  markMonsteraArrived(fp, 'banjiha-desk:0');
+  leaves = 1;
+  shot('주문한 씨앗으로 세 바퀴째 — 몬스테라 도착 (책상 · 잎 1장)');
 
   /* ⑨ 시루를 하나 더 들여 방에 놓는다 */
   const p2 = addCropPot(fp, 'beansprout', { day, sown: false });
@@ -181,16 +193,21 @@ const W = makeWalker(B1);
   ok('B-1 ★★★ 사슬은 **한 걸음에 한 줄만** 새로 열린다', many.length === 0,
      many.map(e => `${e.n}걸음 ${e.opened}`).join(' · '));
 
-  /* ── C. 사슬이 안 끊긴다 ───────────────────────────────────────────── */
+  /* ── C. 사슬이 안 끊긴다 ─────────────────────────────────────────────
+     ⚠ 2026-08-17 — **재는 대상을 넓혔다.** 초반 사슬이 일곱 + 느린 둘로 갈리면서
+       `FIRST_PLAY_CHAIN_IDS` 만 재면 **잎 두 줄이 아무에게도 안 재어진 채로 남는다.**
+       (START-HERE §2.9-⑥ — *"손짓이 바뀌면 자도 같이 고쳐라"* 의 그 모양이다.)
+       ⇒ C-1·C-2 는 **아홉 줄 전부**를 보고, C-3(차례)만 사슬로 걸린 일곱을 본다. */
   const opened = W.log.flatMap(e => e.opened);
   const finished = W.log.flatMap(e => e.finished);
-  const notOpened = FIRST_PLAY_CHAIN_IDS.filter(id => !opened.includes(id));
-  const notDone = FIRST_PLAY_CHAIN_IDS.filter(id => !finished.includes(id));
-  ok('C-1 ★★★ 여덟 줄이 **전부 열린다** (한 줄이라도 안 열리면 없는 것과 같다)',
+  const EARLY = [...FIRST_PLAY_CHAIN_IDS, ...SLOW_QUEST_IDS];
+  const notOpened = EARLY.filter(id => !opened.includes(id));
+  const notDone = EARLY.filter(id => !finished.includes(id));
+  ok(`C-1 ★★★ ${EARLY.length}줄이 **전부 열린다** (한 줄이라도 안 열리면 없는 것과 같다)`,
      notOpened.length === 0, notOpened.join(' · '));
-  ok('C-2 ★★★ 여덟 줄이 **전부 끝난다** (사슬이 안 막힌다)',
+  ok(`C-2 ★★★ ${EARLY.length}줄이 **전부 끝난다** (사슬이 안 막힌다)`,
      notDone.length === 0, notDone.join(' · '));
-  ok('C-3 ★ 여는 차례가 **표의 차례**와 같다',
+  ok('C-3 ★ 사슬로 걸린 줄의 여는 차례가 **표의 차례**와 같다',
      JSON.stringify(opened.filter(id => FIRST_PLAY_CHAIN_IDS.includes(id))) ===
      JSON.stringify(FIRST_PLAY_CHAIN_IDS),
      opened.filter(id => FIRST_PLAY_CHAIN_IDS.includes(id)).join(' → '));
@@ -199,6 +216,25 @@ const W = makeWalker(B1);
   let run = 0, worst = 0;
   for (const e of W.log) { run = (e.opened.length || e.finished.length) ? 0 : run + 1; worst = Math.max(worst, run); }
   note(`사슬이 도는 동안 아무 일도 안 난 걸음 — 최장 ${worst}걸음 / 전체 ${W.log.length}걸음`);
+
+  /* ── ★★★ C-4 2026-08-17 신설 — **긴 줄이 짧은 줄을 막지 않는다** (§긴 줄) ────────
+     박사님: *"잎 두 장·잎 세 장 퀘스트 앞에 「한 상에 두 가지」 등 퀘가 배치돼야 될 듯?"*
+     ⚠ 재는 것은 **여는 차례가 아니라 「지금 할 일」로 뽑히는 차례**다. 잎 줄은 예전에도
+       사슬을 막지 않았다(뒤에 걸린 줄이 하나도 없다) — 막고 있던 것은 `questView.next` 다. */
+  const B1b = board();
+  B1b.stamina.questsTaken = [...FIRST_PLAY_CHAIN_IDS];
+  const vMix = questView(B1b, { ...emptySnapshot(), day: 25,
+                                monsteraArrived: true, motherLeaves: 1 });
+  ok('C-4 ★★★ 잎 줄과 짧은 줄이 같이 열려 있으면 **짧은 줄이 「지금 할 일」이 된다**',
+     vMix.open.includes('leaf_two') && vMix.open.includes('crop_mix') &&
+     !SLOW_QUEST_IDS.includes(vMix.next.id),
+     `열린 것 ${vMix.open.join(',')} → 지금 할 일 「${vMix.next.ko}」`);
+  const B1c = board();
+  B1c.stamina.questsTaken = QUEST_IDS.filter(id => !SLOW_QUEST_IDS.includes(id));
+  const vSlow = questView(B1c, { ...emptySnapshot(), motherLeaves: 1 });
+  ok('C-5 ★★ 그래도 **다른 게 없으면 잎 줄이 「지금 할 일」이 된다** (사라지지 않는다)',
+     vSlow.next && vSlow.next.id === SLOW_QUEST_IDS[0],
+     vSlow.next ? `「${vSlow.next.ko}」` : 'next 가 null 이다');
 }
 
 /* ══ D. ★ 배선이 하나도 안 붙어도 사슬이 도는가 (§안전 폴백) ═══════════════ */
@@ -209,31 +245,34 @@ console.log('\n══ D. ★★ **화면 배선이 하나도 없는 판** — �
      ⇒ 그래도 사슬이 돌아야 한다. 안 돌면 배선이 붙기 전까지 열여섯 줄이 통째로 잠긴다. */
   const B2 = board(), W2 = makeWalker(B2);
   const S0 = emptySnapshot();
+  /* ⚠ 2026-08-17 — 회전 수를 **셋까지** 늘렸다. `order_seed` 의 문턱이 총 3회전이라
+     둘에서 멈춘 옛 표로는 그 줄이 안 끝나고, 뒤에 걸린 ⑤⑥ 이 통째로 막힌다.
+     ★ 값을 늘린 것이지 판정을 느슨하게 한 것이 아니다 — 배선 칸은 여전히 하나도 안 채운다. */
+  const cp = (...counts) => counts.map(h => ({ kind: 'beansprout', harvestCount: h }));
   const naive = [
-    { ...S0, day: 1, cropPots: [{ kind: 'beansprout', harvestCount: 0 }] },
-    { ...S0, day: 2, cropPots: [{ kind: 'beansprout', harvestCount: 0 }] },
-    { ...S0, day: 7, cropHarvestTotal: 1, cropPots: [{ kind: 'beansprout', harvestCount: 1 }] },
-    { ...S0, day: 8, cropHarvestTotal: 1, cropPots: [{ kind: 'beansprout', harvestCount: 1 }] },
-    { ...S0, day: 9, cropHarvestTotal: 1, cropPots: [{ kind: 'beansprout', harvestCount: 1 }] },
-    { ...S0, day: 13, cropHarvestTotal: 2, cropPots: [{ kind: 'beansprout', harvestCount: 2 }] },
-    { ...S0, day: 15, cropHarvestTotal: 2, motherLeaves: 1,
-      cropPots: [{ kind: 'beansprout', harvestCount: 2 }, { kind: 'beansprout', harvestCount: 0 }] },
-    { ...S0, day: 16, cropHarvestTotal: 2, motherLeaves: 1,
-      cropPots: [{ kind: 'beansprout', harvestCount: 2 }, { kind: 'beansprout', harvestCount: 0 }] },
-    { ...S0, day: 30, cropHarvestTotal: 2, motherLeaves: 2,
-      cropPots: [{ kind: 'beansprout', harvestCount: 2 }, { kind: 'beansprout', harvestCount: 0 }] },
-    { ...S0, day: 31, cropHarvestTotal: 2, motherLeaves: 2,
-      cropPots: [{ kind: 'beansprout', harvestCount: 2 }, { kind: 'beansprout', harvestCount: 0 }] },
-    { ...S0, day: 40, cropHarvestTotal: 2, motherLeaves: 3,
-      cropPots: [{ kind: 'beansprout', harvestCount: 2 }, { kind: 'beansprout', harvestCount: 0 }] },
-    { ...S0, day: 41, cropHarvestTotal: 2, motherLeaves: 3,
-      cropPots: [{ kind: 'beansprout', harvestCount: 2 }, { kind: 'beansprout', harvestCount: 0 }] }
+    { ...S0, day: 1, cropPots: cp(0) },
+    { ...S0, day: 2, cropPots: cp(0) },
+    { ...S0, day: 7, cropHarvestTotal: 1, cropPots: cp(1) },
+    { ...S0, day: 8, cropHarvestTotal: 1, cropPots: cp(1) },
+    { ...S0, day: 9, cropHarvestTotal: 1, cropPots: cp(1) },
+    { ...S0, day: 13, cropHarvestTotal: 2, cropPots: cp(2) },
+    { ...S0, day: 14, cropHarvestTotal: 2, cropPots: cp(2) },
+    /* ★ 주문한 씨앗이 와서 세 바퀴째 — `order_seed` 가 여기서 끝난다 */
+    { ...S0, day: 19, cropHarvestTotal: 3, motherLeaves: 1, cropPots: cp(3) },
+    { ...S0, day: 20, cropHarvestTotal: 3, motherLeaves: 1, cropPots: cp(3) },
+    { ...S0, day: 21, cropHarvestTotal: 3, motherLeaves: 1, cropPots: cp(3, 0) },
+    { ...S0, day: 22, cropHarvestTotal: 3, motherLeaves: 1, cropPots: cp(3, 0) },
+    { ...S0, day: 30, cropHarvestTotal: 3, motherLeaves: 2, cropPots: cp(3, 0) },
+    { ...S0, day: 31, cropHarvestTotal: 3, motherLeaves: 2, cropPots: cp(3, 0) },
+    { ...S0, day: 40, cropHarvestTotal: 3, motherLeaves: 3, cropPots: cp(3, 0) },
+    { ...S0, day: 41, cropHarvestTotal: 3, motherLeaves: 3, cropPots: cp(3, 0) }
   ];
   naive.forEach((s, i) => W2.step(`배선 없음 ${i + 1}`, s));
   const done2 = W2.log.flatMap(e => e.finished);
-  const left = FIRST_PLAY_CHAIN_IDS.filter(id => !done2.includes(id));
-  ok('D-1 ★★★ 새 칸을 **하나도 안 채워도** 여덟 줄이 다 끝난다 (사슬이 안 막힌다)',
-     left.length === 0, left.length ? `막힌 줄: ${left.join(' · ')}` : '여덟 줄 전부');
+  const want2 = [...FIRST_PLAY_CHAIN_IDS, ...SLOW_QUEST_IDS];
+  const left = want2.filter(id => !done2.includes(id));
+  ok(`D-1 ★★★ 새 칸을 **하나도 안 채워도** ${want2.length}줄이 다 끝난다 (사슬이 안 막힌다)`,
+     left.length === 0, left.length ? `막힌 줄: ${left.join(' · ')}` : `${want2.length}줄 전부`);
   note('⇒ `game.html` 배선을 나중에 붙여도 사슬은 이미 돈다. 붙이면 **더 일찍** 끝날 뿐이다.');
 }
 
@@ -302,7 +341,10 @@ console.log('\n══ F. 화면 계약 — 「지금 하나 + 다음 몇 줄」 
      v.upcoming.length >= QUEST_PREVIEW &&
      v.upcoming.slice(0, QUEST_PREVIEW).every(a => a.state === 'locked'),
      v.upcoming.slice(0, QUEST_PREVIEW).map(a => `${a.ko}(${a.state})`).join(' · '));
-  ok('F-4 ★ 마디를 말한다', v.stage === 'first_play' && v.chain && v.chain.total === 8,
+  /* ⚠ 2026-08-17 — 줄 수를 **표에서 읽는다**. 예전에는 `=== 8` 이 박혀 있었고,
+     사슬이 여덟 → 일곱으로 갈리자 그 한 줄만 낡았다(START-HERE §2.8 의 그 모양). */
+  ok('F-4 ★ 마디를 말한다',
+     v.stage === 'first_play' && v.chain && v.chain.total === FIRST_PLAY_CHAIN_IDS.length,
      `${v.stage} ${v.chain && v.chain.index}/${v.chain && v.chain.total}`);
   ok('F-5 ★ 셈이 맞는다 (total = done + open + locked)',
      v.counts.done + v.counts.open + v.counts.locked === v.counts.total &&

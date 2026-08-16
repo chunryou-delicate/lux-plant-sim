@@ -22,7 +22,9 @@ import assert from 'node:assert';
 import { QUESTS, QUEST_IDS, questOf, questTodo, questView, stepQuests,
          doneIdsOf, emptySnapshot,
          /* ★ 2026-08-16 — 초반 사슬(§초반 사슬). 줄 수를 이 파일에 안 박는다 */
-         FIRST_PLAY_CHAIN_IDS, questSpeaks, stageOfQuest } from '../src/game/quest.js';
+         FIRST_PLAY_CHAIN_IDS, questSpeaks, stageOfQuest,
+         /* ★ 2026-08-17 — 느린 줄 둘(§긴 줄). 줄 수를 이 파일에 안 박는다 */
+         SLOW_QUEST_IDS } from '../src/game/quest.js';
 import { QUEST_OPEN_SCRIPT, QUEST_DONE_SCRIPT, SCRIPTS, REPEATABLE,
          createStoryteller } from '../src/game/dialogue.js';
 import { STAMINA_RULES, createStaminaState, grantStaminaQuest, staminaView } from '../src/game/stamina.js';
@@ -169,7 +171,20 @@ const P1 = pot({ placed: true });
 const P1W = pot({ placed: true, watered: true });
 const H1 = pot({ placed: true, watered: true, harvestCount: 1 });
 const H2 = pot({ placed: true, watered: true, harvestCount: 2 });
+/* ★ 2026-08-17 — **세 바퀴째**. `order_seed` 가 여기서 끝난다(quest.js §씨앗 주문 —
+   갖고 있던 한 봉지로는 두 바퀴가 끝이라 세 바퀴째는 산 씨앗이라야 돈다) */
+const H3 = pot({ placed: true, watered: true, harvestCount: 3 });
 
+/* ══ ⚠⚠ 2026-08-17 — **걸음을 다시 짰다** (초반 사슬이 여덟 → 일곱 + 둘로 갈렸다) ══
+   ① `order_seed`(씨앗을 주문한다)가 ④와 ⑤ 사이에 들어왔다 — **총 3회전**이 문턱이라
+      그 걸음을 새로 넣었다. 넣기 전에는 `H2` 에서 총합이 2 에 머물러 그 줄이 안 끝났고,
+      뒤에 걸린 ⑤⑥ 이 통째로 밀렸다(실측 — 사슬이 8걸음에서 19걸음으로 밀렸다).
+   ② `leaf_two`·`leaf_three` 가 사슬에서 빠져 **맨 뒤**로 갔다(`quest.SLOW_QUESTS`).
+      걸음 자체는 그대로 둔다 — 그 둘도 여전히 열리고 끝나야 하기 때문이다.
+   ③ ★ **몬스테라 도착을 뒤로 옮겼다.** 예전 7걸음에 `arrived: true` 였는데, 실제 문턱은
+      **총 3회전**이다(`first_play.MONSTERA_ARRIVAL_RULE.harvestCount = 3`).
+      1회전에 도착시킨 것은 옛 걸음표가 틀린 것이었고, `crop_mix` 가 도착을 보게 된
+      지금은 그 틀림이 **첫 플레이가 끝나기 전에 본 줄기가 열리는** 모양으로 드러난다. */
 const steps = [
   /* ─ 초반 사슬 ─────────────────────────────────────────────────────── */
   /* 1  ★★ 켠 그 순간 — **여기서 ①이 열려야 한다**(예전엔 0줄이었다) */
@@ -182,31 +197,37 @@ const steps = [
   fp(2, { pots: [P1W] }),
   /* 5  ③ 열림. 자라는 중이라 아직 못 거둔다 */
   fp(5, { pots: [P1W] }),
-  /* 6  거뒀다 — ③ 완료. 이 순간 몬스테라 문이 열린다(first_play §2349) */
+  /* 6  거뒀다 — ③ 완료 */
   fp(7, { pots: [H1] }),
-  /* 7  ④ 열림 — 빈 시루를 다시 심어야 한다. 몬스테라가 도착했다 */
-  fp(8, { pots: [H1], arrived: true, leaves: 1 }),
-  /* 8  두 바퀴째를 거뒀다 — ④ 완료 (한 시루가 두 바퀴 = 반드시 다시 심었다) */
-  fp(13, { pots: [H2], arrived: true, leaves: 1 }),
-  /* 9  ⑤ 열림 — 아직 시루가 하나다 */
-  fp(14, { pots: [H2], arrived: true, leaves: 1 }),
-  /* 10 시루를 하나 더 들였다 — ⑤ 완료 */
-  fp(15, { pots: [H2, pot({ placed: true })], arrived: true, leaves: 1 }),
-  /* 11 ⑥ 열림 — 몬스테라가 와 있어야만 열린다 */
-  fp(16, { pots: [H2, P1], arrived: true, leaves: 1 }),
-  /* 12 밝은 자리로 옮겼다 — ⑥ 완료 */
-  fp(17, { pots: [H2, P1], arrived: true, homed: true, leaves: 1 }),
-  /* 13 ⑦ 열림 — 아직 잎이 하나다 */
-  fp(24, { pots: [H2, P1], arrived: true, homed: true, leaves: 1 }),
-  /* 14 잎이 둘이 됐다 — ⑦ 완료. 이때 `first_cut` 도 같이 열린다 */
-  fp(30, { pots: [H2, P1], arrived: true, homed: true, leaves: 2 }),
-  /* 15 ⑧ 열림 */
-  fp(31, { pots: [H2, P1], arrived: true, homed: true, leaves: 2 }),
-  /* 16 ★ 잎이 셋 — ⑧ 완료. 박사님이 *"잎 3개 날 때까지"* 라고 하신 그 끝이다 */
-  fp(33, { pots: [H2, P1], arrived: true, homed: true, leaves: 3 }),
+  /* 7  ④ 열림 — 빈 시루를 다시 심어야 한다 (몬스테라는 아직이다 — 총 1회전) */
+  fp(8, { pots: [H1] }),
+  /* 8  두 바퀴째를 거뒀다 — ④ 완료. ★ 이 순간 **갖고 있던 씨앗 한 봉지가 다 나갔다** */
+  fp(13, { pots: [H2] }),
+  /* 9  ④-b 열림 — 심을 씨앗이 없다. 상점에서 주문해야 한다 */
+  fp(14, { pots: [H2] }),
+  /* 10 ★ 주문한 씨앗이 와서 세 바퀴째를 거뒀다 — ④-b 완료.
+        총 3회전이라 **몬스테라도 이 날 온다**(`MONSTERA_ARRIVAL_RULE.harvestCount = 3`).
+        ⇒ 무순이 상점에 뜨는 순간이라 `crop_mix` 도 여기서 열린다(quest.js §긴 줄 ㉠) */
+  fp(19, { pots: [H3], arrived: true, leaves: 1 }),
+  /* 11 ⑤ 열림 — 아직 시루가 하나다 */
+  fp(20, { pots: [H3], arrived: true, leaves: 1 }),
+  /* 12 시루를 하나 더 들였다 — ⑤ 완료 */
+  fp(21, { pots: [H3, pot({ placed: true })], arrived: true, leaves: 1 }),
+  /* 13 ⑥ 열림 — 몬스테라가 와 있어야만 열린다 */
+  fp(22, { pots: [H3, P1], arrived: true, leaves: 1 }),
+  /* 14 밝은 자리로 옮겼다 — ⑥ 완료. **여기까지가 초반 사슬 일곱 줄이다** */
+  fp(23, { pots: [H3, P1], arrived: true, homed: true, leaves: 1 }),
+  /* 15 느린 줄 ㉠ 열림 — 아직 잎이 하나다 */
+  fp(24, { pots: [H3, P1], arrived: true, homed: true, leaves: 1 }),
+  /* 16 잎이 둘이 됐다 — ㉠ 완료. 이때 `first_cut` 도 같이 열린다 */
+  fp(30, { pots: [H3, P1], arrived: true, homed: true, leaves: 2 }),
+  /* 17 느린 줄 ㉡ 열림 */
+  fp(31, { pots: [H3, P1], arrived: true, homed: true, leaves: 2 }),
+  /* 18 ★ 잎이 셋 — ㉡ 완료. 박사님이 *"잎 3개 날 때까지"* 라고 하신 그 끝이다 */
+  fp(33, { pots: [H3, P1], arrived: true, homed: true, leaves: 3 }),
 
   /* ─ 본 줄기 — 예전 그대로다(값도 차례도 안 건드렸다) ────────────────── */
-  /* 17 첫 플레이 도는 중 — 본 줄기는 아직 아무것도 안 열린다 */
+  /* 19 첫 플레이가 도는 중 */
   { ...S0, day: 33, cropHarvestTotal: 1, cropPots: [{ kind: 'beansprout', harvestCount: 1 }] },
   /* 18 ★ 첫 플레이가 끝났다 — `crop_mix` 가 열린다 */
   { ...S0, day: 33, firstPlayDone: true, cropHarvestTotal: 5,
@@ -261,15 +282,50 @@ check(`⑵ ${QUEST_IDS.length}줄이 전부 끝난다`, () => {
   info(`끝난 차례 — ${doneAt.map(([id, n]) => `${n}걸음 ${id}`).join(' · ')}`);
 });
 /* ══ ★★★ 2026-08-16 신설 — **초반 사슬** (§초반 사슬) ═══════════════════════ */
+/* ══ ⚠⚠ 2026-08-17 — **재는 자를 고쳤다** ═══════════════════════════════════
+   예전에는 *"`crop_mix` 가 열린 걸음 = 첫 플레이가 끝난 걸음"* 을 자로 썼다.
+   그 등식이 **2026-08-17 에 깨졌다** — `crop_mix` 가 이제 「무순을 살 수 있게 된 때」
+   (몬스테라 도착)에도 열린다(`quest.js §긴 줄 ㉠`). 즉 그 줄은 첫 플레이가 **도는 동안**
+   열릴 수 있다. 자를 안 고치면 **고친 쪽이 검사를 깨게 된다**(START-HERE §2 의 그 모양).
+   ⇒ **`firstPlayDone` 을 직접 본다.** 원래 재려던 것이 그것이다 — 대리 지표를 쓰다가
+     그 대리 지표가 움직인 것이지, 재려던 사실이 바뀐 것이 아니다. */
 check('⑵ ★★ 초반 사슬은 **첫 플레이가 끝나기 전에** 다 끝난다', () => {
   const doneStep = new Map(doneAt.map(([id, n]) => [id, n]));
-  /* 본 줄기의 첫 줄(`crop_mix`)이 열린 걸음 = 첫 플레이가 끝난 걸음이다 */
-  const fpEnd = (openedAt.find(([id]) => id === 'crop_mix') || [])[1];
-  assert.ok(fpEnd, '`crop_mix` 가 안 열렸습니다');
+  const fpEnd = steps.findIndex(s => s && s.firstPlayDone) + 1;   /* 1부터 세는 걸음 번호 */
+  assert.ok(fpEnd > 0, '첫 플레이가 끝나는 걸음이 없습니다');
   for (const id of FIRST_PLAY_CHAIN_IDS)
     assert.ok(doneStep.get(id) < fpEnd,
       `'${id}' 가 첫 플레이 뒤(${doneStep.get(id)}걸음)에 끝났습니다 — 사슬이 구간을 넘겼습니다`);
   info(`초반 사슬 ${FIRST_PLAY_CHAIN_IDS.length}줄이 1~${fpEnd - 1}걸음에 다 끝났다`);
+});
+/* ══ ★★★ 2026-08-17 신설 — **긴 줄이 짧은 줄을 막지 않는다** (`quest.js §긴 줄`) ══════
+   박사님: *"잎 두 장·잎 세 장 퀘스트 앞에 「한 상에 두 가지」 등 퀘가 배치돼야 될 듯?
+           잎 두 장·잎 세 장은 **엄청 오래 걸리니까.**"*
+   ⚠ 이 검사가 재는 것은 **여는 차례가 아니라 「지금 할 일」로 뽑히는 차례**다.
+     잎 줄은 예전에도 사슬을 막지 않았다(뒤에 걸린 줄이 없다) — 막은 것은 `next` 였다. */
+check('⑶ ★★★ 느린 줄은 **다른 줄이 열려 있는 동안 「지금 할 일」이 안 된다**', () => {
+  const b = newBoard();
+  /* 초반 사슬을 다 끝낸 판 = 잎 줄과 `crop_mix` 가 **같이** 열려 있는 그 자리다 */
+  b.stamina.questsTaken = [...FIRST_PLAY_CHAIN_IDS];
+  const v = questView(b, { ...S0, day: 25, monsteraArrived: true, motherLeaves: 1 });
+  assert.ok(v.open.includes('leaf_two'), `잎 줄이 안 열렸습니다: ${v.open}`);
+  assert.ok(v.open.includes('crop_mix'), `짧은 줄이 안 열렸습니다: ${v.open}`);
+  assert.ok(!SLOW_QUEST_IDS.includes(v.next.id),
+    `느린 줄이 「지금 할 일」을 차지했습니다: ${v.next.id}`);
+  info(`같이 열린 줄 ${v.open.length}개 · 「지금 할 일」은 「${v.next.ko}」`);
+});
+check('⑶ ★★ 그래도 **느린 줄이 사라지지는 않는다** (열리고 · 목록에 남고 · 끝난다)', () => {
+  const got = openedAt.map(([id]) => id), fin = doneAt.map(([id]) => id);
+  for (const id of SLOW_QUEST_IDS) {
+    assert.ok(got.includes(id), `'${id}' 가 한 번도 안 열렸습니다`);
+    assert.ok(fin.includes(id), `'${id}' 가 안 끝났습니다`);
+  }
+  /* 아무것도 안 열린 판에서는 **비로소** 「지금 할 일」이 된다 — 그때는 그것이 참말이다 */
+  const b = newBoard();
+  b.stamina.questsTaken = QUEST_IDS.filter(id => !SLOW_QUEST_IDS.includes(id));
+  const v = questView(b, { ...S0, motherLeaves: 1 });
+  assert.equal(v.next && v.next.id, SLOW_QUEST_IDS[0],
+    `할 게 그것뿐인데도 안 뽑혔습니다: ${v.next && v.next.id}`);
 });
 check('⑵ ★★★ **한 걸음에 두 줄이 새로 열리지 않는다** (심부름 목록이 안 된다)', () => {
   const byStep = new Map();

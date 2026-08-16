@@ -35,7 +35,13 @@
 ============================================================ */
 import { launch, sleep } from './test_cdp.mjs';
 import { SCRIPTS, QUEST_OPEN_SCRIPT, QUEST_DONE_SCRIPT } from '../src/game/dialogue.js';
-import { FIRST_PLAY_CHAIN_IDS, questOf } from '../src/game/quest.js';
+import { FIRST_PLAY_CHAIN_IDS, SLOW_QUEST_IDS, questOf } from '../src/game/quest.js';
+/* ★★ 2026-08-17 — **재는 대상을 넓혔다.** 초반 사슬이 일곱 + 느린 둘로 갈리면서
+   (`quest.js §긴 줄`) 사슬 목록만 돌면 **잎 두 줄의 대사가 아무에게도 안 재어진 채로
+   남는다** — START-HERE §2.9-⑥ 이 적어 둔 *"손짓이 바뀌면 자도 같이 고쳐라"* 의 그
+   모양이다. ⇒ 이 자는 **초반 아홉 줄 전부**를 본다(줄 수를 이 파일에 안 박는다).
+   ⚠ 새로 든 `order_seed`(씨앗을 주문한다)도 사슬 안에 있으므로 자동으로 따라온다. */
+const EARLY_IDS = [...FIRST_PLAY_CHAIN_IDS, ...SLOW_QUEST_IDS];
 
 const BASE = process.env.BYEOT_URL || 'http://localhost:8963';
 let bad = 0, seen = 0;
@@ -249,7 +255,7 @@ await nextDay(); await sleep(1200); await drain();
 
 console.log('\n══ C. ★★★ 열여섯 자리가 **화면에서** 말했나 ══════════════════');
 const rows = [];
-for (const id of FIRST_PLAY_CHAIN_IDS) {
+for (const id of EARLY_IDS) {
   const o = QUEST_OPEN_SCRIPT[id], d = QUEST_DONE_SCRIPT[id];
   rows.push({ id, ko: (questOf(id) || {}).ko, open: o, done: d,
               openSaid: o ? onScreen(o) : false, doneSaid: d ? onScreen(d) : false });
@@ -265,12 +271,12 @@ for (const r of rows) for (const [what, id] of [['열림', r.open], ['완료', r
 }
 
 const final = await snap();
-ok('C-1 ★★ 사슬 여덟이 전부 끝났다', FIRST_PLAY_CHAIN_IDS.every(i => final.done.includes(i)),
+ok(`C-1 ★★ 초반 ${EARLY_IDS.length}줄이 전부 끝났다`, EARLY_IDS.every(i => final.done.includes(i)),
    JSON.stringify(final));
-ok('C-2 ★★★ **열림 대사 여덟이 전부 화면에 떴다**', rows.every(r => r.openSaid),
-   rows.filter(r => !r.openSaid).map(r => r.id).join(' · ') || '여덟 다');
-ok('C-3 ★★★ **완료 대사 여덟이 전부 화면에 떴다**', rows.every(r => r.doneSaid),
-   rows.filter(r => !r.doneSaid).map(r => r.id).join(' · ') || '여덟 다');
+ok(`C-2 ★★★ **열림 대사 ${EARLY_IDS.length}가지가 전부 화면에 떴다**`, rows.every(r => r.openSaid),
+   rows.filter(r => !r.openSaid).map(r => r.id).join(' · ') || '전부');
+ok(`C-3 ★★★ **완료 대사 ${EARLY_IDS.length}가지가 전부 화면에 떴다**`, rows.every(r => r.doneSaid),
+   rows.filter(r => !r.doneSaid).map(r => r.id).join(' · ') || '전부');
 ok('C-4 ★ 그날 한 화면에 같은 말이 두 번 안 났다',
    said().every((t, i) => i === 0 || said()[i - 1] !== t), `${shown.length}줄`);
 /* ★★ 순서 — **열림이 완료보다 먼저** 떠야 한다. 뒤집히면 「다 했다」를 듣고 나서
@@ -280,13 +286,13 @@ ok('C-4 ★ 그날 한 화면에 같은 말이 두 번 안 났다',
 {
   const at = t => said().indexOf(plain(t));
   const flipped = [];
-  for (const id of FIRST_PLAY_CHAIN_IDS) {
+  for (const id of EARLY_IDS) {
     const o = QUEST_OPEN_SCRIPT[id], d = QUEST_DONE_SCRIPT[id];
     if (!o || !d || !onScreen(o) || !onScreen(d)) continue;
     if (at(SCRIPTS[o][0].text) > at(SCRIPTS[d][0].text)) flipped.push(id);
   }
   ok('C-6 ★★ 줄마다 **열림 대사가 완료 대사보다 먼저** 떴다',
-     flipped.length === 0, flipped.join(' · ') || '여덟 다');
+     flipped.length === 0, flipped.join(' · ') || '전부');
 }
 console.log(`   · 오프닝까지 ${bootLines}줄 · 그 뒤 ${shown.length - bootLines}줄`);
 ok('C-5 ★ game.html 예외가 없다', errs.length === 0, `${errs.length}건 ${errs.slice(0, 2).join(' | ')}`);

@@ -45,6 +45,8 @@
        놓기(`placeCrop`) → 물(`waterBeansprout`) → 첫 수확(`harvestBeansprout`) →
        다시 심기(`resowBeansprout`) → 시루 늘리기(`addCropPot`) →
        몬스테라 자리(`markMonsteraArrived`→`moveMonstera`) → 잎 2장 → 잎 3장
+     ⚠⚠ **2026-08-17 에 이 여덟이 일곱 + 둘로 갈렸다.** 아래 §긴 줄 을 읽어라 —
+       잎 두 줄이 사슬에서 빠지고(`SLOW_QUESTS`), 그 자리에 「씨앗을 주문한다」가 들어왔다.
      ⚠ **「씨앗 심기」는 따로 안 넣었다** — 첫 시루는 `createFirstPlayState` 가
        `sown: true` 로 만들어 준다(`makeCropPot` 기본값). 심기 손짓은 **둘째 시루부터**
        생기므로 그것은 ④「다시 심는다」가 가르친다.
@@ -77,10 +79,83 @@
        조용한가」를 둘 다 묻는다. 한쪽만 고치면 거기서 깨진다.
 
      ## ⚠ 보상은 **체력이 아니다**
-     `data/balance/stamina.json` 도 `stamina.js` 도 이 창의 쓰기 영역 밖이라, 여덟 줄은
-     `STAMINA_RULES.quests` 에 없고 그래서 **0** 이다(`grantStaminaQuest` 가 0 으로 읽는다 —
-     던지지 않는다. 확인함). 대신 **세상이 이미 주는 것**을 `reward` 에 적었다.
+     ⚠⚠ **2026-08-17 정정** — 여기 *"여덟 줄이 `STAMINA_RULES.quests` 에 없어서 전부 0"*
+       이라 적혀 있었는데 **낡았다.** 그 사이 다른 창이 `26f5431` 로 **굵은 마디 셋**에
+       +1 을 넣었다(`first_harvest`·`siru_two`·`monstera_home`). 지금 0 인 것은 나머지다.
+       ⇒ 값은 여기서 읽지 말고 **`stamina.rulesOf(S).quests[id]`** 에서 읽어라(§2.8).
+     ★ 새로 든 `order_seed` 는 그 표에 **없다**(`stamina.json` 이 이 창의 쓰기 영역 밖).
+       `grantStaminaQuest` 가 없는 id 를 **0 으로 읽고 안 던진다**(확인함). 대신
+       **세상이 주는 것**을 `reward` 에 적었다 — 「시루가 안 끊기고 돕니다」.
      ⇒ **체력을 줄지는 박사님 판단이다**(인계 §판단필요).
+
+   ══ ★★★ §긴 줄 — **잎 두 줄이 짧은 줄을 막고 있었다** (2026-08-17) ═══════════
+     박사님 원문: *"**잎 두 장·잎 세 장 퀘스트 앞에 「한 상에 두 가지」 등 퀘가 배치돼야
+     될 듯?** 잎 두 장·잎 세 장은 **엄청 오래 걸리니까.**"*
+
+     ## 먼저 — 무엇이 막고 있었나. **사슬이 아니라 「지금 할 일」 한 줄이었다**
+     `leaf_two`·`leaf_three` 뒤에 걸린 줄은 **하나도 없다**(`crop_mix` 는 `after` 가 없고
+     `siru5_cycle5` 는 `crop_mix` 만 본다). 즉 사슬은 안 막혀 있었다.
+     막힌 것은 **`questView` 가 고르는 「지금 하나」**다 — `next = open[0]` 이고 그 `open` 은
+     **정의 순서**라서, 정의가 앞인 잎 줄이 열려 있는 동안 뒤엣것은 **영영 「지금 할 일」이
+     못 된다.** 화면 아래 한 줄과 할 일 창 머리가 그 하나를 그린다.
+     ⇒ 그래서 「잎이 2장이 될 때까지 키우세요」가 **수십 일 동안 안 바뀐 채로** 서 있었다.
+
+     ## ★ 재서 확인한 것 둘 (이 두 값이 아래 고침의 근거다)
+     ① **첫 플레이는 잎 2장보다 먼저 끝난다.** 끝 판정은 `spear_furled` 한 단계이고
+        (`first_play.FIRST_PLAY_COMPLETE_PHASE_ID`), 그 단계가 서는 유효 생장일은
+        **14 · 61 · 146 · 249** 다(`docs/handoff/growth-to-core.md §단계 경계`).
+        몬스테라는 **유효 45일 · 잎 1장**에 온다(START-HERE §6 확정값) — 도착 뒤 처음
+        만나는 문턱이 **61** 이고, 잎 2장은 그보다 뒤다(같은 표의 `leaf_young` 78).
+        ⇒ **`crop_mix` 를 잎 줄 앞에 두는 것이 원리적으로 가능하다.** 못 하는 일이 아니다.
+     ② ★★ **무순은 「첫 플레이 끝」이 아니라 「몬스테라 도착」에 상점에 뜬다.**
+        `game.html:5431` — `musunOpen = !(fp && fp.enabled) || !!(fp.monstera && fp.monstera.arrived)`.
+        ⚠ 이 파일 §초반 사슬 이 *"무순은 첫 플레이가 끝나야 상점에 뜬다"* 고 적어 두었는데
+          **그 줄이 틀렸다**(그래서 위에서 고쳐 적었다). 상점 문이 퀘스트 문보다 **먼저**
+          열려 있었고, 그 사이에는 *살 수 있는데 아무도 말해 주지 않는* 구간이 있었다.
+
+     ## 그래서 고친 것 셋
+     ㉠ **`crop_mix` 를 「무순을 살 수 있게 된 때」에도 연다** — `firstPlayDone` **또는**
+        `monsteraArrived`. ⚠ `||` 인 것이 중요하다. `firstPlayDone` 쪽을 지우면
+        `monsteraArrived` 를 안 채우는 판(검사·옛 세이브)에서 이 줄이 **영영 안 열린다.**
+        ★ 회귀도 이 `||` 가 지킨다 — 옛 걸음표는 `firstPlayDone` 만 세우므로 값이 그대로다.
+     ㉡ **잎 두 줄을 사슬에서 빼서 맨 뒤로 옮겼다**(`SLOW_QUESTS`). 여는 조건(`after`)은
+        **한 글자도 안 바꿨다** — `leaf_two` 는 여전히 `monstera_home` 뒤에 열리고
+        `leaf_three` 는 `leaf_two` 뒤에 열린다. 바뀐 것은 **정의 순서뿐**이고, 그 순서가
+        곧 「지금 하나」의 우선순위다. ⇒ **다른 줄이 하나라도 열려 있으면 그것이 먼저 온다.
+        아무것도 안 열려 있을 때만 잎 줄이 「지금 할 일」이 된다.**
+        ★ 그래서 **어느 줄도 안 열리는 일이 없다** — 잎 줄은 여전히 열리고 여전히 끝나며,
+          다만 **줄을 서지 않는다.**
+     ㉢ 잎 두 줄이 사슬에서 빠지면서 `stage`·`chain` 이 **사실에 맞게** 됐다. 예전에는
+        첫 플레이가 끝난 지 한참 뒤까지 `stage === 'first_play'` 였다(위 ① 이 그 까닭이다).
+
+     ## ⚠ 안 고친 것 — `upcoming` 의 셈
+     `upcoming` 은 여전히 「지금 하나 **뒤**의 안 끝난 줄」이다. 잎 줄이 맨 뒤로 갔으므로
+     **늘 그 안에 들어온다**(꼬리에). 화면이 앞 둘만 펼치므로 잎 줄은 「그 뒤로 N가지」로
+     접히는데, 그것이 맞다 — 지금 손이 갈 곳이 아니기 때문이다.
+
+   ══ ★★ §씨앗 주문 — **「심을 게 없다」에서 멈추던 자리** (2026-08-17) ═══════════
+     박사님 원문: *"그리고 **상점 구매도 상세 가이드** 해 줘. **초반에 씨앗 바로 필요하잖아?**"*
+
+     ## 재서 확인한 것 — **씨앗이 바닥나는 순간이 정확히 어디인가**
+       · 새 판은 콩 씨앗 **한 봉지**로 시작한다(`state.js §shop` 의 `opt.startSeeds` —
+         화면이 새 판을 세울 때만 1 을 넘긴다. 기본값은 0 이다)
+       · 첫 시루는 이미 심겨서 온다(`createFirstPlayState` 의 `sown: true`)
+       ⇒ 그 한 봉지는 **첫 수확 뒤 다시 심을 때** 나간다. 그 다음 회전을 거두는 순간
+         (= ④`resow_siru` 가 끝나는 순간) **재고가 0 이 된다.**
+     ⇒ 그래서 ⑤ 를 **바로 그 자리**에 놓았다. 「시루가 비는 그때」가 실측으로 여기다.
+
+     ## 판정을 무엇으로 하나 — ⚠ **주문한 것을 볼 창구가 없다**
+     스냅샷에 재고도 배송 중인 주문도 없다(`game.html §questSnapshotNow`). 그 파일은
+     이 창의 쓰기 영역 밖이라 칸을 못 늘린다. 새 칸을 지어 걸면 **`undefined` = 「모른다」**
+     라 그 줄이 **영영 안 끝난다** — 사슬이 거기서 죽는다(§계약).
+     ⇒ 그래서 **이미 보이는 사실**로 잰다: **총 회전이 셋**. 갖고 있던 한 봉지로는
+       두 바퀴가 끝이므로, **세 바퀴째는 산 씨앗이 아니면 못 돈다.** 지어낸 판정이 아니라
+       ①②⑥ 이 쓰는 것과 같은 **함의**다(§안전 폴백).
+     ⚠ 문턱이 셋인 것이 우연이 아니다 — ④가 「한 시루 두 바퀴」라 그보다 반드시 뒤다.
+
+     ## 대사가 **숫자를 안 갖는다**
+     배송일·값은 `shop.catalogList()` 것이다. `dialogue.js §5.5-b` 가 그 표를 **읽어서**
+     문장을 짓는다 — 여기에도 저기에도 숫자를 안 적는다(§2.8).
 
    ── 보상 — **있는 것만 쓴다** ────────────────────────────────────────
      새 보상 계통을 안 만들었다. 쓰는 것은 둘뿐이다:
@@ -187,7 +262,10 @@ const isRooted = c => !!c && ROOTED.includes(c.status);
    ⚠ **여기 숫자를 박지 않는다.** 세는 수(시루 5개·5바퀴)는 `need` 에 두고
      `todo` 는 그 값을 읽어 짓는다 — 값이 움직여도 문구가 안 낡는다(§2.8 의 반대). */
 
-/* ══ ★★★ 초반 사슬 — **첫 플레이가 도는 동안 굴러가는 여덟 줄** (2026-08-16) ═══
+/* ══ ★★★ 초반 사슬 — **첫 플레이가 도는 동안 굴러가는 줄** (2026-08-16) ═══
+   ⚠ 줄 수를 여기 안 적는다 — 2026-08-16 에 「여덟」이라 적었다가 2026-08-17 에 일곱이 됐고
+     (잎 두 줄이 `SLOW_QUESTS` 로 가고 `order_seed` 가 들어왔다) 그 한 마디만 낡을 뻔했다.
+     세는 것은 `FIRST_PLAY_CHAIN_IDS.length` 하나다(§2.8).
    왜 생겼나 · 무엇을 따라가나 · 왜 조용한가는 맨 위 §초반 사슬 에 다 적었다.
    여기서는 **줄과 판정만** 적는다.
 
@@ -273,6 +351,28 @@ const FIRST_PLAY_CHAIN = Object.freeze([
     done:  (s, ctx) => arr(s.cropPots).some(p => p && num(p.harvestCount) >= ctx.q.need.cycles)
   }),
 
+  /* ④-b ★★★ **씨앗을 주문한다** — 2026-08-17 박사님 지시로 생긴 줄이다.
+     ------------------------------------------------------------
+     박사님: *"**상점 구매도 상세 가이드** 해 줘. **초반에 씨앗 바로 필요하잖아?**"*
+     까닭·문턱의 근거는 맨 위 §씨앗 주문 에 다 적었다. 여기서는 줄만 적는다.
+     ⚠ **④와 겹치지 않는다.** ④가 가르치는 것은 *다시 심어야 돈다* 이고,
+       이 줄이 가르치는 것은 *주문한 것은 그날 안 온다* 다 — 손짓이 다르다.
+     ⚠ 배송일·값을 여기 안 적는다 — `shop.catalogList()` 것이고 대사가 읽어서 짓는다. */
+  Object.freeze({
+    id: 'order_seed',
+    ko: '씨앗을 주문한다',
+    speaks: true,
+    reward: '시루가 안 끊기고 돕니다',
+    teaches: ['주문한 것은 그날 안 온다', '떨어지기 전에 시켜 둔다'],
+    why: '주문한 것은 그날 오지 않습니다. 시루가 비기 전에 시켜 둬야 회전이 안 끊깁니다.',
+    /* ★ 세 바퀴 — 갖고 있던 한 봉지로는 두 바퀴가 끝이다(§씨앗 주문). 산 씨앗이라야 돈다 */
+    need: Object.freeze({ cycles: 3 }),
+    todo: () => '상점에서 콩 씨앗을 주문하세요',
+    after: 'resow_siru',
+    opens: (s, ctx) => !!(ctx && ctx.doneIds.includes('resow_siru')),
+    done:  (s, ctx) => num(s.cropHarvestTotal) >= ctx.q.need.cycles
+  }),
+
   /* ⑤ ★★ **시루는 하나씩 따로 산다**(2026-08-09 박사님 *"하나씩 따로따로 설치"*).
      ⚠ 여기서 가르치는 것은 「많이 사면 많이 번다」가 **아니다** — 그건 `siru8`·`siru16` 것이다.
        여기 것은 **시차**다: 시루마다 회전이 따로 도니까 거두는 날을 엇갈리게 짤 수 있다
@@ -287,8 +387,10 @@ const FIRST_PLAY_CHAIN = Object.freeze([
     why: '시루가 둘이면 물 주는 날을 어긋나게 할 수 있습니다. 그래야 수확이 안 끊깁니다.',
     need: Object.freeze({ sirus: 2 }),
     todo: q => `시루를 ${q.need.sirus}개로 늘려 엇갈리게 하세요`,
-    after: 'resow_siru',
-    opens: (s, ctx) => !!(ctx && ctx.doneIds.includes('resow_siru')),
+    /* ⚠ 2026-08-17 — 앞 줄이 ④`resow_siru` 에서 ④-b`order_seed` 로 바뀌었다(§씨앗 주문).
+       시루를 늘리면 씨앗이 그만큼 더 드는데, 주문을 안 배운 채로 늘리면 그 자리에서 멎는다 */
+    after: 'order_seed',
+    opens: (s, ctx) => !!(ctx && ctx.doneIds.includes('order_seed')),
     done:  (s, ctx) => potsOfKind(s, 'beansprout').length >= ctx.q.need.sirus
   }),
 
@@ -313,38 +415,10 @@ const FIRST_PLAY_CHAIN = Object.freeze([
     done:  s => yes(s.monsteraHomed) || num(s.motherLeaves) >= 2
   }),
 
-  /* ⑦ ★★ **잎 두 장** — 박사님이 짚으신 그 구간의 앞끝이다.
-     ★ 보상이 지어낸 말이 아니다: `first_cut`(⑫)이 **정확히 `motherLeaves >= 2`** 에서 열린다.
-     ⚠ 잎 간격은 여기 안 적는다 — `30·40·50·70·100·150·200·300` 은 생장 엔진 것이다(§2.8). */
-  Object.freeze({
-    id: 'leaf_two',
-    ko: '잎 두 장',
-    speaks: true,
-    reward: '자를 수 있게 됩니다',
-    teaches: ['잎은 유효 생장일로 난다'],
-    why: '잎은 날짜가 아니라 빛이 쌓인 만큼 납니다. 어두운 자리에서는 날짜만 갑니다.',
-    need: Object.freeze({ leaves: 2 }),
-    todo: q => `잎이 ${q.need.leaves}장이 될 때까지 키우세요`,
-    after: 'monstera_home',
-    opens: (s, ctx) => !!(ctx && ctx.doneIds.includes('monstera_home')),
-    done:  (s, ctx) => num(s.motherLeaves) >= ctx.q.need.leaves
-  }),
-
-  /* ⑧ ★★★ **잎 세 장** — 박사님이 *"잎 3개 날 때까지"* 라고 하신 그 끝이다.
-     여기까지가 초반 사슬이고, 그 뒤는 첫 플레이가 끝나며 ⑨`crop_mix` 로 이어진다. */
-  Object.freeze({
-    id: 'leaf_three',
-    ko: '잎 세 장',
-    speaks: true,
-    reward: '무늬가 날 자리가 늘어납니다',
-    teaches: ['어두우면 날짜만 간다'],
-    why: '잎이 늘수록 무늬가 날 자리도 늘어납니다. 무늬 잎이 이 방을 나가는 열쇠입니다.',
-    need: Object.freeze({ leaves: 3 }),
-    todo: q => `잎이 ${q.need.leaves}장이 될 때까지 키우세요`,
-    after: 'leaf_two',
-    opens: (s, ctx) => !!(ctx && ctx.doneIds.includes('leaf_two')),
-    done:  (s, ctx) => num(s.motherLeaves) >= ctx.q.need.leaves
-  })
+  /* ⚠⚠ 2026-08-17 — 여기 있던 ⑦`leaf_two`·⑧`leaf_three` 를 **아래 `SLOW_QUESTS` 로
+     옮겼다**(§긴 줄). 여는 조건은 한 글자도 안 바꿨다 — 옮긴 것은 **정의 순서**뿐이다.
+     ★ 그리고 그것이 사실에도 맞다: 첫 플레이는 `spear_furled`(유효 61)에 끝나고
+       잎 2장은 그보다 뒤라(유효 78), 이 둘은 애초에 **첫 플레이 구간의 줄이 아니었다.** */
 ]);
 
 /* ══ 본 줄기 여덟 — **첫 플레이가 끝난 뒤부터** (2026-08-17~18) ═══════════
@@ -363,7 +437,16 @@ const MAIN_QUESTS = Object.freeze([
     teaches: ['콩나물은 어두운 자리', '무순은 밝은 자리', '섞어 먹어야 밥이 이득'],
     why: '같은 것을 두 몫 먹으면 둘째 몫이 반값이 됩니다. 다른 작물이라야 온값입니다.',
     todo: () => '무순을 길러 콩나물과 한 상에 올리세요',
-    opens: s => !!s.firstPlayDone,
+    /* ══ ★★★ 2026-08-17 — **「무순을 살 수 있게 된 때」에도 연다** (§긴 줄 ㉠) ══════════
+       예전에는 `firstPlayDone` 하나였다. 그런데 상점이 무순을 여는 문턱은 그것이 아니라
+       **몬스테라 도착**이다(`game.html:5431` 실측). 즉 살 수 있게 된 뒤로도 한참 동안
+       아무도 그 말을 안 하는 구간이 있었고, 그 구간이 잎 줄만 서 있던 자리와 겹친다.
+       ⚠ `||` 인 것이 핵심이다. `firstPlayDone` 쪽을 지우면 `monsteraArrived` 를 안 채우는
+         판(옛 세이브·손으로 적은 스냅샷)에서 이 줄이 **영영 안 열린다** — 그러면 뒤에
+         걸린 `siru5_cycle5`·`siru8`·`siru16` 이 통째로 죽는다.
+       ★ 회귀도 이 `||` 가 지킨다 — 옛 걸음표는 `firstPlayDone` 만 세우므로 값이 그대로다
+         (`probe_questchain §E`). */
+    opens: s => !!s.firstPlayDone || yes(s.monsteraArrived),
     done:  s => new Set(arr(s.mealKinds).filter(Boolean)).size >= 2
   }),
 
@@ -512,14 +595,76 @@ const MAIN_QUESTS = Object.freeze([
   })
 ]);
 
-/* ★★ **초반 사슬이 먼저다.** 이 차례가 곧 배우는 차례이고, `questView` 의 「지금 할 일」도
-   이 차례에서 첫째를 고른다(§questView). 뒤에 붙이면 첫 플레이 동안 화면이
-   `crop_mix`(아직 못 하는 것)를 말하게 된다. */
-export const QUESTS = Object.freeze([...FIRST_PLAY_CHAIN, ...MAIN_QUESTS]);
+/* ══ ★★★ 느린 줄 둘 — **빛이 쌓여야 끝나는 줄** (2026-08-17 · §긴 줄) ═══════════
+   왜 여기로 왔는지는 맨 위 §긴 줄 에 다 적었다. 한 줄로 줄이면 이것이다:
+
+     **이 둘은 「할 일」이 아니라 「기다림」이다.** 나머지 열다섯 줄은 전부 손짓으로 끝나는데
+     (놓고·주고·거두고·주문하고·옮기고·자르고·팔고) 이 둘만은 **아무것도 안 해도 끝나고,
+     아무리 해도 어두우면 안 끝난다.** 그런 줄이 「지금 할 일」 자리를 차지하면 화면이
+     수십 일 동안 같은 말을 한다 — 박사님이 짚으신 것이 그 구간이다.
+
+   ⇒ 그래서 **맨 뒤**에 둔다. `questView` 가 「지금 하나」를 **정의 순서에서 첫째**로 고르므로,
+     맨 뒤에 있으면 **다른 줄이 하나라도 열려 있는 동안은 안 뽑힌다.**
+     아무것도 안 열려 있을 때 비로소 「지금 할 일」이 되는데, 그때는 그것이 참말이다 —
+     정말로 기다리는 것 말고 할 일이 없는 날이라서.
+
+   ⚠ **여는 조건을 한 글자도 안 바꿨다.** `after` 도 `opens` 도 `done` 도 예전 그대로다.
+     그래서 **안 열리는 일이 없다** — `monstera_home` 이 끝나면 `leaf_two` 가 열리고,
+     `leaf_two` 가 끝나면 `leaf_three` 가 열린다. 줄을 안 설 뿐 사슬은 그대로다.
+   ⚠ `stageOfQuest` 는 이 둘을 이제 `'main'` 으로 본다(사슬 목록에서 빠졌으므로).
+     그것도 사실에 맞다 — 첫 플레이는 잎 2장보다 **먼저** 끝난다(§긴 줄 ①). */
+const SLOW_QUESTS = Object.freeze([
+
+  /* ★★ **잎 두 장** — 박사님이 짚으신 그 구간의 앞끝이다.
+     ★ 보상이 지어낸 말이 아니다: `first_cut` 이 **정확히 `motherLeaves >= 2`** 에서 열린다.
+     ⚠ 잎 간격은 여기 안 적는다 — `30·40·50·70·100·150·200·300` 은 생장 엔진 것이다(§2.8). */
+  Object.freeze({
+    id: 'leaf_two',
+    ko: '잎 두 장',
+    speaks: true,
+    reward: '자를 수 있게 됩니다',
+    teaches: ['잎은 유효 생장일로 난다'],
+    why: '잎은 날짜가 아니라 빛이 쌓인 만큼 납니다. 어두운 자리에서는 날짜만 갑니다.',
+    need: Object.freeze({ leaves: 2 }),
+    todo: q => `잎이 ${q.need.leaves}장이 될 때까지 키우세요`,
+    after: 'monstera_home',
+    opens: (s, ctx) => !!(ctx && ctx.doneIds.includes('monstera_home')),
+    done:  (s, ctx) => num(s.motherLeaves) >= ctx.q.need.leaves
+  }),
+
+  /* ★★★ **잎 세 장** — 박사님이 *"잎 3개 날 때까지"* 라고 하신 그 끝이다. */
+  Object.freeze({
+    id: 'leaf_three',
+    ko: '잎 세 장',
+    speaks: true,
+    reward: '무늬가 날 자리가 늘어납니다',
+    teaches: ['어두우면 날짜만 간다'],
+    why: '잎이 늘수록 무늬가 날 자리도 늘어납니다. 무늬 잎이 이 방을 나가는 열쇠입니다.',
+    need: Object.freeze({ leaves: 3 }),
+    todo: q => `잎이 ${q.need.leaves}장이 될 때까지 키우세요`,
+    after: 'leaf_two',
+    opens: (s, ctx) => !!(ctx && ctx.doneIds.includes('leaf_two')),
+    done:  (s, ctx) => num(s.motherLeaves) >= ctx.q.need.leaves
+  })
+]);
+
+/* ★★★ **이 배열의 차례가 곧 「지금 할 일」의 우선순위다** — `questView` 가 열린 것 중
+   **정의 순서에서 첫째**를 뽑는다(§questView). 그러니 여기 차례를 바꾸는 것은
+   그리는 차례를 바꾸는 것이 아니라 **무엇을 시킬지를 바꾸는 것**이다.
+
+     ① 초반 사슬  — 첫 플레이의 걸음. 손짓 하나에 한 줄씩 끝난다
+     ② 본 줄기    — 살림과 삽수. 여전히 손짓으로 끝난다
+     ③ 느린 줄    — ★ 2026-08-17 신설. **빛이 쌓여야 끝나는 둘**(§긴 줄)
+
+   ⚠ ③ 이 맨 뒤인 것이 이번 변경의 전부다. 앞에 두면 그 둘이 열려 있는 수십 일 동안
+     ①②의 어떤 줄도 「지금 할 일」이 못 된다 — 박사님이 짚으신 그 구멍이 거기서 났다. */
+export const QUESTS = Object.freeze([...FIRST_PLAY_CHAIN, ...MAIN_QUESTS, ...SLOW_QUESTS]);
 
 export const QUEST_IDS = Object.freeze(QUESTS.map(q => q.id));
 /* ★ 어느 마디의 줄인가 — 화면이 「초반 사슬을 도는 중인가」를 이걸로 안다 */
 export const FIRST_PLAY_CHAIN_IDS = Object.freeze(FIRST_PLAY_CHAIN.map(q => q.id));
+/* ★ 느린 줄 — 검사가 「이 둘은 줄을 안 선다」를 재는 데 쓴다(§긴 줄) */
+export const SLOW_QUEST_IDS = Object.freeze(SLOW_QUESTS.map(q => q.id));
 export const STAGE_FIRST_PLAY = 'first_play';
 export const STAGE_MAIN = 'main';
 export const STAGE_CLEAR = 'clear';

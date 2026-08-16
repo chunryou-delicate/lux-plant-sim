@@ -20,6 +20,28 @@
  *   숫자만 바뀌고 아무도 아무 말을 안 했다. 그 구간을 채운 것이 아래 §2~§5 다.
  */
 
+/* ★★★ 2026-08-17 — **상점 표를 읽는다** (§5.5-b 씨앗 주문)
+   ------------------------------------------------------------
+   박사님: *"⚠ **숫자를 문구에 박지 마라** — 배송일·값은 `catalogList()` 가 갖고 있다.
+           **읽어서 지어라.**"*
+   ⚠ 이 파일의 규율은 예전부터 *"숫자를 대사에 안 박는다"*(§5.5 ①)였고, 그 규율을
+     지키는 방법이 그동안은 **아예 안 말하는 것**이었다(`questResowSiru` 가 씨앗값을
+     안 읊는 까닭). 그런데 「상점 쓰는 법」을 가르치는 줄은 **배송일을 말해야 뜻이 선다** —
+     "미리 시켜 둬라"의 근거가 그 하루라서다.
+   ⇒ 그래서 **말하되 안 박는다.** 값이 움직이면 문장이 같이 움직인다.
+   ★ 순수함은 안 깨진다 — `shop.js` 도 DOM 도 타이머도 모르는 순수 모듈이다.
+   ⚠ 못 읽는 판(품목이 사라진 판)에서는 **숫자 없는 말**로 떨어진다. 지어내지 않는다. */
+import { catalogList } from './shop.js';
+const BEAN_SEED = (() => {
+  try { return catalogList().find(x => x.id === 'bean_seed') || {}; } catch { return {}; }
+})();
+/* 「하루 뒤에」 — 못 읽으면 「며칠 뒤에」로 떨어진다(거짓말을 안 하는 쪽으로) */
+const BEAN_LEAD_KO = Number.isFinite(BEAN_SEED.leadDays) && BEAN_SEED.leadDays > 0
+  ? `${BEAN_SEED.leadDays}일 뒤에` : '며칠 뒤에';
+/* 「500원」 — 못 읽으면 값 얘기를 통째로 뺀다 */
+const BEAN_WON_KO = Number.isFinite(BEAN_SEED.buyWon)
+  ? `${BEAN_SEED.buyWon.toLocaleString('ko-KR')}원` : null;
+
 export const SPEAKERS = {
   jachwi: { ko: '나',   portrait: true  },
   moni:   { ko: '몬이', portrait: true  },
@@ -541,6 +563,45 @@ export const SCRIPTS = {
     { who: 'moni',   face: 'happy', text: '그게 회전이야. 이제 이 시루는 계속 돌아.' }
   ],
 
+  /* ═══ ★★★ §5.5-b 씨앗 주문 — **「심을 게 없다」에서 멈추던 자리** (2026-08-17) ═══
+     ------------------------------------------------------------
+     박사님 원문: *"그리고 **상점 구매도 상세 가이드** 해 줘. **초반에 씨앗 바로
+     필요하잖아?**"*
+
+     ★ **왜 하필 여기인가 — 재서 골랐다.** 새 판은 콩 씨앗 **한 봉지**로 시작하고
+       (`state.js §shop` 의 `opt.startSeeds` — 화면이 새 판을 세울 때만 1 을 넘긴다),
+       첫 시루는 **이미 심겨서** 온다(`createFirstPlayState` 의 `sown: true`).
+       ⇒ 그 한 봉지는 **첫 수확 뒤 다시 심을 때** 나간다. 그 회전을 거두는 순간
+         (= ④`resow_siru` 가 끝나는 순간) **재고가 0 이 된다.**
+       박사님이 *"시루가 비는 그때"* 라고 하신 자리가 실측으로 바로 여기다.
+
+     ★★ **앞 줄과 안 겹치게 썼다.** ④`questResowSiru` 가 이미 *«씨앗은 어디서 나»* ·
+       *«사야 돼»* 를 말했고 이 줄은 그 **바로 뒤**에 온다. 그래서 여기서는
+       **「사야 한다」를 다시 말하지 않고 「어디서·몇 개·언제 오나·왜 미리」**만 말한다.
+     ⚠ 화면 아래 한 줄도 *«콩 씨앗이 없습니다 — [상점]에서 주문하세요»* 까지는 이미
+       말한다(`game.html`). **그 다음이 없어서** 이 줄이 있는 것이다.
+     ⚠ **자리 이름을 「아래」라고 안 쓴다** — 폰은 아래 띠, PC 는 오른쪽 탭이라
+       한쪽에서 반드시 거짓이 된다. 이름(`[상점]`)만 부른다.
+     ⚠ **배송일·값을 여기 안 적었다** — 위 §상점 표를 읽는다 가 `catalogList()` 에서
+       읽어 짓는다. 값이 움직여도 이 대사가 안 낡는다(§2.8). */
+  questOrderSeed: [
+    { who: 'jachwi', text: '봉지가 비었어. 이제 심을 게 없는데.' },
+    { who: 'moni',   face: 'curious', text: '**[상점]** 열어 봐. 거기 **콩 씨앗**이 있어.' },
+    /* ★ 값을 못 읽는 판에서는 이 줄이 통째로 빠진다 — 지어낸 값을 말하느니 안 말한다 */
+    ...(BEAN_WON_KO
+      ? [{ who: 'moni', text: `한 봉지에 ${BEAN_WON_KO}, 시루 하나 몫이야.` }]
+      : [{ who: 'moni', text: '한 봉지가 시루 하나 몫이야.' }]),
+    { who: 'jachwi', text: '시키면 바로 와?' },
+    { who: 'moni',   text: `안 와. 시킨 건 ${BEAN_LEAD_KO} 도착해.` },
+    { who: 'moni',   face: 'curious', text: '그러니까 거두기 전에 미리 시켜 둬.' },
+    { who: 'moni',   text: '시루를 늘리면 그만큼 더 시켜야 하고.' }
+  ],
+  /* ⚠ 완료는 **두 줄**이다. 이 자리는 몬스테라 도착(총 3회전)과 붙어 있어서 붐빈다 */
+  questDoneOrderSeed: [
+    { who: 'jachwi', text: '왔다. 바로 심었어.' },
+    { who: 'moni',   face: 'happy', text: '이제 이 시루는 네가 시키는 만큼 돌아.' }
+  ],
+
   /* ⑤ ★★ 가르치는 것은 「많이 사면 많이 번다」가 **아니다** — 그건 `siru8`·`siru16` 것이다.
      여기 것은 **시차**다(`first_play.js §겹침` — *"더 번다"가 아니라 "끊기지 않는다"*).
      ⚠ 「하나 더」라고 안 쓴다 — 문턱은 `need.sirus` 것이고 그 수가 움직이면 대사가 낡는다. */
@@ -586,8 +647,13 @@ export const SCRIPTS = {
   ],
 
   /* ⑧ ★★★ **잎 세 장** — 박사님이 *"잎 3개 날 때까지"* 라고 하신 그 끝이다.
-     ★ 완료가 **초반 사슬 전체의 매듭**이다. 그래서 여기서만 지나온 걸음을 한 번 접어 준다 —
-       그 뒤는 첫 플레이가 끝나며 `questCropMix`(§5.5 ①)로 이어진다.
+     ★ 완료가 **배우는 걸음 전체의 매듭**이다. 그래서 여기서만 지나온 걸음을 한 번 접어 준다.
+     ⚠⚠ **2026-08-17 정정** — 예전에 여기 *"그 뒤는 첫 플레이가 끝나며 `questCropMix` 로
+       이어진다"* 고 적혀 있었는데 **그 순서가 틀렸다.** 첫 플레이는 `spear_furled`(유효 61)에
+       끝나고 잎 2장은 그보다 뒤라(유효 78), `questCropMix` 는 이 줄보다 **먼저** 난다.
+       그래서 `quest.js` 가 잎 두 줄을 `SLOW_QUESTS` 로 옮겼다(§긴 줄).
+       ⇒ 대사는 안 고쳤다 — 「여기까지가 첫걸음이야」는 **순서가 아니라 배움의 매듭**을
+         말하는 것이라 뒤에 와도 참이다.
      ⚠ 마지막 줄이 다음을 가리키되 **무늬 얘기를 다시 꺼내지 않는다** — 그건 `varieLucky` 가
        이미 통째로 말했고, 여기서 또 하면 세 번째다. */
   questLeafThree: [
@@ -1368,10 +1434,10 @@ export const QUEST_OPEN_SCRIPT = Object.freeze({
   water_siru:    'questWaterSiru',
   first_harvest: 'questFirstHarvest',
   resow_siru:    'questResowSiru',
+  /* ★ 2026-08-17 — 씨앗 주문(§5.5-b). `quest.js` 가 ④와 ⑤ 사이에 넣은 줄이다 */
+  order_seed:    'questOrderSeed',
   siru_two:      'questSiruTwo',
   monstera_home: 'questMonsteraHome',
-  leaf_two:      'questLeafTwo',
-  leaf_three:    'questLeafThree',
 
   crop_mix:     'questCropMix',
   siru5_cycle5: 'questSiru5',
@@ -1381,7 +1447,13 @@ export const QUEST_OPEN_SCRIPT = Object.freeze({
   first_cut:    'questFirstCut',
   buy_lamp:     'questBuyLamp',
   varie_bright: 'questVarieBright',
-  sell_varie:   'questSellVarie'
+  sell_varie:   'questSellVarie',
+
+  /* ★★ 2026-08-17 — **느린 줄 둘**(`quest.SLOW_QUESTS` · §긴 줄).
+     지도에서의 자리를 정의 순서와 맞춰 맨 뒤로 옮겼다 — 대사는 한 글자도 안 바꿨다.
+     ⚠ 이 지도는 id 로만 찾으므로 자리를 옮겨도 동작이 안 바뀐다. **눈으로 읽히라고** 옮겼다 */
+  leaf_two:     'questLeafTwo',
+  leaf_three:   'questLeafThree'
 });
 export const QUEST_DONE_SCRIPT = Object.freeze({
   /* ★★ 2026-08-16 — 초반 사슬 여덟의 완료 대사(§5.5-a) */
@@ -1389,10 +1461,9 @@ export const QUEST_DONE_SCRIPT = Object.freeze({
   water_siru:    'questDoneWaterSiru',
   first_harvest: 'questDoneFirstHarvest',
   resow_siru:    'questDoneResowSiru',
+  order_seed:    'questDoneOrderSeed',
   siru_two:      'questDoneSiruTwo',
   monstera_home: 'questDoneMonsteraHome',
-  leaf_two:      'questDoneLeafTwo',
-  leaf_three:    'questDoneLeafThree',
 
   crop_mix:     'questDoneCropMix',
   siru5_cycle5: 'questDoneSiru5',
@@ -1401,7 +1472,11 @@ export const QUEST_DONE_SCRIPT = Object.freeze({
   first_cut:    'questDoneFirstCut',
   buy_lamp:     'questDoneBuyLamp',
   varie_bright: 'questDoneVarieBright',
-  sell_varie:   'questDoneSellVarie'
+  sell_varie:   'questDoneSellVarie',
+
+  /* ★★ 2026-08-17 — 느린 줄 둘(위 §QUEST_OPEN_SCRIPT 의 같은 자리 참고) */
+  leaf_two:     'questDoneLeafTwo',
+  leaf_three:   'questDoneLeafThree'
 });
 
 /* ★한 턴에 여러 사건이 겹칠 때의 **순서가 계약이다.**
