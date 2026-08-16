@@ -7811,6 +7811,17 @@ export async function createRoomView(canvas, opts = {}) {
      같은 덩치로 맞춘다("0.2m 안팎"). GLB 가 어떤 크기로 오든 여기에 맞춰 줄인다. */
   const CAN_MAX = 0.24;
   const CAN_TIP = '__can_tip';        // ★ 이름으로 찾는다. clone 이 userData 는 못 넘긴다
+  /* ★★ **손잡이** — 손 뼈에 갖다 붙일 점 (2026-08-16 저녁 · 박사님) ═══════════════
+     박사님: *"물 줄 때 물뿌리개 위치를 잘 조정해서 **손잡이랑 손이 붙어 있게** 좀 수정할래?"*
+
+     ⚠ 그전까지 손에 붙는 것은 물뿌리개의 **원점**이었다(`can.position.copy(손)`).
+       그런데 이 물뿌리개의 원점은 **몸통 밑면 한가운데**다(위 §생김새 규약). 손잡이는
+       거기서 뒤로 6.4cm · 위로 10.6cm 떨어진 곳에 있다 — 즉 **12.4cm 떨어져 떠 있었다.**
+       캐릭터 키가 1.40m 이니 몸의 9%다. 눈에 띄는 것이 당연하다.
+     ⇒ 주둥이(`CAN_TIP`)와 **똑같은 방식**으로 손잡이 점에도 이름을 단다. 쓰는 쪽은
+       그 점이 손에 오도록 물뿌리개를 통째로 옮긴다(§runAct). 모양이 바뀌어도 이 점만
+       맞으면 되고, **원점이 어디에 있든 상관없어진다** — 그것이 이 고침의 요지다. */
+  const CAN_GRIP = '__can_grip';
   /* 지금 들어온 GLB 는 **주둥이가 -X 를 본다** — 이름 있는 노드가 없어 물어볼 데가 없어서
      tools/probe_watering_can.mjs 로 0°·90°·180°·270° 를 찍어 눈으로 잡았다
      (docs/engine/shots/can_zoom.png). 규약은 +X 이므로 반 바퀴 돌려서 맞춘다.
@@ -7860,6 +7871,15 @@ export async function createRoomView(canvas, opts = {}) {
     tip.name = CAN_TIP;
     tip.position.set(size.x * k * 0.5, size.y * k * 0.66, 0);
     g.add(tip);
+    /* 손잡이 — 주둥이의 **반대쪽 끝 위**로 잡는다. 이름 있는 노드가 없어서 규칙으로 잡는 것도
+       주둥이와 같다(위 tip 주석). 물뿌리개는 주둥이 반대편 위에 손잡이가 달린 물건이다.
+       ⚠⚠ **이 값은 화면으로 확인 못 했다.** `CAN_USE_GLB` 가 거짓이라 이 갈래가 지금
+         안 돈다 — 켜는 날(저폴리가 오는 날) `tools/probe_wateringgrip.mjs` 로 **다시 재라.**
+         모르는 것을 「맞췄다」고 적지 않는다. */
+    const grip = new THREE.Object3D();
+    grip.name = CAN_GRIP;
+    grip.position.set(-size.x * k * 0.36, size.y * k * 0.82, 0);
+    g.add(grip);
     return g;
   }
 
@@ -7883,6 +7903,7 @@ export async function createRoomView(canvas, opts = {}) {
       const g = proto.clone(true);
       /* ⚠ clone 은 userData 를 JSON 으로 베낀다 — Object3D 를 못 넘긴다. 이름으로 다시 찾는다. */
       g.userData.tip = g.getObjectByName(CAN_TIP);
+      g.userData.grip = g.getObjectByName(CAN_GRIP);
       g.userData.shared = true;                 // 기하·재질은 원본 것이다. 버리지 않는다
       return g;
     }
@@ -7906,6 +7927,13 @@ export async function createRoomView(canvas, opts = {}) {
     tip.position.set(0.193, 0.138, 0);
     g.add(tip);
     g.userData.tip = tip;
+    /* ★ 손이 쥐는 점 — **손잡이 고리(grip) 한가운데 그대로**다(§CAN_GRIP).
+       숫자를 새로 짓지 않는다. 위 `grip.position` 을 옮기면 손도 따라간다. */
+    const gripAt = new THREE.Object3D();
+    gripAt.name = CAN_GRIP;
+    gripAt.position.copy(grip.position);
+    g.add(gripAt);
+    g.userData.grip = gripAt;
     for (const m of [body, spout, grip]) { m.castShadow = true; m.frustumCulled = false; }
     return g;
   }
@@ -8023,6 +8051,12 @@ export async function createRoomView(canvas, opts = {}) {
   }
 
   const _tipV = new THREE.Vector3();
+  /* ★ 손 뼈 자리와 손잡이 자리 — 매 프레임 두 번 재므로 그릇을 미리 둔다(§CAN_GRIP).
+     ⚠ `_tipV` 를 나눠 쓰면 안 된다. 같은 프레임에 물줄기가 그것을 다시 쓴다. */
+  const _handV = new THREE.Vector3();
+  const _gripV = new THREE.Vector3();
+  const _handQ = new THREE.Quaternion(), _handS = new THREE.Vector3();
+  const _aimE = new THREE.Euler(0, 0, 0, 'YXZ'), _aimQ = new THREE.Quaternion();
 
   async function runAct(key, kind, o, token) {
     const K = String(kind || '').toLowerCase();
@@ -8105,13 +8139,16 @@ export async function createRoomView(canvas, opts = {}) {
     if (spec.prop === 'can') {
       hand = person.c.handBone;
       /* ★ 받아 놨으면 진짜, 아니면 원기둥. **기다리지 않는다**(ensureCanAsset 주석 참고) */
-      if (hand) { can = makeWateringCan(_canReady); can.rotation.order = 'YXZ'; houseGroup.add(can); }
+      /* ★★ **손 뼈에 매단다** (2026-08-16 저녁 · §CAN_GRIP). houseGroup 에 두고 매 프레임
+         손 자리를 베끼던 것을 바꿨다 — 까닭은 §runAct 의 물뿌리개 주석에 재서 적었다. */
+      if (hand) { can = makeWateringCan(_canReady); can.rotation.order = 'YXZ'; hand.add(can); }
       else console.warn('[방뷰] 오른손 뼈를 못 찾았습니다 — 물뿌리개 없이 이펙트만 냅니다');
     }
     if (spec.fx === 'water') { fx = makeWaterFx(); soil = soilPointOf(t); }
     const cleanup = () => {
       if (can) {
-        houseGroup.remove(can);
+        /* ★ 이제 손 뼈에 매달려 있다 — 어디 붙어 있든 제 부모에서 뗀다 */
+        if (can.parent) can.parent.remove(can); else houseGroup.remove(can);
         /* ★ GLB 판은 원본과 기하·재질을 나눠 쓴다 — 버리면 다음 물뿌리개가 텅 빈다 */
         if (!can.userData.shared) disposeObject(can);
         can = null;
@@ -8128,16 +8165,45 @@ export async function createRoomView(canvas, opts = {}) {
         const now = performance.now();
         const dt = Math.min(0.1, (now - last) / 1000); last = now;
         if (can && hand) {
-          hand.getWorldPosition(_tipV);
-          can.position.copy(_tipV);
+          /* ══ ★★ 물뿌리개는 **손 뼈의 자식**이다 (2026-08-16 저녁 · 박사님) ═══════════
+             박사님: *"물 줄 때 물뿌리개 위치를 잘 조정해서 **손잡이랑 손이 붙어 있게**"*
+
+             ⚠ 예전에는 물뿌리개를 방(houseGroup)에 두고 **매 프레임 손 자리를 베꼈다.**
+               두 가지가 겹쳐 어긋났다:
+                 ① 손에 붙는 것이 물뿌리개의 **원점**(몸통 밑면 한가운데)이었다.
+                    손잡이는 거기서 **12.38cm** 떨어져 있다(§CAN_GRIP).
+                 ② 그걸 고쳐도 **가로로 6.07cm 가 남았다.** 세 프레임을 멈춰 놓고 재도
+                    6.07 이었고 **높이(Y)만 정확히 맞았다** — 즉 뒤처짐이 아니라,
+                    이 콜백이 읽는 `hand.matrixWorld` 가 **그 프레임의 것이 아니었다**는 뜻이다
+                    (Y 만 맞는 것이 그 증거다. 사람이 도는 각은 Y 를 안 건드린다).
+             ⇒ **베끼기를 그만두고 매단다.** 자식은 three 가 그릴 때 부모 행렬로 따라오므로
+               손이 어디로 가든 **자리가 구조적으로 정확하다.** 읽을 것이 없으니 낡을 것도 없다.
+             ★ 대신 각도는 손을 따라 돌면 안 된다(화분을 겨눠야 한다). 그래서 **월드로 원하는
+               각을 만들고 손의 각을 나눠서** 로컬 각으로 앉힌다. 그 각에 쓰는 손 행렬은
+               여전히 한 프레임 낡을 수 있지만, 그건 **각도 몇 도**라 눈에 안 띈다 —
+               박사님이 말씀하신 것은 **자리**다. */
+          hand.matrixWorld.decompose(_handV, _handQ, _handS);
           /* 로컬 +X 가 대상을 향하게 돌린다(+X 는 Ry 로 (cos,0,-sin) 이 된다) */
-          can.rotation.y = Math.atan2(-(t.pos.z - can.position.z), t.pos.x - can.position.x);
+          _aimE.y = Math.atan2(-(t.pos.z - _handV.z), t.pos.x - _handV.x);
           /* 붓는 각 — **팔이 다 나간 뒤에** 제일 많이 기울인다.
              쓰는 마디(open_door 0.30~1.80s)에서 팔은 p01 0.13 에 나가기 시작해 0.87 에
              닿고 그대로 멎는다(재서 확인했다). sin(πp01) 로 두면 팔이 아직 나가는 중에
              물뿌리개만 먼저 엎어져 허공에 붓는 그림이 된다. 그래서 올라갈 때는 팔을
              따라가고 끝에서만 짧게 세운다 — 물줄기(fx)가 열리고 닫히는 모양과 같은 꼴이다. */
-          can.rotation.z = -0.95 * Math.min(1, p01 / 0.65) * Math.min(1, (1 - p01) / 0.13);
+          _aimE.z = -0.95 * Math.min(1, p01 / 0.65) * Math.min(1, (1 - p01) / 0.13);
+          _aimQ.setFromEuler(_aimE);
+          /* 손의 각을 나눈다 — 손이 어떻게 꺾여 있든 물뿌리개는 화분을 본다 */
+          can.quaternion.copy(_handQ).invert().multiply(_aimQ);
+          /* 뼈에 배율이 실려 있으면 물뿌리개가 같이 커진다. 되돌려서 실물 크기를 지킨다 */
+          const hs = (_handS.x + _handS.y + _handS.z) / 3 || 1;
+          can.scale.setScalar(1 / hs);
+          /* 손잡이가 **손 뼈 원점**에 오도록 물뿌리개를 뒤로 물린다.
+             손잡이는 물뿌리개의 직속 자식이라 로컬 자리를 지금 각도로 돌린 것이 곧 오프셋이다. */
+          if (can.userData.grip) {
+            _gripV.copy(can.userData.grip.position).applyQuaternion(can.quaternion).multiplyScalar(1 / hs);
+            can.position.copy(_gripV).negate();
+          } else can.position.set(0, 0, 0);
+          can.updateMatrixWorld(true);            // 바로 아래 fx 가 주둥이를 물어본다
         }
         if (fx) {
           if (can) can.userData.tip.getWorldPosition(_tipV);
