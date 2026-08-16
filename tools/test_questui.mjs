@@ -259,10 +259,14 @@ console.log('\n══ A. ★★★ 배선이 살아 있다 ═══════
   const v2 = JSON.parse(await page.eval(`JSON.stringify(window.__questView())`));
   ok('A-6 ★★ ①을 끝내면 ②가 **열린다** (다음 줄로 이어진다)',
      v2.open.includes('siru5_cycle5'), JSON.stringify(v2.open));
+  /* ⚠ 2026-08-16 — **`=== 1` 을 걷었다.** 재려던 것은 「끝낸 줄에 도장이 찍히나」인데
+     끝낸 줄이 **하나뿐일 때만** 참인 식이었다. 초반 사슬이 붙어 이 시점에 이미 둘 이상이
+     끝나 있고(①시루 놓기가 놓는 순간에 끝난다), 그 수는 사슬이 자라면 또 바뀐다.
+     ⇒ **하나 이상이고 전부 도장이 찍혔나**로 잰다 — 뜻은 그대로고 낡지 않는다(§2.8). */
   ok('A-7 ★ 끝낸 줄은 **도장**이 찍힌다 (창에서)', await page.eval(`(()=>{
        window.__byeotQuestShow();
        const r=[...document.querySelectorAll('#questPanel .qrow.done')];
-       return r.length === 1 && /✓/.test((r[0].querySelector('.qmark')||{}).textContent||'');})()`));
+       return r.length >= 1 && r.every(e=>/✓/.test((e.querySelector('.qmark')||{}).textContent||''));})()`));
   await page.eval(`window.__byeotPopClose()`, false); await sleep(250);
 }
 

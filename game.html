@@ -6422,9 +6422,15 @@ function questSnapshotNow(turn) {
   /* 방에 선 작물 용기 전부 — 종류와 「몇 바퀴 돌았나」 */
   let cropPots = [];
   try {
+    /* ★★ 2026-08-16 — **놓였나·물을 받았나**를 같이 낸다(초반 사슬 §questchain-to-plan 3-3).
+       ⚠ 안 채워도 사슬은 돈다(코어가 함의를 걸어 뒀다). 그런데 그러면 ①「시루를 방에 놓는다」가
+         *놓은 순간*이 아니라 **처음 거둔 뒤**에 끝난다 — **할 일이 이미 지나간 뒤에 도장이 찍힌다.**
+         단계로 푸는 것이 이번 일의 뜻이므로, 걸음마다 제때 끝나야 한다. */
     cropPots = cropSites(fp).flatMap(site =>
       ((site && site.pots) || []).map(p => ({ kind: (site.kind || 'beansprout'),
-                                              harvestCount: (p && p.harvestCount) || 0 })));
+                                              harvestCount: (p && p.harvestCount) || 0,
+                                              placed: cropPotPlaced(p),
+                                              watered: !!(p && p.startedOnDay != null) })));
   } catch { cropPots = []; }
   /* ★ 오늘 밥상에 오른 작물 — **턴이 낸 것**이 정본이다(loop.js §밥 · eatFromPantry).
      ⚠ `mealPlanQuote` 로 대신 재지 마라 — 그건 「짤 수 있다」이지 「먹었다」가 아니다. */
@@ -6469,7 +6475,10 @@ function questSnapshotNow(turn) {
          2026-08-06 에 그 둘이 어긋나서 「등을 꺼도 요금이 나가는」 사고가 났다
          (`tutorial.js §lampElectricityWon` 의 ★★). 여기서 묻는 것은 **샀나**다. */
     lampUnlocked: !!(ts.lamp && ts.lamp.unlocked),
-    lampOwned: (ts.lamp && ts.lamp.owned) || 0
+    lampOwned: (ts.lamp && ts.lamp.owned) || 0,
+    /* ★ 초반 사슬 ⑥「몬스테라 자리 잡기」가 이 둘로 판정한다. 정본은 `firstPlay.monstera` 다 */
+    monsteraArrived: !!(fp.monstera && fp.monstera.arrived),
+    monsteraHomed: !!(fp.monstera && fp.monstera.guide && fp.monstera.guide.moved)
   };
 }
 
