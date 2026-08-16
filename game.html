@@ -910,13 +910,25 @@
        띠는 위로 자라므로(아래는 `--pickLift` 로 고정) [다음 날] 줄을 안 가린다.
      ⚠ `white-space:nowrap` 을 **안 건다.** 넘치면 잘리는 대신 두 줄이 되게 둔다 —
        잘린 줄은 거짓말이 되고, 이 게임에서 제일 나쁜 것이 그것이다. */
-  #plantActions{position:absolute;z-index:27;left:12px;right:12px;bottom:var(--pickLift,12px);display:none;
-    gap:7px;align-items:stretch;flex-wrap:wrap}
+  /* ══ ★★ 화분·시루 고름 — **가구와 같은 「그 물건 옆에 뜨는 창」** (2026-08-16) ══════
+     박사님: *"시루나 이런 것도 동일하게 저렇게 팝업 떴으면 좋겠어. **밑에 뜨는 게 아니라.**"*
+     ⚠ 예전에는 화면 **바닥에 가로로 눕는 띠**였다(`left:12px;right:12px;bottom:…`).
+       가구는 이미 물건 옆에 뜨는 창인데 시루만 바닥이라 **같은 손짓에 다른 답**이 나왔다.
+     ⇒ `#furnActions` 와 **같은 모양·같은 자리잡이**(`placeFloatMenu`)를 쓴다.
+       두 벌로 꾸미지 않는다 — 갈리면 언젠가 한쪽만 고쳐진다. */
+  #plantActions{position:absolute;z-index:27;left:0;top:0;display:none;
+    flex-direction:column;gap:5px;align-items:stretch;
+    width:max-content;max-width:min(58vw,230px);padding:7px;border-radius:14px;
+    background:rgba(16,13,24,.9);border:1px solid rgba(255,255,255,.14);
+    box-shadow:0 8px 24px rgba(0,0,0,.5)}
+  /* 눌리는 자리를 보이는 것보다 넓게 — `#furnActions::before` 와 같은 손이다 */
+  #plantActions::before{content:'';position:absolute;inset:-12px;border-radius:22px}
   #stage.picked #plantActions{display:flex}
-  #plantActions button{flex:1;min-height:var(--tap);font-weight:700;font-size:14px;border-radius:12px}
-  #plantActions .who{flex:1 0 100%;display:flex;align-items:center;padding:6px 12px;border-radius:12px;
-    font-size:12.5px;line-height:1.4;color:var(--dim);word-break:keep-all;
-    background:rgba(16,13,24,.86);border:1px solid rgba(255,255,255,.12)}
+  #plantActions button{position:relative;min-height:var(--tap);font-weight:700;font-size:14px;
+    border-radius:10px;white-space:nowrap;padding:0 14px}
+  #plantActions .who{position:relative;display:block;padding:1px 4px 3px;
+    font-size:12px;line-height:1.35;color:var(--dim);word-break:keep-all;
+    max-width:216px;white-space:normal}
   /* ★이동 모드 — 화면 아무 데나 끌어도 잡힌다.
      투명 판이 3D 위를 덮어 카메라 회전을 막는다(끌다가 방이 돌면 조작이 망가진다). */
   /* ══ 가구 고름 — **가구 옆에 뜨는 팝오버** (박사님 2026-08-08) ═══════════════
@@ -8644,6 +8656,7 @@ const picked = {
     $('pickMove').title = '';
     $('stage').classList.add('picked');
     if (roomView) roomView.highlightSlots([slotId]);
+    plantMenuFollow(true);          /* ★ 그 물건 옆에 붙어 따라다닌다(2026-08-16) */
   },
   /* ★ 골라 둔 채로 하루가 가거나 물을 주면 요약이 낡는다 — **그리기마다** 다시 적는다.
      ⚠ 고르기를 새로 하는 것이 아니다(하이라이트·모드·[옮기기] 잠금은 안 건드린다).
@@ -8654,6 +8667,7 @@ const picked = {
     $('pickedName').textContent = r ? siruBriefKo(r) : slotLabel(this.slotId);
   },
   clear() {
+    plantMenuFollow(false);         /* ★ 안 골랐으면 프레임 고리를 끈다 — 노는 화면을 안 깨운다 */
     this.slotId = null; this.mode = null; this.potId = null;
     /* ★ 확인 모드도 같이 푼다 (2026-08-09) — 안 풀면 다음에 아무 화분을 골라 옮겨도
        [확인] 바가 뜬다. 고르기를 놓는 자리가 여기 하나뿐이라 여기서 푼다. */
@@ -8823,6 +8837,25 @@ function placeFloatMenu(el, p) {
   el.style.top = (top - hr.top) + 'px';
 }
 function placeFurnMenu(p) { placeFloatMenu($('furnActions'), p); }
+/* ★ 화분·시루 메뉴도 **같은 자리잡이**를 탄다(2026-08-16 · §plantActions) */
+function placePlantMenu(p) { placeFloatMenu($('plantActions'), p); }
+
+let plantMenuTick = null;
+/* 프레임마다 따라간다 — 골라져 있을 때만 돈다(`furnMenuFollow` 와 같은 규칙) */
+function plantMenuFollow(on) {
+  if (on) {
+    if (plantMenuTick != null) return;
+    const tick = () => {
+      plantMenuTick = requestAnimationFrame(tick);
+      if (!picked.slotId) return;
+      let p = null; try { p = roomView && roomView.screenPosOf(picked.slotId); } catch { }
+      placePlantMenu(p);
+    };
+    plantMenuTick = requestAnimationFrame(tick);
+  } else if (plantMenuTick != null) {
+    cancelAnimationFrame(plantMenuTick); plantMenuTick = null;
+  }
+}
 
 /* ══════════════════════════════════════════════════════════════════════════
    ★★★ 폰 배치 — **눌러서 배치 → 상대이동 → [확인]** (2026-08-09 박사님 지시)
