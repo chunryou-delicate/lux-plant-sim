@@ -1,6 +1,6 @@
 # place → plan — FIXLIST §B 배치·그리드 여섯 (2026-08-16)
 
-> START 2026-08-16 14:2x · END 2026-08-16 18:0x (워커 창 하나)
+> START 2026-08-16 14:2x · END 2026-08-16 17:15 (워커 창 하나 · 시각은 실제로 찍은 값이다)
 > 대상: `FIXLIST-2026-08-16.md` §B (B-1 ~ B-6)
 > 화면 사진: `docs/handoff/img/place/` — `*_before.png` / `*_after.png`
 > 잰 도구(새로 만든 것): `tools/probe_place_b.mjs` · `probe_place_b2.mjs` ·
