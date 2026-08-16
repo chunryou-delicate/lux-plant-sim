@@ -89,8 +89,17 @@ console.log('\n══ B. ★★ 첫날 — 아직 아무것도 안 열린다 ═
   ok('B-2 ★★★ 몬스테라가 안 왔으면 **모주 잎이 0** 이다 ' +
      '(생장 창의 시연용 그루를 모주로 읽으면 안 된다)',
      snap.motherLeaves === 0, `잎 ${snap.motherLeaves} · 화분 ${JSON.stringify(snap.cropPots.length)}개`);
-  ok('B-3 ★★ 그래서 첫날에는 **한 줄도 안 열린다**', view.open.length === 0,
-     `열린 것 ${JSON.stringify(view.open)}`);
+  /* ══ ★★★ 2026-08-16 — **이 줄의 계약이 뒤집혔다.** ══════════════════════════════
+     여기 있던 것: 「첫날에는 **한 줄도 안 열린다**」. 그때는 퀘스트 여덟이 전부
+     첫 플레이가 끝난 뒤(실측 Day 33)에 열렸고, 이 검사는 그 사실을 못 박고 있었다.
+     ⇒ 박사님: *"**잎 3개 날 때까지 너무 이벤트가 없더라.** 퀘스트가 단계별로 풀려야
+       되는데 지금 몇 개 없잖아.."* — **그 「한 줄도 안 열린다」가 곧 문제였다.**
+     ⇒ 이제 초반 사슬이 첫날부터 돈다. 재는 것은 정반대다: **첫날에 첫 줄이 열려 있다.**
+     ⚠ 「몇 개가 열리나」를 숫자로 박지 않는다 — 사슬이 자라도 안 낡게 **하나 이상**만 본다. */
+  ok('B-3 ★★★ 첫날부터 **할 일이 있다** (2026-08-16 계약이 뒤집힌 자리)',
+     view.open.length >= 1, `열린 것 ${JSON.stringify(view.open)}`);
+  ok('B-3b ★ 그래도 **한꺼번에 다 열리지는 않는다** (단계로 푼다)',
+     view.open.length < view.all.length, `${view.open.length}/${view.all.length}줄`);
   ok('B-4 ★★ 아래 한 줄이 아직 **첫 플레이 안내**다 (퀘스트가 안 가로챈다)',
      !/물에 꽂으세요/.test(await txt('#quest')), await txt('#quest'));
 }
@@ -132,23 +141,52 @@ console.log('\n══ C. ★★ 할 일 창 — 팝업 틀 · 진행도 · 여�
       states: rows.map(e=>e.classList.contains('done')?'done':e.classList.contains('open')?'open':'lock'),
       marks: rows.map(e=>(e.querySelector('.qmark')||{}).textContent),
       rew: rows.map(e=>(e.querySelector('.qrew')||{}).textContent),
+      more: rows.map(e=>e.classList.contains('qmore')),
+      ids: rows.map(e=>e.dataset.qid||null),
       inView: r.top>=0 && r.bottom<=innerHeight,
       scroll: c.scrollHeight > c.clientHeight+1,
       btnH: Math.round(document.getElementById('questGo').getBoundingClientRect().height) });})()`);
   const B = JSON.parse(box);
-  ok(`C-5 ★★ **${NQ}줄이 다 있다** (접기·탭 없이 한 화면)`, B.rows === NQ, `${B.rows}줄`);
+  /* ══ ★★★ 2026-08-16 — **이 줄도 뒤집혔다.** ═══════════════════════════════════
+     여기 있던 것: 「**${NQ}줄이 다 있다**(접기·탭 없이 한 화면)」. 줄이 다섯~여덟이던
+     때는 맞는 말이었다. 그런데 초반 사슬이 붙어 **열여섯**이 되자, 다 그리면
+     **잠긴 자물쇠 열 개가 먼저 눈에 든다** — 박사님이 *"그리고 한 번에 보여주고..."* 라고
+     지적하신 것이 그것이다. 「단계적 목표」가 아니라 「끝없는 목록」으로 읽힌다.
+     ⇒ 이제 화면은 셋으로 갈라 그린다(game.html §questRowsHtml):
+         끝낸 것 = 한 줄로 접힘 · 열린 것 = 펼침 · 잠긴 것 = **다음 둘만** + 나머지는 접힘 한 줄
+     ⇒ 재는 것도 그 계약으로 바꾼다. **다 있나**가 아니라 **덜 보이나 · 그래도 셈은 맞나**다.
+     ⚠ 수를 박지 않는다 — 화면이 낸 상태를 세어 견준다(§2.8). */
+  const shownLock = B.states.filter(x => x === 'lock').length;
+  ok('C-5 ★★★ **한 번에 다 안 보여 준다** (2026-08-16 계약이 뒤집힌 자리)',
+     B.rows < NQ, `${B.rows}줄만 그렸다 / 표 ${NQ}줄`);
+  ok('C-5b ★★ 잠긴 줄은 **다음 몇 개만** 미리 보인다 (다음이 뭔지는 보여야 방향이 선다)',
+     shownLock >= 1 && shownLock <= 3, `잠긴 줄 ${shownLock}개`);
+  ok('C-5c ★ 접은 것을 **말한다** (조용히 빼면 「줄이 사라졌다」가 된다)',
+     /더 있습니다/.test(await txt('#questList')), (await txt('#questList')).slice(-40));
   /* ⚠ 템플릿 문자열 안에서는 `\d` 가 그냥 `d` 가 된다 — 정규식으로 쓰려면 **두 번 젖혀야** 한다 */
   ok('C-6 ★★ 진행도를 **수로** 말한다', new RegExp(`\\d+\\s*/\\s*${NQ}`).test(B.title), B.title);
   ok('C-7 ★ 진행도 **띠**도 같은 값을 말한다', /^\d+%$/.test(B.bar), B.bar);
-  ok(`C-8 ★★★ **보상이 ${NQ}줄에 다 보인다** (하나도 빈칸이 아니다)`,
-     B.rew.length === NQ && B.rew.every(r => r && r.trim() && r.trim() !== '—'), JSON.stringify(B.rew));
+  /* ⚠ 2026-08-16 — 「${NQ}줄 전부」에서 **「그린 줄 전부」**로 바꿨다(위 C-5 와 같은 까닭).
+     ★ 접힘 줄(`.qmore`)은 퀘스트가 아니라 안내라 보상 칸이 비는 것이 맞다 — 빼고 센다. */
+  const rewReal = B.rew.filter((_, i) => !B.more[i]);
+  ok('C-8 ★★★ **그린 줄에는 보상이 다 보인다** (하나도 빈칸이 아니다)',
+     rewReal.length === B.rows - B.more.filter(Boolean).length &&
+     rewReal.every(r => r && r.trim() && r.trim() !== '—'), JSON.stringify(B.rew));
   /* ⚠ 2026-08-16 — **3 을 박아 뒀다가 낡았다.** 시루 늘리기 둘이 붙어 다섯이 됐다.
      ⇒ `stamina` 표에서 **세어서** 견준다. 줄이 늘어도 안 낡는다(§2.8). */
-  const staN = QUESTS.filter(q => (STAMINA_RULES.quests || {})[q.id] > 0).length;
+  /* ⚠⚠ 2026-08-16 — **「표 전체의 체력 줄 수」와 못 견준다.** 화면이 이제 일부만 그리므로
+     그 수는 원리적으로 안 맞는다. 재려던 것은 **「화면이 보상 문구를 지어내지 않는가」**였고,
+     그것은 **그린 줄 하나하나를 정의와 대조**하면 그대로 잰다 — 오히려 더 촘촘하다. */
+  const staOf = (id) => (STAMINA_RULES.quests || {})[id] || 0;
+  const shownIds = B.ids || [];
+  const mismatch = shownIds.map((id, i) => {
+    const n = staOf(id), r = String(B.rew[i] || '');
+    if (!id) return null;                       // 접힘 줄
+    if (n > 0) return new RegExp(`체력 \+${n}`).test(r) ? null : `${id}: 체력 +${n} 인데 «${r}»`;
+    return /체력 \+\d/.test(r) ? `${id}: 체력 0 인데 «${r}»` : null;
+  }).filter(Boolean);
   ok('C-9 ★★ 보상 문구를 화면이 안 지어냈다 — 체력 값이 **정의에서** 나온다',
-     B.rew.filter(r => /체력 \+\d/.test(r)).length === staN &&
-     B.rew.some(r => /무늬 등급/.test(r)) && B.rew.some(r => /이사/.test(r)),
-     JSON.stringify(B.rew));
+     mismatch.length === 0, mismatch.length ? JSON.stringify(mismatch) : JSON.stringify(B.rew));
   ok('C-10 ★★ 카드가 화면 안이고 **안 구른다** (모든 줄이 한눈에)',
      B.inView && B.scroll === false, `inView ${B.inView} · scroll ${B.scroll}`);
   ok('C-11 ★ 단추가 44px 이상', B.btnH >= 44, `${B.btnH}px`);

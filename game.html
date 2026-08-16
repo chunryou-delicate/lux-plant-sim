@@ -6566,21 +6566,51 @@ function drawQuestPanel() {
      밟은 그 모양이고, 오늘도 `test_questui` 의 「5」가 그래서 낡았다.
    ⚠ 그래서 이 함수는 위 `drawQuestPanel` 과 **같은 조각을 쓴다**(`questRowsHtml`).
    ⚠ 탭은 **팝업이 닫혀 있어도** 그린다 — PC 는 팝업을 한 번도 안 열 수 있다. */
+/* ★★★ 2026-08-16 — **한 번에 다 보여 주지 않는다** (박사님: *"퀘스트가 단계별로 풀려야
+     되는데 지금 몇 개 없잖아.. 그리고 **한 번에 보여주고**... 단계적 목표로 가이드랑 연계해서."*)
+   ══════════════════════════════════════════════════════════════════
+   ⚠ 예전 계약은 정반대였다 — `test_questui C-5` 가 **「모든 줄이 한 화면에 다 있다」**를
+     못 박고 있었고(2026-08-16), 그때는 줄이 다섯~여덟이라 그것이 맞는 말이었다.
+     초반 사슬이 붙으면 줄이 훨씬 늘고, 그러면 **잠긴 자물쇠 열 개가 먼저 눈에 들어온다.**
+     그건 「단계적 목표」가 아니라 「끝없는 목록」으로 읽힌다.
+   ⇒ 셋으로 갈라 그린다:
+       끝낸 것  — **한 줄로 접는다**(도장 ✓ + 이름). 지난 일은 셈만 맞으면 된다
+       열린 것  — **전부 펼친다**. 지금 손이 갈 곳이라 「무엇을·왜」가 다 있어야 한다
+       잠긴 것  — **다음 둘만** 흐리게 미리 본다. 그 뒤는 한 줄로 접는다
+   ★ 잠긴 둘을 **일부러 보여 준다.** 다음이 뭔지 보여야 오늘 하는 일에 방향이 생긴다 —
+     아무것도 안 보이면 사슬이 아니라 단발이 된다.
+   ⚠ 도장 `✓` 와 `.qrow.done` 은 그대로 둔다 — 끝낸 줄을 그것으로 세는 검사가 있다(A-7). */
+const QUEST_PEEK_LOCKED = 2;
 function questRowsHtml(v) {
   const esc = s => String(s == null ? '' : s).replace(/[&<>]/g, c =>
     ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
-  return v.all.map(q => {
-    const mark = q.state === 'done' ? '✓' : q.state === 'open' ? '▶' : '🔒';
+  const out = [];
+  let peeked = 0, hidden = 0;
+  for (const q of v.all) {
+    const state = q.state === 'done' ? 'done' : q.state === 'open' ? 'open' : 'locked';
+    if (state === 'locked') {
+      if (peeked >= QUEST_PEEK_LOCKED) { hidden++; continue; }
+      peeked++;
+    }
+    const mark = state === 'done' ? '✓' : state === 'open' ? '▶' : '🔒';
+    /* 끝낸 줄은 **이름만** 남긴다. 「끝냈습니다」와 까닭을 다시 적으면 지난 일이 화면을 먹는다 */
     const body =
-      q.state === 'locked' ? '<div class="qwhy">아직 열리지 않았습니다</div>'
-      : q.state === 'done' ? `<div class="qtodo">끝냈습니다</div>` +
-                             `<div class="qwhy">${esc(q.why)}</div>`
+      state === 'locked' ? '<div class="qwhy">아직 열리지 않았습니다</div>'
+      : state === 'done' ? ''
       : `<div class="qtodo">${esc(q.todo)}</div><div class="qwhy">${esc(q.why)}</div>`;
-    const cls = q.state === 'done' ? 'done' : q.state === 'open' ? 'open' : 'lock';
-    return `<div class="qrow ${cls}"><div class="qmark">${mark}</div>` +
-           `<div class="qbody"><div class="qko">${esc(q.ko)}</div>${body}</div>` +
-           `<div class="qrew">${esc(questRewardKo(q))}</div></div>`;
-  }).join('');
+    const cls = state === 'done' ? 'done' : state === 'open' ? 'open' : 'lock';
+    /* ⚠ `data-qid` 를 붙인다 — 화면이 **일부만** 그리게 됐으므로, 검사가 「어느 줄이
+       그려졌나」를 알아야 보상 문구를 정의와 대조할 수 있다(test_questui C-9). */
+    out.push(`<div class="qrow ${cls}" data-qid="${esc(q.id)}"><div class="qmark">${mark}</div>` +
+             `<div class="qbody"><div class="qko">${esc(q.ko)}</div>${body}</div>` +
+             `<div class="qrew">${esc(questRewardKo(q))}</div></div>`);
+  }
+  /* ⚠ 접은 것을 **말한다.** 조용히 빼면 「줄이 사라졌다」가 된다 */
+  if (hidden) out.push(`<div class="qrow lock qmore"><div class="qmark">⋯</div>` +
+    `<div class="qbody"><div class="qko">그 뒤로 ${hidden}가지가 더 있습니다</div>` +
+    `<div class="qwhy">앞의 것을 끝내면 하나씩 열립니다</div></div>` +
+    `<div class="qrew"></div></div>`);
+  return out.join('');
 }
 
 function drawQuestTab() {
