@@ -8981,20 +8981,26 @@ function syncRoom() {
          resolveKey 로 열쇠를 푸는데, 자유 좌표 열쇠(`free:cut_01`)는 그 자리에
          화분이 실제로 놓여 있을 때만 풀린다. 즉 3D 는 장식이 아니라 배선이다.
 
-       ★ 종류는 'monstera' 를 쓴다. room_view.buildPlantGroup 은 모르는 kind 를 **던지고**
-         (아는 것은 monstera·beansprout 둘뿐), 그 파일은 다른 작업자 것이라 손대지 않는다.
-         대신 지름을 용기 크기(CONTAINERS[*].realMaxM = 0.12~0.13m)로 묶어서
-         **작은 조각**으로 보이게 한다 — 몬스테라 기본 화분보다 한참 작다.
-       ★ 생장일은 조각의 나이(c.days)에 어린 개체 밑값을 더해 쓴다. 모주의 143일을
-         그대로 넘기면 다 자란 그루가 병 안에 축소돼 들어앉는다 — 삽수로 안 읽힌다.
-         형태의 정본은 어차피 growth 소유이고 삽수는 그 계약 밖이다(propagation.js §②). */
+       ★★★ 2026-08-16 — **드디어 유리 수경병으로 선다** (박사님: *"유리수경병으로 보여야지"*).
+         ⚠ 여기 있던 것: `kind: 'monstera'` 였다. 까닭이 이 주석에 그대로 적혀 있었다 —
+           *"room_view.buildPlantGroup 은 모르는 kind 를 던지고, 그 파일은 다른 작업자 것이라
+           손대지 않는다."* 그래서 삽수가 **작은 몬스테라 화분**으로 보였고, 박사님 화면에
+           갈색 화분이 저 혼자 늘어 있었다.
+         ⇒ 방 뷰에 `cutjar`(유리 수경병)·`cutpot`(검은 모종포트) 두 갈래가 생겼다(`72d2766`).
+           **모르는 kind 를 던지는 문은 그대로다** — 그 문이 이 저장소가 일부러 세운 것이다.
+       ★ `growthDays` 를 **뺐다.** 그 값은 몬스테라 조립기를 달래려고 넣었던 임시값이고
+         (모주의 143일을 그대로 넘기면 다 자란 그루가 병 안에 들어앉았다), 새 갈래는
+         그 칸을 안 읽는다. 대신 `leaves`·`rooted` 를 넘긴다 — 뿌리가 나면 병 속이 달라진다.
+       ⚠ 코어 실측: `METHODS.water.maxLeaves === 1` 이라 **병에 오는 잎은 0~1장**이다.
+         두 장까지 받는 것은 흙 포트 몫이다. */
     const want = new Set();
     for (const c of cuttingsOf(S)) {
       if (!c.at && !c.slotId) continue;
       const cont = CONTAINERS[c.container] || {};
-      const spec = { kind: 'monstera', potId: c.id, variegated: !!c.variegated,
-                     potD: cont.realMaxM || 0.12,
-                     growthDays: Math.min(120, 34 + (c.days || 0)) };
+      const spec = { kind: c.container === 'jar' ? 'cutjar' : 'cutpot',
+                     potId: c.id, variegated: !!c.variegated,
+                     leaves: c.leaves, rooted: c.status !== 'rooting',
+                     potD: cont.realMaxM || 0.12 };
       want.add(c.id);
       Promise.resolve(c.at && roomView.setPlantAt
         ? roomView.setPlantAt(c.id, c.at, spec)
