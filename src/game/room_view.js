@@ -3815,6 +3815,9 @@ export async function createRoomView(canvas, opts = {}) {
       const dy = e.touches[0].clientY - e.touches[1].clientY;
       const dd = Math.hypot(dx, dy);
       if (pinch) {
+        /* ★ 2026-08-16 — 휠과 같은 까닭으로 **돌던 트윈을 끊는다**(§onWheel ⓐ).
+           두 손가락으로 벌리는데 카메라가 도로 끌려가면 그게 「턱」이다. */
+        tween = null;
         const [lo, hi] = focused ? [0.5, 3.6] : zoomRange();
         cam.dist = softClamp(cam.dist * (1 - (dd - pinch) * 0.004), lo, hi);
         needsRender = true;
@@ -3929,8 +3932,22 @@ export async function createRoomView(canvas, opts = {}) {
     if (ghostMouse(e)) return;
     if (!O.orbit) return;
     e.preventDefault();
+    /* ★★★ 2026-08-16 — **「확대축소가 턱턱 걸린다」의 원인 둘** (박사님 지적) ══════════
+       ------------------------------------------------------------
+       ⓐ **돌던 트윈을 안 끊었다.** 손을 떼면 `settleCam` 이 160ms 뒤에 트윈을 건다.
+         그 트윈이 도는 동안 휠을 굴리면 여기서 `cam.dist` 를 써도 **다음 프레임에
+         `stepTween` 이 덮어쓴다.** 내가 당기는데 카메라가 도로 끌려간다 — 그게 「턱」이다.
+         ⚠ 끌기(`onDragMove`)는 이미 `tween = null` 을 하고 있었다. **휠·핀치만 빠져 있었다.**
+       ⓑ **굴린 양을 안 봤다.** `Math.sign(e.deltaY)` 라 **한 번에 무조건 8%** 였다.
+         트랙패드는 작은 값을 잘게 여러 번 보내는데 그 하나하나가 8% 계단이 된다.
+       ⇒ 트윈을 끊고, 굴린 양에 비례시키되 한 번에 너무 크지 않게 자른다. */
+    tween = null;
     const [lo, hi] = focused ? [0.5, 3.6] : zoomRange();
-    cam.dist = softClamp(cam.dist * (1 + Math.sign(e.deltaY) * 0.08), lo, hi);
+    /* 줄 단위(deltaMode 1)로 오는 브라우저가 있다 — 그때는 한 줄을 16px 로 친다 */
+    const px = e.deltaY * (e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? 400 : 1);
+    /* 100px(휠 한 칸)이 8% 가 되게 맞추고, 한 번에 25% 를 넘지 않게 자른다 */
+    const k = clamp(px * 0.0008, -0.25, 0.25);
+    cam.dist = softClamp(cam.dist * (1 + k), lo, hi);
     needsRender = true;
     clearTimeout(onWheel._t);
     onWheel._t = setTimeout(() => { if (!disposed) settleCam(); }, 160);

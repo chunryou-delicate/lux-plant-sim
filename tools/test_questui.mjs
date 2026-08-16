@@ -100,16 +100,22 @@ console.log('\n══ C. ★★ 할 일 창 — 팝업 틀 · 진행도 · 여�
   /* 사람이 쓰는 길로 연다 — [가방] 안의 단추다 */
   await page.eval(`(()=>{ window.__byeotSheet.open(); window.__byeotSheet.tab('bag'); })()`, false);
   await sleep(700);
-  const btn = await page.eval(`(()=>{const b=document.getElementById('questBack');
+  /* ★★ 2026-08-16 — **여는 문이 옮겨갔다.** 가방 안 [할 일] 단추를 걷고
+     `#navbar` 의 다섯째 칸(`#navQuest`)으로 옮겼다(박사님: *"가방 탭에 할 일은 이제
+     없어도 되지"* · 같은 창을 여는 문이 셋이었다).
+     ⇒ 재는 대상을 그 칸으로 옮긴다. **문이 있나 · 44px 인가 · 눌러서 열리나**는 그대로 잰다.
+     ⚠ 진행도 글자(C-2)는 이제 **안 적는다** — 나머지 넷이 글자만 있는 줄이라
+       여기만 수가 붙으면 줄이 어긋난다. 몇 개인지는 열면 창이 말한다. */
+  const btn = await page.eval(`(()=>{const b=document.getElementById('navQuest');
     if(!b) return null; const r=b.getBoundingClientRect();
     return JSON.stringify({ text:b.textContent, h:Math.round(r.height),
       inView: r.top >= 0 && r.bottom <= innerHeight, disabled:b.disabled });})()`);
-  ok('C-1 ★★ [가방] 안에 여는 단추가 있다 · 44px 이상 · 화면 안이다',
+  ok('C-1 ★★ 왼쪽 줄에 여는 칸이 있다 · 44px 이상 · 화면 안이다',
      !!btn && JSON.parse(btn).h >= 44 && JSON.parse(btn).inView && !JSON.parse(btn).disabled, btn);
-  ok('C-2 ★ 단추가 **진행도를 글자로** 말한다 (열기 전에도 몇 개 남았는지 보인다)',
-     /\d+\s*\/\s*\d+/.test(JSON.parse(btn || '{}').text || ''), JSON.parse(btn || '{}').text);
+  ok('C-2 ★ 칸에 이름이 적혀 있다 (무엇을 여는 문인지 읽힌다)',
+     /할\s*일/.test(JSON.parse(btn || '{}').text || ''), JSON.parse(btn || '{}').text);
 
-  ok('C-3 눌러서 열린다', (await click('questBack')) && (await on('questPanel')));
+  ok('C-3 눌러서 열린다', (await click('navQuest')) && (await on('questPanel')));
   const cls = await page.eval(`(()=>{const e=document.getElementById('questPanel');
     return e.className + '|' + (e.querySelector('.popcard') ? 'popcard' : 'none');})()`);
   ok('C-4 ★★★ **팝업 틀을 새로 안 지었다** (`.pop` + `.popcard` — 여섯째다)',
