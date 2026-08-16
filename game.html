@@ -1400,7 +1400,9 @@
   .siruRow .nm{flex:1;min-width:0;font-size:12.5px;font-weight:700;color:rgba(255,255,255,.92)}
   .siruRow .nm small{display:block;margin-top:3px;font-size:10.5px;font-weight:400;
     color:var(--dim);line-height:1.45;word-break:keep-all}
+  .siruRow .rowbtns{flex:0 0 auto;display:flex;gap:6px}
   .siruRow button{flex:0 0 auto;min-height:34px}
+  .siruRow.thirsty{border-color:rgba(143,216,234,.42);background:rgba(143,216,234,.08)}
   .siru{padding:8px 9px;margin:0 0 7px;border-radius:12px;
     background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.10)}
   .siru:last-child{margin-bottom:0}
@@ -6992,10 +6994,11 @@ function drawNext() {
    규칙·숫자는 전부 `state.js` §몬스테라 물주기 것이다. 여기서는 **묻기만** 한다 —
    주기를 화면에서 다시 세면 코어가 막는 날과 화면이 말하는 날이 갈린다.
    ★ 밴드·계절은 **지난 턴 것**을 넘긴다. 코어가 그 값으로 판정했으므로 화면이 같은 말을 한다. */
-function potWaterNow() {
+function potWaterNow(pot) {
   if (!hasPlant(S)) return null;
   try {
     return potWaterStatus(S, {
+      pot: pot || undefined,
       band: (lastTurn && lastTurn.growthSpeed && lastTurn.growthSpeed.band) || null,
       season: (lastTurn && lastTurn.sky && lastTurn.sky.season) || null
     });
@@ -8012,19 +8015,28 @@ function drawPlantMore() {
                 : (p.at ? '방 안' : '아직 안 놓음');
     const bits = [where];
     /* 물 — 코어가 낸 것을 그대로 적는다(주기도 남은 날도 코어 것이다) */
+    let w = null;
     try {
-      const w = potWaterStatus(S, { band: (lastTurn && lastTurn.growthSpeed && lastTurn.growthSpeed.band) || null,
-                                    season: (lastTurn && lastTurn.sky && lastTurn.sky.season) || null,
-                                    potId: p.id });
+      /* ⚠ **`pot` 이다. `potId` 가 아니다** — 코어가 안 보는 칸을 넘기면 조용히 첫 그루 값이 온다 */
+      w = potWaterStatus(S, { pot: p,
+                              band: (lastTurn && lastTurn.growthSpeed && lastTurn.growthSpeed.band) || null,
+                              season: (lastTurn && lastTurn.sky && lastTurn.sky.season) || null });
       if (w) bits.push(w.dry ? '💧 말랐습니다' : `물 준 지 ${w.dryDays}/${w.interval}일`);
     } catch { }
     if (Number.isFinite(p.daysPlanted)) bits.push(`돌본 날 ${p.daysPlanted}일`);
-    return `<div class="siruRow"><div class="nm">몬스테라 ${i + 1}` +
+    /* ★ 물주기 단추 — 시루 줄과 같은 결이다. **줄 수 있을 때만** 선다(§drawPotWater 의 규칙).
+       ⚠ 잠그지 않는다 — 눌러서 까닭을 듣는 편이 회색 단추보다 낫다(상점 [주문]과 같은 판단). */
+    const canW = !!(w && w.canWater);
+    const btns = (canW ? `<button class="water" data-plantwater="${esc(p.id)}">💧 물 주기</button>` : '')
+               + `<button class="ghost" data-plantzoom="${esc(p.id)}">📋 자세히</button>`;
+    return `<div class="siruRow${w && w.dry ? ' thirsty' : ''}"><div class="nm">몬스테라 ${i + 1}` +
            `<small>${esc(bits.join(' · '))}</small></div>` +
-           `<button class="ghost" data-plantzoom="${esc(p.id)}">📋 자세히</button></div>`;
+           `<span class="rowbtns">${btns}</span></div>`;
   }).join('');
   for (const b of list.querySelectorAll('[data-plantzoom]'))
     b.onclick = guard(() => { try { detail.open('monstera'); } catch { } });
+  for (const b of list.querySelectorAll('[data-plantwater]'))
+    b.onclick = guard(() => waterPotOf(b.dataset.plantwater));
 }
 
 function drawSirus() {
@@ -11787,9 +11799,23 @@ const reallyWater = guard(() => {
    ⚠ 아직 안 놓았으면 `null` → `doAct` 가 연출을 건너뛰고 논리만 돈다(cropKey 와 같은 판단). */
 $('waterPot').onclick = guard(() =>
   doAct('water', () => reallyWaterPot(), { key: (pot0(S) && pot0(S).slotId) || null }));
-const reallyWaterPot = guard(() => {
-  const before = potWaterNow();
+/* ★★★ 2026-08-17 — **그루를 골라 물을 준다** (박사님: *"몬스테라들 물주기 버튼이
+     시루처럼 화분에 물주기 버튼이 있으면 좋겠어."*)
+   ⚠ 코어는 **이미** 그루를 고를 수 있다 — `waterPot(S, { pot })`·`potWaterStatus(S, { pot })`
+     둘 다 `opt.pot` 을 받는다(2026-08-15 다개체). **없던 것은 화면 쪽 손잡이뿐이었다.**
+   ⚠⚠ `opt.potId` 가 아니라 **`opt.pot`(그루 자체)** 다. 내가 어제 줄을 그리며 `potId` 를
+     넘겼는데 코어가 그 칸을 안 봐서 **모든 줄이 첫 그루의 물 상태**를 보여 주고 있었다.
+     이름이 비슷한 칸을 넘기면 **오류 없이 딴 값이 나온다** — 이 저장소가 자주 앓는 병이다. */
+function waterPotOf(potId) {
+  const p = (S.pots || []).find(x => x && x.id === potId);
+  if (!p) { banner('그 그루를 못 찾았습니다', '방을 다시 열어 주세요'); return; }
+  doAct('water', () => reallyWaterPot(p), { key: p.slotId || (p.at ? `free:${p.id}` : null) });
+}
+const reallyWaterPot = guard((pot) => {
+  const p = pot || pot0(S);
+  const before = potWaterNow(p);
   const r = waterPot(S, {
+    pot: p,
     band: (lastTurn && lastTurn.growthSpeed && lastTurn.growthSpeed.band) || null,
     season: (lastTurn && lastTurn.sky && lastTurn.sky.season) || null
   });
