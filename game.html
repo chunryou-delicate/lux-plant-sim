@@ -3468,7 +3468,11 @@ function bindDetail() {
     /* ⚠ 그림 위에서 끝난 손짓은 `bindDrag` 가 이미 처리했다 — 그 메아리로 또 세우면
        한 번 끌었는데 두 개가 선다(§bindDrag ⚠). 칸의 **빈 곳**을 누른 것만 여기 온다. */
     if (bagTapEcho()) return;
+    /* ★★ 2026-08-16 — **화분도 받는다.** 여기 `'beansprout'` 하나뿐이라 모종포트·테라코타를
+       눌러도 **아무 일도 안 일어났다**(박사님: *"다 안 되잖아 배치"*).
+       ⚠ 오류도 안 났다 — 그래서 「눌러도 반응이 없다」로만 보였다. 이 저장소가 제일 자주 앓는 병이다. */
     if (cell.dataset.place === 'beansprout') startPhonePlace();
+    else if (isPotPlace(cell.dataset.place)) startPhonePlacePot(cell.dataset.place);
   });
   /* 자판으로도 눌린다 — `role="button"` 인 칸은 Enter·Space 를 저절로 안 받는다.
      PC 로 검수할 때 손이 막히면 그것도 고장이다. */
@@ -3478,6 +3482,7 @@ function bindDetail() {
     if (!cell || e.target.closest('button')) return;
     e.preventDefault();
     if (cell.dataset.place === 'beansprout') startPhonePlace();
+    else if (isPotPlace(cell.dataset.place)) startPhonePlacePot(cell.dataset.place);
   });
 }
 
@@ -4476,13 +4481,25 @@ const BAG_GROUPS = Object.freeze([
      성립하지 않는다. 그래서 무순은 아직 카드가 손잡이다. */
 const BAG_PLACEABLE = Object.freeze({
   siru: { kind: 'beansprout', thumbId: 'cropThumb', detail: 'crop', ko: '콩나물 시루' },
-  /* ★★ 2026-08-16 — **화분을 넣었다.** 여기 시루 하나뿐이라 화분은 사도 놓을 길이 없었다.
+  /* ★★ 2026-08-16 — **화분 다섯을 전부 넣었다.** 여기 시루 하나뿐이라 화분은 사도
+     놓을 길이 없었다(박사님: *"모종포트라든지 테라코타 화분이라든지 다 안 되잖아 배치"*).
      ⚠ 화분을 놓는 것은 곧 **씨앗을 심는 것**이다(`state.plantMonsteraSeed`) — 화분만 덜렁
        놓이면 빈 그릇이 방을 차지하고 아무도 그걸 심을 수 없다. 그래서 둘을 한 손짓으로 묶는다.
      ⚠ 씨앗이 없으면 `plantMonsteraSeed` 가 그 자리에서 던진다 — 화면이 미리 막지 않는다.
-       막으면 「왜 못 놓는지」를 두 곳이 말하게 되고 한쪽이 반드시 낡는다. */
-  pot: { kind: 'monsteraSeed', thumbId: 'potThumb', detail: 'plant', ko: '검은 모종포트' }
+     ★ `kind` 에 **아이템 id 를 실어 보낸다**(`monsteraSeed:pot_terracotta`). 끌기·누르기가
+       둘 다 이 한 낱말만 나르므로, 어느 화분을 집었는지가 길 끝까지 안 잃어버린다. */
+  pot:                 { kind: 'monsteraSeed:pot',                 thumbId: 'potThumb',   detail: 'plant', ko: '검은 모종포트' },
+  pot_concrete_round:  { kind: 'monsteraSeed:pot_concrete_round',  thumbId: 'potThumb2',  detail: 'plant', ko: '회색 콘크리트 화분' },
+  pot_terracotta:      { kind: 'monsteraSeed:pot_terracotta',      thumbId: 'potThumb3',  detail: 'plant', ko: '테라코타 화분' },
+  pot_ceramic:         { kind: 'monsteraSeed:pot_ceramic',         thumbId: 'potThumb4',  detail: 'plant', ko: '크림도자기 화분' },
+  pot_concrete_square: { kind: 'monsteraSeed:pot_concrete_square', thumbId: 'potThumb5',  detail: 'plant', ko: '콘크리트 사각 화분' }
 });
+/* 갈래 낱말에서 아이템 id 를 꺼낸다 — 없으면 밑값(검은 모종포트) */
+function potItemOf(what) {
+  const m = /^monsteraSeed:(.+)$/.exec(String(what || ''));
+  return m ? m[1] : SEED_POT_ITEM_ID;
+}
+const isPotPlace = (what) => /^monsteraSeed(:|$)/.test(String(what || ''));
 /* ★ 칸의 「×N」이 세는 것 — **가방에 실제로 남은 것**이다 (2026-08-10).
    ⚠ 예전에는 상점 재고(`stock`)만 셌다. 그런데 「아직 안 놓은 시루」는 개체가 이미
      만들어져 있어 재고가 아니다(§spareContainerOf) — 첫 플레이가 들고 시작하는 시루가
@@ -4647,7 +4664,12 @@ function drawBag() {
        ★ 셋째 인자가 **누르기**다 — 안 움직이고 뗀 손은 「눌러서 배치」로 간다(§bindDrag). */
     for (const id of Object.keys(BAG_PLACEABLE)) {
       const p = BAG_PLACEABLE[id];
-      bindDrag(p.thumbId, p.kind, p.kind === 'beansprout' ? () => startPhonePlace() : null);
+      /* ★ 2026-08-16 — **화분도 누르면 놓인다.** 예전에는 `beansprout` 만 손잡이를 받아
+         모종포트·테라코타는 그림을 눌러도 아무 일이 없었다(박사님: *"다 안 되잖아 배치"*). */
+      bindDrag(p.thumbId, p.kind,
+        p.kind === 'beansprout' ? () => startPhonePlace()
+        : isPotPlace(p.kind)    ? () => startPhonePlacePot(p.kind)
+        : null);
     }
   }
   $('bagCount').textContent = total ? `· ${total}개` : '';
@@ -7722,6 +7744,14 @@ async function bootRoomView() {
          그래도 내주는 까닭: 이 배선은 **200일을 굴려야 처음 걸리는 자리**라
          그것 말고는 화면에서 확인할 길이 없고, 그러면 「고쳤다」를 못 쓴다(START-HERE §2).
        ★ 두 번 불러도 안전하다 — 이미 정해진 잎은 안 건드린다(shop.js 검사 E-3). */
+    /* ★ 화분 놓기 — 검사가 「눌러서 실제로 심어지나」를 밖에서 잴 수 있게(2026-08-16).
+       ⚠ 읽기 전용이 아니다. 그래도 내주는 까닭: 이 길은 **가방 → 자리 찾기 → 코어**로
+         세 겹이라 어디서 막혔는지가 밖에서 안 보인다. 던진 말을 그대로 돌려준다. */
+    window.__placePot = (what) => {
+      try { const r = startPhonePlacePot(what || 'monsteraSeed:pot');
+            return { ...(r || { ok: true }), pots: S.pots.length }; }
+      catch (e) { return { ok: false, err: (e && e.message) || String(e) }; }
+    };
     window.__leafGrades = () => {
       noteLeafGrades(lastTurn);
       const p = pot0(S);
@@ -8559,10 +8589,10 @@ function commitPlace(what, hit, opt = {}) {
          씨앗 한 립 + 그릇 하나가 **한 손짓**에 나간다.
        ⚠ 재고·체력·형태 판정은 **전부 코어가 한다.** 여기서 미리 막지 않는다 —
          막으면 「왜 못 놓는지」를 두 곳이 말하게 되고 한쪽이 반드시 낡는다. */
-    if (what === 'monsteraSeed') {
+    if (isPotPlace(what)) {
       try {
         const r = plantMonsteraSeed(S, io, { ...placeOpt(), at: atOf(hit),
-                                             potItemId: SEED_POT_ITEM_ID });
+                                             potItemId: potItemOf(what) });
         banner('🪴 몬스테라를 심었습니다',
                '씨앗부터라 오래 걸립니다 — 물을 주고 밝은 자리에 두세요');
         unlockAfterFix();
@@ -8957,6 +8987,40 @@ const placeConfirm = {
 /* ★ 「눌러서 배치」의 시작 — 빈 시루 하나를 **임시로** 세우고 곧바로 이동 상태로 들어간다.
    ⚠ `placeSiru` 가 재고를 뺀다. [취소]하면 그 시루는 **가방으로 돌아간다**(자리만 null) —
      개체는 남으므로 재고를 도로 넣을 필요가 없다(위 §[취소]). */
+/* ★★ 화분을 눌러서 놓는다 (2026-08-16) — 시루의 `startPhonePlace` 와 **같은 뼈대**다.
+   ⚠ 자리를 여기서 새로 짓지 않는다. `provisionalSpot()` 하나를 같이 쓴다 —
+     둘이 다른 자리를 고르면 「같은 손짓인데 다른 데 놓인다」가 된다. */
+function startPhonePlacePot(what) {
+  const spot = provisionalSpot();
+  /* ⚠ 왜 못 했는지를 **돌려준다** — 안 돌려주면 밖에서 「눌렀는데 아무 일이 없다」밖에 안 보인다 */
+  if (!spot) { banner('놓을 자리를 못 찾았습니다', '방을 조금 돌린 뒤 다시 눌러 주세요');
+               return { ok: false, why: 'no-spot' }; }
+  /* ★★ 2026-08-16 — **`provisionalSpot()` 은 자리 이름(문자열)을 돌려준다.**
+     시루 쪽(`placeSiru`)은 이름도 좌표도 받지만 `plantMonsteraSeed` 는 **좌표만** 받는다
+     (`resolvePlacement` → `makeAt` 이 `{x,y,z}` 를 요구한다). 그대로 넘겼더니
+     **「[배치] makeAt: {x,y,z} 가 필요합니다」** 로 조용히 되돌아갔다 — 눌러도 아무 일이 없었다.
+   ⇒ 이름이면 자리 목록에서 좌표를 찾아 준다. 좌표를 여기서 지어내지 않는다. */
+  let at = spot;
+  if (typeof spot === 'string') {
+    const sl = (io.light.room.slots || []).find(x => x && x.slotId === spot);
+    if (!sl) { banner('놓을 자리를 못 찾았습니다', '방을 조금 돌린 뒤 다시 눌러 주세요');
+               return { ok: false, why: 'slot-not-found:' + spot }; }
+    at = { x: sl.x, y: sl.y, z: sl.z };
+  }
+  try {
+    plantMonsteraSeed(S, io, { slots: io.light.room.slots, size: io.light.room.size,
+                               snapDist: 0, at, potItemId: potItemOf(what) });
+  } catch (e) {
+    /* ⚠ **코어가 던진 말을 그대로 낸다.** 화면이 다시 지어내면 두 곳이 다른 말을 한다 */
+    banner('배치하지 못했습니다', (e && e.message) || '');
+    return { ok: false, why: (e && e.message) || String(e) };
+  }
+  try { window.__byeotSheet.close(); } catch { }
+  banner('🪴 몬스테라를 심었습니다', '씨앗부터라 오래 걸립니다 — 물을 주고 밝은 자리에 두세요');
+  draw();
+  return { ok: true };
+}
+
 function startPhonePlace() {
   if (spareSiru() <= 0) { banner('가방에 빈 시루가 없습니다', '상점에서 시루를 주문해 주세요'); return; }
   const spot = provisionalSpot();
