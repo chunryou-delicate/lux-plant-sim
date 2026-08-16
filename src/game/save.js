@@ -1053,6 +1053,33 @@ function packFurniture(tbl) {
   return out;
 }
 
+/* ★ 판 가구 — uid 목록. **중복은 걷는다**(같은 것을 두 번 적을 일이 없다) */
+function packSoldFurniture(list) {
+  const out = [];
+  for (const [i, uid] of needArr(list || [], 'home.furnitureSold').entries()) {
+    const u = needStr(uid, `home.furnitureSold[${i}]`);
+    if (!out.includes(u)) out.push(u);
+  }
+  return out;
+}
+
+/* ★ 사서 놓은 가구 — `[{uid, preset, x, z, rot, y?}]`. rot 는 도(°)다(자리표와 같은 규약).
+   ⚠ `preset` 을 반드시 적는다 — 이것이 없으면 다시 켤 때 **무슨 가구인지 모른다.**
+     자리표(`home.furniture`)에는 프리셋이 안 실린다(원래 방 정의가 갖고 있었으므로). */
+function packAddedFurniture(list) {
+  return needArr(list || [], 'home.furnitureAdded').map((f, i) => {
+    const path = `home.furnitureAdded[${i}]`;
+    needObj(f, path);
+    return {
+      uid: needStr(f.uid, `${path}.uid`),
+      preset: needStr(f.preset, `${path}.preset`),
+      x: needNum(f.x, `${path}.x`), z: needNum(f.z, `${path}.z`),
+      rot: f.rot == null ? 0 : needNum(f.rot, `${path}.rot`),
+      ...(f.y == null ? {} : { y: needNum(f.y, `${path}.y`) })
+    };
+  });
+}
+
 /* 등 겨누기 표 — `{ 등 uid: {yaw, tilt} }`. 둘 다 도(°)다.
    ★ 겨눈 등만 담긴다. 빈 표 = 안 겨눔이고, 옛 세이브에는 이 칸 자체가 없어 빈 표가 된다
      (docs/growlight_aim.md §2 · state.lamps.aim 주석).
@@ -1111,7 +1138,13 @@ export function serialize(S, opt = {}) {
         weatherK: optNum(sim.weatherK, 'sim.weatherK'),
         seasonK: optNum(sim.seasonK, 'sim.seasonK')
       },
-      home: { room: needStr(home.room, 'home.room'), furniture: packFurniture(home.furniture) },
+      home: { room: needStr(home.room, 'home.room'), furniture: packFurniture(home.furniture),
+              /* ★★ 2026-08-17 — 가구를 사고 팔면서 생긴 두 칸(state.js §가구를 사고 판다).
+                 ⚠ 안 적으면 **판 가구가 다시 켤 때 되살아나고** 사서 놓은 가구는 사라진다.
+                   자리표(`furniture`)만으로는 「무엇이 방에 있나」를 못 적는다 — 그 표는
+                   **옮긴 자리**일 뿐이다. */
+              furnitureSold: packSoldFurniture(home.furnitureSold),
+              furnitureAdded: packAddedFurniture(home.furnitureAdded) },
       lamps: {
         count: needInt(lamps.count ?? 0, 'lamps.count', { min: 0 }),
         litHours: needNum(lamps.litHours ?? 0, 'lamps.litHours', { min: 0 }),
@@ -1526,6 +1559,10 @@ export function deserialize(raw, opt = {}) {
   S.sim.weatherK = optNum(sim.weatherK, 'state.sim.weatherK');
   S.sim.seasonK = optNum(sim.seasonK, 'state.sim.seasonK');
   S.home.furniture = packFurniture(home.furniture);       // 같은 검증을 읽을 때도 한 번 더
+  /* ★ 옛 세이브에는 이 두 칸이 없다 → 빈 목록으로 열린다 = 「아무것도 안 팔았고 안 놓았다」.
+     그 판의 방은 `house_rooms.json` 그대로이므로 **옛 판이 저장될 때와 똑같이 열린다.** */
+  S.home.furnitureSold = packSoldFurniture(home.furnitureSold);
+  S.home.furnitureAdded = packAddedFurniture(home.furnitureAdded);
   /* ★ aim 이 없는 옛 세이브는 빈 표 = 「안 겨눔」으로 열린다 (2026-08-06).
      조용히 메꾸는 게 아니라 **없음이 곧 뜻을 갖는** 경우다 — 안 겨눈 등의 물리는
      옛 식과 비트 단위로 같으므로, 옛 세이브는 저장될 때와 똑같은 빛을 다시 본다. */

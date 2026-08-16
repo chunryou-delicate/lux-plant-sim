@@ -158,13 +158,299 @@ export const CATALOG = Object.freeze({
   })
 });
 
-/* 사는 값. 100원 단위로 올림한다 — 2,100 처럼 지갑에서 셀 수 있는 수가 되게. */
-export function buyPriceOf(itemId) {
-  const it = CATALOG[itemId];
-  if (!it) throw new Error(`[상점] 모르는 품목입니다: ${itemId} (아는 것: ${Object.keys(CATALOG).join(', ')})`);
-  return Math.ceil(it.listWon * BUY_MARKUP / 100) * 100;
+/* ============================================================
+   ②-3 ★★★ 가구 — **117개를 손으로 안 적는다. 프리셋에서 읽어 짓는다** (2026-08-17)
+   ------------------------------------------------------------
+   박사님 확정(2026-08-17):
+     *"**가구 판매/구매도 열자. 등 기구 해금될 때.** 가구 상점은 방 탭에 같이 포함되게 만들자.
+       가구는 다양하게 **이미 다 만들어둔 걸로** 알고 있고, **창호나 이런 거 말고 가구만** 넣어서
+       해줘. **판매는 가구 클릭하면 나오는 팝업 탭에 추가로 버튼** 만들어서 넣어줘.
+       그리고 **가구 가격을 좀 비싸게** 책정하는 게 좋을 듯."*
+     그리고 값에 대해: *"**가구 크기 일부 수정한 거 있잖아. 지금 거에 맞춰서.**"*
+
+   ══ ★ 왜 표를 안 적나 ═══════════════════════════════════════════════════════
+   `data/furniture_presets.json` 에 프리셋이 **117개**다. 여기 베끼면 프리셋이 늘 때마다
+   상점이 낡고, 이름·크기가 **두 벌**이 되어 갈린다(§2.8 이 가르친 바로 그 사고).
+   ⇒ **프리셋을 읽어서 짓는다.** 프리셋이 늘면 상점도 저절로 는다.
+
+   ══ ★★★ 크기는 어디서 오나 — **`size_m` 하나뿐이다** ════════════════════════
+   ⚠⚠ **프리셋의 `w`·`d`·`h` 로 부피를 재면 절반이 틀린다. 재서 확인했다.**
+     그 셋은 **빌더에 넘기는 밑값**이라 안 적힌 것이 많고(협탁은 셋 다 없다) 뜻도 다르다 —
+     천장등 `h: 0.35` 는 **갓 높이**인데 실제 크기는 줄까지 **0.55** 다(펜던트 둘도 그렇다).
+     안 적힌 칸을 0 으로 읽으면 값이 밑값(30,000원)으로 주저앉고, 적힌 칸만 믿으면
+     같은 가구가 방마다 다른 값이 된다.
+   ⇒ **크기의 정본은 빌더**(`render3d/furniture_pastel.js` 의 `userData.size`)다.
+     그 값을 **프리셋 파일의 `size_m` 칸에 박아 두었다**(손으로 적은 것이 아니라 빌더를
+     실제로 돌려 받아 적었다). 상점은 그 칸 하나만 본다.
+   ⚠ **그래서 검사가 반드시 있어야 한다** — `tools/test_furnishop.mjs §A` 가 117개를
+     빌더로 다시 지어 `size_m` 과 한 톨이라도 다르면 깨뜨린다. 값이 두 벌인 것을 검사가
+     못 박아 지키는 형태이고, 이 저장소가 「빛 문턱이 세 곳에 있어」 겪은 사고의 예방이다.
+   ⚠ 방 정의(`house_rooms.json`)가 프리셋을 덮어쓸 수 있다(창턱 깊이 0.24 → 0.30 이 그렇다).
+     **덮어쓴 크기는 그 방에서만의 값**이라 상점 값(프리셋 값)과 다를 수 있다 —
+     파는 값을 낼 때는 부르는 쪽이 덮어쓴 크기를 넘길 수 있게 열어 두었다(§furnitureQuoteOf).
+
+   ══ ★★ 무엇을 팔고 무엇을 안 파나 — **이름으로 안 뺀다** ═══════════════════════
+   박사님 *"창호나 이런 거 말고 가구만"*. 프리셋에는 가구가 아닌 것이 섞여 있다.
+   하나하나 이름으로 빼면 프리셋이 늘 때마다 낡으므로 **데이터 칸으로 금을 긋는다.**
+
+     ① **조명이다**      `grow` · `has_light` · `type` 이 `lamp_*`·`growlight_*`·
+                        `desk_lamp`·`string_light`
+                        ⇒ 식물등은 이미 따로 판다(`tutorial.buyLamp`)고, 장식등은 밝기 계통이라
+                          사고팔면 방의 조도가 조용히 바뀐다. 그건 가구 일이 아니다.
+                        ⚠ `shelf_growrack_2tier`(그로우랙)도 여기로 뺐다 — `has_light` 가 켜져
+                          **등이 달린 것처럼 생겼는데 `lighting_presets.fixtures` 에 없어 빛을
+                          한 톨도 안 낸다.** 팔면 화면이 거짓말을 하게 된다.
+     ② **벽·창에 붙는다** `mount` 가 `wall`·`window`·`under-shelf`·`ceiling`
+                        ⇒ 박사님이 말씀하신 「창호나 이런 거」가 정확히 이것이다. 창턱 받침·
+                          벽걸이 선반·액자·벽시계·칠판·게시판이 한 번에 걸린다.
+                        ★ `corner`·`lean-wall` 은 **안 뺀다** — 바닥에 서는 가구다
+                          (코너 선반·사다리 선반). 「mount 가 있으면 뺀다」로 하면 그 둘을 잃는다.
+     ③ **매단다**        `room` 에 「천장」 ⇒ 이 게임에는 **매다는 자리가 없다**.
+                        (`§POT_KINDS` 가 마크라메 행잉 화분을 같은 까닭으로 뺐다 — 선례를 따른다)
+     ④ **살림집이 아니다** `room` 에 「학원」·「교실」·「사무」 ⇒ 교탁·학생책상·사물함.
+                        ⚠ 이 넷은 **자유 글자 칸**이라 제일 약한 금이다. 새 프리셋이 딴 낱말을
+                          쓰면 새어 나온다 — 다만 **새어도 「가구가 하나 더 팔린다」일 뿐**이라
+                          조용히 틀리지 않는다.
+     ⑤ **가전이다**      `appliance: true` ⇒ 냉장고·TV·주방 카운터.
+                        ⚠ 이 셋만은 **데이터가 스스로 못 가른다**(바닥에 서고 빛도 안 낸다).
+                          그래서 프리셋 파일에 **거르는 칸을 하나 더했다**. 이름 목록이 아니라
+                          데이터 칸이므로 코드가 안 낡는다.
+     ⑥ **크기를 모른다**  `size_m` 이 없거나 부피가 0 ⇒ **값을 지어내지 않는다.** 안 판다.
+                        (지금은 0개다 — 117개가 전부 크기를 갖는다)
+
+   ⇒ 지금 결과: **가구 81 · 걸러 낸 것 36**(조명 11 · 붙박이 12 · 학원 9 · 가전 3 · 매단 것 1).
+     목록은 `docs/handoff/furnishop-to-plan.md` 에 표로 있다.
+   ⏸ 판단이 갈릴 만한 것 셋을 **일부러 남겼다**(박사님이 보고 옮기실 수 있게):
+     전신 거울(세워 두는 가구로 봤다) · 사무 의자·넓은 책상(「학원·사무」라 걸렸다).
+
+   ══ ★★★ 값 — **부피 하나로 센다** ═══════════════════════════════════════════
+       정가 = 100원올림( 밑값 30,000 + 140,000 × 부피[㎥] )
+       실구매 = `buyPriceOf` (정가 × 1.4 · 100원 올림) — 다른 품목과 **같은 규칙**이다
+
+   ★ 왜 갈래 계수를 안 뒀나. 갈래마다 계수를 매기려면 **60여 개의 숫자를 지어내야** 한다.
+     지어낸 값은 근거가 없어 다음 사람이 못 고친다(*"지어낸 값이 실패다"*). 재 보니
+     **부피 하나로도 한국 실거래가 범위에 전부 들어왔다** — 협탁 5.6만(실 5~8만) ·
+     책상 13.3만(실 10~20만) · 옷장 25.8만(실 20~40만) · 2인 소파 32.5만(실 30~60만) ·
+     싱글 침대 41.1만(실 20~40만). 계수를 더 얹을 자리가 안 나왔다.
+
+   ★★ **두 상수는 지어낸 것이 아니라 이 게임의 돈에 맞춘 것이다.**
+     · **밑값 30,000원** — 실구매 42,000원이 되어 **식물등(25,000원)의 1.68배**다.
+       ⇒ 「제일 싼 가구도 식물등보다 비싸다」가 이 상수의 뜻이다. 박사님 *"좀 비싸게"* 다.
+     · **㎥당 140,000원** — 싱글 침대(1.88㎥) 실구매가 **410,500원 = 월세(20만) 2.05달치**로
+       떨어지는 눈금이다. ⇒ 「큰 가구 하나 = 월세 두 달」이 이 상수의 뜻이다.
+     ⇒ 그래서 **제일 싼 것 러그 46,700원(월세 0.23달) ~ 제일 비싼 것 이층 침대 733,600원
+       (월세 3.67달 · 시작돈 150만의 49%)** 사이에 81개가 선다.
+
+   ══ ★★★ 되사는 값 — **정가의 30%** (실구매가의 21.4%) ═══════════════════════
+   ⚠ 이 저장소에 이미 있는 되사기 규칙은 **잉여 채소 85%** 하나인데 **그것을 안 따랐다.**
+     채소는 오늘 거둔 상품이고 가구는 **중고**다. 그리고 결정적인 이유가 따로 있다:
+   ★★ **재서 정했다 — 85%로 두면 반지하 탈출이 깨진다.**
+     반지하에 팔 수 있는 가구가 여섯이고(침대·책상·의자·서랍장·3단선반·협탁) 정가 합이
+     **626,300원**이다. 85%면 **532,000원**이 그냥 생긴다 — 이사비 200만의 27%이고,
+     하프문 그루를 판 뒤 남는 여유(21만원 · START-HERE §6)의 **2.5배**다.
+     ⇒ 「침대를 팔아 이사 간다」가 열려 **하프문이 탈출의 축이 아니게 된다.**
+   ⇒ 30%로 두면 여섯을 통째로 팔아도 **187,600원** — **월세 한 달치(20만)의 94%**이고
+     이사비의 **9.4%** 다. 「가구를 팔면 한 달을 버틴다」는 되고 「가구를 팔아 나간다」는 안 된다.
+     그리고 되사려면 877,000원이라 **판 값의 4.7배** — 홧김에 못 판다.
+   ⚠ 100원 단위 **내림**이다(사는 값은 올림). 중고를 넘기는 쪽이 손해를 본다.
+============================================================ */
+
+/* 가구 품목 id 는 `furn_` 으로 시작한다 — `CATALOG` 의 이름과 절대 안 겹치게. */
+export const FURNITURE_ITEM_PREFIX = 'furn_';
+export const furnitureItemIdOf = (preset) => FURNITURE_ITEM_PREFIX + preset;
+export const isFurnitureItemId = (id) => typeof id === 'string' && id.startsWith(FURNITURE_ITEM_PREFIX);
+export const presetOfFurnitureItemId = (id) =>
+  isFurnitureItemId(id) ? id.slice(FURNITURE_ITEM_PREFIX.length) : null;
+
+export const FURNITURE_RULES = Object.freeze({
+  baseWon: 30_000,        // 밑값(정가) — 실구매 42,000원 = 식물등 25,000원의 1.68배
+  volWonPerM3: 140_000,   // ㎥당(정가) — 싱글 침대 실구매 410,500원 = 월세 2.05달치
+  resaleRate: 0.30,       // 되사는 값 = 정가의 30% (재서 정했다 — 위 ★★★)
+  leadDays: 2             // 배송. 부피가 있는 것은 2일 — §② 머리말 규칙 그대로다
+});
+
+/* 「가구가 아닌 것」의 금 — **전부 데이터 칸이다.** 위 §무엇을 팔고 무엇을 안 파나 */
+const FURN_LIGHT_TYPE = /^(?:lamp_|growlight_)|^(?:desk_lamp|string_light)$/;
+export const FURNITURE_FIXED_MOUNTS = Object.freeze(['wall', 'window', 'under-shelf', 'ceiling']);
+const FURN_HANGING_ROOM = /천장/;
+const FURN_OFFHOME_ROOM = /학원|교실|사무/;
+
+/* 걸러 낸 까닭 — **사람이 읽는 말이다.** 표를 뽑을 때도 화면이 물을 때도 이 한 벌을 쓴다. */
+export const FURNITURE_KIND_KO = Object.freeze({
+  furniture: '가구',
+  lighting: '조명 — 식물등은 따로 팔고 장식등은 밝기 계통이다',
+  fixture: '벽·창 붙박이 — 박사님이 말씀하신 「창호나 이런 거」',
+  hanging: '매다는 것 — 이 게임에 매다는 자리가 없다',
+  school: '살림집 가구가 아니다 (학원·교실·사무)',
+  appliance: '가전이다',
+  unsized: '크기를 모른다 — 값을 지어내지 않는다'
+});
+
+/* 프리셋 한 줄이 무엇인가. **아무것도 안 바꾼다(순수).**
+   반환 { kind, why } · kind 가 'furniture' 면 상점에 낸다. */
+export function furnitureKindOf(presetId, p) {
+  if (!p || typeof p !== 'object') return { kind: 'unsized', why: FURNITURE_KIND_KO.unsized };
+  const type = p.type || presetId;
+  const k =
+      (p.grow || p.has_light || FURN_LIGHT_TYPE.test(type)) ? 'lighting'
+    : (p.mount && FURNITURE_FIXED_MOUNTS.includes(p.mount)) ? 'fixture'
+    : FURN_HANGING_ROOM.test(p.room || '') ? 'hanging'
+    : FURN_OFFHOME_ROOM.test(p.room || '') ? 'school'
+    : p.appliance === true ? 'appliance'
+    : !(p.size_m && p.size_m.w > 0 && p.size_m.d > 0 && p.size_m.h > 0) ? 'unsized'
+    : 'furniture';
+  return { kind: k, why: FURNITURE_KIND_KO[k] };
 }
 
+/* 부피[㎥]. **`size_m` 하나만 본다** — `w`·`d`·`h` 는 빌더 밑값이라 뜻이 다르다(위 ⚠⚠). */
+export function furnitureVolumeOf(sizeM) {
+  const s = sizeM;
+  if (!s || !(s.w > 0) || !(s.d > 0) || !(s.h > 0)) return 0;
+  return s.w * s.d * s.h;
+}
+
+/* 정가(= 파는 값의 뿌리). 100원 올림 — 다른 품목과 같은 눈금이다. */
+export function furniturePriceOf(sizeM) {
+  const vol = furnitureVolumeOf(sizeM);
+  if (!(vol > 0))
+    throw new Error('[가구] 크기를 몰라 값을 매길 수 없습니다 — size_m 이 필요합니다');
+  const R = FURNITURE_RULES;
+  return Math.ceil((R.baseWon + R.volWonPerM3 * vol) / 100) * 100;
+}
+
+/* 되사는 값. **100원 내림**이다(사는 값은 올림) — 중고를 넘기는 쪽이 손해를 본다. */
+export function furnitureResaleWonOf(listWon) {
+  if (!(listWon > 0)) return 0;
+  return Math.floor(listWon * FURNITURE_RULES.resaleRate / 100) * 100;
+}
+
+/* ── 프리셋 표를 꽂는다 ─────────────────────────────────────────────────
+   규약은 `installVarieGrades` 와 같다: **파일이 정본이고, 못 읽으면 빈 표로 돈다.**
+   ⚠ 밑값(하드코딩 사본)을 **안 둔다.** 117개를 여기 베끼면 이 절이 막으려는 그 사고가 된다.
+     못 읽으면 가구가 **한 줄도 안 뜬다** — 조용히 틀리는 대신 아예 없다. */
+let _FURN = Object.freeze({ presets: {}, items: new Map(), all: [] });
+
+export function installFurniturePresets(json) {
+  const presets = (json && json.presets) || {};
+  const items = new Map(), all = [];
+  for (const [presetId, p] of Object.entries(presets)) {
+    const { kind, why } = furnitureKindOf(presetId, p);
+    const sizeM = p.size_m && p.size_m.w > 0 ? { w: p.size_m.w, d: p.size_m.d, h: p.size_m.h } : null;
+    const volumeM3 = furnitureVolumeOf(sizeM);
+    const listWon = kind === 'furniture' ? furniturePriceOf(sizeM) : null;
+    const row = Object.freeze({
+      id: furnitureItemIdOf(presetId), preset: presetId, type: p.type || presetId,
+      ko: p.name_ko || presetId, kind: 'furniture',            // 상점 갈래(탭)
+      shopKind: kind, why,                                     // 가구인가 · 아니면 왜 아닌가
+      sizeM, volumeM3,
+      listWon, leadDays: FURNITURE_RULES.leadDays,
+      note: `data/furniture_presets.json §${presetId} — 크기는 size_m(빌더가 낸 값)`
+    });
+    all.push(row);
+    if (kind === 'furniture') items.set(row.id, row);
+  }
+  _FURN = Object.freeze({ presets, items, all: Object.freeze(all) });
+  return _FURN;
+}
+
+/* 프리셋 117 줄 전부 — **걸러 낸 것까지 낸다.** 표를 뽑고 까닭을 보여 주는 창구다. */
+export function furnitureAllList() { return _FURN.all.map(r => ({ ...r })); }
+
+/* ★ 저절로 한 번 읽는다 — `varie_grades` 와 **같은 규약**(브라우저 fetch · node fs).
+   실패하면 가구가 안 뜰 뿐 게임은 돈다. */
+const FURNITURE_PRESETS_URL = new URL('../../data/furniture_presets.json', import.meta.url);
+try {
+  const j = FURNITURE_PRESETS_URL.protocol === 'file:'
+    ? JSON.parse((await import('node:fs')).readFileSync(FURNITURE_PRESETS_URL, 'utf8'))
+    : await fetch(FURNITURE_PRESETS_URL.href).then(r => (r.ok ? r.json() : null));
+  if (j) installFurniturePresets(j);
+} catch { /* 못 읽으면 가구가 안 뜬다 — 위 ⚠ */ }
+
+/* 품목 하나를 찾는다 — **`CATALOG` 와 가구 표를 한 창구로 본다.**
+   ⚠ 값·재고·주문을 다루는 자리는 전부 이것을 쓴다. `CATALOG[id]` 를 직접 읽으면
+     가구가 「모르는 품목」이 된다. */
+export function catalogItemOf(itemId) {
+  return CATALOG[itemId] || _FURN.items.get(itemId) || null;
+}
+/* 품목의 한글 이름. **모르면 id 를 그대로 낸다**(화면이 죽지 않게) */
+export const catalogKoOf = (itemId) => {
+  const it = catalogItemOf(itemId);
+  return it ? it.ko : String(itemId);
+};
+
+/* ★★ 가구 상점의 문 — **등 기구가 해금될 때 열린다** (박사님: *"등 기구 해금될 때"*)
+   ------------------------------------------------------------
+   정본은 `tutorial.js` 의 `ts.lamp.unlocked`(가을 진입에 켜진다 · §lampUnlockSeason)다.
+   여기서 계절을 다시 세지 않는다 — 세면 두 벌이 된다.
+   ⚠ 열리기 전에는 **목록에 아예 안 뜬다.** 이 저장소는 못 사는 것을 안 띄운다
+     (무순·수경병·식물등이 이미 그 규칙이다 — `game.html §drawShop`).
+   ⚠ 첫 플레이가 꺼진 판(검수·재현)에서는 **안 감춘다** — 다른 갈래와 같은 규약이다. */
+export function furnitureShopOpen(S) {
+  const ts = S && S.tutorial;
+  if (!ts || !ts.enabled) return { open: true, reason: null };
+  const open = !!(ts.lamp && ts.lamp.unlocked);
+  return { open, reason: open ? null
+    : '가구는 아직 살 수 없습니다 — 식물등이 열리는 때(가을)에 같이 열립니다' };
+}
+
+/* 상점에 낼 가구 목록. **문이 닫혀 있으면 빈 목록**이다(위 ⚠). */
+export function furnitureCatalogList(S) {
+  if (!furnitureShopOpen(S).open) return [];
+  return [..._FURN.items.values()].map(it => ({
+    id: it.id, ko: it.ko, kind: it.kind, preset: it.preset, type: it.type,
+    sizeM: it.sizeM, volumeM3: it.volumeM3,
+    listWon: it.listWon, buyWon: buyPriceOf(it.id),
+    resaleWon: furnitureResaleWonOf(it.listWon),
+    leadDays: it.leadDays, note: it.note
+  })).sort((a, b) => a.buyWon - b.buyWon || a.id.localeCompare(b.id));
+}
+
+/* ★ 이 가구가 얼마짜리인가 — **묻기만 한다.** 화면이 팝업에 값을 적을 때 쓴다.
+     presetId  프리셋 이름 (`roomView.furniture()` 의 `preset`)
+     opt.sizeM 방이 크기를 덮어썼으면 그 크기(없으면 프리셋 크기)
+   반환 { ok, reason, preset, ko, sizeM, listWon, buyWon, resaleWon, shopKind }
+   ⚠ 「가구가 아닌 것」이면 `ok:false` 이고 **왜 아닌지**를 말한다(§FURNITURE_KIND_KO). */
+export function furnitureQuoteOf(presetId, opt = {}) {
+  const p = _FURN.presets[presetId];
+  if (!p) return { ok: false, reason: `모르는 가구입니다: ${presetId}`, preset: presetId };
+  const { kind, why } = furnitureKindOf(presetId, p);
+  const ko = p.name_ko || presetId;
+  const base = { preset: presetId, ko, shopKind: kind };
+  if (kind !== 'furniture')
+    return { ...base, ok: false, reason: `${ko}은(는) 사고팔 수 없습니다 — ${why}` };
+  const sizeM = opt.sizeM && opt.sizeM.w > 0 ? opt.sizeM : p.size_m;
+  const listWon = furniturePriceOf(sizeM);
+  return { ...base, ok: true, reason: null, sizeM: { ...sizeM }, volumeM3: furnitureVolumeOf(sizeM),
+           listWon, buyWon: markupWonOf(listWon),
+           resaleWon: furnitureResaleWonOf(listWon), itemId: furnitureItemIdOf(presetId) };
+}
+
+/* 판 돈을 지갑에 넣는다 — 그루·삽수·채소와 **같은 문**(`credit`)으로 들어온다.
+   ⚠ 무엇이 얼마인지는 여기서 안 정한다. `furnitureQuoteOf` 가 낸 값을 받는다. */
+export function creditFurnitureSale(S, won, opt = {}) {
+  const v = Math.round(won);
+  if (!Number.isFinite(v) || v < 0)
+    throw new Error(`[가구] 판 값이 올바르지 않습니다: ${won}`);
+  const r = credit(S, v, 'furniture');
+  if (typeof opt.log === 'function')
+    opt.log(`💰 ${opt.ko || '가구'}를 넘겼습니다 — ${v.toLocaleString()}원`);
+  return r;
+}
+
+/* 정가 → 사는 값. **마진과 눈금을 적은 자리는 여기 하나다** — 두 벌이 되면 갈린다. */
+export const markupWonOf = (listWon) => Math.ceil(listWon * BUY_MARKUP / 100) * 100;
+
+/* 사는 값. 100원 단위로 올림한다 — 2,100 처럼 지갑에서 셀 수 있는 수가 되게. */
+export function buyPriceOf(itemId) {
+  const it = catalogItemOf(itemId);
+  if (!it) throw new Error(`[상점] 모르는 품목입니다: ${itemId} (아는 것: ${Object.keys(CATALOG).join(', ')} · ` +
+                           `가구 ${_FURN.items.size}종)`);
+  return markupWonOf(it.listWon);
+}
+
+/* ⚠ **가구는 여기 안 나온다.** 가구는 `furnitureCatalogList(S)` 가 따로 낸다 —
+   이 목록은 [상점] 탭이 그대로 쓰고, 가구를 섞으면 117줄이 씨앗·그릇 사이에 선다
+   (`game.html §shopGroupOf` 가 모르는 갈래를 「채소 키우는 그릇」으로 떨어뜨린다). */
 export function catalogList() {
   return Object.values(CATALOG).map(it => ({
     id: it.id, ko: it.ko, kind: it.kind,
@@ -447,6 +733,9 @@ export const SALE_KINDS = Object.freeze([
   'pot',          // 그루째 (sellPot)
   'cutting',      // 삽수 (sellCutting)
   'crop',         // 잉여 채소 (state.sellCropSurplus → creditCropSurplus)
+  /* ★ 가구 (2026-08-17 · 아래 §⑨). **여기 이름을 올리는 것이 갈래를 새로 만드는 유일한 길이다** —
+     안 올리고 `credit` 을 부르면 그 자리에서 던진다(위 §「미리 해 둔다」). */
+  'furniture',
   /* ⏸ 곳간 채소 — **아직 아무도 안 쓴다.** 지금은 잉여와 함께 `crop` 으로 들어온다.
      가르려면 `state.sellPantryCrop` 이 `creditCropSurplus(S, won, { kind: 'cropPantry' })`
      로 불러야 하는데 `state.js` 가 이번 창의 쓰기 영역 밖이다 — 받는 쪽만 미리 뚫어 둔다.
@@ -533,10 +822,16 @@ export function incomingOf(S, itemId) {
      opt.log 로그 콜백
    반환 { orderId, itemId, qty, unitWon, totalWon, arrivesOnDay, cashWon, events } */
 export function orderItem(S, itemId, qty = 1, opt = {}) {
-  const it = CATALOG[itemId];
+  const it = catalogItemOf(itemId);
   if (!it) throw new Error(`[상점] 모르는 품목입니다: ${itemId} (아는 것: ${Object.keys(CATALOG).join(', ')})`);
   if (!Number.isInteger(qty) || qty < 1)
     throw new Error(`[상점] 개수가 1 이상의 정수가 아닙니다: ${qty}`);
+  /* ★ 가구는 **문이 열려야 주문된다**(§②-3 §가구 상점의 문). 목록에서 감추는 것만으로는
+     안 된다 — 화면이 아니라 창구가 막아야 「목록에 없는 것을 주문하는」 길이 안 남는다. */
+  if (isFurnitureItemId(itemId)) {
+    const gate = furnitureShopOpen(S);
+    if (!gate.open) { const e = new Error('[상점] ' + gate.reason); e.tutorialInput = true; throw e; }
+  }
 
   const shop = shopOf(S);
   const ts = S.tutorial && S.tutorial.enabled ? S.tutorial : null;
@@ -590,7 +885,7 @@ export function stepShop(S, opt = {}) {
     if (o.arrivesOnDay > S.day) { still.push(o); continue; }
     shop.stock[o.itemId] = (shop.stock[o.itemId] || 0) + o.qty;
     arrived.push(o);
-    const it = CATALOG[o.itemId];
+    const it = catalogItemOf(o.itemId);
     const e = { id: 'shop_arrived', ko: `${it ? it.ko : o.itemId} ${o.qty}개가 도착했습니다`,
                 itemId: o.itemId, qty: o.qty, orderId: o.orderId };
     events.push(e);
@@ -612,7 +907,7 @@ export function stepShop(S, opt = {}) {
 export function assertStock(S, itemId, qty = 1) {
   const have = shopOf(S).stock[itemId] || 0;
   if (have < qty) {
-    const it = CATALOG[itemId];
+    const it = catalogItemOf(itemId);
     const inbound = incomingOf(S, itemId);
     const e = new Error(`[상점] ${it ? it.ko : itemId}이(가) ${qty}개 필요한데 ${have}개뿐입니다 — ` +
       (inbound ? `${inbound}개가 배송 중입니다(기다리거나 더 주문하세요)` : '먼저 주문해 주세요'));

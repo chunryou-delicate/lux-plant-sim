@@ -30,7 +30,9 @@ import { createTutorialState, yearDay0Of } from './tutorial.js';
 /* 체력 — 하루에 돌볼 수 있는 양. 규칙은 전부 그쪽 모듈이 갖는다(docs/stamina.md) */
 import { spend as spendStamina, canAct as canActStamina, createStaminaState } from './stamina.js';
 import { createShopState, useStock, assertStockAll, stockOf,
-         creditCropSurplus } from './shop.js';
+         creditCropSurplus,
+         /* ★ 2026-08-17 · 가구를 사고 판다 (아래 §가구를 사고 판다) */
+         furnitureQuoteOf, creditFurnitureSale, presetOfFurnitureItemId } from './shop.js';
 /* ★★ 2026-08-17 — 삽수 용기. **화살표는 한 방향이다**(state → propagation).
    그쪽은 이 파일을 안 부르므로 순환이 안 생긴다(propagation 은 place·shop·stamina 만 쓴다).
    ⚠ 들여오는 까닭 하나: 「이 그릇에 무엇을 심을 수 있나」는 씨앗(여기)과 삽수(그쪽)를
@@ -1576,6 +1578,158 @@ export function clearFurniturePlacement(S, uid) {
   const had = uid in tbl;
   delete tbl[uid];
   return had;
+}
+
+/* ============================================================
+   ★★★ 가구를 사고 판다 (2026-08-17 · 박사님 *"가구 판매/구매도 열자"*)
+   ------------------------------------------------------------
+   ══ ⚠⚠ 먼저 — **`S.home.furniture` 는 「방에 무엇이 있나」가 아니다** ═══════════
+   그 표는 **옮긴 자리만** 담는다(`{uid: {x,z,rot,y}}`). 방에 무엇이 서 있나는
+   `data/house_rooms.json` 이 갖고, 조도 엔진은 조립 직전에 그 표를 **덮어쓰기로만** 얹는다
+   (`light_adapter §defWithOverrides`). 즉 **지우는 길도 더하는 길도 원래 없었다.**
+   ⇒ 그래서 칸을 둘 새로 뒀다. 자리표에서 지우는 것만으로는 판 가구가 **다시 켤 때 되살아난다.**
+
+     `S.home.furnitureSold`   판아서 **방에서 걷어낸** uid 목록 (방 정의에 원래 있던 것)
+     `S.home.furnitureAdded`  사서 **방에 새로 놓은** 것 `[{uid, preset, x, z, rot, y?}]`
+
+   ⚠ 이 둘을 **조립에 실제로 먹이는 일은 `light_adapter` 몫**이고 그 파일은 이번 창의
+     쓰기 영역 밖이다. 붙일 코드는 `docs/handoff/furnishop-to-plan.md §붙일 코드`에 적어 두었다.
+     ★ 안 붙이면 **상태·세이브는 맞는데 화면은 안 바뀐다.** 그 사실을 여기 적어 둔다 —
+       「고쳤다」를 화면 확인 없이 쓰지 않는다(START-HERE §2).
+
+   ══ ★ 못 파는 것 넷 — **막을 때 까닭을 말한다** ═════════════════════════════
+     ① **가구가 아니다** — 조명·벽 붙박이·가전 (`shop.furnitureQuoteOf` 가 판정한다)
+     ② **위에 뭔가 올라가 있다** — 화분·시루·재배판·삽수. 그 물건이 갈 곳이 없어진다
+     ③ **다른 가구를 받치고 있다** — 2026-08-16 에 두 겹 쌓기가 열렸다(room_view §G-13).
+        ⚠ 「무엇이 내 위에 얹혔나」는 **3D 기하**라 코어가 모른다. 그루의 잎 수를 growth 에서
+          **받는 것과 같은 규약**으로 화면에서 받는다(`opt.riders` = `roomView.ridersOf(uid)`).
+          ⇒ **안 주면 던진다.** 지어내지 않는다.
+     ④ **방이 못 박은 것** — `opt.fixed`. 지금 `house_rooms.json` 에 `fixed` 칸을 쓰는 방은
+        **하나도 없다**(재서 확인했다). 창턱 받침·식물등처럼 못 파는 것은 ①이 이미 막는다.
+        칸을 열어 둔 이유는 나중에 방이 「이건 못 판다」를 말할 수 있게 하기 위해서다.
+============================================================ */
+
+/* 판 가구 목록 — 늘 있는 모양으로 만들어 낸다(`earnedByOf` 와 같은 규약) */
+export function soldFurniture(S) {
+  if (!S.home) S.home = { room: 'banjiha', furniture: {} };
+  if (!Array.isArray(S.home.furnitureSold)) S.home.furnitureSold = [];
+  return S.home.furnitureSold;
+}
+/* 사서 놓은 가구 목록 */
+export function addedFurniture(S) {
+  if (!S.home) S.home = { room: 'banjiha', furniture: {} };
+  if (!Array.isArray(S.home.furnitureAdded)) S.home.furnitureAdded = [];
+  return S.home.furnitureAdded;
+}
+export const isFurnitureSold = (S, uid) => soldFurniture(S).includes(uid);
+export const addedFurnitureOf = (S, uid) => addedFurniture(S).find(f => f.uid === uid) || null;
+
+/* 사서 재고에 있는 가구를 **방에 놓는다.** 재고가 하나 빠지고 방에 한 줄이 는다.
+     itemId  `furn_<preset>` (상점 품목 id)
+     pos     { x, z, rot?, y? } — 가구 자리 규약(도°)과 같다
+     opt.uid 자리 이름. 안 주면 `add-<preset>-<번호>` 로 짓는다
+   ⚠ **자리가 되는 자리인지는 여기서 안 본다** — 겹침·방 밖 판정은 3D 가 갖는다
+     (`room_view.furnitureFit`). 여기는 「무엇이 어디에 있다」만 적는다. */
+export function placeBoughtFurniture(S, itemId, pos, opt = {}) {
+  const preset = presetOfFurnitureItemId(itemId);
+  if (!preset) throw new Error(`[가구] 가구 품목이 아닙니다: ${itemId}`);
+  const q = furnitureQuoteOf(preset);
+  if (!q.ok) { const e = new Error('[가구] ' + q.reason); e.tutorialInput = true; throw e; }
+  assertFurnitureAt(pos, opt);
+  useStock(S, itemId, 1);                       // 없으면 던진다(까닭을 말한다)
+  const list = addedFurniture(S);
+  const uid = opt.uid || `add-${preset}-${list.length + 1}`;
+  if (list.some(f => f.uid === uid) || uid in furnitureOverrides(S))
+    throw new Error(`[가구] 이미 쓰는 자리 이름입니다: ${uid}`);
+  const row = { uid, preset, x: pos.x, z: pos.z, rot: pos.rot == null ? 0 : pos.rot,
+                ...(pos.y == null ? {} : { y: pos.y }) };
+  list.push(row);
+  return { ...row, ko: q.ko, itemId };
+}
+
+/* 이 가구 위에 얹힌 **내 물건**(화분·빈 그릇·삽수·작물 자리). 이름만 낸다.
+   ⚠ 자리 이름 두 벌을 다 본다 — 추천 자리는 `slotId = "<uid>:<번호>"` 이고
+     자유 좌표는 `at.onUid` 다. 하나만 보면 절반이 안 걸린다(2026-08-11 에 갈렸던 자리다). */
+export function itemsOnFurniture(S, uid) {
+  const pre = uid + ':';
+  const hit = [];
+  const look = (o, ko) => {
+    if (!o) return;
+    const onSlot = typeof o.slotId === 'string' && o.slotId.startsWith(pre);
+    const onFree = o.at && o.at.onUid === uid;
+    if (onSlot || onFree) hit.push({ id: o.id || null, ko });
+  };
+  for (const p of (S.pots || [])) look(p, '화분');
+  for (const p of (S.emptyPots || [])) look(p, '빈 그릇');
+  for (const c of (S.cuttings || [])) look(c, '삽수');
+  if (S.firstPlay && S.firstPlay.enabled) for (const site of cropSites(S.firstPlay)) look(site, '작물 자리');
+  return hit;
+}
+
+/* 팔 수 있나. **상태를 안 바꾼다** — 화면이 단추를 회색으로 만들 때도, 실제로 팔기
+   직전에도 같은 함수를 본다(`canSwapPot` 과 같은 규약).
+     opt.preset  프리셋 이름 ★필수 (사서 놓은 가구면 안 줘도 된다 — 목록이 안다)
+     opt.riders  이 가구가 받치고 있는 것들의 uid ★필수 (`roomView.ridersOf(uid)`)
+     opt.fixed   방이 못 박았나
+     opt.sizeM   방이 크기를 덮어썼으면 그 크기
+   반환 { ok, reason, uid, preset, ko, won, listWon, buyWon, riders, on, added } */
+export function furnitureSellQuote(S, uid, opt = {}) {
+  if (!uid || typeof uid !== 'string') throw new TypeError('[가구] 가구 uid 가 필요합니다');
+  const added = addedFurnitureOf(S, uid);
+  const preset = opt.preset || (added && added.preset) || null;
+  if (!preset)
+    throw new Error(`[가구] ${uid} 가 무슨 가구인지 모릅니다 — opt.preset 을 주세요 ` +
+                    '(roomView.furniture() 의 preset 이 그 값입니다)');
+  if (!Array.isArray(opt.riders))
+    throw new Error('[가구] opt.riders 를 주세요 — 「이 가구가 무엇을 받치고 있나」는 3D 기하라 ' +
+                    '코어가 지어내지 않습니다 (roomView.ridersOf(uid) 를 그대로 넘기세요)');
+
+  const q = furnitureQuoteOf(preset, { sizeM: opt.sizeM });
+  const base = { uid, preset, ko: q.ko, added: !!added,
+                 listWon: q.listWon ?? null, buyWon: q.buyWon ?? null, won: q.resaleWon ?? null,
+                 riders: [...opt.riders], on: itemsOnFurniture(S, uid) };
+  if (isFurnitureSold(S, uid))
+    return { ...base, ok: false, reason: `${q.ko}은(는) 이미 팔았습니다` };
+  if (!q.ok) return { ...base, ok: false, reason: q.reason };
+  if (opt.fixed === true)
+    return { ...base, ok: false, reason: `${q.ko}은(는) 이 방에 붙박이라 팔 수 없습니다` };
+  if (base.on.length) {
+    const what = [...new Set(base.on.map(o => o.ko))].join('·');
+    return { ...base, ok: false,
+             reason: `${q.ko} 위에 ${what}이(가) 올라가 있습니다 (${base.on.length}개) — ` +
+                     '먼저 내려놓고 나서 팔아 주세요' };
+  }
+  if (base.riders.length)
+    return { ...base, ok: false,
+             reason: `${q.ko} 위에 다른 가구가 올라가 있습니다 (${base.riders.length}개) — ` +
+                     '위에 있는 것을 먼저 옮기고 나서 팔아 주세요' };
+  return { ...base, ok: true, reason: null };
+}
+
+/* ★ 실제로 판다. **돈이 들어오고 가구가 방에서 없어진다.**
+   ⚠ 자리표(`S.home.furniture`)에서도 걷는다 — 안 걷으면 없는 가구의 자리가 남아
+     같은 uid 가 나중에 다시 서면 엉뚱한 데 선다.
+   ⚠ 조립을 다시 하는 일은 여기서 안 한다(상태와 조립을 한 함수에 안 섞는다 —
+     `setFurniturePlacement` 와 같은 분담). 부르는 쪽이 방을 다시 짓는다. */
+export function sellFurniture(S, uid, opt = {}) {
+  const q = furnitureSellQuote(S, uid, opt);
+  if (!q.ok) { const e = new Error('[가구] ' + q.reason); e.tutorialInput = true; throw e; }
+
+  if (q.added) S.home.furnitureAdded = addedFurniture(S).filter(f => f.uid !== uid);
+  else soldFurniture(S).push(uid);              // 방 정의에 있던 것 — 걷어냈다고 적는다
+  clearFurniturePlacement(S, uid);              // 자리표에서도 걷는다(위 ⚠)
+  if (S.lamps && S.lamps.aim) delete S.lamps.aim[uid];
+
+  const r = creditFurnitureSale(S, q.won, { ko: q.ko, log: opt.log });
+  if (typeof opt.log === 'function')
+    opt.log(`🪑 ${q.ko}을(를) 팔았습니다 — ${q.won.toLocaleString()}원 ` +
+            `(산 값 ${q.buyWon.toLocaleString()}원의 ${Math.round(q.won / q.buyWon * 100)}%)`);
+  return { ...r, uid, preset: q.preset, ko: q.ko, won: q.won,
+           listWon: q.listWon, buyWon: q.buyWon, wasAdded: q.added,
+           /* ⚠ 방을 다시 지어야 한다 — 그 일은 화면 몫이다(위 ⚠) */
+           roomNeedsRebuild: true,
+           events: [{ id: 'furniture_sold', ko: `${q.ko}을(를) 팔았습니다`,
+                      uid, preset: q.preset, won: q.won }] };
 }
 
 /* ---- 등 겨누기 표 (S.lamps.aim) — 2026-08-06 ----

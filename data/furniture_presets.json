@@ -17,6 +17,7 @@
     "bed_single": {
       "type": "bed",
       "name_ko": "싱글 침대",
+      "size_m": { "w": 1, "d": 2, "h": 0.94 },
       "_격자": "★ 2026-08-16 — 격자(0.25m)에 안 떨어져 윗면 칸이 어긋났다. 정수 칸으로 물렸다.",
       "w": 1,
       "d": 2,
@@ -27,6 +28,7 @@
     "bed_double": {
       "type": "bed",
       "name_ko": "더블 침대",
+      "size_m": { "w": 1.5, "d": 2.05, "h": 0.94 },
       "w": 1.5,
       "d": 2.05,
       "color": "#d9c3a9",
@@ -36,6 +38,7 @@
     "desk": {
       "type": "desk",
       "name_ko": "책상",
+      "size_m": { "w": 1.25, "d": 0.5, "h": 0.74 },
       "_격자": "★ 2026-08-16 — 격자(0.25m)에 안 떨어져 윗면 칸이 어긋났다. 정수 칸으로 물렸다.",
       "w": 1.25,
       "d": 0.5,
@@ -46,8 +49,10 @@
     "desk_wide": {
       "type": "desk",
       "name_ko": "넓은 책상",
-      "w": 1.6,
-      "d": 0.65,
+      "_격자": "★ 2026-08-17 — 상판이 0.25 격자 눈금에 안 떨어져 상판 칸이 바닥 격자와 어긋났다. 칸 수는 그대로 두고(round(길이/0.25)) 길이만 0.25 배수로 물렸다.",
+      "size_m": { "w": 1.5, "d": 0.75, "h": 0.74 },
+      "w": 1.5,
+      "d": 0.75,
       "color": "#e3d3bd",
       "accent": "#cbbfae",
       "room": "학원·사무"
@@ -55,6 +60,7 @@
     "chair": {
       "type": "chair",
       "name_ko": "의자",
+      "size_m": { "w": 0.5, "d": 0.5, "h": 0.89 },
       "_격자": "★ 2026-08-16 — 밑값 0.44 x 0.44 는 1.76 x 1.76 칸이라 격자에 안 떨어진다. 0.5 x 0.5 = 2 x 2 칸으로 물렸다.",
       "w": 0.5,
       "d": 0.5,
@@ -65,6 +71,9 @@
     "chair_mint": {
       "type": "chair",
       "name_ko": "의자(민트)",
+      "size_m": { "w": 0.44, "d": 0.44, "h": 0.89 },
+      "w": 0.44,
+      "d": 0.44,
       "color": "#c9d6d2",
       "accent": "#aec2bc",
       "room": "공통"
@@ -72,7 +81,9 @@
     "wardrobe": {
       "type": "wardrobe",
       "name_ko": "옷장",
+      "size_m": { "w": 1, "d": 0.58, "h": 1.9 },
       "w": 1,
+      "d": 0.58,
       "h": 1.9,
       "color": "#eae2d6",
       "accent": "#c8b18a",
@@ -81,6 +92,7 @@
     "dresser": {
       "type": "dresser",
       "name_ko": "서랍장",
+      "size_m": { "w": 1, "d": 0.5, "h": 0.8 },
       "_격자": "★ 2026-08-16 — 0.9 x 0.45 는 3.6 x 1.8 칸이라 격자에 안 떨어졌다. 윗면 칸이 어긋나 보인 까닭이다. 1.0 x 0.5 = 4 x 2 칸으로 물렸다(박사님: \"2x4나 2x3으로 하면 될 것 같은데\").",
       "w": 1,
       "d": 0.5,
@@ -92,7 +104,9 @@
     "shelf": {
       "type": "shelf",
       "name_ko": "책장",
+      "size_m": { "w": 0.8, "d": 0.3, "h": 1.5 },
       "w": 0.8,
+      "d": 0.3,
       "h": 1.5,
       "color": "#e8dfd2",
       "room": "공통"
@@ -100,7 +114,9 @@
     "shelf_low": {
       "type": "shelf",
       "name_ko": "낮은 책장",
+      "size_m": { "w": 1, "d": 0.3, "h": 0.85 },
       "w": 1,
+      "d": 0.3,
       "h": 0.85,
       "rows": 2,
       "color": "#e8dfd2",
@@ -109,7 +125,9 @@
     "sofa": {
       "type": "sofa",
       "name_ko": "2인 소파",
+      "size_m": { "w": 1.6, "d": 0.82, "h": 1.1 },
       "w": 1.6,
+      "d": 0.82,
       "color": "#c9d6d2",
       "accent": "#eef2f0",
       "room": "거실"
@@ -117,7 +135,9 @@
     "sofa_blush": {
       "type": "sofa",
       "name_ko": "소파(블러시)",
+      "size_m": { "w": 1.6, "d": 0.82, "h": 1.1 },
       "w": 1.6,
+      "d": 0.82,
       "color": "#e6d3d0",
       "accent": "#f5eeec",
       "room": "거실"
@@ -125,7 +145,10 @@
     "table_round": {
       "type": "table_round",
       "name_ko": "원형 테이블",
-      "w": 0.8,
+      "_격자": "★ 2026-08-17 — 상판이 0.25 격자 눈금에 안 떨어져 상판 칸이 바닥 격자와 어긋났다. 칸 수는 그대로 두고(round(길이/0.25)) 길이만 0.25 배수로 물렸다.",
+      "size_m": { "w": 0.75, "d": 0.75, "h": 0.45 },
+      "w": 0.75,
+      "d": 0.75,
       "color": "#e5d3b8",
       "accent": "#cbbba2",
       "room": "공통"
@@ -133,8 +156,10 @@
     "table": {
       "type": "table",
       "name_ko": "식탁",
-      "w": 1.2,
-      "d": 0.7,
+      "_격자": "★ 2026-08-17 — 상판이 0.25 격자 눈금에 안 떨어져 상판 칸이 바닥 격자와 어긋났다. 칸 수는 그대로 두고(round(길이/0.25)) 길이만 0.25 배수로 물렸다.",
+      "size_m": { "w": 1.25, "d": 0.75, "h": 0.72 },
+      "w": 1.25,
+      "d": 0.75,
       "color": "#e5d3b8",
       "accent": "#cbbba2",
       "room": "주방"
@@ -142,6 +167,9 @@
     "nightstand": {
       "type": "nightstand",
       "name_ko": "협탁",
+      "size_m": { "w": 0.42, "d": 0.36, "h": 0.48 },
+      "w": 0.42,
+      "d": 0.36,
       "color": "#e6dccd",
       "accent": "#c8b18a",
       "room": "침실"
@@ -149,6 +177,7 @@
     "rug": {
       "type": "rug",
       "name_ko": "러그",
+      "size_m": { "w": 1.8, "d": 1.3, "h": 0.012 },
       "w": 1.8,
       "d": 1.3,
       "color": "#e7ddd0",
@@ -158,6 +187,7 @@
     "rug_mint": {
       "type": "rug",
       "name_ko": "러그(민트)",
+      "size_m": { "w": 1.6, "d": 1.2, "h": 0.012 },
       "w": 1.6,
       "d": 1.2,
       "color": "#d6e2dc",
@@ -166,6 +196,9 @@
     "lamp_floor": {
       "type": "lamp_floor",
       "name_ko": "플로어 스탠드",
+      "size_m": { "w": 0.42, "d": 0.42, "h": 1.45 },
+      "w": 0.42,
+      "d": 0.42,
       "h": 1.45,
       "color": "#cfc7bb",
       "accent": "#f6efdc",
@@ -174,6 +207,9 @@
     "lamp_ceiling": {
       "type": "lamp_ceiling",
       "name_ko": "천장등",
+      "size_m": { "w": 0.44, "d": 0.44, "h": 0.55 },
+      "w": 0.44,
+      "d": 0.44,
       "h": 0.35,
       "color": "#cfc7bb",
       "accent": "#f6efdc",
@@ -182,32 +218,43 @@
     "fridge": {
       "type": "fridge",
       "name_ko": "냉장고",
+      "size_m": { "w": 0.6, "d": 0.62, "h": 1.6 },
       "w": 0.6,
+      "d": 0.62,
       "h": 1.6,
       "color": "#eef0f2",
       "accent": "#c2c8cd",
-      "room": "주방"
+      "room": "주방",
+      "appliance": true
     },
     "kitchen": {
       "type": "kitchen",
       "name_ko": "주방 카운터",
+      "size_m": { "w": 1.5, "d": 0.6, "h": 0.88 },
       "w": 1.5,
+      "d": 0.6,
       "color": "#e9e3d8",
       "accent": "#d5d8da",
-      "room": "주방"
+      "room": "주방",
+      "appliance": true
     },
     "tv": {
       "type": "tv",
       "name_ko": "TV",
+      "size_m": { "w": 1, "d": 0.2, "h": 0.68 },
       "w": 1,
+      "d": 0.2,
       "color": "#3c4046",
-      "room": "거실"
+      "room": "거실",
+      "appliance": true
     },
     "shelf_windowsill": {
       "type": "shelf_windowsill",
       "name_ko": "선반-창턱-확장",
+      "_격자": "★ 2026-08-17 — 상판이 0.25 격자 눈금에 안 떨어져 상판 칸이 바닥 격자와 어긋났다. 칸 수는 그대로 두고(round(길이/0.25)) 길이만 0.25 배수로 물렸다.",
+      "size_m": { "w": 1, "d": 0.25, "h": 0.03 },
       "w": 1,
-      "d": 0.16,
+      "d": 0.25,
       "color": "#eae2d6",
       "room": "창턱",
       "mount": "window",
@@ -216,6 +263,7 @@
     "shelf_sill_pot1": {
       "type": "shelf_wall",
       "name_ko": "창턱 화분받침(1칸)",
+      "size_m": { "w": 0.36, "d": 0.24, "h": 0.035 },
       "w": 0.36,
       "d": 0.24,
       "slots": 1,
@@ -228,6 +276,7 @@
     "shelf_sill_pot4": {
       "type": "shelf_wall",
       "name_ko": "창턱 화분받침(4칸)",
+      "size_m": { "w": 1.4, "d": 0.26, "h": 0.035 },
       "w": 1.4,
       "d": 0.26,
       "slots": 4,
@@ -240,8 +289,10 @@
     "shelf_wall_1tier": {
       "type": "shelf_wall",
       "name_ko": "선반-벽걸이-1단",
-      "w": 0.8,
-      "d": 0.22,
+      "_격자": "★ 2026-08-17 — 상판이 0.25 격자 눈금에 안 떨어져 상판 칸이 바닥 격자와 어긋났다. 칸 수는 그대로 두고(round(길이/0.25)) 길이만 0.25 배수로 물렸다.",
+      "size_m": { "w": 0.75, "d": 0.25, "h": 0.035 },
+      "w": 0.75,
+      "d": 0.25,
       "color": "#e8dfd2",
       "accent": "#cbbfae",
       "room": "벽",
@@ -251,8 +302,10 @@
     "shelf_stool_1": {
       "type": "shelf_stool",
       "name_ko": "선반-스툴-1단",
-      "w": 0.28,
-      "d": 0.28,
+      "_격자": "★ 2026-08-17 — 상판이 0.25 격자 눈금에 안 떨어져 상판 칸이 바닥 격자와 어긋났다. 칸 수는 그대로 두고(round(길이/0.25)) 길이만 0.25 배수로 물렸다.",
+      "size_m": { "w": 0.25, "d": 0.25, "h": 0.355 },
+      "w": 0.25,
+      "d": 0.25,
       "h": 0.355,
       "color": "#e3d3bd",
       "accent": "#cbbfae",
@@ -262,6 +315,7 @@
     "shelf_etagere_3tier": {
       "type": "shelf_etagere",
       "name_ko": "선반-다단-3단",
+      "size_m": { "w": 0.75, "d": 0.25, "h": 0.794 },
       "_격자": "★ 2026-08-16 — 격자(0.25m)에 안 떨어져 윗면 칸이 어긋났다. 정수 칸으로 물렸다.",
       "w": 0.75,
       "d": 0.25,
@@ -275,6 +329,7 @@
     "shelf_ladder_4tier": {
       "type": "shelf_etagere",
       "name_ko": "선반-사다리-4단",
+      "size_m": { "w": 0.66, "d": 0.42, "h": 1.3 },
       "w": 0.66,
       "d": 0.42,
       "h": 1.3,
@@ -289,8 +344,10 @@
     "shelf_cart_3tier": {
       "type": "shelf_cart",
       "name_ko": "선반-카트-3단",
-      "w": 0.46,
-      "d": 0.34,
+      "_격자": "★ 2026-08-17 — 상판이 0.25 격자 눈금에 안 떨어져 상판 칸이 바닥 격자와 어긋났다. 칸 수는 그대로 두고(round(길이/0.25)) 길이만 0.25 배수로 물렸다.",
+      "size_m": { "w": 0.5, "d": 0.25, "h": 0.82 },
+      "w": 0.5,
+      "d": 0.25,
       "h": 0.82,
       "tiers": 3,
       "color": "#dfe6e4",
@@ -302,8 +359,10 @@
     "shelf_growrack_2tier": {
       "type": "shelf_growrack",
       "name_ko": "선반-그로우랙-2단",
-      "w": 0.8,
-      "d": 0.35,
+      "_격자": "★ 2026-08-17 — 상판이 0.25 격자 눈금에 안 떨어져 상판 칸이 바닥 격자와 어긋났다. 칸 수는 그대로 두고(round(길이/0.25)) 길이만 0.25 배수로 물렸다.",
+      "size_m": { "w": 0.75, "d": 0.25, "h": 1.16 },
+      "w": 0.75,
+      "d": 0.25,
       "h": 1.16,
       "tiers": 2,
       "color": "#dfe3e6",
@@ -315,6 +374,7 @@
     "bed_single_maple": {
       "type": "bed",
       "name_ko": "침대(싱글)(메이플)",
+      "size_m": { "w": 1.1, "d": 2, "h": 0.94 },
       "w": 1.1,
       "d": 2,
       "color": "#e6d6bb",
@@ -325,6 +385,7 @@
     "bed_single_white": {
       "type": "bed",
       "name_ko": "침대(싱글)(화이트)",
+      "size_m": { "w": 1.1, "d": 2, "h": 0.94 },
       "w": 1.1,
       "d": 2,
       "color": "#f2f0ec",
@@ -335,6 +396,7 @@
     "bed_single_mint": {
       "type": "bed",
       "name_ko": "침대(싱글)(민트)",
+      "size_m": { "w": 1.1, "d": 2, "h": 0.94 },
       "w": 1.1,
       "d": 2,
       "color": "#c9d6d2",
@@ -345,7 +407,9 @@
     "sofa_sage": {
       "type": "sofa",
       "name_ko": "소파(세이지)",
+      "size_m": { "w": 1.6, "d": 0.82, "h": 1.1 },
       "w": 1.6,
+      "d": 0.82,
       "color": "#d3d9c6",
       "accent": "#b2bba2",
       "room": "거실",
@@ -354,7 +418,9 @@
     "sofa_sky": {
       "type": "sofa",
       "name_ko": "소파(파스텔블루)",
+      "size_m": { "w": 1.6, "d": 0.82, "h": 1.1 },
       "w": 1.6,
+      "d": 0.82,
       "color": "#cddbe6",
       "accent": "#a9becd",
       "room": "거실",
@@ -363,7 +429,9 @@
     "sofa_charcoal": {
       "type": "sofa",
       "name_ko": "소파(차콜)",
+      "size_m": { "w": 1.6, "d": 0.82, "h": 1.1 },
       "w": 1.6,
+      "d": 0.82,
       "color": "#5b6067",
       "accent": "#43474d",
       "room": "거실",
@@ -372,6 +440,9 @@
     "chair_butter": {
       "type": "chair",
       "name_ko": "의자(버터)",
+      "size_m": { "w": 0.44, "d": 0.44, "h": 0.89 },
+      "w": 0.44,
+      "d": 0.44,
       "color": "#eee0bd",
       "accent": "#d3c199",
       "room": "공통",
@@ -380,6 +451,9 @@
     "chair_blush": {
       "type": "chair",
       "name_ko": "의자(블러시)",
+      "size_m": { "w": 0.44, "d": 0.44, "h": 0.89 },
+      "w": 0.44,
+      "d": 0.44,
       "color": "#e6d3d0",
       "accent": "#c9aca8",
       "room": "공통",
@@ -388,6 +462,9 @@
     "chair_charcoal": {
       "type": "chair",
       "name_ko": "의자(차콜)",
+      "size_m": { "w": 0.44, "d": 0.44, "h": 0.89 },
+      "w": 0.44,
+      "d": 0.44,
       "color": "#5b6067",
       "accent": "#43474d",
       "room": "공통",
@@ -396,7 +473,9 @@
     "wardrobe_white": {
       "type": "wardrobe",
       "name_ko": "옷장(화이트)",
+      "size_m": { "w": 1, "d": 0.58, "h": 1.9 },
       "w": 1,
+      "d": 0.58,
       "h": 1.9,
       "color": "#f2f0ec",
       "accent": "#d6d3cd",
@@ -406,7 +485,9 @@
     "wardrobe_mint": {
       "type": "wardrobe",
       "name_ko": "옷장(민트)",
+      "size_m": { "w": 1, "d": 0.58, "h": 1.9 },
       "w": 1,
+      "d": 0.58,
       "h": 1.9,
       "color": "#c9d6d2",
       "accent": "#a6bcb5",
@@ -416,7 +497,9 @@
     "shelf_white": {
       "type": "shelf",
       "name_ko": "책장(화이트)",
+      "size_m": { "w": 0.8, "d": 0.3, "h": 1.5 },
       "w": 0.8,
+      "d": 0.3,
       "h": 1.5,
       "color": "#f2f0ec",
       "accent": "#d6d3cd",
@@ -426,7 +509,9 @@
     "shelf_walnut": {
       "type": "shelf",
       "name_ko": "책장(월넛)",
+      "size_m": { "w": 0.8, "d": 0.3, "h": 1.5 },
       "w": 0.8,
+      "d": 0.3,
       "h": 1.5,
       "color": "#b08a63",
       "accent": "#8f6a46",
@@ -436,7 +521,10 @@
     "table_round_white": {
       "type": "table_round",
       "name_ko": "원형 테이블(화이트)",
-      "w": 0.8,
+      "_격자": "★ 2026-08-17 — 상판이 0.25 격자 눈금에 안 떨어져 상판 칸이 바닥 격자와 어긋났다. 칸 수는 그대로 두고(round(길이/0.25)) 길이만 0.25 배수로 물렸다.",
+      "size_m": { "w": 0.75, "d": 0.75, "h": 0.45 },
+      "w": 0.75,
+      "d": 0.75,
       "color": "#f2f0ec",
       "accent": "#d6d3cd",
       "room": "공통",
@@ -445,7 +533,10 @@
     "table_round_walnut": {
       "type": "table_round",
       "name_ko": "원형 테이블(월넛)",
-      "w": 0.8,
+      "_격자": "★ 2026-08-17 — 상판이 0.25 격자 눈금에 안 떨어져 상판 칸이 바닥 격자와 어긋났다. 칸 수는 그대로 두고(round(길이/0.25)) 길이만 0.25 배수로 물렸다.",
+      "size_m": { "w": 0.75, "d": 0.75, "h": 0.45 },
+      "w": 0.75,
+      "d": 0.75,
       "color": "#b08a63",
       "accent": "#8f6a46",
       "room": "공통",
@@ -454,6 +545,9 @@
     "chair_arm": {
       "type": "chair_arm",
       "name_ko": "암체어",
+      "size_m": { "w": 0.62, "d": 0.66, "h": 1.04 },
+      "w": 0.62,
+      "d": 0.66,
       "color": "#cdd9d5",
       "accent": "#eef2f0",
       "room": "거실"
@@ -461,6 +555,9 @@
     "chair_arm_blush": {
       "type": "chair_arm",
       "name_ko": "암체어(블러시)",
+      "size_m": { "w": 0.62, "d": 0.66, "h": 1.04 },
+      "w": 0.62,
+      "d": 0.66,
       "color": "#e6d3d0",
       "accent": "#f5eeec",
       "room": "거실",
@@ -469,6 +566,9 @@
     "chair_office": {
       "type": "chair_office",
       "name_ko": "사무 의자",
+      "size_m": { "w": 0.52, "d": 0.52, "h": 0.98 },
+      "w": 0.52,
+      "d": 0.52,
       "color": "#cfd8dc",
       "accent": "#8f959b",
       "room": "학원·사무"
@@ -476,6 +576,9 @@
     "stool": {
       "type": "stool",
       "name_ko": "스툴",
+      "size_m": { "w": 0.36, "d": 0.36, "h": 0.45 },
+      "w": 0.36,
+      "d": 0.36,
       "color": "#e0d5c2",
       "accent": "#c3b49c",
       "room": "공통"
@@ -483,7 +586,10 @@
     "bench": {
       "type": "bench",
       "name_ko": "벤치",
-      "w": 1.2,
+      "_격자": "★ 2026-08-17 — 상판이 0.25 격자 눈금에 안 떨어져 상판 칸이 바닥 격자와 어긋났다. 칸 수는 그대로 두고(round(길이/0.25)) 길이만 0.25 배수로 물렸다.",
+      "size_m": { "w": 1.25, "d": 0.5, "h": 0.44 },
+      "w": 1.25,
+      "d": 0.5,
       "color": "#e0d5c2",
       "accent": "#c3b49c",
       "room": "공통"
@@ -491,6 +597,9 @@
     "bed_bunk": {
       "type": "bed_bunk",
       "name_ko": "이층 침대",
+      "size_m": { "w": 1.05, "d": 2, "h": 1.68 },
+      "w": 1.05,
+      "d": 2,
       "color": "#d9c3a9",
       "accent": "#dce6ea",
       "room": "아이방·기숙"
@@ -498,6 +607,9 @@
     "bed_loft": {
       "type": "bed_loft",
       "name_ko": "로프트 침대",
+      "size_m": { "w": 1.05, "d": 2, "h": 1.6 },
+      "w": 1.05,
+      "d": 2,
       "color": "#d9c3a9",
       "accent": "#dce6ea",
       "room": "원룸(공간절약)"
@@ -505,6 +617,9 @@
     "mattress": {
       "type": "mattress",
       "name_ko": "바닥 매트리스",
+      "size_m": { "w": 1.05, "d": 1.95, "h": 0.28 },
+      "w": 1.05,
+      "d": 1.95,
       "color": "#f2efe9",
       "accent": "#dce6ea",
       "room": "원룸 미니멀"
@@ -512,6 +627,10 @@
     "vanity": {
       "type": "vanity",
       "name_ko": "화장대",
+      "_격자": "★ 2026-08-17 — 상판이 0.25 격자 눈금에 안 떨어져 상판 칸이 바닥 격자와 어긋났다. 칸 수는 그대로 두고(round(길이/0.25)) 길이만 0.25 배수로 물렸다.",
+      "w": 1,
+      "d": 0.5,
+      "size_m": { "w": 1, "d": 0.5, "h": 1.31 },
       "color": "#eae2d6",
       "accent": "#cbbfae",
       "room": "침실"
@@ -519,12 +638,18 @@
     "clothes_rack": {
       "type": "clothes_rack",
       "name_ko": "옷걸이 행거",
+      "size_m": { "w": 1, "d": 0.45, "h": 1.62 },
+      "w": 1,
+      "d": 0.45,
       "color": "#cbbfae",
       "room": "원룸"
     },
     "coffee_table": {
       "type": "coffee_table",
       "name_ko": "커피 테이블",
+      "size_m": { "w": 0.95, "d": 0.52, "h": 0.38 },
+      "w": 0.95,
+      "d": 0.52,
       "color": "#e5d3b8",
       "accent": "#cbbba2",
       "room": "거실"
@@ -532,6 +657,10 @@
     "storage_box": {
       "type": "storage_box",
       "name_ko": "수납 박스",
+      "_격자": "★ 2026-08-17 — 상판이 0.25 격자 눈금에 안 떨어져 상판 칸이 바닥 격자와 어긋났다. 칸 수는 그대로 두고(round(길이/0.25)) 길이만 0.25 배수로 물렸다.",
+      "w": 0.5,
+      "d": 0.25,
+      "size_m": { "w": 0.5, "d": 0.25, "h": 0.3 },
       "color": "#dfd6c7",
       "accent": "#c3b49c",
       "room": "공통"
@@ -539,12 +668,18 @@
     "mirror": {
       "type": "mirror",
       "name_ko": "전신 거울",
+      "size_m": { "w": 0.45, "d": 0.3, "h": 1.55 },
+      "w": 0.45,
+      "d": 0.3,
       "color": "#cbbfae",
       "room": "침실"
     },
     "desk_lamp": {
       "type": "desk_lamp",
       "name_ko": "책상 조명",
+      "size_m": { "w": 0.3, "d": 0.2, "h": 0.42 },
+      "w": 0.3,
+      "d": 0.2,
       "color": "#cfc7bb",
       "accent": "#f6efdc",
       "room": "책상 위"
@@ -552,8 +687,10 @@
     "plant_tray_window": {
       "type": "plant_tray",
       "name_ko": "창가 물받이 트레이",
-      "w": 0.9,
-      "d": 0.18,
+      "_격자": "★ 2026-08-17 — 상판이 0.25 격자 눈금에 안 떨어져 상판 칸이 바닥 격자와 어긋났다. 칸 수는 그대로 두고(round(길이/0.25)) 길이만 0.25 배수로 물렸다.",
+      "size_m": { "w": 1, "d": 0.25, "h": 0.05 },
+      "w": 1,
+      "d": 0.25,
       "color": "#dfe4e0",
       "room": "창턱",
       "mount": "window",
@@ -562,7 +699,9 @@
     "shelf_corner_3tier": {
       "type": "shelf_corner",
       "name_ko": "코너 선반-3단",
+      "size_m": { "w": 0.5, "d": 0.5, "h": 1.05 },
       "w": 0.5,
+      "d": 0.5,
       "h": 1.05,
       "tiers": 3,
       "color": "#e8dfd2",
@@ -573,6 +712,7 @@
     "plant_step_3": {
       "type": "plant_step",
       "name_ko": "계단식 플랜트대-3단",
+      "size_m": { "w": 0.9, "d": 0.28, "h": 0.61 },
       "w": 0.9,
       "d": 0.28,
       "tiers": 3,
@@ -583,7 +723,10 @@
     "plant_pedestal": {
       "type": "plant_pedestal",
       "name_ko": "화분 받침대(높은)",
-      "w": 0.26,
+      "_격자": "★ 2026-08-17 — 상판이 0.25 격자 눈금에 안 떨어져 상판 칸이 바닥 격자와 어긋났다. 칸 수는 그대로 두고(round(길이/0.25)) 길이만 0.25 배수로 물렸다.",
+      "size_m": { "w": 0.25, "d": 0.25, "h": 0.62 },
+      "w": 0.25,
+      "d": 0.25,
       "h": 0.62,
       "color": "#e0d5c2",
       "accent": "#c3b49c",
@@ -592,7 +735,9 @@
     "plant_grid_wall": {
       "type": "plant_grid",
       "name_ko": "벽 그리드(걸이)",
+      "size_m": { "w": 0.9, "d": 0.08, "h": 0.9 },
       "w": 0.9,
+      "d": 0.08,
       "h": 0.9,
       "color": "#cfc7bb",
       "room": "벽",
@@ -602,7 +747,9 @@
     "plant_hanger": {
       "type": "plant_hanger",
       "name_ko": "행잉 플랜터",
+      "size_m": { "w": 0.26, "d": 0.26, "h": 0.75 },
       "w": 0.26,
+      "d": 0.26,
       "h": 0.75,
       "color": "#d9a88b",
       "accent": "#cbbfae",
@@ -612,6 +759,7 @@
     "greenhouse_cabinet": {
       "type": "greenhouse_cabinet",
       "name_ko": "미니 온실장",
+      "size_m": { "w": 0.7, "d": 0.4, "h": 1.5 },
       "w": 0.7,
       "d": 0.4,
       "h": 1.5,
@@ -623,7 +771,9 @@
     "lamp_pendant": {
       "type": "lamp_pendant",
       "name_ko": "펜던트 등(돔)",
+      "size_m": { "w": 0.32, "d": 0.32, "h": 0.71 },
       "w": 0.32,
+      "d": 0.32,
       "h": 0.55,
       "color": "#cfc7bb",
       "accent": "#f6efdc",
@@ -632,7 +782,9 @@
     "lamp_pendant_cone": {
       "type": "lamp_pendant",
       "name_ko": "펜던트 등(콘)",
+      "size_m": { "w": 0.3, "d": 0.3, "h": 0.75 },
       "w": 0.3,
+      "d": 0.3,
       "h": 0.6,
       "dome": false,
       "color": "#cfc7bb",
@@ -642,6 +794,9 @@
     "lamp_wall": {
       "type": "lamp_wall",
       "name_ko": "벽등",
+      "size_m": { "w": 0.19, "d": 0.22, "h": 0.22 },
+      "w": 0.19,
+      "d": 0.22,
       "color": "#cfc7bb",
       "accent": "#f6efdc",
       "room": "벽",
@@ -650,7 +805,9 @@
     "string_light": {
       "type": "string_light",
       "name_ko": "스트링 라이트",
+      "size_m": { "w": 1.6, "d": 0.08, "h": 0.24 },
       "w": 1.6,
+      "d": 0.08,
       "bulbs": 7,
       "color": "#b9b2a6",
       "accent": "#f8ecc9",
@@ -660,6 +817,9 @@
     "growlight_clip": {
       "type": "growlight_clip",
       "name_ko": "식물등-클립형",
+      "size_m": { "w": 0.2, "d": 0.24, "h": 0.42 },
+      "w": 0.2,
+      "d": 0.24,
       "color": "#dfe3e6",
       "accent": "#f2e6ff",
       "room": "선반·책상",
@@ -672,7 +832,9 @@
     "growlight_bar": {
       "type": "growlight_bar",
       "name_ko": "식물등-바(선반밑)",
+      "size_m": { "w": 0.7, "d": 0.06, "h": 0.05 },
       "w": 0.7,
+      "d": 0.06,
       "color": "#dfe3e6",
       "accent": "#f4ecff",
       "room": "선반 밑",
@@ -684,6 +846,9 @@
     "growlight_stand": {
       "type": "growlight_stand",
       "name_ko": "식물등-스탠드",
+      "size_m": { "w": 0.45, "d": 0.38, "h": 1.5 },
+      "w": 0.45,
+      "d": 0.38,
       "h": 1.5,
       "color": "#cfd4d8",
       "accent": "#f4ecff",
@@ -697,7 +862,10 @@
     "shoe_cabinet": {
       "type": "shoe_cabinet",
       "name_ko": "신발장",
-      "w": 0.8,
+      "_격자": "★ 2026-08-17 — 상판이 0.25 격자 눈금에 안 떨어져 상판 칸이 바닥 격자와 어긋났다. 칸 수는 그대로 두고(round(길이/0.25)) 길이만 0.25 배수로 물렸다.",
+      "size_m": { "w": 0.75, "d": 0.25, "h": 0.9 },
+      "w": 0.75,
+      "d": 0.25,
       "h": 0.9,
       "color": "#e6dccd",
       "room": "현관"
@@ -705,7 +873,10 @@
     "tv_stand": {
       "type": "tv_stand",
       "name_ko": "TV장",
-      "w": 1.4,
+      "_격자": "★ 2026-08-17 — 상판이 0.25 격자 눈금에 안 떨어져 상판 칸이 바닥 격자와 어긋났다. 칸 수는 그대로 두고(round(길이/0.25)) 길이만 0.25 배수로 물렸다.",
+      "size_m": { "w": 1.5, "d": 0.5, "h": 0.45 },
+      "w": 1.5,
+      "d": 0.5,
       "color": "#e3d3bd",
       "accent": "#c3b49c",
       "room": "거실"
@@ -713,7 +884,10 @@
     "cube_storage": {
       "type": "cube_storage",
       "name_ko": "큐브 수납장",
-      "w": 0.78,
+      "_격자": "★ 2026-08-17 — 상판이 0.25 격자 눈금에 안 떨어져 상판 칸이 바닥 격자와 어긋났다. 칸 수는 그대로 두고(round(길이/0.25)) 길이만 0.25 배수로 물렸다.",
+      "size_m": { "w": 0.75, "d": 0.25, "h": 0.78 },
+      "w": 0.75,
+      "d": 0.25,
       "h": 0.78,
       "color": "#eae2d6",
       "room": "공통"
@@ -721,7 +895,9 @@
     "drying_rack": {
       "type": "drying_rack",
       "name_ko": "빨래 건조대",
+      "size_m": { "w": 0.9, "d": 0.55, "h": 1 },
       "w": 0.9,
+      "d": 0.55,
       "color": "#cfd4d8",
       "room": "원룸",
       "movable": true
@@ -729,7 +905,9 @@
     "room_divider": {
       "type": "room_divider",
       "name_ko": "파티션 가림막",
+      "size_m": { "w": 1.35, "d": 0.3, "h": 1.6 },
       "w": 1.35,
+      "d": 0.3,
       "h": 1.6,
       "color": "#e8dfd2",
       "room": "공간분리",
@@ -738,7 +916,9 @@
     "laundry_basket": {
       "type": "laundry_basket",
       "name_ko": "빨래 바구니",
+      "size_m": { "w": 0.42, "d": 0.42, "h": 0.5 },
       "w": 0.42,
+      "d": 0.42,
       "h": 0.5,
       "color": "#e0d9c9",
       "accent": "#cbbfae",
@@ -747,7 +927,9 @@
     "picture_frame": {
       "type": "picture_frame",
       "name_ko": "액자",
+      "size_m": { "w": 0.42, "d": 0.03, "h": 0.54 },
       "w": 0.42,
+      "d": 0.03,
       "h": 0.54,
       "color": "#cbbfae",
       "accent": "#dfe6ea",
@@ -757,7 +939,9 @@
     "wall_clock": {
       "type": "wall_clock",
       "name_ko": "벽시계",
+      "size_m": { "w": 0.3, "d": 0.04, "h": 0.3 },
       "w": 0.3,
+      "d": 0.04,
       "color": "#e8dfd2",
       "accent": "#6a6f78",
       "room": "벽",
@@ -766,15 +950,19 @@
     "floor_cushion": {
       "type": "floor_cushion",
       "name_ko": "바닥 쿠션",
+      "size_m": { "w": 0.6, "d": 0.6, "h": 0.16 },
       "w": 0.6,
+      "d": 0.6,
       "color": "#dfe0d4",
       "room": "공통"
     },
     "low_table": {
       "type": "low_table",
       "name_ko": "좌식 테이블",
-      "w": 0.9,
-      "d": 0.55,
+      "_격자": "★ 2026-08-17 — 상판이 0.25 격자 눈금에 안 떨어져 상판 칸이 바닥 격자와 어긋났다. 칸 수는 그대로 두고(round(길이/0.25)) 길이만 0.25 배수로 물렸다.",
+      "size_m": { "w": 1, "d": 0.5, "h": 0.32 },
+      "w": 1,
+      "d": 0.5,
       "color": "#e5d3b8",
       "accent": "#cbbba2",
       "room": "공통"
@@ -782,6 +970,9 @@
     "chair_arm_sage": {
       "type": "chair_arm",
       "name_ko": "암체어(세이지)",
+      "size_m": { "w": 0.62, "d": 0.66, "h": 1.04 },
+      "w": 0.62,
+      "d": 0.66,
       "color": "#d3d9c6",
       "accent": "#b2bba2",
       "colorway": "sage",
@@ -790,6 +981,9 @@
     "chair_arm_sky": {
       "type": "chair_arm",
       "name_ko": "암체어(파스텔블루)",
+      "size_m": { "w": 0.62, "d": 0.66, "h": 1.04 },
+      "w": 0.62,
+      "d": 0.66,
       "color": "#cddbe6",
       "accent": "#a9becd",
       "colorway": "sky",
@@ -798,6 +992,9 @@
     "chair_arm_lilac": {
       "type": "chair_arm",
       "name_ko": "암체어(라일락)",
+      "size_m": { "w": 0.62, "d": 0.66, "h": 1.04 },
+      "w": 0.62,
+      "d": 0.66,
       "color": "#ddd4e6",
       "accent": "#bcb0cc",
       "colorway": "lilac",
@@ -806,6 +1003,9 @@
     "nightstand_white": {
       "type": "nightstand",
       "name_ko": "협탁(화이트)",
+      "size_m": { "w": 0.42, "d": 0.36, "h": 0.48 },
+      "w": 0.42,
+      "d": 0.36,
       "color": "#f2f0ec",
       "accent": "#d6d3cd",
       "colorway": "white",
@@ -814,6 +1014,9 @@
     "nightstand_mint": {
       "type": "nightstand",
       "name_ko": "협탁(민트)",
+      "size_m": { "w": 0.42, "d": 0.36, "h": 0.48 },
+      "w": 0.42,
+      "d": 0.36,
       "color": "#c9d6d2",
       "accent": "#a6bcb5",
       "colorway": "mint",
@@ -822,8 +1025,10 @@
     "desk_white": {
       "type": "desk",
       "name_ko": "책상(화이트)",
-      "w": 1.2,
-      "d": 0.6,
+      "_격자": "★ 2026-08-17 — 상판이 0.25 격자 눈금에 안 떨어져 상판 칸이 바닥 격자와 어긋났다. 칸 수는 그대로 두고(round(길이/0.25)) 길이만 0.25 배수로 물렸다.",
+      "size_m": { "w": 1.25, "d": 0.5, "h": 0.74 },
+      "w": 1.25,
+      "d": 0.5,
       "color": "#f2f0ec",
       "accent": "#d6d3cd",
       "colorway": "white",
@@ -832,8 +1037,10 @@
     "desk_walnut": {
       "type": "desk",
       "name_ko": "책상(월넛)",
-      "w": 1.2,
-      "d": 0.6,
+      "_격자": "★ 2026-08-17 — 상판이 0.25 격자 눈금에 안 떨어져 상판 칸이 바닥 격자와 어긋났다. 칸 수는 그대로 두고(round(길이/0.25)) 길이만 0.25 배수로 물렸다.",
+      "size_m": { "w": 1.25, "d": 0.5, "h": 0.74 },
+      "w": 1.25,
+      "d": 0.5,
       "color": "#b08a63",
       "accent": "#8f6a46",
       "colorway": "walnut",
@@ -842,8 +1049,10 @@
     "desk_mint": {
       "type": "desk",
       "name_ko": "책상(민트)",
-      "w": 1.2,
-      "d": 0.6,
+      "_격자": "★ 2026-08-17 — 상판이 0.25 격자 눈금에 안 떨어져 상판 칸이 바닥 격자와 어긋났다. 칸 수는 그대로 두고(round(길이/0.25)) 길이만 0.25 배수로 물렸다.",
+      "size_m": { "w": 1.25, "d": 0.5, "h": 0.74 },
+      "w": 1.25,
+      "d": 0.5,
       "color": "#c9d6d2",
       "accent": "#a6bcb5",
       "colorway": "mint",
@@ -852,7 +1061,10 @@
     "dresser_white": {
       "type": "dresser",
       "name_ko": "서랍장(화이트)",
-      "w": 0.9,
+      "_격자": "★ 2026-08-17 — 상판이 0.25 격자 눈금에 안 떨어져 상판 칸이 바닥 격자와 어긋났다. 칸 수는 그대로 두고(round(길이/0.25)) 길이만 0.25 배수로 물렸다.",
+      "size_m": { "w": 1, "d": 0.5, "h": 0.8 },
+      "w": 1,
+      "d": 0.5,
       "h": 0.8,
       "color": "#f2f0ec",
       "accent": "#d6d3cd",
@@ -862,7 +1074,10 @@
     "dresser_sky": {
       "type": "dresser",
       "name_ko": "서랍장(파스텔블루)",
-      "w": 0.9,
+      "_격자": "★ 2026-08-17 — 상판이 0.25 격자 눈금에 안 떨어져 상판 칸이 바닥 격자와 어긋났다. 칸 수는 그대로 두고(round(길이/0.25)) 길이만 0.25 배수로 물렸다.",
+      "size_m": { "w": 1, "d": 0.5, "h": 0.8 },
+      "w": 1,
+      "d": 0.5,
       "h": 0.8,
       "color": "#cddbe6",
       "accent": "#a9becd",
@@ -872,7 +1087,9 @@
     "coffee_table_walnut": {
       "type": "coffee_table",
       "name_ko": "커피 테이블(월넛)",
+      "size_m": { "w": 0.95, "d": 0.52, "h": 0.38 },
       "w": 0.95,
+      "d": 0.52,
       "color": "#b08a63",
       "accent": "#8f6a46",
       "colorway": "walnut",
@@ -881,7 +1098,9 @@
     "coffee_table_white": {
       "type": "coffee_table",
       "name_ko": "커피 테이블(화이트)",
+      "size_m": { "w": 0.95, "d": 0.52, "h": 0.38 },
       "w": 0.95,
+      "d": 0.52,
       "color": "#f2f0ec",
       "accent": "#d6d3cd",
       "colorway": "white",
@@ -890,8 +1109,10 @@
     "shelf_etagere_3tier_white": {
       "type": "shelf_etagere",
       "name_ko": "다단 선반(화이트)",
-      "w": 0.72,
-      "d": 0.28,
+      "_격자": "★ 2026-08-17 — 상판이 0.25 격자 눈금에 안 떨어져 상판 칸이 바닥 격자와 어긋났다. 칸 수는 그대로 두고(round(길이/0.25)) 길이만 0.25 배수로 물렸다.",
+      "size_m": { "w": 0.75, "d": 0.25, "h": 0.794 },
+      "w": 0.75,
+      "d": 0.25,
       "h": 0.794,
       "tiers": 3,
       "color": "#f2f0ec",
@@ -902,8 +1123,10 @@
     "shelf_etagere_3tier_walnut": {
       "type": "shelf_etagere",
       "name_ko": "다단 선반(월넛)",
-      "w": 0.72,
-      "d": 0.28,
+      "_격자": "★ 2026-08-17 — 상판이 0.25 격자 눈금에 안 떨어져 상판 칸이 바닥 격자와 어긋났다. 칸 수는 그대로 두고(round(길이/0.25)) 길이만 0.25 배수로 물렸다.",
+      "size_m": { "w": 0.75, "d": 0.25, "h": 0.794 },
+      "w": 0.75,
+      "d": 0.25,
       "h": 0.794,
       "tiers": 3,
       "color": "#b08a63",
@@ -914,8 +1137,10 @@
     "shelf_etagere_3tier_mint": {
       "type": "shelf_etagere",
       "name_ko": "다단 선반(민트)",
-      "w": 0.72,
-      "d": 0.28,
+      "_격자": "★ 2026-08-17 — 상판이 0.25 격자 눈금에 안 떨어져 상판 칸이 바닥 격자와 어긋났다. 칸 수는 그대로 두고(round(길이/0.25)) 길이만 0.25 배수로 물렸다.",
+      "size_m": { "w": 0.75, "d": 0.25, "h": 0.794 },
+      "w": 0.75,
+      "d": 0.25,
       "h": 0.794,
       "tiers": 3,
       "color": "#c9d6d2",
@@ -926,7 +1151,10 @@
     "cube_storage_mint": {
       "type": "cube_storage",
       "name_ko": "큐브 수납장(민트)",
-      "w": 0.78,
+      "_격자": "★ 2026-08-17 — 상판이 0.25 격자 눈금에 안 떨어져 상판 칸이 바닥 격자와 어긋났다. 칸 수는 그대로 두고(round(길이/0.25)) 길이만 0.25 배수로 물렸다.",
+      "size_m": { "w": 0.75, "d": 0.25, "h": 0.78 },
+      "w": 0.75,
+      "d": 0.25,
       "h": 0.78,
       "color": "#c9d6d2",
       "accent": "#a6bcb5",
@@ -936,7 +1164,10 @@
     "cube_storage_sky": {
       "type": "cube_storage",
       "name_ko": "큐브 수납장(파스텔블루)",
-      "w": 0.78,
+      "_격자": "★ 2026-08-17 — 상판이 0.25 격자 눈금에 안 떨어져 상판 칸이 바닥 격자와 어긋났다. 칸 수는 그대로 두고(round(길이/0.25)) 길이만 0.25 배수로 물렸다.",
+      "size_m": { "w": 0.75, "d": 0.25, "h": 0.78 },
+      "w": 0.75,
+      "d": 0.25,
       "h": 0.78,
       "color": "#cddbe6",
       "accent": "#a9becd",
@@ -946,8 +1177,10 @@
     "low_table_white": {
       "type": "low_table",
       "name_ko": "좌식 테이블(화이트)",
-      "w": 0.9,
-      "d": 0.55,
+      "_격자": "★ 2026-08-17 — 상판이 0.25 격자 눈금에 안 떨어져 상판 칸이 바닥 격자와 어긋났다. 칸 수는 그대로 두고(round(길이/0.25)) 길이만 0.25 배수로 물렸다.",
+      "size_m": { "w": 1, "d": 0.5, "h": 0.32 },
+      "w": 1,
+      "d": 0.5,
       "color": "#f2f0ec",
       "accent": "#d6d3cd",
       "colorway": "white",
@@ -956,8 +1189,10 @@
     "low_table_walnut": {
       "type": "low_table",
       "name_ko": "좌식 테이블(월넛)",
-      "w": 0.9,
-      "d": 0.55,
+      "_격자": "★ 2026-08-17 — 상판이 0.25 격자 눈금에 안 떨어져 상판 칸이 바닥 격자와 어긋났다. 칸 수는 그대로 두고(round(길이/0.25)) 길이만 0.25 배수로 물렸다.",
+      "size_m": { "w": 1, "d": 0.5, "h": 0.32 },
+      "w": 1,
+      "d": 0.5,
       "color": "#b08a63",
       "accent": "#8f6a46",
       "colorway": "walnut",
@@ -966,6 +1201,9 @@
     "stool_mint": {
       "type": "stool",
       "name_ko": "스툴(민트)",
+      "size_m": { "w": 0.36, "d": 0.36, "h": 0.45 },
+      "w": 0.36,
+      "d": 0.36,
       "color": "#c9d6d2",
       "accent": "#a6bcb5",
       "colorway": "mint",
@@ -974,6 +1212,9 @@
     "stool_blush": {
       "type": "stool",
       "name_ko": "스툴(블러시)",
+      "size_m": { "w": 0.36, "d": 0.36, "h": 0.45 },
+      "w": 0.36,
+      "d": 0.36,
       "color": "#e6d3d0",
       "accent": "#c9aca8",
       "colorway": "blush",
@@ -982,6 +1223,9 @@
     "stool_charcoal": {
       "type": "stool",
       "name_ko": "스툴(차콜)",
+      "size_m": { "w": 0.36, "d": 0.36, "h": 0.45 },
+      "w": 0.36,
+      "d": 0.36,
       "color": "#5b6067",
       "accent": "#43474d",
       "colorway": "charcoal",
@@ -990,7 +1234,9 @@
     "blackboard": {
       "type": "blackboard",
       "name_ko": "칠판",
+      "size_m": { "w": 3, "d": 0.09, "h": 1.2 },
       "w": 3,
+      "d": 0.09,
       "h": 1.2,
       "color": "#4a6152",
       "accent": "#c8b9a4",
@@ -1000,7 +1246,9 @@
     "blackboard_small": {
       "type": "blackboard",
       "name_ko": "칠판-소형",
+      "size_m": { "w": 1.8, "d": 0.09, "h": 1 },
       "w": 1.8,
+      "d": 0.09,
       "h": 1,
       "color": "#4a6152",
       "accent": "#c8b9a4",
@@ -1010,7 +1258,9 @@
     "whiteboard": {
       "type": "blackboard",
       "name_ko": "화이트보드",
+      "size_m": { "w": 2.4, "d": 0.09, "h": 1.2 },
       "w": 2.4,
+      "d": 0.09,
       "h": 1.2,
       "color": "#f2f4f2",
       "accent": "#b8bfc4",
@@ -1020,7 +1270,9 @@
     "bulletin_board": {
       "type": "bulletin_board",
       "name_ko": "게시판",
+      "size_m": { "w": 1.1, "d": 0.04, "h": 0.8 },
       "w": 1.1,
+      "d": 0.04,
       "h": 0.8,
       "color": "#d8c3a0",
       "accent": "#b9a88c",
@@ -1030,6 +1282,7 @@
     "lectern": {
       "type": "lectern",
       "name_ko": "교탁",
+      "size_m": { "w": 0.8, "d": 0.45, "h": 1.05 },
       "w": 0.8,
       "d": 0.45,
       "h": 1.05,
@@ -1040,7 +1293,9 @@
     "desk_student_2": {
       "type": "desk_student",
       "name_ko": "학생책상-2인",
-      "w": 1.2,
+      "_격자": "★ 2026-08-17 — 상판이 0.25 격자 눈금에 안 떨어져 상판 칸이 바닥 격자와 어긋났다. 칸 수는 그대로 두고(round(길이/0.25)) 길이만 0.25 배수로 물렸다.",
+      "size_m": { "w": 1.25, "d": 0.5, "h": 0.72 },
+      "w": 1.25,
       "d": 0.5,
       "h": 0.72,
       "color": "#e6dcc8",
@@ -1050,7 +1305,9 @@
     "desk_student_1": {
       "type": "desk_student",
       "name_ko": "학생책상-1인",
-      "w": 0.7,
+      "_격자": "★ 2026-08-17 — 상판이 0.25 격자 눈금에 안 떨어져 상판 칸이 바닥 격자와 어긋났다. 칸 수는 그대로 두고(round(길이/0.25)) 길이만 0.25 배수로 물렸다.",
+      "size_m": { "w": 0.75, "d": 0.5, "h": 0.72 },
+      "w": 0.75,
       "d": 0.5,
       "h": 0.72,
       "color": "#e6dcc8",
@@ -1060,7 +1317,9 @@
     "desk_student_mint": {
       "type": "desk_student",
       "name_ko": "학생책상-민트",
-      "w": 1.2,
+      "_격자": "★ 2026-08-17 — 상판이 0.25 격자 눈금에 안 떨어져 상판 칸이 바닥 격자와 어긋났다. 칸 수는 그대로 두고(round(길이/0.25)) 길이만 0.25 배수로 물렸다.",
+      "size_m": { "w": 1.25, "d": 0.5, "h": 0.72 },
+      "w": 1.25,
       "d": 0.5,
       "h": 0.72,
       "color": "#dbe8e2",
@@ -1070,8 +1329,10 @@
     "locker_6": {
       "type": "locker",
       "name_ko": "사물함-6칸",
-      "w": 1.2,
-      "d": 0.4,
+      "_격자": "★ 2026-08-17 — 상판이 0.25 격자 눈금에 안 떨어져 상판 칸이 바닥 격자와 어긋났다. 칸 수는 그대로 두고(round(길이/0.25)) 길이만 0.25 배수로 물렸다.",
+      "size_m": { "w": 1.25, "d": 0.5, "h": 1.1 },
+      "w": 1.25,
+      "d": 0.5,
       "h": 1.1,
       "cols": 3,
       "rows": 2,
@@ -1082,8 +1343,10 @@
     "locker_12": {
       "type": "locker",
       "name_ko": "사물함-12칸",
-      "w": 1.6,
-      "d": 0.4,
+      "_격자": "★ 2026-08-17 — 상판이 0.25 격자 눈금에 안 떨어져 상판 칸이 바닥 격자와 어긋났다. 칸 수는 그대로 두고(round(길이/0.25)) 길이만 0.25 배수로 물렸다.",
+      "size_m": { "w": 1.5, "d": 0.5, "h": 1.6 },
+      "w": 1.5,
+      "d": 0.5,
       "h": 1.6,
       "cols": 4,
       "rows": 3,
@@ -1094,6 +1357,7 @@
     "chair_student": {
       "type": "chair",
       "name_ko": "학생의자",
+      "size_m": { "w": 0.42, "d": 0.42, "h": 0.89 },
       "w": 0.42,
       "d": 0.42,
       "color": "#c9d6da",
@@ -1190,5 +1454,7 @@
   ],
   "_colorways": "colorways = 가구 공용 색상표. 프리셋의 color/accent를 이 값으로 바꾸면 같은 형태의 색 변형이 됨.",
   "_pots": "화분은 가구 카탈로그에서 제외 — 식물/화분은 식물 에셋 시스템(assets/monstera 등)에서 슬롯에 올림.",
-  "_lighting": "조명: userData.grow=true면 식물등(ppfd·coverage 보존 → 조도 계산 입력). decorLight=장식광. lampShade=밤에 발광 갱신 대상."
+  "_lighting": "조명: userData.grow=true면 식물등(ppfd·coverage 보존 → 조도 계산 입력). decorLight=장식광. lampShade=밤에 발광 갱신 대상.",
+  "_size_m": "size_m = {w,d,h} — **빌더가 실제로 내는 크기**(render3d/furniture_pastel.js 의 userData.size). w·d·h 칸은 빌더에 넘기는 밑값이라 안 적힌 것이 많고(협탁은 셋 다 없다) 뜻도 다르다 — 천장등 h 0.35 는 갓 높이인데 실제 크기는 줄까지 0.55 다. ★ 상점 가구값은 이 칸으로만 센다. ⚠ 손으로 적지 마라. tools/test_furnishop.mjs §A 가 빌더가 내는 크기와 한 톨이라도 다르면 깨뜨린다.",
+  "_appliance": "appliance=true — 가전이라 **가구 상점에 안 낸다**(냉장고·TV·주방 카운터). 데이터가 스스로 가를 수 없는 셋이라 칸으로 표시했다. shop.js §furnitureKindOf 가 읽는다."
 }

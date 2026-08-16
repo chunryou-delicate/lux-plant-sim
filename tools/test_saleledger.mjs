@@ -119,7 +119,12 @@ check('B 지갑에 들어온 총액 = 판 값의 합 (통을 나눠도 한 원�
 /* ══ C · 모르는 갈래는 던진다 ══════════════════════════════════════════ */
 check('C ★모르는 갈래는 던진다 — 새 판매가 조용히 남의 통에 섞이지 못한다', () => {
   const S = newGame();
-  assert.throws(() => creditCropSurplus(S, 1_000, { kind: 'furniture' }),
+  /* ⚠ 2026-08-17 — 예전에 여기 적혀 있던 보기는 `'furniture'` 였는데 **그날 실제 갈래가 됐다**
+     (가구를 사고 팔게 되면서 `SALE_KINDS` 에 올라갔다). 그대로 두면 이 검사가
+     「모르는 갈래도 통과한다」로 빨개진다 — 고장이 아니라 **자가 낡은 것**이다.
+     ⇒ 보기를 아직 없는 이름으로 바꿨다. `SALE_KINDS` 에 절대 안 올릴 이름이라야 한다. */
+  assert.ok(!SALE_KINDS.includes('__없는갈래__'), '보기로 쓴 이름이 실제 갈래가 됐습니다');
+  assert.throws(() => creditCropSurplus(S, 1_000, { kind: '__없는갈래__' }),
     /모르는 판매 갈래/, '★모르는 갈래가 조용히 통과했습니다');
   assert.equal(shopOf(S).earnedWon, 0, '던졌는데 돈이 들어갔습니다');
   info(`아는 갈래 — ${SALE_KINDS.join(' · ')}`);
