@@ -110,6 +110,21 @@ export function newState(opt = {}) {
          승격은 다개체 리팩터 뒤다(propagation.promoteToPot 이 그 자리에서 던진다). */
     cuttings: [],
 
+    /* ══ ★★★ 삽수 용기 — **놓았지만 아직 안 넣은 그릇** (2026-08-17 박사님 확정) ══════
+       박사님: *"유리병을 먼저 가구처럼 배치하고 거기다 넣고 싶은 삽수를 드래그해서 배치"*
+       그리고: *"삽수 후 수경 안 하고 바로 화분 심는 것도 가능하도록 하자 **동일하게**."*
+       ⇒ 유리 수경병(jar)도 검은 모종포트(soil)도 **똑같이** 「놓고 → 넣는다」 두 걸음이다.
+
+       ★ 위 `emptyPots` 와 **같은 결**이고 그 결이 이 저장소의 손버릇이다
+         (시루·재배판·화분이 전부 「빈 그릇을 놓고 → 심는다」).
+       ⚠⚠ 그런데 `emptyPots` 에 **합치지 않는다.** 거기 든 그릇은 「몬스테라 씨앗을 심을
+         그릇」이라 `plantMonsteraSeed` 가 씨앗을 넣는다 — 합치면 **유리 수경병에 씨앗이
+         심긴다.** 물음이 다른 목록은 안 합친다(위 `pots` ↔ `emptyPots` 와 같은 이유).
+       ★ 규칙·창구는 전부 `src/game/propagation.js §⑤-2` 가 갖는다(용기 표가 거기 있다).
+         여기는 **칸만** 낸다 — 세이브가 이 칸을 보고 저장 방법을 묻게 하려는 것이다.
+       한 줄 = { id, container, itemId, at, slotId, placedOnDay, cuttingId, usedOnDay } */
+    cutContainers: [],
+
     /* Day 0 콩나물 → Day 4 첫 수확·선물 → 몬스테라 말린 새순.
        정식 작물 목록이나 경제 장부가 아니라 첫 재미 검증 한 흐름만 담는다. */
     firstPlay: createFirstPlayState({ enabled: !!opt.firstPlay, rules: opt.firstPlayRules }),
@@ -1361,6 +1376,10 @@ export function followFreeOnFurniture(S, uid, from, to) {
   };
   for (const p of (S.pots || [])) move(p);
   for (const p of (S.emptyPots || [])) move(p);
+  /* ★ 2026-08-17 — 삽수 용기도 가구를 따라간다(propagation §⑤-2).
+     ⚠ 안 넣으면 책상을 옮겼을 때 **병만 허공에 남는다** — 든 삽수는 바로 아래에서
+       따라가므로 둘이 갈린다(그게 이 목록을 여기 적는 유일한 이유다). */
+  for (const t of (S.cutContainers || [])) move(t);
   for (const c of (S.cuttings || [])) move(c);
   if (S.firstPlay && S.firstPlay.enabled) for (const site of cropSites(S.firstPlay)) move(site);
   return n;

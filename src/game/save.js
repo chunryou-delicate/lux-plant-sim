@@ -81,7 +81,11 @@ export const DLI_HIST_KEEP = null;
    조용히 안 저장되는 칸이 생기는 것이 제일 나쁘다. */
 const KNOWN_STATE_KEYS = Object.freeze([
   'schema', 'day', 'timeScale', 'sim', 'home', 'lamps',
-  'pots', 'emptyPots', 'cuttings', 'firstPlay', 'story', 'tutorial', 'shop', 'perks', 'stamina', 'dliHist', 'ledger', 'log'
+  /* ★ 2026-08-17 — `cutContainers`(삽수 용기 · state.js §cutContainers · propagation §⑤-2).
+     ⚠ 이 목록에 안 적으면 아래 문지기가 잡아 검사를 빨갛게 만든다. 그게 이 배열의 존재
+       이유다 — 안 잡히면 **방에 놓은 병이 저장 한 번에 조용히 사라지는** 세이브가 된다
+       (`emptyPots` 때 실제로 그 장치가 잡아 줬다). */
+  'pots', 'emptyPots', 'cuttings', 'cutContainers', 'firstPlay', 'story', 'tutorial', 'shop', 'perks', 'stamina', 'dliHist', 'ledger', 'log'
 ]);
 
 /* ---------------------------------------------------------------
@@ -333,10 +337,40 @@ function packCutting(c, i) {
       stem: needStr(src.stem, `${path}.source.stem`),
       leaves: needInt(src.leaves ?? 0, `${path}.source.leaves`, { min: 0 }),
       variegatedLeaves: needInt(src.variegatedLeaves ?? 0, `${path}.source.variegatedLeaves`, { min: 0 }),
-      growthDays: src.growthDays == null ? null : needNum(src.growthDays, `${path}.source.growthDays`, { min: 0 })
+      growthDays: src.growthDays == null ? null : needNum(src.growthDays, `${path}.source.growthDays`, { min: 0 }),
+      /* ★★★ 2026-08-17 — **자를 때 모주가 며칠짜리였나 · 어떤 씨앗이었나.**
+         ------------------------------------------------------------
+         ⚠⚠ **이 두 칸이 통째로 빠져 있었다** (2026-08-16 에 `propagation.takeCutting` 이
+           적기 시작했는데 세이브가 안 따라왔다). 그래서 저장 한 번에 값이 사라졌고,
+           `tools/test_propagation.mjs` 검사 I(「원본에서 딸려온 값이 안 살아났습니다」)가
+           **이 창이 손대기 전부터 빨갛게 있었다** — HEAD 판으로 돌려서 확인했다.
+         ★ 무엇이 망가지나: 방이 「자른 그 가지」를 그리려면 **그때의 모주를 그대로 다시
+           지어야** 하고(`plant_assemble.branchOf`), 그러려면 유효 생장일과 씨앗이 있어야 한다.
+           둘이 없으면 방은 옛 길(대체 표현)로 간다 — 저장했다 열면 병 속 가지가 달라진다.
+         ⚠ 0 으로 메꾸지 않는다. 0 은 「갓 심은 그루」라 다시 지으면 **씨앗 한 톨**이
+           병에 들어앉는다(propagation.js §motherGrowthDays 의 그 경고 그대로). */
+      motherGrowthDays: src.motherGrowthDays == null
+        ? null : needNum(src.motherGrowthDays, `${path}.source.motherGrowthDays`, { min: 0 }),
+      motherSeed: src.motherSeed == null
+        ? null : needNum(src.motherSeed, `${path}.source.motherSeed`)
     },
-    method: needStr(c.method, `${path}.method`),
-    container: needStr(c.container, `${path}.container`),
+    /* ★★ 2026-08-17 — **가방에 있는 삽수는 이 둘이 `null` 이다**(propagation §⑤-2).
+       자르기와 담기가 두 걸음으로 갈리면서 「아직 용기를 안 정한 조각」이 생겼다.
+       ⚠ `needStr` 로 두면 그 판이 **저장도 복원도 안 된다**(빈 문자열이 아니라 null 이다).
+         0 이나 'water' 로 메꾸면 더 나쁘다 — 가방에 있는 조각이 물꽂이인 척하고
+         하루가 흘러 기한이 붙는다. 그래서 `optStr` 이다.
+       ⚠ 옛 세이브에는 언제나 값이 있다 — `optStr` 은 그 값을 그대로 통과시킨다. */
+    method: optStr(c.method, `${path}.method`),
+    container: optStr(c.container, `${path}.container`),
+    /* 방의 어느 그릇에 들어앉아 있나(`S.cutContainers[].id`). 가방이면 null.
+       ⚠ 안 적으면 저장 한 번에 **삽수와 병의 연결이 끊긴다** — 병은 「비었다」고 하고
+         삽수는 그 자리에 서 있는 판이 되어 회수 단추가 엉뚱한 그릇을 비운다. */
+    inContainerId: optStr(c.inContainerId, `${path}.inContainerId`),
+    /* ★★ 시계의 기준일 — **「자른 날」이 아니라 「용기에 들어간 날」**(propagation §clockDayOf).
+       ⚠ 안 적으면 열 때마다 `cutOnDay` 로 되돌아가 **가방에 오래 뒀던 삽수의 기한이
+         앞당겨진다**(심하면 넣자마자 죽는다). 옛 세이브에는 이 칸이 없고, 그때는
+         `clockDayOf` 가 `cutOnDay` 로 읽으므로 값이 한 톨도 안 달라진다. */
+    clockOnDay: c.clockOnDay == null ? null : needInt(c.clockOnDay, `${path}.clockOnDay`, { min: 0 }),
     gen: needInt(c.gen ?? 1, `${path}.gen`, { min: 0 }),
     varieChance: needNum(c.varieChance ?? 0, `${path}.varieChance`, { min: 0 }),
     variegated: !!c.variegated,
@@ -1103,6 +1137,25 @@ export function serialize(S, opt = {}) {
         };
       }),
       cuttings: needArr(S.cuttings || [], 'cuttings').map(packCutting),
+      /* ★★ 2026-08-17 — **삽수 용기**(놓았지만 아직 안 넣은 그릇 · propagation §⑤-2).
+         ⚠ 그루도 삽수도 없는 물건이라 `packCutting` 을 안 쓴다. 여덟 칸뿐이고,
+           그 여덟이 없으면 방에서 자리를 잃거나(at·slotId) **든 삽수와 끊긴다**(cuttingId).
+         ★ `usedOnDay` 를 같이 적는 이유 — 걷을 때 재고로 돌아오나가 이 칸으로 갈린다
+           (검은 모종포트는 한 번 쓰면 안 돌아온다). 안 적으면 저장 한 번에 새것이 된다. */
+      cutContainers: needArr(S.cutContainers || [], 'cutContainers').map((t, i) => {
+        const path = `cutContainers[${i}]`;
+        needObj(t, path);
+        return {
+          id: needStr(t.id, `${path}.id`),
+          container: needStr(t.container, `${path}.container`),
+          itemId: optStr(t.itemId, `${path}.itemId`),
+          slotId: optStr(t.slotId, `${path}.slotId`),
+          at: packAt(t.at, `${path}.at`),
+          placedOnDay: needInt(t.placedOnDay ?? 0, `${path}.placedOnDay`, { min: 0 }),
+          cuttingId: optStr(t.cuttingId, `${path}.cuttingId`),
+          usedOnDay: t.usedOnDay == null ? null : needInt(t.usedOnDay, `${path}.usedOnDay`, { min: 0 })
+        };
+      }),
       firstPlay: packFirstPlay(S.firstPlay),
       story: packStory(S.story),
       tutorial: packTutorial(S.tutorial),
@@ -1518,6 +1571,21 @@ export function deserialize(raw, opt = {}) {
        두 벌로 저장하면 언젠가 어긋나고, 어긋난 쪽이 값(shop.sellCutting)으로 새어 나간다. */
     return syncCuttingLeaves({ ...q, at: q.at ? makeAt(q.at) : null });
   });
+  /* ★ 삽수 용기를 되세운다. **옛 세이브에는 이 칸이 없다** — 그때는 빈 배열이 맞다
+     (그 판에는 「방에 놓인 빈 병」이라는 것 자체가 없었다). 위 `emptyPots` 와 같은 규약이다.
+     ⚠ 쓸 때와 **같은 검증**을 태운다 — 다른 자를 쓰면 「저장은 되는데 못 여는」 판이 생긴다. */
+  S.cutContainers = needArr(st.cutContainers || [], 'state.cutContainers').map((t, i) => ({
+    id: needStr(t.id, `state.cutContainers[${i}].id`),
+    container: needStr(t.container, `state.cutContainers[${i}].container`),
+    itemId: t.itemId == null ? null : String(t.itemId),
+    slotId: t.slotId == null ? null : String(t.slotId),
+    at: t.at ? makeAt({ x: +t.at.x, y: +t.at.y, z: +t.at.z,
+                        rotY: t.at.rotY ?? 0, onUid: t.at.onUid ?? null,
+                        occIdx: t.at.occIdx ?? null }) : null,
+    placedOnDay: Number.isFinite(t.placedOnDay) ? t.placedOnDay : 0,
+    cuttingId: t.cuttingId == null ? null : String(t.cuttingId),
+    usedOnDay: Number.isFinite(t.usedOnDay) ? t.usedOnDay : null
+  }));
   /* ══ ⚠⚠ 이관 알림은 **여기서 못 적는다** — 아래 `S.log = …` 가 통째로 덮어쓴다 ══════
      ★★ 2026-08-17 재서 잡았다. `migrateCuttingRules` 는 2026-08-17 에 붙으면서
        `pushLog(S, '✂ ' + m)` 을 **바로 여기서** 불렀는데, 그 아래 `S.log = needArr(st.log …)`

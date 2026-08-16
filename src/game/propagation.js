@@ -25,7 +25,7 @@
      화분·콩나물 시루와 **같은 불변식**이다(추천 자리 위면 안정 id, 벗어나면 `free:{id}`).
 ============================================================ */
 import { resolvePlacement, atFromSlot, isFreeSlotId, inRoom } from './place.js';
-import { useStock, shopOf, CATALOG,
+import { useStock, assertStockAll, shopOf, CATALOG,
 /* ★★ 2026-08-17 — 무늬 **등급**(종류)은 전부 shop 이 읽는다.
    ⚠ 정본은 `data/balance/varie_grades.json` 이고 읽는 자리는 `shop.js` 한 곳이다.
      여기서 갈래 이름('sanban' 등)이나 확률을 다시 적지 않는다(확정문 §5 ★). */
@@ -256,11 +256,23 @@ export function graceDaysOf(method, novice) {
   return novice ? m.graceDaysNovice : m.graceDays;
 }
 
+/* ★★ 시계가 언제 시작했나 — 「자른 날」이 아니라 **「용기에 들어간 날」**이다 (2026-08-17).
+   ------------------------------------------------------------
+   ⚠ 자르기와 담기가 두 걸음으로 갈리면서(§⑤-2) 이 둘이 **더 이상 같은 날이 아니다.**
+     가방에 열흘 두었다가 병에 꽂으면 자른 날은 열흘 전이고 물꽂이는 오늘 시작한다.
+   ⚠ 그대로 `cutOnDay` 를 쓰면 **기한이 열흘 앞당겨진다** — 넣자마자 이미 지난 기한이
+     붙어 그 삽수가 첫날 죽는다. 그래서 시계의 기준일을 따로 든다.
+   ★ 옛 세이브·옛 호출부(자르면서 바로 담는 길)에는 이 칸이 없거나 `cutOnDay` 와 같다 —
+     그때는 값이 한 톨도 안 달라진다(`tools/test_cutcontainer.mjs` 검사 ⑧ 이 그걸 고정한다). */
+export function clockDayOf(c) {
+  return Number.isFinite(c && c.clockOnDay) ? c.clockOnDay : (c && c.cutOnDay) || 0;
+}
+
 /* 기한(절대 게임일). `null` 이면 기한 자체가 없다(화분 직삽). */
 export function deadlineDayOf(c, novice) {
   const m = METHODS[c.method];
   if (!m || !m.canDie) return null;
-  return c.cutOnDay + m.nodeDays + graceDaysOf(c.method, novice);
+  return clockDayOf(c) + m.nodeDays + graceDaysOf(c.method, novice);
 }
 
 /* ============================================================
@@ -829,6 +841,28 @@ export function cutBlockedReason(S, nodes, nodeId, opt = {}) {
      (docs/handoff/cutting2-to-plan.md §실측). */
 export const CUTTING_LEAF_DAYS = METHODS.water.nodeDays;
 
+/* ★★★ 2026-08-17 — **수경은 다음 혹이 나면 성장을 멈춘다** (박사님 ③).
+   ------------------------------------------------------------
+   원문: *"수경은 다음 혹이 나면 성장을 멈추고"*
+
+   ══ 재 보니 **이미 그랬다** — 그래도 못을 박는다 ═══════════════════════════
+   ★ 지금 그렇다: 잎이 나는 자리는 `stepCuttings` §①-3 **하나**뿐이고 그 조건이
+     `status === 'established'` 다. 물꽂이는 `rooting → rooted → node` 로만 가고
+     `established` 에 **닿는 길이 없다**(닿는 순간은 분갈이인데, 분갈이는 `method` 를
+     'pot' 으로 바꾼다). 그래서 물꽂이 삽수는 애초에 잎이 한 장도 안 났다 —
+     §삽수가 자란다 규칙 ① 이 *"물꽂이는 뿌리만 내고 잎은 안 낸다"* 로 못 박아 둔 그것이다.
+   ★ 그렇게 하기로 했다: 그래도 **조건을 글로 적는다.** 까닭 둘 —
+     ① 박사님이 규칙으로 말씀하신 것이라 코드에 그 문장이 있어야 다음 사람이 안 되묻는다
+     ② 「established 에 못 닿는다」는 **딴 계통의 사정**이다. 언젠가 물꽂이가 자리를 잡게
+        열리는 날(트레이·수경 전용 그릇) 이 조건이 없으면 **말없이 규칙이 깨진다.**
+   ⚠⚠ **기한(죽는 것)은 안 걷었다.** 박사님 확정: *"혹이 나면 성장이 멈추되 기한은 그대로."*
+     멈추는 것은 **잎**뿐이고 분갈이 기한은 그대로 돈다(§⑥ ③경고 → ④죽음).
+   ⚠ **흙(`pot`)은 안 본다.** 박사님은 **수경**만 말씀하셨다 — 흙은 혹이 나도 계속 자란다.
+     그래서 조건에 `method === 'water'` 가 들어 있고, 그 한 글자가 두 갈래를 가른다. */
+export function leafGrowthStopped(c) {
+  return !!(c && c.method === 'water' && c.nodeOnDay != null);
+}
+
 /* ★★ 2026-08-17 — 잎마다 **등급**도 같이 들고 있다 (확정문 §5).
    `c.leafGrade[i]` 는 `c.leafVarie[i]` 와 **같은 자리의 같은 잎**이다.
    ⚠ 배열 둘을 따로 두면 언젠가 길이가 갈린다 — 그래서 `syncCuttingLeaves` 한 곳에서만
@@ -936,16 +970,36 @@ function nextCuttingId(S) {
   return `cut_${String(n).padStart(2, '0')}`;
 }
 
-/* 모주에서 삽수를 하나 떼어 용기에 담는다. **자르기와 담기는 한 동작**이다 —
-   실제로도 자르자마자 병에 꽂거나 심고, 나눠 두면 "잘라 놓고 안 담은 조각"이라는
-   아무 데도 안 사는 상태가 생긴다.
+/* 모주에서 삽수를 하나 뗀다.
+   ------------------------------------------------------------
+   ★★★ 2026-08-17 — **자르기와 담기가 두 걸음으로 갈렸다** (박사님 ①②⑤).
+     원문: *"삽수하면 삽수된 줄기·잎은 템 형식으로 가방에 들어오도록 하고 / 유리병을 먼저
+     가구처럼 배치하고 거기다 넣고 싶은 삽수를 드래그해서 배치하거나 … / 화분 배치 후
+     거기다가 심을 수 있도록 하자"*
+
+   ⚠ 예전 머리말은 *"자르기와 담기는 한 동작이다 — 나눠 두면 아무 데도 안 사는 상태가
+     생긴다"* 였다. **그 걱정이 이번에 답을 얻었다**: 나눠 둔 조각은 「아무 데도 안 사는
+     것」이 아니라 **가방에 사는 물건**이다(`status:'bag'`). 그리고 이 저장소에는 그 손버릇이
+     이미 있다 — 시루·재배판·화분이 전부 「빈 그릇을 놓고 → 심는다」 두 걸음이다
+     (`state.placeEmptyPot` → `plantMonsteraSeed`, `state.placeSiru(sow:false)` → `state.sowCrop`).
+     **새 사상을 만들지 않고 그 길을 그대로 따랐다.**
+
+   ★ 그래서 `opt.container` 가 **선택**이 됐다. 두 길 다 돈다:
+       주면 (옛 길)   자른 그 자리에서 용기를 쓰고 담는다 — 값도 순서도 예전 그대로다
+       안 주면 (새 길) 삽수만 난다. **재고를 한 톨도 안 깎는다** — 깎는 것은 「용기를 놓을 때」다
+   ⚠ 옛 길을 없애지 않았다. 검사·재현·`game.html` 의 옛 단추가 아직 그 길로 부른다.
+
+   ★ 용기를 안 정해도 **자를 때 정해지는 것은 전부 그대로 적는다** — 무늬·등급·`cutW` ·
+     `motherGrowthDays`·`motherSeed`·`source`. 그 값들은 **모주에서 읽어 온 것**이라
+     용기와 아무 상관이 없다(§① — 코어가 지어내지 않는다).
+   ★ 체력(`ACT_COST.cut`)은 **두 길 다 든다.** 자르는 것이 손이지 담는 것이 손이 아니다.
 
      S
      opt.potId      모주 화분 id (없으면 S.pots[0])
      opt.nodes      ★ 모주의 마디 목록. **필수** — 코어가 지어내지 않는다.
                     growth_adapter.cuttableNodes() 또는 같은 모양의 값
      opt.nodeId     그중 어느 마디를 자르나
-     opt.container  'jar' | 'soil'  (tray 는 에셋 미정이라 막힌다)
+     opt.container  'jar' | 'soil' — **없어도 된다**(가방으로 온다). tray 는 에셋 미정이라 막힌다
      opt.at         놓을 좌표. opt.slots·size·snapDist 는 setPotAt 과 같다
      opt.varieChance  모주의 새 잎 무늬율(정본은 growth). 없으면 varieChanceOf(모주)
      opt.log        로그 콜백
@@ -1001,10 +1055,14 @@ export function takeCutting(S, opt = {}) {
   const wouldEndMother = cutEndsMother(S, nodes, node.nodeId, mkey);
   const novice = isNoviceMode(S);
 
-  const cont = CONTAINERS[opt.container];
-  if (!cont) throw new Error(`[삽수] 모르는 용기입니다: ${opt.container} ` +
-    `(아는 것: ${Object.keys(CONTAINERS).join(', ')})`);
-  if (!cont.ready)
+  /* ★★ 용기 — **안 주면 가방으로 온다**(2026-08-17 · 위 머리말).
+     ⚠ 「안 줬다」와 「모르는 것을 줬다」를 가른다. 후자는 여전히 던진다 —
+       오타를 조용히 가방으로 흘려보내면 화면이 「병에 꽂았다」고 믿는 판이 생긴다. */
+  const cont = opt.container == null ? null : CONTAINERS[opt.container];
+  if (opt.container != null && !cont)
+    throw new Error(`[삽수] 모르는 용기입니다: ${opt.container} ` +
+      `(아는 것: ${Object.keys(CONTAINERS).join(', ')})`);
+  if (cont && !cont.ready)
     throw new Error(`[삽수] ${cont.ko} 는 아직 못 씁니다 — 에셋이 정해지지 않았습니다 ` +
       `(docs/propagation.md §4 ⏸ 물꽂이 트레이). 유리 수경병(jar)이나 화분 직삽(soil)을 쓰세요`);
 
@@ -1013,8 +1071,10 @@ export function takeCutting(S, opt = {}) {
      ★ 사유를 내는 곳은 `methodLeafBlock` **한 곳**이다 — `cutBlockedReason` 도 그것을 부른다.
        두 곳에서 세면 「목록에는 눌리는데 누르면 던지는」 마디가 다시 생긴다.
      ⚠ `tutorialInput` 을 붙인다 — 고장이 아니라 **안내**다(다른 용기를 고르면 된다).
-       안 붙이면 game.html 이 이걸 사고로 읽어 판을 잠근다(`isRecoverable`). */
-  {
+       안 붙이면 game.html 이 이걸 사고로 읽어 판을 잠근다(`isRecoverable`).
+     ★ 용기를 안 정했으면 **여기서 안 묻는다.** 잎 수로 갈리는 것은 「어느 용기에 넣나」이고,
+       그 물음은 넣을 때 `putCuttingIn` 이 **같은 함수로** 다시 한다(새는 길이 없다). */
+  if (cont) {
     const lb = methodLeafBlock(cont.method, node.leaves);
     if (lb) { const e = new Error(`[삽수] ${node.nodeId} — ${lb}`); e.tutorialInput = true; throw e; }
   }
@@ -1033,10 +1093,12 @@ export function takeCutting(S, opt = {}) {
   }
 
   /* ★ 용기를 실제로 쓴다 — 여기서 재고가 하나 빠진다(§용기값). 없으면 `useStock` 이 던지고,
-     그 예외에는 "몇 개가 배송 중인지"까지 들어 있다. 상태는 아직 아무것도 안 바뀌었다. */
-  if (cont.itemId) useStock(S, cont.itemId, 1);
+     그 예외에는 "몇 개가 배송 중인지"까지 들어 있다. 상태는 아직 아무것도 안 바뀌었다.
+     ⚠⚠ **용기를 안 정했으면 한 톨도 안 깎는다**(2026-08-17). 깎는 자리는 「용기를 방에
+       놓을 때」(`placeCutContainer`) 하나로 옮겼다 — 두 곳에서 깎으면 병 하나로 두 번 낸다. */
+  if (cont && cont.itemId) useStock(S, cont.itemId, 1);
 
-  const method = cont.method;
+  const method = cont ? cont.method : null;
   const mom = momCut || pot;
   const motherChance = Number.isFinite(opt.varieChance) ? opt.varieChance : varieChanceOf(mom);
 
@@ -1120,8 +1182,17 @@ export function takeCutting(S, opt = {}) {
     })(),
     leafDays: 0,                 // 빛이 든 날만 쌓인다. CUTTING_LEAF_DAYS 마다 잎 한 장
     grewLeaves: 0,               // 자기가 낸 잎 수(딸려온 것 제외) — 재현·표시용
+    /* ★★ 2026-08-17 — 용기를 안 정했으면 **둘 다 null 이다.**
+       ⚠ 「아직 안 정했다」를 0 이나 'water' 로 메꾸지 않는다 — 메꾸면 가방에 있는 조각이
+         물꽂이인 척하고 하루가 흘러 기한이 붙는다. `null` 이라야 `stepCuttings` 가 건너뛴다. */
     method,
-    container: cont.id,
+    container: cont ? cont.id : null,
+    /* 지금 들어앉아 있는 **방의 용기** id(`S.cutContainers[].id`). 가방에 있으면 null.
+       ⚠ `container` 는 「무슨 그릇이냐」(갈래)이고 이 칸은 「방의 어느 그릇이냐」(개체)다.
+         옛 길(자르면서 담기)은 갈래만 있고 개체가 없다 — 그래서 여기가 null 일 수 있다. */
+    inContainerId: null,
+    /* 시계의 기준일 — §clockDayOf. 담긴 채로 났으면 자른 날이 곧 기준일이다. */
+    clockOnDay: cont ? S.day : null,
     gen: Number.isInteger(mom.gen) ? mom.gen + 1 : 1,
     /* 앞으로 날 **새 잎**의 무늬율. 무지 마디면 이 값이 끝이고(§⑤),
        무늬 마디면 뿌리내리는 날 **빛이 덮어쓴다**(§③). */
@@ -1140,7 +1211,8 @@ export function takeCutting(S, opt = {}) {
     varieRolled: true,
     slotId: null,
     at: null,
-    status: 'rooting',
+    /* ★ 용기가 없으면 **가방**이다 — 자리도 시계도 없다(§CUTTING_STATUS_KO.bag) */
+    status: cont ? 'rooting' : 'bag',
     days: 0,
     rootedOnDay: null,
     nodeOnDay: null,
@@ -1159,6 +1231,8 @@ export function takeCutting(S, opt = {}) {
   spendStamina(S, 'cut');
 
   const log = typeof opt.log === 'function' ? opt.log : null;
+  /* 어디로 갔나 — 로그 한 조각. 용기를 안 정했으면 **가방**이다(문구를 두 벌로 안 쓴다) */
+  const whereKo = cont ? `${cont.ko} · ${METHODS[method].ko}` : '가방';
 
   /* ── 모주가 받는 영향 ────────────────────────────────────────────────
      ★ 모주가 삽수면 **잎이 그 자리에서 실제로 빠진다.** 코어가 그 잎을 들고 있기 때문이다.
@@ -1178,7 +1252,7 @@ export function takeCutting(S, opt = {}) {
     if (log)
       log(`✂ 삽수 ${momCut.id} 의 ${node.nodeId} 마디를 잘랐습니다 — ` +
           `잎 ${node.leaves}장${node.variegatedLeaves ? ` (무늬 ${node.variegatedLeaves}장)` : ''} · ` +
-          `${cont.ko} · ${METHODS[method].ko} · ${momCut.id} 에 잎 ${momCut.leaves}장이 남았습니다`);
+          `${whereKo} · ${momCut.id} 에 잎 ${momCut.leaves}장이 남았습니다`);
   } else {
     if (!Array.isArray(pot.cuts)) pot.cuts = [];
     pot.cuts.push({ day: S.day, cuttingId: id, nodeId: node.nodeId, stem: node.stem, leaves: node.leaves });
@@ -1190,7 +1264,7 @@ export function takeCutting(S, opt = {}) {
     if (log) {
       log(`✂ ${pot.id} 의 ${node.nodeId}(${node.stem}) 마디를 잘랐습니다 — ` +
           `잎 ${node.leaves}장${node.variegatedLeaves ? ` (무늬 ${node.variegatedLeaves}장)` : ''} · ` +
-          `${cont.ko} · ${METHODS[method].ko}`);
+          `${whereKo}`);
       log(`  ⤷ 모주 형태 반영은 대기 중입니다(잎 -${pot.pendingCutLoss.leaves} · ` +
           `마디 -${pot.pendingCutLoss.nodes}) — 생장 창이 다개체 리팩터에서 적용합니다`);
       if (wouldEndMother) log(`⚠ ${pot.id} 에 예비혹이 남지 않았습니다 — 모주는 새 생장점을 못 냅니다`);
@@ -1210,9 +1284,14 @@ export function takeCutting(S, opt = {}) {
     if (method === 'water')
       log(`  ⤷ ${METHODS.water.rootDays}일 뒤 뿌리 · ${METHODS.water.nodeDays}일 뒤 혹 → ` +
           `그때부터 ${graceDaysOf('water', novice)}일 안에 분갈이해야 삽니다`);
-    else
+    else if (method === 'pot')
       log(`  ⤷ ${METHODS.pot.rootDays}일 뒤 자리를 잡고 ${METHODS.pot.nodeDays}일 뒤 혹이 납니다 — ` +
           `기한도 죽음도 없습니다`);
+    else
+      /* ★ 가방에 있는 동안은 **하루가 안 간다.** 그 사실을 말해 준다 — 안 말하면
+         플레이어가 「꽂는 걸 잊어서 늦어졌다」를 버그로 읽는다(조용한 실패의 반대쪽). */
+      log(`  ⤷ 가방에 들어왔습니다 — 방에 놓은 용기에 넣어야 시작합니다 ` +
+          `(넣기 전에는 날이 안 갑니다)`);
   }
   return c;
 }
@@ -1228,7 +1307,284 @@ export function setCuttingAt(S, cuttingOrId, at, opt = {}) {
   const r = resolvePlacement(c.id, at, opt);
   c.at = r.at;
   c.slotId = r.slotId;
+  /* ★ 방의 용기 안에 들어 있으면 **용기도 같이 간다.** 삽수만 옮기면 병은 제자리에 남고
+     삽수는 허공에 서는데, 3D 는 병을 그리므로 **화면과 상태가 갈린다.**
+     자리 규약을 여기서 또 쓰지 않는다 — 이미 잰 값을 그대로 옮겨 적는다. */
+  const ct = cutContainerOf(S, c.inContainerId);
+  if (ct) { ct.at = r.at; ct.slotId = r.slotId; }
   return { cuttingId: c.id, slotId: r.slotId, at: r.at, snappedTo: r.snappedTo, dist: r.dist };
+}
+
+/* ============================================================
+   ⑤-2 ★★★ **용기를 먼저 놓고, 나중에 넣는다** (2026-08-17 · 박사님 ②④⑤⑥)
+   ------------------------------------------------------------
+   박사님 원문:
+     ② *"유리병을 먼저 가구처럼 배치하고 거기다 넣고 싶은 삽수를 드래그해서 배치하거나
+        유리병을 골라서 넣을 수 있도록 하자"*
+     ④ *"수경 재배 중 클릭 누르면 팝업 기능에 다시 삽수 인벤으로 기능을 넣어서 …"*
+     ⑤ *"화분 배치 후 거기다가 심을 수 있도록 하자"*
+     ⑥ *"그 후 유리병도 클릭 시 인벤 회수 버튼이 있도록"*
+   그리고 2026-08-17 추가: *"삽수 후 수경 안 하고 바로 화분 심는 것도 가능하도록 하자 동일하게."*
+
+   ══ 왜 새 사상이 아닌가 ═══════════════════════════════════════════════════
+   이 저장소에는 **이미 같은 손버릇이 셋** 있다. 전부 「빈 그릇을 놓고 → 심는다」다:
+       시루     `state.placeSiru(sow:false)` → `state.sowCrop`
+       재배판   같은 길(2026-08-11 무순이 먼저 왔고 2026-08-16 콩나물이 따라왔다)
+       화분     `state.placeEmptyPot`        → `state.plantMonsteraSeed`
+   ⇒ 여기서는 그 길을 **베끼지 않고 그대로 따른다.** 순서 계약도 같다:
+       ① 던질 수 있는 것을 다 던져 본다(용기 갈래 · 재고 · 자리)
+       ② 다 됐으면 재고를 뺀다   ③ 목록에 남긴다
+     중간에 던지면 아무것도 안 바뀐다.
+
+   ══ 왜 `state.js` 가 아니라 여기인가 (판단 · 까닭을 적으라 하셨다) ═══════════
+   `state.placeEmptyPot` 을 본으로 삼았지만 **삽수 용기는 그 목록에 못 들어간다.** 넷이다:
+     ① **규칙이 여기 있다.** 어느 갈래가 어느 방식인지(`method`) · 몇 개까지 드는지
+        (`capacity`) · 팔 때 돌아오는지(`returnsOnSale`) · 에셋이 정해졌는지(`ready`) —
+        전부 `CONTAINERS` 다. state 에 두면 그 표를 **거꾸로 import** 해야 하고
+        (지금 state → propagation 은 화살표가 아예 없다), 안 하면 표가 두 벌이 된다.
+     ② **`emptyPots` 와 뜻이 다르다.** 거기 든 그릇은 「씨앗을 심을 그릇」이라
+        `plantMonsteraSeed` 가 씨앗을 넣는다. 삽수 용기를 같은 칸에 섞으면
+        **유리 수경병에 몬스테라 씨앗이 심긴다.** 물음이 다른 목록은 안 합친다.
+     ③ **딸린 창구가 전부 여기 있다** — `putCuttingIn` 은 `S.cuttings` 와
+        `methodLeafBlock`·`METHODS` 를 한 자리에서 만져야 한다.
+     ④ 이 파일이 이미 `place.resolvePlacement` 와 `shop.useStock` 을 쓴다. 새로 열 문이 없다.
+   ⚠ **겹치는 것이 하나 있고 숨기지 않는다**: `CONTAINERS.soil.itemId` 는 `'pot'` 이라
+     `state.SEED_POT_ITEM_ID` 와 **같은 상점 품목**이다. 재고 하나를 둘이 나눠 쓴다(그건 맞다 —
+     실제로 같은 검은 모종포트다). 다만 **놓고 나면 목록이 갈린다** — 화면이 [빈 화분]을
+     어느 쪽으로 놓을지 정해야 한다. 그 판단은 화면(`game.html`) 몫이라 보고서에 적었다.
+
+   ══ 담은 그릇의 모양 (`S.cutContainers[]`) ═══════════════════════════════
+     id           `cont_01` … 방에서 이 그릇을 가리키는 이름
+     container    'jar' | 'soil'  (CONTAINERS 의 열쇠)
+     itemId       상점 품목 열쇠 — 걷을 때 이 이름으로 돌려준다
+     at · slotId  자리. 화분·시루와 **같은 규약**(place.resolvePlacement)
+     placedOnDay  놓은 날
+     cuttingId    안에 든 삽수 id. 비었으면 null (**한 그릇에 하나** — capacity 1)
+============================================================ */
+
+export function cutContainersOf(S) { return (S && S.cutContainers) || []; }
+
+export function cutContainerOf(S, id) {
+  if (!id) return null;
+  return cutContainersOf(S).find(x => x && x.id === id) || null;
+}
+
+/* 이 삽수를 담고 있는 방의 그릇. 없으면 null(가방에 있거나 옛 길로 담겼다) */
+export function containerHolding(S, cuttingOrId) {
+  const id = typeof cuttingOrId === 'string' ? cuttingOrId : (cuttingOrId && cuttingOrId.id);
+  if (!id) return null;
+  return cutContainersOf(S).find(x => x && x.cuttingId === id) || null;
+}
+
+function nextCutContainerId(S) {
+  let n = 1;
+  const used = new Set(cutContainersOf(S).map(x => x.id));
+  while (used.has(`cont_${String(n).padStart(2, '0')}`)) n++;
+  return `cont_${String(n).padStart(2, '0')}`;
+}
+
+/* 빈 용기 하나를 방에 놓는다. **여기서 재고가 빠진다**(§용기값 — 깎는 자리는 한 곳이다).
+     container  'jar' | 'soil'
+     at         놓을 좌표. opt.slots·size·snapDist 는 setCuttingAt 과 같다
+     opt.id     이름을 지정하고 싶을 때(재현·검사용)
+     opt.log    로그 콜백
+   반환 { id, container, containerKo, itemId, at, slotId, left } */
+export function placeCutContainer(S, container, at, opt = {}) {
+  if (!S) throw new Error('[용기] 상태가 없습니다');
+  const cont = CONTAINERS[container];
+  if (!cont) throw new Error(`[용기] 모르는 용기입니다: ${container} ` +
+    `(아는 것: ${Object.keys(CONTAINERS).join(', ')})`);
+  if (!cont.ready)
+    throw new Error(`[용기] ${cont.ko} 는 아직 못 씁니다 — 에셋이 정해지지 않았습니다 ` +
+      `(docs/propagation.md §4 ⏸ 물꽂이 트레이)`);
+  if (!cont.itemId)
+    throw new Error(`[용기] ${cont.ko} 는 상점 품목이 없어 놓을 수 없습니다`);
+
+  /* ① **묻기만 한다.** 여기서는 한 톨도 안 뺀다 (state.placeEmptyPot 과 같은 순서) */
+  assertStockAll(S, [{ itemId: cont.itemId, qty: 1 }]);
+  const id = opt.id || nextCutContainerId(S);
+  /* ② 자리 — 여기서 재 본다(던질 수 있다). 아직 아무것도 안 썼다 */
+  const spot = resolvePlacement(id, at, opt);
+  /* ③ 다 됐다. 이제 뺀다 */
+  useStock(S, cont.itemId, 1);
+  if (!Array.isArray(S.cutContainers)) S.cutContainers = [];
+  const row = { id, container: cont.id, itemId: cont.itemId,
+                at: spot.at, slotId: spot.slotId, placedOnDay: S.day, cuttingId: null,
+                /* ★ 한 번이라도 삽수가 들어앉았나 — **걷을 때 돌아오나**가 여기서 갈린다.
+                   검은 모종포트는 흙째 쓰는 소모품이라(`returnsOnSale:false`) 한 번 쓰면
+                   안 돌아오고, 유리 수경병은 소모품이 아니라 언제나 돌아온다.
+                   ⚠ 이 칸이 없으면 「심고 → 빼고 → 걷고」로 포트가 공짜가 된다(경제가 샌다). */
+                usedOnDay: null };
+  S.cutContainers.push(row);
+  const log = typeof opt.log === 'function' ? opt.log : null;
+  if (log) log(`🫙 빈 ${cont.ko}를 놓았습니다 — 가방의 삽수를 넣으면 ` +
+               `${METHODS[cont.method].ko}가 시작됩니다`);
+  return { ...row, containerKo: cont.ko, left: S.cutContainers.length };
+}
+
+/* 빈 용기를 방에서 걷어 **재고로 돌려준다.**
+   ⚠ 안에 삽수가 들어 있으면 **던진다** — 먼저 빼야 한다(박사님 ⑥ 의 순서 그대로).
+     `tutorialInput` 을 붙인다: 고장이 아니라 안내다(빼고 다시 누르면 된다).
+   ★ 돌려주는 것은 `returnContainer` 다 — 상점이 「판 것」으로 안 세게(돌아온 것은 수입이 아니다). */
+export function removeContainer(S, containerId, opt = {}) {
+  const ct = cutContainerOf(S, containerId);
+  if (!ct) throw new Error(`[용기] 모르는 용기입니다: ${containerId}`);
+  if (ct.cuttingId) {
+    const e = new Error(`[용기] ${(CONTAINERS[ct.container] || {}).ko || ct.container} 에 ` +
+      `삽수 ${ct.cuttingId} 가 들어 있습니다 — 먼저 삽수를 가방으로 빼 주세요`);
+    e.tutorialInput = true; throw e;
+  }
+  S.cutContainers = cutContainersOf(S).filter(x => x !== ct);
+  /* ★ 돌아오나 — **`CONTAINERS` 가 정한다**(여기서 갈래 이름을 다시 적지 않는다).
+       유리 수경병 : 소모품이 아니다 → 언제나 돌아온다
+       검은 모종포트 : 흙째 쓴다 → **한 번이라도 삽수가 들어앉았으면 안 돌아온다**
+     ⚠ 안 쓴 채로 걷는 것은 「잘못 놓았다」를 되돌리는 일이라 둘 다 돌아온다. */
+  const cont = CONTAINERS[ct.container] || {};
+  const returns = !!ct.itemId && (cont.returnsOnSale === true || ct.usedOnDay == null);
+  if (returns) returnContainer(S, ct.itemId, 1);
+  const log = typeof opt.log === 'function' ? opt.log : null;
+  if (log) log(`📦 ${cont.ko || ct.container} 를 걷었습니다` +
+               (returns ? ' — 가방으로 돌아왔습니다' : ' (한 번 쓴 것이라 돌아오지 않습니다)'));
+  return { id: ct.id, container: ct.container, itemId: ct.itemId, returned: returns,
+           left: cutContainersOf(S).length };
+}
+
+/* ★★ 넣기 — 가방의 삽수를 방에 놓인 용기에 넣는다. **여기서 시계가 시작된다.**
+   ------------------------------------------------------------
+   ★ `status:'rooting'` · `days:0` · `clockOnDay = 오늘` 이다. 「자른 날」이 아니라
+     **넣은 날**이 기준이다(§clockDayOf) — 안 그러면 가방에 오래 둔 조각이 첫날 죽는다.
+   ⚠ **한 그릇에 하나**다(`capacity` 1). 이미 든 그릇에 또 넣으면 던진다.
+   ⚠ 잎 수 조건은 `methodLeafBlock` **그 함수**가 다시 본다 — 잎 두 장짜리는 병에 안 들어가고
+     흙에는 들어간다(§WATER_LEAF_MAX). 사유를 두 곳에서 짓지 않는다.
+   ★ **재고를 안 건드린다.** 용기값은 놓을 때 이미 냈다.
+   ★ **체력을 안 쓴다** — `state.sowCrop`(놓인 용기에 씨앗 뿌리기)이 안 쓰는 그 판단 그대로다.
+     자르는 것이 손이고(`ACT_COST.cut` 은 `takeCutting` 이 이미 물렸다) 꽂는 것은 그 손의 뒷마무리다.
+     ⚠ 이건 **판단**입니다 — 물리게 하려면 `canActStamina(S,'sow')` 한 줄이고, 그때는
+       밸런스 창과 같이 정해야 합니다.
+   반환 삽수 객체 */
+export function putCuttingIn(S, cuttingOrId, containerId, opt = {}) {
+  const c = typeof cuttingOrId === 'string'
+    ? (S.cuttings || []).find(x => x.id === cuttingOrId) : cuttingOrId;
+  if (!c) throw new Error(`[삽수] 모르는 삽수: ${cuttingOrId}`);
+  if (c.status === 'dead') throw new Error(`[삽수] ${c.id} 는 이미 시들었습니다`);
+  if (c.container || c.inContainerId) {
+    const e = new Error(`[삽수] ${c.id} 는 이미 ` +
+      `${(CONTAINERS[c.container] || {}).ko || c.container} 에 들어 있습니다 — ` +
+      `먼저 가방으로 빼 주세요`);
+    e.tutorialInput = true; throw e;
+  }
+  const ct = cutContainerOf(S, containerId);
+  if (!ct) throw new Error(`[삽수] 모르는 용기입니다: ${containerId} — ` +
+    `방에 놓인 용기라야 합니다(placeCutContainer)`);
+  if (ct.cuttingId) {
+    const e = new Error(`[삽수] ${(CONTAINERS[ct.container] || {}).ko || ct.container} 에 ` +
+      `이미 삽수 ${ct.cuttingId} 가 들어 있습니다 — 용기 하나에 삽수 하나입니다`);
+    e.tutorialInput = true; throw e;
+  }
+  const cont = CONTAINERS[ct.container];
+  if (!cont) throw new Error(`[삽수] 용기 ${ct.id} 의 갈래가 이상합니다: ${ct.container}`);
+
+  /* ⚠ 잎 수 — 사유를 내는 곳은 `methodLeafBlock` 한 곳이다(위 ★) */
+  {
+    const lb = methodLeafBlock(cont.method, cuttingStatsNow(c).leaves);
+    if (lb) { const e = new Error(`[삽수] ${c.id} — ${lb}`); e.tutorialInput = true; throw e; }
+  }
+
+  c.container = cont.id;
+  c.method = cont.method;
+  c.inContainerId = ct.id;
+  c.status = 'rooting';
+  c.days = 0;
+  c.clockOnDay = S.day;
+  c.rootedOnDay = null;
+  c.nodeOnDay = null;
+  c.deadlineDay = null;
+  c.warned = [];
+  c.potted = false;
+  c.at = ct.at;
+  c.slotId = ct.slotId;
+  ct.cuttingId = c.id;
+  if (ct.usedOnDay == null) ct.usedOnDay = S.day;      // 걷을 때 돌아오나 — §removeContainer
+
+  const log = typeof opt.log === 'function' ? opt.log : null;
+  if (log) {
+    const m = METHODS[cont.method];
+    log(`🫙 삽수 ${c.id} 를 ${cont.ko} 에 넣었습니다 — ${m.ko} 시작` +
+        (m.canDie
+          ? ` (${m.rootDays}일 뒤 뿌리 · ${m.nodeDays}일 뒤 혹 → ` +
+            `그때부터 ${graceDaysOf(cont.method, isNoviceMode(S))}일 안에 분갈이해야 삽니다)`
+          : ` (${m.rootDays}일 뒤 자리를 잡고 ${m.nodeDays}일 뒤 혹 — 기한도 죽음도 없습니다)`));
+  }
+  return c;
+}
+
+/* ★★ 회수 — 삽수를 가방으로 되돌린다. **용기는 방에 빈 채로 남는다**(박사님 ④).
+   ------------------------------------------------------------
+   ══ 언제 되나 — **살아 있으면 언제든** (판단 · 까닭을 적으라 하셨다) ══════════
+   박사님 ④ 는 *"혹이 나서 성장이 멈춘 삽수를 다시 인벤으로"* 다. 「혹 난 뒤에만」으로 좁힐
+   수도 있었는데 **안 좁혔다.** 넷이다:
+     ① 그 말씀은 **「혹 난 것도 되돌릴 수 있어야 한다」는 요구**이지 「그 전에는 못 뺀다」는
+        금지가 아니다. 넓게 열어도 요구가 그대로 지켜진다.
+     ② **넣기가 아무 때나 되는데 빼기만 막으면 되돌릴 길이 없다.** 잎 1장짜리를 엉뚱한
+        병에 꽂은 실수가 영영 안 풀리고 병 재고까지 묶인다. 이 저장소는 「놓은 것은 걷을 수
+        있다」를 이미 규칙으로 삼는다(`state.removeEmptyPot`).
+     ③ **남용이 이득이 되는 길이 없다.** 빼면 시계가 멈추고, 다시 넣으면 `days:0` 으로
+        **처음부터** 다시 돈다(위 `putCuttingIn`). 빼는 것은 언제나 **손해이거나 본전**이다.
+     ④ 규칙이 하나면 화면도 하나다 — 팝업의 [가방으로] 단추가 회색이 되는 경우가 없다.
+   ⚠ 죽은 삽수는 못 뺀다. 그건 이미 사라진 것이고 되돌릴 수 없다(§⑥ 과 같은 규약).
+   ⚠⚠ **분갈이 기한을 걷은 것이 아니다.** 기한은 그대로 돈다(박사님 확정 —
+     *"혹이 나면 성장이 멈추되 기한은 그대로"*). 회수는 그 기한을 **피하는 또 하나의 길**이고,
+     대신 시계가 처음으로 돌아가므로 값을 치른다.
+
+   ★ 옛 길로 담긴 삽수(자르면서 바로 병에 꽂은 것 · `inContainerId` 가 없다)도 뺄 수 있다.
+     그때는 **그 자리에 빈 용기를 세워 준다** — 병은 물리적으로 거기 있었으니 그대로 남는 것이
+     맞고, 재고는 안 건드린다(놓을 때 이미 냈다). 안 그러면 회수가 병 하나를 조용히 없앤다.
+   반환 { cuttingId, containerId, container } */
+export function takeCuttingOut(S, cuttingOrId, opt = {}) {
+  const c = typeof cuttingOrId === 'string'
+    ? (S.cuttings || []).find(x => x.id === cuttingOrId) : cuttingOrId;
+  if (!c) throw new Error(`[삽수] 모르는 삽수: ${cuttingOrId}`);
+  if (c.status === 'dead')
+    throw new Error(`[삽수] ${c.id} 는 이미 시들었습니다 — 되돌릴 수 없습니다`);
+  if (c.status === 'bag' || (!c.container && !c.inContainerId)) {
+    const e = new Error(`[삽수] ${c.id} 는 이미 가방에 있습니다`);
+    e.tutorialInput = true; throw e;
+  }
+
+  let ct = cutContainerOf(S, c.inContainerId) || containerHolding(S, c.id);
+  if (!ct) {
+    /* 옛 길 — 용기가 삽수에 붙어만 있었다. 그 자리에 그릇을 세워 준다(위 ★) */
+    const cont = CONTAINERS[c.container] || null;
+    if (!Array.isArray(S.cutContainers)) S.cutContainers = [];
+    ct = { id: nextCutContainerId(S), container: c.container,
+           itemId: cont ? cont.itemId : null,
+           at: c.at || null, slotId: c.slotId || null,
+           /* ⚠ **쓴 것으로 적는다.** 이 그릇에는 이미 삽수가 들어앉아 있었다 —
+              안 적으면 옛 판의 모종포트가 회수 한 번으로 새것이 되어 돌아온다. */
+           placedOnDay: S.day, cuttingId: c.id, usedOnDay: S.day };
+    S.cutContainers.push(ct);
+  }
+
+  const contKo = (CONTAINERS[ct.container] || {}).ko || ct.container;
+  ct.cuttingId = null;
+  c.container = null;
+  c.method = null;
+  c.inContainerId = null;
+  c.status = 'bag';
+  c.days = 0;
+  c.clockOnDay = null;
+  c.rootedOnDay = null;
+  c.nodeOnDay = null;
+  c.deadlineDay = null;
+  c.warned = [];
+  c.potted = false;
+  c.at = null;
+  c.slotId = null;
+
+  const log = typeof opt.log === 'function' ? opt.log : null;
+  if (log) log(`🎒 삽수 ${c.id} 를 ${contKo} 에서 꺼내 가방에 넣었습니다 — ` +
+               `${contKo} 는 방에 빈 채로 남습니다 (다시 넣으면 처음부터 시작합니다)`);
+  return { cuttingId: c.id, containerId: ct.id, container: ct.container };
 }
 
 /* ★ 자리를 잃은 삽수를 회수한다 — 화분(state.rehomePot)과 **같은 두 경우**만 본다.
@@ -1237,7 +1593,34 @@ export function setCuttingAt(S, cuttingOrId, at, opt = {}) {
    자리가 없다고 죽이면 방을 옮겼다는 이유로 삽수가 사라진다(유령의 반대쪽 사고). */
 export function rehomeCuttings(S, room, log) {
   const out = [];
+  /* ★★ 2026-08-17 — **빈 용기도 같이 본다**(§⑤-2). 삽수가 든 그릇은 아래 삽수 쪽에서
+     같이 옮겨지지만, 빈 그릇은 아무도 안 봐서 **받치던 가구가 사라지면 허공에 남는다.**
+     ⚠ 규칙을 새로 짓지 않는다 — 아래 삽수와 **똑같은 두 경우**(가구가 사라졌다 · 방 밖이다)다. */
+  for (const ct of cutContainersOf(S)) {
+    if (ct.cuttingId) continue;                       // 든 것은 삽수 쪽에서 같이 간다
+    let why = null;
+    if (ct.at) {
+      if (room && room.size && !inRoom(ct.at, room.size)) why = '자리가 방 밖입니다';
+      else if (ct.at.onUid && room && room.surfaces && !room.surfaces.has(ct.at.onUid))
+        why = `받치던 ${ct.at.onUid} 이(가) 사라졌습니다`;
+    } else if (ct.slotId && !isFreeSlotId(ct.slotId) &&
+               !((room && room.slots) || []).some(s => s && s.slotId === ct.slotId)) {
+      why = `슬롯 ${ct.slotId} 이(가) 이 방에 없습니다`;
+    }
+    if (!why) continue;
+    const dest = ((room && room.slots) || [])[0] || null;
+    if (dest && [dest.x, dest.y, dest.z].every(v => Number.isFinite(v))) {
+      ct.at = atFromSlot(dest); ct.slotId = dest.slotId;
+      if (log) log(`용기 ${ct.id} 회수 — ${why} · ${ct.slotId} 로 옮겼습니다`);
+    } else {
+      ct.at = null; ct.slotId = null;
+      if (log) log(`용기 ${ct.id} 자리 해제 — ${why}`);
+    }
+    out.push({ id: ct.id, why, kind: 'container' });
+  }
   for (const c of S.cuttings || []) {
+    /* ★ 가방에 있는 조각은 자리가 없다 — 회수할 것이 없다 */
+    if (c.status === 'bag' || (!c.at && !c.slotId)) continue;
     let why = null;
     if (c.at) {
       if (room && room.size && !inRoom(c.at, room.size)) why = '자리가 방 밖입니다';
@@ -1262,6 +1645,9 @@ export function rehomeCuttings(S, room, log) {
       c.at = null; c.slotId = null;
       if (log) log(`삽수 ${c.id} 자리 해제 — ${why} (삽수는 살아 있습니다)`);
     }
+    /* ★ 담고 있던 그릇도 같이 간다 — 안 옮기면 병만 옛 자리에 남아 화면과 갈린다 */
+    const ct = cutContainerOf(S, c.inContainerId) || containerHolding(S, c.id);
+    if (ct) { ct.at = c.at; ct.slotId = c.slotId; }
     out.push({ id: c.id, why });
   }
   return out;
@@ -1274,6 +1660,9 @@ export function rehomeCuttings(S, room, log) {
      마지막 경고는 기한 하루 전에 이미 나갔다.
 ============================================================ */
 export const CUTTING_STATUS_KO = Object.freeze({
+  /* ★★ 2026-08-17 — **가방**. 잘라만 두고 아직 용기에 안 넣은 조각이다(§⑤-2).
+     ⚠ 이 상태에서는 **하루가 안 간다** — `days` 도 기한도 안 돈다. 시계는 넣을 때 시작한다. */
+  bag: '가방에 있다 — 용기에 넣어야 시작한다',
   rooting: '뿌리내리는 중',
   rooted: '뿌리를 냈다',
   node: '혹이 났다 — 분갈이 필요',
@@ -1364,6 +1753,12 @@ export function stepCuttings(S, opt = {}) {
   const alive = [];
   for (const c of S.cuttings) {
     if (c.status === 'dead') { died.push(c); continue; }
+    /* ★★ 2026-08-17 — **가방에 있는 삽수는 하루가 안 간다**(§⑤-2 · CUTTING_STATUS_KO.bag).
+       ⚠ 여기서 안 걸러 내면 바로 아래 `METHODS[c.method]` 가 `undefined` 라 **던진다** —
+         가방에 조각 하나만 있어도 하루 넘기기가 통째로 막힌다.
+       ★ 굶기는 것이 아니다. 자리도 빛도 없는 물건이라 셀 것이 없을 뿐이고,
+         시계는 `putCuttingIn` 이 켠다(그것이 박사님 ② 의 뜻이다). */
+    if (c.status === 'bag' || !c.method) { alive.push(c); continue; }
     c.days++;
     const m = METHODS[c.method];
     if (!m) throw new Error(`[삽수] ${c.id} 의 방식이 이상합니다: ${c.method}`);
@@ -1406,7 +1801,9 @@ export function stepCuttings(S, opt = {}) {
     /* ①-3 ★ 자란다 — 흙에 자리를 잡은 뒤부터, 빛이 든 날만 (§삽수가 자란다).
        ⚠ 2026-08-17 — 「고스트는 안 자란다」를 걷었다. 고스트가 안 죽으니 멈춰 세울 까닭도 없다.
          옛 판의 고스트는 그냥 무늬 소질이 높은 삽수로 이어진다(§save.migrate 가 천장으로 낮춘다). */
-    if (c.status === 'established') {
+    /* ⚠⚠ 2026-08-17 — `leafGrowthStopped` 가 여기 걸린다: **수경은 혹이 나면 잎이 멈춘다**
+       (박사님 ③). 흙은 안 걸린다 — 혹이 나도 계속 자란다. 까닭은 그 함수 머리말. */
+    if (c.status === 'established' && !leafGrowthStopped(c)) {
       if (lit && lit.grows) {
         c.leafDays = (c.leafDays || 0) + 1;
         while (c.leafDays >= CUTTING_LEAF_DAYS) {
@@ -1518,6 +1915,14 @@ export function repotCutting(S, cuttingOrId, opt = {}) {
     throw new Error(`[삽수] ${c.id} 는 이미 사라졌습니다 — 되돌릴 수 없습니다`);
   if (c.potted)
     throw new Error(`[삽수] ${c.id} 는 이미 흙에 있습니다`);
+  /* ★ 2026-08-17 — 가방에 있는 조각은 옮길 것이 없다. **먼저 넣어야** 한다(§⑤-2).
+     ⚠ 이 줄이 없으면 바로 아래 `METHODS[c.method].rootDays` 가 `undefined` 에서 터진다 —
+       사유 없는 TypeError 는 화면이 안내로 못 읽는다. */
+  if (c.status === 'bag' || !c.method) {
+    const e = new Error(`[삽수] ${c.id} 는 가방에 있습니다 — ` +
+      `먼저 방에 놓은 용기에 넣어 주세요(putCuttingIn)`);
+    e.tutorialInput = true; throw e;
+  }
   if (c.status === 'rooting')
     throw new Error(`[삽수] ${c.id} 는 아직 뿌리가 없습니다 — ` +
       `${METHODS[c.method].rootDays}일째부터 옮길 수 있습니다 (지금 ${c.days}일째)`);
@@ -1554,9 +1959,19 @@ export function repotCutting(S, cuttingOrId, opt = {}) {
      `useStock` 도 모자라면 던지지만 그때는 아직 상태를 안 찍었으므로 판이 안 바뀐다.
      자리를 ② 뒤로 미루면 「포트만 빠지고 삽수는 병에 남는」 예전 병으로 돌아간다. */
   useStock(S, CONTAINERS.soil.itemId, 1);
-  if (from && from.returnsOnSale && from.itemId) returnContainer(S, from.itemId);
+  /* ★★ 2026-08-17 — **병이 방에 서 있으면 재고로 돌려주지 않는다.**
+     ------------------------------------------------------------
+     ⚠ 예전에는 늘 돌려줬다. 그 판에서는 병이 「삽수에 붙은 것」이라 삽수가 흙으로 가면
+       병이 갈 데가 없었기 때문이다. 이제는 병이 **방에 놓인 물건**(§⑤-2)이라, 그대로
+       돌려주면 **병 하나가 둘이 된다** — 방에도 서 있고 가방에도 생긴다.
+     ⇒ 방에 있으면 **그 자리에 빈 채로 남긴다**(회수와 같은 그림). 걷고 싶으면
+       `removeContainer` 를 누르면 되고, 유리병은 그때 돌아온다(소모품이 아니므로). */
+  const roomJar = cutContainerOf(S, c.inContainerId) || containerHolding(S, c.id);
+  if (roomJar) roomJar.cuttingId = null;
+  else if (from && from.returnsOnSale && from.itemId) returnContainer(S, from.itemId);
 
   c.potted = true;
+  c.inContainerId = null;
   c.container = 'soil';
   c.method = 'pot';
   c.status = 'established';
@@ -1592,6 +2007,12 @@ export function cuttingSnapshot(S, c) {
   return {
     id: c.id, method: c.method, methodKo: m.ko || c.method,
     container: c.container, containerKo: (CONTAINERS[c.container] || {}).ko || c.container,
+    /* ★★ 2026-08-17 — 방의 어느 그릇에 들어 있나 · 가방에 있나 (§⑤-2).
+       화면이 [가방으로] 단추와 [넣기] 단추를 가르는 근거가 이 두 칸이다. */
+    inContainerId: c.inContainerId || null,
+    inBag: c.status === 'bag' || !c.method,
+    /* ★ 수경이 혹으로 멈췄나 (박사님 ③) — 화면이 「왜 잎이 안 느나」를 말할 근거 */
+    leafGrowthStopped: leafGrowthStopped(c),
     status: c.status, statusKo: CUTTING_STATUS_KO[c.status] || c.status,
     days: c.days, gen: c.gen,
     /* ★ **지금** 달고 있는 잎이다. `c.source` 는 자를 때 딸려온 기록이라 자란 뒤에는 다르다 */
