@@ -23,9 +23,62 @@
         그 여덟을 겹치지 않게 묶으니 **정확히 다섯 덩이**가 된다(아래 표 §가르치는 것).
      ② 빈 구간이 실측으로 **Day 33~77(44일)** 과 **Day 93~끝(107일)** 둘이다.
         다섯이면 평균 **30일에 하나** — 월세 주기와 같은 박자라 새 눈금을 안 만든다.
-     ③ **첫 33일에는 안 넣는다.** 거기는 이미 꽉 차 있다(첫 플레이 대사·안내·말풍선).
-        넣으면 심부름 목록이 된다.
+     ③ ~~**첫 33일에는 안 넣는다.**~~ ⇒ ⚠⚠ **박사님이 이 줄을 물리셨다. 아래 §초반 사슬을 봐라.**
      ⇒ 넷이면 44일을 못 메우고, 여섯이면 첫 플레이 구간을 침범한다.
+
+   ══ ★★★ §초반 사슬 — **위 ③ 이 틀렸다** (2026-08-16 박사님 지시로 뒤집힘) ═══════
+     박사님 원문: *"퀘스트랑 가이드 추가도 병렬로 잘 보강해줘. **잎 3개 날 때까지 너무
+     이벤트가 없더라.** 퀘스트가 **단계별로 풀려야** 되는데 지금 몇 개 없잖아..
+     그리고 **한 번에 보여주고**... **단계적 목표로 가이드랑 연계해서.**"*
+
+     ## 재서 확인한 구멍 — **처음 33일에 퀘스트가 한 줄도 안 열렸다**
+     아래 여덟 줄 중 여섯이 `firstPlayDone` 이거나 그 뒤에 사슬로 걸려 있고, 첫 플레이는
+     **실측 Day 33** 에 끝난다. 나머지 둘(`first_cut`·`varie_bright`)도 모주 잎·무늬가
+     나야 열리므로 더 뒤다. ⇒ **첫 33일은 통째로 빈칸**이었다.
+     ⚠ 위 ③ 은 *"거기는 이미 꽉 차 있다(첫 플레이 대사·안내·말풍선)"* 고 적었는데,
+       **꽉 찬 것은 「말」이고 비어 있던 것은 「할 일」이다.** 이 파일 맨 위가 바로 그 구분을
+       적어 두었다 — *"「조용해서」가 아니라 「할 말은 있는데 시킬 일이 없어서」"*.
+       그 진단을 첫 33일에는 적용하지 않은 것이 ③ 의 잘못이다.
+
+     ## 그래서 **여덟 줄을 앞에 붙였다** (`FIRST_PLAY_CHAIN`)
+     지어낸 단계가 아니라 **`first_play.js` 가 실제로 갖는 걸음**을 그대로 따라간다:
+       놓기(`placeCrop`) → 물(`waterBeansprout`) → 첫 수확(`harvestBeansprout`) →
+       다시 심기(`resowBeansprout`) → 시루 늘리기(`addCropPot`) →
+       몬스테라 자리(`markMonsteraArrived`→`moveMonstera`) → 잎 2장 → 잎 3장
+     ⚠ **「씨앗 심기」는 따로 안 넣었다** — 첫 시루는 `createFirstPlayState` 가
+       `sown: true` 로 만들어 준다(`makeCropPot` 기본값). 심기 손짓은 **둘째 시루부터**
+       생기므로 그것은 ④「다시 심는다」가 가르친다.
+     ⚠ **「무순 알기」도 따로 안 넣었다** — ⑨`crop_mix` 가 이미 그 줄이고, 무순은
+       첫 플레이가 끝나야 상점에 뜬다(`game.html §musunOpen`). 두 줄로 만들면
+       `teaches` 가 겹쳐 검사가 깨진다(§가르치는 것은 겹치지 않는다).
+
+     ## ★ 한 줄이 **하나씩만** 열린다
+     앞 줄을 끝내야 다음 줄이 열린다(`opens` 가 `ctx.doneIds` 를 본다 — `siru8`·`siru16`
+     이 이미 쓰던 그 길이다). 몇 줄은 거기에 **「그 일이 실제로 가능해졌나」를 더 걸었다**
+     (⑥ 은 몬스테라가 와야 열린다) — 없는 일을 시키지 않으려는 것이고, 사슬은 더 좁아질 뿐
+     안 넓어진다.
+
+     ## ★★ 사슬은 **배선이 안 붙어도 안 끊긴다** (아래 §안전 폴백)
+     ①②⑥ 은 화면이 새로 채워 줘야 하는 칸을 본다(`placed`·`watered`·`monsteraArrived`·
+     `monsteraHomed`). 그 칸이 **아직 안 붙은 판에서도** 사슬이 굴러가도록, 이미 있는 사실로
+     **함의**를 걸어 두었다: *거뒀다 ⇒ 놓았고 물을 줬다* · *잎이 둘이다 ⇒ 자리를 잡았다*.
+     ⚠ 이것은 「모르면 지어내기」가 **아니다.** 지어내는 것은 없는 사실을 참으로 치는 것이고,
+       여기 것은 **강한 사실이 약한 사실을 논리적으로 함의**하는 것이다. 거둔 시루는
+       놓여 있었고 물을 받았다 — 그 길 말고는 수확이 없다(`advanceBeansproutDay`).
+
+     ## ⚠ 이 여덟 줄은 **아직 말을 안 한다** (`speaks: false`)
+     `dialogue.js` 는 이 창의 쓰기 영역 밖이라 `QUEST_OPEN_SCRIPT`·`QUEST_DONE_SCRIPT` 에
+     열여섯 줄을 못 넣었다. 그래도 **조용히 지나간다** — `dialogue.js §scriptOf` 가
+     *"여기 없는 questId 는 조용히 지나간다"* 를 이미 계약으로 적어 두었다.
+     ⇒ 지금 이 줄들이 내는 것은 **할 일 창의 줄 · 아래 한 줄 · [할 일] 단추의 점** 셋이다.
+     ⚠ 대사를 붙일 때는 `speaks: true` 로 바꾸고 두 지도에 열여섯 줄을 넣어라 —
+       `tools/test_quest.mjs ⑴` 이 그 둘을 한 자리에서 대조한다.
+
+     ## ⚠ 보상은 **체력이 아니다**
+     `data/balance/stamina.json` 도 `stamina.js` 도 이 창의 쓰기 영역 밖이라, 여덟 줄은
+     `STAMINA_RULES.quests` 에 없고 그래서 **0** 이다(`grantStaminaQuest` 가 0 으로 읽는다 —
+     던지지 않는다. 확인함). 대신 **세상이 이미 주는 것**을 `reward` 에 적었다.
+     ⇒ **체력을 줄지는 박사님 판단이다**(인계 §판단필요).
 
    ── 보상 — **있는 것만 쓴다** ────────────────────────────────────────
      새 보상 계통을 안 만들었다. 쓰는 것은 둘뿐이다:
@@ -62,7 +115,7 @@ export const QUEST_SCHEMA = 'quest/1';
      day                 게임 일자
      firstPlayDone       첫 플레이가 끝났나           (fp.completed)
      cropHarvestTotal    지금까지 거둔 회전의 총합    (cropSites 합)
-     cropPots            [{ kind, harvestCount }]     방에 선 작물 용기 전부
+     cropPots            [{ kind, harvestCount, placed?, watered? }] 작물 용기 전부
      mealKinds           ★ 오늘 밥상에 오른 작물 id 들 (eatFromPantry / mealPlanQuote 의 portions)
      motherLeaves        모주가 지금 달고 있는 잎 수
      motherVarieLeaves   그중 무늬 잎 수
@@ -70,17 +123,33 @@ export const QUEST_SCHEMA = 'quest/1';
      varieSaleCount      무늬 삽수를 판 횟수          (ts.varieSale.count)
      lampUnlocked        식물등을 살 수 있게 됐나     (ts.lamp.unlocked · 가을 진입)
      lampOwned           갖고 있는 식물등 개수        (ts.lamp.owned)
+
+   ══ ★★ 2026-08-16 신설 — **초반 사슬이 보는 칸 넷** (§초반 사슬) ══════════
+     cropPots[].placed   그 용기가 방에 서 있나       (`first_play.cropPotPlaced(p)`)
+     cropPots[].watered  그 용기가 물을 받아 회전이 돌기 시작했나 (`p.startedOnDay != null`)
+     monsteraArrived     몬스테라가 왔나              (`fp.monstera.arrived`)
+     monsteraHomed       도착 자리에서 **한 번이라도 옮겼나** (`fp.monstera.guide.moved`)
+   ⚠ 넷 다 **`true` 라야 참**이다. `null`·없음 = 「모른다」이고 `false` = 「아니다」다 —
+     둘을 한 칸에 섞으면 배선이 안 붙은 판과 실제로 아닌 판을 못 가른다.
+   ★ 그래서 이 넷이 **안 붙어도 사슬은 굴러간다** — §안전 폴백 을 봐라.
    ══════════════════════════════════════════════════════════════════════ */
 export function emptySnapshot() {
   return { day: null, firstPlayDone: false, cropHarvestTotal: 0, cropPots: [],
            mealKinds: [], motherLeaves: 0, motherVarieLeaves: 0,
            cuttings: [], varieSaleCount: 0,
-           lampUnlocked: false, lampOwned: 0 };
+           lampUnlocked: false, lampOwned: 0,
+           /* ★ null = 「모른다」. false 로 두면 「아직 배선이 없다」와 「아니다」가 같아진다 */
+           monsteraArrived: null, monsteraHomed: null };
 }
 function snapOf(s) { return { ...emptySnapshot(), ...(s && typeof s === 'object' ? s : {}) }; }
 
 const arr = v => (Array.isArray(v) ? v : []);
 const num = v => (Number.isFinite(v) ? v : 0);
+/* ★ 「참」은 **`true` 하나뿐**이다 — `null`(모른다)·`undefined`(칸이 없다)를 참으로 안 읽는다.
+   ⚠ `!!v` 를 쓰면 안 되는 자리다. 셋을 가르는 것이 §초반 사슬 의 안전 폴백을 성립시킨다. */
+const yes = v => v === true;
+/* 그 종류의 용기들 */
+const potsOfKind = (s, kind) => arr(s.cropPots).filter(p => p && p.kind === kind);
 
 /* 뿌리를 낸 삽수인가 — 상태 이름은 `propagation.CUTTING_STATUS_KO` 소유다.
    ⚠ 여기서 새 이름을 짓지 않는다. 'rooted' 와 'potted'(흙으로 옮긴 것) 둘 다 뿌리를 낸 것이다. */
@@ -101,9 +170,183 @@ const isRooted = c => !!c && ROOTED.includes(c.status);
      teaches 이 줄이 가르치는 것 (문서와 검사가 대조한다)
      opens   언제 열리나 (스냅샷 → boolean)
      done    언제 끝나나  (스냅샷 → boolean)
+     after   ★ 2026-08-16 신설 — **앞 줄의 id.** 「이것이 끝나야 열린다」를 표에 적은 것이다.
+             ⚠ **판정은 여전히 `opens` 가 한다.** 이 칸은 읽히는 칸이 아니라 **적힌 칸**이고,
+               그래서 두 벌이 될 위험이 있다(§2.8). 그 위험을 검사가 막는다 —
+               `tools/test_quest.mjs ⑶` 이 **`after` 를 지운 판에서 `opens` 가 정말 거짓이 되는지**
+               를 물어 둘이 같은 말을 하는지 매번 대조한다.
+             ★ 왜 굳이 적나 — 사슬은 여기서 **눈으로 읽혀야** 한다. 열 줄의 `opens` 안을
+               하나씩 열어 봐야 사슬이 보이면, 사슬이 끊긴 것도 눈에 안 띈다.
+     speaks  ★ 2026-08-16 신설 — **이 줄이 대사를 갖나.** `false` 면 `dialogue.js` 의
+             두 지도에 일부러 안 넣은 줄이다(§초반 사슬 ⚠ 이 줄들은 아직 말을 안 한다).
+             없으면 `true` 로 본다 — 옛 여덟 줄이 그대로 산다.
    ⚠ **여기 숫자를 박지 않는다.** 세는 수(시루 5개·5바퀴)는 `need` 에 두고
      `todo` 는 그 값을 읽어 짓는다 — 값이 움직여도 문구가 안 낡는다(§2.8 의 반대). */
-export const QUESTS = Object.freeze([
+
+/* ══ ★★★ 초반 사슬 — **첫 플레이가 도는 동안 굴러가는 여덟 줄** (2026-08-16) ═══
+   왜 생겼나 · 무엇을 따라가나 · 왜 조용한가는 맨 위 §초반 사슬 에 다 적었다.
+   여기서는 **줄과 판정만** 적는다.
+
+   ── §안전 폴백 ─────────────────────────────────────────────────────────
+   ①②⑥ 의 `done` 에는 `||` 가 하나씩 붙어 있다. 그것이 **함의**다:
+     ① 놓았나  ← *거둔 적이 있다면 놓여 있었다* (`placedCropPots` 만 자란다)
+     ② 물 줬나 ← *거둔 적이 있다면 물을 받았다* (`startedOnDay` 없이는 안 자란다)
+     ⑥ 자리 잡았나 ← *잎이 둘이 됐다면 자라는 자리에 있다* (도착 자리 DLI 0.61 로는 안 난다)
+   ⚠ 이 `||` 를 지우면 화면 배선이 붙기 전까지 **사슬이 첫 줄에서 멎는다.**
+     그러면 뒤 열다섯 줄이 통째로 못 열린다 — 지금 고치려는 그 구멍이 더 커진다.
+   ★ 반대로 배선이 붙으면 왼쪽 항이 **먼저** 참이 되므로 폴백은 쓰이지 않는다.
+     즉 폴백은 판정을 느슨하게 하는 것이 아니라 **늦게라도 반드시 참이 되게** 한다. */
+const FIRST_PLAY_CHAIN = Object.freeze([
+
+  /* ① ★★★ **첫날에 열리는 단 하나의 줄.** 조건이 없는 유일한 줄이다 —
+     게임을 켠 것이 곧 조건이다.
+     ⚠ 이것이 이번 변경의 핵심이다. 예전에는 첫 스냅샷에서 열린 줄이 **0** 이었다
+       (`tools/test_questui.mjs B-3` 이 그 0 을 **정상으로 못 박고 있었다** —
+        START-HERE §2 가 *"제일 위험하다"* 고 적은 그 모양이다. 그 검사도 같이 고쳤다).
+     ⚠ 「놓기 = 심기」가 아니다(2026-08-11 박사님 순서 바꿈). 다만 **첫 시루만은**
+       `createFirstPlayState` 가 이미 심어서 준다 — 그래서 이 줄 다음이 바로 물이다. */
+  Object.freeze({
+    id: 'place_siru',
+    ko: '시루를 방에 놓는다',
+    speaks: false,
+    reward: '콩나물이 앉을 자리가 생깁니다',
+    teaches: ['가방 안에서는 아무것도 안 자란다'],
+    why: '가방에 있는 동안은 빛을 못 받습니다. 방에 놓아야 그 자리의 빛으로 셈이 시작됩니다.',
+    todo: () => '시루를 방 안에 놓아 보세요',
+    /* ★ 조건이 없다 — 켠 순간이 조건이다(위 ①) */
+    opens: () => true,
+    done:  s => arr(s.cropPots).some(p => yes(p && p.placed)) || num(s.cropHarvestTotal) >= 1
+  }),
+
+  /* ② ★ **놓는 것과 시작하는 것은 다른 동작이다**(`first_play.js §물주기`).
+     *"놓는다고 물이 주어지지 않는다"* · *"물을 준 날이 0일차다"* 가 그 파일의 계약인데
+     그것을 말하는 데가 아래 한 줄뿐이었다. */
+  Object.freeze({
+    id: 'water_siru',
+    ko: '물을 준다',
+    speaks: false,
+    reward: '회전이 돌기 시작합니다',
+    teaches: ['물을 준 날이 0일차다'],
+    why: '놓아 두기만 하면 날짜만 갑니다. 물을 준 날부터 자라는 날을 셉니다.',
+    after: 'place_siru',
+    opens: (s, ctx) => !!(ctx && ctx.doneIds.includes('place_siru')),
+    todo: () => '놓은 시루에 물을 주세요',
+    done:  s => arr(s.cropPots).some(p => yes(p && p.watered)) || num(s.cropHarvestTotal) >= 1
+  }),
+
+  /* ③ ★ **안 거두면 아무 일도 안 난다** — `firstPlayNextEvent` 가
+     *"거두기 전에는 다음 회전이 시작되지 않습니다"* 라고 적어 둔 그것이다.
+     ★ 보상이 지어낸 말이 아니다 — `harvestBeansprout` 이 첫 수확에서
+       `phase = 'monstera_gift'` 로 **문을 연다**(같은 파일 2349행). */
+  Object.freeze({
+    id: 'first_harvest',
+    ko: '첫 수확',
+    speaks: false,
+    reward: '몬스테라가 옵니다',
+    teaches: ['거둬야 다음 회전이 돈다'],
+    why: '다 자라도 거두기 전에는 다음 회전이 시작되지 않습니다. 거두는 것도 손입니다.',
+    after: 'water_siru',
+    opens: (s, ctx) => !!(ctx && ctx.doneIds.includes('water_siru')),
+    todo: () => '다 자란 콩나물을 거두세요',
+    done:  s => num(s.cropHarvestTotal) >= 1
+  }),
+
+  /* ④ ★★ **씨앗은 사야 있다.** 거둔 시루는 비어 있고, 다시 심어야 회전이 돈다
+     (`resowBeansprout` — 씨앗을 빼는 것은 호출부다).
+     ⚠ 판정을 「총 수확이 둘」로 하지 않았다. 시루를 하나 더 사서 거둬도 총합은 둘이 되는데
+       그건 **다시 심은 것이 아니다.** **한 시루가 두 바퀴**라야 반드시 다시 심은 것이다. */
+  Object.freeze({
+    id: 'resow_siru',
+    ko: '씨앗을 사서 다시 심는다',
+    speaks: false,
+    reward: '시루가 다시 돌기 시작합니다',
+    teaches: ['씨앗은 상점에서 산다', '거둔 시루는 다시 심어야 돈다'],
+    why: '한 번 거둔 시루는 빈 그릇입니다. 씨앗을 사서 다시 심어야 다음 회전이 돕니다.',
+    need: Object.freeze({ cycles: 2 }),
+    todo: q => `한 시루를 ${q.need.cycles}바퀴째 돌려 보세요`,
+    after: 'first_harvest',
+    opens: (s, ctx) => !!(ctx && ctx.doneIds.includes('first_harvest')),
+    done:  (s, ctx) => arr(s.cropPots).some(p => p && num(p.harvestCount) >= ctx.q.need.cycles)
+  }),
+
+  /* ⑤ ★★ **시루는 하나씩 따로 산다**(2026-08-09 박사님 *"하나씩 따로따로 설치"*).
+     ⚠ 여기서 가르치는 것은 「많이 사면 많이 번다」가 **아니다** — 그건 `siru8`·`siru16` 것이다.
+       여기 것은 **시차**다: 시루마다 회전이 따로 도니까 거두는 날을 엇갈리게 짤 수 있다
+       (`first_play.js §겹침` — *"더 번다"가 아니라 "끊기지 않는다"*).
+     ★ 그래서 문턱이 **둘**이다. 둘이라야 「엇갈린다」는 말이 성립한다. */
+  Object.freeze({
+    id: 'siru_two',
+    ko: '시루를 하나 더',
+    speaks: false,
+    reward: '거두는 날을 엇갈리게 짤 수 있습니다',
+    teaches: ['시루마다 회전이 따로 돈다'],
+    why: '시루가 둘이면 물 주는 날을 어긋나게 할 수 있습니다. 그래야 수확이 안 끊깁니다.',
+    need: Object.freeze({ sirus: 2 }),
+    todo: q => `시루를 ${q.need.sirus}개로 늘려 엇갈리게 하세요`,
+    after: 'resow_siru',
+    opens: (s, ctx) => !!(ctx && ctx.doneIds.includes('resow_siru')),
+    done:  (s, ctx) => potsOfKind(s, 'beansprout').length >= ctx.q.need.sirus
+  }),
+
+  /* ⑥ ★★★ **몬스테라 자리** — 도착은 사건이고 **자리를 잡아 주는 것이 할 일**이다.
+     그래서 「도착」과 「자리」를 두 줄로 안 갈랐다. 도착은 플레이어가 하는 일이 아니다.
+     ⚠ **몬스테라가 온 뒤에야 열린다** — `opens` 에 `monsteraArrived` 를 같이 걸었다.
+       앞 줄만 보고 열면 「없는 화분을 옮기세요」가 된다.
+     ★ 도착 자리는 책상(`banjiha-desk:0` · DLI 0.61)이고 몬스테라 최소는 3 이라
+       **그 자리에서는 새순이 안 난다**(START-HERE §6 · `first_play.js §몬스테라 유도`).
+       옮기는 것이 곧 자라기 시작하는 것이라 보상을 그렇게 적었다. */
+  Object.freeze({
+    id: 'monstera_home',
+    ko: '몬스테라 자리를 잡아 준다',
+    speaks: false,
+    reward: '새순이 나기 시작합니다',
+    teaches: ['몬스테라는 밝은 자리라야 자란다'],
+    why: '온 자리는 어둡습니다. 밝은 자리로 옮겨야 새순이 납니다 — 빛 판정은 7일 평균이라 나흘쯤 걸립니다.',
+    todo: () => '몬스테라를 밝은 자리로 옮기세요',
+    after: 'siru_two',
+    opens: (s, ctx) => !!(ctx && ctx.doneIds.includes('siru_two')) &&
+                       (yes(s.monsteraArrived) || num(s.motherLeaves) >= 1),
+    done:  s => yes(s.monsteraHomed) || num(s.motherLeaves) >= 2
+  }),
+
+  /* ⑦ ★★ **잎 두 장** — 박사님이 짚으신 그 구간의 앞끝이다.
+     ★ 보상이 지어낸 말이 아니다: `first_cut`(⑫)이 **정확히 `motherLeaves >= 2`** 에서 열린다.
+     ⚠ 잎 간격은 여기 안 적는다 — `30·40·50·70·100·150·200·300` 은 생장 엔진 것이다(§2.8). */
+  Object.freeze({
+    id: 'leaf_two',
+    ko: '잎 두 장',
+    speaks: false,
+    reward: '자를 수 있게 됩니다',
+    teaches: ['잎은 유효 생장일로 난다'],
+    why: '잎은 날짜가 아니라 빛이 쌓인 만큼 납니다. 어두운 자리에서는 날짜만 갑니다.',
+    need: Object.freeze({ leaves: 2 }),
+    todo: q => `잎이 ${q.need.leaves}장이 될 때까지 키우세요`,
+    after: 'monstera_home',
+    opens: (s, ctx) => !!(ctx && ctx.doneIds.includes('monstera_home')),
+    done:  (s, ctx) => num(s.motherLeaves) >= ctx.q.need.leaves
+  }),
+
+  /* ⑧ ★★★ **잎 세 장** — 박사님이 *"잎 3개 날 때까지"* 라고 하신 그 끝이다.
+     여기까지가 초반 사슬이고, 그 뒤는 첫 플레이가 끝나며 ⑨`crop_mix` 로 이어진다. */
+  Object.freeze({
+    id: 'leaf_three',
+    ko: '잎 세 장',
+    speaks: false,
+    reward: '무늬가 날 자리가 늘어납니다',
+    teaches: ['어두우면 날짜만 간다'],
+    why: '잎이 늘수록 무늬가 날 자리도 늘어납니다. 무늬 잎이 이 방을 나가는 열쇠입니다.',
+    need: Object.freeze({ leaves: 3 }),
+    todo: q => `잎이 ${q.need.leaves}장이 될 때까지 키우세요`,
+    after: 'leaf_two',
+    opens: (s, ctx) => !!(ctx && ctx.doneIds.includes('leaf_two')),
+    done:  (s, ctx) => num(s.motherLeaves) >= ctx.q.need.leaves
+  })
+]);
+
+/* ══ 본 줄기 여덟 — **첫 플레이가 끝난 뒤부터** (2026-08-17~18) ═══════════
+   ⚠ 이 여덟은 **한 글자도 안 바꿨다.** 여는 조건도 끝나는 조건도 예전 그대로다 —
+     `tools/probe_questchain.mjs §회귀` 가 그것을 스냅샷으로 못 박는다. */
+const MAIN_QUESTS = Object.freeze([
 
   /* ① ★ 빈 구간의 **첫날**에 열린다 — 첫 플레이가 끝나는 그 순간이다(실측 Day 33).
      가르치는 것 셋을 한 줄이 다 진다: 콩나물은 어두운 데 · 무순은 밝은 데 ·
@@ -134,6 +377,7 @@ export const QUESTS = Object.freeze([
     need: Object.freeze({ sirus: 5, cycles: 5 }),
     todo: q => `시루 ${q.need.sirus}개를 각각 ${q.need.cycles}바퀴 돌리세요`,
     /* ★ ①을 끝낸 뒤에 연다. 둘을 같이 열면 첫날에 할 일이 둘이 되어 어느 쪽도 안 읽힌다 */
+    after: 'crop_mix',
     opens: (s, ctx) => !!s.firstPlayDone && !!(ctx && ctx.doneIds.includes('crop_mix')),
     done:  (s, ctx) => arr(s.cropPots)
       .filter(p => p && p.kind === 'beansprout' && num(p.harvestCount) >= ctx.q.need.cycles)
@@ -162,6 +406,7 @@ export const QUESTS = Object.freeze([
     need: Object.freeze({ sirus: 8 }),
     todo: q => `콩나물 시루를 ${q.need.sirus}개까지 늘리세요`,
     /* ★ ②를 끝낸 뒤에 연다 — 다섯 바퀴를 돌려 봐야 「늘린다」가 무슨 뜻인지 안다 */
+    after: 'siru5_cycle5',
     opens: (s, ctx) => !!(ctx && ctx.doneIds.includes('siru5_cycle5')),
     done:  (s, ctx) => arr(s.cropPots).filter(p => p && p.kind === 'beansprout').length >= ctx.q.need.sirus
   }),
@@ -174,6 +419,7 @@ export const QUESTS = Object.freeze([
     why: '여기서부터 하루가 마이너스에서 플러스로 돕니다. 그 전까지는 조금씩 깎입니다.',
     need: Object.freeze({ sirus: 16 }),
     todo: q => `콩나물 시루를 ${q.need.sirus}개까지 늘리세요`,
+    after: 'siru8',
     opens: (s, ctx) => !!(ctx && ctx.doneIds.includes('siru8')),
     done:  (s, ctx) => arr(s.cropPots).filter(p => p && p.kind === 'beansprout').length >= ctx.q.need.sirus
   }),
@@ -262,7 +508,30 @@ export const QUESTS = Object.freeze([
   })
 ]);
 
+/* ★★ **초반 사슬이 먼저다.** 이 차례가 곧 배우는 차례이고, `questView` 의 「지금 할 일」도
+   이 차례에서 첫째를 고른다(§questView). 뒤에 붙이면 첫 플레이 동안 화면이
+   `crop_mix`(아직 못 하는 것)를 말하게 된다. */
+export const QUESTS = Object.freeze([...FIRST_PLAY_CHAIN, ...MAIN_QUESTS]);
+
 export const QUEST_IDS = Object.freeze(QUESTS.map(q => q.id));
+/* ★ 어느 마디의 줄인가 — 화면이 「초반 사슬을 도는 중인가」를 이걸로 안다 */
+export const FIRST_PLAY_CHAIN_IDS = Object.freeze(FIRST_PLAY_CHAIN.map(q => q.id));
+export const STAGE_FIRST_PLAY = 'first_play';
+export const STAGE_MAIN = 'main';
+export const STAGE_CLEAR = 'clear';
+export function stageOfQuest(q) {
+  const id = typeof q === 'string' ? q : (q && q.id);
+  return FIRST_PLAY_CHAIN_IDS.includes(id) ? STAGE_FIRST_PLAY : STAGE_MAIN;
+}
+/* ★ 이 줄이 대사를 갖나 — 없으면 **가진 것으로** 본다(옛 여덟 줄이 그대로 산다) */
+export function questSpeaks(q) {
+  const d = questOf(typeof q === 'string' ? q : (q && q.id)) || q;
+  return !d || d.speaks !== false;
+}
+/* ★ **다음에 올 것을 몇 줄까지 보여 줄까** — 권장값이다. 화면이 `upcoming.slice(0, 이 수)` 를 쓴다.
+   ⚠ 코어가 잘라서 주지 않는다. 몇 줄이 들어가는지는 폭이 정하는 것이라 화면의 일이다 —
+     여기서 자르면 넓은 화면에서도 셋만 보인다. */
+export const QUEST_PREVIEW = 3;
 export function questOf(id) { return QUESTS.find(q => q.id === id) || null; }
 
 /* 「지금 할 일」 한 줄. ⚠ `todo` 가 함수인 것은 **수를 정의에서 읽게** 하려는 것이다 */
@@ -283,13 +552,36 @@ export function doneIdsOf(S) {
 }
 
 /* 지금 이 판의 퀘스트 상태. **기억하지 않는다 — 스냅샷에서 매번 센다.**
-   { done: [id…], open: [id…], next: {…}|null, all: [{id, ko, todo, state}…] } */
+
+   ══ ★★★ 화면 계약 (2026-08-16 · 박사님 *"한 번에 보여주고… 단계적 목표로"*) ═══
+   ⚠ **예전 칸은 하나도 안 없앴다.** `game.html` 이 `v.next.todo`·`v.all`·`v.done` 을
+     읽고 있고 `test_quest`·`test_questui` 가 그것을 못 박는다. 아래는 **더 낸 것**이다.
+
+     done        끝낸 id 들            (예전 그대로)
+     open        지금 열린 id 들        (예전 그대로)
+     next        지금 할 **하나**       (예전 그대로 · null 가능)
+     all         모든 줄               (예전 그대로 + 아래 세 칸이 늘었다)
+   ── 새로 내는 것 ───────────────────────────────────────────────────────
+     current     `next` 와 **같은 객체**. 이름이 뜻을 말하라고 둔 것뿐이다
+     upcoming    ★ **다음에 올 줄들**(아직 안 끝난 것 중 `current` 뒤 전부 · 정의 순서).
+                 화면이 `slice(0, QUEST_PREVIEW)` 해서 **잠긴 채로** 그린다.
+                 ⚠ 코어가 안 자른다 — 몇 줄이 들어가나는 폭의 일이다
+     counts      { total, done, open, locked }
+     stage       'first_play' | 'main' | 'clear' — **지금 어느 마디인가**
+                 초반 사슬에 안 끝난 줄이 하나라도 있으면 'first_play'
+     chain       { index, total } — 초반 사슬의 **몇째/여덟**. 사슬이 끝났으면 null
+   ── `all[]` 한 줄이 갖는 것 ────────────────────────────────────────────
+     id · ko · todo · why · teaches · reward · state('done'|'open'|'locked')  (예전 그대로)
+     stage       'first_play' | 'main'
+     index       정의 순서(0부터)
+     speaks      이 줄이 대사를 갖나 (지금 초반 여덟은 false)
+   ══════════════════════════════════════════════════════════════════════ */
 export function questView(S, snapshot) {
   const s = snapOf(snapshot);
   const doneIds = doneIdsOf(S);
   const ctx = { doneIds, S };
   const open = [], all = [];
-  for (const q of QUESTS) {
+  QUESTS.forEach((q, i) => {
     const isDone = doneIds.includes(q.id);
     let isOpen = false;
     if (!isDone) { try { isOpen = !!q.opens(s, { ...ctx, q }); } catch { isOpen = false; } }
@@ -297,13 +589,32 @@ export function questView(S, snapshot) {
     all.push({ id: q.id, ko: q.ko, todo: questTodo(q), why: q.why, teaches: q.teaches,
                /* ★ 체력이 아닌 보상의 이름. 없으면 화면이 stamina 에서 「체력 +N」을 짓는다 */
                reward: q.reward || null,
+               stage: stageOfQuest(q), index: i, speaks: q.speaks !== false,
                state: isDone ? 'done' : isOpen ? 'open' : 'locked' });
-  }
+  });
   /* ★ 「지금 할 일」은 **하나만** 보여 준다. 목록을 내면 심부름 목록이 된다.
      고르는 자는 정의 순서다 — 그 순서가 곧 배우는 순서라서. */
   const nextId = open[0] || null;
   const next = nextId ? all.find(a => a.id === nextId) : null;
-  return { schema: QUEST_SCHEMA, done: doneIds, open, next, all };
+  /* ★ 「다음에 올 것」 — 지금 하나 **뒤**의 안 끝난 줄 전부다.
+     ⚠ 끝낸 줄은 안 낸다(그건 `all` 의 'done' 이 갖는다). 잠긴 줄만이 아니라 **열린 줄도**
+       들어간다 — 한 판에 둘이 같이 열리는 자리가 있고(예: `first_cut`+`buy_lamp`),
+       그때 뒤엣것을 안 보여 주면 「다음에 올 것」이 거짓이 된다. */
+  const from = next ? next.index + 1 : 0;
+  const upcoming = all.filter(a => a.index >= from && a.state !== 'done');
+  const doneN = doneIds.length;
+  const counts = { total: all.length, done: doneN, open: open.length,
+                   locked: all.length - doneN - open.length };
+  /* ★ 마디 — 초반 사슬에 안 끝난 줄이 하나라도 남아 있으면 아직 첫 마디다 */
+  const chainLeft = FIRST_PLAY_CHAIN_IDS.filter(id => !doneIds.includes(id));
+  const stage = chainLeft.length ? STAGE_FIRST_PLAY
+              : (doneN >= all.length ? STAGE_CLEAR : STAGE_MAIN);
+  const chain = chainLeft.length
+    ? { index: FIRST_PLAY_CHAIN_IDS.length - chainLeft.length + 1,
+        total: FIRST_PLAY_CHAIN_IDS.length }
+    : null;
+  return { schema: QUEST_SCHEMA, done: doneIds, open, next, all,
+           current: next, upcoming, counts, stage, chain };
 }
 
 /* 하루(또는 한 동작) 뒤에 판을 다시 본다. **사건을 낸다 — 보상은 안 준다.**
