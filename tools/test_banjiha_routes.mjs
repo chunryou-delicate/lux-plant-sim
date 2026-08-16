@@ -1343,6 +1343,20 @@ check('G-2c ★세 경로가 여름을 넘겨 끝난다 — 가을·식물등·�
     info(`★여름에 끝난 ${summer.length}판 — ` + summer.map(r =>
       `${r.route || '?'}/튜토${r.lastDay}일(확정무늬 ${r.grantDay == null ? '안 받음' : r.grantDay + '일'}` +
       `·삽수 ${r.cuttingsSold}개·잎 ${r.maxHeldLeaves ?? '?'})`).join(' · '));
+    /* ★★ 2026-08-16 — **돈이 어디서 왔는지**를 적는다. 앞서 내가 「시작돈 150만 + 하프문 75만」
+       으로 어림잡아 답했는데, 박사님이 *"시작할 때 월세 빠지잖아"* 로 바로잡으셨다.
+       하루 지출 16,667원(식대 7,500 + 공과 2,500 + 월세 6,667)이 **날마다** 빠지므로
+       팔 때 지갑에 150만이 남아 있지 않다. ⇒ 어림하지 말고 **판마다 적는다.** */
+    const one = summer[0];
+    info(`  ⤷ 첫 판 뜯어보기 — 마지막 날 잔액 ${(one.S.tutorial.cashWon).toLocaleString()}원 · ` +
+         `삽수로 번 돈 ${(one.cuttingIncome || 0).toLocaleString()}원` +
+         `(그중 무늬 ${(one.varieIncome || 0).toLocaleString()}원)` +
+         ` · 그루로 번 돈 ${(one.potIncome || 0).toLocaleString()}원`);
+    const at = (r, d) => { const row = r.rows.find(x => x.tday >= d); return row ? row.cashWon : null; };
+    info(`  ⤷ 잔액이 어떻게 줄었나 — 시작 ${TUTORIAL_RULES.startCashWon.toLocaleString()}원 → ` +
+         [10, 20, 30].map(d => `튜토${d}일 ${(at(one, d) || 0).toLocaleString()}원`).join(' → ') +
+         ` → 판 날 ${(one.S.tutorial.cashWon).toLocaleString()}원`);
+    info(`  ⤷ 마지막 날 모주 잎 ${JSON.stringify(one.rows[one.rows.length - 1].leaves)}`);
     const noGrant = summer.filter(r => r.grantDay == null).length;
     info(`  ⤷ 그중 확정 무늬를 **안 받고** 나간 판 ${noGrant}/${summer.length} — ` +
          `안 받았다면 프롤로그 보장 잎(2·3번째)을 잘라 판 것이다`);
