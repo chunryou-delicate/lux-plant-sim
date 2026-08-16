@@ -734,8 +734,42 @@ export async function createRoomView(canvas, opts = {}) {
   ctx.sunLight.shadow.mapSize.set(1024, 1024);
   ctx.ceilingBulb.shadow.mapSize.set(512, 512);
   ctx.renderer.shadowMap.type = THREE.PCFShadowMap;   // Soft 는 폰에서 눈에 띄게 비싸다
+
+  /* ★★ 2026-08-16 — **바닥과 벽이 만나는 자리에 밝은 줄**이 있었다 (박사님: *"바닥 벽
+     모서리 쪽이 살짝 이상하긴 하네. 빛이랑 이런 게"*)
+     ------------------------------------------------------------
+     ⚠ 재질도 채움광(hemi)도 아니었다. **그림자가 벽 밑동에서 떨어져 있었다**(peter-panning).
+     재서 짚었다(`tools/probe_corner.mjs` · 반지하 · 390×844 dpr2 · 한낮 t=0.50):
+       · 그림자를 끄면 그 자리 바닥이 휘도 **208** 이다 — 이 방 안이 어두운 것은
+         재질이 아니라 **그림자맵 하나**가 만드는 것이다. 그러니 그림자맵이 조금만
+         어긋나도 어두운 바닥에 **햇빛 한 줄**이 그대로 드러난다.
+       · 새던 자리를 광선으로 찍어 보니 벽 안쪽 면(x=−2.400)에서 **9mm 안쪽**인
+         바닥 점이었다. 벽이 제 발밑을 못 덮고 있었다.
+     ★ 왜 2cm 나 새나 — `scene.js` 가 `shadow.bias = −0.0004` 를 쓰는데, 그 값은
+       **깊이 비율**이라 그림자 카메라의 near~far 폭을 곱해야 실제 길이가 된다.
+       near 0.5 · far 50 → 폭 49.5m ⇒ **−0.0004 × 49.5 ≈ 20mm**.
+       해 고도 37° 에서 바닥으로는 20mm ÷ tan37° ≈ **26mm** 물러난다.
+       실측한 띠 폭(4 화소 ≈ 28mm)과 맞는다.
+     ⇒ **부호를 뒤집는다.** 음수는 그림자를 caster 에서 떼어내(샘) 이 줄을 만들고,
+       작은 양수는 그림자를 caster 쪽으로 조금 밀어 넣어 발밑을 덮는다.
+       실측(모서리 선 위 182 점 · 「튐」= 봉우리 − 양옆 바탕):
+         −0.0004(전) 중앙값 23.6 · 상위10% 90.0 · 튐>20 인 점 94/182
+         +0.0002(후) 중앙값  2.0 · 상위10% 69.1 · 튐>20 인 점 54/182   ← 채택
+       (남은 54 점은 **책상이 가린 구간**이다 — 자가 벽 대신 책상 상판을 잰다)
+     ⚠ **near/far 를 방 크기로 조이거나 bias 를 0 에 붙이면 안 된다.** 둘 다 해 봤다:
+       · near/far 를 조이면 실효 bias 가 20mm → 3.6mm 로 줄어드는데, 그러면
+         **벽 윗머리(천장 밑 2cm)의 밝은 테**가 점점이 부서진다(사진으로 확인).
+         그 테도 같은 샘이지만 지금 방 윤곽을 그리는 그림이라 부수면 안 된다.
+       · bias 를 0 으로 두면 **방이 통째로 새까맣게** 그려진다(색 가짓수 3,204 — 두 번 재현).
+     ⚠ 이건 **그림뿐**이다. 조도(DLI)는 lighting_sim 이 따로 낸다 — 반지하 14칸 DLI 가
+       전·후로 소수 둘째 자리까지 같다(`tools/probe_place_dli.mjs`). */
+  ctx.sunLight.shadow.bias = 0.0002;
+
+  /* ★ 재는 자가 붙잡는 손잡이 — `tools/probe_corner.mjs` 가 이 셋을 쓴다.
+     `__cam` 은 모서리 선의 월드 좌표를 화면 좌표로 옮기는 데(눈으로 화소를 집지 않으려고),
+     `__sunShadow`·`__sunLight` 는 위 값을 다시 재보는 데 쓴다. 읽기만 하는 참조다. */
   try { window.__sunShadow = ctx.sunLight.shadow; window.__sunLight = ctx.sunLight;
-        window.__cam = ctx.cam; window.__ctxDbg = ctx; } catch {}
+        window.__cam = ctx.cam; } catch { /* 창이 없는 환경 */ }
 
   /* ── 상태 ── */
   const houseGroup = new THREE.Group();
