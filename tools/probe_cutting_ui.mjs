@@ -302,19 +302,51 @@ say(repot.status === 'established' && repot.deadline == null,
     '★[분갈이] 를 누르니 삽수가 살았다 (기한이 사라졌다)', JSON.stringify(repot));
 say(repot.jar === before + 1, '유리병이 돌아왔다', `${before} → ${repot.jar}`);
 
-/* ── ⑤ 팔기 ── */
+/* ── ⑤ 내놓기 → 연락 → 거래 ────────────────────────────────────────────
+   ⚠⚠ 2026-08-16 — **이 절도 낡아 있었다.** 2026-08-17 에 [팔기]가 **[내놓기]**가 됐다
+     (shop.js §⑦-0 중고 거래). 이제 누르는 순간 돈이 안 들어온다 — 게시글이 생기고,
+     며칠 뒤 연락이 오고, [거래하기]에서 그제야 지갑이 는다.
+     옛 자는 `#cutList [data-sell]` 을 찾았는데 그 단추는 **없어진 지 오래**다.
+   ⇒ 새 길로 잰다: 내놓기 → 하루씩 밀어 연락을 받고 → 거래. */
 await page.eval(`(()=>{ window.__byeotSheet.open(); window.__byeotSheet.tab('room'); })()`, false);
 await sleep(600);
 const cash0 = await page.eval(`window.__S().tutorial.cashWon`);
-const sellBtn = await page.eval(`(()=>{ const b=document.querySelector('#cutList [data-sell]');
+const listBtn = await page.eval(`(()=>{ const b=document.querySelector('#cutList [data-list]');
   if (!b) return null; const t=b.textContent; b.click(); return t; })()`);
-await sleep(1500);
+await sleep(1200);
+const listed = await page.eval(`(()=>{ const S=window.__S(); const c=S.cuttings[0]||null;
+  let ms=null; try { ms=window.__io && null; } catch {}
+  return JSON.stringify({ listing: c && c.listing || null, n:S.cuttings.length,
+    cash:S.tutorial.cashWon }); })()`).then(x => JSON.parse(x));
+say(!!listBtn && !!listed.listing, '★[내놓기] 를 누르니 중고 게시글이 생긴다',
+    `${listBtn || '단추 없음'} · ${JSON.stringify(listed)}`);
+say(listed.cash === cash0, '  내놓는 것만으로는 **돈이 안 들어온다** (2026-08-17 확정)',
+    `${cash0.toLocaleString()} → ${listed.cash.toLocaleString()}원`);
+
+/* 연락이 올 때까지 하루씩 민다 — 며칠 걸리는지는 랜덤이라 숫자를 안 박는다 */
+let contactedOn = null;
+for (let d = 0; d < 30; d++) {
+  const on = await page.eval(`(()=>[...document.querySelectorAll('#marketList [data-deal]')].length>0)()`);
+  if (on) { contactedOn = await page.eval(`window.__S().day`); break; }
+  await page.eval(`(()=>{const S=window.__S(); if(S.stamina) S.stamina.usedToday=0;})()`, false);
+  await click('next'); await sleep(600); await skipTalk();
+  await page.eval(`(()=>{ window.__byeotSheet.open('shop'); })()`, false); await sleep(250);
+}
+say(contactedOn != null, '★연락이 온다 (며칠 걸리는지는 랜덤이다)',
+    contactedOn != null ? ('Day ' + contactedOn) : '30일을 밀어도 연락이 없다');
+/* ⚠⚠ **날을 건너뛴 지갑과 견주면 안 된다.** 연락을 기다리는 며칠 사이에 월세(200,000원)와
+   하루 몫이 나간다 — 삽수 값 20,000원은 그 밑에 묻힌다. 실제로 한 번 그렇게 빨갰다
+   (541,903 → 331,687 · 3일치 월세). **거래 직전 값과 견준다.** */
+const cashJustBefore = await page.eval(`window.__S().tutorial.cashWon`);
+await page.eval(`(()=>{ const b=document.querySelector('#marketList [data-deal]'); if (b) b.click(); })()`, false);
+await sleep(1200);
 const sold = await page.eval(`(()=>{ const S=window.__S();
   return { n:S.cuttings.length, cash:S.tutorial.cashWon,
            in3d: window.__rv.plants().filter(p=>String(p.potId||'').startsWith('cut_')).length }; })()`);
-say(!!sellBtn && sold.n === 0 && sold.cash > cash0,
-    '★[팔기] 를 누르니 삽수가 팔리고 지갑이 늘었다',
-    `${sellBtn} · ${cash0.toLocaleString()} → ${sold.cash.toLocaleString()}원`);
+say(sold.n === 0 && sold.cash > cashJustBefore,
+    '★★[거래하기] 에서 **그제야** 삽수가 팔리고 지갑이 는다',
+    `거래 직전 ${cashJustBefore.toLocaleString()} → ${sold.cash.toLocaleString()}원 ` +
+    `(+${(sold.cash - cashJustBefore).toLocaleString()})`);
 say(sold.in3d === 0, '판 삽수는 방에서도 사라졌다 (유령이 안 남는다)');
 
 console.log('');
