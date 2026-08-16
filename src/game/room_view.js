@@ -2274,7 +2274,67 @@ export async function createRoomView(canvas, opts = {}) {
        soak      그 면 아래로 잠기는 길이[m]. 0 이면 아무것도 안 잠긴다
        rimY      용기 아가리 높이[m]. 줄기는 **여기보다 CUT_STEM_UP 만큼 더** 올라간다
        roots     뿌리를 **보여 주나** — 물속에서만 참이다. 흙 속 뿌리는 원래 안 보인다 */
+  /* ★★★ 2026-08-16 — **자란 그 가지를 그대로 꽂는다** (박사님: *"줄기 기존 자랐던 거
+     그대로 쓰라고. 그게 어렵나."*)
+     ══════════════════════════════════════════════════════════════════
+     아래 `addCutStem` 은 **원기둥 + 잎 GLB 한 장**을 세운다. 등급은 맞지만 **그 가지가 아니다.**
+     ⇒ 이제 `plant_assemble.branchOf` 가 **그때의 모주를 다시 지어 그 마디만 떼어** 준다
+       (`a5c951d` — 정점 23군데가 모주와 일치하고 잘린 줄기 어긋남 1e-16m 로 실측됐다).
+     ⚠⚠ **못 부르면 부르지 마라.** 자를 때의 모주 유효 생장일(`motherGrowthDays`)이 없으면
+       — 옛 세이브에는 영원히 없다 — 어림잡아 넣는 순간 「자란 그대로」가 거짓말이 된다.
+       그때는 아래 원기둥 길이 **정직한 답**이다. `null` 을 0 으로 메꾸지 않는다.
+     ⚠ 무늬 그림은 한 박자 늦게 온다(§ensureSkin). 화분이 이미 그 알림을 받아 다시 짓는다. */
+  async function addRealBranch(g, spec, surfaceY, soak, rimY) {
+    if (!Number.isFinite(spec.motherGrowthDays) || !spec.nodeId) return false;
+    let branch = null;
+    try {
+      const asm = await assembler();
+      if (!asm || typeof asm.branchOf !== 'function') return false;
+      branch = asm.branchOf({
+        nodeId: spec.nodeId,
+        growthDays: spec.motherGrowthDays,
+        seed: Number.isFinite(spec.motherSeed) ? spec.motherSeed : undefined,
+        leafState: spec.leafState || null,
+        potD: MONSTERA_POT_D
+      });
+    } catch (e) { warnOnce('branch', '[방뷰] 자란 가지를 못 떼어냈습니다 — 예전 길로 그립니다:', e); return false; }
+    if (!branch) return false;
+    const u = branch.userData || {};
+    /* 밑동이 원점이다 — 잠기는 깊이만큼 내려 꽂는다 */
+    branch.position.set(0, surfaceY - soak, 0);
+    /* 자란 그대로는 옆으로 뻗어 있다. 병에는 세워 꽂는다 */
+    const d = u.cutDir;
+    if (d) branch.quaternion.setFromUnitVectors(
+      new THREE.Vector3(d.x, d.y, d.z).normalize(), new THREE.Vector3(0, 1, 0));
+    /* 조각이 20~52cm 라 0.13m 병에는 반드시 줄인다 */
+    const want = (rimY + CUT_STEM_UP) * 1.6;
+    const h = u.sizeM && u.sizeM.h;
+    if (Number.isFinite(h) && h > want && want > 0) branch.scale.setScalar(want / h);
+    g.add(branch);
+    return true;
+  }
+
+  /* 물속 뿌리 — 난수를 안 쓴다(하루마다 다시 짓는데 그때마다 바뀌면 들썩인다).
+     ⚠ 원기둥 길과 자란 가지 길이 **같은 함수**를 쓴다. 두 벌로 그리면 한쪽이 낡는다. */
+  function addCutRoots(parent, baseY, soak) {
+    const rootMat = new THREE.MeshStandardMaterial({ color: CUT_ROOT_COLOR, roughness: 0.7 });
+    for (let i = 0; i < CUT_ROOT_N; i++) {
+      const a = i * 2.39996;                                  // 황금각 (§buildMusun 과 같은 이유)
+      const len = soak * (0.72 + 0.14 * (i % 3));
+      const r = new THREE.Mesh(new THREE.CylinderGeometry(0.0018, 0.0026, len, 5), rootMat);
+      r.position.set(Math.cos(a) * soak * 0.30, baseY + len * 0.45, Math.sin(a) * soak * 0.30);
+      r.rotation.set(Math.cos(a) * 0.72, 0, -Math.sin(a) * 0.72);
+      parent.add(r);
+    }
+  }
+
   async function addCutStem(g, spec, surfaceY, soak, rimY, roots) {
+    /* ★ 자란 그 가지가 있으면 그것을 쓴다. 없으면 아래 원기둥이 그대로 선다(위 §addRealBranch) */
+    if (await addRealBranch(g, spec, surfaceY, soak, rimY)) {
+      /* 뿌리는 그대로 얹는다 — 가지에는 뿌리가 없다(자른 자리다). 물속에서만 난다 */
+      if (roots && soak > 0) addCutRoots(g, surfaceY - soak, soak);
+      return;
+    }
     const { list, trueCount } = cutLeafListOf(spec);
     const n = list.length;
     /* 밑동(surfaceY − soak)에서 «아가리 + CUT_STEM_UP» 까지. 병이 깊어도 잎이 늘 밖에 있다 */
@@ -2300,18 +2360,8 @@ export async function createRoomView(canvas, opts = {}) {
     cutFace.position.y = H + 0.0004;
     pivot.add(cutFace);
 
-    /* 뿌리 — 물속에서만. 난수를 안 쓴다(하루마다 다시 짓는데 그때마다 바뀌면 들썩인다). */
-    if (roots && soak > 0) {
-      const rootMat = new THREE.MeshStandardMaterial({ color: CUT_ROOT_COLOR, roughness: 0.7 });
-      for (let i = 0; i < CUT_ROOT_N; i++) {
-        const a = i * 2.39996;                                  // 황금각 (§buildMusun 과 같은 이유)
-        const len = soak * (0.72 + 0.14 * (i % 3));
-        const r = new THREE.Mesh(new THREE.CylinderGeometry(0.0018, 0.0026, len, 5), rootMat);
-        r.position.set(Math.cos(a) * soak * 0.30, len * 0.45, Math.sin(a) * soak * 0.30);
-        r.rotation.set(Math.cos(a) * 0.72, 0, -Math.sin(a) * 0.72);
-        pivot.add(r);
-      }
-    }
+    /* 뿌리 — 물속에서만 (§addCutRoots). 원기둥 길도 자란 가지 길도 **같은 함수**를 쓴다 */
+    if (roots && soak > 0) addCutRoots(pivot, 0, soak);
 
     /* 잎 — 줄기 끝에 붙는다. 잎 피벗은 `userData.leaves` 에 넣어 둔다(시들면 처지는 길이
        그 목록을 탄다 · §applyLook fade). ⚠ `potPart` 를 따로 못 박으므로 potPartOf 는 안 헷갈린다. */

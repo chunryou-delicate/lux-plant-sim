@@ -9084,6 +9084,18 @@ function syncRoom() {
                        catch { return null; }
                      }),
                      stem: (c.source && c.source.stem) || null,
+                     /* ★★★ 2026-08-16 — **자란 그 가지를 떼어 오게 하는 넷**
+                        (`plant_assemble.branchOf` · branchcut-to-plan §2).
+                        ⚠ `motherGrowthDays` 가 없으면 방이 **예전 원기둥 길로 내려앉는다.**
+                          옛 세이브에는 그 칸이 영원히 없다 — 어림잡아 채우면 「자란 그대로」가
+                          그 순간 거짓말이 된다. 없는 것을 없는 대로 넘긴다. */
+                     nodeId: (c.source && c.source.nodeId) || null,
+                     motherGrowthDays: (c.source && Number.isFinite(c.source.motherGrowthDays))
+                                       ? c.source.motherGrowthDays : null,
+                     motherSeed: (c.source && Number.isFinite(c.source.motherSeed))
+                                 ? c.source.motherSeed : null,
+                     /* 무늬는 이 칸을 줘야 난다 — 화분에 이미 넘기는 그 값 그대로다(§leafStateForRoom) */
+                     leafState: leafStateForRoom(p),
                      potD: cont.realMaxM || 0.12 };
       want.add(c.id);
       Promise.resolve(c.at && roomView.setPlantAt
