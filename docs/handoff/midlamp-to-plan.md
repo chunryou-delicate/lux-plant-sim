@@ -1,6 +1,6 @@
 # 중간잎을 한 갈래로 · 첫 등을 몬스테라 위로 — 잰 표와 배선
 
-> **START** 2026-08-16 18:09 · **END** 2026-08-16 19:0x (KST · `date` 로 찍은 값이다)
+> **START** 2026-08-16 18:09 · **END** 2026-08-16 19:13 (KST · `date` 로 찍은 값이다)
 > 워커창 `midlamp` · 몫은 `FIXLIST-2026-08-16.md §G` 의 **G-17 · G-16** 둘
 > ⛔ `src/game/room_view.js` · `game.html` · `src/game/first_play.js` · `src/game/dialogue.js` —
 >   **한 글자도 안 건드렸다.** 마스터가 붙일 한 줄도 **없다**(§G-17-3 을 읽어라 — 안 붙여도 된다).
