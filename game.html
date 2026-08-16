@@ -2508,7 +2508,9 @@ import { catalogList, orderItem, shopStatus, priceOf,
          /* ★★ 무늬 등급 (2026-08-16 · plan-2026-08-17-varie-grade.md 확정) */
          installVarieGrades, assignPotLeafGrades,
          /* ★ 2026-08-16 — 잎별 무늬 그림(중간잎·성숙잎을 등급으로 확정 · midalbo-to-plan) */
-         potLeafSkinsOf } from './src/game/shop.js';
+         potLeafSkinsOf,
+         /* ★ 삽수 병 속 잎도 **같은 길**로 고른다 — 자른 그 잎의 등급에서(§자른 그 가지) */
+         leafSkinsFor } from './src/game/shop.js';
 /* ★ 삽수 — 규칙과 수치는 전부 propagation.js 것이다. 여기서는 부르기만 한다
    (날짜를 여기서 다시 세면 화면과 코어가 갈라진다). */
 import { takeCutting, repotCutting, cuttableNow, cutBudgetOf, cutBlockedReason,
@@ -9045,9 +9047,33 @@ function syncRoom() {
     for (const c of cuttingsOf(S)) {
       if (!c.at && !c.slotId) continue;
       const cont = CONTAINERS[c.container] || {};
+      /* ★★★ 2026-08-16 — **자른 그 가지를 그대로 담는다** (박사님: *"기존에 자랐던 거
+         가지 그대로 잘라서 넣어줄래? 안 그러면 이상한 듯."*)
+         ══════════════════════════════════════════════════════════════════
+         ⚠ 여기 있던 것은 `variegated`(참/거짓)와 `leaves`(수) 둘뿐이었다. 그러면 방이
+           **잎을 새로 지어낸다** — 무늬 마디를 잘라도 병 속엔 딴 잎이 들어 있었다.
+         ★ **지어낼 것이 없다.** 삽수는 자를 때 그 마디의 잎을 통째로 물려받는다:
+             `c.leafVarie[]`  아래(오래된 잎)→위(생장점) 참/거짓. **길이가 잎 수의 정본이다**
+             `c.leafGrade[]`  **같은 자리의 같은 잎**의 무늬 등급 (propagation §816·§833)
+           그림은 `shop.leafSkinsFor` 가 등급에서 고른다 — 화분이 쓰는 **그 길 그대로**다.
+         ⚠ **중간잎(`midSkin`)을 넘긴다.** 성숙잎(`mon_*.glb`)은 `plant_grow` 가 열쇠마다
+           따로 돌려 세우는 조정표를 갖고 있어서, 그냥 세우면 잎이 **검게 구겨진 덩어리**가
+           된다(방뷰 워커가 사진으로 확인했다). 등급은 그대로 지켜진다 —
+           하프문을 자르면 병 속 잎도 하프문이다.
+         ⚠ 없는 칸은 방이 조용히 밑값으로 떨어진다(옛 세이브에는 `leafGrade` 가 없다). */
+      const seed = (S.sim && S.sim.seed) || 0;
+      const varie = Array.isArray(c.leafVarie) ? c.leafVarie : [];
+      const grades = Array.isArray(c.leafGrade) ? c.leafGrade : [];
       const spec = { kind: c.container === 'jar' ? 'cutjar' : 'cutpot',
                      potId: c.id, variegated: !!c.variegated,
-                     leaves: c.leaves, rooted: c.status !== 'rooting',
+                     rooted: c.status !== 'rooting',
+                     leafVarie: varie, leafGrades: grades,
+                     leafSkins: varie.map((v, i) => {
+                       if (!v || !grades[i]) return null;
+                       try { return (leafSkinsFor(grades[i], seed, c.id, i) || {}).midSkin || null; }
+                       catch { return null; }
+                     }),
+                     stem: (c.source && c.source.stem) || null,
                      potD: cont.realMaxM || 0.12 };
       want.add(c.id);
       Promise.resolve(c.at && roomView.setPlantAt
