@@ -171,24 +171,9 @@
   #stage.zoom #stageEmpty{display:none}
 
   /* 배치 모드 안내 — 3D 위에 얇게 뜬다 */
-  /* ★★ 할 일 — 폰 왼쪽 위 뜬 단추 (2026-08-16 박사님 요청).
-     ⚠ 44px 이상이라야 한다(이 저장소의 손가락 규격 — `test_questui` 가 잰다).
-     ⚠ `#placeHint` 가 같은 자리에 뜨므로 z-index 를 **그것보다 낮게** 둔다 —
-       놓는 중에는 안내가 이겨야 한다(안내는 그때만 뜨고, 단추는 늘 있다). */
-  #questFab{position:absolute;z-index:22;left:10px;top:10px;
-          min-width:44px;height:44px;padding:0 10px;border-radius:14px;
-          display:flex;align-items:center;gap:5px;
-          background:rgba(20,16,28,.82);border:1px solid rgba(255,255,255,.14);
-          color:var(--ink);font-size:13px;font-weight:700;line-height:1;
-          backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
-  #questFab .qf-ico{font-style:normal;font-size:17px;line-height:1}
-  #questFab b{font-weight:700;font-size:12px;color:var(--dim)}
-  /* 새로 열린 줄이 있으면 점 — [가방] 단추와 **같은 신호**다(questNewSeen 하나가 정본) */
-  #questFab[data-dot]::after{content:'';position:absolute;top:5px;right:5px;
-          width:8px;height:8px;border-radius:99px;background:var(--gold);
-          box-shadow:0 0 0 2px rgba(20,16,28,.82)}
-  /* ⚠ 방이 아직 안 떴거나 놓는 중이면 감춘다 — 그때 누를 것이 아니다 */
-  #stage.room-loading #questFab, #stage.placing #questFab{display:none}
+  /* ★ 할 일 — `#navbar` 의 다섯째 칸(2026-08-16). 겉모습은 나머지 넷과 **같다** —
+     따로 꾸미면 「이것만 다른 것」으로 읽힌다. 아이콘만 이모지다(원화가 생기면 <img> 로). */
+  #navQuest .ni{font-style:normal;font-size:20px;line-height:1}
   #placeHint{position:absolute;z-index:25;left:12px;right:12px;top:10px;display:none;
           padding:9px 12px;border-radius:12px;background:rgba(20,16,28,.86);
           border:1px solid rgba(255,180,84,.30);font-size:13px;color:var(--ink);text-align:center;
@@ -691,9 +676,6 @@
          빈 통을 남겨 두면 `pointer-events:none` 이라 안 보여도 `buildGuide` 가
          **폭 있는 요소로 세어** 허공에 설명을 단다(그 함수는 사각형만 본다). */
     #navbar{display:none}
-    /* ★ 2026-08-16 — PC 에서는 뜬 단추를 감춘다. 오른쪽 패널의 [할 일] 탭이 그 일을 한다.
-       둘 다 두면 같은 것을 여는 문이 둘이 되어 어느 쪽이 참인지 헷갈린다. */
-    #questFab{display:none}
     .sheetbody{padding:2px 14px 20px}
     /* 넓으니 라벨을 다시 가로로 — 폰에서 세로로 세운 건 폭이 없어서였다 */
     #sheet label{flex-direction:row;align-items:center}
@@ -1423,13 +1405,6 @@
       <span id="bootMsg">게임을 불러오는 중…</span>
       <div id="bootBar"><i style="width:6%"></i></div>
     </div></div>
-    <!-- ★★ 할 일 — 폰 왼쪽 위 뜬 단추 (2026-08-16 박사님 요청)
-         *"퀘스트(할 일)도 모바일버전은 좌측 상단에 새 버튼으로 추가해 줘"*
-         ⚠ PC 에서는 **숨긴다** — 그쪽은 오른쪽 패널의 [할 일] 탭이 같은 일을 한다.
-           둘 다 띄우면 같은 것을 여는 문이 둘이 되어 어느 쪽이 참인지 헷갈린다. -->
-    <button id="questFab" aria-label="할 일">
-      <i class="qf-ico">📜</i><b id="questFabNum"></b>
-    </button>
     <div id="placeHint"></div>
     <div id="dropLabel"></div>
     <!-- ★해야 할 일이 있는 물건 위에 말풍선을 띄운다 (박사님 2026-08-04).
@@ -1528,6 +1503,12 @@
       <button id="navPlants" data-tab="plants"><img class="ni" src="./assets/ui/item_monstera.png" alt=""><span>식물</span></button>
       <button id="navShop"   data-tab="shop"><img class="ni" src="./assets/ui/icon_coin.png" alt=""><span>상점</span></button>
       <button id="navRoom"   data-tab="room"><img class="ni" src="./assets/ui/icon_window.png" alt=""><span>방</span></button>
+      <!-- ★★ 할 일 — **가방과 같은 줄에 한 칸 더** (2026-08-16 박사님).
+           처음에는 왼쪽 위에 뜬 단추로 붙였는데 **가방 칸과 겹쳤다** —
+           박사님: *"퀘스트랑 가방 탭들이 겹치잖아.. 가방하고 같은 레이어에서 한 칸 더 추가하라는 건데."*
+           ⚠ 이 줄은 `data-tab` 이 없다. 시트를 여는 것이 아니라 **할 일 창을 연다.**
+             그래서 `syncNav` 가 이 칸을 안 칠한다(칠할 탭이 없다). -->
+      <button id="navQuest" aria-label="할 일"><i class="ni">📜</i><span>할 일</span></button>
     </div>
   </main>
 
@@ -4171,8 +4152,8 @@ $('ledgerBack').onclick = guard(() => { monthOpenAt(monthLogList().length - 1); 
 })();
 
 $('questBack').onclick  = guard(() => { openQuestPanel(); });
-/* ★ 폰 왼쪽 위 뜬 단추 — [가방] 안의 것과 **같은 문**을 연다(2026-08-16) */
-if ($('questFab')) $('questFab').onclick = guard(() => { openQuestPanel(); });
+/* ★ `#navbar` 의 [할 일] 칸 — [가방] 안의 것과 **같은 문**을 연다(2026-08-16) */
+if ($('navQuest')) $('navQuest').onclick = guard(() => { openQuestPanel(); });
 $('questGo').onclick    = guard(() => { closeQuestPanel(); });
 $('questClose').onclick = guard(() => { closeQuestPanel(); });
 /* ★ 검사·재현이 쓰는 창구. 사람이 쓰는 길은 [가방] → [할 일] 이다 */
@@ -5761,15 +5742,12 @@ function drawQuestTab() {
     : '';
 }
 
-/* ★ 폰 왼쪽 위 뜬 단추 — 몇 개 남았나를 글자에 적고, 새 줄이 열리면 점을 켠다 */
+/* ★ `#navbar` 의 [할 일] 칸 — 새 줄이 열리면 점을 켠다.
+   ⚠ 수(0/6)는 **안 적는다.** 나머지 넷이 글자만 있는 줄이라 여기만 수가 붙으면 줄이 어긋난다.
+     몇 개인지는 눌러서 열면 창이 말한다(그리고 [가방] 안 단추가 이미 적고 있다). */
 function drawQuestFab() {
-  const b = $('questFab');
+  const b = $('navQuest');
   if (!b) return;
-  let v = null;
-  try { v = questView(S, questSnapshotNow(lastTurn)); } catch { v = null; }
-  const done = v ? v.done.length : 0, total = v ? v.all.length : 0;
-  const n = $('questFabNum');
-  if (n) n.textContent = total ? `${done}/${total}` : '';
   if (!questNewSeen) b.dataset.dot = '1'; else delete b.dataset.dot;
 }
 

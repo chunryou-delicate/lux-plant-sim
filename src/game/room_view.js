@@ -697,6 +697,36 @@ export async function createRoomView(canvas, opts = {}) {
     } catch (_) { /* 실패하면 그냥 scene.js 기본값으로 간다 */ }
   }
 
+  /* ══ ★★★ 문맥을 못 만들면 **한 단계씩 낮춰 다시 해 본다** (2026-08-16) ══════════════
+     박사님 폰에서 **`Error creating WebGL context`** 로 방이 통째로 안 떴다.
+     ⚠ 코드가 틀린 게 아니다 — **기기가 문맥을 못 내준 것**이다. 흔한 까닭 셋:
+       ① 탭이 여럿 열려 있어 브라우저의 WebGL 문맥 수가 한도에 닿았다(박사님 폰: 탭 13개)
+       ② `powerPreference:'high-performance'` 를 못 맞춰 준다(저사양·절전 모드)
+       ③ webgl2 자체가 없다(옛 기기)
+     ⇒ **한 번 실패했다고 포기하지 않는다.** 요구를 하나씩 내려놓으며 네 번 해 본다.
+       ★ 여기서 성공한 문맥은 브라우저가 기억하므로 아래 `createScene` 이 그대로 받는다.
+     ⚠ 그래도 안 되면 예전처럼 실패한다 — **없는 것을 있다고 하지 않는다.**
+       다만 그때는 무엇을 해 봤는지가 오류에 남아 다음 사람이 헤매지 않는다. */
+  if (!canvas.getContext('webgl2') && !canvas.getContext('webgl')) {
+    const tries = [
+      { name: 'webgl2 · 기본',            type: 'webgl2', attr: {} },
+      { name: 'webgl2 · 저전력',          type: 'webgl2', attr: { powerPreference: 'low-power', antialias: false } },
+      { name: 'webgl1 · 저전력',          type: 'webgl',  attr: { powerPreference: 'low-power', antialias: false } },
+      { name: 'webgl1 · 최소',            type: 'webgl',  attr: { antialias: false, alpha: false, depth: true,
+                                                                 stencil: false, failIfMajorPerformanceCaveat: false } }
+    ];
+    const tried = [];
+    let got = null;
+    for (const t of tries) {
+      tried.push(t.name);
+      try { got = canvas.getContext(t.type, t.attr); } catch (_) { got = null; }
+      if (got) { console.warn(`[방뷰] WebGL 문맥을 «${t.name}» 로 다시 얻었습니다`); break; }
+    }
+    if (!got) throw fail(new Error(
+      'WebGL 문맥을 못 만들었습니다 — 다른 탭을 닫고 새로고침해 보세요. ' +
+      `(해 본 것: ${tried.join(' · ')})`));
+  }
+
   const ctx = createScene(canvas);
   const GRAIN = faintGrainTexture();
 
