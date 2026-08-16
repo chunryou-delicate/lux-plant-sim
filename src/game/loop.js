@@ -669,6 +669,9 @@ function stepPlantDay(S, io, p, ctx) {
      처방이 뒤섞인다: 등을 켜라 / 자리를 옮겨라 / **물을 줘라**.
      ⚠ 주기가 밴드에 걸려 있어(밝을수록 빨리 마른다) 오늘 빛을 넣은 **뒤에** 잰다. */
   let water = null;
+  /* 물 주기를 정한 밴드 — **밝기 속도(speed)와 다른 값일 수 있다.** 이쪽은 오늘 빛을
+     넣기 *전*(어제까지의 7일평균)이고, 마른 날에는 speed 가 아예 안 잰다. */
+  let waterBand = null;
   let dryBlocked = false;
   /* 오늘 growth 에게 실제로 넘긴 하루의 수. **이 화분의 이력에 이만큼 쌓인다** — 그 짝이
      세이브 재생의 입력이라(save.js §growth) 여기서 어긋나면 복원한 형태가 조용히 달라진다. */
@@ -685,9 +688,15 @@ function stepPlantDay(S, io, p, ctx) {
          **저장 때보다 더 자란 채로 선다.** `test_save` H 가 정확히 그것을 잡았다.
        ⇒ 마른 날은 growth 에게 **하루를 통째로 안 넘긴다.**
        ★ 밴드는 **어제까지의 7일평균**으로 잰다(오늘을 아직 안 넣었다). */
+    /* ★★ 2026-08-17 — **이 밴드를 턴에 실어 보낸다.** 마른 날에는 아래 §speed 가 아예
+       안 돌아 `growthSpeed.band` 가 `null` 로 남는데, 주기를 정한 것은 **여기 이 밴드**다.
+       화면이 그것을 못 보면 주기를 다시 세게 되고, 다시 세면 다른 값이 나온다 —
+       실측에서 카드가 「주기 7일」이라 적었다(창턱 그루 값). 정작 그 그루는 11일이었다.
+       ⇒ **쓴 값을 그대로 내놓는다.** 화면이 짐작할 일을 남기지 않는다(§2.8). */
+    waterBand = growthSpeedOf(typeof io.growth.dli7 === 'function' ? io.growth.dli7() : null, th).band;
     water = potWaterStatus(S, {
       pot: p,
-      band: growthSpeedOf(typeof io.growth.dli7 === 'function' ? io.growth.dli7() : null, th).band,
+      band: waterBand,
       season: sky && sky.season
     });
     dryBlocked = !!(water && water.dry);
@@ -758,6 +767,7 @@ function stepPlantDay(S, io, p, ctx) {
       headroomBlocked: headBlocked ? headroom.reason : null,
       /* ★ 물 — 빛 부족·머리공간과 **다른 칸**이다(위 §water). */
       potWater: water,
+      waterBand,          /* ★ 그 주기를 정한 밴드 — 화면이 되세지 않게 그대로 낸다 */
       potDry: dryBlocked
         ? `흙이 말랐습니다 — ${water.dryDays}일째입니다 (주기 ${water.interval}일)`
         : null,

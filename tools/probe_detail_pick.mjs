@@ -160,6 +160,59 @@ const cards = [];
 for (let i = 0; i < rows.length; i++) cards.push(await read(i));
 for (let i = 0; i < cards.length; i++) console.log(`카드 ${i} :`, JSON.stringify(cards[i]));
 
+/* ══ §B 마른 그루가 말을 하나 (2026-08-17) ════════════════════════════════
+   딴 창이 재서 알아낸 것: 박사님의 씨앗 그루 둘은 **빛이 아니라 물** 때문에 멈춰
+   있었고, 방은 **한마디도 안 했다** — 말풍선도 아래 단추도 `pot0` 만 봤기 때문이다.
+   창턱 선물이 촉촉하니 화면은 「아직 촉촉합니다」라고 적혀 있었다.
+   ⇒ 첫 그루에만 물을 주며 날을 넘겨, **둘째 그루가 마르면 화면이 말하는지** 본다. */
+console.log('');
+console.log('── §B 마른 그루가 말을 하나 ──────────────────────────────');
+const dryProbe = { 말풍선: null, 아래단추: null, 카드: null };
+for (let d = 0; d < 16; d++) {
+  await page.eval(`window.__byeotSheet.open('plants')`, false); await sleep(300);
+  /* 첫 그루에만 물을 준다 — 둘째는 일부러 말린다 */
+  const hit = await page.eval(`(()=>{ const b=document.querySelector('[data-plantwater="pot_01"]');
+    if(!b) return false; b.click(); return true; })()`);
+  if (hit) { await waitAct(); await sleep(300); await clearTalk(); }
+  await page.eval(`(()=>{ window.__byeotSheet.close(); })()`, false); await sleep(250);
+  await page.eval(`(()=>{const S=window.__S(); if(S.stamina) S.stamina.usedToday=0;})()`, false);
+  await page.eval(`(()=>{try{document.getElementById('next').click()}catch{}})()`, false);
+  await sleep(1000); await clearTalk();
+  const st = JSON.parse(await page.eval(`(()=>{ const S=window.__S();
+    const t=(window.__lastTurnPeek||{});
+    return JSON.stringify({ day:S.day,
+      마름: S.pots.map(p=>p.id) }); })()`));
+  const marks = await page.eval(`(()=>{ return JSON.stringify([...document.querySelectorAll('.mark,.potmark,[data-mark]')]
+    .map(e=>(e.textContent||'').replace(/\s+/g,' ').trim()).filter(Boolean)); })()`);
+  const btn = await page.eval(`(()=>{ const b=document.getElementById('waterPot');
+    return JSON.stringify({ 보임: !!b && b.style.display!=='none', 글자:(b&&b.textContent||'').trim() }); })()`);
+  if (/몬스테라 2/.test(marks) || /몬스테라 2/.test(btn)) {
+    dryProbe.말풍선 = marks; dryProbe.아래단추 = JSON.parse(btn).글자;
+    console.log(`  ${st.day}일 · 말풍선 ${marks} · 아래단추 ${JSON.parse(btn).글자}`);
+    break;
+  }
+  if (d % 4 === 0) console.log(`  ${st.day}일 · 말풍선 ${marks} · 아래단추 ${JSON.parse(btn).글자}`);
+}
+/* 그 그루의 카드가 「지금 막힌 것」에 마름을 적나 */
+await page.eval(`window.__detailOpen('monstera', {id:'pot_02'})`, false); await sleep(500);
+dryProbe.카드 = JSON.parse(await page.eval(`(()=>{
+  const rowOf=k=>{ for (const r of document.querySelectorAll('#dBody .row')) {
+      const sp=r.querySelector('span'); if(sp&&sp.textContent.trim()===k) return (r.querySelector('b')||{}).textContent||''; }
+    return null; };
+  const t=document.getElementById('dTitle');
+  return JSON.stringify({ 이름:t&&t.textContent, 막힘:rowOf('지금 막힌 것'), 물:rowOf('물 준 지') }); })()`));
+await page.eval(`(()=>{const c=document.getElementById('dClose'); if(c)c.click();})()`, false); await sleep(300);
+console.log('  카드 :', JSON.stringify(dryProbe.카드));
+/* ★ 화면이 무엇을 보고 저렇게 적었나 — 턴 그대로를 옆에 놓고 견준다 */
+console.log('  턴   :', await page.eval(`(()=>{ const t=window.__turn && window.__turn();
+  if(!t) return 'null'; return JSON.stringify((t.plants||[]).map(r=>({ potId:r.potId,
+    band:(r.growthSpeed||{}).band, 주기:(r.potWater||{}).interval, 마름:(r.potWater||{}).dryDays,
+    막힘:r.potDry||r.headroomBlocked||r.growthBlocked||null }))); })()`));
+const dryOk = !!(dryProbe.말풍선 && /몬스테라 2/.test(dryProbe.말풍선))
+           || !!(dryProbe.아래단추 && /몬스테라 2/.test(dryProbe.아래단추));
+console.log(dryOk ? '✔ 마른 둘째 그루를 화면이 말한다'
+                  : '✘ 둘째 그루가 말라도 화면이 조용하다 — 첫 그루만 보고 있다');
+
 /* ⑤ 판정 — 줄의 자리와 카드의 자리가 짝이 맞나 */
 const slotKo = JSON.parse(await page.eval(`(()=>{ const S=window.__S();
   return JSON.stringify(S.pots.map(p=>p.slotId||null)); })()`));
@@ -174,4 +227,4 @@ console.log(uniq.size === cards.length
   : `✘ 카드 ${cards.length}장이 같은 자리(${[...uniq].join(' / ')})를 보여 줍니다 — 아직 첫 그루에 박혀 있습니다`);
 console.log('예외', errs.length, errs.slice(0, 2).join(' | '));
 await page.close();
-process.exit(uniq.size === cards.length && !bad ? 0 : 1);
+process.exit(uniq.size === cards.length && !bad && dryOk ? 0 : 1);
