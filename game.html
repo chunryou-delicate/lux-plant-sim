@@ -1951,6 +1951,10 @@
       <div class="box" id="shopBox" style="display:none">
         <h3>인터넷 주문 <span id="shopCash"></span></h3>
         <div class="sub">주문하면 하루 이틀 뒤에 옵니다. 취소는 안 됩니다.</div>
+        <!-- ★★ 하부 탭 (2026-08-16 박사님: *"상점에 하부탭이 더 생겨서 종류별로 리스팅되게"*)
+             ⚠ 갈래 이름을 여기 손으로 안 적는다 — `SHOP_GROUPS` 가 정본이고 `drawShop` 이 짓는다.
+               두 벌이 되면 품목이 늘 때 한쪽이 반드시 낡는다. -->
+        <div class="sheettabs" id="shopGroups" role="tablist"></div>
         <div id="shopList"></div>
         <div id="shopPending" class="itemline"></div>
         <div class="btns">
@@ -4666,6 +4670,47 @@ function drawBag() {
   try { drawLedgerBackBtn(); } catch (e) { console.warn('[가계부]', e && e.message); }
 }
 
+/* ══ ★★ 상점 하부 탭 (2026-08-16 박사님: *"종류별로 리스팅되게 해 줘"*) ══════════
+   ⚠ 갈래를 **카탈로그의 `kind` 하나로만** 가르지 않는다. `container` 가 여덟인데
+     그 안에 「기르는 그릇(시루·재배판·수경병·모종포트)」과 「보여 주는 화분」이 섞여 있다.
+     사는 마음이 다른 물건이라 한 줄에 두면 고르기가 어렵다 — 그래서 셋으로 가른다.
+   ★ **순서가 곧 배우는 순서다** — 씨앗 → 기르는 그릇 → 화분.
+   ⚠ 이름을 화면 markup 에 안 적는다. 이 표가 정본이고 `drawShopGroups` 가 짓는다. */
+const SHOP_GROUPS = Object.freeze([
+  { id: 'all',   ko: '전체' },
+  { id: 'seed',  ko: '씨앗' },
+  { id: 'grow',  ko: '기르는 그릇' },
+  { id: 'pot',   ko: '화분' }
+]);
+/* 「보여 주는 화분」 — 카탈로그가 갈래를 안 갖고 있어 **id 로 가른다.**
+   ⚠ 새 화분을 카탈로그에 넣을 때 여기도 늘려야 한다. 안 늘리면 [기르는 그릇]에 섞인다
+     (조용히 틀리지는 않는다 — 눈에 바로 보인다). */
+const SHOP_DECOR_POTS = /^pot_/;
+function shopGroupOf(it) {
+  if (!it) return 'grow';
+  if (it.kind === 'seed') return 'seed';
+  if (SHOP_DECOR_POTS.test(it.id)) return 'pot';
+  return 'grow';
+}
+let shopGroup = 'all';
+function drawShopGroups(shown) {
+  const bar = $('shopGroups');
+  if (!bar) return;
+  /* 지금 화면에 있는 갈래만 — 빈 탭을 만들면 눌렀을 때 빈 칸이 된다 */
+  const have = new Set((shown || []).map(shopGroupOf));
+  const rows = SHOP_GROUPS.filter(g => g.id === 'all' || have.has(g.id));
+  /* ⚠ 고른 갈래가 사라졌으면(물건이 아직 안 열렸다) 전체로 되돌린다 — 빈 화면을 안 남긴다 */
+  if (!rows.some(g => g.id === shopGroup)) shopGroup = 'all';
+  bar.innerHTML = rows.map(g => {
+    const n = g.id === 'all' ? (shown || []).length
+            : (shown || []).filter(it => shopGroupOf(it) === g.id).length;
+    return `<button role="tab" data-sg="${g.id}" aria-selected="${g.id === shopGroup}">` +
+           `${g.ko} <small>${n}</small></button>`;
+  }).join('');
+  for (const b of bar.querySelectorAll('[data-sg]'))
+    b.onclick = guard(() => { shopGroup = b.dataset.sg; drawShop(); });
+}
+
 function drawShop() {
   const box = $('shopBox');
   const ts = S.tutorial;
@@ -4716,7 +4761,29 @@ function drawShop() {
   const fp = S.firstPlay;
   const musunOpen = !(fp && fp.enabled) || !!(fp.monstera && fp.monstera.arrived);
   const MUSUN_ITEMS = new Set(['radish_seed', 'sprout_tray']);
-  $('shopList').innerHTML = catalogList().filter(it => musunOpen || !MUSUN_ITEMS.has(it.id)).map(it => {
+  /* ══ ★★ 삽수 물건은 **삽수를 배운 뒤에** 나온다 (2026-08-16 박사님 확정) ══════════
+     박사님: *"유리 수경병 등은 나중에 열리게 해 줘 (삽수 퀘스트나 가이드 이후)."*
+     ★ **문을 여는 값을 새로 짓지 않았다.** 퀘스트 ③ `first_cut`(물에 꽂아 본다)이
+       열렸는지를 그대로 쓴다 — 그 줄이 열리는 순간이 곧 「자를 수 있게 됐다」이고
+       (모주 잎이 둘), 거기 얹으면 단계가 둘로 안 갈린다.
+     ⚠ 왜 감추나 — 유리 수경병은 **삽수를 꽂는 그릇**이다. 자를 줄 모르는 사람에게 팔면
+       쓸 데가 없는 물건에 돈만 나간다(무순을 미리 팔던 그 병과 같은 결).
+     ⚠ 첫 플레이가 꺼진 판(검수)에서는 안 감춘다 — 검수는 다 보여야 한다. */
+  const CUT_ITEMS = new Set(['jar']);
+  let cutOpen = !(fp && fp.enabled);
+  if (!cutOpen) {
+    try {
+      const qv = questView(S, questSnapshotNow(lastTurn));
+      const row = qv.all.find(q => q.id === 'first_cut');
+      cutOpen = !!row && row.state !== 'locked';
+    } catch { cutOpen = false; }     /* 못 물으면 안 연다 — 모르는 것을 열어 주지 않는다 */
+  }
+  const shown = catalogList()
+    .filter(it => musunOpen || !MUSUN_ITEMS.has(it.id))
+    .filter(it => cutOpen || !CUT_ITEMS.has(it.id));
+  /* ★ 하부 탭 — 지금 화면에 있는 것만으로 짓는다. 빈 갈래는 안 만든다(누르면 빈 칸이 된다) */
+  drawShopGroups(shown);
+  $('shopList').innerHTML = shown.filter(it => shopGroupOf(it) === shopGroup || shopGroup === 'all').map(it => {
     const have = st.stock[it.id] || 0;
     return `<div class="shopRow">
       <div class="nm">${it.ko}<small>${it.leadDays}일 뒤 도착</small></div>
