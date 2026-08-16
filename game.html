@@ -8807,7 +8807,7 @@ function syncRoom() {
          ⇒ 방은 판정하는 그루가 아니라 **그리개**다. 빛이 없는 데서 굴리면 답이 정해져
            있으니 여기서 굴리는 것이 오히려 두 벌이다. **정본이 정한 잎별 상태를 받아 그린다.**
          ⚠ 안 넘기면 예전 그대로 돈다 — 이 한 줄이 없으면 화면은 조용히 옛 그루를 그린다. */
-      leafState: (() => { try { return io.growth.leafState && io.growth.leafState(); } catch { return null; } })(),
+      leafState: leafStateForRoom(p),
       fade: p.fade,
       potD: ARRIVAL_POT_D,
       potId: p.id
@@ -8924,6 +8924,55 @@ function syncRoom() {
      칠하면 한 갈래를 빠뜨린다. 방이 맞은 뒤 한 곳에서 훑으면 갈래가 늘어도 안 샌다. */
   try { syncPlantGlow(); } catch (e) { warn('발밑 초록')(e); }
 }
+/* ══════════════════════════════════════════════════════════════════════════
+   ★★★ **잘린 마디는 방에서도 잘려 보인다** (2026-08-16 · 박사님)
+   ──────────────────────────────────────────────────────────────────────────
+   원문: *"그리고 **잘린 원본은 잘려야 되는데 잘리기 전 모습 그대로**네."*
+
+   ★ 왜 안 잘려 보였나. 형태의 정본은 `plant_grow` 이고 **거기에는 「이 마디를 잘랐다」를
+     알려 줄 창구가 없다.** 코어도 그것을 알고 있어서 깎지 않고 **적어만 뒀다**
+     (`pot.cuts[]` · `pot.pendingCutLoss` — propagation.js §takeCutting 의 그 주석이다).
+   ★★ 그래서 **길을 뚫었다**(2026-08-16 · `7ac8b92`). `cuttableNodes()` 가 마디마다
+     그 마디에 딸린 잎들의 열쇠(`leafBirths`)를 같이 낸다. 방은 이미 **잎별 상태를 받아
+     그리므로**(§leafState), 잘린 잎을 「떨어진 것」으로 표시해 넘기면 그리지 않는다.
+     ⇒ 생장 규칙은 한 줄도 안 바꿨다. **안 그리는 것**이지 **안 자란 것**이 아니다.
+
+   ⚠⚠ **`leafBirth` 는 잎마다 유일하지 않다** — 재서 알았다(56판 중 25판에서 겹쳤고
+     그 수가 쌍혹 판 수와 정확히 같았다). 쌍혹에서 같은 날 난 두 잎은 값이 같다.
+     ⇒ 그 값 하나로 지우면 **안 자른 쌍둥이 잎까지 사라진다.** 반대 방향의 거짓말이다.
+     ⇒ 그래서 **딱 맞을 때만 지운다**: 잘라 낸 장수와 화면에 있는 장수가 같은 값일 때만.
+       하나라도 애매하면 **손을 안 댄다.** 「모르면 안 한다」가 이 저장소의 규약이다.
+   ⚠ 열쇠 칸이 없는 옛 `plant_grow` 면 `null` 이 온다 — 그때도 손을 안 댄다. */
+function leafStateForRoom(p) {
+  let ls = null;
+  try { ls = io.growth.leafState && io.growth.leafState(); } catch { return null; }
+  if (!Array.isArray(ls) || !ls.length) return ls;
+  const ids = ((p && p.cuts) || []).map(c => c && c.nodeId).filter(Boolean);
+  if (!ids.length) return ls;
+  let k = null;
+  try { k = io.growth.leafKeysOfNodes && io.growth.leafKeysOfNodes(ids); } catch { }
+  if (!k || !Array.isArray(k.leafBirths) || !k.leafBirths.length) return ls;
+  /* 지우려는 장수 */
+  const want = new Map();
+  for (const b of k.leafBirths) { const n = +b; want.set(n, (want.get(n) || 0) + 1); }
+  /* 화면에 실제로 있는 장수 (이미 떨어진 것은 안 센다) */
+  const have = new Map();
+  for (const r of ls) if (r && !r.dropped) { const n = +r.leafBirth; have.set(n, (have.get(n) || 0) + 1); }
+  const drop = new Set();
+  const skipped = [];
+  for (const [b, n] of want) {
+    if ((have.get(b) || 0) === n) drop.add(b);          // 딱 맞는다 — 지워도 남의 잎이 안 없어진다
+    else if (have.get(b)) skipped.push(b);              // 쌍둥이가 섞였다 — 안 건드린다
+  }
+  if (skipped.length && !leafDropWarned) {
+    leafDropWarned = true;
+    console.warn('[잘린 잎] 쌍둥이 잎이 섞여 있어 그 마디는 화면에서 안 지웠습니다 —', skipped.join(', '));
+  }
+  if (!drop.size) return ls;
+  return ls.map(r => (r && !r.dropped && drop.has(+r.leafBirth) ? { ...r, dropped: true } : r));
+}
+let leafDropWarned = false;
+
 /* ★ 지금 시루가 몇 개인가. **정본은 pots[] 다** — `sirus` 는 읽기용 사본이다(first_play §대표 칸).
    한 곳에서만 세는 이유: 끌기·판정·그리기가 서로 다른 수를 보면
    **놓을 때는 통과하고 그릴 때는 줄어든다**(또는 반대). 그 어긋남은 화면으로 못 잡는다. */

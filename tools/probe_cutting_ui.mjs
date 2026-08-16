@@ -66,13 +66,21 @@ const clickIfShown = async (id) => {
   if (on) { await click(id); return true; }
   return false;
 };
-/* 동작(걸어가기+모션)이 끝날 때까지 기다린다 — 게이지 띄가 사라지면 끝난 것이다 */
-const waitAct = async (ms = 12000) => {
+/* 동작(걸어가기+모션)이 끝날 때까지 기다린다.
+   ⚠⚠ 2026-08-16 — **하단 막대로 재면 안 된다.** 누른 자리에 말풍선이 있으면 진행은
+     거기 그려지고 막대는 **아예 안 뜬다**(game.html §actBar). 그래서 이 자는 걷는 내내
+     「안 바쁘다」고 답했고, 그 뒤 줄이 **일이 끝나기도 전에** 상태를 읽었다 —
+     분갈이·팔기가 그래서 빨갰다(고장이 아니라 자가 일찍 본 것이다).
+   ⇒ **하는 중인가**를 곧바로 묻는다(`__byeotWalkSfx().acting`). 그 값이 정본이다.
+   ⚠ 시작이 한 틱 늦을 수 있으므로 **켜지는 것을 먼저 기다린 뒤** 꺼지는 것을 기다린다. */
+const waitAct = async (ms = 15000) => {
   const t0 = Date.now();
+  const acting = () => page.eval(`(()=>{ try { return !!window.__byeotWalkSfx().acting; }
+    catch { return document.getElementById('actBar').style.display !== 'none'; } })()`);
+  for (let i = 0; i < 6; i++) { if (await acting()) break; await sleep(120); }
   while (Date.now() - t0 < ms) {
-    const busy = await page.eval(`document.getElementById('actBar').style.display !== 'none'`);
-    if (!busy) return true;
-    await sleep(300);
+    if (!(await acting())) { await sleep(250); return true; }
+    await sleep(250);
   }
   return false;
 };
@@ -143,10 +151,22 @@ await page.eval(`(()=>{ const s=document.getElementById('slot'); s.value='banjih
 await sleep(1500); await skipTalk();
 /* ★ [30일 자동]은 첫 플레이가 끝나기 전에는 잠겨 있다 — [다음 날]로 밀어야 한다.
    자를 마디가 하나라도 살아나면 멈춘다(그 날이 곷 "삽수가 열리는 날"이다). */
+/* ★★ 2026-08-16 — **모주에 물을 줘야 자란다.** 이 자는 [다음 날]만 눌렀고, 그래서
+   기록에 「⏸ 흙이 말랐습니다 — 74일째」가 쌓이는 동안 잎이 한 장도 안 났다(재서 잡았다).
+   마른 날은 **하루가 통째로 안 세어진다**(state.js §몬스테라 물주기) — 규칙대로다.
+   ⚠ `#waterPot` 는 말풍선이 같은 말을 하면 감춰지고 `canWater` 가 아니면 잠긴다.
+     여기서 재려는 것은 물주기가 아니라 **삽수 배선**이라 잠금만 풀고 누른다. */
+const waterPotNow = async () => {
+  const hit = await page.eval(`(()=>{ const b=document.getElementById('waterPot');
+    if(!b) return false; b.disabled=false; b.style.display=''; b.click(); return true; })()`);
+  if (hit) { await waitAct(); await sleep(350); await skipTalk(); }
+};
 let openedOnDay = null;
 for (let d = 0; d < 150; d++) {
   const on = await page.eval(`(()=>[...document.querySelectorAll('#cutNodes [data-cut]')].some(x=>!x.disabled))()`);
   if (on) { openedOnDay = await page.eval(`window.__S().day`); break; }
+  await page.eval(`(()=>{const S=window.__S(); if(S.stamina) S.stamina.usedToday=0;})()`, false);
+  await waterPotNow();
   await click('next'); await sleep(560); await skipTalk();
   if (d % 10 === 9) {
     await page.eval(`(()=>{ window.__byeotSheet.open(); window.__byeotSheet.tab('room'); })()`, false);
@@ -193,8 +213,47 @@ if (process.env.BYEOT_DEBUG) console.log('  cut-dbg', await page.eval(`(()=>{con
     btn: !!document.querySelector('#cutNodes [data-cut]')})})()`));
 say(cut.n === 1 && cut.cont === 'jar', '[병에] 를 누르니 물꽂이 삽수가 하나 생겼다', JSON.stringify(cut));
 say(cut.jar === 1, '유리병 재고가 하나 줄었다 (공짜로 안 나온다)', '남은 병 ' + cut.jar);
-say(!!cut.slot, '삽수가 방 안 자리를 받았다', cut.slot || '자리 없음');
-say(cut.in3d, '★삽수가 방 화면에 실제로 서 있다 (말풍선·걸어가기가 이걸 탄다)');
+/* ══ ★★★ 2026-08-16 — **계약이 뒤집혔다** (박사님: *"드래그하기 전에 자동배치되면 안 되지"*)
+   ------------------------------------------------------------
+   여기 있던 두 줄은 「자른 순간 방에 서 있다」를 못 박고 있었다. 그것이 **고장이었다** —
+   자를 때 게임이 빈 자리를 아무거나 골라 세우고 있었고, 박사님 화면에 화분이 저절로 늘었다.
+   ⇒ 이제 재는 것은 **정반대**다: 자른 직후에는 **자리가 없어야** 하고, 가방 칸이 서야 하고,
+     끌어 놓아야 비로소 방에 선다. 시루·화분과 같은 손버릇이다. */
+say(!cut.slot && !cut.at, '★자른 직후에는 **자리를 안 받는다** (자동 배치를 안 한다)',
+    JSON.stringify({ slot: cut.slot, at: cut.at }));
+say(!cut.in3d, '★그래서 방에도 아직 안 선다');
+
+/* ── ②-b 가방 칸이 서고 · 손잡이가 잡히나 ── */
+await page.eval(`(()=>{ window.__byeotSheet.open('bag'); })()`, false);
+await sleep(700);
+const bagCell = await page.eval(`(()=>{ const el=document.querySelector('.bagslot[data-place^="cutting:"]');
+  if(!el) return JSON.stringify({ cell:false });
+  const img=el.querySelector('img'); const r=img?img.getBoundingClientRect():{width:0,height:0};
+  return JSON.stringify({ cell:true, place:el.dataset.place,
+    handle: Math.round(r.width)+'×'+Math.round(r.height), ko:(el.textContent||'').trim() }); })()`)
+  .then(s => JSON.parse(s));
+say(bagCell.cell, '★가방에 「자른 삽수」 칸이 선다', JSON.stringify(bagCell));
+say(bagCell.cell && /^\d+×\d+$/.test(bagCell.handle) && parseInt(bagCell.handle) > 0,
+    '★그 칸의 그림이 **크기를 갖는다** (숨은 그림에 손잡이가 걸리지 않았다)', bagCell.handle);
+
+/* ── ②-c 끌어다 놓으면 방에 선다 ── */
+const dropped = await page.eval(`(()=>{ const rv=window.__rv,
+    c=document.getElementById('roomCanvas').getBoundingClientRect();
+  const el=document.querySelector('.bagslot[data-place^="cutting:"]'); if(!el) return 'no-cell';
+  const sp=rv.screenPosOf('banjiha-etagere:0') || rv.screenPosOf('banjiha-desk:0'); if(!sp) return 'no-slot';
+  const img=el.querySelector('img'); const b=img.getBoundingClientRect();
+  window.__drag.begin(el.dataset.place, img.src, {clientX:b.left+b.width/2, clientY:b.top+b.height/2});
+  window.__drag.move({clientX:c.left+sp.x, clientY:c.top+sp.y}); window.__drag.end();
+  return 'dropped'; })()`);
+await sleep(1400);
+const placed = await page.eval(`(()=>{ const S=window.__S(); const c=S.cuttings[0]||null;
+  return JSON.stringify({ drop:'${dropped}', at: !!(c&&c.at), slot: c&&c.slotId,
+    in3d: !!(c && window.__rv.plants().some(p=>p.potId===c.id)),
+    stillInBag: !!document.querySelector('.bagslot[data-place^="cutting:"]') }); })()`)
+  .then(s => JSON.parse(s));
+say(placed.at || !!placed.slot, '★★끌어다 놓으면 **그때** 자리를 받는다', JSON.stringify(placed));
+say(placed.in3d, '★그리고 방 화면에 선다 (말풍선·걸어가기가 이걸 탄다)');
+say(!placed.stillInBag, '★놓은 뒤에는 가방 칸이 사라진다 (두 곳이 딴말 안 한다)');
 
 /* ── ③ 혹이 날 때까지 굴린다 → 말풍선 ── */
 await page.eval(`(()=>{ window.__byeotSheet.close(); })()`, false);
