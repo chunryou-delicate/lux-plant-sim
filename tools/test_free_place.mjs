@@ -160,11 +160,22 @@ check('D nearestSlot — 제일 가까운 자리와 거리 · maxDist · 화분 
 
   assert.equal(place.nearestSlot({ x: SILL.x + 0.03, y: SILL.y, z: SILL.z }, room.slots,
                                  { maxDist: 0.01 }), null, 'maxDist 를 넘었는데 붙었습니다');
-  /* 창턱은 0.21 한 칸이다 — 큰 화분은 후보에서 빠져야 한다 */
+  /* 창턱은 한 칸이다 — 큰 화분은 후보에서 빠져야 한다 */
   const big = place.nearestSlot({ x: SILL.x, y: SILL.y, z: SILL.z }, room.slots, { potD: 0.5 });
-  assert.notEqual(big && big.slot.slotId, 'banjiha-sill:0', '0.5m 화분이 0.21 자리에 붙었습니다');
+  assert.notEqual(big && big.slot.slotId, 'banjiha-sill:0', `0.5m 화분이 ${SILL.maxPotD} 자리에 붙었습니다`);
   assert.equal(place.slotHolds(SILL, 0.202), true);
-  assert.equal(place.slotHolds(SILL, 0.24), false);
+  /* ⚠⚠ 2026-08-17 (G-14) — **창턱 한도가 0.21 → 0.27 이 됐다.**
+     받침을 방 쪽으로 0.20m 밀면서 깊이를 0.24 → 0.30 으로 키운 몫이다
+     (`data/house_rooms.json §banjiha-sill` · 박사님 "조금만 민다로 하자").
+     ⇒ **열린 콩나물 시루(0.24)가 창턱에 올라간다** — 예전에는 못 올라갔다.
+       늘어난 것이지 깨진 것은 아니지만 **뜻이 바뀐 줄**이라 갈라 적는다:
+       창턱은 이 방에서 제일 밝은 자리고 콩나물은 어두울수록 좋은 작물이다.
+       「제일 밝은 자리에 시루를 올릴 수 있다」가 새로 열린 손짓이다.
+     ⚠ 되돌리고 싶으면 깊이만 0.24 로 되돌리면 된다 — **밝기는 z 가 정하므로
+       3.68·6.02 는 한 톨도 안 바뀐다.** 그때 이 줄도 false 로 되돌려라.
+     ★ 네모 화분(0.2755)은 여전히 못 올라간다 — `test_pots C-2` 가 그것을 잡고 있다. */
+  assert.equal(place.slotHolds(SILL, 0.24), true, '창턱 한도가 0.27 인데 시루(0.24)가 안 올라갑니다');
+  assert.equal(place.slotHolds(SILL, 0.2755), false, '네모 화분(0.2755)이 창턱에 올라갔습니다');
   /* maxPotD 를 모르면 '못 받는다'로 본다 — 결측을 관대하게 넘기지 않는다 */
   assert.equal(place.slotHolds({ maxPotD: null }, 0.1), false);
   assert.equal(place.nearestSlot({ x: 0, y: 0, z: 0 }, []), null);

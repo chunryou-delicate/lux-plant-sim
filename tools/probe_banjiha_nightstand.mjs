@@ -176,14 +176,23 @@ const INJECT = `window.__N = (()=>{
   const SKY = { weather:'clear', season:'summer', lampCount:0, litHours:12 };
   const furn = () => rv.furniture().map(f=>({uid:f.uid,name:f.name,x:f.x,y:f.y,z:f.z,rot:f.rot,
                                              w:f.size.w,d:f.size.d,h:+(f.size.h??0).toFixed(3)}));
+  /* ★ 등 0/1/2 를 한꺼번에 낸다 — 「등 하나로 갈라짐 문턱 6.0 을 넘나」가 이 자의 핵심이다.
+     ⚠ dliOfSlot 은 캐시를 타므로 등 수마다 키가 갈린다(light_adapter §dliOfSlot). */
   const dli = () => { const m={}; for (const s of L.room.slots)
-      m[s.slotId] = { y:+(s.y??0).toFixed(3), dli:+L.dliOfSlot(s.slotId, SKY).toFixed(3) }; return m; };
+      m[s.slotId] = { y:+(s.y??0).toFixed(3),
+                      dli:+L.dliOfSlot(s.slotId, SKY).toFixed(3),
+                      d1 :+L.dliOfSlot(s.slotId, {...SKY, lampCount:1}).toFixed(3),
+                      d2 :+L.dliOfSlot(s.slotId, {...SKY, lampCount:2}).toFixed(3) }; return m; };
+  /* 그 점의 **표면**에서 등 0/1/2 로 잰다 — 화면 빛 분포가 쓰는 그 길 그대로다 */
+  const surfN = (x,z) => { const s = rv.surfaceTopAt(x,z);
+    const d = n => +L.dliAt({x, y:s.y, z}, {...SKY, lampCount:n, occIdx:s.occIdx}).dli.toFixed(3);
+    return { y:s.y, onUid:s.onUid, occIdx:s.occIdx, d0:d(0), d1:d(1), d2:d(2) }; };
   const surf = (x,z) => { const s = rv.surfaceTopAt(x,z);
     return { y:s.y, onUid:s.onUid, occIdx:s.occIdx,
              dli:+L.dliAt({x, y:s.y, z}, {...SKY, occIdx:s.occIdx}).dli.toFixed(3) }; };
   const riders = () => { const m={}; for (const f of rv.furniture()) { const r=rv.ridersOf(f.uid);
                           if (r.length) m[f.uid]=r; } return m; };
-  return { rv, L, SKY, furn, dli, surf, riders,
+  return { rv, L, SKY, furn, dli, surf, surfN, riders,
            snap:(uid,p)=>{ try{ return rv.snapFurniture(uid,p); }catch(e){ return {err:e.message}; } },
            fit :(uid,p)=>{ try{ return rv.furnitureFit(uid,p); }catch(e){ return {ok:false,reason:e.message}; } },
            move: async (uid,p)=>{ try{ const r = await rv.commitFurnitureAt(uid,p); L.clearCache();
@@ -238,10 +247,23 @@ REC.hasNightstand = hasNS;
 const dli = await J('__N.dli()');
 REC.dli = dli;
 console.log(`\n[2] 자리 ${Object.keys(dli).length}곳의 DLI`);
-console.log(`   ${'자리'.padEnd(26)}${'y'.padStart(8)}${'DLI'.padStart(9)}`);
+console.log(`   ${'자리'.padEnd(26)}${'y'.padStart(8)}${'등0'.padStart(9)}${'등1'.padStart(9)}${'등2'.padStart(9)}`);
 for (const id of Object.keys(dli).sort())
   console.log(`   ${id.padEnd(26)}${P(dli[id].y, 3).padStart(8)}${P(dli[id].dli).padStart(9)}` +
+              `${P(dli[id].d1).padStart(9)}${P(dli[id].d2).padStart(9)}` +
               `${id === 'banjiha-sill:0' ? '   ★ 창턱' : ''}`);
+/* ★★ 이 자의 핵심 한 줄 — **등 하나로 갈라짐 문턱 6.0 을 넘나.** G-16 이 식물등을
+   창 위로 옮겨 세운 것이 그 7.07 이고, 창턱을 방 쪽으로 밀면 그것이 먼저 깨진다. */
+{
+  const s = dli['banjiha-sill:0'];
+  const FEN = 6.0, MIN = 3.0;                 // data/balance/light_thresholds.json §monstera_deliciosa
+  console.log(`\n   ★★ 창턱 문턱 판정 — 정체선 ${MIN} · 갈라짐 문턱 ${FEN}`);
+  console.log(`      등 0개 ${P(s.dli)}  ${s.dli >= MIN ? '✔ 자란다(느림 이상)' : '⛔ 정체 — 새 잎이 안 난다'}`);
+  console.log(`      등 1개 ${P(s.d1)}  ${s.d1 >= FEN ? `✔ **갈라진다** (여유 ${(s.d1 - FEN).toFixed(2)})` : '⛔ **안 갈라진다**'}`);
+  console.log(`      등 2개 ${P(s.d2)}  ${s.d2 >= FEN ? '✔ 갈라진다' : '⛔ 안 갈라진다'}`);
+  REC.sillVerdict = { d0: s.dli, d1: s.d1, d2: s.d2, min: MIN, fen: FEN,
+                      grows: s.dli >= MIN, fenestrates1: s.d1 >= FEN };
+}
 
 /* ── ③ 길찾기 ───────────────────────────────────────────── */
 const reach = await J(`(()=>{
@@ -277,7 +299,7 @@ await waitNoon(page);
 await shot(page, `banjiha_ns_${TAG}_room.png`);
 
 /* ── ④ 세 겹 — 협탁이 있을 때만 (창턱 몫을 잴 때는 건너뛴다) ── */
-if (hasNS && PART !== 'sill') {
+if (hasNS && PART === 'nightstand') {
   console.log(`\n[4] ★★ 세 겹을 실제로 쌓는다 — 서랍장(바닥) → 협탁 → 의자`);
   const F = u => furn0.find(f => f.uid === u);
   const dr = F('banjiha-dresser');
@@ -324,8 +346,130 @@ if (hasNS && PART !== 'sill') {
   /* 되돌린다 — 다음 걸음이 정본 배치를 보게 */
   await Ja(`await __N.move('banjiha-chair', {x:${F('banjiha-chair').x}, z:${F('banjiha-chair').z}, rot:180, y:0, step:0.125})`);
   await Ja(`await __N.move('banjiha-nightstand', {x:${F('banjiha-nightstand').x}, z:${F('banjiha-nightstand').z}, rot:${F('banjiha-nightstand').rot}, y:0, step:0.125})`);
-} else if (PART !== 'sill') {
+} else if (PART === 'nightstand') {
   console.log(`\n[4] 세 겹 — 협탁이 아직 없어서 안 잰다 (tag=${TAG})`);
+}
+
+/* ══════════════════════════════════════════════════════════
+   PART WINSTACK — ★ 「2단 세워서 창턱 비슷하게 두면 자라는 정도까지는 빛이 오나」
+   ------------------------------------------------------------
+   박사님: *"2단 세워서 창턱 비슷하게 배치되도록 하면 몬스테라가 **갈라짐은 안 되지만
+     자라는 정도까지는** 빛이 들어오나?"*
+
+   문턱 둘로 답한다 (`data/balance/light_thresholds.json §monstera_deliciosa`)
+     · **자란다**   = DLI **3.0** 이상 (그 아래는 정체 — 새 잎이 안 난다)
+     · **갈라진다** = DLI **6.0** 이상
+
+   재는 법 — **실제로 쌓아 놓고** 그 상판에서 잰다. 허공에 대고 재지 않는다.
+     ① 창 밑을 비운다(3단 선반·협탁을 방 뒤로 물린다)
+     ② 밑짝을 창 밑에 놓고 → 그 위에 윗짝을 올리고 → `surfaceTopAt` 이 집는 면에서
+        `dliAt` 을 등 0/1/2 로 잰다. 화면 빛 분포가 쓰는 그 길 그대로다
+     ③ 조합마다 **원래 자리로 되돌려 놓고** 다음 조합으로 간다
+   ⚠ 창턱(z −1.85·y 1.55)과 창 위 바 등(y 2.15)은 그대로 둔다 — 「창턱 비슷하게」의
+     기준이 그 둘이다.
+   ══════════════════════════════════════════════════════════ */
+if (PART === 'winstack') {
+  const MIN = 3.0, FEN = 6.0;                 // data/balance/light_thresholds.json §monstera_deliciosa
+  console.log(`\n████ PART WINSTACK — 창 밑에 두 겹을 쌓으면 자라는 자리가 되나 ████`);
+  console.log(`   문턱: 자란다 ${MIN} · 갈라진다 ${FEN}`);
+
+  /* ⚠⚠⚠ 여기서 자가 한 번 거짓말했다 — 첫 판을 통째로 버렸다.
+     창 밑을 비우려고 **3단 선반을 방 뒤로 물렸더니 창 위 바 등이 따라갔다.**
+     `ridersOf` 가 `banjiha-etagere → banjiha-growlight-bar` 이기 때문이다(선반이 등을 인다).
+     그 판의 등1·등2 열은 **등이 딴 데 가 있는 방**을 잰 값이라 아무 뜻이 없었다.
+     ⇒ 규칙 둘로 막는다:
+       ① **3단 선반은 안 건드린다.** 창 밑 왼쪽·오른쪽 빈 자리만 쓴다
+       ② 조합마다 **창턱 등1 이 6.02 인지 먼저 확인한다** — 그것이 「바 등이 제자리에
+          있다」의 자다. 어긋나면 그 줄은 못 쓴다고 찍는다
+     ★ 다만 **책상이 집게등을 이는 것은 그대로 둔다** — 그건 고장이 아니라 이 게임의 규칙이고
+       (「등이 곧 길」), 플레이어가 책상을 창 밑으로 옮기면 실제로 집게등이 따라간다. */
+  const SILL_D1_HOME = 6.02;
+  const F0 = {}; for (const f of furn0) F0[f.uid] = f;
+  const home = async (uid) => { const f = F0[uid]; if (!f) return;
+    await Ja(`await __N.move('${uid}', {x:${f.x}, z:${f.z}, rot:${f.rot}, y:${f.y}, grid:false})`); };
+  const sillNow = async () => (await J('__N.dli()'))['banjiha-sill:0'];
+
+  const s0 = await sillNow();
+  console.log(`   [자 확인] 손대기 전 창턱 — 등0 ${P(s0.dli)} · 등1 ${P(s0.d1)} · 등2 ${P(s0.d2)}`);
+
+  /* 창 밑 빈 자리 — 창은 x −1.1~1.1. 3단 선반이 x −0.725~0.025 를 쓰고 있으므로
+     그 **왼쪽**(침대 x ≤ −1.4 와 선반 사이)과 **오른쪽**(선반과 오른 벽 사이)이 빈다. */
+  /* ⚠ **왼쪽은 애초에 못 쓴다** — 침대가 x −2.4~−1.4 를 차지하고 3단 선반이 −0.725~0.025 를
+     쓰므로 그 사이 폭이 0.675m 다. 책상(1.25)도 서랍장(1.0)도 안 들어간다. 재서 확인했다
+     (「선반-다단-3단 와(과) 겹칩니다」). ⇒ 창 밑에서 두 겹을 세울 수 있는 자리는
+     **선반 오른쪽 한 곳뿐**이다. 그것도 이 표가 내는 답의 일부다. */
+  const SPOTS = [{ ko: '창 밑 오른쪽', x: 0.75, z: -1.625 }];
+  const COMBOS = [['banjiha-desk', null], ['banjiha-desk', 'banjiha-nightstand'],
+                  ['banjiha-dresser', null], ['banjiha-dresser', 'banjiha-nightstand'],
+                  ['banjiha-desk', 'banjiha-etagere']];
+  const MOV = ['banjiha-desk', 'banjiha-dresser', 'banjiha-nightstand', 'banjiha-chair'];
+  /* 조합에 안 쓰는 옮길 수 있는 가구는 방 뒤로 물린다 — 안 그러면 서로 겹쳐서 못 놓는다 */
+  const PARK = { 'banjiha-desk': { x: -0.5, z: 1.5 }, 'banjiha-dresser': { x: 2.15, z: 1.4 },
+                 'banjiha-nightstand': { x: 0.6, z: 1.45 }, 'banjiha-chair': { x: 1.3, z: -0.85 } };
+  const rows = [];
+  console.log(`\n   ${'자리'.padEnd(12)}${'조합'.padEnd(24)}${'상판 y'.padStart(8)}${'등0'.padStart(8)}${'등1'.padStart(8)}${'등2'.padStart(8)}   판정`);
+  for (const sp of SPOTS) for (const [base, top] of COMBOS) {
+    /* ★ 3단 선반을 먼저 제자리로 — 그래야 **바 등이 창 위로 돌아온다**(선반이 등을 인다).
+       앞 판에서 이걸 빼먹어 등이 딴 데 간 채로 뒷줄을 다 쟀다. */
+    await home('banjiha-etagere');
+    /* 옮길 수 있는 것을 **전부** 방 뒤로 물린다 — 쓸 것까지 물려야 서로 안 걸린다 */
+    for (const u of MOV)
+      await Ja(`await __N.move('${u}', {x:${PARK[u].x}, z:${PARK[u].z}, rot:0, step:0.125})`);
+    const mb = await Ja(`await __N.move('${base}', {x:${sp.x}, z:${sp.z}, rot:0, step:0.125})`);
+    if (!mb.ok) { console.log(`   ⛔ ${sp.ko} · ${base}: ${mb.reason}`); continue; }
+    const b = (await J('__N.furn()')).find(f => f.uid === base);
+    let t = null;
+    if (top) {
+      const mt = await Ja(`await __N.move('${top}', {x:${b.x}, z:${b.z}, rot:0, step:0.125})`);
+      if (!mt.ok) { console.log(`   ⛔ ${sp.ko} · ${base} 위 ${top}: ${mt.reason}`); continue; }
+      t = (await J('__N.furn()')).find(f => f.uid === top);
+      if (!(t.y > 0.05)) { console.log(`   ⛔ ${sp.ko} · ${top} 이 안 올라갔다 (y ${P(t.y, 3)})`); continue; }
+    }
+    const at = t || b;
+    const s = await J(`__N.surfN(${at.x}, ${at.z})`);
+    const sk = await sillNow();
+    const lampOk = Math.abs(sk.d1 - SILL_D1_HOME) < 0.02;
+    rows.push({ spot: sp.ko, base, top, x: at.x, z: at.z, y: s.y, onUid: s.onUid,
+                d0: s.d0, d1: s.d1, d2: s.d2, layers: top ? 2 : 1, lampOk, sillD1: sk.d1 });
+    console.log(`   ${sp.ko.padEnd(12)}` +
+                `${(base.replace('banjiha-', '') + (top ? ' + ' + top.replace('banjiha-', '') : ' (한 겹)')).padEnd(24)}` +
+                `${P(s.y, 3).padStart(8)}${P(s.d0).padStart(8)}${P(s.d1).padStart(8)}${P(s.d2).padStart(8)}   ` +
+                `${s.d0 >= MIN ? '✔ 자란다' : '⛔ 정체'}` +
+                `${s.d1 >= FEN ? ' · 등1로 갈라짐' : (s.d1 >= MIN ? ' · 등1이면 자란다' : '')}` +
+                `${s.d2 >= FEN ? ' · 등2로 갈라짐' : ''}` +
+                `${lampOk ? '' : `  ⚠ 바 등이 움직였다(창턱 등1 ${P(sk.d1)})`}`);
+  }
+  for (const u of MOV) await home(u);
+  await home('banjiha-etagere');                 // 바 등을 창 위로 되돌린다
+
+  const sillEnd = await sillNow();
+  console.log(`\n   [자 확인] 되돌린 뒤 창턱 — 등0 ${P(sillEnd.dli)} · 등1 ${P(sillEnd.d1)} · 등2 ${P(sillEnd.d2)}` +
+              `  ${Math.abs(sillEnd.d1 - SILL_D1_HOME) < 0.02 ? '✔ 바 등이 제자리다'
+                 : '(⚠ 마지막 조합이 3단 선반을 옮겼으면 여기는 원래 빨갛다 — 선반을 내려도 등은 같이 내려앉는다. 줄마다의 lampOk 가 진짜 자다)'}`);
+  console.log(`   ⇒ 등 열을 믿을 수 있는 줄 ${rows.filter(r => r.lampOk).length}/${rows.length}`);
+  const good = rows.filter(r => r.lampOk);
+  const best = good.reduce((a, r) => (!a || r.d0 > a.d0 ? r : a), null);
+  console.log(`\n   [견줌] 창턱 banjiha-sill:0 (y 1.585) — 등0 ${P(sillEnd.dli)} · 등1 ${P(sillEnd.d1)} · 등2 ${P(sillEnd.d2)}`);
+  if (best) {
+    console.log(`   ⇒ 두 겹 중 제일 밝은 자리: ${best.base.replace('banjiha-', '')}+${String(best.top).replace('banjiha-', '')}` +
+                ` @ ${best.spot} · 상판 y ${P(best.y, 3)}`);
+    console.log(`   ⇒ **자라나(${MIN})**: 등0 ${P(best.d0)} ${best.d0 >= MIN ? '✔' : '⛔'}` +
+                ` · 등1 ${P(best.d1)} ${best.d1 >= MIN ? '✔' : '⛔'} · 등2 ${P(best.d2)} ${best.d2 >= MIN ? '✔' : '⛔'}`);
+    console.log(`   ⇒ **갈라지나(${FEN})**: 등1 ${best.d1 >= FEN ? '✔' : '⛔'} · 등2 ${best.d2 >= FEN ? '✔' : '⛔'}`);
+  }
+  REC.winstack = { rows, sillStart: s0, sillEnd, best, MIN, FEN, SILL_D1_HOME };
+
+  /* 제일 밝은 조합을 실제로 세워 놓고 빛 분포를 켠 채 사진 */
+  if (best) {
+    await home('banjiha-etagere');
+    for (const u of MOV)
+      await Ja(`await __N.move('${u}', {x:${PARK[u].x}, z:${PARK[u].z}, rot:0, step:0.125})`);
+    await Ja(`await __N.move('${best.base}', {x:${best.x}, z:${best.z}, rot:0, step:0.125})`);
+    if (best.top) await Ja(`await __N.move('${best.top}', {x:${best.x}, z:${best.z}, rot:0, step:0.125})`);
+    await J(`__N.rv.setLightHeatmap(true, {weather:'clear', season:'summer', lampCount:0, litHours:12})`);
+    await waitNoon(page);
+    REC.shotWin = await shot(page, `banjiha_winstack_${TAG}.png`);
+  }
 }
 
 /* ══════════════════════════════════════════════════════════

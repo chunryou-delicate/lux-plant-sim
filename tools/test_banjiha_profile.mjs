@@ -73,11 +73,17 @@ const lightTh = JSON.parse(readFileSync(
         자리를 칸 한가운데로 옮긴 것 · `d1986cd`)이 낸 값인데 이 표가 안 따라와서,
         협탁 전에 돌려도 `banjiha-desk:0: static 0.61 vs live 0.6` 로 터졌다(재서 확인).
         여기서 같이 바로잡는다 — **내 변경이 낸 값이 아니다.**
+     ③ ★★ 2026-08-17 늦게 — **창턱 받침을 방 쪽으로 0.20m 밀었다**
+        (`data/house_rooms.json §banjiha-sill` · 박사님 "조금만 민다로 하자").
+        그루가 창 개구부 속에서 나와 창 윗턱을 안 뚫게 한 것이고, 값을 두 칸 움직인다:
+        `sill:0` **4.80 → 3.68**(의도한 값 · 「느림」 밴드 안이라 여전히 자란다) ·
+        `desk:0` 0.61 → **0.58**. 나머지 열세 칸은 한 톨도 안 움직였다.
+        ⚠ 등 1개 창턱은 7.07 → **6.02** 다 — 갈라짐 문턱 6.0 을 **여유 0.02** 로 지킨다.
    ★ 값은 손으로 안 적었다: `node tools/gen_room_profile.mjs` 가 이 표를 그대로 찍어 준다. */
 const LIVE = {
   best: 'banjiha-sill:0',
   dli: {
-    'banjiha-sill:0': 4.8, 'banjiha-desk:0': 0.61, 'banjiha-desk:1': 0.18,
+    'banjiha-sill:0': 3.68, 'banjiha-desk:0': 0.58, 'banjiha-desk:1': 0.18,
     'banjiha-dresser:0': 0.06, 'banjiha-dresser:1': 0.04,
     'banjiha-etagere:0': 0.13, 'banjiha-etagere:1': 0.14, 'banjiha-etagere:2': 0.13,
     'banjiha-etagere:3': 0.22, 'banjiha-etagere:4': 0.22, 'banjiha-etagere:5': 0.21,

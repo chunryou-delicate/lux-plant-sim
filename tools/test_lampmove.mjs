@@ -111,9 +111,13 @@ const dli = (slotId, n) => eng.dliOfSlot(slotId, { ...SKY, lampCount: n });
 /* ★★★ 2026-08-16 갱신 — **G-16. 첫 등을 몬스테라 위로 옮겼다.**
    까닭·갈라 적은 어긋남(어디까지가 G-16 이고 어디부터가 B-1·B-6 인지)은
    `test_lampaim` §BEFORE 머리말에 있다. 여기는 값만 둔다 — 두 표는 글자 그대로 같아야 한다. */
+/* ★★ 2026-08-17 늦게 (G-14) — 창턱 받침을 방 쪽으로 0.20m 밀었다(박사님 "조금만 민다로 하자").
+   움직인 칸은 `sill:0` 과 `desk:0` 둘뿐이다. 창턱 등1 이 7.07 → **6.02** 로, 갈라짐 문턱
+   6.0 을 여유 0.02 로 지킨다. 까닭·표는 `test_lampaim` §BEFORE 머리말과
+   `docs/handoff/nightstand-to-plan.md`. 값은 `BYEOT_REGEN=1` 로 다시 뽑았다. */
 const BEFORE = {
-  'banjiha-sill:0':     { ppfd: [0, 52.604525, 53.477745], dli: [4.8, 7.07, 7.11] },
-  'banjiha-desk:0':     { ppfd: [0, 6.464065, 24.159566],  dli: [0.61, 0.89, 1.65] },
+  'banjiha-sill:0':     { ppfd: [0, 54.242863, 55.148633], dli: [3.68, 6.02, 6.06] },
+  'banjiha-desk:0':     { ppfd: [0, 6.464065, 24.159566],  dli: [0.58, 0.86, 1.63] },
   'banjiha-desk:1':     { ppfd: [0, 3.261011, 26.510409],  dli: [0.18, 0.32, 1.32] },
   'banjiha-dresser:0':  { ppfd: [0, 1.216627, 2.266042],   dli: [0.06, 0.11, 0.16] },
   'banjiha-dresser:1':  { ppfd: [0, 0.901646, 1.544899],   dli: [0.04, 0.08, 0.11] },
@@ -173,8 +177,13 @@ console.log('── 1부 · 조도 (헤드리스) ──────────
 
 /* ══ ② 물림 — 집게등을 창턱에 물리면 창턱이 산다 ═══════════════════════════ */
 const SILL_TOP = 1.585;                       // banjiha-sill 상판 (plantSlots 에서 온 값)
+/* ⚠ 창턱의 z 는 **데이터에서 읽는다.** 2026-08-17 에 받침을 방 쪽으로 0.20m 밀어
+   −1.95 → −1.85 가 됐는데, 여기에 −1.95 를 박아 두면 집게등이 **창턱이 아니라 그 뒤
+   개구부 속**에 달린다. 그러면 이 절이 「창턱에 물렸다」고 말하면서 딴 데를 잰다
+   (START-HERE §2.9-⑥). 박아 두지 않는다. */
+const SILL_Z = BASE_DATA().houseRooms.rooms.banjiha.furniture.find(f => f.uid === 'banjiha-sill').z;
 const beforeSill = (() => { reset(); return [0, 1, 2].map(n => dli(SILL, n)); })();
-put({ [CLIP]: { x: 0, z: -1.95, rot: 0, y: SILL_TOP } });
+put({ [CLIP]: { x: 0, z: SILL_Z, rot: 0, y: SILL_TOP } });
 const afterSill = [0, 1, 2].map(n => dli(SILL, n));
 ok(`② 물림 — 집게등을 창턱에 물리면 창턱 DLI 가 문턱 ${THRESHOLD} 을 넘는다 ` +
    `(${beforeSill[2]} → ${afterSill[2]})`,
@@ -208,7 +217,7 @@ ok('②-c 붙박이 바 등만 켠 상태(등 1개)는 안 바뀐다 — 옮긴 
 /* ══ ③ 높이 — adjustable_height 가 살아 있다 ══════════════════════════════ */
 {
   const lifts = [0, 0.05, 0.1, 0.2].map(l => {
-    put({ [CLIP]: { x: 0, z: -1.95, rot: 0, y: SILL_TOP + l } });
+    put({ [CLIP]: { x: 0, z: SILL_Z, rot: 0, y: SILL_TOP + l } });
     return { lift: l, y: rigOf(CLIP).pos.y, dli: dli(SILL, 2) };
   });
   const strictlyDown = lifts.every((r, i) => i === 0 || r.dli < lifts[i - 1].dli);
@@ -230,7 +239,7 @@ ok('②-c 붙박이 바 등만 켠 상태(등 1개)는 안 바뀐다 — 옮긴 
 /* ══ ⑤ 세이브 왕복 — 등 자리는 **가구 자리표와 같은 표**를 쓴다 ═══════════ */
 {
   const S = newState({ room: 'banjiha' });
-  const spot = { x: 0, z: -1.95, rot: 0, y: SILL_TOP + 0.05 };
+  const spot = { x: 0, z: SILL_Z, rot: 0, y: SILL_TOP + 0.05 };
   setFurniturePlacement(S, CLIP, spot);
   put({ [CLIP]: spot });
   const want = dli(SILL, 2);
@@ -244,7 +253,7 @@ ok('②-c 붙박이 바 등만 켠 상태(등 1개)는 안 바뀐다 — 옮긴 
      !!got && got.x === spot.x && got.z === spot.z && got.rot === spot.rot && got.y === spot.y,
      JSON.stringify(got));
   ok('⑤-b 세이브를 열면 조도 엔진의 등이 그 자리에 가 있다',
-     rigOf(CLIP).pos.x === 0 && rigOf(CLIP).pos.z === -1.95,
+     rigOf(CLIP).pos.x === 0 && rigOf(CLIP).pos.z === SILL_Z,
      JSON.stringify(rigOf(CLIP).pos));
   eng.clearCache();
   const back = dli(SILL, 2);
@@ -377,7 +386,7 @@ if (!BASE) {
     const a0 = after.find(r => r.id === 'growlight_clip');
     ok(`E-b 옮기기 — lightRigs() 가 새 좌표를 낸다 ` +
        `(${b0.pos.x}, ${b0.pos.y}, ${b0.pos.z}) → (${a0.pos.x}, ${a0.pos.y}, ${a0.pos.z})`,
-       a0.pos.x === 0 && a0.pos.z === -1.95 && a0.pos.y > b0.pos.y,
+       a0.pos.x === 0 && a0.pos.z === SILL_Z && a0.pos.y > b0.pos.y,
        JSON.stringify({ b: b0.pos, a: a0.pos }));
     const node3d = JSON.parse(await page.eval(`(() => {
       const g = window.view.three.scene.getObjectByProperty('uuid', '') || null;
@@ -389,7 +398,7 @@ if (!BASE) {
                                        z:+found.position.z.toFixed(3) } : null);
     })()`));
     ok('E-c 옮기기 — 3D 도 같은 자리로 움직인다 (화면과 계산이 안 갈린다)',
-       !!node3d && node3d.x === 0 && node3d.z === -1.95 && Math.abs(node3d.y - SILL_TOP) < 0.001,
+       !!node3d && node3d.x === 0 && node3d.z === SILL_Z && Math.abs(node3d.y - SILL_TOP) < 0.001,
        JSON.stringify(node3d));
     const lamps2 = JSON.parse(await page.eval('JSON.stringify(window.view.lamps())'));
     const l2 = lamps2.find(l => l.uid === CLIP);
