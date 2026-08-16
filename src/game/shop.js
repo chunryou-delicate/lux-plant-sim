@@ -759,7 +759,19 @@ const VARIE_GRADES_FALLBACK = Object.freeze({
   schema: 'varie_grades/1',
   grades: [
     { id: 'plain',    ko: '무지',   varie: false, leafWon:    20_000, assets: [] },
-    { id: 'sanban',   ko: '산반',   varie: true,  leafWon:   350_000, assets: [
+    { id: 'sanban',   ko: '산반',   varie: true,  leafWon:   350_000, midAssets: [
+      { id: 'heart_albo_2672_3',         ko: '알보-크림민트',    midNums: [35, 6, 7] },
+      { id: 'heart_lime_2672_0',         ko: '라임-형광',        midNums: [34, 8, 9] },
+      { id: 'heart_marble_2652',         ko: '마블-실버',        midNums: [32, 10, 11] },
+      { id: 'heart_speckle_2657',        ko: '스페클-실버점',    midNums: [33, 12, 13] },
+      { id: 'pothos_cream_marble',       ko: '마블-크림그린',    midNums: [37, 14, 15] },
+      { id: 'pothos_cream_vein',         ko: '잎맥-크림',        midNums: [36, 16, 17] },
+      { id: 'pothos_marble_greenyellow', ko: '마블-그린옐로우',  midNums: [39, 18, 19] },
+      { id: 'pothos_marble_whitegreen',  ko: '마블-흰그린',      midNums: [40, 20, 21] },
+      { id: 'pothos_mint_dot',           ko: '스페클-민트흰점',  midNums: [38, 22, 23] },
+      { id: 'pothos_mint_dot_34',        ko: '스페클-민트흰점2', midNums: [24, 25, 26] },
+      { id: 'pothos_silver_droplet',     ko: '실버-물방울',      midNums: [41, 27, 28] }
+    ], assets: [
       { id: 'speckle_greencream', ko: '스페클-그린크림',     matNum: 13 },
       { id: 'zebra',              ko: '제브라-그린흰',       matNum: 31 },
       { id: 'star_greenwhite',    ko: '별무늬-그린흰',       matNum: 46 },
@@ -769,14 +781,19 @@ const VARIE_GRADES_FALLBACK = Object.freeze({
       { id: 'green_lemonpatch',   ko: '라임-레몬패치',       matNum: 25 },
       { id: 'neon_lime',          ko: '네온-라임',           matNum: 28 }
     ] },
-    { id: 'halfmoon', ko: '하프문', varie: true,  leafWon:   750_000, assets: [
+    { id: 'halfmoon', ko: '하프문', varie: true,  leafWon:   750_000, midAssets: [
+      { id: 'heart_halfmoon_v2_stem', ko: '하프문-크림민트', midNums: [29, 30, 31] }
+    ], assets: [
       { id: 'halfmoon_greenwhite', ko: '하프문-그린흰',   matNum: 34 },
       { id: 'halfmoon_greencream', ko: '하프문-그린크림', matNum: 52 },
       { id: 'galaxy_tealgold',     ko: '갤럭시-틸골드',   matNum: 10 },
       { id: 'galaxy_darkteal',     ko: '갤럭시-다크틸',   matNum: 19 },
       { id: 'star_pinkmint',       ko: '별무늬-핑크민트', matNum: 7 }
     ] },
-    { id: 'fullmoon', ko: '풀문',   varie: true,  leafWon: 1_150_000, assets: [
+    { id: 'fullmoon', ko: '풀문',   varie: true,  leafWon: 1_150_000, midAssets: [
+      { id: 'monstera_leaf_fullalbo', ko: '알보-전체흰중기', midNums: [1, 2, 3] },
+      { id: 'pothos_whitegreen_29',   ko: '알보-흰연두',     midNums: [42, 4, 5] }
+    ], assets: [
       { id: 'variegata_pink', ko: '핑크-로즈핑크',     matNum: 1 },
       { id: 'variegata_gold', ko: '오로레아-골드',     matNum: 16 },
       { id: 'rose_pink',      ko: '핑크-로즈',         matNum: 43 },
@@ -822,7 +839,13 @@ export function varieGradesFrom(json) {
     assets: Object.freeze((Array.isArray(g.assets) ? g.assets : []).map(a => Object.freeze({
       id: String(a.id), ko: String(a.ko ?? a.id),
       matNum: Number.isInteger(a.matNum) ? a.matNum : null
-    })))
+    }))),
+    /* ★ 중간잎 그림(2026-08-16). 성숙잎과 달리 **세 번호를 다 적는다** —
+       `midNums` 가 연속이 아닌 갈래가 있어서 「대표+1+2」로 접을 수 없다(§⑥-4). */
+    midAssets: Object.freeze((Array.isArray(g.midAssets) ? g.midAssets : []).map(a => Object.freeze({
+      id: String(a.id), ko: String(a.ko ?? a.id),
+      midNums: Object.freeze((Array.isArray(a.midNums) ? a.midNums : []).filter(Number.isInteger))
+    })).filter(a => a.midNums.length))
   }));
   const sale = (j && j.sale) || F.sale;
   const synRaw = (sale && sale.synergy) || F.sale.synergy;
@@ -852,10 +875,16 @@ export function varieGradesFrom(json) {
   const byId = new Map(grades.map(g => [g.id, g]));
   const legacyGradeId = byId.has(j && j.legacyGradeId) ? j.legacyGradeId : F.legacyGradeId;
   /* 에셋 갈래 이름·`leaf_mat` 번호 → 등급. **3D 스킨과 값이 같은 것을 보게 하는 표다** */
-  const assetIndex = new Map(), matIndex = new Map();
+  const assetIndex = new Map(), matIndex = new Map(), midIndex = new Map();
   for (const g of grades) for (const a of g.assets) {
     assetIndex.set(a.id, g);
     if (a.matNum != null) matIndex.set(a.matNum, g);
+  }
+  /* 중간잎도 같은 결로 — `leaf_mid_albo{n}` 번호 하나하나가 등급을 가리킨다.
+     ⚠ 갈래 id 는 `assetIndex` 에 **같이 넣는다**(성숙·중간이 이름을 안 겹친다 — 검사 G-mid 가 못 박는다). */
+  for (const g of grades) for (const a of g.midAssets) {
+    assetIndex.set(a.id, g);
+    for (const n of a.midNums) midIndex.set(n, g);
   }
   return Object.freeze({
     schema: (j && typeof j.schema === 'string') ? j.schema : F.schema,
@@ -875,7 +904,7 @@ export function varieGradesFrom(json) {
     unassignedAssets: Object.freeze(
       (Array.isArray(j && j.unassignedAssets) ? j.unassignedAssets : F.unassignedAssets)
         .map(a => Object.freeze({ ...a }))),
-    assetIndex, matIndex,
+    assetIndex, matIndex, midIndex,
     source: j ? 'data/balance/varie_grades.json' : '(밑값 · src/game/shop.js)'
   });
 }
@@ -997,6 +1026,42 @@ export function skinKeysOfGrade(gradeId) {
   for (const a of g.assets)
     if (a.matNum != null) out.push(`leaf_mat${a.matNum}`, `leaf_mat${a.matNum + 1}`, `leaf_mat${a.matNum + 2}`);
   return out;
+}
+
+/* ============================================================
+   ⑥-1b ★★ **중간잎도 같은 등급에서 고른다** (2026-08-16)
+   ------------------------------------------------------------
+   박사님: *"세 번째 변이가 중간잎에서는 하프문 발현이 아닌가 보지?"*
+          → *"중간잎 말고 **성숙잎 가는 것도 그럼 확정으로 해야겠네. 둘 다.**"*
+
+   ══ 무엇이 어긋나 있었나 ═════════════════════════════════════════════════
+   무늬 그림이 **두 벌**인데 둘이 안 이어져 있었다:
+     · 중간잎 `leaf_mid_albo1~42`  — 등급이 없었다. growth 가 아무 거나 골랐다
+     · 성숙잎 `leaf_mat1~57`(mon_*) — 등급이 있다(§⑥-1)
+   ⇒ 중간에 점박이던 잎이 다 자라 반반이 될 수 있었다. 캐논이 남겨 둔 자리다 —
+     *"★성숙 특수무늬는 앞선 mid 의 특수 형태를 따라 그룹핑(일관성) — 미구현, 향후."*
+
+   ══ 왜 그림끼리 안 잇고 **등급**으로 잇나 ═══════════════════════════════
+   중간잎은 14갈래, 성숙잎은 19갈래다. **짝이 없다**(그린 시기가 다르다).
+   ⇒ 이을 수 있는 것은 **등급**뿐이다. 같은 잎은 중간이든 다 자랐든 **같은 등급 안**에서 고른다.
+     그러면 「중간에 점박이 → 다 자라 반반」이 원리적으로 안 난다.
+
+   ⚠ `midNums` 가 연속이 아닌 갈래가 있다(알보-흰연두 = 42·4·5). 성숙잎처럼 「대표+1+2」로
+     접으면 **엉뚱한 그림**이 나온다 — 그래서 표가 세 번호를 다 들고 있다.
+============================================================ */
+
+/* 그 등급이 쓸 수 있는 `leaf_mid_albo` 키들. (성숙잎의 `skinKeysOfGrade` 와 짝) */
+export function midSkinKeysOfGrade(gradeId) {
+  const g = _VARIE.byId.get(gradeId);
+  if (!g) return [];
+  const out = [];
+  for (const a of g.midAssets) for (const n of a.midNums) out.push(`leaf_mid_albo${n}`);
+  return out;
+}
+/* `leaf_mid_albo{n}` 의 n → 등급. 모르면 `null`(던지지 않는다). */
+export function gradeOfMidNum(n) {
+  if (!Number.isInteger(n) || n < 1) return null;
+  return _VARIE.midIndex.get(n) || null;
 }
 
 /* ★★ 빛 → 등급 (확정문 §3). `step` 은 'dark'|'mid'|'bright', `roll` 은 0~1.
@@ -1319,13 +1384,89 @@ export function assignPotLeafGrades(S, opt = {}) {
     if (!gid) { pending++; continue; }            // 못 쟀다 — 내일 다시(모르면 안 정한다)
     grades[r.leafBirth] = gid;
     const g = _VARIE.byId.get(gid);
-    assigned.push({ leafBirth: r.leafBirth, leafNo, grade: gid, gradeKo: g.ko, why });
+    /* ★ 등급이 정해지는 **그 자리에서 그림 두 벌도 같이 정해진다**(§⑥-4).
+       ⚠ 적어 두지 않는다 — 등급에서 되뽑는다. 두 벌 장부가 갈리는 것을 원리적으로 막는 길이다. */
+    const skins = leafSkinsFor(gid, seed, pot.id, r.leafBirth);
+    assigned.push({ leafBirth: r.leafBirth, leafNo, grade: gid, gradeKo: g.ko, why,
+                    midSkin: skins && skins.midSkin, matSkin: skins && skins.matSkin });
     events.push({ id: 'leaf_grade', leafBirth: r.leafBirth, leafNo, grade: gid,
+                  midSkin: skins && skins.midSkin, matSkin: skins && skins.matSkin,
                   ko: `${leafNo}번째 잎의 무늬는 **${g.ko}**입니다 — 잎 한 장 ` +
                       `${g.leafWon.toLocaleString()}원` +
                       (why === 'light' ? ` (${step === 'bright' ? '밝은' : step === 'mid' ? '중간' : '어두운'} 자리)` : '') });
   }
   return { grades, assigned, pending, step: step || null, events };
+}
+
+/* ============================================================
+   ⑥-4 ★★★ 잎 하나의 **그림 두 벌을 같이 뽑는다** — `leafSkinsFor` (2026-08-16)
+   ------------------------------------------------------------
+   박사님: *"중간잎 말고 성숙잎 가는 것도 그럼 확정으로 해야겠네. 둘 다."*
+
+   ══ ⚠⚠ 왜 **안 적고 되뽑나** — 재서 정했다 ═══════════════════════════════
+   확정문 §5 의 제일 굵은 줄이 *"두 벌이 되면 반드시 어긋난다"* 다.
+   그림을 장부에 따로 적으면 등급 장부와 **두 벌**이 되고, 언젠가 갈린다.
+   ★ 그리고 적어도 **안 남는다**: `save.js §화분 한 칸` 은 화분에서 적을 칸을 **이름으로 골라
+     적는다**(흰 목록). `pot.leafSkins` 같은 새 칸은 저장 한 번에 **조용히 사라진다.**
+     즉 「적는 길」은 save.js 를 같이 고쳐야 성립하는데, 그 파일은 이번 창의 것이 아니다.
+   ⇒ 그림은 **등급 + 시드 + 화분 + `leafBirth` 의 순수 함수**로 둔다.
+     · 두 벌이 안 생긴다 — 갈릴 것이 없다
+     · 저장·불러오기를 건너도 **같은 답**이 나온다(같은 세이브면 같은 그림)
+     · **옛 세이브**에도 저절로 선다 — 등급만 있으면 그림이 따라 나온다(아래 ⚠)
+   ⚠ 굴림은 `assignPotLeafGrades` 가 쓰는 **`marketHash` 그대로**다. 소금만 다르다
+     (21=등급 · 23=중간잎 · 29=성숙잎). 소금이 달라야 등급과 그림이 같이 움직이지 않는다.
+
+   ⚠ **표를 고치면 그림이 바뀐다.** 등급은 그대로고 그림만 바뀐다 — 표가 정본이라 그게 맞다.
+     한 판 안에서는 표가 안 바뀌므로 「한 번 정해지면 안 바뀐다」가 성립한다.
+
+   ⚠ 갈래마다 판이 셋씩이라 **키를 고르게 뽑는 것 = 갈래를 고르게 뽑는 것**이다.
+     ★ 갈래마다 판 수가 달라지면 이 말이 거짓이 된다 — `test_variegrade` 검사 G-mid 가
+       「모든 갈래가 세 판」을 못 박아 그 순간 깨지게 해 뒀다.
+============================================================ */
+export const LEAF_SKIN_SALT = Object.freeze({ grade: 21, mid: 23, mat: 29 });
+
+/* 등급 하나 → 그 잎이 쓸 그림 두 벌. 무늬가 아닌 등급이거나 모르는 등급이면 `null`. */
+export function leafSkinsFor(gradeId, seed, potId, leafBirth) {
+  const g = _VARIE.byId.get(gradeId);
+  if (!g || !g.varie) return null;
+  const mids = midSkinKeysOfGrade(gradeId);
+  const mats = skinKeysOfGrade(gradeId);
+  const pick = (arr, salt) => {
+    if (!arr.length) return null;
+    const r = marketHash(seed, `LS${potId}#${leafBirth}`, salt);
+    return arr[Math.min(arr.length - 1, Math.floor(r * arr.length))];
+  };
+  return {
+    grade: g.id, gradeKo: g.ko,
+    midSkin: pick(mids, LEAF_SKIN_SALT.mid),     // 'leaf_mid_albo29' — 없으면 null
+    matSkin: pick(mats, LEAF_SKIN_SALT.mat)      // 'leaf_mat34'      — 없으면 null
+  };
+}
+
+/* ★ 화분 하나의 **잎별 그림표**. 화면(3D)이 물어보는 자리다.
+     `{ [leafBirth]: { grade, gradeKo, midSkin, matSkin, fromLegacy } }`
+   ⚠ 등급 장부에 없는 잎은 **아예 안 들어간다**(모르는 것을 지어내지 않는다).
+   ⚠ `opt.varieLeafBirths` 를 주면 **등급이 없는 무늬 잎**도 채운다 — 옛 세이브가 그 꼴이다.
+     확정문 §5 대로 `legacyGradeId`(산반)로 떨어뜨리고 **`fromLegacy: true` 로 표시한다.**
+     ★ 조용히 하지 않는다. 부르는 쪽이 그 표시를 보고 기록에 남길 수 있다. */
+export function potLeafSkinsOf(S, pot, opt = {}) {
+  const out = {};
+  if (!pot) return out;
+  const seed = Number.isFinite(opt.seed) ? opt.seed : ((S && S.sim && S.sim.seed) || 0);
+  const led = potLeafGradesOf(pot);
+  for (const [k, gid] of Object.entries(led)) {
+    const lb = Number(k);
+    if (!Number.isFinite(lb)) continue;
+    const s = leafSkinsFor(gid, seed, pot.id, lb);
+    if (s) out[k] = { ...s, fromLegacy: false };
+  }
+  const extra = Array.isArray(opt.varieLeafBirths) ? opt.varieLeafBirths : [];
+  for (const lb of extra) {
+    if (!Number.isFinite(lb) || out[String(lb)]) continue;
+    const s = leafSkinsFor(_VARIE.legacyGradeId, seed, pot.id, lb);
+    if (s) out[String(lb)] = { ...s, fromLegacy: true };
+  }
+  return out;
 }
 
 /* ============================================================

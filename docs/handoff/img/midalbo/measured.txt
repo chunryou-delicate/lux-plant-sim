@@ -1,0 +1,148 @@
+
+══ 성숙잎 — 자를 검정하는 쪽 (정답지가 있다) ══ (잰 것: 섬네일 512×512 · 순백 제외 · 속살 2겹 깎음)
+스킨키            이름                        으뜸색          색가짓수  초록비   적은쪽   갈림   덩어리  최대조각  판정
+leaf_mat1         변이-핑크-로즈핑크          (16,18,15)      18381     6.0%     6.0%     0.07   0.22    0.12      fullmoon
+leaf_mat2         변이-핑크-로즈핑크-쨍       (17,21,16)      25888     12.7%    12.7%    0.03   0.66    0.33      fullmoon
+leaf_mat3         변이-핑크-로즈핑크-차분     (17,17,16)      11589     0.0%     0.0%     0.87   0.00    0.30      fullmoon
+leaf_mat4         변이-별무늬-페일그린        (55,85,44)      16021     89.0%    11.0%    0.15   0.61    0.10      sanban
+leaf_mat5         변이-별무늬-페일그린-쨍     (31,95,31)      19770     90.8%    9.2%     0.09   0.60    0.10      sanban
+leaf_mat6         변이-별무늬-페일그린-차분   (76,77,55)      9813      13.6%    13.6%    0.09   0.59    0.08      fullmoon
+leaf_mat7         변이-별무늬-핑크민트        (179,97,114)    36850     21.1%    21.1%    0.26   0.85    0.33      sanban
+leaf_mat8         변이-별무늬-핑크민트-쨍     (198,175,134)   40185     0.9%     0.9%     0.16   0.22    0.20      fullmoon
+leaf_mat9         변이-별무늬-핑크민트-차분   (114,160,142)   23199     46.0%    46.0%    0.09   0.86    0.23      halfmoon
+leaf_mat10        변이-갤럭시-틸골드          (7,25,24)       17464     56.9%    43.1%    0.08   0.63    0.16      sanban
+leaf_mat11        변이-갤럭시-틸골드-쨍       (2,18,29)       17116     4.0%     4.0%     0.06   0.20    0.10      fullmoon
+leaf_mat12        변이-갤럭시-틸골드-차분     (12,23,15)      11873     96.5%    3.5%     0.13   0.45    0.18      sanban
+leaf_mat13        변이-스페클-그린크림        (19,83,48)      31294     63.2%    36.8%    0.05   0.77    0.40      sanban
+leaf_mat14        변이-스페클-그린크림-쨍     (210,184,141)   30200     58.9%    41.1%    0.05   0.78    0.55      sanban
+leaf_mat15        변이-스페클-그린크림-차분   (119,168,149)   19837     95.4%    4.6%     0.19   0.23    0.17      sanban
+leaf_mat16        변이-오로레아-골드          (218,141,18)    13608     46.7%    46.7%    0.96   0.94    1.00      halfmoon
+leaf_mat17        변이-오로레아-골드-쨍       (226,248,0)     11769     98.6%    1.4%     0.53   0.36    0.30      sanban
+leaf_mat18        변이-오로레아-골드-차분     (198,76,69)     11010     40.2%    40.2%    0.91   0.84    0.98      halfmoon
+leaf_mat19        변이-갤럭시-다크틸          (10,31,34)      7718      2.2%     2.2%     0.14   0.07    0.08      fullmoon
+leaf_mat20        변이-갤럭시-다크틸-쨍       (4,20,38)       8859      0.6%     0.6%     0.10   0.00    0.02      fullmoon
+leaf_mat21        변이-갤럭시-다크틸-차분     (17,30,22)      3690      99.9%    0.1%     0.53   0.00    0.53      sanban
+leaf_mat22        변이-오로레아-그린옐로우    (11,39,24)      17027     100.0%   0.0%     1.20   0.00    0.67      sanban
+leaf_mat23        변이-오로레아-그린옐로우-쨍 (4,44,34)       12949     100.0%   0.0%     0.42   0.00    0.50      sanban
+leaf_mat24        변이-오로레아-그린옐로우-차분(21,35,19)      13773     63.7%    36.3%    0.21   0.76    0.21      sanban
+leaf_mat25        변이-라임-레몬패치          (9,41,24)       7460      87.0%    13.0%    0.92   0.88    1.00      sanban
+leaf_mat26        변이-라임-레몬패치-쨍       (2,46,36)       7919      97.8%    2.2%     0.34   0.36    0.16      sanban
+leaf_mat27        변이-라임-레몬패치-차분     (20,37,18)      5876      86.4%    13.6%    0.92   0.90    1.00      sanban
+leaf_mat28        변이-네온-라임              (131,154,2)     10497     100.0%   0.0%     0.11   0.00    1.00      sanban
+leaf_mat29        변이-네온-라임-쨍           (61,175,0)      4442      100.0%   0.0%     0.11   0.00    1.00      sanban
+leaf_mat30        변이-네온-라임-차분         (141,67,32)     9836      0.2%     0.2%     0.45   0.07    0.27      fullmoon
+leaf_mat31        변이-제브라-그린흰          (12,26,19)      21173     78.0%    22.0%    0.09   0.49    0.18      sanban
+leaf_mat32        변이-제브라-그린흰-쨍       (7,28,25)       25845     52.0%    48.0%    0.08   0.42    0.23      sanban
+leaf_mat33        변이-제브라-그린흰-차분     (16,23,15)      9713      99.4%    0.6%     0.38   0.30    0.47      sanban
+leaf_mat34        변이-하프문-그린흰          (9,34,17)       5436      42.4%    42.4%    0.16   0.90    0.48      halfmoon
+leaf_mat35        변이-하프문-그린흰-쨍       (3,38,23)       5459      42.0%    42.0%    0.16   0.90    0.48      halfmoon
+leaf_mat36        변이-하프문-그린흰-차분     (20,31,17)      3353      100.0%   0.0%     0.23   0.00    0.24      sanban
+leaf_mat37        변이-모브-라벤더그레이      (100,61,95)     9880      0.0%     0.0%     0.97   0.00    1.00      fullmoon
+leaf_mat38        변이-모브-라벤더그레이-쨍   (114,49,85)     17464     0.0%     0.0%     —     —      —        fullmoon
+leaf_mat39        변이-모브-라벤더그레이-차분 (78,69,91)      4891      0.0%     0.0%     0.69   0.02    0.57      fullmoon
+leaf_mat40        변이-별무늬-그린옐로우      (26,87,38)      36490     54.3%    45.7%    0.07   0.81    0.75      sanban
+leaf_mat41        변이-별무늬-그린옐로우-쨍   (216,190,146)   34045     66.9%    33.1%    0.08   0.75    0.12      sanban
+leaf_mat42        변이-별무늬-그린옐로우-차분 (122,172,153)   24671     76.6%    23.4%    0.08   0.70    0.15      sanban
+leaf_mat43        변이-핑크-로즈              (210,75,82)     24497     0.0%     0.0%     —     —      —        fullmoon
+leaf_mat44        변이-핑크-로즈-쨍           (239,67,37)     30151     0.0%     0.0%     —     —      —        fullmoon
+leaf_mat45        변이-핑크-로즈-차분         (190,114,168)   18082     7.8%     7.8%     0.11   0.45    0.30      fullmoon
+leaf_mat46        변이-별무늬-그린흰          (171,179,168)   24737     30.5%    30.5%    0.12   0.79    0.24      sanban
+leaf_mat47        변이-별무늬-그린흰-쨍       (202,177,136)   21517     32.0%    32.0%    0.31   0.82    0.31      sanban
+leaf_mat48        변이-별무늬-그린흰-차분     (114,161,142)   15610     86.6%    13.4%    0.75   0.84    0.44      sanban
+leaf_mat49        변이-차콜-다크그린          (21,25,25)      1480      0.8%     0.8%     0.65   0.05    0.16      fullmoon
+leaf_mat50        변이-차콜-다크그린-쨍       (22,25,29)      2227      0.1%     0.1%     1.14   0.00    0.54      fullmoon
+leaf_mat51        변이-차콜-다크그린-차분     (21,23,22)      1026      34.9%    34.9%    0.57   0.40    0.52      sanban
+leaf_mat52        변이-하프문-그린크림        (12,53,22)      8885      42.4%    42.4%    0.63   0.89    0.69      halfmoon
+leaf_mat53        변이-하프문-그린크림-쨍     (183,161,124)   8736      40.9%    40.9%    0.60   0.89    0.68      halfmoon
+leaf_mat54        변이-하프문-그린크림-차분   (105,147,131)   5923      98.8%    1.2%     0.65   0.16    0.36      sanban
+leaf_mat55        변이-알보-전체흰            (168,154,125)   17277     8.8%     8.8%     0.12   0.61    0.34      fullmoon
+leaf_mat56        변이-알보-전체흰-쨍         (190,164,119)   18904     9.1%     9.1%     0.08   0.58    0.32      fullmoon
+leaf_mat57        변이-알보-전체흰-차분       (110,154,137)   8413      93.8%    6.2%     0.37   0.46    0.23      sanban
+
+── 채점 — **갈래 단위** (varie_grades.json 이 정답지) ──
+  ✓ mon_variegata_pink          핑크-로즈핑크           정답 fullmoon  자 fullmoon  (fullmoon×3)
+  ✓ mon_star_palegreen          별무늬-페일그린         정답 sanban    자 sanban    (sanban×2 fullmoon×1)
+  ✗ mon_star_pinkmint           별무늬-핑크민트         정답 halfmoon  자 sanban    (sanban×1 fullmoon×1 halfmoon×1)
+  ✗ mon_galaxy_tealgold         갤럭시-틸골드           정답 halfmoon  자 sanban    (sanban×2 fullmoon×1)
+  ✓ mon_speckle_greencream      스페클-그린크림         정답 sanban    자 sanban    (sanban×3)
+  ✗ mon_variegata_gold          오로레아-골드           정답 fullmoon  자 halfmoon  (halfmoon×2 sanban×1)
+  ✗ mon_galaxy_darkteal         갤럭시-다크틸           정답 halfmoon  자 fullmoon  (fullmoon×2 sanban×1)
+  ✓ mon_green_yellow            오로레아-그린옐로우     정답 sanban    자 sanban    (sanban×3)
+  ✓ mon_green_lemonpatch        라임-레몬패치           정답 sanban    자 sanban    (sanban×3)
+  ✓ mon_neon_lime               네온-라임               정답 sanban    자 sanban    (sanban×2 fullmoon×1)
+  ✓ mon_zebra                   제브라-그린흰           정답 sanban    자 sanban    (sanban×3)
+  ✓ mon_halfmoon_greenwhite     하프문-그린흰           정답 halfmoon  자 halfmoon  (halfmoon×2 sanban×1)
+  ✓ mon_mauve                   모브-라벤더그레이       정답 fullmoon  자 fullmoon  (fullmoon×3)
+  ✓ mon_star_greenyellow        별무늬-그린옐로우       정답 sanban    자 sanban    (sanban×3)
+  ✓ mon_rose_pink               핑크-로즈               정답 fullmoon  자 fullmoon  (fullmoon×3)
+  ✓ mon_star_greenwhite         별무늬-그린흰           정답 sanban    자 sanban    (sanban×3)
+  ✓ mon_charcoal                차콜-다크그린           정답 fullmoon  자 fullmoon  (fullmoon×2 sanban×1)
+  ✓ mon_halfmoon_greencream     하프문-그린크림         정답 halfmoon  자 halfmoon  (halfmoon×2 sanban×1)
+  ✓ mon_fullalbo                알보-전체흰             정답 fullmoon  자 fullmoon  (fullmoon×2 sanban×1)
+  맞음 15 · 어긋남 4 · 정답률 79%
+
+══ 중간잎 42갈래(= 무늬 14갈래 × 세 판) ══ (잰 것: 섬네일 512×512 · 순백 제외 · 속살 2겹 깎음)
+스킨키            이름                        으뜸색          색가짓수  초록비   적은쪽   갈림   덩어리  최대조각  판정
+leaf_mid_albo1    변이-알보-전체흰중기        (242,246,244)   13774     14.1%    14.1%    0.27   0.81    1.00      fullmoon
+leaf_mid_albo2    변이-알보-전체흰중기-쨍     (246,255,253)   16174     12.1%    12.1%    0.29   0.66    0.96      fullmoon
+leaf_mid_albo3    변이-알보-전체흰중기-차분   (159,222,198)   6241      100.0%   0.0%     —     —      —        sanban
+leaf_mid_albo4    변이-알보-흰연두-쨍         (246,254,253)   15010     6.3%     6.3%     0.28   0.86    0.85      fullmoon
+leaf_mid_albo5    변이-알보-흰연두-차분       (156,220,194)   4938      94.5%    5.5%     0.26   0.86    0.86      sanban
+leaf_mid_albo6    변이-알보-크림민트-쨍       (177,156,119)   7260      8.1%     8.1%     0.93   0.73    0.91      fullmoon
+leaf_mid_albo7    변이-알보-크림민트-차분     (101,141,125)   3383      100.0%   0.0%     —     —      —        sanban
+leaf_mid_albo8    변이-라임-형광-쨍           (6,194,0)       1161      100.0%   0.0%     —     —      —        sanban
+leaf_mid_albo9    변이-라임-형광-차분         (157,138,55)    4671      0.0%     0.0%     —     —      —        fullmoon
+leaf_mid_albo10   변이-마블-실버-쨍           (27,57,43)      8738      97.6%    2.4%     0.20   0.45    0.33      sanban
+leaf_mid_albo11   변이-마블-실버-차분         (40,46,36)      3084      97.6%    2.4%     0.08   0.18    0.18      sanban
+leaf_mid_albo12   변이-스페클-실버점-쨍       (12,42,46)      13684     11.8%    11.8%    0.25   0.52    0.27      fullmoon
+leaf_mid_albo13   변이-스페클-실버점-차분     (25,38,26)      5178      99.8%    0.2%     0.42   0.17    0.42      sanban
+leaf_mid_albo14   변이-마블-크림그린-쨍       (106,159,128)   18185     55.3%    44.7%    0.07   0.72    0.39      sanban
+leaf_mid_albo15   변이-마블-크림그린-차분     (105,147,131)   4270      83.5%    16.5%    0.12   0.24    0.11      sanban
+leaf_mid_albo16   변이-잎맥-크림-쨍           (59,157,119)    14352     89.6%    10.4%    0.05   0.62    1.00      sanban
+leaf_mid_albo17   변이-잎맥-크림-차분         (103,128,94)    4450      100.0%   0.0%     0.86   0.00    1.00      sanban
+leaf_mid_albo18   변이-마블-그린옐로우-쨍     (26,97,67)      38762     99.9%    0.1%     0.93   0.03    0.52      sanban
+leaf_mid_albo19   변이-마블-그린옐로우-차분   (61,78,53)      18489     52.6%    47.4%    0.11   0.81    0.60      sanban
+leaf_mid_albo20   변이-마블-흰그린-쨍         (210,184,141)   21217     65.2%    34.8%    0.25   0.69    0.15      sanban
+leaf_mid_albo21   변이-마블-흰그린-차분       (47,51,35)      7410      58.4%    41.6%    0.23   0.43    0.65      sanban
+leaf_mid_albo22   변이-스페클-민트흰점-쨍     (23,147,152)    19768     10.8%    10.8%    0.36   0.51    0.40      fullmoon
+leaf_mid_albo23   변이-스페클-민트흰점-차분   (73,122,76)     6490      100.0%   0.0%     —     —      —        sanban
+leaf_mid_albo24   변이-스페클-민트흰점2       (123,174,141)   36394     98.1%    1.9%     0.12   0.31    0.10      sanban
+leaf_mid_albo25   변이-스페클-민트흰점2-쨍    (100,184,155)   53020     45.4%    45.4%    0.03   0.74    0.98      sanban
+leaf_mid_albo26   변이-스페클-민트흰점2-차분  (93,131,116)    18853     97.6%    2.4%     0.21   0.53    0.44      sanban
+leaf_mid_albo27   변이-실버-물방울-쨍         (14,77,64)      14056     84.4%    15.6%    0.03   0.85    0.16      sanban
+leaf_mid_albo28   변이-실버-물방울-차분       (41,63,38)      3649      100.0%   0.0%     —     —      —        sanban
+leaf_mid_albo29   변이-하프문-크림민트        (177,186,131)   10530     54.6%    45.4%    0.88   0.95    0.99      halfmoon
+leaf_mid_albo30   변이-하프문-크림민트-쨍     (212,177,119)   13108     56.8%    43.2%    0.94   0.93    0.99      halfmoon
+leaf_mid_albo31   변이-하프문-크림민트-차분   (121,170,151)   6101      94.0%    6.0%     0.34   0.68    0.53      sanban
+leaf_mid_albo32   변이-마블-실버              (32,50,37)      3971      100.0%   0.0%     0.75   0.00    1.00      sanban
+leaf_mid_albo33   변이-스페클-실버점          (19,41,36)      10688     93.0%    7.0%     0.15   0.51    0.16      sanban
+leaf_mid_albo34   변이-라임-형광              (65,171,15)     4588      100.0%   0.0%     —     —      —        sanban
+leaf_mid_albo35   변이-알보-크림민트          (140,156,141)   10980     71.9%    28.1%    0.21   0.18    0.07      sanban
+leaf_mid_albo36   변이-잎맥-크림              (78,141,98)     8701      100.0%   0.0%     —     —      —        sanban
+leaf_mid_albo37   변이-마블-크림그린          (118,150,122)   12461     65.1%    34.9%    0.09   0.65    0.25      sanban
+leaf_mid_albo38   변이-스페클-민트흰점        (48,134,105)    13290     98.6%    1.4%     0.12   0.24    0.10      sanban
+leaf_mid_albo39   변이-마블-그린옐로우        (40,85,54)      30976     97.6%    2.4%     0.06   0.38    0.23      sanban
+leaf_mid_albo40   변이-마블-흰그린            (30,57,27)      12321     75.4%    24.6%    0.23   0.68    0.16      sanban
+leaf_mid_albo41   변이-실버-물방울            (26,69,47)      8658      85.3%    14.7%    0.07   0.87    0.17      sanban
+leaf_mid_albo42   변이-알보-흰연두            (241,242,242)   11635     8.1%     8.1%     0.37   0.86    0.90      fullmoon
+
+── 갈래로 묶은 결과 (세 판 중 많은 쪽 · 비기면 기본판) ──
+  monstera_leaf_fullalbo        변이-알보-전체흰중기    fullmoon  갈림  (fullmoon×2 sanban×1)  키 1,2,3
+  pothos_whitegreen_29          변이-알보-흰연두        fullmoon  갈림  (fullmoon×2 sanban×1)  키 4,5,42
+  heart_albo_2672_3             변이-알보-크림민트      sanban    갈림  (fullmoon×1 sanban×2)  키 6,7,35
+  heart_lime_2672_0             변이-라임-형광          sanban    갈림  (sanban×2 fullmoon×1)  키 8,9,34
+  heart_marble_2652             변이-마블-실버          sanban    만장  (sanban×3)  키 10,11,32
+  heart_speckle_2657            변이-스페클-실버점      sanban    갈림  (fullmoon×1 sanban×2)  키 12,13,33
+  pothos_cream_marble           변이-마블-크림그린      sanban    만장  (sanban×3)  키 14,15,37
+  pothos_cream_vein             변이-잎맥-크림          sanban    만장  (sanban×3)  키 16,17,36
+  pothos_marble_greenyellow     변이-마블-그린옐로우    sanban    만장  (sanban×3)  키 18,19,39
+  pothos_marble_whitegreen      변이-마블-흰그린        sanban    만장  (sanban×3)  키 20,21,40
+  pothos_mint_dot               변이-스페클-민트흰점    sanban    갈림  (fullmoon×1 sanban×2)  키 22,23,38
+  pothos_mint_dot_34            변이-스페클-민트흰점2   sanban    만장  (sanban×3)  키 24,25,26
+  pothos_silver_droplet         변이-실버-물방울        sanban    만장  (sanban×3)  키 27,28,41
+  heart_halfmoon_v2_stem        변이-하프문-크림민트    halfmoon  갈림  (halfmoon×2 sanban×1)  키 29,30,31
+
+── 몇 개씩 나뉘었나 ──
+  sanban      갈래 11  · 스킨 33
+  halfmoon    갈래 1   · 스킨 3
+  fullmoon    갈래 2   · 스킨 6

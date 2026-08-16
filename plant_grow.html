@@ -1513,11 +1513,60 @@ function varieRoll(leafBirth, roll){
 function varieStateAll(){ return [...VARIE_STATE.entries()].map(([leafBirth,varie])=>
   ({leafBirth, varie, prologue: PROLOGUE_VARIE.given.some(x=>x.leafBirth===leafBirth)})); }
 
+/* ============================================================
+   ★★ 잎마다 **무늬 그림을 밖에서 못 박는 손잡이** (2026-08-16 · 무늬 등급 배선)
+   ------------------------------------------------------------
+   박사님: *"중간잎 말고 성숙잎 가는 것도 그럼 확정으로 해야겠네. 둘 다."*
+
+   ══ 왜 필요한가 ═══════════════════════════════════════════════════════════
+   값(코어 `shop.js`)은 잎마다 **등급**을 정해 두었다(산반·하프문·풀문).
+   그런데 여기 무늬 고르기는 **그루 한 벌**(`P.alboMidPick`·`P.matAlboPick`)이라
+   잎 하나만 「하프문 그림으로」 라고 시킬 창구가 없었다.
+   ⇒ 화면에 분홍이 떠 있는데 값은 산반이면 그게 제일 나쁜 거짓말이다(확정문 §5).
+
+   ══ 무엇을 안 바꿨나 ══════════════════════════════════════════════════════
+   ⚠ **무늬가 나나 마나(`varieProb` 20%)는 한 글자도 안 건드렸다.** 캐논이다.
+   ⚠ 아무도 안 시키면 **예전 그대로** 굴린다(`ax.alboMid` · `matFromMid`).
+     이 표가 비어 있는 것이 지금까지의 동작이다 — 배선이 없어도 화면이 안 바뀐다.
+   ⚠ 조절기 고정(`P.alboMidPick`>0)이 **여전히 제일 세다.** 위치를 잡는 사람이 이긴다.
+
+   쓰는 법 (호스트가 iframe 으로):
+       win.setLeafSkins([{ leafBirth: 45, mid: 'leaf_mid_albo29', mat: 'leaf_mat34' }, …])
+       win.setLeafSkins(null)        // 다 푼다
+   ★ `mid`·`mat` 은 키 이름이거나 번호다. 한쪽만 줘도 된다(안 준 쪽은 예전대로 굴린다).
+============================================================ */
+let LEAF_SKIN_FORCE=new Map();      // leafBirth → {mid:number|0, mat:number|0}
+const _skinNum=(v, prefix)=>{
+  if(typeof v==='number' && Number.isFinite(v)) return Math.max(0, Math.round(v));
+  if(typeof v==='string'){ const m=new RegExp('^'+prefix+'(\\d+)$').exec(v); if(m) return +m[1]; }
+  return 0;
+};
+function setLeafSkins(rows){
+  LEAF_SKIN_FORCE=new Map();
+  for(const r of (Array.isArray(rows)? rows : [])){
+    if(!r || !Number.isFinite(r.leafBirth)) continue;
+    const mid=_skinNum(r.mid ?? r.midSkin, 'leaf_mid_albo');
+    const mat=_skinNum(r.mat ?? r.matSkin, 'leaf_mat');
+    if(mid || mat) LEAF_SKIN_FORCE.set(r.leafBirth, {mid, mat});
+  }
+  requestRender();
+  return LEAF_SKIN_FORCE.size;
+}
+/* 지금 못 박혀 있는 것 — 검사·화면이 「값과 그림이 같은가」를 물을 수 있게 낸다 */
+function leafSkinsAll(){ return [...LEAF_SKIN_FORCE.entries()]
+  .map(([leafBirth,v])=>({leafBirth,
+    mid: v.mid? 'leaf_mid_albo'+v.mid : null,
+    mat: v.mat? 'leaf_mat'+v.mat : null})); }
+const forcedSkinOf=(leafBirth)=> (Number.isFinite(leafBirth)? LEAF_SKIN_FORCE.get(leafBirth) : null) || null;
+
 // 성숙 이력과 잎 건강은 같은 개체의 같은 이력이다 — 하나를 버리면 둘 다 버려야 어긋나지 않는다.
 // ★무늬 이력도 같다. 씨앗이 바뀌면(plantSeed) leafBirth 가 겹쳐 옛 개체의 무늬가 새 개체로 샌다.
 function matResetAll(){ MAT_STATE.clear(); LEAF_HEALTH.clear(); VARIE_STATE.clear();
   // ★ 프롤로그 보장도 개체 이력이다 — 개체가 갈리면 「이미 줬다」도 같이 푼다(§프롤로그 보장)
-  PROLOGUE_VARIE.given=[]; }
+  PROLOGUE_VARIE.given=[];
+  // ★ 못 박아 둔 무늬 그림도 개체 이력이다 — 안 지우면 leafBirth 가 겹쳐 **옛 그루의 하프문 잎이
+  //   새 그루에 그대로 뜬다**(위 §손잡이 · VARIE_STATE 와 같은 사정).
+  LEAF_SKIN_FORCE=new Map(); }
 function leafHealthEntry(leafBirth){
   let e=LEAF_HEALTH.get(leafBirth);
   if(!e){ e={fade:0, dropped:false, hold:0}; LEAF_HEALTH.set(leafBirth, e); }
@@ -2139,16 +2188,29 @@ function petColorOf(key){ return KEEP_TEX.has(key)? leafPetColor(key) : null; }
      (§ensureSkin · 2026-08-17). 받는 동안은 기본잎으로 그려지고, 도착하면 다시 그린다.
    ⚠ 「없으면 기본잎」이라는 예전 규칙은 한 글자도 안 바뀌었다 — 그 아래에 한 줄을 더했을 뿐이다. */
 function wantSkin(k){ if(!ASSETS[k]) ensureSkin(k); return !!ASSETS[k]; }
-function pickLeafKey(m, midType, canMature, varie, alboMid, matRoll){
+/* ★ 무늬 번호를 고르는 순서 — **조절기 고정 > 밖에서 못 박은 것 > 예전 굴림** (§손잡이).
+   ⚠ 세 줄을 한 군데 모아 둔다. 흩어 두면 `pickLeafKey` 와 `drawLeafStage` 가 갈린다 —
+     둘은 **같은 답을 내야 하는 쌍둥이**다(하나는 색을 미리 알려고, 하나는 그리려고 부른다). */
+function midAlboNumOf(leafBirth, alboMid){
+  if(P.alboMidPick>0) return Math.round(P.alboMidPick);
+  const f=forcedSkinOf(leafBirth); if(f && f.mid) return f.mid;
+  return (alboMid||1);
+}
+function matAlboNumOf(leafBirth, alboMid, matRoll){
+  if(P.matAlboPick>0) return Math.round(P.matAlboPick);
+  const f=forcedSkinOf(leafBirth); if(f && f.mat) return f.mat;
+  return matFromMid(alboMid, matRoll);
+}
+function pickLeafKey(m, midType, canMature, varie, alboMid, matRoll, leafBirth){
   if(m<0.22) return null;                                          // 새순 단계는 잎 에셋이 아니다
   if(m<P.stageYoung) return (varie&&wantSkin('leaf_young_albo'))?'leaf_young_albo':'leaf_young';
   if(m<P.stageMid || !canMature){
-    if(varie){ const n=P.alboMidPick>0? Math.round(P.alboMidPick) : (alboMid||1);
+    if(varie){ const n=midAlboNumOf(leafBirth, alboMid);
       const k='leaf_mid_albo'+Math.max(1,Math.min(ALBO_MID_MAX,n));
       if(wantSkin(k)) return k; }
     return (midType||'leaf_mid1');
   }
-  if(varie){ const n=P.matAlboPick>0? Math.round(P.matAlboPick) : matFromMid(alboMid, matRoll);
+  if(varie){ const n=matAlboNumOf(leafBirth, alboMid, matRoll);
     if(n>0){ const k='leaf_mat'+Math.max(1,Math.min(MAT_ALBO_MAX,n)); if(wantSkin(k)) return k; } }
   return 'leaf_mature';
 }
@@ -2160,7 +2222,7 @@ function drawLeafStage(pos, az, m, midType, canMature, stemDir, stemRad, varie, 
   if(m<P.stageYoung) key=(varie&&wantSkin('leaf_young_albo'))?'leaf_young_albo':'leaf_young';   // 어린 통잎(변이면 알보)
   else if(m<P.stageMid || !canMature){
     // 변이 잎은 중간 단계도 알보로(캐논: 한번 정해지면 변이 루트 유지)
-    if(varie){ const n=P.alboMidPick>0? Math.round(P.alboMidPick) : (alboMid||1);
+    if(varie){ const n=midAlboNumOf(ownAx&&ownAx.leafBirth, alboMid);
       key='leaf_mid_albo'+Math.max(1,Math.min(ALBO_MID_MAX,n));
       if(!wantSkin(key)) key=(midType||'leaf_mid1'); }
     else key=(midType||'leaf_mid1');                               // 보통은 중간잎에서 정착
@@ -2168,8 +2230,9 @@ function drawLeafStage(pos, az, m, midType, canMature, stemDir, stemRad, varie, 
   else {
     // ★캐논: 변이로 정해진 잎은 성숙까지 변이 루트를 유지한다(중기와 같은 규칙).
     //   어느 무늬가 나올지는 축마다 미리 뽑아둔 matAlbo. 중기 무늬와의 대응 규칙은 아직 미정.
+    //   ★ 2026-08-16 — 밖에서 못 박으면(`setLeafSkins`) 중기·성숙을 **같은 등급으로** 받는다(§손잡이).
     key='leaf_mature';
-    if(varie){ const n=P.matAlboPick>0? Math.round(P.matAlboPick) : matFromMid(alboMid, matRoll);
+    if(varie){ const n=matAlboNumOf(ownAx&&ownAx.leafBirth, alboMid, matRoll);
       if(n>0){ const k2='leaf_mat'+Math.max(1,Math.min(MAT_ALBO_MAX,n)); if(wantSkin(k2)) key=k2; } }
   }
   addLeaf(pos, az, m, key, null, stemDir, stemRad, ownAx);
@@ -2433,7 +2496,7 @@ function buildPlant(){
         // ※ 이 블록 아래에서 const ax=e.ax 를 선언하므로 여기서 ax를 쓰면 TDZ 오류가 난다. e.ax로 쓴다.
         if(g>=e.ax.leafBirth){
           const A=e.ax;
-          const lk=pickLeafKey(leafM(A,g), A.midType, A.canMature, A.varie, A.alboMid, A.matRoll);
+          const lk=pickLeafKey(leafM(A,g), A.midType, A.canMature, A.varie, A.alboMid, A.matRoll, A.leafBirth);
           if(lk) tipCol=petColorOf(lk);
         }
         addStemTube(e.pts, e.rBase, e.rTip, nodeTs, stemTint(0), tipCol);
@@ -2795,6 +2858,9 @@ function _plantRecordNow(id){
   return { id, seed:SEED, growth:GROWTH, calDay:CAL_DAY,
            slot:PLANT_SLOT, dli:PLANT_DLI, dliHist:DLI_HIST, propMode:PROP_MODE,
            mat:MAT_STATE, health:LEAF_HEALTH, varie:VARIE_STATE, prologue:PROLOGUE_VARIE,
+           /* ★ 못 박은 무늬 그림도 **그루마다** 다르다(§손잡이) — 안 옮기면 그루를 바꿔도
+              앞 그루의 하프문 잎이 따라온다. VARIE_STATE 와 한 벌이다. */
+           skins:LEAF_SKIN_FORCE,
            group:plantGroup };
 }
 function _ensureMain(){
@@ -2810,7 +2876,7 @@ function _plantCapture(){
   p.seed=SEED; p.growth=GROWTH; p.calDay=CAL_DAY;
   p.slot=PLANT_SLOT; p.dli=PLANT_DLI; p.propMode=PROP_MODE;
   p.dliHist=DLI_HIST; p.mat=MAT_STATE; p.health=LEAF_HEALTH;
-  p.varie=VARIE_STATE; p.prologue=PROLOGUE_VARIE; p.group=plantGroup;
+  p.varie=VARIE_STATE; p.prologue=PROLOGUE_VARIE; p.skins=LEAF_SKIN_FORCE; p.group=plantGroup;
 }
 /* 기록 → 전역. ★ rng 도 같이 되세운다 — buildPlant 가 매번 다시 만들지만,
    그 사이에 rng 을 읽는 코드가 옛 그루의 흐름을 이어받으면 안 된다. */
@@ -2820,6 +2886,7 @@ function _plantInstall(p){
   PLANT_SLOT=p.slot; PLANT_DLI=p.dli; PROP_MODE=p.propMode;
   DLI_HIST=p.dliHist; MAT_STATE=p.mat; LEAF_HEALTH=p.health;
   VARIE_STATE=p.varie; PROLOGUE_VARIE=p.prologue;
+  LEAF_SKIN_FORCE=(p.skins instanceof Map)? p.skins : new Map();   // 옛 기록에는 없는 칸이다
   plantGroup=p.group;
 }
 function _plantShow(id){
@@ -2847,7 +2914,7 @@ function addPlant(o){
     calDay: Math.max(0, Math.min(GMAX, Math.round(o.calDay!=null? Number(o.calDay) : day))),
     slot: (o.slotId!=null? o.slotId : null),
     dli: null, dliHist: [], propMode: 'batch',
-    mat:new Map(), health:new Map(), varie:new Map(),
+    mat:new Map(), health:new Map(), varie:new Map(), skins:new Map(),
     /* ⚠ 모양이 §프롤로그 보장의 그것과 **같아야 한다** — 여기만 옛 모양으로 두면
        그 그루를 꽂는 순간 `varieStateAll` 이 던진다(실제로 그랬다) */
     prologue:{ leafNos:[], given:[] },

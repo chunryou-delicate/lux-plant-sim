@@ -25,6 +25,7 @@ import {
   priceOf, potPriceOf, cuttingPriceOf, varieLeavesNeededFor,
   varieGradeOf, varieGradeFromLight, varieLightStepOfBand, varieGradeExpectedWon,
   gradeOfMatNum, gradeOfSkinAsset, skinKeysOfGrade,
+  midSkinKeysOfGrade, gradeOfMidNum, leafSkinsFor, potLeafSkinsOf,
   leafGradeListOf, legacyVarieGradeId, plainGradeId,
   assignPotLeafGrades, potLeafGradeListOf, potLeafGradesOf, prologueLeafGradeListOf
 } from '../src/game/shop.js';
@@ -393,6 +394,120 @@ t('G-3 ★ 등급 ↔ 스킨 키를 양쪽으로 물어볼 수 있다 (화면이
   assert.equal(keys.length, fullN * 3, `풀문 스킨 키가 ${keys.length}개다 (${fullN}갈래 × 3판)`);
   assert.ok(keys.includes('leaf_mat55'), 'fullalbo 대표가 빠졌다');
   return `풀문 스킨 키 ${keys.length}개 · 하프문 ${skinKeysOfGrade('halfmoon').length}개 · 산반 ${skinKeysOfGrade('sanban').length}개`;
+});
+
+/* ══════════════════════════════════════════════════════════════════════════
+   G-mid. ★★ **중간잎도 같은 등급에서 고른다** (2026-08-16)
+   ------------------------------------------------------------------------
+   박사님: *"중간잎 말고 성숙잎 가는 것도 그럼 확정으로 해야겠네. 둘 다."*
+   여기가 지키는 것: 42갈래를 **하나도 안 흘렸다** · 한 잎의 두 그림이 **같은 등급**이다 ·
+   **같은 세이브면 같은 그림**이다.
+   ══════════════════════════════════════════════════════════════════════════ */
+const MID = [...GROW.matchAll(/(?<![A-Za-z0-9_])leaf_mid_albo(\d+)\s*:\s*'skins\/([A-Za-z0-9_]+?)(_v[12])?\.glb'/g)]
+  .map(m => ({ n: +m[1], id: m[2], variant: m[3] || null }));
+
+t('G-mid-1 ★ 등급표의 midNums 가 plant_grow.html 의 leaf_mid_albo 키와 실제로 맞는다', () => {
+  assert.ok(MID.length >= 40, `plant_grow.html 에서 leaf_mid_albo 를 ${MID.length}개밖에 못 읽었다`);
+  const byNum = new Map(MID.map(m => [m.n, m]));
+  for (const g of R.grades) for (const a of (g.midAssets || [])) for (const n of a.midNums) {
+    const hit = byNum.get(n);
+    assert.ok(hit, `${g.ko}/${a.ko}: leaf_mid_albo${n} 이 plant_grow.html 에 없다`);
+    assert.equal(hit.id, a.id,
+      `${g.ko}/${a.ko}: leaf_mid_albo${n} 은 ${hit.id} 인데 표는 ${a.id} 라 적었다`);
+  }
+  const n = R.grades.reduce((s, g) => s + (g.midAssets || []).length, 0);
+  return `등급표 ${n}갈래 ↔ leaf_mid_albo ${MID.length}키`;
+});
+
+t('G-mid-2 ★★ 중간 무늬 42키를 **하나도 안 흘렸다** (한 번씩만 들어 있다)', () => {
+  const placed = [];
+  for (const g of R.grades) for (const a of (g.midAssets || [])) placed.push(...a.midNums);
+  const seen = new Set(placed);
+  const lost = MID.map(m => m.n).filter(n => !seen.has(n));
+  assert.equal(lost.length, 0,
+    `어느 등급에도 없는 중간잎: ${lost.map(n => 'leaf_mid_albo' + n).join(', ')} — ` +
+    `조용히 빠지면 그 잎은 중간에 무늬가 없거나 엉뚱한 등급 그림으로 뜬다`);
+  assert.equal(placed.length, seen.size,
+    `두 등급에 걸친 번호가 있다 — ${placed.length}개 적었는데 서로 다른 것은 ${seen.size}개다`);
+  assert.equal(seen.size, MID.length, `표는 ${seen.size}키인데 plant_grow 는 ${MID.length}키다`);
+  const tally = R.grades.map(g => `${g.ko} ${(g.midAssets || []).length}갈래`).join(' · ');
+  return `중간 무늬 ${MID.length}키 = 등급에 전부 배정\n      ${tally}\n      ` +
+         `⚠ 고르지 않다 — 잰 대로다(tools/probe_midalbo.mjs · docs/handoff/midalbo-to-plan.md)`;
+});
+
+t('G-mid-3 ★ 갈래마다 판이 셋이다 (그래야 「키를 고르게 = 갈래를 고르게」가 참이다)', () => {
+  for (const g of R.grades) for (const a of (g.midAssets || []))
+    assert.equal(a.midNums.length, 3,
+      `${g.ko}/${a.ko} 이 ${a.midNums.length}판이다 — shop.js §⑥-4 의 ⚠ 가 이 자리를 가리킨다`);
+  for (const g of R.grades)
+    assert.equal(midSkinKeysOfGrade(g.id).length, (g.midAssets || []).length * 3, `${g.ko}`);
+  return R.grades.filter(g => g.varie)
+    .map(g => `${g.ko} ${midSkinKeysOfGrade(g.id).length}키`).join(' · ');
+});
+
+t('G-mid-4 ★★ 한 잎의 두 그림이 **같은 등급**이다 (중간에 점박이던 것이 반반이 안 된다)', () => {
+  const seed = 4242;
+  let n = 0;
+  for (const g of R.grades.filter(x => x.varie)) for (let lb = 1; lb <= 60; lb++) {
+    const s = leafSkinsFor(g.id, seed, 'potA', lb);
+    assert.ok(s, `${g.ko} 의 그림이 안 나왔다`);
+    assert.equal(gradeOfMidNum(+s.midSkin.slice('leaf_mid_albo'.length)).id, g.id,
+      `${g.ko} 잎인데 중간잎 ${s.midSkin} 은 다른 등급이다`);
+    assert.equal(gradeOfMatNum(+s.matSkin.slice('leaf_mat'.length)).id, g.id,
+      `${g.ko} 잎인데 성숙잎 ${s.matSkin} 은 다른 등급이다`);
+    n++;
+  }
+  assert.equal(leafSkinsFor(plainGradeId(), seed, 'potA', 1), null, '무지 잎에는 무늬 그림이 없다');
+  return `${n}장 다 같은 등급 · 무지 잎은 null`;
+});
+
+t('G-mid-5 ★★ 같은 세이브면 **같은 그림**이다 (등급 굴림과 같은 marketHash)', () => {
+  const a = leafSkinsFor('sanban', 777, 'pot1', 30);
+  const b = leafSkinsFor('sanban', 777, 'pot1', 30);
+  assert.deepEqual(a, b, '같은 열쇠인데 답이 달라졌다');
+  const c = leafSkinsFor('sanban', 778, 'pot1', 30);
+  const d = leafSkinsFor('sanban', 777, 'pot2', 30);
+  const e = leafSkinsFor('sanban', 777, 'pot1', 31);
+  assert.ok([c, d, e].some(x => x.midSkin !== a.midSkin || x.matSkin !== a.matSkin),
+    '시드·화분·잎이 달라도 늘 같은 그림이면 굴림이 안 걸린 것이다');
+  /* ★ 골고루 도나 — 한 갈래에 쏠리면 화면이 늘 같은 잎만 그린다 */
+  const seen = new Set();
+  for (let i = 0; i < 300; i++) seen.add(leafSkinsFor('sanban', 5, 'p', i).midSkin);
+  assert.ok(seen.size >= 20, `산반 중간잎이 ${seen.size}가지밖에 안 나온다 (33키 중)`);
+  return `같은 열쇠 = 같은 답 · 300장에 중간잎 ${seen.size}가지`;
+});
+
+t('G-mid-6 ★★ 등급을 정하는 그 자리에서 **그림 두 벌이 같이 나온다** (assignPotLeafGrades)', () => {
+  const S = { sim: { seed: 31337 }, tutorial: { enabled: false }, pots: [{ id: 'p1' }] };
+  const leafState = [{ leafBirth: 10, varie: false }, { leafBirth: 20, varie: true },
+                     { leafBirth: 30, varie: true }];
+  const r = assignPotLeafGrades(S, { leafState, band: 'best' });
+  assert.equal(r.assigned.length, 2, '무늬 잎 둘에 등급이 붙어야 한다');
+  for (const a of r.assigned) {
+    assert.ok(a.midSkin && a.matSkin, `${a.leafNo}번째 잎에 그림이 안 붙었다`);
+    assert.equal(gradeOfMidNum(+a.midSkin.slice('leaf_mid_albo'.length)).id, a.grade);
+    assert.equal(gradeOfMatNum(+a.matSkin.slice('leaf_mat'.length)).id, a.grade);
+  }
+  /* 되뽑아도 같은 답이라야 한다 — 장부에 안 적고 등급에서 되뽑는 구조라(§⑥-4) */
+  const again = potLeafSkinsOf(S, S.pots[0]);
+  for (const a of r.assigned) {
+    assert.equal(again[String(a.leafBirth)].midSkin, a.midSkin, '되뽑으니 중간잎이 달라졌다');
+    assert.equal(again[String(a.leafBirth)].matSkin, a.matSkin, '되뽑으니 성숙잎이 달라졌다');
+    assert.equal(again[String(a.leafBirth)].fromLegacy, false);
+  }
+  return r.assigned.map(a => `잎${a.leafNo} ${a.grade} → ${a.midSkin}/${a.matSkin}`).join(' · ');
+});
+
+t('G-mid-7 ★★ **옛 세이브**에 그 칸이 없으면 등급에서 되뽑고 **표시를 남긴다**', () => {
+  const S = { sim: { seed: 9 }, pots: [{ id: 'old1' }] };   // 장부가 아예 없다
+  const m2 = potLeafSkinsOf(S, S.pots[0], { varieLeafBirths: [12, 44] });
+  assert.equal(Object.keys(m2).length, 2, '옛 판의 무늬 잎 둘이 채워져야 한다');
+  for (const k of Object.keys(m2)) {
+    assert.equal(m2[k].grade, legacyVarieGradeId(), '옛 판은 산반으로 읽는다(확정문 §5)');
+    assert.equal(m2[k].fromLegacy, true, '★ 조용히 하면 안 된다 — 표시가 있어야 기록에 남는다');
+    assert.ok(m2[k].midSkin && m2[k].matSkin);
+  }
+  return `옛 잎 2장 → ${legacyVarieGradeId()} · fromLegacy 표시 있음`;
 });
 
 /* ══════════════════════════════════════════════════════════════════════════
