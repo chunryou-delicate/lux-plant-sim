@@ -31,8 +31,10 @@ for (const id of POTS) {
     const cell=[...document.querySelectorAll('.bagslot[data-place]')]
       .find(c=>/monsteraSeed:${id}$/.test(c.dataset.place));
     if(!cell) return 'no-cell';
+    /* ★ 끌기 손잡이가 실제로 걸렸나 — 그림이 없어도 걸려야 한다 */
+    const handle = cell.querySelector('img.draggable') || (cell.classList.contains('draggable') ? cell : null);
     cell.dispatchEvent(new MouseEvent('click',{bubbles:true}));
-    return 'tapped'; } catch(e){ return 'ERR '+e.message; } })()`);
+    return JSON.stringify({ 눌렀다: true, 끌기손잡이: !!handle }); } catch(e){ return 'ERR '+e.message; } })()`);
   /* 왜 안 됐는지 — 코어를 직접 불러 본다 */
   const why = await page.eval(`(()=>{ try {
     const S=window.__S(), io=window.__io;
