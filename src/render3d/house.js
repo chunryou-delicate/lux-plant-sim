@@ -109,6 +109,34 @@ function wallURange(wall){
   return (wall==='back'||wall==='front') ? [-CW/2, CW/2] : [-CD/2, CD/2];
 }
 
+/* ★★ 2026-08-17 — **바깥 네 구석의 이음새** (박사님: *"하단부 모서리 빛처리 마무리 안 됐어"*)
+   ------------------------------------------------------------
+   `wallURange` 는 벽을 **중심선까지만** 뻗게 한다. back/front 는 x 로 ±CW/2, left/right 는
+   z 로 ±CD/2 다. 그런데 벽은 두께 WT 라 중심선 양쪽으로 ±WT/2 씩 퍼진다. 그래서
+   네 구석마다 **(WT/2)² 짜리 정사각형이 두 개씩** 어긋나 있었다 — 반지하(5×4·WT 0.2)에서 잰 값:
+
+     · **비는 칸** x[2.5, 2.6] × z[2.0, 2.1] — 어느 벽도 안 덮는다. 바깥 모서리가 **이 빠진** 모양이 된다
+     · **두 겹 칸** x[2.4, 2.5] × z[1.9, 2.0] — front 벽과 right 벽이 **겹쳐** 선다
+
+   벽 본체는 두 겹이어도 티가 안 난다(서로 상대 상자 **속**에 묻힌 면이라 겹치는 면이 없다).
+   ★ 티가 나는 건 **밑동**이다. 컷어웨이가 벽을 10cm 밑동으로 내리면 두 밑동의 **윗면이
+     둘 다 y=LOW_H 로 같은 평면**에 놓여 z-fighting 이 난다. 화면 앞쪽 아래 구석에서
+     **계단 모양 톱니**로 보이던 것이 이것이다. 비는 칸은 그 옆에서 줄을 **끊어 놓는다.**
+
+   ⇒ **그리는 범위만** 고친다. back/front 를 바깥 모서리까지 늘리고 left/right 를 그만큼 물린다.
+     그러면 네 구석이 정확히 한 번씩만 덮인다 — 빈 칸 0, 두 겹 0.
+   ⚠ **`wallURange` 는 그대로 둔다.** 그건 **콜라이더**(사람이 걷는 경계)도 쓰는 자다
+     (§충돌체 1번). 걷는 경계를 같이 늘리면 방 크기가 아니라 **다닐 수 있는 데**가 바뀐다.
+   ⚠ **유리벽 구간(gMin·gMax)도 그대로 둔다.** 그 값이 `luxWins` 의 창 너비로 들어가므로
+     건드리면 **조도가 움직인다.** 여기는 보이는 것만 고치는 자리다.
+   ⚠ left/right 를 WT/2 물리는 것이 개구부를 자르지 않는지 확인했다 — left/right 에 창이
+     있는 방은 온실 하나뿐이고 그 창은 벽 끝에서 **1.60m** 떨어져 있다(WT/2 = 0.10). */
+function wallDrawRange(wall){
+  return (wall==='back'||wall==='front')
+    ? [-CW/2 - WT/2, CW/2 + WT/2]      // 바깥 모서리까지 — 구석을 이쪽이 덮는다
+    : [-CD/2 + WT/2, CD/2 - WT/2];     // 그만큼 물러난다 — 두 겹이 안 생기게
+}
+
 /* 프레임/유리를 벽에 앉히는 변환 (위치 + Y회전). cu=벽 local u중심 */
 function wallPlacement(wall, cu, cy){
   if(wall==='back')  return { pos:[cu, cy, -CD/2],  roty:0 };
@@ -372,12 +400,17 @@ export function buildHouse(GRAIN, roomDefIn, winPresets, doorPresets={}, finishe
     return out;
   }
 
-  /* 어떤 외벽의 어느 u구간이 도려내졌는지 — 그 구간엔 벽을 안 세운다 */
+  /* 어떤 외벽의 어느 u구간이 도려내졌는지 — 그 구간엔 벽을 안 세운다
+     ★ back/front 는 §wallDrawRange 로 바깥 모서리(±(CW/2+WT/2))까지 뻗으므로,
+       방 경계에 닿는 도려내기도 **같이 넓혀야** 한다. 안 넓히면 도려낸 구석에
+       WT/2 짜리 벽 토막이 집 밖에 남는다(cutSlab 이 바닥에 대해 하는 것과 같은 처리다). */
   function cutSpansOn(wall){
     const out=[];
+    const wide=(a,b)=>[ a <= -CW/2 + 1e-6 ? -CW/2 - WT/2 : a,
+                        b >=  CW/2 - 1e-6 ?  CW/2 + WT/2 : b ];
     for(const c of cutouts){
-      if(wall==='back'  && c.z0 <= -CD/2 + 1e-6) out.push([c.x0, c.x1]);
-      if(wall==='front' && c.z1 >=  CD/2 - 1e-6) out.push([c.x0, c.x1]);
+      if(wall==='back'  && c.z0 <= -CD/2 + 1e-6) out.push(wide(c.x0, c.x1));
+      if(wall==='front' && c.z1 >=  CD/2 - 1e-6) out.push(wide(c.x0, c.x1));
       if(wall==='left'  && c.x0 <= -CW/2 + 1e-6) out.push([c.z0, c.z1]);
       if(wall==='right' && c.x1 >=  CW/2 - 1e-6) out.push([c.z0, c.z1]);
     }
@@ -509,6 +542,9 @@ export function buildHouse(GRAIN, roomDefIn, winPresets, doorPresets={}, finishe
     const gspec=glassOn(wall);
     const kind=gspec?'glass':'solid';
     const [uMin,uMax]=wallURange(wall);
+    /* ★ 그리는 범위는 따로다 — 바깥 네 구석의 이음새를 맞추려고(§wallDrawRange).
+       uMin·uMax 는 **조도(유리벽 너비)와 콜라이더**가 쓰므로 그대로 둔다. */
+    const [dMin,dMax]=wallDrawRange(wall);
     /* 유리 구간 — from/to 가 없으면 벽 전체 */
     const gMin=gspec ? Math.max(uMin, gspec.from ?? uMin) : 0;
     const gMax=gspec ? Math.min(uMax, gspec.to   ?? uMax) : 0;
@@ -542,12 +578,12 @@ export function buildHouse(GRAIN, roomDefIn, winPresets, doorPresets={}, finishe
       tileGlassFrames(room, wall, gMin, gMax);
       /* 유리 구간 밖은 그냥 벽이다 — 안 세우면 방이 뚫린다 */
       const wmat2=surfaceMat(roomDef.wallColor, roomDef.wallRough??0.9, GRAIN);
-      if(gMin-uMin > 0.01) for(const r of panelRects(uMin, gMin, 0, CH, openings)) g.add(panelToBox(wall, r, wmat2));
-      if(uMax-gMax > 0.01) for(const r of panelRects(gMax, uMax, 0, CH, openings)) g.add(panelToBox(wall, r, wmat2));
+      if(gMin-dMin > 0.01) for(const r of panelRects(dMin, gMin, 0, CH, openings)) g.add(panelToBox(wall, r, wmat2));
+      if(dMax-gMax > 0.01) for(const r of panelRects(gMax, dMax, 0, CH, openings)) g.add(panelToBox(wall, r, wmat2));
     }else{
       // 솔리드 벽: 1m 모듈 파스텔 패널 - 개구부
       const wmat=surfaceMat(roomDef.wallColor, roomDef.wallRough??0.9, GRAIN);
-      for(const r of panelRects(uMin,uMax, 0,CH, openings)){
+      for(const r of panelRects(dMin,dMax, 0,CH, openings)){
         g.add(panelToBox(wall, r, wmat));
       }
       // ★ 원형·아치·라운드 창은 bbox 자리에 '형태대로 뚫린' 벽조각을 끼움
@@ -556,8 +592,8 @@ export function buildHouse(GRAIN, roomDefIn, winPresets, doorPresets={}, finishe
         const p=resolveWindowPreset(spec, winPresets);
         if(isShaped(p)) g.add(shapedFiller(wall, spec, p, wmat));
       }
-      // 걸레받이(개구부 아닌 바닥 라인만)
-      addSkirting(g, wall, uMin, uMax, openings);
+      // 걸레받이(개구부 아닌 바닥 라인만) — 벽을 따라 가므로 그리는 범위를 쓴다
+      addSkirting(g, wall, dMin, dMax, openings);
     }
     g.userData._h=CH; shells[wall]=g; room.add(g);
 
