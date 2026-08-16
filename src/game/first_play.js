@@ -3044,9 +3044,18 @@ export function pantryGramsOf(fp) {
    count 를 안 주면 **전부**다.
    반환 { lots · maxLots · pendingWon(곳간에서 나갈 원) · rate · won(받을 돈) ·
           lossWon(손해) · pantryWon(지금 곳간) · picked[] · canSell } */
-export function pantrySaleQuote(fp, count) {
+/* ★★★ 2026-08-17 — **작물 하나만 팔 수 있다** (박사님: *"콩나물하고 무순하고 지금 한 번에
+     잡혀서 팔려서, 따로따로 채소 클릭해서 팔기 해서 **그 채소만** 팔리게끔"*)
+   ══════════════════════════════════════════════════════════════════
+   ⚠ 예전에는 **앞에서부터 n 판**을 집었다(FIFO). 곳간에 콩나물과 무순이 섞여 있으면
+     「2판 팔기」가 **둘을 같이** 집어 간다 — 사람은 콩나물만 팔 생각이었는데.
+   ⇒ `opt.kind` 를 주면 **그 작물의 꾸러미만** 본다. **먼저 거둔 것부터**라는 차례는 그대로다.
+   ⚠ 안 주면 **예전과 한 톨도 안 다르다** — 옛 호출부(상점의 고르개)가 그대로 돈다. */
+export function pantrySaleQuote(fp, count, opt = {}) {
   const rules = (fp && fp.rules) || FIRST_PLAY_RULES;
-  const lots = pantryLotsOf(fp);
+  const all = pantryLotsOf(fp);
+  const kind = opt && opt.kind ? String(opt.kind) : null;
+  const lots = kind ? all.filter(l => l && l.kind === kind) : all;
   const maxLots = lots.length;
   const n = Number.isFinite(count)
     ? Math.max(0, Math.min(maxLots, Math.floor(count)))
@@ -3082,12 +3091,21 @@ export function pantrySaleQuote(fp, count) {
 
 /* 곳간에서 앞의 n 판을 덜어 내고 받을 값을 낸다. **지갑은 안 만진다**
    (§잉여 판매의 마지막 줄과 같은 규칙 — 돈으로 바꾸는 것은 `state.sellPantryCrop`). */
-export function takePantryCrop(fp, count) {
+export function takePantryCrop(fp, count, opt = {}) {
   if (!fp || !fp.food) throw new Error('[곳간] 첫 플레이 상태가 없습니다');
-  const q = pantrySaleQuote(fp, count);
+  const q = pantrySaleQuote(fp, count, opt);
   if (q.lots <= 0 || q.pendingWon <= 0) return { ...q, won: 0, lossWon: 0 };
   const lots = pantryLotsOf(fp);
-  fp.food.pantryLots = lots.slice(q.lots);
+  const kind = opt && opt.kind ? String(opt.kind) : null;
+  /* ★ 갈래를 골랐으면 **그 갈래의 앞에서부터** 그만큼만 뺀다. 다른 작물은 손대지 않는다.
+     ⚠ `slice(q.lots)` 로 뭉텅 자르면 갈래를 고른 뜻이 사라진다 — 남의 꾸러미가 같이 잘린다. */
+  if (kind) {
+    let left = q.lots;
+    fp.food.pantryLots = lots.filter(l => {
+      if (left > 0 && l && l.kind === kind) { left--; return false; }
+      return true;
+    });
+  } else fp.food.pantryLots = lots.slice(q.lots);
   fp.food.pantryWon = Math.max(0, Math.round((fp.food.pantryWon || 0) - q.pendingWon));
   fp.food.totalPantrySoldWon = Math.round((fp.food.totalPantrySoldWon || 0) + q.won);
   /* ⚠ `q.pantryGrams` 는 **덜어 내기 전** 값이라 그대로 내면 거짓말이 된다. 다시 센다 */

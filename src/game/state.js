@@ -1344,7 +1344,8 @@ export function sellPantryCrop(S, count, opt = {}) {
   const fp = S && S.firstPlay;
   if (!fp || !fp.enabled)
     throw new Error('[보유 채소] 첫 플레이 상태가 없습니다 — 팔 채소가 없습니다');
-  const q = pantrySaleQuote(fp, count);
+  /* ★ `opt.kind` 를 그대로 넘긴다 — 「그 채소만 팔기」(first_play §갈래 고르기) */
+  const q = pantrySaleQuote(fp, count, opt);
   if (q.maxLots <= 0) {
     const e = new Error('[보유 채소] 가진 채소가 없습니다 — 거둬서 채운 뒤에 팔 수 있습니다');
     e.tutorialInput = true;                 // 안내지 고장이 아니다
@@ -1361,7 +1362,7 @@ export function sellPantryCrop(S, count, opt = {}) {
     e.tutorialInput = true;
     throw e;
   }
-  const taken = takePantryCrop(fp, count);
+  const taken = takePantryCrop(fp, count, opt);
   /* 무엇을 팔았나 — 종류별로 센다. 「콩나물 2판」처럼 적으려고 */
   const byKind = new Map();
   for (const l of taken.picked) {
@@ -1388,12 +1389,13 @@ export function sellPantryCrop(S, count, opt = {}) {
 
 /* 곳간에 몇 판이 있고 n 판을 팔면 얼마인가 — **상태를 안 바꾼다.**
    ⚠ 꾸러미 목록을 총액에 맞추기는 한다(옛 세이브를 여는 길이라 피할 수 없다). */
-export function pantrySaleStatus(S, count) {
+/* ★ `opt.kind` — **그 작물만** 본다(2026-08-17 · first_play §갈래 고르기). 안 주면 예전 그대로 */
+export function pantrySaleStatus(S, count, opt = {}) {
   const fp = S && S.firstPlay;
   if (!fp || !fp.enabled)
     return { lots: 0, maxLots: 0, pendingWon: 0, rate: 0, won: 0, lossWon: 0,
              pantryWon: 0, picked: [], list: [], canSell: false };
-  const q = pantrySaleQuote(fp, count);
+  const q = pantrySaleQuote(fp, count, opt);
   return {
     ...q,
     /* 화면이 「콩나물 400g (7일차)」를 적을 수 있게 이름을 붙여 낸다

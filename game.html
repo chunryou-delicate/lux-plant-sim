@@ -3851,8 +3851,19 @@ function bindDetail() {
     /* ★ 2026-08-16 — 가방에서 **바로 팔기**로 상점 고르개를 연다(§거둔 채소).
        ⚠ 파는 셈은 **한 글자도 새로 안 만들었다** — 상점의 [곳간 채소 팔기] 고르개를
          그대로 연다(`sellPantryCrop`). 손이 짧아질 뿐 길은 하나다. */
+    /* ★★ 2026-08-17 — **채소 칸을 누르면 그 채소만** 판다(박사님). 칸이 곧 손잡이다 */
+    const cropCell = e.target.closest('.bagslot.crop[data-crop]');
+    if (cropCell && cropCell.dataset.crop) {
+      e.stopPropagation();
+      pantrySellKind = cropCell.dataset.crop;
+      pantrySellOpen = true; pantrySellN = 1;
+      try { window.__byeotSheet.tab('shop'); } catch { }
+      draw();
+      return;
+    }
     if (e.target.closest('#bagSellCrop')) {
       e.stopPropagation();
+      pantrySellKind = null;                 /* 아래 단추는 예전대로 섞어서 판다 */
       pantrySellOpen = true; pantrySellN = 1;
       try { window.__byeotSheet.tab('shop'); } catch { }
       draw();
@@ -11865,6 +11876,10 @@ $('sellSurplus').onclick = guard(() => {
    전에도 났다(START-HERE §0). 값 두 개를 위로 올리는 것보다 이쪽이 안전하다. */
 var pantrySellOpen = false;
 var pantrySellN = 1;
+/* ★★ 2026-08-17 — **어느 작물을 파나** (박사님: *"콩나물하고 무순하고 지금 한 번에 잡혀서
+   팔려서, 따로따로 채소 클릭해서 팔기 해서 **그 채소만** 팔리게끔"*).
+   null 이면 예전 그대로 **섞어서** 앞에서부터 판다(상점의 [보유 채소 팔기]가 그 길이다). */
+var pantrySellKind = null;
 
 /* ══ ★★ 거둔 채소를 한 줄로 — **날짜별로 안 가른다** (2026-08-16 박사님) ═══════════
    박사님: *"시루 수확물 **수확 날짜별 분류 없애.**"*
@@ -11888,7 +11903,7 @@ function drawPantrySale() {
   const btn = $('sellPantry'), hint = $('pantryHint'), panel = $('pantryPanel');
   if (!btn || !panel) return;
   let ps = null;
-  try { ps = pantrySaleStatus(S, pantrySellN); } catch { }
+  try { ps = pantrySaleStatus(S, pantrySellN, { kind: pantrySellKind }); } catch { }
   const max = ps ? ps.maxLots : 0;
 
   /* ★ 곳간이 비어도 **단추를 안 감춘다** (2026-08-15 판단 · guideaudit §1-8 ②).
@@ -11921,7 +11936,12 @@ function drawPantrySale() {
   $('pantryList').textContent = ps.list
     .map((l, i) => `${i < ps.lots ? '▶ ' : ''}${l.kindKo} ${formatGram(l.g)}`)
     .join(' · ');
-  $('pantryTitle').textContent = `몇 판을 팔까요 — 보유 채소 ${formatGram(ps.pantryGrams)} · ${max}판`;
+  /* ★ 갈래를 골랐으면 **그 이름을 제목에 적는다** — 「무엇을 파는지」가 창에 없으면
+     콩나물을 눌렀는데 무순이 팔려도 사람이 알 길이 없다(2026-08-17). */
+  const kindKo = (() => { try { return pantrySellKind ? cropKindOf(pantrySellKind).ko : null; } catch { return null; } })();
+  $('pantryTitle').textContent = kindKo
+    ? `${kindKo}을(를) 몇 판 팔까요 — ${formatGram(ps.pantryGrams)} · ${max}판`
+    : `몇 판을 팔까요 — 보유 채소 ${formatGram(ps.pantryGrams)} · ${max}판`;
   $('pantryCount').textContent = `${ps.lots}판`;
   $('pantryMinus').disabled = ps.lots <= 1;
   $('pantryPlus').disabled = ps.lots >= max;
@@ -11986,7 +12006,9 @@ $('pantryGo').onclick = guard(() => {
   /* ⚠ 고르는 자리가 닫혀 있으면 안 판다. 사람은 이 단추를 볼 수 없지만(패널 안에 있다),
      밖에서 부르는 길이 있으면 「손해를 말한 화면을 안 보고 파는 길」이 생긴다. */
   if (!pantrySellOpen) { drawPantrySale(); return; }
-  const r = sellPantryCrop(S, pantrySellN);
+  /* ⚠ 고른 갈래를 **반드시 같이 넘긴다** — 안 넘기면 화면은 「콩나물만」이라 말하고
+     코어는 섞어서 판다. 그 어긋남은 판 뒤에야 드러난다(제일 나쁜 종류다). */
+  const r = sellPantryCrop(S, pantrySellN, { kind: pantrySellKind });
   pantrySellOpen = false;
   pantrySellN = 1;
   banner('보유 채소를 팔았습니다',
