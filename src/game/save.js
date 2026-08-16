@@ -681,6 +681,27 @@ function packFirstPlay(fp) {
            (musunsow §2: 화이트리스트에 안 적으면 저장 한 번에 사라진다). */
       mealPlanWon: f.mealPlanWon == null ? null
         : needNum(f.mealPlanWon, 'firstPlay.food.mealPlanWon', { min: 0 }),
+      /* ★★ **작물마다 갈라 고른 g** (2026-08-18 · first_play §갈라 고르기 · 고칠 목록 G-19).
+         `{ beansprout: 300, musun: 0 }` 모양이고 null = 안 갈랐다.
+         ⚠ **null 과 「전부 0」을 갈라서 싣는다** — 바로 위 `mealPlanWon` 이 겪은 그것과
+           같은 사고다. `{beansprout:0, musun:0}`(= 오늘은 아무것도 안 먹는다)을 null 로
+           뭉개면 새로고침 한 번에 상한까지 먹어 치운다.
+         ★ 옛 세이브에는 이 칸이 없다 → null 로 열린다. **옛 판은 예전 그대로 돈다**
+           (`eatFromPantry` 가 null 을 「안 골랐다」로 읽는다). 잃을 진행이 없다.
+         ⚠ 모르는 작물 이름은 여기서 **던진다** — 조용히 콩나물로 굴리면 그 판의 밥상이
+           통째로 거짓이 된다(first_play `cropKindIndexOf` 와 같은 결). */
+      mealPlanByKind: (() => {
+        const src = f.mealPlanByKind;
+        if (src == null) return null;
+        needObj(src, 'firstPlay.food.mealPlanByKind');
+        const out = {};
+        for (const k of Object.keys(src)) {
+          cropKindOf(k);                       // 모르는 작물이면 던진다
+          out[k] = needInt(Math.round(src[k] ?? 0),
+                           `firstPlay.food.mealPlanByKind.${k}`, { min: 0 });
+        }
+        return out;
+      })(),
       /* ★ 겹침을 세는 기억 (2026-08-04 · first_play.js §겹침). 안 남기면 저장 한 번에
          "오늘 이미 둘을 거뒀다"가 사라져, 불러온 뒤 셋째가 온전한 값을 받는다. */
       harvestDay: f.harvestDay == null ? null

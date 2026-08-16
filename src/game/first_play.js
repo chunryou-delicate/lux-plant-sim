@@ -791,9 +791,89 @@ export function cropSellWonPerGram(rules, kindIndex = 0) {
   return (Number.isFinite(r) && r >= 0 ? r : FIRST_PLAY_RULES.cropSurplusSaleRate) * WON_PER_GRAM;
 }
 
+/* ============================================================
+   ★★★ §갈라 고르기 — **작물마다 따로 상한을 건다** (2026-08-18 · 고칠 목록 G-19)
+   ------------------------------------------------------------
+   박사님 원문: *"콩나물·무순 **식량 적용 시 칸을 갈라 고르도록**"*
+
+   ## 왜 총 g 으로는 못 했나 (terms 창이 재서 적어 둔 진단 · `terms-to-plan.md §4`)
+   고른 값이 지나는 채널이 `mealPlanWon` **수 하나**였고 `cropMealPlan` 은 **총 g 만** 받아
+   어느 작물을 먹을지 **스스로** 골랐다. 콩나물 400g + 무순 300g 판에서 실측:
+       총 500g → 콩나물 300 + 무순 200 · 총 300g → 둘 중 **먼저 거둔 쪽**(FIFO) ·
+       총 200g → **무순 200g**(2,500원 > 콩나물 200g 1,667원)
+   ⇒ 「콩나물만 300g」을 사람이 고르려 해도 **총 g 으로는 그 말이 전달되지 않는다.**
+     화면에 손잡이만 붙이면 **고른 것과 먹은 것이 다른 판**이 난다.
+
+   ## 그래서 창구 하나를 냈다 — `opt.gramsByKind`
+   ```
+   cropMealPlan(fp, { gramsByKind: { beansprout: 300, musun: 0 } })
+   ```
+   ★★ **몫 규칙은 한 톨도 안 바꿨다.** 한 몫 g(300·200) · 같은 작물 둘째 몫 1,200원 ·
+     파는 값보다 못한 몫은 안 먹음(§몫 ④) · 값 큰 쪽 우선 · 동점은 FIFO — 전부 그대로다.
+     이 칸이 하는 일은 **후보를 고를 때 그 작물이 쓸 수 있는 g 을 깎는 것 하나**다.
+   ★ 그래서 **안 고른 판은 예전 그대로 돈다**(`gramsByKind` 가 없으면 코드가 안 지나간다).
+
+   ## ⚠⚠ **안 적힌 작물은 0 이다** — 이 계약이 제일 중요하다
+   `{ beansprout: 300 }` 은 「콩나물 300g **그리고 무순은 안 먹는다**」는 뜻이다.
+   안 적힌 것을 「무제한」으로 읽으면 `{ beansprout: 300 }` 이 무순 200g 까지 먹어 버려
+   **고친 이유 자체가 없어진다**(위 진단의 그 거짓말이 그대로 돌아온다).
+   ⇒ 화면은 **작물을 다 적어 보낸다.** 저장 칸(`mealPlanByKind`)도 늘 다 적는다.
+
+   ## ⚠ `opt.grams`(총량)와 같이 오면 — **둘 다 지킨다**
+   총 g 도 상한이고 작물별 g 도 상한이다. 둘 중 **먼저 걸리는 쪽**이 이긴다.
+   (덜 먹는 쪽으로만 움직이는 두 자니까 같이 걸어도 「더 먹는 판」이 안 생긴다.)
+   ⚠ 다만 **저장 칸은 하나만 찬다** — `planMealGrams` 는 `mealPlanByKind` 를 지우고
+     `planMealByKind` 는 `mealPlanWon` 을 지운다(§planMealByKind). 두 칸이 같이 차 있으면
+     곳간이 바뀐 뒤에 옛 총 g 이 새 선택을 조용히 깎기 때문이다.
+
+   ## ⚠ 모르는 작물 이름은 **던진다**. 곳간에 없는 작물은 **0 이 된다**
+   이름이 틀린 것은 부르는 쪽의 잘못이라 조용히 콩나물로 굴리면 살림이 통째로 틀린다
+   (`cropKindIndexOf` 와 같은 결). 곳간에 그 작물이 없는 것은 **정상적인 판**이라
+   0g 이 나가고 `byKind[k].reason === 'pantry'` 로 왜 못 채웠는지가 반환값에 실린다.
+============================================================ */
+
+/* 고른 표를 **작물 순번 배열**로 편다. 없으면 null(= 안 골랐다 · 예전 길).
+   ★ 안 적힌 작물은 **0**(위 ⚠⚠). Infinity 를 넣으면 「그 작물은 마음껏」이다 —
+     `mealPlanQuote` 가 작물별 최대 g 을 잴 때 쓴다(세이브에는 절대 안 들어간다). */
+function normalizeGramsByKind(rules, byKind) {
+  if (byKind == null) return null;
+  if (typeof byKind !== 'object' || Array.isArray(byKind))
+    throw new Error('[밥상] gramsByKind 는 { 작물id: g } 표여야 합니다');
+  const defs = cropDefsOf(rules);
+  const caps = defs.map(() => 0);
+  for (const [id, v] of Object.entries(byKind)) {
+    const i = defs.findIndex(d => d && d.id === id);
+    if (i < 0)
+      throw new Error(`[밥상] 모르는 작물입니다: ${id} ` +
+                      `(아는 것: ${defs.map(d => d && d.id).join(', ')})`);
+    if (v == null) { caps[i] = 0; continue; }
+    const g = typeof v === 'number' ? v : Number(v);
+    if (!(g >= 0)) throw new Error(`[밥상] ${id} 의 g 이 0 이상의 수가 아닙니다: ${v}`);
+    caps[i] = g === Infinity ? Infinity : Math.round(g);
+  }
+  return caps;
+}
+
+/* 왜 고른 만큼 못 채웠나 — 화면이 그대로 적을 수 있게 말까지 같이 낸다.
+   ⚠ 값도 문장도 화면이 짓지 않는다(START-HERE §2.8 의 그 규율). */
+const MEAL_SHORT_KO = Object.freeze({
+  ok:        '고른 만큼 다 올랐습니다',
+  notPicked: '오늘은 안 고르셨습니다',
+  pantry:    '보유 채소에 그만큼이 없습니다',
+  portions:  '오늘 올릴 수 있는 몫을 다 썼습니다',
+  sell:      '그 몫은 파는 값보다 못해서 상에 안 올립니다',
+  cap:       '하루 끼니 상한을 다 썼습니다',
+  budget:    '오늘 쓰기로 한 총량을 다 썼습니다'
+});
+export function mealShortReasonKo(reason) {
+  return MEAL_SHORT_KO[reason] || '';
+}
+
 /* ★★★ **오늘 몫을 어떻게 짤까** — 상태를 안 바꾼다(꾸러미를 총액에 맞추기는 한다).
    opt.grams 를 주면 **그 g 안에서만** 짠다(사람이 고른 값 · 덜 먹는 쪽으로만 움직인다).
-   반환 { portions[] · savedWon(밥값) · usedGrams · usedWon(곳간에서 빠질 물건 값) } */
+   opt.gramsByKind 를 주면 **작물마다 따로** 그 g 안에서만 짠다(§갈라 고르기).
+   반환 { portions[] · savedWon(밥값) · usedGrams · usedWon(곳간에서 빠질 물건 값) ·
+          byKind[](작물마다 고른 g · 나간 g · 못 채운 까닭) } */
 export function cropMealPlan(fp, opt = {}) {
   const rules = (fp && fp.rules) || FIRST_PLAY_RULES;
   const defs = cropDefsOf(rules);
@@ -803,17 +883,22 @@ export function cropMealPlan(fp, opt = {}) {
   const capWon = Math.max(0, Math.round(rules.cropMealCapWon ?? (fullWon * maxPortions)));
   /* ★ 사람이 고른 g 이 있으면 그것이 예산이다. 없으면 무제한(몫 규칙이 알아서 막는다) */
   const budgetG = Number.isFinite(opt.grams) ? Math.max(0, Math.round(opt.grams)) : Infinity;
+  /* ★★ 작물마다 따로 건 상한(§갈라 고르기). null 이면 **예전 길** — 아래 셈이 안 지나간다 */
+  const capG = normalizeGramsByKind(rules, opt.gramsByKind);
   /* ⚠ **꾸러미 사본으로 센다** — 이 함수는 상태를 안 바꾼다 */
   const lots = pantryLotsOf(fp).map(l => ({ ...l, g: gramsOfWon(l.won),
                                             ki: lotKindIndexOf(rules, l.kind) }));
   /* 작물마다 남은 g · 제일 먼저 거둔 순서(FIFO 동점 처리용) */
-  const left = [], firstAt = [];
-  for (let i = 0; i < defs.length; i++) { left.push(0); firstAt.push(Infinity); }
+  const left = [], firstAt = [], have = [];
+  for (let i = 0; i < defs.length; i++) { left.push(0); firstAt.push(Infinity); have.push(0); }
   lots.forEach((l, idx) => {
     if (l.ki >= left.length) return;
     left[l.ki] += l.g;
     if (idx < firstAt[l.ki]) firstAt[l.ki] = idx;
   });
+  for (let i = 0; i < defs.length; i++) have[i] = left[i];        // 곳간에 있던 g (원본)
+  /* 작물마다 나간 g · 마지막으로 물린 까닭(§갈라 고르기 반환값) */
+  const tookG = defs.map(() => 0), tookWon = defs.map(() => 0), why = defs.map(() => null);
 
   const portions = [];
   let savedWon = 0, usedGrams = 0, prevKind = null;
@@ -821,27 +906,37 @@ export function cropMealPlan(fp, opt = {}) {
     let best = null;
     for (let k = 0; k < defs.length; k++) {
       const need = cropMealPortionGrams(rules, k);
-      if (!(need > 0) || !(left[k] > 0)) continue;
-      const room = Math.min(need, budgetG - usedGrams);
-      if (!(room > 0)) continue;
+      if (!(need > 0)) { why[k] = 'portions'; continue; }
+      if (!(left[k] > 0)) { why[k] = 'pantry'; continue; }
+      /* ★★ 작물별 상한이 남았나 — 이 한 줄이 「갈라 고르기」의 전부다(§갈라 고르기) */
+      const kindRoom = capG ? capG[k] - tookG[k] : Infinity;
+      if (!(kindRoom > 0)) { why[k] = capG && capG[k] <= 0 ? 'notPicked' : 'ok'; continue; }
+      const room = Math.min(need, budgetG - usedGrams, kindRoom);
+      if (!(room > 0)) { why[k] = 'budget'; continue; }
       const g = Math.min(left[k], room);
-      if (!(g > 0)) continue;
+      if (!(g > 0)) { why[k] = 'pantry'; continue; }
       const same = prevKind != null && prevKind === k;
       const base = (n === 0 || !same) ? fullWon : sameWon;
       /* ★ 비례 — 못 채운 몫은 채운 만큼만 친다(확정문 §1 ★) */
       let won = Math.round(base * g / need);
-      won = Math.min(won, Math.max(0, capWon - savedWon));
+      const room2 = Math.max(0, capWon - savedWon);
+      const hitCap = won > room2;                 // 끼니 상한에 깎였나 (까닭을 가르는 표시)
+      won = Math.min(won, room2);
       /* ★★ 팔면 받을 돈. 이보다 못 벌 몫은 **안 먹는다**(위 §몫 ④) */
       const sellWon = Math.round(g * cropSellWonPerGram(rules, k));
-      if (!(won > sellWon)) continue;
+      if (!(won > sellWon)) { why[k] = hitCap ? 'cap' : 'sell'; continue; }
+      why[k] = 'lost';
       if (!best || won > best.won || (won === best.won && firstAt[k] < firstAt[best.k]))
         best = { k, g, won, need, same, base };
     }
     if (!best) break;
     left[best.k] -= best.g;
+    tookG[best.k] += best.g;
+    tookWon[best.k] += best.won;
     usedGrams += best.g;
     savedWon += best.won;
     prevKind = best.k;
+    why[best.k] = 'won';
     portions.push({
       kind: defs[best.k] && defs[best.k].id, kindKo: defs[best.k] && defs[best.k].ko,
       kindIndex: best.k, grams: best.g, needGrams: best.need,
@@ -849,10 +944,43 @@ export function cropMealPlan(fp, opt = {}) {
       won: best.won, baseWon: best.base, second: portions.length > 0, same: best.same
     });
   }
+
+  /* ★★ 작물마다 「고른 g · 나간 g · 못 채운 까닭」 — 화면이 셈을 다시 안 하게(§2.8) */
+  const byKind = defs.map((d, k) => {
+    const want = capG ? capG[k] : null;
+    const wantG = want == null || want === Infinity ? null : want;
+    const short = wantG == null ? 0 : Math.max(0, wantG - tookG[k]);
+    let reason = 'ok';
+    if (short > 0) {
+      /* ⚠ 「곳간에 없다」가 제일 구체적인 답이라 먼저 본다 — 다른 까닭보다 이것이 이긴다 */
+      if (wantG > have[k]) reason = 'pantry';
+      else if (why[k] === 'lost' || why[k] === 'won' || why[k] == null) reason = 'portions';
+      else if (why[k] === 'ok') reason = 'portions';
+      else reason = why[k];
+    } else if (wantG === 0) reason = 'notPicked';
+    return {
+      kind: d && d.id, kindKo: d && d.ko, kindIndex: k,
+      /* 곳간에 있는 g */
+      pantryGrams: have[k],
+      /* 사람이 고른 g (안 골랐으면 null) */
+      wantGrams: wantG,
+      /* 실제로 상에 오르는 g · 그것이 아낀 밥값 */
+      grams: tookG[k], savedWon: tookWon[k], usedWon: wonOfGrams(tookG[k]),
+      /* 그 g 으로 짜인 몫들 */
+      portions: portions.filter(p => p.kindIndex === k),
+      /* 못 채운 g 과 그 까닭 (화면이 그대로 적는다) */
+      shortGrams: short, reason, reasonKo: mealShortReasonKo(reason)
+    };
+  });
+
   return {
     portions, savedWon,
     usedGrams, usedWon: wonOfGrams(usedGrams),
     capWon, maxPortions,
+    /* ★ 작물마다 갈라 본 것(§갈라 고르기). **늘 실린다** — 안 골라도 화면이 그릴 수 있게 */
+    byKind,
+    /* 골라서 왔나 (안 골랐으면 false — 화면이 「최선껏」과 「고른 대로」를 가른다) */
+    pickedByKind: capG != null,
     /* 아직 안 쓴 밥값 여유 — 화면이 「하나만 더 있으면」을 말할 근거다 */
     restCapWon: Math.max(0, capWon - savedWon)
   };
@@ -1489,6 +1617,12 @@ export function createFirstPlayState(opt = {}) {
          null = **안 골랐다** → 예전 그대로 상한까지 먹는다. 0 = **안 먹기로 골랐다.**
          ⚠ 둘을 한 칸에 섞으면 「안 먹고 모아 판다」가 아예 불가능해진다. */
       mealPlanWon: null,
+      /* ★★ **작물마다 갈라 고른 g** (2026-08-18 · §갈라 고르기 · 고칠 목록 G-19).
+         `{ beansprout: 300, musun: 0 }` 모양. null = **안 갈랐다** → 위 `mealPlanWon` 이나
+         몫 규칙이 정한다. ⚠ **안 적힌 작물은 0 이다** — 적힌 표가 곧 오늘의 밥상이다.
+         ⚠ 이 칸과 `mealPlanWon` 은 **동시에 차지 않는다**(§planMealByKind ⚠⚠).
+         ⚠ `save.js §mealPlanByKind` 에 등록돼 있다. 안 적으면 저장 한 번에 사라진다. */
+      mealPlanByKind: null,
       /* ★ 겹침을 세는 두 칸 (2026-08-04 · §겹침) — "그날 몇 번째로 거두나"의 기억이다.
          날이 바뀌면 `harvestDay` 가 안 맞아 저절로 0부터 다시 센다. */
       harvestDay: null,
@@ -2463,15 +2597,46 @@ export const MEAL_DEFAULT_GRAMS = DAILY_CROP_GRAMS;
      2026-08-17 전에는 두 수가 같아서 칸이 하나였다(§몫 ★★). */
 export function mealPlanQuote(fp, grams) {
   const rules = (fp && fp.rules) || FIRST_PLAY_RULES;
+  const defs = cropDefsOf(rules);
   const capWon = Math.max(0, Math.round(dailyCropSaveWonOf(fp)));
   const pantryWon = Math.max(0, Math.round((fp && fp.food && fp.food.pantryWon) || 0));
   const pantryGrams = pantryGramsOf(fp);
+  /* ★★ 2026-08-18 — 둘째 자리에 **표**가 오면 「작물마다 갈라 고른 것」이다(§갈라 고르기).
+     ⚠ 이렇게 겸하게 만든 까닭은 하나다 — `state.js §mealPlanStatus` 가 인자를 **하나만**
+       넘겨 준다. 그 파일은 이번 몫의 쓰기 영역이 아니라서, 창구를 셋째 인자로 내면
+       화면이 그 창구에 **닿을 길이 없다.** 겸하게 하면 옛 부름은 한 글자도 안 바뀐다
+       (수는 예전 그대로 총 g 이고, 표였던 적이 없다). */
+  const byKindIn = (grams != null && typeof grams === 'object' && !Array.isArray(grams))
+    ? grams : null;
+  const gramsIn = byKindIn ? undefined : grams;
   /* ★ 위끝 = 안 고르고 최선껏 먹었을 때 쓰는 g */
   const best = cropMealPlan(fp);
   const maxG = best.usedGrams;
   const defaultG = maxG;
-  const wantG = Number.isFinite(grams) ? Math.max(0, Math.min(maxG, Math.round(grams))) : defaultG;
-  const plan = wantG === maxG ? best : cropMealPlan(fp, { grams: wantG });
+  /* ★★ 작물마다의 위끝 — **그 작물만 골랐을 때** 몫 규칙이 허락하는 g.
+     콩나물은 300(둘째 몫은 파는 게 나아 안 먹는다) · 무순은 200 이 나온다.
+     ⚠ 화면이 이 셈을 다시 하지 않게 여기서 낸다(§2.8). */
+  const maxByKind = defs.map(d => {
+    if (!d || !d.id) return 0;
+    try { return cropMealPlan(fp, { gramsByKind: { [d.id]: Infinity } }).usedGrams; }
+    catch { return 0; }
+  });
+  /* 고른 표를 **위끝까지 깎아** 정규화한다 — 고르개는 「덜 먹는 쪽」으로만 움직인다 */
+  let picked = null;
+  if (byKindIn) {
+    const caps = normalizeGramsByKind(rules, byKindIn);     // 모르는 이름이면 여기서 던진다
+    picked = {};
+    defs.forEach((d, k) => {
+      if (!d || !d.id) return;
+      const c = caps[k] === Infinity ? maxByKind[k] : caps[k];
+      picked[d.id] = Math.max(0, Math.min(maxByKind[k], c));
+    });
+  }
+  const wantG = picked
+    ? Object.values(picked).reduce((a, v) => a + v, 0)
+    : (Number.isFinite(gramsIn) ? Math.max(0, Math.min(maxG, Math.round(gramsIn))) : defaultG);
+  const plan = picked ? cropMealPlan(fp, { gramsByKind: picked })
+             : (wantG === maxG ? best : cropMealPlan(fp, { grams: wantG }));
   const useWon = plan.usedWon;
   const dailyFoodWon = rules.dailyFoodWon || 0;
   const grams2 = plan.usedGrams;
@@ -2486,6 +2651,15 @@ export function mealPlanQuote(fp, grams) {
     savedWon: plan.savedWon,
     /* ★ 몫 내역 — 화면이 「콩나물 300g 한 몫 · 무순 200g 한 몫」을 말할 근거(§몫) */
     portions: plan.portions,
+    /* ══ ★★ 2026-08-18 신설 — **작물마다 갈라 본 것**(§갈라 고르기) ══════════════
+       화면이 작물 한 줄을 그리는 데 필요한 것이 여기 다 있다:
+         `wantGrams` 지금 고른 g (안 골랐으면 null) · `maxGrams` 그 작물의 위끝 ·
+         `grams` 실제로 상에 오르는 g · `portions` 그 g 으로 짜이는 몫 ·
+         `shortGrams`·`reason`·`reasonKo` 못 채웠으면 그 까닭
+       ⚠ 화면은 이 줄을 **그대로 적는다.** 나누지도 곱하지도 마라. */
+    byKind: plan.byKind.map((b, k) => ({ ...b, maxGrams: maxByKind[k] })),
+    /* 고른 표 자체 — 정규화(위끝까지 깎기)된 `{작물id: g}`. 세이브에 적히는 것도 이 값이다 */
+    pickedByKind: picked,
     pantryWon, pantryGrams,
     /* ★★ **오늘 쓰고 남는 것** — 버려지지 않고 쌓인다 */
     restGrams: Math.max(0, pantryGrams - grams2),
@@ -2506,9 +2680,41 @@ export function mealPlanQuote(fp, grams) {
      그 칸을 그대로 저장하므로 단위를 안 바꿨다 — 옛 판이 안 깨진다. */
 export function planMealGrams(fp, grams) {
   if (!fp || !fp.food) throw new Error('[밥상] 첫 플레이 상태가 없습니다');
+  /* ★★ 2026-08-18 — 표가 오면 「갈라 고르기」다(§갈라 고르기 · `mealPlanQuote` 와 같은 결).
+     `state.js §planMeal` 이 인자를 하나만 넘겨 주므로 화면이 닿는 길은 이것뿐이다. */
+  if (grams != null && typeof grams === 'object' && !Array.isArray(grams))
+    return planMealByKind(fp, grams);
+  /* ⚠⚠ **갈라 고른 것을 지운다.** 안 지우면 어제 「콩나물만」 고른 판이 오늘 총 g 만
+     고쳤는데도 조용히 콩나물만 먹는다 — 고른 것과 먹은 것이 다른 판이 다시 난다. */
+  fp.food.mealPlanByKind = null;
   if (grams == null) { fp.food.mealPlanWon = null; return mealPlanQuote(fp); }
   const q = mealPlanQuote(fp, grams);
   fp.food.mealPlanWon = q.useWon;
+  return q;
+}
+
+/* ★★★ **작물마다 갈라 고른다** (2026-08-18 · 고칠 목록 G-19 · §갈라 고르기).
+   `planMealGrams` 와 같은 결이다 — **먹지 않는다.** 적어 둘 뿐이고 먹는 것은 `eatFromPantry` 다.
+   ```
+   planMealByKind(fp, { beansprout: 300, musun: 0 })   // 콩나물만 300g
+   planMealByKind(fp, null)                            // 골랐던 것을 지운다(= 최선껏 먹는다)
+   ```
+   ⚠⚠ **안 적힌 작물은 0 이다**(§갈라 고르기 ⚠⚠). 세이브에는 정규화된 표(작물 전부)가 적힌다.
+   ⚠⚠ **`mealPlanWon`(총 g 채널)을 지운다.** 두 칸이 같이 차 있으면, 고른 뒤에 수확이
+     들어와 곳간이 커진 판에서 **옛 총 g 이 새 선택을 조용히 깎는다**(그날 수확은 같은 턴에
+     곳간에 든다 — §eatFromPantry ★). 고르개는 한 번에 하나만 찬다.
+   ⚠ 모르는 작물 이름이면 **적기 전에 던진다** — 반쯤 적힌 칸을 남기지 않는다.
+   반환은 `mealPlanQuote` 와 같다(작물 줄 `byKind` 포함). */
+export function planMealByKind(fp, byKind) {
+  if (!fp || !fp.food) throw new Error('[밥상] 첫 플레이 상태가 없습니다');
+  if (byKind == null) {
+    fp.food.mealPlanByKind = null;
+    fp.food.mealPlanWon = null;
+    return mealPlanQuote(fp);
+  }
+  const q = mealPlanQuote(fp, byKind);        // 던질 것은 여기서 던진다 (적기 전에)
+  fp.food.mealPlanByKind = q.pickedByKind;
+  fp.food.mealPlanWon = null;
   return q;
 }
 
@@ -2569,16 +2775,23 @@ export function planMealGrams(fp, grams) {
        **지갑에서 뺄 값**으로 읽는다. 그 자리에 물건 값을 넣으면 살림이 조용히 틀어진다. */
 export function eatFromPantry(fp) {
   const zero = { savedWon: 0, foodSavedWon: 0, mealsUsed: 0, savedGrams: 0,
-                 pantryUsedWon: 0, portions: [], planned: false };
+                 pantryUsedWon: 0, portions: [], byKind: [], planned: false };
   if (!fp || !fp.enabled || !fp.rules || !fp.food) return zero;
   const rules = fp.rules;
   const planWon = fp.food.mealPlanWon;
-  const planned = Number.isFinite(planWon);
+  /* ★★ 2026-08-18 — 고르개가 둘이다(§갈라 고르기). 어느 쪽이 차 있어도 「골랐다」다.
+     ⚠ 옛 세이브에는 `mealPlanByKind` 칸이 아예 없다 → `undefined` → null 과 같이 「안 골랐다」로
+       읽힌다. 그래서 **옛 판은 예전 그대로**(`mealPlanWon` 만) 돈다. */
+  const planKinds = fp.food.mealPlanByKind == null ? null : fp.food.mealPlanByKind;
+  const planned = Number.isFinite(planWon) || planKinds != null;
   fp.food.mealPlanWon = null;                 // ★ 한 번 쓰고 지운다
-  /* ★ 고른 값은 **곳간에서 꺼낼 물건 값**이라 g 으로 되돌려 예산으로 쓴다(§몫) */
-  const plan = planned
-    ? cropMealPlan(fp, { grams: gramsOfWon(Math.max(0, Math.round(planWon))) })
-    : cropMealPlan(fp);
+  fp.food.mealPlanByKind = null;              // ★ 갈라 고른 것도 한 번 쓰고 지운다
+  /* ★ 고른 값은 **곳간에서 꺼낼 물건 값**이라 g 으로 되돌려 예산으로 쓴다(§몫).
+     ⚠ 둘이 같이 와도 **둘 다 지킨다** — 먼저 걸리는 쪽이 이긴다(§갈라 고르기 ⚠) */
+  const opt = {};
+  if (Number.isFinite(planWon)) opt.grams = gramsOfWon(Math.max(0, Math.round(planWon)));
+  if (planKinds != null) opt.gramsByKind = planKinds;
+  const plan = planned ? cropMealPlan(fp, opt) : cropMealPlan(fp);
   if (!(plan.savedWon > 0) || !(plan.usedGrams > 0)) {
     fp.food.lastFoodSavedWon = 0;
     fp.food.cashFoodWon = rules.dailyFoodWon;
@@ -2599,6 +2812,8 @@ export function eatFromPantry(fp) {
     pantryUsedWon: usedWon,
     /* ★ 몫 내역 — 화면·기록이 「콩나물 한 몫 · 무순 한 몫」을 말할 근거 */
     portions: plan.portions,
+    /* ★★ 2026-08-18 — 작물마다 갈라 본 것(§갈라 고르기). 고른 대로 나갔나를 여기서 본다 */
+    byKind: plan.byKind,
     planned,
     /* 옛 이름도 같이 낸다 — `noteLearning`·화면이 `foodSavedWon` 을 읽는다 */
     foodSavedWon: use,
