@@ -66,13 +66,15 @@
        여기 것은 **강한 사실이 약한 사실을 논리적으로 함의**하는 것이다. 거둔 시루는
        놓여 있었고 물을 받았다 — 그 길 말고는 수확이 없다(`advanceBeansproutDay`).
 
-     ## ⚠ 이 여덟 줄은 **아직 말을 안 한다** (`speaks: false`)
-     `dialogue.js` 는 이 창의 쓰기 영역 밖이라 `QUEST_OPEN_SCRIPT`·`QUEST_DONE_SCRIPT` 에
-     열여섯 줄을 못 넣었다. 그래도 **조용히 지나간다** — `dialogue.js §scriptOf` 가
-     *"여기 없는 questId 는 조용히 지나간다"* 를 이미 계약으로 적어 두었다.
-     ⇒ 지금 이 줄들이 내는 것은 **할 일 창의 줄 · 아래 한 줄 · [할 일] 단추의 점** 셋이다.
-     ⚠ 대사를 붙일 때는 `speaks: true` 로 바꾸고 두 지도에 열여섯 줄을 넣어라 —
-       `tools/test_quest.mjs ⑴` 이 그 둘을 한 자리에서 대조한다.
+     ## ✅ 이 여덟 줄은 **말을 한다** (`speaks: true` · 2026-08-16 밤에 붙였다)
+     ⚠ 붙기 전에는 여덟 줄이 전부 `speaks: false` 였다 — `dialogue.js` 가 그 창의 쓰기 영역
+       밖이었기 때문이다. 그래서 **열리고 끝나도 몬이가 한 마디도 안 했다**(박사님이
+       *"이벤트가 없다"* 고 하신 것의 나머지 절반). 지금은 `dialogue.js §5.5-a` 에
+       **열여섯 줄**(줄마다 열림·완료)이 들어가 있고 두 지도가 이 여덟 id 를 그대로 부른다.
+     ⇒ 이 줄들이 내는 것은 넷이다 — **대사 · 할 일 창의 줄 · 아래 한 줄 · [할 일] 단추의 점.**
+     ⚠ `speaks` 와 두 지도는 **같이** 움직여야 한다. `tools/test_quest.mjs ⑴` 이 양쪽을
+       한 자리에서 대조한다 — 「말하기로 한 줄에 대사가 있나」와 「조용하기로 한 줄이 정말
+       조용한가」를 둘 다 묻는다. 한쪽만 고치면 거기서 깨진다.
 
      ## ⚠ 보상은 **체력이 아니다**
      `data/balance/stamina.json` 도 `stamina.js` 도 이 창의 쓰기 영역 밖이라, 여덟 줄은
@@ -178,8 +180,10 @@ const isRooted = c => !!c && ROOTED.includes(c.status);
              ★ 왜 굳이 적나 — 사슬은 여기서 **눈으로 읽혀야** 한다. 열 줄의 `opens` 안을
                하나씩 열어 봐야 사슬이 보이면, 사슬이 끊긴 것도 눈에 안 띈다.
      speaks  ★ 2026-08-16 신설 — **이 줄이 대사를 갖나.** `false` 면 `dialogue.js` 의
-             두 지도에 일부러 안 넣은 줄이다(§초반 사슬 ⚠ 이 줄들은 아직 말을 안 한다).
-             없으면 `true` 로 본다 — 옛 여덟 줄이 그대로 산다.
+             두 지도에 **일부러** 안 넣은 줄이다. 없으면 `true` 로 본다 — 옛 여덟 줄이 그대로 산다.
+             ⚠ 지금 `false` 인 줄은 **하나도 없다**(2026-08-16 밤 · 열여섯 줄을 다 붙였다).
+               새 줄을 넣으면서 대사를 못 쓸 때만 `false` 를 쓴다 — 그러면 화면이 조용히
+               지나가고(`dialogue.js §scriptOf`), 검사가 그 조용함을 못 박아 준다.
    ⚠ **여기 숫자를 박지 않는다.** 세는 수(시루 5개·5바퀴)는 `need` 에 두고
      `todo` 는 그 값을 읽어 짓는다 — 값이 움직여도 문구가 안 낡는다(§2.8 의 반대). */
 
@@ -208,7 +212,7 @@ const FIRST_PLAY_CHAIN = Object.freeze([
   Object.freeze({
     id: 'place_siru',
     ko: '시루를 방에 놓는다',
-    speaks: false,
+    speaks: true,
     reward: '콩나물이 앉을 자리가 생깁니다',
     teaches: ['가방 안에서는 아무것도 안 자란다'],
     why: '가방에 있는 동안은 빛을 못 받습니다. 방에 놓아야 그 자리의 빛으로 셈이 시작됩니다.',
@@ -224,7 +228,7 @@ const FIRST_PLAY_CHAIN = Object.freeze([
   Object.freeze({
     id: 'water_siru',
     ko: '물을 준다',
-    speaks: false,
+    speaks: true,
     reward: '회전이 돌기 시작합니다',
     teaches: ['물을 준 날이 0일차다'],
     why: '놓아 두기만 하면 날짜만 갑니다. 물을 준 날부터 자라는 날을 셉니다.',
@@ -241,7 +245,7 @@ const FIRST_PLAY_CHAIN = Object.freeze([
   Object.freeze({
     id: 'first_harvest',
     ko: '첫 수확',
-    speaks: false,
+    speaks: true,
     reward: '몬스테라가 옵니다',
     teaches: ['거둬야 다음 회전이 돈다'],
     why: '다 자라도 거두기 전에는 다음 회전이 시작되지 않습니다. 거두는 것도 손입니다.',
@@ -258,7 +262,7 @@ const FIRST_PLAY_CHAIN = Object.freeze([
   Object.freeze({
     id: 'resow_siru',
     ko: '씨앗을 사서 다시 심는다',
-    speaks: false,
+    speaks: true,
     reward: '시루가 다시 돌기 시작합니다',
     teaches: ['씨앗은 상점에서 산다', '거둔 시루는 다시 심어야 돈다'],
     why: '한 번 거둔 시루는 빈 그릇입니다. 씨앗을 사서 다시 심어야 다음 회전이 돕니다.',
@@ -277,7 +281,7 @@ const FIRST_PLAY_CHAIN = Object.freeze([
   Object.freeze({
     id: 'siru_two',
     ko: '시루를 하나 더',
-    speaks: false,
+    speaks: true,
     reward: '거두는 날을 엇갈리게 짤 수 있습니다',
     teaches: ['시루마다 회전이 따로 돈다'],
     why: '시루가 둘이면 물 주는 날을 어긋나게 할 수 있습니다. 그래야 수확이 안 끊깁니다.',
@@ -298,7 +302,7 @@ const FIRST_PLAY_CHAIN = Object.freeze([
   Object.freeze({
     id: 'monstera_home',
     ko: '몬스테라 자리를 잡아 준다',
-    speaks: false,
+    speaks: true,
     reward: '새순이 나기 시작합니다',
     teaches: ['몬스테라는 밝은 자리라야 자란다'],
     why: '온 자리는 어둡습니다. 밝은 자리로 옮겨야 새순이 납니다 — 빛 판정은 7일 평균이라 나흘쯤 걸립니다.',
@@ -315,7 +319,7 @@ const FIRST_PLAY_CHAIN = Object.freeze([
   Object.freeze({
     id: 'leaf_two',
     ko: '잎 두 장',
-    speaks: false,
+    speaks: true,
     reward: '자를 수 있게 됩니다',
     teaches: ['잎은 유효 생장일로 난다'],
     why: '잎은 날짜가 아니라 빛이 쌓인 만큼 납니다. 어두운 자리에서는 날짜만 갑니다.',
@@ -331,7 +335,7 @@ const FIRST_PLAY_CHAIN = Object.freeze([
   Object.freeze({
     id: 'leaf_three',
     ko: '잎 세 장',
-    speaks: false,
+    speaks: true,
     reward: '무늬가 날 자리가 늘어납니다',
     teaches: ['어두우면 날짜만 간다'],
     why: '잎이 늘수록 무늬가 날 자리도 늘어납니다. 무늬 잎이 이 방을 나가는 열쇠입니다.',
@@ -574,7 +578,7 @@ export function doneIdsOf(S) {
      id · ko · todo · why · teaches · reward · state('done'|'open'|'locked')  (예전 그대로)
      stage       'first_play' | 'main'
      index       정의 순서(0부터)
-     speaks      이 줄이 대사를 갖나 (지금 초반 여덟은 false)
+     speaks      이 줄이 대사를 갖나 (2026-08-16 밤부터 **열여섯 줄 전부 true**)
    ══════════════════════════════════════════════════════════════════════ */
 export function questView(S, snapshot) {
   const s = snapOf(snapshot);

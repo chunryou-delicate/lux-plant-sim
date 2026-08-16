@@ -454,6 +454,153 @@ export const SCRIPTS = {
 
      ⚠ 순서는 `quest.QUESTS` 의 정의 순서와 **같다.** 갈리면 배우는 순서가 둘이 된다. */
 
+  /* ═══ ★★★ §5.5-a 초반 사슬 여덟 줄 — **첫 33일이 말을 하게 한다** (2026-08-16) ═══
+     ------------------------------------------------------------
+     ★ 왜 생겼나 — 박사님 원문: *"**잎 3개 날 때까지 너무 이벤트가 없더라.** 퀘스트가
+       단계별로 풀려야 되는데 지금 몇 개 없잖아.. **단계적 목표로 가이드랑 연계해서.**"*
+       퀘스트 여덟 줄은 2026-08-16 에 붙었는데(`quest.js §초반 사슬`) **전부 `speaks: false`**
+       였다 — 그 창의 쓰기 영역에 이 파일이 없었기 때문이다. 그래서 **열리고 끝나도
+       몬이가 한 마디도 안 했다.** 「이벤트가 없다」의 나머지 절반이 그것이다.
+     ⇒ 여기 열여섯 줄(줄마다 열림·완료)이 그 절반을 채운다. 같은 커밋에서
+       `quest.js` 의 여덟 줄을 **`speaks: true`** 로 바꿨다 — `tools/test_quest.mjs ⑴` 이
+       *"조용하기로 한 줄은 정말로 조용한가"* 를 양쪽으로 못 박아, 한쪽만 바꾸면 깨진다.
+
+     ★★ 지킨 것 다섯 (위 §5.5 의 넷에 **하나가 더 붙는다**)
+       ① **숫자를 안 박는다**(§5.5 ①과 같다). 「시루 둘」·「잎 셋」 같은 수는 전부
+          `quest.QUESTS` 의 `need` 가 갖고 아래 한 줄(`#quest`)이 말한다.
+          ⇒ ⑤`siru_two` 가 「하나 더」라고 안 하고 **「늘려」**라고만 하는 까닭이 그것이다.
+       ② **「무엇을」이 아니라 「왜」를 말한다.** 「무엇을」은 `todo` 가 이미 말하고 있어서
+          되풀이하면 같은 말이 한 화면에 두 번 난다. 각 줄의 `why`·`teaches` 를 옮겼다.
+       ③ **짧다.** 이 여덟은 **첫 플레이 구간**에 얹히는데 거기는 이미 말이 꽉 차 있다
+          (`quest.js` 머리말이 옛날에 *"첫 33일엔 안 넣는다"* 고 적은 근거가 바로 그것이다).
+          그래서 열 때가 3~4줄, 닫을 때는 **1~3줄**이다. §5.5 의 다섯 줄보다 짧다.
+       ④ ★★ **바로 옆에 붙는 대사와 말이 안 겹치게 썼다.** 겹치는 자리가 넷이다:
+            ①완료 ↔ `cropPlaced`      («나흘이면 먹을 수 있어» — 그래서 **날수를 안 말한다**)
+            ③완료 ↔ `harvest`·`learnHarvest`·`god1`·`monsteraArrived` (Day 4 는 열두 줄이다.
+                    그래서 **한 줄**로 끝낸다)
+            ⑥완료 ↔ `monsteraMoved`   («창턱! 여기가 제일 밝아» — 그래서 **자리 얘기를 안 한다**)
+            ⑦완료 ↔ `questFirstCut`   («잎이 두 장이 됐어» — 그래서 **장수를 안 세고** 한 줄이다)
+          ⚠ **①⑥ 은 「같은 턴」이 아니라 「바로 앞뒤」다.** `cropPlaced`·`monsteraMoved` 는
+            손짓 그 자리에서 뜨는데 `checkQuests` 는 그다음 걸음에서 돈다(§scriptsForEvents 의
+            ⚠ 를 볼 것 — 부르는 자리가 여섯인데 놓기도 옮기기도 그중에 없다). 화면에서는
+            **연달아 읽히므로** 겹침을 피해야 하는 것은 똑같다. ⑦ 은 진짜로 같은 걸음이다.
+          ⚠ ⑦완료 자리에는 `varieLucky`(11줄)까지 겹칠 수 있다(둘째 잎 보장). 그 한 자리가
+            이 묶음에서 제일 붐비므로 거기를 제일 짧게 뒀다.
+       ⑤ ★ **정답 자리를 여기서 불러 주지 않는다.** ⑥`monstera_home` 은 「제일 밝은 데」까지만
+          말하고 **「창턱」이라고 안 한다** — 그 이름은 열흘 뒤 `monsteraGuideWindow` 것이고
+          (2026-08-09 박사님 확정), 여기서 미리 말하면 그 장면이 할 말이 없어진다. */
+
+  /* ① 켠 순간 열린다 — 조건이 없는 유일한 줄이다.
+     ★ `intro` 마지막 줄(«가방에 콩나물 시루가 있어. 어두운 데 놓아 봐.»)이 **어디에** 를
+       이미 말했다. 그래서 여기서는 **가방이 왜 아무 자리도 아닌가**만 말한다. */
+  questPlaceSiru: [
+    { who: 'jachwi', text: '가방에 둔 채로는 안 되는 거야?' },
+    { who: 'moni',   face: 'curious', text: '가방 안은 아무 자리도 아니야. 빛이 안 드니까.' },
+    { who: 'moni',   text: '어디에 두느냐. 그게 이 얘기의 전부야.' }
+  ],
+  /* ⚠ `cropPlaced`(«좋아. 나흘이면 먹을 수 있어.»)와 **같은 턴**이다 — 날수를 또 말하지 않는다 */
+  questDonePlaceSiru: [
+    { who: 'moni', face: 'happy', text: '자리를 정했네. 이제 저 자리 빛이 얘 몫이야.' }
+  ],
+
+  /* ② ★ **놓는 것과 시작하는 것은 다른 동작이다**(`first_play.js §물주기`).
+     ⚠ 「0일차」라는 말을 안 쓴다 — 화면에 그런 글자가 없다. 「오늘이 첫날」로 족하다. */
+  questWaterSiru: [
+    { who: 'jachwi', text: '놨으니까 이제 기다리면 되나.' },
+    { who: 'moni',   face: 'curious', text: '아직. 물을 안 줬잖아.' },
+    { who: 'moni',   text: '놓기만 하면 날짜만 가. 물을 준 날부터 세는 거야.' }
+  ],
+  questDoneWaterSiru: [
+    { who: 'moni',   face: 'happy', text: '이제 세기 시작했어. 오늘이 첫날.' },
+    { who: 'jachwi', text: '어제가 아니고?' },
+    { who: 'moni',   text: '어제는 그냥 놓여 있던 날이고.' }
+  ],
+
+  /* ③ ★ **안 거두면 아무 일도 안 난다** — `firstPlayNextEvent` 의 계약 그대로다.
+     ⚠ 완료 대사가 **한 줄**인 까닭: Day 4 는 수확·식비·배움 둘·식물신·도착이 한꺼번에 나는
+       날이고, 그 위에 얹히는 자리다(SCRIPTS §2 머리말의 «Day 4 가 대사 열두 줄»). */
+  questFirstHarvest: [
+    { who: 'jachwi', face: 'surprise', text: '다 자란 것 같은데.' },
+    { who: 'moni',   face: 'curious', text: '자란 거랑 거둔 거는 달라. 거둬야 다음 바퀴가 돌아.' },
+    { who: 'jachwi', text: '놔두면?' },
+    { who: 'moni',   text: '그 자리에 그대로 있어. 아무 일도 안 나고.' }
+  ],
+  questDoneFirstHarvest: [
+    { who: 'moni', face: 'happy', text: '거뒀으니까 다음 바퀴가 돌 수 있어. 거두는 것도 일이야.' }
+  ],
+
+  /* ④ ★★ **씨앗은 사야 있다.** ⚠ 씨앗값을 안 읊는다 — 500원은 상점 화면이 숫자로 말한다. */
+  questResowSiru: [
+    { who: 'jachwi', text: '시루가 비었어.' },
+    { who: 'moni',   face: 'curious', text: '거두면 비지. 다시 심어야 또 돌아.' },
+    { who: 'jachwi', text: '씨앗은 어디서 나.' },
+    { who: 'moni',   text: '사야 돼. 그게 이 회전의 밑천이야.' }
+  ],
+  questDoneResowSiru: [
+    { who: 'jachwi', text: '같은 시루에서 두 번째로 거뒀다.' },
+    { who: 'moni',   face: 'happy', text: '그게 회전이야. 이제 이 시루는 계속 돌아.' }
+  ],
+
+  /* ⑤ ★★ 가르치는 것은 「많이 사면 많이 번다」가 **아니다** — 그건 `siru8`·`siru16` 것이다.
+     여기 것은 **시차**다(`first_play.js §겹침` — *"더 번다"가 아니라 "끊기지 않는다"*).
+     ⚠ 「하나 더」라고 안 쓴다 — 문턱은 `need.sirus` 것이고 그 수가 움직이면 대사가 낡는다. */
+  questSiruTwo: [
+    { who: 'moni',   face: 'curious', text: '시루가 하나면 거두고 나서 며칠이 비어.' },
+    { who: 'jachwi', text: '그 며칠엔 뭘 먹어.' },
+    { who: 'moni',   text: '그래서 늘리는 거야. 물 주는 날을 어긋나게 하면 안 끊겨.' }
+  ],
+  questDoneSiruTwo: [
+    { who: 'jachwi', text: '거두는 날이 겹치지 않게 됐다.' },
+    { who: 'moni',   face: 'happy', text: '더 버는 게 아니라 **안 끊기는** 거야. 그게 살림이고.' }
+  ],
+
+  /* ⑥ ★★★ **자리를 잡아 주는 것이 할 일**이다. 도착은 플레이어가 하는 일이 아니다.
+     ⚠ **「창턱」이라고 말하지 않는다** — 그 이름은 열흘 뒤 `monsteraGuideWindow` 것이다
+       (2026-08-09 박사님 확정: 자리를 먼저 스스로 옮겨 보고, 그래도 안 되면 그때 불러 준다).
+       여기서 미리 부르면 그 장면이 할 말이 없어진다.
+     ⚠ 완료는 `monsteraMoved`(«창턱! 여기가 이 방에서 제일 밝아»)와 **같은 턴**이다 —
+       그래서 자리 얘기를 안 하고 **기다림** 쪽만 말한다. */
+  questMonsteraHome: [
+    { who: 'jachwi', text: '얘는 어디다 둬야 돼?' },
+    { who: 'moni',   face: 'curious', text: '온 자리 말고. 거긴 시루한테나 좋은 데야.' },
+    { who: 'jachwi', text: '그럼 어디.' },
+    { who: 'moni',   text: '이 방에서 제일 밝은 데. 어딘지는 네가 찾아 봐.' }
+  ],
+  questDoneMonsteraHome: [
+    { who: 'moni',   face: 'happy', text: '됐다. 이제 기다리는 게 일이야.' },
+    { who: 'jachwi', text: '기다리기만 하면 돼?' },
+    { who: 'moni',   face: 'curious', text: '밝은 자리에 뒀으면 그게 다야. 나머지는 얘가 해.' }
+  ],
+
+  /* ⑦ ★★ **잎 두 장** — 박사님이 짚으신 구간의 앞끝이다.
+     ⚠ 잎 간격(30·40·50…)을 안 읊는다 — 생장 엔진 것이다.
+     ⚠ 완료가 **한 줄**인 까닭: 같은 순간에 `questFirstCut`(«잎이 두 장이 됐어» 6줄)이 열리고,
+       판에 따라 `varieLucky`(11줄)까지 겹친다. 장수를 여기서 또 세면 세 번 세는 셈이 된다. */
+  questLeafTwo: [
+    { who: 'jachwi', text: '잎은 언제 나.' },
+    { who: 'moni',   face: 'curious', text: '날짜로는 못 세. 빛이 쌓인 만큼 나는 거라서.' },
+    { who: 'moni',   text: '같은 한 달이어도 어디 뒀느냐로 갈려.' }
+  ],
+  questDoneLeafTwo: [
+    { who: 'moni', face: 'happy', text: '한 장 더 났네. 자리를 잘 골라 놨다는 뜻이야.' }
+  ],
+
+  /* ⑧ ★★★ **잎 세 장** — 박사님이 *"잎 3개 날 때까지"* 라고 하신 그 끝이다.
+     ★ 완료가 **초반 사슬 전체의 매듭**이다. 그래서 여기서만 지나온 걸음을 한 번 접어 준다 —
+       그 뒤는 첫 플레이가 끝나며 `questCropMix`(§5.5 ①)로 이어진다.
+     ⚠ 마지막 줄이 다음을 가리키되 **무늬 얘기를 다시 꺼내지 않는다** — 그건 `varieLucky` 가
+       이미 통째로 말했고, 여기서 또 하면 세 번째다. */
+  questLeafThree: [
+    { who: 'jachwi', text: '잎을 더 늘려서 뭐 해.' },
+    { who: 'moni',   face: 'curious', text: '잎이 늘면 무늬가 날 자리도 같이 늘어.' },
+    { who: 'moni',   text: '어두운 데선 그 자리가 안 생겨. 날짜만 가고.' }
+  ],
+  questDoneLeafThree: [
+    { who: 'jachwi', face: 'happy', text: '세 장.' },
+    { who: 'moni',   face: 'happy', text: '여기까지가 첫걸음이야. 놓고, 주고, 거두고, 옮기고.' },
+    { who: 'moni',   face: 'curious', text: '나머지는 이걸 크게 하는 것뿐이야.' }
+  ],
+
   /* ① 첫 플레이가 끝나는 그날 열린다 — 실측으로 **빈 구간의 첫날**이다(Day 33).
      ★ 이 한 줄이 확정문 `crop-balance §3` 을 통째로 진다: 콩나물은 어두운 데 ·
        무순은 밝은 데 · **같은 것을 두 몫 먹으면 둘째가 반값**(2,500 → 1,200원).
@@ -1215,6 +1362,17 @@ export const EVENT_SCRIPT = Object.freeze({
    ★ `tools/test_quest.mjs` 가 **표와 이 두 지도가 어긋나지 않는지**를 못 박는다 —
      둘이 갈리면 「퀘스트는 열리는데 화면이 조용한」 상태가 되고, 그게 이 저장소의 지병이다. */
 export const QUEST_OPEN_SCRIPT = Object.freeze({
+  /* ★★ 2026-08-16 — **초반 사슬 여덟**(§5.5-a). 붙이면서 `quest.js` 의 `speaks` 도 같이
+     `true` 로 바꿨다 — `test_quest ⑴` 이 표와 이 지도를 **양쪽으로** 대조한다. */
+  place_siru:    'questPlaceSiru',
+  water_siru:    'questWaterSiru',
+  first_harvest: 'questFirstHarvest',
+  resow_siru:    'questResowSiru',
+  siru_two:      'questSiruTwo',
+  monstera_home: 'questMonsteraHome',
+  leaf_two:      'questLeafTwo',
+  leaf_three:    'questLeafThree',
+
   crop_mix:     'questCropMix',
   siru5_cycle5: 'questSiru5',
   /* ★ 2026-08-16 — 시루 늘리기 둘(실측 문턱 여덟·열여섯 · quest.js §②-b·②-c) */
@@ -1226,6 +1384,16 @@ export const QUEST_OPEN_SCRIPT = Object.freeze({
   sell_varie:   'questSellVarie'
 });
 export const QUEST_DONE_SCRIPT = Object.freeze({
+  /* ★★ 2026-08-16 — 초반 사슬 여덟의 완료 대사(§5.5-a) */
+  place_siru:    'questDonePlaceSiru',
+  water_siru:    'questDoneWaterSiru',
+  first_harvest: 'questDoneFirstHarvest',
+  resow_siru:    'questDoneResowSiru',
+  siru_two:      'questDoneSiruTwo',
+  monstera_home: 'questDoneMonsteraHome',
+  leaf_two:      'questDoneLeafTwo',
+  leaf_three:    'questDoneLeafThree',
+
   crop_mix:     'questDoneCropMix',
   siru5_cycle5: 'questDoneSiru5',
   siru8:        'questDoneSiru8',
@@ -1312,7 +1480,27 @@ function orderKey(ev) {
    ★Day 4 계약 순서(수확 → 식비 → 식물신 → 도착)는 EVENT_ORDER 가 지킨다. */
 export function scriptsForEvents(events = []) {
   const list = (events || []).filter(Boolean);
-  const rank = ev => { const i = EVENT_ORDER.indexOf(orderKey(ev)); return i < 0 ? 999 : i; };
+  /* ══ ★★ 2026-08-16 — **한 줄이 같은 걸음에 열리고 끝나면 열림이 먼저다** ══════════
+     `EVENT_ORDER` 는 `quest_done → quest_opened` 다. 그 순서는 **다른 두 줄**을 위한 것이고
+     («①을 끝냈다 → 그래서 ②가 열린다» · 위 §EVENT_ORDER) 옳다. 그런데 **같은 줄**이
+     한 걸음에 둘 다 나면 그 순서가 뒤집힌 말이 된다 — 「자리를 정했네」를 듣고 나서
+     「가방에 둔 채로는 안 되는 거야?」를 듣는다.
+   ⚠ 이건 지어낸 걱정이 아니다. **①`place_siru` 에서 실제로 난다** — `game.html` 이
+     `checkQuests` 를 부르는 자리가 여섯인데(자르기·하루넘김·수확 둘·거래) **부팅도 놓기도
+     그중에 없다.** 그래서 시루를 놓고 [다음 날]을 누르는 그 한 걸음에 ①이 열리고 끝난다.
+   ⇒ 같은 `questId` 의 열림·완료가 한 묶음에 있으면 **열림을 완료와 같은 자리로 끌어온다.**
+     `sort` 가 안정적이라 같은 자리끼리는 **넘어온 차례**가 남고, `stepQuests` 는 한 줄에 대해
+     **열림을 먼저 push 한다**(quest.js §stepQuests). 그래서 열림 → 완료가 된다.
+   ★ 다른 줄 사이의 「끝난 것이 먼저」는 **안 건드린다**(`test_quest ⑶` 이 그것을 못 박는다). */
+  const openAndDone = new Set(
+    list.filter(e => e && e.id === 'quest_opened' && e.questId)
+        .map(e => e.questId)
+        .filter(q => list.some(e => e && e.id === 'quest_done' && e.questId === q)));
+  const rank = ev => {
+    let key = orderKey(ev);
+    if (key === 'quest_opened' && ev && openAndDone.has(ev.questId)) key = 'quest_done';
+    const i = EVENT_ORDER.indexOf(key); return i < 0 ? 999 : i;
+  };
   const out = [];
   for (const ev of [...list].sort((a, b) => rank(a) - rank(b))) {
     const s = scriptOf(ev);
