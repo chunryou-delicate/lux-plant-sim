@@ -149,6 +149,27 @@ export const CROP_KINDS = Object.freeze([
          무순 살림을 한 푼도 안 움직이려고 이렇게 갈랐다 — 무순 회전분 1,867원은
          10 으로 안 나누어떨어져서, g 을 정본으로 삼는 순간 1,870원이 되어
          하루 몫 4,867원이 조용히 4,870원이 된다(START-HERE §2.8 이 겪은 그 사고다). */
+    /* ══ ★★★ 2026-08-16 — **수확량 1.3배** (박사님 확정) ═══════════════════════════
+       ------------------------------------------------------------
+       박사님이 화면에서 잡으셨다 — *"100일째 정도 되니 **돈이 0원** 되어 버리네."*
+       재 보니 **당연한 결과**였다. 시작 체력 5 로는 **뭘 해도 못 버틴다**:
+         하루 지출 16,667원 · 밥으로 아낄 수 있는 최대 **4,867원**(하루 몫 상한)
+         ⇒ 매일 11,800원이 모자라고 나머지는 **파는 수밖에** 없다
+         ⇒ 그런데 **물 주는 손이 천장**이다 — 체력 N 이면 5N 개
+         ⇒ 체력 5 = 시루 25개가 한계인데 그걸 다 채워도 **하루 3,400원씩 깎인다**
+       ★ 그러면 「열심히 하면 되는 구간」이 아예 없다. 그것이 진짜 문제였다.
+
+       ⚠ **2배는 안 했다.** 재 보니 체력 5 에서 하루 **+8,850원**이 되어
+         **채소만으로 이사비가 모인다**(230일). 그러면 몬스테라를 팔 이유가 사라지고
+         게임의 축이 통째로 바뀐다. 박사님이 그 축을 이렇게 적어 두셨다 —
+         *"많이 키우는 건 **노가다**잖아? 몬스테라는 쉽고 랜덤이지만 **대박**을 칠 수 있고."*
+         ⇒ 그 대비가 살아 있어야 한다. **1.3배**면 체력 5 에서 겨우 본전(+1,000원)이고,
+           시루를 늘리거나 체력을 올린 만큼만 남는다.
+
+       ⚠ **밥으로 아끼는 것은 안 늘어난다** — 하루 몫 4,867원이 상한이라 g 이 늘어도 그대로다.
+         늘어난 것은 **전부 팔린다.** 그래서 1.3배의 효과는 **판매 수입에만** 온다.
+       ⚠ `savedWonPerCycle` 은 **안 건드렸다.** 그것을 같이 올리면 하루 몫이 흔들리고
+         START-HERE §2.8 의 4,867원이 통째로 움직인다. */
     gramsPerCycle: 350,
     gramsMidMeals: 2,
     gramsPerQualityStep: 150,
@@ -630,6 +651,37 @@ function cropGramSpecOf(rules, kindIndex = 0) {
   return (d && Number.isFinite(d.gramsPerCycle)) ? d : null;
 }
 
+/* ══ ★★★ 수확량 배수 — **초보 구간은 넉넉하고, 어려워질수록 조인다** (2026-08-16 박사님) ══
+   ------------------------------------------------------------
+   박사님이 화면에서 잡으셨다 — *"100일째 정도 되니 **돈이 0원** 되어 버리네."*
+   재 보니 **시작 체력 5 로는 뭘 해도 못 버텼다**:
+     하루 지출 16,667원 · 밥으로 아낄 수 있는 최대 **4,867원**(하루 몫 상한)
+     ⇒ 매일 11,800원이 모자라고 나머지는 **파는 수밖에** 없다
+     ⇒ 그런데 **물 주는 손이 천장**이다(체력 N → 5N 개)
+     ⇒ 체력 5 = 시루 25개가 한계인데 다 채워도 **하루 3,400원씩 깎인다**
+   ★ 「열심히 하면 되는 구간」이 아예 없었다. 그것이 진짜 문제였다.
+
+   ⇒ 박사님 확정: *"**2배로 하고 난이도 올라갈수록 줄이는 건 어때?**"* ·
+     *"어쨌든 **게임오버는 되면 안 되니까** 프롤로그에서."*
+   ★ 그리고 게임의 축을 이렇게 적어 두셨다 —
+     *"많이 키우는 건 **노가다**잖아? 몬스테라는 쉽고 랜덤이지만 **대박**을 칠 수 있고."*
+     ⇒ 채소는 손이 많이 가는 대신 **안전**하고, 몬스테라는 **한 방**이다. 그 대비를 지킨다.
+
+   ══ 표 ═══════════════════════════════════════════════════════════
+     반지하(배우는 구간)  **2.0배**  — 체력 5·시루 25개에서 하루 +8,850원. 안 죽는다
+     원룸 이후            **1.3배**  — 체력 5 에서 겨우 본전(+275원). 늘려야 남는다
+   ⚠ **밥으로 아끼는 것은 안 늘어난다** — 하루 몫 4,867원이 상한이라 g 이 늘어도 그대로다.
+     늘어난 것은 **전부 팔린다.** 그래서 배수의 효과는 **판매 수입에만** 온다.
+   ⚠ `savedWonPerCycle` 은 **안 건드린다.** 같이 올리면 하루 몫이 흔들리고
+     START-HERE §2.8 의 4,867원이 통째로 움직인다.
+   ⚠ 표를 **여기 박지 않는다** — `rules.cropHarvestMult` 로 넘어오면 그것을 쓴다.
+     안 넘어오면 2.0(반지하)이다. 원룸 배선은 `oneroom.js` 몫이다(아직 미확정 · §oneroom). */
+export const CROP_HARVEST_MULT = Object.freeze({ banjiha: 2.0, oneroom: 1.3 });
+const harvestMultOf = (rules) => {
+  const v = rules && rules.cropHarvestMult;
+  return (Number.isFinite(v) && v > 0) ? v : CROP_HARVEST_MULT.banjiha;
+};
+
 /* 그램 표가 있는 작물의 한 회전 수확량(g). 없으면 **null** — 「모른다」와 「0」을 가른다. */
 function cropCycleGramsExact(rules, meals, tiredIndex = 0, kindIndex = tiredIndex) {
   const spec = cropGramSpecOf(rules, kindIndex);
@@ -637,7 +689,9 @@ function cropCycleGramsExact(rules, meals, tiredIndex = 0, kindIndex = tiredInde
   const mid = Number.isFinite(spec.gramsMidMeals) ? spec.gramsMidMeals : 2;
   const step = Number.isFinite(spec.gramsPerQualityStep) ? spec.gramsPerQualityStep : 0;
   const base = spec.gramsPerCycle + (Math.max(0, meals) - mid) * step;
-  return Math.max(0, Math.round(base * cropTiredMultiplier(rules, tiredIndex)));
+  /* ★ 난이도 배수는 **여기 한 곳**에서만 곱한다(위 §수확량 배수).
+     여러 곳에서 곱하면 언젠가 한 곳이 빠져 「어떤 화면에서만 다른 수」가 된다. */
+  return Math.max(0, Math.round(base * cropTiredMultiplier(rules, tiredIndex) * harvestMultOf(rules)));
 }
 
 /* ★ 한 회전이 내는 수확량(g) — **어느 작물이든 답을 낸다.**

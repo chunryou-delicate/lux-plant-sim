@@ -22,7 +22,7 @@ import { TUTORIAL_RULES, banjihaRulesFrom } from '../src/game/tutorial.js';
 import { CROP_KINDS, CROP_TIRED_MULTIPLIER, FIRST_PLAY_RULES, firstPlayRulesFromBalance,
          cropCycleSavedWon, cropBaseSavedWonOf, overlapSavedWon,
          /* ★ 2026-08-16 · 그램 셈 (first_play §그램) */
-         cropCycleGrams, pantryCapWon } from '../src/game/first_play.js';
+         cropCycleGrams, pantryCapWon, CROP_HARVEST_MULT } from '../src/game/first_play.js';
 import { CATALOG, buyPriceOf, BUY_MARKUP } from '../src/game/shop.js';
 
 const J = p => JSON.parse(fs.readFileSync(new URL(p, import.meta.url), 'utf8'));
@@ -37,6 +37,12 @@ const check = (name, fn) => {
 
 const BANJIHA = HOMES.homes.find(h => h.id === 'banjiha');
 const RULES   = firstPlayRulesFromBalance(CHARS);
+/* ★★ 2026-08-16 — **수확량에 난이도 배수가 붙었다**(first_play §수확량 배수 · 박사님 확정).
+   반지하 ×2.0 · 원룸 ×1.3. 표의 밑값(350g)을 **그대로 박으면 낡는다.**
+   ⇒ 배수를 읽어 곱한다. 배수를 바꿔도 검사가 안 낡는다(§2.8 의 반대).
+   ⚠ **g 과 원은 한 축이다**(g = 원 ÷ 10 · §그램). 그래서 배수는 밥값에도 닿는데
+     **하루 몫 상한(5,000원)이 잘라 준다** — 실측: 4,867 → 5,000 에서 멈춘다. */
+const HM = CROP_HARVEST_MULT.banjiha;
 
 /* ══ A · ★하루 지출은 지어낸 값이 아니라 **유도된 값**인가 ═══════════════════
    `dailySpendWon = 월세/주기 + 공과/주기 + 식비`. 월세를 내리면 **따라와야** 한다 —
@@ -201,7 +207,7 @@ check('F ★질림 배율표는 살아 있다 — 그런데 그것을 읽는 축
   assert.equal(overlapSavedWon(RULES, 3, 0, 1), cropCycleGrams(RULES, 3, 0, 1) * 10,
     '★무순이 아직 종류 순번만큼 깎입니다 — 질림이 어디선가 다시 물립니다');
   /* ⚠ 2026-08-18 — 여기 **300** 이 박혀 있었다(확정문 §1 의 옛 표). 눈금이 넓어져 400g 이다. */
-  assert.equal(cropCycleGrams(RULES, 3, 0, 1), 400, '무순 최상 품질 400g');
+  assert.equal(cropCycleGrams(RULES, 3, 0, 1), 400 * HM, `무순 최상 품질 ${400 * HM}g (밑값 400 × 배수 ${HM})`);
   /* 넷째부터 0 — 표 밖은 지어내지 않는다 (문을 열었을 때의 이야기다) */
   assert.equal(cropCycleSavedWon(RULES, 3, 9, 0), 0, '표 밖 순번');
 });
@@ -216,6 +222,7 @@ check('F ★질림 배율표는 살아 있다 — 그런데 그것을 읽는 축
 check('G ★두 작물의 값이 서로 안 샌다 — 각자 자기 표대로 난다', () => {
   /* ⚠ 2026-08-18 — 여기 **3,000 · 2,000** 이 박혀 있었다. 수확량 눈금이 넓어져
      기준점이 350g · 250g 으로 올라갔다(§E). 기본값은 그 g × 10원이다. */
+  /* ⚠ 기본값은 **표의 밑값**이라 난이도 배수를 안 탄다 — 배수는 회전 수확량에만 붙는다 */
   assert.equal(cropBaseSavedWonOf(RULES, 0), 3_500, '콩나물 기본값');
   /* ⚠⚠ 2026-08-17 — 여기 **2,800** 이 박혀 있었다(질림이 붙기 전의 기본값).
      확정문 §1 이 무순 중간 품질을 200g 으로 정해 2,000 이 됐고, 2026-08-18 에 250g 이다. */
@@ -224,16 +231,16 @@ check('G ★두 작물의 값이 서로 안 샌다 — 각자 자기 표대로 �
      ⚠⚠ 2026-08-18 — 그 눈금이 **「중간빛 350g ±150g」**이 됐다. 여기 박혀 있던 옛 값은
        3,000 / 4,000 / 2,000 이었다. **아래끝(2,000 = 200g)만 안 움직인다** —
        박사님이 *"200-500"* 이라 아래끝을 고정하고 위끝만 벌리셨기 때문이다. */
-  assert.equal(overlapSavedWon(RULES, 2, 0, 0), 3_500, '콩나물 · 2끼 품질 = 350g');
-  assert.equal(overlapSavedWon(RULES, 3, 0, 0), 5_000, '콩나물 · 3끼 품질 = 500g');
-  assert.equal(overlapSavedWon(RULES, 1, 0, 0), 2_000, '콩나물 · 1끼 품질 = 200g (안 움직였다)');
+  assert.equal(overlapSavedWon(RULES, 2, 0, 0), 3_500 * HM, `콩나물 · 2끼 품질 = ${350 * HM}g`);
+  assert.equal(overlapSavedWon(RULES, 3, 0, 0), 5_000 * HM, `콩나물 · 3끼 품질 = ${500 * HM}g`);
+  assert.equal(overlapSavedWon(RULES, 1, 0, 0), 2_000 * HM, `콩나물 · 1끼 품질 = ${200 * HM}g`);
   /* ★ 무순 — 확정문 §1 의 300 / 200 / 100g 이 2026-08-18 에 **400 / 250 / 100g** 이 됐다.
      ⚠⚠ 옛 줄은 *"무순은 2종째라 **질림 순번이 1에서 시작한다.** 그날 첫 무순도 이미 ×2/3 다"*
        라고 적고 1,867 · 622 를 못 박고 있었다. 그 밀림이 2026-08-17 에 없어졌다(확정문 §6).
      ★ 여기서도 **아래끝(1,000 = 100g)만 안 움직인다.** */
-  assert.equal(overlapSavedWon(RULES, 3, 0, 1), 4_000, '무순 · 3끼 품질 = 400g');
-  assert.equal(overlapSavedWon(RULES, 2, 0, 1), 2_500, '무순 · 2끼 품질 = 250g');
-  assert.equal(overlapSavedWon(RULES, 1, 0, 1), 1_000, '무순 · 1끼 품질 = 100g (안 움직였다)');
+  assert.equal(overlapSavedWon(RULES, 3, 0, 1), 4_000 * HM, `무순 · 3끼 품질 = ${400 * HM}g`);
+  assert.equal(overlapSavedWon(RULES, 2, 0, 1), 2_500 * HM, `무순 · 2끼 품질 = ${250 * HM}g`);
+  assert.equal(overlapSavedWon(RULES, 1, 0, 1), 1_000 * HM, `무순 · 1끼 품질 = ${100 * HM}g (안 움직였다)`);
   /* ★ 그리고 **한쪽을 고쳐도 다른 쪽이 안 따라 움직이는지**를 여기서 잰다 —
      이 절이 원래 지키던 그것이다. 무순 표를 갈아 끼운 사본에서 콩나물이 안 움직여야 한다. */
   const swapped = Object.freeze({ ...RULES, cropKindDefs: Object.freeze(
