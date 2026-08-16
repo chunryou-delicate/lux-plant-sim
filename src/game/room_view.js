@@ -6094,6 +6094,40 @@ export async function createRoomView(canvas, opts = {}) {
      "설 수는 있는데 걸어갈 수는 없는 자리"가 생긴다. */
   const blockedAt = (x, z, r) => nav.blocked(x, z, r);
 
+  /* ★★★ 걸음 하나를 짓는 **유일한** 자리 — 길의 꼬리를 손본다 (2026-08-16 · G-9)
+     ══════════════════════════════════════════════════════════════
+     박사님: *"물 주러 갈 때 … 「거기까지 못 갑니다 (1.56m 떨어져 있습니다)」"*
+
+     ★ 자를 둘 쓰고 있었다.
+       · 「어디에 설까」(standNear·surfaceAt)는 **연속 좌표**로 고른다 — 어디든 설 수 있다.
+       · 「어떻게 갈까」(floor_nav.path)는 **칸 한가운데만** 돌려준다(칸 0.25m · §cellPos).
+       그래서 "여기 서라"고 한 점과 **실제로 서는 점**이 늘 어긋난다. 반 대각선(0.18m)이면
+       봐줄 만한데, 부탁받은 점이 든 칸의 **한가운데가 막혀 있으면** BFS 가 옆 칸으로
+       비켜서면서 훨씬 더 어긋난다 — 반지하 3단 선반에서 실측 **0.88m** (probe_reach.mjs).
+       가구를 벽에 붙이자(B-6) 가구 앞 빈 띠가 좁아져 이 어긋남이 커졌다.
+
+     ★ 고치는 법은 자를 하나로 만드는 것이다 — **설 수 있는 점이면 거기까지 간다.**
+       마지막 칸에서 그 점까지 직선이 뚫려 있을 때만 늘린다(nav.clearLine). 안 뚫려 있으면
+       예전 그대로 칸 한가운데에 선다. 길을 새로 찾지 않으므로 비용은 직선 검사 한 번이다.
+     ⚠ 이 함수를 거치지 않는 걸음을 만들지 마라. 그러면 자가 다시 둘이 된다. */
+  function navPathTo(from, x, z) {
+    const aim = nav.nearestFree(x, z);
+    const path = nav.path(from.x, from.z, aim.x, aim.z);
+    if (path.length) {
+      const last = path[path.length - 1];
+      if (Math.hypot(last.x - aim.x, last.z - aim.z) > 1e-3
+          && !nav.blocked(aim.x, aim.z) && nav.clearLine(last, aim))
+        path.push({ x: aim.x, z: aim.z });
+    }
+    return { path, aim };
+  }
+  /* 그 점으로 걸으라 하면 **실제로 어디에 서게 되나**. 예측과 실제가 갈리면
+     「재는 자」가 거짓말을 한다 — 그래서 위 함수를 그대로 쓴다. */
+  function walkEndOf(from, x, z) {
+    const { path } = navPathTo(from, x, z);
+    return path.length ? path[path.length - 1] : { x: from.x, z: from.z, stuck: true };
+  }
+
   /* ★ 어디에 세울까 — 이 파일이 새로 정하는 유일한 것.
      ------------------------------------------------------------
      "가구·화분·통행을 가리면 안 된다. 주인공은 방과 식물이다."
@@ -6372,12 +6406,14 @@ export async function createRoomView(canvas, opts = {}) {
 
     /* 바닥 (x,z) 로 걸어간다. 갈 수 있는 데까지만 간다(막힌 주머니면 최대한 다가간다). */
     function goTo(x, z, opt2 = {}) {
-      const p = nav.nearestFree(x, z);
       stats.navPaths++;
       /* 새 걸음이 시작되면 앞선 약속은 여기서 끝난다 — 안 풀면 actAt 이 영영 기다린다 */
       settleWalk(false, '다른 걸음에 밀렸습니다');
       settleFace();
-      path = nav.path(root.position.x, root.position.z, p.x, p.z);
+      /* ★ 길은 §navPathTo 한 곳에서만 짓는다 — 칸 한가운데가 아니라 **부탁받은 점**에 선다 */
+      const r0 = navPathTo({ x: root.position.x, z: root.position.z }, x, z);
+      const p = r0.aim;
+      path = r0.path;
       pathI = 0; stuck = 0; settleYaw = null;
       if (!path.length) { playIdle(); return { ok: false, x: p.x, z: p.z, reason: '갈 수 없는 자리입니다' }; }
       goal.set(path[0].x, 0, path[0].z);
@@ -6913,8 +6949,21 @@ export async function createRoomView(canvas, opts = {}) {
      floor_nav 의 path 는 못 가는 곳이라도 최대한 다가간 경로를 돌려준다(빈 배열이
      아니다). 그래서 "길이 없다"를 goTo 의 실패로는 못 잡는다 — 잡을 수 있는 자리는
      **다 걷고 난 뒤 어디에 서 있나** 하나뿐이다. 벽 하나를 사이에 두면 여기서 걸린다.
-     1.45m 는 ACT_STAND_R 의 끝(1.35)에 격자 한 칸 남짓을 더한 값이다. */
+
+     ★★ 2026-08-16 (G-9) — **값은 그대로 두고 근거를 재서 바꿔 적었다.**
+       옛 근거는 "ACT_STAND_R 의 끝(1.35) + 격자 한 칸 남짓"이었다. 그건 **노린 자리**의
+       한도지 **실제로 서는 자리**의 한도가 아니다(이 주석 바로 위가 그 둘이 다르다고
+       말하고 있는데도 그랬다). 재서 새로 세운 근거는 이렇다 — tools/probe_reach.mjs,
+       반지하 14자리 × 출발점 5곳 전부:
+         걸어서 닿는 제일 가까운 데(cellNear)의 **최대** … 1.25m  (banjiha-desk:1)
+         도착 오차(ARRIVE_EPS)                          … 0.10m
+         ⇒ 실제로 설 수 있는 제일 먼 거리                  1.35m
+         ⇒ 여유 0.10m 를 얹어                            **1.45m**
+       즉 지금 값이 맞다. **키울 이유가 없었다** — 1.56m 는 「못 가는 자리」가 아니라
+       「엉뚱한 자리를 골라서 생긴 거리」였다(§pickStand). */
   const ACT_REACH = 1.45;
+  /* 도착은 늘 조금 못 미친다(ARRIVE_EPS 0.10) — 후보를 고를 때 그만큼 안쪽으로 본다 */
+  const REACH_MARGIN = 0.12;
   /* 이미 이만큼 가까이 서 있으면 걷지 않는다. 한 뼘 옮기자고 걷는 시늉을 하면 우습다. */
   const ACT_NEAR_ENOUGH = 0.28;
 
@@ -6969,11 +7018,16 @@ export async function createRoomView(canvas, opts = {}) {
     const here = { x: person.root.position.x, z: person.root.position.z };
     const cands = standNear({ x: t.pos.x, z: t.pos.z }, here);
     if (!cands.length) return { ok: false, reason: '곁에 설 자리가 없습니다' };
-    for (const c of cands.slice(0, 8)) {
-      if (Math.hypot(here.x - c.x, here.z - c.z) <= ACT_NEAR_ENOUGH) return { ok: true, reason: null };
-      if (nav.path(here.x, here.z, c.x, c.z).length) return { ok: true, reason: null };
-    }
-    return { ok: false, reason: '가는 길이 막혔습니다' };
+    /* ★ 2026-08-16 (G-9) — **runAct 와 같은 자로 잰다.**
+       예전에는 앞 여덟만 보고 "길이 잡히면 된다"고 답했다. 그런데 runAct 가 실제로 거는
+       조건은 「다 걷고 난 뒤 ACT_REACH 안에 서 있나」다. 두 자가 달라서 이 창구는
+       "갈 수 있다"고 하는데 눌러 보면 「거기까지 못 갑니다」가 뜰 수 있었다.
+       ⚠ 그리고 여덟으로 자르고 있었다 — 자른 목록으로 "없다"를 말하면 안 된다(§2.9 ①). */
+    if (Math.hypot(here.x - t.pos.x, here.z - t.pos.z) <= ACT_REACH) return { ok: true, reason: null };
+    const stand = pickStand(cands, here, t.pos);
+    if (!stand) return { ok: false, reason: '곁에 설 자리가 없습니다' };
+    if (stand.gap <= ACT_REACH - REACH_MARGIN) return { ok: true, reason: null };
+    return { ok: false, reason: `거기까지 못 갑니다 (${stand.gap.toFixed(2)}m 떨어져 있습니다)` };
   }
   /* 지금 **닿을 수 없는** 그루들. 화면이 「여기 놓으면 저 시루에 못 갑니다」를
      말할 유일한 근거다. 비어 있으면 다 닿는다. */
@@ -6984,6 +7038,87 @@ export async function createRoomView(canvas, opts = {}) {
       if (!r.ok) out.push({ key, potId: (p && p.potId) || null, reason: r.reason });
     }
     return out;
+  }
+
+  /* ★★★ 어느 후보로 갈까 — **닿는가**를 먼저 묻는다 (2026-08-16 · G-9)
+     ══════════════════════════════════════════════════════════════
+     `standNear` 는 후보를 **그림이 좋은 순**으로 준다(카메라와 이루는 각 · 걷는 거리 ·
+     반지름). 그런데 그림이 좋다고 **거기 설 수 있는 것은 아니다** — 걷기는 길찾기가
+     내주는 자리에만 선다(§navPathTo). 그래서 지금까지는 첫 후보를 그냥 믿고 걸었고,
+     그 자리가 못 서는 자리면 길찾기가 엉뚱한 데 세워 놓고 **닿는 자리를 두고도** 실패했다.
+
+     ★ 실측 (tools/probe_reach.mjs · 반지하 14자리 × 출발점 5곳)
+         첫 후보를 그냥 믿었을 때 제일 먼 거리 … **1.58m**  (ACT_REACH 1.45 넘음 · 4자리)
+         후보를 전부 걸어 봤을 때 제일 먼 거리 … **1.25m**  (전부 넉넉히 닿는다)
+       ⇒ 못 가는 자리가 있는 게 아니었다. **고르는 법**이 틀렸다.
+
+     ★ 그래서 점수 순으로 훑되 **실제로 서게 될 자리**를 재서, 닿는 첫 후보를 고른다.
+       점수 순이므로 첫 통과가 곧 "닿는 것 중 그림이 제일 좋은 자리"다.
+       다 못 닿으면 제일 가까운 것을 준다 — 거기서 실패해도 이유가 참말이 된다.
+     ⚠ 후보를 **자르지 않는다.** 잘라 놓고 "없다"로 읽는 사고가 이 저장소에 있었다(§2.9 ①). */
+  function pickStand(cands, from, tp) {
+    let best = null, bestGap = Infinity;
+    for (let i = 0; i < cands.length; i++) {
+      const c = cands[i];
+      const e = walkEndOf(from, c.x, c.z);
+      const g = Math.hypot(e.x - tp.x, e.z - tp.z);
+      if (g <= ACT_REACH - REACH_MARGIN) return { x: c.x, z: c.z, gap: g, rank: i };
+      if (g < bestGap) { bestGap = g; best = { x: c.x, z: c.z, gap: g, rank: i }; }
+    }
+    return best;
+  }
+
+  /* ★★★ 진단용 — 「거기까지 못 갑니다」를 숫자로 푼다 (2026-08-16 · G-9).
+     ------------------------------------------------------------
+     runAct 가 실제로 쓰는 **같은 함수**로 잰다(standNear · nav). 따로 짜면 다른 것을 재게 된다
+     (이 저장소에서 열 번 넘게 난 사고다 — START-HERE §2.9).
+       nearest   이론상 제일 가까운 설 자리까지의 거리[m] — **연속 좌표**에서 nav.blocked 만 본다
+       cellNear  **걸어서** 닿는 제일 가까운 데 — nav.path 의 마지막 웨이포인트다.
+                 걷기는 격자 칸 한가운데(0.25)에만 설 수 있으므로 이쪽이 진짜 한도다
+       chosen    standNear 가 실제로 고른 자리(cands[0]) 와 그 반지름
+       walkEnd   goTo 가 실제로 세울 자리 = nav.path(여기 → nearestFree(chosen)) 의 끝
+       gap       walkEnd → 대상 거리. ★ **이 값이 ACT_REACH 와 겨뤄지는 그 값이다** */
+  function standProbe(key, from0) {
+    const t = resolveKey(key);
+    if (!t) return null;
+    const person = (() => {
+      const c = (selChar && chars.get(selChar)) || chars.get('jachwi');
+      return c && c.walkable ? c : null;
+    })();
+    const from = from0 || (person ? { x: person.root.position.x, z: person.root.position.z }
+                                  : { x: 0, z: 0 });
+    const tp = { x: t.pos.x, z: t.pos.z };
+    const dTo = p => (p ? Math.hypot(p.x - tp.x, p.z - tp.z) : null);
+    /* ① 연속 좌표에서 제일 가까운 설 자리 (2cm 씩 넓히며 72방향) */
+    let nearest = null;
+    for (let r = 0.30; r <= 2.60001 && !nearest; r += 0.02)
+      for (let k = 0; k < 72; k++) {
+        const a = (k / 72) * Math.PI * 2;
+        const x = tp.x + Math.sin(a) * r, z = tp.z + Math.cos(a) * r;
+        if (nav.blocked(x, z, BODY_R)) continue;
+        nearest = { x, z, r: +r.toFixed(2) }; break;
+      }
+    /* ② 걸어서 닿는 제일 가까운 칸 — BFS 가 대상 칸에 가장 가까운 도달 가능 칸을 준다 */
+    const pc = nav.path(from.x, from.z, tp.x, tp.z);
+    const cellNear = pc.length ? pc[pc.length - 1] : { x: from.x, z: from.z };
+    /* ③ 첫 후보(옛 방식)를 그냥 믿으면 어디에 서게 되나 — 고침 **전**의 값이다 */
+    const cands = standNear(tp, from);
+    const chosen = cands[0] || null;
+    const walkEnd = chosen ? walkEndOf(from, chosen.x, chosen.z) : null;
+    /* ④ 지금 방식 — 닿는 후보를 고른다(§pickStand). 고침 **후**의 값이다 */
+    const picked = cands.length ? pickStand(cands, from, tp) : null;
+    const bestGap = picked ? picked.gap : Infinity;
+    const bestRank = picked ? picked.rank : -1;
+    return {
+      key: t.key, target: { x: +tp.x.toFixed(3), z: +tp.z.toFixed(3), y: +t.pos.y.toFixed(3) },
+      from: { x: +from.x.toFixed(3), z: +from.z.toFixed(3) },
+      nearest: nearest ? { ...nearest, d: +nearest.r.toFixed(3) } : null,
+      cellNear: { x: +cellNear.x.toFixed(3), z: +cellNear.z.toFixed(3), d: +dTo(cellNear).toFixed(3) },
+      chosenR: chosen ? +Math.hypot(chosen.x - tp.x, chosen.z - tp.z).toFixed(3) : null,
+      gap: walkEnd ? +dTo(walkEnd).toFixed(3) : null,
+      bestGap: Number.isFinite(bestGap) ? +bestGap.toFixed(3) : null,
+      bestRank, cands: cands.length, reach: ACT_REACH
+    };
   }
 
   function standNear(t, from) {
@@ -7299,7 +7434,9 @@ export async function createRoomView(canvas, opts = {}) {
     const here = () => ({ x: person.c.root.position.x, z: person.c.root.position.z });
     const cands = standNear({ x: t.pos.x, z: t.pos.z }, here());
     if (!cands.length) return bail('그 자리 곁에는 설 데가 없습니다');
-    const stand = cands[0];
+    /* ★ 첫 후보를 그냥 믿지 않는다 — **닿는 후보**를 고른다(§pickStand · G-9) */
+    const stand = pickStand(cands, here(), t.pos);
+    if (!stand) return bail('그 자리 곁에는 설 데가 없습니다');
     if (Math.hypot(here().x - stand.x, here().z - stand.z) > ACT_NEAR_ENOUGH) {
       const w = await person.c.walkToXZ(stand.x, stand.z, p => prog(p, 'walk'));
       if (token.cancelled) return bail(token.reason);
@@ -8098,6 +8235,9 @@ export async function createRoomView(canvas, opts = {}) {
        ⚠ **막지 않는다.** 무엇을 막을지는 화면이 정한다(박사님 지시). */
     reach(key) { return reachOf(key); },
     unreachable() { return unreachablePlants(); },
+    /* ★ 진단용 — 그 자리까지 「얼마나 가까이 설 수 있나」를 통째로 잰다(§standProbe).
+       ⚠ 게임은 안 쓴다. tools/probe_reach.mjs 가 표를 뽑는 창구다. */
+    standProbe(key, from) { return standProbe(key, from); },
     /* 이 방뷰가 그릴 줄 아는 종류들 — 화면이 "심을 수 있나"를 미리 물어보는 창구 */
     plantKinds() {
       return Object.keys(PLANT_KINDS).map(k => ({ kind: k, potD: PLANT_KINDS[k].potD,

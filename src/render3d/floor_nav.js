@@ -173,6 +173,10 @@ export function createFloorNav(opt = {}) {
     blocked,
     pushOut,
     path,
+    /* 두 점 사이가 직선으로 뚫려 있나. path 가 안에서 쓰던 것을 밖에도 낸다 —
+       ★ 부르는 쪽이 「길의 꼬리를 칸 한가운데가 아니라 부탁받은 점까지 늘려도 되나」를
+         물을 데가 여기밖에 없다(room_view §navPathTo). 새로 짜면 두 벌이 되고 어긋난다. */
+    clearLine(a, b) { return clearLine(a, b); },
     /* 세계가 바뀌면(방 교체·가구 이동) 격자를 버린다. 다시 물을 때 새로 짓는다. */
     setWorld(w = {}) {
       /* 'in' 으로 본다 — 안 준 항목은 그대로 두고, 준 항목만 갈아 끼운다.

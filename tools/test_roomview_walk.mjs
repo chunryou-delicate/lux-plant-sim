@@ -546,8 +546,31 @@ async function main() {
 
     /* ── N-5 못 가는 자리면 실패한다 ──
        ★ 가구 뒤 구석에 화분을 놓는다. floor_nav 의 path 는 못 가는 곳이라도 최대한
-         다가간 경로를 주므로, '못 갔다'는 **다 걷고 난 뒤의 거리**로만 잡힌다. */
-    const put = await page.eval(`window.view.setPlantAt('probe_far', {x:2.35,y:0,z:1.85,rotY:0},
+         다가간 경로를 주므로, '못 갔다'는 **다 걷고 난 뒤의 거리**로만 잡힌다.
+
+       ⚠⚠ 2026-08-16 (G-9) — **자리를 (2.35,1.85) 에서 (2.40,-1.90) 으로 옮겼다.**
+         옛 자리는 「못 가는 자리」가 아니었다. 거기 못 갔던 것은 방이 좁아서가 아니라
+         `standNear` 가 **닿지도 못할 후보**를 골라서였다(room_view §pickStand). 그 버그를
+         고치자 옛 자리는 **1.22m 앞까지 걸어가 물을 준다** — 즉 이 줄은 고장난 상태를
+         정상으로 못 박고 있었다(START-HERE §2.9 의 「제일 위험한 종류」가 이것이다).
+         새 자리는 재서 골랐다(tools/_probe_far · 반지하 바닥 858점 × 출발점 6곳):
+           (2.40,-1.90)  출발점 여섯 중 **다섯**에서 2.05m — 못 간다
+                         나머지 하나는 그 구석 주머니 안(1.9,-1.4)이라 0.71m 로 닿는다
+           (2.35,1.85)   여섯 곳 **전부** 1.22m — 이제 닿는다
+         ⇒ 그래서 부르기 전에 캐릭터를 **방 반대쪽으로 보내 놓는다**. 안 그러면
+           앞 검사(N-4)가 남겨 둔 자리에 따라 결과가 흔들린다. */
+    await page.eval(`(()=>{ const r=document.getElementById('roomCanvas').getBoundingClientRect();
+      let best=null;
+      for(const fx of [0.1,0.25,0.4,0.55,0.7,0.85]) for(const fy of [0.55,0.7,0.85]){
+        const x=r.left+r.width*fx, y=r.top+r.height*fy;
+        const w=window.view.walkTo('jachwi', x, y);
+        if(!w||!w.ok) continue;
+        const d=Math.hypot(w.x-2.4, w.z+1.9);
+        if(!best||d>best.d) best={x,y,d};
+      }
+      if(best) window.view.walkTo('jachwi', best.x, best.y); })()`, false);
+    await sleep(4500);
+    const put = await page.eval(`window.view.setPlantAt('probe_far', {x:2.40,y:0,z:-1.90,rotY:0},
       {kind:'beansprout', progress01:0.4, band:'good'}).then(()=>'ok', e=>'거절:'+e.message)`);
     if (put !== 'ok') ok('N-5 못 가는 자리면 실패한다', false, `구석에 화분을 못 놓았습니다: ${put}`);
     else {
