@@ -8,17 +8,21 @@
      tools/room_view_demo.html 은 캔버스를 폰 틀에 못박아 두는 딴 세상이다(§2.9 ④).
      박사님이 보실 화면은 게임이므로 게임에서 잰다.
 
-   ★ 무엇을 재나 — 여섯 가지
+   ★ 무엇을 재나
      ① 켜면 **화면이 실제로 달라지는가** — 사진 두 장의 화소 차이[%]
         ⚠ 색 가짓수를 같이 센다(§2.9 ③ · 까만 사진 3색 · 멀쩡한 사진 3,000색 넘음).
           색이 적은 사진 위에서 「달라졌다」를 말하면 그건 죽은 프레임 두 장을 견준 것이다.
-     ② **숫자가 읽히는가** — 폰 390px 에서 글자 높이[px] · 몇 개를 그렸나
+     ② **숫자가 읽히는가** — 폰 390px 에서 글자 높이[px] · 몇 개를 그렸나 · **겹친 쌍 0**
      ③ 껐다 켰다 **열 번** — 삼각형·드로우콜·DOM·메모리가 새는가
      ④ 히트맵 값이 **엔진 값과 같은가** — 화면이 들고 있는 값 vs `io.light.dliAt`
-        ⚠ 다르면 화면이 거짓말하는 것이다.
+        ⚠ 다르면 화면이 거짓말하는 것이다. **칸 전부**를 견준다(2026-08-17).
      ⑤ 창턱(밝은 자리)과 구석(어두운 자리)이 **화면에서 실제로 다른 색인가**
         값이 아니라 **찍힌 사진의 화소**로 본다. 값만 보면 「칠하는 코드가 죽어 있어도」 통과한다.
      ⑥ 예외 0건
+     ⑦ 배치 격자 눈금이 히트맵 위에 남는가   ⑧ 시점·줌을 따라오는가
+     ⑨ 칸마다 「그 칸의 표면」에서 재는가     ⑩ 가구를 옮기면 따라오나
+     ⑪ ★★ **창턱·3단 선반·책상** — 상판마다 **몇 칸이 나와야 맞는지**를 먼저 셈하고 견준다
+        (2026-08-17 박사님이 화면 보고 짚으신 셋. §⑪ 머리말을 읽어라)
 
    ★ 값은 어디서 오나 — `window.__io.light.dliAt`. 게임이 화분 자리를 판정할 때 부르는
      **바로 그 함수**다. 그래서 ④ 는 「같은 함수를 두 번 부르면 같은 값이 나오나」가 아니라
@@ -153,6 +157,11 @@ const INSTALL = `(() => {
     const s = rv.surfaceTopAt(x, z);
     return io.light.dliAt({ x, y: s.y, z }, { ...window.__lightCond, occIdx: s.occIdx }).dli;
   };
+  /* ★★ 2026-08-17 — 위에서 쏘는 길로는 **아랫단을 영영 못 찾는다.** 3단 선반 아래 두 단·
+     창턱은 광선이 집는 면이 아니다. 그래서 칸이 들고 있는 **제 y·제 occIdx** 로 묻는다.
+     ⚠ 이게 더 엄한 대조다 — 화면이 y 를 틀리게 잡았으면 여기서 바로 갈린다. */
+  window.__dliCell = c => io.light.dliAt({ x: c.x, y: c.y, z: c.z },
+                                         { ...window.__lightCond, occIdx: c.occIdx }).dli;
   window.__heat = {
     set: on => rv.setLightHeatmap(on, window.__lightCond),
     refresh: () => rv.refreshLightHeatmap(),
@@ -259,10 +268,13 @@ console.log(`  칸 간격 ${L.cellPx}px · ${L.step}칸마다 · 라벨 ${L.labe
 ok('글자 높이 ≥ 10px', L.textPx >= 10, `${L.textPx}px (font ${L.fontPx}px)`);
 ok('숫자를 실제로 그렸다 (≥ 8개)', L.drawn >= 8, `${L.drawn}개`);
 ok('다 안 적는다 (칸 수보다 훨씬 적다)', L.labels < st.cells, `${L.labels} / ${st.cells}칸`);
-/* ⚠ 규칙(「3칸마다」)이 아니라 **화면에서 제일 붙은 둘**을 잰다. 규칙만 보면 가구 위에
-   따로 찍는 숫자가 격자 숫자와 겹친 것을 못 잡는다(첫 판에서 0.63 위에 0.58 이 겹쳤다). */
-ok('숫자끼리 안 겹친다 (제일 붙은 둘 ≥ 글자폭)',
-   L.closestPx >= L.textWidthPx, `제일 붙은 둘 ${L.closestPx}px ≥ 글자폭 ${L.textWidthPx}px`);
+/* ⚠ 규칙(「3칸마다」)이 아니라 **화면에서 그린 것**을 잰다. 규칙만 보면 가구 위에
+   따로 찍는 숫자가 격자 숫자와 겹친 것을 못 잡는다(첫 판에서 0.63 위에 0.58 이 겹쳤다).
+   ★★ 2026-08-17 — **원 거리 대신 글자 네모끼리 겹친 쌍을 센다.** 3단 선반 숫자를 화면에서
+     세로로 쌓게 되면서(단마다 한 줄 · 15px 간격) 원 거리는 늘 글자 폭보다 좁게 나온다.
+     글자는 28×11 짜리 네모지 원이 아니다 — 줄로 쌓은 것은 겹친 것이 아니다. */
+ok('숫자끼리 안 겹친다 (글자 네모가 겹친 쌍 0)',
+   L.overlapPairs === 0, `겹친 쌍 ${L.overlapPairs} · 제일 붙은 둘 ${L.closestPx}px · 글자폭 ${L.textWidthPx}px`);
 ok('머리글이 단위를 말한다', /DLI/.test(await page.eval(
    `document.querySelector('.byeot-lightgrid > div').textContent`)), '');
 
@@ -307,26 +319,31 @@ ok('어두운 쪽이 파란 끝이다 (B > R)', pLo[2] > pLo[0], `B ${pLo[2]} > 
 /* ── ④ 화면 값 == 엔진 값인가 ─────────────────────────────────────
    ★ **가구 위 점으로도 대조한다** — 이번 변경의 핵심이 거기다. 바닥 점만 맞춰 보면
      높이 지도가 통째로 틀려도 통과한다. */
-console.log('\n④ 화면이 들고 있는 값이 엔진 값과 같은가');
+/* ★★ 2026-08-17 — **20점이 아니라 칸 전부**를 대조한다. 창턱 한 칸·3단 아랫단 여섯 칸·
+   책상 가장자리 두 칸처럼 **딱 한 칸씩만 있는 자리**가 이번 고침의 핵심인데, 20점을
+   골라 뽑으면 그 칸들이 표본에 안 들어올 수 있다. 칸이 삼백 몇 개뿐이라 다 재도 싸다. */
+console.log('\n④ 화면이 들고 있는 값이 엔진 값과 같은가 — **칸 전부**');
 const truth = await page.eval(`(() => {
   const all = window.__heat.cells();
-  const floor = all.filter(c => !c.onUid), furn = all.filter(c => c.onUid);
-  const take = (arr, n) => { const out = [], st = Math.max(1, Math.floor(arr.length / n));
-    for (let k = 0; k < arr.length && out.length < n; k += st) out.push(arr[k]); return out; };
-  return [...take(floor, 10), ...take(furn, 10)].map(p => {
-    const engine = window.__dliAt(p.x, p.z);
-    return { i: p.i, j: p.j, x: p.x, y: p.y, z: p.z, onUid: p.onUid,
+  return all.map(p => {
+    const engine = window.__dliCell(p);
+    return { i: p.i, j: p.j, k: p.k, x: p.x, y: p.y, z: p.z, onUid: p.onUid, tier: p.tier,
              screen: p.value, engine, d: Math.abs(p.value - engine) };
   });
 })()`);
 const worst = truth.reduce((a, b) => (b.d > a.d ? b : a), truth[0]);
 const onFurn = truth.filter(t => t.onUid);
-for (const t of [...truth.filter(t => !t.onUid).slice(0, 3), ...onFurn.slice(0, 4)])
-  console.log(`  (${String(t.i).padStart(2)},${String(t.j).padStart(2)}) y=${t.y.toFixed(3)} ` +
-              `${t.onUid ? '[' + t.onUid + ']' : '[바닥]'} 화면 ${t.screen.toFixed(4)} · 엔진 ${t.engine.toFixed(4)}`);
-ok(`엔진과 한 톨도 안 다르다 (바닥 ${truth.length - onFurn.length}점 + 가구 위 ${onFurn.length}점)`,
+const onTier = truth.filter(t => t.tier);
+const pick = [...truth.filter(t => !t.onUid).slice(0, 2),
+              ...onTier.filter(t => /sill/.test(t.tier)),
+              ...onTier.filter(t => /etagere/.test(t.tier)).slice(0, 3),
+              ...onTier.filter(t => /desk/.test(t.tier)).slice(0, 2)];
+for (const t of pick)
+  console.log(`  ${t.tier ? '[' + t.tier + ']' : '(' + t.i + ',' + t.j + ') ' + (t.onUid ? '[' + t.onUid + ']' : '[바닥]')}` +
+              ` y=${t.y.toFixed(3)} 화면 ${t.screen.toFixed(4)} · 엔진 ${t.engine.toFixed(4)}`);
+ok(`엔진과 한 톨도 안 다르다 (칸 ${truth.length}개 전부 · 그중 가구 위 ${onFurn.length})`,
    worst.d < 1e-9, `최대 차이 ${worst.d.toExponential(2)}`);
-ok('가구 위 점으로도 대조했다', onFurn.length >= 5, `${onFurn.length}점`);
+ok('상판 칸(창턱·선반 아랫단 포함)으로도 대조했다', onTier.length >= 5, `${onTier.length}칸`);
 /* 글자가 값을 제대로 줄였나 — 반올림 오차를 넘어서면 안 된다 */
 const lab = await page.eval(`window.__heat.labels()`);
 const badText = lab.filter(t => Math.abs(parseFloat(t.text) - t.value) > 0.06);
@@ -381,7 +398,7 @@ console.log(`  🔬 끈 화면 vs 켜기 전 화면 — 문턱8 ${diffPct(ctrlB.
 ok('끈 상태에서는 숫자가 없다',
    (await page.eval(`window.__heat.stats().labels.visible`)) === false, '');
 ok('끈 상태에서는 판이 안 보인다',
-   (await page.eval(`(()=>{ let n=0; window.__rv.three.scene.traverse(o=>{ if(o.userData&&o.userData.heatSlot&&o.visible) n++; }); return n; })()`)) === 0, '');
+   (await page.eval(`(()=>{ let n=0; window.__rv.three.scene.traverse(o=>{ if(o.userData&&Number.isInteger(o.userData.heatCount)&&o.visible) n++; }); return n; })()`)) === 0, '');
 
 /* ── ⑦ 「그리드 살리면서」 — 배치 격자가 히트맵에 안 묻히나 ───────────
    박사님 지시의 절반이 이것이다. 히트맵을 배치 격자 **아래**(y 0.0022 · renderOrder 1)에
@@ -404,10 +421,11 @@ console.log(`  🔬 대조군(같은 상태 두 장) ${gCtrl}% · 격자를 켜�
 ok('히트맵 위에서도 격자 눈금이 보인다 (대조군의 2배 넘게 바뀐다)',
    dGrid > Math.max(1.5, gCtrl * 2), `${dGrid}% (대조군 ${gCtrl}%)`);
 const gs = await page.eval(`window.__rv.grid()`);
-const hcells = await page.eval(`window.__heat.stats().cells`);
+const hst = await page.eval(`window.__heat.stats()`);
 console.log(`  격자 ${gs.room.cols}×${gs.room.rows}칸 · 한 칸 ${gs.cell}m · 그리는 칸 ${gs.room.cells} · ` +
-            `히트맵 칸 ${hcells}`);
-ok('히트맵 칸 = 배치 격자가 그리는 칸', hcells === gs.room.cells, `${hcells} = ${gs.room.cells}`);
+            `히트맵 바닥 칸 ${hst.floorCells} + 상판 칸 ${hst.surfaceCells} = ${hst.cells}`);
+ok('히트맵 바닥 칸 = 배치 격자가 그리는 칸',
+   hst.floorCells === gs.room.cells, `${hst.floorCells} = ${gs.room.cells}`);
 await page.eval(`window.__rv.showGrid(false)`);
 
 /* ── ⑨ ★ 높이 지도 — 칸마다 「그 칸의 표면」에서 재는가 ────────────
@@ -421,7 +439,8 @@ ok('가구 위 칸이 있다', hm.onFurniture >= 8, `${hm.onFurniture}칸`);
 ok('표면 높이가 바닥이 아니다', hm.yMax > 0.3, `${hm.yMax}m`);
 
 const pairs = await page.eval(`(() => {
-  const all = window.__heat.cells();
+  /* ⚠ **바닥 격자 칸만** 짝을 짓는다 — 상판 칸은 (i,j) 가 없다(제 눈금에 산다). */
+  const all = window.__heat.cells().filter(c => c.j !== null);
   const key = (i, j) => i + ',' + j;
   const m = new Map(all.map(c => [key(c.i, c.j), c]));
   const out = [];
@@ -464,6 +483,74 @@ ok('가구 위끼리도 밝기가 갈린다 (제일 밝은 가구 ≥ 제일 어
 const hshot = await shot('surface');
 console.log(`  📷 표면 히트맵 ${hshot.file} 색 ${hshot.colors}가지`);
 
+/* ── ⑪ ★★ 박사님이 짚으신 세 자리 (2026-08-17) ────────────────────
+   *"창턱에 꺼는 왜 안 나오는 거야?"* · *"3단에는 3단에 다 나오도록"* ·
+   *"책상은 2*5인데 빛은 2*4로 나와"*
+   ⚠ 「칸이 몇 개다」만 세면 안 된다. **몇 칸이어야 맞는지**를 상판 크기와 눈금(0.25m)으로
+     먼저 셈하고, 그 수와 견준다. 화면이 낸 수를 그대로 받아 적으면 그건 재는 게 아니다. */
+console.log('\n⑪ 창턱 · 3단 · 책상 — 상판마다 몇 칸이 나와야 맞나');
+const spots = await page.eval(`(() => {
+  const rv = window.__rv;
+  const cells = rv.lightHeatmapCells();
+  const lab = rv.lightHeatmapLabels();
+  const byTier = new Map();
+  for (const c of cells) {
+    if (!c.tier) continue;
+    if (!byTier.has(c.tier)) byTier.set(c.tier, { tier: c.tier, uid: c.onUid, y: c.y,
+                                                  n: 0, cw: c.cw, cd: c.cd, vmin: 9e9, vmax: -9e9 });
+    const g = byTier.get(c.tier);
+    g.n++; g.vmin = Math.min(g.vmin, c.value); g.vmax = Math.max(g.vmax, c.value);
+  }
+  const labT = new Set(lab.filter(l => l.tier).map(l => l.tier));
+  const labN = new Map();
+  for (const l of lab) if (l.tier) labN.set(l.tier, (labN.get(l.tier) || 0) + 1);
+  const out = [...byTier.values()].sort((a, b) => b.vmax - a.vmax).map(g => ({
+    ...g, vmin: +g.vmin.toFixed(2), vmax: +g.vmax.toFixed(2),
+    /* 이 단의 상판이 얼마짜리인가 = 칸 수 × 칸 크기 (칸이 면을 딱 채운다 · §surfaceAxis) */
+    rectW: +(g.cw * 0).toFixed(3),
+    labels: labN.get(g.tier) || 0
+  }));
+  return { tiers: out, floorCells: cells.filter(c => c.j !== null).length,
+           surfCells: cells.filter(c => c.j === null).length, labeledTiers: labT.size };
+})()`);
+/* 상판 크기는 방 데이터가 아니라 **화면이 잰 칸**에서 되뽑는다 — 다른 창이 창턱 받침의
+   깊이를 바꾸는 중이라 숫자를 박아 두면 그날로 거짓이 된다(지시문 §쓰기 영역). */
+console.log('  단(tier)마다 — 칸 수 · 칸 크기 · 값 · 숫자 개수');
+for (const t of spots.tiers)
+  console.log(`    ${t.tier.padEnd(26)} ${String(t.n).padStart(2)}칸 ` +
+              `${t.cw}×${t.cd}m (상판 ${(t.n * t.cw * t.cd).toFixed(3)}㎡) ` +
+              `DLI ${t.vmin}~${t.vmax} · 숫자 ${t.labels}개`);
+const tierOf = re => spots.tiers.filter(t => re.test(t.tier));
+const sill = tierOf(/sill/), eta = tierOf(/etagere/), desk = tierOf(/desk/);
+ok('① 창턱에 칸이 생겼다', sill.length === 1 && sill[0].n >= 1,
+   sill.length ? `${sill[0].n}칸 · DLI ${sill[0].vmax}` : '창턱 단이 없다');
+ok('① 창턱에 숫자가 찍힌다', sill.length === 1 && sill[0].labels >= 1,
+   sill.length ? `${sill[0].labels}개` : '—');
+ok('② 3단 선반이 **세 단** 다 나온다', eta.length === 3, `${eta.length}단`);
+ok('② 3단 선반 **세 단 다** 숫자가 찍힌다', eta.length === 3 && eta.every(t => t.labels >= 1),
+   eta.map(t => `y${t.y}:${t.labels}개`).join(' · '));
+ok('② 단마다 값이 다르다 (위가 더 밝다)',
+   eta.length === 3 && eta[0].vmax > eta[2].vmax + 0.05,
+   eta.map(t => `y${t.y}=${t.vmax}`).join(' · '));
+/* 책상 — 상판 1.25×0.50 을 0.25 눈금으로 나누면 5×2 = 10칸이다. 그 수와 견준다. */
+const deskN = desk.length ? desk[0].n : 0;
+const deskCw = desk.length ? desk[0].cw : 0, deskCd = desk.length ? desk[0].cd : 0;
+ok('③ 책상이 5×2 = 10칸이다', deskN === 10,
+   `${deskN}칸 (${deskCw}×${deskCd}m → 상판 ${(deskN * deskCw * deskCd).toFixed(3)}㎡)`);
+/* ⚠ 같은 병이 다른 가구에도 있나 — **전부 센다.**
+   ★ 무엇으로 재나 — `surfaceAxis` 는 면을 `n = round(면길이/0.25)` 로 나눠 **남김없이**
+     덮는다. 그러면 칸 한 변은 반드시 `면길이/n ∈ (0.125, 0.375]` 안에 든다(0.375 를 넘으면
+     n 이 하나 더 컸을 것이고, 0.125 이하면 하나 더 작았을 것이다). 이 범위를 벗어난 칸이
+     있으면 그 상판은 **덜 덮였거나 넘쳐 덮인** 것이다 — 책상에서 났던 그 병이다.
+   ⚠ 「0.25 여야 한다」로 재면 안 된다 — 창턱(0.36)·협탁(0.21×0.36)처럼 면이 한 칸보다
+     작거나 어중간한 상판은 칸이 0.25 가 아니고, 그래도 **맞다.** */
+ok('상판 칸이 상판을 남김없이 덮는다 (칸 한 변이 0.125~0.375m 안이다)',
+   spots.tiers.every(t => t.n >= 1 && t.cw > 0.125 - 1e-9 && t.cw <= 0.375 + 1e-9
+                                   && t.cd > 0.125 - 1e-9 && t.cd <= 0.375 + 1e-9),
+   spots.tiers.map(t => `${t.tier.split('@')[0].replace('banjiha-', '')} ${t.n}칸 ${t.cw}×${t.cd}`).join(' · '));
+console.log(`  바닥 격자 칸 ${spots.floorCells} + 상판 칸 ${spots.surfCells} · ` +
+            `숫자가 붙은 단 ${spots.labeledTiers}/${spots.tiers.length}`);
+
 /* ── ⑩ ★ 가구를 옮기면 따라오나 ───────────────────────────────────
    박사님: *"가구 이동하면 이동한 거에 맞춰서 보여주고."*
    두 가지가 같이 바뀌어야 한다 — ⓐ 높이 지도(있던 칸이 바닥이 된다) ⓑ 그림자. */
@@ -472,11 +559,12 @@ const mv = await page.eval(`(async () => {
   const rv = window.__rv;
   /* 칸을 제일 많이 내는 가구를 고른다 — 옮기면 표가 크게 움직인다 */
   const cnt = new Map();
-  for (const c of rv.lightHeatmapCells()) if (c.onUid) cnt.set(c.onUid, (cnt.get(c.onUid) || 0) + 1);
+  for (const c of rv.lightHeatmapCells())
+    if (c.onUid && c.j !== null) cnt.set(c.onUid, (cnt.get(c.onUid) || 0) + 1);
   const uid = [...cnt.entries()].sort((a, b) => b[1] - a[1])[0][0];
   const f = rv.furniture().find(x => x.uid === uid);
   if (!f) return { err: '옮길 수 있는 가구 목록에 없습니다: ' + uid };
-  const before = rv.lightHeatmapCells().filter(c => c.onUid === uid)
+  const before = rv.lightHeatmapCells().filter(c => c.onUid === uid && c.j !== null)
                    .map(c => ({ i: c.i, j: c.j, x: c.x, y: c.y, z: c.z, v: c.value }));
   /* 갈 수 있는 자리를 찾는다 — 방을 훑어 furnitureFit 이 ok 라 하고 지금 자리에서 먼 곳 */
   const b = rv.roomSize();
@@ -493,7 +581,7 @@ const mv = await page.eval(`(async () => {
   await rv.commitFurnitureAt(uid, to);
   const ms = performance.now() - t0;
   const after = rv.lightHeatmapCells();
-  const amap = new Map(after.map(c => [c.i + ',' + c.j, c]));
+  const amap = new Map(after.filter(c => c.j !== null).map(c => [c.i + ',' + c.j, c]));
   const moved = before.map(p => { const a = amap.get(p.i + ',' + p.j) || {};
     return { i: p.i, j: p.j, x: p.x, y0: p.y, y1: a.y, v0: p.v, v1: a.value, on1: a.onUid || null }; });
   const nowOn = after.filter(c => c.onUid === uid).length;
@@ -527,7 +615,8 @@ console.log('\n⑧ 시점을 움직여도 따라오나');
 await page.eval(`window.__heat.set(true)`); await sleep(500);
 const camA = await page.eval(`(()=>{ const s = window.__heat.stats().labels;
   const e = document.querySelector('.byeot-lightgrid > span');
-  return { step: s.step, cellPx: s.cellPx, drawn: s.drawn, tf: e ? e.style.transform : '' }; })()`);
+  return { step: s.step, cellPx: s.cellPx, drawn: s.drawn, tiers: s.tiersLabeled,
+           overlap: s.overlapPairs, tf: e ? e.style.transform : '' }; })()`);
 await page.eval(`(()=>{ const cv = document.getElementById('roomCanvas'), b = cv.getBoundingClientRect();
   for (let i = 0; i < 14; i++) cv.dispatchEvent(new WheelEvent('wheel', { deltaY: -120, bubbles: true,
     cancelable: true, clientX: b.left + b.width / 2, clientY: b.top + b.height / 2 }));
@@ -535,9 +624,13 @@ await page.eval(`(()=>{ const cv = document.getElementById('roomCanvas'), b = cv
 await sleep(1600);
 const camB = await page.eval(`(()=>{ const s = window.__heat.stats().labels;
   const e = document.querySelector('.byeot-lightgrid > span');
-  return { step: s.step, cellPx: s.cellPx, drawn: s.drawn, tf: e ? e.style.transform : '' }; })()`);
-console.log(`  당기기 전 ${camA.cellPx}px/칸 · ${camA.step}칸마다 · ${camA.drawn}개`);
-console.log(`  당긴 뒤   ${camB.cellPx}px/칸 · ${camB.step}칸마다 · ${camB.drawn}개`);
+  return { step: s.step, cellPx: s.cellPx, drawn: s.drawn, tiers: s.tiersLabeled,
+           overlap: s.overlapPairs, tf: e ? e.style.transform : '' }; })()`);
+console.log(`  당기기 전 ${camA.cellPx}px/칸 · ${camA.step}칸마다 · ${camA.drawn}개 · 숫자 붙은 단 ${camA.tiers} · 겹친 쌍 ${camA.overlap}`);
+console.log(`  당긴 뒤   ${camB.cellPx}px/칸 · ${camB.step}칸마다 · ${camB.drawn}개 · 숫자 붙은 단 ${camB.tiers} · 겹친 쌍 ${camB.overlap}`);
+ok('당겨도 숫자가 안 겹친다', camB.overlap === 0, `겹친 쌍 ${camB.overlap}`);
+ok('당기면 단이 더 많이 적힌다 (또는 그대로)', camB.tiers >= camA.tiers,
+   `${camA.tiers} → ${camB.tiers}단`);
 ok('숫자가 시점을 따라 움직였다', camA.tf !== camB.tf, `${camA.tf} → ${camB.tf}`);
 ok('당기면 칸이 넓어진다', camB.cellPx > camA.cellPx * 1.15, `${camA.cellPx} → ${camB.cellPx}px`);
 ok('넓어지면 더 촘촘히 적는다', camB.step <= camA.step, `${camA.step} → ${camB.step}칸마다`);

@@ -6282,7 +6282,11 @@ export async function createRoomView(canvas, opts = {}) {
   const _srfRay = new THREE.Raycaster();
   const _srfDown = new THREE.Vector3(0, -1, 0);
   const _srfFrom = new THREE.Vector3();
-  function surfaceTopAt(x, z) {
+  /* skip(uid, y) 를 주면 그 면은 **없는 셈 치고 그 아래**를 집는다.
+     ⚠ 왜 필요한가 — 상판을 제 눈금으로 따로 그리게 되면서(§상판 칸) 바닥 격자가 같은
+       상판을 또 집으면 **어긋난 두 벌**이 겹친다. 그렇다고 그 칸을 아예 빼면 가구
+       발자국 둘레에 빈 띠가 생긴다. ⇒ 그 면을 지나쳐 **그 아래 면**을 집는다. */
+  function surfaceTopAt(x, z, skip) {
     const flat = { y: 0, onUid: null, occIdx: null };
     if (!built || !built.furniture) return flat;
     const b = roomBox();
@@ -6302,10 +6306,71 @@ export async function createRoomView(canvas, opts = {}) {
       const sz = own.userData.size;
       /* 러그처럼 **납작하고 또 바닥 높이인 것** 위는 그냥 바닥이다(surfaceAt 과 같은 규약) */
       if (sz && sz.h <= 0.06 && h.point.y < FLOOR_Y) continue;
-      return { y: +h.point.y.toFixed(4), onUid: own.userData.uid || null,
+      const uid = own.userData.uid || null;
+      if (typeof skip === 'function' && skip(uid, h.point.y)) continue;
+      return { y: +h.point.y.toFixed(4), onUid: uid,
                occIdx: Number.isInteger(own.userData.occIdx) ? own.userData.occIdx : null };
     }
     return flat;
+  }
+
+  /* ============================================================
+     ★★ 상판 칸 — **화분을 놓을 때 보이는 그 칸에** 값을 낸다 (2026-08-17)
+     ------------------------------------------------------------
+     박사님이 화면을 돌려 보시고 셋을 짚으셨다.
+       *"창턱에 꺼는 왜 안 나오는 거야?"* · *"3단에는 3단에 다 나오도록 해 줘."*
+       *"책상은 2*5인데 빛은 2*4로 나와."*
+     셋 다 **뿌리가 하나**다 — 바닥 격자는 **방 원점**에 물려 있는데 화분이 앉는 칸은
+     **그 상판 한가운데**에 물려 있다(§surfaceAxis). 그래서 재서 확인한 것:
+       창턱  받침 윗면이 z −2.07~−1.83 인데 바닥 격자 뒷끝이 −1.875, 첫 줄 한가운데가
+             −1.75 다 ⇒ **창턱을 지나는 칸 한가운데가 없다.** 못 잰 게 아니라 **잴 자리가 없었다.**
+       3단   한 칸(i,j)에 값이 하나뿐이라 위에서 쏜 광선이 집는 **맨 윗단만** 남았다.
+       책상  상판 칸 x 0.80~1.80 · z −1.625/−1.375 ↔ 바닥 격자 x 0.75~1.75 · z −1.75/−1.50/−1.25.
+             0.05m·0.125m 어긋나 5×2 가 5×3 으로 번지고 오른쪽 5cm 가 샜다.
+
+     ⇒ 상판은 **제 눈금으로** 그린다. 그 눈금을 여기서 새로 짓지 않는다 —
+       `collectTierRects()` + `cellsOfRect()` 는 화분을 끌 때 노란 칸을 까는 **바로 그 둘**이다
+       (§guideCells · snapErr 0 이 그 둘로 보장된다). 두 벌로 지으면 반드시 어긋난다.
+       ⚠ `headroom.js §tiersFromSlots` 도 「단을 슬롯 y 로 되뽑는」 같은 일을 하지만 그쪽은
+         THREE 없는 Node 쪽 자다(상판 **넓이**를 화분 지름으로 어림한다). 방뷰에는 광선으로
+         캔 **진짜 상판 사각형**이 이미 있으므로 여기서는 그것을 쓴다.
+
+     ★ 칸을 나눌 때 화분 지름을 안 넘긴다(`cellsOfRect(rect)` 에 potD 없이). 끌고 있는
+       물건마다 칸이 달라지는 것은 **놓을 때** 얘기고, 빛 분포는 물건과 무관해야 한다.
+       그러면 n = round(면길이/0.25) 라 책상 5×2 · 서랍장 4×2 · 3단 선반 3×1 · 창턱 1×1 이다.
+     ★ 아랫단은 위에서 광선을 쏘아서는 **영영 못 찾는다.** 그래서 값도 광선이 아니라
+       **그 단의 y 와 그 가구의 occIdx** 로 엔진에 직접 묻는다.
+  ============================================================ */
+  let heatTiers = new Map();          // uid → [단 높이…]  (바닥 격자가 「이건 상판이 그린다」를 아는 자)
+  function heatTierPainted(uid, y) {
+    const ys = uid ? heatTiers.get(uid) : null;
+    if (!ys) return false;
+    for (const t of ys) if (Math.abs(t - y) <= 0.02) return true;
+    return false;
+  }
+  function heatSurfaceCells(opt) {
+    heatTiers = new Map();
+    if (!built || !O.lightEngine || typeof O.lightEngine.dliAt !== 'function') return [];
+    if (!tierRects) tierRects = collectTierRects();
+    const c = { weather: opt.weather || 'clear', season: opt.season || 'summer',
+                lampCount: opt.lampCount | 0,
+                litHours: opt.litHours == null ? 12 : opt.litHours };
+    const lift = Number.isFinite(opt.lift) ? opt.lift : 0;     // 기본 0 — §heatProbe 의 ⚠ 를 읽어라
+    const out = [];
+    for (const t of tierRects) {
+      const u = t.own.userData || {};
+      const uid = u.uid || null;
+      const occIdx = Number.isInteger(u.occIdx) ? u.occIdx : null;
+      const tier = `${uid || 'x'}@${t.y.toFixed(3)}`;
+      if (uid) { if (!heatTiers.has(uid)) heatTiers.set(uid, []); heatTiers.get(uid).push(t.y); }
+      for (const cl of cellsOfRect(t.rect)) {
+        const p = { x: cl.x, y: +(t.y + lift).toFixed(4), z: cl.z };
+        out.push({ x: cl.x, y: t.y, z: cl.z, cw: cl.cw, cd: cl.cd, rot: t.rect.rot || 0,
+                   onUid: uid, occIdx, tier,
+                   value: O.lightEngine.dliAt(p, { ...c, occIdx }).dli });
+      }
+    }
+    return out;
   }
 
   let heatView = null, heatOpt = null;
@@ -6323,10 +6388,12 @@ export async function createRoomView(canvas, opts = {}) {
          정말 잎 높이에서 보고 싶으면 `{ lift: 0.12 }` 로 부르면 되게 손잡이만 남긴다. */
     const lift = Number.isFinite(opt.lift) ? opt.lift : 0;
     return (x, z) => {
-      const s = surfaceTopAt(x, z);
+      /* ★ 상판 칸이 이미 그리는 면은 **지나친다**(§상판 칸). 안 지나치면 방 원점 격자와
+         상판 제 눈금이 어긋난 채로 두 벌 겹쳐 그려진다 — 박사님이 책상에서 보신 그것이다. */
+      const s = surfaceTopAt(x, z, heatTierPainted);
       const p = { x, y: +(s.y + lift).toFixed(4), z };
       return { value: O.lightEngine.dliAt(p, { ...c, occIdx: s.occIdx }).dli,
-               y: s.y, onUid: s.onUid };
+               y: s.y, onUid: s.onUid, occIdx: s.occIdx };
     };
   }
   function heatLabel(opt) {
@@ -6346,6 +6413,8 @@ export async function createRoomView(canvas, opts = {}) {
     const extra = opt.extra || heatLabel(opt);
     if (!heatView) heatView = attachLightHeatmap(view, {
       canvas, probeAt, unit, extra,
+      /* ★ 상판 칸 — **바닥 격자보다 먼저** 잰다(heatTiers 를 채워야 바닥이 비켜 준다) */
+      surfaceCells: () => heatSurfaceCells(heatOpt || {}),
       /* 벽 속 칸은 안 칠한다 — 배치 격자가 안 그리는 그 칸이다(§gridSpan) */
       keep: (i, j) => gridSpan().at(i, j),
       captionPos: opt.captionPos, fontPx: opt.fontPx, minGapPx: opt.minGapPx
