@@ -544,7 +544,11 @@ function play(opt = {}) {
 
     rows.push({ day: S.day, tday: ts.day, season: seasonAt(ts, ts.day),
                 seasonDay: seasonDayAt(ts, ts.day), cashWon: ts.cashWon,
-                bankrupt: ts.bankrupt, leaves: io.growth.leafStats() });
+                bankrupt: ts.bankrupt, leaves: io.growth.leafStats(),
+                /* ⚠ 2026-08-16 — `leafStats().growthDays` 와 `growthDays()` 가 **같은 값인지**
+                   확인하려고 둘 다 적는다. 「잎 3장 = 유효 70일」이 나왔는데 생장 엔진은
+                   유효 70일이면 잎 2장이라 한다(씨앗 일곱 개 전부 같다). 둘 중 하나가 거짓말이다. */
+                gd: io.growth.growthDays(), cal: io.growth.calendarDay() });
     if (ts.movedOut) break;
   }
   const last = rows[rows.length - 1];
@@ -1371,8 +1375,8 @@ check('G-2c ★세 경로가 여름을 넘겨 끝난다 — 가을·식물등·�
        즉 「튜토 0일 → 1일」 사이에 **달력은 서른 날 넘게 흐른다.** 튜토일만 보면
        하루 만에 잎이 3장이 된 것처럼 보인다. ⇒ **둘을 같이 안 찍으면 반드시 헛짚는다.** */
     info(`  ⤷ ★잎이 언제 났나 — ` + [...seen.entries()].sort((a, b) => a[0] - b[0])
-      .map(([n, row]) => `${n}장:달력${row.day}일/튜토${row.tday}일(유효 ${row.leaves.growthDays}일` +
-        `·무늬 ${row.leaves.variegatedLeaves}장)`).join(' → '));
+      .map(([n, row]) => `${n}장:달력${row.day}일/튜토${row.tday}일(leafStats.growthDays ${row.leaves.growthDays}` +
+        `·growthDays() ${row.gd}·calendarDay() ${row.cal}·무늬 ${row.leaves.variegatedLeaves}장)`).join(' → '));
     const lastRow = one.rows[one.rows.length - 1];
     info(`  ⤷ 마지막 날 — 달력 ${lastRow.day}일 / 튜토 ${lastRow.tday}일 ` +
          `⇒ 「튜토 33일」은 **달력 ${lastRow.day}일**이다`);
