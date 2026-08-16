@@ -90,18 +90,39 @@ await page.eval(`(()=>{ const rv=window.__rv, c=document.getElementById('roomCan
 await sleep(1200);
 await page.eval(`(()=>{ const S=window.__S(); S.shop.stock.bean_seed = 9; })()`, false);
 
-for (let i = 0; i < 40; i++) {
-  if (await page.eval(`window.__S().pots.length > 0`)) break;
-  if (await clickIfShown('waterCrop')) { await waitAct(); await sleep(400); await skipTalk(); }
-  if (await clickIfShown('harvestCrop')) { await waitAct(); await sleep(900); await skipTalk(); }
-  /* 거두면 바로 다시 심는다 — 그래야 다음 회전이 돌고 수확 횟수가 차간다 */
-  if (await page.eval(`window.__S().firstPlay.beansprout.harvested`)) {
-    await page.eval(`(()=>{ const b=document.getElementById('resow'); if (b) b.disabled=false; b.click(); })()`, false);
-    await waitAct(); await sleep(700); await skipTalk();
+/* ★★ 2026-08-16 — **이 자가 낡아 있었다.** 40일을 굴려도 `beansprout.ageDays` 가 **0**이었다
+   (재서 잡았다). 까닭: 2026-08-16 에 시루가 **놓기 → 심기 두 걸음**이 됐는데(`76d3145` —
+   "씨앗이 자동으로 들어감 → 화분만 놓이게") 이 자는 놓기만 하고 **심기를 한 번도 안 눌렀다.**
+   ⇒ 콩나물이 영영 안 자라고, 그래서 수확도 몬스테라 도착도 없었다.
+   ⚠ 이건 코드 고장이 아니라 **재는 자가 옛 세상을 재고 있던 것**이다(START-HERE §2.9-④).
+     [심기]는 이제 **놓인 시루 줄**에 붙는다(`#siruList [data-act="plant"]`). */
+/* ★★ 시루 줄의 단추를 누른다 — `#siruList [data-act=…]`.
+   아래 버튼(`#waterCrop`·`#harvestCrop`)은 **말풍선이 같은 말을 하면 감춰진다**(§markSays)
+   므로 그것만 누르는 자는 아무것도 못 누른다. 줄 단추는 늘 거기 있다. */
+const rowAct = async (act) => {
+  let n = 0;
+  for (let k = 0; k < 8; k++) {
+    const hit = await page.eval(`(()=>{ const b=[...document.querySelectorAll(
+      '#siruList button[data-act="${act}"]')].find(x=>!x.disabled); if(!b) return false; b.click(); return true; })()`);
+    if (!hit) break;
+    n++; await waitAct(); await sleep(500); await skipTalk();
   }
+  return n;
+};
+await page.eval(`window.__byeotSheet.open('plants')`, false); await sleep(500);
+
+for (let i = 0; i < 60; i++) {
+  if (await page.eval(`window.__S().pots.length > 0`)) break;
+  /* 손이 모자라 못 누르는 것은 이 검사의 대상이 아니다 — 재려는 것은 삽수 배선이다 */
+  await page.eval(`(()=>{const S=window.__S(); if(S.stamina) S.stamina.usedToday=0;})()`, false);
+  await rowAct('plant');              /* 놓기·심기 두 걸음(2026-08-16) — 심기가 따로다 */
+  await rowAct('water');
+  await rowAct('harvest');
+  await rowAct('sow');                /* 거둔 시루를 그 자리에 다시 심는다 */
   await click('next'); await sleep(1000); await skipTalk();
   if (process.env.BYEOT_DEBUG) console.log('  boot', i, await page.eval(`(()=>{const S=window.__S();const b=S.firstPlay.beansprout;
-    return JSON.stringify({d:S.day,age:b.ageDays,n:b.harvestCount,pots:S.pots.length,lock:document.body.dataset.hardLock||''})})()`));
+    const one=(b.pots||[])[0]||{};
+    return JSON.stringify({d:S.day,age:one.ageDays,sown:one.sown,n:b.harvestCount,pots:S.pots.length,lock:document.body.dataset.hardLock||''})})()`));
 }
 const arrived = await page.eval(`(()=>{ const S=window.__S(); return { day:S.day, pots:S.pots.length,
   completed: !!(S.firstPlay && S.firstPlay.completed) }; })()`);

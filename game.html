@@ -2513,6 +2513,10 @@ import { catalogList, orderItem, shopStatus, priceOf,
    (날짜를 여기서 다시 세면 화면과 코어가 갈라진다). */
 import { takeCutting, repotCutting, cuttableNow, cutBudgetOf, cutBlockedReason,
          cuttingsOf, cuttingSnapshot, containerItemOf, graceDaysOf, isNoviceMode,
+         /* ★ 2026-08-16 — 삽수도 **끌어서** 놓는다(§cuttingBagHTML). 자리 함수는 화분·시루와 같은 것이다 */
+         setCuttingAt,
+         /* ★ 삽수 카드가 「뿌리내린 자리의 빛」을 말할 때 쓴다 — 말은 코어 것이다 */
+         VARIE_LIGHT_KO,
          CONTAINERS, METHODS } from './src/game/propagation.js';
 import { isFreeSlotId, atFromSlot } from './src/game/place.js';
 /* 식물등 겨누기 — 물리는 io.light 가, 세이브는 이쪽이 맡는다(lampaim-to-plan §1) */
@@ -3604,6 +3608,40 @@ const detail = {
         + (gate.open ? '' : `<p>${gate.reason}</p>`)
     };
   },
+  /* ★★★ 삽수 한 대의 카드 (2026-08-16 · §pickZoom ②).
+     ⚠ 확대창(plant_grow)은 **몬스테라 하나**라 삽수를 못 그린다. 그래서 삽수의 「자세히」는
+       이 카드가 제자리다 — 자란 날·기한·무늬·팔 수 있나가 전부 여기 있다.
+     ⚠ **셈을 새로 안 만든다.** `cuttingSnapshot`(코어)이 낸 것을 적을 뿐이다. */
+  cutting(arg) {
+    const id = arg && arg.id;
+    const c = cuttingsOf(S).find(x => x && x.id === id);
+    if (!c) return { art: CUT_ART.jar, title: '삽수', sub: '못 찾음',
+                     body: '<p>그 삽수를 못 찾았다.</p>' };
+    let v = null; try { v = cuttingSnapshot(S, c); } catch { }
+    const cont = CONTAINERS[c.container] || {};
+    const r2 = (ko, val) => `<div class="row"><span>${ko}</span><b>${val}</b></div>`;
+    const where = c.slotId && !isFreeSlotId(c.slotId) ? slotLabel(c.slotId)
+                : (c.at || c.slotId) ? '방 안' : '가방 — 아직 안 놓았다';
+    let lst = null; try { lst = listingFor(S, c); } catch { }
+    const btns = [];
+    if (!c.at && !c.slotId) btns.push({ ko: '🪴 방에 놓기', primary: true, go: () => startPhonePlaceCut(c.id) });
+    if (v && SELLABLE_CUTTING_STATUS.includes(v.status) && !lst)
+      btns.push({ ko: '📮 중고에 내놓기', go: () => { try { window.__byeotSheet.open('plants'); } catch { } } });
+    return {
+      art: CUT_ART[c.container] || CUT_ART.jar,
+      title: `삽수 ${c.id}`,
+      sub: `${cont.ko || ''} · ${where}`,
+      body: (v ? r2('잎', `${v.leaves}장` + (v.variegatedLeaves ? ` · 무늬 ${v.variegatedLeaves}장` : '')) : '')
+        + (v ? r2('상태', v.statusKo || v.status) : '')
+        + (v ? r2('자란 날', `${v.days}일째`) : '')
+        + (Number.isFinite(c.deadlineDay) ? r2('분갈이 기한', `${Math.max(0, c.deadlineDay - S.day)}일 남음`) : '')
+        + (c.varieLightBand ? r2('뿌리내린 자리', VARIE_LIGHT_KO[c.varieLightBand] || c.varieLightBand) : '')
+        + (lst ? `<p>중고 거래에 올려 두었다 — <b>${lst.won.toLocaleString()}원</b>.</p>` : '')
+        + '<p>삽수는 <b>뿌리를 내려야</b> 팔린다. 새로 나는 잎의 무늬는 '
+        + '<b>놓은 자리의 빛</b>이 정한다 — 밝을수록 무늬가 잘 난다.</p>',
+      btns
+    };
+  },
   monstera() {
     const p = pot0(S);
     if (!p) return { art: './assets/ui/item_monstera.png', title: '몬스테라', sub: '아직 만나지 못함',
@@ -3628,7 +3666,34 @@ const detail = {
         + '<p>이미 자란 개체가 도착한 것이다. <b>밝은 자리</b>라야 새순이 오르고, 어두우면 날짜만 간다.</p>'
         + '<p>흙이 마르면 <b>그날은 세어지지 않는다</b> — 죽지는 않고 날짜만 간다. '
         + '밝고 더운 자리일수록 빨리 마른다.</p>',
-      btns: [{ ko: '자세히 보기', primary: true, go: () => window.__byeotZoom.open() }]
+      /* ★★★ 2026-08-16 — **파는 길과 자르는 길을 이 카드에 놓는다** (박사님:
+           *"식물 상세보기 칸에 해당 식물 당근에 올려 팔기 버튼이 거기 있으면 좋겠어.
+             아니면 식물 클릭하면 그 팝업 탭에 당근에 팔기 · 삽수 버튼이 있으면 좋겠어."*)
+         ══════════════════════════════════════════════════════════════════
+         ⚠ **셈을 여기서 새로 안 만든다.** 값은 `quotePot`(코어)에 묻고, 내놓는 일은
+           아래 §sellPlant 가 쓰는 **바로 그 함수**(`askListPot`)를 부른다 —
+           두 벌로 적으면 한쪽이 낡는다. 오늘 720,000 vs 1,960,000 이 그렇게 갈렸다.
+         ⚠ 못 하는 것은 **왜 못 하는지**를 단추 글자에 적는다. 회색 단추만 세우면
+           「눌러도 아무 일이 없다」가 된다 — 이 저장소의 지병이다. */
+      btns: (() => {
+        const out = [{ ko: '자세히 보기', primary: true, go: () => window.__byeotZoom.open() }];
+        let ls = null; try { ls = io.growth.leafStats && io.growth.leafStats(); } catch { }
+        let listed = null; try { listed = listingFor(S, p); } catch { }
+        let gate = null; try { gate = ls ? marketGate(S, { leaves: ls.leaves }) : null; } catch { }
+        if (listed) {
+          out.push({ ko: `📮 내놓는 중 · ${listed.won.toLocaleString()}원`, go: () => sheetTo('shop') });
+        } else if (gate && gate.open && ls) {
+          let q = null; try { q = quotePot(S, { leaves: ls.leaves, variegatedLeaves: ls.variegatedLeaves }); } catch { }
+          out.push({ ko: q ? `📮 중고에 내놓기 (${q.won.toLocaleString()}원)` : '📮 중고에 내놓기',
+                     go: () => askListPot() });
+        } else if (gate) {
+          out.push({ ko: `📮 ${gate.reason}`, go: () => sheetTo('shop') });
+        }
+        /* ✂ 자르기는 [식물] 탭의 마디 목록이 맡는다 — 어느 마디를 자를지 고르는 일이라
+           단추 하나로 못 줄인다. 여기서는 **그 자리로 데려다준다.** */
+        out.push({ ko: '✂ 삽수 자르기', go: () => sheetTo('plants') });
+        return out;
+      })()
     };
   }
 };
@@ -3703,6 +3768,7 @@ function bindDetail() {
        ⚠ 오류도 안 났다 — 그래서 「눌러도 반응이 없다」로만 보였다. 이 저장소가 제일 자주 앓는 병이다. */
     if (cell.dataset.place === 'beansprout') startPhonePlace();
     else if (isPotPlace(cell.dataset.place)) startPhonePlacePot(cell.dataset.place);
+    else if (isCutPlace(cell.dataset.place)) startPhonePlaceCut(cutIdOf(cell.dataset.place));
   });
   /* 자판으로도 눌린다 — `role="button"` 인 칸은 Enter·Space 를 저절로 안 받는다.
      PC 로 검수할 때 손이 막히면 그것도 고장이다. */
@@ -3713,6 +3779,7 @@ function bindDetail() {
     e.preventDefault();
     if (cell.dataset.place === 'beansprout') startPhonePlace();
     else if (isPotPlace(cell.dataset.place)) startPhonePlacePot(cell.dataset.place);
+    else if (isCutPlace(cell.dataset.place)) startPhonePlaceCut(cutIdOf(cell.dataset.place));
   });
 }
 
@@ -4563,15 +4630,20 @@ const cutKeyOf = (c) => (c && (c.slotId || (c.at ? 'free:' + c.id : null))) || n
    ★ 밝기를 안 따진다: 뿌리내는 동안은 두 갈래 다 빛과 무관하다(propagation.md §3).
      그래서 자리 고르기를 플레이어에게 안 묻는다 — 물으면 의미 없는 선택이 하나 늘 뿐이다.
    ⚠ 자리가 있어야 말풍선이 뜨고 캐릭터가 걸어간다(screenPosOf · actAt 이 열쇠를 푸는 길). */
+/* ★★★ 2026-08-16 — **자를 때 자리를 안 정한다** (박사님: *"삽수 결과가 드래그 안 해도
+     자동으로 화분으로 옮겨져서 추가 화분이 생겨버렸네. **드래그하기 전에 자동배치되면 안 되지.**"*)
+   ══════════════════════════════════════════════════════════════════
+   여기 있던 것: 방의 자리 목록에서 **빈 자리를 아무거나 골라** 거기에 세웠다.
+   ⇒ 자른 순간 방 어딘가에 물건이 하나 늘어 있다. 어디에 놓을지는 **사람이 정하는 것**인데
+     그 손을 게임이 먼저 써 버렸다. 시루·화분은 전부 「가방에 있다가 끌어서 선다」인데
+     삽수만 저 혼자 다른 손버릇이었다.
+   ⇒ 이제 **자리를 null 로 둔다.** `takeCutting` 은 `opt.at` 이 없으면 자리를 안 잡는다
+     (`if (opt.at) setCuttingAt(...)` — 읽고 확인했다). 자리 없는 삽수는 **가방 칸으로 나오고**
+     (§cuttingBagHTML) 끌어다 놓으면 그때 선다 — 시루와 **같은 길**이다.
+   ⚠ `size`·`slots` 는 그대로 넘긴다. 나중에 끌어 놓을 때 되돌림 경로가 그 값을 쓴다. */
 function cutPlaceOpt() {
   const room = io.light.room || {};
-  const slots = room.slots || [];
-  const taken = new Set();
-  const p = pot0(S); if (p && p.slotId) taken.add(p.slotId);
-  const b = S.firstPlay && S.firstPlay.beansprout; if (b && b.slotId) taken.add(b.slotId);
-  for (const c of cuttingsOf(S)) if (c.slotId) taken.add(c.slotId);
-  const s = slots.find(x => x && !taken.has(x.slotId)) || slots[0] || null;
-  return { at: s ? atFromSlot(s) : null, size: room.size, slots, snapDist: 0 };
+  return { at: null, size: room.size, slots: room.slots || [], snapDist: 0 };
 }
 
 /* ① 자르기 — 캐릭터가 모주 앞으로 가서 모션을 하고 난 뒤에 논리가 돈다 */
@@ -4598,8 +4670,12 @@ const reallyCut = guard((nodeId, container) => {
                          log: m => pushLog(S, m) });
   } catch (e) { e.tutorialInput = true; throw e; }
   const m = METHODS[c.method];
+  /* ★ 2026-08-16 — **어디 있는지를 먼저 말한다.** 자리를 안 잡게 바꿨으므로(§cutPlaceOpt)
+     방에는 아무것도 안 생긴다. 그 사실을 안 말하면 「잘렸나?」가 된다 —
+     이 저장소가 제일 자주 앓는 병이 조용한 성공이다. */
   banner('✂ 삽수를 잘랐습니다',
-         CONTAINERS[c.container].ko + ' · ' + m.rootDays + '일 뒤에 뿌리가 납니다' +
+         CONTAINERS[c.container].ko + '에 담아 [가방]에 넣었습니다 — 끌어서 방에 놓으세요 · ' +
+         m.rootDays + '일 뒤에 뿌리가 납니다' +
          (m.canDie ? ' · ' + m.nodeDays + '일 뒤 혹이 나면 분갈이해야 삽니다'
                    : ' · 기한은 없습니다'));
   /* ★ 2026-08-18 — 무늬 삽수를 자른 그 순간에 ⑤가 열려야 「이제 팔아 봐」가 제때 온다 */
@@ -4943,6 +5019,59 @@ function harvestedCropHTML() {
     `<div class="lotbtns"><button class="ghost" id="bagSellCrop" type="button">상점에서 팔기</button></div>`;
 }
 
+/* ══════════════════════════════════════════════════════════════════════════
+   ★★★ **자른 삽수는 가방에 있다** (2026-08-16 · 박사님)
+   ──────────────────────────────────────────────────────────────────────────
+   원문: *"삽수 결과가 드래그 안 해도 자동으로 화분으로 옮겨져서 추가 화분이 생겨버렸네.
+          저렇게 되면 안 되지. 유리수경병으로 보여야지. **그리고 드래그하기 전에
+          자동배치되면 안 되지.**"*
+
+   ★ 자리를 안 잡게 바꾼 뒤(§cutPlaceOpt) 삽수는 **어디에도 없는 물건**이 된다.
+     그 상태를 보여 줄 자리가 필요하다 — 시루·화분과 **같은 자리**, 곧 가방 칸이다.
+   ★★ **새 저장 계통을 안 만들었다.** `S.cuttings[]` 에서 「자리가 없는 것」을 걸러 그린다.
+     거둔 채소 칸(§harvestedCropHTML)이 곳간을 읽어 그리는 것과 같은 방식이다 —
+     물건을 두 곳에 두면 반드시 어긋난다.
+   ★ 칸은 **삽수 하나에 하나**다. 시루처럼 「×N」으로 묶지 않는다 — 삽수는 하나하나가
+     제 나이·제 무늬·제 기한을 가진 개체라, 묶으면 어느 것을 끌었는지가 사라진다.
+   ⚠ 방에 이미 선 삽수는 여기 안 나온다. 「가방에 있음」이라 적힌 것이 정작 방에 서 있으면
+     두 화면이 서로 다른 말을 한다(§drawBag 의 그 규칙과 같다). */
+/* 시트를 그 탭으로 연다 — `openSheet` 는 **인라인 스크립트 안**에 있어 이 모듈에서 안 보인다.
+   창구(`window.__byeotSheet`)가 그 일을 하라고 있는 것이다. 던지면 조용히 지나간다. */
+function sheetTo(tab) { try { window.__byeotSheet.open(tab); } catch (e) { console.warn('[시트]', e && e.message); } }
+const CUT_ART = Object.freeze({
+  jar:  './assets/pots/thumbs/pot_glassjar.png',
+  soil: './assets/pots/thumbs/pot_nursery_black.png'
+});
+/* 갈래 낱말 — 화분(`monsteraSeed:*`)과 **같은 손버릇**이다. 한 낱말이 끝까지 삽수 id 를 나른다 */
+const isCutPlace = (what) => /^cutting:/.test(String(what || ''));
+const cutIdOf = (what) => String(what || '').split(':')[1] || null;
+const cutThumbId = (id) => 'cutThumb_' + String(id).replace(/[^\w]/g, '_');
+/* 아직 방에 안 선 삽수들 */
+function bagCuttings() {
+  return cuttingsOf(S).filter(c => c && !c.at && !c.slotId);
+}
+function cuttingBagHTML() {
+  const list = bagCuttings();
+  if (!list.length) return '';
+  let cells = '';
+  for (const c of list) {
+    const cont = CONTAINERS[c.container] || {};
+    const art = CUT_ART[c.container] || CUT_ART.jar;
+    const ko = cont.ko || '삽수';
+    /* 무늬면 칸에서부터 티가 나야 한다 — 값이 열 배 넘게 갈리는 물건이다 */
+    const cls = 'bagslot act' + (c.variegated ? ' crop' : '');
+    let brief = '';
+    try { const v = cuttingSnapshot(S, c); brief = `잎 ${v.leaves}장` + (v.variegatedLeaves ? ` · 무늬 ${v.variegatedLeaves}` : ''); }
+    catch { brief = '삽수'; }
+    cells += `<div class="${cls}" title="${ko} · ${brief}" data-place="cutting:${c.id}" role="button" tabindex="0">` +
+      `<span class="art"><img id="${cutThumbId(c.id)}" src="${art}" alt="${ko}"></span>` +
+      `<span class="nm">${ko}</span><span class="eta">${brief}</span></div>`;
+  }
+  return `<div class="grouphead">자른 삽수 · ${list.length}대</div>` +
+    `<div class="baggrid">${cells}</div>` +
+    `<div class="lotline">끌어서 방에 놓으세요 — <b>놓은 자리의 빛이 새 잎의 무늬를 정합니다.</b></div>`;
+}
+
 /* 카드를 [가방] ↔ [식물] 사이로 **노드째** 옮긴다.
    ⚠ 두 벌을 만들지 않는다 — 끌기(bindDrag)·상세창(bindDetail)이 전부 `#musunThumb` 같은
      id 하나를 붙잡고 있다. 노드를 옮기면 그 배선이 그대로 따라온다.
@@ -5084,6 +5213,9 @@ function drawBag() {
        그 하나를 놓는 순간 칸이 통째로 사라지고 **안내도 같이 사라졌다** — 「이제 몇 개를
        더 놓아야 하나」를 말할 자리가 바로 그때 없어진 셈이다(§A-4 · 재서 알았다). */
   html += bagHelpHTML(anyPlaceable);
+  /* ★★★ **자른 삽수** (2026-08-16 · §cuttingBagHTML). 거둔 채소보다 **앞**에 둔다 —
+     삽수는 놓아야 할 물건이고 채소는 보여 주는 물건이다. 할 일이 먼저다. */
+  html += cuttingBagHTML();
   /* ★★★ **거둔 채소** (2026-08-16 · 박사님: *"수확하면 채소가 인벤에 들어와야되는데 안들어오네"*) */
   html += harvestedCropHTML();
   /* ⚠ **끄는 중에는 다시 그리지 않는다.** 칸이 곧 손잡이라 `innerHTML` 로 갈아 끼우면
@@ -5104,6 +5236,11 @@ function drawBag() {
         : isPotPlace(p.kind)    ? () => startPhonePlacePot(p.kind)
         : null);
     }
+    /* ★ 삽수 칸도 손잡이를 받는다 (2026-08-16 · §cuttingBagHTML).
+       ⚠ 품목표(`BAG_PLACEABLE`)에 못 넣는다 — 삽수는 상점 품목이 아니라 **개체**라
+         id 가 판마다 다르다. 그래서 그린 뒤에 그 자리에서 건다. */
+    for (const c of bagCuttings())
+      bindDrag(cutThumbId(c.id), 'cutting:' + c.id, () => startPhonePlaceCut(c.id));
   }
   $('bagCount').textContent = total ? `· ${total}개` : '';
 
@@ -8867,6 +9004,13 @@ function potDOf(what, n) {
     return OPEN_SIRU.diameterM;                 // 방뷰가 없으면 예전 값(한 개 기준)
   }
   if (what === 'musun') return musunPotD() || ARRIVAL_POT_D;
+  /* ★ 삽수는 **용기 크기**다 (2026-08-16). 몬스테라 화분 지름으로 두면 유리병 한 대가
+     화분만 한 자리를 먹어서, 선반에 두 대도 못 올린다. 숫자는 코어(`CONTAINERS`)에서 읽는다. */
+  if (isCutPlace(what)) {
+    const c = cuttingsOf(S).find(x => x && x.id === cutIdOf(what));
+    const cont = c ? (CONTAINERS[c.container] || {}) : {};
+    return cont.realMaxM || 0.12;
+  }
   return ARRIVAL_POT_D;
 }
 
@@ -9354,6 +9498,24 @@ function commitPlace(what, hit, opt = {}) {
       sfx.thud();
     } catch (e) { return placeFailed(e); }
     draw();
+    return;
+  }
+
+  /* ★★ 삽수 갈래 — **화분 갈래 바로 뒤, 작물 판정 앞**이다 (2026-08-16 · §cuttingBagHTML).
+     ⚠ 자리를 여기서 지어내지 않는다. 화분·시루와 **같은 함수**(`resolvePlacement`)를 타는
+       `setCuttingAt` 한 줄이다 — propagation.js §⑤ 가 그렇게 적어 두었다.
+     ⚠ 삽수는 이미 개체가 있다. 여기서 새로 만들 것이 없다 — 자리만 준다. */
+  if (isCutPlace(what)) {
+    const id = cutIdOf(what);
+    const c = cuttingsOf(S).find(x => x && x.id === id);
+    if (!c) return placeFailed(new Error(`그 삽수를 못 찾았습니다 (${id})`));
+    try {
+      setCuttingAt(S, c, atOf(hit), placeOpt());
+      banner('🪴 삽수를 놓았습니다', '놓은 자리의 빛이 새 잎의 무늬를 정합니다');
+      unlockAfterFix();
+      sfx.thud();
+    } catch (e) { return placeFailed(e); }
+    syncRoom(); draw();
     return;
   }
 
@@ -9845,6 +10007,34 @@ function startPhonePlacePot(what) {
   try { window.__byeotSheet.close(); } catch { }
   banner('🪴 빈 화분을 놓았습니다', '[🌱 심기]를 눌러 몬스테라 씨앗을 심으세요');
   draw();
+  return { ok: true };
+}
+
+/* ★ 삽수를 눌러서 놓는다 (2026-08-16) — 위 둘과 **같은 뼈대**다.
+   ⚠ 삽수는 이미 개체가 있다(자를 때 만들어졌다). 여기서 하는 것은 **자리를 주는 것**뿐이라
+     시루·화분처럼 「새로 세우기」가 아니다 — `setCuttingAt` 한 줄이면 끝난다. */
+function startPhonePlaceCut(id) {
+  const c = cuttingsOf(S).find(x => x && x.id === id);
+  if (!c) { banner('그 삽수를 못 찾았습니다', '가방을 다시 열어 주세요'); return { ok: false, why: 'no-cut' }; }
+  const spot = provisionalSpot();
+  if (!spot) { banner('놓을 자리를 못 찾았습니다', '방을 조금 돌린 뒤 다시 눌러 주세요');
+               return { ok: false, why: 'no-spot' }; }
+  let at = spot;
+  if (typeof spot === 'string') {
+    const sl = (io.light.room.slots || []).find(x => x && x.slotId === spot);
+    if (!sl) { banner('놓을 자리를 못 찾았습니다', '방을 조금 돌린 뒤 다시 눌러 주세요');
+               return { ok: false, why: 'slot-not-found:' + spot }; }
+    at = { x: sl.x, y: sl.y, z: sl.z };
+  }
+  try {
+    setCuttingAt(S, c, at, { slots: io.light.room.slots, size: io.light.room.size, snapDist: 0 });
+  } catch (e) {
+    banner('배치하지 못했습니다', (e && e.message) || '');
+    return { ok: false, why: (e && e.message) || String(e) };
+  }
+  try { window.__byeotSheet.close(); } catch { }
+  banner('🪴 삽수를 놓았습니다', '놓은 자리의 빛이 새 잎의 무늬를 정합니다');
+  syncRoom(); draw();
   return { ok: true };
 }
 
@@ -10477,7 +10667,32 @@ function bindPicked() {
   $('furnActions').onpointerdown = (e) => { e.stopPropagation(); };
   $('pickMove').onclick = () => picked.beginMove();
   $('pickTurn').onclick = () => picked.beginTurn();
-  $('pickZoom').onclick = () => { const id = picked.slotId; window.__byeotZoom.open(id); picked.clear(); };
+  /* ★★★ 2026-08-16 — **[자세히]는 창을 연다. 탭으로 떨어지지 않는다** (박사님:
+       *"자세히 누르면 식물 탭으로 가는 게 아니라 그 크게 보는 창이 바로 열리면 좋겠어."*)
+     ══════════════════════════════════════════════════════════════════
+     ⚠ `__byeotZoom.open(id)` 은 **몬스테라 자리일 때만** 확대(plant_grow)를 연다.
+       그 밖에는 작물 상세 카드를 열고, 그것마저 못 열면 `openSheet('tabPlants')` 로 떨어진다.
+       그 마지막 갈래가 박사님이 보신 것이다 — 눌렀는데 **창이 아니라 탭**이 열린다.
+     ⚠⚠ 확대창은 **몬스테라 생장 모델 하나**라 시루·삽수를 못 그린다(2026-08-05 확정).
+       그래서 「전부 확대창」으로 바꾸는 것이 답이 아니다 — 답은 **떨어지지 않는 것**이다.
+     ⇒ 확대가 안 되는 것이면 **그 물건의 카드**를 여기서 연다. 탭은 마지막에도 안 연다 —
+       탭은 「목록」이지 「이것 하나」가 아니라, 자세히를 누른 손과 뜻이 다르다. */
+  $('pickZoom').onclick = () => {
+    const id = picked.slotId;
+    picked.clear();
+    /* ① 몬스테라면 확대창 — 예전 그대로다 */
+    let isPlant = false;
+    try { isPlant = !!(window.__byeotIsPlantSlot && window.__byeotIsPlantSlot(id)); } catch { }
+    if (isPlant) { window.__byeotZoom.open(id); return; }
+    /* ② 삽수면 그 삽수의 카드 */
+    const cut = cuttingsOf(S).find(c => c && (c.slotId === id || id === `free:${c.id}`));
+    if (cut) { try { detail.open('cutting', { id: cut.id }); return; } catch { } }
+    /* ③ 작물이면 그 시루 한 대의 카드 (`__byeotCropDetail` 이 이미 그 일을 한다) */
+    let shown = false;
+    try { shown = !!(window.__byeotCropDetail && window.__byeotCropDetail(id)); } catch { }
+    /* ④ 그래도 못 열면 **말한다.** 조용히 탭으로 보내지 않는다 */
+    if (!shown) banner('자세히 볼 것이 없습니다', '그 자리에는 아직 아무것도 없습니다');
+  };
   $('pickClose').onclick = () => picked.clear();
   /* ★★★ 폰 배치의 [확인] 바 (2026-08-09 · §placeConfirm).
      ⚠ `tapOnce` 를 쓴다 — 폰에서는 pointerdown 이 답이고, 그 뒤끝 click 이 밑
@@ -11147,7 +11362,10 @@ $('pantryGo').onclick = guard(() => {
         그루가 **팔릴 준비 상태**가 되고 그 다음 손짓 하나가 진짜로 판을 끝낸다.
      ② [거래하기]에서 또 묻지 않기 위해서다 — 되묻기를 두 걸음 다 두면 네 번을 누른다.
    ★ 그루가 팔리는 순간은 이제 §doDeal 이다. */
-$('sellPlant').onclick = confirmOnce('중고 거래에 내놓습니까?', guard(() => {
+/* ★ 2026-08-16 — **한 함수로 뺐다.** [상점]의 단추와 식물 상세 카드의 단추가 같은 길을
+   타야 한다(박사님: *"식물 상세보기 칸에 … 당근에 올려 팔기 버튼이 거기 있으면 좋겠어"*).
+   두 벌로 적으면 한쪽이 낡는다 — 오늘 값이 720,000 vs 1,960,000 으로 갈린 것이 그 병이다. */
+const askListPot = confirmOnce('중고 거래에 내놓습니까?', guard(() => {
   let ls = null; try { ls = io.growth.leafStats(); } catch { }
   if (!ls) { const e = new Error('아직 내놓을 수 없습니다 — 식물 상태를 못 읽었습니다'); e.tutorialInput = true; throw e; }
   const r = listPot(S, { leaves: ls.leaves, variegatedLeaves: ls.variegatedLeaves,
@@ -11157,6 +11375,7 @@ $('sellPlant').onclick = confirmOnce('중고 거래에 내놓습니까?', guard(
   syncRoom();
   draw();
 }));
+$('sellPlant').onclick = askListPot;
 
 /* ══ ★★★ 중고 거래 칸 — **올린 것 · 연락 온 것** (2026-08-17) ═══════════════════════
    ------------------------------------------------------------
