@@ -134,6 +134,9 @@ const TAIL = `
   buildPlant, setGrowth, plantSeed, growthPhase, phaseAt, ageOf, dayOfAge,
   growthDays, calendarDay, matResetAll, setDailyLightSteady, resetDailyLight,
   loadAssets, thLoaded, GMAX, ASSET_FILES, ASSETS,
+  /* ★ 읽기 창구 둘 (2026-08-16 · §branchOf) — 떼어낸 가지가 **정본과 같은가**를
+     여기서 바로 물어보려고 낸다. 원본이 이미 갖고 있던 함수를 그대로 낼 뿐이다. */
+  cuttableNodes, leafStats,
   /* ★ 무늬 한 장 늦게 받기 (2026-08-18) — 원본이 2026-08-17 에 낸 손잡이를 그대로 낸다.
      여기에 로직을 쓰지 않는다. 쓰는 순간 두 벌이 된다. */
   ensureSkin, skinsPending, skinsLoaded, isSkinKey,
@@ -503,9 +506,241 @@ async function build(opt) {
 
       lastResult = g;
       return g;
+    },
+
+    /* ══════════════════════════════════════════════════════════════════════
+       ★★★ branchOf — **모주에서 자란 그 가지를 그대로 떼어낸다** (2026-08-16)
+       ══════════════════════════════════════════════════════════════════════
+       박사님 원문(두 번): *"삽수 시, 기존에 자랐던 거 가지 그대로 잘라서 넣어줄래?"*
+                          *"줄기 기존 자랐던 거 그대로 쓰라고."*
+
+       지금까지 병 속의 줄기·잎은 **방 뷰가 새로 지어낸 것**이었다(원기둥 + 등급만 맞춘
+       잎 GLB). 그래서 「자른 그 가지」가 아니라 **비슷하게 생긴 다른 가지**가 들어 있었다.
+
+       ★ 지어낼 것이 하나도 없다. 같은 씨앗·같은 생장일이면 `assemble()` 이 **같은 형태**를
+         낸다(이 파일의 존재 이유다). 그러니 **자를 때의 씨앗·생장일로 모주를 다시 지어,
+         그 마디에서 위로 딸려 나가는 것만 떼어내면** 줄기 굵기·잎 무늬·휘어진 각도가
+         전부 자란 그대로 나온다.
+
+       어떻게 떼어내나 — `plant_grow §마디 표` 가 메시마다 적어 둔 표를 읽는다:
+         `axisKey`  그 메시가 속한 축의 경로(`n0`·`n0.1`·`n0.1:1`)
+         `part`     'stem' | 'bump' | 'leaf'
+         `segIndex` 혹이 앉은 마디 번호 · `segT` 마디 경계의 t · `tubSeg`/`radSeg` 튜브 격자
+       ⇒ 딸려 나가는 것 = ① 그 축의 잎 ② 그 축의 `segIndex ≥ i` 인 혹
+                          ③ **그 축의 마디 i 이상에서 난 가지 전부**(그 아래로 통째로)
+                          ④ 그 축의 줄기 튜브 중 **마디 i 위쪽**
+         ③ 은 이름만 봐도 안다 — 가지의 경로는 `<부모경로>.<난 마디 번호>` 라서
+         `axisKey` 가 `A.` 로 시작하면 그 다음 토막이 곧 「어느 마디에서 났나」다.
+         (`cuttableNodes §carried` 가 트리를 타고 세는 것과 **같은 규칙**이다)
+
+       ④ 는 **정점을 새로 만들지 않는다.** 튜브는 링 (tubSeg+1)개 × (radSeg+1)점 짜리
+         규칙적인 격자라, 자를 링부터 끝까지를 **그대로 베껴 오면** 좌표가 한 비트도
+         안 바뀐다. 새로 만드는 것은 **잘린 자리를 막는 뚜껑 한 장**뿐이다(안 막으면
+         줄기 속이 들여다보인다).
+
+       반환
+         THREE.Group — **밑동이 원점**이다(병에 그대로 꽂을 수 있게).
+         **null** — 모르는 마디 · 아직 안 난 마디 · 씨앗 · 조립 실패.
+                    0 도 빈 그룹도 아니다(이 파일들의 규약이다 — 모르면 안 만든다).
+       인자
+         nodeId      `cuttableNodes()` 가 낸 그 이름(`n0#2`). **이것 하나가 어느 가지인지 정한다**
+         growthDays  ★ **자를 때 모주의 유효 생장일**이다(조각이 자란 날이 아니다)
+         seed        모주의 씨앗
+         leafState   자를 때의 잎별 상태(안 주면 이 인스턴스가 굴린다 — 위 §한계)
+         potD/lightAz/photo  모주를 그릴 때 쓴 값 그대로. 크기가 방의 모주와 같아진다
+
+       userData (호출부가 검사·배치에 쓴다)
+         kind:'cutting' · nodeId · axisKey · segIndex
+         growthDays · seed · scale(모주와 같은 배율)
+         leaves:[]            room_view.applyLook 이 처짐을 얹을 자리(모주와 같은 규약)
+         leafCount            실제로 딸려 온 **잎 수**
+         node                 정본 `cuttableNodes()` 의 그 줄(stem·leaves·leafBirths·leafKeys…)
+         varieLeafKeys        딸려 온 무늬 잎 열쇠
+         cutDir               자른 자리에서 줄기가 뻗는 방향(세워 꽂고 싶으면 이걸로 돌린다)
+         sizeM {h,d}          떼어낸 뒤의 실제 높이·회전무관 지름[m] — 병에 맞춰 줄일 때 쓴다
+         skinsPending         아직 못 받은 무늬가 있나(있으면 도착 뒤 다시 지어야 한다)
+    */
+    branchOf(o = {}) {
+      const nodeId = String((o && o.nodeId) || '');
+      const mm = /^(n[0-9.:]*)#(\d+)$/.exec(nodeId);
+      if (!mm) return null;                                  // 이름 꼴이 아니면 짓지 않는다
+      const axisKey = mm[1], segIndex = +mm[2];
+
+      let mother = null;
+      try {
+        mother = assembler.assemble({ growthDays: o.growthDays, seed: o.seed, potD: o.potD,
+                                      lightAz: o.lightAz, photo: o.photo, leafState: o.leafState });
+      } catch (e) { return null; }
+
+      /* ★ 정본에 그 마디가 있나 — 없으면 **아무것도 안 만든다.**
+         (모르는 이름·아직 안 난 마디가 여기서 걸린다. 지어내지 않는 자리다) */
+      let row = null;
+      try { row = (G.cuttableNodes() || []).find(r => r && r.nodeId === nodeId) || null; }
+      catch (e) { row = null; }
+      if (!row) { disposeTree(mother); return null; }
+
+      const inner = mother.children[0];
+      if (!inner || !inner.children.length) { disposeTree(mother); return null; }
+      const s = inner.scale.x;
+
+      const keep = [];
+      for (const c of [...inner.children]) if (inCut(c.userData, axisKey, segIndex)) keep.push(c);
+
+      const stem = keep.find(c => c.userData && c.userData.part === 'stem');
+      if (!stem || !stem.userData.segT) { disposeTree(mother); return null; }
+      const segT = stem.userData.segT, tubSeg = stem.userData.tubSeg, radSeg = stem.userData.radSeg;
+      /* 마디 번호가 이 축이 실제로 그린 마디 수를 넘으면 — 아직 안 난 마디다 */
+      if (!(segIndex >= 0 && segIndex <= segT.length - 2)) { disposeTree(mother); return null; }
+
+      /* 자를 링 — 마디 i 가 시작하는 t 를 링 번호로 바꾼다.
+         ⚠ 링은 t 를 tubSeg 등분한 자리라 자른 면이 마디 경계에서 최대 반 링만큼 어긋난다
+           (한 마디가 링 10개 안팎이니 마디 길이의 5% 안이다). 정점을 **옮기지는 않는다** —
+           옮기면 그때부터 「자란 그대로」가 아니게 된다. */
+      const ringFrom = Math.max(0, Math.min(tubSeg - 1, Math.round(segT[segIndex] * tubSeg)));
+      const info = tubeRingInfo(stem.geometry, tubSeg, radSeg, ringFrom);
+      if (!info) { disposeTree(mother); return null; }
+      if (ringFrom > 0) {
+        const sliced = sliceTube(stem.geometry, tubSeg, radSeg, ringFrom, info);
+        if (!sliced) { disposeTree(mother); return null; }
+        stem.geometry.dispose();                     // 이 기하는 매 조립마다 새로 나므로 원본과 안 나눠 쓴다
+        stem.geometry = sliced;
+        delete stem.userData.sharedGeometry;
+      }
+
+      const g = new THREE.Group();
+      const inner2 = new THREE.Group();
+      inner2.scale.setScalar(s);
+      /* 밑동이 원점에 오게 — 안쪽 그룹을 통째로 민다. 물건의 좌표는 하나도 안 건드린다 */
+      inner2.position.set(-info.center.x * s, -info.center.y * s, -info.center.z * s);
+      g.add(inner2);
+      for (const c of keep) { inner.remove(c); inner2.add(c); }
+
+      /* ★ 남은 모주는 여기서 버린다. 안 버리면 자를 때마다 그루 한 벌씩 GPU 에 쌓인다 */
+      disposeTree(mother);
+      lastResult = null;
+
+      /* 딸려 온 잎 수 — 잎 표가 붙은 축의 가짓수다(한 축에 잎 하나가 이 파일의 규약) */
+      const leafAx = new Set();
+      const varieKeys = new Set();
+      for (const c of inner2.children) {
+        const u = c.userData || {};
+        if (u.part === 'leaf' && u.axisKey) leafAx.add(u.axisKey);
+      }
+      g.traverse(oo => {
+        const k = oo.userData && oo.userData.assetKey;
+        if (k && skinKeys.has(k)) varieKeys.add(k);
+      });
+
+      const bb = new THREE.Box3().setFromObject(g);
+      g.userData.isPlantAssembled = true;
+      g.userData.kind = 'cutting';
+      g.userData.nodeId = nodeId;
+      g.userData.axisKey = axisKey;
+      g.userData.segIndex = segIndex;
+      g.userData.growthDays = mother.userData.growthDays;
+      g.userData.seed = mother.userData.seed;
+      g.userData.scale = s;
+      g.userData.leaves = [];                        // 모주와 같은 규약(room_view.applyLook)
+      g.userData.leafCount = leafAx.size;
+      g.userData.node = row;
+      g.userData.varieLeafKeys = [...varieKeys];
+      g.userData.cutDir = { x: info.dir.x, y: info.dir.y, z: info.dir.z };
+      g.userData.sizeM = { h: bb.isEmpty() ? 0 : (bb.max.y - bb.min.y),
+                           d: rotSafeDiameter(g, g) };
+      g.userData.skinsPending = G.skinsPending();
+      if (g.userData.skinsPending) watchSkins();
+      return g;
     }
   };
   return assembler;
+
+  /* ── 이 아래는 branchOf 의 손발이다. 그리기 규칙을 한 개도 안 갖고 있다 ── */
+
+  /* 그 물건이 「마디 i 위쪽」에 딸려 나가나.
+     ★ `cuttableNodes §carried` 와 **같은 규칙**을 이름으로만 판정한다 —
+       가지의 경로가 `<부모>.<난 마디>` 라서 트리를 다시 안 타도 된다. */
+  function inCut(u, A, i) {
+    if (!u || !u.axisKey) return false;              // 화분·씨앗처럼 표가 없는 것은 안 딸려간다
+    if (u.axisKey === A)
+      return u.part === 'stem' || u.part === 'leaf' || (u.part === 'bump' && u.segIndex >= i);
+    if (u.axisKey.slice(0, A.length + 1) !== A + '.') return false;
+    const idx = parseInt(u.axisKey.slice(A.length + 1), 10);   // 다음 토막 = 이 가지가 난 마디
+    return Number.isFinite(idx) && idx >= i;
+  }
+
+  /* 튜브의 링 하나가 어디 있고 어디를 보나.
+     ★ 링의 점들은 「가운뎃점 + 반지름 × 단위원」이라, 마지막(겹치는) 점을 뺀 평균이
+       **정확히 가운뎃점**이다. 짐작이 아니라 만드는 식(makeStemTube)에서 나오는 값이다. */
+  function tubeRingInfo(geo, tubSeg, radSeg, ring) {
+    const pos = geo && geo.attributes && geo.attributes.position;
+    if (!pos || !Number.isFinite(tubSeg) || !Number.isFinite(radSeg)) return null;
+    const per = radSeg + 1;
+    if ((tubSeg + 1) * per + 2 > pos.count) return null;       // 격자가 안 맞는다 — 짐작하지 않는다
+    const mid = r => {
+      const v = new THREE.Vector3(), a = new THREE.Vector3();
+      for (let j = 0; j < radSeg; j++) { v.fromBufferAttribute(pos, r * per + j); a.add(v); }
+      return a.multiplyScalar(1 / radSeg);
+    };
+    const center = mid(ring);
+    const dir = mid(Math.min(tubSeg, ring + 1)).sub(center);
+    if (dir.lengthSq() < 1e-12) dir.set(0, 1, 0);
+    return { center, dir: dir.normalize() };
+  }
+
+  /* 링 ringFrom 부터 끝까지를 **그대로 베낀다**(좌표·법선·UV·정점색 한 비트도 안 바꾼다).
+     새로 만드는 것은 잘린 자리 뚜껑 하나뿐이다. */
+  function sliceTube(geo, tubSeg, radSeg, ringFrom, info) {
+    const A = geo.attributes;
+    if (!A || !A.position || !A.normal || !A.uv) return null;
+    const per = radSeg + 1, rings = tubSeg - ringFrom + 1;
+    const from = ringFrom * per, sideN = rings * per;
+    const topOld = (tubSeg + 1) * per + 1;                     // 원본의 위 뚜껑 가운뎃점
+    const cut = (src, n) => {
+      const out = new src.array.constructor((sideN + 2) * n);
+      out.set(src.array.subarray(from * n, from * n + sideN * n), 0);
+      out.set(src.array.subarray(topOld * n, (topOld + 1) * n), sideN * n);        // 위 뚜껑 그대로
+      out.set(src.array.subarray(from * n, from * n + n), (sideN + 1) * n);        // 아래 뚜껑 = 첫 링 값에서 시작
+      return out;
+    };
+    const pos = cut(A.position, 3), nor = cut(A.normal, 3), uv = cut(A.uv, 2);
+    const topC = sideN, botC = sideN + 1;
+    pos[botC * 3] = info.center.x; pos[botC * 3 + 1] = info.center.y; pos[botC * 3 + 2] = info.center.z;
+    nor[botC * 3] = -info.dir.x; nor[botC * 3 + 1] = -info.dir.y; nor[botC * 3 + 2] = -info.dir.z;
+    uv[botC * 2] = 0.5; uv[botC * 2 + 1] = 0.5;
+
+    const idx = [];
+    for (let i = 1; i < rings; i++) for (let j = 1; j <= radSeg; j++) {
+      const a = per * (i - 1) + (j - 1), b = per * i + (j - 1), c = per * i + j, d = per * (i - 1) + j;
+      idx.push(a, b, d, b, c, d);
+    }
+    const topRing = per * (rings - 1);
+    for (let j = 0; j < radSeg; j++) idx.push(topC, topRing + j + 1, topRing + j);   // 위(원본과 같은 감김)
+    for (let j = 0; j < radSeg; j++) idx.push(botC, j, j + 1);                       // 아래(자른 면)
+
+    const out = new THREE.BufferGeometry();
+    out.setIndex(idx);
+    out.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+    out.setAttribute('normal', new THREE.Float32BufferAttribute(nor, 3));
+    out.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
+    if (A.color) out.setAttribute('color', new THREE.Float32BufferAttribute(cut(A.color, 3), 3));
+    return out;
+  }
+
+  /* 안 쓰는 것을 GPU 에서 내린다.
+     ⚠ **원본과 나눠 쓰는 기하는 안 버린다**(§protoGeo). 버리면 다음 그루가 빈 잎이 된다.
+       재질은 `cloned` 표가 붙은 것만 — plant_grow §clearGroup 과 같은 규칙이다. */
+  function disposeTree(root) {
+    if (!root) return;
+    root.traverse(o => {
+      if (!o.isMesh) return;
+      if (o.geometry && !(o.userData && o.userData.sharedGeometry) && !protoGeo.has(o.geometry.uuid))
+        o.geometry.dispose();
+      const ms = Array.isArray(o.material) ? o.material : (o.material ? [o.material] : []);
+      for (const mt of ms) if (mt && mt.userData && mt.userData.cloned) mt.dispose();
+    });
+    if (root.parent) root.parent.remove(root);
+    root.clear ? root.clear() : (root.children.length = 0);
+  }
 }
 
 /* 회전 무관 지름 = 2 × max √(x²+z²). room_view.js 와 같은 식이다.
