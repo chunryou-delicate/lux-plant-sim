@@ -498,9 +498,23 @@ export function buyLamp(ts) {
 export function tutorialDay(ts, opt = {}) {
   const { firstPlayDone = false, mealsUsed = 0, savedWon = null, incomeWon = 0 } = opt;
   if (!ts.enabled) return null;
-  if (!firstPlayDone) return { skipped: '첫 플레이 진행 중' };
+  /* ══ ★★★ 2026-08-16 — **살림 시계를 첫날부터 돌린다** (박사님 확정) ══════════════
+     ------------------------------------------------------------
+     박사님: *"월세가 안 나가 첫째 날."* → *"37일째에 뜨네."* → *"**살림 시계 첫날부터.**"*
 
-  ts.seasonRunning = true;
+     ⚠ 여기 있던 것: `if (!firstPlayDone) return { skipped: '첫 플레이 진행 중' };`
+       첫 플레이가 끝나기 전에는 **돈도 날짜도 한 톨도 안 움직였다.** 그 주석의 근거는
+       *"그 **7~16일**은 배우는 구간이지 살림을 하는 구간이 아니다"* 였다.
+     ★ 그런데 **실측 37일**이다. 첫 플레이가 그때보다 두 배 넘게 길어졌고 주석만 낡았다.
+       그래서 「첫 월세가 달력 37일에 나간다」가 됐다 — 박사님이 본 그것이다.
+     ⇒ 이제 **첫날부터 센다.** 월세도 식비도 처음부터 나간다.
+
+     ⚠⚠ **계절은 안 건드렸다.** `seasonRunning` 은 여전히 첫 플레이가 끝나야 켜진다 —
+       첫 플레이는 「novice · 맑음 · 여름 고정」이 계약이고(`first_play.md §0`),
+       그것까지 풀면 배우는 구간에 겨울이 올 수 있다. **돈만 앞당긴다.**
+     ★ 살림이 도는 것과 계절이 도는 것은 원래 다른 칸이었다(`ts.seasonRunning`) —
+       그 둘이 한 줄에 묶여 있던 것이 이 사고의 모양이다. */
+  if (firstPlayDone) ts.seasonRunning = true;
   ts.day += 1;
   const R = ts.rules;
   const ev = [];

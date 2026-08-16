@@ -604,9 +604,34 @@ console.log('first_play: PASS');
     '★수확·식비 절감이 배움에 안 적혔습니다 — harvestCrop 이 배움을 안 켜고 있습니까?');
   assert.equal(S.tutorial.learned.cropDark, true,
     '★어두운 자리 수확(4일평균 낮음)이 배움에 안 적혔습니다');
-  /* 첫 플레이 중에는 살림이 멈춰 있어야 한다 — 그 며칠은 배우는 구간이다 */
-  assert.equal(S.tutorial.day, 0, '첫 플레이 중인데 반지하 날짜가 갔습니다');
-  assert.equal(S.tutorial.cashWon, S.tutorial.rules.startCashWon, '첫 플레이 중인데 돈이 빠졌습니다');
+  /* ★★ 2026-08-16 — **뒤집혔다. 이제 첫날부터 센다** (박사님 확정: *"살림 시계 첫날부터"*).
+     ------------------------------------------------------------
+     예전 줄: `assert.equal(S.tutorial.day, 0, '첫 플레이 중인데 반지하 날짜가 갔습니다')`
+     그 근거는 *"그 **7~16일** 은 배우는 구간이지 살림을 하는 구간이 아니다"* 였는데,
+     첫 플레이가 **실측 37일**로 길어져 **첫 월세가 달력 37일에** 나가고 있었다.
+     박사님이 화면에서 잡으셨다(*"월세가 안 나가 첫째 날"* → *"37일째에 뜨네"*).
+   ⚠ 이 줄을 안 고치면 **고장난 상태를 검사가 정상으로 못 박는다** — 이 저장소가
+     제일 위험하다고 적어 둔 갈래다(START-HERE §2). 그래서 값을 낮추는 것이 아니라
+     **재는 대상을 바꾼다**: 「안 간다」가 아니라 **「간 만큼 하루씩 갔나」**를 잰다. */
+  assert.ok(S.tutorial.day > 0, '★첫 플레이 중에 살림 날짜가 하루도 안 갔습니다 — 첫날부터 세야 합니다');
+  /* ★ 계절은 **여전히 멈춰 있어야** 한다 — 첫 플레이는 「novice · 맑음 · 여름 고정」이 계약이다.
+     돈만 앞당겼고 계절은 안 건드렸다(`tutorial.js §살림 시계`). */
+  assert.equal(S.tutorial.seasonRunning, false,
+    '★첫 플레이 중에 계절이 돌기 시작했습니다 — 앞당긴 것은 돈뿐입니다');
+  /* ★ 같은 까닭으로 뒤집혔다(위 ★★) — 이제 **돈도 첫날부터 나간다.**
+     재는 대상을 바꾼다: 「안 빠졌나」가 아니라 **「빠진 만큼이 말이 되나」**다.
+     하루 지출은 `dailyCashOutWon`(월세 몫을 뺀 나머지)이고 30일마다 월세가 목돈으로 나간다 —
+     그러니 시작돈보다 줄어 있어야 하고, 그 줄어든 폭이 「하루치 × 지난 날 + 월세」를 안 넘어야 한다.
+     ⚠ 숫자를 여기 박지 않는다 — 규칙에서 읽는다(§2.8). */
+  const R0 = S.tutorial.rules;
+  const spent = R0.startCashWon - S.tutorial.cashWon;
+  assert.ok(spent > 0, '★첫 플레이 중에 돈이 한 푼도 안 나갔습니다 — 첫날부터 살림이 돌아야 합니다');
+  /* ⚠ 규칙에서 읽는다 — 이 파일은 tutorial 을 안 들여오므로 `ts.rules` 로 센다(같은 값이다) */
+  const maxOut = R0.dailySpendWon * S.tutorial.day
+               + R0.rentWon * (S.tutorial.rent.paidCount + 1)
+               + 200_000;                    /* 상점에서 산 것 몫 — 넉넉히 둔다 */
+  assert.ok(spent <= maxOut,
+    `★나간 돈이 말이 안 됩니다 — ${spent.toLocaleString()}원 (상한 ${maxOut.toLocaleString()}원)`);
   /* ★ 도착은 `first_play.MONSTERA_ARRIVAL_RULE.harvestCount` 회전째에 온다 (2026-08-04).
      지금 그 값은 **1** 이다 — 화면(game.html)이 첫 플레이 동안 상점·다시심기를 닫아 둬서
      회전을 더 돌릴 수가 없다(first_play.js §게이트). 게이트가 열려 값이 오르면
@@ -615,10 +640,15 @@ console.log('first_play: PASS');
   const harvests = rotateUntilArrival(S, io, 'dark-slot');
   assert.equal(harvests, MONSTERA_ARRIVAL_RULE.harvestCount,
     `★거둔 횟수 ${harvests}회에 왔습니다 — 규칙은 ${MONSTERA_ARRIVAL_RULE.harvestCount}회전입니다`);
-  assert.equal(S.tutorial.day, 0, '첫 플레이 중인데 반지하 날짜가 갔습니다');
-  assert.equal(S.tutorial.cashWon,
-    cashBeforeRotate - buyPriceOf('bean_seed') * (harvests - 1),
-    '★첫 플레이 중에 씨앗값 말고 다른 돈이 나갔습니다');
+  /* ★★ 2026-08-16 — 여기도 같이 뒤집혔다(위 ★★ · 박사님: *"살림 시계 첫날부터"*).
+     예전 두 줄: 날짜가 0 이고 씨앗값 말고는 한 푼도 안 나갔다.
+     이제는 **날짜가 가고 살림비도 나간다.** 재는 대상을 바꾼다 —
+     「안 나갔나」가 아니라 **「씨앗값이 그 안에 들어 있나」**다. */
+  assert.ok(S.tutorial.day > 0, '★회전을 도는 동안 살림 날짜가 하루도 안 갔습니다');
+  const seedCost = buyPriceOf('bean_seed') * (harvests - 1);
+  const outNow = cashBeforeRotate - S.tutorial.cashWon;
+  assert.ok(outNow >= seedCost,
+    `★씨앗값 ${seedCost.toLocaleString()}원보다 적게 나갔습니다 (${outNow.toLocaleString()}원) — 씨앗값이 안 빠졌습니까?`);
   assert.equal(pot0(S).arrivalGrowthDays, ARRIVAL.growthDays);
   assert.notEqual(pot0(S).slotId, 'banjiha-sill:0', '몬스테라는 먼저 어두운 자리에 도착해야 한다');
 
