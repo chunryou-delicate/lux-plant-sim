@@ -14,7 +14,7 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <!-- 지금 보고 있는 판이 언제 것인지. 캐시가 의심되면 이걸 본다 -->
-<meta name="byeot-build" content="2026-08-17T-corner">
+<meta name="byeot-build" content="2026-08-17T-spot">
 <!-- ★★ 글씨 (2026-08-06 박사님: "글씨체가 이상해. 한글이 안 읽히네 뭔가. 잘 안 보여").
      Pretendard 를 **실제로 받아 온다.** 이름만 적어 두면 그 글씨가 깔린 기계에서만 보이고,
      안 깔린 기계에서는 조용히 system-ui 로 떨어진다 — 화면이 기계마다 달라진다.
@@ -11543,19 +11543,46 @@ function startPhonePlace() {
 
 /* 임시로 세울 자리 — **빈 추천 자리** 우선, 없으면 방 한가운데 바닥.
    ★ 「빈칸으로 임시로 가있고」(박사님)의 그 빈칸이다. 어차피 곧 옮기므로 정확할 필요가 없다. */
+/* ★★★ 2026-08-17 — **임시 자리는 바닥 구석이다** (박사님: *"인벤에서 클릭해서 자동으로
+     화면에 설치될 때 시루 같은 거… 디폴트 위치를 좌측이나 우측 바닥으로 해줘."*)
+   ══════════════════════════════════════════════════════════════════
+   ⚠ 예전에는 **빈 추천 자리부터** 잡았다(창턱·선반·책상 상판). 그러면 「임시로 세운다」가
+     아니라 **이미 좋은 자리에 놓인 것**이 되어, [확인]을 그냥 눌러도 그럭저럭 되어 버린다.
+     자리를 고르는 일이 이 게임의 뼈대인데 그 첫 손짓이 건너뛰어진다.
+   ⚠ 그리고 상판에 임시로 세우면 **그 칸이 잠깐 막혀** 다른 것을 놓으려던 손과 부딪힌다.
+   ⇒ **바닥 구석**에 세운다. 눈에 잘 띄고, 아무 자리도 안 먹고, 「여기서 옮겨야 한다」가
+     한눈에 읽힌다. 왼쪽·오른쪽 중 **비어 있는 쪽**을 고른다.
+   ⚠ 구석을 못 쏘면 예전 길로 떨어진다(한가운데 → 추천 자리). 놓을 데를 못 찾아
+     아무 일도 안 나는 것보다는 어디든 서는 것이 낫다. */
 function provisionalSpot() {
+  const potD = (() => { try { return potDOf('beansprout'); } catch { return 0.24; } })();
+  /* ① 바닥 구석 — 왼쪽 아래·오른쪽 아래 순으로 쏜다(화면에서 가깝고 안 가린다) */
+  try {
+    const c = $('roomCanvas').getBoundingClientRect();
+    const spots = [
+      [c.left + c.width * 0.20, c.top + c.height * 0.80],   // 왼쪽 바닥
+      [c.left + c.width * 0.80, c.top + c.height * 0.80],   // 오른쪽 바닥
+      [c.left + c.width * 0.28, c.top + c.height * 0.70],
+      [c.left + c.width * 0.72, c.top + c.height * 0.70]
+    ];
+    for (const [x, y] of spots) {
+      const hit = freePlace.surfaceAt(x, y, potD);
+      /* ★ **바닥이라야 한다** — 가구 위에 걸리면 그 칸을 잠깐 먹는다(위 ⚠) */
+      if (hit && hit.ok && !hit.onUid) return atOf(hit);
+    }
+  } catch { }
+  /* ② 옛 길 — 한가운데 바닥 */
+  try {
+    const c = $('roomCanvas').getBoundingClientRect();
+    const hit = freePlace.surfaceAt(c.left + c.width / 2, c.top + c.height * 0.72, potD);
+    if (hit && hit.ok) return atOf(hit);
+  } catch { }
+  /* ③ 그래도 안 되면 빈 추천 자리 — 아무 데도 못 서는 것보다는 낫다 */
   const taken = new Set();
   try { for (const it of placedItemsForRoom()) if (it.slotId) taken.add(it.slotId); } catch { }
   let list = [];
   try { list = cropCandidates(); } catch { }
   for (const s of list) if (!taken.has(s.slotId)) return s.slotId;
-  /* 추천 자리가 다 찼거나 없다 — 방 한가운데 바닥을 쏘아 본다 */
-  try {
-    const c = $('roomCanvas').getBoundingClientRect();
-    const hit = freePlace.surfaceAt(c.left + c.width / 2, c.top + c.height * 0.72,
-                                    potDOf('beansprout'));
-    if (hit && hit.ok) return atOf(hit);
-  } catch { }
   return list.length ? list[0].slotId : null;
 }
 /* ══════════════════════════════════════════════════════════════════════════
