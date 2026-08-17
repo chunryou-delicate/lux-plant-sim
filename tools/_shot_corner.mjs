@@ -1,0 +1,24 @@
+import { launch, sleep } from './test_cdp.mjs';
+const BASE = process.env.BYEOT_URL || 'http://localhost:8963';
+const page = await launch({ width: 390, height: 844, dpr: 2, mobile: false });
+await page.goto(`${BASE}/game.html`); await page.eval(`localStorage.clear()`,false);
+await page.goto(`${BASE}/game.html`);
+await page.waitFor('window.__byeotBooted === true', 180000, 300); await sleep(6000);
+const clear=async()=>{for(let i=0;i<30;i++){const b=await page.eval(`(()=>{const s=document.getElementById('stage'),g=document.getElementById('guide');return !!(s&&s.classList.contains('talking'))||!!(g&&g.classList.contains('on'));})()`); if(!b)return;
+  await page.eval(`(()=>{const g=document.getElementById('guideClose'); if(g&&g.offsetParent){g.click();return;} const b=document.getElementById('dlgBox'); if(b)b.click();})()`,false); await sleep(250);}};
+await clear();
+await page.eval(`(()=>{const rv=window.__rv,c=document.getElementById('roomCanvas').getBoundingClientRect();
+  const sp=rv.screenPosOf('banjiha-dresser:1');
+  window.__drag.begin('beansprout',document.getElementById('cropThumb').src,{clientX:c.left+c.width*0.9,clientY:c.top+40});
+  window.__drag.move({clientX:c.left+sp.x,clientY:c.top+sp.y});window.__drag.end();})()`,false);
+await sleep(1400); await clear();
+await page.eval(`(()=>{const b=document.getElementById('placeOk'); if(b&&b.offsetParent)b.click();})()`,false);
+await sleep(1400); await clear();
+console.log('자리:', await page.eval(`(()=>{const g=id=>{const e=document.getElementById(id);
+  if(!e||!e.offsetParent) return null; const r=e.getBoundingClientRect();
+  return {L:Math.round(r.left), R:Math.round(innerWidth-r.right), B:Math.round(innerHeight-r.bottom), w:Math.round(r.width), h:Math.round(r.height)};};
+  const bot=document.getElementById('bottom').getBoundingClientRect();
+  return JSON.stringify({next:g('next'), water:g('waterCrop'), harvest:g('harvestCrop'), pot:g('waterPot'),
+    아래띠높이:Math.round(bot.height), 방높이:Math.round(document.getElementById('stage').getBoundingClientRect().height)});})()`));
+await page.shot('docs/handoff/img/guidewalk/corner.png');
+await page.close();
