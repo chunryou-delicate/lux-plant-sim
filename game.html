@@ -4336,9 +4336,24 @@ function updateHint() {
       });
     } catch { return false; }
   })();
-  if (!sheetOpen && !$('next').disabled && (S.day <= 1 || cropGrowing || seedComing))
-    return hintAt($('next'), seedComing ? '씨앗은 내일 옵니다 — 하루를 넘기세요'
-                          : cropGrowing ? '자라는 중입니다 — 하루를 넘겨 보세요' : '하루를 보냅니다');
+  /* ★★★ 2026-08-17 — **두 바퀴까지만이다.** (박사님 어제: *"**처음** 콩나물 시루 자라는 거
+       넘길 때 **랑 그다음** 시루 자라는 거 넘길 때"* → 오늘: *"시루 1차 튜토 끝났는데
+       시루 2개 늘리는 퀘 중인데도 **계속 손가락이 따라다녀**."*)
+     ⚠ 두 말씀은 **안 부딪힌다** — 어제 것은 「처음과 그다음」, 즉 **두 바퀴**였는데
+       내가 「자라는 동안 늘」로 넓게 물렸다. 넓힌 쪽이 틀린 것이다.
+     ⇒ 두 번 거두고 나면 사람은 이미 안다. 그 뒤로는 [다음 날]에서 손을 뗀다 —
+       2026-08-06 에 못 박은 그 규율(*"안 가리켜도 눈에 띄는 것에 손가락을 붙이면
+       가리킨다가 장식이 된다"*)로 돌아간다.
+     ⚠ **씨앗이 오는 중인 것은 예외다.** 그건 「크는 것을 기다리는」 것이 아니라
+       **누를 것이 아예 없는데 화면도 조용한** 상태라, 안 가리키면 사람이 멈춘다. */
+  const taughtCycles = (() => {
+    try { return ((S.firstPlay && S.firstPlay.beansprout && S.firstPlay.beansprout.harvestCount) || 0) >= 2; }
+    catch { return false; }
+  })();
+  const wait = seedComing ? '씨앗은 내일 옵니다 — 하루를 넘기세요'
+             : (cropGrowing && !taughtCycles) ? '자라는 중입니다 — 하루를 넘겨 보세요'
+             : S.day <= 1 ? '하루를 보냅니다' : null;
+  if (!sheetOpen && !$('next').disabled && wait) return hintAt($('next'), wait);
   hintAt(null);
 }
 
@@ -6784,6 +6799,12 @@ function questSnapshotNow(turn) {
       ((site && site.pots) || []).map(p => ({ kind: (site.kind || 'beansprout'),
                                               harvestCount: (p && p.harvestCount) || 0,
                                               placed: cropPotPlaced(p),
+                                              /* ★ 2026-08-17 — 「지금 크는 중인가」. 할 일 줄이
+                                                 「이미 한 일」을 시키지 않게 하는 근거다(§seedOrdered) */
+                                              growing: !!(p && p.startedOnDay != null && !p.harvested),
+                                              /* 씨는 뿌렸나 — 물 주기 **전** 한 걸음이 여기 있다.
+                                                 이 칸이 없으면 심고 물 주기 사이에 할 일 줄이 한 번 깜빡인다 */
+                                              sown: !!(p && p.sown && !p.harvested),
                                               watered: !!(p && p.startedOnDay != null) })));
   } catch { cropPots = []; }
   /* ★ 오늘 밥상에 오른 작물 — **턴이 낸 것**이 정본이다(loop.js §밥 · eatFromPantry).
@@ -6832,7 +6853,23 @@ function questSnapshotNow(turn) {
     lampOwned: (ts.lamp && ts.lamp.owned) || 0,
     /* ★ 초반 사슬 ⑥「몬스테라 자리 잡기」가 이 둘로 판정한다. 정본은 `firstPlay.monstera` 다 */
     monsteraArrived: !!(fp.monstera && fp.monstera.arrived),
-    monsteraHomed: !!(fp.monstera && fp.monstera.guide && fp.monstera.guide.moved)
+    monsteraHomed: !!(fp.monstera && fp.monstera.guide && fp.monstera.guide.moved),
+    /* ★★ 2026-08-17 — **씨앗을 이미 시켰나** (박사님: *"씨앗 시키는 대화가 뭔가 타이밍
+       안 맞게 뒤에 나와."*). 실측에서 11일에 주문했는데 할 일 줄은 17일까지 계속
+       「상점에서 콩 씨앗을 주문하세요」였다 — **이미 한 일을 하라고 시키는 줄**이다.
+       ⚠ 퀘스트의 **끝나는 조건은 안 건드린다**(세 바퀴가 그대로 정본이다). 바꾸는 것은
+         「지금 무엇을 하면 되나」 한 줄뿐이다 — 그 줄은 지금 상태를 말해야 한다. */
+    seedOrdered: (() => {
+      try {
+        const sid = cropKindOf('beansprout').seedItemId;
+        const st = shopStatus(S);
+        return (st.orders || []).some(o => o.itemId === sid && o.daysLeft >= 0);
+      } catch { return false; }
+    })(),
+    seedStock: (() => {
+      try { return (shopStatus(S).stock || {})[cropKindOf('beansprout').seedItemId] || 0; }
+      catch { return 0; }
+    })()
   };
 }
 

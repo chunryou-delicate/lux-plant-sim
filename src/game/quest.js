@@ -367,7 +367,12 @@ const FIRST_PLAY_CHAIN = Object.freeze([
     why: '주문한 것은 그날 오지 않습니다. 시루가 비기 전에 시켜 둬야 회전이 안 끊깁니다.',
     /* ★ 세 바퀴 — 갖고 있던 한 봉지로는 두 바퀴가 끝이다(§씨앗 주문). 산 씨앗이라야 돈다 */
     need: Object.freeze({ cycles: 3 }),
-    todo: () => '상점에서 콩 씨앗을 주문하세요',
+    /* ⚠ 이 줄은 **세 바퀴가 찰 때까지** 서 있는다. 그 사이에 주문은 이미 끝나 있을 수
+       있으므로, 시킨 뒤에는 「시켜라」가 아니라 **다음에 할 것**을 말한다. */
+    todo: (d, s) => (s && (s.seedOrdered || s.seedStock > 0
+                           || arr(s.cropPots).some(p => yes(p && (p.growing || p.sown)))))
+      ? '주문한 씨앗으로 한 바퀴 더 돌리세요'
+      : '상점에서 콩 씨앗을 주문하세요',
     after: 'resow_siru',
     opens: (s, ctx) => !!(ctx && ctx.doneIds.includes('resow_siru')),
     done:  (s, ctx) => num(s.cropHarvestTotal) >= ctx.q.need.cycles
@@ -684,10 +689,12 @@ export const QUEST_PREVIEW = 3;
 export function questOf(id) { return QUESTS.find(q => q.id === id) || null; }
 
 /* 「지금 할 일」 한 줄. ⚠ `todo` 가 함수인 것은 **수를 정의에서 읽게** 하려는 것이다 */
-export function questTodo(q) {
+export function questTodo(q, s) {
   const d = questOf(typeof q === 'string' ? q : (q && q.id)) || q;
   if (!d || typeof d.todo !== 'function') return null;
-  try { return d.todo(d); } catch { return null; }
+  /* ★ 2026-08-17 — 둘째 인자는 **지금 상태**다(없어도 된다). 「이미 한 일을 하라고
+     시키는 줄」을 없애려면 그 줄이 지금을 볼 수 있어야 한다 — 끝나는 조건은 안 건드린다. */
+  try { return d.todo(d, s); } catch { return null; }
 }
 
 /* ── 판정 ───────────────────────────────────────────────────────────── */
@@ -735,7 +742,7 @@ export function questView(S, snapshot) {
     let isOpen = false;
     if (!isDone) { try { isOpen = !!q.opens(s, { ...ctx, q }); } catch { isOpen = false; } }
     if (isOpen) open.push(q.id);
-    all.push({ id: q.id, ko: q.ko, todo: questTodo(q), why: q.why, teaches: q.teaches,
+    all.push({ id: q.id, ko: q.ko, todo: questTodo(q, s), why: q.why, teaches: q.teaches,
                /* ★ 체력이 아닌 보상의 이름. 없으면 화면이 stamina 에서 「체력 +N」을 짓는다 */
                reward: q.reward || null,
                stage: stageOfQuest(q), index: i, speaks: q.speaks !== false,
