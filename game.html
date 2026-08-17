@@ -14,7 +14,7 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <!-- 지금 보고 있는 판이 언제 것인지. 캐시가 의심되면 이걸 본다 -->
-<meta name="byeot-build" content="2026-08-17T-emptypot">
+<meta name="byeot-build" content="2026-08-17T-pickkind">
 <!-- ★★ 글씨 (2026-08-06 박사님: "글씨체가 이상해. 한글이 안 읽히네 뭔가. 잘 안 보여").
      Pretendard 를 **실제로 받아 온다.** 이름만 적어 두면 그 글씨가 깔린 기계에서만 보이고,
      안 깔린 기계에서는 조용히 system-ui 로 떨어진다 — 화면이 기계마다 달라진다.
@@ -11108,16 +11108,31 @@ const picked = {
      `free:crop_01` 같은 개체 이름일 수도 있다 — 둘 다 본다. */
   /* ★★ 2026-08-09 — 콩나물 열쇠는 **시루마다**다(§자리는 시루마다 따로다).
      자리 사본 하나만 보면 둘째 시루를 고를 때 몬스테라로 읽혀 엉뚱한 것이 움직인다. */
+  /* ★★★ 2026-08-17 — **작물을 종류 안 가리고 찾는다** (박사님: *"무순을 옮기는데
+     몬스테라가 옮겨져."*)
+     ══════════════════════════════════════════════════════════════════
+     ⚠⚠ 여기가 `beansprout.pots` **하나만** 봤다. 무순 재배판은 다른 자리(`cropSites` 의
+       둘째 갈래)에 살아서 늘 `null` 이 나왔고, 그러면 아래 §kindAt 이 「콩나물이 아니면
+       몬스테라」로 떨어져 **선물 몬스테라가 끌려갔다.**
+       ⇒ 빈 화분(어제)·둘째 몬스테라(오늘 아침)에 이어 **같은 뿌리의 셋째**다:
+         「모르는 것이면 몬스테라」라는 밑값이 화면 곳곳에 남아 있었다.
+     ★ 정본은 `cropPotList` 다 — 종류를 가리지 않고 놓인 것을 전부 낸다(`kind` 도 실려 온다).
+       여기서 자리 표를 새로 짓지 않는다. */
   potAt(slotId) {
-    const b = S.firstPlay && S.firstPlay.beansprout;
-    return ((b && b.pots) || []).find(p =>
-      p && (p.slotId === slotId || slotId === `free:${p.id}` || slotId === p.id)) || null;
+    if (!slotId) return null;
+    try {
+      const rows = cropPotList(S.firstPlay, S.day) || [];
+      return rows.find(r => r &&
+        (r.slotId === slotId || slotId === `free:${r.id}` || slotId === r.id)) || null;
+    } catch { return null; }
   },
   kindAt(slotId) {
     const b = S.firstPlay && S.firstPlay.beansprout;
     if (!b) return 'monstera';
     if (slotId === BEANSPROUT_ID || slotId === `free:${BEANSPROUT_ID}`) return 'beansprout';
-    if (this.potAt(slotId)) return 'beansprout';
+    /* ★ 그 줄이 말하는 **제 종류**를 쓴다 — 「콩나물이 아니면 몬스테라」로 떨어뜨리지 않는다 */
+    const row = this.potAt(slotId);
+    if (row) return row.kind || 'beansprout';
     return b.slotId === slotId ? 'beansprout' : 'monstera';
   },
   select(slotId) {
@@ -11193,7 +11208,7 @@ const picked = {
          그러면 `commitPlace` 의 몬스테라 갈래가 `pot0(S)` 로 떨어진다 — 어느 그루를
          집었든 **첫 그루(선물)가 끌려간다.** 오류도 안 난다. 조용히 남의 화분이 움직인다.
        ⇒ 몬스테라면 그 자리에 선 화분을 잡는다(§potOfSlot). 시루와 **같은 규율**이다. */
-    const one = what === 'beansprout' ? this.potAt(this.slotId)
+    const one = (what === 'beansprout' || what === 'musun') ? this.potAt(this.slotId)
               : what === 'monstera'   ? potOfSlot(this.slotId) : null;
     this.potId = one ? one.id : null;
     /* ★ 빈 화분인가 — 옮기는 길이 다르다(§commitPlace). 안 적어 두면 `S.pots` 에서 못 찾아
