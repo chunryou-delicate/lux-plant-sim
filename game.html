@@ -14,7 +14,7 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <!-- 지금 보고 있는 판이 언제 것인지. 캐시가 의심되면 이걸 본다 -->
-<meta name="byeot-build" content="2026-08-17T-gameover">
+<meta name="byeot-build" content="2026-08-17T-art">
 <!-- ★★ 글씨 (2026-08-06 박사님: "글씨체가 이상해. 한글이 안 읽히네 뭔가. 잘 안 보여").
      Pretendard 를 **실제로 받아 온다.** 이름만 적어 두면 그 글씨가 깔린 기계에서만 보이고,
      안 깔린 기계에서는 조용히 system-ui 로 떨어진다 — 화면이 기계마다 달라진다.
@@ -1226,7 +1226,7 @@
   #gameOver.on{display:flex}
   #gameOver .card{max-width:340px;width:100%}
   #gameOver img{width:min(62vw,220px);height:auto;display:block;margin:0 auto 14px;
-    border-radius:14px;filter:grayscale(.55) brightness(.72) contrast(1.05)}
+    border-radius:14px;filter:brightness(.86) contrast(1.04)}
   #gameOver h2{font-size:20px;font-weight:800;color:#f0a35f;margin:0 0 6px}
   #gameOver p{font-size:13px;line-height:1.6;color:var(--dim);margin:0 0 6px}
   #gameOver b{color:var(--ink)}
@@ -1524,7 +1524,7 @@
   <!-- ★ 게임오버 덮개 — 무대 밖이다. 방·시트·말풍선을 전부 가려야 한다(§gameOver) -->
   <div id="gameOver" role="alertdialog" aria-hidden="true">
     <div class="card">
-      <img id="gameOverArt" src="./assets/characters/portraits/portrait_jachwi_cry.png" alt="">
+      <img id="gameOverArt" src="./assets/ui/gameover/gameover_starved.png" alt="">
       <h2>굶어 쓰러졌습니다</h2>
       <p id="gameOverWhy"></p>
       <p>지갑이 <b>0원</b>인 채로 열흘이 지났습니다.<br>
@@ -3994,6 +3994,7 @@ function showBuild() {
     saveOff = true;
     if (saveTimer != null) { clearTimeout(saveTimer); saveTimer = null; }
     try { localStorage.clear(); } catch { }
+    releaseGL();                       /* ★ 옛 문맥을 놓고 나간다(§releaseGL) */
     location.replace(location.pathname + '?v=' + Date.now());
   };
 }
@@ -4052,6 +4053,14 @@ function openZoomFor(pot) {
   g.__wrapped = true;
 })();
 
+/* ★★ 2026-08-17 — **떠나기 전에 3D 문맥을 놓는다** (박사님: 다시 시작했더니
+   「WebGL 문맥을 못 만들었습니다」). 브라우저가 세는 살아 있는 문맥에는 천장이 있고
+   이 게임은 한 탭이 둘을 쓴다(방 + 확대창). 안 놓고 새로 열면 새 판이 문맥을 못 받는다.
+   ⚠ 실패해도 떠나는 것은 막지 않는다 — 못 치웠다고 다시 시작을 못 하면 그게 더 나쁘다. */
+function releaseGL() {
+  try { if (roomView && roomView.dispose) roomView.dispose(); } catch (e) { console.warn('[나가기] 방 치우기', e && e.message); }
+  try { const f = $('growth'); if (f) f.src = 'about:blank'; } catch { }
+}
 function bindDetail() {
   /* ★ 할 일 쪽지를 누르면 [할 일] 탭 — 요약을 보고 그 자리에서 자세히 볼 수 있어야 한다 */
   { const c = $('questChip');
@@ -4064,6 +4073,7 @@ function bindDetail() {
       saveOff = true;
       if (saveTimer != null) { clearTimeout(saveTimer); saveTimer = null; }
       try { localStorage.clear(); } catch { }
+      releaseGL();                     /* ★ 옛 문맥을 놓고 나간다(§releaseGL) */
       location.replace(location.pathname + '?v=' + Date.now());
     }; }
   $('meChip').onclick = () => detail.open('me');

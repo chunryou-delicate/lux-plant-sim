@@ -9754,6 +9754,18 @@ export async function createRoomView(canvas, opts = {}) {
       disposeOutside();
       disposeObject(ctx.scene);
       ctx.renderer.dispose();
+      /* ★★★ 2026-08-17 — **문맥을 실제로 놓아준다** (박사님: 다시 시작했더니
+           *"방을 그리지 못했습니다 — WebGL 문맥을 못 만들었습니다"*).
+         ══════════════════════════════════════════════════════════════════
+         ⚠⚠ `renderer.dispose()` 는 **문맥을 안 버린다.** GPU 자원만 푼다 —
+           브라우저가 세는 「살아 있는 WebGL 문맥」은 그대로 남는다. 그 수에는
+           천장이 있고(크롬 계열은 대개 16), 이 게임은 한 탭이 **둘**을 쓴다
+           (방 + 확대창 `plant_grow` iframe). 탭 여럿을 열어 두면 금세 찬다.
+         ⇒ `forceContextLoss()` 로 명시적으로 놓는다. 이걸 안 부르면 다시 시작할 때
+           옛 문맥이 아직 살아 있어, 새 판이 문맥을 못 받아 방이 통째로 안 뜬다.
+         ⚠ 던질 수 있다(이미 잃은 문맥이면) — 치우다 난 오류로 나머지를 못 치우면 안 된다. */
+      try { if (typeof ctx.renderer.forceContextLoss === 'function') ctx.renderer.forceContextLoss(); }
+      catch (e) { console.warn('[방뷰] 문맥 놓기', e && e.message); }
     }
   };
 
