@@ -52,7 +52,11 @@ const NOT_YET = new Set([
   'shelf', 'shelf_low', 'shelf_white', 'shelf_walnut', 'shelf_ladder_4tier',      // ②
   'plant_step_3', 'plant_grid_wall', 'plant_hanger', 'greenhouse_cabinet',
   'lectern', 'coffee_table', 'coffee_table_walnut', 'coffee_table_white',
-  'nightstand', 'nightstand_white', 'nightstand_mint',                           // ③
+  /* ★ 2026-08-17 — **협탁 셋이 목록에서 빠졌다.** 박사님이 *"협탁 크기가 애매해,
+     할 거면 2*2 크기로 해서 주던지 해"* 라고 정하셔서 0.42×0.36 → **0.50×0.50**(2×2 칸)이 됐다.
+     ⚠ 그때 못 물린 까닭은 「내리면 네모 화분 자리가 5→4칸, 올리면 뒷벽을 뚫는다」였는데,
+       박사님이 **올리는 쪽**을 고르셨고 반지하 자리도 같이 옮겨 벽을 안 뚫는다
+       (`house_rooms.banjiha-nightstand` 의 주석에 잰 값이 있다). */
 ]);
 
 /* ── 스텁 DOM (three 가 캔버스를 만든다 · gen_room_profile.mjs 와 같은 것) ── */
