@@ -56,6 +56,10 @@ const look = () => page.eval(`(()=>{
     대사중: !!(stage && stage.classList.contains('talking')),
     대사: stage && stage.classList.contains('talking') ? (txt(document.getElementById('dlgBox'))||'').slice(0,120) : null,
     안내판: !!(guide && guide.classList.contains('on')),
+    가계부: (()=>{ const m=document.getElementById('monthPanel')||document.getElementById('month');
+      const sub=document.getElementById('monthSub'), t=document.getElementById('monthTitle');
+      const on = !!(sub && sub.offsetParent);
+      return on ? ((t?t.textContent:'')+' · '+(sub?sub.textContent:'')).replace(/\s+/g,' ').trim() : null; })(),
     배너: (txt(document.getElementById('banners'))||'').slice(-90) || null,
     아래: [...document.querySelectorAll('#hud button, #actions button')]
             .filter(b=>b.offsetParent && !b.disabled).map(b=>(txt(b)||'').slice(0,28)).slice(0,6)
@@ -100,6 +104,7 @@ for (let step = 0; step < DAYS * 8; step++) {
     await sleep(500);
     await page.shot(`${OUT}/day${String(v.day).padStart(2, '0')}.png`);
   }
+  if (v.가계부 && !log.some(x => x.가계부 === v.가계부)) console.log(`  ★ 가계부 — ${v.가계부}`);
   log.push(v);
   if (key === lastKey) stuck++; else stuck = 0;
   lastKey = key;

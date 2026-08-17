@@ -14,7 +14,7 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <!-- 지금 보고 있는 판이 언제 것인지. 캐시가 의심되면 이걸 본다 -->
-<meta name="byeot-build" content="2026-08-17T-guidewalk">
+<meta name="byeot-build" content="2026-08-17T-ledger0">
 <!-- ★★ 글씨 (2026-08-06 박사님: "글씨체가 이상해. 한글이 안 읽히네 뭔가. 잘 안 보여").
      Pretendard 를 **실제로 받아 온다.** 이름만 적어 두면 그 글씨가 깔린 기계에서만 보이고,
      안 깔린 기계에서는 조용히 system-ui 로 떨어진다 — 화면이 기계마다 달라진다.
@@ -4797,8 +4797,16 @@ function drawMonthPanel() {
   /* ★ 「1번째 달」은 어색하다 — 첫 달만 다르게 부른다. 수는 `rent.paidCount` 에서 읽는다 */
   $('monthTitle').textContent = r.count <= 1 ? '첫 달 가계부' : `${r.count}번째 달 가계부`;
   /* ⚠ 「N일차」는 **살림 시계**(`ts.day`)다 — 게임 날짜가 아니다(§①) */
+  /* ★★ 2026-08-17 — **첫 달은 0일차부터다** (박사님: *"첫 달 가계부는 0에서 1일째 떠야지."*)
+     ⚠ `+1` 은 「지난 달이 닫힌 **다음** 날부터」라는 뜻이라 둘째 달부터는 맞다
+       (30일에 닫혔으면 31일부터다). 그런데 **첫 달은 0일차가 진짜 첫날**이라
+       거기에 +1 을 하면 시작이 하루 사라지고, 첫 장부가 「살림 1~1일차」가 된다 —
+       시작과 끝이 같은 칸은 사람이 읽을 수 없는 값이다(실측 사진 day12.png).
+     ⇒ 첫 달만 그대로 쓴다. 판정은 제목이 「첫 달」인지 가르는 그 수(`r.count`) 그대로다 —
+       두 줄이 다른 근거로 갈리면 제목과 부제가 서로 딴말을 한다. */
+  const subFrom = r.count <= 1 ? r.fromDay : r.fromDay + 1;
   $('monthSub').textContent =
-    `살림 ${r.fromDay + 1}~${r.toDay}일차` +
+    `살림 ${subFrom}~${r.toDay}일차` +
     (r.period ? ` · 월세는 ${r.period}일마다 나갑니다` : '') +
     (r.days < r.toDay - r.fromDay ? ` · ⚠ 이 중 ${r.days}일치만 셌습니다` : '');
 
