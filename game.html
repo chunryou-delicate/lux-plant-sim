@@ -14,7 +14,7 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <!-- 지금 보고 있는 판이 언제 것인지. 캐시가 의심되면 이걸 본다 -->
-<meta name="byeot-build" content="2026-08-17T-bag">
+<meta name="byeot-build" content="2026-08-17T-marks">
 <!-- ★★ 글씨 (2026-08-06 박사님: "글씨체가 이상해. 한글이 안 읽히네 뭔가. 잘 안 보여").
      Pretendard 를 **실제로 받아 온다.** 이름만 적어 두면 그 글씨가 깔린 기계에서만 보이고,
      안 깔린 기계에서는 조용히 system-ui 로 떨어진다 — 화면이 기계마다 달라진다.
@@ -7802,10 +7802,23 @@ function potMarks() {
   for (const p of (S.pots || [])) {
     if (!p || !p.slotId) continue;
     const w = potWaterNow(p);           /* ⚠ **그 그루의** 물이다 */
-    if (!w || !w.dry) continue;
+    /* ★★★ 2026-08-17 — **마르기 전에도 띄운다** (박사님: *"화면에 몬스테라 물주기 알림이
+         안 떠, 식물 탭에서만 뜨고"*).
+       ══════════════════════════════════════════════════════════════
+       ⚠ 여기는 원래 **마른 것만** 띄웠다. 그 까닭은 위에 적혀 있다 — 「마를 때가 됐다」로
+         띄우면 매 주기 사흘씩 말풍선이 서서 **급한 것을 가린다**.
+       ★ 그런데 그 걱정의 전제가 오늘 바뀌었다: 말풍선이 **아이콘 하나**가 되어(§drawMarks
+         iconOnly) 44×31 이다. 사흘 서 있어도 가리는 것이 거의 없다.
+       ⚠ 그래도 **두 상태를 같은 얼굴로 두지 않는다** — 마른 것은 경고색(잃고 있다),
+         마를 때가 된 것은 보통색(아직 안 잃었다). 색이 같으면 급한 것이 안 갈린다.
+       ⚠ [식물] 탭과 **같은 문턱**을 쓴다(`canWater`) — 두 화면이 다른 날 말하면 그게
+         「탭에서만 뜬다」는 그 어긋남이다. */
+    if (!w || !(w.dry || w.canWater)) continue;
     const nth = (S.pots.length > 1) ? ` ${S.pots.indexOf(p) + 1}` : '';
-    out.push({ key: p.slotId, tone: 'warn',
-               ko: `💧 몬스테라${nth}에 물 주기 (${w.dryDays - w.interval}일째 멈춤)`,
+    out.push({ key: p.slotId, tone: w.dry ? 'warn' : '',
+               ko: w.dry
+                 ? `💧 몬스테라${nth}에 물 주기 (${w.dryDays - w.interval}일째 멈춤)`
+                 : `💧 몬스테라${nth}에 물 주기 (${Math.max(0, w.leftDays)}일 뒤 마릅니다)`,
                go: () => waterPotOf(p.id) });
   }
   return out;
