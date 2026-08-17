@@ -160,6 +160,31 @@ const cards = [];
 for (let i = 0; i < rows.length; i++) cards.push(await read(i));
 for (let i = 0; i < cards.length; i++) console.log(`카드 ${i} :`, JSON.stringify(cards[i]));
 
+/* ══ §C 확대창이 그루마다 뜨나 (2026-08-17 · 박사님: "몬스테라별 확대창") ═══════
+   ⚠ 확대창은 `plant_grow.html` 이고 **지금 꽂힌 그루**를 그린다. 그래서 어느 줄에서
+     열어도 첫 그루가 떴다. 여기서는 줄의 [🔍 확대]를 눌러 **꽂힌 그루가 바뀌는지**,
+     그리고 닫으면 **제자리로 돌아오는지**를 본다(방이 딴 그루를 그리면 안 된다). */
+console.log('');
+console.log('── §C 확대창이 그루마다 뜨나 ────────────────────────────');
+const cur = () => page.eval(`(()=>{ try { return window.__io.growth.current(); } catch(e){ return 'ERR '+e.message; } })()`);
+console.log('  열기 전 :', await cur());
+const zoomOf = async (potId) => {
+  await page.eval(`window.__byeotSheet.open('plants')`, false); await sleep(600);
+  const hit = await page.eval(`(()=>{ const b=document.querySelector('[data-plantbig="${potId}"]');
+    if(!b) return false; b.click(); return true; })()`);
+  await sleep(1400);
+  const r = { 눌림: hit, 꽂힌그루: await cur(),
+              확대열림: await page.eval(`document.getElementById('stage').classList.contains('zoom')`) };
+  await page.eval(`(()=>{ try{ window.__byeotZoom.close() }catch{} })()`, false); await sleep(900);
+  r.닫은뒤 = await cur();
+  return r;
+};
+const zA = await zoomOf('pot_01'); console.log('  pot_01 :', JSON.stringify(zA));
+const zB = await zoomOf('pot_02'); console.log('  pot_02 :', JSON.stringify(zB));
+const zoomOk = zA.확대열림 && zB.확대열림 && zA.꽂힌그루 !== zB.꽂힌그루 && zA.닫은뒤 === zB.닫은뒤;
+console.log(zoomOk ? '✔ 확대창이 그루마다 다른 그루를 꽂고, 닫으면 제자리로 돌아온다'
+                   : '✘ 확대창이 같은 그루를 보여 주거나 닫아도 안 돌아온다');
+
 /* ══ §B 마른 그루가 말을 하나 (2026-08-17) ════════════════════════════════
    딴 창이 재서 알아낸 것: 박사님의 씨앗 그루 둘은 **빛이 아니라 물** 때문에 멈춰
    있었고, 방은 **한마디도 안 했다** — 말풍선도 아래 단추도 `pot0` 만 봤기 때문이다.
@@ -227,4 +252,4 @@ console.log(uniq.size === cards.length
   : `✘ 카드 ${cards.length}장이 같은 자리(${[...uniq].join(' / ')})를 보여 줍니다 — 아직 첫 그루에 박혀 있습니다`);
 console.log('예외', errs.length, errs.slice(0, 2).join(' | '));
 await page.close();
-process.exit(uniq.size === cards.length && !bad && dryOk ? 0 : 1);
+process.exit(uniq.size === cards.length && !bad && dryOk && zoomOk ? 0 : 1);

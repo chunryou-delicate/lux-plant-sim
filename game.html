@@ -2536,7 +2536,7 @@ import { newState, SIM_MODES, pot0, pushLog, givePlant, hasPlant, ARRIVAL,
          placeSiru, waterSiru,
          /* ★ 2026-08-11 · 놓기와 심기를 가른다 — 놓인 재배판에 씨앗을 뿌린다 (state.js §sowCrop) */
          sowCrop,
-         waterPot, potWaterStatus,
+         waterPot, potWaterStatus, growthIdOf,
          cropSurplusStatus, sellCropSurplus,
          /* ★ 2026-08-15 · 곳간 채소 팔기 (state.js §곳간 판매) */
          pantrySaleStatus, sellPantryCrop,
@@ -3849,7 +3849,7 @@ const detail = {
          ⚠ 못 하는 것은 **왜 못 하는지**를 단추 글자에 적는다. 회색 단추만 세우면
            「눌러도 아무 일이 없다」가 된다 — 이 저장소의 지병이다. */
       btns: (() => {
-        const out = [{ ko: '자세히 보기', primary: true, go: () => window.__byeotZoom.open() }];
+        const out = [{ ko: '자세히 보기', primary: true, go: () => openZoomFor(p) }];
         let ls = null; try { ls = io.growth.leafStats && io.growth.leafStats(); } catch { }
         let listed = null; try { listed = listingFor(S, p); } catch { }
         let gate = null; try { gate = ls ? marketGate(S, { leaves: ls.leaves }) : null; } catch { }
@@ -3890,6 +3890,61 @@ function showBuild() {
     location.replace(location.pathname + '?v=' + Date.now());
   };
 }
+/* ══════════════════════════════════════════════════════════════════════════
+   ★★★ **확대창도 그루마다** (2026-08-17 · 박사님: *"몬스테라별 확대창 뜨도록 개선해둬"*)
+   ──────────────────────────────────────────────────────────────────────────
+   ⚠ 확대창(`plant_grow.html`)은 **지금 꽂힌 그루**를 그린다. 그래서 어느 줄에서 열어도
+     첫 그루가 떴다 — [자세히] 카드가 그랬던 것과 **똑같은 거짓말**이다.
+   ★ 고르는 창구는 이미 있다(`growth_adapter.select` · `plant_grow.selectPlant`).
+     없던 것은 **화면에서 그걸 부르는 손**뿐이었다.
+   ⚠⚠ **열 때 고르고 닫을 때 되돌린다.** 방(`syncRoom`)도 「지금 꽂힌 그루」의 잎을 읽으므로
+     골라 둔 채 두면 확대창을 닫은 뒤 방이 딴 그루의 잎으로 그려진다. 확대창이 떠 있는
+     동안 방은 멈춰 있으니(§pauseRoom) 그 사이는 안전하고, 닫는 순간 제자리로 돌린다.
+   ⚠ 여러 그루를 못 굴리는 옛 생장 창에서는 **아무것도 안 한다** — 예전처럼 열린다.
+     못 하는 일을 억지로 하다 던지면 확대창이 아예 안 열린다. */
+/* 그 자리에 선 화분 — 방에서 누른 것이 어느 그루인지 가리는 유일한 길이다.
+   ★ 자유 좌표 화분은 `free:{id}` 를 열쇠로 쓴다(state §화분 자리) — 둘 다 본다. */
+function potOfSlot(slotId) {
+  if (!slotId) return null;
+  return (S.pots || []).find(p => p &&
+    (p.slotId === slotId || slotId === `free:${p.id}` || slotId === p.id)) || null;
+}
+let zoomPrevGrowthId = null;
+function openZoomFor(pot) {
+  const g = window.__byeotZoom;
+  if (!g) return;
+  zoomPrevGrowthId = null;
+  try {
+    if (pot && io.growth && io.growth.multi && io.growth.multi()) {
+      const want = growthIdOf(pot);
+      const now = io.growth.current ? io.growth.current() : null;
+      if (want && want !== now) { zoomPrevGrowthId = now; io.growth.select(want); }
+    }
+  } catch (e) {
+    /* 못 골랐으면 **그대로 연다.** 다만 조용히 넘어가지 않는다 — 어느 그루가 떴는지
+       사람이 알아야 「내 그루가 아닌데」를 말할 수 있다. */
+    console.warn('[확대] 그루 고르기', e && e.message);
+    banner('그 그루를 확대창에 못 꽂았습니다', (e && e.message) || '먼저 보던 그루가 뜹니다');
+  }
+  g.open();
+}
+/* 닫힐 때 되돌린다 — 확대창 자체는 머리 스크립트 소유라 **감싸기만** 한다 */
+(() => {
+  const g = window.__byeotZoom;
+  if (!g || g.__wrapped) return;
+  const raw = g.close;
+  g.close = function () {
+    try { raw.call(g); } finally {
+      if (zoomPrevGrowthId != null) {
+        const back = zoomPrevGrowthId; zoomPrevGrowthId = null;
+        try { io.growth.select(back); } catch (e) { console.warn('[확대] 되돌리기', e && e.message); }
+        try { syncRoom(); } catch { }
+      }
+    }
+  };
+  g.__wrapped = true;
+})();
+
 function bindDetail() {
   $('meChip').onclick = () => detail.open('me');
   $('dClose').onclick = () => detail.close();
@@ -8226,6 +8281,8 @@ function drawPlantMore() {
        ⚠ 잠그지 않는다 — 눌러서 까닭을 듣는 편이 회색 단추보다 낫다(상점 [주문]과 같은 판단). */
     const canW = !!(w && w.canWater);
     const btns = (canW ? `<button class="water" data-plantwater="${esc(p.id)}">💧 물 주기</button>` : '')
+               /* ★ 2026-08-17 — **확대도 그루마다**(박사님). 카드를 한 겹 거치지 않고 바로 연다 */
+               + `<button class="ghost" data-plantbig="${esc(p.id)}">🔍 확대</button>`
                + `<button class="ghost" data-plantzoom="${esc(p.id)}">📋 자세히</button>`;
     return `<div class="siruRow${w && w.dry ? ' thirsty' : ''}"><div class="nm">몬스테라 ${i + 1}` +
            `<small>${esc(bits.join(' · '))}</small></div>` +
@@ -8235,6 +8292,8 @@ function drawPlantMore() {
     b.onclick = guard(() => { try { detail.open('monstera', { id: b.dataset.plantzoom }); } catch { } });
   for (const b of list.querySelectorAll('[data-plantwater]'))
     b.onclick = guard(() => waterPotOf(b.dataset.plantwater));
+  for (const b of list.querySelectorAll('[data-plantbig]'))
+    b.onclick = guard(() => openZoomFor((S.pots || []).find(x => x && x.id === b.dataset.plantbig)));
 }
 
 function drawSirus() {
@@ -9979,7 +10038,12 @@ const placeMode = {
       let has = false;
       try { has = (placedItemsForRoom() || []).some(it => it && it.slotId === slotId); } catch { has = false; }
       if (!has) return false;
-      window.__byeotZoom.open(slotId);
+      /* ★ 2026-08-17 — 방에서 누른 **그 그루**를 꽂는다(§openZoomFor).
+         ⚠ 몬스테라 자리가 아니면 `open` 이 작물 카드로 넘긴다 — 그 판단은 저쪽 몫이라
+           여기서 미리 가르지 않는다. 못 찾으면 `null` 이고 그때는 예전 그대로다. */
+      if (window.__byeotIsPlantSlot && window.__byeotIsPlantSlot(slotId))
+        openZoomFor(potOfSlot(slotId));
+      else window.__byeotZoom.open(slotId);
       return true;
     }
     const sel = this.target === 'beansprout' ? $('cropSlot')
@@ -11540,7 +11604,7 @@ function bindPicked() {
     /* ① 몬스테라면 확대창 — 예전 그대로다 */
     let isPlant = false;
     try { isPlant = !!(window.__byeotIsPlantSlot && window.__byeotIsPlantSlot(id)); } catch { }
-    if (isPlant) { window.__byeotZoom.open(id); return; }
+    if (isPlant) { openZoomFor(potOfSlot(id)); return; }
     /* ② 삽수면 그 삽수의 카드 */
     const cut = cuttingsOf(S).find(c => c && (c.slotId === id || id === `free:${c.id}`));
     if (cut) { try { detail.open('cutting', { id: cut.id }); return; } catch { } }
