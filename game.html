@@ -14,7 +14,7 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <!-- 지금 보고 있는 판이 언제 것인지. 캐시가 의심되면 이걸 본다 -->
-<meta name="byeot-build" content="2026-08-17T-art">
+<meta name="byeot-build" content="2026-08-18T-grid">
 <!-- ★★ 글씨 (2026-08-06 박사님: "글씨체가 이상해. 한글이 안 읽히네 뭔가. 잘 안 보여").
      Pretendard 를 **실제로 받아 온다.** 이름만 적어 두면 그 글씨가 깔린 기계에서만 보이고,
      안 깔린 기계에서는 조용히 system-ui 로 떨어진다 — 화면이 기계마다 달라진다.
@@ -10982,7 +10982,10 @@ const freePlace = {
     catch { return false; }
   },
   /* 놓을 자리를 반투명으로 보여 준다. 못 놓는 자리면 붉게. */
-  preview(hit, potD, potId) {
+  /* ★ `fromId` — **지금 방에 서 있는 그 그루의 실루엣**으로 띄운다(옮기는 중일 때).
+     `potId` 로 찾는 길보다 정확하다. `plants` 의 열쇠를 그대로 쓰므로 시루·무순·빈 화분·
+     둘째 몬스테라가 **전부 제 모습**으로 선다(§previewAt · opt.fromId 가 potId 를 이긴다). */
+  preview(hit, potD, potId, fromId) {
     if (!roomView || !roomView.previewAt) return;
     try {
       /* ★★ **좌표가 없는 hit 은 「자리 없음」이다** (2026-08-08 · QA §3-C).
@@ -10998,7 +11001,7 @@ const freePlace = {
       }
       roomView.previewAt({ x: hit.x, y: hit.y, z: hit.z, rotY: hit.rotY || 0,
                            onUid: hit.onUid, occIdx: hit.occIdx },
-                         { potD, valid: !!hit.ok, potId });
+                         { potD, valid: !!hit.ok, potId, fromId });
     } catch { }
   },
   clear() { try { roomView && roomView.clearPreview && roomView.clearPreview(); } catch { } },
@@ -11188,7 +11191,11 @@ const drag = {
     this.on = false; this.what = null; this.sel = null; this.valid = []; this.best = null;
     this.sowing = false;
     document.body.classList.remove('dragging');
-    $('dragGhost').classList.remove('on', 'ok', 'no');
+    /* ★ `inroom` 도 같이 뗀다 (2026-08-18). 안 떼면 **다음 끌기가 그 찌꺼기를 물려받는다** —
+       가방에서 한 번 끌어 본 판에서는 사진이 저절로 감춰져 「고쳐져 있다」로 보이고,
+       안 끌어 본 판에서는 안 감춰진다. **같은 코드가 판마다 다르게 보이는 것**이 이 클래스다.
+       ㉢ 을 앞 창이 재현 못 한 까닭이 바로 이것이었다(재서 확인 — 찌꺼기를 걷자마자 났다). */
+    $('dragGhost').classList.remove('on', 'ok', 'no', 'inroom');
     freePlace.clear(); freePlace.rings(false); freePlace.grid(false);
     if (roomView) roomView.highlightSlots([]);
     /* ★★★ 2026-08-15 — **여기가 아직 조용했다** (스스로 찾은 것 · quiet-to-plan §5-1).
@@ -11419,6 +11426,21 @@ function placeFailed(e) {
   $('dropLabel').classList.add('no');
   try { banner('놓지 못했습니다', String(raw).replace(/^\[[^\]]*\]\s*/, '')); } catch { }
 }
+/* ★ 그 종류의 **가방 그림**을 준다 (2026-08-18 · §dragTo).
+   가방에서 끄는 길은 `drag.begin(what, thumbUrl)` 로 **부르는 쪽이 그림을 들고 온다.**
+   방에서 집는 길은 부르는 쪽이 없어서 `#plantThumb`(몬스테라 밑값)을 집어 왔다.
+   ⇒ 같은 표(`BAG_PLACEABLE` + `BAG_ART`)에서 찾는다 — 두 길이 이제 **같은 그림**을 쓴다.
+   ⚠ `thumbId` 로 DOM 을 찾으면 **안 된다.** 그 id 는 가방 격자 칸의 `<img>` 것이라
+     시트를 닫으면 사라진다(끌기가 시작될 때 시트는 이미 닫혀 있다). 실제로 그래서
+     늘 밑값(몬스테라)으로 떨어졌다 — **찾는 자리를 틀리면 조용히 남의 그림이 온다.**
+   ⚠ 몬스테라는 그 표에 없다(가방 품목이 아니라 방에 사는 그루다). 그때는 식물 카드의
+     머리 그림이 맞다 — 그 칸은 고른 그루를 따라 바뀐다. */
+function moveThumbSrc(what) {
+  for (const [id, v] of Object.entries(BAG_PLACEABLE))
+    if (v.kind === what && BAG_ART[id]) return BAG_ART[id];
+  const p = $('plantThumb');
+  return p ? p.src : '';
+}
 /* ══ 놓인 식물 — 탭해서 고르고, 끌어서 옮기거나 돌린다 ═══════════════════
    ★"멀리서 잡아도 된다"가 핵심이다(박사님). 슬롯이 작아 정확히 못 집는 문제가
      이걸로 같이 풀린다 — 일단 고른 뒤에는 **화면 아무 데나** 끌면 된다. */
@@ -11606,11 +11628,29 @@ const picked = {
     const gh = $('dragGhost');
     gh.classList.add('on');
     gh.style.left = gx + 'px'; gh.style.top = gy + 'px';
-    gh.style.backgroundImage = `url(${$('plantThumb').src})`;
+    /* ★★ 2026-08-18 — **집은 것의 그림**을 쓴다. 여기가 `#plantThumb` 하나였다 —
+       그 칸은 식물 카드의 머리 그림이고 밑값이 `item_monstera.png` 라, **콩나물 시루를
+       옮기는 내내 손가락에 2D 몬스테라 화분이 따라다녔다**(실측: 62×62 · item_monstera.png).
+       박사님 말씀 *"미리보기가 옮기는 화분이 아니라 이상한 2D 큰 화분이잖아"* 가 이것이다.
+       2026-08-17 의 「모르는 것이면 몬스테라」와 **같은 뿌리**다 — 다섯 번째다. */
+    gh.style.backgroundImage = `url(${moveThumbSrc(drag.what)})`;
     const good = !!(hit && hit.ok);
     gh.classList.toggle('ok', good); gh.classList.toggle('no', !good);
-    /* 옮기는 중인 그 화분은 미리보기 판정에서 뺀다 — 자기 자신과 겹친다고 나오면 못 움직인다 */
-    freePlace.preview(hit, drag.potD, drag.what === 'monstera' && pot0(S) ? pot0(S).id : null);
+    /* ★★ 2026-08-18 — **방 안에 들어오면 2D 사진을 감춘다** (박사님: *"미리보기가 옮기는
+       화분이 아니라 이상한 2D 큰 화분이잖아. 스냅도 안 보이고."*)
+       ══════════════════════════════════════════════════════════════════
+       ⚠ 길이 **두 벌**이었다. 가방에서 끄는 길(`drag.move`)은 2026-08-06 에
+         `gh.classList.toggle('inroom', !!hit)` 를 받았는데, **방에 있는 것을 집어 옮기는
+         이 길은 안 받았다.** 그래서 여기서는 손가락을 따라 **2D 썸네일이 계속** 떠 있고,
+         그 그림이 3D 유령과 격자를 덮어 「스냅이 안 보인다」가 된다.
+       ⇒ 같은 줄을 여기에도 놓는다. 두 길이 이제 같은 규약이다. */
+    gh.classList.toggle('inroom', !!hit);
+    /* 옮기는 중인 그 화분은 미리보기 판정에서 뺀다 — 자기 자신과 겹친다고 나오면 못 움직인다
+       ★★ 2026-08-18 — 유령을 **집은 그루**로 세운다. 여기가 `pot0(S)` 였다 —
+         어느 그루를 집어도 **첫 그루(선물 몬스테라)의 실루엣**이 떴고, 시루·무순은
+         `null` 이라 **일반 모양**으로 섰다. 2026-08-17 의 「모르는 것이면 몬스테라」와 같은 뿌리다.
+         `fromId`(= 지금 열쇠)를 넘기면 방이 **실제로 그린 그 그루**를 그대로 복사한다. */
+    freePlace.preview(hit, drag.potD, this.potId || null, this.slotId || null);
     freePlace.rings(true, drag.potD, good ? { x: hit.x, z: hit.z } : null,
                     hit && hit.snappedTo);
     drag.best = hit;
@@ -11631,7 +11671,7 @@ const picked = {
     if (this.mode === 'move') {
       const hit = drag.best, what = drag.what, sel = drag.sel;
       drag.best = null; drag.valid = [];
-      $('dragGhost').classList.remove('on', 'ok', 'no');
+      $('dragGhost').classList.remove('on', 'ok', 'no', 'inroom');   /* ★ 찌꺼기를 안 남긴다 — §drag.end */
       freePlace.clear(); freePlace.rings(false); freePlace.grid(false);
       if (hit && hit.ok) {
         /* ★★ 2026-08-09 — **고른 그 시루만** 옮긴다(§자리는 시루마다 따로다).
