@@ -14,7 +14,7 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <!-- 지금 보고 있는 판이 언제 것인지. 캐시가 의심되면 이걸 본다 -->
-<meta name="byeot-build" content="2026-08-17T-recall">
+<meta name="byeot-build" content="2026-08-17T-hit">
 <!-- ★★ 글씨 (2026-08-06 박사님: "글씨체가 이상해. 한글이 안 읽히네 뭔가. 잘 안 보여").
      Pretendard 를 **실제로 받아 온다.** 이름만 적어 두면 그 글씨가 깔린 기계에서만 보이고,
      안 깔린 기계에서는 조용히 system-ui 로 떨어진다 — 화면이 기계마다 달라진다.
@@ -721,8 +721,17 @@
     #sheet label>span{width:84px;flex:0 0 84px;font-size:12px}
     #sheet .inventory{grid-template-columns:1fr 1fr}
     /* 하단 액션바는 방 위에 얹는다 — 넓은 화면에서 바를 통째로 깔면 방이 눌린다 */
+    /* ★★ 2026-08-17 — **아래 띠가 모서리 단추를 덮던 것** (박사님: *"좌측 하단 거두기 버튼
+       안 눌려, 뒤쪽에 뭐랑 겹쳐서 그런 듯"*).
+       ⚠ 넓은 화면에서는 이 띠가 **방 위에 얹힌다.** 그런데 오늘 [다음 날]·[거두기]·[물 주기]가
+         `#stage` 안 모서리로 내려오면서 **그 띠 밑에 깔렸다** — 보이기는 하는데 안 눌린다.
+         (띠는 `#stage` 다음 형제라 같은 z 값이면 나중 것이 이긴다.)
+       ⇒ 띠는 **글이 있는 데서만** 손을 받는다. 빈 데는 그대로 통과시킨다.
+         ⚠ 「z 를 올린다」로 안 고쳤다 — 그러면 이번엔 단추가 글을 덮는다. 덮는 넓이가
+           문제지 차례가 문제가 아니다. */
     #bottom{position:absolute;left:0;right:0;bottom:0;background:linear-gradient(0deg,rgba(20,16,28,.92) 40%,transparent 100%);
-            border-top:0;padding:26px 20px 18px}
+            border-top:0;padding:26px 20px 18px;pointer-events:none}
+    #bottom > *{pointer-events:auto}
     #bottom .quest{max-width:620px;margin:0 auto 10px}
     .actionbar{max-width:420px;margin:0 auto}
     #topbar{position:absolute;left:0;right:0;top:0;background:linear-gradient(180deg,rgba(20,16,28,.86) 0,transparent 100%)}
