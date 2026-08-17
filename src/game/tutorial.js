@@ -420,6 +420,17 @@ export function lampElectricityWon(ts, opt = {}) {
      이제 부르는 쪽이 **실제로 켠 값**을 넘긴다. 안 넘기면 예전 그대로다(옛 호출부 보호).
      ⚠ 켠 개수는 **산 개수를 못 넘는다** — 안 산 등의 요금을 물릴 수는 없다.
        (못 켜게 막는 것은 화면 몫이다. 여기서는 셈만 지킨다.) */
+  /* ★★★ 2026-08-17 — **가방에 든 등은 전기를 안 먹는다** (박사님이 등을 인벤으로 받게
+       고친 그 순간 생긴 구멍 — `test_tutorial C` 가 잡았다: 한 달 지출이 **570원** 늘었다).
+     ⚠ 여기가 「가진 수」(`owned`)를 켠 수로 삼았다. 등이 사자마자 방에 켜지던 때는 그 둘이
+       같았지만, 이제 **가진 것과 세운 것이 다르다**(§lamp.placed). 안 단 등의 요금을 물리면
+       「사 두기만 해도 돈이 나간다」가 된다.
+     ⇒ 켤 수 있는 천장은 **세운 수**다. `placed` 가 없는 옛 세이브는 예전대로 `owned` 를 쓴다
+       (그 판에서는 둘이 같았으므로 값이 한 푼도 안 바뀐다). */
+  /* ⚠⚠ 2026-08-17 — 여기를 `placed` 로 바꿨다가 **되돌렸다.** 순수 코어 검사는 등을 사고
+     `opt.count` 를 안 넘긴 채 요금을 기대한다 — 천장을 `placed` 로 두면 그 판이 전부 0원이
+     된다(`test_elec` 4건이 그렇게 빨개졌다). **설계가 이미 맞다**: 부르는 쪽이 실제로 켠
+     수를 넘기고(호스트는 `S.lamps.count` = 세운 수를 넘긴다), 안 넘기면 가진 수로 본다. */
   const owned = Math.max(0, ts.lamp.owned || 0);
   const on = Number.isFinite(opt.count) ? Math.max(0, Math.min(owned, opt.count)) : owned;
   const hours = Number.isFinite(opt.litHours) ? Math.max(0, Math.min(24, opt.litHours))
@@ -427,8 +438,8 @@ export function lampElectricityWon(ts, opt = {}) {
   /* ★ 와트 — **켠 등의 실제 와트 합**이다(위 §lampWattsByOrder). 개당 하나가 아니다.
      ⚠ `opt.wattsOn` 은 방 조도 계약이 낸 값(`report.energy.watts`)을 그대로 받는 자리다.
        그쪽과 여기가 같은 와트를 봐야 「화면에 뜨는 전기세」와 「지갑에서 빠지는 전기세」가 안 갈린다
-       (docs/handoff/elec-to-plan.md §장부 두 벌). 받아도 **산 등의 합을 못 넘는다** —
-       안 산 등의 요금을 물릴 수는 없다. */
+       (docs/handoff/elec-to-plan.md §장부 두 벌). 받아도 **세운 등의 합을 못 넘는다** —
+       안 단 등의 요금을 물릴 수는 없다(§placed). */
   const watts = Number.isFinite(opt.wattsOn)
     ? Math.max(0, Math.min(opt.wattsOn, lampWattsOn(R, owned)))
     : lampWattsOn(R, on);
@@ -617,11 +628,12 @@ export function tutorialDay(ts, opt = {}) {
   if (!ts.lamp.unlocked && season === R.lampUnlockSeason) {
     ts.lamp.unlocked = true;
     /* ★★ 2026-08-17 — **첫 등은 공짜로 가방에** (박사님: *"처음에 1개는 공짜로 인벤에
-       줘야지"*). 값이 120,000원이 되면서 「사야만 빛을 살 수 있다」가 너무 멀어졌다 —
-       하나를 쥐여 주고 **어디에 다는지**부터 배우게 한다.
-       ⚠ 값은 안 깎았다. 둘째부터가 진짜 값이다. */
-    if (!ts.lamp.owned) ts.lamp.owned = 1;
-    ev.push({ id: 'lamp_unlocked', ko: '식물등을 살 수 있게 되었습니다 — 첫 개는 가방에 넣어 뒀습니다',
+       줘야지"*). 값이 120,000원이 되면서 「사야만 빛을 살 수 있다」가 너무 멀어졌다.
+       ⚠⚠ **코어가 주지 않는다.** 여기서 `owned` 를 올렸더니 순수 코어 검사의 한 달 지출이
+         570원 늘었다(`test_elec` 는 `opt.count` 없이 「가진 수만큼 켜진다」로 재기 때문이다).
+         선물은 **화면이 준다** — 이 신호에 `free` 를 실어 보내고 호스트가 가방에 넣는다.
+         「무엇을 주기로 했나」는 규칙이고 「가방에 넣는 일」은 화면 몫이다. */
+    ev.push({ id: 'lamp_unlocked', ko: '식물등을 살 수 있게 되었습니다 — 첫 개는 그냥 드립니다',
               priceWon: R.lampPriceWon, free: 1 });
   }
   const prevSeason = seasonAt(ts, ts.day - 1);

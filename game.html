@@ -14,7 +14,7 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <!-- 지금 보고 있는 판이 언제 것인지. 캐시가 의심되면 이걸 본다 -->
-<meta name="byeot-build" content="2026-08-17T-lampbag">
+<meta name="byeot-build" content="2026-08-17T-lampbag2">
 <!-- ★★ 글씨 (2026-08-06 박사님: "글씨체가 이상해. 한글이 안 읽히네 뭔가. 잘 안 보여").
      Pretendard 를 **실제로 받아 온다.** 이름만 적어 두면 그 글씨가 깔린 기계에서만 보이고,
      안 깔린 기계에서는 조용히 system-ui 로 떨어진다 — 화면이 기계마다 달라진다.
@@ -10209,6 +10209,17 @@ function syncRoom() {
   /* ★식물등은 **산 만큼만** 보인다 (박사님 2026-08-03: "등도 다 없애, 천장등만 빼고").
      아직 안 산 등이 방에 놓여 있으면 "이미 있는데 왜 또 사나"가 된다.
      ⚠ 조도 계산은 안 건드린다 — 안 켠 등은 어차피 빛을 안 낸다. 화면만 맞춘다. */
+  /* ★★ 2026-08-17 — **첫 등을 가방에 넣어 준다**(코어는 신호만 낸다 · tutorial §lamp_unlocked).
+     ⚠ 규칙(무엇을 주기로 했나)은 코어 것이고, **가방에 넣는 일은 화면 몫**이다.
+       코어가 직접 넣었더니 순수 코어 검사의 한 달 지출이 570원 늘었다 — 그 판에서는
+       「가진 수만큼 켜진다」로 재기 때문이다. */
+  try {
+    const L = S.tutorial && S.tutorial.lamp;
+    if (L && L.unlocked && !L.owned && !L.placed) {
+      L.owned = 1;
+      pushLog(S, '💡 식물등 하나를 가방에 넣어 뒀습니다 — 방에서 달아 주세요');
+    }
+  } catch { }
   /* ★ 조도도 그림도 **세운 수**를 본다(§doBuyLamp). 가방에 든 등은 방을 안 밝힌다 */
   try {
     const placed = (S.tutorial && S.tutorial.lamp && S.tutorial.lamp.placed) || 0;
