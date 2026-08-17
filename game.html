@@ -1209,6 +1209,13 @@
      ⚠ 폭을 물린다 — 방을 절반 넘게 덮으면 그건 안내가 아니라 가림막이다.
        긴 줄은 두 줄까지만 보이고 끊는다.
      ⚠ 문구는 **아래 줄과 같은 것**이다(`#quest` 하나가 정본). 두 벌로 적지 않는다. */
+  /* 자리 고르기 줄 — 이름은 크게, 밝기는 작게. 한 손가락으로 누르는 자리라 44px 이상이다 */
+  .slotrow{display:flex;align-items:baseline;gap:8px;width:100%;min-height:46px;
+    justify-content:flex-start;text-align:left;margin-bottom:6px}
+  .slotrow b{font-size:14px;font-weight:700}
+  .slotrow small{font-size:11px;color:var(--dim)}
+  .slotrow:disabled{opacity:.5}
+  #slotList{max-height:46vh;overflow:auto;margin:6px 0 4px}
   #questChip{position:absolute;z-index:23;right:10px;top:calc(var(--safe-t) + 50px);
     max-width:min(56%,230px);padding:7px 10px;border-radius:12px;display:none;
     background:rgba(16,13,24,.82);border:1px solid rgba(255,180,84,.35);
@@ -1640,6 +1647,7 @@
       <span class="who" id="pickedName">—</span>
       <button id="pickMove" class="primary">옮기기</button>
       <button id="pickTurn" class="ghost">돌리기</button>
+      <button id="pickWhere" class="ghost">📍 자리</button>
       <button id="pickZoom" class="ghost">자세히</button>
       <!-- ★★ 2026-08-17 — **빈 화분에는 [🌱 심기]** (박사님: *"화분 탭했을 때 씨앗 심기
            버튼 해서 씨앗 고르는 팝업 뜨는 게 안 나와."*)
@@ -1875,6 +1883,22 @@
        개수를 고르는 자리가 아예 없었다.
      ★ 돈이 모자라도 **이 창은 뜬다.** 예전에는 단추가 `disabled` + `title` 뿐이라
        폰에서는 「왜 회색인지」를 볼 길이 없었다 — 까닭은 이 창 안에서 말한다. -->
+<!-- ══ ★★★ **자리를 골라 옮긴다** (2026-08-17 · 박사님: *"몬스테라를 창턱으로 옮기는 게
+     너무 힘들어 드래그로."*) ═══════════════════════════════════════════
+     ⚠ 창턱은 화면에서 **작고 높다.** 손가락으로 정확히 끌어다 놓기가 어렵고, 그 어려움이
+       「자리를 고르는 일」이라는 이 게임의 뼈대를 가로막는다.
+     ⇒ **끌지 않고 고른다.** 놓을 수 있는 자리를 목록으로 세우고 한 번 누르면 옮겨진다.
+     ⚠ 끌기를 **없애지 않는다** — 정밀하게 놓고 싶은 사람은 그대로 끌면 된다. 길을 더한다.
+     ⚠ 밝기는 **첫 플레이 중에는 안 적는다**(§fillSlots 의 그 규율 그대로) — 무엇이 밝은지는
+       방을 보고 배우는 것이지 목록이 알려 주는 것이 아니다. -->
+<div id="slotPanel" class="pop" aria-hidden="true">
+  <div class="card">
+    <div class="ptitle" id="slotTitle">어디에 둘까요</div>
+    <div class="psub" id="slotSub"></div>
+    <div id="slotList"></div>
+    <div class="pbtns"><button id="slotCancel" class="ghost" type="button">그만두기</button></div>
+  </div>
+</div>
 <div id="buyPanel" class="pop" aria-hidden="true">
   <div class="popcard" role="dialog" aria-modal="true" aria-labelledby="buyTitle">
     <div class="ptitle" id="buyTitle">몇 개 주문할까요</div>
@@ -4127,6 +4151,69 @@ function releaseGL() {
   try { if (roomView && roomView.dispose) roomView.dispose(); } catch (e) { console.warn('[나가기] 방 치우기', e && e.message); }
   try { const f = $('growth'); if (f) f.src = 'about:blank'; } catch { }
 }
+/* ★★★ 자리 고르기 창 — 끌지 않고 옮긴다(§slotPanel).
+   ⚠ 옮기는 것은 **코어의 그 함수**(`setPotSlot`)다. 여기서 좌표를 세우지 않는다 —
+     `slotId` 만 갈아 끼우면 「자리가 어긋납니다」로 던진다(그 함수 머리말).
+   ⚠ 후보는 `fillSlots` 가 쓰는 **같은 판정**(치수가 확인된 자리 · 화분이 올라가는 자리)이다.
+     두 곳이 다른 목록을 내면 「목록엔 있는데 안 놓인다」가 난다. */
+let slotPickPot = null;
+function askMovePot(pot) {
+  const p = pot || pot0(S);
+  if (!p) return;
+  slotPickPot = p;
+  const panel = $('slotPanel'), list = $('slotList');
+  if (!panel || !list) return;
+  const esc = v => String(v == null ? '' : v).replace(/[&<>"]/g, c =>
+    ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  let rows = [];
+  try {
+    const preview = io.light.daily(S.day + 1, S).report;
+    const roomSlot = new Map((io.light.room.slots || []).map(x => [x.slotId, x]));
+    rows = preview.slots
+      .filter(x => slotFitsDiameter(roomSlot.get(x.slotId) || x, ARRIVAL_POT_D))
+      /* 남이 이미 쓰는 자리는 뺀다 — 목록에 두면 눌러도 안 되는 줄이 된다 */
+      .filter(x => !(S.pots || []).some(q => q && q !== p && q.slotId === x.slotId))
+      .filter(x => !(S.emptyPots || []).some(q => q && q.slotId === x.slotId));
+  } catch { rows = []; }
+  const dev = !(S.firstPlay && S.firstPlay.enabled);
+  rows = dev ? [...rows].sort((a, b) => b.dli - a.dli)
+             : [...rows].sort((a, b) => slotLabel(a.slotId).localeCompare(slotLabel(b.slotId), 'ko'));
+  const idx = (S.pots || []).indexOf(p);
+  $('slotTitle').textContent = (S.pots || []).length > 1 && idx >= 0
+    ? `몬스테라 ${idx + 1} — 어디에 둘까요` : '어디에 둘까요';
+  $('slotSub').textContent = rows.length
+    ? '누르면 그 자리로 옮깁니다 · 끌어서 놓아도 됩니다'
+    : '지금 올릴 수 있는 자리가 없습니다 — 가구를 놓거나 자리를 비워 주세요';
+  list.innerHTML = rows.map(x => {
+    const here = p.slotId === x.slotId;
+    return `<button class="ghost slotrow" data-slot="${esc(x.slotId)}"${here ? ' disabled' : ''}>` +
+           `<b>${esc(slotLabel(x.slotId))}</b>` +
+           `<small>${here ? '지금 여기 있습니다' : (dev ? `DLI ${x.dli.toFixed(2)}` : '')}</small></button>`;
+  }).join('');
+  for (const b of list.querySelectorAll('[data-slot]'))
+    b.onclick = guard(() => movePotTo(b.dataset.slot));
+  panel.classList.add('on'); panel.setAttribute('aria-hidden', 'false');
+}
+function closeSlotPanel() {
+  const panel = $('slotPanel');
+  if (panel) { panel.classList.remove('on'); panel.setAttribute('aria-hidden', 'true'); }
+  slotPickPot = null;
+}
+function movePotTo(slotId) {
+  const p = slotPickPot; closeSlotPanel();
+  if (!p || !slotId) return;
+  try { setPotSlot(S, p, slotId, io.light.room.slots); }
+  catch (e) { banner('옮기지 못했습니다', (e && e.message) || ''); return; }
+  try { if (S.firstPlay && S.firstPlay.enabled && p === pot0(S)) moveMonstera(S.firstPlay, slotId); } catch { }
+  const n = (S.pots || []).length > 1 ? ` ${(S.pots || []).indexOf(p) + 1}` : '';
+  pushLog(S, `🪴 몬스테라${n}를 ${slotLabel(slotId)}(으)로 옮겼습니다`);
+  banner(`${slotLabel(slotId)}(으)로 옮겼습니다`, '빛 판정은 7일 평균이라 며칠 지나야 새 자리 값이 됩니다');
+  try { unlockAfterFix(); sfx.thud(); } catch { }
+  try { if (arrivalSlotId && slotId !== arrivalSlotId) dlgOpen('monsteraMoved'); } catch { }
+  try { syncRoom(); } catch { }
+  draw();
+}
+
 function bindDetail() {
   /* ★ 할 일 쪽지를 누르면 [할 일] 탭 — 요약을 보고 그 자리에서 자세히 볼 수 있어야 한다 */
   { const c = $('questChip');
@@ -4142,6 +4229,16 @@ function bindDetail() {
       releaseGL();                     /* ★ 옛 문맥을 놓고 나간다(§releaseGL) */
       location.replace(location.pathname + '?v=' + Date.now());
     }; }
+  { const c = $('slotCancel'); if (c) c.onclick = () => closeSlotPanel(); }
+  { const p2 = $('slotPanel');
+    if (p2) p2.onclick = (e) => { if (e.target === p2) closeSlotPanel(); }; }
+  /* ★ 방에서 고른 그루에도 [📍 자리]를 준다 — 끌기가 어려운 그 손이 여기로도 온다 */
+  { const b = $('pickWhere');
+    if (b) b.onclick = guard(() => {
+      const key = picked.slotId; picked.clear();
+      const p3 = potOfSlot(key);
+      if (p3 && (S.pots || []).includes(p3)) askMovePot(p3);
+    }); }
   $('meChip').onclick = () => detail.open('me');
   $('dClose').onclick = () => detail.close();
   $('detail').onclick = e => { if (e.target === $('detail')) detail.close(); };
@@ -8697,6 +8794,7 @@ function drawPlantMore() {
     const canW = !!(w && w.canWater);
     const btns = (canW ? `<button class="water" data-plantwater="${esc(p.id)}">💧 물 주기</button>` : '')
                /* ★ 2026-08-17 — **확대도 그루마다**(박사님). 카드를 한 겹 거치지 않고 바로 연다 */
+               + `<button class="ghost" data-plantwhere="${esc(p.id)}">📍 자리</button>`
                + `<button class="ghost" data-plantbig="${esc(p.id)}">🔍 확대</button>`
                + `<button class="ghost" data-plantzoom="${esc(p.id)}">📋 자세히</button>`;
     return `<div class="siruRow${w && w.dry ? ' thirsty' : ''}"><div class="nm">몬스테라 ${i + 1}` +
@@ -8707,6 +8805,8 @@ function drawPlantMore() {
     b.onclick = guard(() => { try { detail.open('monstera', { id: b.dataset.plantzoom }); } catch { } });
   for (const b of list.querySelectorAll('[data-plantwater]'))
     b.onclick = guard(() => waterPotOf(b.dataset.plantwater));
+  for (const b of list.querySelectorAll('[data-plantwhere]'))
+    b.onclick = guard(() => askMovePot((S.pots || []).find(x => x && x.id === b.dataset.plantwhere)));
   for (const b of list.querySelectorAll('[data-plantbig]'))
     b.onclick = guard(() => openZoomFor((S.pots || []).find(x => x && x.id === b.dataset.plantbig)));
 }
