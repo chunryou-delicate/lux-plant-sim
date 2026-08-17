@@ -1947,6 +1947,21 @@ export async function createRoomView(canvas, opts = {}) {
                                  lightAz: lightAzimuth(), photo: 0.5 });
         g.userData.growthDays = days;
         if (g.userData.skinsPending) noteSkinTip(asm);
+        /* ★★★ 2026-08-17 — **심은 뒤에도 고른 화분이 보인다** (박사님: *"화분 구매 시
+             모양이 안 나와… 배치해도 처음 화분하고 똑같에"* — 그 남은 반쪽).
+           ══════════════════════════════════════════════════════════════
+           ⚠ 조립기(`plant_assemble`)는 제 화분 하나를 갖고 있고 **고르는 창구가 없다.**
+             그래서 빈 화분은 고른 것대로 나오는데 **심는 순간 기본 화분**으로 돌아갔다.
+           ⇒ 조립이 끝난 뒤 그 화분 조각만 갈아 끼운다. 조립기는 안 건드린다 —
+             거기에 화분 표를 들이면 잎·마디를 짓는 일과 그릇을 고르는 일이 한 파일에서 섞인다.
+           ⚠ **지름을 유지한다.** 조립기가 이미 `potD` 로 통째로 줄여 놓았으므로, 갈아 끼우는
+             화분을 옛 화분과 **같은 폭**으로 맞춰야 그 배율이 안 깨진다. 안 그러면 자리 한도
+             판정(`rotationSafeDiameter`)이 딴 값을 읽어 「안 들어간다」가 뜬다.
+           ⚠ 못 실으면 **그대로 둔다.** 화분 하나 때문에 그루가 통째로 안 보이면 안 된다. */
+        if (spec && spec.potAsset && !/monstera\/pot\.glb$/.test(spec.potAsset)) {
+          try { await swapPotMesh(g, spec.potAsset); }
+          catch (e) { console.warn('[방뷰] 화분 갈아 끼우기', e && e.message); }
+        }
         return g;
       } catch (e) {
         if (!asmWarned) { asmWarned = true; console.warn('[방뷰] 몬스테라 조립 실패 — 옛 샘플로 그립니다:', e.message); }
@@ -1974,6 +1989,34 @@ export async function createRoomView(canvas, opts = {}) {
        ⇒ 화면이 넣을 값은 방뷰에 묻는다: `plantPotD('beansprout', n)`.
      ⚠ 무리가 한도보다 크면 **통째로 줄인다.** 무순 재배판과 같은 규칙이다 —
        "안 들어가면 조용히 걸쳐 두지 않는다". 대신 시루 한 개도 같이 작아진다. */
+  /* 조립된 그루의 화분 조각만 다른 GLB 로 갈아 끼운다(§buildMonstera).
+     ★ **폭을 맞춰 넣는다** — 옛 화분과 같은 폭이라야 바깥 배율이 그대로 산다.
+     ★ **바닥을 맞춘다** — 밑면이 옛 화분 밑면과 같은 높이여야 흙 위에 뜨거나 잠기지 않는다. */
+  async function swapPotMesh(g, assetPath) {
+    const old = g.userData && g.userData.potPart;
+    if (!old || !old.parent) return false;
+    const rep = await loadGLB(AT(`../../assets/${assetPath}`));
+    const bb0 = new THREE.Box3().setFromObject(old);
+    const w0 = Math.max(bb0.max.x - bb0.min.x, bb0.max.z - bb0.min.z);
+    const bb1 = new THREE.Box3().setFromObject(rep);
+    const w1 = Math.max(bb1.max.x - bb1.min.x, bb1.max.z - bb1.min.z);
+    if (!(w0 > 1e-6) || !(w1 > 1e-6)) return false;
+    rep.scale.setScalar(w0 / w1);
+    const bb2 = new THREE.Box3().setFromObject(rep);
+    rep.position.set(old.position.x,
+                     old.position.y + (bb0.min.y - bb2.min.y),
+                     old.position.z);
+    const parent = old.parent;
+    parent.remove(old);
+    parent.add(rep);
+    disposeObject(old);
+    g.userData.potPart = rep;
+    /* ★ 무엇으로 갈아 끼웠는지 남긴다 — 밖에서 「정말 갈렸나」를 잴 유일한 근거다
+       (GLB 는 한 번 실으면 캐시라 네트워크로는 못 잰다 · §2.9 ⑤) */
+    g.userData.potAsset = assetPath;
+    return true;
+  }
+
   async function buildBeansprout(spec, limit) {
     const p01 = clamp(spec.progress01 ?? 1, 0, 1);
     const g = new THREE.Group();
@@ -9088,6 +9131,8 @@ export async function createRoomView(canvas, opts = {}) {
         yaw: p.group.rotation.y || 0,
         at: p.at ? { ...p.at } : null,
         potD: p.potD ?? null,
+        /* 갈아 끼운 화분 — 안 갈았으면 null 이다(§swapPotMesh) */
+        potAsset: (p.group && p.group.userData && p.group.userData.potAsset) || null,
         /* 실제로 **세워진** 용기 수다. spec 을 되읽는 게 아니라 그루가 스스로 적어 둔 값이다 */
         count: p.group.userData.containerCount || 1
       }));
