@@ -74,12 +74,17 @@ const waitAct = async (ms = 15000) => {
   while (Date.now() - t0 < ms) { if (!(await acting())) { await sleep(250); return true; } await sleep(250); }
   return false;
 };
+/* ★ 지나간 대사를 모은다 — 「같은 말이 두 번 나오나」를 재려면 흘려보내면 안 된다 */
+const said = [];
 /* 대사·안내판은 **닫기만** 한다 */
 const clearTalk = async () => {
   for (let i = 0; i < 30; i++) {
     const busy = await page.eval(`(()=>{const s=document.getElementById('stage'),g=document.getElementById('guide');
       return !!(s&&s.classList.contains('talking'))||!!(g&&g.classList.contains('on'));})()`);
     if (!busy) return;
+    const line = await page.eval(`(()=>{ const b=document.getElementById('dlgBox');
+      return b ? (b.textContent||'').replace(/\s+/g,' ').trim().slice(0,60) : ''; })()`);
+    if (line) said.push(`${line}`);
     await page.eval(`(()=>{const g=document.getElementById('guideClose'); if(g&&g.offsetParent){g.click();return;}
       const b=document.getElementById('dlgBox'); if(b)b.click();})()`, false);
     await sleep(260);
@@ -144,6 +149,16 @@ for (const v of log) {
   prev = key;
   console.log(`${String(v.day).padStart(2)}일 ${v.첫플 ? '[튜토]' : '[본편]'} 할일「${v.할일 || '—'}」` +
               ` 손가락「${v.손가락 || '—'}」→${v.대상 || '—'}`);
+}
+/* ── 같은 대사가 두 번 나왔나 ─────────────────────────────── */
+console.log('');
+console.log('── 되풀이된 대사 ────────────────────────────────────────');
+{
+  const n = new Map();
+  for (const l of said) { const k = l.split('|').slice(1).join('|'); n.set(k, (n.get(k) || 0) + 1); }
+  const dup = [...n].filter(([, c]) => c > 1);
+  if (!dup.length) console.log('  없음');
+  for (const [k, c] of dup) console.log(`  ${c}번 — ${k}`);
 }
 console.log('');
 console.log('예외', errs.length, errs.slice(0, 3).join(' | '));

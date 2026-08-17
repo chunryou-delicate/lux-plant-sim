@@ -14,7 +14,7 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <!-- 지금 보고 있는 판이 언제 것인지. 캐시가 의심되면 이걸 본다 -->
-<meta name="byeot-build" content="2026-08-17T-art">
+<meta name="byeot-build" content="2026-08-17T-guide2">
 <!-- ★★ 글씨 (2026-08-06 박사님: "글씨체가 이상해. 한글이 안 읽히네 뭔가. 잘 안 보여").
      Pretendard 를 **실제로 받아 온다.** 이름만 적어 두면 그 글씨가 깔린 기계에서만 보이고,
      안 깔린 기계에서는 조용히 system-ui 로 떨어진다 — 화면이 기계마다 달라진다.
@@ -1160,8 +1160,12 @@
      한 번에 하나만 가리키는 손가락과는 다른 것이다. 이건 **모든 조작을 한 화면에**
      펼쳐 보여주는 판이다 — 처음 열면 저절로 뜨고, 그 뒤엔 [?] 로 다시 본다.
      ★화면을 가리지 않게 반투명으로 덮고, 각 대상 옆에 화살표와 설명을 붙인다. */
-  #guide{position:fixed;z-index:80;inset:0;display:none;background:rgba(8,6,12,.82);
-    -webkit-backdrop-filter:blur(2px);backdrop-filter:blur(2px)}
+  /* ★★ 2026-08-17 — **덮개를 옅게** (박사님: *"좀 더 밖에 화면은 보이게, 덜 반투명으로
+     해야 될 듯. 아무것도 안 보여."*). .82 + blur(2px) 는 뒤가 통째로 안 보였다 —
+     이 판은 「무엇이 무엇인지」를 **가리키는** 판이라 가리킬 대상이 보여야 뜻이 산다.
+     ⚠ 글자는 저마다 제 배경(`.gtip`)을 갖고 있어 옅게 해도 안 묻힌다. */
+  #guide{position:fixed;z-index:80;inset:0;display:none;background:rgba(8,6,12,.42);
+    -webkit-backdrop-filter:blur(0.5px);backdrop-filter:blur(0.5px)}
   #guide.on{display:block}
   /* ★ 2026-08-11 — 제목·부제를 **자원칩 띠 아래로** 내렸다. 18px/44px 이던 때는
      제목 `이렇게 하시면 됩니다` 를 자원칩 테두리 둘이 가로질렀다(실측 그림 01_qmark_panel.png).
@@ -4416,6 +4420,40 @@ function updateHint() {
       if (onScreen($('openBag'))) return hintAt($('openBag'), '[상점] 탭에서 시루를 주문하세요');
     }
   }
+  /* ══ ★★★ 2026-08-17 — **무순 사는 길** (박사님: *"무순 구매도 손가락 가이드해줘."*)
+     ═══════════════════════════════════════════════════════════════════
+     ⚠ 무순은 **둘이 있어야** 시작된다 — 새싹 재배판(그릇)과 무 씨앗. 하나만 사면
+       그 자리에서 멈추므로 **없는 쪽을 가리킨다.**
+     ★ 걸음은 씨앗·시루와 **같다**: [상점] → 그 줄의 [주문] → 개수 확정.
+     ⚠ 할 일이 무순을 말할 때만이다. 그 전에 가리키면 아직 안 배운 것을 사라는 말이 된다.
+     ⚠ 이미 판을 놓았으면 안 가리킨다 — 그때는 사는 일이 아니라 **심는 일**이다. */
+  const musunNeed = (() => {
+    try {
+      if (!/무순/.test($('quest').textContent || '')) return null;
+      /* 이미 판이 서 있으면 사는 일이 아니다 */
+      let rows = []; try { rows = cropPotList(S.firstPlay, S.day).filter(r => r.kind === 'musun'); } catch { }
+      if (rows.some(r => r.placed)) return null;
+      const st = shopStatus(S);
+      const have = (id) => ((st.stock && st.stock[id]) || 0)
+        + (st.orders || []).reduce((n, o) => n + (o.itemId === id && o.daysLeft >= 0 ? (o.qty || 1) : 0), 0);
+      if (!have('sprout_tray')) return { id: 'sprout_tray', ko: '새싹 재배판' };
+      if (!have('radish_seed')) return { id: 'radish_seed', ko: '무 씨앗' };
+      return null;
+    } catch { return null; }
+  })();
+  if (musunNeed) {
+    const go = $('buyGo');
+    if (go && onScreen(go) && !go.disabled)
+      return hintAt(go, `개수를 정하고 [주문] — ${musunNeed.ko}`);
+    const b = $('shopList') && $('shopList').querySelector(`[data-buy="${musunNeed.id}"]`);
+    if (sheetOpen && b && onScreen(b) && !b.disabled)
+      return hintAt(b, `${musunNeed.ko}을(를) 주문합니다 — 무순은 판과 씨앗 둘이 필요합니다`);
+    if (!sheetOpen) {
+      const shopBtn = $('navShop');
+      if (onScreen(shopBtn)) return hintAt(shopBtn, `${musunNeed.ko}을(를) 사러 갑니다`);
+      if (onScreen($('openBag'))) return hintAt($('openBag'), '[상점] 탭에서 무순 재료를 주문하세요');
+    }
+  }
   /* ★★ **식물 위 말풍선을 먼저 가리킨다** (2026-08-06 박사님:
      "밑에 물주기 버튼은 없애고 식물에 물주기 버튼에 손가락 가이드 표기해 줘").
      ⚠ 예전에는 아래 버튼과 말풍선이 **둘 다** 떠서 같은 일을 두 번 말했고,
@@ -4423,7 +4461,21 @@ function updateHint() {
      ⇒ 말풍선이 떠 있으면 **그걸** 가리킨다. 그러면 손가락이 곧 "어디를 눌러라"가 된다.
      ⚠ 말풍선이 없을 때(가려졌거나 방이 안 떴을 때)는 아래 버튼으로 떨어진다 —
        안 그러면 안내가 통째로 사라진다. */
-  const markEl = !sheetOpen && $('marks') && $('marks').querySelector('.mark');
+  /* ★★★ 2026-08-17 — **두 바퀴를 넘기면 거두기·물주기 손가락을 뗀다** (박사님:
+       *"퀘스트 끝난 다음엔 「거둘 때가 됐음」 손가락이 안 나오게 해."*)
+     ══════════════════════════════════════════════════════════════════
+     ⚠ 사진의 상황: Day 24 · 할 일은 「무순을 길러 콩나물과 한 상에 올리세요」인데 손가락은
+       **콩나물 [거두기]**를 가리키고 있었다. 거두는 법은 이미 스무 날 전에 배웠다 —
+       그 손가락은 안내가 아니라 **지금 할 일을 가리는 장식**이다.
+     ★ [다음 날] 손가락을 두 바퀴로 되돌린 것과 **같은 규율**이다(§taughtCycles).
+       손가락은 **모르는 것**에만 쓴다.
+     ⚠ 말풍선은 그대로 뜬다 — 없애는 것은 **손가락**뿐이다. 거둘 것이 있다는 사실은
+       여전히 그 자리에 적혀 있고, 다만 화면이 그리로 끌지 않는다. */
+  const taughtBasics = (() => {
+    try { return ((S.firstPlay && S.firstPlay.beansprout && S.firstPlay.beansprout.harvestCount) || 0) >= 2; }
+    catch { return false; }
+  })();
+  const markEl = !sheetOpen && !taughtBasics && $('marks') && $('marks').querySelector('.mark');
   if (markEl && onScreen(markEl)) {
     const ko = (markEl.textContent || '').replace(/^[^가-힣]+/, '');
     return hintAt(markEl, /거두/.test(ko) ? '거둘 때가 됐습니다'
@@ -4431,9 +4483,9 @@ function updateHint() {
                         : ko || '여기를 눌러 보세요');
   }
   const btnHarvest = $('harvestCrop'), btnWater = $('waterCrop');
-  if (!sheetOpen && onScreen(btnHarvest) && !btnHarvest.disabled)
+  if (!sheetOpen && !taughtBasics && onScreen(btnHarvest) && !btnHarvest.disabled)
     return hintAt(btnHarvest, '거둘 때가 됐습니다');
-  if (!sheetOpen && onScreen(btnWater) && !btnWater.disabled)
+  if (!sheetOpen && !taughtBasics && onScreen(btnWater) && !btnWater.disabled)
     return hintAt(btnWater, '물을 주면 자라기 시작합니다');
   /* ★★ 2026-08-11 — **몬스테라 물주기도 손이 가는 일이다.**
      말풍선(`potMarks`)은 **마른 뒤에만** 뜨는데 아래 버튼(`#waterPot`)은
