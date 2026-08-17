@@ -262,7 +262,11 @@ export function createTutorialState(opt = {}) {
     cashWon: R.startCashWon,
     /* 계절이 흐르기 시작하는 시점. 첫 플레이(novice·여름 고정) 동안은 멈춰 있다. */
     seasonRunning: false,
-    lamp: { unlocked: false, owned: 0, litHours: R.lampHours },
+    /* ★★ 2026-08-17 — `placed` 가 늘었다 (박사님: *"내가 구매하면 인벤으로 들어오게
+       하라고 했잖아. 그 이후 위치 잡고 설치 가능하게 하고 이동도 가능하게 하자고"*).
+       `owned` 는 **가진 수**, `placed` 는 **방에 세운 수**다. 조도는 `placed` 를 본다 —
+       가방에 든 등은 방을 밝히지 않는다(그게 「설치」라는 말의 뜻이다). */
+    lamp: { unlocked: false, owned: 0, placed: 0, litHours: R.lampHours },
     /* ★ 2026-08-09 — 첫 청구는 **첫날**이다(위 §rentFirstDueDay. 유예 폐지).
        ⚠ 옛 세이브·옛 규칙 사본은 `rentGraceDays` 밖에 없다 — 없으면 그 값을 쓴다.
          못 읽으면 조용히 0 이 되어 **없던 월세가 하루 일찍 빠지므로** 폴백을 남긴다. */
@@ -612,8 +616,13 @@ export function tutorialDay(ts, opt = {}) {
   const seasonDay = seasonDayAt(ts, ts.day);
   if (!ts.lamp.unlocked && season === R.lampUnlockSeason) {
     ts.lamp.unlocked = true;
-    ev.push({ id: 'lamp_unlocked', ko: '식물등을 살 수 있게 되었습니다',
-              priceWon: R.lampPriceWon });
+    /* ★★ 2026-08-17 — **첫 등은 공짜로 가방에** (박사님: *"처음에 1개는 공짜로 인벤에
+       줘야지"*). 값이 120,000원이 되면서 「사야만 빛을 살 수 있다」가 너무 멀어졌다 —
+       하나를 쥐여 주고 **어디에 다는지**부터 배우게 한다.
+       ⚠ 값은 안 깎았다. 둘째부터가 진짜 값이다. */
+    if (!ts.lamp.owned) ts.lamp.owned = 1;
+    ev.push({ id: 'lamp_unlocked', ko: '식물등을 살 수 있게 되었습니다 — 첫 개는 가방에 넣어 뒀습니다',
+              priceWon: R.lampPriceWon, free: 1 });
   }
   const prevSeason = seasonAt(ts, ts.day - 1);
   /* ★계절 이름을 같이 싣는다 — 가을과 겨울은 대사가 완전히 다르다.

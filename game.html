@@ -14,7 +14,7 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <!-- 지금 보고 있는 판이 언제 것인지. 캐시가 의심되면 이걸 본다 -->
-<meta name="byeot-build" content="2026-08-17T-seed">
+<meta name="byeot-build" content="2026-08-17T-lampbag">
 <!-- ★★ 글씨 (2026-08-06 박사님: "글씨체가 이상해. 한글이 안 읽히네 뭔가. 잘 안 보여").
      Pretendard 를 **실제로 받아 온다.** 이름만 적어 두면 그 글씨가 깔린 기계에서만 보이고,
      안 깔린 기계에서는 조용히 system-ui 로 떨어진다 — 화면이 기계마다 달라진다.
@@ -5692,6 +5692,10 @@ const BAG_GROUPS = Object.freeze([
    ⚠ 무순(`sprout_tray`)은 **여기 없다.** 재배판은 「심기」(재배판+씨앗 → 개체)를 한 번
      거쳐야 하고 그 개체는 한 판뿐이라(drawMusun `canSow = !pots`), 「누를 때마다 하나씩」이
      성립하지 않는다. 그래서 무순은 아직 카드가 손잡이다. */
+/* ★★ 2026-08-17 — **가방에 든 식물등** (박사님: *"처음에 1개는 공짜로 인벤에 줘야지"*).
+   ⚠ 이것은 상점 재고 품목이 **아니다**(`tutorial.lamp` 가 센다) — 그래서 아래 표가 아니라
+     `drawBag` 이 따로 한 칸을 세운다. 누르면 그 등이 방에 선다. */
+const BAG_LAMP_ID = '__lampbag__';
 const BAG_PLACEABLE = Object.freeze({
   siru: { kind: 'beansprout', thumbId: 'cropThumb', detail: 'crop', ko: '콩나물 시루' },
   /* ★★ 2026-08-16 — **새싹 재배판을 넣었다** (박사님: *"용기 새싹재배판 드래그해서
@@ -6008,6 +6012,26 @@ function drawBag() {
      ⚠ 예전에는 `if (anyPlaceable)` 이었다. 그런데 첫 판이 들고 시작하는 시루는 **하나뿐**이라
        그 하나를 놓는 순간 칸이 통째로 사라지고 **안내도 같이 사라졌다** — 「이제 몇 개를
        더 놓아야 하나」를 말할 자리가 바로 그때 없어진 셈이다(§A-4 · 재서 알았다). */
+  /* ★★★ 2026-08-17 — **가방에 든 식물등** (박사님: *"내가 구매하면 인벤으로 들어오게
+       하라고 했잖아 … 처음에 1개는 공짜로 인벤에 줘야지"*).
+     ⚠ 등은 상점 재고 품목이 **아니다**(`tutorial.lamp` 가 센다) — 그래서 위 표를 안 타고
+       여기서 한 칸을 따로 세운다.
+     ★ **가진 수 − 세운 수** 가 가방에 있는 것이다. 0 이면 칸이 아예 안 그려진다. */
+  {
+    let owned = 0, placed = 0;
+    try { owned = (S.tutorial && S.tutorial.lamp && S.tutorial.lamp.owned) || 0;
+          placed = (S.tutorial && S.tutorial.lamp && S.tutorial.lamp.placed) || 0; } catch { }
+    const left = Math.max(0, owned - placed);
+    if (left > 0) {
+      anyPlaceable = true;
+      const ko = placed === 0 ? '벽부형 식물등' : '집게형 식물등';
+      html += `<div class="grouphead">식물등</div><div class="baggrid">` +
+        `<button class="bagslot draggable" id="${BAG_LAMP_ID}" data-lampbag="1" type="button">` +
+        `<i class="ltr">💡</i>` +
+        (left > 1 ? `<b class="qty">×${left}</b>` : '') +
+        `<small>${ko}</small></button></div>`;
+    }
+  }
   html += bagHelpHTML(anyPlaceable);
   /* ★★★ **자른 삽수** (2026-08-16 · §cuttingBagHTML). 거둔 채소보다 **앞**에 둔다 —
      삽수는 놓아야 할 물건이고 채소는 보여 주는 물건이다. 할 일이 먼저다. */
@@ -6023,6 +6047,9 @@ function drawBag() {
     /* 칸이 새로 만들어졌으니 끌기를 다시 건다 — 노드가 바뀌면 리스너도 같이 사라진다.
        ⚠ 겹치지 않는다: 새 노드에 처음 거는 것이다(부팅 때 한 번 거는 §bindDrag 와 다르다).
        ★ 셋째 인자가 **누르기**다 — 안 움직이고 뗀 손은 「눌러서 배치」로 간다(§bindDrag). */
+    /* ★ 가방의 식물등 — 누르면 방에 세운다(§placeLampFromBag) */
+    { const b = document.getElementById(BAG_LAMP_ID);
+      if (b) b.onclick = guard(() => placeLampFromBag()); }
     for (const id of Object.keys(BAG_PLACEABLE)) {
       const p = BAG_PLACEABLE[id];
       /* ★ 2026-08-16 — **화분도 누르면 놓인다.** 예전에는 `beansprout` 만 손잡이를 받아
@@ -10182,6 +10209,11 @@ function syncRoom() {
   /* ★식물등은 **산 만큼만** 보인다 (박사님 2026-08-03: "등도 다 없애, 천장등만 빼고").
      아직 안 산 등이 방에 놓여 있으면 "이미 있는데 왜 또 사나"가 된다.
      ⚠ 조도 계산은 안 건드린다 — 안 켠 등은 어차피 빛을 안 낸다. 화면만 맞춘다. */
+  /* ★ 조도도 그림도 **세운 수**를 본다(§doBuyLamp). 가방에 든 등은 방을 안 밝힌다 */
+  try {
+    const placed = (S.tutorial && S.tutorial.lamp && S.tutorial.lamp.placed) || 0;
+    if (S.lamps.count !== placed) { S.lamps.count = placed; io.light.clearCache(); }
+  } catch { }
   if (roomView.setGrowLights) { try { roomView.setGrowLights(S.lamps.count || 0); } catch { } }
   try {
     const potSpec = p ? {
@@ -11737,6 +11769,33 @@ function sowEmptyPot(id) {
   draw();
 }
 
+/* ★★★ 가방의 식물등을 방에 세운다 (2026-08-17 · 박사님).
+   ⚠ **벽등은 자리를 안 고른다** — 창 위 벽에 붙는 물건이고, 그 자리는 방 데이터가 정한다
+     (`house_rooms.banjiha-growlight-bar`). 바닥 좌표로 놓으면 허공에 뜬다(그 사고를 봤다).
+     ⇒ 「어디에 놓을까」가 아니라 **「달까 말까」**다. 세우면 그 자리에 켜진다.
+   ⚠ 집게등은 물릴 상판을 고르는 길이 따로 있다(`lampMounts`) — 여기서는 세우기만 한다.
+   ★ 세운 수가 곧 조도다(§doBuyLamp) — 여기서 그 수를 올리는 것이 「설치」의 전부다. */
+function placeLampFromBag() {
+  const L = S.tutorial && S.tutorial.lamp;
+  if (!L) return;
+  const left = Math.max(0, (L.owned || 0) - (L.placed || 0));
+  if (left <= 0) { banner('가방에 식물등이 없습니다', '상점에서 사면 가방으로 들어옵니다'); return; }
+  let max = 0; try { max = io.light.growLampCount(); } catch { }
+  if (max && (L.placed || 0) >= max) {
+    banner('이 방에 더 달 자리가 없습니다', `이 방에 달 수 있는 식물등은 ${max}개입니다`);
+    return;
+  }
+  const ko = (L.placed || 0) === 0 ? '벽부형 식물등' : '집게형 식물등';
+  L.placed = (L.placed || 0) + 1;
+  S.lamps.count = L.placed;
+  io.light.clearCache();
+  pushLog(S, `💡 ${ko}을 달았습니다 — 이제 이 방을 밝힙니다`);
+  banner(`${ko}을 달았습니다`, '누르면 켜고 끌 수 있습니다 · 자리가 나쁘면 등을 켜도 소용없습니다');
+  try { sfx.thud(); } catch { }
+  try { window.__byeotSheet.close(); } catch { }
+  fillSlots(); syncRoom(); draw();
+}
+
 function startPhonePlace() {
   if (spareSiru() <= 0) { banner('가방에 빈 시루가 없습니다', '상점에서 시루를 주문해 주세요'); return; }
   const spot = provisionalSpot();
@@ -12909,7 +12968,12 @@ function runDayAnim(done) {
      ⚠⚠ **사는 규칙(`tutorial.buyLamp`)은 한 글자도 안 건드렸다.** 몸통이 그대로다. */
 function doBuyLamp() {
   const r = buyLamp(S.tutorial);
-  S.lamps.count = S.tutorial.lamp.owned;      /* 조도 계산이 보는 곳에도 반영한다 */
+  /* ★★★ 2026-08-17 — **사면 가방으로 들어온다** (박사님: *"내가 구매하면 인벤으로
+       들어오게 하라고 했잖아. 그 이후 위치 잡고 설치 가능하게 하고"*).
+     ⚠ 여기가 산 즉시 `S.lamps.count` 를 올려 **방에 저절로 켜졌다** — 그래서 벽등이
+       「공중에 붙어버리는」 자리에 혼자 나타났다.
+     ⇒ 조도는 **세운 수**(`placed`)만 본다. 사는 것과 세우는 것은 다른 일이다. */
+  S.lamps.count = (S.tutorial.lamp.placed || 0);
   io.light.clearCache();
   /* ★ 2026-08-17 — **무엇을 샀는지 적는다.** 등이 둘이 되면서 「식물등을 샀습니다」만으로는
      어느 것이 켜졌는지 화면이 말을 안 하게 됐다(§LAMP_KINDS 와 같은 이름을 쓴다). */
