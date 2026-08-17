@@ -14,7 +14,7 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <!-- 지금 보고 있는 판이 언제 것인지. 캐시가 의심되면 이걸 본다 -->
-<meta name="byeot-build" content="2026-08-17T-pots">
+<meta name="byeot-build" content="2026-08-17T-gameover">
 <!-- ★★ 글씨 (2026-08-06 박사님: "글씨체가 이상해. 한글이 안 읽히네 뭔가. 잘 안 보여").
      Pretendard 를 **실제로 받아 온다.** 이름만 적어 두면 그 글씨가 깔린 기계에서만 보이고,
      안 깔린 기계에서는 조용히 system-ui 로 떨어진다 — 화면이 기계마다 달라진다.
@@ -1214,6 +1214,23 @@
     letter-spacing:.02em;margin-bottom:2px}
   #questChip span{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;
     overflow:hidden;font-size:11.5px;line-height:1.35;color:var(--ink)}
+  /* ══ ★★★ **게임오버 — 굶어 쓰러졌다** (2026-08-17 · 박사님: *"돈 0원 되고 10일 지나면
+       배고파서 죽는 걸로 게임오버 하고 0일부터 재시작"*) ═══════════════════════
+     ⚠ 이 저장소는 그동안 **일부러 안 죽였다**(story_arc §0 · first_play §*"게임오버는 되면
+       안 되니까"*). 오늘 그 규율이 바뀌었다 — 옛 주석을 지우지 않고 그 위에 적어 두었다.
+     ⚠ **닫는 길이 하나뿐이다.** 죽은 판을 계속 만지게 두면 「죽었는데 왜 돌아가지」가 된다.
+       ⇒ 덮개는 모든 것을 가리고, 나가는 문은 [처음부터 다시] 하나다. */
+  #gameOver{position:fixed;inset:0;z-index:95;display:none;
+    background:rgba(9,7,14,.94);backdrop-filter:blur(3px);
+    align-items:center;justify-content:center;padding:24px;text-align:center}
+  #gameOver.on{display:flex}
+  #gameOver .card{max-width:340px;width:100%}
+  #gameOver img{width:min(62vw,220px);height:auto;display:block;margin:0 auto 14px;
+    border-radius:14px;filter:grayscale(.55) brightness(.72) contrast(1.05)}
+  #gameOver h2{font-size:20px;font-weight:800;color:#f0a35f;margin:0 0 6px}
+  #gameOver p{font-size:13px;line-height:1.6;color:var(--dim);margin:0 0 6px}
+  #gameOver b{color:var(--ink)}
+  #gameOver button{margin-top:16px;width:100%;min-height:48px;font-weight:800;font-size:15px}
   .hintTarget{position:relative;animation:hintGlow 1.4s ease-in-out infinite}
   @keyframes hintGlow{0%,100%{box-shadow:0 0 0 0 rgba(255,180,84,0)}
                       50%{box-shadow:0 0 0 4px rgba(255,180,84,.45)}}
@@ -1504,6 +1521,17 @@
 <body>
 <div id="app">
   <!-- ══ 상단 상태 ══════════════════════════════════════════════════════ -->
+  <!-- ★ 게임오버 덮개 — 무대 밖이다. 방·시트·말풍선을 전부 가려야 한다(§gameOver) -->
+  <div id="gameOver" role="alertdialog" aria-hidden="true">
+    <div class="card">
+      <img id="gameOverArt" src="./assets/characters/portraits/portrait_jachwi_cry.png" alt="">
+      <h2>굶어 쓰러졌습니다</h2>
+      <p id="gameOverWhy"></p>
+      <p>지갑이 <b>0원</b>인 채로 열흘이 지났습니다.<br>
+         식물은 빛으로 살지만, 사람은 밥으로 삽니다.</p>
+      <button id="gameOverAgain" class="primary" type="button">처음부터 다시</button>
+    </div>
+  </div>
   <header id="topbar">
     <div class="resourcebar">
       <!-- 나 — 누르면 내가 누구고 지금 어디까지 왔는지 -->
@@ -2820,6 +2848,32 @@ function noteTurn(t) {
   lastTurn = t;
   stuckDays = (t && (t.growthBlocked || t.headroomBlocked)) ? stuckDays + 1 : 0;
   noteLeafGrades(t);
+  checkStarved(t);          /* ★ 굶어 죽었나 — 턴이 낸 신호 하나로 본다(§gameOver) */
+}
+
+/* ══ ★★★ 게임오버 — 굶어 쓰러졌다 (2026-08-17 · 박사님) ══════════════════════
+   ★ **판정은 코어가 한다**(`tutorial.js §starveDays` — 0원이 이어진 날을 센다).
+     화면은 그 신호(`starved`)를 받아 덮개를 씌우고, 나가는 문 하나를 준다.
+     ⚠ 여기서 날짜를 다시 세지 않는다. 두 벌이 되면 「화면은 죽었다는데 판은 살아 있는」
+       상태가 생기고, 그건 아무도 못 찾는 종류의 고장이다(§2.8).
+   ⚠ **세이브를 여기서 안 지운다.** 지우는 것은 [처음부터 다시]를 누른 뒤다 —
+     누르기 전에 지우면 화면을 새로 고치는 것만으로 판이 사라진다. */
+function checkStarved(t) {
+  try {
+    const ev = (t && t.tutorial && t.tutorial.events) || [];
+    const hit = ev.find(e => e && e.id === 'starved');
+    if (!hit && !(S.tutorial && S.tutorial.starved)) return;
+    const el = $('gameOver');
+    if (!el || el.classList.contains('on')) return;
+    const why = $('gameOverWhy');
+    if (why) why.textContent =
+      `살림 ${(S.tutorial && S.tutorial.day) || 0}일차 · 반지하에서 ${(hit && hit.days) || 10}일을 굶었습니다.`;
+    el.classList.add('on');
+    el.setAttribute('aria-hidden', 'false');
+    try { window.__byeotSheet.close(); } catch { }
+    try { sfx.thud(); } catch { }
+    pushLog(S, '💀 굶어 쓰러졌습니다 — 판이 끝났습니다');
+  } catch (e) { console.warn('[게임오버]', e && e.message); }
 }
 
 /* ══ ★★★ 무늬 등급 — 새로 난 무늬 잎이 **어떤 무늬인가**를 정한다 (2026-08-16) ══
@@ -4002,6 +4056,16 @@ function bindDetail() {
   /* ★ 할 일 쪽지를 누르면 [할 일] 탭 — 요약을 보고 그 자리에서 자세히 볼 수 있어야 한다 */
   { const c = $('questChip');
     if (c) c.onclick = () => { try { window.__byeotSheet.open('quest'); } catch { } }; }
+  /* ★ 게임오버에서 나가는 **유일한 문** — 저장을 지우고 0일부터 새로 연다.
+     ⚠ `saveOff` 를 **먼저** 세운다. 안 그러면 나가면서 `pagehide` 가 방금 지운 자리에
+       지금 상태를 다시 써 넣는다 — [저장 지우고 처음부터]가 이미 겪은 그 사고다. */
+  { const ga = $('gameOverAgain');
+    if (ga) ga.onclick = () => {
+      saveOff = true;
+      if (saveTimer != null) { clearTimeout(saveTimer); saveTimer = null; }
+      try { localStorage.clear(); } catch { }
+      location.replace(location.pathname + '?v=' + Date.now());
+    }; }
   $('meChip').onclick = () => detail.open('me');
   $('dClose').onclick = () => detail.close();
   $('detail').onclick = e => { if (e.target === $('detail')) detail.close(); };

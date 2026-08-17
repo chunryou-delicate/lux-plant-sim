@@ -154,6 +154,17 @@ export const TUTORIAL_RULES = Object.freeze({
        그쪽 주석도 같이 고쳐 둔다(두 곳이 다른 말을 하면 한쪽이 낡는다).
      ★ 둘째가 싼 까닭은 **집게등이 12W 로 더 약하기 때문**이다(바 20W).
        값이 세기를 따라가야 「왜 이게 더 비싼가」가 화면에서 읽힌다. */
+  /* ★★★ 2026-08-17 — **굶어 죽는다** (박사님: *"게임오버 하나, 원화 만들어서 돈 0원 되고
+     10일 지나면 배고파서 죽는 걸로 게임오버 하고 0일부터 재시작"*).
+     ⚠⚠ 이 저장소는 그동안 **일부러 안 죽였다** — 아래 §파산 이 *"초보 모드라 죽지 않는다"*
+       라고 적어 두었고, `first_play.js` 도 *"어쨌든 게임오버는 되면 안 되니까"* 로 시작한다.
+       그 규율이 오늘 박사님 지시로 **바뀐 것**이다. 옛 주석을 지우지 않고 그 위에 적는다 —
+       왜 바뀌었는지가 안 남으면 다음 사람이 되돌린다.
+     ★ **0원인 채로 이만큼**이다. 0원이 된 날이 아니라 0원이 이어진 날을 센다 —
+       하루라도 돈이 들어오면 시계가 풀린다(§brokeSinceDay).
+     ⚠ 첫 플레이 중에는 살림 시계가 안 돌므로 이 셈도 안 돈다. 배우는 구간에서 굶어 죽으면
+       그건 규칙이 아니라 사고다. */
+  starveDays: 10,
   lampPriceWon: 120_000,
   /* 등마다 값이 다르다 — 앞에서부터 이 순서로 산다(§buyLamp).
      ⚠ 목록이 짧으면 마지막 값을 되쓴다. 등이 늘어도 안 던진다. */
@@ -265,7 +276,11 @@ export function createTutorialState(opt = {}) {
     /* ★★ 탈출의 둘째 축 — 아래 §무늬 삽수를 판 적이 있다 (2026-08-13 박사님 확정) */
     varieSale: createVarieSaleState(),
     movedOut: false,
-    bankrupt: false
+    bankrupt: false,
+    /* 0원이 **이어지기 시작한** 살림 일자. 돈이 들어오면 null 로 돌아간다(§starveDays) */
+    brokeSinceDay: null,
+    /* 굶어 죽었나 — 한 번 켜지면 새 판을 깔기 전까지 안 꺼진다 */
+    starved: false
   };
 }
 
@@ -623,6 +638,27 @@ export function tutorialDay(ts, opt = {}) {
     ts.cashWon = 0;
     if (!ts.bankrupt) { ts.bankrupt = true; ev.push({ id: 'broke', ko: '돈이 다 떨어졌습니다' }); }
   } else if (ts.bankrupt && ts.cashWon > 0) ts.bankrupt = false;
+
+  /* ══ ★★★ 굶주림 시계 (2026-08-17 · §starveDays) ═════════════════════════
+     ★ 0원이 **이어진 날**을 센다. 하루라도 들어오면 풀린다 — 「한 번 0원이 됐다」가 아니라
+       「계속 0원이다」가 죽는 조건이다.
+     ⚠ 남은 날을 **매일 알린다.** 조용히 세다가 열흘째에 죽이면 그건 규칙이 아니라 함정이다.
+       ⇒ 절반을 넘긴 뒤부터 말한다(그 전에는 잔소리다 · §말풍선 규율과 같은 결).
+     ⚠ 여기서 판을 안 지운다. **말만 한다** — 새로 까는 것은 화면의 일이다(코어는 판을 모른다). */
+  const starveMax = Number.isFinite(R.starveDays) ? R.starveDays : 10;
+  if (ts.cashWon <= 0) {
+    if (ts.brokeSinceDay == null) ts.brokeSinceDay = ts.day;
+    const hungry = ts.day - ts.brokeSinceDay;
+    if (!ts.starved && hungry >= starveMax) {
+      ts.starved = true;
+      ev.push({ id: 'starved', ko: '굶어 쓰러졌습니다', days: hungry });
+    } else if (!ts.starved && hungry >= Math.ceil(starveMax / 2)) {
+      ev.push({ id: 'hungry', ko: `굶은 지 ${hungry}일째 — ${starveMax - hungry}일 남았습니다`,
+                days: hungry, left: starveMax - hungry });
+    }
+  } else if (ts.brokeSinceDay != null) {
+    ts.brokeSinceDay = null;
+  }
 
   return { day: ts.day, season, seasonDay: seasonDayAt(ts, ts.day),
            cashWon: ts.cashWon, spentWon: out, savedWon: saved, incomeWon: income,
