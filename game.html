@@ -14,7 +14,7 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <!-- 지금 보고 있는 판이 언제 것인지. 캐시가 의심되면 이걸 본다 -->
-<meta name="byeot-build" content="2026-08-17T-lampbag2">
+<meta name="byeot-build" content="2026-08-17T-mount">
 <!-- ★★ 글씨 (2026-08-06 박사님: "글씨체가 이상해. 한글이 안 읽히네 뭔가. 잘 안 보여").
      Pretendard 를 **실제로 받아 온다.** 이름만 적어 두면 그 글씨가 깔린 기계에서만 보이고,
      안 깔린 기계에서는 조용히 system-ui 로 떨어진다 — 화면이 기계마다 달라진다.
@@ -1697,6 +1697,10 @@
            ⚠ 규칙은 방뷰가 갖고 있다(`setLampOn` · `lampSwitches`) — 여기는 **누르는 자리**다.
            ⚠ 등이 아닌 가구에서는 안 뜬다. -->
       <button id="furnLamp" class="ghost" style="display:none">켜기</button>
+      <!-- ★★ 2026-08-17 — **집게등을 어디에 물릴지 고른다** (박사님: *"집게등 설치가 너무
+           어려워 어떻게 좀 해줘"*). 물릴 수 있는 상판 목록은 방뷰가 이미 낸다(`lampMounts`) —
+           없던 것은 그걸 **고르게 하는 손**이다. 벽등에는 안 뜬다(벽에 붙는 물건이다). -->
+      <button id="furnMount" class="ghost" style="display:none">📍 물릴 자리</button>
       <span class="warn" id="furnWhy" style="display:none"></span>
       <!-- ★★★ 옮기고 **난 뒤**의 두 단추 (2026-08-16 · B-4 · 박사님: "옮긴 다음 팝업이
            [옮기기]가 있어서 헷갈림 — [확정]/[취소] 버튼 나오게")
@@ -12060,6 +12064,7 @@ const furnPicked = {
       if (this.lamp) {
         if (lb) { lb.style.display = ''; lb.textContent = this.lamp.on ? '끄기' : '켜기'; }
         const wall = this.lamp.mount === 'wall';
+        { const mb = $('furnMount'); if (mb) mb.style.display = wall ? 'none' : ''; }
         /* 보이고 안 보이고는 §showConfirm 하나가 정한다 — 여기서 또 정하지 않는다 */
         if (why) {
           why.style.display = wall ? '' : 'none';
@@ -12067,6 +12072,7 @@ const furnPicked = {
         }
       } else {
         if (lb) lb.style.display = 'none';
+        { const mb = $('furnMount'); if (mb) mb.style.display = 'none'; }
         if (why) why.style.display = 'none';
       }
     }
@@ -12506,6 +12512,37 @@ function bindPicked() {
   tapOnce('furnTurn', () => furnPicked.beginTurn());
   tapOnce('furnAim', () => furnPicked.beginAim());
   /* ★ 등 켜기/끄기 — 규칙은 방뷰가 갖고 있다. 여기는 누르는 자리다(§furnLamp) */
+  /* ★ [📍 물릴 자리] — 물릴 수 있는 상판을 **목록으로** 고른다(§lampMounts).
+     ⚠ 규칙은 방뷰가 갖는다(`commitLampAt` 이 못 물리면 한국어로 까닭을 던진다).
+       화면은 목록을 세우고 고른 것을 넘길 뿐이다. */
+  tapOnce('furnMount', () => {
+    const uid = furnPicked.uid;
+    if (!uid || !roomView || !roomView.lampMounts) return;
+    let mounts = [];
+    try { mounts = roomView.lampMounts() || []; } catch (e) { banner('물릴 자리를 못 읽었습니다', (e && e.message) || ''); return; }
+    const panel = $('slotPanel'), list = $('slotList');
+    if (!panel || !list) return;
+    const esc = v => String(v == null ? '' : v).replace(/[&<>"]/g, c =>
+      ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+    $('slotTitle').textContent = '어디에 물릴까요';
+    $('slotSub').textContent = mounts.length
+      ? '누르면 그 상판에 물립니다 · 높이는 그 상판에 맞춰집니다'
+      : '물릴 수 있는 상판이 없습니다 — 선반이나 책상을 놓아 주세요';
+    list.innerHTML = mounts.map(m =>
+      `<button class="ghost slotrow" data-mount="${esc(m.mountId)}">` +
+      `<b>${esc(m.name || m.uid)}</b><small>높이 ${(m.y ?? 0).toFixed(2)}m</small></button>`).join('');
+    for (const b of list.querySelectorAll('[data-mount]'))
+      b.onclick = guard(async () => {
+        closeSlotPanel();
+        try { await roomView.commitLampAt(uid, { mountId: b.dataset.mount }); }
+        catch (e) { banner('여기엔 못 물립니다', (e && e.message) || ''); return; }
+        try { io.light.clearCache(); } catch { }
+        banner('등을 옮겨 물렸습니다', '자리가 바뀌면 밝기가 달라집니다 — 며칠 지나야 값이 붙습니다');
+        try { sfx.thud(); } catch { }
+        fillSlots(); draw();
+      });
+    panel.classList.add('on'); panel.setAttribute('aria-hidden', 'false');
+  });
   tapOnce('furnLamp', () => {
     const uid = furnPicked.uid;
     if (!uid || !roomView || !roomView.toggleLamp) return;
