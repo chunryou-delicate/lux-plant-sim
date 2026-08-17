@@ -380,6 +380,9 @@ export function givePlant(S, io, opt = {}) {
        `S.dliHist` 와 **1:1** 이고, 그 짝을 세이브 복원이 검사한다(save.js §fedDays) */
     fedDays: 0,
     arrivedOnDay: S.day,
+    /* ★ 한 번이라도 방에 놓였나 — 자리를 받고 왔으면 참이다(§rehomePot).
+       거짓이면 **가방에 있는 것**이고, 하루가 가도 아무도 자동으로 안 앉힌다. */
+    placedOnce: !!(opt.slotId || opt.at),
     /* ★★ 마지막으로 물 준 날 (2026-08-07 · §몬스테라 물주기).
        **온 날을 채운다.** null 로 두면 선물로 온 화분이 도착하자마자 목말라 있다 —
        받자마자 벌이 된다. 첫 주기는 도착일부터 센다. */
@@ -866,6 +869,8 @@ export function placedItems(S) {
 export function setPotAt(S, potOrId, at, opt = {}) {
   const p = typeof potOrId === 'string' ? (S.pots || []).find(x => x.id === potOrId) : potOrId;
   if (!p) throw new Error(`[배치] 모르는 화분: ${potOrId}`);
+  /* ★ 한 번이라도 놓였다는 표시 — 그래야 「가방에 있다」와 「자리를 잃었다」가 갈린다(§rehomePot) */
+  p.placedOnce = true;
   /* 불변식 자체는 place.resolvePlacement 한 곳에만 있다 — 콩나물(setCropAt)도 같은 함수를 탄다.
      여기서 다시 세우면 둘 중 하나만 고쳐지고 나머지가 조용히 어긋난다. */
   const r = resolvePlacement(p.id, at, opt);
@@ -1466,6 +1471,7 @@ export function planMeal(S, grams) {
 export function setPotSlot(S, potOrId, slotId, slots) {
   const p = typeof potOrId === 'string' ? (S.pots || []).find(x => x.id === potOrId) : potOrId;
   if (!p) throw new Error(`[배치] 모르는 화분: ${potOrId}`);
+  p.placedOnce = true;                         /* §rehomePot — 놓인 적이 있다 */
   const s = (slots || []).find(x => x && x.slotId === slotId);
   if (!s) throw new Error(`[배치] 모르는 자리: ${slotId}`);
   p.slotId = slotId;
@@ -1587,6 +1593,21 @@ export function followFreeOnFurniture(S, uid, from, to) {
 export function rehomePot(S, slots, log, room = null) {
   const p = pot0(S);
   if (!p) return null;
+  /* ★★★ 2026-08-17 — **가방에 있는 화분은 앉히지 않는다** (박사님: *"몬스테라 주는 거
+       인벤으로 안 들어오고 또 바로 설치되는데?"*)
+     ══════════════════════════════════════════════════════════════════
+     ⚠⚠ 이 함수의 마지막 줄이 **자리 없는 화분을 첫 자리에 앉힌다.** 그 규칙은
+       「슬롯이 사라졌을 때 화분을 잃지 않게」 만든 것인데(v0 · 위 머리말),
+       **「아직 안 놓았다」와 「자리를 잃었다」를 못 가른다.**
+       ⇒ 선물을 가방으로 보내자마자(`givePlant({slotId:null})`) 하루가 가면서
+         여기가 도로 방에 세웠다. 실측: 「인벤으로 안 들어오고 또 바로 설치」.
+     ★ 둘을 가르는 표는 **이미 있다** — `arrivedOnDay` 가 있고 자리·좌표가 둘 다 없으면
+       그것은 **한 번도 안 놓인 것**이다. 자리를 잃은 화분은 `slotId` 나 `at` 중 하나가
+       반드시 남아 있다(그것을 잃는 길이 이 함수 말고는 없다).
+     ⚠ 「모르면 앉힌다」로 두면 안 된다 — 그러면 가방이라는 상태가 존재할 수 없다. */
+  if (p.placedOnce === false || (!p.slotId && !p.at && p.placedOnce == null)) {
+    return null;                               // 아직 가방에 있다 — 놓는 것은 플레이어 손이다
+  }
   migratePots(S, slots);                       // 옛 세이브면 여기서 좌표가 채워진다
 
   if (p.at) {

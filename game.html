@@ -14,7 +14,7 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <!-- 지금 보고 있는 판이 언제 것인지. 캐시가 의심되면 이걸 본다 -->
-<meta name="byeot-build" content="2026-08-17T-mount">
+<meta name="byeot-build" content="2026-08-17T-recall">
 <!-- ★★ 글씨 (2026-08-06 박사님: "글씨체가 이상해. 한글이 안 읽히네 뭔가. 잘 안 보여").
      Pretendard 를 **실제로 받아 온다.** 이름만 적어 두면 그 글씨가 깔린 기계에서만 보이고,
      안 깔린 기계에서는 조용히 system-ui 로 떨어진다 — 화면이 기계마다 달라진다.
@@ -1499,13 +1499,13 @@
        시루가 넷이면 그것만으로 한 화면이다.
      ⇒ 왼쪽에 이름·칸·글을 모으고 **단추를 오른쪽에** 세운다. 높이가 절반 가까이 준다.
      ⚠ 단추 높이(`--tap`)는 안 줄인다 — 손가락이 누르는 자리다. 줄이는 것은 **빈 자리**다. */
-  .siru{padding:8px 9px;margin:0 0 7px;border-radius:12px;
+  .siru{padding:6px 8px;margin:0 0 5px;border-radius:11px;
     background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.10);
     display:grid;grid-template-columns:1fr auto;column-gap:8px;align-items:center}
   .siru > .siruhead, .siru > .cells, .siru > .siruline{grid-column:1}
   .siru > .sirubtns{grid-column:2;grid-row:1 / span 3;margin-top:0;
-    flex-direction:column;align-items:stretch;min-width:104px}
-  .siru > .sirubtns button{flex:0 0 auto;min-height:38px}
+    align-items:stretch;min-width:96px}
+  .siru > .sirubtns button{flex:1 1 0;min-height:34px}
   .siru:last-child{margin-bottom:0}
   .siru.ready{border-color:rgba(255,200,110,.45);background:rgba(255,200,110,.09)}
   .siru.thirsty{border-color:rgba(143,216,234,.42);background:rgba(143,216,234,.08)}
@@ -1554,10 +1554,15 @@
     box-shadow:inset 0 0 0 1px rgba(143,216,234,.45)}
   .cells.done>i.on{background:linear-gradient(90deg,#ffd98f,#f0b45c)}
   .siruline{font-size:10.5px;color:rgba(255,255,255,.55);line-height:1.35}
-  .sirubtns{display:flex;gap:6px;margin-top:7px}
+  /* ★★ 2026-08-17 — **한 대의 높이를 반으로** (박사님: *"버튼을 작게 나란히 둬서 시루 1 칸
+     자체를 1/2 수준으로 줄이고 싶은 거야 · 위아래 높이를 1/2 정도로"*)
+     ⚠ 단추를 **세로로 쌓지 않는다** — 쌓으면 그만큼 다시 높아진다. 나란히 두고 작게 한다.
+     ⚠ 손가락이 누르는 자리라 34px 아래로는 안 내린다(지시서의 바닥). 줄인 것은 **빈 자리**다. */
+  .sirubtns{display:flex;gap:5px;margin-top:4px}
   .sirubtns:empty{display:none}
-  .sirubtns button{flex:1;min-height:var(--tap);border-radius:11px;border:0;
-    font-weight:700;font-size:12.5px;box-shadow:0 3px 0 rgba(0,0,0,.25)}
+  .sirubtns button{flex:1;min-height:34px;border-radius:9px;border:0;padding:0 8px;
+    font-weight:700;font-size:11.5px;box-shadow:0 2px 0 rgba(0,0,0,.25);
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .sirubtns button.water{background:linear-gradient(180deg,#8fd8ea,#5fb9d4);color:#0d2a33}
   .sirubtns button.harvest{background:linear-gradient(180deg,#ffd98f,#f0b45c);color:#3a2708}
   .sirubtns button.sow{background:linear-gradient(180deg,#a8e6a3,#78c97a);color:#12331a}
@@ -3193,10 +3198,20 @@ function fillSlots(pick) {
        보이기 시작해서 플레이어가 실제로 그 길로 간다.
      ⚠ 급한 것은 **첫째 조건 하나**다. 아래 `$('slot').value` 쪽은 화장이다
        (자유 좌표일 때 드롭다운이 엉뚱한 줄을 고른 것처럼 보이지 않게 한다). */
-  if (p && !isFreeSlotId(p.slotId) && (pick || !list.some(s => s.slotId === p.slotId)))
+  /* ★★★ 2026-08-17 — **가방에 있는 화분은 건드리지 않는다** (박사님: *"몬스테라 주는 거
+       인벤으로 안 들어오고 또 바로 설치되는데?"*)
+     ══════════════════════════════════════════════════════════════════
+     ⚠⚠ **여기가 진짜 범인이었다.** `p.slotId` 가 `null` 이면 `isFreeSlotId(null)` 이 거짓이라
+       이 줄이 목록 첫 자리를 꽂았다 — 선물을 가방으로 보내도 **그리는 순간 방에 섰다.**
+       `rehomePot` 을 먼저 막았는데도 안 고쳐진 까닭이 이것이다(자를 믿고 두 번 재서 찾았다).
+     ★ 「아직 안 놓았다」는 이제 상태가 말해 준다(`placedOnce` · state §rehomePot).
+     ⚠ 이 줄의 원래 뜻은 **「없어진 자리를 가리키고 있으면 되돌린다」**다 — 그 뜻은 그대로다.
+       안 놓은 것은 애초에 아무 자리도 안 가리키므로 되돌릴 것이 없다. */
+  const inBag = !!(p && p.placedOnce === false && !p.at);
+  if (p && !inBag && !isFreeSlotId(p.slotId) && (pick || !list.some(s => s.slotId === p.slotId)))
     p.slotId = list[0] ? list[0].slotId : null;
-  $('slot').value = (p && !isFreeSlotId(p.slotId) && p.slotId) || (list[0] ? list[0].slotId : '');
-  $('slot').disabled = !p;
+  $('slot').value = (p && !inBag && !isFreeSlotId(p.slotId) && p.slotId) || (list[0] ? list[0].slotId : '');
+  $('slot').disabled = !p || inBag;
 }
 
 /* ══ 원시 DLI 숫자를 「자세히」에 적어도 되는 때인가 (박사님 2026-08-07 판단) ══
@@ -11381,7 +11396,17 @@ const picked = {
       this.emptyPotId = ep ? ep.id : null;
       const b = $('pickSow'), t = $('pickTake');
       if (b) b.style.display = ep ? '' : 'none';
-      if (t) t.style.display = ep ? '' : 'none';
+      /* ★★ 2026-08-17 — **심은 그루도 가방으로 회수한다** (박사님: *"모든 식물이나
+         채소들은 클릭했을 때 회수 버튼이 있어서 누르면 가방으로 회수되도록 해줘.
+         가방으로 회수되면 성장은 멈춰있는 것으로."*)
+         ⚠ 빈 그릇은 **걷어서 재고로** 돌아가고(`removeContainer`), 심은 그루는
+           **개체째 가방에** 남는다 — 뽑아 버리는 것이 아니다. 둘은 다른 일이라 아래에서 가른다. */
+      this.potInRoom = (() => {
+        try { return (S.pots || []).find(q => q &&
+          (q.slotId === slotId || slotId === `free:${q.id}` || slotId === q.id)) || null; }
+        catch { return null; }
+      })();
+      if (t) t.style.display = (ep || this.potInRoom) ? '' : 'none';
     }
     /* ★★★ 2026-08-14 — **잠금을 걷었다** (박사님: *"씨앗이없는 상태에서 시루가안옮겨져"*).
        여기 있던 것: 거둔 시루면 [옮기기]를 `disabled` 로 잠갔다.
@@ -12573,6 +12598,20 @@ function bindPicked() {
      **돌아오나 마나도 거기서 정한다.** 화면은 그 답을 그대로 옮긴다. */
   { const b = $('pickTake');
     if (b) b.onclick = guard(() => {
+      /* ★ 심은 그루 — **개체째 가방으로.** 자리·좌표를 지우고 「안 놓은 것」으로 되돌린다.
+         그 상태가 곧 「가방에 있다」이고, 턴이 그 그루를 안 굴린다(loop §inBag). */
+      const pr = picked.potInRoom;
+      if (pr && !picked.emptyPotId) {
+        const n = (S.pots || []).length > 1 ? ` ${(S.pots || []).indexOf(pr) + 1}` : '';
+        picked.clear();
+        pr.slotId = null; pr.at = null; pr.placedOnce = false;
+        pushLog(S, `📦 몬스테라${n}를 가방에 넣었습니다 — 다시 놓을 때까지 자라지 않습니다`);
+        banner('가방에 넣었습니다', '가방에 있는 동안에는 자라지 않습니다 — 다시 놓으면 이어서 자랍니다');
+        try { sfx.thud(); } catch { }
+        try { syncRoom(); } catch { }
+        fillSlots(); draw();
+        return;
+      }
       const id = picked.emptyPotId;
       picked.clear();
       if (!id) return;

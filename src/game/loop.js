@@ -1042,8 +1042,20 @@ export function nextDay(S, io) {
      ⚠ 하루가 안 가는 유령을 만들지 않는다 — 중간에서 멈추지 않고 **모든 화분을 돈 뒤에**
        실패를 판정한다. 한 그루가 터졌다고 나머지가 하루를 안 가면 그 판은 영영 어긋난다
        (`promoteToPot` 이 둘째 화분을 막고 있던 이유가 정확히 이것이다). */
+  /* ★★★ 2026-08-17 — **가방에 있는 그루는 하루를 안 간다** (박사님: *"가방으로 회수되면
+       성장은 멈춰있는 것으로"*).
+     ⚠ 「가방에 있다」는 **자리도 좌표도 없는 것**이다(state §rehomePot `placedOnce`).
+       빛을 못 받는 곳에 있으니 자라지 않는 것이 맞고, 무엇보다 **자리가 없으면 조도를
+       못 잰다** — 억지로 재면 0 을 넣게 되고 그건 「어두운 자리에 있다」는 딴말이 된다.
+     ⚠ 하루가 **통째로 안 세어진다**(유효 생장일도 물 시계도 안 움직인다). 그것이
+       「멈춰 있다」의 뜻이다 — 마른 흙과 같은 결이다(§dryBlocked).
+     ⚠ 그루가 **전부** 가방에 있어도 하루는 간다. 판이 멎으면 되돌릴 길이 없다. */
+  const inBag = (p) => !!(p && p.placedOnce === false && !p.slotId && !p.at);
   const plants = [];
-  for (const pot of S.pots) plants.push(stepPlantDay(S, io, pot, { report, sky, check }));
+  for (const pot of S.pots) {
+    if (inBag(pot)) continue;
+    plants.push(stepPlantDay(S, io, pot, { report, sky, check }));
+  }
 
   /* 전기요금은 **하루에 한 번**이다 — 그루 수와 무관하다(그루마다 더하면 두 배가 된다) */
   S.ledger.electricityWon += (report.energy && report.energy.won) || 0;   // 표시만. 차감 없음
@@ -1088,11 +1100,13 @@ export function nextDay(S, io) {
   /* ── 턴 ──────────────────────────────────────────────────────────────
      ★ 옛 칸은 **첫 화분의 것**이다. 화면·검사·세이브가 전부 그 이름을 읽고 있고,
        한 그루짜리 판에서는 그것이 곧 그 판의 전부다. 그루마다의 값은 `turn.plants` 에 있다. */
-  const lead = plants[0];
+  /* ⚠ 그루가 **전부 가방에** 있으면 `plants` 가 빈다 — 옛 칸(`...lead.fields`)이 없어도
+     하루는 가야 한다. 그때는 옛 칸을 안 싣는다(「모른다」이지 0 이 아니다). */
+  const lead = plants[0] || null;
   const turn = {
     day: S.day, sky, report,
     check,
-    ...lead.fields,
+    ...(lead ? lead.fields : {}),
     /* ★★ 그루마다의 하루 — 여기가 다개체의 정본이다. 첫 칸은 위 옛 칸들과 **같은 값**이다. */
     plants: plants.map(r => ({ potId: r.pot.id, growthId: r.growthId, ...r.fields })),
     firstPlayEvent,
