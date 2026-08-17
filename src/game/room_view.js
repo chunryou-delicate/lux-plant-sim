@@ -9133,6 +9133,8 @@ export async function createRoomView(canvas, opts = {}) {
         potD: p.potD ?? null,
         /* 갈아 끼운 화분 — 안 갈았으면 null 이다(§swapPotMesh) */
         potAsset: (p.group && p.group.userData && p.group.userData.potAsset) || null,
+        /* ★ 방이 실제로 그린 생장일 — 「확대창엔 보이는데 방엔 없다」를 가릴 유일한 근거다 */
+        growthDays: (p.group && p.group.userData && p.group.userData.growthDays) ?? null,
         /* 실제로 **세워진** 용기 수다. spec 을 되읽는 게 아니라 그루가 스스로 적어 둔 값이다 */
         count: p.group.userData.containerCount || 1
       }));
