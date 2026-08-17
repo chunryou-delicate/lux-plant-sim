@@ -150,6 +150,26 @@ for (const v of log) {
   console.log(`${String(v.day).padStart(2)}일 ${v.첫플 ? '[튜토]' : '[본편]'} 할일「${v.할일 || '—'}」` +
               ` 손가락「${v.손가락 || '—'}」→${v.대상 || '—'}`);
 }
+/* ── 큐에 들어간 대사 — **넣는 자리에서 적은 것**이 정본이다(§__dlgLog) ── */
+console.log('');
+console.log('── 대사가 언제 큐에 들어갔나 ────────────────────────────');
+{
+  const rows = JSON.parse(await page.eval(`JSON.stringify(window.__dlgLog || [])`));
+  const byDay = new Map();
+  for (const r of rows) { const k = r.day; if (!byDay.has(k)) byDay.set(k, []); byDay.get(k).push(r.id); }
+  void 0;
+  for (const [d, ids] of byDay) console.log(`  ${String(d).padStart(2)}일 · ${ids.length}개 — ${ids.join(' , ')}`);
+  console.log('  ── 한 번에 몇 개씩 떴나(묶음) ──');
+  { const byB = new Map();
+    for (const r of rows) { if (!byB.has(r.b)) byB.set(r.b, { day: r.day, ids: [] }); byB.get(r.b).ids.push(r.id); }
+    for (const [b, v] of byB) console.log(`    묶음 ${b} · ${v.day}일 · ${v.ids.length}개 — ${v.ids.join(' , ')}`); }
+  const n = new Map();
+  for (const r of rows) n.set(r.id, (n.get(r.id) || 0) + 1);
+  const dup = [...n].filter(([, c]) => c > 1);
+  console.log(dup.length ? '  ⚠ 두 번 이상 들어간 것: ' + dup.map(([k, c]) => `${k}×${c}`).join(' , ')
+                         : '  ✔ 두 번 들어간 대사 없음');
+}
+
 /* ── 같은 대사가 두 번 나왔나 ─────────────────────────────── */
 console.log('');
 console.log('── 되풀이된 대사 ────────────────────────────────────────');

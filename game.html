@@ -9493,6 +9493,9 @@ function dlgPaint() {
     $('stage').classList.remove('talking'); refreshOverlays();
     /* ★ 2026-08-18 — 대사 줄이 비었다. 기다리던 한 달 가계부가 있으면 **여기서** 뜬다
        (§openMonthWhenQuiet — 대사를 덮지 않으려고 뒤로 미뤄 둔 것이다). */
+    /* ★ 미뤄 둔 대사가 있으면 여기서 낸다(§DLG_SOLO) — 가계부보다 **앞**이다.
+       가계부는 창이고 대사는 이야기다. 이야기를 창 뒤로 미루면 순서가 뒤집힌다. */
+    try { if (dlgFlushHeld()) return; } catch (e) { console.warn('[대화]', e && e.message); }
     try { openMonthWhenQuiet(); } catch (e) { console.warn('[가계부]', e && e.message); }
     return;
   }
@@ -9524,9 +9527,61 @@ function dlgPaint() {
 }
 /* ★ 2026-08-09 — 예전에는 여기서 빨리감기를 세웠다(말하는 동안 날짜가 가면 대사와 화면이
    어긋나므로). 빨리감기가 없어져 세울 것이 없다 — [다음 날]은 한 번에 하루라 어긋날 틈이 없다. */
+/* ★ 2026-08-17 — **무엇이 언제 큐에 들어갔나**를 밖에서 볼 수 있게 적어 둔다.
+   박사님: *"12일째 상점 구매 관련 대화가 중복으로 있어."* — 대사 상자를 긁어서는 못 잰다
+   (그려지기 전에 읽으면 빈 문자열이 나온다 · 실측에서 57번 빈 값이었다).
+   **큐에 넣는 그 자리**에서 적는 것이 정본이다. */
+window.__dlgLog = [];
+
+/* ══════════════════════════════════════════════════════════════════════════
+   ★★★ **한 날에 대사가 줄줄이 붙던 것** (2026-08-17 · 박사님)
+   --------------------------------------------------------------------------
+   원문 ① *"몬스테라 주는 거랑 뭔가 대화가 겹쳐서 몬스테라 주는 게 묻혀버리는 것 같어."*
+        ② *"12일째 상점 구매 관련 대화가 중복으로 있어."*
+
+   ★ **재서 보니 중복이 아니었다.** 같은 대사가 두 번 들어간 적은 없다(실측 0건).
+     일어난 일은 **한 날에 넷이 한 줄로 붙는 것**이다(§__dlgLog):
+       12일 · 4개 — `god1` , `monsteraArrived` , `questDoneResowSiru` , `questCropMix`
+     큐는 이어 붙이므로(dialogue §push) 넷이 한 덩어리가 되고, 탭을 몇 번 하다 보면
+     가운데 것이 지나간다. **[건너뛰기]는 큐를 통째로 비운다** — 그러면 도착 장면이
+     아예 없던 일이 된다. 「묻힌다」는 그 모양이고, 상점 대사가 둘 붙어 있으면
+     「같은 얘기를 또 한다」로 읽힌다.
+
+   ⇒ 두 가지를 둔다:
+     ① **큰 장면은 혼자 뜬다.** 도착처럼 한 판에 한 번뿐인 장면은 그날 저 혼자다.
+     ② **한 날에 둘까지.** 넘치는 것은 **버리지 않고 다음 날로 미룬다.**
+   ⚠ **버리지 않는다.** 미룬 것은 다음에 대사가 열릴 때 앞에 붙는다 — 퀘스트 보상 대사가
+     사라지면 「받았는데 아무 말이 없다」가 되고, 그건 이 저장소가 여러 번 앓은 병이다.
+   ⚠ 규칙을 코어에 안 넣는다. **무엇을 말할지**는 `dialogue.js` 것이고, **한 번에 몇 개를
+     보여 줄지**는 화면의 몫이다(폭·탭 횟수는 화면만 안다).
+   ══════════════════════════════════════════════════════════════════════════ */
+/* 혼자 떠야 하는 장면 — 「한 판에 한 번뿐이고, 놓치면 되돌릴 수 없는 것」만 넣는다 */
+const DLG_SOLO = new Set(['monsteraArrived', 'intro', 'moved_out', 'varieConfirmed']);
+const DLG_MAX_PER_OPEN = 2;
+let dlgHold = [];
+/* 미뤄 둔 것을 내보낸다 — 대사가 하나도 안 떠 있을 때만(덮으면 미룬 뜻이 없어진다) */
+function dlgFlushHeld() {
+  if (!dlgHold.length) return false;
+  if (dlg.isOpen && dlg.isOpen()) return false;
+  const take = dlgHold;
+  dlgHold = [];
+  return dlgOpen(take);
+}
 function dlgOpen(scriptIds) {
-  const ids = [].concat(scriptIds).filter(Boolean);
+  let ids = [].concat(scriptIds).filter(Boolean);
+  /* 미뤄 둔 것이 **먼저**다 — 어제 일이 오늘 일보다 뒤에 오면 이야기가 거꾸로 선다 */
+  if (dlgHold.length) { ids = [...dlgHold, ...ids]; dlgHold = []; }
+  const solo = ids.find(id => DLG_SOLO.has(id));
+  if (solo) { dlgHold = ids.filter(x => x !== solo); ids = [solo]; }
+  else if (ids.length > DLG_MAX_PER_OPEN) {
+    dlgHold = ids.slice(DLG_MAX_PER_OPEN);
+    ids = ids.slice(0, DLG_MAX_PER_OPEN);
+  }
   let any = false;
+  try { window.__dlgBatch = (window.__dlgBatch || 0) + 1; } catch { }
+  for (const id of ids) {
+    try { window.__dlgLog.push({ day: S && S.day, id, b: window.__dlgBatch }); } catch { }
+  }
   for (const id of ids) { try { if (dlg.push(id)) any = true; } catch (e) { console.warn(e.message); } }
   if (!any) return false;
   dlgPaint();
