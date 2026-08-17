@@ -4073,6 +4073,17 @@ function updateHint() {
   if (coachNow) return hintAt(null);
   const fp = S.firstPlay, ts = S.tutorial;
   const stage = $('stage'), sheetOpen = $('sheet').classList.contains('open');
+  /* ★★★ 2026-08-17 — **[확인]을 가리킨다.** 놓기 직후의 이 한 걸음이 안내의 구멍이었다
+     (§startPhonePlace). 「여기에 둘까요?」가 떠 있는데 손가락이 쉬면, 화면에서 제일 크게
+     말하는 것이 사라져 사람은 그 자리에서 멈춘다 — 실측에서 스물여섯 날을 멈췄다.
+     ⚠ 아래 `picked.mode` 물러남보다 **앞**이다. 뒤에 두면 영영 안 닿는다. */
+  {
+    const ok = $('placeOk');
+    if (ok && stage.classList.contains('confirming') && !stage.classList.contains('moving')) {
+      const r = ok.getBoundingClientRect();
+      if (r.width > 0 && r.height > 0) return hintAt(ok, '여기에 둘까요? — [확인]');
+    }
+  }
   /* 지금 할 일이 이미 분명한 상황에서는 안내를 걷는다 */
   if (drag.on || picked.mode || stage.classList.contains('talking') ||
       stage.classList.contains('zoom')) return hintAt(null);
@@ -4161,6 +4172,13 @@ function updateHint() {
     } catch { return null; }
   })();
   if (seedNeed) {
+    /* ★★★ 2026-08-17 — **세 걸음째가 빠져 있었다.** [주문]은 창을 하나 더 연다
+       (`openBuyPanel` — 「몇 개 주문할까요」). 그 창이 뜬 순간 손가락이 쉬면 사람은
+       거기서 멈춘다 — 실측(probe_guide_walk)에서 5일차에 [주문]만 일곱 번 눌렀다.
+       ⇒ 창이 떠 있으면 그 창의 [주문]을 가리킨다. 걸음은 **상점 → 주문 → 개수 확정** 셋이다. */
+    const go = $('buyGo');
+    if (go && onScreen(go) && !go.disabled)
+      return hintAt(go, '개수를 정하고 [주문] — 내일 옵니다');
     const buyBtn = $('shopList') && $('shopList').querySelector(`[data-buy="${seedNeed}"]`);
     if (sheetOpen && buyBtn && onScreen(buyBtn) && !buyBtn.disabled)
       return hintAt(buyBtn, '여기서 씨앗을 주문합니다 — 하루 뒤에 옵니다');
@@ -4243,8 +4261,29 @@ function updateHint() {
     try { return cropPotList(S.firstPlay, S.day).some(r => r.placed && r.growing && !r.ready); }
     catch { return false; }
   })();
-  if (!sheetOpen && !$('next').disabled && (S.day <= 1 || cropGrowing))
-    return hintAt($('next'), cropGrowing ? '자라는 중입니다 — 하루를 넘겨 보세요' : '하루를 보냅니다');
+  /* ★★★ 2026-08-17 — **씨앗이 오는 중이면 그것도 「기다리는 것이 곧 할 일」이다**
+     (박사님: *"씨앗 심기 누르기 전 하루 보내기 손가락 가이드 있어야 될 듯,
+       씨앗 오는 데 하루 소요되니까."*)
+     ⚠ 자라는 중(`cropGrowing`)과 **다른 칸**이다 — 저쪽은 심긴 것이 크는 중이고
+       이쪽은 **심을 것이 아직 안 온 것**이다. 둘을 뭉치면 「자라는 중입니다」가
+       빈 시루 위에 뜬다.
+     ⚠ 말풍선을 안 세운 그 상태와 **한 벌**이다(§cropMarks §comingOf) — 저쪽에서
+       「없습니다」를 지웠으므로 여기서 갈 곳을 말해 주지 않으면 화면이 통째로 조용해진다. */
+  const seedComing = (() => {
+    try {
+      const rows = cropPotList(S.firstPlay, S.day).filter(r => r.placed && (r.harvested || r.needsSow));
+      if (!rows.length) return false;
+      const st = shopStatus(S);
+      return rows.some(r => {
+        const sid = cropKindOf(r.kind).seedItemId;
+        if ((st.stock && st.stock[sid]) || 0) return false;      /* 이미 있다 — 심으면 된다 */
+        return (st.orders || []).some(o => o.itemId === sid && o.daysLeft >= 0);
+      });
+    } catch { return false; }
+  })();
+  if (!sheetOpen && !$('next').disabled && (S.day <= 1 || cropGrowing || seedComing))
+    return hintAt($('next'), seedComing ? '씨앗은 내일 옵니다 — 하루를 넘기세요'
+                          : cropGrowing ? '자라는 중입니다 — 하루를 넘겨 보세요' : '하루를 보냅니다');
   hintAt(null);
 }
 
@@ -5955,6 +5994,11 @@ function drawBuyPanel() {
     ? '주문' : `${buyQty}개 주문 · ${totalWon.toLocaleString()}원`;
 }
 
+/* ⚠⚠ 2026-08-17 — 이 창을 열고 닫을 때 **손가락을 다시 고른다.**
+   `drawBuyPanel` 은 `draw()` 를 안 거치므로 `updateHint` 가 안 돌고, 그러면 손가락이
+   **창이 뜨기 전 대상**(상점 줄의 [주문])에 그대로 붙어 있다. 실측에서 그 손가락을
+   따라간 판이 [주문]만 일곱 번 누르고 5일차에 멈췄다 — 누를 때마다 같은 창이 다시 떴다. */
+function repickHint() { try { updateHint(); } catch { } }
 function openBuyPanel(itemId) {
   const it = buyItemOf(itemId);
   if (!it) return;
@@ -5966,8 +6010,9 @@ function openBuyPanel(itemId) {
      `drawBuyPanel` 이 소지금으로 살 수 있는 데까지 내려 주고, 내렸으면 그 까닭도 적는다. */
   buyQty = lastOrderQtyOf(itemId);
   drawBuyPanel();
+  repickHint();
 }
-function closeBuyPanel() { buyOpen = false; buyItemId = null; drawBuyPanel(); }
+function closeBuyPanel() { buyOpen = false; buyItemId = null; drawBuyPanel(); repickHint(); }
 
 /* ══ ± 걸음 — **한 개씩. 그리고 누른 채로 있으면 빨라진다** (2026-08-18) ══════════
    ★★ **±10 단추를 안 넣었다 — 재서 못 넣은 것이다.**
@@ -7326,6 +7371,21 @@ function cropMarks() {
   const seedsOf = (kind) => {
     try { return stock[cropKindOf(kind).seedItemId] || 0; } catch { return 0; }
   };
+  /* ★★★ 2026-08-17 — **오는 중인 씨앗을 「없다」고 하지 않는다** (박사님:
+       *"씨앗 시키는 대화가 뭔가 타이밍 안 맞게 뒤에 나와. 그리고 씨앗 심기 누르기 전
+         하루 보내기 손가락 가이드 있어야 될 듯. 씨앗 오는 데 하루 소요되니까."*)
+     ⚠ 주문을 넣은 **뒤에도** 「🌱 씨앗이 없습니다」가 떠 있었고 그 말풍선은 상점으로
+       데려간다 — 방금 주문한 사람을 상점으로 되돌리는 셈이다. 실측에서 그 길로 돌았다.
+     ⇒ 오는 중이면 **아무 말풍선도 안 세운다.** 지금 누를 것이 없기 때문이다.
+       그때 무엇을 할지는 손가락이 말한다 — [다음 날](§updateHint §seedComing). */
+  const comingOf = (kind) => {
+    try {
+      const sid = cropKindOf(kind).seedItemId;
+      const st = shopStatus(S);
+      return (st.orders || []).reduce((n, o) =>
+        n + (o.itemId === sid && o.daysLeft >= 0 ? (o.qty || 1) : 0), 0);
+    } catch { return 0; }
+  };
   const toShop = () => { window.__byeotSheet.open();
                          window.__byeotSheet.tab && window.__byeotSheet.tab('shop'); };
   for (const row of rows) {
@@ -7338,6 +7398,7 @@ function cropMarks() {
     if (row.harvested) {
       if (seedsOf(row.kind) > 0)
         out.push({ key, ko: '🌱 씨앗 심기', tone: 'crop', go: () => siruAct(row.id, 'sow', row.kind) });
+      else if (comingOf(row.kind) > 0) { /* 오는 중 — 누를 것이 없다(§comingOf) */ }
       else
         /* 씨앗이 없으면 갈 곳은 [상점]이다 — 주문 목록이 거기 있다 */
         out.push({ key, ko: '🌱 씨앗이 없습니다', tone: 'warn', go: toShop });
@@ -7348,6 +7409,7 @@ function cropMarks() {
     if (row.needsSow) {
       if (seedsOf(row.kind) > 0)
         out.push({ key, ko: '🌱 씨앗 심기', tone: 'crop', go: () => siruAct(row.id, 'plant', row.kind) });
+      else if (comingOf(row.kind) > 0) { /* 오는 중 — 누를 것이 없다(§comingOf) */ }
       else
         out.push({ key, ko: '🌱 씨앗이 없습니다', tone: 'warn', go: toShop });
       continue;
@@ -10855,8 +10917,26 @@ function startPhonePlace() {
   picked.select(key);
   /* 갓 꺼낸 것인지 기억한다 — [취소]가 가방으로 되돌릴지, 옛 자리로 되돌릴지의 근거 */
   picked.before = { potId: r.potId, fresh: true, slotId: null, at: null };
-  picked.beginMove();
-  banner('자리를 고르세요', '화면 아무 데나 잡고 끌면 시루가 따라옵니다 · 놓으면 [확인]이 뜹니다');
+  /* ★★★ 2026-08-17 — **여기서 옮기기 모드로 들어가지 않는다.** (박사님: *"가이드 순서
+       이상한 거 없는지 직접 검수해."* — 손가락만 따라가며 굴려 보다가 잡았다.)
+     ══════════════════════════════════════════════════════════════════
+     ⚠⚠ 예전에는 `picked.beginMove()` 로 **바로 `moving`** 에 들어갔다. 그런데
+       `#placeConfirm` 은 `#stage.moving` 이면 **숨는다**(§CSS). 그래서 화면에는
+       [확인]도 [취소]도 없고, 안내는 **사라지는 배너 한 줄**뿐이었다.
+       게다가 `stageBusy()`·`updateHint` 가 둘 다 `picked.mode` 를 보고 물러나므로
+       **말풍선도 손가락도 통째로 꺼졌다.**
+     ⇒ 손가락이 시킨 대로 가방 칸을 눌러 놓으면 **막다른 길**이 됐다.
+       실측(probe_guide_walk): 손가락만 따라간 판이 **1일부터 26일까지 손가락 0개**,
+       할 일은 「놓은 시루에 물을 주세요」에 붙박이. 방을 톡 쳐도 끌었다 놓아도
+       `moving` 이 안 풀렸다.
+     ★ 고침은 **모드를 하나 덜 쓰는 것**이다. 놓자마자 `confirming` 으로 서면
+       [확인]·[다시 옮기기]·[취소]가 그 자리에 보인다. 자리를 바꾸고 싶으면
+       [다시 옮기기]가 예전의 그 `beginMove()` 를 그대로 부른다 — **길은 안 없앴다.** */
+  /* ⚠ `picked.confirming` 은 **뜻만** 담는 칸이다. 바를 실제로 세우는 것은 `placeConfirm.show()`
+       이고, 예전에는 끌기를 놓는 순간 그쪽이 불렸다 — 끌기를 안 지나가는 이 길에서는
+       아무도 안 불렀다. 그래서 여기서 직접 세운다. */
+  placeConfirm.show();
+  banner('여기에 둘까요?', '[확인] 을 누르면 그 자리에 놓입니다 · 자리를 바꾸려면 [다시 옮기기]');
 }
 
 /* 임시로 세울 자리 — **빈 추천 자리** 우선, 없으면 방 한가운데 바닥.
