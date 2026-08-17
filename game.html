@@ -14,7 +14,7 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <!-- 지금 보고 있는 판이 언제 것인지. 캐시가 의심되면 이걸 본다 -->
-<meta name="byeot-build" content="2026-08-17T-marks">
+<meta name="byeot-build" content="2026-08-17T-zoompot">
 <!-- ★★ 글씨 (2026-08-06 박사님: "글씨체가 이상해. 한글이 안 읽히네 뭔가. 잘 안 보여").
      Pretendard 를 **실제로 받아 온다.** 이름만 적어 두면 그 글씨가 깔린 기계에서만 보이고,
      안 깔린 기계에서는 조용히 system-ui 로 떨어진다 — 화면이 기계마다 달라진다.
@@ -4149,6 +4149,11 @@ function openZoomFor(pot) {
     console.warn('[확대] 그루 고르기', e && e.message);
     banner('그 그루를 확대창에 못 꽂았습니다', (e && e.message) || '먼저 보던 그루가 뜹니다');
   }
+  /* ★ 2026-08-17 — **확대창의 화분도 그 그루 것으로** (박사님: *"화분들 3D가 없나?
+     확대했을 때 항상 동일한 화분이잖아."*). 3D 는 있었고 쓰는 길만 없었다.
+     ⚠ 이름은 상태가 들고 있는 그대로 넘긴다 — 화면이 품목→그림 표를 또 만들지 않는다. */
+  try { io.growth.setPotAsset && io.growth.setPotAsset((pot && pot.potAsset) || null); }
+  catch (e) { console.warn('[확대] 화분', e && e.message); }
   g.open();
 }
 /* 닫힐 때 되돌린다 — 확대창 자체는 머리 스크립트 소유라 **감싸기만** 한다 */

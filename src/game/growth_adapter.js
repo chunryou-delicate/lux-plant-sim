@@ -184,6 +184,10 @@ export function createGrowthAdapter(iframe) {
     plantInfo(id){ const f = fn('plantInfo'); return f ? f(id) : null; },
 
     /* 이 그루를 꽂는다. **없으면 던진다** — 조용히 딴 그루를 굴리면 그 화분은 영영 안 자란다. */
+    /* ★ 2026-08-17 — 확대창의 화분을 갈아 끼운다(§plant_grow.setPotAsset).
+       ⚠ 옛 확대창에는 이 창구가 없다 — 그때는 **아무 일도 안 한다**(던지지 않는다).
+         화분 모양 하나 때문에 확대창이 안 열리면 안 된다. */
+    setPotAsset(path) { const f = fn('setPotAsset'); return f ? f(path) : false; },
     select(id) {
       const f = fn('selectPlant');
       if (!f) throw new Error(

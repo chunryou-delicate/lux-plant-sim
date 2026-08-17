@@ -684,6 +684,38 @@ function ensureSheath(){
 const SKIN_PENDING=new Set(), SKIN_FAILED=new Set();
 let _skinLoader=null, _skinRedrawT=null, _skinTip=null;
 function isSkinKey(k){ return /^skins\//.test(String(ASSET_FILES[k]||'')); }
+/* ══ ★★★ **확대창에도 고른 화분이 보인다** (2026-08-17 · 박사님: *"화분들 3D가 없나?
+     확대했을 때 항상 동일한 화분이잖아."*)
+   ══════════════════════════════════════════════════════════════════
+   ★ 3D 는 **있다** — `assets/pots/` 에 넷이 다 있다(모종포트·콘크리트 원형/사각·테라코타).
+     없던 것은 **이 창이 그걸 쓰는 길**이다. 여기는 `assets/monstera/pot.glb` 하나로
+     못박혀 있었다.
+   ⇒ 호스트가 이름을 주면 그 GLB 로 갈아 끼우고 다시 짓는다.
+   ⚠ **경로를 지어내지 않는다** — 호스트가 `shop.POT_KINDS.asset` 을 그대로 넘긴다
+     (`pots/pot_concrete_square.glb` 처럼 `assets/` 아래 상대 경로).
+   ⚠ 못 실으면 **옛 화분 그대로** 둔다. 화분 하나 때문에 확대창이 비면 안 된다.
+   ⚠ 같은 것을 또 주면 아무 일도 안 한다 — 확대창을 열 때마다 다시 짓지 않는다. */
+let POT_ASSET_NOW = null;
+window.setPotAsset = function (path) {
+  const want = path || null;
+  if (want === POT_ASSET_NOW) return true;
+  if (!want) { POT_ASSET_NOW = null; return false; }
+  try {
+    (_skinLoader||=new THREE.GLTFLoader()).load(
+      './assets/' + String(want).split('/').map(encodeURIComponent).join('/'),
+      g => {
+        try {
+          ASSETS.pot = normalizeAsset(g.scene, !!LONGY.pot, !!ANCHORB.pot);
+          POT_ASSET_NOW = want;
+          if (typeof buildPlant === 'function') buildPlant();
+        } catch (e) { console.warn('[확대] 화분 정규화 실패', e && e.message); }
+      },
+      undefined,
+      () => console.warn('[확대] 화분 GLB 를 못 실었습니다 —', want));
+    return true;
+  } catch (e) { console.warn('[확대] 화분 갈아 끼우기', e && e.message); return false; }
+};
+
 function loadOneAsset(k, after){
   (_skinLoader||=new THREE.GLTFLoader()).load(
     './assets/monstera/'+ASSET_FILES[k].split('/').map(encodeURIComponent).join('/'),
