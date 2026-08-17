@@ -291,13 +291,39 @@ check('I 목표 — 배울 게 남으면 배움을, 다 배웠으면 돈을 말�
 
 /* ══ J · 표준 진행 — 월세 유예로 데드라인이 성립하는가 ═══════════════════ */
 check('J 표준 진행 — 콩나물 3끼로 버티면 며칠 가나', () => {
-  const ts = mk();
+  /* ★★ 2026-08-17 — **자를 고쳤다. 판이 바뀌었기 때문이다**(§reliefWon).
+     ══════════════════════════════════════════════════════════════════
+     박사님: *"처음 0원 됐을 때는 긴급자금 대출 50만원 … 그다음 죽는 걸로."*
+     ⇒ 이제 0원이 되면 **딱 한 번** 50만원이 들어온다. 그래서 「0원이 될 때까지」로 재면
+       두 번을 재게 되고 211일이 나온다 — 자가 틀린 게 아니라 **재는 대상이 둘로 늘었다.**
+     ⇒ 이 자는 **구호금을 이미 쓴 판**을 잰다. 그것이 진짜 데드라인이다(두 번째 0원 = 죽음).
+       구호금 자체는 아래 J-2 가 따로 잰다 — 한 자에 두 가지를 재면 어느 쪽이 깨졌는지 모른다. */
+  const ts = mk(); ts.reliefTaken = true;
   let day = 0;
   while (ts.cashWon > 0 && day < 400) { tutorialDay(ts, { firstPlayDone: true, mealsUsed: 3 }); day = ts.day; }
   /* game_flow.md 의 "월세 첫 달 유예 → 데드라인 73일" 과 자릿수가 맞는지만 본다.
      콩나물만으로는 흑자가 안 나므로(선반이 있어야 한다) 여기서는 버티는 날수를 잰다. */
   results.push(['INFO', `  콩나물 3끼만으로 버티는 날: ${day}일 (게임 시작 자금 ${TUTORIAL_RULES.startCashWon.toLocaleString()})`]);
   assert.ok(day > 40 && day < 200, `버티는 날이 ${day}일 — 데드라인 자릿수(수십 일)와 어긋납니다`);
+});
+
+/* ══ J-2 · 구호금 — **딱 한 번**이고, 그다음엔 죽는다 (2026-08-17 · §reliefWon) ══════ */
+check('J-2 구호금 — 처음 0원에 한 번만 나오고 그 뒤엔 굶어 죽는다', () => {
+  const ts = mk();
+  let relief = 0, starved = 0, reliefDay = null;
+  for (let i = 0; i < 400 && !ts.starved; i++) {
+    const r = tutorialDay(ts, { firstPlayDone: true, mealsUsed: 3 });
+    for (const e of (r && r.events) || []) {
+      if (e.id === 'relief') { relief++; reliefDay = ts.day;
+        assert.equal(e.won, TUTORIAL_RULES.reliefWon, '구호금 액수가 규칙과 다릅니다'); }
+      if (e.id === 'starved') starved++;
+    }
+  }
+  results.push(['INFO', `  구호금 ${reliefDay}일 · ${relief}번 · 죽은 날 ${ts.day}일`]);
+  assert.equal(relief, 1, `구호금이 ${relief}번 나왔습니다 — 한 번뿐이어야 합니다`);
+  assert.ok(ts.starved, '구호금을 다 쓰고도 안 죽었습니다 — 데드라인이 사라졌습니다');
+  /* ⚠ 「죽긴 죽는다」로는 모자란다. **구호금보다 뒤여야** 순서가 지켜진 것이다 */
+  assert.ok(ts.day > reliefDay, '죽은 날이 구호금 날보다 앞입니다 — 순서가 뒤집혔습니다');
 });
 
 /* ── 보고 ─────────────────────────────────────────────────────────────── */

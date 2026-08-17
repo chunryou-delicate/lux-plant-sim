@@ -124,6 +124,16 @@
           "spectrum": "full",
           "schedule": "photo16",
           "uid": "banjiha-growlight-clip"
+        },
+        {
+          "preset": "growlight_stand",
+          "x": -1.15,
+          "z": -0.6,
+          "y": 0,
+          "spectrum": "full",
+          "schedule": "photo14",
+          "uid": "banjiha-growlight-stand",
+          "note": "★★ 2026-08-17 (박사님 \"식물등도 집게형 말고 그냥 거치형 하나 추가해\") — 셋째 등. 바닥에 서는 스탠드(프리셋 growlight_stand · 250ppfd · 0.45×0.38×1.50). ★ 왜 이 자리인가 — 방 왼쪽은 벽등(창 위)도 집게(오른쪽 선반)도 안 닿는 유일한 구석이다. 앞 둘이 이미 밝히는 데를 또 밝히면 셋째 등을 사는 뜻이 없다. ⚠ 값은 손으로 안 적는다 — `tools/gen_room_profile.mjs` 가 다시 뽑는다. 얼린 표(room_profile.banjiha.json)의 lampCounts 가 [0,1,2] → [0,1,2,3] 으로 늘고, 3등 칸이 새로 생긴다. ⚠ 셋째 등은 **바닥 물건이라 옮길 수 있다**(movable:true) — 집게처럼 상판에 물리는 것이 아니라 바닥 좌표를 갖는다. 그래서 화면에서도 [옮기기]가 벽부형과 달리 열린다."
         }
       ],
       "facing": "south",

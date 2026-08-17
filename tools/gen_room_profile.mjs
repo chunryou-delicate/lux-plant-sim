@@ -70,7 +70,13 @@ console.error = realError; console.warn = realWarn;
 let changed = 0;
 for (const id of ROOMS) {
   light.build(id);
-  const prof = light.profile([0, 1, 2]);
+  /* ★★ 2026-08-17 — **여기 [0,1,2] 가 박혀 있었다.** 방에 셋째 등(거치형)을 세워도
+     얼린 표는 두 개까지만 적혀서, 3등을 켜는 순간 `room_profile.js` 의
+     `lampCounts.indexOf(3)` 이 −1 을 내고 표가 통째로 빗나간다.
+     ⇒ **방이 가진 기구 수만큼** 짓는다. 어댑터가 알아서 넘치는 칸을 걷어낸다
+       (light_adapter §profile: `counts.filter(n => n <= room.growRigs.length)`). */
+  const nRigs = (light.room && light.room.growRigs && light.room.growRigs.length) || 2;
+  const prof = light.profile(Array.from({ length: nRigs + 1 }, (_, i) => i));
   const file = path.join(ROOT, 'data', 'profiles', `room_profile.${id}.json`);
   const old = fs.existsSync(file) ? JSON.parse(fs.readFileSync(file, 'utf8')) : null;
   /* ★ generatedAt/By 는 **옛 파일 것을 그대로 물려받는다** — 물리가 안 바뀌었는데

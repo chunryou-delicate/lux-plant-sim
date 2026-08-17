@@ -1339,6 +1339,32 @@ function potsOf(b) {
 /* ★ 그 시루가 방에 서 있나 — 자리(계약 열쇠)든 좌표든 하나라도 있으면 서 있는 것이다.
    `game.html` 의 `sits()` 와 **같은 판정**이다. 두 곳이 어긋나면 화면과 규칙이 갈린다. */
 export function cropPotPlaced(p) { return !!(p && (p.slotId || p.at)); }
+
+/* ★★★ 2026-08-17 — **심어 놓은 것을 가방으로 되돌린다** (박사님: *"모든 식물이나 채소들은
+   클릭했을 때 회수 버튼이 있어서 누르면 가방으로 회수되도록 해줘. 가방으로 회수되면
+   성장은 멈춰있는 것으로."*)
+   ══════════════════════════════════════════════════════════════════
+   ★ **자라기를 따로 멈추지 않는다.** 하루 도는 자리가 이미 `placedCropPots(site)` 만
+     돌린다(§stepCrops) — 자리를 지우면 그 시루는 목록에서 빠지고, 그날부터 나이도
+     빛 이력도 안 쌓인다. 「멈춤」을 새 칸으로 적으면 그 칸과 자리가 반드시 어긋난다.
+   ⚠ **아무것도 안 버린다.** `startedOnDay`·`ageDays`·`dliHist` 를 그대로 둔다 —
+     다시 놓으면 **이어서** 자란다. 지우면 물 준 하루가 사라진다.
+   ⚠ 거둔 시루는 안 받는다 — 그건 회수가 아니라 「걷기」이고 저쪽(removeContainer) 일이다. */
+export function recallCropPot(fp, potId) {
+  for (const site of cropSites(fp || {})) {
+    for (const p of potsOf(site)) {
+      if (!p || String(p.id) !== String(potId)) continue;
+      if (!cropPotPlaced(p)) return { ok: false, why: '이미 가방에 있습니다' };
+      p.slotId = null; p.at = null;
+      syncCropLead(site);
+      const k = cropKindOf(kindIdOfSite(site));
+      return { ok: true, ko: k.containerKo, kindKo: k.ko,
+               /* 얼마나 자란 채로 들어왔나 — 화면이 「이어서 자란다」를 말할 근거 */
+               ageDays: p.ageDays || 0, started: p.startedOnDay != null };
+    }
+  }
+  return { ok: false, why: '그 시루를 못 찾았습니다' };
+}
 /* ★ 그 용기에 씨앗이 뿌려져 있나 (2026-08-11 · §sown). **없으면 심은 것이다** —
    옛 세이브·옛 코드가 만든 칸에는 이 칸이 없고 그때는 「놓기 = 심기」였다. */
 export function cropPotSown(p) { return !(p && p.sown === false); }

@@ -14,7 +14,7 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <!-- 지금 보고 있는 판이 언제 것인지. 캐시가 의심되면 이걸 본다 -->
-<meta name="byeot-build" content="2026-08-17T-hit">
+<meta name="byeot-build" content="2026-08-17T-four">
 <!-- ★★ 글씨 (2026-08-06 박사님: "글씨체가 이상해. 한글이 안 읽히네 뭔가. 잘 안 보여").
      Pretendard 를 **실제로 받아 온다.** 이름만 적어 두면 그 글씨가 깔린 기계에서만 보이고,
      안 깔린 기계에서는 조용히 system-ui 로 떨어진다 — 화면이 기계마다 달라진다.
@@ -1240,6 +1240,19 @@
        안 되니까"*). 오늘 그 규율이 바뀌었다 — 옛 주석을 지우지 않고 그 위에 적어 두었다.
      ⚠ **닫는 길이 하나뿐이다.** 죽은 판을 계속 만지게 두면 「죽었는데 왜 돌아가지」가 된다.
        ⇒ 덮개는 모든 것을 가리고, 나가는 문은 [처음부터 다시] 하나다. */
+  /* ★ 구호금 — 게임오버와 같은 틀, 다른 색(§reliefBox) */
+  #reliefBox{position:fixed;inset:0;z-index:94;display:none;
+             align-items:center;justify-content:center;padding:24px;
+             background:rgba(12,10,18,.88);backdrop-filter:blur(3px)}
+  #reliefBox.on{display:flex}
+  #reliefBox .card{max-width:340px;width:100%;text-align:center}
+  #reliefBox img{width:min(62vw,220px);height:auto;display:block;margin:0 auto 14px;
+                 border-radius:12px}
+  #reliefBox h2{font-size:19px;font-weight:800;color:#8fd1a0;margin:0 0 8px}
+  #reliefBox p{font-size:13px;line-height:1.6;color:var(--dim);margin:0 0 6px}
+  #reliefBox p.warn{color:#f0a35f}
+  #reliefBox b{color:var(--ink)}
+  #reliefBox button{margin-top:16px;width:100%;min-height:48px;font-weight:800;font-size:15px}
   #gameOver{position:fixed;inset:0;z-index:95;display:none;
     background:rgba(9,7,14,.94);backdrop-filter:blur(3px);
     align-items:center;justify-content:center;padding:24px;text-align:center}
@@ -1595,6 +1608,19 @@
 <body>
 <div id="app">
   <!-- ══ 상단 상태 ══════════════════════════════════════════════════════ -->
+  <!-- ★★★ 2026-08-17 — **동사무소 구호금** (박사님 요청 · §reliefWon).
+       ⚠ 게임오버와 **같은 옷을 입되 색이 다르다** — 저건 끝이고 이건 한 번뿐인 구제다.
+         같은 얼굴로 두면 「또 주겠지」가 된다. -->
+  <div id="reliefBox" role="alertdialog" aria-hidden="true">
+    <div class="card">
+      <img id="reliefArt" src="./assets/ui/relief/relief_office.png" alt=""
+           onerror="this.style.display='none'">
+      <h2>동사무소에서 사람이 왔습니다</h2>
+      <p>지갑이 비었습니다. 긴급 생계지원으로 <b id="reliefWon">500,000원</b>이 나왔습니다.</p>
+      <p class="warn">⚠ 이건 <b>이번 한 번뿐</b>입니다. 다시 0원이 되면 아무도 오지 않습니다.</p>
+      <button id="reliefOk" class="primary" type="button">고맙습니다</button>
+    </div>
+  </div>
   <!-- ★ 게임오버 덮개 — 무대 밖이다. 방·시트·말풍선을 전부 가려야 한다(§gameOver) -->
   <div id="gameOver" role="alertdialog" aria-hidden="true">
     <div class="card">
@@ -2812,6 +2838,8 @@ import {
        화면에도 한 벌 생기고, 두 벌은 반드시 어긋난다. */
   cropPotList,
   cropPotPlaced,
+  /* ★ 2026-08-17 · 심은 시루를 가방으로 되돌린다(first_play §recallCropPot) */
+  recallCropPot,
   syncCropLead,
   /* ★★ 2026-08-16 · 그램(g) — **화면이 g 을 손으로 안 적는다**(first_play §그램).
      `formatGram` 하나가 g/kg 을 정하고, 가방·상점·밥상 창·기록이 전부 그것을 부른다. */
@@ -2988,6 +3016,27 @@ function noteTurn(t) {
 function checkStarved(t) {
   try {
     const ev = (t && t.tutorial && t.tutorial.events) || [];
+    /* ★★★ 2026-08-17 — **처음 0원이 된 날엔 구호금이 먼저 온다** (박사님: *"처음 0원 됐을
+       때는 긴급자금 대출 50만원 해서 동사무소에서 나와서 구호 금액 주는 걸로 하자.
+       그다음 죽는 걸로."*)
+       ══════════════════════════════════════════════════════════════
+       ⚠ **죽음보다 먼저 본다.** 규칙 쪽에서도 구호금이 굶주림 시계보다 앞이라
+         같은 날 둘이 같이 나는 일은 없지만, 화면 순서까지 같아야 「한 번은 살려 준다」가
+         눈에 보인다.
+       ⚠ 이것은 **한 번뿐이다**(tutorial §reliefWon `reliefTaken`) — 두 번째 0원부터는
+         아무도 안 온다. 그래서 이 화면은 안내가 아니라 **경고**로 읽혀야 한다. */
+    { const relief = ev.find(e => e && e.id === 'relief');
+      if (relief) {
+        const el = $('reliefBox');
+        if (el) {
+          const w = $('reliefWon');
+          if (w) w.textContent = `${(relief.won || 500000).toLocaleString()}원`;
+          el.classList.add('on'); el.setAttribute('aria-hidden', 'false');
+          try { window.__byeotSheet.close(); } catch { }
+        }
+        try { sfx.thud(); } catch { }
+        pushLog(S, `🏢 동사무소 긴급자금 ${(relief.won || 500000).toLocaleString()}원 — 이번 한 번뿐입니다`);
+      } }
     const hit = ev.find(e => e && e.id === 'starved');
     if (!hit && !(S.tutorial && S.tutorial.starved)) return;
     const el = $('gameOver');
@@ -4279,6 +4328,9 @@ function bindDetail() {
   /* ★ 게임오버에서 나가는 **유일한 문** — 저장을 지우고 0일부터 새로 연다.
      ⚠ `saveOff` 를 **먼저** 세운다. 안 그러면 나가면서 `pagehide` 가 방금 지운 자리에
        지금 상태를 다시 써 넣는다 — [저장 지우고 처음부터]가 이미 겪은 그 사고다. */
+  { const ro = $('reliefOk');
+    if (ro) ro.onclick = () => { const el = $('reliefBox');
+      if (el) { el.classList.remove('on'); el.setAttribute('aria-hidden', 'true'); } draw(); }; }
   { const ga = $('gameOverAgain');
     if (ga) ga.onclick = () => {
       saveOff = true;
@@ -6052,7 +6104,7 @@ function drawBag() {
     const left = Math.max(0, owned - placed);
     if (left > 0) {
       anyPlaceable = true;
-      const ko = placed === 0 ? '벽부형 식물등' : '집게형 식물등';
+      const ko = ['벽부형 식물등', '집게형 식물등', '거치형 식물등'][placed] || '식물등';
       html += `<div class="grouphead">식물등</div><div class="baggrid">` +
         `<button class="bagslot draggable" id="${BAG_LAMP_ID}" data-lampbag="1" type="button">` +
         `<i class="ltr">💡</i>` +
@@ -6298,7 +6350,9 @@ function drawShop() {
        회색 단추만 세우면 「눌러도 아무 일이 없다」가 된다(이 저장소의 지병). */
   const LAMP_KINDS = [
     { ko: '벽부형 식물등', sub: '창 위 벽에 붙습니다 · 20W — 창턱이 밝아집니다' },
-    { ko: '집게형 식물등', sub: '선반·책상에 물립니다 · 12W' }
+    { ko: '집게형 식물등', sub: '선반·책상에 물립니다 · 12W' },
+    /* ★ 2026-08-17 · 셋째 — 바닥에 서는 거치형(박사님 요청). 값은 코어가 낸다(§lampPricesWon) */
+    { ko: '거치형 식물등', sub: '바닥에 세웁니다 · 36W — 3단 선반이 밝아집니다' }
   ];
   const lampOwned = (ts && ts.lamp && ts.lamp.owned) || 0;
   const lampRows = (lampOpen && ts && ts.rules)
@@ -7860,7 +7914,15 @@ function markList() {
 function potMarks() {
   const out = [];
   for (const p of (S.pots || [])) {
-    if (!p || !p.slotId) continue;
+    /* ★★★ 2026-08-17 — **끌어다 놓은 그루가 말을 못 했다** (박사님: *"몬스테라들 화면상
+       물주기 버튼이 아직도 안 뜨잖아"* — 두 번째 보고).
+       ⚠ 여기 있던 것: `if (!p.slotId) continue;` — **자리(slotId)가 있는 그루만** 말했다.
+         그런데 드래그로 바닥에 놓은 그루는 자리 없이 **좌표(`at`)로만** 선다.
+         선물 몬스테라를 가방에서 꺼내 바닥에 놓으면 정확히 그 꼴이 된다 ⇒ 영영 말이 없다.
+       ⚠ 바로 아래 `driestPot()` 은 처음부터 `(!p.slotId && !p.at)` 로 걸렀다 —
+         **같은 파일 안에서 두 줄이 다른 판정을 쓰고 있었다.** 이제 같다.
+       ⚠ 키는 `free:id` 로 짓는다 — 말풍선은 키로 자리를 잡는데 자리가 없으면 겹친다. */
+    if (!p || (!p.slotId && !p.at)) continue;
     const w = potWaterNow(p);           /* ⚠ **그 그루의** 물이다 */
     /* ★★★ 2026-08-17 — **마르기 전에도 띄운다** (박사님: *"화면에 몬스테라 물주기 알림이
          안 떠, 식물 탭에서만 뜨고"*).
@@ -7875,7 +7937,7 @@ function potMarks() {
          「탭에서만 뜬다」는 그 어긋남이다. */
     if (!w || !(w.dry || w.canWater)) continue;
     const nth = (S.pots.length > 1) ? ` ${S.pots.indexOf(p) + 1}` : '';
-    out.push({ key: p.slotId, tone: w.dry ? 'warn' : '',
+    out.push({ key: p.slotId || `free:${p.id}`, tone: w.dry ? 'warn' : '',
                ko: w.dry
                  ? `💧 몬스테라${nth}에 물 주기 (${w.dryDays - w.interval}일째 멈춤)`
                  : `💧 몬스테라${nth}에 물 주기 (${Math.max(0, w.leftDays)}일 뒤 마릅니다)`,
@@ -7883,6 +7945,10 @@ function potMarks() {
   }
   return out;
 }
+/* ★ 진단 손잡이 — **화면이 무엇을 보고 말했나**를 밖에서 가른다(§2.9).
+   「물주기 알림이 안 뜬다」는 눈으로 못 가른다: 말풍선이 안 난 것인지, 나고도 안 그려진
+   것인지가 겉보기에 똑같다. 이 손잡이가 그 둘을 가른다. */
+try { window.__potMarks = () => potMarks(); } catch { }
 /* ★ 지금 제일 오래 멈춰 있는 그루. 아래 단추 하나가 여러 그루를 가리켜야 할 때 쓴다. */
 function driestPot() {
   let best = null, bestW = null;
@@ -10017,7 +10083,8 @@ async function bootRoomView() {
         /* ⚠ 프리셋 이름(`st.name`)을 **먼저 쓰지 않는다** — 「식물등-바(선반밑)」처럼
            자리를 옮기기 전 이름이 남아 있다(등은 2026-08-16 에 창 위로 갔다).
            상점 줄과 **같은 이름**을 쓴다(§LAMP_KINDS). 두 곳이 다르면 무엇을 산 건지 흐려진다. */
-        f.name = uid.includes('bar') ? '벽부형 식물등'
+        f.name = uid.includes('stand') ? '거치형 식물등'
+               : uid.includes('bar') ? '벽부형 식물등'
                : uid.includes('clip') ? '집게형 식물등'
                : ((st && st.name) || '등');
         f.lamp = { on: !!on, grow: !!(st && st.grow), mount: uid.includes('bar') ? 'wall' : 'clip' };
@@ -11415,7 +11482,18 @@ const picked = {
           (q.slotId === slotId || slotId === `free:${q.id}` || slotId === q.id)) || null; }
         catch { return null; }
       })();
-      if (t) t.style.display = (ep || this.potInRoom) ? '' : 'none';
+      /* ★★ 2026-08-17 — **시루·무순도 회수한다** (박사님: *"모든 식물이나 채소들은"*).
+         ⚠ 몬스테라만 되던 것을 넓혔다. 판정은 `cropPotList` 가 낸 줄로 한다 —
+           화면이 시루 속을 뒤지면 「심었나」 판정이 두 벌이 된다(§cropPotList 머리말).
+         ⚠ **거둔 시루는 뺀다** — 그건 회수가 아니라 「걷기」다. */
+      this.cropInRoom = (() => {
+        try {
+          const row = cropPotList(S.firstPlay, S.day).find(r => r &&
+            (r.slotId === slotId || slotId === `free:${r.id}` || slotId === r.id));
+          return (row && row.placed && !row.harvested) ? row : null;
+        } catch { return null; }
+      })();
+      if (t) t.style.display = (ep || this.potInRoom || this.cropInRoom) ? '' : 'none';
     }
     /* ★★★ 2026-08-14 — **잠금을 걷었다** (박사님: *"씨앗이없는 상태에서 시루가안옮겨져"*).
        여기 있던 것: 거둔 시루면 [옮기기]를 `disabled` 로 잠갔다.
@@ -11834,7 +11912,7 @@ function placeLampFromBag() {
     banner('이 방에 더 달 자리가 없습니다', `이 방에 달 수 있는 식물등은 ${max}개입니다`);
     return;
   }
-  const ko = (L.placed || 0) === 0 ? '벽부형 식물등' : '집게형 식물등';
+  const ko = ['벽부형 식물등', '집게형 식물등', '거치형 식물등'][L.placed || 0] || '식물등';
   L.placed = (L.placed || 0) + 1;
   S.lamps.count = L.placed;
   io.light.clearCache();
@@ -12621,6 +12699,24 @@ function bindPicked() {
         fillSlots(); draw();
         return;
       }
+      /* ★ 시루·무순 — 자리만 지운다. 나이도 빛 이력도 **안 버린다**(§recallCropPot) */
+      const cr = picked.cropInRoom;
+      if (cr && !picked.emptyPotId) {
+        picked.clear();
+        let r = null;
+        try { r = recallCropPot(S.firstPlay, cr.id); }
+        catch (e) { banner('회수하지 못했습니다', (e && e.message) || ''); return; }
+        if (!r || !r.ok) { banner('회수하지 못했습니다', (r && r.why) || ''); return; }
+        const nm = cr.ord > 1 ? `${r.ko} ${cr.ord}` : r.ko;
+        pushLog(S, `📦 ${nm}를 가방에 넣었습니다 — 다시 놓을 때까지 자라지 않습니다`);
+        banner('가방에 넣었습니다',
+               r.started ? `${r.ageDays}일치는 그대로 있습니다 — 다시 놓으면 이어서 자랍니다`
+                         : '다시 놓을 수 있습니다');
+        try { sfx.thud(); } catch { }
+        try { syncRoom(); } catch { }
+        fillSlots(); draw();
+        return;
+      }
       const id = picked.emptyPotId;
       picked.clear();
       if (!id) return;
@@ -13073,7 +13169,7 @@ function doBuyLamp() {
   io.light.clearCache();
   /* ★ 2026-08-17 — **무엇을 샀는지 적는다.** 등이 둘이 되면서 「식물등을 샀습니다」만으로는
      어느 것이 켜졌는지 화면이 말을 안 하게 됐다(§LAMP_KINDS 와 같은 이름을 쓴다). */
-  const bought = ['벽부형 식물등', '집게형 식물등'][Math.max(0, r.owned - 1)] || '식물등';
+  const bought = ['벽부형 식물등', '집게형 식물등', '거치형 식물등'][Math.max(0, r.owned - 1)] || '식물등';
   pushLog(S, `💡 ${bought}을 샀습니다 — 남은 돈 ${r.cashWon.toLocaleString()}원`);
   banner(`${bought}을 샀습니다`, '자리가 나쁘면 등을 켜도 소용없습니다');
   dlgOpen(story.events(r.events));   /* 하루를 기다리면 산 순간이 조용해진다 */

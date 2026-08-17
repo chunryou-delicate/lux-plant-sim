@@ -165,10 +165,22 @@ export const TUTORIAL_RULES = Object.freeze({
      ⚠ 첫 플레이 중에는 살림 시계가 안 돌므로 이 셈도 안 돈다. 배우는 구간에서 굶어 죽으면
        그건 규칙이 아니라 사고다. */
   starveDays: 10,
+  /* ★★★ 2026-08-17 — **처음 한 번은 구호금이 나온다** (박사님: *"처음 0원 됐을 때는
+     긴급자금 대출 50만원 해서 동사무소에서 나와서 구호 금액 주는 걸로 하자.
+     그다음 죽는 걸로."*)
+     ⚠ **한 번뿐이다.** 두 번째로 0원이 되면 그때는 굶주림 시계가 돈다 — 그래서
+       「죽을 수 있는 게임」이 유지되면서 첫 실수는 배움으로 바뀐다.
+     ★ 갚는 규칙은 **안 넣었다.** 박사님 말씀은 「구호 금액을 주는 것」이고, 빚 계통을
+       새로 세우면 월세·전기와 더해져 이 판이 다른 게임이 된다. 이름만 「긴급자금」이다. */
+  reliefWon: 500_000,
   lampPriceWon: 120_000,
   /* 등마다 값이 다르다 — 앞에서부터 이 순서로 산다(§buyLamp).
      ⚠ 목록이 짧으면 마지막 값을 되쓴다. 등이 늘어도 안 던진다. */
-  lampPricesWon: Object.freeze([120_000, 80_000]),
+  /* ★★ 2026-08-17 — **셋째 줄: 거치형** (박사님: *"식물등도 집게형 말고 그냥 거치형
+     하나 추가해"*). 값이 제일 비싼 까닭은 **되살리는 자리가 제일 많아서**다 —
+     실측(profile ppfd · 등2→등3): 3단 선반 6칸이 10.3→28.8 · 7.3→21.9 로 올라온다.
+     벽등이 창 위로 옮겨가며 죽었던 그 자리들이다(house_rooms §banjiha-growlight-bar). */
+  lampPricesWon: Object.freeze([120_000, 80_000, 150_000]),
   /* ★★ **와트가 두 벌이었다** (2026-08-09 정정).
      예전에는 `lampWatt: 12` 하나였다 — 어떤 기구를 켜든 개당 12W 로 셌다.
      그런데 방에 실제로 달린 기구는 **바 20W + 집게 12W** 이고(`data/lighting_presets.json`),
@@ -177,7 +189,9 @@ export const TUTORIAL_RULES = Object.freeze({
      이제 **산 순서대로의 와트 표**를 갖는다. 순서(1개=바 · 2개=바+집게)는 프로파일이 정한 것이지
      여기서 새로 정한 것이 아니다 — 사는 것은 붙박이를 **켤 권리**다(lampecon-to-plan.md §5-③).
      ⚠ 표보다 많이 켜면 마지막 칸을 되쓴다. 없는 기구의 와트를 지어내지 않는다. */
-  lampWattsByOrder: Object.freeze([20, 12]),
+  /* ⚠ 셋째 36W 는 **지어낸 값이 아니다** — 얼린 표가 낸 것이다
+     (`room_profile.banjiha.json` §lampWatts [0,20,32,**68**] · 68−32=36). */
+  lampWattsByOrder: Object.freeze([20, 12, 36]),
   lampHours: 12,
   kwhWon: 160,                                // 원/kWh — 한국 가정용 평균가
   /* ⏸ 누진 구간. `null` 이면 위 `kwhWon` 하나로 센다. 모양과 뜻은 electricity.json §_tiers.
@@ -283,6 +297,8 @@ export function createTutorialState(opt = {}) {
     bankrupt: false,
     /* 0원이 **이어지기 시작한** 살림 일자. 돈이 들어오면 null 로 돌아간다(§starveDays) */
     brokeSinceDay: null,
+    /* 구호금을 이미 받았나 — **한 번뿐이다**(§reliefWon) */
+    reliefTaken: false,
     /* 굶어 죽었나 — 한 번 켜지면 새 판을 깔기 전까지 안 꺼진다 */
     starved: false
   };
@@ -667,6 +683,18 @@ export function tutorialDay(ts, opt = {}) {
        ⇒ 절반을 넘긴 뒤부터 말한다(그 전에는 잔소리다 · §말풍선 규율과 같은 결).
      ⚠ 여기서 판을 안 지운다. **말만 한다** — 새로 까는 것은 화면의 일이다(코어는 판을 모른다). */
   const starveMax = Number.isFinite(R.starveDays) ? R.starveDays : 10;
+  /* ══ ★★★ 구호금 — **처음 0원이 된 그날 한 번** (2026-08-17 · §reliefWon) ═══════════
+     ⚠ 굶주림 시계보다 **앞**이다. 뒤에 두면 첫날에 이미 굶은 것으로 세어진다.
+     ⚠ 두 번째 0원부터는 아무 일도 안 난다 — 그때부터 시계가 돈다. 그것이 이 규칙의 뜻이다. */
+  if (ts.cashWon <= 0 && !ts.reliefTaken) {
+    const won = Number.isFinite(R.reliefWon) ? R.reliefWon : 500_000;
+    ts.reliefTaken = true;
+    ts.cashWon += won;
+    ts.brokeSinceDay = null;                 // 돈이 들어왔으니 시계도 풀린다
+    if (ts.bankrupt) ts.bankrupt = false;
+    ev.push({ id: 'relief', ko: `동사무소에서 긴급자금 ${won.toLocaleString()}원이 나왔습니다`,
+              won, once: true });
+  }
   if (ts.cashWon <= 0) {
     if (ts.brokeSinceDay == null) ts.brokeSinceDay = ts.day;
     const hungry = ts.day - ts.brokeSinceDay;
