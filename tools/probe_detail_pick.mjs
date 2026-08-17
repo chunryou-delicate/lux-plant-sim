@@ -160,6 +160,45 @@ const cards = [];
 for (let i = 0; i < rows.length; i++) cards.push(await read(i));
 for (let i = 0; i < cards.length; i++) console.log(`카드 ${i} :`, JSON.stringify(cards[i]));
 
+/* ══ §D 방이 그루마다 그리나 · 집은 그루가 옮겨지나 (2026-08-17) ══════════
+   박사님: *"추가된 몬스테라 중간잎까지 자랐는데 확대 시는 보이는데 **화면상으로는
+            자란 게 안 보여**"* · *"준 몬스테라 말고 새로 만든 몬스테라 옮기기 했는데
+            **준 몬스테라가 옮겨져**"*
+   ⚠ 방이 그리는 것은 `__rv.plants()` 가 정본이다 — 사진으로 세지 않는다(§2.9 ②). */
+console.log('');
+console.log('── §D 방이 그루마다 그리나 ──────────────────────────────');
+const roomRows = async () => JSON.parse(await page.eval(`(()=>{ try {
+  return JSON.stringify(window.__rv.plants().map(r=>({key:r.key, potId:r.potId, kind:r.kind,
+    x:+r.pos.x.toFixed(3), z:+r.pos.z.toFixed(3)})));
+} catch(e){ return JSON.stringify([{err:e.message}]); } })()`));
+const before = await roomRows();
+console.log('  방 :', JSON.stringify(before));
+const mine = before.filter(r => r.kind === 'monstera');
+const asPot = before.filter(r => r.kind === 'emptypot');
+console.log(mine.length >= 2 ? `✔ 몬스테라가 ${mine.length}그루 서 있다`
+                             : `✘ 몬스테라가 ${mine.length}그루뿐이다 — 나머지는 안 그려졌다`);
+if (asPot.length) console.log(`  ⚠ 아직 「빈 화분」으로 서 있는 것 ${asPot.length}개: ${asPot.map(r=>r.potId||r.key).join(', ')}`);
+
+/* 둘째 그루를 집었을 때 **그 그루**를 붙드나 — 여기가 `null` 이면 첫 그루가 끌려간다 */
+const grabbed = JSON.parse(await page.eval(`(()=>{ try {
+  const S=window.__S(), out=[];
+  for (const id of ['pot_01','pot_02']) {
+    const q=S.pots.find(x=>x.id===id);
+    const key = (q.slotId && q.slotId) || ('free:'+q.id);
+    window.__picked.clear();
+    window.__picked.select(key);
+    window.__picked.beginMove();
+    out.push({ 집은것:id, 열쇠:key, 붙든것: window.__picked.potId,
+               무엇으로봤나: window.__picked.kindAt(key) });
+    window.__picked.clear();
+  }
+  return JSON.stringify(out);
+} catch(e){ return JSON.stringify([{err:e.message}]); } })()`));
+for (const g of grabbed) console.log('  집기 :', JSON.stringify(g));
+const grabOk = grabbed.length === 2 && grabbed.every(g => g.붙든것 === g.집은것);
+console.log(grabOk ? '✔ 집은 그 그루를 붙든다 — 옮기면 그것이 움직인다'
+                   : '✘ 집은 것과 붙든 것이 다르다 — 첫 그루가 끌려간다');
+
 /* ══ §C 확대창이 그루마다 뜨나 (2026-08-17 · 박사님: "몬스테라별 확대창") ═══════
    ⚠ 확대창은 `plant_grow.html` 이고 **지금 꽂힌 그루**를 그린다. 그래서 어느 줄에서
      열어도 첫 그루가 떴다. 여기서는 줄의 [🔍 확대]를 눌러 **꽂힌 그루가 바뀌는지**,
@@ -252,4 +291,4 @@ console.log(uniq.size === cards.length
   : `✘ 카드 ${cards.length}장이 같은 자리(${[...uniq].join(' / ')})를 보여 줍니다 — 아직 첫 그루에 박혀 있습니다`);
 console.log('예외', errs.length, errs.slice(0, 2).join(' | '));
 await page.close();
-process.exit(uniq.size === cards.length && !bad && dryOk && zoomOk ? 0 : 1);
+process.exit(uniq.size === cards.length && !bad && dryOk && zoomOk && grabOk ? 0 : 1);

@@ -9637,6 +9637,54 @@ function syncRoom() {
       Promise.resolve(roomView.setPlantAt(p.id, p.at, potSpec)).catch(warn('몬스테라'));
     else if (p && p.slotId)
       Promise.resolve(roomView.setPlant(p.slotId, potSpec)).catch(warn('몬스테라'));
+    /* ══ ★★★ 2026-08-17 — **둘째 그루부터도 방에 선다** ══════════════════════════
+       박사님: *"추가된 몬스테라 중간잎까지 자랐는데 **확대 시는 보이는데 화면상으로는
+                자란 게 안 보여.**"*
+       ──────────────────────────────────────────────────────────────────
+       ⚠⚠ 위 한 줄은 `pot0(S)` **하나**만 그렸다. 둘째부터는 아무도 안 그리므로,
+         심기 전에 서 있던 **「빈 화분」 메시가 그대로 남는다** — 그래서 흙만 보였다.
+         확대창은 그루를 골라 그리니 거기서는 멀쩡히 보였고, 두 화면이 딴말을 했다.
+       ★ 값은 **그 그루의 것**을 쓴다. `turn.plants` 가 그루마다 이미 싣고 있다
+         (`loop.js §fields` — 오늘 [자세히] 카드를 고칠 때 쓴 그 줄이다).
+       ⚠⚠ `leafState` 는 **지금 꽂힌 그루**를 읽으므로(§leafStateForRoom) 그루마다
+         꽂았다가 **반드시 되돌린다.** 안 되돌리면 다음에 방을 그릴 때 첫 그루가
+         남의 잎으로 그려진다 — 반대 방향의 같은 거짓말이다.
+       ⚠ 여러 그루를 못 굴리는 옛 생장 창에서는 잎 상태를 안 넘긴다(형태만 선다). */
+    {
+      const others = (S.pots || []).filter(q => q && q !== p && (q.at || q.slotId));
+      let canPick = false;
+      try { canPick = !!(io.growth && io.growth.multi && io.growth.multi()); } catch { }
+      let back = null;
+      try { back = canPick && io.growth.current ? io.growth.current() : null; } catch { }
+      for (const q of others) {
+        const row = (() => { try { return (lastTurn && lastTurn.plants || []).find(r => r && r.potId === q.id) || null; }
+                             catch { return null; } })();
+        let ls = null;
+        if (canPick) {
+          try { io.growth.select(growthIdOf(q)); ls = leafStateForRoom(q); }
+          catch (e) { console.warn('[방] 그루 고르기', e && e.message); }
+        }
+        const spec = {
+          kind: 'monstera',
+          phaseId: row && row.growthPhase && row.growthPhase.phaseId,
+          progress01: row && row.growthPhase && row.growthPhase.progress01,
+          /* ⚠ **`??` 다.** `||` 면 갓 심은 유효 0일이 덮여 큰 그루가 선다(위 §growthDays 의 그 사고) */
+          growthDays: (row && row.effectiveGrowthDays) ?? 0,
+          band: row && row.slot && row.slot.band,
+          leafState: ls,
+          fade: q.fade,
+          potD: ARRIVAL_POT_D,
+          potId: q.id
+        };
+        if (q.at && roomView.setPlantAt)
+          Promise.resolve(roomView.setPlantAt(q.id, q.at, spec)).catch(warn('몬스테라 ' + q.id));
+        else if (q.slotId)
+          Promise.resolve(roomView.setPlant(q.slotId, spec)).catch(warn('몬스테라 ' + q.id));
+      }
+      if (canPick && back != null) {
+        try { io.growth.select(back); } catch (e) { console.warn('[방] 그루 되돌리기', e && e.message); }
+      }
+    }
     /* ★★★ 2026-08-09 — **시루 하나가 그루 하나**다 (박사님 "각개 움직이고").
        ------------------------------------------------------------
        예전에는 자리 하나에 `count: N` 을 줘서 방뷰가 무리를 지어 세웠다(multisiru §1).
@@ -10558,13 +10606,17 @@ function commitPlace(what, hit, opt = {}) {
   if (what !== 'monstera') {
     return placeFailed(new Error(`«${what}» 은(는) 놓는 법을 모릅니다 — 개발에 알려 주세요`));
   }
-  const p = pot0(S);
+  /* ★★★ 2026-08-17 — **집은 그 그루를 옮긴다.** `pot0(S)` 를 박아 쓰고 있어서
+     어느 그루를 집었든 첫 그루가 움직였다(박사님이 그대로 겪으셨다).
+     ⚠ `opt.potId` 가 없으면 예전대로 첫 그루다 — 가방에서 새로 놓는 길이 그것이다. */
+  const p = (opt.potId ? (S.pots || []).find(x => x && x.id === opt.potId) : null) || pot0(S);
   if (!p) return;
   try {
     const r = setPotAt(S, p, atOf(hit), placeOpt());
     /* 추천 자리에 붙었으면 첫 플레이 학습 판정도 그 자리 이름으로 이어진다 */
     if (S.firstPlay.enabled && r.slotId && !isFreeSlotId(r.slotId)) moveMonstera(S.firstPlay, r.slotId);
-    pushLog(S, `🪴 몬스테라를 ${r.slotId && !isFreeSlotId(r.slotId) ? slotLabel(r.slotId) : '고르신 자리'}(으)로 옮겼습니다`);
+    { const n = (S.pots || []).length > 1 ? ` ${(S.pots || []).indexOf(p) + 1}` : '';
+      pushLog(S, `🪴 몬스테라${n}를 ${r.slotId && !isFreeSlotId(r.slotId) ? slotLabel(r.slotId) : '고르신 자리'}(으)로 옮겼습니다`); }
     unlockAfterFix();
   sfx.thud();                         /* ★ 놓았다 — 실패는 이 줄을 안 지난다 */
     if (arrivalSlotId && r.slotId !== arrivalSlotId) dlgOpen('monsteraMoved');
@@ -10669,8 +10721,15 @@ const picked = {
     this.mode = 'move';
     /* 그 식물이 갈 수 있는 자리들 — 지금 있는 자리는 빼고 */
     const what = this.kindAt(this.slotId);
-    /* ★ 어느 시루를 옮기는지 붙들어 둔다 (2026-08-09 · §자리는 시루마다 따로다) */
-    const one = what === 'beansprout' ? this.potAt(this.slotId) : null;
+    /* ★ 어느 시루를 옮기는지 붙들어 둔다 (2026-08-09 · §자리는 시루마다 따로다)
+       ★★★ 2026-08-17 — **몬스테라도 그루마다다** (박사님: *"준 몬스테라 말고 새로 만든
+         몬스테라 옮기기 했는데 **준 몬스테라가 옮겨져.**"*)
+       ⚠ 여기가 `'beansprout'` 일 때만 `potId` 를 잡고 몬스테라는 늘 `null` 이었다.
+         그러면 `commitPlace` 의 몬스테라 갈래가 `pot0(S)` 로 떨어진다 — 어느 그루를
+         집었든 **첫 그루(선물)가 끌려간다.** 오류도 안 난다. 조용히 남의 화분이 움직인다.
+       ⇒ 몬스테라면 그 자리에 선 화분을 잡는다(§potOfSlot). 시루와 **같은 규율**이다. */
+    const one = what === 'beansprout' ? this.potAt(this.slotId)
+              : what === 'monstera'   ? potOfSlot(this.slotId) : null;
     this.potId = one ? one.id : null;
     const { sel, ids } = drag.slotsFor(what);
     drag.what = what; drag.sel = sel;
