@@ -39,61 +39,110 @@ const clear = async () => {
 };
 await clear();
 
-/* ── 판을 짓는다 — 몬스테라 둘 · 빈 화분 · 시루 · 무순 판을 한 방에 ─────── */
-await page.eval(`(()=>{ const S=window.__S();
-  if (S.firstPlay && S.firstPlay.monstera) S.firstPlay.monstera.arrived = true;
-  S.shop.stock.pot = 1; S.shop.stock.pot_concrete_square = 1;
-  S.shop.stock.monstera_seed = 3; S.shop.stock.sprout_tray = 1; S.shop.stock.radish_seed = 1;
-  S.shop.stock.siru = 1; S.shop.stock.bean_seed = 3;
-  if (S.stamina) S.stamina.usedToday = 0; window.__redraw && window.__redraw(); })()`, false);
-await sleep(700);
-/* 선물 몬스테라를 창턱에 */
-await page.eval(`(()=>{ const s=document.getElementById('slot'); if(!s) return;
-  s.value='banjiha-sill:0'; s.dispatchEvent(new Event('change',{bubbles:true})); })()`, false);
-await sleep(1400); await clear();
-/* 씨앗 화분 하나를 3단 선반 위에 심는다 — ★ 씨앗 관련 건이 여기 있다 */
-const sown = await page.eval(`(()=>{ try {
-  const S=window.__S(), io=window.__io;
-  const sl=(io.light.room.slots||[]).find(x=>/desk:0$/.test(x.slotId));
-  if(!sl) return 'no-slot';
-  const r = window.__placePot('monsteraSeed:pot_concrete_square');
-  const ep=(S.emptyPots||[])[0];
-  if(!ep) return 'no-emptypot '+JSON.stringify(r);
-  window.__setPotAtForProbe ? 0 : 0;
-  return JSON.stringify({ 놓기:r, 빈화분:{id:ep.id,itemId:ep.itemId,potAsset:ep.potAsset} });
-} catch(e){ return 'ERR '+e.message; } })()`);
-console.log('씨앗 화분 놓기 :', sown);
-await sleep(1200); await clear();
-
-/* ⚠ 화분을 **밀 그 가구 위**에 올려야 뜻이 있다. 처음에 3단 선반에 올려 두고 책상을
-   밀었다가 「안 따라왔다」는 거짓 결론을 냈다 — 안 따라오는 것이 맞는 상황이었다. */
-console.log('선반 위로     :', await page.eval(`(()=>{ try {
-  const S=window.__S(), io=window.__io;
-  const ep=(S.emptyPots||[])[0]; if(!ep) return 'no-pot';
-  const sl=(io.light.room.slots||[]).find(x=>/desk:0$/.test(x.slotId));
-  const r = window.__moveEmptyForProbe ? null : null;
-  ep.slotId = sl.slotId; ep.at = { x: sl.x, y: sl.y, z: sl.z, onUid: 'banjiha-desk', occIdx: sl.occIdx ?? null };
-  window.__redraw && window.__redraw();
-  return JSON.stringify({ 자리: ep.slotId, at:{x:+ep.at.x.toFixed(2), y:+ep.at.y.toFixed(2), z:+ep.at.z.toFixed(2)} });
-} catch(e){ return 'ERR '+e.message; } })()`));
+/* ══ 판을 짓는다 — **실제 첫 플레이로** 선물 몬스테라를 받는다 ══════════════
+   ⚠ 상태만 만져서는 선물 그루가 안 생긴다(`givePlant` 이 첫 수확에서 부른다).
+     그루가 하나뿐이면 「집은 것 = 붙든 것」이 시시해진다 — 오늘 뽑은 세 사고가 전부
+     **둘 이상일 때**만 드러났다. 그래서 굴려서 받는다. */
+const waitAct = async (ms = 15000) => {
+  const t0 = Date.now();
+  const acting = () => page.eval(`(()=>{ try { return !!window.__byeotWalkSfx().acting; } catch { return false; } })()`);
+  for (let i = 0; i < 6; i++) { if (await acting()) break; await sleep(120); }
+  while (Date.now() - t0 < ms) { if (!(await acting())) { await sleep(250); return true; } await sleep(250); }
+  return false;
+};
+const rowAct = async (act) => {
+  for (let k = 0; k < 8; k++) {
+    const hit = await page.eval(`(()=>{ const b=[...document.querySelectorAll(
+      '#siruList button[data-act="${act}"]')].find(x=>!x.disabled); if(!b) return false; b.click(); return true; })()`);
+    if (!hit) break;
+    await waitAct(); await sleep(350); await clear();
+  }
+};
+await page.eval(`(()=>{ const rv=window.__rv, c=document.getElementById('roomCanvas').getBoundingClientRect();
+  const sp=rv.screenPosOf('banjiha-dresser:1');
+  window.__drag.begin('beansprout', document.getElementById('cropThumb').src, {clientX:c.left+c.width*0.9, clientY:c.top+40});
+  window.__drag.move({clientX:c.left+sp.x, clientY:c.top+sp.y}); window.__drag.end(); })()`, false);
 await sleep(1200);
-/* 거기에 심는다 — 씨앗이 실제로 들어가고 그릇이 그대로인가 */
-await page.eval(`(()=>{ const S=window.__S(); const ep=(S.emptyPots||[])[0];
-  if(ep) window.__sowForProbe = ep.id; })()`, false);
-console.log('심기          :', await page.eval(`(()=>{ try {
-  const S=window.__S(); const before={씨앗:S.shop.stock.monstera_seed, 그루:S.pots.length};
-  const b=[...document.querySelectorAll('#emptyPotList [data-sow]')][0];
-  if(!b) return 'no-btn';
-  b.click();
-  return JSON.stringify({전:before});
-} catch(e){ return 'ERR '+e.message; } })()`));
-await sleep(1400);
+await page.eval(`(()=>{ const S=window.__S(); S.shop.stock.bean_seed = 9; })()`, false);
+await page.eval(`(()=>{const b=document.getElementById('placeOk'); if(b&&b.offsetParent)b.click();})()`, false);
+await sleep(1000); await clear();
+await page.eval(`window.__byeotSheet.open('plants')`, false); await sleep(500);
+for (let i = 0; i < 60; i++) {
+  if (await page.eval(`window.__S().pots.length > 0`)) break;
+  await page.eval(`(()=>{const S=window.__S(); if(S.stamina) S.stamina.usedToday=0;})()`, false);
+  await rowAct('plant'); await rowAct('water'); await rowAct('harvest'); await rowAct('sow');
+  await page.eval(`(()=>{try{document.getElementById('next').click()}catch{}})()`, false);
+  await sleep(900); await clear();
+}
+console.log('선물 도착     :', await page.eval(`(()=>{const S=window.__S();
+  return JSON.stringify({day:S.day, 그루:S.pots.map(p=>p.id)});})()`));
+/* 재고를 넣고 씨앗 화분·무순 판을 더 세운다 */
+await page.eval(`(()=>{ const S=window.__S();
+  S.shop.stock.pot_concrete_square = 1; S.shop.stock.monstera_seed = 3;
+  S.shop.stock.pot = 1; S.shop.stock.sprout_tray = 1; S.shop.stock.radish_seed = 1;
+  if (S.stamina) S.stamina.usedToday = 0; window.__redraw && window.__redraw(); })()`, false);
+await sleep(600);
+/* 씨앗 화분 → 책상 위에 심는다 (씨앗 관련 건) */
+await page.eval(`window.__placePot('monsteraSeed:pot_concrete_square')`, false);
+await sleep(1500); await clear();
+await page.eval(`(()=>{ const S=window.__S(), io=window.__io;
+  const ep=(S.emptyPots||[])[0]; if(!ep) return;
+  const sl=(io.light.room.slots||[]).find(x=>/desk:0$/.test(x.slotId));
+  if(!sl) return;
+  ep.slotId = sl.slotId; ep.at = { x: sl.x, y: sl.y, z: sl.z, onUid: 'banjiha-desk', occIdx: sl.occIdx ?? null };
+  window.__redraw && window.__redraw(); })()`, false);
+await sleep(1000);
+await page.eval(`window.__byeotSheet.open('plants')`, false); await sleep(700);
+await page.eval(`(()=>{const b=[...document.querySelectorAll('#emptyPotList [data-sow]')][0]; if(b)b.click();})()`, false);
+await sleep(1300);
 await page.eval(`(()=>{ for(const b of document.querySelectorAll('button')){
   if(/몬스테라/.test(b.textContent||'') && b.offsetParent && !b.disabled){ b.click(); return; } } })()`, false);
 await sleep(1600); await clear();
-console.log('심은 뒤       :', await page.eval(`(()=>{ const S=window.__S();
-  return JSON.stringify({ 씨앗:S.shop.stock.monstera_seed, 사각:S.shop.stock.pot_concrete_square,
-    그루:S.pots.map(p=>({id:p.id, slot:p.slotId, asset:p.potAsset})) }); })()`));
+/* 빈 화분 하나 더(검은 모종포트) — 회수 단추를 잴 것이다 */
+await page.eval(`window.__placePot('monsteraSeed:pot')`, false); await sleep(1400); await clear();
+/* 무순 판 */
+await page.eval(`(()=>{ const rv=window.__rv, c=document.getElementById('roomCanvas').getBoundingClientRect();
+  const sp=rv.screenPosOf('banjiha-etagere:8');
+  const t=document.getElementById('musunThumb');
+  window.__drag.begin('musun', t?t.src:'', {clientX:c.left+20, clientY:c.top+20});
+  window.__drag.move({clientX:c.left+sp.x, clientY:c.top+sp.y}); window.__drag.end(); })()`, false);
+await sleep(1600); await clear();
+await page.eval(`(()=>{ try{window.__byeotSheet.close()}catch{} })()`, false); await sleep(400);
+console.log('판           :', await page.eval(`(()=>{const S=window.__S();
+  return JSON.stringify({ 그루:S.pots.map(p=>({id:p.id,slot:p.slotId,asset:p.potAsset})),
+    빈화분:(S.emptyPots||[]).map(e=>({id:e.id,itemId:e.itemId})),
+    방:window.__rv.plants().map(r=>({key:r.key,kind:r.kind})) });})()`));
+
+/* ── ⓪ 자리와 좌표가 서로 맞나 — **어긋나면 그 가구를 영영 못 옮긴다** ──────
+   조도 엔진이 `slotId` 와 `at` 을 견주어 어긋나면 던진다. 실측에서 그 던짐 때문에
+   3단 선반·서랍장이 **한 톨도 안 움직였다.** 옮기기 전에 먼저 본다. */
+const slotAudit = async (tag) => {
+  console.log('');
+  console.log(`── ⓪ 자리와 좌표가 맞나 (${tag}) ──────────────────────`);
+  const rows = JSON.parse(await page.eval(`(()=>{ const S=window.__S(), io=window.__io;
+    const slots=io.light.room.slots||[];
+    const out=[];
+    const chk=(o,ko)=>{ if(!o||!o.slotId||!o.at) return;
+      if(String(o.slotId).startsWith('free:')) return;
+      const s=slots.find(x=>x.slotId===o.slotId); if(!s) return;
+      const d=Math.max(Math.abs(s.x-o.at.x), Math.abs(s.z-o.at.z));
+      out.push({ 것:ko+' '+o.id, 자리:o.slotId, 어긋남:+d.toFixed(3),
+                 자리xz:[+s.x.toFixed(3),+s.z.toFixed(3)], atxz:[+o.at.x.toFixed(3),+o.at.z.toFixed(3)] }); };
+    for(const p of (S.pots||[])) chk(p,'화분');
+    for(const p of (S.emptyPots||[])) chk(p,'빈그릇');
+    try { for(const site of [S.firstPlay.beansprout, S.firstPlay.musun].filter(Boolean)){
+      chk(site,'자리'); for(const p of (site.pots||[])) chk(p,'작물'); } } catch {}
+    return JSON.stringify(out); })()`));
+  let off = 0;
+  for (const r of rows) {
+    const ok = r.어긋남 < 0.01;
+    if (!ok) off++;
+    console.log(`  ${ok ? '✔' : '✘'} ${r.것} · ${r.자리} · 어긋남 ${r.어긋남}m ${ok ? '' : `(자리 ${r.자리xz} vs at ${r.atxz})`}`);
+  }
+  console.log(off ? `✘ ${off}개가 어긋나 있다 — 그 가구는 못 옮긴다` : '✔ 전부 맞는다');
+  return off;
+};
+await slotAudit('옮기기 전');
 
 /* ── ① 놓인 것을 **하나씩 다 집어 본다** ───────────────────────────── */
 console.log('');
@@ -122,23 +171,41 @@ console.log(bad ? `✘ ${bad}개가 딴 것을 붙든다` : '✔ 놓인 것 전�
 /* ── ② 가구를 옮기면 그 위의 것이 따라오나 ────────────────────────── */
 console.log('');
 console.log('── ② 가구를 옮기면 위의 것이 따라오나 ──────────────────');
-const posOf = () => page.eval(`(()=>{ const rv=window.__rv;
-  return JSON.stringify(rv.plants().map(r=>({key:r.key, kind:r.kind,
+/* ⚠⚠ **어느 가구 위인지**를 같이 잰다. 처음에 「바닥이 아니면 가구 위」로만 걸렀다가
+   서랍장·3단 선반 위의 것을 「책상을 밀었는데 안 따라왔다」로 찍었다 — 안 따라오는 것이
+   맞는 것들이었다. 자가 **엉뚱한 것을 세면 그 자체가 거짓 보고**다(§2.9 ⑦). */
+const posOf = () => page.eval(`(()=>{ const rv=window.__rv, S=window.__S();
+  const onOf = (key) => {
+    const id = String(key).replace(/^free:/, '');
+    const all = [...(S.pots||[]), ...(S.emptyPots||[]), ...(S.cuttings||[])];
+    try { for (const site of (S.firstPlay ? [S.firstPlay.beansprout, S.firstPlay.musun].filter(Boolean) : []))
+            all.push(...(site.pots||[])); } catch {}
+    const o = all.find(x => x && (x.id === id || x.slotId === key));
+    return (o && o.at && o.at.onUid) || null;
+  };
+  return JSON.stringify(rv.plants().map(r=>({key:r.key, kind:r.kind, on:onOf(r.key),
     x:+r.pos.x.toFixed(3), y:+r.pos.y.toFixed(3), z:+r.pos.z.toFixed(3)}))); })()`);
-for (const uid of ['banjiha-desk']) {
+for (const uid of ['banjiha-desk', 'banjiha-etagere', 'banjiha-dresser']) {
   const before = JSON.parse(await posOf());
   /* ⚠⚠ **화면이 쓰는 그 길**로 옮긴다. 처음에 `io.light.moveFurniture` 를 직접 불렀다가
      「안 따라온다」는 거짓 결론을 냈다 — 따라오게 하는 장치(`furnPicked.afterMove` →
      `followFreeOnFurniture`)가 그 아래에 있는데 건너뛴 것이다(§2.9 ④ 자가 딴 길을 잰다). */
-  const moved = await page.eval(`(async ()=>{ try {
-    const io=window.__io, rv=window.__rv;
+  /* ⚠ 한 방향이 막히면(다른 가구와 겹침) **반대쪽도 해 본다** — 못 움직이면 이 줄로는
+     아무것도 못 재는데, 그것을 「따라왔다/안 따라왔다」로 적으면 그게 거짓 보고다. */
+  const moved = await page.eval(`(async ()=>{ const io=window.__io, rv=window.__rv;
     const f=(io.light.furnitureList()||[]).find(x=>x.uid===${JSON.stringify(uid)});
     if(!f) return 'no-furn';
-    const r = await rv.commitFurnitureAt(${JSON.stringify(uid)}, { x: f.x + 0.5, z: f.z, rot: f.rot||0 });
-    window.__furn.afterMove(r, '');
-    return JSON.stringify({ from:{x:+r.from.x.toFixed(2), z:+r.from.z.toFixed(2)},
-                            to:{x:+r.to.x.toFixed(2), z:+r.to.z.toFixed(2)} });
-  } catch(e){ return 'ERR '+(e&&e.message); } })()`);
+    let last='';
+    for (const d of [0.5, -0.5, 0.25, -0.25]) {
+      try {
+        const r = await rv.commitFurnitureAt(${JSON.stringify(uid)}, { x: f.x + d, z: f.z, rot: f.rot||0 });
+        window.__furn.afterMove(r, '');
+        if (Math.abs(r.to.x - r.from.x) < 0.01) { last='안 움직임'; continue; }
+        return JSON.stringify({ from:{x:+r.from.x.toFixed(2), z:+r.from.z.toFixed(2)},
+                                to:{x:+r.to.x.toFixed(2), z:+r.to.z.toFixed(2)} });
+      } catch(e){ last = (e&&e.message)||''; }
+    }
+    return 'ERR '+last; })()`);
   await page.eval(`(()=>{ try{ window.__redraw && window.__redraw(); }catch{} })()`, false);
   await sleep(1600);
   const after = JSON.parse(await posOf());
@@ -154,8 +221,8 @@ for (const uid of ['banjiha-desk']) {
     const b = before.find(x => x.key === a.key);
     if (!b) continue;
     const d = +(a.x - b.x).toFixed(2);
-    const on = Math.abs(b.y) > 0.05;      /* 바닥이 아니면 가구 위다 */
-    if (!on) continue;
+    /* ★ **이 가구 위에 있는 것만** 센다. 다른 가구 위의 것은 안 따라오는 게 맞다 */
+    if (b.on !== uid) continue;
     const ok = Math.abs(d - want) < 0.02;
     if (ok) follow++; else stay++;
     console.log(`    ${ok ? '✔' : '✘'} ${a.key}(${a.kind}) y ${b.y} · Δx ${d} (가구는 ${want})${ok ? '' : ' ← 안 따라왔다'}`);
@@ -163,6 +230,7 @@ for (const uid of ['banjiha-desk']) {
   console.log(`    ${stay ? '✘' : '✔'} 위에 있던 것 ${follow + stay}개 중 ${follow}개가 따라왔다`);
 }
 
+await slotAudit('옮긴 뒤');
 console.log('');
 console.log('예외', errs.length, errs.slice(0, 3).join(' | '));
 await page.close();

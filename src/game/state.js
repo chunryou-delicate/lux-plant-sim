@@ -1517,8 +1517,24 @@ export function reseatAllOnSlots(S, slots) {
   if (!S) return 0;
   let n = 0;
   for (const p of (S.pots || [])) if (reseatOnSlot(p, slots)) n++;
-  if (S.firstPlay && S.firstPlay.enabled)
-    for (const site of cropSites(S.firstPlay)) if (reseatOnSlot(site, slots)) n++;
+  /* ★★★ 2026-08-17 — **빈 그릇과 작물 개체도 다시 앉힌다** (박사님: *"3단장이나 책상에
+       화분 올리고 가구 이동하면 가구 따라가게 다시 검토해."*)
+     ══════════════════════════════════════════════════════════════════
+     ⚠⚠ 여기가 화분·**자리 사본**·삽수만 돌았다. 그런데 2026-08-09 에 시루가 각개가 되면서
+       (`site.pots[]` 마다 제 `at`) **개체는 아무도 안 앉혔고**, 2026-08-16 에 생긴
+       빈 그릇(`S.emptyPots`)도 빠져 있었다.
+     ⇒ 실측: 책상을 옮기면 **서랍장 슬롯까지 다시 앉는데**(자리표를 통째로 다시 적는다)
+       그 위의 콩나물이 안 따라가 **0.25m 어긋났다.** 그 뒤로는 조도 엔진이
+       「자리가 어긋납니다」로 던져서 **그 가구를 영영 못 옮긴다.**
+       옮기기 전 어긋남 0m → 책상 한 번 옮긴 뒤 0.25m (`probe_move_audit ⓪`).
+     ★ 자리 사본만 앉히고 개체를 안 앉히면 **둘이 갈린다** — 이 저장소의 오랜 병이다. */
+  for (const p of (S.emptyPots || [])) if (reseatOnSlot(p, slots)) n++;
+  if (S.firstPlay && S.firstPlay.enabled) {
+    for (const site of cropSites(S.firstPlay)) {
+      if (reseatOnSlot(site, slots)) n++;
+      for (const p of (site.pots || [])) if (reseatOnSlot(p, slots)) n++;
+    }
+  }
   for (const c of (S.cuttings || [])) if (reseatOnSlot(c, slots)) n++;
   return n;
 }
