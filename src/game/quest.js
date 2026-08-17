@@ -787,22 +787,42 @@ export function stepQuests(S, snapshot) {
   /* 「이미 열렸다고 말한 것」 — `_` 라 세이브에 안 실린다(§상태를 안 늘린다) */
   if (!Array.isArray(S._questOpen)) S._questOpen = [];
   const opened = [], finished = [], events = [];
-  for (const q of QUESTS) {
-    if (doneIds.includes(q.id)) continue;
-    let isOpen = false;
-    try { isOpen = !!q.opens(s, { ...ctx, q }); } catch { isOpen = false; }
-    if (!isOpen) continue;
-    if (!S._questOpen.includes(q.id)) {
-      S._questOpen.push(q.id);
-      opened.push(q.id);
-      events.push({ id: 'quest_opened', questId: q.id, ko: q.ko, todo: questTodo(q) });
+  /* ★★★ 2026-08-17 — **이미 해 놓은 줄은 그 자리에서 끝난다** (박사님: *"퀘스트 나오기 전
+       이미 달성했으면 자동 완료되게 해줘 (예를 들면 시루 8개 늘리기)"*)
+     ══════════════════════════════════════════════════════════════════
+     ⚠ 여는 것과 끝내는 것은 원래도 **한 걸음 안에서** 다 봤다. 문제는 **사슬**이었다:
+       ⓑ 는 ⓐ 가 끝나야 열리는데, `doneIds` 를 맨 위에서 **한 번만** 읽으므로 ⓐ 가
+       이번 걸음에 끝나도 ⓑ 는 **다음 걸음**에야 열린다. 걸음은 하루에 한 번이다.
+       ⇒ 시루를 여덟 개까지 늘려 놓고 뒤늦게 사슬에 닿으면 **하루에 한 줄씩** 풀렸다.
+     ⇒ **더 안 바뀔 때까지 돈다.** 이번 걸음에 끝난 것을 「끝난 것」으로 치고 다시 본다.
+     ⚠ 천장을 둔다 — 규칙이 서로를 여는 고리를 만들면 여기서 영영 돈다. 줄 수만큼이면
+       충분하고(한 바퀴에 적어도 하나는 끝나야 다음 바퀴가 있다), 넘으면 그건 고장이다.
+     ⚠ 사람이 보는 순서는 안 바뀐다 — 「열렸다」가 먼저 실리고 「끝났다」가 뒤에 실린다. */
+  const doneNow = new Set(doneIds);
+  for (let round = 0; round <= QUESTS.length; round++) {
+    let changed = false;
+    const ctx2 = { doneIds: [...doneNow], S };
+    for (const q of QUESTS) {
+      if (doneNow.has(q.id)) continue;
+      let isOpen = false;
+      try { isOpen = !!q.opens(s, { ...ctx2, q }); } catch { isOpen = false; }
+      if (!isOpen) continue;
+      if (!S._questOpen.includes(q.id)) {
+        S._questOpen.push(q.id);
+        opened.push(q.id);
+        events.push({ id: 'quest_opened', questId: q.id, ko: q.ko, todo: questTodo(q, s) });
+        changed = true;
+      }
+      let isDone = false;
+      try { isDone = !!q.done(s, { ...ctx2, q }); } catch { isDone = false; }
+      if (isDone) {
+        doneNow.add(q.id);
+        finished.push(q.id);
+        events.push({ id: 'quest_done', questId: q.id, ko: q.ko, todo: questTodo(q, s) });
+        changed = true;
+      }
     }
-    let isDone = false;
-    try { isDone = !!q.done(s, { ...ctx, q }); } catch { isDone = false; }
-    if (isDone) {
-      finished.push(q.id);
-      events.push({ id: 'quest_done', questId: q.id, ko: q.ko, todo: questTodo(q) });
-    }
+    if (!changed) break;
   }
   return { opened, finished, events };
 }

@@ -369,7 +369,13 @@ check('⑶ ★★ 사슬로 걸린 줄은 **앞 줄이 끝난 뒤에만** 열린
   for (const q of chained) {
     assert.ok(QUEST_IDS.includes(q.after), `'${q.id}.after' 가 없는 줄을 가리킵니다: ${q.after}`);
     assert.ok(doneStep.has(q.after), `'${q.after}' 가 안 끝났습니다`);
-    assert.ok(openStep.get(q.id) > doneStep.get(q.after),
+    /* ★★ 2026-08-17 — **같은 걸음도 맞는 것으로 친다** (박사님: *"퀘스트 나오기 전 이미
+       달성했으면 자동 완료되게 해줘"*). `stepQuests` 가 이제 **더 안 바뀔 때까지 돌므로**,
+       앞 줄이 끝나면 뒷줄이 **그 걸음 안에서** 열린다 — 하루를 안 기다린다.
+       ⚠ 재는 것은 여전히 「앞이 끝난 뒤에 열렸나」다. 다만 「뒤」의 눈금이 **걸음에서
+         이벤트 차례로** 내려왔다. 같은 걸음 안에서도 끝난 것이 먼저 실린다(아래 ⑶ 이 잰다).
+       ⚠ **앞 줄이 안 끝났는데 열리는 것**은 여전히 빨갛다 — 그건 사슬이 깨진 것이다. */
+    assert.ok(openStep.get(q.id) >= doneStep.get(q.after),
       `'${q.id}' 가 '${q.after}' 보다 먼저 열렸습니다 ` +
       `(${openStep.get(q.id)}걸음 vs ${doneStep.get(q.after)}걸음)`);
   }
