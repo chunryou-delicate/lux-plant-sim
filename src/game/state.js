@@ -1553,7 +1553,18 @@ export function followFreeOnFurniture(S, uid, from, to) {
      바로 아래 줄이 옮긴다 — 그래서 둘이 갈릴 곳이 없다. */
   for (const p of (S.emptyPots || [])) move(p);
   for (const c of (S.cuttings || [])) move(c);
-  if (S.firstPlay && S.firstPlay.enabled) for (const site of cropSites(S.firstPlay)) move(site);
+  /* ★★★ 2026-08-17 — **시루·재배판은 「자리」가 아니라 「개체마다」다** (박사님:
+       *"3단장이나 책상에 화분 올리고 가구 이동하면 가구 따라가게 다시 검토해."*)
+     ⚠⚠ 여기는 **자리(site) 하나**만 옮기고 있었다. 2026-08-09 에 시루가 각개가 되면서
+       (`site.pots[]` 마다 제 `at` 을 든다) 자리 사본은 대표 하나일 뿐이다 —
+       그래서 상판에 시루를 둘 올려 두고 가구를 밀면 **자리 사본만 따라가고 시루는 남았다.**
+     ⇒ 자리도 옮기고, 그 안의 **개체도 하나씩** 옮긴다. 둘 다 `at` 을 들고 있으므로 둘 다다. */
+  if (S.firstPlay && S.firstPlay.enabled) {
+    for (const site of cropSites(S.firstPlay)) {
+      move(site);
+      for (const p of (site.pots || [])) move(p);
+    }
+  }
   return n;
 }
 

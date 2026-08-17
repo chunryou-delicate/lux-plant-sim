@@ -14,7 +14,7 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <!-- 지금 보고 있는 판이 언제 것인지. 캐시가 의심되면 이걸 본다 -->
-<meta name="byeot-build" content="2026-08-17T-pickkind">
+<meta name="byeot-build" content="2026-08-17T-audit">
 <!-- ★★ 글씨 (2026-08-06 박사님: "글씨체가 이상해. 한글이 안 읽히네 뭔가. 잘 안 보여").
      Pretendard 를 **실제로 받아 온다.** 이름만 적어 두면 그 글씨가 깔린 기계에서만 보이고,
      안 깔린 기계에서는 조용히 system-ui 로 떨어진다 — 화면이 기계마다 달라진다.
@@ -1648,6 +1648,12 @@
              딴 데서 심는 셈이라 손짓이 갈렸다.
            ⚠ 부르는 것은 줄과 **같은 함수**(`sowEmptyPot`)다. 두 벌로 만들지 않는다. -->
       <button id="pickSow" class="primary" style="display:none">🌱 심기</button>
+      <!-- ★★ 2026-08-17 — **안 심은 화분은 가방으로 되돌린다** (박사님: *"안 심어진 화분
+           인벤 회수 기능도 좀 추가해.. 클릭하면 팝업 버튼에 추가로 나오게."*)
+           ⚠ 심은 화분은 못 걷는다 — 그건 그루를 뽑는 일이라 뜻이 다르다.
+           ⚠ 돌아오나 마나는 **코어가 정한다**(`CONTAINERS.returnsOnSale`) — 흙째 쓴
+             검은 모종포트는 한 번 심었으면 안 돌아온다. 화면이 그 규칙을 다시 적지 않는다. -->
+      <button id="pickTake" class="ghost" style="display:none">📦 가방으로</button>
       <button id="pickClose" class="ghost" aria-label="닫기">✕</button>
     </div>
     <!-- 가구를 골랐을 때 — 화분과 버튼이 다르다(자세히·확대가 없다) -->
@@ -2711,6 +2717,8 @@ import { takeCutting, repotCutting, cuttableNow, cutBudgetOf, cutBlockedReason,
          setCuttingAt,
          /* ★ 삽수 카드가 「뿌리내린 자리의 빛」을 말할 때 쓴다 — 말은 코어 것이다 */
          VARIE_LIGHT_KO,
+         /* ★ 2026-08-17 — 안 심은 그릇을 걷는다(§pickTake). 돌아오나 마나는 저쪽이 정한다 */
+         removeContainer,
          CONTAINERS, METHODS } from './src/game/propagation.js';
 import { isFreeSlotId, atFromSlot } from './src/game/place.js';
 /* 식물등 겨누기 — 물리는 io.light 가, 세이브는 이쪽이 맡는다(lampaim-to-plan §1) */
@@ -11145,8 +11153,9 @@ const picked = {
       const ep = (S.emptyPots || []).find(e => e &&
         (e.slotId === slotId || slotId === `free:${e.id}` || slotId === e.id)) || null;
       this.emptyPotId = ep ? ep.id : null;
-      const b = $('pickSow');
+      const b = $('pickSow'), t = $('pickTake');
       if (b) b.style.display = ep ? '' : 'none';
+      if (t) t.style.display = ep ? '' : 'none';
     }
     /* ★★★ 2026-08-14 — **잠금을 걷었다** (박사님: *"씨앗이없는 상태에서 시루가안옮겨져"*).
        여기 있던 것: 거둔 시루면 [옮기기]를 `disabled` 로 잠갔다.
@@ -12257,6 +12266,21 @@ function bindPicked() {
       const id = picked.emptyPotId;
       picked.clear();
       if (id) sowEmptyPot(id);
+    }); }
+  /* ★ [📦 가방으로] — 안 심은 그릇을 걷는다. 규칙은 코어(`removeContainer`)가 갖고 있고
+     **돌아오나 마나도 거기서 정한다.** 화면은 그 답을 그대로 옮긴다. */
+  { const b = $('pickTake');
+    if (b) b.onclick = guard(() => {
+      const id = picked.emptyPotId;
+      picked.clear();
+      if (!id) return;
+      let r = null;
+      try { r = removeContainer(S, id, { log: (m) => pushLog(S, m) }); }
+      catch (e) { banner('걷지 못했습니다', (e && e.message) || ''); return; }
+      banner(r.returned ? '📦 가방으로 돌아왔습니다' : '📦 걷었습니다',
+             r.returned ? '다시 놓을 수 있습니다' : '한 번 쓴 것이라 돌아오지 않습니다');
+      try { sfx.thud(); } catch { }
+      draw();
     }); }
   $('pickTurn').onclick = () => picked.beginTurn();
   /* ★★★ 2026-08-16 — **[자세히]는 창을 연다. 탭으로 떨어지지 않는다** (박사님:
