@@ -1130,7 +1130,13 @@
   /* ★손가락은 **글 아래**에 둔다 (박사님 2026-08-04: "가방 열어보세요 손가락 위치 봐").
      예전엔 위를 가리키는 손가락(☝)을 대상 **위**에 놓았다 — 반대를 가리킨 셈이다.
      아래를 가리키는 손가락을 글 아래 두면 끝이 대상에 닿는다. */
-  #hint .hand{font-size:30px;display:block;text-align:center;margin-top:1px;
+  /* ★★ 2026-08-17 — `position:relative` 는 **손가락을 말풍선과 떼어 놓기 위한 것**이다
+     (박사님 사진: 「씨앗을 미리 주문해 두세요」 손가락이 [상점]이 아니라 그 오른쪽 빈 곳을
+      가리키고 있었다). 말풍선이 화면 밖으로 안 나가려고 오른쪽으로 밀릴 때, 손가락이
+      말풍선 한가운데에 묶여 있으면 **같이 딸려간다** — 대상은 그대로 왼쪽에 있는데.
+     ⚠ `transform` 이 아니라 `left` 로 민다. `transform` 은 `handBob` 이 이미 쓰고 있어
+       덮어쓰면 손가락이 까딱이지 않는다(둘 다 바꾸려면 애니메이션까지 손대야 한다). */
+  #hint .hand{font-size:30px;display:block;text-align:center;margin-top:1px;position:relative;left:0;
     filter:drop-shadow(0 3px 6px rgba(0,0,0,.6));animation:handBob 1.1s ease-in-out infinite}
   @keyframes handBob{0%,100%{transform:translateY(0)}50%{transform:translateY(6px)}}
   #hint .say{display:block;padding:5px 11px;border-radius:999px;white-space:nowrap;
@@ -3309,6 +3315,7 @@ function placeHintAt(el, say) {
   const hand = h.querySelector('.hand');
   h.querySelector('.say').textContent = say;
   h.classList.remove('side', 'toRight');
+  hand.style.left = '0px';        /* ★ 지난 번에 민 것을 되돌린다 — 안 되돌리면 쌓인다 */
   hand.textContent = '👇';
   h.style.left = (r.left + r.width / 2) + 'px';
   h.style.top = '-999px';                      /* 재는 동안은 화면 밖 — 깜빡임을 안 만든다 */
@@ -3337,9 +3344,18 @@ function placeHintAt(el, say) {
                   Math.max(hb.height / 2 + 8, r.top + r.height / 2)) + 'px';
   } else {
     /* 위에 선다. ★가로도 물린다 — 가장자리 대상에서 글이 화면 밖으로 나갔다 */
-    h.style.left = Math.min(innerWidth - 8 - hb.width / 2,
-                   Math.max(hb.width / 2 + 8, r.left + r.width / 2)) + 'px';
+    const want = r.left + r.width / 2;                    /* 대상 한가운데 */
+    const got  = Math.min(innerWidth - 8 - hb.width / 2,
+                 Math.max(hb.width / 2 + 8, want));       /* 화면 안으로 민 자리 */
+    h.style.left = got + 'px';
     h.style.top = (r.top - hh + 4) + 'px';
+    /* ★★ 2026-08-17 — **민 만큼 손가락을 되민다.** 말풍선은 화면 안에 있어야 하지만
+       손가락은 **대상 위에** 있어야 한다. 둘을 한 덩어리로 두면 왼쪽 끝 대상에서
+       손가락이 대상 오른쪽 빈 곳을 가리킨다(박사님 사진의 [상점]이 그것이다).
+       ⚠ 말풍선 밖까지는 안 나간다 — 그러면 어느 말풍선의 손가락인지가 안 읽힌다.
+         거기까지 벌어지면 그건 **옆에서 가리켜야 하는 자리**지 더 미는 자리가 아니다. */
+    const dx = Math.max(-(hb.width / 2 - 8), Math.min(hb.width / 2 - 8, want - got));
+    hand.style.left = dx.toFixed(1) + 'px';
   }
   el.classList.add('hintTarget');
   hintTargetEl = el;
