@@ -14,7 +14,7 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <!-- 지금 보고 있는 판이 언제 것인지. 캐시가 의심되면 이걸 본다 -->
-<meta name="byeot-build" content="2026-08-17T-tapmenu">
+<meta name="byeot-build" content="2026-08-17T-intro">
 <!-- ★★ 글씨 (2026-08-06 박사님: "글씨체가 이상해. 한글이 안 읽히네 뭔가. 잘 안 보여").
      Pretendard 를 **실제로 받아 온다.** 이름만 적어 두면 그 글씨가 깔린 기계에서만 보이고,
      안 깔린 기계에서는 조용히 system-ui 로 떨어진다 — 화면이 기계마다 달라진다.
@@ -1477,8 +1477,19 @@
   .siruRow .rowbtns{flex:0 0 auto;display:flex;gap:6px}
   .siruRow button{flex:0 0 auto;min-height:34px}
   .siruRow.thirsty{border-color:rgba(143,216,234,.42);background:rgba(143,216,234,.08)}
+  /* ══ ★★ 2026-08-17 — **시루 한 줄을 납작하게** (박사님: *"5단 칸을 줄여서 물주기·자리
+       버튼을 칸 오른쪽에 해서 위아래 폭을 줄여"*)
+     ⚠ 예전에는 이름 → 칸 → 글 → 단추가 **네 줄**로 쌓여 한 대가 화면을 크게 먹었다.
+       시루가 넷이면 그것만으로 한 화면이다.
+     ⇒ 왼쪽에 이름·칸·글을 모으고 **단추를 오른쪽에** 세운다. 높이가 절반 가까이 준다.
+     ⚠ 단추 높이(`--tap`)는 안 줄인다 — 손가락이 누르는 자리다. 줄이는 것은 **빈 자리**다. */
   .siru{padding:8px 9px;margin:0 0 7px;border-radius:12px;
-    background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.10)}
+    background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.10);
+    display:grid;grid-template-columns:1fr auto;column-gap:8px;align-items:center}
+  .siru > .siruhead, .siru > .cells, .siru > .siruline{grid-column:1}
+  .siru > .sirubtns{grid-column:2;grid-row:1 / span 3;margin-top:0;
+    flex-direction:column;align-items:stretch;min-width:104px}
+  .siru > .sirubtns button{flex:0 0 auto;min-height:38px}
   .siru:last-child{margin-bottom:0}
   .siru.ready{border-color:rgba(255,200,110,.45);background:rgba(255,200,110,.09)}
   .siru.thirsty{border-color:rgba(143,216,234,.42);background:rgba(143,216,234,.08)}
@@ -1512,7 +1523,7 @@
   .pgauge.stuck>i{background:linear-gradient(90deg,rgba(240,163,95,.75),rgba(240,163,95,.45))}
   /* 단계 이름과 퍼센트 — 막대만 있으면 「무엇이 차는지」를 모른다 */
   .pgline{display:block;font-size:10.5px;font-weight:400;color:var(--dim);line-height:1.3}
-  .cells{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:3px;height:11px;margin:6px 0 5px}
+  .cells{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:3px;height:9px;margin:4px 0 3px}
   .cells>i{position:relative;overflow:hidden;border-radius:3px;background:rgba(0,0,0,.34);
     box-shadow:inset 0 0 0 1px rgba(255,255,255,.13)}
   .cells>i.on{background:linear-gradient(90deg,#8fd36f,#d5ef8b);box-shadow:none}
@@ -11707,8 +11718,24 @@ function reachWarningFor(potId) {
 function placeConfirmOk() {
   const warn = reachWarningFor(picked.potId);
   if (warn) pushLog(S, '⚠ ' + warn);          // 눌러 넘긴 경고도 기록에는 남는다
+  /* ★★ 2026-08-17 — **옮기고 나면 그 자리에서 다시 고른다** (박사님: *"옮기기 하면
+     씨앗 심기 버튼이 사라짐"*).
+     ⚠ [확인]을 누르면 `clear()` 가 메뉴를 통째로 닫았다. 그런데 안 심은 화분을 옮기는
+       까닭은 대개 **거기서 심으려고**다 — 옮기자마자 [🌱 심기]가 사라지면 다시 찾아
+       눌러야 한다. ⇒ 옮긴 자리의 열쇠로 **다시 연다.**
+     ⚠ 자리가 바뀌었으므로 **옮긴 뒤의 열쇠**를 써야 한다(`slotId` 또는 `free:{id}`). */
+  const back = (() => {
+    try {
+      const id = picked.potId;
+      if (!id) return null;
+      const o = (S.emptyPots || []).find(x => x && x.id === id)
+             || (S.pots || []).find(x => x && x.id === id);
+      return o ? (o.slotId || `free:${o.id}`) : null;
+    } catch { return null; }
+  })();
   picked.clear();
   draw();
+  if (back) { try { picked.select(back); } catch { } }
   /* ★ 2026-08-17 — **처음 무언가를 놓은 그 순간에** 사람 움직이는 법을 한 번 말한다
      (§COACH_NOTES.walkTip). 쪽지는 한 번만 뜨므로(coachSeen) 되풀이되지 않는다.
      ⚠ `draw()` **뒤**다 — 쪽지는 다른 말이 하나라도 떠 있으면 스스로 물러난다(§coachClear).
@@ -13462,6 +13489,16 @@ try {
      ⇒ 여기서 한 번 부르면 **열림이 제때 난다.** 두 번 불러도 안전하다 —
        `stepQuests` 가 이미 연 줄을 기억한다(§checkQuests 의 계약).
      ⚠ `draw()` **뒤**에 둔다. 보상은 규칙이고 draw 는 보여 주기라 순서를 안 섞는다. */
+  /* ★★★ 2026-08-17 — **서막이 제일 먼저다** (박사님: *"재시작할 때 멘트가 저렇게 시작해"*
+       — 새 판의 첫 대사가 「가방에 둔 채로는 안 되는 거야?」였다).
+     ══════════════════════════════════════════════════════════════════
+     ⚠ 그 줄은 첫 퀘스트(`questPlaceSiru`) 것이다. 부팅에서 `checkQuests` 가 **먼저** 돌아
+       그 대사를 큐에 넣고, 그 **뒤에** `intro` 가 들어갔다 — 큐는 이어 붙으므로
+       **이야기가 거꾸로 섰다.** 처음 켠 사람이 서막을 못 보고 「가방에…」부터 듣는다.
+     ⇒ 서막을 **먼저** 연다. 순서를 바꾸는 것이 전부다 — 두 대사 다 그대로 나온다.
+     ⚠ 여기 있던 `checkQuests` 를 지우지 않았다. 새로 열린 줄을 찾는 일은 여전히 필요하다 —
+       **뒤로 옮겼을 뿐이다.** */
+  if (!storyStarted()) dlgOpen('intro');
   try { checkQuests(lastTurn); } catch (e) { console.warn('[퀘스트 부팅]', e && e.message); }
   window.__byeotBooted = true;      // 밖의 감시자에게 "여기까지는 왔다"고 알린다
   bindGuide();                      // 조작 안내판 — 처음이면 인트로 뒤에 저절로 뜬다
@@ -13471,9 +13508,8 @@ try {
   armMusicAutostart();
   sfx.setEnabled(musicWanted());    /* ★ 효과음도 같은 스위치를 탄다 — 열쇠는 byeot.music 하나다 */              // 첫 조작에 저절로 켠다 — 끈 사람만 기억한다
   bootRoomView();                   // 방 3D — 실패해도 게임은 돌아간다(아래)
-  /* 이미 들은 이야기를 또 하지 않는다. 다만 기준은 '세이브가 있나'가 아니라
-     '이야기가 시작됐나'다 — 앞에서 설명한 이유다. */
-  if (!storyStarted()) dlgOpen('intro');
+  /* ⚠ 서막은 **위로 올라갔다**(§서막이 제일 먼저다) — 여기서 또 열지 않는다.
+     `dlgOpen` 은 같은 대사를 두 번 안 넣지만(`once`), 순서를 지키는 자리는 하나여야 한다. */
 } catch (err) {
   GATED.forEach(id => { $(id).disabled = true; });       // 실패하면 계속 잠근다
   /* ★#side 는 폰 세로로 바뀌며 없어졌다. 하단에 띄운다 — 안 보이면 "버튼이 안 눌린다"만 남는다 */
