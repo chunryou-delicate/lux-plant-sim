@@ -460,13 +460,22 @@ export function placeEmptyPot(S, at, opt = {}) {
   const potKind = opt.potItemId
     ? Object.values(POT_KINDS).find(k => k && k.itemId === opt.potItemId) || null : null;
   const decorative = !!(potKind && !containerKindOfItem(opt.potItemId));
+  /* ★★★ 2026-08-17 — **검은 모종포트도 제 모양으로 그린다** (박사님: *"검은 모종포트 모양도
+     그게 아니라 크림 어쩌고로 나와."*)
+     ⚠ 위 `decorative` 는 **그릇 표에 없는 화분**만 참이다. 검은 모종포트는 그 표에 있으므로
+       거짓이 되고, 그러면 `potAsset` 을 한 톨도 안 넘겨 방이 기본값
+       (`monstera/pot.glb` = **크림도자기**)으로 떨어졌다.
+     ⇒ 모양·지름은 **아는 화분이면 언제나** 넘긴다. 품목을 갈아 끼우는 것(`itemId`)과
+       모양을 넘기는 것은 **다른 일**인데 한 조건에 묶여 있었다. */
+  const artOf = potKind ? { potAsset: potKind.asset, potD: potKind.diameterM } : {};
   const kind = opt.container ||
                (opt.potItemId ? containerKindOfItem(opt.potItemId) : null) ||
                (decorative ? 'soil' : null) ||
                containerKindOfItem(SEED_POT_ITEM_ID) || 'soil';
   const r = placeCutContainer(S, kind, at, {
     ...opt, log: null,
-    ...(decorative ? { itemId: potKind.itemId, potAsset: potKind.asset, potD: potKind.diameterM } : {})
+    ...artOf,
+    ...(decorative ? { itemId: potKind.itemId } : {})
   });
   pushLog(S, r.accepts && r.accepts.includes('seed')
     ? `🪴 빈 ${r.containerKo}를 놓았습니다 — [🌱 심기]를 눌러 씨앗이나 삽수를 골라 주세요`

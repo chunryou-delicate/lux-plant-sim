@@ -14,7 +14,7 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <!-- 지금 보고 있는 판이 언제 것인지. 캐시가 의심되면 이걸 본다 -->
-<meta name="byeot-build" content="2026-08-17T-spot">
+<meta name="byeot-build" content="2026-08-17T-emptypot">
 <!-- ★★ 글씨 (2026-08-06 박사님: "글씨체가 이상해. 한글이 안 읽히네 뭔가. 잘 안 보여").
      Pretendard 를 **실제로 받아 온다.** 이름만 적어 두면 그 글씨가 깔린 기계에서만 보이고,
      안 깔린 기계에서는 조용히 system-ui 로 떨어진다 — 화면이 기계마다 달라진다.
@@ -1641,6 +1641,13 @@
       <button id="pickMove" class="primary">옮기기</button>
       <button id="pickTurn" class="ghost">돌리기</button>
       <button id="pickZoom" class="ghost">자세히</button>
+      <!-- ★★ 2026-08-17 — **빈 화분에는 [🌱 심기]** (박사님: *"화분 탭했을 때 씨앗 심기
+           버튼 해서 씨앗 고르는 팝업 뜨는 게 안 나와."*)
+           ⚠ 지금까지 그 단추는 **[식물] 탭 줄에만** 있었다. 방에서 화분을 눌러 놓고
+             「여기서 심으면 되겠지」 하면 아무것도 없었다 — 시루는 방에서 심는데 화분만
+             딴 데서 심는 셈이라 손짓이 갈렸다.
+           ⚠ 부르는 것은 줄과 **같은 함수**(`sowEmptyPot`)다. 두 벌로 만들지 않는다. -->
+      <button id="pickSow" class="primary" style="display:none">🌱 심기</button>
       <button id="pickClose" class="ghost" aria-label="닫기">✕</button>
     </div>
     <!-- 가구를 골랐을 때 — 화분과 버튼이 다르다(자세히·확대가 없다) -->
@@ -4059,8 +4066,14 @@ function showBuild() {
    ★ 자유 좌표 화분은 `free:{id}` 를 열쇠로 쓴다(state §화분 자리) — 둘 다 본다. */
 function potOfSlot(slotId) {
   if (!slotId) return null;
-  return (S.pots || []).find(p => p &&
+  const hit = (list) => (list || []).find(p => p &&
     (p.slotId === slotId || slotId === `free:${p.id}` || slotId === p.id)) || null;
+  /* ★★★ 2026-08-17 — **빈 화분도 여기서 찾는다** (박사님: *"화분 여전히 옮기기 하면
+     기존 몬스테라 화분이 옮겨져."*)
+     ⚠ 아직 안 심은 화분은 `S.pots` 가 아니라 **`S.emptyPots`** 에 산다. 그것만 보고 있어서
+       빈 화분을 집으면 `null` 이 나오고, `commitPlace` 가 `pot0(S)` 로 떨어져
+       **선물 몬스테라가 끌려갔다.** 오늘 아침에 고친 그 사고의 **남은 반쪽**이다. */
+  return hit(S.pots) || hit(S.emptyPots);
 }
 let zoomPrevGrowthId = null;
 function openZoomFor(pot) {
@@ -11038,6 +11051,20 @@ function commitPlace(what, hit, opt = {}) {
   /* ★★★ 2026-08-17 — **집은 그 그루를 옮긴다.** `pot0(S)` 를 박아 쓰고 있어서
      어느 그루를 집었든 첫 그루가 움직였다(박사님이 그대로 겪으셨다).
      ⚠ `opt.potId` 가 없으면 예전대로 첫 그루다 — 가방에서 새로 놓는 길이 그것이다. */
+  /* ★★ 2026-08-17 — **빈 화분을 옮기는 길**(§potOfSlot). 아직 안 심은 것은 `S.pots` 에
+     없으므로 여기서 안 가르면 `pot0(S)` 로 떨어져 선물 몬스테라가 끌려간다. */
+  if (opt.potId) {
+    const ep = (S.emptyPots || []).find(x => x && x.id === opt.potId);
+    if (ep) {
+      try {
+        const r = setPotAt(S, ep, atOf(hit), placeOpt());
+        pushLog(S, `🪴 빈 화분을 ${r.slotId && !isFreeSlotId(r.slotId) ? slotLabel(r.slotId) : '고르신 자리'}(으)로 옮겼습니다`);
+        unlockAfterFix(); sfx.thud();
+      } catch (e) { return placeFailed(e); }
+      draw();
+      return;
+    }
+  }
   const p = (opt.potId ? (S.pots || []).find(x => x && x.id === opt.potId) : null) || pot0(S);
   if (!p) return;
   try {
@@ -11097,6 +11124,15 @@ const picked = {
     if (drag.on) return;
     this.slotId = slotId;
     const kind = this.kindAt(slotId);
+    /* ★ 빈 화분이면 [🌱 심기]를 세운다(§pickSow) — 방에서 누른 그 자리에서 심을 수 있어야
+       시루와 손짓이 같아진다. 아니면 감춘다(심은 화분에 또 심을 수는 없다). */
+    {
+      const ep = (S.emptyPots || []).find(e => e &&
+        (e.slotId === slotId || slotId === `free:${e.id}` || slotId === e.id)) || null;
+      this.emptyPotId = ep ? ep.id : null;
+      const b = $('pickSow');
+      if (b) b.style.display = ep ? '' : 'none';
+    }
     /* ★★★ 2026-08-14 — **잠금을 걷었다** (박사님: *"씨앗이없는 상태에서 시루가안옮겨져"*).
        여기 있던 것: 거둔 시루면 [옮기기]를 `disabled` 로 잠갔다.
        ⚠ 박사님은 씨앗 탓으로 보셨는데 **씨앗과는 무관했다** — 거뒀느냐 하나로 잠겼다.
@@ -11160,6 +11196,9 @@ const picked = {
     const one = what === 'beansprout' ? this.potAt(this.slotId)
               : what === 'monstera'   ? potOfSlot(this.slotId) : null;
     this.potId = one ? one.id : null;
+    /* ★ 빈 화분인가 — 옮기는 길이 다르다(§commitPlace). 안 적어 두면 `S.pots` 에서 못 찾아
+       남의 화분이 끌려간다(박사님이 두 번 겪으신 그 모양). */
+    this.emptyPot = !!(one && (S.emptyPots || []).some(e => e && e.id === one.id));
     const { sel, ids } = drag.slotsFor(what);
     drag.what = what; drag.sel = sel;
     drag.valid = ids.filter(id => id !== this.slotId);
@@ -12197,6 +12236,13 @@ function bindPicked() {
      이게 없으면 버튼 사이 5px 틈을 누를 때마다 카메라가 돈다. */
   $('furnActions').onpointerdown = (e) => { e.stopPropagation(); };
   $('pickMove').onclick = () => picked.beginMove();
+  /* ★ [🌱 심기] — [식물] 탭 줄과 **같은 함수**를 탄다(§pickSow) */
+  { const b = $('pickSow');
+    if (b) b.onclick = guard(() => {
+      const id = picked.emptyPotId;
+      picked.clear();
+      if (id) sowEmptyPot(id);
+    }); }
   $('pickTurn').onclick = () => picked.beginTurn();
   /* ★★★ 2026-08-16 — **[자세히]는 창을 연다. 탭으로 떨어지지 않는다** (박사님:
        *"자세히 누르면 식물 탭으로 가는 게 아니라 그 크게 보는 창이 바로 열리면 좋겠어."*)
