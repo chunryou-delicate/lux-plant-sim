@@ -3280,7 +3280,17 @@ export function markMonsteraArrived(fp, target, opt = {}) {
   if (!fp.beansprout.harvested)
     throw new Error('[첫 플레이] 콩나물을 수확하기 전에는 몬스테라가 오지 않습니다');
   if (target == null || target === '') throw new Error('[첫 플레이] 몬스테라 도착 자리가 없습니다');
-  const spot = spotOf(target, { id: MONSTERA_POT_ID, ...opt });
+  /* ★★★ 2026-08-17 — **자리 없이 올 수 있다** (박사님: *"처음에 몬스테라 주는 거 인벤에
+       줘서 드래그해서 배치하거나 누르면 좌측이나 우측 바닥에 배치되도록 해"*).
+     ⚠ 여기가 **자리를 반드시 요구**했다(`spotOf` 가 좌표 없는 것에 던진다). 그래서
+       가방으로 오게 고치자마자 **첫 수확이 통째로 던졌다** — `test_first_play` 가 잡았다.
+     ⇒ 자리가 없는 화분(`slotId`·`at` 둘 다 null)은 **「아직 아무 데도 안 놓았다」**로 받는다.
+       그 상태는 이미 이 저장소가 아는 상태다(state §가방에 있는 화분 · syncRoom 이 방에
+       부탁하지 않는다). 도착했다는 사실과 어디에 놓였나는 **다른 칸**이다.
+     ⚠ 「자리가 없다」와 「아무것도 안 넘겼다」는 다르다 — 위 한 줄이 뒤엣것을 그대로 막는다. */
+  const unplaced = !!(target && typeof target === 'object' && !target.slotId && !target.at);
+  const spot = unplaced ? { slotId: null, at: null }
+                        : spotOf(target, { id: MONSTERA_POT_ID, ...opt });
   fp.monstera.arrived = true;
   fp.monstera.slotId = spot.slotId;
   fp.monstera.at = spot.at;
