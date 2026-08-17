@@ -32,7 +32,9 @@ import { spend as spendStamina, canAct as canActStamina, createStaminaState } fr
 import { createShopState, useStock, assertStockAll, stockOf,
          creditCropSurplus,
          /* ★ 2026-08-17 · 가구를 사고 판다 (아래 §가구를 사고 판다) */
-         furnitureQuoteOf, creditFurnitureSale, presetOfFurnitureItemId } from './shop.js';
+         furnitureQuoteOf, creditFurnitureSale, presetOfFurnitureItemId,
+         /* ★ 2026-08-17 — 꾸미는 화분 표. 「고른 화분」이 실제로 나가고 실제로 그려지게 한다 */
+         POT_KINDS } from './shop.js';
 /* ★★ 2026-08-17 — 삽수 용기. **화살표는 한 방향이다**(state → propagation).
    그쪽은 이 파일을 안 부르므로 순환이 안 생긴다(propagation 은 place·shop·stamina 만 쓴다).
    ⚠ 들여오는 까닭 하나: 「이 그릇에 무엇을 심을 수 있나」는 씨앗(여기)과 삽수(그쪽)를
@@ -449,10 +451,23 @@ export const SEED_START_GROWTH_DAYS = 0;
        부르고 있기 때문이다 — 문은 그대로 두고 속만 옮겼다.
    반환 { id, container, containerKo, itemId, at, slotId, left } */
 export function placeEmptyPot(S, at, opt = {}) {
+  /* ★★★ 2026-08-17 — **고른 화분이 실제로 나간다** (박사님: *"화분 구매 시 모양이 안 나와"*).
+     ⚠⚠ 꾸미는 화분 넷은 `CONTAINERS` 에 없다 — 그래서 `containerKindOfItem` 이 `null` 을 내고
+       **검은 모종포트로 떨어졌다.** 콘크리트 사각을 고르면 모종포트가 나가고 모양도 기본이었다.
+       (실측: 사각 1 · 모종포트 1 → 사각을 놓았더니 모종포트가 0)
+     ⇒ 심는 **방식**은 흙 그릇 그대로 두고, **품목·모양·지름**만 그 화분 것으로 넘긴다.
+     ★ 지름은 `POT_KINDS` 가 GLB 를 직접 재서 굳혀 둔 값이다 — 여기서 지어내지 않는다. */
+  const potKind = opt.potItemId
+    ? Object.values(POT_KINDS).find(k => k && k.itemId === opt.potItemId) || null : null;
+  const decorative = !!(potKind && !containerKindOfItem(opt.potItemId));
   const kind = opt.container ||
                (opt.potItemId ? containerKindOfItem(opt.potItemId) : null) ||
+               (decorative ? 'soil' : null) ||
                containerKindOfItem(SEED_POT_ITEM_ID) || 'soil';
-  const r = placeCutContainer(S, kind, at, { ...opt, log: null });
+  const r = placeCutContainer(S, kind, at, {
+    ...opt, log: null,
+    ...(decorative ? { itemId: potKind.itemId, potAsset: potKind.asset, potD: potKind.diameterM } : {})
+  });
   pushLog(S, r.accepts && r.accepts.includes('seed')
     ? `🪴 빈 ${r.containerKo}를 놓았습니다 — [🌱 심기]를 눌러 씨앗이나 삽수를 골라 주세요`
     : `🫙 빈 ${r.containerKo}를 놓았습니다 — [🌱 심기]를 눌러 삽수를 골라 주세요`);
@@ -653,7 +668,14 @@ export function plantMonsteraSeed(S, io, opt = {}) {
     slotId: spot ? spot.slotId : null,
     at: spot ? spot.at : null,
     plantId: ARRIVAL.plantId,
-    potAsset: ARRIVAL.potAsset,
+    /* ★★★ 2026-08-17 — **고른 화분의 모양을 그대로 쓴다** (박사님: *"배치해도 처음
+       화분하고 똑같에"*). 여기가 늘 `ARRIVAL.potAsset` 하나였다 — 무엇을 골라 심어도
+       도착 그루가 신고 온 그 화분이 됐다.
+       ⚠ 넘어온 것이 없으면 예전 그대로다(옛 세이브·옛 호출부가 안 깨진다). */
+    potAsset: (opt.potAsset || (() => {
+      const k = Object.values(POT_KINDS).find(x => x && x.itemId === potItemId);
+      return (k && k.asset) || null;
+    })() || ARRIVAL.potAsset),
     variegated: false,
     daysPlanted: 0,
     fedDays: 0,

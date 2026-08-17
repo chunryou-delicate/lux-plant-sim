@@ -2147,7 +2147,18 @@ export async function createRoomView(canvas, opts = {}) {
   async function buildEmptyPot(spec, limit) {
     const g = new THREE.Group();
     const want = Math.min(MONSTERA_POT_D, limit === Infinity ? MONSTERA_POT_D : limit);
-    const pot = await loadGLB(AT('../../assets/monstera/pot.glb'));
+    /* ★★★ 2026-08-17 — **고른 화분을 그린다** (박사님: *"배치해도 처음 화분하고 똑같에"*).
+       ⚠ 여기가 `monstera/pot.glb` 하나로 못 박혀 있었다 — 무엇을 사서 놓든 같은 그림이었다.
+       ★ 이름은 호스트가 준다(`spec.potAsset` — `shop.POT_KINDS.asset` 그대로). 여기서
+         품목→그림 표를 또 만들지 않는다. 두 벌이 되면 한쪽이 낡는다.
+       ⚠ 못 실으면 **기본 화분으로 떨어지고 까닭을 남긴다.** 조용히 빈 자리를 두지 않는다. */
+    const url = spec && spec.potAsset ? `../../assets/${spec.potAsset}` : '../../assets/monstera/pot.glb';
+    let pot = null;
+    try { pot = await loadGLB(AT(url)); }
+    catch (e) {
+      console.warn(`[방뷰] 화분 GLB 를 못 실었습니다 (${url}) — 기본 화분으로 그립니다:`, e && e.message);
+      pot = await loadGLB(AT('../../assets/monstera/pot.glb'));
+    }
     const bb = new THREE.Box3().setFromObject(pot);
     const cur = Math.max(bb.max.x - bb.min.x, bb.max.z - bb.min.z) || MONSTERA_POT_D;
     pot.scale.setScalar(want / cur);

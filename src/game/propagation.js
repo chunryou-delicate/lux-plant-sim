@@ -1440,15 +1440,31 @@ export function placeCutContainer(S, container, at, opt = {}) {
   if (!cont.itemId)
     throw new Error(`[용기] ${cont.ko} 는 상점 품목이 없어 놓을 수 없습니다`);
 
+  /* ★★★ 2026-08-17 — **어느 화분을 골랐나** (박사님: *"화분 구매 시 모양이 안 나와…
+     배치해도 처음 화분하고 똑같에"* · *"화분1+모종포트1 해야 배치되는 거야?"*)
+     ══════════════════════════════════════════════════════════════════
+     ⚠⚠ 여기까지는 그릇을 **셋**만 알았다(유리병 · 트레이 · 검은 모종포트). 꾸미는 화분
+       넷(`shop.POT_KINDS`)은 이 표에 없어서 `containerKindOfItem` 이 `null` 을 내고
+       **검은 모종포트로 떨어졌다.** 그래서 콘크리트 사각 화분을 골라도
+         · 나가는 재고가 **검은 모종포트**였고(그래서 「둘이 드는 것처럼」 보였다)
+         · 놓인 그릇의 모양이 **기본 화분**이었다.
+       실측: 사각 1 · 모종포트 1 로 시작해 사각을 놓았더니 **모종포트가 0** 이 됐다.
+     ⇒ 그릇의 **방식**(흙에 심는다)은 그대로 두고, 실제로 나가는 **품목**과 **모양·지름**만
+       갈아 낀다. 방식을 새로 만들면 삽수 계통이 통째로 갈라진다.
+     ⚠ 안 주면 예전 그대로다 — 옛 세이브·옛 호출부가 한 글자도 안 바뀐다. */
+  const itemId = opt.itemId || cont.itemId;
   /* ① **묻기만 한다.** 여기서는 한 톨도 안 뺀다 (state.placeEmptyPot 이 쓰던 그 순서) */
-  assertStockAll(S, [{ itemId: cont.itemId, qty: 1 }]);
+  assertStockAll(S, [{ itemId, qty: 1 }]);
   const id = opt.id || nextContainerId(S);
   /* ② 자리 — 여기서 재 본다(던질 수 있다). 아직 아무것도 안 썼다 */
   const spot = resolvePlacement(id, at, opt);
   /* ③ 다 됐다. 이제 뺀다 */
-  useStock(S, cont.itemId, 1);
+  useStock(S, itemId, 1);
   if (!Array.isArray(S.emptyPots)) S.emptyPots = [];
-  const row = { id, container: cont.id, itemId: cont.itemId,
+  const row = { id, container: cont.id, itemId,
+                /* ★ 고른 화분의 모양·지름 — 없으면 그릇 기본값이다(§opt.itemId) */
+                ...(opt.potAsset ? { potAsset: opt.potAsset } : {}),
+                ...(Number.isFinite(opt.potD) ? { potD: opt.potD } : {}),
                 at: spot.at, slotId: spot.slotId, placedOnDay: S.day,
                 /* ★ 한 번이라도 무언가 들어앉았나 — **걷을 때 돌아오나**가 여기서 갈린다.
                    검은 모종포트는 흙째 쓰는 소모품이라(`returnsOnSale:false`) 한 번 쓰면
