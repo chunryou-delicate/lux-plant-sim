@@ -675,6 +675,8 @@ export async function createRoomView(canvas, opts = {}) {
     /* ★ 등을 눌렀다 (2026-08-08). **누르는 순간 방뷰가 이미 켜고 껐다** — 여기는 알림이다.
        호스트는 이걸 받아 S.lamps 를 맞추고 조도 캐시를 비우면 된다(§등 스위치). */
     onLampTap: null,
+    /* ★ 2026-08-17 — 참이면 등을 눌러도 **안 켜고** 호스트에게만 알린다(§onLampTap) */
+    lampTapMenu: false,
     onProgress: null, onReady: null, onError: null,
     orbit: true, maxPixelRatio: 1.75, deferPlantAssets: false, ...opts
   };
@@ -4585,10 +4587,20 @@ export async function createRoomView(canvas, opts = {}) {
       } else if (hit.type === 'lamp') {
         /* ★ **여기서 먼저 켜고 끈다** (2026-08-08 · §⑧-e).
            호스트를 기다렸다 켜면 폰에서 한 박자 늦게 밝아진다 — 손끝의 물건은
-           손끝에서 반응해야 한다. 호스트가 막을 일이면 setLampOn 으로 되돌린다. */
+           손끝에서 반응해야 한다. 호스트가 막을 일이면 setLampOn 으로 되돌린다.
+           ★★ 2026-08-17 — **호스트가 메뉴를 열겠다면 안 켠다** (박사님: *"식물등들을
+             클릭하면 똑같이 옮기기, 돌리기 버튼이 나오고 거기에 켜기 끄기가 있도록"*).
+             누르자마자 켜지면 그 메뉴가 뜨는 순간 상태가 이미 바뀌어 있어, [켜기]를
+             누르려고 연 사람이 **끄고 나서 켜는** 꼴이 된다.
+           ⚠ 옛 길은 그대로 산다 — `lampTapMenu` 를 안 켠 호스트는 예전처럼 바로 켜진다. */
         selectCharacter(null);
-        const st = toggleLamp(hit.uid);
-        O.onLampTap && O.onLampTap(hit.uid, st.on, st);
+        if (O.lampTapMenu) { O.onLampTap && O.onLampTap(hit.uid, lampIsOn(hit.uid),
+            (() => { const r = ((built && built.lightRigs) || []).find(x => x.uid === hit.uid);
+                     return r ? lampStateOf(r) : null; })()); }
+        else {
+          const st = toggleLamp(hit.uid);
+          O.onLampTap && O.onLampTap(hit.uid, st.on, st);
+        }
       } else {
         selectCharacter(null);
         O.onSlotTap && O.onSlotTap(hit.slotId);

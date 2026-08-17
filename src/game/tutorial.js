@@ -143,7 +143,21 @@ export const TUTORIAL_RULES = Object.freeze({
      둘이 같은지는 `tools/test_elec.mjs` 가 매번 확인한다. 다르면 검사가 깨진다 —
      이 저장소는 정본이 두 벌이라 반복해서 사고가 났다(씨앗값·계절 달력).
      읽어 꽂는 법은 아래 §electricityRulesFrom. */
-  lampPriceWon: 25_000,
+  /* ★★★ 2026-08-17 — **값을 크게 올렸다** (박사님: *"가격을 좀 올렸으면 해. 많이."*)
+     ══════════════════════════════════════════════════════════════════
+     25,000 → **120,000원**(첫 등 · 벽부형) · **80,000원**(둘째 등 · 집게형).
+     왜 이만큼인가 — 이 게임에서 등은 **「빛을 사는 유일한 길」**이고, 값이 싸면
+     「자리를 고르는 일」이 통째로 뜻을 잃는다. 하루 몫이 4,867원(§2.8)이니
+     첫 등은 **약 25일치 살림비**다. 콩나물만 돌려서는 못 사고, 삽수를 팔아야 닿는다.
+     ⚠ 옛값 25,000 은 「제일 싼 가구(실구매 42,000원)보다 싼 등」이었다 —
+       shop.js §FURN_BASE 가 그 비교를 적어 두었는데, 그 줄의 뜻이 뒤집혔다.
+       그쪽 주석도 같이 고쳐 둔다(두 곳이 다른 말을 하면 한쪽이 낡는다).
+     ★ 둘째가 싼 까닭은 **집게등이 12W 로 더 약하기 때문**이다(바 20W).
+       값이 세기를 따라가야 「왜 이게 더 비싼가」가 화면에서 읽힌다. */
+  lampPriceWon: 120_000,
+  /* 등마다 값이 다르다 — 앞에서부터 이 순서로 산다(§buyLamp).
+     ⚠ 목록이 짧으면 마지막 값을 되쓴다. 등이 늘어도 안 던진다. */
+  lampPricesWon: Object.freeze([120_000, 80_000]),
   /* ★★ **와트가 두 벌이었다** (2026-08-09 정정).
      예전에는 `lampWatt: 12` 하나였다 — 어떤 기구를 켜든 개당 12W 로 셌다.
      그런데 방에 실제로 달린 기구는 **바 20W + 집게 12W** 이고(`data/lighting_presets.json`),
@@ -199,6 +213,11 @@ export function electricityRulesFrom(json, rules = TUTORIAL_RULES) {
   const L = json.lamp || {};
   if (Number.isFinite(L.hours)) R.lampHours = L.hours;
   if (Number.isFinite(L.priceWon)) R.lampPriceWon = L.priceWon;
+  /* ★ 2026-08-17 — 등마다 값이 다르다. **정본은 이 파일**이고 여기 기본값은 못 읽는 판용이다
+     (`test_elec A` 가 둘이 같은지 매번 확인한다 — 이 저장소는 정본 두 벌로 여러 번 앓았다). */
+  if (Array.isArray(L.pricesByOrder) && L.pricesByOrder.length &&
+      L.pricesByOrder.every(w => Number.isFinite(w) && w >= 0))
+    R.lampPricesWon = Object.freeze([...L.pricesByOrder]);
   if (Array.isArray(L.wattsByOrder) && L.wattsByOrder.length &&
       L.wattsByOrder.every(w => Number.isFinite(w) && w >= 0))
     R.lampWattsByOrder = Object.freeze([...L.wattsByOrder]);
@@ -471,14 +490,27 @@ export function dailyCashOutWon(ts) {
   return Math.max(0, Math.round(R.dailySpendWon - rentWonOf(ts) / period));
 }
 
+/* ★ 다음에 살 등의 값 — **몇 개째냐**로 정해진다(§lampPricesWon).
+   ⚠ 화면이 이 값을 다시 세지 않는다. 상점 줄도 [사기]도 여기 하나를 묻는다. */
+export function lampPriceAt(ts, idx) {
+  const R = (ts && ts.rules) || {};
+  const list = Array.isArray(R.lampPricesWon) && R.lampPricesWon.length ? R.lampPricesWon : null;
+  if (!list) return R.lampPriceWon || 0;
+  const i = Math.max(0, idx | 0);
+  return list[Math.min(i, list.length - 1)];
+}
+/* 다음에 살 등이 몇 개째인가(0부터) */
+export function lampNextIndex(ts) { return ((ts && ts.lamp && ts.lamp.owned) || 0); }
+
 export function buyLamp(ts) {
   if (!ts.lamp.unlocked) throw new Error('[튜토] 식물등은 아직 살 수 없습니다');
-  if (ts.cashWon < ts.rules.lampPriceWon) {
-    const e = new Error('[튜토] 돈이 모자랍니다 — 식물등 ' + ts.rules.lampPriceWon.toLocaleString() + '원');
+  const price = lampPriceAt(ts, lampNextIndex(ts));
+  if (ts.cashWon < price) {
+    const e = new Error('[튜토] 돈이 모자랍니다 — 식물등 ' + price.toLocaleString() + '원');
     e.tutorialInput = true;                 // 안내지 고장이 아니다
     throw e;
   }
-  ts.cashWon -= ts.rules.lampPriceWon;
+  ts.cashWon -= price;
   ts.lamp.owned += 1;
   /* ★사는 것은 **턴 밖**에서 일어난다(버튼). 그래서 다음 하루를 기다리지 않고
      여기서 바로 신호를 낸다 — 하루 뒤에 "샀네" 하면 산 순간이 조용해진다.

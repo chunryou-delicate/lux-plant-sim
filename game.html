@@ -14,7 +14,7 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <!-- 지금 보고 있는 판이 언제 것인지. 캐시가 의심되면 이걸 본다 -->
-<meta name="byeot-build" content="2026-08-17T-rows">
+<meta name="byeot-build" content="2026-08-17T-lamps">
 <!-- ★★ 글씨 (2026-08-06 박사님: "글씨체가 이상해. 한글이 안 읽히네 뭔가. 잘 안 보여").
      Pretendard 를 **실제로 받아 온다.** 이름만 적어 두면 그 글씨가 깔린 기계에서만 보이고,
      안 깔린 기계에서는 조용히 system-ui 로 떨어진다 — 화면이 기계마다 달라진다.
@@ -1578,6 +1578,12 @@
       <!-- ★식물등만 뜬다 — 겨눌 수 있는 등에서만(io.light.lampList().aimable).
            바 등은 선반 밑 붙박이라 안 뜬다(docs/growlight_aim.md §2). -->
       <button id="furnAim" class="ghost" style="display:none">겨누기</button>
+      <!-- ★★ 2026-08-17 — **등을 켜고 끈다** (박사님: *"식물등들을 클릭하면 똑같이 옮기기,
+           돌리기 버튼이 나오고 거기에 켜기 끄기가 있도록해서 키고 끌수있고"*).
+           ⚠ 규칙은 방뷰가 갖고 있다(`setLampOn` · `lampSwitches`) — 여기는 **누르는 자리**다.
+           ⚠ 등이 아닌 가구에서는 안 뜬다. -->
+      <button id="furnLamp" class="ghost" style="display:none">켜기</button>
+      <span class="warn" id="furnWhy" style="display:none"></span>
       <!-- ★★★ 옮기고 **난 뒤**의 두 단추 (2026-08-16 · B-4 · 박사님: "옮긴 다음 팝업이
            [옮기기]가 있어서 헷갈림 — [확정]/[취소] 버튼 나오게")
            ------------------------------------------------------------
@@ -2665,7 +2671,7 @@ import { createMusic } from './src/game/music.js';
 /* ★ 효과음 — 딸칵·사각사각·물·저벅저벅·띠로롱·턱 (2026-08-16 박사님 요청 · sfx-to-plan.md) */
 import { sfx } from './src/game/sfx.js';
 import { seasonAt, seasonDayAt, SEASON_KO, tutorialGoal, learningLeft,
-         canMoveOut, moveOut, buyLamp } from './src/game/tutorial.js';
+         canMoveOut, moveOut, buyLamp, lampPriceAt, lampNextIndex } from './src/game/tutorial.js';
 /* ★이사는 사건이 아니라 **이동**이다. moveOut 은 돈과 판정만 하고 방을 안 바꿨다 —
    moveIntoOneroom 이 그 위에서 S.home.room 과 자리를 옮긴다(oneroom.js 머리말). */
 import { moveIntoOneroom } from './src/game/oneroom.js';
@@ -4293,6 +4299,38 @@ function updateHint() {
       if (onScreen($('openBag'))) return hintAt($('openBag'), '[상점] 탭에서 씨앗을 주문하세요');
     }
   }
+  /* ══ ★★★ 2026-08-17 — **시루를 하나 더 사는 길** (박사님: *"시루 추가로 1개 사는 것도
+       가이드 좀 해주고."*) ═══════════════════════════════════════════════
+     ⚠ 씨앗 사는 길(§seedNeed)과 **같은 결**이다 — 걸음 셋: [상점] → 그 줄의 [주문] →
+       개수 확정. 다른 것은 「언제 가리키나」뿐이다.
+     ★ **할 일이 「시루를 늘리라」고 말할 때만** 가리킨다. 그 전에 가리키면 아직 안 배운 것을
+       사라는 말이 되고, 그 뒤에 가리키면 이미 산 사람에게 또 사라는 말이 된다.
+     ⚠ 가방에 빈 시루가 있으면 **살 때가 아니라 놓을 때다** — 그때는 이 갈래를 지나간다
+       (놓는 손가락은 §cropThumb 이 이미 맡는다).
+     ⚠ 씨앗보다 **뒤**에 둔다. 씨앗이 없으면 시루를 늘려도 안 돈다 — 급한 순서가 그렇다. */
+  const siruNeed = (() => {
+    try {
+      if (!/시루를 (2|두) ?개|시루를 하나 더|늘려/.test($('quest').textContent || '')) return null;
+      if (spareSiru() > 0) return null;                 /* 가방에 있다 — 사는 일이 아니다 */
+      const st = shopStatus(S);
+      const have = ((st.stock && st.stock.siru) || 0)
+                 + (st.orders || []).reduce((n, o) => n + (o.itemId === 'siru' && o.daysLeft >= 0 ? (o.qty || 1) : 0), 0);
+      return have > 0 ? null : 'siru';
+    } catch { return null; }
+  })();
+  if (siruNeed) {
+    const go = $('buyGo');
+    if (go && onScreen(go) && !go.disabled)
+      return hintAt(go, '개수를 정하고 [주문] — 시루는 이틀 뒤에 옵니다');
+    const b = $('shopList') && $('shopList').querySelector(`[data-buy="siru"]`);
+    if (sheetOpen && b && onScreen(b) && !b.disabled)
+      return hintAt(b, '시루를 하나 더 주문합니다 — 거두는 날이 엇갈립니다');
+    if (!sheetOpen) {
+      const shopBtn = $('navShop');
+      if (onScreen(shopBtn)) return hintAt(shopBtn, '시루를 하나 더 사러 갑니다');
+      if (onScreen($('openBag'))) return hintAt($('openBag'), '[상점] 탭에서 시루를 주문하세요');
+    }
+  }
   /* ★★ **식물 위 말풍선을 먼저 가리킨다** (2026-08-06 박사님:
      "밑에 물주기 버튼은 없애고 식물에 물주기 버튼에 손가락 가이드 표기해 줘").
      ⚠ 예전에는 아래 버튼과 말풍선이 **둘 다** 떠서 같은 일을 두 번 말했고,
@@ -5727,7 +5765,7 @@ const SHOP_MONSTERA_VESSELS = new Set(['jar']);
 const SHOP_LAMP_ID = '__lamp__';
 function shopGroupOf(it) {
   if (!it) return 'grow';
-  if (it.id === SHOP_LAMP_ID) return 'lamp';
+  if (String(it.id).startsWith(SHOP_LAMP_ID)) return 'lamp';
   if (it.kind === 'seed') return 'seed';
   if (SHOP_DECOR_POTS.test(it.id) || SHOP_MONSTERA_VESSELS.has(it.id)) return 'pot';
   return 'grow';
@@ -5847,25 +5885,55 @@ function drawShop() {
        ⇒ 잠긴 채로 회색 단추를 띄우던 옛 [방] 탭의 손버릇을 **여기로 안 가져온다.**
      ⚠ 첫 플레이가 꺼진 판(검수)에서는 안 감춘다 — 다른 갈래와 같은 규약이다. */
   const lampOpen = !(fp && fp.enabled) || !!(ts && ts.lamp && ts.lamp.unlocked);
-  const lampRow = lampOpen && ts && ts.rules ? {
-    id: SHOP_LAMP_ID, ko: '식물등', kind: 'lamp',
-    buyWon: ts.rules.lampPriceWon, leadDays: 0,
-    have: (ts.lamp && ts.lamp.owned) || 0
-  } : null;
-  if (lampRow) shown.push(lampRow);
+  /* ══ ★★★ 2026-08-17 — **등을 두 줄로 판다** (박사님: *"식물등 벽부형 스탠드형인데
+       둘 다 나오게 하고"* · *"처음에 주는 식물등하고 그다음 구매한 식물등하고 모양 자체가
+       완전 다르네? … 서로 이름을 다르게 하고"*)
+     ──────────────────────────────────────────────────────────────────
+     ★ 이 방에 달린 식물등은 **정확히 둘**이고 서로 다른 물건이다
+       (`data/house_rooms.json` · `lighting_presets`):
+         ① `growlight_bar`  **벽부형** — 창 위 벽에 붙는 바. 20W. 창턱을 밝힌다
+         ② `growlight_clip` **집게형** — 선반·책상에 물리는 집게. 12W
+     ⚠⚠ 박사님이 「스탠드형」이라 부르신 둘째는 실제로는 **집게형**이다. 프리셋에
+       `growlight_stand`(바닥에 서는 것)가 따로 있지만 이 방에 달린 것은 집게다 —
+       **화면이 없는 물건 이름을 말하면 그게 곧 거짓말**이라 본 이름으로 적는다.
+       바꾸실 거면 방 데이터의 `banjiha-growlight-clip` 을 갈면 되고, 그때는 조도가
+       움직이므로 얼린 표를 다시 뽑아야 한다(§test_lampaim).
+     ★ **사는 순서는 그대로다** — 앞에서부터 켜진다(`light_adapter.rigsOn` 이 `slice(0,n)`).
+       그래서 첫 줄이 벽부형, 둘째 줄이 집게형이고, 값도 그 순서다(§lampPricesWon).
+     ⚠ 아직 못 살 등은 **회색 단추가 아니라 「앞엣것을 먼저」**라고 적는다 —
+       회색 단추만 세우면 「눌러도 아무 일이 없다」가 된다(이 저장소의 지병). */
+  const LAMP_KINDS = [
+    { ko: '벽부형 식물등', sub: '창 위 벽에 붙습니다 · 20W — 창턱이 밝아집니다' },
+    { ko: '집게형 식물등', sub: '선반·책상에 물립니다 · 12W' }
+  ];
+  const lampOwned = (ts && ts.lamp && ts.lamp.owned) || 0;
+  const lampRows = (lampOpen && ts && ts.rules)
+    ? LAMP_KINDS.map((k, i) => ({
+        id: SHOP_LAMP_ID + i, lampIdx: i, ko: k.ko, sub: k.sub, kind: 'lamp',
+        buyWon: lampPriceAt(ts, i), leadDays: 0,
+        have: lampOwned > i ? 1 : 0,
+        next: lampOwned === i                 /* 지금 살 수 있는 것은 하나뿐이다 */
+      }))
+    : [];
+  const lampRow = null;
+  for (const r of lampRows) shown.push(r);
   /* ★ 하부 탭 — 지금 화면에 있는 것만으로 짓는다. 빈 갈래는 안 만든다(누르면 빈 칸이 된다) */
   drawShopGroups(shown);
   $('shopList').innerHTML = shown.filter(it => shopGroupOf(it) === shopGroup || shopGroup === 'all').map(it => {
     /* ★ 식물등은 배송이 없고 **바로 켜진다** — 「N일 뒤 도착」을 적으면 거짓말이 된다.
        ⚠ 그리고 단추 이름이 [주문]이 아니라 [사기]다. 주문은 기다리는 일이고 이건 아니다. */
-    if (it.id === SHOP_LAMP_ID) {
+    if (String(it.id).startsWith(SHOP_LAMP_ID)) {
       const short = (ts.cashWon || 0) < it.buyWon;
+      const label = it.have ? '이미 있습니다'
+                  : !it.next ? '앞엣것을 먼저'
+                  : short ? '돈이 모자랍니다' : '사기';
+      const can = !it.have && it.next && !short;
       return `<div class="shopRow">
-        <div class="nm">${it.ko}<small>사면 바로 켜집니다</small></div>
-        <div class="have">${it.have ? '보유 ' + it.have : ''}</div>
+        <div class="nm">${it.ko}<small>${it.sub} · 사면 바로 켜집니다</small></div>
+        <div class="have">${it.have ? '보유 1' : ''}</div>
         <div class="won">${it.buyWon.toLocaleString()}원</div>
-        <button class="ghost" id="buyLamp"${short ? ' disabled' : ''} data-lamp="1"
-          >${short ? '돈이 모자랍니다' : '사기'}</button>
+        <button class="ghost"${can ? ' id="buyLamp"' : ''} data-lamp="${it.lampIdx}"
+          >${label}</button>
       </div>`;
     }
     const have = st.stock[it.id] || 0;
@@ -9454,6 +9522,30 @@ async function bootRoomView() {
       /* 탭은 **고르기**다. 바로 확대로 넘어가면 옮기거나 돌릴 기회가 없다 —
          고른 뒤에 [옮기기] [돌리기] [자세히] 중에서 고른다. */
       onPlantTap: (slotId) => { roomTapped(); furnPicked.clear(); picked.select(slotId); },
+      /* ★★★ 2026-08-17 — **등을 누르면 메뉴가 뜬다** (박사님: *"식물등들을 클릭하면
+         똑같이 옮기기, 돌리기 버튼이 나오고 거기에 켜기 끄기가 있도록"*).
+         ⚠ 방뷰가 **안 켜고** 알리기만 하게 했다(`lampTapMenu: true` · room_view §onLampTap).
+           누르자마자 켜지면 메뉴가 뜰 때 상태가 이미 바뀌어 있어, [켜기]를 누르려고 연
+           사람이 **끄고 나서 켜는** 꼴이 된다.
+         ⚠ 등은 `pickFurnitureAt` 이 못 집는다(얹힌 것이라 furnNodes 에 없다) — 그래서
+           고를 거리를 **조도 창의 가구 목록**에서 지어 넘긴다. 자리·회전은 거기가 정본이다. */
+      lampTapMenu: true,
+      /* ★ 진단 손잡이도 같이 낸다 — 3D 광선 없이 「등을 눌렀다」를 밖에서 재현할 수 있어야
+         이 길을 자로 잴 수 있다(`window.__detailOpen` 과 같은 결). **같은 함수**다. */
+      onLampTap: window.__lampTap = (uid, on, st) => {
+        roomTapped(); picked.clear();
+        let f = null;
+        try { f = (io.light.furnitureList() || []).find(x => x && x.uid === uid) || null; } catch { }
+        if (!f) f = { uid, x: 0, z: 0, rot: 0 };
+        /* ⚠ 프리셋 이름(`st.name`)을 **먼저 쓰지 않는다** — 「식물등-바(선반밑)」처럼
+           자리를 옮기기 전 이름이 남아 있다(등은 2026-08-16 에 창 위로 갔다).
+           상점 줄과 **같은 이름**을 쓴다(§LAMP_KINDS). 두 곳이 다르면 무엇을 산 건지 흐려진다. */
+        f.name = uid.includes('bar') ? '벽부형 식물등'
+               : uid.includes('clip') ? '집게형 식물등'
+               : ((st && st.name) || '등');
+        f.lamp = { on: !!on, grow: !!(st && st.grow), mount: uid.includes('bar') ? 'wall' : 'clip' };
+        furnPicked.select(f, lastTapXY.x, lastTapXY.y);
+      },
       /* ★★ 2026-08-16 — **자리 탭이 「먹었을 때만」 먹는다.**
          예전에는 `roomTapped()` 를 먼저 무조건 찍었다. 그러면 윗면에 놓는 자리가 있는
          가구(서랍장 · 3단 선반)를 누를 때 그 자리 탭이 먼저 먹어서 **가구 메뉴가 안 떴다.**
@@ -10928,6 +11020,9 @@ const picked = {
      ① 재조립이 비싸다(60ms). 끄는 동안은 유령만 움직이고 **손 뗄 때 한 번만** 반영한다
      ② 가구가 움직이면 그림자가 따라 움직인다 — 방 밝기가 실제로 바뀐다. 그게 이 기능의 뜻이다 */
 let lastRoomTap = 0;
+/* ★ 2026-08-17 — 마지막으로 방을 누른 화면 자리. 등 메뉴가 원점으로 쓴다(§onLampTap).
+   ⚠ 등은 `pickFurnitureAt` 이 못 집어 좌표가 안 딸려 온다 — 그래서 여기서 붙든다. */
+const lastTapXY = { x: 0, y: 0 };
 function roomTapped() { lastRoomTap = performance.now(); }
 
 /* ══ 가구 옆 메뉴 — 어디에 뜨나 (2026-08-08 · roomui-to-plan §4-1) ═══════════
@@ -11316,8 +11411,13 @@ const furnPicked = {
      ⚠ [겨누기]는 원래 **등에서만** 보인다 — 되돌릴 때 그 규칙을 지우지 않게 aimable 로 기억해 둔다. */
   showConfirm(on) {
     const set = (id, v) => { const el = $(id); if (el) el.style.display = v; };
-    set('furnMove', on ? 'none' : '');
-    set('furnTurn', on ? 'none' : '');
+    /* ★★ 2026-08-17 — **벽에 붙는 등은 못 옮긴다.** 바닥 좌표로 옮기면 높이(y 2.196)를
+       그대로 들고 가서 허공에 뜬다 — 박사님이 보신 *"식물등이 저 하늘로 가버려"* 다.
+       ⚠ 이 규칙을 `select` 안에만 두면 **여기가 뒤에서 되살린다**(실측에서 그랬다).
+         보이고 안 보이고를 정하는 자리는 하나여야 한다. */
+    const wallLamp = !!(this.lamp && this.lamp.mount === 'wall');
+    set('furnMove', (on || wallLamp) ? 'none' : '');
+    set('furnTurn', (on || wallLamp) ? 'none' : '');
     set('furnAim', on ? 'none' : (this.aimable ? '' : 'none'));
     set('furnOk', on ? '' : 'none');
     set('furnUndo', on ? '' : 'none');
@@ -11339,6 +11439,28 @@ const furnPicked = {
        (`aimable` 은 프리셋의 adjustable_height 에서 온다. 바 등은 붙박이라 false). */
     let range = null; try { range = io.light.aimRangeOf(f.uid); } catch { }
     this.aimable = !!range;
+    /* ★★★ 2026-08-17 — **등이면 켜기/끄기가 뜬다** (박사님).
+       ⚠ 그리고 **벽부형은 [옮기기]·[돌리기]를 안 준다.** 벽에 붙는 등이라 바닥 좌표로
+         옮기면 높이(y 2.196)를 그대로 들고 가서 **허공에 뜬다** — 박사님이 보신
+         *"처음에 주는 식물등이 저 하늘로 가버려"* 가 그 모양이다.
+         못 하는 것을 회색 단추로 세우지 않고 **까닭을 글자로** 적는다. */
+    this.lamp = f.lamp || null;
+    {
+      const set = (id, v) => { const el = $(id); if (el) el.style.display = v; };
+      const lb = $('furnLamp'), why = $('furnWhy');
+      if (this.lamp) {
+        if (lb) { lb.style.display = ''; lb.textContent = this.lamp.on ? '끄기' : '켜기'; }
+        const wall = this.lamp.mount === 'wall';
+        /* 보이고 안 보이고는 §showConfirm 하나가 정한다 — 여기서 또 정하지 않는다 */
+        if (why) {
+          why.style.display = wall ? '' : 'none';
+          why.textContent = wall ? '벽에 붙는 등이라 자리를 못 옮깁니다' : '';
+        }
+      } else {
+        if (lb) lb.style.display = 'none';
+        if (why) why.style.display = 'none';
+      }
+    }
     /* ★ B-4 — 새로 고른 것이니 **[확정]/[취소] 는 걷는다.** 안 걷으면 앞 가구의 되돌리기가
        다음 가구의 메뉴에 남아 엉뚱한 것을 되돌린다. (이 한 줄이 [겨누기] 규칙도 다시 세운다) */
     this.showConfirm(false);
@@ -11743,6 +11865,7 @@ function bindFurnitureTap() {
     setTimeout(() => {
       if (performance.now() - lastRoomTap < 60) return;      // 방 뷰가 이미 무언가를 잡았다
       if (drag.on || picked.mode || furnPicked.mode) return;
+      lastTapXY.x = x; lastTapXY.y = y;      /* ★ 등 메뉴가 쓴다(§onLampTap) */
       if (!roomView || !roomView.pickFurnitureAt) return;
       let f = null; try { f = roomView.pickFurnitureAt(x, y); } catch { }
       if (f) furnPicked.select(f, x, y);
@@ -11773,6 +11896,18 @@ function bindPicked() {
   tapOnce('furnMove', () => furnPicked.beginMove());
   tapOnce('furnTurn', () => furnPicked.beginTurn());
   tapOnce('furnAim', () => furnPicked.beginAim());
+  /* ★ 등 켜기/끄기 — 규칙은 방뷰가 갖고 있다. 여기는 누르는 자리다(§furnLamp) */
+  tapOnce('furnLamp', () => {
+    const uid = furnPicked.uid;
+    if (!uid || !roomView || !roomView.toggleLamp) return;
+    let st = null;
+    try { st = roomView.toggleLamp(uid); }
+    catch (e) { banner('등을 못 켰습니다', (e && e.message) || ''); return; }
+    if (furnPicked.lamp) furnPicked.lamp.on = !!(st && st.on);
+    const lb = $('furnLamp'); if (lb) lb.textContent = (st && st.on) ? '끄기' : '켜기';
+    banner((st && st.on) ? '등을 켰습니다' : '등을 껐습니다',
+           '⚠ 밝기 계산은 **산 등의 수**로 돕니다 — 끄면 화면과 전기세만 바뀝니다');
+  });
   /* ★ B-4 — 옮긴 뒤의 두 단추. [확정]은 그대로 두고 고르기를 푼다 · [취소]는 되돌린다 */
   tapOnce('furnOk', () => furnPicked.clear());
   tapOnce('furnUndo', () => { furnPicked.undoMove().then(() => furnPicked.clear()); });
@@ -12215,8 +12350,11 @@ function doBuyLamp() {
   const r = buyLamp(S.tutorial);
   S.lamps.count = S.tutorial.lamp.owned;      /* 조도 계산이 보는 곳에도 반영한다 */
   io.light.clearCache();
-  pushLog(S, `💡 식물등을 샀습니다 — 남은 돈 ${r.cashWon.toLocaleString()}원`);
-  banner('식물등을 샀습니다', '자리가 나쁘면 등을 켜도 소용없습니다');
+  /* ★ 2026-08-17 — **무엇을 샀는지 적는다.** 등이 둘이 되면서 「식물등을 샀습니다」만으로는
+     어느 것이 켜졌는지 화면이 말을 안 하게 됐다(§LAMP_KINDS 와 같은 이름을 쓴다). */
+  const bought = ['벽부형 식물등', '집게형 식물등'][Math.max(0, r.owned - 1)] || '식물등';
+  pushLog(S, `💡 ${bought}을 샀습니다 — 남은 돈 ${r.cashWon.toLocaleString()}원`);
+  banner(`${bought}을 샀습니다`, '자리가 나쁘면 등을 켜도 소용없습니다');
   dlgOpen(story.events(r.events));   /* 하루를 기다리면 산 순간이 조용해진다 */
   fillSlots(); draw();
 }

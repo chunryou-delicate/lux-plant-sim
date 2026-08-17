@@ -3,20 +3,24 @@
   "_why": "2026-08-09 이전에는 이 숫자들이 src/game/tutorial.js 의 TUTORIAL_RULES 안에 박혀 있었고, 그중 와트는 실제 기구 와트(data/lighting_presets.json)와 어긋난 채 12W 하나로 고정돼 있었다. 정본이 두 벌이면 한쪽만 고쳐도 아무 일이 안 일어난다 — 씨앗값·계절 달력이 이미 그렇게 한 번씩 어긋났다.",
   "_code": "코드에도 같은 값이 기본값으로 남아 있다(tutorial.js §TUTORIAL_RULES). 이 파일이 정본이고 코드는 파일을 못 읽는 판(순수 모듈·옛 세이브)을 위한 대비다. tools/test_elec.mjs 가 두 벌이 같은지를 매번 확인한다 — 다르면 검사가 깨진다.",
   "_wire": "읽어 규칙에 꽂는 법: tutorial.electricityRulesFrom(json) → TUTORIAL_RULES 의 사본. oneroom.oneroomRulesFromHomes 와 같은 모양이다.",
-
   "kwhWon": 160,
   "_kwhWon": "단일 단가(원/kWh). 한국 가정용 평균가. data/lighting_presets.json 의 tariff.krw_per_kwh 와 같은 값이어야 한다 — 그쪽은 방 조도 계약(report.energy.won)이 쓰는 같은 단가다.",
-
   "tiers": null,
   "_tiers": "누진 구간. null 이면 위 kwhWon 하나로 센다. 쓰려면 [{ \"uptoKwhPerMonth\": 200, \"won\": 120 }, { \"uptoKwhPerMonth\": 400, \"won\": 214 }, { \"won\": 307 }] 처럼 적는다 — 마지막 칸은 uptoKwhPerMonth 를 생략하면 상한이 없다는 뜻이다. ★식물등은 baseKwhPerMonth 위에 얹히는 몫만 낸다(한계 단가). 집이 원래 쓰던 몫은 dailySpendWon 의 공과·전기 2,500원 안에 이미 들어 있어서, 여기서 또 세면 두 번 낸다.",
-
   "baseKwhPerMonth": 0,
   "_baseKwhPerMonth": "식물등 말고 집이 원래 쓰는 한 달 사용량(kWh). 누진 구간을 어디서부터 세는지를 정한다. tiers 가 null 이면 안 쓰인다.",
-
   "lamp": {
     "hours": 12,
-    "wattsByOrder": [20, 12],
-    "priceWon": 25000
+    "wattsByOrder": [
+      20,
+      12
+    ],
+    "priceWon": 120000,
+    "pricesByOrder": [
+      120000,
+      80000
+    ],
+    "_note_price": "★★ 2026-08-17 (박사님 \"가격을 좀 올렸으면 해. 많이.\") — 25,000 → **첫 등 120,000 · 둘째 등 80,000원**. 등은 이 게임에서 「빛을 사는 유일한 길」이라 값이 싸면 「자리를 고르는 일」이 통째로 뜻을 잃는다. 하루 몫 4,867원 기준으로 첫 등이 약 25일치 살림비다 — 콩나물만 돌려서는 못 사고 삽수를 팔아야 닿는다. ⚠ 둘째가 싼 까닭은 **집게등이 12W 로 더 약하기 때문**이다(바 20W · wattsByOrder 와 같은 순서). 값이 세기를 따라가야 「왜 이게 더 비싼가」가 화면에서 읽힌다. ⚠ `priceWon` 은 옛 한 값짜리 길이 읽는 칸이라 **첫 등 값과 같게** 둔다."
   },
   "_lamp": {
     "hours": "기본 점등시간(h). 화면에서 플레이어가 바꾸면 그 값이 이긴다(S.lamps.litHours).",
