@@ -14,7 +14,7 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <!-- 지금 보고 있는 판이 언제 것인지. 캐시가 의심되면 이걸 본다 -->
-<meta name="byeot-build" content="2026-08-18T-grid">
+<meta name="byeot-build" content="2026-08-18T-ghost">
 <!-- ★★ 글씨 (2026-08-06 박사님: "글씨체가 이상해. 한글이 안 읽히네 뭔가. 잘 안 보여").
      Pretendard 를 **실제로 받아 온다.** 이름만 적어 두면 그 글씨가 깔린 기계에서만 보이고,
      안 깔린 기계에서는 조용히 system-ui 로 떨어진다 — 화면이 기계마다 달라진다.
@@ -2801,7 +2801,10 @@ import { catalogList, orderItem, shopStatus, priceOf,
          /* ★ 2026-08-16 — 잎별 무늬 그림(중간잎·성숙잎을 등급으로 확정 · midalbo-to-plan) */
          potLeafSkinsOf,
          /* ★ 삽수 병 속 잎도 **같은 길**로 고른다 — 자른 그 잎의 등급에서(§자른 그 가지) */
-         leafSkinsFor } from './src/game/shop.js';
+         leafSkinsFor,
+         /* ★ 화분 표 — 설치지점 유령을 지을 때 **모양·지름을 여기서 읽는다**(§ghostSpecFor).
+            지어내면 안 되는 값이다. `state.js` 도 같은 표를 본다(§plantMonsteraSeed). */
+         POT_KINDS } from './src/game/shop.js';
 /* ★ 삽수 — 규칙과 수치는 전부 propagation.js 것이다. 여기서는 부르기만 한다
    (날짜를 여기서 다시 세면 화면과 코어가 갈라진다). */
 import { takeCutting, repotCutting, cuttableNow, cutBudgetOf, cutBlockedReason,
@@ -10985,7 +10988,7 @@ const freePlace = {
   /* ★ `fromId` — **지금 방에 서 있는 그 그루의 실루엣**으로 띄운다(옮기는 중일 때).
      `potId` 로 찾는 길보다 정확하다. `plants` 의 열쇠를 그대로 쓰므로 시루·무순·빈 화분·
      둘째 몬스테라가 **전부 제 모습**으로 선다(§previewAt · opt.fromId 가 potId 를 이긴다). */
-  preview(hit, potD, potId, fromId) {
+  preview(hit, potD, potId, fromId, ghostKey) {
     if (!roomView || !roomView.previewAt) return;
     try {
       /* ★★ **좌표가 없는 hit 은 「자리 없음」이다** (2026-08-08 · QA §3-C).
@@ -11001,7 +11004,7 @@ const freePlace = {
       }
       roomView.previewAt({ x: hit.x, y: hit.y, z: hit.z, rotY: hit.rotY || 0,
                            onUid: hit.onUid, occIdx: hit.occIdx },
-                         { potD, valid: !!hit.ok, potId, fromId });
+                         { potD, valid: !!hit.ok, potId, fromId, ghostKey });
     } catch { }
   },
   clear() { try { roomView && roomView.clearPreview && roomView.clearPreview(); } catch { } },
@@ -11071,6 +11074,29 @@ const freePlace = {
   }
 };
 
+/* ★★ 끌고 있는 것의 **설치지점 유령**을 지을 spec (2026-08-18 · §drag.begin).
+   ------------------------------------------------------------
+   ⚠ 이 spec 은 **놓을 때 쓰는 spec 이 아니다.** 놓는 일은 `commitPlace` 가 코어를 거쳐
+     하고, 여기 것은 「이만한 것이 이렇게 생겼다」만 보이면 되는 그림용이다. 그래서
+     나이·이력을 안 싣는다 — 실으면 두 벌이 되고 반드시 어긋난다(§2.8).
+   ⚠ 몬스테라(방에 사는 그루)는 여기서 안 짓는다. 그건 `potId` 로 방에 서 있는 그 그루를
+     그대로 복사하는 것이 맞다 — 잎·무늬가 그루마다 다르므로 지어낸 그루를 보이면 거짓이다.
+   못 지을 종류는 **null 을 돌려준다.** 그때는 예전대로 대역(민 원기둥)이 선다. */
+function ghostSpecFor(what, potD) {
+  const w = String(what || '');
+  /* 갓 놓는 시루·재배판은 **안 심은 빈 그릇**이다 — 놓기와 심기가 두 걸음이다(2026-08-11) */
+  if (w === 'beansprout' || w === 'musun')
+    return { kind: w, progress01: 0, count: 1, sown: false,
+             potD: Number.isFinite(potD) ? potD : undefined };
+  /* 화분+씨앗은 놓는 순간 **빈 그릇**이 먼저 선다(심는 것은 그 다음 걸음이다) */
+  if (/^monsteraSeed:/.test(w)) {
+    const itemId = w.slice('monsteraSeed:'.length);
+    const k = Object.values(POT_KINDS).find(x => x && x.itemId === itemId) || null;
+    return { kind: 'emptypot', potAsset: (k && k.asset) || null,
+             potD: (k && k.diameterM) || (Number.isFinite(potD) ? potD : undefined) };
+  }
+  return null;
+}
 /* ══ 끌어다 놓기 (박사님 2026-08-03: "드래그해서 배치할 수 있게") ══════════
    드롭다운으로 자리를 고르면 **방을 보면서 놓는다**는 감각이 사라진다.
    ★드래그를 **아이템 위에서 시작**한다 — 3D 위에서 시작하면 카메라 회전과 부딪힌다.
@@ -11129,6 +11155,21 @@ const drag = {
     document.body.classList.add('dragging');
     $('dragGhost').style.backgroundImage = `url(${thumbUrl})`;
     $('dragGhost').classList.add('on');
+    /* ★★ 2026-08-18 — **설치지점 유령을 여기서 한 번 짓는다** (박사님: *"드래그시 설치지점
+       미리보기가 이상하다"*).
+       ══════════════════════════════════════════════════════════════════
+       ⚠ 아래 `move` 가 넘기는 `potId` 는 「방에 **이미** 서 있는 같은 물건」을 찾는 열쇠다.
+         처음 놓는 것은 방에 없으니 늘 빈손이었고, 그러면 대역(민 원기둥)이 섰다 —
+         **하나 놓고 난 뒤부터만 제 모습**이 되는, 판마다 다른 그림이었다(실측: 유령 메시 1).
+       ⇒ 끌기가 **시작될 때 한 번** 지어 둔다. 조립은 async 라 매 프레임 부를 수 없다.
+         늦게 도착하면 그때부터 바뀔 뿐이고, 못 지으면 예전대로 대역이다(`ghostKey` 가 null). */
+    this.ghostKey = null;
+    if (roomView && roomView.prepareGhost) {
+      const spec = ghostSpecFor(what, this.potD);
+      if (spec) Promise.resolve(roomView.prepareGhost(spec, this.potD))
+        .then(k => { if (this.on && this.what === what) this.ghostKey = k || null; })
+        .catch(() => { });
+    }
     /* ★추천 자리를 원으로 알린다. 원은 안내지 제약이 아니다 — 원 밖에도 놓인다(박사님). */
     freePlace.rings(true, this.potD);
     freePlace.grid(true, { potD: this.potD });
@@ -11159,7 +11200,9 @@ const drag = {
     const potId = this.what === 'monstera' ? (pot0(S) ? pot0(S).id : null)
                 : this.what === 'musun'    ? CROP_SITE_IDS.musun
                 :                            BEANSPROUT_ID;
-    freePlace.preview(hit, this.potD, potId);
+    /* ★ `ghostKey` — 방에 아직 그 물건이 **하나도 없을 때** 쓸 유령 원본(§drag.begin).
+       위 `potId` 가 찾는 것은 「방에 이미 서 있는 같은 물건」이라, 처음 놓는 것은 늘 빈손이었다. */
+    freePlace.preview(hit, this.potD, potId, null, this.ghostKey || null);
     freePlace.rings(true, this.potD, hit && hit.ok ? { x: hit.x, z: hit.z } : null,
                     hit && hit.snappedTo);
     this.best = hit;
@@ -11190,6 +11233,8 @@ const drag = {
     const hit = this.best, sel = this.sel, what = this.what;
     this.on = false; this.what = null; this.sel = null; this.valid = []; this.best = null;
     this.sowing = false;
+    /* ★ 열쇠만 놓는다 — 유령 원본은 방뷰가 캐시로 갖고 있다(다음 끌기가 즉시 쓴다). */
+    this.ghostKey = null;
     document.body.classList.remove('dragging');
     /* ★ `inroom` 도 같이 뗀다 (2026-08-18). 안 떼면 **다음 끌기가 그 찌꺼기를 물려받는다** —
        가방에서 한 번 끌어 본 판에서는 사진이 저절로 감춰져 「고쳐져 있다」로 보이고,

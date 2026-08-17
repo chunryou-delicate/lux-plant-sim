@@ -1054,6 +1054,7 @@ export async function createRoomView(canvas, opts = {}) {
     for (const k of [...plantBlobs.keys()]) dropPlantBlob(k);   // 남은 접지 그림자까지
     clearRings();
     clearGuideRings();
+    clearGhostSrc();                // ★ 옛 방 물건이 새 방 유령이 되면 안 된다(§prepareGhost)
     disposeOutside();               // 방마다 다시 짓는다 — 창 자리가 다르다
     disposeNeighbors();             // 이웃 방도 방 크기를 따라간다
     while (houseGroup.children.length) houseGroup.remove(houseGroup.children[0]);
@@ -5356,6 +5357,41 @@ export async function createRoomView(canvas, opts = {}) {
     return (typeof rank === 'string' && RANK_HEX[rank] != null) ? rank : null;
   }
 
+  /* ★★ 아직 방에 없는 물건의 **유령 원본**을 미리 지어 둔다 (2026-08-18 · §previewAt).
+     ------------------------------------------------------------
+     ⚠ 조립은 **async** 다 — 몬스테라가 3~12ms 다. 매 프레임 도는 `previewAt` 에서 부르면
+       손가락이 그 자리에서 멎는다. 그래서 **끌기가 시작될 때 한 번** 부르고,
+       그때까지는 예전대로 대역이 선다. 늦게 도착해도 조용히 바뀔 뿐 아무것도 안 깨진다.
+     ⚠ 여기서 지은 것은 **씬에 안 넣는다.** 복사할 원본으로만 갖고 있는다.
+     ⚠ 방을 바꾸거나 뷰를 버리면 같이 버린다 — 안 버리면 옛 방의 물건이 새 방 유령이 된다.
+     돌려주는 값은 `previewAt(opt.ghostKey)` 에 그대로 넣을 열쇠다. 못 지으면 **null** 이다
+     (지어낸 열쇠를 주면 화면이 「있다」고 믿고 영영 대역이 안 뜬다). */
+  const ghostSrc = new Map();
+  async function prepareGhost(spec, potD) {
+    if (!spec || !spec.kind) return null;
+    const d = Number.isFinite(potD) ? potD : potDOf(spec.kind, spec.count);
+    const key = `${spec.kind}:${d.toFixed(3)}:${spec.count || 1}:${spec.sown === false ? 'n' : 'y'}`;
+    if (ghostSrc.has(key)) return key;
+    try {
+      const days = usesGrowthDays(spec.kind)
+        ? growthDaysOf(spec, await assembler(), null)
+        : Math.round(clamp(spec.progress01 ?? 1, 0, 1) * 100);
+      const group = await buildPlantGroup(spec, Number.isFinite(spec.potD) ? spec.potD : Infinity, days);
+      if (!group) return null;
+      /* 방을 바꾸는 사이에 도착했을 수 있다 — 그때는 버린다(옛 방 물건이다) */
+      if (!built) { disposeObject(group); return null; }
+      ghostSrc.set(key, { group, potD: d, ghostKey: key });
+      return key;
+    } catch (e) {
+      console.warn('[방뷰] 유령 원본을 못 지었습니다 — 대역으로 갑니다:', e && e.message);
+      return null;
+    }
+  }
+  function clearGhostSrc() {
+    for (const [, s] of ghostSrc) { try { disposeObject(s.group); } catch { } }
+    ghostSrc.clear();
+  }
+
   function disposePreview() {
     if (!preview) return;
     houseGroup.remove(preview.group);
@@ -5517,11 +5553,26 @@ export async function createRoomView(canvas, opts = {}) {
        "여기는 안 된다"가 눈에 보인다. 여기서 던지면 화면이 그냥 멈춘다.
        (NaN·무한대는 그대로 던진다. 그건 배선이 틀린 것이라 보여 줄 값이 없다) */
     const A = makeAt(at);
-    const src = opt.fromId != null ? plants.get(opt.fromId)
-              : opt.potId != null ? plantOf(opt.potId) : null;
+    /* ★★ 2026-08-18 — **아직 방에 없는 물건**도 제 모습으로 선다 (박사님: *"드래그시
+       설치지점 미리보기가 이상하다"*).
+       ══════════════════════════════════════════════════════════════════
+       ⚠ 여기 있던 두 길(`fromId`·`potId`)은 **방에 이미 서 있는 그루를 복사**하는 길이다.
+         가방에서 **처음** 끄는 물건은 방에 없으니 둘 다 빈손이고, 그러면 대역
+         (민 원기둥)이 섰다. 「시루를 끄는데 초록 통이 선다」가 그것이다.
+         ⇒ 하나를 놓고 난 **뒤부터만** 제 모습이 되던, 판마다 다른 그림이었다.
+       ⇒ 세 번째 길을 낸다 — `opt.ghostKey`. `prepareGhost(spec)` 가 **끌기 시작할 때 한 번**
+         지어 둔 것을 여기서 꺼내 쓴다. 못 찾으면 예전 그대로 대역이다(§prepareGhost). */
+    /* ⚠ 삼항으로 **가르면 안 된다.** 앞 갈래가 잡히기만 하고 **빈손으로 끝나면** 뒷길을
+       아예 안 본다 — `potId` 는 늘 실려 오므로(BEANSPROUT_ID 등) `ghostKey` 가 영영
+       안 쓰였다(그렇게 짜 놓고 재서 잡았다). **찾을 때까지 내려간다**로 짓는다. */
+    const src = (opt.fromId != null ? plants.get(opt.fromId) : null)
+             || (opt.potId != null ? plantOf(opt.potId) : null)
+             || (opt.ghostKey != null ? ghostSrc.get(opt.ghostKey) : null)
+             || null;
     const potD = Number.isFinite(opt.potD) ? opt.potD : (src ? src.potD : MONSTERA_POT_D);
     /* 같은 유령이면 다시 만들지 않는다 — 끄는 내내 GLB 를 복제하면 폰이 죽는다 */
-    const srcKey = src ? keyOfPlant(src) : `generic:${potD.toFixed(3)}`;
+    const srcKey = src ? (keyOfPlant(src) || src.ghostKey || `spec:${potD.toFixed(3)}`)
+                       : `generic:${potD.toFixed(3)}`;
     if (!preview || preview.srcKey !== srcKey || preview.kind !== 'at') {
       disposePreview();
       preview = buildGhost(src ? src.group : null, potD);
@@ -9155,6 +9206,10 @@ export async function createRoomView(canvas, opts = {}) {
     /* 반투명 유령을 그 좌표에 세운다. opt.valid=false 면 붉게.
        previewMove 와 유령 한 벌을 나눠 쓴다 — 둘이 동시에 뜨지 않는다. */
     previewAt(at, opt) { try { return previewAt(at, opt || {}); } catch (e) { throw fail(e); } },
+    /* ★ 아직 방에 없는 물건의 유령 원본을 미리 짓는다(§prepareGhost · 2026-08-18).
+       **끌기가 시작될 때 한 번** 부른다. 돌려주는 열쇠를 `previewAt` 의 `opt.ghostKey` 에 넣는다.
+       못 지으면 null 이다 — 그때는 예전대로 대역(민 원기둥)이 선다. */
+    prepareGhost(spec, potD) { return prepareGhost(spec, potD); },
     clearPreview() { disposePreview(); },
 
     /* 추천 자리 원형 가이드. on=false 면 감춘다(지우지 않는다 — 다시 켤 때 값싸다).
@@ -9803,6 +9858,7 @@ export async function createRoomView(canvas, opts = {}) {
       disposeFurnGhost();
       clearFurnHighlight();
       clearGuideRings();
+      clearGhostSrc();
       /* ★ 빛 분포 — 감쌌던 renderer.render 를 되돌리고 숫자 <div> 를 DOM 에서 걷는다 */
       if (heatView) { heatView.dispose(); heatView = null; heatOpt = null; }
       clearGrid();
