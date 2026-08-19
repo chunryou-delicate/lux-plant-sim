@@ -179,7 +179,14 @@ const blocked = await page.eval(`(()=>{
   return r; })()`);
 is(blocked === false, '③ 대사가 떠 있으면 쪽지를 안 낸다', '돌려준 값 ' + blocked);
 const notes = await page.eval(`window.__byeotCoach.notes()`);
-is(Array.isArray(notes) && notes.length === 3, '③-b 쪽지는 셋뿐이다 (A-1·A-2·A-3)', String(notes));
+/* ★★ 2026-08-19 — **셋 → 넷.** 2026-08-16 에 이 줄을 박을 때는 A-1·A-2·A-3 셋이었는데,
+   2026-08-17 에 `walkTip`(A-1b · 「사람을 눌러 보세요」)이 들어오면서 넷이 됐다.
+   **검사가 안 따라와 그날부터 계속 빨갰다**(스태시로 확인 · 2026-08-19).
+   ⇒ 뜻은 그대로다 — *쪽지가 무분별하게 늘지 않는다*. 그래서 **수가 아니라 이름**으로 못 박는다.
+     이름으로 재면 「하나 늘었다」와 「엉뚱한 것이 들어왔다」가 갈린다. */
+const NOTE_IDS = ['walk', 'walkTip', 'furn', 'pot'];
+is(Array.isArray(notes) && notes.length === NOTE_IDS.length && NOTE_IDS.every(k => notes.includes(k)),
+   '③-b 쪽지는 넷뿐이다 (A-1 walk · A-1b walkTip · A-2 furn · A-3 pot)', String(notes));
 
 /* ══ ④ §E-3 자유 이동 발소리 ═════════════════════════════════════════════ */
 console.log('\n== ④ §E-3 자유 이동 발소리 ==');
