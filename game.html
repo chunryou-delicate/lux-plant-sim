@@ -14,7 +14,7 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <!-- 지금 보고 있는 판이 언제 것인지. 캐시가 의심되면 이걸 본다 -->
-<meta name="byeot-build" content="2026-08-19T-minwon">
+<meta name="byeot-build" content="2026-08-21T-gift">
 <!-- ★★ 글씨 (2026-08-06 박사님: "글씨체가 이상해. 한글이 안 읽히네 뭔가. 잘 안 보여").
      Pretendard 를 **실제로 받아 온다.** 이름만 적어 두면 그 글씨가 깔린 기계에서만 보이고,
      안 깔린 기계에서는 조용히 system-ui 로 떨어진다 — 화면이 기계마다 달라진다.
@@ -4637,6 +4637,29 @@ function updateHint() {
     return hintAt(null);
   }
   /* ② 몬스테라가 왔는데 아직 안 옮겼다 — 방의 그 화분을 가리킨다 */
+  /* ★★★ 2026-08-21 — **가방에 있는 선물을 가리킨다** (박사님: *"가방에서 식물 설치하는 거
+     가이드도 좀 하고. (손가락 화살표)"*)
+     ══════════════════════════════════════════════════════════════════
+     ⚠ 아래 「탭 → 옮기기 → 창턱으로」는 **방에 이미 서 있는** 그루를 가리킨다. 선물이
+       가방으로 오게 된 뒤로는 그 앞 걸음 —— *가방에서 꺼내 놓는다* —— 이 통째로
+       안 가르쳐지고 있었다. 시루는 그 걸음을 가리키는데(아래 §crop.slotId) 몬스테라는 없었다.
+     ★ **자리는 여기**여야 한다 — 도착 자리 안내보다 **앞**이다. 뒤에 두면 아직 방에 없는
+       그루를 가리키는 줄이 먼저 걸려 손가락이 허공을 짚는다.
+     ⚠ 가방이 닫혀 있으면 [가방] 을 먼저 가리킨다. 열려 있으면 **그 칸**을 짚는다 —
+       시루가 쓰는 두 걸음(`cropThumb` → `openBag`)과 같은 결이다. */
+  if (bagPots().length) {
+    /* 세 걸음이다 — 시루가 쓰는 그 결 그대로: **칸 → 가방 탭 → [가방]**.
+       ⚠ 가운데 걸음을 빼면 **다른 탭이 열려 있을 때 손가락이 통째로 사라진다**
+         (실측 2026-08-21: [식물] 탭을 열어 둔 판에서 `손가락: null` 이었다).
+         칸은 가방 탭 안에 있어서 다른 탭에서는 `onScreen` 이 거짓이다. */
+    const cell = $('bagGrid') && $('bagGrid').querySelector('[data-potbag]');
+    if (onScreen(cell))
+      return hintAt(cell, '끌거나 눌러서 방 안 밝은 자리에');   /* ⚠ hintAt 은 textContent 다 — 굵게가 안 먹는다 */
+    if (sheetOpen && onScreen($('tabBag')))
+      return hintAt($('tabBag'), '가방에 몬스테라가 있습니다');
+    if (onScreen($('openBag')))
+      return hintAt($('openBag'), '가방에 몬스테라가 있습니다 — 꺼내서 놓아 보세요');
+  }
   if (plant.arrived && !fp.completed && arrivalSlotId &&
       pot0(S) && pot0(S).slotId === arrivalSlotId && roomView && roomView.screenPosOf) {
     let p = null; try { p = roomView.screenPosOf(arrivalSlotId); } catch { }
@@ -5837,6 +5860,56 @@ const BAG_GROUPS = Object.freeze([
    ⚠ 이것은 상점 재고 품목이 **아니다**(`tutorial.lamp` 가 센다) — 그래서 아래 표가 아니라
      `drawBag` 이 따로 한 칸을 세운다. 누르면 그 등이 방에 선다. */
 const BAG_LAMP_ID = '__lampbag__';
+/* ══ ★★★ 2026-08-21 — **「가방에 있는 그루」의 정본은 여기 하나다** ══════════════════
+   ------------------------------------------------------------
+   ⚠ 「아직 안 놓았다」를 여러 곳에서 각자 판정하면 **가방에는 있는데 목록에도 있는** 판이 난다.
+     실제로 그럴 뻔했다 — `syncRoom` 은 `placedOnce === false && !at` 로 보고,
+     `drawPlantMore` 는 아무것도 안 보고 있었다.
+   ⇒ 셋(가방 칸 · 식물 목록 · 손가락)이 **이 함수 하나**를 부른다.
+   ★ 판정은 상태가 한다: **놓은 적이 없고**(`placedOnce === false`) **자리도 좌표도 없다.**
+     `placedOnce` 가 없는 옛 세이브는 「놓았다」로 본다 — 없던 칸을 「안 놓음」으로 읽으면
+     이미 방에 서 있는 그루가 통째로 가방으로 빨려 들어간다. */
+function bagPots() {
+  try {
+    return (S.pots || []).filter(p => p && p.placedOnce === false && !p.at && !p.slotId);
+  } catch { return []; }
+}
+/* 그 그루가 신고 있는 화분의 **가방 그림**. 모르면 null 을 낸다 —
+   ⚠ 남의 그림을 되쓰지 않는다(§BAG_LETTER: *"남의 그림을 쓰면 화면이 조용히 거짓말한다"*).
+     못 찾으면 부르는 쪽이 몬스테라 기본 그림으로 떨어진다. */
+function potThumbOf(pot) {
+  try {
+    const a = pot && pot.potAsset;
+    if (!a) return null;
+    const k = Object.values(POT_KINDS).find(x => x && x.asset === a);
+    return (k && BAG_ART[k.itemId]) || null;
+  } catch { return null; }
+}
+/* 가방의 그루를 **눌러서** 놓는다 — 끌기(`commitPlace`)와 **같은 일**을 한다.
+   ⚠ 여기서 자리를 지어내지 않는다. `provisionalSpot()` 이 내는 그 자리다(시루·화분과 같은 길). */
+function startPhonePlacePotBag(potId) {
+  const p = (S.pots || []).find(x => x && x.id === potId);
+  if (!p) { banner('그 화분을 못 찾았습니다', '가방을 다시 확인해 주세요'); return { ok: false }; }
+  const spot = provisionalSpot();
+  if (!spot) { banner('놓을 자리를 못 찾았습니다', '방을 조금 돌린 뒤 다시 눌러 주세요');
+               return { ok: false, why: 'no-spot' }; }
+  let at = spot;
+  if (typeof spot === 'string') {
+    const sl = (io.light.room.slots || []).find(x => x && x.slotId === spot);
+    if (!sl) { banner('놓을 자리를 못 찾았습니다', '방을 조금 돌린 뒤 다시 눌러 주세요');
+               return { ok: false, why: 'slot-not-found:' + spot }; }
+    at = { x: sl.x, y: sl.y, z: sl.z };
+  }
+  try {
+    const r = setPotAt(S, p, at, placeOpt());
+    if (S.firstPlay.enabled && r.slotId && !isFreeSlotId(r.slotId)) moveMonstera(S.firstPlay, r.slotId);
+    try { window.__byeotSheet.close(); } catch { }
+    banner('🪴 몬스테라를 놓았습니다', '눌러서 [옮기기]로 자리를 다시 고를 수 있습니다');
+    unlockAfterFix(); sfx.thud();
+  } catch (e) { banner('배치하지 못했습니다', (e && e.message) || ''); return { ok: false }; }
+  draw();
+  return { ok: true };
+}
 const BAG_PLACEABLE = Object.freeze({
   siru: { kind: 'beansprout', thumbId: 'cropThumb', detail: 'crop', ko: '콩나물 시루' },
   /* ★★ 2026-08-16 — **새싹 재배판을 넣었다** (박사님: *"용기 새싹재배판 드래그해서
@@ -6173,6 +6246,46 @@ function drawBag() {
         `<small>${ko}</small></button></div>`;
     }
   }
+  /* ══ ★★★ 2026-08-21 — **선물 몬스테라는 가방 칸으로 온다** (박사님:
+       *"몬스테라를 줄 때 가방에 템으로 들어와야 되는데 식물탭에 들어오잖아.
+         템으로 들어오고 배치하면 식물탭에 생기는 것으로 해줘."*)
+     ══════════════════════════════════════════════════════════════════
+     ■ 무엇이 어긋나 있었나 — **코어는 고쳤는데 화면이 안 따라왔다**
+       2026-08-17 에 `loop.js` 가 선물을 `slotId: null` 로 만들어 「아직 아무 데도 안 놓은」
+       상태로 보내게 고쳤다(§loop 선물은 가방으로 온다). 상태는 그때부터 맞았다 —
+       `placedOnce:false · slotId:null · at:null` (실측 2026-08-21).
+       **그런데 가방에는 그 칸이 없었다.** 그리는 자리를 아무도 안 만들었다.
+     ⇒ 실측하면 이랬다: 도착한 순간 **가방 칸 ["콩나물"]** 뿐이고,
+       `#plantCard` 는 `arrived && S.pots.length === 0` 일 때만 뜨는데 선물이 오면서
+       `S.pots.length` 가 1이 되어 **그 자리에서 숨었다.**
+       ⇒ 선물이 **화면 어디에도 없었다.** [식물] 탭의 몬스테라 목록 줄 하나로만 보였다.
+     ⇒ 여기서 칸을 세운다. 식물등(위 §BAG_LAMP_ID)이 이미 쓰는 그 길이다 —
+       상점 재고 품목이 아닌 것을 가방에 세우는 자리가 여기다.
+     ★ 「아직 안 놓았나」는 **상태가 말한다**(`placedOnce === false && !at && !slotId`).
+       화면이 다시 판정하지 않는다 — `syncRoom`·`drawPlantMore` 와 **같은 자**를 쓴다(§bagPots).
+     ⚠ 그루마다 칸이 선다. 그래서 칸이 **그루 이름을 들고 있어야** 한다(`data-potbag`) —
+       안 그러면 `commitPlace` 가 `pot0`(첫 그루)로 떨어져 남의 화분이 놓인다. */
+  {
+    const esc = v => String(v == null ? '' : v).replace(/[&<>"]/g, c =>
+      ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+    const waiting = bagPots();
+    if (waiting.length) {
+      anyPlaceable = true;
+      html += `<div class="grouphead">식물</div><div class="baggrid">` +
+        waiting.map((p, i) => {
+          const ko = waiting.length > 1 ? `몬스테라 ${i + 1}` : '몬스테라';
+          const art = potThumbOf(p) || './assets/ui/item_monstera.png';
+          /* ⚠⚠ 껍질(`.art`·`.nm`)을 **그대로** 써야 한다. 처음에 맨 `<img>`+`<small>` 로 썼더니
+             `.bagslot .art img{width:100%;height:100%}` 규칙이 안 걸려 그림이 **원본 크기**로
+             섰다 — 실측 2026-08-21: 내 칸 **98×290**, 다른 칸 98×76. 눈으로는 모달·상세 카드에
+             가려 안 갈렸고 **재서 잡았다.** 칸 모양의 정본은 §bagSlotHTML 이다. */
+          return `<button class="bagslot act draggable" data-potbag="${esc(p.id)}" type="button"` +
+                 ` title="${esc(ko)}" aria-label="${esc(ko)}">` +
+                 `<span class="art"><img src="${art}" alt="${esc(ko)}"></span>` +
+                 `<span class="nm">${esc(ko)}</span></button>`;
+        }).join('') + `</div>`;
+    }
+  }
   html += bagHelpHTML(anyPlaceable);
   /* ★★★ **자른 삽수** (2026-08-16 · §cuttingBagHTML). 거둔 채소보다 **앞**에 둔다 —
      삽수는 놓아야 할 물건이고 채소는 보여 주는 물건이다. 할 일이 먼저다. */
@@ -6191,6 +6304,12 @@ function drawBag() {
     /* ★ 가방의 식물등 — 누르면 방에 세운다(§placeLampFromBag) */
     { const b = document.getElementById(BAG_LAMP_ID);
       if (b) b.onclick = guard(() => placeLampFromBag()); }
+    /* ★ 2026-08-21 — 가방의 몬스테라. **칸마다 그 그루 이름을 걸어** 끌기·누르기를 준다.
+       ⚠ `bindDrag` 에 **요소를 그대로** 넘긴다 — 이 칸들은 id 가 없다(그루마다 생긴다). */
+    for (const b of grid.querySelectorAll('[data-potbag]')) {
+      const pid = b.getAttribute('data-potbag');
+      bindDrag(b, 'monstera', () => startPhonePlacePotBag(pid), pid);
+    }
     for (const id of Object.keys(BAG_PLACEABLE)) {
       const p = BAG_PLACEABLE[id];
       /* ★ 2026-08-16 — **화분도 누르면 놓인다.** 예전에는 `beansprout` 만 손잡이를 받아
@@ -8992,7 +9111,13 @@ if ($('lightHeat')) $('lightHeat').onclick = guard(() => {
 function drawPlantMore() {
   const box = $('plantBox'), list = $('plantList');
   if (!box || !list) return;
-  const pots = S.pots || [];
+  /* ★★ 2026-08-21 — **가방에 있는 그루는 이 목록에 안 선다** (박사님:
+       *"템으로 들어오고 배치하면 식물탭에 생기는 것으로 해줘"*).
+     ⚠ 여기가 `S.pots` 통째였다. 선물이 오는 순간 `S.pots.length` 가 1이 되므로
+       **놓기도 전에** 「몬스테라 · 1그루」 줄이 서 있었다 — 그것이 「식물탭에 들어온다」다.
+     ★ 판정은 `bagPots()` 한 자로 한다(§bagPots). 가방 칸과 **같은 자**라 둘이 못 어긋난다. */
+  const inBag = new Set(bagPots().map(p => p && p.id));
+  const pots = (S.pots || []).filter(p => p && !inBag.has(p.id));
   box.style.display = pots.length ? '' : 'none';
   const cnt = $('plantCount');
   if (cnt) cnt.textContent = pots.length ? `· ${pots.length}그루` : '';
@@ -9953,6 +10078,10 @@ function dlgFlushHeld() {
   dlgHold = [];
   return dlgOpen(take);
 }
+/* ★ 재는 손잡이 — **대사를 단추 없이 연다**(2026-08-21). 도착 대사는 2바퀴를 굴려야 나오는데
+   글자·초상화가 맞는지 보려고 매번 그 길을 다 걸을 수는 없다. `__detailOpen`·`__lampTap` 과 같은 결이다.
+   ⚠ **읽기용이 아니다** — 진짜로 큐에 넣는다. 그래서 재는 것이 실제로 뜨는 그 대사다. */
+window.__dlgOpen = (ids) => { try { return dlgOpen(ids); } catch (e) { return 'ERR ' + e.message; } };
 function dlgOpen(scriptIds) {
   let ids = [].concat(scriptIds).filter(Boolean);
   /* 미뤄 둔 것이 **먼저**다 — 어제 일이 오늘 일보다 뒤에 오면 이야기가 거꾸로 선다 */
@@ -11215,7 +11344,9 @@ const drag = {
     }
     return best;
   },
-  begin(what, thumbUrl, ev) {
+  /* ★ `potId` — **어느 그루를 끄는가**(2026-08-21). 가방 칸이 그루마다 서므로
+     칸이 그 이름을 들고 온다. 안 주면 예전대로 종류만 보고 고른다(`pot0`). */
+  begin(what, thumbUrl, ev, potId = null) {
     const { sel, ids } = this.slotsFor(what);
     /* ★★ **추천 자리가 없어도 끌 수 있다** (2026-08-08).
        ══════════════════════════════════════════════════════════════════
@@ -11233,6 +11364,7 @@ const drag = {
     if (sel.disabled && !sowing) return;
     if (!ids.length && !canFree) return;
     this.on = true; this.what = what; this.sel = sel; this.valid = ids; this.best = null;
+    this.potId = potId || null;                 /* ★ 끝까지 나른다(§commitPlace opt.potId) */
     /* ★ 지름은 **놓고 나면 설 수**로 묻는다 — 가방에 남은 산 시루까지 센다(§dropCount).
        지금 개수로 물으면 좁은 자리를 통과시켜 놓고 그릴 때 무리가 찌그러진다. */
     this.sowing = sowing;
@@ -11283,7 +11415,11 @@ const drag = {
          아무 표시도 없으면 무엇을 끌고 있는지 사라진다.
        ★ `potId` 를 넘겨야 그 물건의 **제 모습**으로 선다. 안 넘기면 방뷰가 무엇인지 몰라
          일반 모양으로 그린다. */
-    const potId = this.what === 'monstera' ? (pot0(S) ? pot0(S).id : null)
+    /* ★ 2026-08-21 — **끌고 있는 그루가 있으면 그것**이다. 없을 때만 예전 길이다.
+       여기가 `pot0` 하나였던 탓에 둘째 그루를 끌어도 첫 그루 모습이 섰다. */
+    const potId = this.potId
+                ? this.potId
+                : this.what === 'monstera' ? (pot0(S) ? pot0(S).id : null)
                 : this.what === 'musun'    ? CROP_SITE_IDS.musun
                 :                            BEANSPROUT_ID;
     /* ★ `ghostKey` — 방에 아직 그 물건이 **하나도 없을 때** 쓸 유령 원본(§drag.begin).
@@ -11317,8 +11453,9 @@ const drag = {
   end() {
     if (!this.on) return;
     const hit = this.best, sel = this.sel, what = this.what;
+    const potId = this.potId || null;           /* ★ 비우기 **전에** 붙든다 */
     this.on = false; this.what = null; this.sel = null; this.valid = []; this.best = null;
-    this.sowing = false;
+    this.sowing = false; this.potId = null;
     /* ★ 열쇠만 놓는다 — 유령 원본은 방뷰가 캐시로 갖고 있다(다음 끌기가 즉시 쓴다). */
     this.ghostKey = null;
     document.body.classList.remove('dragging');
@@ -11350,7 +11487,7 @@ const drag = {
       if (hit) banner('여기엔 못 놓았습니다', freePlace.label(hit, what));
       return;
     }
-    commitPlace(what, hit);
+    commitPlace(what, hit, potId ? { potId } : {});
     /* ★ 2026-08-19 — **끌어서 놓은 길에도** 사람 움직이는 법을 한 번 말한다(§coachLater).
        예전에는 [확인] 을 누르는 길에만 걸려 있어서, 끌어 놓는 사람은 영영 못 봤다. */
     try { coachLater('walkTip'); } catch (e) { console.warn('[안내]', e && e.message); }
@@ -13025,7 +13162,12 @@ addEventListener('pointerup', (e) => { if (e.target === document.documentElement
      `preventDefault` 로 click 이 막히는지는 브라우저마다 달라서 그걸 못 믿는다. */
 const TAP_SLOP_PX = 8;
 let suppressBagTap = 0;
-function bindDrag(thumbId, what, onTap) {
+/* ★★ 2026-08-21 — **`potId` 를 끝까지 나른다.**
+   가방 칸이 「어느 그루인가」를 들고 있어야 `commitPlace` 가 **그 그루**를 놓는다.
+   안 나르면 `pot0(S)`(첫 그루)로 떨어진다 — 2026-08-17 의 「모르는 것이면 몬스테라」
+   그 뿌리의 **마지막 한 마리**다(gridmove-to-plan §5-2 가 남겨 둔 자리).
+   ★ 첫 인자로 **요소를 그대로** 받을 수도 있다 — 그루마다 생기는 가방 칸은 id 가 없다. */
+function bindDrag(thumbId, what, onTap, potId = null) {
   /* ★★ 2026-08-16 — **그림이 없으면 칸 자체를 손잡이로 삼는다.**
      여기 있던 것: `const el = $(thumbId); if (!el) return;`
      그림(`BAG_ART`)이 없는 품목은 글자 한 자로 서서 `id` 가 안 붙는다 — 그러면
@@ -13034,7 +13176,7 @@ function bindDrag(thumbId, what, onTap) {
        (박사님: *"드래그도 안 되고 눌러도 뭐 안 뜸"*).
      ⇒ 그림이 없으면 **같은 갈래를 가진 칸**을 찾아 건다. 미리보기 그림은 없어도
        끌기는 되어야 한다 — 그림은 꾸밈이고 손잡이는 기능이다. */
-  let el = $(thumbId);
+  let el = (thumbId && thumbId.nodeType === 1) ? thumbId : $(thumbId);
   /* ★★ 2026-08-16 — **숨은 것에 걸면 안 먹는다** (박사님: *"새싹 재배판 드래그 안 먹어 설치"*).
      ⚠ `musunThumb` 은 방금 감춘 **큰 카드의 그림**이다. `display:none` 이라 **지워진 게 아니라
        살아 있어서** `$()` 가 그것을 찾아 준다 — 그러고는 손이 안 닿는다.
@@ -13056,7 +13198,7 @@ function bindDrag(thumbId, what, onTap) {
     /* 미리보기 — 그림이 있으면 그것을, 없으면 칸 안의 아무 그림을(없으면 빈 값) */
     const pic = el.src || el.currentSrc
              || ((el.querySelector && el.querySelector('img')) || {}).src || '';
-    drag.begin(what, pic, e);
+    drag.begin(what, pic, e, potId);
     if (drag.on) { try { el.setPointerCapture(e.pointerId); } catch { } }
   });
   el.addEventListener('pointermove', (e) => drag.move(e));
