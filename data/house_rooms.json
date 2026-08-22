@@ -769,6 +769,7 @@
     },
     "classroom": {
       "label": "학원교실",
+        "_slot_cell_warning": "⚠ 학원교실을 열 때 제일 먼저 읽을 것 — 창턱(7.20×1.00) 자리 112칸이 겨눠도 안 붙는다(SLOT_GOVERN_R 0.04 밖). furniture_pastel §tierSlots 의 margin 갈래를 **일부러** 쓰는 옛 설계인데, CORE 가 정본을 뒤집어(room_view §snapAxis \"이제 칸이 정본이고 놓는 자리가 칸 한가운데\") 그 설계가 지금 정본과 싸운다. ★ 고치면 자리 수가 움직인다 — 칸 격자로는 29×4=116칸인데 지금 자리는 112다. 자리 수는 밸런스라 고장 고치기가 아니라 설계 결정이다. 2026-08-23 에 일부러 안 건드렸다(반지하 먼저 방침, 반지하는 0칸). 자세한 것은 docs/engine/slot_cell_align.md · docs/engine/rooms_spec.md §학원교실.",
       "light": "좋음",
       "floorNo": 3,
       "skyViewK": 1.2,

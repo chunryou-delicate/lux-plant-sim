@@ -181,6 +181,44 @@ console.log('── 1부 · 조도 (헤드리스) ──────────
      bad.length === 0, bad.slice(0, 4).join(' / '));
 }
 
+/* ══ ①-0 두 표가 정말 같은가 — **규약을 말이 아니라 자로 둔다** ══════════════
+   ------------------------------------------------------------
+   ★★ 2026-08-23 신설. 위 `BEFORE` 는 `test_lampaim` §BEFORE 와 **글자 그대로 같아야
+     한다**고 두 파일이 서로 적어 두었다. 그런데 **말로만 적혀 있었다.**
+     ⇒ `ca3f8f8`(협탁 2×2 · 책상 다섯 열) 때 `lampaim` 만 갱신되고 여기는 안 됐는데,
+       **아무도 안 던졌다.** 08-17 부터 2026-08-23 까지 두 표가 갈린 채 둘 다 초록이었다.
+       한쪽은 낡은 값으로 「안 바뀌었다」를 통과시키고 있었던 것이다.
+
+   ⚠ 여기서 값을 **한 벌 더 얼리면 안 된다.** 그러면 표가 셋이 되고 갈릴 자리가 하나 는다.
+     저쪽 파일을 **읽어서** 견준다 — 곧 이 검사는 표를 안 갖는다.
+   ⚠ `import` 로 못 가져온다(그 파일은 불러오는 순간 검사를 돌린다). 원문에서 잘라 읽는다.
+
+   이 검사가 지키는 것: **한쪽만 갱신하면 그 자리에서 붉어진다.** */
+{
+  const src = fs.readFileSync(path.join(ROOT, 'tools', 'test_lampaim.mjs'), 'utf8');
+  const k = src.indexOf('const BEFORE = {');
+  const b0 = k >= 0 ? src.indexOf('{', k) : -1, b1 = b0 >= 0 ? src.indexOf('};', b0) : -1;
+  let theirs = null, why = 'test_lampaim.mjs 의 BEFORE 를 못 읽었습니다';
+  if (b1 > b0) {
+    try { theirs = vm.runInNewContext('(' + src.slice(b0, b1 + 1) + ')'); }
+    catch (e) { why = 'BEFORE 를 읽다 넘어졌습니다: ' + e.message; }
+  }
+  const diff = [];
+  if (theirs) {
+    const ids = new Set([...Object.keys(BEFORE), ...Object.keys(theirs)]);
+    for (const id of ids) {
+      const a = BEFORE[id], b = theirs[id];
+      if (!a) { diff.push(`${id}: lampmove 에 없음`); continue; }
+      if (!b) { diff.push(`${id}: lampaim 에 없음`); continue; }
+      for (const key of ['ppfd', 'dli'])
+        if (JSON.stringify(a[key]) !== JSON.stringify(b[key]))
+          diff.push(`${id}.${key} ${JSON.stringify(a[key])} ≠ ${JSON.stringify(b[key])}`);
+    }
+  }
+  ok('①-0 ★ 이 표가 test_lampaim §BEFORE 와 글자 그대로 같다 (한쪽만 갱신하면 붉어진다)',
+     !!theirs && diff.length === 0, theirs ? diff.slice(0, 4).join(' / ') : why);
+}
+
 /* ══ ② 물림 — 집게등을 창턱에 물리면 창턱이 산다 ═══════════════════════════ */
 const SILL_TOP = 1.585;                       // banjiha-sill 상판 (plantSlots 에서 온 값)
 /* ⚠ 창턱의 z 는 **데이터에서 읽는다.** 2026-08-17 에 받침을 방 쪽으로 0.20m 밀어
