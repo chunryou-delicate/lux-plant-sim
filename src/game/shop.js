@@ -1177,12 +1177,52 @@ export function varieGradesFrom(json) {
   const mcRaw = (j && j.midCommon) || F.midCommon;
   const mcFrom = (mcRaw && typeof mcRaw.fromGrade === 'string') ? mcRaw.fromGrade : null;
   const mcGrade = mcFrom ? byId.get(mcFrom) : null;
+  /* ★★ 2026-08-23 — **못을 갈래 목록으로 넓힌다**(`plan-to-asset-midcommon.md §3`).
+     ------------------------------------------------------------
+     왜 넓히나 — 목적은 「등급을 감추는 것」이지 「한 장만 쓰는 것」이 아니다.
+     한 갈래뿐이면 감춰지는 게 아니라 *"무늬잎은 다 저 그림"* 이라는 **새 규칙이 읽힌다.**
+     갈래가 많을수록 잘 감춰진다 — 늘리는 것이 기획을 되돌리는 게 아니라 완성하는 것이다.
+     ⚠ 성립 조건 하나 — **모든 무늬 잎이 같은 못에서 뽑아야 한다.** 등급마다 못이 다르면
+       그림이 다시 등급을 말한다. 그게 애초에 막으려던 것이다.
+
+     ⚠ **하프문 칸에 갈래를 더 넣는 길(㉯)은 안 쓴다.** 지금 코드로 당장 되지만,
+       `midCommon` 을 끄는 날 그 갈래들이 하프문의 것으로 남아 하프문이 산반처럼 보인다.
+       오늘 도는 임시 방편이 내일의 거짓말이 되는 그 모양이다.
+
+     ★ 표를 정본으로 삼는다 — `pool` 은 **어느 갈래를 쓸지**만 말하고, 그 갈래의 `midNums` 는
+       `midAssets` 표에서 가져온다. 목록이 번호까지 지어내면 표와 두 벌이 되고,
+       오타 하나가 **없는 그림**으로 조용히 떨어진다(§8-3 이 막으려는 그 사고다).
+       그래서 `midNums` 를 적어 보내면 **표와 같은지 대조**하고, 다르면 그 줄을 버리고 까닭을 적는다. */
+  const midAssetById = new Map();
+  for (const g of grades) for (const a of g.midAssets) midAssetById.set(a.id, a);
+  const poolProblems = [];
+  const pool = [];
+  for (const e of (Array.isArray(mcRaw && mcRaw.pool) ? mcRaw.pool : [])) {
+    const id = e && e.id != null ? String(e.id) : '';
+    const known = id ? midAssetById.get(id) : null;
+    if (!known) { poolProblems.push(`모르는 갈래다: ${id || '(id 가 없다)'}`); continue; }
+    const want = Array.isArray(e.midNums) ? e.midNums.filter(Number.isInteger) : null;
+    if (want && want.length && String(want) !== String(known.midNums)) {
+      poolProblems.push(`${id} 의 midNums 가 표와 다르다: [${want}] ≠ [${known.midNums}]`);
+      continue;
+    }
+    if (pool.some(a => a.id === known.id)) { poolProblems.push(`${id} 가 두 번 적혔다`); continue; }
+    pool.push(known);
+  }
   const midCommon = Object.freeze({
-    enabled: !!(mcRaw && mcRaw.enabled && mcGrade && mcGrade.midAssets.length),
+    enabled: !!(mcRaw && mcRaw.enabled && (pool.length || (mcGrade && mcGrade.midAssets.length))),
+    /* 옛 모양. `pool` 이 비었을 때만 쓰인다 — 세이브·밑값이 안 깨지게 남긴다 */
     fromGrade: (mcGrade && mcGrade.midAssets.length) ? mcGrade.id : null,
+    /* 새 모양. 있으면 이것이 이긴다 */
+    pool: Object.freeze(pool.map(a => Object.freeze({ id: a.id, ko: a.ko, midNums: a.midNums }))),
+    /* ★ 버린 줄과 그 까닭 — 조용히 빠지면 「목록을 넣었는데 안 먹는다」가 된다 */
+    poolProblems: Object.freeze(poolProblems),
     /* 왜 안 켜졌는지를 남긴다 — 「켰는데 안 먹는다」를 화면·검사가 물을 수 있게 */
     why: !mcRaw || !mcRaw.enabled ? '꺼져 있다'
-       : !mcFrom ? 'fromGrade 가 없다'
+       : pool.length ? null
+       : Array.isArray(mcRaw.pool) && mcRaw.pool.length
+           ? `pool 이 다 버려졌다: ${poolProblems.join(' · ')}`
+       : !mcFrom ? 'fromGrade 도 pool 도 없다'
        : !mcGrade ? `모르는 등급이다: ${mcFrom}`
        : !mcGrade.midAssets.length ? `${mcFrom} 에 중간잎 갈래가 없다`
        : null
@@ -1418,8 +1458,15 @@ export function midCommonRule() { return _VARIE.midCommon; }
      이것은 **화면이 무엇을 그리나**다. 둘을 한 함수로 두면 검사가 표를 못 잰다. */
 export function midSkinPoolOf(gradeId) {
   const mc = _VARIE.midCommon;
-  if (mc.enabled) return midSkinKeysOfGrade(mc.fromGrade);
-  return midSkinKeysOfGrade(gradeId);
+  if (!mc.enabled) return midSkinKeysOfGrade(gradeId);
+  /* ★ 목록이 있으면 목록이 이긴다(2026-08-23). 없으면 예전처럼 등급 하나에서 뽑는다 —
+     세이브·밑값이 안 깨지게 두 모양을 다 받는다. */
+  if (mc.pool.length) {
+    const out = [];
+    for (const a of mc.pool) for (const n of a.midNums) out.push(`leaf_mid_albo${n}`);
+    return out;
+  }
+  return midSkinKeysOfGrade(mc.fromGrade);
 }
 
 /* ★★ 빛 → 등급 (확정문 §3). `step` 은 'dark'|'mid'|'bright', `roll` 은 0~1.
