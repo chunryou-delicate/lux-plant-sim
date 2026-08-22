@@ -469,15 +469,55 @@ t('G-mid-4 ★★★ **중간잎은 등급을 안 드러낸다** · 성숙잎만
       `${g.ko} 잎인데 성숙잎 ${s.matSkin} 은 다른 등급이다`);
     n++;
   }
-  /* ⚠ 세 등급이 **같은 칸을 실제로 나눠 쓰는지**를 잰다. 한 등급만 통일돼도 위 검사는 통과한다 */
-  for (const g of R.grades.filter(x => x.varie)) {
-    const keys = new Set();
-    for (let lb = 1; lb <= 60; lb++) keys.add(leafSkinsFor(g.id, seed, 'potB', lb).midSkin);
-    assert.deepEqual([...keys].sort(), [...pool].sort(),
-      `${g.ko} 이 통일 갈래를 다 안 쓴다 — 등급마다 쏠리면 그것도 티가 난다`);
+  /* ══ ★★ 2026-08-23 — **이 자리의 자가 낡아서 다시 세웠다** ═══════════════════
+     ------------------------------------------------------------
+     옛 줄: 등급마다 `lb` 60개를 굴려 **못을 통째로 덮으라**고 했다.
+     못이 1갈래(3키)였을 때는 60표본이면 당연히 다 나왔다. 못이 14갈래(36키)로 열리자
+     (`ca8607b`) 쿠폰수집으로 ~150표본이 드는데 60으로 재고 있었다 —
+     **값이 아니라 식이 낡은 것**이고, 못을 넓히는 옳은 변경이 검사를 깨뜨렸다.
+
+     ★ 그런데 다시 보니 **덮개(coverage)는 애초에 재려던 것이 아니었다.** 재려던 것은
+       「중간잎 그림이 등급을 말해 버리나」이고, 그건 **표본 없이 정확히 잴 수 있다** —
+       `leafSkinsFor` 의 `pick` 은 해시를 `(seed, potId, leafBirth, salt)` 로만 짓고
+       **등급을 안 넣는다.** 그러니 같은 잎이면 세 등급이 **같은 그림**이라야 한다.
+       그것이 참이면 그림에 등급 정보가 **한 톨도** 없다 — 분포가 같은 것보다 센 말이다.
+     ⚠ 그래도 쏠림은 따로 잰다. 위가 참이어도 못의 한 칸만 계속 나오면 그림이 단조롭다 —
+       그건 등급 누설이 아니라 **보기의 문제**라 따로 재는 것이 맞다.
+     ⚠⚠ **표본 수를 못 크기에 맨다.** 상수로 박으면 못이 커지는 날 이 검사가 또 낡는다 —
+       오늘 겪은 것이 정확히 그것이다. */
+  /* ① ★ 등급은 그림에 **안 샌다** — 표본이 아니라 같은 입력끼리 견준다 */
+  let leak = 0, pairs = 0;
+  const varieIds = R.grades.filter(x => x.varie).map(x => x.id);
+  for (const pot of ['potA', 'potB', 'potC']) for (let lb = 1; lb <= 200; lb++) {
+    const got = new Set(varieIds.map(id => leafSkinsFor(id, seed, pot, lb).midSkin));
+    pairs++;
+    if (got.size !== 1) {
+      leak++;
+      assert.fail(`같은 잎(${pot}#${lb})인데 등급마다 중간잎이 다르다 — ` +
+        `[${[...got].join(' / ')}] · 그림을 보고 등급을 알아챌 수 있다는 뜻이다`);
+    }
   }
+  /* ② 쏠림 — 못을 골고루 쓰나. **표본을 못 크기에 맨다**(쿠폰수집 K·lnK 보다 넉넉히) */
+  const N = Math.max(600, pool.length * 20);
+  const tally = new Map(pool.map(k => [k, 0]));
+  for (let lb = 1; lb <= N; lb++) {
+    const k = leafSkinsFor(varieIds[0], seed, 'potB', lb).midSkin;
+    tally.set(k, (tally.get(k) || 0) + 1);
+  }
+  const counts = pool.map(k => tally.get(k) || 0);
+  const missing = pool.filter(k => !tally.get(k));
+  assert.deepEqual(missing, [],
+    `${N}장을 굴렸는데 못의 ${missing.length}칸이 한 번도 안 나왔다 — [${missing.join(',')}]`);
+  /* ⚠ 문턱 3배는 **재고 나서** 그었다: 실측 최대/기대 = 1.74배(36키·600장).
+     고르면 1.0배에 붙고, 한 칸에 쏠리면 못 크기만큼(36배) 뛴다. 3배는 그 사이다. */
+  const expect = N / pool.length;
+  const worst = Math.max(...counts);
+  assert.ok(worst <= expect * 3,
+    `못의 한 칸이 ${worst}번 나왔다 — 고르면 ${expect.toFixed(1)}번쯤이라야 한다(${(worst / expect).toFixed(2)}배). ` +
+    `한 그림만 계속 나오면 「무늬잎은 다 저것」이 되어 통일의 뜻이 뒤집힌다`);
   assert.equal(leafSkinsFor(plainGradeId(), seed, 'potA', 1), null, '무지 잎에는 무늬 그림이 없다');
-  return `${n}장 · 중간잎은 ${mc.fromGrade} 갈래 ${pool.length}키만(${[...midSeen].join(',')}) · ` +
+  return `${n}장 · 중간잎은 못 ${pool.length}키 안에서만 · ` +
+         `★등급 누설 ${leak}/${pairs}판 · 쏠림 최대 ${(worst / expect).toFixed(2)}배(문턱 3배) · ` +
          `성숙잎은 등급대로 · 무지 잎은 null`;
 });
 

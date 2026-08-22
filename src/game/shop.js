@@ -1101,8 +1101,28 @@ const VARIE_GRADES_FALLBACK = Object.freeze({
       { id: 'charcoal',       ko: '차콜-다크그린',     matNum: 49 }
     ] }
   ],
-  /* ★★ 2026-08-16 박사님 확정 — 중간잎은 **등급과 상관없이 한 갈래**에서 뽑는다(§⑥-4b) */
-  midCommon: { enabled: true, fromGrade: 'halfmoon' },
+  /* ★★ 2026-08-16 박사님 확정 — 중간잎은 **등급과 상관없이 한 못**에서 뽑는다(§⑥-4b)
+     ★★ 2026-08-23 — 못이 **1갈래 → 14갈래**가 됐다(plan `ca8607b`). 1갈래면 감춰지는 것이
+       아니라 「무늬잎은 다 저 그림」이라는 **새 규칙이 읽힌다** — 목적이 뒤집힌다.
+     ⚠ 아래 목록은 `data/balance/varie_grades.json` 의 것과 **한 톨도 다르면 안 된다.**
+       여기는 파일을 못 읽었을 때만 사는 사본이고, 갈리면 「파일을 고쳤는데 게임은 옛 값」이
+       조용히 선다. `test_variegrade A-2` 가 그 자리를 막고 서 있다 — 파일을 고치면
+       **여기도 같이 고쳐야 검사가 통과한다.** 그것이 이 사본을 두고도 안 갈리는 유일한 방법이다.
+     ⚠ `midNums` 는 여기서도 안 적는다 — 번호의 정본은 위 `midAssets` 표 하나다. */
+  midCommon: { enabled: true, fromGrade: 'halfmoon', pool: [
+      { id: 'heart_albo_2672_3' },
+      { id: 'heart_marble_2652' },
+      { id: 'heart_speckle_2657' },
+      { id: 'pothos_cream_marble' },
+      { id: 'pothos_cream_vein' },
+      { id: 'pothos_marble_whitegreen' },
+      { id: 'pothos_mint_dot' },
+      { id: 'pothos_mint_dot_34' },
+      { id: 'pothos_silver_droplet' },
+      { id: 'heart_halfmoon_v2_stem' },
+      { id: 'monstera_leaf_fullalbo' },
+      { id: 'pothos_whitegreen_29' }
+  ] },
   sale: { cuttingMult: 1.0, potMult: 1.4, synergy: { 0: 1.0, 1: 1.0, 2: 1.25, 3: 1.5 } },
   lightGrade: {
     dark:   { sanban: 0.90, halfmoon: 0.09, fullmoon: 0.01 },
