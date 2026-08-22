@@ -70,6 +70,8 @@ import { stepShop, stepMarket } from './shop.js';
 import { resetDay, spend as spendStamina, canAct as canActStamina } from './stamina.js';
 import { weekStats, WEATHER_P } from '../engine/weather.js';
 import { judgeDLI } from '../engine/daily_light.js';
+/* ★ 퀘스트가 아는 문턱을 읽으려고 부른다(§cropEnough). quest.js 는 loop 을 안 부르므로 순환이 아니다 */
+import { QUESTS } from './quest.js';
 
 /* ══ 걷는 속도 — 밝기가 「품질」만이 아니라 「속도」도 정한다 (2026-08-05 박사님 확정) ══
    ------------------------------------------------------------------------------
@@ -533,7 +535,19 @@ function narrativeEvents(S, turn, ts, learnedBefore, day) {
   const state = ts.movedOut ? 'done'
               : c.ok ? 'ready'
               : c.varie ? 'money'              // 삽수는 팔았고 돈만 남았다
-              : c.money ? 'varie' : null;      // null = 둘 다 멀었다. 아직 할 말이 없다
+              /* ══ ★★★ 2026-08-23 — **둘 다 멀 때 게임이 침묵하고 있었다** ═══════════════
+                 옛 줄은 여기가 `null` 이었다 — *"둘 다 멀었다. 아직 할 말이 없다."*
+                 그런데 **제일 막막한 순간이 바로 그때다.** 실측(plan)으로 200일을 굴려도
+                 `move_short_*` 가 **0건**인 판이 있었고, 못 나간 24판 중 3~4판이 그 꼴이다.
+                 ⇒ 갈래를 비워 두면 **조용히** 빠진다. 던지지도 빨갛지도 않고 말만 안 나온다.
+                 ★ **돈을 먼저 말한다** — 무늬는 기다리면 온다(가을 확정 무늬). 돈은 안 그렇다.
+                   그리고 무늬를 얻으려 해도 빛이 필요하고, 빛은 등이고, 등은 돈이다.
+                 ★ 갈래가 둘인 까닭 — 시루가 적으면 **살림**을 말하고, 이미 넉넉하면
+                   그 말이 헛말이라 **빛**을 말한다. 둘 다 채워져 있어 침묵이 안 생긴다.
+                 ⚠ 문턱을 여기서 짓지 않는다 — 퀘스트가 이미 아는 값(`siru5_cycle5.need.sirus`)을
+                   읽는다. 숫자를 두 군데 적으면 한쪽이 낡는다(§2.8). */
+              : c.money ? 'varie'
+              : (cropEnough(S) ? 'both:light' : 'both:crop');
   if (state && state !== ts._moveState) {
     ts._moveState = state;
     if (state === 'money') ev.push({ id: 'move_short_money', ko: '이사 자금이 모자랍니다',
@@ -541,9 +555,33 @@ function narrativeEvents(S, turn, ts, learnedBefore, day) {
     if (state === 'varie') ev.push({ id: 'move_short_learn', ko: '무늬 삽수를 아직 못 팔았습니다',
                                      axis: 'varie', why: c.why, left: c.learningLeft });
     if (state === 'ready') ev.push({ id: 'move_ready', ko: '원룸으로 이사할 수 있습니다' });
+    /* 둘 다 먼 판 — 무엇부터 할지를 말한다. `axis:'both'` 는 화면·검사가 보는 칸이다 */
+    if (state === 'both:crop')
+      ev.push({ id: 'move_short_both_crop', ko: '돈도 무늬도 멉니다 — 먼저 살림을 늘립니다',
+                axis: 'both', shortWon: c.shortWon, sirus: cropPotCount(S) });
+    if (state === 'both:light')
+      ev.push({ id: 'move_short_both_light', ko: '돈도 무늬도 멉니다 — 이제 빛을 봅니다',
+                axis: 'both', shortWon: c.shortWon, sirus: cropPotCount(S) });
   } else if (state) ts._moveState = state;
 
   return ev;
+}
+
+/* 지금 돌리고 있는 시루 수 — 못 세면 **0 이 아니라 null 로 두지 않는다**:
+   여기서는 「적다」 쪽으로 떨어지는 것이 맞다(모르면 살림부터 말하는 것이 덜 해롭다). */
+function cropPotCount(S) {
+  const b = S && S.firstPlay && S.firstPlay.beansprout;
+  if (!b) return 0;
+  if (Array.isArray(b.pots)) return b.pots.length;
+  return Number.isInteger(b.sirus) ? b.sirus : 0;
+}
+/* 살림이 이미 넉넉한가 — 문턱은 **퀘스트가 아는 값**이다(§2.8). 못 읽으면 「적다」로 둔다. */
+function cropEnough(S) {
+  let need = null;
+  try { const q = QUESTS.find(x => x.id === 'siru5_cycle5'); need = q && q.need && q.need.sirus; }
+  catch { }
+  if (!Number.isInteger(need)) return false;
+  return cropPotCount(S) >= need;
 }
 
 function stepTutorial(S, turn, io) {

@@ -857,6 +857,27 @@ export const SCRIPTS = {
      같은 날 `rentFirst`·`chatDailySpend` 는 갱신됐는데 이 줄만 안 따라와서, 화면에서
      **몬이가 틀린 셈을 말하고 있었다**(2026-08-11 화면 실측 Day 48 에서 그대로 떴다).
      ⚠ 숫자를 대사에 박은 자리다. `moveOutCostWon` 이 또 움직이면 이 줄도 같이 고쳐야 한다. */
+  /* ══ ★★★ 2026-08-23 — **둘 다 멀 때** (plan 문안 · `plan-to-core-silence.md`) ═══════
+     ------------------------------------------------------------
+     여기가 없어서 **제일 막막한 순간에 게임이 아무 말도 안 했다.** `loop.js §③` 이
+     둘 다 멀면 `null` 로 떨어졌고, 200일을 굴려도 `move_short_*` 가 0건인 판이 있었다.
+     ★ **돈을 먼저 말한다** — 무늬는 기다리면 온다(가을 확정 무늬). 돈은 안 그렇다.
+       그리고 무늬를 얻으려 해도 빛이 필요하고, 빛은 등이고, 등은 돈이다.
+     ★ 갈래가 둘인 까닭 — 시루가 적으면 **살림**을, 이미 넉넉하면 그 말이 헛말이라 **빛**을
+       말한다. 둘 다 채워져 있어 **어느 판에서도 침묵이 안 생긴다.**
+     ⚠ 숫자를 안 박았다 — 시루 몇 개인지도, 이사비도 여기서 말하지 않는다.
+       갈림 문턱은 `loop.js §cropEnough` 가 퀘스트에서 읽는다. */
+  shortBothCrop: [
+    { who: 'moni',   face: 'sad', text: '둘 다 멀어. 돈도, 무늬도.' },
+    { who: 'jachwi', face: 'tired', text: '…뭐부터 해야 돼.' },
+    { who: 'moni',   text: '돈. 무늬는 기다리면 와. 돈은 안 그래.' },
+    { who: 'moni',   face: 'curious', text: '시루를 늘려. 하나로는 안 모여.' }
+  ],
+  shortBothLight: [
+    { who: 'moni',   face: 'sad', text: '둘 다 멀어. 근데 채소는 잘 돌고 있어.' },
+    { who: 'jachwi', text: '그럼 뭐가 문제야.' },
+    { who: 'moni',   face: 'curious', text: '빛. 무늬는 밝은 데서 나. 등을 놓을 자리를 봐.' }
+  ],
   shortMoney: [
     { who: 'moni',   face: 'curious', text: '배울 건 다 배웠어. 남은 건 돈이야.' },
     { who: 'jachwi', face: 'tired', text: '…제일 안 되는 거네.' },
@@ -1441,6 +1462,9 @@ export const EVENT_SCRIPT = Object.freeze({
   varie_granted:       'varieGranted',
   move_short_money:    'shortMoney',
   move_short_learn:    'shortLearn',
+  /* ★ 2026-08-23 — 둘 다 먼 판. 갈래는 코어가 정하고(§cropEnough) 여기는 문안만 갖는다 */
+  move_short_both_crop:  'shortBothCrop',
+  move_short_both_light: 'shortBothLight',
   move_ready:          'moveReady',
   moved_out:           'movedOut',
   /* ★ 2026-08-11 — ③ 원룸의 첫 장면. `oneroom.moveIntoOneroom` 이 `moved_out` **다음에**
@@ -1554,6 +1578,9 @@ const EVENT_ORDER = [
   'quest_done', 'quest_opened',
   /* ★ `moved_in_oneroom` 은 반드시 `moved_out` **뒤**다 — 나가는 장면과 도착 장면이
      같은 턴에 한 번에 열린다. 순서가 뒤집히면 도착해서 인사하고 나서 짐을 싼다. */
+  /* ★ 「둘 다 멀다」가 **제일 앞**이다 — 무엇부터 할지를 말하는 줄이라, 뒤에 두면
+     모자란 축을 하나씩 짚는 말들 뒤에 와서 순서가 거꾸로 선다. */
+  'move_short_both_crop', 'move_short_both_light',
   'move_short_learn', 'move_short_money', 'move_ready', 'moved_out', 'moved_in_oneroom'
 ];
 
