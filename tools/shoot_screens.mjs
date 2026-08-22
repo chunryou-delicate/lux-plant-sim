@@ -55,6 +55,25 @@ const OUT = process.env.SHOT_OUT || 'docs/engine/shots/qa';
 /* 부팅이 끝났는지 — 기존 프로브(probe_qa_boot.mjs)가 쓰는 것과 같은 표시를 본다 */
 const READY = process.env.SHOT_READY || '!!window.__rv';
 
+/** 움직임이 멎기를 기다린다 — **연출 중에 찍으면 헛것이 나온다.**
+    ⚠ [core] 가 찾았다: 날 넘어가는 연출(`#dayAnim`)이 화면을 덮는 중이면
+      그 아래 단추가 「가려짐」으로 나온다. 갈래로 거르는 것보다 **안 만드는 편**이 낫다.
+    ⚠ 그리고 `.open` 같은 **상태 클래스는 미끄러지기보다 먼저 바뀐다.**
+      그래서 클래스가 아니라 **실제로 움직임이 멎었나**를 본다. */
+async function settle(page, ms = 4000) {
+  const t0 = Date.now();
+  while (Date.now() - t0 < ms) {
+    let running = null;
+    try {
+      running = await page.eval('(()=>{ try { return document.getAnimations ? '
+        + 'document.getAnimations().filter(a=>a.playState==="running").length : 0; } '
+        + 'catch(e){ return 0; } })()');
+    } catch { return; }
+    if (!running) return;
+    await sleep(200);
+  }
+}
+
 /** 해상도별로 한 장씩 찍는다. 파일 이름은 규약을 따른다. */
 export async function shoot(pages, seq, name) {
   const num = String(seq).padStart(2, '0');
@@ -62,6 +81,7 @@ export async function shoot(pages, seq, name) {
   for (const p of pages) {
     const f = `${OUT}/${p.__size.id}/${num}_${name}.png`;
     try {
+      await settle(p);                    // ★ 움직임이 멎은 뒤에 찍는다
       await p.shot(f);
       /* ★ 곁파일 — 그림만으로는 **오류 화면인지 알 수 없다.**
          실제로 부팅에 실패한 붉은 오류 상자를 찍었는데 `check_shot_anomaly` 가
@@ -78,7 +98,7 @@ export async function shoot(pages, seq, name) {
           const sel = 'button,[role=button],a[href],input,select,.btn,#next,#mealGo';
           const occluded = [], partly = [], offscreen = [], tiny = [], clipped = [],
                 outside = [], disabledOff = [], inClosedPanel = [],
-                coveredBySheet = [], coveredByModal = [];
+                coveredBySheet = [], coveredByModal = [], coveredByAnim = [];
           /* ★★ **덮은 것이 무엇이냐**로 갈린다. [core] 갈래를 그대로 쓴다.
              시트가 열려 그 아래가 덮이는 것 · 모달이 떠서 덮이는 것은 **정상**이다.
              아무것도 안 떴는데 남이 잡히는 것만 진짜 「가려짐」이다.
@@ -88,6 +108,10 @@ export async function shoot(pages, seq, name) {
             let a = top, n = 0;
             while (a && n++ < 8) {
               const id = (a.id || '') + ' ' + (typeof a.className === 'string' ? a.className : '');
+              /* ★ 여섯째 갈래 — **연출**. [core] 가 찾았다(next <- dayAnim).
+                 날 넘어가는 연출이 화면을 덮는 중이면 그 아래가 안 잡히는 것이 정상이다.
+                 ⇒ 오늘 네 번째로 같은 자리다 — 꺼짐 · 시트 · 모달 · 연출. */
+              if (/anim|fade|curtain|transition|dayAnim/i.test(id)) return 'anim';
               if (/sheet/i.test(id)) return 'sheet';
               if (/modal|dialog|overlay|panel|popup/i.test(id) || a.getAttribute
                   && a.getAttribute('role') === 'dialog') return 'modal';
@@ -172,7 +196,8 @@ export async function shoot(pages, seq, name) {
             if (q.other) {
               const kind = coverKind(q.top);
               const line = tag + ' ← ' + tagOf(q.top);
-              if (kind === 'sheet') coveredBySheet.push(line);
+              if (kind === 'anim') coveredByAnim.push(line);
+              else if (kind === 'sheet') coveredBySheet.push(line);
               else if (kind === 'modal') coveredByModal.push(line);
               else if (!q.self) occluded.push(line);
               else if (q.other >= 3) partly.push(tag + ' ' + q.other + '/9 ← ' + tagOf(q.top));
@@ -207,7 +232,9 @@ export async function shoot(pages, seq, name) {
           return { ready: !!window.__rv, errorText: err, talking,
                    scrollX: document.documentElement.scrollWidth > innerWidth + 2,
                    occluded, partly, offscreen, tiny, clipped, outside,
-                   disabledOff, inClosedPanel, coveredBySheet, coveredByModal,
+                   disabledOff, inClosedPanel, coveredBySheet, coveredByModal, coveredByAnim,
+                   animating: (document.getAnimations ? document.getAnimations()
+                     .some(a => a.playState === 'running') : null),
                    dupText: dup.slice(0, 5) };
         })()`);
       } catch { }
