@@ -33,8 +33,7 @@ import { fileURLToPath } from 'node:url';
 import { launch, sleep } from './test_cdp.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const OUT = path.join(ROOT, 'tools', '_out', 'night');
-fs.mkdirSync(OUT, { recursive: true });
+const OUTROOT = path.join(ROOT, 'tools', '_out', 'night');
 
 const arg = (k, d) => {
   const i = process.argv.indexOf('--' + k);
@@ -43,6 +42,10 @@ const arg = (k, d) => {
 const SEED = Number(arg('seed', 1));
 const DAYS = Number(arg('days', 400));
 const SHOTS = !!arg('shots', false);
+/* ★ 해상도 축 — 사용자: *"핸드폰 화면비율별·기종별에서 다 잘되도록"*.
+   같은 판을 크기만 바꿔 밟으면 「좁으면 못 누르는 자리」가 그 자리에서 난다. */
+const W = Number(arg('w', 390)), H = Number(arg('h', 844));
+const SIZE = `${W}x${H}`;
 const BASE = process.env.BYEOT_URL || 'http://localhost:8971';
 
 /* ★ 자가 제한 — 재는 도구가 재는 대상보다 오래 살면 안 된다 */
@@ -61,12 +64,21 @@ const R = {
   quests: [],          // 퀘스트가 열리고 닫힌 자리
   console: [],         // 오류·경고·예외
   shots: [],
+  /* ★ 눌리지 않는 자리 — 덮임·화면 밖·너무 작음(§probeHit) */
+  hit: {},
+  size: `${W}x${H}`,
   blocked: null,       // 막혔으면 무엇이
   ended: null          // 'movedOut' | 'dayLimit' | 'stuck' | 'bankrupt' | 'gameOver'
 };
 const note = (s) => { console.log(s); R.log = (R.log || []); R.log.push(s); };
 
-const page = await launch({ width: 390, height: 844, dpr: 2, mobile: false });
+/* ★ 해상도별로 폴더를 가른다([Char] 규약) — 순번이 앞이라 **파일 이름 순서가 곧 컷 순서**다.
+   크기가 섞이면 그쪽 「앞 컷과 같음」 검사가 헛걸린다. */
+const OUT = path.join(OUTROOT, SIZE);
+fs.mkdirSync(OUT, { recursive: true });
+let shotSeq = 0;
+
+const page = await launch({ width: W, height: H, dpr: 2, mobile: false });
 page.on((m, p) => {
   try {
     if (m === 'Runtime.exceptionThrown')
@@ -90,8 +102,88 @@ const shownClick = async (id) => {
 };
 const shot = async (tag) => {
   if (!SHOTS) return;
-  const f = path.join(OUT, `shot_${SEED}_${String(R.today).padStart(3, '0')}_${tag}.png`);
+  const f = path.join(OUT, `${String(++shotSeq).padStart(3, '0')}_d${String(R.today).padStart(3, '0')}_${tag}.png`);
   try { await page.shot(f); R.shots.push({ day: R.today, tag, file: path.basename(f) }); } catch { }
+};
+
+/* ══ ★★★ **누르기 전에 찔러 본다** ([Char] 방식 · `document.elementFromPoint`) ══════════
+   ------------------------------------------------------------
+   ⚠⚠ `el.click()` 은 **덮인 단추도 그냥 누른다.** 손가락은 못 누르는데 자는 눌린다 —
+     그러면 *"눌렀는데 안 됐다"* 를 **이 자가 영영 못 잡는다.**
+   실제로 [Char] 이 320×568 에서 **[다음 날 ▸] 한가운데를 찌르니 대사 글자(`dlgText`)가
+   잡히는 것**을 숫자로 냈다(08-22 민원 *"해상도에 따라 [다음 날] 버튼 클릭 오류"*).
+   ⇒ 그래서 **누르기 전에 한 번 찌른다.** 남이 잡히면 `occluded`, 화면 밖이면 `offscreen`,
+     32px 미만이면 `tiny` 로 적는다. **판정은 여기서 안 한다 — 사실만 적는다.**
+   ⚠ 찔러 보고 **막혀도 그냥 누른다.** 여기서 멈추면 그 뒤가 안 보인다 —
+     찾으려는 것은 「막힌 자리」지 「멈춘 자리」가 아니다. */
+const probeHit = async (id) => {
+  /* ⚠ **날 넘어가는 연출(`#dayAnim`)이 끝나기를 기다린다.** 그 사이에는 화면 전체가
+     덮이는 것이 맞다 — 안 기다리면 「[다음 날]이 dayAnim 에 덮임」이라는 헛것이 난다.
+     실제로 그렇게 났다. 안 보이는 데는 까닭이 여럿이고, 까닭을 안 가르면 전부 「가려짐」이 된다. */
+  for (let i = 0; i < 25; i++) {
+    const on = await ev(`(()=>{const e=document.getElementById('dayAnim');
+      return !!e && e.getAttribute('aria-hidden')==='false';})()`);
+    if (!on) break;
+    await sleep(120);
+  }
+  let r = null;
+  try { r = JSON.parse(await ev(`(()=>{ const e=document.getElementById(${JSON.stringify(id)});
+    if(!e) return JSON.stringify({miss:true});
+    const b=e.getBoundingClientRect();
+    if(b.width<=0||b.height<=0) return JSON.stringify({hidden:true});
+    const cx=b.left+b.width/2, cy=b.top+b.height/2;
+    const off = b.right<=0||b.bottom<=0||b.left>=innerWidth||b.top>=innerHeight;
+    const hit = document.elementFromPoint(cx,cy);
+    const mine = !!hit && (hit===e || e.contains(hit) || hit.contains(e));
+    /* ★★ **덮인 것과 「지금은 덮여 있어도 되는 것」을 가른다.**
+       ⚠ 모달(밥상·가계부·주문)이 떠 있으면 그 아래가 덮이는 것이 **맞다.**
+       ⚠ 대사 중에는 #stage.talking 이 pointer-events:none 을 건다([Asset] 실측) —
+         **꺼진 것**이지 가려진 것이 아니다. 갈라서 안 찍으면 **정상을 버그로 잡는다.** */
+    const modal = [...document.querySelectorAll('.pop')].some(p=>p.getAttribute('aria-hidden')==='false');
+    const talking = document.getElementById('stage').classList.contains('talking');
+    /* ★ 요소 **자신의** 상태를 본다 — 「꺼진 것」은 일부러 그런 것일 수 있다.
+       game.html:839 이 대사 중에 #next 를 pointer-events:none · opacity .35 로 끈다.
+       그걸 「가려짐」으로 찍으면 **고친 흔적을 병으로 잡는다.** */
+    const st = getComputedStyle(e);
+    const dis = !!e.disabled || st.pointerEvents === 'none' || (+st.opacity || 1) < 0.5;
+    /* ★★ **시트 안인가.** 탭 다섯은 #sheet 안에 있고, 시트는 안 열리면 translateY 로
+       화면 아래에 내려가 있다. 그 상태로 찌르면 **「탭이 화면 밖」이라는 헛것**이 난다 —
+       닫힌 서랍 안의 물건이 안 보이는 것을 고장이라 하는 셈이다.
+       ⚠ 반대로 시트가 **열려 있으면** 그 아래의 [다음 날]이 덮이는 것도 맞다. */
+    const sh = document.getElementById('sheet');
+    const sheetOpen = !!sh && sh.classList.contains('open');
+    const inSheet = !!sh && sh.contains(e);
+    return JSON.stringify({ w:Math.round(b.width), h:Math.round(b.height), off, modal, talking, dis,
+      sheetOpen, inSheet,
+      tiny: b.width<32||b.height<32,
+      /* 태그 이름만 적으면 「BUTTON 이 덮음」이 되어 어느 단추인지 영영 모른다.
+         id · class · 글자 · 가장 가까운 id 조상까지 적는다 — 찾을 수 있어야 보고가 된다. */
+      occludedBy: mine?null:(hit ? ([hit.id||'', hit.className||'',
+        (hit.textContent||'').trim().slice(0,18),
+        (hit.closest&&hit.closest('[id]')&&hit.closest('[id]').id)||''].filter(Boolean).join(' | ')
+        || hit.tagName) : null) }); })()`)); }
+  catch { return null; }
+  if (!r || r.miss) return r;
+  /* 모달이 떠 있을 때의 덮임은 **적되 갈라 적는다** — 그건 정상일 수 있다 */
+  /* ★★ 셋을 가른다 — **꺼짐 / 가려짐 / 밖으로**.
+     · 꺼짐   자기가 꺼져 있다(disabled · pointer-events:none · opacity<0.5)
+              ⇒ **일부러일 수 있다.** 다만 「지금 누를 때가 아니다」이므로 자도 기다려야 한다
+     · 가려짐 ★ **안 꺼졌는데 남이 잡힌다** ⇒ 이게 진짜 버그다
+     · 밖으로 화면 밖 — 좁은 기종에서 난다
+     ⚠ 모달이 떠 있으면 그 아래가 덮이는 것이 맞다. 따로 적는다. */
+  let kind = null;
+  if (r.inSheet && !r.sheetOpen) kind = 'inClosedSheet';      /* 서랍이 닫혀 있다 — 정상 */
+  else if (r.off) kind = 'offscreen';
+  else if (r.dis) kind = r.talking ? 'offWhileTalking' : 'disabled';
+  else if (r.occludedBy) kind = r.modal ? 'coveredByModal'
+                             : (!r.inSheet && r.sheetOpen) ? 'coveredBySheet' : 'occluded';
+  else if (r.tiny) kind = 'tiny';
+  if (kind) {
+    const key = `${kind}:${id}`;
+    if (!R.hit[key]) R.hit[key] = { id, kind, firstDay: R.today, n: 0, by: r.occludedBy, w: r.w, h: r.h };
+    R.hit[key].n++;
+  }
+  return r;
 };
 
 /* 동작(걸어가기+모션)이 끝날 때까지 — probe_cutting_ui §waitAct 와 같은 판단.
@@ -191,6 +283,50 @@ const order = async (itemId) => {
   return went;
 };
 
+/* 사람이 늘 눌러야 하는 자리들 — 한 바퀴 찔러 본다.
+   ⚠ [Char] 이 320×568 에서 **탭이 통째로 화면 밖**인 것을 잡았다(가방·식물·상점·방·할 일).
+     가려진 것이 아니라 나가 있다 ⇒ 좁은 기종에서는 아예 못 누른다.
+     그 목록을 여기 그대로 둔다 — 「눌러야 하는데 못 누른다」가 한 줄로 난다. */
+/* ⚠⚠ **찌를 때를 맞춰야 한다.** 탭은 시트가 **열려야** 볼 수 있고, [다음 날]은 시트가
+   **닫혀야** 볼 수 있다. 아무 때나 찌르면 「탭이 화면 밖」·「다음 날이 덮임」이 둘 다
+   헛것으로 난다 — 실제로 처음에 그렇게 났다. 서랍을 닫아 놓고 안이 안 보인다고 한 셈이다. */
+const OPEN_IDS  = ['tabRoom', 'tabPlants', 'tabShop', 'tabBag', 'tabQuest'];
+const CLOSE_IDS = ['next', 'meChip', 'guideOpen', 'questChip'];
+/* ⚠⚠ **서랍이 멈출 때까지 기다린다.** `#sheet` 는 `transform` 으로 미끄러져 오르내린다 —
+   닫으라고 하고 곧바로 찌르면 **아직 덮고 있는 중**이라 「[다음 날]이 상점 줄에 덮임」이 난다.
+   열 때도 마찬가지로 **탭이 아직 화면 밖**이다. 둘 다 실제로 그렇게 났다.
+   ⇒ 정해진 시간을 자지 않고 **자리가 두 번 같아질 때까지** 본다(부하에 안 흔들린다). */
+const settleSheet = async (wantOpen, ms = 2500) => {
+  const t0 = Date.now();
+  let last = null, same = 0;
+  while (Date.now() - t0 < ms) {
+    const r = JSON.parse(await ev(`(()=>{const s=document.getElementById('sheet');
+      return JSON.stringify({ open: s.classList.contains('open'),
+                              top: Math.round(s.getBoundingClientRect().top), h: innerHeight });})()`));
+    /* ⚠ **자리가 두 번 같은 것만으로는 모자란다** — 미끄러지기가 아직 시작을 안 했으면
+       처음 두 번이 당연히 같다. 실제로 그래서 「탭이 화면 밖」이 또 났다.
+       ⇒ **목표 상태가 됐는지**를 먼저 보고, 그 다음에 자리가 멎기를 기다린다. */
+    /* ★★ **클래스가 아니라 자리로 판정한다.** `.open` 은 곧바로 붙고 떨어지는데
+       미끄러지기는 그 뒤에 일어난다 — 클래스만 보면 **아직 덮고 있는 중에** 통과한다.
+       실제로 그래서 「[다음 날]이 상점 줄에 덮임」이 두 번이나 났다.
+       ⇒ 닫힘 = 서랍이 **화면 아래로 다 내려갔다** · 열림 = **위로 다 올라왔다**. */
+    const there = wantOpen ? (r.top < r.h - 40) : (r.top >= r.h - 2);
+    if (r.open === wantOpen && there) { if (last === r.top && ++same >= 1) return r.top; last = r.top; }
+    else { last = null; same = 0; }
+    await sleep(90);
+  }
+  return last;
+};
+const sweepHits = async () => {
+  const was = await ev(`(()=>{const s=document.getElementById('sheet');
+    return !!s && s.classList.contains('open');})()`);
+  await ev(`window.__byeotSheet.close()`, false); await settleSheet(false);
+  for (const id of CLOSE_IDS) await probeHit(id);
+  await ev(`window.__byeotSheet.open('plants')`, false); await settleSheet(true);
+  for (const id of OPEN_IDS) await probeHit(id);
+  if (!was) { await ev(`window.__byeotSheet.close()`, false); await settleSheet(false); }
+};
+
 /* ══ 상태 한 줄 — 지어내지 않는다. 못 읽으면 null 을 둔다 ══════════════ */
 const SNAP = `(()=>{ const S=window.__S(); const ts=S.tutorial||{};
   let ls=null; try{ ls=window.__io.growth.leafStats(); }catch{}
@@ -232,6 +368,7 @@ await ev(`(()=>{ const S=window.__S(); if(S.sim) S.sim.seed=${SEED}; })()`, fals
 
 await tapTalk();
 await click('guideClose'); await sleep(400);
+await sweepHits();                 /* ★ 첫 화면에서 한 바퀴 — 좁은 기종은 여기서 이미 난다 */
 await shot('boot');
 
 /* 시루를 어두운 자리에 놓는다 — 첫 손짓이다(가방에서 끌어다 놓기) */
@@ -279,7 +416,7 @@ for (let d = 1; d <= DAYS; d++) {
     if (before.lampOpen && before.lamp === 0) { if (await order('growlight')) R.did.buyLamp++; }
   }
 
-  await ev(`window.__byeotSheet.close()`, false); await sleep(100);
+  await ev(`window.__byeotSheet.close()`, false); await settleSheet(false);
 
   /* ── 다음 날 ── */
   const canNext = await ev(`(()=>{const n=document.getElementById('next'); return !!n && !n.disabled;})()`);
@@ -287,6 +424,7 @@ for (let d = 1; d <= DAYS; d++) {
     R.blocked = `Day ${before.day} — [다음 날]이 안 눌린다(hardLock="${before.hardLock}")`;
     R.ended = 'stuck'; await shot('stuck'); break;
   }
+  await probeHit('next');            /* ★ 누르기 전에 찔러 본다(§probeHit) — 시트는 바로 위에서 닫았다 */
   await click('next'); R.did.next++;
   await sleep(450); await tapTalk();
   await clearPops();            /* ★ 밥상·가계부를 지나야 비로소 날이 간다 */
@@ -299,7 +437,10 @@ for (let d = 1; d <= DAYS; d++) {
   if (before.pots === 0 && after.pots > 0) await shot('arrive');
   if ((before.varie || 0) === 0 && (after.varie || 0) > 0) await shot('varie');
   if (before.lamp === 0 && after.lamp > 0) await shot('lamp');
-  if (d % 30 === 0) await shot('d' + d);
+  if (d % 30 === 0) { await sweepHits(); await shot('d' + d); }
+  /* 가진 것은 남긴다 — 긴 판이 중간에 죽으면 서른 몇 분이 통째로 사라진다.
+     열흘마다 지금까지 것을 써 둔다. 끝에 다시 쓰므로 손해가 없다. */
+  if (d % 10 === 0) { try { dump(); } catch { } }
 
   /* ★★ 날짜가 안 갔으면 **그 자리에서 무엇이 열려 있었나**를 적는다.
      이 줄이 없으면 「안 간다」까지만 알고 **왜인지는 영영 모른다.** */
@@ -338,6 +479,11 @@ if (!R.ended) R.ended = 'dayLimit';
 try { R.dlgLog = JSON.parse(await ev(`JSON.stringify(window.__dlgLog||[])`)); } catch { }
 await shot('end');
 
+/* 지금까지 것을 파일에 쏟는다 — 중간에도, 끝에도 부른다 */
+function dump() {
+  fs.writeFileSync(path.join(OUT, `play_${SEED}.json`), JSON.stringify(R, null, 1), 'utf8');
+}
+
 function finish() {
   R.endedAt = new Date().toISOString();
   const last = R.days[R.days.length - 1] || {};
@@ -349,13 +495,27 @@ function finish() {
   const bad = R.console.filter(c => c.kind !== 'warning' && c.kind !== 'console.warning');
   lines.push(`  콘솔 — 오류·예외 ${bad.length}건 · 경고 ${R.console.length - bad.length}건`);
   for (const c of bad.slice(0, 15)) lines.push(`     ✘ Day ${c.day} ${c.text.slice(0, 160)}`);
-  lines.push(`  대사 ${R.dialog.length}줄 · 스크린샷 ${R.shots.length}장`);
+  lines.push(`  대사 ${R.dialog.length}줄 · 스크린샷 ${R.shots.length}장 · 화면 ${SIZE}`);
+  /* ★ 「진짜 못 누르는 것」과 「지금은 덮여 있어도 되는 것」을 갈라 적는다 */
+  const REAL = ['offscreen', 'occluded', 'tiny'];
+  const hits = Object.values(R.hit);
+  const noTouch = hits.filter(h => REAL.includes(h.kind));
+  const okish = hits.filter(h => !REAL.includes(h.kind));
+  if (noTouch.length) {
+    lines.push(`  ★⚠ 손가락이 못 닿는 자리 ${noTouch.length}가지 —`);
+    for (const h of noTouch) lines.push(`     · ${h.kind} ${h.id} ${h.w}x${h.h}` +
+      (h.kind === 'occluded' && h.by ? ` ← ${String(h.by).slice(0, 40)} 가 덮음` : '') +
+      ` (Day ${h.firstDay} 부터 ${h.n}번)`);
+  } else lines.push('  손가락이 못 닿는 자리 — 없음(찔러 본 것 중에서)');
+  if (okish.length)
+    lines.push('  (참고 · 덮여 있어도 되는 때 — ' +
+      okish.map(h => `${h.id}:${h.kind}×${h.n}`).join(' · ') + ')');
   /* ★ 같은 대사가 두 번 뜬 자리 — 「중복으로 있어」의 그 물음 */
   const seen = new Map(), dup = [];
   for (const t of R.dialog) { const k = t.text; if (seen.has(k)) dup.push({ text: k, days: [seen.get(k), t.day] }); else seen.set(k, t.day); }
   if (dup.length) { lines.push(`  ⚠ 같은 대사가 두 번 뜬 자리 ${dup.length}건`); for (const x of dup.slice(0, 8)) lines.push(`     · Day ${x.days.join('·')} 「${x.text.slice(0, 50)}」`); }
   const txt = lines.join('\n');
-  fs.writeFileSync(path.join(OUT, `play_${SEED}.json`), JSON.stringify(R, null, 1), 'utf8');
+  dump();
   fs.writeFileSync(path.join(OUT, `play_${SEED}.log`), txt + '\n', 'utf8');
   console.log('\n' + txt);
   console.log(`\n→ ${path.relative(ROOT, path.join(OUT, `play_${SEED}.json`))}`);
