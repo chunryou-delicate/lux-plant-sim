@@ -158,8 +158,11 @@ def check(path, prev_gray=None):
         #   픽셀로는 절대 못 본다. 찍을 때 DOM 으로 재어 곁파일에 남긴 것을 읽는다.
         #   08-22 민원 「해상도에 따라 [다음 날] 버튼 클릭 오류」가 이 갈래로 보인다.
         for key, msg in (('occluded', '★ 눌러야 하는 것이 가려졌다'),
+                         ('partly',   '★ 절반 넘게 가려졌다'),
                          ('offscreen', '누를 것이 화면 밖에 있다'),
-                         ('clipped',  '글자가 잘렸다')):
+                         ('outside',  '부모 밖으로 삐져나가 잘렸다'),
+                         ('clipped',  '글자가 잘렸다'),
+                         ('dupText',  '같은 문구가 두 번 나온다')):
             v = st.get(key) or []
             if v:
                 bad.append('%s: %s' % (msg, ', '.join(v[:3])))

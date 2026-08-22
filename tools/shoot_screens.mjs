@@ -34,7 +34,8 @@
 import fs from 'fs';
 import { launch, sleep } from './test_cdp.mjs';
 
-export const SIZES = [
+const ONLY = (process.env.SHOT_SIZES || '').split(',').filter(Boolean);
+export const SIZES = ([
   { id: '320x568',   w: 320,  h: 568,  dpr: 2, why: '제일 좁다 — 여기서 제일 잘 깨진다' },
   { id: '390x844',   w: 390,  h: 844,  dpr: 3, why: '아이폰 표준' },
   { id: '430x932',   w: 430,  h: 932,  dpr: 3, why: '프로맥스' },
@@ -42,7 +43,7 @@ export const SIZES = [
   { id: '932x430',   w: 932,  h: 430,  dpr: 3, why: '★ 가로(넓음)' },
   { id: '768x1024',  w: 768,  h: 1024, dpr: 2, why: '태블릿' },
   { id: '1920x1080', w: 1920, h: 1080, dpr: 1, why: 'PC' },
-];
+]).filter(s => !ONLY.length || ONLY.includes(s.id));   // SHOT_SIZES=320x568 처럼 골라 돌린다
 
 /* ★ 기본값은 **로컬**이다.
    ⚠ 처음엔 올려둔 사이트(GitHub Pages)를 기본값으로 뒀다. [Asset] 이 잡았다.
@@ -75,29 +76,101 @@ export async function shoot(pages, seq, name) {
              내가 아니라 남이 잡히면 그 위에 무엇이 덮여 있는 것이다.
              08-22 민원 "해상도에 따라 [다음 날] 버튼 클릭 오류" 가 이 갈래로 보인다. */
           const sel = 'button,[role=button],a[href],input,select,.btn,#next,#mealGo';
-          const occluded = [], offscreen = [], tiny = [], clipped = [];
+          const occluded = [], partly = [], offscreen = [], tiny = [], clipped = [],
+                outside = [], disabledOff = [];
+          /* ★★ 「꺼짐」과 「가려짐」은 **다른 병**이다. 뭉뚱그리면 안 된다.
+             ⚠ 내가 뭉뚱그려서 틀렸다 — next(다음 날) 이 「대사창에 덮였다」로 나왔는데,
+               game.html:839 에 '#stage.talking #next { opacity:.35; pointer-events:none }'
+               이 있다. **일부러 끈 것**이다. 그리고 elementFromPoint 는
+               pointer-events:none 인 것을 **건너뛰고 그 밑을 잡는다.**
+               즉 **꺼져 있으면 언제나 「남이 잡힌다」로 나온다.**
+             ⇒ 찌르기 전에 **자기 상태부터** 본다. [Asset] 이 잡아 줬다. */
+          const isOff = (el, cs) => cs.pointerEvents === 'none'
+                        || parseFloat(cs.opacity) < 0.5 || el.disabled === true;
+          const vis = (el) => {
+            const cs = getComputedStyle(el);
+            return !(cs.visibility === 'hidden' || cs.display === 'none' || +cs.opacity === 0);
+          };
+          const tagOf = (el) => {
+            const id = el.id || (typeof el.className === 'string' ? el.className : '') || el.tagName;
+            const label = (el.innerText || el.value || '').trim().slice(0, 14);
+            return id + (label ? '(' + label + ')' : '');
+          };
+          /* ★ 가운데 한 점이 아니라 **아홉 점**을 찔러 본다.
+             [Asset] 이 눈으로 본 「초상화가 방과 글자를 절반쯤 가린다」는
+             가운데만 보면 안 걸린다. **일부만 가려도 누르기 어렵다.** */
+          const probe = (el, r) => {
+            let self = 0, other = 0, top = null;
+            for (const fx of [0.15, 0.5, 0.85]) for (const fy of [0.15, 0.5, 0.85]) {
+              const x = Math.min(innerWidth - 1, Math.max(0, r.left + r.width * fx));
+              const y = Math.min(innerHeight - 1, Math.max(0, r.top + r.height * fy));
+              const hit = document.elementFromPoint(x, y);
+              if (!hit) continue;
+              if (hit === el || el.contains(hit) || hit.contains(el)) self++;
+              else { other++; top = top || hit; }
+            }
+            return { self, other, top };
+          };
           for (const el of document.querySelectorAll(sel)) {
             const r = el.getBoundingClientRect();
-            if (!r.width || !r.height) continue;                 // 안 보이는 것은 뺀다
-            const cs = getComputedStyle(el);
-            if (cs.visibility === 'hidden' || cs.display === 'none' || +cs.opacity === 0) continue;
-            const id = el.id || el.className || el.tagName;
-            const label = (el.innerText || el.value || '').trim().slice(0, 14);
-            const tag = id + (label ? '(' + label + ')' : '');
+            if (!r.width || !r.height || !vis(el)) continue;
+            const tag = tagOf(el);
+            const cs2 = getComputedStyle(el);
             if (r.right < 0 || r.bottom < 0 || r.left > innerWidth || r.top > innerHeight) {
               offscreen.push(tag); continue;
             }
-            if (r.width < 32 || r.height < 32) tiny.push(tag + ':' + Math.round(r.width) + 'x' + Math.round(r.height));
+            if (r.width < 32 || r.height < 32)
+              tiny.push(tag + ':' + Math.round(r.width) + 'x' + Math.round(r.height));
             if (el.scrollWidth > el.clientWidth + 2) clipped.push(tag);
-            const x = Math.min(innerWidth - 1, Math.max(0, r.left + r.width / 2));
-            const y = Math.min(innerHeight - 1, Math.max(0, r.top + r.height / 2));
-            const hit = document.elementFromPoint(x, y);
-            if (hit && hit !== el && !el.contains(hit) && !hit.contains(el))
-              occluded.push(tag + ' ← ' + (hit.id || hit.className || hit.tagName));
+            /* ④ 부모 밖으로 삐져나갔나 — [Asset] 이 가로에서 본 「초상화가 대사창 위로
+               삐져나와 잘린다」가 이것이다. 부모가 넘침을 자르면 그만큼 안 보인다. */
+            const par = el.parentElement;
+            if (par) {
+              const pr = par.getBoundingClientRect();
+              const po = getComputedStyle(par).overflow;
+              /* ★ 방향을 나눈다 — [Asset]: 초상화는 **원래 아래로 걸쳐 놓는 그림**이다.
+                 아래로 나가는 것은 정상일 수 있고, **위·옆으로 나가면 사고**다. */
+              const up = Math.max(0, pr.top - r.top);
+              const side = Math.max(0, pr.left - r.left) + Math.max(0, r.right - pr.right);
+              if (po !== 'visible' && (up + side) > Math.min(r.width, r.height) * 0.25)
+                outside.push(tag + ' ← ' + tagOf(par) + (up > side ? ' 위로 ' : ' 옆으로 ')
+                             + Math.round(up + side) + 'px');
+            }
+            if (isOff(el, cs2)) { disabledOff.push(tag); continue; }   // 일부러 끈 것 — 가려짐이 아니다
+            const q = probe(el, r);
+            if (q.other && !q.self) occluded.push(tag + ' ← ' + tagOf(q.top));
+            else if (q.other >= 3) partly.push(tag + ' ' + q.other + '/9 ← ' + tagOf(q.top));
           }
-          return { ready: !!window.__rv, errorText: err,
+          /* ③ **눌러야 하는 것만이 아니라 「보여야 하는 것」도 가려진다.**
+             [Asset] 이 본 「초상화가 방과 글자를 가린다」가 그것이다.
+             방(캔버스)·대사 글자·안내 문구는 못 누르지만 **안 보이면 못 논다.** */
+          const SHOW = 'canvas,#dlgText,#dlgWho,[class*=hint],[id*=hint],[class*=quest]';
+          for (const el of document.querySelectorAll(SHOW)) {
+            const r = el.getBoundingClientRect();
+            if (r.width < 40 || r.height < 40 || !vis(el)) continue;
+            if (r.right < 0 || r.bottom < 0 || r.left > innerWidth || r.top > innerHeight) continue;
+            const q = probe(el, r);
+            if (q.other >= 4) partly.push('[보여야] ' + tagOf(el) + ' ' + q.other + '/9 ← ' + tagOf(q.top));
+          }
+          /* ② 같은 문구가 두 번 — [Asset] 이 본 것. 글자를 모아 겹치는 것을 센다. */
+          const seen = new Map(), dup = [];
+          for (const el of document.querySelectorAll('p,div,span,li,h1,h2,h3,button')) {
+            if (el.children.length || !vis(el)) continue;       // 잎 노드만
+            const t = (el.innerText || '').trim().replace(/\s+/g, ' ');
+            if (t.length < 8) continue;
+            const r = el.getBoundingClientRect();
+            if (!r.width || r.bottom < 0 || r.top > innerHeight) continue;
+            if (seen.has(t)) { if (!dup.includes(t)) dup.push(t.slice(0, 30)); }
+            else seen.set(t, 1);
+          }
+          /* ★ 「지금 꺼야 맞는 상태인가」를 같이 찍는다.
+             대사 중이면 진행 단추가 꺼져 있는 것이 정상이다. 이 한 칸이 그것을 가른다. */
+          const stage = document.querySelector('#stage');
+          const talking = !!(stage && stage.classList.contains('talking'));
+          return { ready: !!window.__rv, errorText: err, talking,
                    scrollX: document.documentElement.scrollWidth > innerWidth + 2,
-                   occluded, offscreen, tiny, clipped };
+                   occluded, partly, offscreen, tiny, clipped, outside,
+                   disabledOff, dupText: dup.slice(0, 5) };
         })()`);
       } catch { }
       state.ready = state.ready && !!p.__ready;
@@ -122,17 +195,10 @@ export const shootAll = {
       const part = await Promise.all(SIZES.slice(i, i + BATCH).map(one));
       out.push(...part.filter(Boolean));
     }
-    /* ★ 부팅을 못 본 것은 **혼자 다시** 띄운다(밤샘 규칙: 붉은 것은 단독으로 다시 잰다).
-       실제로 일곱을 한꺼번에 띄웠더니 두 개가 부팅에 실패했는데,
-       단독으로 재니 멀쩡했다. **부하였지 버그가 아니었다.** */
-    for (let k = 0; k < out.length; k++) {
-      if (out[k].__ready) continue;
-      const s2 = out[k].__size;
-      console.log(`  ↻ ${s2.id} 부팅을 못 봐서 혼자 다시 띄운다`);
-      try { await out[k].close(); } catch { }
-      const again = await one(s2);
-      if (again) out[k] = again;
-    }
+    /* ⚠ 여기서 물렀다 — 처음엔 **찍기 전에** 부팅 실패한 것을 혼자 다시 띄웠다.
+       그런데 재시도는 하나에 최대 4분이고 넷이 실패하니 **16분**, 제한을 넘겨
+       **한 장도 못 찍고 끝났다.** 재시도가 촬영을 통째로 잡아먹은 것이다.
+       ⇒ **먼저 찍고, 재시도는 그 뒤에** 한다. 무엇을 하든 **가진 것은 남긴다.** */
     return out;
 
     async function one(s) {
