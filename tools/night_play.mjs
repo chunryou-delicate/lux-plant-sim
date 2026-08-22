@@ -45,6 +45,12 @@ const SHOTS = !!arg('shots', false);
 /* ★ 해상도 축 — 사용자: *"핸드폰 화면비율별·기종별에서 다 잘되도록"*.
    같은 판을 크기만 바꿔 밟으면 「좁으면 못 누르는 자리」가 그 자리에서 난다. */
 const W = Number(arg('w', 390)), H = Number(arg('h', 844));
+/* ★★ **안내를 따르나 / 무시하나** — [Plan] 이 세운 경우의 수 축.
+   `--play guided` (기본) 퀘스트 사슬이 시키는 대로 시루를 늘린다
+   `--play minimal`         시루 하나로 버틴다 — 첫 판이 그랬고 136일에 게임오버였다
+   ⚠ 값을 안 바꾼다. **사람이 무엇을 하느냐**만 바꾼다. */
+const PLAY = String(arg('play', 'guided'));
+const SIRU_MAX = Number(arg('sirus', 16));
 const SIZE = `${W}x${H}`;
 const BASE = process.env.BYEOT_URL || 'http://localhost:8971';
 
@@ -57,8 +63,9 @@ wd.unref && wd.unref();
 const R = {
   seed: SEED, startedAt: new Date().toISOString(),
   /* ★ §did — **내가 무엇을 했나.** 이 칸이 없으면 위 ⚠ 의 병을 그대로 앓는다 */
+  play: PLAY,
   did: { next: 0, plant: 0, water: 0, harvest: 0, sow: 0, waterPot: 0, place: 0,
-         buySeed: 0, buyLamp: 0, dlgTap: 0, sheetOpen: 0 },
+         buySeed: 0, buyLamp: 0, buySiru: 0, placeSiru: 0, dlgTap: 0, sheetOpen: 0 },
   days: [],            // 날마다 한 줄
   dialog: [],          // 뜬 대사 (day, who, text)
   quests: [],          // 퀘스트가 열리고 닫힌 자리
@@ -269,11 +276,21 @@ const clearPops = async (rounds = 6) => {
 /* 상점에서 **한 가지를 주문한다** — 사람이 밟는 그 길 그대로:
    [상점] 탭 → 그 줄의 [주문] → 개수 팝업의 [주문].
    ⚠ 줄이 없거나(안 열린 물건) 잠겼으면 **아무것도 안 한다.** 재고를 꽂아 넣지 않는다. */
-const order = async (itemId) => {
+const order = async (itemId, want = 1) => {
   const hit = await ev(`(()=>{ const b=document.querySelector('#shopList [data-buy="${itemId}"]');
     if(!b || b.disabled) return false; b.click(); return true; })()`);
   if (!hit) return false;
   await sleep(200);
+  /* ★ 개수를 맞춘다 — [＋]를 눌러 올린다. **돈이 모자라면 [＋]가 잠기므로 거기서 멎는다**
+     (그것이 곧 「살 수 있는 만큼만 산다」다 — 돈을 만들어 내지 않는다).
+     ⚠ 시루 하나에 씨앗 하나가 든다. 개수를 안 맞추면 [다시 심기]가 매일 던진다
+       — 실제로 스무 날에 열다섯 번 던졌다. */
+  for (let k = 1; k < want; k++) {
+    const up = await ev(`(()=>{ const p=document.getElementById('buyPlus');
+      if(!p || p.disabled) return false; p.click(); return true; })()`);
+    if (!up) break;
+    await sleep(60);
+  }
   const went = await ev(`(()=>{ const p=document.getElementById('buyPanel');
     if(!p || p.getAttribute('aria-hidden')==='true') return false;
     const g=document.getElementById('buyGo'); if(!g || g.disabled){
@@ -325,6 +342,29 @@ const sweepHits = async () => {
   await ev(`window.__byeotSheet.open('plants')`, false); await settleSheet(true);
   for (const id of OPEN_IDS) await probeHit(id);
   if (!was) { await ev(`window.__byeotSheet.close()`, false); await settleSheet(false); }
+};
+
+/* 시루 하나를 방에 끌어다 놓는다 — 사람이 [가방]에서 끌어 내리는 그 손짓이다.
+   ⚠ 자리는 **빈 자리 중에서** 고른다. 이미 뭐가 있는 자리에 겹쳐 놓지 않는다. */
+const placeOneSiru = async () => {
+  const slot = await ev(`(()=>{ const S=window.__S();
+    const taken = new Set();
+    for (const p of (S.pots||[])) if (p.slotId) taken.add(p.slotId);
+    const b=(S.firstPlay&&S.firstPlay.beansprout)||{};
+    for (const p of (b.pots||[])) if (p && p.slotId) taken.add(p.slotId);
+    const free=(window.__io.light.room.slots||[]).map(x=>x.slotId).filter(id=>!taken.has(id));
+    return free[0]||''; })()`);
+  if (!slot) return false;
+  const ok = await ev(`(()=>{ const rv=window.__rv;
+    const c=document.getElementById('roomCanvas').getBoundingClientRect();
+    let sp=null; try { sp=rv.screenPosOf(${JSON.stringify(slot)}); } catch { return false; }
+    if(!sp) return false;
+    const th=document.getElementById('cropThumb');
+    window.__drag.begin('beansprout', th?th.src:'', {clientX:c.left+c.width*0.9, clientY:c.top+40});
+    window.__drag.move({clientX:c.left+sp.x, clientY:c.top+sp.y});
+    window.__drag.end(); return true; })()`);
+  if (ok) { R.did.placeSiru++; await sleep(600); await tapTalk(); }
+  return ok;
 };
 
 /* ══ 상태 한 줄 — 지어내지 않는다. 못 읽으면 null 을 둔다 ══════════════ */
@@ -410,18 +450,57 @@ for (let d = 1; d <= DAYS; d++) {
      ⚠⚠ 2026-08-18 부터 [주문]은 **개수 팝업**을 거친다(§buyPanel). 줄 단추만 누르고 말면
        팝업이 열린 채 아무것도 안 시켜지고, 그 뒤 [다시 심기]가 매일 「먼저 주문해 주세요」로
        던진다 — **첫 판이 여기서 통째로 선다.** 실제로 첫 굴림이 그랬다(씨앗 0 · 다시심기 160번 실패). */
-  if (before.seed === 0 || (before.lampOpen && before.lamp === 0)) {
+  /* ★★ **안내를 따르는 판은 시루를 늘린다**(§PLAY). 본 퀘스트 사슬이 5 → 8 → 16 을 시킨다.
+     첫 굴림은 하나로 버티다 136일에 게임오버였는데, 그건 **판이 그런 게 아니라 안 늘린 것**이다
+     ([Plan] 실측 「시루 1개 → 126일 파산」과 겹친다). 늘리는 판이 진짜 답이다.
+     ⚠ 살 수 있을 때만 산다 — 돈을 만들어 내지 않는다. 자리가 없으면 안 산다. */
+  /* ★★ **퀘스트가 지금 시키는 수**를 읽는다 — 「안내를 그대로 따른다」는 그런 뜻이다.
+     ⚠ 목표를 처음부터 16 으로 두면 **사람이 안 하는 짓**이 된다: 스무 날에 지갑
+       1,500,000 → 5,000 원이 됐다. 퀘스트는 5 → 8 → 16 으로 **차례로** 연다.
+     ⚠ 하루에 하나씩만 산다. 한꺼번에 사면 그것도 사람이 아니다.
+     ⚠ 못 읽으면 1 로 둔다 — 모르면 안 늘리는 쪽이 덜 해롭다(지어내지 않는다). */
+  let wantSiru = 1;
+  if (PLAY === 'guided') {
+    try {
+      const n = await ev(`(()=>{ try { const v=window.__questView();
+        const rows=[].concat(v&&v.open||[], v&&v.active||[], v&&v.list||[], v&&v.rows||[]);
+        let m=0; for (const q of rows) { const k=q&&q.need&&q.need.sirus;
+          if (Number.isInteger(k)) m=Math.max(m,k); }
+        return m; } catch { return 0; } })()`);
+      if (Number.isInteger(n) && n > 0) wantSiru = Math.min(n, SIRU_MAX);
+    } catch { }
+  }
+  const needSiru = (before.sirus || 0) < wantSiru;
+  /* 씨앗은 **시루 수만큼** 있어야 한 바퀴가 돈다 — 0 일 때만 사면 늘 모자란다 */
+  const needSeed = (before.seed || 0) < (before.sirus || 1);
+  if (needSeed || needSiru || (before.lampOpen && before.lamp === 0)) {
     await ev(`window.__byeotSheet.open('shop')`, false); await sleep(150);
-    if (before.seed === 0) { if (await order('bean_seed')) R.did.buySeed++; }
+    if (needSiru) { if (await order('siru', 1)) R.did.buySiru++; }   /* 하루에 하나씩 */
+    if (needSeed) { if (await order('bean_seed', Math.max(1, (before.sirus || 1) - (before.seed || 0)))) R.did.buySeed++; }
     if (before.lampOpen && before.lamp === 0) { if (await order('growlight')) R.did.buyLamp++; }
   }
+  /* 산 시루는 **가방에 온다.** 끌어다 놓아야 쓴다 — 안 놓으면 영영 가방에 남는다 */
+  if (PLAY === 'guided') { for (let k = 0; k < 3; k++) if (!(await placeOneSiru())) break; }
 
   await ev(`window.__byeotSheet.close()`, false); await settleSheet(false);
 
   /* ── 다음 날 ── */
-  const canNext = await ev(`(()=>{const n=document.getElementById('next'); return !!n && !n.disabled;})()`);
+  let canNext = await ev(`(()=>{const n=document.getElementById('next'); return !!n && !n.disabled;})()`);
   if (!canNext) {
-    R.blocked = `Day ${before.day} — [다음 날]이 안 눌린다(hardLock="${before.hardLock}")`;
+    /* ⚠ **곧바로 「막혔다」고 하지 않는다.** 사람은 한 번 더 해 본다 —
+       놓는 중이면 취소하고, 팝업이 떠 있으면 닫고, 대사가 있으면 넘긴다.
+       그러고도 안 되면 그때가 진짜 막힌 것이다. */
+    await ev(`(()=>{const b=document.getElementById('placeCancel'); if(b) b.click();})()`, false);
+    await clearPops(); await tapTalk(); await sleep(400);
+    canNext = await ev(`(()=>{const n=document.getElementById('next'); return !!n && !n.disabled;})()`);
+  }
+  if (!canNext) {
+    let why = null;
+    try { why = await ev(`(()=>{ const open=[...document.querySelectorAll('[aria-hidden="false"]')]
+      .map(e=>e.id).filter(Boolean);
+      return JSON.stringify({ open, stage:document.getElementById('stage').className,
+        lock:document.body.dataset.hardLock||'' }); })()`); } catch { }
+    R.blocked = `Day ${before.day} — [다음 날]이 안 눌린다 · ${why}`;
     R.ended = 'stuck'; await shot('stuck'); break;
   }
   await probeHit('next');            /* ★ 누르기 전에 찔러 본다(§probeHit) — 시트는 바로 위에서 닫았다 */
@@ -488,7 +567,7 @@ function finish() {
   R.endedAt = new Date().toISOString();
   const last = R.days[R.days.length - 1] || {};
   const lines = [];
-  lines.push(`■ 씨앗 ${SEED} — ${R.ended}${R.blocked ? ' · ' + R.blocked : ''}`);
+  lines.push(`■ 씨앗 ${SEED} · ${PLAY} — ${R.ended}${R.blocked ? ' · ' + R.blocked : ''}`);
   lines.push(`  달력 ${last.day ?? 0}일 · 튜토 ${last.tday ?? '—'}일 · 지갑 ${(last.cash ?? 0).toLocaleString()}원 · ` +
              `잎 ${last.leaves ?? '—'}장(무늬 ${last.varie ?? '—'}) · 수확 ${last.harvests ?? '—'}회 · 등 ${last.lamp ?? '—'}개`);
   lines.push(`  ★내가 한 일 — ${Object.entries(R.did).map(([k, v]) => k + ' ' + v).join(' · ')}`);
