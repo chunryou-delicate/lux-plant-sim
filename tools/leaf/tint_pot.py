@@ -32,11 +32,24 @@ MINT, PINK = 151.0, 343.0
 TARGET_S   = 0.13      # 회백 콘크리트가 「플라스틱」으로 안 보이게 낮게
 TARGET_V   = 0.638     # 위 표의 c1·c2 가 앉은 자리
 
+# ⚠⚠ **1판은 흙까지 칠했다.** 찍어서 눈으로 보고 잡았다 —
+#   민트 화분의 흙이 **초록**, 핑크 화분의 흙이 **적갈색**이 됐다. 흙은 갈색이어야 한다.
+#   까닭: 칠하기는 **텍스처 전체**를 한 색으로 덮는데, 이 화분은 **흙이 같은 텍스처 안에** 있다.
+#   ⇒ 흙만 빼 둔다. 흙은 **갈색이고 어둡다**(색상 25 · 채도 0.18 · 밝기 0.32 · 텍스처의 5.3%).
+#   ⚠ 화분 몸통은 거의 무채색(평균 채도 0.035)이라 이 조건에 안 걸린다. 그래서 갈린다.
+SOIL_H  = (5, 50)      # 갈색 띠
+SOIL_S  = 0.15         # 그보다 진하면 흙 (몸통은 0.035 라 안 걸린다)
+SOIL_V  = 0.60         # 그보다 어두우면 흙
+
 def tint(img, hue):
     a = np.asarray(img.convert('RGB'), dtype=float)/255.0
     h, s, v = to_hsv(a)
+    soil = (h >= SOIL_H[0]) & (h <= SOIL_H[1]) & (s > SOIL_S) & (v < SOIL_V)
     v2 = np.clip(v * (TARGET_V/max(v.mean(), 1e-6)), 0, 1)   # 밝기 무늬는 살리고 평균만 옮긴다
-    out = to_rgb(np.full_like(h, hue), np.full_like(s, TARGET_S), v2)
+    h2 = np.where(soil, h,  np.full_like(h, hue))            # ★ 흙은 제 색 그대로
+    s2 = np.where(soil, s,  np.full_like(s, TARGET_S))
+    v3 = np.where(soil, v,  v2)                              # 흙은 밝기도 안 건드린다
+    out = to_rgb(h2, s2, v3)
     return Image.fromarray((out*255+0.5).astype(np.uint8))
 
 def make(base, suf, hue):
