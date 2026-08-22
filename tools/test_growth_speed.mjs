@@ -229,24 +229,39 @@ check('D ★slow 밴드(계수 1.0) — 루프가 엔진 직접 굴림과 한 �
 });
 
 /* ══ E · ★곡선 불변 — 첫 플레이 안전선 ═══════════════════════════════════ */
-/* ★★ 2026-08-09 — **143·146 이 117·120 으로 움직였다.** 회귀가 아니라 박사님 확정이다.
-   잎 간격이 표가 됐다(`data/growth_tuning.json · leaf_interval.days` = 30·40·50·70·…) —
-   셋째 잎이 누적 30+40+50 = 유효 120일에 나고, 그 사흘 앞이 117 이다.
-   ★ 이 검사가 지키는 것은 그대로다: **코어는 곡선을 안 만진다.** 곡선은 여전히
-     「유효 생장일의 함수」이고, 코어가 정하는 것은 「며칠 만에 그 유효일에 닿나」뿐이다.
-     바뀐 것은 growth 창 안의 곡선 정본이지 그 경계선이 아니다.
-   ⚠ 표를 안 고쳤는데 이 검사가 깨지면 그때는 진짜 회귀다. */
-check('E ★곡선 안전선 — 117 → 3걸음 → 120 spear_furled (test_maturation G 와 같은 안전선)', () => {
+/* ★★ 2026-08-23 — **숫자를 지웠다.** 이 검사는 「117 → 120」을 손으로 박고 있었고,
+   2026-08-09 에 143·146 에서 그 값으로 **사람이 손으로 옮겨 적어야** 했다. 그게 낡는 자리다.
+   ⇒ 이제 못박는 것은 **숫자가 아니라 규칙**이다:
+       「셋째 잎이 나는 날은 표의 누적이고, 그 SPEAR_READY_DAYS 걸음 앞부터 spear_ready 다」
+     표(`data/growth_tuning.json · leaf_interval.days`)를 고치면 이 검사가 **저절로 따라간다.**
+     표를 안 고쳤는데 깨지면 그때가 진짜 회귀다 — 기계가 깨진 것이다.
+   ★ 모범은 바로 아래 E2 다. 거기도 표에서 유도한다.
+   ⚠ 기준선을 조용히 옮긴 것이 아니다 — 바꾸기 전 값(117·120)과 유도한 값이 같은 것을
+     먼저 찍어서 확인했다(2026-08-23 [growth]). 아래 info 가 그 값을 매번 찍는다. */
+check('E ★곡선 안전선 — 표에서 유도한 「새순 3걸음 전」 → 새순 (test_maturation G 와 같은 안전선)', () => {
+  const days = (TUNING.leaf_interval && TUNING.leaf_interval.days) || null;
+  assert.ok(Array.isArray(days) && days.length >= 3,
+    'growth_tuning.json 의 leaf_interval.days 가 없습니다 — 안전선을 유도할 정본이 없습니다');
+  /* ★ 숫자를 여기 베껴 적지 않는다 — plant_grow 가 내주는 창구에서 받는다(§2.9 ⑪ 자는 재라, 짓지 마라) */
+  assert.equal(typeof G.spearReadyDays, 'function',
+    'plant_grow 에 spearReadyDays() 가 없습니다 — 안전선 길이를 물을 창구가 없습니다');
+  const lead = G.spearReadyDays();
+  assert.ok(Number.isFinite(lead) && lead >= 1, `spearReadyDays() 가 이상합니다: ${lead}`);
+  const spearDay = days[0] + days[1] + days[2];      // 셋째 잎이 나는 유효 생장일 (누적)
+  const readyDay = spearDay - lead;                  // 그 앞 lead 걸음이 준비 구간
   try { G.plantSeed(92158); } catch { /* 3D 무대 없음 — 씨앗은 세워진다 */ }
   G.matResetAll();
-  G.setGrowth(117); G.setDailyLightSteady(SAMPLE.slow);
-  assert.equal(G.growthPhase().phaseId, 'spear_ready', '117 이 spear_ready 가 아닙니다');
+  G.setGrowth(readyDay); G.setDailyLightSteady(SAMPLE.slow);
+  assert.equal(G.growthPhase().phaseId, 'spear_ready', `${readyDay} 이 spear_ready 가 아닙니다`);
   const seen = [];
-  for (let i = 0; i < 3; i++) { G.setDailyLightSteady(SAMPLE.slow); G.advanceTo(G.calendarDay() + 1);
-                                seen.push(G.growthPhase().phaseId); }
-  assert.equal(G.growthDays(), 120, `3걸음 뒤 유효 생장이 120 이 아닙니다: ${G.growthDays()}`);
-  assert.equal(seen[2], 'spear_furled', `120 이 spear_furled 가 아닙니다: ${seen[2]}`);
-  info('곡선은 유효 생장일의 함수 그대로다 — 코어가 바꾼 것은 "며칠 만에 그 유효일에 닿나"뿐이다');
+  for (let i = 0; i < lead; i++) { G.setDailyLightSteady(SAMPLE.slow); G.advanceTo(G.calendarDay() + 1);
+                                   seen.push(G.growthPhase().phaseId); }
+  assert.equal(G.growthDays(), spearDay, `${lead}걸음 뒤 유효 생장이 ${spearDay} 가 아닙니다: ${G.growthDays()}`);
+  assert.equal(seen[lead - 1], 'spear_furled', `${spearDay} 이 spear_furled 가 아닙니다: ${seen[lead - 1]}`);
+  /* 마지막 걸음 전까지는 계속 준비 중이어야 한다 — 중간에 딴 단계가 끼면 기계가 깨진 것이다 */
+  for (let i = 0; i < lead - 1; i++)
+    assert.equal(seen[i], 'spear_ready', `${readyDay + i + 1} 이 spear_ready 가 아닙니다: ${seen[i]}`);
+  info(`안전선 ${readyDay} → ${lead}걸음 → ${spearDay} spear_furled (표 누적 ${days[0]}+${days[1]}+${days[2]})`);
 });
 
 /* ══ E2 · ★잎 간격표가 실제로 그 날에 잎을 낸다 (2026-08-09 신설) ═════════

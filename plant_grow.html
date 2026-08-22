@@ -3102,26 +3102,43 @@ function dayOfAge(g){
 //   ⚠ 첫 플레이 전용 오프셋이 아니다. 모든 새순 주기에 똑같이 적용된다.
 //   ⚠ 표시에만 쓴다. 형태·성장 곡선은 이 값을 보지 않는다.
 const SPEAR_READY_DAYS=3;
+// 읽기 전용 창구 — 검사가 이 값을 손으로 베껴 적지 않게 낸다(2026-08-23).
+// const 는 vm 컨텍스트 밖에서 안 보이므로 함수로 내야 한다. 세터는 두지 않는다.
+function spearReadyDays(){ return SPEAR_READY_DAYS; }
+// ★ 코드 폴백을 읽는 창구 셋 (2026-08-23 · tools/test_growth_fallback.mjs 가 쓴다).
+//   정본이 안 실렸을 때 쓰는 값들이라, 정본과 어긋나도 **정본이 안 실린 판에서만** 드러난다 —
+//   제일 늦게 발견되는 종류다. 검사가 글자로 훑지 않고 여기서 그 자리의 값을 받아 간다.
+//   ⚠ 정본이 실린 뒤에 부르면 덮인 값이 나온다. 폴백을 보려면 정본을 안 실은 채로 물어야 한다.
+function leafDaysFallback(){ return Array.isArray(LEAF_DAYS)? LEAF_DAYS.slice() : LEAF_DAYS; }
+function thresholdsFallback(){ return Object.assign({}, TH_MONSTERA); }
+function varieMultFallback(){ return VARIE_MULT; }
 // 그 날 화면에서 "지금 무슨 일이 벌어지는 중인가". 가장 늦게 난 생장점이 기준이다.
 function phaseAt(day){
   const d=Math.max(0, day), g=ageOf(d);
   if(g<P.seedEnd)   return 'seed';
-  if(g<P.sproutEnd) return 'sprout';
   const born=axisTimeline(g).filter(a=>a.birth<=g);
   const ax=born[born.length-1];
-  if(!ax || g<ax.leafBirth){                           // 새 생장점은 났는데 잎은 아직
+  // ★잎이 이미 났으면 그 잎이 이긴다 — 새싹 검사보다 **먼저** 본다(2026-08-23 정정).
+  //   예전에는 `g<P.sproutEnd` 를 위에 뒀는데, 첫 잎의 leafBirth(생장나이 36)가 sproutEnd(45)보다
+  //   앞이라 **잎이 이미 그려지고 있는데 단계는 '새싹'이라 말하는** 나흘이 생겼다.
+  //   표는 첫 잎을 유효 30 이라 하고 buildPlant 도 30 부터 그리는데 단계만 34 였다.
+  //   ⚠ 도착 45 짜리 모주는 이 구간을 안 지나서 티가 안 났다. **삽수는 유효 0 부터 걷는다.**
+  if(ax && g>=ax.leafBirth){
+    const m=Math.max(0, Math.min(1,(g-ax.leafBirth)/P.matSpan));
+    if(m<0.10)          return 'spear_furled';         // drawLeafStage 와 같은 값
+    if(m<0.22)          return 'spear_opening';
+    if(m<P.stageYoung)  return 'leaf_young';
+    if(m<P.stageMid)    return 'leaf_mid';
+    // ★시간이 다 됐다고 성숙잎이 아니다 — 굴림에 성공해야 넘어간다(2026-08-03 확정).
+    //   아직 못 넘었거나 중간잎으로 확정된 잎은 계속 중간잎이다.
+    return matureOf(ax.leafBirth)? 'leaf_mature' : 'leaf_mid';
+  }
+  if(g<P.sproutEnd) return 'sprout';                   // 아직 첫 잎 전이면 새싹
+  {                                                    // 새 생장점은 났는데 잎은 아직
     if(!ax) return 'spear_ready';
     const leafDay=Math.ceil(dayOfAge(ax.leafBirth));   // 말린 새순이 처음 보이는 날
     return (d >= leafDay-SPEAR_READY_DAYS)? 'spear_ready' : 'axis_rising';
   }
-  const m=Math.max(0, Math.min(1,(g-ax.leafBirth)/P.matSpan));
-  if(m<0.10)          return 'spear_furled';           // drawLeafStage 와 같은 값
-  if(m<0.22)          return 'spear_opening';
-  if(m<P.stageYoung)  return 'leaf_young';
-  if(m<P.stageMid)    return 'leaf_mid';
-  // ★시간이 다 됐다고 성숙잎이 아니다 — 굴림에 성공해야 넘어간다(2026-08-03 확정).
-  //   아직 못 넘었거나 중간잎으로 확정된 잎은 계속 중간잎이다.
-  return matureOf(ax.leafBirth)? 'leaf_mature' : 'leaf_mid';
 }
 // 코어용 — 표시 전용이다. 게임 판정은 advanceTo 의 grew·blocked 로 한다.
 //   progress01 은 '이 단계 안에서 얼마나 왔나'를 원비율 그대로 낸다(A안).

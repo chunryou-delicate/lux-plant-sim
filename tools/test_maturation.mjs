@@ -223,22 +223,38 @@ check('F 3.77 vs 12.16 — 상시 중간잎 수가 어두운 쪽이 더 많다',
 });
 
 /* ══ G · ★안전선 — 첫 플레이가 안 깨진다 ════════════════════════════════
-   ★★ 2026-08-09 — **값이 143·146 에서 117·120 으로 움직였다.** 회귀가 아니라 확정이다.
-     박사님이 잎 간격을 표로 정하셨고(`data/growth_tuning.json · leaf_interval.days`
-     = 30·40·50·70·100·150·200·300), 시간 축이 그 표를 따르게 바뀌었다
-     (plant_grow.html §ageOf — timeCurve 거듭제곱 곡선을 대신한다).
-   ⇒ 셋째 잎은 누적 30+40+50 = **유효 120일**에 난다. 그 사흘 앞(SPEAR_READY_DAYS=3)이 117 이다.
-   ⇒ 옛 146 은 timeCurve 0.72 가 만들던 값이었다. 표를 지우면 그 값으로 되돌아간다.
-   ⚠ 이 검사가 다시 깨지면 **먼저 표를 봐라.** 표를 안 고쳤는데 깨졌으면 그때가 회귀다. */
-check('G 안전선 — 117 → 적정광 3턴 → 120 spear_furled (잎 간격표 누적 30+40+50)', () => {
+   ★★ 2026-08-23 — **숫자를 지웠다.** 이 검사는 143·146 → 117·120 으로 **사람이 손으로**
+     옮겨 적어야 했다(2026-08-09). 손으로 옮기는 자리는 반드시 낡는다.
+   ⇒ 이제 못박는 것은 숫자가 아니라 **규칙**이다:
+       「셋째 잎은 표의 누적일에 나고, 그 spearReadyDays() 걸음 앞부터 spear_ready 다」
+     표(`data/growth_tuning.json · leaf_interval.days`)를 고치면 저절로 따라간다.
+     표를 안 고쳤는데 깨지면 그때가 회귀다 — 기계가 깨진 것이다.
+   ⚠ 기준선을 조용히 옮긴 것이 아니다. 바꾸기 전 값(117·120)과 유도값이 같은 것을
+     먼저 확인했다(2026-08-23 [growth]). 아래 정보 줄이 그 값을 매번 찍는다. */
+check('G 안전선 — 표에서 유도한 「새순 N걸음 전」 → 적정광 N턴 → spear_furled', () => {
+  /* 표는 정본 파일에서 그 자리에서 읽는다 — 이 자에는 TUNING 전역이 없다 */
+  const TUN = JSON.parse(fs.readFileSync(path.join(ROOT, 'data', 'growth_tuning.json'), 'utf8'));
+  const days = (TUN.leaf_interval && TUN.leaf_interval.days) || null;
+  assert.ok(Array.isArray(days) && days.length >= 3,
+    'growth_tuning.json 의 leaf_interval.days 가 없습니다 — 안전선을 유도할 정본이 없습니다');
+  /* ★ 숫자를 베껴 적지 않는다 — plant_grow 가 내주는 창구에서 받는다(§2.9 ⑪) */
+  assert.equal(typeof g.spearReadyDays, 'function',
+    'plant_grow 에 spearReadyDays() 가 없습니다 — 안전선 길이를 물을 창구가 없습니다');
+  const lead = g.spearReadyDays();
+  const spearDay = days[0] + days[1] + days[2];
+  const readyDay = spearDay - lead;
   g.seedTo(92158); g.matResetAll();
-  g.setGrowth(117); g.setDailyLightSteady(3.77);
-  assert.equal(g.growthPhase().phaseId, 'spear_ready', '117 이 spear_ready 가 아닙니다');
+  g.setGrowth(readyDay); g.setDailyLightSteady(3.77);
+  assert.equal(g.growthPhase().phaseId, 'spear_ready', `${readyDay} 이 spear_ready 가 아닙니다`);
   const seen = [];
-  for (let i = 0; i < 3; i++) { g.setDailyLightSteady(3.77); g.advanceTo(g.calendarDay() + 1);
-                                seen.push(g.growthPhase().phaseId); }
-  assert.equal(g.growthDays(), 120, `3턴 뒤 유효 생장이 120 이 아닙니다: ${g.growthDays()}`);
-  assert.equal(seen[2], 'spear_furled', `120 이 spear_furled 가 아닙니다: ${seen[2]}`);
+  for (let i = 0; i < lead; i++) { g.setDailyLightSteady(3.77); g.advanceTo(g.calendarDay() + 1);
+                                   seen.push(g.growthPhase().phaseId); }
+  assert.equal(g.growthDays(), spearDay, `${lead}턴 뒤 유효 생장이 ${spearDay} 가 아닙니다: ${g.growthDays()}`);
+  assert.equal(seen[lead - 1], 'spear_furled', `${spearDay} 이 spear_furled 가 아닙니다: ${seen[lead - 1]}`);
+  for (let i = 0; i < lead - 1; i++)
+    assert.equal(seen[i], 'spear_ready', `${readyDay + i + 1} 이 spear_ready 가 아닙니다: ${seen[i]}`);
+  results.push(['INFO', `  안전선 ${readyDay} → ${lead}턴 → ${spearDay} spear_furled `
+                      + `(표 누적 ${days[0]}+${days[1]}+${days[2]} · 손으로 박은 숫자 없음)`]);
 });
 
 /* ══ 부수 — 소급 뒤집힘이 사라졌는가 (고치기 전의 실제 동작) ═════════════ */
