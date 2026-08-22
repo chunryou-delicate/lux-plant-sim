@@ -1236,3 +1236,87 @@ node tools/test_growth_speed.mjs        # 저장소 자 — E 가 117→120 을 
 경계 전수는 `tools/test_growth_speed.mjs · loadGrowth()` 를 그대로 베껴 쓰면 된다.
 `phaseAt(d)` 를 0~300 훑고 값이 바뀌는 날만 찍으면 위 표가 나온다.
 
+---
+
+## 20. 복제된 값과 그 짝을 지키는 검사 — **[growth] 실측** (2026-08-23)
+
+총괄 요청으로 `team-map §8-3` 표를 **다시 쟀다.** 그 표는 총괄이 여러 창 보고를 모아 만든 것이라
+실측이 아니었고, 오늘 그중 둘이 낡았다. **고치지 않았다 — 재고 주인만 짚는다.**
+
+### 재는 법
+
+밸런스 JSON 의 정수값(1,000 이상)을 전부 모아 `src/game/**` 의 리터럴과 맞춰 봤다.
+주석 줄은 뺐다. 후보가 나오면 **눈으로 확인**했다 — 글자로 훑은 것을 그대로 믿지 않는다(§2.9 ⑮).
+코드 폴백은 글자가 아니라 `plant_grow.html` 을 **실제로 돌려** 그 자리의 값을 읽었다.
+
+### 표 — 갱신본
+
+| 값 | 몇 벌 | 지키는 검사 | 판정 |
+|---|---|---|---|
+| 조도 임계값 7개 | **3벌** — `light_thresholds.json` · `growth_tuning.json` · `plant_grow.html:1049` | `test_growth_fallback C·E` | ✅ **셋이 한 고리로 이어졌다** |
+| 잎 간격표 | **2벌** — `growth_tuning.json` · `plant_grow.html:2311` | `test_growth_fallback B` | ✅ 🔴 해소 |
+| 무늬 등급값 4개 | **2벌** — `varie_grades.json` · `shop.js:1056~1088` | `test_variegrade A-2` | ✅ **이미 지켜지고 있었다** |
+| 반지하 월세 | **2벌** — `homes.json banjiha.rent` · `tutorial.js:85` | `test_econ` (55행) | ✅ **이미 지켜지고 있었다** |
+| 전기 요금·와트 6칸 | **2벌** — `electricity.json` · `tutorial.js` | `test_elec A` | ✅ |
+| **등 값 3개** | **2벌** — `electricity.json lamp.pricesByOrder` · `tutorial.js:183 lampPricesWon` | **없음** | 🔴 **새로 찾음** |
+| **이사비 200만** | **3벌** — `homes.json oneroom.moveCost` · `tutorial.js:59` · **`dialogue.js:863` 대사 안** | **없음** | 🔴 |
+
+### 표에서 고쳐야 할 것 넷
+
+1. **조도 임계값 «(일부)» → 완결.** 예전 표는 `test_growth_speed C` 만 적었는데 그건
+   **코어의 `judgeDLI` 와 `bandOf` 가 같은 답을 내는가**를 본다(0~20 DLI 전수). 값의 짝은 아니다.
+   `judgeDLI(dli, th)` 는 `th` 를 **인자로 받으므로 넷째 벌이 아니다** — 확인했다.
+   지금은 `test_growth_fallback` 이 두 고리를 잇는다: **C** 가 `plant_grow.html:1049` ↔ `growth_tuning.json`,
+   **E** 가 `growth_tuning.json` ↔ `light_thresholds.json`. 셋이 한 줄로 묶였다.
+2. **잎 간격표 🔴 → ✅** (`test_growth_fallback B`). 폴백을 일부러 어긋내 FAIL 이 나는 것까지 봤다.
+3. **월세 «없음 🔴» 은 틀렸다.** `test_econ:55` 가 `TUTORIAL_RULES.rentWon` ↔ `homes.json banjiha.rent` 를 지킨다.
+   그리고 *"`dialogue.js:1050` 에서 몬이가 한 판에서 두 값을 말했다"* 도 **사실이 아니다** —
+   그 줄은 **주석**이고, 내용은 정반대다: *"월세 얘기를 안 썼다 … 걸리기 전에 쓰면
+   「몬이가 틀린 셈을 말하는」 자리가 또 하나 생긴다."* **안 쓰기로 한 것**이지 갈린 것이 아니다.
+   대사 전체를 훑어 월세 금액을 말하는 줄은 **0건**이었다.
+4. **무늬 표 사본은 이미 지켜지고 있었다.** `shop.js` 에 사본이 있는 것은 맞지만
+   `test_variegrade A-2`(*"밑값과 파일이 한 톨도 안 다르다"*)가 그 짝을 본다.
+   ⇒ ★ **「사본이 있다」와 「안 지켜진다」는 다른 이야기다.** 표에 사본만 적으면 멀쩡한 자리가 붉게 보인다.
+
+### 새로 찾은 🔴 둘
+
+**㉠ 등 값 3개 — `electricity.json lamp.pricesByOrder` ↔ `tutorial.js:183 lampPricesWon`**
+```
+electricity.json  lamp.priceWon 120000 · lamp.pricesByOrder [120000, 80000, 150000]
+tutorial.js       lampPriceWon  120000 · lampPricesWon      [120000, 80000, 150000]
+test_elec A       kwhWon · lampHours · lampPriceWon · lampWattsByOrder · tariffTiers · baseKwhPerMonth
+                  ⇒ pricesByOrder 만 빠져 있다
+```
+지금은 같다. 다만 **집게등·거치등 값이 갈리면 아무도 안 잡는다.** 주인은 **[core]**(`tutorial.js`)이고
+`test_elec A` 에 한 줄 더 넣으면 끝난다.
+
+**㉡ 이사비 200만 — 3벌, 그중 하나가 대사 안**
+```
+homes.json     homes[1].moveCost 2000000
+tutorial.js:59 moveOutCostWon  2_000_000
+dialogue.js:863  «이백만 원. 보증금이랑 첫 달 월세랑 이삿짐값.»
+```
+앞 둘의 짝을 보는 검사가 **없다**(`tools/test_*` 는 `TUTORIAL_RULES.moveOutCostWon` 을 **읽기만** 한다).
+셋째는 **대사 안의 숫자**라 §8-3 개정문대로 검사가 못 미친다 —
+`dialogue.js:830` 이 *"이사비 금액을 안 박았다 … 두 곳이"* 라며 **두 번째 자리는 이미 피했는데**,
+`shortMoney` 의 그 한 줄은 남아 있다. 주인은 **[core]**(코드 짝)와 **[Plan]**(대사 문구)이다.
+
+### ⏸ 갈린 것이 아니라 미구현인 것 하나
+
+`homes.json oneroom.rent = 350000` 인데 `tutorial.js:92 oneroomRentWon = null` 이라 원룸에서도 20만이 나간다.
+**값이 갈린 것이 아니라 부르는 데가 없는 것**이다(`START-HERE §6` 의 ⚠ 와 같은 건).
+🔴 로 세면 안 된다 — 검사를 붙여도 «다르다»만 나오고 고칠 것은 검사가 아니다.
+
+### 「모범」 딱지에 붙일 단서
+
+`test_elec` 은 여전히 모범이 맞다. 다만 **B 는 손으로 늘려야 하는 자리**를 안고 있다 —
+주석이 *"넷째 등이 들어오면 이 줄도 같이 늘려야 한다"* 고 스스로 적어 뒀다.
+와트 **값**이 바뀌는 것은 프리셋에서 읽어 저절로 따라오지만, 등이 **하나 더 늘면** 안 따라온다.
+2026-08-22 에 정확히 그래서 **멀쩡한 코드를 빨갛게 찍었다.**
+⇒ 등 **개수**도 프리셋에서 세면 그 자리가 없어진다. 주인은 **[core]**.
+
+### 이 절에서 쓴 자
+
+`tools/test_growth_fallback.mjs`(신설) · `tools/test_variegrade.mjs` · `tools/test_econ.mjs` ·
+`tools/test_elec.mjs` — 전부 그 자리에서 돌려 보고 적었다. 표의 값은 옮겨 적지 않고 매번 다시 읽었다(§2.9 ⑰).
+
