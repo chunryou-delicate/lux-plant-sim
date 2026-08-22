@@ -465,9 +465,10 @@ for (let d = 1; d <= DAYS; d++) {
   if (PLAY === 'guided') {
     try {
       const n = await ev(`(()=>{ try { const v=window.__questView();
-        const rows=[].concat(v&&v.open||[], v&&v.active||[], v&&v.list||[], v&&v.rows||[]);
-        let m=0; for (const q of rows) { const k=q&&q.need&&q.need.sirus;
-          if (Number.isInteger(k)) m=Math.max(m,k); }
+        let m=0; for (const q of (v&&v.all)||[]) {
+          if (q.state === 'locked') continue;              /* 아직 안 열린 줄은 안 따른다 */
+          const k = q.need && q.need.sirus;
+          if (Number.isInteger(k)) m = Math.max(m, k); }
         return m; } catch { return 0; } })()`);
       if (Number.isInteger(n) && n > 0) wantSiru = Math.min(n, SIRU_MAX);
     } catch { }
@@ -482,7 +483,19 @@ for (let d = 1; d <= DAYS; d++) {
     if (before.lampOpen && before.lamp === 0) { if (await order('growlight')) R.did.buyLamp++; }
   }
   /* 산 시루는 **가방에 온다.** 끌어다 놓아야 쓴다 — 안 놓으면 영영 가방에 남는다 */
-  if (PLAY === 'guided') { for (let k = 0; k < 3; k++) if (!(await placeOneSiru())) break; }
+  /* ⚠ **놓을 시루가 있을 때만 놓는다.** 없는데 끌면 손짓만 나가고 아무 일도 안 난다 —
+     실측으로 마흔 날에 **120번**이 그렇게 헛돌았다(시간만 먹는다). */
+  if (PLAY === 'guided') {
+    for (let k = 0; k < 3; k++) {
+      const have = await ev(`(()=>{ const S=window.__S();
+        const b=(S.firstPlay&&S.firstPlay.beansprout)||{};
+        const loose=((b.pots||[]).filter(p=>p&&!p.slotId).length)
+                  + ((S.shop&&S.shop.stock&&S.shop.stock.siru)||0);
+        return loose > 0; })()`);
+      if (!have) break;
+      if (!(await placeOneSiru())) break;
+    }
+  }
 
   await ev(`window.__byeotSheet.close()`, false); await settleSheet(false);
 

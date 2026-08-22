@@ -743,6 +743,11 @@ export function questView(S, snapshot) {
     if (!isDone) { try { isOpen = !!q.opens(s, { ...ctx, q }); } catch { isOpen = false; } }
     if (isOpen) open.push(q.id);
     all.push({ id: q.id, ko: q.ko, todo: questTodo(q, s), why: q.why, teaches: q.teaches,
+               /* ★ 2026-08-23 — **목표 수를 그대로 실어 준다.** 보기에는 `todo` 문장만 있어서
+                  밖에서 「몇 개까지 늘리라는 것인가」를 알려면 **문장을 파싱**해야 했다.
+                  숫자를 글에서 캐내는 것은 문구가 바뀌는 날 조용히 깨진다(§2.8 의 뒷면이다).
+                  ⚠ 없는 줄은 `null` 이다 — 0 으로 메꾸지 않는다. */
+               need: q.need || null,
                /* ★ 체력이 아닌 보상의 이름. 없으면 화면이 stamina 에서 「체력 +N」을 짓는다 */
                reward: q.reward || null,
                stage: stageOfQuest(q), index: i, speaks: q.speaks !== false,
