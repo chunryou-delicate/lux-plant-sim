@@ -31,6 +31,11 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { launch, sleep } from './test_cdp.mjs';
+/* ★★ [Char] 이 재는 부분만 떼어 내보내 줬다(`bb918c4`) — **한 벌을 같이 쓴다.**
+   ⚠ `shootAll.open()` 은 **안 쓴다.** 그건 제 페이지를 따로 띄우는데, 그러면
+     진행은 내 페이지에서 돌고 그림은 남의 페이지에서 찍혀 **같은 순간이 아니게 된다.**
+   ⇒ `settle`(움직임이 멎기를 기다림) 과 `saveSidecar`(곁파일) 만 가져다 **내 페이지로** 부른다. */
+import { settle as settleAnim, saveSidecar } from './shoot_screens.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const OUTROOT = path.join(ROOT, 'tools', '_out', 'night');
@@ -116,7 +121,16 @@ const shot = async (tag) => {
   if (!SHOTS) return;
   const no = SHOT_NO[tag] != null ? SHOT_NO[tag] : (40 + (++shotSeq));
   const f = path.join(OUT, `${String(no).padStart(3, '0')}_d${String(R.today).padStart(3, '0')}_${tag}.png`);
-  try { await page.shot(f); R.shots.push({ day: R.today, tag, file: path.basename(f) }); } catch { }
+  /* ★ 찍기 전에 **움직임이 멎기를 기다린다** — 연출 중에 찍으면 그림도 판정도 헛것이 된다.
+     `getAnimations()` 가 없는 브라우저면 0 을 돌려주므로 그냥 안 기다린다(안전하다). */
+  try { await settleAnim(page); } catch { }
+  try {
+    await page.shot(f);
+    R.shots.push({ day: R.today, tag, file: path.basename(f) });
+    /* 곁파일 — 그 순간의 `ready·talking·occluded·disabledOff·errorLines…` 를 같은 이름 .json 으로.
+       ⚠ 그림만 남기면 「왜 이상한가」를 사람이 눈으로 다시 찾아야 한다. */
+    try { await saveSidecar(page, f, { day: R.today, seed: SEED, tag, play: PLAY }); } catch { }
+  } catch { }
 };
 
 /* ══ ★★★ **누르기 전에 찔러 본다** ([Char] 방식 · `document.elementFromPoint`) ══════════
