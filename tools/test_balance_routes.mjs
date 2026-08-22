@@ -25,7 +25,7 @@ import vm from 'node:vm';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createProfileLight } from '../src/game/room_profile.js';
-import { newState, pot0, setPotSlot, resowCrop, waterCrop, ARRIVAL } from '../src/game/state.js';
+import { newState, pot0, setPotSlot, resowCrop, waterCrop, waterPot, ARRIVAL } from '../src/game/state.js';
 import { nextDay, harvestCrop, DEFAULT_MS_PER_DAY, FAST_MODE_MAX_DAYS, JUMP_MAX_DAYS } from '../src/game/loop.js';
 import { firstPlayRulesFromBalance, placeBeansprout, moveMonstera, beansproutReady } from '../src/game/first_play.js';
 import { seasonAt, seasonDayAt, buyLamp, canMoveOut, moveOut, varieView,
@@ -214,6 +214,12 @@ function play(opt = {}) {
     /* 물 — 첫 플레이 동안은 손으로(jump 는 물 대기에서 선다), 그 뒤 배속은 자동이다(loop §물주기) */
     if (!S.firstPlay.completed) taps++;
     try { waterCrop(S); } catch { /* 아직 안 놓은 시루 */ }
+    /* ★★ 2026-08-23 — **모주에도 물을 준다.** 여기 이 줄이 없었다.
+       마른 날은 유효 생장일이 안 오르므로(§2.9-⑥) 도착값 45 에서 54 로 +9 만 오르고
+       300일이 지났다. 잎이 1장에서 안 늘어 **A(등 없이)와 B(등 1개)가 완전히 같아졌고**,
+       그래서 이 자가 「식물등이 아무것도 안 산다」고 말하고 있었다. **밸런스가 아니라 자였다.**
+       ⚠ `banjiha_routes` 는 네 군데에서 이것을 부른다. 이 자만 안 불렀다. */
+    try { waterPot(S); } catch { /* 아직 없거나 안 놓은 화분 — 그런 날은 물이 안 든다 */ }
 
     const turn = nextDay(S, io).turn;
     if (S.firstPlay.completed) ffDays++; else jumpDays++;
