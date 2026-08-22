@@ -208,6 +208,8 @@ def load_roles():
                 continue
             if 'source' in t or '원료' in t:
                 roles[rel(r)] = '원료'
+            elif 'archive' in t or '보관' in t:
+                roles[rel(r)] = '보관'      # 일부러 안 쓰는 것 — 버린 판·중복·시험물
             elif 'viewer' in t or '뷰어' in t:
                 roles[rel(r)] = '뷰어용'
     return roles
@@ -237,8 +239,8 @@ def classify(base):
 
         # ② 폴더가 「원료」라고 밝혔으면 코드가 안 부르는 것이 정상이다
         role = role_of(d, roles)
-        if role == '원료':
-            res['원료(선언됨)'].append((r, ['%s/%s' % (d, ROLE_FILE)]))
+        if role in ('원료', '보관'):
+            res['%s(선언됨)' % role].append((r, ['%s/%s' % (d, ROLE_FILE)]))
             continue
 
         # ★ 「쓰임」의 근거는 **코드만** 친다. 문서에 이름이 나오는 것은 언급이지 사용이 아니다.
