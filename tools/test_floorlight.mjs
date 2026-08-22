@@ -84,6 +84,17 @@ function makeEngine(overrideSkyView) {
     weatherBalance: dataOf('balance/weather.json')
   });
 }
+/* 방 데이터를 통째로 갈아끼운 엔진 — `makeEngine` 은 skyViewK 만 만진다.
+   ⑤(자리 이름 안정) 가 「가구를 끼운 방」을 지어 보려면 이쪽이 필요하다. */
+function makeEngineWith(houseRooms) {
+  return createLightEngine({
+    houseRooms, winPresets: dataOf('window_presets.json').presets,
+    doorPresets: dataOf('door_presets.json').presets, finishes: dataOf('room_finishes.json'),
+    furnPresets: dataOf('furniture_presets.json').presets, lightPresets: dataOf('lighting_presets.json'),
+    shadePresets: dataOf('shading_presets.json'), lightTh: TH,
+    weatherBalance: dataOf('balance/weather.json')
+  });
+}
 const eng = makeEngine();
 console.error = realError; console.warn = realWarn;
 
@@ -401,12 +412,40 @@ check('④ 온실 — 과광선(monstera max 16.0)을 안 넘는다', () => {
   eng.build('oneroom');
 });
 
-/* ══ 다른 방의 임시 uid — 숫자로 남긴다(이 창이 고칠 것은 아니다) ══════ */
-check('⏸ 남은 임시 uid — 원룸은 0, 나머지는 아직 남았다(인계)', () => {
-  assert.equal(SC.oneroom.tempSlots, 0, '원룸에 임시 uid 가 남았습니다');
-  assert.equal(SC.banjiha.tempSlots, 0);
-  for (const id of ['classroom', 'tworoom', 'apartment', 'greenhouse'])
-    info(`${SC[id].label}: 임시 uid 슬롯 ${SC[id].tempSlots}/${SC[id].slots}칸 — 프로파일을 못 뽑는다`);
+/* ══ ⑤ 자리 이름이 흔들리지 않는다 ═════════════════════════════════════
+   ★★ 2026-08-23 — **여섯 방 전부 uid 를 박았다.** 그 전에는 반지하·원룸만이었고
+     나머지 넷은 `TEMP~` 였다(온실 64/64 · 아파트 83/83 · 학원 128/128 · 투룸 20/20).
+
+   무엇이 문제였나 — `light_adapter` 는 uid 가 없으면 **로드 순번**으로 이름을 짓는다.
+   곧 `house_rooms.json` 에 가구를 **하나만 끼워도 뒤 이름이 통째로 밀린다.**
+   화분은 `slotId` 로 자리를 기억하므로, 밀리는 순간 **어느 자리에 있었는지를 잃는다.**
+   실제로 그런 적이 있다(`oneroom-shelf-15:5` → `-6:5`).
+
+   ⚠ **여기서 「TEMP~ 가 없다」만 재면 모자란다** — 그건 이름이 예쁜지를 볼 뿐이다.
+     뜻은 **「가구를 끼워도 안 밀린다」**이므로 **실제로 끼워 보고** 잰다.
+     방 맨 앞에 가구를 하나 넣는다. 순번으로 짓는 이름이라면 여기서 전부 밀린다.
+   ⚠ 한 번 박은 uid 는 바꾸지 마라 — 세이브가 그 이름으로 자리를 찾는다. */
+check('⑤ ★ 여섯 방 전부 자리 이름이 안정하다 — 가구를 끼워도 안 밀린다', () => {
+  const HR = dataOf('house_rooms.json');
+  const bad = [];
+  for (const id of ROOMS) {
+    assert.equal(SC[id].tempSlots, 0,
+      `★ ${SC[id].label} 에 임시 uid 슬롯이 ${SC[id].tempSlots}칸 있습니다 — ` +
+      `house_rooms.json §${id}.furniture 의 그 가구에 uid 를 박으십시오`);
+    const before = eng.build(id).slots.map(s => s.slotId);
+    const hr = JSON.parse(JSON.stringify(HR));
+    hr.rooms[id].furniture.unshift(
+      { preset: 'shelf_stool_1', uid: 'PROBE-first', x: 0, z: 0, rot: 0 });
+    const e2 = makeEngineWith(hr);
+    const after = e2.build(id).slots.map(s => s.slotId)
+      .filter(i => !String(i).startsWith('PROBE-'));
+    const moved = before.filter((v, i) => v !== after[i]);
+    if (moved.length) bad.push(`${SC[id].label}: ${moved.length}칸 밀림 (예: ${moved.slice(0, 2).join(' · ')})`);
+  }
+  assert.equal(bad.length, 0,
+    `★ 가구를 하나 끼웠더니 자리 이름이 밀렸습니다:\n      ${bad.join('\n      ')}`);
+  info(`여섯 방 ${ROOMS.reduce((a, id) => a + SC[id].slots, 0)}칸 — 임시 uid 0 · 가구를 끼워도 이름 그대로`);
+  eng.build('oneroom');
 });
 
 /* ---- 출력 ---- */

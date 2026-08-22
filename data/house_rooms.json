@@ -438,6 +438,7 @@
       }
     },
     "apartment": {
+      "_uid_note": "★ 2026-08-23 — 가구마다 uid 를 못박았다. 없으면 light_adapter 가 로드 시점 순번으로 TEMP~ 이름을 붙이는데, 그러면 **가구를 하나만 편집해도 slotId 가 통째로 바뀐다**(화분이 어느 자리에 있었는지를 잃는다). 이름 규칙은 {방}-{프리셋}, 겹치면 -2·-3. ⚠ 한 번 박은 uid 는 바꾸지 마라 — 세이브가 이 이름으로 자리를 찾는다. ⚠ 좌표·프리셋은 한 톨도 안 건드렸다(uid 줄만 늘었다).",
       "label": "아파트",
       "light": "좋음",
       "floorNo": 12,
@@ -554,157 +555,186 @@
       "furniture": [
         {
           "preset": "shelf_ladder_4tier",
+          "uid": "apartment-shelf-ladder-4tier",
           "x": -5,
           "z": -4.66
         },
         {
           "preset": "shelf_etagere_3tier",
+          "uid": "apartment-shelf-etagere-3tier",
           "x": -4.2,
           "z": -4.73
         },
         {
           "preset": "plant_step_3",
+          "uid": "apartment-plant-step-3",
           "x": -3.35,
           "z": -4.73
         },
         {
           "preset": "shelf_etagere_3tier",
+          "uid": "apartment-shelf-etagere-3tier-2",
           "x": -1.15,
           "z": -4.73
         },
         {
           "preset": "shelf_growrack_2tier",
+          "uid": "apartment-shelf-growrack-2tier",
           "x": -0.3,
           "z": -4.695
         },
         {
           "preset": "plant_step_3",
+          "uid": "apartment-plant-step-3-2",
           "x": 0.75,
           "z": -4.73
         },
         {
           "preset": "shelf_etagere_3tier",
+          "uid": "apartment-shelf-etagere-3tier-3",
           "x": 3.2,
           "z": -4.73
         },
         {
           "preset": "plant_step_3",
+          "uid": "apartment-plant-step-3-3",
           "x": 4.1,
           "z": -4.73
         },
         {
           "preset": "plant_pedestal",
+          "uid": "apartment-plant-pedestal",
           "x": 4.9,
           "z": -4.74
         },
         {
           "preset": "bed_double",
+          "uid": "apartment-bed-double",
           "x": -4.3,
           "z": -1.35
         },
         {
           "preset": "nightstand",
+          "uid": "apartment-nightstand",
           "x": -3.2,
           "z": -2.1
         },
         {
           "preset": "wardrobe",
+          "uid": "apartment-wardrobe",
           "x": -5.35,
           "z": 0.28,
           "rot": 180
         },
         {
           "preset": "dresser",
+          "uid": "apartment-dresser",
           "x": -4.35,
           "z": 0.32,
           "rot": 180
         },
         {
           "preset": "tv",
+          "uid": "apartment-tv",
           "x": -0.1,
           "z": -3.05
         },
         {
           "preset": "table_round",
+          "uid": "apartment-table-round",
           "x": -0.1,
           "z": -1.95
         },
         {
           "preset": "sofa_blush",
+          "uid": "apartment-sofa-blush",
           "x": -0.1,
           "z": -0.75,
           "rot": 0
         },
         {
           "preset": "lamp_floor",
+          "uid": "apartment-lamp-floor",
           "x": 1.75,
           "z": -1
         },
         {
           "preset": "bed_single",
+          "uid": "apartment-bed-single",
           "x": 4.85,
           "z": -1.7,
           "rot": 90
         },
         {
           "preset": "desk",
+          "uid": "apartment-desk",
           "x": 3.1,
           "z": -0.55
         },
         {
           "preset": "chair",
+          "uid": "apartment-chair",
           "x": 3.1,
           "z": -1.25
         },
         {
           "preset": "shelf",
+          "uid": "apartment-shelf",
           "x": 5.45,
           "z": 0.2,
           "rot": 180
         },
         {
           "preset": "shoe_cabinet",
+          "uid": "apartment-shoe-cabinet",
           "x": -5.35,
           "z": 2.05,
           "rot": 180
         },
         {
           "preset": "shelf_low",
+          "uid": "apartment-shelf-low",
           "x": 4.9,
           "z": 2.05,
           "rot": 180
         },
         {
           "preset": "picture_frame",
+          "uid": "apartment-picture-frame",
           "x": -1,
           "z": 0.6,
           "y": 1.55
         },
         {
           "preset": "fridge",
+          "uid": "apartment-fridge",
           "x": -1.9,
           "z": 4.52,
           "rot": 180
         },
         {
           "preset": "kitchen",
+          "uid": "apartment-kitchen",
           "x": -0.75,
           "z": 4.53,
           "rot": 180
         },
         {
           "preset": "table",
+          "uid": "apartment-table",
           "x": 1.45,
           "z": 4.15,
           "rot": 90
         },
         {
           "preset": "chair",
+          "uid": "apartment-chair-2",
           "x": 0.55,
           "z": 4.15
         },
         {
           "preset": "shelf_etagere_3tier",
+          "uid": "apartment-shelf-etagere-3tier-4",
           "x": 0.6,
           "z": 4.7
         }
@@ -771,6 +801,7 @@
       }
     },
     "classroom": {
+      "_uid_note": "★ 2026-08-23 — 가구마다 uid 를 못박았다. 없으면 light_adapter 가 로드 시점 순번으로 TEMP~ 이름을 붙이는데, 그러면 **가구를 하나만 편집해도 slotId 가 통째로 바뀐다**(화분이 어느 자리에 있었는지를 잃는다). 이름 규칙은 {방}-{프리셋}, 겹치면 -2·-3. ⚠ 한 번 박은 uid 는 바꾸지 마라 — 세이브가 이 이름으로 자리를 찾는다. ⚠ 좌표·프리셋은 한 톨도 안 건드렸다(uid 줄만 늘었다).",
       "label": "학원교실",
         "_slot_cell_warning": "⚠ 학원교실을 열 때 제일 먼저 읽을 것 — 창턱(7.20×1.00) 자리 112칸이 겨눠도 안 붙는다(SLOT_GOVERN_R 0.04 밖). furniture_pastel §tierSlots 의 margin 갈래를 **일부러** 쓰는 옛 설계인데, CORE 가 정본을 뒤집어(room_view §snapAxis \"이제 칸이 정본이고 놓는 자리가 칸 한가운데\") 그 설계가 지금 정본과 싸운다. ★ 고치면 자리 수가 움직인다 — 칸 격자로는 29×4=116칸인데 지금 자리는 112다. 자리 수는 밸런스라 고장 고치기가 아니라 설계 결정이다. 2026-08-23 에 일부러 안 건드렸다(반지하 먼저 방침, 반지하는 0칸). 자세한 것은 docs/engine/slot_cell_align.md · docs/engine/rooms_spec.md §학원교실.",
       "light": "좋음",
@@ -824,6 +855,7 @@
       "furniture": [
         {
           "preset": "blackboard",
+          "uid": "classroom-blackboard",
           "x": -5.38,
           "z": 0,
           "y": 1.55,
@@ -831,6 +863,7 @@
         },
         {
           "preset": "bulletin_board",
+          "uid": "classroom-bulletin-board",
           "x": -3.93,
           "z": -0.4,
           "y": 1.5,
@@ -838,78 +871,92 @@
         },
         {
           "preset": "lectern",
+          "uid": "classroom-lectern",
           "x": -3.6,
           "z": 1.6,
           "rot": -90
         },
         {
           "preset": "desk_student_2",
+          "uid": "classroom-desk-student-2",
           "x": -2.4,
           "z": 0.6
         },
         {
           "preset": "desk_student_2",
+          "uid": "classroom-desk-student-2-2",
           "x": 0,
           "z": 0.6
         },
         {
           "preset": "desk_student_2",
+          "uid": "classroom-desk-student-2-3",
           "x": 1.3,
           "z": 0.6
         },
         {
           "preset": "desk_student_2",
+          "uid": "classroom-desk-student-2-4",
           "x": -2.4,
           "z": -0.5
         },
         {
           "preset": "desk_student_2",
+          "uid": "classroom-desk-student-2-5",
           "x": 0,
           "z": -0.5
         },
         {
           "preset": "desk_student_2",
+          "uid": "classroom-desk-student-2-6",
           "x": 1.3,
           "z": -0.5
         },
         {
           "preset": "chair_student",
+          "uid": "classroom-chair-student",
           "x": -2.4,
           "z": 0.04999999999999993,
           "rot": 180
         },
         {
           "preset": "chair_student",
+          "uid": "classroom-chair-student-2",
           "x": 0,
           "z": 0.04999999999999993,
           "rot": 180
         },
         {
           "preset": "chair_student",
+          "uid": "classroom-chair-student-3",
           "x": 1.3,
           "z": 0.04999999999999993,
           "rot": 180
         },
         {
           "preset": "chair_student",
+          "uid": "classroom-chair-student-4",
           "x": -2.4,
           "z": -1.05,
           "rot": 180
         },
         {
           "preset": "chair_student",
+          "uid": "classroom-chair-student-5",
           "x": 0,
           "z": -1.05,
           "rot": 180
         },
         {
           "preset": "chair_student",
+          "uid": "classroom-chair-student-6",
           "x": 1.3,
           "z": -1.05,
           "rot": 180
         },
         {
           "preset": "locker_12",
+          "uid": "classroom-locker-12",
           "x": -3.72,
           "z": 1.6,
           "rot": 90
@@ -987,6 +1034,7 @@
       ]
     },
     "greenhouse": {
+      "_uid_note": "★ 2026-08-23 — 가구마다 uid 를 못박았다. 없으면 light_adapter 가 로드 시점 순번으로 TEMP~ 이름을 붙이는데, 그러면 **가구를 하나만 편집해도 slotId 가 통째로 바뀐다**(화분이 어느 자리에 있었는지를 잃는다). 이름 규칙은 {방}-{프리셋}, 겹치면 -2·-3. ⚠ 한 번 박은 uid 는 바꾸지 마라 — 세이브가 이 이름으로 자리를 찾는다. ⚠ 좌표·프리셋은 한 톨도 안 건드렸다(uid 줄만 늘었다).",
       "label": "온실",
       "light": "최상",
       "floorNo": 1,
@@ -1055,68 +1103,81 @@
       "furniture": [
         {
           "preset": "shelf_ladder_4tier",
+          "uid": "greenhouse-shelf-ladder-4tier",
           "x": -4.438,
           "z": -3.178
         },
         {
           "preset": "shelf_etagere_3tier",
+          "uid": "greenhouse-shelf-etagere-3tier",
           "x": -3.25,
           "z": -3.276
         },
         {
           "preset": "plant_step_3",
+          "uid": "greenhouse-plant-step-3",
           "x": -1.938,
           "z": -3.276
         },
         {
           "preset": "shelf_growrack_2tier",
+          "uid": "greenhouse-shelf-growrack-2tier",
           "x": -0.562,
           "z": -3.227
         },
         {
           "preset": "shelf_etagere_3tier",
+          "uid": "greenhouse-shelf-etagere-3tier-2",
           "x": -4.475,
           "z": 0.4
         },
         {
           "preset": "shelf_cart_3tier",
+          "uid": "greenhouse-shelf-cart-3tier",
           "x": -4.5,
           "z": 0.4
         },
         {
           "preset": "table",
+          "uid": "greenhouse-table",
           "x": -2.5,
           "z": 0.14
         },
         {
           "preset": "plant_step_3",
+          "uid": "greenhouse-plant-step-3-2",
           "x": 0.438,
           "z": 0.4
         },
         {
           "preset": "bed_single",
+          "uid": "greenhouse-bed-single",
           "x": 3.25,
           "z": -1.82
         },
         {
           "preset": "desk",
+          "uid": "greenhouse-desk",
           "x": 4.6,
           "z": -1.61,
           "rot": -90
         },
         {
           "preset": "chair",
+          "uid": "greenhouse-chair",
           "x": 3.812,
           "z": -1.61
         },
         {
           "preset": "shelf",
+          "uid": "greenhouse-shelf",
           "x": 4.625,
           "z": 0.4,
           "rot": -90
         },
         {
           "preset": "shelf_etagere_3tier",
+          "uid": "greenhouse-shelf-etagere-3tier-3",
           "x": 3.875,
           "z": -3.276
         }
@@ -1194,6 +1255,7 @@
       }
     },
     "tworoom": {
+      "_uid_note": "★ 2026-08-23 — 가구마다 uid 를 못박았다. 없으면 light_adapter 가 로드 시점 순번으로 TEMP~ 이름을 붙이는데, 그러면 **가구를 하나만 편집해도 slotId 가 통째로 바뀐다**(화분이 어느 자리에 있었는지를 잃는다). 이름 규칙은 {방}-{프리셋}, 겹치면 -2·-3. ⚠ 한 번 박은 uid 는 바꾸지 마라 — 세이브가 이 이름으로 자리를 찾는다. ⚠ 좌표·프리셋은 한 톨도 안 건드렸다(uid 줄만 늘었다).",
       "label": "투룸",
       "light": "보통",
       "floorNo": 5,
@@ -1261,54 +1323,64 @@
       "furniture": [
         {
           "preset": "bed_double",
+          "uid": "tworoom-bed-double",
           "x": -2.2,
           "z": -1
         },
         {
           "preset": "nightstand",
+          "uid": "tworoom-nightstand",
           "x": -2.2,
           "z": 0.55
         },
         {
           "preset": "wardrobe",
+          "uid": "tworoom-wardrobe",
           "x": -3,
           "z": 1.5,
           "rot": 90
         },
         {
           "preset": "sofa",
+          "uid": "tworoom-sofa",
           "x": 1.4,
           "z": 1.1,
           "rot": 180
         },
         {
           "preset": "table_round",
+          "uid": "tworoom-table-round",
           "x": 1.4,
           "z": -0.1
         },
         {
           "preset": "tv",
+          "uid": "tworoom-tv",
           "x": 1.4,
           "z": -2.1
         },
         {
           "preset": "shelf_low",
+          "uid": "tworoom-shelf-low",
           "x": 2.9,
           "z": 0.2,
           "rot": -90
         },
         {
           "preset": "rug",
+          "uid": "tworoom-rug",
           "x": 1.4,
           "z": 0.4
         },
         {
           "preset": "lamp_ceiling",
+          "uid": "tworoom-lamp-ceiling",
           "x": 1.4,
           "z": 0
         },
         {
           "preset": "shelf_etagere_3tier",
+          "uid": "tworoom-shelf-etagere-3tier",
           "x": -2.2,
           "z": -2.3,
           "rot": 0,
@@ -1316,6 +1388,7 @@
         },
         {
           "preset": "plant_step_3",
+          "uid": "tworoom-plant-step-3",
           "x": 2.35,
           "z": -2.2,
           "rot": 0,
