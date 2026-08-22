@@ -1225,7 +1225,11 @@ B.locker=(o)=>{
     g.add(cyl(0.012,0.012,0.02, furnMat('#8f979c','satin'), x+cw*0.3, y, d/2+0.03, 8));
   }
   g.userData.size={w,h,d};
-  return addSlots(g, tierSlots(w,h,cols>2?3:2,0), [h], [d]);
+  /* ★★ 2026-08-23 — 깊이축이 칸 경계에 앉아 결겨도 안 붙었다.
+     상판 깊이 0.50 은 칸 2개라 한가운데(z=0)가 경계다 — 가장 가까운 칸 한가운데까지
+     0.125m 이고 SLOT_GOVERN_R 0.04 밖이다. 책상·서람장은 이미 frontCellZ 를 쓴다.
+     ★ 자리 수는 그대로다(3칸). 앞줄 칸 한가운데로 옮기만 한다. */
+  return addSlots(g, tierSlots(w,h,cols>2?3:2,frontCellZ(d)), [h], [d]);
 };
 
 export const FURNITURE_TYPES=Object.keys(B);
