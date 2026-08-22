@@ -1124,3 +1124,115 @@ $('cropThumb').src = OPEN_SIRU.bagThumbnail;
 | 빈 시루 계약 | `src/game/first_play.js · openSiruContractFromManifest.bagThumbnail` |
 | 안내 되감김 고침 | `src/game/first_play.js · placeCrop` |
 | 검사 | `test_growth_speed E·E2` · `test_maturation G` · `test_fastforward ⑵` · `test_first_play` · `test_multisiru`/`test_musun_view` GOLD |
+
+---
+
+## 19. 잎 간격표 뒤 형태 단계가 어디로 갔나 — 옛 축/새 축 실측 (2026-08-22)
+
+총괄 지시로 **읽기 전용 재검증**만 했다. 값·경계는 한 글자도 안 고쳤다.
+
+### 왜 다시 쟀나
+
+growth 창은 「도착 143 → 적정광 3턴 → 146 말린 새순」을 첫 플레이 확정 수치로 알고 있었다.
+그런데 2026-08-09 에 잎 간격표(`data/growth_tuning.json · leaf_interval.days`)가
+`ageOf`/`dayOfAge` 시간 축을 가져갔다. **`phaseAt` 의 경계는 그 축을 타므로**
+옛 `timeCurve` 기준으로 낸 검증은 근거가 못 된다.
+
+### ★ 결론 — 「어긋난 것」이 아니라 「창 쪽 기억이 낡은 것」이다
+
+| | 옛 축 (timeCurve 0.72) | 새 축 (잎 간격표) |
+|---|---|---|
+| 말린 새순이 뜨는 유효일 | 14 · 61 · **146** · 249 · 365 | 34 · 70 · **120** · 190 · 290 |
+| 「3턴 뒤 첫 새순」 안전선 | **143 → 146** | **117 → 120** |
+| 도착값(유효 45)에서 다음 새순 | 61 (도착+16) | 70 (도착+25) |
+
+- **143/146 은 growth 창 안쪽의 형태 단계 자였다.** 저장소 확정문(`START-HERE §6`)의
+  「몬스테라 도착 = 유효 45」는 처음부터 45 였고 지금도 45 다(`src/game/state.js:323`) — 일치한다
+- 저장소 자(`tools/test_growth_speed.mjs` E)는 **이미 `117 → 3걸음 → 120` 으로 갱신돼 있다.**
+  낡은 것은 코드도 자도 아니고 이 창의 기억이었다
+- `state.js` 주석이 이 이사를 2026-08-09 에 이미 적어 두었다(도착 45 는 여전히 줄기 1개 구간)
+
+### [실측] 단계 경계 전수 — 유효 0~300
+
+```
+옛 축 (LEAF_DAYS 비움 → timeCurve 0.72)        새 축 (현재 main · 잎 간격표)
+    0 seed                                        0 seed
+    5 sprout                                     17 sprout
+   14 spear_furled                               34 spear_furled
+   15 spear_opening                              35 spear_opening
+   21 leaf_young                                 41 leaf_young
+   30 leaf_mid                                   49 leaf_mid
+   51 axis_rising                                64 axis_rising
+   58 spear_ready                                67 spear_ready
+   61 spear_furled                               70 spear_furled
+   68 spear_opening                              75 spear_opening
+   78 leaf_young                                 81 leaf_young
+   91 leaf_mid                                   90 leaf_mid
+  134 axis_rising                               114 axis_rising
+  143 spear_ready   ←옛 안전선                  117 spear_ready   ←새 안전선
+  146 spear_furled                              120 spear_furled
+  156 spear_opening                             127 spear_opening
+  167 leaf_young                                136 leaf_young
+  183 leaf_mid                                  147 leaf_mid
+  234 axis_rising                               181 axis_rising
+  246 spear_ready                               187 spear_ready
+  249 spear_furled                              190 spear_furled
+  260 spear_opening                             200 spear_opening
+  273 leaf_young                                213 leaf_young
+  291 leaf_mid                                  228 leaf_mid
+                                                277 axis_rising
+                                                287 spear_ready
+                                                290 spear_furled
+```
+
+### [실측] `growthPhase()` 계약 자체는 안 깨졌다
+
+축이 바뀌어도 **모양은 그대로**다 — `spear_ready` 는 언제나 정확히 3걸음이고
+`0.000 → 0.333 → 0.667` 뒤에 `spear_furled 0.000` 으로 넘어간다.
+
+```
+옛 축  143 spear_ready 0.000 → 144 0.333 → 145 0.667 → 146 spear_furled 0.000
+새 축  117 spear_ready 0.000 → 118 0.333 → 119 0.667 → 120 spear_furled 0.000
+```
+
+즉 **`SPEAR_READY_DAYS=3` 은 「며칟날」이 아니라 「며칠 전」이라 축을 따라 저절로 따라갔다.**
+설계 의도대로 동작했고 고칠 것이 없다.
+
+### 고친 것 — 낡은 주석 한 줄뿐
+
+`plant_grow.html · SPEAR_READY_DAYS` 주석이 아직 **"(146일)"** 이라 적혀 있었다.
+그 146 은 옛 곡선의 값이다. 날짜를 지우고 「이 상수는 '며칟날'이 아니라 '며칠 전'이다」를 박았다.
+**값·경계는 안 건드렸다.**
+
+### ⚠ 남은 물음 둘 — 제가 정할 것이 아니다
+
+1. **첫 잎만 표와 화면 단계가 4일 어긋난다.** 표는 첫 잎을 유효 30 이라 하고 실제 `leafBirth` 도
+   생장나이 36(=`ageOf(30)`)인데, `phaseAt` 은 **유효 34 까지 `sprout`** 으로 덮는다
+   (`g < P.sproutEnd(45)` 검사가 잎 검사보다 앞이라서다). 도착이 45 라 첫 플레이에는 안 걸리지만
+   **삽수는 유효 0 부터 걷는다** — 삽수 화면에서 「표대로면 30일에 나야 할 새순」이 34일에 뜬다
+2. **체감은 달력일로 재야 한다** (총괄 지적 · §2.9 ⑤ 시계가 둘이다).
+   `growth_speed.by_band` 가 `best`/`good` 에서 **1.25** 라 밝은 자리에서는 하루에 유효일이
+   1.25 씩 오른다. 도착 45 → 새순 70 은 **유효 25걸음**이지만 최적광이면 **달력 20일**이다.
+   총괄 실측으로는 첫 플레이 완료가 달력 33일쯤이다(`guide-event-quest-map.md §2`) — [문서, 제가 재지 않음]
+
+### ★ 자가 거짓말한 것 하나 — 다음 사람이 또 밟는다 (§2.9 에 더할 값어치)
+
+**`leaf_interval` 을 JSON 에서 지워도 옛 축이 되지 않는다.**
+`plant_grow.html` 안에 코드 기본값 `LEAF_DAYS=[30,40,50,70,100,150,200,300]` 이 있어 표가 그대로 산다
+(정본이 없을 때 조용히 멈추지 않으려고 둔 폴백이다 — 그 자체는 옳다).
+그걸 모르고 「표 있음」과 「표 없음」을 같은 세상으로 두 번 재고
+**"옛 축과 새 축이 똑같다"** 고 쓸 뻔했다. 두 출력이 한 글자도 안 달라서 이상하다고 느끼지 않았다면
+그대로 보고했을 것이다.
+
+⇒ **폴백이 있는 값은 「입력을 지우는 것」으로 못 끈다.** 진짜로 끄려면 그 변수를 비워야 한다
+(`vm.runInContext('LEAF_DAYS=null; _leafMapKey=null; _leafMap=null;', ctx)`).
+⇒ 그리고 **두 조건의 출력이 완전히 같으면 「조건이 안 걸렸다」를 먼저 의심할 것.**
+
+### 재는 법
+
+```
+node tools/test_growth_speed.mjs        # 저장소 자 — E 가 117→120 을 못 박는다
+```
+경계 전수는 `tools/test_growth_speed.mjs · loadGrowth()` 를 그대로 베껴 쓰면 된다.
+`phaseAt(d)` 를 0~300 훑고 값이 바뀌는 날만 찍으면 위 표가 나온다.
+
