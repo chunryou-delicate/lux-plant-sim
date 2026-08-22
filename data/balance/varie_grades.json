@@ -146,12 +146,10 @@
   "midCommon": { "enabled": true, "fromGrade": "halfmoon",
     "pool": [
       { "id": "heart_albo_2672_3" },
-      { "id": "heart_lime_2672_0" },
       { "id": "heart_marble_2652" },
       { "id": "heart_speckle_2657" },
       { "id": "pothos_cream_marble" },
       { "id": "pothos_cream_vein" },
-      { "id": "pothos_marble_greenyellow" },
       { "id": "pothos_marble_whitegreen" },
       { "id": "pothos_mint_dot" },
       { "id": "pothos_mint_dot_34" },
