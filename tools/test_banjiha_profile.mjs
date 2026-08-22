@@ -99,6 +99,44 @@ assert.ok(profile.roomRev && /\S/.test(profile.roomRev), 'roomRev 가 실려 있
 const port = createProfileLight(profile, { lightTh });   // throw 하면 여기서 실패
 console.log(`load: PASS (uidStable · roomRev="${profile.roomRev}")`);
 
+/* ══ ①-b ★ 프로필의 roomRev 가 방 데이터와 같은가 (2026-08-23 신설) ══════════
+   ★★ 왜 세우나 — **이 검사가 초록이면서 낡은 날짜를 찍고 있었다.**
+     위 `load: PASS` 줄이 `profile.roomRev` 를 그대로 출력한다. 그 값이 낡아도
+     **PASS 옆에 찍히므로 최신처럼 읽힌다.** 그리고 그냥 낡은 것보다 나쁘다 —
+     **「프로필이 낸 숫자」로 보이면 더 믿게 된다.** 표시일 뿐인데 권위가 붙는다.
+   ⇒ 계율 ㉓ 의 제일 나쁜 모양이다: **초록이 낡음을 덮는다.**
+
+   ⚠ 새는 길이 실제로 있다 — `light_adapter:517` 이 `measured` 를 프로필에 실어 보내고
+     `room_profile:180` 이 그것을 `def.measured` 로 되읽는다. 곧 **낡은 기록이 프로필을
+     타고 화면까지 간다.** 물리는 아니고 표시뿐이지만, 표시가 틀리면 사람이 틀린다.
+
+   ⚠⚠ **이 검사는 프로필을 못 고친다** — `data/profiles/*` 는 손대지 말라는 지시가 있다.
+     그래서 여기서 하는 일은 **고치는 것이 아니라 「갈렸다」고 말하는 것**이다.
+     갈린 채로 초록인 것보다 **붉은 편이 낫다.** */
+{
+  const hr = JSON.parse(readFileSync(
+    new URL('../data/house_rooms.json', import.meta.url), 'utf8'));
+  const live = ((hr.rooms.banjiha.measured || {}).roomRev || '').trim();
+  const inProfile = String(profile.roomRev || '').trim();
+  const shaOf = t => (t.split(/\s+/)[0] || '');
+  const same = shaOf(live) && shaOf(live) === shaOf(inProfile);
+  if (!same) {
+    console.log('roomRev_match: FAIL');
+    console.log(`  ★ 프로필과 방 데이터의 roomRev 가 갈렸습니다`);
+    console.log(`      house_rooms.json §banjiha : ${live || '(없음)'}`);
+    console.log(`      room_profile.banjiha.json : ${inProfile || '(없음)'}`);
+    console.log('  ⇒ 프로필이 **낡은 방**을 담고 있습니다. 위 load 줄이 그 낡은 날짜를 찍습니다.');
+    console.log('  ⇒ 고치려면 프로필을 다시 뽑아야 합니다(`_profile_gen.html`). ' +
+                '⚠ 정적 프로필은 승인 뒤에 건드리라는 지시가 있습니다.');
+    /* ⚠ 여기서는 assert 로 안 던진다 — 던지면 AssertionError 뭉치가 찍혀
+       **위에 적어 둔 두 줄(어느 커밋 vs 어느 커밋)이 스택에 묻힌다.**
+       이 검사가 하는 일은 「갈렸다」를 **읽히게** 말하는 것이므로 조용히 1 로 나간다. */
+    process.exitCode = 1;
+  } else {
+    console.log(`roomRev_match: PASS (프로필과 방 데이터가 같은 커밋을 가리킨다 — ${shaOf(live)})`);
+  }
+}
+
 /* ── ② 안정 ID: 15칸 고유 · TEMP~ 없음 · 중복 없음 ── */
 const ids = profile.slots.map(s => s.slotId);
 assert.equal(ids.length, 15, '반지하 슬롯 15칸');
@@ -133,4 +171,7 @@ for (const id of ids) {
 assert.equal(bestId, LIVE.best, `best 슬롯 정적 ${bestId} ≠ 라이브 ${LIVE.best}`);
 console.log(`live_vs_static: PASS (best ${bestId} 일치 · 최대 오차 ${maxErr.toFixed(5)} @ ${worst})`);
 
-console.log('banjiha_profile: PASS');
+/* ⚠ 마지막 줄이 늘 PASS 를 찍으면 **위에서 붉은 줄이 나도 초록으로 읽힌다.**
+   실제로 그랬다 — roomRev_match 가 FAIL 인데 이 줄이 PASS 였다.
+   그것이 이 검사가 막으려는 바로 그 모양이라(초록이 낡음을 덮는다) 여기부터 고친다. */
+console.log('banjiha_profile: ' + (process.exitCode ? 'FAIL — 위 붉은 줄을 보십시오' : 'PASS'));
