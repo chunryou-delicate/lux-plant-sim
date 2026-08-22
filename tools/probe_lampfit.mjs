@@ -23,6 +23,15 @@
    쓰는 법
      node tools/probe_lampfit.mjs              (반지하)
      node tools/probe_lampfit.mjs oneroom      (다른 방)
+   ⚠⚠ **자를 한 번 틀렸다 — 적어 둔다.**
+     처음엔 등의 높이를 `rig.pos.y` 로 읽었다. 그런데 `house.js:864` 에서
+       pos  = 발광점 (`emitY = yBase + h*0.92`)      ← 빛이 나오는 곳
+       base = 노드   (`yBase`)                        ← 물건이 놓인 곳
+     이고 **`lampFit` 이 보는 것은 노드**(`g.position.y`)다. 집게등은 노드 0.75 ·
+     발광점 1.1364 라 **0.39m 나 다르다.** 그 자로 재서 창턱 적중률을 36% 로 냈는데
+     제대로 재면 **25%** 다(결론은 같고 숫자가 틀렸다).
+     ★ 이름이 비슷한 두 값 중 **저쪽이 실제로 읽는 것**을 골라야 한다.
+
    ⚠ 이 도구는 `lampFit` 을 **베껴 적은 것**이다. 저쪽이 바뀌면 여기도 같이 고쳐야 한다.
      진짜 회귀 잠금은 브라우저를 쓰는 `test_lampmove.mjs` 2부가 할 일이다.
 ============================================================ */
@@ -98,8 +107,9 @@ const pick = (x, z, wantY) => {
 const clip = (r.built.lightRigs || []).find(g => g.id === 'growlight_clip');
 console.log('방 ' + ROOM + ' · 물릴 상판 ' + mounts.length + '개');
 for (const m of mounts) console.log('   ' + m.uid.padEnd(24) + ' y ' + m.y.toFixed(3).padStart(6) + '  ' + m.w.toFixed(2) + 'x' + m.d.toFixed(2));
+const clipY = (clip && clip.base ? clip.base.y : (clip ? clip.pos.y : 0));
 if (!clip) { console.log('\n이 방엔 집게등이 없습니다.'); process.exit(0); }
-console.log('\n집게등 ' + clip.uid + ' 지금 y ' + clip.pos.y.toFixed(4));
+console.log('\n집게등 ' + clip.uid + ' 지금 y ' + clipY.toFixed(4));
 
 /* 상판마다: 그 상판 위를 찍었을 때 그 상판에 붙나 */
 console.log('\n상판                       점수   [지금] 맞음   [고친 뒤] 맞음');
@@ -110,7 +120,7 @@ for (const m of mounts) {
     for (let z = m.z - m.d / 2 - PAD; z <= m.z + m.d / 2 + PAD; z += 0.05) {
       if (topAt(x, z) !== m) continue;        // 커서가 이 상판에 얹힌 점만 센다
       n++;
-      if (pick(x, z, clip.pos.y) === m) a++;  // [지금]  등의 지금 높이가 기준
+      if (pick(x, z, clipY) === m) a++;  // [지금]  등의 지금 높이가 기준
       if (pick(x, z, m.y) === m) b++;         // [고친 뒤] 커서가 얹힌 상판의 높이가 기준
     }
   if (!n) continue;
@@ -127,10 +137,10 @@ console.log('\n== 되먹임: 선반에 한 번 붙였다가 창턱을 다시 찍
 const sill = mounts.find(m => /sill/.test(m.uid));
 const low  = mounts.filter(m => m !== sill).sort((a, b) => b.y - a.y)[0];
 if (sill && low) {
-  const now  = pick(sill.x, sill.z, clip.pos.y);
+  const now  = pick(sill.x, sill.z, clipY);
   const after = pick(sill.x, sill.z, low.y);      // 낮은 데 붙은 뒤 다시 창턱을 찍는다
   console.log('   창턱 한가운데를 찍음');
-  console.log('     처음(등 y ' + clip.pos.y.toFixed(3) + ')          → ' + (now ? now.uid : '없음'));
+  console.log('     처음(등 y ' + clipY.toFixed(3) + ')          → ' + (now ? now.uid : '없음'));
   console.log('     ' + low.uid + '(y ' + low.y.toFixed(3) + ') 에 붙은 뒤 → ' + (after ? after.uid : '없음'));
   console.log('     [고친 뒤]                       → ' + (pick(sill.x, sill.z, sill.y) || {}).uid);
   if (now !== sill && after !== sill) console.log('   ★ 두 번 다 창턱이 아니다 — 등이 아래에 갇힌다');
