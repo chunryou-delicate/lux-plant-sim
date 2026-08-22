@@ -214,7 +214,7 @@ const nextId = open.find(id => !SLOW_QUEST_IDS.includes(id)) || open[0] || null;
 | 4건 | `test_crop_seat` |
 | 3건 | `test_dialogue_coverage` |
 | 2건 | `test_fastforward` · `test_free_place` · `test_oneroom` |
-| 1건 | `test_elec` · `test_tutorial` · `test_pots` |
+| 1건 | ~~`test_elec`~~ **고쳐졌다** · `test_tutorial` · `test_pots` |
 | — | `test_first_play_attacks` · `test_floorlight`(5/8) · `test_oneroom_room`(6/9) · `test_pantrysale` · `test_room_map` |
 
 ⚠ **`test_room_map` 은 세지 마라** — `src/game/room_map.js` 와 `tools/test_room_map.mjs` 가
@@ -225,7 +225,7 @@ const nextId = open.find(id => !SLOW_QUEST_IDS.includes(id)) || open[0] || null;
 
 ## 2. ★ 표본 둘 — **둘 다 자가 낡았다**
 
-### ㉠ `test_elec` B
+### ㉠ `test_elec` B — ✅ **총괄이 고쳤다(`0c2c85c`). 다시 돌려 PASS 확인** (2026-08-23)
 
 ```
 FAIL B → 와트 표가 기구 프리셋과 다릅니다 — 바 20W · 집게 12W 여야 합니다
