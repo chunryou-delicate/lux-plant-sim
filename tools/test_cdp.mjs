@@ -108,7 +108,21 @@ export async function launch(opts = {}) {
   const page = {
     on(fn) { listeners.push(fn); },
     send: S,
-    async goto(url) { await S('Page.navigate', { url }); },
+    /* ★★ 2026-08-23 — **못 붙었으면 그 자리에서 죽는다** ([growth]).
+       예전에는 `Page.navigate` 의 답을 버렸다. 그런데 크롬은 **연결이 거부돼도 성공으로 답하고**
+       `errorText` 에만 사유를 담는다(`net::ERR_CONNECTION_REFUSED`). 그래서 서버가 없으면
+       검사가 **안 죽고 그 다음 `waitFor` 의 제한시간을 통째로 태웠다** — 기본 600초라 하나에 10분이다.
+       ⇒ 서버 없이 스위트를 돌리면 일곱 개가 **70분**을 쓰고 나서야 「기다리다 지쳤습니다」라고 했다.
+         원인은 서버인데 화면은 조건 이야기를 한다. 제일 늦게 알아채는 종류다.
+       ⚠ 잡는 것은 **연결 자체가 안 되는 경우**뿐이다. 404 는 크롬이 「열었다」고 보므로 여기서 안 잡힌다
+         (빈 디렉터리를 서빙하는 서버가 실제로 있다 — 2026-08-23 [core]). 그건 검사가 제 조건으로 잡아야 한다. */
+    async goto(url) {
+      const r = await S('Page.navigate', { url });
+      if (r && r.errorText)
+        throw new Error(`페이지를 못 열었습니다 — ${url} (${r.errorText})
+` +
+          `      서버가 떠 있는지 보십시오: python tools/serve.py <포트> · BYEOT_URL=http://localhost:<포트>`);
+    },
     async eval(expr, awaitPromise = true) {
       const r = await S('Runtime.evaluate', {
         expression: expr, awaitPromise, returnByValue: true, allowUnsafeEvalBlockedByCSP: true
