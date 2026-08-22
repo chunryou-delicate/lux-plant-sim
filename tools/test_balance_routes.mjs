@@ -299,7 +299,16 @@ function play(opt = {}) {
   return { S, rows, taps: taps + ffPresses + Math.ceil(jumpDays / JUMP_MAX_DAYS),
            ffDays, jumpDays, ffPresses, lampDay,
            cuttingIncome, varieIncome, potIncome, containerSpend, sold,
-           movedOut: S.tutorial.movedOut, lastDay: last.tday, lastGameDay: last.day,
+           movedOut: S.tutorial.movedOut,
+           /* ★★ 2026-08-23 — **못 나갔으면 「어디서 막혔나」를 찍는다.**
+              이사 게이트는 축이 둘이다(돈 · 무늬 삽수를 판 적). 그런데 이 자는
+              「못 나갔다」만 말해서, 「돈이 모자랐다」와 「무늬를 한 번도 못 팔았다」를
+              못 갈랐다. **그 둘은 완전히 다른 답이다** — 앞은 밸런스고 뒤는 배선·설계다.
+              ⚠ canMoveOut 이 이미 money·varie·shortWon 을 낸다. 안 찍고 있었을 뿐이다. */
+           gate: (() => { const g = canMoveOut(S.tutorial);
+                          return { ok: g.ok, money: g.money, varie: g.varie,
+                                   shortWon: g.shortWon, varieSaleCount: g.varieSaleCount }; })(),
+           lastDay: last.tday, lastGameDay: last.day,
            season: last.season, eff: last.eff, leaves: last.leaves,
            everBroke: rows.some(r => r.bankrupt) };
 }
@@ -312,6 +321,13 @@ function route(name, opt) {
   for (const r of ok) seasons[r.season] = (seasons[r.season] || 0) + 1;
   return {
     name, opt, runs, ok, rate: ok.length / runs.length,
+    /* ★ 못 나간 판을 막힌 축으로 나눈다 — 셋은 서로 다른 병이다 */
+    stuck: (() => { const bad = runs.filter(r => !r.movedOut);
+      return { total: bad.length,
+               moneyOnly: bad.filter(r => !r.gate.money && r.gate.varie).length,
+               varieOnly: bad.filter(r => r.gate.money && !r.gate.varie).length,
+               both:      bad.filter(r => !r.gate.money && !r.gate.varie).length,
+               medShort:  bad.length ? median(bad.map(r => r.gate.shortWon)) : null }; })(),
     days: ok.map(r => r.lastDay), seasons,
     medDay: ok.length ? median(ok.map(r => r.lastDay)) : null,
     medEff: median(runs.map(r => r.eff)),
@@ -347,7 +363,9 @@ check('①-1 ★A 와 B 가 실제로 다른가 — 같으면 B 는 경로가 �
        `잎 ${A0.medLeaves} vs ${B0.medLeaves}장 · 가을(45일) 잔액 ${A0.medCash45.toLocaleString()} vs ${B0.medCash45.toLocaleString()}원`);
   assert.ok(!same,
     `★A 와 B 가 완전히 같습니다(이사 ${A0.medDay}일 · 유효생장 ${A0.medEff} · 잎 ${A0.medLeaves}장). ` +
-    `식물등 ${TUTORIAL_RULES.lampPriceWon.toLocaleString()}원이 사는 것은 **잔액 −25,000원뿐**이고 ` +
+    /* ⚠ 여기도 값을 적지 않는다 — 앞은 정본을 읽는데 뒤에 「−25,000원」이 손으로 박혀 있었다(2026-08-23 정정) */
+    `식물등 ${TUTORIAL_RULES.lampPriceWon.toLocaleString()}원이 사는 것은 ` +
+    `**잔액 −${TUTORIAL_RULES.lampPriceWon.toLocaleString()}원뿐**이고 ` +
     `얻는 것이 하나도 없습니다 — 즉 B 는 A 보다 열등한 같은 경로입니다`);
 });
 
