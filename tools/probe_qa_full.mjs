@@ -141,7 +141,33 @@ async function clearGuide() {
   if (r && r.vis) { await tapXY(r.x, r.y, 70, 350); return true; }
   return false;
 }
-async function calm() { await clearTalk(); await clearGuide(); }
+/* ══ ★★★ 2026-08-23 — **[다음 날] 뒤에 문이 둘 더 있다** ═══════════════════════
+   ------------------------------------------------------------
+   이 자는 `tap('next')` 뒤에 날이 안 가면 **「치명」을 내고 `break` 로 멈췄다.**
+   그런데 그 「치명」은 **제품이 아니라 이 자였다** — `#next` 는 곳간이 차 있으면
+   **밥상(`#mealPanel`)** 을 열고, 월세 낸 날은 그 앞에 **첫 달 가계부(`#monthPanel`)** 를
+   연다. 거기서 각각 [이대로 다음 날 ▸]·[✕] 를 눌러야 비로소 날이 간다.
+   ⇒ 실측(`night_play`): [다음 날] 214번 중 **밥상이 88번(41%)** · 가계부 5번.
+   ⇒ [growth] 가 잡은 것: 이 자가 **일 1 에서 멈췄고**, 그 뒤 「34일을 돌려도 몬스테라가
+     안 옴」까지 스스로 만들어 놓고 버그로 보고했다. **자가 자기가 만든 증상을 보고했다.**
+   ⇒ ★ 그래서 `qa-to-plan.md:233` 「뒤쪽 절반을 아무도 안 봤다」에 원인이 붙는다 —
+     게을러서가 아니라 **자가 첫날에 멈췄기 때문**이다.
+   ⚠ 순서가 있다: **가계부가 먼저, 밥상이 나중**이다(둘이 같이 뜨는 날이 있다).
+   ⚠ 안 뜨면 아무것도 안 한다 — 없는 단추를 누르지 않는다. */
+async function clearDayGates() {
+  let did = 0;
+  for (let i = 0; i < 4; i++) {
+    const g1 = await rectOf('monthGo');                     /* 첫 달 가계부 */
+    if (g1 && g1.vis) { await tapXY(g1.x, g1.y, 70, 350); did++; continue; }
+    const gx = await rectOf('monthClose');                  /* ✕ 로도 닫힌다 */
+    if (gx && gx.vis) { await tapXY(gx.x, gx.y, 70, 350); did++; continue; }
+    const g2 = await rectOf('mealGo');                      /* 오늘 밥상 */
+    if (g2 && g2.vis) { await tapXY(g2.x, g2.y, 70, 350); did++; continue; }
+    break;
+  }
+  return did;
+}
+async function calm() { await clearTalk(); await clearGuide(); await clearDayGates(); }
 
 /* ★ 시트 — **폰은 아래에서 올라오는 서랍**이고, **PC 는 오른쪽에 늘 붙은 판**이다
      (game.html @media: PC 에서는 #openBag 이 없고 #sheetScrim 이 display:none).
