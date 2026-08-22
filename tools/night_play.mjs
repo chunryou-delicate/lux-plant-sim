@@ -282,7 +282,16 @@ const clearPops = async (rounds = 6) => {
         if(!b||b.disabled) return false; b.click(); return true; };
       if (up('reliefBox')  && hit('reliefOk'))   return 'relief';
       if (up('monthPanel') && hit('monthClose')) return 'month';
-      if (up('mealPanel')  && hit('mealGo'))     return 'meal';
+      if (up('mealPanel')) {
+        /* ★★ **한 상에 두 가지를 올린다.** 밥상에 갈래가 둘 이상 뜨면(작물이 둘일 때만 뜬다)
+           갈래마다 [＋]를 눌러 조금씩 담는다 — 그래야 crop_mix(한 상에 두 가지)가 닫히고
+           그 뒤 사슬(siru5_cycle5 → siru8 → siru16)이 열린다.
+           ⚠ 기본값만 누르면 **한 가지만 담긴다.** 그것이 이 하네스가 사슬을 못 열던 까닭이다.
+           ⚠ 양을 정하지 않는다 — [＋]가 잠기면 거기서 멎는다. */
+        const plus = [...document.querySelectorAll('[data-mealkind-plus]')].filter(b2=>!b2.disabled);
+        if (plus.length >= 2) { for (const b2 of plus) b2.click(); return 'mealkind'; }
+        if (hit('mealGo')) return 'meal';
+      }
       if (up('buyPanel')   && hit('buyCancel'))  return 'buy';
       return '';
     })()`);
