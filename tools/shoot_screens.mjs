@@ -77,7 +77,24 @@ export async function shoot(pages, seq, name) {
              08-22 민원 "해상도에 따라 [다음 날] 버튼 클릭 오류" 가 이 갈래로 보인다. */
           const sel = 'button,[role=button],a[href],input,select,.btn,#next,#mealGo';
           const occluded = [], partly = [], offscreen = [], tiny = [], clipped = [],
-                outside = [], disabledOff = [];
+                outside = [], disabledOff = [], inClosedPanel = [],
+                coveredBySheet = [], coveredByModal = [];
+          /* ★★ **덮은 것이 무엇이냐**로 갈린다. [core] 갈래를 그대로 쓴다.
+             시트가 열려 그 아래가 덮이는 것 · 모달이 떠서 덮이는 것은 **정상**이다.
+             아무것도 안 떴는데 남이 잡히는 것만 진짜 「가려짐」이다.
+             ⇒ 오늘 세 번 같은 자리에서 틀렸다(꺼짐 · 닫힌 시트 · 부하).
+               **안 보이는 데는 까닭이 여럿이고, 까닭을 안 찍으면 전부 「가려짐」이 된다.** */
+          const coverKind = (top) => {
+            let a = top, n = 0;
+            while (a && n++ < 8) {
+              const id = (a.id || '') + ' ' + (typeof a.className === 'string' ? a.className : '');
+              if (/sheet/i.test(id)) return 'sheet';
+              if (/modal|dialog|overlay|panel|popup/i.test(id) || a.getAttribute
+                  && a.getAttribute('role') === 'dialog') return 'modal';
+              a = a.parentElement;
+            }
+            return null;
+          };
           /* ★★ 「꺼짐」과 「가려짐」은 **다른 병**이다. 뭉뚱그리면 안 된다.
              ⚠ 내가 뭉뚱그려서 틀렸다 — next(다음 날) 이 「대사창에 덮였다」로 나왔는데,
                game.html:839 에 '#stage.talking #next { opacity:.35; pointer-events:none }'
@@ -117,7 +134,21 @@ export async function shoot(pages, seq, name) {
             const tag = tagOf(el);
             const cs2 = getComputedStyle(el);
             if (r.right < 0 || r.bottom < 0 || r.left > innerWidth || r.top > innerHeight) {
-              offscreen.push(tag); continue;
+              /* ★★ 화면 밖이라고 다 병이 아니다. **닫힌 패널 안**일 수 있다.
+                 ⚠ 내가 여기서 틀렸다 — 'tabBag 이 화면 밖이라 가방을 못 연다'고 올렸는데,
+                   조상 'sheet' 가 top:849(창 높이 844)였다. **가방 시트가 닫혀서 아래로
+                   내려가 있던 것**이고 그 안의 탭이 밖인 것은 **정상**이다.
+                 ⇒ 조상이 밀려서 밖에 있는 것과, 제가 밖에 있는 것을 가른다. */
+              let closed = null, a = el.parentElement, n = 0;
+              while (a && n++ < 6) {
+                const ar = a.getBoundingClientRect();
+                if (ar.height > 0 && (ar.top >= innerHeight - 8 || ar.bottom <= 8
+                    || ar.left >= innerWidth - 8 || ar.right <= 8)) { closed = a; break; }
+                a = a.parentElement;
+              }
+              if (closed) inClosedPanel.push(tag + ' ⊂ ' + tagOf(closed));
+              else offscreen.push(tag);
+              continue;
             }
             if (r.width < 32 || r.height < 32)
               tiny.push(tag + ':' + Math.round(r.width) + 'x' + Math.round(r.height));
@@ -138,8 +169,14 @@ export async function shoot(pages, seq, name) {
             }
             if (isOff(el, cs2)) { disabledOff.push(tag); continue; }   // 일부러 끈 것 — 가려짐이 아니다
             const q = probe(el, r);
-            if (q.other && !q.self) occluded.push(tag + ' ← ' + tagOf(q.top));
-            else if (q.other >= 3) partly.push(tag + ' ' + q.other + '/9 ← ' + tagOf(q.top));
+            if (q.other) {
+              const kind = coverKind(q.top);
+              const line = tag + ' ← ' + tagOf(q.top);
+              if (kind === 'sheet') coveredBySheet.push(line);
+              else if (kind === 'modal') coveredByModal.push(line);
+              else if (!q.self) occluded.push(line);
+              else if (q.other >= 3) partly.push(tag + ' ' + q.other + '/9 ← ' + tagOf(q.top));
+            }
           }
           /* ③ **눌러야 하는 것만이 아니라 「보여야 하는 것」도 가려진다.**
              [Asset] 이 본 「초상화가 방과 글자를 가린다」가 그것이다.
@@ -170,7 +207,8 @@ export async function shoot(pages, seq, name) {
           return { ready: !!window.__rv, errorText: err, talking,
                    scrollX: document.documentElement.scrollWidth > innerWidth + 2,
                    occluded, partly, offscreen, tiny, clipped, outside,
-                   disabledOff, dupText: dup.slice(0, 5) };
+                   disabledOff, inClosedPanel, coveredBySheet, coveredByModal,
+                   dupText: dup.slice(0, 5) };
         })()`);
       } catch { }
       state.ready = state.ready && !!p.__ready;

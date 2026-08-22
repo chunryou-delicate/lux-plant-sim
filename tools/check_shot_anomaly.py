@@ -166,6 +166,16 @@ def check(path, prev_gray=None):
             v = st.get(key) or []
             if v:
                 bad.append('%s: %s' % (msg, ', '.join(v[:3])))
+        # ★ 정상인 까닭들 — 짚지 않고 **참고로만** 적는다. 이것을 「가려짐」으로 세면 안 된다.
+        for key, msg in (('inClosedPanel', '닫힌 패널 안(정상)'),
+                         ('coveredBySheet', '시트가 열려 그 아래(정상)'),
+                         ('coveredByModal', '모달이 떠 있음(정상)'),
+                         ('disabledOff',   '일부러 꺼둠(정상일 수 있음)')):
+            v = st.get(key) or []
+            if v:
+                note.append('%s %d개' % (msg, len(v)))
+        if st.get('talking'):
+            note.append('대사 중이었다(.talking)')
         tiny = st.get('tiny') or []
         if tiny:
             note.append('손가락에 작다(32px 미만) %d개: %s' % (len(tiny), ', '.join(tiny[:3])))
