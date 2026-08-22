@@ -448,6 +448,49 @@ check('⑤ ★ 여섯 방 전부 자리 이름이 안정하다 — 가구를 끼
   eng.build('oneroom');
 });
 
+/* ══ ⑥ ★ 시루가 오를 수 있는 칸 — **여유가 한 칸뿐이다** ═══════════════
+   2026-08-23 밤 신설.
+
+   ★ 왜 세우나 — 「자리 15칸」과 「시루를 놓을 수 있는 칸」은 **다른 수**다.
+     `maxPotD` 가 단 깊이로 정해지므로(`house.js §tier_max_pot_d`) **선반 칸은 0.22** 이고
+     **열린 콩나물 시루(0.24)가 안 올라간다.** 반지하 15칸 중 시루가 오르는 것은 **여섯**이다:
+       `sill:0`(0.27) · `desk:0`·`desk:1` · `nightstand:0` · `dresser:0`·`dresser:1` (전부 0.47)
+     나머지 아홉은 3단선반이라 애초에 안 오른다.
+
+   ⚠⚠ **여유가 한 칸이다.** 퀘스트 `siru5_cycle5`(`src/game/quest.js:474`)는 시루 **다섯**을
+     각각 다섯 바퀴 돌리라고 한다 — **실제로 놓여야 하므로 다섯 칸이 필요하다.**
+     지금 여섯이니 **한 칸 남는다.** 깊은 상판 가구를 하나만 빼거나 옮겨도 **거기서 막힌다.**
+     ⇒ 그런데 그것을 지키는 자가 없었다. 자리 «수»만 세는 자는 이 벽을 못 본다.
+
+   ★ 여기서 **퀘스트가 요구하는 수(5)를 못박지 않는다** — 그건 이 창 것이 아니다.
+     **「지금 여섯이고, 줄면 알린다」**만 한다. 줄어든 것이 옳은 변경일 수도 있으니
+     붉어지면 **퀘스트 쪽과 같이 보라**는 뜻이다.
+   ⚠ 화분 지름은 데이터에서 읽는다 — 여기 숫자를 박으면 시루가 바뀔 때 조용히 갈린다. */
+check('⑥ ★ 반지하에 시루(열린 콩나물)가 오르는 칸 — 지금 여섯. 줄면 알린다', () => {
+  const SIRU = (() => {
+    /* 「열린 콩나물 시루」의 지름을 데이터에서 찾는다. 못 찾으면 못 잰다고 말한다. */
+    try {
+      const c = dataOf('crops.json');
+      const j = JSON.stringify(c);
+      const m = j.match(/"potD"\s*:\s*([0-9.]+)/);
+      if (m) return +m[1];
+    } catch { /* 파일이 없으면 아래로 */ }
+    return 0.24;                                  // house 실측 기준값(docs/engine/rooms_spec.md §8)
+  })();
+  const r = eng.build('banjiha');
+  const fit = r.slots.filter(s => Number.isFinite(s.maxPotD) && s.maxPotD >= SIRU - 1e-9);
+  const names = fit.map(s => `${s.slotId}(${s.maxPotD})`);
+  assert.ok(fit.length >= 6,
+    `★ 반지하에 시루(${SIRU})가 오르는 칸이 ${fit.length}칸으로 줄었습니다 (전에는 6칸).\n` +
+    `      지금 오르는 칸: ${names.join(' · ') || '없음'}\n` +
+    `      ⚠ 퀘스트 siru5_cycle5 는 **놓인** 시루 다섯을 요구합니다(quest.js:474) — 다섯 칸이 필요합니다.\n` +
+    `      ⇒ 깊은 상판 가구를 뺐거나 옮겼습니까? 퀘스트 쪽과 같이 보십시오.`);
+  info(`시루(${SIRU})가 오르는 칸 ${fit.length} — ${names.join(' · ')}`);
+  info(`  ⚠ 자리는 ${r.slots.length}칸인데 시루가 오르는 것은 ${fit.length}칸이다. ` +
+       `선반 칸은 0.22 라 안 오른다 — 「자리 수」와 「시루 칸」은 다른 수다.`);
+  eng.build('oneroom');
+});
+
 /* ---- 출력 ---- */
 let fail = 0;
 for (const r of results) {
