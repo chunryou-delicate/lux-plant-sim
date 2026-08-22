@@ -2,7 +2,7 @@
  "note": "tools/glb_thumb.mjs 가 만든다. 손으로 고치지 말 것. GLB 이름 -> 썸네일 이름 · GLB 자체 크기",
  "sizeMeans": "GLB 원본 바운딩박스. 실제 미터 = 이 값 × manifest.scale_to_real",
  "tool": "tools/glb_thumb.mjs",
- "updated": "2026-08-14",
+ "updated": "2026-08-22",
  "thumbs": {
   "leaf_sheath.glb": {
    "png": "leaf_sheath.png",
@@ -56,8 +56,12 @@
   },
   "monstera_leaf_mid2_v2.glb": {
    "png": "monstera_leaf_mid2_v2.png",
-   "m": null,
-   "view": null
+   "m": {
+    "x": 0.8527,
+    "z": 0.8866,
+    "y": 0.9951
+   },
+   "view": "top"
   },
   "monstera_leaf_mid2.glb": {
    "png": "monstera_leaf_mid2.png",
