@@ -166,8 +166,55 @@ def recolor_vivid(img):
 def redo_vivid(base, out):
     return redo(base, out, mode=0, _fn=recolor_vivid)
 
+
+# ─────────────────────────────────────────────────────────────
+# ★★ 셋째 길 — **색상 그대로, 채도만 낮춘다** (2026-08-23 · [Plan] 이 낸 길)
+#
+#   PYTHONIOENCODING=utf-8 python tools/leaf/recolor_calm.py --dim <갈래이름>
+#
+# ⚠ 왜 이것이 이기나 — 위 「옮기기」는 화소마다 **-40° 와 +40° 로 방향이 갈려서** 얼룩이 난다.
+#   [Plan]: ***"채도는 방향이 없습니다. 낮추면 모든 화소가 같은 쪽으로 갑니다."***
+#
+#   재 본 것(같은 채도 0.38 로 맞춰 놓고):
+#       민무늬 라임   색상 91 그대로 · 색흔들림 4.8(기본과 같음) · 삭은색 0.0%
+#                     (옮기기는 색상 122 로 밀리고 흔들림 22.7 · 삭은색 2.0%)
+#       무늬 마블     색흔들림 28.6 **그대로** = 무늬의 색 대비가 온전히 남는다
+#                     (옮기기 11.8 절반 · 칠하기 0.3 소멸)
+#
+# ★ 뜻도 맞는다 — 차분판은 **「빛이 덜 든 개체」**다. 색을 바꾸는 게 아니라 **빛을 줄이는 것**이다.
+# ★ 그리고 잎은 **품종이 정체성**이라 색을 옮기면 이름과 그림이 어긋난다
+#   (`variegata_pink` · `galaxy_tealgold` · `charcoal` 은 이름이 곧 색이다).
+DIM_SAT, DIM_VAL = 0.55, 0.96
+DIM_GOLD_SAT     = 0.82      # ★ 금은 덜 뺀다 — 아래 ⚠ 참고
+
+# ⚠⚠ **채도만 낮추면 될 줄 알았는데 아니었다. 재서 잡았다.**
+#   `mon_star_greenyellow` 로 미리 재 보니 **겨자가 1.1% → 3.3% 로 늘었다.**
+#   까닭이 분명하다 — **겨자는 「채도가 빠진 금」이다.**
+#   그러니 **채도를 낮추는 것 자체가 금을 겨자로 만든다.** 방향과 무관한, 구조적인 것이다.
+#   ⇒ 그래서 오늘 아침에 찾은 것을 여기에도 건다: **금은 덜 뺀다.**
+#
+#   재 본 것 (`mon_star_greenyellow`):
+#       기본                     겨자 1.1%  금 10.0%  채도 0.374  색흔들림 24.3
+#       옮기기(지금 쓰는 것)      겨자 4.0%  금  7.9%  채도 0.220  색흔들림 26.4
+#       채도만 (금도 같이 뺌)     겨자 2.8%  금  3.9%  채도 0.206  색흔들림 24.0
+#       ★ 채도만 + 금은 덜 뺌     겨자 0.7%  금  9.1%  채도 0.221  색흔들림 24.0
+#   ⇒ **겨자가 기본보다도 낮고, 금은 그대로 남고, 무늬 대비도 그대로다.**
+
+def recolor_dim(img):
+    a = np.asarray(img.convert('RGB'), dtype=float)/255.0
+    h, s, v = to_hsv(a)                       # ★ h 를 안 건드린다. 그것이 뼈대다
+    gold = (h >= 40) & (h <= 70) & (s >= 0.35)
+    s2 = np.where(gold, s*DIM_GOLD_SAT, s*DIM_SAT)
+    out = to_rgb(h, np.clip(s2, 0, 1), np.clip(v*DIM_VAL, 0, 1))
+    return Image.fromarray((out*255+0.5).astype(np.uint8)), 0, 1, 0.0
+
+def redo_dim(base, out):
+    return redo(base, out, mode=0, _fn=lambda im: recolor_dim(im))
+
 if __name__ == '__main__':
-    todo = sys.argv[1:] or list(PICK)
+    args = sys.argv[1:]
+    dim  = '--dim' in args                    # ★ 셋째 길로 만든다
+    todo = [a for a in args if not a.startswith('--')] or list(PICK)
     for name in todo:
         mode = PICK.get(name, 3)
         base = 'assets/monstera/skins/%s.glb' % name
@@ -175,6 +222,11 @@ if __name__ == '__main__':
         if not os.path.exists(base):
             base = 'assets/monstera/%s.glb' % name
             out  = 'assets/monstera/%s_v2.glb' % name
-        p, t, fr = redo(base, out, mode)
-        print('%-30s 고른 판 %d · 되돌린 화소 %5.1f%% · 금 %4.1f%%  -> %d KB'
-              % (name, mode, 100.0*p/t, 100*fr, os.path.getsize(out)//1024))
+        if dim:
+            p, t, fr = redo_dim(base, out)
+            print('%-30s ★ 채도만 낮추기(셋째 길) — 색상 안 건드림  -> %d KB'
+                  % (name, os.path.getsize(out)//1024))
+        else:
+            p, t, fr = redo(base, out, mode)
+            print('%-30s 고른 판 %d · 되돌린 화소 %5.1f%% · 금 %4.1f%%  -> %d KB'
+                  % (name, mode, 100.0*p/t, 100*fr, os.path.getsize(out)//1024))
