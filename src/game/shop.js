@@ -1118,10 +1118,7 @@ const VARIE_GRADES_FALLBACK = Object.freeze({
       { id: 'pothos_marble_whitegreen' },
       { id: 'pothos_mint_dot' },
       { id: 'pothos_mint_dot_34' },
-      { id: 'pothos_silver_droplet' },
-      { id: 'heart_halfmoon_v2_stem' },
-      { id: 'monstera_leaf_fullalbo' },
-      { id: 'pothos_whitegreen_29' }
+      { id: 'pothos_silver_droplet' }
   ] },
   sale: { cuttingMult: 1.0, potMult: 1.4, synergy: { 0: 1.0, 1: 1.0, 2: 1.25, 3: 1.5 } },
   lightGrade: {
