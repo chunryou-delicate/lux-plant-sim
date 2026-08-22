@@ -107,9 +107,15 @@ const shownClick = async (id) => {
   if (on) { await click(id); return true; }
   return false;
 };
+/* ★ 순번은 **사건 순서**다 — 파일 이름 앞에 붙어 **정렬이 곧 컷 순서**가 된다([Char] 규약).
+   그래야 「앞 컷과 사실상 같다(화면이 안 넘어갔나)」 검사가 그 순서로 돈다.
+   자리마다 번호를 띄엄띄엄 준다 — 사이에 새 자리를 끼워 넣기 좋다. */
+const SHOT_NO = { boot: 1, arrive: 10, varie: 20, lamp: 30, moveout: 80,
+                  gameover: 90, stuck: 95, lock: 96, nomove: 97, end: 98 };
 const shot = async (tag) => {
   if (!SHOTS) return;
-  const f = path.join(OUT, `${String(++shotSeq).padStart(3, '0')}_d${String(R.today).padStart(3, '0')}_${tag}.png`);
+  const no = SHOT_NO[tag] != null ? SHOT_NO[tag] : (40 + (++shotSeq));
+  const f = path.join(OUT, `${String(no).padStart(3, '0')}_d${String(R.today).padStart(3, '0')}_${tag}.png`);
   try { await page.shot(f); R.shots.push({ day: R.today, tag, file: path.basename(f) }); } catch { }
 };
 
@@ -531,7 +537,12 @@ for (let d = 1; d <= DAYS; d++) {
   if (before.pots === 0 && after.pots > 0) await shot('arrive');
   if ((before.varie || 0) === 0 && (after.varie || 0) > 0) await shot('varie');
   if (before.lamp === 0 && after.lamp > 0) await shot('lamp');
-  if (d % 30 === 0) { await sweepHits(); await shot('d' + d); }
+  /* ⚠ **성기게라도 남긴다**([Char]): 사건 자리는 **무엇이 일어날지 아는 곳**이라
+     거기만 찍으면 **모르는 것은 영영 안 보인다.** 긴 판에서만 드러나는 것이 있다 —
+     소지금 자릿수가 칸을 넘거나, 날짜가 세 자리가 되며 줄이 밀리거나, 목록이 길어져 넘치거나.
+     ⚠ 찔러 보기(§sweepHits)는 서른 날마다 그대로 — 그건 그림이 아니라 판정이라 싸다. */
+  if (d % 30 === 0) await sweepHits();
+  if (d === 60 || d === 150 || d === 270 || d === 390) await shot('d' + d);
   /* 가진 것은 남긴다 — 긴 판이 중간에 죽으면 서른 몇 분이 통째로 사라진다.
      열흘마다 지금까지 것을 써 둔다. 끝에 다시 쓰므로 손해가 없다. */
   if (d % 10 === 0) { try { dump(); } catch { } }
