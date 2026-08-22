@@ -11,7 +11,7 @@
      ④ 문턱     몬스테라가 원룸에서 갈라짐 문턱 6.0 을 **등 1개로** 넘는다.
                 자연광만으로는 **못 넘는다**(등이 값을 하는 자리가 남아 있어야 한다)
      ⑤ 과하지   원룸의 어떤 자리도 반지하 최고를 넘지 않는다. 무늬종 갈라짐(8.4)은 못 넘는다 → ④가 산다
-     ⑥ 회귀     **반지하 14칸이 한 톨도 안 바뀐다** — 아래 표와 정확히 같다(허용 오차 없음)
+     ⑥ 회귀     **반지하 15칸이 한 톨도 안 바뀐다** — 아래 표와 정확히 같다(허용 오차 없음)
 
    ★ 집 조립(THREE)을 헤드리스로 돌린다 — tools/test_lampaim.mjs 와 같은 방식이라
      브라우저와 **같은 코드**가 그대로 돈다.
@@ -95,37 +95,50 @@ const check = (name, fn) => { try { fn(); results.push(['PASS', name]); }
                               catch (e) { results.push(['FAIL', name, e.message]); } };
 const info = (s) => results.push(['INFO', '  ' + s]);
 
-/* ══ ⑥ 회귀 — 반지하 14칸이 한 톨도 안 바뀐다 ════════════════════════════
+/* ══ ⑥ 회귀 — 반지하 15칸이 한 톨도 안 바뀐다 ════════════════════════════
    ★ 이게 이 작업의 절반이다. 이 창은 house_rooms.json 의 `oneroom` 절과
      furniture_presets.json 의 **새 프리셋 하나**만 건드렸으므로 반지하는
      구조상 안 바뀌어야 한다. "안 바뀌어야 한다"를 믿지 않고 잰다.
    ⚠ 값은 2026-08-06 main(729109c, 등 옮기기까지) 에서 뜬 것이다. tools/test_lampaim.mjs
      ①(안 겨눈 등 회귀)과 같은 판을 다른 각도에서 한 번 더 잠근다. */
-/* ★★ 2026-08-15 갱신 — 추천 자리를 칸 한가운데로 옮겼다(박사님 허락).
-   까닭과 폭은 `tools/test_floorlight.mjs` §① 머리말에 한 벌만 적어 두었다. 여기는 값만 둔다.
-   다시 뽑는 문: `BYEOT_REGEN=1 node tools/test_oneroom_room.mjs`
+/* ★★ 2026-08-23 다시 얼렸다 — **말없이 갱신하지 않는다.**
+   ------------------------------------------------------------
+   ⚠ [Plan]: ***"기준선을 말없이 갱신하는 것은 검사를 끄는 것과 같다."***
+   값은 손으로 안 적었다: `BYEOT_REGEN=1 node tools/test_oneroom_room.mjs`.
+   ⚠ 침대 줄(null)은 규약대로 되살려 두었다 — 그건 「없어야 한다」를 재는 줄이다.
+
+   왜 움직였나 — 셋 다 **다른 데서 한 일**이다.
+   ① `23521a1` 반지하에 **협탁**이 들어와 14 → **15칸**이 되었다. 이 검사는 「14칸」을
+      숫자로 못박고 있어서, 자리가 는 순간부터 **표를 보기도 전에** 떨어졌다.
+   ② `d0bc365` 반지하 **셋째 등**(거치형). 기구 수 못박음도 2 → **3** 이다.
+      ⚠ 표의 칸은 여전히 [등0, 등1, 등2] 다 — `tableOf('banjiha',[0,1,2])` 가 그렇게 부른다.
+        곧 **기구가 셋인데 둘까지만 켜 본다.** 셋째 등을 켠 값은 `test_floorlight` §① 의
+        둘째 칸(「등 전부」)이 잰다. 두 표가 다른 것을 재고 있다는 뜻이니 헷갈리지 마라.
+   ③ 2026-08-23 자리를 **칸 한가운데**로 옮겼다(`furniture_pastel §tierSlots` — 협탁 자리가
+      칸 경계에 앉아 겨눠도 안 붙었다). nightstand:0 이 그때 움직였다.
+      ★ 자리 **수는 안 늘렸다** — 여섯 방 325칸 그대로, 자연광 최고 여섯 개 다 그대로.
+
    옛 값(2026-08-06 main): sill [4.80,5.15,5.19] · desk:0 [0.61,1.10,1.86] · desk:1 [0.17,0.32,1.32] ·
      dresser:0 [0.08,0.14,0.19] · dresser:1 [0.05,0.10,0.13] ·
-     etagere:0~2 [0.13,0.89,0.95]/[0.14,0.95,1.04]/[0.13,0.88,0.99] ·
-     etagere:3~5 [0.23,1.94,2.01]/[0.22,2.27,2.37]/[0.21,1.92,2.05] ·
      etagere:6~8 [0.51,5.98,6.06]/[0.48,12.31,12.41]/[0.48,5.95,6.10] */
 const BANJIHA_FROZEN = {
-  /* slotId              [등0,   등1,   등2  ] */
-  'banjiha-sill:0':      [ 4.80,  5.15,  5.19],
-  'banjiha-bed:0':       null,   // 침대는 슬롯을 안 낸다 — 아래에서 "없어야 한다"로 쓴다
-  'banjiha-desk:0':      [ 0.60,  1.06,  1.85],
-  'banjiha-desk:1':      [ 0.19,  0.34,  1.38],
-  'banjiha-dresser:0':   [ 0.07,  0.14,  0.19],
-  'banjiha-dresser:1':   [ 0.05,  0.10,  0.13],
-  'banjiha-etagere:0':   [ 0.13,  0.90,  0.97],
-  'banjiha-etagere:1':   [ 0.14,  0.95,  1.04],
-  'banjiha-etagere:2':   [ 0.13,  0.90,  1.00],
-  'banjiha-etagere:3':   [ 0.22,  1.99,  2.07],
-  'banjiha-etagere:4':   [ 0.22,  2.27,  2.37],
-  'banjiha-etagere:5':   [ 0.21,  1.98,  2.11],
-  'banjiha-etagere:6':   [ 0.51,  6.68,  6.77],
-  'banjiha-etagere:7':   [ 0.48, 12.31, 12.41],
-  'banjiha-etagere:8':   [ 0.48,  6.66,  6.80]
+  /* slotId                [등0,   등1,   등2  ] */
+  'banjiha-sill:0':        [ 3.68,  6.02,  6.06],
+  'banjiha-bed:0':         null,   // 침대는 슬롯을 안 낸다 — 아래에서 "없어야 한다"로 쓴다
+  'banjiha-desk:0':        [ 0.56,  0.83,  1.77],
+  'banjiha-desk:1':        [ 0.16,  0.29,  1.11],
+  'banjiha-dresser:0':     [ 0.06,  0.11,  0.16],
+  'banjiha-dresser:1':     [ 0.04,  0.08,  0.11],
+  'banjiha-etagere:0':     [ 0.13,  0.30,  0.37],
+  'banjiha-etagere:1':     [ 0.14,  0.32,  0.40],
+  'banjiha-etagere:2':     [ 0.13,  0.31,  0.42],
+  'banjiha-etagere:3':     [ 0.22,  0.46,  0.54],
+  'banjiha-etagere:4':     [ 0.22,  0.48,  0.58],
+  'banjiha-etagere:5':     [ 0.21,  0.49,  0.61],
+  'banjiha-etagere:6':     [ 0.51,  0.87,  0.95],
+  'banjiha-etagere:7':     [ 0.48,  0.89,  1.00],
+  'banjiha-etagere:8':     [ 0.48,  0.92,  1.06],
+  'banjiha-nightstand:0':  [ 0.44,  0.70,  0.95]
 };
 
 const BJ = tableOf('banjiha', [0, 1, 2]);
@@ -139,9 +152,9 @@ if (process.env.BYEOT_REGEN) {
   process.exit(0);
 }
 
-check('⑥ 회귀 — 반지하 14칸 DLI 가 정확히 같다 (반올림 허용치 없음)', () => {
-  assert.equal(BJ.room.slots.length, 14, `반지하 슬롯 수가 14 가 아닙니다 (${BJ.room.slots.length})`);
-  assert.equal(BJ.room.growRigs.length, 2, '반지하 식물등 기구가 2개가 아닙니다');
+check('⑥ 회귀 — 반지하 15칸 DLI 가 정확히 같다 (반올림 허용치 없음)', () => {
+  assert.equal(BJ.room.slots.length, 15, `반지하 슬롯 수가 15 가 아닙니다 (${BJ.room.slots.length})`);   // 23521a1 협탁
+  assert.equal(BJ.room.growRigs.length, 3, '반지하 식물등 기구가 3개가 아닙니다');   // d0bc365 거치등
   assert.equal(BJ.room.unstableSlots.length, 0, '반지하에 임시 uid 슬롯이 생겼습니다');
   for (const [slotId, want] of Object.entries(BANJIHA_FROZEN)) {
     if (want == null) { assert.ok(!BJ.out.has(slotId), `${slotId} 가 새로 생겼습니다`); continue; }

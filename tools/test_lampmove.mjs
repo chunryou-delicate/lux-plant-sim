@@ -116,24 +116,30 @@ const dli = (slotId, n) => eng.dliOfSlot(slotId, { ...SKY, lampCount: n });
    6.0 을 여유 0.02 로 지킨다. 까닭·표는 `test_lampaim` §BEFORE 머리말과
    `docs/handoff/nightstand-to-plan.md`. 값은 `BYEOT_REGEN=1` 로 다시 뽑았다. */
 const BEFORE = {
+  /* ★★ 2026-08-23 — **이 표가 두 번 낡아 있었다.** `test_lampaim` §BEFORE 와 글자 그대로
+     같아야 하는 표인데, 그쪽은 08-17 에 갱신되고 여기는 안 됐다.
+       · `ca3f8f8` 책상 다섯 열 · 협탁 2×2 → desk:0 · desk:1 · nightstand:0
+       · 2026-08-23 자리를 칸 한가운데로(`furniture_pastel §tierSlots`) → nightstand:0
+     ⇒ 창턱 3.68 / 6.02 / 6.06 은 그대로다. 값은 `BYEOT_REGEN=1` 로 다시 뽑았다.
+     ⚠ 「두 표가 같아야 한다」는 규약은 **한쪽만 갱신하면 조용히 깨진다.** 실제로 깨져 있었다. */
   'banjiha-sill:0':     { ppfd: [0, 54.242863, 55.148633], dli: [3.68, 6.02, 6.06] },
-  'banjiha-desk:0':     { ppfd: [0, 6.464065, 24.159566],  dli: [0.58, 0.86, 1.63] },
-  'banjiha-desk:1':     { ppfd: [0, 3.261011, 26.510409],  dli: [0.18, 0.32, 1.32] },
-  'banjiha-dresser:0':  { ppfd: [0, 1.216627, 2.266042],   dli: [0.06, 0.11, 0.16] },
-  'banjiha-dresser:1':  { ppfd: [0, 0.901646, 1.544899],   dli: [0.04, 0.08, 0.11] },
-  'banjiha-etagere:0':  { ppfd: [0, 3.94717, 5.541377],    dli: [0.13, 0.3, 0.37] },
-  'banjiha-etagere:1':  { ppfd: [0, 4.172122, 6.161167],   dli: [0.14, 0.32, 0.4] },
-  'banjiha-etagere:2':  { ppfd: [0, 4.287694, 6.813442],   dli: [0.13, 0.31, 0.42] },
-  'banjiha-etagere:3':  { ppfd: [0, 5.591329, 7.341375],   dli: [0.22, 0.46, 0.54] },
-  'banjiha-etagere:4':  { ppfd: [0, 6.054186, 8.297927],   dli: [0.22, 0.48, 0.58] },
-  'banjiha-etagere:5':  { ppfd: [0, 6.300717, 9.264352],   dli: [0.21, 0.49, 0.61] },
-  'banjiha-etagere:6':  { ppfd: [0, 8.419273, 10.267717],  dli: [0.51, 0.87, 0.95] },
-  'banjiha-etagere:7':  { ppfd: [0, 9.51673, 11.927482],   dli: [0.48, 0.89, 1] },
+  'banjiha-desk:0':     { ppfd: [0, 6.172824, 27.854809], dli: [0.56, 0.83, 1.77] },
+  'banjiha-desk:1':     { ppfd: [0, 3.097671, 22.011606], dli: [0.16, 0.29, 1.11] },
+  'banjiha-dresser:0':  { ppfd: [0, 1.216627, 2.266042], dli: [0.06, 0.11, 0.16] },
+  'banjiha-dresser:1':  { ppfd: [0, 0.901646, 1.544899], dli: [0.04, 0.08, 0.11] },
+  'banjiha-etagere:0':  { ppfd: [0, 3.94717, 5.541377], dli: [0.13, 0.3, 0.37] },
+  'banjiha-etagere:1':  { ppfd: [0, 4.172122, 6.161167], dli: [0.14, 0.32, 0.4] },
+  'banjiha-etagere:2':  { ppfd: [0, 4.287694, 6.813442], dli: [0.13, 0.31, 0.42] },
+  'banjiha-etagere:3':  { ppfd: [0, 5.591329, 7.341375], dli: [0.22, 0.46, 0.54] },
+  'banjiha-etagere:4':  { ppfd: [0, 6.054186, 8.297927], dli: [0.22, 0.48, 0.58] },
+  'banjiha-etagere:5':  { ppfd: [0, 6.300717, 9.264352], dli: [0.21, 0.49, 0.61] },
+  'banjiha-etagere:6':  { ppfd: [0, 8.419273, 10.267717], dli: [0.51, 0.87, 0.95] },
+  'banjiha-etagere:7':  { ppfd: [0, 9.51673, 11.927482], dli: [0.48, 0.89, 1] },
   'banjiha-etagere:8':  { ppfd: [0, 10.140864, 13.409602], dli: [0.48, 0.92, 1.06] },
   /* ★ 2026-08-17 (G-14) — 반지하에 협탁이 들어와 자리가 14 → 15 가 됐다
      (`data/house_rooms.json §banjiha-nightstand`). ⚠ **위 14줄은 글자 하나 안 바뀌었다** —
      `BYEOT_REGEN=1` 로 다시 뽑아 대조했고 `test_lampaim` ① 과도 같은 표다. */
-  'banjiha-nightstand:0': { ppfd: [0, 6.34696, 12.722602], dli: [0.29, 0.56, 0.84] }
+  'banjiha-nightstand:0': { ppfd: [0, 6.006547, 11.96924], dli: [0.44, 0.7, 0.95] }
 };
 
 /* 새 값을 뽑을 때 쓴다: BYEOT_REGEN=1 node tools/test_lampmove.mjs
