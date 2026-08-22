@@ -42,7 +42,9 @@ import {
   makeCropPot, eatFromPantry, pantryCapWon, dailyCropSaveWonOf,
   cropCycleSavedWon, cropSurplusQuote, cropSurplusRateOf, takeCropSurplus,
   /* ★ 2026-08-17 · §K — 「잉여가 0 이 됐어도 **곳간에서 파는 길**은 살아 있다」를 잰다 */
-  pantrySaleQuote
+  pantrySaleQuote,
+  /* ★ 2026-08-16 — 수확량 난이도 배수(반지하 ×2 · 원룸 ×1.3). 손익분기가 이것으로 나뉜다 */
+  CROP_HARVEST_MULT
 } from '../src/game/first_play.js';
 import { newState, sellCropSurplus, cropSurplusStatus } from '../src/game/state.js';
 import { buyPriceOf, cropBreakEvenRate, shopStatus } from '../src/game/shop.js';
@@ -140,8 +142,15 @@ console.log('\n== B. 손익분기 — 지갑에서 나가는 씨앗값으로 잰
        반대로 갈렸다. 「늘 갈린다」로도, 「늘 같이 간다」로도 읽으면 안 된다.
      ⚠ `cropBreakEvenRate` 는 **최상 품질**(`qualityMaxMeals`)로 잰다 — 「제일 잘 됐을 때
        씨앗값을 뽑으려면 몇 %에 팔아야 하나」다. 그래서 위끝만 벌려도 이 값이 움직인다. */
-  assert.equal(bean.toFixed(3), '0.100', `★콩나물 손익분기가 10.0%가 아니다: ${bean}`);
-  assert.equal(musun.toFixed(3), '0.150', `★무순 손익분기가 15.0%가 아니다: ${musun}`);
+  /* ⚠⚠ 2026-08-16 — **수확량에 난이도 배수가 붙었다**(first_play §수확량 배수 · 반지하 ×2).
+     손익분기는 「씨앗값 ÷ 최상 품질 수확량」이라 **수확량이 곱해지면 그만큼 나눠진다** —
+     10.0% → 5.0% · 15.0% → 7.5%. 값이 좋아진 것이고, 그게 배수를 단 목적이다.
+     ⇒ 여기에 수를 다시 박지 않는다. **밑값 ÷ 배수**로 적어 배수를 바꿔도 안 낡게 한다(§2.8). */
+  const HM = CROP_HARVEST_MULT.banjiha;
+  assert.equal(bean.toFixed(3), (0.100 / HM).toFixed(3),
+    `★콩나물 손익분기가 ${(10 / HM).toFixed(1)}%가 아니다: ${bean}`);
+  assert.equal(musun.toFixed(3), (0.150 / HM).toFixed(3),
+    `★무순 손익분기가 ${(15 / HM).toFixed(1)}%가 아니다: ${musun}`);
   /* ★ 정가로 셈하면 11.7%가 나온다 — 그 값이 아님을 못 박는다 */
   assert.notEqual(bean.toFixed(3), '0.117', '★손익분기를 정가로 셈하고 있다');
   ok(`손익분기 콩나물 ${(bean * 100).toFixed(1)}% · 무순 ${(musun * 100).toFixed(1)}%`);
