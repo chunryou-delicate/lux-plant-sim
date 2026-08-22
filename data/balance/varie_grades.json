@@ -153,10 +153,7 @@
       { "id": "pothos_marble_whitegreen" },
       { "id": "pothos_mint_dot" },
       { "id": "pothos_mint_dot_34" },
-      { "id": "pothos_silver_droplet" },
-      { "id": "heart_halfmoon_v2_stem" },
-      { "id": "monstera_leaf_fullalbo" },
-      { "id": "pothos_whitegreen_29" }
+      { "id": "pothos_silver_droplet" }
     ],
     "_doc_pool": [
       "★★ 2026-08-23 plan — **못을 14갈래로 열었다.** 그전에는 `fromGrade` 하나라 **1갈래만** 쓰고 있었다.",
