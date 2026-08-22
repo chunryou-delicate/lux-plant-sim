@@ -12605,12 +12605,32 @@ const furnPicked = {
       const lb = $('furnLamp'), why = $('furnWhy');
       if (this.lamp) {
         if (lb) { lb.style.display = ''; lb.textContent = this.lamp.on ? '끄기' : '켜기'; }
-        const wall = this.lamp.mount === 'wall';
-        { const mb = $('furnMount'); if (mb) mb.style.display = wall ? 'none' : ''; }
+        /* ★★ 2026-08-23 — **못 옮기는 까닭은 엔진이 안다. 여기서 다시 판정하지 않는다.**
+           ⚠⚠ **이건 고장을 고친 것이 아니다. 그렇게 적을 뻔했으니 사실부터 적는다.**
+             여기 있던 것은 `this.lamp.mount === 'wall'` 이었고 **결과는 맞았다** —
+             `§onLampTap` 이 `mount: uid.includes('bar') ? 'wall' : 'clip'` 으로 **지어 넣기** 때문이다.
+             실제로 눌러 재 봤다(`_diag_lamptap`): 바 등은 단추가 감춰지고 까닭이 떴다. **멀쩡했다.**
+           ⇒ 그럼 왜 바꾸나 — **같은 사실을 세 곳이 따로 알고 있었다:**
+               프리셋      growlight_bar.mount = 'under-shelf'
+               onLampTap   uid 에 'bar' 가 있으면 'wall'          ← 글자로 짐작한다
+               여기        'wall' 이면 못 옮긴다                   ← 그 짐작에 기댄다
+             **셋이 맞아떨어져서 돌고 있었을 뿐**이다. uid 이름을 바꾸거나 못 옮기는 등을
+             하나 더 들이면 그날 조용히 갈린다(붙박이는 셋이다 — room_view §LAMP_FIXED_MOUNTS).
+           ★ 오늘 고친 등 겨눔(ghost 에 y 가 없던 것)이 **같은 병이 터진 판**이었다.
+             거기서는 두 곳이 이미 갈려 있었고 여기서는 아직 안 갈렸을 뿐이다. ⇒ **화면은 묻기만 한다.**
+           ⚠ 못 물으면(엔진이 아직 안 섰으면) **단추를 남긴다** — 감추면 옮길 수 있는 등이
+             갇힌다. 그때는 `commitLampAt` 이 제 자리에서 까닭을 던진다.
+           ⚠ 글은 엔진 것을 그대로 안 쓴다 — 그쪽은 `throw` 용이라 파일 경로가 붙어 있다.
+             **판정만 엔진에서 오고 말은 여기서 한다.**
+           ★ 잰 값 (`_diag_lamptap` · 고친 뒤): 바 등 물릴자리 false · 까닭 "붙박이 등이라 자리를
+             못 옮깁니다" / 집게등 물릴자리 뜸 · 까닭 없음 / 예외 0. **고치기 전과 같은 결과다.** */
+        let immovable = null;
+        try { immovable = roomView.lampImmovableReason(this.uid) || null; } catch { immovable = null; }
+        { const mb = $('furnMount'); if (mb) mb.style.display = immovable ? 'none' : ''; }
         /* 보이고 안 보이고는 §showConfirm 하나가 정한다 — 여기서 또 정하지 않는다 */
         if (why) {
-          why.style.display = wall ? '' : 'none';
-          why.textContent = wall ? '벽에 붙는 등이라 자리를 못 옮깁니다' : '';
+          why.style.display = immovable ? '' : 'none';
+          why.textContent = immovable ? '붙박이 등이라 자리를 못 옮깁니다' : '';
         }
       } else {
         if (lb) lb.style.display = 'none';
