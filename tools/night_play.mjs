@@ -308,7 +308,9 @@ const order = async (itemId, want = 1) => {
    **닫혀야** 볼 수 있다. 아무 때나 찌르면 「탭이 화면 밖」·「다음 날이 덮임」이 둘 다
    헛것으로 난다 — 실제로 처음에 그렇게 났다. 서랍을 닫아 놓고 안이 안 보인다고 한 셈이다. */
 const OPEN_IDS  = ['tabRoom', 'tabPlants', 'tabShop', 'tabBag', 'tabQuest'];
-const CLOSE_IDS = ['next', 'meChip', 'guideOpen', 'questChip'];
+/* ★ `btnMusic` 을 넣는다 — [Char] 이 1920 에서 「대사창에 덮인다」고 냈다.
+   ⚠ 남의 측정이라 **내가 다시 잰다.** 갈래 다섯을 갈라 찍으므로 헛것이면 헛것으로 난다. */
+const CLOSE_IDS = ['next', 'meChip', 'guideOpen', 'questChip', 'btnMusic'];
 /* ⚠⚠ **서랍이 멈출 때까지 기다린다.** `#sheet` 는 `transform` 으로 미끄러져 오르내린다 —
    닫으라고 하고 곧바로 찌르면 **아직 덮고 있는 중**이라 「[다음 날]이 상점 줄에 덮임」이 난다.
    열 때도 마찬가지로 **탭이 아직 화면 밖**이다. 둘 다 실제로 그렇게 났다.
