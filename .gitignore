@@ -165,3 +165,6 @@ assets/monstera/skins/*.png
 # ⚠ **지우는 것이 아니다** — `../lux-assets-보관/` 에 그대로 복사해 뒀고 깃 히스토리에도 남는다.
 assets/characters/_pipeline_test/
 assets/existing/
+
+# 밤샘 하네스가 쌓는 것 — 결과물이라 저장소에 안 넣는다 (tools/night_play.mjs)
+tools/_out/
