@@ -51,7 +51,24 @@ export const SIZES = ([
      **화면이 멀쩡히 뜨니 아무도 눈치 못 챈다.** 기본값이 조용히 거짓말을 한다.
    ⇒ 올려둔 사이트를 보려면 **일부러** BYEOT_URL 을 줘야 한다. */
 const BASE = process.env.BYEOT_URL || 'http://127.0.0.1:8780';
-const OUT = process.env.SHOT_OUT || 'docs/engine/shots/qa';
+const OUT_ROOT = process.env.SHOT_OUT || 'docs/engine/shots/qa';
+/* ★ 판마다 폴더를 새로 만든다 — **다시 찍는 것이 앞 판을 지우면 안 된다.**
+   ⚠ [Asset] 이 잡았다: 내 2차 촬영이 `320x568/01_boot.png` 를 덮어써서,
+     그 창이 *"처음엔 방이 또렷이 보였다"* 던 것을 **확인할 길이 없어졌다.**
+     근거 하나가 사라진 것이다.
+   ⇒ 내가 낸 말을 내 도구가 안 지키고 있었다 — **「무엇을 하든 가진 것은 남긴다.」**
+   ⇒ 그리고 판이 여럿 남아야 **「판마다 다르다」를 나중에 증명**할 수 있다. */
+function nextRun(root) {
+  let n = 1;
+  try {
+    const seen = fs.readdirSync(root).filter(x => /^run\d+$/.test(x))
+      .map(x => +x.slice(3));
+    if (seen.length) n = Math.max(...seen) + 1;
+  } catch { /* 폴더가 아직 없다 */ }
+  return 'run' + String(n).padStart(2, '0');
+}
+const RUN = process.env.SHOT_RUN || nextRun(OUT_ROOT);
+const OUT = `${OUT_ROOT}/${RUN}`;
 /* 부팅이 끝났는지 — 기존 프로브(probe_qa_boot.mjs)가 쓰는 것과 같은 표시를 본다 */
 const READY = process.env.SHOT_READY || '!!window.__rv';
 
