@@ -43,6 +43,24 @@ check('A ★코드 기본값 = data/balance/electricity.json', () => {
   assert.equal(TUTORIAL_RULES.kwhWon, BAL.kwhWon, 'kwhWon 이 갈렸습니다');
   assert.equal(TUTORIAL_RULES.lampHours, BAL.lamp.hours, 'lampHours 가 갈렸습니다');
   assert.equal(TUTORIAL_RULES.lampPriceWon, BAL.lamp.priceWon, 'lampPriceWon 이 갈렸습니다');
+  /* ★★ 2026-08-23 — **등 값 배열이 빠져 있었다** ([growth] 가 §8-3 재측정에서 찾음).
+     이 검사가 여섯 칸을 보는데 `lamp.pricesByOrder` 만 안 봤다. 지금은 같지만
+     **집게등·거치등 값이 갈리면 아무도 안 잡았다** — 사는 값과 파는 값이 다른 판이 된다.
+     ⚠ 「틀렸다」가 아니라 **어느 등이 얼마로 갈렸는지** 찍는다. 안 그러면 고칠 자리를 또 찾아야 한다. */
+  {
+    const code = [...(TUTORIAL_RULES.lampPricesWon || [])];
+    const canon = [...(BAL.lamp.pricesByOrder || [])];
+    const n = Math.max(code.length, canon.length);
+    const bad = [];
+    for (let i = 0; i < n; i++)
+      if (code[i] !== canon[i])
+        bad.push(`${i + 1}번째 등 — 코드 ${code[i] === undefined ? '없음' : code[i].toLocaleString() + '원'}` +
+                 ` / 정본 ${canon[i] === undefined ? '없음' : canon[i].toLocaleString() + '원'}`);
+    assert.equal(bad.length, 0,
+      `lampPricesWon 이 electricity.json lamp.pricesByOrder 와 갈렸습니다 — ${bad.join(' · ')}`);
+    assert.equal(code.length, canon.length,
+      `등 값 개수가 다릅니다 — 코드 ${code.length}개 / 정본 ${canon.length}개`);
+  }
   assert.deepEqual([...TUTORIAL_RULES.lampWattsByOrder], [...BAL.lamp.wattsByOrder],
     'lampWattsByOrder 가 갈렸습니다');
   assert.equal(TUTORIAL_RULES.tariffTiers, BAL.tiers, 'tariffTiers 가 갈렸습니다');
@@ -51,23 +69,34 @@ check('A ★코드 기본값 = data/balance/electricity.json', () => {
 
 /* ══ B · ★와트가 기구·방과 같은가 — 이게 이번에 고친 그 버그다 ══════════ */
 check('B ★와트 — 기구 프리셋 · 방 프로파일 · 지갑이 같은 값을 본다', () => {
-  const bar  = PRESETS.fixtures.growlight_bar.watts;
-  const clip = PRESETS.fixtures.growlight_clip.watts;
-  /* ★★★ 2026-08-22 — **거치형이 빠져 있었다.** 이 자가 등을 **둘**만 보는 사이
-     2026-08-17 에 셋째 등(거치형)이 들어왔다(박사님: *"식물등도 집게형 말고 그냥 거치형 하나
-     추가해"* · `tutorial.js §LAMP_KINDS`). 코드는 셋을 다 들고 있었다:
-       기구 프리셋 20 · 12 · **36**  ·  `lampWattsByOrder` [20, 12, **36**]
-       방 프로파일 `lampWatts` [0, 20, 32, **68**] — 누계라 32+36=68 로 딱 맞는다
-     ⇒ **셋 다 아귀가 맞는데 이 한 줄만 둘을 기다려 FAIL 을 냈다.** 코드가 아니라 자가 낡았다.
-     ⚠⚠ 이게 §2.9-⑥ 의 **더 나쁜 판**이다. 「조용히 안 재어지는 것」이 아니라
-       **멀쩡한 코드를 빨갛게 찍고 있었다.** 이 붉은 줄을 보고 `lampWattsByOrder` 에서
-       36 을 빼는 순간 **거치등 전기세가 통째로 사라진다** — 검사가 사고를 만드는 자리다.
-     ⇒ 이제 **기구 표에서 셋을 다 읽는다.** 넷째 등이 들어오면 이 줄도 같이 늘려야 한다.
-       (수를 여기 박지 않고 프리셋에서 읽으므로 **와트 값이 바뀌는 것**은 저절로 따라온다.) */
-  const stand = PRESETS.fixtures.growlight_stand.watts;
-  assert.deepEqual([...TUTORIAL_RULES.lampWattsByOrder], [bar, clip, stand],
-    `와트 표가 기구 프리셋과 다릅니다 — 바 ${bar}W · 집게 ${clip}W · 거치 ${stand}W 여야 합니다`);
-  /* 방 프로파일의 lampWatts[n] 은 "등 n개를 켰을 때의 와트 합"이다. 누계라 그대로 맞아야 한다 */
+  /* ★★★ 2026-08-23 — **기구 이름 셋을 손으로 적던 자리를 없앴다** ([growth]).
+     예전에는 `growlight_bar`·`growlight_clip`·`growlight_stand` 를 여기 박아 두고 견줬다.
+     그래서 2026-08-17 에 셋째 등이 들어왔을 때 **이 줄만 둘을 기다려 FAIL** 을 냈다 —
+     코드 셋은 아귀가 맞는데 자가 낡아서 **멀쩡한 코드를 빨갛게 찍었다.** 그 붉은 줄을 보고
+     `lampWattsByOrder` 에서 36 을 빼면 **거치등 전기세가 통째로 사라진다.** 검사가 사고를 만드는 자리였다.
+     ⇒ 이제 **기구 표에서 「식물등인 것」을 세어** 견준다. 넷째 등이 들어와도 이 줄은 안 고친다.
+       · 개수 — 프리셋의 `grow:true` 개수 = 와트 표 길이
+       · 값   — 두 쪽의 와트 **묶음**이 같다 (순서는 아래 방 프로파일이 정한다)
+       · 순서 — `PROFILE.lampWatts` 누계가 정본이다. 여기서 새로 정하지 않는다
+     ⚠ 프리셋의 `price`(18,000·34,000·72,000)는 **실제 기구 소매가**라 게임 구매가
+       (`lampPricesWon` 120,000·80,000·150,000)와 **다른 값이다.** 같은 것으로 보고 묶지 말 것. */
+  const grow = Object.entries(PRESETS.fixtures).filter(([, v]) => v.grow === true);
+  assert.ok(grow.length > 0, 'lighting_presets.json 에 grow:true 인 기구가 없습니다');
+  const table = [...TUTORIAL_RULES.lampWattsByOrder];
+  assert.equal(table.length, grow.length,
+    `식물등 개수가 다릅니다 — 기구 표 ${grow.length}개(${grow.map(([k]) => k).join(', ')}) / ` +
+    `와트 표 ${table.length}개(${table.join('·')}W). 등이 늘었으면 lampWattsByOrder 도 늘려야 합니다`);
+  const sortNum = a => [...a].sort((x, y) => x - y);
+  const presetWatts = grow.map(([, v]) => v.watts);
+  assert.deepEqual(sortNum(table), sortNum(presetWatts),
+    `와트가 기구 프리셋과 다릅니다 — 기구 ` +
+    grow.map(([k, v]) => `${k} ${v.watts}W`).join(' · ') + ` / 와트 표 ${table.join('·')}W`);
+  /* 방 프로파일의 lampWatts[n] 은 "등 n개를 켰을 때의 와트 합"이다. 누계라 그대로 맞아야 한다.
+     ★ 길이도 본다 — 등이 늘었는데 프로파일만 안 늘면 아래 forEach 가 **새 등을 아예 안 돈다**
+       (없는 것을 「없다」로 읽는 자리다 · §2.9 ①). 그래서 개수부터 못박는다. */
+  assert.equal(PROFILE.lampWatts.length, table.length + 1,
+    `방 프로파일 lampWatts 가 ${PROFILE.lampWatts.length}칸인데 등은 ${table.length}개입니다 — ` +
+    `[0개, 1개, …, ${table.length}개] 로 ${table.length + 1}칸이어야 합니다`);
   PROFILE.lampWatts.forEach((w, n) => {
     assert.equal(lampWattsOn(TUTORIAL_RULES, n), w,
       `등 ${n}개 — 지갑은 ${lampWattsOn(TUTORIAL_RULES, n)}W, 방은 ${w}W 로 셉니다`);
