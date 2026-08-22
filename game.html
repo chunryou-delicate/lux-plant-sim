@@ -525,7 +525,10 @@
   .cutRow.warn{background:rgba(240,138,114,.10);border-color:rgba(240,138,114,.28)}
   .cutRow .nm{flex:1;min-width:0;font-size:12.5px;color:rgba(255,255,255,.86)}
   .cutRow .nm small{display:block;font-size:10.5px;color:var(--dim);margin-top:1px}
-  .cutRow .won{font-weight:700;font-size:12.5px;color:var(--gold);white-space:nowrap}
+  .cutRow .won{font-weight:700;font-size:12.5px;color:var(--gold);white-space:nowrap;text-align:right}
+  /* ★★ 2026-08-23 — **자르면 모주가 얼마 깎이나** (plan 판단 · 「막지 않고 대가를 보여 준다」).
+     급전은 대가를 치르는 것이 본질이다 — 대가를 숨기면 함정이고 보여 주면 기능이다. */
+  .cutRow .won small{display:block;font-weight:600;font-size:10px;color:#f08a72;margin-top:1px}
   .cutRow button{min-height:34px;padding:0 10px;border-radius:9px;font-size:11.5px;flex:0 0 auto}
   /* ══ ★ 중고 거래 줄 — **줄바꿈한다** (2026-08-17 · 화면에서 깨진 것을 보고 고쳤다) ══
      ------------------------------------------------------------
@@ -2831,6 +2834,8 @@ import { catalogList, orderItem, shopStatus, priceOf,
          listPot, listCutting, dealListing, cancelListing,
          marketGate, marketStatus, listingFor, marketWaitKo, MARKET_MIN_LEAVES,
          stockOf, SELLABLE_CUTTING_STATUS, varieLeavesNeededFor,
+         /* ★ 장부에서 잎별 등급을 줄 세우는 정본 — 재는 자가 따로 줄 세우면 갈린다(§cutMotherLoss) */
+         potLeafGradeListOf,
          /* ★★ 무늬 등급 (2026-08-16 · plan-2026-08-17-varie-grade.md 확정) */
          installVarieGrades, assignPotLeafGrades,
          /* ★ 2026-08-16 — 잎별 무늬 그림(중간잎·성숙잎을 등급으로 확정 · midalbo-to-plan) */
@@ -5551,6 +5556,88 @@ window.__byeotMonthShow = (n) =>
    ★ 수치를 하나도 안 만들었다. 물꽂이 12 / 직삽 24 / 마디 32 / 기한 40 은
      propagation.METHODS 가 갖고, 값은 shop.priceOf 가 갖는다. 여기는 배선만 한다. */
 
+/* ★★★ 2026-08-23 — **자른 삽수에 잎 등급을 딸려 보낸다** (plan 판단 · 버그였다)
+   ------------------------------------------------------------
+   `propagation.js §leafGrade` 는 출처를 셋으로 적어 두었다:
+     ① `opt.leafGrades`  ← **화면이 모주 장부에서 읽어 넘긴다**
+     ② `node.leafGrades` ← 모주가 삽수일 때만 찬다
+     ③ 없으면 산반(확정문 §5 — 옛 세이브 규약)
+   그런데 **①을 넘기는 데가 한 곳도 없었다.** 그루에서 자른 삽수는 늘 ③으로 떨어져
+   **하프문 잎을 잘라도 산반 값**으로 팔렸다(750,000 → 350,000).
+   ⇒ 무늬 시스템 전체가 「등급이 값을 정한다」인데 삽수만 예외였다. 예외일 까닭이 없다.
+   ⇒ ★ 급전의 이자는 안 바뀐다 — 받는 값이 커지면 §cutMotherLoss 의 치르는 값도
+     `quotePot` 차액이라 저절로 같이 커진다. `cuttingMult`·`potMult` 는 안 건드렸다.
+
+   ⚠ **자리 규약을 여기서 새로 만들지 않는다.** `shop.potLeafGradeListOf` 와 **같은 규칙**이다 —
+     무늬 잎은 **위쪽(최근)** 에 두고, 장부에서 오래된 것(작은 leafBirth)부터 줄 세운다.
+     `propagation` 이 `i >= leaves - variegatedLeaves` 를 무늬 자리로 읽으므로 거기에 맞춘다.
+   ⚠ **장부에 없으면 안 넘긴다**(null 반환). 지어내면 없는 등급이 값을 받는다 —
+     그때는 ③(산반)으로 떨어지는 것이 맞고, 그건 확정문이 정한 자리다. */
+function cutLeafGradesOf(p, n) {
+  const led = (p && p.leafGrades && typeof p.leafGrades === 'object') ? p.leafGrades : null;
+  const births = Array.isArray(n && n.leafBirths) ? n.leafBirths : null;
+  if (!led || !births || !Number.isInteger(n.leaves) || births.length !== n.leaves) return null;
+  const v = n.variegatedLeaves || 0;
+  if (v < 1) return null;                       /* 무지 마디는 넘길 등급이 없다 */
+  const got = births.map(Number).filter(lb => Number.isFinite(lb) && led[lb])
+                    .sort((a, b) => a - b).map(lb => led[lb]);
+  if (!got.length) return null;
+  const take = got.slice(-Math.min(v, n.leaves));
+  const out = new Array(n.leaves).fill(null);
+  for (let i = 0; i < take.length; i++) out[n.leaves - take.length + i] = take[i];
+  return out;
+}
+
+/* ★★★ 2026-08-23 — **이 마디를 자르면 모주 값이 얼마나 깎이나** (plan 판단)
+   ------------------------------------------------------------
+   삽수는 **개체수 늘리기 + 급전**이지 이사 자금의 주 경로가 아니다(박사님 확정).
+   그래서 「자르면 손해」는 **고칠 것이 아니라 말해 줄 것**이다 —
+   급전은 대가를 치르는 것이 본질이고, 대가를 숨기면 함정이고 보여 주면 기능이다.
+
+   ★ **왜 자르기 줄인가 — 손해는 팔 때가 아니라 자를 때 난다.**
+     `propagation.motherStatsNow` 가 `cutLossOf` 를 바로 뺀다 — 자르는 그 순간
+     모주의 팔 수 있는 잎이 준다. 내놓기 단추에 적으면 **이미 치른 값을
+     나중에 청구서로 보여 주는 꼴**이 된다. 고를 수 있는 자리에 적는다.
+
+   ⚠ **숫자를 여기서 짓지 않는다**(§2.8). 삽수 값(×1.0)도 그루 값(×1.4)도
+     한 글자 안 건드렸다 — **그 둘의 차이가 곧 급전의 이자**라, 없애면 급전이
+     급전이 아니게 된다. 화면은 정본(`quotePot`)에 두 번 묻고 빼기만 한다.
+   ⚠ **모르면 아무 말도 안 한다.** 잎 열쇠(`leafBirths`)를 안 내는 예전 plant_grow 에서는
+     「어느 등급의 잎이 딸려 나가나」를 모른다. 0 으로 메꾸면 「손해 없음」이라는
+     **거짓말**이 된다 — 그럴 땐 줄을 안 그린다.
+   ⚠ 기준 값은 [몬스테라 내놓기]가 적는 그 값과 **같은 입력**으로 묻는다(§sellPlant) —
+     둘이 다른 수를 말하면 무엇을 잃는지가 안 맞는다. */
+function cutMotherLoss(p, n) {
+  if (!p || !n || !Number.isInteger(n.leaves)) return null;
+  const births = Array.isArray(n.leafBirths) ? n.leafBirths : null;
+  if (!births || births.length !== n.leaves) return null;   /* 열쇠가 없으면 입을 닫는다 */
+  let ls = null; try { ls = io.growth.leafStats && io.growth.leafStats(); } catch { }
+  if (!ls || !Number.isInteger(ls.leaves)) return null;
+  const leavesAfter = ls.leaves - n.leaves;
+  const varieAfter = (ls.variegatedLeaves || 0) - (n.variegatedLeaves || 0);
+  /* 잎이 한 장도 안 남는 자르기는 값을 못 매긴다(문이 잎 2장이다 · marketGate) */
+  if (leavesAfter < 1 || varieAfter < 0) return null;
+  /* 장부에서 **딸려 나갈 잎만** 뺀다. 남은 것을 줄 세우는 것은 정본 몫이다 —
+     여기서 다시 줄 세우면 「무늬 잎은 위쪽에 있다」 규약이 두 벌이 된다. */
+  let after = null;
+  const led = (p.leafGrades && typeof p.leafGrades === 'object') ? p.leafGrades : null;
+  if (led) {
+    const gone = new Set(births.map(Number));
+    const left = {};
+    for (const k of Object.keys(led)) if (!gone.has(Number(k))) left[k] = led[k];
+    try { after = potLeafGradeListOf({ leafGrades: left }, leavesAfter, varieAfter); } catch { }
+  }
+  let now = null, then = null;
+  try { now = quotePot(S, { leaves: ls.leaves, variegatedLeaves: ls.variegatedLeaves }); } catch { }
+  try {
+    then = quotePot(S, { leaves: leavesAfter, variegatedLeaves: varieAfter,
+                         ...(after ? { leafGrades: after } : {}) });
+  } catch { }
+  if (!now || !then || !Number.isFinite(now.won) || !Number.isFinite(then.won)) return null;
+  const lose = now.won - then.won;
+  return lose > 0 ? lose : null;      /* 안 깎이면 줄을 안 그린다 */
+}
+
 /* 모주에서 지금 실제로 자를 수 있는 마디.
    ★ 목록은 growth 소유다(io.growth.cuttableNodes). 없으면 **화면을 안 열면 된다** —
      잎 수를 여기서 지어내면 "실제 자란 것"이라는 이 기능의 뜻이 그 자리에서 사라진다. */
@@ -5618,8 +5705,11 @@ const reallyCut = guard((nodeId, container) => {
     let momDays = null;
     try { const d = io.growth.growthDays(); if (Number.isFinite(d)) momDays = d; } catch { }
     const momSeed = (S.sim && Number.isFinite(S.sim.seed)) ? S.sim.seed : null;
+    /* ★ 잎 등급을 딸려 보낸다(§cutLeafGradesOf) — 못 읽으면 안 넘기고, 코어가 확정문 §5 로 떨어뜨린다 */
+    const grades = cutLeafGradesOf(pot0(S), nodes.find(x => x.nodeId === nodeId));
     c = takeCutting(S, { potId: pot0(S).id, nodes, nodeId, container,
                          at: pl.at, size: pl.size, slots: pl.slots, snapDist: pl.snapDist,
+                         ...(grades ? { leafGrades: grades } : {}),
                          ...(momDays != null ? { motherGrowthDays: momDays } : {}),
                          ...(momSeed != null ? { motherSeed: momSeed } : {}),
                          log: m => pushLog(S, m) });
@@ -5717,6 +5807,7 @@ function drawCuttings() {
            인데 그 파일이 이번 창의 쓰기 영역 밖이다. 붙일 코드는 보고서에 그대로 적어 두었다
            (`docs/handoff/market-to-plan.md §못 한 것`). ⇒ 그때까지는 이 한 줄이 유일한 문이다. */
       if (!why && potListing) why = '중고 거래에 내놓은 그루입니다 — 먼저 게시글을 내려 주세요';
+      const lose = cutMotherLoss(p, n);
       const btn = (cid) => {
         const item = containerItemOf(cid);
         const have = item ? (st.stock[item] || 0) : 0;
@@ -5731,7 +5822,10 @@ function drawCuttings() {
         (n.variegatedLeaves ? ' · 무늬 ' + n.variegatedLeaves + '장' : '') +
         '<small>' + n.nodeId + ' · ' + n.stem + ' · ' +
         (why ? why : '뿌리내면 팔 수 있습니다') + '</small></div>' +
-        '<div class="won">' + sellWon.toLocaleString() + '원</div>' + btn('jar') + btn('soil') + '</div>');
+        /* ★ 이 줄이 급전의 값을 말한다 — 받는 것 위, 치르는 것 아래(§cutMotherLoss) */
+        '<div class="won">+' + sellWon.toLocaleString() + '원' +
+        (lose ? '<small>모주 값 −' + lose.toLocaleString() + '원</small>' : '') +
+        '</div>' + btn('jar') + btn('soil') + '</div>');
     }
   }
   $('cutNodes').innerHTML = rows.join('');
