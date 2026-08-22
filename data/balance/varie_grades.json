@@ -143,7 +143,42 @@
     "  ⚠ 위 midAssets 표는 **한 줄도 안 지웠다.** 지우면 잰 근거가 사라지고, 박사님이",
     "    나중에 「등급별로 다시 갈라」 하실 때 다시 재야 한다."
   ],
-  "midCommon": { "enabled": true, "fromGrade": "halfmoon" },
+  "midCommon": { "enabled": true, "fromGrade": "halfmoon",
+    "pool": [
+      { "id": "heart_albo_2672_3" },
+      { "id": "heart_lime_2672_0" },
+      { "id": "heart_marble_2652" },
+      { "id": "heart_speckle_2657" },
+      { "id": "pothos_cream_marble" },
+      { "id": "pothos_cream_vein" },
+      { "id": "pothos_marble_greenyellow" },
+      { "id": "pothos_marble_whitegreen" },
+      { "id": "pothos_mint_dot" },
+      { "id": "pothos_mint_dot_34" },
+      { "id": "pothos_silver_droplet" },
+      { "id": "heart_halfmoon_v2_stem" },
+      { "id": "monstera_leaf_fullalbo" },
+      { "id": "pothos_whitegreen_29" }
+    ],
+    "_doc_pool": [
+      "★★ 2026-08-23 plan — **못을 14갈래로 열었다.** 그전에는 `fromGrade` 하나라 **1갈래만** 쓰고 있었다.",
+      "  그림은 16갈래가 있고(스킨 48장) 그중 무늬가 있는 것이 14갈래다. 나머지 둘은 민무늬이라 안 넣었다(위 `_doc_unassigned_mid`).",
+      "",
+      "★ 왜 늘리는 것이 기획을 지키는가 — 이 규칙의 목적은 `_doc_midCommon` 이 적은 대로",
+      "  **「중간잎 그림이 그 잎의 등급을 미리 말해 버리는 것」을 막는 것**이다.",
+      "  갈래가 많을수록 더 잘 감춰진다. 1갈래면 감춰지는 게 아니라 *\"무늬잎은 다 저 그림\"* 이라는",
+      "  **새 규칙이 읽힌다** — 목적이 뒤집힌다.",
+      "  ⇒ 모든 무늬 잎이 **같은 못**에서 뽑는다. 등급마다 못이 다르면 그림이 다시 등급을 말한다.",
+      "",
+      "⚠ **어떤 것이 예쁩게 보이나로 고르지 않았다.** 난 그림을 못 본다 — 오늘 그것으로 한 번 틀렸다",
+      "  (이름만 보고 `monstera_leaf_mid1·2` 를 무늬로 알았다).",
+      "  ⇒ **무늬가 있는 것을 전부** 넣었다. 보기에 어깋나는 것이 있으면 **[Asset] 이 뺄다.**",
+      "    그것은 그림을 본 사람이 할 일이지 내가 할 일이 아니다.",
+      "",
+      "⚠ `midNums` 를 안 적는다([core] 규약) — 번호를 두 군데 적으면 갈리고, 갈리면 없는 잎을 그린다.",
+      "⚠ `fromGrade` 를 안 지운다 — pool 이 다 버려지는 판에서 그리로 되돌아간다."
+    ]
+  },
 
   "sale": {
     "cuttingMult": 1.0,
