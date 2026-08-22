@@ -45,14 +45,16 @@ import { seasonAt, seasonDayAt, buyLamp, canMoveOut, moveOut, TUTORIAL_RULES,
 import { orderItem, stockOf, incomingOf, priceOf, potPriceOf, cuttingPriceOf,
          potLeafGradeListOf, prologueLeafGradeListOf, varieLeavesNeededFor,
          listCutting, listPot, dealListing, marketStatus, marketGate, listingFor,
-         CATALOG, buyPriceOf, SELLABLE_CUTTING_STATUS } from '../src/game/shop.js';
+         CATALOG, buyPriceOf, SELLABLE_CUTTING_STATUS,
+         /* ★ 2026-08-23 — 잎 등급 장부를 **재현에서도 채운다**(§등급 장부) */
+         assignPotLeafGrades } from '../src/game/shop.js';
 import { takeCutting, cuttableNow, cutBudgetOf, motherStatsNow, METHODS,
          repotCutting, cuttingStatsNow, WATER_LEAF_MAX } from '../src/game/propagation.js';
 /* ★★ 2026-08-18 — **프롤로그 보장의 정본을 코어에서 읽는다.**
    이 재현은 지금껏 `setPrologueVarieLeaf` 를 한 번도 안 불렀다 ⇒ 잎 2·3 무늬 보장이
    **한 판도 안 돌았다**(multiplant-to-plan §3 이 그 사실을 적어 두었다).
    여기서 숫자 [2,3] 을 손으로 베끼지 않는다 — 정본이 바뀌면 재현이 조용히 옛 값에 남는다. */
-import { PROLOGUE_VARIE_LEAVES } from '../src/game/growth_adapter.js';
+import { PROLOGUE_VARIE_LEAVES, createGrowthAdapter } from '../src/game/growth_adapter.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const U = p => new URL(p, import.meta.url);
@@ -161,6 +163,8 @@ function loadGrowth() {
   return ctx;
 }
 const G = loadGrowth();
+/* ★ 어댑터를 이 vm 전역 위에 세운다 — `leafState` 하나를 얻으려는 것이다(§stand-leafState) */
+const GA = createGrowthAdapter({ contentWindow: G });
 for (let i = 0; i < 200 && !G.thLoaded(); i++) await new Promise(r => setImmediate(r));
 assert.ok(G.thLoaded(), '임계값 정본(data/growth_tuning.json)이 안 실렸습니다');
 
@@ -204,6 +208,10 @@ function standGrowth(seed, opt = {}) {
     dli7: () => G.dli7(), dliCV: () => G.dliCV(), ageOf: (d) => G.ageOf(d),
     cuttableNodes: () => G.cuttableNodes(),
     leafStats: () => G.leafStats(),
+    /* ★★★ 2026-08-23 — **잎 상태를 낸다.** `assignPotLeafGrades` 가 이걸 먹고 등급 장부를 채운다.
+       ⚠ 여기서 다시 짓지 않는다 — `growth_adapter.leafState` 가 정본이고, 어댑터는
+         `contentWindow` 만 있으면 서므로 **이 vm 전역을 그대로 물린다.** 두 벌이 되면 갈린다. */
+    leafState: (o) => GA.leafState(o),
     /* ★★★ 2026-08-18 — **`bandOf` 가 빠져 있었다.** 이 한 줄이 없어서 삽수가 통째로 멈춰 있었다.
        `loop.cuttingLightOf` 는 `io.growth.bandOf(dli, varie)` 로 밴드를 묻고, 못 얻으면
        **null 을 돌려준다**(「growth 가 밴드를 못 내면 판정하지 않는다」). 그러면
@@ -249,6 +257,25 @@ function cuttingValueOf(S) {
     n++;
   }
   return { won, n };
+}
+
+/* ★ 자른 마디에 딸려 갈 **잎 등급** — `game.html §cutLeafGradesOf` 와 같은 함수다.
+   자리 규약은 `shop.potLeafGradeListOf` 것을 그대로 쓴다: 무늬 잎은 위쪽(최근),
+   장부에서 오래된 것(작은 leafBirth)부터 줄 세운다.
+   ⚠ 장부에 없으면 **안 넘긴다** — 그때는 확정문 §5 대로 산반으로 떨어지는 것이 맞다. */
+function cutGradesOf(p, n) {
+  const led = (p && p.leafGrades && typeof p.leafGrades === 'object') ? p.leafGrades : null;
+  const births = Array.isArray(n && n.leafBirths) ? n.leafBirths : null;
+  if (!led || !births || !Number.isInteger(n.leaves) || births.length !== n.leaves) return null;
+  const v = n.variegatedLeaves || 0;
+  if (v < 1) return null;
+  const got = births.map(Number).filter(lb => Number.isFinite(lb) && led[lb])
+                    .sort((a, b) => a - b).map(lb => led[lb]);
+  if (!got.length) return null;
+  const take = got.slice(-Math.min(v, n.leaves));
+  const out = new Array(n.leaves).fill(null);
+  for (let i = 0; i < take.length; i++) out[n.leaves - take.length + i] = take[i];
+  return out;
 }
 
 /* 오늘 자를 마디를 고른다.
@@ -321,6 +348,8 @@ function play(opt = {}) {
     }
   };
 
+  /* ★ 장부의 **최대치**를 들고 간다(§peek) — 끝값은 모주를 팔면 사라진다 */
+  const ledgerPeak = { n: 0, led: null };
   for (let d = 1; d <= (opt.days || 240); d++) {
     /* ★★ 물주기 = **회전 시작** (2026-08-04 새 규칙 · first_play.js §물주기).
        한 번 누르면 **시루 하나**가 그날을 0일차로 잡는다. 그래서 하루에 한 번 누르는 이 재현은
@@ -334,6 +363,34 @@ function play(opt = {}) {
     let turn;
     try { turn = nextDay(S, io).turn; }
     catch (e) { throw new Error(`Day ${S.day} 에서 턴이 터졌습니다 — ${e.message}`); }
+
+    /* ══ ★★★ 2026-08-23 — **잎 등급 장부를 채운다** (§등급 장부) ═══════════════════
+       ------------------------------------------------------------
+       이 재현은 이제껏 `assignPotLeafGrades` 를 **한 번도 안 불렀다.** 부르는 자리가
+       `game.html §noteLeafGrades`(턴 끝) 하나뿐이라 재현에는 그 줄이 없었기 때문이다.
+       ⇒ 그래서 장부가 늘 비었고, 값이 `prologueLeafGradeListOf`(잎2 산반·잎3 하프문,
+         그 밖은 전부 산반) **다리**로만 매겨졌다. 즉 **「빛이 무늬 등급을 정한다」가
+         재현에서 한 번도 안 돌았다** — 이 게임의 뼈대인 그 규칙을 안 재고 있었다.
+       ⚠ 화면과 **같은 자리·같은 인자**로 부른다. 밴드는 **이 턴 것**을 넘긴다 —
+         지난 턴 것을 넘기면 어제 자리가 오늘 난 잎의 등급을 정한다(§noteLeafGrades). */
+    if (pot0(S)) {
+      try {
+        const lst = io.growth.leafState && io.growth.leafState();
+        if (lst) assignPotLeafGrades(S, { leafState: lst,
+                   band: (turn && turn.growthSpeed && turn.growthSpeed.band) || null });
+      } catch { /* 빛을 못 재면 아무것도 안 정한다 — 0 으로 안 메꾼다(shop 검사 E-2) */ }
+      /* ⚠⚠ **여기서 본다. 판이 끝난 뒤에 보면 안 된다.** 처음엔 끝에서 `pot0(S).leafGrades` 를
+         읽었는데, **모주를 판 판은 그루가 없어 늘 0** 이었다. 그래서 성공률이 높은 경로일수록
+         장부가 비어 보였다(A 16/40 · B 6/40 · C 2/40 — 성공률과 정확히 거꾸로).
+         재는 자가 「빛이 등급을 못 정한다」고 거짓말할 뻔한 자리다(§2.9). */
+      try {
+        const led = pot0(S) && pot0(S).leafGrades;
+        if (led) {
+          const k = Object.keys(led).length;
+          if (k > ledgerPeak.n) { ledgerPeak.n = k; ledgerPeak.led = { ...led }; }
+        }
+      } catch { }
+    }
 
     /* ★ 중고 거래의 문을 연다 — **화면이 하는 것과 같은 일**이다(`game.html §drawShop` 이
        매번 `marketGate(S, { leaves })` 를 부른다). 잎 수는 growth 소유라 여기서도 받아 넘긴다.
@@ -427,7 +484,12 @@ function play(opt = {}) {
              새 잎도 안 난다(propagation §①-2·①-3). 사람은 병을 어딘가에 놓는다.
              ⚠ 자리는 **좌표로** 준다 — `setCuttingAt` 은 자리 이름 문자열을 못 받는다
                (`place.makeAt` 이 던진다 · tools/probe_three_layers.mjs §7.13-③ 이 잡아 둔 함정). */
+          /* ★★★ 2026-08-23 — **잎 등급을 딸려 보낸다.** 화면(`game.html §cutLeafGradesOf`)이
+             하는 것을 그대로 한다 — 재현이 화면과 다른 것을 하면 재는 것이 게임이 아니다.
+             ⚠ 이게 없으면 하프문 잎을 잘라도 **산반 값**(350,000 vs 750,000)이라
+               이사 경로의 수입이 통째로 낮게 잡힌다. 그 상태로 쟀던 숫자가 옛 값이다. */
           takeCutting(S, { nodes: v0.nodes, nodeId: node.nodeId, container: cont,
+                           ...(cutGradesOf(pot0(S), node) ? { leafGrades: cutGradesOf(pot0(S), node) } : {}),
                            at: atOfSlot(opt.cutSlot || SILL), slots: light.room.slots });
           if (firstCutDay == null) firstCutDay = S.day;
           if (node.variegatedLeaves > 0) varieCutsTaken++;
@@ -552,7 +614,18 @@ function play(opt = {}) {
     if (ts.movedOut) break;
   }
   const last = rows[rows.length - 1];
-  return { S, rows, growth: io.growth, lampDay, grantDay, grantNode,
+  /* ★★ 2026-08-23 — **장부가 실제로 찼나**를 재현이 스스로 말한다.
+     ⚠ 이 줄이 없어서 한 번 속을 뻔했다: `assignPotLeafGrades` 를 붙였는데 숫자가 한 톨도
+       안 움직였고, 그때 「효과가 없다」로 읽으면 틀린다 — **안 걸린 것**일 수도 있다.
+       배선을 붙였으면 배선이 걸렸다는 증거를 같이 내야 한다(§2.9). */
+  const ledger = (() => {
+    const led = ledgerPeak.led;
+    if (!led) return { n: 0, kinds: [] };
+    const t = {}; for (const g of Object.values(led)) t[g] = (t[g] || 0) + 1;
+    return { n: Object.keys(led).length,
+             kinds: Object.entries(t).sort((a, b) => b[1] - a[1]).map(([k, v]) => k + ':' + v) };
+  })();
+  return { S, rows, growth: io.growth, lampDay, grantDay, grantNode, ledger,
            cuttingIncome, varieIncome, potIncome, containerSpend, cuttingsSold,
            firstCutDay, firstSellDay, varieCutsTaken, heldSold, cuttingsDied, maxHeldLeaves,
            movedOut: S.tutorial.movedOut, lastDay: last.tday,
@@ -1196,6 +1269,10 @@ function runRoute(name, opt) {
          `모주 ${median(ok.map(r => r.potIncome)).toLocaleString()}원 · ` +
          `병값 ${median(ok.map(r => r.containerSpend)).toLocaleString()}원`);
   /* ★ 삽수가 실제로 자랐나 — `bandOf` 를 이었으므로 이제 잰다(안 이어져 있으면 늘 1장이다) */
+  /* ★ 등급 장부 — 「빛이 무늬 등급을 정한다」가 이 재현에서 **실제로 돌았나** */
+  info(`  ⤷ 등급 장부 — 채워진 판 ${runs.filter(r => r.ledger.n > 0).length}/${runs.length} · ` +
+       `잎 수 중앙값 ${median(runs.map(r => r.ledger.n))}장 · ` +
+       `한 판의 예 [${(runs.find(r => r.ledger.n > 0) || { ledger: { kinds: [] } }).ledger.kinds.join(' ')}]`);
   info(`  ⤷ 삽수 — 무늬 마디를 자른 판 ${runs.filter(r => r.varieCutsTaken > 0).length}/${runs.length} · ` +
        `삽수가 달았던 최대 잎 중앙값 ${median(runs.map(r => r.maxHeldLeaves))}장 · ` +
        `★기한을 넘겨 시든 삽수 ${runs.reduce((n, r) => n + r.cuttingsDied, 0)}개 ` +
