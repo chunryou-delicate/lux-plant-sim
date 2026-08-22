@@ -24,7 +24,13 @@ def run(path, label):
     T=np.asarray(tex,dtype=float)/255.0
     H,W=T.shape[:2]
     h,s,v=to_hsv(T)
-    tan=((h>=10)&(h<=55)&(s>0.12))            # 벽돌·녹·주황·겨자·갈색
+    # ⚠ 2판 — 1판은 「색상 10~55도」를 통째로 삭은 색으로 셌다.
+    #   그러면 **정상인 금(gold)** 이 같이 걸린다(mon_variegata_gold 가 87% 로 나왔다).
+    #   [Plan] 금대로 가른다: 겨자 = 채도가 빠진 금. 금은 채도가 살아 있다.
+    rust    = (h>=10)&(h<40)&(s>0.12)             # 벽돌·녹·주황·갈색 — 삭은 색
+    mustard = (h>=40)&(h<=60)&(s>0.12)&(s<0.35)   # 겨자 = 채도 빠진 금 — 삭은 색
+    gold    = (h>=40)&(h<=70)&(s>=0.35)           # ★ 금 — 이 게임의 정식 잎 색이다
+    tan = rust | mustard
     pr=js['meshes'][0]['primitives'][0]
     P=acc(js,bb,pr['attributes']['POSITION']).astype(float)
     N=acc(js,bb,pr['attributes']['NORMAL']).astype(float)
