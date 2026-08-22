@@ -77,7 +77,7 @@ const READY = process.env.SHOT_READY || '!!window.__rv';
       그 아래 단추가 「가려짐」으로 나온다. 갈래로 거르는 것보다 **안 만드는 편**이 낫다.
     ⚠ 그리고 `.open` 같은 **상태 클래스는 미끄러지기보다 먼저 바뀐다.**
       그래서 클래스가 아니라 **실제로 움직임이 멎었나**를 본다. */
-async function settle(page, ms = 4000) {
+export async function settle(page, ms = 4000) {
   const t0 = Date.now();
   while (Date.now() - t0 < ms) {
     let running = null;
@@ -91,21 +91,19 @@ async function settle(page, ms = 4000) {
   }
 }
 
-/** 해상도별로 한 장씩 찍는다. 파일 이름은 규약을 따른다. */
-export async function shoot(pages, seq, name) {
-  const num = String(seq).padStart(2, '0');
-  const made = [];
-  for (const p of pages) {
-    const f = `${OUT}/${p.__size.id}/${num}_${name}.png`;
-    try {
-      await settle(p);                    // ★ 움직임이 멎은 뒤에 찍는다
-      await p.shot(f);
-      /* ★ 곁파일 — 그림만으로는 **오류 화면인지 알 수 없다.**
-         실제로 부팅에 실패한 붉은 오류 상자를 찍었는데 `check_shot_anomaly` 가
-         「안 깨졌다」로 통과시켰다. 글자를 읽는 것은 픽셀이 아니라 **DOM 이 할 일**이다. */
-      let state = { ready: !!p.__ready };
-      try {
-        state = await p.eval(`(()=>{
+/** ★ 화면 상태를 DOM 으로 잰다 — **아무 페이지에나 쓸 수 있다.**
+    [core] 가 짚었다: `shootAll.open()` 이 띄운 페이지와 하네스의 페이지가 **별개**면
+    진행은 저쪽에서 돌고 그림은 이쪽에서 찍혀 **같은 순간이 아니다.**
+    ⇒ 그래서 **재는 것만 떼어냈다.** 페이지를 가진 쪽이 자기 페이지로 부르면 된다.
+
+      import { measure, settle, saveSidecar } from './shoot_screens.mjs';
+      await settle(page);                       // 움직임이 멎기를 기다린다
+      await page.shot(file);
+      await saveSidecar(page, file);            // 같은 이름 .json 을 남긴다
+*/
+export async function measure(page) {
+  try {
+    return await page.eval(`(()=>{
           const t = (document.body && document.body.innerText || '');
           /* ★ 참/거짓으로 뭉개지 않고 **전문을 남긴다.**
              ⚠ 내가 errorText 를 true/false 로만 썼더니, [Asset] 이 그림을 눈으로 읽어
@@ -261,18 +259,33 @@ export async function shoot(pages, seq, name) {
                      .some(a => a.playState === 'running') : null),
                    dupText: dup.slice(0, 5) };
         })()`);
-      } catch { }
-      /* ★ 곁파일이 **반쪽이면 조용히 지나가지 않는다.**
-         ⚠ 실제로 그랬다 — 내가 eval 문자열 안에 **진짜 개행**을 넣어 브라우저 파싱이
-           깨졌는데, catch 가 삼키고 `{ready:...}` 한 칸만 남았다. 그런데도 그림은 찍혔고
-           **아무 소리도 안 났다.** 「못 했다」를 「했다」로 끝내는 자리가 여기 또 있었다. */
-      if (!('occluded' in state)) {
-        console.error(`  ⚠ ${p.__size.id} ${name}: 곁파일이 반쪽이다(DOM 을 못 쟀다).`
-          + ' 판정에 쓰지 말 것.');
-        state.incomplete = true;
-      }
-      state.ready = state.ready && !!p.__ready;
-      fs.writeFileSync(f.replace(/\.png$/, '.json'), JSON.stringify(state));
+  } catch (e) {
+    return { incomplete: true, why: e && e.message };
+  }
+}
+
+/** 잰 것을 그림 옆에 `.json` 으로 남긴다. */
+export async function saveSidecar(page, file, extra = {}) {
+  const st = Object.assign(await measure(page), extra);
+  if (!('occluded' in st))
+    console.error(`  ⚠ ${file}: 곁파일이 반쪽이다(DOM 을 못 쟀다). 판정에 쓰지 말 것.`);
+  fs.writeFileSync(file.replace(/\.png$/, '.json'), JSON.stringify(st));
+  return st;
+}
+
+/** 해상도별로 한 장씩 찍는다. 파일 이름은 규약을 따른다. */
+export async function shoot(pages, seq, name) {
+  const num = String(seq).padStart(2, '0');
+  const made = [];
+  for (const p of pages) {
+    const f = `${OUT}/${p.__size.id}/${num}_${name}.png`;
+    try {
+      await settle(p);                    // ★ 움직임이 멎은 뒤에 찍는다
+      await p.shot(f);
+      /* ★ 곁파일 — 그림만으로는 **오류 화면인지 알 수 없다.**
+         실제로 부팅에 실패한 붉은 오류 상자를 찍었는데 `check_shot_anomaly` 가
+         「안 깨졌다」로 통과시켰다. 글자를 읽는 것은 픽셀이 아니라 **DOM 이 할 일**이다. */
+      await saveSidecar(p, f, { ready: !!p.__ready });
       made.push(f);
     }
     catch (e) { console.error(`  ✗ ${p.__size.id} ${name}: ${e.message}`); }
