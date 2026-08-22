@@ -107,7 +107,14 @@ export async function shoot(pages, seq, name) {
       try {
         state = await p.eval(`(()=>{
           const t = (document.body && document.body.innerText || '');
-          const err = /불러오지 못|읽지 못했습니다|경로 미상/.test(t);
+          /* ★ 참/거짓으로 뭉개지 않고 **전문을 남긴다.**
+             ⚠ 내가 errorText 를 true/false 로만 썼더니, [Asset] 이 그림을 눈으로 읽어
+               "모듈 파일을 읽지 못했습니다 — 경로 미상" 을 찾아내야 했다.
+               **무엇이 잘못됐는지가 거기 적혀 있는데 내가 지웠던 것이다.** */
+          const errRe = /불러오지 못|읽지 못했습니다|경로 미상|오류가|실패/;
+          const err = errRe.test(t);
+          const errLines = t.split(String.fromCharCode(10)).map(x => x.trim())
+            .filter(x => x && errRe.test(x)).slice(0, 4);
           /* ★ 「눌러야 하는 것이 다른 것에 가려졌나」 — [Asset] 이 눈으로 짚은 갈래다.
              픽셀로는 못 본다. **elementFromPoint 로 가운데를 찔러 보면** 안다:
              내가 아니라 남이 잡히면 그 위에 무엇이 덮여 있는 것이다.
@@ -246,7 +253,7 @@ export async function shoot(pages, seq, name) {
              대사 중이면 진행 단추가 꺼져 있는 것이 정상이다. 이 한 칸이 그것을 가른다. */
           const stage = document.querySelector('#stage');
           const talking = !!(stage && stage.classList.contains('talking'));
-          return { ready: !!window.__rv, errorText: err, talking,
+          return { ready: !!window.__rv, errorText: err, errorLines: errLines, talking,
                    scrollX: document.documentElement.scrollWidth > innerWidth + 2,
                    occluded, partly, offscreen, tiny, clipped, outside,
                    disabledOff, inClosedPanel, coveredBySheet, coveredByModal, coveredByAnim,
@@ -255,6 +262,15 @@ export async function shoot(pages, seq, name) {
                    dupText: dup.slice(0, 5) };
         })()`);
       } catch { }
+      /* ★ 곁파일이 **반쪽이면 조용히 지나가지 않는다.**
+         ⚠ 실제로 그랬다 — 내가 eval 문자열 안에 **진짜 개행**을 넣어 브라우저 파싱이
+           깨졌는데, catch 가 삼키고 `{ready:...}` 한 칸만 남았다. 그런데도 그림은 찍혔고
+           **아무 소리도 안 났다.** 「못 했다」를 「했다」로 끝내는 자리가 여기 또 있었다. */
+      if (!('occluded' in state)) {
+        console.error(`  ⚠ ${p.__size.id} ${name}: 곁파일이 반쪽이다(DOM 을 못 쟀다).`
+          + ' 판정에 쓰지 말 것.');
+        state.incomplete = true;
+      }
       state.ready = state.ready && !!p.__ready;
       fs.writeFileSync(f.replace(/\.png$/, '.json'), JSON.stringify(state));
       made.push(f);
@@ -318,6 +334,26 @@ if (import.meta.url === `file://${process.argv[1].replace(/\\/g, '/')}` ||
   await sleep(1200);                       // 첫 그림이 안정되기를 기다린다
   let n = (await shoot(pages, 1, 'boot')).length;
   console.log(`\n01_boot  ${n}장`);
+
+  /* ★★ 대사를 끝낸 컷 — [Asset] 이 청했다.
+     `game.html:816` 에 `#stage.talking ~ #bottom { opacity:.35; pointer-events:none }` 이 있어
+     **대사 중에는 하단이 통째로 잠긴다.** 그래서 부팅 컷으로는
+     「320 에서 탭이 안 보이는 것」이 **시트 탓인지 대사 탓인지 영영 안 갈린다.**
+     ⇒ 대사를 넘기고 한 컷. 이 한 장이 **탭 건과 [다음 날] 건을 같이** 푼다.
+     ⚠ 날짜는 안 넘긴다 — 건너뛰기는 대사만 닫는다. */
+  for (const p of pages) {
+    try {
+      await p.eval(`(()=>{ for (let i=0;i<40;i++){
+        const st=document.querySelector('#stage');
+        if(!st||!st.classList.contains('talking')) return i;
+        const b=document.querySelector('#dlgSkip')||document.querySelector('#dlgBox');
+        if(!b) return -1; b.click();
+      } return 40; })()`);
+    } catch { }
+  }
+  await sleep(900);
+  const n3 = (await shoot(pages, 3, 'after_dlg')).length;
+  console.log(`03_after_dlg  ${n3}장`);
 
   /* ── UI 자리 (날짜를 안 넘긴다 — [core] 와 겹치지 않는 선) ──────────
      ★ 시트를 연 한 컷이 필요하다. [Plan] 이 문구 중복을 이렇게 갈랐다:

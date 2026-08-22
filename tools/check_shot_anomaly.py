@@ -147,11 +147,21 @@ def check(path, prev_gray=None):
     bad, note = [], []
 
     st = sidecar(path)
+    if st and st.get('ready') is False:
+        # ★★ **잴 수 있는 판인가**를 먼저 본다. 갈래가 아니다.
+        #   게임이 안 뜬 화면에서 나온 「가려짐」·「화면 밖」은 **답이 아니라 잡음**이다.
+        #   ⚠ 실제로 넷이 그 상태에서 나온 목록이었고, [Asset] 이 오류 문구를 읽어
+        #     "모듈 파일을 읽지 못했습니다" 를 찾을 때까지 아무도 몰랐다.
+        #   ⇒ 「이 0 은 없다인가 비었다인가」 — **안 뜬 화면의 0 은 답이 아니다.**
+        bad.append('★ 게임이 안 떴다 — 이 컷으로는 레이아웃을 판정할 수 없다')
+        for line in (st.get('errorLines') or [])[:2]:
+            bad.append('   화면 문구: %s' % line)
+        return bad, note, load(path)[1]
     if st:
         if st.get('errorText') or st.get('errorBox'):
             bad.append('화면에 오류 문구가 떠 있다')
-        if st.get('ready') is False:
-            bad.append('부팅 표시를 못 봤다(게임이 안 떴다)')
+            for line in (st.get('errorLines') or [])[:2]:
+                bad.append('   화면 문구: %s' % line)
         if st.get('scrollX'):
             bad.append('가로로 넘친다(내용이 폭을 벗어났다)')
         # ★ 「눌러야 하는 것이 가려졌나」 — [Asset] 이 눈으로 짚은 갈래(2026-08-23).
@@ -178,7 +188,12 @@ def check(path, prev_gray=None):
         if st.get('animating'):
             note.append('★ 찍는 순간 연출이 돌고 있었다 — 이 컷의 가려짐 판정은 믿지 말 것')
         if st.get('talking'):
-            note.append('대사 중이었다(.talking)')
+            # ★ 대사 중에는 `#stage.talking ~ #bottom` 이 하단을 통째로 잠근다(game.html:816).
+            #   그 상태의 「하단이 안 보인다/안 눌린다」는 **규칙대로**이지 병이 아니다.
+            #   ⚠ [Asset] 이 바로 그것으로 틀렸고(「다음 날」을 가려짐으로 올렸다 물림),
+            #     나도 같은 데서 틀렸다. 그래서 **판정을 참고로 낮춘다.**
+            note.append('대사 중이었다(.talking) — 하단 관련 판정은 규칙대로일 수 있다')
+            bad[:] = [b for b in bad if '가려졌다' not in b or 'dlgText' not in b]
         tiny = st.get('tiny') or []
         if tiny:
             note.append('손가락에 작다(32px 미만) %d개: %s' % (len(tiny), ', '.join(tiny[:3])))
