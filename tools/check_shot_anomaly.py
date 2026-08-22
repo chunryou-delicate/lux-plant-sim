@@ -17,6 +17,11 @@
     빈 화면 · 단색 화면 · 새까맣거나 새하얀 화면 · 아무것도 안 그려진 화면 ·
     앞 컷과 한 픽셀도 안 바뀐 화면(멈춤) · 글자가 배경에 묻힌 자리
 
+  그리고 **곁파일(`.json`)이 있으면** 픽셀로 못 보는 것까지 본다 —
+  화면에 뜬 오류 문구 · 부팅 실패 · 가로 넘침 ·
+  ★ **눌러야 하는 것이 다른 것에 가려짐** · 화면 밖 · 글자 잘림 · 손가락에 작음.
+  그 갈래는 `shoot_screens.mjs` 가 찍을 때 **DOM 으로 재어** 남긴다.
+
 ⇒ **통과했다고 「괜찮다」가 아니다. 「깨지진 않았다」다.** 그 둘을 섞으면 안 된다.
 
 ■ 문턱을 어떻게 정했나 — ★ 지어내지 않았다
@@ -30,8 +35,9 @@
     python tools/check_shot_anomaly.py <폴더 또는 파일...>
     python tools/check_shot_anomaly.py --selftest      # ★ 자부터 검사한다
     python tools/check_shot_anomaly.py --calibrate <폴더>   # 표본으로 문턱 다시 재기
+    python tools/check_shot_anomaly.py --compare <폴더>     # ★ 해상도끼리 견주기
 """
-import os, sys, glob
+import os, sys, glob, collections, io
 
 try:
     sys.stdout.reconfigure(encoding='utf-8')
@@ -117,9 +123,49 @@ def low_contrast_bands(g, bands=8):
     return out
 
 
+def sidecar(path):
+    """★ 그림 옆의 `.json` 을 읽는다 — **픽셀로는 글자를 못 읽는다.**
+
+    ⚠ 실제로 겪었다. 7해상도를 나란히 띄웠다가 **부팅에 실패한 붉은 오류 상자**를 찍었는데
+      이 자가 「안 깨졌다」로 통과시켰다. 오류 화면은 **깨져 보이지 않는다.**
+      글자를 읽는 것은 픽셀이 아니라 **DOM 이 할 일**이라, `shoot_screens.mjs` 가 찍을 때
+      화면 상태를 곁파일로 남기게 했다. 여기서 그걸 읽는다.
+
+    곁파일이 없으면 조용히 넘어간다 — 남이 찍은 그림도 이 자로 볼 수 있어야 한다."""
+    j = path.rsplit('.', 1)[0] + '.json'
+    if not os.path.exists(j):
+        return None
+    try:
+        import json
+        return json.load(io.open(j, encoding='utf-8'))
+    except Exception:
+        return None
+
+
 def check(path, prev_gray=None):
     a, g = load(path)
     bad, note = [], []
+
+    st = sidecar(path)
+    if st:
+        if st.get('errorText') or st.get('errorBox'):
+            bad.append('화면에 오류 문구가 떠 있다')
+        if st.get('ready') is False:
+            bad.append('부팅 표시를 못 봤다(게임이 안 떴다)')
+        if st.get('scrollX'):
+            bad.append('가로로 넘친다(내용이 폭을 벗어났다)')
+        # ★ 「눌러야 하는 것이 가려졌나」 — [Asset] 이 눈으로 짚은 갈래(2026-08-23).
+        #   픽셀로는 절대 못 본다. 찍을 때 DOM 으로 재어 곁파일에 남긴 것을 읽는다.
+        #   08-22 민원 「해상도에 따라 [다음 날] 버튼 클릭 오류」가 이 갈래로 보인다.
+        for key, msg in (('occluded', '★ 눌러야 하는 것이 가려졌다'),
+                         ('offscreen', '누를 것이 화면 밖에 있다'),
+                         ('clipped',  '글자가 잘렸다')):
+            v = st.get(key) or []
+            if v:
+                bad.append('%s: %s' % (msg, ', '.join(v[:3])))
+        tiny = st.get('tiny') or []
+        if tiny:
+            note.append('손가락에 작다(32px 미만) %d개: %s' % (len(tiny), ', '.join(tiny[:3])))
     m, s = float(g.mean()), float(g.std())
 
     if s < FLAT_STD:
@@ -245,6 +291,72 @@ def selftest():
     return bad == 0
 
 
+def compare_resolutions(root):
+    """★ 해상도끼리 견준다 — **한 장을 보는 게 아니라 여럿을 나란히 놓고 본다.**
+
+    지금까지의 검사는 「깨진 그림」을 잡는다. 그런데 해상도 문제는
+    **안 깨졌는데 잘못된 것**이다 — 버튼이 밖으로 나가거나, 아래에 빈 띠가 생기거나,
+    같은 자리인데 해상도마다 딴판이거나.
+
+    `qa/{해상도}/{순번}_{자리}.png` 규약을 전제로, **같은 「순번_자리」를 모아** 견준다.
+    크기가 다르므로 **가로세로를 128×128 로 눌러** 배치만 남기고 비교한다.
+
+    ⚠ **이것도 「깨지진 않았다」까지다.** 배치가 서로 닮았다고 예쁜 것은 아니다.
+      그리고 **가로 화면은 세로와 원래 다르게 생겨야 정상**이라 따로 묶어 본다."""
+    groups = collections.defaultdict(dict)     # 자리 -> {해상도: 경로}
+    for p in glob.glob(os.path.join(root, '*', '*.png')):
+        res = os.path.basename(os.path.dirname(p))
+        spot = os.path.basename(p)
+        groups[spot][res] = p
+    if not groups:
+        print('견줄 것이 없다 — %s/{해상도}/{순번}_{자리}.png 규약이 아니다' % root)
+        return
+
+    def sig(path):
+        im = Image.open(path).convert('L').resize((128, 128), Image.BILINEAR)
+        a = np.asarray(im, dtype=np.float32)
+        a = (a - a.mean()) / (a.std() + 1e-6)      # 밝기 차는 지우고 **배치만** 본다
+        return a
+
+    print('해상도끼리 견주기 — 자리 %d개\n' % len(groups))
+    for spot in sorted(groups):
+        res = groups[spot]
+        # 가로/세로를 갈라 본다. 서로 다르게 생기는 것이 정상이다.
+        for kind, keys in (('세로', [k for k in res if _is_portrait(k)]),
+                           ('가로', [k for k in res if not _is_portrait(k)])):
+            if len(keys) < 2:
+                continue
+            sigs = {k: sig(res[k]) for k in keys}
+            base = np.mean(list(sigs.values()), axis=0)
+            far = []
+            for k, v in sigs.items():
+                d = float(np.abs(v - base).mean())
+                far.append((d, k))
+            far.sort(reverse=True)
+            worst, name = far[0]
+            typical = np.median([d for d, _ in far])
+            if worst > max(0.25, typical * 2.0):
+                print('★ %-24s [%s] **%s 만 딴판** (차이 %.2f · 나머지 중앙 %.2f)'
+                      % (spot, kind, name, worst, typical))
+            # 아래·옆 빈 띠 — 해상도 문제의 대표 증상
+            for k in keys:
+                _, g = load(res[k])
+                bf = border_flat_ratio(g)
+                if bf > 0.22:
+                    print('   %-24s [%s] %-10s 가장자리 빈 띠 %.0f%%'
+                          % (spot, kind, k, bf * 100))
+    print()
+    print('⚠ 여기서 안 걸린 것이 「보기 좋다」는 뜻은 아니다. **배치가 서로 닮았다**까지다.')
+
+
+def _is_portrait(res_id):
+    try:
+        w, h = res_id.split('x')
+        return int(h) >= int(w)
+    except Exception:
+        return True
+
+
 def main():
     args = [a for a in sys.argv[1:] if not a.startswith('--')]
     if '--selftest' in sys.argv:
@@ -257,6 +369,8 @@ def main():
             paths.append(a)
     if '--calibrate' in sys.argv:
         return calibrate(paths)
+    if '--compare' in sys.argv:
+        return compare_resolutions(args[0] if args else 'docs/engine/shots/qa')
 
     prev = None
     hits = 0
