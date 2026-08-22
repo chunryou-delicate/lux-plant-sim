@@ -70,7 +70,12 @@ const VARIE_FEN = +(FEN * TH.variegated.need_mult).toFixed(4);
 function makeEngine(overrideSkyView) {
   const hr = JSON.parse(JSON.stringify(HOUSE));
   if (overrideSkyView)
-    for (const [k, v] of Object.entries(overrideSkyView)) if (hr.rooms[k]) hr.rooms[k].skyViewK = v;
+    for (const [k, v] of Object.entries(overrideSkyView)) {
+      if (!hr.rooms[k]) continue;
+      /* null 은 **키를 지운다** — 「안 적은 방」을 만들 수 있어야 ①-2 가 성립한다.
+         값만 넣을 수 있으면 그 검사는 자기 이름대로 잴 수가 없다. */
+      if (v === null) delete hr.rooms[k].skyViewK; else hr.rooms[k].skyViewK = v;
+    }
   return createLightEngine({
     houseRooms: hr, winPresets: dataOf('window_presets.json').presets,
     doorPresets: dataOf('door_presets.json').presets, finishes: dataOf('room_finishes.json'),
@@ -272,12 +277,27 @@ check('①-1 ★ 반지하 15칸이 칸 한가운데에 앉는다 · 시루가 �
 });
 
 check('① -2 skyViewK 1.00 은 아무것도 안 바꾼다 — 안 적은 방과 같다', () => {
-  /* 명시 1.00 과 미기재가 같은 값이어야 "기본이 안전"이 성립한다 */
-  const e1 = makeEngine({ banjiha: 1.0 });
-  const r = e1.build('banjiha');
-  const got = r.slots.map(s => { e1.clearCache(); return +e1.dliOfSlot(s.slotId, { ...SKY, lampCount: 2 }).toFixed(2); });
-  const want = r.slots.map(s => BANJIHA_FROZEN[s.slotId][1]);
-  assert.deepEqual(got, want, 'skyViewK: 1.0 이 값을 움직였습니다');
+  /* 명시 1.00 과 미기재가 같은 값이어야 "기본이 안전"이 성립한다.
+
+     ⚠ 2026-08-23 고침 — 전에는 이 검사가 **얼린 표**(BANJIHA_FROZEN)와 견주었다.
+       그러면 위 ① 과 같은 것을 재는 셈이고, 표가 낡기만 해도
+       「skyViewK: 1.0 이 값을 움직였습니다」라는 **없는 죄**가 떴다. 실제로 그렇게 떴다 —
+       ca3f8f8 이 협탁을 2×2 로, 책상을 다섯 열로 바꾸고 표를 다시 안 얼렸다.
+       그런데 붉은 글씨는 skyViewK 를 가리켰다. 자가 엉뚱한 데를 가리키면
+       **고칠 곳을 못 찾는 것보다 나쁘다** — 안 틀린 곳을 고치게 된다.
+     ⚠ 게다가 예전 `makeEngine` 은 값을 **넣을** 수만 있어서 「안 적은 방」을 못 만들었다.
+       곧 이 검사는 제 이름에 적힌 것을 애초에 잴 수가 없었다.
+     ⇒ 이제 두 벌을 **직접** 견준다 — 키를 지운 방과 1.00 을 적은 방. 표를 안 본다. */
+  const del = makeEngine({ banjiha: null }), one = makeEngine({ banjiha: 1.0 });
+  const a = del.build('banjiha'), b = one.build('banjiha');
+  assert.deepEqual(b.slots.map(s => s.slotId), a.slots.map(s => s.slotId),
+    '★ 자리 목록부터 다릅니다 — skyViewK 이전에 방이 다르게 지어졌습니다');
+  const read = (e, r) => r.slots.map(s => {
+    e.clearCache(); return +e.dliOfSlot(s.slotId, { ...SKY, lampCount: 2 }).toFixed(4);
+  });
+  const got = read(one, b), want = read(del, a);
+  assert.deepEqual(got, want, 'skyViewK: 1.0 이 값을 움직였습니다 — 기본이 안전하지 않습니다');
+  info(`skyViewK 미기재 = 명시 1.00 — 반지하 ${a.slots.length}칸 한 톨도 안 다르다`);
 });
 
 check('① -3 조도는 skyViewK 에 **선형**이다 — 배수 그대로 움직인다', () => {

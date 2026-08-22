@@ -159,23 +159,24 @@
           "_method": "0.25m 격자·높이 0.10~1.80m. 가구 제외. 고체 벽(외곽)·칸막이·도려낸 경계 벽 속 점은 빼고, 창·문 개구부(reveal)는 살린다 — 창턱이 실제로 그 안에 놓인다."
         },
         "slots": {
-          "peak_summer": 3.77,
-          "avg7_summer": 2.42,
-          "count": 14,
-          "sampled_peak_ratio_pct": 101,
+          "peak_summer": 3.68,
+          "avg7_summer": 2.37,
+          "count": 15,
+          "sampled_peak_ratio_pct": 98,
           "_sampled_note": "slots.peak ÷ space.peak. 두 값의 표본이 다르다 — space 는 0.25m 격자 위 점이고 slots 는 가구가 정한 임의 높이다. 격자 사이에 더 좋은 자리가 있으면 100%를 넘을 수 있고, 그건 오차가 아니라 표본 차이다.",
           "_method": "지금 furniture 배치 기준. 차폐에 가구 포함.",
           "bright_slot": {
             "slotId": "banjiha-sill:0",
-            "peak_summer": 3.77,
-            "avg7_summer": 2.42,
+            "peak_summer": 3.68,
+            "avg7_summer": 2.37,
             "point": {
               "x": 0,
               "y": 1.585,
-              "z": -1.95
+              "z": -1.85
             },
-            "maxPotD": 0.21,
-            "_note": "★ 첫 플레이의 '높은 창가 자리'. 창 개구부 안. 몬스테라 min 3.0 대비 +26%."
+            "maxPotD": 0.27,
+            "_note": "★ 첫 플레이의 '높은 창가 자리'. 창 개구부 안. 몬스테라 min 3.0 대비 +23%.",
+        "_remeasured_2026_08_23": "★ 이 다섯 줄이 **반만 낡아** 있었다 — 날짜·roomRev 는 08-02 인데 어두운 자리 좌표만 누군가 고쳐 두었다. 통째로 낡으면 의심하는데 반만 맞으면 믿게 된다(계율 §2.9-⑭). 그래서 **다른 파일의 3.68 을 베끼지 않고 직접 다시 쟀다**(등 0개·맑음·여름). 바뀐 것: z -1.95→-1.85(b725b8c 가 받침을 방 쪽으로 0.20 밀었다) · peak 3.77→3.68 · maxPotD 0.21→0.27 · 자리 14→15칸(23521a1 협탁). ⚠ space 쪽 값은 안 건드렸다 — 그쪽은 가구를 빼고 재므로 위 커밋들에 안 흔들린다."
           },
           "dark_slots_le_0_3": 9,
           "darkest_slot": {
@@ -203,8 +204,8 @@
           },
           "_method": "floor_m2_net = 0.25m 격자로 센 실제 바닥(외곽 벽 띠·칸막이·도려낸 자리 제외). floor_m2_gross = 외곽 치수 곱. 등 상한은 net 기준."
         },
-        "measuredAt": "2026-08-02",
-        "roomRev": "a9e2ec4 2026-08-02 창턱 화분받침 1칸",
+        "measuredAt": "2026-08-23",
+        "roomRev": "d0bc365 2026-08-17 반지하 셋째 등(거치형) — 그 뒤 house_rooms.json §banjiha 는 안 움직였다. 가구 프리셋 쪽 마지막은 ca3f8f8(협탁 2×2)이라 그것도 이 값에 들어 있다.",
         "status": "확정"
       }
     },
