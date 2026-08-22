@@ -368,6 +368,31 @@ const sweepHits = async () => {
 
 /* 시루 하나를 방에 끌어다 놓는다 — 사람이 [가방]에서 끌어 내리는 그 손짓이다.
    ⚠ 자리는 **빈 자리 중에서** 고른다. 이미 뭐가 있는 자리에 겹쳐 놓지 않는다. */
+const placeCrop = async (kind, bright) => {
+  /* 무순은 **밝은 자리**, 콩나물은 **어두운 자리**다 — 퀘스트가 그걸 가르친다.
+     ⚠ 자리는 빈 것 중에서 고른다. 이미 뭐가 있는 자리에 겹쳐 놓지 않는다. */
+  const sortExpr = bright ? 'b2.y - a.y' : 'a.y - b2.y';
+  const slot = await ev('(()=>{ const S=window.__S();'
+    + ' const taken=new Set();'
+    + ' for (const p of (S.pots||[])) if (p.slotId) taken.add(p.slotId);'
+    + ' const b=(S.firstPlay&&S.firstPlay.beansprout)||{};'
+    + ' for (const p of (b.pots||[])) if (p && p.slotId) taken.add(p.slotId);'
+    + ' for (const st of (S.cropSites||[])) { if (st&&st.slotId) taken.add(st.slotId);'
+    + '   for (const p of (st&&st.pots)||[]) if (p&&p.slotId) taken.add(p.slotId); }'
+    + ' const all=(window.__io.light.room.slots||[]).filter(x=>!taken.has(x.slotId));'
+    + ' if (!all.length) return "";'
+    + ' all.sort((a,b2)=> ' + sortExpr + ');'
+    + ' return all[0].slotId; })()');
+  if (!slot) return false;
+  return await ev('(()=>{ const rv=window.__rv;'
+    + ' const c=document.getElementById("roomCanvas").getBoundingClientRect();'
+    + ' let sp=null; try { sp=rv.screenPosOf(' + JSON.stringify(slot) + '); } catch { return false; }'
+    + ' if(!sp) return false;'
+    + ' window.__drag.begin(' + JSON.stringify(kind) + ', "", {clientX:c.left+c.width*0.9, clientY:c.top+40});'
+    + ' window.__drag.move({clientX:c.left+sp.x, clientY:c.top+sp.y});'
+    + ' window.__drag.end(); return true; })()');
+};
+
 const placeOneSiru = async () => {
   const slot = await ev(`(()=>{ const S=window.__S();
     const taken = new Set();
@@ -405,6 +430,14 @@ const SNAP = `(()=>{ const S=window.__S(); const ts=S.tutorial||{};
     fpDone:!!(S.firstPlay&&S.firstPlay.completed), movedOut:!!ts.movedOut,
     lamp:(ts.lamp&&ts.lamp.owned)??null, lampOpen:!!(ts.lamp&&ts.lamp.unlocked),
     seed:(S.shop&&S.shop.stock&&S.shop.stock.bean_seed)??null,
+    /* 무순 — 판이 이미 서 있나 · 재배판/무 씨앗 재고(§musun) */
+    musun: (()=>{ try { const fp=S.firstPlay;
+      const m=(fp&&fp.crops&&fp.crops.musun)||(fp&&fp.musun)||null;
+      if (m && (m.sirus || (m.pots||[]).length)) return true;
+      return (S.cropSites||[]).some(x=>x&&x.kind==='musun');
+    } catch { return false; } })(),
+    tray:(S.shop&&S.shop.stock&&S.shop.stock.sprout_tray)??0,
+    radish:(S.shop&&S.shop.stock&&S.shop.stock.radish_seed)??0,
     bankrupt:!!ts.bankrupt,
     hardLock: document.body.dataset.hardLock||'',
     gameOver: document.getElementById('gameOver') ?
@@ -499,12 +532,29 @@ for (let d = 1; d <= DAYS; d++) {
   if (needSeed || needSiru || (before.lampOpen && before.lamp === 0)) {
     await ev(`window.__byeotSheet.open('shop')`, false); await sleep(150);
     if (needSiru) { if (await order('siru', 1)) R.did.buySiru++; }   /* 하루에 하나씩 */
+    /* ★★ **무순을 기른다.** 이게 없으면 본 퀘스트 사슬이 첫 줄에서 막힌다:
+         crop_mix(한 상에 두 가지 · ★무순) → siru5_cycle5 → siru8 → siru16
+       ⇒ 콩나물만 기르던 판은 `crop_mix` 가 안 닫혀 **그 뒤가 통째로 잠긴 채** 141일을 굴렀고
+         141일에 파산했다. 「가이드대로 놀았다」가 아니었다 — **첫 줄만 따른 것**이다.
+       ⚠ 무순은 **재배판(sprout_tray) + 무 씨앗(radish_seed)** 둘이 있어야 한다
+         (game.html §musunNeed 가 그 둘을 순서대로 시킨다). 하나만 사면 아무 일도 안 난다. */
+    if (PLAY === 'guided' && !before.musun) {
+      if ((before.tray || 0) < 1 && (before.radish || 0) < 1)
+        { if (await order('sprout_tray', 1)) R.did.buyTray = (R.did.buyTray || 0) + 1; }
+      else if ((before.radish || 0) < 1)
+        { if (await order('radish_seed', 1)) R.did.buyRadish = (R.did.buyRadish || 0) + 1; }
+    }
     if (needSeed) { if (await order('bean_seed', Math.max(1, (before.sirus || 1) - (before.seed || 0)))) R.did.buySeed++; }
     if (before.lampOpen && before.lamp === 0) { if (await order('growlight')) R.did.buyLamp++; }
   }
   /* 산 시루는 **가방에 온다.** 끌어다 놓아야 쓴다 — 안 놓으면 영영 가방에 남는다 */
   /* ⚠ **놓을 시루가 있을 때만 놓는다.** 없는데 끌면 손짓만 나가고 아무 일도 안 난다 —
      실측으로 마흔 날에 **120번**이 그렇게 헛돌았다(시간만 먹는다). */
+  /* 산 재배판을 **밝은 자리에** 내려놓는다 — 안 놓으면 가방에 남고 `crop_mix` 가 안 닫힌다 */
+  if (PLAY === 'guided' && !before.musun && (before.tray || 0) > 0) {
+    if (await placeCrop('musun', true)) { R.did.placeMusun = (R.did.placeMusun || 0) + 1;
+      await sleep(600); await tapTalk(); }
+  }
   if (PLAY === 'guided') {
     for (let k = 0; k < 3; k++) {
       const have = await ev(`(()=>{ const S=window.__S();
