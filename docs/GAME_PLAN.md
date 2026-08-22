@@ -2,6 +2,22 @@
 > **살림 숫자를 여기서 베끼지 마라.** 무엇이 어떻게 바뀌었는지는 **[STALE-2026-08-22.md](STALE-2026-08-22.md)** 에 있다.
 > 본문은 일부러 안 고쳤다 — 재지 않고 고치면 새 틀린 값이 생긴다.
 
+# 볕(byeot) — 게임 기획 정본
+
+**최종 2026-07-26** · 기획이 창마다 흩어져 중복 논의가 생겨 하나로 합쳤다.
+**앞으로 기획 논의는 이 문서를 고친다.** 아래 원본들은 참고용으로 남기되 정본이 아니다.
+
+> 통합 원본: `게임기획_해야할것_v3.md` · `food_economy.md` · `researcher_track.md` ·
+> `time_modes.md` · `env_difficulty_axis.md` · `game_first_loop_start.md` ·
+> `sale_economy.md` · `game_loop_spec.md`
+> 기술 레퍼런스로 **남겨두는 것**(게임 기획이 아니라 엔진 문서라 통합하지 않음):
+> `engine/light_contract.md`(계약 객체 전문) · `engine/greenhouse_plan.md`(온실 실측) ·
+> `balance_decisions.md`(방별 DLI 실측) · `engine/rooms_progression.md`
+> 목록에 있었으나 **레포에 없는 파일**: `growth_conditions_map.md` · `세션요약_20260713.md`
+> — 내용은 v3가 인용한 범위로만 반영했다.
+
+---
+
 # ★★ 2026-08-23 — **오늘 정한 「뜻」 열** (본문보다 새것이다)
 
 > ⚠ **숫자는 한 톨도 안 넣었다.** 넣는 순간 **두 벌**이 되어 §2.8 의 그 사고가 난다.
@@ -66,22 +82,6 @@
 
 ---
 
-
-# 볕(byeot) — 게임 기획 정본
-
-**최종 2026-07-26** · 기획이 창마다 흩어져 중복 논의가 생겨 하나로 합쳤다.
-**앞으로 기획 논의는 이 문서를 고친다.** 아래 원본들은 참고용으로 남기되 정본이 아니다.
-
-> 통합 원본: `게임기획_해야할것_v3.md` · `food_economy.md` · `researcher_track.md` ·
-> `time_modes.md` · `env_difficulty_axis.md` · `game_first_loop_start.md` ·
-> `sale_economy.md` · `game_loop_spec.md`
-> 기술 레퍼런스로 **남겨두는 것**(게임 기획이 아니라 엔진 문서라 통합하지 않음):
-> `engine/light_contract.md`(계약 객체 전문) · `engine/greenhouse_plan.md`(온실 실측) ·
-> `balance_decisions.md`(방별 DLI 실측) · `engine/rooms_progression.md`
-> 목록에 있었으나 **레포에 없는 파일**: `growth_conditions_map.md` · `세션요약_20260713.md`
-> — 내용은 v3가 인용한 범위로만 반영했다.
-
----
 
 # ★ 0. 지금 할 일은 하나다
 
