@@ -48,7 +48,12 @@ for (const [file, why] of CHECKS) {
   const last = out.trim().split('\n').filter(l => /PASS|FAIL|SKIP/.test(l)).pop() || '(출력 없음)';
   const skipped = /SKIP/.test(out);
   const okRun = r.status === 0 && !r.error;
-  rows.push({ file, why, ok: okRun, line: last.trim(), skipped,
+  /* ★★ 찍힌 요약과 종료코드가 맞나 (계율 ㉝ 의 기계 쪽 짝).
+     검사가 「FAIL」을 찍고도 0 으로 나가면 **이 자가 초록으로 셉니다.** 그러면
+     사람 눈에는 붉은데 자에는 초록인, 제일 나쁜 갈림이 됩니다. 그것부터 잡습니다. */
+  const saysFail = /FAIL/.test(last);
+  const lied = saysFail !== !okRun;
+  rows.push({ file, why, ok: okRun, line: last.trim(), skipped, lied,
               died: !!r.error || r.status === null });
   if (!QUIET) {
     console.log((okRun ? '  ✔ ' : '  ✘ ') + file.padEnd(26) + last.trim());
@@ -58,6 +63,7 @@ for (const [file, why] of CHECKS) {
 }
 
 const bad = rows.filter(r => !r.ok);
+const lied = rows.filter(r => r.lied);
 const skip = rows.filter(r => r.skipped);
 console.log('');
 console.log('house 검사 ' + rows.length + '개 · 초록 ' + (rows.length - bad.length) + ' · 붉음 ' + bad.length +
@@ -65,10 +71,15 @@ console.log('house 검사 ' + rows.length + '개 · 초록 ' + (rows.length - ba
 if (skip.length && !process.env.BYEOT_URL)
   console.log('  ⚠ BYEOT_URL 을 안 넘겨 브라우저 부분을 건너뛴 검사가 있습니다: ' +
               skip.map(r => r.file).join(', '));
+if (lied.length) {
+  console.log('  ★★ 찍힌 요약과 종료코드가 갈린 검사: ' + lied.map(r => r.file).join(' · '));
+  console.log('     ⇒ 사람 눈에 보이는 것과 자가 세는 것이 다릅니다. 그것부터 고치십시오 —');
+  console.log('       요약이 FAIL 인데 0 으로 나가면 이 묶음 자가 초록으로 셉니다(계율 ㉝).');
+}
 if (bad.length) {
   console.log('  붉은 것: ' + bad.map(r => r.file).join(' · '));
   console.log('  ⚠ 「알려진 붉음」인지 새로 깨진 것인지는 ' + '`' + 'docs/handoff/STATUS.md §house' + '`' +
               ' 의 ⏸ 목록과 견주십시오.');
   console.log('  ⛔ 여기에 봐주기 목록을 넣어 초록으로 만들지 마십시오 — 고쳐진 것과 미룬 것을 못 가립니다.');
 }
-process.exit(bad.length ? 1 : 0);
+process.exit((bad.length || lied.length) ? 1 : 0);
