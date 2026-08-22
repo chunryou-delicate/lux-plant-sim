@@ -206,7 +206,10 @@ def recolor_dim(img):
     gold = (h >= 40) & (h <= 70) & (s >= 0.35)
     s2 = np.where(gold, s*DIM_GOLD_SAT, s*DIM_SAT)
     out = to_rgb(h, np.clip(s2, 0, 1), np.clip(v*DIM_VAL, 0, 1))
-    return Image.fromarray((out*255+0.5).astype(np.uint8)), 0, 1, 0.0
+    # ★ 계율 ㉙ — 1판은 아무 숫자도 안 냈다(0, 1, 0.0 을 그냥 돌려줬다).
+    #   그러면 「돌았다」밖에 모른다. **금을 얼마나 지켰나 · 채도가 어디로 갔나**를 낸다.
+    return (Image.fromarray((out*255+0.5).astype(np.uint8)),
+            int(gold.sum()), int(gold.size), float(s2.mean()))
 
 def redo_dim(base, out):
     return redo(base, out, mode=0, _fn=lambda im: recolor_dim(im))
@@ -224,8 +227,8 @@ if __name__ == '__main__':
             out  = 'assets/monstera/%s_v2.glb' % name
         if dim:
             p, t, fr = redo_dim(base, out)
-            print('%-30s ★ 채도만 낮추기(셋째 길) — 색상 안 건드림  -> %d KB'
-                  % (name, os.path.getsize(out)//1024))
+            print('%-30s ★ 채도만 낮추기 · 색상 안 건드림 · 금 %4.1f%% 를 덜 뺌 · 채도 -> %.3f  (%d KB)'
+                  % (name, 100.0*p/max(t,1), fr, os.path.getsize(out)//1024))
         else:
             p, t, fr = redo(base, out, mode)
             print('%-30s 고른 판 %d · 되돌린 화소 %5.1f%% · 금 %4.1f%%  -> %d KB'

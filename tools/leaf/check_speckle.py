@@ -31,6 +31,8 @@ def run(path, label):
     mustard = (h>=40)&(h<=60)&(s>0.12)&(s<0.35)   # 겨자 = 채도 빠진 금 — 삭은 색
     gold    = (h>=40)&(h<=70)&(s>=0.35)           # ★ 금 — 이 게임의 정식 잎 색이다
     tan = rust | mustard
+    # ★ 계율 ㉙ — 「삭은 색인가」로 접지 않는다. **무엇이 얼마나**를 따로 낸다.
+    #   1판은 접어서 냈다가 **금을 삭은 색으로 87.7%** 로 잘못 셌다.
     pr=js['meshes'][0]['primitives'][0]
     P=acc(js,bb,pr['attributes']['POSITION']).astype(float)
     N=acc(js,bb,pr['attributes']['NORMAL']).astype(float)
@@ -52,7 +54,8 @@ def run(path, label):
     up = ny > 0.2; dn = ny < -0.2
     tot=area.sum()
     print('== %s ==' % label)
-    print('   텍스처에서 탄색 화소 %5.1f%%' % (100*tan.mean()))
+    print('   텍스처에서 —  녹·벽돌 %4.1f%% · 겨자 %4.1f%% · ★금(정상) %4.1f%%   (삭은 색 합 %4.1f%%)'
+          % (100*rust.mean(), 100*mustard.mean(), 100*gold.mean(), 100*tan.mean()))
     print('   탄색을 문 삼각형     %5.1f%%  (넓이로 %5.1f%%)' % (100*hit.mean(), 100*area[hit].sum()/tot))
     for nm,m in (('위를 보는 면',up),('아래를 보는 면',dn),('옆면',~up&~dn)):
         if m.sum()==0: continue

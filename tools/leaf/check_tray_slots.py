@@ -36,10 +36,24 @@ if __name__ == '__main__':
     if c == m:
         print('같다 — 두 벌이 한 자리도 안 어긋난다')
         sys.exit(0)
+    # ★ 계율 ㉙ — 「다르다」로 접지 않는다. **얼마나 움직였나**를 낸다.
+    #   1판은 「manifest 에만 / 코드에만」으로 냈다. 그러면 1mm 움직인 칸이
+    #   **「하나가 사라지고 하나가 생겼다」**로 보인다. 옮긴 것과 갈아치운 것을 못 가린다.
     print('★★ 어긋난다:')
+    used = set()
     for a in m:
-        if a not in c: print('   manifest 에만 :', a)
-    for a in c:
-        if a not in m: print('   코드에만      :', a)
-    print('⇒ 어느 쪽이 옳은지는 사람이 정한다. 이 자는 「갈렸다」만 말한다.')
+        best, bd = None, 1e9
+        for j, b in enumerate(c):
+            if j in used: continue
+            d = sum((x-y)**2 for x, y in zip(a, b)) ** 0.5
+            if d < bd: best, bd = j, d
+        if best is not None and bd < 0.05:          # 5cm 안이면 「움직인 것」으로 본다
+            used.add(best)
+            print('   움직였다  %s -> %s   (%.1f mm)' % (a, c[best], bd*1000))
+        else:
+            print('   manifest 에만  %s   (가장 가까운 코드 칸까지 %.1f mm)' % (a, bd*1000))
+    for j, b in enumerate(c):
+        if j not in used and b not in m:
+            print('   코드에만      %s' % (b,))
+    print('⇒ 어느 쪽이 옳은지는 사람이 정한다. 이 자는 「무엇이 얼마나」까지만 말한다.')
     sys.exit(1)

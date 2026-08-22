@@ -50,21 +50,25 @@ def tint(img, hue):
     s2 = np.where(soil, s,  np.full_like(s, TARGET_S))
     v3 = np.where(soil, v,  v2)                              # 흙은 밝기도 안 건드린다
     out = to_rgb(h2, s2, v3)
-    return Image.fromarray((out*255+0.5).astype(np.uint8))
+    # ★ 계율 ㉙ — 1판은 파일 크기만 냈다. **흙을 얼마나 뺐나**를 같이 낸다.
+    #   그 숫자가 0 이면 흙 예외가 안 걸린 것이고, 그러면 흙이 또 물든다.
+    return Image.fromarray((out*255+0.5).astype(np.uint8)), float(soil.mean())
 
 def make(base, suf, hue):
     src = 'assets/pots/%s.glb' % base
     dst = 'assets/pots/%s%s.glb' % (base, suf)
     js, bb = read(src)
     news = {}
+    soilfrac = 0.0
     for im in js['images']:
         bv = js['bufferViews'][im['bufferView']]
         s0 = bv.get('byteOffset', 0)
         pil = Image.open(io.BytesIO(bb[s0:s0+bv['byteLength']]))
         buf = io.BytesIO()
         fmt = 'JPEG' if 'jpeg' in (im.get('mimeType') or '') else 'PNG'
-        tint(pil, hue).save(buf, fmt, quality=92, optimize=True) if fmt == 'JPEG' \
-            else tint(pil, hue).save(buf, 'PNG', optimize=True)
+        timg, soilfrac = tint(pil, hue)
+        if fmt == 'JPEG': timg.save(buf, 'JPEG', quality=92, optimize=True)
+        else:             timg.save(buf, 'PNG', optimize=True)
         news[im['bufferView']] = buf.getvalue()
     order = sorted(range(len(js['bufferViews'])), key=lambda i: js['bufferViews'][i].get('byteOffset', 0))
     nb = bytearray()
@@ -75,10 +79,10 @@ def make(base, suf, hue):
         bv['byteOffset'] = len(nb); bv['byteLength'] = len(data); nb += data
     js['buffers'][0]['byteLength'] = len(nb)
     write(dst, js, bytes(nb))
-    return dst, os.path.getsize(dst)
+    return dst, os.path.getsize(dst), soilfrac
 
 if __name__ == '__main__':
     for base in (sys.argv[1:] or ['pot_concrete_square']):
         for suf, hue, ko in (('_c1', MINT, '민트'), ('_c2', PINK, '핑크')):
-            d, n = make(base, suf, hue)
-            print('%-34s %-5s %6d KB' % (d, ko, n//1024))
+            d, n, sf = make(base, suf, hue)
+            print('%-34s %-5s %6d KB   흙으로 빼 둔 화소 %4.1f%%' % (d, ko, n//1024, 100*sf))
