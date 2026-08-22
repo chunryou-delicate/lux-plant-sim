@@ -35,7 +35,8 @@ import {
 import { newState, pot0, waterCrop, waterPot, resowCrop, ARRIVAL } from '../src/game/state.js';
 import { nextDay, harvestCrop, startFastForward } from '../src/game/loop.js';
 import { moveIntoOneroom, ONEROOM_ROOM_ID } from '../src/game/oneroom.js';
-import { createTutorialState, noteLearning, TUTORIAL_RULES } from '../src/game/tutorial.js';
+import { createTutorialState, noteLearning, noteVarieCuttingSale,
+         TUTORIAL_RULES } from '../src/game/tutorial.js';
 import { orderItem, stockOf, incomingOf } from '../src/game/shop.js';
 import { serialize, deserialize } from '../src/game/save.js';
 
@@ -225,6 +226,15 @@ check('E 이사 — 거둔 시루도 새 방에 선다 (예전에는 통째로 �
   noteLearning(S.tutorial, { harvested: true, foodSavedWon: 5000, cropAvgDli: 0.1,
                              plantDli7: 3.8, plantMinDli: 3.0, spearFurled: true });
   S.tutorial.cashWon = TUTORIAL_RULES.moveOutCostWon;
+  /* ★ 2026-08-23 — 이사 게이트는 **축이 둘**이다(tutorial §두 축): 돈 × 무늬 삽수를 판 적.
+     이 검사는 돈만 채우고 있었다 — 둘째 축이 생기기 전(한 축 시절) 그대로였다.
+     그래서 `moveIntoOneroom` 이 「무늬 삽수를 아직 못 팔았습니다」로 정직하게 막았고,
+     **이 검사가 지키려던 것(이사 뒤 시루 자리)에는 닿지도 못하고** 붉었다.
+     ⚠ 기준선을 낮춘 것이 아니다 — `cashWon` 을 채우는 것과 **같은 종류의 전제 갖추기**다.
+       아래 자리 검증(§거둔 시루도 새 방에 선다)은 그대로 두었고, 그것이 이 검사의 주제다.
+     ★ 상태를 직접 쓰지 않고 **정식 문**으로 적는다 — `noteVarieCuttingSale` 이
+       「친다/안 친다」의 유일한 문이다(무늬 잎이 0이면 아무 일도 안 한다). */
+  noteVarieCuttingSale(S.tutorial, { variegatedLeaves: 1, won: 350_000 });
 
   const fp = S.firstPlay;
   addCropPot(fp, 'beansprout', { day: 0 });
@@ -266,6 +276,15 @@ check('E-2 못 옮기면 **말을 한다** — 조용히 사라지지 않는다'
   noteLearning(S.tutorial, { harvested: true, foodSavedWon: 5000, cropAvgDli: 0.1,
                              plantDli7: 3.8, plantMinDli: 3.0, spearFurled: true });
   S.tutorial.cashWon = TUTORIAL_RULES.moveOutCostWon;
+  /* ★ 2026-08-23 — 이사 게이트는 **축이 둘**이다(tutorial §두 축): 돈 × 무늬 삽수를 판 적.
+     이 검사는 돈만 채우고 있었다 — 둘째 축이 생기기 전(한 축 시절) 그대로였다.
+     그래서 `moveIntoOneroom` 이 「무늬 삽수를 아직 못 팔았습니다」로 정직하게 막았고,
+     **이 검사가 지키려던 것(이사 뒤 시루 자리)에는 닿지도 못하고** 붉었다.
+     ⚠ 기준선을 낮춘 것이 아니다 — `cashWon` 을 채우는 것과 **같은 종류의 전제 갖추기**다.
+       아래 자리 검증(§거둔 시루도 새 방에 선다)은 그대로 두었고, 그것이 이 검사의 주제다.
+     ★ 상태를 직접 쓰지 않고 **정식 문**으로 적는다 — `noteVarieCuttingSale` 이
+       「친다/안 친다」의 유일한 문이다(무늬 잎이 0이면 아무 일도 안 한다). */
+  noteVarieCuttingSale(S.tutorial, { variegatedLeaves: 1, won: 350_000 });
   const fp = S.firstPlay;
   placeCrop(fp, 'beansprout', 'dark-slot', { slots: ROOMS.banjiha,
                                              potId: fp.beansprout.pots[0].id });
