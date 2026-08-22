@@ -101,7 +101,7 @@ def recolor(img, mode=3):
     out = to_rgb(h1, np.clip(sat, 0, 1), np.clip(v*VAL, 0, 1))
     return Image.fromarray((out*255+0.5).astype(np.uint8)), int(push.sum()), push.size, float(frac)
 
-def redo(base, out, mode=3):
+def redo(base, out, mode=3, _fn=None):
     js, bb = read(base)
     imgidx = {im['bufferView'] for im in js.get('images', []) if 'bufferView' in im}
     assert imgidx, base + ' 에 이미지가 없다'
@@ -113,7 +113,7 @@ def redo(base, out, mode=3):
         raw = bb[s0:s0+bv['byteLength']]
         pil = Image.open(io.BytesIO(raw))
         fmt = 'JPEG' if 'jpeg' in (im.get('mimeType') or '') else 'PNG'
-        newim, p, t, frac = recolor(pil, mode); pushed += p; tot += t; fr = frac
+        newim, p, t, frac = (_fn(pil) if _fn else recolor(pil, mode)); pushed += p; tot += t; fr = frac
         buf = io.BytesIO()
         if fmt == 'JPEG': newim.save(buf, 'JPEG', quality=92, optimize=True)
         else: newim.save(buf, 'PNG', optimize=True)
@@ -143,6 +143,28 @@ PICK = {
     'mon_star_greenyellow'     : 3,
     'mon_green_lemonpatch'     : 3,
 }
+
+
+# ─────────────────────────────────────────────────────────────
+# 쨍판(_v1) — 채도 x1.55 · 색상 +18 · 밝기 x1.06
+# ⚠ 흰·크림 화소는 채도를 올리면 **따뜻한 밑색이 드러나 탄색**이 된다.
+#   이름이 `*white` · `*silver` 인 잎이 「흰 데가 없는 잎」이 됐다.
+#   ⇒ 채도가 낮은 화소는 **덜 올린다.** 흰 것은 흰 채로 둔다.
+VROT, VSAT, VVAL = 18.0, 1.55, 1.06
+PALE_S   = 0.18      # 이보다 옅으면 「흰·크림」으로 본다
+PALE_SAT = 1.12      # 그런 화소는 이만큼만 올린다
+
+def recolor_vivid(img):
+    a = np.asarray(img.convert('RGB'), dtype=float)/255.0
+    h, s, v = to_hsv(a)
+    pale = s < PALE_S
+    h1 = np.where(pale, h, (h + VROT) % 360)          # 흰 데는 색상도 안 돌린다
+    sat = np.where(pale, s*PALE_SAT, s*VSAT)
+    out = to_rgb(h1, np.clip(sat, 0, 1), np.clip(v*VVAL, 0, 1))
+    return Image.fromarray((out*255+0.5).astype(np.uint8)), int(pale.sum()), pale.size, 0.0
+
+def redo_vivid(base, out):
+    return redo(base, out, mode=0, _fn=recolor_vivid)
 
 if __name__ == '__main__':
     todo = sys.argv[1:] or list(PICK)
