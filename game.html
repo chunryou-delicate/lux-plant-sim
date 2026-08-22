@@ -2879,7 +2879,8 @@ import {
 } from './src/game/first_play.js';
 import { createLightEngine } from './src/game/light_adapter.js';
 import { createGrowthAdapter } from './src/game/growth_adapter.js';
-import { createDialogue, createStoryteller, SPEAKERS } from './src/game/dialogue.js';
+import { createDialogue, createStoryteller, SPEAKERS,
+         auditFaceKeys, auditFacePortraits } from './src/game/dialogue.js';
 import { createMusic } from './src/game/music.js';
 /* ★ 효과음 — 딸칵·사각사각·물·저벅저벅·띠로롱·턱 (2026-08-16 박사님 요청 · sfx-to-plan.md) */
 import { sfx } from './src/game/sfx.js';
@@ -9994,10 +9995,33 @@ const story = createStoryteller();
 /* 표정 키(대사가 쓰는 뜻) → 파일명. 3차 초상화부터는 대체로 같지만 몬이만 다르다
    (몬이의 '기뻐함'은 excited 다). 이름이 또 바뀌어도 대사는 안 고치게 여기서만 안다. */
 const FACE_FILE = {
+  /* ★ 2026-08-23 — `think` · `proud` 를 이었다([Char] 조사: 그림은 이미 있는데 표만 없었다).
+       think  — 시선을 위로 두고 입을 살짝 벌린 얼굴. **의아함**이다
+       proud  — 입을 다문 잔잔한 미소. happy(활짝)와 확실히 다르다
+     ★ `curious: 'think'` **별칭**이 핵심이다. 이러면 대사는 두 화자 모두 `curious` 를 그냥 쓰고
+       자취생은 think 그림으로, 몬이는 curious 그림으로 각각 떨어진다 —
+       화자마다 다른 키를 외우는 것보다 실수가 적다.
+     ⚠ `jachwi_m`(남 자취) 9장은 **안 잇는다.** 파일은 있지만 이번 판에 안 쓴다(사용자 결정).
+       안 쓰는 길을 열어 두면 나중에 「왜 이게 있지」가 된다. */
   jachwi: { base: 'neutral', happy: 'happy', worry: 'worry',
-            cry: 'cry', surprise: 'surprise', tired: 'tired' },
+            cry: 'cry', surprise: 'surprise', tired: 'tired',
+            think: 'think', curious: 'think', proud: 'proud' },
+  /* ⚠ 몬이에게는 `surprise` 그림이 **없다**(파일 자체가 없다). 놀람도 `curious` 가 진다 —
+     그 한 표정이 몬이 대사 237줄 중 81줄을 지고 있다. 그림 발주는 사용자 승인 대기(2026-08-23). */
   moni:   { base: 'neutral', happy: 'excited', sad: 'sad', curious: 'curious' }
 };
+/* ★ 표정 자가검사 — 없는 표정 키는 **오류 없이** 기본 얼굴로 떨어져서 아무도 모른다.
+   그래서 소리를 내게 한다. 키 검사는 순수라 `tools/test_*.mjs` 도 부를 수 있다(§dialogue.js). */
+try {
+  const badFaces = auditFaceKeys(FACE_FILE);
+  /* 한 줄씩 따로 찍는다 — 줄바꿈을 문자열에 넣으면 콘솔에서 접히고, 여기 이스케이프가
+     한 겹 먹히는 사고도 실제로 났다(2026-08-23). 줄 수만큼 부르는 편이 안전하다. */
+  if (badFaces.length) {
+    console.warn('[표정] 대사가 표에 없는 표정을 부른다 — ' + badFaces.length + '건');
+    for (const b of badFaces) console.warn('  ' + b.script + ': ' + b.who + '.' + b.face + ' — ' + b.why);
+  }
+  auditFacePortraits(FACE_FILE);          /* 파일이 실제로 있나 — 결과는 조금 늦게 찍힌다 */
+} catch (e) { console.warn('[표정] 자가검사를 못 돌렸다 —', e && e.message); }
 function dlgPaint() {
   const line = dlg.current();
   if (!line) {

@@ -137,12 +137,12 @@ export const SCRIPTS = {
   monsteraArrived: [
     { who: 'jachwi', face: 'surprise', text: '가방에… 화분이 하나 들어와 있어.' },
     { who: 'moni',   face: 'happy',    text: '몬스테라야. 나도 오랜만에 보네.' },
-    { who: 'jachwi', face: 'surprise', text: '줄기가 하나뿐인데.' },   /* ⚠ jachwi 에 curious 는 없다(§FACE_FILE) */
+    { who: 'jachwi', face: 'curious',  text: '줄기가 하나뿐인데.' },   /* ★ 2026-08-23 — curious 가 생겼다(§FACE_FILE: jachwi.curious → think 그림) */
     { who: 'moni',   face: 'curious',  text: '작은 걸 줬네. 대신 얘는 콩나물이랑 **반대**야.' },
     { who: 'moni',   text: '콩나물은 어두울수록 하얗게 잘 됐잖아. 얘는 어두운 데 두면 **아무 일도 안 일어나.**' },
     { who: 'jachwi', face: 'worry',    text: '먹지도 못하는 걸 왜…' },
     { who: 'moni',   text: '잘 키우면 새 잎에 **흰 무늬**가 나. 그게 값이 돼.' },
-    { who: 'jachwi', text: '…값이 된다고?' },
+    { who: 'jachwi', face: 'curious',  text: '…값이 된다고?' },
     { who: 'moni',   face: 'happy',    text: '응. **이 방을 나가는 돈**, 거기서 나와.' },
     { who: 'moni',   text: '가방에서 꺼내서 **밝은 데** 놓아 봐.' }
   ],
@@ -437,10 +437,10 @@ export const SCRIPTS = {
     /* ⚠ 몬이에게는 `surprise` 얼굴이 없다(game.html FACE_FILE — base·happy·sad·curious).
        놀람은 `curious` 로 짓고 **말이 놀란다** — 없는 표정 키를 쓰면 조용히 기본 얼굴이 된다. */
     { who: 'moni',   face: 'curious',  text: '어어. 잠깐만. **그거 무늬야.**' },
-    { who: 'jachwi', text: '무늬?' },
+    { who: 'jachwi', face: 'curious',  text: '무늬?' },
     { who: 'moni',   face: 'curious',  text: '흰 게 섞여서 나오는 거. 흔한 게 아닌데.' },
     { who: 'moni',   text: '**두 번째 잎에** 바로 나오네. 운 좋다, 너.' },
-    { who: 'jachwi', text: '좋은 거야?' },
+    { who: 'jachwi', face: 'curious',  text: '좋은 거야?' },
     { who: 'moni',   face: 'happy',    text: '값이 달라. 근데 **한 장으로는 어림도 없어.**' },
     { who: 'moni',   face: 'curious',  text: '무늬 있는 그루를 잘라서 물에 꽂으면, 그 삽수도 무늬를 물려받아.' },
     { who: 'moni',   text: '**그게 늘리는 방법이야.** 한 장을 여러 장으로 만드는 거지.' },
@@ -1813,4 +1813,58 @@ export function createStoryteller(opt = {}) {
     return ids;
   }
   return { turn, events, get quietDays() { return quiet; }, recent: () => [...history] };
+}
+
+/* ══ ★ 표정 자가검사 (2026-08-23 · [Char] 제안 · [core] 구현) ═════════════════════
+   ■ 무엇이 문제였나
+     대사가 **없는 표정 키**를 부르면 화면은 조용히 기본 얼굴로 떨어진다
+     (§dlgPaint 의 `|| 'neutral'` 과 CSS 두 겹 배경). **오류가 안 난다.**
+     그래서 틀린 채로 오래 남는다 — team-map §0 의 「여기가 틀리면 조용히 틀린다」다.
+
+   ■ 왜 둘로 갈랐나 — ★ **검사를 검사할 수 있어야 한다**
+     원안은 키 검사와 파일 검사가 한 함수였고 `new Image()` 를 써서 **브라우저에서만** 돌았다.
+     그러면 `tools/test_*.mjs` 가 못 부르고, 결국 아무도 안 돌린다.
+     ⇒ **키 검사는 순수**(Node 에서 돈다) · **파일 검사만 DOM**.
+
+   ■ ★★ 왜 정규식이 아니라 순회인가 — 2026-08-23 에 실제로 당한 자리다
+     같은 질문을 `grep "who: 'x', face: 'y'"` 로 세었다가 **몬이 160줄 중 151줄을 놓쳤다.**
+     파일이 이름 길이에 맞춰 칸을 맞춰 놨는데(`{ who: 'moni',   face: …` — 공백 세 칸)
+     자가 공백을 **한 칸으로 박아서**다. 자취생은 이름이 길어 여백이 없어 전부 맞았고,
+     그래서 **한쪽만 조용히 빠졌다.**
+     ⚠ 더 나쁜 것은 **0이 아니라 그럴듯한 작은 수(9줄)가 나온 것**이다. 0이면 누구나 알아챈다.
+     ⇒ **코드 안의 데이터를 세려면 글자가 아니라 데이터를 순회한다.**
+       「간단하게 grep 으로 바꾸자」는 생각이 들면 이 문단을 다시 읽을 것.
+   ══════════════════════════════════════════════════════════════ */
+
+/** 대사가 부르는 표정 키가 표에 다 있나. **순수** — 아무것도 안 찍고 목록만 돌려준다.
+ *  @param {object} FACE_FILE  game.html 의 정본 표 { 화자: { 표정키: 파일이름 } }
+ *  @param {object} scripts    기본값은 이 파일의 SCRIPTS (검사용으로 딴 것을 넣을 수 있다)
+ *  @returns {{who:string, face:string, script:string, why:string}[]} 빈 배열이면 이상 없음 */
+export function auditFaceKeys(FACE_FILE, scripts = SCRIPTS) {
+  const bad = [];
+  for (const [script, lines] of Object.entries(scripts || {})) {
+    if (!Array.isArray(lines)) continue;
+    for (const l of lines) {
+      if (!l || !l.face) continue;      /* 표정을 안 단 줄은 기본 얼굴이 맞다(식물신 줄이 그렇다) */
+      const map = FACE_FILE && FACE_FILE[l.who];
+      if (!map) { bad.push({ who: l.who, face: l.face, script, why: '화자에 표정표가 없다' }); continue; }
+      if (!map[l.face])
+        bad.push({ who: l.who, face: l.face, script, why: '표에 없는 표정 — 조용히 기본 얼굴로 떨어진다' });
+    }
+  }
+  return bad;
+}
+
+/** 표에 적힌 파일이 실제로 있나. **DOM 이 있어야 한다** — 브라우저에서만 돈다.
+ *  그림을 받아 봐야 알기 때문에 결과가 늦게 온다. 콘솔로만 알린다.
+ *  @returns {boolean} 검사를 걸었나 (Node 면 false) */
+export function auditFacePortraits(FACE_FILE, dir = './assets/characters/portraits') {
+  if (typeof Image === 'undefined') return false;          /* Node — 조용히 건너뛴다 */
+  for (const [who, map] of Object.entries(FACE_FILE || {}))
+    for (const [key, file] of Object.entries(map || {})) {
+      const img = new Image();
+      img.onerror = () => console.warn(`[표정] 파일 없음 — ${who}.${key} → portrait_${who}_${file}.png`);
+      img.src = `${dir}/portrait_${who}_${file}.png`;
+    }
+  return true;
 }
