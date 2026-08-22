@@ -1,0 +1,148 @@
+{
+ "_note": "leaf 가 손으로 쓴다. 큰 장면 원화의 규격 계약이다. 읽는 쪽(core)은 여기만 보면 된다.",
+ "_why": "말로 넘기면 읽는 쪽이 파일명 규칙과 자를 자리를 다시 정하게 되고, 두 벌이 되면 어긋난다. (thumbs/index.json 과 같은 규약)",
+ "_gaps": "safe·text 는 leaf 가 그림을 눈으로 보고 정한 것이다. 밝기 숫자만 실측이다. 화면에 올려 보고 안 맞으면 leaf 에 알려 달라 — 고쳐 준다.",
+ "_units": "safe/focus 는 그림 전체를 1.0 으로 본 비율이다. 픽셀이 아니다 — 축소판을 써도 같은 값이 맞다.",
+ "updated": "2026-08-23",
+ "written_by": "leaf",
+ "scenes": {
+  "ev_monstera_arrive_b": {
+   "name_ko": "몬스테라 도착",
+   "what": "선물로 온 몬스테라를 처음 받는 장면",
+   "src": {
+    "path": "assets/illust/ev_monstera_arrive_b.png",
+    "w": 2400,
+    "h": 1792,
+    "bytes": 7104216,
+    "alpha": false,
+    "format": "png"
+   },
+   "web": {
+    "path": "assets/illust/web/ev_monstera_arrive_b.jpg",
+    "w": 1400,
+    "h": 1045,
+    "bytes": 184799,
+    "alpha": false,
+    "format": "jpeg",
+    "use": "★ 화면에는 이쪽을 써라. 원본은 21MB 라 폰에서 안 뜬다"
+   },
+   "safe_crop": {
+    "top": 0.1,
+    "bottom": 0.02,
+    "left": 0.08,
+    "right": 0.1,
+    "note": "아래(러그·마스코트 발)와 가운데(손에 든 화분)는 자르면 사건이 사라진다",
+    "how": "여기 적힌 비율만큼은 잘라도 그림이 안 상한다. 그 이상은 사건이 잘린다"
+   },
+   "focus": {
+    "x0": 0.44,
+    "y0": 0.45,
+    "x1": 0.58,
+    "y1": 0.62,
+    "ko": "화분을 받쳐 든 두 손",
+    "note": "어떻게 자르든 이 네모는 화면에 남아야 한다"
+   },
+   "text": {
+    "band": [
+     0.7,
+     0.88
+    ],
+    "white_ok": true,
+    "scrim": false,
+    "note": "아래 20~28% 가 충분히 어둡다(밝은쪽10% = 145). 흰 글자를 그냥 얹어도 읽힌다"
+   }
+  },
+  "ev_first_varie_a2": {
+   "name_ko": "첫 무늬",
+   "what": "빛줄기 아래에서 첫 무늬 잎이 난 것을 보는 장면",
+   "src": {
+    "path": "assets/illust/ev_first_varie_a2.png",
+    "w": 2400,
+    "h": 1792,
+    "bytes": 7159645,
+    "alpha": false,
+    "format": "png"
+   },
+   "web": {
+    "path": "assets/illust/web/ev_first_varie_a2.jpg",
+    "w": 1400,
+    "h": 1045,
+    "bytes": 196108,
+    "alpha": false,
+    "format": "jpeg",
+    "use": "★ 화면에는 이쪽을 써라. 원본은 21MB 라 폰에서 안 뜬다"
+   },
+   "safe_crop": {
+    "top": 0.0,
+    "bottom": 0.06,
+    "left": 0.12,
+    "right": 0.06,
+    "note": "★ 위를 자르면 안 된다 — 창에서 내려오는 빛줄기가 이 장면의 사건이다",
+    "how": "여기 적힌 비율만큼은 잘라도 그림이 안 상한다. 그 이상은 사건이 잘린다"
+   },
+   "focus": {
+    "x0": 0.4,
+    "y0": 0.33,
+    "x1": 0.55,
+    "y1": 0.52,
+    "ko": "무늬가 난 잎",
+    "note": "어떻게 자르든 이 네모는 화면에 남아야 한다"
+   },
+   "text": {
+    "band": [
+     0.66,
+     0.84
+    ],
+    "white_ok": false,
+    "scrim": true,
+    "note": "어느 띠도 반반이다(아래 12% 밝은쪽10% = 157). 반투명 띠를 깔아야 흰 글자가 산다"
+   }
+  },
+  "ev_moveout_a2": {
+   "name_ko": "이사",
+   "what": "몬스테라를 안고 반지하 계단을 올라 나가는 장면",
+   "src": {
+    "path": "assets/illust/ev_moveout_a2.png",
+    "w": 2400,
+    "h": 1792,
+    "bytes": 7332726,
+    "alpha": false,
+    "format": "png"
+   },
+   "web": {
+    "path": "assets/illust/web/ev_moveout_a2.jpg",
+    "w": 1400,
+    "h": 1045,
+    "bytes": 190764,
+    "alpha": false,
+    "format": "jpeg",
+    "use": "★ 화면에는 이쪽을 써라. 원본은 21MB 라 폰에서 안 뜬다"
+   },
+   "safe_crop": {
+    "top": 0.04,
+    "bottom": 0.0,
+    "left": 0.15,
+    "right": 0.08,
+    "note": "★ 아래를 자르면 안 된다 — 상자와 가방이 「이사」를 말한다. 위도 계단 끝이라 방향이 죽는다",
+    "how": "여기 적힌 비율만큼은 잘라도 그림이 안 상한다. 그 이상은 사건이 잘린다"
+   },
+   "focus": {
+    "x0": 0.42,
+    "y0": 0.1,
+    "x1": 0.62,
+    "y1": 0.75,
+    "ko": "몬스테라를 안고 올라가는 인물",
+    "note": "어떻게 자르든 이 네모는 화면에 남아야 한다"
+   },
+   "text": {
+    "band": [
+     0.73,
+     0.91
+    ],
+    "white_ok": false,
+    "scrim": true,
+    "note": "★ 위쪽은 하늘이라 아주 밝다(밝은쪽10% = 240) — 위에는 글자를 얹지 마라. 아래도 띠가 필요하다"
+   }
+  }
+ }
+}
