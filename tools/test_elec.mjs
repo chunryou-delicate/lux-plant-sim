@@ -53,8 +53,20 @@ check('A ★코드 기본값 = data/balance/electricity.json', () => {
 check('B ★와트 — 기구 프리셋 · 방 프로파일 · 지갑이 같은 값을 본다', () => {
   const bar  = PRESETS.fixtures.growlight_bar.watts;
   const clip = PRESETS.fixtures.growlight_clip.watts;
-  assert.deepEqual([...TUTORIAL_RULES.lampWattsByOrder], [bar, clip],
-    `와트 표가 기구 프리셋과 다릅니다 — 바 ${bar}W · 집게 ${clip}W 여야 합니다`);
+  /* ★★★ 2026-08-22 — **거치형이 빠져 있었다.** 이 자가 등을 **둘**만 보는 사이
+     2026-08-17 에 셋째 등(거치형)이 들어왔다(박사님: *"식물등도 집게형 말고 그냥 거치형 하나
+     추가해"* · `tutorial.js §LAMP_KINDS`). 코드는 셋을 다 들고 있었다:
+       기구 프리셋 20 · 12 · **36**  ·  `lampWattsByOrder` [20, 12, **36**]
+       방 프로파일 `lampWatts` [0, 20, 32, **68**] — 누계라 32+36=68 로 딱 맞는다
+     ⇒ **셋 다 아귀가 맞는데 이 한 줄만 둘을 기다려 FAIL 을 냈다.** 코드가 아니라 자가 낡았다.
+     ⚠⚠ 이게 §2.9-⑥ 의 **더 나쁜 판**이다. 「조용히 안 재어지는 것」이 아니라
+       **멀쩡한 코드를 빨갛게 찍고 있었다.** 이 붉은 줄을 보고 `lampWattsByOrder` 에서
+       36 을 빼는 순간 **거치등 전기세가 통째로 사라진다** — 검사가 사고를 만드는 자리다.
+     ⇒ 이제 **기구 표에서 셋을 다 읽는다.** 넷째 등이 들어오면 이 줄도 같이 늘려야 한다.
+       (수를 여기 박지 않고 프리셋에서 읽으므로 **와트 값이 바뀌는 것**은 저절로 따라온다.) */
+  const stand = PRESETS.fixtures.growlight_stand.watts;
+  assert.deepEqual([...TUTORIAL_RULES.lampWattsByOrder], [bar, clip, stand],
+    `와트 표가 기구 프리셋과 다릅니다 — 바 ${bar}W · 집게 ${clip}W · 거치 ${stand}W 여야 합니다`);
   /* 방 프로파일의 lampWatts[n] 은 "등 n개를 켰을 때의 와트 합"이다. 누계라 그대로 맞아야 한다 */
   PROFILE.lampWatts.forEach((w, n) => {
     assert.equal(lampWattsOn(TUTORIAL_RULES, n), w,
