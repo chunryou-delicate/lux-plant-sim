@@ -340,7 +340,14 @@ function route(name, opt) {
 const show = r => info(`${r.name} — 이사 ${r.ok.length}/${r.runs.length} (${(r.rate * 100).toFixed(0)}%)` +
   (r.medDay != null ? ` · 중앙값 튜토 ${r.medDay}일 · 최선 ${Math.min(...r.days)} · 최악 ${Math.max(...r.days)}` : ' · **한 판도 못 나감**') +
   ` · 계절 ${Object.entries(r.seasons).map(([k, v]) => k + ':' + v).join(' ') || '—'}` +
-  ` · 유효생장 ${r.medEff} · 잎 ${r.medLeaves}장`);
+  ` · 유효생장 ${r.medEff} · 잎 ${r.medLeaves}장` +
+  /* ★ 못 나간 판이 있으면 **어디서 막혔는지**를 같이 적는다 */
+  (r.stuck.total
+    ? `
+      ↳ 못 나간 ${r.stuck.total}판 — 돈만 모자람 ${r.stuck.moneyOnly} · `
+      + `무늬만 못 판 ${r.stuck.varieOnly} · 둘 다 ${r.stuck.both}`
+      + (r.stuck.medShort != null ? ` · 모자란 돈 중앙값 ${r.stuck.medShort.toLocaleString()}원` : '')
+    : ''));
 
 /* ══ ① 지금 게임 그대로 — 계절이 빛에 안 걸린 상태 ═══════════════════════ */
 console.log('══ 세 경로 비교 (test_balance_routes) ═════════════════════════════');
