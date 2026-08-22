@@ -343,17 +343,20 @@ def compare_resolutions(root):
             if len(keys) < 2:
                 continue
             sigs = {k: sig(res[k]) for k in keys}
-            base = np.mean(list(sigs.values()), axis=0)
-            far = []
-            for k, v in sigs.items():
-                d = float(np.abs(v - base).mean())
-                far.append((d, k))
-            far.sort(reverse=True)
-            worst, name = far[0]
-            typical = np.median([d for d, _ in far])
-            if worst > max(0.25, typical * 2.0):
-                print('★ %-24s [%s] **%s 만 딴판** (차이 %.2f · 나머지 중앙 %.2f)'
-                      % (spot, kind, name, worst, typical))
+            # ★ 기준을 **평균이 아니라 중앙값**으로 잡는다.
+            #   ⚠ 처음엔 평균을 썼는데 **이상치가 평균을 자기 쪽으로 끌어서**
+            #     모두가 비슷하게 멀어졌다. 실제로 일곱 장 중 넷이 오류 화면이었는데
+            #     차이가 0.509~0.550 으로 **거의 같게** 나와 아무도 안 튀었다.
+            #   ⇒ 중앙값은 소수의 이상치에 안 끌린다. 그리고 문턱도
+            #     「중앙의 2배」가 아니라 **중앙 + 절대폭**으로 잡는다.
+            base = np.median(np.stack(list(sigs.values())), axis=0)
+            far = sorted(((float(np.abs(v - base).mean()), k)
+                          for k, v in sigs.items()), reverse=True)
+            typical = float(np.median([d for d, _ in far]))
+            for d, k in far:
+                if d > typical + 0.12 and d > 0.20:
+                    print('★ %-24s [%s] **%s 만 딴판** (차이 %.3f · 나머지 중앙 %.3f)'
+                          % (spot, kind, k, d, typical))
             # 아래·옆 빈 띠 — 해상도 문제의 대표 증상
             for k in keys:
                 _, g = load(res[k])

@@ -223,7 +223,7 @@ export async function shoot(pages, seq, name) {
           /* ③ **눌러야 하는 것만이 아니라 「보여야 하는 것」도 가려진다.**
              [Asset] 이 본 「초상화가 방과 글자를 가린다」가 그것이다.
              방(캔버스)·대사 글자·안내 문구는 못 누르지만 **안 보이면 못 논다.** */
-          const SHOW = 'canvas,#dlgText,#dlgWho,[class*=hint],[id*=hint],[class*=quest]';
+          const SHOW = 'canvas,#dlgText,#dlgWho,#quest,[class*=hint],[id*=hint],[class*=quest]';
           for (const el of document.querySelectorAll(SHOW)) {
             const r = el.getBoundingClientRect();
             if (r.width < 40 || r.height < 40 || !vis(el)) continue;
