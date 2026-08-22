@@ -470,5 +470,120 @@ if (!BASE) {
   }
 }
 
+/* ══ 3부 · **화면의 그 손짓** (game.html · 2026-08-23 신설) ═══════════════
+   ------------------------------------------------------------
+   ★★ 왜 2부로는 모자란가 — 오늘 이 자리에서 배운 것이다.
+     2부는 `room_view_demo.html` 을 열고 `mountId` 나 `lampFit(uid, {x,z,y})` 로 부른다.
+     그런데 **2026-08-23 의 버그는 game.html 에 있었다** — `lampDragTo` 가 `pos.y` 를
+     안 넘겨서 `lampFit` 이 「등의 지금 높이」로 상판을 골랐다(창턱 적중 25%).
+     ⇒ 2부에 아무리 검사를 더해도 **고치기 전에도 통과했을 것이다.**
+       방뷰는 y 를 주면 늘 옳게 골랐다. 틀린 것은 **부르는 쪽**이었다.
+     ⚠ 이것이 「떨어질 수 없는 검사」다(계율 ㉑). **버그가 있던 길을 지나야 자다.**
+
+   ⇒ 그래서 여기는 **game.html 을 띄워 `furnPicked.lampDragTo` 를 실제로 부른다.**
+     겨누는 점은 **화면 좌표**다 — 사람이 손가락을 얹는 그 점이다.
+
+   잠그는 것 셋:
+     ① 창턱을 겨누면 **창턱에 붙는다** (다른 상판이 이기지 않는다)
+     ② ★ **미리보기와 붙는 곳이 같다** — `previewLampAt` 이 낸 `ghost` 그대로
+        `commitLampAt` 이 쓴다. 이게 깨지면 「붙는 것처럼 보이는데 딴 데 붙는」 판이 되어
+        **지금보다 나빠진다.**
+     ③ **되먹임이 없다** — 낮은 데 한 번 붙였다가 창턱을 다시 겨눠도 창턱이다.
+
+   ⚠⚠ **떨어질 수 있는가 — 내가 직접은 못 재 봤다. 적어 둔다.**
+     계율 ㉑ 대로 「고치기 전 판에서 붉어지는가」를 밟으려 했는데, `game.html` 은 [core] 소유라
+     **내 권한으로 못 고친다**(한 줄 임시 되돌리기도 막혔다 — 맞는 경계다).
+     ⇒ 대신 [core] 가 **같은 손짓을 부르는 자**(`tools/probe_lampaim.mjs`)로
+       `git stash` 해서 앞뒤를 다 쟀다고 알려 왔다: **창턱 ✘ → ✔ · 합계 4/6 → 6/6.**
+       이 3부는 그 자와 **같은 길**(`furnPicked.lampDragTo` → `F.ghost`)을 지나므로
+       고치기 전이었으면 ①과 ③이 붉었을 것이다.
+     ★ 그래도 **남의 측정이다.** 다음에 `game.html` 을 만질 수 있는 창이 이 검사를
+       한 번 되돌려 떨어뜨려 보고 이 줄을 지워 주면 좋겠다.
+
+   ⚠ game.html 은 뜨는 데 오래 걸린다. 서버가 없으면 **건너뛴다**(2부와 같은 규약).
+     python tools/serve.py 8972 . 뒤에
+     BYEOT_URL=http://localhost:8972 node tools/test_lampmove.mjs
+============================================================ */
+if (BASE) {
+  const { launch, sleep } = await import('./test_cdp.mjs');
+  const GURL = `${BASE}/game.html`;
+  console.log(`\n── 3부 · 화면의 그 손짓 (${GURL}) ──────────────────────`);
+  let alive = false;
+  try { alive = (await fetch(GURL, { method: 'HEAD' })).ok; } catch { alive = false; }
+  if (!alive) {
+    console.log('SKIP  game.html 을 못 열었습니다 — 3부를 건너뜁니다.');
+  } else {
+    const page = await launch({ width: 390, height: 844, dpr: 2 });
+    try {
+      await page.goto(GURL);
+      await page.eval('localStorage.clear()', false);
+      await page.goto(GURL);
+      await page.waitFor('!!window.__rv', 150000, 300);
+      await sleep(5000);
+
+      /* 한 자리를 화면에서 겨눠 보고 **어디에 붙을지**를 돌려준다.
+         붙는 곳은 `commitLampAt(uid, ghost)` 이 쓰는 그 `ghost` 로 판정한다 —
+         곧 ②(미리보기 = 붙는 곳)가 여기서 같이 재진다. */
+      const aim = async slotId => JSON.parse(await page.eval(`(()=>{
+        const rv = window.__rv, F = window.__furn;
+        const c = document.getElementById('roomCanvas').getBoundingClientRect();
+        let sp = null; try { sp = rv.screenPosOf(${JSON.stringify(slotId)}); }
+        catch(e) { return JSON.stringify({ err: e.message }); }
+        if (!sp) return JSON.stringify({ err: '화면 위치를 못 얻었습니다' });
+        F.uid = ${JSON.stringify(CLIP)}; F.mode = 'lampmove';
+        try { F.beginLampMove(); } catch(e) { return JSON.stringify({ err: 'beginLampMove ' + e.message }); }
+        F.originX = 0; F.originY = 0;
+        try { F.lampDragTo(c.left + sp.x, c.top + sp.y); }
+        catch(e) { return JSON.stringify({ err: 'lampDragTo ' + e.message }); }
+        const g = F.ghost;
+        let fit = null;
+        try { fit = g ? rv.lampFit(${JSON.stringify(CLIP)}, g) : null; }
+        catch(e) { fit = { err: e.message }; }
+        return JSON.stringify({ ghost: g, mount: fit && fit.mountId, ok: fit && fit.ok });
+      })()`));
+      const ownerOf = r => (r && r.mount) ? String(r.mount).split('@')[0] : null;
+
+      /* ① 상판마다 — 겨눈 자리의 주인에게 붙나 */
+      const TARGETS = ['banjiha-sill:0', 'banjiha-etagere:0', 'banjiha-desk:0',
+                       'banjiha-dresser:0', 'banjiha-nightstand:0'];
+      let hit = 0;
+      for (const t of TARGETS) {
+        const r = await aim(t);
+        const want = t.slice(0, t.lastIndexOf(':'));
+        const got = ownerOf(r);
+        if (got === want) hit++;
+        if (t === 'banjiha-sill:0')
+          ok('① ★ 창턱을 겨누면 **창턱에** 붙는다 (2026-08-23 이전엔 25%만 그랬다)',
+             got === 'banjiha-sill', `겨눔 ${t} → ${got || r.err} · ghost.y ${r.ghost && r.ghost.y}`);
+      }
+      ok(`①-b 상판 ${TARGETS.length}군데를 겨눠 전부 제 주인에게 붙는다`,
+         hit === TARGETS.length, `${hit}/${TARGETS.length}`);
+
+      /* ② 미리보기와 붙는 곳이 같다 — ghost 로 실제로 놓고 견준다 */
+      const r0 = await aim('banjiha-sill:0');
+      const put = JSON.parse(await page.eval(
+        `window.__rv.commitLampAt(${JSON.stringify(CLIP)}, window.__furn.ghost)` +
+        `.then(r => JSON.stringify({ ok: true, mountId: r.mountId }))` +
+        `.catch(e => JSON.stringify({ ok: false, e: e.message }))`));
+      ok('② ★★ 미리보기와 붙는 곳이 같다 (같은 ghost 를 쓴다)',
+         put.ok === true && put.mountId === r0.mount,
+         `미리보기 ${r0.mount} · 붙은 곳 ${put.mountId || put.e}`);
+
+      /* ③ 되먹임 — 낮은 데 붙였다가 창턱을 다시 겨눈다 */
+      await page.eval(`(()=>{ try {
+        const m = (window.__rv.lampMounts() || [])
+          .find(x => String(x.mountId).startsWith('banjiha-dresser@'));
+        if (m) return window.__rv.commitLampAt(${JSON.stringify(CLIP)}, { mountId: m.mountId, lift: 0 });
+      } catch {} })()`, false);
+      await sleep(600);
+      const r2 = await aim('banjiha-sill:0');
+      ok('③ ★ 되먹임이 없다 — 서랍장에 붙였다가 창턱을 다시 겨눠도 창턱이다',
+         ownerOf(r2) === 'banjiha-sill', `→ ${ownerOf(r2) || r2.err}`);
+    } finally {
+      await page.close();
+    }
+  }
+}
+
 console.log(`\nlampmove: ${fail ? 'FAIL' : 'PASS'} — ${pass}/${pass + fail}`);
 process.exit(fail ? 1 : 0);
