@@ -13,6 +13,65 @@
 
 ---
 
+# ★★ 0-0. **2026-08-22~23 에 새로 생긴 문서 서른** — 아래 §3 지도는 07-26 것이라 이걸 모른다
+
+> ⚠ **아래 「3. 문서 지도」는 2026-07-26 상태다.** 그 사이 문서가 서른 개 늘었다.
+> 다시 쓰지 않고 **여기 앞에 얹는다** — 아침에 **파일 이름을 몰라 못 찾는 일**을 막으려는 것이다.
+> 각 줄은 **「무엇을 답하는 문서인가」**로 적었다. 제목만으로는 안 찾아진다.
+
+## 밤샘·운영
+| 파일 | 무엇을 답하나 |
+|---|---|
+| [handoff/night-20260823.md](handoff/night-20260823.md) | ★ **밤샘 규칙 · 밤새 나온 것 · 아침에 물을 것.** 아침에 **이것부터** |
+| [handoff/team-map.md](handoff/team-map.md) | 창 영역을 **파일이 아니라 책임**으로 가른 지도 |
+| [handoff/multi-session-ops.md](handoff/multi-session-ops.md) | 여러 창을 어떻게 굴리나 |
+| [STALE-2026-08-22.md](STALE-2026-08-22.md) | ⚠ **기획 문서가 어디까지 낡았나.** 숫자를 베끼기 전에 볼 것 |
+
+## 밸런스 — **아직 답이 없는 물음**
+| 파일 | 무엇을 답하나 |
+|---|---|
+| [handoff/plan-questions-moveout.md](handoff/plan-questions-moveout.md) | ★ 이사 경제 — **모주 하나가 이사비의 127%** · 잘라 파는 것이 왜 손해인가 |
+| [handoff/plan-to-core-cropescape.md](handoff/plan-to-core-cropescape.md) | **채소만으로 나갈 수 있나** — 물음과 판정선(2배/3배) |
+
+## 검사 — **빨간 줄을 어떻게 읽나**
+| 파일 | 무엇을 답하나 |
+|---|---|
+| [handoff/plan-fail-triage.md](handoff/plan-fail-triage.md) | ★★ **FAIL 을 여섯 갈래로 가른 것 + 주인별 지도.** 「고치면 결정이 지워지는」 열 건이 맨 앞 |
+| [handoff/plan-night-oddities.md](handoff/plan-night-oddities.md) | **「어색하다」를 기계가 어떻게 재나** — 18줄 + 경우의 수 312판 |
+| [handoff/plan-harness-fields.md](handoff/plan-harness-fields.md) | 하네스가 **찍어야 할 칸**(날마다 12 · 판마다 6) |
+
+## 튜토·원룸 기획
+| 파일 | 무엇을 답하나 |
+|---|---|
+| [handoff/plan-lines-all.md](handoff/plan-lines-all.md) | ★ **오늘 쓴 대사 문안 전부.** 붙일 수 있는 것 / 기다리는 것 / 나중 것으로 갈랐다 |
+| [handoff/plan-night-cutting-block.md](handoff/plan-night-cutting-block.md) | ★ **삽수를 튜토에서 막으면 이사가 막힌다** — 그 충돌과 답 |
+| [handoff/plan-oneroom-questline.md](handoff/plan-oneroom-questline.md) | **원룸 퀘스트 다섯 줄 + 대사.** 붙일 수 있는 형태 |
+| [handoff/plan-night-shelf-teaching.md](handoff/plan-night-shelf-teaching.md) | ★ **선반과 등은 짝이다** — 1층(답을 준다) · 2층(선택이 있다만 준다) |
+| [handoff/plan-cutting-quickcash.md](handoff/plan-cutting-quickcash.md) | 「급전」을 **어디서 처음 말하나**(퀘스트로는 안 만든다) |
+| [handoff/plan-to-core-silence.md](handoff/plan-to-core-silence.md) | **말해야 할 때 말을 안 하는 자리 셋** |
+
+## 에셋 — plan 판단
+| 파일 | 무엇을 답하나 |
+|---|---|
+| [handoff/plan-to-asset-thisrun.md](handoff/plan-to-asset-thisrun.md) | ★ **이번 판에 실제로 나오는 물건** — 가구·무늬는 이미 있다 |
+| [handoff/plan-to-asset-badleaves.md](handoff/plan-to-asset-badleaves.md) | ★ **색조 금** — 로즈·핑크는 쓰고 벽돌·녹·겨자는 못 쓴다 |
+| [handoff/plan-to-asset-calm.md](handoff/plan-to-asset-calm.md) | ★ **「차분판」이 무엇인가** — 채도만 낮춘다(색상은 안 돌린다) |
+| [handoff/plan-to-asset-midcommon.md](handoff/plan-to-asset-midcommon.md) | 중간잎 못을 왜 넓히나 |
+| [handoff/plan-decisions-0823-2.md](handoff/plan-decisions-0823-2.md) | 못에서 셋을 뺀 까닭 · 삽수 등급 배선 |
+| [handoff/plan-to-master.md](handoff/plan-to-master.md) | 리듬 셋 판단 · 검사 51개 훑기 |
+
+## 다른 창이 오늘 만든 것
+| 파일 | 누구 |
+|---|---|
+| [assets/leaf_colorway_audit.md](assets/leaf_colorway_audit.md) · [assets/mid_leaf_variety.md](assets/mid_leaf_variety.md) | [Asset] — 색변이 72장 훑기 · 중간잎 16갈래 |
+| [assets/screen_check_list.md](assets/screen_check_list.md) · [assets/tutorial_asset_audit.md](assets/tutorial_asset_audit.md) | [Asset] |
+| [assets/character_base_spec.md](assets/character_base_spec.md) · [assets/gen20260812_ghost_verdict.md](assets/gen20260812_ghost_verdict.md) | [Asset]·[Char] |
+| [engine/slot_cell_align.md](engine/slot_cell_align.md) · [handoff/house-to-master.md](handoff/house-to-master.md) | [House] |
+| [character_layer_spec.md](character_layer_spec.md) · [byeot_ai_collaboration_plan.md](byeot_ai_collaboration_plan.md) | 주인 없이 떠돌던 것을 plan 이 거둠 |
+
+---
+
+
 # ★ 0. 창 구조 — 새 창이면 여기부터
 
 작업은 **여러 창이 병렬로** 돈다. **남의 파일은 절대 직접 수정하지 않는다.**
