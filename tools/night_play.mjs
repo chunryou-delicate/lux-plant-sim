@@ -431,11 +431,23 @@ const SNAP = `(()=>{ const S=window.__S(); const ts=S.tutorial||{};
     lamp:(ts.lamp&&ts.lamp.owned)??null, lampOpen:!!(ts.lamp&&ts.lamp.unlocked),
     seed:(S.shop&&S.shop.stock&&S.shop.stock.bean_seed)??null,
     /* 무순 — 판이 이미 서 있나 · 재배판/무 씨앗 재고(§musun) */
-    musun: (()=>{ try { const fp=S.firstPlay;
-      const m=(fp&&fp.crops&&fp.crops.musun)||(fp&&fp.musun)||null;
-      if (m && (m.sirus || (m.pots||[]).length)) return true;
-      return (S.cropSites||[]).some(x=>x&&x.kind==='musun');
-    } catch { return false; } })(),
+    /* ⚠⚠ **fp.crops 는 배열이다**(first_play §cropSites — CROP_KINDS.slice(1).map(...)).
+       처음에 fp.crops.musun 으로 물었는데 배열이라 늘 undefined 였고, 그래서
+       **재배판을 놓고도 「안 놓았다」로 읽어** 매일 다시 놓으려 들었다(35일에 18번).
+       ⇒ 자리는 **처음부터 있다**(그래야 화면이 「살 수 있다」를 띄운다). 그러니
+         「자리가 있나」가 아니라 **「놓였나(slotId)」·「심었나(sown)」**를 봐야 한다. */
+    musun: (()=>{ try { const fp=S.firstPlay||{};
+      for (const st of (fp.crops||[])) {
+        if (!st || st.kind !== 'musun') continue;
+        if (st.slotId) return true;
+        for (const p of (st.pots||[])) if (p && (p.slotId || p.sown)) return true;
+      }
+      return false; } catch { return false; } })(),
+    /* 무순 자리를 그대로 한 줄 적어 둔다 — 「왜 안 열리나」를 짐작으로 답하지 않으려는 것 */
+    musunSite: (()=>{ try { const fp=S.firstPlay||{};
+      const st=(fp.crops||[]).find(x=>x&&x.kind==='musun');
+      return st ? { slot: st.slotId||null, pots:(st.pots||[]).map(p=>({s:p&&p.slotId||null, sown:!!(p&&p.sown)})) } : null;
+    } catch { return null; } })(),
     tray:(S.shop&&S.shop.stock&&S.shop.stock.sprout_tray)??0,
     radish:(S.shop&&S.shop.stock&&S.shop.stock.radish_seed)??0,
     bankrupt:!!ts.bankrupt,
