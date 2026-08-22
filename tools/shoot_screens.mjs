@@ -319,6 +319,21 @@ if (import.meta.url === `file://${process.argv[1].replace(/\\/g, '/')}` ||
   let n = (await shoot(pages, 1, 'boot')).length;
   console.log(`\n01_boot  ${n}장`);
 
+  /* ── UI 자리 (날짜를 안 넘긴다 — [core] 와 겹치지 않는 선) ──────────
+     ★ 시트를 연 한 컷이 필요하다. [Plan] 이 문구 중복을 이렇게 갈랐다:
+       "아래 퀘스트 줄은 시트를 열면 가린다. 같은 한 줄을 두 곳이 나눠 볼 뿐이다."
+     ⇒ **가림이 실제로 도는지는 아직 아무도 안 봤다.** 이 한 장이 그것을 답한다.
+     누르지 않고 game.html 이 내놓은 손잡이를 쓴다(2797행 window.__byeotSheet). */
+  for (const p of pages) {
+    try {
+      await p.eval("(()=>{ try { window.__byeotSheet && window.__byeotSheet.open('tabBag');"
+                 + " return 1; } catch(e){ return 0; } })()");
+    } catch { /* 손잡이가 없으면 건너뛴다 */ }
+  }
+  await sleep(600);
+  const n2 = (await shoot(pages, 2, 'sheet_open')).length;
+  console.log(`02_sheet_open  ${n2}장`);
+
   /* ★ 여기서부터는 [core] 가 진행을 밟으며 부를 자리다.
      아직 하네스가 없어서 **부팅 한 장까지만** 찍는다.
      진행을 여기서 흉내내면 [core] 와 두 벌이 되므로 안 한다. */
