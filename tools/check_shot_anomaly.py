@@ -35,7 +35,7 @@
     python tools/check_shot_anomaly.py <폴더 또는 파일...>
     python tools/check_shot_anomaly.py --selftest      # ★ 자부터 검사한다
     python tools/check_shot_anomaly.py --calibrate <폴더>   # 표본으로 문턱 다시 재기
-    python tools/check_shot_anomaly.py --compare <폴더>     # ★ 해상도끼리 견주기
+    python tools/check_shot_anomaly.py --compare <폴더>     # ⚠ 폐기됨(설계가 틀렸다)
 """
 import os, sys, glob, collections, io
 
@@ -323,64 +323,30 @@ def selftest():
 
 
 def compare_resolutions(root):
-    """★ 해상도끼리 견준다 — **한 장을 보는 게 아니라 여럿을 나란히 놓고 본다.**
+    """★★ **이 갈래는 못 쓴다. 쓰지 말 것.** (2026-08-24 폐기)
 
-    지금까지의 검사는 「깨진 그림」을 잡는다. 그런데 해상도 문제는
-    **안 깨졌는데 잘못된 것**이다 — 버튼이 밖으로 나가거나, 아래에 빈 띠가 생기거나,
-    같은 자리인데 해상도마다 딴판이거나.
+    ⚠ **한 번도 떨어져 본 적이 없어서** 잘 도는 줄 알았다. 일부러 틀린 것을 넣어 보니
+      **통째로 위아래를 뒤집은 그림도 못 잡았다.** 값을 찍어 보니 까닭이 분명했다:
 
-    `qa/{해상도}/{순번}_{자리}.png` 규약을 전제로, **같은 「순번_자리」를 모아** 견준다.
-    크기가 다르므로 **가로세로를 128×128 로 눌러** 배치만 남기고 비교한다.
+        뒤집어 놓은 430x932   거리 0.374
+        멀쩡한   768x1024     거리 0.391   <- ★ 멀쩡한 쪽이 더 멀다
 
-    ⚠ **이것도 「깨지진 않았다」까지다.** 배치가 서로 닮았다고 예쁜 것은 아니다.
-      그리고 **가로 화면은 세로와 원래 다르게 생겨야 정상**이라 따로 묶어 본다."""
-    groups = collections.defaultdict(dict)     # 자리 -> {해상도: 경로}
-    for p in glob.glob(os.path.join(root, '*', '*.png')):
-        res = os.path.basename(os.path.dirname(p))
-        spot = os.path.basename(p)
-        groups[spot][res] = p
-    if not groups:
-        print('견줄 것이 없다 — %s/{해상도}/{순번}_{자리}.png 규약이 아니다' % root)
-        return
+    ⇒ **지표가 아니라 설계가 틀렸다.** 종횡비가 다른 화면을 128x128 로 눌러 견주면
+      **찌그러지는 정도가 서로 달라서** 「배치가 닮았나」가 아니라 「종횡비가 닮았나」를 잰다.
+      320x568 과 768x1024 는 **정상일 때도** 크게 다르다. 그 위에서는 진짜 차이가 묻힌다.
 
-    def sig(path):
-        im = Image.open(path).convert('L').resize((128, 128), Image.BILINEAR)
-        a = np.asarray(im, dtype=np.float32)
-        a = (a - a.mean()) / (a.std() + 1e-6)      # 밝기 차는 지우고 **배치만** 본다
-        return a
+    ⇒ **옳은 길은 그림이 아니라 DOM 이다.** 곁파일에 요소마다
+      「화면의 어디에 몇 %로 있나」를 남기고 **요소 단위로** 견주면 종횡비를 넘어 비교된다.
+      (`shoot_screens.mjs` 가 이미 rect 를 재고 있으니 남기기만 하면 된다)
 
-    print('해상도끼리 견주기 — 자리 %d개\n' % len(groups))
-    for spot in sorted(groups):
-        res = groups[spot]
-        # 가로/세로를 갈라 본다. 서로 다르게 생기는 것이 정상이다.
-        for kind, keys in (('세로', [k for k in res if _is_portrait(k)]),
-                           ('가로', [k for k in res if not _is_portrait(k)])):
-            if len(keys) < 2:
-                continue
-            sigs = {k: sig(res[k]) for k in keys}
-            # ★ 기준을 **평균이 아니라 중앙값**으로 잡는다.
-            #   ⚠ 처음엔 평균을 썼는데 **이상치가 평균을 자기 쪽으로 끌어서**
-            #     모두가 비슷하게 멀어졌다. 실제로 일곱 장 중 넷이 오류 화면이었는데
-            #     차이가 0.509~0.550 으로 **거의 같게** 나와 아무도 안 튀었다.
-            #   ⇒ 중앙값은 소수의 이상치에 안 끌린다. 그리고 문턱도
-            #     「중앙의 2배」가 아니라 **중앙 + 절대폭**으로 잡는다.
-            base = np.median(np.stack(list(sigs.values())), axis=0)
-            far = sorted(((float(np.abs(v - base).mean()), k)
-                          for k, v in sigs.items()), reverse=True)
-            typical = float(np.median([d for d, _ in far]))
-            for d, k in far:
-                if d > typical + 0.12 and d > 0.20:
-                    print('★ %-24s [%s] **%s 만 딴판** (차이 %.3f · 나머지 중앙 %.3f)'
-                          % (spot, kind, k, d, typical))
-            # 아래·옆 빈 띠 — 해상도 문제의 대표 증상
-            for k in keys:
-                _, g = load(res[k])
-                bf = border_flat_ratio(g)
-                if bf > 0.22:
-                    print('   %-24s [%s] %-10s 가장자리 빈 띠 %.0f%%'
-                          % (spot, kind, k, bf * 100))
-    print()
-    print('⚠ 여기서 안 걸린 것이 「보기 좋다」는 뜻은 아니다. **배치가 서로 닮았다**까지다.')
+    ★ 교훈 — **한 번도 떨어져 본 적 없는 검사는 검사가 아니다.**
+      나는 이 갈래를 만들고 "아무것도 안 걸렸다"를 세 번 보고했다. 실은 **잰 적이 없었다.**
+    """
+    print('⚠ --compare 는 폐기됐다. 설계가 틀렸다 — 종횡비가 다른 화면을 눌러 견주면')
+    print('   「배치가 닮았나」가 아니라 「종횡비가 닮았나」를 잰다.')
+    print('   실측: 위아래를 뒤집은 그림(0.374)보다 **멀쩡한 다른 해상도(0.391)가 더 멀다.**')
+    print('   ⇒ 이 결과를 근거로 쓰지 말 것. 요소 단위(DOM)로 다시 만들어야 한다.')
+    return
 
 
 def _is_portrait(res_id):
