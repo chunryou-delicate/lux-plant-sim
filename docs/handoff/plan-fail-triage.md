@@ -1,3 +1,70 @@
+# ★ 주인별 지도 (2026-08-23 밤 · 아침에 읽는 곳)
+
+> ⚠ **아래 본문(§0~§11)은 하나도 안 고쳤다.** 시간순으로 쌓인 것이라 **자기 몫만 뽑아 보라고** 앞에 표만 얹는다.
+> ⚠⚠ **날짜를 보라** — §1~§8 은 **08-23 이른 시각**, §10 은 **늦은 시각**이다.
+>   병렬로 도는 지금 **다시 돌리기 전에는 이 목록을 사실로 쓰지 마라.**
+> ⚠ 그리고 §10 의 **「등 배치 버그가 있던 동안 잰 값」** 표시를 먼저 보라 —
+>   **흔들리는 것과 안 흔들리는 것을 갈라 뒀다.**
+
+## ⛔ 먼저 — **사람 확인 없이 손대면 안 되는 것 (㉣ 열 건)**
+
+**고치면 박사님이 정하신 것이 지워진다.** 갈래 표에서 ㉣ 인 것 전부다.
+
+| 무엇 | 어느 결정을 지우나 |
+|---|---|
+| `crop_seat F`·`F-2` · `fastforward ⑵`·`⑵-b` | **몬스테라 가방행**(08-17 *"인벤에 줘서 드래그"*) |
+| `oneroom H` — `assert.equal(g.min, 3.0)` | **min 3.0 → 2.7**(08-17) |
+| `tutorial A` — 첫 플레이 중 시계 정지 | **「살림 시계 첫날부터」**(08-16) |
+| `first_play_attacks` · `pots E-6` — 수확 g 2배 | **수확량 배수 2.0**(08-17 *"2배로 하고 난이도 올라갈수록"*) |
+| `pantrysale` — 곳간이 열흘로 안 빔 | 같은 뿌리(수확량 2배) |
+| `dialogue_coverage ⑸` — 식물신 4줄 | 가방행 때문에 는 줄. **3줄로 되돌리는 것은 승인됐다** |
+
+## 주인별 — **자기 줄만 보면 된다**
+
+### [core] — `src/game/*` · `game.html`
+```
+㉣ 위 여섯 (자를 고친다. 값은 안 건드린다)
+㉡ dialogue_coverage ⑵  「둘 다 모자랄 때」 침묵   ← 문안 넘겼다(plan-to-core-silence.md)
+㉡ dialogue_coverage ⑶C brokeTalk 두 번          ← 「처음 한 번만」 승인됨
+㉠ oneroom C-2          stub 이 08-17 at/onUid 규칙을 안 따라감
+· 유령 다섯 [growth 판정] furnishop · monthly · sellpopup · siruinfo · roomview_place
+· moving:false 세 건은 실은 한 건 [growth] — 흐름은 온전하고 중간 상태만 다르다
+· probe_qa_full 이 일 1 에서 멈춘다 [growth] — 거짓 치명을 내고 런을 끊는다
+```
+
+### [House] — `src/engine/*` · `src/render3d/*` · `data/profiles/*`
+```
+㉡ floorlight ①-1   자리가 칸 한가운데를 0.1768m 벗어남 ★ 자가 고칠 곳까지 짚었다
+                     (furniture_pastel.js §tierSlots)
+㉡ oneroom_room ③   원룸에 거치등이 없다 (08-17 셋째 등이 반지하에만 들어감)
+㉤ floorlight ①-2   skyViewK — ★ **무죄로 밝혀짐.** 자가 「안 적은 방」을 못 만든다
+㉠ oneroom_room ⑥ · floorlight ①   기준선 14→15칸 · 6.06→6.17
+   ⚠⚠ **새 값으로 다시 얼리기 전에 사람이 봐야 한다.** 회귀 기준선을 말없이 갱신하는 것은
+      **검사를 끄는 것과 같다**
+? free_place L      자가 원래 자리를 손으로 적는다. **엔진이 그 값을 내주는 창구가 있나**에 따라
+                     ㉠(자가 안 물었다) 또는 ㉤(물어볼 데가 없다) — **그 확인이 [House] 몫**
+```
+
+### 자를 만든 창 — `tools/*`
+```
+㉥ test_roomview_shots   ★ **검사가 아니다.** 단언 0 · 실패해도 log 만 → **이름을 `shot_` 로**
+㉠ free_place F          좌표 칸에 occIdx·onUid 가 늘었다
+㉠ test_place_confirm ①-2·①-3  선택자 낡음 [growth] — 버튼이 `.actionbar` 밖으로 옮겨갔다
+㉠ test_place_grid R-1   5건이 상판 밖 · 셋 다 같은 자리 x−0.87 z−0.6 [growth]
+㉠ test_bagcell          `#musunGauge` 가 없다(값 7 은 코드가 맞다) [growth]
+· ok(…, true) 다섯 [growth] — ⚠ **넷이 같은 병이 아니다.** `test_furnishop:336` 은
+  위 두 줄이 진짜로 검사해서 **통과 수만 부풀리고**, 나머지는 **「건너뛴 것」을 「통과」로** 찍는다
+✅ test_balance_routes   **내가 고쳤다**(waterPot · gate 찍기). 이름 바꾸기는 아침 판단
+```
+
+### [plan] — 내 몫
+```
+· 서막에 월세 한 줄 (D4 — 예고를 첫 회로 당기지 않는다. tutorial.js 는 안 건드린다)
+· 「둘 다 모자랄 때」·식물신·급전·선반·원룸 문안 — 다 썼다. 붙이는 것은 [core]
+· 값 판단 — §9 묶음 1·3
+```
+
+---
 # 2026-08-23 · FAIL 12개 가르기 — **고치지 않았다. 가르기만 했다**
 
 > 총괄 승인. 순수 모듈 검사 51개 중 FAIL 12개(+`test_elec` 은 총괄이 이미 고침)를 갈랐다.
