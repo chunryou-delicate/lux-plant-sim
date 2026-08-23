@@ -56,10 +56,28 @@ for (const f of files) {
   }
 }
 
-const gone = [], untracked = [];
+/* ★★ 2026-08-23 보탬 — **「없다」와 「옮겨졌다」를 가른다.**
+   처음엔 「가리키는데 없다」만 말했다. 그랬더니 읽는 쪽이 **「파일이 사라졌다」로 읽었고**,
+   캐릭터 파이프라인 넷이 「없어졌다」로 보고될 뻔했다. **실은 `tools/char/` 로 옮겨져 있었다.**
+   ⇒ 자는 **「그 경로에 없다」**를 말한 것인데 사람이 **「그 파일이 없다」**로 읽었다.
+   ⇒ ★ **자가 그 구분을 «스스로» 말하게 한다** — 같은 이름이 다른 경로에 있으면 그 경로를 댄다.
+     그러면 읽는 사람이 **「지워야 하나」가 아니라 「문서의 경로를 고쳐야 하나」**로 본다. */
+const byName = new Map();                     // 파일이름 → 실제 있는 경로들
+for (const f of tracked) {
+  if (!f) continue;
+  const b = path.basename(f);
+  if (!byName.has(b)) byName.set(b, []);
+  byName.get(b).push(f);
+}
+
+const gone = [], moved = [], untracked = [];
 for (const [t, from] of [...hits].sort()) {
   const exists = fs.existsSync(path.join(ROOT, t));
-  if (!exists) gone.push([t, [...from]]);
+  if (!exists) {
+    const alt = (byName.get(path.basename(t)) || []).filter(p => p !== t);
+    if (alt.length) moved.push([t, [...from], alt]);
+    else gone.push([t, [...from]]);
+  }
   else if (!tracked.has(t)) untracked.push([t, [...from]]);
 }
 const show = (title, rows, mark) => {
@@ -70,9 +88,17 @@ const show = (title, rows, mark) => {
                 (from.length > 3 ? ' … 그 밖 ' + (from.length - 3) : ''));
 };
 console.log('문서·코드가 가리키는 tools/ 경로 ' + hits.size + '군데를 봤다.');
-show('★ 가리키는데 «없다»', gone, '✖');
+show('★ 가리키는데 «없다» — 같은 이름이 어디에도 없다', gone, '✖');
+if (moved.length) {
+  console.log('');
+  console.log('↷ 그 경로엔 «없지만» 같은 이름이 «다른 데» 있다 — 옮겨진 것으로 보인다 — ' + moved.length + '개');
+  for (const [t, from, alt] of moved)
+    console.log('  ↷ ' + t.padEnd(34) + ' → ' + alt.join(' · ') + '\n      ← ' +
+                from.slice(0, 3).join(' · ') + (from.length > 3 ? ' … 그 밖 ' + (from.length - 3) : ''));
+  console.log('  ⇒ ★ 이건 «지울 일»이 아니라 «문서의 경로를 고칠 일»이다.');
+}
 show('⚠ 있지만 «커밋 안 됐다» (남의 컴퓨터에는 없다)', untracked, '△');
 console.log('');
 console.log('⚠ 판정하지 않는다 — 지울지 커밋할지는 그 문서를 쓴 창이 안다.');
 console.log('   여기서는 「가리키는데 없다」만 말한다.');
-process.exit(gone.length ? 1 : 0);
+process.exit((gone.length || moved.length) ? 1 : 0);
