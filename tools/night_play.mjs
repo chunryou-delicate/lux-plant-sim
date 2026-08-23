@@ -331,8 +331,24 @@ const rowAct = async (act, max = 8) => {
    (`#mealGo`)를 눌러야 날이 간다.** 월세 낸 날은 그 앞에 **한 달 가계부**(`#monthPanel`)도 선다.
    ⇒ 첫 굴림에서 날짜가 **한 번 걸러** 갔던 까닭이 이것이다. 판이 막힌 것이 아니라
      **재는 자가 하루의 절반만 밟고 있었다.**
-   ⚠ 밥상은 **매일 사람이 고르는 것**이다. 기본값 그대로 [이대로 다음 날]을 누른다 —
-     여기서 양을 바꾸면 그건 밸런스를 만지는 것이라 안 한다.
+   ⚠⚠ **2026-08-23 정정 — 여기 있던 말이 틀렸다.** 있던 말:
+     *"기본값 그대로 [이대로 다음 날]을 누른다 — 여기서 양을 바꾸면 그건 밸런스를 만지는 것이라 안 한다."*
+   ⇒ ⛔ **밥상에서 [최대]를 누르는 것은 밸런스를 만지는 것이 아니다.** 그건 «사람의 손»이다.
+     밸런스는 확률·배수·«값»이고, 이건 게임이 사람에게 내주는 «고르개»다. 둘을 내가 안 갈랐다.
+   ★ 그 탓에 이 하네스는 **곳간에 콩나물이 쌓여 있는데 매일 밥을 사 먹었다** —
+     `mealCostWon 2,500 × 2끼 = 하루 5,000원`. 138일이면 **69만 원**이다.
+     그러고서 「열여섯 개를 돌려도 적자」라고 말할 뻔했다.
+   ⇒ ★ 이제 **[최대](`#mealAll`)를 먼저 누르고** [이대로 다음 날]을 누른다.
+   ⚠⚠⚠ **2026-08-23 다시 정정 — 이 흠은 «없었다».** 붙여 놓고 굴려 보니
+     `pop:mealmax` 가 **0회**다. 까닭은 `game.html:9860` —
+       `$('mealAll').disabled = ms.grams >= ms.maxGrams`
+     ⇒ ★ **밥상은 기본값이 이미 「최대」다.** 곳간은 처음부터 다 쓰이고 있었다.
+       씨앗 9(30일)에서 하루 빠지는 돈이 d10~15 −9,273 → d25~30 −4,587 로 «줄었다» —
+       시루가 늘자 곳간이 밥값을 덮은 것이다.
+   ⇒ ⇒ ⛔ **그러니 「곳간에 쌓였는데 밥을 사 먹었다」는 내 말이 틀렸다.** 총괄에게 그대로 냈다.
+     실제 흠은 **㉮ 하나**였다 — 「안 팔았다」. 아래 `sellSurplus` 가 그것이다.
+   ★ 그래도 이 줄을 «안 지운다» — 상한을 손으로 낮추는 날 이 자리가 그대로 살아나고,
+     무엇보다 **「눌러 봤더니 잠겨 있더라」가 여기 적혀 있어야** 다음 사람이 또 안 헤맨다.
    ⚠ 여는 순서가 판마다 다르므로 **닫힐 때까지 몇 바퀴 돈다.** */
 const clearPops = async (rounds = 6) => {
   for (let i = 0; i < rounds; i++) {
@@ -351,6 +367,12 @@ const clearPops = async (rounds = 6) => {
            ⚠ 양을 정하지 않는다 — [＋]가 잠기면 거기서 멎는다. */
         const plus = [...document.querySelectorAll('[data-mealkind-plus]')].filter(b2=>!b2.disabled);
         if (plus.length >= 2) { for (const b2 of plus) b2.click(); return 'mealkind'; }
+        /* ★ **[최대]로 곳간을 먹는다** — 하루에 한 번만이다(누른 날을 창에 적어 둔다).
+           ⚠ 하루에 두 번 이상 누르면 이 고리가 안 끝난다. */
+        const dayNow = (window.__S && window.__S().sim && window.__S().sim.day) || -1;
+        if (window.__nightMealAllDay !== dayNow && hit('mealAll')) {
+          window.__nightMealAllDay = dayNow; return 'mealmax';
+        }
         if (hit('mealGo')) return 'meal';
       }
       if (up('buyPanel')   && hit('buyCancel'))  return 'buy';
@@ -388,6 +410,55 @@ const order = async (itemId, want = 1) => {
     g.click(); return true; })()`);
   await sleep(200); await tapTalk();
   return went;
+};
+
+/* ══ ★★★ **거둔 것을 돈으로 바꾼다** (2026-08-23) ═══════════════════════════════
+   ------------------------------------------------------------
+   ⚠⚠ **오늘 찾은 것 중 제일 큰 흠이다.** 이 하네스는 140일 동안 시루 17개를 돌리고도
+     `#sellPantry`(「보유 채소 팔기」)를 **한 번도 안 눌렀다.** did 에 `sell` 항목 자체가 없었다.
+     ⇒ 그래서 「d91~d140 에 지갑이 오른 날이 0일」이 났고, 하마터면
+       **「열여섯 개를 돌려도 적자」**라고 말할 뻔했다. 판이 아니라 **손이 없던 것**이다.
+
+   ★ 순서가 중요하다 — **먹는 쪽이 파는 쪽보다 1.5배 낫다.**
+     먹으면 (3,500 − 500) / 5일 = 600원/일 · 팔면 (3,500×0.7 − 500) / 5일 = 390원/일
+     ⇒ ★ 그러니 **끼니를 먼저 채우고(`#mealAll`) 남는 것만 판다.** 반대로 하면
+       「팔아서 밥이 없어 사 먹는」 사람이 된다 — 아무도 그렇게 안 논다.
+
+   ★ 얼마를 남기나 — **이레치 밥값(2,500×2×7 = 35,000원어치 ≈ 10판)**을 두고 나머지를 판다.
+     ⚠ 이것은 **밸런스 값이 아니라 손버릇**이다. 게임 값은 한 글자도 안 건드린다.
+     ⚠ 곳간에 상한이 없고(`pantryCapWon` 이 `pantryCapEnabled` 없이는 Infinity) 질림도
+       걷혔으니(`cropOverlapTiredIndex` 가 0) **쟁여도 안 상한다** — 그래도 팔아 두는 까닭은
+       월세가 서른 날마다 한 번에 20만 원씩 오기 때문이다.
+   ══════════════════════════════════════════════════════════════════════════ */
+const KEEP_LOTS = 10;                    /* 남겨 둘 판 수 — 이레치 밥값 */
+const sellSurplus = async () => {
+  const was = await ev(`(()=>{const s=document.getElementById('sheet');
+    return s.classList.contains('open');})()`) === 'true' || false;
+  await ev(`window.__byeotSheet.open('shop')`, false); await settleSheet(true);
+  /* ① 「보유 채소 팔기」가 잠겨 있으면 팔 것이 없다 — 아무것도 안 한다 */
+  const opened = await ev(`(()=>{ const b=document.getElementById('sellPantry');
+    if(!b || b.disabled) return false; b.click(); return true; })()`);
+  let sold = 0;
+  if (opened) {
+    await sleep(220);
+    /* ② [최대]로 올린 뒤 남길 만큼 [−] 로 내린다 — 사람이 밟는 그 길이다 */
+    await ev(`(()=>{const a=document.getElementById('pantryAll'); if(a&&!a.disabled) a.click();})()`, false);
+    await sleep(120);
+    for (let k = 0; k < KEEP_LOTS; k++) {
+      const down = await ev(`(()=>{const m=document.getElementById('pantryMinus');
+        if(!m || m.disabled) return false; m.click(); return true; })()`);
+      if (!down) break;
+      await sleep(40);
+    }
+    /* ③ 판다 — [이 값에 팔기]가 잠겨 있으면(0판이면) 물러난다 */
+    const went = await ev(`(()=>{const g=document.getElementById('pantryGo');
+      if(!g || g.disabled) return false; g.click(); return true; })()`);
+    if (went) { sold = 1; R.did.sellPantry = (R.did.sellPantry || 0) + 1; }
+    else await ev(`(()=>{const c=document.getElementById('pantryCancel'); if(c) c.click();})()`, false);
+    await sleep(200); await tapTalk();
+  }
+  if (!was) { await ev(`window.__byeotSheet.close()`, false); await settleSheet(false); }
+  return sold;
 };
 
 /* 사람이 늘 눌러야 하는 자리들 — 한 바퀴 찔러 본다.
@@ -525,6 +596,9 @@ const SNAP = `(()=>{ const S=window.__S(); const ts=S.tutorial||{};
     pots:(S.pots||[]).length, potSlot:p?p.slotId:null, potDry:p?!!p.dry:null,
     leaves:ls?ls.leaves:null, varie:ls?ls.variegatedLeaves:null,
     sirus:b.sirus??null, harvests:b.harvestCount??null,
+    /* ★ **곳간에 얼마어치 있나** — 「거둔 것이 돈이 되는가」를 이 줄 없이는 못 읽는다.
+       지갑만 보면 「수확 8회인데 지갑이 안 오른다」까지만 보이고 그 뒤가 안 보였다. */
+    pantry:(()=>{ try { const f=S.firstPlay; return (f&&f.food&&f.food.pantryWon!=null)?Math.round(f.food.pantryWon):null; } catch(e){ return null; } })(),
     fpDone:!!(S.firstPlay&&S.firstPlay.completed), movedOut:!!ts.movedOut,
     lamp:(ts.lamp&&ts.lamp.owned)??null, lampOpen:!!(ts.lamp&&ts.lamp.unlocked),
     seed:(S.shop&&S.shop.stock&&S.shop.stock.bean_seed)??null,
@@ -739,6 +813,9 @@ for (let d = 1; d <= DAYS; d++) {
   await sleep(450); await tapTalk();
   await clearPops();            /* ★ 밥상·가계부를 지나야 비로소 날이 간다 */
   await tapTalk();
+  /* ★★ **거둔 것을 돈으로 바꾼다** — 닷새마다 한 번이면 넉넉하다(회전이 닷새다).
+     ⚠ 날마다 부르면 시트를 여닫느라 한 판이 두 배로 길어진다. */
+  if (R.today % 5 === 0) { try { await sellSurplus(); } catch { } }
   /* ⚠⚠ **날 넘어가는 연출이 끝나기를 기다린다.** 안 기다리면 «날이 갔는데 상태를 먼저 읽어»
      「날짜가 안 갔다」로 읽는다 — 실측: 씨앗 2 가 d41 에서 그렇게 멈췄고, 그때 열려 있던 것이
      `dayAnim` 하나였다. ★ 크롬을 둘 띄워 느려지자 드러났다.
