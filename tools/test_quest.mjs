@@ -240,14 +240,17 @@ const steps = [
     cropPots: Array.from({ length: 5 }, () => ({ kind: 'beansprout', harvestCount: 4 })) },
   /* 21 ★ 시루를 여덟까지 늘린다 — `siru8` 완료 (2026-08-16 신설) */
   { ...S0, day: 64, firstPlayDone: true, lampUnlocked: false,
-    cropPots: Array.from({ length: 8 }, () => ({ kind: 'beansprout', harvestCount: 5 })) },
+    /* ★ 2026-08-24 — `placed: true` 를 붙였다. `siru8`·`siru16` 이 **놓인 것만** 세게
+       바뀌었기 때문이다(박사님 확정: "놓인것만 센다"). 걸음표가 옛 세상을 재고 있었다 —
+       가방에 쟁여 둔 시루로도 줄이 닫히던 시절의 값이다. */
+    cropPots: Array.from({ length: 8 }, () => ({ kind: 'beansprout', harvestCount: 5, placed: true })) },
   /* 22 ★ 열여섯까지 — `siru16` 완료. 여기서 살림이 본전을 넘는다(실측) */
   { ...S0, day: 66, firstPlayDone: true,
-    cropPots: Array.from({ length: 16 }, () => ({ kind: 'beansprout', harvestCount: 5 })) },
+    cropPots: Array.from({ length: 16 }, () => ({ kind: 'beansprout', harvestCount: 5, placed: true })) },
   /* 23 `siru5_cycle5` 완료 · 모주 잎이 둘이 됐다 → `first_cut` 열림.
         ★ 가을이 왔다 — 식물등이 풀린다(`ts.lamp.unlocked`) → `buy_lamp` 열림 */
   { ...S0, day: 70, firstPlayDone: true, motherLeaves: 2, lampUnlocked: true,
-    cropPots: Array.from({ length: 16 }, () => ({ kind: 'beansprout', harvestCount: 5 })) },
+    cropPots: Array.from({ length: 16 }, () => ({ kind: 'beansprout', harvestCount: 5, placed: true })) },
   /* 24 물꽂이가 뿌리를 냈다 — `first_cut` 완료. ★ 등을 샀다 — `buy_lamp` 완료.
         무늬 잎이 났다 → `varie_bright` 열림 */
   { ...S0, day: 84, firstPlayDone: true, motherLeaves: 3, motherVarieLeaves: 1,

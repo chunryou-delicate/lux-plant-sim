@@ -500,7 +500,14 @@ const MAIN_QUESTS = Object.freeze([
     /* ★ ②를 끝낸 뒤에 연다 — 다섯 바퀴를 돌려 봐야 「늘린다」가 무슨 뜻인지 안다 */
     after: 'siru5_cycle5',
     opens: (s, ctx) => !!(ctx && ctx.doneIds.includes('siru5_cycle5')),
-    done:  (s, ctx) => arr(s.cropPots).filter(p => p && p.kind === 'beansprout').length >= ctx.q.need.sirus
+    /* ★★ 2026-08-24 박사님 확정: **"놓인것만 센다."**
+       예전에는 `cropPots` 를 그냥 셌다 — **가방에 쟁여 두기만 해도 줄이 닫혔다.**
+       이 줄이 가르치는 것은 「늘리면 하루가 는다」인데, **가방에 있는 시루는 아무것도 안 낸다.**
+       사 두기만 하고 배운 것이 되면 그건 가르친 것이 아니라 세어 준 것이다.
+       ⚠ `placed` 는 스냅샷이 이미 낸다(`first_play.cropPotPlaced`) — 새 칸이 아니다.
+       ⚠ 값은 한 톨도 안 건드렸다(여덟·열여섯 그대로). **세는 방식만** 바뀐다. */
+    done:  (s, ctx) => arr(s.cropPots)
+      .filter(p => p && p.kind === 'beansprout' && yes(p.placed)).length >= ctx.q.need.sirus
   }),
 
   /* ②-c ★★★ **본전이 되는 자리** — 열여섯이다(위 ②-b 의 실측). */
@@ -513,7 +520,14 @@ const MAIN_QUESTS = Object.freeze([
     todo: q => `콩나물 시루를 ${q.need.sirus}개까지 늘리세요`,
     after: 'siru8',
     opens: (s, ctx) => !!(ctx && ctx.doneIds.includes('siru8')),
-    done:  (s, ctx) => arr(s.cropPots).filter(p => p && p.kind === 'beansprout').length >= ctx.q.need.sirus
+    /* ★★ 2026-08-24 박사님 확정: **"놓인것만 센다."**
+       예전에는 `cropPots` 를 그냥 셌다 — **가방에 쟁여 두기만 해도 줄이 닫혔다.**
+       이 줄이 가르치는 것은 「늘리면 하루가 는다」인데, **가방에 있는 시루는 아무것도 안 낸다.**
+       사 두기만 하고 배운 것이 되면 그건 가르친 것이 아니라 세어 준 것이다.
+       ⚠ `placed` 는 스냅샷이 이미 낸다(`first_play.cropPotPlaced`) — 새 칸이 아니다.
+       ⚠ 값은 한 톨도 안 건드렸다(여덟·열여섯 그대로). **세는 방식만** 바뀐다. */
+    done:  (s, ctx) => arr(s.cropPots)
+      .filter(p => p && p.kind === 'beansprout' && yes(p.placed)).length >= ctx.q.need.sirus
   }),
 
   /* ③ ★ **자를 수 있게 된 순간**에 열린다 — 모주 잎이 둘이 된 날이다.
