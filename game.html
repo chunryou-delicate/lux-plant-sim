@@ -203,6 +203,26 @@
           border:1px solid rgba(255,180,84,.42);box-shadow:0 6px 18px rgba(0,0,0,.45);
           font-size:12.5px;line-height:1.5;color:var(--ink);word-break:keep-all}
   #coach.on{display:block}
+  /* ══ ★★ 2026-08-24 — **조작 쪽지가 떠 있는 동안 「다음 손」을 안 띄운다** ═══════════
+     [Plan] 이 세운 축은 「층」이 아니라 **「수명」**이다:
+       coach  조작법   ★ 한 번 배우면 끝 — **사람**에게 붙는다 (평생 것)
+       chip   다음 손  그 손을 할 때까지                        (지금 것)
+     ⇒ ★★ **평생 것이 지금 것을 가린다. 수명이 정반대인 둘이 겹친다.**
+       실측(playshot · 양쪽 판 모두): `coachBody` ⇄ `questChipText` **95%** · ⇄ 배너 68%.
+     ⇒ 그래서 **겹치는 동안은 지금 것을 미룬다.** 쪽지는 몇 초뿐이고(§COACH_MS)
+       칩은 그 손을 할 때까지 사니까 **미뤄도 잃는 것이 없다.** 반대로 하면 조작을 못 배운다.
+     ⚠ **감추는 것이지 끄는 것이 아니다** — 쪽지가 걷히면 그대로 돌아온다.
+     ⚠ 배너(`#event`)는 **안 건드린다.** 그건 「방금 한 일」이라 쪽지와 같이 봐도 어긋나지 않고,
+       이미 제 시계(6초)를 갖고 있다.
+     ⚠⚠ `opacity:0` 이 아니라 **`display:none`** 이다. 처음에 opacity 로 했더니
+       **자리(rect)가 그대로 남아** 겹침 자가 여전히 95% 라고 답했다 — 눈에는 안 보이는데
+       **자에는 보인다.** 그러면 다음 사람이 「안 고쳐졌다」로 읽는다.
+       그리고 실제로도 **자리를 차지하지 않는 것이 맞다** — 그 동안은 없는 물건이다. */
+  #stage.coaching #questChip{display:none}
+  /* ★ 그리고 [?] 도 같이 뺀다 — 쪽지의 [✕] 가 그 위에 **92%** 얹힌다(실측).
+     둘 다 26~44px 이라 **손가락 하나에 든다** — 닫으려다 안내서를 연다.
+     ⚠ 같은 판단이다: 쪽지는 몇 초뿐이고 [?]는 늘 있다. **잠깐 비켜 주는 쪽이 [?] 다.** */
+  #stage.coaching #guideOpen{display:none}
   #coach b{color:var(--gold)}
   #coach .ct{display:block;font-weight:800;font-size:13px;margin-bottom:2px}
   #coach .cx{pointer-events:auto;position:absolute;right:6px;top:6px;width:26px;height:26px;border:0;border-radius:50%;
@@ -4544,6 +4564,7 @@ function coachHide() {
   coachNow = null;
   if (coachTimer != null) { clearTimeout(coachTimer); coachTimer = null; }
   const el = $('coach'); if (el) el.classList.remove('on');
+  try { $('stage').classList.remove('coaching'); } catch { }
 }
 /* 한 번만 뜬다. 이미 본 것이면 아무 일도 안 한다(돌려주는 값 = 실제로 띄웠나) */
 function coach(id) {
@@ -4566,6 +4587,7 @@ function coach(id) {
     el.style.left = (r && r.width > 1 ? Math.round(r.right - sr.left + 8) : 12) + 'px';
   } catch { el.style.left = '12px'; }
   el.classList.add('on');
+  $('stage').classList.add('coaching');   /* ★ 쪽지가 사는 동안 「다음 손」을 미룬다(§coaching) */
   coachNow = id;
   coachMark(id);
   if (coachTimer != null) clearTimeout(coachTimer);
