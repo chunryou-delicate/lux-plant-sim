@@ -37,9 +37,14 @@ GROUPS = [
     ('작물', ['beansprout_s', 'beansprout_m', 'beansprout_l',
               'sprout_radish_s', 'sprout_radish_m', 'sprout_radish_l',
               'seed_dicot', 'seed_monocot', 'sprout_dicot', 'sprout_monocot']),
-    ('몬스테라', ['monstera_bud_furled', 'monstera_leaf_mid1', 'monstera_leaf_mature',
-                  'heart_albo_2672_3', 'pothos_mint_dot']),
+    ('몬스테라·잎', ['monstera_leaf_early1', 'monstera_bud_furled',
+                     'monstera_leaf_mid1', 'heart_albo_2672_3', 'monstera_leaf_mature']),
+    ('삽수', ['pot_glassjar', 'pot_nursery_black']),
 ]
+
+# ★ 등은 manifest 가 아니라 data/furniture_presets.json 이 갖는다 (가구·조명은 그쪽 소관)
+LIGHT_PRESETS = ['lamp_ceiling', 'growlight_bar', 'growlight_clip', 'growlight_stand',
+                 'lamp_desk', 'lamp_clip']
 
 def main():
     M = json.load(io.open(os.path.join(ROOT, 'assets', 'manifest.json'), encoding='utf-8'))['items']
@@ -61,6 +66,20 @@ def main():
                 print('   %-23s %9s' % (n, '(크기 없음)')); continue
             px = m * PX_PER_M
             print('   %-23s %9.3f %9.0f   %s' % (n, m, px, verdict(px)))
+    # ── 등 ──────────────────────────────────────────────
+    try:
+        FP = json.load(io.open(os.path.join(ROOT, 'data', 'furniture_presets.json'), encoding='utf-8'))['presets']
+    except Exception as e:
+        print('── 등 ── (프리셋을 못 읽었다: %s)' % e); return
+    print('── 등 ' + '─' * 47)
+    for n in LIGHT_PRESETS:
+        p = FP.get(n)
+        if not p: print('   %-23s %9s' % (n, '(없다)')); continue
+        sm = p.get('size_m') or {}
+        m = max([v for v in (sm.get('w'), sm.get('d'), sm.get('h')) if isinstance(v, (int, float))] or [0])
+        if not m: print('   %-23s %9s' % (n, '(크기 없음)')); continue
+        px = m * PX_PER_M
+        print('   %-23s %9.3f %9.0f   %s' % (n, m, px, verdict(px)))
 
 if __name__ == '__main__':
     main()
