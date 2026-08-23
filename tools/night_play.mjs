@@ -380,7 +380,10 @@ const sweepHits = async () => {
 const placeCrop = async (kind, bright) => {
   /* 무순은 **밝은 자리**, 콩나물은 **어두운 자리**다 — 퀘스트가 그걸 가르친다.
      ⚠ 자리는 빈 것 중에서 고른다. 이미 뭐가 있는 자리에 겹쳐 놓지 않는다. */
-  const sortExpr = bright ? 'b2.y - a.y' : 'a.y - b2.y';
+  /* ★ 무순은 **밝은 자리**, 콩나물은 **어두운 자리**다 — 퀘스트가 그걸 가르친다.
+     ⚠ 안내가 *"방 안 어두운 자리에 놓아 보세요"* 라고 말하는데 자가 밝은 데 놓으면
+       **자가 안내를 안 따르는 것**이고, 그 판의 수확·파산 숫자가 통째로 헛것이 된다. */
+  const sortExpr = bright ? 'key(b2) - key(a)' : 'key(a) - key(b2)';
   const slot = await ev('(()=>{ const S=window.__S();'
     + ' const taken=new Set();'
     + ' for (const p of (S.pots||[])) if (p.slotId) taken.add(p.slotId);'
@@ -390,6 +393,15 @@ const placeCrop = async (kind, bright) => {
     + '   for (const p of (st&&st.pots)||[]) if (p&&p.slotId) taken.add(p.slotId); }'
     + ' const all=(window.__io.light.room.slots||[]).filter(x=>!taken.has(x.slotId));'
     + ' if (!all.length) return "";'
+    /* ⚠⚠ **밝기로 고른다. 높이가 아니다.** 처음에 `y` 로 줄 세웠는데 그건 「높다/낮다」지
+       「밝다/어둡다」가 아니다. 반지하는 창턱이 제일 밝고 그 자리가 제일 높아서 **우연히
+       맞아 보였을 뿐**이다. 다른 방에서는 그대로 틀린다.
+       ⇒ 조도 보고(`light.daily`)의 슬롯별 DLI 로 줄 세운다. 못 읽으면 y 로 떨어진다. */
+    + ' let dli=null;'
+    + ' try { const r=window.__io.light.daily(window.__S().day, window.__S()).report;'
+    + '   dli=new Map((r.slots||[]).map(x=>[x.slotId, x.dli])); } catch(e){}'
+    + ' const key=(x)=> (dli && dli.has(x.slotId) && Number.isFinite(dli.get(x.slotId)))'
+    + '   ? dli.get(x.slotId) : x.y;'
     + ' all.sort((a,b2)=> ' + sortExpr + ');'
     + ' return all[0].slotId; })()');
   if (!slot) return false;
@@ -402,23 +414,13 @@ const placeCrop = async (kind, bright) => {
     + ' window.__drag.end(); return true; })()');
 };
 
+/* ⚠⚠ **콩나물은 어두운 자리다.** 예전에는 「빈 자리 중 첫 번째」를 골랐는데,
+   튜토 안내가 *"방 안 «어두운 자리»에 놓아 보세요"* 라고 말한다. 자가 밝은 데 놓으면
+   **자가 안내를 안 따르는 것**이고, 그 판의 수확·파산 숫자가 통째로 헛것이 된다.
+   ⇒ `placeCrop` 한 벌로 모은다 — 무순은 밝은 쪽, 콩나물은 어두운 쪽. 셈이 하나다.
+   (총괄의 `playshot` 도 같은 실수를 따로 했다 — 「남은 첫 자리」는 편한데 사람이 안 그런다.) */
 const placeOneSiru = async () => {
-  const slot = await ev(`(()=>{ const S=window.__S();
-    const taken = new Set();
-    for (const p of (S.pots||[])) if (p.slotId) taken.add(p.slotId);
-    const b=(S.firstPlay&&S.firstPlay.beansprout)||{};
-    for (const p of (b.pots||[])) if (p && p.slotId) taken.add(p.slotId);
-    const free=(window.__io.light.room.slots||[]).map(x=>x.slotId).filter(id=>!taken.has(id));
-    return free[0]||''; })()`);
-  if (!slot) return false;
-  const ok = await ev(`(()=>{ const rv=window.__rv;
-    const c=document.getElementById('roomCanvas').getBoundingClientRect();
-    let sp=null; try { sp=rv.screenPosOf(${JSON.stringify(slot)}); } catch { return false; }
-    if(!sp) return false;
-    const th=document.getElementById('cropThumb');
-    window.__drag.begin('beansprout', th?th.src:'', {clientX:c.left+c.width*0.9, clientY:c.top+40});
-    window.__drag.move({clientX:c.left+sp.x, clientY:c.top+sp.y});
-    window.__drag.end(); return true; })()`);
+  const ok = await placeCrop('beansprout', false);
   if (ok) { R.did.placeSiru++; await sleep(600); await tapTalk(); }
   return ok;
 };
