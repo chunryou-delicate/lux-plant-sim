@@ -85,10 +85,23 @@ function readRun(file) {
        *"살림돈이 남아 있을 때 여물었나, 마른 뒤에 여물었나."* */
   let maxVarie = 0;
   const varieAt = [];                       // 무늬 잎이 처음 N 장이 된 날
-  for (const d of days) {
+  for (let i = 0; i < days.length; i++) {
+    const d = days[i];
     const v = Number.isFinite(d.varie) ? d.varie : null;
     if (v == null) continue;
-    while (v > maxVarie) { maxVarie++; varieAt.push({ n: maxVarie, day: d.day, cash: d.cash }); }
+    while (v > maxVarie) {
+      maxVarie++;
+      /* ★★ **팔 수 있었던 창** — 그 장수가 된 «뒤로» 지갑이 얼마까지 올랐나.
+         [Plan] 실측: 하프문 3장 그루가 1,830,000 이고 이사비가 2,000,000 이라
+         **살림돈이 170,000 남아 있을 때** 팔면 닿는다.
+         ⇒ ★ 그러니 「여문 날의 지갑」만으로는 모자라다 — **여문 뒤에 «한 번이라도»
+           그만큼 있었나**를 봐야 「팔 수 있었던 날이 있었나」가 나온다.
+         ⚠ 170,000 을 여기 안 박는다 — 사람이 보고 재게 «수»만 낸다. */
+      const rest = days.slice(i);
+      const best = rest.reduce((a, b) => (b.cash > a.cash ? b : a));
+      varieAt.push({ n: maxVarie, day: d.day, cash: d.cash,
+                     afterBestDay: best.day, afterBestCash: best.cash });
+    }
   }
   const last = days[days.length - 1];
   return {
@@ -109,7 +122,11 @@ for (const r of runs) {
   console.log(`  ⑤ 무늬 잎 최대 ${r.maxVarie}장` +
     (r.maxVarie >= 3 ? ' — ★ 하프문(3장)에 닿았다 · 팔 것이 여문다'
                      : ' — ⛔ 3장에 «안» 닿았다 · 팔 것이 «안» 여문다') +
-    (r.varieAt.length ? '  [' + r.varieAt.map(v => `${v.n}장 d${v.day}(지갑 ${v.cash.toLocaleString()})`).join(' · ') + ']' : ''));
+    '');
+  for (const v of r.varieAt)
+    console.log(`     ${v.n}장 d${v.day} · 그날 지갑 ${v.cash.toLocaleString()}` +
+      ` · 그 뒤 최고 d${v.afterBestDay} ${v.afterBestCash.toLocaleString()}`);
+  if (r.maxVarie < 3) console.log(`     ⇒ ⛔ 3장에 안 닿았으니 **팔 수 있었던 날이 하루도 없다**`);
   /* ① 이 제일 먼저다 — 다섯 다 「아니오」면 그것으로 이미 답이다 */
   console.log(`  ① 시작 자금(${r.start.toLocaleString()}원)을 넘은 적 — ` +
     (r.over.length
