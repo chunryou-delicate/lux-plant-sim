@@ -100,13 +100,15 @@ const COLLECT = `(() => {
   for (const s of seen) if (s.text.length >= 6) (byText[s.text] = byText[s.text] || []).push(s.id || s.cls);
   const dup = Object.entries(byText).filter(([, v]) => v.length > 1)
                     .map(([t, v]) => t + '  ← ' + v.join(' · '));
+  const 덮개 = ['questPanel','sheet','guide','buyPanel','mealPanel','monthPanel','slotPanel']
+    .filter(id => { const e=document.getElementById(id); return e && e.offsetParent; });
   const S = (() => { try { const s = window.__S(); return {
       day: s.day, money: s.money, sta: s.stamina && s.stamina.cur,
       next잠김: (()=>{const n=document.getElementById('next'); return !n ? '없음' : (n.disabled ? '잠김' : '');})(),
       할일: (()=>{ try { const q=window.__quest&&window.__quest(); return q?(q.ko||q.id):null; } catch { return null; } })()
     }; } catch { return {}; } })();
   for (const s2 of seen) delete s2.el;          /* 참조는 안 내보낸다 */
-  return JSON.stringify({ state: S, 겹침: ov, 화면밖: off, 같은글자두곳: dup, 보이는것: seen });
+  return JSON.stringify({ state: S, 떠있는덮개: 덮개, 겹침: ov, 화면밖: off, 같은글자두곳: dup, 보이는것: seen });
 })()`;
 
 const settle = async () => {
@@ -125,11 +127,11 @@ const shot = async (step) => {
   try { info = JSON.parse(await ev(COLLECT)); } catch (e) { info = { readError: String(e.message) }; }
   fs.writeFileSync(path.join(OUT, base + '.json'), JSON.stringify(info, null, 1));
   const st = info.state || {};
-  rows.push({ no, step, day: st.day, money: st.money,
+  rows.push({ no, step, day: st.day, money: st.money, 덮개: (info.떠있는덮개||[]).join('·'),
               겹침: (info.겹침 || []).length, 화면밖: (info.화면밖 || []).length,
               같은글자: (info.같은글자두곳 || []).length,
               file: base + '.png' });
-  console.log(`${no} ${step.padEnd(18)} day=${st.day ?? '?'} 겹침=${(info.겹침||[]).length} 밖=${(info.화면밖||[]).length} 같은글자=${(info.같은글자두곳||[]).length}`);
+  console.log(`${no} ${step.padEnd(18)} day=${st.day ?? '?'} 덮개=${(info.떠있는덮개||[]).join('·')||'없음'} 겹침=${(info.겹침||[]).length} 밖=${(info.화면밖||[]).length} 같은글자=${(info.같은글자두곳||[]).length}`);
 };
 
 /* 대사가 떠 있으면 넘긴다 — 사람이 하듯 상자를 누른다 */
@@ -152,6 +154,24 @@ const closeGuide = async () => {
     await sleep(250);
   }
 };
+/* ★★ 2026-08-23 [House] 가 잡음 — **28장 중 27장이 「할 일」 시트에 덮여 있었다.**
+   `navQuest` 가 여는 것은 `__byeotSheet` 가 «아니라» 따로 뜨는 패널이라
+   `sheet.close()` 로 안 닫혔고, 그 뒤 스물일곱 걸음이 «같은 덮개 그림»이 됐다.
+   ⇒ 걸음마다 «떠 있는 덮개를 전부» 닫는다. 안 닫으면 그 뒤가 통째로 헛것이다(계율 ㉛). */
+const closeOverlays = async () => {
+  for (let round = 0; round < 6; round++) {
+    const closed = await ev(`(()=>{ let n=0;
+      for (const id of ['questGo','questClose','guideClose','buyCancel','placeCancel','slotClose']) {
+        const b=document.getElementById(id); if (b && b.offsetParent) { b.click(); n++; }
+      }
+      try { const s=window.__byeotSheet; if (s&&s.close) { s.close(); } } catch(e){}
+      return n; })()`);
+    await sleep(300);
+    if (!closed) return round;
+  }
+  return 6;
+};
+
 const click = async (id) => {
   const ok = await ev(`(()=>{const b=document.getElementById(${JSON.stringify(id)});
     if(!b||!b.offsetParent) return false; b.click(); return true;})()`);
@@ -202,14 +222,14 @@ for (const t of ['bag', 'plants', 'shop', 'room']) {
 await ev(`(()=>{ const s=window.__byeotSheet; s&&s.close&&s.close(); })()`, false);
 await sleep(400);
 await click('navQuest'); await shot('tab_quest');
-await ev(`(()=>{ const s=window.__byeotSheet; s&&s.close&&s.close(); })()`, false);
-await sleep(400);
-await shot('room_only');
+await closeOverlays();
+await shot('room_only');            /* ★ 이제 «정말» 방만 보여야 한다 */
 
 /* ③ 날짜를 밀며 걸음마다 찍는다 */
 let day = 0;
 for (let i = 0; i < DAYS * 3 && day < DAYS; i++) {
   await closeGuide();
+  await closeOverlays();            /* ★ 덮개가 남아 있으면 그 뒤가 전부 같은 그림이 된다 */
   if (await talking()) { await shot('talk_d' + day); await tapTalk(); }
   /* ★ 놓을 시루가 가방에 있으면 놓는다 — 첫날은 이걸 해야 날짜가 넘어간다 */
   const idle = await ev(`(()=>{ try { const b=window.__S().firstPlay.beansprout||{};
@@ -242,10 +262,10 @@ await shot('end');
 const md = [];
 md.push(`# playshot — ${TAG} (${SIZE})`, '');
 md.push(`돌린 날: 실행 시점 · 걸음 ${rows.length} 장 · 예외 ${errs.length} 건`, '');
-md.push('| # | 걸음 | day | 겹침 | 화면밖 | 같은글자 | 그림 |');
-md.push('|---|---|---|---|---|---|---|');
+md.push('| # | 걸음 | day | ★떠있는덮개 | 겹침 | 화면밖 | 같은글자 | 그림 |');
+md.push('|---|---|---|---|---|---|---|---|');
 for (const r of rows)
-  md.push(`| ${r.no} | ${r.step} | ${r.day ?? ''} | ${r.겹침 || ''} | ${r.화면밖 || ''} | ${r.같은글자 || ''} | ${r.file} |`);
+  md.push(`| ${r.no} | ${r.step} | ${r.day ?? ''} | ${r.덮개 || ''} | ${r.겹침 || ''} | ${r.화면밖 || ''} | ${r.같은글자 || ''} | ${r.file} |`);
 md.push('', '## 겹친 쌍 (전부 모음 — 판정은 안 했다. 사실만 적는다)', '');
 for (const r of rows) {
   let j = {}; try { j = JSON.parse(fs.readFileSync(path.join(OUT, r.no + '_' + r.step + '.json'), 'utf8')); } catch { }
