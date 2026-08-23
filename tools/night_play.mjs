@@ -377,26 +377,38 @@ const sweepHits = async () => {
 
 /* 시루 하나를 방에 끌어다 놓는다 — 사람이 [가방]에서 끌어 내리는 그 손짓이다.
    ⚠ 자리는 **빈 자리 중에서** 고른다. 이미 뭐가 있는 자리에 겹쳐 놓지 않는다. */
+/* ══════════════════════════════════════════════════════════════════════════
+   작물 하나를 방에 끌어다 놓는다 — 가구 상판이 차면 **바닥**에 놓는다.
+   --------------------------------------------------------------------------
+   ⚠⚠ 2026-08-24 — 예전에는 `light.room.slots`(=가구 상판)**에서만** 골랐다.
+     그래서 시루가 **13개에서 멈췄고**, 그것을 「이 방은 자리가 13뿐」이라고 적을 뻔했다.
+     ★ 박사님: *"뭔소리야 **시루는 땅바닥에 놓으면 되는데**."* — 그리고 실측으로 놓인다:
+       바닥에 끌면 `free:crop_01_02` 처럼 **자리 이름 없이 좌표로** 선다.
+     ⇒ ⇒ ★★ **「자리가 13뿐」은 방이 아니라 «자»의 한계였다.**
+   ⚠ 바닥 점은 **찍어 봐야 안다** — 가구·벽 위로 떨어지면 안 놓인다.
+     그래서 **놓였는지를 세어 확인하고 안 되면 다음 점**으로 간다. 짐작으로 안 넘어간다.
+   ★ 콩나물은 어두운 자리라 **바닥이 오히려 맞다**(그늘이다). 무순만 밝은 상판을 찾는다.
+   ══════════════════════════════════════════════════════════════════════════ */
+const cropPlacedCount = () => ev('(()=>{ try { const S=window.__S(); let n=0;'
+  + ' const b=(S.firstPlay&&S.firstPlay.beansprout)||{};'
+  + ' for (const p of (b.pots||[])) if (p && (p.slotId||p.at)) n++;'
+  + ' for (const st of (S.firstPlay&&S.firstPlay.crops)||[])'
+  + '   for (const p of (st&&st.pots)||[]) if (p && (p.slotId||p.at)) n++;'
+  + ' return n; } catch { return -1; } })()');
+
 const placeCrop = async (kind, bright) => {
-  /* 무순은 **밝은 자리**, 콩나물은 **어두운 자리**다 — 퀘스트가 그걸 가르친다.
-     ⚠ 자리는 빈 것 중에서 고른다. 이미 뭐가 있는 자리에 겹쳐 놓지 않는다. */
-  /* ★ 무순은 **밝은 자리**, 콩나물은 **어두운 자리**다 — 퀘스트가 그걸 가르친다.
-     ⚠ 안내가 *"방 안 어두운 자리에 놓아 보세요"* 라고 말하는데 자가 밝은 데 놓으면
-       **자가 안내를 안 따르는 것**이고, 그 판의 수확·파산 숫자가 통째로 헛것이 된다. */
   const sortExpr = bright ? 'key(b2) - key(a)' : 'key(a) - key(b2)';
+  /* ① 빈 상판을 밝기로 줄 세운다 — 무순은 밝은 쪽, 콩나물은 어두운 쪽.
+     ⚠ 밝기는 **조도 보고**로 잰다. 높이(y)는 「높다/낮다」지 「밝다/어둡다」가 아니다. */
   const slot = await ev('(()=>{ const S=window.__S();'
     + ' const taken=new Set();'
     + ' for (const p of (S.pots||[])) if (p.slotId) taken.add(p.slotId);'
     + ' const b=(S.firstPlay&&S.firstPlay.beansprout)||{};'
     + ' for (const p of (b.pots||[])) if (p && p.slotId) taken.add(p.slotId);'
-    + ' for (const st of (S.cropSites||[])) { if (st&&st.slotId) taken.add(st.slotId);'
+    + ' for (const st of (S.firstPlay&&S.firstPlay.crops)||[]) { if (st&&st.slotId) taken.add(st.slotId);'
     + '   for (const p of (st&&st.pots)||[]) if (p&&p.slotId) taken.add(p.slotId); }'
     + ' const all=(window.__io.light.room.slots||[]).filter(x=>!taken.has(x.slotId));'
     + ' if (!all.length) return "";'
-    /* ⚠⚠ **밝기로 고른다. 높이가 아니다.** 처음에 `y` 로 줄 세웠는데 그건 「높다/낮다」지
-       「밝다/어둡다」가 아니다. 반지하는 창턱이 제일 밝고 그 자리가 제일 높아서 **우연히
-       맞아 보였을 뿐**이다. 다른 방에서는 그대로 틀린다.
-       ⇒ 조도 보고(`light.daily`)의 슬롯별 DLI 로 줄 세운다. 못 읽으면 y 로 떨어진다. */
     + ' let dli=null;'
     + ' try { const r=window.__io.light.daily(window.__S().day, window.__S()).report;'
     + '   dli=new Map((r.slots||[]).map(x=>[x.slotId, x.dli])); } catch(e){}'
@@ -404,21 +416,35 @@ const placeCrop = async (kind, bright) => {
     + '   ? dli.get(x.slotId) : x.y;'
     + ' all.sort((a,b2)=> ' + sortExpr + ');'
     + ' return all[0].slotId; })()');
-  if (!slot) return false;
-  return await ev('(()=>{ const rv=window.__rv;'
-    + ' const c=document.getElementById("roomCanvas").getBoundingClientRect();'
-    + ' let sp=null; try { sp=rv.screenPosOf(' + JSON.stringify(slot) + '); } catch { return false; }'
-    + ' if(!sp) return false;'
-    + ' window.__drag.begin(' + JSON.stringify(kind) + ', "", {clientX:c.left+c.width*0.9, clientY:c.top+40});'
-    + ' window.__drag.move({clientX:c.left+sp.x, clientY:c.top+sp.y});'
-    + ' window.__drag.end(); return true; })()');
+
+  const before = await cropPlacedCount();
+  const drop = async (expr) => {
+    await ev('(()=>{ const rv=window.__rv;'
+      + ' const c=document.getElementById("roomCanvas").getBoundingClientRect();'
+      + ' const p = ' + expr + '; if(!p) return;'
+      + ' window.__drag.begin(' + JSON.stringify(kind) + ', "", {clientX:c.left+c.width*0.9, clientY:c.top+40});'
+      + ' window.__drag.move({clientX:p.x, clientY:p.y});'
+      + ' window.__drag.end(); })()', false);
+    await sleep(700);
+    return (await cropPlacedCount()) > before;
+  };
+
+  if (slot) {
+    const ok = await drop('(()=>{ let sp=null; try { sp=rv.screenPosOf(' + JSON.stringify(slot) + '); } catch {}'
+      + ' return sp ? {x:c.left+sp.x, y:c.top+sp.y} : null; })()');
+    if (ok) return true;
+  }
+  /* ② 상판이 차거나 안 먹으면 **바닥**에 놓는다. 점을 여럿 찍어 보고 놓인 것을 받는다.
+     ⚠ 같은 점만 계속 찍으면 이미 놓인 것 위라 안 놓인다 — 그래서 여러 점을 돈다. */
+  const FLOOR = [[0.50, 0.72], [0.70, 0.70], [0.50, 0.62], [0.35, 0.66], [0.62, 0.64],
+                 [0.45, 0.76], [0.58, 0.76], [0.30, 0.72], [0.75, 0.64], [0.40, 0.60]];
+  for (const [fx, fy] of FLOOR) {
+    const ok = await drop('({x:c.left+c.width*' + fx + ', y:c.top+c.height*' + fy + '})');
+    if (ok) return true;
+  }
+  return false;
 };
 
-/* ⚠⚠ **콩나물은 어두운 자리다.** 예전에는 「빈 자리 중 첫 번째」를 골랐는데,
-   튜토 안내가 *"방 안 «어두운 자리»에 놓아 보세요"* 라고 말한다. 자가 밝은 데 놓으면
-   **자가 안내를 안 따르는 것**이고, 그 판의 수확·파산 숫자가 통째로 헛것이 된다.
-   ⇒ `placeCrop` 한 벌로 모은다 — 무순은 밝은 쪽, 콩나물은 어두운 쪽. 셈이 하나다.
-   (총괄의 `playshot` 도 같은 실수를 따로 했다 — 「남은 첫 자리」는 편한데 사람이 안 그런다.) */
 const placeOneSiru = async () => {
   const ok = await placeCrop('beansprout', false);
   if (ok) { R.did.placeSiru++; await sleep(600); await tapTalk(); }
@@ -560,8 +586,16 @@ for (let d = 1; d <= DAYS; d++) {
       if (Number.isInteger(n) && n > 0) wantSiru = Math.min(n, SIRU_MAX);
     } catch { }
   }
-  const needSiru = (before.sirus || 0) < wantSiru;
+  /* ⚠⚠ **재고를 쌓지 않는다.** 앞 판이 시루를 **53개 사서 13개만 놓았다** —
+     못 놓은 40개(3,550원 × 40 ≈ 14만원)가 **재고에 묶여** 지갑이 그만큼 얇아졌다.
+     ⇒ 사람은 손에 있는 것을 먼저 놓고 나서 산다. **재고가 있으면 안 산다.**
+     ⚠ 「빈 상판이 있나」는 **안 본다** — 상판이 차도 **바닥에 놓을 수 있다**(§placeCrop).
+       그걸 조건으로 걸었다가 「자리가 13뿐」이라는 헛것을 만들 뻔했다.
+  const siruStock = await ev(`(()=>{ try { const S=window.__S();
+    return (S.shop&&S.shop.stock&&S.shop.stock.siru)||0; } catch { return 0; } })()`);
+  const needSiru = (before.sirus || 0) < wantSiru && (siruStock | 0) < 1;
   /* 씨앗은 **시루 수만큼** 있어야 한 바퀴가 돈다 — 0 일 때만 사면 늘 모자란다 */
+  /* 씨앗도 같은 결이다 — 놓인 시루 수만큼만 있으면 된다. 앞 판은 **17개가 남은 채** 끝났다 */
   const needSeed = (before.seed || 0) < (before.sirus || 1);
   if (needSeed || needSiru || (before.lampOpen && before.lamp === 0)) {
     await ev(`window.__byeotSheet.open('shop')`, false); await sleep(150);
