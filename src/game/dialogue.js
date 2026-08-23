@@ -32,6 +32,9 @@
    ★ 순수함은 안 깨진다 — `shop.js` 도 DOM 도 타이머도 모르는 순수 모듈이다.
    ⚠ 못 읽는 판(품목이 사라진 판)에서는 **숫자 없는 말**로 떨어진다. 지어내지 않는다. */
 import { catalogList } from './shop.js';
+/* ★ 등값·전기값의 정본은 `TUTORIAL_RULES` 다 — 대사가 거기서 읽는다(아래 §LAMP).
+   ⚠ `tutorial.js` 는 `dialogue.js` 를 안 불러온다 — 고리가 안 생긴다(2026-08-23 확인). */
+import { TUTORIAL_RULES } from './tutorial.js';
 const BEAN_SEED = (() => {
   try { return catalogList().find(x => x.id === 'bean_seed') || {}; } catch { return {}; }
 })();
@@ -41,6 +44,39 @@ const BEAN_LEAD_KO = Number.isFinite(BEAN_SEED.leadDays) && BEAN_SEED.leadDays >
 /* 「500원」 — 못 읽으면 값 얘기를 통째로 뺀다 */
 const BEAN_WON_KO = Number.isFinite(BEAN_SEED.buyWon)
   ? `${BEAN_SEED.buyWon.toLocaleString('ko-KR')}원` : null;
+
+/* ══ ★★★ **등값·전기값도 「말하되 안 박는다」** (2026-08-23) ═══════════════════
+   ------------------------------------------------------------
+   ⚠⚠⚠ **박혀 있다가 실제로 거짓말이 됐다.** 대사가 이렇게 말하고 있었다:
+     "이만오천 원. 전기는 하루 이십삼 원이고."   ⇐ 지금 첫 등은 **120,000원**이다(다섯 배)
+   ★ 바로 위 `BEAN_WON_KO` 자리에 **"그래서 말하되 안 박는다. 값이 움직이면 문장이 같이
+     움직인다"** 라고 적어 두고, **등에서만 그 규칙을 안 지켰다.**
+
+   ⚠⚠ 그리고 **한 곳만 고치면 새 거짓말이 된다.** 재 보니 이렇다:
+```
+     등 0   120,000원 · 20W ⇒ 하루 38원      ← 첫 등
+     등 1    80,000원 · 12W ⇒ 하루 23원      ← ★ 대사의 「이십삼 원」은 «이쪽» 값이다
+     등 2   150,000원 · 36W ⇒ 하루 69원
+```
+   ⇒ ★ 값만 120,000 으로 바꾸면 **「십이만 원인데 하루 이십삼 원」**이 된다. 둘이 한 벌이다.
+
+   ⚠ 못 읽는 판에서는 **숫자 없는 말**로 떨어진다 — 지어내지 않는다(`BEAN_WON_KO` 와 같은 결).
+   ⛔ 구조는 안 건드린다 — 몬이는 여전히 **"사"라고 말하지 않는다.** 낡은 것은 숫자뿐이었다. */
+const LAMP = (() => {
+  try {
+    const R = TUTORIAL_RULES;
+    const won = (R.lampPricesWon || [])[0] ?? R.lampPriceWon;
+    const w = (R.lampWattsByOrder || [])[0];
+    if (!Number.isFinite(won)) return {};
+    const kwh = Number.isFinite(w) && Number.isFinite(R.lampHours) && Number.isFinite(R.kwhWon)
+      ? Math.round(w * R.lampHours / 1000 * R.kwhWon) : null;
+    const days = Number.isFinite(R.dailySpendWon) && R.dailySpendWon > 0
+      ? Math.round(won / R.dailySpendWon) : null;
+    return { wonKo: `${won.toLocaleString('ko-KR')}원`,
+             kwhKo: kwh != null ? `${kwh.toLocaleString('ko-KR')}원` : null,
+             daysKo: days != null ? `${days}일` : null };
+  } catch { return {}; }
+})();
 
 export const SPEAKERS = {
   jachwi: { ko: '나',   portrait: true  },
@@ -190,7 +226,8 @@ export const SCRIPTS = {
   ],
   /* 창턱(또는 다른 데)으로 옮겼는데도 여전히 안 자랄 때.
      ★ **여기서 처음으로 등이 나온다.** 「자리를 다 썼다」가 등의 이유다 —
-       그 벽을 먼저 만나야 이만오천 원이 고민할 만한 값이 된다.
+       그 벽을 먼저 만나야 등값이 고민할 만한 값이 된다.
+       ⚠ 여기 있던 「이만오천 원」을 걷었다(2026-08-23) — 그 값은 지금 120,000원이다.
      ⚠ 자리가 충분히 밝으면 이 말은 안 나온다. 그게 맞다 — 안 필요한 물건을 권하지 않는다. */
   monsteraGuideLamp: [
     { who: 'jachwi', face: 'worry', text: '옮겼는데도 그대로다.' },
@@ -337,10 +374,19 @@ export const SCRIPTS = {
      여기만은 숫자를 대사로 준다 — 처음 보는 물건이라 겪을 기회가 아직 없다. */
   lampUnlocked: [
     { who: 'moni',   face: 'curious', text: '가을이 됐으니 하나 알려 줄게. **식물등.**' },
-    { who: 'moni',   text: '이만오천 원. 전기는 하루 이십삼 원이고.' },
-    /* ★ 등값 25,000원 ÷ 하루 지출 16,667원 = 하루 반. 예전 하루 지출 20,000원 시절에는
-       「하루 살고 조금 더」였다 — 값이 내려가 등이 상대적으로 비싸졌으므로 말도 따라간다. */
-    { who: 'jachwi', text: '이만오천 원이면… 하루 반은 사는 돈인데.' },
+    ...(LAMP.wonKo
+      ? [{ who: 'moni', text: LAMP.kwhKo
+             ? `${LAMP.wonKo}. 전기는 하루 ${LAMP.kwhKo}이고.`
+             : `${LAMP.wonKo}.` }]
+      : []),
+    /* ★ 등값 ÷ 하루 지출 = 며칠치인가. **여기 수를 안 적는다** — 위 `LAMP.daysKo` 가 낸다.
+       ⚠⚠ 예전에는 「하루 반」이었다(25,000 ÷ 16,667). 지금 값(120,000)이면 **이레**다.
+         ⇒ ★ 「하루 반」과 「이레」는 **무게가 다르다** — 앞은 「살 만하다」, 뒤는 「무겁다」.
+           그 무게를 어떻게 말할지는 **[Plan]·박사님 몫**이라 여기서는 «참값»만 말한다.
+           문장을 고르는 것과 수를 맞추는 것은 다른 일이고, 지금 급한 것은 뒤쪽이다. */
+    ...(LAMP.wonKo && LAMP.daysKo
+      ? [{ who: 'jachwi', text: `${LAMP.wonKo}이면… ${LAMP.daysKo}은 사는 돈인데.` }]
+      : []),
     { who: 'moni',   text: '사도 되고 안 사도 돼. 그 돈을 이사 자금에 보태도 되고.' },
     { who: 'jachwi', face: 'worry', text: '…고민되네.' },
     { who: 'moni',   face: 'happy', text: '고민할 만한 값이라서 알려 준 거야.' }
