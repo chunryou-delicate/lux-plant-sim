@@ -55,6 +55,67 @@ const W = Number(arg('w', 390)), H = Number(arg('h', 844));
    `--play minimal`         시루 하나로 버틴다 — 첫 판이 그랬고 136일에 게임오버였다
    ⚠ 값을 안 바꾼다. **사람이 무엇을 하느냐**만 바꾼다. */
 const PLAY = String(arg('play', 'guided'));
+/* ══════════════════════════════════════════════════════════════════════════
+   ★★★ **게으름** — `--lazy 0.2` (2026-08-24 · [Plan] 계율 ㊵)
+   --------------------------------------------------------------------------
+   지금까지 낸 숫자는 **전부 「완벽한 사람」 하나**다:
+     매일 빠짐없이 물을 주고 · 열여섯을 어긋나게 돌리고 · 한 번도 안 잊고 ·
+     거둔 날 그날 다시 심는다. ⇒ **사람이 그러지 않는다.**
+   ⇒ ★ 그래서 「자의 실패」만 고쳐 왔는데(오늘 네 번), **「자의 성공」은 아무도 안 봤다** —
+     ***사람은 «못 할 짓»을 해서 성공했을 수 있다.***
+   ⇒ ⇒ **실패는 눈에 띄어 고치는데, 성공은 안 고친다.**
+
+   ★ 그래서 **값**으로 둔다(0/1 이 아니다) — 「얼마나 게을러야 못 닿나」를 재려는 것이다.
+     `--lazy 0`   지금까지의 판 = **위쪽 한계**(완벽한 사람). ⛔ 지우지 않는다
+     `--lazy 0.2` 다섯 번에 한 번 거른다
+   ⚠ **씨앗과 날짜로 정한다 — 굴리지 않는다.** 같은 씨앗·같은 게으름이면 **같은 판**이라야
+     둘을 견줄 수 있다. `Math.random` 을 쓰면 판마다 달라 비교가 안 된다.
+   ⚠ 이것은 **밸런스 값이 아니라 자의 손버릇**이다. 판의 규칙은 한 톨도 안 건드린다.
+
+   ══ ★ **벌이 무엇인가 — 코드로 읽었다**(굴리기 전에 알아야 결과를 읽는다) ═════════════
+     `first_play.js:2241`  `needsWater: placed && sown && !harvested && startedOnDay == null`
+     ⇒ ★ **물주기는 「회전 시작」 한 번뿐이다.** 매일 주는 것이 아니다.
+     ⇒ ⇒ 그러니 **거르면 「그 시루의 회전이 하루 늦게 시작」**된다.
+       · 늦어진다 ✅ — 수확이 밀리고 그만큼 **수입이 준다**
+       · 죽는다   ✖ — 시루는 안 죽는다(삽수와 다르다)
+       · 공짜다   ✖ — **아니다.** 그래서 이 실험이 뜻을 갖는다
+     ⇒ 「다시 심기」를 거르는 것도 같다 — 다음 회전이 하루 밀린다.
+
+   ══ ⚠⚠ **이 자가 못 재는 것 — 셋. 적어 둔다** ═══════════════════════════════════
+     ㉠ 이 게으름은 **긴 눈으로는 고르다** — 재 보니 400일에 21.0%(`--lazy 0.2` · 씨앗 1).
+        ⚠ 다만 **짧은 구간에서는 뭉친다** — 같은 판의 첫 열나흘이 `01011110000000` 이었다
+          (d4~d7 넉 줄 연속). 해시가 그런 것이지 **일부러 만든 것이 아니다.**
+        ★ 그래서 **「사람은 몰아서 빼먹는다」를 어느 정도는 흉내 낸다.** 다만 **그건 우연이고,
+          「바쁜 주」처럼 «까닭이 있는 뭉침»은 아니다.** 그 차이를 재고 싶으면 따로 만들어야 한다.
+     ㉡ ★ **어긋내기를 안 잰다.**
+        ⚠ 「물을 거르면 저절로 어긋난다」로 적으면 **장점처럼 읽힌다. 그게 아니다** —
+          어긋냄   = **고르게** 벌리기 → 최저점을 **올린다**
+          흐트러짐 = 무작위           → ★ 최저점을 **내릴 수도** 있다
+        ⇒ ★★ 어긋내기는 **총수입을 안 바꾸고 「수입의 고름」을 바꾼다.** 그리고 고름은
+          **파산 시점**에 걸린다 — 몰아서 들어오면 그 사이에 0원이 된다.
+          ⇒ 그 값어치는 **평균이 아니라 최저점**에서 난다. **이 자는 그걸 안 잰다.**
+     ㉢ ★ **「할 줄 알고 게으르지도 않은데 신경을 못 쓰는」 사람**을 안 잰다.
+        어긋내기는 **달력을 머릿속에 들고 있어야** 하는 일이다. 퀘스트도 대사도 그것을
+        가르치지만(quest.js:394 · dialogue.js:640), **아는 것과 해내는 것은 다르다.**
+     ⇒ ⛔ 셋 다 **안 잰다.** 「사람을 다 쟀다」로 읽지 마라.
+   ══════════════════════════════════════════════════════════════════════════ */
+const LAZY = Math.max(0, Math.min(1, Number(arg('lazy', 0)) || 0));
+/* 씨앗·날·무슨 일 → 0~1. 같은 셋이면 늘 같은 값이다(굴림이 아니다) */
+const lazyRoll = (day, tag) => {
+  let h = 2166136261 ^ SEED;
+  const str = day + ':' + tag;
+  for (let i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 16777619); }
+  return ((h >>> 0) % 10000) / 10000;
+};
+/* 오늘 이 일을 «거를까». 게으름이 0 이면 절대 안 거른다 */
+const beLazy = (tag) => {
+  if (LAZY <= 0) return false;
+  const skip = lazyRoll(R.today, tag) < LAZY;
+  /* ★ 거른 날을 **그대로 남긴다** — 나중에 「왜 이 판이 느렸나」를 되짚을 유일한 근거다 */
+  if (skip) { R.did['lazy:' + tag] = (R.did['lazy:' + tag] || 0) + 1;
+              (R.lazyDays = R.lazyDays || []).push({ day: R.today, tag }); }
+  return skip;
+};
 const SIRU_MAX = Number(arg('sirus', 16));
 const SIZE = `${W}x${H}`;
 const BASE = process.env.BYEOT_URL || 'http://localhost:8971';
@@ -68,7 +129,7 @@ wd.unref && wd.unref();
 const R = {
   seed: SEED, startedAt: new Date().toISOString(),
   /* ★ §did — **내가 무엇을 했나.** 이 칸이 없으면 위 ⚠ 의 병을 그대로 앓는다 */
-  play: PLAY,
+  play: PLAY, lazy: LAZY,
   did: { next: 0, plant: 0, water: 0, harvest: 0, sow: 0, waterPot: 0, place: 0,
          buySeed: 0, buyLamp: 0, buySiru: 0, placeSiru: 0, dlgTap: 0, sheetOpen: 0 },
   days: [],            // 날마다 한 줄
@@ -549,10 +610,13 @@ for (let d = 1; d <= DAYS; d++) {
 
   /* ── 오늘 할 일 ── (사람이 [식물] 탭에서 하는 순서 그대로) */
   await ev(`window.__byeotSheet.open('plants')`, false); await sleep(120);
+  /* ★ 게으름은 **물주기와 다시 심기**에만 건다(§LAZY).
+     ⚠ 거두기는 안 거른다 — 다 자란 것을 안 거두는 사람은 없다. 그건 게으름이 아니라 딴 판이다.
+     ⚠ 심기(첫 파종)도 안 거른다 — 놓자마자 심는 것이 한 손짓이다. */
   await rowAct('plant');
-  await rowAct('water');
+  if (!beLazy('water')) await rowAct('water');
   await rowAct('harvest');
-  await rowAct('sow');
+  if (!beLazy('sow')) await rowAct('sow');
 
   /* 모주 — 자리를 안 잡았으면 창턱에 놓고, 마르면 물을 준다.
      ⚠ **이 줄이 없으면 balance_routes 와 같은 병을 앓는다**(§⚠). */
@@ -692,6 +756,14 @@ for (let d = 1; d <= DAYS; d++) {
   /* 가진 것은 남긴다 — 긴 판이 중간에 죽으면 서른 몇 분이 통째로 사라진다.
      열흘마다 지금까지 것을 써 둔다. 끝에 다시 쓰므로 손해가 없다. */
   if (d % 10 === 0) { try { dump(); } catch { } }
+  /* ★★ **어디서 벌어졌나** — [Plan]: 게으름의 벌은 **시루 수에 반비례**한다.
+     시루 1개면 하루 거르는 것이 그날 수입의 **전부**이고, 16개면 **1/16** 이다.
+     ⇒ 그래서 같은 --lazy 0.2 라도 **d0~d40 과 d100~ 이 다른 값**이다.
+     ⇒ ⇒ ★ 「닿았나/못 닿았나」로만 읽으면 **그 갈림이 안 보인다.** 눈금을 따로 남긴다. */
+  if (d === 40 || d === 80 || d === 120 || d === 160 || d === 200) {
+    (R.marks = R.marks || []).push({ day: after.day, cash: after.cash,
+                                     harvests: after.harvests, sirus: after.sirus });
+  }
 
   /* ★★ 날짜가 안 갔으면 **그 자리에서 무엇이 열려 있었나**를 적는다.
      이 줄이 없으면 「안 간다」까지만 알고 **왜인지는 영영 모른다.** */
@@ -732,20 +804,31 @@ await shot('end');
 
 /* 지금까지 것을 파일에 쏟는다 — 중간에도, 끝에도 부른다 */
 function dump() {
-  fs.writeFileSync(path.join(OUT, `play_${SEED}.json`), JSON.stringify(R, null, 1), 'utf8');
+  /* ⚠ 게으름마다 파일을 가른다 — 안 그러면 다음 판이 앞 판을 덮어 **견줄 것이 없어진다** */
+  fs.writeFileSync(path.join(OUT, `play_${SEED}${LAZY > 0 ? '_lazy' + LAZY : ''}.json`), JSON.stringify(R, null, 1), 'utf8');
 }
 
 function finish() {
   R.endedAt = new Date().toISOString();
   const last = R.days[R.days.length - 1] || {};
   const lines = [];
-  lines.push(`■ 씨앗 ${SEED} · ${PLAY} — ${R.ended}${R.blocked ? ' · ' + R.blocked : ''}`);
+  lines.push(`■ 씨앗 ${SEED} · ${PLAY}` +
+    (LAZY > 0 ? ` · 게으름 ${LAZY}` : ' · ★완벽한 사람(위쪽 한계)') +
+    ` — ${R.ended}${R.blocked ? ' · ' + R.blocked : ''}`);
   lines.push(`  달력 ${last.day ?? 0}일 · 튜토 ${last.tday ?? '—'}일 · 지갑 ${(last.cash ?? 0).toLocaleString()}원 · ` +
              `잎 ${last.leaves ?? '—'}장(무늬 ${last.varie ?? '—'}) · 수확 ${last.harvests ?? '—'}회 · 등 ${last.lamp ?? '—'}개`);
   lines.push(`  ★내가 한 일 — ${Object.entries(R.did).map(([k, v]) => k + ' ' + v).join(' · ')}`);
+  if (LAZY > 0) {
+    const ld = R.lazyDays || [];
+    lines.push(`  ★거른 날 ${ld.length}번 — ` +
+      ld.slice(0, 12).map(x => `d${x.day}:${x.tag}`).join(' · ') + (ld.length > 12 ? ' …' : ''));
+  }
   const bad = R.console.filter(c => c.kind !== 'warning' && c.kind !== 'console.warning');
   lines.push(`  콘솔 — 오류·예외 ${bad.length}건 · 경고 ${R.console.length - bad.length}건`);
   for (const c of bad.slice(0, 15)) lines.push(`     ✘ Day ${c.day} ${c.text.slice(0, 160)}`);
+  if ((R.marks || []).length)
+    lines.push('  ★눈금 — ' + R.marks.map(m =>
+      `d${m.day}: 지갑 ${(m.cash || 0).toLocaleString()} · 수확 ${m.harvests} · 시루 ${m.sirus}`).join(' | '));
   lines.push(`  대사 ${R.dialog.length}줄 · 스크린샷 ${R.shots.length}장 · 화면 ${SIZE}`);
   /* ★ 「진짜 못 누르는 것」과 「지금은 덮여 있어도 되는 것」을 갈라 적는다 */
   const REAL = ['offscreen', 'occluded', 'tiny'];
@@ -767,9 +850,10 @@ function finish() {
   if (dup.length) { lines.push(`  ⚠ 같은 대사가 두 번 뜬 자리 ${dup.length}건`); for (const x of dup.slice(0, 8)) lines.push(`     · Day ${x.days.join('·')} 「${x.text.slice(0, 50)}」`); }
   const txt = lines.join('\n');
   dump();
-  fs.writeFileSync(path.join(OUT, `play_${SEED}.log`), txt + '\n', 'utf8');
+  fs.writeFileSync(path.join(OUT, `play_${SEED}${LAZY > 0 ? '_lazy' + LAZY : ''}.log`), txt + String.fromCharCode(10), 'utf8');
   console.log('\n' + txt);
-  console.log(`\n→ ${path.relative(ROOT, path.join(OUT, `play_${SEED}.json`))}`);
+  console.log(`
+→ ${path.relative(ROOT, path.join(OUT, `play_${SEED}${LAZY > 0 ? '_lazy' + LAZY : ''}.json`))}`);
 }
 finish();
 await page.close();
