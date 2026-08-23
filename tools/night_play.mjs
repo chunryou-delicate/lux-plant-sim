@@ -590,12 +590,12 @@ for (let d = 1; d <= DAYS; d++) {
      못 놓은 40개(3,550원 × 40 ≈ 14만원)가 **재고에 묶여** 지갑이 그만큼 얇아졌다.
      ⇒ 사람은 손에 있는 것을 먼저 놓고 나서 산다. **재고가 있으면 안 산다.**
      ⚠ 「빈 상판이 있나」는 **안 본다** — 상판이 차도 **바닥에 놓을 수 있다**(§placeCrop).
-       그걸 조건으로 걸었다가 「자리가 13뿐」이라는 헛것을 만들 뻔했다.
+       그걸 조건으로 걸었다가 「자리가 13뿐」이라는 헛것을 만들 뻔했다. */
   const siruStock = await ev(`(()=>{ try { const S=window.__S();
     return (S.shop&&S.shop.stock&&S.shop.stock.siru)||0; } catch { return 0; } })()`);
   const needSiru = (before.sirus || 0) < wantSiru && (siruStock | 0) < 1;
-  /* 씨앗은 **시루 수만큼** 있어야 한 바퀴가 돈다 — 0 일 때만 사면 늘 모자란다 */
-  /* 씨앗도 같은 결이다 — 놓인 시루 수만큼만 있으면 된다. 앞 판은 **17개가 남은 채** 끝났다 */
+  /* 씨앗은 **놓인 시루 수만큼** 있어야 한 바퀴가 돈다 — 0 일 때만 사면 늘 모자라고,
+     목표 수만큼 사면 남는다(앞 판은 **17개가 남은 채** 끝났다) */
   const needSeed = (before.seed || 0) < (before.sirus || 1);
   if (needSeed || needSiru || (before.lampOpen && before.lamp === 0)) {
     await ev(`window.__byeotSheet.open('shop')`, false); await sleep(150);
