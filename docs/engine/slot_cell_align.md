@@ -46,7 +46,7 @@ CORE 가 놓는 자리의 정본을 바꿨다.
 난다"*), **내 첫 측정도 거기 빠졌다** — 처음엔 「34칸 중 16칸」이라고 셌는데,
 화면과 같은 광선으로 다시 재니 **325칸 중 137칸**이었다.
 
-⇒ 자는 `tools/_probe_tiercell.mjs` 에 있다(임시 도구). `room_view` 의
+⇒ 자는 `tools/probe_slot_cell.mjs` 에 있다(2026-08-23 승격 — 정본이 가리키는 자라 커밋했다). `room_view` 의
 `tierRectOf`/`meshRect`/`surfaceAxis` 를 그대로 옮겨 적었다.
 ⚠ 헤드리스에서는 **`root.updateMatrixWorld(true)` 를 먼저 불러야 한다** — 안 부르면
 광선이 가구를 다 놓치고 바닥을 맞는다(315/325 가 그렇게 나왔다).
