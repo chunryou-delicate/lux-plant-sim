@@ -397,18 +397,35 @@ B.lamp_floor=(o)=>{
   g.userData.size={w:0.42,h,d:0.42}; g.userData.lampShade=shade; return g;
 };
 
-/* 천장등 (ceilY 아래로 매달림) */
+/* 천장등 — **천장에 붙는 LED 판** (ceilY 아래로 매달림)
+   ★★ 2026-08-23 박사님: *"0.60 × 0.60 × 0.05 넉넉 · **LED 판으로 확실히 읽힘**"*
+     예전에는 «줄 + 원뿔 갓»이었다(줄 0.35 · 갓 0.22×0.2). 작고 어두워 무엇인지 안 읽혔다.
+
+   ⚠⚠ **`userData.lampShade` 를 반드시 넘겨야 한다.** 밤 광원이 「빛나는 메시」를 그 칸으로 찾는다
+     (`src/main.js:116` · `game/room_view.js:1134` — 둘 다 `o.parent.userData.lampShade === o` 로 본다).
+     ⇒ 그 칸을 빠뜨리면 **천장등이 밤에 안 켜진다.** 그리고 **낮에는 티가 안 난다** —
+       낮엔 갓이 어차피 어두워서 그림이 같아 보인다. **「됐다」를 낮 컷으로 판정하면 못 잡는다.**
+     ⇒ 그래서 이 파일에서 지켜야 하는 것 둘: **`lampShade` 는 `g` 의 «직계 자식»일 것** ·
+       `g.userData.lampShade` 가 그것을 가리킬 것.
+
+   ⚠ **`h` 의 뜻이 바뀌었다.** 예전 `h` 는 **매달리는 줄 길이**(0.35)였고 `size_m.h` 는
+     줄+갓(0.55)이라 **둘이 달랐다.** 이제 `h` 는 **판 두께**이고 `size_m.h` 도 같은 값이다.
+     ⇒ `h` 를 「매달리는 길이」로 읽지 마라. 판은 천장에 **붙는다**(안 늘어진다).
+
+   ⚠ `hangFromCeiling` 은 그대로다 — 그것이 「옮길 수 없다」를 만든다(room_view §isRider).
+   ⚠ `emissiveIntensity` 도 그대로 0.2 다 — 밤 밝기는 코어가 올린다. 여기서 안 건드린다. */
 B.lamp_ceiling=(o)=>{
-  const drop=o.h??0.35;
+  const w=o.w??0.60, d=o.d??0.60, t=o.h??0.05;
   const g=new THREE.Group();
   const m=furnMat(o.color??'#cfc7bb','satin');
-  g.add(cyl(0.05,0.05,0.02,m,0,-0.01,0,12));
-  g.add(cyl(0.008,0.008,drop,m,0,-drop/2,0,8));
-  const shade=new THREE.Mesh(new THREE.ConeGeometry(0.22,0.2,20,1,true),
-    new THREE.MeshStandardMaterial({ color:col(o.accent??'#f6efdc'), roughness:0.6,
-      side:THREE.DoubleSide, emissive:col('#3a2f18'), emissiveIntensity:0.2 }));
-  shade.position.y=-drop-0.08; g.add(shade);
-  g.userData.size={w:0.44,h:drop+0.2,d:0.44}; g.userData.lampShade=shade;
+  /* 천장에 닿는 테두리 — 얇은 띠. 판이 천장에서 살짝 떠 보이게 한다 */
+  g.add(panel(w,t*0.34,d,m,0,-t*0.17,0,0.012));
+  /* 빛나는 면 — 테두리 안쪽으로 조금 들어간 판 */
+  const shade=new THREE.Mesh(new THREE.BoxGeometry(w-0.05,t*0.66,d-0.05),
+    new THREE.MeshStandardMaterial({ color:col(o.accent??'#f6efdc'), roughness:0.55,
+      emissive:col('#3a2f18'), emissiveIntensity:0.2 }));
+  shade.position.y=-t*0.67; g.add(shade);
+  g.userData.size={w,h:t,d}; g.userData.lampShade=shade;
   g.userData.hangFromCeiling=true; return g;
 };
 
