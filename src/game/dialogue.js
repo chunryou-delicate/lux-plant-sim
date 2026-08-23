@@ -35,6 +35,9 @@ import { catalogList } from './shop.js';
 /* ★ 등값·전기값의 정본은 `TUTORIAL_RULES` 다 — 대사가 거기서 읽는다(아래 §LAMP).
    ⚠ `tutorial.js` 는 `dialogue.js` 를 안 불러온다 — 고리가 안 생긴다(2026-08-23 확인). */
 import { TUTORIAL_RULES } from './tutorial.js';
+/* ★ 콩나물이 자라는 날의 정본은 `CROP_KINDS[0].harvestDays` 다 — 대사가 거기서 읽는다(아래 §BEAN_DAYS).
+   ⚠ `first_play.js` 는 `dialogue.js` 를 안 불러온다 — 고리가 안 생긴다(2026-08-23 확인). */
+import { CROP_KINDS } from './first_play.js';
 const BEAN_SEED = (() => {
   try { return catalogList().find(x => x.id === 'bean_seed') || {}; } catch { return {}; }
 })();
@@ -76,6 +79,27 @@ const LAMP = (() => {
              kwhKo: kwh != null ? `${kwh.toLocaleString('ko-KR')}원` : null,
              daysKo: days != null ? `${days}일` : null };
   } catch { return {}; }
+})();
+
+/* ══ ⚠⚠ **「나흘」이 틀렸다** (2026-08-23) ═══════════════════════════════════
+   `cropPlaced` 가 «좋아. 나흘이면 먹을 수 있어.» 라고 했다. 갈라 재 보니 아니다:
+```
+     first_play.js:84   harvestDays — 한 회전이 자라는 날 (★ «물을 준 날»이 0일차)
+     CROP_KINDS[0].harvestDays = 5    (무순은 7)
+     실측(probe_crop_cycle) — 그날 바로 거두면 30일에 «6번» ⇒ 30/6 = ★ 닷새
+     실측(내 판)            — 시루를 d0 에 놓고 첫 수확이 «d6» (물은 d1 에 줬다)
+```
+   ⇒ ⛔ 「나흘」은 어느 쪽으로 세도 안 맞는다.
+   ⇒ ★★ 그리고 **「놓은 뒤 며칠」은 아예 못 세는 수다** — 날은 «물을 준 날»부터 가는데
+     이 대사는 «놓은 직후»에 나온다. 언제 물을 줄지는 사람이 정한다.
+     ⇒ 그래서 **「물을 주면 닷새」**로 말한다. 그러면 언제 주든 참이고,
+       바로 뒤 `learnWater` 의 «놓기만 하면 날짜만 가. 물을 준 날부터 세는 거야.» 와도 맞는다.
+   ⚠ 못 읽는 판에서는 **날수 없는 말**로 떨어진다 — 지어내지 않는다(`BEAN_WON_KO` 와 같은 결). */
+const BEAN_DAYS_KO = (() => {
+  try {
+    const d = (CROP_KINDS || []).find(k => k && k.id === 'beansprout');
+    return Number.isFinite(d && d.harvestDays) ? `${d.harvestDays}일` : null;
+  } catch { return null; }
 })();
 
 export const SPEAKERS = {
@@ -125,10 +149,15 @@ export const SCRIPTS = {
   /* 시루를 놓은 직후 — 왜 어두운 곳이어야 하는지는 여기서 말하지 않는다.
      수확 때 품질로 직접 겪는 편이 낫다. */
   cropPlaced: [
-    { who: 'moni', text: '좋아. 나흘이면 먹을 수 있어.' }
+    { who: 'moni', text: BEAN_DAYS_KO
+        ? `좋아. 물을 주면 ${BEAN_DAYS_KO} 뒤에 먹을 수 있어.`
+        : '좋아. 물을 주면 그날부터 자라.' }
   ],
 
-  /* Day 4 · 수확 직후. 식비 결과를 **본 뒤에** 나온다(계약 순서). */
+  /* 수확 직후. 식비 결과를 **본 뒤에** 나온다(계약 순서).
+     ⚠ 2026-08-23 — 여기 「Day 4」라 적혀 있었는데 **회전은 닷새**다(`CROP_KINDS[0].harvestDays`).
+       ★ 그런데 날은 «물을 준 날»부터 가므로 «몇 째 날»인지는 사람이 정한다 — 그래서 **날을 안 적는다.**
+       (실측: 시루를 d0 에 놓고 d1 에 물을 준 판에서 첫 수확이 d6) */
   harvest: [
     { who: 'jachwi', face: 'happy', text: '…이게 되네.' },
     { who: 'moni',   face: 'happy', text: '어두운 자리라 하얗게 잘 자랐어. 빛을 봤으면 초록이 되고 썼을 거야.' }
@@ -572,7 +601,9 @@ export const SCRIPTS = {
           (`quest.js` 머리말이 옛날에 *"첫 33일엔 안 넣는다"* 고 적은 근거가 바로 그것이다).
           그래서 열 때가 3~4줄, 닫을 때는 **1~3줄**이다. §5.5 의 다섯 줄보다 짧다.
        ④ ★★ **바로 옆에 붙는 대사와 말이 안 겹치게 썼다.** 겹치는 자리가 넷이다:
-            ①완료 ↔ `cropPlaced`      («나흘이면 먹을 수 있어» — 그래서 **날수를 안 말한다**)
+            ①완료 ↔ `cropPlaced`      («물을 주면 닷새야» — 그래서 **날수를 안 말한다**)
+                      ⚠ 2026-08-23 — 그 대사가 「나흘」이었는데 실측이 닷새라 고쳤다(§BEAN_DAYS).
+                        이 줄이 **날수를 안 말하는 것은 그대로**다 — 두 벌이면 한쪽이 낡는다.
             ③완료 ↔ `harvest`·`learnHarvest`·`god1`·`monsteraArrived` (Day 4 는 열두 줄이다.
                     그래서 **한 줄**로 끝낸다)
             ⑥완료 ↔ `monsteraMoved`   («창턱! 여기가 제일 밝아» — 그래서 **자리 얘기를 안 한다**)
