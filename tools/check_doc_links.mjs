@@ -49,10 +49,31 @@ for (const f of files) {
   let txt = '';
   try { txt = fs.readFileSync(path.join(ROOT, f), 'utf8'); } catch { continue; }
   if (ONLY && !txt.includes(ONLY)) continue;
-  for (const m of txt.matchAll(/tools\/[_a-zA-Z0-9]+\.(?:mjs|html|py|js)/g)) {
-    const t = m[0];
-    if (!hits.has(t)) hits.set(t, new Set());
-    hits.get(t).add(f);
+  /* ★★ 2026-08-23 — **줄 단위로 본다. 그리고 「고친 기록」은 건너뛴다.**
+     ------------------------------------------------------------
+     처음엔 파일 전체를 한 번에 훑었다. 그랬더니 **「전 → 후」 대조표의 «왼쪽 칸»을
+     「살아 있는 링크」로 읽었다.** 이 저장소 문서는 **고친 것을 표로 남기는 습관**이 있어서
+     그런 칸이 많다. ⇒ 캐릭터 도구 넷이 「없다」로 떴는데, 실은
+     *"`tools/x.py` → `tools/char/x.py` 로 옮겼다"* 라고 **적어 둔 기록**이었다.
+     ⇒ ★ **기록을 고치면 「무엇을 고쳤나」가 사라진다.** 왼쪽 칸이 옛 경로인 것이 그 표의 존재 이유다.
+
+     ⇒ 규칙 하나로 셋을 다 거른다: **같은 줄에 「같은 파일 이름의 다른 경로」가 또 있으면 건너뛴다.**
+       표의 한 줄     `| tools/x.py 로… | tools/char/x.py 로… |`
+       sed 명령       `sed -i 's|tools/x.py|tools/char/x.py|g`
+       화살표         `- tools/x.py → tools/char/x.py`
+       ⇒ 셋 다 **옛것과 새것이 한 줄에 같이** 있다. 그 줄은 「가리키는」 것이 아니라 「적어 둔」 것이다.
+     ⚠ 그래도 놓치는 것이 있다 — **여러 줄에 걸친 표**나 **다른 문단에서 고쳤다고 적은 것**.
+       그건 이 자가 못 가른다. **닫힌 자가 아니다.** */
+  for (const line of txt.split('\n')) {
+    const found = [...line.matchAll(/tools\/[_a-zA-Z0-9/]+\.(?:mjs|html|py|js)/g)].map(m => m[0]);
+    if (!found.length) continue;
+    for (const t of found) {
+      const base = t.slice(t.lastIndexOf('/') + 1);
+      /* 같은 줄에 같은 이름의 «다른» 경로가 또 있나 — 있으면 「고친 기록」이다 */
+      if (found.some(o => o !== t && o.slice(o.lastIndexOf('/') + 1) === base)) continue;
+      if (!hits.has(t)) hits.set(t, new Set());
+      hits.get(t).add(f);
+    }
   }
 }
 
@@ -62,19 +83,27 @@ for (const f of files) {
    ⇒ 자는 **「그 경로에 없다」**를 말한 것인데 사람이 **「그 파일이 없다」**로 읽었다.
    ⇒ ★ **자가 그 구분을 «스스로» 말하게 한다** — 같은 이름이 다른 경로에 있으면 그 경로를 댄다.
      그러면 읽는 사람이 **「지워야 하나」가 아니라 「문서의 경로를 고쳐야 하나」**로 본다. */
-const byName = new Map();                     // 파일이름 → 실제 있는 경로들
+const byName = new Map(), byStem = new Map();                     // 파일이름 → 실제 있는 경로들
 for (const f of tracked) {
   if (!f) continue;
   const b = path.basename(f);
   if (!byName.has(b)) byName.set(b, []);
   byName.get(b).push(f);
+  const st = b.replace(/\.[^.]+$/, '');
+  if (!byStem.has(st)) byStem.set(st, []);
+  byStem.get(st).push(f);
 }
 
 const gone = [], moved = [], untracked = [];
 for (const [t, from] of [...hits].sort()) {
   const exists = fs.existsSync(path.join(ROOT, t));
   if (!exists) {
-    const alt = (byName.get(path.basename(t)) || []).filter(p => p !== t);
+    const base = path.basename(t);
+    const stem = base.replace(/\.[^.]+$/, '');
+    let alt = (byName.get(base) || []).filter(p => p !== t);
+    /* ⚠ 확장자만 다른 것도 「없다」로 뜬다 — `strip_anim_glb.js` 라 적혔는데 실제는 `.py` 였다.
+       그건 «지울 일»이 아니라 «문서의 확장자를 고칠 일»이다. 같이 잡아 준다. */
+    if (!alt.length) alt = (byStem.get(stem) || []).filter(p => p !== t);
     if (alt.length) moved.push([t, [...from], alt]);
     else gone.push([t, [...from]]);
   }
