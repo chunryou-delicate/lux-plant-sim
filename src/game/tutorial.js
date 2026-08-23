@@ -293,6 +293,8 @@ export function createTutorialState(opt = {}) {
     varieGrant: createVarieGrantState(),
     /* ★★ 탈출의 둘째 축 — 아래 §무늬 삽수를 판 적이 있다 (2026-08-13 박사님 확정) */
     varieSale: createVarieSaleState(),
+    /* ★ 2026-08-24 — 이사 둘째 축(§noteVarieLeaf). 세이브에 남아야 한다 */
+    varieLeaf: createVarieLeafState(),
     movedOut: false,
     bankrupt: false,
     /* 0원이 **이어지기 시작한** 살림 일자. 돈이 들어오면 null 로 돌아간다(§starveDays) */
@@ -390,6 +392,61 @@ export function noteVarieCuttingSale(ts, sale = {}) {
    옛 세이브(칸 없음)에서 조용히 터진다. */
 export function hasSoldVarieCutting(ts) {
   return !!(ts && ts.varieSale && (ts.varieSale.count || 0) > 0);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   ★★★ **무늬 잎을 낸 적이 있나** — 이사 둘째 축 (2026-08-24 박사님 확정)
+   --------------------------------------------------------------------------
+   박사님: *"이사 둘째 조건을 바꾼다 — 「판 적」 대신 **「무늬 잎을 낸 적」 및 돈**으로"*
+
+   ★ 왜 바뀌나 — 삽수 버튼이 **원룸으로** 간다(같은 날 확정). 그러면 반지하에 자를 수단이
+     없어 **「무늬 삽수를 판 적」이 영영 안 서고 문이 안 열린다.** 무늬 잎은 삽수 없이도
+     난다(등을 사서 밝은 자리에 두면) — 그래서 그쪽으로 옮긴다.
+
+   ★ 뜻은 [Plan] 이 정했다(`plan-moveout-varie-leaf.md`):
+     ㉠ **한 장**이면 된다   ㉡ **어느 잎이든** — 모주든 삽수든 안 가린다
+     ㉢ ★★ **「낸 적」이다. 「지금 있나」가 아니다.**
+
+   ⚠⚠ ㉢ 이 이 칸이 **따로 있어야 하는 까닭**이다. 「지금 있나」로 하면 —
+     `growth_adapter §312` 가 적어 두었듯 **삽수를 자르면 코어 장부에서 잎이 준다.**
+     ⇒ 무늬 잎을 **잘라** 삽수를 만드는 순간 문이 닫힌다. **판 적도 없는데 닫힌다.**
+     ⇒ 옛 병(팔면 닫힘)이 한 걸음 **앞**으로 당겨질 뿐이다.
+   ⛔ 그래서 `motherVarieLeaves` 를 재사용하지 않는다 — 그건 **지금 수**이지 이력이 아니다.
+
+   ★ 두 조건의 **성격이 다르다**(그것이 이 문의 뜻이다):
+     돈 2,000,000  「지금 있나」 — 쓰면 준다. 그래야 모으는 것이 뜻을 갖는다
+     무늬 잎        「했나」     — 배움은 되돌아가지 않는다
+   ⇒ 문이 **「돈이 있고 + 할 줄 안다」**를 묻는다.
+   ══════════════════════════════════════════════════════════════════════════ */
+export function createVarieLeafState() {
+  return {
+    ever: false,         // 무늬 잎을 한 번이라도 냈나 — ★ 한 번 참이면 안 내린다
+    firstDay: null,      // 처음 낸 튜토 일자 (안내·기록용)
+    where: null          // 'mother' | 'cutting' — 어디서 처음 났나 (기록용. 판정에 안 쓴다)
+  };
+}
+
+/* 무늬 잎을 냈다고 적는다. **한 번 서면 안 내린다.**
+     opt.motherVarieLeaves   모주가 지금 달고 있는 무늬 잎 수
+     opt.cuttingVarieLeaves  삽수들이 지금 달고 있는 무늬 잎 수의 합
+   ⚠ 「지금 수」를 받아 **이력으로 바꿔 적는 것**이 이 함수의 일이다.
+     부르는 쪽은 매 턴 불러도 된다 — 이미 서 있으면 아무 일도 안 한다. */
+export function noteVarieLeaf(ts, opt = {}) {
+  if (!ts || !ts.enabled) return null;
+  const v = ts.varieLeaf || (ts.varieLeaf = createVarieLeafState());
+  if (v.ever) return v;
+  const mom = Math.max(0, Math.round(opt.motherVarieLeaves || 0));
+  const cut = Math.max(0, Math.round(opt.cuttingVarieLeaves || 0));
+  if (mom < 1 && cut < 1) return v;
+  v.ever = true;
+  v.firstDay = ts.day;
+  v.where = mom >= 1 ? 'mother' : 'cutting';
+  return v;
+}
+
+/* 낸 적이 있나. ⚠ **옛 세이브에는 이 칸이 없다** — 그때는 「판 적」이 대신 선다(§canMoveOut). */
+export function hasEverVarieLeaf(ts) {
+  return !!(ts && ts.varieLeaf && ts.varieLeaf.ever);
 }
 
 /* ── 계절 ─────────────────────────────────────────────────────────────── */
@@ -1049,7 +1106,11 @@ export function varieView(S, io = {}) {
 export function canMoveOut(ts) {
   const need = ts.rules.moveOutCostWon;
   const money = ts.cashWon >= need;
-  const varie = hasSoldVarieCutting(ts);
+  /* ★★ 2026-08-24 — 둘째 축이 **「무늬 잎을 낸 적」**이다(§noteVarieLeaf · 박사님 확정).
+     ⚠ **`||` 인 것이 핵심이다.** 옛 세이브에는 `varieLeaf` 칸이 없고, 이미 무늬 삽수를
+       **판 사람**이 그 판에서 못 나가면 안 된다. 판 적이 있으면 잎도 냈던 것이다 —
+       그러니 옛 깃발을 그대로 인정한다. 이 저장소가 여러 번 쓴 그 `||` 다. */
+  const varie = hasEverVarieLeaf(ts) || hasSoldVarieCutting(ts);
   const left = learningLeft(ts);
   const shortWon = Math.max(0, need - ts.cashWon);
   return {

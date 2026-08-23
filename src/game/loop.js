@@ -61,7 +61,9 @@ import {
   slotFitsDiameter
 } from './first_play.js';
 import { canMoveOut, createTutorialState, LEARNING, tutorialDay, noteLearning,
-         stepVarieGrant } from './tutorial.js';
+         stepVarieGrant ,
+         /* ★ 2026-08-24 — 무늬 잎을 낸 적(이사 둘째 축) */
+         noteVarieLeaf } from './tutorial.js';
 import { dliFromContract } from './growth_adapter.js';
 import { headroomCheck, PLANT_POT_D_REF } from './headroom.js';
 import { rehomeCuttings, stepCuttings, cuttableNow } from './propagation.js';
@@ -589,6 +591,24 @@ function stepTutorial(S, turn, io) {
   if (!ts || !ts.enabled) return null;
   const fp = S.firstPlay;
   try {
+    /* ══ ★★ 2026-08-24 — **무늬 잎을 낸 적**을 적는다 (이사 둘째 축 · tutorial §noteVarieLeaf)
+       ------------------------------------------------------------
+       ⚠ **왜 여기인가.** 턴이 지나는 목이 여기 하나뿐이다 — `noteLeafGrades` 가 화면에
+         붙은 것과 같은 판단인데, 이건 **판정에 쓰이는 값**이라 코어가 들고 있어야 한다.
+       ⚠ **모주만 보지 않는다.** [Plan] 확정 ㉡ — 어디서 났든 친다. 삽수가 달고 있는
+         무늬 잎도 같이 센다(`syncCuttingLeaves` 가 그 칸을 맞춰 둔다).
+       ⚠ 못 물으면 **아무것도 안 적는다.** 0 으로 메꾸면 「안 났다」가 아니라 「못 물었다」인데
+         둘이 같은 모양이 된다. `noteVarieLeaf` 는 이미 서 있으면 아무 일도 안 한다. */
+    try {
+      let mom = 0;
+      try { const ls = io.growth.leafStats && io.growth.leafStats();
+            if (ls && Number.isFinite(ls.variegatedLeaves)) mom = ls.variegatedLeaves; } catch { }
+      let cut = 0;
+      for (const c of (S.cuttings || []))
+        if (c && Number.isInteger(c.variegatedLeaves)) cut += c.variegatedLeaves;
+      if (mom >= 1 || cut >= 1) noteVarieLeaf(ts, { motherVarieLeaves: mom, cuttingVarieLeaves: cut });
+    } catch (e) { /* 잎을 못 재는 판(계약 없음)에서는 안 적는다 */ }
+
     /* 배운 것부터 적는다 — 이사 판정이 이 값을 본다 */
     const learnedBefore = { ...ts.learned };
     const ev = turn.firstPlayEvent || {};

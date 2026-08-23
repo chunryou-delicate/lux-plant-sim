@@ -843,6 +843,19 @@ function packTutorial(ts) {
       migrated: (ts.varieSale || {}).migrated == null ? null
         : needStr(String(ts.varieSale.migrated), 'tutorial.varieSale.migrated')
     },
+    /* ★★ 2026-08-24 — **무늬 잎을 낸 적**(이사 둘째 축 · tutorial §noteVarieLeaf).
+       ⚠ 안 담으면 불러오기에서 「낸 적 있다」가 없던 일이 되어 **이미 낸 사람이 방에 갇힌다** —
+         바로 위 `varieSale` 과 똑같은 자리다.
+       ⚠ 옛 세이브에는 이 칸이 없다. 그때는 `false` 로 서고, `canMoveOut` 이
+         「판 적」(`varieSale`)을 `||` 로 같이 보므로 **이미 판 사람은 그대로 나간다.**
+       ⚠ `ever` 는 **한 번 참이면 안 내린다** — 여기서도 되돌리지 않는다. */
+    varieLeaf: {
+      ever: !!(ts.varieLeaf || {}).ever,
+      firstDay: (ts.varieLeaf || {}).firstDay == null ? null
+        : needInt(ts.varieLeaf.firstDay, 'tutorial.varieLeaf.firstDay', { min: 0 }),
+      where: (ts.varieLeaf || {}).where == null ? null
+        : needStr(String(ts.varieLeaf.where), 'tutorial.varieLeaf.where')
+    },
     /* 살림 장부 — 상점에 쓴 돈·판 돈. 안 적으면 "얼마 벌었나"가 저장 왕복에서 사라진다. */
     crop: {
       spentWon: needNum((ts.crop || {}).spentWon ?? 0, 'tutorial.crop.spentWon', { min: 0 }),
@@ -1700,6 +1713,10 @@ export function deserialize(raw, opt = {}) {
     for (const k of Object.keys(ts.learned)) if (k in t.learned) ts.learned[k] = t.learned[k];
     ts.varieGrant = { ...ts.varieGrant, ...t.varieGrant };
     ts.varieSale = { ...ts.varieSale, ...t.varieSale };
+    /* ★ 2026-08-24 — 무늬 잎 이력(§varieLeaf). 없으면 처음 상태 그대로(ever:false)다.
+       ⚠ 따로 이관하지 않는다 — 옛 세이브에서 「낸 적」을 되짚을 근거가 없다.
+         대신 `canMoveOut` 이 「판 적」을 `||` 로 같이 보므로 **이미 판 사람은 안 갇힌다.** */
+    ts.varieLeaf = { ...ts.varieLeaf, ...t.varieLeaf };
     ts.crop = { ...ts.crop, ...t.crop };
     ts.movedOut = t.movedOut; ts.bankrupt = t.bankrupt;
     /* ★★ 옛 세이브에는 `varieSale` 칸이 **아예 없다** — 위 §무늬 삽수 판매 이관.
