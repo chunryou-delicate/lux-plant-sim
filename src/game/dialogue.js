@@ -736,6 +736,27 @@ export const SCRIPTS = {
 
   /* ③ 모주 잎이 둘이 된 날 열린다 — `varieSecond` 가 말한 「이제 됐다」의 손 쪽이다.
      ★ 가르치는 것은 **잎 1장이라야 물꽂이**(확정문 `cutting §2-②`). 확률이 아니라 조건이다. */
+  /* ②-a ★★★ **무순 다섯** (2026-08-24 박사님 확정 · 문안은 [Plan] 것) ═══════════════
+     ★ 앞 줄(`questSiru5`)이 「한계가 내 손에 있다」였다면 이 줄은 **「한계가 내 손 밖에 있다」**다.
+     ⚠ **어디에 놓으라고 안 말한다.** 자리를 고르는 것이 이 줄이 가르칠 몫이라,
+       말해 버리면 심부름이 된다.
+     ⚠ 값을 안 말한다 — 문턱도 개수도. 몬이는 **눈에 보이는 것**만 말한다
+       (「희멀겋게 웃자랐다」). 값이 움직여도 대사가 안 낡는다.
+     ★ 끝 줄이 **등과 이사 둘 다를 처음 가리킨다.** 답은 안 준다. */
+  questRadish5: [
+    { who: 'moni',   face: 'curious', text: '무순도 다섯 판까지 늘려 볼까.' },
+    { who: 'jachwi', text: '콩나물처럼 늘리면 되는 거지?' },
+    { who: 'moni',   text: '늘리는 건 같은데, **아무 데나 놓으면 안 돼.**' },
+    { who: 'jachwi', face: 'surprise', text: '왜?' },
+    { who: 'moni',   face: 'happy', text: '콩나물은 어두울수록 하얗고 아삭해. 무순은 **반대야** — 빛을 봐야 파래지고 알싸해져.' }
+  ],
+  questDoneRadish5: [
+    { who: 'jachwi', text: '판마다 색이 다르네. 어두운 데 둔 건 희멀겋게 웃자랐어.' },
+    { who: 'moni',   face: 'curious', text: '이 방에서 무순이 파래지는 자리는 몇 개 없어.' },
+    { who: 'jachwi', text: '더 늘리려면?' },
+    { who: 'moni',   text: '방을 바꾸든지, 빛을 들이든지.' }
+  ],
+
   /* ②-b ★★★ **시루를 늘린다** (2026-08-16 박사님) — 실측 문턱 여덟·열여섯.
      ⚠ 숫자를 대사에 안 박는다. 몬이는 **왜 늘리나**를 말하고, 몇 개인지는
        할 일 줄(`quest.js §todo`)이 말한다 — 값이 움직여도 대사가 안 낡는다. */
@@ -1494,6 +1515,8 @@ export const QUEST_OPEN_SCRIPT = Object.freeze({
 
   crop_mix:     'questCropMix',
   siru5_cycle5: 'questSiru5',
+  /* ★ 2026-08-24 — 무순 다섯(박사님 확정 · quest.js §②-a). **콩나물 늘리기보다 앞이다** */
+  radish5:      'questRadish5',
   /* ★ 2026-08-16 — 시루 늘리기 둘(실측 문턱 여덟·열여섯 · quest.js §②-b·②-c) */
   siru8:        'questSiru8',
   siru16:       'questSiru16',
@@ -1520,6 +1543,7 @@ export const QUEST_DONE_SCRIPT = Object.freeze({
 
   crop_mix:     'questDoneCropMix',
   siru5_cycle5: 'questDoneSiru5',
+  radish5:      'questDoneRadish5',
   siru8:        'questDoneSiru8',
   siru16:       'questDoneSiru16',
   first_cut:    'questDoneFirstCut',

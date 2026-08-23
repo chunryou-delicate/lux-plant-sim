@@ -238,6 +238,12 @@ const steps = [
   /* 20 `siru5_cycle5` 가 열린 뒤 시루를 늘려 돌린다 — 아직 모자란다 */
   { ...S0, day: 60, firstPlayDone: true, motherLeaves: 1,
     cropPots: Array.from({ length: 5 }, () => ({ kind: 'beansprout', harvestCount: 4 })) },
+  /* 20-b ★ 무순 판을 다섯 놓았다 — `radish5` 완료 (2026-08-24 박사님 확정)
+     ⚠ `placed: true` 라야 닫힌다. 이 줄은 **자리가 전부**라 가방에 다섯 넣고 닫히면
+       뜻이 통째로 없어진다(quest.js §②-a). */
+  { ...S0, day: 62, firstPlayDone: true, motherLeaves: 1,
+    cropPots: [...Array.from({ length: 5 }, () => ({ kind: 'beansprout', harvestCount: 5, placed: true })),
+               ...Array.from({ length: 5 }, () => ({ kind: 'musun', harvestCount: 1, placed: true }))] },
   /* 21 ★ 시루를 여덟까지 늘린다 — `siru8` 완료 (2026-08-16 신설) */
   { ...S0, day: 64, firstPlayDone: true, lampUnlocked: false,
     /* ★ 2026-08-24 — `placed: true` 를 붙였다. `siru8`·`siru16` 이 **놓인 것만** 세게
