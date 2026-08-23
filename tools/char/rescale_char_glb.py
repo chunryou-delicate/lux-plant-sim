@@ -29,6 +29,15 @@ import sys
 import os
 import glob
 
+# cp949 콘솔에서 '—' 한 글자에 죽는다 — 2026-08-24 에 열 개가 다 그랬다.
+# 내 창에서만 PYTHONIOENCODING=utf-8 을 붙여 돌려 와서 한 번도 안 걸렸다.
+# ★ 자가 내 창에서만 돌면 그건 자가 아니라 내 손버릇이다.
+try:
+    sys.stdout.reconfigure(encoding='utf-8')
+except Exception:
+    pass
+
+
 GLB = 0x46546C67
 CJ = 0x4E4F534A
 CB = 0x004E4942

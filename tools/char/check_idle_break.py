@@ -19,7 +19,17 @@
 단위 주의 — 클립 좌표는 미터가 아니다. 이 골격은 Hips rest Y = 66.8 이다.
 그래서 전부 **Hips rest 대비 비율(%)** 로 낸다.
 """
+import sys
 import json, struct, os, math
+
+# cp949 콘솔에서 '—' 한 글자에 죽는다 — 2026-08-24 에 열 개가 다 그랬다.
+# 내 창에서만 PYTHONIOENCODING=utf-8 을 붙여 돌려 와서 한 번도 안 걸렸다.
+# ★ 자가 내 창에서만 돌면 그건 자가 아니라 내 손버릇이다.
+try:
+    sys.stdout.reconfigure(encoding='utf-8')
+except Exception:
+    pass
+
 
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 ANIM = os.path.join(ROOT, "assets", "characters", "3d", "anim")

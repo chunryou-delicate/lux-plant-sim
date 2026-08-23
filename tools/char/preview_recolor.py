@@ -20,6 +20,15 @@ ROOT = os.path.dirname(os.path.dirname(HERE))              # 저장소 루트
 sys.path.insert(0, HERE)
 from make_part_mask import read_glb, CODE, CHARS  # noqa: E402
 
+# cp949 콘솔에서 '—' 한 글자에 죽는다 — 2026-08-24 에 열 개가 다 그랬다.
+# 내 창에서만 PYTHONIOENCODING=utf-8 을 붙여 돌려 와서 한 번도 안 걸렸다.
+# ★ 자가 내 창에서만 돌면 그건 자가 아니라 내 손버릇이다.
+try:
+    sys.stdout.reconfigure(encoding='utf-8')
+except Exception:
+    pass
+
+
 MASKS = os.path.join(ROOT, "assets", "characters", "masks")
 SRC = os.path.join(ROOT, "assets", "characters", "3d")
 

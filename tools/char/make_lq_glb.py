@@ -35,6 +35,15 @@ MASCOT = dict(ratio=0.016, error=0.002, tex=512)
 sys.path.insert(0, HERE)
 from rescale_char_glb import load, world_bounds, target_for  # noqa: E402
 
+# cp949 콘솔에서 '—' 한 글자에 죽는다 — 2026-08-24 에 열 개가 다 그랬다.
+# 내 창에서만 PYTHONIOENCODING=utf-8 을 붙여 돌려 와서 한 번도 안 걸렸다.
+# ★ 자가 내 창에서만 돌면 그건 자가 아니라 내 손버릇이다.
+try:
+    sys.stdout.reconfigure(encoding='utf-8')
+except Exception:
+    pass
+
+
 
 def gt(*args):
     """gltf-transform CLI. npx 캐시를 쓰므로 전역 설치가 필요 없다."""

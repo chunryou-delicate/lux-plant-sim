@@ -20,6 +20,15 @@ import sys
 import os
 import glob
 
+# cp949 콘솔에서 '—' 한 글자에 죽는다 — 2026-08-24 에 열 개가 다 그랬다.
+# 내 창에서만 PYTHONIOENCODING=utf-8 을 붙여 돌려 와서 한 번도 안 걸렸다.
+# ★ 자가 내 창에서만 돌면 그건 자가 아니라 내 손버릇이다.
+try:
+    sys.stdout.reconfigure(encoding='utf-8')
+except Exception:
+    pass
+
+
 GLB_MAGIC = 0x46546C67
 CHUNK_JSON = 0x4E4F534A
 CHUNK_BIN = 0x004E4942
@@ -116,11 +125,39 @@ def strip(src, dst):
     return os.path.getsize(src), os.path.getsize(dst)
 
 
+# ★ 「어디에 쓰는지」를 도구 안에 적는다.
+#   ⚠ 여태 출력 경로를 **인자로만** 받았다. 그런데 게임은 딱 한 곳을 읽는다
+#     (`src/game/room_view.js:7482` · `src/render3d/character.js:28`).
+#     ⇒ **짝이 도구 밖에 있었다.** 다음 사람이 엉뚱한 데 쓰면 게임은 클립이 없다고
+#       콘솔에 한 줄 적을 뿐 **조용히 안 붙는다.**
+CLIPS_DIR = os.path.join(
+    os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
+    "assets", "derived", "char_clips")
+
+
 def main():
     args = sys.argv[1:]
     if not args:
         print(__doc__)
+        print("★ 게임이 읽는 곳은 여기 하나다:")
+        print("    %s" % CLIPS_DIR)
+        print("  거기로 뽑으려면:  python strip_anim_glb.py --clips <원본_withSkin.glb ...>")
         return 1
+    if args[0] == "--clips":
+        # 인자를 준 경우는 그대로 둔다. 이건 **새 모드**다.
+        src_list = args[1:]
+        if not src_list:
+            print("--clips 뒤에 원본 GLB 를 주십시오")
+            return 1
+        os.makedirs(CLIPS_DIR, exist_ok=True)
+        for f in src_list:
+            base = os.path.basename(f).replace("_withSkin.glb", ".glb")
+            dst = os.path.join(CLIPS_DIR, base)
+            s2, d2 = strip(f, dst)
+            print(f"  {base:50s} {s2/1048576:7.1f}MB -> {d2/1024:7.1f}KB")
+        print()
+        print("★ 게임이 읽는 곳에 넣었다: %s" % CLIPS_DIR)
+        return 0
     if args[0] == "--dir":
         files = sorted(glob.glob(os.path.join(args[1], "*_withSkin.glb")))
         if not files:
