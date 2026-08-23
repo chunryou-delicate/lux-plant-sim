@@ -51,7 +51,10 @@ const read = eng => { const r = eng.build('banjiha');
 
 const ROOM = process.argv.find(a => !a.startsWith('-') && a !== process.argv[0] && a !== process.argv[1]);
 const SHOW_CELLS = process.argv.includes('--cells');
-const CELL = 0.25;          // 바닥 격자와 같은 눈금 (game/place.js §GRID_CELL)
+const CELL = +(process.argv.find(a => a.startsWith('--cell='))||'').split('=')[1] || 0.25;
+/* 기본 0.25 — 바닥 격자와 같은 눈금 (game/place.js §GRID_CELL).
+   ⚠ **벽만 다른 눈금을 쓰면 어색하다.** 바닥이 0.25 인데 벽이 0.5 면 같은 방에 자가 둘이다.
+     `--cell=0.5` 로 견줘 볼 수는 있게 열어 두되, 고르는 것은 기획 몫이다. */
 const WALL_T = 0.1;         // 벽 두께 — 안쪽 면까지 (house.js 규약)
 const HR = dataOf('house_rooms.json');
 const eng = mk(() => {});
@@ -66,7 +69,7 @@ function toWorld(wall, u, v, W, D) {
   return { x: W / 2 - WALL_T, y: v, z: u };
 }
 /* 그 벽에 뚫린 것들 — 창·문·유리벽. [u0,u1,v0,v1] 로 낸다 */
-function holesOf(def, wall) {
+function holesOf(def, wall, W, D) {
   const out = [];
   for (const w of (def.windows || [])) {
     if (w.wall !== wall) continue;
@@ -77,9 +80,18 @@ function holesOf(def, wall) {
     if (d.wall !== wall) continue;
     out.push({ kind: '문', u0: (d.cu ?? 0) - d.w / 2, u1: (d.cu ?? 0) + d.w / 2, v0: 0, v1: d.h });
   }
-  for (const g of (def.glassWalls || [])) {
+  /* ⚠ `glassWalls` 는 두 모양이다 (house.js:325):
+       "left"                       → **벽 전체**가 유리
+       {wall:"left", from:-6, to:1} → 그 구간만
+     처음에 `from`/`to` 를 그냥 읽었더니 전체 유리인 벽에서 `undefined` 와 견주게 되어
+     **하나도 안 걸렀다** — 온실 뒷벽이 통째로 유리인데 「붙일 수 있는 칸 440」이 나왔다.
+     ★ 없으면 «그 벽 전체»로 읽는다. */
+  const [wa, wb] = spanOf(wall, W, D);
+  for (const g0 of (def.glassWalls || [])) {
+    const g = (typeof g0 === 'string') ? { wall: g0 } : g0;
     if (g.wall !== wall) continue;
-    out.push({ kind: '유리벽', u0: g.from, u1: g.to, v0: 0, v1: 99 });
+    out.push({ kind: '유리벽', u0: Number.isFinite(g.from) ? g.from : wa,
+               u1: Number.isFinite(g.to) ? g.to : wb, v0: 0, v1: 99 });
   }
   return out;
 }
@@ -100,7 +112,7 @@ for (const id of ROOMS) {
     const len = b - a;
     const nu = Math.max(1, Math.round(len / CELL));
     const nv = Math.max(1, Math.round(H / CELL));
-    const holes = holesOf(def, wall);
+    const holes = holesOf(def, wall, W, D);
     const rows = [];
     let free = 0, hit = 0;
     for (let i = 0; i < nu; i++) for (let j = 0; j < nv; j++) {
@@ -122,4 +134,55 @@ for (const id of ROOMS) {
   }
   console.log('  ⇒ 네 벽 합 ' + tot + '칸 중 뚫린 것 ' + blocked + ' · **붙일 수 있는 칸 ' + (tot - blocked) + '**');
   console.log('');
+}
+
+/* ══ 칸 크기 견주기 — 「608칸은 너무 잘다」에 답하려면 ═══════════════════════
+   ★ 화분 때와 같은 물음이다: **물건이 한 칸에 들어가나.**
+     바닥 격자는 화분 지름을 보고 칸을 나눈다(`room_view §surfaceAxis`).
+     벽도 같아야 한다 — 등이 칸보다 크면 「칸 한가운데」가 뜻을 잃는다. */
+if (process.argv.includes('--sizes')) {
+  const FP = dataOf('furniture_presets.json').presets;
+  const lamps = ['growlight_bar', 'growlight_clip', 'lamp_wall'];
+  console.log('');
+  console.log('== 벽에 붙일 물건의 크기 ==');
+  for (const id of lamps) {
+    const P = FP[id] || {}, sm = P.size_m || {};
+    console.log('  ' + id.padEnd(18) + (sm.w ?? P.w ?? '?') + ' x ' + (sm.d ?? P.d ?? '?') +
+                ' x ' + (sm.h ?? P.h ?? '?') + '   ' + (P.name_ko || ''));
+  }
+  /* 실제로 조립된 크기도 본다 — 프리셋 w·d 가 빌더가 내는 크기와 다를 수 있다(84d3a3f) */
+  const rb = eng.build('banjiha');
+  rb.built.room.updateMatrixWorld(true);
+  for (const g of rb.built.furniture.children) {
+    const u = g.userData; if (!u || !/growlight-bar/.test(String(u.uid))) continue;
+    const bb = new THREE.Box3().setFromObject(g);
+    console.log('  ★ 조립된 벽부등 실제 크기 ' +
+                (bb.max.x - bb.min.x).toFixed(3) + ' x ' + (bb.max.z - bb.min.z).toFixed(3) +
+                ' x ' + (bb.max.y - bb.min.y).toFixed(3) + ' m');
+  }
+  console.log('');
+  console.log('== 칸 크기별 — 반지하 네 벽 ==');
+  console.log('  칸 크기   붙일 수 있는 칸   등(가로 0.70)이 차지하는 칸 수');
+  const def0 = HR.rooms['banjiha'];
+  for (const cs of [0.25, 0.5, 1.0]) {
+    let free = 0;
+    for (const wall of WALLS) {
+      const [a, b] = spanOf(wall, def0.size.w, def0.size.d);
+      const len = b - a, nu = Math.max(1, Math.round(len / cs)), nv = Math.max(1, Math.round(def0.size.h / cs));
+      const hs = holesOf(def0, wall, def0.size.w, def0.size.d);
+      for (let i = 0; i < nu; i++) for (let j = 0; j < nv; j++) {
+        const u = a + (i + 0.5) * (len / nu), v = (j + 0.5) * (def0.size.h / nv);
+        if (hs.some(o => u > o.u0 && u < o.u1 && v > o.v0 && v < o.v1)) continue;
+        free++;
+      }
+    }
+    console.log('  ' + cs.toFixed(2) + 'm' + String(free).padStart(14) +
+                String(Math.ceil(0.70 / cs)).padStart(22) + '칸');
+  }
+  console.log('');
+  console.log('  ⚠ 바닥 격자는 0.25m 다(game/place.js §GRID_CELL). **벽만 다른 눈금이면 자가 둘이다.**');
+  console.log('  ⚠ 등이 가로 0.70m 라 0.25 칸에는 **안 들어간다** — 세 칸을 걸친다.');
+  console.log('     화분은 그래서 `surfaceAxis` 가 «화분 지름을 보고» 칸을 나눈다.');
+  console.log('     벽도 같은 셈이 필요하다: 칸을 나누는 자가 «등 크기»를 봐야 한다.');
+  console.log('  ⇒ 고르는 것은 기획 몫이다. 여기서는 수만 낸다.');
 }
