@@ -122,7 +122,18 @@ const BASE = process.env.BYEOT_URL || 'http://localhost:8971';
 
 /* ★ 자가 제한 — 재는 도구가 재는 대상보다 오래 살면 안 된다 */
 const WD = Number(process.env.BYEOT_NIGHT_TIMEOUT_MS || 1800000);
-const wd = setTimeout(() => { console.error('⏱ 자가 제한을 넘겨 멈춥니다'); process.exit(2); }, WD);
+/* ⚠⚠⚠ **자가 제한에 걸리면 «적어 둔 것까지 잃는다»** (2026-08-23 실측)
+   팔기를 붙인 판이 d100 에서 이 줄에 걸렸는데, `process.exit(2)` 가 곧바로 나가는 바람에
+   **마지막 갈무리(`finish`)가 안 돌았다.** 남은 것은 열흘마다 떨구는 중간 파일뿐이었고,
+   `.log` 은 «어젯밤 것이 그대로» 남아 있어서 하마터면 **다른 판의 기록을 이 판 것으로
+   읽을 뻔했다**(실제로 한 번 그렇게 읽었다).
+   ⇒ ★ 그래서 **나가기 전에 갈무리를 부른다.** `finish` 는 아래에서 정의되므로 창구를 하나 둔다. */
+let onWatchdog = null;
+const wd = setTimeout(() => {
+  console.error('⏱ 자가 제한을 넘겨 멈춥니다 — 여기까지를 갈무리합니다');
+  if (typeof onWatchdog === 'function') { try { onWatchdog('timeout'); } catch (e) { console.error(e.message); } }
+  process.exit(2);
+}, WD);
 wd.unref && wd.unref();
 
 /* ══ 한 판이 남기는 것 ═══════════════════════════════════════════════ */
@@ -905,8 +916,14 @@ function dump() {
   fs.writeFileSync(path.join(OUT, `${STEM}.json`), JSON.stringify(R, null, 1), 'utf8');
 }
 
+/* ★ 자가 제한이 부를 창구를 잇는다 — `function` 선언이라 여기서 이어도 위에서 부른다 */
+onWatchdog = (why) => { R.watchdog = why || true; finish(); };
+
 function finish() {
   R.endedAt = new Date().toISOString();
+  /* ★ 자가 제한에 걸려 불려 왔으면 그것도 적어 둔다 — 「끝난 꼴」이 빈 채로 남으면
+     다음 사람이 「끝까지 돈 판」으로 읽는다. 실제로 내가 한 번 그렇게 읽었다. */
+  if (R.ended == null && R.watchdog) R.ended = 'timeout';
   const last = R.days[R.days.length - 1] || {};
   const lines = [];
   lines.push(`■ 씨앗 ${SEED} · ${PLAY}` +
