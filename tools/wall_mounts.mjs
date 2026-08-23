@@ -140,6 +140,42 @@ function partitionCells(def, W, D, H, cell) {
   return out;
 }
 
+/* ══ 창턱 상자(sills) — **벽을 가리고, 제 앞면을 새로 낸다** ══════════════
+   2026-08-23: 「아직 안 본다」로 두었던 둘 중 하나. 세어서 크기를 드러낸다.
+   학원교실의 깊은 창턱이 그것이다 — `{wall:'back', cu:-1.5, w:7.2, y:1, depth:1}`.
+
+   두 가지가 같이 일어난다:
+     ① **벽을 가린다** — 그 폭·그 높이 아래의 «뒷벽 칸»에는 못 붙는다(상자가 앞에 있다)
+     ② **제 앞면이 생긴다** — 방을 향한 수직면 (w × y). 벽에서 `depth` 만큼 들어와 있다
+   ⇒ 대충 상쇄되지만 **자리가 다르다** — 앞면은 벽보다 방 쪽으로 1m 나와 있다.
+   ⛔ 여기서 「붙일 수 있다」고 정하지 않는다. **면이 있다는 것과 크기만** 낸다. */
+function sillFaces(def, W, D, H, cell) {
+  const out = [];
+  for (const sl of (def.sills || [])) {
+    const w = sl.w, top = sl.y, dep = sl.depth ?? 0.25;
+    const nu = Math.max(1, Math.round(w / cell));
+    const nv = Math.max(1, Math.round(top / cell));
+    out.push({ uid: sl.uid || '?', wall: sl.wall, w, top, dep,
+               front: nu * nv, side: Math.max(1, Math.round(dep / cell)) * nv * 2 });
+  }
+  return out;
+}
+/* 그 창턱이 «가리는» 뒷벽 칸 수 — 벽 격자와 같은 눈금으로 센다 */
+function sillBlocks(def, wall, W, D, H, cell) {
+  const [a, b] = spanOf(wall, W, D);
+  const len = b - a, nu = Math.max(1, Math.round(len / cell)), nv = Math.max(1, Math.round(H / cell));
+  let n = 0;
+  for (const sl of (def.sills || [])) {
+    if (sl.wall !== wall) continue;
+    const u0 = (sl.cu ?? 0) - sl.w / 2, u1 = (sl.cu ?? 0) + sl.w / 2;
+    for (let i = 0; i < nu; i++) for (let j = 0; j < nv; j++) {
+      const u = a + (i + 0.5) * (len / nu), v = (j + 0.5) * (H / nv);
+      if (u > u0 && u < u1 && v < sl.y) n++;
+    }
+  }
+  return n;
+}
+
 const ROOMS = ROOM ? [ROOM] : ['banjiha', 'oneroom', 'classroom', 'tworoom', 'apartment', 'greenhouse'];
 const WALLS = ['back', 'right', 'front', 'left'];
 console.log('벽 격자 ' + CELL + 'm · 벽 안쪽 면(두께 ' + WALL_T + 'm) · 높이는 칸 한가운데');
@@ -177,6 +213,18 @@ for (const id of ROOMS) {
     if (SHOW_CELLS && rows.length > 8) console.log('        … 그 밖 ' + (rows.length - 8) + '칸');
   }
   console.log('  ⇒ 네 벽 합 ' + tot + '칸 중 뚫린 것 ' + blocked + ' · **붙일 수 있는 칸 ' + (tot - blocked) + '**');
+  /* 창턱 상자 — 가리는 칸과 새로 나는 면 */
+  const sf = sillFaces(def, W, D, H, CELL);
+  if (sf.length) {
+    let blocked2 = 0;
+    for (const wall of WALLS) blocked2 += sillBlocks(def, wall, W, D, H, CELL);
+    for (const f of sf)
+      console.log('  창턱상자 ' + String(f.uid).padEnd(16) + f.w.toFixed(2) + 'm · 높이 ' + f.top.toFixed(2) +
+                  ' · 깊이 ' + f.dep.toFixed(2) + '  → 앞면 ' + f.front + '칸 · 옆면 ' + f.side + '칸');
+    console.log('  ⚠ 그런데 그 창턱이 **뒷벽 ' + blocked2 + '칸을 가린다** — 위 「붙일 수 있는 칸」에서 빼야 한다');
+    console.log('     ⇒ 상쇄하면 ' + (sf.reduce((a, f) => a + f.front + f.side, 0) - blocked2) +
+                '칸 (자리는 벽보다 ' + sf[0].dep.toFixed(2) + 'm 방 쪽으로 나와 있다)');
+  }
   const parts = partitionCells(def, W, D, H, CELL);
   let pFree = 0;
   for (const p of parts) {
