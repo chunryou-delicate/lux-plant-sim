@@ -1517,7 +1517,13 @@
   .resource b{display:block;font-weight:700;font-size:15px;color:#e8ffd9;margin-top:1px;
     overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .journey{border-color:rgba(190,235,165,.25);background:rgba(224,255,207,.07)}
-  .quest{padding:9px 11px 9px 42px;border-radius:10px;color:#dff8d4;
+  /* ⛔ 2026-08-24 — **하단 줄을 끈다.** 칩과 **같은 글자**인데(§questChip 이 옮긴다)
+     ★ **칩은 지시이면서 손이고, 줄은 지시이기만 하다** — 눌러도 아무 일이 안 난다.
+     그리고 하단 띠 안이라 시트 안 것들과 계속 부딪혔다(실측: `sellPantry` 91% · `ledgerBackHint` 86%).
+     ⚠ **글자를 지우지 않는다.** `#quest` 는 여전히 **원본**이고 칩·시트가 그것을 가져다 쓴다 —
+       지우면 세 곳이 각자 짓게 되고 그것이 ㉰ 가 막는 그 병이다. **보이기만 끈다.** */
+  .quest{display:none}
+  .quest--legacy{padding:9px 11px 9px 42px;border-radius:10px;color:#dff8d4;
     background:rgba(7,20,10,.35) url(./assets/ui/icon_window.png) 10px 9px/23px 23px no-repeat;
     font-size:13px;line-height:1.45;margin-bottom:9px}
   .inventory{display:grid;grid-template-columns:1fr 1fr;gap:8px}
@@ -2637,12 +2643,27 @@
   /* ★ 할 일 쪽지는 시트가 열리면 감춘다 — 시트 안 `#sheetQuest` 가 같은 말을 한다.
      ⚠ 그리기(`draw`)에 맡기면 안 된다. 시트를 여는 것은 그리기를 안 부르므로
        쪽지가 시트 위에 남는다(실측에서 그랬다) — 여는 손이 직접 걷는다. */
+  /* ★★ 2026-08-24 — **켜는 셈은 하나다**(규율 ㉰ · 전문은 §questChip 주석).
+     ⚠⚠ 여기가 **같은 판단을 하는 두 번째 자리**였다. `syncRoom` 쪽을 「누가 말하고 있나」로
+       고쳤는데 이쪽은 옛 `!시트열림` 그대로라, **탭을 열면 이 함수가 다시 껐다.**
+       ⇒ 실측: 가방·상점·방 탭에서 아무도 할 일을 안 말하는데 칩도 꺼져 있었다.
+       ⇒ ★ 「판단하는 곳은 하나」를 세우려다 **부르는 곳을 둘로 남긴** 꼴이다 —
+         오늘 등에서 한 번 겪은 그것이다. 셈을 여기 한 벌로 두고 저쪽이 이것을 부른다. */
+  function questChipShouldShow() {
+    const has = !!(document.getElementById('questChipText') || {}).textContent;
+    if (!has) return false;
+    const vis = (e) => !!e && e.offsetParent !== null;
+    /* 이미 말하고 있는 자리가 있나 — 식물 탭의 `#sheetQuest` · 할 일 탭의 `.qtodo`(class 다) */
+    if (vis(document.getElementById('sheetQuest'))) return false;
+    if ([...document.querySelectorAll('.qtodo')].some(vis)) return false;
+    return true;
+  }
   function syncQuestChip() {
     const c = document.getElementById('questChip');
     if (!c) return;
-    const has = !!(document.getElementById('questChipText') || {}).textContent;
-    c.classList.toggle('on', has && !sheet.classList.contains('open'));
+    c.classList.toggle('on', questChipShouldShow());
   }
+  window.__byeotQuestChipShould = questChipShouldShow;
   window.__byeotQuestChip = syncQuestChip;
   function openSheet(tab) {
     sheet.classList.add('open'); scrim.classList.add('open');
@@ -2737,6 +2758,10 @@
     var body = sheet.querySelector('.sheetbody'); if (body) body.scrollTop = 0;
     /* 아래 띠도 같이 칠한다 — 시트 안에서 탭을 갈아도 아래가 옛 탭을 가리키면 둘이 갈린다 */
     syncNav();
+    /* ★ 2026-08-24 — **탭을 갈면 「누가 말하고 있나」가 바뀐다**(§questChip).
+       식물·할 일 탭에는 말하는 자리가 있고 가방·상점·방에는 없다. 여기서 안 부르면
+       탭을 갈아도 칩이 옛 탭 기준으로 남는다. */
+    syncQuestChip();
   }
   Object.keys(TABS).forEach(function (t) {
     $(t).addEventListener('click', function () { selectTab(t); });
@@ -8917,16 +8942,50 @@ function drawJourney() {
     }
   }
   const sq = $('sheetQuest'); if (sq) sq.textContent = $('quest').textContent;
-  /* ★ 오른쪽 위 쪽지 — **같은 한 줄**을 옮긴다(§questChip). 새로 짓지 않는다.
-     ⚠ 시트가 열려 있으면 감춘다 — 시트 안에 `#sheetQuest` 가 같은 말을 이미 하고 있어
-       둘이 겹치면 같은 말이 두 번 보인다(이 저장소가 자주 앓는 그 병). */
+  /* ══════════════════════════════════════════════════════════════════════════
+     ★★★ **「지금 할 것」을 말하는 자리들 — 층 · 수명 · 켜는 규칙** (2026-08-24)
+     --------------------------------------------------------------------------
+     이 게임에는 「지금 뭘 하나」를 말하는 자리가 여럿인데, **서로 무슨 사이인지가
+     아무 데도 안 적혀 있었다.** 그래서 낱개 버그로 보이던 것이 셋 났다([Plan] 정리).
+     ⇒ 두 축으로 적어 둔다. **층**은 「무엇을 말하나」, **수명**은 「언제 사라지나」다.
+     ⚠ 층만 맞추면 여섯이 다 **옳은 말을 동시에** 한다 — 그것이 지금까지의 화면이었다.
+
+       자리                 층(무엇을)   수명(언제까지)
+       ─────────────────────────────────────────────────────────
+       #coach              조작법        ★ 한 번 배우면 끝 — 사람에게 붙는다(평생)
+       #event (배너)       방금 한 일    6초(§banners 의 bannerTimer)
+       #questChip          다음 손       그 손을 할 때까지
+       #quest (하단 줄)    다음 손       ⛔ 2026-08-24 끔 — 칩과 같은 말인데 손이 없다
+       #sheetQuest         다음 손       식물 탭이 열린 동안
+       #qtodo              다음 손       할 일 탭이 열린 동안
+       손짓(#hint)         첫 걸음       그 물건을 놓을 때까지
+       #questSub           줄 이름       그 줄이 열린 동안 ⚠ 지시가 아니라 이름표다
+
+     ★★ 규율 ㉰ — **같은 글자를 두 곳에 「짓지」 않는다. 한 곳에서 짓고 가져다 쓴다.**
+        짝: ★ **가져다 쓴 자리는 「원본이 안 보일 때만」 켠다.**
+        ⇒ ⇒ **「어디에 두나」가 아니라 「누가 이미 말하고 있나」로 켠다.**
+
+     ⚠⚠ 옛 조건은 `!시트열림` 이었다. 그건 **「시트 = 식물 탭」일 때만 참**이다 —
+       탭은 다섯이고, `sheetQuest` 는 **식물 탭 안**에만, `qtodo` 는 **할 일 탭 안**에만 있다.
+       ⇒ **가방·상점·방 탭에서는 아무도 할 일을 안 말하고 있었다.**
+         그런데 ★ **그 셋이 할 일을 「하는」 곳**이다 — 시루를 끌고(가방) · 씨앗을 사고(상점) ·
+         자리를 고른다(방). **할 일을 하는 탭에 할 일이 안 보였다.**
+       ⇒ 그래서 **말하는 자리가 지금 보이나**로 바꾼다. 탭이 늘어도 규칙을 안 고친다 —
+         새 탭은 「말하는 자리가 없다」에 **저절로** 든다. 옛 방식은 탭이 늘 때마다
+         **조용히 틀려졌고, 실제로 그렇게 틀려 있었다.**
+     ══════════════════════════════════════════════════════════════════════════ */
   {
     const chip = $('questChip'), ct = $('questChipText');
     if (chip && ct) {
       const line = $('quest').textContent || '';
-      const open = $('sheet') && $('sheet').classList.contains('open');
+      /* 「보이나」는 `offsetParent` 로 묻는다 — `style.display` 만 보면 부모가 감춘 것을 못 본다
+         (바로 위 §plantsBox 가 쓰는 그 손과 같다). */
       ct.textContent = line;
-      chip.classList.toggle('on', !!line && !open);
+      /* ★ 켜는 셈은 **저쪽 한 벌**을 부른다(§syncQuestChip) — 여기서 다시 짓지 않는다.
+         ⚠ 글자를 먼저 넣고 나서 물어야 한다. 그 함수가 「글자가 있나」부터 보기 때문이다. */
+      try { window.__byeotQuestChipShould
+        ? chip.classList.toggle('on', window.__byeotQuestChipShould())
+        : chip.classList.toggle('on', !!line); } catch { }
       /* 여닫는 손도 같은 셈을 쓴다 — 두 곳이 갈리면 한쪽이 낡는다 */
       try { window.__byeotQuestChip && window.__byeotQuestChip(); } catch { }
     }
