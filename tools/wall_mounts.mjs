@@ -140,6 +140,51 @@ for (const id of ROOMS) {
    ★ 화분 때와 같은 물음이다: **물건이 한 칸에 들어가나.**
      바닥 격자는 화분 지름을 보고 칸을 나눈다(`room_view §surfaceAxis`).
      벽도 같아야 한다 — 등이 칸보다 크면 「칸 한가운데」가 뜻을 잃는다. */
+/* ══ 안 셋을 나란히 — 「무엇을 기준으로 나누나」 ═══════════════════════════
+   ⓐ 바닥과 «같은 자» 0.25m — 등은 여러 칸을 «걸친다»(place.unitsFor·snapSpan 이 이미 한다)
+   ⓑ 물건 크기로 나눈다 — room_view.surfaceAxis 와 «같은 셈»(칸이 등보다 크거나 같게)
+   ⓒ 굵은 고정 눈금 0.5m — 수는 줄지만 바닥과 자가 갈린다 */
+if (process.argv.includes('--plans')) {
+  const LAMP_W = 0.70, LAMP_T = 0.046;          // 조립된 벽부등 실제 크기
+  const axis = (len, obj) => {                   // surfaceAxis 와 같은 셈
+    let n = Math.max(1, Math.round(len / 0.25));
+    if (obj > 0) n = Math.min(n, Math.max(1, Math.floor(len / obj + 1e-9)));
+    return n;
+  };
+  console.log('');
+  console.log('== 안 셋 — 반지하 네 벽 (창·문 뺀 칸) ==');
+  const d0 = HR.rooms['banjiha'], W0 = d0.size.w, D0 = d0.size.d, H0 = d0.size.h;
+  const count = (nuOf, nvOf) => {
+    let free = 0;
+    for (const wall of WALLS) {
+      const [a, b] = spanOf(wall, W0, D0);
+      const len = b - a, nu = nuOf(len), nv = nvOf(H0);
+      const hs = holesOf(d0, wall, W0, D0);
+      for (let i = 0; i < nu; i++) for (let j = 0; j < nv; j++) {
+        const u = a + (i + 0.5) * (len / nu), v = (j + 0.5) * (H0 / nv);
+        if (hs.some(o => u > o.u0 && u < o.u1 && v > o.v0 && v < o.v1)) continue;
+        free++;
+      }
+    }
+    return free;
+  };
+  const A = count(l => Math.max(1, Math.round(l / 0.25)), h => Math.max(1, Math.round(h / 0.25)));
+  const Bc = count(l => axis(l, LAMP_W), h => axis(h, LAMP_T));
+  const C = count(l => Math.max(1, Math.round(l / 0.5)), h => Math.max(1, Math.round(h / 0.5)));
+  console.log('  ⓐ 0.25m (바닥과 같은 자)   붙일 수 있는 칸 ' + String(A).padStart(4) +
+              '   등은 ' + Math.ceil(LAMP_W / 0.25) + '칸을 걸친다');
+  console.log('  ⓑ 물건 크기로 나눔          붙일 수 있는 칸 ' + String(Bc).padStart(4) +
+              '   등이 한 칸에 «딱» 들어간다 (가로 칸 ' +
+              (5.0 / axis(5.0, LAMP_W)).toFixed(3) + 'm / ' + (4.0 / axis(4.0, LAMP_W)).toFixed(3) + 'm)');
+  console.log('  ⓒ 0.5m 고정                붙일 수 있는 칸 ' + String(C).padStart(4) +
+              '   등은 ' + Math.ceil(LAMP_W / 0.5) + '칸을 걸친다');
+  console.log('');
+  console.log('  ⚠ 바닥은 0.25m 다(place.js §GRID_CELL). ⓒ 는 «한 방에 자가 둘»이 된다.');
+  console.log('  ★ 바닥은 넓은 물건을 이미 다룬다 — place.unitsFor(m)=ceil(m/0.25) 로 칸 수를 세고');
+  console.log('    snapSpan 이 그 «묶음»을 격자에 앉힌다. ⓐ 는 그 셈을 벽에 그대로 쓰는 것이다.');
+  console.log('  ★ ⓑ 는 화분이 쓰는 셈이다(room_view §surfaceAxis) — 칸이 물건보다 크거나 같아');
+  console.log('    「칸 한가운데」가 늘 뜻을 갖는다. 다만 «벽마다 칸 크기가 달라진다».');
+}
 if (process.argv.includes('--sizes')) {
   const FP = dataOf('furniture_presets.json').presets;
   const lamps = ['growlight_bar', 'growlight_clip', 'lamp_wall'];
