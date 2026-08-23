@@ -14,6 +14,7 @@
      ★ 물어도 되는 것    무엇이 있나 · 어디 있나 · 겹치나 · 같은 글자인가
      ⛔ 물으면 안 되는 것  얼마나 «오래» · «언제» 사라지나 · 사람이 무엇을 «먼저» 보나
      ⛔ 그리고            «꺼져 있는 것은 안 찍힌다» — 「안 나왔다」가 「없다」가 아니다
+     ⛔ 넷째              ★ 돌릴 때마다 «폴더를 비운다» — 안 비우면 두 판을 한 판으로 읽는다
 
      ⇒ ★ 첫 줄이 나온 까닭: 한 판에서 나온 세 판정이 «세 번 다» 틀렸다.
        ① "열이틀에 한 번도 못 거둔다"  ← 자가 「심기」를 안 눌러서
@@ -22,6 +23,10 @@
        ⇒ ⇒ **시간이 이 자의 눈에는 안 보인다.** 배너에는 이미 6초 시계가 있었다(game.html:14305).
      ⇒ ★ 둘째 줄이 나온 까닭: 「칩이 세 탭에서 안 겹친다」로 읽었는데 **꺼져 있어서** 안 찍힌 것이었다.
        ⇒ ⚠ **「이 목록에 없다」는 「그 화면에 없다」이지 「그런 일이 없다」가 아니다.**
+     ⇒ ★ 넷째 줄이 나온 까닭: 「가계부가 day 4 인데 0~1일차라 한다」로 읽었는데
+       **다른 판의 day 1 파일**이었다. 걸음 수가 줄면 옛 파일이 남는데 폴더를 안 비웠다.
+       ⇒ ⚠⚠ **이 자는 오늘 «네 번» 거짓 그림을 냈고 앞의 셋은 남이 잡았다.**
+         ⇒ **「무엇이 나왔나」보다 「이 자가 그걸 잴 수 있나」를 먼저 물어라.**
 
    쓰기:
      BYEOT_URL=http://localhost:8963 node tools/playshot.mjs --tag core --days 12
@@ -49,6 +54,17 @@ const SIZE  = String(arg('size', '390x844'));
 const [W, H] = SIZE.split('x').map(Number);
 const BASE  = process.env.BYEOT_URL || 'http://localhost:8963';
 const OUT   = path.join(ROOT, 'tools', '_out', 'playshot', TAG);
+/* ⚠⚠ 2026-08-23 넷째 — **돌릴 때마다 폴더를 비운다.**
+   안 비웠더니 «옛 판과 새 판이 섞였다». 걸음 수가 줄면 옛 파일이 남고,
+   목록(_list.md)은 새 것만 적는데 폴더에는 둘이 함께 있다.
+   ⇒ 그 상태로 json 을 훑으면 «두 판을 한 판으로» 읽는다. 실제로 그랬다 —
+     day 1~8 의 monthSub 를 세다가 옛 판 것을 같이 셌다.
+   ★ 이 자가 오늘 네 번째로 거짓 그림을 낸 자리다. 앞의 셋은 덮개·심기·밥상창이었다. */
+if (fs.existsSync(OUT)) {
+  for (const f of fs.readdirSync(OUT)) {
+    if (/\.(png|json|md)$/.test(f)) { try { fs.unlinkSync(path.join(OUT, f)); } catch { } }
+  }
+}
 fs.mkdirSync(OUT, { recursive: true });
 
 const page = await launch({ width: W, height: H, dpr: 2, mobile: false });
