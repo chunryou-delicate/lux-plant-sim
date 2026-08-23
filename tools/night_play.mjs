@@ -452,6 +452,11 @@ const SNAP = `(()=>{ const S=window.__S(); const ts=S.tutorial||{};
         for (const p of (st.pots||[])) if (p && (p.slotId || p.sown)) return true;
       }
       return false; } catch { return false; } })(),
+    /* 심었나 — 놓기와 심기가 다른 걸음이라 따로 본다(§buy) */
+    musunSown: (()=>{ try { const fp=S.firstPlay||{};
+      for (const st of (fp.crops||[])) { if (!st || st.kind !== 'musun') continue;
+        for (const p of (st.pots||[])) if (p && p.sown) return true; }
+      return false; } catch { return false; } })(),
     /* 무순 자리를 그대로 한 줄 적어 둔다 — 「왜 안 열리나」를 짐작으로 답하지 않으려는 것 */
     musunSite: (()=>{ try { const fp=S.firstPlay||{};
       const st=(fp.crops||[]).find(x=>x&&x.kind==='musun');
@@ -464,7 +469,13 @@ const SNAP = `(()=>{ const S=window.__S(); const ts=S.tutorial||{};
     gameOver: document.getElementById('gameOver') ?
       document.getElementById('gameOver').getAttribute('aria-hidden')!=='true' : false,
     nextOff: (()=>{const n=document.getElementById('next'); return !n||n.disabled;})(),
-    quest: (()=>{ try { const q=window.__quest && window.__quest(); return q?q.id||q.ko||null:null; } catch { return null; } })()
+    /* ★ 퀘스트 사슬이 실제로 도나 — 「열린 줄」과 「끝낸 줄」을 그대로 적는다.
+       ⚠ window.__quest 는 없는 이름이었다(늘 null 이었다). __questView 가 정본이다.
+       ⚠⚠ 이 안에는 **백틱을 쓰지 않는다** — 통째로 템플릿 문자열이라 그 자리에서 깨진다.
+          오늘만 세 번 깨뜨렸다. */
+    qNow: (()=>{ try { const v=window.__questView(); return (v&&v.next&&v.next.id)||null; } catch { return null; } })(),
+    qDone: (()=>{ try { const v=window.__questView();
+      return ((v&&v.all)||[]).filter(x=>x&&x.state==='done').map(x=>x.id); } catch { return null; } })()
   }); })()`;
 const snap = async () => { try { return JSON.parse(await ev(SNAP)); } catch (e) { return { readError: String(e.message) }; } };
 
@@ -559,10 +570,13 @@ for (let d = 1; d <= DAYS; d++) {
          141일에 파산했다. 「가이드대로 놀았다」가 아니었다 — **첫 줄만 따른 것**이다.
        ⚠ 무순은 **재배판(sprout_tray) + 무 씨앗(radish_seed)** 둘이 있어야 한다
          (game.html §musunNeed 가 그 둘을 순서대로 시킨다). 하나만 사면 아무 일도 안 난다. */
-    if (PLAY === 'guided' && !before.musun) {
-      if ((before.tray || 0) < 1 && (before.radish || 0) < 1)
+    /* ⚠⚠ **놓기와 심기는 다른 걸음이다.** 앞서는 「무순이 있나」 하나로 물어서,
+       판을 놓고 나면 무 씨앗을 영영 안 샀다 — 예순 날에 [심기]가 **43번 던졌다**.
+       ⇒ 걸음마다 따로 묻는다: **판이 없으면 판을, 판은 있는데 안 심었으면 씨앗을.** */
+    if (PLAY === 'guided') {
+      if (!before.musun && (before.tray || 0) < 1)
         { if (await order('sprout_tray', 1)) R.did.buyTray = (R.did.buyTray || 0) + 1; }
-      else if ((before.radish || 0) < 1)
+      else if (before.musun && !before.musunSown && (before.radish || 0) < 1)
         { if (await order('radish_seed', 1)) R.did.buyRadish = (R.did.buyRadish || 0) + 1; }
     }
     if (needSeed) { if (await order('bean_seed', Math.max(1, (before.sirus || 1) - (before.seed || 0)))) R.did.buySeed++; }
