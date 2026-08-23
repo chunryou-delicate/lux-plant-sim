@@ -74,10 +74,26 @@ function readRun(file) {
       else dips.push({ day: days[i].day, cash: b });
     }
   }
+  /* ══ ⑤ ★★★ **무늬 잎이 몇 장까지 갔나** — 이사 자금의 «전부»가 여기서 나온다 ══════
+     `tutorial.js:130` 이 못 박아 두었다: *"콩나물은 **버티는 수단이지 이사 자금이 아니다**.
+     이사 자금은 **무늬 개체 하나를 팔아 한 번에** 만든다."*
+     ⇒ ★ 그러니 **지갑이 내려가는 것은 설계**다. 물음은 「낮아지나」가 아니라 **「얼마나 빨리」**다.
+     ⇒ ⇒ ★★ 그리고 **팔 물건이 여무느냐**가 먼저다:
+       [Plan] 실측 — 하프문 3장 그루가 **1,830,000원**인데 이사비는 **2,000,000원**이다.
+       ⇒ **최고로 키워 팔아도 170,000원이 모자란다.** 살림돈이 **남아 있을 때** 팔아야 닿는다.
+     ⇒ ⇒ ⇒ 그래서 **「몇 장까지 갔나」와 「며칠에 갔나」를 같이** 낸다 —
+       *"살림돈이 남아 있을 때 여물었나, 마른 뒤에 여물었나."* */
+  let maxVarie = 0;
+  const varieAt = [];                       // 무늬 잎이 처음 N 장이 된 날
+  for (const d of days) {
+    const v = Number.isFinite(d.varie) ? d.varie : null;
+    if (v == null) continue;
+    while (v > maxVarie) { maxVarie++; varieAt.push({ n: maxVarie, day: d.day, cash: d.cash }); }
+  }
   const last = days[days.length - 1];
   return {
     file: path.basename(file), seed: R.seed, lazy: R.lazy || 0, ended: R.ended,
-    lastDay: last.day, start, over, peaks, dips,
+    lastDay: last.day, start, over, peaks, dips, maxVarie, varieAt,
     harvests: last.harvests, sirus: last.sirus
   };
 }
@@ -89,6 +105,11 @@ if (!runs.length) { console.error('읽을 판이 없습니다'); process.exit(2)
 for (const r of runs) {
   console.log(`\n■ ${r.file} — 씨앗 ${r.seed}` + (r.lazy ? ` · 게으름 ${r.lazy}` : ' · 완벽한 사람') +
               ` · ${r.ended} · ${r.lastDay}일 · 수확 ${r.harvests} · 시루 ${r.sirus}`);
+  /* ⑤ 가 제일 먼저다 — 이사 자금의 전부가 무늬 개체 하나에서 나온다(§⑤) */
+  console.log(`  ⑤ 무늬 잎 최대 ${r.maxVarie}장` +
+    (r.maxVarie >= 3 ? ' — ★ 하프문(3장)에 닿았다 · 팔 것이 여문다'
+                     : ' — ⛔ 3장에 «안» 닿았다 · 팔 것이 «안» 여문다') +
+    (r.varieAt.length ? '  [' + r.varieAt.map(v => `${v.n}장 d${v.day}(지갑 ${v.cash.toLocaleString()})`).join(' · ') + ']' : ''));
   /* ① 이 제일 먼저다 — 다섯 다 「아니오」면 그것으로 이미 답이다 */
   console.log(`  ① 시작 자금(${r.start.toLocaleString()}원)을 넘은 적 — ` +
     (r.over.length
@@ -106,6 +127,9 @@ for (const r of runs) {
 /* 여러 판이면 한눈에 — ⚠ 파산일 평균은 **안 낸다**(운이 섞인다 · [Plan]) */
 if (runs.length > 1) {
   console.log('\n══ 한눈에 ══');
+  console.log('  ⑤ 무늬 3장에 닿은 판 — ' +
+    `${runs.filter(r => r.maxVarie >= 3).length}/${runs.length}` +
+    '  (최대 장수: ' + runs.map(r => `씨앗${r.seed}:${r.maxVarie}`).join(' · ') + ')');
   console.log('  ① 시작 자금을 넘은 판 — ' +
     `${runs.filter(r => r.over.length).length}/${runs.length}`);
   console.log('  ② 봉우리가 줄곧 낮아진 판 — ' +
