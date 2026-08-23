@@ -481,6 +481,11 @@ const SNAP = `(()=>{ const S=window.__S(); const ts=S.tutorial||{};
       }
       return false; } catch { return false; } })(),
     /* 심었나 — 놓기와 심기가 다른 걸음이라 따로 본다(§buy) */
+    /* 놓인 무순 판이 몇 개인가 — 씨앗을 그만큼 갖고 있어야 한 바퀴가 돈다 */
+    musunPots: (()=>{ try { const fp=S.firstPlay||{}; let n=0;
+      for (const st of (fp.crops||[])) { if (!st || st.kind!=='musun') continue;
+        for (const p of (st.pots||[])) if (p && (p.slotId||p.at)) n++; }
+      return n; } catch { return 0; } })(),
     musunSown: (()=>{ try { const fp=S.firstPlay||{};
       for (const st of (fp.crops||[])) { if (!st || st.kind !== 'musun') continue;
         for (const p of (st.pots||[])) if (p && p.sown) return true; }
@@ -612,10 +617,16 @@ for (let d = 1; d <= DAYS; d++) {
     if (PLAY === 'guided') {
       if (!before.musun && (before.tray || 0) < 1)
         { if (await order('sprout_tray', 1)) R.did.buyTray = (R.did.buyTray || 0) + 1; }
-      else if (before.musun && !before.musunSown && (before.radish || 0) < 1)
-        { if (await order('radish_seed', 1)) R.did.buyRadish = (R.did.buyRadish || 0) + 1; }
+      /* ⚠⚠ 앞 판이 **무 씨앗을 못 사서 심기가 95번 던졌다** — 무순 수입이 통째로 빠졌다.
+         까닭: 「안 심었을 때만」 사게 해 뒀는데, 무순은 거두면 다시 안 심은 상태가 되고
+         그때 재고가 0 이면 그날부터 계속 던진다. ⇒ **놓인 판 수만큼 늘 갖고 있게** 한다
+         (콩 씨앗과 같은 결이다). 돈이 모자라면 [＋]가 잠겨 거기서 멎는다. */
+      else if (before.musun && (before.radish || 0) < (before.musunPots || 1))
+        { if (await order('radish_seed', Math.max(1, (before.musunPots || 1) - (before.radish || 0))))
+            R.did.buyRadish = (R.did.buyRadish || 0) + 1; }
     }
-    if (needSeed) { if (await order('bean_seed', Math.max(1, (before.sirus || 1) - (before.seed || 0)))) R.did.buySeed++; }
+    /* ⚠ 앞 판은 콩 씨앗이 **44개까지 쌓였다** — 모자란 만큼만 산다(넘치면 돈이 묶인다) */
+    if (needSeed) { if (await order('bean_seed', Math.max(1, Math.min(8, (before.sirus || 1) - (before.seed || 0))))) R.did.buySeed++; }
     if (before.lampOpen && before.lamp === 0) { if (await order('growlight')) R.did.buyLamp++; }
   }
   /* 산 시루는 **가방에 온다.** 끌어다 놓아야 쓴다 — 안 놓으면 영영 가방에 남는다 */
