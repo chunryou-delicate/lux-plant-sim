@@ -32,7 +32,29 @@ export function createScene(canvas){
   sunLight.shadow.camera.near=0.5; sunLight.shadow.camera.far=50;
   const d=9; sunLight.shadow.camera.left=-d; sunLight.shadow.camera.right=d;
   sunLight.shadow.camera.top=d; sunLight.shadow.camera.bottom=-d;
-  sunLight.shadow.bias=-0.0004; sunLight.shadow.radius=11;   // 그림자 더 부드럽게(A미니멀)
+  /* ★★ 2026-08-23 — **볕이 드는 자리가 「오돌토돌」했다.** 박사님: *"버그야. 고쳐줘"*
+     ------------------------------------------------------------
+     증상: 바닥·상판에 볕이 닿는 곳이 **깨끗한 네모가 아니라 흩어진 흰 조각**으로 보였다.
+       (playshot D-2 「바닥에 흰 얼룩 — 책상 밑·의자 주변」으로 올라온 그것이다.)
+
+     ⚠ 처음엔 **텍스처가 깨진 것**으로 보고됐다. 아니다 — 해를 낮추면(daylight 0.10)
+       통째로 사라지고 올리면(0.75) **자리가 바뀐다.** 물건이 아니라 **볕**이다.
+     ⚠ 그다음엔 내가 **그림자 여드름**으로 짚고 `normalBias` 를 넣어 봤다. **안 들었다.**
+       여드름은 밝은 면에 **어두운** 줄을 만드는데 이건 어두운 바닥의 **밝은** 조각이다 —
+       **모양만 보고 아는 이름을 얹은 것**이었다. 되돌렸다.
+
+     ⇒ 진짜 원인은 **이 줄의 `radius`** 였다. `radius=11` 이었다.
+       three r128 의 `PCFSoftShadowMap` 은 `radius` 를 **쓴다**(무시하지 않는다).
+       그림자 카메라가 24m(`half=12`)를 2048 로 덮으니 한 텍셀이 1.17cm 이고,
+       11 텍셀이면 **13cm 씩 흩어 뜬다.** 볕 무늬의 가장자리가 통째로 부서졌다.
+     ⇒ **4 로 내렸다.** 재서 골랐다 — 11(부서짐) · 2(깨끗·조금 딱딱) · **4(깨끗하고 부드러움이 남음)**.
+       앞 주석의 뜻("그림자 더 부드럽게 · A미니멀")은 4 에서도 산다.
+     ★ 앞뒤 그림: `tools/_out/roomshot/BEFORE_day050.png` ↔ `TRY_r4_day050.png`
+       (`tools/_probe_roomshot.mjs` · `room_view_demo` · **게임 화면밝기 보정 없음**)
+
+     ⚠⚠ **조도 계산과는 무관하다.** lux 엔진은 그림자 맵이 아니라 `built.occluders` 로 잰다.
+       이 줄은 **그림만 고친다.** DLI 는 한 톨도 안 움직인다(재서 확인). */
+  sunLight.shadow.bias=-0.0004; sunLight.shadow.radius=4;   // 그림자 더 부드럽게(A미니멀)
   scene.add(sunLight,sunLight.target);
 
   /* ★ 창 보조 스포트라이트 — 껐다. 남겨두면 안 되는 물건이었다.
