@@ -29,6 +29,21 @@ const OUT = path.join(ROOT, 'tools', '_out', 'night');
    주기는 아래에서 「골이 몇 번 왔나」로 세므로 상수를 안 박는다. */
 const RENT_CYCLE = 30;                 // 월세 주기(일). 봉우리를 자를 창 크기로만 쓴다
 
+/* ══ ★★★ **넷째 잎이 오는 날 — d158** ═══════════════════════════════════════════
+   [growth] 가 박사님 간격표에서 냈고, 내가 실측으로 교차검산했다. 셈은 이렇다:
+     간격표(누적 «유효 생장일»)  30 · 70 · 120 · ★190 · 290       (박사님 확정)
+     도착 개체는 유효 «45» 에서 시작한다(`state.js ARRIVAL.growthDays`)
+     도착일 d13  ⇒  게임일 = 13 + (유효 − 45)
+     ⇒ 잎2 d38 · 잎3 d88 · ★ **잎4 d158** · 잎5 d258
+   ⇒ ★ 실측(씨앗 1)이 d13 · d39 · d89 — **한 칸도 안 어긋난다.** 두 창이 다른 길로 같은 수에 닿았다.
+
+   ⚠⚠ **무늬 잎 셋째 장은 넷째 잎이 «무늬여야» 온다.** 창턱은 속도 축이 안 열려(밴드 'slow')
+     무늬 확률이 **0.50 이 천장**이다 — 등을 셋 사도 안 오른다([growth] 실측).
+     ⇒ ★ 그러니 **「d158」이 아니라 「반은 d158, 반은 그 뒤」**다: 50% d158 · 25% d258 · 12.5% 그 뒤.
+   ⚠ 이 수는 **이 자가 지은 것이 아니다.** 간격표는 박사님 것이고 45 는 코어 것이다.
+     둘 중 하나가 움직이면 **여기도 같이 움직여야 한다.** */
+const LEAF4_DAY = 158;
+
 function collect(files) {
   if (files.length) return files;
   const out = [];
@@ -139,6 +154,11 @@ for (const r of runs) {
                                  : '한 번이라도 올라간 적이 있다'));
   console.log(`  ③ 고비 ${r.dips.length}번 — ` +
     (r.dips.length ? r.dips.map(d => `d${d.day} ${d.cash.toLocaleString()}`).join(' · ') : '없음'));
+  /* ④ ★ **넷째 잎 날까지 살았나** — 그게 「팔 물건이 여물 기회가 «있기라도» 했나」다 */
+  const alive = r.lastDay >= LEAF4_DAY;
+  console.log(`  ④ 넷째 잎이 오는 날(d${LEAF4_DAY})까지 — ` +
+    (alive ? `★ 살았다(d${r.lastDay}). 그때 무늬 ${r.maxVarie}장`
+           : `⛔ 못 살았다 — d${r.lastDay} 에 끝. **${LEAF4_DAY - r.lastDay}일 모자람**`));
 }
 
 /* 여러 판이면 한눈에 — ⚠ 파산일 평균은 **안 낸다**(운이 섞인다 · [Plan]) */
@@ -152,5 +172,8 @@ if (runs.length > 1) {
   console.log('  ② 봉우리가 줄곧 낮아진 판 — ' +
     `${runs.filter(r => r.peaks.every((p, i) => i === 0 || p.cash <= r.peaks[i - 1].cash)).length}/${runs.length}`);
   console.log('  ③ 고비 수 — ' + runs.map(r => `씨앗${r.seed}:${r.dips.length}`).join(' · '));
+  console.log(`  ④ 넷째 잎 날(d${LEAF4_DAY})까지 산 판 — ` +
+    `${runs.filter(r => r.lastDay >= LEAF4_DAY).length}/${runs.length}` +
+    '  (' + runs.map(r => `씨앗${r.seed}:${r.lastDay}일`).join(' · ') + ')');
   console.log('  끝난 날 — ' + runs.map(r => `씨앗${r.seed}:${r.lastDay}일(${r.ended})`).join(' · '));
 }
