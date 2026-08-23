@@ -87,11 +87,55 @@ function holesOf(def, wall, W, D) {
      **하나도 안 걸렀다** — 온실 뒷벽이 통째로 유리인데 「붙일 수 있는 칸 440」이 나왔다.
      ★ 없으면 «그 벽 전체»로 읽는다. */
   const [wa, wb] = spanOf(wall, W, D);
+  /* ⚠⚠ **도려낸 자리(`cutouts`)의 외벽은 «아예 없다».** house.js:331 —
+     *"도려낸 자리는 '집 밖'이라 바닥·천장을 안 깔고, **그 자리에 닿는 외벽 구간도 없앤다**"*.
+     ⇒ 안 빼면 **없는 벽에 칸을 그린다.** 아파트 앞벽 12m 중 7.58m 가 그렇다.
+     여기서는 「뚫린 것」과 같이 다룬다 — 붙일 데가 없다는 점에서 같다. */
+  for (const cu of (def.cutouts || [])) {
+    const x0 = Math.min(cu.x0, cu.x1), x1 = Math.max(cu.x0, cu.x1);
+    const z0 = Math.min(cu.z0, cu.z1), z1 = Math.max(cu.z0, cu.z1);
+    const EPS = 0.01;
+    if (wall === 'back'  && z0 <= -D / 2 + EPS) out.push({ kind: '도려냄', u0: x0, u1: x1, v0: 0, v1: 99 });
+    if (wall === 'front' && z1 >=  D / 2 - EPS) out.push({ kind: '도려냄', u0: x0, u1: x1, v0: 0, v1: 99 });
+    if (wall === 'left'  && x0 <= -W / 2 + EPS) out.push({ kind: '도려냄', u0: z0, u1: z1, v0: 0, v1: 99 });
+    if (wall === 'right' && x1 >=  W / 2 - EPS) out.push({ kind: '도려냄', u0: z0, u1: z1, v0: 0, v1: 99 });
+  }
   for (const g0 of (def.glassWalls || [])) {
     const g = (typeof g0 === 'string') ? { wall: g0 } : g0;
     if (g.wall !== wall) continue;
     out.push({ kind: '유리벽', u0: Number.isFinite(g.from) ? g.from : wa,
                u1: Number.isFinite(g.to) ? g.to : wb, v0: 0, v1: 99 });
+  }
+  return out;
+}
+
+/* ══ 칸막이(partitions) — **양면 다 붙일 수 있는 면**이다 ══════════════════
+   2026-08-23: 처음엔 「아직 안 본다」고만 적었다. 그러면 **얼마나 빠졌는지를 모른다.**
+   ⇒ 세어서 낸다. 안 세면 「608칸」이 방 전체인 줄 알게 된다.
+
+   데이터 모양 (`house_rooms.json §partitions`)
+     { axis:'x'|'z', at, from, to, door:{at,w,h}, glazing:{...} }
+     axis 는 **고정되는 좌표**다 — axis:'x', at:2.5 면 x=2.5 에 선 벽이고 z 로 뻗는다.
+   ⚠ `glazing.full` 이면 **통유리**라 붙일 데가 없다(아파트 베란다 칸막이가 그렇다).
+   ⚠ `from`/`to` 가 없으면 **벽에서 벽까지**다(투룸 `mid` 가 그렇다). */
+function partitionCells(def, W, D, H, cell) {
+  const out = [];
+  for (const p of (def.partitions || [])) {
+    const along = p.axis === 'x' ? D : W;                 // 뻗는 방향의 길이
+    const a = Number.isFinite(p.from) ? p.from : -along / 2;
+    const b = Number.isFinite(p.to) ? p.to : along / 2;
+    const len = b - a;
+    const glass = !!(p.glazing && p.glazing.full);
+    const nu = Math.max(1, Math.round(len / cell));
+    const nv = Math.max(1, Math.round(H / cell));
+    let free = 0;
+    if (!glass) for (let i = 0; i < nu; i++) for (let j = 0; j < nv; j++) {
+      const u = a + (i + 0.5) * (len / nu), v = (j + 0.5) * (H / nv);
+      const d = p.door;
+      if (d && u > d.at - d.w / 2 && u < d.at + d.w / 2 && v < d.h) continue;
+      free++;
+    }
+    out.push({ id: p.id || '?', len, nu, nv, glass, free: free * 2, cells: nu * nv * 2 });
   }
   return out;
 }
@@ -133,6 +177,16 @@ for (const id of ROOMS) {
     if (SHOW_CELLS && rows.length > 8) console.log('        … 그 밖 ' + (rows.length - 8) + '칸');
   }
   console.log('  ⇒ 네 벽 합 ' + tot + '칸 중 뚫린 것 ' + blocked + ' · **붙일 수 있는 칸 ' + (tot - blocked) + '**');
+  const parts = partitionCells(def, W, D, H, CELL);
+  let pFree = 0;
+  for (const p of parts) {
+    pFree += p.free;
+    console.log('  칸막이 ' + String(p.id).padEnd(9) + p.len.toFixed(2) + 'm · 칸 ' + p.nu + '×' + p.nv +
+                ' ×2면 = ' + p.cells + ' · **붙일 수 있는 칸 ' + p.free + '**' +
+                (p.glass ? '   ← 통유리라 한 칸도 못 붙인다' : (p.free < p.cells ? '   (문)' : '')));
+  }
+  if (parts.length)
+    console.log('  ⇒ ★ 네 벽 + 칸막이 = **' + ((tot - blocked) + pFree) + '칸**');
   console.log('');
 }
 
