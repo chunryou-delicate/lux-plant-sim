@@ -350,6 +350,16 @@ const rowAct = async (act, max = 8) => {
    ★ 그래도 이 줄을 «안 지운다» — 상한을 손으로 낮추는 날 이 자리가 그대로 살아나고,
      무엇보다 **「눌러 봤더니 잠겨 있더라」가 여기 적혀 있어야** 다음 사람이 또 안 헤맨다.
    ⚠ 여는 순서가 판마다 다르므로 **닫힐 때까지 몇 바퀴 돈다.** */
+/* ══ ⚠⚠⚠ **판 이름에 「무엇을 한 판인지」를 넣는다** (2026-08-23) ═══════════════
+   여태 이름이 `play_<씨앗>.json` 뿐이었다. 그래서 **팔기를 붙인 판을 씨앗 1 로 던졌더니
+   어젯밤 씨앗 1 의 140일 기록을 «말없이 덮어썼다».** `tools/_out` 은 .gitignore 라 되돌릴
+   데도 없었다(다행히 씨앗 2·3 이 같은 판이라 밑값은 남았다).
+   ⇒ ★ 이제 **한 일이 이름에 남는다** — `--tag` 를 주면 그것이, 안 주면 손버릇이 붙는다.
+   ⚠ 「덮어쓰기 전에 물어본다」로 안 푼다 — 밤새 도는 자에게 물음은 곧 멈춤이다. */
+const TAG = String(arg('tag', '') || '') ||
+            '';
+const STEM = `play_${SEED}${LAZY > 0 ? '_lazy' + LAZY : ''}${TAG ? '_' + TAG : ''}`;
+
 const clearPops = async (rounds = 6) => {
   for (let i = 0; i < rounds; i++) {
     const did = await ev(`(()=>{
@@ -892,7 +902,7 @@ await shot('end');
 /* 지금까지 것을 파일에 쏟는다 — 중간에도, 끝에도 부른다 */
 function dump() {
   /* ⚠ 게으름마다 파일을 가른다 — 안 그러면 다음 판이 앞 판을 덮어 **견줄 것이 없어진다** */
-  fs.writeFileSync(path.join(OUT, `play_${SEED}${LAZY > 0 ? '_lazy' + LAZY : ''}.json`), JSON.stringify(R, null, 1), 'utf8');
+  fs.writeFileSync(path.join(OUT, `${STEM}.json`), JSON.stringify(R, null, 1), 'utf8');
 }
 
 function finish() {
@@ -937,10 +947,10 @@ function finish() {
   if (dup.length) { lines.push(`  ⚠ 같은 대사가 두 번 뜬 자리 ${dup.length}건`); for (const x of dup.slice(0, 8)) lines.push(`     · Day ${x.days.join('·')} 「${x.text.slice(0, 50)}」`); }
   const txt = lines.join('\n');
   dump();
-  fs.writeFileSync(path.join(OUT, `play_${SEED}${LAZY > 0 ? '_lazy' + LAZY : ''}.log`), txt + String.fromCharCode(10), 'utf8');
+  fs.writeFileSync(path.join(OUT, `${STEM}.log`), txt + String.fromCharCode(10), 'utf8');
   console.log('\n' + txt);
   console.log(`
-→ ${path.relative(ROOT, path.join(OUT, `play_${SEED}${LAZY > 0 ? '_lazy' + LAZY : ''}.json`))}`);
+→ ${path.relative(ROOT, path.join(OUT, `${STEM}.json`))}`);
 }
 finish();
 await page.close();

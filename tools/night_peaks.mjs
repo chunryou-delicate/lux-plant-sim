@@ -135,11 +135,49 @@ function readRun(file) {
                      afterBestDay: best.day, afterBestCash: best.cash });
     }
   }
+  /* ══ ⑥ ★★★ **흑자로 돌아선 날 — 「실측한 본전 시루 수」** (2026-08-23) ══════════
+     ------------------------------------------------------------------
+     퀘스트 `siru16` 이 **"열여섯이면 버틴다 · 여기서부터 하루가 마이너스에서 플러스로 돈다"**
+     라고 «가르친다». 그 말이 맞는지 재는 자다. 값(`FIRST_PLAY_RULES`)으로 셈하면 **약 25개**가
+     나오는데, 셈과 견줄 수 있는 것은 **실제로 돌아선 날의 시루 수** 하나뿐이다.
+
+     ⚠⚠ **두 잣대를 «같이» 낸다. 하나로는 못 잰다.**
+       ㉮ **이레 내리 오른 첫 날** — 총괄이 물은 그 잣대다. 눈에 보이는 「돌아섬」이다.
+          ⚠ 그런데 월세가 서른 날마다 20만 원씩 «한 번에» 빠진다. 그 앞뒤로는 이레가 안 찬다.
+       ㉯ **서른 날 벌이가 처음 플러스가 된 날** — 월세 한 주기를 통째로 담는 창이라
+          **월세 덩어리에 안 흔들린다.** 「본전」이라는 말에는 이쪽이 더 가깝다.
+     ⇒ ★ 둘이 어긋나면 **㉯를 믿고 ㉮는 곁으로 읽어라.** 어긋나는 것 자체가 「월세가
+       덩어리로 온다」는 뜻이고, 그것도 판에 대해 말해 주는 값이다. */
+  let up7 = null;
+  for (let i = 1; i + 6 < days.length; i++) {
+    let ok = true;
+    for (let k = 0; k < 7; k++) if (!(days[i + k].cash > days[i + k - 1].cash)) { ok = false; break; }
+    if (ok) { up7 = days[i]; break; }
+  }
+  /* ⚠⚠⚠ **덩어리 수입이 든 창은 «세지 않는다».** 처음 붙였을 때 씨앗 3 이
+     「d91 에 서른 날 벌이가 플러스 · 시루 15개」로 나왔는데 — **그건 벌이가 아니라
+     구제금(`reliefWon` 500,000)**이었다. `did` 에 `pop:relief 1` 이 그대로 있었고
+     d91 하루에만 +351,701 이 들어왔다. ⇒ ★ 하마터면 **「본전은 15개」**라고 낼 뻔했다.
+     ⇒ 그래서 **하루에 20만 원 넘게 들어온 날**은 덩어리로 보고 그 날이 든 창을 건너뛴다.
+       (구제금 50만 · 그루 판매 백만 대 — 둘 다 「시루가 벌어들인 것」이 아니다.
+        시루로 버는 것은 한 판 3,500원짜리라 20만을 하루에 못 넘는다)
+     ⚠ 건너뛴 날은 **반드시 찍는다.** 안 찍으면 「그 구간이 원래 없었다」로 읽힌다. */
+  const LUMP = 200000;
+  const lumpDays = [];
+  for (let i = 1; i < days.length; i++)
+    if (days[i].cash - days[i - 1].cash >= LUMP) lumpDays.push(days[i].day);
+  const hasLump = (a, b) => lumpDays.some(d => d > a && d <= b);
+  let win30 = null;
+  for (let i = 0; i + RENT_CYCLE < days.length; i++) {
+    const a = days[i], b = days[i + RENT_CYCLE];
+    if (hasLump(a.day, b.day)) continue;
+    if (b.cash > a.cash) { win30 = { at: b, from: a }; break; }
+  }
   const last = days[days.length - 1];
   return {
     file: path.basename(file), seed: R.seed, lazy: R.lazy || 0, ended: R.ended,
     lastDay: last.day, start, bestDay: best.day, earlyBest, peaks, dips, maxVarie, varieAt,
-    harvests: last.harvests, sirus: last.sirus
+    harvests: last.harvests, sirus: last.sirus, up7, win30, lumpDays
   };
 }
 
@@ -174,6 +212,32 @@ for (const r of runs) {
   console.log(`  ④ 넷째 잎이 오는 날(d${LEAF4_DAY})까지 — ` +
     (alive ? `★ 살았다(d${r.lastDay}). 그때 무늬 ${r.maxVarie}장`
            : `⛔ 못 살았다 — d${r.lastDay} 에 끝. **${LEAF4_DAY - r.lastDay}일 모자람**`));
+
+  /* ⑥ ★★★ 흑자로 돌아선 날 — **그 날의 시루 수가 「실측한 본전 수」다** */
+  const S16 = 16;                      /* 퀘스트 siru16 이 가르치는 수 — 견주기만 한다 */
+  if (!r.up7 && !r.win30) {
+    console.log('  ⑥ 흑자로 돌아선 날 — ⛔ **없다.** 끝까지 한 번도 안 돌아섰다');
+    if (r.lumpDays && r.lumpDays.length)
+      console.log(`     ⚠ 덩어리 수입이 든 날은 뺐다 — ${r.lumpDays.map(d => 'd' + d).join(' · ')} ` +
+                  '(구제금·그루 판매 — 시루가 번 것이 아니다)');
+
+  } else {
+    if (r.win30) {
+      const n = r.win30.at.sirus;
+      console.log(`  ⑥ 서른 날 벌이가 처음 플러스 — d${r.win30.at.day} · 그때 시루 **${n}개** ` +
+        `(d${r.win30.from.day} ${r.win30.from.cash.toLocaleString()} → ${r.win30.at.cash.toLocaleString()})`);
+      console.log(`     ⇒ ★ **실측한 본전 수 = ${n}개** — 퀘스트가 가르치는 ${S16}개와 ` +
+        (n === S16 ? '**같다**' : `**${Math.abs(n - S16)}개 ${n > S16 ? '많다' : '적다'}** ` +
+                                  `⇒ ⚠ 게임이 «틀린 것을 가르치고» 있다`));
+    } else {
+      console.log('  ⑥ 서른 날 벌이 — ⛔ 한 번도 플러스가 안 됐다');
+    }
+    if (r.lumpDays && r.lumpDays.length)
+      console.log(`     ⚠ 덩어리 수입이 든 날은 뺐다 — ${r.lumpDays.map(d => 'd' + d).join(' · ')} ` +
+                  '(구제금·그루 판매 — 시루가 번 것이 아니다)');
+    if (r.up7) console.log(`     (곁 · 이레 내리 오른 첫 날 — d${r.up7.day} · 그때 시루 ${r.up7.sirus}개)`);
+    else       console.log('     (곁 · 이레 내리 오른 날은 없다 — 월세가 서른 날마다 덩어리로 온다)');
+  }
 }
 
 /* 여러 판이면 한눈에 — ⚠ 파산일 평균은 **안 낸다**(운이 섞인다 · [Plan]) */
