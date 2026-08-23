@@ -508,8 +508,19 @@ sellPot(S, { leaves: mother.leaves, variegatedLeaves: mother.variegatedLeaves, l
 
 ```
 이 문서            이사 자금 «1,500,000»  ⇒ 1,830,000 이면 «닿는다»
-tutorial.js:59     moveOutCostWon: ★ «2,000,000»
+★ 정본             `src/game/tutorial.js` §moveOutCostWon = «2,000,000»
 ⇒ ⛔ 1,830,000 «<» 2,000,000  —  ★ «안 닿는다»
+```
+
+> ## ★★ **이 문서가 낡은 «까닭» — 그리고 이 줄이 그 처방이다**
+> **위 표는 「셈이 이렇다」를 «담았고», 그 셈이 «어느 값에서 나왔는지»를 안 적었다.**
+> ⇒ **그래서 `moveOutCostWon` 을 고친 사람이 «여기를 찾을 길이 없었다».**
+> ⇒ ⇒ ★ **아래 표의 모든 값에 «정본 자리»를 붙인다. 다음에 값이 바뀌면 «찾아진다».**
+```
+이사 자금        `src/game/tutorial.js` §moveOutCostWon
+잎 한 장의 값     `data/balance/varie_grades.json` §grades[].leafWon
+모주 잎 한계      `tools/test_cuttable.mjs` 실측 (반지하 3장)
+등급 판정         `src/game/shop.js` §grade
 ```
 > ## ★★★★ **값이 올랐는데 «역산이 안 따라왔다».**
 ⇒ ⚠ **그리고 1,830,000 은 「반지하 모주가 낼 수 있는 «최댓값»」이다**
