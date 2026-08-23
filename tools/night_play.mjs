@@ -944,11 +944,25 @@ onWatchdog = (why) => { R.watchdog = why || true; finish(); };
 
 function finish() {
   R.endedAt = new Date().toISOString();
+  /* ══ ★★ **자가 스스로 소리를 낸다** (2026-08-23) ═══════════════════════════
+     오늘 「주석에 경고를 박는 것」이 세 번 다 소용없었다 — 읽는 사람이 없으면 경고가 아니다.
+     ⇒ ★ 그래서 **없으면 없다고 갈무리에 적는다.** 판이 끝난 뒤에야 「그게 없네」를 아는 일이
+       오늘만 두 번이었다(로그 하나 · 잎 등급 하나). 둘 다 되돌릴 수 없었다.
+     ⛔ 던져서 판을 죽이지는 않는다 — 밤새 도는 자를 사소한 것으로 멈추면 그게 더 나쁘다. */
+  const missing = [];
+  const arrived = R.days.some(d => d && d.leaves != null && d.day >= 13);
+  if (arrived && !R.days.some(d => d && d.grades)) missing.push('잎 등급(grades)');
+  if (!R.days.some(d => d && d.pantry != null)) missing.push('곳간(pantry)');
+  if (missing.length) R.missing = missing;
   /* ★ 자가 제한에 걸려 불려 왔으면 그것도 적어 둔다 — 「끝난 꼴」이 빈 채로 남으면
      다음 사람이 「끝까지 돈 판」으로 읽는다. 실제로 내가 한 번 그렇게 읽었다. */
   if (R.ended == null && R.watchdog) R.ended = 'timeout';
   const last = R.days[R.days.length - 1] || {};
   const lines = [];
+  if (R.missing && R.missing.length)
+    lines.push(`⚠⚠ **이 판에 «없는 기록»** — ${R.missing.join(' · ')}` +
+               String.fromCharCode(10) +
+               '   ⇒ ★ 창이 닫히면 되돌릴 수 없다. 다음 판을 던지기 «전»에 자에 붙여라.');
   lines.push(`■ 씨앗 ${SEED} · ${PLAY}` +
     (LAZY > 0 ? ` · 게으름 ${LAZY}` : ' · ★완벽한 사람(위쪽 한계)') +
     ` — ${R.ended}${R.blocked ? ' · ' + R.blocked : ''}`);
