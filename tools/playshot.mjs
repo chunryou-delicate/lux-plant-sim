@@ -10,6 +10,19 @@
      거의 다 겹침이었다(할 일 상자가 알림 제목을 덮음 · 같은 문장이 두 곳 · 손가락이 탭을 가림).
      ⇒ 사람이 볼 것을 줄여 준다. **판정은 안 한다 — 겹쳤다는 사실만 적는다.**
 
+   ══ ⚠⚠ 이 자가 «못 재는 것» — 2026-08-23 하루 동안 세 번 데었다 ═══════════════
+     ★ 물어도 되는 것    무엇이 있나 · 어디 있나 · 겹치나 · 같은 글자인가
+     ⛔ 물으면 안 되는 것  얼마나 «오래» · «언제» 사라지나 · 사람이 무엇을 «먼저» 보나
+     ⛔ 그리고            «꺼져 있는 것은 안 찍힌다» — 「안 나왔다」가 「없다」가 아니다
+
+     ⇒ ★ 첫 줄이 나온 까닭: 한 판에서 나온 세 판정이 «세 번 다» 틀렸다.
+       ① "열이틀에 한 번도 못 거둔다"  ← 자가 「심기」를 안 눌러서
+       ② "배너가 day 12 까지 있다"     ← 판이 안 굴러서
+       ③ "배너 수명은 사건까지다"       ← ★ 자의 6초와 사람의 6초가 달라서
+       ⇒ ⇒ **시간이 이 자의 눈에는 안 보인다.** 배너에는 이미 6초 시계가 있었다(game.html:14305).
+     ⇒ ★ 둘째 줄이 나온 까닭: 「칩이 세 탭에서 안 겹친다」로 읽었는데 **꺼져 있어서** 안 찍힌 것이었다.
+       ⇒ ⚠ **「이 목록에 없다」는 「그 화면에 없다」이지 「그런 일이 없다」가 아니다.**
+
    쓰기:
      BYEOT_URL=http://localhost:8963 node tools/playshot.mjs --tag core --days 12
      옵션  --tag <이름>   산출 폴더 이름 (창마다 다르게 — 남의 것을 안 덮는다)
@@ -158,10 +171,14 @@ const closeGuide = async () => {
    `navQuest` 가 여는 것은 `__byeotSheet` 가 «아니라» 따로 뜨는 패널이라
    `sheet.close()` 로 안 닫혔고, 그 뒤 스물일곱 걸음이 «같은 덮개 그림»이 됐다.
    ⇒ 걸음마다 «떠 있는 덮개를 전부» 닫는다. 안 닫으면 그 뒤가 통째로 헛것이다(계율 ㉛). */
+/* ⚠ 2026-08-23 둘째 — mealGo·monthGo 가 빠져 있었다. 그래서 day 6 에서 밥상 창이
+   뜬 채 멈췄고(030_날짜안감_d6) 겹침이 18 → 64 로 뛰었다. 판이 멈춘 게 아니라
+   자가 창을 못 닫은 것이다. [Plan] 이 「겹침이 세 배」로 잡아 줬다.
+   ⚠ 주석에 백틱을 쓰지 마라 — 이 함수 안은 템플릿 리터럴이라 문자열이 끊긴다(그것으로 한 번 깨졌다). */
 const closeOverlays = async () => {
   for (let round = 0; round < 6; round++) {
     const closed = await ev(`(()=>{ let n=0;
-      for (const id of ['questGo','questClose','guideClose','buyCancel','placeCancel','slotClose']) {
+      for (const id of ['mealGo','monthGo','questGo','questClose','guideClose','buyCancel','placeCancel','slotClose']) {
         const b=document.getElementById(id); if (b && b.offsetParent) { b.click(); n++; }
       }
       try { const s=window.__byeotSheet; if (s&&s.close) { s.close(); } } catch(e){}
@@ -231,6 +248,26 @@ for (let i = 0; i < DAYS * 3 && day < DAYS; i++) {
   await closeGuide();
   await closeOverlays();            /* ★ 덮개가 남아 있으면 그 뒤가 전부 같은 그림이 된다 */
   if (await talking()) { await shot('talk_d' + day); await tapTalk(); }
+  /* ★★★ 2026-08-23 — **[식물] 탭 줄의 단추를 누른다.** 여기가 빠져 있었다.
+     ⚠ 내가 누르던 `waterCrop`·`harvestCrop` 은 **화분 상세** 쪽이고,
+       심기·물주기·거두기의 «정본»은 `#siruList button[data-act=…]` 다(night_play §rowAct).
+     ⇒ 그래서 **열이틀을 굴려도 콩나물을 한 번도 못 거뒀다.** [Plan] 이 그 그림을 보고
+       「판이 첫 칸에서 못 나간다」로 읽을 뻔했다 — **판이 아니라 재는 자였다.**
+     ⚠ 순서가 있다: plant(심기) → water(물) → harvest(거두기) → sow(다시 심기). */
+  await ev(`(()=>{ const s=window.__byeotSheet; if(s){ s.open&&s.open(); s.tab&&s.tab('plants'); } })()`, false);
+  await sleep(600);
+  for (const act of ['plant', 'water', 'harvest', 'sow']) {
+    let n = 0;
+    for (let k = 0; k < 8; k++) {
+      const hit = await ev(`(()=>{ const b=[...document.querySelectorAll(
+        '#siruList button[data-act="${act}"]')].find(x=>!x.disabled && x.offsetParent);
+        if(!b) return false; b.click(); return true; })()`);
+      if (!hit) break;
+      n++; await sleep(500); await tapTalk();
+    }
+    if (n) await shot(act + '_d' + day);
+  }
+  await closeOverlays();
   /* ★ 놓을 시루가 가방에 있으면 놓는다 — 첫날은 이걸 해야 날짜가 넘어간다 */
   const idle = await ev(`(()=>{ try { const b=window.__S().firstPlay.beansprout||{};
     return (b.pots||[]).filter(p=>p && !p.slotId && !p.at && !p.harvested).length; } catch { return 0; } })()`);
@@ -248,8 +285,16 @@ for (let i = 0; i < DAYS * 3 && day < DAYS; i++) {
     return (m&&m.offsetParent?'meal':'') || (o&&o.offsetParent?'month':'') || '';})()`);
   if (panel) { await shot(panel + '_d' + day); await click('mealGo'); await sleep(700); }
   await sleep(700);
-  const nd = await ev(`(()=>{ try { return window.__S().day; } catch { return -1; } })()`);
-  if (nd === day) { await shot('날짜안감_d' + day); break; }
+  let nd = await ev(`(()=>{ try { return window.__S().day; } catch { return -1; } })()`);
+  if (nd === day) {
+    /* ★ 멈췄다고 바로 접지 않는다 — 먼저 «무엇이 떠 있는지» 찍고 닫아 본 뒤 다시 센다.
+       ⚠ 그냥 접으면 「판이 멈췄다」로 읽히는데, 실제로는 «자가 창을 못 닫은 것»일 수 있다. */
+    await shot('멈춤_뭐가떴나_d' + day);
+    await closeOverlays();
+    await click('next'); await sleep(900); await closeOverlays(); await sleep(700);
+    nd = await ev(`(()=>{ try { return window.__S().day; } catch { return -1; } })()`);
+    if (nd === day) { await shot('★진짜날짜안감_d' + day); break; }
+  }
   day = nd;
   if (day % 2 === 0 || day <= 4) await shot('day' + String(day).padStart(3, '0'));
   const over = await ev(`(()=>{const g=document.getElementById('gameOver');
