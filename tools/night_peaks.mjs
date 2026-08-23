@@ -63,20 +63,37 @@ function readRun(file) {
   const R = JSON.parse(fs.readFileSync(file, 'utf8'));
   const days = (R.days || []).filter(d => d && Number.isFinite(d.cash));
   if (!days.length) return null;
-  const start = days[0].cash;
-  /* ① 시작 자금을 넘은 적이 있나 — **첫날 자신은 안 센다**(그게 출발점이다) */
-  const over = days.slice(1).filter(d => d.cash > start);
+  /* ══ ⚠ ① 을 고쳤다 — **「첫 기록의 지갑」으로 재면 판마다 달라진다** ═══════════════
+     씨앗 1 은 첫 기록이 d0(1,500,000) 이고 씨앗 2 는 d2(1,290,000) 였다.
+     ⇒ **같은 물음에 판마다 다른 잣대**를 댄 셈이라 가로질러 못 견줬다.
+     ⇒ ★ 그래서 「시작 자금을 넘었나」가 아니라 **「지갑의 최고점이 언제였나」**로 묻는다.
+       앞쪽(열흘 안)에 있으면 **첫날이 제일 부자**라는 뜻이고, 그것이 원래 재려던 것이다.
+     ⚠ 판정은 안 바뀐다 — 씨앗 1·2 는 어느 잣대로 재도 못 넘었다. **잣대만 하나로 만든다.** */
+  const best = days.reduce((a, b) => (b.cash > a.cash ? b : a));
+  const start = best.cash;
+  const earlyBest = best.day <= 10;
   /* ② 봉우리 — 주기마다의 최고점. 창을 겹치지 않게 자른다.
      ⚠⚠ **첫날(시작 자금)은 빼고 센다.** 안 그러면 첫 창의 최고점이 늘 시작 자금이라
        「봉우리가 낮아진다」가 **공짜로 참**이 된다 — 잰 것이 아니라 정의가 그런 것이 된다.
        ⇒ ★ 첫날은 `start` 로 따로 들고, 봉우리는 **그 뒤로만** 센다. */
+  /* ⚠ ② 도 고쳤다 — **고정 창(30일)으로 자르면 «자르는 자리»를 탄다.**
+     씨앗 2 는 d91 500,000 과 d92 486,000 이 **둘 다 봉우리로 잡혀** 그 사이가 내림으로 보였다.
+     ⇒ ★ 판이 다른 것이 아니라 **자가 그런 것**이었다.
+     ⇒ 그래서 골과 같은 방식으로 **동네 최고점**을 찾고, 스무 날 안이면 같은 봉우리로 본다.
+     ⚠⚠ **그러면 봉우리가 적게 잡힌다** — 줄곧 내려가는 줄에는 동네 최고점이 «거의 없다».
+       ⇒ ★ 그러니 ②는 **「몇 개나 잡혔나」로 읽지 마라.** 잡힌 것이 적다는 것 자체가
+         「오르내리지 않고 내려가기만 한다」는 뜻이다. **①·④ 가 이 표의 뼈대**이고 ②는 곁이다. */
   const after0 = days.slice(1);
   const peaks = [];
-  for (let i = 0; i < after0.length; i += RENT_CYCLE) {
-    const win = after0.slice(i, i + RENT_CYCLE);
-    if (!win.length) continue;
-    const best = win.reduce((a, b) => (b.cash > a.cash ? b : a));
-    peaks.push({ day: best.day, cash: best.cash });
+  for (let i = 1; i < after0.length - 1; i++) {
+    const a = after0[i - 1].cash, b = after0[i].cash, c = after0[i + 1].cash;
+    /* ⚠ 지갑이 0 인 날은 봉우리가 아니다 — 죽고 나서 평평해진 구간이라
+       `b >= a && b >= c` 에 걸려 «0원 봉우리»가 잡혔다(씨앗 2 의 d130). */
+    if (b > 0 && b >= a && b >= c) {
+      const lastP = peaks[peaks.length - 1];
+      if (lastP && after0[i].day - lastP.day < 20) { if (b > lastP.cash) { lastP.day = after0[i].day; lastP.cash = b; } }
+      else peaks.push({ day: after0[i].day, cash: b });
+    }
   }
   /* ③ 고비 — **오르다 내려가 다시 오르는** 골. 마지막 0 은 골이 아니라 끝이다 */
   const dips = [];
@@ -121,7 +138,7 @@ function readRun(file) {
   const last = days[days.length - 1];
   return {
     file: path.basename(file), seed: R.seed, lazy: R.lazy || 0, ended: R.ended,
-    lastDay: last.day, start, over, peaks, dips, maxVarie, varieAt,
+    lastDay: last.day, start, bestDay: best.day, earlyBest, peaks, dips, maxVarie, varieAt,
     harvests: last.harvests, sirus: last.sirus
   };
 }
@@ -143,11 +160,9 @@ for (const r of runs) {
       ` · 그 뒤 최고 d${v.afterBestDay} ${v.afterBestCash.toLocaleString()}`);
   if (r.maxVarie < 3) console.log(`     ⇒ ⛔ 3장에 안 닿았으니 **팔 수 있었던 날이 하루도 없다**`);
   /* ① 이 제일 먼저다 — 다섯 다 「아니오」면 그것으로 이미 답이다 */
-  console.log(`  ① 시작 자금(${r.start.toLocaleString()}원)을 넘은 적 — ` +
-    (r.over.length
-      ? `★예 · ${r.over.length}일 · 제일 높았던 날 d${r.over.reduce((a, b) => b.cash > a.cash ? b : a).day} ` +
-        `${r.over.reduce((a, b) => b.cash > a.cash ? b : a).cash.toLocaleString()}원`
-      : '⛔아니오 — **첫날이 제일 부자다**'));
+  console.log(`  ① 지갑의 최고점 — d${r.bestDay} ${r.start.toLocaleString()}원` +
+    (r.earlyBest ? '  ⇒ ⛔ **첫날이 제일 부자다**(열흘 안) — 그 뒤로 한 번도 못 넘었다'
+                 : '  ⇒ ★ 중간에 더 높이 올라간 적이 있다'));
   console.log('  ② 봉우리 — ' + r.peaks.map(p => `d${p.day} ${p.cash.toLocaleString()}`).join(' → '));
   const down = r.peaks.every((p, i) => i === 0 || p.cash <= r.peaks[i - 1].cash);
   console.log('     ⇒ ' + (down ? '★ 줄곧 낮아진다 — 회복이 전보다 낮은 곳까지만 온다'
@@ -167,8 +182,8 @@ if (runs.length > 1) {
   console.log('  ⑤ 무늬 3장에 닿은 판 — ' +
     `${runs.filter(r => r.maxVarie >= 3).length}/${runs.length}` +
     '  (최대 장수: ' + runs.map(r => `씨앗${r.seed}:${r.maxVarie}`).join(' · ') + ')');
-  console.log('  ① 시작 자금을 넘은 판 — ' +
-    `${runs.filter(r => r.over.length).length}/${runs.length}`);
+  console.log('  ① 첫날이 제일 부자였던 판 — ' +
+    `${runs.filter(r => r.earlyBest).length}/${runs.length}`);
   console.log('  ② 봉우리가 줄곧 낮아진 판 — ' +
     `${runs.filter(r => r.peaks.every((p, i) => i === 0 || p.cash <= r.peaks[i - 1].cash)).length}/${runs.length}`);
   console.log('  ③ 고비 수 — ' + runs.map(r => `씨앗${r.seed}:${r.dips.length}`).join(' · '));
