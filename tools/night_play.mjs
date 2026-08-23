@@ -620,6 +620,29 @@ const SNAP = `(()=>{ const S=window.__S(); const ts=S.tutorial||{};
     /* ★ **곳간에 얼마어치 있나** — 「거둔 것이 돈이 되는가」를 이 줄 없이는 못 읽는다.
        지갑만 보면 「수확 8회인데 지갑이 안 오른다」까지만 보이고 그 뒤가 안 보였다. */
     pantry:(()=>{ try { const f=S.firstPlay; return (f&&f.food&&f.food.pantryWon!=null)?Math.round(f.food.pantryWon):null; } catch(e){ return null; } })(),
+    /* ★★★ **잎 «등급»과 그루 값** (2026-08-23) — 이것이 없어서 판 하나를 못 읽었다.
+       ⚠ 무늬는 «몇 장»이 아니라 «무슨 등급»이 값을 정한다:
+         plain 20,000 · sanban 350,000 · halfmoon 750,000 · fullmoon 1,150,000
+         그루 = 잎 값 합 × potMult 1.4 × synergy[서로 다른 무늬 등급 «종수»]
+       ⇒ ★ 산반+산반 이면 1,008,000 이라 이사비 2,000,000 에 «크게» 못 미치고,
+         산반+하프문 이면 1,960,000 이라 «사만 원» 모자란다. **같은 「무늬 2장」인데 판이 갈린다.**
+       ⚠⚠ 이 줄이 없으면 판이 끝나는 순간 그 판의 등급을 «영영» 못 본다 — 창이 닫히면 끝이다.
+         실제로 220일 판 하나를 그렇게 잃었다. */
+    /* __leafGrades() 는 { grades, potId, band } 를 낸다(game.html:10622) — 등급 줄과
+       속도 띠만 챙긴다. ⚠ 화면을 안 건드린다. 읽기용 손잡이다.
+       ⚠⚠ 이 안에는 백틱을 쓰지 않는다 — 오늘만 «네» 번째다. */
+    grades:(()=>{ try {
+      const g = window.__leafGrades && window.__leafGrades();
+      return (g && g.grades) || null;
+    } catch(e){ return null; } })(),
+    band:(()=>{ try {
+      const g = window.__leafGrades && window.__leafGrades();
+      return (g && g.band) || null;
+    } catch(e){ return null; } })(),
+    potWon:(()=>{ try {
+      const el = document.getElementById('sellPlant');
+      return el ? (el.textContent || '').replace(/\s+/g,' ').trim() : null;
+    } catch(e){ return null; } })(),
     fpDone:!!(S.firstPlay&&S.firstPlay.completed), movedOut:!!ts.movedOut,
     lamp:(ts.lamp&&ts.lamp.owned)??null, lampOpen:!!(ts.lamp&&ts.lamp.unlocked),
     seed:(S.shop&&S.shop.stock&&S.shop.stock.bean_seed)??null,
