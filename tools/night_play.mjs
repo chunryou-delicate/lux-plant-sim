@@ -739,6 +739,16 @@ for (let d = 1; d <= DAYS; d++) {
   await sleep(450); await tapTalk();
   await clearPops();            /* ★ 밥상·가계부를 지나야 비로소 날이 간다 */
   await tapTalk();
+  /* ⚠⚠ **날 넘어가는 연출이 끝나기를 기다린다.** 안 기다리면 «날이 갔는데 상태를 먼저 읽어»
+     「날짜가 안 갔다」로 읽는다 — 실측: 씨앗 2 가 d41 에서 그렇게 멈췄고, 그때 열려 있던 것이
+     `dayAnim` 하나였다. ★ 크롬을 둘 띄워 느려지자 드러났다.
+     ⇒ **판이 막힌 것이 아니라 자가 일찍 본 것**이다. 오늘 여러 번 본 그 모양이다. */
+  for (let i = 0; i < 40; i++) {
+    const on = await ev(`(()=>{const e=document.getElementById('dayAnim');
+      return !!e && e.getAttribute('aria-hidden')==='false';})()`);
+    if (!on) break;
+    await sleep(120);
+  }
 
   const after = await snap();
   R.days.push({ d, ...after });
