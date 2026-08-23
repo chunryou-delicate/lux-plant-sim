@@ -43,7 +43,11 @@ function scan(mode, lamps) {
   return stat;
 }
 const BANDS = [['몬스테라 2.7', 2.7], ['무순 최상 0.35', 0.35], ['콩나물 최상 ≤0.3', 0.3]];
-for (const [mode, lamps] of [['novice', 0], ['real', 0], ['real', 1]]) {
+/* 등 개수는 밖에서 바꿀 수 있다 — LAMPS=0,1,2,3 (기본은 novice0 · real0 · real1) */
+const CASES = process.env.LAMPS
+  ? process.env.LAMPS.split(',').map(n => ['real', Number(n)])
+  : [['novice', 0], ['real', 0], ['real', 1]];
+for (const [mode, lamps] of CASES) {
   const st = scan(mode, lamps);
   console.log('[' + mode + ' 등' + lamps + ']  자리별 7일평균  (연평균 / 연중최저 / 겨울최저)');
   for (const id of IDS) {
