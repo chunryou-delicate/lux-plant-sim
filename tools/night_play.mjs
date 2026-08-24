@@ -117,6 +117,13 @@ const beLazy = (tag) => {
   return skip;
 };
 const SIRU_MAX = Number(arg('sirus', 16));
+/* ★★ **튜토를 «끝까지» 밟는 손** (2026-08-24 · 박사님 설계)
+   튜토 끝 = 「무늬 조건(잎3 하프문)」 + 「지갑 2,000,000」이고, 그 돈을 «어떻게 모으든» 된다.
+     ⓐ pot   그루째 중고에 내놓고 연락이 오면 판다
+     ⓒ crop  아무것도 안 팔고 채소로만 모은다(지금까지의 판이 이것이다)
+   ⚠ ⓑ(삽수 일부만)는 **아직 안 붙인다** — 무엇을 자를지가 정해져야 한다.
+   ⛔ 값은 하나도 안 건드린다. 화면에 있는 단추를 «사람처럼 누를» 뿐이다. */
+const ENDING = String(arg('ending', 'crop'));
 const SIZE = `${W}x${H}`;
 const BASE = process.env.BYEOT_URL || 'http://localhost:8971';
 
@@ -482,6 +489,48 @@ const sellSurplus = async () => {
   return sold;
 };
 
+/* ══ ★★★ **그루째 내놓고 · 연락 오면 팔고 · 이사한다** (2026-08-24) ═══════════
+   ------------------------------------------------------------
+   ⚠ 「판다」가 한 번의 누름이 아니다. 눌러 보고 알았다:
+     ① `#sellPlant` 「몬스테라 내놓기」 → **중고 거래에 «올린다»**(`askListPot`)
+        ⚠ `confirmOnce` 라 **두 번 눌러야** 한다(첫 번째는 「내놓습니까?」로 바뀔 뿐이다)
+     ② 며칠 뒤 연락이 온다 (`MARKET_CONTACT_DAYS` 1~7일 · 랜덤)
+     ③ `#marketList [data-deal]` 「거래하기」를 눌러야 **비로소 돈이 들어온다**
+     ④ 그러고 `#moveOut` 「원룸으로 이사」가 열린다
+   ⇒ ★ 넷 중 하나만 빠져도 「팔았는데 돈이 없다」가 된다. 어제 그 꼴을 두 번 봤다. */
+const listPot = async () => {
+  const was = await ev(`(()=>{const s=document.getElementById('sheet');return s.classList.contains('open')?'1':'';})()`);
+  await ev(`window.__byeotSheet.open('shop')`, false); await settleSheet(true);
+  /* ⚠ 두 번 누른다 — confirmOnce 는 첫 누름에 «묻기»만 한다 */
+  const done = await ev(`(()=>{ const b=document.getElementById('sellPlant');
+    if(!b || b.disabled) return false; b.click(); b.click(); return true; })()`);
+  if (done) R.did.listPot = (R.did.listPot || 0) + 1;
+  await sleep(300); await tapTalk();
+  if (!was) { await ev(`window.__byeotSheet.close()`, false); await settleSheet(false); }
+  return done;
+};
+const takeDeal = async () => {
+  const was = await ev(`(()=>{const s=document.getElementById('sheet');return s.classList.contains('open')?'1':'';})()`);
+  await ev(`window.__byeotSheet.open('shop')`, false); await settleSheet(true);
+  const hit = await ev(`(()=>{ const b=document.querySelector('#marketList [data-deal]');
+    if(!b || b.disabled) return false; b.click(); return true; })()`);
+  if (hit) R.did.deal = (R.did.deal || 0) + 1;
+  await sleep(400); await tapTalk(); await clearPops();
+  if (!was) { await ev(`window.__byeotSheet.close()`, false); await settleSheet(false); }
+  return hit;
+};
+/* ★ 이사 — **열려 있으면 누른다.** 그 날이 곧 「튜토가 끝난 날」이다. */
+const tryMoveOut = async () => {
+  const was = await ev(`(()=>{const s=document.getElementById('sheet');return s.classList.contains('open')?'1':'';})()`);
+  await ev(`window.__byeotSheet.open('room')`, false); await settleSheet(true);
+  const hit = await ev(`(()=>{ const b=document.getElementById('moveOut');
+    if(!b || b.disabled) return false; b.click(); b.click(); return true; })()`);
+  if (hit) { R.did.moveOut = (R.did.moveOut || 0) + 1; R.movedOutOnDay = R.today; }
+  await sleep(500); await tapTalk(); await clearPops();
+  if (!was) { await ev(`window.__byeotSheet.close()`, false); await settleSheet(false); }
+  return hit;
+};
+
 /* 사람이 늘 눌러야 하는 자리들 — 한 바퀴 찔러 본다.
    ⚠ [Char] 이 320×568 에서 **탭이 통째로 화면 밖**인 것을 잡았다(가방·식물·상점·방·할 일).
      가려진 것이 아니라 나가 있다 ⇒ 좁은 기종에서는 아예 못 누른다.
@@ -639,6 +688,21 @@ const SNAP = `(()=>{ const S=window.__S(); const ts=S.tutorial||{};
       const g = window.__leafGrades && window.__leafGrades();
       return (g && g.band) || null;
     } catch(e){ return null; } })(),
+    /* ★★★ **튜토가 끝날 수 있는 날** — 이 세 줄이 오늘의 물음을 잰다.
+       moveOk  이사 단추가 «열렸나» ⇒ 처음 참이 되는 날이 곧 「튜토가 끝날 수 있는 날」
+       listed  중고에 올라간 건수 · dealOk 연락이 와서 «거래하기»가 떴나
+       potBtn  「몬스테라 내놓기」 단추 글자 — 값이 거기 적힌다
+       ⚠ 누르지 않는다. 여기서는 «보기»만 한다(누르는 것은 tryMoveOut 이 따로 한다). */
+    moveOk:(()=>{ try { const b=document.getElementById('moveOut');
+      return b ? !b.disabled : null; } catch(e){ return null; } })(),
+    listed:(()=>{ try { return document.querySelectorAll('#marketList [data-deal]').length
+      + document.querySelectorAll('#marketList .lrow').length; } catch(e){ return null; } })(),
+    dealOk:(()=>{ try { return !!document.querySelector('#marketList [data-deal]'); } catch(e){ return null; } })(),
+    potBtn:(()=>{ try { const b=document.getElementById('sellPlant');
+      return b ? ((b.textContent||'').replace(/\s+/g,' ').trim() + (b.disabled?' [잠김]':'')) : null; } catch(e){ return null; } })(),
+    /* ★ 프롤로그 못박기가 «켜졌나» — 어제는 「화분이 하나뿐」으로 «유추»했다. 유추는 기록이 아니다. */
+    prologue:(()=>{ try { const S2=window.__S(); const ps=(S2.pots||[]);
+      return !!(S2.tutorial && S2.tutorial.enabled && ps[0]); } catch(e){ return null; } })(),
     potWon:(()=>{ try {
       const el = document.getElementById('sellPlant');
       return el ? (el.textContent || '').replace(/\s+/g,' ').trim() : null;
@@ -860,6 +924,16 @@ for (let d = 1; d <= DAYS; d++) {
   /* ★★ **거둔 것을 돈으로 바꾼다** — 닷새마다 한 번이면 넉넉하다(회전이 닷새다).
      ⚠ 날마다 부르면 시트를 여닫느라 한 판이 두 배로 길어진다. */
   if (R.today % 5 === 0) { try { await sellSurplus(); } catch { } }
+  /* ★★ 튜토를 끝까지 밟는다 — ⓐ 는 「내놓기 → 연락 → 거래 → 이사」 넷을 다 밟아야 한다.
+     ⚠ ⓒ 는 안 판다. 그래도 **이사 단추는 매일 눌러 본다** — 채소로만 200만에 닿는 날이
+       언제인지가 ⓒ 의 답이고, 그건 「열렸을 때 눌러 보는 것」으로만 잰다. */
+  if (!R.movedOutOnDay) {
+    try {
+      if (ENDING === 'pot' && !R.did.listPot) await listPot();
+      if (ENDING === 'pot') await takeDeal();
+      await tryMoveOut();
+    } catch { }
+  }
   /* ⚠⚠ **날 넘어가는 연출이 끝나기를 기다린다.** 안 기다리면 «날이 갔는데 상태를 먼저 읽어»
      「날짜가 안 갔다」로 읽는다 — 실측: 씨앗 2 가 d41 에서 그렇게 멈췄고, 그때 열려 있던 것이
      `dayAnim` 하나였다. ★ 크롬을 둘 띄워 느려지자 드러났다.
