@@ -40,6 +40,37 @@ const CHECKS = [
   ['test_oneroom_room.mjs',    '원룸이 반지하보다 낫고 과하지 않은가 · 반지하 회귀']
 ];
 
+/* ============================================================
+   ★★ 검사가 «다시 찍은 그림»을 스스로 되돌린다 (2026-08-24)
+   ------------------------------------------------------------
+   `docs/engine/shots/*.png` 는 391장이 저장소에 들어 있는데 **아무도 커밋하지 않는다.**
+   그런데 검사가 돌 때마다 다시 찍어서 파일이 「고쳐진 것」이 된다.
+   ⇒ ⛔ **그러면 다른 창의 `git pull --rebase` 가 막힌다.** 2026-08-24 에 실제로 그랬다 —
+     [growth] 가 리베이스를 못 했고, 막고 있던 46장 중 **45장이 이 폴더**였다.
+
+   ★★★ 처음엔 이것을 `verify_tools.md` 에 **「돌린 뒤 되돌려라」로 적었다. 그건 «사람 쪽»이다.**
+     [growth] 가 짚었다 — *"그쪽 것만 아직 「사람 쪽」입니다. 문서에 적은 것은 «읽어야» 지켜집니다."*
+     같은 날 [core] 도 같은 데 닿았다 — *"주석에 경고를 박는 것은 «세 번 다» 소용없었고,
+     «자가 던지는 것»만 걸렸다."* ⇒ 그래서 **자가 스스로 하게** 옮겼다.
+
+   ⚠⚠ **내가 «만든» 것만 되돌린다.** 돌기 «전»에 이미 고쳐져 있던 파일은 손대지 않는다 —
+     그건 남이 하던 일일 수 있고, **남의 일을 지우면 이 자를 아무도 안 돌린다.**
+     ⇒ 그래서 앞뒤로 두 번 세고 **«늘어난 것»만** 되돌린다.
+   ⛔ `git restore <폴더>` 를 쓰지 않는다. 그러면 남의 것까지 쓸어 간다 —
+     같은 날 `tools/playshot.mjs` 가 그렇게 날아갈 뻔했다([Asset] 이 고친 진짜 작업이었다).
+   ⚠ 되돌리기 전에 파일 이름을 찍는다. **조용히 지우지 않는다.**
+============================================================ */
+const SHOTS = 'docs/engine/shots/';
+function dirtyShots() {
+  const r = spawnSync('git', ['status', '--porcelain', '--', SHOTS],
+                      { cwd: ROOT, encoding: 'utf8' });
+  if (r.status !== 0 || r.error) return null;      /* git 이 없으면 아무것도 안 한다 */
+  return new Set((r.stdout || '').split('\n')
+    .filter(l => /^ ?M/.test(l))                   /* 「고쳐진 것」만. ??(새것)은 리베이스를 안 막는다 */
+    .map(l => l.slice(3).trim()).filter(Boolean));
+}
+const shotsBefore = dirtyShots();
+
 const rows = [];
 for (const [file, why] of CHECKS) {
   const r = spawnSync(process.execPath, [path.join(ROOT, 'tools', file)],
@@ -60,6 +91,28 @@ for (const [file, why] of CHECKS) {
     if (!okRun) for (const l of out.split('\n').filter(l => /^FAIL|^\s+✘/.test(l)).slice(0, 4))
       console.log('        ' + l.trim());
   }
+}
+
+/* ---- 내가 만든 그림만 되돌린다 (위 주석) ---- */
+if (shotsBefore) {
+  const after = dirtyShots() || new Set();
+  const mine = [...after].filter(f => !shotsBefore.has(f));
+  if (mine.length) {
+    const r = spawnSync('git', ['restore', '--', ...mine], { cwd: ROOT, encoding: 'utf8' });
+    console.log('');
+    if (r.status === 0 && !r.error) {
+      console.log('  ↩ 검사가 다시 찍은 그림 ' + mine.length + '장을 되돌렸습니다 (' + SHOTS + ')');
+      console.log('     ⇒ 안 되돌리면 다른 창의 `git pull --rebase` 가 막힙니다. 아무도 커밋 안 하는 파일입니다.');
+      if (mine.length <= 6) for (const f of mine) console.log('       · ' + f);
+    } else {
+      console.log('  ⚠ 그림 ' + mine.length + '장을 못 되돌렸습니다 — 손으로 하십시오:');
+      console.log('     git restore -- ' + mine.slice(0, 3).join(' ') + (mine.length > 3 ? ' …' : ''));
+    }
+  }
+  const theirs = [...(dirtyShots() || new Set())];
+  if (theirs.length)
+    console.log('  ⚠ ' + SHOTS + ' 에 «돌기 전부터» 고쳐져 있던 것 ' + theirs.length +
+                '장은 그대로 뒀습니다 — 남의 일일 수 있습니다.');
 }
 
 const bad = rows.filter(r => !r.ok);
