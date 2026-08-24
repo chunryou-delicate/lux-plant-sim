@@ -36,6 +36,18 @@ class Handler(SimpleHTTPRequestHandler):
         if args and "GET" in str(args[0]) and ".glb" in str(args[0]):
             sys.stderr.write("%s %s\n" % (self.address_string(), args[0]))
 
+    # ★ 밖으로 열 때(--lan · 터널) 절대 나가면 안 되는 것들.
+    #   .git 은 커밋 내력 전체이고 자격증명이 섞일 수 있다. 나머지는 그냥 안 줘도 되는 것.
+    #   (2026-08-23: 박사님이 밖에서 여실 링크를 만들며 넣었다)
+    BLOCK = (".git", ".env", "node_modules", ".venv", "__pycache__")
+
+    def send_head(self):
+        parts = [p for p in self.path.split("?")[0].split("#")[0].split("/") if p]
+        if any(p in self.BLOCK or p.startswith(".env") for p in parts):
+            self.send_error(403, "blocked")
+            return None
+        return super().send_head()
+
     def handle_one_request(self):
         """★ 클라이언트가 먼저 끊어도 서버가 죽지 않게.
 
@@ -94,4 +106,12 @@ def main():
 
 
 if __name__ == "__main__":
+    # ★ cp949 콘솔에서는 ⚠ 같은 글자 하나가 print 를 죽이고, 그러면 serve_forever 에
+    #   닿기 전에 서버가 통째로 내려간다. 안내문 때문에 서버가 죽는 건 말이 안 된다.
+    #   (2026-08-23: --lan 으로 띄우다 UnicodeEncodeError 로 즉사 — 실제로 겪었다)
+    try:
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+        sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
     main()
