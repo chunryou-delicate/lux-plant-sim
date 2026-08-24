@@ -29,17 +29,25 @@ import { yearDay0Of, TUTORIAL_RULES as TR } from '../src/game/tutorial.js';
      ③ 자라는 기간  콩나물 5일 · 무순 7일 · 몬스테라 관문은 7일 이동평균
               ★ 등급이 먹는 값은 «자라는 동안의 하루 조도 평균»이다
    ────────────────────────────────────────────────────────────────── */
-function printHead(what) {
+function profileTag(prof) {
+  const rev = String(prof.roomRev || '').split(' ')[0] || '?';
+  return `자리 ${(prof.slots||[]).length}칸 · roomRev ${rev} · 잰 날 ${prof.measuredAt || (prof.measured && prof.measured.measuredAt) || (prof.size && prof.size.measuredAt) || '?'}`;
+}
+function printHead(what, prof) {
   console.log('══ ' + what);
   console.log('   ⚠ 「모드 · 등 개수 · 자라는 기간」이 다르면 다른 표다. 셋을 «같이» 옮겨라.');
   console.log('     novice = 여름·맑음 고정(첫 플레이) · real = 계절이 돈다(끝까지 가는 판)');
+  /* ★ 넷째 — 어느 «프로필»로 잰 표인가. 프로필이 다르면 그것도 다른 표다.
+     [House] 2026-08-24: "얼린 표가 두 벌인데 «둘 다 같이 낡아서» 검사가 통과하고 있었다."
+     ⇒ 같이 낡으면 아무 자도 안 운다. 그래서 자가 스스로 밝힌다. */
+  if (prof) console.log('     프로필: ' + profileTag(prof));
   console.log('');
 }
 
-printHead("자리별 조도 — 몬스테라 관문(7일 이동평균) 기준");
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const J = p => JSON.parse(fs.readFileSync(path.join(ROOT, p), 'utf8'));
 const P = J('data/profiles/room_profile.banjiha.json');
+printHead("자리별 조도 — 몬스테라 관문(7일 이동평균) 기준", P);
 const LD = { thresholds: J('data/balance/light_thresholds.json'),
              weather: J('data/balance/weather.json'), electricity: J('data/balance/electricity.json') };
 const YD0 = yearDay0Of(TR);
