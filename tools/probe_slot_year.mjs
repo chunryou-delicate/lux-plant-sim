@@ -17,6 +17,26 @@ import fs from 'node:fs'; import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createProfileLight } from '../src/game/room_profile.js';
 import { yearDay0Of, TUTORIAL_RULES as TR } from '../src/game/tutorial.js';
+
+/* ── ★ 표 머리에 박는 셋 (2026-08-24) ──────────────────────────────
+   같은 방을 재도 이 셋이 다르면 «다른 표»다. 안 밝히면 다른 창에서 반드시 오독된다.
+   실제로 세 번 났다 — 「0.58」(novice 를 real 이라 옮김) · 「무순 다섯」(real 로 재서 죽임) ·
+   7일평균 표를 콩나물(5일)에 대려다 갈릴 뻔한 것.
+
+     ① 모드   novice = 여름·맑음 «고정»(첫 플레이) / real = 계절·날씨가 돈다(끝까지 가는 판)
+              ★ 「어느 쪽이 맞나」가 아니라 «다른 판»이다
+     ② 등 개수  0/1/2/3. 등은 «위치를 못 고른다» — 개수만 고른다(growRigs.slice)
+     ③ 자라는 기간  콩나물 5일 · 무순 7일 · 몬스테라 관문은 7일 이동평균
+              ★ 등급이 먹는 값은 «자라는 동안의 하루 조도 평균»이다
+   ────────────────────────────────────────────────────────────────── */
+function printHead(what) {
+  console.log('══ ' + what);
+  console.log('   ⚠ 「모드 · 등 개수 · 자라는 기간」이 다르면 다른 표다. 셋을 «같이» 옮겨라.');
+  console.log('     novice = 여름·맑음 고정(첫 플레이) · real = 계절이 돈다(끝까지 가는 판)');
+  console.log('');
+}
+
+printHead("자리별 조도 — 몬스테라 관문(7일 이동평균) 기준");
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const J = p => JSON.parse(fs.readFileSync(path.join(ROOT, p), 'utf8'));
 const P = J('data/profiles/room_profile.banjiha.json');
