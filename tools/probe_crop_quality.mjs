@@ -28,6 +28,13 @@ const light = createProfileLight({ ...P, uidStable: true },
   { thresholds: J('data/balance/light_thresholds.json'),
     weather: J('data/balance/weather.json'), electricity: J('data/balance/electricity.json') });
 const IDS = P.slots.map(s => s.slotId);
+/* ★ 3단 선반은 «단»이 등급을 가른다 — 이름을 붙여 둔다(2026-08-24 박사님 물음) */
+const TIER = {};
+for (const s of P.slots) {
+  if (!/etagere/.test(s.slotId)) continue;
+  const y = (s.point && s.point.y) ?? 0;
+  TIER[s.slotId] = y < 0.2 ? '아랫단' : y < 0.6 ? '가운뎃단' : '윗단';
+}
 
 for (const kind of ['beansprout','musun']) {
   const HD = cropKindOf(kind).harvestDays;
@@ -46,11 +53,17 @@ for (const kind of ['beansprout','musun']) {
     }
     const N = 400-HD+1;
     console.log(`\n[${cropKindOf(kind).ko} · ${mode} 등${lamps}]  (자라는 ${HD}일 평균 → 품질)  ${N}주기`);
+    let zero=0;
     for (const id of IDS){
       const t=tally[id]; const best=((t[3]||0)/N*100), mid=((t[2]||0)/N*100), low=((t[1]||0)/N*100);
       const g = (t[3]||0)*500 + (t[2]||0)*350 + (t[1]||0)*200;
-      console.log('   '+id.padEnd(22)+'3끼 '+best.toFixed(0).padStart(3)+'% · 2끼 '+mid.toFixed(0).padStart(3)
-        +'% · 1끼 '+low.toFixed(0).padStart(3)+'%   평균 '+(g/N).toFixed(0).padStart(3)+'g');
+      if (g/N <= 0) zero++;
+      console.log('   '+id.padEnd(21)+(TIER[id]||'').padEnd(8)+'3끼 '+best.toFixed(0).padStart(3)
+        +'% · 2끼 '+mid.toFixed(0).padStart(3)+'% · 1끼 '+low.toFixed(0).padStart(3)
+        +'%   평균 '+(g/N).toFixed(0).padStart(3)+'g');
     }
+    /* ★★ 「최상 칸 수」와 「놓을 수 있는 칸 수」는 «다르다» — 이 줄이 그것을 가른다.
+       2026-08-24 에 「무순 최상은 창턱뿐」이 「무순은 창턱에서만 자란다」로 읽혔다. */
+    console.log('   ⇒ ★ 0g 인 칸 '+zero+'/'+IDS.length+' — 0 이 아니면 «자란다». 품질만 다르다');
   }
 }
