@@ -3,7 +3,7 @@
   "room": "banjiha",
   "label": "반지하",
   "uidStable": true,
-  "roomRev": "a9e2ec4 2026-08-02 창턱 화분받침 1칸",
+  "roomRev": "d0bc365 2026-08-17 반지하 셋째 등(거치형) — 그 뒤 house_rooms.json §banjiha 는 안 움직였다. 가구 프리셋 쪽 마지막은 ca3f8f8(협탁 2×2)이라 그것도 이 값에 들어 있다.",
   "lampCounts": [
     0,
     1,
@@ -37,23 +37,26 @@
       "_method": "0.25m 격자·높이 0.10~1.80m. 가구 제외. 고체 벽(외곽)·칸막이·도려낸 경계 벽 속 점은 빼고, 창·문 개구부(reveal)는 살린다 — 창턱이 실제로 그 안에 놓인다."
     },
     "slots": {
-      "peak_summer": 3.77,
-      "avg7_summer": 2.42,
-      "count": 14,
-      "sampled_peak_ratio_pct": 101,
+      "peak_summer": 3.68,
+      "avg7_summer": 2.37,
+      "verifiedAt": "2026-08-23",
+      "_verifiedAt_note": "★ 이 날 tools/test_measured_fresh.mjs 가 slots 를 다시 재서 위 값과 같은 것을 확인했다. ⚠ 이 도장은 slots 에만 찍힌다 — space·area 는 그 검사가 안 본다. 그 둘의 날짜는 measuredAt 이다.",
+      "count": 15,
+      "sampled_peak_ratio_pct": 98,
       "_sampled_note": "slots.peak ÷ space.peak. 두 값의 표본이 다르다 — space 는 0.25m 격자 위 점이고 slots 는 가구가 정한 임의 높이다. 격자 사이에 더 좋은 자리가 있으면 100%를 넘을 수 있고, 그건 오차가 아니라 표본 차이다.",
       "_method": "지금 furniture 배치 기준. 차폐에 가구 포함.",
       "bright_slot": {
         "slotId": "banjiha-sill:0",
-        "peak_summer": 3.77,
-        "avg7_summer": 2.42,
+        "peak_summer": 3.68,
+        "avg7_summer": 2.37,
         "point": {
           "x": 0,
           "y": 1.585,
-          "z": -1.95
+          "z": -1.85
         },
-        "maxPotD": 0.21,
-        "_note": "★ 첫 플레이의 '높은 창가 자리'. 창 개구부 안. 몬스테라 min 3.0 대비 +26%."
+        "maxPotD": 0.27,
+        "_note": "★ 첫 플레이의 '높은 창가 자리'. 창 개구부 안. 몬스테라 min 3.0 대비 +23%.",
+        "_remeasured_2026_08_23": "★ 이 다섯 줄이 **반만 낡아** 있었다 — 날짜·roomRev 는 08-02 인데 어두운 자리 좌표만 누군가 고쳐 두었다. 통째로 낡으면 의심하는데 반만 맞으면 믿게 된다(계율 §2.9-⑭). 그래서 **다른 파일의 3.68 을 베끼지 않고 직접 다시 쟀다**(등 0개·맑음·여름). 바뀐 것: z -1.95→-1.85(b725b8c 가 받침을 방 쪽으로 0.20 밀었다) · peak 3.77→3.68 · maxPotD 0.21→0.27 · 자리 14→15칸(23521a1 협탁). ⚠ space 쪽 값은 안 건드렸다 — 그쪽은 가구를 빼고 재므로 위 커밋들에 안 흔들린다."
       },
       "dark_slots_le_0_3": 9,
       "darkest_slot": {
@@ -81,8 +84,8 @@
       },
       "_method": "floor_m2_net = 0.25m 격자로 센 실제 바닥(외곽 벽 띠·칸막이·도려낸 자리 제외). floor_m2_gross = 외곽 치수 곱. 등 상한은 net 기준."
     },
-    "measuredAt": "2026-08-02",
-    "roomRev": "a9e2ec4 2026-08-02 창턱 화분받침 1칸",
+    "measuredAt": "2026-08-23",
+    "roomRev": "d0bc365 2026-08-17 반지하 셋째 등(거치형) — 그 뒤 house_rooms.json §banjiha 는 안 움직였다. 가구 프리셋 쪽 마지막은 ca3f8f8(협탁 2×2)이라 그것도 이 값에 들어 있다.",
     "status": "확정"
   },
   "slots": [
@@ -107,16 +110,16 @@
       "slotId": "banjiha-desk:0",
       "owner": "desk",
       "point": {
-        "x": 0.8,
+        "x": 0.875,
         "y": 0.74,
         "z": -1.375
       },
       "maxPotD": 0.47,
-      "ratio": 0.0379391,
+      "ratio": 0.0365625,
       "ppfd": [
         0,
-        6.46,
-        24.16,
+        6.17,
+        27.85,
         34.62
       ]
     },
@@ -124,16 +127,16 @@
       "slotId": "banjiha-desk:1",
       "owner": "desk",
       "point": {
-        "x": 1.8,
+        "x": 1.875,
         "y": 0.74,
         "z": -1.375
       },
       "maxPotD": 0.47,
-      "ratio": 0.0114418,
+      "ratio": 0.0101425,
       "ppfd": [
         0,
-        3.26,
-        26.51,
+        3.1,
+        22.01,
         25.39
       ]
     },
@@ -328,21 +331,20 @@
       "slotId": "banjiha-nightstand:0",
       "owner": "nightstand",
       "point": {
-        "x": 0.425,
+        "x": 0.375,
         "y": 0.48,
-        "z": -1.675
+        "z": -1.375
       },
-      "maxPotD": 0.33,
-      "ratio": 0.0187161,
+      "maxPotD": 0.47,
+      "ratio": 0.0284182,
       "ppfd": [
         0,
-        6.35,
-        12.72,
-        21.53
+        6.01,
+        11.97,
+        21.44
       ]
     }
   ],
-  "generatedAt": "2026-08-16",
-  "generatedBy": "tools/gen_room_profile.mjs (light_adapter.profile)",
-  "_note_2026_08_17_stand": "★★ 셋째 등(거치형 growlight_stand)을 더했다(박사님 요청). ⚠ **표를 통째로 다시 뽑지 않았다** — `gen_room_profile.mjs` 가 낸 값이 live 와 어긋난다(banjiha-desk:0 정지광 0.56 vs 실시간 0.58 · 등2 ppfd 27.85 vs 24.16). 그 어긋남은 오늘 생긴 것이 아니다: `test_lampmove` ①④ 가 **전부터** 그 자리에서 붉었고(16/18), 이 파일은 어느 시점에 live 쪽 값으로 맞춰져 있었다. 통째로 다시 뽑으면 생성기의 어긋남이 이 파일로 옮겨붙어 `test_banjiha_profile` 까지 붉어진다(실제로 그렇게 됐다). ⇒ 옛 칸은 **한 톨도 안 건드리고** 3등 칸(ppfd[3] · lampWatts[3]=68)만 덧댔다. ★ 남은 일: 생성기와 live 가 왜 갈리는지 — 등 기구를 가림물로 세는 쪽이 어디인지 — 를 찾아 생성기를 고치는 것이다. 그 전에는 이 파일을 --write 로 덮지 마라."
+  "generatedAt": "2026-08-24",
+  "generatedBy": "tools/gen_room_profile.mjs (light_adapter.profile)"
 }

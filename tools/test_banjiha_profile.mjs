@@ -80,15 +80,30 @@ const lightTh = JSON.parse(readFileSync(
         `desk:0` 0.61 → **0.58**. 나머지 열세 칸은 한 톨도 안 움직였다.
         ⚠ 등 1개 창턱은 7.07 → **6.02** 다 — 갈라짐 문턱 6.0 을 **여유 0.02** 로 지킨다.
    ★ 값은 손으로 안 적었다: `node tools/gen_room_profile.mjs` 가 이 표를 그대로 찍어 준다. */
+/* ★★ 2026-08-24 다시 얼렸다 — **「두 벌」 중 둘째다.**
+   ------------------------------------------------------------
+   ⚠⚠ 얼린 표가 **두 벌**이다:
+     ① `data/profiles/room_profile.banjiha.json`   ← `gen_room_profile --write` 가 쓴다
+     ② **이 `LIVE` 표**                             ← **사람이 손으로 붙인다**
+   `gen_room_profile.mjs:104` 가 ②를 **화면에 찍어 주지만 «쓰지는» 않는다.** 거기가 갈리는 자리다.
+   ★ ②는 아래 `live_vs_static` 이 **기준값**으로 읽는다 —
+     곧 **①만 갱신하면 「새 프로필 ↔ 낡은 기준」**을 견주게 된다.
+
+   ⚠⚠⚠ **그리고 그 전까지 둘 다 낡아 있었다. 그런데 이 검사는 «통과»했다.**
+     `desk:0` 0.58 · `desk:1` 0.18 · `nightstand:0` 0.29 — 세 칸이 ①에도 ②에도 같이 낡아서
+     **서로 맞았다.** ⇒ ★ **둘이 같이 낡으면 검사가 못 잡는다.** 그것을 알고 이번에 «같이» 썼다.
+
+   바뀐 세 칸의 까닭 — `ca3f8f8`(책상 다섯 열 · 협탁 2×2) · 2026-08-23 칸 정렬(`tierSlots`).
+   ★ 창턱 `sill:0` **3.68 은 그대로**다. 첫 플레이의 그 자리는 안 움직였다.
+   ★ 값은 손으로 안 적었다: `node tools/gen_room_profile.mjs` 가 찍어 준 것을 그대로 붙였다. */
 const LIVE = {
   best: 'banjiha-sill:0',
   dli: {
-    'banjiha-sill:0': 3.68, 'banjiha-desk:0': 0.58, 'banjiha-desk:1': 0.18,
-    'banjiha-dresser:0': 0.06, 'banjiha-dresser:1': 0.04,
-    'banjiha-etagere:0': 0.13, 'banjiha-etagere:1': 0.14, 'banjiha-etagere:2': 0.13,
-    'banjiha-etagere:3': 0.22, 'banjiha-etagere:4': 0.22, 'banjiha-etagere:5': 0.21,
-    'banjiha-etagere:6': 0.51, 'banjiha-etagere:7': 0.48, 'banjiha-etagere:8': 0.48,
-    'banjiha-nightstand:0': 0.29
+    'banjiha-sill:0': 3.68, 'banjiha-desk:0': 0.56, 'banjiha-desk:1': 0.16,
+    'banjiha-dresser:0': 0.06, 'banjiha-dresser:1': 0.04, 'banjiha-etagere:0': 0.13,
+    'banjiha-etagere:1': 0.14, 'banjiha-etagere:2': 0.13, 'banjiha-etagere:3': 0.22,
+    'banjiha-etagere:4': 0.22, 'banjiha-etagere:5': 0.21, 'banjiha-etagere:6': 0.51,
+    'banjiha-etagere:7': 0.48, 'banjiha-etagere:8': 0.48, 'banjiha-nightstand:0': 0.44,
   }
 };
 
