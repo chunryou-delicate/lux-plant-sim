@@ -206,11 +206,27 @@ Meshy 리깅 메시는 노드 변환이 invBind 에 baked 되어 three.js 컬링
 2026-08-03 에 Higgsfield `nano_banana_pro` 로 뽑았다. **시트 한 장에 3~4표정**을 담아
 받은 뒤 `_raw/derive3.py` 로 낱장을 뜬다. 시트당 2크레딧이라 표정 하나가 0.5~0.7크레딧이다.
 
-| 화자 | 파일 | 표정 |
-|---|---|---|
-| 자취생(여) | `portrait_jachwi_*.png` | neutral · happy · worry · cry · surprise · tired · **proud** · **think** · blank |
-| 자취생(남) | `portrait_jachwi_m_*.png` | 위와 같은 9종 |
-| 몬이 | `portrait_moni_*.png` | neutral · excited · sad · curious |
+⚠⚠ **여기 「이름」만 적어 두면 안 된다 — 2026-08-24 에 실제로 사고가 났다.**
+[Plan] 이 「담담한 얼굴이 없다」며 새로 뽑자고 했는데, **`neutral` 이 이미 그 얼굴이었다.**
+그 창은 **파일을 안 열고 이 표의 이름만** 봤고, 내 표에는 *"기본 · 안내"* 라고만 적혀 있었다.
+⇒ ★ **이름은 그림을 안 말해 준다.** 그래서 아래에 **「무엇을 하는 얼굴인가」**를 적는다.
+
+| 파일 | 무엇을 하는 얼굴인가 (그림을 열어 보고 적음) |
+|---|---|
+| `portrait_moni_neutral.png` | ★ **안 움직이는 얼굴.** 두 팔을 화분 테두리에 얹고 발까지 내려 앉아 있다. 입꼬리가 거의 안 올라가 「웃음」이라 부르기 어렵다. **몬이의 「원래 얼굴」이다** — 넷 중 유일하게 가만히 있다 |
+| `portrait_moni_excited.png` | 입을 크게 벌리고 **두 팔을 다 들었다.** 몸 전체가 반응한다 |
+| `portrait_moni_sad.png` | 눈에 눈물이 맺히고 입꼬리가 내려갔다. 몸은 웅크린다 |
+| `portrait_moni_curious.png` | 작은 `o` 입 + **한 팔만** 들기. 갸웃하는 쪽 |
+| `portrait_jachwi_neutral/happy/worry/cry/surprise/tired` | 흉상 6종. 기본 표정들 |
+| `portrait_jachwi_proud.png` | **입을 다문 잔잔한 미소.** `happy`(활짝)와 구분된다. 회상·성취 줄에 맞는다 |
+| `portrait_jachwi_think.png` | **시선을 위로 두고 입을 살짝 벌림.** 의아함 — `curious` 자리에 쓴다 |
+| `portrait_jachwi_blank.png` | 표정이 거의 없는 얼굴 |
+| `portrait_jachwi_m_*.png` | 위와 같은 9종의 남자 판. **⏸ 보류**(§7-2) |
+
+> ★ **「…나한테서.」 같은 무거운 줄에도 `neutral` 을 쓴다.** [Plan] 판정(2026-08-24):
+> *"몬이는 원래 그렇게 생겼다. **큰 말을 하는데 얼굴이 안 변하는 것**이 담담함이다.
+> 새 얼굴을 만들면 「특별한 표정을 지었다」가 되어 오히려 무거워지고,
+> 박사님이 「몬이는 계속 따라다녀」로 없앤 슬픔이 되돌아온다."*
 
 600×800 · 투명 배경. **자취생은 흉상이라 아래·좌우가 프레임 밖으로 흘러나간다**(의도).
 몬이가 프레임을 다 안 채우는 것도 의도다 — 몬이는 0.375m 로 작다.
