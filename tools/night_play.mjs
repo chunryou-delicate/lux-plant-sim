@@ -124,6 +124,8 @@ const SIRU_MAX = Number(arg('sirus', 16));
    ⚠ ⓑ(삽수 일부만)는 **아직 안 붙인다** — 무엇을 자를지가 정해져야 한다.
    ⛔ 값은 하나도 안 건드린다. 화면에 있는 단추를 «사람처럼 누를» 뿐이다. */
 const ENDING = String(arg('ending', 'crop'));
+/* 이사비 — **규칙에서 읽는다.** 자에 수를 안 박는다(오늘만 세 번 낡은 수에 데었다). */
+const MOVE_WON = (await import('../src/game/tutorial.js')).TUTORIAL_RULES.moveOutCostWon;
 const SIZE = `${W}x${H}`;
 const BASE = process.env.BYEOT_URL || 'http://localhost:8971';
 
@@ -498,6 +500,29 @@ const sellSurplus = async () => {
      ③ `#marketList [data-deal]` 「거래하기」를 눌러야 **비로소 돈이 들어온다**
      ④ 그러고 `#moveOut` 「원룸으로 이사」가 열린다
    ⇒ ★ 넷 중 하나만 빠져도 「팔았는데 돈이 없다」가 된다. 어제 그 꼴을 두 번 봤다. */
+/* ⚠⚠⚠ **너무 «일찍» 팔면 판이 끝난다** (2026-08-24 실측)
+   ------------------------------------------------------------
+   처음엔 「팔 수 있으면 곧바로」로 짰다. 그랬더니 이렇게 됐다:
+```
+     d37  잎 2장(무지1+산반1)에서 「몬스테라 내놓기 «(518,000원)»」이 열렸다
+     d38  팔았다 ⇒ 지갑 795,766 → 1,300,666 · ★ 화분수 «0»
+     ⇒ ⛔ 그루가 사라졌다. 이사비 2,000,000 은 «영영» 못 채운다. 되돌릴 수 없다
+```
+   ⇒ ★★ 이건 «두 가지»다. ㉠ 내 손버릇이 틀렸고 ㉡ 게임에 «막다른 길»이 있다.
+     ㉠ 사람은 「팔 수 있으니 판다」로 안 논다 — **「팔면 나갈 수 있을 때」 판다.**
+     ㉡ 그런데 게임은 **잎 2장에서 그 문을 연다**(`MARKET_MIN_LEAVES = 2`).
+        박사님이 삽수에서 막으려 하신 함정의 **더 큰 얼굴**이다 — 삽수는 잎 하나를 잃고,
+        그루째는 **판을 잃는다.**
+   ⇒ ★ 그래서 이 손은 **「팔면 이사비에 닿는가」를 먼저 본다.** 안 닿으면 «안 판다».
+   ⚠ 값을 안 박는다 — 이사비는 화면(`#moveOut` 언저리)이 아니라 규칙에서 오므로
+     **「팔고 나서 이사가 열리는가」로 판정할 수 없다**(팔면 되돌릴 수 없다).
+     ⇒ 단추 글자에 적힌 값과 지금 지갑을 더해 본다. 사람이 하는 것과 같은 셈이다. */
+const potWorthNow = async () => {
+  const t = await ev(`(()=>{ const b=document.getElementById('sellPlant');
+    return b ? (b.textContent||'') : ''; })()`);
+  const m = String(t).replace(/,/g, '').match(/(\d{4,})/);
+  return m ? Number(m[1]) : null;
+};
 const listPot = async () => {
   const was = await ev(`(()=>{const s=document.getElementById('sheet');return s.classList.contains('open')?'1':'';})()`);
   await ev(`window.__byeotSheet.open('shop')`, false); await settleSheet(true);
@@ -929,8 +954,14 @@ for (let d = 1; d <= DAYS; d++) {
        언제인지가 ⓒ 의 답이고, 그건 「열렸을 때 눌러 보는 것」으로만 잰다. */
   if (!R.movedOutOnDay) {
     try {
-      if (ENDING === 'pot' && !R.did.listPot) await listPot();
-      if (ENDING === 'pot') await takeDeal();
+      if (ENDING === 'pot' && !R.did.listPot) {
+        /* ★ 「팔면 나갈 수 있는가」 — 그루값 + 지금 지갑이 이사비에 닿아야 판다 */
+        const worth = await potWorthNow();
+        const cash = (R.days[R.days.length - 1] || {}).cash || 0;
+        if (worth != null && worth + cash >= MOVE_WON) await listPot();
+        else if (worth != null) R.did.potTooCheap = (R.did.potTooCheap || 0) + 1;
+      }
+      if (ENDING === 'pot' && R.did.listPot && !R.did.deal) await takeDeal();
       await tryMoveOut();
     } catch { }
   }
