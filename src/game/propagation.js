@@ -793,6 +793,34 @@ export function cutBlockedReason(S, nodes, nodeId, opt = {}) {
            `${CUTTABLE_STEMS.join('/')} 마디라야 새 생장점을 냅니다 (잎꽂이는 안 됩니다)`;
   if (!Number.isInteger(node.leaves) || node.leaves < 1)
     return `${nodeId} 에 잎이 없습니다 — 잎이 없는 조각은 뿌리 낼 에너지가 없습니다(propagation.md §3)`;
+  /* ══ ★★★ **아직 자를 때가 아니다** (2026-08-24 · 박사님 확정) ═══════════════
+     박사님: *"삽수버튼 (자르기) 생기는건 3번째 하프문 무늬잎 나와서 성숙잎 됬을때야."*
+
+     ⚠⚠ **여기 문이 «없었다».** 위 넷(용기·stem·잎 0장·총량)과 novice 의 `cutEndsMother`
+       뿐이라 **잎 두 장(무지1+산반1)에서 산반을 자를 수 있었다.** 그러면 모주에 무지 한 장만
+       남아 **20,000원짜리**가 되고 **되돌릴 수 없다.** `cutEndsMother` 는 「예비혹이 안 남는」
+       것만 보므로 그 자리를 안 막는다. `dialogue.js` 가 그 함정을 이미 적어 뒀다.
+
+     ★ 무엇으로 재나 — **「무늬이면서 «다 자란» 잎이 몇 장인가」** 하나다.
+       등급 이름('halfmoon')을 문에 **안 박는다**. 프롤로그에서는 잎2 산반 · 잎3 하프문이라
+       **둘째가 다 자라는 날이 곧 박사님이 말씀하신 그 날**이고, 원룸에서 새로 키운 그루
+       (등급이 굴림인 판)에서도 같은 뜻으로 선다.
+
+     ⚠⚠⚠ **「등급 장부(`leafGradesSeen`)」로 재면 안 된다.** 붙여 보고 알았다 —
+       그 장부는 **화면이 턴 끝에 채우므로**(`shop.js §prologueLeafGradeListOf` 가 이미
+       그렇게 적어 뒀다) 화면을 안 거치는 판에서는 **늘 비어 있다.**
+       ⇒ 실제로 `test_propagation` **열넷이 전부** 「아직 자를 수 없습니다」로 깨졌다.
+       ⇒ ★ 그래서 **부르는 쪽이 growth 의 `leafState()` 에서 세어 넘긴다**(`opt.varieMaturedLeaves`).
+         그 값은 화면과 무관한 정본이다.
+
+     ⚠ **안 넘기면 이 문은 «안 걸린다».** 모르면 안 막는다 — 이 저장소의 규약 그대로다
+       (`cuttableNodes`·`leafStats` 가 "못 재면 null, 0 으로 안 메꾼다"고 적어 둔 그 결).
+     ⚠ 삽수에서 다시 자르는 것은 이 문을 안 탄다 — 모주의 잎으로 삽수를 막을 근거가 없다. */
+  if (!opt.motherCuttingId && !opt.motherCutting &&
+      Number.isInteger(opt.varieMaturedLeaves) && opt.varieMaturedLeaves < 2)
+    /* ⚠ 값을 문장에 안 적는다 — 「둘」도 「하프문」도 읊지 않는다(§2.8). */
+    return '아직 자를 수 없습니다 — 무늬 잎이 다 자라면 삽수를 낼 수 있습니다';
+
   const b = cutBudgetOf(S, nodes, opt);
   if (b.cutNodeIds.includes(nodeId))
     return `${nodeId} 는 이미 잘라낸 마디입니다 — 같은 마디가 두 번 나오지 않습니다`;

@@ -5706,6 +5706,22 @@ function cutMotherLoss(p, n) {
 /* 모주에서 지금 실제로 자를 수 있는 마디.
    ★ 목록은 growth 소유다(io.growth.cuttableNodes). 없으면 **화면을 안 열면 된다** —
      잎 수를 여기서 지어내면 "실제 자란 것"이라는 이 기능의 뜻이 그 자리에서 사라진다. */
+/* ★★★ **무늬이면서 «다 자란» 잎이 몇 장인가** (2026-08-24 · 박사님 확정)
+   박사님: *"삽수버튼 (자르기) 생기는건 3번째 하프문 무늬잎 나와서 성숙잎 됬을때야."*
+   ⇒ 그 문은 `propagation.cutBlockedReason` 이 걸고, **세는 것은 여기서 한다.**
+   ⚠⚠ 「등급 장부」로 세면 안 된다 — 그 장부는 **화면이 채우므로** 화면을 안 거치는 판
+     (검사·헤드리스·옛 세이브)에서는 늘 비어 있다. 실제로 그렇게 붙였다가
+     `test_propagation` 열넷이 전부 깨졌다. ⇒ ★ growth 의 `leafState()` 가 정본이다.
+   ⚠ 못 재면 **null 을 낸다.** 0 으로 안 메꾼다 — 0 이면 「영영 못 자른다」가 되고,
+     그건 모르는 것을 안다고 하는 짓이다(cuttableNodes 와 같은 규약). */
+function varieMaturedLeavesNow() {
+  let rows = null;
+  try { rows = io.growth.leafState(); } catch { rows = null; }
+  if (!Array.isArray(rows)) return null;
+  let n = 0;
+  for (const r of rows) if (r && r.varie && r.matured && !r.dropped) n += 1;
+  return n;
+}
 function cutNodesNow() {
   const p = pot0(S);
   if (!p) return { nodes: null, ok: [] };
@@ -5864,7 +5880,7 @@ function drawCuttings() {
          (tools/probe_cutting_ui.mjs 가 잡았다 — 도착 직후 몬스테라가 정확히 그 상태다).
          이제 propagation.cutBlockedReason 이 그 사유까지 낸다 — **한 곳에서** 묻는다. */
       let why = null;
-      try { why = cutBlockedReason(S, nodes, n.nodeId, { potId: p.id }); } catch { }
+      try { why = cutBlockedReason(S, nodes, n.nodeId, { potId: p.id, varieMaturedLeaves: varieMaturedLeavesNow() }); } catch { }
       /* ══ ★★ 내놓은 그루는 못 자른다 (2026-08-17 · shop.js §⑦-0 §값은 올릴 때 얼린다) ══
          값이 올릴 때 얼기 때문에, 올려 둔 그루에서 잎을 떼어 내면 **잎을 따로 팔고도
          통째 값을 그대로 받는다** — `priceOf` §증명이 없앤 「떼어 팔기 이득」이 되돌아온다.
@@ -8365,7 +8381,7 @@ function cutMarks(urgent) {
       const { nodes } = cutNodesNow();
       for (const n of ok) {
         let why = null;
-        try { why = cutBlockedReason(S, nodes, n.nodeId, { potId: p.id }); } catch { why = '알 수 없음'; }
+        try { why = cutBlockedReason(S, nodes, n.nodeId, { potId: p.id, varieMaturedLeaves: varieMaturedLeavesNow() }); } catch { why = '알 수 없음'; }
         if (!why) free++;
       }
     }
