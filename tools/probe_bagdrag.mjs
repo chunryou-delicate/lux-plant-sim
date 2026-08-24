@@ -24,6 +24,14 @@ const page = await launch({ width: 390, height: 844, dpr: 1 });
 await page.goto(`${BASE}/game.html`);
 await page.eval('localStorage.clear()', false);
 await page.goto(`${BASE}/game.html`);
+/* ⚠⚠⚠ **터치 흉내를 «켜야» 한다.** 안 켜면 `Input.dispatchTouchEvent` 가
+   pointer 이벤트로 «안 바뀌고», 그러면 「터치에서 안 된다」가 **자 탓**이 된다.
+   ⇒ ★ 오늘만 그 꼴을 여러 번 봤다 — 「판이 안 되는 것」과 「자가 못 재는 것」을 갈라야 한다. */
+try {
+  await page.send('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 1 });
+  await page.send('Emulation.setEmitTouchEventsForMouse', { enabled: true, configuration: 'mobile' });
+  console.log('■ 터치 흉내 — 켰다');
+} catch (e) { console.log('⚠ 터치 흉내를 «못 켰다» —', e.message, '⇒ 아래 결과는 못 믿는다'); }
 await page.waitFor('!!window.__rv', 150000, 300);
 await sleep(4000);
 
@@ -149,6 +157,151 @@ for (const t of targets) {
   const got = (v) => !!(v && !v.err && (v.on || v.placing || v.ghost));
   console.log(`  ${String(t.ko).slice(0,12).padEnd(14)} 그림 ${mark(a)} · 귀퉁이 ${mark(b)}` +
               (got(a) && !got(b) ? '   ← 갈린다' : ''));
+}
+
+
+/* ══ ★★★ **「눌러서 놓기」는 되나** — 이것이 흠의 «크기»를 정한다 ═══════════
+   총괄 지적: 끄는 것은 안 되어도 «누르는» 길이 열려 있으면, 박사님은 «못 찾으신» 것이지
+   «안 되는» 것이 아니다. ⇒ 그러면 고칠 것이 「드래그」가 아니라 «보이게 하는 것»이 된다.
+   ⇒ ★ 그래서 «움직이지 않고» 짧게 톡 친다(touchStart → touchEnd). `pointerup` 이
+     `moved` 를 거짓으로 보고 `onTap()` 을 부르는 길이 그것이다(game.html:13529). */
+const tapAt = async (x, y) => {
+  const pt = [{ x, y, radiusX: 12, radiusY: 12, force: 1, id: 1 }];
+  await page.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: pt });
+  await sleep(80);
+  await page.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+  await sleep(260);
+  const r = await page.eval(`(()=>{ try{
+    const st = document.getElementById('stage');
+    const sheet = document.getElementById('sheet');
+    return JSON.stringify({
+      placing: !!(st && st.classList.contains('placing')),
+      hint: ((document.getElementById('placeHint')||{}).textContent||'').replace(/\s+/g,' ').trim().slice(0,40),
+      sheetOpen: !!(sheet && sheet.classList.contains('open'))
+    });
+  } catch(e){ return JSON.stringify({err:e.message}) } })()`);
+  /* 되돌린다 — 다음 칸 재기가 더러워진다 */
+  await page.eval(`(()=>{ try{ const s=document.getElementById('stage');
+    if (s && s.classList.contains('placing')) { const c=document.getElementById('placeCancel');
+      if (c) c.click(); else s.classList.remove('placing'); }
+    window.__byeotSheet.open('bag'); } catch(e){} })()`, false);
+  await sleep(500);
+  return JSON.parse(r);
+};
+
+console.log(String.fromCharCode(10) + '■ ★★ 톡 쳐서 — 「눌러서 놓기」가 열리나 (이것이 흠의 크기를 정한다)');
+for (const t of targets) {
+  const p = t.mid || t.corner;
+  const r = await tapAt(p.x, p.y);
+  const ok = r && !r.err && r.placing;
+  console.log(`  ${String(t.ko).slice(0,12).padEnd(14)} ${ok ? '✔ 열린다' : '⛔ 안 열린다'}` +
+    (r && r.hint ? `  · 안내 「${r.hint}」` : '') + (r && r.err ? '  ✘ ' + r.err : ''));
+}
+
+console.log(String.fromCharCode(10) + '■ 손잡이가 «어디»에 붙었나 — 칸(80x76) 인가 그림(44x44) 인가');
+console.log(await page.eval(`(()=>{
+  const out = [];
+  for (const cell of document.querySelectorAll('.bagslot[data-place]')) {
+    const ko = ((cell.querySelector('.nm')||{}).textContent||'?').slice(0,12);
+    const self = cell.classList.contains('draggable');
+    const inner = cell.querySelector('.draggable');
+    const r = (self ? cell : inner) ? (self ? cell : inner).getBoundingClientRect() : null;
+    out.push('  ' + ko.padEnd(14) + (self ? 'CELL' : inner ? 'IMG ' : 'NONE') +
+             (r ? '  ' + Math.round(r.width) + 'x' + Math.round(r.height) : ''));
+  }
+  return out.join(String.fromCharCode(10));
+})()`));
+
+
+/* ══ ★★★ **자를 먼저 시험한다** — 「터치가 아예 안 먹는 자」인지 가른다 ═══════════
+   ⚠⚠ 위에서 「톡 쳐도 전부 안 열린다」가 나왔다. 그런데 그것이 «판»의 말인지
+     «자»의 말인지 아직 모른다. ⇒ ★ 그래서 **틀림없이 되는 것**을 같은 손으로 눌러 본다.
+     탭 단추가 터치로 안 눌리면 **자가 못 누르는 것**이고, 위 결과는 통째로 못 믿는다. */
+console.log(String.fromCharCode(10) + '■ ★★★ 자 시험 — 틀림없이 되는 것을 같은 손으로 눌러 본다');
+const ctl = JSON.parse(await page.eval(`(()=>{
+  const b = document.getElementById('tabShop');
+  if (!b) return JSON.stringify({ err: 'tabShop 없음' });
+  const r = b.getBoundingClientRect();
+  return JSON.stringify({ x: Math.round(r.left + r.width/2), y: Math.round(r.top + r.height/2) });
+})()`));
+if (ctl.err) console.log('  ✘', ctl.err);
+else {
+  await page.send('Input.dispatchTouchEvent', { type: 'touchStart',
+    touchPoints: [{ x: ctl.x, y: ctl.y, radiusX: 12, radiusY: 12, force: 1, id: 1 }] });
+  await sleep(80);
+  await page.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+  await sleep(400);
+  const sel = await page.eval(`(()=>{ const b=document.getElementById('tabShop');
+    return b ? String(b.getAttribute('aria-selected')) : 'null'; })()`);
+  console.log('  [상점] 탭을 터치로 눌렀다 ⇒ aria-selected =', sel,
+    sel === 'true' ? '  ✔ 자는 터치로 누를 수 있다 — 위 결과를 믿어도 된다'
+                   : '  ⛔ ★ 자가 터치로 못 누른다 — 위 결과는 «통째로» 못 믿는다');
+  await page.eval(`window.__byeotSheet.open('bag')`, false); await sleep(400);
+}
+
+
+/* ══ ★★★ **그 점에서 «무엇이» 잡히나** — 덮인 것인지 가른다 ═══════════════════
+   자가 터치로 [상점] 탭을 누를 수 있는 것은 확인했다(대조군 통과).
+   그런데 가방 칸은 끌기도 누르기도 안 된다. ⇒ ★ 그러면 **손가락이 그 칸에 안 닿는** 것일 수 있다.
+   ⇒ `document.elementFromPoint` 로 그 점에서 실제로 무엇이 잡히는지 본다.
+     오늘 아침 「덮였나」를 재던 그 자와 같은 길이다. */
+console.log(String.fromCharCode(10) + '■ ★★ 그 점에서 무엇이 잡히나 — 칸 자신이면 안 덮인 것이다');
+console.log(await page.eval(`(()=>{
+  const out = [];
+  for (const cell of document.querySelectorAll('.bagslot[data-place]')) {
+    const ko = ((cell.querySelector('.nm')||{}).textContent||'?').slice(0,12);
+    const r = cell.getBoundingClientRect();
+    const x = Math.round(r.left + r.width/2), y = Math.round(r.top + r.height/2);
+    const hit = document.elementFromPoint(x, y);
+    const inCell = !!(hit && cell.contains(hit));
+    const tag = hit ? (hit.tagName.toLowerCase() + (hit.id ? '#' + hit.id : '') +
+                       (hit.className && typeof hit.className === 'string'
+                         ? '.' + hit.className.trim().split(/\s+/).slice(0,2).join('.') : '')) : 'null';
+    out.push('  ' + ko.padEnd(14) + (inCell ? 'OK   ' : 'COVER') + '  ' + tag.slice(0, 46));
+  }
+  return out.join(String.fromCharCode(10));
+})()`));
+
+
+/* ══ ★★★★ **좌표를 «그때그때» 다시 읽고 다시 잰다** ═══════════════════════════
+   ⚠⚠ 위 두 자리는 `targets` 를 **한 번 계산해 두고** 썼다. 그런데 그 사이에 시트를
+     여닫았다 — 시트는 `transform` 으로 «미끄러진다». ⇒ ★ 오늘 아침 `settleSheet` 로
+     겪은 그 병이다: **아직 미끄러지는 중에 찍으면 엉뚱한 자리를 짚는다.**
+   ⇒ 그래서 다시 잰다 — **찍기 «직전»에 그 칸의 자리를 다시 읽고**, 시트가 멎었는지 보고. */
+console.log(String.fromCharCode(10) + '■ ★★★★ 다시 — 자리를 그때그때 읽어서 (앞의 두 표는 못 믿는다)');
+const settle = async () => {
+  let last = null;
+  for (let i = 0; i < 30; i++) {
+    const t = await page.eval(`(()=>{const s=document.getElementById('sheet');
+      return String(Math.round(s.getBoundingClientRect().top));})()`);
+    if (t === last) return true;
+    last = t; await sleep(100);
+  }
+  return false;
+};
+await page.eval(`window.__byeotSheet.open('bag')`, false);
+await settle();
+const names = JSON.parse(await page.eval(`(()=>JSON.stringify(
+  [...document.querySelectorAll('.bagslot[data-place]')].map(c => c.getAttribute('data-place'))))()`));
+for (const what of names) {
+  await page.eval(`window.__byeotSheet.open('bag')`, false);
+  await settle();
+  const pt = JSON.parse(await page.eval(`(()=>{
+    const c = document.querySelector('.bagslot[data-place="${what}"]');
+    if (!c) return JSON.stringify({err:'칸 없음'});
+    const h = c.querySelector('.draggable') || (c.classList.contains('draggable') ? c : null) || c;
+    const r = h.getBoundingClientRect();
+    const ko = ((c.querySelector('.nm')||{}).textContent||'?').slice(0,12);
+    return JSON.stringify({ ko, x: Math.round(r.left + r.width/2), y: Math.round(r.top + r.height/2),
+                            w: Math.round(r.width), h: Math.round(r.height) });
+  })()`));
+  if (pt.err) { console.log('  ✘', what, pt.err); continue; }
+  const dragged = await touchAt(pt.x, pt.y);
+  await page.eval(`window.__byeotSheet.open('bag')`, false); await settle();
+  const tapped = await tapAt(pt.x, pt.y);
+  console.log(`  ${String(pt.ko).padEnd(14)} 손잡이 ${pt.w}x${pt.h} @${pt.x},${pt.y}` +
+    `  · 끌기 ${dragged && dragged.on ? '✔ drag.on' : '⛔'}` +
+    `  · 톡 ${tapped && tapped.placing ? '✔ placing' : '⛔'}`);
 }
 
 await page.close(); clearTimeout(wd);

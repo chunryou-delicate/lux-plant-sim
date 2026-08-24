@@ -11604,7 +11604,24 @@ const drag = {
          `resowCrop` 이 이력을 되살린 뒤 놓는 길로 가므로 코어가 막지 않는다. */
     const canFree = !!(roomView && roomView.surfaceAt);
     const sowing = what === 'beansprout' && spareSiru() > 0;
-    if (sel.disabled && !sowing) return;
+    /* ⚠⚠⚠ 2026-08-25 — **여기서 「잠김」을 안 풀고 있었다** (박사님: *"인벤 몬스테라가 드래그가안됰"*)
+       ══════════════════════════════════════════════════════════════════
+       바로 위 2026-08-08 주석이 **「목록이 비어도 끈다」**를 풀어 놨는데, **「목록이 잠겼어도」**는
+       안 풀었다. 그래서 이 줄이 **아래 `canFree` 가지에 닿기 «전»에** 되돌아갔다.
+       ⇒ 실측(`tools/probe_bagdrag.mjs` · `#slot` 상태):
+```
+         #slot(몬스테라)  disabled «true»  · 자리 15   ⇒ ⛔ 화분 셋이 여기서 막혔다
+         #cropSlot(콩나물) disabled false            ⇒ ✔ 끌린다
+         #musunSlot(무순)  disabled false · 자리 «0»  ⇒ ✔ 비었지만 canFree 로 통과한다
+         canFree true
+```
+       ⇒ ★ 그래서 **검은 모종포트·테라코타·크림도자기**만 「잡히지도 않았다」.
+         「인벤 몬스테라」가 그 화분이다.
+       ⚠ 그리고 이것은 **터치만의 흠이 아니다** — 마우스도 같은 `begin` 을 탄다.
+         손잡이(`.draggable`)는 걸려 있어서 «걸린 것처럼» 보였을 뿐이다.
+         ★ 「걸렸다」와 「먹는다」는 다르다 — 오늘 이 방이 여러 번 본 그 갈래다.
+       ⇒ **자유 배치를 할 수 있으면 목록이 «비었든 잠겼든» 끈다.** 바닥은 목록과 무관하다. */
+    if (sel.disabled && !sowing && !canFree) return;
     if (!ids.length && !canFree) return;
     this.on = true; this.what = what; this.sel = sel; this.valid = ids; this.best = null;
     this.potId = potId || null;                 /* ★ 끝까지 나른다(§commitPlace opt.potId) */
