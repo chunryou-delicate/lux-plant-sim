@@ -2320,6 +2320,24 @@ export function advanceBeansproutDay(fp, dli, opt = {}) {
          표에 없으면 자리 대표값(옛 뜻 그대로)으로 떨어진다 — 옛 호출부·옛 검사가 안 깨진다.
          ⚠ **조도를 여기서 새로 재지 않는다.** 표는 하루치 계약(daily_light/1)이 낸 값을
            `loop.js` 가 시루마다 뽑아 넘긴 것이다. 이 파일은 빛을 만들지 않는다. */
+      /* ⚠⚠⚠ **표를 줬는데 그 시루가 표에 없으면 «던진다»** (2026-08-24 실측)
+         ------------------------------------------------------------
+         [House] 가 「받는 쪽이 대표값을 읽는 길이 있나」를 물어 와서 **재 봤다.** 둘 다 나왔다:
+```
+           표에 «있으면»   시루 A 0.05 · 시루 B 2.0  ⇒ ✔ 자리마다 제 빛을 받는다
+           표에 «없으면»   free:crop_02 가 A 의 0.05 를 받았다 ⇒ ⛔ 조용히 대표값으로 떨어진다
+```
+         ⇒ ★ `loop.js` 를 거치면 `cropDliFromReport` 가 «던지므로» 이 낙하가 안 난다.
+           ⚠ **딱 한 길만 빼고** — `loop.js` 가 `if (!p || !p.slotId) continue` 로 «건너뛴다».
+             그런데 `cropPotPlaced` 는 `slotId || at` 이라 **`at` 만 있는 시루도 「놓인 것」**이다.
+             ⇒ ⇒ 그런 시루는 표에 안 실리고, 여기서 **조용히 남의 자리 빛으로 자란다.**
+         ⇒ ★★ 그래서 **소리를 내게 한다.** 오늘 배운 처방 그대로다 —
+           「주석에 경고를 박는 것」은 세 번 다 소용없었고, **자가 던지는 것**만 걸렸다.
+         ⚠ `bySlot` 을 «안 준» 옛 호출부는 예전 그대로다 — 표가 없으면 대표값이 맞는 값이다. */
+      if (bySlot && (p.slotId == null || bySlot[p.slotId] == null))
+        throw new Error(`[첫 플레이] ${cropKindOf(kindId).ko} ${p.id} 가 자리 표에 없습니다 ` +
+                        `(자리 ${p.slotId == null ? '없음' : p.slotId}) — ` +
+                        '남의 자리 빛으로 자라면 품질이 조용히 틀립니다');
       const dv = bySlot && p.slotId != null && bySlot[p.slotId] != null ? bySlot[p.slotId] : v;
       if (!validDli(dv))
         throw new Error(`[첫 플레이] ${cropKindOf(kindId).ko} ${p.id} 자리의 DLI가 ` +
