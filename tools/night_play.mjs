@@ -713,6 +713,32 @@ const SNAP = `(()=>{ const S=window.__S(); const ts=S.tutorial||{};
       const g = window.__leafGrades && window.__leafGrades();
       return (g && g.band) || null;
     } catch(e){ return null; } })(),
+    /* ★★★ **잎마다 「얼마나 자랐나」**(leafM) — 2026-08-26
+       박사님: 그루값은 «자란 정도에 따라» 달리 책정한다.
+         leafM = clamp01((T - leafBirth) / matSpan)   (plant_grow §leafM · 렌더러가 쓰는 값)
+       ⚠ 셋이 다 있어야 셈이 된다 — leafStats().growthDays · leafStageParams().matSpan · leafState()[].leafBirth
+       ⚠ 못 읽으면 null 이다. 0 이나 1 로 «안 메꾼다» — 0 이면 「다 안 자랐다」,
+         1 이면 「다 자랐다」가 되어 그루값이 통째로 틀린다.
+       ⚠⚠ 이 안에는 백틱을 쓰지 않는다 — 브라우저 쪽 템플릿 안이다. */
+    leafM:(()=>{ try {
+      const g = window.__io && window.__io.growth; if (!g) return null;
+      const st = g.leafStats && g.leafStats();
+      const par = g.leafStageParams && g.leafStageParams();
+      const rows = g.leafState && g.leafState();
+      if (!st || !par || !Array.isArray(rows)) return null;
+      const T = st.growthDays, span = par.matSpan;
+      if (!Number.isFinite(T) || !Number.isFinite(span) || span <= 0) return null;
+      return rows.filter(r => r && !r.dropped).map(r => ({
+        lb: r.leafBirth,
+        m: Math.round(Math.max(0, Math.min(1, (T - r.leafBirth) / span)) * 100) / 100,
+        v: !!r.varie, mat: !!r.matured
+      }));
+    } catch(e){ return null; } })(),
+    growthT:(()=>{ try {
+      const g = window.__io && window.__io.growth;
+      const st = g && g.leafStats && g.leafStats();
+      return st && Number.isFinite(st.growthDays) ? st.growthDays : null;
+    } catch(e){ return null; } })(),
     /* ★★★ **튜토가 끝날 수 있는 날** — 이 세 줄이 오늘의 물음을 잰다.
        moveOk  이사 단추가 «열렸나» ⇒ 처음 참이 되는 날이 곧 「튜토가 끝날 수 있는 날」
        listed  중고에 올라간 건수 · dealOk 연락이 와서 «거래하기»가 떴나
