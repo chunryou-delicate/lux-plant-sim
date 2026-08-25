@@ -379,6 +379,27 @@ export function createGrowthAdapter(iframe) {
       return (s && typeof s === 'object' && !Array.isArray(s)) ? s : null;
     },
 
+    /* ★★ **잎 자람의 눈금** (2026-08-26 · 박사님 *"그루값은 «자란 정도에 따라» 달리 값을 책정한다"*)
+       반환 `{ matSpan, stageYoung, stageMid, spawnStep, seedEnd, petGrow }` 또는 **null**.
+
+       ⚠ 왜 이어야 하나 — 「자란 정도」를 셈하려면 **셋이 다 있어야** 한다:
+```
+         leafStats().growthDays    지금 T
+         ★ leafStageParams().matSpan  나눌 폭      ← 이것이 «안 나와 있었다»
+         leafState()[].leafBirth   잎마다 태어난 때
+         ⇒ leafM = clamp01((T − leafBirth) / matSpan)     (plant_grow §leafM — 렌더러가 쓰는 그 값)
+```
+       ⇒ ★ 실측(`tools/probe_leafm.mjs`)이 그 자리에서 멈췄다 — 「leafStageParams: false」.
+       ⚠ 못 읽으면 **null 이다. 값을 지어내지 않는다** — `leafStats`·`cuttableNodes` 와 같은 규약.
+         0 이나 1 로 메꾸면 「다 안 자랐다」나 「다 자랐다」가 되어 **그루값이 통째로 틀린다.**
+       ⚠⚠ 그리고 이 창구는 **값을 안 정한다.** 「어떻게 비례할까」는 부르는 쪽 몫이다. */
+    leafStageParams() {
+      const f = fn('leafStageParams');
+      if (!f) return null;
+      const p = f();
+      return (p && typeof p === 'object' && !Array.isArray(p)) ? p : null;
+    },
+
     /* ★★ 잎별 상태 — **방이 확대창과 같은 그루를 그리게 하는 값** (2026-08-16).
        반환 `[{ leafBirth, varie, matured, fade, dropped }]` 또는 접근자가 없으면 **null**.
 
