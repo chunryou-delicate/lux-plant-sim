@@ -77,6 +77,19 @@ GROUPS = [
          ["portrait_moni_neutral", "portrait_moni_excited",
           "portrait_moni_sad", "portrait_moni_curious"]),
     ]),
+    # ★★ 2026-08-26 — 「알아보는 놀람」 한 장. **별도 그룹**이다.
+    #   ⚠ 처음엔 위 그룹에 같이 넣었더니 **기존 넷이 다 바뀌었다**(배율 x1.078).
+    #     배율은 «그룹 안 head_width 중앙값»으로 정해지는데, 새 그림이 그 중앙값을
+    #     끌어당긴 것이다. ⇒ **한 장을 더하려다 넷을 흔들 뻔했다.**
+    #   ⇒ 그룹을 갈라 기존 넷은 손대지 않는다. 대신 **새 그림이 기존과 같은 크기인지**
+    #     따로 재야 한다 — 그룹이 다르면 서로 맞춰 주지 않는다.
+    # fit_like = (전체높이, 바닥y) — 위 그룹(몬이 넷)의 실측 중앙값이다.
+    #   ⚠ 그 넷이 바뀌면 이 수도 다시 재야 한다. 안 그러면 놀람만 크기가 어긋난다.
+    dict(mode="whole", target_bw=612, fit_like=(383.5, 622), sheets=[
+        # target_bw 는 위 그룹(몬이 넷)이 실제로 쓴 기준값이다.
+        # 아래 「기준값 재기」 주석 참조. 여기 수를 바꾸면 크기가 어긋난다.
+        ("v4_moni_surprise_a_raw.png", 1, ["portrait_moni_surprise"]),
+    ]),
 ]
 
 
@@ -227,7 +240,12 @@ def collect(group):
     for s in {it["sheet"] for it in items}:
         med[s] = statistics.median(it["bw"] for it in items
                                    if it["sheet"] == s)
-    target = statistics.median(med.values())
+    # ★ 그룹이 「기준 머리폭」을 못박아 둘 수 있다.
+    #   ⚠ 안 그러면 **그룹이 다르면 서로 크기가 안 맞는다.**
+    #     실제로 「놀람」을 별도 그룹으로 뺐더니 머리폭 301 이 나왔다 —
+    #     기존 넷은 186~191 이라 나란히 놓으면 몬이가 커 보인다.
+    #   ⇒ 같은 인물을 여러 그룹으로 나눌 때는 **기준을 손으로 물려야** 한다.
+    target = group.get("target_bw") or statistics.median(med.values())
     for it in items:
         it["s"] = target / med[it["sheet"]]
         print(f"    {it['name']:32s} 머리폭 {it["bw"]:6.0f}  보정 x{it['s']:.3f}")
@@ -271,6 +289,36 @@ def lay_whole(items):
     return out
 
 
+def fit_like(im, want_bw, want_bottom):
+    """★ 이미 만들어진 낱장을 **다른 그룹의 결과에 맞춘다.**
+
+    ⚠ 왜 필요한가 — `lay_whole` 은 **그룹에서 제일 큰 것이 프레임에 맞도록** 배율을 정한다.
+      그래서 **한 장짜리 그룹은 그 한 장이 프레임을 꽉 채운다.** 실제로 「놀람」을 따로 뽑았더니
+      머리폭이 304 로 나왔다 — 기존 넷은 186~191 이라 나란히 놓으면 몬이가 커 보인다.
+    ⇒ 같은 인물을 **여러 그룹으로 나누면 크기가 서로 안 맞는다.** 그래서 손으로 맞춘다.
+    ⚠ 기존 넷을 같은 그룹에 넣어 해결하려 했지만, 그러면 **그 넷이 다시 계산되어 바뀐다.**
+      **한 장을 더하려고 넷을 흔들 수는 없다.**"""
+    a = np.asarray(im.convert("RGBA"))
+    al = a[..., 3] > 40
+    ys, xs = np.where(al)
+    if not len(ys):
+        return im
+    top, bot = ys.min(), ys.max()
+    # ★ 머리폭이 아니라 **전체 높이**로 맞춘다.
+    #   ⚠ 머리폭으로 맞췄더니 크기는 같은데 **위가 텅 비고 아래로 쏠렸다.**
+    #     이 raw 는 인물 대비 화분·잎 비율이 기존 시트와 달라서, 한 척도를 맞추면
+    #     다른 척도가 어긋난다. 대화창에서 중요한 것은 **상자를 채우는 정도**라
+    #     전체 높이를 기준으로 삼는다.
+    k = want_bw / float(bot - top)
+    nw, nh = max(1, int(round(im.size[0] * k))), max(1, int(round(im.size[1] * k)))
+    sub = im.resize((nw, nh), Image.LANCZOS)
+    cv = Image.new("RGBA", im.size, (0, 0, 0, 0))
+    # 바닥선을 맞춘다 — 세로는 「화분 밑」이 기준이다
+    cv.paste(sub, ((im.size[0] - nw) // 2,
+                   int(round(want_bottom - bot * k))), sub)
+    return cv
+
+
 def main():
     for group in GROUPS:
         print(group["sheets"][0][0], "…")
@@ -280,6 +328,8 @@ def main():
         laid = (lay_bust if group["mode"] == "bust" else lay_whole)(items)
         for name, im in laid:
             im = im.resize((int(round(DELIV_H * AR)), DELIV_H), Image.LANCZOS)
+            if group.get("fit_like"):
+                im = fit_like(im, *group["fit_like"])
             im = im.quantize(colors=QUANT, method=Image.FASTOCTREE)
             dst = os.path.join(OUT, name + ".png")
             im.save(dst, optimize=True)
