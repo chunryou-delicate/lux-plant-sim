@@ -171,10 +171,24 @@ const tapAt = async (x, y) => {
   await sleep(80);
   await page.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
   await sleep(260);
+  /* ⚠⚠⚠ 2026-08-25 정정 — **`#stage.placing` 은 톡 치기의 신호가 «아니다».**
+     읽어 보니 `startPhonePlacePot` 은 「놓기 모드로 들어가는」 것이 아니라 **곧바로 놓는다**
+     (`provisionalSpot()` 으로 자리를 «게임이» 정하고 `placeEmptyPot` 을 부른다).
+     ⇒ ★ 그러니 앞서 낸 「톡 쳐서 놓기가 여섯 칸 전부 안 열린다」는 **자 탓**이었다.
+       놓였는데 «내가 엉뚱한 곳을 봤다».
+     ⇒ ⇒ ★★ 제대로 된 신호는 **「방에 물건이 늘었나」**다 — 화분 수·시루 수·삽수 자리. */
   const r = await page.eval(`(()=>{ try{
     const st = document.getElementById('stage');
     const sheet = document.getElementById('sheet');
+    const S = window.__S();
+    const fp = S.firstPlay || {};
+    const sirus = (()=>{ try{ let n=0; for (const k of Object.keys(fp)) {
+      const site = fp[k]; if (site && Array.isArray(site.pots))
+        n += site.pots.filter(p=>p && (p.slotId||p.at)).length; } return n; } catch(e){ return -1 } })();
     return JSON.stringify({
+      pots: (S.pots||[]).length,
+      sirus,
+      cutPlaced: (S.cuttings||[]).filter(c=>c && (c.slotId||c.at)).length,
       placing: !!(st && st.classList.contains('placing')),
       hint: ((document.getElementById('placeHint')||{}).textContent||'').replace(/\s+/g,' ').trim().slice(0,40),
       sheetOpen: !!(sheet && sheet.classList.contains('open'))
@@ -298,10 +312,15 @@ for (const what of names) {
   if (pt.err) { console.log('  ✘', what, pt.err); continue; }
   const dragged = await touchAt(pt.x, pt.y);
   await page.eval(`window.__byeotSheet.open('bag')`, false); await settle();
+  /* ★ 톡 치기는 「놓기 모드」가 아니라 «곧바로 놓기»다 ⇒ 「방에 물건이 늘었나」로 잰다 */
+  const before = await tapAt(-1, -1);            /* 안 누르고 상태만 읽는다 */
   const tapped = await tapAt(pt.x, pt.y);
+  const grew = (a, b) => b && a && !b.err && !a.err &&
+    (b.pots > a.pots || b.sirus > a.sirus || b.cutPlaced > a.cutPlaced || b.placing);
   console.log(`  ${String(pt.ko).padEnd(14)} 손잡이 ${pt.w}x${pt.h} @${pt.x},${pt.y}` +
     `  · 끌기 ${dragged && dragged.on ? '✔ drag.on' : '⛔'}` +
-    `  · 톡 ${tapped && tapped.placing ? '✔ placing' : '⛔'}`);
+    `  · 톡 ${grew(before, tapped) ? '✔ 놓였다' : '⛔'}` +
+    (tapped && tapped.hint ? ` 「${tapped.hint}」` : ''));
 }
 
 await page.close(); clearTimeout(wd);
