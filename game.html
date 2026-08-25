@@ -4243,7 +4243,7 @@ const detail = {
         if (listed) {
           out.push({ ko: `📮 내놓는 중 · ${listed.won.toLocaleString()}원`, go: () => sheetTo('shop') });
         } else if (gate && gate.open && ls) {
-          let q = null; try { q = quotePot(S, { leaves: ls.leaves, variegatedLeaves: ls.variegatedLeaves }); } catch { }
+          let q = null; try { q = quotePot(S, { leaves: ls.leaves, variegatedLeaves: ls.variegatedLeaves, ...(potLeafArgs(pot0(S)) || {}) }); } catch { }
           out.push({ ko: q ? `📮 중고에 내놓기 (${q.won.toLocaleString()}원)` : '📮 중고에 내놓기',
                      go: () => askListPot() });
         } else if (gate) {
@@ -5698,7 +5698,7 @@ function cutMotherLoss(p, n) {
     try { after = potLeafGradeListOf({ leafGrades: left }, leavesAfter, varieAfter); } catch { }
   }
   let now = null, then = null;
-  try { now = quotePot(S, { leaves: ls.leaves, variegatedLeaves: ls.variegatedLeaves }); } catch { }
+  try { now = quotePot(S, { leaves: ls.leaves, variegatedLeaves: ls.variegatedLeaves, ...(potLeafArgs(pot0(S)) || {}) }); } catch { }
   try {
     then = quotePot(S, { leaves: leavesAfter, variegatedLeaves: varieAfter,
                          ...(after ? { leafGrades: after } : {}) });
@@ -5726,6 +5726,37 @@ function varieMaturedLeavesNow() {
   let n = 0;
   for (const r of rows) if (r && r.varie && r.matured && !r.dropped) n += 1;
   return n;
+}
+/* ══ ★★★ **그루값에 넘길 잎 목록** — 「달린 잎」만, 그리고 «잎 순서대로» (2026-08-26)
+   ------------------------------------------------------------
+   박사님: *"그루값은 «자란 정도에 따라» 달리 값을 책정한다."*
+   ⇒ 그러려면 값이 **잎 하나하나를 알아야** 하는데, `quotePot` 이 받던 것은 「잎 수」뿐이었다.
+     그래서 등급 목록을 **장부에서 뽑아 «뒤에서부터»** 채웠고 —
+     ⇒ ⛔ 그 탓에 **아직 나지도 않은 잎의 등급**이 값에 들어갔다(실측 d72: 518,000 → 1,078,000).
+
+   ★ 여기서 두 배열을 **같은 순서로** 짓는다 — 그 순서가 곧 계약이다:
+```
+     grades[i]  그 잎의 등급 id (없으면 null — 그때는 옛 길이 메운다)
+     leafM[i]   그 잎이 «얼마나 자랐나» 0~1
+     ⇒ 둘 다 leafBirth 오름차순. i 가 같으면 «같은 잎»이다
+```
+   ⚠⚠ **거를 때는 `onPlant` 를 쓴다.** `leafM > 0` 으로 거르면 「오늘 «막 난» 잎」이 같이 빠진다 —
+     안 난 잎과 막 난 잎이 **둘 다 leafM 0** 이라 갈리지 않는다(실측 d36 vs d37: 둘 다 0.00).
+   ⚠ 못 읽으면 **null 을 낸다.** 빈 배열을 내면 「잎이 하나도 없다」가 되어 값이 0 이 된다. */
+function potLeafArgs(pot) {
+  let rows = null;
+  try { rows = io.growth.leafOnPlant && io.growth.leafOnPlant(); } catch { rows = null; }
+  if (!Array.isArray(rows)) return null;
+  const on = rows.filter(r => r && r.onPlant === true)
+                 .sort((a, b) => a.leafBirth - b.leafBirth);
+  if (!on.length) return null;
+  let led = null;
+  try { led = (pot && pot.leafGrades) || null; } catch { led = null; }
+  return {
+    leafGrades: on.map(r => (led && led[r.leafBirth]) || null),
+    leafM: on.map(r => (Number.isFinite(r.leafM) ? r.leafM : 0)),
+    onCount: on.length
+  };
 }
 function cutNodesNow() {
   const p = pot0(S);
@@ -6848,7 +6879,7 @@ function drawShop() {
        이 줄이 그것이었다 — **경고를 적어 두는 것만으로는 안 막힌다.**
      ⇒ 이제 **올릴 때와 같은 함수**(`quotePot`)에 묻는다. 값을 정하는 곳이 하나면 못 갈린다. */
   let q = null;
-  try { q = quotePot(S, { leaves: ls.leaves, variegatedLeaves: ls.variegatedLeaves }); } catch { }
+  try { q = quotePot(S, { leaves: ls.leaves, variegatedLeaves: ls.variegatedLeaves, ...(potLeafArgs(pot0(S)) || {}) }); } catch { }
   /* ⚠ 못 매기면 **값을 지어내지 않는다** — 단추는 열되 숫자를 안 적는다 */
   sell.disabled = false;
   sell.textContent = q ? `몬스테라 내놓기 (${q.won.toLocaleString()}원)` : '몬스테라 내놓기';
