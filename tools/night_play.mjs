@@ -716,6 +716,15 @@ const SNAP = `(()=>{ const S=window.__S(); const ts=S.tutorial||{};
     /* ★★★ **잎마다 「얼마나 자랐나」**(leafM) — 2026-08-26
        박사님: 그루값은 «자란 정도에 따라» 달리 책정한다.
          leafM = clamp01((T - leafBirth) / matSpan)   (plant_grow §leafM · 렌더러가 쓰는 값)
+       ⚠⚠⚠ 2026-08-26 정정 — 이 셈은 «틀렸다». growthDays 가 T 가 아니다.
+         plant_grow:3343  const day = …GROWTH…,  ★ g = ageOf(day);
+                          return { …, growthDays: ★ day }      ⇐ 넘기는 것은 «day»
+         plant_grow:3348  if (ax.birth > g || ★ g < ax.leafBirth || …) continue;   ⇐ 판정은 «g»
+         plant_grow §ageOf  g = ageOf(day) 는 «곡선 변환»이다 — day 와 «같지 않다»
+       ⇒ ⛔ 그러니 아래 값은 「day 를 g 인 양 쓴」 것이라 참 leafM 이 아니다.
+         40일 판에서 「하루 1/120 씩 곧게 오른다」가 나온 것은 그 구간에서 ageOf 가
+         우연히 곧았을 뿐일 수 있다. ⇒ ★ 어댑터에 g 가 실릴 때까지 이 칸을 믿지 마라.
+       ⚠⚠ 이 안에는 백틱을 쓰지 않는다 — 오늘 «여섯» 번째다.
        ⚠ 셋이 다 있어야 셈이 된다 — leafStats().growthDays · leafStageParams().matSpan · leafState()[].leafBirth
        ⚠ 못 읽으면 null 이다. 0 이나 1 로 «안 메꾼다» — 0 이면 「다 안 자랐다」,
          1 이면 「다 자랐다」가 되어 그루값이 통째로 틀린다.
