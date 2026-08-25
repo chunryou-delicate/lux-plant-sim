@@ -729,18 +729,25 @@ const SNAP = `(()=>{ const S=window.__S(); const ts=S.tutorial||{};
        ⚠ 못 읽으면 null 이다. 0 이나 1 로 «안 메꾼다» — 0 이면 「다 안 자랐다」,
          1 이면 「다 자랐다」가 되어 그루값이 통째로 틀린다.
        ⚠⚠ 이 안에는 백틱을 쓰지 않는다 — 브라우저 쪽 템플릿 안이다. */
+    /* ★★★ **잎마다 「달렸나」와 「얼마나 자랐나」** — [growth] 가 «거기서 재서» 넘긴다.
+       ⚠⚠ 여기 있던 것은 «틀렸다» — leafStats().growthDays(= day) 를 g 인 양 써서 셈했다.
+         g = ageOf(day) 는 곡선 변환이라 day 와 같지 않다. 하루 동안 틀린 값을 적었다.
+       ★ 거를 때는 onPlant === true 를 쓴다. leafM > 0 으로 거르면 «막 난 잎»이 같이 빠진다.
+       ⚠ 못 읽으면 null 이다. 빈 배열로 안 메꾼다.
+       ⚠⚠ 이 안에는 백틱을 쓰지 않는다 — 오늘 여섯 번 깨뜨렸다. */
     leafM:(()=>{ try {
-      const g = window.__io && window.__io.growth; if (!g) return null;
-      const st = g.leafStats && g.leafStats();
-      const par = g.leafStageParams && g.leafStageParams();
-      const rows = g.leafState && g.leafState();
-      if (!st || !par || !Array.isArray(rows)) return null;
-      const T = st.growthDays, span = par.matSpan;
-      if (!Number.isFinite(T) || !Number.isFinite(span) || span <= 0) return null;
-      return rows.filter(r => r && !r.dropped).map(r => ({
+      const g = window.__io && window.__io.growth;
+      const rows = g && g.leafOnPlant && g.leafOnPlant();
+      if (!Array.isArray(rows)) return null;
+      const st = g.leafState && g.leafState();
+      const varieOf = {};
+      if (Array.isArray(st)) for (const r of st) if (r) varieOf[r.leafBirth] = { v: !!r.varie, mat: !!r.matured };
+      return rows.map(r => ({
         lb: r.leafBirth,
-        m: Math.round(Math.max(0, Math.min(1, (T - r.leafBirth) / span)) * 100) / 100,
-        v: !!r.varie, mat: !!r.matured
+        on: !!r.onPlant,
+        m: Math.round((Number.isFinite(r.leafM) ? r.leafM : 0) * 100) / 100,
+        v: !!(varieOf[r.leafBirth] && varieOf[r.leafBirth].v),
+        mat: !!(varieOf[r.leafBirth] && varieOf[r.leafBirth].mat)
       }));
     } catch(e){ return null; } })(),
     growthT:(()=>{ try {

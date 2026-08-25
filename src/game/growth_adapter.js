@@ -393,6 +393,27 @@ export function createGrowthAdapter(iframe) {
        ⚠ 못 읽으면 **null 이다. 값을 지어내지 않는다** — `leafStats`·`cuttableNodes` 와 같은 규약.
          0 이나 1 로 메꾸면 「다 안 자랐다」나 「다 자랐다」가 되어 **그루값이 통째로 틀린다.**
        ⚠⚠ 그리고 이 창구는 **값을 안 정한다.** 「어떻게 비례할까」는 부르는 쪽 몫이다. */
+    /* ★★★ **잎마다 「달렸나」와 「얼마나 자랐나」** (2026-08-26 · [growth] `5d707e4`)
+       반환 `[{ leafBirth, onPlant, leafM }]` 또는 접근자가 없으면 **null**.
+
+       ⚠⚠ 왜 이 창구여야 하나 — **여기 말고는 «못 잰다»**:
+         · 「달렸나」의 정본은 `g = ageOf(day)` 로 재는데, `g` 는 «곡선 변환»이라
+           `leafStats().growthDays`(= day) 와 **같지 않다.** 내가 그 둘을 같다고 여겨
+           leafM 을 손으로 셈했다가 **틀린 값을 하루 썼다**(2026-08-26 물림).
+         · ⇒ ★ 그래서 **growth 가 «거기서 재서» 넘긴다.** 이 파일은 곡선을 몰라도 된다.
+
+       ★ 거를 때는 **`onPlant === true`** 를 쓴다. ⛔ **`leafM > 0` 으로 거르면 안 된다** —
+         「아직 안 난 잎」과 「오늘 «막 난» 잎」이 **둘 다 leafM 0** 이라 «갈리지 않는다».
+         그 함정이 이 값이 생긴 까닭이다.
+       ⚠ 목록에 «없는» leafBirth 는 `onPlant` 가 undefined 라 자연히 걸러진다(안전한 쪽).
+       ⚠ 못 읽으면 **null 이다.** 빈 배열로 안 메꾼다 — 빈 배열은 「잎이 하나도 안 달렸다」가 된다. */
+    leafOnPlant() {
+      const f = fn('leafOnPlantAll');
+      if (!f) return null;
+      const r = f();
+      return Array.isArray(r) ? r : null;
+    },
+
     leafStageParams() {
       const f = fn('leafStageParams');
       if (!f) return null;
