@@ -509,9 +509,13 @@ export const SCRIPTS = {
           잎 한 장을 들고 이사 버튼 앞에 갔다가 혼자 막힌다. */
   varieLucky: [
     { who: 'jachwi', face: 'surprise', text: '…어? 새 잎이 좀 이상한데.' },
-    /* ⚠ 몬이에게는 `surprise` 얼굴이 없다(game.html FACE_FILE — base·happy·sad·curious).
-       놀람은 `curious` 로 짓고 **말이 놀란다** — 없는 표정 키를 쓰면 조용히 기본 얼굴이 된다. */
-    { who: 'moni',   face: 'curious',  text: '어어. 잠깐만. **그거 무늬야.**' },
+    /* ★ 2026-08-26 — 몬이 `surprise` 그림이 들어와서 이 줄이 «제 얼굴»을 갖는다([Char] `e4c0a67`).
+       여기 있던 것: *"몬이에게는 surprise 얼굴이 없다 — 놀람은 curious 로 짓고 말이 놀란다."*
+       ⚠⚠ **몬이 대사 237줄 중 이 한 줄에만 쓴다.** 여러 줄에 쓰면 놀람이 흔해지고,
+         한 줄뿐이라야 «아껴 쓴 것»이 된다([Plan] 판정). 다른 데로 옮기지 마라.
+       ★ 바로 윗줄 자취생도 `surprise` 다 — 같은 키인데 «그림이 달라»
+         하나는 「걱정」이고 이쪽은 「알아보는」 얼굴이다. 그 대비가 이 장면이다. */
+    { who: 'moni',   face: 'surprise', text: '어어. 잠깐만. **그거 무늬야.**' },
     { who: 'jachwi', face: 'curious',  text: '무늬?' },
     { who: 'moni',   face: 'curious',  text: '흰 게 섞여서 나오는 거. 흔한 게 아닌데.' },
     { who: 'moni',   text: '**두 번째 잎에** 바로 나오네. 운 좋다, 너.' },
