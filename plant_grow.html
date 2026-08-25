@@ -3340,12 +3340,44 @@ function leafAxisKeys(){
         그루 값이 조용히 0 으로 간다 — "초보는 안 죽는다"와 정면으로 어긋난다
      ⚠ 바램을 값에 반영할지는 판정이 아니라 기획이다. 정해지면 칸을 **따로** 낸다 —
        여기서 임의로 깎으면 코어가 그걸 정본으로 알고 그 위에 가격을 쌓는다. */
+/* ★★ 「그 잎이 지금 «그루에 달려 있나»」 — 판정은 **여기 한 군데**다 (2026-08-26)
+   ------------------------------------------------------------
+   뜻 그대로다: **줄기가 났고(ax.birth<=g) · 잎이 났고(g>=leafBirth) · 안 떨어졌다.**
+   ⚠ 「다 자랐나」도 「보이나」도 「셀 수 있나」도 **아니다.** 달려 있느냐 하나다.
+
+   ★ 왜 함수로 뺐나 — `leafStats`(화면이 세는 수)와 밖으로 내보내는 표가 **같은 줄**을
+     쓰게 하려고다. 두 곳에 적으면 언젠가 갈리고, 그러면 **화면과 값이 다른 잎을 센다.**
+     2026-08-26 에 그루값이 «아직 안 난 잎»의 등급을 쓰고 있던 것이 그 병이었다.
+
+   ⚠⚠ `leafM` 으로는 이 물음에 **답할 수 없다** — 안 난 잎도 0, 막 난 잎도 0 이다.
+     한 값에 두 물음을 걸면 안 된다. 그래서 칸을 따로 낸다. */
+function leafOnPlant(ax, g){
+  return !(ax.birth>g || g<ax.leafBirth || leafDroppedOf(ax.leafBirth));
+}
+
+/* 잎마다 «달려 있나»와 «얼마나 컸나»를 함께 낸다 — 읽기 전용. 밖(core)에서 쓴다.
+   ⚠ `growthDays`(=GROWTH)와 `leafBirth` 는 **눈금이 다르다.** leafBirth 는 `ageOf` 를
+     지난 쪽이다. 밖에서 둘을 직접 견주면 틀린다 — 그래서 여기서 재서 넘긴다.
+   leafM  0..1, 시간만 본다(갈라졌나는 `matured` 가 따로 답한다). 안 난 잎은 0 이다. */
+function leafOnPlantAll(){
+  const g=ageOf(Math.max(0, Math.min(GMAX, GROWTH)));
+  const out=[];
+  if(g<P.seedEnd) return out;
+  for(const ax of topologyNow(g)){
+    if(!Number.isFinite(ax.leafBirth)) continue;
+    out.push({ leafBirth:ax.leafBirth,
+               onPlant:leafOnPlant(ax, g),
+               leafM:Math.max(0, Math.min(1,(g-ax.leafBirth)/P.matSpan)) });
+  }
+  return out;
+}
+
 function leafStats(){
   const day=Math.max(0, Math.min(GMAX, GROWTH)), g=ageOf(day);
   let leaves=0, varie=0, mature=0;
   if(g>=P.seedEnd) for(const ax of topologyNow(g)){
     // 살아서 달려 있는 잎만 — buildPlant 이 실제로 그리는 기준 그대로다
-    if(ax.birth>g || g<ax.leafBirth || leafDroppedOf(ax.leafBirth)) continue;
+    if(!leafOnPlant(ax, g)) continue;
     leaves++;
     if(ax.varie) varie++;                     // 무늬는 잎이 날 때 정해진 것을 읽기만 한다
     if(matureOf(ax.leafBirth)) mature++;      // 갈라짐은 MAT_STATE 가 정본
