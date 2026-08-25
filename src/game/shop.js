@@ -1601,23 +1601,45 @@ export function leafGradeListOf({ leaves, variegatedLeaves = 0, leafGrades = nul
        그루를 매길 때는 부르는 쪽이 `form: 'pot'` 을 **줘야 한다**(listPot 이 그렇게 부른다).
    반환 { won, leaves, variegatedLeaves, plainLeaves, leafGrades, byGrade, leafSumWon,
           form, formMult, varieKinds, synergy, grade, gradeKo, v, size, multiplier } */
+/* ══ ★★★ **「자란 정도」를 값에 태운다** (2026-08-26) ═══════════════════════════
+   박사님 2026-08-25: *"그루값은 «자란 정도에 따라» 달리 값을 책정한다."*
+   ⇒ `opt.leafM` — `leafGrades` 와 **같은 순서·같은 길이**의 0~1 배열이면 잎마다 곱한다.
+     안 주면 **한 글자도 안 바뀐다**(늘 1 로 본다). 옛 부름은 그대로다.
+
+   ⚠⚠⚠ **이 곱하기는 「총괄(claude-64) 해석」이지 «박사님 확정이 아니다».**
+     박사님 말씀은 「자란 정도에 따라」까지이고, 「등급값 × leafM」은 그 읽기다.
+     ⇒ ★ 아니라 하시면 **이 커밋 하나만 되돌리면 된다** — 거르기(앞 커밋)는 어느 해석이든 남는다.
+
+   ⚠ **막 난 잎은 값이 0 이 된다**(leafM 0). 사람 눈에는 「잎이 났는데 값이 그대로」로 보인다.
+     ⇒ 그것이 «흠»인지 «사실»인지는 값이 아니라 **말**의 문제다 — 갓 펼친 잎은 실제로 값을 못 받는다.
+     ⇒ ⚠ 다만 사람이 그 까닭을 알 길이 없으면 흠으로 보인다. 그 몫은 [Plan] 이다.
+   ⚠ 길이가 안 맞으면 **곱하지 않는다.** 짝이 어긋난 채 곱하면 «다른 잎의 자람»이 값에 든다 —
+     조용히 틀리는 쪽이라 아예 안 한다. */
 export function priceOf({ species = 'monstera', leaves, variegatedLeaves = 0,
-                          leafGrades = null, form = 'cutting' } = {}) {
+                          leafGrades = null, leafM = null, form = 'cutting' } = {}) {
   if (!UNIT_WON[species])
     throw new Error(`[상점] 모르는 종입니다: ${species} (아는 것: ${Object.keys(UNIT_WON).join(', ')})`);
   if (form !== 'cutting' && form !== 'pot')
     throw new Error(`[상점] 모르는 파는 길입니다: ${form} (아는 것: cutting, pot)`);
   const list = leafGradeListOf({ leaves, variegatedLeaves, leafGrades });
   const byGrade = {};
-  let leafSumWon = 0, varie = 0;
+  let leafSumWon = 0, varie = 0, i = 0;
+  /* ★ 자람 배수 — 길이가 목록과 «같을 때만» 쓴다. 어긋나면 곱하지 않는다(위 §leafM). */
+  const mOk = Array.isArray(leafM) && leafM.length === list.length;
+  const mAt = (k) => {
+    if (!mOk) return 1;
+    const v = leafM[k];
+    return Number.isFinite(v) ? Math.max(0, Math.min(1, v)) : 1;
+  };
   const kinds = new Set();
   for (const gid of list) {
     const g = _VARIE.byId.get(gid);
     if (!g) throw new Error(`[상점] 모르는 무늬 등급입니다: ${gid} ` +
       `(아는 것: ${[..._VARIE.byId.keys()].join(', ')} — data/balance/varie_grades.json)`);
     byGrade[gid] = (byGrade[gid] || 0) + 1;
-    leafSumWon += g.leafWon;
+    leafSumWon += g.leafWon * mAt(i);
     if (g.varie) { varie++; kinds.add(gid); }
+    i += 1;
   }
   const formMult = form === 'pot' ? _VARIE.sale.potMult : _VARIE.sale.cuttingMult;
   const synergy = _VARIE.sale.synergy[kinds.size] ?? 1;
@@ -1633,6 +1655,8 @@ export function priceOf({ species = 'monstera', leaves, variegatedLeaves = 0,
     leaves: list.length, variegatedLeaves: varie, plainLeaves: list.length - varie,
     leafGrades: list, byGrade, leafSumWon,
     form, formMult, varieKinds: kinds.size, synergy,
+    /* ★ 자람을 실제로 태웠나 — 화면·검사가 「왜 값이 이런가」를 물을 수 있게 낸다 */
+    leafMUsed: mOk, leafM: mOk ? leafM.slice() : null,
     grade: top.id, gradeKo: top.ko,
     /* ── 옛 이름들. 화면·재현이 읽던 칸이라 남긴다(값의 뜻은 위에 있다) ── */
     v: list.length ? varie / list.length : 0,
@@ -2277,9 +2301,13 @@ export function quotePot(S, opt = {}) {
   const fromLedger = fromOpt ? null : potLeafGradeListOf(p, opt.leaves, varieN);
   const fromPrologue = (fromOpt || fromLedger) ? null
                      : prologueLeafGradeListOf(S, p, opt.leaves, varieN);
+  /* ★ 자람 배수는 **넘겨받은 등급 목록과 짝일 때만** 태운다 —
+     장부·프롤로그 다리로 «메운» 목록은 순서가 다를 수 있어 짝이 안 맞는다(§leafM). */
+  const mIn = (fromOpt && Array.isArray(opt.leafM)) ? opt.leafM : null;
   const q = potPriceOf({ species: opt.species || 'monstera',
                          leaves: opt.leaves, variegatedLeaves: varieN,
-                         leafGrades: fromOpt || fromLedger || fromPrologue });
+                         leafGrades: fromOpt || fromLedger || fromPrologue,
+                         leafM: mIn });
   q.gradesFrom = fromOpt ? 'opt' : fromLedger ? 'ledger' : fromPrologue ? 'prologue' : 'legacy';
   q.potId = p.id;
   return q;
