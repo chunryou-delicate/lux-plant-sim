@@ -69,7 +69,8 @@ import { headroomCheck, PLANT_POT_D_REF } from './headroom.js';
 import { rehomeCuttings, stepCuttings, cuttableNow } from './propagation.js';
 import { stepShop, stepMarket } from './shop.js';
 /* 체력 — 하루에 돌볼 수 있는 양. 규칙은 전부 그쪽 모듈이 갖는다(docs/stamina.md) */
-import { resetDay, spend as spendStamina, canAct as canActStamina } from './stamina.js';
+import { resetDay, spend as spendStamina, canAct as canActStamina,
+         staminaView } from './stamina.js';
 import { weekStats, WEATHER_P } from '../engine/weather.js';
 import { judgeDLI } from '../engine/daily_light.js';
 /* ★ 퀘스트가 아는 문턱을 읽으려고 부른다(§cropEnough). quest.js 는 loop 을 안 부르므로 순환이 아니다 */
@@ -1026,6 +1027,30 @@ export function nextDay(S, io) {
            센 값이라(advanceBeansproutDay), 무순만 놓은 판에서 콩나물이라 부르면 거짓말이다. */
         pushLog(S, `🥬 ${firstPlayEvent.justReadyCount}시루를 거둘 때가 됐습니다 — ` +
                    `[수확하기]를 눌러 주세요 (거두기 전에는 그 시루의 다음 회전이 시작되지 않습니다)`);
+
+      /* ══ ★★★ **한날에 몰려 익어 손이 모자란 날** (2026-08-27 · [Plan] ⑤) ═══════════
+         ------------------------------------------------------------
+         ⚠ [Plan] 이 처음 겨눈 자리는 `beansprout_harvest_again` 이었다. 그런데 그 사건은
+           **날마다** 나고, `dialogue.js:1684` 가 **「일부러 대사를 안 붙였다」**고 적어 뒀다 —
+           *"회전이 5일이라 한 판에 «스무 번 넘게» 난다"*. ⇒ 붙이면 잔소리가 된다.
+         ⇒ ★ 그래서 겨눈 것을 다시 보니 **「거뒀나」가 아니라 「손이 모자랄 만큼 몰렸나」**였다.
+           ⇒ ⇒ **그 날은 드물다.** 그러면 위 주석이 걱정한 것이 안 일어난다.
+
+         ★★ **새 수를 안 만든다.** 이미 있는 둘에서 읽어 나온다:
+```
+           시루 한 바퀴에 손 «둘» — 거두기 1 + 다시 심기 1 (ACT_COST)
+           ⇒ 오늘 익은 것을 «다 다시 심으면» 드는 손 = justReadyCount × 2
+           ⇒ ★ 그것이 «오늘 남은 손»보다 크면 오늘 안에 못 돈다
+```
+         ⇒ ⚠ 그러니 손 밑천이 바뀌면 이 문턱도 **저절로 따라간다.** 박은 수가 하나도 없다.
+         ★ 실측이 이 자리를 가리켰다 — `sowThrew 24`(손이 모자라 못 심은 횟수) ·
+           d94·d101·d109 에 여덟 시루가 한날에 익어 그날 손 16 이 필요했다(밑천 14). */
+      try {
+        const stv = staminaView(S);
+        const need = (firstPlayEvent.justReadyCount || 0) * 2;
+        if (stv && Number.isFinite(stv.left) && need > 0 && need > stv.left)
+          ev.push({ id: 'crop_hands_short', ko: '오늘 거둘 것이 몰렸습니다' });
+      } catch { /* 체력을 못 읽으면 말하지 않는다 — 지어내지 않는다 */ }
     } catch (e) {
       /* 콩나물 하루가 터졌으면 날짜·상태를 통째로 되돌려 그날을 다시 밟을 수 있게 한다.
          ★ 이 블록은 이제 growth 를 안 건드린다(선물이 harvestCrop 으로 갔다) — 되돌릴 수 없는

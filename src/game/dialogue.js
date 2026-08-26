@@ -1172,6 +1172,14 @@ export const SCRIPTS = {
      "콩나물이 진짜 자랄까"가 **Day 36 · Day 84** 에 다시 떴다. 열 번째 시루를 앞에 두고
      처음 보는 사람처럼 말한 것이다. 그래서 위 둘에 `!firstPlayDone` 을 걸고, 비는 자리를
      여기가 받는다. **같은 사실을 다른 사람이 말한다** — 그 사이에 겪은 것이 그 차이다. */
+  /* ★★ 2026-08-27 [Plan] ⑤ — **한날에 몰려 익은 날.** 앞은 «상황»이고 뒤가 «물음»이다.
+     ⚠ 「몇 개」라 말하고 «수를 안 센다» — 몇 개인지는 화면(시루 목록)이 말한다(§2.8).
+     ⚠ 「«다» 심을 거야?」의 「다」는 **오늘 비운 것 전부**를 가리키니 참이다.
+     ★ 그리고 이 말은 **막히기 «전»**에 온다 — 손이 모자라 못 심고 나서 오면 그건 «벌»이 된다. */
+  cropHandsShort: [
+    { who: 'moni', face: 'curious', text: '오늘 몇 개 비었네. …오늘 **다** 심을 거야?' }
+  ],
+
   chatCropAgain: [
     { who: 'jachwi', text: '오늘도 하얀 게 올라와 있다.' },
     { who: 'moni',   face: 'curious', text: '이제 안 놀라네.' },
@@ -1529,7 +1537,10 @@ export const SCRIPTS = {
                           190일 통째로 조용해졌다(2026-08-03 진단). */
 export const REPEATABLE = new Set(
   Object.keys(SCRIPTS).filter(k => k.startsWith('chat'))
-    .concat(['rentSoon', 'rentAgain', 'plantStalledAgain', 'plantStalledWinter'])
+    /* ★ `cropHandsShort` 는 되풀이된다 — 몰리는 날이 판마다 여러 번 온다.
+       ⚠ 다만 «드물다»(손이 모자랄 만큼 몰려야 한다). 그래서 잔소리가 안 된다. */
+    .concat(['rentSoon', 'rentAgain', 'plantStalledAgain', 'plantStalledWinter',
+             'cropHandsShort'])
 );
 
 /* ── 진행 ───────────────────────────────────────────────────────────── */
@@ -1570,6 +1581,10 @@ export function createDialogue(seen = new Set()) {
       식물·배움·이사 신호는 loop.stepTutorial 이 낸다.) */
 export const EVENT_SCRIPT = Object.freeze({
   beansprout_harvest:  'harvest',
+  /* ★ 2026-08-27 — 한날에 몰려 익어 손이 모자란 날([Plan] ⑤ · loop.js §crop_hands_short).
+     ⚠ `beansprout_harvest_again` 에는 여전히 대사를 «안 붙인다» — 그건 날마다 난다.
+       이것은 **드문 날**이라야 뜨므로 위 §1684 가 걱정한 「스무 번」이 안 일어난다. */
+  crop_hands_short:    'cropHandsShort',
   monstera_arrived:    'monsteraArrived',
   /* ★ 유도 두 걸음 (2026-08-09) — first_play.firstPlayEventsOf 가 낸다 */
   monstera_no_spear:   'monsteraGuideWindow',
