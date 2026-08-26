@@ -870,10 +870,24 @@ export const SCRIPTS = {
     { who: 'moni',   text: '아직 본전은 아니야. 조금 더 가야 해.' }
   ],
   /* ②-c ★ **본전이 되는 자리.** 이 줄이 「살림이 돈다」를 처음 말한다 */
+  /* ★★ 2026-08-27 — **「조금만 더」가 «참이 아니었다»** ([Plan] 문안 · [core] 실측)
+     ⛔ 있던 말: *"«조금만 더» 늘리면 하루가 안 깎여."*
+     ⇒ 실측 — 시루를 여덟 늘리는 동안이 **그 전보다 «두 배 넘게» 나빴다**:
+```
+       d40~d60  시루 그대로   하루 «−3,145원»
+       d80~d100 여덟 늘림     하루 «−7,240원»   ⇒ ★ 늘리는 동안이 더 깎인다
+```
+     ⇒ ★ 그래서 「한참」으로 고치고, **왜 더 깎이는지**를 몬이가 말한다.
+     ⚠ 수를 «안 박는다» — 「시루값이 먼저 나가고 첫 회전은 닷새 뒤」는 `harvestDays` 가 바뀌어도
+       뜻이 안 낡는다. 몇 개인지·며칠인지는 화면이 말한다(§2.8). */
   questSiru16: [
-    { who: 'moni',   face: 'curious', text: '조금만 더 늘리면 **하루가 안 깎여.**' },
+    { who: 'moni',   face: 'curious', text: '**한참** 더 늘려야 하루가 안 깎여.' },
     { who: 'jachwi', text: '지금까진 계속 줄고 있었구나.' },
     { who: 'moni',   face: 'sad', text: '응. 조금씩. 그래서 티가 안 났어.' },
+    { who: 'jachwi', text: '지금도 빠듯한데.' },
+    { who: 'moni',   text: '늘리는 동안은 **더** 깎여. 시루값이 먼저 나가고 첫 회전은 닷새 뒤라서.' },
+    { who: 'jachwi', face: 'worry', text: '…그럼 지금보다 나빠진다는 거네.' },
+    { who: 'moni',   text: '한동안은. 그러고 나서 넘어가.' },
     { who: 'moni',   face: 'happy', text: '거기까지 가면 처음으로 **버는 쪽**이 돼.' }
   ],
   questDoneSiru16: [
@@ -1412,6 +1426,13 @@ export const SCRIPTS = {
     { who: 'jachwi', text: '성의 없다.' },
     { who: 'moni',   text: '성의 있는 이름은 네가 지어 줘.' }
   ],
+  /* ★ 2026-08-27 — **두 번째로 나오는 날의 한 줄** ([Plan]).
+     ⛔ 「이름 짓기를 만들자」가 «아니다». 지어 주지 않은 채로 시간이 흘렀다는 것만 말한다.
+     ⚠ 그래서 이 줄은 **한 마디로 끝난다** — 되물으면 「그럼 지어라」가 되고 그건 새 기능이다. */
+  chatMoniName2: [
+    { who: 'jachwi', text: '몬이는 왜 몬이야?' },
+    { who: 'moni',   face: 'happy', text: '…아직도 몬이네.' }
+  ],
   /* ★부모 얘기를 여기서 한 번 더 한다 — 다만 **웃으면서** 한다.
      오프닝의 울음과 이사 장면의 한 줄 사이를 이 톤이 이어 준다. */
   chatParents: [
@@ -1862,6 +1883,13 @@ export const CHATTER = [
   { id: 'chatMorning',    when: c => c.living },
   { id: 'chatQuiet',      when: c => c.living },
   { id: 'chatMoniName',   when: c => c.living },
+  /* ★ 2026-08-27 — 두 번째로 나오는 날의 한 줄([Plan] · §chatMoniName2).
+     ⚠ `pickChatter` 는 **가장 오래 안 나온 것**을 고른다. 둘 다 처음이면 «목록 순서»가 이긴다
+       ⇒ 첫날 `chatMoniName`, 그다음 이것. **새 장치를 안 만들고 「두 번째」가 된다.**
+     ⚠⚠ 다만 그 뒤로는 **둘이 번갈아 나온다.** 「아직도 몬이네」 뒤에 다시 「왜 몬이야?」가 온다.
+       ⇒ ★ 그것이 어색하면 «장치»가 필요하고(한 번 나온 뒤 첫째를 끄는 것), 그건 새 일이다.
+         [Plan] 에 그대로 알렸다 — 여기서 «지어내지» 않는다. */
+  { id: 'chatMoniName2',  when: c => c.living },
   { id: 'chatParents',    when: c => c.living },
   { id: 'chatLandlord',   when: c => c.living && !c.movedOut },
   { id: 'chatNeighbor',   when: c => c.living },

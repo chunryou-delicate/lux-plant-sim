@@ -14186,8 +14186,15 @@ function drawPantrySale() {
   $('pantryQuote').textContent =
     `${formatGram(ps.pendingGrams)}(밥값 ${ps.pendingWon.toLocaleString()}원어치)을 ` +
     `${ps.won.toLocaleString()}원에 넘깁니다 — ${ps.lossWon.toLocaleString()}원 손해입니다. ` +
-    `판 만큼 밥값을 못 아낍니다 (남는 것 ` +
-    `${formatGram(Math.max(0, ps.pantryGrams - ps.pendingGrams))} 남음)`;
+    /* ★★ 2026-08-27 — **「전부」일 때 말이 달라진다** ([Plan] ④)
+       있던 말은 늘 「남는 것 N 남음」이었다. ⇒ ⛔ 다 넘기는 날에도 「남는 것 0g 남음」이라 적혔다.
+       ★ 그 순간이 이 화면에서 제일 무거운 자리인데 말이 «제일 가벼웠다».
+       ⇒ 남을 때는 「다음에 또 급할 수 있습니다」, 전부일 때는 「팔 것이 «없습니다»」.
+       ⚠ 수를 안 더 적는다 — 남는 g 은 위에서 이미 말한다. 여기는 «뒷일»만 말한다. */
+    (Math.max(0, ps.pantryGrams - ps.pendingGrams) > 0
+      ? `판 만큼 밥값을 못 아낍니다 (남는 것 ` +
+        `${formatGram(Math.max(0, ps.pantryGrams - ps.pendingGrams))} — 다음에 또 급할 수 있습니다)`
+      : `판 만큼 밥값을 못 아낍니다 (다 넘깁니다 — 다음에 급하면 팔 것이 없습니다)`);
   $('pantryGo').disabled = !ps.canSell;
 }
 
