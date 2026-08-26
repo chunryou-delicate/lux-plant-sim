@@ -819,7 +819,11 @@ export function cutBlockedReason(S, nodes, nodeId, opt = {}) {
   if (!opt.motherCuttingId && !opt.motherCutting &&
       Number.isInteger(opt.varieMaturedLeaves) && opt.varieMaturedLeaves < 2)
     /* ⚠ 값을 문장에 안 적는다 — 「둘」도 「하프문」도 읊지 않는다(§2.8). */
-    return '아직 자를 수 없습니다 — 무늬 잎이 다 자라면 삽수를 낼 수 있습니다';
+    /* ★ [Plan] 2026-08-27 — 「막는 말」이 아니라 「기다리는 말」로 쓴다.
+         *"뜻은 같은데 «누가 주인인가»가 다릅니다. 회색은 «누르기 전»이니 «가르침» 쪽이라야 합니다."*
+       ⚠ 그리고 **수를 안 쓴다** — 「세 번째」는 프롤로그에서만 맞다(원룸은 등급이 굴림이라 다르다).
+         몇 장인지는 `game.html §drawCuttings` 의 마디 목록이 바로 위에서 말한다. */
+    return '아직 이릅니다 — 무늬 잎이 다 자라야 자를 수 있습니다';
 
   const b = cutBudgetOf(S, nodes, opt);
   if (b.cutNodeIds.includes(nodeId))
