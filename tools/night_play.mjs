@@ -777,7 +777,12 @@ const SNAP = `(()=>{ const S=window.__S(); const ts=S.tutorial||{};
       const d = window.__drag, rv = window.__rv;
       const out = [];
       for (const c of cells) {
-        const what = c.getAttribute('data-place');
+        /* ⚠⚠⚠ 2026-08-27 — data-place 만 보면 «틀린다». 가방의 몬스테라 칸은
+           data-potbag 을 쓰고 bindDrag(b, 'monstera', …) 로 손이 걸린다(game.html:6528).
+           ⇒ ⛔ 그것을 「못놓음」으로 찍는 바람에 「끌 것이 없는 칸」이라고 잘못 냈다.
+           ⚠⚠ 이 안에는 백틱을 쓰지 않는다 — 오늘 «일곱» 번째다. */
+        const what = c.getAttribute('data-place')
+                  || (c.getAttribute('data-potbag') ? 'monstera' : null);
         const ko = ((c.querySelector('.nm') || {}).textContent || '?').slice(0, 10);
         /* ★ 어느 판에 있는 칸인가 — 가방인지 상점인지. 「가방에 몬스테라가 있다」를 가르려면 필요하다 */
         const page = (c.closest && c.closest('[id^=page]')) ? c.closest('[id^=page]').id : '?';
