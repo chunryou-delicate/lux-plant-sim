@@ -397,7 +397,11 @@ export function givePlant(S, io, opt = {}) {
   };
   S.pots.push(pot);
   syncPotLead(S);
-  pushLog(S, `🪴 몬스테라가 도착했습니다 — 이미 ${growthDays}일 자란 개체입니다`);
+  /* ★ 2026-08-27 [Plan] ① — 「화분째」가 «심는 걸음이 없다»를 그 자리에서 말한다.
+     그리고 박사님이 이 그루를 「축복받은 몬스테라 삽수」라 부르기로 하셨다 —
+     상점의 「몬스테라 씨앗」과 «같은 것으로 보이면» 안 되기 때문이다.
+     ⚠ `${growthDays}` 는 읽어 쓰는 값이라 안 낡는다. 그대로 둔다. */
+  pushLog(S, `🪴 축복받은 몬스테라 삽수가 도착했습니다 — 화분째, 이미 ${growthDays}일 자란 개체입니다`);
   return pot;
 }
 

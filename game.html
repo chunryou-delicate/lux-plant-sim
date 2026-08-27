@@ -4186,7 +4186,11 @@ const detail = {
     return {
       art: './assets/ui/item_monstera.png',
       title: pots.length > 1 && idx >= 0 ? `몬스테라 ${idx + 1}` : '몬스테라',
-      sub: p.slotId && !isFreeSlotId(p.slotId) ? slotLabel(p.slotId) + '에 있음' : '방에 놓여 있음',
+      /* ⚠ 2026-08-27 — 「방에 놓여 있음」이 «자리가 없을 때도» 나왔다(배너와 같은 거짓).
+         ★ 삽수 카드(§cutting)가 쓰는 갈래 그대로 셋으로 나눈다 — 게임이 이미 쓰는 말이다. */
+      sub: p.slotId && !isFreeSlotId(p.slotId) ? slotLabel(p.slotId) + '에 있음'
+         : (p.at || p.slotId) ? '방에 놓여 있음'
+         : '가방 — 아직 안 놓았다',
       body: `<div class="row"><span>지금 단계</span><b>${((tp && tp.growthPhase && tp.growthPhase.phaseKo)
              || (pots.length > 1 ? null : (lastTurn && lastTurn.growthPhase && lastTurn.growthPhase.phaseKo))) || '—'}</b></div>`
         + dliRow('오늘 받은 빛', dli, '아직 없음')
@@ -6492,7 +6496,9 @@ function drawBag() {
       anyPlaceable = true;
       html += `<div class="grouphead">식물</div><div class="baggrid">` +
         waiting.map((p, i) => {
-          const ko = waiting.length > 1 ? `몬스테라 ${i + 1}` : '몬스테라';
+          /* ★ 2026-08-27 박사님: 이 그루는 「축복받은 몬스테라 삽수」다 —
+             상점의 「몬스테라 씨앗」과 «같은 것으로 보이면» 안 된다. */
+          const ko = waiting.length > 1 ? `축복받은 몬스테라 삽수 ${i + 1}` : '축복받은 몬스테라 삽수';
           const art = potThumbOf(p) || './assets/ui/item_monstera.png';
           /* ⚠⚠ 껍질(`.art`·`.nm`)을 **그대로** 써야 한다. 처음에 맨 `<img>`+`<small>` 로 썼더니
              `.bagslot .art img{width:100%;height:100%}` 규칙이 안 걸려 그림이 **원본 크기**로
@@ -6501,7 +6507,11 @@ function drawBag() {
           return `<button class="bagslot act draggable" data-potbag="${esc(p.id)}" type="button"` +
                  ` title="${esc(ko)}" aria-label="${esc(ko)}">` +
                  `<span class="art"><img src="${art}" alt="${esc(ko)}"></span>` +
-                 `<span class="nm">${esc(ko)}</span></button>`;
+                 `<span class="nm">${esc(ko)}</span>` +
+                 /* ★★ 2026-08-27 [Plan] ④ — 「끌지 마세요」(부정)가 아니라 「«이 칸을» 끌어라」(가리킴).
+                    ⚠ 처음에 「방에 놓인 화분을 끄세요」로 쓸 뻔했는데 «틀렸다» —
+                      그 화분이 곧 «이 칸»이다. 방에 아직 없다. */
+                 `<span class="eta">화분째 받았습니다 · 이 칸을 끌어 방에 놓으세요</span></button>`;
         }).join('') + `</div>`;
     }
   }
@@ -9801,7 +9811,23 @@ function showFirstPlayEvents(turn) {
     /* ★식물신 대사를 배너 부제에서 뺐다. 계약 순서가 수확 → 식비 → **식물신** → 도착이라
        도착 배너에 붙이면 순서가 뒤집히고, 누가 하는 말인지도 화면에서 안 보였다.
        이제 대화로 나온다(dialogue.js SCRIPTS.god1). */
-    events.push({ title: '🪴 몬스테라가 도착했습니다', sub: '창가가 아닌 자리에 놓였습니다' });
+    /* ══ ★★★ 2026-08-27 — **「놓였습니다」가 «거짓»이었다** ([Plan] ㉣ · [core] 실측) ══
+       ⛔ 있던 말: *"창가가 «아닌» 자리에 «놓였습니다»"*
+       ⇒ ★ 실측 — 도착한 날(d12) `pot0(S).slotId` 가 **null** 이다. 방에 «안 놓였고 가방에 있다».
+         (바로 위 줄이 그 값을 `arrivalSlotId` 로 잡는데, 그때 이미 null 이다)
+       ⇒ ⇒ ★★ 그러면 사람은 «방에서» 찾는다. 물건은 «가방»에 있다. **못 찾는다.**
+       ★ 그리고 게임은 «이미 올바른 말»을 갖고 있었다 — 삽수·시루가 쓰는 그 말:
+```
+         game.html §삽수 카드   '가방 — 아직 안 놓았다'
+         game.html §시루 줄     '아직 안 놓았습니다'
+```
+       ⇒ ⇒ ★★★ **배너 한 줄만 반대로 말하고 있었다.** 게임이 «자기 자신과» 어긋났다.
+       ⚠ 그래서 «새 말을 짓지 않는다» — 이미 쓰는 말로 맞춘다([Plan] ㊺).
+         지어낸 말은 «혼자» 낡고, 이미 쓰는 말은 «같이» 낡는다.
+       ⚠ 「창가가 아닌」을 버리는 것은 «잃는 것이 없다» — 그 말은 «놓은 뒤»에 할 말이고,
+         몬이가 그 자리에서 한다(§cropHandsShort 와 같은 결). */
+    events.push({ title: '🪴 축복받은 몬스테라 삽수가 도착했습니다',
+                  sub: '가방에 있습니다 — 아직 안 놓았습니다' });
   }
   if (S.firstPlay.completed)
     events.push({ title: '🌱 말린 새순이 나왔어요!', sub: '자리에 따라 필요한 빛이 다릅니다.' });
