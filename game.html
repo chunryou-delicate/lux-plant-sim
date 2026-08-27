@@ -1018,6 +1018,22 @@
     background:rgba(16,13,24,.92);border:1px solid rgba(255,255,255,.16);color:var(--ink);
     pointer-events:none}
   body.dragging #dropLabel{display:block}
+  /* ★★★ 2026-08-28 — **«방 → 방» 옮기기에서도 보이게 한다.**
+     ═════════════════════════════════════════════════════════════════
+     박사님이 이틀 막히셨다: *"여전히 안옴겨져."*  실측(probe_droplabel_vis):
+```
+       [옮기기] 누른 직후 — 글 «아무 데나 잡고 끌어 보세요»        display: ★none · 보이나 ⛔false
+       끄는 중            — 글 «벽에는 못 놓습니다 — 위를 향한 면이…»  display: ★none · 보이나 ⛔false
+```
+     ⇒ ★★ 손짓도 안 보이고 **«왜 안 됐는지»도 안 보였다.** 그러면 사람은 [옮기기]를
+       안 거치고 바로 끌고, 아무 일도 안 난다 — 그것이 «안 옮겨져»의 정체다.
+     ⚠ 까닭은 한 줄이다. `body.dragging` 을 붙이는 곳은 `drag.begin`(«가방 → 방»)
+       **한 군데뿐**이고, `picked.beginMove`/`beginTurn`(«방 → 방»)은 `#stage.moving` 만 붙인다.
+     ★★★ 그리고 이 병은 **2026-08-11 에 이미 한 번 고쳤다**(§`dropLabel` 배너).
+       ⛔ 그때 «가방 길»만 덧대고 «방 길»은 안 덧대었다. **아는 것이 한 자리에만 쓰였다**(㊲-e).
+     ⇒ ★ `#stage.moving` 으로 맨다 — `beginMove` 와 `beginTurn` 이 **둘 다** 붙이는 그 글자다.
+       둘 중 하나에만 손대면 세 번째가 난다. */
+  #stage.moving #dropLabel{display:block}
   #dropLabel.ok{border-color:rgba(159,220,134,.55);color:var(--leaf)}
   #dropLabel.no{border-color:rgba(255,120,100,.5);color:#ff9c8c}
 
