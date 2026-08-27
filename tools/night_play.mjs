@@ -768,6 +768,32 @@ const SNAP = `(()=>{ const S=window.__S(); const ts=S.tutorial||{};
     potBtn:(()=>{ try { const b=document.getElementById('sellPlant');
       return b ? ((b.textContent||'').replace(/\s+/g,' ').trim() + (b.disabled?' [잠김]':'')) : null; } catch(e){ return null; } })(),
     /* ★ 프롤로그 못박기가 «켜졌나» — 어제는 「화분이 하나뿐」으로 «유추»했다. 유추는 기록이 아니다. */
+    /* ★★★ **가방에서 끌 수 있나** (2026-08-27 · 박사님 "아직도안된다 몬스테라 처음 가방에서드래그")
+       ⚠ 시트를 «열지 않는다» — 열면 판이 흔들린다. 칸이 안 그려져 있으면 null 이다.
+       ⚠⚠ 이 안에는 백틱을 쓰지 않는다. */
+    bagDrag:(()=>{ try {
+      const cells = document.querySelectorAll('.bagslot');
+      if (!cells.length) return null;
+      const d = window.__drag, rv = window.__rv;
+      const out = [];
+      for (const c of cells) {
+        const what = c.getAttribute('data-place');
+        const ko = ((c.querySelector('.nm') || {}).textContent || '?').slice(0, 10);
+        /* ★ 어느 판에 있는 칸인가 — 가방인지 상점인지. 「가방에 몬스테라가 있다」를 가르려면 필요하다 */
+        const page = (c.closest && c.closest('[id^=page]')) ? c.closest('[id^=page]').id : '?';
+        const full = ((c.querySelector('.nm') || {}).textContent || '') + '|' + (c.getAttribute('title') || '');
+        if (!what) { out.push(page + '/' + full.slice(0, 30) + ':«못놓음»'); continue; }
+        const hand = c.classList.contains('draggable') ? 'CELL'
+                   : c.querySelector('.draggable') ? 'IMG' : 'NONE';
+        let ids = -1, dis = null;
+        try { const r = d.slotsFor(what); ids = (r.ids || []).length; dis = !!(r.sel && r.sel.disabled); } catch (e) {}
+        let on = false;
+        try { d.end && d.end(); d.begin(what, '', { clientX: 100, clientY: 400, pointerId: 1 }, null);
+              on = !!d.on; d.end && d.end(); } catch (e) {}
+        out.push(ko + ':' + hand + '/자리' + ids + (dis ? '/잠김' : '') + (on ? '/★켜짐' : '/⛔안켜짐'));
+      }
+      return out;
+    } catch(e){ return null; } })(),
     prologue:(()=>{ try { const S2=window.__S(); const ps=(S2.pots||[]);
       return !!(S2.tutorial && S2.tutorial.enabled && ps[0]); } catch(e){ return null; } })(),
     potWon:(()=>{ try {
