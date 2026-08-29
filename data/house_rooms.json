@@ -994,12 +994,21 @@
           "_method": "0.25m 격자·높이 0.10~1.80m. 가구 제외. 고체 벽(외곽)·칸막이·도려낸 경계 벽 속 점은 빼고, 창·문 개구부(reveal)는 살린다 — 창턱이 실제로 그 안에 놓인다."
         },
         "slots": {
-          "peak_summer": 6.01,
-          "avg7_summer": 3.86,
+          "peak_summer": 7.21,
+          "avg7_summer": 4.64,
           "count": 128,
           "sampled_peak_ratio_pct": 79,
           "_sampled_note": "slots.peak ÷ space.peak. 두 값의 표본이 다르다 — space 는 0.25m 격자 위 점이고 slots 는 가구가 정한 임의 높이다. 격자 사이에 더 좋은 자리가 있으면 100%를 넘을 수 있고, 그건 오차가 아니라 표본 차이다.",
-          "_method": "지금 furniture 배치 기준. 차폐에 가구 포함."
+          "_method": "지금 furniture 배치 기준. 차폐에 가구 포함.",
+          "_was_2026_08_02": {
+            "peak_summer": 6.01,
+            "avg7_summer": 3.86,
+            "count": 128,
+            "_why": "★ 옛 값을 «지우지 않는다». [Plan] 의 balance_decisions.md 가 이 수를 «실제로 썼다» — 지우면 그쪽 표가 «무엇에서 무엇으로» 움직였는지 아무도 못 본다.",
+            "_what_moved": "2026-08-02 뒤로 창 프리셋(80100cc 08-05)·가구 프리셋(ede8341 08-23)·방 데이터(2a089a3 08-23)가 바뀌었다. 값이 «틀렸던» 것이 아니라 «낡은» 것이다. 셋 다 «밝아지는» 방향이었다.",
+            "_measured_by": "tools/test_measured_fresh.mjs 가 돌 때마다 다시 재서 견준 값이다. 손으로 안 적었다.",
+            "_also": "⚠ 2026-08-29 에 이 방의 교탁을 x −3.6 → −3.24 로 옮겼다(사물함과 박혀 있었다). 그래서 roomRev 가 그 커밋이다. [잰 것] 그 이동으로 자리 수(128)도 최고(7.21)도 «안 움직였다»."
+          }
         },
         "area": {
           "floor_m2_net": 60.6,
@@ -1011,9 +1020,10 @@
           },
           "_method": "floor_m2_net = 0.25m 격자로 센 실제 바닥(외곽 벽 띠·칸막이·도려낸 자리 제외). floor_m2_gross = 외곽 치수 곱. 등 상한은 net 기준."
         },
-        "measuredAt": "2026-08-02",
-        "roomRev": "6d38200 2026-07-26 교실+교사방 11x6 · 깊은 창턱",
-        "status": "확정"
+        "measuredAt": "2026-08-29",
+        "roomRev": "52802d2 2026-08-29",
+        "status": "확정",
+        "_note_2026_08_29": "★ slots 만 다시 적었다. space·area 는 «안 건드렸다» — 그건 0.25m 격자를 훑는 일이라 브라우저 도구(_space_probe.html)가 있어야 한다. ⇒ ⚠ 이 방의 space·area 는 «아직 낡았다»."
       },
       "sills": [
         {
@@ -1427,12 +1437,20 @@
           "_method": "0.25m 격자·높이 0.10~1.80m. 가구 제외. 고체 벽(외곽)·칸막이·도려낸 경계 벽 속 점은 빼고, 창·문 개구부(reveal)는 살린다 — 창턱이 실제로 그 안에 놓인다."
         },
         "slots": {
-          "peak_summer": 5.64,
-          "avg7_summer": 3.63,
+          "peak_summer": 7.89,
+          "avg7_summer": 5.07,
           "count": 20,
           "sampled_peak_ratio_pct": 84,
           "_sampled_note": "slots.peak ÷ space.peak. 두 값의 표본이 다르다 — space 는 0.25m 격자 위 점이고 slots 는 가구가 정한 임의 높이다. 격자 사이에 더 좋은 자리가 있으면 100%를 넘을 수 있고, 그건 오차가 아니라 표본 차이다.",
-          "_method": "지금 furniture 배치 기준. 차폐에 가구 포함."
+          "_method": "지금 furniture 배치 기준. 차폐에 가구 포함.",
+          "_was_2026_08_02": {
+            "peak_summer": 5.64,
+            "avg7_summer": 3.63,
+            "count": 20,
+            "_why": "★ 옛 값을 «지우지 않는다». [Plan] 의 balance_decisions.md 가 이 수를 «실제로 썼다» — 지우면 그쪽 표가 «무엇에서 무엇으로» 움직였는지 아무도 못 본다.",
+            "_what_moved": "2026-08-02 뒤로 창 프리셋(80100cc 08-05)·가구 프리셋(ede8341 08-23)·방 데이터(2a089a3 08-23)가 바뀌었다. 값이 «틀렸던» 것이 아니라 «낡은» 것이다. 셋 다 «밝아지는» 방향이었다.",
+            "_measured_by": "tools/test_measured_fresh.mjs 가 돌 때마다 다시 재서 견준 값이다. 손으로 안 적었다."
+          }
         },
         "area": {
           "floor_m2_net": 32.1,
@@ -1444,9 +1462,10 @@
           },
           "_method": "floor_m2_net = 0.25m 격자로 센 실제 바닥(외곽 벽 띠·칸막이·도려낸 자리 제외). floor_m2_gross = 외곽 치수 곱. 등 상한은 net 기준."
         },
-        "measuredAt": "2026-08-02",
-        "roomRev": "1fdc9ff 2026-07-26",
-        "status": "확정"
+        "measuredAt": "2026-08-29",
+        "roomRev": "2a089a3 2026-08-23",
+        "status": "확정",
+        "_note_2026_08_29": "★ slots 만 다시 적었다. space·area 는 «안 건드렸다» — 그건 0.25m 격자를 훑는 일이라 브라우저 도구(_space_probe.html)가 있어야 한다. ⇒ ⚠ 이 방의 space·area 는 «아직 낡았다»."
       }
     }
   },
