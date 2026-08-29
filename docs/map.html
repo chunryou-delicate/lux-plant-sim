@@ -540,9 +540,9 @@ graph LR
           <td class="num">3 / 3</td>
           <td>게임 코드에 <b>한 줄도 없다</b>. 오늘 칠을 바꾼 것이 게임에 영향이 없는 까닭</td>
         </tr>
-        <tr><td>캐릭터 동작 클립</td><td class="num"><b>120 / 128</b><br><span style="color:var(--ink-3)">384 크레딧</span></td><td>게임은 4동작 × 2인만 연다</td></tr>
-        <tr><td>캐릭터 에셋 용량</td><td class="num">1,179 / 1,190<small>MB</small></td><td>게임이 여는 건 <b>0.9%</b></td></tr>
-        <tr><td>캐릭터 6종</td><td class="num">6 / 8</td><td>직업 선택이 아직 없다</td></tr>
+        <tr><td>캐릭터 동작 클립</td><td class="num"><b>124 / 128</b><br><span style="color:var(--ink-3)">396 크레딧</span></td><td>게임은 4동작 × <b>1인</b>만 연다</td></tr>
+        <tr><td>캐릭터 에셋 용량</td><td class="num">1,175 / 1,190<small>MB</small></td><td>게임이 여는 건 <b>1.27%</b> — 22파일</td></tr>
+        <tr><td>캐릭터 <b>7종</b></td><td class="num">7 / 8</td><td>직업 선택이 없다. <b>자취남은 표에 있는데 아무도 안 부른다</b></td></tr>
         <tr><td><b>목록의 캐릭터 등록</b></td><td class="num" style="color:var(--gap)"><b>0 / 246</b></td><td>이름으로 못 찾는다</td></tr>
       </tbody>
     </table>
@@ -635,9 +635,11 @@ graph LR
 
   <h3>돌긴 도는데 안 재 본 것</h3>
   <div class="gaps">
-    <div class="g"><div class="sev"></div><div>
-      <div class="t">헤드리스 생장 창 ↔ 브라우저 생장 창</div>
-      <div class="d">같은 수를 내는지 <em>아무도 안 쟀다.</em> 헤드리스는 3D 스텁 위에서 돈다 — 형태 축이 갈릴 수 있다. <b>잴 수는 있다.</b></div>
+    <div class="g i"><div class="sev" style="background:var(--ok)"></div><div>
+      <div class="t">헤드리스 생장 창 ↔ 브라우저 생장 창 <span class="chip c-ok">닫힘</span></div>
+      <div class="d">네 판을 재니 <b>한 글자도 안 다르다</b> — 잎 수·무늬·갈라짐·성숙도·단계까지.
+        3D 스텁은 형태 판정에 안 끼어든다. ⇒ <b>생장 창의 표 전부가 산다.</b>
+        검사로 남겨 다음에 갈리면 스스로 붉어진다.</div>
     </div></div>
     <div class="g w"><div class="sev"></div><div>
       <div class="t">무늬가 화면에 실제로 그려지는가</div>
@@ -788,8 +790,8 @@ graph LR
       <div class="role">생장 · 조도 관문 · 작물 품질</div>
       <dl>
         <dt>쥔 것</dt><dd><code>plant_grow.html</code> 3,881줄 · 자리·작물·잎 프로브 넷</dd>
-        <dt>다음</dt><dd>바닥 계약 대기 · 헤드리스↔브라우저 검사</dd>
-        <dt>비어 있는 것</dt><dd class="miss">헤드리스와 브라우저가 같은 수를 내는지 안 쟀다</dd>
+        <dt>다음</dt><dd>원룸 재기 · 바닥 계약 닫기</dd>
+        <dt>비어 있는 것</dt><dd class="miss">원룸을 한 번도 안 쟀다 — 이제 잰다</dd>
       </dl>
     </div>
     <div class="ses">
@@ -911,7 +913,7 @@ graph LR
       <tbody>
         <tr><td>목록에 캐릭터 246개 올리기</td><td>인물</td><td>0원. <b>지금 이름으로 못 찾는다</b></td></tr>
         <tr><td><b>낡은 세 방 재측정</b></td><td>집</td><td>아파트 6.02 ↔ 9.75. <b>낡은 값이 쓰이고 있다</b></td></tr>
-        <tr><td>헤드리스 ↔ 브라우저 같은 수인가</td><td>생장</td><td>「시키면 지금 합니다」</td></tr>
+        
         <tr><td>초상화를 폰 크기로 보기</td><td>인물</td><td>무엇을 가리는지</td></tr>
         <tr><td><code>acceptance.json</code> 을 읽히게</td><td>기획 · 코어</td><td>합격 조건이 죽어 있다</td></tr>
         <tr><td>임시 도구 26개 정리</td><td>집</td><td>—</td></tr>
@@ -1012,12 +1014,9 @@ graph LR
 <script type="module">
   import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
   const dark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-  mermaid.initialize({
-    startOnLoad: true,
-    theme: dark ? 'dark' : 'neutral',
-    themeVariables: { fontFamily: '"IBM Plex Sans KR", system-ui, sans-serif', fontSize: '14px' },
-    flowchart: { curve: 'basis', padding: 14 }
-  });
+  mermaid.initialize({startOnLoad:true, theme: dark?'dark':'neutral',
+    themeVariables:{fontFamily:'"IBM Plex Sans KR", system-ui, sans-serif', fontSize:'14px'},
+    flowchart:{curve:'basis', padding:14}});
 </script>
 </body>
 </html>
