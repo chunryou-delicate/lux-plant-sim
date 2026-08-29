@@ -15594,18 +15594,28 @@
         "credits": 27,
         "balance_after": 4475,
         "note": "★ leaf 가 잔액을 다시 재다 27 이 빈 것을 잡았고(4502→4475), char 가 까닭을 냈다. 총괄이 이었다"
+      },
+      {
+        "date": "2026-08-30",
+        "window": "char",
+        "service": "meshy",
+        "use": "★ 뼈대 시험 — 기존 자취녀 메시를 meshy_rig 로 다시 리깅해 24본이 그대로인지 판정",
+        "qty": 1,
+        "credits": 5,
+        "balance_after": 4470,
+        "note": "박사님 승인 받고 씀. 판정 O — 24본 «완전 일치». ⇒ 모션 128개(384cr)가 캐릭터를 다시 만들어도 붙는다. 뼈대는 메시에서 나오는 것이 아니라 도구가 박는 고정 표준이다(몸 비율 68.7% 다른 아홉이 다 같은 24본). ★ 곁에서 나온 것 — Meshy 리깅 결과의 model_urls.glb 는 «입력 파일을 되돌려준다». download_model({task_type:'rigging'}) 을 써야 한다(char README §11-3). char 가 MD5 를 재 보고 잡았다 — 안 쟀으면 「Meshy 가 깨졌다」를 올릴 뻔했다"
       }
     ],
     "balance_checked": {
-      "date": "2026-08-29",
-      "meshy": 4475,
+      "date": "2026-08-30",
+      "meshy": 4470,
       "higgsfield": 0,
       "_prev": {
-        "date": "2026-08-23",
-        "meshy": 4502,
+        "date": "2026-08-29",
+        "meshy": 4475,
         "higgsfield": 0
       },
-      "_delta_note": "✔ 2026-08-30 풀림 — 27 은 char 의 몬이 초상 3장이었다(위 entries 마지막 줄). 더 이상 빈 곳이 없다",
+      "_delta_note": "✔ 4475 → 4470. 5는 char 의 뼈대 시험이다(위 entries 마지막 줄). 빈 곳 없다. ★ 짐작으로 뺀 값이 아니라 다시 재서 넣었다",
       "_measured_by": "leaf — MCP 로 직접 재었다(meshy_check_balance / higgsfield balance)",
       "_higgsfield_caution": "⚠ 08-03 에 791 이었던 것이 0 이 됐다. 그 사이 기록은 한 줄도 없다. 쓴 것인지 플랜이 만료돼 날아간 것인지 모른다(지금 plan_type=free). 짐작해서 적지 않는다",
       "_note": "다음에 재는 창은 이 값과 비교해라. 값이 늘어 있으면 누군가 충전한 것이고, 줄어 있는데 entries 가 그대로면 누군가 쓰고 안 적은 것이다"
