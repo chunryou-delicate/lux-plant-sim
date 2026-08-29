@@ -4663,22 +4663,44 @@ function coach(id) {
           기다리는 것은 **하나뿐**이다(§coach ⓐ 한 번에 하나와 같은 규율).
        ㉯ 부르는 자리를 **두 길 다**에 놓는다(끌기·누르기).
    ★ 「한 번 보면 끝」(ⓓ)은 그대로다 — `coachSeen` 이 그것을 지킨다. */
-let coachPending = null;
+/* ★★★ 2026-08-29 — **못 뜬 쪽지는 «새로고침해도 기다린다»** (박사님 ⑥)
+   ══════════════════════════════════════════════════════════════════
+   박사님: *"가이드데로 «행동안하고» «다음날 눌러도» 가이드는 «살아있게» 해줘."*
+   ⚠ 여기가 `let coachPending = null` 하나였다 — **화면 변수**라 새로고침·이어하기에
+     사라진다. ⇒ ⛔ 못 뜬 쪽지는 **영영** 안 뜬다. `walkTip`(캐릭터 이동 튜토)이
+     2026-08-19 에 「기다리게」까지 고쳐 놓고도 그렇게 새는 자리였다.
+   ★ 「봤다」(`coachSeen`)는 이미 localStorage 에 남는다. **「기다리는 중」만 안 남았다.**
+     ⇒ ⇒ ★★ 그러니 **같은 서랍에 같이 넣는다** — 새 계통을 안 짓는다(㊺).
+   ⚠ 기다리는 것은 **하나뿐**이다(§coach ⓐ 한 번에 하나). 그 규율은 안 바꿨다.
+   ⚠ localStorage 는 없을 수 있다(사생활 모드) — 못 쓰면 예전 그대로 화면 변수로만 돈다. */
+const COACH_WAIT_KEY = 'byeot.coach.wait';
+let coachPending = (() => {
+  try { const v = localStorage.getItem(COACH_WAIT_KEY); return v || null; } catch { return null; }
+})();
+function coachPendingSet(id) {
+  coachPending = id || null;
+  try {
+    if (id) localStorage.setItem(COACH_WAIT_KEY, id);
+    else localStorage.removeItem(COACH_WAIT_KEY);
+  } catch { }
+}
 function coachLater(id) {
   if (!COACH_NOTES[id] || coachSeen().has(id)) return false;
-  if (coach(id)) { coachPending = null; return true; }
-  coachPending = id;                       /* 화면이 바쁘다 — 조용해지면 뜬다 */
+  if (coach(id)) { coachPendingSet(null); return true; }
+  coachPendingSet(id);                     /* 화면이 바쁘다 — 조용해지면 뜬다(새로고침해도) */
   return false;
 }
 function coachTick() {
   if (coachNow && !coachClear()) coachHide();
   /* 기다리던 쪽지 — 지금 뜰 수 있으면 띄운다. 이미 본 것이면 기다림을 접는다. */
   if (!coachNow && coachPending) {
-    if (coachSeen().has(coachPending)) coachPending = null;
-    else if (coach(coachPending)) coachPending = null;
+    /* ⚠ 없는 쪽지 이름이 서랍에 남아 있을 수 있다(옛 판·이름이 바뀐 판) — 그때도 접는다 */
+    if (!COACH_NOTES[coachPending] || coachSeen().has(coachPending)) coachPendingSet(null);
+    else if (coach(coachPending)) coachPendingSet(null);
   }
 }
 window.__byeotCoach = { show: coach, hide: coachHide, now: () => coachNow,
+                        later: coachLater, waiting: () => coachPending,
                         seen: () => [...coachSeen()], notes: () => Object.keys(COACH_NOTES) };
 
 window.__byeotHint = () => { try { updateHint(); } catch (e) { /* 안내가 게임을 막지 않는다 */ } };
