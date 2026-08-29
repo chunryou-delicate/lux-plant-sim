@@ -116,8 +116,20 @@ async function run() {
       try { await p.waitFor(READY, 240000, 400); } catch { ready = false; }
       console.log('  띄움 ' + s.id + '  (' + s.why + ')' + (ready ? '' : '  ⚠ 부팅 표시 못 봄'));
       if (!ready) { report.push({ size: s.id, ready: false }); continue; }
+      /* ★ 「같은 화면을 여러 번 찍었나」를 자가 «스스로» 본다.
+         ⛔ 실제로 그렇게 넷을 찍고도 「✓」 넷이 찍혀 성공처럼 보였다. */
+      const seenPng = [];
 
       for (const sh of SHOTS) {
+        /* ⚠⚠ **먼저 큐를 비운다.** 안 비우면 «앞 줄이 그대로 떠 있다».
+           `__dlgOpen` 은 «큐에 붙일» 뿐 보이는 줄을 안 바꾼다.
+           ⇒ ⛔ 처음에 이걸 안 하고 넷을 찍었더니 **네 장이 다 같았다** —
+             같은 크기 · 같은 그림(`jachwi_tired`), 내 대사 넷 중 «아무것도 아닌» 것.
+             ⇒ ★ 그런데 `__dlgOpen` 은 «참»을 돌려줬고 그림도 넷 다 저장됐다.
+               ⛔ 「열렸다」와 「그 줄이 보인다」는 다르다 — 오늘의 그 갈래가 또 나왔다. */
+        await p.eval("(()=>{ const b=document.getElementById('dlgSkip'); "
+          + 'if (b) b.click(); return true; })()');
+        await sleep(200);
         const opened = await p.eval('window.__dlgOpen(' + JSON.stringify(sh.ids) + ')');
         if (opened === false || String(opened).startsWith('ERR')) {
           console.log('    - ' + sh.name + ': 안 열렸다 (' + opened + ')');
@@ -132,12 +144,19 @@ async function run() {
         await p.shot(f);
         await saveSidecar(p, f, { ready: true, probe: m, why: sh.why });
         const tap = (m.under || []).filter(u => u.tappable);
+        const png = String(m.faceUrl || '').match(/portrait_[a-z_]+\.png/);
         console.log('    ✓ ' + sh.name.padEnd(6)
           + ' 얼굴 ' + (m.face ? m.face.w + '×' + m.face.h : '없음')
-          + ' · faceH ' + m.faceH
-          + (m.noface ? ' · noface' : '')
+          + ' · ' + (png ? png[0] : (m.noface ? 'noface' : '그림없음'))
           + (tap.length ? '  ⚠ 누를 것 ' + tap.length + '개를 덮는다' : ''));
+        seenPng.push(png ? png[0] : (m.noface ? '(noface)' : '(없음)'));
         report.push({ size: s.id, shot: sh.name, ...m });
+      }
+      if (seenPng.length > 1 && new Set(seenPng).size === 1) {
+        console.error('  ⛔⛔ ' + s.id + ': ' + seenPng.length
+          + '장이 «전부 같은 그림»이다 (' + seenPng[0] + ')');
+        console.error('     ⇒ 대사가 «안 바뀐» 것이다. 이 판의 그림은 «믿지 말 것».');
+        report.push({ size: s.id, sameShotWarning: seenPng });
       }
     } catch (e) {
       console.error('  ✗ ' + s.id + ': ' + e.message);
