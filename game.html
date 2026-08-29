@@ -10504,12 +10504,14 @@ const FACE_FILE = {
        안 쓰는 길을 열어 두면 나중에 「왜 이게 있지」가 된다. */
   /* ★★ 2026-08-29 — `numb` 를 이었다([Char] `5609cd3` · [Plan] `5460601`).
        뜻은 **얼어붙음 · 말을 잃음**이다. 파산 첫 줄(「지갑에 남은 게 없다」)이 쓴다.
-     ⚠ 그림 파일 이름은 `portrait_jachwi_blank.png` 인데 **키는 `blank` 로 안 짓는다** —
-       [Char]가 파일을 열기 «전»까지 «빈 이미지»인 줄 알았다고 밝혔다. 다음 사람도 그런다.
-       ⇒ 키는 «감정»으로 짓는다(옆 줄들과 같은 결). 파일 이름을 [Char]가 바꾸면 값만 고치면 된다. */
+     ★ 파일 이름도 같이 바뀌었다 — [Char] `0d4f1b9`: `portrait_jachwi_numb.png`.
+       ⚠ 왜 바꿨는가 — 키가 `blank` 였을 때 [Char]가 파일을 열기 «전»까지 «빈 이미지»인 줄
+         알았다고 밝혔다. 옆 키들은 전부 «감정»인데 그것만 «생김»이었다. 이제 둘이 같은 말을 한다.
+       ⚠★ 그리고 그 사이에 **대사가 안 죽고 `neutral` 로 떴다** — CSS 가 url 을 둘 주기 때문이다.
+         ⇒ ★★ 「안 죽는 것」이 오히려 무섭다. [Char] 의 관문이 그것을 잡았다(check_face_reach). */
   jachwi: { base: 'neutral', happy: 'happy', worry: 'worry',
             cry: 'cry', surprise: 'surprise', tired: 'tired',
-            think: 'think', curious: 'think', proud: 'proud', numb: 'blank' },
+            think: 'think', curious: 'think', proud: 'proud', numb: 'numb' },
   /* ★ 2026-08-26 — `surprise` 가 들어왔다([Char] `e4c0a67` · 600×800 · 같은 바닥선).
      ⚠ **한 줄에만 쓴다** — `varieLucky` 의 「어어. 잠깐만. 그거 무늬야.」 하나다.
        [Plan] 판정: *"여러 줄에 쓰면 놀람이 «흔해진다». 한 줄뿐이라 «아껴 쓴 것»이 된다."*
