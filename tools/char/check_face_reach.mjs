@@ -311,6 +311,8 @@ function main() {
   console.log();
   console.log('  ★ 실제로 이 저장소에서 그 틈에 빠진 일이 있습니다:');
   console.log('     `monsteraMoved` 는 «불리기는 불렸는데» 조건(arrivalSlotId)이 «죽어» 있었다.');
+  console.log('     ✔ 그건 [core] 가 열었다(2026-08-30 `57d3972`). ★ 그래도 «안 지운다» —');
+  console.log('       고쳤다고 지우면 다음 사람이 «그런 함정이 있었다는 것»을 모른다.');
   console.log('     ⇒ 그때도 검사는 «초록»이었고 사람은 그 대사를 «한 번도 못 봤다».');
   console.log('     (test_dialogue_coverage.mjs:572)');
   console.log();
