@@ -10982,6 +10982,32 @@ function syncRoom() {
       roomView.setPlantAt(ep.id, ep.at, { kind: 'emptypot', potAsset: ep.potAsset || null })
         .catch(warn('빈 화분'));
     }
+    /* ★★★★ 2026-08-29 — **가방으로 간 그루는 방에서 «걷는다»** (박사님)
+       ══════════════════════════════════════════════════════════════════
+       박사님: *"몬스테라 «눌러서 가방으로» 눌렀는데 ★ «화면에서 안 사라지고» 가방에 들어가네"*
+       ⇒ 재서 갈랐다(probe_recall). ★ **자리로 놓은 것과 좌표로 놓은 것이 갈렸다:**
+```
+         자리(banjiha-desk:0) 로 놓은 것 → [가방으로] ⇒ ✔ 방에서 «사라진다»
+         ★ 좌표(free:pot_a) 로 놓은 것   → [가방으로] ⇒ ⛔ 방에 «그대로 남는다»
+```
+       ⛔ 까닭: 걷는 길이 `clearIfMoved` **하나**뿐인데, 그것은 `shownAt[kind]` 에
+         **자리(slotId)** 만 적어 두고 `setPlant(옛자리, null)` 로 지운다.
+         ⇒ 좌표로 세운 것은 `setPlantAt(화분 id, …)` 로 **id 를 열쇠로** 서므로
+           그 길이 «닿지 않는다». ⇒ ⇒ ★ **좌표로 놓은 그루를 걷는 길이 «없었다».**
+       ⚠ 바로 아래 주석이 *"옛 자리를 걷는 일은 위 clearIfMoved 가 이미 했다 — 여기서
+         안 해도 안 남는다"* 라고 «단언»하고 있었다. **자리로 놓은 것에만 맞는 말이다.**
+       ★ 그리고 이것이 [취소] 흠(어제)의 «거울»이다 — 그때는 「가방 칸이 안 돌아왔다」,
+         오늘은 「방에서 안 사라진다」. **둘 다 한쪽만 바뀌고 다른 쪽이 안 따라간 것**이다.
+       ⇒ ★★ 「가방에 있나」의 정본은 `placedOnce`/자리 없음이다(§bagPots). **그 정본 하나를
+         보고** 방에서 걷는다 — 첫 그루든 둘째 그루든 **같은 줄**이 맡는다(㊷).
+       ⚠ `setPlantAt(id, null, null)` 이 곧 「걷어라」다(room_view §setPlantAt 첫 줄). */
+    if (roomView.setPlantAt) {
+      for (const q of (S.pots || [])) {
+        if (!q || q.at || q.slotId) continue;              /* 방에 있는 것은 안 건드린다 */
+        try { Promise.resolve(roomView.setPlantAt(q.id, null, null)).catch(warn('가방으로 간 그루')); }
+        catch (e) { warn('가방으로 간 그루')(e); }
+      }
+    }
     if (p && p.at && roomView.setPlantAt)
       Promise.resolve(roomView.setPlantAt(p.id, p.at, potSpec)).catch(warn('몬스테라'));
     else if (p && p.slotId)
