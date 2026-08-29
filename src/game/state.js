@@ -1709,6 +1709,59 @@ export function addedFurniture(S) {
 export const isFurnitureSold = (S, uid) => soldFurniture(S).includes(uid);
 export const addedFurnitureOf = (S, uid) => addedFurniture(S).find(f => f.uid === uid) || null;
 
+/* ★★★★ 2026-08-30 — **가방에 든 가구** (원룸 이사 · [House] 합의 `agree-oneroom-move-20260830.md`)
+   ══════════════════════════════════════════════════════════════════
+   박사님: *"반지하 있던 가구만 «인벤에 넣어서 가져와서» 플레이어가 «배치»하도록 해."*
+   ⚠ **있는 칸 셋을 다 대 봤고 셋 다 뜻이 다르다**(그래서 새 칸을 낸다):
+     `furnitureSold`   「**판** 것」 — `sellFurniture` 가 **돈을 준다**. 이사 짐을 넣으면
+                       언젠가 「이사했더니 돈이 들어왔다」가 난다
+     `furnitureAdded`  「방에 **놓은** 것」 — 가방에 든 것은 방에 없다
+     `S.home.furniture` 「**옮긴 자리**」만 — 「있나 없나」를 안 담는다
+   ★ 이름 하나가 두 가지 일을 하면 안 된다 — 오늘 uid 에서 갈랐던 그 자리와 같은 판단이다.
+   ⚠ **무엇을 담을지는 여기서 안 고른다.** 「방에 붙었나」는 프리셋(`mount`)이 알고 그 데이터는
+     [House] 마당이다. ⇒ **부르는 쪽이 목록을 준다**(㊸ 임자를 밝혀라).
+   ⚠ 그리고 이 칸은 **세이브에 실어야 한다**(save.js §furnitureBag) — 안 실으면 새로고침에
+     짐이 사라진다. 2026-08-30 에 `coachPending` 이 그랬다. */
+export function carriedFurniture(S) {
+  if (!S.home) S.home = { room: 'banjiha', furniture: {} };
+  if (!Array.isArray(S.home.furnitureBag)) S.home.furnitureBag = [];
+  return S.home.furnitureBag;
+}
+export const carriedFurnitureOf = (S, uid) => carriedFurniture(S).find(f => f.uid === uid) || null;
+
+/* 가구 하나를 가방에 담는다. **방에서 걷는 일은 여기서 안 한다** — 이사는 방을 통째로
+   갈아 끼우므로 옛 방 정의가 더 안 쓰인다(oneroom §moveIntoOneroom). */
+export function carryFurniture(S, row) {
+  if (!row || !row.uid || !row.preset)
+    throw new Error('[가구] 가방에 담으려면 uid 와 preset 이 있어야 합니다: ' + JSON.stringify(row));
+  const bag = carriedFurniture(S);
+  if (bag.some(f => f.uid === row.uid)) return carriedFurnitureOf(S, row.uid);   // 두 번 담아도 하나다
+  const one = { uid: row.uid, preset: row.preset,
+                ...(row.y == null ? {} : { y: row.y }) };
+  bag.push(one);
+  return one;
+}
+
+/* 가방에서 꺼내 **방에 놓는다.** 가방이 하나 줄고 방에 한 줄이 는다.
+   ⚠ `placeBoughtFurniture` 와 **같은 결**이다 — 겹침·방 밖 판정은 3D 가 갖는다(room_view.furnitureFit).
+     여기는 「무엇이 어디에 있다」만 적는다.
+   ★ uid 를 **그대로** 쓴다 — 새 uid 를 주면 `slotId = {uid}:{n}` 이 통째로 바뀌어
+     세이브의 화분이 가리키는 자리를 잃는다([House] 실측 · 합의 ②). */
+export function placeCarriedFurniture(S, uid, pos, opt = {}) {
+  const one = carriedFurnitureOf(S, uid);
+  if (!one) { const e = new Error(`[가구] 가방에 없습니다: ${uid}`); e.tutorialInput = true; throw e; }
+  assertFurnitureAt(pos, opt);
+  const list = addedFurniture(S);
+  if (list.some(f => f.uid === uid))
+    throw new Error(`[가구] 이미 방에 있습니다: ${uid}`);
+  const row = { uid, preset: one.preset, x: pos.x, z: pos.z,
+                rot: pos.rot == null ? 0 : pos.rot,
+                ...(pos.y == null ? {} : { y: pos.y }) };
+  list.push(row);
+  S.home.furnitureBag = carriedFurniture(S).filter(f => f.uid !== uid);
+  return { ...row, fromBag: true };
+}
+
 /* 사서 재고에 있는 가구를 **방에 놓는다.** 재고가 하나 빠지고 방에 한 줄이 는다.
      itemId  `furn_<preset>` (상점 품목 id)
      pos     { x, z, rot?, y? } — 가구 자리 규약(도°)과 같다

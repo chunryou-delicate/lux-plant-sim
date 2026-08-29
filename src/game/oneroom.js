@@ -46,7 +46,7 @@ import { cropSites, placeCrop, syncCropLead, CROP_SITE_IDS } from './first_play.
 /* ★ 거둔 시루는 `placeCrop` 이 막는다(수확 잠금). 이사는 「손으로 옮기는 것」이 아니라
    「방이 통째로 바뀌는 것」이라 그 잠금을 우회해야 자리를 지킬 수 있다 — 자리 두 칸만 짓는다. */
 import { spotOf } from './place.js';
-import { pot0, pushLog, rehomePot } from './state.js';
+import { pot0, pushLog, rehomePot, carryFurniture } from './state.js';
 import { rehomeCuttings } from './propagation.js';
 import { weatherE } from '../engine/weather.js';
 
@@ -226,6 +226,24 @@ export function moveIntoOneroom(S, io = {}, opt = {}) {
      표는 방을 안 가린다 — 반지하 uid 는 원룸에 없어서 그냥 안 얹힐 뿐이고,
      나중에 되돌아갈 일이 있으면 그때 그대로 산다(save.js §furnitureNotInRoom 과 같은 판단). */
 
+  /* ★★★★ 2026-08-30 — **반지하 가구를 가방에 담는다** (박사님 · [House] 합의)
+     ══════════════════════════════════════════════════════════════════
+     박사님: *"반지하 있던 가구만 «인벤에 넣어서 가져와서» 플레이어가 «배치»하도록 해."*
+     ⚠ **무엇을 담을지는 여기서 안 고른다.** 「방에 붙었나」는 프리셋(`mount`)이 알고
+       그 데이터는 [House] 마당이다(`rooms_spec §13`). ⇒ **부르는 쪽이 목록을 준다**(㊸).
+       `opt.carry = [{uid, preset}]` — 안 주면 **예전 그대로**다(아무것도 안 담는다).
+     ⚠ 「팔 수 있나」로 가르면 안 된다 — [House] 실측: `furnitureQuoteOf` 로 가르면
+       **식물등 셋이 「두고 가는 쪽」**으로 떨어진다. 합의(등은 들고 온다)와 정반대다.
+       ★ 「팔 수 있나」와 「들고 갈 수 있나」는 **다른 물음**이다.
+     ★ 방에서 걷는 일은 안 한다 — 방이 통째로 갈리므로 옛 방 정의가 더 안 쓰인다. */
+  const carried = [];
+  for (const row of (Array.isArray(opt.carry) ? opt.carry : [])) {
+    try { carried.push(carryFurniture(S, row).uid); }
+    catch (e) { pushLog(S, '⚠ 이사 — 못 담았습니다: ' + (e && e.message)); }
+  }
+  if (carried.length)
+    pushLog(S, `📦 반지하 가구 ${carried.length}개를 가방에 담았습니다 — 원룸에서 놓아 주세요`);
+
   /* ③ 자리를 비운다. 반지하의 슬롯 id 도 좌표도 원룸에서는 뜻이 없다 —
      그대로 두면 계약이 「이 방에 없는 자리」를 실어 조용히 0 DLI 가 되거나 던진다. */
   const cleared = clearPlacements(S);
@@ -252,6 +270,7 @@ export function moveIntoOneroom(S, io = {}, opt = {}) {
   return {
     ...r,
     fromRoom, roomId, roomChanged: true, roomBuilt,
+    carried,                       /* ★ 가방에 담은 가구 uid — 화면이 「몇 개 담았나」를 말할 때 쓴다 */
     movedInOnDay: story.movedInOnDay,
     clearedPlacements: cleared,
     rehomed,

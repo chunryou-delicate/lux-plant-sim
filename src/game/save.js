@@ -1097,6 +1097,25 @@ function packAddedFurniture(list) {
   });
 }
 
+/* ★★ 2026-08-30 — **가방에 든 가구** `[{uid, preset, y?}]` (원룸 이사 · state §carriedFurniture)
+   ⚠ **안 실으면 새로고침에 짐이 사라진다.** 2026-08-30 에 `coachPending` 이 그랬다 —
+     기다리던 쪽지가 화면 변수라 새로고침에 없어졌고, 아무도 몰랐다.
+   ⚠ `preset` 을 반드시 적는다 — 없으면 다시 켤 때 **무슨 가구인지 모른다**(§packAddedFurniture 와 같은 까닭).
+   ★ 자리(x·z·rot)는 **안 적는다** — 가방에 든 것은 자리가 없다. 놓을 때 생긴다. */
+function packCarriedFurniture(list) {
+  const out = [], seen = new Set();
+  for (const [i, f] of needArr(list || [], 'home.furnitureBag').entries()) {
+    const path = `home.furnitureBag[${i}]`;
+    needObj(f, path);
+    const uid = needStr(f.uid, `${path}.uid`);
+    if (seen.has(uid)) continue;               // 두 번 담긴 것은 하나로(§carryFurniture 와 같은 규약)
+    seen.add(uid);
+    out.push({ uid, preset: needStr(f.preset, `${path}.preset`),
+               ...(f.y == null ? {} : { y: needNum(f.y, `${path}.y`) }) });
+  }
+  return out;
+}
+
 /* 등 겨누기 표 — `{ 등 uid: {yaw, tilt} }`. 둘 다 도(°)다.
    ★ 겨눈 등만 담긴다. 빈 표 = 안 겨눔이고, 옛 세이브에는 이 칸 자체가 없어 빈 표가 된다
      (docs/growlight_aim.md §2 · state.lamps.aim 주석).
@@ -1161,7 +1180,8 @@ export function serialize(S, opt = {}) {
                    자리표(`furniture`)만으로는 「무엇이 방에 있나」를 못 적는다 — 그 표는
                    **옮긴 자리**일 뿐이다. */
               furnitureSold: packSoldFurniture(home.furnitureSold),
-              furnitureAdded: packAddedFurniture(home.furnitureAdded) },
+              furnitureAdded: packAddedFurniture(home.furnitureAdded),
+              furnitureBag: packCarriedFurniture(home.furnitureBag) },
       lamps: {
         count: needInt(lamps.count ?? 0, 'lamps.count', { min: 0 }),
         litHours: needNum(lamps.litHours ?? 0, 'lamps.litHours', { min: 0 }),
@@ -1580,6 +1600,7 @@ export function deserialize(raw, opt = {}) {
      그 판의 방은 `house_rooms.json` 그대로이므로 **옛 판이 저장될 때와 똑같이 열린다.** */
   S.home.furnitureSold = packSoldFurniture(home.furnitureSold);
   S.home.furnitureAdded = packAddedFurniture(home.furnitureAdded);
+  S.home.furnitureBag = packCarriedFurniture(home.furnitureBag);
   /* ★ aim 이 없는 옛 세이브는 빈 표 = 「안 겨눔」으로 열린다 (2026-08-06).
      조용히 메꾸는 게 아니라 **없음이 곧 뜻을 갖는** 경우다 — 안 겨눈 등의 물리는
      옛 식과 비트 단위로 같으므로, 옛 세이브는 저장될 때와 똑같은 빛을 다시 본다. */
