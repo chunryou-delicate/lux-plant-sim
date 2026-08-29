@@ -1,6 +1,10 @@
 /* ============================================================
    tools/test_bagcell.mjs — 가방은 **빈 시루**만 · 게이지는 **칸**이다 · 2026-08-09 신설
    ------------------------------------------------------------
+   ⚠★ **이 검사는 `docs/engine/shots/` 의 문서 그림을 덮어쓴다.** 돌린 뒤 뜻이 없으면
+     `git checkout -- docs/engine/shots` 로 되돌려라 — 안 그러면 다른 창의 리베이스를 막는다
+     (2026-08-29 에 실제로 그랬다). 안 찍고 돌리려면 `--no-shots`.
+   ------------------------------------------------------------
      python tools/serve.py 8963
      BYEOT_URL=http://127.0.0.1:8963 node tools/test_bagcell.mjs
 
@@ -77,9 +81,10 @@ const skipTalk = async () => {
 await clickId('dlgSkip'); await sleep(700); await skipTalk();
 await clickId('guideClose'); await sleep(500);
 
+let shotCount = 0;                     /* ★ 몇 장을 덮어썼나 — 끝에서 말해 준다(§머리말 ⚠) */
 const shot = async (name) => {
   if (!SHOTS) return;
-  try { await page.shot(SHOT_DIR + name + '.png');
+  try { await page.shot(SHOT_DIR + name + '.png'); shotCount += 1;
         console.log(`        · 찍음 docs/engine/shots/${name}.png`); }
   catch (e) { console.log('       ↳ 못 찍음 — ' + (e && e.message)); }
 };
@@ -435,5 +440,16 @@ await shot('baggrid_empty_zero');
 /* ══ 콘솔에 처리 안 된 예외가 없다 ═════════════════════════════════════ */
 console.log('');
 console.log(`잰 것 ${seen}개 · 어긋난 것 ${bad}개`);
+/* ★★★ 2026-08-29 — **덮어쓴 것을 «스스로 말한다»**(계율 ㊹ 「경고문은 못 막는다 — 자가 던지게 하라」).
+   ⚠ 머리말에 적어 두는 것만으로는 안 막힌다 — 2026-08-29 에 [core] 가 그 머리말을 «안 읽고»
+     돌려서 문서 그림 열 장이 더러워졌고, 그것이 다른 창의 리베이스를 막았다.
+   ⛔ 저절로 되돌리지 않는다. 찍는 자리도 안 옮긴다 — 그건 계약이다(문서가 이 그림을 가리킨다).
+   ★ 하는 일은 하나뿐 — **돌린 사람이 «알게» 한다.** */
+if (shotCount) {
+  console.log('');
+  console.log(`⚠ 문서 그림 ${shotCount}장을 덮어썼습니다 — docs/engine/shots/`);
+  console.log('   뜻이 없으면 되돌리십시오:  git checkout -- docs/engine/shots');
+  console.log('   안 찍고 돌리려면:          node tools/test_bagcell.mjs --no-shots');
+}
 await page.close();
 process.exit(bad ? 1 : 0);
