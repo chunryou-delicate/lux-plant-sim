@@ -50,6 +50,8 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from recolor_calm import read, write, to_hsv, to_rgb
 
 MINT     = 151.0       # 화분 규약과 같은 자리
+PINK     = 343.0       # ★ 2026-08-30 — `_c2` 도 화분과 맞춘다(총괄이 ⓑ로 정함).
+                       #   그전엔 7.4°(코랄)였다. 화분 `_c2` 를 재니 345.0 이라 규약값 343 을 쓴다.
 TARGET_S = 0.13        # 화분 `_c1` 과 같은 자리
 
 LIT_H = (25, 70)       # 켜진 안쪽 — 따뜻한 띠
@@ -119,5 +121,6 @@ def make(base, folder, target_v, suf='_c1', hue=MINT):
 
 if __name__ == '__main__':
     for base, (folder, tv) in LAMPS.items():
-        d, n, lf = make(base, folder, tv)
-        print('%-38s %6d KB   켜진 데로 빼 둔 화소 %4.1f%%' % (d, n // 1024, 100 * lf))
+        for suf, hue, ko in (('_c1', MINT, '민트'), ('_c2', PINK, '핑크')):
+            d, n, lf = make(base, folder, tv, suf, hue)
+            print('%-38s %-4s %6d KB   켜진 데로 빼 둔 화소 %4.1f%%' % (d, ko, n // 1024, 100 * lf))
