@@ -22,6 +22,16 @@
 ⚠ 콘크리트는 원래 회백이다. 채도를 올리면 **다른 재질처럼** 보인다.
   그래서 채도를 **0.13 로 낮게** 둔다(위 표의 c1·c2 와 같은 자리).
 """
+
+# ── ⚠ 내 창에서만 도는 자가 되지 않게 (2026-08-30 · char 가 잡아 줬다) ──────────
+#   ★ 나는 늘 `PYTHONIOENCODING=utf-8` 을 «붙여서» 돌려 왔다. 그래서 «한 번도 안 걸렸다».
+#     char 의 cp949 콘솔에서는 이 파일 열 개가 «전부» 죽었다 — 그것도 **검사를 통과한 뒤**
+#     마지막 「✔」 한 글자를 찍다가. ⇒ ⛔ 「통과」가 «실패»로 보이고 종료값도 1 이 된다.
+#   ⇒ ★★ 「내 창에서만 도는 자」는 자가 아니라 «내 손버릇»이다.
+import sys as _sys
+for _s in (_sys.stdout, _sys.stderr):
+    try: _s.reconfigure(encoding='utf-8')
+    except Exception: pass
 import io, os, sys
 import numpy as np
 from PIL import Image

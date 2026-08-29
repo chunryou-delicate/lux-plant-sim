@@ -11,6 +11,16 @@
 ⚠ 이 검사는 «값이 옳은가»를 안 본다. **「파일이 스스로와 맞는가」만 본다.**
   ⇒ 크기가 실제로 맞는지는 재 봐야 안다. 그건 이 자의 몫이 아니다.
 """
+
+# ── ⚠ 내 창에서만 도는 자가 되지 않게 (2026-08-30 · char 가 잡아 줬다) ──────────
+#   ★ 나는 늘 `PYTHONIOENCODING=utf-8` 을 «붙여서» 돌려 왔다. 그래서 «한 번도 안 걸렸다».
+#     char 의 cp949 콘솔에서는 이 파일 열 개가 «전부» 죽었다 — 그것도 **검사를 통과한 뒤**
+#     마지막 「✔」 한 글자를 찍다가. ⇒ ⛔ 「통과」가 «실패»로 보이고 종료값도 1 이 된다.
+#   ⇒ ★★ 「내 창에서만 도는 자」는 자가 아니라 «내 손버릇»이다.
+import sys as _sys
+for _s in (_sys.stdout, _sys.stderr):
+    try: _s.reconfigure(encoding='utf-8')
+    except Exception: pass
 import json, os, sys, collections
 
 M = 'assets/manifest.json'
