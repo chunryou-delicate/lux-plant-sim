@@ -3364,7 +3364,33 @@ export function moveMonstera(fp, target, opt = {}) {
   /* ★ 「옮겼다」는 **자리가 실제로 달라진 것**이다. 같은 자리에 다시 놓는 것(좌표 미세 조정)은
      옮긴 것이 아니다 — 그걸 옮김으로 세면 등 안내가 자리 안내보다 먼저 나온다. */
   const g = fp.monstera.guide || (fp.monstera.guide = newMonsteraGuide());
-  if (fp.monstera.slotId !== spot.slotId) { g.moved = true; g.movedDays = 0; }
+  /* ★★★★ 2026-08-29 — **「가방에서 처음 놓는 것」은 «옮긴 것이 아니다»** (박사님·[Plan]·총괄)
+     ══════════════════════════════════════════════════════════════════
+     ⚠ 여기가 「자리가 달라졌나」 하나였다. 그런데 선물이 **가방으로** 오게 된 뒤로
+       도착 시점 `slotId` 가 `null` 이다 — ⇒ ★ 처음 **놓기만 해도** `null !== '자리'` 라
+       `g.moved` 가 참이 됐다. 그 길은 `startPhonePlacePotBag` 이 탄다.
+     ⛔ 그러면 세 가지가 한꺼번에 어긋난다(실측 probe_guidedoors · 16일):
+```
+       ① move = !g.moved && days>=10  ⇒ ★ 「창턱. 해가 제일 오래 드는 자리야」가 «영영» 안 뜬다
+       ② lamp =  g.moved && movedDays>=5 ⇒ 놓고 닷새면 «등» 얘기가 «먼저» 나온다 — 차례가 뒤집힌다
+       ③ 그리고 그 말이 **거짓**이다 — 「«옮겼는데도» 안 나네」인데 그 사람은 «안 옮겼다»
+       ④ 퀘스트 `monstera_home`(「몬스테라를 «밝은 자리»로 옮기세요」)도 이 칸을 본다
+          ⇒ ⇒ ★ 어두운 책상에 «놓기만» 해도 그 줄이 «끝났다»고 도장이 찍혔다
+```
+     ★ 걸음이 둘이다 — ① 가방에서 **놓기**(받아들이는 손짓) · ② 창가로 **옮기기**(배우는 손짓).
+       `fp.phase` 이름이 이미 `move_monstera` 다. **이름이 그렇게 말하고 있었다.**
+     ⇒ ★★ 그래서 **아직 아무 데도 없던 것을 처음 앉히는 것**은 옮김으로 안 센다.
+     ⇒ ⇒ ★★★ 그러면 차례가 **날수가 아니라 «구조»로** 정해진다 —
+       `moved` 가 거짓인 동안만 자리 유도, 참이 된 뒤에만 등 유도. **둘이 서로 배타다.**
+       일수(`MONSTERA_HINT_DAYS`·`MONSTERA_LAMP_HINT_DAYS`)를 어떻게 정하든 **안 뒤집힌다**(㊶).
+     ★ 그리고 문안이 **한 글자도 안 바뀌고 참이 된다** — 「옮겼는데도」가 진짜 옮긴 사람에게만 간다. */
+  /* ⚠★ 「처음 놓는 것」은 **부르는 쪽이 말해 준다**(`opt.firstPlace`).
+     ⛔ 여기서 추측하려 했다가 한 번 틀렸다 — `fp.monstera.slotId` 로 「이미 방에 있었나」를
+       보려 했는데, **자유 좌표로 놓으면 그 칸이 안 채워진다**(game.html 이 `isFreeSlotId` 면
+       이 함수를 아예 안 부른다). ⇒ 놓고 나서 옮겨도 `moved` 가 거짓으로 남았다(재서 잡았다).
+     ★ 부르는 쪽은 **안다** — 가방 칸이 `placedOnce === false` 였는지를 보고 놓는다.
+       그러니 여기서 짓지 말고 **받아 쓴다**(㉳ 임자를 밝혀라). */
+  if (!opt.firstPlace && fp.monstera.slotId !== spot.slotId) { g.moved = true; g.movedDays = 0; }
   fp.monstera.slotId = spot.slotId;
   fp.monstera.at = spot.at;
   return spot.slotId;

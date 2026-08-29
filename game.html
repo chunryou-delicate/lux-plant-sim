@@ -6282,7 +6282,10 @@ function startPhonePlacePotBag(potId) {
   let r = null;
   try {
     r = setPotAt(S, p, at, placeOpt());
-    if (S.firstPlay.enabled && r.slotId && !isFreeSlotId(r.slotId)) moveMonstera(S.firstPlay, r.slotId);
+    /* ★ 가방에서 **처음 놓는** 길이다 — «옮기기»가 아니라고 알려 준다(first_play §firstPlace).
+       ⚠ 안 알려 주면 「창턱」 유도가 영영 안 뜼고 등 얘기가 먼저 난다(2026-08-29 실측). */
+    if (S.firstPlay.enabled && r.slotId && !isFreeSlotId(r.slotId))
+      moveMonstera(S.firstPlay, r.slotId, { firstPlace: true });
     try { window.__byeotSheet.close(); } catch { }
     unlockAfterFix(); sfx.thud();
   } catch (e) { banner('배치하지 못했습니다', (e && e.message) || ''); return { ok: false }; }
