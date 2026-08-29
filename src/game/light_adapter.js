@@ -69,14 +69,40 @@ export function createLightEngine(data) {
        그래야 "기본값 + 차이" 로 남고, 세이브를 지우면 원래 방으로 돌아온다. */
   let furnOverrides = {};
 
+  /* ★★★★ 2026-08-30 — **판 가구를 걷고 산 가구를 더한다** (furnishop-to-plan §9)
+     ══════════════════════════════════════════════════════════════════
+     ⚠ `state.js` 가 `S.home.furnitureSold` · `furnitureAdded` 두 칸을 두면서 이렇게 적어 뒀다:
+       *"이 둘을 조립에 실제로 먹이는 일은 `light_adapter` 몫이고 그 파일은 이번 창의 쓰기 영역
+         밖이다. ★ 안 붙이면 **상태·세이브는 맞는데 화면은 안 바뀐다.**"*
+       ⇒ ⇒ 그 줄이 2026-08-30 까지 **안 붙어 있었다**(전문 검색 0건). 그동안 가구를 사고 팔면
+         상태만 바뀌고 방은 그대로였다. **오늘 원룸 이사가 그 벽에 부딪혔다.**
+     ★ 규약은 `furnOverrides` 와 같다 — **플레이어가 실제로 한 것만** 담고,
+       `data/house_rooms.json` 은 **한 글자도 안 고친다.** 조립 직전 사본 위에만 얹는다.
+     ⚠⚠ 걷으면 **그림자(`occluders`)와 자리(`plantSlots`)가 «같이»** 없어진다([House] 짚음).
+       하나만 되면 조용히 틀린다 — 「가구를 걷었는데 그 위 자리가 남아 있다」가 그 꼴이다.
+       ⇒ ★ 그래서 여기서 **`def.furniture` 하나만** 고친다. 아래 `buildHouse` 가 둘 다 그 목록에서 짓는다. */
+  let furnSold = [], furnAdded = [];
+
   /* 덮어쓰기를 얹은 **사본**을 만든다. 원본 def 는 손대지 않는다(되돌릴 수 있어야 한다). */
   function defWithOverrides(def) {
     const ids = Object.keys(furnOverrides);
-    if (!ids.length || !def.furniture) return def;
-    return { ...def, furniture: def.furniture.map(f => {
-      const o = f.uid ? furnOverrides[f.uid] : null;
-      return o ? { ...f, ...o } : f;
-    }) };
+    if (!ids.length && !furnSold.length && !furnAdded.length) return def;
+    if (!def.furniture) return def;
+    const lay = (f) => { const o = f.uid ? furnOverrides[f.uid] : null; return o ? { ...f, ...o } : f; };
+    const base = def.furniture.filter(f => !furnSold.includes(f.uid)).map(lay);   /* 판 것을 걷는다 */
+    return { ...def, furniture: [...base, ...furnAdded.map(lay)] };               /* 산 것을 더한다 */
+  }
+
+  /* 세이브·상태에서 읽은 두 목록을 통째로 얹는다. 방을 다시 조립해야 반영된다.
+     ⚠ `setFurnitureOverrides` 와 **같은 결**이다 — 지어내지 않고 받은 것만 담는다. */
+  function setFurnitureEdits(sold, added, { rebuild = true } = {}) {
+    furnSold  = Array.isArray(sold) ? sold.filter(x => typeof x === 'string') : [];
+    furnAdded = Array.isArray(added) ? added.map(f => ({ ...f })) : [];
+    for (const f of furnAdded)
+      if (!f || !f.uid || !f.preset)
+        throw new Error('[가구] 산 가구에는 uid 와 preset 이 있어야 합니다: ' + JSON.stringify(f));
+    if (rebuild && room) build(room.id);
+    return { sold: [...furnSold], added: furnAdded.map(f => ({ ...f })) };
   }
 
   /* ---- 방 조립 (방을 바꿀 때만) ---- */
@@ -536,6 +562,9 @@ export function createLightEngine(data) {
     /* ★ 자유 좌표 배치 (2026-08-03) — UI 창이 쓰는 공개 API */
     dliAt, nearestSlotTo, moveFurniture, setFurnitureOverrides, furnitureList,
     furnitureOverrides: () => ({ ...furnOverrides }),
+    /* ★ 판 것·산 것 (2026-08-30 · §defWithOverrides) — 화면·이사 창이 쓰는 공개 API */
+    setFurnitureEdits,
+    furnitureEdits: () => ({ sold: [...furnSold], added: furnAdded.map(f => ({ ...f })) }),
     /* ★ 등 겨누기 (2026-08-06) — 화면 창이 쓰는 공개 API */
     setLampAim, clearLampAim, setLampAims, lampList, aimRangeOf,
     lampAims: () => ({ ...lampAims }),
