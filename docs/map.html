@@ -271,7 +271,7 @@ hr.rule{border:none; border-top:1px solid var(--line); margin:44px 0}
 <nav class="strip">
   <a href="#gaps" class="gap"><div class="n">10</div><div class="l">박사님 결정을 기다리는 것</div></a>
   <a href="#ready" class="warn"><div class="n">6</div><div class="l">값이 안 걸려 바로 할 수 있는 것</div></a>
-  <a href="#unused" class="idle"><div class="n">58<small style="font-size:16px">%</small></div><div class="l">만들었는데 게임이 안 여는 잎</div></a>
+  <a href="#unused" class="idle"><div class="n">12</div><div class="l">만들었는데 게임이 못 여는 것</div></a>
   <a href="#closed" class="ok"><div class="n">8</div><div class="l">오늘 닫힌 것</div></a>
 </nav>
 
@@ -523,9 +523,10 @@ graph LR
       <thead><tr><th style="width:26%">무엇</th><th class="num" style="width:16%">안 쓰는 몫</th><th>어디서 끊겼나</th></tr></thead>
       <tbody>
         <tr>
-          <td><b>잎 무늬 갈래</b></td>
-          <td class="num"><b>22 / 38</b><br><span style="color:var(--gap)">약 60장</span></td>
-          <td>등급표가 <b>16갈래만 부른다.</b> 어느 무늬가 몇 등급인지가 밸런스라 잎 창이 못 정한다</td>
+          <td>잎 무늬 갈래 <span class="chip c-ok">물렀다</span></td>
+          <td class="num"><b>3 / 38</b><br><span style="color:var(--ok)">8%</span></td>
+          <td><s>22갈래가 안 붙었다</s> → <b>다시 재니 33갈래가 붙어 있다.</b>
+              안 붙은 셋은 민무늬거나 잎꼴이 다른 것 — <b>등급에 넣을 것이 아니다</b></td>
         </tr>
         <tr>
           <td><b>화분 색</b></td>
@@ -578,9 +579,18 @@ graph LR
     ⚠ 다만 이것은 게임 화면이 아니라 <b>썸네일을 방 밝기로 눕힌 시늉</b>이다.
   </p>
 
-  <p style="font-size:13.5px;color:var(--ink-2)">
-    ⚠ 그리고 생장 조율 도구는 34갈래를 알고 게임은 16을 안다 —
-    <b>도구에서 본 무늬가 게임에 안 나올 수 있다.</b>
+  <h4>⚠ 잎 항목은 물렸다 — 어떻게 틀렸나</h4>
+  <p>등급표는 <strong>파일 이름을 안 적는다.</strong> 짧은 이름과 번호로 적고,
+     그 번호가 파일로 가는 다리는 <strong>다른 파일</strong>에 있다.</p>
+<pre class="calc"><code>등급표      { "id": "zebra", "matNum": 31 }
+다리        leaf_mat31  →  skins/mon_zebra.glb      … 19갈래가 이렇게 이어진다
+
+  ⇒ 등급표 「안에서」 파일 이름을 찾았고, 없으니 「안 붙었다」고 했다
+  ⇒ 다리를 안 건넜다</code></pre>
+  <p>
+    그리고 <strong>맞는 단서를 손에 쥐고 잘못 읽었다</strong> — 34갈래를 아는 그 파일을
+    「생장 조율 <b>도구</b>」라고 불렀는데, 실은 게임의 렌더가 그 파일의 소스를 그대로 평가해
+    <strong>생장 엔진으로 쓴다.</strong> 「도구」라고 부르는 순간 <b>맞는 증거가 반대 증거로 뒤집혔다.</b>
   </p>
 
   <h3>준 것이 보이지 않는다</h3>
@@ -864,11 +874,12 @@ graph LR
       <div class="who">잎</div>
     </div></div>
     <div class="row"><div class="k">⑤</div><div>
-      <div class="t">배선 안 된 것 셋을 붙일까 — 잎 22갈래 · 화분 색 9장 · 조명 셋</div>
-      <div class="d">그림은 다 있다. 붙이려면 <b>어느 무늬가 몇 등급인지 · 상점에 얼마로 놓을지</b>를 정해야 한다.
-        <b>셋 다 밸런스라 창들이 스스로 못 붙인다.</b><br>
+      <div class="t">배선 안 된 것 <b>둘</b>을 붙일까 — 화분 색 9장 · 조명 셋</div>
+      <div class="d">그림은 다 있다. 붙이려면 <b>상점에 얼마로 놓을지</b>를 정해야 한다 — 둘 다 밸런스다.<br>
         <span style="color:var(--ok)">화분은 붙일 코드가 <b>인계 문서에 이미 적혀 있어</b> 품이 싸다 —
-        새로 짜는 게 아니라 집어다 붙이는 일.</span></div>
+        새로 짜는 게 아니라 집어다 붙이는 일.</span><br>
+        <span class="chip c-ok">잎은 빠졌다</span> 22갈래가 안 붙었다던 것은 <b>틀렸다.</b>
+        33갈래가 이미 붙어 있고, 남은 셋은 등급에 넣을 것이 아니다.</div>
       <div class="who">잎 · 기획</div>
     </div></div>
     <div class="row"><div class="k">⑥</div><div>
