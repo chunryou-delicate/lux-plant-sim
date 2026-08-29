@@ -35,8 +35,13 @@ await page.eval(`(()=>{ const S=window.__S(); S.pots=S.pots||[]; S.pots.length=0
   window.__redraw();
   try{ window.__io.growth.setGrowth(${DAYS}); window.__redraw(); }catch(e){} })()`, false);
 await sleep(3500);
+/* ★★ 2026-08-30 — **날씨·계절은 `S.sim` 에 «없다».** `io.light.skyFor(day, sim)` 이 낸다 —
+   초보 모드는 표(SIM_MODES)에서 고정값을 가져오므로 `S.sim.weather` 는 «빈 칸»이다.
+   ⚠ 처음에 `S.sim.weather` 를 읽어 「낮·맑음을 확인 못 했다」로 냈다. [House] 가 어제 겪은
+     그 자리(`skyFor 는 S.sim.weather 를 안 본다`)를 **내 자에서 똑같이** 밟았다. */
 console.log('  판 —', await page.eval(`(()=>{ const S=window.__S();
-  return JSON.stringify({ 날씨:(S.sim||{}).weather, 계절:(S.sim||{}).season, 등:(S.lamps||{}).count,
+  let sky=null; try{ sky = window.__io.light.skyFor(S.day, S.sim); }catch(e){ sky={err:e.message}; }
+  return JSON.stringify({ 하늘: sky, mode:(S.sim||{}).mode ?? null, 등:(S.lamps||{}).count,
     자리:(S.pots[0]||{}).slotId, 생장:${DAYS} }); })()`));
 
 /* 잎마다 «화면 테두리» — [leaf] 가 그 네모만 잘라 재면 된다 */
