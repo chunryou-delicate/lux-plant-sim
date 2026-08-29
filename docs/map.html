@@ -530,8 +530,9 @@ graph LR
         <tr>
           <td><b>화분 색</b></td>
           <td class="num"><b>9 / 9</b><br><span style="color:var(--gap)">전부</span></td>
-          <td>색은 코드에 <b>제대로 들어 있는데</b> 그걸 내주는 함수를 <b>부르는 곳이 0줄</b>이다 →
-              <em>민트·핑크 화분은 플레이어가 절대 만날 수 없다</em></td>
+          <td>색은 코드에 <b>제대로 들어 있고 검사도 부르는데</b> <b>게임이 안 부른다</b> →
+              <em>민트·핑크 화분은 플레이어가 절대 만날 수 없다.</em>
+              <b>붙일 코드는 인계 문서에 이미 적혀 있다</b></td>
         </tr>
         <tr>
           <td>장식 조명</td>
@@ -548,9 +549,34 @@ graph LR
 
   <div class="claim gap">
     「안 보인다」가 아니라 「못 고른다」였다.
-    <small>화분 색 판 아홉 장은 그림도 코드도 다 있는데, <b>내주는 함수를 아무도 안 부른다.</b>
+    <small>화분 색 판 아홉 장은 그림도 코드도 다 있는데, <b>게임이 그 함수를 안 부른다.</b>
     셋 다 밸런스가 걸려 있어(무늬 등급 · 상점 품목 · 가격) 창들이 스스로 못 붙인다.</small>
   </div>
+
+  <h4>화분은 「만들다 만 것」이 아니라 「인계가 안 집힌 것」이다</h4>
+  <p>깃 내력으로 <strong>재서</strong> 나왔다 — 그 함수는 게임 화면에 <strong>들어간 적이 없다.</strong>
+     에셋 쪽이 2026-08-08에 만들면서 커밋 글에 이렇게 적어 두었다:</p>
+<pre class="calc"><code>「상태를 바꾸는 부분은 코어 몫이라 손대지 않았다 —
+  붙일 코드는 docs/handoff/pots-to-plan.md 에 적었다」
+
+  ⇒ 붙일 코드가 §209~303 에 이미 적혀 있다
+  ⇒ 새로 짜는 일이 아니라 집어다 붙이는 일이다</code></pre>
+
+  <h4>배선이 있었다면 폰에서 색이 갈릴까 — 갈린다</h4>
+  <div class="tw">
+    <table>
+      <thead><tr><th>23px 로 눕혀 본 화분</th><th class="num">채도</th><th class="num">초록 앞섬</th><th class="num">붉음 앞섬</th></tr></thead>
+      <tbody>
+        <tr><td>기본 (회색)</td><td class="num">0.185</td><td class="num">3</td><td class="num">21</td></tr>
+        <tr><td>민트</td><td class="num">0.248</td><td class="num" style="color:var(--ok)"><b>30</b></td><td class="num">0</td></tr>
+        <tr><td>핑크</td><td class="num">0.243</td><td class="num">1</td><td class="num" style="color:var(--gap)"><b>50</b></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p style="font-size:13.5px;color:var(--ink-2)">
+    색은 무늬와 달라 <b>작아도 읽힌다</b> — 면 전체가 한 색이기 때문이다.
+    ⚠ 다만 이것은 게임 화면이 아니라 <b>썸네일을 방 밝기로 눕힌 시늉</b>이다.
+  </p>
 
   <p style="font-size:13.5px;color:var(--ink-2)">
     ⚠ 그리고 생장 조율 도구는 34갈래를 알고 게임은 16을 안다 —
@@ -618,11 +644,11 @@ graph LR
 <!-- ══════════ 자 ══════════ -->
 <section id="rulers">
   <h2><span class="num">06 · 자</span>자가 거짓말하는 법</h2>
-  <p class="sub">오늘 두 창이 <strong>따로</strong> 같은 병에 물렸다. 그리고 <strong>따로</strong> 같은 답에 닿았다.</p>
+  <p class="sub">오늘 <strong>네 창이 따로</strong> 같은 병에 물렸다. 그리고 <strong>따로</strong> 같은 답에 닿았다.</p>
 
   <div class="tw">
     <table>
-      <thead><tr><th style="width:14%">창</th><th>무엇을 했나</th><th style="width:34%">무슨 일이 났나</th></tr></thead>
+      <thead><tr><th style="width:12%">창</th><th>무엇을 했나</th><th style="width:38%">무슨 일이 났나</th></tr></thead>
       <tbody>
         <tr>
           <td><b>집</b></td>
@@ -632,13 +658,28 @@ graph LR
         </tr>
         <tr>
           <td><b>잎</b></td>
-          <td>화분 색을 갈고 방에 놓아 찍었다</td>
-          <td>색 바꾸기는 <b>방을 조립할 때</b> 불린다. 놓은 뒤 값만 넣었으니
-              셋 다 기본 화분이었을 수 있다 → <b>셋이 같은 게 당연</b></td>
+          <td>화분 색을 갈고 방에 놓아 찍었다 — <b>세 판</b></td>
+          <td>세 판 다 색이 <b>안 갈렸다.</b> 그물(받은 파일 이름)이 없었으면
+              <b>세 번 다 「색이 안 읽힌다」로 냈을 것</b></td>
+        </tr>
+        <tr>
+          <td><b>코어</b></td>
+          <td>47줄을 고쳐 커밋했다</td>
+          <td>「고쳤다」만 보고 <b>「얼마나 고쳤나」를 안 봤다.</b>
+              줄끝이 통째로 바뀌어 <b>15,000줄짜리 커밋</b>이 됐다 → 되돌림</td>
+        </tr>
+        <tr>
+          <td><b>총괄</b></td>
+          <td>「아무도 안 읽는 데이터 다섯」을 냈다</td>
+          <td><code>assets/**/*.html</code> 을 <b>안 봤다.</b> 다시 재니 <b>하나</b>만 남았다</td>
         </tr>
       </tbody>
     </table>
   </div>
+  <p style="font-size:13.5px;color:var(--ink-2)">
+    뒤의 둘은 <b>자를 좁게 댄 것</b>이다 — 잎 창도 같은 날 <code>.mjs</code> 를 빼고 훑어
+    「부르는 곳이 없다」를 냈다가 스스로 고쳤다. <b>바른 말은 「검사는 부른다, 게임이 안 부른다」였다.</b>
+  </p>
 
   <div class="claim gap">
     안 달린 손잡이를 돌려 놓고 「같다」고 하면,<br>아무것도 안 잰 것인데 <b>초록으로 보인다.</b>
@@ -778,7 +819,9 @@ graph LR
     <div class="row"><div class="k">⑤</div><div>
       <div class="t">배선 안 된 것 셋을 붙일까 — 잎 22갈래 · 화분 색 9장 · 조명 셋</div>
       <div class="d">그림은 다 있다. 붙이려면 <b>어느 무늬가 몇 등급인지 · 상점에 얼마로 놓을지</b>를 정해야 한다.
-        <b>셋 다 밸런스라 창들이 스스로 못 붙인다.</b></div>
+        <b>셋 다 밸런스라 창들이 스스로 못 붙인다.</b><br>
+        <span style="color:var(--ok)">화분은 붙일 코드가 <b>인계 문서에 이미 적혀 있어</b> 품이 싸다 —
+        새로 짜는 게 아니라 집어다 붙이는 일.</span></div>
       <div class="who">잎 · 기획</div>
     </div></div>
     <div class="row"><div class="k">⑥</div><div>
