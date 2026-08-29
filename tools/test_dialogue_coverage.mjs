@@ -547,18 +547,63 @@ check('데이터 — 이벤트 표가 가리키는 대사가 전부 있다', () 
   for (const [q, id] of Object.entries(QUEST_DONE_SCRIPT))
     assert.ok(SCRIPTS[id], `퀘스트 ${q} 완료 → 없는 대사 '${id}'`);
 });
+/* ★★★ 2026-08-29 — **「아직 안 쓰는 대사」는 «흠»이 아니라 «상태»다** ([Plan] ㊿-c).
+   ⛔ 지우지 말 것. 까닭을 여기 적는다.
+   monsteraStalled — 「원룸(이사 뒤) 멈춤」용이다.
+     ⚠ `monsteraGuideWindow` 와 **겹치지 않는다** — 저쪽은 「창턱」이라 **불러 주고**,
+       이쪽은 「더 밝은 자리를 찾아 보자」로 **안 불러 준다**(dialogue.js:252 가 「헷갈리지 말라」고 적었다).
+     ★ 이름을 **안 부르는** 말이라 **어느 방에서나** 쓴다. 원룸에는 창턱이 다르다.
+     ⇒ 붙일 자리는 원룸이 열릴 때 정한다(2026-08-29 plan 판단).
+     ⚠ dialogue.js:233 의 「지우는 것이 맞아 보인다」는 **2026-08-11** 판단이고,
+       그때는 **원룸이 없었다.** 그 줄은 낡았다. */
+const NOT_YET_USED = new Set(['monsteraStalled']);
 check('데이터 — 쓰이지 않는 대사가 없다', () => {
+  /* ★★★★ 2026-08-29 — **손으로 박던 것을 «세는 것»으로 바꿨다** ([Plan] ㊿-c · cc7a8d4)
+     ══════════════════════════════════════════════════════════════════
+     ⛔ 여기 아홉 이름이 **손으로** 박혀 있었다. 그중 둘이 이러했다:
+```
+       monsteraStalled  dialogue.js:233 이 «스스로» 「아무 데서도 안 불린다」고 적었다
+                        ⇒ ★ 그런데 이 목록이 그것을 «정상»으로 못 박고 있었다
+       monsteraMoved    ⇒ 불리기는 «불렸다». ⛔ 그런데 «조건이 죽어» 있었다(arrivalSlotId)
+                        ⇒ ⇒ ★★ 자는 「불린다」만 보고 「닿는다」는 안 봤다
+```
+     ⇒ ★★ 고침 둘:
+       ㉮ **`dlgOpen('...')` 를 `game.html` 에서 «긁어» 센다.** 손으로 안 적는다 —
+          손으로 적으면 부르는 자리가 늘 때마다 이 목록이 낡는다(바로 위 §퀘스트 지도와 같은 규율).
+       ㉯ ★ **「아직 안 쓰는 대사」 갈래를 «따로» 둔다.** 「안 쓴다」는 «흠»이 아니라 «상태»다.
+          그리고 **까닭을 적는다** — 다음 사람이 「지워도 되나」를 다시 묻지 않게.
+     ★★★ 그리고 **그 갈래가 «변하면 자가 운다»** — 아래 두 번째 검사가 그 일을 한다.
+       「아직 안 쓴다」고 적어 둔 것이 실제로 «쓰이기 시작하면» 이 목록에서 빼라고 말한다.
+       ⇒ 안 그러면 오늘 고친 그 병(박아 두고 잊기)이 그대로 되살아난다. */
+  const html = readFileSync(U('../game.html'), 'utf8');
+  const calledInHtml = [...html.matchAll(/dlgOpen\(\s*'([A-Za-z0-9_]+)'\s*\)/g)].map(m => m[1]);
   const used = new Set([
     ...Object.values(EVENT_SCRIPT), ...CHATTER.map(c => c.id),
     /* ★ 2026-08-17 — **손으로 안 적는다.** 퀘스트 대사는 지도에서 읽는다 —
        손으로 적으면 줄이 늘 때마다 이 목록이 낡고, 그게 START-HERE §2 가 "제일 위험하다"고
        적은 모양(검사가 고장난 상태를 정상으로 못 박는 것)의 씨앗이다. */
     ...Object.values(QUEST_OPEN_SCRIPT), ...Object.values(QUEST_DONE_SCRIPT),
-    'god1', 'intro', 'cropPlaced', 'monsteraMoved', 'monsteraStalled',
-    'rentFirst', 'rentAgain', 'autumnCame', 'winterCame'   // scriptOf 가 id 안에서 가른다
+    /* ★ 2026-08-29 — 화면이 직접 부르는 것은 **긁어서** 센다(§㉮) */
+    ...calledInHtml,
+    /* ⚠ 아래 다섯만 남는다 — **코드에서 이름이 안 보이는** 길들이다.
+       god1        dialogue.js 가 순서를 맞추며 `out.splice(arr, 0, 'god1')` 로 끼워 넣는다
+       나머지 넷    `scriptOf` 가 **id 안에서** 가른다(계절·월세). 이벤트 표에는 한 이름뿐이다 */
+    'god1', 'rentFirst', 'rentAgain', 'autumnCame', 'winterCame'
   ]);
-  const dead = Object.keys(SCRIPTS).filter(id => !used.has(id));
+  const dead = Object.keys(SCRIPTS).filter(id => !used.has(id) && !NOT_YET_USED.has(id));
   assert.equal(dead.length, 0, `아무 데서도 안 불리는 대사: ${dead}`);
+});
+check('데이터 — 「아직 안 쓰는 대사」 목록이 안 낡았다', () => {
+  const html = readFileSync(U('../game.html'), 'utf8');
+  const calledInHtml = new Set([...html.matchAll(/dlgOpen\(\s*'([A-Za-z0-9_]+)'\s*\)/g)].map(m => m[1]));
+  const wired = new Set([...Object.values(EVENT_SCRIPT), ...CHATTER.map(c => c.id),
+    ...Object.values(QUEST_OPEN_SCRIPT), ...Object.values(QUEST_DONE_SCRIPT), ...calledInHtml]);
+  for (const id of NOT_YET_USED) {
+    assert.ok(SCRIPTS[id], `「아직 안 쓴다」고 적힌 없는 대사 '${id}' — 목록에서 빼십시오`);
+    /* ★ 쓰이기 시작했으면 **자가 운다.** 박아 두고 잊는 것이 오늘 고친 그 병이다 */
+    assert.ok(!wired.has(id),
+      `'${id}' 는 이제 쓰입니다 — 「아직 안 쓰는 대사」 목록(NOT_YET_USED)에서 빼십시오`);
+  }
 });
 check('데이터 — 계절·월세는 같은 이벤트 안에서 갈린다', () => {
   assert.deepEqual(scriptsForEvents([{ id: 'season', season: 'autumn' }]), ['autumnCame']);
