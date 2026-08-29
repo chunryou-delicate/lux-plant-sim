@@ -53,6 +53,22 @@ ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)
 OUT = os.path.join(ROOT, "assets", "derived", "manifest_char.json")
 MANIFEST = os.path.join(ROOT, "assets", "manifest.json")
 
+# ■ ★ 이 자가 «훑는 곳»과 «안 훑는 곳» — 2026-08-30 에 적는다
+#
+#   훑는다    assets/characters/**  ·  assets/derived/char_clips/**
+#   ⛔ 안 훑는다  assets/derived/rig_test/**
+#
+#   ⚠ `rig_test` 는 «시험 결과»지 «에셋»이 아니다. manifest 의 쓰임은
+#     「이름으로 «에셋» 찾기」인데, 시험 결과를 넣으면 찾는 사람이 걸려 넘어진다.
+#   ★ [leaf] 확인(2026-08-30): 넣으면 «그쪽 검사가 운다» —
+#     이 저장소는 「GLB 는 전부 real_max_m 을 갖는다」로 굴러왔고 check_manifest.py 가
+#     그것을 지킨다. 시험 결과에 크기를 재서 붙이는 것은 뜻이 없고 규약만 흐린다.
+#   ✔ 그리고 안 넣어도 «지워질 위험이 없다» — 유령 검사에서 derived 17개가 전부 쓰임으로 나온다.
+#
+#   ⇒ ★★ 이 칸을 적는 까닭: 앞서 「blank→빈판」이 네 군데를 돌아다닐 때
+#     **넷째 자리(이 자의 표)를 아무도 안 보고 있었다.** 정한 것을 안 적으면
+#     다음 사람이 「왜 rig_test 가 빠졌지」 하고 «넓혀» 놓는다.
+
 # 뽑지 않는 것 - 폴더 이름 하나라도 걸리면 뺀다
 SKIP_DIR = {'_raw', '_out', '_pipeline_test', '_old', '_ref', '_style',
             '3d_wip', '__pycache__'}
