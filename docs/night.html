@@ -146,7 +146,7 @@ hr.rule{border:none; border-top:1px solid var(--line); margin:44px 0}
   <div class="strip">
     <a href="#ask" class="gap"><div class="n">4</div><div class="l">답이 필요한 것</div></a>
     <a href="#done" class="ok"><div class="n">9</div><div class="l">정하고 진행한 것</div></a>
-    <a href="#flip" class="warn"><div class="n">7</div><div class="l">뒤집힌 것</div></a>
+    <a href="#flip" class="warn"><div class="n">8</div><div class="l">뒤집힌 것</div></a>
     <a href="#learn" class="idle"><div class="n">12</div><div class="l">자에 물린 것</div></a>
   </div>
 </header>
@@ -179,14 +179,20 @@ ppfd  (등 몫)     15/15 칸 — 등을 옮겼으니 전부
       <table>
         <thead><tr><th>날</th><th class="num">배수 없음</th><th class="num">밑값 0</th><th class="num">0.3</th><th class="num">0.5</th></tr></thead>
         <tbody>
-          <tr><td><b>d37</b> 튜토 끝</td><td class="num">518,000</td><td class="num" style="color:var(--gap)"><b>23,240</b></td><td class="num">170,240</td><td class="num">268,240</td></tr>
-          <tr><td>d87</td><td class="num">1,960,000</td><td class="num">647,500</td><td class="num">1,041,250</td><td class="num">1,303,750</td></tr>
+          <tr style="opacity:.5"><td><s>d37 튜토 끝</s> <span class="chip c-gap">못 팜</span></td><td class="num"><s>518,000</s></td><td class="num"><s>23,240</s></td><td class="num"><s>170,240</s></td><td class="num"><s>268,240</s></td></tr>
+          <tr><td><b>d87</b> 팔 수 있는 첫날</td><td class="num">1,960,000</td><td class="num">647,500</td><td class="num">1,041,250</td><td class="num">1,303,750</td></tr>
           <tr><td>d120 뒤</td><td class="num">1,960,000</td><td class="num" colspan="3" style="text-align:center">넷이 붙습니다 (1,264,375~1,303,750)</td></tr>
         </tbody>
       </table>
     </div>
-    <p>밑값 0이면 튜토가 끝나는 그 순간 그루값이 <b>22분의 1</b>로 떨어집니다.
-       잎이 둘인데 하나가 통째로 0이라서입니다.</p>
+    <div class="claim g" style="margin-top:16px">
+      ⚠ 이 물음이 방금 작아졌습니다 — <b>d37에는 팔 수가 없습니다.</b>
+      <small>제가 「튜토 끝나는 순간 22분의 1로 떨어진다」고 올렸는데,
+      <b>파는 문이 잎 3장부터 열립니다.</b> ⇒ d37에는 잎이 둘이라 <b>애초에 못 팝니다.</b><br>
+      ⇒ 팔 수 있는 첫날은 <b>d87</b>이고, 그때 밑값에 따른 차이는
+      <b>22배가 아니라 두 배 안쪽</b>입니다. 정확한 수를 다시 받고 있습니다.<br>
+      ⇒ <b>일어날 수 없는 일을 물음의 알맹이로 올렸습니다.</b></small>
+    </div>
   </div>
 
   <div class="ask">
@@ -328,6 +334,12 @@ ppfd  (등 몫)     15/15 칸 — 등을 옮겼으니 전부
       <div class="t">「안 쓰는 초상화 2장」 — 1장이었습니다</div>
       <div class="d"><b>별칭</b>이 하나 끼어 있어서, 키를 세는 자가
         <b>멀쩡히 뜨는 그림</b>을 「유령」이라 적고 있었습니다.</div>
+    </div></div>
+    <div class="it g"><div class="sev"></div><div>
+      <div class="t">「튜토 끝나는 순간 22분의 1로 떨어진다」 — 그날엔 <b>팔 수가 없습니다</b></div>
+      <div class="d">파는 문이 <b>잎 3장부터</b> 열립니다. d37에는 잎이 둘이라 애초에 못 팝니다.
+        ⇒ <b>제가 일어날 수 없는 일을 물음의 알맹이로 올렸습니다.</b>
+        팔 수 있는 첫날은 d87이고, 그때 차이는 두 배 안쪽입니다.</div>
     </div></div>
     <div class="it w"><div class="sev"></div><div>
       <div class="t">「200일 굴림이 45분을 넘었다」 — 400일을 돌고 있었습니다</div>
