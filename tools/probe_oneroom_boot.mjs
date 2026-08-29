@@ -89,5 +89,43 @@ console.log(' ', await page.eval(`(async()=>{ const S=window.__S();
     가방:(window.__S().home.furnitureBag||[]).length,
     자리:(window.__io.light.room.slots||[]).length,
     '방 서 있나': !!window.__rv }); })()`, true, 200000));
+console.log('');
+console.log('=== ④ 자를 조인다 — 놓인 가구가 방 «안»에 «온전히» 들어갔나 ===');
+/* ★★★ 2026-08-30 — 벽을 뚫고 서던 것을 잡고 나서 «자»에 건다.
+   ⛔ 코어 검사(place.js §inRoom)는 «가운데 점»만 본다 — 게다가 경계는 ε 로 봐준다.
+     그래서 「벽에 딱 붙은 금」이 «통과»로 세어졌고, 화면에서는 침대가 반쯤 나가 있었다.
+   ⇒ 여기서는 ★ «덩치»를 본다 — 폭·깊이를 돌려서 네 귀가 방 안인지 잰다.
+   ⚠ 코어를 안 고친다. 「가운데만 보는 것」이 틀린 규칙은 아니다(가구는 벽에 붙여 놓는다).
+     ⇒ ★ 다만 「자동으로 세워 주는 자리」가 벽을 넘으면 그건 «화면 몫»의 탈이고, 이 자가 잡는다. */
+console.log(' ', await page.eval(`(async()=>{
+  const pre = await fetch('/data/furniture_presets.json').then(r=>r.json()).then(j=>j.presets||j);
+  const sz = window.__io.light.room.size;
+  const rows = (window.__io.light.room.def.furniture||[]);
+  const out = [];
+  for (const f of rows) {
+    const p = pre[f.preset]; const m = p && p.size_m;
+    if (!m || !(m.w>0) || !(m.d>0)) continue;
+    const t = (f.rot||0) * Math.PI/180, c = Math.abs(Math.cos(t)), s2 = Math.abs(Math.sin(t));
+    const hw = m.w/2*c + m.d/2*s2, hd = m.w/2*s2 + m.d/2*c;
+    const outX = Math.abs(f.x||0) + hw - sz.w/2, outZ = Math.abs(f.z||0) + hd - sz.d/2;
+    const over = Math.max(outX, outZ);
+    if (over > 0.02) out.push({ uid:f.uid, 넘은m: Math.round(over*100)/100 });
+  }
+  return JSON.stringify({ 방: sz.w + '×' + sz.d, '가구 수': rows.length,
+    '벽을 넘은 것': out.length, 어느것: out.slice(0,5),
+    판정: out.length ? '★ 넘은 것이 있다' : '✔ 다 방 안이다' }); })()`));
+/* ★ 그리고 «자가 그것을 잡나»를 잰다 — 자를 조여 놓고 안 재면 조인 줄 모른다.
+   옛 자리(방너비/2, 방깊이/2)를 그 가구에 대 보고 «몇 m 넘는지» 셈한다(놓지는 않는다). */
+console.log('  · 옛 자리였다면 —', await page.eval(`(async()=>{
+  const pre = await fetch('/data/furniture_presets.json').then(r=>r.json()).then(j=>j.presets||j);
+  const sz = window.__io.light.room.size;
+  const added = (window.__S().home.furnitureAdded||[]);
+  const one = added[added.length-1]; if(!one) return JSON.stringify({ 탈:'놓은 것이 없다' });
+  const m = (pre[one.preset]||{}).size_m; if(!m) return JSON.stringify({ 탈:'크기를 모른다' });
+  const hw = m.w/2, hd = m.d/2;
+  const over = Math.max(Math.abs(sz.w/2)+hw - sz.w/2, Math.abs(sz.d/2)+hd - sz.d/2);
+  return JSON.stringify({ 것:one.preset, '옛 자리': (sz.w/2)+','+(sz.d/2),
+    '벽을 넘었을 길이 m': Math.round(over*100)/100,
+    판정: over > 0.02 ? '★ 자가 잡는다' : '⛔ 자가 «못» 잡는다 — 조인 것이 아니다' }); })()`));
 await page.shot('docs/handoff/img/oneroom_placed.png').catch(() => {});
 await page.close(); clearTimeout(wd);
