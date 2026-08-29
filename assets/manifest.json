@@ -14833,16 +14833,16 @@
       "style": "2D"
     },
     {
-      "file": "portrait_jachwi_blank.png",
-      "path": "characters/portraits/portrait_jachwi_blank.png",
+      "file": "portrait_jachwi_numb.png",
+      "path": "characters/portraits/portrait_jachwi_numb.png",
       "is_glb": false,
       "bytes": 56879,
       "category": "캐릭터·초상",
       "type": "초상화",
       "status": "채택",
       "char": "jachwi_f",
-      "name_ko": "자취녀_빈판",
-      "note": "대사창 얼굴. ⚠ game.html FACE_FILE 에 없는 키는 조용히 neutral 로 떨어진다",
+      "name_ko": "자취녀_넋나감",
+      "note": "대사창 얼굴. ⚠ game.html FACE_FILE 에 없는 키는 조용히 neutral 로 떨어진다 ★ 2026-08-30 leaf — 이름을 「빈판」에서 고쳤다. 그림은 «빈 판»이 아니라 «얼어붙은 얼굴»이다. char 가 파일 이름을 blank→numb 로 고친 것과 짝(0d4f1b9 · core 표정키 numb e0d4a42).",
       "id": 761,
       "source": "char",
       "style": "2D"
@@ -14878,16 +14878,16 @@
       "style": "2D"
     },
     {
-      "file": "portrait_jachwi_m_blank.png",
-      "path": "characters/portraits/portrait_jachwi_m_blank.png",
+      "file": "portrait_jachwi_m_numb.png",
+      "path": "characters/portraits/portrait_jachwi_m_numb.png",
       "is_glb": false,
       "bytes": 42110,
       "category": "캐릭터·초상",
       "type": "초상화",
       "status": "채택",
       "char": null,
-      "name_ko": "자취남_빈판",
-      "note": "대사창 얼굴. ⚠ game.html FACE_FILE 에 없는 키는 조용히 neutral 로 떨어진다",
+      "name_ko": "자취남_넋나감",
+      "note": "대사창 얼굴. ⚠ game.html FACE_FILE 에 없는 키는 조용히 neutral 로 떨어진다 ★ 2026-08-30 leaf — 이름을 「빈판」에서 고쳤다. 그림은 «빈 판»이 아니라 «얼어붙은 얼굴»이다. char 가 파일 이름을 blank→numb 로 고친 것과 짝(0d4f1b9 · core 표정키 numb e0d4a42).",
       "id": 764,
       "source": "char",
       "style": "2D"
@@ -15610,5 +15610,12 @@
       "_higgsfield_caution": "⚠ 08-03 에 791 이었던 것이 0 이 됐다. 그 사이 기록은 한 줄도 없다. 쓴 것인지 플랜이 만료돼 날아간 것인지 모른다(지금 plan_type=free). 짐작해서 적지 않는다",
       "_note": "다음에 재는 창은 이 값과 비교해라. 값이 늘어 있으면 누군가 충전한 것이고, 줄어 있는데 entries 가 그대로면 누군가 쓰고 안 적은 것이다"
     }
+  },
+  "_name_ko_rule": {
+    "_what": "★ `name_ko` 는 «짝 이름»이다 — 열쇠가 아니다.",
+    "rule": "한 물건의 원화(2D)와 그 3D 판이 «같은 이름»을 쓴다. 그것이 짝이라는 뜻이다. 그래서 이름 하나에 줄이 둘 나오는 것이 «정상»이다 — 2026-08-30 기준 137개가 그렇다.",
+    "how_to_search": "이름으로 찾을 때는 `category` 와 `is_glb` 를 «같이» 봐라. 원화가 필요하면 is_glb=false, 게임에 물릴 것이 필요하면 is_glb=true 다.",
+    "_checked": "⛔ 다만 «2D끼리» 또는 «3D끼리» 이름이 겹치면 그건 짝이 아니라 «사고»다. tools/leaf/check_manifest.py 가 그것만 잡는다. 137개 짝은 안 운다 — ★ 매번 137줄이 울면 사람이 그 자를 안 보게 된다(char 가 짚어 준 것).",
+    "_measured": "2026-08-30 leaf — 겹친 이름 137개를 다 갈라 봤다. 137개 «전부» 2D↔3D 짝이었다. 어긋난 것 0개."
   }
 }
