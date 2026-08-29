@@ -322,6 +322,14 @@ def main():
             }, f, ensure_ascii=False, indent=1)
         print('썼다: %s' % os.path.relpath(OUT, ROOT))
         print('⇒ ★ [leaf] 에 합쳐 달라고 알릴 것. ⛔ 내가 manifest.json 을 고치지 않는다.')
+        print()
+        # ★★ 이 파일은 [leaf] 검사의 «정답지»다(2026-08-30 · `31b5a61`).
+        #   그쪽 `check_manifest.py` 가 manifest.json 과 여기를 견줘, 이름이 갈리면 운다.
+        #   ⇒ ⛔ 그러니 «낡은 채로 두면» 그 검사가 «틀린 것을 정답이라» 우긴다.
+        #     실제로 「빈판」이라는 틀린 이름이 여기서 나가 세 군데로 퍼졌다.
+        print('★ 다음 한 줄을 «지금» 돌릴 것 — 이 파일이 [leaf] 검사의 정답지다:')
+        print('    PYTHONIOENCODING=utf-8 python tools/leaf/check_manifest.py')
+        print('  ⇒ 이름을 고쳤으면 여기가 낡은 채로 있으면 안 된다.')
     else:
         print('(보기만 했다. --emit 으로 파일에 쓴다)')
 
