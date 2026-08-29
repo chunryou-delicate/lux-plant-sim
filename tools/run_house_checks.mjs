@@ -134,7 +134,7 @@ for (const [file, why] of CHECKS) {
   rows.push({ file, why, ok: okRun, line: last.trim(), skipped, lied,
               died: !!r.error || r.status === null });
   if (!QUIET) {
-    console.log((okRun ? '  ✔ ' : '  ✘ ') + file.padEnd(26) + last.trim());
+    console.log((okRun ? '  ✔ ' : '  ✘ ') + (file + ' ').padEnd(30) + last.trim());
     if (!okRun) for (const l of out.split('\n').filter(l => /^FAIL|^\s+✘/.test(l)).slice(0, 4))
       console.log('        ' + l.trim());
   }
