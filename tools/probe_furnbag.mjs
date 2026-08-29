@@ -57,6 +57,15 @@ console.log(' ', await page.eval(`(()=>{ const S=window.__S();
   const bag=(S.home||{}).furnitureBag||[];
   return JSON.stringify({ 방:S.home.room, 자리:(window.__io.light.room.slots||[]).length,
     '가방 가구': bag.length, 들고온것: bag.map(f=>f.uid) }); })()`));
+/* ★★★ 2026-08-30 — **방이 다 설 때까지 기다린다.** ⛔ 안 기다리면 이사 뒤 방을 다시 짓는
+   «그 시간»이 눌러 놓는 시간에 얹혀 잡힌다 — 처음에 31,088 ms 로 적었던 것이 그 탈이었다.
+   ★ 그때 `window.__rv` 는 «null» 이었다(probe_placecost). 즉 재던 것은 놓기가 아니라 «이사»였다. */
+{
+  const t = Date.now();
+  await page.waitFor('!!window.__rv', 180000, 500);
+  await sleep(1500);
+  console.log('  · 이사 뒤 방이 다시 서기까지 —', Date.now() - t, 'ms (⚠ 이건 «놓기»가 아니라 «이사» 몫)');
+}
 console.log('');
 console.log('=== ② 가방 칸이 뜨나 ===');
 await page.eval(`try{ window.__byeotSheet.open('bag') }catch(e){}`, false);

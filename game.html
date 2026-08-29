@@ -11081,6 +11081,11 @@ async function remountRoomView() {
   $('stage').classList.remove('room-ok');
   await bootRoomView();
 }
+/* ★ 진단 손잡이 — 밖에서 「방을 다시 지어라」를 재현할 수 있어야 이 길을 «잴» 수 있다
+   (`window.__lampTap` 과 같은 결). ⚠ 게임은 이걸 안 쓴다. 읽는 자를 위한 문이다.
+   ⚠ `window.__rv` 옆이 아니라 «여기»에 둔다 — 방이 «안 섰을» 때가 바로 재야 할 때인데,
+     그 자리(§bootRoomView 끝)는 방이 서야만 지나간다. 안 서면 손잡이도 안 생긴다. */
+window.__remount = remountRoomView;
 
 /* 코어 상태 → 방 화면. 한 방향으로만 흐른다 — 방이 게임 상태를 바꾸지 않는다. */
 /* ⚠ setPlant 는 GLB 를 싣느라 **Promise 를 돌려준다**(모듈 실제 시그니처).
@@ -12918,8 +12923,16 @@ async function startPhonePlaceFurnitureBag(uid) {
   try { window.__byeotSheet.close(); } catch { }
   try { sfx.thud(); } catch { }
   draw();
-  /* 3D 를 다시 짓는다 — 늦게 끝나도 위 화면은 이미 새 상태를 말하고 있다(§이사와 같은 결) */
-  try { await remountRoomView(); } catch (e) { console.warn('[가구] 방 다시 짓기 —', e && e.message); }
+  /* ★★★ 2026-08-30 — **가볍게** 다시 짓는다(`room_view §refreshFurniture`).
+     ⛔ 처음에 `remountRoomView()`(통째로 다시 마운트)를 썼다가 **31,088 ms** 가 나왔다 —
+       가구 아홉이면 4~5분이라 사람이 못 쓴다. 그때는 「무겁지만 검증된 길」이라 적었는데,
+       ★ **재 보니 「무겁다」가 아니라 「못 쓴다」였다.** 값을 모른 채 길을 골랐던 것이다.
+     ★ [House] 실측으로 그 31초 중 **조도 몫은 5.74 ms**(0.02%)였다 — 나머지는 전부 화면.
+       ⇒ 그래서 옮기기가 쓰는 그 가벼운 길(`rebuildRoom({prebuilt})`)로 창구를 냈다. */
+  try {
+    if (roomView && roomView.refreshFurniture) await roomView.refreshFurniture();
+    else await remountRoomView();                 /* 옛 방뷰라 창구가 없으면 예전 그대로 */
+  } catch (e) { console.warn('[가구] 방 다시 짓기 —', e && e.message); }
   return { ok: true, uid, preset: row.preset };
 }
 

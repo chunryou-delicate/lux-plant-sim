@@ -7248,6 +7248,26 @@ export async function createRoomView(canvas, opts = {}) {
     return { uid, from, to, mountId: fit.mountId, lift: fit.lift };
   }
 
+  /* ★★★★ 2026-08-30 — **가구가 늘거나 줄었을 때 «가볍게» 다시 짓는다** (원룸 이사 ④)
+     ══════════════════════════════════════════════════════════════════
+     ⛔ 화면이 이때까지 쓸 수 있던 길은 **방을 통째로 다시 마운트하는 것**뿐이었다
+       (`game.html §remountRoomView`). 실측: 가방에서 가구 하나 꺼내 놓는 데 **31,088 ms**.
+       가구 아홉이면 4~5분이라 **사람이 못 쓴다.**
+     ★ 그런데 [House] 가 재서 갈랐다 — 그 31초 중 **조도 몫은 5.74 ms**(0.02%)다.
+       나머지는 **전부 화면**이다. ⇒ 고칠 데는 여기 하나다.
+     ⇒ ★★ `commitFurnitureAt` 이 이미 쓰는 그 길(`rebuildRoom({ prebuilt })`)을 그대로 낸다 —
+       조도 엔진이 **이미 새로 조립해 둔 결과**를 받아 3D 만 다시 세운다.
+       ⚠ 새 길이 아니다. **옮기기가 2.56 ms 로 도는 그 길**이다(㊺ — 있는 것을 쓴다).
+     ⚠ 부르는 쪽이 **먼저** `light.setFurnitureEdits(sold, added)` 를 해야 한다 —
+       여기서는 그 결과를 받아 그릴 뿐, 무엇이 늘고 줄었는지 **안 정한다**(㊸ 임자를 밝혀라). */
+  async function refreshFurniture() {
+    let prebuilt = null;
+    const r = O.lightEngine && O.lightEngine.room;
+    if (r) prebuilt = { built: r.built, def: r.def, wins: r.wins };
+    const n = await rebuildRoom({ prebuilt });
+    return { plants: n, furniture: ((r && r.def && r.def.furniture) || []).length };
+  }
+
   /* ============================================================
      ⑨ 캐릭터와 마스코트
      ------------------------------------------------------------
@@ -9415,6 +9435,9 @@ export async function createRoomView(canvas, opts = {}) {
     /* 실제로 옮긴다 — 방을 다시 조립하고 화분을 규칙대로 되돌린다(위 ⑧-b 주석).
        Promise 를 돌려준다. 못 놓는 자리면 reject 한다. */
     commitFurnitureAt(uid, pos) { return commitFurnitureAt(uid, pos || {}); },
+    /* ★ 2026-08-30 — 가구가 «늘거나 줄었을» 때 가벼게 다시 짓는다(§refreshFurniture).
+       ⚠ 부르는 쪽이 먼저 `light.setFurnitureEdits` 를 해야 한다 — 여기는 그리기만 한다. */
+    refreshFurniture() { return refreshFurniture(); },
 
     /* ── ★ 등 옮기기 (2026-08-06 · 위 ⑧-d 주석) ──
        ⚠ **바닥에 선 등(스탠드)은 여기 없다** — 그건 위 `furniture()`·`commitFurnitureAt` 몫이다.
