@@ -14841,8 +14841,8 @@
       "type": "초상화",
       "status": "채택",
       "char": "jachwi_f",
-      "name_ko": "자취녀_넋나감",
-      "note": "대사창 얼굴. ⚠ game.html FACE_FILE 에 없는 키는 조용히 neutral 로 떨어진다 ★ 2026-08-30 leaf — 이름을 「빈판」에서 고쳤다. 그림은 «빈 판»이 아니라 «얼어붙은 얼굴»이다. char 가 파일 이름을 blank→numb 로 고친 것과 짝(0d4f1b9 · core 표정키 numb e0d4a42).",
+      "name_ko": "자취녀_말잃음",
+      "note": "대사창 얼굴. ⚠ game.html FACE_FILE 에 없는 키는 조용히 neutral 로 떨어진다 ★ 2026-08-30 leaf — 이름을 「빈판」→「넋나감」→「말잃음」으로 두 번 고쳤다. ⛔ 「넋나감」도 물렸다 — 그건 곧 「멍하다」라 char 가 처음 틀렸던 읽기로 되돌아간다. plan 이 그림을 보고 가른 것은 「눈은 크고, 눈썹이 평평하고 홍조가 옅다 = 말이 안 나오는 얼굴」이다. 쓰는 자리도 파산 첫 줄이다. 그림은 «빈 판»이 아니라 «얼어붙은 얼굴»이다. char 가 파일 이름을 blank→numb 로 고친 것과 짝(0d4f1b9 · core 표정키 numb e0d4a42).",
       "id": 761,
       "source": "char",
       "style": "2D"
@@ -14886,8 +14886,8 @@
       "type": "초상화",
       "status": "채택",
       "char": null,
-      "name_ko": "자취남_넋나감",
-      "note": "대사창 얼굴. ⚠ game.html FACE_FILE 에 없는 키는 조용히 neutral 로 떨어진다 ★ 2026-08-30 leaf — 이름을 「빈판」에서 고쳤다. 그림은 «빈 판»이 아니라 «얼어붙은 얼굴»이다. char 가 파일 이름을 blank→numb 로 고친 것과 짝(0d4f1b9 · core 표정키 numb e0d4a42).",
+      "name_ko": "자취남_말잃음",
+      "note": "대사창 얼굴. ⚠ game.html FACE_FILE 에 없는 키는 조용히 neutral 로 떨어진다 ★ 2026-08-30 leaf — 이름을 「빈판」→「넋나감」→「말잃음」으로 두 번 고쳤다. ⛔ 「넋나감」도 물렸다 — 그건 곧 「멍하다」라 char 가 처음 틀렸던 읽기로 되돌아간다. plan 이 그림을 보고 가른 것은 「눈은 크고, 눈썹이 평평하고 홍조가 옅다 = 말이 안 나오는 얼굴」이다. 쓰는 자리도 파산 첫 줄이다. 그림은 «빈 판»이 아니라 «얼어붙은 얼굴»이다. char 가 파일 이름을 blank→numb 로 고친 것과 짝(0d4f1b9 · core 표정키 numb e0d4a42).",
       "id": 764,
       "source": "char",
       "style": "2D"

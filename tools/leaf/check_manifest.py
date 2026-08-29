@@ -98,6 +98,31 @@ def main():
     noSize = [x.get('file') for x in items if x.get('is_glb') and 'real_max_m' not in x]
     if noSize: bad.append('GLB 인데 real_max_m 이 없는 줄 %d개: %s' % (len(noSize), noSize[:5]))
 
+    # ④-b ★★ «베낀 자리»가 갈라지지 않았나 — 캐릭터 줄을 [Char] 의 자와 견준다
+    #   ⚠⚠ 왜 필요했나 (2026-08-30): 표정 이름 하나가 «네 군데»에 있었다 —
+    #       파일 이름 · core 의 표정 키 · 여기 name_ko · 그리고 ★ char 의 뽑는 자 안의 표.
+    #     셋을 고쳤는데 «넷째»는 아무도 안 보고 있었고, char 가 다시 뽑는 날
+    #     틀린 이름이 «조용히 되살아날» 뻔했다.
+    #   ⇒ ★ 틀린 이름은 고쳐도 남는다. «베낀 자리»가 따로 있기 때문이다.
+    #   ⇒ ⇒ 그러니 char 의 자가 낸 것과 여기를 «견준다». 겹치는 칸만 본다 —
+    #      real_max_m·scale_to_real·id 는 내가 채운 것이라 그쪽 자가 모른다.
+    DERIVED = 'assets/derived/manifest_char.json'
+    OWNED = ('name_ko', 'category', 'type', 'char', 'file')
+    if os.path.exists(DERIVED):
+        try:
+            dv = json.load(open(DERIVED, encoding='utf-8'))['items']
+        except Exception as e:
+            bad.append('%s 를 못 읽는다 — %s' % (DERIVED, e)); dv = []
+        mine = {x.get('path'): x for x in items}
+        for x in dv:
+            me = mine.get(x.get('path'))
+            if me is None:
+                bad.append('char 의 자에는 있는데 여기 없다: %s' % x.get('path')); continue
+            for k in OWNED:
+                if k in x and me.get(k) != x[k]:
+                    bad.append('%s 의 %s 가 갈렸다 — 여기 %r · char 의 자 %r'
+                               % (x.get('path'), k, me.get(k), x[k]))
+
     # ⑤ 적힌 path 가 실제로 있나 (없으면 지워졌거나 옮겨진 것)
     gone = [x['path'] for x in items
             if x.get('path') and not os.path.exists(os.path.join('assets', x['path']))]
