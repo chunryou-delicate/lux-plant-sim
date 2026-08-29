@@ -10502,9 +10502,14 @@ const FACE_FILE = {
        화자마다 다른 키를 외우는 것보다 실수가 적다.
      ⚠ `jachwi_m`(남 자취) 9장은 **안 잇는다.** 파일은 있지만 이번 판에 안 쓴다(사용자 결정).
        안 쓰는 길을 열어 두면 나중에 「왜 이게 있지」가 된다. */
+  /* ★★ 2026-08-29 — `numb` 를 이었다([Char] `5609cd3` · [Plan] `5460601`).
+       뜻은 **얼어붙음 · 말을 잃음**이다. 파산 첫 줄(「지갑에 남은 게 없다」)이 쓴다.
+     ⚠ 그림 파일 이름은 `portrait_jachwi_blank.png` 인데 **키는 `blank` 로 안 짓는다** —
+       [Char]가 파일을 열기 «전»까지 «빈 이미지»인 줄 알았다고 밝혔다. 다음 사람도 그런다.
+       ⇒ 키는 «감정»으로 짓는다(옆 줄들과 같은 결). 파일 이름을 [Char]가 바꾸면 값만 고치면 된다. */
   jachwi: { base: 'neutral', happy: 'happy', worry: 'worry',
             cry: 'cry', surprise: 'surprise', tired: 'tired',
-            think: 'think', curious: 'think', proud: 'proud' },
+            think: 'think', curious: 'think', proud: 'proud', numb: 'blank' },
   /* ★ 2026-08-26 — `surprise` 가 들어왔다([Char] `e4c0a67` · 600×800 · 같은 바닥선).
      ⚠ **한 줄에만 쓴다** — `varieLucky` 의 「어어. 잠깐만. 그거 무늬야.」 하나다.
        [Plan] 판정: *"여러 줄에 쓰면 놀람이 «흔해진다». 한 줄뿐이라 «아껴 쓴 것»이 된다."*

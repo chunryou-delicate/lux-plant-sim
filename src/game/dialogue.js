@@ -159,7 +159,9 @@ export const SCRIPTS = {
        ★ 그런데 날은 «물을 준 날»부터 가므로 «몇 째 날»인지는 사람이 정한다 — 그래서 **날을 안 적는다.**
        (실측: 시루를 d0 에 놓고 d1 에 물을 준 판에서 첫 수확이 d6) */
   harvest: [
-    { who: 'jachwi', face: 'happy', text: '…이게 되네.' },
+    /* ★ 2026-08-29 [Char]·[Plan] — happy(활짝) 가 아니라 **proud**(입 다문 잔잔한 미소).
+       처음 거둔 것에 「해냈다」가 붙는 자리다. 그림은 2026-08-23 부터 있었는데 쓰는 줄이 없었다. */
+    { who: 'jachwi', face: 'proud', text: '…이게 되네.' },
     { who: 'moni',   face: 'happy', text: '어두운 자리라 하얗게 잘 자랐어. 빛을 봤으면 초록이 되고 썼을 거야.' }
   ],
 
@@ -350,7 +352,13 @@ export const SCRIPTS = {
     { who: 'moni',   face: 'curious', text: '안 놀라게 된 것도 는 거야, 그것도.' }
   ],
   brokeTalk: [
-    { who: 'jachwi', face: 'worry', text: '지갑에 남은 게 없다.' },
+    /* ★★ 2026-08-29 [Char]·[Plan] — worry 가 아니라 **numb**(말을 잃은 얼굴).
+       [Plan]: *worry(걱정)는 «앞»을 보는 얼굴인데, 이 줄은 «이미 벌어진 일»이다.*
+       ⚠ 그림은 있었다(`portrait_jachwi_blank.png`) — 표에 «이름이 없어» 아무도 못 썼다.
+         [Char] 실측: 볼의 붉은기 R−(G+B)/2 가 blank 36.05 · neutral 38.16 · happy 46.47 —
+         여덟 장 중 제일 옅다. 「피가 가신」 얼굴이 맞다(다만 차이는 5.5% 라 옆에 놓아야 보인다).
+       ★ 키를 `blank` 로 안 짓는다 — [Char]가 «빈 이미지»로 읽었다고 밝혔다. `numb` 는 감정이다. */
+    { who: 'jachwi', face: 'numb', text: '지갑에 남은 게 없다.' },
     { who: 'moni',   face: 'sad', text: '…미안. 나는 돈은 못 만들어.' },
     { who: 'jachwi', text: '네가 미안할 게 뭐 있어.' },
     /* ★초보 모드는 죽지 않는다(story_arc.md §0). 그 규칙을 대사가 그대로 말한다 —
@@ -798,7 +806,8 @@ export const SCRIPTS = {
     { who: 'moni',   text: '어두운 데선 그 자리가 안 생겨. 날짜만 가고.' }
   ],
   questDoneLeafThree: [
-    { who: 'jachwi', face: 'happy', text: '세 장.' },
+    /* ★ 2026-08-29 [Char]·[Plan] — 여기도 proud 다. 세 장을 세는 것은 «자랑»이지 «기쁨»이 아니다. */
+    { who: 'jachwi', face: 'proud', text: '세 장.' },
     { who: 'moni',   face: 'happy', text: '여기까지가 첫걸음이야. 놓고, 주고, 거두고, 옮기고.' },
     { who: 'moni',   face: 'curious', text: '나머지는 이걸 크게 하는 것뿐이야.' }
   ],
