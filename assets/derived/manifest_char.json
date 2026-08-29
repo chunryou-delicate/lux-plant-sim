@@ -3476,18 +3476,6 @@
    "note": "아틀라스 부위 마스크. ⚠ 실시간 부위 교체용이 아니다(README 4장)"
   },
   {
-   "file": "portrait_jachwi_blank.png",
-   "path": "characters/portraits/portrait_jachwi_blank.png",
-   "is_glb": false,
-   "bytes": 56879,
-   "category": "캐릭터·초상",
-   "type": "초상화",
-   "status": "채택",
-   "char": "jachwi_f",
-   "name_ko": "자취녀_빈판",
-   "note": "대사창 얼굴. ⚠ game.html FACE_FILE 에 없는 키는 조용히 neutral 로 떨어진다"
-  },
-  {
    "file": "portrait_jachwi_cry.png",
    "path": "characters/portraits/portrait_jachwi_cry.png",
    "is_glb": false,
@@ -3509,18 +3497,6 @@
    "status": "채택",
    "char": "jachwi_f",
    "name_ko": "자취녀_기쁨",
-   "note": "대사창 얼굴. ⚠ game.html FACE_FILE 에 없는 키는 조용히 neutral 로 떨어진다"
-  },
-  {
-   "file": "portrait_jachwi_m_blank.png",
-   "path": "characters/portraits/portrait_jachwi_m_blank.png",
-   "is_glb": false,
-   "bytes": 42110,
-   "category": "캐릭터·초상",
-   "type": "초상화",
-   "status": "채택",
-   "char": null,
-   "name_ko": "자취남_빈판",
    "note": "대사창 얼굴. ⚠ game.html FACE_FILE 에 없는 키는 조용히 neutral 로 떨어진다"
   },
   {
@@ -3557,6 +3533,18 @@
    "status": "채택",
    "char": null,
    "name_ko": "자취남_무표정",
+   "note": "대사창 얼굴. ⚠ game.html FACE_FILE 에 없는 키는 조용히 neutral 로 떨어진다"
+  },
+  {
+   "file": "portrait_jachwi_m_numb.png",
+   "path": "characters/portraits/portrait_jachwi_m_numb.png",
+   "is_glb": false,
+   "bytes": 42110,
+   "category": "캐릭터·초상",
+   "type": "초상화",
+   "status": "채택",
+   "char": null,
+   "name_ko": "자취남_말잃음",
    "note": "대사창 얼굴. ⚠ game.html FACE_FILE 에 없는 키는 조용히 neutral 로 떨어진다"
   },
   {
@@ -3629,6 +3617,18 @@
    "status": "채택",
    "char": "jachwi_f",
    "name_ko": "자취녀_무표정",
+   "note": "대사창 얼굴. ⚠ game.html FACE_FILE 에 없는 키는 조용히 neutral 로 떨어진다"
+  },
+  {
+   "file": "portrait_jachwi_numb.png",
+   "path": "characters/portraits/portrait_jachwi_numb.png",
+   "is_glb": false,
+   "bytes": 56879,
+   "category": "캐릭터·초상",
+   "type": "초상화",
+   "status": "채택",
+   "char": "jachwi_f",
+   "name_ko": "자취녀_말잃음",
    "note": "대사창 얼굴. ⚠ game.html FACE_FILE 에 없는 키는 조용히 neutral 로 떨어진다"
   },
   {
