@@ -4682,6 +4682,45 @@ window.__byeotCoach = { show: coach, hide: coachHide, now: () => coachNow,
                         seen: () => [...coachSeen()], notes: () => Object.keys(COACH_NOTES) };
 
 window.__byeotHint = () => { try { updateHint(); } catch (e) { /* 안내가 게임을 막지 않는다 */ } };
+/* ★★★ 2026-08-29 — **「제일 밝은 자리」를 «한 군데»서 낸다**(㊷ 밑이 같으면 셋이 아니라 하나).
+   손가락(§updateHint)과 아래글(§beginMove)이 **같은 칸**을 가리켜야 한다. 따로 세면
+   손가락은 창턱을 짚는데 글은 다른 데를 말하는 날이 온다 — 이 저장소가 늘 앓는 병이다.
+   ⚠ 자는 `fillSlots` 것을 그대로 쓴다(`slotFitsDiameter` · `ARRIVAL_POT_D`). 칸을 박지 않는다(㊶). */
+function guideBrightSlot(exceptSlotId) {
+  try {
+    const rep = io.light.daily(S.day + 1, S).report;
+    const roomSlot = new Map((io.light.room.slots || []).map(s => [s.slotId, s]));
+    const fits = rep.slots.filter(s => slotFitsDiameter(roomSlot.get(s.slotId) || s, ARRIVAL_POT_D));
+    const best = fits.slice().sort((a, b) => b.dli - a.dli)[0];
+    return best && best.slotId !== exceptSlotId ? best.slotId : null;
+  } catch { return null; }
+}
+/* 「창턱 화분받침**이**」 · 「화분 받침대**가**」 — 받침이 있으면 이, 없으면 가.
+   ⚠ 자리 이름은 방마다 다르다(§room_map). 글자를 박으면 방이 바뀌는 날 어색해진다. */
+function josaIGa(word) {
+  const c = String(word || '').trim().slice(-1).charCodeAt(0);
+  if (!(c >= 0xAC00 && c <= 0xD7A3)) return '이';        /* 한글이 아니면 예전대로 */
+  return ((c - 0xAC00) % 28) ? '이' : '가';
+}
+/* ★★★ 2026-08-29 [Plan] — **[옮기기] 중 가이드일 때는 아래글이 «왜»를 말한다.**
+   ══════════════════════════════════════════════════════════════════
+   [Plan]: *"손가락은 «어디»를 말합니다. dropLabel 은 ★ «왜»를 말해야 합니다."*
+   ⇒ ★ 두 자리가 같은 말을 하면 하나가 남는다. 다른 일을 해야 둘 다 산다.
+   ⛔ 「거기에 놓아야 한다」로 쓰지 않는다 — **아무 데나 놓아도 놓아진다.** 그건 거짓이고
+     손을 묶는다. 「거기가 밝다」는 참이고, 고르는 것은 사람에게 남는다.
+     ⇒ ★★ 그리고 그것이 이 게임의 첫 가르침이다 — **「자리가 정한다」**.
+   ⛔ 그리고 **「거기」라고 안 쓴다** — 실측(probe_hintgate)으로 `stage.talking` 이면 손가락이
+     쉰다. 그때 「거기」는 **허공**이다(㊽-b). ⇒ ★ 칸 이름을 **읽어** 넣어 혼자 서게 한다. */
+function moveDropLabelKo() {
+  try {
+    const fp = S.firstPlay;
+    if (!(fp && fp.enabled && fp.phase === 'move_monstera' && drag.what === 'monstera')) return null;
+    const goal = guideBrightSlot(picked.slotId);
+    if (!goal) return null;
+    const ko = slotLabel(goal);
+    return `${ko}${josaIGa(ko)} 제일 밝습니다`;
+  } catch { return null; }
+}
 function updateHint() {
   coachTick();
   /* ★ 쪽지가 떠 있으면 손가락은 쉰다 — 같은 순간에 두 안내가 뜨면 둘 다 안 읽힌다(§coach ⓑ) */
@@ -4721,15 +4760,7 @@ function updateHint() {
      ⚠ 이미 그 자리면 안 가리킨다 — 「지금 있는 데로 가라」가 된다. */
   if (fp && fp.enabled && fp.phase === 'move_monstera' && picked.mode === 'move' &&
       drag.what === 'monstera' && roomView && roomView.screenPosOf) {
-    const goal = (() => {
-      try {
-        const rep = io.light.daily(S.day + 1, S).report;
-        const roomSlot = new Map((io.light.room.slots || []).map(s => [s.slotId, s]));
-        const fits = rep.slots.filter(s => slotFitsDiameter(roomSlot.get(s.slotId) || s, ARRIVAL_POT_D));
-        const best = fits.slice().sort((a, b) => b.dli - a.dli)[0];
-        return best && best.slotId !== picked.slotId ? best.slotId : null;
-      } catch { return null; }
-    })();
+    const goal = guideBrightSlot(picked.slotId);   /* ★ 손가락과 아래글이 «같은 칸»을 가리킨다(§guideBrightSlot) */
     let gp = null;
     if (goal) { try { gp = roomView.screenPosOf(goal); } catch { } }
     if (gp) {
@@ -10806,7 +10837,8 @@ async function bootRoomView() {
     }; window.__io = io;
     /* 진단용 — 말풍선이 왜 안 뜨는지 밖에서 볼 수 있게. 읽기 전용이다 */
     window.__marks = { list: () => markList(), busy: () => stageBusy() };
-    window.__S = () => S;                    /* 진단용 — 읽기 전용으로 쓴다 */
+    window.__S = () => S;
+    window.__moveLabel = () => moveDropLabelKo();   /* 진단용 — 읽기 전용 */                    /* 진단용 — 읽기 전용으로 쓴다 */
     /* ★ 퀘스트 — 검사가 「무엇이 열렸나 · 화면이 무슨 사실을 보고 그렇게 말했나」를
        밖에서 잴 수 있게. **읽기 전용**이다(`stepQuests` 는 안 내준다 — 보상이 걸려 있다). */
     window.__questSnap = () => questSnapshotNow(lastTurn);
@@ -12374,7 +12406,10 @@ const picked = {
     freePlace.rings(true, drag.potD);
     freePlace.grid(true, { potD: drag.potD });
     if (roomView) roomView.highlightSlots(drag.valid);
-    $('dropLabel').textContent = '아무 데나 잡고 끌어 보세요';
+    /* ★★★ 2026-08-29 [Plan] — **가이드 중이면 «왜»를 말한다**(§moveDropLabelKo).
+       손가락은 «어디»를 짚고, 이 글은 «왜 거기인지»를 말한다. 둘이 같은 말을 하면 하나가 남는다.
+       ⚠ 가이드가 아니면 «아무 데나»가 **맞는 말**이다 — 자유 배치가 이 조작의 사상이다. */
+    $('dropLabel').textContent = moveDropLabelKo() || '아무 데나 잡고 끌어 보세요';
   },
   beginTurn() {
     if (!this.slotId) return;

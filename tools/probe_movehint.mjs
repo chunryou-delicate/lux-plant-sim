@@ -55,5 +55,8 @@ console.log('  창턱 자리 화면 좌표 —', await page.eval(`(()=>{ try{
   const p=rv.screenPosOf('banjiha-sill:0');
   return p? '('+Math.round(r.left+p.x)+','+Math.round(r.top+p.y)+')' : 'null'; }catch(e){ return 'err'; } })()`));
 console.log('  아래글 —', await page.eval(`(()=>{ const e=document.getElementById('dropLabel'), cs=getComputedStyle(e);
-  return (cs.display!=='none'?'보임 ':'⛔안보임 ')+(e.textContent||'').trim(); })()`));
+  return JSON.stringify({ display: cs.display, 글: e.textContent,
+    'moveDropLabelKo()': (()=>{ try{ return String(window.__moveLabel ? window.__moveLabel() : 'no-hook'); }catch(x){ return 'err '+x.message; } })(),
+    'drag.what': (window.__drag||{}).what||null,
+    phase: (window.__S().firstPlay||{}).phase||null }); })()`));
 await page.close(); clearTimeout(wd);
