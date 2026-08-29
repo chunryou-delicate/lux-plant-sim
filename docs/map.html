@@ -1,0 +1,892 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>*{margin:0;padding:0}img,svg{max-width:100%}</style>
+<title>빛식물 전체 지도</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=IBM+Plex+Sans+KR:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+
+<style>
+:root{
+  --bg:#F6F7F3; --surface:#FFFFFF; --surface-2:#EFF1EA;
+  --ink:#1A1F18; --ink-2:#5A6157; --ink-3:#878E82;
+  --line:#DCE0D5; --line-2:#C6CBBC;
+  --accent:#2E6F6B; --accent-soft:#DCEAE8;
+  --ok:#43712F; --ok-bg:#E4EEDC;
+  --warn:#9C6D14; --warn-bg:#F6EBD3;
+  --gap:#A8402F; --gap-bg:#F6E0DB;
+  --idle:#767C71; --idle-bg:#E8EAE4;
+  --shadow:0 1px 2px rgba(26,31,24,.05), 0 8px 24px -12px rgba(26,31,24,.16);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#11150F; --surface:#191E17; --surface-2:#20261E;
+    --ink:#E9ECE3; --ink-2:#9CA396; --ink-3:#767D71;
+    --line:#2A3126; --line-2:#3A4335;
+    --accent:#63B8B0; --accent-soft:#1B2E2C;
+    --ok:#86BE6E; --ok-bg:#1C2A17;
+    --warn:#DFAC4B; --warn-bg:#2C2413;
+    --gap:#E5806B; --gap-bg:#2E1A16;
+    --idle:#848A7E; --idle-bg:#22271F;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -12px rgba(0,0,0,.6);
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#11150F; --surface:#191E17; --surface-2:#20261E;
+  --ink:#E9ECE3; --ink-2:#9CA396; --ink-3:#767D71;
+  --line:#2A3126; --line-2:#3A4335;
+  --accent:#63B8B0; --accent-soft:#1B2E2C;
+  --ok:#86BE6E; --ok-bg:#1C2A17;
+  --warn:#DFAC4B; --warn-bg:#2C2413;
+  --gap:#E5806B; --gap-bg:#2E1A16;
+  --idle:#848A7E; --idle-bg:#22271F;
+  --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -12px rgba(0,0,0,.6);
+}
+
+*{box-sizing:border-box}
+body{
+  margin:0; background:var(--bg); color:var(--ink);
+  font-family:"IBM Plex Sans KR", system-ui, -apple-system, sans-serif;
+  font-weight:400; line-height:1.75; font-size:15.5px;
+  -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:1080px; margin:0 auto; padding:0 24px 96px}
+
+/* ─── 머리 ─── */
+header.top{
+  border-bottom:1px solid var(--line);
+  padding:56px 0 30px; margin-bottom:8px;
+}
+.eyebrow{
+  font-family:"IBM Plex Mono", monospace; font-size:11.5px; font-weight:500;
+  letter-spacing:.16em; text-transform:uppercase; color:var(--accent);
+  margin:0 0 14px;
+}
+h1{
+  font-family:"Gowun Batang", serif; font-weight:700;
+  font-size:clamp(34px, 6vw, 52px); line-height:1.15; letter-spacing:-.01em;
+  margin:0 0 16px; text-wrap:balance;
+}
+.lede{
+  font-size:17px; color:var(--ink-2); max-width:60ch; margin:0 0 28px;
+  line-height:1.7;
+}
+.scale{
+  display:flex; flex-wrap:wrap; gap:0; border-top:1px solid var(--line);
+}
+.scale div{
+  flex:1 1 130px; padding:14px 16px 12px 0; border-right:1px solid var(--line);
+}
+.scale div:last-child{border-right:none}
+.scale b{
+  display:block; font-family:"IBM Plex Mono",monospace; font-size:23px;
+  font-weight:600; font-variant-numeric:tabular-nums; letter-spacing:-.02em;
+}
+.scale span{font-size:12.5px; color:var(--ink-3)}
+
+/* ─── 상태 스트립 ─── */
+.strip{
+  display:grid; grid-template-columns:repeat(auto-fit,minmax(168px,1fr));
+  gap:1px; background:var(--line); border:1px solid var(--line);
+  border-radius:3px; overflow:hidden; margin:34px 0 8px;
+}
+.strip a{
+  background:var(--surface); padding:18px 18px 16px; text-decoration:none;
+  color:inherit; display:block; transition:background .15s;
+}
+.strip a:hover, .strip a:focus-visible{background:var(--surface-2)}
+.strip a:focus-visible{outline:2px solid var(--accent); outline-offset:-2px}
+.strip .n{
+  font-family:"IBM Plex Mono",monospace; font-size:30px; font-weight:600;
+  line-height:1; font-variant-numeric:tabular-nums; letter-spacing:-.03em;
+}
+.strip .l{font-size:13px; color:var(--ink-2); margin-top:8px; line-height:1.45}
+.strip .gap .n{color:var(--gap)}
+.strip .warn .n{color:var(--warn)}
+.strip .ok .n{color:var(--ok)}
+.strip .idle .n{color:var(--idle)}
+
+/* ─── 절 ─── */
+section{padding-top:60px}
+h2{
+  font-family:"Gowun Batang",serif; font-size:clamp(24px,3.4vw,32px);
+  font-weight:700; line-height:1.3; margin:0 0 6px; text-wrap:balance;
+  letter-spacing:-.01em;
+}
+h2 .num{
+  font-family:"IBM Plex Mono",monospace; font-size:12px; font-weight:500;
+  color:var(--accent); letter-spacing:.14em; display:block; margin-bottom:10px;
+}
+.sub{color:var(--ink-2); font-size:15px; margin:0 0 26px; max-width:62ch}
+h3{
+  font-size:16.5px; font-weight:600; margin:36px 0 12px;
+  letter-spacing:-.005em; text-wrap:balance;
+}
+h4{font-size:14px; font-weight:600; margin:24px 0 8px; color:var(--ink-2)}
+p{margin:0 0 14px; max-width:66ch}
+
+/* ─── 강조 ─── */
+.claim{
+  border-left:3px solid var(--accent); padding:4px 0 4px 20px;
+  margin:26px 0; font-family:"Gowun Batang",serif; font-size:19px;
+  line-height:1.6; font-weight:700; text-wrap:balance; max-width:56ch;
+}
+.claim.gap{border-left-color:var(--gap)}
+.claim small{
+  display:block; font-family:"IBM Plex Sans KR",sans-serif; font-size:13.5px;
+  font-weight:400; color:var(--ink-2); margin-top:8px; line-height:1.6;
+}
+
+/* ─── 표 ─── */
+.tw{overflow-x:auto; margin:18px 0 8px; border:1px solid var(--line); border-radius:3px}
+table{border-collapse:collapse; width:100%; font-size:14px; min-width:460px}
+th{
+  text-align:left; font-weight:600; font-size:11.5px; letter-spacing:.08em;
+  text-transform:uppercase; color:var(--ink-3); padding:11px 14px;
+  background:var(--surface-2); border-bottom:1px solid var(--line); white-space:nowrap;
+}
+td{padding:11px 14px; border-bottom:1px solid var(--line); vertical-align:top; background:var(--surface)}
+tr:last-child td{border-bottom:none}
+td.num, th.num{
+  font-family:"IBM Plex Mono",monospace; font-variant-numeric:tabular-nums;
+  text-align:right; white-space:nowrap;
+}
+td b{font-weight:600}
+
+/* ─── 칩 ─── */
+.chip{
+  display:inline-block; font-size:11.5px; font-weight:600; padding:2px 8px;
+  border-radius:2px; white-space:nowrap; line-height:1.6;
+  font-family:"IBM Plex Sans KR",sans-serif;
+}
+.c-ok{background:var(--ok-bg); color:var(--ok)}
+.c-warn{background:var(--warn-bg); color:var(--warn)}
+.c-gap{background:var(--gap-bg); color:var(--gap)}
+.c-idle{background:var(--idle-bg); color:var(--idle)}
+
+/* ─── 코드 ─── */
+pre.calc{
+  font-family:"IBM Plex Mono",monospace; font-size:13px; line-height:1.85;
+  background:var(--surface-2); border:1px solid var(--line); border-radius:3px;
+  padding:16px 18px; overflow-x:auto; margin:16px 0;
+}
+code{
+  font-family:"IBM Plex Mono",monospace; font-size:.9em;
+  background:var(--surface-2); padding:1px 5px; border-radius:2px;
+}
+pre.calc code{background:none; padding:0}
+
+/* ─── 창 카드 ─── */
+.sessions{
+  display:grid; grid-template-columns:repeat(auto-fit,minmax(272px,1fr));
+  gap:1px; background:var(--line); border:1px solid var(--line);
+  border-radius:3px; overflow:hidden; margin:20px 0;
+}
+.ses{background:var(--surface); padding:20px}
+.ses .hd{display:flex; align-items:baseline; gap:9px; margin-bottom:4px}
+.ses .nm{font-weight:700; font-size:16px}
+.ses .id{
+  font-family:"IBM Plex Mono",monospace; font-size:11px; color:var(--ink-3);
+}
+.ses .role{font-size:13px; color:var(--ink-2); margin-bottom:14px}
+.ses dl{margin:0; font-size:13.5px; line-height:1.65}
+.ses dt{
+  font-size:10.5px; letter-spacing:.09em; text-transform:uppercase;
+  color:var(--ink-3); font-weight:600; margin-top:11px;
+}
+.ses dd{margin:2px 0 0}
+.ses dd.miss{color:var(--gap)}
+
+/* ─── 빈 데 목록 ─── */
+.gaps{display:grid; gap:1px; background:var(--line); border:1px solid var(--line); border-radius:3px; overflow:hidden; margin:18px 0}
+.g{background:var(--surface); padding:15px 18px; display:grid; grid-template-columns:auto 1fr; gap:0 14px; align-items:start}
+.g .sev{width:3px; height:100%; min-height:22px; border-radius:2px; background:var(--gap)}
+.g.w .sev{background:var(--warn)}
+.g.i .sev{background:var(--idle)}
+.g .t{font-weight:600; font-size:14.5px; margin-bottom:3px}
+.g .d{font-size:13.5px; color:var(--ink-2); line-height:1.6}
+.g .d em{font-style:normal; color:var(--ink); font-weight:500}
+
+/* ─── 머메이드 ─── */
+.dia{
+  margin:24px 0; padding:20px 8px; background:var(--surface);
+  border:1px solid var(--line); border-radius:3px; overflow-x:auto;
+}
+.dia pre.mermaid{margin:0; text-align:center}
+.cap{font-size:12.5px; color:var(--ink-3); margin:8px 2px 0; text-align:center}
+
+/* ─── 결정 ─── */
+.dec{display:grid; gap:1px; background:var(--line); border:1px solid var(--line); border-radius:3px; overflow:hidden}
+.dec .row{background:var(--surface); padding:16px 18px; display:grid; grid-template-columns:34px 1fr; gap:14px}
+.dec .k{
+  font-family:"IBM Plex Mono",monospace; font-weight:600; font-size:15px;
+  color:var(--accent); padding-top:1px;
+}
+.dec .t{font-weight:600; font-size:14.5px; margin-bottom:4px}
+.dec .d{font-size:13.5px; color:var(--ink-2); line-height:1.62}
+.dec .who{
+  font-family:"IBM Plex Mono",monospace; font-size:11px; color:var(--ink-3);
+  margin-top:5px; letter-spacing:.03em;
+}
+
+/* ─── 꼬리 ─── */
+footer{
+  margin-top:72px; padding-top:24px; border-top:1px solid var(--line);
+  font-size:13px; color:var(--ink-3); line-height:1.75;
+}
+footer a{color:var(--accent)}
+
+hr.rule{border:none; border-top:1px solid var(--line); margin:44px 0}
+
+@media (max-width:640px){
+  body{font-size:15px}
+  .wrap{padding:0 18px 72px}
+  header.top{padding-top:38px}
+  .scale div{flex-basis:50%; border-right:none}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none !important; animation:none !important}}
+</style>
+
+<div class="wrap">
+
+<header class="top">
+  <p class="eyebrow">2026-08-29 · 49일째 · 창 여섯</p>
+  <h1>빛식물 전체 지도</h1>
+  <p class="lede">
+    반지하에서 몬스테라를 길러 이사 나가는 게임. 여섯 창이 각자 제 마당을 세어 낸 것을
+    한 장으로 엮었다. <strong>무엇이 있고, 그 속이 어떻게 돌고, 무엇이 없는가.</strong>
+  </p>
+  <div class="scale">
+    <div><b>1,363</b><span>커밋</span></div>
+    <div><b>18,899</b><span>줄 · 두 화면</span></div>
+    <div><b>85</b><span>검사</span></div>
+    <div><b>27</b><span>데이터 파일</span></div>
+    <div><b>3.3<small style="font-size:14px">GB</small></b><span>에셋</span></div>
+  </div>
+</header>
+
+<nav class="strip">
+  <a href="#gaps" class="gap"><div class="n">9</div><div class="l">박사님 결정을 기다리는 것</div></a>
+  <a href="#ready" class="warn"><div class="n">6</div><div class="l">값이 안 걸려 바로 할 수 있는 것</div></a>
+  <a href="#unused" class="idle"><div class="n">58<small style="font-size:16px">%</small></div><div class="l">만들었는데 게임이 안 여는 잎</div></a>
+  <a href="#closed" class="ok"><div class="n">5</div><div class="l">오늘 닫힌 것</div></a>
+</nav>
+
+<!-- ══════════ 판 ══════════ -->
+<section id="loop">
+  <h2><span class="num">01 · 판</span>게임이 무엇인가</h2>
+  <p class="sub">
+    작물로 하루를 버티고, 몬스테라로 목돈을 만든다. 200만 원과 하프문 무늬가 모이면 이사한다.
+    <strong>어떻게 모으느냐가 다음 방의 시작 상태를 정한다.</strong>
+  </p>
+
+  <div class="dia">
+<pre class="mermaid">
+graph TB
+    S["Day 0 · 반지하<br/>시루 하나 · 몬스테라 선물"]
+    S --> L["하루 — 물·수확·심기<br/>체력 5로 시작"]
+    L --> L2["자리마다 빛이 다르다<br/>DLI"]
+    L2 --> L3["작물 — 콩나물 5일 · 무순 7일"]
+    L3 --> L4["먹거나 판다<br/>먹는 몫엔 상한이 있다"]
+    L4 --> L5["살림비가 나간다"]
+    L5 --> L
+
+    S --> M["몬스테라 — 팔지 않고 기른다"]
+    M --> M1["잎이 난다<br/>누적 30·70·120·190·290"]
+    M1 --> M2["2·3번째는 무늬 확정<br/>산반 · 하프문"]
+    M2 --> M3["3번째가 성숙하면<br/>자르기가 열린다"]
+
+    L4 --> W["지갑"]
+    M3 --> W
+    W --> E{"200만 + 하프문"}
+    E --> END["이사 — 첫 플레이 끝"]
+
+    END --> T1["그루째 판다<br/>원룸은 씨앗부터"]
+    END --> T2["삽수만 판다<br/>원룸은 삽수로"]
+    END --> T3["안 판다<br/>그루째 데려간다"]
+
+    style M2 fill:#1d3d22,stroke:#6ab04c,color:#f0f4ec
+    style END fill:#3a2c14,stroke:#d9a441,stroke-width:3px,color:#f6f0e2
+    style E fill:#1b2e2c,stroke:#63b8b0,color:#e6f2f0
+</pre>
+  </div>
+  <p class="cap">몬이는 세 길 어느 쪽이든 따라간다. 그것만 갈래에 안 걸린다.</p>
+
+  <h3>프롤로그 검산 — 4만 원이 모자라는 것은 설계다</h3>
+<pre class="calc"><code>(20,000 + 350,000 + 750,000) × 1.4 × 1.25 = 1,960,000
+이사비                                       2,000,000
+                                     ────────────────
+                                        40,000 모자람</code></pre>
+  <p>그루만 팔아서는 못 나간다 — 그것을 수로 못박은 것이다.</p>
+</section>
+
+<hr class="rule">
+
+<!-- ══════════ 수의 갈래 ══════════ -->
+<section id="kinds">
+  <h2><span class="num">02 · 갈래</span>수에는 세 갈래가 있다</h2>
+  <p class="sub">
+    지도를 만들며 가장 크게 얻은 것. <strong>이 갈래가 「이 수를 만지면 어디까지 흔들리나」를 말해 준다.</strong>
+  </p>
+
+  <div class="tw">
+    <table>
+      <thead><tr><th style="width:22%">갈래</th><th>보기</th><th style="width:30%">만지면</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><b>박은 수</b><br><span class="chip c-warn">grep 으로 찾힌다</span></td>
+          <td>등급 넷 · 배수 1.0·1.4 · 시너지 1.25·1.5 · 이사비 2,000,000 · 파는 문 3장 · 체력 5 · 전기 160원/kWh</td>
+          <td><b>거기만</b> 바뀐다.<br>밑이 바뀌어도 안 따라온다 — <em>혼자 낡는다</em></td>
+        </tr>
+        <tr>
+          <td><b>나오는 수</b><br><span class="chip c-ok">안 찾힌다</span></td>
+          <td>하루 절감 상한 · 프롤로그 그루값 1,960,000 · 삽수/그루 값 · 하루 지출 · 전기세</td>
+          <td>밑을 고치면 <b>따라온다</b>.<br>안 낡는다 — 대신 어디서 나오는지를 알아야 한다</td>
+        </tr>
+        <tr>
+          <td><b>잰 수</b><br><span class="chip c-gap">코드에 없다</span></td>
+          <td>창턱 DLI 3.68 · 겨울 2.78 · 유효 생장 19일 · 선반 500/350/200g · 무늬 13%</td>
+          <td>방·프로필이 바뀌면 <b>혼자 낡는다</b>.<br>잰 날짜와 조건이 값의 일부다</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="claim">
+    「못 찾았다」가 좋은 신호일 때가 있다.
+    <small>기획 창이 <code>grep</code> 으로 「5000」을 찾다 못 찾았는데, 못 찾은 까닭이 그게 <b>나오는 수</b>였기 때문이었다.
+    박혀 있지 <b>않아서</b> 「혼자 낡는다」에 안 걸린다.</small>
+  </div>
+
+  <h3>하루 작물 절감 상한 — 박은 수가 아니다</h3>
+<pre class="calc"><code>상한 = (1인당 끼니 상한 2) × 식구수 × (하루 밥값 7,500 ÷ 끼니 3)
+
+  자취생 1인  =   5,000원
+  가장   4인  =  20,000원        ← 네 배다</code></pre>
+  <p>
+    총괄이 이 값을 「5,000」이라고만 넘겨 이틀 돌았다. <strong>「1인 기준」이 빠져 있었다.</strong>
+    수만 옮기면 반만 옮긴 것이고, <strong>조건이 나머지 반이다.</strong>
+  </p>
+
+  <p style="font-size:13.5px;color:var(--ink-3)">
+    아래 모든 실측값은 <b>프로필 <code>e2891b0</code> · 반지하 15칸 · 잰 날 2026-08-23</b> 기준이다.
+  </p>
+</section>
+
+<hr class="rule">
+
+<!-- ══════════ 빛 ══════════ -->
+<section id="light">
+  <h2><span class="num">03 · 빛</span>이 게임의 뼈대</h2>
+  <p class="sub">모든 것이 여기서 갈린다. 자리 하나가 등 세 개보다 세다.</p>
+
+<pre class="calc"><code>천공 상한 = 25,000 lx × 날씨 × 계절 × 지역
+  날씨   맑음 1.00 · 흐림 0.25 · 비 0.12
+  계절   여름 1.00 (낮 14.5h) · 봄 0.85 · 가을 0.80 · 겨울 0.55 (낮 9.8h)
+  지역   전부 1.00     ← 아직 안 본다
+
+자리 lx = 천공 × 조도비
+  조도비 = 그 점에서 창이 보이는 입체각 — 기하학이다. 시각과 무관
+  창 향   남 1.00 · 동서 0.62 · 북 0.38 · 천창 1.20
+
+lx → PPFD  ×0.0185        PPFD → DLI  peak × (2/π) × 낮시간 × 3600 ÷ 1,000,000
+식물등 = 역제곱 + 광축이탈 감쇠 + 뒤쪽 0.18 (기준거리 0.3m)</code></pre>
+
+  <div class="claim">
+    「층」은 안 본다.
+    <small>반지하가 어두운 건 「반지하라서」가 아니라 <b>창이 작고 높아서</b>다.</small>
+  </div>
+
+  <h3>방 여섯 — 맑음·여름·등 0개·자연광만</h3>
+  <div class="tw">
+    <table>
+      <thead><tr><th>방</th><th>크기</th><th class="num">자리</th><th class="num">최고 DLI</th><th>어디</th></tr></thead>
+      <tbody>
+        <tr><td><b>반지하</b> banjiha</td><td>5 × 4 × 2.3</td><td class="num">15</td><td class="num"><b>3.68</b></td><td>창턱</td></tr>
+        <tr><td><b>원룸</b> oneroom</td><td>6 × 5 × 2.5</td><td class="num">15</td><td class="num"><b>6.69</b></td><td>창턱</td></tr>
+        <tr><td>투룸 tworoom</td><td>7 × 5 × 2.5</td><td class="num">20</td><td class="num">7.89</td><td>3단선반</td></tr>
+        <tr><td>교실 classroom</td><td>11 × 6 × 2.8</td><td class="num">128</td><td class="num">7.21</td><td>창턱</td></tr>
+        <tr><td>아파트 apartment</td><td>12 × 10 × 2.6</td><td class="num">83</td><td class="num">9.75</td><td>3단선반</td></tr>
+        <tr><td>온실 greenhouse</td><td>10 × 12 × 2.8</td><td class="num">64</td><td class="num">14.55</td><td>재배랙</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>반지하 → 원룸이 <b>1.8배</b>. 이것이 「이사가 값을 매긴다」의 수적 근거다.</p>
+
+  <h3>등이 얼마를 더하나 — 첫 등이 거의 전부다</h3>
+  <div class="tw">
+    <table>
+      <thead><tr><th>반지하 창턱 · 맑음·여름 · 12시간 점등</th><th class="num">DLI</th><th class="num">더한 값</th></tr></thead>
+      <tbody>
+        <tr><td>등 0개</td><td class="num">3.68</td><td class="num">—</td></tr>
+        <tr><td>등 1개</td><td class="num"><b>6.02</b></td><td class="num" style="color:var(--ok)"><b>+2.34</b></td></tr>
+        <tr><td>등 2개</td><td class="num">6.06</td><td class="num" style="color:var(--ink-3)">+0.04</td></tr>
+        <tr><td>등 3개</td><td class="num">6.17</td><td class="num" style="color:var(--ink-3)">+0.11</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="claim">
+    「등을 사도 아무것도 안 변한다」의 절반이 이 표다.
+    <small>둘째·셋째가 창턱에 <b>안 닿는다.</b> 나머지 절반은 생장 쪽 실측이다 —
+    등 1·2·3이 <b>전부 같은 405일</b>. 두 창이 따로 재서 같은 데 닿았다.</small>
+  </div>
+
+  <p>다만 <strong>등은 다른 자리를 살린다</strong> — 책상 0.56 → 2.06 <span class="chip c-ok">+1.50</span>,
+     서랍장 0.06 → 0.27 <span class="chip c-ok">+0.21</span>.</p>
+
+  <h3>이 판에서 제일 아슬한 수</h3>
+<pre class="calc"><code>real · 창턱 · 등 1개 · 겨울 최저 7일평균     2.78
+몬스테라 최소 문턱                          2.70
+                                    ───────────
+                                     여유  0.08</code></pre>
+  <p>문턱을 <b>도로 올리면 real 이 겨울에 죽는다.</b> 그리고 이 값은 <b>세 곳</b>에 적혀 있다 —
+     <code>light_thresholds.json</code> · <code>growth_tuning.json</code> · <code>plant_grow.html</code>.</p>
+</section>
+
+<hr class="rule">
+
+<!-- ══════════ 생장 ══════════ -->
+<section id="growth">
+  <h2><span class="num">04 · 생장</span>몬스테라가 자라는 규칙</h2>
+
+  <div class="tw">
+    <table>
+      <thead><tr><th style="width:30%">무엇</th><th>값</th><th style="width:26%">조건</th></tr></thead>
+      <tbody>
+        <tr><td><b>잎 간격 (누적)</b></td><td class="num" style="text-align:left">30 · 70 · 120 · 190 · 290 · 440 · 640 · 940</td><td>유효 생장일. <b>표는 간격, 문턱은 누적</b></td></tr>
+        <tr><td>잎 성숙</td><td>matSpan 120 · 어린→중간 0.38 · 중간→성인 0.66</td><td>leafM = clamp01((g−leafBirth)/120)</td></tr>
+        <tr><td>성숙 굴림</td><td>gauge 1 에서 시작 · 차면 굴림 · 성공 0 · 실패 0.5</td><td><b>진행도가 아니라 굴림 대기</b></td></tr>
+        <tr><td>생장 배수</td><td>정체 이하 0 · 느림 1.0 · 최적 1.25 · 상한 2</td><td>best_lo 5.0</td></tr>
+        <tr><td><b>무늬 확률</b></td><td>창턱 DLI 2.78~4.12 전 구간 <b>13%/잎</b> · 0.58 은 0% · 8.0 이상 39%</td><td>novice·real 공통 · 등 0~3 공통</td></tr>
+        <tr><td>무늬 등급 분포</td><td>어두움 90/9/1 · <b>중간 70/25/5</b> · 밝음 45/40/15</td><td>산반/하프문/풀문. <b>반지하 창턱은 등 0~3 전부 중간</b></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="claim gap">
+    눈금 함정 — <code>ageOf(45)</code> 는 45가 아니라 <b>73.50</b> 이다.
+    <small><code>growthDays</code> 와 <code>leafBirth</code> 는 <b>다른 눈금</b>이다. 이걸 헷갈려 옛 값이 네 배 틀렸다.</small>
+  </div>
+
+  <h3>프롤로그만은 굴리지 않는다</h3>
+<pre class="calc"><code>PROLOGUE_VARIE_LEAVES = [2, 3]                    무늬 여부
+prologueGrades { 1:plain, 2:sanban, 3:halfmoon }  등급까지</code></pre>
+  <p>첫 플레이에서 2·3번째 잎은 <strong>굴림이 없다.</strong> 그래서 「축복받은 몬스테라」다.</p>
+
+  <h3>무늬 잎 값 — 표가 정본이고 코드는 읽기만 한다</h3>
+  <div class="tw">
+    <table>
+      <thead><tr><th>등급</th><th class="num">잎 하나</th><th>파는 길</th><th class="num">배수</th></tr></thead>
+      <tbody>
+        <tr><td>무지 plain</td><td class="num">20,000</td><td>삽수</td><td class="num">×1.0</td></tr>
+        <tr><td>산반 sanban</td><td class="num">350,000</td><td>그루</td><td class="num">×1.4</td></tr>
+        <tr><td><b>하프문</b> halfmoon</td><td class="num"><b>750,000</b></td><td>시너지 2종</td><td class="num">×1.25</td></tr>
+        <tr><td>풀문 fullmoon</td><td class="num">1,150,000</td><td>시너지 3종</td><td class="num">×1.5</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>삽수냐 그루냐는 <strong>잎 수가 아니라 파는 길</strong>이 정한다. 파는 문은 잎 3장부터 열린다.</p>
+</section>
+
+<hr class="rule">
+
+<!-- ══════════ 부족한 것 ══════════ -->
+<section id="gaps">
+  <h2><span class="num">05 · 빈 데</span>부족한 것</h2>
+  <p class="sub">여섯 창이 <strong>스스로 적어 낸 것</strong>이다. 이 지도의 진짜 목적.</p>
+
+  <h3>네 창이 따로 재서 같은 데 닿은 것</h3>
+  <div class="dia">
+<pre class="mermaid">
+graph LR
+    A["코어<br/>「이사 뒤 원룸을<br/>한 번도 안 굴려 봤다」"] --> X
+    B["기획<br/>「원룸이 통째로 비었다<br/>방·조도·살림·퀘스트」"] --> X
+    C["생장<br/>「한 번도 안 잼」"] --> X
+    D["집<br/>「데이터는 다 있다<br/>모자란 건 밸런스 둘」"] --> X
+    X["원룸 = 첫 플레이 다음이<br/>통째로 비어 있다"]
+    X --> Y["막힌 게 아니라<br/>「반지하 먼저」로 미룬 것"]
+    Y --> Z["뜻은 이미 정해졌다<br/>「원룸에서 빛은 값을 매긴다」"]
+    style X fill:#3a1e1a,stroke:#e5806b,stroke-width:3px,color:#f7e9e5
+    style Z fill:#1d3d22,stroke:#6ab04c,stroke-width:2px,color:#f0f4ec
+</pre>
+  </div>
+  <p class="cap">밑이 넷 다 다르다 — 판 / 기획 / 조도 / 방 데이터. 그러니 이건 진짜 넷이다.</p>
+
+  <h3 id="unused">만들어 두고 배선을 안 한 것</h3>
+  <p>세 가지가 <strong>같은 병</strong>이다 — 그림은 다 있는데 게임이 그 이름을 모르거나, 내주는 함수를 아무도 안 부른다.</p>
+  <div class="tw">
+    <table>
+      <thead><tr><th style="width:26%">무엇</th><th class="num" style="width:16%">안 쓰는 몫</th><th>어디서 끊겼나</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><b>잎 무늬 갈래</b></td>
+          <td class="num"><b>22 / 38</b><br><span style="color:var(--gap)">약 60장</span></td>
+          <td>등급표가 <b>16갈래만 부른다.</b> 어느 무늬가 몇 등급인지가 밸런스라 잎 창이 못 정한다</td>
+        </tr>
+        <tr>
+          <td><b>화분 색</b></td>
+          <td class="num"><b>9 / 9</b><br><span style="color:var(--gap)">전부</span></td>
+          <td>색은 코드에 <b>제대로 들어 있는데</b> 그걸 내주는 함수를 <b>부르는 곳이 0줄</b>이다 →
+              <em>민트·핑크 화분은 플레이어가 절대 만날 수 없다</em></td>
+        </tr>
+        <tr>
+          <td>장식 조명</td>
+          <td class="num">3 / 3</td>
+          <td>게임 코드에 <b>한 줄도 없다</b>. 오늘 칠을 바꾼 것이 게임에 영향이 없는 까닭</td>
+        </tr>
+        <tr><td>캐릭터 동작 클립</td><td class="num"><b>120 / 128</b><br><span style="color:var(--ink-3)">384 크레딧</span></td><td>게임은 4동작 × 2인만 연다</td></tr>
+        <tr><td>캐릭터 에셋 용량</td><td class="num">1,179 / 1,190<small>MB</small></td><td>게임이 여는 건 <b>0.9%</b></td></tr>
+        <tr><td>캐릭터 6종</td><td class="num">6 / 8</td><td>직업 선택이 아직 없다</td></tr>
+        <tr><td><b>목록의 캐릭터 등록</b></td><td class="num" style="color:var(--gap)"><b>0 / 246</b></td><td>이름으로 못 찾는다</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="claim gap">
+    「안 보인다」가 아니라 「못 고른다」였다.
+    <small>화분 색 판 아홉 장은 그림도 코드도 다 있는데, <b>내주는 함수를 아무도 안 부른다.</b>
+    셋 다 밸런스가 걸려 있어(무늬 등급 · 상점 품목 · 가격) 창들이 스스로 못 붙인다.</small>
+  </div>
+
+  <p style="font-size:13.5px;color:var(--ink-2)">
+    ⚠ 그리고 생장 조율 도구는 34갈래를 알고 게임은 16을 안다 —
+    <b>도구에서 본 무늬가 게임에 안 나올 수 있다.</b>
+  </p>
+
+  <h3>돌긴 도는데 안 재 본 것</h3>
+  <div class="gaps">
+    <div class="g"><div class="sev"></div><div>
+      <div class="t">헤드리스 생장 창 ↔ 브라우저 생장 창</div>
+      <div class="d">같은 수를 내는지 <em>아무도 안 쟀다.</em> 헤드리스는 3D 스텁 위에서 돈다 — 형태 축이 갈릴 수 있다. <b>잴 수는 있다.</b></div>
+    </div></div>
+    <div class="g w"><div class="sev"></div><div>
+      <div class="t">무늬가 화면에 실제로 그려지는가</div>
+      <div class="d">값(<code>VARIE_STATE</code>)만 봤다.</div>
+    </div></div>
+    <div class="g w"><div class="sev"></div><div>
+      <div class="t">잎 건강을 사계절로</div>
+      <div class="d">검사는 고정광이다. 바램·낙엽을 real 사계절로 안 돌려 봤다.</div>
+    </div></div>
+    <div class="g w"><div class="sev"></div><div>
+      <div class="t">그루 여럿을 판 하나에서</div>
+      <div class="d">그루 교체는 단위검사뿐. 다개체를 한 판에서 안 돌렸다.</div>
+    </div></div>
+    <div class="g w"><div class="sev"></div><div>
+      <div class="t">초상화를 폰 크기로 · 몬이를 원룸 배경에서</div>
+      <div class="d">무엇을 가리는지 본 적이 없다.</div>
+    </div></div>
+  </div>
+
+  <h3>낡은 값이 쓰이고 있다</h3>
+<pre class="calc"><code>아파트 창턱 DLI   기록된 값 6.02   ↔   다시 재니 9.75
+                  그리고 기획·생장 두 창이 그 6.02 를 썼다</code></pre>
+  <p>실측값을 문서에 <strong>담으면</strong> 방을 다시 잰 날 <strong>혼자 낡고, 쓰는 쪽은 모른다.</strong>
+     집 검사의 붉음 하나(<code>measured_fresh</code>)가 바로 이것을 울고 있다.</p>
+
+  <h3>임시로 박아 둔 수 — 근거가 없거나 약한 것</h3>
+  <div class="tw">
+    <table>
+      <thead><tr><th>값</th><th>어디</th><th>왜 임시인가</th></tr></thead>
+      <tbody>
+        <tr><td><code>CLEAR_SKY_MAX</code> 25,000 lx</td><td>조도 엔진</td><td>「캘리브레이션값」이라 주석에 적혀 있다. <b>실측 아님</b></td></tr>
+        <tr><td><code>BACK_REFLECT</code> 0.18</td><td>조도 엔진</td><td>근거 없는 어림수</td></tr>
+        <tr><td><code>REGION</code> 전부 1.00</td><td>조도 엔진</td><td>지역차를 안 본다</td></tr>
+        <tr><td><code>ORIENT</code> 여덟 방위</td><td>조도 엔진</td><td>「서울 기준 <b>대략적</b> 비율」</td></tr>
+        <tr><td><code>glazed</code></td><td>계약</td><td>계약에 <b>넘기는데 엔진이 안 쓴다</b></td></tr>
+        <tr><td><code>fLight</code> · <code>fStable</code></td><td>생장</td><td>주석에 「임시값. 실플레이로 정밀화할 것」</td></tr>
+        <tr><td><code>VARIE_MULT</code> 1.4</td><td>생장</td><td>근거가 추정</td></tr>
+        <tr><td>낙엽 · 활력</td><td>생장</td><td><b>꺼 뒀다</b> · 보류</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>합격 조건이 죽어 있다</h3>
+  <div class="claim gap">
+    <code>acceptance.json</code> — 밸런스 합격 조건인데 <b>읽는 코드가 없다.</b>
+    <small>파일이 스스로 적어 두었다: <i>「sim.js 가 「기획이 옮기면 그 값을 읽는다」라 적었고,
+    <b>기획은 옮겼는데 읽는 배선이 안 왔다.</b>」</i>
+    약속이 반쪽만 지켜지면 「아무도 안 보는 합격 조건」이 된다. 값은 8월 1일에 멈췄다.</small>
+  </div>
+</section>
+
+<hr class="rule">
+
+<!-- ══════════ 자 ══════════ -->
+<section id="rulers">
+  <h2><span class="num">06 · 자</span>자가 거짓말하는 법</h2>
+  <p class="sub">오늘 두 창이 <strong>따로</strong> 같은 병에 물렸다. 그리고 <strong>따로</strong> 같은 답에 닿았다.</p>
+
+  <div class="tw">
+    <table>
+      <thead><tr><th style="width:14%">창</th><th>무엇을 했나</th><th style="width:34%">무슨 일이 났나</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><b>집</b></td>
+          <td>계절을 훑어 「먹는 값 = 재는 값」을 확인하려 했다</td>
+          <td>그 손잡이가 <b>안 달려 있었다.</b> 겨울도 여름도 3.68 →
+              <b>검사는 통과</b> — 둘 다 안 움직였으니 서로 같았다</td>
+        </tr>
+        <tr>
+          <td><b>잎</b></td>
+          <td>화분 색을 갈고 방에 놓아 찍었다</td>
+          <td>색 바꾸기는 <b>방을 조립할 때</b> 불린다. 놓은 뒤 값만 넣었으니
+              셋 다 기본 화분이었을 수 있다 → <b>셋이 같은 게 당연</b></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="claim gap">
+    안 달린 손잡이를 돌려 놓고 「같다」고 하면,<br>아무것도 안 잰 것인데 <b>초록으로 보인다.</b>
+    <small>틀리는 것보다 무섭다. 틀리면 붉어지는데, <b>아무것도 안 하면 초록</b>이다.</small>
+  </div>
+
+  <h4>그리고 둘이 따로 같은 답에 닿았다 — 자에게 「변했나」를 세게 하라</h4>
+<pre class="calc"><code>집   자에 「하늘이 몇 가지 나왔나 · 최고값이 몇 가지 나왔나」를 박음
+     → 안 갈리면 자가 스스로 붉어진다     지금 하늘 6가지 · 최고값 24가지
+
+잎   「어떤 파일을 실제로 받았는지」를 그물로 잡음
+     → 「색이 갈렸다」를 짐작이 아니라 받은 파일 이름으로 말한다</code></pre>
+
+  <h3>자가 못 재는 것</h3>
+  <div class="gaps">
+    <div class="g"><div class="sev"></div><div>
+      <div class="t">브라우저 자동화는 진짜 손짓 처리를 안 지난다</div>
+      <div class="d">스크롤 가로채기 · 제스처 취소 · 붙잡기 해제가 <em>재현이 안 된다.</em>
+        그래서 「가방에서 몬스테라를 못 뺀다」가 <b>나흘</b> 갔다.</div>
+    </div></div>
+    <div class="g"><div class="sev"></div><div>
+      <div class="t">누르면 좌표로 앉고, 자리로 놓으면 다르게 걷힌다</div>
+      <div class="d">재는 쪽은 <em>자리</em>로 놓고 있었고 박사님은 <em>누르고</em> 계셨다.
+        그래서 박사님만 보셨다.</div>
+    </div></div>
+    <div class="g w"><div class="sev"></div><div>
+      <div class="t">자가 크롬 하나다</div>
+      <div class="d">파이어폭스에서 「불러오는 중」에 멈추는 것을 자가 못 잡았다.</div>
+    </div></div>
+    <div class="g w"><div class="sev"></div><div>
+      <div class="t">손가락 과녁 36 × 30 (권장 44 × 44)</div>
+      <div class="d">방에 <em>선</em> 화분을 <em>누르기</em>가 어렵다.
+        나흘짜리 끌기 건과 <b>다른 흠</b>이고, 지금은 다른 길이 있어 덜 아프다.</div>
+    </div></div>
+  </div>
+</section>
+
+<hr class="rule">
+
+<!-- ══════════ 창 ══════════ -->
+<section id="sessions">
+  <h2><span class="num">07 · 창</span>누가 무엇을 쥐고 있나</h2>
+
+  <div class="sessions">
+    <div class="ses">
+      <div class="hd"><span class="nm">코어</span><span class="id">claude-60</span></div>
+      <div class="role">게임 코어 · 헤드리스 하네스</div>
+      <dl>
+        <dt>쥔 것</dt><dd><code>game.html</code> 15,018줄 · <code>src/game/</code> 30모듈 · 검사 85 · 프로브 200여</dd>
+        <dt>다음</dt><dd>새순 순간 화면 당기기 · <code>arrivalSlotId</code></dd>
+        <dt>비어 있는 것</dt><dd class="miss">「했나」가 셋으로 흩어짐 · 원룸을 판으로 안 굴려 봄</dd>
+      </dl>
+    </div>
+    <div class="ses">
+      <div class="hd"><span class="nm">생장</span><span class="id">claude-8e</span></div>
+      <div class="role">생장 · 조도 관문 · 작물 품질</div>
+      <dl>
+        <dt>쥔 것</dt><dd><code>plant_grow.html</code> 3,881줄 · 자리·작물·잎 프로브 넷</dd>
+        <dt>다음</dt><dd>바닥 계약 대기 · 헤드리스↔브라우저 검사</dd>
+        <dt>비어 있는 것</dt><dd class="miss">헤드리스와 브라우저가 같은 수를 내는지 안 쟀다</dd>
+      </dl>
+    </div>
+    <div class="ses">
+      <div class="hd"><span class="nm">기획</span><span class="id">claude-78</span></div>
+      <div class="role">기획 · 문안 · 밸런스 판단</div>
+      <dl>
+        <dt>쥔 것</dt><dd><code>data/balance/</code> 8종 · 문서 다수 · <b>판정값 변경 0 (나흘째)</b></dd>
+        <dt>다음</dt><dd>검사 두 건 판단 · 임자 붙이기 여덟</dd>
+        <dt>비어 있는 것</dt><dd class="miss">세 갈래의 시작 상태가 하나도 안 정해짐</dd>
+      </dl>
+    </div>
+    <div class="ses">
+      <div class="hd"><span class="nm">집</span><span class="id">claude-6e</span></div>
+      <div class="role">방 · 가구 · 조도 시뮬</div>
+      <dl>
+        <dt>쥔 것</dt><dd>엔진 5파일 994줄 · 방 6 · 가구 93 · 자리 325 · 검사 8</dd>
+        <dt>다음</dt><dd>낡은 세 방 재측정 · 바닥 계약에 좌표 싣기</dd>
+        <dt>비어 있는 것</dt><dd class="miss">검사 붉음 셋 — 전부 밸런스 결정이 필요</dd>
+      </dl>
+    </div>
+    <div class="ses">
+      <div class="hd"><span class="nm">인물</span><span class="id">claude-0c</span></div>
+      <div class="role">캐릭터 에셋 · 도구</div>
+      <dl>
+        <dt>쥔 것</dt><dd>3D 8종 · 클립 128 · 초상화 23 · 도구 11 · 잔액 4,475</dd>
+        <dt>다음</dt><dd>목록에 246개 올리기 (0원)</dd>
+        <dt>비어 있는 것</dt><dd class="miss">만든 것의 99%가 게임에 안 붙음</dd>
+      </dl>
+    </div>
+    <div class="ses">
+      <div class="hd"><span class="nm">잎</span><span class="id">claude-db</span></div>
+      <div class="role">잎 · 줄기 · 조명 에셋</div>
+      <dl>
+        <dt>쥔 것</dt><dd>잎 38갈래 · 조명 GLB · 새순 진단</dd>
+        <dt>다음</dt><dd>화분 색 재촬영 (자를 고쳐서)</dd>
+        <dt>비어 있는 것</dt><dd class="miss">잎 22갈래가 게임에 안 붙음 — 등급이 밸런스라 못 정함</dd>
+      </dl>
+    </div>
+  </div>
+
+  <div class="claim">
+    수만 옮기면 반만 옮긴 것이다. 조건이 나머지 반이다.
+    <small>이틀 동안 창 사이에서 넷이 그 구멍으로 났다 — 출처 없는 배수, 예순 날을 헛짚게 한 금액,
+    모드가 빠진 실측표 둘. 그래서 창끼리 <b>직접</b> 주고받는 쪽으로 바꿨다.</small>
+  </div>
+</section>
+
+<hr class="rule">
+
+<!-- ══════════ 결정 ══════════ -->
+<section id="decisions">
+  <h2><span class="num">08 · 결정</span>박사님을 기다리는 것</h2>
+  <p class="sub">전부 <strong>값이 걸리는 자리</strong>다 — 확률·배수·가격·일수·갈래 수·자리 수.</p>
+
+  <div class="dec">
+    <div class="row"><div class="k">①</div><div>
+      <div class="t">그루값을 「자란 정도에 따라」 매길까</div>
+      <div class="d">붙이면 첫 플레이 끝이 <b>88일차 → 약 137일차</b>. 49일 밀린다.</div>
+      <div class="who">코어가 막혀 있음</div>
+    </div></div>
+    <div class="row"><div class="k">②</div><div>
+      <div class="t">갓 난 잎도 얼마쯤은 값을 줄까</div>
+      <div class="d">밑값 0.3이면 87일차에 100만 원.</div>
+      <div class="who">코어가 막혀 있음</div>
+    </div></div>
+    <div class="row"><div class="k">③</div><div>
+      <div class="t">삽수 일부만 파는 길의 문턱</div>
+      <div class="d">625,000(껍데기) 대 1,250,000(무늬 한 장).</div>
+      <div class="who">코어 · 기획</div>
+    </div></div>
+    <div class="row"><div class="k">④</div><div>
+      <div class="t">조명을 민트로 둘까, 버터크림으로 되돌릴까</div>
+      <div class="d">전제가 반쪽이었다 — 목록은 조명을 <b>애초에 다른 색 짝</b>으로 적어 두었다.
+        게임에 안 붙어 있어 <b>어느 쪽이든 안전하다.</b> 0원 · 3분.</div>
+      <div class="who">잎</div>
+    </div></div>
+    <div class="row"><div class="k">⑤</div><div>
+      <div class="t">배선 안 된 것 셋을 붙일까 — 잎 22갈래 · 화분 색 9장 · 조명 셋</div>
+      <div class="d">그림은 다 있다. 붙이려면 <b>어느 무늬가 몇 등급인지 · 상점에 얼마로 놓을지</b>를 정해야 한다.
+        <b>셋 다 밸런스라 창들이 스스로 못 붙인다.</b></div>
+      <div class="who">잎 · 기획</div>
+    </div></div>
+    <div class="row"><div class="k">⑥</div><div>
+      <div class="t">바닥 조도 — 모르는 좌표를 물으면 어떻게 할까</div>
+      <div class="d">지금은 0이 오고, 그 0이 <b>최상</b>으로 읽힌다. 게임(라이브)은 이미 제대로 잰다.</div>
+      <div class="who">생장 · 집</div>
+    </div></div>
+    <div class="row"><div class="k">⑦</div><div>
+      <div class="t">가구 겹침 셋 · 원룸 등과 밝기 · 교실 창턱 112칸</div>
+      <div class="d">고치면 <b>자리 수가 움직인다.</b></div>
+      <div class="who">집</div>
+    </div></div>
+    <div class="row"><div class="k">⑧</div><div>
+      <div class="t">원룸을 열까</div>
+      <div class="d">데이터는 준비돼 있다. 모자란 건 밸런스 둘 — 거치등이 없고, 반지하보다 과하다.</div>
+      <div class="who">기획 · 생장 · 집</div>
+    </div></div>
+    <div class="row"><div class="k">⑨</div><div>
+      <div class="t">손가락 과녁을 36×30 → 44×44 로 키울까</div>
+      <div class="d">3D 집기라 판단이 필요하다. 지금은 다른 길이 있어 덜 아프다.</div>
+      <div class="who">코어</div>
+    </div></div>
+  </div>
+
+  <h3 id="ready">값이 안 걸려 바로 할 수 있는 것</h3>
+  <div class="tw">
+    <table>
+      <thead><tr><th>무엇</th><th style="width:16%">누가</th><th style="width:30%">왜 지금</th></tr></thead>
+      <tbody>
+        <tr><td>목록에 캐릭터 246개 올리기</td><td>인물</td><td>0원. <b>지금 이름으로 못 찾는다</b></td></tr>
+        <tr><td><b>낡은 세 방 재측정</b></td><td>집</td><td>아파트 6.02 ↔ 9.75. <b>낡은 값이 쓰이고 있다</b></td></tr>
+        <tr><td>헤드리스 ↔ 브라우저 같은 수인가</td><td>생장</td><td>「시키면 지금 합니다」</td></tr>
+        <tr><td>초상화를 폰 크기로 보기</td><td>인물</td><td>무엇을 가리는지</td></tr>
+        <tr><td><code>acceptance.json</code> 을 읽히게</td><td>기획 · 코어</td><td>합격 조건이 죽어 있다</td></tr>
+        <tr><td>임시 도구 26개 정리</td><td>집</td><td>—</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<hr class="rule">
+
+<!-- ══════════ 오늘 ══════════ -->
+<section id="closed">
+  <h2><span class="num">09 · 오늘</span>닫힌 것</h2>
+
+  <div class="gaps">
+    <div class="g i"><div class="sev" style="background:var(--ok)"></div><div>
+      <div class="t">가방에서 몬스테라 끌기 <span class="chip c-ok">나흘째</span></div>
+      <div class="d">가방이 닫히며 칸이 사라져 <em>붙잡기가 풀렸다.</em>
+        박사님이 「배치된 이동은 되는데 가방에서 빼는 게 안 된다」고 갈라 주신 한 줄이
+        <b>나흘을 한 시간으로 줄였다.</b></div>
+    </div></div>
+    <div class="g i"><div class="sev" style="background:var(--ok)"></div><div>
+      <div class="t">「가방으로」 눌러도 방에 남던 것</div>
+      <div class="d"><em>자리</em>로 놓은 것은 걷혔고 <em>좌표</em>로 놓은 것은 안 걷혔다.
+        그리고 <b>누르면 좌표로 앉는다</b> — 그래서 박사님만 보셨다.</div>
+    </div></div>
+    <div class="g i"><div class="sev" style="background:var(--ok)"></div><div>
+      <div class="t">할 일이 안 넘어가던 것</div>
+      <div class="d">규칙은 아는데 <em>화면만 몰랐다.</em> 부팅에서 다시 그리는 줄이 빠져 있었다.</div>
+    </div></div>
+    <div class="g i"><div class="sev" style="background:var(--ok)"></div><div>
+      <div class="t">옮기기 손가락이 갈 자리를 가리킨다</div>
+      <div class="d">칸을 <b>안 박았다</b> — 「몬스테라가 올라가는 자리 중 제일 밝은 곳」을
+        그때그때 묻는다. 방이 바뀌면 답도 따라 바뀐다.</div>
+    </div></div>
+    <div class="g i"><div class="sev" style="background:var(--ok)"></div><div>
+      <div class="t">가이드가 다음날에도 살아 있다</div>
+      <div class="d">앞 반쪽 「행동 안 해도」는 아침에, 뒤 반쪽 「살아있게」는 저녁에 닫혔다.
+        못 <em>뜬</em> 쪽지가 새로고침해도 기다린다.</div>
+    </div></div>
+  </div>
+
+  <div class="claim">
+    읽어서 낸 <b>수</b>는 대개 죽고, 읽어서 낸 <b>뜻</b>은 죽거나 받쳐진다.
+    <small>기획이 오래전에 이야기로 써 둔 「반지하는 살리는 것 · 원룸은 값을 정하는 것」이
+    오늘 생장 실측으로 <b>살아났다</b> — 반지하는 등 셋을 사도 밝음 대역에 못 닿는다.</small>
+  </div>
+</section>
+
+<footer>
+  <p>
+    <strong>빛식물 / lux-plant-sim</strong> · 2026-07-11 시작 · 이 지도는 2026-08-29 기준이다.<br>
+    원본 문서 <code>docs/handoff/MASTER-MAP.md</code> · 관계도 <code>docs/handoff/session-atlas-20260829.md</code> ·
+    계율 <code>docs/handoff/START-HERE.md</code> §2.9
+  </p>
+  <p style="margin-top:14px">
+    새로 오는 창에게 — 「코드를 읽어 보니 …인 것 같다」로 보고하지 마라.
+    <strong>눌러 보고 「눌러 보니 …다 [실측: …]」로 내라.</strong>
+    그리고 수를 넘길 때는 조건을 같이 — 모드 · 등 개수 · 기간 · 식구 수 · 어느 방.
+  </p>
+</footer>
+
+</div>
+
+<script type="module">
+  import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+  const dark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  mermaid.initialize({
+    startOnLoad: true,
+    theme: dark ? 'dark' : 'neutral',
+    themeVariables: {
+      fontFamily: '"IBM Plex Sans KR", system-ui, sans-serif',
+      fontSize: '14px'
+    },
+    flowchart: { curve: 'basis', padding: 14 }
+  });
+</script>
+</body>
+</html>
