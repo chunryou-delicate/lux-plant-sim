@@ -783,7 +783,11 @@ function packFirstPlay(fp) {
         days:      optNum(m.guide.days,      'firstPlay.monstera.guide.days'),
         moved:     !!m.guide.moved,
         movedDays: optNum(m.guide.movedDays, 'firstPlay.monstera.guide.movedDays'),
-        grewOnce:  !!m.guide.grewOnce
+        grewOnce:  !!m.guide.grewOnce,
+        /* ★ 2026-08-29 — 「자리를 배웠나」(first_play §hinted). 안 실으면 새로고침에
+           되살아나 같은 말을 또 한다. 옛 세이브는 없으니 거짓이다 — 그게 맞다(아직 안 배웠다). */
+        hinted:    !!m.guide.hinted,
+        lampHinted: !!m.guide.lampHinted
       } : null,
       /* ★ 단계 표시는 growth 가 낸 **관측 기록**이다. 판정에 안 쓰고 화면 문구로만 쓰므로
          그대로 적어 둔다 — 복원 직후 재생이 끝나기 전 화면이 빈칸이 되지 않게. */

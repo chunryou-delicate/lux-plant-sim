@@ -3316,7 +3316,18 @@ function newMonsteraGuide() {
     days: 0,        // 형태가 그대로인 채 지난 게임일
     moved: false,   // 도착 자리에서 한 번이라도 옮겼나
     movedDays: 0,   // 옮긴 뒤 형태가 그대로인 채 지난 게임일
-    grewOnce: false // 한 번이라도 형태가 올랐나 — 오르면 유도는 끝이다
+    grewOnce: false,// 한 번이라도 형태가 올랐나 — 오르면 유도는 끝이다
+    /* ★★★ 2026-08-29 — **자리를 「배웠나」**([Plan]·총괄).
+       ⚠ 「안 옮겼나」가 아니다. 스스로 일찍 다른 어두운 데로 옮긴 사람도 **자리는 아직 안 배웠다** —
+         그 사람에게 등 얘기부터 하면 「더 열심히 한 사람이 더 나쁜 것을 받는」 꼴이 된다.
+       ★ 그래서 유도의 임자를 「안 옮겼다」에서 **「안 자란다 + 아직 안 배웠다」**로 옮겼다.
+       ⇒ 「배웠다」는 **그 말을 실제로 들려준 순간**이다 — §firstPlayEventsOf 가 적는다. */
+    hinted: false,
+    /* ★ 등 얘기를 이미 했나 — 아래 §firstPlayEventsOf 가 「한 번만」을 이걸로 지킨다.
+       ⚠ 앞뒤 스냅샷 비교(!before && now)로는 못 지킨다: 「배웠다」와 「등이 필요하다」가
+         **같은 턴에** 참이 되어 다음 턴에는 before 도 이미 참이라 문턱이 사라진다.
+         재서 잡았다 — 20일을 돌려도 등 얘기가 한 번도 안 나갔다. */
+    lampHinted: false
   };
 }
 /* 지금 무슨 안내를 낼 상태인가. **순수 함수**다 — 상태를 안 건드린다.
@@ -3326,8 +3337,12 @@ export function monsteraGuideOf(fp) {
   if (!m || !m.arrived || (fp && fp.completed)) return { move: false, lamp: false };
   const g = m.guide || newMonsteraGuide();
   if (g.grewOnce) return { move: false, lamp: false };     // 자라기 시작하면 유도는 끝난다
-  const move = !g.moved && g.days >= MONSTERA_HINT_DAYS;
-  const lamp = g.moved && g.movedDays >= MONSTERA_LAMP_HINT_DAYS;
+  /* ★★★ 2026-08-29 — 임자가 바뀌었다(위 §hinted).
+       move  아직 안 배웠고 · 안 자란 지 열흘         ⇒ 옮겼든 안 옮겼든 **자리부터**
+       lamp  배웠고 · 정말 옮겼고 · 그래도 안 난다    ⇒ 등은 **그 뒤**에만
+     ⇒ ★ 차례가 날수가 아니라 **구조**로 선다. 두 문이 서로 겹치지 않는다. */
+  const move = !g.hinted && g.days >= MONSTERA_HINT_DAYS;
+  const lamp = g.hinted && g.moved && g.movedDays >= MONSTERA_LAMP_HINT_DAYS;
   return { move, lamp };
 }
 
@@ -3521,12 +3536,25 @@ export function firstPlayEventsOf(before, fp) {
     out.push({ id: 'monstera_arrived', ko: '몬스테라 도착', slotId: fp.monstera.slotId });
   /* ★★ 유도 두 걸음 (§몬스테라 유도). **자리를 먼저, 등은 그 다음.**
      ⚠ 대사는 dialogue.js 소유이고 순서는 EVENT_ORDER 가 지킨다 — 여기서는 사건만 낸다. */
-  if (!before.guideMove && now.guideMove)
+  /* ⚠ 앞뒤 비교가 아니라 **적어 둔 칸**으로 「한 번만」을 지킨다(§guide.hinted 주석).
+     `guideMove` 자체가 `!hinted` 를 이미 품고 있어 적는 순간 닫힌다. */
+  if (now.guideMove) {
     out.push({ id: 'monstera_no_spear', ko: '새순이 안 납니다',
                days: fp.monstera.guide.days });
-  if (!before.guideLamp && now.guideLamp)
+    /* ★★★ 2026-08-29 — **여기가 「들려준 순간」이다.** 이 한 줄만 상태를 적는다.
+       ⚠ 「낼 수 있다」(monsteraGuideOf)와 「실제로 냈다」는 다르다 — 뒤엣것을 아는 곳은
+         **이 자리 하나**뿐이라 여기서 적는다(㊸ 임자를 밝혀라).
+       ⚠ `stepMonstera` 에서 적으면 **이 줄보다 먼저** 돌아 `now.guideMove` 가 거짓이 되고,
+         그러면 그 말이 **한 번도 안 나간다** — 오늘 고친 「지어 놓고 문을 잠갔다」와 같은 병이다.
+       ★ 그리고 이 칸은 **세이브에 실린다**(save.js §guide) — 안 실으면 새로고침에 되살아나
+         같은 말을 또 한다. 오늘 `coachPending` 에서 배운 그것이다. */
+    fp.monstera.guide.hinted = true;
+  }
+  if (now.guideLamp && !fp.monstera.guide.lampHinted) {
     out.push({ id: 'monstera_needs_lamp', ko: '옮겼는데도 새순이 안 납니다',
                days: fp.monstera.guide.movedDays });
+    fp.monstera.guide.lampHinted = true;
+  }
   if (!before.completed && now.completed)
     out.push({ id: FIRST_PLAY_COMPLETE_PHASE_ID, ko: '말린 새순 등장' });
   return out;
