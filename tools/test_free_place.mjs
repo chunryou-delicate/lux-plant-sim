@@ -230,11 +230,31 @@ check('F 옛 세이브 — slotId 만 있으면 그 슬롯 좌표가 정확히 �
   assert.equal(at.occIdx, SILL.occIdx, '자가차폐 번호가 빠졌습니다');
   assert.equal(S.pots[0].slotId, 'banjiha-sill:0', 'slotId 를 버렸습니다(하위호환 파손)');
 
-  /* 좌표가 이미 있으면 좌표가 이긴다 — 덮어쓰지 않는다 */
-  const keep = place.makeAt({ x: 1.0, y: 0.74, z: -1.4, onUid: 'banjiha-desk', occIdx: 2 });
-  S.pots[0].at = keep;
+  /* ★★★ 2026-08-30 — **여기 있던 「좌표가 이미 있으면 좌표가 이긴다」를 고쳐 쓴다.**
+     ══════════════════════════════════════════════════════════════════
+     2026-08-17 에 규칙이 바뀌었다(`state.js §migratePots · resnap`). 박사님 폰에서
+     옛 판이 안 열린 날이다 — 자리를 칸 한가운데로 옮겼더니 세이브의 옛 좌표와
+     `slotId` 가 갈려 조도가 던졌고 게임이 통째로 멈췄다.
+     ⇒ 새 규칙: **그 화분은 그 자리에 있었다.** 자리가 움직였으면 화분도 따라간다.
+     ⚠ 그런데 이 자는 옛 규칙을 그대로 들고 있었고, 게다가 «어긋난» 조합
+       (slotId 는 창턱인데 at 은 책상)을 만들어 놓고 「안 덮어써야 한다」고 우겼다.
+       그 조합이 바로 2026-08-17 이 고치려던 그 병이다. **자가 병을 요구하고 있었다.**
+     ⇒ 뜻을 둘로 갈라 다시 적는다:
+       ① slotId 와 **맞는** 좌표는 안 건드린다 (같은 물건 그대로다)
+       ② slotId 와 **어긋난** 좌표는 slotId 쪽으로 따라가고, 조용히 하지 않는다 */
+  const same = place.makeAt({ x: SILL.x, y: SILL.y, z: SILL.z,
+                              onUid: 'banjiha-sill', occIdx: SILL.occIdx });
+  S.pots[0].at = same;
   migratePots(S, room.slots);
-  assert.equal(S.pots[0].at, keep, '이미 있는 좌표를 슬롯 값으로 덮어썼습니다');
+  assert.equal(S.pots[0].at, same, '자리와 맞는 좌표를 괜히 갈아 끼웠습니다');
+
+  const off = place.makeAt({ x: 1.0, y: 0.74, z: -1.4, onUid: 'banjiha-desk', occIdx: 2 });
+  S.pots[0].at = off;
+  const rOff = migratePots(S, room.slots);
+  assert.notEqual(S.pots[0].at, off, '어긋난 좌표를 그대로 뒀습니다 — 옛 세이브가 안 열립니다');
+  assert.deepEqual({ x: S.pots[0].at.x, y: S.pots[0].at.y, z: S.pots[0].at.z },
+    { x: SILL.x, y: SILL.y, z: SILL.z }, '따라간 곳이 그 자리가 아닙니다');
+  assert.equal((rOff.resnapped || []).length, 1, '옮겨 놓고 기록에 안 남겼습니다');
 
   /* 모르는 슬롯·좌표 없는 슬롯은 지어내지 않고 건너뛴다(0,0,0 으로 메꾸면 순간이동한다) */
   const S2 = newState({ room: 'banjiha' });
@@ -356,11 +376,25 @@ check('L 가구를 옮기면 그 뒤 지점의 DLI 가 실제로 바뀐다 · �
   assert.ok(before > 0.2, `옮기기 전 그늘 후보가 ${before} — 대조가 안 됩니다`);
 
   const occBefore = eng.room.built.occluders.length;
+  /* ★★ 2026-08-30 — **원래 자리를 여기 «적지» 않는다. 방 데이터에 «묻는다».**
+     여기 `{ x: 1.3, z: -1.5 }` 라고 적혀 있었는데, 2026-08-17 에 박사님이
+     *"책상이 2*6 차지하는데 칸수는 2*5네"* 하셔서 책상이 **x 1.375 로 옮겨졌다**
+     (`data/house_rooms.json §banjiha-desk`). 그날부터 이 자가 떨어져 있었다.
+     ⚠ 재는 뜻은 「옮기기가 «옮기기 전» 자리를 옳게 돌려주나」다 — 그 값이 얼마인지가 아니다.
+       ⇒ 값을 베끼면 데이터가 움직일 때마다 자가 거짓으로 떨어진다. **묻는다.** */
+  const deskWas = (eng.room.def.furniture || []).find(f => f && f.uid === 'banjiha-desk');
+  assert.ok(deskWas, '방 데이터에 banjiha-desk 가 없습니다 — 방이 바뀌었습니다');
   const mv = eng.moveFurniture('banjiha-desk', { x: 0, z: -1.75, rot: 0 });
-  assert.deepEqual(mv.from, { x: 1.3, z: -1.5, rot: 0 }, '원래 자리를 잘못 읽었습니다');
+  assert.deepEqual(mv.from, { x: deskWas.x, z: deskWas.z, rot: deskWas.rot || 0 },
+    '원래 자리를 잘못 읽었습니다');
   assert.equal(eng.room.built.occluders.length, occBefore, '차폐체 개수가 달라졌습니다');
-  /* 조립 결과가 갱신됐나 — 차폐체가 실제로 옮겨졌는지 본다 */
-  assert.ok(eng.room.built.occluders.some(o => Math.abs(o.x - (0 - 1.2 / 2)) < 1e-6),
+  /* 조립 결과가 갱신됐나 — 차폐체가 실제로 옮겨졌는지 본다.
+     ★ 2026-08-30 — 여기도 폭을 `1.2` 로 «적어» 놓고 있었다. 책상 폭은 1.25 다.
+       차폐체는 왼쪽 앞 귀를 적으므로(`house.js §occluders.push`: x = 가운데 − 폭/2)
+       ⇒ **가운데를 되짚어** 본다. 폭이 얼마든 「옮긴 자리에 와 있나」는 그대로 잰다. */
+  assert.ok(eng.room.built.occluders.some(o =>
+      o.src === 'furniture' && Math.abs((o.x + (o.w || 0) / 2) - 0) < 1e-6
+                            && Math.abs((o.z + (o.d || 0) / 2) - (-1.75)) < 1e-6),
     '가구는 옮겼는데 차폐체(occluders)가 그대로입니다');
   /* 추천 자리도 같이 따라갔나 */
   const deskSlot = eng.room.slots.find(s => s.slotId === 'banjiha-desk:0');
