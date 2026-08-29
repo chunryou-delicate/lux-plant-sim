@@ -584,6 +584,13 @@ check('데이터 — 대사마다 «부르는 자리»가 있다 («불린다»�
        ⇒ 안 그러면 오늘 고친 그 병(박아 두고 잊기)이 그대로 되살아난다. */
   const html = readFileSync(U('../game.html'), 'utf8');
   const calledInHtml = [...html.matchAll(/dlgOpen\(\s*'([A-Za-z0-9_]+)'\s*\)/g)].map(m => m[1]);
+  /* ★★★ 2026-08-30 — **「하나도 못 찾는 것」도 고장이다** ([Char] 이 오늘 세운 관문).
+     ⚠ 이 긁기가 언젠가 깨지면(부르는 꼴이 바뀌거나 정규식이 상하면) `calledInHtml` 이 빈 배열이 된다.
+       ⇒ 그러면 아래 「안 낡았나」 검사가 **조용히 초록**이 된다 — 쓰이는 것이 없다고 보니까.
+     ★ [Char] 가 오늘 그러다 데였다 — 사건 30개가 «전부» 「없다」로 나왔는데 자 검사는 «통과»했다.
+       「다 통과」와 「다 실패」는 **둘 다** 고장이다. */
+  assert.ok(calledInHtml.length > 0,
+    'game.html 에서 dlgOpen 부르는 자리를 한 개도 못 찾았습니다 — 긁는 자가 깨졌을 가능성이 큽니다');
   const used = new Set([
     ...Object.values(EVENT_SCRIPT), ...CHATTER.map(c => c.id),
     /* ★ 2026-08-17 — **손으로 안 적는다.** 퀘스트 대사는 지도에서 읽는다 —
