@@ -142,8 +142,11 @@ async function main() {
   await sleep(200);
   const onL = await page.eval(`window.__growLights()`);
   const underOn = await page.eval(`window.__patch(${onL[0].under.x}, ${onL[0].under.y}, ${onL[0].under.z}, 11)`);
-  await page.eval(`window.view.setLampOn(${JSON.stringify(BAR)}, false);
-                   window.view.setLampOn(${JSON.stringify(CLIP)}, false); 1`);
+  /* ★★ 2026-08-30 — **식물등을 «전부» 끈다.** 여기 있던 것은 BAR 와 CLIP 둘뿐이었는데,
+     그 사이에 «거치형»이 늘어 식물등이 «셋»이 됐다. 그래서 아래 B-2 가 「전부 0」을 우기면서
+     끄지도 않은 셋째의 0.34 를 보고 떨어져 있었다 — 게임이 아니라 **자가 낡은 것**이다.
+     ⇒ 낱개 이름을 세지 말고 **그때 방에 있는 식물등을 다 끈다.** 하나 더 늘어도 안 낡는다. */
+  await page.eval(`(${JSON.stringify(grow.map(r => r.uid))}).forEach(u => window.view.setLampOn(u, false)); 1`);
   await sleep(200);
   const offL = await page.eval(`window.__growLights()`);
   const underOff = await page.eval(`window.__patch(${onL[0].under.x}, ${onL[0].under.y}, ${onL[0].under.z}, 11)`);
@@ -156,8 +159,10 @@ async function main() {
   console.log(`      · 등 아래 밝기 끔 ${underOff} → 켬 ${underOn} ` +
               `(${(100 * (underOn - underOff) / underOff).toFixed(1)}%)`);
 
-  await page.eval(`window.view.setLampOn(${JSON.stringify(BAR)}, null);
-                   window.view.setLampOn(${JSON.stringify(CLIP)}, null);
+  /* ★ 손으로 끈 것을 «전부» 자동으로 되돌린다 — 위에서 전부 껐으므로 여기도 전부다.
+     ⚠ 둘만 되돌리면 남은 하나가 «손으로 끈 채»로 아래 C-4 까지 따라와 거기서 떨어진다.
+       (실제로 그렇게 한 번 떨어뜨렸다 — 끄는 자리만 고치고 켜는 자리를 안 고쳤다.) */
+  await page.eval(`(${JSON.stringify(grow.map(r => r.uid))}).forEach(u => window.view.setLampOn(u, null));
                    window.view.setDaylight(0.50); 1`);
 
   /* ── C. 안 산 등은 안 켜진다 ───────────────────────────── */
