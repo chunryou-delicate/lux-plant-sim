@@ -2862,6 +2862,9 @@
 <script type="module">
 import { newState, SIM_MODES, pot0, pushLog, givePlant, hasPlant, ARRIVAL,
          setPotAt, setPotSlot, setCropAt, setFurniturePlacement, furnitureOverrides,
+         /* ★ 2026-08-30 — 가방에 든 가구(원룸 이사 §carriedFurniture) */
+         carriedFurniture, carriedFurnitureOf, placeCarriedFurniture,
+         soldFurniture, addedFurniture,
          resowCrop, waterCrop, cropWaterStatus, cropHarvestStatus,
          /* ★ 2026-08-09 · 시루 각개 — 하나 놓기 · 하나에만 물주기 (state.js §placeSiru) */
          placeSiru, waterSiru,
@@ -6713,6 +6716,30 @@ function drawBag() {
     }
   }
   html += bagHelpHTML(anyPlaceable);
+  /* ★★★★ 2026-08-30 — **가방에 든 가구** (원룸 이사 · state §carriedFurniture)
+     박사님: *"반지하 있던 가구만 «인벤에 넣어서 가져와서» 플레이어가 «배치»하도록 해."*
+     ★ 식물등·몬스테라가 이미 쓰는 그 길이다 — 상점 재고 품목이 아닌 것을 가방에 세우는 자리.
+     ⚠ 끌기는 **안 건다.** 가구는 자리(slot)에 안 서고 좌표에 서므로 `drag.slotsFor` 가
+       줄 것이 없다. ⇒ **누르면 방에 세우고 그 자리에서 [옮기기]로 넘긴다**(§startPhonePlaceFurnitureBag). */
+  {
+    const esc2 = v => String(v == null ? '' : v).replace(/[&<>"]/g, c =>
+      ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+    const bag = carriedFurniture(S);
+    if (bag.length) {
+      anyPlaceable = true;
+      html += `<div class="grouphead">가구</div><div class="baggrid">` +
+        bag.map(f => {
+          /* ★ 이름은 `name_ko` 가 정본이다(data/furniture_presets.json) —
+             처음에 `.ko` 로 읽어 칸에 «bed_single» 이 뗴다(재서 잡았다). */
+          const ko = (furnPresets[f.preset] && furnPresets[f.preset].name_ko) || f.preset;
+          return `<button class="bagslot act" data-furnbag="${esc2(f.uid)}" type="button"` +
+                 ` title="${esc2(ko)}" aria-label="${esc2(ko)}">` +
+                 `<i class="ltr">🪑</i>` +
+                 `<span class="nm">${esc2(ko)}</span>` +
+                 `<span class="eta">눌러서 방에 놓으세요</span></button>`;
+        }).join('') + `</div>`;
+    }
+  }
   /* ★★★ **자른 삽수** (2026-08-16 · §cuttingBagHTML). 거둔 채소보다 **앞**에 둔다 —
      삽수는 놓아야 할 물건이고 채소는 보여 주는 물건이다. 할 일이 먼저다. */
   html += cuttingBagHTML();
@@ -6735,6 +6762,11 @@ function drawBag() {
     for (const b of grid.querySelectorAll('[data-potbag]')) {
       const pid = b.getAttribute('data-potbag');
       bindDrag(b, 'monstera', () => startPhonePlacePotBag(pid), pid);
+    }
+    /* ★ 2026-08-30 — 가방의 가구. **누르기만** 건다(위 §가방에 든 가구 ⚠) */
+    for (const b of grid.querySelectorAll('[data-furnbag]')) {
+      const uid = b.getAttribute('data-furnbag');
+      b.onclick = guard(() => startPhonePlaceFurnitureBag(uid));
     }
     for (const id of Object.keys(BAG_PLACEABLE)) {
       const p = BAG_PLACEABLE[id];
@@ -12857,6 +12889,40 @@ function sowEmptyPot(id) {
      ⇒ 「어디에 놓을까」가 아니라 **「달까 말까」**다. 세우면 그 자리에 켜진다.
    ⚠ 집게등은 물릴 상판을 고르는 길이 따로 있다(`lampMounts`) — 여기서는 세우기만 한다.
    ★ 세운 수가 곧 조도다(§doBuyLamp) — 여기서 그 수를 올리는 것이 「설치」의 전부다. */
+/* ★★★★ 2026-08-30 — **가방의 가구를 방에 세운다** (원룸 이사 ④)
+   ══════════════════════════════════════════════════════════════════
+   박사님: *"반지하 있던 가구만 인벤에 넣어서 가져와서 «플레이어가 배치»하도록 해."*
+   ★ 걸음이 둘이다 — ① **세운다**(방 한가운데 언저리) ② 그 자리에서 **[옮기기]**로 넘긴다.
+     오늘 몬스테라에 붙인 그 결이다(§startPhonePlacePotBag) — 새 손짓을 안 짓는다(㊺).
+   ⚠ **자리 판정(겹침·방 밖)은 여기서 안 한다.** 3D 가 갖는다(`room_view.furnitureFit`) —
+     [옮기기]로 옮길 때 그쪽이 막는다. 여기는 「무엇이 어디에 있다」만 적는다.
+   ⚠⚠ 그리고 **방을 통째로 다시 짓는다**(`remountRoomView`). 가구가 늘면 그림자도 자리도
+     같이 바뀌는데, `room_view` 는 「가구 하나 더하기」 창구를 안 내준다(전문 검색: `rebuildRoom`
+     은 안 내보낸다). ⇒ 이사할 때 쓰는 그 길을 그대로 쓴다 — **검증된 길이다.**
+     ⛔ 무겁다. 가구를 여럿 놓으면 그만큼 여러 번 짓는다. 그 값은 재서 여기 적어야 한다. */
+async function startPhonePlaceFurnitureBag(uid) {
+  const one = carriedFurnitureOf(S, uid);
+  if (!one) { banner('가방에 없습니다', '가방을 다시 확인해 주세요'); return { ok: false }; }
+  /* 세울 자리 — 방 한가운데 바닥. 곧 옮길 것이라 정확할 필요가 없다(§provisionalSpot 과 같은 판단) */
+  let at = { x: 0, z: 0, rot: 0 };
+  try { const sz = io.light.room.size; at = { x: sz.w / 2, z: sz.d / 2, rot: 0 }; } catch { }
+  let row = null;
+  try { row = placeCarriedFurniture(S, uid, at, { size: io.light.room.size }); }
+  catch (e) { banner('놓지 못했습니다', (e && e.message) || ''); return { ok: false }; }
+  try {
+    io.light.setFurnitureEdits(soldFurniture(S), addedFurniture(S));
+  } catch (e) { console.warn('[가구] 조립에 못 먹였습니다 —', e && e.message); }
+  const ko = (furnPresets[row.preset] && furnPresets[row.preset].name_ko) || row.preset;
+  pushLog(S, `🪑 ${ko}을(를) 방에 놓았습니다 — 눌러서 [옮기기]로 자리를 고르세요`);
+  banner(`${ko}을(를) 놓았습니다`, '눌러서 [옮기기]로 자리를 고를 수 있습니다');
+  try { window.__byeotSheet.close(); } catch { }
+  try { sfx.thud(); } catch { }
+  draw();
+  /* 3D 를 다시 짓는다 — 늦게 끝나도 위 화면은 이미 새 상태를 말하고 있다(§이사와 같은 결) */
+  try { await remountRoomView(); } catch (e) { console.warn('[가구] 방 다시 짓기 —', e && e.message); }
+  return { ok: true, uid, preset: row.preset };
+}
+
 function placeLampFromBag() {
   const L = S.tutorial && S.tutorial.lamp;
   if (!L) return;
@@ -14749,7 +14815,33 @@ const doUnlist = guard((listingId) => {
 $('moveOut').onclick = guard(() => {
   /* ★moveOut 이 아니라 moveIntoOneroom 이다 — 전자는 돈과 판정만 하고 방을 안 바꿨다.
      그래서 「이사했습니다」가 떠도 조도도 자리도 화면도 전부 반지하로 남아 있었다. */
-  const r = moveIntoOneroom(S, io);
+  /* ★★★★ 2026-08-30 — **반지하 가구를 «들고 간다»** (박사님 · [House] 합의 `rooms_spec §13`)
+     ══════════════════════════════════════════════════════════════════
+     박사님: *"반지하 있던 가구만 «인벤에 넣어서 가져와서» 플레이어가 «배치»하도록 해."*
+     ★ 무엇을 들고 가나 — **「방에 붙었나」로 가른다**([House] 규약):
+       ⛔ 두고 간다  ① `mount` 가 «방»에 붙는 것 — window · wall · corner · lean-wall
+                    ② 천장에 «달린» 것 — lamp_ceiling · lamp_pendant
+       ✅ 들고 간다  그 밖 «전부» (★ 팔 수 있든 «없든»)
+     ⚠⚠ **「팔 수 있나」로 가르면 안 된다.** [House] 실측: `furnitureQuoteOf` 로 가르면
+       **식물등 셋이 「두고 가는 쪽」**으로 떨어진다 — 합의(등은 들고 온다)와 **정반대**다.
+       ★ 「팔 수 있나」와 「들고 갈 수 있나」는 **다른 물음**이다.
+     ★ `growlight_bar` 의 `mount: under-shelf` 는 «가구»에 붙는 것이지 «방»에 붙는 것이 아니다.
+       ⇒ 가구에 붙은 것은 그 가구와 **같이** 간다.
+     ⚠ preset 이름을 박은 것은 `CEILING` 둘뿐이고, [House] 가 프리셋에 `mount:"ceiling"` 을
+       달면 그 줄도 없어진다(그쪽이 하겠다고 했다 · ⏸). 그때까지만 여기 둔다. */
+  const ROOM_BOUND = new Set(['window', 'wall', 'corner', 'lean-wall']);
+  const CEILING = new Set(['lamp_ceiling', 'lamp_pendant']);
+  const carry = (() => {
+    try {
+      const def = io.light.room.def;
+      return (def.furniture || [])
+        .filter(f => f && f.uid && f.preset)
+        .filter(f => !CEILING.has(f.preset)
+                  && !ROOM_BOUND.has((furnPresets[f.preset] || {}).mount))
+        .map(f => ({ uid: f.uid, preset: f.preset }));
+    } catch (e) { console.warn('[이사] 들고 갈 가구를 못 셌습니다 —', e && e.message); return []; }
+  })();
+  const r = moveIntoOneroom(S, io, { carry });
   pushLog(S, '📦 원룸으로 이사했습니다 — 반지하 튜토리얼 종료');
   banners([{ title: '📦 원룸으로 이사했습니다', sub: '반지하에서 배운 것을 가지고 갑니다' }]);
   dlgOpen(story.events(r.events));   /* 반지하를 떠나는 장면이 여기서 나온다 */
