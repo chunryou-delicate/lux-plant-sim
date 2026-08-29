@@ -9786,9 +9786,11 @@
       }
     ],
     "balance_checked": {
-      "date": "2026-08-23",
-      "meshy": 4502,
+      "date": "2026-08-29",
+      "meshy": 4475,
       "higgsfield": 0,
+      "_prev": {"date": "2026-08-23", "meshy": 4502, "higgsfield": 0},
+      "_delta_note": "⚠ 08-23 4502 → 08-29 4475. **27 줄었는데 entries 에 그 줄이 없다.** 누군가 쓰고 안 적었다. 어느 창인지 모른다 — 짐작해서 안 적는다",
       "_measured_by": "leaf — MCP 로 직접 재었다(meshy_check_balance / higgsfield balance)",
       "_higgsfield_caution": "⚠ 08-03 에 791 이었던 것이 0 이 됐다. 그 사이 기록은 한 줄도 없다. 쓴 것인지 플랜이 만료돼 날아간 것인지 모른다(지금 plan_type=free). 짐작해서 적지 않는다",
       "_note": "다음에 재는 창은 이 값과 비교해라. 값이 늘어 있으면 누군가 충전한 것이고, 줄어 있는데 entries 가 그대로면 누군가 쓰고 안 적은 것이다"
