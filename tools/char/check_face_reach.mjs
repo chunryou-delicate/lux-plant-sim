@@ -91,6 +91,55 @@ const DECLARED_OFF = [
     + '안 쓰는 길을 열어 두면 나중에 「왜 이게 있지」가 된다'],
 ];
 
+/* ★★★ 다리를 «한 칸 더» 건넌다 — 「표가 가리킨다」 다음은 「그 사건이 «나기는» 하나」다.
+   ⚠ 이게 `monsteraMoved` 부류다: 표에 있고 불리기도 했는데 «조건이 죽어» 있었다.
+     그때도 검사는 초록이었고 사람은 그 대사를 «한 번도 못 봤다».
+   ⇒ ★ 여기서 다 못 막는다. 다만 **「사건 이름이 «아예» 안 난다」**는 잡는다.
+     ⛔ 「나기는 나는데 조건이 안 맞는다」는 «굴려야» 안다. 그건 이 자가 못 한다 —
+       그래서 아래에서 **자가 «스스로» 그렇게 말한다.** 주석은 안 읽힌다. */
+/* ⚠⚠ 이 함수를 **두 번 틀리게 지었다.** 둘 다 「그럴듯한 거짓」이 나왔다.
+ *
+ *  ① 정규식에 «진짜 백스페이스 글자»가 들어갔다(파이썬이 `\b` 를 0x08 로 바꿔 넣었다).
+ *     ⇒ 아무것도 안 맞았고 ⇒ 사건 30개가 **전부** 「코드에 없다」로 나왔다.
+ *     ⇒ ★ 그런데 그것이 **그럴듯해 보였다** — 「다리가 또 끊겼구나」 하고.
+ *       ⛔ **다 걸리는 자는 하나도 안 걸리는 자와 똑같이 쓸모없다.**
+ *
+ *  ② 고쳤더니 아홉이 남았는데, **다섯은 멀쩡히 있는 것**이었다. 까닭이 둘:
+ *     ⓐ 파일 목록을 **손으로 적어** `oneroom.js` 가 빠졌다(src/game 에 js 가 25개다)
+ *     ⓑ 사건을 내는 **꼴이 하나가 아니었다**:
+ *          { id: 'moved_in_oneroom', ... }              ← 속성
+ *          const id = cond ? 'plant_stalled_winter' :   ← 변수에 담는다
+ *          export const ..._PHASE_ID = 'spear_furled'   ← 상수
+ *
+ * ⇒ ★★ 그래서 **꼴을 맞히려 들지 않는다.** 묻는 것은 하나다 —
+ *      **「이 사건 이름이 «글자로» 어딘가에 있나」.**
+ *   ⇒ 꼴을 좇으면 꼴이 늘 때마다 자가 조용히 낡는다. 이름은 안 낡는다.
+ */
+function engineSources() {
+  const out = [];
+  for (const f of readdirSync(join(ROOT, 'src', 'game')))
+    if (f.endsWith('.js')) out.push(['src/game/' + f,
+      readFileSync(join(ROOT, 'src', 'game', f), 'utf8')]);
+  out.push(['game.html', readFileSync(join(ROOT, 'game.html'), 'utf8')]);
+  return out;
+}
+
+function emittedEvents(names) {
+  const src = engineSources();
+  const lit = new Set(), built = [];
+  for (const ev of names) {
+    const q = "'" + ev + "'";
+    /* ⚠ dialogue.js 는 «표» 자신이라 뺀다. 거기 있는 것을 「난다」로 세면
+       표가 표를 증명하는 꼴이 된다 — 오늘 이 방이 온종일 겪은 그것이다. */
+    if (src.some(([p, t]) => !p.endsWith('dialogue.js') && t.includes(q))) lit.add(ev);
+  }
+  /* ★ 이름을 «만들어» 쓰는 자리 — 이 자가 못 푸는 갈래다. 세어서 말한다 */
+  for (const [p, t] of src)
+    for (const m of t.matchAll(/'([a-z][a-z0-9]*_)'\s*\+/g))
+      built.push(p + " → '" + m[1] + "' + ...");
+  return { lit, built };
+}
+
 function reachable() {
   const r = new Map();          // 대사이름 -> 어느 다리로 닿나
   const add = (s, how) => { if (s && !r.has(s)) r.set(s, how); };
@@ -231,11 +280,44 @@ function main() {
     console.log();
   }
 
-  console.log('⛔ 이 자는 「부를 «길»이 있나」까지만 안다. 그 길을 실제로 걷는지는 모른다.');
-  console.log('   사건이 나는 조건은 못 판정한다. **돌려 보기 전에는 「뜬다」고 적지 말 것.**');
-  console.log('   ★ 이 저장소가 그걸 비싸게 배웠다 — `monsteraMoved` 는 «불리기는 불렸는데»');
-  console.log('     조건(arrivalSlotId)이 죽어 있었다. 그때도 검사는 초록이었고 사람은 그 대사를');
-  console.log('     한 번도 못 봤다 (test_dialogue_coverage.mjs:572). **나도 같은 데까지만 본다.**');
+  /* ── ⑸ ★★★ 한 칸 더 — 표가 가리키는 «사건»이 나기는 하나 ───────── */
+  const { lit, built } = emittedEvents(Object.keys(EVENT_SCRIPT));
+  const deadEvents = Object.entries(EVENT_SCRIPT)
+    .filter(([ev]) => !lit.has(ev))
+    .filter(([, sid]) => SCRIPTS[sid]);
+
+  console.log('■ ★★ 한 칸 더 — 표가 가리키는 «사건»이 코드에서 나기는 하나');
+  console.log();
+  console.log('  EVENT_SCRIPT 가 아는 사건 ' + Object.keys(EVENT_SCRIPT).length
+    + '개 · 코드에 «글자로» 있는 것 ' + lit.size + '개');
+  if (deadEvents.length) {
+    console.log('  ⚠ 코드에서 «글자로» 못 찾은 사건 ' + deadEvents.length + '개:');
+    for (const [ev, sid] of deadEvents) console.log('     ' + ev.padEnd(24) + '→ ' + sid);
+  }
+  if (built.length) {
+    console.log('  ⛔ ★ 이름을 «만들어» 쓰는 자리 ' + built.length + '군데 — 이 자가 «못 푼다»:');
+    for (const bnm of [...new Set(built)]) console.log('     ' + bnm);
+    console.log('     ⇒ 위 「못 찾은 사건」에 이 갈래가 섞여 있을 수 있다. **고장이 아니다.**');
+  }
+  console.log();
+
+  /* ★★★ 자가 «스스로» 못 하는 것을 말한다. ⛔ 주석에 적는 것으로는 모자라다 —
+     오늘 이 저장소에서 「주석을 적어 두고도 못 읽어 밤새 틀린 셈을 한」 일이 있었다. */
+  console.log('━'.repeat(66));
+  console.log('⛔⛔ 이 자가 «내지 못한» 답 — 읽고 나가십시오');
+  console.log('━'.repeat(66));
+  console.log('  이 자는 ' + keys.length + '개 대사에 대해 「부를 «길»이 있나」를 봤습니다.');
+  console.log('  ⛔ 「그 길을 «걷나»」는 ' + keys.length + '개 «전부» 안 봤습니다. 0개입니다.');
+  console.log();
+  console.log('  ★ 실제로 이 저장소에서 그 틈에 빠진 일이 있습니다:');
+  console.log('     `monsteraMoved` 는 «불리기는 불렸는데» 조건(arrivalSlotId)이 «죽어» 있었다.');
+  console.log('     ⇒ 그때도 검사는 «초록»이었고 사람은 그 대사를 «한 번도 못 봤다».');
+  console.log('     (test_dialogue_coverage.mjs:572)');
+  console.log();
+  console.log('  ⇒ ★ 그러므로 위 숫자는 「뜬다」가 «아니라» 「뜰 «길»이 있다」입니다.');
+  console.log('    ⛔ 이 자만 보고 「된다」고 적지 마십시오. **판을 굴려야 답합니다.**');
+  console.log();
+
 }
 
 /* ★ 관문이 켜지나 — 안 꺼지는 검사는 검사가 아니다.
@@ -257,6 +339,22 @@ function selftest() {
   ok(BRANCHED.every(k => SCRIPTS[k]),
     '손으로 적은 BRANCHED 넷이 아직 SCRIPTS 에 다 있다 (낡지 않았다)');
   ok(!r.has('이런대사는없다'), '없는 이름은 안 잡는다');
+
+  /* ★★★ 아래 셋은 **이 자가 실제로 낸 거짓말을 막으려고** 세웠다.
+     ⚠ 앞의 검사들은 「찾아야 할 것을 찾나」만 봤다. 그래서 사건 훑기가 **0개**를 냈을 때
+       자 검사가 «통과»했다. ⇒ ★ 「하나도 못 찾는 것」도 «고장»이다. */
+  const evNames = Object.keys(EVENT_SCRIPT);
+  const { lit, built } = emittedEvents(evNames);
+  ok(lit.has('broke'),
+    "사건 훑기가 아는 것을 찾는다 ('broke' 는 loop.js 에 글자로 있다)");
+  ok(lit.size >= evNames.length * 0.7,
+    '사건 ' + evNames.length + '개 중 ' + lit.size + '개를 찾았다 — ★ «거의 못 찾으면» 자가 고장이다'
+    + ' (실제로 0개를 낸 적이 있다: 정규식에 백스페이스 글자가 들어갔었다)');
+  ok(built.some(b => b.includes("'learn_'")),
+    "이름을 «만들어» 쓰는 자리를 알아본다 (loop.js 의 'learn_' + ...)");
+  ok(lit.has('spear_furled') && lit.has('moved_in_oneroom') && lit.has('plant_stalled'),
+    '★ 꼴이 «다른» 셋을 다 찾는다 — 상수(spear_furled) · 속성(moved_in_oneroom) · '
+    + '변수(plant_stalled). ⚠ 앞서 이 셋을 놓쳐 「없다」고 냈었다');
 
   console.log();
   console.log('자 검사 ' + (bad === 0 ? '통과' : '실패 ' + bad + '건'));
