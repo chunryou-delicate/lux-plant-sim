@@ -4699,6 +4699,52 @@ function updateHint() {
       if (r.width > 0 && r.height > 0) return hintAt(ok, '여기에 둘까요? — [확인]');
     }
   }
+  /* ★★★★ 2026-08-29 — **[옮기기] 뒤에는 «갈 자리»를 가리킨다** (박사님 ④)
+     ══════════════════════════════════════════════════════════════════
+     박사님: *"창턱으로 몬스테라 옮기기 «가이드할때», ★ «옮기기 눌러서 격자나올때»
+       ★★ «옴길위치»에 손가락 가이드해줘"*
+     ⇒ ★ 손가락이 **두 걸음**이 된다:
+```
+       ① 화분을 가리킨다      「이걸 눌러라」          ⇐ §fp.phase === 'move_monstera'
+       ★② 격자가 뜨면 «갈 자리»  「여기에 놓아라」        ⇐ ★★ 여기가 «없었다»
+```
+     ⛔ 없던 까닭은 바로 아래 줄이다 — `picked.mode` 면 **손가락을 통째로 끈다.**
+       그래서 [옮기기]를 누르는 순간 안내가 사라지고, 사람은 격자만 보고 선다.
+       ⇒ ★ 그러니 이 갈래를 **그 줄보다 «앞»에** 둔다. 뒤에 두면 영영 안 닿는다
+         (오늘 아침 [확인] 갈래를 앞에 둔 것과 «같은 규율»이다).
+     ★ **어느 칸인가 — 박지 않는다**(㊶). 「몬스테라 화분이 올라가는 자리 중 제일 밝은 곳」을
+       그때그때 묻는다. 반지하에서는 그것이 창턱이고, 방이 바뀌면 답도 따라 바뀐다.
+       ⚠ `fillSlots` 가 쓰는 **같은 판정**(`slotFitsDiameter` · `ARRIVAL_POT_D`)이다 —
+         자를 새로 만들면 목록과 손가락이 서로 다른 자리를 가리키는 날이 온다.
+     ⚠ 첫 플레이의 `move_monstera` 동안, **몬스테라를 옮기는 중일 때만**이다.
+       시루·가구를 옮길 때 창턱을 가리키면 그건 거짓말이다.
+     ⚠ 이미 그 자리면 안 가리킨다 — 「지금 있는 데로 가라」가 된다. */
+  if (fp && fp.enabled && fp.phase === 'move_monstera' && picked.mode === 'move' &&
+      drag.what === 'monstera' && roomView && roomView.screenPosOf) {
+    const goal = (() => {
+      try {
+        const rep = io.light.daily(S.day + 1, S).report;
+        const roomSlot = new Map((io.light.room.slots || []).map(s => [s.slotId, s]));
+        const fits = rep.slots.filter(s => slotFitsDiameter(roomSlot.get(s.slotId) || s, ARRIVAL_POT_D));
+        const best = fits.slice().sort((a, b) => b.dli - a.dli)[0];
+        return best && best.slotId !== picked.slotId ? best.slotId : null;
+      } catch { return null; }
+    })();
+    let gp = null;
+    if (goal) { try { gp = roomView.screenPosOf(goal); } catch { } }
+    if (gp) {
+      const cr = $('roomCanvas').getBoundingClientRect();
+      const h = $('hint');
+      h.querySelector('.say').textContent = '여기로 끌어 보세요 — ' + slotLabel(goal);
+      h.classList.remove('side', 'toRight');
+      h.querySelector('.hand').textContent = '👇';
+      h.style.left = (cr.left + gp.x) + 'px';
+      h.style.top = Math.max(4, cr.top + gp.y - 86) + 'px';
+      h.classList.add('on');
+      if (hintTargetEl) { hintTargetEl.classList.remove('hintTarget'); hintTargetEl = null; }
+      return;
+    }
+  }
   /* 지금 할 일이 이미 분명한 상황에서는 안내를 걷는다 */
   if (drag.on || picked.mode || stage.classList.contains('talking') ||
       stage.classList.contains('zoom')) return hintAt(null);
