@@ -40,10 +40,26 @@ import { settle as settleAnim, saveSidecar } from './shoot_screens.mjs';
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const OUTROOT = path.join(ROOT, 'tools', '_out', 'night');
 
+/* ★★★★ 2026-08-29 — **`--k=v` 도 받는다.**
+   ⛔ 예전에는 `--k v`(띄어쓰기) 하나만 봤다. 그래서 `--days=120` 을 주면 **조용히 무시**되고
+     밑값 400일이 돌았다 — 나는 「120일이 45분을 넘었다」고 읽었지만 실은 **400일을 돌고 있었다.**
+     `--tag=brief` 도 같이 먹혀서 파일 이름이 안 갈렸고, 그래서 「끝났나」를 보는 자도 헛돌았다.
+   ⚠ 자가 **틀린 인자를 조용히 삼키면**, 재는 사람은 「자기가 시킨 판」이 아니라 「다른 판」을 읽는다.
+     오늘 그것으로 한 시간 넘게 잃었다. ⇒ ★ 모르는 인자는 아래에서 **소리 내어** 말한다. */
 const arg = (k, d) => {
+  const eq = process.argv.find(a => a.startsWith('--' + k + '='));
+  if (eq) return eq.slice(k.length + 3);
   const i = process.argv.indexOf('--' + k);
   return i >= 0 ? (process.argv[i + 1] && !process.argv[i + 1].startsWith('--') ? process.argv[i + 1] : true) : d;
 };
+/* ★ 아는 인자 목록 — 여기 없는 `--…` 이 오면 «오타»다. 조용히 넘기지 않는다(㊹). */
+const KNOWN = ['seed','days','shots','w','h','play','lazy','sirus','ending','tag','size','url'];
+for (const a of process.argv.slice(2)) {
+  if (!a.startsWith('--')) continue;
+  const k = a.slice(2).split('=')[0];
+  if (!KNOWN.includes(k))
+    console.error(`⚠ 모르는 인자입니다: ${a} — 아는 것: ${KNOWN.map(x => '--' + x).join(' ')}`);
+}
 const SEED = Number(arg('seed', 1));
 const DAYS = Number(arg('days', 400));
 const SHOTS = !!arg('shots', false);
@@ -170,6 +186,16 @@ const note = (s) => { console.log(s); R.log = (R.log || []); R.log.push(s); };
 const OUT = path.join(OUTROOT, SIZE);
 fs.mkdirSync(OUT, { recursive: true });
 let shotSeq = 0;
+/* ★★★★ 2026-08-29 — **자가 제한이 부를 창구를 «여기서» 잇는다.**
+   ══════════════════════════════════════════════════════════════════
+   ⛔ 이 줄이 예전에는 **판이 다 끝난 뒤(§onWatchdog 옛 자리)** 에 있었다. `finish` 가
+     함수 선언이라 «부를 수는» 있지만, **잇는 줄 자체가 판이 끝나야 돈다.**
+     ⇒ ★ 그래서 도는 «동안»에는 `onWatchdog` 이 늘 `null` 이었고, 제한에 걸리면
+       `process.exit(2)` 가 그냥 나갔다 — **갈무리가 한 번도 안 돌았다.**
+   ⇒ ⇒ ★★ 2026-08-29 에 200일·120일 두 판이 그렇게 «통째로» 사라졌다(45분·30분).
+     주석에는 「나가기 전에 갈무리를 부른다」고 적혀 있었다 — **적어 두고 안 걸어 뒀다**(㊹).
+   ★ 여기서 이으면 판이 도는 «내내» 걸려 있다. `R`·`finish`·`dump` 는 위에서 이미 선다. */
+onWatchdog = (why) => { R.watchdog = why || true; try { dump(); } catch (e) {} finish(); };
 
 const page = await launch({ width: W, height: H, dpr: 2, mobile: false });
 page.on((m, p) => {
@@ -1065,6 +1091,10 @@ for (let d = 1; d <= DAYS; d++) {
   /* 가진 것은 남긴다 — 긴 판이 중간에 죽으면 서른 몇 분이 통째로 사라진다.
      열흘마다 지금까지 것을 써 둔다. 끝에 다시 쓰므로 손해가 없다. */
   if (d % 10 === 0) { try { dump(); } catch { } }
+  /* ★★ 2026-08-29 — **살아 있다는 것을 말한다.** 이 자는 끝날 때까지 «한 글자도» 안 찍어서,
+     45분을 돌고도 파일이 0바이트였다 — 「멎었나 도는가」를 밖에서 알 길이 없었다.
+     ⚠ `console.error` 다. 갈무리(stdout)와 섞이면 «판 기록»을 읽는 쪽이 헷갈린다. */
+  if (d % 5 === 0) console.error(`   … d${d} · 지갑 ${(R.days[R.days.length-1]||{}).cash ?? '—'}`);
   /* ★★ **어디서 벌어졌나** — [Plan]: 게으름의 벌은 **시루 수에 반비례**한다.
      시루 1개면 하루 거르는 것이 그날 수입의 **전부**이고, 16개면 **1/16** 이다.
      ⇒ 그래서 같은 --lazy 0.2 라도 **d0~d40 과 d100~ 이 다른 값**이다.
@@ -1117,8 +1147,8 @@ function dump() {
   fs.writeFileSync(path.join(OUT, `${STEM}.json`), JSON.stringify(R, null, 1), 'utf8');
 }
 
-/* ★ 자가 제한이 부를 창구를 잇는다 — `function` 선언이라 여기서 이어도 위에서 부른다 */
-onWatchdog = (why) => { R.watchdog = why || true; finish(); };
+/* ⚠ 창구는 **위에서**(§onWatchdog 새 자리) 이미 이었다 — 여기서 이으면 «판이 끝나야» 걸린다.
+   2026-08-29 에 그 탓으로 두 판을 잃었다. 이 줄은 남겨 두지 않는다. */
 
 function finish() {
   R.endedAt = new Date().toISOString();
