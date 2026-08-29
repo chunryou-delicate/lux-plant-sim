@@ -1339,6 +1339,22 @@ function roomOf(S, opt) {
     /* ★ 표가 비어 있어도 반드시 부른다. 안 부르면 **직전 게임에서 옮긴 가구**가 그대로 남는다 —
        "새 세이브를 불렀는데 남의 방"이 되는 조용한 사고다. */
     light.setFurnitureOverrides(furn, { rebuild: false });
+    /* ★★★ 2026-08-30 — **판 가구·산 가구도 «같은 규약»으로 얹는다.**
+       ══════════════════════════════════════════════════════════════════
+       ⛔ 이 줄이 없어서 **판 가구가 새로 켜면 되살아났다**(probe_furnsell ③-b:
+         세이브에는 `furnitureSold: ['banjiha-dresser']` 가 남아 있는데 방 가구는 11,
+         자리는 15 로 돌아와 있었다. 지갑만 25,800원 늘고 서랍장은 방에 그대로 섰다).
+       ★ 자리표(바로 위)와 **똑같은 병**이고 똑같은 약이다 — 「비어 있어도 반드시 부른다」.
+         안 부르면 직전 판에서 판 것이 남거나, 이번 판에서 판 것이 안 빠진다.
+       ⚠ 새 창구가 없는 옛 조도 창이면 조용히 건너뛴다 — 그때는 판 것이 방에 남지만
+         게임은 돈다. 없는 함수를 부르면 세이브가 통째로 안 열린다. */
+    if (typeof light.setFurnitureEdits === 'function') {
+      const home = S.home || {};
+      light.setFurnitureEdits(
+        Array.isArray(home.furnitureSold) ? home.furnitureSold : [],
+        Array.isArray(home.furnitureAdded) ? home.furnitureAdded : [],
+        { rebuild: false });
+    }
     let room;
     try { room = light.build(S.home.room); }
     catch (e) {

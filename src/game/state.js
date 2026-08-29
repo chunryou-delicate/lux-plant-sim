@@ -33,6 +33,9 @@ import { createShopState, useStock, assertStockAll, stockOf,
          creditCropSurplus,
          /* ★ 2026-08-17 · 가구를 사고 판다 (아래 §가구를 사고 판다) */
          furnitureQuoteOf, creditFurnitureSale, presetOfFurnitureItemId,
+         /* ★ 2026-08-30 — 조사를 «받침으로» 고른다. 「이(가)」를 박으면 화면에 그대로 나간다
+            ([Plan]: 「이미 있는 것을 쓴다」). 정본은 shop.js §josa 하나다 — 여기서 새로 안 짓는다. */
+         josa,
          /* ★ 2026-08-17 — 꾸미는 화분 표. 「고른 화분」이 실제로 나가고 실제로 그려지게 한다 */
          POT_KINDS } from './shop.js';
 /* ★★ 2026-08-17 — 삽수 용기. **화살표는 한 방향이다**(state → propagation).
@@ -1834,7 +1837,7 @@ export function furnitureSellQuote(S, uid, opt = {}) {
   if (base.on.length) {
     const what = [...new Set(base.on.map(o => o.ko))].join('·');
     return { ...base, ok: false,
-             reason: `${q.ko} 위에 ${what}이(가) 올라가 있습니다 (${base.on.length}개) — ` +
+             reason: `${q.ko} 위에 ${josa(what, '이', '가')} 올라가 있습니다 (${base.on.length}개) — ` +
                      '먼저 내려놓고 나서 팔아 주세요' };
   }
   if (base.riders.length)
@@ -1860,13 +1863,13 @@ export function sellFurniture(S, uid, opt = {}) {
 
   const r = creditFurnitureSale(S, q.won, { ko: q.ko, log: opt.log });
   if (typeof opt.log === 'function')
-    opt.log(`🪑 ${q.ko}을(를) 팔았습니다 — ${q.won.toLocaleString()}원 ` +
+    opt.log(`🪑 ${josa(q.ko, '을', '를')} 팔았습니다 — ${q.won.toLocaleString()}원 ` +
             `(산 값 ${q.buyWon.toLocaleString()}원의 ${Math.round(q.won / q.buyWon * 100)}%)`);
   return { ...r, uid, preset: q.preset, ko: q.ko, won: q.won,
            listWon: q.listWon, buyWon: q.buyWon, wasAdded: q.added,
            /* ⚠ 방을 다시 지어야 한다 — 그 일은 화면 몫이다(위 ⚠) */
            roomNeedsRebuild: true,
-           events: [{ id: 'furniture_sold', ko: `${q.ko}을(를) 팔았습니다`,
+           events: [{ id: 'furniture_sold', ko: `${josa(q.ko, '을', '를')} 팔았습니다`,
                       uid, preset: q.preset, won: q.won }] };
 }
 

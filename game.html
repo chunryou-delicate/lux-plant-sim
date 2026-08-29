@@ -1813,6 +1813,11 @@
            어려워 어떻게 좀 해줘"*). 물릴 수 있는 상판 목록은 방뷰가 이미 낸다(`lampMounts`) —
            없던 것은 그걸 **고르게 하는 손**이다. 벽등에는 안 뜬다(벽에 붙는 물건이다). -->
       <button id="furnMount" class="ghost" style="display:none">📍 물릴 자리</button>
+      <!-- ★★★ 2026-08-30 — **가구를 판다** (박사님 「ㄱㄱ」 · [Plan] 「파는 것만 열고 사는 것은 안 연다」).
+           ⚠ 상점에는 아무것도 안 낸다 — 사는 길은 «원룸부터»다. 반지하는 나가려고 버티는 방이라
+             침대(733,600원)를 사면 이사가 멀어진다.
+           ⚠ 파는 셈도 막는 자리도 코어가 갖는다(`state.js §furnitureSellQuote`) — 여기는 «누르는 자리»다. -->
+      <button id="furnSell" class="ghost" style="display:none">팔기</button>
       <span class="warn" id="furnWhy" style="display:none"></span>
       <!-- ★★★ 옮기고 **난 뒤**의 두 단추 (2026-08-16 · B-4 · 박사님: "옮긴 다음 팝업이
            [옮기기]가 있어서 헷갈림 — [확정]/[취소] 버튼 나오게")
@@ -2865,6 +2870,9 @@ import { newState, SIM_MODES, pot0, pushLog, givePlant, hasPlant, ARRIVAL,
          /* ★ 2026-08-30 — 가방에 든 가구(원룸 이사 §carriedFurniture) */
          carriedFurniture, carriedFurnitureOf, placeCarriedFurniture,
          soldFurniture, addedFurniture,
+         /* ★ 2026-08-30 — 가구를 판다(§가구 팔기). ⚠ 파는 셈·막는 자리는 «전부» 코어 것이다 —
+            화면은 묻고, 되묻고, 부른다. 값(되사기 30%)은 여기서 한 톨도 안 센다. */
+         furnitureSellQuote, sellFurniture,
          resowCrop, waterCrop, cropWaterStatus, cropHarvestStatus,
          /* ★ 2026-08-09 · 시루 각개 — 하나 놓기 · 하나에만 물주기 (state.js §placeSiru) */
          placeSiru, waterSiru,
@@ -2893,6 +2901,8 @@ import { newState, SIM_MODES, pot0, pushLog, givePlant, hasPlant, ARRIVAL,
    으로 연락을 가져오고 → `dealListing` 에서 돈이 들어온다. 채소(`sellPantryCrop` ·
    `sellCropSurplus`)는 **그대로 상점이다** — 식료품이라 상점이 맞다. */
 import { catalogList, orderItem, shopStatus, priceOf,
+         /* ★ 조사 — 받침을 세어 이/가·을/를을 고른다. 정본은 여기 하나다(§josa) */
+         josa,
          /* ★ 그루 값은 **묻는다** — 화면이 다시 세면 코어와 갈린다(shop.js §quotePot) */
          quotePot,
          listPot, listCutting, dealListing, cancelListing,
@@ -4740,12 +4750,11 @@ function guideBrightSlot(exceptSlotId) {
   } catch { return null; }
 }
 /* 「창턱 화분받침**이**」 · 「화분 받침대**가**」 — 받침이 있으면 이, 없으면 가.
-   ⚠ 자리 이름은 방마다 다르다(§room_map). 글자를 박으면 방이 바뀌는 날 어색해진다. */
-function josaIGa(word) {
-  const c = String(word || '').trim().slice(-1).charCodeAt(0);
-  if (!(c >= 0xAC00 && c <= 0xD7A3)) return '이';        /* 한글이 아니면 예전대로 */
-  return ((c - 0xAC00) % 28) ? '이' : '가';
-}
+   ⚠ 자리 이름은 방마다 다르다(§room_map). 글자를 박으면 방이 바뀌는 날 어색해진다.
+   ★★ 2026-08-30 — **셈은 `shop.js §josa` 것을 쓴다.** 낮에 여기서 받침을 다시 세고 있었는데,
+     그건 이미 있는 자다([Plan] 지적). 이름만 남기고 속은 그쪽에 맡긴다 —
+     ⚠ 부르는 자리가 넷이라 이름을 지우지는 않는다. 「이/가」만 내는 짧은 창구다. */
+function josaIGa(word) { return josa(String(word || ''), '이', '가'); }
 /* ★★★ 2026-08-29 [Plan] — **[옮기기] 중 가이드일 때는 아래글이 «왜»를 말한다.**
    ══════════════════════════════════════════════════════════════════
    [Plan]: *"손가락은 «어디»를 말합니다. dropLabel 은 ★ «왜»를 말해야 합니다."*
@@ -13178,6 +13187,37 @@ function furnMenuFollow(on) {
     cancelAnimationFrame(furnMenuTick); furnMenuTick = null;
   }
 }
+/* ══ 가구 팔기 — 묻고, 되묻고, 부른다 (2026-08-30) ═══════════════════════
+   박사님 「ㄱㄱ」 · [Plan] 「«파는» 것만 열고 «사는» 것은 안 연다 — 사는 것은 원룸부터」.
+   ⛔ 이 절에 «셈»은 없다. 되사는 값도 막는 자리도 코어 것을 부른다(§furnitureSellQuote).
+   ⚠ 여기 있는 것은 셋뿐이다: ① 무엇이 받치고 있나(3D 만 안다) ② 자리가 몇 개 사라지나
+     ③ 되묻는 말. 그 밖은 전부 코어에 묻는다. */
+/* ① 이 가구가 «받치고 있는» 가구들. **3D 기하라 코어가 지어내지 않는다** —
+   못 물으면 빈 목록이 아니라 «못 물었다»를 알아야 하는데, 방뷰가 없으면 팔 일도 없다. */
+function sellRidersOf(uid) {
+  try { return (roomView && roomView.ridersOf) ? (roomView.ridersOf(uid) || []) : []; }
+  catch (e) { console.warn('[가구] 받치는 것을 못 읽었습니다 —', e && e.message); return []; }
+}
+/* ② 「이걸 팔면 자리가 몇 개 사라지나」. ★★ **세지 않는다 — 엔진에 «물어본다».**
+   ⚠ 처음엔 자리 이름 `"<uid>:<번호>"` 를 세었다. 결과는 맞았지만 그건 **두 벌로 세는 것**이다
+     ([House] 2026-08-30). 자리를 만드는 자는 조립이고, 화면이 그 규칙을 따로 알면
+     언젠가 갈린다 — 오늘 밤 내내 본 그 모양이다(「내부 이름은 이미 틀렸는데 답이 맞아서」).
+   ⇒ 판 것 표에 uid 를 얹어 **한 번 지어 보고 자리 수를 읽은 뒤 되돌린다.**
+     ⚠ **되돌리기가 이 함수의 전부다.** 안 되돌리면 「물어만 봤는데 팔린」 판이 된다.
+   ★ [House] 실측: 침대 15→15(자리를 안 갖는다) · 서랍장 15→13 · **3단 선반 15→6**.
+     그러니 「팔면 둘 준다」 같은 표를 만들면 그 표가 그날로 낡는다.
+   ⚠ 못 물으면 **0 을 돌려준다**(모른다). 그러면 되묻는 말이 자리 대목을 빼고 나간다 —
+     지어낸 수를 보여 주는 것보다 안 보여 주는 편이 낫다. */
+function slotsLostBySelling(uid) {
+  const sold = soldFurniture(S), added = addedFurniture(S);
+  try {
+    const before = (io.light.room.slots || []).length;
+    io.light.setFurnitureEdits([...sold, uid], added);
+    const after = (io.light.room.slots || []).length;
+    return Math.max(0, before - after);
+  } catch (e) { console.warn('[가구] 자리 수를 못 물었습니다 —', e && e.message); return 0; }
+  finally { try { io.light.setFurnitureEdits(sold, added); } catch { } }   /* ★ 반드시 되돌린다 */
+}
 const furnPicked = {
   uid: null, mode: null, x0: 0, y0: 0, originX: 0, originY: 0, base: null, rot0: 0, ghost: null,
   tapX: null, tapY: null,
@@ -13200,6 +13240,8 @@ const furnPicked = {
     set('furnMove', (on || wallLamp) ? 'none' : '');
     set('furnTurn', (on || wallLamp) ? 'none' : '');
     set('furnAim', on ? 'none' : (this.aimable ? '' : 'none'));
+    /* ★ 파는 단추도 옮기는 중에는 감춘다 — 옮기다 말고 팔면 되돌릴 자리가 사라진다 */
+    set('furnSell', on ? 'none' : (this.sellable ? '' : 'none'));
     set('furnOk', on ? '' : 'none');
     set('furnUndo', on ? '' : 'none');
     if (!on) this.undoFrom = null;
@@ -13226,6 +13268,20 @@ const furnPicked = {
          *"처음에 주는 식물등이 저 하늘로 가버려"* 가 그 모양이다.
          못 하는 것을 회색 단추로 세우지 않고 **까닭을 글자로** 적는다. */
     this.lamp = f.lamp || null;
+    /* ★★★ 2026-08-30 — **팔 수 있는 것인가.** 판정은 «코어»가 한다(§furnitureSellQuote).
+       ⚠ 여기서 새로 가르지 않는다. 화분이 얹혔나·붙박이인가·위에 가구가 있나 — 셋 다 코어가 안다.
+       ⚠ 다만 **단추를 «내느냐»**는 갈래로 가른다:
+         · 갈래가 아예 «가구가 아니면»(조명·붙박이·가전) ⇒ 영영 안 되는 것이라 **안 낸다**
+         · 갈래는 가구인데 «지금» 못 파는 것(위에 화분이 있다) ⇒ **낸다.** 누르면 까닭을 말한다
+       그래야 「왜 안 뜨지」와 「왜 안 되지」가 갈린다 — 앞엣것은 답이 없고 뒤엣것은 답이 있다. */
+    this.sellable = false; this.sellPreset = f.preset || null;
+    if (f.preset && !f.lamp) {
+      try {
+        const q = furnitureSellQuote(S, f.uid, { preset: f.preset, riders: sellRidersOf(f.uid) });
+        /* 갈래가 아니면 reason 이 「사고팔 수 없습니다」다 — 그때만 감춘다(§FURNITURE_KIND_KO) */
+        this.sellable = q.ok || !/사고팔 수 없습니다|붙박이라/.test(q.reason || '');
+      } catch (e) { this.sellable = false; }
+    }
     {
       const set = (id, v) => { const el = $(id); if (el) el.style.display = v; };
       const lb = $('furnLamp'), why = $('furnWhy');
@@ -13750,6 +13806,61 @@ function bindPicked() {
     el.onpointerdown = (e) => { e.preventDefault(); e.stopPropagation(); at = performance.now(); go(); };
     el.onclick = (e) => { e.stopPropagation(); if (performance.now() - at > DOWN_CLICK_MS) go(); };
   };
+  /* ★★★ [팔기] — **두 걸음**이다(§confirmOnce 와 같은 손버릇. 새 창을 안 연다).
+     첫 탭에 값과 「자리 몇 개가 사라지나」를 단추에 적고, 둘째 탭에 판다.
+     ⚠ 되묻는 말은 **누를 때 셈한다** — 가구마다·방마다 자리 수가 다르다(총괄 금 ①). */
+  {
+    const b = $('furnSell');
+    if (b) {
+      let armed = false, timer = null;
+      const disarmSell = () => { armed = false; if (timer) { clearTimeout(timer); timer = null; }
+                                 b.textContent = '팔기'; b.classList.remove('armed'); };
+      const go = () => {
+        const uid = furnPicked.uid, preset = furnPicked.sellPreset;
+        if (!uid || !preset) return;
+        let q = null;
+        try { q = furnitureSellQuote(S, uid, { preset, riders: sellRidersOf(uid) }); }
+        catch (e) { disarmSell(); banner('팔 수 없습니다', (e && e.message) || ''); return; }
+        /* 못 파는 까닭은 **코어 말을 그대로** 낸다 — 화면이 다시 지으면 두 벌이 된다 */
+        if (!q.ok) { disarmSell(); banner('아직 못 팝니다', q.reason || ''); return; }
+        if (!armed) {                                   /* 첫 탭 — 되묻는다 */
+          const now = (() => { try { return (io.light.room.slots || []).length; } catch { return 0; } })();
+          const lose = slotsLostBySelling(uid);
+          armed = true; b.classList.add('armed');
+          /* ★ 문안은 [Plan] 것이다(5404cec). 「−2」가 아니라 「15→13」인 까닭:
+             앞엣것은 «잃는 것»만 말하고 뒤엣것은 «남는 것»도 말한다 — 사람이 「13이면 되나」를 센다.
+             ⚠ 자리가 안 주는 가구(침대)에서는 **자리 대목을 통째로 뺀다.**
+               「15→15」는 소음이고, 안 바뀐 것을 말하면 바뀐 것이 묻힌다. */
+          b.textContent = lose > 0
+            ? `${q.won.toLocaleString()}원 · 자리 ${now}→${now - lose}?`
+            : `${q.won.toLocaleString()}원에 팔까요?`;
+          timer = setTimeout(disarmSell, 3000);
+          return;
+        }
+        disarmSell();                                   /* 둘째 탭 — 판다 */
+        let r = null;
+        try { r = sellFurniture(S, uid, { preset, riders: sellRidersOf(uid), log: (m) => pushLog(S, m) }); }
+        catch (e) { banner('팔지 못했습니다', (e && e.message) || ''); return; }
+        furnPicked.clear();
+        try { io.light.setFurnitureEdits(soldFurniture(S), addedFurniture(S)); }
+        catch (e) { console.warn('[가구] 조립에 못 먹였습니다 —', e && e.message); }
+        banner(`${josa(r.ko, '을', '를')} 팔았습니다`, `${r.won.toLocaleString()}원이 들어왔습니다`);
+        try { sfx.thud(); } catch { }
+        draw();
+        /* 방은 «가볍게» 다시 짓는다 — 놓기와 같은 창구다(§refreshFurniture · 실측 273 ms) */
+        (async () => {
+          try {
+            if (roomView && roomView.refreshFurniture) await roomView.refreshFurniture();
+            else await remountRoomView();
+          } catch (e) { console.warn('[가구] 방 다시 짓기 —', e && e.message); }
+          try { fillSlots(); } catch (e) { console.warn('[가구] 자리 다시 채우기 —', e && e.message); }
+          draw();
+        })();
+      };
+      tapOnce('furnSell', go);
+      addEventListener('pointerdown', (e) => { if (armed && e.target !== b) disarmSell(); }, true);
+    }
+  }
   tapOnce('furnMove', () => furnPicked.beginMove());
   tapOnce('furnTurn', () => furnPicked.beginTurn());
   tapOnce('furnAim', () => furnPicked.beginAim());
