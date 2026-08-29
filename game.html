@@ -6139,14 +6139,38 @@ function startPhonePlacePotBag(potId) {
                return { ok: false, why: 'slot-not-found:' + spot }; }
     at = { x: sl.x, y: sl.y, z: sl.z };
   }
+  let r = null;
   try {
-    const r = setPotAt(S, p, at, placeOpt());
+    r = setPotAt(S, p, at, placeOpt());
     if (S.firstPlay.enabled && r.slotId && !isFreeSlotId(r.slotId)) moveMonstera(S.firstPlay, r.slotId);
     try { window.__byeotSheet.close(); } catch { }
-    banner('🪴 몬스테라를 놓았습니다', '눌러서 [옮기기]로 자리를 다시 고를 수 있습니다');
     unlockAfterFix(); sfx.thud();
   } catch (e) { banner('배치하지 못했습니다', (e && e.message) || ''); return { ok: false }; }
   draw();
+  /* ★★★ 2026-08-29 — **시루와 «같은 손버릇»으로 만든다** (박사님).
+     ══════════════════════════════════════════════════════════════════
+     박사님: *"몬스테라 받고 바로 드래그하면 ★«시루 옮길때처럼» 그 «배치할수있는 칸»들이
+       나오고 해야되는데 그게안나와. 아까느 어찌저찌 갈려서 «아무대나 배치됬는데»…"*
+     ⚠ 재서 갈랐다(probe_bagtap · probe_dropmap): ★ **«끌 때»는 둘이 같다** —
+       금색 네모 15 대 15 · 받는 점 57 대 58. ⛔ 다른 것은 **«누를 때»**뿐이었다.
+         시루를 누르면   → 임시로 서고 ★ 「여기에 둘까요? [확인][다시 옮기기][취소]」
+         몬스테라를 누르면 → ⛔ free 좌표(방 한가운데)에 그냥 놓이고 **끝**
+     ⇒ ★ 그래서 「배치할 수 있는 칸이 안 나온다」였고 「아무 데나 배치됐다」였다.
+     ★★ `startPhonePlace`(시루)의 그 다섯 줄을 여기에도 놓는다 — **같은 줄이어야 두 손이
+       같은 일을 한다.** 값은 한 톨도 안 건드린다.
+     ⚠ 자리 열쇠가 없으면 예전대로 «놓고 끝»이다 — 못 세우는 바를 억지로 세우면
+       「확인을 눌렀는데 아무 일도 안 난다」가 된다(2026-08-09 에 겪은 그것). */
+  const key = (r && r.slotId) || p.slotId || null;
+  if (!key) {
+    banner('🪴 몬스테라를 놓았습니다', '눌러서 [옮기기]로 자리를 다시 고를 수 있습니다');
+    return { ok: true };
+  }
+  picked.confirming = true;
+  picked.select(key);
+  /* 갓 꺼낸 것이라 [취소]는 **가방으로** 되돌린다(§placeConfirmCancel) */
+  picked.before = { potId: p.id, fresh: true, slotId: null, at: null };
+  placeConfirm.show();
+  banner('여기에 둘까요?', '[확인] 을 누르면 그 자리에 놓입니다 · 자리를 바꾸려면 [다시 옮기기]');
   return { ok: true };
 }
 const BAG_PLACEABLE = Object.freeze({
@@ -12752,6 +12776,20 @@ function placeConfirmCancel() {
       else { pot.slotId = b.slotId; pot.at = b.at; }       // 옛 자리로
       try { syncCropLead(site); } catch { }
       pushLog(S, b.fresh ? '🥣 시루를 가방에 도로 넣었습니다' : '🥣 시루를 원래 자리로 되돌렸습니다');
+    }
+    /* ★★★ 2026-08-29 — **몬스테라 화분도 되돌린다** (§startPhonePlacePotBag).
+       ══════════════════════════════════════════════════════════════════
+       ⚠ 여기가 `S.firstPlay.beansprout` **한 군데만** 뒤졌다. 가방 몬스테라를 눌러 놓고
+         [취소]를 누르면 그 화분은 **방에 그대로 선 채** 고르기만 풀렸다 —
+         「취소를 눌렀는데 안 취소된다」다. 확인 바를 새로 태우면서 **같이 열어야 하는 문**이다.
+       ★ `placedOnce` 를 되돌리는 것이 요점이다 — 그 칸 하나가 「가방에 있나」의 정본이고
+         (§bagPots), 안 되돌리면 방에서 지워도 가방에 다시 안 뜬다.
+       ⚠ 시루와 **같은 `before` 규약**을 쓴다: `fresh` 면 가방으로, 아니면 옛 자리로. */
+    const mine = (S.pots || []).find(x => x && x.id === b.potId);
+    if (mine) {
+      if (b.fresh) { mine.slotId = null; mine.at = null; mine.placedOnce = false; }
+      else { mine.slotId = b.slotId; mine.at = b.at; }
+      pushLog(S, b.fresh ? '🪴 몬스테라를 가방에 도로 넣었습니다' : '🪴 몬스테라를 원래 자리로 되돌렸습니다');
     }
   }
   picked.clear();
