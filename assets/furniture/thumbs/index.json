@@ -2,42 +2,70 @@
  "note": "tools/glb_thumb.mjs 가 만든다. 손으로 고치지 말 것. GLB 이름 -> 썸네일 이름 · GLB 자체 크기",
  "sizeMeans": "GLB 원본 바운딩박스. 실제 미터 = 이 값 × manifest.scale_to_real",
  "tool": "tools/glb_thumb.mjs",
- "updated": "2026-08-14",
+ "updated": "2026-08-29",
  "thumbs": {
   "shelf_cart_3tier.glb": {
    "png": "shelf_cart_3tier.png",
-   "m": null,
-   "view": null
+   "m": {
+    "x": 0.44,
+    "z": 0.344,
+    "y": 0.82
+   },
+   "view": "3q"
   },
   "shelf_etagere_3tier.glb": {
    "png": "shelf_etagere_3tier.png",
-   "m": null,
-   "view": null
+   "m": {
+    "x": 0.72,
+    "z": 0.28,
+    "y": 0.794
+   },
+   "view": "3q"
   },
   "shelf_growrack_2tier.glb": {
    "png": "shelf_growrack_2tier.png",
-   "m": null,
-   "view": null
+   "m": {
+    "x": 0.79,
+    "z": 0.34,
+    "y": 1.16
+   },
+   "view": "3q"
   },
   "shelf_ladder_4tier.glb": {
    "png": "shelf_ladder_4tier.png",
-   "m": null,
-   "view": null
+   "m": {
+    "x": 0.68,
+    "z": 0.4726,
+    "y": 1.291
+   },
+   "view": "3q"
   },
   "shelf_stool_1.glb": {
    "png": "shelf_stool_1.png",
-   "m": null,
-   "view": null
+   "m": {
+    "x": 0.28,
+    "z": 0.28,
+    "y": 0.355
+   },
+   "view": "3q"
   },
   "shelf_wall_1tier.glb": {
    "png": "shelf_wall_1tier.png",
-   "m": null,
-   "view": null
+   "m": {
+    "x": 0.8,
+    "z": 0.22,
+    "y": 0.185
+   },
+   "view": "3q"
   },
   "shelf_windowsill.glb": {
    "png": "shelf_windowsill.png",
-   "m": null,
-   "view": null
+   "m": {
+    "x": 1,
+    "z": 0.16,
+    "y": 0.14
+   },
+   "view": "3q"
   }
  }
 }

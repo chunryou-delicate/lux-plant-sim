@@ -2,57 +2,97 @@
  "note": "tools/glb_thumb.mjs 가 만든다. 손으로 고치지 말 것. GLB 이름 -> 썸네일 이름 · GLB 자체 크기",
  "sizeMeans": "GLB 원본 바운딩박스. 실제 미터 = 이 값 × manifest.scale_to_real",
  "tool": "tools/glb_thumb.mjs",
- "updated": "2026-08-22",
+ "updated": "2026-08-29",
  "thumbs": {
   "leaf_sheath.glb": {
    "png": "leaf_sheath.png",
-   "m": null,
-   "view": null
+   "m": {
+    "x": 1.9131,
+    "z": 2.0263,
+    "y": 1.6
+   },
+   "view": "top"
   },
   "monstera_bud_furled.glb": {
    "png": "monstera_bud_furled.png",
-   "m": null,
-   "view": null
+   "m": {
+    "x": 0.2516,
+    "z": 0.2255,
+    "y": 0.9955
+   },
+   "view": "top"
   },
   "monstera_bud_opening2.glb": {
    "png": "monstera_bud_opening2.png",
-   "m": null,
-   "view": null
+   "m": {
+    "x": 0.9947,
+    "z": 0.375,
+    "y": 0.7913
+   },
+   "view": "top"
   },
   "monstera_leaf_mature_v1.glb": {
    "png": "monstera_leaf_mature_v1.png",
-   "m": null,
-   "view": null
+   "m": {
+    "x": 1.6303,
+    "z": 2,
+    "y": 1.9889
+   },
+   "view": "top"
   },
   "monstera_leaf_mature_v2.glb": {
    "png": "monstera_leaf_mature_v2.png",
-   "m": null,
-   "view": null
+   "m": {
+    "x": 1.6303,
+    "z": 2,
+    "y": 1.9889
+   },
+   "view": "top"
   },
   "monstera_leaf_mature.glb": {
    "png": "monstera_leaf_mature.png",
-   "m": null,
-   "view": null
+   "m": {
+    "x": 1.6303,
+    "z": 2,
+    "y": 1.9889
+   },
+   "view": "top"
   },
   "monstera_leaf_mid1_v1.glb": {
    "png": "monstera_leaf_mid1_v1.png",
-   "m": null,
-   "view": null
+   "m": {
+    "x": 0.753,
+    "z": 0.7303,
+    "y": 0.9952
+   },
+   "view": "top"
   },
   "monstera_leaf_mid1_v2.glb": {
    "png": "monstera_leaf_mid1_v2.png",
-   "m": null,
-   "view": null
+   "m": {
+    "x": 0.753,
+    "z": 0.7303,
+    "y": 0.9952
+   },
+   "view": "top"
   },
   "monstera_leaf_mid1.glb": {
    "png": "monstera_leaf_mid1.png",
-   "m": null,
-   "view": null
+   "m": {
+    "x": 0.753,
+    "z": 0.7303,
+    "y": 0.9952
+   },
+   "view": "top"
   },
   "monstera_leaf_mid2_v1.glb": {
    "png": "monstera_leaf_mid2_v1.png",
-   "m": null,
-   "view": null
+   "m": {
+    "x": 0.8527,
+    "z": 0.8866,
+    "y": 0.9951
+   },
+   "view": "top"
   },
   "monstera_leaf_mid2_v2.glb": {
    "png": "monstera_leaf_mid2_v2.png",
@@ -65,58 +105,102 @@
   },
   "monstera_leaf_mid2.glb": {
    "png": "monstera_leaf_mid2.png",
-   "m": null,
-   "view": null
+   "m": {
+    "x": 0.8527,
+    "z": 0.8866,
+    "y": 0.9951
+   },
+   "view": "top"
   },
   "monstera_leaf_young.glb": {
    "png": "monstera_leaf_young.png",
-   "m": null,
-   "view": null
+   "m": {
+    "x": 0.8101,
+    "z": 0.8959,
+    "y": 0.9943
+   },
+   "view": "top"
   },
   "pot_c1.glb": {
    "png": "pot_c1.png",
-   "m": null,
-   "view": null
+   "m": {
+    "x": 0.9813,
+    "z": 0.978,
+    "y": 0.6598
+   },
+   "view": "top"
   },
   "pot_c2.glb": {
    "png": "pot_c2.png",
-   "m": null,
-   "view": null
+   "m": {
+    "x": 0.9813,
+    "z": 0.978,
+    "y": 0.6598
+   },
+   "view": "top"
   },
   "pot.glb": {
    "png": "pot.png",
-   "m": null,
-   "view": null
+   "m": {
+    "x": 0.9813,
+    "z": 0.978,
+    "y": 0.6598
+   },
+   "view": "top"
   },
   "stem_early.glb": {
    "png": "stem_early.png",
-   "m": null,
-   "view": null
+   "m": {
+    "x": 0.0896,
+    "z": 0.073,
+    "y": 0.9983
+   },
+   "view": "top"
   },
   "stem_knob.glb": {
    "png": "stem_knob.png",
-   "m": null,
-   "view": null
+   "m": {
+    "x": 2,
+    "z": 2,
+    "y": 0.7943
+   },
+   "view": "top"
   },
   "stem_late_bump.glb": {
    "png": "stem_late_bump.png",
-   "m": null,
-   "view": null
+   "m": {
+    "x": 0.5595,
+    "z": 0.3775,
+    "y": 0.9967
+   },
+   "view": "top"
   },
   "stem_late_double.glb": {
    "png": "stem_late_double.png",
-   "m": null,
-   "view": null
+   "m": {
+    "x": 0.602,
+    "z": 0.4042,
+    "y": 0.9953
+   },
+   "view": "top"
   },
   "stem_mid_1.glb": {
    "png": "stem_mid_1.png",
-   "m": null,
-   "view": null
+   "m": {
+    "x": 0.1559,
+    "z": 0.2258,
+    "y": 0.9989
+   },
+   "view": "top"
   },
   "stem_mid_2.glb": {
    "png": "stem_mid_2.png",
-   "m": null,
-   "view": null
+   "m": {
+    "x": 0.2192,
+    "z": 0.2362,
+    "y": 0.9987
+   },
+   "view": "top"
   }
  }
 }

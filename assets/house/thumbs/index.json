@@ -2,27 +2,43 @@
  "note": "tools/glb_thumb.mjs 가 만든다. 손으로 고치지 말 것. GLB 이름 -> 썸네일 이름 · GLB 자체 크기",
  "sizeMeans": "GLB 원본 바운딩박스. 실제 미터 = 이 값 × manifest.scale_to_real",
  "tool": "tools/glb_thumb.mjs",
- "updated": "2026-08-14",
+ "updated": "2026-08-29",
  "thumbs": {
   "house_mod_door.glb": {
    "png": "house_mod_door.png",
-   "m": null,
-   "view": null
+   "m": {
+    "x": 0.9867,
+    "z": 0.3095,
+    "y": 2
+   },
+   "view": "3q"
   },
   "house_mod_glass_panel.glb": {
    "png": "house_mod_glass_panel.png",
-   "m": null,
-   "view": null
+   "m": {
+    "x": 1.2774,
+    "z": 0.1423,
+    "y": 2
+   },
+   "view": "3q"
   },
   "house_mod_window_banjiha.glb": {
    "png": "house_mod_window_banjiha.png",
-   "m": null,
-   "view": null
+   "m": {
+    "x": 2,
+    "z": 0.1718,
+    "y": 0.8209
+   },
+   "view": "3q"
   },
   "house_mod_window_normal.glb": {
    "png": "house_mod_window_normal.png",
-   "m": null,
-   "view": null
+   "m": {
+    "x": 1.9814,
+    "z": 0.2102,
+    "y": 2
+   },
+   "view": "3q"
   }
  }
 }

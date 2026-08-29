@@ -2,67 +2,115 @@
  "note": "tools/glb_thumb.mjs 가 만든다. 손으로 고치지 말 것. GLB 이름 -> 썸네일 이름 · GLB 자체 크기",
  "sizeMeans": "GLB 원본 바운딩박스. 실제 미터 = 이 값 × manifest.scale_to_real",
  "tool": "tools/glb_thumb.mjs",
- "updated": "2026-08-14",
+ "updated": "2026-08-29",
  "thumbs": {
   "basil_l.glb": {
    "png": "basil_l.png",
-   "m": null,
-   "view": null
+   "m": {
+    "x": 1.7116,
+    "z": 2,
+    "y": 1.8822
+   },
+   "view": "3q"
   },
   "basil_m.glb": {
    "png": "basil_m.png",
-   "m": null,
-   "view": null
+   "m": {
+    "x": 1.6496,
+    "z": 1.9465,
+    "y": 2
+   },
+   "view": "3q"
   },
   "basil_s.glb": {
    "png": "basil_s.png",
-   "m": null,
-   "view": null
+   "m": {
+    "x": 1.0748,
+    "z": 2,
+    "y": 1.915
+   },
+   "view": "3q"
   },
   "beansprout_l.glb": {
    "png": "beansprout_l.png",
-   "m": null,
-   "view": null
+   "m": {
+    "x": 0.0417,
+    "z": 0.018,
+    "y": 0.1281
+   },
+   "view": "3q"
   },
   "beansprout_m.glb": {
    "png": "beansprout_m.png",
-   "m": null,
-   "view": null
+   "m": {
+    "x": 0.0225,
+    "z": 0.0107,
+    "y": 0.0856
+   },
+   "view": "3q"
   },
   "beansprout_s.glb": {
    "png": "beansprout_s.png",
-   "m": null,
-   "view": null
+   "m": {
+    "x": 0.0114,
+    "z": 0.0086,
+    "y": 0.0494
+   },
+   "view": "3q"
   },
   "chive_l.glb": {
    "png": "chive_l.png",
-   "m": null,
-   "view": null
+   "m": {
+    "x": 0.0664,
+    "z": 0.0702,
+    "y": 0.2014
+   },
+   "view": "3q"
   },
   "chive_m.glb": {
    "png": "chive_m.png",
-   "m": null,
-   "view": null
+   "m": {
+    "x": 0.0377,
+    "z": 0.0405,
+    "y": 0.1219
+   },
+   "view": "3q"
   },
   "chive_s.glb": {
    "png": "chive_s.png",
-   "m": null,
-   "view": null
+   "m": {
+    "x": 0.0162,
+    "z": 0.0176,
+    "y": 0.0583
+   },
+   "view": "3q"
   },
   "container_siru_closed.glb": {
    "png": "container_siru_closed.png",
-   "m": null,
-   "view": null
+   "m": {
+    "x": 0.2424,
+    "z": 0.2424,
+    "y": 0.19
+   },
+   "view": "3q"
   },
   "container_siru_open.glb": {
    "png": "container_siru_open.png",
-   "m": null,
-   "view": null
+   "m": {
+    "x": 0.24,
+    "z": 0.24,
+    "y": 0.109
+   },
+   "view": "3q"
   },
   "container_tray_l.glb": {
    "png": "container_tray_l.png",
-   "m": null,
-   "view": null
+   "m": {
+    "x": 0.52,
+    "z": 0.32,
+    "y": 0.06
+   },
+   "view": "3q"
   },
   "container_tray_s_empty.glb": {
    "png": "container_tray_s_empty.png",
@@ -71,113 +119,201 @@
   },
   "container_tray_s.glb": {
    "png": "container_tray_s.png",
-   "m": null,
-   "view": null
+   "m": {
+    "x": 0.36,
+    "z": 0.24,
+    "y": 0.055
+   },
+   "view": "3q"
   },
   "flower_white.glb": {
    "png": "flower_white.png",
-   "m": null,
-   "view": null
+   "m": {
+    "x": 0.0223,
+    "z": 0.0228,
+    "y": 0.0044
+   },
+   "view": "3q"
   },
   "fruit_strawberry_l.glb": {
    "png": "fruit_strawberry_l.png",
-   "m": null,
-   "view": null
+   "m": {
+    "x": 1.7369,
+    "z": 1.7559,
+    "y": 2
+   },
+   "view": "3q"
   },
   "fruit_strawberry_m.glb": {
    "png": "fruit_strawberry_m.png",
-   "m": null,
-   "view": null
+   "m": {
+    "x": 1.6339,
+    "z": 1.6479,
+    "y": 2
+   },
+   "view": "3q"
   },
   "fruit_strawberry_s.glb": {
    "png": "fruit_strawberry_s.png",
-   "m": null,
-   "view": null
+   "m": {
+    "x": 1.76,
+    "z": 2,
+    "y": 1.9579
+   },
+   "view": "3q"
   },
   "fruit_tomato_m.glb": {
    "png": "fruit_tomato_m.png",
-   "m": null,
-   "view": null
+   "m": {
+    "x": 0.022,
+    "z": 0.022,
+    "y": 0.02
+   },
+   "view": "3q"
   },
   "lettuce_l.glb": {
    "png": "lettuce_l.png",
-   "m": null,
-   "view": null
+   "m": {
+    "x": 1.9936,
+    "z": 2,
+    "y": 1.6037
+   },
+   "view": "3q"
   },
   "lettuce_m.glb": {
    "png": "lettuce_m.png",
-   "m": null,
-   "view": null
+   "m": {
+    "x": 1.9981,
+    "z": 2,
+    "y": 0.9853
+   },
+   "view": "3q"
   },
   "lettuce_s.glb": {
    "png": "lettuce_s.png",
-   "m": null,
-   "view": null
+   "m": {
+    "x": 1.9959,
+    "z": 2,
+    "y": 1.7736
+   },
+   "view": "3q"
   },
   "scallion_l.glb": {
    "png": "scallion_l.png",
-   "m": null,
-   "view": null
+   "m": {
+    "x": 0.0561,
+    "z": 0.0533,
+    "y": 0.2662
+   },
+   "view": "3q"
   },
   "scallion_m.glb": {
    "png": "scallion_m.png",
-   "m": null,
-   "view": null
+   "m": {
+    "x": 0.0351,
+    "z": 0.0324,
+    "y": 0.1573
+   },
+   "view": "3q"
   },
   "scallion_s.glb": {
    "png": "scallion_s.png",
-   "m": null,
-   "view": null
+   "m": {
+    "x": 0.0145,
+    "z": 0.0125,
+    "y": 0.0666
+   },
+   "view": "3q"
   },
   "seed_dicot.glb": {
    "png": "seed_dicot.png",
-   "m": null,
-   "view": null
+   "m": {
+    "x": 0.0084,
+    "z": 0.006,
+    "y": 0.0064
+   },
+   "view": "3q"
   },
   "seed_monocot.glb": {
    "png": "seed_monocot.png",
-   "m": null,
-   "view": null
+   "m": {
+    "x": 0.0044,
+    "z": 0.0096,
+    "y": 0.0036
+   },
+   "view": "3q"
   },
   "sprout_dicot.glb": {
    "png": "sprout_dicot.png",
-   "m": null,
-   "view": null
+   "m": {
+    "x": 0.031,
+    "z": 0.011,
+    "y": 0.0337
+   },
+   "view": "3q"
   },
   "sprout_monocot.glb": {
    "png": "sprout_monocot.png",
-   "m": null,
-   "view": null
+   "m": {
+    "x": 0.0036,
+    "z": 0.0056,
+    "y": 0.0343
+   },
+   "view": "3q"
   },
   "sprout_radish_l.glb": {
    "png": "sprout_radish_l.png",
-   "m": null,
-   "view": null
+   "m": {
+    "x": 0.0437,
+    "z": 0.0169,
+    "y": 0.0738
+   },
+   "view": "3q"
   },
   "sprout_radish_m.glb": {
    "png": "sprout_radish_m.png",
-   "m": null,
-   "view": null
+   "m": {
+    "x": 0.0282,
+    "z": 0.0109,
+    "y": 0.0477
+   },
+   "view": "3q"
   },
   "sprout_radish_s.glb": {
    "png": "sprout_radish_s.png",
-   "m": null,
-   "view": null
+   "m": {
+    "x": 0.0148,
+    "z": 0.0057,
+    "y": 0.025
+   },
+   "view": "3q"
   },
   "strawberry_l.glb": {
    "png": "strawberry_l.png",
-   "m": null,
-   "view": null
+   "m": {
+    "x": 1.9428,
+    "z": 2,
+    "y": 1.4856
+   },
+   "view": "3q"
   },
   "strawberry_m.glb": {
    "png": "strawberry_m.png",
-   "m": null,
-   "view": null
+   "m": {
+    "x": 1.9622,
+    "z": 1.872,
+    "y": 2
+   },
+   "view": "3q"
   },
   "strawberry_s.glb": {
    "png": "strawberry_s.png",
-   "m": null,
-   "view": null
+   "m": {
+    "x": 2,
+    "z": 1.461,
+    "y": 1.638
+   },
+   "view": "3q"
   }
  }
 }
