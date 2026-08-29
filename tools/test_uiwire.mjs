@@ -263,15 +263,26 @@ console.log('\n══ W. 물 주기 말풍선이 죽지 않는다 (QA 2026-08-08
    핸들러가 안 돈다. 그래서 「눌러도 아무 일이 없다」가 났다 — 회전마다 하루~이틀이 사라졌다.
    ⚠ 「눌러 보니 되더라」로 끝내지 않는다. 물이 **실제로 들어갔는지**(회전이 시작됐는지)를
      상태에서 확인한다. 화면 글자는 증거가 아니다. */
-const waterSnap = () => page.eval(`(()=>{ const S=window.__S();
+/* ★★★ 2026-08-30 — **말풍선은 «글자»가 아니라 `aria-label` 로 읽는다.**
+   ══════════════════════════════════════════════════════════════════
+   2026-08-17 에 박사님이 *"물주기 거두기 이런 글자를 없애서 크기를 줄이자"* 하셔서
+   말풍선이 **아이콘만** 남았다(`game.html §drawMarks`). 글자는 안 버렸다 —
+   `aria-label`·`title` 에 그대로 있다. 화면에서만 민 것이다.
+   ⇒ 그런데 이 자는 여전히 `textContent` 에서 「물」을 찾고 있었다. 그래서 **W-1·W-3·W-4·
+     W-5·W-7·D-0 여섯이 한꺼번에 떨어져 있었다** — 게임이 아니라 **자가 낡은 것**이다.
+   ⚠ 이 파일은 바로 아래(§D)에 「글자로 노드를 찾지 않는다」를 이미 적어 놨다.
+     그런데 **찾아 «들어가는» 첫 줄은 글자로 찾고 있었다.** 같은 병을 반만 고친 자리다.
+   ⇒ 재는 뜻은 하나도 안 바꿨다. 「무엇을 보고 그 말풍선인지 아나」만 바꿨다. */
+const MARK_KO = `(el)=>((el&&(el.getAttribute('aria-label')||el.title||el.textContent))||'')`;
+const waterSnap = () => page.eval(`(()=>{ const S=window.__S(); const markKo=${MARK_KO};
   const b = S.firstPlay && S.firstPlay.beansprout;
   const wb = document.getElementById('waterCrop');
   return { day:S.day,
            started:((b&&b.pots)||[]).map(p=>p.startedOnDay),
-           mark:[...document.querySelectorAll('#marks .mark')].map(e=>e.textContent).join('|'),
+           mark:[...document.querySelectorAll('#marks .mark')].map(markKo).join('|'),
            disabled: wb.disabled, shown: wb.style.display !== 'none' }; })()`);
-const tapWaterMark = () => page.eval(`(()=>{
-  const el = [...document.querySelectorAll('#marks .mark')].find(e=>/물/.test(e.textContent||''));
+const tapWaterMark = () => page.eval(`(()=>{ const markKo=${MARK_KO};
+  const el = [...document.querySelectorAll('#marks .mark')].find(e=>/물/.test(markKo(e)));
   if (!el) return false;
   el.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true,pointerId:1,pointerType:'mouse'}));
   return true; })()`);
@@ -324,8 +335,8 @@ ok('W-2 말풍선이 떠 있어도 그 버튼은 **안 잠겨 있다**', w.disab
    99.6px 이 움직였다고 적었다 — 움직인 것은 말풍선이 아니라 **자였다**.
    ⇒ 뜻(「누르는 동안 그 말풍선이 제자리에 있나」)은 그대로다. **같은 노드**를
      `data-key` 로 붙잡아 잰다. 글자가 아니라 물건으로 찾는다. */
-const markKey = await page.eval(`(()=>{ const el=[...document.querySelectorAll('#marks .mark')]
-  .find(e=>/물/.test(e.textContent||''));
+const markKey = await page.eval(`(()=>{ const markKo=${MARK_KO};
+  const el=[...document.querySelectorAll('#marks .mark')].find(e=>/물/.test(markKo(e)));
   if (el) { el.classList.add('hintTarget'); return el.dataset.key || null; } return null; })()`);
 const markBox = () => page.eval(`(()=>{ const el=[...document.querySelectorAll('#marks .mark')]
     .find(e=>e.dataset.key === ${JSON.stringify(markKey)});
