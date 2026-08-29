@@ -12908,9 +12908,13 @@ function sowEmptyPot(id) {
 async function startPhonePlaceFurnitureBag(uid) {
   const one = carriedFurnitureOf(S, uid);
   if (!one) { banner('가방에 없습니다', '가방을 다시 확인해 주세요'); return { ok: false }; }
-  /* 세울 자리 — 방 한가운데 바닥. 곧 옮길 것이라 정확할 필요가 없다(§provisionalSpot 과 같은 판단) */
-  let at = { x: 0, z: 0, rot: 0 };
-  try { const sz = io.light.room.size; at = { x: sz.w / 2, z: sz.d / 2, rot: 0 }; } catch { }
+  /* 세울 자리 — **방 한가운데 바닥**. 곧 옮길 것이라 정확할 필요가 없다(§provisionalSpot 과 같은 판단).
+     ★★ 2026-08-30 — 여기 한동안 `{ x: sz.w/2, z: sz.d/2 }` 라고 적혀 있었다. **구석이다.**
+       방 자리는 **한가운데가 원점**이라 쓸 수 있는 값이 `|x| ≤ w/2` 다(`place.js §inRoom`).
+       그러니 `w/2` 는 한가운데가 아니라 **벽에 딱 붙은 금**이고, 검사도 경계라 그냥 지난다
+       (ε 로 봐준다). ⇒ 화면에서는 침대가 **벽을 뚫고 반쯤 나가 보였다**(oneroom_placed.png).
+     ⚠ 주석은 「한가운데」라고 말하고 값은 구석을 가리켰다 — 말과 값이 갈린 자리였다. */
+  const at = { x: 0, z: 0, rot: 0 };
   let row = null;
   try { row = placeCarriedFurniture(S, uid, at, { size: io.light.room.size }); }
   catch (e) { banner('놓지 못했습니다', (e && e.message) || ''); return { ok: false }; }
