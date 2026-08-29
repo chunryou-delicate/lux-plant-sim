@@ -42,15 +42,17 @@ const set = await page.eval(`(()=>{const S=window.__S();
   const A=${JSON.stringify(A)};
   const list=(S.pots&&S.pots.length?S.pots:(S.emptyPots||[]));
   list.slice(0,3).forEach((p,i)=>{ p.potAsset=A[i]; });
-  try{ window.__save&&window.__save(); }catch(e){}
+
   return JSON.stringify(list.slice(0,3).map(p=>({id:p.id,a:p.potAsset,slot:p.slotId})));})()`);
 console.log('  색 지정:', set);
 await sleep(600);
 
-/* ★ 여기서 다시 부른다 — 방을 «새로 조립»시켜야 swapPotMesh 가 돈다 */
+/* ★★ 2판도 못 쓰는 판이었다 — `window.__save` 가 «없어서» 아무것도 안 실렸고,
+   다시 부르니 potAsset 이 통째로 사라졌다(그물이 monstera/pot.glb 하나만 잡았다).
+   ⇒ 다시 부르지 않는다. 방을 **그 자리에서 다시 조립**시킨다 — `roomView.setRoom` 이 그 문이다. */
 got.length = 0;
-await page.goto(`${BASE}/game.html`);
-await page.waitFor('window.__byeotBooted === true', 180000, 300); await sleep(7000);
+await page.eval(`window.__rv.setRoom('banjiha')`, false);
+await sleep(7000);
 await clear();
 console.log('  ★ 다시 부른 뒤 실제로 받은 화분 GLB:', JSON.stringify([...new Set(got)]));
 console.log('  화분 상태:', await page.eval(`(()=>{const S=window.__S();
