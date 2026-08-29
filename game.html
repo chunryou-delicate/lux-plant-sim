@@ -13668,6 +13668,28 @@ function bindDrag(thumbId, what, onTap, potId = null) {
   if (!el) return;
   el.classList.add('draggable');
   let from = null;
+  /* ★★★★ 2026-08-29 — **손짓을 «창»에 건다** (박사님 나흘: *"최초의 또는 «가방의»
+     몬스테라를 «밖으로 빼는» 작업이 «안된다»"*).
+     ══════════════════════════════════════════════════════════════════
+     ★ 박사님이 갈라 주셨다 — **방에 놓인 화분은 «끌어서 잘 옮겨진다».** 안 되는 것은
+       «가방에서 밖으로 빼는» 것 하나다. ⇒ 같은 「끌기」인데 **시작점만** 다르다.
+     ⇒ ★★ 되는 쪽(방)을 보면 안 되는 쪽(가방)이 보인다 — **두 길의 짜임이 다르다:**
+```
+       방 끌기   #moveCatcher — 화면 «전체»를 덮는 판(inset:0 · z 28 · touch-action:none)
+                 ⇒ 스크롤되는 곳«밖»이고, 손가락이 어디로 가도 그 판 위다
+       가방 끌기 ⛔ 리스너가 «가방 칸» 하나에 걸려 있었다. 그 칸은 «시트 안»이고,
+                 시트는 «스크롤되는» 통이다(실측: sheetbody 514/883)
+```
+     ⚠ 그리고 `drag.begin` 은 시작하자마자 **시트를 닫는다**(§drag.begin `__byeotSheet.close`).
+       ⇒ ⛔ 그러면 그 칸이 «감춰지거나 다시 그려진다». 칸이 문서에서 빠지면
+         **포인터 잡기(setPointerCapture)가 «풀린다»** — 그 뒤로 `pointermove` 가 «안 온다».
+       ⇒ ⇒ ★ 데스크톱에서는 안 걸리고 폰에서 걸리는 꼴이다. 그래서 내 자(CDP)로는
+         **다섯 판을 재도 늘 「된다」**가 나왔다 — 자가 그걸 못 잰다(㊴).
+     ⇒ ★★★ 고침: **`pointermove`·`pointerup` 을 칸이 아니라 «창»에 건다.** 칸이 사라져도
+       손짓이 안 끊긴다. 잡기(capture)는 그대로 둔다 — 되면 좋고, 풀려도 창이 받는다.
+       ⚠ 방 끌기가 이미 그 사상이다(화면 전체 판). **새 짜임이 아니라 «되는 쪽과 같게» 한 것이다.**
+     ⛔ 그리고 이 고침은 **폰에서만 나는 갈래**를 겨눈다 — 내 자로는 「나아졌다」를 못 낸다.
+       내가 낼 수 있는 것은 「예전에 되던 것이 안 깨졌다」까지다. */
   el.addEventListener('pointerdown', (e) => {
     e.preventDefault();
     from = { x: e.clientX, y: e.clientY };
@@ -13676,17 +13698,31 @@ function bindDrag(thumbId, what, onTap, potId = null) {
              || ((el.querySelector && el.querySelector('img')) || {}).src || '';
     drag.begin(what, pic, e, potId);
     if (drag.on) { try { el.setPointerCapture(e.pointerId); } catch { } }
+    /* 이 손짓이 끝날 때까지만 창이 듣는다 — 끝나면 반드시 뗀다(안 떼면 다음 손짓이 겹친다) */
+    const off = () => {
+      removeEventListener('pointermove', onMove);
+      removeEventListener('pointerup', onUp);
+      removeEventListener('pointercancel', onCancel);
+    };
+    const onMove = (ev) => { if (ev.pointerId === e.pointerId) drag.move(ev); };
+    const onUp = (ev) => {
+      if (ev.pointerId !== e.pointerId) return;
+      off();
+      const moved = !from || Math.hypot(ev.clientX - from.x, ev.clientY - from.y) > TAP_SLOP_PX;
+      from = null;
+      suppressBagTap = Date.now();           // 뒤따라오는 click 은 이 손짓의 메아리다
+      drag.end();
+      /* 안 움직였으면 **누른 것**이다 — 끌기는 방 밖에서 끝나 아무것도 안 했다 */
+      if (!moved && typeof onTap === 'function') { try { onTap(); } catch (e2) { console.warn('[가방] 누르기', e2); } }
+    };
+    const onCancel = (ev) => {
+      if (ev.pointerId !== e.pointerId) return;
+      off(); from = null; drag.end();
+    };
+    addEventListener('pointermove', onMove);
+    addEventListener('pointerup', onUp);
+    addEventListener('pointercancel', onCancel);
   });
-  el.addEventListener('pointermove', (e) => drag.move(e));
-  el.addEventListener('pointerup', (e) => {
-    const moved = !from || Math.hypot(e.clientX - from.x, e.clientY - from.y) > TAP_SLOP_PX;
-    from = null;
-    suppressBagTap = Date.now();           // 뒤따라오는 click 은 이 손짓의 메아리다
-    drag.end();
-    /* 안 움직였으면 **누른 것**이다 — 끌기는 방 밖에서 끝나 아무것도 안 했다 */
-    if (!moved && typeof onTap === 'function') { try { onTap(); } catch (e2) { console.warn('[가방] 누르기', e2); } }
-  });
-  el.addEventListener('pointercancel', () => { from = null; drag.end(); });
 }
 /* 방금 손잡이 위에서 끝난 손짓인가 — 그 메아리(click)는 새 누름이 아니다 */
 const bagTapEcho = () => Date.now() - suppressBagTap < 700;
