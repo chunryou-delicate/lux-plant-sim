@@ -22,6 +22,7 @@
      안 넘기면 그 부분을 건너뛴다 — 건너뛴 것도 아래에 적힌다.
 ============================================================ */
 import { spawnSync } from 'node:child_process';
+import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -71,6 +72,36 @@ function dirtyShots() {
 }
 const shotsBefore = dirtyShots();
 
+/* ============================================================
+   ★★ 도는 «동안» 데이터가 바뀌면 말한다 (2026-08-29)
+   ------------------------------------------------------------
+   2026-08-29 에 내가 검사를 돌려 놓고 «그 사이에» data/house_rooms.json 을 고쳤다.
+   ⇒ ⛔ `test_floorlight` 가 붉게 나왔다. **고장이 아니라 «반쯤 고친 파일»을 읽은 것**이다.
+     다시 돌리니 9/9 초록이었다.
+   ⇒ ★★ 그런데 그 붉음은 «진짜 붉음과 똑같이» 생겼다. 까닭을 모르면
+     「원래 붉었나 보다」로 넘어가거나, 멀쩡한 것을 고치러 들어간다.
+   ⇒ ⇒ ★ 그래서 앞뒤로 데이터 파일의 «바뀐 시각»을 세어 둔다. 달라졌으면 말한다.
+   ⚠ 막지는 않는다. 다른 창이 제 파일을 고칠 수도 있고, 그건 «금지할 일»이 아니다.
+     ⇒ 다만 **모르고 지나가면 안 된다.** 그게 이 자의 몫이다.
+============================================================ */
+function dataStamp() {
+  const dir = path.join(ROOT, 'data');
+  const out = [];
+  const walk = (p) => {
+    let ents; try { ents = fs.readdirSync(p, { withFileTypes: true }); } catch { return; }
+    for (const e of ents) {
+      const f = path.join(p, e.name);
+      if (e.isDirectory()) walk(f);
+      else if (e.name.endsWith('.json')) {
+        try { out.push(f + '@' + fs.statSync(f).mtimeMs); } catch {}
+      }
+    }
+  };
+  walk(dir);
+  return out.sort().join('|');
+}
+const dataBefore = dataStamp();
+
 const rows = [];
 for (const [file, why] of CHECKS) {
   const r = spawnSync(process.execPath, [path.join(ROOT, 'tools', file)],
@@ -113,6 +144,15 @@ if (shotsBefore) {
   if (theirs.length)
     console.log('  ⚠ ' + SHOTS + ' 에 «돌기 전부터» 고쳐져 있던 것 ' + theirs.length +
                 '장은 그대로 뒀습니다 — 남의 일일 수 있습니다.');
+}
+
+/* ---- 도는 동안 데이터가 바뀌었나 (위 주석) ---- */
+if (dataStamp() !== dataBefore) {
+  console.log('');
+  console.log('  ⛔⛔ 도는 «동안» data/*.json 이 바뀌었습니다.');
+  console.log('     ⇒ ★ 위 결과를 «믿지 마십시오». 검사마다 «다른 파일»을 읽었을 수 있습니다.');
+  console.log('     ⇒ 붉은 것이 있어도 «고장이 아닐» 수 있습니다 — 고치러 들어가기 전에 다시 도십시오.');
+  console.log('     ⚠ 내가 고쳤나, 다른 창이 고쳤나부터 보십시오: git status --porcelain data/');
 }
 
 const bad = rows.filter(r => !r.ok);
