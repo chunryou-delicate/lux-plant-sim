@@ -21,17 +21,25 @@ const teachAll = (ts) => noteLearning(ts, {
   plantDli7: 3.8, plantMinDli: 3.0, spearFurled: true
 });
 
-/* ══ A · 첫 플레이 동안에는 계절도 돈도 안 움직인다 ═══════════════════════ */
-check('A 첫 플레이 중 — 날짜·돈·계절 전부 정지', () => {
+/* ══ A · 첫 플레이 동안 — **살림은 돌고 계절은 안 돈다** ══════════════════
+   ★★★ 2026-08-30 — 여기 있던 것은 「날짜·돈·계절 «전부» 정지」였다. **낡았다.**
+     2026-08-16 에 박사님이 *"살림 시계 첫날부터"* 로 정하셨다(`tutorial.js §tutorialDay`).
+     까닭은 실측이다 — 첫 플레이가 37일이라, 멈춰 두면 **첫 월세가 달력 37일에** 나갔다.
+   ⚠ 그런데 «계절»은 그때도 안 건드렸다. 첫 플레이는 「맑음·여름 고정」이 계약이라
+     그것까지 풀면 배우는 구간에 겨울이 온다.
+   ⇒ 그러니 재는 뜻은 「전부 정지」가 아니라 ★ **「둘이 «갈려» 있나」**다.
+     그 둘이 한 줄에 묶여 있던 것이 그날 사고의 «모양»이었으니, 갈린 것을 자로 지킨다. */
+check('A 첫 플레이 중 — 살림은 첫날부터 돌고 계절만 멈춰 있다', () => {
   const ts = mk();
   const before = ts.cashWon;
-  for (let i = 0; i < 20; i++) {
-    const r = tutorialDay(ts, { firstPlayDone: false });
-    assert.ok(r && r.skipped, '첫 플레이 중인데 하루가 갔습니다');
-  }
-  assert.equal(ts.day, 0, '날짜가 갔습니다');
-  assert.equal(ts.cashWon, before, '돈이 빠졌습니다');
-  assert.equal(ts.seasonRunning, false, '계절이 돌기 시작했습니다');
+  for (let i = 0; i < 20; i++) tutorialDay(ts, { firstPlayDone: false });
+  assert.equal(ts.day, 20, '살림 시계가 안 돌았습니다 — 첫 월세가 달력 한참 뒤로 밀립니다');
+  assert.ok(ts.cashWon < before, '돈이 한 톨도 안 나갔습니다');
+  assert.equal(ts.seasonRunning, false, '계절이 돌기 시작했습니다 — 배우는 구간에 겨울이 옵니다');
+  assert.equal(seasonAt(ts, ts.day), 'summer', '첫 플레이 중인데 여름이 아닙니다');
+  /* 첫 플레이가 끝나면 그때 계절이 켜진다 — 갈린 둘이 각자 제 때에 켜지나 */
+  tutorialDay(ts, { firstPlayDone: true });
+  assert.equal(ts.seasonRunning, true, '첫 플레이가 끝났는데 계절이 안 돕니다');
 });
 
 /* ══ B · 계절 — 여름 45일차에서 시작해 45일 뒤 가을 ═══════════════════════ */
