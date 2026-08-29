@@ -190,6 +190,16 @@ function packPot(p, i) {
     id: needStr(p.id, `${path}.id`),
     slotId: optStr(p.slotId, `${path}.slotId`),
     at: packAt(p.at, `${path}.at`),
+    /* ★★★ 2026-08-30 — **「아직 안 놓았다」(가방)는 «상태»다. 안 적으면 새로고침에 사라진다.**
+       ══════════════════════════════════════════════════════════════════
+       ⛔ 이 칸이 없어서 **가방에 있던 그루가 새로 켜면 방에 섰다.**
+         `game.html §fillSlots` 가 「자리가 없으면 첫 자리로 되돌린다」를 하는데, 그 줄은
+         `placedOnce === false` 일 때만 비켜선다. 세이브에 안 실리니 열 때마다 `undefined` 라
+         **비켜설 근거가 사라진다.** ⇒ 박사님이 2026-08-17 에 보신
+         *"몬스테라 주는 거 인벤으로 안 들어오고 또 바로 설치되는데?"* 가 **새로고침으로 되돌아온다.**
+       ★ `false` 일 때만 적는다 — `true`/없음은 「놓았다」로 읽히므로 옛 세이브와 한 바이트도 안 달라진다.
+       ⚠ 「가방」의 정본은 이 칸 하나다(state §rehomePot · game.html §bagPots). 두 벌로 만들지 말 것. */
+    ...(p.placedOnce === false ? { placedOnce: false } : {}),
     plantId: optStr(p.plantId, `${path}.plantId`),
     potAsset: optStr(p.potAsset, `${path}.potAsset`),
     variegated: !!p.variegated,
