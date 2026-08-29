@@ -269,10 +269,10 @@ hr.rule{border:none; border-top:1px solid var(--line); margin:44px 0}
 </header>
 
 <nav class="strip">
-  <a href="#gaps" class="gap"><div class="n">9</div><div class="l">박사님 결정을 기다리는 것</div></a>
+  <a href="#gaps" class="gap"><div class="n">10</div><div class="l">박사님 결정을 기다리는 것</div></a>
   <a href="#ready" class="warn"><div class="n">6</div><div class="l">값이 안 걸려 바로 할 수 있는 것</div></a>
   <a href="#unused" class="idle"><div class="n">58<small style="font-size:16px">%</small></div><div class="l">만들었는데 게임이 안 여는 잎</div></a>
-  <a href="#closed" class="ok"><div class="n">5</div><div class="l">오늘 닫힌 것</div></a>
+  <a href="#closed" class="ok"><div class="n">8</div><div class="l">오늘 닫힌 것</div></a>
 </nav>
 
 <!-- ══════════ 판 ══════════ -->
@@ -583,6 +583,46 @@ graph LR
     <b>도구에서 본 무늬가 게임에 안 나올 수 있다.</b>
   </p>
 
+  <h3>준 것이 보이지 않는다</h3>
+  <p>오늘 화면에 투영해 재서 나왔다. <strong>등급을 정하려다 그보다 앞선 것이 드러났다.</strong></p>
+  <div class="tw">
+    <table>
+      <thead><tr><th>무엇</th><th class="num">잎 수</th><th class="num">멀리서</th><th class="num">당겨서</th></tr></thead>
+      <tbody>
+        <tr><td><b>45일 그루</b> — 첫 플레이 내내</td><td class="num">1</td><td class="num" style="color:var(--gap)"><b>3 × 3</b></td><td class="num">83 × 92</td></tr>
+        <tr><td>200일 그루 (성숙잎)</td><td class="num">4</td><td class="num">14 × 15</td><td class="num">262 × 273</td></tr>
+        <tr><td>400일 그루 (성숙잎)</td><td class="num">5</td><td class="num">14 × 14</td><td class="num">277 × 283</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="claim gap">
+    첫 플레이의 보상이 <b>3 × 3 픽셀</b>이다.
+    <small>주기로 한 것은 「둘째·셋째 잎에 무늬가 <b>확정</b>으로 든다」인데,
+    그 잎이 3px이라 <b>무늬가 통째로 죽는다.</b> 「축복」이 안 보인다.</small>
+  </div>
+
+  <h4>그래서 눈으로 세어 본 「몇 갈래가 갈리나」</h4>
+<pre class="calc"><code>  3 px  (45일 그루 · 멀리서)   ⇒ 약 10  — 무늬가 죽고 색만 남는다
+ 14 px  (성숙잎 · 멀리서)      ⇒ 약 16
+262 px  (성숙잎 · 당겨서)      ⇒ 거의 36 전부
+
+  ⚠ [leaf]의 눈으로 센 것. 셈으로는 못 쟀다 —
+    자를 둘 대 봤는데 12px에서도 「36갈래가 다 갈린다」고 말한다
+  ⚠ 그리고 36을 늘어놓고 본 값이다. 게임에서는 한 장만 본다 ⇒ 실제로는 덜 갈린다</code></pre>
+
+  <div class="claim">
+    작아지면 <b>무늬</b>가 먼저 죽고 <b>색</b>이 남는다.
+    <small>그래서 <b>무늬는 「등급」(값)이고 색은 「품종」(정체)</b>이다.
+    방에 놓고 멀리서 볼 때는 색이 「저건 다른 애다」를 말하고,
+    가까이 볼 때 무늬가 「이건 하프문이다」를 말한다.</small>
+  </div>
+
+  <p>⇒ 같은 문제에 길이 셋이다:
+     <b>㉠</b> 무늬 드는 날 화면을 당긴다 ·
+     <b>㉡</b> 그 뒤에도 당겨 볼 수 있게 한다 <span class="chip c-ok">이미 있다 — [자세히]</span> ·
+     <b>㉢</b> 축복받은 잎을 색으로도 갈리게 그린다 <span class="chip c-warn">당기기 없이 풀린다</span></p>
+
   <h3>돌긴 도는데 안 재 본 것</h3>
   <div class="gaps">
     <div class="g"><div class="sev"></div><div>
@@ -810,6 +850,13 @@ graph LR
       <div class="d">625,000(껍데기) 대 1,250,000(무늬 한 장).</div>
       <div class="who">코어 · 기획</div>
     </div></div>
+    <div class="row"><div class="k">⓪</div><div>
+      <div class="t">첫 플레이의 보상이 3px이다 — 어떻게 보이게 할까</div>
+      <div class="d"><b>㉠</b> 무늬 드는 날 화면을 당긴다 (붙일 자리는 이미 있다) ·
+        <b>㉡</b> 그 뒤에도 당겨 볼 수 있게 — <span class="chip c-ok">이미 있다</span> ·
+        <b>㉢</b> 축복받은 잎을 <b>색</b>으로도 갈리게 그린다 — 당기기 없이 풀린다</div>
+      <div class="who">코어 · 잎</div>
+    </div></div>
     <div class="row"><div class="k">④</div><div>
       <div class="t">조명을 민트로 둘까, 버터크림으로 되돌릴까</div>
       <div class="d">전제가 반쪽이었다 — 목록은 조명을 <b>애초에 다른 색 짝</b>으로 적어 두었다.
@@ -894,7 +941,40 @@ graph LR
       <div class="d">앞 반쪽 「행동 안 해도」는 아침에, 뒤 반쪽 「살아있게」는 저녁에 닫혔다.
         못 <em>뜬</em> 쪽지가 새로고침해도 기다린다.</div>
     </div></div>
+    <div class="g i"><div class="sev" style="background:var(--ok)"></div><div>
+      <div class="t">새순이 설 때 화면이 당겨졌다 돌아온다</div>
+      <div class="d">19×31 → <b>285×511</b>, 15배. 그림은 한 톨도 안 건드렸다 —
+        「색을 진하게」는 재 보니 <em>×3~5라야 보여</em> 그림이 망가진다.
+        그 창구는 이 저장소가 <b>한 번도 안 쓰던 것</b>이라 되돌아가는 손짓이 없었다. 그것부터 만들었다.</div>
+    </div></div>
+    <div class="g i"><div class="sev" style="background:var(--ok)"></div><div>
+      <div class="t">「창턱」을 처음으로 가르친다 <span class="chip c-ok">오늘 제일 큰 것</span></div>
+      <div class="d">가방에서 <em>처음 놓는 것</em>이 <em>옮겼다</em>로 세어져,
+        「창턱. 이 방에서 해가 제일 오래 드는 자리야」가 <b>영영 안 떴다.</b>
+        대신 5일 뒤 「<em>옮겼는데도</em> 안 나네 — 등」이 먼저 났다 —
+        <b>그 사람은 옮긴 적이 없는데.</b></div>
+    </div></div>
+    <div class="g i"><div class="sev" style="background:var(--ok)"></div><div>
+      <div class="t">그리고 유도 차례가 「구조」로 섰다</div>
+      <div class="d">고친 것은 일수가 아니라 <b>임자</b>다 — 자리 유도는 「아직 안 배웠으면」,
+        등 유도는 「배웠고 · 따라 옮겼고 · 그래도 안 자라면」.
+        <em>일수를 어떻게 정하든 순서가 안 뒤집힌다.</em></div>
+    </div></div>
   </div>
+
+  <div class="claim">
+    자리를 제대로 찾으면 등 얘기가 아예 안 나온다.
+    <small>창턱으로 옮기면 식물이 자라고 <b>유도가 끝난다.</b>
+    「등보다 자리」가 말이 아니라 <b>판</b>으로 섰다 —
+    그 계율이 게임 안에서 스스로 증명된 첫 자리다.</small>
+  </div>
+
+  <h4>그리고 오늘 같은 병이 둘이었다</h4>
+<pre class="calc"><code>어제  「놓였습니다」    ⇐ 안 놓았는데 놓았다 함  ⇒ 사람이 방에서 찾는다
+오늘  「옮겼는데도」    ⇐ 안 옮겼는데 옮겼다 함  ⇒ 사람이 등을 산다
+
+  ⇒ 판이 사람의 「한 일」을 잘못 적으면, 그 뒤 모든 말이 거짓이 된다
+  ⇒ 둘 다 문안이 아니라 「기억」이 틀렸다 — 그래서 문안을 고쳐도 안 나았다</code></pre>
 
   <div class="claim">
     읽어서 낸 <b>수</b>는 대개 죽고, 읽어서 낸 <b>뜻</b>은 죽거나 받쳐진다.
@@ -924,10 +1004,7 @@ graph LR
   mermaid.initialize({
     startOnLoad: true,
     theme: dark ? 'dark' : 'neutral',
-    themeVariables: {
-      fontFamily: '"IBM Plex Sans KR", system-ui, sans-serif',
-      fontSize: '14px'
-    },
+    themeVariables: { fontFamily: '"IBM Plex Sans KR", system-ui, sans-serif', fontSize: '14px' },
     flowchart: { curve: 'basis', padding: 14 }
   });
 </script>
