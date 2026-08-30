@@ -39,8 +39,13 @@ console.log('■ 선물을 가방으로 —', await page.eval(`(async()=>{
     window.__redraw();
     return JSON.stringify({ 화분:(S.pots||[]).map(p=>({ id:p.id, 자리:p.slotId, 좌표:!!p.at, 놓은적:p.placedOnce })) });
   } catch(e){ return JSON.stringify({ 탈:e.message }); } })()`, true, 30000));
-await page.eval(`(()=>{ try{ window.__byeotSheet.open('bag'); }catch(e){} window.__redraw(); })()`, false);
-await sleep(1500);
+/* ★★ **선물이 «다른 탭»에서 도착한 판을 그대로 만든다** (총괄 Day 11: [상점] 탭에서 왔다).
+   ⇒ 그때 가방 칸은 크기가 0 이라 손잡이가 안 걸렸다. 그 뒤 [가방]으로 옮겨도
+     격자 글이 같으면 다시 안 그리므로 «영영» 안 걸린다. 그 자리를 그대로 세운다. */
+await page.eval(`(()=>{ try{ window.__byeotSheet.open('shop'); }catch(e){} window.__redraw(); })()`, false);
+await sleep(1200);
+await page.eval(`(()=>{ const b=document.getElementById('tabBag'); if(b) b.click(); })()`, false);
+await sleep(1200);
 await clearDlg();
 await sleep(600);
 const cellInfo = () => page.eval(`(()=>{ const b=document.querySelector('#bagGrid [data-potbag]');
@@ -140,9 +145,16 @@ Object.assign(cell, JSON.parse(await cellInfo()) || cell);
 console.log('■ 다시 잰 칸 —', JSON.stringify(cell));
 /* ★ 손가락을 따라오다 그루가 «이미 놓였으면» 가방으로 돌려놓고 잰다.
    ⚠ 자만의 손질이다. 판을 Day 11 의 그 자리(그루가 가방에 있다)로 맞추는 것뿐이다. */
+/* ⚠⚠ **되돌리는 다시 그리기를 «가방이 안 보일 때» 한다.**
+   총괄이 겪은 자리가 그것이다 — 선물이 [상점] 탭에서 도착했다. 가방이 보이는 채로 되돌리면
+   그 순간 손잡이가 다시 걸려서 «자가 거짓으로 초록»이 된다(내가 그 판에 한 번 속았다). */
+await page.eval(`(()=>{ try{ window.__byeotSheet.open('shop'); }catch(e){} })()`, false);
+await sleep(600);
 await page.eval(`(()=>{ const S=window.__S(); const p=(S.pots||[])[0];
-  if (p && (p.slotId || p.at)) { p.slotId=null; p.at=null; p.placedOnce=false; window.__redraw(); }
-})()`, false);
+  if (p && (p.slotId || p.at)) { p.slotId=null; p.at=null; p.placedOnce=false; }
+  window.__redraw(); })()`, false);
+await sleep(1000);
+await page.eval(`(()=>{ const b=document.getElementById('tabBag'); if(b) b.click(); })()`, false);
 await sleep(1200);
 Object.assign(cell, JSON.parse(await cellInfo()) || cell);
 console.log('■ 되돌린 뒤 칸 —', JSON.stringify(cell));

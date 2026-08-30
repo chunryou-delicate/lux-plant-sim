@@ -14759,7 +14759,19 @@ function bindDrag(thumbId, what, onTap, potId = null) {
     const r = n.getBoundingClientRect();
     return r.width > 0 && r.height > 0;
   };
-  if (!usable(el)) el = document.querySelector(`.bagslot[data-place="${what}"]`);
+  /* ★★★★ 2026-08-30 — **요소를 «그대로» 넘긴 것은 크기를 안 묻는다.**
+     ══════════════════════════════════════════════════════════════════
+     ⛔ 아래 `usable` 갈래는 «id 로 찾은» 것을 위한 것이다(감춘 큰 카드가 `$()` 에 잡히던 그 일).
+       그런데 가방의 그루 칸은 **요소째** 넘어온다 — 그리고 `drawBag` 은 **다른 탭이 열려 있을 때도**
+       돈다. 그때 그 칸은 «크기가 0» 이라 여기서 `usable` 이 거짓이 되고,
+       `.bagslot[data-place="monstera"]` 는 **없으므로** `el` 이 null 이 되어 ⇒ ★ **손잡이가 안 걸린다.**
+     ⇒ ⇒ ★★ 그리고 탭을 바꿔도 격자 글이 같으면 **다시 안 그린다** — 그래서 «영영» 안 걸린다.
+       실측(총괄 · Day 11 · 1770×1188): 선물이 [상점] 탭에서 도착했다 ⇒ 그 순간 칸이 안 보였다
+       ⇒ [가방]으로 옮겨 다섯 번을 눌러도 아무 일이 없었다. 칸은 있는데 **손잡이가 없었다.**
+     ★ 요소를 그대로 받은 것은 **그 요소가 임자다.** 지금 보이나 마나는 나중 일이다.
+     ⚠ id 로 찾은 길은 예전 그대로 둔다 — 그쪽은 「살아 있지만 못 쓰는 것」을 가려야 한다. */
+  const givenNode = !!(thumbId && thumbId.nodeType === 1);
+  if (!givenNode && !usable(el)) el = document.querySelector(`.bagslot[data-place="${what}"]`);
   if (!el) return;
   el.classList.add('draggable');
   let from = null;
