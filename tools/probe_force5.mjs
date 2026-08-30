@@ -231,6 +231,38 @@ for (let i = 0; i < 60 * GOAL; i++) {
   }
   await tapPoint(f.x, f.y);
   if (deep) {
+    /* ★★★ **누름이 안 먹으면 «끌어» 본다** — 박사님 낱말이 「«끌어놓는» 거」였다.
+       ⚠ 총괄 자는 누르기만 낸다(합성 손짓으로 끌기를 못 낸다). 끌기는 여기서만 잰다.
+       ⚠ 그리고 이건 «걸어서» 온 판이다 — 세운 판이 아니다(총괄 청). */
+    const stillBag = await page.eval(`(()=>{ const S=window.__S(); const p=(S.pots||[])[0];
+      return String(!!(p && !p.slotId && !p.at)); })()`);
+    if (stillBag === 'true') {
+      const at = JSON.parse(await page.eval(`(()=>{ const b=document.querySelector('#bagGrid [data-potbag]');
+        const c=document.getElementById('roomCanvas');
+        if(!b||!c) return 'null';
+        const r=b.getBoundingClientRect(), rc=c.getBoundingClientRect();
+        return JSON.stringify({ x:Math.round(r.left+r.width/2), y:Math.round(r.top+r.height/2),
+          rx:Math.round(rc.left+rc.width*0.5), ry:Math.round(rc.top+rc.height*0.72) }); })()`));
+      if (at) {
+        const mm = (type, x, y, buttons) => page.send('Input.dispatchMouseEvent',
+          { type, x: Math.round(x), y: Math.round(y), button: 'left', buttons, clickCount: 1 });
+        await mm('mouseMoved', at.x, at.y, 0);
+        await mm('mousePressed', at.x, at.y, 1);
+        for (let k = 1; k <= 10; k++) {
+          await mm('mouseMoved', at.x + (at.rx - at.x) * k / 10, at.y + (at.ry - at.y) * k / 10, 1);
+          await sleep(45);
+        }
+        await sleep(200);
+        await mm('mouseReleased', at.rx, at.ry, 0);
+        await sleep(1600);
+        log.push('     ↳ ★★ «끌어» 봤다 — ' + await page.eval(`(()=>{ const S=window.__S();
+          return JSON.stringify({ 화분:(S.pots||[]).map(p=>({ 자리:p.slotId, 좌표:!!p.at, 놓은적:p.placedOnce })),
+            확인바:(()=>{ const b=document.getElementById('placeOk');
+              if(!b) return false; const r=b.getBoundingClientRect(); return r.width>0&&r.height>0; })(),
+            아래글:(document.getElementById('dropLabel').textContent||'').trim().slice(0,26),
+            배너:(()=>{ const b=document.getElementById('event'); return b?((b.textContent||'').trim().slice(0,40)):null; })() }); })()`));
+      } else log.push('     ↳ ⚠ 끌 칸을 못 찾았다');
+    }
     log.push('     ↳ ★ 손짓이 간 곳 — ' + await page.eval(`(()=>{
       const S=window.__S();
       return JSON.stringify({ 받은것:(window.__ev||[]),

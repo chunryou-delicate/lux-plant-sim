@@ -159,6 +159,23 @@ await sleep(1200);
 Object.assign(cell, JSON.parse(await cellInfo()) || cell);
 console.log('■ 되돌린 뒤 칸 —', JSON.stringify(cell));
 console.log('');
+console.log('=== ⓪ ★ «도구가 부르는» 누름 (el.click()) — 총괄 자가 쓰는 그 길 ===');
+await watch();
+await page.eval(`(()=>{ const b=document.querySelector('#bagGrid [data-potbag]'); if(b) b.click(); })()`, false);
+await sleep(1400);
+console.log(' ', await state('DOM 누름'));
+/* 되돌린다 — 다음 걸음을 같은 자리에서 재려고 */
+await page.eval(`(()=>{ try{ window.__byeotSheet.open('shop'); }catch(e){} })()`, false);
+await sleep(500);
+await page.eval(`(()=>{ const S=window.__S(); const p=(S.pots||[])[0];
+  if (p) { p.slotId=null; p.at=null; p.placedOnce=false; }
+  try { if (window.__placeCancel) window.__placeCancel(); } catch(e){}
+  window.__redraw(); })()`, false);
+await sleep(900);
+await page.eval(`(()=>{ const b=document.getElementById('tabBag'); if(b) b.click(); })()`, false);
+await sleep(1000);
+Object.assign(cell, JSON.parse(await cellInfo()) || cell);
+console.log('');
 console.log('=== ① «누름» (덮개 그대로) ===');
 await watch(); await tap();
 console.log(' ', await state('누름'));
