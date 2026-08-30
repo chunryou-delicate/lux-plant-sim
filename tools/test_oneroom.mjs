@@ -134,7 +134,16 @@ check('C 이사 — S.home.room 이 oneroom 이 되고 자리가 비워진다', 
   assert.equal(stageOf(S), STAGES.oneroom);
 });
 
-check('C-2 이사 — 조도 창을 주면 새 방으로 조립하고 자리를 회수한다', () => {
+/* ★★★★ 2026-08-30 — **뜻이 바뀌어 이 자도 바뀐다** (박사님 「응 그렇게 해」 · [Plan] (c)).
+   ══════════════════════════════════════════════════════════════════
+   여기 있던 것은 「화분이 새 방 «자리»로 옮겨진다」였다. 그 규칙대로 돌리면 실측에서
+   원룸 `oneroom-nightstand:0` 에 앉았다 — ★ 열다섯 중 열다섯째, DLI **0.00** 이다.
+   사람이 아무것도 안 했는데 그루가 죽는 자리에 선다(probe_carrypot).
+   ⇒ 새 뜻: **그루는 «가방»으로 간다. 놓는 것은 사람 손이다.**
+     이사가 「처음을 다시 하는 일」이 된다 — 받아들이고 · 놓고 · 옮긴다.
+   ⚠ 「가방에 있다」의 정본은 셋이다: 자리 없음 · 좌표 없음 · `placedOnce === false`.
+   ⚠ 삽수·작물은 **예전 그대로 회수**다 — 그쪽은 가방 칸이 없어서 안 앉히면 떠 있게 된다. */
+check('C-2 이사 — 조도 창을 주면 새 방을 짓고, 그루는 «가방»으로 간다', () => {
   const S = readyToMove();
   S.pots.push({ id: 'pot_01', plantId: 'monstera_deliciosa',
                 slotId: 'banjiha-sill:0', at: { x: 0, y: 1.585, z: -1.95 }, variegated: false });
@@ -142,8 +151,10 @@ check('C-2 이사 — 조도 창을 주면 새 방으로 조립하고 자리를 
   const r = moveIntoOneroom(S, { light });
   assert.equal(r.roomBuilt, true, '조도 창을 줬는데 방을 안 지었습니다');
   assert.deepEqual(light.builtRooms, [ONEROOM_ROOM_ID]);
-  assert.equal(S.pots[0].slotId, 'oneroom-shelf:0', '★ 화분이 새 방 자리로 안 옮겨졌습니다');
-  assert.ok(r.rehomed.length > 0, '회수 기록이 없습니다');
+  assert.equal(S.pots[0].slotId, null, '★ 그루가 새 방 자리에 앉았습니다 — 가방으로 가야 합니다');
+  assert.equal(S.pots[0].at, null, '★ 그루가 좌표를 들고 있습니다');
+  assert.equal(S.pots[0].placedOnce, false,
+    '★ 「아직 안 놓았다」가 안 세워졌습니다 — 그러면 다음 회수가 도로 앉힙니다');
 });
 
 check('C-3 이사 — 조건을 못 채우면 던지고 **방도 안 바뀐다**', () => {

@@ -286,7 +286,18 @@ export function moveIntoOneroom(S, io = {}, opt = {}) {
    (propagation.rehomeCuttings 머리말과 같은 판단). */
 function clearPlacements(S) {
   const out = { pots: 0, cuttings: 0, crops: 0 };
-  for (const p of S.pots || []) { p.at = null; p.slotId = null; out.pots++; }
+  /* ★★★★ 2026-08-30 — **그루는 «가방»으로 간다** (박사님 「응 그렇게 해」 · [Plan] (c)).
+     ══════════════════════════════════════════════════════════════════
+     ⚠ 예전에는 자리만 뗐다. 그러면 바로 아래 §④ 의 `rehomePot` 이 「자리를 잃은 화분」으로 보고
+       **새 방의 «첫 자리»에 앉혔다.** 실측: 원룸 `oneroom-nightstand:0` — ★ 열다섯 중 «열다섯째»,
+       DLI **0.00** 이다(probe_carrypot). 사람이 아무것도 안 했는데 그루가 죽는 자리에 선다.
+     ★ 그래서 「아직 안 놓았다」로 «세워» 둔다 — 그러면 `rehomePot` 이 비켜서고 가방 칸이 뜬다.
+       ⇒ 이사가 「처음을 다시 하는 일」이 된다: 받아들이고 · 놓고 · 옮긴다([Plan]).
+     ⚠ 「가방에 있다」의 정본은 이 셋이다 — 자리 없음 · 좌표 없음 · `placedOnce === false`
+       (state §rehomePot · game.html §bagPots). 새 칸을 만들지 않는다.
+     ⚠ 삽수·작물은 **안 건드린다.** 그쪽은 제 회수 규칙이 따로 있고(rehomeCuttings·reseatCrops)
+       가방 칸도 없다 — 여기서 같이 「안 놓았다」로 만들면 갈 데 없이 떠 있게 된다. */
+  for (const p of S.pots || []) { p.at = null; p.slotId = null; p.placedOnce = false; out.pots++; }
   for (const c of S.cuttings || []) { c.at = null; c.slotId = null; out.cuttings++; }
   const fp = S.firstPlay;
   /* ★★ 2026-08-09 — 자리의 정본이 **시루마다**로 내려왔다(first_play §자리는 시루마다 따로다).
