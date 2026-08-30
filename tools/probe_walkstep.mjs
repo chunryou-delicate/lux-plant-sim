@@ -174,6 +174,20 @@ for (let step = 1; step <= 8; step++) {
   await sleep(1200);
   await row(`걸음 ${step} (${hadMark ? '말풍선' : '다음 날'})`);
 }
+/* ★★ 총괄 ②(ㄱ)·④ 확인 — 「대사 중에는 안 짚고 · 걷히면 «저절로» 돌아온다」 */
+console.log('');
+console.log('=== ★ 대사 중 ⇄ 걷힌 뒤 (아무것도 안 누르고 기다린다) ===');
+{
+  const st = async () => JSON.parse(await page.eval(`(()=>{ const h=document.getElementById('hint');
+    const t=document.querySelector('.hintTarget'); const d=document.getElementById('hintDim');
+    return JSON.stringify({ talking: document.getElementById('stage').classList.contains('talking'),
+      손가락: !!(h && h.classList.contains('on')), 짚는것: t ? (t.id||t.className.split(' ')[0]) : null,
+      '빛나는 테': !!t, 덮개: !!(d && d.classList.contains('on')) }); })()`));
+  console.log('  · 대사 중 —', JSON.stringify(await st()));
+  await tapEl('#dlgSkip');
+  await sleep(1100);          /* ⚠ 아무것도 안 누르고 기다린다 — 지킴이가 세워야 한다 */
+  console.log('  · 걷은 뒤 1.1초 —', JSON.stringify(await st()));
+}
 console.log('');
 console.log('■ 사람을 누른 적 —', await page.eval(`(()=>{ const S=window.__S();
   return JSON.stringify({ '캐릭터 고름': !!(window.__rv && window.__rv.selectedCharacter

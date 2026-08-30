@@ -3677,6 +3677,23 @@ function hintFollowLoop(on) {
     if (hintTick != null) return;
     const tick = () => {
       hintTick = requestAnimationFrame(tick);
+      /* ★★★★ 2026-08-30 — **대사·확대 중에는 손가락을 «건는다»** (총괄 (ㄱ) 확정).
+         ══════════════════════════════════════════════════════════════════
+         ⛔ 났던 일 — 대사가 뜨면 `#stage.talking` 이 [다음 날]·[물 주기] 넷을 **흐리게 하고
+           안 눌리게** 한다(그 규칙은 「대사를 넘기려다 하루가 지나가지 않는다」를 지킨다).
+           그런데 **이 고리는 그 사실을 안 봤다** — 매 프레임 `placeHintAt` 만 다시 불러
+           손가락이 [다음 날]을 계속 짚고 있었다. ⇒ ★ 「눌러라」 해 놓고 «못 누르게» 한다.
+         ⚠⚠ 그리고 `updateHint` 는 그 갈래를 갖고 있는데도 안 돌았다 — 반 초 지킴이가
+           「이미 따라다니는 중」이면 비켜서기 때문이다(§HINT_WATCH_MS). 두 자리가 서로를 믿었다.
+         ⇒ ★ 여기서 **끝낸다**(`hintAt(null)`). 그러면 고리도 멎고, 대사가 걷히면
+           지킴이가 반 초 안에 다시 세운다 — 박사님 「대사 끝나고 손가락이 나타나야지」.
+         ⚠ 「무엇이 막는 중인가」를 여기서 세지 않는다 — 무대가 이미 안다(§stageBusy 와 같은 자). */
+      {
+        const st = $('stage');
+        if (st && (st.classList.contains('talking') || st.classList.contains('zoom'))) {
+          hintAt(null); return;
+        }
+      }
       /* ⚠⚠ 2026-08-16 §E-2 — **가리키던 것이 사라지면 손가락도 꺼야 한다.**
          여기 있던 것은 `return` 한 줄이었다. 그러면 고리는 계속 도는데 아무것도 안 하고,
          손가락은 **옛 자리에 그대로 켜진 채** 남는다. 다시 그리는 계기가 없으면 영영이다.
@@ -3727,7 +3744,13 @@ function hintFollowLoop(on) {
       }
       /* ★ 2026-08-30 — 손가락을 감출 때 **덮개도 같이 걷는다.** 손가락은 없는데 덮개만
          남으면 화면이 까닭 없이 어둡다 — 실측에서 그랬다(probe_hintdim ④). */
-      if (shOpen && !sh.contains(hintFollow.el)) { if (h2) h2.classList.remove('on'); dimOff(); return; }
+      if (shOpen && !sh.contains(hintFollow.el)) {
+        /* ★ 2026-08-30 — **빛나는 테도 같이 걷는다.** 손가락만 감추고 테를 두면
+           「가리키는 것은 없는데 무언가 빛나는」 화면이 된다(총괄이 짚은 그 자리). */
+        if (h2) h2.classList.remove('on');
+        if (hintTargetEl) { hintTargetEl.classList.remove('hintTarget'); }
+        dimOff(); return;
+      }
       /* ⚠ 다시 **놓기만** 한다. `hintAt` 을 통째로 다시 부르면 대상 표시(`hintTarget`)를
          뗐다 붙였다 하며 깜빡인다. */
       placeHintAt(hintFollow.el, hintFollow.say);
