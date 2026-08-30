@@ -544,6 +544,19 @@ export function createGrowthAdapter(iframe) {
       return per;
     },
 
+    /* ★★★ 2026-08-30 [growth] — **엔진이 빛을 «몇 칸» 받았나**(누적 · 읽기 전용).
+       ══════════════════════════════════════════════════════════════════
+       왜 필요한가 — `desync` 가 나면 **엔진만 한 칸 앞선다.** 코어 이력에는 그날이 안 쌓이는데
+       (`loop.js:808` 의 push 가 성공 경로에만 있다) 엔진은 `setDailyLight` 을 이미 받았다.
+       ⇒ 그 어긋남은 **코어 쪽 수로는 안 보인다** — `dliHist` 와 `fedDays` 는 같이 늘어 늘 맞는다
+         (재서 확인했다 · `tools/probe_desync.mjs` ②).
+       ⇒ ⇒ 그래서 「엔진이 몇 칸 받았나」를 엔진에 «묻는다». 갈리면 그 차만큼 굴림이 달라진다.
+       ⚠ `dliHistory().length` 로는 못 센다 — 그쪽은 14칸에서 잘린다(DLI_KEEP).
+       ⚠ **세이브에 안 싣는다.** 「지금 갈렸나」를 보는 값이지 복원의 입력이 아니다 —
+         복원의 입력은 `S.dliHist` 하나다(save.js §75). 두 벌로 만들면 그날 갈린다.
+       ⚠ 옛 엔진에는 없다 ⇒ `null`. **0 으로 메꾸지 않는다** — 「안 받았다」와 「못 물었다」는 다르다. */
+    dliFedCount() { const f = fn('dliFedCount'); return f ? f() : null; },
+
     /* 표시·대조 전용(판정에 안 쓴다) — 없으면 화면에 '—' 로 두면 되므로 던지지 않는다. */
     dli7()   { const f = fn('dli7');   return f ? f() : null; },
     dliCV()  { const f = fn('dliCV');  return f ? f() : null; },
