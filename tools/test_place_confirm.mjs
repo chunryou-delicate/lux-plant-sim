@@ -71,9 +71,20 @@ const snap = () => page.eval(`(()=>{ const S=window.__S(); const b=S.firstPlay.b
 console.log('\n══ ① [빨리감기]가 없다 — 하루를 넘기는 손은 하나다 ═══════════════');
 const bar = await page.eval(`[...document.querySelectorAll('.actionbar button')].map(b=>b.id)`);
 ok('①-1 [빨리감기] 버튼이 아예 없다', await page.eval(`!document.getElementById('ff')`), JSON.stringify(bar));
-ok('①-2 하단 액션바에 [다음 날]이 남아 있다', bar.includes('next'), JSON.stringify(bar));
+/* ★★ 2026-08-30 — **[다음 날]은 더 이상 «하단 띠»에 없다.** 2026-08-17 에 박사님이
+   *"[다음 날] 버튼은 «우측 하단»으로 … 화면 앞으로 아이콘 형태로"* 하셔서 `#stage` 안으로 갔다.
+   ⇒ 그러니 「띠에 남아 있나」는 낡은 물음이다. 재는 «뜻»은 그대로다 —
+     **하루를 넘기는 손이 «하나»뿐인가.** 어디에 서 있든 그것이 지켜지면 된다. */
+/* ⚠ 글자로 세지 않는다 — 「다음 날」이라는 말은 «밥상 단추»에도 들어 있다(`mealGo`:
+     「이 몫으로 «다음 날»까지」). 그걸 세면 늘 둘이라 이 자가 헛울음을 운다.
+   ⇒ **하루를 넘기는 손은 id 로 센다** — `next`(지금) · `ff`(없앤 빨리감기). */
+const nextBtns = await page.eval(`[...document.querySelectorAll('button')]
+  .filter(b => b.id === 'next' || b.id === 'ff').map(b => b.id)`);
+ok('①-2 [다음 날]이 화면에 있다 (띠가 아니라 방 모서리)',
+   await page.eval(`(()=>{ const b=document.getElementById('next');
+     return !!(b && b.offsetParent !== null); })()`), JSON.stringify(nextBtns));
 ok('①-3 날짜를 넘기는 버튼이 **하나뿐**이다',
-   bar.filter(id => id === 'next' || id === 'ff').length === 1, JSON.stringify(bar));
+   nextBtns.length === 1, JSON.stringify(nextBtns));
 /* 안내판(가이드)도 없어진 버튼을 가리키면 안 된다 — 죽은 손가락은 고장으로 읽힌다 */
 ok('①-4 안내판이 없어진 버튼을 안 가리킨다',
    await page.eval(`!/빨리감기|감습니다/.test(document.getElementById('guide').textContent||'')`));
@@ -99,9 +110,17 @@ ok('②-2 ★가방 격자의 시루 칸을 **누를 수 있다** (예전 [📍 
    await tapSiruCell() === true);
 await sleep(1600); await clear();
 s = await snap();
-ok('②-3 ★누르면 방에 **임시로 서고 곧바로 이동 상태**가 된다 (배치 확정이 아니다)',
-   s.placed === 1 && s.moving === true, JSON.stringify({ placed: s.placed, moving: s.moving }));
-ok('②-4 그때는 아직 [확인]이 안 떠 있다', s.confirming === false);
+/* ★★★ 2026-08-30 — **모드가 하나 줄었다.** 예전에는 「누르면 임시로 서고 «이동 상태»」였고
+   [확인]은 손을 뗄 때 떴다. 그런데 누르기는 «끌기를 안 지나가므로» 그 손이 영영 안 오고,
+   사람은 격자 위에서 멈췄다(game.html §startPhonePlace 의 그 주석).
+   ⇒ 지금은 **놓자마자 `confirming`** 이다 — [확인]·[다시 옮기기]·[취소]가 그 자리에 뜬다.
+     자리를 바꾸려면 [다시 옮기기]가 예전의 `beginMove()` 를 그대로 부른다. 길은 안 없앴다.
+   ⇒ ★ 그래서 재는 뜻을 바꿔 적는다: 「임시로 서되 **아직 확정이 아니다**」. */
+ok('②-3 ★누르면 방에 **임시로 서고 곧바로 되묻는다** (배치 확정이 아니다)',
+   s.placed === 1 && s.confirming === true,
+   JSON.stringify({ placed: s.placed, confirming: s.confirming, moving: s.moving }));
+ok('②-4 그때 [확인]이 «그 자리에» 떠 있다 — 손을 뗄 때까지 기다리지 않는다',
+   s.barVisible === true, JSON.stringify({ barVisible: s.barVisible }));
 
 /* ★ 상대이동 — 물건을 짚지 않는다. 화면 아무 데나 잡고 **끈 만큼** 움직인다 */
 const moved = await page.eval(`(()=>{ const rv=window.__rv;

@@ -3051,6 +3051,20 @@ const errBox = (() => {
       const nav = document.getElementById('bottom');
       if (nav) up = Math.round(nav.getBoundingClientRect().height) + 10;
     } catch { }
+    /* ★★★ 2026-08-30 — **[다음 날]도 안 덮는다.**
+       ⛔ 2026-08-17 에 박사님이 그 단추를 «방 모서리»로 빼셨는데(§#next `position:absolute`)
+         이 상자는 아직 «하단 띠»만 피하고 있었다. 그래서 오류가 뜨면 ⇒ ★ 그 단추 한가운데를
+         짚어도 «상자가 잡혔다»(test_nextday_gate C-1: hitId 'DIV' · 상자 밑 769 · 단추 위 711).
+         ⇒ ⇒ 오류가 난 판에서 **하루를 못 넘긴다** — 이 상자가 막으려던 것보다 나쁜 일이다.
+       ★ 피할 것을 «세지» 않고 «물어본다» — 지금 화면에 서 있는 그 단추의 자리를 잰다.
+         px 로 박으면 폰마다·상태마다 어긋난다(바로 위 ⚠ 와 같은 규율). */
+    try {
+      const nx = document.getElementById('next');
+      if (nx && nx.offsetParent !== null) {
+        const r = nx.getBoundingClientRect();
+        if (r.height > 0) up = Math.max(up, Math.round(innerHeight - r.top) + 10);
+      }
+    } catch { }
     b.style.bottom = up + 'px';
     b.classList.add('on');
   }

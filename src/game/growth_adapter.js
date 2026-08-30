@@ -555,7 +555,14 @@ export function createGrowthAdapter(iframe) {
        ⚠ **세이브에 안 싣는다.** 「지금 갈렸나」를 보는 값이지 복원의 입력이 아니다 —
          복원의 입력은 `S.dliHist` 하나다(save.js §75). 두 벌로 만들면 그날 갈린다.
        ⚠ 옛 엔진에는 없다 ⇒ `null`. **0 으로 메꾸지 않는다** — 「안 받았다」와 「못 물었다」는 다르다. */
-    dliFedCount() { const f = fn('dliFedCount'); return f ? f() : null; },
+    /* ★ 2026-08-30 (그날 저녁) — [growth] 가 **그루마다** 세게 고쳤다(`dliFedCount(plantId)`).
+       ⇒ 그루 이름을 그대로 넘긴다. 안 주면 「지금 꽂힌 그루」다. 없는 그루면 null 이 온다.
+       ⚠ 그래서 코어 쪽 짝이 **Σ fedDays 가 아니라 그 화분의 fedDays** 가 된다 —
+         합으로 견주면 그루를 파는 날 셈 범위가 갈라져 늘 어긋난 것으로 보인다(probe_fedcount ④).
+       ⛔ 그리고 이 수로 **하루 결산에 경고를 걸지 않았다.** 「갈리면 알린다」를 걸면
+         파는 날부터 매일 헛울음이 나고, 헛울음을 우는 자는 아무도 안 본다.
+         ⇒ 쓸 자리는 「그루 목록이 안 변한 구간」의 «진단»이다. 그 뜻은 [growth] 몫이다. */
+    dliFedCount(plantId) { const f = fn('dliFedCount'); return f ? f(plantId) : null; },
 
     /* 표시·대조 전용(판정에 안 쓴다) — 없으면 화면에 '—' 로 두면 되므로 던지지 않는다. */
     dli7()   { const f = fn('dli7');   return f ? f() : null; },
