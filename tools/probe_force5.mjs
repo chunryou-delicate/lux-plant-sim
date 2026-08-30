@@ -68,7 +68,9 @@ const now = () => page.eval(`(async()=>{ const fp=await import('/src/game/first_
   const stm=await import('/src/game/stamina.js');
   const sv=(()=>{ try { return stm.staminaView(S); } catch(e) { return null; } })();
   const tab=[...document.querySelectorAll('[role=tab]')].find(t=>t.getAttribute('aria-selected')==='true');
+  const p0=(S.pots||[])[0];
   return JSON.stringify({ 날:S.day,
+    몬자리: p0 ? (p0.slotId || (p0.at ? 'free' : null)) : null,
     탭: tab ? tab.id : null,
     /* ★ 「할 일」 한 줄도 걸음마다 적는다 — 오늘 겪은 병이 「할 일과 손가락이 «다른 말»을 한다」였다.
        걸음 줄에 «둘 다» 있어야 눈으로 바로 갈린다(총괄: 자에 그것이 없어 한 번 더 걸어야 했다). */
@@ -86,11 +88,24 @@ console.log('■ 켠 직후 —', await now());
 console.log('');
 console.log('=== 손가락만 따라 첫 수확까지 ===');
 const log = [];
-let taps = 0, lastDay = -1, lastSig = '', same = 0, deepDone = false;
+let taps = 0, lastDay = -1, lastSig = '', same = 0, deepDone = false, dry = 0;
 for (let i = 0; i < 60 * GOAL; i++) {
   await quiet();
   const st = JSON.parse(await now());
   if (st.거둔횟수 >= GOAL) { console.log(`  ✔ ${GOAL}번째 수확 — Day ${st.날} · 손 ${taps}개 · 체력 ${st.체력}`); break; }
+  /* ★★★★ 2026-08-31 — **안내가 «제 뜻대로» 끝나는 자리를 «실패로 세지 않는다».**
+     두 바퀴를 거두면 거두기·물주기 손가락을 «일부러» 뗀다(박사님 2026-08-17 · §taughtBasics).
+     ⇒ 그 뒤로 이 자는 따라갈 손가락이 없어 하루만 넘기게 되고, 예전엔 그것이
+       「손가락 끊김 79번 · Day 91」로 붉게 나왔다 — ⛔ 자가 «거짓으로» 우는 것이다.
+     ★ 그러니 「안내가 끝났다」로 적고 멈춘다. 그 뒤는 «안내가 아니라 살림»이다. */
+  /* ⚠ **한 번 비었다고 끝난 것이 아니다** — 대사·연출 중에는 잠깐 비고, 그 사이에 끊으면
+     그 뒤의 걸음(선물 받기·창턱 옮기기)을 통째로 놓친다(실측에서 한 번 그렇게 잘렸다).
+     ⇒ «잇달아 세 번» 비어야 끝으로 본다. */
+  if ((st.거둔횟수 || 0) >= 2 && !JSON.parse(await fingerAt())) dry++; else dry = 0;
+  if (dry >= 3) {
+    log.push(`Day ${String(st.날).padStart(2)} · ✔ 안내가 끝났다 — 두 바퀴를 거두면 손가락을 뗀다(뜻대로)`);
+    break;
+  }
   let f = JSON.parse(await fingerAt());
   /* ★ 쪽지가 떠 있으면 손가락은 «일부러» 쉰다(§coach 규율 ⓑ: 둘이 같이 뜨면 둘 다 안 읽힌다).
      ⇒ 그건 끊긴 길이 아니라 «읽는 동안»이다. 사람처럼 기다렸다가 다시 본다.
@@ -137,6 +152,15 @@ for (let i = 0; i < 60 * GOAL; i++) {
         buyGo:f('buyGo'),
         /* ★ 어느 «줄»이 손가락을 껐나 — 이걸 보려고 __hintLast 를 뒀다 */
         열린창: [...document.querySelectorAll('.pop.on')].map(x=>x.id||x.className),
+        상점줄: (()=>{ const l=document.getElementById('shopList');
+          if(!l) return null; const r=l.getBoundingClientRect();
+          return { 칸수:l.children.length, 보임:l.offsetParent!==null,
+                   네모:[Math.round(r.left),Math.round(r.top),Math.round(r.width),Math.round(r.height)],
+                   살것:[...l.querySelectorAll('[data-buy]')].map(b=>b.getAttribute('data-buy')).slice(0,6) }; })(),
+        문:['navShop','tabShop','openBag'].map(id=>{ const e=document.getElementById(id);
+          if(!e) return id+':없음'; const r=e.getBoundingClientRect();
+          return id+':'+(r.width>0&&r.top<innerHeight?'보임':'안보임')+
+                 (e.getAttribute('aria-selected')==='true'?'(고름)':''); }),
         줄단추: [...document.querySelectorAll('[data-act]')].map(x=>{
           const r=x.getBoundingClientRect();
           return { 일:x.getAttribute('data-act'), 잠김:!!x.disabled,
@@ -229,6 +253,40 @@ for (let i = 0; i < 60 * GOAL; i++) {
     const o = JSON.parse(aim);
     if (o) log.push('     ⚠ 겨눈 곳이 다르다 — ' + JSON.stringify(o));
   }
+  /* ★★★★ 2026-08-31 — **「끌어 보세요」는 «끌어야» 한다.**
+     ⚠ 이 자는 손가락이 짚는 곳을 «누르기»만 했다. 그런데 창턱으로 옮기는 걸음은
+       **잡아서 끄는** 손짓이라 누르기로는 영영 안 지나간다(총괄 자도 그래서 못 낸다).
+     ⇒ 말에 「끌어」가 있으면 «끈다». 잡는 자리는 방에 선 그 화분이고,
+       자유 좌표라 자리 열쇠가 없으면 **방 안 아무 데서나** 잡는다 —
+       지금 손버릇(direct)은 「잡은 자리로 온다」라 끌어 놓는 점이 곧 갈 자리다. */
+  if (/끌어/.test(String(f.말 || ''))) {
+    const gp = JSON.parse(await page.eval(`(()=>{ const S=window.__S(); const p=(S.pots||[])[0];
+      const rv=window.__rv, c=document.getElementById('roomCanvas');
+      if(!c) return 'null';
+      const r=c.getBoundingClientRect();
+      let sp=null;
+      try { if (p && p.slotId && rv && rv.screenPosOf) sp = rv.screenPosOf(p.slotId); } catch(e){}
+      if (sp) return JSON.stringify({ x:Math.round(r.left+sp.x), y:Math.round(r.top+sp.y), 잡은곳:'화분' });
+      return JSON.stringify({ x:Math.round(r.left+r.width*0.5), y:Math.round(r.top+r.height*0.62), 잡은곳:'방바닥' }); })()`));
+    if (gp) {
+      await mouse('mouseMoved', gp.x, gp.y, 0);
+      await mouse('mousePressed', gp.x, gp.y, 1);
+      for (let k = 1; k <= 12; k++) {
+        await mouse('mouseMoved', gp.x + (f.x - gp.x) * k / 12, gp.y + (f.y - gp.y) * k / 12, 1);
+        await sleep(45);
+      }
+      await sleep(250);
+      await mouse('mouseReleased', f.x, f.y, 0);
+      await sleep(1500);
+      log.push('     ↳ ★ «끌었다»(' + gp.잡은곳 + ') — ' + await page.eval(`(()=>{ const S=window.__S();
+        return JSON.stringify({ 화분:(S.pots||[]).map(p=>({ 자리:p.slotId, 좌표:!!p.at })),
+          확인바:(()=>{ const b=document.getElementById('placeOk');
+            if(!b) return false; const r=b.getBoundingClientRect(); return r.width>0&&r.height>0; })(),
+          아래글:(document.getElementById('dropLabel').textContent||'').trim().slice(0,26) }); })()`));
+      taps++; lastDay = st.날;
+      continue;
+    }
+  }
   await tapPoint(f.x, f.y);
   if (deep) {
     /* ★★★ **누름이 안 먹으면 «끌어» 본다** — 박사님 낱말이 「«끌어놓는» 거」였다.
@@ -320,10 +378,14 @@ console.log('■ 끝 —', await now());
   try { 주기 = Number(await page.eval(HD, true, 30000)) || 5; } catch { }
   const 마지노 = (주기 + 1) * GOAL;
   const 판정 = [
-    ['한 바퀴가 돈다 (거둔 횟수)', 끝.거둔횟수 >= GOAL, 끝.거둔횟수 + '/' + GOAL],
+    /* ⚠ 손가락이 이끄는 것은 «두 바퀴»까지다(그 뒤는 일부러 뗀다). 그 너머를 요구하지 않는다. */
+    ['한 바퀴가 돈다 (거둔 횟수)', 끝.거둔횟수 >= Math.min(GOAL, 2),
+     끝.거둔횟수 + '/' + Math.min(GOAL, 2)],
     ['제자리걸음이 없다', !굳음, 굳음 ? '있다' : '없다'],
     ['마지노(' + 마지노 + '일) 안에 끝난다', 끝.날 <= 마지노, 'Day ' + 끝.날],
     ['손가락이 끊긴 자리가 적다', 없음 <= 2 * GOAL, 없음 + '번'],
+    /* ★ 박사님이 받는 문 — 「몬스테라가 «창턱에 섰나»」. 자리 이름을 박지 않고 계통만 본다. */
+    ['몬스테라가 창턱에 섰다', /sill/.test(String(끝.몬자리 || '')), String(끝.몬자리 || '(아직)')],
   ];
   console.log('');
   console.log('=== ★ 판정 — 손가락만 따라가면 판이 도나 ===');
