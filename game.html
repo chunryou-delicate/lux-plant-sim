@@ -3878,6 +3878,21 @@ setInterval(() => {
 }, HINT_WATCH_MS);
 function hintAt(el, say) {
   const h = $('hint');
+  /* ★ 진단 손잡이 — **마지막으로 «무엇을» 짚으라 했나**(2026-08-30).
+     ⚠ 오늘 「왜 손가락이 없나」를 네 번 물었고, 그때마다 갈래를 손으로 뒤졌다.
+       이 한 줄이 그 물음을 «한 번에» 답한다. 게임은 이 값을 안 쓴다(읽는 자를 위한 문). */
+  try {
+    window.__hintLast = { id: el ? (el.id || el.className || el.tagName) : null, say: say || null,
+                          보임: el ? (() => { const r = el.getBoundingClientRect();
+                            return r.width > 0 && r.height > 0; })() : null,
+                          /* ★ 어느 «줄»이 불렀나 — 갈래가 열둘이라 이름 없이 못 찾는다 */
+                          자리: (() => { try {
+                            const L = ((new Error()).stack || '').split(String.fromCharCode(10));
+                            /* ⚠ 첫 줄들은 «이 안»이다 — hintAt 밖의 첫 줄이 부른 자리다 */
+                            return L.slice(1, 6).map(x => x.trim().replace(/^at\s+/, '')
+                                     .replace(/^.*game\.html:/, '')).join(' ← ');
+                          } catch { return null; } })() };
+  } catch { }
   if (hintTargetEl && hintTargetEl !== el) hintTargetEl.classList.remove('hintTarget');
   if (!el) { h.classList.remove('on'); hintTargetEl = null; dimOff();
              hintFollow = null; hintFollowLoop(false); return; }
@@ -5010,6 +5025,24 @@ function updateHint() {
   if (coachNow) return hintAt(null);
   const fp = S.firstPlay, ts = S.tutorial;
   const stage = $('stage'), sheetOpen = $('sheet').classList.contains('open');
+  /* ★★★★ 2026-08-30 — **「시트가 열렸나」가 아니라 「시트가 «이것을» 덮나」.**
+     ══════════════════════════════════════════════════════════════════
+     ⛔ 갈래마다 `!sheetOpen` 으로 막고 있었다. 뜻은 「시트에 가린 것을 가리키지 마라」인데
+       **넓은 화면에서는 시트가 늘 펴져 있다** ⇒ ★ 그 갈래들이 통째로 죽는다.
+       ⇒ 실측(총괄 · 1770×1188 · 시트 연 채): Day 5 에 씨앗이 오는 중인데 손가락이 «없었다» —
+         「씨앗은 내일 옵니다 — 하루를 넘기세요」가 `!sheetOpen` 에 걸려 안 떴다.
+         ⇒ ⇒ ★★ 할 일은 「2바퀴째 돌려라」인데 화면은 «조용»했다. 사람이 거기서 멈춘다.
+     ★ 그러니 «덮나»를 잰다 — 따라다니는 고리에 오늘 넣은 그 자와 **같은 자**다(㊷ 하나로 센다). */
+  const sheetCovers = (el) => {
+    if (!sheetOpen || !el) return false;
+    try {
+      const sh = $('sheet');
+      if (!sh || sh.contains(el)) return false;
+      const a = el.getBoundingClientRect(), b = sh.getBoundingClientRect();
+      if (!a.width || !a.height || !b.width || !b.height) return false;
+      return !(a.right <= b.left || b.right <= a.left || a.bottom <= b.top || b.bottom <= a.top);
+    } catch { return false; }
+  };
   /* ★★★ 2026-08-17 — **[확인]을 가리킨다.** 놓기 직후의 이 한 걸음이 안내의 구멍이었다
      (§startPhonePlace). 「여기에 둘까요?」가 떠 있는데 손가락이 쉬면, 화면에서 제일 크게
      말하는 것이 사라져 사람은 그 자리에서 멈춘다 — 실측에서 스물여섯 날을 멈췄다.
@@ -5100,11 +5133,17 @@ function updateHint() {
      ⚠ 「배웠나」의 임자를 **새로 안 만들었다** — 「본 쪽지」 서랍(`coachSeen`)이 이미 그 뜻이고
        새로고침에도 남는다. 쪽지 `walk` 는 **사람을 처음 누를 때** 찍히므로 그 하나로 ①이 끝난다.
      ⚠ 대사·쪽지 중에는 이 갈래도 안 뜬다 — 위 §쪽지가 떠 있으면 · §talking 이 이미 걷는다. */
+  /* ★★★★ 2026-08-30 — **「시루를 놓았나」의 자는 «하나»다.**
+     ⛔ 아래 ①갈래가 `crop.slotId` 를 보고 있었다 — 그런데 **자유 좌표(`at`)로 놓은 시루는
+       `slotId` 가 없다.** 끌어 놓거나 바닥에 놓으면 그렇다(그게 기본 길이다).
+       ⇒ 그러면 게임이 「아직 안 놓았다」로 읽고, 넓은 화면에서는 가리킬 것도 없어
+         **손가락을 통째로 껐다** — 총괄이 걸은 [20~24]의 다섯 걸음이 그것이다.
+     ★ 코어에는 이미 그 자가 있다: `cropPotList(...).placed`(= `cropPotPlaced` = slotId «또는» at).
+       퀘스트 사슬도 그 자를 쓴다. 화면만 다른 자를 쓰고 있었다(㊷ 하나로 센다). */
+  const cropRows = (() => { try { return cropPotList(fp, S.day); } catch { return []; } })();
+  const placedOne = cropRows.some(r => r && r.placed);
   {
     const learnedWalk = (() => { try { return coachSeen().has('walk'); } catch { return true; } })();
-    const placedOne = (() => {
-      try { return cropPotList(fp, S.day).some(r => r && r.placed); } catch { return false; }
-    })();
     if (!learnedWalk && placedOne && roomView && roomView.screenPosOf) {
       const who = (() => {
         try { return (roomView.characters() || []).find(c => c && c.walkable) || null; }
@@ -5132,8 +5171,8 @@ function updateHint() {
       }
     }
   }
-  /* ① 시루를 아직 안 놓았다 */
-  if (!crop.slotId) {
+  /* ① 시루를 아직 안 놓았다 — ★ 자유 좌표도 「놓은 것」이다(§placedOne) */
+  if (!placedOne) {
     /* ★ 2026-08-10 — 가리키는 것은 이제 **가방 격자의 시루 칸**이다(id 는 그대로 `cropThumb`).
        칸이 없으면(빈 시루 0개) `onScreen(null)` 이 false 라 아래 [가방]으로 떨어진다. */
     if (onScreen($('cropThumb'))) return hintAt($('cropThumb'), '끌거나 눌러서 방 안 어두운 자리에');
@@ -5372,17 +5411,17 @@ function updateHint() {
     try { return ((S.firstPlay && S.firstPlay.beansprout && S.firstPlay.beansprout.harvestCount) || 0) >= 2; }
     catch { return false; }
   })();
-  const markEl = !sheetOpen && !taughtBasics && $('marks') && $('marks').querySelector('.mark');
-  if (markEl && onScreen(markEl)) {
+  const markEl = !taughtBasics && $('marks') && $('marks').querySelector('.mark');
+  if (markEl && onScreen(markEl) && !sheetCovers(markEl)) {
     const ko = (markEl.textContent || '').replace(/^[^가-힣]+/, '');
     return hintAt(markEl, /거두/.test(ko) ? '거둘 때가 됐습니다'
                         : /물/.test(ko)   ? '물을 주면 자라기 시작합니다'
                         : ko || '여기를 눌러 보세요');
   }
   const btnHarvest = $('harvestCrop'), btnWater = $('waterCrop');
-  if (!sheetOpen && !taughtBasics && onScreen(btnHarvest) && !btnHarvest.disabled)
+  if (!taughtBasics && onScreen(btnHarvest) && !btnHarvest.disabled && !sheetCovers(btnHarvest))
     return hintAt(btnHarvest, '거둘 때가 됐습니다');
-  if (!sheetOpen && !taughtBasics && onScreen(btnWater) && !btnWater.disabled)
+  if (!taughtBasics && onScreen(btnWater) && !btnWater.disabled && !sheetCovers(btnWater))
     return hintAt(btnWater, '물을 주면 자라기 시작합니다');
   /* ★★ 2026-08-11 — **몬스테라 물주기도 손이 가는 일이다.**
      말풍선(`potMarks`)은 **마른 뒤에만** 뜨는데 아래 버튼(`#waterPot`)은
@@ -5475,7 +5514,9 @@ function updateHint() {
   const wait = seedComing ? '씨앗은 내일 옵니다 — 하루를 넘기세요'
              : (cropGrowing && !taughtCycles) ? '자라는 중입니다 — 하루를 넘겨 보세요'
              : S.day <= 1 ? '하루를 보냅니다' : null;
-  if (!sheetOpen && !$('next').disabled && wait) return hintAt($('next'), wait);
+  /* ★ 여기가 총괄이 잡은 자리다 — 씨앗이 «오는 중»인데 시트가 열려 있어 손가락이 통째로 없었다.
+     ⇒ 「시트가 [다음 날]을 «덮나»」로 바꾼다. 넓은 화면에서는 안 덮으므로 그대로 짚는다. */
+  if (!$('next').disabled && wait && !sheetCovers($('next'))) return hintAt($('next'), wait);
   hintAt(null);
 }
 
@@ -11329,6 +11370,11 @@ async function bootRoomView() {
        검사가 상태를 만들어 놓고 화면이 그걸 따라오는지 보려면 이 한 걸음이 필요하다.
        ⚠ 게임은 이걸 안 쓴다(draw() 를 직접 부른다). 밖에서만 쓰는 진단용이다. */
     window.__redraw = () => { try { draw(); } catch (e) { console.warn('[진단] 다시 그리기', e); } };
+    /* ★ 지금 «무엇을 들고 있나» — 손가락이 꺼지는 까닭의 태반이 여기다(집는 중·끄는 중).
+       ⚠ 읽기용이다. 밖에서 집게를 «세우는» 문은 만들지 않는다. */
+    window.__pickState = () => { try { return { 집기: picked.mode || null, 무엇: picked.what || null,
+                                                끄는중: !!drag.on, 끄는것: drag.what || null }; }
+                                 catch (e) { return { 탈: String(e && e.message || e) }; } };
     /* ★ 상세 창을 밖에서 연다 — **화면이 부르는 바로 그 함수**다(다른 길을 만들지 않는다).
        검사가 「어느 그루의 카드가 뜨나」를 단추 없이도 가릴 수 있게 하는 진단용 손잡이. */
     window.__detailOpen = (kind, arg) => { try { detail.open(kind, arg); return true; }

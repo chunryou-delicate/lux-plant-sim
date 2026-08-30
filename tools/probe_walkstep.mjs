@@ -15,6 +15,12 @@ await page.goto(`${BASE}/game.html`);
 await page.eval('localStorage.clear()', false);
 await page.goto(`${BASE}/game.html`);
 await page.waitFor('!!window.__rv', 150000, 300);
+/* ★ 탈을 받아 적는다 — 화면이 조용히 죽으면 대사도 안 넘어간다 */
+await page.eval(`(()=>{ window.__errs=[];
+  for (const k of ['warn','error']) { const o=console[k].bind(console);
+    console[k]=(...a)=>{ try{ window.__errs.push(k+' | '+a.map(x=>(x&&x.message)?x.message:String(x)).join(' ').slice(0,120)); }catch{} o(...a); }; }
+  addEventListener('error', e=>window.__errs.push('던짐 | '+(e.message||'')));
+})()`, false);
 await sleep(5000);
 const mouse = (type, x, y, buttons) => page.send('Input.dispatchMouseEvent',
   { type, x: Math.round(x), y: Math.round(y), button: 'left', buttons, clickCount: 1 });
@@ -270,12 +276,21 @@ console.log(' ', await page.eval(`(()=>{ const h=document.getElementById('hint')
 }
 console.log('');
 console.log('=== ★ 사람을 «한 번도 안 누르고» 계속 가 본다 ===');
+/* ⚠ [건너뛰기]는 «안 보일 때»가 있다 — 그때 여기서 그냥 돌아 나오면
+     「대사 중」인 채로 재게 되고, 손가락은 규칙대로 꺼져 있다(= 거짓 구멍).
+   ⇒ 대사 상자를 누르는 길은 늘 있다. DOM 누르기와 «진짜 마우스»를 둘 다 쓴다. */
 const clearDlg = async () => {
-  for (let i = 0; i < 30; i++) {
-    const t = await page.eval(`document.getElementById('stage').classList.contains('talking')`);
-    if (t !== 'true') return;
-    if (!await tapEl('#dlgSkip')) return;
+  for (let i = 0; i < 40; i++) {
+    /* ⚠ `String(...)` 을 씌운다 — 안 씌우면 되돌아오는 값이 «참 거짓»이 아닐 때가 있어
+         「대사 없음」으로 잘못 읽고 곧바로 빠져나갔다(그 탓에 다섯 걸음을 헛짚었다). */
+    const t = await page.eval(`String(document.getElementById('stage').classList.contains('talking'))`);
+    if (t !== 'true') return true;
+    /* ⚠ [건너뛰기]는 큐를 통째로 비운다 — 미뤄 둔 대사까지 날아간다.
+       ⇒ 재는 판에서는 **상자를 눌러 한 줄씩 넘긴다**(사람이 하는 그대로). */
+    await page.eval(`(()=>{ const x=document.getElementById('dlgBox'); if (x) x.click(); })()`, false);
+    await sleep(220);
   }
+  return false;
 };
 for (let step = 1; step <= 8; step++) {
   await clearDlg();
@@ -302,6 +317,76 @@ console.log('=== ★ 대사 중 ⇄ 걷힌 뒤 (아무것도 안 누르고 기�
   await sleep(1100);          /* ⚠ 아무것도 안 누르고 기다린다 — 지킴이가 세워야 한다 */
   console.log('  · 걷은 뒤 1.1초 —', JSON.stringify(await st()));
 }
+/* ★★ 총괄이 잡은 [20] 자리 — **시트를 «연 채»로도 손가락이 사나** */
+console.log('');
+console.log('=== ★ 시트를 «연 채» 손가락이 사나 (총괄 [20]) ===');
+/* ★ 총괄이 본 «그 판»을 세운다 — 거둔 시루가 있고 · 씨앗이 «오는 중»이다 */
+console.log('  · 판 세우기 —', await page.eval(`(async()=>{ const shop=await import('/src/game/shop.js');
+  const st=await import('/src/game/state.js'); const S=window.__S();
+  try {
+    const b=S.firstPlay.beansprout, p0=(b.pots||[])[0];
+    if (p0) { p0.harvested = true; p0.sown = false; p0.startedOnDay = null; }
+    (S.shop.stock||{}).bean_seed = 0;
+    shop.orderItem(S, 'bean_seed', 1);
+    window.__redraw();
+    return JSON.stringify({ 주문: (shop.shopStatus(S).orders||[]).map(o=>o.itemId+' d'+o.daysLeft),
+      씨앗: (S.shop.stock||{}).bean_seed||0 });
+  } catch(e) { return JSON.stringify({ 탈: e.message }); } })()`, true, 30000));
+await sleep(900);
+await page.eval(`(()=>{ try{ window.__byeotSheet.open('shop'); }catch(e){} window.__redraw(); })()`, false);
+await sleep(1400);
+/* ★★ 2026-08-30 — **대사를 먼저 걷는다.**
+   ⛔ 안 걷고 재면 언제나 「손가락 없음」이 나온다 — 대사 중에는 손가락을 «일부러» 끄기 때문이다
+     (박사님 「대사 끝나고 손가락이 나타나야지」). 그건 구멍이 아니라 규칙이다.
+   ⇒ 내가 만든 판 탓으로 다섯 걸음을 헛짚었다. 재는 자리는 «대사가 끝난 뒤»여야 한다. */
+/* ⚠ 한 묶음을 걷으면 «다음 묶음»이 곧바로 열린다(끝냄 → 다음 열림).
+   ⇒ 한 번만 걷고 재면 또 「대사 중」이다. 잠잠해질 때까지 걷는다. */
+for (let i = 0; i < 5; i++) { await clearDlg(); await sleep(900); }
+console.log('  · 대사 걷기 —', await clearDlg(), await page.eval(`(()=>{
+  const t=document.getElementById('dlgText'); const b=document.getElementById('dlgBox');
+  const s=document.getElementById('dlgSkip');
+  const r=b?b.getBoundingClientRect():null;
+  return JSON.stringify({ 글: t?(t.textContent||'').trim().slice(0,40):null,
+    상자: r?{ 네모:[Math.round(r.left),Math.round(r.top),Math.round(r.width),Math.round(r.height)],
+              보임: r.width>0&&r.height>0 }:null,
+    건너뛰기: s?{ 보임: s.offsetParent!==null }:null,
+    줄: (window.__dlgLog||[]).slice(-4).map(x=>x.id+'(b'+x.b+')') }); })()`));
+console.log('  · 시트 열고 —', await page.eval(`(()=>{ const h=document.getElementById('hint');
+  const d=document.getElementById('hintDim'); const sh=document.getElementById('sheet');
+  return JSON.stringify({ 시트열림: !!(sh && sh.classList.contains('open')),
+    손가락: !!(h && h.classList.contains('on')),
+    말: h ? ((h.querySelector('.say')||{}).textContent||'').trim().slice(0,30) : null,
+    덮개: !!(d && d.classList.contains('on')),
+    네모: (()=>{ const n=document.getElementById('next'); const r1=n?n.getBoundingClientRect():null;
+      const r2=sh?sh.getBoundingClientRect():null;
+      return { next: r1?[Math.round(r1.left),Math.round(r1.top),Math.round(r1.right),Math.round(r1.bottom)]:null,
+               sheet: r2?[Math.round(r2.left),Math.round(r2.top),Math.round(r2.right),Math.round(r2.bottom)]:null,
+               next잠김: n?!!n.disabled:null }; })(),
+    말풍선칸: (()=>{ const m=document.querySelector('#marks .mark');
+      if(!m) return null; const r=m.getBoundingClientRect(); const cs=getComputedStyle(m);
+      return { 네모:[Math.round(r.left),Math.round(r.top),Math.round(r.width),Math.round(r.height)],
+               display:cs.display, 보임: r.width>0&&r.height>0&&r.bottom>0&&r.top<innerHeight }; })(),
+    마지막짚기: window.__hintLast || null,
+    무대: (document.getElementById('stage').className||'').trim(),
+    집기: window.__pickState ? window.__pickState() : null,
+    거두기단추: (()=>{ const b=document.getElementById('harvestCrop');
+      if(!b) return null; const r=b.getBoundingClientRect();
+      return { 보임: r.width>0&&r.height>0, 잠김:!!b.disabled }; })() }); })()`));
+console.log('  · seedComing 을 그대로 셈해 보면 —', await page.eval(`(async()=>{
+  const fp0=await import('/src/game/first_play.js'); const shop=await import('/src/game/shop.js');
+  const S=window.__S();
+  try {
+    const rows = fp0.cropPotList(S.firstPlay, S.day).filter(r => r.placed && (r.harvested || r.needsSow));
+    const st = shop.shopStatus(S);
+    const per = rows.map(r => { const sid = fp0.cropKindOf(r.kind).seedItemId;
+      return { id:r.id, kind:r.kind, harvested:!!r.harvested, needsSow:!!r.needsSow, sid,
+        재고:(st.stock&&st.stock[sid])||0,
+        오는중:(st.orders||[]).some(o=>o.itemId===sid && o.daysLeft>=0) }; });
+    return JSON.stringify({ '줄 수': rows.length, 줄: per, 날: S.day,
+      '주문 전부': (st.orders||[]).map(o=>o.itemId+' d'+o.daysLeft) });
+  } catch(e) { return JSON.stringify({ 탈:e.message }); } })()`, true, 30000));
+await page.eval(`(()=>{ try{ window.__byeotSheet.close(); }catch(e){} window.__redraw(); })()`, false);
+await sleep(900);
 console.log('');
 console.log('■ 사람을 누른 적 —', await page.eval(`(()=>{ const S=window.__S();
   return JSON.stringify({ '캐릭터 고름': !!(window.__rv && window.__rv.selectedCharacter
