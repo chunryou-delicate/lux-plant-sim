@@ -9679,6 +9679,11 @@ export async function createRoomView(canvas, opts = {}) {
     screenPosOf(slotId) {
       const t = resolveKey(slotId);
       if (t) return slotScreenPos(t.pos);
+      /* ★★ 2026-08-30 — **캐릭터도 이 창구로 묻는다.** 안내 손가락이 「사람」을 짚어야 하는데
+         (박사님 「캐릭이동 강제 가이드」) 화면 쪽에는 사람의 «화면 자리»를 묻는 길이 없었다.
+         ⚠ 새 창구를 안 낸다 — 자리·가구가 이미 이 하나로 답한다. 셋이 되면 셋이 갈린다(㊷).
+         ⚠ 안에서는 이미 그렇게 쓰고 있었다(§tapPointOf: `chars.has(id)` 면 `charScreenPos`). */
+      if (chars.has(slotId)) return charScreenPos(chars.get(slotId));
       return furnScreenPos(anyFurnNode(slotId), 0);
     },
     /* 지금 시점 — 저장했다 복원하거나 검증할 때 쓴다 */

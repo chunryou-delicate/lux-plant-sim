@@ -111,18 +111,36 @@ console.log('\n== ① A-1 사람을 눌러 자유 이동 ==');
 const rect = await page.eval(`(()=>{ const r=document.getElementById('roomCanvas').getBoundingClientRect();
   return {l:r.left,t:r.top,w:r.width,h:r.height}; })()`);
 const jp = await page.eval(`(()=>{ try{ return window.__rv.characterScreenPos('jachwi'); }catch{ return null; } })()`);
+/* 「끄는 법」 쪽지가 «있는가»만 본다 — 걸어가는 것까지 이 자로 몰지 않는다(그건 probe_walkstep 몫) */
+const COACH_NOTES_WALKOFF = await page.eval(`(()=>{ try{
+  const n=(window.__byeotCoach.notes()||[]); return n.includes('walkOff') ? 'walkOff 있음' : '';
+}catch(e){ return ''; } })()`);
 if (!jp) {
   no('① 자취생이 화면에 없다 — 이 검사를 못 돈다');
 } else {
   await page.eval(`window.__rv.selectCharacter(null)`, false);
   await sleep(300);
   await tap(Math.round(rect.l + jp.x), Math.round(rect.t + jp.y));
+  /* ★★★ 2026-08-30 — **뜻이 바뀌었다: 켜기·걸어가기는 «손가락»이 한다**
+     (박사님 「캐릭이동 «강제» 가이드」 · [Plan] 세 걸음 · 총괄 ⓐ).
+     ⛔ 예전에는 «쪽지 한 장»이 셋(켜기·걸어가기·끄기)을 한꺼번에 말했다. 그런데
+       ① 쪽지는 손가락을 끄고 ② 안 봐도 그냥 넘어간다 ⇒ 실측: **사람을 한 번도 안 눌러도**
+       놓기·심기·물주기·하루 넘김이 다 됐다(probe_walkstep). 「강제」가 아니었다.
+     ⇒ 이제 ①② 는 손가락이 짚고, «걸어간 뒤»에만 쪽지 한 줄(`walkOff`)이 뜬다.
+     ⇒ ★ 그러니 여기서 재는 것도 바뀐다 — 「쪽지가 뜨나」가 아니라 **「손가락이 방바닥을 짚나」**다. */
   const a = await page.eval(VISIBLE);
-  is(!!a.coach && a.coachNow === 'walk', '① 사람을 누르면 쪽지가 **화면에** 뜬다',
-     JSON.stringify(a.coach) + ' · ' + a.coachNow);
-  is(!a.hint, '①-b ★ 같은 순간에 손가락은 꺼져 있다 (겹침 0)', a.hint ? JSON.stringify(a.hint) : '없음');
-  const txt = await page.eval(`(document.getElementById('coachBody')||{}).textContent||''`);
-  is(/바닥/.test(txt) && /걸어/.test(txt), '①-c 쪽지가 「바닥을 누르면 걸어간다」를 말한다', txt.slice(0, 40));
+  const say = await page.eval(`(()=>{ const h=document.getElementById('hint');
+    return (h && h.classList.contains('on')) ? ((h.querySelector('.say')||{}).textContent||'').trim() : ''; })()`);
+  /* ⚠ 이 자리는 «시루를 놓기 전»이다. 캐릭 이동 가르침은 「첫 시루를 놓은 뒤」에 서므로
+     여기서는 **안 끼어드는 것이 맞다** — 그래서 재는 것을 그렇게 적는다.
+     ★ 「사람을 누르면 방바닥을 짚나」는 «놓은 뒤»의 자리라 `tools/probe_walkstep.mjs` 가 잰다
+       (거기서 「사람을 눌러 보세요」 손가락과 덮개를 확인했다). 한 자에 몰지 않는다. */
+  is(!/걸어가/.test(say), '① 시루를 놓기 «전»에는 캐릭 이동 가르침이 «안 끼어든다»',
+     say || '(손가락 없음)');
+  is(!a.coach, '①-b ★ 같은 순간에 쪽지는 «안» 뜬다 (셋을 한꺼번에 말하지 않는다)',
+     a.coach ? JSON.stringify(a.coach) : '없음');
+  is(!!(COACH_NOTES_WALKOFF), '①-c 「끄는 법」은 «걸어간 뒤»에 말하는 쪽지로 따로 있다',
+     COACH_NOTES_WALKOFF || '없음');
   if (SHOT) await page.shot(`${SHOT}/coach_01_walk.png`);
 
   /* ③ 한 번만 — 닫고 다시 눌러도 안 뜬다 */
@@ -131,7 +149,7 @@ if (!jp) {
   await sleep(400);
   await tap(Math.round(rect.l + jp.x), Math.round(rect.t + jp.y));
   const b = await page.eval(VISIBLE);
-  is(!b.coach, '①-d ★ 두 번째부터는 안 뜬다 (한 번 보면 끝)', b.coachNow || '없음');
+  is(!b.coach, '①-d ★ 쪽지는 두 번째에도 안 뜬다', b.coachNow || '없음');
 }
 
 /* ══ ② A-2 가구를 누르면 「가구 이동」 쪽지 ═══════════════════════════════ */
@@ -184,9 +202,13 @@ const notes = await page.eval(`window.__byeotCoach.notes()`);
    **검사가 안 따라와 그날부터 계속 빨갰다**(스태시로 확인 · 2026-08-19).
    ⇒ 뜻은 그대로다 — *쪽지가 무분별하게 늘지 않는다*. 그래서 **수가 아니라 이름**으로 못 박는다.
      이름으로 재면 「하나 늘었다」와 「엉뚱한 것이 들어왔다」가 갈린다. */
-const NOTE_IDS = ['walk', 'walkTip', 'furn', 'pot'];
+/* ★ 2026-08-30 — `walkOff` 가 늘었다(「걸어간 뒤 — 한 번 더 누르면 꺼집니다」).
+   ⚠ `walk`·`walkTip` 은 **자리에 남아 있되 이제 안 불린다** — 그 일을 손가락이 한다.
+     지우지 않은 까닭: 옛 세이브의 「본 쪽지」 서랍에 그 이름이 남아 있고, 없는 이름을
+     서랍에서 만나면 `coachTick` 이 그때마다 접어야 한다. 이름은 두고 부르는 자리만 걷었다. */
+const NOTE_IDS = ['walk', 'walkTip', 'walkOff', 'furn', 'pot'];
 is(Array.isArray(notes) && notes.length === NOTE_IDS.length && NOTE_IDS.every(k => notes.includes(k)),
-   '③-b 쪽지는 넷뿐이다 (A-1 walk · A-1b walkTip · A-2 furn · A-3 pot)', String(notes));
+   '③-b 쪽지는 다섯이다 (walk · walkTip · ★walkOff · furn · pot)', String(notes));
 
 /* ══ ④ §E-3 자유 이동 발소리 ═════════════════════════════════════════════ */
 console.log('\n== ④ §E-3 자유 이동 발소리 ==');

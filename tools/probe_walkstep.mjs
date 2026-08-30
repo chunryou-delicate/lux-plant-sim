@@ -95,6 +95,35 @@ await sleep(1200);
 await row('④ [확인] 을 누른 뒤 (이제 심어야 한다)');
 await sleep(2500);
 await row('⑤ 2.5초 더 기다린 뒤 (쪽지가 끼어드나)');
+/* ★★ ② 걸음 — 사람을 «고른 뒤»에는 «방바닥»을 짚어야 한다([Plan] 세 걸음의 둘째).
+   ⚠ 여기서는 게임이 쓰는 창구로 고른다 — 「사람이 누를 수 있나」가 아니라
+     「고른 뒤 손가락이 «무엇을» 짚나」를 보는 자리다. */
+await page.eval(`(()=>{ try{ const c=(window.__rv.characters()||[]).find(x=>x&&x.walkable);
+  if (c) window.__rv.selectCharacter(c.id); window.__redraw(); }catch(e){} })()`, false);
+await sleep(900);
+console.log('  ★ 사람을 고른 뒤 손가락 —', await page.eval(`(()=>{ const h=document.getElementById('hint');
+  const d=document.getElementById('hintDim');
+  return JSON.stringify({ 고름: (()=>{ try{ return window.__rv.selectedCharacter(); }catch(e){ return null; } })(),
+    손가락: !!(h && h.classList.contains('on')),
+    말: h ? ((h.querySelector('.say')||{}).textContent||'').trim() : null,
+    덮개: !!(d && d.classList.contains('on')) }); })()`));
+await page.eval(`(()=>{ try{ window.__rv.selectCharacter(null); window.__redraw(); }catch(e){} })()`, false);
+await sleep(400);
+/* ★ 캐릭 이동 손가락 — 놓은 «직후»에 서야 한다(대사를 걷고 나서) */
+for (let i = 0; i < 30; i++) {
+  const t = await page.eval(`document.getElementById('stage').classList.contains('talking')`);
+  if (t !== 'true') break;
+  await page.eval(`(()=>{ const b=document.getElementById('dlgSkip');
+    if (b && b.offsetParent !== null) b.click();
+    const x=document.getElementById('dlgBox'); if (x) x.click(); })()`, false);
+  await sleep(200);
+}
+await sleep(900);
+console.log('  ★ 캐릭 손가락 —', await page.eval(`(()=>{ const h=document.getElementById('hint');
+  const d=document.getElementById('hintDim');
+  return JSON.stringify({ 손가락: !!(h && h.classList.contains('on')),
+    말: h ? ((h.querySelector('.say')||{}).textContent||'').trim() : null,
+    덮개: !!(d && d.classList.contains('on')) }); })()`));
 /* ★ ④에서 무대에 talking 이 다시 붙었다 — 놓고 나면 몬이가 «말을 건다».
    사람은 그것을 넘긴다. 자도 그래야 한다 — 안 넘기면 「안내가 없다」로 잘못 읽는다. */
 /* ⚠ `.click()` 으로는 안 넘어간다 — 이 대사는 «진짜 손짓»으로 넘긴다(실측: 40번 눌러도 그대로).
@@ -154,6 +183,54 @@ await sleep(1600);
 await row('⑦ 한 번 더 누른 뒤');
 /* ★★★ 총괄 물음 ① — **사람을 «한 번도 안 눌러도» 끝까지 가나.**
    ⇒ 여기서부터는 «캐릭터를 절대 안 누른다». 시루 말풍선과 [다음 날]만 누른다. */
+console.log('');
+console.log('=== ★ 캐릭 이동 손가락이 «서나» (박사님 「강제 가이드」) ===');
+console.log(' ', await page.eval(`(()=>{ const h=document.getElementById('hint');
+  const d=document.getElementById('hintDim');
+  return JSON.stringify({ 손가락: !!(h && h.classList.contains('on')),
+    말: h ? ((h.querySelector('.say')||{}).textContent||'').trim() : null,
+    덮개: !!(d && d.classList.contains('on')),
+    '본 쪽지': (()=>{ try { return JSON.parse(localStorage.getItem('byeot.coach')||'[]'); }
+      catch(e){ return null; } })() }); })()`));
+/* ★ ②③ — 사람을 «눌러» 보고, 방바닥을 «눌러» 걸어가 본다 */
+{
+  const at = JSON.parse(await page.eval(`(()=>{ try{
+    const c=(window.__rv.characters()||[]).find(x=>x&&x.walkable); if(!c) return 'null';
+    const p=window.__rv.screenPosOf(c.id); if(!p) return 'null';
+    const r=document.getElementById('roomCanvas').getBoundingClientRect();
+    return JSON.stringify({ x:r.left+p.x, y:r.top+p.y, id:c.id });
+  }catch(e){ return 'null'; } })()`));
+  if (!at) console.log('  ⛔ 사람의 화면 자리를 못 얻었다');
+  else {
+    await mouse('mouseMoved', at.x, at.y, 0);
+    await mouse('mousePressed', at.x, at.y, 1);
+    await sleep(60);
+    await mouse('mouseReleased', at.x, at.y, 0);
+    await sleep(1200);
+    console.log('  ② 사람을 누른 뒤 —', await page.eval(`(()=>{ const h=document.getElementById('hint');
+      return JSON.stringify({ 고름: (()=>{ try{ return window.__rv.selectedCharacter(); }catch(e){ return null; } })(),
+        손가락: !!(h && h.classList.contains('on')),
+        말: h ? ((h.querySelector('.say')||{}).textContent||'').trim() : null }); })()`));
+    /* 방바닥 — 손가락이 짚는 그 자리를 그대로 누른다 */
+    const fl = JSON.parse(await page.eval(`(()=>{ const r=document.getElementById('roomCanvas').getBoundingClientRect();
+      return JSON.stringify({ x:r.left+r.width*0.42, y:r.top+r.height*0.66 }); })()`));
+    await mouse('mouseMoved', fl.x, fl.y, 0);
+    await mouse('mousePressed', fl.x, fl.y, 1);
+    await sleep(60);
+    await mouse('mouseReleased', fl.x, fl.y, 0);
+    await sleep(2200);
+    console.log('  ③ 방바닥을 누른 뒤 —', await page.eval(`(()=>{ const h=document.getElementById('hint');
+      const c=document.getElementById('coach');
+      return JSON.stringify({ 걷는중: (()=>{ try{ return (window.__rv.characters()||[])
+          .some(x=>x&&x.walking); }catch(e){ return null; } })(),
+        쪽지: !!(c && c.classList.contains('on')),
+        쪽지말: ((document.getElementById('coachBody')||{}).textContent||'').trim().slice(0,40),
+        손가락: !!(h && h.classList.contains('on')),
+        말: h ? ((h.querySelector('.say')||{}).textContent||'').trim() : null,
+        '본 쪽지': (()=>{ try { return JSON.parse(localStorage.getItem('byeot.coach')||'[]'); }
+          catch(e){ return null; } })() }); })()`));
+  }
+}
 console.log('');
 console.log('=== ★ 사람을 «한 번도 안 누르고» 계속 가 본다 ===');
 const clearDlg = async () => {
