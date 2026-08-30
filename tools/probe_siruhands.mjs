@@ -72,3 +72,27 @@ console.log('=== ⑤ 최대체력이 어떻게 오르나 (「하루에 하나씩
   }
   console.log(`  ⇒ 5 → ${lv} 까지 모두 ${acc} 회. 판을 뒤집는 크기는 아니다.`);
 }
+
+console.log('');
+console.log('=== ⑥ ★ 시루 다섯을 «엇갈리게» 세우면 하루에 손이 몇인가 ===');
+{
+  const max = st.STAMINA_RULES.startMax;
+  const per = (st.ACT_COST.harvest || 0) + (st.ACT_COST.sow || 0) + (st.ACT_COST.water || 0);
+  const cyc = fp.cropKindOf('beansprout').harvestDays;
+  /* 다섯을 하루씩 밀어 세운 판을 스무 날 돌려 본다 — 날마다 익는 것이 몇인가 */
+  for (const spread of [1, 0]) {
+    const start = [0, 1, 2, 3, 4].map(i => i * spread);   /* spread 0 = 다 같은 날 */
+    const load = [];
+    for (let d = 0; d < 20; d++) {
+      const ripe = start.filter(s0 => d >= s0 + cyc && (d - s0 - cyc) % cyc === 0).length;
+      load.push(ripe * per);
+    }
+    const over = load.filter(x => x > max).length;
+    console.log(`   ${spread ? '하루씩 엇갈려' : '전부 같은 날'} 세우면 —` +
+      ` 하루 최대 손 ${Math.max(...load)} · 체력 ${max} 을 넘는 날 ${over}/20` +
+      (over ? '  ⛔ 그날 못 다 돈다(다음 날로 밀린다)' : '  ✔ 하루에 다 돈다'));
+  }
+  console.log(`  ⇒ ★ 다섯을 하루씩 엇갈려 세우면 하루에 한 시루(손 ${per})면 된다 — 체력 ${max} 안이다.`);
+  console.log('  ⇒ ⚠ 같은 날 익게 세우면 첫날부터 넘친다. 「거두는 날이 엇갈립니다」가 그 말이다.');
+  console.log('  ⛔ 「하루에 몇으로 할까」는 여기서 안 정한다 — 수만 낸다.');
+}
