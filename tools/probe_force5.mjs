@@ -13,6 +13,9 @@ const W = Number(process.env.W || 390), H = Number(process.env.H || 844);
 /* ★ 몇 바퀴까지 걸을까 — 첫 수확이 밑값이고, CYCLES=2 로 두 바퀴째까지 본다
    (두 바퀴째라야 「거두기 → 다시 심기 → 물」의 체력을 «걸으며» 잴 수 있다) */
 const GOAL = Number(process.env.CYCLES || 1);
+/* 코어에게 콩나물 주기를 묻는 한 줄 — 판정에서 쓴다(날짜를 자에 안 박는다) */
+const HD = "(async()=>{ const fp=await import('/src/game/first_play.js');"
+         + " return String(fp.cropKindOf('beansprout').harvestDays); })()";
 const wd = setTimeout(() => { console.error('⏱ 자가 제한'); process.exit(2); }, 560000);
 wd.unref && wd.unref();
 const page = await launch({ width: W, height: H, dpr: 1 });
@@ -201,5 +204,34 @@ console.log('=== ★ 총괄이 물은 것 — 물 줄 날이 그 사이에 있�
 }
 console.log('');
 console.log('■ 끝 —', await now());
+/* ══════════════════════════════════════════════════════════════════════════
+   ★★★ **판정** — 이 자는 재기만 하는 것이 아니라 «지키는 자»이기도 하다.
+   한 줄로: **손가락만 따라가면 판이 돈다.** 그것이 무너지면 여기서 붉게 선다.
+   ⚠ 날짜를 박지 않는다 — 콩나물 주기(코어)에서 세어 나온 것에 하루 여유를 준다.
+   ⚠ 「손가락 없음」은 «몇 번까지»로 견준다. 대사·연출 중에는 손가락이 일부러 쉬므로
+     한두 번은 자연스럽다(0 으로 못 박으면 자가 거짓으로 붉어진다).
+   ══════════════════════════════════════════════════════════════════════════ */
+{
+  const 끝 = JSON.parse(await now());
+  const 굳음 = log.some(l => /제자리걸음/.test(l));
+  const 없음 = log.filter(l => /손가락 없음/.test(l)).length;
+  /* ⚠ 주기를 여기 안 박는다 — 코어에게 묻는다(작물이 바뀌어도 자가 저절로 맞는다) */
+  let 주기 = 5;
+  try { 주기 = Number(await page.eval(HD, true, 30000)) || 5; } catch { }
+  const 마지노 = (주기 + 1) * GOAL;
+  const 판정 = [
+    ['한 바퀴가 돈다 (거둔 횟수)', 끝.거둔횟수 >= GOAL, 끝.거둔횟수 + '/' + GOAL],
+    ['제자리걸음이 없다', !굳음, 굳음 ? '있다' : '없다'],
+    ['마지노(' + 마지노 + '일) 안에 끝난다', 끝.날 <= 마지노, 'Day ' + 끝.날],
+    ['손가락이 끊긴 자리가 적다', 없음 <= 2 * GOAL, 없음 + '번'],
+  ];
+  console.log('');
+  console.log('=== ★ 판정 — 손가락만 따라가면 판이 도나 ===');
+  let bad = 0;
+  for (const [ko, ok, v] of 판정) { if (!ok) bad++; console.log('  ' + (ok ? 'OK  ' : 'FAIL') + ' ' + ko + '  → ' + v); }
+  console.log('');
+  console.log(bad ? ('⛔ ' + bad + '개가 떨어졌습니다') : '✓ 다 통과');
+  if (bad) process.exitCode = 1;
+}
 await page.shot('docs/handoff/img/force5.png').catch(() => {});
 await page.close(); clearTimeout(wd);
