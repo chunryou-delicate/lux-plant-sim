@@ -98,6 +98,13 @@ await sleep(1200);
 /* ★ 놓으면 대사가 뜬다(퀘스트를 끝내고 여는 말) — 사람이 그것을 넘긴다. 자도 넘긴다. */
 await clearDlg();
 await sleep(1000);
+/* ★★ 총괄 실측을 그대로 흉내 낸다 — **넓은 화면에서는 시트가 «늘 펴져» 있다.**
+   그 판에서 손가락이 사는지 보는 것이 이 자의 요점이다. */
+await page.eval(`(()=>{ try{ window.__byeotSheet.open('bag'); }catch(e){} })()`, false);
+await sleep(1200);
+console.log('①-시트열림 —', await look());
+await page.eval(`(()=>{ try{ window.__byeotSheet.close(); }catch(e){} })()`, false);
+await sleep(900);
 console.log('① 시루를 놓고 대사를 걷은 뒤 —', await look());
 /* 사람을 누른다 */
 const at = JSON.parse(await page.eval(`(()=>{ try{

@@ -3747,7 +3747,25 @@ function hintFollowLoop(on) {
       }
       /* ★ 2026-08-30 — 손가락을 감출 때 **덮개도 같이 걷는다.** 손가락은 없는데 덮개만
          남으면 화면이 까닭 없이 어둡다 — 실측에서 그랬다(probe_hintdim ④). */
-      if (shOpen && !sh.contains(hintFollow.el)) {
+      /* ★★★★ 2026-08-30 — **「시트가 열렸다」가 아니라 「시트가 «그 대상을 덮나»」로 가른다.**
+         ══════════════════════════════════════════════════════════════════
+         ⛔ 여기 있던 것은 `shOpen && !sh.contains(el)` 였다. 뜻은 「시트에 가려진 것을
+           가리키지 마라」인데, **넓은 화면에서는 시트가 «늘 펴져» 있다**(이 파일 §onScreen).
+           ⇒ ⇒ ★ 그러면 방 안의 것을 짚는 손가락이 **통째로** 죽는다 —
+             총괄 실측(1770×1188): 시루 말풍선도 · [다음 날]도 · 캐릭 갈래도 «열두 걸음 내내» 없었다.
+             좁은 화면(390)에서는 시트가 닫혀 있어 «안 났다» ⇒ 「내 판에서는 됐는데」의 정체.
+         ★ 그러니 «덮나»를 «잰다» — 네모가 겹치면 감추고, 안 겹치면 그대로 둔다.
+           시트 «안»의 것(상점 [주문] 같은 것)은 겹쳐도 그 시트의 것이므로 예외다.
+         ⚠ 숫자를 안 박는다. 시트 폭은 화면마다 다르다(폰은 아래에서 올라오고 넓은 화면은 옆에 붙는다). */
+      const covered = (() => {
+        if (!shOpen || !sh || sh.contains(hintFollow.el)) return false;
+        try {
+          const a = hintFollow.el.getBoundingClientRect(), b = sh.getBoundingClientRect();
+          if (!a.width || !a.height || !b.width || !b.height) return false;
+          return !(a.right <= b.left || b.right <= a.left || a.bottom <= b.top || b.bottom <= a.top);
+        } catch { return false; }
+      })();
+      if (covered) {
         /* ★ 2026-08-30 — **빛나는 테도 같이 걷는다.** 손가락만 감추고 테를 두면
            「가리키는 것은 없는데 무언가 빛나는」 화면이 된다(총괄이 짚은 그 자리). */
         if (h2) h2.classList.remove('on');
@@ -3813,6 +3831,28 @@ function hintAt(el, say) {
   hintFollow = { el, say };
   hintFollowLoop(true);
   placeHintAt(el, say);
+}
+/* ★★★★ 2026-08-30 — **DOM 이 아닌 «점»을 짚을 때** (방 안의 자리 · 사람 · 방바닥).
+   ══════════════════════════════════════════════════════════════════
+   ⛔ 났던 일 — 이런 갈래는 손가락을 «손으로» 놓는다(`h.style.left/top`). 그런데 그때
+     **따라다니는 고리가 «옛 대상»을 그대로 들고 돌고 있었다.** 그 고리에는
+     「시트가 열렸는데 대상이 시트 «밖»이면 감춘다」는 줄이 있다 —
+     ★ 넓은 화면에서는 시트가 **늘 펴져 있다**(이 파일 §onScreen 이 적어 둔 사실).
+     ⇒ ⇒ 그래서 방금 켠 손가락을 **다음 프레임이 곧바로 껐다.** 좁은 화면에서는 안 났다.
+   ⇒ ★★★ 「내 판에서는 됐는데」의 정체가 이것이다 — 판이 아니라 **화면 크기**였다(총괄 실측).
+   ★ 그러니 점을 짚을 때는 **고리를 끈다.** 따라갈 «대상»이 없으므로 따라다닐 것도 없다.
+   ⚠ 카메라를 돌리면 이 손가락은 안 따라간다 — 반 초 지킴이가 다시 놓는다(§HINT_WATCH_MS). */
+function hintAtPoint(cx, cy, say, r = 48) {
+  const h = $('hint');
+  if (hintTargetEl) { hintTargetEl.classList.remove('hintTarget'); hintTargetEl = null; }
+  hintFollow = null; hintFollowLoop(false);
+  h.querySelector('.say').textContent = say;
+  h.classList.remove('side', 'toRight');
+  h.querySelector('.hand').textContent = '👇';
+  h.style.left = cx + 'px';
+  h.style.top = Math.max(4, cy - 86) + 'px';
+  h.classList.add('on');
+  dimAt(cx, cy, r);
 }
 
 /* 놓기만 하는 몫 — `hintAt` 과 프레임 고리가 **같은 셈**을 쓰게 갈라냈다 */
@@ -4971,16 +5011,10 @@ function updateHint() {
     if (goal) { try { gp = roomView.screenPosOf(goal); } catch { } }
     if (gp) {
       const cr = $('roomCanvas').getBoundingClientRect();
-      const h = $('hint');
-      h.querySelector('.say').textContent = '여기로 끌어 보세요 — ' + slotLabel(goal);
-      h.classList.remove('side', 'toRight');
-      h.querySelector('.hand').textContent = '👇';
-      h.style.left = (cr.left + gp.x) + 'px';
-      h.style.top = Math.max(4, cr.top + gp.y - 86) + 'px';
-      h.classList.add('on');
-      /* 방 안의 «자리»를 짚을 때도 같은 덮개다 — 대상이 DOM 이 아니라 3D 점일 뿐이다 */
-      dimAt(cr.left + gp.x, cr.top + gp.y, 44);
-      if (hintTargetEl) { hintTargetEl.classList.remove('hintTarget'); hintTargetEl = null; }
+      /* ★ 2026-08-30 — 여기도 «점»이라 같은 창구를 쓴다(§hintAtPoint).
+         손으로 놓던 것을 그대로 두면 «넓은 화면»에서 다음 프레임이 곧바로 껐다 —
+         따라다니는 고리가 옛 대상을 들고 「시트 밖이면 감춘다」를 하기 때문이다. */
+      hintAtPoint(cr.left + gp.x, cr.top + gp.y, '여기로 끌어 보세요 — ' + slotLabel(goal), 44);
       return;
     }
   }
@@ -5037,15 +5071,8 @@ function updateHint() {
         /* ② 고른 뒤에는 «방바닥»을 짚는다 — 자리(slot)가 아니라 그냥 바닥이라 화면 점으로 짚는다 */
         else gp = { x: cr.width * 0.42, y: cr.height * 0.66 };
         if (gp) {
-          const h = $('hint');
-          h.querySelector('.say').textContent = sel ? '여기를 눌러 걸어가 보세요' : '사람을 눌러 보세요';
-          h.classList.remove('side', 'toRight');
-          h.querySelector('.hand').textContent = '👇';
-          h.style.left = (cr.left + gp.x) + 'px';
-          h.style.top = Math.max(4, cr.top + gp.y - 86) + 'px';
-          h.classList.add('on');
-          if (hintTargetEl) { hintTargetEl.classList.remove('hintTarget'); hintTargetEl = null; }
-          dimAt(cr.left + gp.x, cr.top + gp.y, 52);
+          hintAtPoint(cr.left + gp.x, cr.top + gp.y,
+                      sel ? '여기를 눌러 걸어가 보세요' : '사람을 눌러 보세요', 52);
           return;
         }
       }
