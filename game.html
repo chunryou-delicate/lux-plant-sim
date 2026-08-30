@@ -2982,6 +2982,9 @@ import {
 import { createLightEngine } from './src/game/light_adapter.js';
 import { createGrowthAdapter } from './src/game/growth_adapter.js';
 import { createDialogue, createStoryteller, SPEAKERS,
+         /* ★ 2026-08-30 — 「끝냈다」와 「다음은」을 «가르는» 데 쓴다(§dlgOpen 의 흩기).
+            ⚠ 글자 모양(questDone…)으로 안 가른다 — 이름은 바뀔 수 있고, 표가 정본이다. */
+         QUEST_OPEN_SCRIPT, QUEST_DONE_SCRIPT,
          auditFaceKeys, auditFacePortraits } from './src/game/dialogue.js';
 import { createMusic } from './src/game/music.js';
 /* ★ 효과음 — 딸칵·사각사각·물·저벅저벅·띠로롱·턱 (2026-08-16 박사님 요청 · sfx-to-plan.md) */
@@ -10814,10 +10817,31 @@ function dlgFlushHeld() {
    글자·초상화가 맞는지 보려고 매번 그 길을 다 걸을 수는 없다. `__detailOpen`·`__lampTap` 과 같은 결이다.
    ⚠ **읽기용이 아니다** — 진짜로 큐에 넣는다. 그래서 재는 것이 실제로 뜨는 그 대사다. */
 window.__dlgOpen = (ids) => { try { return dlgOpen(ids); } catch (e) { return 'ERR ' + e.message; } };
+/* ★ 「퀘스트를 끝냈다」 줄과 「다음 퀘스트가 열렸다」 줄 — 표에 «있는가»로 가른다(글자 모양 아님) */
+const DLG_DONE_SET = new Set(Object.values(QUEST_DONE_SCRIPT));
+const DLG_OPEN_SET = new Set(Object.values(QUEST_OPEN_SCRIPT));
 function dlgOpen(scriptIds) {
   let ids = [].concat(scriptIds).filter(Boolean);
   /* 미뤄 둔 것이 **먼저**다 — 어제 일이 오늘 일보다 뒤에 오면 이야기가 거꾸로 선다 */
   if (dlgHold.length) { ids = [...dlgHold, ...ids]; dlgHold = []; }
+  /* ★★★★ 2026-08-30 — **「했다」와 「다음은」을 «흩는다»** ([Plan] ④ · 총괄 전달).
+     ══════════════════════════════════════════════════════════════════
+     ⛔ 났던 일 — 시루를 놓는 «그 순간»에 두 줄이 «한 묶음»으로 나왔다
+       (실측 probe_dlgwhen: `questDonePlaceSiru(b3)` + `questWaterSiru(b3)`).
+       ⇒ [Plan]: 셋은 한 걸음이 아니라 **세 걸음**이다 — 「왜 놓나」(놓기 전) ·
+         「했다」(놓은 순간) · 「다음은」(다음 걸음). ★ 줄일 것이 아니라 «흩을» 것이다.
+     ★ 그래서 한 묶음에 둘 다 들어오면 **「다음은」을 미룬다.** 버리지 않는다 —
+       미룸 서랍(`dlgHold`)이 이미 그 일을 한다(위 §미뤄 둔 것이 먼저다).
+     ⚠ 이름 «모양»으로 안 가른다(`questDone…`) — 표(`QUEST_DONE_SCRIPT`·`QUEST_OPEN_SCRIPT`)에
+       있는가로 가른다. 이름은 바뀔 수 있고 그때 조용히 갈린다.
+     ⚠ 「왜 놓나」(첫 줄)는 **안 건드렸다** — 재 보니 그것은 «놓기 전»에 이미 뜬다(b2). */
+  if (ids.some(id => DLG_DONE_SET.has(id))) {
+    const later = ids.filter(id => DLG_OPEN_SET.has(id));
+    if (later.length) {
+      ids = ids.filter(id => !DLG_OPEN_SET.has(id));
+      dlgHold = [...later, ...dlgHold];
+    }
+  }
   const solo = ids.find(id => DLG_SOLO.has(id));
   if (solo) { dlgHold = ids.filter(x => x !== solo); ids = [solo]; }
   else if (ids.length > DLG_MAX_PER_OPEN) {

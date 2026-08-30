@@ -200,5 +200,8 @@ console.log('■ 사람을 누른 적 —', await page.eval(`(()=>{ const S=wind
       catch(e){ return null; } })(),
     '기다리는 쪽지': (()=>{ try { return localStorage.getItem('byeot.coach.wait'); }
       catch(e){ return null; } })() }); })()`));
+/* ★ 대사가 «언제 무엇을» 열었나 — 미룬 줄이 «잃어버려지지» 않았는지 본다(§dlgOpen 흩기) */
+console.log('■ 대사를 연 차례 —', await page.eval(`JSON.stringify((window.__dlgLog||[])
+  .map(r => r.id + '(b' + r.b + '·d' + r.day + ')'))`));
 await page.shot('docs/handoff/img/walkstep.png').catch(() => {});
 await page.close(); clearTimeout(wd);
