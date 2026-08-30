@@ -827,6 +827,17 @@ function packTutorial(ts) {
     lamp: {
       unlocked: !!lamp.unlocked,
       owned: needInt(lamp.owned ?? 0, 'tutorial.lamp.owned', { min: 0 }),
+      /* ★★★ 2026-08-30 — **「방에 «세운» 등의 수」도 싣는다.**
+         ══════════════════════════════════════════════════════════════
+         `placed` 는 2026-08-17 에 늘었다(박사님: *"구매하면 인벤으로 들어오게"*) — 그때부터
+         **가진 것(`owned`)과 세운 것(`placed`)이 다른 값**이 됐는데, 여기 안 실렸다.
+         ⛔ 그래서 새로 켜면 `placed` 가 0 이 되고 ⇒ **이미 단 등이 «가방으로 되돌아온다»**
+           (`game.html §drawBag`: 남은 것 = owned − placed). 다시 놓으면 `S.lamps.count` 가
+           오히려 «내려간다» — 둘이 조용히 갈린다.
+         ★ 이 칸을 못 찾은 것은 `tools/test_save_roundtrip.mjs` 를 지은 «첫 판»이었다.
+         ⚠ 옛 세이브에는 이 칸이 없다 — 그때는 아래 복원에서 `lamps.count` 로 떨어뜨린다.
+           그 값이 곧 「세운 수」였던 것이 사실이라 근거가 있다(§placeLampFromBag). */
+      placed: needInt(lamp.placed ?? 0, 'tutorial.lamp.placed', { min: 0 }),
       litHours: needNum(lamp.litHours ?? 0, 'tutorial.lamp.litHours', { min: 0 })
     },
     rent: {
@@ -1760,6 +1771,13 @@ export function deserialize(raw, opt = {}) {
     const ts = createTutorialState({ enabled: t.enabled, rules: opt.rules });
     ts.day = t.day; ts.cashWon = t.cashWon; ts.seasonRunning = t.seasonRunning;
     ts.lamp = { ...ts.lamp, ...t.lamp };
+    /* ★ 옛 세이브에는 `placed` 칸이 없다 — 「세운 수」는 그 시절 `S.lamps.count` 가 곧 그것이었다.
+       ⚠ 지어내는 것이 아니라 **같은 값이었던 것이 사실**이라 그것으로 떨어뜨린다
+         (`fedDays` 를 `daysPlanted` 로 떨어뜨리는 것과 같은 근거).
+       ⚠ 새 세이브에는 칸이 «있으므로» 이 줄이 안 걸린다 — 그때는 적힌 값이 그대로 이긴다. */
+    if (!(st.tutorial.lamp && st.tutorial.lamp.placed != null))
+      ts.lamp.placed = Math.max(0, Math.min(ts.lamp.owned || 0, needInt((st.lamps || {}).count ?? 0,
+        'state.lamps.count', { min: 0 })));
     ts.rent = { ...ts.rent, ...t.rent };
     for (const k of Object.keys(ts.learned)) if (k in t.learned) ts.learned[k] = t.learned[k];
     ts.varieGrant = { ...ts.varieGrant, ...t.varieGrant };
