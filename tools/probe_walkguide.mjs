@@ -71,20 +71,34 @@ const look = () => page.eval(`(()=>{ const h=document.getElementById('hint');
       return ((b&&b.pots)||[]).map(q=>({ 놓임:!!(q.slotId||q.at) })); }catch(e){ return null; } })(),
     '본 쪽지': (()=>{ try { return JSON.parse(localStorage.getItem('byeot.coach')||'[]'); }
       catch(e){ return null; } })() }); })()`);
+/* ★ 대사가 «넘어가나»를 다섯 번 찍어 본다 — 안 넘어가면 그것이 답이다 */
+for (let i = 0; i < 5; i++) {
+  console.log(`  · 넘기기 ${i} —`, await page.eval(`(()=>{ const t=document.getElementById('dlgText');
+    return JSON.stringify({ talking: document.getElementById('stage').classList.contains('talking'),
+      글: t ? (t.textContent||'').trim().slice(0,22) : null,
+      연것: (window.__dlgLog||[]).length }); })()`));
+  await page.eval(`(()=>{ const b=document.getElementById('dlgSkip'); if (b) b.click(); })()`, false);
+  await sleep(400);
+}
 await clearDlg();
-/* 시루를 놓는다 — 그 뒤에 이 가르침이 선다 */
-await page.eval(`(()=>{ try{ window.__byeotSheet.open('bag'); }catch(e){} })()`, false);
+/* ★ 시루를 «상태»로 놓는다 — 화면 길로 놓으면 몬이 대사가 뜨고, 대사 중에는 손가락이 «규칙대로»
+   쉬어서 이 갈래를 못 본다(첫 판에서 그렇게 못 봤다). 여기서 보려는 것은 «갈래»지 «놓는 손»이 아니다.
+   ⚠ 그래서 이 자는 「사람이 놓을 수 있다」를 «안 잽니다» — 그건 probe_walkstep 몫이다. */
+console.log('· 시루를 상태로 놓는다 —', await page.eval(`(async()=>{ const st=await import('/src/game/state.js');
+  const S=window.__S(); const io=window.__io;
+  try {
+    st.placeSiru(S, { x: 0.6, y: 0, z: 0.6 }, { size: io.light.room.size, slots: io.light.room.slots, snapDist: 0 });
+  } catch(e) { try { st.setCropAt(S, { x: 0.6, y: 0, z: 0.6 },
+      { size: io.light.room.size, slots: io.light.room.slots, snapDist: 0 }); }
+    catch(e2) { return JSON.stringify({ 탈: e.message + ' / ' + e2.message }); } }
+  window.__redraw();
+  const b=S.firstPlay.beansprout;
+  return JSON.stringify({ 시루: ((b&&b.pots)||[]).map(q=>({ 놓임: !!(q.slotId||q.at) })) }); })()`, true, 30000));
 await sleep(1200);
-await tapEl('.bagslot[data-place="beansprout"]');
-await tapEl('#placeOk');
-await sleep(1200);
-/* ⚠ 가방(시트)을 «닫고» 나서 대사를 걷는다 — 넓은 화면에서는 시트가 옆에 붙어 있어
-   대사 상자 한가운데를 «덮는다». 그대로 누르면 시트가 그 손짓을 먹는다(첫 판에서 그랬다). */
-await page.eval(`(()=>{ try{ window.__byeotSheet.close(); }catch(e){} })()`, false);
-await sleep(600);
+/* ★ 놓으면 대사가 뜬다(퀘스트를 끝내고 여는 말) — 사람이 그것을 넘긴다. 자도 넘긴다. */
 await clearDlg();
-await sleep(900);
-console.log('① 시루를 놓은 뒤 —', await look());
+await sleep(1000);
+console.log('① 시루를 놓고 대사를 걷은 뒤 —', await look());
 /* 사람을 누른다 */
 const at = JSON.parse(await page.eval(`(()=>{ try{
   const c=(window.__rv.characters()||[]).find(x=>x&&x.walkable); if(!c) return 'null';
