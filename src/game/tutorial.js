@@ -741,7 +741,14 @@ export function tutorialDay(ts, opt = {}) {
      0원 아래로는 안 내려가고, 표시로만 알린다. 게임을 끝내지 않는다. */
   if (ts.cashWon < 0) {
     ts.cashWon = 0;
-    if (!ts.bankrupt) { ts.bankrupt = true; ev.push({ id: 'broke', ko: '돈이 다 떨어졌습니다' }); }
+    if (!ts.bankrupt) {
+      ts.bankrupt = true;
+      /* ★★ 2026-08-30 [Plan] — **첫 번인가**를 같이 낸다. 첫 번은 «위로»고 그다음은 «버릇»이다
+         (`dialogue §brokeTalk` ⇄ `brokeTalkAgain` · `rent` 의 `first` 와 **같은 규약**).
+         ⚠ 새 칸을 안 만들었다 — 「구호금을 이미 받았나」(`reliefTaken`)가 곧 「전에 0원이 된 적이
+           있나」다(구호금은 «처음 0원이 된 그날 한 번»뿐이므로 · §reliefWon). 그 칸은 세이브에 있다. */
+      ev.push({ id: 'broke', ko: '돈이 다 떨어졌습니다', first: !ts.reliefTaken });
+    }
   } else if (ts.bankrupt && ts.cashWon > 0) ts.bankrupt = false;
 
   /* ══ ★★★ 굶주림 시계 (2026-08-17 · §starveDays) ═════════════════════════

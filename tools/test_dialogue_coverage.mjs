@@ -599,10 +599,13 @@ check('데이터 — 대사마다 «부르는 자리»가 있다 («불린다»�
     ...Object.values(QUEST_OPEN_SCRIPT), ...Object.values(QUEST_DONE_SCRIPT),
     /* ★ 2026-08-29 — 화면이 직접 부르는 것은 **긁어서** 센다(§㉮) */
     ...calledInHtml,
-    /* ⚠ 아래 다섯만 남는다 — **코드에서 이름이 안 보이는** 길들이다.
-       god1        dialogue.js 가 순서를 맞추며 `out.splice(arr, 0, 'god1')` 로 끼워 넣는다
-       나머지 넷    `scriptOf` 가 **id 안에서** 가른다(계절·월세). 이벤트 표에는 한 이름뿐이다 */
-    'god1', 'rentFirst', 'rentAgain', 'autumnCame', 'winterCame'
+    /* ⚠ 아래 여섯만 남는다 — **코드에서 이름이 안 보이는** 길들이다.
+       god1           dialogue.js 가 순서를 맞추며 `out.splice(arr, 0, 'god1')` 로 끼워 넣는다
+       나머지 다섯     `scriptOf` 가 **id 안에서** 가른다. 이벤트 표에는 한 이름뿐이다:
+                      계절(autumn·winter) · 월세(first·again) · ★ 파산(첫 번·그다음)
+       ★ 2026-08-30 — `brokeTalkAgain` 이 늘었다([Plan]). `broke` 사건 하나가 둘로 갈린다 —
+         `ev.first` 가 거짓이면 그쪽이다(그 값은 `tutorial` 이 `reliefTaken` 으로 낸다). */
+    'god1', 'rentFirst', 'rentAgain', 'autumnCame', 'winterCame', 'brokeTalkAgain'
   ]);
   const dead = Object.keys(SCRIPTS).filter(id => !used.has(id) && !NOT_YET_USED.has(id));
   assert.equal(dead.length, 0, `아무 데서도 안 불리는 대사: ${dead}`);

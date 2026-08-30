@@ -181,11 +181,13 @@ export const SCRIPTS = {
          ③ **어디에 있나** — 가방이다. (2026-08-21 부터 선물은 가방 칸으로 온다)
      ⚠ 값·날짜를 여기서 말하지 않는다. 그건 화면이 세는 것이고 대사가 세면 두 벌이 된다(§2.8).
      ★ 식물신은 **짧고 무겁게** 말한다(§SPEAKERS). 설명은 몬이가 이어받는다. */
+  /* ★★★ 2026-08-30 [Plan] — **네 줄에서 «한 줄»로.** 나머지 셋은 «옮긴 것이 아니라 지운 것»이다 —
+     `monsteraArrived` 에 **이미 같은 말이 있었다**(그쪽 확인):
+       ② 「어두운 데서 먹을 것을」 ⇒ moni:205·206   ③ 「못 먹는다·값이 된다」 ⇒ jachwi:207 · moni:206·209
+       ④ 「가방에 넣어 두었다」    ⇒ jachwi:203
+     ⇒ 같은 말을 둘이 하면 한쪽이 낡는다. 식물신은 **자리마다 한 줄**이 계약이다(외형 없음). */
   god1: [
-    { who: 'god', text: '한 바퀴는 운이다. 두 바퀴는 손이지.' },
-    { who: 'god', text: '너는 어두운 데서 먹을 것을 얻었다. 이제 **반대**를 해 보아라.' },
-    { who: 'god', text: '이건 못 먹는다. 대신 **잘 둔 만큼** 값이 된다.' },
-    { who: 'god', text: '가방에 넣어 두었다.' }
+    { who: 'god', text: '한 바퀴는 운이다. 두 바퀴는 손이지.' }
   ],
 
   /* 몬스테라 도착 — ★정답이 아닌 자리에 온다(first_play.md 확정).
@@ -364,6 +366,15 @@ export const SCRIPTS = {
     /* ★초보 모드는 죽지 않는다(story_arc.md §0). 그 규칙을 대사가 그대로 말한다 —
        "게임 오버가 없다"고 설명하지 않고, 하루가 그냥 계속된다는 걸로 보여준다. */
     { who: 'moni',   text: '오늘 하루는 그래도 지나가. 내일도 지나가고.' }
+  ],
+
+  /* ★★★ 2026-08-30 [Plan] — **두 번째 파산부터는 «다른 말»이다.**
+     첫 번은 «위로»(위 `brokeTalk`)이고, 그다음은 «버릇»이다 — 놀라는 것도 힘이 든다.
+     ⚠ 문안은 [Plan] 것을 한 글자도 안 고쳤다. */
+  brokeTalkAgain: [
+    { who: 'jachwi', face: 'numb', text: '또 바닥이다.' },
+    { who: 'moni',   face: 'sad',  text: '이번엔 안 놀라네.' },
+    { who: 'jachwi', text: '…놀랄 힘도 아껴야지.' }
   ],
 
   /* ═══ §4 계절 · 식물등 ════════════════════════════════════════════════ */
@@ -1565,8 +1576,10 @@ export const REPEATABLE = new Set(
   Object.keys(SCRIPTS).filter(k => k.startsWith('chat'))
     /* ★ `cropHandsShort` 는 되풀이된다 — 몰리는 날이 판마다 여러 번 온다.
        ⚠ 다만 «드물다»(손이 모자랄 만큼 몰려야 한다). 그래서 잔소리가 안 된다. */
+    /* ★★ 2026-08-30 [Plan] — **파산은 «되풀이된다».** 첫 번은 위로고 두 번째부터는 버릇이다.
+       ⚠ 「또」가 붙는 손은 `rentAgain` 이 이미 쓴다 — 새 결을 안 지었다(㊺). */
     .concat(['rentSoon', 'rentAgain', 'plantStalledAgain', 'plantStalledWinter',
-             'cropHandsShort'])
+             'cropHandsShort', 'brokeTalk', 'brokeTalkAgain'])
 );
 
 /* ── 진행 ───────────────────────────────────────────────────────────── */
@@ -1776,6 +1789,10 @@ function scriptOf(ev) {
   if (id === 'season') return ev.season === 'autumn' ? 'autumnCame'
                             : ev.season === 'winter' ? 'winterCame' : null;
   if (id === 'rent') return ev.first ? 'rentFirst' : 'rentAgain';
+  /* ★ 2026-08-30 [Plan] — 파산도 «첫 번»과 «그다음»이 다르다(위 §brokeTalkAgain).
+     ⚠ 옛 세이브·옛 코어는 `first` 를 안 싣는다 ⇒ `undefined` 면 «첫 번»으로 읽는다.
+       모르면 위로하는 쪽이 낫다 — 「또 바닥이네」를 처음 겪는 사람에게 하면 안 된다. */
+  if (id === 'broke') return ev.first === false ? 'brokeTalkAgain' : 'brokeTalk';
   /* ★ 퀘스트는 `questId` 로 갈린다 (2026-08-17 · 위 §QUEST_OPEN_SCRIPT) */
   if (id === 'quest_opened') return QUEST_OPEN_SCRIPT[ev && ev.questId] || null;
   if (id === 'quest_done')   return QUEST_DONE_SCRIPT[ev && ev.questId] || null;
