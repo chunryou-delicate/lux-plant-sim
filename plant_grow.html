@@ -1179,6 +1179,16 @@ let PLANT_DLI=null;         // 가장 최근 하루의 DLI
    복사하면 두 벌이 되고, 한쪽만 자라는 날이 온다. 안의 값을 만지는 코드는 그대로 산다. */
 let DLI_HIST=[];            // 최근 며칠치 (뒤가 최신)
 const DLI_KEEP=14;          // 이동평균에 쓸 만큼만 남긴다
+/* ★★ 「빛을 «몇 칸» 받았나」 — 누적이라 DLI_KEEP 으로 «안 잘린다» (2026-08-30)
+   ⚠ DLI_HIST 는 14칸만 남으므로 «길이»로는 못 센다. 그래서 따로 센다.
+   ★ 왜 있나 — 코어가 「내 이력」과 「엔진 이력」이 갈렸는지 볼 창구다.
+     desync(loop.js §㉠)에서 «엔진은 그 하루를 받았는데 코어는 안 쌓는» 일이 난다.
+     [core] 실측(2026-08-30): 코어 이력 3 · fedDays 3 «둘이 맞아» 코어 쪽 수로는 못 잡는다.
+     ⇒ 갈렸는지는 **엔진이 몇 칸 받았나**로만 보인다. 그 한 칸이 무늬를 다시 굴리고,
+       무늬 한 장은 20,000 ⇄ 1,150,000 이다.
+   ⚠ 세이브에 «안 남는다». 라이브에서 「지금 갈렸나」를 보는 값이지 복원의 입력이 아니다.
+     복원의 입력은 코어의 `S.dliHist` 하나다(save.js §75). */
+let DLI_FED=0;              // setDailyLight 이 «유효한 값»을 받은 횟수(누적)
 
 // 하루치 빛을 넘긴다. 계약 객체 daily_light/1을 통째로 줘도 되고 숫자만 줘도 된다.
 //   setDailyLight(contract, 'shelf_top')  ← 이 그루가 놓인 슬롯을 지정
@@ -1220,7 +1230,7 @@ function setDailyLight(c, slotId){
   // ★유효한 게임 입력이 들어오면 튜닝 모드는 끝난다. 남겨두면 저광 게이트를 우회한다.
   noteLightInput(d);
   PLANT_DLI=d;
-  if(d!=null){ DLI_HIST.push(d); if(DLI_HIST.length>DLI_KEEP) DLI_HIST.shift(); }
+  if(d!=null){ DLI_HIST.push(d); DLI_FED++; if(DLI_HIST.length>DLI_KEEP) DLI_HIST.shift(); }
   return d;
 }
 // 최근 n일 이동평균. 날씨가 굴러가면 같은 자리도 하루 값이 크게 흔들려서,
@@ -1233,7 +1243,10 @@ function dliAvg(days){
   return s/n;
 }
 function dliHistory(){ return DLI_HIST.slice(); }
-function resetDailyLight(){ DLI_HIST.length=0; PLANT_DLI=null; PLANT_SLOT=null; }
+/* 엔진이 「유효한 빛」을 몇 칸 받았나(누적). ⚠ 세터는 안 둔다 —
+   밖에서 맞출 수 있으면 「갈렸나」를 보는 값이 그 순간 장식이 된다. */
+function dliFedCount(){ return DLI_FED; }
+function resetDailyLight(){ DLI_HIST.length=0; DLI_FED=0; PLANT_DLI=null; PLANT_SLOT=null; }
 function dli7(){ return dliAvg(7); }
 // 최근 14일 변동계수(표준편차/평균). 기록이 7일 미만이면 '모른다' → null.
 // ⚠ 1:1 모드에선 7일 = 168 실시간 시간이다. "관찰 기록 n/7일"을 UI로 보여줄 것
