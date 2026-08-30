@@ -354,10 +354,25 @@ await page.eval(`(()=>{ try{ window.__byeotSheet.open(); window.__byeotSheet.tab
   const c=document.getElementById('musunCard');
   if (c) c.scrollIntoView({ block:'center' }); return true; })()`, false);
 await sleep(600);
-const m = await cellsOf('#musunGauge .cells');
-ok('M-1 무순 칸에도 칸 게이지가 있다', !!m, JSON.stringify(m));
-ok('M-2 ★★ 무순은 **7칸**이다 (5를 박아 뒀으면 여기서 걸린다)', m && m.n === 7, m && m.n);
-ok('M-3 안 심었으면 찬 칸이 0이다', m && m.on === 0, m && m.on);
+/* ★★★ 2026-08-30 — **무순 «카드»는 화면에서 없어졌다.** 2026-08-16 에 박사님이
+   *"카드 없애고"* 하셔서 `drawMusun` 이 `hide` 로 늘 접는다(game.html:3536 `const hide = true`).
+   ⇒ 그 안에 있던 `#musunGauge` 는 이제 **한 번도 안 채워진다** — 재 보니 늘 빈 칸이다
+     (probe_musungauge: 몬이가 왔다고 해도 칸 수 0).
+   ⇒ ⇒ 그러니 여기서 「무순 칸이 7개인가」를 «그 카드에서» 보는 것은 없는 것을 보는 일이다.
+   ★ 재는 «뜻»은 그대로 지킨다 — 「주기가 곧 칸 수다. 작물마다 다르다」.
+     그 뜻은 두 곳에서 볼 수 있다: ① 데이터(무순 7일 · 콩나물 5일) ② 실제로 그린 줄의 칸 수.
+   ⚠ 무순 «판»을 놓아야 그 줄이 생긴다 — 그건 이 절의 일이 아니라 별도 자의 일이다.
+     여기서는 ①과 「같은 함수가 그린다」까지 못 박는다. */
+const kinds = JSON.parse(await page.eval(`(async()=>{ const fp=await import('./src/game/first_play.js');
+  const one=(id)=>{ try{ return fp.cropKindOf(id).harvestDays; }catch(e){ return null; } };
+  return JSON.stringify({ musun: one('musun'), beansprout: one('beansprout') }); })()`, true, 30000));
+ok('M-1 무순 주기가 데이터에 서 있다 (7일)', kinds.musun === 7, JSON.stringify(kinds));
+ok('M-2 ★★ 작물마다 주기가 다르다 — 콩나물 5 · 무순 7 (한 값을 박아 뒀으면 여기서 걸린다)',
+   kinds.beansprout === 5 && kinds.musun === 7, JSON.stringify(kinds));
+/* ③ 그 주기가 «칸 수»로 그려지나 — 콩나물 줄에서 본다(같은 함수가 그린다 · §cellsHTML) */
+const bean = await cellsOf('#siruList .siru .cells');
+ok('M-3 주기가 그대로 칸 수가 된다 (콩나물 줄 5칸)',
+   !!bean && bean.n === kinds.beansprout, JSON.stringify(bean));
 await shot('cells_musun7');
 
 /* ══ A. ★★ 가방 격자 칸이 **곧 손잡이다** (2026-08-10) ══════════════════
@@ -407,10 +422,15 @@ const tapCell = () => page.eval(`(()=>{
   if (!b || !b.hasAttribute('data-place')) return false; b.click(); return true; })()`);
 ok('A-9 격자 칸을 누를 수 있다', await tapCell() === true);
 await sleep(1700); await skipTalk();
+/* ★★ 2026-08-30 — **모드가 하나 줄었다.** 예전에는 「임시로 서고 «이동 상태»」였고 [확인]은
+   손을 뗄 때 떴는데, 누르기는 끌기를 안 지나가서 그 손이 영영 안 왔다 — 사람이 격자 위에서
+   멈췄다(game.html §startPhonePlace 의 그 주석 · test_place_confirm ②-3 과 같은 자리).
+   ⇒ 지금은 놓자마자 `confirming` 이다. 재는 뜻은 그대로 — 「임시로 서되 «확정은 아니다»」. */
 let mv = await page.eval(`({ moving: document.getElementById('stage').classList.contains('moving'),
+  confirming: document.getElementById('stage').classList.contains('confirming'),
   placed: ((window.__S().firstPlay.beansprout.pots)||[]).filter(p=>p&&(p.slotId||p.at)).length })`);
-ok('A-10 ★★ **누르면** 방에 하나가 임시로 서고 곧바로 이동 상태가 된다',
-   mv.placed === placed1 + 1 && mv.moving === true, JSON.stringify(mv));
+ok('A-10 ★★ **누르면** 방에 하나가 임시로 서고 곧바로 되묻는다 (확정이 아니다)',
+   mv.placed === placed1 + 1 && (mv.confirming === true || mv.moving === true), JSON.stringify(mv));
 /* 자리를 조금 옮기고 [확인] — 흐름이 끝까지 도는지 본다 */
 await page.eval(`(()=>{ const c=document.getElementById('roomCanvas').getBoundingClientRect();
   const x=c.left+c.width*0.5, y=c.top+c.height*0.62;
