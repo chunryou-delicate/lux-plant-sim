@@ -152,5 +152,39 @@ await row('⑥ 시루 말풍선을 누른 뒤');
 await tapEl('#marks .mark');
 await sleep(1600);
 await row('⑦ 한 번 더 누른 뒤');
+/* ★★★ 총괄 물음 ① — **사람을 «한 번도 안 눌러도» 끝까지 가나.**
+   ⇒ 여기서부터는 «캐릭터를 절대 안 누른다». 시루 말풍선과 [다음 날]만 누른다. */
+console.log('');
+console.log('=== ★ 사람을 «한 번도 안 누르고» 계속 가 본다 ===');
+const clearDlg = async () => {
+  for (let i = 0; i < 30; i++) {
+    const t = await page.eval(`document.getElementById('stage').classList.contains('talking')`);
+    if (t !== 'true') return;
+    if (!await tapEl('#dlgSkip')) return;
+  }
+};
+for (let step = 1; step <= 8; step++) {
+  await clearDlg();
+  /* 말풍선이 있으면 그것을 누른다 — 그것이 「지금 할 일」이다 */
+  const hadMark = await tapEl('#marks .mark');
+  if (!hadMark) {
+    /* 할 일이 없으면 하루를 넘긴다 */
+    await tapEl('#next');
+  }
+  await sleep(1200);
+  await row(`걸음 ${step} (${hadMark ? '말풍선' : '다음 날'})`);
+}
+console.log('');
+console.log('■ 사람을 누른 적 —', await page.eval(`(()=>{ const S=window.__S();
+  return JSON.stringify({ '캐릭터 고름': !!(window.__rv && window.__rv.selectedCharacter
+      && window.__rv.selectedCharacter()),
+    '첫 플레이 단계': S.firstPlay && S.firstPlay.phase,
+    '날': S.day,
+    '시루': ((S.firstPlay.beansprout||{}).pots||[]).map(q=>({ 놓임:!!(q.slotId||q.at),
+      심음:!!q.sown, 물:q.startedOnDay!=null, 거둠:!!q.harvested })),
+    '쪽지 본 것': (()=>{ try { return JSON.parse(localStorage.getItem('byeot.coach')||'[]'); }
+      catch(e){ return null; } })(),
+    '기다리는 쪽지': (()=>{ try { return localStorage.getItem('byeot.coach.wait'); }
+      catch(e){ return null; } })() }); })()`));
 await page.shot('docs/handoff/img/walkstep.png').catch(() => {});
 await page.close(); clearTimeout(wd);
