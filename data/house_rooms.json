@@ -285,7 +285,7 @@
         "slots": {
           "peak_summer": 6.69,
           "avg7_summer": 4.3,
-          "count": 15,
+          "count": 4,
           "sampled_peak_ratio_pct": 84,
           "_sampled_note": "slots.peak ÷ space.peak. 두 값의 표본이 다르다 — space 는 0.25m 격자 위 점이고 slots 는 가구가 정한 임의 높이다. 격자 사이에 더 좋은 자리가 있으면 100%를 넘을 수 있고, 그건 오차가 아니라 표본 차이다.",
           "_method": "지금 furniture 배치 기준. 차폐에 가구 포함. 식물등 0개(자연광만) 값이다 — 등을 켠 값은 아래 lamp 절.",
@@ -333,7 +333,13 @@
             ],
             "_note": "★ 갈라짐 문턱은 7일평균 6.0 (data/balance/light_thresholds.json · monstera_deliciosa). 자연광만으로는 못 넘고 등 1개로 넘는다 — 반지하에서 산 등이 원룸에서 값을 하는 자리다. 반지하는 같은 조건에서 등1·등2 모두 1칸이었다. ⚠ 무늬종 갈라짐(8.4)은 등 둘을 다 켜도 못 넘는다(7.28, 여유 13%). 그건 온실(자연광 9.36) 몫으로 남겨 둔 것이다."
           },
-          "_slotid_note": "★ 2026-08-06 부터 원룸도 가구마다 uid 를 데이터에 못 박는다(반지하와 같은 규약). 그 전에는 light_adapter 가 로드 때 `TEMP~oneroom#n~preset` 을 붙여 11칸 전부가 임시 uid 위에 있었고, 가구를 하나만 더해도 저장된 화분이 남의 자리로 갔다."
+          "_slotid_note": "★ 2026-08-06 부터 원룸도 가구마다 uid 를 데이터에 못 박는다(반지하와 같은 규약). 그 전에는 light_adapter 가 로드 때 `TEMP~oneroom#n~preset` 을 붙여 11칸 전부가 임시 uid 위에 있었고, 가구를 하나만 더해도 저장된 화분이 남의 자리로 갔다.",
+          "_was_2026_08_06": {
+            "count": 15,
+            "_why": "★ 옛 값을 «지우지 않는다». 「자리가 15였다」가 «원룸이 가구 있는 방이었을 때»의 기록이다.",
+            "_what_moved": "2026-08-30 에 원룸을 «빈 방»으로 비웠다(d4a4221) — 창턱만 남기고 열둘을 지웠다. ⇒ 자리 15 → 4. peak·avg7 은 «안 바뀌었다» — 창턱 값은 그대로다",
+            "_measured_by": "tools/test_measured_fresh.mjs 가 돌 때마다 다시 재서 견준 값이다. 손으로 안 적었다."
+          }
         },
         "area": {
           "floor_m2_net": 27.3,
@@ -345,10 +351,11 @@
           },
           "_method": "floor_m2_net = 0.25m 격자로 센 실제 바닥(외곽 벽 띠·칸막이·도려낸 자리 제외). floor_m2_gross = 외곽 치수 곱. 등 상한은 net 기준."
         },
-        "measuredAt": "2026-08-06",
+        "measuredAt": "2026-08-30",
         "roomRev": "d4a4221 2026-08-30 원룸을 빈 방으로 비웠다 — 창턱만 남기고 열둘",
         "_roomRev_fixed_2026_08_23": "★ 이 줄에 **커밋 이름이 아예 없었다** — 날짜와 설명만 적혀 있었다. tools/test_measured_fresh.mjs §A 가 처음 켜지자마자 잡았다. 이름이 없으면 「그때 이후로 뭐가 바뀌었나」를 아무도 못 센다. 곧 이 방은 낡았는지 알 길이 없는 상태였다.",
-        "status": "확정"
+        "status": "확정",
+        "_note_2026_08_30": "★ slots.count 만 바뀌었다(15 → 4). peak_summer·avg7_summer 는 «한 톨도» 안 움직였다 — 창턱은 창에 붙어 있어 «그 앞을 막을 자리가 없어» 다른 가구가 안 가렸기 때문이다 [잰 것]. ⚠ space·area 는 «안 건드렸다» — 브라우저 격자 도구가 있어야 한다. 아직 낡았다."
       },
       "_emptied_2026_08_30": "★★ 원룸을 «빈 방»으로 비웠다 (박사님 확정) — 「가구 싹 비우고, 반지하 있던 가구만 인벤에 넣어서 가져와서 «플레이어가 배치»하도록」.\n  남긴 것: oneroom-sill (shelf_sill_pot4 · mount=wall) ⇒ §13 대로 «방에 붙은 것»이라 안 들고 간다.\n    ⇒ ★ 자리 «4칸»(sill:0~3). ⛔ 다 비우면 자리가 «0»이라 화분을 하나도 못 놓는다 [잰 것].\n      ⇒ 그래서 창턱을 남기는 것이 «취향»이 아니라 «최소»다.\n  지운 것 12개: bed(bed_single) · nightstand(nightstand) · desk(desk) · chair(chair) · wardrobe(wardrobe) · shelf(shelf) · rug(rug) · lamp-floor(lamp_floor) · lamp-ceiling(lamp_ceiling) · lamp-pendant(lamp_pendant) · growlight-bar(growlight_bar) · growlight-clip(growlight_clip)\n  ⇒ ★ 자리 «15 → 4». ppfd·ratio 는 프로필을 다시 뽑아 맞춘다(같은 날 따로 커밋).\n  ⚠⚠ 그리고 «지우면서 사라질 앎»을 docs/engine/rooms_spec.md §14 로 옮겨 뒀다 —\n    「등이 창턱 «바로 위 0.47m»에 붙어 있어서 원룸이 «단번»이었다」와 그것을 고친 셈 전부다.\n    ⇒ ★ 이제 등은 «사람이 놓는다». 그러면 그 발견이 «플레이어가 고를 수 있는 것»이 된다.\n  ⚠ 되돌리려면: git checkout <이 커밋의 앞> -- data/house_rooms.json  (백업 $TEMP/hr_before_empty.json)"
     },
