@@ -16,7 +16,8 @@ const GOAL = Number(process.env.CYCLES || 1);
 /* 코어에게 콩나물 주기를 묻는 한 줄 — 판정에서 쓴다(날짜를 자에 안 박는다) */
 const HD = "(async()=>{ const fp=await import('/src/game/first_play.js');"
          + " return String(fp.cropKindOf('beansprout').harvestDays); })()";
-const wd = setTimeout(() => { console.error('⏱ 자가 제한'); process.exit(2); }, 560000);
+/* ⚠ 바퀴 수에 맞춰 늘린다 — 한 바퀴에 대략 오 분이다(고정해 두면 긴 걸음이 늘 잘린다) */
+const wd = setTimeout(() => { console.error('⏱ 자가 제한'); process.exit(2); }, 300000 + 320000 * GOAL);
 wd.unref && wd.unref();
 const page = await launch({ width: W, height: H, dpr: 1 });
 await page.goto(`${BASE}/game.html`);
@@ -69,6 +70,9 @@ const now = () => page.eval(`(async()=>{ const fp=await import('/src/game/first_
   const tab=[...document.querySelectorAll('[role=tab]')].find(t=>t.getAttribute('aria-selected')==='true');
   return JSON.stringify({ 날:S.day,
     탭: tab ? tab.id : null,
+    /* ★ 「할 일」 한 줄도 걸음마다 적는다 — 오늘 겪은 병이 「할 일과 손가락이 «다른 말»을 한다」였다.
+       걸음 줄에 «둘 다» 있어야 눈으로 바로 갈린다(총괄: 자에 그것이 없어 한 번 더 걸어야 했다). */
+    할일: (document.getElementById('quest').textContent||'').trim().slice(0,26),
     체력: sv ? (sv.left ?? sv.now ?? null) + '/' + (sv.max ?? null) : null,
     거둔횟수: ((S.firstPlay&&S.firstPlay.beansprout&&S.firstPlay.beansprout.harvestCount)||0),
     /* ⚠ 이름을 «코어가 부르는 대로» 쓴다 — 예전에 watered·canHarvest 로 물었다가
@@ -82,7 +86,7 @@ console.log('■ 켠 직후 —', await now());
 console.log('');
 console.log('=== 손가락만 따라 첫 수확까지 ===');
 const log = [];
-let taps = 0, lastDay = -1, lastSig = '', same = 0;
+let taps = 0, lastDay = -1, lastSig = '', same = 0, deepDone = false;
 for (let i = 0; i < 60 * GOAL; i++) {
   await quiet();
   const st = JSON.parse(await now());
@@ -147,7 +151,9 @@ for (let i = 0; i < 60 * GOAL; i++) {
     taps++;
     continue;
   }
-  log.push(`Day ${String(st.날).padStart(2)} · 체력${st.체력} · ${String(st.탭).padEnd(9)} · ${String(f.짚는것).padEnd(11)} 「${f.말}」` +
+  log.push(`Day ${String(st.날).padStart(2)} · 체력${st.체력} · ${String(f.짚는것).padEnd(11)} 「${f.말}」` +
+           `
+              할 일 「${st.할일}」` +
            (st.줄[0] ? `  (물필요:${st.줄[0].물필요 ? 'O' : 'X'} 심어야:${st.줄[0].심어야 ? 'O' : 'X'}` +
             ` 익음:${st.줄[0].익음 ? 'O' : 'X'} 남은날:${st.줄[0].남은날})` : ''));
   /* ★ **제자리걸음을 잡는다** — 같은 것을 짚는데 판이 «하나도» 안 바뀌면 그건 멈춘 것이다.
@@ -171,6 +177,17 @@ for (let i = 0; i < 60 * GOAL; i++) {
                  글:(b.textContent||'').trim().slice(0,16) }; };
       return JSON.stringify({ harvestCrop:f('harvestCrop'), waterCrop:f('waterCrop'),
         짚는것:(()=>{ const t=document.querySelector('.hintTarget'); return t?(t.id||t.className):null; })() }); })()`));
+    /* ★ 가방에 «무엇이» 들었나 · 배너가 «무슨 말»을 했나 — 「눌러도 아무 일이 없다」의 답이 여기 있다 */
+    log.push('   · 가방과 배너 — ' + await page.eval(`(()=>{
+      const S=window.__S();
+      /* 배너의 임자는 #event 다 — #banner 로 물었다가 늘 null 을 받았다(내가 만든 판) */
+      const b=document.getElementById('event');
+      return JSON.stringify({
+        화분들:(S.pots||[]).map(p=>({ id:p.id, 자리:p.slotId||null, 좌표:!!p.at,
+                                      놓은적:p.placedOnce, 이름:p.ko||p.name||null })),
+        가방칸:[...document.querySelectorAll('#bagGrid [data-potbag]')].map(c=>c.getAttribute('data-potbag')),
+        배너: b ? { 보임:b.offsetParent!==null, 글:(b.textContent||'').trim().slice(0,50) } : null,
+        할일:(document.getElementById('quest').textContent||'').trim().slice(0,40) }); })()`));
     log.push('   · 시트 쪽 — ' + await page.eval(`(()=>{
       const pages=[...document.querySelectorAll('.sheetpage')].map(p=>p.id+(p.classList.contains('on')?'*':''));
       const acts=[...document.querySelectorAll('[data-act]')].map(b=>{
@@ -185,7 +202,58 @@ for (let i = 0; i < 60 * GOAL; i++) {
       return el ? (el.id || el.tagName + '.' + (el.className||'').split(' ')[0]) : 'null'; })()`));
     break;
   }
+  /* ★★ 가방의 그루 칸을 짚었을 때는 **손짓이 어디까지 가나**를 통째로 적는다.
+     「눌러도 아무 일이 없다」의 답이 그 사이에 있다(총괄 [d11]). 한 번만 적는다. */
+  const deep = /bagslot/.test(String(f.짚는것)) && !deepDone;
+  if (deep) {
+    deepDone = true;
+    await page.eval(`(()=>{ window.__ev=[];
+      const b=document.querySelector('#bagGrid [data-potbag]');
+      if (b) for (const t of ['pointerdown','pointerup','mousedown','mouseup','click'])
+        b.addEventListener(t, ()=>window.__ev.push('칸:'+t), true);
+      for (const t of ['pointerdown','pointermove','pointerup','pointercancel'])
+        addEventListener(t, ()=>window.__ev.push('창:'+t), true);
+    })()`, false);
+  }
+  /* ★ **누르기 «전»에 겨눈 곳을 확인한다** — 짚는 것과 «그 점에 실제로 잡히는 것»이 다르면
+     내가 엉뚱한 데를 누르는 것이고, 그러면 「눌러도 안 된다」가 «자가 만든 판»이 된다.
+     ⚠ 오늘 그 함정에 한 번 빠졌다(덮개 구멍이 딴 데 뚫려 있었다). */
+  {
+    const aim = await page.eval(`(()=>{ const t=document.querySelector('.hintTarget');
+      const el=document.elementFromPoint(${Math.round(f.x)}, ${Math.round(f.y)});
+      if (!t || !el) return 'null';
+      const 맞나 = (el === t) || t.contains(el) || el.contains(t);
+      if (맞나) return 'null';
+      return JSON.stringify({ 짚는것:(t.id||t.className||'').toString().slice(0,28),
+        그점:(el.id||el.tagName+'.'+(el.className||'').toString().split(' ')[0]) }); })()`);
+    const o = JSON.parse(aim);
+    if (o) log.push('     ⚠ 겨눈 곳이 다르다 — ' + JSON.stringify(o));
+  }
   await tapPoint(f.x, f.y);
+  if (deep) {
+    log.push('     ↳ ★ 손짓이 간 곳 — ' + await page.eval(`(()=>{
+      const S=window.__S();
+      return JSON.stringify({ 받은것:(window.__ev||[]),
+        집기: window.__pickState ? window.__pickState() : null,
+        끌기: window.__dragState ? window.__dragState() : null,
+        /* ⚠ 탈을 «통째로» 낸다 — 끝의 셋만 보다가 「던짐」을 놓쳤다(오늘 그 판에 한 번 속았다) */
+        탈전부:(window.__errs||[]).slice(-10),
+        아래글:(document.getElementById('dropLabel').textContent||'').trim().slice(0,24),
+        화분:(S.pots||[]).map(p=>({ 자리:p.slotId, 좌표:!!p.at, 놓은적:p.placedOnce })),
+        확인바:(()=>{ const b=document.getElementById('placeOk');
+          if(!b) return null; const r=b.getBoundingClientRect(); return { 보임:r.width>0&&r.height>0 }; })(),
+        배너:(()=>{ const b=document.getElementById('event');
+          return b?((b.textContent||'').trim().slice(0,50)):null; })() }); })()`));
+  }
+  /* ★ 누른 «직후»에 배너를 한 번 훔쳐본다 — 배너는 몇 초 뒤 사라져서,
+     제자리걸음이 잡힐 때쯤이면 「아무 말도 없었다」로 보인다(자가 거짓말하는 꼴). */
+  {
+    const bn = await page.eval(`(()=>{ const b=document.getElementById('event');
+      if(!b) return 'null'; const t=(b.textContent||'').trim();
+      return JSON.stringify({ 보임:b.offsetParent!==null, 글:t.slice(0,60) }); })()`);
+    const o = JSON.parse(bn);
+    if (o && o.글) log.push('     ↳ 배너 — ' + o.글);
+  }
   taps++;
   lastDay = st.날;
 }

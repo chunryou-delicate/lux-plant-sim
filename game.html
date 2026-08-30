@@ -1213,7 +1213,13 @@
        ⚠ 덮개는 **손가락이 뜰 때만** 켜진다. 손가락이 없으면 아무것도 안 막는다. */
   #hintDim{position:fixed;inset:0;z-index:69;pointer-events:none;display:none;
     transition:opacity .18s ease}
-  #hintDim.on{display:block;pointer-events:auto}
+  /* ★★★★ 2026-08-30 — **덮개는 손짓을 «직접» 먹지 않는다**(`pointer-events:none` 그대로).
+     ⛔ 예전에는 켜지면 `auto` 였다. 그러면 덮개가 «먼저» 받아서, 밑에 무엇이 있는지도
+       모른 채 통째로 삼켰다 — 박사님 「몬스테라 «끌어놓는» 거부터 고쳐」가 그 자리다
+       (실측: 뗀 곳이 `hintDim` 이고 가방 칸은 손짓을 한 번도 못 받았다).
+     ⇒ 막는 일은 **문서 잡는 단계**로 옮긴다(§울타리). 거기서는 «밑에 무엇이 있나»를 보고
+       가를 수 있다 — 끌 손잡이는 지나가게 두고 나머지만 삼킨다. */
+  #hintDim.on{display:block}
   /* ★ 막힌 손짓에 대한 대답 — **말을 새로 안 짓는다.** 이미 짚고 있는 그 손가락이 한 번 뛴다 */
   #hint.knock{animation:hintKnock .42s ease}
   @keyframes hintKnock{
@@ -3843,20 +3849,59 @@ function dimAt(cx, cy, r) {
   d.classList.add('on');
 }
 /* ★★★ 막힌 손짓 — **삼키고, 손가락을 한 번 뛰게 한다** (총괄: 「말을 새로 짓지 마라」).
+   ══════════════════════════════════════════════════════════════════
    ⚠ 잡는 단계에서 막는다 — 밑에 있는 것이 먼저 받으면 이미 눌린 것이다.
-   ⚠ 「구멍 안」은 여기 안 온다 — 도려냈으므로 덮개가 그 손짓을 아예 안 받는다. */
+   ★★★★ 2026-08-30 — **덮개가 아니라 «문서»가 막는다.**
+     ⛔ 예전에는 덮개(`#hintDim`)에 걸어 두고 덮개가 손짓을 먹게 했다. 그러면
+       **밑에 무엇이 있는지 모른 채** 삼킨다 — 박사님 *"몬스테라 «끌어놓는» 거부터 고쳐"*
+       가 그 자리다. 실측(probe_bagdragpot · 1770×1188):
+```
+         덮개 그대로 ⇒ 가방 칸이 pointerdown 을 «한 번도» 못 받는다 · 뗀 곳이 `hintDim`
+         덮개를 죽이면 ⇒ ✔ 누름도 끌기도 «된다»(자리 free:pot_01 · [확인] 뜸)
+```
+     ⇒ 문서에서 막으면 «밑에 무엇이 있나»를 보고 가를 수 있다.
+   ★ 가르는 자 — **「끌 손잡이면 지나간다」**. 박사님 두 말씀이 여기서 만난다:
+     *"터치를 막아버려"*(가리키는 것 말고는 못 누른다)와
+     *"가이드 있어도 «드래그 되게» 바꿔"*(잡는 것까지 막지는 마라).
+     ⇒ 누르기는 여전히 막고, **잡아 끄는 손잡이만** 통과시킨다.
+   ⚠ 「구멍 안」은 통과다(짚은 그 자리). 구멍은 `dataset.hole` 이 정본이다 —
+     `clip-path` 로 «보이게» 파는 것과 같은 값을 쓴다(자를 둘로 두지 않는다). */
 {
-  const d = $('hintDim');
-  if (d) for (const type of ['pointerdown', 'click']) {
-    d.addEventListener(type, (e) => {
+  const knock = () => {
+    const h = $('hint');
+    if (!h) return;
+    h.classList.remove('knock');
+    void h.offsetWidth;                   /* 애니메이션을 다시 태우려면 한 번 끊어야 한다 */
+    h.classList.add('knock');
+    setTimeout(() => h.classList.remove('knock'), 460);
+  };
+  /* 그 점이 구멍 «안»인가 — 없으면(아직 안 판 덮개) 다 막는다 */
+  const inHole = (x, y) => {
+    const d = $('hintDim');
+    const v = (d && d.dataset.hole || '').split(',').map(Number);
+    if (v.length !== 3 || !v.every(Number.isFinite)) return false;
+    return Math.hypot(x - v[0], y - v[1]) <= v[2];
+  };
+  /* ★ 지나가도 되는 것 — **잡아 끄는 손잡이**와, 층이 덮개 «위»인 것들.
+     ⚠ 이름으로 안 센다: `.draggable` 은 `bindDrag` 가 «걸면서» 붙이는 표이고,
+       `.pop` 은 z 84 라 애초에 덮개 위다(§hintAt 도 같은 자를 쓴다). */
+  const passes = (el) => {
+    if (!el || !el.closest) return false;
+    return !!el.closest('.draggable, [data-potbag], .pop, #next, #hint');
+  };
+  for (const type of ['pointerdown', 'click']) {
+    document.addEventListener(type, (e) => {
+      const d = $('hintDim');
+      if (!d || !d.classList.contains('on')) return;
+      /* ★★ **사람 손짓만 막는다.** 코드가 부르는 `el.click()` 은 좌표가 (0,0) 이라
+         「구멍 밖」으로 읽혀 통째로 막혔다 — 대사 넘기기·검사·화면 안쪽 배선이 다 그 길이다
+         (실측: 이 줄이 없을 때 자 둘이 아홉 자리에서 떨어졌다).
+         ⇒ `isTrusted` 로 가른다. 사람이 누른 것과 코드가 부른 것은 다른 일이다. */
+      if (!e.isTrusted) return;
+      if (inHole(e.clientX, e.clientY)) return;
+      if (passes(e.target)) return;
       e.preventDefault(); e.stopPropagation();
-      if (type !== 'pointerdown') return;
-      const h = $('hint');
-      if (!h) return;
-      h.classList.remove('knock');
-      void h.offsetWidth;                 /* 애니메이션을 다시 태우려면 한 번 끊어야 한다 */
-      h.classList.add('knock');
-      setTimeout(() => h.classList.remove('knock'), 460);
+      if (type === 'pointerdown') knock();
     }, true);
   }
 }
@@ -11561,6 +11606,13 @@ async function bootRoomView() {
        ⚠ 읽기용이다. 밖에서 집게를 «세우는» 문은 만들지 않는다. */
     window.__pickState = () => { try { return { 집기: picked.mode || null, 무엇: picked.what || null,
                                                 끄는중: !!drag.on, 끄는것: drag.what || null }; }
+                                 catch (e) { return { 탈: String(e && e.message || e) }; } };
+    /* ★ 끌기의 «속»을 밖에서 읽는다 — 「누름이 끌기로 시작됐다가 끝나는 길에서 샌다」를
+       가리려면 `drag.on` 만으로는 모자라다(그때는 이미 꺼져 있다).
+       ⚠ 읽기용이다. 밖에서 끌기를 «세우는» 문은 만들지 않는다. */
+    window.__dragState = () => { try { return { 켜짐: !!drag.on, 무엇: drag.what || null,
+                                                자리수: (drag.valid || []).length,
+                                                고른자리: drag.best || null }; }
                                  catch (e) { return { 탈: String(e && e.message || e) }; } };
     /* ★ 상세 창을 밖에서 연다 — **화면이 부르는 바로 그 함수**다(다른 길을 만들지 않는다).
        검사가 「어느 그루의 카드가 뜨나」를 단추 없이도 가릴 수 있게 하는 진단용 손잡이. */
