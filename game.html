@@ -4729,7 +4729,15 @@ function coach(id) {
     const nb = $('navbar'), sr = $('stage').getBoundingClientRect();
     const r = nb ? nb.getBoundingClientRect() : null;
     el.style.left = (r && r.width > 1 ? Math.round(r.right - sr.left + 8) : 12) + 'px';
-  } catch { el.style.left = '12px'; }
+    /* ★★★ 2026-08-30 — **돈·체력·날짜 띠도 피해 앉힌다** (총괄 실측 · 넓은 화면).
+       ⛔ 넓은 화면에서 쪽지가 그 띠를 «덮었다» — 실측: 쪽지 top 10 · 띠 bottom 65 (겹침).
+         조작을 가르치는 쪽지가 **살림 숫자를 가리는** 것이라, 배우는 동안 돈이 안 보인다.
+       ⚠ 숫자를 박지 않는다 — 띠 높이는 화면·안전영역마다 다르다. 바로 위 왼쪽 자리를
+         탭 줄에서 «재서» 잡은 것과 **같은 손**이다. 위쪽도 그렇게 잰다. */
+    const tb = $('topbar');
+    const tr = tb ? tb.getBoundingClientRect() : null;
+    el.style.top = (tr && tr.height > 1 ? Math.max(10, Math.round(tr.bottom - sr.top + 8)) : 10) + 'px';
+  } catch { el.style.left = '12px'; el.style.top = '10px'; }
   el.classList.add('on');
   $('stage').classList.add('coaching');   /* ★ 쪽지가 사는 동안 「다음 손」을 미룬다(§coaching) */
   coachNow = id;
@@ -4790,6 +4798,19 @@ function coachTick() {
   if (!coachNow && coachPending) {
     /* ⚠ 없는 쪽지 이름이 서랍에 남아 있을 수 있다(옛 판·이름이 바뀐 판) — 그때도 접는다 */
     if (!COACH_NOTES[coachPending] || coachSeen().has(coachPending)) coachPendingSet(null);
+    /* ★★★★ 2026-08-30 — **손가락이 «지금 할 일»을 짚고 있으면 쪽지를 미룬다** (총괄 (a) 확정).
+       ══════════════════════════════════════════════════════════════════
+       ⛔ 났던 일 — 첫 시루를 놓자마자 「사람을 눌러 보세요」가 떴다. 규칙 ⓑ 대로 쪽지는
+         손가락을 걷는데, 그 순간이 하필 **「심기」를 가리켜야 할 걸음**이었다.
+         ⇒ 실측(총괄이 처음부터 눌러 봄): 손가락이 «10초» 사라졌다가 쪽지가 꺼지자 돌아왔다.
+         ⇒ ⇒ ★ 「깜빡인다」가 아니라 **「쪽지가 덮은 10초」**였다.
+       ★ 박사님 뜻이 「전혀 모르는 사람이 «따라하게»」이므로 ⇒ **따라할 것이 가려지면 안 된다.**
+         조작 요령(평생 것)은 «손이 빌 때» 말해도 늦지 않다.
+       ⚠ 「첫 플레이가 끝난 뒤」로 밀지 않는다 — 그러면 영영 안 볼 수 있다(총괄 금).
+         ⇒ 「손이 빈 때」의 자는 이것 하나다: **손가락이 아무것도 안 짚고 있거나,
+           짚는 것이 [다음 날] 하나뿐일 때.** 뒤엣것은 「오늘 할 일을 다 한」 자리다.
+       ⚠ 여기서 「무슨 걸음인가」를 세지 않는다(㊸) — 걸음은 늘 늘어난다. 손가락에 묻는다. */
+    else if (hintTargetEl && hintTargetEl.id !== 'next') { /* 지금은 아니다 — 기다린다 */ }
     else if (coach(coachPending)) coachPendingSet(null);
   }
 }
