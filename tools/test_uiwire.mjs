@@ -424,6 +424,15 @@ async function tapPick(uid, x, y, tries = 3) {
   }
   return false;
 }
+/* ★★★★ 2026-08-30 — **가르치는 동안에는 「짚은 자리」 말고는 안 눌린다**
+   (박사님: *"터치를 «막아버려»"* · §hintDim 울타리).
+   ⇒ 그러면 이 절(가구를 눌러 고르기)은 **손가락이 떠 있는 동안 못 돈다** — 그것이 «뜻»이다.
+   ⇒ ★ 그러니 재기 «전»에 가르침을 «끝난 자리»로 옮긴다: 첫 플레이를 끈다.
+     ⚠ 값을 바꾸는 것이 아니라 **판을 고르는 것**이다 — 이 절이 보는 것은 「가구 고르기」지
+       「첫 플레이 안내」가 아니다. 안내는 §guide_notes·probe_walkstep 이 따로 지킨다. */
+await page.eval(`(()=>{ try{ const S=window.__S(); if (S.firstPlay) S.firstPlay.enabled = false;
+  window.__byeotHint && window.__byeotHint(); window.__redraw(); }catch(e){} })()`, false);
+await sleep(600);
 let target = null;
 for (const cand of spots) {
   if (await tapPick(cand.uid, cand.x, cand.y)) { target = cand; break; }

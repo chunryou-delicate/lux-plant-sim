@@ -131,5 +131,41 @@ else {
   await sleep(2500);
   console.log('④ 걸음이 끝난 뒤 —', await look());
 }
+/* ★★★★ 2026-08-30 — **울타리가 «잠그지는» 않나** (박사님 「터치를 막아버려」 · 총괄 청 셋).
+   덮개가 이제 짚은 자리 «밖»의 손짓을 삼킨다. ⇒ 그러면 「틀린 데를 짚으면 판이 잠긴다」.
+   그래서 «밀기 전»에: ① 구멍 안은 눌리나 ② 밖은 삼켜지고 손가락이 뛰나 ③ [다음 날]이 눌리나 */
+console.log('');
+console.log('=== ★ 울타리 — 잠그지는 않나 ===');
+{
+  const st = JSON.parse(await page.eval(`(()=>{ const d=document.getElementById('hintDim');
+    const h=(d && d.dataset && d.dataset.hole || '').split(',').map(Number);
+    return JSON.stringify({ 덮개: !!(d && d.classList.contains('on')),
+      먹나: d ? getComputedStyle(d).pointerEvents !== 'none' : null,
+      구멍: h.length === 3 && h.every(v=>Number.isFinite(v)) ? { x:h[0], y:h[1], r:h[2] } : null }); })()`));
+  console.log('  · 지금 —', JSON.stringify(st));
+  if (st.덮개 && st.구멍) {
+    const inHit = await page.eval(`(()=>{ const el=document.elementFromPoint(${Math.round(st.구멍.x)}, ${Math.round(st.구멍.y)});
+      return el ? (el.id || el.tagName + '.' + (el.className||'').split(' ')[0]) : 'null'; })()`);
+    const outX = Math.min(1760, Math.round(st.구멍.x + st.구멍.r + 220));
+    const outHit = await page.eval(`(()=>{ const el=document.elementFromPoint(${outX}, ${Math.round(st.구멍.y)});
+      return el ? (el.id || el.tagName + '.' + (el.className||'').split(' ')[0]) : 'null'; })()`);
+    console.log('  ① 구멍 «안» 에서 잡히는 것 —', inHit, inHit === 'hintDim' ? '⛔ 덮개가 먹는다' : '✔ 밑이 잡힌다');
+    console.log('  ② 구멍 «밖» 에서 잡히는 것 —', outHit, outHit === 'hintDim' ? '✔ 덮개가 막는다' : '⛔ 안 막는다');
+    /* 밖을 눌러 손가락이 «뛰는지» */
+    await page.send('Input.dispatchMouseEvent', { type:'mouseMoved', x:outX, y:Math.round(st.구멍.y), button:'left', buttons:0 });
+    await page.send('Input.dispatchMouseEvent', { type:'mousePressed', x:outX, y:Math.round(st.구멍.y), button:'left', buttons:1, clickCount:1 });
+    await sleep(140);
+    console.log('  ②-b 밖을 누른 순간 손가락이 —', await page.eval(`(()=>{ const h=document.getElementById('hint');
+      return JSON.stringify({ 뜀: !!(h && h.classList.contains('knock')) }); })()`));
+    await page.send('Input.dispatchMouseEvent', { type:'mouseReleased', x:outX, y:Math.round(st.구멍.y), button:'left', buttons:0, clickCount:1 });
+    await sleep(500);
+  }
+  console.log('  ③ [다음 날] —', await page.eval(`(()=>{ const n=document.getElementById('next');
+    if (!n) return JSON.stringify({ 탈:'단추가 없다' });
+    const r=n.getBoundingClientRect();
+    const el=document.elementFromPoint(Math.round(r.left+r.width/2), Math.round(r.top+r.height/2));
+    return JSON.stringify({ 잠김:!!n.disabled, 잡히는것: el?(el.id||el.tagName):null,
+      판정: (el && el.id === 'next') ? '✔ 눌린다' : '⛔ 다른 것이 먹는다' }); })()`));
+}
 await page.shot('docs/handoff/img/walkguide.png').catch(() => {});
 await page.close(); clearTimeout(wd);

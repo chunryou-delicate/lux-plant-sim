@@ -59,6 +59,10 @@ const row = async (ko) => {
           물:q.startedOnDay!=null })); } catch(e){ return null; } })(),
       씨앗: (()=>{ try { return (window.__S().shop.stock||{}).bean_seed||0; } catch(e){ return null; } })(),
       무대: (document.getElementById('stage').className||'').trim().slice(0,60),
+      '다음날': (()=>{ const n=document.getElementById('next'); if(!n) return null;
+        const r=n.getBoundingClientRect();
+        const el=document.elementFromPoint(Math.round(r.left+r.width/2), Math.round(r.top+r.height/2));
+        return { 잠김:!!n.disabled, 잡히는것: el?(el.id||el.tagName):null }; })(),
       /* ★ talking 이 붙었는데 «대사가 보이나» — 「쉰다」와 「굳었다」를 가르는 값 */
       대사: (()=>{ const d=document.getElementById('dlg'), b3=document.getElementById('dlgBox');
         const vis=(el)=>{ if(!el) return false; const cs=getComputedStyle(el);
@@ -95,6 +99,39 @@ await sleep(1200);
 await row('④ [확인] 을 누른 뒤 (이제 심어야 한다)');
 await sleep(2500);
 await row('⑤ 2.5초 더 기다린 뒤 (쪽지가 끼어드나)');
+/* ★★★ 캐릭 이동 갈래의 «조건»을 그 자리에서 찍는다 — 「문이 열리나」를 같이 잰다(총괄 규율).
+   ⚠ 코드를 읽어 짐작하지 않는다. 갈래가 보는 값을 «그대로» 불러 본다. */
+console.log('  ★ 캐릭 갈래 조건 —', await page.eval(`(async()=>{ try{
+  const fp0=await import('/src/game/first_play.js'); const S=window.__S(); const fp=S.firstPlay;
+  let rows=[]; let err=null;
+  try { rows = fp0.cropPotList(fp, S.day); } catch(e){ err = e.message; }
+  const who=(()=>{ try{ return (window.__rv.characters()||[]).find(c=>c&&c.walkable)||null; }catch(e){ return null; } })();
+  return JSON.stringify({
+    placedOne: rows.some(r=>r&&r.placed), '줄 수': rows.length,
+    줄: rows.slice(0,3).map(r=>({ id:r.id, placed:!!r.placed, sown:!!r.sown, inBag:!!r.inBag })),
+    'cropPotList 탈': err,
+    learnedWalk: (()=>{ try { return JSON.parse(localStorage.getItem('byeot.coach')||'[]').includes('walk'); }
+      catch(e){ return 'n/a'; } })(),
+    who: who ? { id:who.id, walking:!!who.walking } : null,
+    sel: (()=>{ try{ return window.__rv.selectedCharacter(); }catch(e){ return 'n/a'; } })(),
+    'fp.enabled': !!(fp && fp.enabled),
+    무대: (document.getElementById('stage').className||'').trim().slice(0,40)
+  }); }catch(e){ return JSON.stringify({ 탈:e.message }); } })()`, true, 30000));
+/* ★ 대사를 «완전히» 걷고 나서 한 번 더 — 「대사 때문에 안 뜬 것」과 「원래 안 뜨는 것」을 가른다 */
+for (let i = 0; i < 30; i++) {
+  const t = await page.eval(`document.getElementById('stage').classList.contains('talking')`);
+  if (t !== 'true') break;
+  if (!await tapEl('#dlgSkip')) { await tapEl('#dlgBox'); }
+}
+await sleep(1200);
+console.log('  ★ 대사를 다 걷고 나서 —', await page.eval(`(()=>{ const h=document.getElementById('hint');
+  const d=document.getElementById('hintDim');
+  return JSON.stringify({ 무대:(document.getElementById('stage').className||'').trim().slice(0,40),
+    손가락: !!(h && h.classList.contains('on')),
+    말: h ? ((h.querySelector('.say')||{}).textContent||'').trim() : null,
+    덮개: !!(d && d.classList.contains('on')),
+    쪽지: !!(document.getElementById('coach')||{}).classList &&
+      document.getElementById('coach').classList.contains('on') }); })()`));
 /* ★★ ② 걸음 — 사람을 «고른 뒤»에는 «방바닥»을 짚어야 한다([Plan] 세 걸음의 둘째).
    ⚠ 여기서는 게임이 쓰는 창구로 고른다 — 「사람이 누를 수 있나」가 아니라
      「고른 뒤 손가락이 «무엇을» 짚나」를 보는 자리다. */
