@@ -55,6 +55,27 @@ const look = () => page.eval(`(()=>{ const h=document.getElementById('hint');
     무대: (document.getElementById('stage').className||'').trim(),
     '할 일': ((document.getElementById('questChipText')||{}).textContent||'').trim().slice(0,30)
   }); })()`);
+/* ★★★ 박사님: 「대사 «끝나고» 손가락이 나타나야지」 — 그 «되돌아옴»을 잰다.
+   ⚠ 아무것도 «안 누르고» 기다린다. 눌러서 되살아나는 것은 답이 아니다. */
+console.log('=== ★ 대사가 걷히면 손가락이 «저절로» 돌아오나 ===');
+{
+  const st = async () => JSON.parse(await page.eval(`(()=>{ const h=document.getElementById('hint');
+    const d=document.getElementById('hintDim');
+    return JSON.stringify({ talking: document.getElementById('stage').classList.contains('talking'),
+      손가락: !!(h && h.classList.contains('on')), 덮개: !!(d && d.classList.contains('on')) }); })()`));
+  console.log('  · 대사 중 —', JSON.stringify(await st()));
+  await page.eval(`(()=>{const s=document.getElementById('dlgSkip'); if(s)s.click();})()`, false);
+  for (let i = 0; i < 40; i++) {
+    const t = await page.eval(`document.getElementById('stage').classList.contains('talking')`);
+    if (t !== 'true') break;
+    await page.eval(`document.getElementById('dlgBox').click()`, false);
+    await sleep(200);
+  }
+  console.log('  · 대사를 걷은 직후 —', JSON.stringify(await st()));
+  await sleep(1400);            /* ⚠ 아무것도 안 누르고 기다린다 */
+  console.log('  · 1.4초 그냥 기다린 뒤 —', JSON.stringify(await st()));
+}
+console.log('');
 console.log('■ 대사 걷기 —', JSON.stringify(await clearTalk()));
 await page.eval(`window.__redraw()`, false);
 await sleep(900);
