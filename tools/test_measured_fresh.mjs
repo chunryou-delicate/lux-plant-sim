@@ -35,6 +35,26 @@
      0.25m 격자를 훑는 일이라 브라우저 도구(`_space_probe.html`)가 있어야 한다.
      곧 **이 등이 초록이어도 `space`·`area` 는 낡았을 수 있다.**
      닫힌 목록인 척하지 않는다.
+
+   ⛔⛔ 2026-08-30 — **이 자가 «안 보는 것». [growth] 가 청해서 박는다.**
+   ------------------------------------------------------------
+   ★ 보는 것은 «셋»뿐이다:
+       measured.slots.peak_summer  ·  avg7_summer  ·  count
+   ⛔ 안 보는 것 — `measured` 안에 있는데 이 자가 «한 번도 안 읽는» 칸들:
+       bright_slot · darkest_slot · dark_slots_le_0_3 · lamp(등 개수별 값) ·
+       sampled_peak_ratio_pct · space · area
+   ⇒ ⇒ ★★★ **그러니 이 자가 초록이어도 그 칸들은 «낡아 있을 수 있다».**
+
+   ⚠ 실제로 그랬다(2026-08-30) — 원룸을 「빈 방」으로 비운 뒤 `count 15 → 4` 를 적었더니
+     이 자가 «12/12 초록»이 됐다. 그런데 그 초록이 «못 보는» 칸 셋이 낡은 채였다:
+       darkest_slot = oneroom-nightstand:0   ⇐ ★ 그 가구가 «없어졌는데»
+       dark_slots_le_0_3 = 1                 ⇐ 그 한 칸이 바로 그 협탁이었는데
+       lamp = 등 1·2개 값                     ⇐ ★★ 방에 등이 «없어졌는데»
+     ⇒ 셋을 `_was_…._data` 로 «옮겨» 두었다(지우지 않았다).
+
+   > ★★ **검사가 «어디까지» 보는지를 알아야 «그 밖»을 손으로 본다.**
+   ⇒ ★ 그러니 방을 크게 고쳤으면 ⇒ **이 자가 초록이어도 `measured` 를 «눈으로» 한 번 훑어라.**
+     ⇒ ⇒ 특히 「없어진 가구를 가리키는 칸」과 「등 개수별 값」이 그렇다.
 ============================================================ */
 import fs from 'node:fs'; import vm from 'node:vm'; import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
@@ -159,6 +179,7 @@ for (const id of ROOMS) {
     eng.clearCache();
     best = Math.max(best, eng.dliOfSlot(s.slotId, { weather: 'clear', season: 'summer', litHours: 12, lampCount: 0 }));
   }
+  /* ⚠⚠ 이 자가 «보는 것»은 아래 «셋»뿐이다 — 머리말 §「안 보는 것」과 같이 읽어라 */
   const now = { peak: +best.toFixed(2), avg7: +(best * E).toFixed(2), count: room.slots.length };
   const bad = [];
   if (rec.peak_summer !== now.peak) bad.push('peak_summer ' + rec.peak_summer + ' → ' + now.peak);
