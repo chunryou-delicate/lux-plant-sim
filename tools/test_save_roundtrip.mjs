@@ -48,7 +48,16 @@ function stubLight(slotIds) {
 /* 생장 창 흉내 — **계약은 `sim.nullGrowth` 것을 그대로 쓴다.**
    ⚠ 손으로 흉내 내다가 `setDailyLight` 하나를 빠뜨려 복원이 통째로 던졌다.
      이미 있는 것을 쓰면 그 계약이 늘어도 이 자가 안 낡는다(㊺). */
-const stubGrowth = () => nullGrowth(14);
+/* ★ 2026-08-30 — **그루를 «여럿» 굴릴 수 있다고 답한다.**
+   화분이 둘 이상인 세이브는 `multi()`·`addPlant`·`select` 가 없으면 복원이 **던진다**
+   (save §restoreGrowth: 「조용히 한 그루에 겹쳐 걸면 마지막 형태만 남는다」).
+   ⚠ 형태는 안 만든다 — 이 자가 보는 것은 「무엇이 살아 돌아오나」지 그루의 모양이 아니다. */
+const stubGrowth = () => {
+  const g = nullGrowth(14);
+  return { ...g, multi: () => true, addPlant() {}, select() {},
+           setGrowth: (d) => g.setGrowth(d), setDailyLight: (v) => g.setDailyLight(v),
+           advanceTo: (d) => g.advanceTo(d) };
+};
 
 /* ── 왕복시킬 판을 짓는다 ────────────────────────────────────────────────
    ★ 「그 칸이 있나」를 보는 자라 **값은 아무거나**여도 된다. 다만 **빈 값은 안 된다** —
@@ -88,6 +97,25 @@ function makeRich() {
     'banjiha-growlight-stand': { yaw: 15, tilt: 30 },
     'banjiha-growlight-clip':  { yaw: -37.5, tilt: 12.25 }
   };
+  /* ★★★★ 빛 이력 — [growth] 가 「무엇보다 앞」이라 짚은 칸 (2026-08-30).
+     복원은 replay 다: 같은 씨앗 + 같은 이력 = 같은 굴림. 이력이 어긋나면 **무늬가 다시 굴려진다**.
+     무늬 한 장이 20,000 ⇄ 1,150,000 이라 ⇒ ★ 이력이 곧 돈이다(save.js 머리말 §growth).
+     ⚠ `null` 이 뜻을 갖는다 — 「그날 빛을 못 쟀다」다. 0 이 되면 「어두운 날」이 되어 굴림이 달라진다.
+     ★ 그래서 «가운데»에 null 을 끼운다 — 끝만 보면 잘린 것은 잡아도 가운데는 못 잡는다
+       ([House] 가 가구에서 세운 그 규율과 같다: 빈 값·어림수를 넣으면 자가 눈감는다). */
+  S.dliHist = [3.6, 2.14, null, 4.42, 0, 1.75, null, 5.02];
+  /* 둘째 그루 — 그루마다 제 이력과 잎 등급을 든다(첫 그루 이력의 정본은 위 대표 칸이다) */
+  S.pots.push({ id: 'pot_02', plantId: 'monstera_deliciosa', slotId: 'banjiha-desk:0', at: null,
+                placedOnce: true, variegated: true, daysPlanted: 4, fedDays: 5,
+                arrivedOnDay: 8, wateredOnDay: 12, arrivalGrowthDays: 0,
+                growthId: 'pot_02', growthSeed: 12345,
+                dliHist: [1.13, null, 2.27],
+                /* ⚠ `leafGrades` 는 **무늬 잎만** 든다 — 민무늬 잎은 «원래 없다».
+                   그러니 이 자가 「사라졌다」고 하면 그건 진짜 사라진 것이다([growth]). */
+                leafGrades: { 3: 'sanban', 5: 'halfmoon' },
+                leafGradesSeen: { 3: true },
+                /* 계통 값 — 세대 감쇠(0.8ⁿ)가 초기화되면 그 줄기의 값이 통째로 달라진다 */
+                varieChance: 0.64 });
   /* 지갑·배움 */
   S.tutorial.cashWon = 1234500;
   S.tutorial.lamp = { ...(S.tutorial.lamp || {}), unlocked: true, owned: 2, placed: 1 };
@@ -125,13 +153,29 @@ const OK_TO_DIFFER = [
   [/^log$/,                      '위와 같다'],
   [/^savedAt|^appVersion/,       '저장할 때 찍는 것이라 원본에 없다'],
   [/^growth/,                    '형태는 생장 창이 갖는다 — 코어가 안 싣는다(save 머리말 §growth)'],
-  [/^pots\[\d+\]\.dliHist/,      '빛 이력은 대표 칸(dliHist)으로 따로 실린다'],
-  [/^dliHist/,                   '위와 같다 — 복원이 다시 건다'],
+  /* ⛔ 2026-08-30 — **빛 이력은 더 이상 안 봐준다**([growth] 가 「무엇보다 앞」이라 짚었다).
+     여기 있던 두 줄은 「대표 칸으로 따로 실린다」였는데, 그렇다면 **그 대표 칸이 그대로인지**를
+     봐야 하지 봐줄 일이 아니었다. 이력은 복원의 «유일한 입력»이고 어긋나면 무늬가 다시 굴려진다.
+     ⇒ ★ 그 두 줄이 남아 있었으면 이 자는 **제일 비싼 칸에 눈감고** 있었을 것이다. */
   [/^firstPlay\.rules/,          '밸런스 계약은 파일이 정본이라 복원 때 다시 읽는다'],
   [/^tutorial\.rules/,           '위와 같다'],
-  [/^story\.schema|^firstPlay\.schema|^schema/, '판 번호는 봉투가 들고 있다']
+  [/^story\.schema|^firstPlay\.schema|^schema/, '판 번호는 봉투가 들고 있다'],
+  /* ★★ 2026-08-30 — 아래 둘은 **경로만으로 봐주면 안 된다.** 셋째 칸에 「언제 봐주나」를 적는다.
+     ⛔ 그냥 봐주면 오늘 잡은 바로 그 탈(`placedOnce:false` 가 사라지는 것)을 이 자가 «놓친다». */
+  [/^pots\[\d+\]\.placedOnce$/,
+   '「놓았다」는 true 든 없든 같은 뜻이라 안 싣는다 — «false 만» 싣는다(save §packPot). ' +
+   '⚠ false 가 사라지면 봐주지 않는다. 그것이 가방을 잃는 그 탈이다',
+   (d) => d.was === true],
+  [/^pots\[\d+\]\.at$/,
+   'slotId 만 있는 화분은 복원이 «그 자리 좌표»를 채운다(state §migratePots · test_free_place F). ' +
+   '자리가 움직였으면 화분도 따라가는 것이 규칙이다',
+   (d) => d.was === null && d.now && typeof d.now === 'object']
 ];
-const forgiven = (p) => OK_TO_DIFFER.find(([re]) => re.test(p));
+const forgiven = (d) => {
+  const p = typeof d === 'string' ? d : d.at;
+  return OK_TO_DIFFER.find(([re, , when]) =>
+    re.test(p) && (typeof when !== 'function' || when(typeof d === 'string' ? { at: p } : d)));
+};
 
 const S = makeRich();
 const before = JSON.parse(JSON.stringify(S));
@@ -141,14 +185,14 @@ const S2 = deserialize(raw, { light: stubLight(['banjiha-sill:0', 'banjiha-desk:
 const after = JSON.parse(JSON.stringify(S2));
 
 const all = diff(before, after);
-const lost = all.filter(d => !forgiven(d.at));
-const seen = all.filter(d => forgiven(d.at));
+const lost = all.filter(d => !forgiven(d));
+const seen = all.filter(d => forgiven(d));
 
 console.log('══ 세이브 왕복 — 살아남지 못한 칸 ═══════════════════════════════');
 for (const d of lost) console.log(`  ✘ ${d.at}: ${JSON.stringify(d.was)} → ${JSON.stringify(d.now)}`);
 if (!lost.length) console.log('  ✔ 없다 — 넣은 칸이 전부 살아 돌아왔습니다');
 console.log(`\n  · 봐준 자리 ${seen.length}건 (§봐주는 자리에 까닭이 적혀 있다)`);
-for (const d of seen.slice(0, 6)) console.log(`      ~ ${d.at} — ${forgiven(d.at)[1]}`);
+for (const d of seen.slice(0, 6)) console.log(`      ~ ${d.at} — ${forgiven(d)[1]}`);
 if (seen.length > 6) console.log(`      … 그 밖 ${seen.length - 6}건`);
 
 /* ★ 그리고 **이 자가 떨어질 수 있나**를 같이 보인다 — 안 떨어지는 자는 자가 아니다.
@@ -160,7 +204,7 @@ if (seen.length > 6) console.log(`      … 그 밖 ${seen.length - 6}건`);
   const back = deserialize(JSON.stringify(rawP),
     { light: stubLight(['banjiha-sill:0']), growth: stubGrowth(), firstPlayRules: FP_RULES });
   const caught = diff(JSON.parse(JSON.stringify(probe)), JSON.parse(JSON.stringify(back)))
-    .filter(d => !forgiven(d.at)).some(d => /placedOnce/.test(d.at));
+    .filter(d => !forgiven(d)).some(d => /placedOnce/.test(d.at));
   console.log(`\n  ★ 자가 떨어질 수 있나 — placedOnce 를 빼 보면: ${caught ? '✔ 잡는다' : '✘ 못 잡는다'}`);
   assert.ok(caught, '이 자는 빠진 칸을 못 잡습니다 — 자가 장식이 됩니다');
 }
@@ -175,7 +219,16 @@ for (const [name, hurt, pat] of [
   ['가구 좌표가 반올림됨',
    raw => { raw.state.home.furniture['banjiha-desk'].x = 1.0; },      /home\.furniture/],
   ['겨눔 yaw 의 부호가 뒤집힘',
-   raw => { raw.state.lamps.aim['banjiha-growlight-clip'].yaw *= -1; }, /lamps\.aim/]
+   raw => { raw.state.lamps.aim['banjiha-growlight-clip'].yaw *= -1; }, /lamps\.aim/],
+  /* ★★★ 2026-08-30 [growth] — **빛 이력의 «가운데» 한 칸.**
+     그쪽 말: *"끝을 자르면 길이로 잡히지만 «가운데»는 길이가 같아 안 잡힐 수 있습니다."*
+     ⇒ 그래서 둘을 따로 본다. ★ 그리고 `null → 0` 이 제일 무섭다 —
+       「그날 빛을 못 쟀다」가 「어두운 날」이 되어 **같은 씨앗인데 굴림이 달라진다**.
+       무늬 한 장이 20,000 ⇄ 1,150,000 이라 그 한 칸이 곧 판이다. */
+  ['빛 이력 가운데 칸의 null 이 0 이 됨',
+   raw => { raw.state.dliHist[2] = 0; },                                /^dliHist\[/],
+  ['그루의 빛 이력 가운데가 바뀜',
+   raw => { raw.state.pots[1].dliHist[1] = 9.99; },                     /pots\[\d+\]\.dliHist/]
 ]) {
   const probe = makeRich();
   const rawP = JSON.parse(JSON.stringify(serialize(probe)));
@@ -185,7 +238,7 @@ for (const [name, hurt, pat] of [
     const back = deserialize(JSON.stringify(rawP),
       { light: stubLight(['banjiha-sill:0']), growth: stubGrowth(), firstPlayRules: FP_RULES });
     got = diff(JSON.parse(JSON.stringify(probe)), JSON.parse(JSON.stringify(back)))
-      .filter(d => !forgiven(d.at)).some(d => pat.test(d.at));
+      .filter(d => !forgiven(d)).some(d => pat.test(d.at));
   } catch (e) { got = true; }   /* 세이브 계통이 «던져서» 막아도 잡은 것이다 */
   console.log(`  ★ 내 칸에서도 — ${name}: ${got ? '✔ 잡는다' : '✘ 못 잡는다'}`);
   assert.ok(got, `이 자가 «${name}» 을 못 잡습니다 — [House] 칸이 안 지켜집니다`);
