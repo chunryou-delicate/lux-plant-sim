@@ -4485,6 +4485,15 @@ function bindDetail() {
   { const c = $('slotCancel'); if (c) c.onclick = () => closeSlotPanel(); }
   { const p2 = $('slotPanel');
     if (p2) p2.onclick = (e) => { if (e.target === p2) closeSlotPanel(); }; }
+  /* ★★ 막 뜬 메뉴가 «그 손짓»을 삼킨다 — 잡는 단계(capture)에서 막아야 단추 제 핸들러보다 앞선다.
+     ⚠ `pointerdown` 도 같이 막는다 — 이 파일의 단추들은 `tapOnce` 로 **누를 때** 도는 것이 많다.
+     ⚠ 250 ms 뒤에는 아무것도 안 막는다. 「두 번째 손짓」은 사람이 뜻을 갖고 하는 것이다. */
+  { const pa = $('plantActions');
+    if (pa) for (const type of ['pointerdown', 'click'])
+      pa.addEventListener(type, (e) => {
+        if (performance.now() - plantMenuAt >= MENU_DEAF_MS) return;
+        e.stopPropagation(); e.preventDefault();
+      }, true); }
   /* ★ 방에서 고른 그루에도 [📍 자리] — 끌기와 **나란히** 두는 길이다(§자리를 골라 옮긴다) */
   { const b = $('pickWhere');
     if (b) b.onclick = guard(() => {
@@ -12532,6 +12541,7 @@ const picked = {
     $('stage').classList.add('picked');
     if (roomView) roomView.highlightSlots([slotId]);
     plantMenuFollow(true);          /* ★ 그 물건 옆에 붙어 따라다닌다(2026-08-16) */
+    plantMenuAt = performance.now();  /* ★ 막 떴다 — 이 손짓은 안 먹는다(§MENU_DEAF_MS) */
     /* ★ A-3 「놓은 자리가 마음에 안 들면」 — **처음 한 번만**(§coach).
        ⚠ 놓은 **직후**에는 안 낸다. 그 순간에는 배너가 이미 말하고 있다(§commitPlace).
          `startPhonePlace` 는 놓자마자 여기를 지나 옮기기 모드로 들어가는데, 그때는
@@ -12709,10 +12719,33 @@ const picked = {
      ① 재조립이 비싸다(60ms). 끄는 동안은 유령만 움직이고 **손 뗄 때 한 번만** 반영한다
      ② 가구가 움직이면 그림자가 따라 움직인다 — 방 밝기가 실제로 바뀐다. 그게 이 기능의 뜻이다 */
 let lastRoomTap = 0;
+/* ★★★★ 2026-08-30 — **막 뜬 메뉴는 «그 손짓»을 안 먹는다** (유령 클릭 막이).
+   ══════════════════════════════════════════════════════════════════
+   ⛔ 시루를 눌러 고르면 메뉴가 **그 물건 옆**에 뜬다(§plantMenuFollow). 그런데 그 자리가
+     하필 **손가락 밑**이면, 같은 손짓의 `click` 이 방금 나타난 단추를 그대로 누른다.
+   ⇒ 실측(probe_sirupick_look): 시루 셋 중 «셋째»에서
+     `select free:crop_01_03` → `clear ← game.html:4491(#pickWhere onclick)` 이 연달아 찍혔다.
+     화면에서는 **「눌렀는데 안 골라진다」**로 보인다 — 실은 골랐다가 «제 손에» 풀린 것이다.
+   ★ 그래서 메뉴가 «뜬 시각»을 적어 두고, 그 뒤 잠깐은 메뉴가 손짓을 삼킨다.
+   ⚠ 자리를 옮겨서 피하지 않는다 — 메뉴는 그 물건 옆에 있어야 무엇의 메뉴인지 읽힌다.
+     피할 것은 «자리»가 아니라 «그 한 손짓»이다. */
+let plantMenuAt = 0;
+const MENU_DEAF_MS = 250;
+/* ★★★ 2026-08-30 — **「방이 이 손짓을 이미 잡았나」를 «시각»이 아니라 «깃발»로 안다.**
+   ══════════════════════════════════════════════════════════════════
+   아래 §bindFurnitureTap 이 「60 ms 안에 방이 잡았으면 비켜선다」로 갈랐는데, 그 60 ms 가
+   **모자랄 때가 있다** — 고르기가 하는 일(하이라이트·메뉴 띄우기·요약 짓기·쪽지)이
+   그 사이에 들어가기 때문이다. 그러면 가구 탭이 뒤늦게 깨어나 **방금 고른 것을 풀어 버린다.**
+   ⇒ 실측(probe_sirupick_look): 시루 셋 중 «셋째»에서 `select free:crop_01_03 → clear` 가
+     연달아 찍혔다. 눌렀는데 안 골라지는 것처럼 보이던 것이 이것이다.
+   ★ 시간은 「얼마나 걸렸나」를 재는 자다. 「누가 먼저 잡았나」는 **깃발**로 묻는 것이 맞다.
+   ⚠ 시각(`lastRoomTap`)은 **안 지웠다** — 방뷰가 «늦게» 알려 주는 경우(순서가 뒤집힌 판)에는
+     그쪽이 아직 유일한 방패다. 둘을 같이 본다. */
+let roomTookTap = false;
 /* ★ 2026-08-17 — 마지막으로 방을 누른 화면 자리. 등 메뉴가 원점으로 쓴다(§onLampTap).
    ⚠ 등은 `pickFurnitureAt` 이 못 집어 좌표가 안 딸려 온다 — 그래서 여기서 붙든다. */
 const lastTapXY = { x: 0, y: 0 };
-function roomTapped() { lastRoomTap = performance.now(); }
+function roomTapped() { lastRoomTap = performance.now(); roomTookTap = true; }
 
 /* ══ 가구 옆 메뉴 — 어디에 뜨나 (2026-08-08 · roomui-to-plan §4-1) ═══════════
    좌표는 방뷰가 준다. **캔버스 기준** CSS 픽셀이라 캔버스 rect 를 더해야 마우스와 같은 자다.
@@ -13805,6 +13838,7 @@ function bindFurnitureTap() {
        늦게 돌아도 값이 안 부풀어, 손가락이 실제로 머문 시간만 잰다. */
   c.addEventListener('pointerdown', e => {
     lastPointerType = e.pointerType || '';        // 버튼을 누른 뒤에도 "손인지 마우스인지"를 안다
+    roomTookTap = false;                          /* ★ 이 손짓은 아직 아무도 안 잡았다(§roomTookTap) */
     sx = e.clientX; sy = e.clientY; moved = false;
     st = Number.isFinite(e.timeStamp) ? e.timeStamp : performance.now();
   });
@@ -13816,7 +13850,8 @@ function bindFurnitureTap() {
     if (moved || held > 400) return;                        // 끈 것은 카메라 조작이다
     const x = e.clientX, y = e.clientY;
     setTimeout(() => {
-      if (performance.now() - lastRoomTap < 60) return;      // 방 뷰가 이미 무언가를 잡았다
+      if (roomTookTap) return;                              // ★ 방 뷰가 이 손짓을 잡았다(깃발)
+      if (performance.now() - lastRoomTap < 60) return;      // 방 뷰가 늦게 알려 준 경우의 방패
       if (drag.on || picked.mode || furnPicked.mode) return;
       lastTapXY.x = x; lastTapXY.y = y;      /* ★ 등 메뉴가 쓴다(§onLampTap) */
       if (!roomView || !roomView.pickFurnitureAt) return;
