@@ -5289,7 +5289,22 @@ function updateHint() {
       return have < Math.max(1, rows.length) ? sid : null;
     } catch { return null; }
   })();
-  if (seedNeed) {
+  /* ★★★★ 2026-08-30 — **첫 바퀴 동안은 「사는 갈래」를 아예 안 연다.**
+     ══════════════════════════════════════════════════════════════════
+     박사님: *"처음 5일 넘기는 건 강제하자. 중간에 뭐 넣으면 까먹으니까.
+       「5일 넘겨보자」라고 가이드하면서 계속 손가락 가이드 [다음 날]로"*
+     ⇒ 곧 **가르치는 차례**의 문제다 — 한 바퀴를 다 돌기 전에 상점이 끼면 앞엣것을 잊는다.
+     ⚠ 「닷새」로 «세지 않는다» — 「첫 수확을 «했나»」로 묻는다(총괄). 그래야 나흘이든
+       닷새든 저절로 맞고, 날 수를 박지 않는다.
+     ⚠ 아래 세 갈래는 저마다 이미 «비슷한» 조건을 안고 있다(씨앗은 「한 번도 안 거뒀으면
+       살 때가 아니다」, 시루·무순은 할 일 글). 그래도 **한 자리에 한 번 못 박아 둔다** —
+       갈래가 셋이라 하나만 고치면 나머지가 새는 자리다(오늘 그 병을 두 번 봤다).
+     ⚠ 값을 안 박는다: 문턱 1은 `taughtBasics`(2)와 같은 칸의 같은 셈이다. */
+  const firstCycleDone = (() => {
+    try { return ((S.firstPlay && S.firstPlay.beansprout && S.firstPlay.beansprout.harvestCount) || 0) >= 1; }
+    catch { return false; }
+  })();
+  if (seedNeed && firstCycleDone) {
     /* ★★★ 2026-08-17 — **세 걸음째가 빠져 있었다.** [주문]은 창을 하나 더 연다
        (`openBuyPanel` — 「몇 개 주문할까요」). 그 창이 뜬 순간 손가락이 쉬면 사람은
        거기서 멈춘다 — 실측(probe_guide_walk)에서 5일차에 [주문]만 일곱 번 눌렀다.
@@ -5325,7 +5340,7 @@ function updateHint() {
       return have > 0 ? null : 'siru';
     } catch { return null; }
   })();
-  if (siruNeed) {
+  if (siruNeed && firstCycleDone) {
     const go = $('buyGo');
     if (go && onScreen(go) && !go.disabled)
       return hintAt(go, '개수를 정하고 [주문] — 시루는 이틀 뒤에 옵니다');
@@ -5377,7 +5392,7 @@ function updateHint() {
       return null;
     } catch { return null; }
   })();
-  if (musunNeed) {
+  if (musunNeed && firstCycleDone) {
     const go = $('buyGo');
     if (go && onScreen(go) && !go.disabled)
       return hintAt(go, `개수를 정하고 [주문] — ${musunNeed.ko}`);
@@ -5411,6 +5426,21 @@ function updateHint() {
     try { return ((S.firstPlay && S.firstPlay.beansprout && S.firstPlay.beansprout.harvestCount) || 0) >= 2; }
     catch { return false; }
   })();
+  /* ★★★★ 2026-08-30 — **단추가 서 있으면 «단추»를 짚는다. 말풍선은 «문»일 뿐이다.**
+     ══════════════════════════════════════════════════════════════════
+     ⛔ 예전에는 말풍선을 «먼저» 짚었다. 그런데 말풍선을 누르면 카드가 열리고,
+       할 일을 하는 것은 그 안의 [물 주기]·[거두기] «단추»다.
+       ⇒ 카드가 열려도 손가락은 여전히 말풍선을 짚었고, 그것을 다시 누르면 카드가 닫힌다.
+       ⇒ ⇒ ★ 손가락을 그대로 따라가면 **열고 닫기를 되풀이할 뿐 물이 안 들어간다.**
+         실측(probe_force5 · 390×844): Day 1 에 말풍선만 서른여덟 번 짚었다.
+         울타리가 선 뒤로는 그 사이 다른 것을 누를 수도 없다 — 그러면 판이 «멈춘다».
+     ★ 그러니 차례를 뒤집는다: **할 수 있는 일이 있으면 그 단추**, 없을 때만 말풍선(문).
+       ⚠ 말풍선은 그대로 뜬다 — 바뀌는 것은 «손가락이 무엇을 짚나»뿐이다. */
+  const btnHarvest = $('harvestCrop'), btnWater = $('waterCrop');
+  if (!taughtBasics && onScreen(btnHarvest) && !btnHarvest.disabled && !sheetCovers(btnHarvest))
+    return hintAt(btnHarvest, '거둘 때가 됐습니다');
+  if (!taughtBasics && onScreen(btnWater) && !btnWater.disabled && !sheetCovers(btnWater))
+    return hintAt(btnWater, '물을 주면 자라기 시작합니다');
   const markEl = !taughtBasics && $('marks') && $('marks').querySelector('.mark');
   if (markEl && onScreen(markEl) && !sheetCovers(markEl)) {
     const ko = (markEl.textContent || '').replace(/^[^가-힣]+/, '');
@@ -5418,11 +5448,6 @@ function updateHint() {
                         : /물/.test(ko)   ? '물을 주면 자라기 시작합니다'
                         : ko || '여기를 눌러 보세요');
   }
-  const btnHarvest = $('harvestCrop'), btnWater = $('waterCrop');
-  if (!taughtBasics && onScreen(btnHarvest) && !btnHarvest.disabled && !sheetCovers(btnHarvest))
-    return hintAt(btnHarvest, '거둘 때가 됐습니다');
-  if (!taughtBasics && onScreen(btnWater) && !btnWater.disabled && !sheetCovers(btnWater))
-    return hintAt(btnWater, '물을 주면 자라기 시작합니다');
   /* ★★ 2026-08-11 — **몬스테라 물주기도 손이 가는 일이다.**
      말풍선(`potMarks`)은 **마른 뒤에만** 뜨는데 아래 버튼(`#waterPot`)은
      「마를 때가 됐다」부터 뜬다. 그 사이 며칠 동안 화면에는 눌러야 할 버튼이 서 있는데
@@ -5511,8 +5536,26 @@ function updateHint() {
     try { return ((S.firstPlay && S.firstPlay.beansprout && S.firstPlay.beansprout.harvestCount) || 0) >= 2; }
     catch { return false; }
   })();
+  /* ★★★★ 2026-08-30 — **「며칠 남았나」를 말한다** (박사님 「5일 넘겨보자」 · 문안은 [Plan]).
+     ══════════════════════════════════════════════════════════════════
+     ⛔ 같은 말이 닷새 내리 뜨면 «시계가 멈춘» 것처럼 보인다. 그러면 강제가 「막다른 길」이 된다.
+     ★ 끝이 보이면 그것은 «기다림»이고, 사람은 기다림은 견딘다.
+     ⚠ **「5」를 안 박는다** — 남은 날은 코어가 낸 값(`daysLeft`)에서 «세어» 나온다.
+       그래야 하루 넘길 때마다 줄어들고, 작물이 바뀌어도 저절로 맞는다.
+     ⚠ **마지막 날은 다른 말이다**(「내일이면 거둡니다」) — 그 한 줄이 끝을 보이게 한다. */
+  const DAY_KO = ['', '하루', '이틀', '사흘', '나흘', '닷새', '엿새', '이레', '여드레', '아흐레', '열흘'];
+  const growLeft = (() => {
+    try {
+      const ns = cropRows.filter(r => r && r.placed && r.growing && !r.ready)
+                         .map(r => r.daysLeft).filter(n => Number.isFinite(n) && n > 0);
+      return ns.length ? Math.min(...ns) : 0;
+    } catch { return 0; }
+  })();
+  const growSay = growLeft === 1 ? '자라는 중입니다 — 내일이면 거둡니다'
+                : growLeft > 1 ? `자라는 중입니다 — ${DAY_KO[growLeft] || (growLeft + '일')} 더 넘겨 보세요`
+                : '자라는 중입니다 — 하루를 넘겨 보세요';
   const wait = seedComing ? '씨앗은 내일 옵니다 — 하루를 넘기세요'
-             : (cropGrowing && !taughtCycles) ? '자라는 중입니다 — 하루를 넘겨 보세요'
+             : (cropGrowing && !taughtCycles) ? growSay
              : S.day <= 1 ? '하루를 보냅니다' : null;
   /* ★ 여기가 총괄이 잡은 자리다 — 씨앗이 «오는 중»인데 시트가 열려 있어 손가락이 통째로 없었다.
      ⇒ 「시트가 [다음 날]을 «덮나»」로 바꾼다. 넓은 화면에서는 안 덮으므로 그대로 짚는다. */
@@ -8693,7 +8736,23 @@ function drawWater() {
      ⚠ 말풍선이 안 뜨는 상황(대화 중·확대 중·방이 안 뜸)에서는 아래 버튼이 나온다.
        그때 버튼마저 없으면 물을 줄 길이 사라진다.
      ⚠⚠ **여기서 돌아가면 안 된다** — 위 §진짜 원인. 보이기만 끈다. */
-  b.style.display = markSays(/물/) ? 'none' : '';
+  /* ★★★★ 2026-08-30 — **잠긴 알림줄은 «살아 있는» 단추에 자리를 내준다.**
+     ══════════════════════════════════════════════════════════════════
+     위 §CSS 에 「거두기 — 물주기와 같은 자리, 다른 색. **둘이 같이 뜨는 일은 없다**」라고
+     적혀 있다. ⛔ 그 전제가 깨졌다. 익은 날에는 거두기가 살아 뜨는데, 물주기도
+     「💧 작물은 전부 자라는 중」이라는 **알림줄**로 같이 뜬다 — 그리고 DOM 에서 뒤에 있어
+     **위에 얹힌다.** 둘의 왼쪽 위 모서리가 같다(실측 12,708 · 폭만 다르다).
+     ⇒ 실측(probe_force5 · 390×844): Day 6 에 손가락은 [거두기]를 짚는데
+       그 점에서 잡히는 것은 [물주기]였다. **여섯 번을 눌러도 아무 일이 없었다.**
+       울타리가 선 뒤로는 그 사이 다른 것도 못 누른다 ⇒ ★ 첫 수확에서 판이 «선다».
+     ★ 그러니 할 일이 있는 쪽에 자리를 내준다. 알림뿐인 줄은 물러난다.
+     ⚠ **감추기만 한다 — 잠그지 않는다.** 말풍선의 `click()` 길은 살아 있어야 한다
+       (위 §「눌러도 안 먹는다」의 진짜 원인).
+     ⚠ `drawHarvest` 가 **먼저** 돈다(§draw · §refreshOverlays 둘 다). 그래서 그 단추가
+       이미 제 모습을 정한 뒤다 — 여기서는 그것을 «보기만» 한다(셈을 두 벌 두지 않는다). */
+  const hb = $('harvestCrop');
+  const harvestUp = !!(hb && hb.style.display !== 'none' && hb.offsetParent !== null);
+  b.style.display = (markSays(/물/) || (!st.needsWater && harvestUp)) ? 'none' : '';
   /* ★2026-08-04 — 물은 **회전 시작**이다. 매일 주는 것이 아니다.
      그래서 "빼먹었다"가 아니라 "아직 시작을 안 했다"로 말한다 —
      벌이 아니라 아직 안 한 일이다. */
