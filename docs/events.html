@@ -1,0 +1,448 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>*{margin:0;padding:0}img,svg{max-width:100%}</style>
+<title>빛식물 말과 손가락</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=IBM+Plex+Sans+KR:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+
+<style>
+:root{
+  --bg:#F6F7F3; --surface:#FFFFFF; --surface-2:#EFF1EA;
+  --ink:#1A1F18; --ink-2:#5A6157; --ink-3:#878E82;
+  --line:#DCE0D5; --accent:#2E6F6B; --accent-soft:#DCEAE8;
+  --ok:#43712F; --ok-bg:#E4EEDC;
+  --warn:#9C6D14; --warn-bg:#F6EBD3;
+  --gap:#A8402F; --gap-bg:#F6E0DB;
+  --idle:#767C71; --idle-bg:#E8EAE4;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#11150F; --surface:#191E17; --surface-2:#20261E;
+  --ink:#E9ECE3; --ink-2:#9CA396; --ink-3:#767D71;
+  --line:#2A3126; --accent:#63B8B0; --accent-soft:#1B2E2C;
+  --ok:#86BE6E; --ok-bg:#1C2A17;
+  --warn:#DFAC4B; --warn-bg:#2C2413;
+  --gap:#E5806B; --gap-bg:#2E1A16;
+  --idle:#848A7E; --idle-bg:#22271F;
+}}
+:root[data-theme="dark"]{
+  --bg:#11150F; --surface:#191E17; --surface-2:#20261E;
+  --ink:#E9ECE3; --ink-2:#9CA396; --ink-3:#767D71;
+  --line:#2A3126; --accent:#63B8B0; --accent-soft:#1B2E2C;
+  --ok:#86BE6E; --ok-bg:#1C2A17;
+  --warn:#DFAC4B; --warn-bg:#2C2413;
+  --gap:#E5806B; --gap-bg:#2E1A16;
+  --idle:#848A7E; --idle-bg:#22271F;
+}
+
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);
+  font-family:"IBM Plex Sans KR",system-ui,-apple-system,sans-serif;
+  line-height:1.75;font-size:15.5px;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1000px;margin:0 auto;padding:0 24px 96px}
+
+header.top{border-bottom:1px solid var(--line);padding:56px 0 28px}
+.eyebrow{font-family:"IBM Plex Mono",monospace;font-size:11.5px;font-weight:500;
+  letter-spacing:.16em;text-transform:uppercase;color:var(--accent);margin:0 0 14px}
+h1{font-family:"Gowun Batang",serif;font-weight:700;font-size:clamp(34px,6vw,52px);
+  line-height:1.15;margin:0 0 16px;text-wrap:balance}
+.lede{font-size:17px;color:var(--ink-2);max-width:62ch;margin:0 0 26px}
+.scale{display:flex;flex-wrap:wrap;border-top:1px solid var(--line)}
+.scale div{flex:1 1 110px;padding:13px 16px 11px 0;border-right:1px solid var(--line)}
+.scale div:last-child{border-right:none}
+.scale b{display:block;font-family:"IBM Plex Mono",monospace;font-size:22px;font-weight:600;
+  font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.scale span{font-size:12.5px;color:var(--ink-3)}
+
+nav.strip{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:1px;
+  background:var(--line);border:1px solid var(--line);border-radius:3px;overflow:hidden;margin:32px 0 0}
+nav.strip a{background:var(--surface);padding:16px 16px 14px;text-decoration:none;color:inherit;display:block}
+nav.strip a:hover{background:var(--surface-2)}
+nav.strip a:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+nav.strip .n{font-family:"IBM Plex Mono",monospace;font-size:27px;font-weight:600;line-height:1;letter-spacing:-.03em}
+nav.strip .l{font-size:12.5px;color:var(--ink-2);margin-top:7px;line-height:1.45}
+nav.strip .gap .n{color:var(--gap)} nav.strip .ok .n{color:var(--ok)}
+nav.strip .warn .n{color:var(--warn)} nav.strip .idle .n{color:var(--idle)}
+
+section{padding-top:58px}
+h2.sec{font-family:"Gowun Batang",serif;font-size:clamp(23px,3.3vw,31px);font-weight:700;
+  margin:0 0 6px;line-height:1.3;text-wrap:balance}
+h2.sec .n{font-family:"IBM Plex Mono",monospace;font-size:12px;font-weight:500;color:var(--accent);
+  letter-spacing:.14em;display:block;margin-bottom:9px}
+.secsub{color:var(--ink-2);font-size:14.5px;margin:0 0 24px;max-width:64ch}
+h3{font-size:17px;font-weight:700;margin:34px 0 10px;text-wrap:balance}
+h4{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);font-weight:600;margin:22px 0 7px}
+p{margin:0 0 12px;max-width:66ch}
+
+.claim{border-left:3px solid var(--accent);padding:4px 0 4px 20px;margin:24px 0;
+  font-family:"Gowun Batang",serif;font-size:19px;line-height:1.6;font-weight:700;
+  text-wrap:balance;max-width:56ch}
+.claim.g{border-left-color:var(--gap)} .claim.o{border-left-color:var(--ok)}
+.claim small{display:block;font-family:"IBM Plex Sans KR",sans-serif;font-size:13.5px;
+  font-weight:400;color:var(--ink-2);margin-top:9px;line-height:1.65}
+
+pre{font-family:"IBM Plex Mono",monospace;font-size:12.5px;line-height:1.8;
+  background:var(--surface-2);border:1px solid var(--line);border-radius:3px;
+  padding:14px 16px;overflow-x:auto;margin:12px 0}
+code{font-family:"IBM Plex Mono",monospace;font-size:.9em;background:var(--surface-2);padding:1px 5px;border-radius:2px}
+pre code{background:none;padding:0}
+
+.tw{overflow-x:auto;margin:14px 0;border:1px solid var(--line);border-radius:3px}
+table{border-collapse:collapse;width:100%;font-size:13.5px;min-width:520px}
+th{text-align:left;font-weight:600;font-size:11px;letter-spacing:.07em;text-transform:uppercase;
+  color:var(--ink-3);padding:9px 13px;background:var(--surface-2);border-bottom:1px solid var(--line);white-space:nowrap}
+td{padding:9px 13px;border-bottom:1px solid var(--line);vertical-align:top;background:var(--surface)}
+tr:last-child td{border-bottom:none}
+td.mono{font-family:"IBM Plex Mono",monospace;font-size:12px;white-space:nowrap;color:var(--ink-2)}
+
+.chip{display:inline-block;font-size:11.5px;font-weight:600;padding:2px 8px;border-radius:2px;white-space:nowrap;line-height:1.6}
+.c-ok{background:var(--ok-bg);color:var(--ok)} .c-warn{background:var(--warn-bg);color:var(--warn)}
+.c-gap{background:var(--gap-bg);color:var(--gap)} .c-idle{background:var(--idle-bg);color:var(--idle)}
+
+.list{display:grid;gap:1px;background:var(--line);border:1px solid var(--line);border-radius:3px;margin:16px 0}
+.it{background:var(--surface);padding:15px 18px;display:grid;grid-template-columns:auto 1fr;gap:0 14px;align-items:start}
+.it .sev{width:3px;height:100%;min-height:20px;border-radius:2px;background:var(--ok)}
+.it.w .sev{background:var(--warn)} .it.g .sev{background:var(--gap)} .it.i .sev{background:var(--idle)}
+.it .t{font-weight:600;font-size:14.5px;margin-bottom:3px}
+.it .d{font-size:13.5px;color:var(--ink-2);line-height:1.62}
+.it .d b{color:var(--ink)}
+
+.ask{border:2px solid var(--accent);border-radius:4px;background:var(--accent-soft);padding:20px 22px;margin:18px 0}
+.ask .tag{font-family:"IBM Plex Mono",monospace;font-size:11px;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--accent);font-weight:600}
+.ask h3{font-family:"Gowun Batang",serif;font-size:clamp(18px,2.8vw,23px);margin:8px 0 10px;line-height:1.4}
+.ask p{font-size:14.5px;margin:0 0 8px} .ask p:last-child{margin-bottom:0}
+
+.dia{margin:22px 0;padding:18px 8px;background:var(--surface);border:1px solid var(--line);
+  border-radius:3px;overflow-x:auto}
+.dia pre.mermaid{margin:0;text-align:center;background:none;border:none;padding:0}
+.cap{font-size:12.5px;color:var(--ink-3);margin:8px 2px 0;text-align:center}
+
+footer{border-top:1px solid var(--line);margin-top:70px;padding-top:26px;font-size:13px;color:var(--ink-3)}
+footer a{color:var(--accent)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="top">
+  <p class="eyebrow">빛식물 · 2026-08-30 · 총괄</p>
+  <h1>말과 손가락</h1>
+  <p class="lede">게임이 <b>언제 말을 걸고</b>, <b>언제 손가락이 뜨나</b>. 조건을 붙여 한 장에 폈다.
+     저장소에서 캔 것이고 — 이름에서 읽은 것이 아니다.</p>
+  <div class="scale">
+    <div><b>66</b><span>대사 SCRIPTS</span></div>
+    <div><b>31</b><span>사건 대사</span></div>
+    <div><b>18</b><span>퀘스트</span></div>
+    <div><b>7</b><span>첫 플레이 걸음</span></div>
+    <div><b>8</b><span>손가락 갈래</span></div>
+    <div><b>6</b><span>손가락이 쉬는 때</span></div>
+  </div>
+  <nav class="strip">
+    <a href="#zero"><span class="n">0</span><span class="l">큰 그림 — 셋과 넷째</span></a>
+    <a href="#one" class="ok"><span class="n">1</span><span class="l">첫 플레이 일곱 걸음</span></a>
+    <a href="#two" class="ok"><span class="n">2</span><span class="l">퀘스트 열여덟</span></a>
+    <a href="#three"><span class="n">3</span><span class="l">사건 대사 서른하나</span></a>
+    <a href="#four" class="warn"><span class="n">4</span><span class="l">손가락 — 차례가 규칙</span></a>
+    <a href="#five" class="gap"><span class="n">5</span><span class="l">어긋남 넷</span></a>
+  </nav>
+</header>
+
+<section id="zero">
+  <h2 class="sec"><span class="n">§0</span>말이 나오는 곳은 셋이고, 손가락은 넷째다</h2>
+  <p class="secsub">셋은 <b>일이 벌어져서</b> 말한다 — 사건이다. 넷째는 <b>지금 상태가 이러니까</b> 가리킨다.
+     그래서 넷째만 되돌아온다.</p>
+
+  <div class="dia"><pre class="mermaid">
+flowchart LR
+  subgraph SRC["말이 나오는 곳 — 셋"]
+    A["① 첫 플레이<br/>first_play.js<br/>걸음 7"]
+    B["② 퀘스트<br/>quest.js<br/>18줄"]
+    C["③ 살림·계절·식물<br/>tutorial.js · loop.js<br/>사건 31"]
+  end
+  A --&gt; EV["사건 id"]
+  B --&gt; EV
+  C --&gt; EV
+  EV --&gt; MAP["EVENT_SCRIPT<br/>QUEST_OPEN / QUEST_DONE"]
+  MAP --&gt; ORD["EVENT_ORDER<br/>차례를 정한다"]
+  ORD --&gt; DLG["대사 SCRIPTS 66"]
+  DLG --&gt; STAGE["화면 · talking"]
+  subgraph FOUR["④ 손가락 — 사건이 아니다"]
+    H["updateHint()<br/>상태를 매 틱 다시 묻는다"]
+    K["쪽지 coach · 10초"]
+  end
+  STAGE -. "말하는 동안 쉼" .-&gt; H
+  K -. "쪽지 뜨면 쉼" .-&gt; H
+  classDef s fill:#1d4b3a,stroke:#4ade80,color:#e8fff4
+  classDef f fill:#4a2f1d,stroke:#fbbf24,color:#fff8e8
+  class A,B,C s
+  class H,K f
+  </pre>
+  <p class="cap">사건은 한 번 지나가면 끝. 손가락은 조건이 참인 동안 계속 뜬다.</p></div>
+
+  <div class="claim">사건은 <b>지나간 일</b>이고, 손가락은 <b>지금 상태</b>다.
+    <small>그래서 사건을 못 보면 영영 못 보고, 손가락은 놓쳐도 다시 뜬다.
+      「못 뜬 쪽지는 영영 안 뜬다」가 오늘 우리를 물었던 그 자리다.</small></div>
+</section>
+
+<section id="one">
+  <h2 class="sec"><span class="n">§1</span>첫 플레이 — 일곱 걸음</h2>
+  <p class="secsub">시루 하나로 시작해 말린 새순으로 끝난다. 유도 둘이 곁에 붙는다.</p>
+
+  <div class="dia"><pre class="mermaid">
+flowchart TD
+  P0["start<br/>가방에 시루 하나"] --&gt;|"시루를 방에 놓았다"| P1["place_beansprout"]
+  P1 --&gt;|"심었다"| P2["grow_beansprout<br/>4일 한 바퀴"]
+  P2 --&gt;|"첫 수확"| E1(["beansprout_harvest<br/>대사 harvest"])
+  P2 --&gt;|"몬스테라가 아직"| P3["monstera_gift"]
+  P3 --&gt;|"도착"| E2(["monstera_arrived<br/>셋이 말한다"])
+  E2 --&gt; P4["move_monstera<br/>★ 손가락 두 걸음"]
+  P4 --&gt;|"밝은 자리에 놓았다"| P5["grow_monstera"]
+  P5 --&gt;|"말린 새순이 섰다"| E3(["spear_furled"])
+  E3 --&gt; P6["complete"]
+  P5 -.-&gt;|"열흘 안 자람 · 아직 안 들려줌"| G1(["monstera_no_spear<br/>창턱. 해가 제일 오래 드는 자리야"])
+  G1 -.-&gt;|"들려줬고 · 정말 옮겼고<br/>그 뒤 닷새 더 안 자람"| G2(["monstera_needs_lamp<br/>★ 여기서 등이 처음 나온다"])
+  P5 -.-&gt;|"자라기 시작하면"| GX["유도 끝 · grewOnce"]
+  classDef ev fill:#3a2a52,stroke:#c4b5fd,color:#f3f0ff
+  class E1,E2,E3,G1,G2 ev
+  </pre></div>
+
+  <div class="claim o">유도 둘은 <b>날수가 아니라 구조로</b> 선다.
+    <small><code>move</code>는 「안 들려줬을 때」만, <code>lamp</code>는 「들려주고 실제로 옮겼을 때」만.
+      두 문이 겹치지 않아, 열흘·닷새를 어떻게 바꿔도 차례가 안 뒤집힌다.</small></div>
+</section>
+
+<section id="two">
+  <h2 class="sec"><span class="n">§2</span>퀘스트 열여덟 — 사슬과 곁가지</h2>
+  <p class="secsub">앞의 여덟은 한 줄로 이어지고, 뒤는 조건이 열면 각자 뜬다.
+     퀘스트마다 대사가 둘이다 — 열릴 때와 끝낼 때.</p>
+
+  <div class="dia"><pre class="mermaid">
+flowchart TD
+  Q1["place_siru<br/>늘 열려 있다"] --&gt; Q2["water_siru"]
+  Q2 --&gt; Q3["first_harvest"]
+  Q3 --&gt; Q4["resow_siru"]
+  Q4 --&gt; Q5["order_seed"]
+  Q5 --&gt; Q6["siru_two"]
+  Q6 --&gt; Q7["monstera_home"]
+  Q7 --&gt; L2["leaf_two"]
+  L2 --&gt; L3["leaf_three"]
+  FP{{"firstPlayDone<br/>또는 몬스테라 도착"}} --&gt; Q8["crop_mix"]
+  FPD{{"firstPlayDone + 앞 사슬"}} --&gt; Q9["siru5_cycle5<br/>★ 시루 다섯 · 다섯 바퀴"]
+  Q9 --&gt; Q10["radish5"]
+  Q9 --&gt; Q11["siru8"]
+  Q11 --&gt; Q12["siru16"]
+  M2{{"어미 잎 ≥ 2"}} --&gt; C1["first_cut"]
+  LU{{"등이 열렸다"}} --&gt; C2["buy_lamp"]
+  MV{{"어미 무늬잎 ≥ 1"}} --&gt; C3["varie_bright"]
+  CUT{{"무늬 삽수가 있다"}} --&gt; C4["sell_varie<br/>★ 이사의 문"]
+  classDef gate fill:#4a2f1d,stroke:#fbbf24,color:#fff8e8
+  classDef main fill:#1d4b3a,stroke:#4ade80,color:#e8fff4
+  class FP,FPD,M2,LU,MV,CUT gate
+  class Q1,Q2,Q3,Q4,Q5,Q6,Q7,Q9 main
+  </pre></div>
+
+  <div class="claim g">지도에 <b>없는 퀘스트는 조용히 지나간다.</b>
+    <small>그게 맞다 — 없는 대사를 부르다 던지는 것보다 안 뜨는 편이 낫다.
+      다만 「퀘스트는 열리는데 화면이 조용한」 것이 이 저장소의 지병이라
+      <code>test_quest.mjs</code>가 표와 두 지도를 양쪽으로 대조한다.</small></div>
+</section>
+
+<section id="three">
+  <h2 class="sec"><span class="n">§3</span>사건 대사 서른하나 — 조건을 붙여서</h2>
+  <p class="secsub">살림 · 등 · 멈춤 · 무늬 · 이사 · 손. 여섯 무리다.</p>
+
+  <div class="dia"><pre class="mermaid">
+flowchart TD
+  subgraph SAL["살림"]
+    R1{{"오늘이 청구일 이레 전"}} --&gt; R1e(["rent_soon · 되풀이"])
+    R2{{"지갑이 0 밑으로<br/>아직 파산 아님"}} --&gt; R2e(["broke<br/>⛔ 한 번뿐 → 되풀이로 옮길 것"])
+  end
+  subgraph LAMP["등"]
+    L1{{"가을에 들어섰다"}} --&gt; L1e(["lamp_unlocked · 첫 개는 공짜"])
+    L2{{"가을 이레째 · 가진 등 0"}} --&gt; L2e(["lamp_skipped · 한 번만 짚는다"])
+    L3{{"샀다"}} --&gt; L3e(["lamp_bought"])
+  end
+  subgraph STL["멈춤 · 나흘"]
+    S0{{"나흘째 형태 그대로"}} --&gt; S1{"어느 판인가"}
+    S1 --&gt;|"겨울"| S1e(["plant_stalled_winter · 되"])
+    S1 --&gt;|"둘째 번부터"| S2e(["plant_stalled_again · 되"])
+    S1 --&gt;|"처음"| S3e(["plant_stalled"])
+    S4{{"멈춰 봤고 다시 오른다"}} --&gt; S4e(["plant_resumed"])
+    S5{{"겨울 열하루째 · 아직 반지하"}} --&gt; S5e(["winter_still"])
+  end
+  subgraph VAR["무늬"]
+    V1{{"무늬 잎 한 장"}} --&gt; V1e(["varie_lucky<br/>무늬가 섞였습니다"])
+    V2{{"무늬 잎 두 장"}} --&gt; V2e(["varie_lucky2"])
+    V3{{"확정 잎이 났다"}} --&gt; V3e(["varie_granted"])
+    V4{{"셋째 장부터"}} --&gt; V4e(["⛔ 말하지 않는다<br/>놀람이 값을 잃는다"])
+  end
+  subgraph MOV["이사 — 상태가 바뀔 때만"]
+    M1{"어디가 모자라나"} --&gt;|"돈만"| M1e(["move_short_money"])
+    M1 --&gt;|"배움만"| M2e(["move_short_learn"])
+    M1 --&gt;|"둘 다 · 살림이 얕다"| M3e(["move_short_both_crop"])
+    M1 --&gt;|"둘 다 · 살림은 됐다"| M4e(["move_short_both_light"])
+    M1 --&gt;|"됐다"| M5e(["move_ready"])
+    M5e --&gt; M6e(["moved_out"])
+    M6e --&gt; M7e(["moved_in_oneroom"])
+  end
+  subgraph HAND["손"]
+    H1{{"오늘 익은 것 × 2 가<br/>오늘 남은 손보다 크다"}} --&gt; H1e(["crop_hands_short · 되<br/>드문 날이라야 뜬다"])
+  end
+  classDef ev fill:#3a2a52,stroke:#c4b5fd,color:#f3f0ff
+  classDef bad fill:#4a1d1d,stroke:#f87171,color:#ffecec
+  class R1e,L1e,L2e,L3e,S1e,S2e,S3e,S4e,S5e,V1e,V2e,V3e,M1e,M2e,M3e,M4e,M5e,M6e,M7e,H1e ev
+  class R2e,V4e bad
+  </pre></div>
+
+  <h3>박은 수 넷 — 여기 말고 다른 데 적지 않는다</h3>
+  <div class="tw"><table>
+    <thead><tr><th>이름</th><th class="mono">값</th><th>무엇을 정하나</th></tr></thead>
+    <tbody>
+      <tr><td>MONSTERA_HINT_DAYS</td><td class="mono">10</td><td>「자리부터」 유도가 뜨는 날수</td></tr>
+      <tr><td>MONSTERA_LAMP_HINT_DAYS</td><td class="mono">5</td><td>옮긴 뒤 「등」이 나오는 날수</td></tr>
+      <tr><td>STALL_DAYS</td><td class="mono">4</td><td>「멈췄다」로 세는 날수</td></tr>
+      <tr><td>RENT_NOTICE_DAYS</td><td class="mono">7</td><td>월세 예고를 며칠 전에</td></tr>
+      <tr><td>LAMP_NUDGE_DAY</td><td class="mono">7</td><td>가을 며칠째에 등을 한 번 짚나</td></tr>
+      <tr><td>WINTER_STILL_DAY</td><td class="mono">10</td><td>겨울 며칠째에 다시 짚나</td></tr>
+      <tr><td>COACH_MS</td><td class="mono">10000</td><td>쪽지가 떠 있는 시간</td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="claim">이사만 <b>「상태가 바뀔 때」</b>고, 나머지는 <b>「일이 벌어질 때」</b>다.
+    <small>그래서 이사 말은 조건이 오가면 다시 나오고, 나머지는 한 번 지나가면 안 나온다.</small></div>
+</section>
+
+<section id="four">
+  <h2 class="sec"><span class="n">§4</span>손가락 — 차례가 곧 규칙이다</h2>
+  <p class="secsub">위에서부터 먼저 잡히는 갈래가 이긴다.
+     그래서 <b>새 갈래를 어디에 끼우나가 그 갈래의 생사</b>다.</p>
+
+  <div class="dia"><pre class="mermaid">
+flowchart TD
+  T["updateHint() — 매 틱"] --&gt; C0{"쪽지가 떠 있나"}
+  C0 --&gt;|"예"| X0(["⛔ 쉼 — 둘이 뜨면 둘 다 안 읽힌다"])
+  C0 --&gt;|"아니오"| C1{"여기에 둘까요? 확인 중인가"}
+  C1 --&gt;|"예"| A1(["👉 확인 단추<br/>★ 여기가 구멍이었다 — 26일 멈춤"])
+  C1 --&gt;|"아니오"| C2{"몬스테라를 옮기는 중 · 격자가 떴나"}
+  C2 --&gt;|"예"| A2(["👇 갈 자리<br/>여기로 끌어 보세요 — 창턱"])
+  C2 --&gt;|"아니오"| C3{"끌기 · 고르기 · 말하기 · 확대 중인가"}
+  C3 --&gt;|"하나라도 예"| X1(["⛔ 쉼"])
+  C3 --&gt;|"아니오"| C4{"첫 플레이가 켜져 있나"}
+  C4 --&gt;|"아니오"| X2(["⛔ 쉼"])
+  C4 --&gt;|"예"| B1{"시루를 아직 안 놓았나"}
+  B1 --&gt;|"예"| A3(["👉 가방 시루 칸<br/>방 안 어두운 자리에"])
+  B1 --&gt;|"아니오"| B2{"가방에 몬스테라가 있나"}
+  B2 --&gt;|"예"| A4(["👉 가방의 그것<br/>방 안 밝은 자리에"])
+  B2 --&gt;|"아니오"| B3{"걸음이 move_monstera 인가"}
+  B3 --&gt;|"예"| A5(["👉 방의 화분<br/>창턱으로 옮겨 보세요"])
+  B3 --&gt;|"아니오"| B4{"오늘 할 일이 있나"}
+  B4 --&gt;|"예"| A6(["👉 그 일<br/>물주기 · 거두기 · 심기"])
+  B4 --&gt;|"아니오"| B5{"씨앗·시루·무순을 사야 하나"}
+  B5 --&gt;|"예"| A7(["👉 상점 → 품목 → 주문<br/>★ 세 걸음을 끝까지"])
+  B5 --&gt;|"아니오"| A8(["👉 다음 날"])
+  classDef stop fill:#4a1d1d,stroke:#f87171,color:#ffecec
+  classDef fin fill:#4a2f1d,stroke:#fbbf24,color:#fff8e8
+  class X0,X1,X2 stop
+  class A1,A2,A3,A4,A5,A6,A7,A8 fin
+  </pre>
+  <p class="cap">[확인]과 [갈 자리]가 「고르는 중이면 쉰다」보다 <b>앞</b>에 있는 까닭 — 뒤에 두면 영영 안 닿는다.</p></div>
+
+  <h3>안 뜨는 때 — 여섯</h3>
+  <div class="tw"><table>
+    <thead><tr><th>때</th><th class="mono">자</th><th>까닭</th></tr></thead>
+    <tbody>
+      <tr><td>쪽지가 떠 있다</td><td class="mono">coachNow</td><td>10초. 둘이 같이 뜨면 둘 다 안 읽힌다</td></tr>
+      <tr><td>끌고 있다</td><td class="mono">drag.on</td><td>이미 하고 있는 중</td></tr>
+      <tr><td>무언가를 고르는 중</td><td class="mono">picked.mode</td><td><span class="chip c-warn">단, [확인]·[갈 자리]는 이보다 앞</span></td></tr>
+      <tr><td>말하는 중</td><td class="mono">stage.talking</td><td>대사가 화면을 갖는다</td></tr>
+      <tr><td>확대 중</td><td class="mono">stage.zoom</td><td>좌표가 안 맞는다</td></tr>
+      <tr><td>첫 플레이가 꺼졌다</td><td class="mono">!fp.enabled</td><td>가르칠 것이 없다</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>층 — 누가 누구를 덮나</h3>
+<pre>82  상세창
+80  안내판
+70  손가락 hint
+69  hintDim 덮개   ← pointer-events:none. 빼면 «울타리»가 된다
+41  왼쪽 세로 메뉴
+40  시트
+39  시트 스크림</pre>
+</section>
+
+<section id="five">
+  <h2 class="sec"><span class="n">§5</span>어긋남 넷 — 이 그림이 드러내려고 있는 것</h2>
+  <p class="secsub">이 그림의 값은 「보여 주는」 데 있지 않다. <b>어긋남을 드러내는</b> 데 있다.
+     조건을 적어야 어긋남이 보인다.</p>
+
+  <div class="list">
+    <div class="it g"><div class="sev"></div><div>
+      <div class="t">돈이 다 떨어졌다 — 한 번뿐인데 여러 번 일어난다</div>
+      <div class="d"><code>brokeTalk</code>이 <b>한 번뿐</b>으로 잡혀 있다. 그런데 지갑은 여러 번 빈다.
+        두 번째부터는 조용한 날이 된다.
+        <b>고칠 것</b> — 되풀이로 옮기고 <code>brokeTalkAgain</code>을 더한다.
+        「되풀이되는 말은 두 번째를 다르게」의 바로 그 자리.</div></div></div>
+
+    <div class="it"><div class="sev"></div><div>
+      <div class="t">할 일 줄이 옛말을 이고 있었다 <span class="chip c-ok">고침</span></div>
+      <div class="d">줄은 「물을 주세요」인데 게임은 「심기」를 기다렸다. 8-16에 걸음이 하나 늘었는데
+        줄만 안 따라갔다. <b>고친 것</b> — <code>32f6ede</code>가 할 일을 상태에 묻게 바꿨다.
+        이제 「놓였는데 안 심었으면 씨앗을 심으세요, 심었으면 물을 주세요」로 걸음마다 바뀐다.
+        <b>다시 걸을 때 이 줄을 자로 써도 된다.</b></div></div></div>
+
+    <div class="it"><div class="sev"></div><div>
+      <div class="t">쪽지가 손가락을 10초 끈다 <span class="chip c-ok">고침</span></div>
+      <div class="d">「사람을 눌러 보세요」가 첫 시루를 놓은 직후에 떠서, 가장 가르쳐야 할 10초 동안 손가락이 쉬었다.
+        <b>고친 것</b> — 「손가락이 아무것도 안 짚거나 [다음 날]만 짚을 때」로 미뤘다.
+        <b>안 한 것</b> — 「첫 플레이가 끝난 뒤」로는 안 밀었다. 그러면 영영 안 볼 수 있다.
+        걸음 번호를 세지 않고 <b>손가락에 물어서</b> 정한다 — 걸음은 늘 늘어나니까.</div></div></div>
+
+    <div class="it"><div class="sev"></div><div>
+      <div class="t">쪽지가 살림 숫자를 가리고 있었다 <span class="chip c-ok">재서 고침</span></div>
+      <div class="d">쪽지 위쪽 <b>10</b>, 띠 아래쪽 <b>65</b> — 겹쳤다. 조작을 가르치는 쪽지가 돈·날짜를 덮었다.
+        <b>고친 것</b> — 띠를 <b>재서</b> 그 아래에 앉힌다. 숫자를 안 박았다.</div></div></div>
+
+    <div class="it i"><div class="sev"></div><div>
+      <div class="t">「안 사도 돼」가 근거를 잃었다</div>
+      <div class="d">등 없이 나가는 길이 폐기됐다. 그러면 「사도 되고 안 사도 돼」는 더 이상 참이 아니다.
+        코드의 낡은 인용은 걷었지만 <b>대사 한 줄이 아직 답을 기다린다</b> —
+        재촉으로 바꿀지는 판을 가르는 결정이라 이 창이 정할 것이 아니다.</div></div></div>
+  </div>
+
+  <div class="ask">
+    <div class="tag">아직 비어 있는 칸</div>
+    <h3>읽어서 낸 것은 죽는다 — 눌러야 산다</h3>
+    <p>이 그림의 조건은 소스에서 캤다. 그래도 「지금 화면에서 정말 그렇게 뜨나」는 다른 물음이다.
+       오늘 하루에만 「할 일 줄이 거짓이었다」를 포함해 여러 번 물렸다.</p>
+    <p><b>① 손가락 갈래 넷째부터가 정말 그 차례로 뜨나</b> ·
+       <b>② 사건 조건이 정말 그 날에 터지나</b></p>
+    <p>그리고 오늘 하나가 더 붙었다 — <b>재는 자도 거짓말을 한다.</b>
+       대사 상자를 마흔 번 눌러도 안 넘어가는 것처럼 보였는데, 연 기록을 붙여 다시 재니
+       세 줄이 차례로 넘어가 있었다. <b>못 넘긴 것은 자였고 게임은 멀쩡했다.</b>
+       그래서 <code>tools/probe_walkstep.mjs</code>가 「없다 · 쉰다 · 가려졌다」를 한 줄에서 가른다.</p>
+  </div>
+</section>
+
+<footer>
+  <p>빛식물 · lux-plant-sim — 캔 곳: <code>quest.js</code> · <code>first_play.js</code> ·
+     <code>dialogue.js</code> · <code>loop.js</code> · <code>tutorial.js</code> ·
+     <code>oneroom.js</code> · <code>game.html</code></p>
+  <p>같이 보기 — <a href="map.html">전체 지도</a> ·
+     <a href="forks.html">갈림길</a> · <a href="night.html">밤샘 협의</a></p>
+</footer>
+
+</div>
+
+<script type="module">
+  import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+  const dark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  mermaid.initialize({startOnLoad:true, theme: dark?'dark':'neutral',
+    themeVariables:{fontFamily:'"IBM Plex Sans KR", system-ui, sans-serif', fontSize:'14px'},
+    flowchart:{curve:'basis', padding:14}});
+</script>
+</body>
+</html>

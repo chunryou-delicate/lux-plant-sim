@@ -18,6 +18,7 @@
 ```
 전체            docs/map.html            지금 판 · 한 것 · 할 것 · 빈 데 · 배운 것
                 (같은 것을 아티팩트로도 냈다 — 박사님이 원격에서 보시는 쪽)
+★ 말·손가락    docs/events.html         언제 말하고 언제 손가락이 뜨나 · 조건까지 (docs/handoff/event-tree.md)
 관계도          docs/handoff/session-atlas-20260829.md
 ★ [growth]      docs/handoff/growth-index.md
 ```
