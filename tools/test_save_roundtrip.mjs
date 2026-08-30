@@ -60,14 +60,34 @@ function makeRich() {
   S.pots.push({ id: 'pot_01', plantId: 'monstera_deliciosa', slotId: null, at: null,
                 placedOnce: false, variegated: true, daysPlanted: 9, fedDays: 9,
                 arrivedOnDay: 3, wateredOnDay: 11, arrivalGrowthDays: 45, growthId: '__main__' });
-  /* 집 — 가구를 팔고 · 사서 놓고 · 가방에 담은 셋 */
-  S.home.furniture = { 'banjiha-desk': { x: 1.0, z: -1.5, rot: 90 } };
-  S.home.furnitureSold = ['banjiha-dresser'];
-  S.home.furnitureAdded = [{ uid: 'add-bed_single-1', preset: 'bed_single', x: 0, z: 0, rot: 0 }];
-  S.home.furnitureBag = [{ uid: 'banjiha-chair', preset: 'chair' }];
-  /* 등 — 산 개수와 겨눔 */
+  /* 집 — 가구를 팔고 · 사서 놓고 · 가방에 담은 셋
+     ★★ 2026-08-30 [House] 가 다섯을 세게 했다. 까닭을 하나씩 적는다:
+       ① «둘 이상» 넣는다 — 하나만 넣으면 「둘째 칸이 사라지는」 것을 못 잡는다
+       ② 좌표를 «어림수로 안 쓴다» — 실제 값은 0.047 · −2.03 · −3.83 같은 것이다.
+          1.0 · −1.5 만 넣으면 «반올림하는 저장»을 못 잡는다
+       ③ ★ `furnitureAdded` 가 `x:0, z:0, rot:0` 이었다 — 위 머리말이 «바로 그것»을
+          경계하는데(「비어 있으면 사라져도 표가 안 난다」) 0 을 넣어 뒀다. 0 은 사라져도 0 이다
+       ④ `rot` 에 «음수»와 «0 아닌 여러 값» — 부호를 잃는 저장을 잡는다
+       ⑤ `aim` 을 «등 둘»에, «음수 yaw» 로 — 겨누기는 −180~180 을 쓴다(growlight_aim §2) */
+  S.home.furniture = {
+    'banjiha-desk':    { x: 1.047, z: -1.503, rot: 90 },
+    'banjiha-etagere': { x: -2.375, z: -1.875, rot: -90 }
+  };
+  S.home.furnitureSold = ['banjiha-dresser', 'banjiha-chair'];
+  S.home.furnitureAdded = [
+    { uid: 'add-bed_single-1', preset: 'bed_single', x: -3.83, z: 2.03, rot: 180 },
+    { uid: 'add-shelf_cart_3tier-2', preset: 'shelf_cart_3tier', x: 0.047, z: -2.03, rot: -45 }
+  ];
+  S.home.furnitureBag = [
+    { uid: 'banjiha-nightstand', preset: 'nightstand' },
+    { uid: 'banjiha-growlight-clip', preset: 'growlight_clip' }
+  ];
+  /* 등 — 산 개수와 겨눔 (★ 둘에, 음수 yaw 로) */
   S.lamps.count = 2; S.lamps.litHours = 12;
-  S.lamps.aim = { 'banjiha-growlight-stand': { yaw: 15, tilt: 30 } };
+  S.lamps.aim = {
+    'banjiha-growlight-stand': { yaw: 15, tilt: 30 },
+    'banjiha-growlight-clip':  { yaw: -37.5, tilt: 12.25 }
+  };
   /* 지갑·배움 */
   S.tutorial.cashWon = 1234500;
   S.tutorial.lamp = { ...(S.tutorial.lamp || {}), unlocked: true, owned: 2, placed: 1 };
@@ -143,6 +163,32 @@ if (seen.length > 6) console.log(`      … 그 밖 ${seen.length - 6}건`);
     .filter(d => !forgiven(d.at)).some(d => /placedOnce/.test(d.at));
   console.log(`\n  ★ 자가 떨어질 수 있나 — placedOnce 를 빼 보면: ${caught ? '✔ 잡는다' : '✘ 못 잡는다'}`);
   assert.ok(caught, '이 자는 빠진 칸을 못 잡습니다 — 자가 장식이 됩니다');
+}
+
+/* ★★ 2026-08-30 [House] — «내 칸»에서도 떨어지나. 남의 칸으로만 확인된 자는 내 것을 안 지킨다.
+   ⇒ 셋을 따로 본다: ① 둘째 칸이 사라짐 ② 좌표가 반올림됨 ③ 겨눔의 부호가 뒤집힘
+   ⚠ 그리고 이 셋은 «실제로 날 수 있는» 모양이다 —
+     ① 배열을 `[0]` 만 싣는 packer · ② `toFixed(1)` 을 끼운 packer · ③ Math.abs 가 섞인 packer */
+for (const [name, hurt, pat] of [
+  ['둘째 가구가 사라짐',
+   raw => { raw.state.home.furnitureAdded.length = 1; },              /paletteX|furnitureAdded/],
+  ['가구 좌표가 반올림됨',
+   raw => { raw.state.home.furniture['banjiha-desk'].x = 1.0; },      /home\.furniture/],
+  ['겨눔 yaw 의 부호가 뒤집힘',
+   raw => { raw.state.lamps.aim['banjiha-growlight-clip'].yaw *= -1; }, /lamps\.aim/]
+]) {
+  const probe = makeRich();
+  const rawP = JSON.parse(JSON.stringify(serialize(probe)));
+  hurt(rawP);
+  let got = false;
+  try {
+    const back = deserialize(JSON.stringify(rawP),
+      { light: stubLight(['banjiha-sill:0']), growth: stubGrowth(), firstPlayRules: FP_RULES });
+    got = diff(JSON.parse(JSON.stringify(probe)), JSON.parse(JSON.stringify(back)))
+      .filter(d => !forgiven(d.at)).some(d => pat.test(d.at));
+  } catch (e) { got = true; }   /* 세이브 계통이 «던져서» 막아도 잡은 것이다 */
+  console.log(`  ★ 내 칸에서도 — ${name}: ${got ? '✔ 잡는다' : '✘ 못 잡는다'}`);
+  assert.ok(got, `이 자가 «${name}» 을 못 잡습니다 — [House] 칸이 안 지켜집니다`);
 }
 
 console.log('');
