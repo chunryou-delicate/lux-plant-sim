@@ -10,6 +10,9 @@
 import { launch, sleep } from './test_cdp.mjs';
 const BASE = process.env.BYEOT_URL || 'http://localhost:8972';
 const W = Number(process.env.W || 390), H = Number(process.env.H || 844);
+/* ★ 몇 바퀴까지 걸을까 — 첫 수확이 밑값이고, CYCLES=2 로 두 바퀴째까지 본다
+   (두 바퀴째라야 「거두기 → 다시 심기 → 물」의 체력을 «걸으며» 잴 수 있다) */
+const GOAL = Number(process.env.CYCLES || 1);
 const wd = setTimeout(() => { console.error('⏱ 자가 제한'); process.exit(2); }, 560000);
 wd.unref && wd.unref();
 const page = await launch({ width: W, height: H, dpr: 1 });
@@ -57,7 +60,13 @@ const fingerAt = () => page.eval(`(()=>{ const h=document.getElementById('hint')
     말: ((h.querySelector('.say')||{}).textContent||'').trim().slice(0,30) }); })()`);
 const now = () => page.eval(`(async()=>{ const fp=await import('/src/game/first_play.js');
   const S=window.__S(); const rs=fp.cropPotList(S.firstPlay, S.day)||[];
+  /* ★ 체력도 같이 적는다 — 「손이 몇인가」를 «읽은 표»가 아니라 «걸으며» 확인한다 */
+  const stm=await import('/src/game/stamina.js');
+  const sv=(()=>{ try { return stm.staminaView(S); } catch(e) { return null; } })();
+  const tab=[...document.querySelectorAll('[role=tab]')].find(t=>t.getAttribute('aria-selected')==='true');
   return JSON.stringify({ 날:S.day,
+    탭: tab ? tab.id : null,
+    체력: sv ? (sv.left ?? sv.now ?? null) + '/' + (sv.max ?? null) : null,
     거둔횟수: ((S.firstPlay&&S.firstPlay.beansprout&&S.firstPlay.beansprout.harvestCount)||0),
     /* ⚠ 이름을 «코어가 부르는 대로» 쓴다 — 예전에 watered·canHarvest 로 물었다가
        늘 거짓을 받았다(그런 자리가 없다). 자가 없는 것을 물으면 조용히 거짓이 나온다.
@@ -71,10 +80,10 @@ console.log('');
 console.log('=== 손가락만 따라 첫 수확까지 ===');
 const log = [];
 let taps = 0, lastDay = -1, lastSig = '', same = 0;
-for (let i = 0; i < 60; i++) {
+for (let i = 0; i < 60 * GOAL; i++) {
   await quiet();
   const st = JSON.parse(await now());
-  if (st.거둔횟수 >= 1) { console.log(`  ✔ 첫 수확 — Day ${st.날} · 손 ${taps}개`); break; }
+  if (st.거둔횟수 >= GOAL) { console.log(`  ✔ ${GOAL}번째 수확 — Day ${st.날} · 손 ${taps}개 · 체력 ${st.체력}`); break; }
   let f = JSON.parse(await fingerAt());
   /* ★ 쪽지가 떠 있으면 손가락은 «일부러» 쉰다(§coach 규율 ⓑ: 둘이 같이 뜨면 둘 다 안 읽힌다).
      ⇒ 그건 끊긴 길이 아니라 «읽는 동안»이다. 사람처럼 기다렸다가 다시 본다.
@@ -112,7 +121,21 @@ for (let i = 0; i < 60; i++) {
         시트네모:(()=>{ const r=sh?sh.getBoundingClientRect():null;
           return r?[Math.round(r.left),Math.round(r.top),Math.round(r.right),Math.round(r.bottom)]:null; })(),
         말풍선:marks, 시트줄단추:rowBtns,
-        waterCrop:f('waterCrop'), harvestCrop:f('harvestCrop') }); })()`));
+        waterCrop:f('waterCrop'), harvestCrop:f('harvestCrop'),
+        /* ★ 개수 창(사는 길의 «세 걸음째») — 여기서 손가락이 끊긴 적이 있다 */
+        개수창:(()=>{ const p=document.getElementById('buyPanel');
+          if(!p) return null; const r=p.getBoundingClientRect();
+          return { 열림:p.getAttribute('aria-hidden')!=='true', 폭:Math.round(r.width),
+                   보임:p.offsetParent!==null }; })(),
+        buyGo:f('buyGo'),
+        /* ★ 어느 «줄»이 손가락을 껐나 — 이걸 보려고 __hintLast 를 뒀다 */
+        열린창: [...document.querySelectorAll('.pop.on')].map(x=>x.id||x.className),
+        줄단추: [...document.querySelectorAll('[data-act]')].map(x=>{
+          const r=x.getBoundingClientRect();
+          return { 일:x.getAttribute('data-act'), 잠김:!!x.disabled,
+                   보임:x.offsetParent!==null, 네모:[Math.round(r.left),Math.round(r.top),Math.round(r.width),Math.round(r.height)] }; }),
+        마지막짚기: window.__hintLast || null,
+        집기: window.__pickState ? window.__pickState() : null }); })()`));
     const n = JSON.parse(await page.eval(`(()=>{ const b=document.getElementById('next');
       if (!b || b.disabled) return 'null'; const r=b.getBoundingClientRect();
       return JSON.stringify({ x:r.left+r.width/2, y:r.top+r.height/2 }); })()`));
@@ -121,7 +144,7 @@ for (let i = 0; i < 60; i++) {
     taps++;
     continue;
   }
-  log.push(`Day ${String(st.날).padStart(2)} · ${String(f.짚는것).padEnd(11)} 「${f.말}」` +
+  log.push(`Day ${String(st.날).padStart(2)} · 체력${st.체력} · ${String(st.탭).padEnd(9)} · ${String(f.짚는것).padEnd(11)} 「${f.말}」` +
            (st.줄[0] ? `  (물필요:${st.줄[0].물필요 ? 'O' : 'X'} 심어야:${st.줄[0].심어야 ? 'O' : 'X'}` +
             ` 익음:${st.줄[0].익음 ? 'O' : 'X'} 남은날:${st.줄[0].남은날})` : ''));
   /* ★ **제자리걸음을 잡는다** — 같은 것을 짚는데 판이 «하나도» 안 바뀌면 그건 멈춘 것이다.
@@ -145,6 +168,15 @@ for (let i = 0; i < 60; i++) {
                  글:(b.textContent||'').trim().slice(0,16) }; };
       return JSON.stringify({ harvestCrop:f('harvestCrop'), waterCrop:f('waterCrop'),
         짚는것:(()=>{ const t=document.querySelector('.hintTarget'); return t?(t.id||t.className):null; })() }); })()`));
+    log.push('   · 시트 쪽 — ' + await page.eval(`(()=>{
+      const pages=[...document.querySelectorAll('.sheetpage')].map(p=>p.id+(p.classList.contains('on')?'*':''));
+      const acts=[...document.querySelectorAll('[data-act]')].map(b=>{
+        const r=b.getBoundingClientRect(); const pg=b.closest('.sheetpage');
+        return { 일:b.getAttribute('data-act'), 쪽:pg?pg.id:null, 켜짐:pg?pg.classList.contains('on'):null,
+                 네모:[Math.round(r.left),Math.round(r.top),Math.round(r.width),Math.round(r.height)] }; });
+      const box=document.getElementById('siruBox');
+      return JSON.stringify({ 쪽들:pages, 줄단추:acts,
+        시루상자: box ? { display:box.style.display, 보임:box.offsetParent!==null } : null }); })()`));
     log.push('   · 짚은 점에서 잡히는 것 — ' + await page.eval(`(()=>{
       const el=document.elementFromPoint(${Math.round(f.x)}, ${Math.round(f.y)});
       return el ? (el.id || el.tagName + '.' + (el.className||'').split(' ')[0]) : 'null'; })()`));

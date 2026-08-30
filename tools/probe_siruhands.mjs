@@ -1,93 +1,74 @@
-/* tools/probe_siruhands.mjs — **시루 하나를 세우는 데 «손»이 몇인가**
+/* tools/probe_siruhands.mjs — **시루 하나를 세우는 데 «손»이 몇인가** (총괄 ⓑ)
    ------------------------------------------------------------------
-   총괄 ⓑ: 「놓기 1 + 심기 1 + 물 1 = 셋인가」. 「하루에 하나씩」 규칙의 밑돌이 될 수다.
-   재는 법: **손가락이 짚는 것을 그대로 따라간다.** 안내가 곧 길이므로(§lamp-is-the-path),
-     손가락이 짚는 것을 한 번 누르는 것이 곧 「손 하나」다. 물이 들어갈 때까지 센다.
-   재는 것: ① 콩나물 시루 하나에 손 몇 ② 무순 재배판 하나에 손 몇
-            ③ 그 손들이 «같은 날»에 다 들어가나 ④ 다섯 시루면 손 몇
-   ⛔ 값은 안 바꾼다. 「하루에 몇」을 정하는 것은 [Plan] 몫이다. 여기는 수만 낸다. */
-import { launch, sleep } from './test_cdp.mjs';
-const BASE = process.env.BYEOT_URL || 'http://localhost:8972';
-const W = Number(process.env.W || 390), H = Number(process.env.H || 844);
-const wd = setTimeout(() => { console.error('⏱ 자가 제한'); process.exit(2); }, 420000);
-wd.unref && wd.unref();
-const page = await launch({ width: W, height: H, dpr: 1 });
-await page.goto(`${BASE}/game.html`);
-await page.eval('localStorage.clear()', false);
-await page.goto(`${BASE}/game.html`);
-await page.waitFor('!!window.__rv', 150000, 300);
-await sleep(5000);
-const mouse = (type, x, y, buttons) => page.send('Input.dispatchMouseEvent',
-  { type, x: Math.round(x), y: Math.round(y), button: 'left', buttons, clickCount: 1 });
-const tapPoint = async (x, y) => {
-  await mouse('mouseMoved', x, y, 0);
-  await mouse('mousePressed', x, y, 1);
-  await sleep(70);
-  await mouse('mouseReleased', x, y, 0);
-  await sleep(700);
-};
-/* ⚠ 대사 중에는 손가락이 «일부러» 꺼진다. 안 걷고 세면 0이 나온다. */
-const clearDlg = async () => {
-  for (let i = 0; i < 40; i++) {
-    const t = await page.eval(`String(document.getElementById('stage').classList.contains('talking'))`);
-    if (t !== 'true') return true;
-    await page.eval(`(()=>{ const x=document.getElementById('dlgBox'); if (x) x.click(); })()`, false);
-    await sleep(220);
-  }
-  return false;
-};
-const quiet = async () => { for (let i = 0; i < 4; i++) { await clearDlg(); await sleep(700); } };
-/* 손가락이 지금 짚는 «점» — 요소든 점이든 화면 좌표 하나로 받는다 */
-const fingerAt = () => page.eval(`(()=>{ const h=document.getElementById('hint');
-  if (!h || !h.classList.contains('on')) return 'null';
-  const r=h.getBoundingClientRect();
-  const t=document.querySelector('.hintTarget');
-  const tr=t?t.getBoundingClientRect():null;
-  /* ⚠ «점»으로 짚을 때는 손가락 그림이 그 점 «옆»에 선다 — 그림 한가운데를 누르면 빗나간다.
-     ⇒ 덮개가 뚫어 둔 구멍의 «한가운데»가 곧 그 점이다(§dimAt 이 dataset.hole 에 적어 둔다). */
-  const d=document.getElementById('hintDim');
-  const hole=(d&&d.dataset.hole||'').split(',').map(Number);
-  const at = tr && tr.width ? { x:tr.left+tr.width/2, y:tr.top+tr.height/2 }
-           : (hole.length===3 && hole.every(Number.isFinite)) ? { x:hole[0], y:hole[1] }
-           : { x:r.left+r.width/2, y:r.top+r.height/2 };
-  return JSON.stringify({ x:at.x, y:at.y,
-    짚는것: t ? (t.id || (t.className||'').split(' ')[0]) : '(점)',
-    말: ((h.querySelector('.say')||{}).textContent||'').trim().slice(0,26) }); })()`);
-/* 지금 시루 줄이 어떤가 — 코어에게 묻는다(화면을 긁지 않는다) */
-const rows = () => page.eval(`(async()=>{ const fp=await import('/src/game/first_play.js');
-  const S=window.__S();
-  const rs=fp.cropPotList(S.firstPlay, S.day)||[];
-  return JSON.stringify({ 날:S.day, 줄: rs.map(r=>({ id:r.id, 종:r.kind, 놓임:!!r.placed,
-    심어야:!!r.needsSow, 물:!!r.watered, 거둠:!!r.harvested })) }); })()`, true, 30000);
-console.log('■ 켠 직후 —', await rows());
-await quiet();
+   물음: 「놓기 1 + 심기 1 + 물 1 = 셋인가」. 「하루에 하나씩」 규칙의 밑돌이 될 수다.
+   ★ 「손」에는 두 뜻이 있어서 둘 다 잰다 — 섞으면 답이 어긋난다:
+     ㉠ **누르는 횟수**   사람이 화면에서 하는 손짓 (안내가 이끄는 걸음 수)
+     ㉡ **체력**          코어가 깎는 값 (`stamina.ACT_COST` · 하루에 쓸 수 있는 양이 정해져 있다)
+   ⇒ ㉠은 probe_force5 가 걸으며 셌다. 여기서는 ㉡을 코어에게 «직접» 묻는다.
+   ⛔ 값은 안 바꾼다. 「하루에 몇으로 할까」는 [Plan]·박사님 몫이다. 여기는 수만 낸다.
+   ⚠ 브라우저가 필요 없다 — stamina 는 순수 모듈이다(THREE 도 DOM 도 안 쓴다). */
+const st = await import('../src/game/stamina.js');
+const fp = await import('../src/game/first_play.js');
+const J = (o) => JSON.stringify(o, null, 0);
+console.log('=== ① 동작 하나에 드는 체력 (코어 표) ===');
+console.log(' ', J(st.ACT_COST));
+console.log('  · 시작 최대체력 —', st.STAMINA_RULES.startMax);
+console.log('  · 상한 —', st.STAMINA_RULES.maxCap === null || st.STAMINA_RULES.maxCap === undefined
+  ? '없다(계속 오른다)' : st.STAMINA_RULES.maxCap);
+console.log('  ⚠ 옮기기·돌리기·놓기는 표에 «없다» = 0. 자리를 바꿔 보는 것에는 벌이 없다.');
 console.log('');
-console.log('=== ① 콩나물 시루 하나 — 손가락을 따라 세어 본다 ===');
-let hands = 0; const path = []; const days = new Set();
-for (let i = 0; i < 14; i++) {
-  await quiet();
-  const st = JSON.parse(await rows());
-  days.add(st.날);
-  const done = (st.줄 || []).some(r => r.놓임 && r.물);
-  if (done) { console.log(`  ✔ 물까지 들어갔다 — 손 ${hands}개`); break; }
-  const f = JSON.parse(await fingerAt());
-  if (!f) { console.log('  ⛔ 손가락이 없다 — 여기서 길이 끊긴다', JSON.stringify(st)); break; }
-  path.push(`${hands + 1}. ${f.짚는것} 「${f.말}」`);
-  await tapPoint(f.x, f.y);
-  hands++;
+console.log('=== ② 시루 하나 — 걸음마다 무엇이 드나 ===');
+{
+  const rows = [
+    ['가방에서 방으로 놓기', 0, '표에 없다 — 놓기·옮기기는 공짜다'],
+    ['씨앗 심기 (sow)',      st.ACT_COST.sow || 0, '놓은 시루는 needsSow 가 참이 된다'],
+    ['물 주기 (water)',      st.ACT_COST.water || 0, '물이 회전의 «시작»이다'],
+    ['거두기 (harvest)',     st.ACT_COST.harvest || 0, '한 시루에 1 — 다섯이면 5'],
+  ];
+  for (const [ko, c, why] of rows) console.log(`   ${String(c)} 손  ${ko.padEnd(22)} ${why}`);
+  const setUp = (st.ACT_COST.sow || 0) + (st.ACT_COST.water || 0);
+  const cycle = setUp + (st.ACT_COST.harvest || 0);
+  console.log(`  ⇒ ★ 세우는 데(놓기+심기+물) — 체력 ${setUp}`);
+  console.log(`  ⇒ ★ 한 바퀴(거두고 다시 심고 물) — 체력 ${cycle}`);
+  console.log(`  ⇒ ⚠ 「손이 셋인가」의 답: 누르는 횟수로는 셋(놓기·심기·물)이지만`);
+  console.log(`      체력으로는 ${setUp} 이다 — **놓기는 공짜**다.`);
 }
-for (const p of path) console.log('   ' + p);
-console.log('  · 지나온 날 —', [...days].join(', '));
-console.log('  · 끝난 뒤 —', await rows());
 console.log('');
-console.log('=== ② 「놓기 = 심기」인가 (콩나물) ===');
-console.log(' ', await page.eval(`(async()=>{ const st=await import('/src/game/state.js');
-  return JSON.stringify({ '놓기 문': typeof st.placeSiru,
-    '심기 문': typeof st.sowCrop,
-    뜻: '콩나물 시루는 놓기가 곧 심기다 — 심기 문은 재배판(무순)이 쓴다' }); })()`, true, 30000));
+console.log('=== ③ 시루 다섯이면 — 하루에 몇 바퀴가 도나 ===');
+{
+  const max = st.STAMINA_RULES.startMax;
+  const per = (st.ACT_COST.harvest || 0) + (st.ACT_COST.sow || 0) + (st.ACT_COST.water || 0);
+  for (const n of [1, 2, 3, 5]) {
+    const need = per * n;
+    console.log(`   시루 ${n}개 한 바퀴 = 체력 ${need}` +
+      `  ⇒ 최대체력 ${max} 이면 ${Math.ceil(need / max)}일치` +
+      (need > max ? `  (하루에 ${Math.floor(max / per)}개까지)` : ''));
+  }
+  console.log('  ⚠ 다섯이 «같은 날» 익으면 하루에 다 못 돈다 — 그것이 「거두는 날을 엇갈리게」의 까닭이다.');
+}
 console.log('');
-console.log('=== ③ 다섯이면 손 몇인가 (지금 셈으로) ===');
-console.log(`  · 콩나물 시루 하나 = 손 ${hands}개 ⇒ 다섯이면 ${hands * 5}개`);
-console.log('  ⚠ 무순 재배판은 여기에 [심기] 한 손이 더 붙는다(놓기 → 심기 → 물).');
-await page.shot('docs/handoff/img/siruhands.png').catch(() => {});
-await page.close(); clearTimeout(wd);
+console.log('=== ④ 무순 하나를 더 얹으면 ===');
+{
+  const k = fp.cropKindOf('musun'), b = fp.cropKindOf('beansprout');
+  console.log(' ', J({ 무순: { 주기: k.harvestDays, 밝은데: k.wantsLight },
+                       콩나물: { 주기: b.harvestDays, 밝은데: b.wantsLight } }));
+  const per = (st.ACT_COST.harvest || 0) + (st.ACT_COST.sow || 0) + (st.ACT_COST.water || 0);
+  console.log(`  · 무순도 같은 표를 쓴다 ⇒ 한 바퀴 체력 ${per}`);
+  console.log(`  · 다만 주기가 다르므로(${b.harvestDays}일 대 ${k.harvestDays}일) 익는 날이 저절로 엇갈린다.`);
+}
+console.log('');
+console.log('=== ⑤ 최대체력이 어떻게 오르나 (「하루에 하나씩」이 언제 풀리나) ===');
+{
+  const R = st.STAMINA_RULES;
+  console.log('  · 그날 쓴 체력이 곧 경험치다(따로 세는 축이 없다).');
+  let lv = R.startMax, acc = 0;
+  const per = (st.ACT_COST.harvest || 0) + (st.ACT_COST.sow || 0) + (st.ACT_COST.water || 0);
+  for (let i = 0; i < 4; i++) {
+    const need = st.xpNeededAt ? st.xpNeededAt(lv, R) : (R.levelTable[lv] || lv * R.beyondMult);
+    acc += need;
+    console.log(`   최대체력 ${lv} → ${lv + 1} : 경험치 ${need}` +
+      `  (시루 다섯이면 ${(need / (per * 5)).toFixed(1)}바퀴쯤)`);
+    lv++;
+  }
+  console.log(`  ⇒ 5 → ${lv} 까지 모두 ${acc} 회. 판을 뒤집는 크기는 아니다.`);
+}
