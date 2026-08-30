@@ -334,9 +334,17 @@ const musun = await page.eval(`(() => {
            cueShown: !!(cue && getComputedStyle(cue).display !== 'none') };
 })()`);
 await sleep(500);
-is(musun.shown, '⑤-8 무순 카드가 뜬다 (몬스테라 도착 뒤)', JSON.stringify(musun).slice(0, 140));
-is(!!musun.cue && /끌어서/.test(musun.cue) && /심기/.test(musun.cue),
-   '⑤-9 A-5 ★ 무순 안내가 **놓기 → 심기** 두 걸음을 다 말한다', musun.cue || '없음');
+/* ★★★ 2026-08-30 — **무순 «카드»는 화면에서 없어졌다.** 2026-08-16 에 박사님이
+   *"카드 없애고"* 하셔서 `drawMusun` 이 `hide` 로 늘 접는다(game.html §drawMusun `const hide = true`).
+   손잡이는 **가방 격자 칸**으로 갔다. 그러니 「카드가 뜨나」는 이제 없는 것을 묻는 것이다.
+   ⇒ 재는 «뜻»은 그대로다 — **「안내가 «놓기»를 말하나」**. 그 말은 카드가 접혀도 살아 있다
+     (`.dragcue` 는 카드 안에 있지만 글은 같은 함수가 짓는다).
+   ⚠ 「심기」까지 한 문장에 넣던 것도 낡았다 — 지금은 걸음마다 «다른 말»을 한다
+     (① 아직 안 놓았다 → ② 놓았는데 안 심었다 → ③ 심었는데 물 전). 한 문장에 둘을 넣으라고
+     우기면 그 갈래를 도로 뭉개게 된다. ⇒ 여기서는 ①의 말만 본다. */
+is(!!musun.cue, '⑤-8 무순 안내 글이 서 있다 (카드는 접혔어도)', JSON.stringify(musun).slice(0, 140));
+is(!!musun.cue && /끌어서|놓/.test(musun.cue),
+   '⑤-9 A-5 ★ 첫 걸음은 «놓기»라고 말한다', musun.cue || '없음');
 if (SHOT) { await page.eval(`(()=>{ try{ window.__byeotSheet.open('tabPlants'); }catch{} })()`, false);
             await sleep(700); await page.shot(`${SHOT}/coach_07_musun.png`); }
 /* ★ 시트가 열려 있으면 손가락은 쉬어야 한다 — 안 그러면 시트 **위에** 얹혀 글씨를 덮는다.

@@ -1200,6 +1200,11 @@
 
   /* ★어디를 눌러야 하는지 손가락으로 가리킨다 (박사님 요청).
      버튼이 여럿인데 무엇을 눌러야 하는지 화면이 말해 주지 않았다. */
+  /* ★ 덮개는 손가락(70) «바로 아래»에 선다 — 손가락과 그 글은 안 어두워진다.
+     ⚠ `pointer-events:none` 을 빼지 말 것. 빼는 순간 이것은 «울타리»가 된다(§hintDim 머리말). */
+  #hintDim{position:fixed;inset:0;z-index:69;pointer-events:none;display:none;
+    transition:opacity .18s ease}
+  #hintDim.on{display:block}
   #hint{position:fixed;z-index:70;pointer-events:none;display:none;transform:translate(-50%,0)}
   #hint.on{display:block}
   /* ★손가락은 **글 아래**에 둔다 (박사님 2026-08-04: "가방 열어보세요 손가락 위치 봐").
@@ -1957,6 +1962,14 @@
 </div>
 
 <div id="dragGhost"></div>
+<!-- ★★★★ 2026-08-30 — **손가락이 짚는 자리만 남기고 «약간» 어둡게** (박사님:
+     *"처음 가이드할 때 … 터치 지점 외에는 «약간 투명 까망» 처리해서 손가락 터치를 따라가게"*)
+     ⚠ **막지는 않는다**(박사님 「터치 안 되게 하든지」는 [Plan]·총괄이 갈라 «안 하기»로 했다).
+       까닭: 막는 것은 「판이 옳다」를 전제하는데, 오늘 하루에만 그 전제가 열두 번 넘게 틀렸다.
+       판을 못 믿는데 막으면 사람이 갇힌다. ⇒ `pointer-events:none` — **보이기만 한다.**
+     ★ 「약간」이 가르침과 울타리를 가르는 낱말이다([Plan]) — 딴 데도 «있다»는 알되
+       «여기»가 먼저임을 안다. 그래서 안 보이게가 아니라 «덜» 보이게다. -->
+<div id="hintDim"></div>
 <div id="hint"><span class="say"></span><span class="hand">👇</span></div>
 <!-- ══ 조작 안내판 — 모든 조작을 한 화면에 ══════════════════════════════ -->
 <div id="guide">
@@ -3712,7 +3725,9 @@ function hintFollowLoop(on) {
         if (hintFollow && hintFollow.el && sh && sh.contains(hintFollow.el)) hintRepick = 0;
         return;
       }
-      if (shOpen && !sh.contains(hintFollow.el)) { if (h2) h2.classList.remove('on'); return; }
+      /* ★ 2026-08-30 — 손가락을 감출 때 **덮개도 같이 걷는다.** 손가락은 없는데 덮개만
+         남으면 화면이 까닭 없이 어둡다 — 실측에서 그랬다(probe_hintdim ④). */
+      if (shOpen && !sh.contains(hintFollow.el)) { if (h2) h2.classList.remove('on'); dimOff(); return; }
       /* ⚠ 다시 **놓기만** 한다. `hintAt` 을 통째로 다시 부르면 대상 표시(`hintTarget`)를
          뗐다 붙였다 하며 깜빡인다. */
       placeHintAt(hintFollow.el, hintFollow.say);
@@ -3723,10 +3738,28 @@ function hintFollowLoop(on) {
   }
 }
 
+/* ★★★ 2026-08-30 — **덮개를 그 자리에 맞춘다.** 구멍 하나를 뚫은 검은 판이 아니라
+   «가운데가 비치는 그라데이션»이다 — 테두리가 딱 떨어지면 「여기만 눌러라」로 읽혀
+   울타리가 된다. 부드럽게 어두워지면 「여기가 먼저다」로 읽힌다.
+   ⚠ 「그 자리」를 여기서 «따로 세지» 않는다 — 손가락이 짚는 그 대상의 자리를 그대로 쓴다.
+     두 곳이 각자 세면 어느 날 손가락과 밝은 데가 어긋난다(총괄 금 ①).
+   ⚠ 「가이드가 언제 끝나나」 = **손가락이 꺼질 때**다. 그러니 새 칸을 안 만들었다 —
+     손가락의 임자(`fp.phase`·가방에 그루가 있나·방 이름)는 이미 세이브에 있다(총괄 금 ③). */
+const HINT_DIM_ALPHA = 0.28;              /* 「약간」 — 딴 데가 안 보이면 안 된다 */
+function dimAt(cx, cy, r) {
+  const d = $('hintDim');
+  if (!d) return;
+  const hole = Math.max(34, Math.round(r));
+  d.style.background =
+    `radial-gradient(circle ${hole + 52}px at ${Math.round(cx)}px ${Math.round(cy)}px, ` +
+    `rgba(0,0,0,0) ${hole}px, rgba(0,0,0,${HINT_DIM_ALPHA}) ${hole + 52}px)`;
+  d.classList.add('on');
+}
+function dimOff() { const d = $('hintDim'); if (d) d.classList.remove('on'); }
 function hintAt(el, say) {
   const h = $('hint');
   if (hintTargetEl && hintTargetEl !== el) hintTargetEl.classList.remove('hintTarget');
-  if (!el) { h.classList.remove('on'); hintTargetEl = null;
+  if (!el) { h.classList.remove('on'); hintTargetEl = null; dimOff();
              hintFollow = null; hintFollowLoop(false); return; }
   /* ★ 이 대상을 기억해 두고 프레임마다 다시 놓는다(§hintFollowLoop) */
   hintFollow = { el, say };
@@ -3738,7 +3771,8 @@ function hintAt(el, say) {
 function placeHintAt(el, say) {
   const h = $('hint');
   const r = el.getBoundingClientRect();
-  if (!r.width || !r.height) { h.classList.remove('on'); return; }   // 안 보이는 것은 안 가리킨다
+  if (!r.width || !r.height) { h.classList.remove('on'); dimOff(); return; }   // 안 보이는 것은 안 가리킨다
+  dimAt(r.left + r.width / 2, r.top + r.height / 2, Math.max(r.width, r.height) / 2 + 16);
   const hand = h.querySelector('.hand');
   h.querySelector('.say').textContent = say;
   h.classList.remove('side', 'toRight');
@@ -4868,6 +4902,8 @@ function updateHint() {
       h.style.left = (cr.left + gp.x) + 'px';
       h.style.top = Math.max(4, cr.top + gp.y - 86) + 'px';
       h.classList.add('on');
+      /* 방 안의 «자리»를 짚을 때도 같은 덮개다 — 대상이 DOM 이 아니라 3D 점일 뿐이다 */
+      dimAt(cr.left + gp.x, cr.top + gp.y, 44);
       if (hintTargetEl) { hintTargetEl.classList.remove('hintTarget'); hintTargetEl = null; }
       return;
     }
