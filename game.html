@@ -3866,6 +3866,10 @@ function dimAt(cx, cy, r) {
      ⇒ 누르기는 여전히 막고, **잡아 끄는 손잡이만** 통과시킨다.
    ⚠ 「구멍 안」은 통과다(짚은 그 자리). 구멍은 `dataset.hole` 이 정본이다 —
      `clip-path` 로 «보이게» 파는 것과 같은 값을 쓴다(자를 둘로 두지 않는다). */
+/* ★ 몇 번 막히면 풀어 줄까 — 총괄이 정한 안전 문턱이다(밸런스 값이 아니다).
+   ⚠ 이 셈은 «짚는 것이 바뀌면» 0 으로 돌아간다(§hintAt). */
+const FENCE_GIVE_UP = 3;
+let fenceMiss = 0;
 {
   const knock = () => {
     const h = $('hint');
@@ -3912,6 +3916,21 @@ function dimAt(cx, cy, r) {
       if (!e.isTrusted) return;
       if (inHole(e.clientX, e.clientY)) return;
       if (passes(e.target)) return;
+      /* ★★★★★ 2026-09-02 — **탈출구: 세 번 막히면 그 걸음에서 울타리를 «푼다».**
+         ══════════════════════════════════════════════════════════════════
+         박사님: *"첫 몬스테라 배치 후 ⇒ «뭘 할 수가 없어»"* — 손가락이 «허공»을 짚고,
+         울타리가 나머지를 막아 판이 통째로 갇혔다.
+         ★ 총괄이 정한 안전 문턱이다(값이 아니라 «안전»이다):
+           「울타리 밖을 세 번 눌렀는데 판이 안 바뀌면 그 걸음에서 운다」.
+         ⇒ ★★ **가르치기를 그만두지 않되, «가두지»도 않는다.** 손가락은 그대로 둔다 —
+           틀린 데를 짚고 있어도 사람은 제 손으로 계속할 수 있다.
+         ⚠ 「그 걸음」의 임자는 «짚는 것»이다. 손가락이 다른 것을 짚으면 셈이 0 으로 돌아간다
+           (§hintAt 에서 되돌린다) — 그래야 다음 걸음에서 울타리가 다시 선다.
+         ⚠ 손가락이 «맞게» 짚고 있으면 이 셈은 애초에 안 는다: 구멍 안은 여기 안 온다. */
+      /* ⚠ **누름만 센다.** 한 번 누르면 `pointerdown` 과 `click` 이 둘 다 오므로,
+         같이 세면 「세 번」이 실은 «한 번 반»이 된다. 사람이 센 것과 자가 센 것이 달라진다. */
+      if (type === 'pointerdown') fenceMiss++;
+      if (fenceMiss >= FENCE_GIVE_UP) return;         /* 풀어 준다 — 이 걸음 동안만 */
       e.preventDefault(); e.stopPropagation();
       if (type === 'pointerdown') knock();
     }, true);
@@ -3983,6 +4002,8 @@ function hintAt(el, say) {
       if (pop && !pop.contains(el)) el = null;
     } catch { }
   }
+  /* ★ 짚는 것이 바뀌면 «막힌 셈»을 되돌린다 — 새 걸음에서는 울타리가 다시 선다(§FENCE_GIVE_UP) */
+  if (hintTargetEl !== el) fenceMiss = 0;
   if (hintTargetEl && hintTargetEl !== el) hintTargetEl.classList.remove('hintTarget');
   if (!el) { h.classList.remove('on'); hintTargetEl = null; dimOff();
              hintFollow = null; hintFollowLoop(false); return; }
@@ -4003,6 +4024,8 @@ function hintAt(el, say) {
    ⚠ 카메라를 돌리면 이 손가락은 안 따라간다 — 반 초 지킴이가 다시 놓는다(§HINT_WATCH_MS). */
 function hintAtPoint(cx, cy, say, r = 48) {
   const h = $('hint');
+  /* ★ 짚는 것이 «요소에서 점으로» 바뀌는 것도 새 걸음이다 — 막힌 셈을 되돌린다(§FENCE_GIVE_UP) */
+  if (hintTargetEl) fenceMiss = 0;
   if (hintTargetEl) { hintTargetEl.classList.remove('hintTarget'); hintTargetEl = null; }
   hintFollow = null; hintFollowLoop(false);
   h.querySelector('.say').textContent = say;
