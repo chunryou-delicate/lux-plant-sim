@@ -80,9 +80,30 @@ function declaredUnused() {
   return new Set([...m[1].matchAll(/'([^']+)'/g)].map(x => x[1]));
 }
 
-/* ③ scriptOf 안에서 «코드로» 갈리는 것. 표에 없으므로 손으로 적는다.
-   ⚠ 손으로 적은 것은 낡는다. 그래서 dialogue.js 에 그 이름이 아직 있는지 «되짚는다». */
-const BRANCHED = ['autumnCame', 'winterCame', 'rentFirst', 'rentAgain'];
+/* ③ scriptOf 안에서 «코드로» 갈리는 것 — 표에 없다.
+ *
+ * ⚠⚠ **처음에 «손으로» 넷을 적어 뒀다. 그리고 실제로 낡았다.**
+ *   2026-08-30 에 [Plan]·[core] 가 `brokeTalkAgain` 을 더했는데
+ *   (`if (id === 'broke') return ev.first === false ? ... : ...`)
+ *   내 목록에 없어서 ⇒ ⛔ **「부르는 데를 못 찾은 대사」로 찍혔다.**
+ *   ⇒ ★ 머리말에 「손으로 적은 것은 낡는다」고 «내가» 적어 두고 그대로 당했다.
+ *
+ * ⇒ ★★ 그래서 **손으로 안 적는다. `scriptOf` 함수 본문에서 «뽑아낸다».**
+ *   ⇒ 위 `emittedEvents` 와 같은 결이다 — **꼴을 맞히지 말고 «이름»으로 찾는다.**
+ *   ⚠ 이 방법의 한계: `scriptOf` 안의 «모든» 문자열을 가져오므로 사건 이름(`'season'`)도
+ *     섞인다. ⇒ ★ 그래서 **`SCRIPTS` 에 있는 것만** 남긴다. 없는 이름은 저절로 걸러진다. */
+function branchedScripts(SCRIPTS_KEYS) {
+  const src = readFileSync(join(ROOT, 'src', 'game', 'dialogue.js'), 'utf8');
+  const i = src.indexOf('function scriptOf(');
+  if (i < 0) throw new Error('dialogue.js 에서 scriptOf 를 못 찾았다 — 이름이 바뀌었나');
+  /* 함수 본문만 — 다음 `\n}` 까지 */
+  const end = src.indexOf('\n}', i);
+  const body = src.slice(i, end < 0 ? src.length : end);
+  const out = new Set();
+  for (const m of body.matchAll(/'([A-Za-z][A-Za-z0-9_]*)'/g))
+    if (SCRIPTS_KEYS.has(m[1])) out.add(m[1]);
+  return out;
+}
 
 /* ★ 표가 «일부러» 안 가리키는 그림. 까닭을 적는다 — 안 적으면 다음 사람이 「고장」으로 읽는다.
    ⚠ 그냥 빼면 진짜로 잊힌 것이 여기 섞여 안 보인다. 그래서 «세어서» 따로 찍는다. */
@@ -160,7 +181,7 @@ function reachable() {
   for (const s of Object.values(EVENT_SCRIPT)) add(s, 'EVENT_SCRIPT');
   for (const s of Object.values(QUEST_OPEN_SCRIPT)) add(s, 'QUEST_OPEN');
   for (const s of Object.values(QUEST_DONE_SCRIPT)) add(s, 'QUEST_DONE');
-  for (const s of BRANCHED) add(s, 'scriptOf 가지');
+  for (const s of branchedScripts(new Set(Object.keys(SCRIPTS)))) add(s, 'scriptOf 가지');
   for (const s of literalCalls()) add(s, 'game.html 붙박이');
   for (const c of (CHATTER || [])) add(typeof c === 'string' ? c : c && c.id, 'CHATTER');
   add('god1', 'scriptsForEvents 가 monsteraArrived 앞에 끼운다');
@@ -352,8 +373,13 @@ function selftest() {
     "game.html 붙박이 dlgOpen('monsteraMoved') 를 잡는다 (④ 다리)");
   ok(r.has('autumnCame'),
     'scriptOf 가지(season) 를 잡는다 — ③ 을 빼면 멀쩡한 대사가 유령이 된다');
-  ok(BRANCHED.every(k => SCRIPTS[k]),
-    '손으로 적은 BRANCHED 넷이 아직 SCRIPTS 에 다 있다 (낡지 않았다)');
+  /* ★★ 여기가 «손으로 적은 목록»이었다. 그리고 낡았다(2026-08-30 `brokeTalkAgain`).
+     ⇒ 이제 `scriptOf` 본문에서 뽑아낸다. 아래 둘이 그것을 지킨다. */
+  const br = branchedScripts(new Set(Object.keys(SCRIPTS)));
+  ok(br.has('autumnCame') && br.has('rentFirst'),
+    'scriptOf 본문에서 «뽑아낸다» — season·rent 가지를 잡는다');
+  ok(br.has('brokeTalkAgain'),
+    '★ 2026-08-30 에 «새로 는» broke 가지를 잡는다 — «손으로 적었으면» 놓쳤을 것이다');
   ok(!r.has('이런대사는없다'), '없는 이름은 안 잡는다');
 
   /* ★★★ 아래 셋은 **이 자가 실제로 낸 거짓말을 막으려고** 세웠다.
