@@ -129,6 +129,9 @@ function run(table, opt) {
   const sirus = [{ age: 0, n: 0 }];
   let musunOrderedOn = null, musunAge = null, musunHarvest = 0;
   let monsteraArrived = false, monsteraHomed = false;
+  /* ★ 2026-09-02 — 「옮긴 뒤 며칠」도 센다. crop_mix 가 「집 잡은 «다음 날»」로 열리게 됐다(quest.js) —
+     그 칸(guide.movedDays)을 이 모형이 안 세면 crop_mix 가 «영영» 안 열려 자가 거짓으로 붉어진다. */
+  let homedOn = null;
   const MUSUN_CYCLE = 7;                 /* 무순 한 바퀴 — `docs` 확정값(START-HERE §6) */
   const LEAD = 1;                        /* 주문이 오는 데 걸리는 날 (shop 표와 같은 자리) */
 
@@ -151,7 +154,8 @@ function run(table, opt) {
       /* 한 상에 두 가지 — 무순을 한 번이라도 거둔 뒤부터는 같이 먹는다 */
       mealKinds: musunHarvest >= 1 ? ['beansprout', 'musun'] : ['beansprout'],
       motherLeaves: day >= leaf3Day ? 3 : day >= leaf2Day ? 2 : monsteraArrived ? 1 : 0,
-      monsteraArrived, monsteraHomed
+      monsteraArrived, monsteraHomed,
+      monsteraHomedDays: (monsteraHomed && homedOn != null) ? day - homedOn : 0
     };
 
     /* ── 끝난 것을 걷는다 ── */
@@ -163,7 +167,7 @@ function run(table, opt) {
 
     /* ── 그 할 일을 향해 **하루에 한 걸음** ── */
     if (nx) switch (nx.id) {
-      case 'monstera_home': if (monsteraArrived) monsteraHomed = true; break;
+      case 'monstera_home': if (monsteraArrived && !monsteraHomed) { monsteraHomed = true; homedOn = day; } break;
       case 'crop_mix':
         /* 무순은 몬스테라가 온 뒤에 상점에 뜬다(`game.html §musunOpen` 실측) */
         if (monsteraArrived && musunOrderedOn == null) musunOrderedOn = day;
@@ -200,10 +204,12 @@ function idleStats(log, from, to) {
 console.log('\n══ A. ★★ 「한 상에 두 가지」가 잎 줄 앞에 올 수 있는가 ═══════════════');
 {
   /* 몬스테라가 왔고(무순을 살 수 있고) 잎은 아직 하나인 판 — 사슬을 다 끝낸 자리다 */
+  /* ★ 2026-09-02 — 집을 잡은 «다음 날»(monsteraHomedDays 1)이라야 crop_mix 가 선다(quest.js).
+     옛 표의 사슬에는 resow_siru 가 «있었다» — 지금 FIRST_PLAY_CHAIN_IDS 에는 없으니 옛 판에만 얹는다. */
   const snap = { ...emptySnapshot(), day: 25, monsteraArrived: true,
-                 monsteraHomed: true, motherLeaves: 1 };
+                 monsteraHomed: true, monsteraHomedDays: 1, motherLeaves: 1 };
   const doneIds = [...FIRST_PLAY_CHAIN_IDS];
-  const nOld = nextOf(OLD_TABLE, doneIds, snap);
+  const nOld = nextOf(OLD_TABLE, [...doneIds, 'resow_siru'], snap);
   const nNew = nextOf(NEW_TABLE, doneIds, snap);
   ok('A-1 ★★★ 옛 차례에서는 그 자리의 「지금 할 일」이 **잎 줄**이었다',
      nOld && SLOW_QUEST_IDS.includes(nOld.id), nOld ? `「${nOld.ko}」` : 'null');

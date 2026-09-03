@@ -351,19 +351,6 @@ const FIRST_PLAY_CHAIN = Object.freeze([
      (`resowBeansprout` — 씨앗을 빼는 것은 호출부다).
      ⚠ 판정을 「총 수확이 둘」로 하지 않았다. 시루를 하나 더 사서 거둬도 총합은 둘이 되는데
        그건 **다시 심은 것이 아니다.** **한 시루가 두 바퀴**라야 반드시 다시 심은 것이다. */
-  Object.freeze({
-    id: 'resow_siru',
-    ko: '씨앗을 사서 다시 심는다',
-    speaks: true,
-    reward: '시루가 다시 돌기 시작합니다',
-    teaches: ['씨앗은 상점에서 산다', '거둔 시루는 다시 심어야 돈다'],
-    why: '한 번 거둔 시루는 빈 그릇입니다. 씨앗을 사서 다시 심어야 다음 회전이 돕니다.',
-    need: Object.freeze({ cycles: 2 }),
-    todo: q => `한 시루를 ${q.need.cycles}바퀴째 돌려 보세요`,
-    after: 'first_harvest',
-    opens: (s, ctx) => !!(ctx && ctx.doneIds.includes('first_harvest')),
-    done:  (s, ctx) => arr(s.cropPots).some(p => p && num(p.harvestCount) >= ctx.q.need.cycles)
-  }),
 
   /* ④-b ★★★ **씨앗을 주문한다** — 2026-08-17 박사님 지시로 생긴 줄이다.
      ------------------------------------------------------------
@@ -387,8 +374,10 @@ const FIRST_PLAY_CHAIN = Object.freeze([
                            || arr(s.cropPots).some(p => yes(p && (p.growing || p.sown)))))
       ? '주문한 씨앗으로 한 바퀴 더 돌리세요'
       : '상점에서 콩 씨앗을 주문하세요',
-    after: 'resow_siru',
-    opens: (s, ctx) => !!(ctx && ctx.doneIds.includes('resow_siru')),
+    /* ★ 2026-09-02 — 앞 줄 `resow_siru`(「한 시루를 2바퀴째」)를 «없앴다»(박사님 「1바퀴 더 돌리는 퀘는 없애」).
+       첫 수확 «바로 뒤»가 씨앗 주문이다 — 사슬은 안 끊긴다(plan-quest-reframe ⓑ). */
+    after: 'first_harvest',
+    opens: (s, ctx) => !!(ctx && ctx.doneIds.includes('first_harvest')),
     done:  (s, ctx) => num(s.cropHarvestTotal) >= ctx.q.need.cycles
   }),
 
@@ -405,7 +394,9 @@ const FIRST_PLAY_CHAIN = Object.freeze([
     teaches: ['시루마다 회전이 따로 돈다'],
     why: '시루가 둘이면 물 주는 날을 어긋나게 할 수 있습니다. 그래야 수확이 안 끊깁니다.',
     need: Object.freeze({ sirus: 2 }),
-    todo: q => `시루를 ${q.need.sirus}개로 늘려 엇갈리게 하세요`,
+    /* ★ 2026-09-02 — 문안 ㉮([plan] plan-quest-reframe): 「2개」는 «수»고 「하나 더」는 «몸짓»이다 —
+       따라할 것은 몸짓이다. 「엇갈림」은 «까닭»이라 둘에서는 가르칠 수 없다(ⓚ) — 한 글자도 안 쓴다. */
+    todo: () => '시루를 하나 더 사서 놓으세요',
     /* ⚠ 2026-08-17 — 앞 줄이 ④`resow_siru` 에서 ④-b`order_seed` 로 바뀌었다(§씨앗 주문).
        시루를 늘리면 씨앗이 그만큼 더 드는데, 주문을 안 배운 채로 늘리면 그 자리에서 멎는다 */
     after: 'order_seed',
@@ -494,7 +485,9 @@ const MAIN_QUESTS = Object.freeze([
     teaches: ['물은 한 번에 하나', '체력이 천장이다'],
     why: '시루가 늘면 하루에 다 못 돌봅니다. 그 상한이 체력입니다.',
     need: Object.freeze({ sirus: 5, cycles: 5 }),
-    todo: q => `시루 ${q.need.sirus}개를 각각 ${q.need.cycles}바퀴 돌리세요`,
+    /* ★ 2026-09-02 — 문안 ㉯([plan]): 「바퀴」를 뗐다. 다섯이면 «개수»만으로 체력 천장에 닿는다(ⓕ) —
+       「엇갈리게」는 그때 막힌 «순간»에 몬이가 말한다(§crop_hands_short). 여기서는 수만 말한다. */
+    todo: q => `시루를 ${q.need.sirus}으로 늘리세요`,
     /* ★ ①을 끝낸 뒤에 연다. 둘을 같이 열면 첫날에 할 일이 둘이 되어 어느 쪽도 안 읽힌다 */
     after: 'crop_mix',
     opens: (s, ctx) => !!s.firstPlayDone && !!(ctx && ctx.doneIds.includes('crop_mix')),
@@ -783,7 +776,24 @@ export function questSpeaks(q) {
    ⚠ 코어가 잘라서 주지 않는다. 몇 줄이 들어가는지는 폭이 정하는 것이라 화면의 일이다 —
      여기서 자르면 넓은 화면에서도 셋만 보인다. */
 export const QUEST_PREVIEW = 3;
-export function questOf(id) { return QUESTS.find(q => q.id === id) || null; }
+/* ★ 물러난 줄 — 표에서는 뺐지만 «이름»은 남긴다. 옛 세이브의 questsTaken 과 「옛 표 vs 새 표」를 재는 자
+   (probe_questorder)가 이 이름을 붙잡고 있다. 열리지도 뜨지도 않는다 — 정본은 QUESTS 뿐이다. */
+export const RETIRED_QUESTS = Object.freeze([
+  Object.freeze({
+    id: 'resow_siru',
+    ko: '씨앗을 사서 다시 심는다',
+    speaks: true,
+    reward: '시루가 다시 돌기 시작합니다',
+    teaches: ['씨앗은 상점에서 산다', '거둔 시루는 다시 심어야 돈다'],
+    why: '한 번 거둔 시루는 빈 그릇입니다. 씨앗을 사서 다시 심어야 다음 회전이 돕니다.',
+    need: Object.freeze({ cycles: 2 }),
+    todo: q => `한 시루를 ${q.need.cycles}바퀴째 돌려 보세요`,
+    after: 'first_harvest',
+    opens: (s, ctx) => !!(ctx && ctx.doneIds.includes('first_harvest')),
+    done:  (s, ctx) => arr(s.cropPots).some(p => p && num(p.harvestCount) >= ctx.q.need.cycles)
+  }),
+]);
+export function questOf(id) { return QUESTS.find(q => q.id === id) || RETIRED_QUESTS.find(q => q.id === id) || null; }
 
 /* 「지금 할 일」 한 줄. ⚠ `todo` 가 함수인 것은 **수를 정의에서 읽게** 하려는 것이다 */
 export function questTodo(q, s) {
