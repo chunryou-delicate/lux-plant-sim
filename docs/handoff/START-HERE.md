@@ -21,6 +21,7 @@
 ★ 말·손가락    docs/events.html         언제 말하고 언제 손가락이 뜨나 · 조건까지 (docs/handoff/event-tree.md)
 관계도          docs/handoff/session-atlas-20260829.md
 ★ [growth]      docs/handoff/growth-index.md
+★ [House]       docs/handoff/house-index.md      ★ 「물린 표」 12줄 — 어젯밤 열한 번 물린 것의 색인
 ```
 
 ★ **`growth-index.md` 는 「무엇을 쟀나」의 색인이고, ⇒ ⚠ 그 안에 「물린 표」 절이 따로 있다.**
