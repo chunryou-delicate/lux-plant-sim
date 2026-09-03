@@ -3730,6 +3730,16 @@ function hintFollowLoop(on) {
            `isConnected` 가 거짓이 된다. 박사님이 보신 「다른 것을 눌렀는데 손화살표가
            안 없어진다」가 이 길이다.
          ⇒ 막대(§actBarTick)와 **같은 처방**이다: 없는 것을 가리킬 수는 없다. 사실로 되돌린다. */
+      /* ★ 점을 따라다니는 갈래 — 부른 쪽이 준 `pointOf` 를 프레임마다 다시 묻는다(§hintAtPoint) */
+      if (hintFollow && typeof hintFollow.pointOf === 'function') {
+        let p = null; try { p = hintFollow.pointOf(); } catch { p = null; }
+        if (!p || !Number.isFinite(p.x) || !Number.isFinite(p.y)) {
+          try { updateHint(); } catch { hintAt(null); }
+          return;
+        }
+        placePointHint(p.x, p.y, hintFollow.say, hintFollow.r);
+        return;
+      }
       if (!hintFollow || !hintFollow.el || !hintFollow.el.isConnected) {
         /* ⚠ 2026-08-17 — 지우기만 하면 **고리가 멈춘다.** 상점 줄·시루 줄·말풍선은 다시 그릴 때
            **노드째 새로 만들어지므로** 가리키던 것이 자주 죽는다. 죽었다고 안내를 끝내면
@@ -4022,12 +4032,9 @@ function hintAt(el, say) {
    ⇒ ★★★ 「내 판에서는 됐는데」의 정체가 이것이다 — 판이 아니라 **화면 크기**였다(총괄 실측).
    ★ 그러니 점을 짚을 때는 **고리를 끈다.** 따라갈 «대상»이 없으므로 따라다닐 것도 없다.
    ⚠ 카메라를 돌리면 이 손가락은 안 따라간다 — 반 초 지킴이가 다시 놓는다(§HINT_WATCH_MS). */
-function hintAtPoint(cx, cy, say, r = 48) {
+/* 놓기만 하는 몫 — 점 손가락도 요소 손가락처럼 «놓는 셈»과 «따라다니는 고리»를 가른다 */
+function placePointHint(cx, cy, say, r = 48) {
   const h = $('hint');
-  /* ★ 짚는 것이 «요소에서 점으로» 바뀌는 것도 새 걸음이다 — 막힌 셈을 되돌린다(§FENCE_GIVE_UP) */
-  if (hintTargetEl) fenceMiss = 0;
-  if (hintTargetEl) { hintTargetEl.classList.remove('hintTarget'); hintTargetEl = null; }
-  hintFollow = null; hintFollowLoop(false);
   h.querySelector('.say').textContent = say;
   h.classList.remove('side', 'toRight');
   h.querySelector('.hand').textContent = '👇';
@@ -4035,6 +4042,26 @@ function hintAtPoint(cx, cy, say, r = 48) {
   h.style.top = Math.max(4, cy - 86) + 'px';
   h.classList.add('on');
   dimAt(cx, cy, r);
+}
+/* ★★★★ 2026-09-02 — **점으로 짚는 손가락도 «따라다닌다»** (박사님 폰 그림: 「허공을 짚는다」).
+   ══════════════════════════════════════════════════════════════════
+   ⛔ 여태 점은 «한 번» 놓고 끝이었다. 요소는 프레임마다 다시 놓는데(§hintFollowLoop) 점은 아니었다.
+     그런데 점이 가리키는 것은 «방 안의 것»이다 — 시점이 돌거나, 시트가 닫히며 캔버스가 자라거나,
+     사람이 걸어가면 그 자리가 «움직인다». 점은 옛 자리에 남고 사람은 허공을 짚는 손가락을 본다.
+   ⇒ ★ 부르는 쪽이 **「지금 어디인가」를 묻는 함수(`pointOf`)**를 같이 준다. 고리가 프레임마다
+     그것을 다시 물어 놓는다. 없어졌으면(null) 다시 고른다(§updateHint) — 요소가 사라졌을 때와 같다.
+   ⚠ 옛 부름(점만 주는 것)도 그대로 돈다 — 그때는 예전처럼 한 번 놓는다. */
+function hintAtPoint(cx, cy, say, r = 48, pointOf = null) {
+  /* ★ 짚는 것이 «요소에서 점으로» 바뀌는 것도 새 걸음이다 — 막힌 셈을 되돌린다(§FENCE_GIVE_UP) */
+  if (hintTargetEl) fenceMiss = 0;
+  if (hintTargetEl) { hintTargetEl.classList.remove('hintTarget'); hintTargetEl = null; }
+  if (typeof pointOf === 'function') {
+    hintFollow = { el: null, pointOf, say, r };
+    hintFollowLoop(true);
+  } else {
+    hintFollow = null; hintFollowLoop(false);
+  }
+  placePointHint(cx, cy, say, r);
 }
 
 /* 놓기만 하는 몫 — `hintAt` 과 프레임 고리가 **같은 셈**을 쓰게 갈라냈다 */
@@ -5250,7 +5277,11 @@ function updateHint() {
       /* ★ 2026-08-30 — 여기도 «점»이라 같은 창구를 쓴다(§hintAtPoint).
          손으로 놓던 것을 그대로 두면 «넓은 화면»에서 다음 프레임이 곧바로 껐다 —
          따라다니는 고리가 옛 대상을 들고 「시트 밖이면 감춘다」를 하기 때문이다. */
-      hintAtPoint(cr.left + gp.x, cr.top + gp.y, '여기로 끌어 보세요 — ' + slotLabel(goal), 44);
+      hintAtPoint(cr.left + gp.x, cr.top + gp.y, '여기로 끌어 보세요 — ' + slotLabel(goal), 44,
+        /* 갈 자리는 방 안의 점이다 — 시점이 돌면 따라간다 */
+        () => { try { const q = roomView.screenPosOf(goal); if (!q) return null;
+                      const c2 = $('roomCanvas').getBoundingClientRect();
+                      return { x: c2.left + q.x, y: c2.top + q.y }; } catch { return null; } });
       return;
     }
   }
@@ -5413,8 +5444,15 @@ function updateHint() {
         /* ② 고른 뒤에는 «방바닥»을 짚는다 — 자리(slot)가 아니라 그냥 바닥이라 화면 점으로 짚는다 */
         else gp = { x: cr.width * 0.42, y: cr.height * 0.66 };
         if (gp) {
+          /* ★ 사람은 «걸어 다니고» 바닥 점은 캔버스가 «커지면» 움직인다 — 둘 다 따라간다(§hintAtPoint pointOf) */
+          const whoId = who.id, chosen = !!sel;
           hintAtPoint(cr.left + gp.x, cr.top + gp.y,
-                      sel ? '여기를 눌러 걸어가 보세요' : '사람을 눌러 보세요', 52);
+                      sel ? '여기를 눌러 걸어가 보세요' : '사람을 눌러 보세요', 52,
+            () => { try {
+              const c2 = $('roomCanvas').getBoundingClientRect();
+              if (!chosen) { const q = roomView.screenPosOf(whoId); return q ? { x: c2.left + q.x, y: c2.top + q.y } : null; }
+              return { x: c2.left + c2.width * 0.42, y: c2.top + c2.height * 0.66 };
+            } catch { return null; } });
           return;
         }
       }
@@ -5515,7 +5553,11 @@ function updateHint() {
     let p = null; try { p = roomView.screenPosOf(potNow.slotId); } catch { }
     if (p) {
       const cr = $('roomCanvas').getBoundingClientRect();
-      hintAtPoint(cr.left + p.x, cr.top + p.y, '여기를 눌러 보세요', 44);
+      hintAtPoint(cr.left + p.x, cr.top + p.y, '여기를 눌러 보세요', 44,
+        /* 그 화분은 방 안의 것이다 — 시점·판이 바뀌면 따라간다(박사님 「허공」이 이 자리다) */
+        () => { try { const q = roomView.screenPosOf(potNow.slotId); if (!q) return null;
+                      const c2 = $('roomCanvas').getBoundingClientRect();
+                      return { x: c2.left + q.x, y: c2.top + q.y }; } catch { return null; } });
       return;
     }
     }
