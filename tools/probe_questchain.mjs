@@ -223,8 +223,12 @@ const W = makeWalker(B1);
        사슬을 막지 않았다(뒤에 걸린 줄이 하나도 없다) — 막고 있던 것은 `questView.next` 다. */
   const B1b = board();
   B1b.stamina.questsTaken = [...FIRST_PLAY_CHAIN_IDS];
+  /* ★ 2026-09-02 — 이 판은 `questsTaken` 에 `monstera_home` 을 «끝냈다»고 적어 둔다.
+     그런데 그 줄의 done 이 곧 `monsteraHomed`(옮겼나)다 — 끝냈으면 옮긴 것이다. 예전에는 그 칸을
+     안 채워도 통했는데, 오늘부터 `crop_mix` 가 「왔나」가 아니라 「옮겼나」로 열린다(박사님:
+     창턱까지 배치하고 설명이 끝난 뒤에 무순 이야기). ⇒ 판을 «사실대로» 채운다 — 자의 자기 모순을 없앤다. */
   const vMix = questView(B1b, { ...emptySnapshot(), day: 25,
-                                monsteraArrived: true, motherLeaves: 1 });
+                                monsteraArrived: true, monsteraHomed: true, monsteraHomedDays: 1, motherLeaves: 1 });
   ok('C-4 ★★★ 잎 줄과 짧은 줄이 같이 열려 있으면 **짧은 줄이 「지금 할 일」이 된다**',
      vMix.open.includes('leaf_two') && vMix.open.includes('crop_mix') &&
      !SLOW_QUEST_IDS.includes(vMix.next.id),

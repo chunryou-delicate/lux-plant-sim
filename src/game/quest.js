@@ -216,7 +216,9 @@ export function emptySnapshot() {
            cuttings: [], varieSaleCount: 0,
            lampUnlocked: false, lampOwned: 0,
            /* ★ null = 「모른다」. false 로 두면 「아직 배선이 없다」와 「아니다」가 같아진다 */
-           monsteraArrived: null, monsteraHomed: null };
+           monsteraArrived: null, monsteraHomed: null,
+           /* ★ 2026-09-02 — 옮긴 뒤 지난 날 · 한 번 자랐나 (둘 다 firstPlay.monstera.guide 의 칸) */
+           monsteraHomedDays: 0, monsteraGrewOnce: null };
 }
 function snapOf(s) { return { ...emptySnapshot(), ...(s && typeof s === 'object' ? s : {}) }; }
 
@@ -463,7 +465,20 @@ const MAIN_QUESTS = Object.freeze([
          걸린 `siru5_cycle5`·`siru8`·`siru16` 이 통째로 죽는다.
        ★ 회귀도 이 `||` 가 지킨다 — 옛 걸음표는 `firstPlayDone` 만 세우므로 값이 그대로다
          (`probe_questchain §E`). */
-    opens: s => !!s.firstPlayDone || yes(s.monsteraArrived),
+    /* ★★★★ 2026-09-02 — **「왔나」가 아니라 「집을 «잡았나»」** (박사님: *"몬스테라 받고 나서
+         무순 이야기가 바로 이어지는데 ⇒ 창턱까지 배치하고 설명이 끝난 다음에 무순 이야기를 하든지"*).
+       ⛔ `monsteraArrived` 로 열면 선물이 «오는 그 순간» 무순 줄이 선다 — 창턱으로 옮기는 것과
+         무순 사기가 «같은 날 둘»이 된다(plan-one-thing-a-day: 한 날에 하나만).
+       ★ 임자를 «새로 안 짓는다» — 「도착 자리에서 옮겼나」(`monsteraHomed` · `monstera_home` 의 done 이
+         이미 쓰는 그 칸)로 연다. 창턱에 서면 «다음 날 맨 앞»에 저절로 서고, «말 없이» 미뤄진다.
+       ⚠ `|| firstPlayDone` 은 그대로 둔다 — 옛 세이브·검사 스냅샷에서 이 줄이 영영 안 열리면
+         뒤의 siru5_cycle5·siru8·siru16 이 통째로 죽는다(위 ㉠). */
+    /* ★ 그리고 «다음 날»부터다 — 창턱에 세운 «그날»은 몬스테라 설명이 서는 날이라 무순까지 얹으면
+       「한 날에 둘」이다(plan-one-thing-a-day: 미룬 것은 «다음 날 맨 앞»). 임자는 새로 안 짓는다 —
+       `guide.movedDays`(옮긴 뒤 지난 날)와 `guide.grewOnce`(한 번 자랐나 = 유도 끝)가 이미 있다.
+       movedDays 는 형태가 오르면 0 으로 돌아가므로 grewOnce 를 «같이» 본다 — 그러면 한 번 열린 것이 안 닫힌다. */
+    opens: s => !!s.firstPlayDone ||
+                (yes(s.monsteraHomed) && (num(s.monsteraHomedDays) >= 1 || yes(s.monsteraGrewOnce))),
     done:  s => new Set(arr(s.mealKinds).filter(Boolean)).size >= 2
   }),
 

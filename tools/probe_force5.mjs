@@ -287,6 +287,16 @@ for (let i = 0; i < 60 * GOAL; i++) {
       continue;
     }
   }
+  /* ★ 2026-09-02 — 밥상 창에 닿으면 «설명 상자»가 서 있나·펴졌나를 한 번 적는다(④ plan-bapsang-guide-box).
+     첫 밥상(Day 5)은 펴져 있어야 하고, 셋째 날 뒤 밥상은 접혀 있어야 한다 — 그 둘을 걸음이 다 지난다. */
+  if (String(f.짚는것) === 'mealGo') {
+    log.push('     ↳ 밥상 설명 상자 — ' + await page.eval(`(()=>{ const g=document.getElementById('mealGuide');
+      if(!g) return '"없다"'; const r=g.getBoundingClientRect();
+      let rec=null; try { rec=JSON.parse(localStorage.getItem('byeot.mealGuideOpens')||'null'); } catch(e){}
+      return JSON.stringify({ 보임:r.width>0&&r.height>0, 펴짐:g.open, 몇번째:rec&&rec.n,
+        제목:(g.querySelector('summary')||{}).textContent, 문단:g.querySelectorAll('.mg1').length,
+        높이:Math.round(r.height) }); })()`));
+  }
   await tapPoint(f.x, f.y);
   if (deep) {
     /* ★★★ **누름이 안 먹으면 «끌어» 본다** — 박사님 낱말이 「«끌어놓는» 거」였다.
@@ -394,6 +404,33 @@ console.log('■ 끝 —', await now());
   console.log('');
   console.log(bad ? ('⛔ ' + bad + '개가 떨어졌습니다') : '✓ 다 통과');
   if (bad) process.exitCode = 1;
+}
+/* ★★★ 2026-09-02 — **「퀘스트가 «뜬 날» + «무엇이 열었나»」** ([plan] 청 · 총괄 ③).
+   ⚠ 「뜬 날」은 «걸어야» 나오고, 「열쇠」는 코어의 `opens` 를 «그대로» 찍는다 — 내가 옮겨 적지 않는다.
+   ⚠ 「after」는 «열리는 조건»이지 «뜨는 차례»가 아니다 — 몬스테라는 사슬 «밖»(두 바퀴)에서 온다. */
+{
+  const rows = JSON.parse(await page.eval(`(async()=>{
+    const q=await import('/src/game/quest.js'); const d=await import('/src/game/dialogue.js');
+    const open2q = {}; for (const [qid, sid] of Object.entries(d.QUEST_OPEN_SCRIPT||{})) open2q[sid]=qid;
+    const done2q = {}; for (const [qid, sid] of Object.entries(d.QUEST_DONE_SCRIPT||{})) done2q[sid]=qid;
+    const all = (q.QUESTS||q.MAIN_QUESTS||[]);
+    const byId = {}; for (const x of all) byId[x.id]=x;
+    const seenOpen = {}, seenDone = {};
+    for (const e of (window.__dlgLog||[])) {
+      if (open2q[e.id] && seenOpen[open2q[e.id]]==null) seenOpen[open2q[e.id]] = e.day;
+      if (done2q[e.id] && seenDone[done2q[e.id]]==null) seenDone[done2q[e.id]] = e.day;
+    }
+    /* ⚠ 정규식을 «안 쓴다» — 틀(템플릿) 안에서 역슬래시가 녹아 브라우저가 「Invalid group」으로 던졌다(실측).
+       화살표 «뒤»만 남기고 공백을 접는다. 그것으로 충분하다 — 열쇠는 사람이 «읽는» 것이다. */
+    const src = f => { try { const t=String(f); const i=t.indexOf('=>');
+      return (i>=0 ? t.slice(i+2) : t).split(String.fromCharCode(10)).join(' ').split(/ +/).join(' ').trim().slice(0,90); } catch(e){ return '?'; } };
+
+    return JSON.stringify(all.map(x => ({ id:x.id, 뜬날: seenOpen[x.id] ?? null, 끝난날: seenDone[x.id] ?? null,
+      after: x.after || null, 열쇠: src(x.opens) }))); })()`, true, 30000));
+  console.log('');
+  console.log('=== ★ 퀘스트가 «뜬 날» + «열쇠»(코어 opens 그대로) ===');
+  for (const r of rows)
+    console.log(`  ${r.id.padEnd(14)} 뜬 d${r.뜬날 == null ? '—' : r.뜬날}  끝 d${r.끝난날 == null ? '—' : r.끝난날}  after:${String(r.after||'—').padEnd(14)} 열쇠: ${r.열쇠}`);
 }
 await page.shot('docs/handoff/img/force5.png').catch(() => {});
 await page.close(); clearTimeout(wd);

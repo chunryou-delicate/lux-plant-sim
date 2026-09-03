@@ -318,6 +318,18 @@
     word-break:keep-all;margin:9px 0 2px}
   /* ★ 고르는 줄 — **44px 밑으로 내리지 말 것**(엄지로 누른다). 예전 밥상 줄이 36px 이었다 */
   .popcard .prow{display:flex;gap:6px;align-items:center;margin-top:9px}
+  /* ★ 밥상 설명 상자 — 가계부 줄(.lrow.why)과 같은 옷이다. 접혀도 제목 한 줄은 «늘» 남는다 */
+  .mguide{margin:10px 0 2px;border:1px solid rgba(255,255,255,.12);border-radius:10px;
+    background:rgba(255,255,255,.04);padding:6px 10px;font-size:11.5px;line-height:1.55;
+    color:rgba(255,255,255,.78);word-break:keep-all}
+  .mguide summary{cursor:pointer;font-weight:700;color:var(--gold);font-size:12px;padding:3px 0;list-style:none}
+  .mguide summary::-webkit-details-marker{display:none}
+  .mguide summary::before{content:'▸ ';opacity:.7}
+  .mguide[open] summary::before{content:'▾ '}
+  /* ★ 펴져도 «상자 안»이 구른다 — 창(.popcard · 86dvh)이 구르면 단추가 화면 밖으로 나간다(자 W-360/390/430) */
+  .mguide .mgbody{max-height:20vh;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-right:4px}
+  .mguide .mg1{margin:7px 0 2px;padding-left:2px}
+  .mguide .mg1 b:first-child{display:block;color:rgba(255,255,255,.92);margin-bottom:1px}
   .popcard .prow button{flex:1 1 0;min-width:0;min-height:var(--tap);
     font-size:13.5px;font-weight:700;border-radius:11px;padding:0}
   .popcard .prow .pcount{flex:1.5 1 0;opacity:1;color:var(--gold);font-size:15px}
@@ -2162,6 +2174,34 @@
          식량 적용 시 칸을 갈라 고르도록"*). 작물이 하나뿐이면 안 그린다(같은 말이 된다). -->
     <div id="mealKinds"></div>
     <div id="mealRows"></div>
+    <!-- ★★★ 2026-09-02 — **밥상 «설명 상자»** ([plan] plan-bapsang-guide-box.md · 박사님 「오늘 밥상에 대한
+         설명도 여기서 약간 추가로 네모 상자 하면서 가이드」).
+         ⚠ «쪽지»가 아니다 — 쪽지는 10초·한 번뿐이라 「자세히」가 안 들어간다. 창 «안»의 상자라 «늘» 거기 있다.
+         ★ 「처음엔 펴고 뒤엔 접는다」 — 접는 수는 §MEAL_GUIDE_OPEN_TIMES(core 것). 접혀도 «있다».
+         ⛔ 문안은 [plan] 것 «그대로»다. 「300g」·「2,500원」·「7,500원」 같은 수를 안 쓴다 — 작물이 늘고
+           값이 바뀌어도 상자가 안 낡는다. -->
+    <details id="mealGuide" class="mguide">
+      <summary>밥상은 어떻게 셈하나</summary>
+      <!-- ⚠ 몸통을 따로 감싼다 — 폰(360×844)에서 넷을 다 펴면 «창»이 구른다. 창은 안 구르고(자 W-360)
+           «상자 안»이 구르게 높이를 물린다(§.mguide .mgbody). 접히면 제목 한 줄뿐이다. -->
+      <div class="mgbody">
+      <div class="mg1"><b>한 끼는 묶음으로 셉니다</b>
+        채소는 g 으로 쌓이지만, 상에 오를 때는 <b>묶음</b>으로 셉니다. 한 묶음에 드는 g 은 <b>작물마다</b> 정해져 있습니다.
+        그러니 「몇 g 을 올렸나」가 아니라 <b>「몇 묶음이 찼나」</b>를 보십시오.</div>
+      <div class="mg1"><b>밥값이 둘로 나뉩니다</b>
+        하루 식비는 <b>정해져</b> 있습니다. 그 가운데 <b>아끼는</b> 식비는 기른 채소가 <b>대신한</b> 몫이고,
+        <b>나가는</b> 밥값은 그래도 <b>지갑에서</b> 나가는 몫입니다. 둘을 더하면 <b>늘</b> 하루 식비입니다.
+        그러니 밥상은 「돈을 <b>버는</b>」 자리가 아니라 <b>「돈이 덜 나가게 하는」</b> 자리입니다.</div>
+      <div class="mg1"><b>남은 것은 안 버립니다</b>
+        올리지 않은 채소는 그대로 쌓입니다. 다음 날 상에 올려도 되고 [상점]에서 팔아도 됩니다.
+        <b>먼저 거둔 것부터</b> 밥이 되니, 오래 둔 것이 <b>먼저</b> 나갑니다.</div>
+      <div class="mg1"><b>먹는 것에는 천장이 있습니다</b>
+        같은 작물로 <b>둘째 묶음</b>을 채우면, 그 묶음이 아끼는 식비가 <b>파는 값보다 못합니다.</b>
+        까닭은 하루 식비가 <b>정해져</b> 있기 때문입니다 — 아무리 올려도 그 위로는 <b>안 아낍니다.</b>
+        그러니 <b>한 끼를 채웠으면 나머지는 파십시오.</b>
+        <b>밥상이 「식비」를 막고, 상점이 「돈」을 만듭니다 — 둘이 다른 일을 합니다.</b></div>
+      </div>
+    </details>
     <div id="mealSay" class="pquote"></div>
     <div class="pbtns">
       <button id="mealGo" class="go" type="button">이대로 다음 날 ▸</button>
@@ -3514,9 +3554,23 @@ function fillCropSlots() {
 const musunPotD = () => (roomView && roomView.plantPotD ? roomView.plantPotD('musun') : null);
 /* 무순을 지금 다룰 수 있나 — 몬스테라가 온 뒤다(상점 §musunOpen 과 **같은 문턱**).
    두 곳이 어긋나면 "살 수는 있는데 놓을 데가 없다"가 다시 난다. */
+/* ★★★★ 2026-09-02 — **무순 문은 「몬스테라가 «집을 잡은» 뒤」에 연다** (박사님: *"몬스테라 받고 나서
+     무순 이야기가 바로 이어지는데 ⇒ 창턱까지 배치하고 설명 끝나고 그다음 무순 이야기를"*).
+   ⛔ 「왔나」(`arrived`)로 열면 선물이 오는 그 순간 상점에 무순이 서고, 창턱 옮기기와 무순 사기가
+     «같은 날 둘»이 된다. 퀘스트 `crop_mix` 도 같은 날 같은 자로 옮겼다(quest.js §monsteraHomed).
+   ★ 임자를 새로 안 짓는다 — 「도착 자리에서 한 번이라도 옮겼나」(`fp.monstera.guide.moved`)는
+     `monstera_home` 퀘스트의 done 이 이미 쓰는 그 칸이다. 퀘스트와 상점이 «한 자»를 본다 —
+     둘이 갈리면 「퀘스트는 아직인데 상점엔 있다」가 되고, 그게 오늘 여러 번 본 「한 쪽만 손댄」 꼴이다.
+   ⚠ 첫 플레이가 아니면(끝났거나 안 켜졌으면) 예전대로 늘 열려 있다. */
+function musunHomed() {
+  const fp = S.firstPlay;
+  const g = fp && fp.monstera && fp.monstera.guide;
+  /* ★ 퀘스트 crop_mix 와 «같은 셈»이다(quest.js) — 집을 잡은 «다음 날»부터, 한 번 자랐으면 계속 */
+  return !!(g && g.moved && ((g.movedDays || 0) >= 1 || g.grewOnce));
+}
 function musunOpenNow() {
   const fp = S.firstPlay;
-  return !(fp && fp.enabled) || !!(fp.monstera && fp.monstera.arrived);
+  return !(fp && fp.enabled) || musunHomed();
 }
 function musunSite() { try { return cropSiteOf(S.firstPlay, 'musun'); } catch { return null; } }
 function fillMusunSlots() {
@@ -7653,7 +7707,8 @@ function drawShop() {
        카탈로그를 건드리면 세이브·주문 기록이 모르는 물건을 가리키게 된다.
      ⚠ 첫 플레이가 꺼진 판(검수)에서는 안 감춘다. 검수는 다 보여야 한다. */
   const fp = S.firstPlay;
-  const musunOpen = !(fp && fp.enabled) || !!(fp.monstera && fp.monstera.arrived);
+  /* ★ 무순 물건도 «같은 문»으로 연다(§musunOpenNow) — 창턱에 세운 뒤다. 몬스테라 물건은 예전대로 «왔나»다 */
+  const musunOpen = musunOpenNow();
   const MUSUN_ITEMS = new Set(['radish_seed', 'sprout_tray']);
   /* ══ ★★ 삽수 물건은 **삽수를 배운 뒤에** 나온다 (2026-08-16 박사님 확정) ══════════
      박사님: *"유리 수경병 등은 나중에 열리게 해 줘 (삽수 퀘스트나 가이드 이후)."*
@@ -8809,6 +8864,9 @@ function questSnapshotNow(turn) {
     /* ★ 초반 사슬 ⑥「몬스테라 자리 잡기」가 이 둘로 판정한다. 정본은 `firstPlay.monstera` 다 */
     monsteraArrived: !!(fp.monstera && fp.monstera.arrived),
     monsteraHomed: !!(fp.monstera && fp.monstera.guide && fp.monstera.guide.moved),
+    /* ★ 2026-09-02 — 무순 줄(crop_mix)이 「집 잡은 «다음 날»」로 열리게 — 있는 칸 둘을 옮겨 적는다 */
+    monsteraHomedDays: (fp.monstera && fp.monstera.guide && fp.monstera.guide.movedDays) || 0,
+    monsteraGrewOnce: !!(fp.monstera && fp.monstera.guide && fp.monstera.guide.grewOnce),
     /* ★★ 2026-08-17 — **씨앗을 이미 시켰나** (박사님: *"씨앗 시키는 대화가 뭔가 타이밍
        안 맞게 뒤에 나와."*). 실측에서 11일에 주문했는데 할 일 줄은 17일까지 계속
        「상점에서 콩 씨앗을 주문하세요」였다 — **이미 한 일을 하라고 시키는 줄**이다.
@@ -10925,6 +10983,9 @@ function placedCropRows() {
      고르개가 두 모양이면 「무엇을 누르면 무엇이 뜨는가」를 두 번 배워야 한다.
      ⇒ 화면을 덮으므로 [다음 날] 단추에 손이 안 닿는다. 「한 번 더 누르면 간다」를
        창 안 **[이대로 다음 날 ▸]** 이 이어받았다. **손 횟수는 예전과 같다.** */
+/* ★ 밥상 설명 상자를 «펴서» 여는 횟수 — 「처음엔 펴고 뒤엔 접는다」의 그 «처음». core 의 수다(밸런스 값이 아니다).
+   ⚠ 세 번인 까닭: 밥상 창은 날마다 뜬다. 첫날은 처음 보고, 둘째 날은 어제 것을 «확인»하고, 셋째 날이면 안다. */
+const MEAL_GUIDE_OPEN_TIMES = 3;
 var mealOpen = false;
 var mealG = null;              // null = 아직 안 골랐다(디폴트를 쓴다)
 /* ★ 작물마다 고른 g. null = 안 갈랐다(예전 그대로 총 g 으로 고른다 · first_play §갈라 고르기) */
@@ -10962,6 +11023,31 @@ function drawMealPanel() {
   /* 무엇이 언제 거둔 것인지 — 먼저 거둔 것부터 나간다(먹는 순서) */
   /* ★ 2026-08-16 — 날짜별 가르기를 걷었다(§lotsBriefKo) */
   $('mealLots').textContent = lotsBriefKo(ms.list) || '보유 채소가 없습니다';
+  /* ★★★ 2026-09-02 — 설명 상자 «펴기/접기» (§#mealGuide). 처음 MEAL_GUIDE_OPEN_TIMES 번은 «펴서» 연다.
+     그 뒤는 «접힌 채» 둔다 — 아는 사람에게 군더더기가 되지 않게. 상자는 «늘» 있다(사람이 펼 수 있다).
+     ⚠ 「몇 번 열었나」는 세이브 칸을 «안 만든다» — 이 기기의 손버릇(포인터 모드와 같은 서랍 localStorage).
+       사람마다·기기마다 다른 «편의»라 그 서랍이 맞다. 없어도(사생활 창) 「펴진다」로 떨어진다.
+     ⚠ 밥상 창은 «날마다» 뜨므로 «창이 열린 날»로 센다 — 같은 날 다시 그려도 한 번이다. */
+  try {
+    const g = $('mealGuide');
+    if (g) {
+      const K = 'byeot.mealGuideOpens';
+      let rec = null; try { rec = JSON.parse(localStorage.getItem(K) || 'null'); } catch { rec = null; }
+      if (!rec || typeof rec !== 'object') rec = { n: 0, day: null };
+      if (rec.day !== S.day) { rec.n = (rec.n || 0) + 1; rec.day = S.day; try { localStorage.setItem(K, JSON.stringify(rec)); } catch { } }
+      if (!g.dataset.set || g.dataset.set !== String(S.day)) { g.open = rec.n <= MEAL_GUIDE_OPEN_TIMES; g.dataset.set = String(S.day); }
+      /* ★★ **펴서 창이 «구르면» 접는다.** 「밥상 창은 안 구른다」(자 W-360/390/430)가 이 상자보다 «윗법»이다 —
+         구르면 [이대로 다음 날 ▸]이 화면 밖으로 나가고, 그건 하루를 못 넘기는 병이다(어제 겪은 그것).
+         ⚠ 실측: HEAD 판은 안 굴렀고, 상자를 «펴서» 넣자 폰 셋(360·390·430)에서 굴렀다. 20vh 로 물려도 모자랐다.
+         ⇒ 그려진 «뒤»(rAF)에 창을 재서, 구르면 접는다. 넓은 판에서는 그대로 펴진다 — 값을 박지 않고 «재서» 정한다. */
+      requestAnimationFrame(() => {
+        try {
+          const card = panel.querySelector('.popcard');
+          if (g.open && card && card.scrollHeight > card.clientHeight + 1) g.open = false;
+        } catch { }
+      });
+    }
+  } catch { }
   $('mealCount').textContent = formatGram(ms.grams);
   $('mealMinus').disabled = ms.grams <= 0;
   $('mealPlus').disabled = ms.grams >= ms.maxGrams;
