@@ -97,6 +97,14 @@ for (let i = 0; i < PTS.length; i++) {
 console.log('');
 if (bad) { console.log('floor_contract: FAIL — 라이브 두 길이 어긋난 곳 ' + bad + '개'); process.exitCode = 1; }
 else console.log('㉠ 라이브 두 길은 만난다 (' + PTS.length + '점)');
-console.log('㉢ 라이브↔헤드리스가 갈리는 점: ' + split + '/' + PTS.length
-  + (split ? '   ⏸ 이건 «고장»이 아니라 «결정 대기»다 — night-20260823.md §좌표 조도 계약 A·B·C'
-           : '   ⚠ 갈린 데가 없다. 밝은 점을 안 찍었는지 보라'));
+/* ★ 2026-08-30 계약 D 가 들어왔다(core 3b3177f) — 이제 헤드리스는 바닥 점에 «던져야» 한다.
+   「0」이 나오면 D 가 «안 들어간» 것이고, 「던짐」이 옳다. 판정을 그에 맞춘다. */
+const thrown = head.filter(h => h.e).length;
+const zeros  = head.filter(h => !h.e && Number(h.v) === 0).length;
+if (thrown === PTS.length)
+  console.log('㉢ 헤드리스가 바닥 ' + PTS.length + '점 «전부» 던진다 — ✅ 계약 D 그대로 («0 이 아니라 모른다»)');
+else {
+  console.log('㉢ ⛔ 헤드리스가 «안 던진» 점 ' + (PTS.length - thrown) + '/' + PTS.length
+    + (zeros ? ' (그중 «0» 을 낸 것 ' + zeros + ') — 계약 D 가 안 들어간 것이다. room_profile.dliOfSlot 을 보라' : ''));
+  process.exitCode = 1;
+}
