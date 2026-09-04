@@ -227,10 +227,13 @@ const W = makeWalker(B1);
      그런데 그 줄의 done 이 곧 `monsteraHomed`(옮겼나)다 — 끝냈으면 옮긴 것이다. 예전에는 그 칸을
      안 채워도 통했는데, 오늘부터 `crop_mix` 가 「왔나」가 아니라 「옮겼나」로 열린다(박사님:
      창턱까지 배치하고 설명이 끝난 뒤에 무순 이야기). ⇒ 판을 «사실대로» 채운다 — 자의 자기 모순을 없앤다. */
-  const vMix = questView(B1b, { ...emptySnapshot(), day: 25,
+  /* ★ 2026-09-02 ㉱ — 짧은 줄(siru5_cycle5)의 열쇠가 「세팅 끝」이 됐다([plan]). 이 판은 day 25 라 세팅이 끝난 판이다 —
+     그 사실을 채운다(안 채우면 짧은 줄이 없어 자가 거짓으로 붉다). */
+  const vMix = questView(B1b, { ...emptySnapshot(), day: 25, firstPlayDone: true,
                                 monsteraArrived: true, monsteraHomed: true, monsteraHomedDays: 1, motherLeaves: 1 });
   ok('C-4 ★★★ 잎 줄과 짧은 줄이 같이 열려 있으면 **짧은 줄이 「지금 할 일」이 된다**',
-     vMix.open.includes('leaf_two') && vMix.open.includes('crop_mix') &&
+     /* ★ ㉱ — 짧은 줄의 «이름»을 안 박는다(예전엔 crop_mix 였고 지금은 siru5_cycle5 다). 「짧은 줄이 하나 열려 있다」로 본다 */
+     vMix.open.includes('leaf_two') && vMix.open.some(id => !SLOW_QUEST_IDS.includes(id)) &&
      !SLOW_QUEST_IDS.includes(vMix.next.id),
      `열린 것 ${vMix.open.join(',')} → 지금 할 일 「${vMix.next.ko}」`);
   const B1c = board();
@@ -295,7 +298,12 @@ console.log('\n══ E. ★★ 회귀 — 본 줄기 여덟은 예전 그대로
        이것을 회귀로 읽고 되돌린다(이 저장소가 여러 번 겪은 그 모양).
      ⚠ 나머지 다섯(crop_mix 2 · first_cut 7 · buy_lamp 7 · varie_bright 8 · sell_varie 9)은
        **한 톨도 안 움직였다** — 그것들은 사슬이 아니라 제 사실로 열리기 때문이다. */
-  const OLD = { crop_mix: 2, siru5_cycle5: 3, siru8: 5, siru16: 5,
+  /* ★★★ 2026-09-02 ㉱ — **[plan]이 사슬을 다시 짰다. 회귀가 아니라 지시다.** (plan-quest-reframe ㉱ · 263b920)
+       siru5_cycle5 의 열쇠가 「crop_mix 끝」→「세팅 끝」 ⇒ 3 → **2** (무순 없이 열린다 — 141일 파산의 자물쇠가 풀렸다)
+       crop_mix 는 siru5 «뒤»로 ⇒ 2 → **4** · siru8 은 siru5 를 따라 5 → **4**
+       ⚠ siru16 은 이 걸음표에서 원래(HEAD)부터 안 열렸다(undefined) — 그건 이 표의 병이지 사슬의 병이 아니다. 5 를 남긴다.
+       ⚠ 옛 값은 지우지 않고 옆에 남긴다: crop_mix 2 · siru5_cycle5 3 · siru8 5. */
+  const OLD = { crop_mix: 4, siru5_cycle5: 2, siru8: 4, siru16: 5,
                 first_cut: 7, buy_lamp: 7, varie_bright: 8, sell_varie: 9 };
   const S0 = emptySnapshot();
   const oldSteps = [

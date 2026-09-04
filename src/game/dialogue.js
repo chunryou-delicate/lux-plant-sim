@@ -1215,6 +1215,19 @@ export const SCRIPTS = {
      ★ 그리고 이 말은 **막히기 «전»**에 온다 — 손이 모자라 못 심고 나서 오면 그건 «벌»이 된다. */
   /* ★ 2026-09-02 — 문안 ㉯③([plan]): 「엇갈리게」는 «까닭»이라 몬이 말이고, 말할 때는 «막힌 그 순간»이다 —
      이 사건이 곧 그 순간이다(익은 시루의 손이 남은 체력을 넘는 날). 매일 나는 말은 «한 줄»(plan-quest-nudge ⓐ). */
+  /* ═══ ★★★ 독촉 낯 넷 (2026-09-02 · [plan] plan-quest-nudge · 박사님 「퀘스트 안 하면 몬이가 매일매일 독촉」) ═══
+     ★ 몬이는 «이름»을 안 부른다 — 「그거」라고 한다. 「무엇」인지는 할 일 줄이 옆에서 말한다(가리킴이 말의 절반).
+     ★ 매일 나는 말은 «한 줄». 「빈 날」에만·맨 뒤(§pickChatter — 다른 작은 말이 없을 때만).
+     ★ ④「물러섬」은 «영영» 그 자리에 선다 — 「그만둔다」가 아니라 「멈춘다」. 「마음 내키면」이 「안 해도 된다」를 막는다.
+     ⚠ 날 문턱은 §NUDGE_DAYS — [plan] 밑값이고, 「뜬 날·열쇠」 표로 다시 센다고 했다. 여기 안 박는다. */
+  nudgeOffer: [ { who: 'moni', face: 'curious', text: '해 보면 알 거야.' } ],
+  nudgeAsk:   [ { who: 'moni', face: 'curious', text: '그거 아직이지?' } ],
+  /* ⚠ [plan] 은 «worry» 라 했는데 몬이 초상화에 그 키가 없다(game.html §FACE_FILE.moni: base·happy·sad·curious·surprise).
+     없는 키는 소리 없이 기본 얼굴로 떨어지므로(dialogue_coverage ⑷) 있는 것 중 제일 가까운 «sad» 를 쓴다.
+     «worry» 그림이 생기면 그때 바꾼다 — [Char] 몫. */
+  nudgeWorry: [ { who: 'moni', face: 'sad',     text: '무슨 일 있어?' } ],
+  nudgeBack:  [ { who: 'moni',                  text: '급한 건 아니야. 마음 내키면 해.' } ],
+
   cropHandsShort: [
     { who: 'moni', face: 'curious', text: '손이 다 됐네 — 물 주는 날을 엇갈리게 해 봐.' }
   ],
@@ -1580,6 +1593,8 @@ export const REPEATABLE = new Set(
        ⚠ 다만 «드물다»(손이 모자랄 만큼 몰려야 한다). 그래서 잔소리가 안 된다. */
     /* ★★ 2026-08-30 [Plan] — **파산은 «되풀이된다».** 첫 번은 위로고 두 번째부터는 버릇이다.
        ⚠ 「또」가 붙는 손은 `rentAgain` 이 이미 쓴다 — 새 결을 안 지었다(㊺). */
+    /* ★ 독촉 넷은 «매일» 되풀이된다 — 다만 빈 날에만·한 줄이라 잔소리가 안 된다(plan-quest-nudge ⓕ) */
+    .concat(['nudgeOffer', 'nudgeAsk', 'nudgeWorry', 'nudgeBack'])
     .concat(['rentSoon', 'rentAgain', 'plantStalledAgain', 'plantStalledWinter',
              'cropHandsShort', 'brokeTalk', 'brokeTalkAgain'])
 );
@@ -1854,6 +1869,9 @@ export function scriptsForEvents(events = []) {
 /* ── 작은 말 고르기 ────────────────────────────────────────────────────
    ★조건은 **겪은 것**으로 쓴다. "지금 가을이다"가 아니라 "가을이라 해가 짧다"를
      말할 수 있는 상황인가로 고른다. 조건이 겹치면 가장 오래 안 나온 것이 나온다. */
+/* ★ 독촉 날 문턱 — [plan] 밑값(plan-quest-nudge ⓔ: 열린 다음 날 · 사나흘 · 한 이레 · 두 이레).
+   ⚠ 「뜬 날·열쇠」 표가 나온 뒤 [plan]이 다시 센다. 여기 것은 밑값이다. */
+export const NUDGE_DAYS = Object.freeze({ ask: 4, worry: 7, back: 14 });
 export const CHATTER = [
   /* 첫 플레이 — 수확 전 사흘. ★날짜를 딱 집어 걸지 않는다(`===` 로 걸었더니
      조용한 날 세기와 어긋나 셋 다 못 나오는 날이 있었다). 둘 중 안 나온 쪽이 먼저 나온다. */
@@ -1962,20 +1980,37 @@ export const CHATTER = [
   { id: 'chatNeighbor',   when: c => c.living },
   /* ★맨 끝 그물 — 첫 플레이가 길어져 위가 전부 안 걸리는 날을 위해 둔다.
      이게 없으면 어두운 자리에 방치한 판이 며칠이고 통째로 조용해진다(진단에서 46일). */
-  { id: 'chatQuiet',      when: () => true },
-  { id: 'chatMoniName',   when: () => true },
-  { id: 'chatMorning',    when: () => true }
+  /* ★ 2026-09-02 — 이 셋은 «그물»(net:true)이다. 독촉(nudge:true)은 알맹이 있는 작은 말보다는 «뒤»,
+     그물보다는 «앞»이다 — 실측(probe_nudge): 그물이 늘 참이라 「풀이 비는 날」이 «없어» 독촉이 «한 번도» 안 나왔다.
+     「빈 날을 채운다」의 «빈»은 「알맹이 있는 말이 없는 날」이다. 그물은 빈 날의 «다른 이름»이다. */
+  { id: 'chatQuiet',      net: true, when: () => true },
+  { id: 'chatMoniName',   net: true, when: () => true },
+  { id: 'chatMorning',    net: true, when: () => true },
+  /* ═══ ★ 독촉 낯 넷 — «맨 뒤»(nudge:true · §pickChatter). 날 문턱은 §NUDGE_DAYS([plan] 밑값) ═══ */
+  { id: 'nudgeOffer', nudge: true, when: c => !!c.nudge && c.nudge.days >= 1 && c.nudge.days < NUDGE_DAYS.ask },
+  { id: 'nudgeAsk',   nudge: true, when: c => !!c.nudge && c.nudge.days >= NUDGE_DAYS.ask && c.nudge.days < NUDGE_DAYS.worry },
+  { id: 'nudgeWorry', nudge: true, when: c => !!c.nudge && c.nudge.days >= NUDGE_DAYS.worry && c.nudge.days < NUDGE_DAYS.back },
+  { id: 'nudgeBack',  nudge: true, when: c => !!c.nudge && c.nudge.days >= NUDGE_DAYS.back },
 ];
 
 /* 조건에 맞는 것 중 **가장 오래 안 나온 것**. recent 는 나온 차례(오래된 것부터)다.
    ★순수하다 — 난수를 안 쓴다. 재현이 매번 같은 결과를 봐야 검증이 된다. */
+/* ★ 독촉 날 문턱 — [plan] 밑값(plan-quest-nudge ⓔ: 열린 다음 날 · 사나흘 · 한 이레 · 두 이레).
+   ⚠ 「뜬 날·열쇠」 표가 나온 뒤 [plan]이 다시 센다. 여기 것은 밑값이다. */
 export function pickChatter(ctx = {}, recent = []) {
-  const pool = [];
+  const pool = [], nudges = [], nets = [];
   for (const c of CHATTER) {
     let ok = false;
     try { ok = !!c.when(ctx); } catch { ok = false; }
-    if (ok && !pool.includes(c.id)) pool.push(c.id);
+    if (!ok) continue;
+    /* ★ 세 층이다 — ① 알맹이 있는 작은 말 ② 독촉(`nudge`) ③ 그물(`net` · 늘 참).
+       독촉은 «맨 뒤»(plan-quest-nudge ⓕ)이되 «그물보다는 앞»이다 — 그물까지 뒤에 두면 풀이 비는 날이 없어
+       독촉이 영영 안 나온다(실측). 넷은 날로 갈려 한 번에 하나만 참이다.
+       ⚠ 표를 둘로 안 둔다 — CHATTER 한 표에 «표»만 붙였다(부르는 자리를 세는 자가 그 표를 본다). */
+    const bucket = c.nudge ? nudges : c.net ? nets : pool;
+    if (!bucket.includes(c.id)) bucket.push(c.id);
   }
+  if (!pool.length) { if (nudges.length) return nudges[0]; pool.push(...nets); }
   if (!pool.length) return null;
   const rank = id => recent.lastIndexOf(id);      // 안 나온 적 있으면 -1 → 제일 앞
   let best = pool[0];
@@ -2018,7 +2053,19 @@ export function chatterContext(turn = {}, S = null) {
          (`plant_grow §canFenestrate` 가 7일평균으로 보는 것과 같은 이유). */
     fenestrating: !!(turn.slot && turn.slot.fenestrating),
     lampOwned: ts ? ts.lamp.owned : 0,
-    movedOut: !!(ts && ts.movedOut)
+    movedOut: !!(ts && ts.movedOut),
+    /* ★ 2026-09-02 — 독촉의 임자: «가장 먼저 열렸는데 아직 안 끝난» 퀘스트가 열린 지 며칠째인가.
+       열린 날은 stamina.questsOpenedOn(세이브에 실린다), 끝난 것은 stamina.questsTaken 이 안다. 새 칸은 열린 날 하나뿐이다. */
+    nudge: (() => {
+      try {
+        const stm = S && S.stamina; if (!stm || !stm.questsOpenedOn || dayNow == null) return null;
+        const done = new Set(stm.questsTaken || []);
+        let best = null;
+        for (const [id, d] of Object.entries(stm.questsOpenedOn))
+          if (!done.has(id) && Number.isFinite(d) && (best == null || d < best.on)) best = { id, on: d };
+        return best ? { id: best.id, days: dayNow - best.on } : null;
+      } catch { return null; }
+    })()
   };
 }
 

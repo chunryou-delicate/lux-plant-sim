@@ -173,6 +173,9 @@ export function createStaminaState(maxOrRules = STAMINA_RULES) {
     totalSpent: 0,
     /* 퀘스트로 받은 몫 — 같은 퀘스트를 두 번 못 받게 하는 기억이다 */
     questsTaken: [],
+    /* ★ 2026-09-02 — 퀘스트가 «열린 날» {id: day}. 독촉(plan-quest-nudge)이 「며칠째인가」를 세는 근거다.
+       값이 아니라 «사실»이다(총괄 결정 ㉮). 세이브에 같이 실린다(save.js §stamina). */
+    questsOpenedOn: {},
     /* ★ 아직 화면이 안 보여 준 레벨업. **화면이 비운다**(§레벨업은 보여야 한다).
        ⚠ 세이브에 안 싣는다 — 「보여 줄 것이 남았나」는 판의 사실이 아니라 화면의 사정이다. */
     levelUps: [],

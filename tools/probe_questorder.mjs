@@ -206,10 +206,12 @@ console.log('\n══ A. ★★ 「한 상에 두 가지」가 잎 줄 앞에 �
   /* 몬스테라가 왔고(무순을 살 수 있고) 잎은 아직 하나인 판 — 사슬을 다 끝낸 자리다 */
   /* ★ 2026-09-02 — 집을 잡은 «다음 날»(monsteraHomedDays 1)이라야 crop_mix 가 선다(quest.js).
      옛 표의 사슬에는 resow_siru 가 «있었다» — 지금 FIRST_PLAY_CHAIN_IDS 에는 없으니 옛 판에만 얹는다. */
-  const snap = { ...emptySnapshot(), day: 25, monsteraArrived: true,
+  /* ★ 2026-09-02 ㉱ — 옛 사슬에는 resow_siru·siru_two 가 «있었다»(지금은 RETIRED). 옛 판에만 얹는다.
+     새 판은 day 25 = 세팅 끝 — 짧은 줄(siru5)의 열쇠가 그것이라 채운다. */
+  const snap = { ...emptySnapshot(), day: 25, firstPlayDone: true, monsteraArrived: true,
                  monsteraHomed: true, monsteraHomedDays: 1, motherLeaves: 1 };
   const doneIds = [...FIRST_PLAY_CHAIN_IDS];
-  const nOld = nextOf(OLD_TABLE, [...doneIds, 'resow_siru'], snap);
+  const nOld = nextOf(OLD_TABLE, [...doneIds, 'resow_siru', 'siru_two'], snap);
   const nNew = nextOf(NEW_TABLE, doneIds, snap);
   ok('A-1 ★★★ 옛 차례에서는 그 자리의 「지금 할 일」이 **잎 줄**이었다',
      nOld && SLOW_QUEST_IDS.includes(nOld.id), nOld ? `「${nOld.ko}」` : 'null');

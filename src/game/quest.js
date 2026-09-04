@@ -386,23 +386,6 @@ const FIRST_PLAY_CHAIN = Object.freeze([
        여기 것은 **시차**다: 시루마다 회전이 따로 도니까 거두는 날을 엇갈리게 짤 수 있다
        (`first_play.js §겹침` — *"더 번다"가 아니라 "끊기지 않는다"*).
      ★ 그래서 문턱이 **둘**이다. 둘이라야 「엇갈린다」는 말이 성립한다. */
-  Object.freeze({
-    id: 'siru_two',
-    ko: '시루를 하나 더',
-    speaks: true,
-    reward: '거두는 날을 엇갈리게 짤 수 있습니다',
-    teaches: ['시루마다 회전이 따로 돈다'],
-    why: '시루가 둘이면 물 주는 날을 어긋나게 할 수 있습니다. 그래야 수확이 안 끊깁니다.',
-    need: Object.freeze({ sirus: 2 }),
-    /* ★ 2026-09-02 — 문안 ㉮([plan] plan-quest-reframe): 「2개」는 «수»고 「하나 더」는 «몸짓»이다 —
-       따라할 것은 몸짓이다. 「엇갈림」은 «까닭»이라 둘에서는 가르칠 수 없다(ⓚ) — 한 글자도 안 쓴다. */
-    todo: () => '시루를 하나 더 사서 놓으세요',
-    /* ⚠ 2026-08-17 — 앞 줄이 ④`resow_siru` 에서 ④-b`order_seed` 로 바뀌었다(§씨앗 주문).
-       시루를 늘리면 씨앗이 그만큼 더 드는데, 주문을 안 배운 채로 늘리면 그 자리에서 멎는다 */
-    after: 'order_seed',
-    opens: (s, ctx) => !!(ctx && ctx.doneIds.includes('order_seed')),
-    done:  (s, ctx) => potsOfKind(s, 'beansprout').length >= ctx.q.need.sirus
-  }),
 
   /* ⑥ ★★★ **몬스테라 자리** — 도착은 사건이고 **자리를 잡아 주는 것이 할 일**이다.
      그래서 「도착」과 「자리」를 두 줄로 안 갈랐다. 도착은 플레이어가 하는 일이 아니다.
@@ -419,9 +402,12 @@ const FIRST_PLAY_CHAIN = Object.freeze([
     teaches: ['몬스테라는 밝은 자리라야 자란다'],
     why: '온 자리는 어둡습니다. 밝은 자리로 옮겨야 새순이 납니다 — 빛 판정은 7일 평균이라 나흘쯤 걸립니다.',
     todo: () => '몬스테라를 밝은 자리로 옮기세요',
-    after: 'siru_two',
-    opens: (s, ctx) => !!(ctx && ctx.doneIds.includes('siru_two')) &&
-                       (yes(s.monsteraArrived) || num(s.motherLeaves) >= 1),
+    /* ★ 2026-09-02 ㉱([plan]) — 열쇠에서 「siru_two 끝」을 뗀다. 그루는 「콩나물 두 바퀴」로 사슬 «밖»에서 오므로
+       그 열쇠로는 창턱에 서고도 이 줄이 영영 안 떴다(뜬 날·열쇠 표가 찍은 병). 도착이 곧 열쇠다. */
+    after: null,
+    /* ⚠ 「잎 ≥ 1」은 «왔다»는 뜻이다 — 새 칸(monsteraArrived)을 안 채운 옛 세이브·검사 판에서도 사슬이 굴러가게
+       이미 있는 사실로 «같이» 연다(맨 위 §64 규율). 열쇠를 넓힌 것이 아니다. */
+    opens: s => yes(s.monsteraArrived) || num(s.motherLeaves) >= 1,
     done:  s => yes(s.monsteraHomed) || num(s.motherLeaves) >= 2
   }),
 
@@ -468,8 +454,10 @@ const MAIN_QUESTS = Object.freeze([
        「한 날에 둘」이다(plan-one-thing-a-day: 미룬 것은 «다음 날 맨 앞»). 임자는 새로 안 짓는다 —
        `guide.movedDays`(옮긴 뒤 지난 날)와 `guide.grewOnce`(한 번 자랐나 = 유도 끝)가 이미 있다.
        movedDays 는 형태가 오르면 0 으로 돌아가므로 grewOnce 를 «같이» 본다 — 그러면 한 번 열린 것이 안 닫힌다. */
-    opens: s => !!s.firstPlayDone ||
-                (yes(s.monsteraHomed) && (num(s.monsteraHomedDays) >= 1 || yes(s.monsteraGrewOnce))),
+    /* ★ 2026-09-02 ㉱([plan] ⓓ) — 「무순을 처음 만나는 자리」 = 시루 다섯 «뒤». 세 자(한 날에 하나 · 겪어야 가르친다 ·
+       층)가 같은 답을 냈다. 앞의 「집 잡은 다음 날」 셈은 같은 날 ⑥ 전에 세웠던 것이라 여기서 물린다. */
+    after: 'siru5_cycle5',
+    opens: (s, ctx) => !!(ctx && ctx.doneIds.includes('siru5_cycle5')),
     done:  s => new Set(arr(s.mealKinds).filter(Boolean)).size >= 2
   }),
 
@@ -481,19 +469,21 @@ const MAIN_QUESTS = Object.freeze([
      ★ 그래서 이 줄이 「물은 한 번에 하나」와 「체력이 천장이다」를 가르친다. */
   Object.freeze({
     id: 'siru5_cycle5',
-    ko: '시루 다섯, 다섯 바퀴',
+    /* ★ 2026-09-02 ㉱([plan] ⓕ) — 「바퀴」를 뗀다. 박사님 「5개 사기」가 곧 done 이다. 「체력이 천장」은 말이 아니라
+       손이 다 되는 날 몬이가 가르친다(§crop_hands_short). */
+    ko: '시루 다섯',
     teaches: ['물은 한 번에 하나', '체력이 천장이다'],
     why: '시루가 늘면 하루에 다 못 돌봅니다. 그 상한이 체력입니다.',
-    need: Object.freeze({ sirus: 5, cycles: 5 }),
+    need: Object.freeze({ sirus: 5 }),
     /* ★ 2026-09-02 — 문안 ㉯([plan]): 「바퀴」를 뗐다. 다섯이면 «개수»만으로 체력 천장에 닿는다(ⓕ) —
        「엇갈리게」는 그때 막힌 «순간»에 몬이가 말한다(§crop_hands_short). 여기서는 수만 말한다. */
     todo: q => `시루를 ${q.need.sirus}으로 늘리세요`,
     /* ★ ①을 끝낸 뒤에 연다. 둘을 같이 열면 첫날에 할 일이 둘이 되어 어느 쪽도 안 읽힌다 */
-    after: 'crop_mix',
-    opens: (s, ctx) => !!s.firstPlayDone && !!(ctx && ctx.doneIds.includes('crop_mix')),
-    done:  (s, ctx) => arr(s.cropPots)
-      .filter(p => p && p.kind === 'beansprout' && num(p.harvestCount) >= ctx.q.need.cycles)
-      .length >= ctx.q.need.sirus
+    /* ★ ㉱ ⓒ — 「crop_mix 끝」을 뗀다. 그 열쇠가 141일 파산의 자물쇠였다(무순을 안 사면 뒤가 영영 안 열렸다).
+       「세팅 끝」은 무순 없이 열린다 = 박사님 「5개 사기로 «바로»」. */
+    after: null,
+    opens: s => !!s.firstPlayDone,
+    done:  (s, ctx) => potsOfKind(s, 'beansprout').length >= ctx.q.need.sirus
   }),
 
   /* ══ ②-a ★★★ **무순 다섯** (2026-08-24 박사님 확정 · [Plan] plan-radish-guide-and-quest) ══
@@ -531,8 +521,9 @@ const MAIN_QUESTS = Object.freeze([
     reward: '무순이 안 끊겨 밥상에 두 가지가 늘 오릅니다',
     need: Object.freeze({ pots: 5 }),
     todo: q => `무순 재배판을 ${q.need.pots}개까지 늘리세요`,
-    after: 'siru5_cycle5',
-    opens: (s, ctx) => !!(ctx && ctx.doneIds.includes('siru5_cycle5')),
+    /* ★ ㉱ ⓔ — crop_mix 와 같은 날 열리므로 하나 미룬다(자 ②: 무순 «하나»가 싸다) — 「만난 뒤 다섯」 */
+    after: 'crop_mix',
+    opens: (s, ctx) => !!(ctx && ctx.doneIds.includes('crop_mix')),
     /* ★ 놓인 것만 센다 — 이 줄은 **자리가 전부**다 */
     done:  (s, ctx) => arr(s.cropPots)
       .filter(p => p && p.kind === 'musun' && yes(p.placed)).length >= ctx.q.need.pots
@@ -779,6 +770,24 @@ export const QUEST_PREVIEW = 3;
 /* ★ 물러난 줄 — 표에서는 뺐지만 «이름»은 남긴다. 옛 세이브의 questsTaken 과 「옛 표 vs 새 표」를 재는 자
    (probe_questorder)가 이 이름을 붙잡고 있다. 열리지도 뜨지도 않는다 — 정본은 QUESTS 뿐이다. */
 export const RETIRED_QUESTS = Object.freeze([
+  /* ★ 2026-09-02 ㉱ — siru_two 도 물러난다(박사님 「2개째는 «강제 가이드»로」). 문안 ㉮는 가이드 할 일로 옮겼다(game.html §siruNeed) */
+  Object.freeze({
+    id: 'siru_two',
+    ko: '시루를 하나 더',
+    speaks: true,
+    reward: '거두는 날을 엇갈리게 짤 수 있습니다',
+    teaches: ['시루마다 회전이 따로 돈다'],
+    why: '시루가 둘이면 물 주는 날을 어긋나게 할 수 있습니다. 그래야 수확이 안 끊깁니다.',
+    need: Object.freeze({ sirus: 2 }),
+    /* ★ 2026-09-02 — 문안 ㉮([plan] plan-quest-reframe): 「2개」는 «수»고 「하나 더」는 «몸짓»이다 —
+       따라할 것은 몸짓이다. 「엇갈림」은 «까닭»이라 둘에서는 가르칠 수 없다(ⓚ) — 한 글자도 안 쓴다. */
+    todo: () => '시루를 하나 더 사서 놓으세요',
+    /* ⚠ 2026-08-17 — 앞 줄이 ④`resow_siru` 에서 ④-b`order_seed` 로 바뀌었다(§씨앗 주문).
+       시루를 늘리면 씨앗이 그만큼 더 드는데, 주문을 안 배운 채로 늘리면 그 자리에서 멎는다 */
+    after: 'order_seed',
+    opens: (s, ctx) => !!(ctx && ctx.doneIds.includes('order_seed')),
+    done:  (s, ctx) => potsOfKind(s, 'beansprout').length >= ctx.q.need.sirus
+  }),
   Object.freeze({
     id: 'resow_siru',
     ko: '씨앗을 사서 다시 심는다',
@@ -921,6 +930,14 @@ export function stepQuests(S, snapshot) {
       if (!isOpen) continue;
       if (!S._questOpen.includes(q.id)) {
         S._questOpen.push(q.id);
+        /* ★ 2026-09-02 — «열린 날»을 적는다(stamina.questsOpenedOn · 세이브에 실린다). 한 번 적으면 안 바꾼다 —
+           다시 켜서 _questOpen 이 비어도 «처음 열린 날»이 남아야 독촉이 「며칠째」를 안 잊는다. */
+        try {
+          if (S.stamina && Number.isFinite(s.day)) {
+            if (!S.stamina.questsOpenedOn || typeof S.stamina.questsOpenedOn !== 'object') S.stamina.questsOpenedOn = {};
+            if (S.stamina.questsOpenedOn[q.id] == null) S.stamina.questsOpenedOn[q.id] = s.day;
+          }
+        } catch { }
         opened.push(q.id);
         events.push({ id: 'quest_opened', questId: q.id, ko: q.ko, todo: questTodo(q, s) });
         changed = true;

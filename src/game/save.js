@@ -1265,7 +1265,11 @@ export function serialize(S, opt = {}) {
         xp: needInt(((S.stamina || {}).xp ?? 0), 'stamina.xp', { min: 0 }),
         totalSpent: needInt(((S.stamina || {}).totalSpent ?? 0), 'stamina.totalSpent', { min: 0 }),
         questsTaken: needArr(((S.stamina || {}).questsTaken || []), 'stamina.questsTaken')
-          .map((q, i) => needStr(q, `stamina.questsTaken[${i}]`))
+          .map((q, i) => needStr(q, `stamina.questsTaken[${i}]`)),
+        /* ★ 2026-09-02 — 퀘스트가 «열린 날» {id: day}. 독촉이 「며칠째」를 세는 사실이라 같이 싣는다(총괄 ㉮).
+           ⚠ 안 실으면 다시 켤 때마다 독촉이 처음부터 센다 — 「안 잊히게」라는 뜻이 죽는다. */
+        questsOpenedOn: Object.fromEntries(Object.entries(needObj(((S.stamina || {}).questsOpenedOn || {}), 'stamina.questsOpenedOn'))
+          .map(([id, d]) => [needStr(id, 'stamina.questsOpenedOn[id]'), needInt(d, `stamina.questsOpenedOn[${id}]`, { min: 0 })]))
       },
       /* ★ 자르지 않는다 — growth 복원의 입력이다(맨 위 §growth). null 은 '못 잰 날'이라 그대로 둔다. */
       dliHist: needArr(S.dliHist || [], 'dliHist')
@@ -1839,6 +1843,13 @@ export function deserialize(raw, opt = {}) {
       S.stamina.totalSpent = st.stamina.totalSpent;
     if (Array.isArray(st.stamina.questsTaken))
       S.stamina.questsTaken = st.stamina.questsTaken.filter(q => typeof q === 'string');
+    /* ★ 2026-09-02 — «열린 날»을 되읽는다. 옛 세이브(칸이 없는 것)는 빈 것으로 — 그때는 독촉이 «다시 열린 날»부터 센다 */
+    if (st.stamina.questsOpenedOn && typeof st.stamina.questsOpenedOn === 'object') {
+      const o = {};
+      for (const [id, d] of Object.entries(st.stamina.questsOpenedOn))
+        if (typeof id === 'string' && Number.isInteger(d) && d >= 0) o[id] = d;
+      S.stamina.questsOpenedOn = o;
+    }
     S.stamina.left = Number.isInteger(st.stamina.left)
       ? Math.max(0, Math.min(S.stamina.max, st.stamina.left))
       : S.stamina.max;

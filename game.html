@@ -3563,10 +3563,9 @@ const musunPotD = () => (roomView && roomView.plantPotD ? roomView.plantPotD('mu
      둘이 갈리면 「퀘스트는 아직인데 상점엔 있다」가 되고, 그게 오늘 여러 번 본 「한 쪽만 손댄」 꼴이다.
    ⚠ 첫 플레이가 아니면(끝났거나 안 켜졌으면) 예전대로 늘 열려 있다. */
 function musunHomed() {
-  const fp = S.firstPlay;
-  const g = fp && fp.monstera && fp.monstera.guide;
-  /* ★ 퀘스트 crop_mix 와 «같은 셈»이다(quest.js) — 집을 잡은 «다음 날»부터, 한 번 자랐으면 계속 */
-  return !!(g && g.moved && ((g.movedDays || 0) >= 1 || g.grewOnce));
+  /* ★ 2026-09-02 ㉱ — 퀘스트 crop_mix 의 열쇠가 「시루 다섯 끝」으로 옮겨졌다([plan]). 상점도 «같은 열쇠»를 본다 —
+     끝난 것은 stamina.questsTaken 이 안다(세이브에 실린다). 둘이 갈리면 「퀘스트는 아직인데 상점엔 있다」가 된다. */
+  try { return ((S.stamina && S.stamina.questsTaken) || []).includes('siru5_cycle5'); } catch { return false; }
 }
 function musunOpenNow() {
   const fp = S.firstPlay;
@@ -5717,9 +5716,21 @@ function updateHint() {
      ⚠ 가방에 빈 시루가 있으면 **살 때가 아니라 놓을 때다** — 그때는 이 갈래를 지나간다
        (놓는 손가락은 §cropThumb 이 이미 맡는다).
      ⚠ 씨앗보다 **뒤**에 둔다. 씨앗이 없으면 시루를 늘려도 안 돈다 — 급한 순서가 그렇다. */
+  /* ★ 2026-09-02 ㉱ — siru_two 가 퀘스트에서 «빠졌다»(박사님 「2개째는 강제 가이드로」). 그러니 「언제 사라 하나」를
+     할 일 글이 아니라 «사실»로 묻는다: 씨앗 주문을 배웠고(order_seed 끝) 시루가 아직 하나뿐이면 하나 더다.
+     문안 ㉮「시루를 하나 더 사서 놓으세요」는 §quest 줄이 아니라 손가락 말로 선다(아래). 값을 안 박는다 — 「둘」은
+     「하나뿐이면 하나 더」의 결과다. */
+  const guideSiruTwo = (() => {
+    try {
+      const done = (S.stamina && S.stamina.questsTaken) || [];
+      if (!done.includes('order_seed')) return false;
+      const n = cropRows.filter(r => r && r.kind === 'beansprout').length;
+      return n < 2;
+    } catch { return false; }
+  })();
   const siruNeed = (() => {
     try {
-      if (!/시루를 (2|두) ?개|시루를 하나 더|늘려/.test($('quest').textContent || '')) return null;
+      if (!guideSiruTwo && !/시루를 (2|두) ?개|시루를 하나 더|늘려/.test($('quest').textContent || '')) return null;
       if (spareSiru() > 0) return null;                 /* 가방에 있다 — 사는 일이 아니다 */
       const st = shopStatus(S);
       const have = ((st.stock && st.stock.siru) || 0)
