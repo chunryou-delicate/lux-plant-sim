@@ -101,15 +101,14 @@ for (let i = 0; i < 60 * GOAL; i++) {
   /* ⚠ **한 번 비었다고 끝난 것이 아니다** — 대사·연출 중에는 잠깐 비고, 그 사이에 끊으면
      그 뒤의 걸음(선물 받기·창턱 옮기기)을 통째로 놓친다(실측에서 한 번 그렇게 잘렸다).
      ⇒ «잇달아 세 번» 비어야 끝으로 본다. */
-  /* ★ 2026-09-04 ㉲ — **「세팅 끝」에서 강제 가이드가 «뜻대로» 끝난다**(콩나물 시루 «둘» 놓임 && 몬스테라 «창턱» · [plan] 93a35e1).
-     그 뒤 손가락이 없는 것은 끊긴 길이 아니라 «자유»다 — 여기서 적고 멈춘다(표는 그대로 찍힌다). */
-  {
-    const placedSirus = (st.줄 || []).filter(r => r && r.종 === 'beansprout' && r.놓임).length;
-    const onSill = /sill/.test(String(st.몬자리 || ''));
-    if (placedSirus >= 2 && onSill && !JSON.parse(await fingerAt())) {
-      log.push(`Day ${String(st.날).padStart(2)} · ✔ 세팅 끝(시루 ${placedSirus} 놓임 · 창턱) — 강제 가이드가 뜻대로 끝났다`);
-      break;
-    }
+  /* ★ 2026-09-04 — 「세팅 끝 = 손가락 없음」 탈출구를 «뗐다»([plan] ②: 세팅 끝은 «덮개»만 끄고 손가락은 살림 안내로 잇는다).
+     그러니 세팅 끝 뒤에 손가락이 없는 것은 뜻대로가 아니라 «끊긴 길»이다 — 아래 예전 자(잇달아 셋 비면 안내 끝)가 그대로 잰다. */
+  /* ★ 2026-09-04 — 손이 바쁘면(사람이 물 주러·거두러 가는 중 · .mark.acting) «기다린다». 그 사이 손가락은 일부러 쉬므로 「손가락 없음」이 아니다.
+     ⚠ 헤드리스는 연출이 느려(2fps 안팎) 한 동작이 열 몇 초 걸린다 — 60초까지. */
+  for (let w = 0; w < 120; w++) {
+    const busy = await page.eval(`String(!!document.querySelector('#marks .mark.acting'))`);
+    if (busy !== 'true') break;
+    await sleep(500);
   }
   if ((st.거둔횟수 || 0) >= 2 && !JSON.parse(await fingerAt())) dry++; else dry = 0;
   if (dry >= 3) {
