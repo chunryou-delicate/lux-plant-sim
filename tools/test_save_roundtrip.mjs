@@ -120,6 +120,7 @@ function makeRich() {
   /* ★ 2026-09-02 — 퀘스트가 «열린 날»(독촉의 근거 · 총괄 ㉮). 둘 이상 넣는다 — 하나만 넣으면 둘째 칸이
      사라지는 저장을 못 잡는다(위 ①과 같은 까닭). 0 도 넣는다 — 「0 을 없음으로 읽는」 저장을 잡는다. */
   S.stamina.questsOpenedOn = { place_siru: 0, first_harvest: 1, order_seed: 5 };
+  S.stamina.nappedOnDay = 3;   /* ⑦ 낮잠 잔 날 — 하루 1번의 근거 */
   S.tutorial.cashWon = 1234500;
   S.tutorial.lamp = { ...(S.tutorial.lamp || {}), unlocked: true, owned: 2, placed: 1 };
   /* ⚠ 모양을 «지어내지» 않는다 — 정본은 `tutorial.createVarieLeafState()` 다({ever, firstDay, where}).
@@ -234,7 +235,10 @@ for (const [name, hurt, pat] of [
    raw => { raw.state.pots[1].dliHist[1] = 9.99; },                     /pots\[\d+\]\.dliHist/],
   /* ★ 2026-09-02 — 독촉의 근거인 「열린 날」이 «한 칸» 빠지면 잡아야 한다(둘째 칸이 사라지는 저장) */
   ['퀘스트 열린 날 한 칸이 사라짐',
-   raw => { delete raw.state.stamina.questsOpenedOn.first_harvest; },   /stamina\.questsOpenedOn/]
+   raw => { delete raw.state.stamina.questsOpenedOn.first_harvest; },   /stamina\.questsOpenedOn/],
+  /* ★ 2026-09-04 ⑦ — 낮잠 잔 날이 빠지면 «오늘 또» 잘 수 있다 */
+  ['낮잠 잔 날이 사라짐',
+   raw => { delete raw.state.stamina.nappedOnDay; },                    /stamina\.nappedOnDay/]
 ]) {
   const probe = makeRich();
   const rawP = JSON.parse(JSON.stringify(serialize(probe)));

@@ -162,13 +162,23 @@ export function createProfileLight(profile, data = {}) {
     /* ref 는 slotId 문자열 또는 화분 객체({slotId, at}) — 라이브 포트와 인자 모양을 맞춘다.
        ⚠ 여기서는 `at` 을 **안 본다.** 위 주석대로 정적 표에는 임의 좌표가 없다.
          자유 좌표 화분을 이 경로로 돌리면 그 화분의 slotId(`free:…`)가 표에 없어 0 이 나온다. */
+    /* ★★★★ 2026-09-02 — **좌표 조도 계약 «D»(박사님): 헤드리스는 «모른다고 던진다».** ([house] 청 · docs/engine/floor_light_contract.md)
+       ⛔ 여태 표에 없는 자리를 물으면 «0» 을 돌려줬다. 그 0 이 「어둡다」로 읽혀 — 콩나물 최상 대역은 하한이 없어
+         «최상»이 되고, 다른 판정은 «어둡다»로 갔다. 「모른다」와 「0」은 다른 말이다.
+       ⇒ ★ `cropDliFromReport`(first_play · 302a4fe)가 이미 같은 뜻으로 던진다 — 그 결을 «한 층 아래»로 내린다.
+       ⚠ 자유 좌표(`at`)는 정적 표에 «없다». 바닥 표가 필요하면 «브라우저 자로만» 낸다(계약 D).
+       ⚠ loop.js §cropLightOf 는 try/catch 라 던지면 「판정하지 않는다」(null)로 떨어진다 — 0 이 아니라 «모름»이다. */
     dliOfSlot(ref, { weather, season, lampCount, litHours }) {
+      const at = (ref && typeof ref === 'object') ? ref.at : null;
       const slotId = (ref && typeof ref === 'object') ? ref.slotId : ref;
+      if (at || (slotId != null && String(slotId).startsWith('free:')))
+        throw new Error(`[정적 프로필] 자유 좌표 자리 ${slotId} 의 조도는 모른다 — 바닥 표는 브라우저 자로만 낸다(계약 D)`);
       const key = `${slotId}|${weather}|${season}|${lampCount}|${litHours}`;
       if (cache.has(key)) return cache.get(key);
       const r = build(0, { weather, season, lampCount, litHours });
       const s = r.slots.find(x => x.slotId === slotId);
-      const v = s ? s.dli : 0;
+      if (!s) throw new Error(`[정적 프로필] 자리 ${slotId} 가 표에 없다 — 0 이 아니라 모른다(계약 D)`);
+      const v = s.dli;
       cache.set(key, v);
       return v;
     },

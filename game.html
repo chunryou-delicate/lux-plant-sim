@@ -1861,6 +1861,11 @@
              침대(733,600원)를 사면 이사가 멀어진다.
            ⚠ 파는 셈도 막는 자리도 코어가 갖는다(`state.js §furnitureSellQuote`) — 여기는 «누르는 자리»다. -->
       <button id="furnSell" class="ghost" style="display:none">팔기</button>
+      <!-- ★ 2026-09-04 ⑦ — 의자·침대(박사님 · plan-nap-and-sit): 「앉기⇄일어서기」「눕기⇄일어나기」「낮잠자기」.
+           프리셋 type 이 chair 면 앞엣것, bed 면 뒤 둘. 값(10%·하루 1번·두 시간)은 침대 프리셋과 코어(stamina.nap)에. -->
+      <button id="furnSit" class="ghost" style="display:none">앉기</button>
+      <button id="furnLie" class="ghost" style="display:none">눕기</button>
+      <button id="furnNap" class="ghost" style="display:none">낮잠자기</button>
       <span class="warn" id="furnWhy" style="display:none"></span>
       <!-- ★★★ 옮기고 **난 뒤**의 두 단추 (2026-08-16 · B-4 · 박사님: "옮긴 다음 팝업이
            [옮기기]가 있어서 헷갈림 — [확정]/[취소] 버튼 나오게")
@@ -3073,7 +3078,8 @@ import { staminaView, staminaRulesFrom, takeLevelUps, xpNeededAt,
          /* 퀘스트 보상 창구 — 「무엇을 완주로 보나」만 화면이 정한다(아래 §퀘스트) */
          grantStaminaQuest,
          /* ★ 퀘스트 창이 「보상이 얼마인가」를 **정의에서 읽는다**(손으로 안 적는다 · §2.8) */
-         rulesOf as staminaRulesOf } from './src/game/stamina.js';
+         rulesOf as staminaRulesOf,
+         nap, napStatus /* ⑦ 낮잠 */ } from './src/game/stamina.js';
 /* ★★ 퀘스트 다섯 줄 (2026-08-17 · docs/handoff/plan-2026-08-17-quest.md).
    ⚠ **판정만 여기서 부른다.** 무엇을 시키는가는 quest.js 가, 얼마를 주는가는
      stamina.json 이 갖는다 — 화면이 그 둘을 다시 짓지 않는다. */
@@ -5805,14 +5811,15 @@ function updateHint() {
          ⇒ 그래서 문을 하나 더 연다 — **`siru_two` 를 끝냈고 아직 무순을 안 시작했으면.**
          ⚠ 「무순」이 뜬 뒤에도 그대로 가리킨다(옛 문을 안 지웠다).
          ⚠ 못 물으면 **옛 문만 쓴다** — 지어내서 가리키지 않는다. */
-      const sayingMusun = /무순/.test($('quest').textContent || '');
-      let afterSiruTwo = false;
+      /* ★ 2026-09-04 ([plan] cb60cc6 · 총괄 ②) — 무순 손가락의 «때» = **crop_mix 열림(= siru5 끝)**. 상점 무순 문(§musunOpenNow)과
+         «같은 자»다. 할 일 글에 「무순」이 보이나로 재던 것과 siru_two(물러남) 끝을 뗀다 — 할 일은 「시루 다섯」인데 손가락은 「무순」인
+         병(d11 에서 잡은 그것)이 도로 나지 않게. radish5(무순 다섯)가 열려 있을 때도 같은 손가락이다. */
+      let musunQuestOpen = false;
       try {
         const qv = questView(S, questSnapshotNow(lastTurn));
-        const q = (qv && qv.all || []).find(x => x && x.id === 'siru_two');
-        afterSiruTwo = !!(q && q.state === 'done');
-      } catch { afterSiruTwo = false; }
-      if (!sayingMusun && !afterSiruTwo) return null;
+        musunQuestOpen = (qv && qv.all || []).some(x => x && (x.id === 'crop_mix' || x.id === 'radish5') && x.state === 'open');
+      } catch { musunQuestOpen = false; }
+      if (!musunQuestOpen) return null;
       /* 이미 판이 서 있으면 사는 일이 아니다 */
       let rows = []; try { rows = cropPotList(S.firstPlay, S.day).filter(r => r.kind === 'musun'); } catch { }
       if (rows.some(r => r.placed)) return null;
@@ -11760,6 +11767,17 @@ async function bootRoomView() {
          ⇒ 골라졌을 때만 쪽지를 낸다 — 푸는 손짓에 「이제 걸어갑니다」가 뜨면 거짓말이다(§A-1) */
       onCharacterTap: (id) => {
         roomTapped();
+        /* ★ 2026-09-04 ⑦ — 앉아·누워 있는 사람을 누르면 «그 가구의 메뉴»를 연다. 사람이 가구 한가운데 있어 가구를 눌러도
+           사람이 잡히므로, 이 길이 없으면 [일어서기]·[일어나기]에 닿을 수가 없다(실측 probe_nap). */
+        try {
+          const on = id && roomView && roomView.restingOn ? roomView.restingOn() : null;
+          if (on && on.charId === id) {
+            const f = (roomView.furniture() || []).find(x => x.uid === on.key);
+            const cr = $('roomCanvas').getBoundingClientRect();
+            const sp = roomView.screenPosOf(on.key);
+            if (f) { roomView.selectCharacter(null); furnPicked.select(f, cr.left + (sp ? sp.x : cr.width / 2), cr.top + (sp ? sp.y : cr.height / 2)); return; }
+          }
+        } catch (e) { console.warn('[방] 앉은 사람 누름 —', e && e.message); }
         roomView && roomView.selectCharacter(id);
         /* ⚠ 2026-08-30 — 여기서 `coach('walk')` 를 부르던 줄을 **걷었다.**
            그 쪽지는 「방바닥을 누르면 걸어간다 · 잡고 끌어도 된다 · 한 번 더 누르면 꺼진다」를
@@ -14170,6 +14188,25 @@ function slotsLostBySelling(uid) {
   } catch (e) { console.warn('[가구] 자리 수를 못 물었습니다 —', e && e.message); return 0; }
   finally { try { io.light.setFurnitureEdits(sold, added); } catch { } }   /* ★ 반드시 되돌린다 */
 }
+/* ★ 2026-09-04 ⑦ — 가구 메뉴의 앉기·눕기·낮잠 단추. 글자는 [plan] 문안 그대로:
+   「앉기⇄일어서기」「눕기⇄일어나기」「낮잠자기」「오늘은 이미 잤습니다 — 내일 다시」. */
+function furnRestButtons(fp) {
+  const set = (id, v) => { const el = $(id); if (el) el.style.display = v; };
+  let on = null; try { on = roomView && roomView.restingOn ? roomView.restingOn() : null; } catch { on = null; }
+  const here = !!(on && fp.uid && on.key === fp.uid);
+  set('furnSit', fp.restType === 'chair' ? '' : 'none');
+  set('furnLie', fp.restType === 'bed' ? '' : 'none');
+  set('furnNap', fp.restType === 'bed' ? '' : 'none');
+  const sit = $('furnSit'), lie = $('furnLie'), nb = $('furnNap');
+  if (sit) sit.textContent = here ? '일어서기' : '앉기';
+  if (lie) lie.textContent = here ? '일어나기' : '눕기';
+  if (nb) {
+    let st = null; try { st = napStatus(S); } catch { st = null; }
+    const slept = !!(st && st.napped);
+    nb.textContent = slept ? '오늘은 이미 잤습니다 — 내일 다시' : '낮잠자기';
+    nb.disabled = slept;
+  }
+}
 const furnPicked = {
   uid: null, mode: null, x0: 0, y0: 0, originX: 0, originY: 0, base: null, rot0: 0, ghost: null,
   tapX: null, tapY: null,
@@ -14194,6 +14231,8 @@ const furnPicked = {
     set('furnAim', on ? 'none' : (this.aimable ? '' : 'none'));
     /* ★ 파는 단추도 옮기는 중에는 감춘다 — 옮기다 말고 팔면 되돌릴 자리가 사라진다 */
     set('furnSell', on ? 'none' : (this.sellable ? '' : 'none'));
+    if (on) { set('furnSit', 'none'); set('furnLie', 'none'); set('furnNap', 'none'); }
+    else furnRestButtons(this);   /* ⑦ */
     set('furnOk', on ? '' : 'none');
     set('furnUndo', on ? '' : 'none');
     if (!on) this.undoFrom = null;
@@ -14234,6 +14273,10 @@ const furnPicked = {
         this.sellable = q.ok || !/사고팔 수 없습니다|붙박이라/.test(q.reason || '');
       } catch (e) { this.sellable = false; }
     }
+    /* ⑦ 의자·침대면 앉기·눕기·낮잠 단추 — 프리셋 type 으로 본다(새 칸 없음) */
+    this.restType = null;
+    try { const ty = (furnPresets[f.preset] || {}).type; if (ty === 'bed' || ty === 'chair') this.restType = ty; } catch { }
+    furnRestButtons(this);
     {
       const set = (id, v) => { const el = $(id); if (el) el.style.display = v; };
       const lb = $('furnLamp'), why = $('furnWhy');
@@ -14862,6 +14905,30 @@ function bindPicked() {
            '⚠ 밝기 계산은 **산 등의 수**로 돕니다 — 끄면 화면과 전기세만 바뀝니다');
   });
   /* ★ B-4 — 옮긴 뒤의 두 단추. [확정]은 그대로 두고 고르기를 푼다 · [취소]는 되돌린다 */
+  /* ★ 2026-09-04 ⑦ — 앉기·눕기(잡고 있는 동작 · roomView.actAt(uid, 'sit'|'sleep')) · 일어나기(standUp) · 낮잠(코어 nap + 시계 두 시간) */
+  const restAct = (kind) => {
+    const uid = furnPicked.uid; if (!uid || !roomView) return;
+    let on = null; try { on = roomView.restingOn ? roomView.restingOn() : null; } catch { on = null; }
+    if (on && on.key === uid) { try { roomView.standUp('일어났습니다'); } catch { } furnPicked.clear(); draw(); return; }
+    furnPicked.clear();
+    roomView.actAt(uid, kind, { onFail: (why) => banner('가지는 못했습니다', why || '') }).catch(() => { });
+  };
+  tapOnce('furnSit', () => restAct('sit'));
+  tapOnce('furnLie', () => restAct('sleep'));
+  tapOnce('furnNap', () => {
+    const uid = furnPicked.uid, preset = furnPicked.sellPreset || null; if (!uid) return;
+    const pr = (preset && furnPresets[preset]) || {};
+    let r = null;
+    try { r = nap(S, { frac: pr.nap_recover_frac }); }
+    catch (e) { banner('낮잠을 못 잤습니다', (e && e.message) || ''); return; }
+    if (!r.ok) { banner('오늘은 이미 잤습니다', '내일 다시'); furnRestButtons(furnPicked); return; }
+    furnPicked.clear();
+    napClockSkip(pr.nap_hours);                       /* 두 시간 — «티»(시계·빛만 간다) */
+    banner('낮잠을 잤습니다', `체력 +${r.gained} · 두 시간이 지났습니다`);
+    try { sfx.thud && sfx.thud(); } catch { }
+    draw(); try { saveNow(); } catch { }
+    if (roomView) roomView.actAt(uid, 'sleep', {}).catch(() => { });
+  });
   tapOnce('furnOk', () => furnPicked.clear());
   tapOnce('furnUndo', () => { furnPicked.undoMove().then(() => furnPicked.clear()); });
   tapOnce('furnClose', () => furnPicked.clear());
@@ -15224,6 +15291,13 @@ const dayClockHeld = () => !dayAnimRunning && dayElapsed01 >= DAY_HOLD01 - 1e-9;
      읽어 **저절로 넘기기가 무한히 돈다.** 실제로 `runDayAnim` 의 연출-끄기 지름길이
      `dayPhase` 만 되돌리고 있었다(검사·`?fast=1` 이 그 길로 간다). 두 줄을 묶어 막는다. */
 function resetDayClock() { dayPhase = DAWN_T01; dayElapsed01 = 0; }
+/* ★ 2026-09-04 ⑦ — 낮잠의 «티»: 시계를 몇 시간 민다(값은 침대 프리셋 nap_hours). 하루를 넘기지는 않는다(DAY_HOLD01 에서 선다). */
+function napClockSkip(hours) {
+  const h = Number.isFinite(+hours) && +hours > 0 ? +hours : 2;
+  dayElapsed01 = Math.min(DAY_HOLD01, dayElapsed01 + h / 24);
+  dayPhase = (DAWN_T01 + Math.min(dayElapsed01, DAY_HOLD01)) % 1;
+  return dayElapsed01;
+}
 /* 재는 손잡이 — **읽기만 한다.** 시계가 어디까지 갔고 섰는지를 밖에서 물을 유일한 길이다
    (한 바퀴가 576초라, 이게 없으면 재는 자가 매번 10분을 기다려야 한다). */
 window.__dayClock = () => ({ phase: +dayPhase.toFixed(5), elapsed01: +dayElapsed01.toFixed(5),

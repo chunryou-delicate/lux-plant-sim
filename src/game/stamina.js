@@ -176,6 +176,8 @@ export function createStaminaState(maxOrRules = STAMINA_RULES) {
     /* ★ 2026-09-02 — 퀘스트가 «열린 날» {id: day}. 독촉(plan-quest-nudge)이 「며칠째인가」를 세는 근거다.
        값이 아니라 «사실»이다(총괄 결정 ㉮). 세이브에 같이 실린다(save.js §stamina). */
     questsOpenedOn: {},
+    /* ★ 2026-09-04 ⑦ — 낮잠을 «잔 날»(하루 1번의 근거 · plan-nap-and-sit). 세이브에 실린다. -1 = 아직. */
+    nappedOnDay: -1,
     /* ★ 아직 화면이 안 보여 준 레벨업. **화면이 비운다**(§레벨업은 보여야 한다).
        ⚠ 세이브에 안 싣는다 — 「보여 줄 것이 남았나」는 판의 사실이 아니라 화면의 사정이다. */
     levelUps: [],
@@ -198,6 +200,7 @@ export function staminaOf(S, rules = null) {
   if (!Array.isArray(st.questsTaken)) st.questsTaken = [];
   if (!Array.isArray(st.levelUps)) st.levelUps = [];
   if (!Number.isFinite(st.max)) st.max = st.rules.startMax || STAMINA_MAX;
+  if (!Number.isInteger(st.nappedOnDay)) st.nappedOnDay = -1;   /* ⑦ 옛 세이브 */
   return st;
 }
 /* 규칙을 지금 판에 꽂는다 — 불러오기·새 판이 한 번씩 부른다. **레벨(max)은 안 건드린다.** */
@@ -249,6 +252,29 @@ export function spend(S, kind) {
 
 /* 경험치를 넣고 찰 때마다 한 칸씩 올린다. **여러 칸이 한 번에 오를 수 있다**(퀘스트·보정).
    ★ 오른 것은 `levelUps` 에 쌓는다 — 조용히 오르면 보상이 아니다(박사님). */
+/* ★★ 2026-09-04 ⑦ — **낮잠**(박사님 · plan-nap-and-sit): 최대 체력의 «몫»만큼 올림으로 회복 · 하루 «한 번».
+   ⚠ 값(몫)은 여기 없다 — **침대 프리셋**(data/furniture_presets.json §nap_recover_frac)이 들고 오고 코어는 읽는다.
+     없으면 던진다 — 0 으로 조용히 «안 자는» 침대를 만들지 않는다.
+   ⚠ 「오늘」은 S.day 다(스태미나의 day 는 하루 시작에 맞춰 두는 칸이라 같지만, 판의 정본은 S.day). */
+export function napStatus(S) {
+  const st = staminaOf(S);
+  if (!st) return { napped: false, day: null };
+  const day = Number.isFinite(S && S.day) ? S.day : st.day;
+  return { napped: st.nappedOnDay === day, day };
+}
+export function nap(S, opt = {}) {
+  const st = staminaOf(S);
+  if (!st) return { ok: false, gained: 0, reason: '체력 판이 없습니다' };
+  const frac = Number(opt.frac);
+  if (!(frac > 0 && frac <= 1)) throw new Error('낮잠 회복 몫(nap_recover_frac)이 침대 프리셋에 없습니다 — 값은 프리셋에 둔다');
+  const day = Number.isFinite(S && S.day) ? S.day : st.day;
+  if (st.nappedOnDay === day) return { ok: false, gained: 0, reason: '오늘은 이미 잤습니다' };
+  const gained = Math.min(Math.ceil(st.max * frac), Math.max(0, st.max - st.left));
+  st.left += gained;
+  st.nappedOnDay = day;
+  return { ok: true, gained, left: st.left, max: st.max };
+}
+
 export function gainXp(S, amount) {
   const st = staminaOf(S);
   if (!st || !(amount > 0)) return st;

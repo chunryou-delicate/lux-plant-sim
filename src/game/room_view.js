@@ -2860,6 +2860,10 @@ export async function createRoomView(canvas, opts = {}) {
     /* ③ 빈 추천 자리 */
     const s = slotById.get(id);
     if (s) return of(id, null, s);
+    /* ★ 2026-09-04 ⑦ — 가구 uid 도 열쇠다(앉기·눕기). 화분·자리가 아니면 가구를 묻는다 — 새 자를 안 만든다(§furnNode). */
+    { const g = (typeof furnNode === 'function') ? furnNode(id) : null;
+      if (g) return { key: id, plant: null, slot: null, furn: g,
+                      pos: { x: g.position.x, y: g.position.y, z: g.position.z } }; }
     /* ④ 'free:pot_01' 인데 그 화분이 없다 — 없는 것은 없다고 한다 */
     return null;
   }
@@ -7651,7 +7655,8 @@ export async function createRoomView(canvas, opts = {}) {
          (박사님: "반쯤 준 물은 없다"). 그래서 시계를 update 의 dt 하나로 통일한다. */
     let walkWait = null;    // { resolve, onTick, total } — 도착하면 푼다
     let faceWait = null;    // { resolve } — 다 돌아서면 푼다
-    let clipRun = null;     // { a, sec, t, onTick, resolve, y0 } — 모션 한 번
+    let clipRun = null;     // { a, sec, t, onTick, resolve, y0, hold } — 모션 한 번
+    let heldAction = null;  // ⑦ 끝 자세를 잡고 있는 동작(앉기·눕기) — abortAct 가 푼다
 
     function settleWalk(ok, reason) {
       if (!walkWait) return;
@@ -7754,8 +7759,9 @@ export async function createRoomView(canvas, opts = {}) {
        ⚠ 절차적 몸짓은 뼈를 안 건드린다. 뼈를 굽혀 봐야 같은 프레임에 믹서가
          idle 로 되돌려 놓는다(믹서가 나중에 쓴다). 대신 래퍼(root·model)를 움직인다.
        onTick(0..1) 을 매 프레임 부른다. 다 돌면 true 로 푼다(중간에 끊기면 false). */
-    function runClip(clip, sec, onTick) {
+    function runClip(clip, sec, onTick, hold) {
       if (clipRun) { const c = clipRun; clipRun = null; c.resolve(false); }
+      if (heldAction) { heldAction.stop(); heldAction = null; }
       const dur = Math.max(0.2, +sec || 1.6);
       let a = null;
       if (clip) {
@@ -7770,12 +7776,17 @@ export async function createRoomView(canvas, opts = {}) {
       }
       needsRender = true;
       return new Promise(resolve => {
-        clipRun = { a, sec: dur, t: 0, onTick: onTick || null, resolve, y0: root.position.y };
+        clipRun = { a, sec: dur, t: 0, onTick: onTick || null, resolve, y0: root.position.y, hold: !!(hold && a) };
       });
     }
 
     /* 하던 것을 전부 끊는다 — 취소·치우기·방 다시 짓기. 약속은 **전부 푼다**(안 풀면 샌다). */
     function abortAct(reason) {
+      if (heldAction) {                                                /* ⑦ 잡고 있던 자세를 푼다 */
+        heldAction.stop(); heldAction = null;
+        base.reset().setEffectiveWeight(1).play();
+        groundY = measureGround(idleClip, 'idle');
+      }
       if (clipRun) {
         const c = clipRun; clipRun = null;
         if (c.a) { c.a.stop(); base.reset().setEffectiveWeight(1).play();
@@ -7800,7 +7811,7 @@ export async function createRoomView(canvas, opts = {}) {
       timer = setTimeout(async () => {
         if (!alive) return;
         /* ★ 무언가 하는 중에는 안 끼운다 — 물을 주다 머리를 긁으면 물뿌리개가 순간이동한다 */
-        if (walking || clipRun) { schedule(); return; }
+        if (walking || clipRun || heldAction) { schedule(); return; }
         const name = pool[(Math.random() * pool.length) | 0];
         try {
           if (!clips[name]) {
@@ -7809,7 +7820,7 @@ export async function createRoomView(canvas, opts = {}) {
             if (!cl) throw new Error('클립 없음');
             cl.name = name; clips[name] = cl;
           }
-          if (!alive || walking || clipRun) { schedule(); return; }
+          if (!alive || walking || clipRun || heldAction) { schedule(); return; }
           const a = mixer.clipAction(clips[name]);
           a.setLoop(THREE.LoopOnce, 1); a.clampWhenFinished = false;
           a.reset().crossFadeFrom(base, 0.3, false).play();
@@ -7831,6 +7842,9 @@ export async function createRoomView(canvas, opts = {}) {
 
     return {
       kind: 'person', assetId: id, root, walkable: true,
+      /* ⑦ 잡고 있는 동작 — 끝 자세에서 멈춘다(abortAct 가 푼다) */
+      holdClip: (clip, sec, onTick) => runClip(clip, sec, onTick, true),
+      get held() { return !!heldAction; },
       /* ★ 발바닥 보정을 밖에서 볼 수 있게 낸다 — 검사(tools/test_ground.mjs)가
          "클립마다 재서 주는가"를 숫자로 못 박는 유일한 길이다. */
       get ground() {
@@ -7875,7 +7889,8 @@ export async function createRoomView(canvas, opts = {}) {
           needsRender = true;
           if (p01 >= 1) {
             const c = clipRun; clipRun = null;
-            if (c.a) { base.reset().crossFadeFrom(c.a, 0.28, false).play();
+            if (c.hold) { heldAction = c.a; }                          // ⑦ 끝 자세를 그대로 잡는다
+            else if (c.a) { base.reset().crossFadeFrom(c.a, 0.28, false).play();
                        groundY = measureGround(idleClip, 'idle'); }   // 접지 높이도 idle 로
             else { root.position.y = c.y0; model.rotation.x = 0; }
             c.resolve(true);
@@ -8234,7 +8249,15 @@ export async function createRoomView(canvas, opts = {}) {
                     옛 값(5.2s 에서 끊기)보다 **양쪽 다 낫다** — 끝 자세 거리 1.22 vs 1.47,
                     끊는 순간 속도 0.61 vs 0.86. 일어서는 데까지 담으려면 6.6초가 필요해
                     배속 4.4배가 된다. 못 담는다. */
-               low: { clip: 'harvest_crouch', from: 0.30, win: 2.10, sec: 1.5, atY: 0.45 } }
+               low: { clip: 'harvest_crouch', from: 0.30, win: 2.10, sec: 1.5, atY: 0.45 } },
+    /* ★ 2026-09-04 ⑦(plan-nap-and-sit) — **잡고 있는 동작**(hold). 물·심기·거두기는 하고 «돌아오지만»
+       앉기·눕기는 하고 «그대로 있는다» — 클립 끝 자세를 잡고(clampWhenFinished) idle 로 안 돌아온다.
+       열쇠는 화분 자리가 아니라 **가구 uid**(§resolveKey). 자리는 가구 «한가운데»·가구의 앞 방향이다.
+       ⚠ 클립(assets/characters/3d/anim/char_*_sit.glb · _sleep.glb)은 이미 있다(총괄 확인 · 24/24 뼈).
+       sleepLift: 침대 «위»에 눕는 높이 = 가구 h - 이 값(매트리스 두께 어림). 화면으로 재서 고친다. */
+    sit:     { clip: 'sit',   from: 0, win: 0, sec: 1.2, prop: null, fx: null, ko: '앉는 중', hold: true },
+    sleep:   { clip: 'sleep', from: 0, win: 0, sec: 1.6, prop: null, fx: null, ko: '눕는 중', hold: true,
+               sleepLift: 0.45 }
   };
   /* 대상 둘레 어디쯤에 서나. 화분에 손이 닿는 거리부터 훑는다.
      ★ 0.70 부터 시작하는 이유 — 몸 반지름이 0.38 이고 서랍장 깊이가 0.45 안팎이라
@@ -8718,9 +8741,11 @@ export async function createRoomView(canvas, opts = {}) {
     const K = String(kind || '').toLowerCase();
     const base = ACT_SPEC[K];
     /* 모르는 이름은 **던진다** — 프로그램이 잘못 부른 것이지 게임에서 일어난 일이 아니다 */
-    if (!base) throw fail(new Error(`모르는 동작: ${kind} — water·sow·harvest 뿐입니다`));
+    if (!base) throw fail(new Error(`모르는 동작: ${kind} — water·sow·harvest·sit·sleep 뿐입니다`));
     const t = resolveKey(key);
     if (!t) throw fail(new Error(`모르는 슬롯: ${key} (방 ${roomId})`));
+    /* ⑦ 앉아·누워 있었으면 먼저 일어난다 — 가구 한가운데서는 길이 안 잡힌다 */
+    standUp('다른 동작을 시작했습니다');
     /* 소품은 **걷는 동안** 미리 받아 둔다. 다 걷고 나서 받으면 모션 앞이 한 박자 빈다.
        (안 켜져 있거나 파일이 없으면 곧바로 null 이 되어 원기둥으로 간다) */
     if (base.prop === 'can') ensureCanAsset();
@@ -8762,22 +8787,38 @@ export async function createRoomView(canvas, opts = {}) {
     /* ① 걸어간다 ------------------------------------------------------- */
     prog(0, 'walk');
     const here = () => ({ x: person.c.root.position.x, z: person.c.root.position.z });
+    /* ★ 2026-09-04 ⑦ — **잡고 있는 동작은 설 자리를 «발자국 밖»으로 잡는다.** 실측: 침대 [눕기]가 걷기에서 멈췄다(p01 0.816 · 15초).
+       standNear 는 화분 자리 둘레 0.7~1.35m 를 노리는데 침대(1×2m)의 한가운데 둘레는 가구 «안»이다 — 길이 거기까지 안 간다.
+       ⇒ 가구 중심에서 «지금 선 쪽»으로 (반너비 + 0.35m) 나간 점으로 걷는다. 못 가는 자리면 goTo 가 제일 가까운 데까지 간다. */
+    if (base.hold) {
+      const size = (t.furn && t.furn.userData && t.furn.userData.size) || {};
+      const half = Math.max(size.w || 0.5, size.d || 0.5) / 2;
+      const h0 = here();
+      const dx = h0.x - t.pos.x, dz = h0.z - t.pos.z, L = Math.hypot(dx, dz) || 1;
+      const aim = { x: t.pos.x + dx / L * (half + 0.35), z: t.pos.z + dz / L * (half + 0.35) };
+      if (Math.hypot(h0.x - aim.x, h0.z - aim.z) > ACT_NEAR_ENOUGH) {
+        const w = await person.c.walkToXZ(aim.x, aim.z, p => prog(p, 'walk'));
+        if (token.cancelled) return bail(token.reason);
+        if (!w.ok && w.reason !== '갈 수 없는 자리입니다') return bail(w.reason || '걸음이 끊겼습니다');
+      }
+    } else {
     const cands = standNear({ x: t.pos.x, z: t.pos.z }, here());
-    if (!cands.length) return bail('그 자리 곁에는 설 데가 없습니다');
-    /* ★ 첫 후보를 그냥 믿지 않는다 — **닿는 후보**를 고른다(§pickStand · G-9) */
-    const stand = pickStand(cands, here(), t.pos);
-    if (!stand) return bail('그 자리 곁에는 설 데가 없습니다');
-    if (Math.hypot(here().x - stand.x, here().z - stand.z) > ACT_NEAR_ENOUGH) {
-      const w = await person.c.walkToXZ(stand.x, stand.z, p => prog(p, 'walk'));
-      if (token.cancelled) return bail(token.reason);
-      /* ok:false 는 '길이 아예 안 잡혔다'거나 '다른 걸음에 밀렸다'다. 둘 다 그만둔다 —
-         밀린 것을 이어서 하면 플레이어가 방금 시킨 걸음을 이 함수가 되돌리게 된다. */
-      if (!w.ok && w.reason !== '갈 수 없는 자리입니다') return bail(w.reason || '걸음이 끊겼습니다');
+      if (!cands.length) return bail('그 자리 곁에는 설 데가 없습니다');
+      /* ★ 첫 후보를 그냥 믿지 않는다 — **닿는 후보**를 고른다(§pickStand · G-9) */
+      const stand = pickStand(cands, here(), t.pos);
+      if (!stand) return bail('그 자리 곁에는 설 데가 없습니다');
+      if (Math.hypot(here().x - stand.x, here().z - stand.z) > ACT_NEAR_ENOUGH) {
+        const w = await person.c.walkToXZ(stand.x, stand.z, p => prog(p, 'walk'));
+        if (token.cancelled) return bail(token.reason);
+        /* ok:false 는 '길이 아예 안 잡혔다'거나 '다른 걸음에 밀렸다'다. 둘 다 그만둔다 —
+           밀린 것을 이어서 하면 플레이어가 방금 시킨 걸음을 이 함수가 되돌리게 된다. */
+        if (!w.ok && w.reason !== '갈 수 없는 자리입니다') return bail(w.reason || '걸음이 끊겼습니다');
+      }
+      /* ★ 여기가 "못 가는 자리면 실패한다"를 재는 유일한 곳이다(위 ACT_REACH 주석) */
+      const gap = Math.hypot(here().x - t.pos.x, here().z - t.pos.z);
+      if (gap > ACT_REACH) return bail(`거기까지 못 갑니다 (${gap.toFixed(2)}m 떨어져 있습니다)`);
+      prog(1, 'walk');
     }
-    /* ★ 여기가 "못 가는 자리면 실패한다"를 재는 유일한 곳이다(위 ACT_REACH 주석) */
-    const gap = Math.hypot(here().x - t.pos.x, here().z - t.pos.z);
-    if (gap > ACT_REACH) return bail(`거기까지 못 갑니다 (${gap.toFixed(2)}m 떨어져 있습니다)`);
-    prog(1, 'walk');
 
     /* ② 선다 — 대상을 본다 --------------------------------------------- */
     await person.c.faceXZ(t.pos.x, t.pos.z);
@@ -8791,6 +8832,27 @@ export async function createRoomView(canvas, opts = {}) {
     if (token.cancelled) return bail(token.reason);
 
     /* 소품·이펙트는 여기서 만들고 여기서 치운다. 새는 길을 하나만 둔다. */
+    /* ★ 2026-09-04 ⑦ — **잡고 있는 동작**: 가구 한가운데로 «옮겨 서서» 클립을 틀고 끝 자세를 잡는다.
+       걸어간 자리(before)를 적어 둔다 — 일어날 때(§standUp) 거기로 돌아온다. */
+    if (spec.hold) {
+      const g = t.furn || null;
+      const root = person.c.root;
+      const before = { x: root.position.x, y: root.position.y, z: root.position.z, rot: root.rotation.y };
+      const size = (g && g.userData && g.userData.size) || {};
+      const lift = K === 'sleep' ? Math.max(0.15, (size.h || 0) - (spec.sleepLift || 0)) : 0;
+      root.position.set(t.pos.x, before.y + lift, t.pos.z);
+      if (g) root.rotation.y = g.rotation.y || 0;
+      needsRender = true;
+      prog(0, 'act');
+      try { o.onArrive && o.onArrive(); } catch (e) { fail(e); }
+      const done = await person.c.holdClip(clip, spec.sec, p01 => prog(p01, 'act'));
+      if (token.cancelled || !done) {
+        root.position.set(before.x, before.y, before.z); root.rotation.y = before.rot; needsRender = true;
+        return bail(token.cancelled ? token.reason : '동작이 끊겼습니다');
+      }
+      restPose = { charId: person.id, key: t.key, kind: K, before };
+      return finish();
+    }
     let can = null, fx = null, soil = null, hand = null;
     if (spec.prop === 'can') {
       hand = person.c.handBone;
@@ -8881,6 +8943,22 @@ export async function createRoomView(canvas, opts = {}) {
   }
 
   /* ★ 공개 창구는 actAt 하나다. 돌려주는 Promise 에 .cancel() 이 붙어 있다. */
+  /* ★ 2026-09-04 ⑦ — 지금 앉아·누워 있는 자리. 일어나면 걸어갔던 자리로 돌아온다. */
+  let restPose = null;   // { charId, key, kind, before:{x,y,z,rot} }
+  function standUp(reason) {
+    if (!restPose) return false;
+    const r = restPose; restPose = null;
+    const c = chars.get(r.charId);
+    if (c) {
+      try { c.abortAct(reason || '일어났습니다'); } catch (e) { fail(e); }
+      c.root.position.set(r.before.x, r.before.y, r.before.z);
+      c.root.rotation.y = r.before.rot;
+    }
+    needsRender = true;
+    return true;
+  }
+  function restingOn() { return restPose ? { charId: restPose.charId, key: restPose.key, kind: restPose.kind } : null; }
+
   function actAt(key, kind, opt) {
     const o = opt || {};
     cancelAct('다른 동작이 시작됐습니다');
@@ -9795,6 +9873,7 @@ export async function createRoomView(canvas, opts = {}) {
       const t = walkTargetAt(screenX, screenY);
       if (!t) return { ok: false, reason: '바닥을 못 찾았습니다(카메라가 바닥을 안 보고 있습니다)' };
       if (!t.ok) return { ok: false, x: t.x, z: t.z, reason: '거기에는 못 섭니다' };
+      standUp('걸어갑니다');   /* ⑦ 앉아 있다가 바닥을 누르면 일어나서 간다 */
       return doWalk(id, t) || { ok: false, reason: `걸을 수 있는 캐릭터가 아닙니다: ${id}` };
     },
     /* 갈 자리를 반투명 기둥·링으로 미리 보여준다. screenY 가 null 이면 지운다.
@@ -9849,6 +9928,9 @@ export async function createRoomView(canvas, opts = {}) {
        ⚠ setPaused(확대 화면) 중에는 **멈춘다**. 풀면 이어서 한다. 시계가 update(dt)
          하나뿐이라 그렇다 — 멈춘 화면 뒤에서 논리가 끝나면 안 되기 때문이다. */
     actAt(key, kind, opt) { return actAt(key, kind, opt); },
+    /* ⑦ 앉기·눕기는 actAt(uid, 'sit'|'sleep') — 잡고 있다. 일어나기는 여기. */
+    standUp(reason) { return standUp(reason); },
+    restingOn() { return restingOn(); },
     /* 하던 동작을 취소한다. 취소하면 onDone 은 안 불린다. 취소할 게 있었으면 true. */
     cancelAct(reason) { return cancelAct(reason); },
     /* 지금 무엇을 하고 있나 — { kind, key, phase, p01 } · 없으면 null */

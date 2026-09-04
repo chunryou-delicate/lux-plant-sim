@@ -1269,7 +1269,9 @@ export function serialize(S, opt = {}) {
         /* ★ 2026-09-02 — 퀘스트가 «열린 날» {id: day}. 독촉이 「며칠째」를 세는 사실이라 같이 싣는다(총괄 ㉮).
            ⚠ 안 실으면 다시 켤 때마다 독촉이 처음부터 센다 — 「안 잊히게」라는 뜻이 죽는다. */
         questsOpenedOn: Object.fromEntries(Object.entries(needObj(((S.stamina || {}).questsOpenedOn || {}), 'stamina.questsOpenedOn'))
-          .map(([id, d]) => [needStr(id, 'stamina.questsOpenedOn[id]'), needInt(d, `stamina.questsOpenedOn[${id}]`, { min: 0 })]))
+          .map(([id, d]) => [needStr(id, 'stamina.questsOpenedOn[id]'), needInt(d, `stamina.questsOpenedOn[${id}]`, { min: 0 })])),
+        /* ⑦ 낮잠 잔 날 — 하루 1번의 근거. -1 = 아직 */
+        nappedOnDay: needInt(((S.stamina || {}).nappedOnDay ?? -1), 'stamina.nappedOnDay', { min: -1 })
       },
       /* ★ 자르지 않는다 — growth 복원의 입력이다(맨 위 §growth). null 은 '못 잰 날'이라 그대로 둔다. */
       dliHist: needArr(S.dliHist || [], 'dliHist')
@@ -1850,6 +1852,8 @@ export function deserialize(raw, opt = {}) {
         if (typeof id === 'string' && Number.isInteger(d) && d >= 0) o[id] = d;
       S.stamina.questsOpenedOn = o;
     }
+    if (Number.isInteger(st.stamina.nappedOnDay) && st.stamina.nappedOnDay >= -1)
+      S.stamina.nappedOnDay = st.stamina.nappedOnDay;
     S.stamina.left = Number.isInteger(st.stamina.left)
       ? Math.max(0, Math.min(S.stamina.max, st.stamina.left))
       : S.stamina.max;

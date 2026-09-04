@@ -275,3 +275,21 @@ HEAD 판(내 고침을 뺀 판)으로 갈아 끼우고 재도 **똑같이 떨어
 | 「이틀 뒤」 규칙 | 독촉 ①②③은 그 값을 «안 거친다»(quiet 세기 밖) · 값 그대로 2 |
 
 자: coverage PASS · questchain 16/16(E 옛 표는 placed·monsteraHomed 를 일부러 안 채우므로 siru5 뒤 넷이 undefined 인 것이 뜻대로 — 옛 값 옆에 남김) · questorder 6/7(C-1 은 HEAD 부터) · roundtrip PASS · force5 두 판 5/5.
+
+
+---
+
+## 10. 2026-09-04 덧 — ⑦ 침대 눕기·낮잠·의자 앉기 · 무순 손가락의 때 · [house] 계약 D
+
+[plan] plan-nap-and-sit.md 그대로. 값(10%·올림·하루 1번·두 시간)은 **침대 프리셋**(`data/furniture_presets.json` bed_* 의 `nap_recover_frac`·`nap_hours`)에 두고 코어(`stamina.nap`)와 화면 시계가 읽는다. 없으면 던진다(0 으로 조용히 안 자는 침대를 안 만든다).
+
+| 무엇 | 자리 | 걸어서(probe_nap · 1770×1188 · 첫 플레이 끔 · 진짜 마우스) |
+|---|---|---|
+| 앉기·눕기 | 방뷰 `ACT_SPEC.sit/sleep`(hold) — 물·심기·거두기와 «같은 길»(actAt)인데 끝 자세를 «잡고 있는다»(clampWhenFinished · idle 변주도 쉰다). 열쇠는 가구 uid(`resolveKey` 가 가구도 본다). 설 자리는 가구 «발자국 밖»(중심에서 사람 쪽으로 반너비+0.35m) — 화분처럼 둘레 0.7~1.35m 를 노리면 침대(1×2m) «안»이라 길이 안 간다 | 의자: 한가운데 앉음(그림 nap_sit.png) · 침대: 위(y 0.49)에 누움(nap_sleep.png) · 15/15 |
+| 일어나기 | `standUp()` — 걸어갔던 자리로 돌아온다. 바닥을 눌러 걷게 해도 먼저 일어난다. ★ 앉아 있으면 사람이 가구 한가운데라 가구를 눌러도 «사람»이 잡힌다 ⇒ 앉은 사람을 누르면 «그 가구 메뉴»가 열린다(일어서기가 거기 있다) | [일어서기]·[일어나기] 글자 바뀜 · 바닥 걷기 OK |
+| 낮잠 | `stamina.nap(S,{frac})` — ceil(max×몫) · `nappedOnDay`(세이브 왕복 자 PASS) · 시계 `napClockSkip(hours)`(하루는 안 넘긴다) | 체력 3→4(max 5 × 0.1 올림) · 시계 +2h · 같은 날 「오늘은 이미 잤습니다 — 내일 다시」 잠김 |
+| 무순 손가락의 때 | [plan] cb60cc6 ②: crop_mix 「열림」(= siru5 끝) — 상점 무순 문과 같은 자. 할 일 글에 「무순」이 보이나로 재던 것을 뗐다 | (걸음 자 밖 — 세팅 끝 너머) |
+| [house] 계약 D | `room_profile.js §dliOfSlot` 이 표에 없는 자리(특히 free:)에 0 대신 «던진다» — `cropDliFromReport`(302a4fe)와 같은 결 | probe_floor_contract ㉢ 「던짐」 · first_play PASS |
+
+⚠ 헤드리스 크롬은 그림이 느려(2fps 안팎) 사람 걸음의 dt 가 0.1초로 잘린다 — 1.2~1.6초 클립이 열 몇 초 걸린다(앉기 45초). 자는 90초까지 기다린다. 진짜 브라우저의 값이 아니다.
+⚠ 눕는 높이(`sleepLift` 0.45 = 가구 h − 매트리스 두께 어림)는 그림으로 맞춘 값이다. 침대가 바뀌면 다시 본다.
