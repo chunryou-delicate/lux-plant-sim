@@ -1,13 +1,14 @@
 # 여기서 이어서 — 새 창이 제일 먼저 읽을 것
 
-> 갱신 **2026-08-11 밤** · 검사 통과 · 원격에 **아직 안 밀었다**(커밋만 돼 있다)
+> 갱신 **2026-09-02** · 여섯 창 점호 끝 · 미커밋 0 · 원격에 **다 밀려 있다**
 >
-> ★ **`game.html` 널 바이트는 없앴다** — `grep` 이 이제 끝까지 읽는다.
-> 전에는 6,869줄에서 멈춰 뒤 250줄을 통째로 안 봤다.
+> ★ 이 이틀에 바뀐 큰 것: **첫날 강제 가이드**(시루→사람→방바닥→심기→물) · **첫 닷새는 [다음 날]만** ·
+> **울타리**(손가락 밖 터치 막힘 · 세 번 막히면 풀림) · **몬스테라가 끌려서 창턱에 선다** ·
+> **거두기·물주기 손가락이 시루 쪽 말풍선으로** · **퀘스트 사슬 재편**(2바퀴 퀘 없앰 · 시루 둘은 가이드 · 다섯이 바로).
+> 상세는 `docs/handoff/hint-table-to-plan.md`(core) · `plan-quest-reframe.md`(plan).
 >
-> ★ 이 날 바뀐 큰 것 넷: **무순이 「놓고 나서 심기」로** · **가구 윗면에 칸이 깔림**(14 → 31) ·
-> **끌어 놓기 실패가 말을 하게** 됨 · **화면이 멎던 사고**(자유 좌표 화분) 고침.
-> 각각 `musunsow-` · `slotgrid-` · `guidefix-to-plan.md` 에 상세가 있다.
+> ⚠ **창 이름이 바뀌었다** (09-02 재시작): core=claude-4f · plan=claude-70 · growth=claude-14 ·
+> house=claude-84 · char=claude-59 · leaf=claude-79 · 총괄=claude-5d. 옛 이름(60·78·64·8e·6e)은 없다.
 >
 > 이 파일 하나로 이어진다. 더 깊이 알아야 할 때만 아래 링크를 연다.
 
@@ -22,6 +23,10 @@
 관계도          docs/handoff/session-atlas-20260829.md
 ★ [growth]      docs/handoff/growth-index.md
 ★ [House]       docs/handoff/house-index.md      ★ 「물린 표」 12줄 — 어젯밤 열한 번 물린 것의 색인
+★ [plan]        docs/handoff/plan-index.md       「물린 표」 18줄 — 차례를 표에서 읽은 것·5분의 1·쪽지… (09-02)
+★ [char]        docs/handoff/char-index.md       「물린 표」 7줄 — 28×68 은 «한 자리» 값. 조건 넷을 같이 (09-02)
+★ [leaf]        docs/handoff/leaf-index.md       「물린 표」 7줄 — 이 창 수는 «다 위쪽 값». 45%로 정해도 안전 (09-02)
+★ [core]        docs/handoff/hint-table-to-plan.md  손가락 조건표 · 안 뜨는 자리 일곱 · 오늘 잡은 것 §5·§6
 ```
 
 ★ **`growth-index.md` 는 「무엇을 쟀나」의 색인이고, ⇒ ⚠ 그 안에 「물린 표」 절이 따로 있다.**
