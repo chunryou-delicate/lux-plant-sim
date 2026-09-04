@@ -481,8 +481,13 @@ const MAIN_QUESTS = Object.freeze([
     /* ★ ①을 끝낸 뒤에 연다. 둘을 같이 열면 첫날에 할 일이 둘이 되어 어느 쪽도 안 읽힌다 */
     /* ★ ㉱ ⓒ — 「crop_mix 끝」을 뗀다. 그 열쇠가 141일 파산의 자물쇠였다(무순을 안 사면 뒤가 영영 안 열렸다).
        「세팅 끝」은 무순 없이 열린다 = 박사님 「5개 사기로 «바로»」. */
+    /* ★★ 2026-09-04 ㉲([plan] · 93a35e1) — 열쇠를 「첫 플레이 끝」에서 «뗀다». 그 칸은 «새순 말림»(spear_furled)이라
+       박사님 「세팅」이 아니었고(실측: Day 17 너머), 「빛이 쌓여 나오는 것」에 문을 매면 141일 자물쇠와 «같은 꼴»이다.
+       ★ 「세팅 끝」 = 콩나물 시루 «둘» 놓임 && 몬스테라 «창턱»(도착 자리에서 옮겼나 = monstera_home 의 그 칸).
+         둘 다 강제 가이드가 «끄는» 걸음이라 반드시 일어난다 — 문이 안 잠긴다. ⛔ 새 칸 없음.
+       ⚠ 「놓임」이다 — 가방에 든 시루는 안 센다(placed). 손가락이 「놓으세요」를 말하는 동안 이 줄이 먼저 서면 안 된다. */
     after: null,
-    opens: s => !!s.firstPlayDone,
+    opens: s => potsOfKind(s, 'beansprout').filter(p => p && p.placed === true).length >= 2 && yes(s.monsteraHomed),
     done:  (s, ctx) => potsOfKind(s, 'beansprout').length >= ctx.q.need.sirus
   }),
 

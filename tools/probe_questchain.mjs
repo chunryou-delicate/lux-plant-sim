@@ -229,7 +229,10 @@ const W = makeWalker(B1);
      창턱까지 배치하고 설명이 끝난 뒤에 무순 이야기). ⇒ 판을 «사실대로» 채운다 — 자의 자기 모순을 없앤다. */
   /* ★ 2026-09-02 ㉱ — 짧은 줄(siru5_cycle5)의 열쇠가 「세팅 끝」이 됐다([plan]). 이 판은 day 25 라 세팅이 끝난 판이다 —
      그 사실을 채운다(안 채우면 짧은 줄이 없어 자가 거짓으로 붉다). */
+  /* ★ 2026-09-04 ㉲ — siru5 의 열쇠가 「시루 둘 «놓임» && 창턱」이라 놓인 시루 둘을 «사실대로» 채운다. */
   const vMix = questView(B1b, { ...emptySnapshot(), day: 25, firstPlayDone: true,
+                                cropPots: [{ kind: 'beansprout', harvestCount: 3, placed: true },
+                                           { kind: 'beansprout', harvestCount: 1, placed: true }],
                                 monsteraArrived: true, monsteraHomed: true, monsteraHomedDays: 1, motherLeaves: 1 });
   ok('C-4 ★★★ 잎 줄과 짧은 줄이 같이 열려 있으면 **짧은 줄이 「지금 할 일」이 된다**',
      /* ★ ㉱ — 짧은 줄의 «이름»을 안 박는다(예전엔 crop_mix 였고 지금은 siru5_cycle5 다). 「짧은 줄이 하나 열려 있다」로 본다 */
@@ -303,7 +306,12 @@ console.log('\n══ E. ★★ 회귀 — 본 줄기 여덟은 예전 그대로
        crop_mix 는 siru5 «뒤»로 ⇒ 2 → **4** · siru8 은 siru5 를 따라 5 → **4**
        ⚠ siru16 은 이 걸음표에서 원래(HEAD)부터 안 열렸다(undefined) — 그건 이 표의 병이지 사슬의 병이 아니다. 5 를 남긴다.
        ⚠ 옛 값은 지우지 않고 옆에 남긴다: crop_mix 2 · siru5_cycle5 3 · siru8 5. */
-  const OLD = { crop_mix: 4, siru5_cycle5: 2, siru8: 4, siru16: 5,
+  /* ★★ 2026-09-04 ㉲([plan] 93a35e1) — **열쇠가 또 바뀌었다. 회귀가 아니라 지시다.**
+       siru5_cycle5 ← 「시루 둘 «놓임»(placed) && 창턱(monsteraHomed)」. 이 옛 걸음표는 그 두 칸을 «일부러 안 채운다»
+       (위 ⚠ 새 칸 넷) ⇒ 그러니 siru5 와 그 뒤(crop_mix·siru8·siru16)는 이 표에서 «안 열리는 것이 뜻대로»다(undefined).
+       ⚠ 진짜 옛 세이브는 다르다 — 화면의 questSnapshotNow 가 placed 와 guide.moved(세이브에 실린다)로 두 칸을 «채운다».
+       ⚠ 옛 값은 지우지 않고 옆에 남긴다: crop_mix 4 · siru5_cycle5 2 · siru8 4 · siru16 5. */
+  const OLD = { crop_mix: undefined, siru5_cycle5: undefined, siru8: undefined, siru16: undefined,
                 first_cut: 7, buy_lamp: 7, varie_bright: 8, sell_varie: 9 };
   const S0 = emptySnapshot();
   const oldSteps = [

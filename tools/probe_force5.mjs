@@ -101,6 +101,16 @@ for (let i = 0; i < 60 * GOAL; i++) {
   /* ⚠ **한 번 비었다고 끝난 것이 아니다** — 대사·연출 중에는 잠깐 비고, 그 사이에 끊으면
      그 뒤의 걸음(선물 받기·창턱 옮기기)을 통째로 놓친다(실측에서 한 번 그렇게 잘렸다).
      ⇒ «잇달아 세 번» 비어야 끝으로 본다. */
+  /* ★ 2026-09-04 ㉲ — **「세팅 끝」에서 강제 가이드가 «뜻대로» 끝난다**(콩나물 시루 «둘» 놓임 && 몬스테라 «창턱» · [plan] 93a35e1).
+     그 뒤 손가락이 없는 것은 끊긴 길이 아니라 «자유»다 — 여기서 적고 멈춘다(표는 그대로 찍힌다). */
+  {
+    const placedSirus = (st.줄 || []).filter(r => r && r.종 === 'beansprout' && r.놓임).length;
+    const onSill = /sill/.test(String(st.몬자리 || ''));
+    if (placedSirus >= 2 && onSill && !JSON.parse(await fingerAt())) {
+      log.push(`Day ${String(st.날).padStart(2)} · ✔ 세팅 끝(시루 ${placedSirus} 놓임 · 창턱) — 강제 가이드가 뜻대로 끝났다`);
+      break;
+    }
+  }
   if ((st.거둔횟수 || 0) >= 2 && !JSON.parse(await fingerAt())) dry++; else dry = 0;
   if (dry >= 3) {
     log.push(`Day ${String(st.날).padStart(2)} · ✔ 안내가 끝났다 — 두 바퀴를 거두면 손가락을 뗀다(뜻대로)`);

@@ -1990,7 +1990,9 @@ export const CHATTER = [
   { id: 'nudgeOffer', nudge: true, when: c => !!c.nudge && c.nudge.days >= 1 && c.nudge.days < NUDGE_DAYS.ask },
   { id: 'nudgeAsk',   nudge: true, when: c => !!c.nudge && c.nudge.days >= NUDGE_DAYS.ask && c.nudge.days < NUDGE_DAYS.worry },
   { id: 'nudgeWorry', nudge: true, when: c => !!c.nudge && c.nudge.days >= NUDGE_DAYS.worry && c.nudge.days < NUDGE_DAYS.back },
-  { id: 'nudgeBack',  nudge: true, when: c => !!c.nudge && c.nudge.days >= NUDGE_DAYS.back },
+  /* ★ 낯 ④「물러섬」은 «자리»도 물러선다(plan-quest-nudge ⓖ~ⓛ · d90ab11) — 잡담과 «같은 줄»에 서서 「이틀 뒤」 규칙을
+     같이 따른다(late). 「급한 건 아니야」를 매일 하면 그 말이 거짓이 된다. */
+  { id: 'nudgeBack',  nudge: true, late: true, when: c => !!c.nudge && c.nudge.days >= NUDGE_DAYS.back },
 ];
 
 /* 조건에 맞는 것 중 **가장 오래 안 나온 것**. recent 는 나온 차례(오래된 것부터)다.
@@ -2007,11 +2009,19 @@ export function pickChatter(ctx = {}, recent = []) {
        독촉은 «맨 뒤»(plan-quest-nudge ⓕ)이되 «그물보다는 앞»이다 — 그물까지 뒤에 두면 풀이 비는 날이 없어
        독촉이 영영 안 나온다(실측). 넷은 날로 갈려 한 번에 하나만 참이다.
        ⚠ 표를 둘로 안 둔다 — CHATTER 한 표에 «표»만 붙였다(부르는 자리를 세는 자가 그 표를 본다). */
-    const bucket = c.nudge ? nudges : c.net ? nets : pool;
+    /* ★ 2026-09-04 — 차례가 바뀌었다(plan-quest-nudge ⓖ~ⓛ): 독촉 ①②③은 잡담보다 «앞»이고 「이틀 뒤」 규칙 «밖»이라
+       여기(잡담 고르기)가 아니라 §pickNudge 가 먼저 낸다. 여기 남는 독촉은 낯 ④(late)뿐 — 잡담과 같은 풀에 선다.
+       ⚠ ①②③이 이 풀까지 내려오는 일은 스토리텔러가 §pickNudge 를 안 부를 때뿐이다(옛 부름) — 그때는 예전처럼 맨 뒤. */
+    const bucket = c.nudge ? (c.late ? pool : nudges) : c.net ? nets : pool;
     if (!bucket.includes(c.id)) bucket.push(c.id);
   }
   if (!pool.length) { if (nudges.length) return nudges[0]; pool.push(...nets); }
   if (!pool.length) return null;
+  /* ★ 2026-09-04 — 낯 ④(late)는 «번갈아» 선다([plan] ⓖ~ⓛ: 잡담과 같은 줄 · 사흘에 한 번쯤).
+     ⛔ 「가장 오래 안 나온 것」만으로는 영영 안 난다 — 안 나온 것끼리 동률이면 표 앞엣것이 이기고 물러섬은 표 맨 뒤라
+       (실측 probe_nudge d15~26: 물러섬 0 · 잡담 3). ⇒ 마지막에 난 말이 물러섬이 «아니면» 물러섬, 그 뒤엔 잡담. */
+  const late = CHATTER.filter(c => c.nudge && c.late && pool.includes(c.id)).map(c => c.id);
+  if (late.length && recent[recent.length - 1] !== late[0]) return late[0];
   const rank = id => recent.lastIndexOf(id);      // 안 나온 적 있으면 -1 → 제일 앞
   let best = pool[0];
   for (const id of pool) if (rank(id) < rank(best)) best = id;
@@ -2077,6 +2087,20 @@ export function chatterContext(turn = {}, S = null) {
    게임 상태가 아니다. 세이브에 안 남고(다시 켜면 처음부터 센다) 코어도 몰라도 된다. */
 export const QUIET_DAYS_BEFORE_CHATTER = 2;
 
+/* ★★ 독촉 ①②③ — 「열린 퀘스트를 «안 한» 날」마다 «한 줄»(박사님 「매일매일」 · plan-quest-nudge ⓖ~ⓛ).
+   사건이 있는 날은 사건만(몰림 막기 그대로). 잡담보다 «앞»이고 「이틀 뒤」 규칙(QUIET_DAYS_BEFORE_CHATTER)을 «안 거친다» —
+   그 값의 임자가 아니다. 낯 ④(late)는 여기서 «안 낸다» — 잡담 줄로 내려섰다(§pickChatter).
+   ★순수하다 — 넷은 날로 갈려 한 번에 하나만 참이다. */
+export function pickNudge(ctx = {}) {
+  for (const c of CHATTER) {
+    if (!c.nudge || c.late) continue;
+    let ok = false;
+    try { ok = !!c.when(ctx); } catch { ok = false; }
+    if (ok) return c.id;
+  }
+  return null;
+}
+
 export function createStoryteller(opt = {}) {
   /* ★나온 차례를 **여기서 센다.** 예전엔 대화 상자(dlg.recentList)를 보게 해 뒀는데,
      호출부가 낸 id 를 상자에 넣어 주지 않으면 이력이 영영 비어서 작은 말이
@@ -2091,6 +2115,10 @@ export function createStoryteller(opt = {}) {
     const ids = scriptsForEvents((turnObj && turnObj.events) || []);
     if (ids.length) { quiet = 0; history.push(...ids); return ids; }
     quiet++;
+    /* ★ 2026-09-04 — 독촉 ①②③은 조용한 날 세기 «밖»이다: 오늘 나도 quiet 을 안 건드린다(잡담의 리듬은 잡담 것).
+       하루 «한 줄» — 독촉이 나면 잡담은 오늘 안 선다. */
+    { const n = pickNudge(chatterContext(turnObj || {}, S));
+      if (n) { history.push(n); return [n]; } }
     if (quiet <= quietMax) return [];
     const id = pickChatter(chatterContext(turnObj || {}, S), history);
     if (!id) return [];

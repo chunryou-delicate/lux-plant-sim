@@ -9,7 +9,7 @@
 import { launch, sleep } from './test_cdp.mjs';
 const BASE = process.env.BYEOT_URL || 'http://localhost:8972';
 const W = Number(process.env.W || 1770), H = Number(process.env.H || 1188);
-const DAYS = Number(process.env.DAYS || 18);
+const DAYS = Number(process.env.DAYS || 26);   /* 낯 ④(두 이레 뒤)까지 보려면 열린 날+14 를 넘겨야 한다 */
 const wd = setTimeout(() => { console.error('⏱ 자가 제한'); process.exit(2); }, 600000);
 wd.unref && wd.unref();
 const page = await launch({ width: W, height: H, dpr: 1 });
@@ -97,9 +97,27 @@ console.log('');
 console.log('=== 판정 ===');
 const ok = (ko, v, why) => console.log(`  ${v ? 'OK  ' : 'FAIL'} ${ko}  → ${why}`);
 ok('열린 날이 적힌다', !!opened && Object.keys(opened).length >= 3, JSON.stringify(opened));
-ok('독촉이 «나온다»(빈 날에 하나라도)', Object.keys(seen).length >= 1, JSON.stringify(seen));
+ok('독촉이 «나온다»(안 한 날에 하나라도)', Object.keys(seen).length >= 1, JSON.stringify(seen));
 ok('★ 하루에 독촉이 «둘» 나온 날이 없다', twice.length === 0, twice.length ? 'd' + twice.join(',d') : '없음');
-ok('★ 다른 대사가 있는 날엔 독촉이 «안» 나온다(맨 뒤)', withOthers.length === 0, withOthers.length ? 'd' + withOthers.join(',d') : '없음');
+ok('★ 독촉이 난 날엔 다른 대사가 «없다»(하루 한 줄)', withOthers.length === 0, withOthers.length ? 'd' + withOthers.join(',d') : '없음');
+/* ★ 2026-09-04 차례(plan-quest-nudge ⓖ~ⓛ): 사건 > 독촉 > 잡담. ①②③ 동안(열린 날+1 ~ +13)은 «사건 없는 날마다» 독촉이다.
+   ④(열린 날+14 ~)는 잡담 줄로 내려서 «매일은 아니다». 여기서 임자 퀘스트 = 가장 먼저 열렸는데 안 끝난 것. */
+const takenSet = new Set(taken);
+const first = Object.entries(opened || {}).filter(([id]) => !takenSet.has(id)).sort((a, b) => a[1] - b[1])[0];
+const on = first ? first[1] : null;
+const isEvent = id => !isNudge(id) && !/^chat/.test(id);
+const lastDay = Math.max(...Object.keys(byDay).map(Number), d0 + DAYS);
+let early = { want: [], got: [] }, late = { days: 0, back: 0, chat: 0 };
+if (on != null) for (let d = on + 1; d <= lastDay; d++) {
+  const ids = byDay[d] || [];
+  if (ids.some(isEvent)) continue;
+  if (d < on + 14) { early.want.push(d); if (ids.some(isNudge)) early.got.push(d); }
+  else { late.days++; if (ids.includes('nudgeBack')) late.back++; if (ids.some(x => /^chat/.test(x))) late.chat++; }
+}
+ok(`★ ①②③ 동안 사건 없는 날마다 독촉이 «난다»(임자 ${first ? first[0] : '-'} · 열린 날 d${on})`, early.want.length > 0 && early.got.length === early.want.length,
+   `안 한 날 ${early.want.length} · 독촉 ${early.got.length}` + (early.got.length !== early.want.length ? ' · 빠진 날 d' + early.want.filter(x => !early.got.includes(x)).join(',d') : ''));
+ok('★ ④부터는 잡담과 «번갈아» 선다(매일이 아니다 · 잡담도 선다)', late.days === 0 || (late.back >= 1 && late.back < late.days && late.chat >= 1),
+   `날 ${late.days} · 물러섬 ${late.back} · 잡담 ${late.chat}` + (late.days === 0 ? ' (④ 구간이 걸음 안에 없다)' : ''));
 ok('낯이 «날»에 따라 갈린다(권함 → 궁금 순)',
    (seen.nudgeOffer == null || seen.nudgeAsk == null) || seen.nudgeOffer < seen.nudgeAsk, JSON.stringify(seen));
 ok('세이브에 실리고 되읽어도 같다', !!(round.실림 && round.같음), JSON.stringify(round));

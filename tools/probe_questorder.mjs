@@ -166,6 +166,9 @@ function run(table, opt) {
     log.push({ day, next: nx ? nx.id : null });
 
     /* ── 그 할 일을 향해 **하루에 한 걸음** ── */
+    /* ★ 2026-09-04 ㉲ — 둘째 시루는 퀘스트가 아니라 «강제 가이드»(창턱 && 하나뿐 ⇒ 「하나 더 사서 놓으세요」)가 끈다.
+       사람 모형도 그 손가락을 따른다 — 안 따르면 siru5(열쇠 = 둘 놓임 && 창턱)가 영영 안 열린다. */
+    if (monsteraHomed && sirus.length < 2) sirus.push({ age: 0, n: 0 });
     if (nx) switch (nx.id) {
       case 'monstera_home': if (monsteraArrived && !monsteraHomed) { monsteraHomed = true; homedOn = day; } break;
       case 'crop_mix':
@@ -208,7 +211,9 @@ console.log('\n══ A. ★★ 「한 상에 두 가지」가 잎 줄 앞에 �
      옛 표의 사슬에는 resow_siru 가 «있었다» — 지금 FIRST_PLAY_CHAIN_IDS 에는 없으니 옛 판에만 얹는다. */
   /* ★ 2026-09-02 ㉱ — 옛 사슬에는 resow_siru·siru_two 가 «있었다»(지금은 RETIRED). 옛 판에만 얹는다.
      새 판은 day 25 = 세팅 끝 — 짧은 줄(siru5)의 열쇠가 그것이라 채운다. */
+  /* ★ 2026-09-04 ㉲ — 세팅 끝 = 시루 둘 «놓임» && 창턱. 놓인 둘을 채운다. */
   const snap = { ...emptySnapshot(), day: 25, firstPlayDone: true, monsteraArrived: true,
+                 cropPots: [{ kind: 'beansprout', harvestCount: 3, placed: true }, { kind: 'beansprout', harvestCount: 1, placed: true }],
                  monsteraHomed: true, monsteraHomedDays: 1, motherLeaves: 1 };
   const doneIds = [...FIRST_PLAY_CHAIN_IDS];
   const nOld = nextOf(OLD_TABLE, [...doneIds, 'resow_siru', 'siru_two'], snap);

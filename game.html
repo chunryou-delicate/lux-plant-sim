@@ -5235,6 +5235,18 @@ function updateHint() {
   /* ★ 쪽지가 떠 있으면 손가락은 쉰다 — 같은 순간에 두 안내가 뜨면 둘 다 안 읽힌다(§coach ⓑ) */
   if (coachNow) return hintAt(null);
   const fp = S.firstPlay, ts = S.tutorial;
+  /* ★★★ 2026-09-04 ㉲([plan] 93a35e1 · 총괄) — **강제 가이드는 「세팅 끝」에서 «끊는다».**
+     「세팅 끝」 = 콩나물 시루 «둘» 놓임 && 몬스테라 «창턱». 그 뒤 grow_monstera 국면은 강제 «없이» 이어지고
+     「첫 새순」(fp.completed)은 «사건»이라 축하 대사만 — 아무 문도 안 연다.
+     ⚠ 첫 새순 «뒤»의 손가락(살림 상자·무순 사기)은 예전 그대로 둔다 — 그건 첫 플레이의 강제가 아니라 살림 안내다.
+     ⚠ 같은 자(quest.js §siru5_cycle5.opens)와 «같은 칸»으로 본다 — placed · guide.moved. */
+  const settingDone = (() => {
+    try {
+      if (!fp || !(fp.monstera && fp.monstera.guide && fp.monstera.guide.moved)) return false;
+      return cropPotList(fp, S.day).filter(r => r && r.kind === 'beansprout' && r.placed).length >= 2;
+    } catch { return false; }
+  })();
+  if (settingDone && !fp.completed) return hintAt(null);
   const stage = $('stage'), sheetOpen = $('sheet').classList.contains('open');
   /* ★★★★ 2026-08-30 — **「시트가 열렸나」가 아니라 「시트가 «이것을» 덮나」.**
      ══════════════════════════════════════════════════════════════════
@@ -5443,7 +5455,16 @@ function updateHint() {
   const growSay = growLeft === 1 ? '자라는 중입니다 — 내일이면 거둡니다'
                 : growLeft > 1 ? `자라는 중입니다 — ${DAY_KO[growLeft] || (growLeft + '일')} 더 넘겨 보세요`
                 : '자라는 중입니다 — 하루를 넘겨 보세요';
+  /* ★ 2026-09-04 ㉲ — 시루가 «오는 중»(「하나 더」를 주문한 뒤 이틀)에도 [다음 날] 말이 선다. 실측: d12 에 손가락이 쉬었다. */
+  const siruComing = (() => {
+    try {
+      const st = shopStatus(S);
+      const o = (st.orders || []).find(o => o.itemId === 'siru' && o.daysLeft >= 0);
+      return o ? Math.max(0, o.daysLeft) : null;
+    } catch { return null; }
+  })();
   const wait = seedComing ? '씨앗은 내일 옵니다 — 하루를 넘기세요'
+             : (siruComing != null && !spareSiru()) ? (siruComing <= 1 ? '시루는 내일 옵니다 — 하루를 넘기세요' : '시루가 오는 중입니다 — 하루를 넘기세요')
              : (cropGrowing && !taughtCycles) ? growSay
              : S.day <= 1 ? '하루를 보냅니다' : null;
 
@@ -5512,11 +5533,27 @@ function updateHint() {
     }
   }
   /* ① 시루를 아직 안 놓았다 — ★ 자유 좌표도 「놓은 것」이다(§placedOne) */
-  if (!placedOne) {
+  /* ★ 2026-09-04 ㉲ — 걸어서 잡았다: 둘째 시루가 가방에 온 날(d13)부터 손가락이 «없었다». 놓는 갈래가 「아직 하나도 안 놓음」에만
+     걸려 있어서다. 「세팅 끝」(둘 놓임 && 창턱)은 «놓아야» 서므로, 창턱 뒤에 놓인 시루가 둘 미만이고 가방에 빈 시루가 있으면 같은 갈래로 간다. */
+  const needPlaceSecond = (() => {
+    try {
+      if (!(fp.monstera && fp.monstera.guide && fp.monstera.guide.moved)) return false;
+      const placedN = cropRows.filter(r => r && r.kind === 'beansprout' && r.placed).length;
+      return placedN >= 1 && placedN < 2 && spareSiru() > 0;
+    } catch { return false; }
+  })();
+  if (!placedOne || needPlaceSecond) {
     /* ★ 2026-08-10 — 가리키는 것은 이제 **가방 격자의 시루 칸**이다(id 는 그대로 `cropThumb`).
        칸이 없으면(빈 시루 0개) `onScreen(null)` 이 false 라 아래 [가방]으로 떨어진다. */
     if (onScreen($('cropThumb'))) return hintAt($('cropThumb'), '끌거나 눌러서 방 안 어두운 자리에');
-    if (onScreen($('openBag')))   return hintAt($('openBag'), '가방을 열어 보세요');
+    /* ★ 2026-09-04 ㉲ — 넓은 판에서는 [가방] 문이 `openBag` 이 아니라 탭 `tabBag` 이다(시트가 늘 펴져 있다). 실측: 둘째 시루가
+       가방에 온 d13 에 손가락이 «없었다». 몬스테라 가방 갈래(§bagPots)와 «같은» 문 고르기로 간다 — 이미 고른 탭은 안 짚는다. */
+    for (const [id, say] of [['tabBag', '가방에 시루가 있습니다'], ['openBag', '가방을 열어 보세요']]) {
+      const el = $(id);
+      if (!el || !onScreen(el) || sheetCovers(el)) continue;
+      if (el.getAttribute && el.getAttribute('aria-selected') === 'true') continue;
+      return hintAt(el, say);
+    }
     return hintAt(null);
   }
   /* ② 몬스테라가 왔는데 아직 안 옮겼다 — 방의 그 화분을 가리킨다 */
@@ -5720,12 +5757,13 @@ function updateHint() {
      할 일 글이 아니라 «사실»로 묻는다: 씨앗 주문을 배웠고(order_seed 끝) 시루가 아직 하나뿐이면 하나 더다.
      문안 ㉮「시루를 하나 더 사서 놓으세요」는 §quest 줄이 아니라 손가락 말로 선다(아래). 값을 안 박는다 — 「둘」은
      「하나뿐이면 하나 더」의 결과다. */
+  /* ★ 2026-09-04 ㉲ — 열쇠를 「order_seed 끝」에서 «뗀다». 세 바퀴는 창턱 뒤 두 바퀴 너머라 «안 켜졌다».
+     ⇒ 「창턱 && 시루 «하나뿐»」(총괄 ㉲②). 시루가 가방에 들면 둘이라 이 문은 닫히고 놓는 손가락(§cropThumb)이 잇는다. */
   const guideSiruTwo = (() => {
     try {
-      const done = (S.stamina && S.stamina.questsTaken) || [];
-      if (!done.includes('order_seed')) return false;
+      if (!(fp.monstera && fp.monstera.guide && fp.monstera.guide.moved)) return false;
       const n = cropRows.filter(r => r && r.kind === 'beansprout').length;
-      return n < 2;
+      return n === 1;
     } catch { return false; }
   })();
   const siruNeed = (() => {
