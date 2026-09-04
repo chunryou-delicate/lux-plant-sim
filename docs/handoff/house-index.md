@@ -57,7 +57,7 @@ docs/handoff/house-decisions.md      결정 대기 — 배경 · 선택안 · «
 docs/handoff/house-oneroom-agreed.md 원룸 협의 — 합의 셋 · 갈린 것 · ★ 버린 것 넷
 docs/engine/rooms_spec.md            §4 자리 · §11 방 작업 · §12 uid 는 «무엇인가»의 이름 · §13 이사에 무엇을 들고 가나 ·
                                      §14 원룸을 빈 방으로(등 자리 발견을 여기 옮겼다)
-docs/engine/floor_light_contract.md  바닥 조도 — 게임은 이미 되고 헤드리스만 0 을 낸다(그 0 은 «모른다»)
+docs/engine/floor_light_contract.md  바닥 조도 — 게임은 이미 됐고 헤드리스는 «던진다»(계약 D · core 3b3177f). 「0 = 모른다」였던 병이 닫혔다
 docs/engine/slot_cell_align.md       자리 ↔ 격자 — 「틀린 자는 작은 답을 준다」
 docs/engine/verify_tools.md          자 목록 · 검사 뒤 shots 되돌리기(자가 한다)
 docs/handoff/night-20260823.md §10   밤샘 일지 (첫날 것, 그 뒤로 쌓임)

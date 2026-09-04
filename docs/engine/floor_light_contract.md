@@ -120,7 +120,7 @@ dliAt 이 있나              있다            ★ 없다
 바닥이 밝나          tools/probe_floor_dli.mjs         (라이브 · 브라우저) [growth]
 좌표 = 슬롯 인가     tools/test_coord_matches_slot.mjs (라이브 · 브라우저) [growth]
 바닥에서 갈리나      tools/probe_floor_contract.mjs    (라이브 + 헤드리스) [House]
-⛔ 정적 프로필로 바닥을 묻지 마라 — 0 이 돌아오고, 그 0 이 초록으로 읽힌다
+⛔ 정적 프로필로 바닥을 묻지 마라 — (D 전) 0 이 돌아오고 그 0 이 초록으로 읽혔다 · ★ (D 뒤 · 3b3177f) 이제는 «던진다»
 ```
 
 ■ 곁의 것: [core] 가 본 「바닥 시루가 **대표값**으로 떨어진다」는 **이것과 다른 병**이다.
