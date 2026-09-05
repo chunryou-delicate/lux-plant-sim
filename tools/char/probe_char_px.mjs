@@ -115,34 +115,28 @@ async function main() {
         const pos = JSON.parse(await p.eval('(()=>{ const c=(window.__rv.characters()||[])'
           + ".find(c=>c.id==='jachwi'); return JSON.stringify(c?c.pos:null); })()"));
 
-        mkdirSync(join(OUT, s.id), { recursive: true });
-        const fA = join(OUT, s.id, sp.key + '_a.png');
-        const fB = join(OUT, s.id, sp.key + '_b.png');
-        /* ★ 사람만 «움직이는» 두 순간을 찍는다 — 방은 안 움직인다.
-           ⇒ 걷는 중에 두 장. 그 차이가 «사람이 지나간 자리»다. */
-        await p.eval('window.__rv.walkTo(' + (x + 0.9) + ', ' + z + ')');
-        await sleep(250);
-        await p.shot(fA);
-        await sleep(700);
-        await p.shot(fB);
-        await sleep(2500);
+        if (!pos) { console.log('  ' + sp.key + ': 사람을 못 찾음 (' + w + ')'); continue; }
 
-        const px = diffHeight(fA, fB, s.dpr);
-        if (px == null) { console.log('  ' + sp.key + ': 차이를 못 찾음 (' + w + ')'); continue; }
+        /* ★ 발밑·머리끝을 «게임이» 화면으로 옮겨 준다 — 셈 아님 */
+        const m = JSON.parse(await p.eval('(()=>{ const rv=window.__rv;'
+          + ' const a=rv.worldToScreen(' + pos.x + ', ' + pos.y + ', ' + pos.z + ');'
+          + ' const b=rv.worldToScreen(' + pos.x + ', ' + (pos.y + H_M) + ', ' + pos.z + ');'
+          + ' return JSON.stringify({ a: a, b: b, vh: innerHeight }); })()'));
+        if (!m.a || !m.b) { console.log('  ' + sp.key + ': worldToScreen 이 null'); continue; }
 
-        /* ★★ 관문 — 「말이 되나」. 사람은 «세로로 긴» 것이다.
-           ⛔ 폭이 키보다 크면 사람이 아니다(앞서 916px 이 그랬다). */
-        /* ⚠⚠ 처음에 «1.6배»로 뒀다. ⛔ 너무 헐거웠다 —
-           390×844 에서 「키 310 · 폭 317」이 «통과»했다. 사람 폭이 키와 같을 리 없다.
-           ⇒ ★ 사람은 대략 폭:키 = 1:2.5 다. 0.7 로 죈다.
-           ⇒ ⇒ ★★ 관문을 «통과했는데도 틀린» 것이 이 자의 두 번째 거짓말이었다. */
-        const sane = px.h > 8 && px.w <= px.h * 0.7;
+        const px = Math.abs(m.b.y - m.a.y);
+
+        /* ★★ 관문 — 「말이 되나」. 사람 키가 화면보다 클 수 없다.
+           ⚠ 앞서 «픽셀 차이»로 잴 때 두 번 거짓을 냈다(폭 916 · 키310폭317).
+             ⇒ 이제 «사람만» 재므로 그 갈래는 없다. 그래도 관문은 둔다. */
+        const sane = px > 2 && px < s.h * 1.2;
         console.log('  ' + sp.key.padEnd(5) + ' z=' + z.toFixed(2).padStart(6)
-          + '  키 ' + String(px.h).padStart(4) + ' px · 폭 ' + String(px.w).padStart(4)
-          + (sane ? '   ✔' : '   ⛔ 폭이 키보다 크다 — «사람이 아니다». 이 칸은 버린다'));
+          + '  ⇒ ★ 화면 키 ' + px.toFixed(0).padStart(4) + ' px'
+          + '   (화면 높이의 ' + (px / s.h * 100).toFixed(1) + '%)'
+          + (sane ? '' : '   ⛔ 말이 안 된다 — 이 칸은 버린다'));
         if (!sane) continue;
         rows.push({ size: s.id, spot: sp.key, z: +z.toFixed(3),
-                    px: px.h, pxw: px.w, pct: +(px.h / s.h * 100).toFixed(2), pos });
+                    px: +px.toFixed(1), pct: +(px / s.h * 100).toFixed(2), pos });
       }
     } catch (e) { console.error('  ✗ ' + s.id + ': ' + e.message); }
     finally { try { p && await p.close(); } catch { } }
