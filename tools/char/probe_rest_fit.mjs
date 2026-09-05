@@ -136,8 +136,8 @@ async function main() {
         + ' m  ⚠ 이건 등받이·헤드보드까지다. 앉는 면이 아니다');
       console.log('  사람 pos.y     = ' + Math.min(...ys).toFixed(3)
         + ' ~ ' + Math.max(...ys).toFixed(3) + ' m');
-      if (num) console.log('  ★ 높이 차      = ' + sgn(Math.min(...ys) - top)
-        + ' m   (+ 면 «떠 있다» · − 면 «박혔다»)');
+      if (num) console.log('  · 뿌리 ↔ 면 차 = ' + sgn(Math.min(...ys) - top)
+        + ' m   ⚠ 앉기는 «발이 바닥»에 있는 것이 정상이라 이 수는 «뜻이 없다»');
       console.log('  ★ 자리 차      = x ' + sgn(dx) + ' · z ' + sgn(dz)
         + ' m   (가구 «중심» 대비)');
       console.log('  ground.y       = ' + Math.min(...gy).toFixed(4)
@@ -163,6 +163,20 @@ async function main() {
       console.log('  restingOn()    = ' + JSON.stringify(rest));
       console.log('  yaw = ' + cs[0].yaw.toFixed(3) + ' rad ('
         + (cs[0].yaw * 180 / Math.PI).toFixed(1) + '°) · 가구 rot = ' + f.rot);
+
+      /* ★★ 판정 한 줄 — 「무엇을 봐야 하나」를 자가 «말한다».
+         ⚠ 앞서 「높이 차 −0.408」이 맨 위에 찍혀 «고쳐졌는데도 어긋나 보였다».
+           ⇒ ★ 뜻 있는 수를 «맨 아래»에 다시 놓는다. 눈이 마지막 줄에 남는다. */
+      if (hips.length && num) {
+        const d = Math.min(...hips) - top;
+        const vsIdle = idleHips ? Math.min(...hips) - idleHips : null;
+        console.log('  ────────────────────────────────────────────');
+        console.log('  ★ 판정 — 골반이 앉는/눕는 면에서 ' + sgn(d) + ' m'
+          + (Math.abs(d) < 0.02 ? '   ✔ 맞다' : '')
+          + (vsIdle !== null ? '  ·  서 있을 때 대비 ' + sgn(vsIdle) : ''));
+        if (w.act === 'sit' && vsIdle !== null && vsIdle > 0)
+          console.log('    ⛔ 앉았는데 골반이 «서 있을 때보다 높다». 그럴 수 없다');
+      }
       out.push({ what: w.act, furniture: f, top, frames: cs,
                  dyMin: Math.min(...ys) - top, dx, dz });
     }
