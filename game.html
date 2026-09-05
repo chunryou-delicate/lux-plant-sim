@@ -1228,6 +1228,7 @@
          구멍 «안»에서 시작한 끌기는 붙잡기(setPointerCapture)가 끝까지 데려간다 —
          밖에 놓아도 된다. 구멍 «밖»에서 시작한 것만 덮개가 삼킨다.
        ⚠ 덮개는 **손가락이 뜰 때만** 켜진다. 손가락이 없으면 아무것도 안 막는다. */
+  #marks.busy .mark{display:none}   /* ★ 옮기는·끄는·대사 중엔 말풍선을 «감춘다» — 지우지 않는다(§drawMarks 2026-09-06) */
   #hintDim{position:fixed;inset:0;z-index:69;pointer-events:none;display:none;
     transition:opacity .18s ease}
   /* ★★★★ 2026-08-30 — **덮개는 손짓을 «직접» 먹지 않는다**(`pointer-events:none` 그대로).
@@ -9709,8 +9710,12 @@ function cropMarks() {
   };
   const toShop = () => { window.__byeotSheet.open();
                          window.__byeotSheet.tab && window.__byeotSheet.tab('shop'); };
+  /* ★★ 2026-09-06 아침(박사님: 「시루를 옮기면 그 버튼들이 사라져버려」) — 걸어서 잡은 까닭: 방의 시루를 끌어 «자리»(창턱 받침)에 놓으면
+     판(state)은 slotId 를 받는데 방뷰의 그루는 «free:그루id» 열쇠로 남는다. 말풍선 열쇠를 slotId 로 짓자 방뷰의 그루와 안 맞아 말풍선이 통째로
+     사라졌다(1770·390 둘 다 · 전 1 → 후 0). ⇒ 말풍선 열쇠는 «방뷰가 실제로 쥔 열쇠»를 먼저 쓴다(그루 id 로 찾는다). 없으면 예전대로. */
+  const rvKeyOf = (() => { try { const m = new Map(); for (const p of (roomView && roomView.plants ? roomView.plants() : [])) if (p && p.potId) m.set(p.potId, p.key); return id => m.get(id) || null; } catch { return () => null; } })();
   for (const row of rows) {
-    const key = row.slotId || (row.at ? `free:${row.id}` : null);
+    const key = rvKeyOf(row.id) || row.slotId || (row.at ? `free:${row.id}` : null);
     if (!key) continue;                 // 방이 모르는 이름으로는 말풍선을 못 띄운다(§cropKey)
     if (row.ready) {
       out.push({ key, ko: '🥣 거두기', tone: 'crop', go: () => siruAct(row.id, 'harvest', row.kind) });
@@ -9753,6 +9758,7 @@ function siruAct(id, act, kind = 'beansprout') {
 function placeMarks() {
   const box = $('marks');
   if (!box || !roomView || !roomView.screenPosOf) return;
+  box.classList.toggle('busy', stageBusy());   /* ★ 바쁨이 풀리면 감춘 말풍선이 다시 보인다(§drawMarks) */
   const c = $('roomCanvas');
   for (const el of box.children) {
     const key = el.dataset.key;
@@ -9866,7 +9872,11 @@ function refreshOverlays() {
 function drawMarks() {
   const box = $('marks');
   if (!box) return;
-  const want = (stageBusy() ? [] : markList());
+  /* ★★ 2026-09-06 아침(박사님 「시루를 옮기면 그 버튼들이 사라져버려」 · 총괄 재현) — 걸어서 잡은 까닭: 옮겨 놓는 길이 draw() 를 «아직 바쁜 채»
+     (picked.mode 남음) 부르므로 여기서 want=[] 로 «비워» 버리고, 그 뒤 바쁨이 풀려도 다시 그리는 부름이 없어 말풍선이 통째로 사라졌다
+     (1770·390 둘 다 · 전 1 → 후 0). ⇒ 바쁠 때 «비우지» 않고 «감춘다»(.busy) — placeMarks 가 프레임마다 바쁨을 다시 봐서 풀리면 보인다. */
+  const want = markList();
+  box.classList.toggle('busy', stageBusy());
   /* 내용이 같으면 다시 만들지 않는다 — 매 턴 새로 만들면 뛰는 애니메이션이 끊긴다 */
   const sig = want.map(m => m.key + '|' + m.ko).join(',');
   if (box.dataset.sig !== sig) {
