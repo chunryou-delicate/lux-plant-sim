@@ -121,6 +121,24 @@ radish5 · siru16 · sell_varie   뜬 d—   ⇐ 자의 탈(재배판이 가방 
 ㉣ [core] 보탬 — novice 에서 등을 켜면 빛 엔진은 등 DLI 를 «더한다»(skyFor 는 하늘만 고정 · dliOfSlot 이 rigsOn(lampCount) 를 따로 얹음). ⇒ 「안 바꾼다」가 아니라 ★ 「더하긴 하는데 «모자람이 없어» 안 보인다」가 정확한 말이다. 그래서 novice 에서 등은 「값만 드는 물건」이 된다
 ⇒ **buy_lamp 는 지금 ⓐ(달력 d45) 그대로 둔다** — 「어디에 매나」는 전환이 정해진 «뒤»의 물음이다. 전환이 ⓒ(아래 묶음 ⑤)로 서면 d45 가 곧 「빛이 모자라기 시작하는 날」이 되어 «저절로» 맞는다.
 ⇒ 박사님 묶음 ⑤로 올렸다 — `plan-night-asks-20260906.md ⑤`. 값 결정이라 총괄을 거친다.
+
+---
+## ⓛ ★ 6판 「뜬 날」 — [잰 것] · probe_longwalk · 재배판 가방 칸 살린 뒤 · STOP_AT=siru8
+머리표: 1770×1188 · 시트 연 채 · Day 0 부터 · ★ 모드 S.mode «없음»(undefined) / isNoviceMode «초보» 끝까지 바뀜 없음 · 값 0
+```
+place/water_siru 뜬d0 끝d1 · first_harvest 뜬d1 끝d6 · order_seed 뜬d5 끝d18 · monstera_home 뜬d11 끝d14 · leaf_two 뜬d13 끝d44
+siru5_cycle5   뜬 d16  끝 d27
+★ crop_mix     뜬 d26  끝 d37   ⇐ 처음 끝남 — d29 놓고 심고 → d36 첫 무순 → 한 상
+★ radish5      뜬 d37  끝 d49   ⇐ 처음 봄 — 재배판 하나씩(이틀) · d47 무순4 → d49 다섯   ✔ ㉱ⓔ 「crop_mix 끝 뒤」 그대로
+siru8          뜬 d27  끝 d55   ⇐ d49 부터 시루 셋 더(이틀에 하나) — 걷는 사람이 radish5 를 «먼저» 했다(배우는 것 먼저)
+siru16         뜬 d54(siru8 끝과 같은 걸음) — STOP_AT 이라 여기서 멈춤
+first_cut · varie_bright · leaf_three 뜬 d44 · buy_lamp 뜬 d45 끝 d46
+sell_varie 뜬 d—
+돈 d29 1,019k → d35 771k(월세) → d41 717k → d53 600k · 체력 0 막힘 d33·d48
+```
+⚠ d44 에 «셋»이 한 날 — [core]: 「한 번에 하나」가 «부름» 단위였다(stepQuests 가 놓기·거두기 뒤마다 불림) ⇒ questsOpenedOn 으로 «날» 단위로 고침. 걸어서는 다음 판.
+✔ 모드 — S.mode 는 새 판에 없고 isNoviceMode 는 80일 내내 초보. ⇒ ⓚ·묶음 ⑤ 그대로 «확인».
+⇒ 4판과 견주면 — 무순 줄이 살아나자 d27~55 가 crop_mix → radish5 → siru8 로 «빈틈없이» 이어진다. ⓒ①(crop_mix 먼저 · siru8 뒤)이 걸음으로도 그렇게 났다.
 ### ⓘ 돈 — 배경으로만 (판의 값 · 박사님 묶음에 안 넣는다)
 ```
 d24 1,066k → d32 796k(월세) → d64 339k → d76 244k   ⇒ 시루 다섯 «만» 돌리면 80일에 244k
