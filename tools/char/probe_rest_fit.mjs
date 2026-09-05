@@ -46,6 +46,13 @@ const WANT = [
 
 const CHAR = "(window.__rv.characters()||[]).find(c=>c.id==='jachwi')||null";
 
+/* ★ 2026-08-30 밤 — [core] 가 «읽기만» 붙여 준 것 둘 (91afd4c · c8b003c)
+     characters()[i].hipsY    Hips 뼈의 «월드» y  ⇒ ★ 「뿌리 ↔ 메시」를 가른다
+     restingOn()              { top, lift, topWhy } ⇒ 높이를 «가구에게 물은» 결과
+   ⇒ ⇒ ★★ 그래서 이 자가 `surfaceTopAt` 을 «따로» 안 불러도 된다. 게임이 답을 갖고 있다. */
+const RESTING = "(()=>{ try { return JSON.stringify(window.__rv.restingOn()); }"
+  + " catch(e){ return JSON.stringify({err:e.message}); } })()";
+
 async function main() {
   console.log('여는 곳: ' + BASE + '/game.html');
   const p = await launch({ width: 1280, height: 800, dpr: 1 });
@@ -58,6 +65,21 @@ async function main() {
     console.log('사람 세우는 중 … ' + await p.eval(
       "window.__rv.setCharacter('jachwi').then(()=>'ok').catch(e=>'ERR '+e.message)"));
     await sleep(1500);
+
+    /* ★★ 기준자 — «서 있을 때» hipsY 를 먼저 잰다.
+       ⚠ 이걸 안 재면 「앉았을 때 0.873」이 큰지 작은지 «알 수가 없다».
+         실제로 그 수를 보고 「이상하다」까지는 갔는데 «이상한지 아닌지»를 못 갈랐다.
+       ⇒ ★ 기준 없이 잰 수는 «수가 아니다». */
+    const idle = JSON.parse(await p.eval('JSON.stringify(' + CHAR + ')'));
+    console.log('');
+    console.log('■ ★ 기준 — «서 있을 때»(idle)');
+    console.log('  pos.y = ' + (idle ? idle.pos.y.toFixed(3) : '?')
+      + ' m · ★ hipsY = ' + (idle && typeof idle.hipsY === 'number'
+        ? idle.hipsY.toFixed(3) + ' m' : String(idle && idle.hipsY))
+      + '   (사람 키 1.40 m)');
+    const idleHips = idle && typeof idle.hipsY === 'number' ? idle.hipsY : null;
+    if (idleHips) console.log('  ⇒ 골반이 키의 ' + (idleHips / 1.40 * 100).toFixed(0) + '% 높이에 있다');
+    out.push({ what: 'idle', pos: idle && idle.pos, hipsY: idleHips });
 
     const furn = JSON.parse(await p.eval('JSON.stringify(window.__rv.furniture())'));
     console.log('\n■ 가구 — 게임이 «미터로» 갖고 있는 값');
@@ -120,6 +142,25 @@ async function main() {
         + ' m   (가구 «중심» 대비)');
       console.log('  ground.y       = ' + Math.min(...gy).toFixed(4)
         + ' ~ ' + Math.max(...gy).toFixed(4) + ' · clips = ' + JSON.stringify(clips));
+
+      /* ★★ 뿌리 ↔ 메시 — [core] 가 붙여 준 hipsY 로 «가른다» */
+      const hips = cs.map(c => c.hipsY).filter(v => typeof v === 'number');
+      if (hips.length) {
+        const hi = Math.min(...hips), ha = Math.max(...hips);
+        console.log('  ★ hipsY(월드)   = ' + hi.toFixed(3) + ' ~ ' + ha.toFixed(3) + ' m');
+        console.log('    ⇒ 뿌리(pos.y ' + Math.min(...ys).toFixed(3) + ') 와의 차 = '
+          + sgn(hi - Math.min(...ys)) + ' m   ⇐ ★ 「몸이 뿌리보다 얼마나 위인가」');
+        if (num) console.log('    ⇒ ★ 앉는/눕는 면(' + top.toFixed(3) + ') 과의 차 = '
+          + sgn(hi - top) + ' m');
+        /* ★ 기준(서 있을 때)과 견준다 — 그래야 이 수가 큰지 작은지 알 수 있다 */
+        if (idleHips) console.log('    ⇒ ★★ 서 있을 때(' + idleHips.toFixed(3)
+          + ') 대비 = ' + sgn(hi - idleHips) + ' m'
+          + ((w.act === 'sit' && hi > idleHips) ? '   ⛔ 앉았는데 «더 높다»' : ''));
+      } else {
+        console.log('  ⚠ hipsY 가 없다 — [core] 의 91afd4c 가 안 실렸거나 뼈를 못 찾았다');
+      }
+      const rest = JSON.parse(await p.eval(RESTING));
+      console.log('  restingOn()    = ' + JSON.stringify(rest));
       console.log('  yaw = ' + cs[0].yaw.toFixed(3) + ' rad ('
         + (cs[0].yaw * 180 / Math.PI).toFixed(1) + '°) · 가구 rot = ' + f.rot);
       out.push({ what: w.act, furniture: f, top, frames: cs,
