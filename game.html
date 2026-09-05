@@ -5884,7 +5884,7 @@ function updateHint() {
       return hintAt(go, '개수를 정하고 [주문] — 시루는 이틀 뒤에 옵니다');
     const b = $('shopList') && $('shopList').querySelector(`[data-buy="siru"]`);
     if (b && onScreen(b) && !b.disabled && !sheetCovers(b))
-      return hintAt(b, '시루를 하나 더 주문합니다 — 거두는 날이 엇갈립니다');
+      return hintAt(b, '시루를 하나 더 주문합니다');   /* ★ 2026-09-06 총괄 — 「엇갈림」은 시루 «둘»에서 뺐다([plan] ⓩ·㉮ · 겪지 않은 어려움은 못 가르친다). 한 글자도 안 쓴다 */
     { const door = shopDoor(); if (door) return hintAt(door, '시루를 하나 더 사러 갑니다'); }
   }
   /* ══ ★★★ 2026-08-17 — **무순 사는 길** (박사님: *"무순 구매도 손가락 가이드해줘."*)
