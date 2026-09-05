@@ -52,8 +52,10 @@ const state = () => J(`(async()=>{ const fp=await import('/src/game/first_play.j
     주문:(S.shop&&S.shop.orders||[]).map(o=>o.itemId+':'+(o.arrivesOnDay-S.day)) }; })()`);
 const banner = () => page.eval(`((document.getElementById('banner')||{}).textContent||'').trim().slice(0,70)`);
 const domClick = (sel) => page.eval(`(()=>{ const b=document.querySelector(${JSON.stringify(sel)}); if(!b||b.disabled) return 'no'; b.click(); return 'ok'; })()`);
-const tapEl = async (sel) => { const r = JSON.parse(await page.eval(`(()=>{ const b=document.querySelector(${JSON.stringify(sel)}); if(!b) return 'null';
-  const r=b.getBoundingClientRect(); if(!(r.width>0)) return 'null'; return JSON.stringify({x:r.left+r.width/2,y:r.top+r.height/2}); })()`));
+/* ⚠ 같은 id 가 둘일 수 있다(#musunThumb — 감춘 큰 카드의 그림 + 가방 칸의 그림). «보이는» 것을 고른다(실측: 80일 내내 재배판을 못 놓았다) */
+const tapEl = async (sel) => { const r = JSON.parse(await page.eval(`(()=>{ const all=[...document.querySelectorAll(${JSON.stringify(sel)})];
+  const b=all.find(e=>{ const r=e.getBoundingClientRect(); return r.width>0 && r.height>0 && getComputedStyle(e).visibility!=='hidden'; }); if(!b) return 'null';
+  const r=b.getBoundingClientRect(); return JSON.stringify({x:r.left+r.width/2,y:r.top+r.height/2}); })()`));
   if (!r) return false; await tapAt(r.x, r.y); return true; };
 const openTab = async (tabId, navId) => {
   const sel = await page.eval(`(()=>{ const t=document.getElementById('${tabId}'); return t && t.getAttribute('aria-selected')==='true' ? 'on' : 'off'; })()`);
@@ -65,6 +67,8 @@ const openTab = async (tabId, navId) => {
 const followFinger = async (log) => {
   const f = JSON.parse(await fingerAt());
   if (!f) return false;
+  /* [다음 날]을 짚으면 오늘 손가락은 끝이다 — 살림·할 일을 한 뒤 «한 번만» 넘긴다(실측: 여기서 다섯 날을 내리 넘겼다) */
+  if (f.짚는것 === 'next') { log.push(`👉 (next) 「${f.말}」 → 살림 뒤 넘김`); return false; }
   if (/끌어/.test(String(f.말 || ''))) {
     const gp = JSON.parse(await page.eval(`(()=>{ const S=window.__S(); const p=(S.pots||[])[0]; const rv=window.__rv, c=document.getElementById('roomCanvas');
       if(!c) return 'null'; const r=c.getBoundingClientRect(); let sp=null;
@@ -155,18 +159,30 @@ const goal = async (st, log) => {
   }
   return false;
 };
-const nextDay = async () => {
+/* 떠 있는 창을 닫는다 — [go]가 있으면 그것, 없으면 닫기/취소/확인, 그것도 없으면 마지막 단추 */
+const closePops = async () => {
   for (let k = 0; k < 6; k++) {
+    const r = await page.eval(`(()=>{ const pop=document.querySelector('.pop.on'); if(!pop) return 'none';
+      const live=[...pop.querySelectorAll('button')].filter(b=>!b.disabled && b.getBoundingClientRect().width>0);
+      const b = live.find(x=>x.classList.contains('go')) || live.find(x=>/닫기|취소|확인|✕|×/.test(x.textContent||'')) || live[live.length-1];
+      if(!b) return 'stuck'; b.click(); return b.id||b.className||'btn'; })()`);
+    if (r === 'none') return true;
+    if (r === 'stuck') return false;
+    await sleep(350); await quiet();
+  }
+  return false;
+};
+/* 하루를 넘긴다 — «한 번만». 실측(2 판): 밥상 창 [go]와 [다음 날]을 번갈아 누르다 사흘씩 넘겼고, [go] 없는 창에 막혀 «못 넘겼다» */
+const nextDay = async () => {
+  const start = Number(await page.eval(`String(window.__S().day)`));
+  for (let k = 0; k < 8; k++) {
     await quiet();
-    const go = JSON.parse(await page.eval(`(()=>{ const pop=document.querySelector('.pop.on');
-      const b = pop ? [...pop.querySelectorAll('button.go')].find(x=>!x.disabled) : null;
-      const n = b || document.getElementById('next'); if(!n || n.disabled) return 'null';
-      const r=n.getBoundingClientRect(); return JSON.stringify({ x:r.left+r.width/2, y:r.top+r.height/2, id:n.id }); })()`));
-    if (!go) { await sleep(400); continue; }
-    const before = await page.eval(`String(window.__S().day)`);
-    if (go.id === 'next') await domClick('#next'); else await tapAt(go.x, go.y);
-    await quiet();
-    if (await page.eval(`String(window.__S().day)`) !== before) return true;
+    await closePops();
+    const now = Number(await page.eval(`String(window.__S().day)`));
+    if (now > start) { await closePops(); return true; }
+    const r = await domClick('#next');
+    if (r !== 'ok') { await sleep(500); continue; }
+    await sleep(500); await quiet();
   }
   return false;
 };

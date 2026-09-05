@@ -8840,8 +8840,9 @@ export async function createRoomView(canvas, opts = {}) {
       const root = person.c.root;
       const before = { x: root.position.x, y: root.position.y, z: root.position.z, rot: root.rotation.y };
       /* 높이 — 가구 «윗면»(surfaceTopAt · 앉는 면 · 매트리스 위)에서 sink 만큼 눌린 데. 못 물으면(면이 없다) 바닥. */
-      let top = 0;
-      try { const st = surfaceTopAt(t.pos.x, t.pos.z); top = (st && Number.isFinite(st.y)) ? st.y : 0; } catch { top = 0; }
+      let top = 0, topWhy = null;
+      try { const st = surfaceTopAt(t.pos.x, t.pos.z); top = (st && Number.isFinite(st.y)) ? st.y : 0; topWhy = st ? (st.onUid || 'no-owner') : 'null'; }
+      catch (e) { top = 0; topWhy = 'throw:' + (e && e.message); }
       const lift = Math.max(0, top - (spec.sink || 0));
       root.position.set(t.pos.x, before.y + lift, t.pos.z);
       if (g) root.rotation.y = g.rotation.y || 0;
@@ -8853,7 +8854,7 @@ export async function createRoomView(canvas, opts = {}) {
         root.position.set(before.x, before.y, before.z); root.rotation.y = before.rot; needsRender = true;
         return bail(token.cancelled ? token.reason : '동작이 끊겼습니다');
       }
-      restPose = { charId: person.id, key: t.key, kind: K, before };
+      restPose = { charId: person.id, key: t.key, kind: K, before, top, lift, topWhy };
       return finish();
     }
     let can = null, fx = null, soil = null, hand = null;
@@ -8960,7 +8961,8 @@ export async function createRoomView(canvas, opts = {}) {
     needsRender = true;
     return true;
   }
-  function restingOn() { return restPose ? { charId: restPose.charId, key: restPose.key, kind: restPose.kind } : null; }
+  function restingOn() { return restPose ? { charId: restPose.charId, key: restPose.key, kind: restPose.kind,
+                                             top: restPose.top, lift: restPose.lift, topWhy: restPose.topWhy } : null; }
 
   function actAt(key, kind, opt) {
     const o = opt || {};

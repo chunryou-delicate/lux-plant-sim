@@ -82,6 +82,10 @@ if (chair) {
     await tapAt(b.x, b.y);
     const w = await waitAct(); const on = w && w.on, st = w && w.st;
     ok('앉아 «있는다»(restingOn = 의자 · 동작 끝)', on && on.key === chair.uid && on.kind === 'sit' && !st, JSON.stringify(w));
+    /* ★ [char] c53e661 이 잰 것: 앉는 면 y(surfaceTopAt) 와 사람 pos.y — 높이는 가구에게 묻는다 */
+    const sy = await J(`(()=>{ const c=(window.__rv.characters()||[]).find(x=>x.id==='jachwi'); const t=window.__rv.surfaceTopAt(${chair.x}, ${chair.z});
+      return { 사람y: c ? +c.pos.y.toFixed(3) : null, 앉는면y: t ? +(+t.y).toFixed(3) : null, ground: c && c.ground ? c.ground : null }; })()`);
+    ok('앉는 높이 = 의자 앉는 면(surfaceTopAt)', sy && sy.사람y != null && sy.앉는면y != null && Math.abs(sy.사람y - sy.앉는면y) < 0.02, JSON.stringify(sy));
     await page.shot('docs/handoff/img/nap_sit.png').catch(() => {});
     const p2 = await pickFurn(chair);
     const b2 = await btn('furnSit');
@@ -130,7 +134,7 @@ if (bed) {
     const frac = ((presets.presets || presets)[bed.preset] || {}).nap_recover_frac, hours = ((presets.presets || presets)[bed.preset] || {}).nap_hours;
     const want = Math.min(Math.ceil(b0.max * frac), b0.max - b0.left);
     ok(`낮잠 — 체력 +올림(max ${b0.max} × ${frac}) = +${want}`, a.left === b0.left + want, `${b0.left} → ${a.left} (max ${a.max})`);
-    ok(`낮잠 — 시계가 ${hours}시간 간다`, Math.abs((a.clock - b0.clock) - hours / 24) < 0.005 /* 재는 사이에도 시계는 돈다(576초/하루 · 1.5초 ≈ 0.0026) */, `${b0.clock.toFixed(4)} → ${a.clock.toFixed(4)} (Δ ${(a.clock - b0.clock).toFixed(4)} · 바람 ${(hours / 24).toFixed(4)})`);
+    ok(`낮잠 — 시계가 ${hours}시간 간다`, Math.abs((a.clock - b0.clock) - hours / 24) < 0.012 /* 재는 사이에도 시계는 돈다(576초/하루 · 헤드리스는 재는 데 3~5초 ≈ 0.006~0.009) */, `${b0.clock.toFixed(4)} → ${a.clock.toFixed(4)} (Δ ${(a.clock - b0.clock).toFixed(4)} · 바람 ${(hours / 24).toFixed(4)})`);
     ok('낮잠 — 잔 날이 적힌다(nappedOnDay = 오늘)', a.napped === a.day, `nappedOnDay ${a.napped} · day ${a.day}`);
     const w2 = await waitAct(); const on = w2 && w2.on;
     ok('낮잠 — 누워 있는 그림', on && on.key === bed.uid && on.kind === 'sleep', JSON.stringify(w2));
