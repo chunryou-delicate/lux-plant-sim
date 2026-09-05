@@ -99,7 +99,7 @@
 ```
 무순을 처음 만나는 자리      ✔ 됨(09-06) — crop_mix = 시루 다섯 «뒤». plan-quest-reframe ㉱ⓓ
 박사님 묶음 다섯             plan-night-asks-20260906 — 두 바퀴째 ㉮/㉯ · 바닥 시루 · 크레딧 10/74 · 기준 배치 · ★ ⑤ novice→real 전환 «언제»(지금은 안 넘어간다 — 값은 real 에, 사람은 novice 에). 아침 답 뒤 각 파일에 반영
-[core] 80일 걸음(probe_longwalk) ✔ 됨(09-06) — after-setup ⓖ · empty-days ⓕ. ⚠ 머리표에 «모드»가 없어 「가을 d45」가 novice 인지 물어 둠. 다섯째 판(radish5·siru16·sell_varie)은 아직
+[core] 80일 걸음(probe_longwalk) ✔ 4판(after-setup ⓖ · empty-days ⓕ) · ✔ 6판(ⓛ · ⓘ — 무순 줄 처음 · 모드 칸 있음: novice 내내). 남은 것 — 「한 번에 하나」 날 단위 고친 뒤 판 · 원룸 첫 장면 걸음 · sell_varie 판
 독촉 넷의 「며칠마다」        같은 표 뒤. 밑값(다음 날/사나흘/한 이레/두 이레)은 월세 한 달에 댄 것
 걸음표 「지금」 칸           [core] 손가락 되살린 뒤
 ③ 두 바퀴째가 걸음으로 남나   총괄 → 박사님. 열쇠(콩나물 두 바퀴)를 두면 ㉮ 강제 가이드가 끈다
