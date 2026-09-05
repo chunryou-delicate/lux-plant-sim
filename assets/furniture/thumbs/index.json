@@ -2,7 +2,7 @@
  "note": "tools/glb_thumb.mjs 가 만든다. 손으로 고치지 말 것. GLB 이름 -> 썸네일 이름 · GLB 자체 크기",
  "sizeMeans": "GLB 원본 바운딩박스. 실제 미터 = 이 값 × manifest.scale_to_real",
  "tool": "tools/glb_thumb.mjs",
- "updated": "2026-08-29",
+ "updated": "2026-09-05",
  "thumbs": {
   "shelf_cart_3tier.glb": {
    "png": "shelf_cart_3tier.png",

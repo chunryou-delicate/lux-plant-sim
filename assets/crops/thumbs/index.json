@@ -2,7 +2,7 @@
  "note": "tools/glb_thumb.mjs 가 만든다. 손으로 고치지 말 것. GLB 이름 -> 썸네일 이름 · GLB 자체 크기",
  "sizeMeans": "GLB 원본 바운딩박스. 실제 미터 = 이 값 × manifest.scale_to_real",
  "tool": "tools/glb_thumb.mjs",
- "updated": "2026-08-29",
+ "updated": "2026-09-05",
  "thumbs": {
   "basil_l.glb": {
    "png": "basil_l.png",
@@ -111,11 +111,6 @@
     "y": 0.06
    },
    "view": "3q"
-  },
-  "container_tray_s_empty.glb": {
-   "png": "container_tray_s_empty.png",
-   "m": null,
-   "view": null
   },
   "container_tray_s.glb": {
    "png": "container_tray_s.png",
