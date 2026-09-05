@@ -940,7 +940,12 @@ export function stepQuests(S, snapshot) {
        남으므로 «다음 걸음»에 저절로 선다. 열린 날(questsOpenedOn)도 그날로 적힌다. 값 아님 — 차례. */
   const OPEN_PRIORITY = ['buy_lamp', 'first_cut', 'leaf_three', 'varie_bright'];
   const rankOf = id => { const i = OPEN_PRIORITY.indexOf(id); return i < 0 ? OPEN_PRIORITY.length + QUESTS.findIndex(x => x.id === id) : i; };
-  let openedFree = 0;                       // 이 걸음에 새로 연 «사슬 밖» 줄 수
+  /* ★ 실측(6판): d44 에 first_cut·varie_bright·leaf_three 셋이 «같은 날» 떴다 — stepQuests 는 하루에 «여러 번» 불리므로(놓기·거두기 뒤마다)
+     «부름»이 아니라 «날»로 세야 한다. 오늘 이미 연 사슬 밖 줄(questsOpenedOn == 오늘)을 먼저 센다. */
+  let openedFree = (() => { try {
+    const on = (S.stamina && S.stamina.questsOpenedOn) || {};
+    return Object.entries(on).filter(([id, d]) => d === s.day && !FIRST_PLAY_CHAIN_IDS.includes(id)).length;
+  } catch { return 0; } })();
   const deferred = new Set();               // 이 걸음에 미룬 줄 — 같은 걸음의 다음 바퀴에서도 안 연다
   for (let round = 0; round <= QUESTS.length; round++) {
     let changed = false;

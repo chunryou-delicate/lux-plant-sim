@@ -368,3 +368,12 @@ radish5 · siru16 · sell_varie 뜬 d— ⇐ 자의 탈(재배판이 가방 줄�
 - `worldToScreen(x,y,z)`(읽기만) · `hipsY` — [char] 청.
 - 대비([leaf] 폰 실화면): 「몬스테라는 아직 촉촉합니다 (n일 뒤)」 = `#waterPot.done` 반투명 흰 글 1.63:1 ⇒ 어두운 잉크 + 옅은 흰 알약(색 하나 · 값 아님). [다음 날] 2.67:1 은 안 건드림(판의 얼굴 · 박사님 몫).
 - ⑤ 원룸(첫 플레이 «끝» 뒤 이사 · 세운 판 · 새로 켬): 도착 대사(「불도 잘 안 드는 방이네」 · 건너뛰기 단추) 뒤 손가락은 «첫 플레이 시루 놓기»(cropThumb)를 짚었고 놓자 fp 단계가 grow_beansprout 로 «다시» 돌기 시작 → 그 다음 손가락 없음. 가구 아홉(가방)을 「받아들이고·놓고·옮기는」 손가락은 «없다». fp.completed 인데 phase 가 원룸에서 도로 도는 것부터 자리 물음 — [plan]과 볼 자리.
+
+### 밤 걸음 결과(넷째 묶음) — 6판 표(재배판 가방 칸 살린 뒤 · 80일 · 모드 초보 끝까지)
+```
+siru5_cycle5 뜬 d16 끝 d27 · crop_mix 뜬 d26 끝 d37 · radish5 뜬 d37 끝 d49 · siru8 뜬 d27 끝 d55 · siru16 뜬 d54
+first_cut · varie_bright · leaf_three 뜬 d44 · buy_lamp 뜬 d45 끝 d46 · leaf_two 끝 d44
+돈 d29 1,019k → d35 771k → d53 600k · 체력 0 막힘 d33·d48
+```
+⚠ d44 에 셋이 한 날 — 「한 번에 하나」가 «부름» 단위였다(stepQuests 는 하루에 여러 번 불린다) ⇒ questsOpenedOn 으로 «날» 단위로 고침.
+⚠ S.mode 는 새 판에 없다(undefined) · isNoviceMode 는 80일 내내 초보 — 전환 자리 없음(plan-after-setup-steps ⓚ).
