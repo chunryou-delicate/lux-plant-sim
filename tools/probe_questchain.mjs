@@ -311,8 +311,11 @@ console.log('\n══ E. ★★ 회귀 — 본 줄기 여덟은 예전 그대로
        (위 ⚠ 새 칸 넷) ⇒ 그러니 siru5 와 그 뒤(crop_mix·siru8·siru16)는 이 표에서 «안 열리는 것이 뜻대로»다(undefined).
        ⚠ 진짜 옛 세이브는 다르다 — 화면의 questSnapshotNow 가 placed 와 guide.moved(세이브에 실린다)로 두 칸을 «채운다».
        ⚠ 옛 값은 지우지 않고 옆에 남긴다: crop_mix 4 · siru5_cycle5 2 · siru8 4 · siru16 5. */
+  /* ★ 2026-09-06 — **「한 번에 하나」([plan] plan-after-setup-steps ⓒ · stepQuests). 회귀가 아니라 지시다.**
+       first_cut·buy_lamp 가 «같은 걸음(7)»에 열리던 것을 하루씩 세운다: buy_lamp 7(등이 곧 길) → first_cut 8 → varie_bright 9 → sell_varie 10.
+       ⚠ 옛 값은 옆에 남긴다: first_cut 7 · varie_bright 8 · sell_varie 9. */
   const OLD = { crop_mix: undefined, siru5_cycle5: undefined, siru8: undefined, siru16: undefined,
-                first_cut: 7, buy_lamp: 7, varie_bright: 8, sell_varie: 9 };
+                first_cut: 8, buy_lamp: 7, varie_bright: 10, sell_varie: 11 };   /* varie_bright 는 잎 3(leaf_three)이 먼저 서는 걸음(9) 뒤라 10 · sell_varie 11 */
   const S0 = emptySnapshot();
   const oldSteps = [
     { ...S0, day: 10, cropHarvestTotal: 1, cropPots: [{ kind: 'beansprout', harvestCount: 1 }] },
@@ -332,6 +335,13 @@ console.log('\n══ E. ★★ 회귀 — 본 줄기 여덟은 예전 그대로
       lampUnlocked: true, lampOwned: 1,
       cuttings: [{ method: 'water', status: 'rooted', varieFromCut: false, varieLightBand: 'mid' }] },
     { ...S0, day: 90, firstPlayDone: true, motherLeaves: 3, motherVarieLeaves: 2,
+      lampUnlocked: true, lampOwned: 1,
+      cuttings: [{ method: 'water', status: 'rooting', varieFromCut: true, varieLightBand: null }] },
+    /* ★ 2026-09-06 「한 번에 하나」(stepQuests · [plan] ⓒ) — 미뤄진 줄이 «다음 걸음»에 서므로 같은 판을 두 걸음 더 얹는다 */
+    { ...S0, day: 91, firstPlayDone: true, motherLeaves: 3, motherVarieLeaves: 2,
+      lampUnlocked: true, lampOwned: 1,
+      cuttings: [{ method: 'water', status: 'rooting', varieFromCut: true, varieLightBand: null }] },
+    { ...S0, day: 92, firstPlayDone: true, motherLeaves: 3, motherVarieLeaves: 2,
       lampUnlocked: true, lampOwned: 1,
       cuttings: [{ method: 'water', status: 'rooting', varieFromCut: true, varieLightBand: null }] }
   ];

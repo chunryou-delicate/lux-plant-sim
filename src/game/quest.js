@@ -933,14 +933,38 @@ export function stepQuests(S, snapshot) {
        충분하고(한 바퀴에 적어도 하나는 끝나야 다음 바퀴가 있다), 넘으면 그건 고장이다.
      ⚠ 사람이 보는 순서는 안 바뀐다 — 「열렸다」가 먼저 실리고 「끝났다」가 뒤에 실린다. */
   const doneNow = new Set(doneIds);
+  /* ★★ 2026-09-06 ([plan] plan-after-setup-steps ⓒ · 「한 번에 하나」) — **한 걸음(하루)에 새로 여는 줄은 하나다.**
+     실측(probe_longwalk 80일): d45 에 first_cut·buy_lamp·varie_bright·leaf_three «넷»이 한 날 떴다(잎 두 장 = 가을 진입).
+     ⇒ 첫 플레이 사슬(FIRST_PLAY_CHAIN_IDS · 놓기→물→첫 수확→… 가르침의 걸음)은 예외로 같은 날 잇고, 그 밖의 새 열림은
+       하루 하나 — 차례는 OPEN_PRIORITY(등이 곧 길 → 잎 2 → 잎 3 → 무늬), 나머지는 정의 순서. 미뤄진 줄은 opens 가 참인 채
+       남으므로 «다음 걸음»에 저절로 선다. 열린 날(questsOpenedOn)도 그날로 적힌다. 값 아님 — 차례. */
+  const OPEN_PRIORITY = ['buy_lamp', 'first_cut', 'leaf_three', 'varie_bright'];
+  const rankOf = id => { const i = OPEN_PRIORITY.indexOf(id); return i < 0 ? OPEN_PRIORITY.length + QUESTS.findIndex(x => x.id === id) : i; };
+  let openedFree = 0;                       // 이 걸음에 새로 연 «사슬 밖» 줄 수
+  const deferred = new Set();               // 이 걸음에 미룬 줄 — 같은 걸음의 다음 바퀴에서도 안 연다
   for (let round = 0; round <= QUESTS.length; round++) {
     let changed = false;
     const ctx2 = { doneIds: [...doneNow], S };
+    /* 이 바퀴에 «새로 열릴 수 있는» 줄을 먼저 모아 차례를 매긴다 — 정의 순서대로 열면 차례가 못 선다 */
+    const cands = [];
+    for (const q of QUESTS) {
+      if (doneNow.has(q.id) || S._questOpen.includes(q.id) || deferred.has(q.id)) continue;
+      let isOpen = false;
+      try { isOpen = !!q.opens(s, { ...ctx2, q }); } catch { isOpen = false; }
+      if (isOpen) cands.push(q);
+    }
+    cands.sort((a, b) => rankOf(a.id) - rankOf(b.id));
+    const allowed = new Set();
+    for (const q of cands) {
+      if (FIRST_PLAY_CHAIN_IDS.includes(q.id)) { allowed.add(q.id); continue; }
+      if (openedFree < 1) { allowed.add(q.id); openedFree++; } else deferred.add(q.id);
+    }
     for (const q of QUESTS) {
       if (doneNow.has(q.id)) continue;
       let isOpen = false;
       try { isOpen = !!q.opens(s, { ...ctx2, q }); } catch { isOpen = false; }
       if (!isOpen) continue;
+      if (!S._questOpen.includes(q.id) && !allowed.has(q.id)) continue;   /* ★ 미룬 줄 — 이 걸음엔 안 연다(끝남 판정도 다음 걸음) */
       if (!S._questOpen.includes(q.id)) {
         S._questOpen.push(q.id);
         /* ★ 2026-09-02 — «열린 날»을 적는다(stamina.questsOpenedOn · 세이브에 실린다). 한 번 적으면 안 바꾼다 —

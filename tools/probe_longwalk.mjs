@@ -44,7 +44,8 @@ const fingerAt = () => page.eval(`(()=>{ const h=document.getElementById('hint')
 const state = () => J(`(async()=>{ const fp=await import('/src/game/first_play.js'); const S=window.__S();
   const rows=[]; try { for (const r of (fp.cropPotList(S.firstPlay,S.day)||[])) rows.push({ 종:r.kind, 놓임:!!r.placed, 심어야:!!(r.needsSow||r.needsResow), 물:!!r.needsWater, 익음:!!r.ready, 자람:!!r.growing }); } catch(e){}
   const stm=await import('/src/game/stamina.js'); let sv=null; try { sv=stm.staminaView(S); } catch(e){}
-  return { 날:S.day, 할일:(document.getElementById('quest').textContent||'').trim().slice(0,30),
+  let 초보=null; try { const pr=await import('/src/game/propagation.js'); 초보=!!pr.isNoviceMode(S); } catch(e){}
+  return { 날:S.day, 모드:S.mode||null, 초보, 할일:(document.getElementById('quest').textContent||'').trim().slice(0,30),
     체력:sv?(sv.left??sv.now):null, 최대:sv?sv.max:null, 돈:(S.tutorial&&S.tutorial.cashWon)??null,
     줄:rows, 뜬:(S.stamina&&S.stamina.questsOpenedOn)||{}, 끝:(S.stamina&&S.stamina.questsTaken)||[],
     가방: { 시루: (S.shop&&S.shop.stock&&S.shop.stock.siru)||0, 판:(S.shop&&S.shop.stock&&S.shop.stock.sprout_tray)||0,
@@ -191,7 +192,8 @@ const nextDay = async () => {
 /* ── 걷기 ── */
 await quiet();
 const days = [], seen = { opened: {}, done: {} };
-let stuck = 0;
+let stuck = 0, modeSeen = null;
+{ const s0 = await state(); modeSeen = `${s0.모드}/${s0.초보 ? '초보' : '실전'}`; console.log(`■ 모드 — ${modeSeen} (S.mode / isNoviceMode)`); }
 for (let d = 0; d < DAYS; d++) {
   const log = [];
   let st = await state();
@@ -215,6 +217,7 @@ for (let d = 0; d < DAYS; d++) {
     if (!did && !g) break;
   }
   st = await state();
+  { const mNow = `${st.모드}/${st.초보 ? '초보' : '실전'}`; if (mNow !== modeSeen) { console.log(`★ 모드 바뀜 — Day ${st.날}: ${modeSeen} → ${mNow}`); modeSeen = mNow; } }
   const sig = JSON.stringify([st.할일, st.줄.length, st.가방, st.끝.length]);
   days.push({ 날: st.날, 할일: st.할일, 체력: `${st.체력}/${st.최대}`, 돈: st.돈, 줄: st.줄.length, 가방: st.가방, 주문: st.주문.join(','), log });
   console.log(`Day ${String(st.날).padStart(3)} · ${st.체력}/${st.최대} · ₩${st.돈} · 시루${st.줄.filter(r => r.종 === 'beansprout').length} 무순${st.줄.filter(r => r.종 === 'musun').length} · 「${st.할일}」` + (log.length ? '\n     ' + log.join('\n     ') : ''));
@@ -226,7 +229,7 @@ const fin = await state();
 for (const [id, on] of Object.entries(fin.뜬 || {})) if (seen.opened[id] == null) seen.opened[id] = on;
 for (const id of fin.끝 || []) if (seen.done[id] == null) seen.done[id] = fin.날;
 console.log('');
-console.log('=== ★ 퀘스트가 «뜬 날» · «끝난 날» (걸어서) ===');
+console.log(`=== ★ 퀘스트가 «뜬 날» · «끝난 날» (걸어서 · 모드 ${modeSeen} · ${W}×${H}) ===`);
 const q = await J(`(async()=>{ const Q=await import('/src/game/quest.js'); return Q.QUESTS.map(x=>({id:x.id, ko:x.ko, after:x.after||null})); })()`);
 for (const x of q) console.log(`  ${x.id.padEnd(14)} 뜬 ${seen.opened[x.id] != null ? 'd' + seen.opened[x.id] : 'd—'}  끝 ${seen.done[x.id] != null ? 'd' + seen.done[x.id] : 'd—'}   ${x.ko}`);
 console.log('');

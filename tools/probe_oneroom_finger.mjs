@@ -18,7 +18,7 @@ const m = (type, x, y, buttons) => page.send('Input.dispatchMouseEvent',
   { type, x: Math.round(x), y: Math.round(y), button: 'left', buttons, clickCount: 1 });
 const tapAt = async (x, y) => { await m('mouseMoved', x, y, 0); await m('mousePressed', x, y, 1);
   await sleep(80); await m('mouseReleased', x, y, 0); await sleep(700); };
-const skip = async (n = 40) => {
+const skip = async (n = 120) => {   /* 원룸 도착 대사가 길다(실측: 스무 번으로는 talking 이 안 걷혔다) */
   for (let i = 0; i < n; i++) {
     const b = await page.eval(`(()=>{const s=document.getElementById('stage'),g=document.getElementById('guide');
       return !!(s&&s.classList.contains('talking'))||!!(g&&g.classList.contains('on'));})()`);
@@ -44,12 +44,15 @@ const snap = () => page.eval(`(()=>{ const S=window.__S(); const fp=S.firstPlay|
     무대:document.getElementById('stage').className }); })()`);
 await skip();
 /* 이사 — 상태만 넘기고 저장, 새로 켠다(probe_oneroom_boot 와 같은 손) */
-await page.eval(`(()=>{ const S=window.__S(); const ts=S.tutorial;
+/* ★ 「첫 플레이 «끝» 뒤」의 이사다(총괄 ⑤) — 첫 판(Day 0 · place_beansprout)에서 이사하면 손가락은 첫 플레이 것을 짚는다(실측: 이사 true 인데 할 일이 「시루를 놓아 보세요」).
+   첫 플레이 끝은 코어 사실(fp.completed)로 세운다 — 세운 판이다. «걸어서» 첫 새순까지 가는 것은 36일이라 여기서는 안 걷는다(적는다). */
+await page.eval(`(()=>{ const S=window.__S(); const ts=S.tutorial; const fp=S.firstPlay;
+  if (fp) { fp.completed = true; fp.phase = 'spear_furled'; }
   ts.cashWon = ts.rules.moveOutCostWon + 100000;
   ts.varieLeaf = { ever:true, count:1, firstOnDay:S.day }; window.__redraw(); })()`, false);
 await sleep(600);
 await page.eval(`(()=>{ const b=document.getElementById('moveOut'); if(b){ b.disabled=false; b.click(); } })()`, false);
-await sleep(6000); await skip(20);
+await sleep(6000); await skip();
 console.log('■ 이사 직후 —', await snap());
 await page.eval(`(()=>{ try{ if(window.__save) window.__save(); }catch(e){} })()`, false);
 await sleep(1200);
@@ -57,13 +60,13 @@ await page.goto(`${BASE}/game.html`);
 let stood = false;
 for (let i = 0; i < 150; i++) { await sleep(1000); if (await page.eval(`String(!!window.__rv)`) === 'true') { stood = true; break; } }
 console.log('■ 새로 켠 원룸 —', stood ? '섰다' : '★★ 안 섰다', await snap());
-await sleep(2000); await skip(20);
+await sleep(2000); await skip();
 console.log('');
 console.log('=== 손가락 스무 걸음 ===');
 const steps = [];
 let same = 0, last = '';
 for (let i = 0; i < 20; i++) {
-  await skip(10);
+  await skip();
   const f = JSON.parse(await fingerAt());
   const before = await snap();
   if (!f) { steps.push({ i, 손가락: null, 판: before }); console.log(`  ${String(i).padStart(2)}  ⛔ 손가락 없음  · ${before}`); break; }
