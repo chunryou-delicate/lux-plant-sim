@@ -145,6 +145,8 @@ const goal = async (st, log) => {
     }
   }
   if (/무순|두 가지/.test(todo)) {
+    /* 실측(4 판): 산 재배판이 «가방 줄»(종 musun · 놓임 X)로 잡혀 「없음」도 「있음」도 아니었다 — 안 놓인 줄이 있으면 놓는다 */
+    if (musuns.some(r => !r.놓임)) return placeFromBag('musunThumb', log);
     if (!musuns.length) {
       if (st.가방.판 > 0) return placeFromBag('musunThumb', log);
       if (!ordered('sprout_tray')) return buy('sprout_tray', log);

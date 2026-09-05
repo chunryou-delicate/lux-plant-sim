@@ -7845,6 +7845,8 @@ export async function createRoomView(canvas, opts = {}) {
       /* ⑦ 잡고 있는 동작 — 끝 자세에서 멈춘다(abortAct 가 푼다) */
       holdClip: (clip, sec, onTick) => runClip(clip, sec, onTick, true),
       get held() { return !!heldAction; },
+      /* ★ [char] 청 — Hips 뼈의 «월드» y(읽기만). 뿌리(root.position.y)와 메시가 갈리는지 보는 자. 뼈가 없으면 null */
+      get hipsY() { try { if (!hips) return null; const v = new THREE.Vector3(); hips.getWorldPosition(v); return +v.y.toFixed(4); } catch { return null; } },
       /* ★ 발바닥 보정을 밖에서 볼 수 있게 낸다 — 검사(tools/test_ground.mjs)가
          "클립마다 재서 주는가"를 숫자로 못 박는 유일한 길이다. */
       get ground() {
@@ -9340,6 +9342,9 @@ export async function createRoomView(canvas, opts = {}) {
          ok:false 면 reason 이 **한국어 이유**다. nearest 는 붙일 후보일 뿐 —
          ★ 스냅 판단은 호출부가 한다. 원 밖에도 놓을 수 있어야 하기 때문이다. */
     surfaceAt(px, py, opt) { try { return surfaceAt(px, py, opt || {}); } catch (e) { throw fail(e); } },
+    /* ★ 2026-09-06 — 화면 점 → «바닥 평면» 점(걷기가 쓰는 floorAt 그대로). 가구를 옮길 때 면(surfaceAt)을 못 맞으면
+       (키 큰 가구의 옆면을 잡았을 때) 이것으로 잡는다. 읽기만 한다. 방 밖·못 맞으면 null. */
+    floorPointAt(px, py) { try { const f = floorAt(px, py); return f ? { x: f.x, z: f.z } : null; } catch (e) { throw fail(e); } },
 
     /* 임의 좌표에 화분을 세운다. spec 이 null 이면 그 화분을 치운다.
        ★ 같은 potId 가 어디에 놓여 있든 옛 자리를 지우고 옮긴다(복사되지 않는다). */
@@ -9853,6 +9858,7 @@ export async function createRoomView(canvas, opts = {}) {
         selected: id === selChar, walking: !!c.walking,
         pos: { x: c.root.position.x, y: c.root.position.y, z: c.root.position.z },
         yaw: c.root.rotation.y,
+        hipsY: (c.hipsY ?? null),      /* ★ [char] 청 — Hips 월드 y(읽기만) */
         /* 발바닥 보정 — 클립마다 재서 넣은 값들(사람만 있다) */
         ground: c.ground || null
       }));

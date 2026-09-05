@@ -14613,7 +14613,13 @@ const furnPicked = {
        snapFurniture 한 곳뿐이고, 걸음은 거기로 넘긴다. */
   dragTo(dx, dy) {
     const gx = this.originX + dx, gy = this.originY + dy;
-    const hit = freePlace.surfaceAt(gx, gy, 0, { grid: false });
+    let hit = freePlace.surfaceAt(gx, gy, 0, { grid: false });
+    /* ★ 2026-09-06 (uiwire P-2 · 그제부터) — 키 큰 가구(침대)를 «비껴 잡으면» 광선이 그 가구의 «옆면»을 맞아 surfaceAt 이
+       「벽」(x 없음)을 돌려주고, 유령이 안 섰다. 가구 옮기기의 기준은 바닥이다 ⇒ 면을 못 맞으면 «바닥 평면»으로 잡는다. */
+    if (!hit || !Number.isFinite(hit.x) || !Number.isFinite(hit.z)) {
+      let f = null; try { f = roomView && roomView.floorPointAt ? roomView.floorPointAt(gx, gy) : null; } catch { f = null; }
+      if (f) hit = { ...(hit || {}), x: f.x, z: f.z, ok: true, floorFallback: true };
+    }
     if (!hit) { $('dropLabel').textContent = '방 안으로 끌어 주세요'; return; }
     const at = this.relTo(hit);
     if (!at) { $('dropLabel').textContent = '방 안으로 끌어 주세요'; return; }
