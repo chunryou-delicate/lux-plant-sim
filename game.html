@@ -251,10 +251,13 @@
     background:linear-gradient(180deg,#8fd8ea,#5fb9d4);
     box-shadow:0 3px 0 rgba(0,0,0,.25);animation:waterPulse 1.8s ease-in-out infinite}
   @keyframes waterPulse{0%,100%{filter:brightness(1)}50%{filter:brightness(1.12)}}
-  /* ★ 2026-09-06 [leaf] 폰 실화면 대비: 「몬스테라는 아직 촉촉합니다 (n일 뒤)」가 1.63:1(글 L44.8 ↔ 바탕 L81) — «언제 물을 주나»를 말하는 줄이
+  /* ★ 2026-09-06 [leaf] 폰 실화면 대비: 「몬스테라는 아직 촉촉합니다 (n일 뒤)」가 1.69:1([leaf] 검증된 자 · 처음 낸 1.63 은 죽은 자의 수) — «언제 물을 주나»를 말하는 줄이
      거의 안 보였다. 반투명 흰 글(--dim)은 밝은 바탕 위에서 죽는다 ⇒ 어두운 잉크 + 옅은 흰 알약(밝은 바탕·어두운 무대 둘 다 4.5:1 위). 값 아님 · 색 하나. */
   #waterCrop.done,#waterPot.done{background:rgba(255,255,255,.55);color:#0d2a33;
-    box-shadow:none;animation:none}
+    box-shadow:none;animation:none;
+    /* ★ [leaf] 찍어서 잼(폰 390×844 · dpr2): .done 은 disabled 와 같은 조건이라 `button:disabled{opacity:.45}` 가 겹쳐 2.44:1 — 흐림을 걷으면 5.10:1.
+       .done 은 이미 제 옷(그림자·애니메이션 없음 · 옅은 알약)으로 「못 누른다」를 말하니 흐림까지 겹칠 까닭이 없다. 다른 잠긴 단추의 .45 는 그대로. */
+    opacity:1}
   /* 마른 채로 하루를 잃고 있는 중 — 재촉이 아니라 **잃고 있다는 사실**을 색으로 말한다 */
   #waterPot.dry{background:linear-gradient(180deg,#ffc98f,#f0a35f);color:#3a2708}
   /* 거두기 — 물주기와 같은 자리, 다른 색. 둘이 같이 뜨는 일은 없다 */
