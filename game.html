@@ -3897,6 +3897,7 @@ const HINT_DIM_ALPHA = 0.28;              /* 「약간」 — 딴 데가 안 보
 /* ★★ 2026-09-04 ㉲([plan] ② · 총괄) — **「강제」는 «어둡게 하기»(덮개+울타리)이지 손가락이 아니다.**
    「세팅 끝」(콩나물 시루 둘 놓임 && 창턱)부터 덮개는 «안 켠다» — 손가락은 살림 안내로 «남는다»(§updateHint 가 켠다). */
 let hintNoDim = false;
+let oneroomShadeSaid = false;   /* 원룸 첫 장면 ③ 「선반 아래가 어두워졌습니다」 — 이 판에서 한 번 */
 /* ★★ 2026-09-04 — **「놓임」은 «확정된 것»만이다.** 놓는 순간 그루에 slotId/at 가 «먼저» 들어가고 [취소]가 되돌리므로(§placeConfirmCancel)
    `cropPotPlaced` 는 「여기에 둘까요?」 단계의 임시 자리도 놓임으로 센다. 그래서 둘째 시루가 [확인] «전»에 세팅 끝이 서서
    [확인] 손가락이 죽었다(총괄 걸음 f56). ⇒ 확정 대기(picked.before · 무대 confirming)인 그루는 안 센다. 세팅 끝·둘째 시루 갈래·퀘스트 스냅샷이 «이 한 자»를 쓴다. */
@@ -5272,6 +5273,10 @@ function updateHint() {
     const nav = openTab && navOf[openTab.id] && $(navOf[openTab.id]);
     return (nav && onScreen(nav)) ? nav : (openTab && onScreen(openTab) ? openTab : null);
   };
+  /* ★ 2026-09-06 ([plan] plan-oneroom-first-scene ⓕ · 「첫 플레이는 반지하 한 번」) — 첫 플레이의 «놓기» 손가락은 fp.completed(주) ·
+     tutorial.movedOut(띠)이면 «안 선다». 실측(probe_oneroom_finger): 이사로 시루·그루가 가방에 들자 「끌거나 눌러서 방 안 어두운 자리에」가
+     원룸에서 «다시» 섰다 — 첫 플레이 말이 원룸에서 도는 병. 원룸의 첫 장면 안내(가방 → 가구 → 식물)는 [plan] ⓒⓓ 문안으로 따로 선다. */
+  const fpLive = !!(fp && fp.enabled && !fp.completed && !(ts && ts.movedOut));
   const settingDone = (() => {
     try {
       if (!fp || !(fp.monstera && fp.monstera.guide && fp.monstera.guide.moved)) return false;
@@ -5280,7 +5285,7 @@ function updateHint() {
     } catch { return false; }
   })();
   /* ⇒ 세팅 끝부터 «덮개만» 끈다. 손가락은 아래 갈래가 그대로 잇는다(총괄 걸음 4e7df67: d13 세팅 끝 뒤 다섯 걸음 내내 손가락이 없었다 — 그건 [plan] ②와 어긋났다). */
-  hintNoDim = !!settingDone;
+  hintNoDim = !!settingDone || !!(ts && ts.movedOut);   /* 원룸은 강제(어둡게) 없음 — [plan] ⓒ */
   const stage = $('stage'), sheetOpen = $('sheet').classList.contains('open');
   /* ★★★★ 2026-08-30 — **「시트가 열렸나」가 아니라 「시트가 «이것을» 덮나」.**
      ══════════════════════════════════════════════════════════════════
@@ -5577,7 +5582,49 @@ function updateHint() {
       return placedN >= 1 && placedN < 2 && spareSiru() > 0;
     } catch { return false; }
   })();
-  if (!placedOne || needPlaceSecond) {
+  /* ★★ 2026-09-06 ([plan] plan-oneroom-first-scene ⓒⓓⓕ) — **원룸 첫 장면 안내.** 강제 없이 가리킴만. 두 번째 방이라 배운 것을 «쓴다».
+     ① 가방 → ② 가구 하나 → ★③ (가구가 놓인 «순간») 「선반 아래가 어두워졌습니다 — 콩나물 자리입니다」 → ④ 식물·시루(세 갈래 문안).
+     끝 = 가방의 «식물»(그루·삽수·시루·재배판)이 다 놓였다 — 가구는 다 놓지 않아도 끝(자유 · 「플레이어가 배치」). 등은 손가락 없음(퀘스트 몫).
+     ⚠ 첫 플레이 손가락은 fp.completed·movedOut 이면 안 선다(§fpLive) — 이 사슬이 그 자리를 잇는다. */
+  if (ts && ts.movedOut) {
+    const home = S.home || {};
+    const furnBag = (home.furnitureBag || []).length, furnDone = (home.furnitureAdded || []).length;
+    let cutN = 0; try { cutN = bagCuttings().length; } catch { cutN = 0; }
+    let potN = 0; try { potN = bagPots().length; } catch { potN = 0; }
+    let siruN = 0, trayN = 0; try { siruN = spareSiru(); trayN = spareContainerOf('musun'); } catch { }
+    const plantsLeft = potN + cutN + siruN + trayN;
+    const bagDoor = () => {
+      for (const id of ['tabBag', 'openBag']) {
+        const el = $(id);
+        if (!el || !onScreen(el) || sheetCovers(el)) continue;
+        if (el.getAttribute && el.getAttribute('aria-selected') === 'true') continue;
+        return el;
+      }
+      return null;
+    };
+    /* ★③ 놓인 «순간» 한 줄 — 첫 가구가 서면 한 번만(이 판에서). 말은 [plan] 문안 그대로 */
+    if (furnDone >= 1 && !oneroomShadeSaid) { oneroomShadeSaid = true; banner('선반 아래가 어두워졌습니다', '콩나물 자리입니다'); }
+    if (plantsLeft > 0) {
+      /* ① · ② 가구 하나 — 아직 하나도 안 놓았고 가방에 가구가 있으면 */
+      if (furnDone === 0 && furnBag > 0) {
+        const cell = $('bagGrid') && $('bagGrid').querySelector('[data-furnbag]');
+        if (onScreen(cell) && !sheetCovers(cell)) return hintAt(cell, '선반을 꺼내 놓아 보세요');
+        const door = bagDoor(); if (door) return hintAt(door, '가방을 열어 보세요 — 반지하에서 가져온 것이 다 있습니다');
+      }
+      /* ④ 식물·시루 — 세 갈래 문안(ⓓ). 있는 것부터: 그루 → 삽수 → 시루/재배판 */
+      const potCell = $('bagGrid') && $('bagGrid').querySelector('[data-potbag]');
+      if (potN > 0 && onScreen(potCell) && !sheetCovers(potCell)) return hintAt(potCell, '몬스테라를 밝은 자리에 놓으세요');
+      let cutCell = null; try { const c0 = bagCuttings()[0]; cutCell = c0 ? $(cutThumbId(c0.id)) : null; } catch { cutCell = null; }
+      if (cutN > 0 && onScreen(cutCell) && !sheetCovers(cutCell)) return hintAt(cutCell, '삽수를 밝은 자리에 놓으세요');
+      const siruCell = $('bagGrid') && $('bagGrid').querySelector('[id="cropThumb"], [id="musunThumb"]');
+      if ((siruN + trayN) > 0 && onScreen(siruCell) && !sheetCovers(siruCell)) return hintAt(siruCell, '시루를 놓고 씨앗을 심으세요 — 처음처럼');
+      const door = bagDoor(); if (door) return hintAt(door, '이제 식물과 시루를 놓으세요');
+      return hintAt(null);
+    }
+    /* 끝 — 손가락 없음. 그 뒤는 원룸 퀘스트 몫 */
+    return hintAt(null);
+  }
+  if ((!placedOne || needPlaceSecond) && fpLive) {
     /* ★ 2026-08-10 — 가리키는 것은 이제 **가방 격자의 시루 칸**이다(id 는 그대로 `cropThumb`).
        칸이 없으면(빈 시루 0개) `onScreen(null)` 이 false 라 아래 [가방]으로 떨어진다. */
     if (onScreen($('cropThumb'))) return hintAt($('cropThumb'), '끌거나 눌러서 방 안 어두운 자리에');
@@ -5602,7 +5649,7 @@ function updateHint() {
        그루를 가리키는 줄이 먼저 걸려 손가락이 허공을 짚는다.
      ⚠ 가방이 닫혀 있으면 [가방] 을 먼저 가리킨다. 열려 있으면 **그 칸**을 짚는다 —
        시루가 쓰는 두 걸음(`cropThumb` → `openBag`)과 같은 결이다. */
-  if (bagPots().length) {
+  if (bagPots().length && fpLive) {
     /* 세 걸음이다 — 시루가 쓰는 그 결 그대로: **칸 → 가방 탭 → [가방]**.
        ⚠ 가운데 걸음을 빼면 **다른 탭이 열려 있을 때 손가락이 통째로 사라진다**
          (실측 2026-08-21: [식물] 탭을 열어 둔 판에서 `손가락: null` 이었다).

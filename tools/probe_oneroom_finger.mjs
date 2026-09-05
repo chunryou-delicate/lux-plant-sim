@@ -85,11 +85,14 @@ for (let i = 0; i < 20; i++) {
   if (!f) { steps.push({ i, 손가락: null, 판: before }); console.log(`  ${String(i).padStart(2)}  ⛔ 손가락 없음  · ${before}`); break; }
   const sig = f.짚는것 + '|' + f.말;
   same = sig === last ? same + 1 : 0; last = sig;
-  await tapAt(f.x, f.y); await sleep(600); await skip(10);
+  await tapAt(f.x, f.y); await sleep(600);
+  /* ★ [plan] ⓖ① — ③ 「선반 아래가 어두워졌습니다」 배너가 «찍히나»: 누른 직후(대사 넘기기 전)에 배너를 읽는다 */
+  const ban = await page.eval(`(()=>{ const b=document.getElementById('banner'); return b ? (b.textContent||'').trim().replace(/\\s+/g,' ').slice(0,80) : ''; })()`);
+  await skip();
   const after = await snap();
   const changed = before !== after;
-  steps.push({ i, 손가락: sig, 덮개: f.덮개, 바뀜: changed });
-  console.log(`  ${String(i).padStart(2)}  👉 ${f.짚는것.padEnd(12)} 「${f.말}」 덮개:${f.덮개 ? 'O' : 'X'}  판 ${changed ? '바뀜' : '그대로'}`);
+  steps.push({ i, 손가락: sig, 덮개: f.덮개, 바뀜: changed, 배너: ban });
+  console.log(`  ${String(i).padStart(2)}  👉 ${f.짚는것.padEnd(12)} 「${f.말}」 덮개:${f.덮개 ? 'O' : 'X'}  판 ${changed ? '바뀜' : '그대로'}` + (ban ? `  · 배너 「${ban}」` : ''));
   if (same >= 4) { console.log('  ⛔ 같은 손가락 다섯 번 · 판 그대로 — 여기가 막힌 데'); break; }
 }
 console.log('');
