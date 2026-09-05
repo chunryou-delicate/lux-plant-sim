@@ -48,7 +48,8 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const J = p => JSON.parse(fs.readFileSync(path.join(ROOT, p), 'utf8'));
 /* ★ 방을 밖에서 고른다 — ROOM=oneroom 처럼. 없으면 반지하다 (2026-08-29 원룸이 열렸다) */
 const ROOM = process.env.ROOM || 'banjiha';
-const P = J('data/profiles/room_profile.' + ROOM + '.json');
+/* PROFILE=<경로> 면 그 파일을 읽는다 — 후보 배치처럼 정본이 아닌 표를 돌릴 때 */
+const P = process.env.PROFILE ? JSON.parse(fs.readFileSync(path.resolve(process.env.PROFILE),'utf8')) : J('data/profiles/room_profile.' + ROOM + '.json');
 printHead(`자리별 조도 — 몬스테라 관문(7일 이동평균) 기준 · 방 «${ROOM}»`, P);
 const LD = { thresholds: J('data/balance/light_thresholds.json'),
              weather: J('data/balance/weather.json'), electricity: J('data/balance/electricity.json') };

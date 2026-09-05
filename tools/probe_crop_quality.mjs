@@ -50,7 +50,9 @@ function printHead(what, prof) {
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const J = p => JSON.parse(fs.readFileSync(path.join(ROOT, p), 'utf8'));
-const P = J('data/profiles/room_profile.banjiha.json');
+const ROOM = process.env.ROOM || 'banjiha';
+/* PROFILE=<경로> 면 그 파일을 읽는다 — 후보 배치처럼 정본이 아닌 표를 돌릴 때 */
+const P = process.env.PROFILE ? JSON.parse(fs.readFileSync(path.resolve(process.env.PROFILE),'utf8')) : J('data/profiles/room_profile.' + ROOM + '.json');
 printHead("작물 품질 — 자리마다 실제로 잡히는 등급", P);
 const light = createProfileLight({ ...P, uidStable: true },
   { thresholds: J('data/balance/light_thresholds.json'),
@@ -66,7 +68,11 @@ for (const s of P.slots) {
 
 for (const kind of ['beansprout','musun']) {
   const HD = cropKindOf(kind).harvestDays;
-  for (const [mode,lamps] of [['novice',0],['real',0],['real',1]]) {
+  /* LAMPS=0,1,2 면 real 을 그 개수로 돈다. 없으면 novice0 · real0 · real1 */
+  const CASES = process.env.LAMPS
+    ? process.env.LAMPS.split(',').map(n => ['real', Number(n)])
+    : [['novice',0],['real',0],['real',1]];
+  for (const [mode,lamps] of CASES) {
     const hist={}; const tally={};
     IDS.forEach(id=>{hist[id]=[];tally[id]={};});
     for (let d=1; d<=400; d++){
