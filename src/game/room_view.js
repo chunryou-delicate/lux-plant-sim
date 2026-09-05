@@ -8255,9 +8255,10 @@ export async function createRoomView(canvas, opts = {}) {
        열쇠는 화분 자리가 아니라 **가구 uid**(§resolveKey). 자리는 가구 «한가운데»·가구의 앞 방향이다.
        ⚠ 클립(assets/characters/3d/anim/char_*_sit.glb · _sleep.glb)은 이미 있다(총괄 확인 · 24/24 뼈).
        sleepLift: 침대 «위»에 눕는 높이 = 가구 h - 이 값(매트리스 두께 어림). 화면으로 재서 고친다. */
-    sit:     { clip: 'sit',   from: 0, win: 0, sec: 1.2, prop: null, fx: null, ko: '앉는 중', hold: true },
-    sleep:   { clip: 'sleep', from: 0, win: 0, sec: 1.6, prop: null, fx: null, ko: '눕는 중', hold: true,
-               sleepLift: 0.45 }
+    sit:     { clip: 'sit',   from: 0, win: 0, sec: 1.2, prop: null, fx: null, ko: '앉는 중', hold: true, sink: 0 },
+    /* ★ 2026-09-06 — 높이는 «가구에게 묻는다»(surfaceTopAt · ㊶). [char]가 수로 잰 것: 앉기가 바닥(0.000)에 앉았다(앉는 면 0.465).
+       sink = 윗면에서 «눌리는» 만큼(매트리스). 의자는 0. */
+    sleep:   { clip: 'sleep', from: 0, win: 0, sec: 1.6, prop: null, fx: null, ko: '눕는 중', hold: true, sink: 0.04 }
   };
   /* 대상 둘레 어디쯤에 서나. 화분에 손이 닿는 거리부터 훑는다.
      ★ 0.70 부터 시작하는 이유 — 몸 반지름이 0.38 이고 서랍장 깊이가 0.45 안팎이라
@@ -8838,8 +8839,10 @@ export async function createRoomView(canvas, opts = {}) {
       const g = t.furn || null;
       const root = person.c.root;
       const before = { x: root.position.x, y: root.position.y, z: root.position.z, rot: root.rotation.y };
-      const size = (g && g.userData && g.userData.size) || {};
-      const lift = K === 'sleep' ? Math.max(0.15, (size.h || 0) - (spec.sleepLift || 0)) : 0;
+      /* 높이 — 가구 «윗면»(surfaceTopAt · 앉는 면 · 매트리스 위)에서 sink 만큼 눌린 데. 못 물으면(면이 없다) 바닥. */
+      let top = 0;
+      try { const st = surfaceTopAt(t.pos.x, t.pos.z); top = (st && Number.isFinite(st.y)) ? st.y : 0; } catch { top = 0; }
+      const lift = Math.max(0, top - (spec.sink || 0));
       root.position.set(t.pos.x, before.y + lift, t.pos.z);
       if (g) root.rotation.y = g.rotation.y || 0;
       needsRender = true;
