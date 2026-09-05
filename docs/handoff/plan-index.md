@@ -97,7 +97,9 @@
 ## ⑤ ⏸ 대기 — «언제»를 붙였다
 
 ```
-무순을 처음 만나는 자리      ⛔ [core]의 「뜬 날 · 열쇠」 표가 나온 «뒤». 그 전에 세우면 [차례]를 읽는 것
+무순을 처음 만나는 자리      ✔ 됨(09-06) — crop_mix = 시루 다섯 «뒤». plan-quest-reframe ㉱ⓓ
+박사님 묶음 넷               plan-night-asks-20260906 — 두 바퀴째 ㉮/㉯ · 바닥 시루 · 크레딧 10/74 · 기준 배치. 아침 답 뒤 각 파일에 반영
+[core] 세 바퀴 너머 걸음     나오면 plan-after-setup-steps 「뜬 날」 칸과 plan-empty-days ⓓ를 [잰 것]으로 바꾼다
 독촉 넷의 「며칠마다」        같은 표 뒤. 밑값(다음 날/사나흘/한 이레/두 이레)은 월세 한 달에 댄 것
 걸음표 「지금」 칸           [core] 손가락 되살린 뒤
 ③ 두 바퀴째가 걸음으로 남나   총괄 → 박사님. 열쇠(콩나물 두 바퀴)를 두면 ㉮ 강제 가이드가 끈다
@@ -115,7 +117,8 @@
 원룸·집          plan-oneroom-order · plan-apartment-9-75
 잎·무늬          plan-leaf22-before-grading · plan-white-to-varie · plan-varie-line-awkward · plan-blessed-cutting
 사람             plan-char-remodel-why · plan-jachwi-two-faces · plan-stamina-teaching
-일하는 법         plan-nobody-does-it · plan-rules-naming-and-baseval · plan-night-agreements-0829 · plan-map-2026-08-29(지도)
+일하는 법         plan-nobody-does-it · plan-rules-naming-and-baseval · plan-night-agreements-0829 · plan-map-2026-08-29(지도) · plan-rules-20260906(계율 일곱)
+09-06 밤          plan-night-asks-20260906(박사님 묶음 넷) · plan-after-setup-steps(세팅 뒤 순서·열쇠) · plan-empty-days(빈 날 넷) · plan-oneroom-first-scene(원룸 첫 장면)
 ```
 
 ---
