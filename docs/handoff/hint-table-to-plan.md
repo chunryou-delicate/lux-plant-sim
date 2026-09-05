@@ -377,3 +377,9 @@ first_cut · varie_bright · leaf_three 뜬 d44 · buy_lamp 뜬 d45 끝 d46 · l
 ```
 ⚠ d44 에 셋이 한 날 — 「한 번에 하나」가 «부름» 단위였다(stepQuests 는 하루에 여러 번 불린다) ⇒ questsOpenedOn 으로 «날» 단위로 고침.
 ⚠ S.mode 는 새 판에 없다(undefined) · isNoviceMode 는 80일 내내 초보 — 전환 자리 없음(plan-after-setup-steps ⓚ).
+
+### 밤 걸음 결과(다섯째 묶음) — 918263f · 8acdef1
+- 「한 번에 하나」는 «날» 단위 — 6판 d44 에 셋이 한 날 뜬 까닭은 stepQuests 가 하루에 여러 번 불리는 것(놓기·거두기 뒤마다). questsOpenedOn 으로 「오늘 이미 연 사슬 밖 줄」을 센다. questchain 「그대로 하루 더」 걸음이 day 를 안 올리고 있던 자의 탈 → 올림 → 16/16.
+- 앉기 골반 hipsY 0.465 = 앉는 면 0.465 · 뿌리 0.057 — 제 자(probe_nap)와 [char] 자(probe_rest_fit)가 «같은 수». 서 있을 때 0.562 → 앉으면 −0.097.
+- 「첫 플레이는 반지하 한 번」 — fpLive = fp.enabled && !fp.completed && !movedOut. 첫 플레이의 놓기 손가락(시루·가방 그루)은 이것이 아니면 안 선다. 첫 닷새 회귀(force5 1770 두 바퀴) 5/5 · 끊김 0.
+- 원룸 첫 장면 안내([plan] plan-oneroom-first-scene ⓒⓓⓕ 문안 · 강제 없음): 걸어서(세운 판 · 첫 플레이 끝 뒤 이사 · 새로 켬) 「선반을 꺼내 놓아 보세요」→ 놓임 → 「시루를 놓고 씨앗을 심으세요 — 처음처럼」→ [확인] → 끝(손가락 없음 · 가구 8 남음). ⚠ ③ 「선반 아래가 어두워졌습니다」 배너는 자가 «못 읽었다»(#banner 글이 매 걸음 비어 나옴 — 놓기 배너도 안 잡힘) — 자의 눈 문제. 눈으로 볼 자리. ⓓ-ⓑ·ⓓ-ⓒ(삽수·그루)는 진짜 이사 판이 필요해 못 걸음.
