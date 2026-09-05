@@ -83,9 +83,11 @@ if (chair) {
     const w = await waitAct(); const on = w && w.on, st = w && w.st;
     ok('앉아 «있는다»(restingOn = 의자 · 동작 끝)', on && on.key === chair.uid && on.kind === 'sit' && !st, JSON.stringify(w));
     /* ★ [char] c53e661 이 잰 것: 앉는 면 y(surfaceTopAt) 와 사람 pos.y — 높이는 가구에게 묻는다 */
+    /* ★ [char] 9dcc158 — 자는 «뿌리»가 아니라 «골반»(hipsY)을 잰다. sit 클립은 이미 앉은 자세(발 바닥 · 골반 0.408)라
+       뿌리를 좌석 높이만큼 올리면 골반이 서 있을 때보다 31cm 높아진다. 맞는 그림 = 골반 ≈ 앉는 면. */
     const sy = await J(`(()=>{ const c=(window.__rv.characters()||[]).find(x=>x.id==='jachwi'); const t=window.__rv.surfaceTopAt(${chair.x}, ${chair.z});
-      return { 사람y: c ? +c.pos.y.toFixed(3) : null, 앉는면y: t ? +(+t.y).toFixed(3) : null, ground: c && c.ground ? c.ground : null }; })()`);
-    ok('앉는 높이 = 의자 앉는 면(surfaceTopAt)', sy && sy.사람y != null && sy.앉는면y != null && Math.abs(sy.사람y - sy.앉는면y) < 0.02, JSON.stringify(sy));
+      return { 뿌리y: c ? +c.pos.y.toFixed(3) : null, 골반y: c && c.hipsY != null ? +c.hipsY.toFixed(3) : null, 앉는면y: t ? +(+t.y).toFixed(3) : null, ground: c && c.ground ? c.ground : null }; })()`);
+    ok('앉는 높이 — 골반(hipsY) ≈ 의자 앉는 면(surfaceTopAt)', sy && sy.골반y != null && sy.앉는면y != null && Math.abs(sy.골반y - sy.앉는면y) < 0.03, JSON.stringify(sy));
     await page.shot('docs/handoff/img/nap_sit.png').catch(() => {});
     const p2 = await pickFurn(chair);
     const b2 = await btn('furnSit');

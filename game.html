@@ -251,7 +251,9 @@
     background:linear-gradient(180deg,#8fd8ea,#5fb9d4);
     box-shadow:0 3px 0 rgba(0,0,0,.25);animation:waterPulse 1.8s ease-in-out infinite}
   @keyframes waterPulse{0%,100%{filter:brightness(1)}50%{filter:brightness(1.12)}}
-  #waterCrop.done,#waterPot.done{background:rgba(255,255,255,.07);color:var(--dim);
+  /* ★ 2026-09-06 [leaf] 폰 실화면 대비: 「몬스테라는 아직 촉촉합니다 (n일 뒤)」가 1.63:1(글 L44.8 ↔ 바탕 L81) — «언제 물을 주나»를 말하는 줄이
+     거의 안 보였다. 반투명 흰 글(--dim)은 밝은 바탕 위에서 죽는다 ⇒ 어두운 잉크 + 옅은 흰 알약(밝은 바탕·어두운 무대 둘 다 4.5:1 위). 값 아님 · 색 하나. */
+  #waterCrop.done,#waterPot.done{background:rgba(255,255,255,.55);color:#0d2a33;
     box-shadow:none;animation:none}
   /* 마른 채로 하루를 잃고 있는 중 — 재촉이 아니라 **잃고 있다는 사실**을 색으로 말한다 */
   #waterPot.dry{background:linear-gradient(180deg,#ffc98f,#f0a35f);color:#3a2708}
@@ -7657,8 +7659,12 @@ function drawBag() {
       const p = BAG_PLACEABLE[id];
       /* ★ 2026-08-16 — **화분도 누르면 놓인다.** 예전에는 `beansprout` 만 손잡이를 받아
          모종포트·테라코타는 그림을 눌러도 아무 일이 없었다(박사님: *"다 안 되잖아 배치"*). */
-      bindDrag(p.thumbId, p.kind,
+      /* ★ 2026-09-06 (밤 걸음 · 5판) — **재배판 칸이 죽어 있었다.** `#musunThumb` 은 «감춘 큰 카드»에도 있어 `$()` 가 그것을 잡고,
+         `usable` 이 거짓이면 `.bagslot[data-place="musun"]` 을 찾는데 그 칸은 그 표를 안 달아 손잡이가 안 걸렸다(80일 내내 못 놓음).
+         ⇒ «가방 격자 안»의 그 그림을 요소째 넘긴다 — 시루(cropThumb)와 같은 손. */
+      bindDrag(grid.querySelector(`[id="${p.thumbId}"]`) || p.thumbId, p.kind,
         p.kind === 'beansprout' ? () => startPhonePlace()
+        : p.kind === 'musun'    ? () => startPhonePlaceMusun()
         : isPotPlace(p.kind)    ? () => startPhonePlacePot(p.kind)
         : null);
     }
@@ -13982,22 +13988,27 @@ function placeLampFromBag() {
   fillSlots(); syncRoom(); draw();
 }
 
-function startPhonePlace() {
-  if (spareSiru() <= 0) { banner('가방에 빈 시루가 없습니다', '상점에서 시루를 주문해 주세요'); return; }
+/* ★ 2026-09-06 (밤 걸음 5판) — **재배판도 «누르면» 놓인다.** 여태 재배판은 끌기만 있었고(§bindDrag('musunThumb') 셋째 인자 없음)
+   가방 칸은 죽어 있어(§drawBag) 80일 내내 못 놓았다. 콩나물과 «같은 함수»(placeSiru · kind · sow:false)를 탄다 — 시루와 같은 손. */
+function startPhonePlaceMusun() { return startPhonePlace('musun'); }
+function startPhonePlace(kind = 'beansprout') {
+  const musun = kind === 'musun';
+  const spare = musun ? spareContainerOf('musun') : spareSiru();
+  if (spare <= 0) { banner(musun ? '가방에 빈 재배판이 없습니다' : '가방에 빈 시루가 없습니다', musun ? '상점에서 새싹 재배판을 주문해 주세요' : '상점에서 시루를 주문해 주세요'); return; }
   const spot = provisionalSpot();
   if (!spot) { banner('놓을 자리를 못 찾았습니다', '방을 조금 돌린 뒤 다시 눌러 주세요'); return; }
   let r = null;
   /* ★ 2026-08-16 — 끌어 놓기와 **같은 낱말**(`sow:false`)이라야 두 손이 같은 일을 한다.
      안 넘기면 누르기만 씨앗을 먹어서, 같은 물건이 손버릇에 따라 다른 값이 든다. */
   try { r = placeSiru(S, spot, { slots: io.light.room.slots, size: io.light.room.size,
-                                 snapDist: 0, sow: false }); }
+                                 snapDist: 0, sow: false, ...(musun ? { kind: 'musun' } : {}) }); }
   catch (e) { banner('배치하지 못했습니다', (e && e.message) || ''); return; }
   try { window.__byeotSheet.close(); } catch { }
   draw();
   afterPlace();          /* ★ 놓은 그 순간에 할 일 줄을 다시 본다(§afterPlace) */
   /* 방에 실제로 서야 `screenPosOf` 가 풀린다 — 그린 **뒤에** 고른다 */
   const key = siruKey(r.potId);
-  if (!key) { banner('시루를 놓았습니다', '방에서 눌러 옮길 수 있습니다'); return; }
+  if (!key) { banner(musun ? '재배판을 놓았습니다' : '시루를 놓았습니다', '방에서 눌러 옮길 수 있습니다'); return; }
   /* ★ 2026-08-16 — **`confirming` 을 고르기 앞으로 옮겼다**(§coach A-3).
      이 길은 놓자마자 옮기기 모드로 들어가고 아래에서 「자리를 고르세요」 배너를 낸다.
      `picked.select` 안의 첫걸음 쪽지는 `confirming` 이 거짓일 때만 뜨므로, 뒤에 세우면

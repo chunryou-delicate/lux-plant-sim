@@ -8856,7 +8856,16 @@ export async function createRoomView(canvas, opts = {}) {
         root.position.set(before.x, before.y, before.z); root.rotation.y = before.rot; needsRender = true;
         return bail(token.cancelled ? token.reason : '동작이 끊겼습니다');
       }
-      restPose = { charId: person.id, key: t.key, kind: K, before, top, lift, topWhy };
+      /* ★ 2026-09-06 ([char] 9dcc158) — **앉기는 «골반»을 좌석 면에 맞춘다.** sit 클립은 이미 「발은 바닥 · 골반 0.408」인 자세라
+         뿌리를 좌석 높이만큼 통째로 올리면 발이 좌석 높이에 뜨고 골반이 서 있을 때보다 31cm 높아졌다(hipsY 0.873 vs idle 0.562).
+         ⇒ 클립이 끝난 자세에서 골반의 뿌리 대비 높이를 «재서»(hipsLocal · 클립에게 묻는다) 뿌리 = 좌석 면 − hipsLocal. 박은 수 없음.
+         눕기는 그대로 — 몸 최저점이 매트리스에 sink 만큼 눌리고 골반은 등을 대고 누운 두께만큼 위(0.18)가 맞다. */
+      let liftUsed = lift;
+      if (K === 'sit' && Number.isFinite(person.c.hipsY)) {
+        const hipsLocal = person.c.hipsY - root.position.y;
+        if (Number.isFinite(hipsLocal) && hipsLocal > 0) { liftUsed = Math.max(0, top - hipsLocal); root.position.y = before.y + liftUsed; needsRender = true; }
+      }
+      restPose = { charId: person.id, key: t.key, kind: K, before, top, lift: liftUsed, topWhy };
       return finish();
     }
     let can = null, fx = null, soil = null, hand = null;
@@ -9345,6 +9354,8 @@ export async function createRoomView(canvas, opts = {}) {
     /* ★ 2026-09-06 — 화면 점 → «바닥 평면» 점(걷기가 쓰는 floorAt 그대로). 가구를 옮길 때 면(surfaceAt)을 못 맞으면
        (키 큰 가구의 옆면을 잡았을 때) 이것으로 잡는다. 읽기만 한다. 방 밖·못 맞으면 null. */
     floorPointAt(px, py) { try { const f = floorAt(px, py); return f ? { x: f.x, z: f.z } : null; } catch (e) { throw fail(e); } },
+    /* ★ [char] 청(2026-09-06) — 세계점 → 화면점(캔버스 기준 px · 읽기만). screenPosOf 가 쓰는 slotScreenPos 그대로. 키를 재려면 두 점이 필요하다. */
+    worldToScreen(x, y, z) { try { const p = slotScreenPos({ x: +x, y: +y, z: +z }); return p ? { x: p.x, y: p.y } : null; } catch (e) { throw fail(e); } },
 
     /* 임의 좌표에 화분을 세운다. spec 이 null 이면 그 화분을 치운다.
        ★ 같은 potId 가 어디에 놓여 있든 옛 자리를 지우고 옮긴다(복사되지 않는다). */

@@ -61,6 +61,19 @@ let stood = false;
 for (let i = 0; i < 150; i++) { await sleep(1000); if (await page.eval(`String(!!window.__rv)`) === 'true') { stood = true; break; } }
 console.log('■ 새로 켠 원룸 —', stood ? '섰다' : '★★ 안 섰다', await snap());
 await sleep(2000); await skip();
+/* ★ 실측(n2): 새로 켠 원룸에서 talking 이 30초를 넘겨도 안 걷혔다 — 어떤 대사인지, 눌 단추가 있는지 «적고», 보이는 단추를 눌러 본다 */
+for (let i = 0; i < 6; i++) {
+  const d = JSON.parse(await page.eval(`(()=>{ const s=document.getElementById('stage'); if(!s.classList.contains('talking')) return 'null';
+    const box=document.getElementById('dlgBox'); const btns=[...document.querySelectorAll('#dlg button, #dlgBox button, .dlg button')]
+      .filter(b=>b.getBoundingClientRect().width>0).map(b=>({ id:b.id, 글:(b.textContent||'').trim().slice(0,16) }));
+    return JSON.stringify({ 글:(box?box.textContent:'').trim().replace(/\\s+/g,' ').slice(0,120), 단추:btns, 무대:s.className }); })()`));
+  if (!d) break;
+  console.log(`  ⚠ 대사가 안 걷힘 — ${JSON.stringify(d)}`);
+  const clicked = await page.eval(`(()=>{ const bs=[...document.querySelectorAll('#dlg button, #dlgBox button, .dlg button')].filter(b=>b.getBoundingClientRect().width>0 && !b.disabled);
+    const b=bs.find(x=>/다음|확인|닫기|알겠|응|네/.test(x.textContent||'')) || bs[0]; if(!b) return 'none'; b.click(); return b.id||(b.textContent||'').trim().slice(0,10); })()`);
+  console.log(`     ↳ 눌렀다: ${clicked}`);
+  await sleep(600); await skip();
+}
 console.log('');
 console.log('=== 손가락 스무 걸음 ===');
 const steps = [];
