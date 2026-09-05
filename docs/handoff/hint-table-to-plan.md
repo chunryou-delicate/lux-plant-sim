@@ -353,3 +353,10 @@ first_cut · buy_lamp · varie_bright · leaf_three 뜬 d45 (잎 두 장 = 가�
 radish5 · siru16 · sell_varie 뜬 d— ⇐ 자의 탈(재배판이 가방 줄로 잡혀 안 놓음 → 5판에서 다시)
 돈 d24 1,066k → d32 796k(월세) → d64 339k → d76 244k · 체력 0 으로 막힌 날 d34·d64
 ```
+
+### 밤 걸음 결과(이어서)
+- ③ P-2 — 바닥 평면 폴백 뒤 걸어서: probe_grabjump 유령 섬(1.02m · direct 손버릇 그대로) · test_uiwire **55/55**(P-2 초록). 91afd4c.
+- ② 폰 390×844 force5(4바퀴): 끊김 **6 → 2** · 5/5 · 네 바퀴 d19. 남은 둘은 d11·d18 [주문] 직후 — `__hintLast` 는 next 「씨앗은 내일 옵니다」 보임 true 인데 화면 손가락(#hint.on)이 2초 넘게 안 보인다 — 게임 쪽 자리로 보이며 보류.
+- [plan] ⓒ 「한 번에 하나」 — 실측(4판)에서 d45 에 first_cut·buy_lamp·varie_bright·leaf_three 넷이 한 날 떴다 ⇒ stepQuests 가 한 걸음에 «사슬 밖» 새 열림을 하나만(차례 buy_lamp → first_cut → leaf_three → varie_bright · 첫 플레이 사슬 예외). questchain 옛 표 재핀(7 → 7·8·10·11). 2281dba.
+- ⑤ 원룸 — 첫 자는 Day 0 에서 이사해 첫 플레이 손가락을 짚었다(제 판 잘못). 첫 플레이 끝(fp.completed · 세운 판)으로 세워 다시 켰더니 «도착 대사가 30초를 넘겨도 안 걷혀» 손가락을 못 읽었다 — 자에 「어떤 대사·단추가 있나」를 적고 누르는 손을 붙여 다시 돈다(크롬 차례).
+- 표의 모드: 새 판 `S.mode` 는 «없음»(undefined) · isNoviceMode = 초보. novice → real 로 «바꾸는 자리»는 코드에 없다(엔딩·이사 뒤 스토리 기준).
