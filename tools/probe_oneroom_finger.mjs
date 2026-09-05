@@ -74,6 +74,10 @@ for (let i = 0; i < 6; i++) {
   console.log(`     ↳ 눌렀다: ${clicked}`);
   await sleep(600); await skip();
 }
+/* ★ 배너는 «순간»이라 걸음 뒤에 읽으면 비어 있다(n5 실측: 매 걸음 ''). 페이지에 «지켜보는 눈»(MutationObserver)을 달아 배너 글이 바뀔 때마다 적어 둔다 */
+await page.eval(`(()=>{ window.__banLog = []; const b = document.getElementById('banner'); if (!b) return;
+  const push = () => { const t = (b.textContent || '').trim().replace(/\\s+/g, ' ').slice(0, 90); if (t && window.__banLog[window.__banLog.length - 1] !== t) window.__banLog.push(t); };
+  new MutationObserver(push).observe(b, { childList: true, subtree: true, characterData: true, attributes: true }); push(); })()`, false);
 console.log('');
 console.log('=== 손가락 스무 걸음 ===');
 const steps = [];
@@ -96,6 +100,7 @@ for (let i = 0; i < 20; i++) {
   if (same >= 4) { console.log('  ⛔ 같은 손가락 다섯 번 · 판 그대로 — 여기가 막힌 데'); break; }
 }
 console.log('');
+console.log('■ 배너 자국 —', await page.eval(`JSON.stringify(window.__banLog || null)`));
 console.log('■ 끝 —', await snap());
 await page.shot('docs/handoff/img/oneroom_finger.png').catch(() => {});
 await page.close(); clearTimeout(wd);
