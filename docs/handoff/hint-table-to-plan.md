@@ -396,3 +396,4 @@ siru5 끝 d26 → crop_mix 뜬 d25 끝 d36 → radish5 뜬 d36 끝 d48 → siru8
 - ③ 「선반 아래가 어두워졌습니다 — 콩나물 자리입니다」 — 걸어서 찍힘(첫 가구가 서는 순간 · #event). 앞서 「못 읽었다」는 자가 #banner 를 본 탓(게임의 배너 칸은 #event).
   회귀(hintAtPoint 문 뒤): force5 폰 390×844 네 바퀴 5/5 · 끊김 3 · 창턱 d11 · force5 1770 두 바퀴 5/5(창턱은 두 바퀴 밖) · 끊김 0.
   ★ 폰 80일 «다시»(9판 · 390×844 · 점 손가락 문 뒤): 「할 일이 가려졌습니다」→ 끌기 → 창턱 d17(monstera_home 끝) → siru5 끝 d31 → crop_mix d30~52 → radish5 d52~64 → siru8 끝 d70 → siru16 뜬 d69 · buy_lamp d45~46 · 잎 2장 d59. (폰 자는 손이 느려 날이 뒤로 밀린다 — 차례는 같다.)
+- 대비 마무리([leaf] 찍어서): `.done` 알약이 `button:disabled{opacity:.45}` 에 겹쳐 2.44:1 이던 것 → `#waterCrop.done,#waterPot.done{opacity:1}`(6a7d02b) → 배포판 실측 5.10:1(글 구역) · 4.69:1(알약 안쪽) · 어두운 무대 한 바탕만 잼(밝은 바탕은 셈으로 더 유리). 닫힘.
