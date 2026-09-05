@@ -109,9 +109,27 @@ async function main() {
         /* 방 깊이(z)를 t 로 나눠 자리를 잡는다 */
         const z = (room.d ? (-room.d / 2 + room.d * sp.t) : (-1 + 2 * sp.t));
         const x = 0;
-        const w = await p.eval('(()=>{ const v = window.__rv.walkTo(' + x + ', ' + z + ');'
-          + " return (v&&v.then) ? v.then(()=>'ok').catch(e=>'ERR '+e.message) : String(v); })()");
-        await sleep(4500);
+        /* ⚠⚠ `walkTo` 는 **`(id, screenX, screenY)`** 다 — «화면 점»(client 좌표)이지
+             세계 x,z 가 «아니다». ⇒ 나는 `walkTo(x, z)` 로 불렀고
+             ⇒ ⛔ 열두 번 다 「걸을 수 있는 캐릭터가 아닙니다」로 돌아왔다(id 에 숫자가 들어가서).
+           ⇒ ⇒ ★★ 그런데 그 «반환을 안 읽었다». `[object Object]` 로만 찍고 넘어갔다.
+             ⇒ 자가 「안 됐다」고 «말해 줬는데» 내가 «안 들었다». 오늘 세 번째로 이름만 보고 짚었다.
+           ⇒ ✔ 옳은 부름 ([core] 가 알려 줌):
+               const p = rv.worldToScreen(x, 0, z);
+               const r = roomCanvas.getBoundingClientRect();
+               rv.walkTo('jachwi', r.left + p.x, r.top + p.y)
+             반환에 { ok, x, z, reason } 이 있다 — ★ **그 `ok` 를 «본다».** */
+        const w = JSON.parse(await p.eval('(()=>{ try {'
+          + ' const rv = window.__rv;'
+          + ' const sp = rv.worldToScreen(' + x + ', 0, ' + z + ');'
+          + ' if (!sp) return JSON.stringify({ ok: false, reason: "worldToScreen null" });'
+          + ' const cv = document.getElementById("roomCanvas");'
+          + ' const r = cv.getBoundingClientRect();'
+          + " const v = rv.walkTo('jachwi', r.left + sp.x, r.top + sp.y);"
+          + ' return JSON.stringify(v && typeof v === "object" ? v : { ok: !!v, raw: String(v) });'
+          + ' } catch(e) { return JSON.stringify({ ok: false, reason: e.message }); } })()'));
+        if (!w.ok) { console.log('  ' + sp.key + ': ⛔ 못 걸었다 — ' + (w.reason || '?')); continue; }
+        await sleep(6000);
         const pos = JSON.parse(await p.eval('(()=>{ const c=(window.__rv.characters()||[])'
           + ".find(c=>c.id==='jachwi'); return JSON.stringify(c?c.pos:null); })()"));
 
