@@ -60,3 +60,34 @@ sell_varie       무늬 삽수가 생겼을 때                  무늬 삽수�
 뜬 날 · 실제로 몇 번째 가을에 lampUnlocked 가 참이 되나 · siru16 이 끝나는 날 · 잎 2장이 오는 날(novice 창턱)
 ⇒ 그 넷이 오면 ⓒ의 「겹치는 날」이 «진짜» 겹치나가 보인다. 그 전엔 이 표는 «순서»다
 ```
+
+---
+## ⓖ ★ 「뜬 날」 — [잰 것] · [core] probe_longwalk (2026-09-06 밤)
+머리표: 1770×1188 · 시트 연 채 · Day 0 부터 80일 · 손가락 있으면 손가락, 없으면 [식물] 줄 살아 있는 단추 + 할 일 줄 · 연출 생략 · 값 0
+```
+place/water_siru   뜬 d0   끝 d1
+first_harvest      뜬 d1   끝 d6
+order_seed         뜬 d5   끝 d18
+monstera_home      뜬 d11  끝 d14
+leaf_two           뜬 d13  끝 d45      ⇐ 잎 두 장 = d45 (growth 새순 d36 + 9)
+★ siru5_cycle5     뜬 d16  끝 d27      ⇐ 시루 하나 5,000원 · 이틀에 하나 옴 → 다섯이 d27
+★ crop_mix         뜬 d26              ⇐ siru5 끝과 같은 걸음
+★ siru8            뜬 d27              ⇐ ✔ ⓒ①「crop_mix 열린 날을 거친 뒤」= 하루 뒤 — 걸어서 확인됨
+★ first_cut · buy_lamp · varie_bright · leaf_three   뜬 d45   ⇐ ⚠ «넷이 한 날». 가을 진입 = d45 · buy_lamp 끝 d46
+radish5 · siru16 · sell_varie   뜬 d—   ⇐ 자의 탈(재배판이 가방 줄로 잡혀 안 놓음) — 다섯째 판에서
+```
+⚠ **세팅 끝이 표에서 d16** — 총괄 걸음(d13)과 사흘 다르다. 자가 「연출 생략 · 할 일 줄 따라」라 시루 주문이 늦은 것인지 판이 다른지는 [core]가 본다. 이 문서는 「d13~16」으로 읽는다.
+
+### ⓗ 표가 새로 보인 것 둘 — [core]로 갈 것 (차례 · 값 아님)
+```
+① ⛔ d45 에 «넷»이 한 날 열린다 — first_cut · buy_lamp · varie_bright · leaf_three
+   ⇒ 「한 번에 하나」 ⇒ 열림을 미룬다. 차례는 ⓒ② 그대로 ★ buy_lamp 먼저(등이 곧 길) → first_cut(잎 2 · 되돌릴 수 있음) → leaf_three → varie_bright(무늬 잎이 «났을 때»만 — 굴림)
+   ⇒ 곧 d45 buy_lamp · d46 first_cut · d47 leaf_three · varie_bright 는 무늬가 난 날. 하루 하나
+② ⚠ 「가을 진입 = d45」 — 첫 플레이는 novice(여름 «고정»)인데 lampUnlocked 가 d45 에 참이 됐다
+   ⇒ 이 걸음이 novice 인지 real 인지, 아니면 novice 가 어디서 끝나는지 — ★ 머리표에 «모드»가 없다. [core]에 묻는다. 모드가 갈리면 «다른 표»다
+```
+### ⓘ 돈 — 배경으로만 (판의 값 · 박사님 묶음에 안 넣는다)
+```
+d24 1,066k → d32 796k(월세) → d64 339k → d76 244k   ⇒ 시루 다섯 «만» 돌리면 80일에 244k
+체력 0 으로 막힌 날 d34 · d64   ⇒ ★ ㉯③ 「손이 다 됐네 — 엇갈리게」가 «거기서» 뜬다 (다섯이 d27, 막힘이 d34 — 이레 뒤)
+```
