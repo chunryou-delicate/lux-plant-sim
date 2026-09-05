@@ -128,6 +128,7 @@ function run(table, opt) {
   /* 시루마다 { age, harvestCount }. 첫 시루 하나로 시작한다 */
   const sirus = [{ age: 0, n: 0 }];
   let musunOrderedOn = null, musunAge = null, musunHarvest = 0;
+  let trays = 1;   /* ★ 2026-09-06 — 무순 재배판 수(radish5 의 손). 처음 심는 판이 하나다 */
   let monsteraArrived = false, monsteraHomed = false;
   /* ★ 2026-09-02 — 「옮긴 뒤 며칠」도 센다. crop_mix 가 「집 잡은 «다음 날»」로 열리게 됐다(quest.js) —
      그 칸(guide.movedDays)을 이 모형이 안 세면 crop_mix 가 «영영» 안 열려 자가 거짓으로 붉어진다. */
@@ -149,8 +150,8 @@ function run(table, opt) {
       cropHarvestTotal: total + musunHarvest,
       cropPots: [...sirus.map(s => ({ kind: 'beansprout', harvestCount: s.n,
                                       placed: true, watered: true })),
-                 ...(musunAge != null ? [{ kind: 'musun', harvestCount: musunHarvest,
-                                           placed: true, watered: true }] : [])],
+                 ...(musunAge != null ? Array.from({ length: trays }, () => ({ kind: 'musun', harvestCount: musunHarvest,
+                                           placed: true, watered: true })) : [])],
       /* 한 상에 두 가지 — 무순을 한 번이라도 거둔 뒤부터는 같이 먹는다 */
       mealKinds: musunHarvest >= 1 ? ['beansprout', 'musun'] : ['beansprout'],
       motherLeaves: day >= leaf3Day ? 3 : day >= leaf2Day ? 2 : monsteraArrived ? 1 : 0,
@@ -182,6 +183,11 @@ function run(table, opt) {
           플레이어 모형이 게을렀던 것이다) */
       case 'siru_two': case 'siru5_cycle5': case 'siru8': case 'siru16':
         if (sirus.length < nx.need.sirus) sirus.push({ age: 0, n: 0 });
+        break;
+      /* ★ 2026-09-06 — 무순 다섯: 하루에 판 하나(시루와 같은 손). 이 손이 없으면 d28 부터 next=radish5 에서 영영 서고,
+         열려 있는 siru8 에는 손이 안 간다(지금 할 일이 하나뿐이라) — 실측(TRACE). */
+      case 'radish5':
+        if (musunAge != null && trays < nx.need.pots) trays++;
         break;
       /* `order_seed` 는 「주문해 두고 기다리는」 줄이라 따로 할 걸음이 없다 —
          씨앗은 시켜 뒀고 회전은 위에서 돌고 있다 */
@@ -278,6 +284,12 @@ console.log('\n══ C. ⚠ **어느 줄도 영영 안 열리지 않는가** (�
   const want = QUEST_IDS.filter(id => !OFF.includes(id));
   const n = run(NEW_TABLE, { leaf2Day: 60, leaf3Day: 90, fpEndDay: 33, days: 400 });
   const left = want.filter(id => !n.doneIds.includes(id));
+  /* ★ 2026-09-06 — 어디서 멈추나: TRACE=1 이면 「지금 할 일」이 바뀌는 날만 찍는다 */
+  if (process.env.TRACE) {
+    let last = null;
+    for (const r of n.log) if (r.next !== last) { console.log(`     d${String(r.day).padStart(3)} next=${r.next}`); last = r.next; }
+    console.log('     끝난 차례:', n.doneIds.join(' → '));
+  }
   ok(`C-1 ★★★ 켠 계통의 ${want.length}줄이 **전부 끝난다**`, left.length === 0,
      left.length ? `안 끝난 줄: ${left.join(' · ')}` : `${want.length}줄 전부`);
   /* ★ 「지금 할 일」이 하루도 안 비었나 — `null` 은 「아무 줄도 안 열렸다」다 */

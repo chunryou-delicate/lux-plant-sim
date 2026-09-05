@@ -557,7 +557,15 @@ const MAIN_QUESTS = Object.freeze([
     todo: q => `콩나물 시루를 ${q.need.sirus}개까지 늘리세요`,
     /* ★ ②를 끝낸 뒤에 연다 — 다섯 바퀴를 돌려 봐야 「늘린다」가 무슨 뜻인지 안다 */
     after: 'siru5_cycle5',
-    opens: (s, ctx) => !!(ctx && ctx.doneIds.includes('siru5_cycle5')),
+    /* ★ 2026-09-06 ([plan] plan-after-setup-steps ⓒ①) — siru5 가 끝나면 crop_mix 와 «같은 날» 열렸다. 「한 번에 하나」:
+       crop_mix(층 · 새것)가 먼저, 이 줄은 crop_mix 가 «열린 날을 거친 뒤»(다음 날부터). 값이 아니라 차례다.
+       ⚠ 열린 날을 안 적는 판(옛 세이브 · 검사 판 · 걸음 모형)에서는 예전대로 같은 날 연다 — 문이 안 잠긴다. */
+    opens: (s, ctx) => {
+      if (!(ctx && ctx.doneIds.includes('siru5_cycle5'))) return false;
+      const on = ctx.S && ctx.S.stamina && ctx.S.stamina.questsOpenedOn;
+      if (!on || !Number.isFinite(on.crop_mix)) return true;
+      return num(s.day) > on.crop_mix;
+    },
     /* ★★ 2026-08-24 박사님 확정: **"놓인것만 센다."**
        예전에는 `cropPots` 를 그냥 셌다 — **가방에 쟁여 두기만 해도 줄이 닫혔다.**
        이 줄이 가르치는 것은 「늘리면 하루가 는다」인데, **가방에 있는 시루는 아무것도 안 낸다.**

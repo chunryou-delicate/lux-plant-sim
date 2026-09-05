@@ -1227,6 +1227,9 @@ export const SCRIPTS = {
      «worry» 그림이 생기면 그때 바꾼다 — [Char] 몫. */
   nudgeWorry: [ { who: 'moni', face: 'sad',     text: '무슨 일 있어?' } ],
   nudgeBack:  [ { who: 'moni',                  text: '급한 건 아니야. 마음 내키면 해.' } ],
+  /* ★ 2026-09-06 ([plan] plan-after-setup-steps ⓔ) — 등(buy_lamp)의 낯 ④만 «다른 말»: 등은 물러서지 않는다(「등이 곧 길」 · 겨울이 오면 늦는다).
+     걱정 낯 그대로 · 매일. */
+  nudgeBackLamp: [ { who: 'moni', face: 'sad', text: '겨울 오기 전에는 있어야 해.' } ],
 
   cropHandsShort: [
     { who: 'moni', face: 'curious', text: '손이 다 됐네 — 물 주는 날을 엇갈리게 해 봐.' }
@@ -1594,7 +1597,7 @@ export const REPEATABLE = new Set(
     /* ★★ 2026-08-30 [Plan] — **파산은 «되풀이된다».** 첫 번은 위로고 두 번째부터는 버릇이다.
        ⚠ 「또」가 붙는 손은 `rentAgain` 이 이미 쓴다 — 새 결을 안 지었다(㊺). */
     /* ★ 독촉 넷은 «매일» 되풀이된다 — 다만 빈 날에만·한 줄이라 잔소리가 안 된다(plan-quest-nudge ⓕ) */
-    .concat(['nudgeOffer', 'nudgeAsk', 'nudgeWorry', 'nudgeBack'])
+    .concat(['nudgeOffer', 'nudgeAsk', 'nudgeWorry', 'nudgeBack', 'nudgeBackLamp'])
     .concat(['rentSoon', 'rentAgain', 'plantStalledAgain', 'plantStalledWinter',
              'cropHandsShort', 'brokeTalk', 'brokeTalkAgain'])
 );
@@ -1992,7 +1995,9 @@ export const CHATTER = [
   { id: 'nudgeWorry', nudge: true, when: c => !!c.nudge && c.nudge.days >= NUDGE_DAYS.worry && c.nudge.days < NUDGE_DAYS.back },
   /* ★ 낯 ④「물러섬」은 «자리»도 물러선다(plan-quest-nudge ⓖ~ⓛ · d90ab11) — 잡담과 «같은 줄»에 서서 「이틀 뒤」 규칙을
      같이 따른다(late). 「급한 건 아니야」를 매일 하면 그 말이 거짓이 된다. */
-  { id: 'nudgeBack',  nudge: true, late: true, when: c => !!c.nudge && c.nudge.days >= NUDGE_DAYS.back },
+  /* ★ 등(buy_lamp)은 ④에서 물러서지 않는다 — 공통 ④ 앞에 서고, 공통 ④는 등을 뺀다(plan-after-setup-steps ⓔ) */
+  { id: 'nudgeBackLamp', nudge: true, when: c => !!c.nudge && c.nudge.id === 'buy_lamp' && c.nudge.days >= NUDGE_DAYS.back },
+  { id: 'nudgeBack',  nudge: true, late: true, when: c => !!c.nudge && c.nudge.id !== 'buy_lamp' && c.nudge.days >= NUDGE_DAYS.back },
 ];
 
 /* 조건에 맞는 것 중 **가장 오래 안 나온 것**. recent 는 나온 차례(오래된 것부터)다.
