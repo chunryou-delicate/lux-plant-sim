@@ -41,6 +41,11 @@ const CASES = [];
 for (const lamps of [0, 1, 2, 3])
   for (const day of [0, 60, 120, 180, 240, 300])
     CASES.push({ lamps, day });
+/* ★ 2026-09-06 — 「아직 안 잰 것」 중 하나를 잰다: «겨눈 등». 겨누기 표(lampAims)는 daily() 와
+   dliOfSlot() 이 «같은 표»를 읽는다고 «적혀» 있다(light_adapter §rigsOn). 적힌 것은 재야 한다.
+   반지하 clip 은 aimable 이다(growlight_aim §2). yaw 25 · tilt 30 으로 겨눠 두 길을 견준다. */
+for (const day of [0, 180])
+  CASES.push({ lamps: 3, day, aim: { uid: 'banjiha-growlight-clip', yaw: 25, tilt: 30 } });
 
 const page = await launch({ width: 900, height: 700, dpr: 1, mobile: false });
 await page.goto(BASE + '/game.html');
@@ -53,6 +58,7 @@ const raw = await page.eval('(()=>{ const io=window.__io, S=window.__S();'
   + ' const CASES=' + JSON.stringify(CASES) + ', out=[];'
   + ' for (const c of CASES) {'
   /* 게임 상태를 그 조건으로 흉내 낸다 — daily() 가 실제로 보는 열쇠만 바꾼다 */
+  + '   if (c.aim) io.light.setLampAim(c.aim.uid, {yaw:c.aim.yaw, tilt:c.aim.tilt}); else io.light.setLampAims({});'
   + '   const S2=Object.assign({},S,{'
   + '     lamps:Object.assign({},S.lamps,{count:c.lamps, litHours:12}),'
   + '     sim:Object.assign({},S.sim,{mode:"real"}) });'   /* ★ 날씨·계절을 «날짜로 굴리게» 한다 */
@@ -65,9 +71,14 @@ const raw = await page.eval('(()=>{ const io=window.__io, S=window.__S();'
   + '   const rows=rep.slots.map(s=>{ let ask=null, e2=null;'
   + '     try{ ask=io.light.dliOfSlot(s.slotId,opt); }catch(err){ e2=String(err.message||err); }'
   + '     return {id:s.slotId, fed:s.dli, ask:ask, e:e2}; });'
-  + '   out.push({c:c, sky:{weather:sky.weather,season:sky.season}, n:rows.length, rows:rows,'
+  /* ★ 겨눔 판이면 «안 겨눈» 값도 같이 재서 «몇 칸이 움직였나»를 센다 — 0 이면 손잡이가 안 달린 것 */
+  + '   let moved=null; if (c.aim) { io.light.setLampAims({}); io.light.clearCache();'
+  + '     moved=0; for (const s of rep.slots) { const v=io.light.dliOfSlot(s.slotId,opt); if (Math.abs(v-s.dli)>1e-6) moved++; }'
+  + '     io.light.setLampAim(c.aim.uid, {yaw:c.aim.yaw, tilt:c.aim.tilt}); }'
+  + '   out.push({c:c, sky:{weather:sky.weather,season:sky.season}, n:rows.length, rows:rows, moved:moved,'
   + '     bad:rows.filter(r=>r.e || Math.abs(r.fed-r.ask)>1e-6)});'
   + ' }'
+  + ' io.light.setLampAims({});'   /* ★ 겨눔을 «되돌린다» — 안 되돌리면 다음 판이 겨눈 채로 돈다 */
   + ' return JSON.stringify({room:(io.light.room&&io.light.room.id), day:S.day, cases:out}); })()');
 await page.close();
 const D = JSON.parse(raw);
@@ -76,16 +87,18 @@ console.log('방 ' + D.room + ' · ' + D.day + '일차 · 점등 12시간');
 console.log('★ 「식물이 먹는 값」(daily 계약) 과 「검사가 재는 값」(dliOfSlot) 을 조건마다 견준다\n');
 console.log('  ' + '조건'.padEnd(28) + '어긋난 칸'.padEnd(12) + '가장 밝은 자리   먹는 값 vs 재는 값');
 
-let bad = 0, err = 0, cells = 0;
+let bad = 0, err = 0, cells = 0, aimDead = false;
 for (const c of D.cases) {
-  const tag = ((c.sky ? c.sky.season + '/' + c.sky.weather : '?') + ' · 등 ' + c.c.lamps + '개 · ' + c.c.day + '일').padEnd(28);
+  const tag = ((c.sky ? c.sky.season + '/' + c.sky.weather : '?') + (c.c.aim ? ' ★겨눔' : '') + ' · 등 ' + c.c.lamps + '개 · ' + c.c.day + '일').padEnd(28);
   if (c.e) { err++; console.log('  ✘ ' + tag + '던짐: ' + c.e); continue; }
   const top = c.rows.reduce((a, b) => (!a || b.fed > a.fed) ? b : a, null);
   bad += c.bad.length; cells += c.n;
   console.log('  ' + (c.bad.length ? '✘ ' : '  ') + tag
     + (c.bad.length + '/' + c.n).padEnd(12)
     + Number(top.fed).toFixed(2).padStart(6) + '  vs ' + Number(top.ask).toFixed(2).padStart(6)
-    + (c.bad.length ? '   ★ 어긋남' : '   같다'));
+    + (c.bad.length ? '   ★ 어긋남' : '   같다')
+    + (c.moved == null ? '' : '   · 겨눔이 움직인 칸 ' + c.moved + '/' + c.n + (c.moved ? '' : '  ⛔ 손잡이 안 달림')));
+  if (c.moved === 0) { aimDead = true; }
   for (const r of c.bad.slice(0, 3))
     console.log('        ★ ' + r.id + '   먹는 값 ' + r.fed + ' · 재는 값 ' + r.ask + (r.e ? ' · ' + r.e : ''));
 }
@@ -99,6 +112,10 @@ console.log('★ 손잡이가 실제로 돌아갔나 — 나온 하늘 ' + skies
   + [...skies].join(' · ') + ')');
 console.log('                            나온 최고값 ' + tops.size + '가지 ('
   + [...tops].map(v => (+v).toFixed(2)).join(' · ') + ')');
+if (aimDead) {
+  console.log('  ⛔ 겨눔 판에서 «한 칸도» 안 움직였습니다 — 겨누기 손잡이가 «안 달렸습니다». 그 판의 「같다」는 아무것도 안 잰 것입니다.');
+  process.exitCode = 1;
+}
 if (skies.size < 2 || tops.size < 2) {
   console.log('  ⛔ 값이 안 갈렸습니다. 그러면 위의 「같다」는 «아무것도 안 잰 것»입니다.');
   process.exitCode = 1;
@@ -112,5 +129,5 @@ if (err || bad) {
 } else {
   console.log('report_vs_slot: PASS — 조건 ' + D.cases.length + '가지 · ' + cells + '칸, 전부 같다  (하늘 ' + skies.size + '가지 · 최고값 ' + tops.size + '가지로 «갈렸다»)');
   console.log('  ★ 「식물이 먹는 값 = 검사가 재는 값」을 이제 «쟀다». 그동안 «적혀만» 있었다.');
-  console.log('  ⚠ 아직 안 잰 것: 겨눈 등 · 자유 좌표(바닥) · 반지하 말고 다른 방.');
+  console.log('  ⚠ 아직 안 잰 것: 자유 좌표(바닥 — 계약 D 로 헤드리스는 던진다) · 반지하 말고 다른 방. (겨눈 등은 2026-09-06 부터 잰다)');
 }
