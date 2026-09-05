@@ -4129,6 +4129,23 @@ function placePointHint(cx, cy, say, r = 48) {
      그것을 다시 물어 놓는다. 없어졌으면(null) 다시 고른다(§updateHint) — 요소가 사라졌을 때와 같다.
    ⚠ 옛 부름(점만 주는 것)도 그대로 돈다 — 그때는 예전처럼 한 번 놓는다. */
 function hintAtPoint(cx, cy, say, r = 48, pointOf = null) {
+  /* ★ 2026-09-06 (밤 걸음 · 폰 80일 판) — **점 손가락이 시트에 가리면 «닫는 길»을 짚는다.** 실측(390×844): 상점 탭을 연 채로 두면
+     「몬스테라를 옮기세요」의 점(사람·화분)이 시트 «밑»에 있어 손가락이 통째로 없어졌고, 68일 동안 창턱으로 못 갔다.
+     말풍선·단추의 「할 일이 가려졌습니다」(§updateHint sheetCloseDoor)와 «같은 결» — 점에도 같은 문을 준다. */
+  try {
+    const sh = $('sheet');
+    if (sh && sh.classList.contains('open')) {
+      const hit = document.elementFromPoint(Math.round(cx), Math.round(cy));
+      if (hit && sh.contains(hit)) {
+        const openTab = [...document.querySelectorAll('#sheet [role="tab"]')].find(t => t.getAttribute('aria-selected') === 'true');
+        const navOf = { tabBag: 'openBag', tabPlants: 'navPlants', tabShop: 'navShop', tabRoom: 'navRoom' };
+        const vis = el => { if (!el) return false; const q = el.getBoundingClientRect(); return q.width > 0 && q.height > 0 && q.bottom > 0 && q.top < innerHeight; };
+        const nav = openTab && navOf[openTab.id] && $(navOf[openTab.id]);
+        const door = vis(nav) ? nav : (vis(openTab) ? openTab : null);
+        if (door) return hintAt(door, '할 일이 가려졌습니다 — 한 번 더 누르면 닫힙니다');
+      }
+    }
+  } catch { }
   /* ★ 짚는 것이 «요소에서 점으로» 바뀌는 것도 새 걸음이다 — 막힌 셈을 되돌린다(§FENCE_GIVE_UP) */
   if (hintTargetEl) fenceMiss = 0;
   if (hintTargetEl) { hintTargetEl.classList.remove('hintTarget'); hintTargetEl = null; }
