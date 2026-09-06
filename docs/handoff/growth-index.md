@@ -32,6 +32,7 @@
 | `probe_slot_year.mjs` | 이름 붙은 자리를 400일 굴려 밴드·문턱 넘는 칸 (`ROOM=` · `LAMPS=` · `PROFILE=<경로>`) | 헤드리스 |
 | `probe_crop_quality.mjs` | 자리마다 작물이 실제로 몇 그램인지 · **0g 인 칸 세기** (`PROFILE=` · `LAMPS=`) | 헤드리스 |
 | `probe_leaf_when.mjs` | n번째 잎이 언제 오나 (`FROM=` · `EFF=`) | 헤드리스 |
+| `probe_leaf_health_year.mjs` | 잎이 **바랬다가 돌아오나** — real 사계절 |
 | `probe_arrival_phases.mjs` | 도착 뒤 **단계마다 첫날** — 어린잎→중간잎→줄기→새순 자리→말린 새순 (`ROOM=`·`SLOT=`) | 헤드리스 |
 | `probe_floor_dli.mjs` | **바닥**을 격자로 훑는다 — 정적 프로필은 바닥을 모른다 | 라이브 |
 | `probe_room_live_year.mjs` | ⚠ 프로필이 **낡았을 때** 400일 — 라이브 값을 날씨에 태운다 | 둘 다 |
@@ -44,6 +45,7 @@
 | `test_crop_unknown_slot.mjs` | 「모르는 자리」가 최상 품질로 새지 않는가 |
 | `test_coord_matches_slot.mjs` | 좌표로 잰 값이 슬롯으로 잰 값과 같은가 |
 | `test_growth_parity.mjs` | 헤드리스 `plant_grow` 와 브라우저가 같은 수를 내나 |
+| `test_multiplant_isolation.mjs` | ★ **그루끼리 상태가 새지 않는가** — A→B→A 로 돌아와서 본다 |
 
 ## ③ 잰 것 — 어디에 적혀 있나
 
