@@ -162,10 +162,14 @@
   #growth{position:absolute;inset:0;z-index:30;opacity:0;pointer-events:none;
           transition:opacity .28s ease;background:#0f0c16}
   #stage.zoom #growth{opacity:1;pointer-events:auto}
-  #closeZoom{position:absolute;z-index:31;top:calc(var(--safe-t) + 10px);right:12px;display:none;
-          width:var(--tap);height:var(--tap);border-radius:50%;border:1px solid rgba(255,255,255,.18);
-          background:rgba(20,16,28,.82);color:var(--ink);font-size:18px;line-height:1}
+  /* ★ 2026-09-06 아침(박사님 폰 Day 36: 「확대 아주 좋아 — 근데 시야 돌아가기 버튼이 없네」) — ✕ 하나가 오른쪽 위에 있었는데 폰에서는
+     위 띠(#topbar · position:absolute)에 «가려» 안 보였다. ⇒ 글자 있는 알약 「↩ 시야 돌아가기」를 왼쪽 아래(아래 띠 위)에, 띠보다 위(z 60)에 둔다. */
+  #closeZoom{position:absolute;z-index:60;left:calc(var(--safe-l) + 12px);bottom:calc(var(--safe-b) + 78px);display:none;
+          min-height:var(--tap);padding:0 16px;border-radius:999px;border:1px solid rgba(255,255,255,.22);
+          background:rgba(20,16,28,.88);color:var(--ink);font-size:14px;font-weight:700;line-height:var(--tap);white-space:nowrap}
   #stage.zoom #closeZoom{display:block}
+  /* ★ 확대 중엔 손가락·덮개를 «감춘다» — 방이 멈춰(pauseRoom) 지킴이가 안 돌면 마지막 손가락이 확대 위에 «얼어» 남았다(폰 실측: [방] 탭 짚음) */
+  #stage.zoom #hint,#stage.zoom #hintDim{display:none !important}
   /* 확대 중에는 no-plant 가림막이 위를 덮으면 안 된다 */
   #stage.zoom.no-plant #growth{opacity:1;pointer-events:auto}
   #stage.zoom #stageEmpty{display:none}
@@ -1913,7 +1917,7 @@
       <div class="gg-bar"><i id="ggFill"></i></div>
       <div class="gg-why" id="ggWhy"></div>
     </div>
-    <button id="closeZoom" aria-label="확대 닫기">✕</button>
+    <button id="closeZoom" aria-label="시야 돌아가기">↩ 시야 돌아가기</button>
     <div id="stageEmpty"><b><img src="./assets/ui/item_monstera.png" alt="">아직 몬스테라가 없습니다<i>콩나물을 수확하면 새로운 화분이 찾아옵니다.</i></b></div>
     <!-- ★ v0의 완료 조건이 걸린 자리 — "등을 켰더니 갈라지기 시작했어요"가 여기 뜬다 -->
     <div id="event"></div>
@@ -2777,6 +2781,9 @@
   window.__byeotQuestChipShould = questChipShouldShow;
   window.__byeotQuestChip = syncQuestChip;
   function openSheet(tab) {
+    /* ★ 2026-09-06 아침(박사님 Day 37 · 확대 중 「살림 보기」 눌러도 «아무 대응 없음» — 갇힘): 확대 중 탭·띠를 누르면 «확대를 닫고» 연다.
+       사람이 탭을 누른 뜻은 「거기로 간다」다 — 있는 길을 막지 않는다(총괄 ①). */
+    try { if (window.__byeotZoom && window.__byeotZoom.isOpen()) window.__byeotZoom.close(); } catch (e) { }
     sheet.classList.add('open'); scrim.classList.add('open');
     sheet.setAttribute('aria-hidden', 'false');
     if (tab) selectTab(tab);
@@ -2861,6 +2868,7 @@
   function selectTab(tabId) {
     var want = TABS[tabId] ? tabId : (TAB_ALIAS[tabId] || tabId);
     if (!TABS[want]) return;                 /* 모르는 이름이면 지금 탭을 그대로 둔다 */
+    try { if (window.__byeotZoom && window.__byeotZoom.isOpen()) window.__byeotZoom.close(); } catch (e) { }   /* ★ 넓은 판(시트 늘 펴짐)의 탭도 같은 문 */
     Object.keys(TABS).forEach(function (t) {
       var on = (t === want);
       $(t).setAttribute('aria-selected', String(on));
@@ -2920,9 +2928,11 @@
         return false;
       }
       stage.classList.add('zoom'); closeSheet(); pauseRoom(true); pauseZoomRender(false);
+      try { window.__byeotHint && window.__byeotHint(); } catch (e) { }   /* ★ 확대 중 손가락은 쉰다 — 멈춘 방 위에 얼어 남지 않게 지금 한 번 다시 묻는다 */
       return true;
     },
-    close: function () { stage.classList.remove('zoom'); pauseZoomRender(true); pauseRoom(false); },
+    close: function () { stage.classList.remove('zoom'); pauseZoomRender(true); pauseRoom(false);
+      try { window.__byeotHint && window.__byeotHint(); } catch (e) { } },
     isOpen: function () { return stage.classList.contains('zoom'); }
   };
   /* iframe 이 실리면 바로 재운다. load 를 놓쳤을 때를 대비해 한 번 더 시도한다. */
@@ -5049,6 +5059,9 @@ function bindDetail() {
 const COACH_KEY = 'byeot.coach';
 const COACH_MS = 10000;
 const COACH_NOTES = Object.freeze({
+  /* ★ 2026-09-06 ([plan] plan-firstplay-setup-steps ⑦ · 박사님 청) — 확대가 «가능해진 때»(몬스테라가 창턱에 선 순간) 한 장, 한 번. 돌아오는 법은 안 적는다(단추 이름이 말한다) */
+  zoomTip: { ko: '가까이 볼 수 있습니다',
+             say: '몬스테라를 누르고 <b>[확대 보기]</b>를 누르면 잎을 <b>가까이</b> 볼 수 있습니다.' },
   /* A-1 캐릭터를 눌러 자유 이동 — 저장소 전체에 이 말을 하는 자리가 **하나도 없었다** */
   walk: { ko: '사람을 골랐습니다',
           say: '이제 <b>방바닥을 누르면</b> 거기로 걸어갑니다. 사람을 <b>잡고 끌어도</b> 됩니다 · ' +
@@ -5307,6 +5320,8 @@ function updateHint() {
   })();
   /* ⇒ 세팅 끝부터 «덮개만» 끈다. 손가락은 아래 갈래가 그대로 잇는다(총괄 걸음 4e7df67: d13 세팅 끝 뒤 다섯 걸음 내내 손가락이 없었다 — 그건 [plan] ②와 어긋났다). */
   hintNoDim = !!settingDone || !!(ts && ts.movedOut);   /* 원룸은 강제(어둡게) 없음 — [plan] ⓒ */
+  /* ★ 확대 보기 쪽지 — 몬스테라가 창턱에 «선 순간»부터 한 번(coachSeen · coachClear 가 겹침을 미룬다 · [plan] ⑦②) */
+  try { if (fp && fp.monstera && fp.monstera.guide && fp.monstera.guide.moved) coach('zoomTip'); } catch { }
   const stage = $('stage'), sheetOpen = $('sheet').classList.contains('open');
   /* ★★★★ 2026-08-30 — **「시트가 열렸나」가 아니라 「시트가 «이것을» 덮나」.**
      ══════════════════════════════════════════════════════════════════
@@ -13527,6 +13542,9 @@ const picked = {
     if (drag.on) return;
     this.slotId = slotId;
     const kind = this.kindAt(slotId);
+    /* ★ 2026-09-06 아침(박사님 「메뉴에 확대 보기 버튼」 · [plan] 낱말 그대로): 그루(몬스테라)면 「확대 보기」, 작물·삽수면 「자세히」(상세 카드) */
+    try { const z = $('pickZoom'); if (z) { let isPlant = false; try { isPlant = !!(window.__byeotIsPlantSlot && window.__byeotIsPlantSlot(slotId)); } catch { }
+          z.textContent = isPlant ? '확대 보기' : '자세히'; } } catch { }
     /* ★ 빈 화분이면 [🌱 심기]를 세운다(§pickSow) — 방에서 누른 그 자리에서 심을 수 있어야
        시루와 손짓이 같아진다. 아니면 감춘다(심은 화분에 또 심을 수는 없다). */
     {
