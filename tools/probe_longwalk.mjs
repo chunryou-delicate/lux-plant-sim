@@ -203,7 +203,13 @@ for (let d = 0; d < DAYS; d++) {
   /* ① 손가락 */
   for (let i = 0, same = 0; i < 16; i++) {
     const n0 = log.length;
-    if (!await followFinger(log)) break;
+    if (!await followFinger(log)) {
+      /* ★ 손가락이 없는 날은 «왜 없나»를 남긴다 — 게임의 마지막 짚기(__hintLast: id·say·자리 스택)와 [다음 날] 잠김·시트 (실측 d20~21 빈 자리) */
+      if (i === 0) { const why = await J(`(()=>{ const h=window.__hintLast||null; const n=document.getElementById('next'); const sh=document.getElementById('sheet');
+        return { 마지막: h ? { id:h.id, say:h.say, 자리:String(h.자리||'').slice(0,60) } : null, next잠김: !!(n&&n.disabled), 시트: !!(sh&&sh.classList.contains('open')), 무대: document.getElementById('stage').className }; })()`);
+        log.push(`(손가락 없음 — ${JSON.stringify(why)})`); }
+      break;
+    }
     /* 같은 것을 네 번 짚었는데 판이 안 바뀌면 그 손가락은 오늘 «못 따르는» 것이다 — 살림으로 넘어간다(제자리걸음 막기) */
     if (log.length > n0 && log[log.length - 1] === log[log.length - 2]) { if (++same >= 3) { log.push('⛔ 같은 손가락 네 번 — 살림으로'); break; } } else same = 0;
     const s2 = await state(); if (s2.날 !== st.날) { log.push(`(손가락이 하루를 넘겼다 → Day ${s2.날})`); st = s2; }
