@@ -74,8 +74,8 @@ for (let i = 0; i < 6; i++) {
   console.log(`     ↳ 눌렀다: ${clicked}`);
   await sleep(600); await skip();
 }
-/* ★ 배너는 «순간»이라 걸음 뒤에 읽으면 비어 있다(n5 실측: 매 걸음 ''). 페이지에 «지켜보는 눈»(MutationObserver)을 달아 배너 글이 바뀔 때마다 적어 둔다 */
-await page.eval(`(()=>{ window.__banLog = []; const b = document.getElementById('banner'); if (!b) return;
+/* ★ 배너는 #event 다(banners() 가 쓰는 칸 · #banner 가 아니다 — n6 실측: 자국 []). 배너는 «순간»이라 걸음 뒤에 읽으면 비어 있다(n5 실측: 매 걸음 ''). 페이지에 «지켜보는 눈»(MutationObserver)을 달아 배너 글이 바뀔 때마다 적어 둔다 */
+await page.eval(`(()=>{ window.__banLog = []; const b = document.getElementById('event'); if (!b) return;
   const push = () => { const t = (b.textContent || '').trim().replace(/\\s+/g, ' ').slice(0, 90); if (t && window.__banLog[window.__banLog.length - 1] !== t) window.__banLog.push(t); };
   new MutationObserver(push).observe(b, { childList: true, subtree: true, characterData: true, attributes: true }); push(); })()`, false);
 console.log('');
@@ -91,7 +91,7 @@ for (let i = 0; i < 20; i++) {
   same = sig === last ? same + 1 : 0; last = sig;
   await tapAt(f.x, f.y); await sleep(600);
   /* ★ [plan] ⓖ① — ③ 「선반 아래가 어두워졌습니다」 배너가 «찍히나»: 누른 직후(대사 넘기기 전)에 배너를 읽는다 */
-  const ban = await page.eval(`(()=>{ const b=document.getElementById('banner'); return b ? (b.textContent||'').trim().replace(/\\s+/g,' ').slice(0,80) : ''; })()`);
+  const ban = await page.eval(`(()=>{ const b=document.getElementById('event'); return b ? (b.textContent||'').trim().replace(/\\s+/g,' ').slice(0,80) : ''; })()`);
   await skip();
   const after = await snap();
   const changed = before !== after;
