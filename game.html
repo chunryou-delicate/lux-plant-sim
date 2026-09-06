@@ -5523,9 +5523,24 @@ function updateHint() {
       return o ? Math.max(0, o.daysLeft) : null;
     } catch { return null; }
   })();
+  /* ★★ 2026-09-06 아침(박사님 폰 그림 Day 29 · 총괄): 「시루 다섯」 퀘가 열려 있는데 손가락이 [다음 날] 「자라는 중 — 닷새」를 짚었다 —
+     할 일과 «다른 말». 되어야: 열린 퀘가 «사는 일»(시루 N · 재배판 N)이면 손가락은 «상점»(살 수 있으면) 또는 «없음»(못 사면). [다음 날]의
+     「자라는 중」은 세팅 끝 «전»(강제 구간)의 말이다. ⇒ «사는 퀘» 둘을 여기서 먼저 세어 wait 보다 «앞»에 둔다. 값 아님 · 갈래 차례. */
+  const buyQuest = (() => {
+    try {
+      const qv = questView(S, questSnapshotNow(lastTurn));
+      const open = (qv && qv.all || []).filter(x => x && x.state === 'open' && x.need);
+      const sirus = cropRows.filter(r => r && r.kind === 'beansprout').length;
+      const trays = cropRows.filter(r => r && r.kind === 'musun').length;
+      const qs = open.find(x => Number.isFinite(x.need.sirus) && sirus < x.need.sirus);
+      const qt = open.find(x => Number.isFinite(x.need.pots) && trays < x.need.pots);
+      return { siru: qs ? x => x : null, tray: qt ? x => x : null, sirusWant: qs ? qs.need.sirus - sirus : 0, traysWant: qt ? qt.need.pots - trays : 0 };
+    } catch { return { siru: null, tray: null, sirusWant: 0, traysWant: 0 }; }
+  })();
+  const buySiruNeed = buyQuest.sirusWant > 0, buyTrayNeed = buyQuest.traysWant > 0;
   const wait = seedComing ? '씨앗은 내일 옵니다 — 하루를 넘기세요'
              : (siruComing != null && !spareSiru()) ? (siruComing <= 1 ? '시루는 내일 옵니다 — 하루를 넘기세요' : '시루가 오는 중입니다 — 하루를 넘기세요')
-             : (cropGrowing && (!taughtCycles || settingDone)) ? growSay   /* 세팅 끝 뒤에는 [다음 날]도 짚는다(총괄 · [plan] ②) */
+             : (cropGrowing && (!taughtCycles || (settingDone && !buySiruNeed && !buyTrayNeed))) ? growSay   /* 세팅 끝 뒤에도 [다음 날]을 짚되, «사는 퀘»가 열려 있으면 안 짚는다(박사님 Day 29) */
              : S.day <= 1 ? '하루를 보냅니다' : null;
 
   /* ★★★★ 2026-08-30 — **떠 있는 창은 «그 창의 일하는 단추»를 짚는다** (총괄 판정 · [Plan] 계율).
@@ -5600,7 +5615,9 @@ function updateHint() {
       if (!(fp.monstera && fp.monstera.guide && fp.monstera.guide.moved)) return false;
       const site = fp.beansprout;
       const placedN = ((site && site.pots) || []).filter(p => p && cropPotConfirmed(p)).length;
-      return placedN >= 1 && placedN < 2 && spareSiru() > 0;
+      /* ★ 2026-09-06 아침(34일 걸음): 세팅 끝 뒤 「시루 다섯」 퀘가 열려 셋째 시루가 가방에 왔는데 놓는 손가락이 없었다(d18~20 손가락 없음).
+         «사는 퀘»가 열려 시루가 모자라면(§buyQuest) 가방의 시루도 놓게 짚는다 — 둘째와 같은 손. */
+      return placedN >= 1 && (placedN < 2 || buySiruNeed) && spareSiru() > 0;
     } catch { return false; }
   })();
   /* ★★ 2026-09-06 ([plan] plan-oneroom-first-scene ⓒⓓⓕ) — **원룸 첫 장면 안내.** 강제 없이 가리킴만. 두 번째 방이라 배운 것을 «쓴다».
@@ -5871,7 +5888,8 @@ function updateHint() {
   })();
   const siruNeed = (() => {
     try {
-      if (!guideSiruTwo && !/시루를 (2|두) ?개|시루를 하나 더|늘려/.test($('quest').textContent || '')) return null;
+      /* ★ 2026-09-06 — 「시루 N」 퀘가 열려 있고 시루가 모자라면 상점(§buyQuest). 할 일 글의 낱말(「늘려」)에 안 기댄다 — 문안이 바뀌면 조용히 죽는 자였다 */
+      if (!guideSiruTwo && !buySiruNeed && !/시루를 (2|두) ?개|시루를 하나 더|늘려/.test($('quest').textContent || '')) return null;
       if (spareSiru() > 0) return null;                 /* 가방에 있다 — 사는 일이 아니다 */
       const st = shopStatus(S);
       const have = ((st.stock && st.stock.siru) || 0)
@@ -5919,7 +5937,7 @@ function updateHint() {
       if (!musunQuestOpen) return null;
       /* 이미 판이 서 있으면 사는 일이 아니다 */
       let rows = []; try { rows = cropPotList(S.firstPlay, S.day).filter(r => r.kind === 'musun'); } catch { }
-      if (rows.some(r => r.placed)) return null;
+      if (rows.some(r => r.placed) && !buyTrayNeed) return null;   /* ★ 무순 다섯(radish5): 판이 하나 놓여 있어도 모자라면 더 산다(§buyQuest) */
       const st = shopStatus(S);
       const have = (id) => ((st.stock && st.stock[id]) || 0)
         + (st.orders || []).reduce((n, o) => n + (o.itemId === id && o.daysLeft >= 0 ? (o.qty || 1) : 0), 0);
