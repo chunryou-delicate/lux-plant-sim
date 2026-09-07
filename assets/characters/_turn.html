@@ -1,0 +1,86 @@
+<!doctype html><html lang="ko"><meta charset="utf-8">
+<title>맨몸 돌려보기 — 정면·측면·후면·3/4</title>
+<!-- 2026-09-07 총괄. GLB 하나를 네 각도로 «몸만 꽉 차게» 찍는다.
+     ⛔ 왜 또 지었나: 기존 shot 자들이 «스킨드 메시»의 크기를 뼈로 잡아 사람이 점처럼 찍혔다([char] 실측).
+     ★ 여기서는 세계행렬을 갱신한 뒤 «메시의 실제 상자»를 잡아 카메라를 맞춘다. 짐작 없이 재서 맞춘다. -->
+<style>
+  html,body{margin:0;background:#1b241f;color:#dfe7e0;font:13px system-ui,'Malgun Gothic',sans-serif}
+  #wrap{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding:8px}
+  .cell{background:#0f1512;border-radius:8px;overflow:hidden}
+  .cap{padding:6px 8px;font-size:12px;color:#9fb3a6}
+  canvas{display:block;width:100%;height:auto}
+</style>
+<div id="wrap"></div>
+<script src="../../vendor/three/three.min.js"></script>
+<script src="../../vendor/three/GLTFLoader.js"></script>
+<script>
+const SRC = new URLSearchParams(location.search).get('src') || '_bodybase/char_yeoja_base_v3t_rigged.glb';
+const W = 560, H = 840;
+const VIEWS = [
+  ['정면',  [0, 0, 1]],
+  ['좌측면', [-1, 0, 0]],
+  ['후면',  [0, 0, -1]],
+  ['3/4',   [0.85, 0, 0.85]],
+];
+window.__done = false;
+window.__err = null;
+
+new THREE.GLTFLoader().load(SRC, (g) => {
+  try {
+    const root = g.scene;
+    root.updateMatrixWorld(true);
+
+    /* ★ 스킨드 메시는 POSITION 이 바인드 원점 근처라 상자를 못 믿는다.
+       그래서 «스킨을 실제로 적용한» 정점을 뽑아 상자를 잡는다. */
+    const pts = [];
+    root.traverse(o => {
+      if (!o.isMesh) return;
+      const pos = o.geometry.attributes.position;
+      const v = new THREE.Vector3();
+      const step = Math.max(1, Math.floor(pos.count / 4000));   // 4천 점이면 상자엔 넉넉
+      for (let i = 0; i < pos.count; i += step) {
+        v.fromBufferAttribute(pos, i);
+        if (o.isSkinnedMesh && o.applyBoneTransform) o.applyBoneTransform(i, v);
+        o.localToWorld(v);
+        pts.push(v.clone());
+      }
+    });
+    if (!pts.length) throw new Error('정점 0 — 메시를 못 찾았다');
+    const box = new THREE.Box3().setFromPoints(pts);
+    const size = box.getSize(new THREE.Vector3());
+    const mid = box.getCenter(new THREE.Vector3());
+    window.__box = { size: size.toArray(), 세로: size.y, 점: pts.length };
+
+    const wrap = document.getElementById('wrap');
+    for (const [name, dir] of VIEWS) {
+      const cell = document.createElement('div'); cell.className = 'cell';
+      const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+      const cap = document.createElement('div'); cap.className = 'cap'; cap.textContent = name;
+      cell.appendChild(cv); cell.appendChild(cap); wrap.appendChild(cell);
+
+      const r = new THREE.WebGLRenderer({ canvas: cv, antialias: true, alpha: false });
+      r.setPixelRatio(1);                       // ⚠ 2 로 두면 CSS 크기까지 커져 1/4 만 찍힌다([char] 실측)
+      r.setSize(W, H, false);
+      r.setClearColor(0x121a15, 1);
+
+      const sc = new THREE.Scene();
+      sc.background = new THREE.Color(0x121a15);
+      sc.add(new THREE.HemisphereLight(0xffffff, 0x445544, 1.5));
+      const key = new THREE.DirectionalLight(0xffffff, 1.4); key.position.set(2, 3, 3); sc.add(key);
+      const fill = new THREE.DirectionalLight(0xffffff, 0.5); fill.position.set(-2, 1, -2); sc.add(fill);
+      sc.add(root.clone(true));
+
+      /* 카메라 — 세로를 화면의 88% 로 채운다 */
+      const fov = 30;
+      const cam = new THREE.PerspectiveCamera(fov, W / H, 0.01, 100);
+      const need = (size.y / 0.88) / (2 * Math.tan(fov * Math.PI / 360));
+      const d = new THREE.Vector3(...dir).normalize().multiplyScalar(need);
+      cam.position.copy(mid).add(d);
+      cam.lookAt(mid);
+      r.render(sc, cam);
+    }
+    window.__done = true;
+  } catch (e) { window.__err = String(e && e.message || e); window.__done = true; }
+}, undefined, (e) => { window.__err = 'load: ' + String(e && e.message || e); window.__done = true; });
+</script>
+</html>
