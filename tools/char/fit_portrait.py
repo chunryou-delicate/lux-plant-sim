@@ -120,6 +120,15 @@ def main():
     src, dst = args[0], args[1]
 
     bottom, body_h, ow, oh = BOTTOM, BODY_H, OUT_W, OUT_H
+    # ★ 총괄 결정(2026-09-07): 자취녀는 «판 끝»으로 채운다.
+    #   ⇒ 대사창이 아래 22%를 흐리게 지우므로 그 자리는 «어차피 안 보인다».
+    #   ⇒ ★★ 그리고 「중앙값」도 «흩어진 것의 가운데»지 «지켜야 할 규약»이 아니다.
+    #     ⇒ 743~799 로 흩어진 아홉 장의 가운데를 「기준」이라 부르면
+    #       ⇒ ⇒ 「한 장을 기준이라 부르면 그 예외를 물려받는다」와 «같은 병»이다.
+    if '--bottom' in sys.argv:
+        BOTTOM_OVERRIDE = int(sys.argv[sys.argv.index('--bottom') + 1])
+    else:
+        BOTTOM_OVERRIDE = None
     if ref:
         import glob as _g
         paths = sorted(_g.glob(ref)) if ('*' in ref or '?' in ref) else [ref]
@@ -133,6 +142,11 @@ def main():
                       % m['spread'])
                 if m['n'] == 1:
                     print('  ⛔ 그런데 기준이 «한 장»이다. 그 한 장의 예외를 물려받는다')
+
+    if BOTTOM_OVERRIDE is not None:
+        print('★ 바닥선을 «손으로» 준다: %d  (기준에서 잰 %d 를 «덮는다»)'
+              % (BOTTOM_OVERRIDE, bottom))
+        bottom = BOTTOM_OVERRIDE
 
     im = Image.open(src).convert('RGB')
     rgb = np.asarray(im)
