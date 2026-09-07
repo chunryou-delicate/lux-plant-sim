@@ -5,7 +5,8 @@
 import { launch, sleep } from './test_cdp.mjs';
 import { writeFileSync, mkdirSync } from 'node:fs';
 const BASE = process.env.BYEOT_URL || 'http://localhost:8972';
-const WANT = Number(process.env.LEAVES || 2);   /* [leaf]: 두 장이면 넉넉하다 — 세 장 기다리지 말 것 */
+const WANT = Number(process.env.LEAVES || 2);   /* [leaf]: 두 장이면 넉넉하다 */
+const WANT_MATURE = Number(process.env.MATURE || 0);   /* ★ 「무늬 잎이 «폈있는» 판」([leaf] 2차 청) — 다 자란 잎 수로 멈춘다 */
 const DAYS = Number(process.env.DAYS || 70);
 const OUT = process.env.OUT || 'docs/handoff/saves/leaf_sill.json';
 const W = 1770, H = 1188;
@@ -83,10 +84,12 @@ for (let d = 0; d < DAYS; d++) {
     /* ⚠ 생장 창은 «부팅 때부터» {leaves:3} 을 들고 있다 — 화분이 없으면 그 수는 «그 그루의 것이 아니다»(§questSnapshotNow 도 hasPlant 로 막는다) */
     const 그루있나 = !!p;
     return JSON.stringify({ 날:S.day, 그루있나, 잎: 그루있나 && st ? st.leaves : 0, 무늬: 그루있나 && st ? st.variegatedLeaves : 0,
+      성숙: 그루있나 && st ? (st.matureLeaves||0) : 0,
       유효일: 그루있나 && st ? st.growthDays : null, 자리: p ? (p.slotId || (p.at?'free':null)) : null }); })()`));
   leaves = s.잎 || 0; day = s.날;
-  if (d % 5 === 0 || leaves >= WANT) console.log(`   d${s.날} · 그루 ${s.그루있나?'O':'X'} · 잎 ${s.잎} · 무늬 ${s.무늬} · 유효일 ${s.유효일} · 자리 ${s.자리}`);
-  if (leaves >= WANT) break;
+  if (WANT_MATURE > 0 && (s.성숙 || 0) >= WANT_MATURE) { console.log(`   ★ 다 자란 잎 ${s.성숙} — 여기서 멈춘다`); break; }
+  if (d % 5 === 0 || leaves >= WANT) console.log(`   d${s.날} · 그루 ${s.그루있나?'O':'X'} · 잎 ${s.잎}(다자람 ${s.성숙}) · 무늬 ${s.무늬} · 유효일 ${s.유효일} · 자리 ${s.자리}`);
+  if (WANT_MATURE === 0 && leaves >= WANT) break;
 }
 const raw = String(await page.eval(`(()=>{ try { window.__save && window.__save(); } catch(e) {} return localStorage.getItem('byeot/save/1') || ''; })()`, true, 30000));
 if (raw.length > 50) { mkdirSync(OUT.slice(0, OUT.lastIndexOf('/')), { recursive: true }); writeFileSync(OUT, raw); console.log(`★ 세이브 — ${OUT} · ${raw.length}자 · Day ${day} · 잎 ${leaves}`); }
