@@ -70,8 +70,11 @@ MANIFEST = os.path.join(ROOT, "assets", "manifest.json")
 #     다음 사람이 「왜 rig_test 가 빠졌지」 하고 «넓혀» 놓는다.
 
 # 뽑지 않는 것 - 폴더 이름 하나라도 걸리면 뺀다
+# ⚠ `_kling` 은 2026-09-07 에 늘었다 — 클링이 낸 «원본»이다(880×1168 · 흰 배경).
+#   ⇒ 게임이 쓰는 것은 그것을 `fit_portrait.py` 로 «맞춘» 낱장이다.
+#   ⇒ ⇒ ★ 원본을 색인에 넣으면 「이름으로 찾기」에서 «둘»이 나와 어느 쪽인지 모른다.
 SKIP_DIR = {'_raw', '_out', '_pipeline_test', '_old', '_ref', '_style',
-            '3d_wip', '__pycache__'}
+            '3d_wip', '__pycache__', '_kling'}
 SKIP_EXT = {'.html', '.py', '.md', '.json', '.txt'}
 
 CHAR = {
@@ -120,6 +123,8 @@ FACE = {
     'neutral': '무표정', 'numb': '말잃음', 'happy': '기쁨', 'worry': '걱정', 'cry': '울음',
     'surprise': '놀람', 'tired': '피곤', 'think': '생각', 'proud': '뿌듯', 'sad': '슬픔',
     'excited': '신남', 'curious': '궁금', 'default': '기본', 'cheer': '환호', 'sleepy': '졸림',
+    # ★ 2026-09-07 클링으로 늘린 낯 (몬이 다섯 · 자취녀 하나)
+    'teach': '가르침', 'calm': '담담',
 }
 
 
