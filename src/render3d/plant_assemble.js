@@ -368,6 +368,10 @@ async function build(opt) {
     /* ★ 무늬 — 지금 몇 장 받는 중인가 · 몇 장 받았나 (2026-08-18) */
     skinsPending() { return G.skinsPending(); },
     skinsLoaded() { return G.skinsLoaded(); },
+    /* ★ 2026-09-07 ([growth] 청 ㉡) — 「방이 «지금 그리는» 잎이 어느 그림을 쓰나」. 원본 함수를 그대로 낸다(로직 없음).
+       ⚠ 없으면 «null» 이다 — 빈 배열로 메꾸지 않는다(「모른다」와 「없다」는 다른 말이다).
+       ⚠ TAIL 에 이름을 넣는 것만으로는 밖에서 못 부른다 — 밖이 쥐는 것은 이 `assembler` 객체다(걸어서 확인했다). */
+    leafSkinUsedAll() { return typeof G.leafSkinUsedAll === 'function' ? G.leafSkinUsedAll() : null; },
     /* 무늬가 한 장 도착할 때마다 부른다. 되돌려 주는 것은 **끊는 함수**다.
        ⚠ 여기서 다시 assemble 을 부르는 것은 **호출부 몫**이다 — 어느 그루가 그 무늬를
          쓰는지는 여기가 모른다(이 인스턴스는 그루를 한 벌만 기억한다). */

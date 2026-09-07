@@ -571,6 +571,12 @@ export function createGrowthAdapter(iframe) {
     bandOf(dli, varie) { const f = fn('bandOf'); return f ? f(dli, varie) : null; },
     reset()  { const f = fn('resetDailyLight'); return f ? f() : null; },
 
+    /* ★ 2026-09-07 ([growth] 청 385f2d4 · [leaf] 물음) — 「이 잎이 «어느 그림»을 쓰나」를 밖에서 «수로» 읽는다.
+       확대 창(plant_grow)이 그리는 길과 «같은» pickLeafKey 를 지나 나온 값이라 화면과 안 갈린다.
+       ⚠ 없으면 «null» 이다 — 빈 배열로 메꾸지 않는다. `[]` 는 「잎이 없다」이고 null 은 「이 창이 그 물음을 모른다」다
+         (옛 plant_grow 를 물리면 함수가 없는데, 그때 [] 를 내면 「무늬 잎이 하나도 없다」로 조용히 읽힌다). */
+    leafSkinUsedAll() { const f = fn('leafSkinUsedAll'); return f ? f() : null; },
+
     /* ★ vigor()·isDead() 훅은 **제거했다** (2026-08-02).
        활력 표시가 취소됐고(novice 는 형태 진행도 한 축, 활력은 숨김·감소 없음),
        고수 모드 활력도 보류다. 지금 계약 밖이므로 자리조차 두지 않는다 —

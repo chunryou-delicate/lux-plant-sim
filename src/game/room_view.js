@@ -1832,9 +1832,10 @@ export async function createRoomView(canvas, opts = {}) {
      이제 plant_grow.html 의 buildPlant 를 그대로 불러 쓴다(render3d/plant_assemble.js).
      실패하면 조용히 빈 화면을 내지 않고 옛 샘플로 내려앉되, 왜 내려앉았는지는 남긴다. */
   let asmPromise = null, asmWarned = false;
+  let asmReady = null;   /* ★ 2026-09-07 — 조립기가 «온 뒤»의 그것. 읽기 창구(leafSkinsInRoom)가 지금 것을 내려면 필요하다. 아직이면 null */
   function assembler() {
     if (asmPromise === null) {
-      asmPromise = getPlantAssembler({}).catch(e => {
+      asmPromise = getPlantAssembler({}).then(a => { asmReady = a; return a; }).catch(e => {
         if (!asmWarned) {
           asmWarned = true;
           console.warn('[방뷰] 생장 모듈을 못 실었습니다 — 옛 샘플(plant_sample.js)로 그립니다:', e.message);
@@ -9367,6 +9368,17 @@ export async function createRoomView(canvas, opts = {}) {
     floorPointAt(px, py) { try { const f = floorAt(px, py); return f ? { x: f.x, z: f.z } : null; } catch (e) { throw fail(e); } },
     /* ★ [char] 청(2026-09-06) — 세계점 → 화면점(캔버스 기준 px · 읽기만). screenPosOf 가 쓰는 slotScreenPos 그대로. 키를 재려면 두 점이 필요하다. */
     worldToScreen(x, y, z) { try { const p = slotScreenPos({ x: +x, y: +y, z: +z }); return p ? { x: p.x, y: p.y } : null; } catch (e) { throw fail(e); } },
+    /* ★ 2026-09-07 ([growth] 청 ㉡) — 「방이 «지금 그리는» 그림이 몇 번인가」. 확대 창의 같은 물음(io.growth.leafSkinUsedAll)과
+       «맞대야» 「방과 확대가 같은 그림인가」가 나온다 — 그 둘이 갈린 사고가 두 번 있었다(bf5dd20 · 7b573cb).
+       ⚠ 조립기가 아직 안 왔으면 «null» 이다 — 빈 배열로 메꾸지 않는다(「모른다」와 「없다」는 다른 말이다). */
+    leafSkinsInRoom() {
+      try {
+        if (asmPromise === null) assembler();          /* 아직 안 실었으면 실어 두고, 이번엔 「모른다」로 답한다 */
+        const a = asmReady;
+        if (!a || typeof a.leafSkinUsedAll !== 'function') return null;
+        return a.leafSkinUsedAll();
+      } catch (e) { throw fail(e); }
+    },
 
     /* 임의 좌표에 화분을 세운다. spec 이 null 이면 그 화분을 치운다.
        ★ 같은 potId 가 어디에 놓여 있든 옛 자리를 지우고 옮긴다(복사되지 않는다). */
