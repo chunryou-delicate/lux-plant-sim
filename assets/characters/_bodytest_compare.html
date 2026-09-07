@@ -1,0 +1,287 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>볕 · 캐릭터 모션 라이브러리</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<style>
+  body{margin:0;font-family:"Segoe UI",system-ui,sans-serif;background:#eef3ee;color:#2f3a30}
+  h1{font-size:19px;margin:14px 16px 2px}.sub{margin:0 16px 10px;color:#6b7a6b;font-size:13px}
+  .bar{display:flex;flex-wrap:wrap;gap:9px;align-items:center;padding:0 16px 12px;font-size:12px}
+  .bar select,.bar button{padding:6px 10px;border:1px solid #cfe0d3;background:#fff;border-radius:8px;color:#3a6b4e;font-size:12px;cursor:pointer}
+  .bar button.on{background:#3a6b4e;color:#fff;border-color:#3a6b4e}
+  .bar label{display:flex;align-items:center;gap:6px;color:#5c6b5f}
+  .bar input[type=range]{width:110px}
+  .bar b{color:#3a6b4e;font-variant-numeric:tabular-nums;min-width:30px;display:inline-block}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:0 12px 16px}
+  @media(max-width:900px){.grid{grid-template-columns:1fr}}
+  .cell{background:#fff;border:1px solid #dde7dd;border-radius:12px;overflow:hidden;box-shadow:0 2px 8px rgba(80,100,80,.07)}
+  .cvs{width:100%;height:500px;display:block;background:linear-gradient(#f7fbf7,#e7efe7);cursor:grab}
+  .lab{padding:8px 12px}.lab b{font-size:13px;color:#3a6b4e}.lab span{display:block;font-size:11px;color:#8a988a;margin-top:2px}
+  .note{margin:0 16px 18px;padding:12px 14px;background:#fff;border:1px solid #dde7dd;border-radius:10px;font-size:12px;line-height:1.7;color:#5c6b5f;max-width:1000px}
+  .note b{color:#3a6b4e} .note code{background:#f2f8f3;padding:1px 5px;border-radius:4px}
+  #err{color:#b4544c}
+</style>
+<style>
+/* ★ [Char] 시험용 사본에서만 — 맨몸은 «흰색»이라 연녹 배경에 묻힌다.
+   ⇒ 내 「비었나」 관문이 그것을 「아무도 안 그려졌다」로 «잘못» 읽었다(거짓 경보).
+   ⇒ ⇒ 값을 물어 보니 메시 1 · 뼈 24 · visible · 카메라 정상이었다. ★ 그려지고 있었다. */
+.card, .card canvas { background:#2b3a30 !important; }
+</style>
+</head>
+<body>
+  <h1>볕 · 캐릭터 모션 라이브러리 (정면 · 측면)</h1>
+  <p class="sub">리깅 메시 1개 + 애니 클립(뼈대 전용)을 조합해 재생합니다. 드래그 회전 · 스크롤 확대.</p>
+
+  <div class="bar">
+    <select id="pick"></select>
+    <select id="clip"></select>
+    <label>속도 <input type="range" id="spd" min="0" max="2" step="0.05" value="1"><b id="spdv">1.00</b></label>
+    <button id="pause">일시정지</button>
+    <button id="lock" class="on">제자리 고정</button>
+    <span id="err"></span>
+  </div>
+
+  <div class="grid">
+    <div class="cell"><canvas class="cvs" id="cf"></canvas>
+      <div class="lab"><b>정면</b><span>얼굴·어깨·팔 확인</span></div></div>
+    <div class="cell"><canvas class="cvs" id="cs"></canvas>
+      <div class="lab"><b>측면</b><span>웅크림·보폭·자세 확인</span></div></div>
+  </div>
+
+  <div class="note">
+    <b>구조</b> — Meshy는 애니메이션마다 스킨드 메시(≈15MB)를 통째로 재출력하지만,
+    실제 애니 데이터는 68KB뿐입니다. 그래서 클립은 <code>3d/anim/</code>에 뼈대+트랙만 남겨
+    저장하고(<code>tools/char/strip_anim_glb.py</code>), 여기서 <code>char_*_rigged.glb</code>에 얹어 재생합니다.
+    본 이름 26개가 완전히 일치해 그대로 바인딩됩니다. 엔진에서도 같은 방식으로 쓰면 됩니다.
+  </div>
+
+<script>
+// 캐시 무효화 쿼리. 이름을 CB로 둔다 —
+// 예전에 V로 뒀다가 아래 [VF,VS].forEach(V=>...) 의 루프 변수와 겹쳐 URL이 깨졌었다.
+const CB='?t='+Date.now();
+const CH=[
+ ["char_jachwi_f","여 · 자취생"],["char_yeoja_jubu","여 · 주부"],
+ ["char_yeoja_gajang","여 · 가장"],["char_yeoja_researcher","여 · 연구자"],
+ ["char_namja_jachwi","남 · 자취생"],["char_namja_jubu","남 · 주부"],
+ ["char_namja_gajang","남 · 가장"],["char_namja_researcher","남 · 연구자"],
+ ["char_bodytest","★ 새 맨몸(T포즈)"],
+];
+// [파일접미사, 표시명, 경로타입]  path: 'anim' = 3d/anim/, 'root' = 3d/
+const CLIPS=[
+ ["idle","유휴 (Idle)","root"],
+ ["walking","걷기 (기본)","root"],
+ ["walking_w","걷기 (여성)","root"],
+ ["inspect","★ 굽혀 살펴보기","anim"],
+ ["repot","★ 쭈그려 옮겨놓기","anim"],
+ ["pickup","허리 굽혀 집기","anim"],
+ ["harvest","서서 따기","anim"],
+ ["harvest_crouch","쭈그려 따고 일어서기","anim"],
+ ["opendoor","문 열기","anim"],
+ ["sleep","취침","anim"],
+ ["doze","앉아서 졸기","anim"],
+ ["sit","의자에 앉기","anim"],
+ ["happyjump","★ 기뻐서 폴짝","anim"],
+ ["heart","★ 하트","anim"],
+ ["cheer","응원·환호","anim"],
+ ["wave","손 흔들기","anim"],
+ ["nod","끄덕임","anim"],
+ ["listen","듣는 자세","anim"],
+ ["scratch","머리 긁적","anim"],
+];
+const pick=document.getElementById('pick'), clipSel=document.getElementById('clip');
+CH.forEach(([k,n])=>{const o=document.createElement('option');o.value=k;o.textContent=n;pick.appendChild(o);});
+function fillClips(charKey){
+  const isF=/jachwi_f|yeoja/.test(charKey), cur=clipSel.value;
+  clipSel.innerHTML='';
+  CLIPS.filter(c=>c[0]!=='walking_w'||isF).forEach(([k,n])=>{
+    const o=document.createElement('option');o.value=k;o.textContent='… '+n;
+    o.dataset.label=n; clipSel.appendChild(o);});
+  if([...clipSel.options].some(o=>o.value===cur)) clipSel.value=cur; else clipSel.value='idle';
+  probeClips(charKey);
+}
+
+// 파일이 실제로 있는지 HEAD로 확인해 드롭다운에 표시한다.
+//  ●  = 보유(재생 가능)   ✕ 미다운로드 = 파일 없음(선택 불가)
+// "안 받아진 것"과 "받았는데 오류난 것"을 구분하기 위한 표시.
+function probeClips(charKey){
+  [...clipSel.options].forEach(o=>{
+    const url=clipPath(charKey,o.value);
+    fetch(url,{method:'HEAD'}).then(r=>{
+      if(r.ok){ o.textContent='● '+o.dataset.label; o.disabled=false; }
+      else    { o.textContent='✕ '+o.dataset.label+' (미다운로드)'; o.disabled=true; }
+    }).catch(()=>{ o.textContent='✕ '+o.dataset.label+' (미다운로드)'; o.disabled=true; });
+  });
+}
+function clipPath(charKey,clipKey){
+  /* ★ 새 맨몸에는 «기존 자취녀(A포즈로 구운)» 클립을 그대로 얹는다 — 그것이 이 시험이다 */
+  if(charKey==='char_bodytest') charKey='char_jachwi_f';
+  const c=CLIPS.find(x=>x[0]===clipKey);
+  return c && c[2]==='anim' ? `3d/anim/${charKey}_${clipKey}.glb` : `3d/${charKey}_${clipKey}.glb`;
+}
+
+function toonGrad(){const c=document.createElement('canvas');c.width=64;c.height=1;const x=c.getContext('2d');
+ const g=x.createLinearGradient(0,0,64,0);
+ g.addColorStop(0,'#7c877f');g.addColorStop(.45,'#aab8ac');g.addColorStop(.75,'#d2dbd2');g.addColorStop(1,'#ffffff');
+ x.fillStyle=g;x.fillRect(0,0,64,1);
+ const t=new THREE.CanvasTexture(c);t.minFilter=THREE.LinearFilter;t.magFilter=THREE.LinearFilter;t.generateMipmaps=false;return t;}
+const GRAD=toonGrad();
+function pastelize(tex){try{if(!tex||!tex.image)return tex;const im=tex.image,w=im.width||512,h=im.height||512;if(!w)return tex;
+ const c=document.createElement('canvas');c.width=w;c.height=h;const x=c.getContext('2d');x.drawImage(im,0,0,w,h);
+ const d=x.getImageData(0,0,w,h),p=d.data,S=.7;
+ for(let i=0;i<p.length;i+=4){const r=p[i],g=p[i+1],b=p[i+2],y=.299*r+.587*g+.114*b;
+  p[i]=y+(r-y)*S;p[i+1]=y+(g-y)*S;p[i+2]=y+(b-y)*S;}
+ x.putImageData(d,0,0);const nt=new THREE.CanvasTexture(c);nt.flipY=tex.flipY;nt.encoding=THREE.sRGBEncoding;nt.needsUpdate=true;return nt;}catch(e){return tex;}}
+/* ★ [Char] 2026-09-07 · 시험용 사본에서만 —
+   맨몸은 «흰색 + 툰 음영 2~3단»이라 «살 접힘»이 눈에도 자에도 안 잡힌다.
+   ⇒ 내 「비었나」 관문이 흰 몸을 「아무도 안 그려졌다」로 잘못 읽었고(거짓 경보),
+     내 「그림 견주기」는 자세가 바뀌어도 차이 0.5 밖에 못 냈다.
+   ⇒ ⇒ ★ 「접힘이 안 보인다」는 «몸의 흠»이 아니라 «내가 못 보게 차려 놓은 것»이었다.
+   ⇒ ✔ 그래서 시험용으로만 «살구색 + 부드러운 음영»을 입힌다. 원본 뷰어는 안 건드린다. */
+function toonify(root){
+  /* ⛔ 처음엔 MeshStandardMaterial 로 갈아 끼웠다 ⇒ 이 three 판에서 «스키닝이 안 돌아»
+     몸이 통째로 «사라졌다»(seq 4장이 차이 0.000). ★ 재질을 «바꾸면» 안 된다.
+     ⇒ ✔ 쓰던 MeshToonMaterial 을 그대로 두고 «색»만 살구색으로 준다. */
+  const tint = root.userData.__bodytest ? 0xe8b89a : null;
+  root.traverse(o=>{if(!o.isMesh||!o.material)return;try{
+ const src=Array.isArray(o.material)?o.material:[o.material];
+ const out=src.map(m=>{const mat=new THREE.MeshToonMaterial({map:m.map?pastelize(m.map):null,
+   color:tint!=null?tint:(m.map?0xffffff:(m.color?m.color.getHex():0xffffff)),gradientMap:GRAD});
+  mat.skinning=!!o.isSkinnedMesh; return mat;});
+ o.material=Array.isArray(o.material)?out:out[0];}catch(e){}});}
+
+function boneBox(root){
+  root.updateMatrixWorld(true);
+  const pts=[];
+  root.traverse(o=>{if(o.isBone) pts.push(o.getWorldPosition(new THREE.Vector3()));});
+  if(pts.length<3) return new THREE.Box3().setFromObject(root);
+  const box=new THREE.Box3().setFromPoints(pts);
+  const s=box.getSize(new THREE.Vector3());
+  box.expandByVector(new THREE.Vector3(s.x*0.35,s.y*0.16,s.z*0.35));
+  return box;
+}
+
+const ST={speed:1,paused:false,lock:true};
+function makeView(id,mode){
+  const cv=document.getElementById(id);
+  const r=new THREE.WebGLRenderer({canvas:cv,antialias:true,alpha:true});
+  r.setPixelRatio(Math.min(devicePixelRatio,2));r.outputEncoding=THREE.sRGBEncoding;
+  const sc=new THREE.Scene();
+  const cam=new THREE.PerspectiveCamera(32,1,0.01,5000);
+  const ctr=new THREE.OrbitControls(cam,cv);ctr.enableDamping=true;
+  sc.add(new THREE.AmbientLight(0xffffff,0.70));
+  sc.add(new THREE.HemisphereLight(0xffffff,0xdfe6df,0.22));
+  const d=new THREE.DirectionalLight(0xffffff,0.45);d.position.set(2,4,3);sc.add(d);
+  const clock=new THREE.Clock();
+  const V={sc,cam,ctr,r,clock,cv,mode,mixer:null,root:null,hips:null,hips0:null};
+  (function loop(){
+    requestAnimationFrame(loop);
+    const w=cv.clientWidth,h=cv.clientHeight;
+    if(cv.width!==w||cv.height!==h){r.setSize(w,h,false);cam.aspect=w/h;cam.updateProjectionMatrix();}
+    const dt=clock.getDelta();
+    if(V.mixer&&!ST.paused) V.mixer.update(dt*ST.speed);
+    if(V.hips&&ST.lock){V.hips.position.x=V.hips0.x;V.hips.position.z=V.hips0.z;}
+    ctr.update();r.render(sc,cam);
+  })();
+  return V;
+}
+const VF=makeView('cf','front'), VS=makeView('cs','side');
+const errEl=document.getElementById('err');
+
+function load(charKey){
+  errEl.textContent='';
+  const cpath=clipPath(charKey,clipSel.value);
+  [VF,VS].forEach(V=>{
+    if(V.root){V.sc.remove(V.root);V.root=null;V.mixer=null;V.hips=null;}
+    // 메시 소스: _rigged.glb 우선, 실패하면 검증된 _walking.glb로 폴백
+    const sources = charKey==='char_bodytest'
+      ? ['_bodytest/body_female_t1_rigged.glb']
+      : [`3d/${charKey}_rigged.glb`, `3d/${charKey}_walking.glb`];
+    (function tryMesh(i){
+      if(i>=sources.length){
+        V.cv.style.background='#fdeaea';
+        errEl.textContent='메시 로드 실패: '+sources.join(' , ');
+        return;
+      }
+      new THREE.GLTFLoader().load(sources[i]+CB, rg=>{
+        V.cv.style.background='';
+        if(i>0) errEl.textContent='주의: _rigged 실패 → _walking으로 대체 로드됨';
+        const m=rg.scene; m.userData.__bodytest = (charKey==='char_bodytest'); toonify(m); V.sc.add(m); V.root=m;
+        // 스킨드 메시는 지오메트리 바운딩(0.017m, 원점 부근)이 실제 렌더 크기와 어긋나 있어
+        // 카메라가 가까우면 three.js가 화면 밖으로 판정해 통째로 잘라낸다.
+        m.traverse(o=>{if(o.isMesh)o.frustumCulled=false;});
+        m.traverse(o=>{if(o.isBone&&!V.hips&&/hips/i.test(o.name)){V.hips=o;V.hips0=o.position.clone();}});
+        new THREE.GLTFLoader().load(cpath+CB, ag=>{
+          if(!ag.animations||!ag.animations.length){errEl.textContent='클립에 애니 없음: '+cpath; frame(V,m); return;}
+          V.mixer=new THREE.AnimationMixer(m);
+          const act=V.mixer.clipAction(ag.animations[0]);
+          act.play();
+          V.mixer.update(0.001);
+          /* ★ 시험용 관찰창 — 트랙이 «물렸나»를 묻는다.
+             three 는 못 문 트랙을 «조용히 무시»한다(check_skeleton_match.py 가 적어 둔 그것). */
+          try{
+            const clip=ag.animations[0];
+            const names=new Set(); m.traverse(o=>names.add(o.name));
+            const miss=clip.tracks.map(t=>t.name.split('.')[0]).filter(n=>!names.has(n));
+            window.__mx=window.__mx||[]; window.__mx.push({view:V.mode, clip:clip.name,
+              tracks:clip.tracks.length, dur:+clip.duration.toFixed(2),
+              bound:act._propertyBindings?act._propertyBindings.length:-1,
+              missN:miss.length, miss:[...new Set(miss)].slice(0,5),
+              t0:clip.tracks[0]?clip.tracks[0].name:null});
+          }catch(e){ window.__mx=window.__mx||[]; window.__mx.push({err:e.message}); }
+          frame(V,m);
+        },undefined,e=>{errEl.textContent='클립 로드 실패: '+cpath+' ('+(e&&(e.message||e.type))+')'; frame(V,m);});
+      },undefined,e=>{
+        console.warn('mesh load failed', sources[i], e);
+        tryMesh(i+1);   // 폴백 시도
+      });
+    })(0);
+  });
+}
+function frame(V,m){
+  /* ★★ [Char] 2026-09-07 — 시험용 사본에서만 고친 곳.
+     boneBox(뼈 위치로 만든 상자)가 «새 몸»에서는 거의 0 이 나와 카메라가 엉뚱한 데를 본다.
+     ⇒ 화면이 «통째로 빈다». (찍는 자의 「비었나」 관문이 두 번 잡아냈다)
+     ⇒ ⛔ 왜 0 인지는 «안 팠다». 시험은 「클립이 얹힌 모양」을 보는 것이지 뷰어를 고치는 게 아니다.
+     ⇒ ✔ 그래서 «너무 작으면 사람 크기로 손수 잡는다». 원본 뷰어는 안 건드린다. */
+  let box=boneBox(m);
+  let rad0=box.getBoundingSphere(new THREE.Sphere()).radius;
+  if(!(rad0>0.2)){
+    box=new THREE.Box3().setFromCenterAndSize(
+      new THREE.Vector3(0,0.85,0), new THREE.Vector3(1.2,1.7,1.2));
+    console.warn('[bodytest] boneBox 가 너무 작다(r='+rad0.toFixed(4)+') — 카메라를 손으로 잡는다');
+  }
+  const c=box.getCenter(new THREE.Vector3());
+  const rad=Math.max(box.getBoundingSphere(new THREE.Sphere()).radius,0.001);
+  /* ★ 시험용 관찰창 — 자에게 «묻기» 위해 남긴다 */
+  try{
+    let nMesh=0, nBone=0; m.traverse(o=>{ if(o.isMesh) nMesh++; if(o.isBone) nBone++; });
+    const wb=new THREE.Box3().setFromObject(m);
+    window.__dbg=window.__dbg||[]; window.__dbg.push({view:V.mode, rad0:+rad0.toFixed(4),
+      rad:+rad.toFixed(4), c:[+c.x.toFixed(3),+c.y.toFixed(3),+c.z.toFixed(3)],
+      mesh:nMesh, bone:nBone, visible:m.visible,
+      wb:[+wb.min.y.toFixed(3),+wb.max.y.toFixed(3)]});
+  }catch(e){ window.__dbg=window.__dbg||[]; window.__dbg.push({err:e.message}); }
+  V.ctr.target.copy(c);
+  const dist=rad/Math.sin((32*Math.PI/180)/2)*1.05;
+  V.cam.near=Math.max(dist/500,0.001);V.cam.far=dist*500;
+  if(V.mode==='front') V.cam.position.set(c.x,c.y+rad*0.05,c.z+dist);
+  else V.cam.position.set(c.x+dist,c.y+rad*0.05,c.z);
+  V.cam.updateProjectionMatrix();V.ctr.update();
+}
+
+fillClips(CH[0][0]); clipSel.value='inspect'; load(CH[0][0]);
+pick.onchange=()=>{fillClips(pick.value);load(pick.value);};
+clipSel.onchange=()=>load(pick.value);
+const spd=document.getElementById('spd'),spdv=document.getElementById('spdv');
+spd.oninput=()=>{ST.speed=parseFloat(spd.value);spdv.textContent=ST.speed.toFixed(2);};
+const pb=document.getElementById('pause');
+pb.onclick=()=>{ST.paused=!ST.paused;pb.textContent=ST.paused?'재생':'일시정지';pb.classList.toggle('on',ST.paused);};
+const lb=document.getElementById('lock');
+lb.onclick=()=>{ST.lock=!ST.lock;lb.classList.toggle('on',ST.lock);};
+</script>
+</body>
+</html>
