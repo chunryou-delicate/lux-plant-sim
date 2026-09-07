@@ -3,18 +3,25 @@
    손가락을 따라 첫날을 하고, 그 뒤 [다음 날]을 눌러 날을 보낸다(진짜 길). 잎이 목표에 닿으면 `byeot/save/1` 을 파일로 뜬다.
    ⛔ 값 0 · 고치지 않는다. */
 import { launch, sleep } from './test_cdp.mjs';
-import { writeFileSync, mkdirSync } from 'node:fs';
+import { writeFileSync, mkdirSync, readFileSync } from 'node:fs';
 const BASE = process.env.BYEOT_URL || 'http://localhost:8972';
 const WANT = Number(process.env.LEAVES || 2);   /* [leaf]: 두 장이면 넉넉하다 */
 const WANT_MATURE = Number(process.env.MATURE || 0);   /* ★ 「무늬 잎이 «폈있는» 판」([leaf] 2차 청) — 다 자란 잎 수로 멈춘다 */
 const DAYS = Number(process.env.DAYS || 70);
 const OUT = process.env.OUT || 'docs/handoff/saves/leaf_sill.json';
 const W = 1770, H = 1188;
-const wd = setTimeout(() => { console.error('⏱ 자가 제한'); process.exit(2); }, 2400000);
+const wd = setTimeout(() => { console.error('⏱ 자가 제한'); process.exit(2); }, Number(process.env.WD || 2400000));
 wd.unref && wd.unref();
 const page = await launch({ width: W, height: H, dpr: 1 });
 await page.goto(`${BASE}/game.html`);
 await page.eval('localStorage.clear()', false);
+/* ★ 이어 걷기(FROM=파일) — 세이브는 «부팅 전»에 심어야 한다([leaf] 잰 것: 새로고침하면 pagehide→saveNow 가 덮어쓴다) */
+if (process.env.FROM) {
+  const txt = readFileSync(process.env.FROM, 'utf8');
+  await page.send('Page.addScriptToEvaluateOnNewDocument', {
+    source: `try { localStorage.setItem('byeot/save/1', ${JSON.stringify(txt)}); } catch (e) {}` });
+  console.log('■ 이어 걷기 —', process.env.FROM, txt.length + '자');
+}
 await page.goto(`${BASE}/game.html`);
 await page.waitFor('!!window.__rv', 150000, 300);
 await sleep(4500);
