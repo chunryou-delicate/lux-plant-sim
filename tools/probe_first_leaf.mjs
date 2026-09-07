@@ -13,6 +13,20 @@
    ⛔ 이 자는 «재기만» 한다. 갈래 수·확률·일수는 박사님 것이다.
 
      ROOM=banjiha LAMPS=0,1 FROM=11 node tools/probe_first_leaf.mjs
+
+   ★★ 2026-09-07 · DLI= 손잡이를 달았다. 왜 필요했나:
+     «바닥»은 프로필의 열다섯 칸에 **없다**(자리는 전부 가구에 붙어 있다).
+     그래서 바닥 값은 라이브 `dliAt` 으로 따로 재야 하는데, 그 수를 손에 들고
+     「1.44 는 2.7 보다 작으니 0 이다」로 «셈»만 하면 그건 잰 것이 아니다.
+     ⇒ 그래서 «잰 수를 그대로 태우는» 길을 냈다. 이름:값 을 콤마로 준다.
+       DLI='바닥한가운데:0.27,바닥최고:1.44' node tools/probe_first_leaf.mjs
+     ⚠ novice 는 날씨가 고정이라 하루 값이 상수다. 그래서 상수를 먹여도 옳다.
+       real 에는 쓰지 마라 — 계절이 도는데 상수를 먹이면 거짓이 된다.
+
+   ⚠⚠ `die` 는 밴드 «이름»일 뿐이고 **죽이지 않는다.** 이 자도 죽음을 안 센다.
+     loop.js:17   「band === 'critical' 로 죽이는 코드는 절대 넣지 않는다」
+     headroom.js:5「죽지 않는다. 시들지도 않는다. 그냥 멈춘다. 옮기면 다시 자란다」
+     ⇒ 「die 아래」를 「죽는다」로 읽지 마라. 2026-09-07 에 내가 그렇게 읽어서 틀렸다.
 ============================================================ */
 import fs from 'node:fs'; import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -37,16 +51,29 @@ function bandOf(d){ if(d<T.die)return'critical'; if(d<T.survive)return'poor'; if
 console.log(`══ 첫 잎까지 며칠인가 — 방 «${ROOM}» · 그루는 게임일 ${FROM} 에 놓인다`);
 console.log(`   ⚠ 첫 잎 = 누적 GROWTH ${FIRST} · 몬스테라 7일 이동평균 · ${DAYS}일까지 본다`);
 console.log(`   ⚠ 모드를 표에서 떼지 마라 — novice=여름·맑음 고정(첫 플레이) · real=계절이 돈다\n`);
-for (const mode of MODES) for (const lamps of LAMPS) {
-  console.log(`[${mode} 등${lamps}개]   자리          7일평균(놓인 뒤)   밴드      첫 잎`);
+/* DLI= 를 주면 «프로필 자리» 대신 «준 상수»를 태운다 (바닥처럼 자리 목록에 없는 데) */
+const FIXED = process.env.DLI
+  ? process.env.DLI.split(',').map(t => { const i = t.lastIndexOf(':');
+      return { slotId: t.slice(0,i).trim(), fixed: Number(t.slice(i+1)) }; })
+  : null;
+if (FIXED) console.log('⚠ DLI= 로 «잰 상수»를 태웁니다 — 등 개수는 그 상수에 이미 들어 있습니다\n');
+for (const mode of MODES) for (const lamps of (FIXED ? [0] : LAMPS)) {
+  console.log(FIXED ? `[${mode} «잰 상수»]   자리                     하루 DLI   밴드      첫 잎` : `[${mode} 등${lamps}개]   자리          7일평균(놓인 뒤)   밴드      첫 잎`);
   let any = 0;
-  for (const slot of P.slots.map(s => s.slotId)) {
+  const TARGETS = FIXED ? FIXED.map(f => f.slotId) : P.slots.map(s => s.slotId);
+  for (const slot of TARGETS) {
+    const fixedOf = FIXED ? FIXED.find(f => f.slotId === slot).fixed : null;
     const hist = []; let g = 0, leafDay = null, bandSeen = {}, avgSum = 0, avgN = 0;
     for (let d = 1; d <= DAYS; d++) {
       const S = { sim:{mode, yearDay0:135}, lamps:{count:lamps, litHours:12}, pots:[], placedItems:[] };
-      const r = light.daily(d, S);
-      const s = (r.report.slots||[]).find(x => x.slotId === slot); if (!s) continue;
-      hist.push(s.dli || 0);
+      let dayDli;
+      if (fixedOf !== null) dayDli = fixedOf;
+      else {
+        const r = light.daily(d, S);
+        const s = (r.report.slots||[]).find(x => x.slotId === slot); if (!s) continue;
+        dayDli = s.dli || 0;
+      }
+      hist.push(dayDli);
       const w = hist.slice(-7), a = w.reduce((x,y)=>x+y,0)/w.length;
       if (d < FROM) continue;
       avgSum += a; avgN++;
@@ -63,5 +90,5 @@ for (const mode of MODES) for (const lamps of LAMPS) {
     if (leafDay) any++;
     console.log(`   ${slot.padEnd(22)}${avg.toFixed(2).padStart(6)}   ${(topBand?topBand[0]:'-').padEnd(9)} ${ans}`);
   }
-  console.log(`   ⇒ ★ 첫 잎이 «나는» 자리 ${any}/${P.slots.length}\n`);
+  console.log(`   ⇒ ★ 첫 잎이 «나는» 자리 ${any}/${TARGETS.length}\n`);
 }
