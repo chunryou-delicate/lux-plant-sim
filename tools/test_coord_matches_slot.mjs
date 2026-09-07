@@ -43,16 +43,29 @@ const out = await page.eval(`(()=>{ const io=window.__io;
   return JSON.stringify(rows); })()`);
 const rows = JSON.parse(out);
 console.log('C7 — 슬롯으로 잰 값 vs 좌표로 잰 값 (맑음·여름 · 등 개수마다)');
-let bad=0, lastN=null;
-for (const r of rows) {
-  if (r.n !== lastN) { console.log('  [등 '+r.n+'개]'); lastN=r.n; }
-  if (r.err) { console.log('   '+r.id.padEnd(22)+'⛔ '+r.err.slice(0,60)); bad++; continue; }
-  const d = Math.abs(r.bySlot - r.byXYZ);
-  const rel = r.bySlot > 0 ? d/r.bySlot : d;
-  const mark = rel > 0.02 ? '⚠ 어긋남' : '✅';
-  if (rel > 0.02) bad++;
-  if (rel > 0.02 || r.n === 0) console.log('   '+r.id.padEnd(22)+r.bySlot.toFixed(3).padStart(7)+' vs '+r.byXYZ.toFixed(3).padStart(7)
-    +'   차 '+d.toFixed(4)+'   '+mark);
+/* ★★ 2026-09-07 — «빈 머리말» 을 없앴다. 왜 고쳤는지 남긴다:
+   전에는 등 1·2·3 을 «어긋날 때만» 찍었다. 그래서 다 맞으면 「[등 1개]」 밑이 통째로
+   비었고, 나는 그것을 보고 ★ 「안 쟀구나」로 읽었다 — 내가 짠 검사인데도 그랬다.
+   ⇒ 조용한 것과 «안 잰 것»이 화면에서 같아 보이면 안 된다. 이제 등마다 «몇 칸을 쟀는지»
+     와 «본보기 한 칸»을 반드시 찍는다. 0 칸이면 그 자리에서 붉는다. */
+let bad=0;
+const byN = new Map();
+for (const r of rows) { if(!byN.has(r.n)) byN.set(r.n, []); byN.get(r.n).push(r); }
+for (const [n, list] of byN) {
+  console.log('  [등 '+n+'개]  — '+list.length+'칸 쟀다');
+  if (list.length === 0) { console.log('   ⛔ 이 등 개수에서 «한 칸도 못 쟀다»'); bad++; continue; }
+  let quiet = 0, sample = null;
+  for (const r of list) {
+    if (r.err) { console.log('   '+r.id.padEnd(22)+'⛔ '+r.err.slice(0,60)); bad++; continue; }
+    const d = Math.abs(r.bySlot - r.byXYZ);
+    const rel = r.bySlot > 0 ? d/r.bySlot : d;
+    const line = '   '+r.id.padEnd(22)+r.bySlot.toFixed(3).padStart(7)+' vs '+r.byXYZ.toFixed(3).padStart(7)+'   차 '+d.toFixed(4)+'   ';
+    if (rel > 0.02) { bad++; console.log(line+'⚠ 어긋남'); continue; }
+    quiet++; if (!sample) sample = line+'✅';
+    if (n === 0) console.log(line+'✅');
+  }
+  /* 등 0개는 위에서 다 찍었으니 겹쳐 찍지 않는다. 나머지는 «본보기 하나»를 꼭 남긴다 */
+  if (n !== 0 && quiet) console.log('   ↳ '+quiet+'칸 조용함 · 본보기\n'+sample);
 }
 console.log('\n⇒ 어긋난 칸 '+bad+'/'+rows.length+' (자리 × 등 개수)'+(bad?'':'   ★ 등을 켜도 좌표 길이 슬롯 길과 «같은 답»을 냅니다'));
 
