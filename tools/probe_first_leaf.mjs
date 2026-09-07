@@ -31,6 +31,7 @@
 import fs from 'node:fs'; import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createProfileLight } from '../src/game/room_profile.js';
+import { GROWTH_STEPS_MAX } from '../src/game/loop.js';
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const J = p => JSON.parse(fs.readFileSync(path.join(ROOT, p), 'utf8'));
 const ROOM = process.env.ROOM || 'banjiha';
@@ -38,7 +39,9 @@ const P  = J(`data/profiles/room_profile.${ROOM}.json`);
 const TH = J('data/balance/light_thresholds.json');
 const T  = TH.plants.monstera_deliciosa;
 const GS = J('data/growth_tuning.json').growth_speed.by_band;
-const STEP_MAX = J('data/growth_tuning.json').growth_speed.GROWTH_STEPS_MAX ?? 2;
+/* ★★ GROWTH_STEPS_MAX 는 JSON 에 **없다** — loop.js 의 상수다. 전에는 JSON 에서 읽고
+   `?? 2` 로 메꿔서, 코어가 2 를 바꿔도 이 자는 조용히 옛 값을 썼다. 정본을 그대로 들어온다. */
+const STEP_MAX = GROWTH_STEPS_MAX;
 const light = createProfileLight({ ...P, uidStable: true },
   { thresholds: TH, weather: J('data/balance/weather.json'), electricity: J('data/balance/electricity.json') });
 const FROM  = Number(process.env.FROM || 11);      // 그루가 방에 놓이는 게임일
@@ -63,7 +66,7 @@ for (const mode of MODES) for (const lamps of (FIXED ? [0] : LAMPS)) {
   const TARGETS = FIXED ? FIXED.map(f => f.slotId) : P.slots.map(s => s.slotId);
   for (const slot of TARGETS) {
     const fixedOf = FIXED ? FIXED.find(f => f.slotId === slot).fixed : null;
-    const hist = []; let g = 0, leafDay = null, bandSeen = {}, avgSum = 0, avgN = 0;
+    const hist = []; let g = 0, credit = 0, leafDay = null, bandSeen = {}, avgSum = 0, avgN = 0;
     for (let d = 1; d <= DAYS; d++) {
       const S = { sim:{mode, yearDay0:135}, lamps:{count:lamps, litHours:12}, pots:[], placedItems:[] };
       let dayDli;
@@ -78,8 +81,20 @@ for (const mode of MODES) for (const lamps of (FIXED ? [0] : LAMPS)) {
       if (d < FROM) continue;
       avgSum += a; avgN++;
       const b = bandOf(a); bandSeen[b] = (bandSeen[b]||0)+1;
-      const m = GS[b] ?? 0;
-      if (m > 0) g += Math.min(m, STEP_MAX);
+      /* ★ 문지기는 밴드 표가 아니라 «7일평균 < min» 이다 (plant_grow §growthBlockReason).
+         예전에는 by_band 의 0 으로 막았는데, 코어는 그 0 을 «받지 않는다» —
+         loop.js §growthSpeedOf 가 `m < 1` 이면 mult 1 을 낸다('unsupported').
+         두 길이 같은 답을 내지만 «같은 길» 은 아니다. 정본 쪽으로 맞췄다. */
+      if (a >= T.min) {
+        let m = GS[b];
+        if (typeof m !== 'number' || !isFinite(m) || m < 1) m = 1;   // loop.js §growthSpeedOf
+        credit += Math.min(m, STEP_MAX);
+        /* 소수점은 적립통에 쌓고 1 이 모이는 날 한 걸음 더 간다 (loop.js §growthStepsOf).
+           전에는 1.25 를 그대로 더해서 잎 나는 날이 하루씩 어긋날 수 있었다. */
+        let steps = Math.min(STEP_MAX, Math.floor(credit + 1e-9));
+        credit -= steps;
+        g += Math.max(1, steps);       // 자랄 수 있는 날은 최소 한 걸음
+      }
       if (leafDay === null && g >= FIRST) leafDay = d;
     }
     const avg = avgN ? (avgSum/avgN) : 0;
