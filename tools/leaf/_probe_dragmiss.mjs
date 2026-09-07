@@ -75,6 +75,17 @@ for(let t=0;t<offs.length;t++){
   console.log(`  빗나감 ${String(Math.round(Math.hypot(dx,dy))).padStart(3)}화소 → ${JSON.stringify(now)}`);
   console.log(`        손가락 ${h.on?'★켜짐':'⛔꺼짐'} 「${(h.say||'—').slice(0,28)}」 ★테:${h.테} · 구멍:${JSON.stringify(h.구멍)} · 그점:${h.그점}${창턱?'   ⇐ ⚠ 창턱에 들어감':''}`);
   if(창턱){ console.log('  ⇒ ⚠ 창턱에 들어가 버렸다 — 여기서 빗나감 재기는 끝난다'); break; }
+  /* ★★ 그 한 칸 — 빗나간 뒤 [옮기기]를 «누르면» 말이 «돌아오나» */
+  if(t===0 && h.테==='pickMove'){
+    console.log('  ── ★ [옮기기]를 «눌러» 본다 — 「창턱」이 돌아오나 ──');
+    const r=await page.eval(`(()=>{const b=document.getElementById('pickMove');
+      if(!b||b.offsetParent===null||b.disabled)return 'none'; b.click(); return 'clicked';})()`);
+    await sleep(900); await quiet(); await sleep(400);
+    const h2=JSON.parse(await hint());
+    console.log(`     누름:${r} ⇒ 손가락 ${h2.on?'★켜짐':'⛔꺼짐'} 「${(h2.say||'—').slice(0,32)}」 테:${h2.테} · 그점:${h2.그점}`);
+    console.log(`     ⇒ ★ 「창턱」이 ${/창턱/.test(h2.say||'')?'✔ «돌아왔다»':'⛔ «안 돌아왔다»'}`);
+    console.log('  ────────────────────────────────────────');
+  }
 }
 console.log('');
 console.log('── 마지막으로 «정확히» 끈다 (성공을 나중에) ──');
