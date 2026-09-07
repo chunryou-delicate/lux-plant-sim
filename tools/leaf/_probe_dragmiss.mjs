@@ -22,7 +22,13 @@ const quiet=async()=>{for(let k=0;k<3;k++){for(let i=0;i<40;i++){
   await page.eval(`(()=>{const x=document.getElementById('dlgBox'); if(x)x.click();})()`,false); await sleep(180);} await sleep(380);}};
 const hint=()=>page.eval(`(()=>{const h=document.getElementById('hint');
   const on=!!(h&&h.classList.contains('on'));
-  return JSON.stringify({on,say:on?((h.querySelector('.say')||{}).textContent||'').trim():''});})()`);
+  const t=document.querySelector('.hintTarget');
+  const d=document.getElementById('hintDim'); const ho=(d&&d.dataset.hole||'').split(',').map(Number);
+  return JSON.stringify({on, say:on?((h.querySelector('.say')||{}).textContent||'').trim():'',
+    테:t?(t.id||(t.className||'').split(' ')[0]||t.tagName):null,
+    구멍:(ho.length===3&&ho.every(Number.isFinite))?{x:Math.round(ho[0]),y:Math.round(ho[1])}:null,
+    그점:(()=>{try{const e=(ho.length===3)?document.elementFromPoint(ho[0],ho[1]):null;
+      return e?(e.id||e.className||e.tagName):null;}catch(_){return null;}})()});})()`);
 const clickHint=async()=>{
   const i=await page.eval(`(()=>{const t=document.querySelector('.hintTarget');
     if(t){const r=t.getBoundingClientRect(); const c=t.id==='roomCanvas'||t.tagName==='CANVAS';
@@ -52,9 +58,10 @@ for(let i=0;i<90 && !found;i++){
 if(!found){ console.log('⛔ 창턱 안내 못 만남'); await page.close(); process.exit(3); }
 const S=JSON.parse(await page.eval(`(()=>{try{return JSON.stringify(window.__rv.screenPosOf('banjiha-sill:0'));}catch(e){return 'null';}})()`));
 console.log('창턱 화면 자리:', JSON.stringify(S), '· 그루 자리(전):', await slot());
+console.log('★ 빗나가기 «전» 손가락:', await hint());
 console.log('');
 console.log('── ★ 빗나감을 «먼저» 잰다 — 큰 것부터 ──');
-const offs=[[0,-100],[100,0],[0,-40],[26,-26],[0,-24],[14,-14],[0,-12]];
+const offs=[[0,-100],[0,-40],[0,-24],[0,-12]];   // ★ 테만 보면 되니 넷이면 넉넉하다
 for(let t=0;t<offs.length;t++){
   const p=await potXY(); if(p==='null'){console.log('  그루 자리 못 찾음'); break;}
   const q=JSON.parse(p); const [dx,dy]=offs[t];
@@ -65,7 +72,8 @@ for(let t=0;t<offs.length;t++){
   await quiet();
   const now=JSON.parse(await slot()); const h=JSON.parse(await hint());
   const 창턱=now.slot==='banjiha-sill:0';
-  console.log(`  빗나감 ${String(Math.round(Math.hypot(dx,dy))).padStart(3)}화소 → ${JSON.stringify(now)}  ·  손가락 ${h.on?'★켜짐':'⛔꺼짐'} 「${(h.say||'—').slice(0,26)}」${창턱?'   ⇐ ⚠ 그래도 창턱에 들어감':''}`);
+  console.log(`  빗나감 ${String(Math.round(Math.hypot(dx,dy))).padStart(3)}화소 → ${JSON.stringify(now)}`);
+  console.log(`        손가락 ${h.on?'★켜짐':'⛔꺼짐'} 「${(h.say||'—').slice(0,28)}」 ★테:${h.테} · 구멍:${JSON.stringify(h.구멍)} · 그점:${h.그점}${창턱?'   ⇐ ⚠ 창턱에 들어감':''}`);
   if(창턱){ console.log('  ⇒ ⚠ 창턱에 들어가 버렸다 — 여기서 빗나감 재기는 끝난다'); break; }
 }
 console.log('');
@@ -76,6 +84,6 @@ if(p!=='null'){ const q=JSON.parse(p);
   await page.eval(`(()=>{const b=document.getElementById('pickMove'); if(b&&b.offsetParent!==null&&!b.disabled)b.click();})()`,false);
   await sleep(450); await drag(q.x,q.y,S.x,S.y); await quiet(); }
 console.log('★ 정확히 끈 뒤:', await slot());
-const h=JSON.parse(await hint()); console.log('★ 그때 손가락:', h.on?`켜짐 「${h.say.slice(0,26)}」`:'꺼짐');
+const h2=JSON.parse(await hint()); console.log('★ 그때 손가락:', h2.on?`켜짐 「${h2.say.slice(0,26)}」 테:${h2.테}`:'꺼짐');
 await page.shot('docs/handoff/img/varie/dragmiss_end.png');
 await page.close();
