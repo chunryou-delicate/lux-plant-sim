@@ -9374,6 +9374,11 @@ export async function createRoomView(canvas, opts = {}) {
     leafSkinsInRoom() {
       try {
         if (asmPromise === null) assembler();          /* 아직 안 실었으면 실어 두고, 이번엔 「모른다」로 답한다 */
+        /* ★★ 2026-09-07 ([growth]가 잡아 줬다) — **방에 그루가 없으면 «모른다»(null)다.**
+           조립기는 그루를 «한 벌» 기억하고 그 밑값이 「잎 3장」이라, 방이 아무것도 안 그리는 판에서도 그 3장을 낸다.
+           그러면 확대와 방이 «저절로 같아져» 견주는 검사가 아무것도 안 재고 초록이 된다([growth] 지킴이 ①이 막는 그것).
+           ⇒ 이 창구가 말하는 것은 「방이 «지금 그리는» 그루」다 — 그리는 것이 없으면 답도 없다. */
+        if (!plants.size) return null;
         const a = asmReady;
         if (!a || typeof a.leafSkinUsedAll !== 'function') return null;
         return a.leafSkinUsedAll();
