@@ -25,7 +25,7 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
 const GLB = process.argv[2] || '_bodybase/char_yeoja_base_tpose.glb';
 const TAG = process.argv[3] || 'still';
 /* 정면 · 측면 · 3/4 — 세 장이면 넉넉하다 */
-const VIEWS = [['front', 0], ['side', 90], ['q34', 35]];
+const VIEWS = [['front', 0], ['left', 90], ['back', 180], ['q34', 35]];
 
 const WANT_CLIP = sys_wantClip();
 function sys_wantClip(){ return process.argv.includes('--clip'); }
@@ -88,7 +88,27 @@ new THREE.GLTFLoader().load(${JSON.stringify(GLB)}, g=>{
        ⛔ 스킨드 메시는 POSITION 이 «바인드 포즈 원점 근처»라 정점으로 상자를 잡으면 rad 0.01 이 나온다.
          (뷰어 주석에도 「지오메트리 바운딩 0.017m, 원점 부근」이라 적혀 있다)
        ⇒ ★ 뼈가 있으면 «뼈»로. 뼈가 없을 때만 «그려지는 삼각형의 정점»으로. */
-    if(p.length>2) box.setFromPoints(p);
+    /* ★★★ 스킨드 메시는 «뼈»로도 «정점»으로도 정확히 못 잡는다.
+       ⛔ 뼈로 잡으니 사람이 «점»처럼 작게 찍혔다(2026-09-07 · v3t).
+         뼈가 메시보다 크게 퍼져 있어 상자가 부풀었기 때문이다.
+       ⇒ ★ 그러니 «실제로 스키닝한 정점»을 뽑아 잡는다 — three 가 그 계산을 해 준다.
+         (skinnedMesh.applyBoneTransform · 옛 판은 boneTransform) */
+    const sp=[];
+    m.traverse(o=>{
+      if(!o.isSkinnedMesh) return;
+      const g2=o.geometry, pa=g2.attributes.position, ix=g2.index;
+      const fn = o.applyBoneTransform ? 'applyBoneTransform' : (o.boneTransform ? 'boneTransform' : null);
+      if(!pa || !fn) return;
+      const v=new THREE.Vector3();
+      const step=Math.max(1, Math.floor(pa.count/4000));   /* 4천 점이면 넉넉하다 */
+      const seen=new Set();
+      const push=k=>{ if(seen.has(k))return; seen.add(k);
+        v.fromBufferAttribute(pa,k); o[fn](k,v); sp.push(v.clone().applyMatrix4(o.matrixWorld)); };
+      if(ix) for(let i=0;i<ix.count;i+=step*3) push(ix.getX(i));
+      else   for(let i=0;i<pa.count;i+=step)   push(i);
+    });
+    if(sp.length>20) box.setFromPoints(sp);
+    else if(p.length>2) box.setFromPoints(p);
     else if(pts.length>2) box.setFromPoints(pts);
     else box.setFromObject(m);
     const c=box.getCenter(new THREE.Vector3());

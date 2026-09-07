@@ -8,6 +8,16 @@
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
 <style>
+/* ★ [Char] 시험용 — 껍데기 감추기. 올릴 그림에 제목·단추·설명이 들어가면 안 된다 */
+body.shotmode{margin:0!important;background:#1b2620!important;overflow:hidden!important}
+body.shotmode h1,body.shotmode p,body.shotmode .bar,body.shotmode .note,
+body.shotmode .lab{display:none!important}
+body.shotmode .grid{display:block!important;margin:0!important;padding:0!important;gap:0!important}
+body.shotmode .cell:nth-child(2){display:none!important}
+body.shotmode .cell{margin:0!important;padding:0!important;border:0!important;
+  border-radius:0!important;background:#1b2620!important;box-shadow:none!important}
+body.shotmode .cvs{width:100vw!important;height:100vh!important;display:block!important}
+
   body{margin:0;font-family:"Segoe UI",system-ui,sans-serif;background:#eef3ee;color:#2f3a30}
   h1{font-size:19px;margin:14px 16px 2px}.sub{margin:0 16px 10px;color:#6b7a6b;font-size:13px}
   .bar{display:flex;flex-wrap:wrap;gap:9px;align-items:center;padding:0 16px 12px;font-size:12px}
@@ -231,7 +241,24 @@ function load(charKey){
           const act=V.mixer.clipAction(ag.animations[0]);
           /* ★ 시험용 — 클립을 «시각으로» 돌릴 손잡이. 팔 든 프레임을 잡으려면 필요하다.
              ⚠ 그냥 기다려 찍으면 «찍힌 순간»이 어느 대목인지 못 고른다(4차에서 팔 내린 대목만 찍혔다). */
-          window.__seek = function(t){
+          /* ★★ [Char] 시험용 — «껍데기 없이 한 각도»만 찍는 손잡이.
+     ⛔ 내 shot_body_still 은 스킨드 메시 상자를 못 잡아 사람이 «점»처럼 찍혔다(세 번).
+     ⇒ ★ 이 뷰어의 boneBox/frame 은 기존 8캐릭에서 «도는» 자다. 그것을 그대로 쓴다. */
+  window.__shot = function(deg){
+    ST.paused = true;
+    for (const V2 of [VF, VS]) { if (V2.mixer) V2.mixer.setTime(0); }
+    const V2 = VF, box = boneBox(V2.root);
+    const c = box.getCenter(new THREE.Vector3());
+    const rad = Math.max(box.getBoundingSphere(new THREE.Sphere()).radius, 0.001);
+    const dist = rad / Math.sin((32 * Math.PI / 180) / 2) * 0.92;
+    const a = deg * Math.PI / 180;
+    V2.cam.position.set(c.x + Math.sin(a) * dist, c.y + rad * 0.02, c.z + Math.cos(a) * dist);
+    V2.ctr.target.copy(c); V2.cam.near = dist / 500; V2.cam.far = dist * 500;
+    V2.cam.updateProjectionMatrix(); V2.ctr.update();
+    document.body.classList.add('shotmode');
+    return JSON.stringify({ rad: +rad.toFixed(4), cy: +c.y.toFixed(4) });
+  };
+  window.__seek = function(t){
             ST.paused = true;                 /* ★ 안 멈추면 setTime 뒤 루프가 다시 흘려 보낸다 */
             let n = 0;
             for (const V2 of [VF, VS]) {
