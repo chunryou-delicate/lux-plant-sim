@@ -31,7 +31,8 @@ const nextDay=()=>page.eval(`(()=>{for(const id of ['mealGo','next']){const b=do
 const now=()=>page.eval(`(()=>{try{const g=window.__io.growth;const p=g.growthPhase();
   const l=g.leafState()||[];
   return JSON.stringify({단계:p.phaseId,진행:+p.progress01.toFixed(2),유효:g.growthDays(),day:window.__S().day,
-    줄:l.length, 성숙:l.filter(r=>r&&r.matured).length});}catch(e){return '{}';}})()`);
+    줄:l.length, 성숙:l.filter(r=>r&&r.matured).length,
+    무늬성숙:l.filter(r=>r&&r.matured&&r.varie).length});}catch(e){return '{}';}})()`);
 await quiet();
 console.log('세이브:', process.env.SAVE || 'leaf_sill', '· 나갈 자리:', OUT);
 console.log('시작:', await now());
@@ -39,7 +40,11 @@ let s=null,w=0;
 for(let d=0; d<MAX; d++){
   s=JSON.parse(await now());
   /* ★② 「중간잎이 났나」를 단계로 본다 */
-  if(/mid|mature/i.test(s.단계||'')){ console.log('★★ 중간잎/성숙 단계 도달:', JSON.stringify(s)); break; }
+  const GOAL=process.env.GOAL||'mid';
+  const hit = GOAL==='varie' ? (s.무늬성숙>0)
+            : GOAL==='mature' ? (s.성숙>0 || /mature|adult/i.test(s.단계||''))
+                              : /mid|mature/i.test(s.단계||'');
+  if(hit){ console.log('★★ 닿음:', JSON.stringify(s)); break; }
   const r=await water(); if(r!=='-') w++;
   if(d%12===0) console.log(`  +${String(d).padStart(3)}일 ${JSON.stringify(s)}`);
   const n=await nextDay(); if(n==='none'){ await quiet(); await sleep(180); }
@@ -78,5 +83,16 @@ console.log('★ 덮은 것:', seen);
 if (JSON.parse(seen).덮은창.length) { console.error('⛔ 아직 창이 덮고 있다 — 안 찍는다'); await page.close(); process.exit(3); }
 await page.shot(OUT);
 console.log('찍음:', OUT, '· 확대:', z);
+/* ★ 그림 «열쇠»를 읽는다 — 「값은 무늬인데 그림은 민무늬」를 이것으로 잡는다 */
+console.log('★ 쓰는 그림 열쇠:', await page.eval(`(()=>{try{
+  const w=window.__growWin||window; 
+  if(typeof w.leafSkinsAll==='function') return JSON.stringify(w.leafSkinsAll());
+  return 'no-api';}catch(e){return 'ERR '+e.message;}})()`));
+/* ★ 판을 남긴다 — 다음에 «이어» 걷는다(200일을 다시 걷지 않게) */
+if (process.env.DUMP) {
+  const raw = await page.eval(`(()=>{try{return localStorage.getItem('byeot/save/1')||'';}catch(e){return '';}})()`);
+  if (raw && raw.length > 1000) { fs.writeFileSync(process.env.DUMP, raw); console.log('★ 판 남김:', process.env.DUMP, raw.length, '자'); }
+  else console.log('⛔ 판을 못 남겼다 —', (raw||'').length, '자');
+}
 console.log('잎:', await page.eval(`(()=>{try{return JSON.stringify(window.__io.growth.leafState().map(r=>({생:r.leafBirth,무늬:r.varie,성숙:r.matured})));}catch(e){return 'ERR';}})()`));
 await page.close();
