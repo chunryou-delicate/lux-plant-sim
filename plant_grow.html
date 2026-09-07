@@ -3437,6 +3437,45 @@ function leafOnPlantAll(){
   return out;
 }
 
+/* ★ 2026-09-07 — 「이 잎이 «무슨 그림»을 쓰나」를 낸다 ([leaf] 가 청해서 냈다).
+   ------------------------------------------------------------
+   ⚠ `leafSkinsAll()` 과 헷갈리지 마라. 그것은 **못 박은 것**만 낸다(대개 비어 있다).
+     이것은 **실제로 고른 것**을 낸다 — 그리는 길이 부르는 것과 «똑같이» 부른다(§buildPlant).
+
+   ★ 왜 필요한가 — 이 파일의 §손잡이가 스스로 세워 둔 물음이 있다:
+     「화면에 분홍이 떠 있는데 값은 산반이면 그게 제일 나쁜 거짓말이다」
+     그 거짓말을 «수로» 물으려면 「값이 무엇이고 그림이 몇 번인가」를 나란히 놓아야 한다.
+     ⇒ 값(등급)은 여기 없다 — `shop.js` 것이다. ★ 부르는 쪽이 `leafBirth` 로 맞물려라
+       (`leafState()` 줄과 같은 열쇠다).
+
+   ⚠ `key` 는 «지금» 고른 열쇠다. 에셋이 아직 안 왔으면 기본잎으로 떨어져 있을 수 있다
+     (`wantSkin`→`ensureSkin` 은 비동기다). ⇒ 그림이 안 왔을 때와 «안 고른 것»을 가르려고
+     `midNum`·`matNum` 을 따로 낸다 — 이 둘은 에셋과 «상관없이» 정해진다.
+   ⚠ **읽기 전용이다.** `topologyNow` 가 난수를 쓰고 반드시 되돌린다. 아무것도 안 바꾼다. */
+function leafSkinUsedAll(){
+  const g=ageOf(Math.max(0, Math.min(GMAX, GROWTH)));
+  const out=[];
+  if(g<P.seedEnd) return out;
+  for(const ax of topologyNow(g)){
+    if(!Number.isFinite(ax.leafBirth)) continue;
+    if(!leafOnPlant(ax, g)) continue;                 // 달려 있는 잎만 — 그리는 기준 그대로다
+    /* ⚠ `leafM` 은 buildPlant 안쪽 지역 함수다(:2503). 식을 그대로 쓴다 —
+       `leafOnPlantAll` 도 같은 식을 쓴다. 둘이 갈리면 거기서도 갈린다. */
+    const m=Math.max(0, Math.min(1,(g-ax.leafBirth)/P.matSpan));
+    out.push({
+      leafBirth: ax.leafBirth,
+      varie:     !!ax.varie,
+      leafM:     m,
+      /* 그리는 길과 «같은 인자»다 (§buildPlant 의 pickLeafKey 호출) */
+      key:       pickLeafKey(m, ax.midType, ax.canMature, ax.varie, ax.alboMid, ax.matRoll, ax.leafBirth),
+      midNum:    ax.varie ? midAlboNumOf(ax.leafBirth, ax.alboMid) : 0,
+      matNum:    ax.varie ? matAlboNumOf(ax.leafBirth, ax.alboMid, ax.matRoll) : 0,
+      forced:    !!forcedSkinOf(ax.leafBirth)         // 못 박아서 그리 된 것인가
+    });
+  }
+  return out;
+}
+
 function leafStats(){
   const day=Math.max(0, Math.min(GMAX, GROWTH)), g=ageOf(day);
   let leaves=0, varie=0, mature=0;
