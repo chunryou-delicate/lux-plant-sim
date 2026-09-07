@@ -207,7 +207,7 @@ function load(charKey){
     if(V.root){V.sc.remove(V.root);V.root=null;V.mixer=null;V.hips=null;}
     // 메시 소스: _rigged.glb 우선, 실패하면 검증된 _walking.glb로 폴백
     const sources = charKey==='char_bodytest'
-      ? ['_bodybase/char_yeoja_base_rigged.glb']
+      ? ['_bodybase/char_yeoja_base_v3t_rigged.glb']
       : charKey==='char_meshywalk'
       ? ['_bodybase/yeoja_meshy_walk.glb']
       : [`3d/${charKey}_rigged.glb`, `3d/${charKey}_walking.glb`];
