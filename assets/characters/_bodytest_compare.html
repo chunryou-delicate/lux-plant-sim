@@ -170,6 +170,11 @@ function makeView(id,mode){
   const r=new THREE.WebGLRenderer({canvas:cv,antialias:true,alpha:true});
   r.setPixelRatio(Math.min(devicePixelRatio,2));r.outputEncoding=THREE.sRGBEncoding;
   const sc=new THREE.Scene();
+  /* ★ [Char] 시험용 — 씬 배경을 «짙게» 둔다.
+     ⛔ 앞서 CSS 로 카드 배경만 바꿨는데 렌더러가 alpha:true 라 «캔버스는 그대로 투명»이었다.
+     ⇒ 살구색 맨몸이 연녹 바탕에 묻혀 내 배경 빼기가 «거의 못 봤다»(화소 5811 대 79594, 13배).
+     ⇒ ⇒ ★ 「몸매를 못 견준다」가 아니라 «못 보게 차려 놓은 것»이었다. 오늘 두 번째다. */
+  sc.background = new THREE.Color(0x1b2620);
   const cam=new THREE.PerspectiveCamera(32,1,0.01,5000);
   const ctr=new THREE.OrbitControls(cam,cv);ctr.enableDamping=true;
   sc.add(new THREE.AmbientLight(0xffffff,0.70));
