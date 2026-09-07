@@ -69,6 +69,7 @@ const CH=[
  ["char_namja_jachwi","남 · 자취생"],["char_namja_jubu","남 · 주부"],
  ["char_namja_gajang","남 · 가장"],["char_namja_researcher","남 · 연구자"],
  ["char_bodytest","★ 새 맨몸(T포즈)"],
+ ["char_meshywalk","★★ 본판 + «메시 자기» 걷기"],
 ];
 // [파일접미사, 표시명, 경로타입]  path: 'anim' = 3d/anim/, 'root' = 3d/
 const CLIPS=[
@@ -119,6 +120,9 @@ function probeClips(charKey){
 function clipPath(charKey,clipKey){
   /* ★ 새 맨몸에는 «기존 자취녀(A포즈로 구운)» 클립을 그대로 얹는다 — 그것이 이 시험이다 */
   if(charKey==='char_bodytest') charKey='char_jachwi_f';
+  /* ★★ 메시가 «자기 리깅에 딸려 준» 클립을 «자기 메시»에 얹는다 —
+     이것이 「리깅 자체가 잘못됐나 / 우리 클립과 어긋나나」를 가른다. */
+  if(charKey==='char_meshywalk') return '_bodybase/yeoja_meshy_walk.glb';
   const c=CLIPS.find(x=>x[0]===clipKey);
   return c && c[2]==='anim' ? `3d/anim/${charKey}_${clipKey}.glb` : `3d/${charKey}_${clipKey}.glb`;
 }
@@ -203,7 +207,9 @@ function load(charKey){
     if(V.root){V.sc.remove(V.root);V.root=null;V.mixer=null;V.hips=null;}
     // 메시 소스: _rigged.glb 우선, 실패하면 검증된 _walking.glb로 폴백
     const sources = charKey==='char_bodytest'
-      ? ['_bodytest/body_female_t1_rigged.glb']
+      ? ['_bodybase/char_yeoja_base_rigged.glb']
+      : charKey==='char_meshywalk'
+      ? ['_bodybase/yeoja_meshy_walk.glb']
       : [`3d/${charKey}_rigged.glb`, `3d/${charKey}_walking.glb`];
     (function tryMesh(i){
       if(i>=sources.length){
@@ -276,6 +282,12 @@ function frame(V,m){
   /* ★ 시험용 관찰창 — 자에게 «묻기» 위해 남긴다 */
   try{
     let nMesh=0, nBone=0; m.traverse(o=>{ if(o.isMesh) nMesh++; if(o.isBone) nBone++; });
+    /* ★ 「실제로 얼마나 큰가」는 게임에게 «묻는다» — 파일의 POSITION 범위가 아니라
+       뼈가 «월드에서» 어디 있는지를 본다. Armature scale 이 걸려 있으면 여기 나온다. */
+    let by0=1e9, by1=-1e9;
+    m.traverse(o=>{ if(o.isBone){ const w=o.getWorldPosition(new THREE.Vector3());
+      by0=Math.min(by0,w.y); by1=Math.max(by1,w.y); } });
+    window.__h = { boneSpanY:+(by1-by0).toFixed(4), boneTop:+by1.toFixed(4), boneBot:+by0.toFixed(4) };
     const wb=new THREE.Box3().setFromObject(m);
     window.__dbg=window.__dbg||[]; window.__dbg.push({view:V.mode, rad0:+rad0.toFixed(4),
       rad:+rad.toFixed(4), c:[+c.x.toFixed(3),+c.y.toFixed(3),+c.z.toFixed(3)],
