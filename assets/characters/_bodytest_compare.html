@@ -218,6 +218,18 @@ function load(charKey){
           if(!ag.animations||!ag.animations.length){errEl.textContent='클립에 애니 없음: '+cpath; frame(V,m); return;}
           V.mixer=new THREE.AnimationMixer(m);
           const act=V.mixer.clipAction(ag.animations[0]);
+          /* ★ 시험용 — 클립을 «시각으로» 돌릴 손잡이. 팔 든 프레임을 잡으려면 필요하다.
+             ⚠ 그냥 기다려 찍으면 «찍힌 순간»이 어느 대목인지 못 고른다(4차에서 팔 내린 대목만 찍혔다). */
+          window.__seek = function(t){
+            ST.paused = true;                 /* ★ 안 멈추면 setTime 뒤 루프가 다시 흘려 보낸다 */
+            let n = 0;
+            for (const V2 of [VF, VS]) {
+              if (!V2.mixer) continue;
+              V2.mixer.setTime(t); n++;       /* 렌더는 루프가 알아서 한다 */
+            }
+            return n;
+          };
+          window.__dur = ag.animations[0].duration;
           act.play();
           V.mixer.update(0.001);
           /* ★ 시험용 관찰창 — 트랙이 «물렸나»를 묻는다.
