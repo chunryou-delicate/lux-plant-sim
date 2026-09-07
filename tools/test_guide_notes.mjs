@@ -206,9 +206,11 @@ const notes = await page.eval(`window.__byeotCoach.notes()`);
    ⚠ `walk`·`walkTip` 은 **자리에 남아 있되 이제 안 불린다** — 그 일을 손가락이 한다.
      지우지 않은 까닭: 옛 세이브의 「본 쪽지」 서랍에 그 이름이 남아 있고, 없는 이름을
      서랍에서 만나면 `coachTick` 이 그때마다 접어야 한다. 이름은 두고 부르는 자리만 걷었다. */
-const NOTE_IDS = ['walk', 'walkTip', 'walkOff', 'furn', 'pot'];
+/* ★ 2026-09-07 — `zoomTip` 이 들어와 여섯이다([plan] plan-firstplay-setup-steps ⑦ · 박사님 「확대 보기」 청).
+   「몬스테라를 누르고 [확대 보기]를 누르면 잎을 가까이 볼 수 있습니다」 — 창턱에 선 순간부터 한 번. 옛 다섯은 그대로. */
+const NOTE_IDS = ['walk', 'walkTip', 'walkOff', 'furn', 'pot', 'zoomTip'];
 is(Array.isArray(notes) && notes.length === NOTE_IDS.length && NOTE_IDS.every(k => notes.includes(k)),
-   '③-b 쪽지는 다섯이다 (walk · walkTip · ★walkOff · furn · pot)', String(notes));
+   '③-b 쪽지는 여섯이다 (walk · walkTip · walkOff · furn · pot · ★zoomTip)', String(notes));
 
 /* ══ ④ §E-3 자유 이동 발소리 ═════════════════════════════════════════════ */
 console.log('\n== ④ §E-3 자유 이동 발소리 ==');
