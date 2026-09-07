@@ -84,15 +84,29 @@ def edge_background(rgb, tol=26):
     return bg
 
 
-def ref_metrics(path):
-    """기준 그림에서 «바닥선»과 «인물 높이»를 잰다 — 박지 않고 «재서» 쓴다."""
-    a = np.asarray(Image.open(path).convert('RGBA'))
-    op = a[:, :, 3] > 128
-    if not op.any():
+def ref_metrics(paths):
+    """기준에서 «바닥선»과 «인물 높이»를 잰다 — 박지 않고 «재서» 쓴다.
+
+    ⚠⚠ 처음에 «한 장»만 받았다. ⛔ 그것이 틀렸다 —
+      몬이는 바닥이 «전부 621» 로 같은데, **자취녀는 743~799 로 제각각**이다.
+      ⇒ ★ 그래서 `neutral`(799) 을 기준으로 삼았더니 새 그림이 «55px 아래»에 앉았다.
+      ⇒ ⇒ ★★ **한 장을 「기준」이라 부르면 그 한 장의 «예외»를 물려받는다.**
+    ⇒ ✔ 여러 장을 받아 **중앙값**을 쓴다. 한 장만 주면 그 한 장이 곧 중앙값이다."""
+    import statistics
+    bots, hs, size = [], [], None
+    for p in paths:
+        a = np.asarray(Image.open(p).convert('RGBA'))
+        op = a[:, :, 3] > 128
+        if not op.any():
+            continue
+        ys, _ = np.nonzero(op)
+        bots.append(int(ys.max()))
+        hs.append(int(ys.max() - ys.min() + 1))
+        size = (a.shape[1], a.shape[0])
+    if not bots:
         return None
-    ys, xs = np.nonzero(op)
-    return dict(bottom=int(ys.max()), h=int(ys.max() - ys.min() + 1),
-                size=(a.shape[1], a.shape[0]))
+    return dict(bottom=round(statistics.median(bots)), h=round(statistics.median(hs)),
+                size=size, n=len(bots), spread=(min(bots), max(bots)))
 
 
 def main():
@@ -107,11 +121,18 @@ def main():
 
     bottom, body_h, ow, oh = BOTTOM, BODY_H, OUT_W, OUT_H
     if ref:
-        m = ref_metrics(ref)
+        import glob as _g
+        paths = sorted(_g.glob(ref)) if ('*' in ref or '?' in ref) else [ref]
+        m = ref_metrics(paths)
         if m:
             bottom, body_h, (ow, oh) = m['bottom'], m['h'], m['size']
-            print('기준 %s → 바닥 y %d · 인물 높이 %d · 판 %dx%d'
-                  % (os.path.basename(ref), bottom, body_h, ow, oh))
+            print('기준 %d장 → 바닥 y %d · 인물 높이 %d · 판 %dx%d'
+                  % (m['n'], bottom, body_h, ow, oh))
+            if m['spread'][1] - m['spread'][0] > 8:
+                print('  ⚠ 기존 바닥이 %d~%d 로 «벌어져» 있다 — 중앙값을 쓴다'
+                      % m['spread'])
+                if m['n'] == 1:
+                    print('  ⛔ 그런데 기준이 «한 장»이다. 그 한 장의 예외를 물려받는다')
 
     im = Image.open(src).convert('RGB')
     rgb = np.asarray(im)
