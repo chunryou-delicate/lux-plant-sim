@@ -116,6 +116,36 @@ def main():
         hs.append(hh)
         print(f"   {j}: {out}  상자 {ww}x{hh}  화소 {n:,}")
 
+    # ★ 등신 재기 — «주문한 값»이 아니라 «나온 값»을 잰다 (09-08, 총괄이 2.22 를 3.5 로 적었다)
+    #   목 = 머리 밑. 위에서 내려오며 가로폭이 «가장 좁아지는» 자리다.
+    #   ⛔ 이 자가 못 하는 것: 옆면 뷰는 목이 잘 안 좁아져 못 믿는다. 정면·후면 값을 봐라.
+    print()
+    for j, (y0, x0, y1, x1, n, i) in enumerate(blobs):
+        m = (lab == i)
+        rows = [int(m[y].sum()) for y in range(y0, y1 + 1)]
+        H = len(rows)
+        if H < 40:
+            continue
+        top, bot = int(0.18 * H), int(0.62 * H)
+        seg = rows[top:bot]
+        if not seg:
+            continue
+        k = top + seg.index(min(seg))
+        if k < 6:
+            continue
+        print(f"   {j}: 등신 {H/k:5.2f}   (머리 {k}px · 키 {H}px · 목이 위에서 {100*k/H:.0f}%)")
+        # ★ 하체 두께 — 박사님 지적 「하체가 너무 두꺼워」를 «수»로 잡는다 (09-08)
+        #   ⛔ 두 번 물렸다. 무엇으로 «나누느냐»가 답을 바꿨다:
+        #     ① «어깨»로 나눔 ⇒ T포즈라 어깨 자리에서 «팔 끝까지» 재어 390px. 두꺼운 다리에 ✔
+        #     ② «머리 폭»으로 나눔 ⇒ ★ 머리가 «문제인데» 그것을 자로 삼았다. 0.27 로 작아 보였다
+        #   ⇒ ★★ 그래서 «키»로 나눈다. 키는 무엇이 틀려도 안 흔들리는 유일한 값이다.
+        #     사람은 한쪽 허벅지가 키의 8~9%. 11% 를 넘으면 통짜 다리다.
+        th = max(rows[int(0.72 * H):int(0.82 * H)] or [1])       # 두 허벅지 합
+        r = 0.5 * th / H
+        print(f"       하체 — 두 허벅지 {th}px · 한쪽÷키 {100*r:.1f}% "
+              f"{'⛔ 두껍다' if r > 0.11 else '✔'}   (사람 8~9%)")
+
+
     if hs:
         print(f"\n  ★ 키 견줌 — 가장 작은 {min(hs)} · 가장 큰 {max(hs)} · "
               f"어긋남 {100*(max(hs)-min(hs))/max(hs):.1f}%")
