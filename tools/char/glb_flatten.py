@@ -181,7 +181,20 @@ def main():
         for k in (A, Bi, C):
             np.add.at(N, k, fn)
         L = np.linalg.norm(N, axis=1, keepdims=True)
-        L[L == 0] = 1
+        # ★ 면을 잃은 정점의 법선은 0벡터가 된다 ⇒ glTF 규격 위반 ⇒ Meshy 가 «즉시» 422 로 거절한다(261개가 그랬다).
+        #   같은 자리 쌍둥이나 이웃의 법선으로 채우고, 그것도 없으면 +z.
+        zero = (L[:, 0] < 1e-12)
+        if zero.any():
+            Nn = N / np.where(L == 0, 1, L)
+            keyz = np.round(V * 2000).astype(np.int64)
+            _, invz = np.unique(keyz, axis=0, return_inverse=True); invz = invz.ravel()
+            grp = np.zeros((invz.max() + 1, 3)); np.add.at(grp, invz, Nn)
+            fill = grp[invz]
+            fl = np.linalg.norm(fill, axis=1, keepdims=True)
+            fill = np.where(fl > 1e-9, fill / np.where(fl == 0, 1, fl), np.array([0.0, 0.0, 1.0]))
+            N[zero] = fill[zero]
+            L = np.linalg.norm(N, axis=1, keepdims=True)
+            print(f"  0벡터 법선 {int(zero.sum())} 채움")
         binc[nb:nb + n * 12] = (N / L).astype(np.float32).tobytes()
     write_glb(js, binc, dst)
     print(f"✔ {dst}")
