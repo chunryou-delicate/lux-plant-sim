@@ -136,6 +136,7 @@ v17(슬림 어른 + 머리 확대)은 등신 «수»만 맞고 치비가 아니�
 ④ 굽기        multi_image_to_3d(30cr) · ★ pose_mode «t-pose» (a-pose 로 구우면 소매가 아래를 향해 T포즈 몸에 안 맞는다)
 ⑤ 떼기        make_part.py = glb_extract_part(색: near/notcolors/dark) → icp 맞춤 → (옷) glb_refit_cloth → 리깅 공간 → 무게
               · 옷: transfer_weights(1단계) · 머리·모자: glb_reweight_hair(머리·목·척추 뼈에서만 — 팔 뼈에 물리면 찢긴다)
+              · ★ 긴 머리(hair13)는 굽기의 두개골이 낮아 정수리 살이 비쳤다 → glb_stretch_y.py --y0=1.22 --top=1.535 (눈 선 위만 세로로 늘임, 크레딧 0)
               · 색 기준은 «k-means 로 재서» 넣는다(살색·옷색). 살색과 가까운 옷(회색·베이지)은 못 가른다 ⇒ 색을 바꿔 주문
 ⑥ 몸 변형본   glb_cull_under — 옷 아래 몸 면을 지운 몸(옷마다 하나). 뚫림을 «없앤다», 밀지 않는다
 ⑦ 눈          glb_face_decal — 얼굴 앞면을 4mm 띄워 복사, 정면 투영 UV, 눈 PNG(알파). eyes/*.png 여섯 종
