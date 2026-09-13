@@ -164,6 +164,11 @@ def main():
         keep_v = far
     else:
         keep_v = (~is_skin) | far
+    # ★ 높이 띠 — 살색과 «색이 가까운 옷»(크림 니트)은 거리로만 가르는데, 거리는 머리·팔다리도 잡는다 ⇒ 띠로 자른다
+    if "--ymin" in o or "--ymax" in o:
+        keep_v &= (V[:, 1] >= float(o.get("--ymin", -9))) & (V[:, 1] <= float(o.get("--ymax", 9)))
+    if "--xmax" in o:
+        keep_v &= np.abs(V[:, 0]) <= float(o["--xmax"])
     keep_f = keep_v[F].all(1)
     Fe = F[keep_f]
     used = np.unique(Fe)

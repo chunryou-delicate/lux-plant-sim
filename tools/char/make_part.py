@@ -21,7 +21,7 @@ def main():
     baked, body_u, body_r, out = a[:4]
     opt={x.split('=')[0]:x.split('=',1)[1] for x in o}
     kind=opt.get('--kind','cloth'); tmp=out.replace('.glb','')
-    ex=[x for x in o if x.split('=')[0] in ('--skin','--ctol','--mode','--excl','--target','--dark')]
+    ex=[x for x in o if x.split('=')[0] in ('--skin','--ctol','--mode','--excl','--target','--dark','--dmin','--ymin','--ymax','--xmax')]
     run(['tools/char/glb_extract_part.py',baked,body_u,tmp+'_part.glb','--align=icp']+ex)
     src=tmp+'_part.glb'
     if kind=='cloth':
