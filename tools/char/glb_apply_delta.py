@@ -122,7 +122,19 @@ def main():
                 ib, iacc, ibv = span(rj, p["indices"])
                 dt = {5121: np.uint8, 5123: np.uint16, 5125: np.uint32}[iacc["componentType"]]
                 F = np.frombuffer(bytes(rb[ib:ib + iacc["count"] * np.dtype(dt).itemsize]), dt).astype(np.int64).reshape(-1, 3)
+                # ★ 옮기며 «뒤집히거나 찌부러진» 면은 지운다 — 남겨 두면 «턱받이» 그늘로 드러난다(리깅판 첫 렌더).
+                P0 = R[k:k + n]
+                fn0 = np.cross(P0[F[:, 1]] - P0[F[:, 0]], P0[F[:, 2]] - P0[F[:, 0]])
                 fn = np.cross(P[F[:, 1]] - P[F[:, 0]], P[F[:, 2]] - P[F[:, 0]])
+                a0, a1 = np.linalg.norm(fn0, axis=1), np.linalg.norm(fn, axis=1)
+                bad = ((fn0 * fn).sum(1) < 0) | (a1 < 0.2 * a0)
+                if bad.any():
+                    F = F[~bad]
+                    keep = F.astype(dt).reshape(-1)
+                    rb[ib:ib + keep.nbytes] = keep.tobytes()
+                    iacc["count"] = int(keep.size)
+                    fn = fn[~bad]
+                    print(f"  접힌 면 {int(bad.sum())} 지움 (남은 면 {len(F):,})")
                 N = np.zeros_like(P)
                 for c in (F[:, 0], F[:, 1], F[:, 2]):
                     np.add.at(N, c, fn)
