@@ -22,7 +22,7 @@ def main():
     opt={x.split('=')[0]:x.split('=',1)[1] for x in o}
     kind=opt.get('--kind','cloth'); tmp=out.replace('.glb','')
     ex=[x for x in o if x.split('=')[0] in ('--skin','--ctol','--mode','--excl','--target','--dark','--dmin','--ymin','--ymax','--xmax')]
-    run(['tools/char/glb_extract_part.py',baked,body_u,tmp+'_part.glb','--align=icp']+ex)
+    run(['tools/char/glb_extract_part.py',baked,body_u,tmp+'_part.glb','--align='+opt.get('--align','icp')]+ex)
     src=tmp+'_part.glb'
     if kind=='cloth':
         run(['tools/char/glb_refit_cloth.py',baked,body_u,src,tmp+'_fit.glb']+[x for x in o if x.split('=')[0] in ('--skin','--ctol')]); src=tmp+'_fit.glb'
