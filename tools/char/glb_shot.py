@@ -112,14 +112,19 @@ def render(V, F, yaw, W, H, pad=0.94, UV=None, TEX=None):
         zb = zbuf.reshape(-1); ib = img.reshape(-1)
         keep = zo > zb[fo]
         # 같은 픽셀 여럿이면 «마지막»(가장 앞) 이 남는다
-        zb[fo[keep]] = zo[keep]; ib[fo[keep]] = lo2[keep]
+        if not (UV is not None and TEX is not None and TEX.shape[2] == 4):
+            zb[fo[keep]] = zo[keep]; ib[fo[keep]] = lo2[keep]
         if UV is not None and TEX is not None:
             u = UV[A, 0] * a + UV[B, 0] * b + UV[C, 0] * g
             v = UV[A, 1] * a + UV[B, 1] * b + UV[C, 1] * g
             th, tw = TEX.shape[:2]
             tx = np.clip((u * tw).astype(np.int32), 0, tw - 1); ty = np.clip((v * th).astype(np.int32), 0, th - 1)
             cc = TEX[ty, tx][order]
-            cb = cimg.reshape(-1, 3); cb[fo[keep]] = cc[keep]
+            if TEX.shape[2] == 4:                       # ★ 알파 — 투명한 샘플은 «안 찍는다»(눈 데칼)
+                op = cc[:, 3] >= 128
+                keep = keep & op
+                zb[fo[keep]] = zo[keep]; ib[fo[keep]] = lo2[keep]
+            cb = cimg.reshape(-1, 3); cb[fo[keep]] = cc[keep][:, :3]
 
     # 구멍 한 겹 메우기
     m = (zbuf <= -1e8)

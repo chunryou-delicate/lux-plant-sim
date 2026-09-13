@@ -94,7 +94,7 @@ def pose_part(path, chans, t):
         if bt is not None:
             img = js["images"][js["textures"][bt["index"]]["source"]]
             bv = js["bufferViews"][img["bufferView"]]
-            tex = np.array(Image.open(io.BytesIO(bytes(b[bv["byteOffset"]:bv["byteOffset"] + bv["byteLength"]]))).convert("RGB")).astype(np.float32)
+            tex = np.array(Image.open(io.BytesIO(bytes(b[bv["byteOffset"]:bv["byteOffset"] + bv["byteLength"]]))).convert("RGBA")).astype(np.float32)
     sk = js["skins"][0]
     joints = sk["joints"]
     ibm = np.asarray(acc_np(js, b, sk["inverseBindMatrices"]), np.float32).reshape(-1, 4, 4).transpose(0, 2, 1)
@@ -160,7 +160,7 @@ def main():
         UV = TEX = None
         if all(u is not None and t_ is not None for u, t_ in zip(UVs, texs)):
             Hm = max(t_.shape[0] for t_ in texs); Wt = sum(t_.shape[1] for t_ in texs)
-            TEX = np.zeros((Hm, Wt, 3), np.float32); x0 = 0
+            TEX = np.zeros((Hm, Wt, 4), np.float32); x0 = 0
             for u, t_ in zip(UVs, texs):
                 h, w = t_.shape[:2]; TEX[:h, x0:x0 + w] = t_
                 u[:, 0] = (u[:, 0] % 1.0) * w / Wt + x0 / Wt; u[:, 1] = (u[:, 1] % 1.0) * h / Hm
