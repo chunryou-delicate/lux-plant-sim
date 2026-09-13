@@ -14,7 +14,7 @@
   구운 판의 «살색 정점» 상자를 v19 몸 상자에 맞춘다(배율·이동). 머리카락이 키를 늘려도 살색 상자는 몸이다.
 
 쓰기
-  python tools/char/glb_extract_part.py <구운.glb> <몸v19.glb> <날.glb> [--skin=230,200,180] [--ctol=55] [--dmin=0.012] [--mode=color|dist|both|dark] [--dark=120] [--align=skin|span|icp]
+  python tools/char/glb_extract_part.py <구운.glb> <몸v19.glb> <날.glb> [--skin=230,200,180] [--ctol=55] [--dmin=0.012] [--mode=color|dist|both|dark|notcolors|near] [--target=R,G,B] [--dark=120] [--align=skin|span|icp]
     --skin   살색(RGB). 구운 텍스처의 살색을 먼저 «재서» 넣어라
     --ctol   이보다 살색에서 멀면 «덧씌운 것»
     --dmin   몸 표면에서 이보다 멀면 «덧씌운 것»(몸 키 1.9 기준)
@@ -148,7 +148,10 @@ def main():
 
     d, _ = cKDTree(M).query(V, k=1)
     far = d > dmin
-    if mode == "notcolors":                              # ★ 주어진 색들(살색;셔츠색…) «모두»에서 먼 것만 — 머리카락 정수리 하이라이트가
+    if mode == "near":                                   # ★ 한 색 «가까운» 것만 — 세트(후드·바지·신발)를 색으로 나눠 뗄 때
+        tgt = np.array([float(v) for v in o.get("--target", "0,0,0").split(",")])
+        keep_v = np.abs(col - tgt).max(1) <= ctol
+    elif mode == "notcolors":                              # ★ 주어진 색들(살색;셔츠색…) «모두»에서 먼 것만 — 머리카락 정수리 하이라이트가
         excl = [np.array([float(v) for v in c.split(",")]) for c in o.get("--excl", "").split(";") if c]
         keep_v = np.ones(len(V), bool)                    #   밝아서 «어두운 것만» 기준에 빠졌던 것(정수리가 비었다)
         for c in excl:
