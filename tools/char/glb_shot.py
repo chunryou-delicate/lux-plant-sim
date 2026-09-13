@@ -69,7 +69,7 @@ VIEWS = {
 }
 
 
-def render(V, F, yaw, W, H, pad=0.94):
+def render(V, F, yaw, W, H, pad=0.94, UV=None, TEX=None):
     c, s = math.cos(yaw), math.sin(yaw)
     x = V[:, 0] * c + V[:, 2] * s
     z = -V[:, 0] * s + V[:, 2] * c
@@ -86,6 +86,7 @@ def render(V, F, yaw, W, H, pad=0.94):
 
     zbuf = np.full((H, W), -1e9, np.float32)
     img = np.zeros((H, W), np.float32)
+    cimg = np.zeros((H, W, 3), np.float32)          # 텍스처 색(있으면)
 
     A, B, C = F[:, 0], F[:, 1], F[:, 2]
     # 면 노멀(회전 뒤 좌표에서) → 램버트
@@ -112,6 +113,13 @@ def render(V, F, yaw, W, H, pad=0.94):
         keep = zo > zb[fo]
         # 같은 픽셀 여럿이면 «마지막»(가장 앞) 이 남는다
         zb[fo[keep]] = zo[keep]; ib[fo[keep]] = lo2[keep]
+        if UV is not None and TEX is not None:
+            u = UV[A, 0] * a + UV[B, 0] * b + UV[C, 0] * g
+            v = UV[A, 1] * a + UV[B, 1] * b + UV[C, 1] * g
+            th, tw = TEX.shape[:2]
+            tx = np.clip((u * tw).astype(np.int32), 0, tw - 1); ty = np.clip((v * th).astype(np.int32), 0, th - 1)
+            cc = TEX[ty, tx][order]
+            cb = cimg.reshape(-1, 3); cb[fo[keep]] = cc[keep]
 
     # 구멍 한 겹 메우기
     m = (zbuf <= -1e8)
@@ -122,6 +130,11 @@ def render(V, F, yaw, W, H, pad=0.94):
 
     out = np.full((H, W, 3), 22, np.uint8)
     body = img > 0
+    if UV is not None and TEX is not None:
+        col = (cimg * img[:, :, None] * 1.25).clip(0, 255).astype(np.uint8)   # 텍스처 × 빛
+        for ch in range(3):
+            out[:, :, ch] = np.where(body, col[:, :, ch], out[:, :, ch])
+        return out
     v = (img * 255).clip(0, 255).astype(np.uint8)
     for ch, tint in enumerate((1.00, 0.93, 0.86)):
         out[:, :, ch] = np.where(body, (v * tint).astype(np.uint8), out[:, :, ch])
