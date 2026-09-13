@@ -156,6 +156,19 @@ def main():
     coef = [float(zb[len(cx)//2]), float(zt[len(cx)//2])]
     print(f"  곡면 가운데 z — 배 띠 {coef[0]:.3f} · 쇄골 띠 {coef[1]:.3f}")
 
+    # ★ 눌리며 «뒤집히거나 찌부러진» 면은 지운다 — 봉우리 안쪽에 접힌 것이라 겉으론 안 보이는데,
+    #   Meshy 자세 추정이 여기에 걸려 422 를 냈다(여캐 v19 는 통과, 남캐만 거절 ⇒ 차이는 이 면들뿐).
+    V0 = np.frombuffer(bytes(binc[pb:pb + n * 12]), np.float32).reshape(n, 3)
+    fn0 = np.cross(V0[F[:, 1]] - V0[F[:, 0]], V0[F[:, 2]] - V0[F[:, 0]])
+    fn1 = np.cross(V[F[:, 1]] - V[F[:, 0]], V[F[:, 2]] - V[F[:, 0]])
+    a0, a1 = np.linalg.norm(fn0, axis=1), np.linalg.norm(fn1, axis=1)
+    bad = ((fn0 * fn1).sum(1) < 0) | (a1 < 0.2 * a0)
+    if bad.any():
+        keep = F[~bad].astype(dt).reshape(-1)
+        binc[ib:ib + keep.nbytes] = keep.tobytes()
+        iacc["count"] = int(keep.size)
+        F = F[~bad]
+        print(f"  접힌 면 {int(bad.sum())} 지움 (남은 면 {len(F):,})")
     binc[pb:pb + n * 12] = V.astype(np.float32).tobytes()
     pacc["min"] = [float(x) for x in V.min(0)]
     pacc["max"] = [float(x) for x in V.max(0)]
