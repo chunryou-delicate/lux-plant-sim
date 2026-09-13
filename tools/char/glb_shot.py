@@ -49,7 +49,7 @@ def acc_np(js, binc, idx):
     base = bv.get("byteOffset", 0) + acc.get("byteOffset", 0)
     n = acc["count"]
     ct = acc["componentType"]
-    ncomp = {"SCALAR": 1, "VEC2": 2, "VEC3": 3, "VEC4": 4}[acc["type"]]
+    ncomp = {"SCALAR": 1, "VEC2": 2, "VEC3": 3, "VEC4": 4, "MAT4": 16}[acc["type"]]
     dt, sz = {5120: (np.int8, 1), 5121: (np.uint8, 1), 5122: (np.int16, 2),
               5123: (np.uint16, 2), 5125: (np.uint32, 4), 5126: (np.float32, 4)}[ct]
     stride = bv.get("byteStride") or (sz * ncomp)
