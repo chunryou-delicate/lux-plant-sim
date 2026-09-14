@@ -28,11 +28,11 @@ for (who,kind),files in groups.items():
         if kind in ('top','bottom','shoes','dress','set','acc'):          # ★ 옷은 그 옷 밑 몸 면을 지운 몸으로(게임과 같은 조건)
             bd=f'{tmp}/{f[:-4]}_body.glb'
             subprocess.run([sys.executable,'tools/char/glb_cull_under.py',body,f'{B}/{f}',bd,'--dmax='+('0.05' if kind in ('bottom','dress','set') else '0.03'),f'--mask={B}/masks/{f[:-11]}_mask.json'],capture_output=True,text=True,encoding='utf-8')
-        r=subprocess.run([sys.executable,'tools/char/glb_pose_shot.py',clip,png,bd,f'{B}/{f}',eyes,'--t=0.3','--view=q34',f'--w={W}'],capture_output=True,text=True,encoding='utf-8')
+        r=subprocess.run([sys.executable,'tools/char/glb_pose_shot.py',clip,png,bd,f'{B}/{f}',eyes,'--t='+o.get('--t','0.3'),'--view='+o.get('--view','q34'),f'--w={W}'],capture_output=True,text=True,encoding='utf-8')
         if not os.path.exists(png): print('⛔',f,r.stderr[-200:]); continue
         im=Image.open(png).convert('RGB'); d=ImageDraw.Draw(im); d.text((3,3),f.replace('_rigged.glb',''),fill=(255,255,120)); tiles.append(im)
     if not tiles: continue
-    cols=8; rows=(len(tiles)+cols-1)//cols; tw,th=tiles[0].size
+    cols=int(o.get('--cols',8)); rows=(len(tiles)+cols-1)//cols; tw,th=tiles[0].size
     sheet=Image.new('RGB',(cols*tw,rows*th),(18,18,18))
     for i,t in enumerate(tiles): sheet.paste(t,((i%cols)*tw,(i//cols)*th))
-    p=f'{OUT}/catalog_{who}_{kind}.png'; sheet.save(p); print('✔',p,len(tiles))
+    p=f'{OUT}/catalog_{who}_{kind}{o.get("--suffix","")}.png'; sheet.save(p); print('✔',p,len(tiles))

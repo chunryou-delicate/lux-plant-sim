@@ -34,7 +34,12 @@ def main():
     js,b=read_glb(src); b=bytearray(b); p=js['meshes'][0]['primitives'][0]; acc=js['accessors'][p['attributes']['POSITION']]; bv=js['bufferViews'][acc['bufferView']]; off=bv['byteOffset']; n=acc['count']
     V=np.frombuffer(bytes(b[off:off+n*12]),np.float32).reshape(n,3)*s+t; b[off:off+n*12]=V.astype(np.float32).tobytes(); acc['min']=[float(x) for x in V.min(0)]; acc['max']=[float(x) for x in V.max(0)]
     write_glb(js,bytes(b),tmp+'_rig.glb')
-    run(['tools/char/transfer_weights.py',body_r,tmp+'_rig.glb',out])
+    import re
+    base=os.path.basename(out); skirt=bool(re.search(r'skirt|mini|_dress',base)); legs=bool(re.search(r'_bottom|_set',base)) and not skirt
+    sm='150' if (skirt or legs or '_dress' in base) else '30'          # 하의·치마·원피스는 오래 푼다(가랑이 잡음)
+    run(['tools/char/transfer_weights.py',body_r,tmp+'_rig.glb',out,'--smooth='+opt.get('--smooth',sm)])
+    if kind=='cloth' and (legs or skirt or '_dress' in base):           # ★ 2026-09-14 걷기 찢김: 바지는 가운데 가르고 치마는 안감 지움
+        run(['tools/char/glb_split_legs.py',body_r,out,out,'--ymax=0.60']+(['--cut=0','--lining=0.025'] if (skirt or '_dress' in base) else ['--cut=1']))
     if kind=='hair': run(['tools/char/glb_reweight_hair.py',body_r,out,out])
     print('★',out)
 if __name__=='__main__': main()

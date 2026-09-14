@@ -11,6 +11,7 @@
 ## ★ 2026-09-14 낮 — 「지직지직·매칭 안 됨」 고침
 - 렌더러(가짜 점) · refit(옷 구김·가슴 찢김) · 남캐 맨몸(접시 가슴·구멍) 세 가지를 고치고 옷 128벌을 전부 다시 감쌌다. README 3~4절.
 - 옷마다 `masks/<옷>_mask.json`(지울 몸 면 번호). 조합은 `tools/char/glb_apply_masks.py` 로 합집합.
+- 움직임: `tools/char/check_motion.py`(걷기 8순간 늘어난 변 %) → `docs/handoff/char_motion_check.txt` · 네 순간 표 `catalog_*_motion.png`. 바지는 가랑이를 갈랐고 치마는 안감을 지웠다(README 5절).
 - 전 부품 표: `docs/handoff/img/bodytest/catalog/catalog_<누구>_<종류>.png` (같은 자세·같은 크기, 옷 밑 몸 면 지운 상태)
 
 ## 몇 개 (2026-09-14 · 26차까지)
@@ -61,7 +62,7 @@
 | 여캐 | 상의 | `yeoja_top20_orangehoodie_rigged.glb` | 6,640 | O |
 | 여캐 | 상의 | `yeoja_top21_peacoat_rigged.glb` | 4,612 | O |
 | 여캐 | 상의 | `yeoja_top2_hoodie_rigged.glb` | 4,245 | O |
-| 여캐 | 상의 | `yeoja_top3_blouse_rigged.glb` | 4,130 | O |
+| 여캐 | 상의 | `yeoja_top3_blouse_rigged.glb` ⚠ 질 낮음 | 4,130 | O |
 | 여캐 | 상의 | `yeoja_top4_cardigan_rigged.glb` | 3,417 | O |
 | 여캐 | 상의 | `yeoja_top5_coat_rigged.glb` | 4,264 | O |
 | 여캐 | 상의 | `yeoja_top6_tank_rigged.glb` | 2,794 | O |
@@ -137,7 +138,7 @@
 | 남캐 | 상의 | `namja_top18_blackturtle_rigged.glb` | 9,504 | O |
 | 남캐 | 상의 | `namja_top19_biker_rigged.glb` ⚠ 질 낮음 | 6,456 | O |
 | 남캐 | 상의 | `namja_top20_whitetee_rigged.glb` ⚠ 질 낮음 | 2,843 | O |
-| 남캐 | 상의 | `namja_top21_trench_rigged.glb` | 5,231 | O |
+| 남캐 | 상의 | `namja_top21_trench_rigged.glb` ⚠ 질 낮음 | 5,231 | O |
 | 남캐 | 상의 | `namja_top22_utility_rigged.glb` | 6,195 | O |
 | 남캐 | 상의 | `namja_top23_yellowhoodie_rigged.glb` | 4,488 | O |
 | 남캐 | 상의 | `namja_top24_burgundyknit_rigged.glb` | 9,044 | O |
@@ -152,17 +153,17 @@
 | 남캐 | 하의 | `namja_bottom11_blacktrousers_rigged.glb` | 3,609 | O |
 | 남캐 | 하의 | `namja_bottom13_wshorts_rigged.glb` | 4,233 | O |
 | 남캐 | 하의 | `namja_bottom14_wooltrousers_rigged.glb` ⚠ 질 낮음 | 5,000 | O |
-| 남캐 | 하의 | `namja_bottom15_dgjeans_rigged.glb` | 5,913 | O |
+| 남캐 | 하의 | `namja_bottom15_dgjeans_rigged.glb` ⚠ 질 낮음 | 5,913 | O |
 | 남캐 | 하의 | `namja_bottom16_jeans3_rigged.glb` | 2,948 | O |
 | 남캐 | 하의 | `namja_bottom17_cargo_rigged.glb` | 4,973 | O |
 | 남캐 | 하의 | `namja_bottom18_bluejeans_rigged.glb` | 3,273 | O |
 | 남캐 | 하의 | `namja_bottom19_charcoal_rigged.glb` | 4,621 | O |
 | 남캐 | 하의 | `namja_bottom1_chino_rigged.glb` | 5,493 | O |
 | 남캐 | 하의 | `namja_bottom2_jeans_rigged.glb` | 3,506 | O |
-| 남캐 | 하의 | `namja_bottom4_navy_rigged.glb` | 2,884 | O |
+| 남캐 | 하의 | `namja_bottom4_navy_rigged.glb` ⚠ 질 낮음 | 2,884 | O |
 | 남캐 | 하의 | `namja_bottom5_kshorts_rigged.glb` | 3,390 | O |
 | 남캐 | 하의 | `namja_bottom6_blackjeans_rigged.glb` | 4,302 | O |
-| 남캐 | 하의 | `namja_bottom7_workpants_rigged.glb` | 3,543 | O |
+| 남캐 | 하의 | `namja_bottom7_workpants_rigged.glb` ⚠ 질 낮음 | 3,543 | O |
 | 남캐 | 하의 | `namja_bottom8_darkblue_rigged.glb` | 2,568 | O |
 | 남캐 | 하의 | `namja_bottom9_trackpants_rigged.glb` | 3,635 | O |
 | 남캐 | 신발 | `namja_shoes10_orange_rigged.glb` | 3,453 | O |
@@ -180,7 +181,7 @@
 | 남캐 | 신발 | `namja_shoes4_boots_rigged.glb` | 2,933 | O |
 | 남캐 | 신발 | `namja_shoes5_red_rigged.glb` | 2,485 | O |
 | 남캐 | 신발 | `namja_shoes6_dress_rigged.glb` | 3,068 | O |
-| 남캐 | 신발 | `namja_shoes7_white_rigged.glb` | 3,740 | O |
+| 남캐 | 신발 | `namja_shoes7_white_rigged.glb` ⚠ 질 낮음 | 3,740 | O |
 | 남캐 | 신발 | `namja_shoes8_rubber_rigged.glb` | 3,148 | O |
 | 남캐 | 신발 | `namja_shoes9_rubber2_rigged.glb` | 2,989 | O |
 | 남캐 | 세트 | `namja_set1_sweater_rigged.glb` | 10,370 | O |

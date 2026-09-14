@@ -1,0 +1,248 @@
+yeoja_acc1_scarf_rigged.glb                  늘어난 변  0.77% (t=0.250) · 몸에서 95% 거리 0.082
+yeoja_acc2_apron_rigged.glb                  늘어난 변  1.87% (t=0.750) · 몸에서 95% 거리 0.056
+yeoja_acc3_ribbon_rigged.glb                 늘어난 변  0.25% (t=0.250) · 몸에서 95% 거리 0.027
+yeoja_acc4_kneesocks_rigged.glb              늘어난 변  1.06% (t=0.750) · 몸에서 95% 거리 0.027
+yeoja_bottom10_jeans2_rigged.glb             늘어난 변  0.97% (t=0.750) · 몸에서 95% 거리 0.022
+yeoja_bottom11_navyskirt_rigged.glb          늘어난 변  1.97% (t=0.750) · 몸에서 95% 거리 0.095
+yeoja_bottom12_burgskirt_rigged.glb          늘어난 변  5.84% (t=0.750) · 몸에서 95% 거리 0.062
+yeoja_bottom13_leggings2_rigged.glb          늘어난 변  0.50% (t=0.750) · 몸에서 95% 거리 0.023
+yeoja_bottom14_redmini_rigged.glb            늘어난 변  2.54% (t=0.750) · 몸에서 95% 거리 0.032
+yeoja_bottom15_plaidskirt_rigged.glb         늘어난 변  2.08% (t=0.750) · 몸에서 95% 거리 0.076
+yeoja_bottom16_sweatpants_rigged.glb         늘어난 변  0.41% (t=0.750) · 몸에서 95% 거리 0.040
+yeoja_bottom17_grayskirt_rigged.glb          늘어난 변  3.21% (t=0.750) · 몸에서 95% 거리 0.072
+yeoja_bottom1_jeans_rigged.glb               늘어난 변  2.10% (t=0.750) · 몸에서 95% 거리 0.027
+yeoja_bottom2_skirt_rigged.glb               늘어난 변  5.06% (t=0.750) · 몸에서 95% 거리 0.107
+yeoja_bottom3_shorts_rigged.glb              늘어난 변  1.55% (t=0.750) · 몸에서 95% 거리 0.024
+yeoja_bottom4_wshorts_rigged.glb             늘어난 변  1.55% (t=0.750) · 몸에서 95% 거리 0.010
+yeoja_bottom5_leggings_rigged.glb            늘어난 변  1.57% (t=0.750) · 몸에서 95% 거리 0.029
+yeoja_bottom6_overalls_rigged.glb            늘어난 변  0.98% (t=0.750) · 몸에서 95% 거리 0.031
+yeoja_bottom7_cordskirt_rigged.glb           늘어난 변  2.82% (t=0.750) · 몸에서 95% 거리 0.035
+yeoja_bottom8_widepants_rigged.glb           늘어난 변  1.39% (t=0.750) · 몸에서 95% 거리 0.082
+yeoja_bottom9_graypants_rigged.glb           늘어난 변  1.38% (t=0.750) · 몸에서 95% 거리 0.018
+yeoja_dress1_yellow_rigged.glb               늘어난 변  3.55% (t=0.750) · 몸에서 95% 거리 0.119
+yeoja_dress2_knit_rigged.glb                 늘어난 변  1.04% (t=0.750) · 몸에서 95% 거리 0.016
+yeoja_dress3_hoodie_rigged.glb               늘어난 변  0.49% (t=0.750) · 몸에서 95% 거리 0.021
+yeoja_dress4_sundress_rigged.glb             늘어난 변  1.20% (t=0.750) · 몸에서 95% 거리 0.022
+yeoja_hair10_pink_rigged.glb                 늘어난 변  0.75% (t=0.750) · 몸에서 95% 거리 0.177
+yeoja_hair11_blackwavy_rigged.glb            늘어난 변  1.42% (t=0.750) · 몸에서 95% 거리 0.282
+yeoja_hair12_spacebuns_rigged.glb            늘어난 변  0.00% (t=0.000) · 몸에서 95% 거리 0.138
+yeoja_hair13_longstraight_rigged.glb         늘어난 변  1.58% (t=0.750) · 몸에서 95% 거리 0.231
+yeoja_hair1_rigged.glb                       늘어난 변  1.21% (t=0.750) · 몸에서 95% 거리 0.216
+yeoja_hair2_bob_rigged.glb                   늘어난 변  0.00% (t=0.000) · 몸에서 95% 거리 0.104
+yeoja_hair3_pony_rigged.glb                  늘어난 변  0.86% (t=0.750) · 몸에서 95% 거리 0.221
+yeoja_hair4_twin_rigged.glb                  늘어난 변  0.29% (t=0.750) · 몸에서 95% 거리 0.250
+yeoja_hair5_shortwavy_rigged.glb             늘어난 변  0.00% (t=0.000) · 몸에서 95% 거리 0.116
+yeoja_hair6_ashblonde_rigged.glb             늘어난 변  1.44% (t=0.750) · 몸에서 95% 거리 0.277
+yeoja_hair7_braid_rigged.glb                 늘어난 변  0.15% (t=0.750) · 몸에서 95% 거리 0.180
+yeoja_hair8_bun_rigged.glb                   늘어난 변  0.00% (t=0.000) · 몸에서 95% 거리 0.079
+yeoja_hair9_pixie_rigged.glb                 늘어난 변  0.00% (t=0.000) · 몸에서 95% 거리 0.054
+yeoja_hat1_beanie_rigged.glb                 늘어난 변  0.01% (t=0.750) · 몸에서 95% 거리 0.101
+yeoja_set1_pajama_rigged.glb                 늘어난 변  0.72% (t=0.750) · 몸에서 95% 거리 0.031
+yeoja_shoes10_loafers_rigged.glb             늘어난 변  0.01% (t=0.375) · 몸에서 95% 거리 0.065
+yeoja_shoes11_chunky_rigged.glb              늘어난 변  0.03% (t=0.375) · 몸에서 95% 거리 0.022
+yeoja_shoes12_redboots_rigged.glb            늘어난 변  0.07% (t=0.375) · 몸에서 95% 거리 0.031
+yeoja_shoes13_gray_rigged.glb                늘어난 변  0.01% (t=0.500) · 몸에서 95% 거리 0.010
+yeoja_shoes14_bloafers_rigged.glb            늘어난 변  0.00% (t=0.375) · 몸에서 95% 거리 0.027
+yeoja_shoes15_tanboots_rigged.glb            늘어난 변  0.00% (t=0.000) · 몸에서 95% 거리 0.025
+yeoja_shoes16_kneeboots_rigged.glb           늘어난 변  0.66% (t=0.750) · 몸에서 95% 거리 0.036
+yeoja_shoes17_tealboots_rigged.glb           늘어난 변  0.04% (t=0.375) · 몸에서 95% 거리 0.033
+yeoja_shoes18_hitops_rigged.glb              늘어난 변  0.03% (t=0.375) · 몸에서 95% 거리 0.015
+yeoja_shoes19_pink_rigged.glb                늘어난 변  0.03% (t=0.250) · 몸에서 95% 거리 0.010
+yeoja_shoes1_sneakers_rigged.glb             늘어난 변  0.01% (t=0.750) · 몸에서 95% 거리 0.024
+yeoja_shoes20_redcanvas_rigged.glb           늘어난 변  0.02% (t=0.375) · 몸에서 95% 거리 0.011
+yeoja_shoes21_loafers2_rigged.glb            늘어난 변  0.08% (t=0.375) · 몸에서 95% 거리 0.042
+yeoja_shoes22_blueslippers_rigged.glb        늘어난 변  1.20% (t=0.375) · 몸에서 95% 거리 0.053
+yeoja_shoes23_laceboots_rigged.glb           늘어난 변  0.49% (t=0.375) · 몸에서 95% 거리 0.031
+yeoja_shoes2_flats_rigged.glb                늘어난 변  0.00% (t=0.000) · 몸에서 95% 거리 0.014
+yeoja_shoes3_sandals_rigged.glb              늘어난 변  0.00% (t=0.250) · 몸에서 95% 거리 0.018
+yeoja_shoes4_slippers_rigged.glb             늘어난 변  0.01% (t=0.375) · 몸에서 95% 거리 0.024
+yeoja_shoes5_boots_rigged.glb                늘어난 변  0.04% (t=0.250) · 몸에서 95% 거리 0.030
+yeoja_shoes6_fluffy_rigged.glb               늘어난 변  2.02% (t=0.375) · 몸에서 95% 거리 0.064
+yeoja_shoes7_osandals_rigged.glb             늘어난 변  0.00% (t=0.000) · 몸에서 95% 거리 0.009
+yeoja_shoes8_running_rigged.glb              늘어난 변  0.01% (t=0.375) · 몸에서 95% 거리 0.024
+yeoja_shoes9_rainboots_rigged.glb            늘어난 변  0.65% (t=0.500) · 몸에서 95% 거리 0.058
+yeoja_top10_puffer_rigged.glb                늘어난 변  0.88% (t=0.750) · 몸에서 95% 거리 0.031
+yeoja_top11_gardentee_rigged.glb             늘어난 변  0.66% (t=0.750) · 몸에서 95% 거리 0.017
+yeoja_top12_labcoat_rigged.glb               늘어난 변  1.49% (t=0.750) · 몸에서 95% 거리 0.060
+yeoja_top13_blackturtle_rigged.glb           늘어난 변  2.54% (t=0.750) · 몸에서 95% 거리 0.021
+yeoja_top14_sailor_rigged.glb                늘어난 변  0.78% (t=0.750) · 몸에서 95% 거리 0.030
+yeoja_top15_parka_rigged.glb                 늘어난 변  1.26% (t=0.750) · 몸에서 95% 거리 0.094
+yeoja_top16_raincoat_rigged.glb              늘어난 변  3.29% (t=0.750) · 몸에서 95% 거리 0.069
+yeoja_top17_biker_rigged.glb                 늘어난 변  0.33% (t=0.750) · 몸에서 95% 거리 0.022
+yeoja_top18_denim_rigged.glb                 늘어난 변  0.15% (t=0.750) · 몸에서 95% 거리 0.016
+yeoja_top19_purplecardi_rigged.glb           늘어난 변  0.36% (t=0.750) · 몸에서 95% 거리 0.025
+yeoja_top20_orangehoodie_rigged.glb          늘어난 변  0.32% (t=0.750) · 몸에서 95% 거리 0.040
+yeoja_top21_peacoat_rigged.glb               늘어난 변  0.63% (t=0.750) · 몸에서 95% 거리 0.035
+yeoja_top2_hoodie_rigged.glb                 늘어난 변  0.47% (t=0.750) · 몸에서 95% 거리 0.044
+yeoja_top3_blouse_rigged.glb                 늘어난 변  0.52% (t=0.750) · 몸에서 95% 거리 0.019
+yeoja_top4_cardigan_rigged.glb               늘어난 변  0.63% (t=0.750) · 몸에서 95% 거리 0.027
+yeoja_top5_coat_rigged.glb                   늘어난 변  2.76% (t=0.750) · 몸에서 95% 거리 0.082
+yeoja_top6_tank_rigged.glb                   늘어난 변  0.41% (t=0.750) · 몸에서 95% 거리 0.022
+yeoja_top7_track_rigged.glb                  늘어난 변  0.41% (t=0.750) · 몸에서 95% 거리 0.030
+yeoja_top8_orange_rigged.glb                 늘어난 변  0.84% (t=0.750) · 몸에서 95% 거리 0.014
+yeoja_top9_turtle_rigged.glb                 늘어난 변  0.87% (t=0.750) · 몸에서 95% 거리 0.022
+namja_acc1_apron_rigged.glb                  늘어난 변  2.05% (t=0.750) · 몸에서 95% 거리 0.074
+namja_bottom10_jogger_rigged.glb             늘어난 변  2.50% (t=0.750) · 몸에서 95% 거리 0.034
+namja_bottom11_blacktrousers_rigged.glb      늘어난 변  1.12% (t=0.750) · 몸에서 95% 거리 0.033
+namja_bottom12_lightjeans_rigged.glb         늘어난 변  1.95% (t=0.750) · 몸에서 95% 거리 0.272
+namja_bottom13_wshorts_rigged.glb            늘어난 변  0.84% (t=0.750) · 몸에서 95% 거리 0.022
+namja_bottom14_wooltrousers_rigged.glb       늘어난 변  0.59% (t=0.750) · 몸에서 95% 거리 0.030
+namja_bottom15_dgjeans_rigged.glb            늘어난 변  1.10% (t=0.750) · 몸에서 95% 거리 0.043
+namja_bottom16_jeans3_rigged.glb             늘어난 변  1.51% (t=0.750) · 몸에서 95% 거리 0.050
+namja_bottom17_cargo_rigged.glb              늘어난 변  0.70% (t=0.750) · 몸에서 95% 거리 0.046
+namja_bottom18_bluejeans_rigged.glb          늘어난 변  1.09% (t=0.750) · 몸에서 95% 거리 0.020
+namja_bottom19_charcoal_rigged.glb           늘어난 변  0.91% (t=0.750) · 몸에서 95% 거리 0.048
+namja_bottom1_chino_rigged.glb               늘어난 변  1.10% (t=0.750) · 몸에서 95% 거리 0.019
+namja_bottom2_jeans_rigged.glb               늘어난 변  1.34% (t=0.750) · 몸에서 95% 거리 0.021
+namja_bottom3_slacks_rigged.glb              늘어난 변  0.03% (t=0.750) · 몸에서 95% 거리 0.030
+namja_bottom4_navy_rigged.glb                늘어난 변  2.28% (t=0.750) · 몸에서 95% 거리 0.032
+namja_bottom5_kshorts_rigged.glb             늘어난 변  2.61% (t=0.750) · 몸에서 95% 거리 0.023
+namja_bottom6_blackjeans_rigged.glb          늘어난 변  1.29% (t=0.750) · 몸에서 95% 거리 0.034
+namja_bottom7_workpants_rigged.glb           늘어난 변  0.88% (t=0.500) · 몸에서 95% 거리 0.027
+namja_bottom8_darkblue_rigged.glb            늘어난 변  0.88% (t=0.750) · 몸에서 95% 거리 0.028
+namja_bottom9_trackpants_rigged.glb          늘어난 변  2.56% (t=0.750) · 몸에서 95% 거리 0.024
+namja_hair1_short_rigged.glb                 늘어난 변  0.00% (t=0.000) · 몸에서 95% 거리 0.060
+namja_hair2_wavy_rigged.glb                  늘어난 변  0.10% (t=0.250) · 몸에서 95% 거리 0.188
+namja_hair3_buzz_rigged.glb                  늘어난 변  0.00% (t=0.000) · 몸에서 95% 거리 0.016
+namja_hair4_spiky_rigged.glb                 늘어난 변  0.00% (t=0.375) · 몸에서 95% 거리 0.082
+namja_hair5_curly_rigged.glb                 늘어난 변  0.03% (t=0.375) · 몸에서 95% 거리 0.123
+namja_hair6_manbun_rigged.glb                늘어난 변  0.00% (t=0.500) · 몸에서 95% 거리 0.158
+namja_hair7_ashgray_rigged.glb               늘어난 변  0.00% (t=0.000) · 몸에서 95% 거리 0.066
+namja_hair8_blonde_rigged.glb                늘어난 변  0.02% (t=0.750) · 몸에서 95% 거리 0.104
+namja_hair9_undercut_rigged.glb              늘어난 변  0.00% (t=0.000) · 몸에서 95% 거리 0.052
+namja_hat1_cap_rigged.glb                    늘어난 변  0.00% (t=0.000) · 몸에서 95% 거리 0.140
+namja_set1_sweater_rigged.glb                늘어난 변  3.18% (t=0.750) · 몸에서 95% 거리 0.061
+namja_set2_suit_rigged.glb                   늘어난 변  1.52% (t=0.750) · 몸에서 95% 거리 0.044
+namja_shoes10_orange_rigged.glb              늘어난 변  0.03% (t=0.250) · 몸에서 95% 거리 0.041
+namja_shoes11_slides_rigged.glb              늘어난 변  0.05% (t=0.750) · 몸에서 95% 거리 0.025
+namja_shoes12_oxford_rigged.glb              늘어난 변  0.18% (t=0.375) · 몸에서 95% 거리 0.057
+namja_shoes13_loafers_rigged.glb             늘어난 변  0.01% (t=0.375) · 몸에서 95% 거리 0.288
+namja_shoes14_bsandals_rigged.glb            늘어난 변  0.02% (t=0.375) · 몸에서 95% 거리 0.012
+namja_shoes15_chelsea_rigged.glb             늘어난 변  0.01% (t=0.375) · 몸에서 95% 거리 0.046
+namja_shoes16_workboots_rigged.glb           늘어난 변  0.02% (t=0.375) · 몸에서 95% 거리 0.061
+namja_shoes17_white2_rigged.glb              늘어난 변  0.00% (t=0.000) · 몸에서 95% 거리 0.036
+namja_shoes18_hiking_rigged.glb              늘어난 변  0.20% (t=0.500) · 몸에서 95% 거리 0.061
+namja_shoes19_whitesneak_rigged.glb          늘어난 변  0.01% (t=0.250) · 몸에서 95% 거리 0.017
+namja_shoes1_sneakers_rigged.glb             늘어난 변  0.01% (t=0.750) · 몸에서 95% 거리 0.019
+namja_shoes20_brownboots_rigged.glb          늘어난 변  0.00% (t=0.750) · 몸에서 95% 거리 0.044
+namja_shoes2_black_rigged.glb                늘어난 변  0.08% (t=0.375) · 몸에서 95% 거리 0.011
+namja_shoes3_leather_rigged.glb              늘어난 변  0.00% (t=0.000) · 몸에서 95% 거리 0.007
+namja_shoes4_boots_rigged.glb                늘어난 변  0.06% (t=0.250) · 몸에서 95% 거리 0.018
+namja_shoes5_red_rigged.glb                  늘어난 변  0.03% (t=0.375) · 몸에서 95% 거리 0.009
+namja_shoes6_dress_rigged.glb                늘어난 변  0.01% (t=0.375) · 몸에서 95% 거리 0.029
+namja_shoes7_white_rigged.glb                늘어난 변  0.05% (t=0.750) · 몸에서 95% 거리 0.019
+namja_shoes8_rubber_rigged.glb               늘어난 변  0.04% (t=0.375) · 몸에서 95% 거리 0.035
+namja_shoes9_rubber2_rigged.glb              늘어난 변  1.15% (t=0.750) · 몸에서 95% 거리 0.053
+namja_top10_raincoat_rigged.glb              늘어난 변  1.26% (t=0.750) · 몸에서 95% 거리 0.077
+namja_top11_track_rigged.glb                 늘어난 변  0.75% (t=0.750) · 몸에서 95% 거리 0.035
+namja_top12_grayhoodie_rigged.glb            늘어난 변  0.59% (t=0.750) · 몸에서 95% 거리 0.052
+namja_top13_whiteshirt_rigged.glb            늘어난 변  0.50% (t=0.750) · 몸에서 95% 거리 0.015
+namja_top14_vest_rigged.glb                  늘어난 변  0.51% (t=0.750) · 몸에서 95% 거리 0.029
+namja_top15_cardigan_rigged.glb              늘어난 변  3.16% (t=0.250) · 몸에서 95% 거리 0.268
+namja_top16_whitetee_rigged.glb              늘어난 변  2.32% (t=0.750) · 몸에서 95% 거리 0.139
+namja_top17_camp_rigged.glb                  늘어난 변  0.85% (t=0.750) · 몸에서 95% 거리 0.031
+namja_top18_blackturtle_rigged.glb           늘어난 변  1.04% (t=0.750) · 몸에서 95% 거리 0.045
+namja_top19_biker_rigged.glb                 늘어난 변  0.47% (t=0.750) · 몸에서 95% 거리 0.031
+namja_top20_whitetee_rigged.glb              늘어난 변  0.80% (t=0.750) · 몸에서 95% 거리 0.018
+namja_top21_trench_rigged.glb                늘어난 변  1.36% (t=0.750) · 몸에서 95% 거리 0.085
+namja_top22_utility_rigged.glb               늘어난 변  0.74% (t=0.750) · 몸에서 95% 거리 0.062
+namja_top23_yellowhoodie_rigged.glb          늘어난 변  0.79% (t=0.750) · 몸에서 95% 거리 0.070
+namja_top24_burgundyknit_rigged.glb          늘어난 변  0.94% (t=0.750) · 몸에서 95% 거리 0.067
+namja_top2_hoodie_rigged.glb                 늘어난 변  0.66% (t=0.750) · 몸에서 95% 거리 0.064
+namja_top3_tee_rigged.glb                    늘어난 변  0.62% (t=0.750) · 몸에서 95% 거리 0.032
+namja_top4_sweater_rigged.glb                늘어난 변  0.89% (t=0.750) · 몸에서 95% 거리 0.061
+namja_top5_coat_rigged.glb                   늘어난 변  1.45% (t=0.750) · 몸에서 95% 거리 0.081
+namja_top6_shirt_rigged.glb                  늘어난 변  0.80% (t=0.750) · 몸에서 95% 거리 0.032
+namja_top7_dressshirt_rigged.glb             늘어난 변  0.22% (t=0.250) · 몸에서 95% 거리 0.022
+namja_top8_denim_rigged.glb                  늘어난 변  0.79% (t=0.750) · 몸에서 95% 거리 0.037
+namja_top9_yellowtee_rigged.glb              늘어난 변  0.60% (t=0.750) · 몸에서 95% 거리 0.041
+
+== 부품 158 · 늘어난 변 0.5% 넘는 것 88
+  ⚠ yeoja_bottom12_burgskirt_rigged.glb 5.84%
+  ⚠ yeoja_bottom2_skirt_rigged.glb 5.06%
+  ⚠ yeoja_dress1_yellow_rigged.glb 3.55%
+  ⚠ yeoja_top16_raincoat_rigged.glb 3.29%
+  ⚠ yeoja_bottom17_grayskirt_rigged.glb 3.21%
+  ⚠ namja_set1_sweater_rigged.glb 3.18%
+  ⚠ namja_top15_cardigan_rigged.glb 3.16%
+  ⚠ yeoja_bottom7_cordskirt_rigged.glb 2.82%
+  ⚠ yeoja_top5_coat_rigged.glb 2.76%
+  ⚠ namja_bottom5_kshorts_rigged.glb 2.61%
+  ⚠ namja_bottom9_trackpants_rigged.glb 2.56%
+  ⚠ yeoja_bottom14_redmini_rigged.glb 2.54%
+  ⚠ yeoja_top13_blackturtle_rigged.glb 2.54%
+  ⚠ namja_bottom10_jogger_rigged.glb 2.50%
+  ⚠ namja_top16_whitetee_rigged.glb 2.32%
+  ⚠ namja_bottom4_navy_rigged.glb 2.28%
+  ⚠ yeoja_bottom1_jeans_rigged.glb 2.10%
+  ⚠ yeoja_bottom15_plaidskirt_rigged.glb 2.08%
+  ⚠ namja_acc1_apron_rigged.glb 2.05%
+  ⚠ yeoja_shoes6_fluffy_rigged.glb 2.02%
+  ⚠ yeoja_bottom11_navyskirt_rigged.glb 1.97%
+  ⚠ namja_bottom12_lightjeans_rigged.glb 1.95%
+  ⚠ yeoja_acc2_apron_rigged.glb 1.87%
+  ⚠ yeoja_hair13_longstraight_rigged.glb 1.58%
+  ⚠ yeoja_bottom5_leggings_rigged.glb 1.57%
+  ⚠ yeoja_bottom4_wshorts_rigged.glb 1.55%
+  ⚠ yeoja_bottom3_shorts_rigged.glb 1.55%
+  ⚠ namja_set2_suit_rigged.glb 1.52%
+  ⚠ namja_bottom16_jeans3_rigged.glb 1.51%
+  ⚠ yeoja_top12_labcoat_rigged.glb 1.49%
+  ⚠ namja_top5_coat_rigged.glb 1.45%
+  ⚠ yeoja_hair6_ashblonde_rigged.glb 1.44%
+  ⚠ yeoja_hair11_blackwavy_rigged.glb 1.42%
+  ⚠ yeoja_bottom8_widepants_rigged.glb 1.39%
+  ⚠ yeoja_bottom9_graypants_rigged.glb 1.38%
+  ⚠ namja_top21_trench_rigged.glb 1.36%
+  ⚠ namja_bottom2_jeans_rigged.glb 1.34%
+  ⚠ namja_bottom6_blackjeans_rigged.glb 1.29%
+  ⚠ namja_top10_raincoat_rigged.glb 1.26%
+  ⚠ yeoja_top15_parka_rigged.glb 1.26%
+  ⚠ yeoja_hair1_rigged.glb 1.21%
+  ⚠ yeoja_dress4_sundress_rigged.glb 1.20%
+  ⚠ yeoja_shoes22_blueslippers_rigged.glb 1.20%
+  ⚠ namja_shoes9_rubber2_rigged.glb 1.15%
+  ⚠ namja_bottom11_blacktrousers_rigged.glb 1.12%
+  ⚠ namja_bottom15_dgjeans_rigged.glb 1.10%
+  ⚠ namja_bottom1_chino_rigged.glb 1.10%
+  ⚠ namja_bottom18_bluejeans_rigged.glb 1.09%
+  ⚠ yeoja_acc4_kneesocks_rigged.glb 1.06%
+  ⚠ yeoja_dress2_knit_rigged.glb 1.04%
+  ⚠ namja_top18_blackturtle_rigged.glb 1.04%
+  ⚠ yeoja_bottom6_overalls_rigged.glb 0.98%
+  ⚠ yeoja_bottom10_jeans2_rigged.glb 0.97%
+  ⚠ namja_top24_burgundyknit_rigged.glb 0.94%
+  ⚠ namja_bottom19_charcoal_rigged.glb 0.91%
+  ⚠ namja_top4_sweater_rigged.glb 0.89%
+  ⚠ namja_bottom7_workpants_rigged.glb 0.88%
+  ⚠ yeoja_top10_puffer_rigged.glb 0.88%
+  ⚠ namja_bottom8_darkblue_rigged.glb 0.88%
+  ⚠ yeoja_top9_turtle_rigged.glb 0.87%
+  ⚠ yeoja_hair3_pony_rigged.glb 0.86%
+  ⚠ namja_top17_camp_rigged.glb 0.85%
+  ⚠ yeoja_top8_orange_rigged.glb 0.84%
+  ⚠ namja_bottom13_wshorts_rigged.glb 0.84%
+  ⚠ namja_top20_whitetee_rigged.glb 0.80%
+  ⚠ namja_top6_shirt_rigged.glb 0.80%
+  ⚠ namja_top23_yellowhoodie_rigged.glb 0.79%
+  ⚠ namja_top8_denim_rigged.glb 0.79%
+  ⚠ yeoja_top14_sailor_rigged.glb 0.78%
+  ⚠ yeoja_acc1_scarf_rigged.glb 0.77%
+  ⚠ yeoja_hair10_pink_rigged.glb 0.75%
+  ⚠ namja_top11_track_rigged.glb 0.75%
+  ⚠ namja_top22_utility_rigged.glb 0.74%
+  ⚠ yeoja_set1_pajama_rigged.glb 0.72%
+  ⚠ namja_bottom17_cargo_rigged.glb 0.70%
+  ⚠ yeoja_top11_gardentee_rigged.glb 0.66%
+  ⚠ yeoja_shoes16_kneeboots_rigged.glb 0.66%
+  ⚠ namja_top2_hoodie_rigged.glb 0.66%
+  ⚠ yeoja_shoes9_rainboots_rigged.glb 0.65%
+  ⚠ yeoja_top4_cardigan_rigged.glb 0.63%
+  ⚠ yeoja_top21_peacoat_rigged.glb 0.63%
+  ⚠ namja_top3_tee_rigged.glb 0.62%
+  ⚠ namja_top9_yellowtee_rigged.glb 0.60%
+  ⚠ namja_top12_grayhoodie_rigged.glb 0.59%
+  ⚠ namja_bottom14_wooltrousers_rigged.glb 0.59%
+  ⚠ yeoja_top3_blouse_rigged.glb 0.52%
+  ⚠ namja_top14_vest_rigged.glb 0.51%
+  ⚠ yeoja_bottom13_leggings2_rigged.glb 0.50%

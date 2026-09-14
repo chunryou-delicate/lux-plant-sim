@@ -146,9 +146,20 @@ def transfer(src, dst_pos, dst_nrm, D=None, theta_deg=30.0, limit=4):
     diag = float(np.linalg.norm(hi - lo))
     if D is None:
         D = 0.05 * diag                       # ★ 표준 기본값
+    # ★ 이웃 k 개 «거리 가중 평균» (2026-09-14 · 박사님 「움직일 때랑」)
+    #   최근접 «하나»만 베끼면 가랑이(몸에서 먼 자리)에서 이웃 옷 점끼리 다른 다리 살을 베껴 걸을 때 4~5% 변이 찢어졌다.
+    #   좌우를 갈라 찾아도 x=0 에서 단이 생겨 그대로였다. ⇒ k=12 를 1/d² 로 섞으면 두 다리 사이는 반반이 되어 «띠»로 늘어난다.
     tree = cKDTree(src['pos'])
-    dist, idx = tree.query(dst_pos, k=1)
-
+    k = min(12, len(src['pos']))
+    dk, ik = tree.query(dst_pos, k=k)
+    dist, idx = dk[:, 0], ik[:, 0]
+    wk = 1.0 / (dk ** 2 + 1e-6); wk /= wk.sum(1, keepdims=True)
+    nb_ = int(src['jnt'].max()) + 1
+    dense = np.zeros((len(dst_pos), nb_))
+    for c in range(k):
+        Jc = src['jnt'][ik[:, c]].astype(np.int64); Wc = src['wgt'][ik[:, c]] * wk[:, c:c + 1]
+        for q in range(Jc.shape[1]):
+            np.add.at(dense, (np.arange(len(dst_pos)), Jc[:, q]), Wc[:, q])
     ok_d = dist <= D
     if dst_nrm is not None and src['nrm'] is not None:
         a = dst_nrm / (np.linalg.norm(dst_nrm, axis=1, keepdims=True) + 1e-12)
@@ -160,8 +171,9 @@ def transfer(src, dst_pos, dst_nrm, D=None, theta_deg=30.0, limit=4):
         ok_n = np.ones(len(dst_pos), bool)
     confident = ok_d & ok_n
 
-    J = src['jnt'][idx].astype(np.int64)
-    W = src['wgt'][idx].astype(np.float64)
+    order = np.argsort(-dense, axis=1)[:, :limit]
+    J = order.astype(np.int64)
+    W = np.take_along_axis(dense, order, 1)
     # ★ 본 수 제한 — 작은 것부터 버리고 다시 정규화
     if W.shape[1] > limit:
         order = np.argsort(-W, axis=1)[:, :limit]
@@ -243,6 +255,35 @@ def main():
     print('   ★ 탈락  거리 %.2f%% · 법선 %.2f%% · 합 %.2f%%' % (st['drop_d'], st['drop_n'], st['drop']))
     if st['drop'] > 5.0:
         print('   ⚠ 탈락이 5%% 를 넘는다 — 2단계(인페인팅)가 필요할 수 있다. **눈으로 볼 것**')
+
+    # ★ 2단계 대신 «옷 그물 위에서 무게 풀기» (2026-09-14 · 박사님 「움직일 때랑」)
+    #   최근접 복사만 하면 가랑이·겨드랑이에서 이웃 정점이 «다른 다리·다른 팔» 뼈를 물어, 걸을 때 4~5% 변이 찢어졌다
+    #   (맨몸은 0.6%). 무게를 옷 그물에서 smooth 번 이웃 평균으로 풀면 경계가 «띠»로 번져 찢기지 않는다.
+    #   탈락(확신 없음) 점도 이때 이웃에서 채워진다. 그 뒤 큰 뼈 4개만 남기고 다시 정규화.
+    sm = int(next((a.split('=')[1] for a in sys.argv[1:] if a.startswith('--smooth=')), 30))
+    if sm > 0 and 'indices' in pr:
+        from scipy.sparse import coo_matrix
+        nb = len(src['names']); N = len(dpos)
+        Wd = np.zeros((N, nb)); rows = np.repeat(np.arange(N), J.shape[1])
+        np.add.at(Wd, (rows, J.reshape(-1)), W.reshape(-1))
+        Fi, _ = acc(cj, cb, pr['indices']); F = np.asarray(Fi).reshape(-1, 3).astype(np.int64)
+        key = np.round(dpos / 1e-5).astype(np.int64); _, grp = np.unique(key, axis=0, return_inverse=True); grp = grp.ravel(); ng = grp.max() + 1
+        E = np.concatenate([F[:, [0, 1]], F[:, [1, 2]], F[:, [2, 0]]]); E = grp[np.concatenate([E, E[:, ::-1]])]
+        E = np.unique(E, axis=0); E = E[E[:, 0] != E[:, 1]]
+        deg = np.maximum(np.bincount(E[:, 0], minlength=ng), 1).astype(np.float64)
+        cnt = np.bincount(grp, minlength=ng).astype(np.float64)
+        Wg = np.zeros((ng, nb)); np.add.at(Wg, grp, Wd); Wg /= cnt[:, None]
+        confg = np.zeros(ng); np.add.at(confg, grp, conf.astype(np.float64)); confg = confg / cnt > 0.5
+        A = coo_matrix((np.ones(len(E)), (E[:, 0], E[:, 1])), shape=(ng, ng)).tocsr()
+        W0 = Wg.copy()
+        for _ in range(sm):
+            Wg = 0.5 * Wg + 0.5 * (A @ Wg) / deg[:, None]
+            pass   # (확신 점을 원래 값에 되붙들면 가랑이의 «잡음»이 그대로 남는다 — 재 보니 4.6%→4.6%. 붙들지 않는다)
+        Wd = Wg[grp]
+        order = np.argsort(-Wd, axis=1)[:, :4]
+        J = order.astype(np.int64); W = np.take_along_axis(Wd, order, 1)
+        W = W / np.maximum(W.sum(1, keepdims=True), 1e-9)
+        print('   무게 풀기 %d번 (그물 점 %d · 변 %d)' % (sm, ng, len(E) // 2))
 
     # ★ 뼈대를 통째로 베낀다. ⛔ 본 이름이 하나라도 안 맞으면 «즉시 멈춘다»
     #   (「필요 없을 것」과 「검사도 필요 없다」는 다르다. 검사는 공짜다)
