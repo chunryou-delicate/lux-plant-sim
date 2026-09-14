@@ -11,7 +11,7 @@
   세 꼭짓점이 모두 덮인 삼각형을 지운다. 뼈·웨이트·UV 는 그대로(정점은 안 지우고 면만 지운다).
 
 쓰기
-  python tools/char/glb_cull_under.py <몸_rigged.glb> <옷_rigged.glb> <날.glb> [--dmax=0.06]
+  python tools/char/glb_cull_under.py <몸_rigged.glb> <옷_rigged.glb> <날.glb> [--dmax=0.06] [--mask=날.json]
 
 ⚠ 이 자가 «안» 하는 것
   · 옷이 «안 덮는» 자리(목 구멍·소매 끝 근처)는 남는다 — 그 언저리에서 살짝 뚫릴 수 있다. 그건 눈으로
@@ -24,7 +24,7 @@ from glb_extract_part import read_glb, acc_np, write_glb
 
 def main():
     a=[x for x in sys.argv[1:] if not x.startswith('--')]
-    o={x.split('=')[0]:float(x.split('=')[1]) for x in sys.argv[1:] if x.startswith('--') and '=' in x}
+    o={x.split('=')[0]:float(x.split('=')[1]) for x in sys.argv[1:] if x.startswith('--') and '=' in x and not x.startswith('--mask=')}
     body, cloth, out = a[0], a[1], a[2]; dmax=o.get('--dmax',0.06)
     cj,cb=read_glb(cloth); cp=cj['meshes'][0]['primitives'][0]
     CV=np.asarray(acc_np(cj,cb,cp['attributes']['POSITION']),np.float32); CN=np.asarray(acc_np(cj,cb,cp['attributes']['NORMAL']),np.float32)
@@ -42,6 +42,11 @@ def main():
     torso=np.abs(BV[:,0])<0.2
     covered=((d<dmax)&torso | (d<0.015)&~torso)&(BV[:,1]<CV[:,1].max()-0.01)
     drop=covered[F].all(1)
+    # ★ 지운 면 번호를 JSON 으로도 낸다(--mask=파일) — 게임 로더가 옷 여러 벌의 마스크를 «합집합»으로 쓰면
+    #   옷 조합마다 몸 변형본을 따로 둘 필요가 없다 (2026-09-14). 면 번호는 «원본 몸(char_*_base_v19_rigged)» 기준.
+    mk=[x.split('=',1)[1] for x in sys.argv[1:] if x.startswith('--mask=')]
+    if mk:
+        import json, os; json.dump({'body':os.path.basename(body),'cloth':os.path.basename(cloth),'faces':int(len(F)),'drop':[int(i) for i in np.nonzero(drop)[0]]},open(mk[0],'w'))
     keep=F[~drop].astype(dt).reshape(-1)
     bb[ioff:ioff+keep.nbytes]=keep.tobytes(); iacc['count']=int(keep.size)
     print(f'  몸 정점 {len(BV):,} · 덮인 정점 {int(covered.sum()):,} · 지운 면 {int(drop.sum()):,} / {len(F):,}')

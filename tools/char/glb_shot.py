@@ -97,34 +97,40 @@ def render(V, F, yaw, W, H, pad=0.94, UV=None, TEX=None):
     light = np.array([0.35, 0.45, 0.82]); light = light / np.linalg.norm(light)
     lam = np.clip(nrm @ light, 0, 1) * 0.78 + 0.22
 
-    # 삼각형마다 무게중심 격자 샘플 — 면이 촘촘하므로 4점이면 메워진다
-    bar = [(1/3, 1/3, 1/3), (0.6, 0.2, 0.2), (0.2, 0.6, 0.2), (0.2, 0.2, 0.6),
-           (0.5, 0.5, 0.0), (0.0, 0.5, 0.5), (0.5, 0.0, 0.5)]
-    for a, b, g in bar:
-        px = sx[A] * a + sx[B] * b + sx[C] * g
-        py = sy[A] * a + sy[B] * b + sy[C] * g
-        pz = sz[A] * a + sz[B] * b + sz[C] * g
-        ix = np.clip(px.astype(np.int32), 0, W - 1)
-        iy = np.clip(py.astype(np.int32), 0, H - 1)
-        flat = iy * W + ix
-        order = np.argsort(pz)          # 뒤→앞 차례로 덮어쓰면 앞이 남는다
-        fo, zo, lo2 = flat[order], pz[order], lam[order]
-        zb = zbuf.reshape(-1); ib = img.reshape(-1)
-        keep = zo > zb[fo]
-        # 같은 픽셀 여럿이면 «마지막»(가장 앞) 이 남는다
-        if not (UV is not None and TEX is not None and TEX.shape[2] == 4):
-            zb[fo[keep]] = zo[keep]; ib[fo[keep]] = lo2[keep]
-        if UV is not None and TEX is not None:
-            u = UV[A, 0] * a + UV[B, 0] * b + UV[C, 0] * g
-            v = UV[A, 1] * a + UV[B, 1] * b + UV[C, 1] * g
-            th, tw = TEX.shape[:2]
-            tx = np.clip((u * tw).astype(np.int32), 0, tw - 1); ty = np.clip((v * th).astype(np.int32), 0, th - 1)
-            cc = TEX[ty, tx][order]
-            if TEX.shape[2] == 4:                       # ★ 알파 — 투명한 샘플은 «안 찍는다»(눈 데칼)
-                op = cc[:, 3] >= 128
-                keep = keep & op
+    # ★ 삼각형마다 «화면 크기에 맞춰» 무게중심 격자 샘플 (2026-09-14 · 박사님 「지직지직」)
+    #   전엔 7점 고정이라 확대하면 삼각형 하나가 수십 픽셀인데 7점만 찍혀 «구멍이 점점이» 남았다 — 판이 아니라 이 자 탓.
+    #   변 길이(픽셀)만큼 k 를 올려 k(k+1)/2 점을 찍는다(최대 24).
+    e = np.maximum.reduce([np.hypot(sx[B] - sx[A], sy[B] - sy[A]), np.hypot(sx[C] - sx[B], sy[C] - sy[B]), np.hypot(sx[A] - sx[C], sy[A] - sy[C])])
+    kk = np.clip(np.ceil(e).astype(np.int32) + 1, 2, 24)
+    zb = zbuf.reshape(-1); ib = img.reshape(-1); cb = cimg.reshape(-1, 3)
+    for k in np.unique(kk):
+        sel = np.nonzero(kk == k)[0]
+        Ak, Bk, Ck, lk = A[sel], B[sel], C[sel], lam[sel]
+        grid = [(i / k, j / k) for i in range(k + 1) for j in range(k + 1 - i)]
+        for a_, b_ in grid:
+            a, b, g = 1 - a_ - b_, a_, b_
+            px = sx[Ak] * a + sx[Bk] * b + sx[Ck] * g
+            py = sy[Ak] * a + sy[Bk] * b + sy[Ck] * g
+            pz = sz[Ak] * a + sz[Bk] * b + sz[Ck] * g
+            ix = np.clip(px.astype(np.int32), 0, W - 1)
+            iy = np.clip(py.astype(np.int32), 0, H - 1)
+            flat = iy * W + ix
+            order = np.argsort(pz)          # 뒤→앞 차례로 덮어쓰면 앞이 남는다
+            fo, zo, lo2 = flat[order], pz[order], lk[order]
+            keep = zo > zb[fo]
+            if not (UV is not None and TEX is not None and TEX.shape[2] == 4):
                 zb[fo[keep]] = zo[keep]; ib[fo[keep]] = lo2[keep]
-            cb = cimg.reshape(-1, 3); cb[fo[keep]] = cc[keep][:, :3]
+            if UV is not None and TEX is not None:
+                u = UV[Ak, 0] * a + UV[Bk, 0] * b + UV[Ck, 0] * g
+                v = UV[Ak, 1] * a + UV[Bk, 1] * b + UV[Ck, 1] * g
+                th, tw = TEX.shape[:2]
+                tx = np.clip((u * tw).astype(np.int32), 0, tw - 1); ty = np.clip((v * th).astype(np.int32), 0, th - 1)
+                cc = TEX[ty, tx][order]
+                if TEX.shape[2] == 4:                       # ★ 알파 — 투명한 샘플은 «안 찍는다»(눈 데칼)
+                    op = cc[:, 3] >= 128
+                    keep = keep & op
+                    zb[fo[keep]] = zo[keep]; ib[fo[keep]] = lo2[keep]
+                cb[fo[keep]] = cc[keep][:, :3]
 
     # 구멍 한 겹 메우기
     m = (zbuf <= -1e8)

@@ -21,11 +21,15 @@ def main():
     baked, body_u, body_r, out = a[:4]
     opt={x.split('=')[0]:x.split('=',1)[1] for x in o}
     kind=opt.get('--kind','cloth'); tmp=out.replace('.glb','')
-    ex=[x for x in o if x.split('=')[0] in ('--skin','--ctol','--mode','--excl','--target','--dark','--dmin','--ymin','--ymax','--xmax')]
-    run(['tools/char/glb_extract_part.py',baked,body_u,tmp+'_part.glb','--align='+opt.get('--align','icp')]+ex)
+    ex=[x for x in o if x.split('=')[0] in ('--skin','--ctol','--mode','--excl','--target','--dark','--dmin','--ymin','--ymax','--xmax','--fill','--smooth')]
+    import os
+    if opt.get('--from-part')=='1' and os.path.exists(tmp+'_part.glb'):
+        print('  (뗀 것 그대로 씀 — refit 부터 다시)')             # 2026-09-14 refit 매끈 고침 뒤 129벌 다시 감쌀 때
+    else:
+        run(['tools/char/glb_extract_part.py',baked,body_u,tmp+'_part.glb','--align='+opt.get('--align','icp')]+ex)
     src=tmp+'_part.glb'
     if kind=='cloth':
-        run(['tools/char/glb_refit_cloth.py',baked,body_u,src,tmp+'_fit.glb']+[x for x in o if x.split('=')[0] in ('--skin','--ctol')]); src=tmp+'_fit.glb'
+        run(['tools/char/glb_refit_cloth.py',baked,body_u,src,tmp+'_fit.glb']+[x for x in o if x.split('=')[0] in ('--skin','--ctol','--smooth')]); src=tmp+'_fit.glb'
     U=P(body_u); R=P(body_r); s=float(np.median((R.max(0)-R.min(0))/(U.max(0)-U.min(0)))); t=R.min(0)-U.min(0)*s
     js,b=read_glb(src); b=bytearray(b); p=js['meshes'][0]['primitives'][0]; acc=js['accessors'][p['attributes']['POSITION']]; bv=js['bufferViews'][acc['bufferView']]; off=bv['byteOffset']; n=acc['count']
     V=np.frombuffer(bytes(b[off:off+n*12]),np.float32).reshape(n,3)*s+t; b[off:off+n*12]=V.astype(np.float32).tobytes(); acc['min']=[float(x) for x in V.min(0)]; acc['max']=[float(x) for x in V.max(0)]

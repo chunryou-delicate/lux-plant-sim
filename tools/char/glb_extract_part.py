@@ -14,7 +14,7 @@
   구운 판의 «살색 정점» 상자를 v19 몸 상자에 맞춘다(배율·이동). 머리카락이 키를 늘려도 살색 상자는 몸이다.
 
 쓰기
-  python tools/char/glb_extract_part.py <구운.glb> <몸v19.glb> <날.glb> [--skin=230,200,180] [--ctol=55] [--dmin=0.012] [--mode=color|dist|both|dark|notcolors|near] [--target=R,G,B] [--dark=120] [--align=skin|span|icp]
+  python tools/char/glb_extract_part.py <구운.glb> <몸v19.glb> <날.glb> [--skin=230,200,180] [--ctol=55] [--dmin=0.012] [--mode=color|dist|both|dark|notcolors|near] [--fill=2] [--target=R,G,B] [--dark=120] [--align=skin|span|icp]
     --skin   살색(RGB). 구운 텍스처의 살색을 먼저 «재서» 넣어라
     --ctol   이보다 살색에서 멀면 «덧씌운 것»
     --dmin   몸 표면에서 이보다 멀면 «덧씌운 것»(몸 키 1.9 기준)
@@ -169,6 +169,20 @@ def main():
         keep_v &= (V[:, 1] >= float(o.get("--ymin", -9))) & (V[:, 1] <= float(o.get("--ymax", 9)))
     if "--xmax" in o:
         keep_v &= np.abs(V[:, 0]) <= float(o["--xmax"])
+    # ★ 다수결로 다듬기 (2026-09-14 · 박사님 「지직지직」) — 구운 텍스처는 텍셀 단위로 얼룩·이음선 여백이 섞여 있어
+    #   정점 «하나»가 색 시험에 떨어지면 그 정점의 면 6개가 다 빠진다 ⇒ 옷 전체에 바늘구멍 수천 개.
+    #   이웃(고리) 정점의 «과반»이 남으면 나도 남고, 과반이 빠지면 나도 빠진다. fill 번 되풀이. (--fill=0 이면 안 한다)
+    fill = int(o.get("--fill", 2))
+    if fill > 0:
+        E = np.concatenate([F[:, [0, 1]], F[:, [1, 2]], F[:, [2, 0]]])
+        E = np.concatenate([E, E[:, ::-1]])
+        deg = np.bincount(E[:, 0], minlength=len(V)).astype(np.float32)
+        for _ in range(fill):
+            cnt = np.bincount(E[:, 0], weights=keep_v[E[:, 1]].astype(np.float32), minlength=len(V))
+            vote = np.where(deg > 0, cnt / np.maximum(deg, 1), keep_v.astype(np.float32))
+            was = keep_v.copy()
+            keep_v = np.where(vote > 0.5, True, np.where(vote < 0.5, False, keep_v))
+            print(f"  다수결 — 메운 정점 {int((keep_v & ~was).sum()):,} · 떨군 정점 {int((~keep_v & was).sum()):,}")
     keep_f = keep_v[F].all(1)
     Fe = F[keep_f]
     used = np.unique(Fe)

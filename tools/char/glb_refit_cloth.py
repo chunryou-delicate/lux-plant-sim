@@ -9,7 +9,7 @@
      (차이는 이웃 k 개의 평균으로 매끈하게)
 
 쓰기
-  python tools/char/glb_refit_cloth.py <구운.glb> <몸v19(리깅전).glb> <옷(몸v19공간).glb> <날.glb> [--skin=R,G,B] [--ctol=45] [--k=12]
+  python tools/char/glb_refit_cloth.py <구운.glb> <몸v19(리깅전).glb> <옷(몸v19공간).glb> <날.glb> [--skin=R,G,B] [--ctol=45] [--k=12] [--smooth=30]
     구운.glb 는 extract 때 쓴 그 판(살색 정점이 있어야 «구운 몸»을 안다). 옷은 v19 공간(리깅 전)이어야 한다.
 
 ⚠ 이 자가 «안» 하는 것
@@ -45,6 +45,21 @@ def main():
     d,ii=cKDTree(S).query(C,k=k); w=1.0/np.maximum(d,1e-4); w/=w.sum(1,keepdims=True)
     D=(delta[ii]*w[:,:,None]).sum(1)
     print(f'  옷 점 {n:,} · 옮긴 양 중앙값 {np.median(np.linalg.norm(D,axis=1)):.4f} · 최대 {np.linalg.norm(D,axis=1).max():.4f}')
+    # ★ 옮긴 양을 옷 그물 위에서 매끈하게 (2026-09-14 · 박사님 「지직지직」) — 점마다 따로 옮기니 이웃끼리 어긋나
+    #   면이 2% 꺾여(90도 넘게) 옷 전체가 오돌토돌했다. 이웃 평균으로 smooth 번 풀면 «옮기는 양»만 매끈해지고 옷 모양은 그대로.
+    sm=int(o.get('--smooth',30))
+    if sm>0:
+        F=np.asarray(acc_np(cj,cb,cp['indices']),np.int64).reshape(-1,3)
+        E=np.concatenate([F[:,[0,1]],F[:,[1,2]],F[:,[2,0]]]); E=np.concatenate([E,E[:,::-1]])
+        # UV 이음선 쌍둥이(같은 자리 다른 번호)도 한 점으로 — 위치로 묶는다
+        key=np.round(C/1e-4).astype(np.int64); _,grp=np.unique(key,axis=0,return_inverse=True); grp=grp.ravel()
+        Eg=grp[E]; ng=grp.max()+1
+        deg=np.bincount(Eg[:,0],minlength=ng).astype(np.float32); deg=np.maximum(deg,1)
+        Dg=np.zeros((ng,3),np.float32); np.add.at(Dg,grp,D); cntg=np.bincount(grp,minlength=ng).astype(np.float32); Dg/=cntg[:,None]
+        for _ in range(sm):
+            acc_=np.zeros_like(Dg); np.add.at(acc_,Eg[:,0],Dg[Eg[:,1]]); Dg=0.5*Dg+0.5*acc_/deg[:,None]
+        D=Dg[grp]
+        print(f'  매끈하게 {sm}번 · 옮긴 양 중앙값 {np.median(np.linalg.norm(D,axis=1)):.4f}')
     C+=D; cb[off:off+n*12]=C.astype(np.float32).tobytes(); acc['min']=[float(x) for x in C.min(0)]; acc['max']=[float(x) for x in C.max(0)]
     write_glb(cj,bytes(cb),out); print('✔',out)
 if __name__=='__main__': main()
