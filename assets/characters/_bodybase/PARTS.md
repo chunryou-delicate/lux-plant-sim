@@ -15,7 +15,55 @@
 - 움직임: `tools/char/check_motion.py`(걷기 8순간 늘어난 변 %) → `docs/handoff/char_motion_check.txt` · 네 순간 표 `catalog_*_motion.png`. 바지는 가랑이를 갈랐고 치마는 안감을 지웠다(README 5절).
 - 전 부품 표: `docs/handoff/img/bodytest/catalog/catalog_<누구>_<종류>.png` (같은 자세·같은 크기, 옷 밑 몸 면 지운 상태)
 
-## 몇 개 (2026-09-14 · 26차까지)
+## ★ 옷 입은 몸 통째 (2026-09-14 저녁 · 정본) — README 마지막 절
+떼어 붙인 부품 대신 이것을 쓴다. 상·하·신발이 한 벌, 머리(`*_hair*`)와 눈(`*_face_eyes1.glb`)만 얹는다. 표: `docs/handoff/img/bodytest/catalog/outfits_yeoja.png` · `outfits_namja.png`
+
+| 누구 | 파일 | KB |
+|---|---|---|
+| 남캐 | `namja_outfit10_raincoat_rigged.glb` | 13,776 |
+| 남캐 | `namja_outfit11_shirt_rigged.glb` | 14,147 |
+| 남캐 | `namja_outfit12_suit_rigged.glb` | 13,276 |
+| 남캐 | `namja_outfit13_sweater_rigged.glb` | 20,334 |
+| 남캐 | `namja_outfit14_tee_rigged.glb` | 11,922 |
+| 남캐 | `namja_outfit15_track_rigged.glb` | 13,785 |
+| 남캐 | `namja_outfit16_trench_rigged.glb` | 15,191 |
+| 남캐 | `namja_outfit17_turtle_rigged.glb` | 19,023 |
+| 남캐 | `namja_outfit18_utility_rigged.glb` | 17,535 |
+| 남캐 | `namja_outfit19_vest_rigged.glb` | 12,595 |
+| 남캐 | `namja_outfit1_biker_rigged.glb` | 18,426 |
+| 남캐 | `namja_outfit20_yellowhoodie_rigged.glb` | 13,301 |
+| 남캐 | `namja_outfit2_burgundy_rigged.glb` | 19,123 |
+| 남캐 | `namja_outfit3_camp_rigged.glb` | 17,318 |
+| 남캐 | `namja_outfit5_coat_rigged.glb` | 13,797 |
+| 남캐 | `namja_outfit6_denim_rigged.glb` | 17,837 |
+| 남캐 | `namja_outfit7_garden_rigged.glb` | 14,593 |
+| 남캐 | `namja_outfit8_hoodie_rigged.glb` | 15,377 |
+| 남캐 | `namja_outfit9_lounge_rigged.glb` | 15,764 |
+| 여캐 | `yeoja_outfit10_knitdress_rigged.glb` | 13,403 |
+| 여캐 | `yeoja_outfit11_labcoat_rigged.glb` | 13,814 |
+| 여캐 | `yeoja_outfit12_orangehoodie_rigged.glb` | 14,907 |
+| 여캐 | `yeoja_outfit13_overalls_rigged.glb` | 15,706 |
+| 여캐 | `yeoja_outfit14_pajama_rigged.glb` | 12,607 |
+| 여캐 | `yeoja_outfit15_parka_rigged.glb` | 16,656 |
+| 여캐 | `yeoja_outfit16_peacoat_rigged.glb` | 15,216 |
+| 여캐 | `yeoja_outfit17_plaid_rigged.glb` | 18,250 |
+| 여캐 | `yeoja_outfit18_puffer_rigged.glb` | 11,185 |
+| 여캐 | `yeoja_outfit19_raincoat_rigged.glb` | 12,731 |
+| 여캐 | `yeoja_outfit1_biker_rigged.glb` | 16,808 |
+| 여캐 | `yeoja_outfit20_sailor_rigged.glb` | 23,992 |
+| 여캐 | `yeoja_outfit21_summer_rigged.glb` | 13,501 |
+| 여캐 | `yeoja_outfit22_sundress_rigged.glb` | 17,289 |
+| 여캐 | `yeoja_outfit23_track_rigged.glb` | 12,562 |
+| 여캐 | `yeoja_outfit24_turtle_rigged.glb` | 21,090 |
+| 여캐 | `yeoja_outfit3_blouse2_rigged.glb` | 16,021 |
+| 여캐 | `yeoja_outfit4_cardigan_rigged.glb` | 11,362 |
+| 여캐 | `yeoja_outfit5_coat_rigged.glb` | 12,179 |
+| 여캐 | `yeoja_outfit6_dress_rigged.glb` | 16,978 |
+| 여캐 | `yeoja_outfit7_garden_rigged.glb` | 15,735 |
+| 여캐 | `yeoja_outfit8_hoodie_rigged.glb` | 12,769 |
+| 여캐 | `yeoja_outfit9_hoodiedress_rigged.glb` | 15,355 |
+
+## (부차) 떼어 붙인 부품 — 몇 개 (2026-09-14 · 26차까지)
 - 여캐 머리 13
 - 여캐 상의 20
 - 여캐 하의 17
