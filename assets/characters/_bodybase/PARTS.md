@@ -11,6 +11,7 @@
 ## ★ 2026-09-14 낮 — 「지직지직·매칭 안 됨」 고침
 - 렌더러(가짜 점) · refit(옷 구김·가슴 찢김) · 남캐 맨몸(접시 가슴·구멍) 세 가지를 고치고 옷 128벌을 전부 다시 감쌌다. README 3~4절.
 - 옷마다 `masks/<옷>_mask.json`(지울 몸 면 번호). 조합은 `tools/char/glb_apply_masks.py` 로 합집합.
+- 살색: 몸 텍스처를 복숭아빛(245,212,190)으로 물들임(README 6절). 렌더러 밝기 ×1.0.
 - 움직임: `tools/char/check_motion.py`(걷기 8순간 늘어난 변 %) → `docs/handoff/char_motion_check.txt` · 네 순간 표 `catalog_*_motion.png`. 바지는 가랑이를 갈랐고 치마는 안감을 지웠다(README 5절).
 - 전 부품 표: `docs/handoff/img/bodytest/catalog/catalog_<누구>_<종류>.png` (같은 자세·같은 크기, 옷 밑 몸 면 지운 상태)
 
@@ -51,7 +52,7 @@
 | 여캐 | 머리 | `yeoja_hair9_pixie_rigged.glb` | 6,653 |  |
 | 여캐 | 상의 | `yeoja_top10_puffer_rigged.glb` | 4,256 | O |
 | 여캐 | 상의 | `yeoja_top11_gardentee_rigged.glb` | 3,461 | O |
-| 여캐 | 상의 | `yeoja_top12_labcoat_rigged.glb` | 5,332 | O |
+| 여캐 | 상의 | `yeoja_top12_labcoat_rigged.glb` ⚠ 질 낮음 | 5,332 | O |
 | 여캐 | 상의 | `yeoja_top13_blackturtle_rigged.glb` | 2,442 | O |
 | 여캐 | 상의 | `yeoja_top14_sailor_rigged.glb` | 4,018 | O |
 | 여캐 | 상의 | `yeoja_top15_parka_rigged.glb` | 7,741 | O |
@@ -132,7 +133,7 @@
 | 남캐 | 상의 | `namja_top10_raincoat_rigged.glb` | 6,028 | O |
 | 남캐 | 상의 | `namja_top11_track_rigged.glb` | 4,440 | O |
 | 남캐 | 상의 | `namja_top12_grayhoodie_rigged.glb` | 5,452 | O |
-| 남캐 | 상의 | `namja_top13_whiteshirt_rigged.glb` | 3,457 | O |
+| 남캐 | 상의 | `namja_top13_whiteshirt_rigged.glb` ⚠ 질 낮음 | 3,457 | O |
 | 남캐 | 상의 | `namja_top14_vest_rigged.glb` | 3,134 | O |
 | 남캐 | 상의 | `namja_top17_camp_rigged.glb` | 7,332 | O |
 | 남캐 | 상의 | `namja_top18_blackturtle_rigged.glb` | 9,504 | O |
@@ -146,7 +147,7 @@
 | 남캐 | 상의 | `namja_top3_tee_rigged.glb` | 3,590 | O |
 | 남캐 | 상의 | `namja_top5_coat_rigged.glb` | 5,720 | O |
 | 남캐 | 상의 | `namja_top6_shirt_rigged.glb` | 4,845 | O |
-| 남캐 | 상의 | `namja_top7_dressshirt_rigged.glb` | 2,791 | O |
+| 남캐 | 상의 | `namja_top7_dressshirt_rigged.glb` ⚠ 질 낮음 | 2,791 | O |
 | 남캐 | 상의 | `namja_top8_denim_rigged.glb` | 6,091 | O |
 | 남캐 | 상의 | `namja_top9_yellowtee_rigged.glb` | 3,647 | O |
 | 남캐 | 하의 | `namja_bottom10_jogger_rigged.glb` | 3,832 | O |
