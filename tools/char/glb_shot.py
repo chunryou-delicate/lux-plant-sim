@@ -95,7 +95,7 @@ def render(V, F, yaw, W, H, pad=0.94, UV=None, TEX=None):
     L = np.linalg.norm(nrm, axis=1, keepdims=True); L[L == 0] = 1
     nrm = nrm / L
     light = np.array([0.35, 0.45, 0.82]); light = light / np.linalg.norm(light)
-    lam = np.clip(nrm @ light, 0, 1) * 0.78 + 0.22
+    lam = np.clip(nrm @ light, 0, 1) * 0.65 + 0.35          # ★ 2026-09-14 색을 «있는 그대로» — 정면 빛에서 알베도 그대로(×1.0)
 
     # ★ 삼각형마다 «화면 크기에 맞춰» 무게중심 격자 샘플 (2026-09-14 · 박사님 「지직지직」)
     #   전엔 7점 고정이라 확대하면 삼각형 하나가 수십 픽셀인데 7점만 찍혀 «구멍이 점점이» 남았다 — 판이 아니라 이 자 탓.
@@ -142,7 +142,7 @@ def render(V, F, yaw, W, H, pad=0.94, UV=None, TEX=None):
     out = np.full((H, W, 3), 22, np.uint8)
     body = img > 0
     if UV is not None and TEX is not None:
-        col = (cimg * img[:, :, None] * 1.25).clip(0, 255).astype(np.uint8)   # 텍스처 × 빛
+        col = (cimg * img[:, :, None] * 1.0).clip(0, 255).astype(np.uint8)    # 텍스처 × 빛 (전엔 ×1.25 라 살색이 하얗게 떴다)
         for ch in range(3):
             out[:, :, ch] = np.where(body, col[:, :, ch], out[:, :, ch])
         return out

@@ -13,7 +13,7 @@
 import sys, json, os, numpy as np
 sys.path.insert(0, __file__.rsplit('/', 1)[0] if '/' in __file__ else '.')
 from glb_extract_part import read_glb, write_glb
-body, out, masks = sys.argv[1], sys.argv[2], sys.argv[3:]
+args=[x for x in sys.argv[1:] if not x.startswith('--')]; body, out, masks = args[0], args[1], args[2:]   # --force: 이름이 달라도 면 수가 같으면(물들인 몸 등) 적용
 bj,bb=read_glb(body); bb=bytearray(bb); bp=bj['meshes'][0]['primitives'][0]
 iacc=bj['accessors'][bp['indices']]; ibv=bj['bufferViews'][iacc['bufferView']]; ioff=ibv['byteOffset']+iacc.get('byteOffset',0)
 dt={5121:np.uint8,5123:np.uint16,5125:np.uint32}[iacc['componentType']]
@@ -21,7 +21,7 @@ F=np.frombuffer(bytes(bb[ioff:ioff+iacc['count']*np.dtype(dt).itemsize]),dt).res
 drop=np.zeros(len(F),bool)
 for m in masks:
     d=json.load(open(m))
-    if d['body']!=os.path.basename(body) or d['faces']!=len(F): raise SystemExit(f'⛔ {m}: 몸이 다르다 ({d["body"]} {d["faces"]} ≠ {os.path.basename(body)} {len(F)})')
+    if d['faces']!=len(F) or (d['body']!=os.path.basename(body) and '--force' not in sys.argv): raise SystemExit(f'⛔ {m}: 몸이 다르다 ({d["body"]} {d["faces"]} ≠ {os.path.basename(body)} {len(F)})')
     drop[d['drop']]=True
 keep=F[~drop].reshape(-1); bb[ioff:ioff+keep.nbytes]=keep.tobytes(); iacc['count']=int(keep.size)
 write_glb(bj,bytes(bb),out); print(f'  지운 면 {int(drop.sum()):,} / {len(F):,} (마스크 {len(masks)}) ✔ {out}')
