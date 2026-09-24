@@ -1147,6 +1147,8 @@
   /* 눌리는 자리를 보이는 것보다 넓게 — `#furnActions::before` 와 같은 손이다 */
   #placeConfirm::before{content:'';position:absolute;inset:-12px;border-radius:22px}
   #stage.confirming #placeConfirm{display:flex}
+  /* ★ 2026-09-25 (#8) — [확인]을 기다리는 동안 그루 메뉴는 비킨다(두 팝업이 겹쳐 [확인]을 가렸다). 자리는 남긴다 */
+  #stage.confirming #plantActions{visibility:hidden}
   /* 옮기는 **중**에는 감춘다 — 잡이판(#moveCatcher) 위에 떠 있으면 끌다가 눌린다 */
   #stage.moving #placeConfirm{display:none}
   #placeConfirm button{position:relative;min-height:var(--tap);font-weight:700;font-size:14px;
@@ -4201,7 +4203,8 @@ function placeHintAt(el, say) {
      `translateX(-50%)` 라 왼쪽 가장자리 대상에서는 글이 화면 **밖으로** 나갔다.
      ⇒ 위가 자원칩 띠에 물리면 옆으로 세운다. 한계는 박지 않고 띠를 **잰다.** */
   let lim = 4; try { lim = Math.max(4, $('topbar').getBoundingClientRect().bottom + 4); } catch { }
-  if (r.top - hh + 4 < lim) {
+  /* ★ 2026-09-25 (#11) — 세로 탭 줄(#navbar)의 단추는 늘 옆에서 가리킨다. 위에 세우면 말풍선이 옆 단추를 덮는다 */
+  if ((el.closest && el.closest('#navbar')) || r.top - hh + 4 < lim) {
     h.classList.add('side');
     hb = h.getBoundingClientRect();
     /* 오른쪽에 자리가 있으면 오른쪽. 없으면 왼쪽 — 손 방향도 같이 뒤집는다 */
@@ -5586,7 +5589,11 @@ function updateHint() {
          「다음 날」이라 적힌 단추는 곧 하루를 넘기는 손이므로 하려던 말(`wait`)을 그대로 쓴다.
          그 밖의 창(가계부처럼 «읽는» 창)에서 「하루를 넘기세요」라 하면 가리킴과 말이 어긋난다. */
       const goesOn = go && /다음 날/.test(go.textContent || '');
-      return hintAt(go || null, go ? ((goesOn && wait) || '여기를 눌러 보세요') : null);
+      /* ★ 2026-09-25 (#11) — 주문 창이면 «언제 오나»를 품목 표(leadDays)에서 읽어 말한다. 못 읽으면 옛 말 그대로 */
+      const lead = (() => { try { return go && go.id === 'buyGo' && buyItemId ? Number(buyItemOf(buyItemId).leadDays) : NaN; } catch { return NaN; } })();
+      const buySay = lead === 1 ? '개수를 정하고 [주문] — 내일 옵니다'
+                   : lead >= 2 ? `개수를 정하고 [주문] — ${lead === 2 ? '이틀' : lead + '일'} 뒤에 옵니다` : null;
+      return hintAt(go || null, go ? ((goesOn && wait) || buySay || '여기를 눌러 보세요') : null);
     }
   }
   {
@@ -5859,10 +5866,15 @@ function updateHint() {
       /* ⚠ **이미 열린 탭은 안 짚는다.** 열린 것을 또 짚으면 눌러도 아무 일이 안 나고
          손가락이 거기 붙어 돈다 — 실측에서 여섯 번을 헛돌았다(오늘 [식물] 탭에서 겪은 그것). */
       if (el.getAttribute && el.getAttribute('aria-selected') === 'true') continue;
+      /* ★ 2026-09-25 (#11) — 레일 단추는 `aria-selected` 가 아니라 `cur`·`aria-current` 로 열림을 적는다(§syncNav).
+           못 알아보면 열린 [상점]을 또 짚고, 누르면 상점이 닫힌다. ⚠ 상점이 이미 열렸으니 다음 문([가방])으로도, 아래 갈래
+           ([다음 날])로도 새지 않는다 — 시트가 올라오는 동안 손가락이 [가방]·[다음 날]을 짚었다(걸어서 잼). 줄의 [주문]이 서면 위 갈래가 짚는다 */
+      if (el.getAttribute && (el.getAttribute('aria-current') === 'true' || (el.classList && el.classList.contains('cur')))) { shopOpenNow = true; return null; }
       return el;
     }
     return null;
   };
+  let shopOpenNow = false;
   const firstCycleDone = (() => {
     try { return ((S.firstPlay && S.firstPlay.beansprout && S.firstPlay.beansprout.harvestCount) || 0) >= 1; }
     catch { return false; }
@@ -5880,7 +5892,7 @@ function updateHint() {
        그 물음이 거짓이 되고, 상점 줄이 «화면에 보이는데도» 손가락이 통째로 사라졌다(실측). */
     if (buyBtn && onScreen(buyBtn) && !buyBtn.disabled && !sheetCovers(buyBtn))
       return hintAt(buyBtn, '여기서 씨앗을 주문합니다 — 하루 뒤에 옵니다');
-    { const door = shopDoor(); if (door) return hintAt(door, '씨앗을 미리 주문해 두세요'); }
+    { const door = shopDoor(); if (door) return hintAt(door, '씨앗을 사러 갑니다'); if (shopOpenNow) return hintAt(null); }   /* 재고 0 에 「미리」는 틀린 말(#11) */
   }
   /* ══ ★★★ 2026-08-17 — **시루를 하나 더 사는 길** (박사님: *"시루 추가로 1개 사는 것도
        가이드 좀 해주고."*) ═══════════════════════════════════════════════
@@ -5922,7 +5934,7 @@ function updateHint() {
     const b = $('shopList') && $('shopList').querySelector(`[data-buy="siru"]`);
     if (b && onScreen(b) && !b.disabled && !sheetCovers(b))
       return hintAt(b, '시루를 하나 더 주문합니다');   /* ★ 2026-09-06 총괄 — 「엇갈림」은 시루 «둘»에서 뺐다([plan] ⓩ·㉮ · 겪지 않은 어려움은 못 가르친다). 한 글자도 안 쓴다 */
-    { const door = shopDoor(); if (door) return hintAt(door, '시루를 하나 더 사러 갑니다'); }
+    { const door = shopDoor(); if (door) return hintAt(door, '시루를 하나 더 사러 갑니다'); if (shopOpenNow) return hintAt(null); }
   }
   /* ══ ★★★ 2026-08-17 — **무순 사는 길** (박사님: *"무순 구매도 손가락 가이드해줘."*)
      ═══════════════════════════════════════════════════════════════════
@@ -5971,7 +5983,7 @@ function updateHint() {
     const b = $('shopList') && $('shopList').querySelector(`[data-buy="${musunNeed.id}"]`);
     if (b && onScreen(b) && !b.disabled && !sheetCovers(b))
       return hintAt(b, `${musunNeed.ko}을(를) 주문합니다 — 무순은 판과 씨앗 둘이 필요합니다`);
-    { const door = shopDoor(); if (door) return hintAt(door, `${musunNeed.ko}을(를) 사러 갑니다`); }
+    { const door = shopDoor(); if (door) return hintAt(door, `${musunNeed.ko}을(를) 사러 갑니다`); if (shopOpenNow) return hintAt(null); }
   }
   /* ★★ **식물 위 말풍선을 먼저 가리킨다** (2026-08-06 박사님:
      "밑에 물주기 버튼은 없애고 식물에 물주기 버튼에 손가락 가이드 표기해 줘").
@@ -7283,7 +7295,9 @@ function startPhonePlacePotBag(potId) {
     try { window.__byeotSheet.close(); } catch { }
     unlockAfterFix(); sfx.thud();
   } catch (e) { banner('배치하지 못했습니다', (e && e.message) || ''); return { ok: false }; }
-  afterPlace();          /* ★ 놓은 그 순간에 할 일 줄을 다시 본다(§afterPlace) */
+  /* ★ 2026-09-25 (#8) — 시루(§startPhonePlace)와 같이 `afterPlace()` 는 [확인] 뒤로 뺐다(§placeConfirmOk).
+       확인 바가 안 서는 길(아래 !key)만 여기서 본다. 그리기는 그대로 한다(afterPlace 가 하던 몫) */
+  try { draw(); } catch (e) { console.warn('[놓기 그리기]', e && e.message); }
   /* ★★★ 2026-08-29 — **시루와 «같은 손버릇»으로 만든다** (박사님).
      ══════════════════════════════════════════════════════════════════
      박사님: *"몬스테라 받고 바로 드래그하면 ★«시루 옮길때처럼» 그 «배치할수있는 칸»들이
@@ -7299,6 +7313,7 @@ function startPhonePlacePotBag(potId) {
        「확인을 눌렀는데 아무 일도 안 난다」가 된다(2026-08-09 에 겪은 그것). */
   const key = (r && r.slotId) || p.slotId || null;
   if (!key) {
+    afterPlace();
     banner('🪴 몬스테라를 놓았습니다', '눌러서 [옮기기]로 자리를 다시 고를 수 있습니다');
     return { ok: true };
   }
@@ -8369,6 +8384,11 @@ $('buyGo').onclick = guard(() => {
   banner('주문했습니다',
          `${koOf(r.itemId)} ${r.qty}개 · ${r.totalWon.toLocaleString()}원 · ` +
          `${r.arrivesOnDay - S.day}일 뒤 도착`);
+  /* ★ 2026-09-25 (#11) — 첫 플레이 중 손가락이 상점으로 이끈 주문(첫 수확 뒤 · §updateHint firstCycleDone) 뒤에는 시트를 닫는다.
+       폰에서 시트가 방과 [다음 날]을 덮은 채 손가락이 쉬었다. ⚠ 첫 수확 «전»은 이끈 주문이 아니라 시트를 그대로 둔다(test_buypopup E-③) */
+  const fpGuided = S.firstPlay && S.firstPlay.enabled && !S.firstPlay.completed &&
+                   ((S.firstPlay.beansprout && S.firstPlay.beansprout.harvestCount) || 0) >= 1;
+  if (fpGuided) { try { window.__byeotSheet.close(); } catch { } }
   draw();
 });
 
@@ -10757,13 +10777,14 @@ const siruPlant = guard((id, kind) => {
   const r = sowCrop(S, id, { kind });
   let ko = '', days = '';
   try { const k = cropKindOf(r.kind); ko = k.ko; days = k.harvestDays; } catch { }
-  banner(`${ko} 씨앗을 심었습니다`, `씨앗 ${r.seedsUsed}봉지 · 물을 줘야 ${days}일 회전이 시작됩니다`);
-  syncRoom(); draw();
+  /* ★ 2026-09-25 (#2) — 「회전」은 안 배운 말이다. 심은 것·물 줄 것만 말한다(값은 r 이 낸다) */
+  banner(`${ko} 씨앗을 심었습니다`, `씨앗 ${r.seedsUsed}봉지 · 물을 주면 자라기 시작합니다`);
+  syncRoom(); checkQuests(lastTurn); draw();   /* 심은 그 순간에 할 일 줄을 넘긴다(§afterPlace 와 같은 까닭) */
 });
 const siruWater = guard((id, kind) => {
   const r = waterSiru(S, id, { kind });
-  if (r.watered) banner('물을 줬습니다', `오늘이 0일차입니다 — ${r.harvestDays || ''}일 뒤에 거둡니다`);
-  draw();
+  if (r.watered) banner('물을 줬습니다', `오늘부터 셉니다 — ${r.harvestDays || ''}일 뒤에 거둡니다`);
+  checkQuests(lastTurn); draw();               /* ★ #2 — 물 준 순간 「세기 시작」을 본다. 두 번 불러도 안전(§checkQuests) */
 });
 /* ══ 잉여가 생긴 날 — **배너 한 줄** (2026-08-15 · guideaudit §1-8 ①) ═══════
    ------------------------------------------------------------
@@ -14139,10 +14160,11 @@ function startPhonePlace(kind = 'beansprout') {
   catch (e) { banner('배치하지 못했습니다', (e && e.message) || ''); return; }
   try { window.__byeotSheet.close(); } catch { }
   draw();
-  afterPlace();          /* ★ 놓은 그 순간에 할 일 줄을 다시 본다(§afterPlace) */
+  /* ★ 2026-09-25 (#8) — 여기 있던 `afterPlace()` 를 뺐다. [확인] «전»에 할 일이 넘어가 「자리를 정했네」가
+       확인 팝업 위에 떴다. 할 일은 [확인]이 본다(§placeConfirmOk). 확인 바가 안 서는 길(아래 !key)만 여기서 본다. */
   /* 방에 실제로 서야 `screenPosOf` 가 풀린다 — 그린 **뒤에** 고른다 */
   const key = siruKey(r.potId);
-  if (!key) { banner(musun ? '재배판을 놓았습니다' : '시루를 놓았습니다', '방에서 눌러 옮길 수 있습니다'); return; }
+  if (!key) { afterPlace(); banner(musun ? '재배판을 놓았습니다' : '시루를 놓았습니다', '방에서 눌러 옮길 수 있습니다'); return; }
   /* ★ 2026-08-16 — **`confirming` 을 고르기 앞으로 옮겼다**(§coach A-3).
      이 길은 놓자마자 옮기기 모드로 들어가고 아래에서 「자리를 고르세요」 배너를 낸다.
      `picked.select` 안의 첫걸음 쪽지는 `confirming` 이 거짓일 때만 뜨므로, 뒤에 세우면
@@ -14171,7 +14193,12 @@ function startPhonePlace(kind = 'beansprout') {
        이고, 예전에는 끌기를 놓는 순간 그쪽이 불렸다 — 끌기를 안 지나가는 이 길에서는
        아무도 안 불렀다. 그래서 여기서 직접 세운다. */
   placeConfirm.show();
-  banner('여기에 둘까요?', '[확인] 을 누르면 그 자리에 놓입니다 · 자리를 바꾸려면 [다시 옮기기]');
+  /* ★ 2026-09-25 (#8) — 첫 플레이 중에는 배너를 안 낸다. 확인 팝업이 같은 말을 이미 한다(말이 둘이면 둘 다 안 읽힌다).
+       ⚠ 떠 있던 배너는 걷는다 — 폰에서 가방 칸을 누르면 끌기가 그 자리에서 끝나 「여기엔 못 놓았습니다」가 먼저 뜬다(걸어서 잼).
+         예전엔 「여기에 둘까요?」가 덮어 가렸고, 안 걷으면 [확인] 팝업 옆에 틀린 말이 남는다 */
+  const fpOn = S.firstPlay && S.firstPlay.enabled && !S.firstPlay.completed && !(S.tutorial && S.tutorial.movedOut);
+  if (!fpOn) banner('여기에 둘까요?', '[확인] 을 누르면 그 자리에 놓입니다 · 자리를 바꾸려면 [다시 옮기기]');
+  else { try { $('event').classList.remove('on'); } catch { } }
 }
 
 /* 임시로 세울 자리 — **빈 추천 자리** 우선, 없으면 방 한가운데 바닥.
@@ -14280,6 +14307,9 @@ function placeConfirmOk() {
     } catch { return null; }
   })();
   picked.clear();
+  /* ★ 2026-09-25 (#8) — 할 일은 [확인] «뒤»에 넘긴다. `picked.before` 가 비워진 뒤라야 §cropPotConfirmed 가 참이다.
+       두 번 불러도 안전하다(§checkQuests) */
+  try { checkQuests(lastTurn); } catch (e) { console.warn('[퀘스트 확인]', e && e.message); }
   draw();
   if (back) { try { picked.select(back); } catch { } }
   /* ★ 2026-08-17 — **처음 무언가를 놓은 그 순간에** 사람 움직이는 법을 한 번 말한다
