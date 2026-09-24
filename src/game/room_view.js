@@ -47,6 +47,7 @@ import { applyRoomMaterials } from '../render3d/room_materials.js';   // v2: 벽
    sunLight·skyPortals·조도 엔진 어느 쪽도 이 기하를 보지 않는다.
    (그래서 이걸 켜고 꺼도 test_banjiha_profile 의 숫자는 한 자리도 안 움직인다) */
 import { attachOutside, attachNeighbors } from './outside.js';
+import { attachAtmosphere } from '../render3d/atmosphere.js';   // v2: 창빛 기둥·먼지·등 달무리(그림뿐 · ?v2atm=0)
 /* ★ WEATHER·SEASON 은 **말 표**다(`ko`). 머리글에 한글로 적으려고 가져온다 —
    여기서 '맑음' 을 새로 적으면 표가 두 벌이 되고 두 벌은 반드시 어긋난다. */
 import { winFromHouse, WEATHER, SEASON } from '../engine/daylight_lux.js';
@@ -802,6 +803,7 @@ export async function createRoomView(canvas, opts = {}) {
   let roomId = null, roomDef = null, built = null;
   /* 창밖 골목. 방마다 다시 짓고, 창이 없으면 null 이다. */
   let outside = null;
+  let atm = null;              // v2: 창빛·먼지·달무리 손잡이(render3d/atmosphere.js). 방마다 다시 짓는다
   /* 'auto'(반지하만) · true(어느 방이든) · false(끔). opts.outside 로 덮어쓸 수 있다 */
   let outsideMode = (O.outside === undefined ? 'auto' : O.outside);
   /* 이웃 방(우리 방 양옆). ★ 창밖과 **따로** 산다 — setOutside(false) 로 골목만 꺼도
@@ -1073,6 +1075,7 @@ export async function createRoomView(canvas, opts = {}) {
     clearGhostSrc();                // ★ 옛 방 물건이 새 방 유령이 되면 안 된다(§prepareGhost)
     disposeOutside();               // 방마다 다시 짓는다 — 창 자리가 다르다
     disposeNeighbors();             // 이웃 방도 방 크기를 따라간다
+    if (atm) { atm.dispose(); atm = null; }   // v2: 창빛 기둥도 창 자리를 따라간다
     while (houseGroup.children.length) houseGroup.remove(houseGroup.children[0]);
 
     /* 가구 한글 이름표는 가볍다(수십 KB). lightEngine 을 받아 방을 안 짓는 경우에도
@@ -1116,6 +1119,9 @@ export async function createRoomView(canvas, opts = {}) {
     houseGroup.add(built.room);
     buildOutside(id);                       // 창밖 골목 (창 없는 방이면 조용히 아무것도 안 한다)
     buildNeighbors(id);                     // 양옆 이웃 방 (기본은 반지하만)
+    /* v2: 창빛 기둥·먼지·등 달무리 — 씬에 직접(built.room 밖), 빛 분포를 켜면 안 그린다 */
+    atm = attachAtmosphere(ctx, built, { requestRender: () => { needsRender = true; },
+      suppress: () => !!(heatView && heatView.isOn()) });
     /* 걸어 다닐 바닥을 다시 물린다 — 방이 바뀌면 벽도 가구도 다 다르다.
        ★ 2026-08-09 — 놓인 그루도 같이 물린다(§놓은 것이 길을 막는다). */
     nav.setWorld({ colliders: navColliders(), size: built.size });
@@ -5046,6 +5052,7 @@ export async function createRoomView(canvas, opts = {}) {
       }
       if (r.shade && r.shade.material) r.shade.material.emissiveIntensity = want ? 0.85 : 0;
     }
+    if (atm) atm.update(daylightT);   // v2: 해 방향·세기·등 켜짐을 읽기만 한다(값은 안 쓴다)
     needsRender = true;
     return label;
   }
@@ -5236,6 +5243,7 @@ export async function createRoomView(canvas, opts = {}) {
     needsRender = false;
     const t0 = performance.now();
     updateCam();
+    if (atm) atm.tick(now);          // v2: 먼지·빛결 시간은 이미 그리는 장에서만 흐른다(프레임을 안 깨운다)
     postfx.present();   // v2: 예전 ctx.renderer.render(ctx.scene, ctx.cam) — 꺼져 있으면 그대로 그것이다
     const ms = performance.now() - t0;
     if (ms > stats.worstMs) stats.worstMs = ms;
@@ -10101,6 +10109,7 @@ export async function createRoomView(canvas, opts = {}) {
       chars.clear();
       clearPlants(); clearRings();
       disposeOutside();
+      if (atm) { atm.dispose(); atm = null; }   // v2:
       disposeObject(ctx.scene);
       postfx.dispose();   // v2: 후처리 타깃·재질
       ctx.renderer.dispose();
