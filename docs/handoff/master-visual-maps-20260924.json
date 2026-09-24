@@ -1,0 +1,908 @@
+[
+ {
+  "summary": "The game does not use src/render3d/character.js. That file is only imported by the room tool (src/main.js:13 and :405, index.html). The in-game protagonist and mascot are built entirely inside src/game/room_view.js: makePerson (7525) and makeMascot (7991). game.html creates them through roomView.setCharacter('jachwi') and then setCharacter('moni') (game.html:12132-12139). The protagonist is 'jachwi' → asset id 'jachwi_f' (room_view.js:7297). Its mesh and idle clip come from one file, assets/characters/3d/lq/char_jachwi_f_idle.glb (2.43 MB, 15,832 verts, 24-bone rig, 1 material + PNG). Walking comes from assets/derived/char_clips/char_jachwi_f_walking.glb (35 KB, clip only). Actions come from assets/characters/3d/anim/char_jachwi_f_{opendoor,repot,harvest,harvest_crouch,sit,sleep}.glb. In every file the code takes animations[0] and renames it, so the clip names inside the files do not matter. The file name is the key: idle and walking by file, and ACT_SPEC maps water→opendoor, sow→repot, harvest→harvest or harvest_crouch (target y<0.45), sit→sit, sleep→sleep. There is no runtime scaling. The 1.40 m height (0.375 m for the mascot) is baked into a '__scale_root' wrapper node. The engine keeps the feet on the floor by measuring each clip's lowest skinned vertex at 8 phases (measureGround) and sliding model.position.y toward that value. It also overwrites the Hips bone's local X/Z every frame, so every clip plays in place. Movement moves only root.position x/z. It uses floor_nav (radius 0.38 = BODY_R, 0.25 m grid) through navPathTo → nav.path/pushOut at WALK_SPEED 1.45 m/s. Facing is root.rotation.y = atan2(dx,dz) with local +Z as the front (measured, no π), turning at 9/s, and the character faces the camera on arrival. Sit and lie are 'hold' actions: root snaps to the furniture centre and takes the furniture's yaw, the whole clip plays over 1.2 s or 1.6 s, and the last frame is held. For sit, the root is then lifted so Hips world y equals the seat top (surfaceTopAt). For lie, the root goes to bed top − 0.04. The mascot is a static unrigged mesh (lq/char_mascot_sprout.glb, 242 KB) animated only procedurally: it floats 0.221 m up, bobs 0.103 m on a 2.5 s period, tilts 4°, follows 0.774 m behind the person, and yaws toward the person at 6/s. Both are re-created from scratch on every room re-assemble, including a furniture move (room_view.js:1059-1061, 1166-1171).",
+  "files": [
+   {
+    "path": "C:/Users/pc/Desktop/빛식물/lux-plant-sim/src/game/room_view.js",
+    "role": "THE in-game character system. Constants 165-182 (WALK_SPEED, WALK_CLIP_MPS 0.871, ARRIVE_EPS), skinLowestY 343, makeBlobShadow 407, nav radius 826, CHAR paths 7292-7297, IDLE_BREAK 7345, MON follow params 7353, BODY_R 7358, yawTo 7372, makePerson 7525-7989, makeMascot 7991-8146, ACT_SPEC 8252-8276, actClipOf 8308, runAct 8755-8970, setCharacter 9232-9257, public API 9890-9998"
+   },
+   {
+    "path": "C:/Users/pc/Desktop/빛식물/lux-plant-sim/game.html",
+    "role": "Host. Loads three r128 + GLTFLoader as globals (35-42). Spawns jachwi then moni (12128-12139). Character tap handler (11933-11946). doAct→roomView.actAt for water/sow/harvest (8746-8859, footstep/gauge SFX in onProgress 8828-8844). Sit/Lie/Nap buttons → actAt(uid,'sit'|'sleep') / standUp (15087-15110). Walk footstep poller reads characters()[].walking (8703-8737)"
+   },
+   {
+    "path": "C:/Users/pc/Desktop/빛식물/lux-plant-sim/src/render3d/character.js",
+    "role": "Room-tool (index.html via src/main.js:405) character only, not used by game.html. Loads lq/char_<id>_rigged.glb + derived idle/walking clips; EMOTES list of 16 anim files (31-48); +Z forward note 319-331"
+   },
+   {
+    "path": "C:/Users/pc/Desktop/빛식물/lux-plant-sim/src/render3d/floor_nav.js",
+    "role": "Shared grid BFS / pushOut / nearestFree / clearLine (CELL 0.25, line 24). Movement logic; must not change"
+   },
+   {
+    "path": "C:/Users/pc/Desktop/빛식물/lux-plant-sim/assets/characters/3d/lq/char_jachwi_f_idle.glb",
+    "role": "Protagonist mesh+skeleton+idle clip in ONE file (root '__scale_root' scale 0.8236 → Armature scale 0.01 → Hips; 24 joints: Hips, Left/RightUpLeg, Left/RightLeg, Left/RightFoot, Left/RightToeBase, Spine02, Spine01, Spine, Left/RightShoulder, Left/RightArm, Left/RightForeArm, Left/RightHand, neck, Head, head_end, headfront). Bind height 1.70×0.8236 = 1.40 m, feet at y=0"
+   },
+   {
+    "path": "C:/Users/pc/Desktop/빛식물/lux-plant-sim/assets/derived/char_clips/char_jachwi_f_walking.glb",
+    "role": "Clip-only in-place walk, 1.067 s ('Armature|walking_man|baselayer'); URL pattern asserted by tools/test_roomview_walk.mjs G"
+   },
+   {
+    "path": "C:/Users/pc/Desktop/빛식물/lux-plant-sim/assets/characters/3d/anim/",
+    "role": "Per-action clip-only GLBs char_<id>_<name>.glb (root Armature scale 0.01, same 24 bone names). Game uses opendoor, repot, harvest, harvest_crouch, sit (Chair_Sit_Idle_F 11.37 s), sleep (Sleep_Normally 1.77 s)"
+   },
+   {
+    "path": "C:/Users/pc/Desktop/빛식물/lux-plant-sim/assets/characters/3d/lq/char_mascot_sprout.glb",
+    "role": "Mascot 몬이: static mesh, no skin/anim, 5,438 verts, jpeg texture, baked 0.375 m tall, bottom at y=0, face +Z"
+   },
+   {
+    "path": "C:/Users/pc/Desktop/빛식물/lux-plant-sim/tools/test_ground.mjs",
+    "role": "Asserts person feet |min.y|≤0.01, idle height 1.28–1.45 m (A2), moni min.y>0.05, walking |min.y|≤0.02, and E2 |ground.clips.idle − ground.clips.walking| > 0.03 (tied to the current asset)"
+   },
+   {
+    "path": "C:/Users/pc/Desktop/빛식물/lux-plant-sim/tools/test_roomview_walk.mjs",
+    "role": "Asserts the derived walking-clip URL (G, line 383-386), facing along the walk direction (K ~295), facing the camera on arrival (L 326), and a watering can on the hand (N-4 544, needs the RightHand bone)"
+   },
+   {
+    "path": "C:/Users/pc/Desktop/빛식물/lux-plant-sim/tools/probe_nap.mjs",
+    "role": "Sit/lie checks. Sit: Hips world y ≈ seat surfaceTopAt within 0.03 (line 90). Lie: y>0.15 on the bed (115)"
+   },
+   {
+    "path": "C:/Users/pc/Desktop/빛식물/lux-plant-sim/tools/char/",
+    "role": "Asset pipeline: rescale_char_glb.py (bakes the height into __scale_root), strip_anim_glb.py (derives clip-only walking/idle), make_lq_glb.py, probe_anim_hands.py (measures hand positions to choose ACT_SPEC from/win), check_idle_break.py"
+   },
+   {
+    "path": "C:/Users/pc/Desktop/빛식물/lux-plant-sim/vendor/three/postprocessing/SSAOPass.js",
+    "role": "Vendored r128 SSAO. Renders normals with a plain MeshNormalMaterial via scene.overrideMaterial (line 71/241). Relevant to skinned characters (see risks)"
+   },
+   {
+    "path": "C:/Users/pc/Desktop/빛식물/lux-plant-sim/docs/handoff/char-to-house.md",
+    "role": "Original char→house contract (heights, lq usage, MON follow params). Its 'rotation.y = Math.PI' advice is WRONG for these assets; the code measured +Z forward"
+   },
+   {
+    "path": "C:/Users/pc/Desktop/빛식물/lux-plant-sim/docs/handoff/char-to-core-restfit.md",
+    "role": "Measured sit/lie fit: sit hipsY fitted to the seat, lie hipsY 0.184 above the mattress = lying body thickness"
+   }
+  ],
+  "hooks": [
+   {
+    "what": "Swap the protagonist GLB (mesh + idle)",
+    "where": "src/game/room_view.js:7292",
+    "how": "The CHAR_MESH/CHAR_ANIM base paths are at 7292-7293. To add an id, extend CHAR_ASSET at 7297 (e.g. jachwi→'<newId>'). makePerson loads `${CHAR_MESH}/char_${id}_idle.glb` at 7528 and uses g.scene as the mesh and g.animations[0] as idle (7568-7571). Ship the new mesh with its idle clip in that ONE file. The game never reads char_*_rigged.glb."
+   },
+   {
+    "what": "Swap the walk clip",
+    "where": "src/game/room_view.js:7507",
+    "how": "walkClipOf tries `assets/derived/char_clips/char_${id}_walking.glb`, then lq/ (7512). It uses animations[0] and names it 'walking'. Put a clip-only in-place walk there. After measuring the new clip's ground speed, update WALK_CLIP_MPS at 180; the timeScale formula is at 7691."
+   },
+   {
+    "what": "Swap action clips (water/sow/harvest/sit/lie)",
+    "where": "src/game/room_view.js:8252",
+    "how": "ACT_SPEC (8252-8276) maps kind→file name + from/win/sec. actClipOf (8308-8325) loads `anim/char_${id}_${name}.glb` and subclips at 30 fps. New clips must reuse the file names opendoor/repot/harvest/harvest_crouch/sit/sleep, or the clip names in ACT_SPEC must change. Re-measure from/win with tools/char/probe_anim_hands.py; this is visual only, and sec 1.5 is the gameplay-feel value."
+   },
+   {
+    "what": "Material/shadow/layer setup for the person (the place to tag for post-FX, outline, rim light, color grade exclusions)",
+    "where": "src/game/room_view.js:7532",
+    "how": "The traverse at 7532-7537 sets castShadow/receiveShadow, frustumCulled=false and sRGB map. It runs on every re-create because characters are rebuilt on each assemble (1059-1061, 1166-1171). Any per-character material swap, layers.enable, or userData flag for selective bloom/SSAO must go here, not be applied once."
+   },
+   {
+    "what": "Material setup for the mascot",
+    "where": "src/game/room_view.js:7992",
+    "how": "The mascot load is at 7992. Its material is cloned and desaturated by MONI_SAT 0.78 (8001-8015). Replace the file or tweak MONI_SAT here. The mascot has no mixer, and all its motion is procedural at 8106-8142 (bob/tilt/follow/yaw)."
+   },
+   {
+    "what": "Contact shadow (blob) under characters — replace or keep alongside real shadows/SSAO",
+    "where": "src/game/room_view.js:7559",
+    "how": "The person blob is makeBlobShadow(1.05, BLOB_A_CHAR 0.55) at 7559-7562, added as a root child at y=0.006. The mascot blob is at 8030-8033, and its scale and opacity are animated at 8139-8142. The function is at 407 and the alphas at 651. Tests F (test_ground) count isBlobShadow meshes (≥3)."
+   },
+   {
+    "what": "Camera nudge when an action starts or finishes (harvest/water)",
+    "where": "src/game/room_view.js:8908",
+    "how": "In runAct, o.onArrive fires when the motion starts: 8908 for normal acts, 8865 for sit/lie. The logic-complete point is finish() at 8778/8969. The camera tween primitive is setCam({az,el,dist,target}, snap, ms) at 1558. There is no character-focus API yet; frameRoom (1497) restores the view. Alternatively hook from the host in game.html doAct onProgress/onDone (8828-8845)."
+   },
+   {
+    "what": "Footstep SFX synced to the walk cycle",
+    "where": "src/game/room_view.js:7948",
+    "how": "The person.update walking branch (7948-7977) moves root at WALK_SPEED. Today footsteps are a looping sound toggled by polling characters()[].walking every 120 ms (game.html:8717-8737), plus onProgress phase 'walk' during acts (game.html:8839-8840). For per-step events, derive the phase from walkAct.time/clip duration inside update. The clip has no footstep events."
+   },
+   {
+    "what": "Procedural pose fallback / idle variety",
+    "where": "src/game/room_view.js:7884",
+    "how": "When a clip fails to load, runClip dips root.y by 0.10 and leans model.rotation.x by 0.24 (7884-7890). IDLE_BREAK (7345) is empty for jachwi_f by design; the schedule is at 7810-7842. Add new idle-variation clips only after head-penetration checks (comment 7326-7344)."
+   },
+   {
+    "what": "Spawn call sites (host)",
+    "where": "game.html:12132",
+    "how": "Sequential setCharacter('jachwi') then setCharacter('moni'). Keep them sequential because the mascot follows the person."
+   },
+   {
+    "what": "Sit / Lie / Nap entry points (host)",
+    "where": "game.html:15088",
+    "how": "restAct(kind) → roomView.actAt(furnUid, 'sit'|'sleep'), with standUp when tapped again. Nap (15097-15110) runs the core nap() and then actAt(uid,'sleep') purely for visuals."
+   }
+  ],
+  "constraints": [
+   "Do not add runtime scaling. Height is baked in the GLB: the person is 1.40 m in bind pose (1.28–1.45 m in idle, test_ground A2) and the mascot is 0.375 m. Use tools/char/rescale_char_glb.py (a '__scale_root' wrapper). Feet at y=0, origin between the feet (XZ≈0). Comments at room_view.js:7282 and 7530 forbid engine rescaling.",
+   "The forward axis is local +Z (face and toes) with +Y up, for both the person and the mascot. Yaw = atan2(dx,dz) with no +π (room_view.js:7360-7372, 8070-8074). The sit clip must face +Z. The lie clip must lie on its back along Z with the head toward −Z and the feet toward +Z, because root.rotation.y is set to the furniture's rotation.y (room_view.js:8862).",
+   "Bone names are the binding contract. Tracks bind by node name, so the mesh file and every clip file must share one skeleton naming. There must be a node matching /hips/i (the pelvis; its parent must be an unrotated Y-up node, since local X/Z are pinned at 7913) and a node named exactly 'RightHand' after three's name sanitizing (regex /^righthand$/i at 7636). 'mixamorig:RightHand' becomes 'mixamorigRightHand' and fails.",
+   "No root motion. Walk and every action clip must be in place. Hips local X/Z is overwritten each frame with the idle t≈0 value (7629-7631, 7913), so root motion on any bone above Hips would make the character drift.",
+   "The sleep clip must be a lying pose in all 8 sampled phases, with no stand-to-lie transition. measureGround takes the minimum lowest vertex over the whole clip (7599-7623), and that minimum places the body on the mattress (root = surfaceTop − 0.04).",
+   "Sit and lie clips play whole, not subclipped (win:0). They are time-scaled to 1.2 s or 1.6 s and the LAST frame is held (clampWhenFinished, heldAction). Sit then lifts the root so Hips world y = seat top (8876-8879).",
+   "Keep the movement numbers unchanged: WALK_SPEED 1.45, ARRIVE_EPS 0.10, BODY_R/nav radius 0.38 (7358, 826), ACT_REACH 1.45, ACT_STAND_R, TURN_RATE 9, MON follow params (7353). They feed reachability/placement probes (probe_reach) and must not move. Only WALK_CLIP_MPS (180) should change, and only to match a new walk clip's measured ground speed.",
+   "The public API used by game.html and the tests must keep its shape: characters() → {id, kind, assetId, walkable, selected, walking, pos, yaw, hipsY, ground{y,target,clips}}; setCharacter('jachwi'|'moni'|null); actAt/standUp/restingOn/walkTo/previewWalk/characterScreenPos/isWalking/stopWalk/selectCharacter/nudgeCharacters (room_view.js:9890-9998). Keep the chars Map keys 'jachwi' and 'moni'.",
+   "Scene-graph markers the tests rely on: the pick box has userData.isCharacterPick + isPickBox (7496-7497), root.userData.charKind 'person'|'mascot' (7563, 8034), and blob userData.isBlobShadow. The selection ring is RingGeometry colour 0xffb454 (test A-3).",
+   "The walk-clip URL must match /derived\\/char_clips\\/char_\\w+_walking\\.glb/, and lq/char_*_walking.glb must not be fetched (test_roomview_walk G).",
+   "The watering can attaches to the RightHand bone and compensates for bone world scale (1/hs, 8943-8944). Test N-4 expects the can plus water points during a water act.",
+   "Use the loader as it is: a plain new THREE.GLTFLoader() with no DRACO, meshopt or KTX2 decoder wired (room_view.js:7468-7469). The new GLB must be uncompressed glTF. EXT_texture_webp and KHR_mesh_quantization are supported.",
+   "three r128 globals only (game.html:35-42). AnimationUtils.subclip and SkinnedMesh.boneTransform are used (8319, 353).",
+   "Characters are visual only and not light occluders. DLI/lighting_sim never sees them (test_ground I asserts DLI unchanged)."
+  ],
+  "risks": [
+   "Using a new rig with different bone names while reusing the old anim/*.glb files fails silently. PropertyBinding only warns 'No target node', and the character stands in bind pose. All 8 files (idle, walking, opendoor, repot, harvest, harvest_crouch, sit, sleep) must be regenerated on the new skeleton, e.g. Meshy rig + animate on the same model.",
+   "A Blender or other Z-up export with a rotated Armature makes the Hips X/Z pin at 7913 pin the wrong axes, including vertical, so the character sinks or levitates. Keep the Hips parent unrotated with Y up, as in the current Armature (scale 0.01, no rotation).",
+   "tools/test_ground.mjs E2 requires |idle − walking| ground offset > 0.03 m. That only holds because the current mocap idle floats 8.6 cm and walking sinks 2.8 cm. A clean replacement will FAIL E2 even though it looks correct, so the test must be updated alongside the asset.",
+   "WALK_CLIP_MPS 0.871 was measured on the current walk clip. With a new clip and no re-measure, feet visibly slide or the walk looks like running (timeScale = (1.45−0.23)/WALK_CLIP_MPS, clamped ≥0.6).",
+   "The ACT_SPEC from/win windows (0.30+1.50 opendoor etc.) were chosen by measuring the hand trajectories of the current clips. New clips without re-measuring put the watering can or hand in the wrong place and the crossfade snaps.",
+   "Generated sit/sleep clips that include a stand-to-sit or stand-to-lie transition break the fit. Sleep floats because measureGround takes the minimum over the standing frames. Sit is fine as long as the final frame is seated. A looping seated idle would freeze on its last frame, so there is no breathing while held.",
+   "The SSAO/SAO passes (vendor/three/postprocessing/SSAOPass.js:71, SAOPass.js:57-60) render normals and depth with a plain MeshNormalMaterial/MeshDepthMaterial override without skinning, so in r128 the skinned character is drawn in BIND pose in that pass. Result: a ghost of the standing A-pose in the AO, even while sitting or lying. Fix when wiring post-FX: set normalMaterial.skinning = true (and depthMaterial for SAO). This is safe for non-skinned meshes in r128 because skinning also requires maxBones > 0.",
+   "Post-FX override passes also draw transparent helper planes (blob shadows at y=0.006, selection rings, walk ghost cylinder) as opaque geometry into the depth/normal buffers. The invisible pick box is skipped because material.visible=false is filtered before the override. Consider excluding these via layers.",
+   "Characters are disposed and reloaded on every assemble(), including every furniture move (1059-1061, 1166-1171), and charLoad has no GLB cache. A heavier protagonist (above the current 2.4 MB / 15.8k verts / 1 material) directly lengthens every re-assemble and the first boot. Any per-character material or layer tweak must be applied inside makePerson/makeMascot, not once.",
+   "A new height or a non-chibi silhouette leaves several hard-coded visuals sized for 1.40 m: pick box 0.62×1.55×0.62 at y 0.78 (7554), charBodyPos up 0.62 (9107), GHOST_H 1.40 (9017), blob 1.05 (7559), ring 0.26-0.34, CAN_MAX 0.24 (8506). These are UI/visual only, but tap hit-testing depends on the pick box and body anchor.",
+   "A rigged, animated mascot would need new mixer/update code. makeMascot has no AnimationMixer and would render a rigged GLB in bind pose. Its follow/bob/yaw logic is transform-only and can stay if the rig plays only an in-place idle.",
+   "src/render3d/character.js (room tool) expects lq/char_<id>_rigged.glb + derived/char_clips/char_<id>_idle.glb + walking. If only the game files are replaced, the room tool at index.html keeps showing the old character or 404s.",
+   "docs/handoff/char-to-house.md says 'model.rotation.y = Math.PI'. That is wrong for these assets (twice-measured +Z forward). Do not re-add π when swapping models; verify the new model's LeftFoot→LeftToeBase and Head→headfront vectors point +Z (FK check: idle headfront−Head = (0,−0.04,+0.17))."
+  ],
+  "perf_notes": "Renderer: room_view uses scene.js's renderer with pixel ratio min(maxPixelRatio 1.75, dpr) (room_view.js:690, 5319). autoQuality steps it down through [1.75, 1.5, 1.25, 1.0, 0.85] when two consecutive 500 ms busy windows fall below 24 fps (5320-5341). Shadows: PCFShadowMap (not Soft) at 751. Sun shadow map is 1024² with bias +0.0002 (749, 781); the ceiling bulb shadow is 512 (point light, so 6 cube faces). Both characters castShadow=true and receiveShadow=true, so the skinned 15.8k-vert mesh is drawn in every shadow pass as well. The render loop draws on demand (loop 5204-5256, render call 5230 = the single hook for an EffectComposer). Frame-rate caps: idle with no skeletal character 10 fps; idle with the person standing 18 fps (ANIM_IDLE_FPS 5136, drops permanently to 10 on slow devices, idleBackoff); busy (drag, camera tween, rings) 30 fps; person walking or acting 60 fps (drops to 30 via moveBackoff). A person in the room therefore means the scene redraws at least 18 fps forever, so any post-FX chain runs continuously at that rate on phones. Budget SSAO/bloom accordingly, e.g. half-res AO, skip AO while LV_MOVE, or let the character stay idle-only at 10 fps with post-FX. Character update rate equals draw rate (stepCharacters 5190-5202, dt clamped to 0.1). setPaused stops rAF entirely while the plant zoom iframe is open (5269). measureGround runs skinLowestY (220 sampled verts × 8 phases per clip per skinned mesh) once per clip, cached. Multiple skinned sub-meshes in a new character multiply that one-time cost and the per-frame skinning/shadow cost. The current budget worth keeping: protagonist ≤ ~16k verts, 1 material, 1 texture (lq idle GLB 2.43 MB); mascot 5.4k verts, 242 KB. Tested phone target is 390×844 at dpr 2 (tools/test_roomview_perf.mjs, test_perf_budget.mjs)."
+ },
+ {
+  "summary": "game.html boots the room with a dynamic `import('./src/game/room_view.js')`, then calls `createRoomView(#roomCanvas, {roomId, lightEngine: io.light, onProgress, onCharacterTap, onPlantTap, onLampTap, lampTapMenu, onSlotTap, onError})` (game.html:11928). It exposes the returned view as `window.__rv` (game.html:12019) and drives it only through view methods. room_view.js (10,144 lines) wraps render3d/scene.js `createScene`/`updateLight` and house.js `buildHouse`. It owns the camera, placement, raycast picking, characters, walk/act animations, lamps and the render loop. It is supposed to know nothing about game rules. Time of day is pushed in from outside. game.html's idle clock (`idleClockStart`, game.html:15564) moves `dayPhase` (0=midnight, 0.25=06:00, one full day = 576 s) and calls `roomView.setDaylight(dayPhase)` on every rAF (game.html:15581). That calls `applyDaylight()` (room_view.js:4900), which runs `updateLight`, applies the game's dimming and boost factors and sets `needsRender`. The clock pauses while `#stage.talking`, while the guide is open, during the day-change animation and when the tab is hidden. The camera is an orbit rig {az, el, dist, target} (room_view.js:878). It changes through `setCam` → an eased `tween` (1558/1602) that `updateCam()` applies once per rendered frame (1614). `focusSlot()` is the only existing zoom-in, and game.html uses it once as a pull-then-return (`focusOnMonstera`, game.html:11044). Rendering is one `ctx.renderer.render(scene, cam)` in `loop()` (5230), plus `redraw()` (9647) and the boot frame (10128). The loop draws only when needed: 10 fps idle (18 with a skinned character), 30 fps busy, 60 fps while moving. There is no post-processing yet. vendor/three/postprocessing, shaders and math are untracked new files and are not loaded by any page. Audio is fully synthesized with WebAudio and ships no audio files. music.js gets a lazily created `musicCtx` from game.html (game.html:11786). sfx.js makes its own lazy AudioContext for its six voices (tap, scrape, water, step, chime, thud). Both follow the single localStorage key `byeot.music`, toggled by the ♪ button (#btnMusic). The '화면 밝기' slider only sets `toneMappingExposure = 0.72 × userBright` through `view.brightness(v)`.",
+  "files": [
+   {
+    "path": "C:/Users/pc/Desktop/빛식물/lux-plant-sim/src/game/room_view.js",
+    "role": "The room view module: camera rig, applyDaylight lighting policy, render loop and fps caps, placement raycasts, characters, act (water/sow/harvest) choreography and public view API. Main attach point for post-processing, atmosphere, camera nudges and furniture dressing."
+   },
+   {
+    "path": "C:/Users/pc/Desktop/빛식물/lux-plant-sim/src/render3d/scene.js",
+    "role": "createScene (renderer sRGB + ACESFilmic + PCFSoft, hemi/ambient/sun/ceilingBulb and 16 skyPortal SpotLights) and updateLight(ctx, t0..100, ceilingMode), which sets sun direction/colour/warmth, sky background and fog every call. room_view treats render3d/** as read-only (room_view.js:26)."
+   },
+   {
+    "path": "C:/Users/pc/Desktop/빛식물/lux-plant-sim/src/engine/daylight.js",
+    "role": "Pure daylight(t) → {alt, az, sky, label('한밤'/'새벽'/'아침'/'한낮'/'오후'/'해질녘'), intensity, warm}. Source of the time-of-day palette and label."
+   },
+   {
+    "path": "C:/Users/pc/Desktop/빛식물/lux-plant-sim/game.html",
+    "role": "Host page. Script tags for global THREE (34-42), room boot (11903-12160), day clock (15414-15710), dialogue paint/open (11635-11760), doAct (8746-8850), music/sfx wiring (11764-11827, 16580-16582), brightness slider (2545-2553, 6729-6751) and the window.__ debug hooks."
+   },
+   {
+    "path": "C:/Users/pc/Desktop/빛식물/lux-plant-sim/src/game/sfx.js",
+    "role": "Synthesized SFX (SPEC table :56, VOICES :216, createSfx :243, lazy AudioContext makeLazy :330, export sfx :356). New SFX voices belong here."
+   },
+   {
+    "path": "C:/Users/pc/Desktop/빛식물/lux-plant-sim/src/game/music.js",
+    "role": "Synthesized lyrical BGM (createMusic(ctx) :182). Uses a setInterval lookahead scheduler, not rAF. Template for an ambience module."
+   },
+   {
+    "path": "C:/Users/pc/Desktop/빛식물/lux-plant-sim/src/game/outside.js",
+    "role": "attachOutside(ctx, built, id, () => daylightT). Existing pattern for a non-lighting, non-raycast, scene-attached visual layer that reads the day clock at updateMatrixWorld time."
+   },
+   {
+    "path": "C:/Users/pc/Desktop/빛식물/lux-plant-sim/src/render3d/light_grid_labels.js",
+    "role": "Light heatmap overlay. It monkey-patches ctx.renderer.render (418-424) to reposition labels after each render call, which interacts with an EffectComposer."
+   },
+   {
+    "path": "C:/Users/pc/Desktop/빛식물/lux-plant-sim/src/game/dialogue.js",
+    "role": "SPEAKERS {jachwi, moni, god} (:105) and createDialogue (:1608). Speaker ids match room_view character ids ('jachwi', 'moni')."
+   },
+   {
+    "path": "C:/Users/pc/Desktop/빛식물/lux-plant-sim/src/game/light_adapter.js",
+    "role": "Light and DLI engine adapter. Reads only data arrays from built (luxWins, plantSlots, lightRigs, occluders, glazedPanes), never meshes, so visual swaps do not change DLI."
+   },
+   {
+    "path": "C:/Users/pc/Desktop/빛식물/lux-plant-sim/vendor/three/postprocessing/",
+    "role": "Untracked, not yet loaded: EffectComposer, RenderPass, ShaderPass, MaskPass, SSAOPass, SAOPass, UnrealBloomPass (examples/js global-THREE format, r128)."
+   },
+   {
+    "path": "C:/Users/pc/Desktop/빛식물/lux-plant-sim/vendor/three/shaders/",
+    "role": "Untracked: CopyShader, GammaCorrectionShader, VignetteShader, ColorCorrectionShader, FXAAShader, SSAO/SAO shaders, LuminosityHighPass, DepthLimitedBlur, UnpackDepthRGBA."
+   },
+   {
+    "path": "C:/Users/pc/Desktop/빛식물/lux-plant-sim/tools/room_view_demo.html",
+    "role": "Second host of createRoomView. Loads three r128 and GLTFLoader from CDN (lines 11-12), so it needs post-processing scripts too or must fail gracefully."
+   }
+  ],
+  "hooks": [
+   {
+    "what": "Post-processing: replace the main frame render",
+    "where": "src/game/room_view.js:5230",
+    "how": "`ctx.renderer.render(ctx.scene, ctx.cam)` inside loop(). Swap it for composer.render() behind a flag. Also route redraw() (9647) and the first boot frame (10128) through the same function so headless tools and the first frame match."
+   },
+   {
+    "what": "Post-processing: size and pixel-ratio sync",
+    "where": "src/game/room_view.js:5343",
+    "how": "resize() sets fov/aspect, setPixelRatio(min(pxRatio, dpr)) (5351) and setSize(w,h,false) (5352). Call composer.setPixelRatio and composer.setSize here and also in autoQuality() right after `ctx.renderer.setPixelRatio(pxRatio)` (5336). One autoQuality step could first drop SSAO/bloom before lowering pixel ratio."
+   },
+   {
+    "what": "Post-processing: create composer after scene setup",
+    "where": "src/game/room_view.js:745",
+    "how": "After `const ctx = createScene(canvas)` and the shadow budget lines (749-781), build EffectComposer(ctx.renderer), RenderPass(ctx.scene, ctx.cam), optional SAO/SSAO, UnrealBloom and a single combined grade+vignette+gamma ShaderPass. Guard with `typeof THREE.EffectComposer === 'function'` so the demo host keeps working."
+   },
+   {
+    "what": "Post-processing: dispose",
+    "where": "src/game/room_view.js:10092",
+    "how": "Dispose composer render targets before `ctx.renderer.dispose()` (10093) and forceContextLoss (10104)."
+   },
+   {
+    "what": "Load vendor post-processing scripts (global THREE)",
+    "where": "game.html:35",
+    "how": "Add <script src=./vendor/three/postprocessing/EffectComposer.js>, RenderPass, ShaderPass, shaders/CopyShader, GammaCorrectionShader, LuminosityHighPassShader, UnrealBloomPass, SAO/SSAO and their shader deps after line 35 (GLTFLoader). The CDN fallback block at 36-42 only covers three and GLTFLoader, so post-processing needs local files or its own fallback. tools/room_view_demo.html:11-12 loads from CDN."
+   },
+   {
+    "what": "Time-of-day grading: per-time lighting hook",
+    "where": "src/game/room_view.js:5039",
+    "how": "End of applyDaylight(), just before `needsRender = true` (5040). `daylightT` (0..1, 0=midnight, 0.25=06:00) is current here, ctx.sunLight.color already holds the warm mix, and `label` is known. Set grade, bloom and vignette uniforms, light-shaft colour and intensity, and lamp glow here. Skip it when lightPolicy==='house' (early return at 4907-4916). applyDaylight also runs on setLampOn/brightness/setGrowLights/assemble, so it must be idempotent."
+   },
+   {
+    "what": "Clock value to read for time of day (host side)",
+    "where": "game.html:15431",
+    "how": "`let dayPhase = DAWN_T01` (0.25). Advanced by idleClockStart step (15564-15590 → `roomView.setDaylight(dayPhase)` at 15581) and by runDayAnim (15682-15712) during the 900 ms sweep to 06:00. Read-only hook `window.__dayClock()` at 15482. Inside room_view use `daylightT` (810) or the view getter `daylight` (9660). setDaylight (9654-9659) returns the Korean label that paintWhen (15500) prints."
+   },
+   {
+    "what": "Atmosphere layer (light shafts + dust at basement window)",
+    "where": "src/game/room_view.js:1108",
+    "how": "In assemble(), next to `buildOutside(id)` (1108) and `buildNeighbors(id)` (1109), add attachAtmosphere(ctx, built, id, () => daylightT) using the outside.js pattern (980-996). Window geometry is available: built.luxWins, ctx.skyWins (centres + inward normals, 1117-1129), ctx.winPos (1130) and windowAzimuth() (1438). Dispose it next to disposeOutside() (1067). Set mesh.raycast=()=>{}, no castShadow and no new lights. For per-frame animation, add a stepFx(now) to the `moving` OR in loop() (5219) so dust also moves at idle caps."
+   },
+   {
+    "what": "Procedural wallpaper/linoleum/concrete textures",
+    "where": "src/game/room_view.js:1099",
+    "how": "`dimRoomMaterials(built)` (662-678) caches `m.userData.__rvBaseColor` and multiplies it by ROOM_DIM 0.62 or FURN_DIM 0.78. Assign new maps before this line so the dimming still applies, or register new base colours. setLightPolicy (9676-9683) re-dims with k=1/0.62/0.78. GRAIN (746) is the existing faintGrainTexture."
+   },
+   {
+    "what": "Generated GLB furniture dressing",
+    "where": "src/game/room_view.js:1107",
+    "how": "After `houseGroup.add(built.room)`, walk built.furniture.children (userData.uid, size, mount). Add GLB visuals as children with raycast disabled. Keep the original box meshes Object3D.visible=true as raycast and bbox proxies; hide them with a per-mesh material.visible=false or colorWrite=false, because hiddenInScene (4125) skips visible=false parents. assemble also re-runs from rebuildRoom (6723), commitFurnitureAt (6766) and refreshFurniture (7268), so dressing must be re-applied on every assemble."
+   },
+   {
+    "what": "Camera nudge API (new view method)",
+    "where": "src/game/room_view.js:9642",
+    "how": "Add next to `focusSlot(id, snap)` in the view object, e.g. view.nudgeCamera({to: key|charId, k, ms, hold}). Implement with setCam (1558), which already tweens az/el/dist/target with ease (1602). Do not set `focused` (it changes pinch limits in 4631 and settleCam at 1527). Return via frameRoom(false) (1497), which re-derives from userYaw/userEl/zoomK. Positions: resolveKey(key).pos (2848), chars.get(id).root.position, charAnchor (9100). Cancel on user drag, which already does tween=null at 4669."
+   },
+   {
+    "what": "Dialogue speaker shown → nudge",
+    "where": "game.html:11647",
+    "how": "In dlgPaint(), `const sp = SPEAKERS[line.who]` gives the current speaker ('jachwi' | 'moni' | 'god'). `$('stage').classList.add('talking')` (11667) = dialogue open, `classList.remove('talking')` (11638) = dialogue closed. Call roomView.nudgeCamera toward line.who on open or speaker change, and frameRoom back on close. Advance is dlgBox click (11770), skip is dlgSkip (11771). The clock is paused while talking (clockPaused 15552)."
+   },
+   {
+    "what": "Water/sow/harvest arrival → nudge (internal)",
+    "where": "src/game/room_view.js:8908",
+    "how": "In runAct, `prog(0,'act'); o.onArrive && o.onArrive()` (8907-8908, and 8864-8865 for sit/sleep) is the moment the character arrives. t.pos (the target) and person.c.root are in scope, so a tween toward the midpoint can start here and be released in cleanup (8893) or finish (8778). Alternatively pass onArrive from game.html doAct at game.html:8825 (currently not passed)."
+   },
+   {
+    "what": "Harvest completed → nudge + SFX",
+    "where": "game.html:10011",
+    "how": "noteHarvest(r) is the single choke point for both harvest paths (reallyHarvest 15747 and siruHarvest 10787). r.perPot[].id → siruKey(id) is the key for screenPosOf and camera target, and floatUp (9848) already fires here. Good place for a harvest punch and pop SFX."
+   },
+   {
+    "what": "Watering / gauge SFX already wired",
+    "where": "game.html:8828",
+    "how": "doAct's actAt onProgress (8828-8845) calls sfx.walk(walking), sfx.gauge(!walking && kind!=='water') and sfx.water() when not walking and kind==='water'. Replace or extend these with richer voices. Free-walk footsteps come from walkSfxTick (8717, polled by setInterval at 8736)."
+   },
+   {
+    "what": "Day change → nudge / ambience swap",
+    "where": "game.html:11456",
+    "how": "commitNextDay (nextDay → showFirstPlayEvents → checkQuests → draw) runs after runDayAnim (15682) reaches 06:00 in endDayAnim (15653). autoNextDay (11483) and goNextDay (11501) are the entry points. The day sweep drives setDaylight via paintDayClock (15648)."
+   },
+   {
+    "what": "Existing camera pull precedent",
+    "where": "game.html:11044",
+    "how": "focusOnMonstera(): setTimeout 900 ms → roomView.focusSlot(key) → 3600 ms later → focusSlot(null), unless the user picked something. It is triggered at 11134 on the first-play completion event. Model new nudges on this and respect picked/drag state."
+   },
+   {
+    "what": "Ambient loops (new) + music/sfx master switch",
+    "where": "game.html:11786",
+    "how": "startMusic() lazily creates musicCtx (11791) plus createMusic. Start an ambience bus (same ctx) here after music.start() (11795), and stop it in toggleMusic (11800-11814), which also calls sfx.setEnabled. The key is MUSIC_KEY 'byeot.music' (11783); autoplay unlock is armMusicAutostart (11820, called at 16581). Feed time of day from the idle clock step (15581) or setDaylight label. Use setInterval or AudioContext scheduling, not rAF (music.js §예약)."
+   },
+   {
+    "what": "New SFX voices",
+    "where": "src/game/sfx.js:56",
+    "how": "Add entries to SPEC (56) and VOICES (216). makeLazy (330) auto-exposes every NAMES entry on `sfx`. The capture-phase tap listener is at game.html:11764. chime is fired at 11136 (events) and 8957 (level up); thud fires at the placement sites."
+   },
+   {
+    "what": "Brightness slider path",
+    "where": "src/game/room_view.js:9665",
+    "how": "view.brightness(v) clamps 0.6-2.2, stores localStorage 'byeot.brightness' (587-593, default 1.5) and calls applyDaylight, which sets toneMappingExposure = GAME_EXPOSURE 0.72 × userBright (4956). The UI is game.html:2549-2553 (#brightRange 60-220) bound at 6729-6751. Keep the grade exposure-neutral so the slider still means the same thing."
+   },
+   {
+    "what": "Protagonist replacement",
+    "where": "src/game/room_view.js:7525",
+    "how": "makePerson loads `${CHAR_MESH}/char_${id}_idle.glb` (CHAR_MESH 7292 = assets/characters/3d/lq, CHAR_ASSET map 7297). Walk clips come from assets/derived/char_clips (7507-7523) and act clips from `${CHAR_ANIM}/char_${id}_${name}.glb` (actClipOf 8308; ACT_SPEC 8252 needs opendoor, repot, harvest, harvest_crouch, sit, sleep). Bones are found by /hips/i (7630) and exactly 'RightHand' (7636)."
+   },
+   {
+    "what": "Debug hooks",
+    "where": "src/game/room_view.js:786",
+    "how": "window.__sunShadow, window.__sunLight and window.__cam are set at 786-787. The view getter `three` (10058) returns ctx {renderer, scene, cam, hemi, ambient, sunLight, ceilingBulb, skyPortals}. The host sets window.__rv/__picked/__drag at game.html:12019, plus __io (12064), __S (12067), __turn (12119), __dayClock (15482), __dayClockSkip (15489), __remount, __dlgOpen, __byeotWalkSfx (8743). Add e.g. window.__fx = {composer, setPost(on)} next to 786 in the same try/catch style."
+   }
+  ],
+  "constraints": [
+   "Three r128 is loaded as global scripts (game.html:34-35 local vendor, CDN fallback 36-42). room_view uses the global THREE and throws if missing (700). No ES-module imports of three. Vendor post-processing files are examples/js style (THREE.EffectComposer, THREE.Pass).",
+   "DLI and lighting are computed by light_adapter/lighting_sim from built.luxWins/plantSlots/lightRigs/occluders/glazedPanes data, never from meshes. Do not touch those arrays, data/*.json, S.lamps or turn.* contracts. room_view comments state every visual light change must leave the 14-slot DLI identical (e.g. 641-642, 779-780).",
+   "Placement rules depend on raycasts against real furniture meshes in built.room/built.furniture: supportY 2927, tierRectOf 3582, pickLampRay 4089, surfaceAt 4316, pickFurnitureAt 5977, surfaceTopAt 6487, and meshRect (4138) reading geometry.boundingBox. hiddenInScene (4125) skips Object3D.visible=false chains. Keep the original box meshes raycastable at the same geometry and set raycast=()=>{} on all new visual meshes (as blob shadows do at 1241).",
+   "Grid and snap constants must stay: SNAP_DIV/MOVE_STEP (108-109), GRID_UNIT/GRID_CELL from place.js, gridSpan (1321), plant diameters MONSTERA_POT_D 0.20, SIRU_D 0.20, MUSUN_D 0.20, CUT_JAR_D 0.13, CUT_POT_D 0.12 (1637-1715), ACT_REACH 1.45 and ACT_STAND_R (8280-8302), BODY_R 0.38 (7358), nav radius 0.38 (826).",
+   "Furniture groups keep userData.uid, size {w,d,h}, mount and lampShade. slotId naming is `{uid}:{tier}` or `free:{potId}`. lightRigs keep uid, light, shade, grow and schedule because lampIsOn and applyDaylight read them (5026-5039, 6921-6935).",
+   "Characters: GLB has 1.40 m (jachwi) and 0.375 m (moni) baked in, so never rescale (7282, 7530). Local +Z is forward (yawTo 7372). frustumCulled=false on skinned meshes (7535). Bone names must match /hips/i and exactly 'RightHand'. Clip file names in assets/characters/3d/anim: char_{id}_{opendoor|repot|harvest|harvest_crouch|sit|sleep}.glb, idle in lq/, walking in derived/char_clips/.",
+   "view API names and return shapes used by game.html must not change, including screenPosOf (27 calls), setPlantAt, highlightSlots, actAt, setDaylight (returns label string), brightness() ({value,min,max,base}), characters(), camera() ({az,el,dist,fit,baseAz,target}), stats() (fps, pixelRatio, triangles, calls, fpsCap, idleCap, level), focusSlot, setPaused/isPaused, restingOn and dispose.",
+   "toneMappingExposure is the brightness channel: 0.72 × userBright (4956), and 1.1 in the 'house' policy (4911). tools/test_outside.mjs:57 reads it. The localStorage keys byeot.brightness, byeot.music and byeot.pointerMode are the single sources of truth.",
+   "The render-on-change policy (needsRender, fps caps, idle/move backoff, setPaused for the plant_grow iframe) is contractual and measured by tools/test_roomview_perf.mjs and test_perf_budget.mjs. Do not force continuous 60 fps.",
+   "Blob shadows (userData.isBlobShadow, BLOB_A_* 651) and setBlobShadows/blobShadows are toggled by tools. Keep the flags.",
+   "Audio: a single on/off key 'byeot.music' governs music and sfx (game.html:16582). Never create an AudioContext before a user gesture. Timing uses setInterval or the AudioContext clock, never rAF.",
+   "render3d/** (scene.js, house.js, textures.js) is documented as read-only from room_view (room_view.js:26). Visual changes should live in room_view or new modules, or the owning window must be coordinated with."
+  ],
+  "risks": [
+   "r128 tone-maps inside material shaders even when rendering to a render target: `toneMapping: r.toneMapped ? t.toneMapping : 0` with no render-target check. outputEncoding becomes Linear when a render target is bound. So RenderPass output is already ACES-tone-mapped but linear-encoded, and the final pass needs GammaCorrectionShader or an sRGB conversion, or the image goes dark and washed out. Bloom then runs on LDR, so the threshold needs tuning. The exposure slider keeps working. Materials with toneMapped:false (blob shadows 1235, water fx) are not affected by exposure.",
+   "light_grid_labels.js:418-424 monkey-patches ctx.renderer.render. Every composer pass that calls renderer.render (RenderPass, SSAO internals and each FullScreenQuad) would trigger labels.update(). Wrap composer.render instead, or keep the heatmap path on a plain render.",
+   "stats() reads ctx.renderer.info.render.calls/triangles (9831). With a composer, info auto-resets on every render call, so calls/triangles report only the last fullscreen pass. That breaks perf tools and test_outside's draw_calls delta (≤2). Set renderer.info.autoReset=false, reset once per frame and snapshot after RenderPass.",
+   "The idle clock calls setDaylight on every rAF (game.html:15581) → applyDaylight sets needsRender=true (5040). In normal play the room is therefore always LV_BUSY at about 30 fps, not idle, so any post-processing cost is paid continuously on phones. updateLight also allocates a new THREE.Fog and Colors per call (scene.js:106-107).",
+   "resize() and assemble() call frameRoom(true)/focusSlot(snap). Rebuilds happen on every furniture or lamp commit. Both snap the camera and cancel any in-flight nudge. settleCam (1543-1550) writes userYaw/userEl/zoomK from the current cam, so a user release mid-nudge would persist the nudged angle. Nudges should prefer target/dist only and restore via frameRoom(false).",
+   "DOM overlays (speech marks, floats, finger guides) are positioned from screenPosOf. Marks and floats re-place every rAF (placeMarks via markTick 9979, placeFloats 9823), but anything placed only on draw() will drift during camera nudges.",
+   "Dressing furniture with GLBs inside built.room changes buildFurnitureBlobs' Box3.setFromObject footprints (1212), highlightFurniture/brightenedMat (6015-6060) and makeFurnGhost clones (6639). Hiding proxy boxes with Object3D.visible=false silently removes them from placement raycasts (hiddenInScene), which changes placement and violates the hard rule.",
+   "New THREE lights (warm lamp, shaft spotlights) force shader recompiles for every material. The scene already carries 16 skyPortal SpotLights plus hemi, ambient, sun, point bulb and up to 4 rig point lights. Prefer emissive, additive or billboard fakes and pre-allocated lights. castShadow lights would break the 'lean' shadow budget (4871-4889).",
+   "Two AudioContexts already exist (musicCtx in game.html and sfx's own lazy one). A third for ambience adds latency and cost on mobile. Reuse musicCtx or sfx.ctx() and follow the same enable key.",
+   "Pixel-measuring tests may shift under vignette, bloom or grading: test_lampswitch B-3 requires the lamp-lit area to be ≥1.10× brighter at night, and test_outside reads exposure. Many probe_* tools read luminance. Documented visual constants (SUN_BOOST 4.20, BULB_K, RIG_GROW 0.34, ROOM_DIM 0.62) were tuned by pixel probes and will read differently after grading.",
+   "WebGL context pressure is already an issue: room + plant_grow iframe, with fallbacks at 725-743. On dpr≥2 the context is created with antialias:false (708-713), so composer render targets get no MSAA and edges alias. Use FXAA, or WebGLMultisampleRenderTarget on WebGL2.",
+   "tools/room_view_demo.html loads three from CDN and has no post-processing scripts. createRoomView must feature-detect THREE.EffectComposer and fall back to a plain render.",
+   "The vendor postprocessing/shaders/math folders and src/game/room_map.js are untracked (git status '??'). Per the multi-window commit rule, commit only your own paths explicitly."
+  ],
+  "perf_notes": "Pixel ratio: pxRatio = min(O.maxPixelRatio (default 1.75, room_view.js:690; game.html does not override it), devicePixelRatio) (5319). autoQuality (5322-5341) steps down PX_STEPS [1.75, 1.5, 1.25, 1.0, 0.85] after two consecutive busy 500 ms windows below 24 fps and never steps back up. Idle windows are excluded from that check. On 390×844 at 1.75 the drawing buffer is ~683×1477 ≈ 1.0 MP. Context: on dpr≥2, room_view pre-creates webgl2 with {antialias:false, alpha:false, stencil:false, powerPreference:'high-performance'} (707-713), so createScene's antialias:true is ignored and there is no MSAA on phones. Shadows: renderer.shadowMap.type is overridden to PCFShadowMap (751) because PCFSoft is too expensive on phones. The sun shadow map is 1024² (749), bias +0.0002 (781), radius 4 (scene.js). In 'lean' mode (default, 4864) only the sun casts shadows; the ceilingBulb cube shadow (512) and skyPortal shadows are off (4873-4875). The sun shadow camera is tightened to the room (4880-4888), autoUpdate=false, and the map is re-baked only when the sun moves more than 0.004 rad (4976-4979). Loop cadence: rAF gated by needsRender. Caps are idle 10 fps (IDLE_FPS 5108), 18 fps idle with a skinned character (ANIM_IDLE_FPS 5136), busy 30 (MIN_FRAME_MS 5094) and moving (walk/act) 60 with backoff to 30 (5077, moveBackoff 5308). setContinuous forces every frame for tools. setPaused cancels rAF while the plant_grow zoom iframe is open (5269). In normal play the idle clock calls setDaylight every rAF, so the room effectively renders at ~30 fps all the time. During dialogue the clock pauses and the room drops to 18 fps. Scene budget per comments: ~103 draw calls and ~76k triangles for the banjiha room; lq characters; the watering-can GLB was rejected over 12k triangles. Lights: 16 skyPortal SpotLights always present (intensity 0 when unused, but still in shader light count), up to 4 rig point lights on (5024-5039), plus hemi, ambient, sun and point bulb. Fog is pushed out to near≥30 m and far≥120 m, effectively off (5018-5021). Recommendations for phones: no full-resolution SSAO (SSAOPass does a normal+depth re-render of the scene). Use half-resolution SAO, or baked AO in the GLB furniture and procedural texture, or skip AO when pxRatio≤1.25. Run UnrealBloom at half resolution with 3 mips. Fold grade, vignette and gamma into one ShaderPass. Add FXAA only if MSAA is absent. Tie the post chain to autoQuality: drop AO, then bloom, before lowering pixel ratio. Keep composer targets sized to renderer.getPixelRatio() in resize (5343) and autoQuality (5336). Snapshot renderer.info with autoReset=false so stats() stays meaningful."
+ },
+ {
+  "summary": "Repo root: C:/Users/pc/Desktop/빛식물/lux-plant-sim. The game room is not rendered in game.html itself. game.html:11919 dynamically imports src/game/room_view.js, and createRoomView(canvas,{lightEngine:io.light}) owns the renderer, the render loop, the camera and every light tweak. The renderer, scene, camera and all lights come from render3d/scene.js createScene() (room_view.js:745). updateLight(ctx,t,mode) (scene.js:104) turns daylight(t) (src/engine/daylight.js:15, visual only, separate from the DLI engine) into sun direction, colour and intensity, sky-portal spotlights, hemi/ambient fill, background, fog and glass tint. room_view.applyDaylight (room_view.js:4900-5042) then rewrites almost all of those numbers for the game view: SUN_BOOST/PORTAL_BOOST 4.2, fill cuts, exposure GAME_EXPOSURE 0.72 × userBright, background lerped to 0x14101c, lamp-rig intensities and the shadow budget. The room shell (floor, ceiling, walls, window frames and glass) is built by render3d/house.js buildHouse(). In the game path it runs inside light_adapter.build (light_adapter.js:113, with its own GRAIN at :63), so the lux engine and the screen share one `built`. It uses flat pastel MeshStandardMaterials times a near-white 128px grain CanvasTexture (textures.js:67). room_view then darkens those materials in place with dimRoomMaterials (room_view.js:662, called at :1099). Rendering is on demand: loop() at room_view.js:5204 draws only when needsRender or something is moving, with caps of 10/18/30/60 fps. In practice game.html's idle clock calls setDaylight every rAF (game.html:15581), and applyDaylight sets needsRender=true unconditionally (room_view.js:5040), so the room draws at about 30fps whenever the clock runs. There is exactly one draw call, ctx.renderer.render(ctx.scene, ctx.cam), at three sites: loop :5230, redraw() :9647 and boot :10128. That is where an EffectComposer goes. r128 examples/js postprocessing is already vendored but untracked and not loaded (vendor/three/postprocessing, shaders, math/SimplexNoise.js). In the banjiha room (5×4×2.3 m, facing south) sunlight enters through one frosted letterbox window on the back wall: x −1.1..1.1, y 1.495..2.045, wall plane z=−2.0. The sun always sits on the −z side and shines toward +z and down. The camera sits on the +z side looking at that window, so shafts would fall toward the viewer. Everything visual listed here is separate from the DLI calculation. DLI uses built.occluders, luxWins, glazedPanes and plantSlots plus lighting_sim.ppfdSum, never the THREE lights, the shadow maps or the materials. render3d/room.js is dead code (nothing imports it).",
+  "files": [
+   {
+    "path": "C:/Users/pc/Desktop/빛식물/lux-plant-sim/src/render3d/scene.js",
+    "role": "createScene(): WebGLRenderer (antialias:true, pixelRatio min(2,dpr), PCFSoftShadowMap, localClippingEnabled, sRGBEncoding, ACESFilmic exposure 1.1) at :13-21; PerspectiveCamera(34,1,0.1,200) :24; hemi 0x9ab0d0/0x40342e 0.12 :26; ambient 0.04 :27; sun DirectionalLight 0xfff0d8 1.6, 2048 shadow, autoUpdate=false, bias -0.0004 radius 4 :29-58; winLight1 SpotLight intensity 0, dead :67-69; ceilingBulb PointLight 0xffe4b0, 0, dist 14, decay 1.2, fixed at (0,3.4,0) :71-74; 16 skyPortals SpotLight 0xeaf2ff (first 2 cast 512 shadows) :86-97. updateLight(ctx,t,ceilingMode) :104-181 runs background :106, new Fog every call :107, sun dir/pos :117-121, shadow cam ±12 :124-126, sun intensity s.intensity*1.55 :127 and warm colour :128, portal placement/intensity/colour :141-151, hemi/ambient :157-159, clear-glass sky tint :162-165, ceiling lamp modes :168-173, shadow needsUpdate :176-178. Shared with index.html/main.js and _bj_shot.html."
+   },
+   {
+    "path": "C:/Users/pc/Desktop/빛식물/lux-plant-sim/src/game/room_view.js",
+    "role": "Game room view (10,144 lines): owns renderer usage, loop, resize, camera, all game-specific light overrides, brightness, room assembly. Header :26 says it only READS render3d/**."
+   },
+   {
+    "path": "C:/Users/pc/Desktop/빛식물/lux-plant-sim/src/render3d/house.js",
+    "role": "buildHouse(): room shell, window/door openings (rectMinus), frames+glass (trims), furniture, lamp-rig PointLights (:832), sills, occluders/colliders/plantSlots/luxWins, shadow policy, wall stubs, cutaway updateShellVisibility (:1195) and setShadowOnly (:1251)."
+   },
+   {
+    "path": "C:/Users/pc/Desktop/빛식물/lux-plant-sim/src/render3d/textures.js",
+    "role": "Procedural canvas textures. faintGrainTexture (:67-77, 128px near-white 247-255, sRGB, anisotropy 4) is the only one the game uses. Old brick/wood/fabric (:7-45) and PNG loadHouseTextures (:79-90, assets/house/textures/*.png exist) are unused by the game."
+   },
+   {
+    "path": "C:/Users/pc/Desktop/빛식물/lux-plant-sim/src/render3d/window_frame.js",
+    "role": "Code-built window frames/doors/glass. FRAME_DEFAULTS FT 0.09 depth 0.14 (:15-28); cached frameMaterial (:55-65); cached glassMaterial per type (:70-100, frosted :82-84 transmission .4 rough .95 opacity .82 transparent depthWrite false; skyTint only for clear :97); buildWindowFrame letterbox vertical bars (:138-182)."
+   },
+   {
+    "path": "C:/Users/pc/Desktop/빛식물/lux-plant-sim/src/render3d/shadow_policy.js",
+    "role": "Only writer of castShadow (applyShadowPolicy :47; sets receiveShadow=true on all meshes). Roles BLOCK/CLEAR/HIDDEN. auditShadowCoverage (:89) checks that shells still block light."
+   },
+   {
+    "path": "C:/Users/pc/Desktop/빛식물/lux-plant-sim/src/render3d/util.js",
+    "role": "col/mix/hx colour helpers; mat() MeshStandardMaterial; box() (BoxGeometry, marks BLOCK, UVs 0..1 per face)."
+   },
+   {
+    "path": "C:/Users/pc/Desktop/빛식물/lux-plant-sim/src/render3d/lighting_viz.js",
+    "role": "Diagnostic heatmaps. buildCellHeatmap (:185, MeshBasic, vertexColors, transparent, toneMapped:false, renderOrder 1) is used by the game's light-distribution overlay. buildFloorHeatmap (:21, depthTest false, renderOrder 999) belongs to main.js."
+   },
+   {
+    "path": "C:/Users/pc/Desktop/빛식물/lux-plant-sim/src/render3d/light_grid_labels.js",
+    "role": "Heatmap + DOM number labels. hookRender (:420-425) monkey-patches ctx.renderer.render to call labels.update(); tick() (:509) is the manual alternative when opt.hookRender===false."
+   },
+   {
+    "path": "C:/Users/pc/Desktop/빛식물/lux-plant-sim/src/render3d/lighting_sim.js",
+    "role": "Pure PPFD/energy/photoperiod math with no THREE (the one 'THREE' is a comment). Simulation, not visual. Do not touch."
+   },
+   {
+    "path": "C:/Users/pc/Desktop/빛식물/lux-plant-sim/src/engine/daylight.js",
+    "role": "daylight(t 0..100) returns {alt, az, sky rgb, label, daytime, intensity=alt, warm}. Visual sun/sky only. Best source for time-of-day grade parameters (room_view passes daylightT*100)."
+   },
+   {
+    "path": "C:/Users/pc/Desktop/빛식물/lux-plant-sim/src/game/outside.js",
+    "role": "Decorative alley plus neighbour rooms. MeshBasicMaterial with vertex colours, no lights, no shadows, no raycast. HAZE colours :106-107 and DIM :116 are tuned so the view outside stays darker than the room floor. Overrides mesh.updateMatrixWorld (:902, :1192) to recolour and animate the alley walker once per renderer.render."
+   },
+   {
+    "path": "C:/Users/pc/Desktop/빛식물/lux-plant-sim/src/game/light_adapter.js",
+    "role": "Lux engine. build() (:109-122) calls buildHouse with its own GRAIN (:63). This is the `built` the game renders (room_view.js:1085)."
+   },
+   {
+    "path": "C:/Users/pc/Desktop/빛식물/lux-plant-sim/game.html",
+    "role": "Host page. Loads three r128 as globals at :34-35 (CDN fallback :36-43); the room canvas is at :1790 (CSS :122); the brightness slider is at :2549-2553 with its handler at :6729-6749; boots the room view at :11915-11929; the idle clock that drives setDaylight every frame is at :15564-15589; dialogue on/off toggles #stage.talking at :11667 and :11638."
+   },
+   {
+    "path": "C:/Users/pc/Desktop/빛식물/lux-plant-sim/data/house_rooms.json",
+    "role": "banjiha room def (:12): size 5x4x2.3, facing south, wall w_concrete (:18), window back cu0 cy1.77 w2.2 h0.55 preset win_semi_letterbox (:30), door front cu-1.6. Sill shelf furniture at (0, y1.55, -1.85). DATA: do not edit."
+   },
+   {
+    "path": "C:/Users/pc/Desktop/빛식물/lux-plant-sim/data/room_finishes.json",
+    "role": "banjiha finishes: w_concrete #cdd0d4 r.96 (:62), f_cement #c6c7c8 r.9 no pattern → GRAIN (:150), c_concrete #d3d5d8 (:194)."
+   },
+   {
+    "path": "C:/Users/pc/Desktop/빛식물/lux-plant-sim/data/window_presets.json",
+    "role": "win_semi_letterbox (:7): letterbox 3 cols, frosted glass, transmittance 0.70 (confirmed balance value, used by DLI)."
+   },
+   {
+    "path": "C:/Users/pc/Desktop/빛식물/lux-plant-sim/vendor/three/postprocessing",
+    "role": "Untracked r128 examples/js global passes (EffectComposer, RenderPass, ShaderPass, MaskPass, SSAOPass, SAOPass, UnrealBloomPass) plus ../shaders (Copy, GammaCorrection, FXAA, Vignette, ColorCorrection, SSAO, SAO, DepthLimitedBlur, LuminosityHighPass, UnpackDepthRGBA) and ../math/SimplexNoise.js. They register on window.THREE. Nothing loads them yet."
+   },
+   {
+    "path": "C:/Users/pc/Desktop/빛식물/lux-plant-sim/src/render3d/room.js",
+    "role": "Legacy procedural room. Not imported anywhere, so ignore it."
+   }
+  ],
+  "hooks": [
+   {
+    "what": "Load post-processing scripts (global THREE.* classes)",
+    "where": "game.html:34-35 (and CDN fallback block :36-43)",
+    "how": "Add <script> tags after three.min.js/GLTFLoader for vendor/three/math/SimplexNoise.js (SSAO needs it), shaders/CopyShader, GammaCorrectionShader, FXAAShader, VignetteShader, LuminosityHighPassShader, SSAOShader/SAOShader and friends, then postprocessing/EffectComposer, RenderPass, ShaderPass, MaskPass, UnrealBloomPass, SSAOPass/SAOPass. Order matters: shaders before passes. These files are untracked, so they must be committed. The CDN fallback only covers three+GLTFLoader, so guard with `if (THREE.EffectComposer)` and fall back to a plain render."
+   },
+   {
+    "what": "Create the EffectComposer (once per view)",
+    "where": "src/game/room_view.js:745-751 (right after `const ctx = createScene(canvas)` and the phone shadow budget)",
+    "how": "ctx.renderer/ctx.scene/ctx.cam are ready here. Build the composer with RenderPass (or SSAOPass, which renders beauty itself), then bloom, a single combined grade+vignette+gamma(+FXAA) ShaderPass. Store it on a closure var (e.g. ctx.composer). Honour the dpr>=2 context (antialias false, :707-713) and the WebGL1 fallback path (:725-743) by feature-gating SSAO (it needs DepthTexture + float noise)."
+   },
+   {
+    "what": "Replace the draw call (the EffectComposer wrap point)",
+    "where": "src/game/room_view.js:5230 (loop), :9647 (view.redraw), :10128 (boot first frame)",
+    "how": "Route all three `ctx.renderer.render(ctx.scene, ctx.cam)` calls through one drawFrame() that does `composer ? composer.render() : ctx.renderer.render(...)`. Keep updateCam() before it. Tests and probes call view.redraw(), so it must use the same path or screenshots will differ."
+   },
+   {
+    "what": "Resize / pixel ratio sync",
+    "where": "src/game/room_view.js:5343-5358 (resize: setPixelRatio :5351, setSize(w,h,false) :5352) and autoQuality :5336",
+    "how": "After renderer.setPixelRatio/setSize call composer.setPixelRatio(pxRatio) + composer.setSize(w,h) and resize SSAO/bloom passes. autoQuality steps pxRatio down through PX_STEPS [1.75,1.5,1.25,1.0,0.85] (:5320) and never back up, so apply the same change to the composer there. Resize is triggered by ResizeObserver/window resize (:5360-5365)."
+   },
+   {
+    "what": "Dispose post-processing",
+    "where": "src/game/room_view.js:10060-10106 (before ctx.renderer.dispose() :10093 / forceContextLoss :10104)",
+    "how": "Dispose composer render targets and pass materials here. game.html remountRoomView (:12172) destroys and recreates the whole view on room change, so there must be no module-level composer."
+   },
+   {
+    "what": "Time-of-day visual driver (grade, shaft intensity, lamp warmth, window glow)",
+    "where": "src/game/room_view.js:4900-5042 applyDaylight (append just before `needsRender = true` at :5040); daylightT at :810; view.setDaylight at :9654",
+    "how": "applyDaylight runs on every setDaylight, every brightness change and every assemble. Read daylightT (0=midnight, 0.5=noon; isDay 0.30-0.78 at :4906) and call daylight(daylightT*100) from src/engine/daylight.js:15 for {alt, az, warm, sky, label}. After updateLight, ctx.sunLight.position is the sun direction ×18 (scene.js:117-121), ctx.sunLight.intensity is already ×SUN_BOOST (0 at night) and ctx.sunLight.color is the warm-mixed colour. Push these into grade uniforms, shaft/dust opacity and colour, and bloom strength. It is called every frame by the idle clock, so keep it allocation-free."
+   },
+   {
+    "what": "Brightness slider ('화면 밝기')",
+    "where": "game.html:2549-2553 (range #brightRange 60-220%) and game.html:6729-6749 (bindBrightness calls roomView.brightness(v)); src/game/room_view.js:587-593 (BRIGHT_KEY 'byeot.brightness', MIN 0.6, MAX 2.2, default 1.5 from localStorage), :9665-9672 (brightness API → applyDaylight), :4956 (`ctx.renderer.toneMappingExposure = GAME_EXPOSURE(0.72) * userBright`)",
+    "how": "Exposure is set only at :4956 (and at :4911 when lightPolicy is 'house'). r128 applies ACES tone mapping inside each material shader, even when drawing into a composer render target, so the slider keeps working as long as renderer.toneMapping stays ACES. If the grade pass takes over tone mapping, feed userBright into that pass's uniform at :4956 instead."
+   },
+   {
+    "what": "Room shell materials (walls / floor / ceiling) — swap in procedural wallpaper, linoleum or concrete",
+    "where": "src/game/room_view.js:1099 (`dimRoomMaterials(built)` inside assemble; also reached from rebuildRoom :6729 and refreshFurniture :7272). Materials are made in src/render3d/house.js: surfaceMat :35-39; floor :498-508 (finishTexture(floorPattern) || GRAIN at :499); ceiling :529-535 (glass-ceiling variant :511-528); solid walls :585-588 (one new material per wall); glass-wall remainder :580-582; partitions :656; sills :891; cutout walls :978. Wall-stub clones are made at house.js:1282 and stored in shells[k].userData.stub.list",
+    "how": "Traverse built.shells (floor, ceiling, back/front/left/right, part_*, cut_*) right after :1099 and replace or augment material.map/normalMap/roughnessMap. Each wall must keep its own material instance, because cutaway toggles colorWrite/depthWrite per material (house.js:1251-1259). Also update the stub materials in userData.stub.list (they were cloned at build time). Update or clear m.userData.__rvBaseColor so dimRoomMaterials (room_view.js:662-678) does not dim twice. Box UVs are 0..1 per face, so wall pieces of different sizes stretch the texture: generate world-space UVs per piece or use a triplanar shader. finishTexture patterns (plank/tile/tile2, house.js:154-230) show the canvas-texture style already in use."
+   },
+   {
+    "what": "Light shafts + dust from the basement window",
+    "where": "Attach next to buildOutside at src/game/room_view.js:1108 (the outside pattern is :980-996: attach to ctx.scene directly, dispose in assemble at :1067). Window data comes from built.luxWins (house.js:466-476: wall, cu, cy, w, h, tau), built.windows / winPos (house.js:646, :958 → room_view.js:1130) and the frame depth FRAME_DEFAULTS (window_frame.js:15-28). Per frame, update inside applyDaylight (room_view.js:4900-5042). Hide when the window wall is stubbed: house.js:1190 wallIsStub(camPos, center, normal), or check built.trims[wall].visible (set at house.js:1243 from updateCam room_view.js:1626)",
+    "how": "For banjiha the opening is x −1.1..1.1, y 1.495..2.045, on the back wall plane z=−2.0 (wall is z −2.1..−1.9). The glass inner pane is 2.02×0.37 with two vertical mullions at x≈±0.34 (letterbox cols 3). The sun travels along −normalize(ctx.sunLight.position), toward +z and down. Elevation is el=0.25+alt*0.9 rad (scene.js:110), so the shaft reaches about 0.66 m into the room at noon. Build a shaft volume by extruding the window quad along that direction to the floor or sill: additive, depthWrite false, fog false, raycast=()=>{}, castShadow false, name it like the __outside meshes. Keep it OUT of built.room (raycasts and blobs traverse it) and out of houseGroup (cleared at :1069), or re-add it after every assemble. Fade by ctx.sunLight.intensity and dot(sunDir, window outward normal)."
+   },
+   {
+    "what": "Warm lamp light (ceiling bulb + placed fixtures)",
+    "where": "src/game/room_view.js:4934-4943 (ceilingBulb ×BULB_K 0.45, distance from room box, decay BULB_DECAY 1.6, clShade emissive 0.14) and :5025-5039 (lamp rigs: RIG_GROW 0.34 / RIG_LAMP 0.55, distance/decay, shade emissive 0.85); constants :612, :643; rig PointLights created at house.js:832-835 (castShadow false); clShade found at room_view.js:1132-1135; lamp shade meshes/emissive in furniture_pastel.js (e.g. :395-397, :438-441, :987-989)",
+    "how": "Tune colour and warmth, and add emissive/bloom on lamp shades, AFTER these lines. Do not change which lamps are on: lampIsOn / lampSw / lampClock logic feeds the electricity accounting. Note that ceilingBulb stays at scene.js:72 y=3.4, which is above the banjiha ceiling slab (2.3-2.5). In lean shadow mode it casts no shadow and shines through the slab."
+   },
+   {
+    "what": "Window glow / frosted glass look",
+    "where": "src/game/room_view.js:1131 (ctx.glassMeshes = built.glassMeshes); frosted glass material at window_frame.js:82-84 (cached in _glassCache :69); scene.js:162-165 tints only skyTint glass",
+    "how": "Add emissive or colour driven by time of day in applyDaylight. The glass material is shared through the cache across rooms and windows, so clone it before mutating. dimRoomMaterials skips transparent materials with opacity <0.95 (room_view.js:672)."
+   },
+   {
+    "what": "Background / outside darkness consistency",
+    "where": "src/game/room_view.js:4963-4966 (background and fog lerped 0.72 toward 0x14101c); src/game/outside.js:106-116 (HAZE_DAY 0x23242f, HAZE_NIGHT 0x14101c, DIM 0.80/0.90)",
+    "how": "A vignette or grade must keep the room as the only bright island. outside.js is tuned so the view outside stays darker than the room floor (luma 103.8, outside.js:113-116); re-measure with tools/probe_outside.mjs after grading."
+   },
+   {
+    "what": "Camera nudges on dialogue / harvest",
+    "where": "src/game/room_view.js setCam :1558-1571 (tween, CAM_TWEEN_MS 560 at :183), stepTween :1602, updateCam :1614-1632, focusSlot :9262, frameRoom :1497; actions actAt :8990 / ACT_SPEC :8252 (harvest clips :8175-8176); dialogue toggles game.html:11667 (add 'talking') / :11638 (remove)",
+    "how": "Expose a small view API that offsets cam.target/dist through setCam(goal,false,ms), so needsRender and tween drive the redraw. updateCam already handles cutaway and the outside/neighbours per frame. Keep EL_MIN/EL_MAX (:197) and the zoom limits."
+   },
+   {
+    "what": "Heatmap label render hook (conflicts with composer)",
+    "where": "src/render3d/light_grid_labels.js:420-425 (wraps ctx.renderer.render); attached from src/game/room_view.js:6606-6612",
+    "how": "With a composer, renderer.render runs once per pass, so labels.update() fires several times per frame. Pass hookRender:false at :6606 and call heatView.tick() once after composer.render() in drawFrame. Also exclude the heatmap (and ghost/guide rings) from grading and bloom, or turn grading off while the overlay is on: its colours must match the DOM legend (heatColorHex)."
+   }
+  ],
+  "constraints": [
+   "Do not change light-simulation inputs: built.occluders, luxWins (tau, evScale, skyViewK), glazedPanes, plantSlots (slotId = uid:i, maxPotD, occIdx), colliders, doorways; house.js dimensions CW/CD/CH/WT(0.2)/GRID(1)/SILL_GRID(0.25); wallURange (colliders + glass-wall lux width) as opposed to wallDrawRange (visual only); data/*.json (house_rooms, room_finishes, window_presets tau 0.70 for win_semi_letterbox, lighting_presets, shading_presets); lighting_sim.js; engine/daylight_lux.js; light_adapter.build.",
+   "The comments label these as screen-only and tuned by measurement with probes; changing them moves probe numbers but not DLI: SUN_BOOST/PORTAL_BOOST 4.2 (room_view.js:565), DAY_FILL_CUT, NIGHT_* (:566-567), GAME_EXPOSURE 0.72 (:568), BULB_K/DECAY/EMISSIVE (:612), RIG_GROW/RIG_LAMP (:643), BLOB alphas (:651), ROOM_DIM 0.62/FURN_DIM 0.78 (:556), sun shadow bias +0.0002 (:781).",
+   "castShadow is written only by shadow_policy.applyShadowPolicy (plus the cutaway code in house.js updateShellVisibility/setShadowOnly). Hidden walls and the ceiling stay visible=true with colorWrite/depthWrite false so they keep blocking the sun. Never set visible=false on shells while a shadow map may render (the documented ceiling-leak bug). Glass and trims have the CLEAR role.",
+   "Shell userData contract: normal, center, plane, partition, _h, _stub, stub{list,visible}; mesh flags isStub, isDoor, isBlobShadow; shells keys floor/ceiling/back/front/left/right/part_*/cut_*; built.trims per wall.",
+   "Furniture group userData contract (GLB replacements must keep it): furnIdx, uid, type, size{w,h,d} (drives occluders and colliders), slots, tier_max_pot_d, occIdx, movable, mount, hangFromCeiling, fixed, and lampShade, which must be a DIRECT child (room_view.js:1134, main.js:116).",
+   "Visual-only meshes (shafts, dust, props) must follow the outside.js safety rules: no real lights, castShadow false, raycast no-op, and not inside built.room (tap/surface raycasts and furniture blobs use it). Existing names __outside, __outside_far and __nbr are expected by probes.",
+   "view API names and return shapes are used by game.html and tools: brightness() → {value,min,max,base}, setDaylight(t01) returns the Korean label (paintWhen), setLightPolicy('house'|'game'), setShadowBudget('lean'|'full'|'none'), redraw(), stats() (fps, pixelRatio, triangles, calls), three (ctx), setOutside/setNeighbors/outsideInfo/neighborInfo, resize. localStorage key 'byeot.brightness' with range 0.6-2.2 and default 1.5.",
+   "ctx fields read by tools/tests: renderer, scene, cam, hemi, ambient, sunLight, winLight1, ceilingBulb, skyPortals, skyWins, winPos, glassMeshes, clShade. tools/test_outside.mjs compares sun/hemi/ambient intensity, sun colour and toneMappingExposure with the outside on and off, and they must match. tools/test_perf_budget.mjs reads skyPortals castShadow, sun mapSize and shadow camHalf. window.__sunShadow, __sunLight and __cam are set at room_view.js:786-787.",
+   "render3d/* is shared with index.html (src/main.js house tool) and _bj_shot.html. room_view.js:26 declares render3d read-only from the game side. lightPolicy 'house' (room_view.js:4907-4916, :9676) is the measurement baseline and must stay equal to scene.js defaults, with exposure 1.1.",
+   "Turn contracts, game rules, placement grid (GRID_UNIT 0.05, GRID_CELL 0.25, SNAP_DIV 2, MOVE_STEP), headroom and slot logic in room_view/place.js must not change; only draw/material/light-appearance code changes."
+  ],
+  "risks": [
+   "SSAO/SAO depth-normal override pass will draw the 'hidden' walls and ceiling. Cutaway hides them with colorWrite=false/depthWrite=false while keeping visible=true (house.js:1251-1259), and SSAOPass.renderOverride uses scene.overrideMaterial (MeshNormalMaterial), which ignores that. With the camera looking down, the ceiling and camera-facing walls cover the room in the SSAO depth buffer and the AO is lost or wrong. The fix is to set visible=false on colorWrite=false meshes (and to skip glass, heatmap, blob and ghost meshes) only around the normal pass, after the beauty pass has already consumed shadow needsUpdate. Otherwise the sun leaks through the ceiling.",
+   "r128 applies tone mapping inside material shaders even when rendering into a render target, but writes LINEAR encoding into targets (outputEncoding comes from the target texture). The composer therefore needs a final GammaCorrection/LinearToSRGB step. With the default 8-bit RGBA targets, a dark basement stored linearly will band badly in the shadows. Use HalfFloatType targets on WebGL2 (with a fallback) or an sRGB-encoded first target.",
+   "Rendering into composer targets loses MSAA. Desktop currently gets antialias:true; phones already have AA off (room_view.js:707-713 creates webgl2 with antialias:false when dpr>=2). Add FXAA/SMAA, or WebGLMultisampleRenderTarget on WebGL2 desktop only.",
+   "light_grid_labels hookRender (light_grid_labels.js:420-425) and outside.js updateMatrixWorld overrides (outside.js:902, :1192) run on EVERY renderer.render. SSAOPass calls render twice per frame (beauty + normals) and traverses the scene twice to cache visibility. That double-applies the outside day colours, halves the alley-walker warmup, and can trigger its `dt<=0` gap reset (outside.js:910) when timers are coarse. Labels also update several times per frame.",
+   "autoQuality (room_view.js:5322-5341) permanently lowers the pixel ratio when busy-window fps < 24 for 1 s. Heavy post work will push phones down to 1.0 or 0.85 and the ratio never recovers. Add post-effect tiers that are dropped before resolution, and keep the composer pixel ratio in sync.",
+   "The idle game clock calls setDaylight every rAF (game.html:15581), and applyDaylight sets needsRender=true unconditionally (room_view.js:5040). The room therefore renders at about 30fps continuously while the clock runs, so post-processing cost is paid all the time, not only on interaction. The clock pauses only during dialogue, the guide, the day-transition animation or a hidden tab.",
+   "scene.js:107 creates a new THREE.Fog on every updateLight call, which is every frame. In r128 `material.fog && cachedFog !== scene.fog` forces a program-cache-key recomputation for every fog-enabled material every frame, a CPU hotspot that grows with the number of scene renders. Fog near/far is ≥30/120 m (room_view.js:5018-5021), so fog has no visible effect in the room.",
+   "Shader light count is large: 1 dir + hemi + ambient + 16 skyPortals SpotLights (intensity 0 for all but one in banjiha) + ceilingBulb + up to 4 lamp-rig PointLights. Every MeshStandardMaterial fragment loops over all of them. That already costs fill rate before post is added. Setting visible=false on unused portals removes them from the shader (visual-only), but changing the light count forces a shader recompile.",
+   "Probes and tests measure screen luminance (e.g. floor 103.8, outside darker than floor, lamp pools) and some call r.render(scene, cam) directly (tools/test_perf_budget.mjs:48, :210-214), bypassing the composer. renderer.info resets on every render call, so stats().calls/triangles (room_view.js:9831) would report only the last full-screen pass. Tools: probe_room_light, probe_lampswitch, probe_corner, probe_outside, test_outside, test_roomview_perf, test_perf_budget, _probe_roomshot.",
+   "The WebGL1 fallback (room_view.js:725-743) may leave SSAOPass without DepthTexture or float noise textures. Two WebGL contexts run at once (room + plant_grow iframe; comment at :10094-10102), so the extra full-resolution targets (composer 2×, SSAO beauty/normal/depth/ssao/blur, bloom mips) add real GPU memory on phones.",
+   "Procedural shell textures: BoxGeometry UVs are 0..1 per face, and rectMinus wall pieces of different sizes share one material and texture repeat, so wallpaper will stretch unless UVs are rewritten per piece or a world-space/triplanar shader is used. Stub clones (house.js:1282) keep the old material. Module-level cached materials (frameMaterial, glassMaterial, makeGlassMaterial) are shared across walls and rooms; setShadowOnly already mutates the shared frame materials inside partition shells.",
+   "Materials are rebuilt on every furniture move, sale or purchase (assemble via rebuildRoom :6729 and refreshFurniture :7272, using the light engine's prebuilt `built`). Any visual material or texture swap must be reapplied at the :1099 hook and must dispose its own textures, or GPU memory leaks with each rebuild.",
+   "Colour grading and bloom will also tint the diagnostic heatmap (its DOM legend uses heatColorHex), the green/yellow/red slot rings and the ghost previews (GH_OK 0x4aa3ff / GH_NG 0xe8615a). Those are information colours, so exclude them from the grade or skip grading while those overlays are shown.",
+   "The frosted banjiha glass (opacity .82) mostly hides the alley. A sunlit window plus bloom can blow out; the old comments record several rounds of the room being 'too bright', each measured on a phone. Warm lamp tuning must keep the documented night contrast (lamp pool vs corner) that the room_view.js:597-611 comments protect."
+  ],
+  "perf_notes": "Target phone is 390×844 CSS (the PHONE constant, room_view.js:132). The pixel ratio is min(O.maxPixelRatio 1.75, dpr), about 683×1477 ≈ 1.0 Mpx per full-screen pass. autoQuality can step it down through [1.75, 1.5, 1.25, 1.0, 0.85] and never raises it again (room_view.js:5319-5341). The context is webgl2 with antialias:false, alpha:false, stencil:false, high-performance when dpr>=2 (:707-713); desktop keeps scene.js antialias:true. Shadows in the 'lean' budget (default, :4864-4889): only the sun casts. Its map is 1024 (:749) with PCFShadowMap, not Soft (:751), and the shadow camera is tightened to the room (half = max(2.5, diag/2+0.6) ≈ 3.8 m for banjiha, about 7 mm per texel). autoUpdate=false and the map re-renders only when the sun moves more than 0.004 rad (:4976-4984), about every 0.5 s at the normal clock speed. Sky portals and the ceiling bulb do not cast in lean mode. The measured room load is about 103 draw calls and 76k triangles, and a headless render took 1.4 ms (comments at :5061-5062, :5089). Render cadence: idle 10 fps, 18 with a skeletal character idling (ANIM_IDLE_FPS :5136), busy 30 fps (MIN_FRAME_MS :5094), moving 60 fps with backoff to 30 (:5077). Because the idle clock calls setDaylight every rAF, the room normally draws at the busy 30 fps (see risks). setPaused (:5269) stops rAF entirely while plant_grow is open. forceContinuous/setContinuous is used for demos and measurements. Post-processing advice for phones: (1) Fold grade + vignette + gamma + FXAA into ONE ShaderPass, since every full-screen pass costs about 1 Mpx of read and write. (2) Run bloom at half or quarter resolution with a high threshold; tone mapping has already happened in the materials, so bloom sees LDR. (3) SSAO at full resolution is the most expensive option: it re-renders the whole scene for normals and depth and traverses it twice. Prefer half-resolution SAO/SSAO with the hidden-wall handling, or skip AO on phones and rely on the existing blob contact shadows (room_view.js:1203) plus baked or vertex AO. (4) Gate every effect on capability (webgl2, float or half-float render targets, depth texture) and on the autoQuality level, dropping effects before the pixel ratio drops. (5) Use HalfFloat composer targets on WebGL2 to avoid banding in dark areas. (6) Two contexts can be live at once (room + plant_grow iframe), so keep the extra render-target memory small. (7) Dust particles and shaft animation need continuous frames; the clock already supplies about 30 fps, and while it is paused (dialogue) the animation must mark itself as 'moving' in loop() (:5219) the way pulseRings does. Otherwise dust freezes at the 10 fps idle cap."
+ },
+ {
+  "summary": "The game's room (game.html → src/game/room_view.js) is built by render3d/house.js buildHouse(), which walks data/house_rooms.json rooms.banjiha.furniture (11 entries, lines 49-137), merges each with data/furniture_presets.json (`{...preset, ...f}`, house.js:793), and calls the code-only builder furniture_pastel.js buildFurniture(type,p) (1269-1281). That returns a floor-origin THREE.Group of unnamed primitive meshes plus the logical contract on userData: size{w,h,d}, slots[{x,y,z}], tier_heights, tier_max_pot_d, mount, hangFromCeiling, movable, lampShade. Every downstream system uses that userData, not the look. Collision (house.js:813-814 → colliders → floor_nav.js), light-sim occluders (house.js:819-824, OBB from size), plant slots (house.js:928-946, from userData.slots) and lamp rigs (house.js:827-865) are all plain data. The light engine (light_adapter.js:109-168) and 20+ Node tools build the same house headless with no GLTFLoader. room_view renders the SAME `built` object the light engine holds (room_view.js:1083-1086), so adding visual children does not change DLI. BUT room_view's placement layer raycasts the real furniture meshes. surfaceAt (4308-4475), tierRectOf/collectTierRects (3575-3635), surfaceTopAt (6481-6507; used for the heatmap and sit/sleep height at 8858-8861), supportY (2922-2940), pickFurnitureAt (5973-5985) and pickLampRay (4082-4096) all take the plate rectangle from meshRect(hit mesh) (4138-4155), i.e. the hit mesh's local geometry bbox. So a GLB mesh that rays can hit would silently change cell grids, snapping, sit heights and pot fit. The shelf GLBs in assets/furniture/*.glb (28-312 tris, untextured, dimensions differ from the presets) and assets/lamps/*.glb are not loaded anywhere today. Legacy render3d/furniture.js is dead code. decorate.js is used only by the index.html tool (src/main.js:14,320), not the game. The cleanest seam is a render-only \"dress\" pass in room_view.assemble(). It keeps every procedural mesh as an invisible but still raycastable proxy (material swapped to a shared MeshBasicMaterial with visible:false). It adds a GLB normalized and scaled to the proxy's local bbox as a child Group, excluded from raycasts (layers.set(1) plus cam.layers.enable(1)). I checked the r128 vendor code: Raycaster filters by layers only (not material.visible); the render list and shadow pass skip material.visible=false, so they skip the proxies; the shadow pass tests object layers against the main camera, so the layer-1 GLB still casts shadows.",
+  "files": [
+   {
+    "path": "C:/Users/pc/Desktop/빛식물/lux-plant-sim/src/render3d/furniture_pastel.js",
+    "role": "Current furniture builders (code primitives). This is the source of truth for userData.size/slots/tiers. B.bed 187-202, B.desk 205-215, B.chair 218-226, B.dresser 244-267, B.nightstand 341-354, B.lamp_ceiling 429-442, B.shelf_wall (sill pot rest) 499-512, B.shelf_etagere 528-572, growlight_clip/bar/stand 1033-1086. addSlots 71-83, topAxis 118-123 (twin of room_view.surfaceAxis), tierSlots 132-178, shared material cache furnMat 17-30, buildFurniture 1269-1281."
+   },
+   {
+    "path": "C:/Users/pc/Desktop/빛식물/lux-plant-sim/src/render3d/house.js",
+    "role": "Places furniture from roomDef. Sets userData.furnIdx and uid (796-797) and movable (804), y base (806). Pushes colliders (813-814), occluders (819-824), light rigs whose shade is captured from userData.lampShade (827-865, 862) and plantSlots (928-946). Shadow policy is applied once at build (1065-1068). Returns the built object (1070-1073)."
+   },
+   {
+    "path": "C:/Users/pc/Desktop/빛식물/lux-plant-sim/src/game/room_view.js",
+    "role": "The game's 3D view and the only place to hook visuals. Contains: loadGLB cache 497-506, FURN_DIM 556, dimRoomMaterials 662-678, assemble 1046-1172, furniture blobs 1203-1240, tierRectOf/cells 3575-3635, surfaceAxis 3790-3797, meshRect/ownerOf/hiddenInScene 4125-4176, surfaceAt 4308-4475, lamp emissive 5038, render loop 5204-5235, pixel ratio 5319-5352, furnNodes/furnInfo 5761-5971, highlight 6006-6059, furnitureFit/snap 6098-6245, surfaceTopAt 6481-6507, makeFurnGhost 6639-6662, rebuildRoom 6723-6763, lampFit 7149-7194, sit/sleep height 8850-8862, setFurnitureVisible/setGrowLights 10014-10054."
+   },
+   {
+    "path": "C:/Users/pc/Desktop/빛식물/lux-plant-sim/src/render3d/floor_nav.js",
+    "role": "Walk grid (CELL 0.25 at :24). OBB blocked test 35-44, BFS 90-127, pushOut 152-168, setWorld 181-188. It reads only collider data ({x,z,w,d,h,rot,kind}) from house.js; room_view creates it with radius 0.38 (:826) and appends plant boxes (2775-2788). No mesh dependence."
+   },
+   {
+    "path": "C:/Users/pc/Desktop/빛식물/lux-plant-sim/src/render3d/decorate.js",
+    "role": "Room-tool (index.html/src/main.js) furniture editor, not used by game.html. Contains SNAP 0.25 (:21), ghost box from userData.size (75-94), canPlace via colliders and doorways (114-150), pick by userData.furnIdx raycast (168-179). JSON export matches the house_rooms furniture format (325-337)."
+   },
+   {
+    "path": "C:/Users/pc/Desktop/빛식물/lux-plant-sim/src/render3d/furniture.js",
+    "role": "Legacy box furniture. Imported nowhere (src/main.js:10 says it is unused). Ignore."
+   },
+   {
+    "path": "C:/Users/pc/Desktop/빛식물/lux-plant-sim/data/house_rooms.json",
+    "role": "banjiha layout, lines 12-137. Room size 5×4×2.3 (44-48). Furniture x/z/y/rot/uid entries 49-137 (sill d override 0.30 at :55). The frozen DLI tables (measured 141-198, room_profile.banjiha.json) depend on these."
+   },
+   {
+    "path": "C:/Users/pc/Desktop/빛식물/lux-plant-sim/data/furniture_presets.json",
+    "role": "Preset w/d/h and size_m. Entries: bed_single :17, desk :58, chair :88, dresser :132, nightstand :235, lamp_ceiling :291, shelf_sill_pot1 :368, shelf_etagere_3tier :436, growlight_clip :1132, growlight_bar :1151, growlight_stand :1169. The shop reads size_m, and tools/test_furnishop.mjs §A asserts builder size == size_m for all 117 presets."
+   },
+   {
+    "path": "C:/Users/pc/Desktop/빛식물/lux-plant-sim/src/game/light_adapter.js",
+    "role": "Light engine. build() 109-168 calls buildHouse headless-safe and uses only occluders/plantSlots/lightRigs/glazedPanes/size (ctxFor 363-375). Must stay free of GLB loading."
+   },
+   {
+    "path": "C:/Users/pc/Desktop/빛식물/lux-plant-sim/src/render3d/shadow_policy.js",
+    "role": "markShadow/applyShadowPolicy (32-65). castShadow is set only once at build, so GLBs attached later must set shadowRole/castShadow/receiveShadow themselves."
+   },
+   {
+    "path": "C:/Users/pc/Desktop/빛식물/lux-plant-sim/src/render3d/scene.js",
+    "role": "Renderer/camera/lights. sRGB+ACES 1.1 (20-21), sun shadow autoUpdate=false (31), shadow radius 4 (57), updateLight marks shadows needsUpdate (176-178)."
+   },
+   {
+    "path": "C:/Users/pc/Desktop/빛식물/lux-plant-sim/src/game/headroom.js",
+    "role": "Node-side head clearance. Uses occluders and slot y plus SHELF_BOARD_M=0.03, which matches the pastel board thickness. Data only."
+   },
+   {
+    "path": "C:/Users/pc/Desktop/빛식물/lux-plant-sim/assets/furniture/_shelf_meta.json",
+    "role": "Metadata for the unused code-generated shelf GLBs. Dimensions and tiers differ from the presets (etagere 0.72×0.28, tiers 0.074/0.434/0.794 vs builder slot y 0.03/0.412/0.794), so these are not drop-in."
+   },
+   {
+    "path": "C:/Users/pc/Desktop/빛식물/lux-plant-sim/assets/lamps/lamp_desk_mint.glb",
+    "role": "Example Meshy output. Normalized to 2.0 m tall and centered (bbox 0.818×2.0×0.552, min y -1.0), 5,375 tris, 2.5 MB plus a 5.4 MB PNG. Generated furniture will need floor-origin normalization and non-uniform fit."
+   },
+   {
+    "path": "C:/Users/pc/Desktop/빛식물/lux-plant-sim/src/render3d/plant_assemble.js",
+    "role": "Monstera assembler (fetches plant_grow.html, evaluates buildPlant). Plants attach to houseGroup at slot/surface coordinates. They depend on slot y and proxy tops, not on furniture visuals."
+   }
+  ],
+  "hooks": [
+   {
+    "what": "Main seam: dress furniture visuals after the room is built (render path only)",
+    "where": "src/game/room_view.js:1098-1099",
+    "how": "Right after `if (!built || !built.room) throw` and BEFORE `dimRoomMaterials(built)`, call a new render-only `await dressFurniture(built, roomDef, {loadGLB, AT})` from a new module src/render3d/furniture_dress.js. Map each built.furniture child with userData.uid+size to a preset, using roomDef.furniture.find(f=>f.uid===uid).preset (same lookup as furnInfo 5959-5962) or userData.type, then look it up in a new data/furniture_visuals.json (preset → glb, yaw, fit, keep[]). Running before dimRoomMaterials means FURN_DIM 0.78 also applies to the GLB materials. assemble() runs on every rebuild (commitFurnitureAt → rebuildRoom 6729, refreshFurniture 7268-7273, lamp moves 7252), so dress must be idempotent and use the cache."
+   },
+   {
+    "what": "GLB load/cache",
+    "where": "src/game/room_view.js:497-506",
+    "how": "Reuse loadGLB (_glbCache promise + scene.clone(true), so geometry/materials are shared) with AT('../../assets/furniture/gen/<preset>.glb') (AT defined :73). Preload during the boot 'room' progress phase. On load failure, leave the procedural meshes as they are (graceful fallback)."
+   },
+   {
+    "what": "Per-piece fit + proxy hide",
+    "where": "src/render3d/furniture_pastel.js:1269-1281 (read-only reference; do not modify)",
+    "how": "In the dress module: compute the proxy's LOCAL bbox from g's direct child meshes (geometry.boundingBox transformed by child.matrix, excluding g's rotation), not userData.size (bed size.h is 0.94 but the drawn bed is 0.583). Normalize the GLB bbox to min.y=0 and center x/z, apply the spec yaw so the front faces +Z (builder convention: drawer knobs/desk slots at +Z, headboard/chair back at -Z), then scale per axis to the proxy bbox. Wrap it in a Group {name:'dress', userData:{visualOnly:true}} and add it to g, not to g.parent, so rot/position/visibility follow. Only after the GLB is attached, swap each proxy mesh's material to ONE shared `new THREE.MeshBasicMaterial({visible:false})`, keeping the original in userData.__dressOrig. Never set g.visible, never colorWrite=false, never transparent. Skip meshes with glowing emissive materials (lampShade parts)."
+   },
+   {
+    "what": "Exclude GLB meshes from all raycasts",
+    "where": "src/game/room_view.js:745 (after `const ctx = createScene(canvas)`)",
+    "how": "Add `ctx.cam.layers.enable(1)` and set every dress mesh to `layers.set(1)`. The r128 Raycaster tests layers (`t.layers.test(e.layers)&&t.raycast`), so ray, _srfRay (6474) and _dropRay (2921) keep hitting the layer-0 proxies. The shadow pass tests layers against the main camera, so the GLB still casts sun shadows. Layers survive the clone() used by makeFurnGhost/preview; a per-instance `mesh.raycast=()=>{}` does NOT survive clone."
+   },
+   {
+    "what": "Shadows after async attach",
+    "where": "src/render3d/scene.js:31 and :176",
+    "how": "The sun shadow map has autoUpdate=false. After dressing, set GLB meshes castShadow=receiveShadow=true and userData.shadowRole='blocker' (applyShadowPolicy ran once at house.js:1068), then set ctx.sunLight.shadow.needsUpdate=true and needsRender=true."
+   },
+   {
+    "what": "Lamp glow parts (ceiling LED panel, grow-light LEDs)",
+    "where": "src/render3d/house.js:862 and src/game/room_view.js:1133-1135, 5038, 4941",
+    "how": "rig.shade is captured from g.userData.lampShade at build time, and ctx.clShade is found by `o.parent.userData.lampShade === o`. Keep the procedural lampShade mesh visible (as the emissive part) and hide only the other parts. Alternatively, reparent the GLB emissive node as a DIRECT child of g and re-point g.userData.lampShade, built.lightRigs[i].shade and ctx.clShade together. If any one of them is missed, the lamp stays dark at night, and a daytime screenshot will not show it (furniture_pastel.js:404-409)."
+   },
+   {
+    "what": "Move/lamp ghost",
+    "where": "src/game/room_view.js:6639-6662 (makeFurnGhost)",
+    "how": "It clones g and forces every mesh to the translucent ghost material, so proxies and GLB would both show. Inside the clone traverse, add `if (o.userData.visualOnly) o.visible=false` to keep the logical box ghost with edges (≤900 verts), or hide proxies and show the GLB silhouette."
+   },
+   {
+    "what": "Selection highlight (works as-is)",
+    "where": "src/game/room_view.js:6006-6059",
+    "how": "brightenedMat clones materials and uses map as emissiveMap, so GLB textures stay readable; the glowing() skip keeps lamp LEDs untouched. No change needed. Just check that GLB materials are MeshStandardMaterial (GLTFLoader default)."
+   },
+   {
+    "what": "Ground contact blobs (works as-is)",
+    "where": "src/game/room_view.js:1146, 1203-1240",
+    "how": "Box3.setFromObject(g) includes the dress group. If the GLB is fitted to the proxy bbox, the footprint is unchanged. Run dress before 1146, or rebuild blobs after an async attach."
+   },
+   {
+    "what": "Optional data tag (house window owns this file)",
+    "where": "src/render3d/house.js:796-797",
+    "how": "Optional one-liner `g.userData.preset = f.preset` so the dress pass can key on preset without a roomDef lookup. It is data-only and changes no numbers, but touches a file other tools import."
+   },
+   {
+    "what": "Sit/sleep heights come from proxy tops",
+    "where": "src/game/room_view.js:8272-8275, 8856-8861",
+    "how": "surfaceTopAt on the proxy decides the character y (chair seat 0.465, bed duvet top 0.53 minus sink 0.04). The GLB seat/mattress must be modeled or fitted to those heights, or the character floats or sinks visually."
+   },
+   {
+    "what": "Post-processing call sites (other subsystem, but they render these meshes)",
+    "where": "src/game/room_view.js:5230, 9647, 10128",
+    "how": "The three ctx.renderer.render(ctx.scene, ctx.cam) calls need replacing by composer.render. Proxies stay out of SSAO normal/depth passes because r128 builds the render list with `r.visible&&push` before overrideMaterial."
+   }
+  ],
+  "constraints": [
+   "Banjiha logical furniture (builder output, local units, floor origin unless noted) is below. Positions and slot/tier values must stay identical. sill `banjiha-sill` shelf_sill_pot1 → type shelf_wall, pos (0, y1.55, -1.85), size 0.36×0.035×0.30 (d overridden by room data), mount wall, 1 slot at (0, 0.035, 0) → world y 1.585, maxPotD 0.27. bed `banjiha-bed` bed_single → size 1.0×0.94×2.0 but drawn bbox height 0.583, at (-1.9, -0.9), no slots. desk `banjiha-desk` → 1.25×0.74×0.5 at (1.375, -1.5), slots (±0.5, 0.74, 0.125). chair `banjiha-chair` → 0.5×0.89×0.5 at (1.3, -0.85) rot 180, seat top 0.465. dresser `banjiha-dresser` → 1.0×0.8×0.5 at (2.15, 1.4) rot -90, slots (±0.375, 0.8, 0.125). lamp_ceiling → 0.6×0.05×0.6, hangs from ceiling y 2.3, geometry below. etagere `banjiha-etagere` shelf_etagere_3tier → 0.75×0.794×0.25 at (-0.35, -1.72), tier_heights [0.015, 0.397, 0.779], slots at y 0.03/0.412/0.794 × x -0.25/0/0.25. nightstand → 0.5×0.48×0.5 at (0.5, -1.5), slot (-0.125, 0.48, 0.125). growlight_bar → 0.7×0.05×0.06 at y 2.15, mount under-shelf. growlight_clip → 0.2×0.42×0.24 at (1.35, y0.75, -1.5), movable. growlight_stand → 0.45×1.5×0.38 at (-1.15, -0.6), movable.",
+   "Where the dimensions come from: builder defaults in furniture_pastel.js, overridden by data/furniture_presets.json w/d/h, then by house_rooms.json per-room fields (`{...preset, ...f}`, house.js:793). userData.size is canonical, size_m in presets must equal it (tools/test_furnishop.mjs §A, 117 presets rebuilt in Node).",
+   "Do not change or reassign these userData fields: size, slots, tier_heights, tier_max_pot_d, size_m, mount, hangFromCeiling, movable, lampShade, has_light, light_bars, grow, ppfd, coverage, type, uid, furnIdx, occIdx, fixed. They feed colliders, occluders, plantSlots, lightRigs, headroom and slot IDs (`{uid}:{i}`).",
+   "Do not change house_rooms.json banjiha furniture x/z/y/rot/d/uid or preset w/d/h/size_m. room_profile.banjiha.json and measured.slots (sill 3.68, dresser:1 0.04, 15 slots) are frozen; tools/test_measured_fresh.mjs re-measures them.",
+   "furniture_pastel.topAxis (118-123) must stay identical to room_view.surfaceAxis (3790-3797): slot centers sit on cell centers (guideCells snapErr 0). Neither may be touched by visual work.",
+   "Proxy meshes are the raycast truth. They must keep visible=true up the parent chain (hiddenInScene 4125-4128) and a material that is not colorWrite=false and not transparent with opacity<0.95 (surfaceAt usable 4317-4320, surfaceTopAt 6492-6493, supportY 2931-2932). Hide them only with material.visible=false on a separate shared material.",
+   "The group's g.visible is semantic: it marks lamps bought or on (setGrowLights 10026-10054, lampIsOn, blob skip 1210). Visual code must not toggle it.",
+   "A lampShade mesh must be a direct child of g, and g.userData.lampShade must point to it (house.js:862 rig.shade, room_view 1133-1135, 5038). Otherwise lamps do not glow at night.",
+   "furnMat materials are cached and shared across all pieces with the same color+gloss (furniture_pastel.js:17-30). Never mutate them for per-piece looks; clone or replace per mesh.",
+   "No GLB loading in buildFurniture or buildHouse. Both run synchronously in light_adapter.build and in Node tools with a global THREE and no GLTFLoader (test_furnishop, test_banjiha_profile, test_lampmove, test_measured_fresh, test_oneroom_room, etc.).",
+   "Builder orientation: front faces +Z, origin at floor center of the footprint. Rotation comes from house.js g.rotation.y = rot° (dresser -90, chair 180). The GLB wrapper must match this so the parent transform works unchanged.",
+   "Visible top heights a GLB must reproduce (within about 1 cm) so pots and characters don't float or sink: desk 0.74, dresser 0.80, nightstand 0.48, chair seat 0.465, bed duvet about 0.53 (sleep sink 0.04), etagere boards centered 0.015/0.397/0.779 with t=0.03 (headroom.js SHELF_BOARD_M=0.03), sill board top 0.035 with brackets down to -0.11.",
+   "Collision and walking use only colliders from userData.size (house.js:813-814; h>0.20, not hanging, not wall-mounted, not rug). floor_nav CELL 0.25 and body radius 0.38 (room_view 826) are unaffected by visuals and must remain so.",
+   "No global names or mesh .name are read by game code for furniture. game.html touches only room_view APIs (furniture(), furnitureFit, surfaceAt, surfaceTopAt, setFurnitureVisible, setGrowLights), never meshes; view.three exposes ctx (10058)."
+  ],
+  "risks": [
+   "If GLB meshes stay raycastable, meshRect() returns the whole-GLB bbox instead of a single plate. That breaks tierRectOf/collectTierRects (etagere tiers would merge), surfaceAt frames and snapping, cell overlays and sit heights. The browser tests catch it (tools/test_place_grid.mjs, test_roomview_place, test_ground, test_furn_clash, test_lampmove, test_place_confirm, probe_slot_cell/probe_topcell snapErr). Run them after the swap.",
+   "Generated GLBs won't reproduce the exact inner heights: etagere tier y 0.03/0.412/0.794, desk top 0.74, bed duvet 0.53, chair seat 0.465. Proxies keep logic correct, but plants float or sink visually. Keep multi-tier shelves and the sill pot rest procedural (re-materialed), or split the GLB into per-tier nodes and snap each to the builder tier y. Add a probe that casts layer-1 rays at every slot x/z and asserts |GLB top − slot.y| ≤ 0.01.",
+   "Async attach flicker: if proxies are hidden before the GLB clone is attached, the piece disappears for a frame. On a load error the piece vanishes permanently. Attach first, then hide, and fall back to procedural on failure.",
+   "Every furniture move or refresh calls assemble() again with a new built object. The dress pass must re-run each time (cheap with the _glbCache clone). A missed hook leaves the old primitive look after the first drag.",
+   "dimRoomMaterials runs once per assemble (1099; also 9678 on policy switch). A GLB attached after it will be 22% brighter than its neighbors unless the dress runs before it or applies the same __rvBaseColor×FURN_DIM treatment.",
+   "Sun shadow map has autoUpdate=false (scene.js:31). A GLB attached after updateLight won't cast its shadow until the next daylight change, so needsUpdate must be set manually.",
+   "makeFurnGhost (6639-6662) clones g including the dress and forces the ghost material, which gives a double silhouette. The ghost is disposed via disposeObject, which disposes materials. That is safe only because it swaps in gm and marks sharedGeometry; keep that pattern for any new clones of cached GLB scenes.",
+   "Existing assets/furniture/*.glb are code-built lowpoly (28-312 tris, no textures) with different dimensions from the presets. assets/lamps GLBs are Meshy-normalized (2 m tall, centered at y=0). None are drop-in and none are loaded today.",
+   "Pre-existing quirk: ctx.clShade (room_view 1133-1135) keeps the LAST lampShade in traversal. In banjiha that is the growlight_stand LED, not the ceiling panel; the ceiling panel glow is actually driven by rig.shade (5038). Don't break it while re-pointing glow meshes.",
+   "The light-sim occluder for the bed is 1.0×0.94×2.0 while the drawn bed is 0.583 tall. The shadow picture and the DLI already disagree slightly. A new GLB bed can choose either height without changing numbers, but the screen-vs-calc comparisons (tools/_render_vs_calc, probe_corner) may shift.",
+   "The sill pot rest sits inside the letterbox window reveal (window y 1.495-2.045, x ±1.1). An oversized or bracketed GLB will clip the window frame. The documented 0.02 DLI margin concerns occluders only, but the visual should still stay within the proxy bbox.",
+   "Changing furniture_presets.json (e.g. adding visual keys) is tested by test_furnishop against size_m. Put visual mapping in a separate data file so the preset canon isn't touched."
+  ],
+  "perf_notes": "Renderer: scene.js creates WebGLRenderer(antialias:true) with setPixelRatio(min(2,dpr)), PCFSoft, sRGB output and ACES exposure 1.1 (scene.js:13-21). room_view overrides this for phones. On dpr≥2 it pre-creates a webgl2 context with antialias:false, stencil:false, alpha:false (room_view 707-713), so there is no MSAA on phones and an FXAA/SMAA pass is needed if post is added. Shadow type is PCFShadowMap (751), sun map 1024 (749), ceilingBulb 512 (750). Shadow mode 'lean' is the default: only the sun casts; sky portals and ceiling cube are off (4864-4889); the sun shadow camera is fitted to the room. Shadow maps are manual (autoUpdate=false, needsUpdate in updateLight scene.js:176-178). Pixel ratio = min(maxPixelRatio 1.75, dpr). autoQuality steps it down through [1.75, 1.5, 1.25, 1.0, 0.85] after two 500 ms windows below 24 fps (5319-5341); resize at 5343-5352. A composer must mirror setPixelRatio/setSize in both places. The render loop is on-demand (needsRender) with fps caps: idle 10, idle with a skeletal character 18, busy 30, move 60 with backoff (5054-5136). Continuous effects (dust motes, light-shaft shimmer) will force frames and fight the battery policy, so animate them at the idle cap or bake the motion. Render call sites to replace with a composer: 5230 (loop), 9647 (redraw), 10128. Current banjiha cost is about 103 draw calls / 76k tris (room_view comments 5089, 5102); the furniture builders total about 2.2k tris for 11 pieces. Meshy GLBs run about 5k+ tris with 2-5 MB textures (lamp_desk_mint 5,375 tris, 2.5 MB GLB + 5.4 MB PNG). Suggested phone budget: ≤10-15k tris per hero piece, one merged material per piece (one draw call), 1024 px (or smaller) textures embedded as JPEG/WebP, furniture total ≤100k tris. tools/test_perf_budget.mjs asserts the furniture blob stays 1 draw call and siru draw calls stay 47±6; tools/test_roomview_perf.mjs measures 390×844 dpr2 at CPU×4. Post-processing is vendored but not wired: vendor/three/postprocessing/{EffectComposer, RenderPass, SSAOPass, SAOPass, UnrealBloomPass, ShaderPass}; shaders {FXAA, Vignette, ColorCorrection, GammaCorrection, CopyShader}. At 390×844×1.75 (~683×1477 px), full-res SSAOPass re-renders the scene for normals and depth. Prefer half-res SAO/SSAO or rely on the existing contact blobs, and half-res bloom. Proxies with material.visible=false are skipped in those extra passes: r128 builds render lists with `material.visible&&push` before overrideMaterial, and the shadow pass also checks material.visible. Layer-1 dress meshes render only because cam.layers.enable(1). Verify r128 composer output handling: a RenderPass into a render target writes linear output (outputEncoding applies only to the default framebuffer), so a final GammaCorrection/output pass is needed to match the current sRGB+ACES look."
+ },
+ {
+  "summary": "The room is drawn by one module, src/game/room_view.js (createRoomView, line 690). It calls createScene (src/render3d/scene.js:12) and shows the same `built` object the light engine assembled (room_view.js:1083-1087 → light_adapter.build → house.js buildHouse). game.html hosts it as window.__rv (game.html:12019). tools/room_view_demo.html hosts it as window.view (demo:381); that page loads three r128 from the CDN (demo:11-12), so the demo-based tests need internet. There are three render call sites, all a direct ctx.renderer.render: the loop (room_view.js:5230), view.redraw() (9647, which headless tests call before every pixel read and screenshot) and the first boot frame (10128). No post-processing is wired anywhere yet. A worker already copied EffectComposer, RenderPass, ShaderPass, SSAOPass, SAOPass, UnrealBloomPass and some shaders into vendor/three/postprocessing, vendor/three/shaders and vendor/three/math (all dated today), but no page loads them. The light numbers (DLI) never read meshes or materials. They use data only: house.js occluders (built from userData.size, house.js:813-824), plantSlots (userData.slots, 928-946), luxWins and lightRigs. So visual swaps are safe as long as each furniture Group keeps its userData. The weak spot is room_view: free placement, the top-surface grid, drop support and furniture/lamp picking all raycast the real primitive meshes (surfaceAt 4308, meshRect 4138, tierRectOf 3575, surfaceTopAt 6481, supportY 2921, pickFurnitureAt 5973, pickLampRay 4080). A free-placed pot's y therefore comes from mesh geometry and goes straight into dliAt. The tests that depend on the rendered room fall into three groups. (1) Browser tests on the demo page that read the scene graph, renderer.info or canvas pixels: test_lampswitch, test_ground, test_outside, test_roomview_place, test_place_grid, test_roomview_walk, test_perf_budget, test_roomview_perf, test_multisiru, test_musun_view. (2) Browser tests on game.html that tap on-screen positions: test_uiwire, test_quiet, test_place_confirm, test_siru_pick, test_dawn6, test_guide_notes, test_sfx and others. (3) Node tests that build the house or import room_view.js headlessly against a stub canvas: test_snap, test_furn_size, test_furnishop, test_lampmove part 1, test_measured_fresh, test_floorlight and others. I ran the relevant subset today on a stock checkout and recorded which tests were already red before any visual work (listed in perf_notes).",
+  "files": [
+   {
+    "path": "C:/Users/pc/Desktop/빛식물/lux-plant-sim/src/game/room_view.js",
+    "role": "The whole 3D room view: renderer, loop, raycast picking, placement, furniture highlight, characters, daylight grading, public API (view object at 9340; `get three()` returns ctx at 10058). All visual hooks live here."
+   },
+   {
+    "path": "C:/Users/pc/Desktop/빛식물/lux-plant-sim/src/render3d/scene.js",
+    "role": "createScene: renderer (ACES, sRGB, PCFSoft, localClipping), lights hemi/ambient/sunLight/ceilingBulb/16 skyPortals. Tests read these by key (sunLight, hemi, ambient, ceilingBulb, skyPortals, skyWins, glassMeshes, cam, renderer, scene). updateLight is the base time-of-day color."
+   },
+   {
+    "path": "C:/Users/pc/Desktop/빛식물/lux-plant-sim/src/render3d/house.js",
+    "role": "buildHouse: walls/floor/sills (surfaceMat 35, floor 496-500), furniture groups (791-876), occluders, plantSlots (928-946). Shared with the light engine and with Node tests; editing it trips the test_measured_fresh suspicion list."
+   },
+   {
+    "path": "C:/Users/pc/Desktop/빛식물/lux-plant-sim/src/render3d/furniture_pastel.js",
+    "role": "buildFurniture (1269): synchronous primitive builders that set userData.size, slots, tier_max_pot_d, lampShade, hangFromCeiling, mount. This is the size and slot contract; Node tests call it directly."
+   },
+   {
+    "path": "C:/Users/pc/Desktop/빛식물/lux-plant-sim/src/render3d/light_grid_labels.js",
+    "role": "Light heatmap overlay plus DOM number labels. hookRender (418-425) monkey-patches ctx.renderer.render to reposition labels after each render."
+   },
+   {
+    "path": "C:/Users/pc/Desktop/빛식물/lux-plant-sim/src/render3d/shadow_policy.js",
+    "role": "markShadow/applyShadowPolicy: new meshes need a shadowRole. Untagged meshes only produce a console.warn."
+   },
+   {
+    "path": "C:/Users/pc/Desktop/빛식물/lux-plant-sim/src/game/light_adapter.js",
+    "role": "Light engine. Calls buildHouse (113) and uses built.plantSlots/occluders/luxWins/lightRigs only. Imported headlessly by many Node tests."
+   },
+   {
+    "path": "C:/Users/pc/Desktop/빛식물/lux-plant-sim/src/game/sfx.js",
+    "role": "SFX voices. SPEC (56-71) and NAMES must stay exactly 6 for test_sfx."
+   },
+   {
+    "path": "C:/Users/pc/Desktop/빛식물/lux-plant-sim/game.html",
+    "role": "Host. three via vendor script tags (34-35, CDN fallback 40-42). bootRoomView (11915), window.__rv and debug hooks (12019-12119), dlgOpen (11722), doAct (8746), harvest button (15745), FACE_FILE portraits (read by test_dialogue_coverage)."
+   },
+   {
+    "path": "C:/Users/pc/Desktop/빛식물/lux-plant-sim/tools/room_view_demo.html",
+    "role": "Test host for the demo-based browser tests. Loads three from the CDN (11-12), exposes window.view (381) and window.engine (350). Any new global three script (EffectComposer etc.) must be added here too, or room_view must degrade gracefully."
+   },
+   {
+    "path": "C:/Users/pc/Desktop/빛식물/lux-plant-sim/tools/test_cdp.mjs",
+    "role": "Headless Chrome over CDP with SwiftShader GL (--use-angle=swiftshader). Default 390x844 at dpr 2. page.shot = Page.captureScreenshot."
+   },
+   {
+    "path": "C:/Users/pc/Desktop/빛식물/lux-plant-sim/tools/test_lampswitch.mjs",
+    "role": "Pixel luminance under a grow lamp via redraw()+drawImage (33-52, B-3 at 157). Exact grow PointLight intensity 0.34 (B-1 154, C-4 182), found by position match (57-63). Lamp tap by raycast (E-1 241)."
+   },
+   {
+    "path": "C:/Users/pc/Desktop/빛식물/lux-plant-sim/tools/test_outside.mjs",
+    "role": "Reads renderer.info after redraw (cost 183-197; nbr_cost 360 requires exactly +1 call). Pixel fills (fills_above_roof 295, nbr_fills_side 544). Neighbor floor darker than our floor (481) and >4 (484). Named meshes __outside, __outside_far, __nbr must stay MeshBasic with no raycast (223)."
+   },
+   {
+    "path": "C:/Users/pc/Desktop/빛식물/lux-plant-sim/tools/test_ground.mjs",
+    "role": "Character bbox from skinned vertices (BB 35-66): feet on floor (A 101), height 1.28-1.45 m (A2 106), walking min.y (E 176), idle vs walking ground offsets differ by >0.03 (E2 190). surfaceAt floating scan (H 226). DLI unchanged (I 248)."
+   },
+   {
+    "path": "C:/Users/pc/Desktop/빛식물/lux-plant-sim/tools/test_roomview_place.mjs",
+    "role": "surfaceAt, slot centers, onUid/occIdx, tops (S/A/B/C). Furniture pick and move (F). Highlight material fingerprint restores exactly (L-1..L-7, 1000-1063)."
+   },
+   {
+    "path": "C:/Users/pc/Desktop/빛식물/lux-plant-sim/tools/test_place_grid.mjs",
+    "role": "Top-surface cells from mesh rects (Q/R/S/U/W). No floor ledge or baseboard protruding (V-1 398-410). Takes the FIRST LineSegments in the scene as the floor grid (X 461-484)."
+   },
+   {
+    "path": "C:/Users/pc/Desktop/빛식물/lux-plant-sim/tools/test_roomview_walk.mjs",
+    "role": "Character select ring color 0xffb454 (221). Walk-clip network URL pattern (G 383-386). Water FX counted as every THREE.Points in the scene ×10 + can groups: must be 11 during the act and 0 after (FX 497-498; N-4/N-4b 544-545; N-5c; N-7b)."
+   },
+   {
+    "path": "C:/Users/pc/Desktop/빛식물/lux-plant-sim/tools/test_perf_budget.mjs",
+    "role": "Draw calls and triangles via direct r.render (SHOT 42-54). Blob shadow is exactly 1 call (A 246). Per-siru draw calls 47±6 (B 252; shadow passes count). Idle cap 18 with a skeletal person (C 259). Lean shadow budget keeps ceilingBulb shadow off (② 240)."
+   },
+   {
+    "path": "C:/Users/pc/Desktop/빛식물/lux-plant-sim/tools/test_roomview_perf.mjs",
+    "role": "Wraps renderer.render to count frames/calls/tris (INSTALL 38-58). Water fps ≤33 (242), calls restored after water (238), idle <14 fps (248). Prints FAIL text but never sets the exit code."
+   },
+   {
+    "path": "C:/Users/pc/Desktop/빛식물/lux-plant-sim/tools/test_uiwire.mjs",
+    "role": "game.html real-mouse flow. settle() needs two-rAF frame time <90 ms (89-99; F-A 388). Speech bubble must not drift more than 1 px while pressed (D-1 357). Camera az stable while dragging the menu (F-12 566). Furniture tap→highlight (F-0..F-15)."
+   },
+   {
+    "path": "C:/Users/pc/Desktop/빛식물/lux-plant-sim/tools/test_sfx.mjs",
+    "role": "Exactly 6 SFX NAMES (100). Zero console.error or exceptions at game.html boot (86-95)."
+   },
+   {
+    "path": "C:/Users/pc/Desktop/빛식물/lux-plant-sim/tools/test_snap.mjs",
+    "role": "Imports room_view.js in Node with only three.min.js as a global (27-54). Any top-level use of EffectComposer, AudioContext or GLTFLoader in room_view.js or its static imports crashes it."
+   },
+   {
+    "path": "C:/Users/pc/Desktop/빛식물/lux-plant-sim/tools/test_measured_fresh.mjs",
+    "role": "Light-value freshness guard (TOUCHES 100-109 include house.js and furniture_pastel.js). Section C (values actually changed) is the verdict. Takes ~23 s."
+   },
+   {
+    "path": "C:/Users/pc/Desktop/빛식물/lux-plant-sim/tools/probe_lightview.mjs",
+    "role": "(Probe, not in the suite.) Heatmap screenshots. Brightest cell R>B and darkest B>R pixels (313-317). Control-frame diff ×3 (257). renderer.info leak checks (379-382)."
+   },
+   {
+    "path": "C:/Users/pc/Desktop/빛식물/lux-plant-sim/tools/check_shot_anomaly.py",
+    "role": "Screenshot sanity thresholds calibrated on old shots: DARK_MEAN 15, BORDER_FLAT 0.34 and others. A heavy vignette or dark grade can trip them."
+   },
+   {
+    "path": "C:/Users/pc/Desktop/빛식물/lux-plant-sim/docs/handoff/README.md",
+    "role": "Bottom section 139-183: how to run tests (one server, BYEOT_URL). test_boot_profile only accepts --url=. 'window.view timeout' almost always means no server."
+   }
+  ],
+  "hooks": [
+   {
+    "what": "Create the post-processing composer (render target, SSAO/SAO, bloom, grade/vignette ShaderPass)",
+    "where": "src/game/room_view.js:745-790 (right after `const ctx = createScene(canvas)` and the shadow-map setup)",
+    "how": "Build it lazily inside createRoomView only when `typeof THREE.EffectComposer === 'function'`. Do NOT touch THREE.* at module top level (test_snap imports room_view.js in Node). Keep ctx keys unchanged. Store the composer outside ctx or as a new key; never replace ctx.renderer."
+   },
+   {
+    "what": "Single present path for every frame",
+    "where": "src/game/room_view.js:5230 (loop), 9647 (view.redraw), 10128 (first boot frame)",
+    "how": "Replace all three `ctx.renderer.render(ctx.scene, ctx.cam)` calls with one present() that renders the composer when FX is on. redraw() MUST go through it, otherwise test screenshots and drawImage reads show a different image than the loop. Offer a switch (e.g. view.setPostFx(false) or a ?fx=0 flag) so tests can measure the raw scene."
+   },
+   {
+    "what": "Composer size and pixel ratio",
+    "where": "src/game/room_view.js:5343-5357 (resize) and 5317-5333 (autoQuality setPixelRatio)",
+    "how": "Call composer.setSize/setPixelRatio alongside renderer.setPixelRatio/setSize. Note that tests stub `r.setPixelRatio = () => {}` (test_perf_budget:76-77, test_roomview_perf:108-109), so read the ratio from the renderer rather than trusting setPixelRatio calls."
+   },
+   {
+    "what": "Dispose of FX resources",
+    "where": "src/game/room_view.js:10060-10108 (view.dispose)",
+    "how": "Dispose composer render targets and passes before renderer.forceContextLoss. Oneroom moves call __remount (game.html:12192) and rebuild the view."
+   },
+   {
+    "what": "Time-of-day color grade and exposure",
+    "where": "src/game/room_view.js:4900-5040 (applyDaylight; exposure at 4956, background/fog at 4963-4966, rig intensities around 5025-5035); constants 556-612 (ROOM_DIM/FURN_DIM, SUN_BOOST, GAME_EXPOSURE 0.72, BULB_*)",
+    "how": "Drive grade uniforms from daylightT here. Do not change the grow-rig PointLight intensity (RIG_GROW 0.34, asserted exactly) or ceilingBulb.castShadow under the lean budget. applyShadowBudget is at 4871."
+   },
+   {
+    "what": "Swap furniture visuals to GLB and apply procedural wall/floor/concrete textures",
+    "where": "src/game/room_view.js:1099 (right after `dimRoomMaterials(built)` in assemble) or 1146 (after buildFurnitureBlobs); also after refreshFurniture 7268 / commitFurnitureAt 6766, because the room is re-assembled on every furniture move",
+    "how": "Per furniture Group in built.furniture.children (matched by userData.uid/preset), add the GLB as a CHILD. Keep the Group, its userData (uid, size, slots, occIdx, movable, mount, lampShade) and the primitive meshes. Hide the primitives with material.visible=false: the renderer and shadow pass skip them, but room_view raycasts still hit them, because its filters test only object.visible, colorWrite, transparency and face normals. That keeps surfaceAt, top cells, lamp and furniture picking and free-pot y byte-identical. Set `raycast = () => {}` on GLB meshes. Re-run dimRoomMaterials(built) after attaching (it is idempotent via userData.__rvBaseColor). Keep this in room_view (browser only), not in house.js or furniture_pastel.js, so Node tests and the light engine stay untouched."
+   },
+   {
+    "what": "Light shafts, dust and other ambient VFX",
+    "where": "src/game/room_view.js houseGroup (created at ~797) or a separate overlay scene rendered by the composer",
+    "how": "Do not add anything under built.room or built.furniture. Give every VFX mesh `raycast = () => {}`. Do NOT use THREE.Points for dust in window.view.three.scene (test_roomview_walk counts every isPoints). Use a separate FX scene, or InstancedMesh/sprites. Animate only on frames the loop already draws (idle cap 10/18 fps); never force needsRender every frame."
+   },
+   {
+    "what": "Character GLB replacement",
+    "where": "src/game/room_view.js:7292-7297 (CHAR_MESH/CHAR_ANIM/CHAR_ASSET), 7507-7521 (walk clip from assets/derived/char_clips/char_{id}_walking.glb), 7526-7570 (makePerson: idle GLB with mesh and idle clip, pick box 7496, charKind 'person' 7563), 7809-7830 (idle-break clips), 8252-8270 (ACT_SPEC clip names and time cuts: opendoor, repot, harvest…), 8313 (act clip loader), 7850 (hipsY needs a bone named 'Hips'), 7991 (mascot)",
+    "how": "Keep the file-name pattern char_{id}_idle.glb in lq/, char_{id}_walking.glb in derived/char_clips/ and char_{id}_{clip}.glb in anim/, with the same bone names (the clips bind by bone name). The model faces local +Z. Scale is baked (~1.40 m). Ground offsets are measured per clip automatically (measureGround ~7598)."
+   },
+   {
+    "what": "Camera nudges on dialogue and harvest",
+    "where": "src/game/room_view.js:1602 (stepTween), 1614 (updateCam), 9817 (camera()); game.html:11722 (dlgOpen), 8746 (doAct), 15745 (harvest button)",
+    "how": "Hook inside dlgOpen/doAct, not at call sites: test_dialogue_coverage scrapes `dlgOpen('id')` calls from game.html. Keep a nudge short and skip it while a pointer is down, while dragging, and in instant/fast-forward mode (setActInstant). screenPosOf projects through ctx.cam, so any offset moves every tap target and speech bubble."
+   },
+   {
+    "what": "Ambient sound and new SFX",
+    "where": "src/game/sfx.js:56-71 (SPEC), 216 (VOICES); game.html window.__byeotWalkSfx (8743)",
+    "how": "Put ambience and new one-shots in a new module (or behind a separate SPEC) so NAMES stays exactly 6. Never console.error on a missing audio file; use console.warn. test_sfx counts console errors at boot."
+   },
+   {
+    "what": "Script tags for the vendored post-processing files",
+    "where": "game.html:34-35 (vendor three, with CDN fallback at 40-42) and tools/room_view_demo.html:11-12 (CDN)",
+    "how": "Add EffectComposer, RenderPass, ShaderPass, CopyShader, SSAO/SAO shaders, SimplexNoise and bloom to both hosts. Without them the demo-based tests run the non-FX path, so they will not exercise the new code."
+   },
+   {
+    "what": "Heatmap label repositioning under a composer",
+    "where": "src/render3d/light_grid_labels.js:418-425 (hookRender) and room_view.js 6597-6630 (setLightHeatmap/refreshLightHeatmap)",
+    "how": "With a composer, the patched renderer.render fires once per pass (full-screen quads included), so labels.update runs several times per frame. Pass hookRender:false and call heatView.tick() once after present(). Consider drawing the heatmap mesh after the grade pass (or excluding it from SSAO) so its red/blue stays readable."
+   }
+  ],
+  "constraints": [
+   "DLI and the light simulation must not move. The light engine reads only built.occluders, plantSlots, luxWins and lightRigs (house.js:813-824, 928-946, 465-557, 791-876), built from userData.size/slots. Never change userData.size, slots, tier_max_pot_d or furniture Group positions. Do not edit data/*.json presets. The guards are test_lampswitch F-1..F-4, test_ground I, test_roomview_place L-4 and N-*, test_coord_matches_slot, test_measured_fresh C, test_banjiha_profile, test_lampaim and test_sill_winter_margin.",
+   "Free placement takes y from raycasts on the real meshes (surfaceAt room_view.js:4308, meshRect 4138, tierRectOf 3575, surfaceTopAt 6481, supportY 2921). That y goes into dliAt, so the hittable geometry of furniture tops must stay identical. Keep the primitive meshes as hidden proxies with material.visible=false. Do not use visible=false, colorWrite=false or opacity<0.95: room_view's filters skip meshes in those states.",
+   "built.furniture.children must stay the per-furniture Groups carrying userData.uid (+size), plus the lamp PointLights as direct children of furnGroup (house.js:835-836). Tests use furniture.children.find(uid) (test_lampmove:337), match PointLights by rig position within 0.02 (test_lampswitch:57-63), and find furniture by `userData.uid && userData.size` (test_roomview_place:1005). The lamp shade must remain a direct child referenced by parent.userData.lampShade (room_view.js:1119-1121).",
+   "Grow-lamp PointLight intensity must stay exactly 0.34 (RIG_GROW; test_lampswitch:154,182). Do not add another PointLight at the same position as a grow rig.",
+   "Under the default 'lean' shadow budget, ceilingBulb.castShadow must stay false (test_perf_budget:240). Adding new shadow-casting lights also inflates per-object draw calls and breaks 'B 시루 47±6 calls' (test_perf_budget:252).",
+   "Furniture blob shadows stay a single draw call (test_perf_budget:246).",
+   "The outside meshes __outside, __outside_far and __nbr must stay MeshBasicMaterial with no shadows and raycast emptied (test_outside:223, 385). Keep their names: they are found with getObjectByName.",
+   "No THREE.Points may persist in window.view.three.scene. test_roomview_walk expects isPoints×10 + can groups == 11 during watering and 0 after (497-498, 544-545).",
+   "No LineSegments may be added to the scene ahead of the floor grid. test_place_grid X-1/X-2 take the first LineSegments found by traversal (461-484); outline or edge effects must go elsewhere.",
+   "No baseboard or floor ledge may protrude past the inner wall face (wall inner = size/2 − 0.1). This is checked by test_place_grid V-1 (398-410); the Doctor explicitly asked for the ledge to be removed.",
+   "room_view.js and everything it imports statically must stay importable in Node with only three.min.js global (test_snap). buildFurniture and buildHouse must stay synchronous and Node-safe under Proxy canvas stubs (test_furn_size, test_furnishop, test_lampmove, test_floorlight, test_measured_fresh…). So: no GLTFLoader, OffscreenCanvas, ImageData, createImageBitmap or AudioContext inside them.",
+   "Keep the ctx keys returned by view.three: renderer, scene, cam, hemi, ambient, sunLight, ceilingBulb, skyPortals, skyWins, glassMeshes, winPos, clShade, outside. Keep window.__sunShadow, __sunLight and __cam (room_view.js:786-787).",
+   "Keep the view API shapes tests call: redraw, setDaylight, daylight, stats(){triangles,calls,drawn,fpsCap,idleCap}, camera(), screenPosOf, surfaceAt, pickFurnitureAt, highlightFurniture (returns lit>0 and restores the exact material fingerprint), characters(){kind, assetId, ground.clips.idle/walking, hipsY}, lightRigs, lampSwitches, setGrowLights, setOutside, setBlobShadows, setShadowBudget, setLightPolicy.",
+   "Idle render policy: no frames when nothing changes; idle cap 10 fps (18 fps with a skeletal person), busy 30, move 60 (room_view.js:5054-5190). Ambient animation must not force continuous rendering (test_roomview_perf idle <14 fps; test_perf_budget C/C2).",
+   "Character contract: the person is a SkinnedMesh with a 'Hips' bone. Height 1.28-1.45 m, feet at y≈0 in idle (test_ground A/A2). Clip files keep the name patterns (test_roomview_walk G requires a request to /derived/char_clips/char_*_walking.glb and none to /characters/3d/lq/char_*_walking.glb). ACT_SPEC clip names must exist. The pick box keeps userData.isCharacterPick, the root keeps charKind 'person'/'mascot', and the select ring stays color 0xffb454 (test_roomview_walk:221).",
+   "sfx.js SPEC/NAMES stays exactly 6 voices, and game.html boot emits zero console.error (test_sfx:95,100). The room_view_demo tests treat Log 'error' entries, including 404 resource loads, as failures (test_lampmove H:467), so every referenced GLB, texture and audio file must exist.",
+   "Plant groups: never add children (VFX, sparkles, blobs) to plant groups. test_multisiru/test_musun_view compare children counts, and potPartOf/rotationSafeDiameter read the first non-leaf child (room_view.js:2943-2947 comment)."
+  ],
+  "risks": [
+   "(a) POST-PROCESSING — renderer.info breaks. With a composer, renderer.info.render is reset on every renderer.render call, so after redraw() it holds only the last full-screen pass. test_outside nbr_cost (:360, requires exactly +1 call) FAILS. test_outside draw_calls/frame_tris (:195,197) and probe_lightview leak checks (:379-382) pass vacuously. view.stats().triangles/calls (room_view.js:9823-9832) become meaningless. test_perf_budget stays valid only because it calls r.render directly (SHOT :42-54) and therefore measures the scene without FX.",
+   "(a) POST-PROCESSING — tests that wrap renderer.render. test_roomview_perf INSTALL (:38-58) counts every renderer.render as one frame. With N passes, 'fps' is inflated N×, so water fps >33 (:242) and the call counts are wrong. It prints a FAIL but exits 0, so the problem can pass unnoticed. light_grid_labels.hookRender (:418-425) runs labels.update N× per frame.",
+   "(a) POST-PROCESSING — pixel checks shift. If redraw() goes through the composer, the pixel tests measure graded, vignetted, bloomed output. At risk: test_outside fills_above_roof ≥45% (:295; vignette flattens the top band), nbr_fills_side (:544), nbr_darker_than_room and nbr_not_a_void >4 at night (:481/484); test_lampswitch B-3 (+10% under the lamp at night, :157); probe_lightview R>B/B>R (:316-317, a warm grade can flip them), plus the 'control ×3' diff (:257) if dust or grain changes every frame. If redraw() is NOT routed through the composer, those tests keep passing but measure an image the player never sees. Screenshots (page.shot) then capture whichever path drew last, which is flaky.",
+   "(a) POST-PROCESSING — headless speed. Headless runs on SwiftShader. SSAO and bloom at 390x844 dpr2 (pixel ratio up to 1.75) can push frames past 45 ms. test_uiwire settle()/F-A requires two rAFs in under 90 ms (:89-99, :388), and every CDP eval/tap flow slows down. autoQuality may drop the pixel ratio mid-test. Provide an FX-off switch for tests, or scale FX quality by pixel ratio.",
+   "(a) POST-PROCESSING — overlays. SSAO and bloom also hit the transparent overlays: heatmap (opacity 0.45), slot rings, the grid (LineSegments), placement ghosts (renderOrder 997-999, depthTest:false) and the select ring. The heatmap's red/blue readability and the ghost colors (GH_OK 0x4aa3ff, GH_NG 0xe8615a, good/ok/bad) are information and must survive the grade. check_shot_anomaly.py DARK_MEAN 15 and BORDER_FLAT 0.34 can flag vignetted night shots.",
+   "(a) POST-PROCESSING — load order and hosts. The vendor/three/postprocessing scripts are not referenced by game.html or tools/room_view_demo.html. room_view_demo loads three from the CDN, so its tests need internet. A top-level `class extends THREE.Pass`, or any THREE.EffectComposer reference at import time in room_view.js or a module it imports, breaks test_snap in Node.",
+   "(b) WALL/FLOOR MATERIALS — our floor must stay brighter than the neighbor floor. A darker floor (concrete or linoleum texture) can fail test_outside nbr_darker_than_room: our-room floor luminance must exceed the neighbor floor at t=0.5 and t=0.92 (:433-482). The floor under the heatmap (probe_lightview ⑤) and under the lamp (test_lampswitch B-3) also feeds pixel checks.",
+   "(b) WALL/FLOOR MATERIALS — baseboards. Adding a baseboard or skirting as BoxGeometry fails test_place_grid V-1 (:398-410). A tiny inset baseboard flush with the wall is fine only if it doesn't protrude past the wall's inner face.",
+   "(b) WALL/FLOOR MATERIALS — where texture code lives. If procedural textures are generated in house.js/textures.js, the code runs in Node for every buildHouse: light_adapter rebuilds rooms many times, and test_floorlight already takes 24 s. It also runs under the Proxy canvas stub (test_snap:27-50 and similar). ImageData, OffscreenCanvas or ctx.canvas access can throw there. Editing house.js or furniture_pastel.js also trips test_measured_fresh's section-B suspicion. Safer: generate textures in room_view after assemble, cached at module level.",
+   "(b) WALL/FLOOR MATERIALS — per-wall materials. Wall cutaway uses per-material clipping planes (house.js 'materials per face, don't share'; updateShellVisibility called in room_view.js updateCam 1627). New wall materials must stay per-wall instances with clipping preserved. dimRoomMaterials (room_view.js:662) and setLightPolicy (9676) re-color materials that have a .color. Textured materials must keep a color property, or the dimming and the 'house' comparison policy (probe_room_light) silently stop working.",
+   "(c) FURNITURE GLBs — without raycast proxies. If the GLB replaces the primitive meshes instead of hiding them, every raycast consumer changes. S-1/S-2/S-3/B-1..B-5/C-*/E-5/F-*/I-*/N-* in test_roomview_place break, as do Q-1..W-3 in test_place_grid. test_ground H (floating spots) breaks, test_lampswitch E-1 (lamp tap via pickLampRay) breaks, test_uiwire F-0..F-15 (tap-to-highlight via pickFurnitureAt) breaks, and test_quiet/test_place_confirm/test_siru_pick drag-drops break. Worst, free-placed pots get a different y, so their DLI changes (the hard rule is violated). meshRect uses per-mesh local bboxes, so a single merged GLB mesh would make the 'top rectangle' the whole object.",
+   "(c) FURNITURE GLBs — shared materials and emissive. highlightFurniture clones materials per mesh and skips meshes with emissive>0 (room_view.js:6000-6061). If every material of a GLB has non-zero emissive (common in exports), lit=0 and test_roomview_place L-1/L-5 and test_uiwire F-1 fail. GLB materials shared across instances are fine because it swaps per mesh, but dimRoomMaterials mutates shared materials (idempotent).",
+   "(c) FURNITURE GLBs — shadows vs the light calculation. Visible shadows cast by a GLB silhouette will differ from the calculation's box occluders. That is the 'screen ≠ calc' mismatch _render_vs_calc.html and _shadow_audit.html exist to catch. Choose deliberately: keep proxy boxes as the shadow casters (castShadow on proxies, material.visible=false still casts? NO — r128 skips invisible materials in the shadow pass, so if proxies are hidden the GLB must cast), and document the choice. New meshes need markShadow roles, or applyShadowPolicy warns.",
+   "(c) FURNITURE GLBs — async loading. Loading is asynchronous and the room is re-assembled on every furniture commit (light_adapter rebuilds). Attach from a cached template synchronously when possible, and never console.error on a load failure (test_sfx boot, test_lampmove H). test_roomview_place L-1/L-2 run inside one synchronous eval, so they tolerate a late attach, but screenshots can catch half-attached rooms (START-HERE §2.9-③).",
+   "(c) PROPS AND VFX — raycast blocking. Props or VFX placed on tops or in built.room with raycasting enabled can block surfaceAt at slot centers (S-1) or turn the top-of-canvas wall drop in test_quiet (:110-116) into a valid spot. Always disable raycast on decorative-only meshes.",
+   "(d) CHARACTER GLB — test_ground. The test assumes the old Meshy clips: E2 (:190) requires the idle and walking ground offsets to differ by >0.03 m. A clean new rig where both stand on the floor would FAIL E2 while actually being better. Flag it to plan, then update the test deliberately. A2 (:106) pins height to 1.28-1.45 m; A and E check the feet. The BB also needs skeleton.update/boneTransform on a SkinnedMesh.",
+   "(d) CHARACTER GLB — other dependencies. test_roomview_walk G (:383-386) pins the walk-clip URL layout. test_perf_budget C (:259) needs a skeletal 'person' (hasSkeletalChar). ACT_SPEC (room_view.js:8252-8270) cuts the old clips by seconds (opendoor 0.30+1.50, repot, harvest), so new clips with different timing play wrong though tests may still pass. The mascot (char_mascot_sprout.glb, 7992) is separate. Dialogue portraits (game.html FACE_FILE, test_dialogue_coverage ⑷) are 2D files; if the new 3D look diverges from them, that is a design issue, not a test failure. BODY_R 0.38 and the pick box size were tuned to the chibi proportions; the occlusion/nudge tests (test_roomview_walk F-1/F-2) depend on screen projection.",
+   "CAMERA NUDGES: test_uiwire D-1 requires the speech bubble to drift ≤1 px during a 140 ms press (:357; the original bug was a 61.6 px drift). F-12 requires camera az to change by less than 1e-6 while dragging the menu (:566). test_roomview_walk C-1 requires no camera rotation while dragging with a character selected (:256). Many game.html tests compute screenPosOf and then dispatch a tap, so a running nudge makes those taps miss.",
+   "AUDIO: adding voices to sfx.js SPEC fails test_sfx:100 ('여섯 가지가 다 있다'). An AudioContext created at import time breaks Node tests that import game modules. A 404 on an audio file shows up as a Log error on the demo page.",
+   "BASELINE REDS measured today (2026-09-24) on the untouched tree. Do not mistake them for regressions; compare the failing-ID sets before and after. test_roomview_place 68/74: S-3, E-3, F-2, F-3, F-6, N-5. test_place_grid 21/22: R-1. test_multisiru 9/15 and test_musun_view 16/20: stale siru-diameter 0.24→0.20 tables. test_floorlight 7/9: ①-3, ③-2. test_oneroom_room 3/9. Everything else I ran was green."
+  ],
+  "perf_notes": "RUNTIME TODAY: createScene uses antialias:true, PCFSoftShadowMap, ACES tone mapping and sRGB output. room_view overrides some of it: shadow type becomes PCFShadowMap; sun shadow map 1024², ceilingBulb 512², sun bias +0.0002 (room_view.js:752-781). On dpr≥2 the context is pre-created with antialias:false, alpha:false, stencil:false (room_view.js:707-713). If the composer uses a multisampled target it doubles the cost; prefer FXAA or none on phones. Pixel ratio = min(O.maxPixelRatio 1.75, dpr); autoQuality steps 1.75→1.5→1.25→1.0→0.85 after two slow 500 ms windows (target 24 fps) and never steps back up (5311-5333). Render loop: frames are drawn only on needsRender, tween, zoom, walking or acting. Idle cap is 10 fps, or 18 with a skeletal person, backing off to 10 if the device can't keep up. Busy is 30 fps, moving 60 fps backing off to 30 (5054-5190). setPaused stops rAF entirely while the zoom iframe is open. Sun shadows re-bake only when the sun moves by more than 0.004 rad. Budget: 'lean' bakes the sun only, 'full' adds the bulb cube map and 2 sky portals. The tab runs two WebGL contexts (room + plant_grow iframe) and dispose() force-loses the room context. For phone post-processing at 390x844: render FX at ≤1.0-1.25 of the pixel ratio (the half-res SSAO/SAO target is already vendored). Run bloom at half res. Combine grade + vignette into one ShaderPass. Skip SSAO on the autoQuality fallback. Don't animate anything that forces frames at idle; piggyback the 10/18 fps idle frames. FAST GATE (reliable subset). Timings below were measured today on this PC, sequentially, SwiftShader headless. [0] No server, Node only (~1 s, plus two ~24 s runs). Commands: `node tools/test_snap.mjs` (0.1 s; room_view.js still Node-importable); `node tools/test_furn_size.mjs` (0.15 s) and `node tools/test_furnishop.mjs` (0.2 s; buildFurniture size/slot contract); `node tools/test_lampmove.mjs` (0.3 s, part 1); `node tools/test_lampaim.mjs` (0.25 s); `node tools/test_banjiha_profile.mjs` (0.1 s); `node tools/test_furn_clash.mjs` (0.2 s); `node tools/test_headroom.mjs` (0.2 s); `node tools/test_free_place.mjs` (0.2 s); `node tools/test_sill_winter_margin.mjs` (0.1 s); `node tools/test_measured_fresh.mjs` (23 s; DLI freshness verdict C). test_floorlight (24 s) and test_oneroom_room (6.6 s) are already red; compare failing IDs only. Alternative: `node tools/run_house_checks.mjs` (~60 s; it also reverts docs/engine/shots itself). [1] Browser. Start `python tools/serve.py 8963`, then `export BYEOT_URL=http://localhost:8963`, and run each as `node tools/<file>` (all exit non-zero on FAIL except test_roomview_perf). test_lampswitch.mjs 9.8 s (38/38; pixels + lamp intensity + lamp tap + DLI invariance). test_ground.mjs 16.7 s (11/11; character feet/height, floating spots, DLI unchanged). test_place_grid.mjs 6.8 s (21/22 baseline; top cells, baseboard V-1, LineSegments X). test_roomview_place.mjs 19.6 s (68/74 baseline; surfaceAt, picking, highlight restore). test_outside.mjs --no-shots 38.6 s (29/29; renderer.info, luminance, light untouched; omit --no-shots only when you want PNGs in docs/engine/shots). test_roomview_walk.mjs 45.8 s (44/44; character pick/walk/clip URLs/FX Points count). test_perf_budget.mjs 42.9 s (6/6; draw calls, idle cap, skeletal, lean shadows). test_uiwire.mjs 73.9 s (55/55; game.html real-mouse taps, highlight menu, camera stability, <90 ms frame gate). test_sfx.mjs 3.3 s (33/33; 6 voices, zero boot console errors). test_coord_matches_slot.mjs 9.9 s (DLI slot == coordinate on game.html). Total ≈ 4.5 min sequential. Measured only, not asserted: test_roomview_perf.mjs (CPU×4, a few minutes, prints FAIL without an exit code); test_boot_profile.mjs (needs `--url=http://localhost:8963/game.html`; ignores BYEOT_URL). Browser tests that also write PNGs (revert them afterwards): test_multisiru/test_musun_view (use --no-shots; about 12 s and 9.5 s, both already red on stale tables), test_roomview_shots.mjs (writes docs/engine/shots/roomview3_*.png), test_bagcell, test_guide_notes, test_nextday_gate, test_siruinfo. For the Doctor's visual A/B use tools/_probe_roomshot.mjs (writes tools/_out/roomshot, same camera at t=0.10/0.30/0.50/0.75) or playshot.mjs. Per the walk-not-build memory rule, finish with probe_force5 (BYEOT_URL default 8972, ~5 min per cycle, writes docs/handoff/img/force5.png). Kill only headless Chrome processes whose command line has --headless=new plus --remote-debugging-port plus byeot-cdp-. I left none running and stopped my server."
+ }
+]
