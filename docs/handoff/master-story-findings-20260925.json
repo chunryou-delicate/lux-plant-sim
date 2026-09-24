@@ -1,0 +1,987 @@
+[
+ {
+  "lens": "스토리·대사 (내레이티브 디자이너 눈) — 첫 50일의 모든 대사를 코드에서 읽고, 실제 게임을 걸어서 확인함: probe_longwalk 복사본으로 d0~48 대사 id를 날짜·묶음별로 기록(tools/_out/storylens_walk/dlglog.json · longwalk.log), playshot 390×844 14일(tools/_out/playshot/storylens/), 진짜 대사 상자에서 줄바꿈 측정(tools/_out/storylens_wrap/wrap.json, storylens_wrap2/*.png). 파일은 하나도 고치지 않았고 서버(9001)는 끝나고 껐음.",
+  "findings": [
+   {
+    "title": "첫 한 달 동안 몬이의 아침 인사가 거의 매일 잔소리다 — 기다리는 날까지 재촉하고, 성격이 드러나는 잡담은 48일 동안 한 줄도 안 나온다",
+    "where": "src/game/dialogue.js createStoryteller.turn → pickNudge / chatterContext().nudge (열린 날부터 셈) / SCRIPTS.nudgeOffer·nudgeAsk·nudgeWorry; src/game/quest.js order_seed(done = cropHarvestTotal ≥ 3)·first_harvest",
+    "problem": "독촉 날수를 퀘스트가 «열린 날»부터 세기 때문에, 플레이어가 할 수 있는 게 없는 날(콩나물이 자라는 중, 주문한 씨앗으로 세 바퀴를 채우는 중)에도 몬이가 매일 아침 재촉한다. 씨앗을 d5에 이미 주문했는데 d12부터는 슬픈 얼굴로 「무슨 일 있어?」라고 묻는다. 같은 날들을 위해 써 둔 따뜻한 줄(chatCrop1 「콩나물이 진짜 자랄까.」, chatCrop2 「뭔가 하얀 게 올라왔어. / 봐. 빛 없이도 자라는 게 있어.」, 그리고 부모·집주인·윗집·몬이 이름·「아침에 제일 먼저 보는 게 화분」)은 독촉이 매일 그 자리를 먼저 차지해서 뜰 수가 없다. 그래서 플레이어가 첫 달에 보는 마스코트는 호기심 많은 새싹이 아니라 늘 걱정하는 감독관이다.",
+    "evidence": "실제로 걸어서 잰 것(tools/_out/storylens_walk/dlglog.json, 손가락·할 일을 다 따른 판): d2·3·4 nudgeOffer 「해 보면 알 거야.」(콩나물 자라는 중, 거둘 수 없음 · playshot 017~026 390×844에서도 같음) → d5 아침 nudgeAsk 「그거 아직이지?」(그날 막 익은 날) → d6~8 「해 보면 알 거야.」 → d9~11 「그거 아직이지?」 → d12·13·15·16·17·19·20·21·23·25 nudgeWorry(sad) 「무슨 일 있어?」 → d27·34·37·43·48 「급한 건 아니야. 마음 내키면 해.」. order_seed는 d5에 열리고 봇이 같은 날 주문했는데 끝난 건 d18(세 바퀴). 독촉이 뜬 날 26일 / 잡담이 뜬 날 2일(d30 chatSummerHeat, d40 chatSummerDamp). chatCrop1·chatCrop2·chatParents·chatLandlord·chatNeighbor·chatMoniName·chatMorning은 0번.",
+    "proposal": "① 규칙 쪽(박사님 확인 필요): 독촉 날수를 «열린 날부터»가 아니라 «할 수 있었는데 안 한 날»로만 센다. chatterContext().nudge에서, 그날 그 퀘스트의 다음 손이 막혀 있으면 날수를 올리지 않고 pickNudge가 null을 내게 한다. 막혀 있다는 건: 작물이 자라는 중(cropPotList에 growing만 있고 ready·needsWater가 없음), 산 물건이 배송 중(S.shop.orders에 그 품목), 자르기 문이 닫힘(cutBlockedReason이 '아직 이릅니다'). 그러면 그날은 원래 차례대로 잡담 몫이 되고 chatCrop1/2가 처음으로 뜬다. 「매일매일 독촉」은 «안 한 날»에는 그대로 살아 있다. ② 문안만 바꿀 경우: nudgeWorry { face:'sad', text:'무슨 일 있어?' } → { face:'worry', text:'그거, 같이 볼까?' }(worry 낯은 2026-09-07에 생김. 탓하지 않고 곁에 서는 말이고, 대신 해 준다는 뜻은 아니다).",
+    "touches_rules": true,
+    "impact": "high",
+    "effort": "M"
+   },
+   {
+    "title": "첫 식물등은 공짜로 가방에 들어오는데, 대사는 그 등을 «120,000원 주고 살지 고민하라»고 말한다",
+    "where": "src/game/dialogue.js SCRIPTS.lampUnlocked · questBuyLamp · questDoneBuyLamp (lampSkipped는 영영 안 뜸); src/game/quest.js buy_lamp ko/todo; game.html 12249 (L.owned = 1 · '식물등 하나를 가방에 넣어 뒀습니다')",
+    "problem": "가을이 되면 게임이 첫 등을 가방에 넣어 준다(박사님 08-17 「처음에 1개는 공짜로 인벤에」). 그런데 같은 날 대사는 「120,000원. … 7일은 사는 돈인데. …고민되네. / 고민할 만한 값이라서 알려 준 거야」, 「볕을 사 오면 돼 / 볕을 사?」라고 한다. buy_lamp는 owned≥1이면 끝나서 같은 날 바로 완료되는데, 완료 대사는 등을 아직 달지도 않았는데 「켰어. 생각보다 안 밝네.」다. 그날 하루에 가을(6줄) + 등 해금(7줄) + 퀘스트 열림(6줄) + 퀘스트 완료(3줄) = 22줄이 쏟아지고, 그중 셋이 「자리 말고 다른 게 필요해 / 자리 말고 빛을 사는 거야 / 볕을 사 오면 돼」로 같은 말을 한다. lampSkipped(「이사 자금에 보태려고 / 그것도 답이야」)는 owned가 0일 때만 뜨는데 owned가 늘 1이라 절대 안 뜬다. 게다가 「등이 곧 길」과도 어긋난다.",
+    "evidence": "걸어서 잰 것 d45: b76 autumnCame+lampUnlocked, b77 questBuyLamp, b79 questDoneBuyLamp — 셋 다 d45(tools/_out/storylens_walk/dlglog.json). 봇은 등을 달지 않았다. 390px에서 측정한 lampUnlocked 줄: 「120,000원. 전기는 하루 38원이고.」「120,000원이면… 7일은 사는 돈인데.」(tools/_out/storylens_wrap/wrap.json). game.html 7990: 첫 줄(벽부형 120,000)은 have=1이 되어 있음.",
+    "proposal": "lampUnlocked를 이렇게: [몬이 curious '가을이 됐으니 하나 알려 줄게. **식물등.**'(그대로)] [몬이 happy '가방 열어 봐. 첫 개는 그냥 왔어.'] [나 surprise '…공짜로?'] [몬이 LAMP.kwhKo가 있으면 `첫 개만. 전기는 하루 ${LAMP.kwhKo}이고.`, 없으면 '첫 개만.'] [몬이 teach '…그런데 없이는 안 커. 어디 달지가 문제야.'] [나 think '…제일 오래 쓸 자리에 달아야겠네.'] [몬이 happy '고민할 만한 건 그쪽이야.'] — 값·「7일은 사는 돈」·「지금 급하진 않아」·「고민되네」는 뺀다. [plan]이 확정한 「없이는 안 커」는 남긴다. 고민의 대상이 «값»에서 «자리»로 옮겨 가는데, 자리가 곧 이 게임의 주제다. questBuyLamp(6줄→4줄): [나 tired '해가 짧아졌어.'] [몬이 worry '그러니까 **볕을 달자.**'] [나 surprise '볕을 달아?'] [몬이 happy '**등 밑**이 이 방의 둘째 창턱이 돼.']. questDoneBuyLamp: '켰어. 생각보다 안 밝네.' / '사람 눈엔 그래. 식물한텐 아니야.' / '이제 이 방에도 **밝은 자리**가 있어. 뭘 거기 둘지 잘 골라.' → [나 '등이 생겼다. 손바닥만 하네.'] [몬이 curious '켜 봐. 사람 눈엔 별로여도 식물한텐 달라.'] [몬이 proud '이제 이 방에도 **밝은 자리**를 만들 수 있어.']. quest.js buy_lamp: ko '볕을 사 온다' → '볕을 들인다', todo '식물등을 사서 밝은 자리를 만드세요' → '가방의 식물등을 달아 밝은 자리를 만드세요'. lampSkipped는 영영 안 뜨니 지우거나 그대로 둔다(규칙은 안 건드림).",
+    "touches_rules": false,
+    "impact": "high",
+    "effort": "S"
+   },
+   {
+    "title": "식물신의 한 줄이 선물 «뒤»에 나온다 — 확정된 차례(수확→식비→식물신→도착)가 화면에서 뒤집혀 있다",
+    "where": "game.html dlgOpen (DLG_SOLO = ['monsteraArrived', …] 갈래); src/game/dialogue.js scriptsForEvents (god1을 monsteraArrived 앞에 끼움)",
+    "problem": "scriptsForEvents는 god1을 도착 대사 바로 앞에 제대로 넣는다. 그런데 dlgOpen이 monsteraArrived를 «혼자 띄우는» 대사로 떼어 내면서 god1을 미룸 서랍에 넣는다. 그래서 몬이가 몬스테라를 다 소개하고 「가방에서 꺼내서 밝은 데 놓아 봐.」까지 말한 다음에야 「? — 한 바퀴는 운이다. 두 바퀴는 손이지.」가 나온다. 주는 이의 목소리가 선물을 열어 본 뒤에 와서 그 줄의 무게가 사라진다. first_play.md §2가 막아 둔 바로 그 모양이다(식물신이 도착 뒤에 말하는 회차).",
+    "evidence": "걸어서 잰 것 d11: b21 monsteraArrived → b22 god1 + questMonsteraHome(tools/_out/storylens_walk/dlglog.json). game.html:11709 `const DLG_SOLO = new Set(['monsteraArrived', 'intro', 'moved_out', 'varieConfirmed']);` · `if (solo) { dlgHold = ids.filter(x => x !== solo); ids = [solo]; }`",
+    "proposal": "dlgOpen의 solo 갈래를 이렇게: `if (solo) { const lead = (solo === 'monsteraArrived' && ids.includes('god1')) ? ['god1'] : []; dlgHold = ids.filter(x => x !== solo && !lead.includes(x)); ids = [...lead, solo]; }` — 문안은 하나도 안 바뀐다. 박사님이 확정한 차례를 되살리는 것뿐이다. 무대 연출(선택): god1 줄에서 방 조명을 한 번 부드럽게 올리고(postfx·ambience) sfx.chime을 울려, 모습 없는 신을 «빛»으로 보여 준다.",
+    "touches_rules": false,
+    "impact": "high",
+    "effort": "S"
+   },
+   {
+    "title": "Day 1에 몬스테라가 오기도 전에 몬이가 «무늬»와 «등»을 말한다 — 그리고 방금 한 「뭘 할지는 네가 정해」를 두 줄 만에 뒤집는다",
+    "where": "src/game/dialogue.js SCRIPTS.shortBothCrop · shortBothLight (loop.js stepTutorial의 _moveState: 처음 판정에서 'both:crop'이 되어 새 판마다 d1에 반드시 뜬다)",
+    "problem": "_moveState는 처음에 비어 있어서, 새 판이면 누구나 d1에 move_short_both_crop이 난다. 그래서 rentFirst가 「나는 세는 것만 할게. 뭘 할지는 네가 정해.」로 끝나자마자 같은 묶음에서 「둘 다 멀어. 돈도, 무늬도. / 돈. 무늬는 기다리면 와. 돈은 안 그래. / 시루를 늘려. 하나로는 안 모여.」가 나온다. 무늬는 아직 들어 본 적도 없는 말이고, 시루는 늘릴 수도 없는 때다. d22에 뜨는 shortBothLight(「빛. 무늬는 밝은 데서 나. 등을 놓을 자리를 봐.」)도 등을 살 수 없고(가을 d45) 무늬도 없는 때에 나온다. 한편 이 게임에는 주인공이 «무엇을 원하는지»를 말하는 줄이 한 번도 없다. 이 자리가 그 말이 들어가기 가장 좋은 곳이다.",
+    "evidence": "걸어서 잰 것: d1 b5 rentFirst + shortBothCrop(같은 묶음), d22 b42 shortBothLight(tools/_out/storylens_walk/dlglog.json). loop.js:557 `: (cropEnough(S) ? 'both:light' : 'both:crop');`",
+    "proposal": "shortBothCrop(4줄→3줄 · Day 1에 참인 말 · 설계 주석의 «돈을 먼저 말한다»를 «밥값을 먼저»로 지킨다): [나 tired '…해 드는 방은 한참 멀었겠지.'] [몬이 curious '멀어. 그러니까 밥부터 돌리자.'] [몬이 calm '밥값이 덜 나가야 나머지도 모여.']. shortBothLight(d22에 참인 말 · 무늬·등 용어 없이 다음 축인 화분을 가리킨다): [나 '밥은 이제 좀 돈다.'] [몬이 proud '응. 밥은 됐어. 이제 남은 건 볕이야.'] [나 think '…해 드는 방.'] [몬이 calm '저 화분이 거기까지 데려다줄 거야.']. 「해 드는 방」은 오프닝 「…불도 잘 안 드는 방이네.」의 반대말이고, 원룸 첫 아침 「방이 밝다. 불을 안 켰는데.」가 이 말에 대한 보상이 된다.",
+    "touches_rules": false,
+    "impact": "high",
+    "effort": "S"
+   },
+   {
+    "title": "둘째 무늬 잎이 «날 때» 몬이가 「이제 됐다, 잘라」라고 하는데, 그때 자르기 단추는 「아직 이릅니다」다",
+    "where": "src/game/dialogue.js SCRIPTS.varieSecond (EVENT_SCRIPT varie_lucky2 = 셋째 잎이 태어나는 날); src/game/propagation.js cutBlockedReason (다 자란 무늬 잎 2장 문)",
+    "problem": "박사님 08-24: 「삽수버튼 생기는건 3번째 하프문 무늬잎 나와서 성숙잎 됐을때야.」 그런데 varie_lucky2는 셋째 잎이 막 «태어날» 때 뜨고, 몬이는 「두 장째네. 이제 됐다. … 두 장이면 한 장은 자르고 한 장은 남겨.」라고 한다. 그 순간 자르기는 회색이고 「아직 이릅니다 — 무늬 잎이 다 자라야 자를 수 있습니다」가 적혀 있다. 몬이가 시킨 일을 게임이 막는 셈이다. 게다가 갓 난 잎에서는 무늬가 보이지도 않는데(plan-varie-seen-late ⓐ) 주인공은 「…또 무늬가 섞였어.」라고 본 것처럼 말한다.",
+    "evidence": "propagation.js:819~826 `opt.varieMaturedLeaves < 2` → '아직 이릅니다 — 무늬 잎이 다 자라야 자를 수 있습니다'; loop.js:417 varie_lucky2 '무늬 잎이 두 장이 됐습니다'(태어날 때). 390px 측정: varieSecond[3] 45자, [4]·[6]·[7]이 다음 날 단추 밑으로 들어감(wrap.json).",
+    "proposal": "varieSecond를 «기다림» 판으로(10줄→6줄): [몬이 proud '이번 잎에도 **무늬가 섞였어.** 두 장째.'] [나 '그럼 이제 잘라도 돼?'] [몬이 teach '아직. 둘 다 **다 자라야** 해.'] [몬이 teach '그때 한 장은 자르고, 한 장은 남기는 거야.'] [나 tired '또 기다리네.'] [몬이 calm '이번 건 끝이 보이는 기다림이야.'] — [plan]이 세운 자 「끝이 보이면 견딘다」를 그대로 쓴 말이고, 자르기 단추의 회색 문구와도 맞는다. 원래 있던 「자른 건… 죽는 거 아니야? / 물에 꽂아 / 밝은 데 둬 / 여기서 나가는 값」은 문이 실제로 열리는 순간(다음 항목: 하프문 새 장면)으로 옮긴다.",
+    "touches_rules": false,
+    "impact": "high",
+    "effort": "S"
+   },
+   {
+    "title": "[새 장면] 하프문 잎이 다 자라서 자르기 문이 열리는 순간 — 지금은 배너 한 줄뿐, 반지하 편에서 제일 큰 보상 자리가 비어 있다",
+    "where": "game.html noteLeafGrades (for a of r.assigned → banner) — a.why==='prologue' && a.leafNo===3 일 때 dlgOpen('varieHalfMoon') 추가; src/game/dialogue.js SCRIPTS에 varieHalfMoon 추가",
+    "problem": "프롤로그의 셋째 잎(하프문)이 다 자라는 날이 곧 박사님이 말한 «자르기 단추가 생기는 날»이고, 이 방을 나가는 길이 처음 손에 잡히는 날이다. 그런데 지금 화면에 나오는 것은 「✨ 3번째 잎 — 하프문 / 3번째 잎이 다 자랐습니다 — 무늬는 하프문, 잎 한 장 750,000원」 배너 하나뿐이고 6초 뒤 사라진다. 도착 때 한 약속(「두 번째랑 세 번째」)이 눈앞에서 지켜지는데 아무도 말을 안 한다.",
+    "evidence": "shop.js:1903~1911 assigned/leaf_grade ko(배너 전용 · dialogue.js는 leaf_grade를 모름); game.html:3344 `banner(`✨ ${a.leafNo}번째 잎 — ${a.gradeKo}`, …)`; data/balance/varie_grades.json prologueGrades {\"2\":\"sanban\",\"3\":\"halfmoon\"}; game.html:6869 박사님 원문.",
+    "proposal": "varieHalfMoon(새 대사, 한 번만): [나 surprise '…이건 아까 거랑 완전히 다르네.'] [몬이 cheer '**하프문**이야. 흔한 거 아니야.'] [나 '이제 잘라도 돼?'] [몬이 proud '이제 돼. 둘 다 다 자랐으니까.'] [나 worry '자른 건… 죽는 거 아니야?'] [몬이 teach '물에 꽂아. 뿌리 나와. **밝은 데** 두고.'] [나 '…드디어 나가는 길이 보이네.'] [몬이 happy '응. 그 한 장이 여기서 나가는 값이야.'] — 값은 배너가 말하므로 대사는 값을 안 읊는다. 등급 이름은 지금 눈에 보이고 배너도 부르니 참이다. 무대 연출: 새순 때와 같은 focusOnMonstera()로 잎에 카메라를 당기고, sfx.chime, 몬이 cheer 낯(아직 쓰는 줄 없음), 「드디어」 줄에서 주인공 v2 cheer 클립. 마지막 줄 직후 같은 화면에 ✂ 단추가 뜬다.",
+    "touches_rules": false,
+    "impact": "high",
+    "effort": "M"
+   },
+   {
+    "title": "[새 장면] 무늬가 처음으로 «눈에 보이는» 날 — 「다 자라면 보여」의 약속을 지키는 짧은 장면",
+    "where": "game.html noteLeafGrades — a.why==='prologue' && a.leafNo===2(무늬 잎이 처음 성숙) 일 때 dlgOpen('varieSeen'); src/game/dialogue.js SCRIPTS에 varieSeen 추가",
+    "problem": "무늬는 잎이 태어날 때 «말하고», 다 자랐을 때야 «보인다»(plan-varie-seen-late). 중간잎에서는 등급이 일부러 같아 보인다(midCommon). 그래서 플레이어가 무늬를 실제로 처음 보는 순간은 둘째 잎(산반)이 다 자라는 날인데, 거기도 배너뿐이다. 「이 식물을 왜 아껴야 하지?」에 대한 첫 감각적 답이 조용히 지나간다.",
+    "evidence": "shop.js:1888 `if (!r.matured) continue; // 아직 중간잎이다 — 티 내지 않는다` · 드러내는 것은 배너뿐(game.html:3344). plan-varie-seen-late ⓖ 「다 자라면 보여」.",
+    "proposal": "varieSeen(새 대사, 한 번만, 4줄): [나 surprise '…아. 이게 그 무늬구나.'] [몬이 cheer '보이지? 다 자라니까 나오잖아.'] [나 proud '…이 방에서 이런 게 나네.'] [몬이 curious '다음 잎은 또 달라. 기다려 봐.'] — 「다음 잎은 또 달라」는 프롤로그에서 셋째가 하프문으로 정해져 있으니 참이고, 위 하프문 장면으로 이어지는 약속이다. 연출: focusOnMonstera() 한 번 + sfx.chime. 배너(값)는 그대로 둔다.",
+    "touches_rules": false,
+    "impact": "high",
+    "effort": "M"
+   },
+   {
+    "title": "첫 무늬 장면이 «못 본 것을 봤다»고 말하고, 몬이 스스로 한 «정해져 있어» 약속과도 부딪힌다",
+    "where": "src/game/dialogue.js SCRIPTS.varieLucky (varie_lucky = 둘째 잎이 태어날 때) · varieGranted",
+    "problem": "loop.js는 무늬 잎이 «태어날 때» 사건을 내는데, 어린잎에는 무늬가 안 보인다. 그런데도 주인공이 「…어? 새 잎이 좀 이상한데.」라고 먼저 본다. 또 도착 날 몬이는 「얘는 정해져 있어. 두 번째랑 세 번째 잎에 무늬가 나.」라고 약속했는데, 25일 뒤 같은 몬이가 「흔한 게 아닌데. / 두 번째 잎에 바로 나오네. 운 좋다, 너.」라며 놀란다. 약속과 운이 한 판 안에서 부딪친다. (08-13 박사님 「운좋게 나오는 거로」와 08-29 [plan] 「정해져 있어」, 두 방향이 겹쳐 남은 흔적이다.)",
+    "evidence": "dialogue.js:221 monsteraArrived '얘는 정해져 있어. **두 번째랑 세 번째** 잎에 무늬가 나. 그게 값이 돼.' vs :574~575 '무늬가 섞여서 나오는 거. 흔한 게 아닌데.' / '**두 번째 잎에** 바로 나오네. 운 좋다, 너.' · plan-varie-seen-late ⓑⓒⓖ · 390px: varieLucky[7] 37자, [8] 32자가 단추 밑으로 들어감.",
+    "proposal": "varieLucky(11줄→10줄, 몬이가 먼저 안다 · 박사님 낱말 「무늬가 섞였」 유지 · 몬이 surprise 낯은 여기 한 줄만): [몬이 surprise '어어. 잠깐만. 벌써 **무늬가 섞였어.**'] [나 curious '…어디? 그냥 돌돌 말린 잎인데.'] [몬이 curious '지금은 안 보여. **다 자라면** 보여.'] [나 '두 번째 잎이라더니. 진짜네.'] [몬이 happy '말했잖아. 이게 값이 된다고.'] [몬이 teach '근데 **한 장으로는 어림도 없어.**'] [몬이 teach '잘라서 물에 꽂으면 삽수도 무늬를 물려받아.'] [몬이 '**그게 늘리는 방법이야.**'] [나 '…자르는 게 무섭긴 한데.'] [몬이 happy '안 자르면 여기서 못 나가.']. varieGranted 첫 두 줄은 [plan] ⓖ 고친 판 그대로 하되 줄 길이만 나눈다: [몬이 curious '이 잎, **무늬가 섞였어.**'] [나 surprise '…어디? 아직 잘 모르겠는데.'] [몬이 teach '**다 자라면** 보여.'] [몬이 '무늬는 빛을 못 만들어. 그래서 밝은 데서만 나.']. ⚠ 「운 좋다」를 빼는 건 08-13 박사님 방향을 건드리므로 박사님께 여쭐 것. 거꾸로 「운」 쪽을 살리려면 도착 줄의 「정해져 있어」를 되돌려야 한다.",
+    "touches_rules": true,
+    "impact": "high",
+    "effort": "S"
+   },
+   {
+    "title": "몬스테라 도착 장면: 방금 들은 말을 되묻고, 가방에 있는 화분을 두고 「온 자리 말고」라 하고, 손가락이 창턱을 가리키는데 「네가 찾아 봐」라고 한다 — 그리고 «왜 아껴야 하나»가 돈뿐이다",
+    "where": "src/game/dialogue.js SCRIPTS.monsteraArrived · questMonsteraHome · questDoneMonsteraHome; src/game/quest.js monstera_home.why",
+    "problem": "d11에 god1 1줄 + monsteraArrived 10줄 + questMonsteraHome 4줄이 이어진다. monsteraArrived가 「가방에서 꺼내서 밝은 데 놓아 봐.」로 끝나자마자 주인공이 「얘는 어디다 둬야 돼?」라고 되묻는다. 몬이는 「온 자리 말고. 거긴 시루한테나 좋은 데야.」라고 답하는데, 2026-08-21부터 화분은 가방으로 와서 «온 자리»가 없다. 「어딘지는 네가 찾아 봐.」 바로 옆에서는 손가락이 「여기로 끌어 보세요 — 창턱 화분받침」을 짚고 있다. 게다가 이 식물이 소중한 까닭이 «값·나가는 돈»뿐인데, 몬이 머리에 난 잎과 같은 몬스테라라는 친근함(LOOK.md)이 한 번도 쓰이지 않는다. 390px에서는 [4](46자)와 [6](40자)의 뒷부분이 단추 밑으로 들어간다.",
+    "evidence": "걸어서 잰 것 d11 b21 monsteraArrived → b22 god1+questMonsteraHome · 손가락 「가방에 몬스테라가 있습니다」→「끌거나 눌러서 방 안 밝은 자리에」 · d12 「여기로 끌어 보세요 — 창턱 화분받침」(storylens_walk/longwalk.log). wrap.json: monsteraArrived[4] len46 under=1, [6] len40 under=1. dialogue.js:790 '온 자리 말고. 거긴 시루한테나 좋은 데야.' :792 '이 방에서 제일 밝은 데. 어딘지는 네가 찾아 봐.'",
+    "proposal": "monsteraArrived(모두 25자 이하, [plan] 「정해져 있어 / 두 번째랑 세 번째」 낱말 유지): [나 surprise '가방에… 화분이 하나 들어와 있어.'] [몬이 cheer '몬스테라야. 나도 오랜만에 보네.'] [나 curious '줄기 하나뿐인데… 네 머리 잎이랑 닮았다.'] [몬이 happy '닮았지. 대신 얘는 콩나물이랑 **반대**야.'] [몬이 '콩나물은 어두울수록 하얗게 잘 됐잖아.'] [몬이 '얘는 어두운 데 두면 **아무 일도 안 일어나.**'] [나 worry '먹지도 못하는 걸 왜…'] [몬이 teach '얘는 정해져 있어. **두 번째랑 세 번째** 잎.'] [몬이 '거기 무늬가 나. 그게 값이 돼.'] [나 curious '…값이 된다고?'] [몬이 happy '응. **이 방을 나가는 돈**, 거기서 나와.'] [몬이 '가방에서 꺼내서 **밝은 데** 놓아 봐.']. questMonsteraHome(4줄→1줄): [몬이 happy '볕이 제일 오래 머무는 데로 데려가 줘.']. questDoneMonsteraHome('됐다. 이제 기다리는 게 일이야.' / '기다리기만 하면 돼?' / '밝은 자리에 뒀으면 그게 다야. 나머지는 얘가 해.') → [나 '…잘 부탁해.'(화분에게)] [몬이 calm '나머지는 얘가 해. 우린 기다리면 돼.']. quest.js monstera_home.why '온 자리는 어둡습니다. …' → '가방 안이나 어두운 자리에서는 자라지 않습니다. 밝은 자리에 놓아야 새순이 납니다 — 빛 판정은 7일 평균이라 나흘쯤 걸립니다.' 도착 날 전체는 15줄 → 14줄.",
+    "touches_rules": false,
+    "impact": "high",
+    "effort": "S"
+   },
+   {
+    "title": "폰(390px)에서는 26자를 넘는 줄 끝이 흐린 [다음 날] 단추 밑으로 들어간다 — 굵게 강조한 핵심어가 정확히 거기에 걸린다",
+    "where": "src/game/dialogue.js SCRIPTS 전체(459줄 중 92줄이 25자 초과) — 특히 questRadish5[4] · questSellVarie[3] · autumnCame[2] · movedOut[7] · harvest[1]",
+    "problem": "진짜 대사 상자에서 재 보니, 25자 이하 줄은 전부 한 줄에 다 보인다. 27자 이상이면 끝부분 글자가 흐린 [다음 날] 단추(오른쪽 아래) 밑으로 들어간다. **강조**는 문장 끝에 오는 경우가 많아서 가장 중요한 낱말이 가려진다. 「무순은 **반대야**」, 「**밝은 자리에서만**」, 그리고 이 게임에서 제일 중요한 대사라는 questSellVarie의 「**무늬 삽수를 팔아 본 적.**」이 그렇다.",
+    "evidence": "tools/_out/storylens_wrap/wrap.json(390×844, 대사 상자에서 글자 사각형과 #next 단추 사각형의 겹침을 셈): len≤25 → under=0(측정한 줄 전부) · questSellVarie[3] len27 under=2 · varieSecond[6] len29 under=1 · questRadish5[4] len46 under=4. 스크린샷: tools/_out/storylens_wrap2/questRadish5_4.png(「반대야 —」가 단추에 가림), varieGranted_1.png(「밝은 자리에서만」이 가림).",
+    "proposal": "규칙: 한 줄은 24자 안팎(최대 25자), 굵게는 줄 앞쪽에 둔다. 바로 고칠 줄: questRadish5[4] '콩나물은 어두울수록 하얗고 아삭해. 무순은 **반대야** — 빛을 봐야 파래지고 알싸해져.' → '콩나물은 어두울수록 하얗고 아삭해.' / '무순은 **반대야.** 빛을 봐야 파래지고 알싸해져.' · questSellVarie[3] '이사비 한 번, 그리고 **무늬 삽수를 팔아 본 적.**' → '하나는 이사비.' / '하나는 **무늬 삽수를 팔아 본 적.**' · autumnCame[2] '겨울로 갈수록 창 하나로는 모자라져. 자리가 나빠지는 게 아니라 **해가 낮아지는** 거고.' → '겨울로 갈수록 창 하나로는 모자라져.' / '자리 탓이 아니야. **해가 낮아지는** 거지.' · movedOut[7] '들었을 거야. 여기 빛은 잘 안 들어와도, 소리는 잘 들리는 방이었잖아.' → '들었을 거야.' / '빛은 안 들어도 소리는 잘 들리는 방이었잖아.' (harvest[1], varie*, monsteraArrived, questBuyLamp는 각 항목의 고친 판에 이미 들어 있다.) 덧붙여, tools/test_dialogue_coverage.mjs에 «25자 넘는 줄» 경고 칸을 하나 두면 다시 늘어나지 않는다.",
+    "touches_rules": false,
+    "impact": "medium",
+    "effort": "S"
+   },
+   {
+    "title": "첫 수확 무렵: 콩나물이 막 물을 먹은 날 「다 자란 것 같은데.」라고 하고, 첫 기쁨 「…이게 되네.」가 네 줄짜리 수업에 묻힌다",
+    "where": "src/game/dialogue.js SCRIPTS.questFirstHarvest · harvest · learnCropDark · questDoneFirstHarvest; src/game/quest.js first_harvest.todo",
+    "problem": "first_harvest는 물을 준 다음 날(d1) 열리는데, 여는 대사 첫 줄이 「다 자란 것 같은데.」라서 그날에는 거짓이다. 할 일 칸도 d1~d4 내내 「다 자란 콩나물을 거두세요」다(손가락은 「자라는 중입니다 — 나흘 더」). 수확 날(d5)은 아침 잔소리 1줄 → harvest 2줄 → learnHarvest 1줄 → learnCropDark 1줄 → questDoneFirstHarvest 1줄 → questOrderSeed 7줄, 합쳐서 13줄이다. 주인공이 조용히 뿌듯해하는 줄 바로 뒤에 39자짜리 설명(「…빛을 봤으면 초록이 되고 썼을 거야」)이 붙고, 몬이의 말투가 한 줄만 「이제 아는 거다」로 튄다.",
+    "evidence": "걸어서 잰 것: d1 b7 questFirstHarvest, d1~d4 할 일 「다 자란 콩나물을 거두세요」 · 손가락 「자라는 중입니다 — 나흘/이틀 더 넘겨 보세요」, d5 b11~b14(tools/_out/storylens_walk/longwalk.log · dlglog.json). wrap.json harvest[1] len39 under=1.",
+    "proposal": "questFirstHarvest: '다 자란 것 같은데.' / '자란 거랑 거둔 거는 달라. 거둬야 다음 바퀴가 돌아.' / '놔두면?' / '그 자리에 그대로 있어. 아무 일도 안 나고.' → [나 '다 자라면 그냥 먹으면 돼?'] [몬이 teach '거둬야 먹지. 거둬야 다음 바퀴도 돌고.'] [나 '안 거두면?'] [몬이 '그 자리에 그대로 있어. 아무 일도 안 나고.'](d1에도 참). quest.js first_harvest.todo `() => '다 자란 콩나물을 거두세요'` → 익었으면 '다 자란 콩나물을 거두세요', 아니면 '콩나물이 다 자라면 거두세요'(cropPots의 ready/growing으로 가름). harvest[1] '어두운 자리라 하얗게 잘 자랐어. 빛을 봤으면 초록이 되고 썼을 거야.' → '하얗지? 어두운 데 둬서 그래.'(「초록이 되고 쓰다」는 무순·원룸 시루 줄이 나중에 가르친다). learnCropDark '이거 하나는 이제 아는 거다 — **어두운 자리도 자리야.**' → '**어두운 자리도 자리야.** 이제 알겠지?'(proud · 몬이가 묻는 꼴).",
+    "touches_rules": false,
+    "impact": "medium",
+    "effort": "S"
+   },
+   {
+    "title": "[새 장면] 첫 수확 밥상에 기억 한 숟가락 — 아낀 밥값을 «엄마의 콩나물국»으로 바꾼다",
+    "where": "src/game/dialogue.js SCRIPTS.questDoneFirstHarvest(교체) — QUEST_DONE_SCRIPT.first_harvest 그대로",
+    "problem": "부모 이야기는 오프닝 울음(「엄마… 아빠…」)과 이사(「…엄마 아빠한테 자랑할 게 생겼는데.」) 사이에 잡담 chatParents 하나뿐인데, 그 잡담은 48일 걸음에서 한 번도 안 떴다. 그래서 이사 장면의 울음이 붙잡을 중간 기억이 없다. 첫 수확은 식비(시스템)가 처음 주인공의 삶에 닿는 순간이라 그 기억을 심기에 가장 좋은 자리다. 지금 완료 줄 「거뒀으니까 다음 바퀴가 돌 수 있어. 거두는 것도 일이야.」는 여는 대사가 이미 한 말을 되풀이한다.",
+    "evidence": "dialogue.js:715 questDoneFirstHarvest 현재 한 줄 · :1501 chatParents '엄마가 화분을 잘 죽였어.' — dlglog.json d0~48에 chatParents 0회 · movedOut[5] '…엄마 아빠한테 자랑할 게 생겼는데.'",
+    "proposal": "questDoneFirstHarvest → [나 think '…엄마는 콩나물국을 늘 짜게 끓였는데.'] [몬이 curious '짰어?'] [나 happy '응. 그래서 밥을 두 공기씩 먹었지.']. 슬픔을 웃음으로 받는 결은 chatParents와 같고, 몬이가 사람 일을 궁금해하는 몇 안 되는 줄이 된다. 규칙·차례·수는 하나도 안 바뀌고, 3줄은 [plan] 「닫을 때 1~3줄」 안이다.",
+    "touches_rules": false,
+    "impact": "medium",
+    "effort": "S"
+   },
+   {
+    "title": "첫 새순(몬스테라의 첫 보상): 배너는 말투가 바뀌고 설명조이며, 주인공은 놀라기만 할 뿐 정이 드는 줄이 없다",
+    "where": "game.html 첫 플레이 완료 배너(events.push { title: '🌱 말린 새순이 나왔어요!', sub: '자리에 따라 필요한 빛이 다릅니다.' }); src/game/dialogue.js SCRIPTS.spearFurled",
+    "problem": "다른 배너는 모두 합니다체인데 이것만 「나왔어요!」이고, 부제는 교과서 문장이다. 대사는 「뭔가… 돌돌 말린 게 올라왔어.」 → 「새순이야! 저게 펴지면 잎이 돼.」 → 식물신 한 줄로 끝나서, 반지하에서 버티는 사람과 반지하에서 처음 자라는 식물이 서로를 비추는 순간이 말로 안 잡힌다.",
+    "evidence": "game.html:11124 배너 문자열; dialogue.js:282~286 spearFurled. (이번 걸음은 d48까지 새순이 안 떠서 코드로만 확인했다.)",
+    "proposal": "배너: title '🌱 첫 새순이 올라왔습니다', sub '밝은 자리에 둔 보람입니다'. spearFurled는 몬이 줄 다음, 식물신 앞에 한 줄 넣는다: [나 proud '…너도 여기서 버텨 보겠다는 거네.'] — 식물신 「자리를 옮긴 것뿐인데 말이지.」는 마지막에 그대로 둔다(식물신 한 줄 계약). 연출은 이미 있는 focusOnMonstera() 당기기를 그대로 쓴다.",
+    "touches_rules": false,
+    "impact": "medium",
+    "effort": "S"
+   },
+   {
+    "title": "Day 0: 오프닝 13줄 바로 뒤에 같은 말을 되묻는 3줄이 붙어, 처음 손대기 전까지 16번을 눌러야 한다",
+    "where": "src/game/dialogue.js SCRIPTS.questPlaceSiru (QUEST_OPEN_SCRIPT.place_siru · 부팅 즉시 열림)",
+    "problem": "intro가 「가방에 콩나물 시루가 있어. 어두운 데 놓아 봐. / …어두운 데? / 응. 어두운 자리도 쓸모가 있거든.」으로 끝나자마자 questPlaceSiru가 「가방에 둔 채로는 안 되는 거야? / 가방 안은 아무 자리도 아니야. 빛이 안 드니까. / 어디에 두느냐. 그게 이 얘기의 전부야.」를 잇는다. 주인공이 방금 들은 지시를 다시 묻고, 마지막 줄은 «이 얘기»라며 이야기 밖으로 나가는 말이다. Day 0에만 intro 13 + 3 + 완료 1 + 물주기 3 = 20줄이다.",
+    "evidence": "걸어서 잰 것 d0: b1 intro → b2 questPlaceSiru(첫 손대기 전), b3 questDonePlaceSiru, b4 questWaterSiru(tools/_out/storylens_walk/dlglog.json).",
+    "proposal": "questPlaceSiru(3줄→1줄): [몬이 teach '가방 안은 자리가 아니야. 꺼내야 시작돼.'] — 겹치지 않는 정보(가방 안에서는 안 자란다)만 남긴다. 오프닝(박사님 장면)은 그대로 둔다.",
+    "touches_rules": false,
+    "impact": "medium",
+    "effort": "S"
+   },
+   {
+    "title": "몬이의 말버릇 「그게 ~야」가 초반 설명마다 붙어 격언 기계처럼 들리고, «호기심 많은 새싹»이 거의 묻지 않는다",
+    "where": "src/game/dialogue.js SCRIPTS.questDoneSiruTwo[1] · questSiru5[4] · questSiru8[3] · questWaterSiru[1] (몬이 256줄 중 「그게 」 17줄, 물음 15줄)",
+    "problem": "「그게 살림이고」, 「그게 이 방에서 제일 모자란 거야」, 「여기선 그게 제일 정직한 길이야」, 「그게 다야」, 「그게 값이 돼」처럼 같은 꼴의 맺음이 첫 3주 설명 줄에 몰려 있다. 몬이는 curious 낯을 87줄에 쓰지만, 실제로 묻는 말은 256줄 중 15줄이고 초반 사슬에는 거의 없다. 몬이만의 결(모를 때가 있다, 식물이라 먼저 안다)이 흐려진다.",
+    "evidence": "dialogue.js SCRIPTS 전체를 세어 봄(scratch lens.mjs): moni 256줄 · '그게 ' 17 · '?' 15. 예: :779 '더 버는 게 아니라 **안 끊기는** 거야. 그게 살림이고.' :865 '하루에 물 줄 수 있는 횟수. **그게 이 방에서 제일 모자란 거야.**'(33자, 390px에서 단추 밑) :903 '응. 여기선 그게 제일 정직한 길이야.'",
+    "proposal": "questDoneSiruTwo[1] → '더 버는 게 아니라 **안 끊기는** 거야.' · questSiru5[4] → '하루에 물 줄 수 있는 횟수.' / '**이 방에서 제일 모자란 거.**' · questSiru8[3] → '응. 여기선 늘린 만큼 늘어. 정직하지.' · questWaterSiru[1] '아직. 물을 안 줬잖아.' → '아직. 물은 줬어?'(가르치지 않고 묻는다). 낯은 plan-moni-faces ⓚ·ⓠ 배정을 따른다.",
+    "touches_rules": false,
+    "impact": "low",
+    "effort": "S"
+   }
+  ]
+ },
+ {
+  "lens": "튜토리얼 + 첫날 강제 가이드 + 손가락 힌트 — 폰 390×844. playshot(--days 3 --tag crit_tut, 21장)과 별도의 «손가락만 따라 걷는» 자(scratchpad/walk_tut.mjs, Day 0~6, 41장, 대사 51줄 기록)로 걸어서 봤다. 확정 차례(시루→사람→방바닥→심기→물→[다음 날]×5→거두기→씨앗 주문)는 하나도 안 바꾸는 안만 냈다. 그림 폴더: C:\\Users\\pc\\AppData\\Local\\Temp\\claude\\c--Users-pc-Desktop----\\e3922879-1ecc-42e2-8d6f-3ca0fedba33a\\scratchpad\\walk\\ (걸음 기록 _log.txt 포함) · C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\tools\\_out\\playshot\\crit_tut\\. 서버 9002는 닫았다. 저장소 파일은 하나도 안 고쳤다.",
+  "findings": [
+   {
+    "title": "[확인]을 누르기도 전에 몬이가 「자리를 정했네」라고 하고, 할 일 줄도 먼저 넘어간다. 화면에 다섯 겹이 한꺼번에 뜬다",
+    "where": "game.html startPhonePlace() L14137–14174: L14142 afterPlace()(→checkQuests)가 L14151–14154 picked.confirming·picked.before 보다 먼저 돈다. cropPotConfirmed() L3921 · updateHint [확인] 갈래 L5366 · dialogue.js questDonePlaceSiru L688 / questWaterSiru L694",
+    "problem": "가방의 시루를 누르는 순간 화면에 다섯 가지가 한꺼번에 뜬다. 초록 배너 「여기에 둘까요? [확인]을 누르면…」, 시루 메뉴(옮기기…✕), 그 위의 확인 팝업 「여기에 둘까요? [확인][다시 옮기기][취소]」, 몬이 대사 4줄 「자리를 정했네. 이제 저 자리 빛이 얘 몫이야.」→「아직. 물을 안 줬잖아.」, 그리고 이미 바뀐 할 일 칩 「놓은 시루에 씨앗을 심으세요」다. 아직 정하지도 않았는데 「정했네」라고 한다. 정작 놓일 시루는 메뉴 더미에 가려서 「여기」가 어디인지 보이지 않는다. 「여기에 둘까요?」라는 글이 배너 제목, 팝업 제목, 손가락 말 세 곳에 있다.",
+    "evidence": "scratchpad/walk/006_dlg_d0.png · 007_d0_placeOk.png · 008_d0_placeOk.png. scratchpad/drift.mjs로 잰 값: 가방 칸을 누르고 1.5초 뒤 stage=\"talking picked confirming\", 칩=\"놓은 시루에 씨앗을 심으세요\", 넘긴 대사 4줄. 까닭은 코드 순서다: L14142 `afterPlace();` → checkQuests → cropPotConfirmed()가 picked.before를 못 봐서 임시 자리를 «확정»으로 센다. picked.before는 L14154에 가서야 채워진다.",
+    "proposal": "① startPhonePlace에서 L14142 `afterPlace();`를 지우고, placeConfirmOk() 끝의 `if (back) { … }` 다음 줄로 `afterPlace();`를 옮긴다. 그러면 「자리를 정했네」가 [확인]을 누른 순간에 뜬다. 대사 계약 「놓은 순간」 그대로다. ② CSS 한 줄 `#stage.confirming #plantActions{visibility:hidden}`으로 확인 팝업 뒤의 시루 메뉴를 숨긴다. [확인] 뒤에는 placeConfirmOk가 picked.select(back)으로 메뉴를 다시 연다. ③ fpLive일 때 L14174 `banner('여기에 둘까요?', …)`를 부르지 않는다. 팝업과 손가락이 이미 같은 말을 한다. ④ 손가락 말 L5366 '여기에 둘까요? — [확인]'을 '바닥은 어둡습니다 — [확인]'으로 바꾼다(fpLive이고 반지하일 때만). 팝업 제목과 겹치지 않고, 인트로의 「어두운 데 놓아 봐」를 놓는 자리에서 확인시킨다.",
+    "touches_rules": false,
+    "impact": "high",
+    "effort": "S"
+   },
+   {
+    "title": "첫 [다음 날]을 누르면 대사를 18번 넘겨야 하고, 그 뒤에 0원투성이 「첫 달 가계부」 창이 뜬다",
+    "where": "Day 1 아침 첫 턴. dialogue.js rentFirst L342(7줄) + shortBothCrop L1041(4줄) + questDoneWaterSiru L699(3줄) + questFirstHarvest L708(4줄). 이어서 game.html openMonthWhenQuiet() → drawMonthPanel() L6589·L6640–6655",
+    "problem": "첫날 일을 다 하고 [다음 날]을 누르면 월세, 「둘 다 멀어」, 「오늘이 첫날」, 「다 자란 것 같은데」가 쉬지 않고 18줄 이어진다. 그 뒤 가계부 창에는 채소 판 것 0원, 식물 판 것 0원, 「밥으로 아낀 식비 −0원」(초록), 밥이 된 것 없음, 거둔 것 없음이 적혀 있다. 18줄 가운데 7줄은 거짓이거나 너무 이른 말이다(아래 세 항목). 가계부는 절반이 빈 칸이다.",
+    "evidence": "scratchpad/walk/_log.txt의 대사 21~37(첫 줄 「이십만 원…」 포함 18줄). 016_dlg_d1.png, 017_d1_monthGo.png. playshot 012_day001.png, 014_plant_d1.png. 코드 L6648: `row('밥으로 아낀 식비', '−' + won(r.saved), 'save')`.",
+    "proposal": "(a) 첫 장부만 줄인다. drawMonthPanel에서 `r.count <= 1 && !r.veg && !r.plant && !r.saved && !r.harvests`이면 '나간 돈' 세 줄과 '이번 달 지갑' 한 줄만 그린다. 비어 있는 '들어온 돈·아낀 돈·먹은 것' 칸은 한 줄로 대신한다: 「채소를 거두기 시작하면 여기에 아낀 돈이 붙습니다」. 창 자체는 그대로 둔다. 박사님 「다음날 월세가 쓱 빠지게 … 돈 설명 먼저」를 살리기 위해서다. (b) L6648을 `r.saved > 0 ? '−' + won(r.saved) : '아직 없습니다'`로 고친다. (c) 아래 「이사 대사 Day 1」「물 뒤 할 일 멈춤」「첫 수확 줄」 세 가지를 같이 넣으면 Day 1 아침은 questFirstHarvest 4줄(D0에서 미뤄진 것) + rentFirst 7줄 = 11줄이 된다. 가계부는 4줄짜리 카드다.",
+    "touches_rules": false,
+    "impact": "high",
+    "effort": "S"
+   },
+   {
+    "title": "Day 1에 몬이가 「무늬」와 「시루를 늘려」를 말한다. 아직 모르는 말이고 할 수도 없는 일이다",
+    "where": "src/game/loop.js stepTutorial §③ 이사 두 축 L541–572(state 'both:crop' → move_short_both_crop) · dialogue.js shortBothCrop L1041–1046",
+    "problem": "Day 1 아침 월세 대사 바로 뒤에 「둘 다 멀어. 돈도, 무늬도.」「돈. 무늬는 기다리면 와. 돈은 안 그래.」「시루를 늘려. 하나로는 안 모여.」가 나온다. 무늬는 Day 11에 몬스테라가 올 때 처음 나오는 말이다(monsteraArrived 「두 번째랑 세 번째 잎에 무늬가 나」). 시루를 하나 더 사는 일은 강제 가이드가 창턱 뒤(d11)에야 시킨다. 사람은 모르는 낱말을 듣고, 지금은 할 수 없는 일을 지시받는다. dialogue.js:393 계율 「겪지 않은 것을 겪은 것처럼 말하지 않는다」와도 어긋난다.",
+    "evidence": "scratchpad/walk/_log.txt 대사 27~30(Day 1). loop.js L556–557 `: c.money ? 'varie' : (cropEnough(S) ? 'both:light' : 'both:crop');`에서 첫 평가 때 _moveState가 undefined → 'both:crop'으로 바뀌어 곧바로 사건이 난다.",
+    "proposal": "loop.js L558 `if (state && state !== ts._moveState) {` 바로 앞에 `if (!(S.firstPlay && S.firstPlay.monstera && S.firstPlay.monstera.arrived) && !c.ok) return ev;`를 넣는다. _moveState를 적지 않고 돌아가므로, 몬스테라가 온 다음 턴에 처음 한 번 뜬다. 그때의 「시루를 늘려」는 강제 가이드 ⑤(시루 둘째)와 같은 말이 된다. 사건 차례(사건>독촉>잡담)와 값은 그대로다. 이 사건이 처음 뜨는 날만 d1에서 d12 무렵으로 늦춰진다.",
+    "touches_rules": false,
+    "impact": "high",
+    "effort": "S"
+   },
+   {
+    "title": "물을 줘도 할 일 줄이 「물을 주세요」에 멈춰 있고, 다음 날 아침 몬이가 「어제는 그냥 놓여 있던 날」이라고 틀리게 말한다",
+    "where": "game.html siruWater L10763–10767(checkQuests를 부르지 않음. siruHarvest L10801은 부름) · siruPlant L10756 · dialogue.js questDoneWaterSiru L699–703",
+    "problem": "Day 0에 물을 준 뒤에도 칩은 「놓은 시루에 물을 주세요」 그대로다. 방금 한 일을 또 하라고 한다. 퀘스트는 다음 턴에야 끝나서, Day 1 아침에 몬이가 「이제 세기 시작했어. 오늘이 첫날.」 → 나 「어제가 아니고?」 → 몬이 「어제는 그냥 놓여 있던 날이고.」라고 말한다. 실제로는 어제(Day 0)에 물을 줬다. 강제 가이드에서는 놓기와 물이 늘 같은 날이라 이 두 줄은 늘 거짓이 된다. 물을 줄 때 뜨는 배너도 「오늘이 0일차입니다」인데, dialogue.js:693은 「0일차라는 말을 안 쓴다 — 화면에 그런 글자가 없다」고 적어 두었다.",
+    "evidence": "scratchpad/walk/014_d0_next.png(칩 「놓은 시루에 물을 주세요」, 배너 「물을 줬습니다 오늘이 0일차입니다」). _log.txt 대사 31~33(Day 1). 코드 L10765 `banner('물을 줬습니다', \\`오늘이 0일차입니다 — ${r.harvestDays || ''}일 뒤에 거둡니다\\`)`.",
+    "proposal": "① siruWater와 siruPlant에서 `draw();` 앞에 `checkQuests(lastTurn);` 한 줄을 넣는다. siruHarvest가 쓰는 방식과 같다. 그러면 dlgOpen의 흩기(끝낸 말은 지금, 새로 연 말은 미룸)가 questFirstHarvest를 D1 아침으로 알아서 넘긴다. ② questDoneWaterSiru를 첫 줄 하나만 남긴다: `[{ who:'moni', face:'happy', text:'이제 세기 시작했어. 오늘이 첫날.' }]`. 「어제가 아니고?」와 「어제는 그냥 놓여 있던 날이고.」는 지운다. ③ L10765 부제를 `오늘부터 셉니다 — ${n}일 뒤에 거둡니다`로 바꾼다.",
+    "touches_rules": false,
+    "impact": "high",
+    "effort": "S"
+   },
+   {
+    "title": "나흘을 기다리는 동안 할 일 칩이 「다 자란 콩나물을 거두세요」이고, 자취녀는 「다 자란 것 같은데」라고 말한다",
+    "where": "src/game/quest.js first_harvest.todo L346 · dialogue.js questFirstHarvest L708–713 · game.html questSnapshotNow() L9018–9028",
+    "problem": "Day 1부터 Day 4까지 위쪽 칩은 「다 자란 콩나물을 거두세요」다. 바로 아래 [다음 날 ▸ · 수확까지 4일]과 반대되는 말이다. 사람은 거둘 것을 찾아 방을 뒤진다. Day 1 아침에는 자취녀가 「다 자란 것 같은데.」(놀람 얼굴)라고 하는데 수확까지 4일이 남아 있다.",
+    "evidence": "scratchpad/walk/018_d1_next.png(칩 「다 자란 콩나물을 거두세요」, 버튼 「수확까지 4일」). 019_dlg_d2.png. playshot 017_day002.png. _log.txt 대사 34 「나: 다 자란 것 같은데.」(Day 1).",
+    "proposal": "① quest.js L346을 `todo: (d, s) => arr(s && s.cropPots).some(p => yes(p && p.ready)) ? '다 자란 콩나물을 거두세요' : '콩나물이 자라는 중 — [다음 날]로 넘기세요'`로 바꾼다. 스무 자 남짓이라 F-1의 28자 계약 안이다. questSnapshotNow의 cropPots에는 `ready`를 한 칸 붙인다. cropPotList(fp, S.day)의 같은 id 줄에서 `.ready`를 그대로 옮겨 적는다. 화면이 날을 다시 세지 않는다. ② 대사 L709 '다 자란 것 같은데.'를 '이제 다 자라면 끝이야?'로 바꾼다. 다음 줄 몬이 「자란 거랑 거둔 거는 달라. 거둬야 다음 바퀴가 돌아.」가 그대로 답이 된다.",
+    "touches_rules": false,
+    "impact": "high",
+    "effort": "S"
+   },
+   {
+    "title": "위쪽에 늘 보이는 「목표 한 줄」이 없다. 칩·손가락·배너·알약·버튼이 저마다 다른 말을 한다",
+    "where": "game.html #questChip/#questChipText(할 일 칩)을 그리는 곳 · updateHint가 고르는 걸음 · quest.js 사슬 todo",
+    "problem": "강제 가이드 동안 동시에 말하는 곳이 다섯이다. 위 칩, 손가락 말, 가운데 배너, 왼쪽 아래 알약, [다음 날] 글자. 009에서는 손가락이 「사람을 눌러 보세요」인데 칩은 「놓은 시루에 씨앗을 심으세요」다. 014에서는 칩이 「놓은 시루에 물을 주세요」(이미 줬다)인데 손가락은 「닷새 더 넘겨 보세요」, 알약은 「작물은 전부 자라는 중」이다. 첫날이 몇 걸음이고 지금 몇째 걸음인지 보이는 곳이 없다.",
+    "evidence": "scratchpad/walk/009_d0_(점).png · 012_d0_mark.png · 014_d0_next.png. plan-firstplay-setup-steps ⓒ의 판정: 「할 일이 «지금 할 것»을 말해야 한다」 · 「할 일과 손가락이 다른 말을 한다」.",
+    "proposal": "fpLive && !settingDone인 동안에만 칩 글을 손가락과 같은 상태에서 읽은 짧은 명사로 바꾸고, 걸음 수를 붙인다. `1/5 · 시루 놓기`(!placedOne) → `2/5 · 사람 움직이기`(!coachSeen('walk')) → `3/5 · 씨앗 심기`(needsSow) → `4/5 · 물 주기`(needsWater) → `5/5 · 하루 넘기기 — 수확까지 N일`(growing, N은 daysLeft) → `거두기`(ready). 수확 뒤에는 `씨앗 사기` → `씨앗 심기`, 창턱 뒤에는 `시루 하나 더` 순이다. 칩 머리 「📜 할 일」은 그대로 둔다. 손가락은 문장, 칩은 명사라서 같은 글이 두 번 찍히지 않는다. 세팅이 끝나면 예전처럼 퀘스트 todo로 돌아간다. 판정은 새로 만들지 않고 updateHint가 쓰는 cropRows·coachSeen을 그대로 읽는다.",
+    "touches_rules": false,
+    "impact": "medium",
+    "effort": "M"
+   },
+   {
+    "title": "걸어가기를 마치자마자 쪽지가 10초 동안 손가락을 가린다. 다음 할 일(씨앗 심기)이 안 보인다",
+    "where": "game.html updateHint 캐릭 이동 갈래 L5604–5606 `coachLater('walkOff')` · coachTick() L5227",
+    "problem": "방바닥을 눌러 걷는 순간 「걸어갔습니다 — 사람을 한 번 더 누르면 이동 모드가 꺼집니다」 쪽지가 뜨고, 10초 동안 손가락이 없다. 규칙은 「쪽지는 손가락이 [다음 날]만 짚을 때」인데, 걷기 손가락은 «점» 손가락이라 hintTargetEl이 null이어서 규칙이 안 걸린다. coachLater가 coach()를 바로 부른다.",
+    "evidence": "scratchpad/walk/_log.txt 「53s 쪽지: 걸어갔습니다…」 → 「64s D0 👉 mark 「씨앗 심기」」(11초 비었다). 011_coach_d0.png. 같은 병을 walkTip으로 이미 겪은 기록이 coachTick 주석(「쪽지가 덮은 10초」)에 있다.",
+    "proposal": "L5606 `coachLater('walkOff')`를 `coachPendingSet('walkOff')`로 바꾼다. 바로 띄우지 않고 기다림 서랍에만 넣는다. 그러면 coachTick 규칙대로 물을 준 뒤 손가락이 [다음 날]로 갈 때(「손이 빈 때」) 뜬다. 덤으로 coachTick L5227 조건을 `else if ((hintTargetEl && hintTargetEl.id !== 'next') || (hintFollow && !hintFollow.el)) { }`로 넓혀 점 손가락도 «할 일을 짚는 중»으로 본다.",
+    "touches_rules": false,
+    "impact": "medium",
+    "effort": "S"
+   },
+   {
+    "title": "강제 가이드 중에도 [다음 날]만 밝은 주황이라 손가락이 가리키는 것보다 눈에 띈다. 누르면 그날이 날아간다",
+    "where": "game.html #next CSS L1402(z-index 71, 덮개 위) · drawNext() L9439–9449 · $('next').onclick L11523",
+    "problem": "덮개(0.28)가 방을 어둡게 해도 [다음 날]은 z71이라 가장 밝다. 시루를 놓고 심기나 물을 하기 전에 누르면 하루가 넘어가 월세 대사가 나오고, 시루는 그대로다. playshot에서 안 심은 채 Day 1이 됐고 칩은 「놓은 시루에 씨앗을 심으세요」 그대로였다. 라벨 「다음 날 ▸ · 수확까지 5일」은 화살표가 가운데 있다.",
+    "evidence": "tools/_out/playshot/crit_tut/010_시루놓기_d0.png → 012_day001.png(심기 전 Day 1, 칩 그대로). scratchpad/walk/014_d0_next.png(「다음 날 ▸ · 수확까지 5일」). 코드 L9449 `b.textContent = \\`${NEXT_KO} · 수확까지 ${left}일\\``.",
+    "proposal": "① updateHint 끝(과 hintAt)에서 `$('next').classList.toggle('notNow', fpLive && !settingDone && !!hintTargetEl && hintTargetEl.id !== 'next')`를 켜고, CSS에 `#next.notNow{filter:saturate(.25) brightness(.8);box-shadow:none}`를 둔다. 누르는 것은 그대로다. 박사님 ⑥ 「가이드대로 안 하고 다음 날 눌러도 가이드는 살아 있게」를 건드리지 않는다. 손가락이 [다음 날]을 짚는 순간에만 다시 주황이 된다. ② L9449를 `다음 날 · 수확까지 ${left}일 ▸`로 바꾼다(화살표를 끝으로).",
+    "touches_rules": false,
+    "impact": "medium",
+    "effort": "S"
+   },
+   {
+    "title": "오프닝에서 첫 손짓까지 대사를 16번 넘겨야 한다. 뒤 3줄은 바로 앞 말의 되풀이다",
+    "where": "dialogue.js intro L130–147(13줄) + questPlaceSiru L682–686(3줄, 켤 때 한 묶음으로 뜸)",
+    "problem": "게임을 켜면 탭 16번을 해야 가방을 누를 수 있다. 끝의 「가방에 둔 채로는 안 되는 거야?」「가방 안은 아무 자리도 아니야. 빛이 안 드니까.」「어디에 두느냐. 그게 이 얘기의 전부야.」는 바로 앞 「가방에 콩나물 시루가 있어. 어두운 데 놓아 봐.」의 되풀이다. 할 일 창의 why(「가방에 있는 동안은 빛을 못 받습니다…」)와도 같은 말이다.",
+    "evidence": "scratchpad/walk/_log.txt 대사 1~16 → 33s에야 첫 손가락(openBag). 002_dlg_d0.png.",
+    "proposal": "울음 두 줄, 몬이 등장, 식물신 줄은 그대로 둔다. ① intro L146 '응. 어두운 자리도 쓸모가 있거든.'을 '응. 어디에 두느냐, 그게 이 얘기의 전부야.'로 바꿔 명제를 인트로 끝으로 옮긴다. ② questPlaceSiru를 `[{ who:'moni', face:'curious', text:'가방 안은 아무 자리도 아니야. 빛이 안 드니까.' }]` 한 줄로 줄인다. 그러면 16줄이 14줄이 된다. 오프닝의 전제는 박사님 것이고, 이 문장들은 [plan] 몫이다(박사님이 직접 낸 문구 목록에는 없다).",
+    "touches_rules": false,
+    "impact": "medium",
+    "effort": "S"
+   },
+   {
+    "title": "강제 가이드 중에도 몬이가 할 게 없는 날 「해 보면 알 거야.」라고 독촉한다",
+    "where": "dialogue.js chatterContext().nudge L2074–2082(가장 먼저 열린 미완 퀘) · pickNudge L2099 · nudgeOffer L1223",
+    "problem": "Day 2 아침, 할 일은 첫 수확이고 수확까지 4일 남았다. 몬이는 앞뒤 없이 「해 보면 알 거야.」 한 줄만 한다. 무엇을 해 보라는지 모르고, 해 볼 수 있는 일도 없다. Day 6 아침에는 씨앗이 막 도착한 순간(심기 전)에 같은 줄이 또 나온다. 강제 가이드 동안에는 손가락이 이미 독촉 역할을 한다.",
+    "evidence": "scratchpad/walk/019_dlg_d2.png(칩 「다 자란 콩나물을 거두세요」, 버튼 「수확까지 3일」) · 035_dlg_d6.png. _log.txt 대사 38(D2), 51(D6).",
+    "proposal": "chatterContext의 nudge를 셀 때 `fpForced = fp.enabled && !fp.completed && !(창턱 && 콩나물 시루 확정 둘)`(updateHint settingDone과 같은 셈)이면 FIRST_PLAY_CHAIN_IDS 퀘는 후보에서 건너뛴다. 곧 세팅이 끝나기 전에는 첫 플레이 사슬 퀘를 독촉하지 않는다. 박사님 「매일매일」 독촉은 세팅이 끝난 뒤(siru5부터) 그대로다. ⚠ 「독촉 매일」은 박사님 확정 항목이라, 이 제외가 확정 범위 안인지 박사님께 여쭤야 한다.",
+    "touches_rules": true,
+    "impact": "medium",
+    "effort": "S"
+   },
+   {
+    "title": "폰에서 결과 배너의 오른쪽 1/3이 할 일 칩 밑에 깔려 글이 잘린다",
+    "where": "game.html #event 배너(위 가운데) vs #questChip(위 오른쪽), banner()를 부르는 곳 전부",
+    "problem": "「콩나물 씨앗을 심었습니다」「물을 줬습니다 오늘이 0일차입니다 — 5일 뒤에 거둡니다」「주문했습니다」「📦 주문한 것이 왔습니다」의 오른쪽이 칩에 덮여 「씨앗을[칩]」「— [칩] 뒤에 거둡니다」처럼 읽힌다. 손짓 결과를 알려 주는 유일한 글인데 반이 가려진다.",
+    "evidence": "scratchpad/walk/006_dlg_d0.png · 013_d0_mark.png · 014_d0_next.png · 016_dlg_d1.png · 032_d5_next.png · 034_d5_navShop.png(모두 x≈222~292에서 겹친다).",
+    "proposal": "배너가 사는 동안(6초) 칩을 비킨다. banner()가 켤 때 `$('stage').classList.add('bannering')`, 끌 때 remove를 하고, CSS `#stage.bannering #questChip{opacity:0;pointer-events:none;transition:opacity .2s}`를 둔다. 그렇게 하지 않는다면 innerWidth<600에서 배너 top을 `questChip.getBoundingClientRect().bottom + 8`로 내린다.",
+    "touches_rules": false,
+    "impact": "medium",
+    "effort": "S"
+   },
+   {
+    "title": "「여기를 눌러 걸어가 보세요」가 사람 바로 옆 아무 바닥이나 짚는다. 다음 걸음과 이어지지 않는다",
+    "where": "game.html updateHint 캐릭 이동 갈래 L5612 `gp = { x: cr.width * 0.42, y: cr.height * 0.66 }` · L5617 say",
+    "problem": "사람을 고르면 손가락이 캔버스 42%·66% 자리를 짚는다. 사람에게서 한두 걸음 떨어진 빈 바닥이다. 걷기는 뜻 없이 1m쯤 움직이고 끝나고, 바로 다음 걸음(씨앗 심기)은 방 반대편 시루다.",
+    "evidence": "scratchpad/walk/010_d0_(점).png(사람 75,500 · 짚은 점 163,497 · 시루 말풍선 280,500).",
+    "proposal": "목표 점을 «첫 놓인 시루 앞 바닥»으로 바꾼다. roomView.screenPosOf(siruKey(첫 확정 시루 id))에서 사람 화면 위치 쪽으로 약 40px 당긴 점이다(시루를 누르지 않도록). 말은 '시루 앞으로 걸어가 보세요'로 한다. 시루 자리를 못 읽으면 예전 점을 쓴다. 차례(사람→방바닥→심기)는 그대로이고, 걸은 자리가 곧 심는 자리가 된다.",
+    "touches_rules": false,
+    "impact": "medium",
+    "effort": "S"
+   },
+   {
+    "title": "씨앗을 주문한 뒤 상점 시트가 열린 채 남는다. [다음 날]이 「보유 채소 팔기」를 덮고, 닫는 탭이 한 번 더 든다",
+    "where": "game.html $('buyGo').onclick L8353–8375 · updateHint sheetCloseDoor 갈래 L6168–6171",
+    "problem": "Day 5에 주문하면 시트(상점 탭)가 그대로 열려 있다. [다음 날]이 시트 위 「보유 채소 팔기 (1판)」 단추 오른쪽 위에 겹쳐 떠서 잘못 누르기 쉽다. 날을 넘기면 다음 날 아침에도 시트가 말풍선을 가려 「…한 번 더 누르면 닫힙니다」라는 쓸모없는 걸음이 하나 더 든다.",
+    "evidence": "scratchpad/walk/032_d5_next.png([다음 날]이 판매 단추에 겹침) · 034_d5_navShop.png(Day 6 시트 열린 채) · _log.txt 168s 「[다음 날]이 가려졌습니다 — 한 번 더 누르면 닫힙니다」.",
+    "proposal": "buyGo onclick의 `banner('주문했습니다', …)` 다음에 `if (S.firstPlay && S.firstPlay.enabled && !S.firstPlay.completed) { try { window.__byeotSheet.close(); } catch {} }`를 넣는다. startPhonePlace L14140이 이미 쓰는 것과 같은 방식이다. 강제 구간에서 주문 다음 걸음은 늘 방([다음 날]이나 놓기)이다.",
+    "touches_rules": false,
+    "impact": "medium",
+    "effort": "S"
+   },
+   {
+    "title": "대사를 닫자마자 뜬 손가락 밑에서 [확인]과 말풍선이 0.4초 동안 45~100px 미끄러진다. 첫 누름이 빗나간다",
+    "where": "game.html updateHint() 첫머리 · src/game/camera_moves.js talkOut(outMs 720) · room_view.camBusy()",
+    "problem": "대사를 닫는 순간 손가락이 [확인]에 뜨고, 이어서 대화 카메라가 제자리로 돌아가며 [확인]이 (195,463)에서 (160,509)로 밀린다. 바로 누르면 구멍 밖을 눌러 울타리가 삼키고, 손가락만 한 번 뛴다. Day 5 거두기 말풍선도 첫 누름이 헛손이었다.",
+    "evidence": "scratchpad/drift.mjs 표: 0ms 195,463 tween=false → 100~300ms tween=true → 400ms 160,509. _log.txt에서 placeOk 두 번(48s·50s), D5 mark 두 번(121s·125s).",
+    "proposal": "updateHint에서 coachTick 다음 줄에 `try { const b = roomView && roomView.camBusy && roomView.camBusy(); if ((b && b.tween && !b.down) || (Date.now() - lastTalkEndAt < 800)) return hintAt(null); } catch {}`를 넣는다. lastTalkEndAt은 #stage에서 talking 클래스가 빠질 때 적는다(dlgPaint의 !line 갈래). 손가락과 덮개는 카메라가 멎은 뒤(0.8초 안) 뜬다. 반 초 지킴이가 다시 부르므로 따로 붙일 것은 없다. v2 카메라 연출은 그대로 둔다.",
+    "touches_rules": false,
+    "impact": "low",
+    "effort": "S"
+   },
+   {
+    "title": "세로 탭 줄의 [상점]을 위에서 짚어서 손이 [식물] 위에 얹힌다. 말도 「미리」가 틀렸다",
+    "where": "game.html placeHintAt() L4203–4213(옆에서 가리키기는 위가 막혔을 때만) · updateHint seedNeed 갈래 L5883",
+    "problem": "Day 5에 [상점]을 가리킬 때 말풍선 「씨앗을 미리 주문해 두세요」가 [가방]을, 손이 [식물]을 덮는다. 손이 있는 [식물]을 누르기 쉽다. 이때 씨앗 재고는 0이고 알약도 「콩 씨앗이 없습니다」라서 「미리」가 틀린 말이다.",
+    "evidence": "scratchpad/walk/029_d5_navShop.png. 반면 [가방]을 짚는 003_d0_openBag.png는 옆(👈)에서 가리켜 또렷하다.",
+    "proposal": "① L4204 조건을 `if (el.closest && el.closest('#navbar') || r.top - hh + 4 < lim)`로 바꿔, 세로 탭 줄 대상은 늘 옆(👈)에서 가리킨다. ② L5883 '씨앗을 미리 주문해 두세요'를 '콩 씨앗을 사러 갑니다'로 바꾼다. 시루 갈래 '시루를 하나 더 사러 갑니다'와 같은 꼴이다.",
+    "touches_rules": false,
+    "impact": "low",
+    "effort": "S"
+   },
+   {
+    "title": "개수 창의 손가락이 「여기를 눌러 보세요」뿐이다. 이미 써 둔 품목별 말이 한 번도 안 뜬다",
+    "where": "game.html updateHint «떠 있는 창» 갈래 L5578–5590(먼저 걸림)과, 그 아래 buyGo 문안 L5877 / L5921 / L5970(도달 못 함)",
+    "problem": "씨앗을 살 때 마지막 걸음(개수 창)에서 손가락 말이 「여기를 눌러 보세요」라서, 무엇이 언제 오는지가 끊긴다. '개수를 정하고 [주문] — 내일 옵니다', '…— 시루는 이틀 뒤에 옵니다'는 코드에 있지만, .pop 갈래가 먼저 return해서 한 번도 안 뜬다.",
+    "evidence": "scratchpad/walk/_log.txt 158s 「D5 👉 buyGo 「여기를 눌러 보세요」」 · 031_d5_buyGo.png.",
+    "proposal": ".pop 갈래 L5589를 `const say = goesOn ? wait : (pop.id === 'buyPanel' && buyItemId) ? ('개수를 정하고 [주문] — ' + (arriveDays(buyItemId) <= 1 ? '내일 옵니다' : '이틀 뒤에 옵니다')) : '여기를 눌러 보세요';`로 바꾼다. arriveDays는 상점 품목 표의 도착일을 읽는다. 이미 있는 세 문안을 살리는 것이다.",
+    "touches_rules": false,
+    "impact": "low",
+    "effort": "S"
+   },
+   {
+    "title": "몬이는 「물을 안 줬잖아」라고 하는데 다음 걸음은 「씨앗 심기」다",
+    "where": "dialogue.js questWaterSiru L694–698",
+    "problem": "첫 시루를 놓은 순간 시루는 아직 안 심겨 있다. 칩은 「놓은 시루에 씨앗을 심으세요」이고 곧 손가락도 「씨앗 심기」를 짚는데, 몬이만 「아직. 물을 안 줬잖아.」라고 한다. 걸음 하나를 건너뛴 말이다.",
+    "evidence": "scratchpad/walk/_log.txt 대사 19~20과 64s 「👉 mark 「씨앗 심기」」 · 012_d0_mark.png.",
+    "proposal": "L696 '아직. 물을 안 줬잖아.'를 '아직. 씨앗 심고 물까지 줘야 해.'로 바꾼다. L697 「놓기만 하면 날짜만 가. 물을 준 날부터 세는 거야.」는 그대로 둔다.",
+    "touches_rules": false,
+    "impact": "low",
+    "effort": "S"
+   },
+   {
+    "title": "가방을 처음 열면 손가락 말이 가방 제목을 덮고, 밑의 도움말이 세 줄짜리에 「손가락」 낱말이 겹친다",
+    "where": "game.html updateHint 시루 놓기 갈래 L5686 · #baghelp 문안(가방 탭)",
+    "problem": "「끌거나 눌러서 방 안 어두운 자리에」가 「가방 · 2개」 제목을 덮고, 손은 시루 칸의 i·×1을 덮는다. 밑의 도움말 「시루 칸을 끌거나 누르면 방에 한 번에 하나씩 섭니다 — 끌면 손가락이 놓은 자리에, 누르면 게임이 빈 자리를 골라 세운 뒤 자리를 고르는 화면으로 갑니다 · i 를 누르면 자세히」는 세 줄이고, 「손가락」이 화면의 안내 손가락(👇)과 헷갈린다.",
+    "evidence": "tools/_out/playshot/crit_tut/004_tab_bag.png(겹침: say⇄bagCount 86%, hand⇄info 68%) · scratchpad/walk/005_d0_cropThumb.png.",
+    "proposal": "① L5686 말을 '눌러서 방에 꺼내 보세요'로 바꾼다. 「어두운 자리」 가르침은 첫 항목의 [확인] 손가락 '바닥은 어둡습니다 — [확인]'이 놓는 자리에서 맡는다. ② baghelp를 '누르면 방바닥에 꺼내 놓고 [확인]을 묻습니다 · 끌면 원하는 자리에 바로 놓입니다'로 줄인다. 끌기 길은 박사님 「가이드 있어도 드래그 되게」 그대로 남는다.",
+    "touches_rules": false,
+    "impact": "low",
+    "effort": "S"
+   },
+   {
+    "title": "대사 중에 흐린 [다음 날]이 대사 상자 위에 떠서 글 끝과 「▼ 탭」을 덮는다",
+    "where": "game.html CSS L880–884 `#stage.talking #next{opacity:.35;pointer-events:none}` + L1402 `#next{z-index:71}`(대사 #dlg는 z34)",
+    "problem": "대사를 읽는 내내 흐린 「다음 날 ▸ · 수확까지 4일」 알약이 상자 오른쪽 아래를 차지한다. 넘기라는 표시 「▼ 탭」은 100% 가리고, 긴 줄은 끝 글자를 덮는다. 눌리지는 않지만 「눌러야 하나」로 읽힌다.",
+    "evidence": "tools/_out/playshot/crit_tut/_list.md 001: 「100% — next «다음 날 ▸» ⇄ dlgNext «▼ 탭»」, 「67% — next ⇄ dlgText」 · scratchpad/walk/016_dlg_d1.png · 019_dlg_d2.png.",
+    "proposal": "L884를 `#stage.talking #resow{opacity:.35;pointer-events:none}`로 두고 `#stage.talking #next{opacity:.35;pointer-events:none;z-index:30}`을 따로 준다. 대사 중에만 대사 상자(z34) 밑으로 내려가 상자에 가린다. 대사가 없을 때의 z71(덮개 위) 규칙은 그대로다.",
+    "touches_rules": false,
+    "impact": "low",
+    "effort": "S"
+   },
+   {
+    "title": "화면 낱말이 「0일차」「회전」「1일 뒤」로 갈린다. 몬이는 「첫날」「바퀴」「하루 뒤」라고 한다",
+    "where": "game.html siruPlant L10760 · siruWater L10765 · buyGo 배너 L8371–8373 · 가계부 L6653 `(${r.harvests}회전)` · quest.js water_siru.reward L312 · dialogue.js questOrderSeed L755–761",
+    "problem": "심기 배너는 「물을 줘야 5일 회전이 시작됩니다」, 퀘스트 보상은 「회전이 돌기 시작합니다」, 주문 배너는 「1일 뒤 도착」이다. 반면 몬이는 「바퀴」「오늘이 첫날」이라 하고, 손가락은 「하루 뒤에 옵니다」라고 한다. questOrderSeed는 「한 봉지에 500원」을 말하는데, 같은 파일 L718의 「씨앗값을 안 읊는다 — 500원은 상점 화면이 숫자로 말한다」와 어긋난다. 「시킨 건 1일 뒤에 도착해」, 그리고 d11 전에는 할 수 없는 「시루를 늘리면 그만큼 더 시켜야 하고」가 이어져 수확 날 대사가 12줄이 된다.",
+    "evidence": "scratchpad/walk/013_d0_mark.png(「5일 회전이 시작됩니다」) · 031_d5_buyGo.png · _log.txt 대사 45~50.",
+    "proposal": "L10760 부제를 `씨앗 ${n}봉지 · 물을 주면 자라기 시작합니다`로 바꾼다. quest.js L312를 '콩나물이 자라기 시작합니다'로, L6653을 `(${r.harvests}번 거둠)`으로 바꾼다. 주문 배너 도착일과 BEAN_LEAD_KO는 updateHint의 DAY_KO(하루·이틀…)로 낸다: '하루 뒤 도착', '하루 뒤에 도착해'. questOrderSeed는 값 줄을 이미 있는 대체 줄 '한 봉지가 시루 하나 몫이야.'로 바꾸고, 마지막 줄 '시루를 늘리면 그만큼 더 시켜야 하고.'를 지운다. 수확 날 대사가 12줄에서 11줄이 된다. 값은 하나도 안 바뀐다.",
+    "touches_rules": false,
+    "impact": "low",
+    "effort": "S"
+   }
+  ]
+ },
+ {
+  "lens": "몬스테라 순간들 — 도착(몬이 배달)·새 잎·갈라짐·무늬·하프문·삽수·확대 보기·원화(ev_*)를 플레이어 눈으로 본다. 축하받는가 / 기대(다음은 뭐고 얼마나 남았나)가 서는가 / 빛→자람이 읽히는가. 생장 수식·문턱·캐논은 안 건드리고 «보여 주기»만 제안한다. 확인한 방법: 코드를 읽었고, 로컬 서버(9003, 끝나고 내림)에서 진짜 dlgOpen() 을 부르는 읽기 전용 탐침을 돌렸다(scratchpad/probe_dlgorder.mjs). 원화 10장은 전부 열어 봤고, 몬이 없이 자른 판은 scratchpad/ill/crop_*.jpg 에 있다. playshot --days 14 는 d9 씨앗 주문 고리에서 멈춰(rc 124) 도착까지 못 갔다. 그래서 방 안 장면은 docs/handoff/img 에 있던 옛 캡처로 보강했다.",
+  "findings": [
+   {
+    "title": "도착 장면 차례가 뒤집혀 나온다: 식물신이 몬스테라를 받은 «뒤»에 말한다 (DLG_SOLO 오작동)",
+    "where": "game.html §DLG_SOLO (const DLG_SOLO …) · §dlgOpen 안 `const solo = …` 두 줄",
+    "problem": "도착 날 사람이 보는 차례: ①몬이·나 10줄로 화분을 받고 이야기함 → ②수확 반응 → ③마지막에야 '?: 한 바퀴는 운이다. 두 바퀴는 손이지.'. 박사님 확정 차례는 '시루 멘트 → 식물신이 준다 → 도착'이다(gift-to-plan ②, first_play.md §2가 '식물신이 도착 뒤에 말하는 회차'를 금한다). 지금은 준 사람이 선물을 다 뜯어 본 뒤에 나타나서 도착의 무게가 사라진다. 같은 표에 'moved_out'(사건 id)이 적혀 있는데 dlgOpen 이 받는 것은 스크립트 id 'movedOut'이다. 그래서 이사 장면은 혼자 뜨지 않고, 미뤄 둔 독촉 줄이 작별 앞에 끼어들 수 있다. 'varieConfirmed' 라는 스크립트는 어디에도 없다.",
+    "evidence": "game.html:11709 `const DLG_SOLO = new Set(['monsteraArrived', 'intro', 'moved_out', 'varieConfirmed']);` · :11749 `const solo = ids.find(id => DLG_SOLO.has(id));\n  if (solo) { dlgHold = ids.filter(x => x !== solo); ids = [solo]; }` — storyteller 는 god1 을 도착 바로 «앞»에 꽂는다(dialogue.js events(): `out.splice(arr, 0, 'god1')`). 이 줄이 god1 을 미룸 서랍으로 보낸다. 탐침 결과(진짜 window.__dlgOpen): storyteller ids = [\"harvest\",\"god1\",\"monsteraArrived\"] → 보인 차례 1~10 「가방에… 화분이 하나 들어와 있어」…「가방에서 꺼내서 밝은 데 놓아 봐」, 11~12 수확 반응, 13 「?: 한 바퀴는 운이다. 두 바퀴는 손이지.」 (scratchpad/probe_dlgorder.mjs)",
+    "proposal": "game.html 두 곳을 고친다.\n(1) `const DLG_SOLO = new Set(['monsteraArrived', 'intro', 'movedOut', 'varieLucky']);` — 표에 쓰는 것은 «스크립트 id» 다. varieLucky 는 '한 판에 한 번뿐이고 놓치면 못 되돌리는 것'이라는 이 표의 기준에 맞아서 넣는다.\n(2) 장면의 «앞말»은 그대로 두고 «뒤»의 것만 미룬다:\n```js\nconst solo = ids.find(id => DLG_SOLO.has(id));\nif (solo) {\n  /* ★ storyteller 가 차례대로 앞에 둔 것(수확·식물신)은 앞에 둔다 — 미루는 것은 장면 «뒤»뿐 */\n  const cut = ids.indexOf(solo) + 1;\n  dlgHold = [...ids.slice(cut), ...dlgHold];\n  ids = ids.slice(0, cut);\n}\n```\n이러면 도착은 god1 → monsteraArrived 가 되고, 이사는 movedOut 다음에 movedInOneroom 이 이어서 나온다(dlgPaint → dlgFlushHeld). 잴 것: 같은 탐침에서 첫 줄 화자가 '?' 인가, 이사 묶음 첫 줄이 「짐이 생각보다 적다.」인가.",
+    "touches_rules": false,
+    "impact": "high",
+    "effort": "S"
+   },
+   {
+    "title": "무늬 잎이 첫 그림에서 민무늬로 뜨고, 하프문은 다 자라는 날 한 번 더 민잎으로 번쩍인다: 무늬 그림을 미리 받아 두기",
+    "where": "plant_grow.html §wantSkin·§pickLeafKey·§drawLeafStage·§buildPlant (방은 render3d/plant_assemble 이 같은 buildPlant 를 쓰므로 같이 고쳐진다)",
+    "problem": "무늬 그림(skins/*.glb, 장당 약 4MB)은 그 잎이 «처음 그려지는 프레임»에 요청된다. 받는 몇 초 동안은 기본잎으로 그렸다가 툭 바뀐다. 이 게임에서 제일 큰 두 순간이 정확히 그 프레임에 걸린다. ① 둘째 잎: varie_lucky 대사(「…어? 새 잎이 좀 이상한데」)는 leafM 이 0.22 를 넘는 날에 나오는데, pickLeafKey 가 'leaf_young_albo' 를 처음 청하는 날도 같은 날이다. 몬이가 놀라는 순간 화면의 잎은 민무늬다. ② 하프문이 다 자라는 날: canMature 가 참이 되는 그날 'leaf_mat34' 를 처음 청한다. 그래서 잎이 중간무늬 → 민성숙잎(leaf_mature) → 하프문으로 두 번 바뀐다. 등급이 드러나는 순간에 가짜 민잎이 한 번 끼는 것이다.",
+    "evidence": "plant_grow.html:2310 `function wantSkin(k){ if(!ASSETS[k]) ensureSkin(k); return !!ASSETS[k]; }` · :2326 `if(m<P.stageYoung) return (varie&&wantSkin('leaf_young_albo'))?'leaf_young_albo':'leaf_young';` · :2334 `if(n>0){ const k='leaf_mat'+…; if(wantSkin(k)) return k; } } return 'leaf_mature';` · :1572 `const PROLOGUE_SHOW_M=0.22;` (loop.js 는 `shown` 이 참이 되는 날에 varie_lucky 를 낸다) · room_view.js:1901 「처음 한 번은 기본잎으로 그려진다」 · master-story-inputs [growth] ②",
+    "proposal": "① (본 고침) 변이 여부·중기 번호·성숙 추첨은 축이 설 때(mkAxis) 이미 정해져 있으니, 그 자리에서 «읽기만» 하고 미리 받는다. rng·VARIE_STATE·MAT_STATE 는 안 건드린다. 받는 장수도 같고 시점만 앞당긴다. wantSkin 아래에 추가:\n```js\nfunction prefetchVarieSkins(axes, g, leafMOf){\n  for(const ax of axes){\n    if(!ax.varie || ax.birth>g || leafDroppedOf(ax.leafBirth)) continue;\n    const m = g>=ax.leafBirth ? leafMOf(ax,g) : 0;          // 아직 새순 전이면 0\n    if(m<P.stageYoung) ensureSkin('leaf_young_albo');          // 축이 선 날부터 — 0.22 보다 한참 앞\n    if(m<P.stageMid){ const n=midAlboNumOf(ax.leafBirth, ax.alboMid);\n      ensureSkin('leaf_mid_albo'+Math.max(1,Math.min(ALBO_MID_MAX,n))); }\n    /* canMature 는 안 본다 — 성숙 굴림이 이기는 «그날» 처음 받으면 민잎이 한 번 번쩍인다 */\n    if(m>=P.stageYoung){ const n=matAlboNumOf(ax.leafBirth, ax.alboMid, ax.matRoll);\n      if(n>0) ensureSkin('leaf_mat'+Math.max(1,Math.min(MAT_ALBO_MAX,n))); }\n  }\n}\n```\nbuildPlant 안 `nodes=nSeg; leaves=nLeaf;` 바로 뒤에 `prefetchVarieSkins(axes, g, leafM);` 한 줄을 넣는다. axes·leafM 은 그 블록의 growTopology 결과라서 새 topology 도 새 난수도 없다. 축이 서는 날부터 잎이 0.22 가 되기까지 생장나이 16+26 정도가 비어 있어 받을 시간이 넉넉하다.\n② (덤, 세이브를 막 불러 여러 장이 한꺼번에 올 때) pickLeafKey·drawLeafStage 두 쌍둥이 모두, 무늬 열쇠가 아직 안 왔으면 민잎 대신 «그 잎이 마지막으로 그린 무늬 열쇠»를 쓴다(LAST_VKEY Map, 열쇠는 `${CUR_PLANT}:${leafBirth}`).\n잴 것: varie_lucky 가 나는 턴에 `leafSkinUsedAll().find(l=>l.leafBirth===ev.leafBirth).key === 'leaf_young_albo'` 이고 skinsPending()===0 인가. 성숙하는 날 key 가 한 번도 'leaf_mature' 를 안 거치는가. test_skin_room_matches_zoom 을 같이 돌린다.",
+    "touches_rules": false,
+    "impact": "high",
+    "effort": "S"
+   },
+   {
+    "title": "원화 열 장(ev_*) 전부 몬이가 정본과 다르다: 화분이 없고 꼬리와 «등딱지»가 있다. 붙이기 전에 막아야 한다",
+    "where": "assets/illust/ev_*.png 10장 · assets/illust/web/*.jpg 3장 · assets/illust/index.json (leaf 소유) · assets/characters/LOOK.md",
+    "problem": "원화(2026-08-16)의 몬이는 화분 없이 서 있는 연두 공룡이다. 꼬리가 있고, 몬스테라 잎이 날개처럼 달렸다. ev_monstera_arrive_b 에는 갈색 등딱지까지 있다. 정본(LOOK.md, 09-07)은 «테라코타 화분에 든 새싹»이고, 게임 대사창 초상화도 그 모습이다. 이대로 컷신에 붙이면 같은 장면에서 대사창 몬이(화분)와 원화 몬이(공룡)가 나란히 뜬다. LOOK.md 가 '세 번 잃었다'고 적은 바로 그 실패 모양이다. 주인공(긴 생머리, 일자 앞머리, 크림 티)은 정본과 맞는다.",
+    "evidence": "LOOK.md: 「★ «화분에 든 새싹»… 화분은 «테라코타»」 · 「teach try2 ⇒ 화분 사라짐 · 잎 사라짐 ⇒ ★ «거북이 등딱지»가 붙었다」 · 「화분과 잎은 몬이의 «옷»이 아니라 «몸»이다」. 비교: assets/characters/portraits/portrait_moni_neutral.png (화분 속) ↔ ev_monstera_arrive_b.png (왼쪽 아래, 등딱지·잎날개·화분 없음) · ev_moveout_a2.png (계단 위, 꼬리). 열 장 모두 눈으로 봤다(scratchpad/ill/*.jpg)",
+    "proposal": "(최종) 몬이 자리만 다시 칠한다. 주인공과 배경은 그대로 두고, portrait_moni_*.png 를 참조로 image-to-image 를 쓴다. LOOK.md 의 몬이 프롬프트에 CRITICAL 절(「MUST still be sitting inside the SAME terracotta flower pot … Do not give it a shell」)을 붙인다. ⚠ 크레딧이 드는 일이라 박사님 대기 항목 ③(캐릭 크레딧)이 풀린 뒤에 한다.\n(당장, 크레딧 0) 몬이가 안 들어가게 잘라 쓴다. 비율은 그림 전체를 1로 본 값이고, 사건(focus 네모)은 남는 것을 눈으로 확인했다(scratchpad/ill/crop_*.jpg):\n  ev_monstera_arrive_b → [0.44, 0.06, 0.96, 0.66] (화분 든 두 손·얼굴·창)\n  ev_first_varie_a2 → [0.40, 0.00, 0.95, 0.64] (빛줄기·무늬 잎·표정. index.json 이 「위를 자르면 안 된다」고 한 것 지킴)\n  ev_moveout_a2 → [0.08, 0.00, 0.68, 1.00] (계단·몬스테라·상자. 몬이와 가방만 빠짐)\nindex.json 의 safe_crop 은 «몬이를 살리는» 값이라 이 자르기는 그 값을 넘는다. leaf 가 index.json 에 `crop_no_moni` 칸을 새로 적어 주면 core 는 그것만 읽는다. 렌더 확인은 같은 픽셀 크기로 나란히 놓고 한다([[render-check-equal-scale]]).",
+    "touches_rules": false,
+    "impact": "high",
+    "effort": "M"
+   },
+   {
+    "title": "몬스테라 도착이 «글만» 나온다: 짧은 도착 컷신(원화 카드, 대사 두 줄 동안)",
+    "where": "game.html §showFirstPlayEvents (turn.plantArrived 갈래) · §dlgPaint · 새 #sceneCard (#reliefBox 옆) · dialogue.js createDialogue().push",
+    "problem": "게임에서 제일 큰 장면 셋(도착·첫 무늬·이사)의 원화가 코드에서 한 번도 불리지 않는다. 도착은 배너 한 줄('🪴 축복받은 몬스테라 삽수가 도착했습니다'), 띠로롱, 방 위 대사 열 줄로만 지나간다. 사람은 «선물을 받았다»는 순간을 못 느끼고, 가방 속 아이콘으로만 만난다.",
+    "evidence": "`grep \"assets/illust\"` 결과 코드 0건(guide-event-quest-map §7, plan-to-asset-thisrun: 「⛔ 배선 없음 … 새로 만들 것이 아니라 붙일 것이다」). 옛 판에 있던 대사창 캡처: scratchpad/shots/02_dlg_arrive1.png — 방 위에 대사만 있다.",
+    "proposal": "#1(DLG_SOLO)과 #3(몬이 자르기)을 먼저 하고 붙인다. 순서가 뒤집힌 채로 붙이면 카드가 도착 «뒤»에 뜬다.\n(a) dialogue.js push 한 줄: `queue = queue.concat(lines.map((l, i) => ({ ...l, scriptId, lineNo: i })));` — 줄 번호만 싣는 표시용 칸이다.\n(b) game.html:\n```js\nconst SCENES = {\n  god1:     { src: './assets/illust/web/ev_monstera_arrive_b.jpg', box: [0.44,0.06,0.96,0.66], until: ['monsteraArrived', 1] },\n  movedOut: { src: () => sceneForMoveOut(), box: [0.08,0,0.68,1], until: ['movedInOneroom', 0] }   // #9\n};\nfunction syncScene(line){\n  const card=$('sceneCard'); if(!card) return;\n  if(!line){ card.classList.remove('on'); return; }\n  const sc = SCENES[line.scriptId];\n  if(sc && line.lineNo===0){ const src = typeof sc.src==='function'? sc.src() : sc.src; if(src){ paintScene(src, sc.box); card.dataset.until = sc.until.join(':'); card.classList.add('on'); } }\n  const [us, un] = (card.dataset.until||'').split(':');\n  if(card.classList.contains('on') && line.scriptId===us && line.lineNo>=+un) card.classList.remove('on');\n}\n```\ndlgPaint 는 첫 줄 `const line = dlg.current();` 바로 뒤에서 `syncScene(line)` 을 부른다. [건너뛰기]도 카드를 닫는다. paintScene 은 틀 aspect-ratio 를 `(x1-x0)*1400 / (y1-y0)*1045` 로 두고, img 폭 `100/(x1-x0)%`, `transform: translate(${-x0*100}%, ${-y0*100}%)` 로 자른다.\nCSS: `#sceneCard{position:absolute;inset:0;z-index:58;pointer-events:none;opacity:0;transition:opacity .45s;background:rgba(8,6,12,.72);display:flex;justify-content:center;align-items:flex-start;padding:calc(var(--safe-t,0px) + 64px) 16px 0}` `#sceneCard.on{opacity:1}` `.art{width:min(100%,720px);overflow:hidden;border-radius:14px}`. 대사 상자(z 60↑)가 카드 위에 있으니 탭은 그대로 먹는다.\n흐름: 도착 턴이 끝나면 띠로롱과 배너(그대로) → 「?: 한 바퀴는 운이다. 두 바퀴는 손이지.」 줄에서 카드가 0.45초에 걸쳐 뜬다 → 「가방에… 화분이 하나 들어와 있어.」도 카드 위 → 「몬스테라야. 나도 오랜만에 보네.」에서 카드가 걷히고 방으로 돌아온다. 뒤의 여덟 줄과 가방 손가락은 지금 그대로다. 대사 문구는 한 글자도 안 바꾼다.",
+    "touches_rules": false,
+    "impact": "high",
+    "effort": "M"
+   },
+   {
+    "title": "하프문이 다 자라 «이제 자를 수 있게 된» 순간이 조용하다: 탈출 열쇠가 생긴 날에 보상이 없다",
+    "where": "game.html §varieMaturedLeavesNow · §삽수 말풍선(`✂ 삽수 자르기` mark) · §showFirstPlayEvents · propagation.cutBlockedReason 은 그대로",
+    "problem": "박사님 확정: 「삽수버튼(자르기) 생기는건 3번째 하프문 무늬잎 나와서 성숙잎 됬을때야」. 프롤로그에서는 이 날이 곧 등급(하프문)이 드러나는 날이고 이 방을 나가는 열쇠가 생기는 날이다. 그런데 화면은 방에 '✂ 삽수 자르기' 말풍선 하나를 조용히 세울 뿐이다. 게다가 몬이는 훨씬 앞, 잎 두 장째(말린 새순일 때)에 「그럼 하나는 떼도 돼」라고 이미 말했다. 그 뒤로 사람은 회색 사유(「아직 이릅니다 — 무늬 잎이 다 자라야 자를 수 있습니다」)를 수십 일 본다. 풀리는 날 아무도 알려 주지 않으니 그 고리가 닫히지 않는다.",
+    "evidence": "propagation.js:820 `Number.isInteger(opt.varieMaturedLeaves) && opt.varieMaturedLeaves < 2)` → `'아직 이릅니다 — 무늬 잎이 다 자라야 자를 수 있습니다'` · game.html:9687 말풍선 `if (free && (jar || pot)) out.push({ … ko: '✂ 삽수 자르기' …})` (알림·배너·초점 없음) · dialogue.js questFirstCut 「잎이 두 장이 됐어.」「그럼 하나는 떼도 돼.」 (quest first_cut 은 `motherLeaves >= 2` 에서 열리고, leafStats 는 잎을 말린 새순 날부터 센다)",
+    "proposal": "문턱 «2»를 화면에 다시 적지 않는다(§2.8). 대신 말풍선이 이미 쓰는 판정을 빌려 «막힘 → 풀림»이 바뀌는 순간만 잡는다:\n```js\nlet _cutFreePrev = null;            // 메모리만 — 세이브를 연 첫 턴은 안 울린다\nfunction cutJustOpened(){\n  const p = pot0(S); if(!p) return false;\n  const { ok, nodes } = cutNodesNow(); let free = 0;\n  for (const n of ok) { let why=null; try{ why = cutBlockedReason(S, nodes, n.nodeId, { potId:p.id, varieMaturedLeaves: varieMaturedLeavesNow() }); }catch{ why='?'; } if(!why) free++; }\n  const was = _cutFreePrev; _cutFreePrev = free;\n  return was === 0 && free > 0;\n}\n```\nshowFirstPlayEvents 에서 이것이 참이면: ①`events.push({ title: '✂ 이제 자를 수 있습니다', sub: '무늬 잎이 다 자랐습니다 — [식물]에서 마디를 고르세요' })` (막힘 문구를 뒤집은 말이고 「하프문」·「둘」은 안 읊는다) ② focusOnMonstera() 로 카메라를 그 그루로 당긴다 ③ 반짝임과 소리(#6) ④ #sceneCard 에 ev_first_varie_a2 를 몬이 없는 자르기 [0.40,0,0.95,0.64] 로 띄우고 배너를 누르면 닫는다. 원화의 반은 흰 잎이 «다 자란 하프문»이라 이 순간과 그림이 맞다. 어린 둘째 잎(산반) 때 쓰면 그림과 3D 가 어긋난다 ⑤ ✂ 말풍선이 3초 동안 맥박치게 한다(`.mark.pulse`). 몬이 한 줄은 [plan] 몫으로 남기고 초안만 적는다: happy 「다 자랐네. 이제 무늬가 또렷해.」. surprise 낯은 varieLucky 한 줄에만 쓰는 규칙을 지킨다. #2 선로딩이 없으면 이 순간에 민잎이 번쩍이므로 #2 가 먼저다.",
+    "touches_rules": false,
+    "impact": "high",
+    "effort": "M"
+   },
+   {
+    "title": "새 잎이 펴지는 순간에 아무 연출이 없다: 카메라를 당기는 것은 첫 새순 한 번뿐이다",
+    "where": "game.html §focusOnMonstera · §showFirstPlayEvents · src/game/sfx.js SPEC·VOICES · room_view.screenPosOf",
+    "problem": "반지하에서 잎은 30·40·50·70·100… 유효일마다 한 장씩, 드물게 난다. 그런데 화면이 반응하는 것은 첫 플레이 끝의 말린 새순 한 번뿐이다(focusOnMonstera, 12×16px 이라 당긴다). 잎 2·3장째는 퀘스트 완료 대사(「한 장 더 났네」)가 잎이 아직 «말린 새순»일 때 나간다. leafStats 가 leafBirth 부터 세기 때문이다. 정작 잎이 활짝 펴지는 날에는 아무 일도 없다. 4장째부터는 대사도 연출도 0이다. «기다린 보람»이 오는 날이 화면에서 지워진 셈이다.",
+    "evidence": "game.html:11139 `if (justNow) focusOnMonstera();` (FIRST_PLAY_COMPLETE_PHASE_ID 턴에만) · :11141 `if (events.length) sfx.chime();` · plant_grow leafStats `if(!leafOnPlant(ax, g)) continue; leaves++;` (leafBirth=새순) · quest.js leaf_two `done: (s, ctx) => num(s.motherLeaves) >= ctx.q.need.leaves` · dialogue.js questDoneLeafTwo 「한 장 더 났네. 자리를 잘 골라 놨다는 뜻이야.」 · plant_grow.html:3200 `if(m<0.22) return 'spear_opening'; if(m<P.stageYoung) return 'leaf_young';`",
+    "proposal": "growth 가 이미 내는 단계 경계를 그대로 쓴다. 새 문턱은 없다. 그루마다 어제 phaseId 를 메모리에 두고, turn.plants[].growthPhase.phaseId 가 'spear_opening' → 'leaf_young' 으로 바뀐 턴에 celebratePlant(pot) 를 부른다:\n① focusOnMonstera 를 `focusOnPlant(pot, holdMs)` 로 넓힌다(열쇠 `p.at ? 'free:'+p.id : p.slotId` 는 지금 식). 새순 때와 같은 900ms/3600ms 를 쓴다.\n② 반짝임: roomView.screenPosOf(key) 에 캔버스 rect 를 더한 자리에 ✦ 여섯 알을 반경 40px 로 1.2초 동안 흩었다가 지운다. DOM 한 겹이고 3D 는 안 건드린다. `.leafSpark i{position:absolute;color:#fff6c8;animation:spark 1.2s ease-out forwards}`\n③ 소리: sfx.js 에 'sprout' 목소리를 더한다. `sprout: { ko: '새잎', dur: 0.52, throttleMs: 80 }`. 배경 음계(A C D E G)에서 midi [69,72,74,76,81] 을 triangle 로 0.06초 간격 오름차순으로 친다(vChime 과 같은 결). test_sfx.mjs 를 같이 돈다.\n④ 배너(배너는 숫자를 말해도 된다): `{ title: '🌿 새 잎이 펴졌습니다', sub: `${S.pots.length>1?'몬스테라 '+(idx+1)+' · ':''}잎 ${leaves}장` }`\n⑤ 몬이 한 줄은 [plan] 몫이다. 초안: 되풀이 가능한 'leafOpened' 스크립트에 두세 줄을 돌려 쓴다(happy 「폈다.」 / curious 「이것도 빛 쌓인 만큼 난 거야.」). 같은 턴에 퀘스트 대사가 있으면 안 낸다. 숫자는 안 읊는다.\n⑥ 주인공 환호(#12)가 이어지면 덧붙인다.\n잴 것: 탐침으로 잎 2장째가 펴지는 턴에 배너 1, 초점 1, 반짝임 1 이 나고, 다음 턴에는 다시 안 나는지 본다.",
+    "touches_rules": false,
+    "impact": "high",
+    "effort": "M"
+   },
+   {
+    "title": "«다음 잎까지 얼마나 남았나»를 식물 줄이 안 말한다: 게이지가 «무엇까지»인지 없고 잎 수도 없다",
+    "where": "game.html §drawPlantMore (pgauge·pgline) · §detail.monstera · §drawGrowGauge · plant_grow.html PHASE_KO · loop.js stepPlantDay fields",
+    "problem": "[식물] 탭 줄은 「새 축이 올라오는 중 · 43%」처럼 나온다. ① 43%가 «무엇까지»인지 안 적혀 있다. ② '축'은 개발 말이다. ③ 잎 몇 장, 무늬 몇 장인지가 어디에도 없다. [📋 자세히] 카드에도 없다. 코드 주석이 '잎 수는 growth 소유라 안 적는다'고 스스로 비워 두었다. ④ 확대창 게이지는 단계는 확대한 그루 것을, 멈춘 까닭은 첫 그루(pot0·lastTurn) 것을 읽어서 둘째 그루를 열면 두 값이 섞인다. 기다리는 게임인데 «얼마나 왔나»가 흐리다.",
+    "evidence": "game.html:10662 `+ `<small class=\"pgline\">${esc(ph.phaseKo || '자라는 중')} · ${Math.round(…progress01…)}%`` · :10640 주석 「잎 수는 growth 소유라 … 그래서 **안 적는다.**」 · plant_grow.html:3221 `axis_rising:'새 축이 올라오는 중', spear_ready:'말린 새순을 준비하는 중'` · drawGrowGauge `const p = pot0(S);` + `const why = t && (t.headroomBlocked || t.growthBlocked)` · 옛 캡처 docs/handoff/img/varie/opened_zoom.png 「새순이 펴지는 중 → 어린잎까지 33%」",
+    "proposal": "날수는 절대 안 쓴다. 조도 때문에 못 세고, 「사흘 더」 꼴은 plan-empty-days ⓔ 가 금했다. 단계와 막대만 쓴다.\n① 자료: loop.js stepPlantDay 의 fields 에 `leafStats: (()=>{ try { return io.growth.leafStats(); } catch { return null; } })(),` 한 줄. 그 순간 그루가 꽂혀 있어서 그 그루 값이 나온다. 표시용 자료라 셈은 안 바뀐다.\n② 줄 글: `🌿 잎 ${ls.leaves}장${ls.variegatedLeaves?` · 무늬 ${ls.variegatedLeaves}장`:''}` 아래에 잎 한 바퀴를 점 여섯으로 그린다. LEAF_CYCLE = ['axis_rising','spear_ready','spear_furled','spear_opening','leaf_young','leaf_mid'] 에서 지금 칸까지 ●, 나머지 ○. 뒤에 `${nextPhaseKo ? '다음: '+nextPhaseKo : ''} ${pct}%` 를 붙인다. axis_rising·spear_ready 일 때 머리는 「다음 잎 준비」, 그 뒤 단계에서는 「${ls.leaves}번째 잎이 자라는 중」.\n③ 이름표(growth 소유 PHASE_KO, 표시만 바뀜): `axis_rising:'새 잎자루가 오르는 중'`. 캐논이 '잎자루가 먼저, 새순이 나중'이다(monsterabranch).\n④ [자세히] 카드에 `잎` 줄(같은 글)을 넣는다.\n⑤ drawGrowGauge 는 pot0 대신 «확대 중인 그루»를 읽는다. openZoomFor 가 쥔 pot 을 zoomPot 에 두고, 막힘 까닭도 turn.plants 에서 그 potId 줄로 읽는다.",
+    "touches_rules": false,
+    "impact": "medium",
+    "effort": "M"
+   },
+   {
+    "title": "첫 무늬: 몬이가 말하는 날에 사람은 아무것도 못 본다. 화면이 «보이는 날»을 따로 짚어 줘야 한다",
+    "where": "game.html §showFirstPlayEvents (varie_lucky 사건 턴) · 새 «무늬가 보인다» 비트 · coachSeen 한 번 저장",
+    "problem": "varie_lucky 는 둘째 잎이 어린잎이 되는 날(leafM 0.22) 난다. [leaf] 실측으로 어린잎에서는 무늬가 안 보이고, 중간잎(0.38)부터 흰 점박이가 또렷하다. 그래서 「…어? 새 잎이 좀 이상한데」「어어. 잠깐만. 그거 무늬야.」 동안 카메라는 대화 쪽으로 다가가고 그루는 작게 남는다. 사람은 «어느 잎»인지도 모른다. 정작 무늬가 눈에 보이게 되는 날에는 아무 일도 없다.",
+    "evidence": "loop.js:392 주석 「무늬가 화면에 보이는 날을 기다린다」 → plant_grow `PROLOGUE_SHOW_M=0.22` (drawLeafStage 의 새순/잎 경계) · plan-varie-seen-late ⓐ 「✔ «중간잎»에서 짙은 잎에 흰 점박이가 또렷하다 ⛔ «어린잎»에서는 안 보인다」 · camera_moves.js ① 「대화가 열리면 말하는 쪽으로 10% 다가가고」",
+    "proposal": "대사는 안 건드린다. 말하는 사람 바꾸기는 plan-varie-seen-late ⓒ·ⓖ 제안에 맡긴다.\n① varie_lucky 턴: dlgOpen 과 함께 focusOnPlant(pot0, «대사가 끝날 때까지») 를 건다. dlgPaint 의 빈 줄 갈래에서 focusSlot(null) 로 돌린다. 반짝임(#6)은 그 잎 자리에 딱 한 번. 「이 잎」이 어느 잎인지 눈이 따라가게 된다.\n② «보이는 날» 비트(새 대사 0): io.growth.leafState() 에서 varie 이고 io.growth.leafOnPlant() 의 leafM 이 io.growth.leafStageParams().stageYoung 을 어제는 못 넘고 오늘 넘은 잎이 있으면 → 배너 `{ title: '✨ 무늬가 보이기 시작했습니다', sub: '몬스테라를 누르고 [확대 보기]로 가까이 볼 수 있습니다' }` 와 초점·반짝임. 「확대 보기」는 박사님이 직접 낸 낱말 그대로다. 판에 한 번만(coachSeen 열쇠 'varieVisible'). 이 비트가 확대 보기로 들어가는 자연스러운 첫 이유가 된다.\n③ #2 선로딩이 먼저 있어야 ①에서 잎이 처음부터 무늬 그림으로 선다.",
+    "touches_rules": false,
+    "impact": "medium",
+    "effort": "M"
+   },
+   {
+    "title": "이사의 절정: 작별 대사를 읽는 동안 방이 이미 원룸으로 바뀌어 있고, 원화는 «들고 가는 것»과 어긋날 수 있다",
+    "where": "game.html §$('moveOut').onclick · #sceneCard(#4) · dialogue.js movedOut 은 [plan] 몫",
+    "problem": "이사 단추는 dlgOpen(작별 12줄 + 원룸 8줄)과 remountRoomView() 를 같은 손에서 부른다. 「불 끄고 가자. 어차피 잘 안 들어오던 불.」을 읽는 동안 뒤에서는 원룸이 지어지거나 로딩 중이다. 반지하를 떠나는 장면이 새 방 위에서 흘러간다. 또 core 실측으로 실제로 나가는 길은 «그루째 팔기»(ⓑ)라서, 많은 사람은 몬스테라 없이 이사한다. 그런데 이사 원화 a2 는 큰 몬스테라를 안고 있고, 대사는 「화분은 내가 안고 갈까?」다.",
+    "evidence": "game.html:16205 `const r = moveIntoOneroom(S, io, { carry });` → `dlgOpen(story.events(r.events));` → `if (r.roomChanged) remountRoomView();` (같은 동기 흐름) · core-cutting-gate-3leaves ⓑ 「그루째 팔고 — 선다. 그리고 이것만 선다」 · oneroom.js:300 `for (const p of S.pots || []) { p.at = null; … out.pots++; }` (가진 그루·삽수만 들고 간다) · 탐침에서 이사 묶음이 「짐이 생각보다 적다」→…→「…창이 눈높이에 있네」로 이어짐",
+    "proposal": "① #sceneCard 를 movedOut 첫 줄에서 띄우고 movedInOneroom 첫 줄(「…창이 눈높이에 있네.」)에서 걷는다(#4 의 SCENES.movedOut). 카드가 원룸 재조립을 가려 주니, «문을 나서고 → 새 창을 본다»가 한 박자로 붙는다. remountRoomView 는 지금 자리 그대로 둔다.\n② 원화는 들고 가는 것으로 고른다:\n```js\nfunction sceneForMoveOut(){\n  if ((S.pots||[]).length) return './assets/illust/web/ev_moveout_a2.jpg';          // 그루를 안고 간다\n  if ((S.cuttings||[]).length) return './assets/illust/web/ev_moveout_a3.jpg';      // 병 속 삽수 — ⚠ leaf 가 web 판을 뽑아야 한다\n  return null;                                                                       // 판 사람에게는 그림을 거짓으로 안 보인다\n}\n```\n자르기는 [0.08,0,0.68,1] 이다(몬이 제외, #3).\n③ 몬이 대사 「화분은 내가 안고 갈까?」는 그루를 판 판에서 거짓이 된다. 갈래(S.pots.length===0 일 때 다른 한 줄)가 필요한지는 [plan] 에 넘긴다. 문구는 이 창이 정하지 않는다.",
+    "touches_rules": false,
+    "impact": "medium",
+    "effort": "M"
+   },
+   {
+    "title": "빛→자람이 몸으로 안 읽힌다: 등을 켜서 자리가 «잘 자라는 자리»로 바뀌는 순간이 안 보인다",
+    "where": "game.html §drawPlantToday (grew 갈래) · §detail.monstera 의 KO(band) 표",
+    "problem": "아래 한 줄은 자란 날 「🌱 오늘 하루치 자랐습니다 — 어린잎까지 33%」만 말한다. 얼마나 빨리 자라는지(밴드)는 [자세히] 카드 안쪽에만 있다. 그래서 등을 사서 켠 날 «이 자리가 느리게 → 잘 자랍니다»로 바뀌는 것이 화면 어디에도 안 뜬다. 「등이 곧 길」(박사님 확정)을 몸으로 느낄 유일한 보상이 조용히 지나간다.",
+    "evidence": "game.html drawPlantToday: `el.textContent = `🌱 오늘 하루치 자랐습니다` + (ph && ph.nextPhaseKo ? ` — ${ph.nextPhaseKo}까지${pct != null ? ` ${pct}%` : ''}` : '');` · detail.monstera `const KO = { … slow: '느리게 자랍니다', good: '잘 자랍니다', best: '가장 잘 자랍니다', … }` · quest buy_lamp `reward: '밝은 자리가 생깁니다'`",
+    "proposal": "값과 배수는 안 쓴다. 밴드 «이름»만 옮긴다(정본은 data/growth_tuning.json by_band).\n① grew 갈래: `🌱 오늘 하루치 자랐습니다 · ${BAND_SHORT[b]} — ${ph.nextPhaseKo}까지 ${pct}%`. BAND_SHORT = { slow:'느리게', good:'잘', best:'아주 잘', over:'빛이 세서 느리게' }. b 는 `lastTurn.plants` 의 pot0 줄 growthSpeed.band 이고, 표는 카드의 KO 와 한 군데서 같이 쓴다.\n② 그루마다 어제 밴드를 메모리에 두고 서열(critical<poor<stagnant<slow<good<best)이 오른 턴에 배너를 한 번 낸다: `{ title: '💡 이 자리가 더 밝아졌습니다', sub: `자라는 속도: ${KO[어제]} → ${KO[오늘]}` }` 과 반짝임. 내려간 때는 지금처럼 「⏸」 줄이 맡는다.\n③ lamp_bought 대사(「방이 아니라 그 자리가 밝아진 거야」)가 난 뒤 처음 오는 이 배너가 그 말을 눈으로 확인해 준다.",
+    "touches_rules": false,
+    "impact": "medium",
+    "effort": "S"
+   },
+   {
+    "title": "갈라짐: «왜 안 갈라지나»를 게임이 말하지 않는다. 갈라짐 배너는 개발 시나리오에만 있다",
+    "where": "game.html §detail.monstera · §showFirstPlayEvents · (개발 전용) §SCENARIOS 의 「🌿 잎이 갈라지기 시작했어요!」",
+    "problem": "growth 약점 ④대로 반지하 창턱 7일 평균은 3.68, 등 1~3개면 6.02~6.17(문턱 6.0)이다. 갈라진 잎은 뜻대로 드물다. 손댈 수 있는 것은 «왜 안 갈라지는지 보여 주는 쪽»뿐이다. 그런데 진짜 게임 화면에는 갈라짐 이야기가 아예 없다. v0 완료 조건이던 「등을 켰더니 잎이 갈라지기 시작했어요」 배너는 개발 탭 시나리오 실행기에만 남았다. 사람은 몬스테라가 원래 갈라지는 식물인지, 자기 방에서 왜 통잎만 나는지 모른다.",
+    "evidence": "game.html:16471 `banner(`🌿 ${sc.cause ? sc.cause + ' ' : ''}잎이 갈라지기 시작했어요!`, …)` (runScenario 안에만) · growth_adapter.js canFenestrate: 「갈라짐 표시는 반드시 이걸 쓴다 … 7일 평균을 보므로」 · `grep canFenestrate game.html` → 0건 · master-story-inputs [growth] ④",
+    "proposal": "확률은 안 건드리고, 판정은 growth 의 canFenestrate(7일 평균) 하나만 쓴다.\n① [자세히] 카드에 줄 하나: `잎 갈라짐` → 참이면 「이 자리 빛이면 새 잎이 갈라질 수 있습니다」, 거짓이면 「이 자리 빛으로는 통잎으로 납니다 — 더 밝아야 갈라집니다」. 숫자는 안 적는다(showDli 규약).\n② 진짜 게임으로 옮긴다: 놓인 그루의 io.growth.canFenestrate(false) 가 어제 거짓에서 오늘 참이 된 턴에 배너 `{ title: '🌿 이 자리 빛이 갈라지는 선을 넘었습니다', sub: '이제부터 나는 잎은 갈라질 수 있습니다' }` 과 초점. 판에 한 번(coachSeen 'fenestrateOn'). 「수 있습니다」라 성숙 굴림과 어긋나지 않는다.",
+    "touches_rules": false,
+    "impact": "medium",
+    "effort": "S"
+   },
+   {
+    "title": "새 주인공의 환호·손 흔들기 클립이 불릴 길이 없다: 축하 순간에 몸짓을 못 붙인다",
+    "where": "src/game/v2_hero.js §actClipFrom · src/game/room_view.js (새 창구 emote)",
+    "problem": "오늘 밤 들어온 hero.glb 에는 wave·cheer 클립이 있다. 그런데 actClipFrom 은 sit·sleep·crouch·idle 만 돌려주고, room_view 에는 «제자리에서 몸짓 하나» 창구가 없다. 그래서 잎이 펴질 때, 하프문이 다 자랄 때, 이사할 때 주인공이 가만히 서 있다.",
+    "evidence": "v2_hero.js:18 「hero 는 제 클립 8개(walk·idle·sit·sleep·doze·crouch·wave·cheer)만 쓴다」 ↔ actClipFrom: `if (kind === 'sit' && C.sit) … if (kind === 'sleep' && C.sleep) … if (C.crouch) {…} return C.idle ? …` (wave·cheer 갈래 없음) · master-visual-result 「클립 8(… 손 흔들기·환호)」",
+    "proposal": "① actClipFrom 맨 위에 `if ((kind === 'cheer' || kind === 'wave') && C[kind]) return cut(C[kind], 0, C[kind].duration, kind + ':act');` 를 넣는다.\n② room_view 에 `emote(kind, facePos)` 를 연다. 걷지 않고 facePos(그루 자리)를 한 번 보고(person.c.faceXZ) holdClip(clip, clip.duration) 한 뒤 idle 로 돌아온다. 걷는 중·동작 중(acting)·대화 중이 아닐 때만 돌고, 아니면 조용히 건너뛴다.\n③ 부르는 자리: #6 잎 펴짐 → 'cheer', #5 자를 수 있음 → 'cheer', 도착 카드가 걷히는 순간 → 'wave'.\n④ 팔 고침(5890987a) 뒤로 앉기·눕기 검사를 다시 안 돌렸다고 적혀 있으니 probe_nap·probe_movemarks 를 같이 돌린다. ?v2hero=0 에서는 옛 몸에 그 클립이 없으니 조용히 건너뛴다.",
+    "touches_rules": false,
+    "impact": "low",
+    "effort": "M"
+   }
+  ]
+ },
+ {
+  "lens": "A brand-new player's first five minutes, compared with polished cozy games. 3D room visuals excluded. What I ran: tools/playshot.mjs --days 5 at 1280x720 (tools/_out/playshot/ux5_desk, 24 shots) and 390x844 (ux5_phone, 26 shots). I also wrote a scratchpad probe that taps only where the finger points and logs every dialogue line, the quest chip, finger, banner and __dlgLog (scratchpad/walk_desk/walk.txt to Day 13; walk_phone2/walk.txt to Day 7). Measured: on phone, reaching Day 5 took 51 dialogue lines and 79 taps. On desktop, reaching Day 13 took 76 lines and 140 taps. The monstera arrives on Day 11. No repo files were edited. The server on port 9004 is stopped.\n\nMinute by minute. Real-time figures are estimates [추정: 3 s per line, 1.5 s per tap].\n\n0:00-0:50 — 13 intro lines plus 3 questPlaceSiru lines: 16 lines before the player can touch anything. What hooks: the basement, the orphan's \"엄마… 아빠…\", Moni's \"뿅!\" and the pretty portraits. It works emotionally. The only goal is \"굶지는 않게\", with no promise of what comes next. Behind the dialogue box the quest chip, the bag's long explanation, the greyed \"가계부 다시 보기\" button and the 검수 tab are already showing. The dimmed [다음 날] shows through the dialogue box and reads \"다음 날▼ 탭\". It looks like a dev build.\n\n0:50-1:40 — Right after placing the siru, four places say four different things: finger \"사람을 눌러 보세요\", quest chip \"놓은 시루에 씨앗을 심으세요\", grey pill \"아직 안 심었습니다 — [심기] 먼저\", and the bag note \"[상점]에서 시루를 더 주문해\". After walk → plant → water, the chip still says \"물을 주세요\".\n\n1:40-2:40 — The first [다음 날] brings the ledger with six rows of 0원/없습니다, then 18 lines in a row. The rent explanation creates good tension. But \"둘 다 멀어. 돈도, 무늬도.\" uses a word I've never heard. \"오늘이 첫날… 어제는 그냥 놓여 있던 날이고\" is false because I watered yesterday. \"다 자란 것 같은데.\" plays when the sprouts are at 1/5. A skip-happy player presses [건너뛰기] here and also loses the money explanation.\n\n2:40-3:10 — Days 2-4: three presses of [다음 날] with nothing to do. Every day Moni repeats \"해 보면 알 거야.\", while the chip keeps saying \"다 자란 콩나물을 거두세요\". **This is where I would quit.**\n\n3:10-4:10 — Day 5 harvest. \"…이게 되네.\" with the proud face is the first reward and it lands. Right after it: a stamina toast, \"콩나물을(를)\", five scripts, then no seed → shop → quantity popup. On phone, when I followed the finger to [상점], it stayed on the left-rail [상점] for over a second after the shop opened, so a second tap closed the shop.\n\n4:10-5:00 — Every [다음 날] opens a \"오늘 밥상\" popup: g/몫/묶음/식비 arithmetic and a 4-paragraph explanation box. Then five more days of waiting with \"해 보면 알 거야.\"/\"그거 아직이지?\".\n\nAfter ~6-9 minutes — Day 11: the monstera, the plant the title refers to, finally arrives. The god's line lands after the gift, reversing the order. On the windowsill the plant is fingernail-sized, and the chip reads \"빛 판정은 7일 평균이라…\". Days 12-16: Moni asks \"무슨 일 있어?\" with a crying face, even though I followed every instruction.\n\nCompared with Stardew (grandfather's letter plus a goal on day 1), Animal Crossing (a clear first-day goal), or Unpacking (immediate hands-on play): the stakes are here (rent), but the promise (leave the basement) and the plant arrive after the five-minute window. The one good payoff (first harvest) is buried under economy popups.",
+  "findings": [
+   {
+    "title": "Moni nags every day about quests the player cannot do yet — and blocks the good crop lines",
+    "where": "src/game/dialogue.js chatterContext() → nudge IIFE, pickNudge(), CHATTER nudgeOffer/nudgeAsk/nudgeWorry; related src/game/quest.js first_harvest, order_seed(need.cycles 3), leaf_two/leaf_three",
+    "problem": "While the player follows every finger and is simply waiting for crops, Moni says the same vague line day after day. The nudge's owner is the oldest open quest that isn't finished yet. first_harvest (can't be done until the crop is ripe) and order_seed (already ordered on Day 5 but stays open until the 3rd harvest) get nagged for about two weeks. By Day 12-16 Moni asks \"무슨 일 있어?\" with a sad face. Because 독촉 ranks above 잡담, the first-play-only lines chatCrop1 \"콩나물이 진짜 자랄까.\" and chatCrop2 \"뭔가 하얀 게 올라왔어.\" never appear. Moni stops feeling like a character and starts feeling like a broken alarm, and players quit here.",
+    "evidence": "__dlgLog from the walk (scratchpad/walk_desk/walk.txt): d2:nudgeOffer, d3:nudgeOffer, d4:nudgeOffer, d5:nudgeAsk, d6~d8:nudgeOffer, d9~d11:nudgeAsk, d13:nudgeWorry, and zero chatCrop lines. Screenshots: tools/_out/playshot/ux5_phone/018_talk_d2.png through 026_end.png (「해 보면 알 거야.」 four days running, chip 「다 자란 콩나물을 거두세요」); scratchpad/walk_desk/048_d13_talk.png (「무슨 일 있어?」 with the crying face).",
+    "proposal": "In chatterContext()'s nudge loop, skip quests the player cannot act on right now. Just before the line `if (!done.has(id) && Number.isFinite(d) && ...)`, add `if (nudgeWaiting(id, S, dayNow)) continue;`. nudgeWaiting stays a pure function: first_harvest → import cropPotList from first_play.js and treat it as waiting when `!cropPotList(S.firstPlay, dayNow).some(r => r.ready)`. order_seed → waiting when there is already an order or stock of the seed, or a pot is growing (the same condition as its todo's '주문한 씨앗으로…' branch). leaf_two / leaf_three → always waiting (Moni herself says 「날짜로는 못 세. 빛이 쌓인 만큼 나는 거라서.」). The empty days then fill with chatCrop1/chatCrop2 under the unchanged QUIET_DAYS 2 rule. ⚠ This reads 박사님's 「퀘스트 안 하면 매일매일 독촉」 as 「할 수 있는데 안 하면」, so it needs 박사님's confirmation.",
+    "touches_rules": true,
+    "impact": "high",
+    "effort": "S"
+   },
+   {
+    "title": "Day 1 is an 18-line wall containing two false lines",
+    "where": "game.html siruWater / siruPlant (no checkQuests call), src/game/dialogue.js SCRIPTS.questFirstHarvest, questDoneWaterSiru",
+    "problem": "siruWater and siruPlant don't call checkQuests. Water done and first_harvest open are therefore detected on the next day's turn and pile onto the rent scene. On Day 1 the player reads rentFirst (7) + shortBothCrop (4) + questDoneWaterSiru (3) + questFirstHarvest (4) back to back. Two lines contradict what they just did: 「오늘이 첫날… 어제는 그냥 놓여 있던 날이고」, although the banner the day before said 「물을 줬습니다 · 오늘이 0일차입니다」, and 「다 자란 것 같은데.」, when the crop is at 1/5. If the player presses [건너뛰기] here, the rent explanation is lost too.",
+    "evidence": "walk_desk/walk.txt d1: 「이제 세기 시작했어. 오늘이 첫날.」「어제가 아니고?」「어제는 그냥 놓여 있던 날이고.」「다 자란 것 같은데.」, with the finger at the same moment saying 「자라는 중입니다 — 나흘 더 넘겨 보세요」. For comparison, siruHarvest (game.html ~10793) already calls `checkQuests(lastTurn)`.",
+    "proposal": "① game.html siruWater: change `if (r.watered) banner(...); draw();` to `if (r.watered) banner(...); checkQuests(lastTurn); draw();`. Add the same `checkQuests(lastTurn);` to siruPlant. questDoneWaterSiru then plays at the moment of watering on Day 0, where it is true. ② dialogue.js questFirstHarvest: change line 1 `{ who: 'jachwi', face: 'surprise', text: '다 자란 것 같은데.' }` to `{ who: 'jachwi', text: '이제 기다리기만 하면 먹는 거지?' }`. Change line 2 `'자란 거랑 거둔 거는 달라. 거둬야 다음 바퀴가 돌아.'` to `'다 자라도 거둬야 끝이야. 거둬야 다음 바퀴가 돌아.'`. Keep lines 3-4 (「놔두면?」「그 자리에 그대로 있어…」). With these plus the next two findings, Day 1 is left with only the rent scene.",
+    "touches_rules": false,
+    "impact": "high",
+    "effort": "S"
+   },
+   {
+    "title": "No long-term goal in the first five minutes, and 「무늬」 is mentioned before it exists",
+    "where": "src/game/dialogue.js SCRIPTS.rentFirst (end), src/game/loop.js narrativeEvents() move_short_* block (`if (state && state !== ts._moveState)`), game.html drawQuestPanel #questSub",
+    "problem": "From Day 0 to Day 10 the only goal is survival (「굶지는 않게」, 「석 달 안에 뭘 해야 한다는 소리네.」). The goal of leaving the basement is first spoken on Day 11 (「이 방을 나가는 돈, 거기서 나와.」). Meanwhile, on Day 1, move_short_both_crop throws 「둘 다 멀어. 돈도, 무늬도.」 and 「시루를 늘려. 하나로는 안 모여.」 before the monstera exists. The quest panel is just a chore list: 「할 일 0/16 — 그 뒤로 14가지가 더 있습니다」. Nothing tells the player where all this is heading.",
+    "evidence": "walk d1 (dlgLog d1:shortBothCrop), tools/_out/playshot/ux5_phone/008_tab_quest.png (할 일 0/16), dlgLog d11:monsteraArrived (first mention of the goal).",
+    "proposal": "① After the last line of rentFirst, 「나는 세는 것만 할게. 뭘 할지는 네가 정해.」, add two lines: `{ who: 'jachwi', face: 'worry', text: '…여기서 나가고 싶어. 계단 위로.' }`, `{ who: 'moni', face: 'happy', text: '그럼 그게 목표야. 오늘은 밥부터 — 콩나물이 첫걸음이야.' }`. They contain no numbers and don't name the monstera, so the arrival's surprise is kept. ② loop.js narrativeEvents: put `if (!(S.firstPlay && S.firstPlay.completed)) return ev;` before the move_short_* block, so 「무늬」 is first spoken by Moni in monsteraArrived. It must return before _moveState is updated, so the event fires on the first day after setup ends. ③ drawQuestPanel: prefix #questSub with a fixed goal line: `큰 목표 — 반지하에서 나가기 · 지금 할 것 — ${v.next.ko}`.",
+    "touches_rules": false,
+    "impact": "high",
+    "effort": "S"
+   },
+   {
+    "title": "The 식물신 line plays after the gift, reversing the canon order",
+    "where": "game.html dlgOpen() → the DLG_SOLO branch (`const solo = ids.find(id => DLG_SOLO.has(id)); if (solo) { dlgHold = ids.filter(x => x !== solo); ids = [solo]; }`)",
+    "problem": "scriptsForEvents correctly queues god1 before monsteraArrived. The screen then plays only the solo monsteraArrived and sends god1 to the hold queue. The god's single line, the one mysterious beat in the story, therefore comes right after 「가방에서 꺼내서 밝은 데 놓아 봐.」 and reads as a non-sequitur. dialogue.js itself says this reversal is forbidden: 「도착보다 앞이라야 한다 — first_play.md §2 가 금지한 것이 식물신이 도착 뒤에 말하는 회차다」.",
+    "evidence": "walk d11 order: ten monsteraArrived lines, then 「?: 한 바퀴는 운이다. 두 바퀴는 손이지.」, then questMonsteraHome. dlgLog: d11:monsteraArrived, d11:god1.",
+    "proposal": "In the solo branch, keep an immediately preceding god1 attached: `if (solo) { const i = ids.indexOf(solo); const pre = (i > 0 && ids[i-1] === 'god1') ? ['god1'] : []; dlgHold = ids.filter(x => x !== solo && !pre.includes(x)); ids = [...pre, solo]; }`. This restores the confirmed order; the god line text itself is untouched.",
+    "touches_rules": false,
+    "impact": "high",
+    "effort": "S"
+   },
+   {
+    "title": "Held dialogue is not actually held — overflow plays in the same breath",
+    "where": "game.html dlgPaint() → `try { if (dlgFlushHeld()) return; }`, the DLG_MAX_PER_OPEN=2 comment in dlgOpen()",
+    "problem": "The comment promises 「한 날에 둘까지. 넘치는 것은 버리지 않고 다음 날로 미룬다」. In practice dlgPaint flushes the hold queue as soon as the current script ends, so all queued scripts play back to back: four on Day 1, six on Day 11. The pacing fix 박사님 asked for (「몬스테라 주는 게 묻혀버린다」) is not in effect, and the silent Days 2-4 get nothing.",
+    "evidence": "walk d1: four scripts, 18 lines, one continuous stream. walk d11: monsteraArrived → god1 → questMonsteraHome → monsteraMoved → questDoneMonsteraHome → questLeafTwo in one sitting.",
+    "proposal": "In dlgPaint, don't flush immediately. Split the held scripts in two. (a) The QUEST_OPEN_SCRIPT line for the step the finger points at right now (e.g. questOrderSeed, questMonsteraHome) still plays immediately. (b) Reflection lines (learn*, QUEST_DONE_SCRIPT, shortBoth*) wait for the next day on which the storyteller returns [] and are output there first, e.g. `if (dlgHold.length && !ids.length) dlgOpen([])` in the day-turn handler. The empty days then fill with the story's own lines. The order 사건 > 독촉 > 잡담 is kept.",
+    "touches_rules": false,
+    "impact": "medium",
+    "effort": "M"
+   },
+   {
+    "title": "The right panel looks like a developer build",
+    "where": "game.html #tabDev (검수 tab) / #pageDev; #pageRoom #ctl 「집과 자리」 (room/slot/lamps/lit selects, ptrMode, #roomDev 「개발자 설정」); room option label `${r.label} (${r.light})` (~3386) with data/house_rooms.json \"light\": \"최악\"; phone shows the left nav rail and the sheet tabs at the same time",
+    "problem": "On first launch, players see a 검수 tab and a 「방」 tab full of greyed-out selects: 「반지하 (최악)」, 「0개 (자연광만)」, 「점등시간 12」, 「포인터 이동: 직접 — 잡은 자리로 옮겨집니다」 and 「개발자 설정」. First play disables them (game.html ~16547 `$('room').disabled = true …`) but leaves them visible. On phone the same five destinations appear twice. First impression: not a finished game.",
+    "evidence": "tools/_out/playshot/ux5_desk/007_tab_room.png, ux5_phone/007_tab_room.png, ux5_phone/004_tab_bag.png (left rail and sheet tabs both visible, 검수 tab included).",
+    "proposal": "Add a dev flag: `const DEV = new URLSearchParams(location.search).has('dev') || localStorage.getItem('byeot.dev') === '1'; document.body.classList.toggle('dev', DEV);`. CSS: `body:not(.dev) #tabDev, body:not(.dev) #roomDev, body:not(.dev) .devonly { display:none }`. Wrap the four labels 방 / 몬스테라 자리 / 식물등 / 점등시간 in `<div class=\"devonly\">`. Rename the h3 「집과 자리」 to 「설정」, leaving only 화면 밝기 and 포인터 이동. Use `${r.label}` for the option label when !DEV. Elements stay in the DOM and are only hidden, so id-based wiring survives. ⚠ Tests and tools/playshot.mjs that click #reset/#run30/#mode/#scen need ?dev=1 added.",
+    "touches_rules": false,
+    "impact": "high",
+    "effort": "M"
+   },
+   {
+    "title": "Right after the first siru is placed, four places say four different things",
+    "where": "game.html updateHint() walk branch (`if (!learnedWalk && placedOne …)`), drawJourney() `$('quest').textContent = …`, the #waterCrop grey pill text, bagHelpHTML() last `.bagmore` line",
+    "problem": "Keeping the forced order (시루→사람→바닥→심기→물), at the moment the finger says 「사람을 눌러 보세요」 the quest chip says 「놓은 시루에 씨앗을 심으세요」, the bottom pill says 「💧 아직 안 심었습니다 — [🌱 심기] 먼저」, and the bag says 「방에서 도는 시루가 1개입니다. 하나로는 하루 밥값이 안 메꿔집니다 — [상점]에서 시루를 더 주문해 어두운 칸을 갈라 놓으세요」. A new player can't tell which one to follow, and at minute one they're told to buy something.",
+    "evidence": "walk d0 64-97 s log. scratchpad/walk_desk/006_d0_finger.png and 008_d0_finger.png; tools/_out/playshot/ux5_phone/010_시루놓기_d0.png (finger on the person, chip on planting, pill on planting).",
+    "proposal": "① drawJourney: add a first branch while the walk step is active: `const walkStep = placedOne && !coachSeen().has('walk');` → `walkStep ? '사람을 눌러 방 안을 걸어 보세요 — 그다음 씨앗을 심습니다' : (justMoved ? … : …)`. ② Hide the #waterCrop pill while walkStep is true. ③ bagHelpHTML: replace the last `else out += more('방에서 도는 시루가 … [상점] 에서 시루를 더 주문해 …')` with `more('놓인 것은 <b>눌러서 [옮기기]</b> 로 자리를 다시 고릅니다')` until siru_two opens. The order itself doesn't change.",
+    "touches_rules": false,
+    "impact": "high",
+    "effort": "S"
+   },
+   {
+    "title": "The quest chip lags behind and uses technical language",
+    "where": "src/game/quest.js first_harvest.todo; game.html drawJourney() justMoved branch; movePotTo() banner; questSnapshotNow() cropPots",
+    "problem": "The chip is the most-read line on screen, and it doesn't match the finger. After watering on Day 0 it still says 「놓은 시루에 물을 주세요」, while the finger says 「자라는 중 — 닷새」. On phone Day 1 it says 「물을 주세요」 while the pill says 「작물은 전부 자라는 중」. For Days 1-4 it says 「다 자란 콩나물을 거두세요」 while the crop is at 1/5. After the monstera moves it reads 「창턱 화분받침(으)로 옮겼습니다. 빛 판정은 7일 평균이라 나흘쯤 지나야 새 자리 값이 됩니다 — 하루씩 넘겨 보세요.」, which is developer language.",
+    "evidence": "walk_desk/walk.txt d0 133 s, d1-d4. tools/_out/playshot/ux5_phone/016_waterCrop_d1.png; scratchpad/walk_desk/039_d11_talk.png and 045_d11_finger.png.",
+    "proposal": "① quest.js first_harvest: change `todo: () => '다 자란 콩나물을 거두세요'` to `todo: (d, s) => arr(s && s.cropPots).some(p => yes(p && p.ready)) ? '다 자란 콩나물을 거두세요' : '콩나물이 자라는 중입니다 — 다 자라면 거두세요'`. In questSnapshotNow's cropPots add `ready: !!(p && p.startedOnDay != null && !p.harvested && p.ageDays >= cropKindOf(site.kind).harvestDays)`. ② drawJourney justMoved: change to `${slotLabel(plant.slotId)}에 두었습니다 — 새순은 며칠 뒤에 보입니다. 하루씩 넘겨 보세요.`. ③ movePotTo banner sub: change '빛 판정은 7일 평균이라 며칠 지나야 새 자리 값이 됩니다' to '새 자리에 익숙해지는 데 며칠 걸립니다'. ④ The watering lag is fixed by checkQuests in the Day 1 finding.",
+    "touches_rules": false,
+    "impact": "medium",
+    "effort": "S"
+   },
+   {
+    "title": "Phone: after tapping [상점], the finger stays on the left-rail button, and a second tap closes the shop",
+    "where": "game.html updateHint() → shopDoor() (`if (el.getAttribute && el.getAttribute('aria-selected') === 'true') continue;`), syncNav() (gives the rail button class 'cur' and aria-current)",
+    "problem": "At 390×844, following the finger to [상점] for the first purchase opens the sheet on the 상점 tab. The finger keeps pointing at the left-rail [상점] for over a second, and a player following it taps again, which closes the shop (the same tab toggles the sheet). This hits the core loop at minute ~4. shopDoor only skips buttons with aria-selected, so it doesn't recognise the rail button that is already open (marked aria-current/cur).",
+    "evidence": "walk_phone2 DIAG: `{\"target\":\"navShop\",\"sheetOpen\":true}` twice in a row, then 「여기서 씨앗을 주문합니다」 only later. First phone run: 「⛔ 제자리 5|navShop|씨앗을 미리 주문해 두세요」 (six loops, scratchpad/walk_phone/025_d5_stuck.png). ⚠ The cause (aria-current / slide timing) is my guess from reading the code; walk it through to confirm.",
+    "proposal": "In shopDoor, change the skip condition to `if (el.getAttribute && (el.getAttribute('aria-selected') === 'true' || el.getAttribute('aria-current') === 'true' || el.classList.contains('cur'))) continue;`. On the sheet's `transitionend`, call `try { updateHint(); } catch {}` once so the finger moves to the [주문] button as soon as the slide finishes.",
+    "touches_rules": false,
+    "impact": "medium",
+    "effort": "S"
+   },
+   {
+    "title": "The title plant's arrival and first placement get no staging",
+    "where": "game.html movePotTo() / the two other dlgOpen('monsteraMoved') sites (~10930, ~13483), focusOnMonstera() (currently used only for the spear); assets/illust/web/ev_monstera_arrive_b.jpg (0 references in the code)",
+    "problem": "The monstera arrives with the same portrait-and-dialogue treatment as a shop order. On the windowsill it is a few pixels in a tiny pot, and the camera stays wide. The arrival illustration exists but is unused, and Moni in it is off-model: no pot, a shell on the back, against LOOK.md's 「화분과 잎은 몬이의 몸이다」.",
+    "evidence": "scratchpad/walk_desk/033_d11_talk.png (arrival) and 039_d11_talk.png (a fingernail-sized pot on the sill). `grep -rln illust game.html src/` returns nothing.",
+    "proposal": "① Right after each `dlgOpen('monsteraMoved')`, add `if (S.firstPlay && S.firstPlay.enabled && !S.firstPlay.monstera.focusedOnce) { S.firstPlay.monstera.focusedOnce = true; focusOnMonstera(); }`. This reuses the camera push already used for the spear. ② Hold off on the arrival illustration until [Char]/[leaf] redraw Moni with the pot; don't use the current one.",
+    "touches_rules": false,
+    "impact": "medium",
+    "effort": "S"
+   },
+   {
+    "title": "The first harvest, the one payoff, gets buried in polish issues and economy text",
+    "where": "game.html siruHarvest() banner, #mealGuide text, drawMealPanel mealSay, src/game/dialogue.js learnHarvest face",
+    "problem": "「…이게 되네.」 (proud) lands well, but it's immediately covered by: ① a banner with a particle glitch, 「🥣 콩나물을(를) 거뒀습니다」; ② the meal popup calling the same unit 「몫」 in its rows (「첫 몫 · 콩나물 300g」, 「한 몫에 드는 g」) and 「묶음」 in the explanation box (「상에 오를 때는 묶음으로 셉니다」); ③ Moni's praise line 「그리고 오늘, 밥값을 네가 아니라 얘가 냈어.」 using the plain happy face, while the proud portrait (since 09-07) is unused.",
+    "evidence": "scratchpad/walk_desk/033_d11_talk.png (「콩나물을(를)」), scratchpad/walk_phone2/031_d5_pop_mealPanel.png (몫 vs 묶음), game.html FACE_FILE.moni has proud/cheer/teach.",
+    "proposal": "① Change `title: \\`🥣 ${ko}을(를) 거뒀습니다\\`` to `title: \\`🥣 ${josa(ko, '을', '를')} 거뒀습니다\\``. josa is already imported from shop.js; the same fix applies to the other 「을(를)」 at ~5973/5974/7087/13448/14086. ② Unify the unit in #mealGuide: change 「묶음으로 셉니다 · 한 묶음에 · 몇 묶음이 찼나 · 둘째 묶음」 to 「몫으로 셉니다 · 한 몫에 · 몇 몫이 찼나 · 둘째 몫」, following first_play.js's 「몫」. ③ In learnHarvest change `face: 'happy'` to `face: 'proud'`.",
+    "touches_rules": false,
+    "impact": "medium",
+    "effort": "S"
+   },
+   {
+    "title": "The dimmed [다음 날] shows through the dialogue box on every line",
+    "where": "game.html CSS `#stage.talking #next, #stage.talking #waterCrop, … {opacity:.35;pointer-events:none}`",
+    "problem": "On both sizes, the 35%-opacity [다음 날] (z 71) overlaps the dialogue box's 「▼ 탭」 cue, producing 「다음 날▼ 탭」 and 「수확까지 4일▼탭」. It happens on every line of dialogue and looks broken.",
+    "evidence": "tools/_out/playshot/ux5_desk/001_boot.png, ux5_phone/001_boot.png and 018_talk_d2.png.",
+    "proposal": "Change the rule to `{opacity:0;pointer-events:none;transition:opacity .15s}`. The rule that it can't be pressed during dialogue stays; only the leftover image goes.",
+    "touches_rules": false,
+    "impact": "medium",
+    "effort": "S"
+   },
+   {
+    "title": "The intro gives no control for 16 lines and tells rather than shows",
+    "where": "src/game/dialogue.js SCRIPTS.intro (text unchanged), SCRIPTS.questPlaceSiru; game.html boot checkQuests (questPlaceSiru opens at boot); src/game/v2_hero.js actClipFrom (sit is available)",
+    "problem": "Cozy games hand over control within about 30 seconds. Here 13 intro lines plus 3 questPlaceSiru lines play at boot before any input. The questPlaceSiru lines repeat what the intro just said (「가방에 둔 채로는 안 되는 거야?」 right after 「가방에 콩나물 시루가 있어」). While the sad lines play, the hero just stands on the floor.",
+    "evidence": "walk_desk/walk.txt: 16 lines on d0 before the first finger (「끌거나 눌러서 방 안 어두운 자리에」).",
+    "proposal": "Keep the intro text as it is (박사님's opening). ① On lines 1-3 (「…불도 잘 안 드는 방이네」 to 「나 이제 어떻게 살지.」), have the hero use the existing sit clip on the bed (actClip('sit')), then stand up when 「— 뿅!」 plays. The talk camera push already exists. ② Open questPlaceSiru the first time the player taps the bag, not at boot, and cut it to two lines: drop the jachwi line, keep 「가방 안은 아무 자리도 아니야. 빛이 안 드니까.」 and 「어디에 두느냐. 그게 이 얘기의 전부야.」.",
+    "touches_rules": false,
+    "impact": "medium",
+    "effort": "M"
+   },
+   {
+    "title": "The first ledger on Day 1 is mostly zeros",
+    "where": "game.html drawMonthPanel() `$('monthRows').innerHTML = …`",
+    "problem": "The first [다음 날] opens a popup where six of nine rows are empty: 「상점에서 산 것 0원 · 채소 판 것 0원 · 식물 판 것 0원 · 밥으로 아낀 식비 −0원 · 밥이 된 것 없습니다 · 거둔 것 없습니다」. It shows a wall of zeros instead of what the player could do about it, and 「−0원」 has a sign glitch.",
+    "evidence": "tools/_out/playshot/ux5_desk/014_plant_d1.png, ux5_phone/014_plant_d1.png.",
+    "proposal": "When `r.count <= 1`, omit rows whose value is 0 or empty, and set #monthNote to 「콩나물이 밥값을 대신 내기 시작하면 여기 「아낀 돈」이 생깁니다.」. Output `row('밥으로 아낀 식비', …)` only when r.saved > 0, so −0원 never appears.",
+    "touches_rules": false,
+    "impact": "low",
+    "effort": "S"
+   },
+   {
+    "title": "Phone: the 할 일 chip overlaps the harvest reward toast",
+    "where": "game.html questChipShouldShow() / #event banner position (phone)",
+    "problem": "At the first-harvest reward, the stamina toast 「✨ 체력이 늘었습니다 — 하루 6번」 is squeezed into a tall narrow card, with the 할 일 chip on top of it, so the reward text breaks up.",
+    "evidence": "scratchpad/walk_phone/023_d5_talk.png",
+    "proposal": "In questChipShouldShow(), add `&& !($('event') && $('event').classList.contains('on'))`, hiding the chip while a banner is showing. The chip returns after the 6-second banner.",
+    "touches_rules": false,
+    "impact": "low",
+    "effort": "S"
+   },
+   {
+    "title": "From Day 5, every day needs two taps through the 「오늘 밥상」 popup",
+    "where": "game.html #mealPanel / goNextDay() / autoNextDay()",
+    "problem": "After the first harvest, every [다음 날] opens a g/몫/식비 arithmetic popup, and the default amount is right almost every day. Five straight days of 「이대로 다음 날 ▸」 turn the waiting into a chore.",
+    "evidence": "walk_desk/walk.txt d5-d11: 창[\"mealPanel\"] appears every day.",
+    "proposal": "When there is one crop and the plan is unchanged from yesterday, skip the popup and show a one-line banner instead: 「오늘 밥상: 콩나물 1몫 (어제와 같게)」. Open the popup only on tap. ⚠ The popup was 박사님's request, so this needs 박사님's confirmation.",
+    "touches_rules": true,
+    "impact": "low",
+    "effort": "M"
+   }
+  ]
+ },
+ {
+  "lens": "확정 규칙 감사(가드레일). 박사님이 확정했거나 '되묻지 말 것'으로 적힌 것, 그리고 박사님 답을 기다리는 것을 모았다. 출처는 START-HERE §0·1·3·6, plan-index ①④⑤, master-story-inputs-20260925, plan-quest-reframe ㉮~㉲, hint-table-to-plan §0~13, plan-firstplay-setup-steps ⑤~⑦, plan-after-setup-steps, plan-night-asks-20260906, plan-quest-nudge, plan-nap-and-sit, plan-2026-08-09·08-17 결정문, minwon, 이사·자르기·파는 문 문서, memory 파일(몬스테라 생장 명세, 등이 곧 길, 반지하 먼저), LOOK.md다. 규칙마다 지금 코드(quest.js·dialogue.js·tutorial.js·game.html·data/balance)와 맞춰 확인했다. 읽기만 했고 파일은 하나도 바꾸지 않았다. 참고로 낡은 문서가 넷 있다. event-tree.md ②, plan-2026-08-09-decisions §1 경제표, plan-2026-08-17-quest §1 표, plan-2026-08-17-market의 '잎 2장'이다. 이 넷은 지금 규칙과 다르니 근거로 쓰지 말 것.",
+  "findings": [
+   {
+    "title": "첫 플레이 사슬 다섯 줄과 그 열쇠(FIRST_PLAY_CHAIN_IDS) — 없앤 두 줄을 되살리지 않는다",
+    "where": "src/game/quest.js FIRST_PLAY_CHAIN · RETIRED_QUESTS · monstera_home.opens / docs/handoff/plan-quest-reframe.md ㉱ⓑ / master-story-inputs [core] 확정",
+    "problem": "사슬에 줄을 끼우거나 열쇠를 바꾸면 걸어서 잰 세팅 흐름(첫 수확 d5 · 몬스테라 d11 · 세팅 끝 d13)이 흐트러진다. 예전에는 monstera_home이 「siru_two 끝」에 걸려 있었다. 그래서 그루가 창턱에 서고도 할 일 줄이 끝내 안 떴다. 그 병이 되돌아온다.",
+    "evidence": "quest.js:283 FIRST_PLAY_CHAIN = [place_siru, water_siru, first_harvest, order_seed, monstera_home] · monstera_home `opens: s => yes(s.monsteraArrived) || num(s.motherLeaves) >= 1` · RETIRED: siru_two 「시루를 하나 더 사서 놓으세요」, resow_siru 「한 시루를 N바퀴째 돌려 보세요」 · 박사님 08-31 「1바퀴 더 돌리는 퀘는 없애고 · 2개째까지는 강제 가이드 · 5개 사기로 바로」",
+    "proposal": "DO NOT CHANGE: 줄 id, 차례, opens/done/after는 그대로 둔다. resow_siru·siru_two를 퀘스트로 되살리지 않는다. 바꿔도 되는 것은 네 가지다. ① QUEST_OPEN_SCRIPT·QUEST_DONE_SCRIPT 대사 문안. 숫자를 넣지 않고, 한 묶음에 끝남과 열림이 겹치면 열림을 미룬다. ② why·teaches 문장 다듬기. 뜻은 그대로 둔다. ③ 사건 순간의 연출(카메라 nudge, 효과음, hero wave·cheer). ④ todo는 28자 안에서만 고친다. ⚠ event-tree.md ② 그림은 08-30 판이다. resow_siru·siru_two·「다섯 바퀴」가 남아 있어 낡았다. 차례를 볼 때는 quest.js와 hint-table §8·§9를 본다.",
+    "touches_rules": true,
+    "impact": "high",
+    "effort": "S"
+   },
+   {
+    "title": "세팅 끝 = 콩나물 시루 둘 놓임 && 몬스테라 창턱 — 첫 새순은 사건일 뿐 문을 열지 않는다",
+    "where": "src/game/quest.js siru5_cycle5.opens · game.html updateHint settingDone/hintNoDim / docs/handoff/plan-quest-reframe.md ㉲ / plan-after-setup-steps.md ⓐ",
+    "problem": "세팅 끝을 첫 새순(fp.completed, 빛에 따라 d36 안팎)에 걸면 siru5가 며칠씩 늦게 열린다. 그러면 d13~d36이 빈다. 이것은 「무순을 사야 풀리는 문」 때문에 141일 동안 파산했던 판과 같은 꼴이다. 거꾸로 첫 새순에 할 일을 걸면 축하가 숙제로 바뀐다.",
+    "evidence": "`opens: s => potsOfKind(s, 'beansprout').filter(p => p && p.placed === true).length >= 2 && yes(s.monsteraHomed)` · ㉲ⓒ 「세팅 끝 = 시루 둘 놓임 && 창턱 ⇒ 강제 가이드가 끝나는 곳 · siru5 열쇠 · 그 뒤는 자유」 「첫 새순 = fp.completed(새순 말림) ⇒ 사건이다 — 축하 대사 · 아무 문도 안 연다」",
+    "proposal": "DO NOT CHANGE: 두 조건을 그대로 둔다. 시루 «놓임»은 [확인]을 누른 것만 센다(cropPotConfirmed). 창턱은 guide.moved로 본다. 첫 새순은 문을 열지 않는다. 바꿔도 되는 것은 둘이다. ① 첫 새순(spear_furled) 축하를 키우는 것. 카메라가 새순으로 다가가고, hero가 cheer하고, 효과음을 넣는다. 말만 하고 문은 안 연다. ② 세팅 끝 순간에 몬이 한 줄. 단 몰림 규칙을 지킨다.",
+    "touches_rules": true,
+    "impact": "high",
+    "effort": "S"
+   },
+   {
+    "title": "첫날 강제는 «어둡게 하기»(덮개·울타리)뿐이다 — 세 번 누르면 풀리고, 세팅 끝 뒤에는 덮개만 꺼지고 손가락은 남는다",
+    "where": "game.html FENCE_GIVE_UP · hintNoDim · dimAt / docs/handoff/plan-guide-dim-not-block.md / hint-table-to-plan.md §6·§11 / master-story-inputs [core] 확정",
+    "problem": "새 강제 구간을 만들거나 울타리가 안 풀리게 하면 사람이 화면에 갇힌다. 박사님이 실제로 나흘 갇힌 사례가 적혀 있다. 반대로 세팅이 끝났다고 손가락까지 치우면 d13 뒤 다섯 걸음 내내 손가락이 없던 병이 돌아온다.",
+    "evidence": "박사님 08-30 「손가락 지점 외에는 터치 안 되게 하든지 · 약간 투명 까망」 · game.html:3975 `const FENCE_GIVE_UP = 3;` · :5325 `hintNoDim = !!settingDone || !!(ts && ts.movedOut);` · 「첫날 강제는 «어둡게 하기»만. 세팅이 끝난 뒤에도 손가락은 남는다」",
+    "proposal": "DO NOT CHANGE: 덮개는 「약간」 어둡게 한다. 세 번 누르면 풀린다. 세팅 끝부터는 덮개만 끄고 손가락은 이어 간다. 원룸에는 강제가 없다. 바꿔도 되는 것은 둘이다. ① 손가락의 말 문안. 가리킴이 말의 절반을 맡는다는 원칙을 지킨다. ② 손가락의 모양과 흔들림 연출. 스토리나 튜토리얼 개선으로 강제 구간을 새로 늘리지는 않는다.",
+    "touches_rules": true,
+    "impact": "high",
+    "effort": "S"
+   },
+   {
+    "title": "첫날 걸음 순서 시루→사람→방바닥→심기→물 · 대사가 끝나야 손가락 · 놓기/심기/물은 따로",
+    "where": "START-HERE.md 머리 · docs/handoff/plan-firstplay-setup-steps.md ⑥ⓑ · hint-table-to-plan.md §0 ⓑ · quest.js water_siru.todo · game.html COACH_NOTES.walk",
+    "problem": "걸음을 합치거나 순서를 바꾸면 할 일 줄이 손을 막는다. 예전에 할 일이 「물을 주세요」라고 했는데 게임은 「아직 안 심었습니다」라며 막았다. 대사 중에 손가락이 뜨면 둘 다 안 읽힌다.",
+    "evidence": "START-HERE:5 「첫날 강제 가이드(시루→사람→방바닥→심기→물)」 · 박사님 「대사 끝나고 손가락이 나타나야지」(#stage.talking이면 손가락 쉼) · 박사님 08-16 「놓기 → 심기 → 물 주기」 · 박사님 08-11 무순 「재배판 배치 후」 심기 · 박사님 08-17 「캐릭 클릭해서 이동하는 거 초반 튜토리얼에 있으면 좋겠어」 · 확정 08-02 「시루는 수확 전까지 언제든 옮길 수 있다」",
+    "proposal": "DO NOT CHANGE: 다섯 걸음의 차례를 지킨다. 대사 중에는 손가락이 쉰다. 세 동작(놓기·심기·물)은 따로 둔다. 바꿔도 되는 것은 셋이다. ① 쪽지 walk와 걸음 말의 문안 다듬기. ② intro가 끝나고 첫 손가락이 뜨기 전의 짧은 연출. 카메라가 가방에서 방바닥으로 옮겨 가고 효과음을 넣는다. ③ 첫 수확 원화 ev_* 쓰기.",
+    "touches_rules": true,
+    "impact": "high",
+    "effort": "S"
+   },
+   {
+    "title": "첫 닷새는 [다음 날]만 누른다 — 남은 날을 세어 주고 수를 박지 않는다",
+    "where": "game.html updateHint (firstCycleDone · growSay · DAY_KO · shopDoor 앞 가드) / docs/handoff/plan-firstplay-setup-steps.md ⑤",
+    "problem": "첫 수확 전에 상점·씨앗·새 할 일이 끼면 박사님 말대로 사람이 앞엣것을 잊는다. 같은 말이 닷새 이어지면 시계가 멈춘 것처럼 보이고, 강제가 막다른 길이 된다.",
+    "evidence": "박사님 「처음 5일 넘기는 건 강제하자. 중간에 뭐 넣으면 까먹으니까. 「5일 넘겨보자」라고 가이드하면서 계속 손가락 가이드 [다음 날]로」 · `const growSay = growLeft === 1 ? '자라는 중입니다 — 내일이면 거둡니다' : growLeft > 1 ? `자라는 중입니다 — ${DAY_KO[growLeft] …} 더 넘겨 보세요``",
+    "proposal": "DO NOT CHANGE: 첫 수확 전에는 사는 갈래를 열지 않는다. 기준은 5일이 아니라 첫 수확을 했는지다. 남은 날은 코어가 낸 daysLeft를 센다. 마지막 날은 「내일이면 거둡니다」로 한다. 바꿔도 되는 것은 d1~d4의 기다림을 덜 지루하게 하는 일이다. 몬이 한 줄짜리 잡담이나 시루의 «티»(게이지가 차는 것, 싹이 보이는 것)를 쓴다. 단 대사는 한 줄로 짧게 해서 손가락을 오래 가리지 않게 한다. 상점이나 새 할 일은 넣지 않는다.",
+    "touches_rules": true,
+    "impact": "high",
+    "effort": "S"
+   },
+   {
+    "title": "손가락은 두 바퀴까지만 이끈다 — 예외는 씨앗·시루가 오는 중일 때, 그리고 사는 퀘스트가 열려 있으면 [다음 날]을 짚지 않는다",
+    "where": "game.html updateHint taughtCycles · wait · buyQuest / hint-table-to-plan.md §1-15 · §13②",
+    "problem": "손가락이 늘 [다음 날]에 붙어 있으면 가리킴이 장식이 된다(박사님 08-06). 반대로 누를 것이 없는 배송 날에 안 짚으면 사람이 멈춘다. 시루 다섯 퀘스트가 열린 날에 [다음 날]을 짚으면 할 일과 다른 말을 하게 된다.",
+    "evidence": "박사님 08-17 「시루 1차 튜토 끝났는데 시루 2개 늘리는 퀘 중인데도 계속 손가락이 따라다녀」 · 박사님 08-17 「씨앗 오는 데 하루 소요되니까」 · 박사님 09-06 Day 29 「시루 다섯 퀘 중에 계속 [다음 날] 손가락 — 없거나 상점이어야」 · `const taughtCycles = … harvestCount >= 2`",
+    "proposal": "DO NOT CHANGE: 두 바퀴 규율과 예외 둘을 지킨다. 바꿔도 되는 것은 둘이다. ① 「씨앗은 내일 옵니다 — 하루를 넘기세요」·「시루는 내일 옵니다」 같은 말 다듬기. ② core 약점 ①(폰에서 [주문] 직후 약 2초 손가락이 비는 것) 고치기. 이것은 보여 주는 타이밍 문제라서 규율을 건드리지 않고 고칠 수 있다.",
+    "touches_rules": true,
+    "impact": "medium",
+    "effort": "S"
+   },
+   {
+    "title": "「한 번에 하나」 — 사슬 밖 새 퀘스트는 하루에 하나, 차례는 buy_lamp → first_cut → leaf_three → varie_bright",
+    "where": "src/game/quest.js stepQuests OPEN_PRIORITY · questsOpenedOn / docs/handoff/plan-after-setup-steps.md ⓒⓗⓜ / master-story-inputs [core] 확정",
+    "problem": "d45 안팎에 퀘스트 넷이 한 날 열리면 할 일이 쏟아져 심부름 목록이 된다(4판 실측). 가운데 토막을 채우려고 새 퀘스트를 넣으면 이 줄에 끼어들어 등의 차례가 밀린다.",
+    "evidence": "quest.js:942 `const OPEN_PRIORITY = ['buy_lamp', 'first_cut', 'leaf_three', 'varie_bright'];` · 7판 걸음: first_cut d39 → leaf_three d40 → varie_bright d41 → buy_lamp d45 「하루 하나 ✔」",
+    "proposal": "DO NOT CHANGE: 하루 하나(날 단위), OPEN_PRIORITY, 첫 플레이 사슬 예외를 지킨다. core 약점 ②(d27~45가 지루하다)는 새 퀘스트로 메우지 않는다. 사건 대사, 잡담, 몬스테라의 티(4·19·22·25일째 형태 변화)에 붙는 몬이 한 줄과 카메라로 메운다. 미뤄진 줄이 열리는 날의 QUEST_OPEN_SCRIPT 문안은 다듬어도 된다.",
+    "touches_rules": true,
+    "impact": "high",
+    "effort": "S"
+   },
+   {
+    "title": "살림 줄 차례: siru5 → crop_mix → radish5, siru8은 crop_mix가 열린 다음 날부터 → siru16 · 무순 손가락은 crop_mix가 열리면 · 여덟·열여섯은 놓인 것만 센다",
+    "where": "src/game/quest.js crop_mix.after · radish5.after · siru8.opens · siru16 / docs/handoff/plan-quest-reframe.md ㉱ⓒⓓⓔ / plan-after-setup-steps.md ⓒ①",
+    "problem": "crop_mix를 siru5 앞에 두면 다시 문이 잠긴다. 무순을 안 사면 siru5가 끝내 안 열려 141일에 파산했던 판이 그것이다. 무순을 시루 다섯 전에 만나게 하면 밝기의 «층»을 볼 자리가 없다. 가방에 쌓아 둔 시루로 줄이 끝나면 배운 것이 아니라 세어 준 것이 된다.",
+    "evidence": "crop_mix `after: 'siru5_cycle5'` · radish5 `after: 'crop_mix'` · siru8 `return num(s.day) > on.crop_mix;` · 박사님 08-24 「놓인것만 센다」 · master-story-inputs 「siru8은 crop_mix가 열린 다음 날부터. 무순 손가락 = crop_mix 열림」",
+    "proposal": "DO NOT CHANGE: 열쇠와 셈 방식을 그대로 둔다. ⚠ plan-2026-08-17-quest §1 표(「crop_mix = 첫 플레이 끝난 날 · siru5 = 다섯 바퀴」)는 낡았다. 바꿔도 되는 것은 무순을 처음 만나는 문안이다. 몬이가 「이건 해가 조금은 드는 데 놔. 콩나물이랑 다르게.」 결로 층을 가르친다. 0.35 같은 수나 「반대」라는 말은 쓰지 않는다.",
+    "touches_rules": true,
+    "impact": "high",
+    "effort": "S"
+   },
+   {
+    "title": "「엇갈리게」는 시루 다섯에서, 손이 다 된 그 순간에만 가르친다 — 시루 둘째에는 말도 텀도 넣지 않는다",
+    "where": "docs/handoff/plan-quest-reframe.md ⓙ~ⓞ · ㉮ · ㉯ · ⓩ (박사님 확정 「ㄱ」) / dialogue.js cropHandsShort / plan-index ④",
+    "problem": "시루 둘에서 엇갈림을 말하면 아무것도 아껴지지 않는다(손 2 ≤ 체력 5). 사람은 까닭을 모른 채 따라 하게 된다. 시루 둘째에 하루 텀을 넣으면 까닭 없는 기다림, 곧 막다른 길이 된다.",
+    "evidence": "「시루 2 · 같은 날 ⇒ 하루 물 2 ⇒ 체력 5 ⇒ 넉넉하다」 · 「⛔ 「엇갈림」을 한 글자도 안 쓴다」 · cropHandsShort `'손이 다 됐네 — 물 주는 날을 엇갈리게 해 봐.'` · 「하루 텀 — ⛔ 넣지 않는다. 배송이 이미 텀이다」",
+    "proposal": "DO NOT CHANGE: 「하나 더」 손가락 세 줄(「시루를 하나 더 사러 갑니다」·「시루를 하나 더 주문합니다」·「개수를 정하고 [주문] — 시루는 이틀 뒤에 옵니다」)에 엇갈림을 넣지 않는다. 계율 「겪지 않은 어려움은 가르칠 수 없다」를 지킨다. 바꿔도 되는 것은 둘이다. ① cropHandsShort가 뜨는 순간의 연출(몬이 얼굴, 짧은 카메라). ② 몬이 줄 「하나로는 드문드문하잖아. 하나 더 있으면 자주 거둬」의 표현 다듬기. 뜻은 그대로 둔다.",
+    "touches_rules": true,
+    "impact": "medium",
+    "effort": "S"
+   },
+   {
+    "title": "siru5 할 일 줄은 박사님 문안이다 — 「상점에서 시루를 더 주문해 N개 이상 배치하세요」(26자) · 모든 todo는 28자 이하",
+    "where": "src/game/quest.js siru5_cycle5.todo / docs/handoff/plan-quest-reframe.md ㉯① / plan-2026-08-17-quest.md §4",
+    "problem": "문안을 고치면 박사님이 직접 걸어 보고 내신 낱말이 사라진다. 28자를 넘기면 폰 360px에서 한 줄이 잘린다.",
+    "evidence": "`todo: q => `상점에서 시루를 더 주문해 ${q.need.sirus}개 이상 배치하세요``(26자) · 「「배치」는 게임 다른 줄의 「놓으세요」와 낱말이 다르나 ⛔ 안 고친다 — 박사님 낱말이 우선. 문안을 통일할 날 한 번에 본다」",
+    "proposal": "DO NOT CHANGE: 낱말 다섯(상점·더·주문·N개 이상·배치)과 수를 need에서 읽는 방식을 지킨다. 「배치/놓다」, 「확대 보기/자세히」 같은 낱말 통일은 박사님과 한 번에 정한다. 스토리 창이 먼저 바꾸지 않는다. 다른 todo도 28자를 넘기지 않는다.",
+    "touches_rules": true,
+    "impact": "medium",
+    "effort": "S"
+   },
+   {
+    "title": "독촉: 박사님 「매일매일」 · 차례는 사건 > 독촉 > 잡담 · 얼굴 ①②③은 매일 나오고 QUIET_DAYS를 거치지 않는다 · ④는 잡담 줄에서 번갈아 · 몬이는 이름 대신 「그거」",
+    "where": "src/game/dialogue.js nudgeOffer/nudgeAsk/nudgeWorry/nudgeBack · NUDGE_DAYS · pickNudge · pickChatter · QUIET_DAYS_BEFORE_CHATTER / docs/handoff/plan-quest-nudge.md ⓐ~ⓛ",
+    "problem": "독촉을 잡담 뒤로 보내면 18일 동안 한 번도 안 나온다(probe_nudge 실측). ④를 매일 내면 「급한 건 아니야」가 거짓이 된다. 퀘스트마다 문안을 지으면 수십 벌이 되어 지을 수 없다.",
+    "evidence": "박사님 「퀘스트 안 하면 몬이가 매일매일 독촉하도록 해줘」 · 「해 보면 알 거야.」「그거 아직이지?」「무슨 일 있어?」「급한 건 아니야. 마음 내키면 해.」 · `NUDGE_DAYS = { ask: 4, worry: 7, back: 14 }` · `QUIET_DAYS_BEFORE_CHATTER = 2`",
+    "proposal": "DO NOT CHANGE: 차례, 한 줄씩, ①②③ 매일, ④ 번갈이, 「그거」, QUIET=2를 지킨다. NUDGE_DAYS는 [plan]의 밑값이다. 박사님이 정한 수는 아니지만 걸음표 근거 없이 바꾸지 않는다. 바꿔도 되는 것: core 약점 ④(물러섬이 이틀에 한 번 되풀이)는 얼굴마다 줄을 둘로 늘려 풀 수 있다. 이 방법은 plan-quest-nudge ⓛ가 이미 허용했다. 문안만 늘리고 값은 두며, 새 줄은 plan 승인을 받는다.",
+    "touches_rules": true,
+    "impact": "high",
+    "effort": "S"
+   },
+   {
+    "title": "buy_lamp 독촉 ④는 「겨울 오기 전에는 있어야 해.」로 고정 — 매일 · 걱정 얼굴 · 물러서지 않는다",
+    "where": "src/game/dialogue.js nudgeBackLamp · CHATTER nudgeBackLamp / docs/handoff/plan-after-setup-steps.md ⓓⓔ / master-story-inputs [core] 문구",
+    "problem": "core 약점 ③이 이것이다. 초보 판은 빛의 겨울이 안 와서 이 겁준 말이 몸으로 느껴지지 않는다. 그래도 문구는 확정이다. 이 문제를 푸는 길은 박사님 대기 ⑤(초보에서 실전으로 넘어가는 때)에 달려 있다.",
+    "evidence": "`nudgeBackLamp: [ { who: 'moni', face: 'sad', text: '겨울 오기 전에는 있어야 해.' } ]` · 「«물러섬»이 없는 유일한 줄이다 — 「등이 곧 길」이니까」",
+    "proposal": "DO NOT CHANGE: 문구, 얼굴, 매일 나오는 것, 물러서지 않는 것을 지킨다. ⑤의 답이 오기 전에는 이 줄을 누그러뜨리거나 드물게 바꾸지 않는다. 창밖을 어둡게 하는 연출도 넣지 않는다. 없는 빛 변화를 보여 주면 거짓이 된다. 바꿔도 되는 것은 둘이다. ① 할 일 줄 「식물등을 사서 밝은 자리를 만드세요」 옆의 가리킴. ② 등을 산 순간(lamp_bought)의 연출.",
+    "touches_rules": true,
+    "impact": "high",
+    "effort": "S"
+   },
+   {
+    "title": "등이 곧 길이다 — 등 없이 나가는 길은 만들지 않는다(경로 A 38%는 뜻한 수) · buy_lamp 열쇠는 달력 가을 · 등값 120,000/80,000/150,000",
+    "where": "docs/handoff/START-HERE.md §3 · memory lamp-is-the-path · src/game/quest.js buy_lamp · tutorial.js lampPricesWon · LAMP_NUDGE_DAY",
+    "problem": "A 38%를 고칠 수로 읽고 값을 건드리면 B·C, 이사비 200만, 하프문 배수가 함께 흔들린다. 스토리에서 「등 없어도 돼」 같은 말을 하면 퀘스트가 끄는 길과 어긋난다.",
+    "evidence": "박사님 「지금 좋은 거 같어, 등은 지금 확정이잖아. 퀘스트든 가이드든으로」 · buy_lamp `opens: s => !!s.lampUnlocked` · `lampPricesWon: Object.freeze([120_000, 80_000, 150_000])` · teaches 「등이 곧 밝은 자리다」「반지하는 등 없이 못 나간다」",
+    "proposal": "DO NOT CHANGE: 등값, 열쇠(가을 진입), A 경로 값을 지킨다. 바꿔도 되는 것은 둘이다. ① 등을 산 장면과 켜는 장면의 연출(빛이 켜짐, 효과음, hero cheer). ② autumnCame 대사 다듬기. 단 「창턱이 예전만 못하다」 같은 빛 변화를 현재형으로 말하지 않는다. 초보 판에서는 그런 변화가 일어나지 않는다.",
+    "touches_rules": true,
+    "impact": "high",
+    "effort": "S"
+   },
+   {
+    "title": "몬스테라 도착 캐논 — 콩나물 두 바퀴 뒤, 가방으로 온다 · 도착 자리는 정답이 아니다 · 순서는 수확 → 식비 → 식물신 → 도착",
+    "where": "src/game/first_play.js MONSTERA_ARRIVAL_RULE · markMonsteraArrived / docs/first_play.md 2026-08-23 ① · 확정 2026-08-02 / plan-night-asks-20260906 ① ㉮ 확정 / dialogue.js EVENT_ORDER",
+    "problem": "도착을 한 바퀴로 당기면 「씨앗은 상점에서 사고, 거둔 시루는 다시 심어야 돈다」를 몬스테라보다 먼저 배우지 못한다. 대사가 정답 자리를 대신 말하면 옮기기라는 두 번째 배움이 사라진다.",
+    "evidence": "`harvestCount: 2` · 박사님 08-17 「처음에 몬스테라 주는 거 인벤에 줘서 드래그해서 배치」 · dialogue.js 「몬스테라 도착 — ★정답이 아닌 자리에 온다(first_play.md 확정). '옮겨라'라고 대놓고 말하지 않는다.」 · 계약 순서 「수확 → 식비 → 식물신 → 도착」 · 도착 유효 45 · 잎 1장 · 09-06 확정 「두 바퀴째 ㉮」",
+    "proposal": "DO NOT CHANGE: 두 바퀴, 가방으로 오는 것, 대사로 좌표를 말하지 않는 것(옮기기는 손가락 네 걸음이 이끈다), 계약 순서, 도착 크기를 지킨다. ⚠ START-HERE §6 표의 「책상(banjiha-desk:0)」은 낡았다. 바꿔도 되는 것은 셋이다. ① 도착 장면 연출(가방 칸 반짝임, 카메라가 창턱으로 nudge, hero wave). ② monsteraArrived 대사 다듬기. 「콩나물이랑 반대야」의 뜻은 둔다. ③ 도착 원화 ev_* 쓰기.",
+    "touches_rules": true,
+    "impact": "high",
+    "effort": "S"
+   },
+   {
+    "title": "식물신은 외형·이름·초상이 없고, 자리마다 한 줄이다 — 「한 바퀴는 운이다. 두 바퀴는 손이지.」",
+    "where": "src/game/dialogue.js SPEAKERS.god · SCRIPTS.god1 · EVENT_ORDER / docs/first_play.md §식물신 / docs/handoff/plan-four-answers-0829.md ④",
+    "problem": "식물신에게 모습을 그려 주거나 줄을 늘리면 신이 설명을 하게 된다. 예전에 몬이와 같은 말을 해서 검사 「식물신 6줄」이 FAIL 났다.",
+    "evidence": "`god: { ko: '?', portrait: false } // ★이름도 아직 없다` · `god1: [ { who: 'god', text: '한 바퀴는 운이다. 두 바퀴는 손이지.' } ]` · 「식물신은 자리마다 한 줄이 계약이다(외형 없음)」 · 「★식물신이 식비 뒤·도착 앞에 온다. 그 자리가 확정이다」",
+    "proposal": "DO NOT CHANGE: 모습이 없는 것, 줄 수, 자리, 문구를 지킨다. ev_* 원화에도 식물신을 그리지 않는다. 바꿔도 되는 것은 초상 없이 하는 화면 연출이다. 화면 가장자리의 빛, 잠깐 어두워짐, 효과음 같은 것이다. 모습을 만들지 않는 선에서만 한다.",
+    "touches_rules": true,
+    "impact": "medium",
+    "effort": "S"
+   },
+   {
+    "title": "오프닝 캐논 — 주인공은 고아 자취생이고, 부모를 찾으며 울 때 몬이가 「식물신이 보냈어」라며 나타난다(박사님 2026-08-03)",
+    "where": "src/game/dialogue.js SCRIPTS.intro (주석 「★오프닝 (박사님 2026-08-03)」)",
+    "problem": "오프닝 전제를 바꾸거나 울음을 길게 끌면 첫 화면에서 [건너뛰기]를 누르게 되어 아무것도 안 남는다. 몬이가 위로부터 하면 이 게임이 주는 위로와 어긋난다. 이 게임의 위로는 자리를 옮기면 식물이 자라는 것이다.",
+    "evidence": "「주인공은 고아 자취생이다. 힘든 상황에서 부모를 찾으며 울고, 그때 마스코트가 나타나 '식물신이 보냈다'고 한다」 · 지킨 것 셋 「① 울음을 길게 끌지 않는다 ② 식물신은 여기 안 나온다 ③ 몬이가 위로부터 하지 않는다」 · 첫 줄 「…불도 잘 안 드는 방이네.」",
+    "proposal": "DO NOT CHANGE: 전제와 세 원칙을 지킨다. 바꿔도 되는 것은 셋이다. ① intro 연출(몬이 pop 효과음, 카메라, 원화). ② 지금 줄 순서 안에서 말 다듬기. ③ 얼굴(tired·cry·worry·surprise) 배정 다듬기. 줄은 늘리지 않는다.",
+    "touches_rules": true,
+    "impact": "medium",
+    "effort": "S"
+   },
+   {
+    "title": "「무늬가 섞였다」는 박사님 낱말이다 — 살리고 말하는 사람만 바꾼다 · 셋째 장부터는 말하지 않는다",
+    "where": "src/game/dialogue.js varieGranted · varieLucky 계열 / docs/handoff/plan-varie-seen-late.md ⓒⓖ / event-tree.md ③ VAR",
+    "problem": "지금은 자취녀가 어린잎에서 무늬를 봤다고 말하는데, 그림에는 아직 안 보인다. 이 약점을 고치려다 낱말을 바꾸거나 「흰 데」라고 쓰면 까닭을 틀리게 가르친다. 무늬 진 데는 엽록소가 없는 것이지 색과는 무관하다.",
+    "evidence": "현재 `{ who: 'jachwi', face: 'surprise', text: '…새로 난 잎에 무늬가 섞였어.' }` · plan 고침안(미반영): 몬이 「이 잎, 무늬가 섞였어.」 → 자취녀(surprise) 「…어디? 아직 잘 모르겠는데.」 → 몬이 「다 자라면 보여. 무늬 진 데는 빛을 못 만들어서, 밝은 자리에서만 나와.」 · master-story-inputs 「「무늬가 섞였다」는 박사님 낱말 — 살리고 말하는 사람만 바꾼다」",
+    "proposal": "DO NOT CHANGE: 「무늬가 섞였」은 그대로 둔다. 「흰」으로 바꾸지 않는다. 셋째 장부터는 말하지 않는다. 바꿔도 되는 것은 plan이 승인한 ⓖ판을 그대로 넣는 것이다. 이때 「자라면」이 아니라 「다 자라면」으로 쓴다. 성숙잎을 가리키기 위해서다. 나머지 줄(「창턱에 올려놨잖아. 그게 한 거야.」)은 그대로 둔다.",
+    "touches_rules": true,
+    "impact": "medium",
+    "effort": "S"
+   },
+   {
+    "title": "「확대 보기」⇄「시야 돌아가기」는 박사님 낱말 · zoomTip은 창턱에 선 순간 한 번 · 쪽지는 10초 한 번뿐",
+    "where": "game.html #closeZoom · COACH_NOTES.zoomTip · 그루 메뉴 라벨(:13568) · COACH_MS / docs/handoff/plan-firstplay-setup-steps.md ⑦",
+    "problem": "단추 이름을 바꾸면 박사님 낱말이 사라진다. zoomTip을 다른 때에 띄우면 안내 둘이 겹쳐 둘 다 안 읽힌다.",
+    "evidence": "`<button id='closeZoom' aria-label='시야 돌아가기'>↩ 시야 돌아가기</button>` · zoomTip say 「몬스테라를 누르고 [확대 보기]를 누르면 잎을 가까이 볼 수 있습니다.」 · 「⛔ 「관찰」은 우리 말 — 「가까이 본다」로」 · `const COACH_MS = 10000;`",
+    "proposal": "DO NOT CHANGE: 라벨 둘, zoomTip 문구와 때를 지킨다. ⚠ 확대 화면은 코어 창이 새로 실패한 ⑤의 원인을 아침에 가릴 예정이다. 그때까지 확대 화면의 연출은 손대지 않는다. 바꿔도 되는 것은 확대 화면 밖의 안내 문안이다.",
+    "touches_rules": true,
+    "impact": "medium",
+    "effort": "S"
+   },
+   {
+    "title": "금지 낱말 「빈 자리」 — 이 게임에서 「빈 자리」는 «놓을 수 있는 자리»다 · 반지하 바닥은 놓을 수 있는 자리다",
+    "where": "master-story-inputs [core] 문구 · hint-table-to-plan.md §13④ · plan-night-asks-20260906 ② ㉡㉢ · first_play.js:2305 · game.html:7567",
+    "problem": "스토리에서 「빈 자리」를 «못 놓는 곳»이나 «아무것도 없는 곳»의 뜻으로 쓰면 한 낱말이 두 뜻을 갖는다. 「바닥에 두지 마」라고 가르치면 반지하에서 siru8·siru16이 끝내 안 끝난다. 시루가 설 칸이 실질 다섯뿐이기 때문이다.",
+    "evidence": "「⚠ 「빈 데」·「빈 자리」는 안 쓴다 — 이 게임에서 「빈 자리」는 «놓을 수 있는» 자리다」 · 게임 안 줄 「누르면 게임이 빈 자리를 골라 세운 뒤」 · 확정 09-06 「반지하 바닥 ⇒ 어둡다 ⇒ 콩나물 자리 ⇒ ✔ 인정 / 원룸 바닥 ⇒ ⛔ 못 놓게」",
+    "proposal": "DO NOT CHANGE: 낱말의 뜻과 방마다 다른 바닥 규칙을 지킨다. 원룸 바닥 배너 「방바닥에는 못 놓습니다 — 가구 위에 놓으세요」는 취소했다. 원룸이 열릴 때 다시 낸다(core 약점 ⑤). 지금 넣지 않는다.",
+    "touches_rules": true,
+    "impact": "medium",
+    "effort": "S"
+   },
+   {
+    "title": "반지하 먼저, 원룸은 나중 — 원룸 첫 장면 문안 ⓒⓓ · 첫 플레이는 반지하에서 한 번뿐(fpLive) · 등도 가구라 들고 간다",
+    "where": "memory banjiha-first · docs/handoff/plan-oneroom-first-scene.md ⓒⓓⓕ · agree-oneroom-move-20260830.md ③④ · game.html fpLive",
+    "problem": "원룸 스토리를 먼저 넓히면 아직 못 쓰는 방에 이야기가 먼저 선다. 첫 플레이 사슬이 원룸에서 다시 켜지면 「시루 하나 놓기 → 몬스테라 도착」이라는 반지하 이야기가 되풀이된다.",
+    "evidence": "박사님 「원룸은 나중에, 반지하 먼저 끝내고.」 · 문안 「선반을 꺼내 놓아 보세요」「선반 아래가 어두워졌습니다 — 콩나물 자리입니다」「시루를 놓고 씨앗을 심으세요 — 처음처럼」「삽수를 밝은 자리에 놓으세요」「몬스테라를 밝은 자리에 놓으세요」 · fpLive = fp.enabled && !fp.completed && !movedOut",
+    "proposal": "DO NOT CHANGE: 원룸 이야기, 퀘스트, 월세 대사에는 착수하지 않는다. 원룸 첫 장면 문안과 강제 없음 규칙을 지킨다. 이번 개선은 반지하 구간(d0~이사)만 다룬다.",
+    "touches_rules": true,
+    "impact": "medium",
+    "effort": "S"
+   },
+   {
+    "title": "파산 대사 brokeTalk·brokeTalkAgain은 문안 그대로 · 처음 0원일 때 구호금 50만 한 번 · 그 뒤 0원이 열흘 이어지면 굶어 죽는다(박사님 08-17)",
+    "where": "src/game/dialogue.js brokeTalk · brokeTalkAgain · tutorial.js starveDays · reliefWon / master-story-inputs [plan] 「brokeTalk 문안 그대로」",
+    "problem": "파산 대사를 바꾸거나 「게임오버는 없어」 같은 줄을 새로 넣으면 지금 규칙과 거짓으로 어긋난다. 지금 규칙은 굶주림 시계로 게임오버가 있다.",
+    "evidence": "brokeTalk 「지갑에 남은 게 없다.」「…미안. 나는 돈은 못 만들어.」「네가 미안할 게 뭐 있어.」「오늘 하루는 그래도 지나가. 내일도 지나가고.」 · brokeTalkAgain 「또 바닥이다.」「이번엔 안 놀라네.」「…놀랄 힘도 아껴야지.」 · 박사님 「처음 0원 됐을 때는 긴급자금 대출 50만원 … 그다음 죽는 걸로」 · `starveDays: 10` `reliefWon: 500_000`",
+    "proposal": "DO NOT CHANGE: 문안, 구호금 한 번, 굶주림 열흘을 지킨다. ⚠ brokeTalk 주석의 「초보 모드는 죽지 않는다」는 08-17 이후 낡았다. 그 주석을 근거로 「안 죽는다」는 대사를 짓지 않는다. 바꿔도 되는 것은 구호금 장면과 게임오버 원화의 연출이다. 문안을 바꾸려면 박사님께 여쭌다.",
+    "touches_rules": true,
+    "impact": "medium",
+    "effort": "S"
+   },
+   {
+    "title": "낮잠은 침대에서만 · 하루 1번 · 2시간 · 체력 10% 올림 / 앉기는 아무것도 주지 않는 «티» / 의자 낮잠은 열지 않는다",
+    "where": "docs/handoff/plan-nap-and-sit.md ②ⓔ⑦ · data/furniture_presets.json bed_* nap_recover_frac 0.1 · nap_hours 2 · stamina.nap",
+    "problem": "앉기에 보상을 붙이거나 의자 낮잠을 열면 앉기가 «주는 것»이 된다. 박사님이 아니라고 하신 그것이다. 좋은 침대를 살 까닭도 흐려진다.",
+    "evidence": "박사님 「침대 눕기·낮잠(하루 1번·2시간·체력 10% 올림) · 의자에 앉기」 · 「뭐가 되진 않아. 그냥 앉혀 놓는 거지.」 · 단추 「눕기」「일어나기」「낮잠자기」 · 「오늘은 이미 잤습니다 — 내일 다시」",
+    "proposal": "DO NOT CHANGE: 값, 단추 낱말, 잠긴 문구, 의자 낮잠을 열지 않는 것을 지킨다. 바꿔도 되는 것은 앉아 있는 동안 가끔 나오는 딴짓 연출이다. 조건도 값도 횟수도 붙이지 않는다. ⚠ 앉기·눕기 클립은 캐릭터 창이 오늘 밤 안 바꿨다. 다시 돌리기 전에는 새 연출의 전제로 삼지 않는다.",
+    "touches_rules": true,
+    "impact": "medium",
+    "effort": "S"
+   },
+   {
+    "title": "체력: 시작 5 · 상한 없음 · 행동 하나에 손 1(물·수확·심기·자르기·옮겨심기) · 옮기기와 돌리기는 0 · 레벨업 10·15·20·25·30, 그 위는 ×10 · 일괄 버튼 금지",
+    "where": "data/balance/stamina.json · docs/handoff/plan-2026-08-09-decisions.md §3 · plan-2026-08-17-quest.md §1 보상",
+    "problem": "스토리 보상으로 체력을 주거나 「모두 물주기」 같은 일괄 버튼을 되살리면 초반 병목이 사라진다. 박사님이 뜻한 「체력 때문에 막혀 있게 되는」 판이 무너진다.",
+    "evidence": "`\"startMax\": 5` · `\"maxCap\": null` · `\"cost\": { water:1, harvest:1, sow:1, cut:1, repot:1 }` · levelUp table {5:10, 6:15, 7:20, 8:25, 9:30} · beyondMult 10 · 박사님 「내가 체력을 둔 이유가 이거야. 체력 때문에 막혀 있게 되는 거지 초반엔.」 · 퀘스트 보상 +1은 crop_mix·siru5·first_cut 셋(5→8)",
+    "proposal": "DO NOT CHANGE: 새 체력 보상, 일괄 버튼, 옮기기 비용을 넣지 않는다. 몬이는 「체력」이라는 말을 쓰지 않고 「손」이라고 한다. 수는 화면이 보여 준다. 바꿔도 되는 것은 손이 다 된 날과 남은 날의 몬이 한 줄이다. 「오늘은 손이 다 됐어. 자고 나면 다시 차.」 계열이다.",
+    "touches_rules": true,
+    "impact": "high",
+    "effort": "S"
+   },
+   {
+    "title": "경제는 한 벌이다: 시작돈 150만 · 이사비 200만 · 하프문 배수 · 반지하 월세 20만 · 하루 16,667 · 첫 월세는 첫날(유예 폐지) · 판매 85% · 씨앗 500/시루 5,000 · 실시간 진행 · 빨리감기 없음",
+    "where": "docs/handoff/START-HERE.md §6 · src/game/tutorial.js TUTORIAL_RULES · data/balance/homes.json · minwon-to-plan.md 1-2",
+    "problem": "하나만 움직여도 나머지가 어긋난다. 시작돈이 이사비와 같아지면 48일에 튜토리얼이 끝나고, 가을·식물등·겨울이 통째로 빠진다. 스토리 대사에 금액을 새로 박으면 값이 바뀔 때 대사가 낡는다.",
+    "evidence": "`startCashWon: 1_500_000` · `moveOutCostWon: 2_000_000` · `rentWon: 200_000` · `dailySpendWon: 16_667` · 「「이사비 200만」과 「하프문 71.1」과 「시작돈 150만」은 한 벌이다」 · 박사님 「넘긴다 — 실시간 진행」(하루 576초 · 되묻지 말 것)",
+    "proposal": "DO NOT CHANGE: 값 전부를 그대로 둔다. ⚠ plan-2026-08-09-decisions §1 표(130만·30만·20,000)는 낡았다. 인용하지 않는다. rentFirst·rentSoon의 「이십만 원」은 화면 사실에 맞춘 예외다. 새 대사에는 원·g 같은 수를 넣지 않는다. 문안은 값을 품지 않는다. 바꿔도 되는 것은 월세 날의 연출과 첫 달 가계부 장면의 몬이 줄을 다듬는 것이다.",
+    "touches_rules": true,
+    "impact": "high",
+    "effort": "S"
+   },
+   {
+    "title": "이사 문 = 돈 200만 AND (무늬 잎을 낸 적 OR 무늬 삽수를 판 적) — 「무늬 잎 셋을 모아 하프문」은 조건이 아니다",
+    "where": "src/game/tutorial.js canMoveOut · tutorialGoal / docs/handoff/plan-moveout-varie-leaf.md / quest.js sell_varie",
+    "problem": "스토리가 「무늬 잎 세 장이 있어야 나간다」처럼 없는 조건을 말하면 게임이 거짓말을 한다. 「지금 있나」로 바꾸면 무늬 잎을 자르는 순간 문이 닫힌다.",
+    "evidence": "`const varie = hasEverVarieLeaf(ts) || hasSoldVarieCutting(ts);` · `ok: money && varie` · 박사님 08-24 「「판 적」 대신 「무늬 잎을 낸 적」 및 돈으로」 · sell_varie 주석 「⛔ 그렇다고 이 줄을 지우지 않는다 … 이 줄이 「팔아라」를 가르치는 게임의 몇 안 되는 자리다」",
+    "proposal": "DO NOT CHANGE: 두 축과 「낸 적」이라는 이력 판정을 지킨다. sell_varie 줄도 지우지 않는다. 바꿔도 되는 것은 둘이다. ① 무늬 잎이 처음 난 날의 연출. 이사 문이 반쯤 열린 순간이다. ② tutorialGoal 문안 다듬기. 무엇을 할지와 어떻게 할지를 말한다.",
+    "touches_rules": true,
+    "impact": "high",
+    "effort": "S"
+   },
+   {
+    "title": "몬스테라 판매: 상점이 아니라 중고 거래(1~7일 뒤 연락) · 파는 문은 잎 3장 · 자르는 문은 무늬 잎 둘이 드러났을 때 · 삽수는 개체 수와 급전 · 「손해」라고 말하지 않는다",
+    "where": "src/game/shop.js MARKET_MIN_LEAVES · MARKET_CONTACT_DAYS · propagation cutBlockedReason / docs/handoff/plan-2026-08-17-market.md · core-deadend-sell-at-2leaves.md(08-25) · core-cutting-gate-3leaves.md(08-24) · docs/first_play.md ⑤",
+    "problem": "잎 2장에서 그루를 팔 수 있었을 때 판이 끝났다(d38 화분 0 → 이사 영영 불가). 급전을 「손해」라고 부르면 그냥 나쁜 선택이 되어, 기능을 안 만든 것과 같다.",
+    "evidence": "`MARKET_MIN_LEAVES = 3` · `MARKET_CONTACT_DAYS = { min: 1, max: 7 }` · 박사님 「당근 같은 곳에 올려서 판다 · 일주일 정도 안에 랜덤으로 연락」「몬스테라 연관된 것 자체가 다 상점에는 그냥 안 팔리게」「3.아니 3장부터」「삽수버튼 (자르기) 생기는건 3번째 하프문 무늬잎 나와서 성숙잎 됬을때야.」「삽수는 사실 개체수 늘리거나 급전 만드는 기능」",
+    "proposal": "DO NOT CHANGE: 문턱 둘, 거래 방식, 「손해」를 쓰지 않는 것을 지킨다. ⚠ market 문서의 「잎 2장 이상」은 낡았다. core (덧) 약점 「3장에서 팔면 되살 길이 씨앗뿐」은 문으로 막지 않는다. 알려 주는 쪽으로만 간다(0829 ③ⓑ ㉢). 예: 몬이 「그 둘은 받은 잎이야. 자르면 다시는 안 나.」 이 안은 plan 승인이 필요하다.",
+    "touches_rules": true,
+    "impact": "high",
+    "effort": "S"
+   },
+   {
+    "title": "무늬 등급 캐논: 개수가 아니라 종류(산반·하프문·풀문) · 잎 값 20,000/350,000/750,000/1,150,000 · 그루 ×1.4 · 시너지 · 프롤로그는 잎2 산반·잎3 하프문 · 중간잎은 등급을 드러내지 않는다",
+    "where": "data/balance/varie_grades.json · docs/handoff/plan-2026-08-17-varie-grade.md §1~§4 · plan-decisions-0823-2.md ① · plan-varie-seen-late.md ⓕ",
+    "problem": "대사나 연출이 중간잎에서 「하프문이네!」라고 미리 말하면 박사님이 뜻한 목적이 뒤집힌다. 목적은 중간잎에서 산반과 풀문이 같아 보이는 것이다. 그러면 성숙 때 받는 선물 같은 놀라움이 사라진다.",
+    "evidence": "박사님 08-17 「무늬는 개수가 아니라 종류」 · 박사님 08-16 「중간잎은 하프문만 있는 걸로 그냥 ㄱ, 성숙 때 확률적으로 분류되는 걸로」 · 「중간잎 못에는 「등급의 이름을 가진 그림」을 넣지 않는다」 · 프롤로그 1,960,000원 vs 이사비 2,000,000 · 무늬 텍스처는 절대 단색 틴트 금지(memory)",
+    "proposal": "DO NOT CHANGE: 값, 배수, 프롤로그 등급, midCommon 목적을 지킨다. 등급 이름은 성숙한 뒤에만 말한다. 바꿔도 되는 것은 성숙 순간, 곧 등급이 드러나는 때의 연출이다. 확대, 효과음, 몬이 한 줄을 쓴다. growth 약점 ①(다섯에 하나가 민무늬로 그려짐)과 ②(늦게 툭 바뀜)는 그림을 미리 받아 두는 쪽으로만 고친다. 등급과 그림을 잇는 일은 박사님 대기다.",
+    "touches_rules": true,
+    "impact": "high",
+    "effort": "S"
+   },
+   {
+    "title": "몬스테라 생장 캐논 — 곡선·잎 간격·문턱·밴드·죽음 없음은 스토리 개선으로 건드리지 않는다",
+    "where": "memory monstera-growth-spec · data/growth_tuning.json · master-story-inputs [growth] 「바꾸면 안 되는 것」 · START-HERE §6",
+    "problem": "core 약점 ②(가운데 토막이 지루함)와 growth 약점 ③(도착 뒤 오래 아무 일도 없음)을 생장 속도로 메우면 캐논이 깨진다. 이사 성공률과 등이 곧 길이라는 수도 함께 흔들린다.",
+    "evidence": "leaf_interval days [30,40,50,70,100,150,200,300] · thresholds min 2.7 · fenestrate 6 · by_band slow 1 (올리기만) · health drop_enabled false · varieProb 0.20 잎마다 독립 · 빛 이력 없으면 무늬 0 · 첫 몬스테라 normal 고정 · 갈라짐 하한 roll_lo · 잎자루 먼저 · 1혹",
+    "proposal": "DO NOT CHANGE: 값 전부를 그대로 둔다. 바꿔도 되는 것은 셋이다. ① 이미 있는 티(도착 뒤 4일째 중간잎, 19일째 줄기, 22일째 새순 자리, 25일째 새순)에 몬이 한 줄과 카메라를 붙인다. ② 반지하에서 잎이 갈라지지 않는 까닭을 보여 준다. 확률은 두고 설명만 한다(growth ④). ③ 무늬 스킨을 미리 받아 둔다. 그림만 바뀐다.",
+    "touches_rules": true,
+    "impact": "high",
+    "effort": "S"
+   },
+   {
+    "title": "작물 표와 밥 규칙: 콩나물 5일·500/350/200g·<0.3 최상 · 무순 7일·400/250/100g·≥0.35 최상 · 몫 300g/200g · 하루 상한 5,000 · 둘째 몫은 다른 작물이라야 온값 · 반지하 수확량 곱",
+    "where": "docs/handoff/plan-2026-08-17-crop-balance.md §1 · src/game/first_play.js CROP_KINDS · docs/first_play.md ④",
+    "problem": "대사에서 g·원 수를 말하거나 「섞어 먹기」의 뜻을 바꾸면 crop_mix가 가르치는 것과 어긋난다. 반지하 수확량 배수를 건드리면 「열심히 하면 되는 구간」이 사라진다.",
+    "evidence": "박사님 08-18 「콩나물은 200-500 … 좋은 위치면 여유롭게」 · 박사님 08-17 「2배로 하고 난이도 올라갈수록 줄이는 건 어때? … 어쨌든 게임오버는 되면 안 되니까」 · 「첫 몫 2,500원 … 둘째 몫 다른 작물 2,500원」",
+    "proposal": "DO NOT CHANGE: 값을 그대로 둔다. 바꿔도 되는 것은 밥상 창 몬이 한 줄로 「섞어 먹어야 이득」을 뜻만으로 말하는 것이다. 밥상 상자 문안 넷은 [plan] 것이다. 고치려면 plan을 거친다.",
+    "touches_rules": true,
+    "impact": "medium",
+    "effort": "S"
+   },
+   {
+    "title": "초보 판은 맑음·여름 고정 — 겪지 않은 빛 변화를 겪은 것처럼 말하거나 보여 주지 않는다",
+    "where": "src/game/state.js SIM_MODES.novice · propagation.js isNoviceMode · dialogue.js autumnCame 주석 · docs/first_play.md ② · plan-night-asks-20260906 ⑤",
+    "problem": "스토리가 「창이 어두워졌다」나 「잎이 바랜다」를 반지하 초보 판에서 현재형으로 말하거나 연출하면, 화면이 스스로와 어긋난다. 빛 엔진은 여름 그대로다.",
+    "evidence": "`novice: { … rollWeather: false, rollSeason: false, weather: 'clear', season: 'summer' }` · 「⚠ 계절만은 안 돈다 — 첫 플레이는 「맑음·여름 고정」이 계약」 · autumnCame 「그때까지 몬이는 겪지 않은 것을 겪은 것처럼 말하지 않는다」",
+    "proposal": "DO NOT CHANGE: 모드와 그 계약을 지킨다. 바꿔도 되는 것은 달력의 사실(날짜, 해의 각도, 월세, 계절 인사)이다. 빛이 줄어드는 연출과 대사는 박사님이 ⑤에 답한 뒤로 미룬다.",
+    "touches_rules": true,
+    "impact": "high",
+    "effort": "S"
+   },
+   {
+    "title": "말투 계율과 몬이가 못 하는 것 셋 — 새 줄은 모두 이 거름을 지난다(plan 정본, 박사님 값 아님)",
+    "where": "src/game/dialogue.js 주석 :67 :311 :321 :393 :601 :879 :958 · docs/handoff/plan-moni-is.md · plan-index 「문안은 값을 안 품는다」 · memory explain-before-numbers",
+    "problem": "이 거름 없이 지은 새 대사는 몬이를 짐작해서 짓게 된다. 「사라」고 시키거나, 숫자를 말하거나, 몬이가 지치는 줄이 생긴다. 그러면 체력 계통과 가르침이 흐려진다.",
+    "evidence": "「'사'라고 말하지 않는다」「대신 해 주지 않는다」「세어 주지만 벌어 주지 않는다」「겪지 않은 것을 겪은 것처럼 말하지 않는다」「규칙을 말하지 숫자를 말하지 않는다」「눈에 보이는 것만」「「사라」가 아니라 「왜 여기가 어두운가」」 · 몬이: 지치지 않는다 · 이름을 안 부르고 「그거」 · 모를 때가 있다 · 「몬이는 뜻 · 화면은 수」",
+    "proposal": "DO NOT CHANGE: 계율을 지킨다. 몬이에게 tired·sleepy 얼굴을 쓰지 않는다. 몬이 초상에는 worry가 없으니 sad를 쓴다. 바꿔도 되는 것은 얼굴 재배정이다. plan-moni-faces ⓚ~ⓡ 안(크레딧 0)을 plan 승인으로 쓴다. 새 문안은 [판단]/[잰 것]을 붙여 plan에 넘긴다. plan-moni-is의 「없음」 칸은 지어 채우지 않는다.",
+    "touches_rules": true,
+    "impact": "medium",
+    "effort": "S"
+   },
+   {
+    "title": "캐릭터 생김새 정본(LOOK) — 자취녀는 긴 생머리·일자 앞머리·크림색 반팔 티 · 몬이는 테라코타 화분에 든 새싹, 2D",
+    "where": "assets/characters/LOOK.md · portraits/portrait_jachwi_neutral.png · portrait_moni_neutral.png",
+    "problem": "새 원화(ev_*)나 연출 그림을 주문할 때 정본을 안 보면 딴 사람이 나온다. 09-07에 단발로 두 장이 나왔다.",
+    "evidence": "「⛔ 단발(bob) 아님 · ⛔ 묶음머리 아님 · ⛔ 곱슬 아님」 · 「크림색·아이보리 반팔 티셔츠 · ⛔ 흰색 아님」 · 몬이 「화분은 테라코타 · 머리에 몬스테라 잎 좌우 하나씩 · ⛔ 3D 클레이 화풍 따라 하지 말 것」 · 크기 사람의 38%",
+    "proposal": "DO NOT CHANGE: 생김새와 화풍을 지킨다. [Char] 정본이다. 오늘 밤 새 chibi 주인공 3D는 다시 디자인하지 않는다. 바꿔도 되는 것은 이미 있는 원화와 hero 클립(wave·cheer)을 장면에 배치하는 것이다.",
+    "touches_rules": true,
+    "impact": "low",
+    "effort": "S"
+   },
+   {
+    "title": "⏸ 박사님 답 대기 — 정하지 않는다: ③ 캐릭 크레딧 · ④ 원룸 기준 배치·기본 가구 · ⑤ 초보→실전 넘어가는 때 · 돈 곡선 · 원룸 월세 35만 걸기 · 등급-그림 잇기 · midCommon 29·30·31 · 퀘스트 목록·진행도 보이기",
+    "where": "master-story-inputs 「박사님 값 대기」·「⏸ 답 없는 것」 · plan-night-asks-20260906 ③④⑤ · START-HERE §3 · tutorial.js oneroomRentWon · plan-2026-08-17-quest.md §7 · growth 약점 ①⑤ · plan-quest4-teaches-false.md",
+    "problem": "이 답에 기대는 스토리 수정을 먼저 하면 답이 온 뒤 되물린다. 예를 들어 buy_lamp 독촉을 누그러뜨리거나, varie_bright 「빛이 무늬 등급을 정한다」를 반지하용으로 고치거나, 원룸 월세 대사를 쓰거나, 옷 갈아입는 이야기를 넣는 것이다.",
+    "evidence": "「⏸ 답 없는 것(건드리지 않는다): ③ 캐릭 크레딧 · ④ 원룸 기준 배치 · ⑤ novice→real «언제»」 · 「박사님 값 대기: ③④⑤ · 돈 곡선 · 원룸 기본 가구」 · `oneroomRentWon: null` (35만은 homes.json에만 있다) · 「퀘스트를 목록으로 보여 줄지 · 진행도(3/5)를 보여 줄지 ☐ 안 정한 것」",
+    "proposal": "DO NOT DECIDE: 이 목록에 걸린 개선은 물음으로만 올린다. 배경, 선택안, 결과 예상을 붙여 plan-night-asks 꼴로 적는다. 결정은 박사님께 받는다. 그동안은 이 답과 무관한 반지하 연출과 문안만 손댄다.",
+    "touches_rules": true,
+    "impact": "high",
+    "effort": "S"
+   }
+  ]
+ }
+]
