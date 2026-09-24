@@ -69,6 +69,7 @@ import { nearestSlot, slotHolds, freeSlotId, isFreeSlotId, FREE_PREFIX,
          samePoint, distanceXZ, inRoom, makeAt, atFromSlot,
          GRID_UNIT, GRID_CELL, unitsFor, snapSpan, snapAngleDeg,
          cellBox, cellBoxOverlap } from './place.js';
+import * as v2Hero from './v2_hero.js';   // v2: 새 주인공(hero.glb) — 끄기 ?v2hero=0
 
 /* ── 경로는 이 파일 기준으로 푼다 ──
    호스트 페이지가 저장소 뿌리에 있든 tools/ 아래에 있든 같은 곳을 가리켜야 한다.
@@ -7571,7 +7572,10 @@ export async function createRoomView(canvas, opts = {}) {
   async function makePerson(gameId) {
     const id = CHAR_ASSET[gameId] || 'jachwi_f';
     /* idle 파일 하나에 메시와 동작이 다 들어 있다 — 리깅본을 따로 안 받는다(char 창 §3) */
-    const g = await charLoad(`${CHAR_MESH}/char_${id}_idle.glb`);
+    /* v2: 새 주인공 — 켜져 있으면 hero.glb(제 클립 8개)를 쓴다. 못 받으면 옛 길로 */
+    const hero = (id === 'jachwi_f' && v2Hero.heroOn())
+      ? await v2Hero.makeHero().catch(e => { console.warn('[방뷰] v2 hero 실패 — 옛 몸으로:', e.message); return null; }) : null;
+    const g = hero || await charLoad(`${CHAR_MESH}/char_${id}_idle.glb`);
     const model = g.scene;
     /* ★ 크기는 절대 안 건드린다. GLB 에 1.40m 가 구워져 있다(README §1).
        여기서 다시 정규화하면 그 위에 곱해져 1.36m 같은 값이 된다. */
@@ -7728,13 +7732,13 @@ export async function createRoomView(canvas, opts = {}) {
 
     async function ensureWalkClip() {
       if (walkAct) return walkAct;
-      const cl = await walkClipOf(id);
+      const cl = hero ? hero.walk : await walkClipOf(id);   // v2: hero 는 제 걷기만
       if (!alive) return null;
       walkAct = mixer.clipAction(cl);
       walkAct.setLoop(THREE.LoopRepeat, Infinity);
       /* ★ 다리가 도는 속도를 바닥이 흐르는 속도에 맞춘다 — 이 한 줄이 발 미끄러짐을 줄인다.
          근거와 숫자는 WALK_SPEED 주석에 다 적어 뒀다. 지금 값으로는 1.40 배다. */
-      walkAct.timeScale = Math.max(0.6, (WALK_SPEED - WALK_SLIP_OK) / WALK_CLIP_MPS);
+      walkAct.timeScale = Math.max(0.6, (WALK_SPEED - WALK_SLIP_OK) / (hero ? hero.walkMps : WALK_CLIP_MPS));   // v2: hero 걷기 속도
       return walkAct;
     }
     function playWalk() {
@@ -7851,7 +7855,7 @@ export async function createRoomView(canvas, opts = {}) {
     /* idle 을 돌리다 8~20초마다 변주를 한 번 끼운다. 끝자세=시작자세인 클립만
        배정표에 들어 있어 crossfade 0.3s 면 안 튄다.
        ★ 걷는 동안은 끼우지 않는다 — 걸어가다 갑자기 머리를 긁으면 다리가 멈춘다. */
-    const pool = IDLE_BREAK[id] || [];
+    const pool = hero ? [] : (IDLE_BREAK[id] || []);   // v2: hero 에 옛 anim 클립을 얹지 않는다
     const clips = {};
     function schedule() {
       if (!alive || !pool.length) return;
@@ -7889,6 +7893,7 @@ export async function createRoomView(canvas, opts = {}) {
 
     return {
       kind: 'person', assetId: id, root, walkable: true,
+      v2ActClip: hero ? hero.actClip : null,   // v2: hero 동작 클립(runAct 가 먼저 묻는다)
       /* ⑦ 잡고 있는 동작 — 끝 자세에서 멈춘다(abortAct 가 푼다) */
       holdClip: (clip, sec, onTick) => runClip(clip, sec, onTick, true),
       get held() { return !!heldAction; },
@@ -8888,7 +8893,7 @@ export async function createRoomView(canvas, opts = {}) {
     /* ③ 모션 ------------------------------------------------------------ */
     /* 바닥에 놓인 것은 쭈그려서 딴다 */
     const spec = (base.low && t.pos.y < base.low.atY) ? { ...base, ...base.low } : base;
-    const clip = await actClipOf(person.c.assetId, spec.clip, spec.from, spec.win)
+    const clip = await (person.c.v2ActClip ? person.c.v2ActClip(K, t.pos.y) : actClipOf(person.c.assetId, spec.clip, spec.from, spec.win))   // v2: hero
       .catch(e => { console.warn(`[방뷰] 동작 클립 '${spec.clip}' 을 못 실었습니다 — 절차적 몸짓으로 대신합니다:`, e.message); return null; });
     if (token.cancelled) return bail(token.reason);
 
