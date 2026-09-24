@@ -12,7 +12,7 @@
 5. `userData.lampShade` 는 g 의 직접 자식 · `hangFromCeiling` (main.js·room_view 가 그렇게 찾는다)
 - `lighting_sim.js` 는 조도 엔진이다. 손대지 않는다
 - `scene.js sunLight.shadow.radius=4` 는 08-23 「볕 얼룩」을 고친 값이다(11 이면 어두운 바닥에 밝은 조각)
-- 확인: `BYEOT_URL=http://localhost:8971 node tools/run_house_checks.mjs` ⇒ 지금 기준 초록 8 · 붉음 1(oneroom_room ④⑤는 일부러 붉음). 바뀌면 조도·자리가 움직인 것
+- 확인: `BYEOT_URL=http://localhost:8971 node tools/run_house_checks.mjs` ⇒ **기준 초록 7 · 붉음 2** [잰 것 · 2026-09-24 21:32 · HEAD 9e854d70 · v2 변경 «전»]: ✘ `test_floorlight` 7/9(①-3 skyViewK 선형 · ③-2 단계마다 남는 것) · ✘ `test_oneroom_room` 3/9(①-2 · ③ · ③-2 · ④ · ⑤) — 둘 다 08-30 원룸을 빈 방으로 비운 뒤 알려진 것. **판정은 개수가 아니라 칸 단위** — 이 목록 밖의 ✘ 가 나오면 v2 변경 탓이다. 기준 원본은 house 창 `$TEMP/house_baseline_2132.txt` (⚠ 처음 받은 「초록 8 · 붉음 1」은 원룸을 비우기 전의 낡은 수였다 — house 정정)
 - `test_banjiha_profile` 이 붉으면 `gen_room_profile --write` 로 덮지 말 것(얼린 표가 두 벌) — house 창에 넘긴다
 
 ## [core] claude-1a — room_view 창구
