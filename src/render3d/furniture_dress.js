@@ -73,8 +73,10 @@ const RESTYLE = {
        숨는다**(yieldTo). 판정·길찾기는 소품을 모른다(그림뿐). */
 const PROPS = {
   banjiha: [
-    { id: 'rug',     rug: true, x: -0.35, z: 0.78, w: 1.5, d: 1.0, yaw: 0 },
-    { id: 'laundry', file: 'props/laundry.glb',     x: 1.70,  z: -1.50, yaw: 0,   h: 0.30 },
+    // v2 합치기 검토: 러그 그림이 흰 테두리째 비스듬한 제품 사진이라 뺀다 — 알파 있는 위에서 본 그림이 생기면 되살린다
+    // { id: 'rug',     rug: true, x: -0.35, z: 0.78, w: 1.5, d: 1.0, yaw: 0 },
+    // v2 합치기 검토: 책상 발치를 삐져나와 뺀다
+    // { id: 'laundry', file: 'props/laundry.glb',     x: 1.70,  z: -1.50, yaw: 0,   h: 0.30 },
     { id: 'heater',  file: 'props/heater.glb',      x: -2.19, z: 0.52,  yaw: 90,  h: 0.50 },
     { id: 'trash',   file: 'props/trash.glb',       x: -2.21, z: 1.53,  yaw: 0,   h: 0.40 },
     { id: 'backpack',file: 'props/backpack.glb',    x: -0.72, z: 1.64,  yaw: 90,  h: 0.36 },

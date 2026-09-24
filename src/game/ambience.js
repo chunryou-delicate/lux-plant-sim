@@ -21,7 +21,7 @@ import { v2Flag } from './camera_moves.js';
 /* 세기 — 음악(RMS ≈ 0.04~0.06) 밑으로 12~18dB. 귀로 못 들으니 probe 로 잰다 */
 export const AMB = {
   vol: 0.34,                       // 마스터
-  hum:   { gain: 0.050, hz: 60, cycleOn: [70, 150], cycleOff: [25, 60], ramp: 2.2 },
+  hum:   { gain: 0.025,   /* v2 합치기 검토: 늘 켜져 있는 소리라 절반으로 */ hz: 60, cycleOn: [70, 150], cycleOff: [25, 60], ramp: 2.2 },
   air:   { gain: 0.030, lp: 520 },
   rain:  { gain: 0.060, chance: 0.45, fade: 7 },
   street: { dayGap: [16, 42], nightGap: [40, 100], wallLp: 900 }

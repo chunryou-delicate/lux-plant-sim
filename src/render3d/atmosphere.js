@@ -535,12 +535,12 @@ function build(ctx, built, opt) {
       seen.push(r.shade);
       if (!(r.light.intensity > 0) || !visibleChain(r.shade)) continue;
       if (r.grow) colTmp.copy(r.light.color).lerp(lampWarm, 0.35); else colTmp.copy(lampWarm);
-      put(r.shade, colTmp, r.grow ? 0.30 : 0.45);
+      put(r.shade, colTmp, r.grow ? 0.30 : 0.22);   // v2 합치기 검토: 천장등 달무리가 침대 위에 불 켜진 얼룩으로 읽혔다
     }
     /* 천장등 갓(등 기구가 아닌 것) — scene 의 천장 전구가 켜져 있을 때만 */
     const cs = ctx.clShade;
     if (cs && !seen.includes(cs) && ctx.ceilingBulb && ctx.ceilingBulb.intensity > 0 && visibleChain(cs))
-      put(cs, lampWarm, 0.45);
+      put(cs, lampWarm, 0.22);
     for (let i = n; i < MAX_HALO; i++) HC[i].w = 0;
     haloN = n;
   }
