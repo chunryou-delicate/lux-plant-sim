@@ -44,7 +44,7 @@ export const CAM_MOVES = {
     center: 0.18,            // 가려지지 않는 칸 안에서 가운데로 조금 더 — 다가가는 느낌
     capX: 0.24, capY: 0.16,  // 한 번에 화면을 이만큼보다 더 밀지 않는다(폭·높이 비)
     top: 0.13,               // 위 띠(HUD·할 일)는 안 쓴다
-    inMs: 1000, outMs: 720, retargetMs: 1100, retargetM: 0.6
+    inMs: 1000, outMs: 420, retargetMs: 1100, retargetM: 0.6   // outMs 720→420 (09-25 core: 돌아오는 1초 동안 메뉴가 흘러 빗누름)
   },
   act: {
     water:   { closer: 0.94, shift: 0.18 },
@@ -233,8 +233,12 @@ export function createCameraMoves(opt = {}) {
     const v = view();
     if (!ours(v)) { own = null; st.lost++; note('talk-lost'); return; }   // 누가 가져갔다 → 손을 뗀다
     if (v.camBusy().down) { backT = setTimeout(talkOut, 200); return; }   // 누르고 있는 동안은 기다린다
-    v.camTo(own.home, CAM_MOVES.talk.outMs);
-    own = null; st.talkOut++; note('talk-out');
+    /* ★ 09-25 [core] 실측: 대사가 닫힌 뒤 돌아오는 동안 그루 메뉴(#stage.picked)·놓기 [확인](#stage.confirming)이
+       화면에서 흘러, 「확대 보기」를 빗누르면 바닥을 눌러 화분 옮기기가 시작됐다. 그 둘이 떠 있으면 «바로» 돌아온다. */
+    const st0 = opt.stage && opt.stage.classList;
+    const ui = !!(st0 && (st0.contains('picked') || st0.contains('confirming')));
+    v.camTo(own.home, ui ? 0 : CAM_MOVES.talk.outMs);
+    own = null; st.talkOut++; note(ui ? 'talk-out-snap' : 'talk-out');
   }
   function onStage() {
     const now = !!(opt.stage && opt.stage.classList.contains('talking'));
@@ -244,7 +248,7 @@ export function createCameraMoves(opt = {}) {
     else {
       clearTimeout(retryT);
       /* 대사가 곧바로 이어 열리는 경우가 있다 — 잠깐 기다려 들썩이지 않게 한다 */
-      backT = setTimeout(talkOut, 140);
+      backT = setTimeout(talkOut, 60);    // 140→60 (09-25 · 위 talkOut 주석)
     }
   }
 
