@@ -62,6 +62,18 @@ class Handler(SimpleHTTPRequestHandler):
             self.close_connection = True
 
 
+class Server(ThreadingHTTPServer):
+    """★ 2026-09-25 — 연결 «대기열»을 넓힌다.
+
+    ThreadingHTTPServer 여도 받아들이기 전 대기열(listen backlog)은 socketserver 기본 «5»다.
+    보이는 층 v2(bd8b91b5)가 GLB·셰이더·모듈을 한꺼번에 여럿 부르자 Windows 가 넘친 연결을
+    «ERR_CONNECTION_REFUSED» 로 돌려보냈다 — FXAAShader.js · v2 가구 GLB 가 거절됐고,
+    test_lampmove 3부가 game.html 에서 window.__rv 를 150초 기다리다 죽었다(두 번 재현).
+    ⇒ 게임 고장이 아니라 «검사용 서버»가 못 받은 것이다. 같은 검사를 대기열만 넓혀 다시 돌려 갈랐다.
+    """
+    request_queue_size = 128
+
+
 def lan_ips():
     """이 컴퓨터가 같은 와이파이에서 어떤 주소로 보이는지. 폰으로 들어올 때 쓴다."""
     out = []
@@ -95,9 +107,9 @@ def main():
 
     port = int(args[0]) if len(args) > 0 else 8780
     root = args[1] if len(args) > 1 else os.getcwd()
-    srv = ThreadingHTTPServer((host, port), partial(Handler, directory=root))
+    srv = Server((host, port), partial(Handler, directory=root))
     srv.daemon_threads = True
-    print(f"serving {root} on http://{host}:{port}  (threading, no-cache)")
+    print(f"serving {root} on http://{host}:{port}  (threading, no-cache, backlog {srv.request_queue_size})")
     if host == "0.0.0.0":
         for ip in lan_ips():
             print(f"  폰에서는  http://{ip}:{port}/game.html")
