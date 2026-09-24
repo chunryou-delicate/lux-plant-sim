@@ -37,7 +37,8 @@ files.forEach((f, i) => {
     let tris = 0; o.traverse(m => { if (m.isMesh) tris += (m.geometry.index ? m.geometry.index.count : m.geometry.attributes.position.count) / 3; });
     window.__info[i] = { f, size: [s.x, s.y, s.z].map(v => +v.toFixed(3)), tris, clips: g.animations.map(a => a.name + ':' + a.duration.toFixed(2)) };
     if (q.get('anim') && g.animations.length) {
-      const mx = new THREE.AnimationMixer(o); const a = mx.clipAction(g.animations[+(q.get('clip') || 0)]); a.play();
+      const src = g.animations[+(q.get('clip') || 0)].clone(); src.tracks = src.tracks.filter(t => !/\.scale$/.test(t.name));   // 게임(v2_hero.js)과 같게 크기 트랙을 뺀다 — idle Hips 1.176
+      const mx = new THREE.AnimationMixer(o); const a = mx.clipAction(src); a.play();
       mx.setTime(parseFloat(q.get('t') || '0.4') * g.animations[+(q.get('clip') || 0)].duration); mixers.push(mx);
     }
     if (++done === files.length) finish();
