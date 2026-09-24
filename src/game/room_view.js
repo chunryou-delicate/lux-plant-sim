@@ -38,6 +38,7 @@
 ============================================================ */
 
 import { createScene, updateLight } from '../render3d/scene.js';
+import { createPostFx } from '../render3d/postfx.js';   // v2: 후처리(보이는 층만) — ?v2fx=0 으로 끈다
 import { faintGrainTexture } from '../render3d/textures.js';
 import { buildHouse, updateShellVisibility } from '../render3d/house.js';
 /* ★ 창밖 골목 — **보이는 것일 뿐** 빛의 근원이 아니다.
@@ -743,6 +744,11 @@ export async function createRoomView(canvas, opts = {}) {
   }
 
   const ctx = createScene(canvas);
+  /* v2: 후처리 — 스크립트를 받는 동안·꺼져 있으면 예전처럼 renderer.render 한 번이다.
+     빛 분포 판(범례 색)·'house' 재기 정책일 때는 건너뛴다. */
+  const postfx = createPostFx(ctx, { canvas,
+    bypass: () => lightPolicy === 'house' || !!(heatView && heatView.isOn && heatView.isOn()),
+    onChange: () => { needsRender = true; } });
   const GRAIN = faintGrainTexture();
 
   /* 폰 기준 그림자 예산 — scene.js 기본은 데스크톱 기준(2048)이라 폰에선 과하다 */
@@ -5227,7 +5233,7 @@ export async function createRoomView(canvas, opts = {}) {
     needsRender = false;
     const t0 = performance.now();
     updateCam();
-    ctx.renderer.render(ctx.scene, ctx.cam);
+    postfx.present();   // v2: 예전 ctx.renderer.render(ctx.scene, ctx.cam) — 꺼져 있으면 그대로 그것이다
     const ms = performance.now() - t0;
     if (ms > stats.worstMs) stats.worstMs = ms;
     stats.drawn++;
@@ -5329,6 +5335,9 @@ export async function createRoomView(canvas, opts = {}) {
     slowWindows = stats.fps < target ? slowWindows + 1 : 0;
     if (slowWindows >= 2) {
       slowWindows = 0;
+      /* v2: 픽셀비를 내리기 전에 후처리의 비싼 것(AO → FXAA → 번짐)부터 내려놓는다 */
+      const fxDrop = postfx.degrade();
+      if (fxDrop) { stats.reduced = fxDrop; needsRender = true; return; }
       const i = PX_STEPS.findIndex(v => v <= pxRatio + 1e-3);
       const next = PX_STEPS[Math.min(PX_STEPS.length - 1, (i < 0 ? 0 : i) + 1)];
       if (next < pxRatio - 1e-3) {
@@ -9644,7 +9653,7 @@ export async function createRoomView(canvas, opts = {}) {
        안 도는 환경에서 화면을 확정지어야 할 때 쓴다. */
     /* ★ 캐릭터도 한 칸 걸어 준다. rAF 가 안 도는 곳(헤드리스·숨은 탭)에서 이걸 안 하면
        사람이 바인드 자세(팔 벌린 A포즈) 그대로 찍힌다 — 실제로 그렇게 찍혔다. */
-    redraw() { stepCharacters(performance.now(), true); updateCam(); ctx.renderer.render(ctx.scene, ctx.cam); needsRender = false; },
+    redraw() { stepCharacters(performance.now(), true); updateCam(); postfx.present(); needsRender = false; },   // v2: 후처리 경로(루프와 같은 그림)
     /* 0..1 하루 시간대. 시간대 이름('아침'·'한낮'…)을 돌려준다.
        ★ 빨리감기는 이 함수를 하루에 한 바퀴 돌리는 것으로 표현한다 —
          해의 방향·색온도·창으로 든 빛 웅덩이가 같이 움직인다. */
@@ -10090,6 +10099,7 @@ export async function createRoomView(canvas, opts = {}) {
       clearPlants(); clearRings();
       disposeOutside();
       disposeObject(ctx.scene);
+      postfx.dispose();   // v2: 후처리 타깃·재질
       ctx.renderer.dispose();
       /* ★★★ 2026-08-17 — **문맥을 실제로 놓아준다** (박사님: 다시 시작했더니
            *"방을 그리지 못했습니다 — WebGL 문맥을 못 만들었습니다"*).
@@ -10125,7 +10135,7 @@ export async function createRoomView(canvas, opts = {}) {
     resize();
     applyDaylight();
     updateCam();
-    ctx.renderer.render(ctx.scene, ctx.cam);
+    postfx.present();   // v2: 첫 장(스크립트를 받는 중이면 예전처럼 바로 그린다)
     raf = requestAnimationFrame(loop);
     progress('ready', '방이 떴습니다');
     try { O.onReady && O.onReady(view); } catch (e) { fail(e); }
