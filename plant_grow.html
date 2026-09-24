@@ -2308,6 +2308,17 @@ function petColorOf(key){ return KEEP_TEX.has(key)? leafPetColor(key) : null; }
      (§ensureSkin · 2026-08-17). 받는 동안은 기본잎으로 그려지고, 도착하면 다시 그린다.
    ⚠ 「없으면 기본잎」이라는 예전 규칙은 한 글자도 안 바뀌었다 — 그 아래에 한 줄을 더했을 뿐이다. */
 function wantSkin(k){ if(!ASSETS[k]) ensureSkin(k); return !!ASSETS[k]; }
+/* ★ 2026-09-25 (W3 #9) — 무늬 잎이 **다음에 쓸 그림**을 미리 받아 둔다. 첫 프레임·성숙하는 날의 «민잎 번쩍임» 없애기.
+   ⚠ 받는 것만 앞당긴다 — rng·VARIE_STATE·MAT_STATE 는 읽기만 한다(굴림 없음). 고르는 번호는 pickLeafKey 와 같은 함수다. */
+function prefetchVarieSkins(axes, g, leafMOf){
+  for(const ax of axes){
+    if(!ax.varie || ax.birth>g || leafDroppedOf(ax.leafBirth)) continue;
+    const m = g>=ax.leafBirth ? leafMOf(ax,g) : 0;
+    if(m<P.stageYoung) ensureSkin('leaf_young_albo');
+    if(m<P.stageMid){ const n=midAlboNumOf(ax.leafBirth, ax.alboMid); ensureSkin('leaf_mid_albo'+Math.max(1,Math.min(ALBO_MID_MAX,n))); }
+    if(m>=P.stageYoung){ const n=matAlboNumOf(ax.leafBirth, ax.alboMid, ax.matRoll); if(n>0) ensureSkin('leaf_mat'+Math.max(1,Math.min(MAT_ALBO_MAX,n))); }
+  }
+}
 /* ★ 무늬 번호를 고르는 순서 — **조절기 고정 > 밖에서 못 박은 것 > 예전 굴림** (§손잡이).
    ⚠ 세 줄을 한 군데 모아 둔다. 흩어 두면 `pickLeafKey` 와 `drawLeafStage` 가 갈린다 —
      둘은 **같은 답을 내야 하는 쌍둥이**다(하나는 색을 미리 알려고, 하나는 그리려고 부른다). */
@@ -2582,6 +2593,7 @@ function buildPlant(){
   } else {
     // ===== 정밀 생장 — 마디 트리는 growTopology 가 낸다(순서도 #0~#16) =====
     const {axes, axBase, leafM}=growTopology(g);
+    prefetchVarieSkins(axes, g, leafM);          // ★ W3 #9 — 무늬 그림 미리 받기(굴림 없음 · 시점만 앞당김)
     // ===== 렌더 =====
     // ★2단계로 나눈다: 잎이 "다른 줄기"를 피하려면 잎을 놓기 전에 모든 줄기를 알아야 하기 때문.
     //   1단계에서 전 축의 마디 점·굵기를 계산해 장애물(STEMS)로 등록하고, 2단계에서 그린다.
