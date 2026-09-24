@@ -40,6 +40,7 @@
 import { createScene, updateLight } from '../render3d/scene.js';
 import { faintGrainTexture } from '../render3d/textures.js';
 import { buildHouse, updateShellVisibility } from '../render3d/house.js';
+import { applyRoomMaterials } from '../render3d/room_materials.js';   // v2: 벽지·장판·콘크리트 겉감 (?v2mat=0 끔)
 /* ★ 창밖 골목 — **보이는 것일 뿐** 빛의 근원이 아니다.
    무광원(MeshBasicMaterial) + castShadow/receiveShadow 없음이라
    sunLight·skyPortals·조도 엔진 어느 쪽도 이 기하를 보지 않는다.
@@ -1096,6 +1097,8 @@ export async function createRoomView(canvas, opts = {}) {
         .filter(Boolean);
     }
     if (!built || !built.room) throw new Error(`방 조립 결과가 비었습니다: ${id}`);
+    try { applyRoomMaterials(built, id); }   // v2: 겉감을 먼저 입히고 아래 dim 이 그 바탕에서 누른다
+    catch (e) { console.warn('[v2mat] 겉감을 못 입혔습니다 —', e.message); }
     dimRoomMaterials(built);
 
     /* ★ 방을 갈아타면 등 스위치·시간 장부를 비운다 (2026-08-08 · §⑧-e).
