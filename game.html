@@ -3076,6 +3076,9 @@ import { createDialogue, createStoryteller, SPEAKERS,
 import { createMusic } from './src/game/music.js';
 /* ★ 효과음 — 딸칵·사각사각·물·저벅저벅·띠로롱·턱 (2026-08-16 박사님 요청 · sfx-to-plan.md) */
 import { sfx } from './src/game/sfx.js';
+/* v2: 방 소리(냉장고 웅·창 너머 발소리·밤비)와 카메라 연출 — 끄기 ?v2amb=0 · ?v2cam=0 · ?v2=0 */
+import { createAmbience } from './src/game/ambience.js';
+import { createCameraMoves } from './src/game/camera_moves.js';
 import { seasonAt, seasonDayAt, SEASON_KO, tutorialGoal, learningLeft,
          canMoveOut, moveOut, buyLamp, lampPriceAt, lampNextIndex } from './src/game/tutorial.js';
 /* ★이사는 사건이 아니라 **이동**이다. moveOut 은 돈과 판정만 하고 방을 안 바꿨다 —
@@ -8823,6 +8826,8 @@ function doAct(kind, done, opt = {}) {
      한 자리에 모아 둔다 — 하나라도 빠뜨리면 밀린 것이 영영 안 돈다. */
   const finishAct = () => { stop(); runOnce(); actDrain(); };
   roomView.actAt(key, kind, {
+    /* v2: 손이 닿는 순간 카메라를 살짝 밀었다 돌려놓는다(물·거두기만 · 동작 안에서 끝난다) */
+    onArrive: () => { try { if (actSeq === myAct && camMoves) camMoves.act(kind, key); } catch { } },
     /* ★ 소리 — `phase` 가 걷는 중인지 일하는 중인지를 이미 말해 준다(2026-08-16).
          걷는 중 → 저벅저벅(멈추면 멈춘다) · 물주기 → 물 · 그 밖 → 사각사각(심기·수확·삽수·분갈이) */
     onProgress: (p, phase) => {
@@ -11775,6 +11780,7 @@ $('dlgSkip').addEventListener('click', (e) => { e.stopPropagation(); dlg.skip();
    ★AudioContext 를 미리 만들지 않는다 — 브라우저가 사용자 조작 전에는 소리를 막고,
      막힌 컨텍스트를 들고 있으면 나중에 켜도 안 나는 상태가 된다. 누를 때 만든다. */
 let music = null, musicCtx = null;
+let amb;                                /* v2: 방 소리(ambience.js). undefined=아직 안 만듦 · null=꺼 둠 */
 
 /* ★★ 켬/끔을 **기억한다** (박사님 2026-08-07: "음악 나오게 해줘").
    음악은 이미 있었고 ♪ 로 켤 수 있었는데 **기본이 꺼짐**이라, 누르지 않으면
@@ -11793,6 +11799,12 @@ function startMusic() {
   }
   if (musicCtx.state === 'suspended') musicCtx.resume();
   if (!music.isPlaying()) music.start();
+  /* v2: 방 소리 — 같은 ctx · 같은 손짓 · 같은 스위치. 실패해도 음악은 산다 */
+  try {
+    if (amb === undefined) amb = createAmbience(musicCtx, { phase: () => dayPhase, day: () => S.day,
+                                                           basement: () => !S.home || !S.home.room || S.home.room === 'banjiha' });
+    if (amb) amb.start();
+  } catch (e) { amb = null; console.warn('[방 소리]', (e && e.message) || e); }
   b.setAttribute('aria-pressed', 'true');
   return true;
 }
@@ -11802,6 +11814,7 @@ function toggleMusic() {
   try {
     if (music && music.isPlaying()) {
       music.stop();
+      try { amb && amb.stop(); } catch { }   /* v2: 방 소리도 같이 멎는다 */
       b.setAttribute('aria-pressed', 'false');
       localStorage.setItem(MUSIC_KEY, 'off'); sfx.setEnabled(false);
       return;
@@ -11832,6 +11845,7 @@ function armMusicAutostart() {
    room_view.js 는 별도 모듈이라 아직 없을 수 있다 — **없어도 게임은 돌아간다.**
    빈 검은 화면만 두면 "고장났나"로 읽히므로 무엇을 기다리는지 적어 둔다. */
 let roomView = null;
+let camMoves = null;                    /* v2: 카메라 연출(camera_moves.js) — 부팅 끝에 붙는다 */
 let roomListenersBound = false;         /* 한 번만 거는 리스너를 지킨다 — remountRoomView 참조 */
 
 /* ══ 포인터 「상대 이동」 (박사님 2026-08-08) ═══════════════════════════════
@@ -16578,6 +16592,12 @@ try {
   bindDetail();                     // 나 · 아이템 · 식물 상세
   showBuild();                      // 지금 보는 판이 언제 것인지 — 캐시가 의심될 때 여기를 본다
   $('btnMusic').onclick = toggleMusic;
+  /* v2: 카메라 연출 — 대화가 열리면 말하는 쪽으로 10% 다가가고, 닫히면 돌아온다. 사람이 만지면 손을 뗀다 */
+  try { camMoves = createCameraMoves({ view: () => roomView, stage: $('stage'), whoEl: $('dlgWho'),
+                                       box: () => $('dlgBox'), face: () => $('dlgFace'),
+                                       speaker: () => { const l = dlg.current(); return l && l.who; } });
+        window.__v2.cam = camMoves; }
+  catch (e) { console.warn('[카메라 연출]', (e && e.message) || e); }
   armMusicAutostart();
   sfx.setEnabled(musicWanted());    /* ★ 효과음도 같은 스위치를 탄다 — 열쇠는 byeot.music 하나다 */              // 첫 조작에 저절로 켠다 — 끈 사람만 기억한다
   bootRoomView();                   // 방 3D — 실패해도 게임은 돌아간다(아래)
