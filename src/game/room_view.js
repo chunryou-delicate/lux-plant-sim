@@ -57,6 +57,7 @@ import { getPlantAssembler } from '../render3d/plant_assemble.js';
 /* 걷는 길은 render3d/character.js 가 쓰던 것과 **같은 한 벌**을 쓴다.
    복사하면 방과 방 도구에서 통행 판정이 어긋난다(floor_nav.js 머리말). */
 import { createFloorNav } from '../render3d/floor_nav.js';
+import { createFurnitureDress } from '../render3d/furniture_dress.js';   // v2: 가구 옷(GLB)·소품 — 그림만
 /* ★ 배치 규칙은 game/place.js 한 벌만 쓴다.
    place.js 는 THREE 도 DOM 도 없이 도는 순수 모듈이라, 화면과 Node 테스트가
    **같은 식**으로 판정한다. 여기서 다시 짜면 두 벌이 되고 두 벌은 반드시 어긋난다
@@ -786,6 +787,11 @@ export async function createRoomView(canvas, opts = {}) {
   try { window.__sunShadow = ctx.sunLight.shadow; window.__sunLight = ctx.sunLight;
         window.__cam = ctx.cam; } catch { /* 창이 없는 환경 */ }
 
+  /* v2: 가구 옷(GLB)·소품 — 그림만. 광선은 옛 상자(보이지 않는 대리)가 받고, 옷은 층 1 이라
+     광선에 안 맞는다(카메라가 층 1 을 켠다). 끄기 ?v2furn=0 · 머리말은 furniture_dress.js */
+  const furnDress = createFurnitureDress({ cam: ctx.cam, renderer: ctx.renderer, loadGLB,
+    furnK: () => (lightPolicy === 'house' ? 1 : FURN_DIM), onChange: () => furnDressChanged() });
+
   /* ── 상태 ── */
   const houseGroup = new THREE.Group();
   ctx.scene.add(houseGroup);
@@ -1076,6 +1082,8 @@ export async function createRoomView(canvas, opts = {}) {
     }
 
     progress('room', '방을 짓는 중');
+    /* v2: 가구 옷을 처음 한 번만 기다린다(최대 4초) — 받은 뒤로는 안 기다린다 */
+    if (furnDress.enabled && !furnDress.furnReady()) await furnDress.preload(4000);
     let wins;
     if (opt.prebuilt && opt.prebuilt.built) {
       /* 이미 지어진 것을 받았다 — 두 번 짓지 않는다 */
@@ -1096,6 +1104,7 @@ export async function createRoomView(canvas, opts = {}) {
         .filter(Boolean);
     }
     if (!built || !built.room) throw new Error(`방 조립 결과가 비었습니다: ${id}`);
+    furnDress.dress(built, roomDef);        // v2: 옷 입히기 — dim 앞이라 옷도 같이 눌린다
     dimRoomMaterials(built);
 
     /* ★ 방을 갈아타면 등 스위치·시간 장부를 비운다 (2026-08-08 · §⑧-e).
@@ -1107,6 +1116,7 @@ export async function createRoomView(canvas, opts = {}) {
     houseGroup.add(built.room);
     buildOutside(id);                       // 창밖 골목 (창 없는 방이면 조용히 아무것도 안 한다)
     buildNeighbors(id);                     // 양옆 이웃 방 (기본은 반지하만)
+    furnDress.props(houseGroup, built, id); // v2: 소품 — houseGroup 에만 · 층 1(광선 안 맞음)
     /* 걸어 다닐 바닥을 다시 물린다 — 방이 바뀌면 벽도 가구도 다 다르다.
        ★ 2026-08-09 — 놓인 그루도 같이 물린다(§놓은 것이 길을 막는다). */
     nav.setWorld({ colliders: navColliders(), size: built.size });
@@ -1188,6 +1198,15 @@ export async function createRoomView(canvas, opts = {}) {
      ⚠⚠ 조도는 한 톨도 안 바뀐다 — 이건 houseGroup 에 붙는 무광원 판때기고,
        조도는 light_adapter 가 **방 정의**로 낸다. tools/test_ground.mjs 가 못 박는다.
   ============================================================ */
+  /* v2: 옷·소품이 늦게 왔다(또는 끄고 켰다) — 같은 방이면 다시 눌러 칠하고 접지판·그림자를 새로 */
+  function furnDressChanged() {
+    if (disposed || !built) return;
+    dimRoomMaterials(built, lightPolicy === 'house' ? 1 : ROOM_DIM, lightPolicy === 'house' ? 1 : FURN_DIM);
+    buildFurnitureBlobs();
+    if (ctx.sunLight.castShadow) ctx.sunLight.shadow.needsUpdate = true;
+    needsRender = true;
+  }
+
   let furnBlobs = null;
   /* 접지 그림자를 켜 둘까 — 기본은 켠다. setBlobShadows 로 끄면 새로 만드는 것도 꺼진 채 난다
      (재는 도구가 before/after 를 찍는 동안 새 화분이 혼자 그림자를 달고 나오면 안 된다). */
@@ -1224,6 +1243,11 @@ export async function createRoomView(canvas, opts = {}) {
       uv.push(0, 0,  1, 0,  1, 1,  0, 1);
       idx.push(k, k + 2, k + 1, k, k + 3, k + 2);
       n++;
+    }
+    for (const r of furnDress.blobRects()) {   // v2: 소품 발자국도 같은 한 판에(드로우콜 그대로 1)
+      const hw = r.w * 0.8, hd = r.d * 0.8, k = pos.length / 3;
+      pos.push(r.x - hw, 0, r.z - hd, r.x + hw, 0, r.z - hd, r.x + hw, 0, r.z + hd, r.x - hw, 0, r.z + hd);
+      uv.push(0, 0, 1, 0, 1, 1, 0, 1); idx.push(k, k + 2, k + 1, k, k + 3, k + 2); n++;
     }
     if (!n) return 0;
     const geo = new THREE.BufferGeometry();
@@ -2785,6 +2809,7 @@ export async function createRoomView(canvas, opts = {}) {
   function refreshNavObstacles() {
     if (!built) return;
     nav.setWorld({ colliders: navColliders(), size: built.size });
+    if (furnDress.yieldTo(navColliders())) buildFurnitureBlobs();   // v2: 화분과 겹친 소품은 비켜 준다(그림만)
   }
 
   function removePlant(slotId) {
@@ -6646,6 +6671,7 @@ export async function createRoomView(canvas, opts = {}) {
     const edges = [];
     c.traverse(o => {
       o.userData = { ...o.userData, uid: undefined, isPreview: true, sharedGeometry: true };
+      if (o.userData.v2dress) o.visible = false;   // v2: 유령은 옛 상자(대리) 모양만 — 옷은 겹쳐 그리지 않는다
       if (!o.isMesh) return;
       o.castShadow = false; o.receiveShadow = false;
       o.material = gm;
@@ -10089,6 +10115,7 @@ export async function createRoomView(canvas, opts = {}) {
       chars.clear();
       clearPlants(); clearRings();
       disposeOutside();
+      furnDress.dispose();                  // v2: 소품·러그 치우기
       disposeObject(ctx.scene);
       ctx.renderer.dispose();
       /* ★★★ 2026-08-17 — **문맥을 실제로 놓아준다** (박사님: 다시 시작했더니
