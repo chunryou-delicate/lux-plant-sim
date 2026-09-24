@@ -64,6 +64,11 @@ function prepare(g) {
     cl.tracks = cl.tracks.filter(t => !/\.scale$/.test(t.name));   // ⛔ idle Hips 1.176 — 위 주석
     clips[c.name] = cl;
   }
+  /* v2 (02:50 · char 창 실측): Meshy 가 hero 에 붙인 walk·idle 은 팔이 들린다(벌림각 walk 82° · idle 38°).
+     char 창이 옛 자취녀 클립의 «팔 8뼈 회전만» 옮긴 walk_arm·idle_arm 을 더했다(12.6° · 18.6°, 뼈 길이는 hero 것).
+     있으면 그것을 쓴다. 뒷머리 무게는 아래 fixBackHair 가 옮기니 팔을 따라 날개처럼 펼쳐지지 않는다(게임에서 볼 것). */
+  if (clips.walk_arm) clips.walk = clips.walk_arm;
+  if (clips.idle_arm) clips.idle = clips.idle_arm;
   if (!clips.idle) throw new Error('hero.glb 에 idle 클립이 없습니다');
   /* 파일 키 — 스킨 메시의 바인드 상자(정점 min/max). 재서 1.10 이 아니면 그 값을 믿는다 */
   let h = 0;
