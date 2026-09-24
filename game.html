@@ -9015,6 +9015,8 @@ function questSnapshotNow(turn) {
        ⚠ 안 채워도 사슬은 돈다(코어가 함의를 걸어 뒀다). 그런데 그러면 ①「시루를 방에 놓는다」가
          *놓은 순간*이 아니라 **처음 거둔 뒤**에 끝난다 — **할 일이 이미 지나간 뒤에 도장이 찍힌다.**
          단계로 푸는 것이 이번 일의 뜻이므로, 걸음마다 제때 끝나야 한다. */
+    /* ★ 2026-09-25 — 「익었나」는 코어 줄(`cropPotList`)의 그 칸을 옮긴다. first_harvest 할 일이 이것을 본다 */
+    const rows = (() => { try { return cropPotList(fp, S.day); } catch { return []; } })();
     cropPots = cropSites(fp).flatMap(site =>
       ((site && site.pots) || []).map(p => ({ kind: (site.kind || 'beansprout'),
                                               harvestCount: (p && p.harvestCount) || 0,
@@ -9025,6 +9027,7 @@ function questSnapshotNow(turn) {
                                               /* 씨는 뿌렸나 — 물 주기 **전** 한 걸음이 여기 있다.
                                                  이 칸이 없으면 심고 물 주기 사이에 할 일 줄이 한 번 깜빡인다 */
                                               sown: !!(p && p.sown && !p.harvested),
+                                              ready: !!((rows.find(x => x.id === (p && p.id)) || {}).ready),
                                               watered: !!(p && p.startedOnDay != null) })));
   } catch { cropPots = []; }
   /* ★ 오늘 밥상에 오른 작물 — **턴이 낸 것**이 정본이다(loop.js §밥 · eatFromPantry).
@@ -11705,8 +11708,9 @@ window.__dlgLog = [];
    ⚠ 규칙을 코어에 안 넣는다. **무엇을 말할지**는 `dialogue.js` 것이고, **한 번에 몇 개를
      보여 줄지**는 화면의 몫이다(폭·탭 횟수는 화면만 안다).
    ══════════════════════════════════════════════════════════════════════════ */
-/* 혼자 떠야 하는 장면 — 「한 판에 한 번뿐이고, 놓치면 되돌릴 수 없는 것」만 넣는다 */
-const DLG_SOLO = new Set(['monsteraArrived', 'intro', 'moved_out', 'varieConfirmed']);
+/* 혼자 떠야 하는 장면 — 「한 판에 한 번뿐이고, 놓치면 되돌릴 수 없는 것」만 넣는다
+   ★ 2026-09-25 — 스크립트 id 로 적는다. 'moved_out'(사건 id)은 안 맞아 이사 장면이 혼자 안 떴다 · 'varieConfirmed' 는 없는 대사 */
+const DLG_SOLO = new Set(['monsteraArrived', 'intro', 'movedOut']);
 const DLG_MAX_PER_OPEN = 2;
 let dlgHold = [];
 /* 미뤄 둔 것을 내보낸다 — 대사가 하나도 안 떠 있을 때만(덮으면 미룬 뜻이 없어진다) */
@@ -11726,6 +11730,7 @@ const DLG_DONE_SET = new Set(Object.values(QUEST_DONE_SCRIPT));
 const DLG_OPEN_SET = new Set(Object.values(QUEST_OPEN_SCRIPT));
 function dlgOpen(scriptIds) {
   let ids = [].concat(scriptIds).filter(Boolean);
+  const fresh = new Set(ids);            /* 이번에 들어온 것 — 혼자 뜨는 장면의 앞말·뒷말을 가른다(§DLG_SOLO) */
   /* 미뤄 둔 것이 **먼저**다 — 어제 일이 오늘 일보다 뒤에 오면 이야기가 거꾸로 선다 */
   if (dlgHold.length) { ids = [...dlgHold, ...ids]; dlgHold = []; }
   /* ★★★★ 2026-08-30 — **「했다」와 「다음은」을 «흩는다»** ([Plan] ④ · 총괄 전달).
@@ -11746,10 +11751,19 @@ function dlgOpen(scriptIds) {
       dlgHold = [...later, ...dlgHold];
     }
   }
+  /* ★★ 2026-09-25 — 혼자 뜨는 장면에도 **앞말**은 붙는다. 확정 차례는 수확 → 식비 → 식물신 → 도착인데
+     예전에는 god1 까지 뒤로 밀려 선물이 먼저 왔다. 이번 묶음에서 장면 앞에 온 것(fresh)만 앞에 두고,
+     뒤에 온 것·어제 미룬 것은 미룬다. ⚠ 위 흩기가 서랍에 넣은 «다음은» 줄을 **덮어쓰지 않는다**(예전엔 잃었다). */
   const solo = ids.find(id => DLG_SOLO.has(id));
-  if (solo) { dlgHold = ids.filter(x => x !== solo); ids = [solo]; }
-  else if (ids.length > DLG_MAX_PER_OPEN) {
-    dlgHold = ids.slice(DLG_MAX_PER_OPEN);
+  if (solo) {
+    const i = ids.indexOf(solo);
+    const lead = ids.slice(0, i).filter(x => fresh.has(x));
+    const tail = ids.slice(i + 1).filter(x => fresh.has(x));
+    const old = ids.filter(x => x !== solo && !fresh.has(x));
+    dlgHold = [...tail, ...old, ...dlgHold];
+    ids = [...lead, solo];
+  } else if (ids.length > DLG_MAX_PER_OPEN) {
+    dlgHold = [...ids.slice(DLG_MAX_PER_OPEN), ...dlgHold];   /* ⚠ 여기도 흩기로 미룬 줄을 안 잃는다 */
     ids = ids.slice(0, DLG_MAX_PER_OPEN);
   }
   let any = false;
