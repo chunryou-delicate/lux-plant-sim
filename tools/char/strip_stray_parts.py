@@ -89,11 +89,29 @@ def acc_array(js, bn, i):
     a = js['accessors'][i]
     bv = js['bufferViews'][a['bufferView']]
     off = bv.get('byteOffset', 0) + a.get('byteOffset', 0)
+    # ⛔⛔ 2026-09-24 — «끼워 넣은 버퍼»(byteStride)를 무시했다.
+    #   Meshy 옛 파일은 속성마다 bufferView 가 따로라 stride 가 없어 우연히 맞았다.
+    #   assets/v2/char/hero.glb 는 POSITION·NORMAL·UV·JOINTS·WEIGHTS 를 stride 52 로 한데 끼웠다.
+    #   ⇒ 연속으로 읽으니 법선·UV 가 위치에 섞여 «키 2.05 정육면체 · 482덩어리»가 나왔고,
+    #     이 자가 멀쩡한 몸에 「판이 섞였다 · 리깅 쓰지 말 것」을 냈다.
+    #   ⇒ ★ 파일의 min/max(키 1.10)와 달라서 잡았다. 그래서 그 대조를 «관문»으로 박는다.
     nc = {'SCALAR': 1, 'VEC2': 2, 'VEC3': 3, 'VEC4': 4, 'MAT4': 16}[a['type']]
     c = CT[a['componentType']]
-    ar = array.array(c)
-    ar.frombytes(bytes(bn[off:off + a['count'] * nc * SZ[c]]))
-    return np.array(ar).reshape(-1, nc) if nc > 1 else np.array(ar)
+    esz = SZ[c] * nc
+    stride = bv.get('byteStride') or esz
+    n = a['count']
+    if off + (n - 1) * stride + esz > len(bn):
+        raise SystemExit('⛔ accessor %d 가 버퍼 밖을 가리킨다' % i)
+    raw = np.frombuffer(bytes(bn), dtype=np.uint8)
+    rows = np.lib.stride_tricks.as_strided(raw[off:], shape=(n, esz), strides=(stride, 1))
+    out = np.ascontiguousarray(rows).view(np.dtype('<' + c)).reshape(n, nc)
+    # ★ 관문 — 파일에 적힌 min/max 와 «다르게» 읽었으면 이 자가 틀린 것이다
+    if 'min' in a and 'max' in a and a['componentType'] == 5126:
+        mn, mx = out.min(0), out.max(0)
+        tol = 1e-4 * max(1.0, float(np.max(np.abs(a['max']))))
+        if np.abs(mn - a['min']).max() > tol or np.abs(mx - a['max']).max() > tol:
+            raise SystemExit('⛔ accessor %d: 읽은 범위가 파일의 min/max 와 다르다 — 이 자가 잘못 읽고 있다' % i)
+    return out if nc > 1 else out.reshape(-1)
 
 
 def components(pos, tri, h):

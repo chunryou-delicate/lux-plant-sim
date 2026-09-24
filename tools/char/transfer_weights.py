@@ -86,12 +86,29 @@ def acc(js, bn, i):
     a = js['accessors'][i]
     bv = js['bufferViews'][a['bufferView']]
     off = bv.get('byteOffset', 0) + a.get('byteOffset', 0)
-    nc = NC[a['type']]
+    # ⛔⛔ 2026-09-24 — «끼워 넣은 버퍼»(byteStride)를 무시했다.
+    #   Meshy 옛 파일은 속성마다 bufferView 가 따로라 stride 가 없어 우연히 맞았다.
+    #   assets/v2/char/hero.glb 는 POSITION·NORMAL·UV·JOINTS·WEIGHTS 를 stride 52 로 한데 끼웠다.
+    #   ⇒ 연속으로 읽으니 법선·UV 가 위치에 섞여 «키 2.05 정육면체 · 482덩어리»가 나왔고,
+    #     이 자가 멀쩡한 몸에 「판이 섞였다 · 리깅 쓰지 말 것」을 냈다.
+    #   ⇒ ★ 파일의 min/max(키 1.10)와 달라서 잡았다. 그래서 그 대조를 «관문»으로 박는다.
+    nc = {'SCALAR': 1, 'VEC2': 2, 'VEC3': 3, 'VEC4': 4, 'MAT4': 16}[a['type']]
     c = CT[a['componentType']]
-    ar = array.array(c)
-    ar.frombytes(bytes(bn[off:off + a['count'] * nc * SZ[c]]))
-    out = np.array(ar)
-    return out.reshape(-1, nc) if nc > 1 else out, a
+    esz = SZ[c] * nc
+    stride = bv.get('byteStride') or esz
+    n = a['count']
+    if off + (n - 1) * stride + esz > len(bn):
+        raise SystemExit('⛔ accessor %d 가 버퍼 밖을 가리킨다' % i)
+    raw = np.frombuffer(bytes(bn), dtype=np.uint8)
+    rows = np.lib.stride_tricks.as_strided(raw[off:], shape=(n, esz), strides=(stride, 1))
+    out = np.ascontiguousarray(rows).view(np.dtype('<' + c)).reshape(n, nc)
+    # ★ 관문 — 파일에 적힌 min/max 와 «다르게» 읽었으면 이 자가 틀린 것이다
+    if 'min' in a and 'max' in a and a['componentType'] == 5126:
+        mn, mx = out.min(0), out.max(0)
+        tol = 1e-4 * max(1.0, float(np.max(np.abs(a['max']))))
+        if np.abs(mn - a['min']).max() > tol or np.abs(mx - a['max']).max() > tol:
+            raise SystemExit('⛔ accessor %d: 읽은 범위가 파일의 min/max 와 다르다 — 이 자가 잘못 읽고 있다' % i)
+    return (out if nc > 1 else out.reshape(-1)), a
 
 
 def norm_weights(w, comp):
@@ -139,7 +156,7 @@ def read_skin_source(path):
                 wgt=norm_weights(wgt, wa['componentType']), names=names)
 
 
-def transfer(src, dst_pos, dst_nrm, D=None, theta_deg=30.0, limit=4):
+def transfer(src, dst_pos, dst_nrm, D=None, theta_deg=30.0, limit=4, k=12):
     """★ 1단계 — 최근접 표면점에서 복사. 거리·법선각을 «통과한» 점만 확신으로 본다."""
     from scipy.spatial import cKDTree
     lo, hi = src['pos'].min(0), src['pos'].max(0)
@@ -150,8 +167,10 @@ def transfer(src, dst_pos, dst_nrm, D=None, theta_deg=30.0, limit=4):
     #   최근접 «하나»만 베끼면 가랑이(몸에서 먼 자리)에서 이웃 옷 점끼리 다른 다리 살을 베껴 걸을 때 4~5% 변이 찢어졌다.
     #   좌우를 갈라 찾아도 x=0 에서 단이 생겨 그대로였다. ⇒ k=12 를 1/d² 로 섞으면 두 다리 사이는 반반이 되어 «띠»로 늘어난다.
     tree = cKDTree(src['pos'])
-    k = min(12, len(src['pos']))
+    k = min(k, len(src['pos']))
     dk, ik = tree.query(dst_pos, k=k)
+    if k == 1:                               # cKDTree 는 k=1 이면 1차원으로 돌려준다
+        dk, ik = dk[:, None], ik[:, None]
     dist, idx = dk[:, 0], ik[:, 0]
     wk = 1.0 / (dk ** 2 + 1e-6); wk /= wk.sum(1, keepdims=True)
     nb_ = int(src['jnt'].max()) + 1
@@ -193,9 +212,18 @@ def selftest(body):
     """★★ 「이미 옳다고 아는 것」에 먼저 댄다 — 몸을 «자기 자신»에게 이식한다.
 
     같은 점을 같은 점에서 옮기는 것이므로 **원래 무게와 «똑같이» 나와야 한다.**
-    안 같으면 자가 틀린 것이다."""
+    안 같으면 자가 틀린 것이다.
+
+    ⛔⛔ 2026-09-24 — 이 시험이 9/14 부터 «늘 떨어지고» 있었다(뼈번호 다른 칸 13.59%).
+      9/14 에 이식을 「최근접 1개 복사」→「이웃 12개 섞기」로 바꿨는데(가랑이 찢김 고침)
+      ★ 시험은 «그대로» 두었다. 섞으면 자기 자신에게 옮겨도 똑같이 나올 수 없다.
+      게다가 뼈 칸을 무게 순으로 다시 늘어놓아 «차례만 달라도» 다르다고 셌다.
+      ⇒ 곧 «자가 틀린 것»이 아니라 «시험이 낡은 것»이었다. 9/7 판(0da9d57)은 지금도 통과한다.
+    ⇒ ✔ 그래서 이 시험은 이제 **k=1(섞지 않음)** 으로 «배관»(읽기·뼈 칸·정규화)만 본다.
+      비교는 칸 차례와 상관없이 «뼈마다 무게»로 한다.
+      ⚠ k=12 섞기가 «잘» 섞는지는 이 시험으로 못 본다 — 걸어 보고(check_motion) 눈으로 볼 일이다."""
     src = read_skin_source(body)
-    J, W, conf, st = transfer(src, src['pos'], src['nrm'])
+    J, W, conf, st = transfer(src, src['pos'], src['nrm'], k=1)
     print('■ ★★ 자기시험 — %s 를 «자기 자신»에게 이식' % os.path.basename(body))
     print('   점 %d · 대각 %.4f · D %.4f' % (len(src['pos']), st['diag'], st['D']))
     print('   최근접 거리  중앙값 %.6f · 90%% %.6f      (0 이어야 맞다)' % (st['dist_med'], st['dist_p90']))
@@ -209,8 +237,15 @@ def selftest(body):
         J0 = np.take_along_axis(J0, o, 1); W0 = np.take_along_axis(W0, o, 1)
     s0 = W0.sum(1, keepdims=True)
     W0 = np.where(s0 > 1e-9, W0 / np.maximum(s0, 1e-9), 0.0)
-    dj = float((J != J0).mean() * 100)
-    dw = float(np.abs(W - W0).max())
+    nb = int(max(J.max(), J0.max())) + 1
+    def dense(Jx, Wx):
+        d = np.zeros((len(Jx), nb))
+        for q in range(Jx.shape[1]):
+            np.add.at(d, (np.arange(len(Jx)), Jx[:, q]), Wx[:, q])
+        return d
+    D1, D0 = dense(J, W), dense(J0, W0)
+    dj = float(((D1 > 1e-6) != (D0 > 1e-6)).any(1).mean() * 100)   # 물린 뼈가 다른 점의 비율
+    dw = float(np.abs(D1 - D0).max())
     print('   ★ 뼈번호가 다른 칸 %.4f%%  ·  무게 최대 차이 %.6f' % (dj, dw))
     # ⛔⛔ 처음엔 「탈락 0%」까지 통과 조건에 넣었다가 **0.41% 로 «떨어졌다».**
     #   ⇒ ★ 파 보니 탈락한 506점이 «전부 거리 0» 이고, «UV 이음매의 짝 정점»을 고른 것이며,

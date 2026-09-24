@@ -59,6 +59,8 @@ import os
 import struct
 import sys
 
+import numpy as np
+
 try:
     sys.stdout.reconfigure(encoding='utf-8')
 except Exception:
@@ -135,10 +137,15 @@ def verts(g, bn):
                 continue
             bv = g['bufferViews'][a['bufferView']]
             off = bv.get('byteOffset', 0) + a.get('byteOffset', 0)
-            n = a['count'] * 3
-            arr = array.array('f')
-            arr.frombytes(bn[off:off + n * 4])
-            pts += [tuple(arr[i:i + 3]) for i in range(0, len(arr) - 2, 3)]
+            # ⛔ 2026-09-24 — byteStride(끼워 넣은 버퍼)를 무시해 hero.glb 를 정육면체로 읽었다. 이제 읽는다.
+            stride = bv.get('byteStride') or 12
+            n = a['count']
+            raw = np.frombuffer(bytes(bn), dtype=np.uint8)
+            rows = np.lib.stride_tricks.as_strided(raw[off:], shape=(n, 12), strides=(stride, 1))
+            xyz = np.ascontiguousarray(rows).view('<f4').reshape(n, 3)
+            if 'min' in a and (np.abs(xyz.min(0) - a['min']).max() > 1e-3 or np.abs(xyz.max(0) - a['max']).max() > 1e-3):
+                raise SystemExit('⛔ POSITION 을 파일의 min/max 와 다르게 읽었다 — 이 자가 잘못 읽고 있다')
+            pts += [tuple(v) for v in xyz.tolist()]
     return pts
 
 
