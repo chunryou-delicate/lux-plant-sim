@@ -9691,6 +9691,26 @@ export async function createRoomView(canvas, opts = {}) {
     /* 카메라를 그 자리로. null 이면 방 전체로.
        snap=true 면 부드럽게 가지 않고 바로 간다(스크린샷·헤드리스 검증용). */
     focusSlot(id, snap) { try { focusSlot(id, !!snap); } catch (e) { throw fail(e); } },
+    /* v2: 카메라 연출 창구(src/game/camera_moves.js). 목표로 부드럽게 간다(setCam 트윈).
+       focused·userYaw·userEl·zoomK 는 안 건드린다. 빠진 값은 지금 값, dist 는 줌 한계 안으로.
+       사람이 끌거나 굴리면 늘 하던 대로 tween=null 로 끊긴다. 돌려주는 것은 실제로 건 목표다 */
+    camTo(goal, ms) {
+      const g = goal || {}, n = (v, d) => (Number.isFinite(+v) && v !== null ? +v : d);
+      const [lo, hi] = focused ? [0.5, 3.6] : zoomRange();
+      const tg = g.target ? new THREE.Vector3(n(g.target.x, cam.target.x), n(g.target.y, cam.target.y),
+                                              n(g.target.z, cam.target.z)) : cam.target.clone();
+      const to = { az: n(g.az, cam.az), el: n(g.el, cam.el), dist: clamp(n(g.dist, cam.dist), lo, hi), target: tg };
+      setCam(to, false, clamp(n(ms, CAM_TWEEN_MS), 120, 4000));
+      return { az: to.az, el: to.el, dist: to.dist, target: { x: tg.x, y: tg.y, z: tg.z } };
+    },
+    /* v2: 지금 카메라를 누가 쥐고 있나 · 어디로 가는 중인가 — 연출은 사람 손을 안 뺏으려고 이걸 본다 */
+    camBusy() {
+      const to = tween && tween.to;
+      return { down: !!down, dragging: !!dragging, pinch: !!pinch, walkDrag: !!walkDrag,
+               zoom: zoomTo != null, focused: !!focused, tween: !!tween,
+               tweenTo: to ? { az: to.az, el: to.el, dist: to.dist,
+                               target: { x: to.target.x, y: to.target.y, z: to.target.z } } : null };
+    },
     /* 한 장 지금 그린다. 평소엔 rAF 루프가 알아서 하지만, 헤드리스처럼 rAF 가
        안 도는 환경에서 화면을 확정지어야 할 때 쓴다. */
     /* ★ 캐릭터도 한 칸 걸어 준다. rAF 가 안 도는 곳(헤드리스·숨은 탭)에서 이걸 안 하면
