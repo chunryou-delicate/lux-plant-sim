@@ -28,7 +28,12 @@ const TAG = process.argv[3] || 'still';
 const VIEWS = [['front', 0], ['left', 90], ['back', 180], ['q34', 35]];
 
 const WANT_CLIP = sys_wantClip();
-function sys_wantClip(){ return process.argv.includes('--clip'); }
+function sys_wantClip(){
+  /* --clip 이면 첫 클립, --clip=이름 이면 그 이름의 클립 (한 파일에 여럿이 든 hero.glb 용 · 2026-09-25) */
+  const a = process.argv.find(x => x === '--clip' || x.startsWith('--clip='));
+  if (!a) return false;
+  return a.includes('=') ? a.split('=')[1] : true;
+}
 
 const HTML = `<!doctype html><meta charset="utf-8">
 <style>html,body{margin:0;background:#1b2620;overflow:hidden}
@@ -54,7 +59,11 @@ new THREE.GLTFLoader().load(${JSON.stringify(GLB)}, g=>{
   const m=g.scene;
   /* ★ 클립을 «안» 얹는다. 바인드 포즈 그대로 본다 */
   m.traverse(o=>{ if(o.isMesh){ o.frustumCulled=false;
-    o.material=new THREE.MeshLambertMaterial({color:0xe9bda3}); } });
+    /* ⛔⛔ 2026-09-25 — three r128 은 스킨드 메시 재질에 «skinning: true» 를 줘야 살이 뼈를 따른다(r129 부터 자동).
+       안 주면 살이 «스키닝 없이» Armature(scale 0.01) 공간에 그려져 사람이 «점»이 된다.
+       ⇒ 9/7 에 세 번 «점»으로 찍힌 까닭을 나는 「스킨드 메시 상자를 뼈로도 못 잡는다」로 적었다 — ⛔ 틀린 진단이었다.
+         사본 뷰어는 toonify 에서 mat.skinning 을 켜서 멀쩡했던 것이다. */
+    o.material=new THREE.MeshLambertMaterial({color:0xe9bda3, skinning: !!o.isSkinnedMesh}); } });
   sc.add(m); window.__m=m;
   /* ★ --clip 을 주면 «그 파일에 든» 클립을 얹는다.
      ⇒ 메시가 «자기 리깅에 딸려 준» 클립을 «자기 메시»에 얹으면
@@ -62,7 +71,8 @@ new THREE.GLTFLoader().load(${JSON.stringify(GLB)}, g=>{
   window.__clipInfo=null;
   if(WANT_CLIP && g.animations && g.animations.length){
     const mx=new THREE.AnimationMixer(m);
-    const a=g.animations[0]; mx.clipAction(a).play(); mx.setTime(0);
+    const a=(typeof WANT_CLIP==='string' ? g.animations.find(x=>x.name===WANT_CLIP) : null) || g.animations[0];
+    mx.clipAction(a).play(); mx.setTime(0);
     window.__mx=mx; window.__dur=a.duration;
     window.__clipInfo={name:a.name, dur:+a.duration.toFixed(2), tracks:a.tracks.length};
     window.__seek=function(t){ mx.setTime(t); m.updateMatrixWorld(true); return t; };
