@@ -1,0 +1,51 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>v2 GLB gallery</title>
+<style>html,body{margin:0;background:#2b2622;overflow:hidden}canvas{display:block}</style>
+<script src="../../vendor/three/three.min.js"></script>
+<script src="../../vendor/three/GLTFLoader.js"></script>
+</head><body>
+<script>
+/* 보이는 층 v2 — 생성 GLB 를 한 장에 늘어놓고 보는 판. 크레딧 0.
+   ?files=a.glb,b.glb  (저장소 루트 기준 경로) · &anim=1 이면 첫 클립을 t 초에 멈춰 찍는다 · &t=0.4 */
+const q = new URLSearchParams(location.search);
+const files = (q.get('files') || '').split(',').filter(Boolean);
+const W = innerWidth, H = innerHeight;
+const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
+renderer.setSize(W, H); renderer.outputEncoding = THREE.sRGBEncoding;
+renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.0;
+document.body.appendChild(renderer.domElement);
+const scene = new THREE.Scene(); scene.background = new THREE.Color(0x2b2622);
+scene.add(new THREE.HemisphereLight(0xfff4e6, 0x3a3029, 0.9));
+const sun = new THREE.DirectionalLight(0xffe2c0, 1.4); sun.position.set(3, 5, 4); scene.add(sun);
+const cols = Math.ceil(Math.sqrt(files.length)), rows = Math.ceil(files.length / cols);
+const cam = new THREE.PerspectiveCamera(30, W / H, 0.01, 200);
+const loader = new THREE.GLTFLoader();
+const mixers = [];
+window.__ready = false; window.__info = [];
+let done = 0;
+files.forEach((f, i) => {
+  loader.load('../../' + f, g => {
+    const o = g.scene;
+    const box = new THREE.Box3().setFromObject(o); const s = box.getSize(new THREE.Vector3());
+    let skinned = false; o.traverse(m => { if (m.isSkinnedMesh) skinned = true; });
+    const k = skinned ? (1 / (parseFloat(q.get('hero_h') || '1.1'))) : 1 / Math.max(s.x, s.y, s.z);   // 리깅 판은 제 키(m) 그대로 · 상자 계산이 뼈 공간이라 못 믿는다
+    o.scale.multiplyScalar(k);
+    const b2 = skinned ? new THREE.Box3(new THREE.Vector3(-0.2,0,-0.2), new THREE.Vector3(0.2,1,0.2)) : new THREE.Box3().setFromObject(o); const c = b2.getCenter(new THREE.Vector3());
+    const x = (i % cols) * 1.4, z = Math.floor(i / cols) * 1.4;
+    o.position.set(x - c.x, -b2.min.y, z - c.z);
+    scene.add(o);
+    let tris = 0; o.traverse(m => { if (m.isMesh) tris += (m.geometry.index ? m.geometry.index.count : m.geometry.attributes.position.count) / 3; });
+    window.__info[i] = { f, size: [s.x, s.y, s.z].map(v => +v.toFixed(3)), tris, clips: g.animations.map(a => a.name + ':' + a.duration.toFixed(2)) };
+    if (q.get('anim') && g.animations.length) {
+      const mx = new THREE.AnimationMixer(o); const a = mx.clipAction(g.animations[+(q.get('clip') || 0)]); a.play();
+      mx.setTime(parseFloat(q.get('t') || '0.4') * g.animations[+(q.get('clip') || 0)].duration); mixers.push(mx);
+    }
+    if (++done === files.length) finish();
+  }, undefined, e => { window.__info[i] = { f, err: String(e) }; if (++done === files.length) finish(); });
+});
+function finish() {
+  const cx = (cols - 1) * 1.4 / 2, cz = (rows - 1) * 1.4 / 2, R = Math.max(cols, rows) * 1.4;
+  cam.position.set(cx + R * 0.9, R * 0.95, cz + R * 1.25); cam.lookAt(cx, 0.35, cz);
+  renderer.render(scene, cam); window.__ready = true;
+}
+</script></body></html>

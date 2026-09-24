@@ -1,0 +1,31 @@
+{
+  "_note": "2026-09-24 밤 보이는 층 v2 — Meshy 작업 번호. image-to-3d 는 remesh 가 안 걸려 40만 면이 나올 수 있다(주인공이 43만 면이었다) → 필요하면 meshy_remesh.",
+  "style_keyframe": "01a0d34b-b52c-713b-9d37-e07a8191d656",
+  "hero": {
+    "concept_i2i": "01a0d34e-38ba-77f1-b33c-8fa8e7b7c5c3",
+    "mesh_i23d": "01a0d34f-49a3-76b5-8def-d87090109c8c",
+    "remesh_30k": "01a0d353-1db0-768e-b4ff-6e57d816cff2",
+    "rig": "01a0d355-6635-7681-a736-0c21a792fc81",
+    "clips_wanted": {"idle": 0, "sit_chair": 32, "sleep": 267, "doze": 268, "crouch_pick": 274, "wave": 28, "cheer": 303}
+  },
+  "props_i23d": {
+    "backpack": "01a0d352-3762-731f-ae81-09d7c218d301",
+    "desk_set": "01a0d352-44ca-72c3-bbbf-e9313a000328",
+    "drying_rack": "01a0d352-5348-7712-bdfb-30cfdc021073",
+    "heater": "01a0d352-6455-7330-a2df-fc61a76cc3ca",
+    "kitchen": "01a0d352-73ec-75cc-b357-6d5b4697ca66",
+    "laundry": "01a0d352-8597-755f-ba4a-7a0459a1c8b2",
+    "monitor": "01a0d352-93d8-75ce-9853-cee765bd3c7f",
+    "plush_clock": "01a0d352-a2ea-7053-8744-56d4c37960a4",
+    "trash": "01a0d352-b06e-7684-b70c-a5dd1f58e9a7"
+  },
+  "rug_texture": "assets/gen/v2_props/c_rug.png",
+  "furniture_i23d": {
+    "bed": "01a0d355-fe07-72e9-92c0-c0179bccfeb9",
+    "desk": "01a0d356-0c36-70b1-aa89-f1699285961d",
+    "chair": "01a0d356-19bc-75ab-8f9a-6eb8bc62e753",
+    "drawer": "01a0d356-27e1-778f-84a4-3e4db663a48e",
+    "shelf": "01a0d356-35dc-7719-b655-81ecad6d8851",
+    "cabinet": "01a0d356-448d-7664-abbb-eeaf77c7b71f"
+  }
+}
