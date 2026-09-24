@@ -26,6 +26,9 @@
 ## [char] claude-44 — 새 GLB 를 크레딧 없이 재는 자
 - `strip_stray_parts.py <glb> --count` 덩어리 수 · `check_skeleton_match.py` 24본 클립이 붙는지 · `shot_body_still.mjs` 네 각도
 - 원화 넷을 다 열어 볼 것. 견줄 그림은 같은 자·같은 음영으로
+- ✔ `assets/v2/char/hero.glb` 실측(c84fd9c5 · docs/handoff/img/hero/): 1덩어리 · 정점 25,478 · 키 1.10 · **24본 이름·차례·부모가 기존과 같음** · 클립 8개 모두 24본만 치고 뼈 길이 ×1.00
+- ⛔ **옛 `assets/characters/3d/anim/*` 클립을 hero 에 얹지 말 것** — 키 1.7 몸의 뼈 길이를 덮어써 hero 가 늘어난다. hero 는 제 클립 8개(walk·idle·sit·sleep·doze·crouch·wave·cheer)만 쓴다
+- hero 는 정점 속성이 한 버퍼에 끼워져 있다(stride 52). stride 를 안 읽는 자는 엉뚱한 값을 낸다 — char 창 자 셋은 고쳤다
 
 ## 아트 기준
 `assets/gen/v2_room/style_keyframe_a.png` — 따뜻한 디오라마. 노란 꽃무늬 벽지 · 노란 장판 · 높은 창의 아침 빛 · 생활 소품이 꽉 찬 반지하.
