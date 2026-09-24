@@ -1,0 +1,1494 @@
+{
+ "domain": "plants",
+ "sections": [
+  {
+   "title_ko": "몬스테라 한 그루 — 게임에서 보이는 모습",
+   "note_ko": "에셋이 아니라 실제 게임 확대창 캡처(08~09월, 기존 문서 그림을 잘랐다). 아래 칸들은 이 그루를 이루는 부품이다.",
+   "items": [
+    {
+     "id": "shot_day25",
+     "name_ko": "몬스테라 — 도착 뒤 첫 무늬 잎 (Day 25)",
+     "kind": "screenshot",
+     "thumb": "thumbs/plants/shot_day25.webp",
+     "files": [
+      "docs/engine/shots/arrival/ingame_two_leaves_zoom.png",
+      "plant_grow.html"
+     ],
+     "status": "ok",
+     "used_in_game": true,
+     "note_ko": "확대창(plant_grow) 실제 화면. 크림도자기 화분 + 줄기 + 무늬 중간잎. 민무늬 잎 색은 GLB 색이 아니라 코드(leafTint)가 칠한다"
+    },
+    {
+     "id": "shot_day133",
+     "name_ko": "몬스테라 — 성숙잎·무늬 중간잎이 같이 달린 모습 (Day 133)",
+     "kind": "screenshot",
+     "thumb": "thumbs/plants/shot_day133.webp",
+     "files": [
+      "docs/handoff/img/varie/mature_sanban.png"
+     ],
+     "status": "ok",
+     "used_in_game": true,
+     "note_ko": "위는 갈라진 성숙잎(민무늬, 코드 색), 아래는 무늬 중간잎 두 장. 08-16 무늬 등급 작업 때 찍은 것"
+    },
+    {
+     "id": "shot_day164",
+     "name_ko": "몬스테라 — 성숙 무늬 잎 (Day 164)",
+     "kind": "screenshot",
+     "thumb": "thumbs/plants/shot_day164.webp",
+     "files": [
+      "docs/handoff/img/varie/vmature_fullmoon.png"
+     ],
+     "status": "ok",
+     "used_in_game": true,
+     "note_ko": "갈라진 성숙잎이 반지하에선 거의 안 나온다(성장팀: 창턱 7일 평균 3.68~6.17 · 문턱 6.0 — 뜻대로임)"
+    }
+   ]
+  },
+  {
+   "title_ko": "몬스테라 기본 잎 — 새순부터 성숙잎까지",
+   "note_ko": "plant_grow.html 이 잎 한 장을 새순→반잎→어린잎→중간잎→성숙잎 순서로 갈아 끼운다. 여섯 장 다 쓰는 중.",
+   "items": [
+    {
+     "id": "bud_furled",
+     "name_ko": "새순 (말린 잎)",
+     "kind": "glb",
+     "thumb": "thumbs/plants/bud_furled.webp",
+     "files": [
+      "assets/monstera/monstera_bud_furled.glb"
+     ],
+     "status": "ok",
+     "used_in_game": true,
+     "note_ko": "기본-초기-새순1. 성숙도 0~0.10 구간 · 게임에선 GLB 색을 안 쓰고 모양만 쓴다(코드가 잎색을 칠함)"
+    },
+    {
+     "id": "bud_opening2",
+     "name_ko": "반잎 (펴지는 새순)",
+     "kind": "glb",
+     "thumb": "thumbs/plants/bud_opening2.webp",
+     "files": [
+      "assets/monstera/monstera_bud_opening2.glb"
+     ],
+     "status": "ok",
+     "used_in_game": true,
+     "note_ko": "기본-초기-반잎1. 성숙도 0.10~0.22 구간 · 게임에선 GLB 색을 안 쓰고 모양만 쓴다(코드가 잎색을 칠함)"
+    },
+    {
+     "id": "leaf_young",
+     "name_ko": "어린잎",
+     "kind": "glb",
+     "thumb": "thumbs/plants/leaf_young.webp",
+     "files": [
+      "assets/monstera/monstera_leaf_young.glb"
+     ],
+     "status": "ok",
+     "used_in_game": true,
+     "note_ko": "기본-어린-잎1. 삽수 병 속 잎으로도 쓴다(room_view) · 게임에선 GLB 색을 안 쓰고 모양만 쓴다(코드가 잎색을 칠함)"
+    },
+    {
+     "id": "leaf_mid1",
+     "name_ko": "중간잎 1 (짙은 초록)",
+     "kind": "glb",
+     "thumb": "thumbs/plants/leaf_mid1.webp",
+     "files": [
+      "assets/monstera/monstera_leaf_mid1.glb"
+     ],
+     "status": "ok",
+     "used_in_game": true,
+     "note_ko": "기본-중간-잎1. 축마다 중간잎 1·2 중 하나 · 게임에선 GLB 색을 안 쓰고 모양만 쓴다(코드가 잎색을 칠함)"
+    },
+    {
+     "id": "leaf_mid2",
+     "name_ko": "중간잎 2 (올리브)",
+     "kind": "glb",
+     "thumb": "thumbs/plants/leaf_mid2.webp",
+     "files": [
+      "assets/monstera/monstera_leaf_mid2.glb"
+     ],
+     "status": "ok",
+     "used_in_game": true,
+     "note_ko": "기본-중간-잎2 · 게임에선 GLB 색을 안 쓰고 모양만 쓴다(코드가 잎색을 칠함)"
+    },
+    {
+     "id": "leaf_mature",
+     "name_ko": "성숙잎 (갈라진 잎)",
+     "kind": "glb",
+     "thumb": "thumbs/plants/leaf_mature.webp",
+     "files": [
+      "assets/monstera/monstera_leaf_mature.glb"
+     ],
+     "status": "ok",
+     "used_in_game": true,
+     "note_ko": "기본-성숙-잎1. 무늬 잎이 성숙 짝을 못 찾으면 이 잎으로 떨어진다 · 게임에선 GLB 색을 안 쓰고 모양만 쓴다(코드가 잎색을 칠함)"
+    },
+    {
+     "id": "leaf_base_sat",
+     "name_ko": "기본잎 채도판 (쨍·차분) 6장",
+     "kind": "glb",
+     "thumb": "thumbs/plants/leaf_base_sat.webp",
+     "files": [
+      "assets/monstera/monstera_leaf_mid1_v1.glb",
+      "assets/monstera/monstera_leaf_mid1_v2.glb",
+      "assets/monstera/monstera_leaf_mid2_v1.glb",
+      "assets/monstera/monstera_leaf_mid2_v2.glb",
+      "assets/monstera/monstera_leaf_mature_v1.glb",
+      "assets/monstera/monstera_leaf_mature_v2.glb"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "plant_grow ASSET_FILES 에 없다. 게임이 민무늬 잎 색을 코드로 칠해서 채도판이 쓸 데가 없다"
+    },
+    {
+     "id": "bud_opening_old",
+     "name_ko": "옛 반잎 (버림)",
+     "kind": "glb",
+     "thumb": "thumbs/plants/bud_opening_old.webp",
+     "files": [
+      "assets/monstera/_removed/monstera_bud_opening.glb"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "_removed 폴더. bud_opening2 로 바뀌었다"
+    }
+   ]
+  },
+  {
+   "title_ko": "줄기·엽초·뿌리",
+   "note_ko": "줄기 다섯 개는 다 쓴다. ⚠ assets/monstera/manifest.json 은 없는 파일(monstera_petiole·monstera_stem_main 등)을 적고 있다 — 옛 목록.",
+   "items": [
+    {
+     "id": "stem_early",
+     "name_ko": "줄기 — 초기 (잎자루)",
+     "kind": "glb",
+     "thumb": "thumbs/plants/stem_early.webp",
+     "files": [
+      "assets/monstera/stem_early.glb"
+     ],
+     "status": "ok",
+     "used_in_game": true,
+     "note_ko": "plant_grow 열쇠 `petiole`. 굵기 순서로 초기→후기"
+    },
+    {
+     "id": "stem_mid_2",
+     "name_ko": "줄기 — 중기 2 (가는 것)",
+     "kind": "glb",
+     "thumb": "thumbs/plants/stem_mid_2.webp",
+     "files": [
+      "assets/monstera/stem_mid_2.glb"
+     ],
+     "status": "ok",
+     "used_in_game": true,
+     "note_ko": "plant_grow 열쇠 `stem_thin`. 굵기 순서로 초기→후기"
+    },
+    {
+     "id": "stem_mid_1",
+     "name_ko": "줄기 — 중기 1",
+     "kind": "glb",
+     "thumb": "thumbs/plants/stem_mid_1.webp",
+     "files": [
+      "assets/monstera/stem_mid_1.glb"
+     ],
+     "status": "ok",
+     "used_in_game": true,
+     "note_ko": "plant_grow 열쇠 `stem_med`. 굵기 순서로 초기→후기"
+    },
+    {
+     "id": "stem_late_bump",
+     "name_ko": "줄기 — 후기 (혹)",
+     "kind": "glb",
+     "thumb": "thumbs/plants/stem_late_bump.webp",
+     "files": [
+      "assets/monstera/stem_late_bump.glb"
+     ],
+     "status": "ok",
+     "used_in_game": true,
+     "note_ko": "plant_grow 열쇠 `stem_thick`. 굵기 순서로 초기→후기"
+    },
+    {
+     "id": "stem_late_double",
+     "name_ko": "줄기 — 후기 (쌍혹)",
+     "kind": "glb",
+     "thumb": "thumbs/plants/stem_late_double.webp",
+     "files": [
+      "assets/monstera/stem_late_double.glb"
+     ],
+     "status": "ok",
+     "used_in_game": true,
+     "note_ko": "plant_grow 열쇠 `stem_main`. 굵기 순서로 초기→후기"
+    },
+    {
+     "id": "stem_knob",
+     "name_ko": "줄기 혹 돌기 (따로 붙이는 것)",
+     "kind": "glb",
+     "thumb": "thumbs/plants/stem_knob.webp",
+     "files": [
+      "assets/monstera/stem_knob.glb"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "코드 주석: 「현재 미사용 — 혹 있는 줄기 GLB 방식 사용 중」"
+    },
+    {
+     "id": "leaf_sheath_glb",
+     "name_ko": "엽초 GLB (줄기↔잎자루 이음 슬리브)",
+     "kind": "glb",
+     "thumb": "thumbs/plants/leaf_sheath_glb.webp",
+     "files": [
+      "assets/monstera/leaf_sheath.glb"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "한쪽이 트인 C자라 옆구리가 비어 보여서, 게임은 이 파일 대신 코드로 닫힌 튜브를 만든다(makeSheathAsset)"
+    },
+    {
+     "id": "sheath_code",
+     "name_ko": "엽초 — 게임이 그리는 것 (코드 튜브)",
+     "kind": "code",
+     "thumb": null,
+     "files": [
+      "plant_grow.html"
+     ],
+     "status": "missing",
+     "used_in_game": true,
+     "note_ko": "그림 에셋이 아니라 코드가 만든 360° 튜브. 일부러 그렇게 한 것이라 급하지 않다"
+    },
+    {
+     "id": "aerial_root",
+     "name_ko": "공기뿌리 (기근)",
+     "kind": "none",
+     "thumb": null,
+     "files": [],
+     "status": "missing",
+     "used_in_game": false,
+     "note_ko": "에셋도 코드도 없다. 생장 캐논 명세에도 없다 — 실물 몬스테라엔 있다. 넣을지는 판단 필요"
+    }
+   ]
+  },
+  {
+   "title_ko": "무늬 잎 — 어린잎·중간잎 (14갈래 × 3판)",
+   "note_ko": "무늬가 정해진 잎은 중간잎부터 이 그림을 쓴다. 등급을 미리 들키지 않게 모든 무늬 잎이 같은 못(11갈래)에서 뽑는다 — 박사님 확정(08-16). 각 칸은 원본·쨍·차분 세 판을 하나로 묶었다.",
+   "items": [
+    {
+     "id": "leaf_young_albo",
+     "name_ko": "무늬 어린잎 (알보)",
+     "kind": "glb",
+     "thumb": "thumbs/plants/leaf_young_albo.webp",
+     "files": [
+      "assets/monstera/skins/monstera_leaf_young_albo.glb"
+     ],
+     "status": "old",
+     "used_in_game": true,
+     "note_ko": "무늬 잎이 어린잎일 때 이 한 장을 쓴다. 그런데 무늬가 거의 안 보인다(연한 얼룩뿐) — 성장팀 「어린잎에 무늬가 안 보였다」와 맞는다. 무늬가 또렷한 어린잎이 필요"
+    },
+    {
+     "id": "mid_heart_albo_2672_3",
+     "name_ko": "무늬 중간잎 — 알보-크림민트",
+     "kind": "glb",
+     "thumb": "thumbs/plants/mid_heart_albo_2672_3.webp",
+     "files": [
+      "assets/monstera/skins/heart_albo_2672_3.glb",
+      "assets/monstera/skins/heart_albo_2672_3_v1.glb",
+      "assets/monstera/skins/heart_albo_2672_3_v2.glb"
+     ],
+     "status": "ok",
+     "used_in_game": true,
+     "note_ko": "무늬 못(varie_grades midCommon.pool)에 있음 · 성숙하면 → 하프문-그린크림 / 스페클-그린크림 (MAT_TREE) · 쨍·차분 판 포함 3장 · leaf_mid_albo35·6·7"
+    },
+    {
+     "id": "mid_heart_lime_2672_0",
+     "name_ko": "무늬 중간잎 — 라임-형광",
+     "kind": "glb",
+     "thumb": "thumbs/plants/mid_heart_lime_2672_0.webp",
+     "files": [
+      "assets/monstera/skins/heart_lime_2672_0.glb",
+      "assets/monstera/skins/heart_lime_2672_0_v1.glb",
+      "assets/monstera/skins/heart_lime_2672_0_v2.glb"
+     ],
+     "status": "ok",
+     "used_in_game": true,
+     "note_ko": "무늬 못(varie_grades midCommon.pool)에 있음 · 성숙하면 → 네온-라임 / 라임-레몬패치 (MAT_TREE) · 쨍·차분 판 포함 3장 · leaf_mid_albo34·8·9"
+    },
+    {
+     "id": "mid_heart_marble_2652",
+     "name_ko": "무늬 중간잎 — 마블-실버",
+     "kind": "glb",
+     "thumb": "thumbs/plants/mid_heart_marble_2652.webp",
+     "files": [
+      "assets/monstera/skins/heart_marble_2652.glb",
+      "assets/monstera/skins/heart_marble_2652_v1.glb",
+      "assets/monstera/skins/heart_marble_2652_v2.glb"
+     ],
+     "status": "ok",
+     "used_in_game": true,
+     "note_ko": "무늬 못(varie_grades midCommon.pool)에 있음 · 성숙하면 → 제브라-그린흰 / 별무늬-페일그린 (MAT_TREE) · 쨍·차분 판 포함 3장 · leaf_mid_albo32·10·11"
+    },
+    {
+     "id": "mid_heart_speckle_2657",
+     "name_ko": "무늬 중간잎 — 스페클-실버점",
+     "kind": "glb",
+     "thumb": "thumbs/plants/mid_heart_speckle_2657.webp",
+     "files": [
+      "assets/monstera/skins/heart_speckle_2657.glb",
+      "assets/monstera/skins/heart_speckle_2657_v1.glb",
+      "assets/monstera/skins/heart_speckle_2657_v2.glb"
+     ],
+     "status": "ok",
+     "used_in_game": true,
+     "note_ko": "무늬 못(varie_grades midCommon.pool)에 있음 · 성숙하면 → 갤럭시-다크틸 / 별무늬-페일그린 (MAT_TREE) · 쨍·차분 판 포함 3장 · leaf_mid_albo33·12·13"
+    },
+    {
+     "id": "mid_pothos_cream_marble",
+     "name_ko": "무늬 중간잎 — 마블-크림그린",
+     "kind": "glb",
+     "thumb": "thumbs/plants/mid_pothos_cream_marble.webp",
+     "files": [
+      "assets/monstera/skins/pothos_cream_marble.glb",
+      "assets/monstera/skins/pothos_cream_marble_v1.glb",
+      "assets/monstera/skins/pothos_cream_marble_v2.glb"
+     ],
+     "status": "ok",
+     "used_in_game": true,
+     "note_ko": "⚠ 못에는 있는데 MAT_TREE 에 성숙 짝이 없다 → 다 자라면 민무늬 성숙잎으로 그려진다(성장팀이 잰 18.2% 의 절반) · leaf_mid_albo37·14·15"
+    },
+    {
+     "id": "mid_pothos_cream_vein",
+     "name_ko": "무늬 중간잎 — 잎맥-크림",
+     "kind": "glb",
+     "thumb": "thumbs/plants/mid_pothos_cream_vein.webp",
+     "files": [
+      "assets/monstera/skins/pothos_cream_vein.glb",
+      "assets/monstera/skins/pothos_cream_vein_v1.glb",
+      "assets/monstera/skins/pothos_cream_vein_v2.glb"
+     ],
+     "status": "ok",
+     "used_in_game": true,
+     "note_ko": "무늬 못(varie_grades midCommon.pool)에 있음 · 성숙하면 → 오로레아-골드 / 별무늬-그린옐로우 (MAT_TREE) · 쨍·차분 판 포함 3장 · leaf_mid_albo36·16·17"
+    },
+    {
+     "id": "mid_pothos_marble_greenyellow",
+     "name_ko": "무늬 중간잎 — 마블-그린옐로우",
+     "kind": "glb",
+     "thumb": "thumbs/plants/mid_pothos_marble_greenyellow.webp",
+     "files": [
+      "assets/monstera/skins/pothos_marble_greenyellow.glb",
+      "assets/monstera/skins/pothos_marble_greenyellow_v1.glb",
+      "assets/monstera/skins/pothos_marble_greenyellow_v2.glb"
+     ],
+     "status": "ok",
+     "used_in_game": true,
+     "note_ko": "무늬 못(varie_grades midCommon.pool)에 있음 · 성숙하면 → 오로레아-그린옐로우 / 별무늬-그린옐로우 (MAT_TREE) · 쨍·차분 판 포함 3장 · leaf_mid_albo39·18·19"
+    },
+    {
+     "id": "mid_pothos_marble_whitegreen",
+     "name_ko": "무늬 중간잎 — 마블-흰그린",
+     "kind": "glb",
+     "thumb": "thumbs/plants/mid_pothos_marble_whitegreen.webp",
+     "files": [
+      "assets/monstera/skins/pothos_marble_whitegreen.glb",
+      "assets/monstera/skins/pothos_marble_whitegreen_v1.glb",
+      "assets/monstera/skins/pothos_marble_whitegreen_v2.glb"
+     ],
+     "status": "ok",
+     "used_in_game": true,
+     "note_ko": "무늬 못(varie_grades midCommon.pool)에 있음 · 성숙하면 → 별무늬-그린흰 / 스페클-그린크림 (MAT_TREE) · 쨍·차분 판 포함 3장 · leaf_mid_albo40·20·21"
+    },
+    {
+     "id": "mid_pothos_mint_dot",
+     "name_ko": "무늬 중간잎 — 스페클-민트흰점",
+     "kind": "glb",
+     "thumb": "thumbs/plants/mid_pothos_mint_dot.webp",
+     "files": [
+      "assets/monstera/skins/pothos_mint_dot.glb",
+      "assets/monstera/skins/pothos_mint_dot_v1.glb",
+      "assets/monstera/skins/pothos_mint_dot_v2.glb"
+     ],
+     "status": "ok",
+     "used_in_game": true,
+     "note_ko": "무늬 못(varie_grades midCommon.pool)에 있음 · 성숙하면 → 별무늬-핑크민트 / 스페클-그린크림 (MAT_TREE) · 쨍·차분 판 포함 3장 · leaf_mid_albo38·22·23"
+    },
+    {
+     "id": "mid_pothos_mint_dot_34",
+     "name_ko": "무늬 중간잎 — 스페클-민트흰점2",
+     "kind": "glb",
+     "thumb": "thumbs/plants/mid_pothos_mint_dot_34.webp",
+     "files": [
+      "assets/monstera/skins/pothos_mint_dot_34.glb",
+      "assets/monstera/skins/pothos_mint_dot_34_v1.glb",
+      "assets/monstera/skins/pothos_mint_dot_34_v2.glb"
+     ],
+     "status": "ok",
+     "used_in_game": true,
+     "note_ko": "⚠ 못에는 있는데 MAT_TREE 에 성숙 짝이 없다 → 다 자라면 민무늬 성숙잎으로 그려진다(성장팀이 잰 18.2% 의 절반) · leaf_mid_albo24·25·26"
+    },
+    {
+     "id": "mid_pothos_silver_droplet",
+     "name_ko": "무늬 중간잎 — 실버-물방울",
+     "kind": "glb",
+     "thumb": "thumbs/plants/mid_pothos_silver_droplet.webp",
+     "files": [
+      "assets/monstera/skins/pothos_silver_droplet.glb",
+      "assets/monstera/skins/pothos_silver_droplet_v1.glb",
+      "assets/monstera/skins/pothos_silver_droplet_v2.glb"
+     ],
+     "status": "ok",
+     "used_in_game": true,
+     "note_ko": "무늬 못(varie_grades midCommon.pool)에 있음 · 성숙하면 → 갤럭시-틸골드 / 갤럭시-다크틸 (MAT_TREE) · 쨍·차분 판 포함 3장 · leaf_mid_albo41·27·28"
+    },
+    {
+     "id": "mid_heart_halfmoon_v2_stem",
+     "name_ko": "무늬 중간잎 — 하프문-크림민트",
+     "kind": "glb",
+     "thumb": "thumbs/plants/mid_heart_halfmoon_v2_stem.webp",
+     "files": [
+      "assets/monstera/skins/heart_halfmoon_v2_stem.glb",
+      "assets/monstera/skins/heart_halfmoon_v2_stem_v1.glb",
+      "assets/monstera/skins/heart_halfmoon_v2_stem_v2.glb"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "게임 무늬 못(midCommon.pool 11갈래)에 없다 — 원본이 기준잎의 2.4배 두께라 줄이면 구멍이 나서 plant_grow 뽑기 못에서도 뺐다. MAT_TREE 짝은 하프문-그린크림 / 하프문-그린흰 · leaf_mid_albo29·30·31"
+    },
+    {
+     "id": "mid_monstera_leaf_fullalbo",
+     "name_ko": "무늬 중간잎 — 알보-전체흰중기",
+     "kind": "glb",
+     "thumb": "thumbs/plants/mid_monstera_leaf_fullalbo.webp",
+     "files": [
+      "assets/monstera/skins/monstera_leaf_fullalbo.glb",
+      "assets/monstera/skins/monstera_leaf_fullalbo_v1.glb",
+      "assets/monstera/skins/monstera_leaf_fullalbo_v2.glb"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "게임 무늬 못(midCommon.pool 11갈래)에 없다 — 못에서 빠져 있다(풀문 쪽 중간잎). MAT_TREE 짝은 알보-전체흰 / 하프문-그린흰 · leaf_mid_albo1·2·3"
+    },
+    {
+     "id": "mid_pothos_whitegreen_29",
+     "name_ko": "무늬 중간잎 — 알보-흰연두",
+     "kind": "glb",
+     "thumb": "thumbs/plants/mid_pothos_whitegreen_29.webp",
+     "files": [
+      "assets/monstera/skins/pothos_whitegreen_29.glb",
+      "assets/monstera/skins/pothos_whitegreen_29_v1.glb",
+      "assets/monstera/skins/pothos_whitegreen_29_v2.glb"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "게임 무늬 못(midCommon.pool 11갈래)에 없다 — 못에서 빠져 있다(풀문 쪽 중간잎). MAT_TREE 짝은 별무늬-그린흰 / 알보-전체흰 · leaf_mid_albo42·4·5"
+    }
+   ]
+  },
+  {
+   "title_ko": "무늬 성숙잎 — 산반 (잎 한 장 350,000원 · 8갈래)",
+   "note_ko": "점박이·반점이 흩어진 것. 제일 흔하고, 옛 세이브의 무늬 잎이 여기로 읽힌다(legacyGradeId).",
+   "items": [
+    {
+     "id": "mon_speckle_greencream",
+     "name_ko": "성숙 무늬 — 스페클-그린크림",
+     "kind": "glb",
+     "thumb": "thumbs/plants/mon_speckle_greencream.webp",
+     "files": [
+      "assets/monstera/skins/mon_speckle_greencream.glb",
+      "assets/monstera/skins/mon_speckle_greencream_v1.glb",
+      "assets/monstera/skins/mon_speckle_greencream_v2.glb"
+     ],
+     "status": "ok",
+     "used_in_game": true,
+     "note_ko": "leaf_mat13~15 (원본·쨍·차분) · 중간잎 알보-크림민트(부)·마블-흰그린(부)·스페클-민트흰점(부)에서 옴"
+    },
+    {
+     "id": "mon_zebra",
+     "name_ko": "성숙 무늬 — 제브라-그린흰",
+     "kind": "glb",
+     "thumb": "thumbs/plants/mon_zebra.webp",
+     "files": [
+      "assets/monstera/skins/mon_zebra.glb",
+      "assets/monstera/skins/mon_zebra_v1.glb",
+      "assets/monstera/skins/mon_zebra_v2.glb"
+     ],
+     "status": "ok",
+     "used_in_game": true,
+     "note_ko": "leaf_mat31~33 (원본·쨍·차분) · 중간잎 마블-실버에서 옴"
+    },
+    {
+     "id": "mon_star_greenwhite",
+     "name_ko": "성숙 무늬 — 별무늬-그린흰",
+     "kind": "glb",
+     "thumb": "thumbs/plants/mon_star_greenwhite.webp",
+     "files": [
+      "assets/monstera/skins/mon_star_greenwhite.glb",
+      "assets/monstera/skins/mon_star_greenwhite_v1.glb",
+      "assets/monstera/skins/mon_star_greenwhite_v2.glb"
+     ],
+     "status": "ok",
+     "used_in_game": true,
+     "note_ko": "leaf_mat46~48 (원본·쨍·차분) · 중간잎 마블-흰그린에서 옴 (그 밖에 못에 없는 알보-흰연두)"
+    },
+    {
+     "id": "mon_star_greenyellow",
+     "name_ko": "성숙 무늬 — 별무늬-그린옐로우",
+     "kind": "glb",
+     "thumb": "thumbs/plants/mon_star_greenyellow.webp",
+     "files": [
+      "assets/monstera/skins/mon_star_greenyellow.glb",
+      "assets/monstera/skins/mon_star_greenyellow_v1.glb",
+      "assets/monstera/skins/mon_star_greenyellow_v2.glb"
+     ],
+     "status": "ok",
+     "used_in_game": true,
+     "note_ko": "leaf_mat40~42 (원본·쨍·차분) · 중간잎 잎맥-크림(부)·마블-그린옐로우(부)에서 옴"
+    },
+    {
+     "id": "mon_star_palegreen",
+     "name_ko": "성숙 무늬 — 별무늬-페일그린",
+     "kind": "glb",
+     "thumb": "thumbs/plants/mon_star_palegreen.webp",
+     "files": [
+      "assets/monstera/skins/mon_star_palegreen.glb",
+      "assets/monstera/skins/mon_star_palegreen_v1.glb",
+      "assets/monstera/skins/mon_star_palegreen_v2.glb"
+     ],
+     "status": "ok",
+     "used_in_game": true,
+     "note_ko": "leaf_mat4~6 (원본·쨍·차분) · 중간잎 마블-실버(부)·스페클-실버점(부)에서 옴"
+    },
+    {
+     "id": "mon_green_yellow",
+     "name_ko": "성숙 무늬 — 오로레아-그린옐로우",
+     "kind": "glb",
+     "thumb": "thumbs/plants/mon_green_yellow.webp",
+     "files": [
+      "assets/monstera/skins/mon_green_yellow.glb",
+      "assets/monstera/skins/mon_green_yellow_v1.glb",
+      "assets/monstera/skins/mon_green_yellow_v2.glb"
+     ],
+     "status": "ok",
+     "used_in_game": true,
+     "note_ko": "leaf_mat22~24 (원본·쨍·차분) · 중간잎 마블-그린옐로우에서 옴"
+    },
+    {
+     "id": "mon_green_lemonpatch",
+     "name_ko": "성숙 무늬 — 라임-레몬패치",
+     "kind": "glb",
+     "thumb": "thumbs/plants/mon_green_lemonpatch.webp",
+     "files": [
+      "assets/monstera/skins/mon_green_lemonpatch.glb",
+      "assets/monstera/skins/mon_green_lemonpatch_v1.glb",
+      "assets/monstera/skins/mon_green_lemonpatch_v2.glb"
+     ],
+     "status": "ok",
+     "used_in_game": true,
+     "note_ko": "leaf_mat25~27 (원본·쨍·차분) · 중간잎 라임-형광(부)에서 옴"
+    },
+    {
+     "id": "mon_neon_lime",
+     "name_ko": "성숙 무늬 — 네온-라임",
+     "kind": "glb",
+     "thumb": "thumbs/plants/mon_neon_lime.webp",
+     "files": [
+      "assets/monstera/skins/mon_neon_lime.glb",
+      "assets/monstera/skins/mon_neon_lime_v1.glb",
+      "assets/monstera/skins/mon_neon_lime_v2.glb"
+     ],
+     "status": "ok",
+     "used_in_game": true,
+     "note_ko": "leaf_mat28~30 (원본·쨍·차분) · 중간잎 라임-형광에서 옴"
+    }
+   ]
+  },
+  {
+   "title_ko": "무늬 성숙잎 — 하프문 (잎 한 장 750,000원 · 5갈래)",
+   "note_ko": "특이색 + 반반으로 갈린 것. 식테크의 정점이고 경매 최고가가 여기서 나온다.",
+   "items": [
+    {
+     "id": "mon_halfmoon_greenwhite",
+     "name_ko": "성숙 무늬 — 하프문-그린흰",
+     "kind": "glb",
+     "thumb": "thumbs/plants/mon_halfmoon_greenwhite.webp",
+     "files": [
+      "assets/monstera/skins/mon_halfmoon_greenwhite.glb",
+      "assets/monstera/skins/mon_halfmoon_greenwhite_v1.glb",
+      "assets/monstera/skins/mon_halfmoon_greenwhite_v2.glb"
+     ],
+     "status": "ok",
+     "used_in_game": true,
+     "note_ko": "leaf_mat34~36 (원본·쨍·차분) · 짝인 중간잎(하프문-크림민트(부)·알보-전체흰중기(부))이 전부 못 밖이라 MAT_TREE 길로는 안 나오고, 등급을 정해 그림을 박아 주는 길(shop.leafSkinsFor → setLeafSkins)로만 나온다 [읽음]"
+    },
+    {
+     "id": "mon_halfmoon_greencream",
+     "name_ko": "성숙 무늬 — 하프문-그린크림",
+     "kind": "glb",
+     "thumb": "thumbs/plants/mon_halfmoon_greencream.webp",
+     "files": [
+      "assets/monstera/skins/mon_halfmoon_greencream.glb",
+      "assets/monstera/skins/mon_halfmoon_greencream_v1.glb",
+      "assets/monstera/skins/mon_halfmoon_greencream_v2.glb"
+     ],
+     "status": "ok",
+     "used_in_game": true,
+     "note_ko": "leaf_mat52~54 (원본·쨍·차분) · 중간잎 알보-크림민트에서 옴 (그 밖에 못에 없는 하프문-크림민트)"
+    },
+    {
+     "id": "mon_galaxy_tealgold",
+     "name_ko": "성숙 무늬 — 갤럭시-틸골드",
+     "kind": "glb",
+     "thumb": "thumbs/plants/mon_galaxy_tealgold.webp",
+     "files": [
+      "assets/monstera/skins/mon_galaxy_tealgold.glb",
+      "assets/monstera/skins/mon_galaxy_tealgold_v1.glb",
+      "assets/monstera/skins/mon_galaxy_tealgold_v2.glb"
+     ],
+     "status": "ok",
+     "used_in_game": true,
+     "note_ko": "leaf_mat10~12 (원본·쨍·차분) · 중간잎 실버-물방울에서 옴"
+    },
+    {
+     "id": "mon_galaxy_darkteal",
+     "name_ko": "성숙 무늬 — 갤럭시-다크틸",
+     "kind": "glb",
+     "thumb": "thumbs/plants/mon_galaxy_darkteal.webp",
+     "files": [
+      "assets/monstera/skins/mon_galaxy_darkteal.glb",
+      "assets/monstera/skins/mon_galaxy_darkteal_v1.glb",
+      "assets/monstera/skins/mon_galaxy_darkteal_v2.glb"
+     ],
+     "status": "ok",
+     "used_in_game": true,
+     "note_ko": "leaf_mat19~21 (원본·쨍·차분) · 중간잎 스페클-실버점·실버-물방울(부)에서 옴"
+    },
+    {
+     "id": "mon_star_pinkmint",
+     "name_ko": "성숙 무늬 — 별무늬-핑크민트",
+     "kind": "glb",
+     "thumb": "thumbs/plants/mon_star_pinkmint.webp",
+     "files": [
+      "assets/monstera/skins/mon_star_pinkmint.glb",
+      "assets/monstera/skins/mon_star_pinkmint_v1.glb",
+      "assets/monstera/skins/mon_star_pinkmint_v2.glb"
+     ],
+     "status": "ok",
+     "used_in_game": true,
+     "note_ko": "leaf_mat7~9 (원본·쨍·차분) · 중간잎 스페클-민트흰점에서 옴"
+    }
+   ]
+  },
+  {
+   "title_ko": "무늬 성숙잎 — 풀문 (잎 한 장 1,150,000원 · 6갈래)",
+   "note_ko": "완전 특수색(분홍·금·라벤더·전백). 확정문이 새로 만든 등급이다.",
+   "items": [
+    {
+     "id": "mon_variegata_pink",
+     "name_ko": "성숙 무늬 — 핑크-로즈핑크",
+     "kind": "glb",
+     "thumb": "thumbs/plants/mon_variegata_pink.webp",
+     "files": [
+      "assets/monstera/skins/mon_variegata_pink.glb",
+      "assets/monstera/skins/mon_variegata_pink_v1.glb",
+      "assets/monstera/skins/mon_variegata_pink_v2.glb"
+     ],
+     "status": "ok",
+     "used_in_game": true,
+     "note_ko": "leaf_mat1~3 (원본·쨍·차분) · 희귀 — 어느 무늬 중간잎에서든 낮은 확률로"
+    },
+    {
+     "id": "mon_variegata_gold",
+     "name_ko": "성숙 무늬 — 오로레아-골드",
+     "kind": "glb",
+     "thumb": "thumbs/plants/mon_variegata_gold.webp",
+     "files": [
+      "assets/monstera/skins/mon_variegata_gold.glb",
+      "assets/monstera/skins/mon_variegata_gold_v1.glb",
+      "assets/monstera/skins/mon_variegata_gold_v2.glb"
+     ],
+     "status": "ok",
+     "used_in_game": true,
+     "note_ko": "leaf_mat16~18 (원본·쨍·차분) · 중간잎 잎맥-크림에서 옴"
+    },
+    {
+     "id": "mon_rose_pink",
+     "name_ko": "성숙 무늬 — 핑크-로즈",
+     "kind": "glb",
+     "thumb": "thumbs/plants/mon_rose_pink.webp",
+     "files": [
+      "assets/monstera/skins/mon_rose_pink.glb",
+      "assets/monstera/skins/mon_rose_pink_v1.glb",
+      "assets/monstera/skins/mon_rose_pink_v2.glb"
+     ],
+     "status": "ok",
+     "used_in_game": true,
+     "note_ko": "leaf_mat43~45 (원본·쨍·차분) · 희귀 — 어느 무늬 중간잎에서든 낮은 확률로"
+    },
+    {
+     "id": "mon_mauve",
+     "name_ko": "성숙 무늬 — 모브-라벤더그레이",
+     "kind": "glb",
+     "thumb": "thumbs/plants/mon_mauve.webp",
+     "files": [
+      "assets/monstera/skins/mon_mauve.glb",
+      "assets/monstera/skins/mon_mauve_v1.glb",
+      "assets/monstera/skins/mon_mauve_v2.glb"
+     ],
+     "status": "ok",
+     "used_in_game": true,
+     "note_ko": "leaf_mat37~39 (원본·쨍·차분) · 희귀 — 어느 무늬 중간잎에서든 낮은 확률로"
+    },
+    {
+     "id": "mon_fullalbo",
+     "name_ko": "성숙 무늬 — 알보-전체흰",
+     "kind": "glb",
+     "thumb": "thumbs/plants/mon_fullalbo.webp",
+     "files": [
+      "assets/monstera/skins/mon_fullalbo.glb",
+      "assets/monstera/skins/mon_fullalbo_v1.glb",
+      "assets/monstera/skins/mon_fullalbo_v2.glb"
+     ],
+     "status": "ok",
+     "used_in_game": true,
+     "note_ko": "leaf_mat55~57 (원본·쨍·차분) · 짝인 중간잎(알보-전체흰중기·알보-흰연두(부))이 전부 못 밖이라 MAT_TREE 길로는 안 나오고, 등급을 정해 그림을 박아 주는 길(shop.leafSkinsFor → setLeafSkins)로만 나온다 [읽음]"
+    },
+    {
+     "id": "mon_charcoal",
+     "name_ko": "성숙 무늬 — 차콜-다크그린",
+     "kind": "glb",
+     "thumb": "thumbs/plants/mon_charcoal.webp",
+     "files": [
+      "assets/monstera/skins/mon_charcoal.glb",
+      "assets/monstera/skins/mon_charcoal_v1.glb",
+      "assets/monstera/skins/mon_charcoal_v2.glb"
+     ],
+     "status": "ok",
+     "used_in_game": true,
+     "note_ko": "leaf_mat49~51 (원본·쨍·차분) · 희귀 — 어느 무늬 중간잎에서든 낮은 확률로"
+    }
+   ]
+  },
+  {
+   "title_ko": "무늬 잎 — 빈 곳 (성장팀 보고)",
+   "note_ko": "docs/handoff/master-story-inputs-20260925.md [growth] 1·5번과 「어린잎에 무늬가 안 보였다」. 무늬 잎이 처음엔 민무늬로 그려졌다가 나중에 툭 바뀌는 것(2번)은 그림이 아니라 불러오기 순서 문제라 여기 안 넣었다.",
+   "items": [
+    {
+     "id": "gap_mat_creammarble",
+     "name_ko": "빈 곳: 마블-크림그린 중간잎의 성숙 짝",
+     "kind": "gap",
+     "thumb": "thumbs/plants/mid_pothos_cream_marble.webp",
+     "files": [
+      "plant_grow.html",
+      "data/balance/varie_grades.json"
+     ],
+     "status": "missing",
+     "used_in_game": true,
+     "note_ko": "이 중간잎(leaf_mid_albo14·15·37)이 다 자라면 갈 무늬 성숙잎이 없다 → 민무늬로 그려진다. 짝이 될 성숙잎을 정하거나 새로 만들어야 한다 (성장팀 09-07 잰 것)"
+    },
+    {
+     "id": "gap_mat_mintdot2",
+     "name_ko": "빈 곳: 스페클-민트흰점2 중간잎의 성숙 짝",
+     "kind": "gap",
+     "thumb": "thumbs/plants/mid_pothos_mint_dot_34.webp",
+     "files": [
+      "plant_grow.html",
+      "data/balance/varie_grades.json"
+     ],
+     "status": "missing",
+     "used_in_game": true,
+     "note_ko": "위와 같다(leaf_mid_albo24·25·26). 두 갈래 합쳐 무늬 잎 다섯에 하나(18.2%)가 성숙하면 민무늬가 된다"
+    },
+    {
+     "id": "gap_mid_halfmoon",
+     "name_ko": "빈 곳: 하프문 중간잎이 못에 없다",
+     "kind": "gap",
+     "thumb": "thumbs/plants/mid_heart_halfmoon_v2_stem.webp",
+     "files": [
+      "data/balance/varie_grades.json",
+      "plant_grow.html"
+     ],
+     "status": "missing",
+     "used_in_game": true,
+     "note_ko": "문서는 「하프문-크림민트(29·30·31) 중간잎」을 말하는데 midCommon.pool 에 없다. 그림이 두꺼워(2.4배) 구멍이 나서 뺀 것 — 얇게 다시 만든 하프문 중간잎이 있어야 넣을 수 있다. 박사님 확인 필요"
+    }
+   ]
+  },
+  {
+   "title_ko": "잎 스킨 — 게임이 안 쓰는 것",
+   "note_ko": "assets/monstera/skins 안에 있지만 plant_grow·게임이 부르지 않는 파일.",
+   "items": [
+    {
+     "id": "skin_pothos_mint_simple",
+     "name_ko": "포토스 — 민트 하트 심플",
+     "kind": "glb",
+     "thumb": "thumbs/plants/skin_pothos_mint_simple.webp",
+     "files": [
+      "assets/monstera/skins/pothos_mint_simple.glb"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "민무늬 하트잎. 무늬 못에 안 넣었다(무늬가 없어서)"
+    },
+    {
+     "id": "skin_pothos_variegated",
+     "name_ko": "포토스 — 무늬종 (주황 줄)",
+     "kind": "glb",
+     "thumb": "thumbs/plants/skin_pothos_variegated.webp",
+     "files": [
+      "assets/monstera/skins/pothos_variegated.glb"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "게임 어디서도 안 부른다. 포토스는 아직 게임에 없는 식물"
+    },
+    {
+     "id": "skin_gw_stem",
+     "name_ko": "변이-그린흰 줄기판 (깨짐)",
+     "kind": "glb",
+     "thumb": "thumbs/plants/skin_gw_stem.webp",
+     "files": [
+      "assets/monstera/skins/mon_variegata_greenwhite_stem.glb",
+      "assets/monstera/skins/_gw_standing.glb"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "납작하게 뭉개진 모양. 시험 중 남은 것"
+    },
+    {
+     "id": "skin_rejected",
+     "name_ko": "버린 시험작 모음 (_rejected)",
+     "kind": "folder",
+     "thumb": "thumbs/plants/skin_rejected.webp",
+     "files": [
+      "assets/monstera/skins/_rejected/"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "GLB 22개 + 원화. 하프문 옛판·유리 창문 시험·포토스 통통판 등. 지워도 되는지 판단 필요"
+    },
+    {
+     "id": "skin_orig",
+     "name_ko": "줄이기 전 원본 GLB (_orig)",
+     "kind": "folder",
+     "thumb": null,
+     "files": [
+      "assets/monstera/skins/_orig/"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "08-16 스킨 용량 줄이기(428MB→34MB) 전 원본 104장. 되돌리기용 보관본"
+    }
+   ]
+  },
+  {
+   "title_ko": "화분",
+   "note_ko": "상점 「화분 바꾸기」 다섯 종류(shop.js POT_KINDS) + 삽수용 유리병. 색판은 지름이 같아 자리를 안 잃는다.",
+   "items": [
+    {
+     "id": "pot_ceramic",
+     "name_ko": "크림도자기 화분 (나무받침) — 도착 화분",
+     "kind": "glb",
+     "thumb": "thumbs/plants/pot_ceramic.webp",
+     "files": [
+      "assets/monstera/pot.glb"
+     ],
+     "status": "ok",
+     "used_in_game": true,
+     "note_ko": "몬스테라가 신고 오는 기본 화분(지름 0.202m). 게임 화면에선 크림색으로 보인다"
+    },
+    {
+     "id": "pot_ceramic_colors",
+     "name_ko": "크림도자기 — 민트·핑크 색판",
+     "kind": "glb",
+     "thumb": "thumbs/plants/pot_ceramic_colors.webp",
+     "files": [
+      "assets/monstera/pot_c1.glb",
+      "assets/monstera/pot_c2.glb"
+     ],
+     "status": "ok",
+     "used_in_game": true,
+     "note_ko": "색 갈아입기(지름 그대로)"
+    },
+    {
+     "id": "pot_ceramic_bagart",
+     "name_ko": "크림도자기 화분 — 가방·상점 그림",
+     "kind": "ui",
+     "thumb": "thumbs/plants/pot_ceramic_bagart.webp",
+     "files": [
+      "game.html",
+      "assets/monstera/thumbs/pot.png"
+     ],
+     "status": "missing",
+     "used_in_game": true,
+     "note_ko": "가방 칸에 그림 대신 글자 「도」가 뜬다(game.html BAG_LETTER). 코드 주석은 「썸네일이 아직 없다」인데 내려다본 섬네일(assets/monstera/thumbs/pot.png)은 이미 있다 — 다른 화분처럼 비스듬히 찍어 이으면 된다"
+    },
+    {
+     "id": "pot_nursery",
+     "name_ko": "검은 모종포트",
+     "kind": "glb",
+     "thumb": "thumbs/plants/pot_nursery.webp",
+     "files": [
+      "assets/pots/pot_nursery_black.glb"
+     ],
+     "status": "ok",
+     "used_in_game": true,
+     "note_ko": "화분 바꾸기 + 삽수·씨앗 흙 그릇으로 같이 쓴다"
+    },
+    {
+     "id": "pot_concrete_round",
+     "name_ko": "회색 콘크리트 화분 (원형)",
+     "kind": "glb",
+     "thumb": "thumbs/plants/pot_concrete_round.webp",
+     "files": [
+      "assets/pots/pot_concrete_round.glb"
+     ],
+     "status": "ok",
+     "used_in_game": true,
+     "note_ko": "지름 0.180m"
+    },
+    {
+     "id": "pot_concrete_round_colors",
+     "name_ko": "회색 콘크리트 원형 — 민트·핑크",
+     "kind": "glb",
+     "thumb": "thumbs/plants/pot_concrete_round_colors.webp",
+     "files": [
+      "assets/pots/pot_concrete_round_c1.glb",
+      "assets/pots/pot_concrete_round_c2.glb"
+     ],
+     "status": "ok",
+     "used_in_game": true,
+     "note_ko": "색 갈아입기"
+    },
+    {
+     "id": "pot_terracotta",
+     "name_ko": "테라코타 화분 (나무받침)",
+     "kind": "glb",
+     "thumb": "thumbs/plants/pot_terracotta.webp",
+     "files": [
+      "assets/pots/pot_terracotta_wood.glb"
+     ],
+     "status": "ok",
+     "used_in_game": true,
+     "note_ko": "지름 0.201m — 창턱 한도 0.21 을 9mm 차로 통과"
+    },
+    {
+     "id": "pot_terracotta_colors",
+     "name_ko": "테라코타 — 민트·핑크",
+     "kind": "glb",
+     "thumb": "thumbs/plants/pot_terracotta_colors.webp",
+     "files": [
+      "assets/pots/pot_terracotta_wood_c1.glb",
+      "assets/pots/pot_terracotta_wood_c2.glb"
+     ],
+     "status": "ok",
+     "used_in_game": true,
+     "note_ko": "색 갈아입기"
+    },
+    {
+     "id": "pot_concrete_square",
+     "name_ko": "콘크리트 사각 화분",
+     "kind": "glb",
+     "thumb": "thumbs/plants/pot_concrete_square.webp",
+     "files": [
+      "assets/pots/pot_concrete_square.glb"
+     ],
+     "status": "ok",
+     "used_in_game": true,
+     "note_ko": "대각선 0.2755m 라 창턱·선반에 못 올라간다(일부러 보여 주는 화분)"
+    },
+    {
+     "id": "pot_concrete_square_colors",
+     "name_ko": "콘크리트 사각 — 민트·핑크",
+     "kind": "glb",
+     "thumb": "thumbs/plants/pot_concrete_square_colors.webp",
+     "files": [
+      "assets/pots/pot_concrete_square_c1.glb",
+      "assets/pots/pot_concrete_square_c2.glb"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "만들어 두었는데 상점 색 목록(shop.js POT_KINDS)엔 기본색 하나만 있다"
+    },
+    {
+     "id": "pot_glassjar",
+     "name_ko": "유리 수경병",
+     "kind": "glb",
+     "thumb": "thumbs/plants/pot_glassjar.webp",
+     "files": [
+      "assets/pots/pot_glassjar.glb"
+     ],
+     "status": "ok",
+     "used_in_game": true,
+     "note_ko": "삽수 물꽂이 그릇(물까지 들어 있는 GLB)"
+    },
+    {
+     "id": "pot_macrame_hanging",
+     "name_ko": "마크라메 행잉 화분 (+민트·핑크)",
+     "kind": "glb",
+     "thumb": "thumbs/plants/pot_macrame_hanging.webp",
+     "files": [
+      "assets/pots/pot_macrame_hanging.glb",
+      "assets/pots/pot_macrame_hanging_c1.glb",
+      "assets/pots/pot_macrame_hanging_c2.glb"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "걸이 화분이라 방에 매달 자리가 없어서 상점에 안 넣었다(shop.js 주석)"
+    },
+    {
+     "id": "pot_macrame",
+     "name_ko": "마크라메 화분 (옛판)",
+     "kind": "glb",
+     "thumb": "thumbs/plants/pot_macrame.webp",
+     "files": [
+      "assets/pots/pot_macrame.glb"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "매니페스트에 없어 실제 크기를 모른다"
+    }
+   ]
+  },
+  {
+   "title_ko": "작물 — 게임에 있는 것 (콩나물·무순)",
+   "note_ko": "지금 게임에서 기르는 작물은 콩나물(시루)과 무순(재배판) 둘이다.",
+   "items": [
+    {
+     "id": "siru_open",
+     "name_ko": "콩나물 시루 (열림) — 방에 서는 것",
+     "kind": "glb",
+     "thumb": "thumbs/plants/siru_open.webp",
+     "files": [
+      "assets/crops/container_siru_open.glb"
+     ],
+     "status": "ok",
+     "used_in_game": true,
+     "note_ko": "빈 그릇 GLB(400면). 방에서는 여기에 콩나물 GLB 를 꽂아 그린다(room_view.js). 슬롯 15칸"
+    },
+    {
+     "id": "siru_closed",
+     "name_ko": "콩나물 시루 (뚜껑) — 가방 그림",
+     "kind": "glb",
+     "thumb": "thumbs/plants/siru_closed.webp",
+     "files": [
+      "assets/crops/container_siru_closed.glb",
+      "assets/crops/thumbs/container_siru_closed.png"
+     ],
+     "status": "ok",
+     "used_in_game": true,
+     "note_ko": "가방·상점 칸 그림으로만 쓴다(= 아직 안 심은 빈 시루). GLB 자체는 방에 안 선다"
+    },
+    {
+     "id": "beansprout",
+     "name_ko": "콩나물 — 소·중·대",
+     "kind": "glb",
+     "thumb": "thumbs/plants/beansprout.webp",
+     "files": [
+      "assets/crops/beansprout_s.glb",
+      "assets/crops/beansprout_m.glb",
+      "assets/crops/beansprout_l.glb"
+     ],
+     "status": "ok",
+     "used_in_game": true,
+     "note_ko": "크림 줄기 + 연노랑 머리. 대(l) 그림은 수확 칸 그림으로도 쓴다. 코드로 지은 단순한 모양"
+    },
+    {
+     "id": "tray_s",
+     "name_ko": "새싹 재배판 (소) — 무순 판",
+     "kind": "glb",
+     "thumb": "thumbs/plants/tray_s.webp",
+     "files": [
+      "assets/crops/container_tray_s.glb"
+     ],
+     "status": "ok",
+     "used_in_game": true,
+     "note_ko": "슬롯 12칸. 방에선 줄여 그린다"
+    },
+    {
+     "id": "musun",
+     "name_ko": "무순 — 소·중·대",
+     "kind": "glb",
+     "thumb": "thumbs/plants/musun.webp",
+     "files": [
+      "assets/crops/sprout_radish_s.glb",
+      "assets/crops/sprout_radish_m.glb",
+      "assets/crops/sprout_radish_l.glb"
+     ],
+     "status": "ok",
+     "used_in_game": true,
+     "note_ko": "크림 줄기 + 연두 떡잎 2장. 대(l)는 수확 칸 그림. 코드로 지은 단순한 모양"
+    },
+    {
+     "id": "seed_dicot",
+     "name_ko": "씨앗 — 쌍떡잎 (콩·무 씨앗)",
+     "kind": "glb",
+     "thumb": "thumbs/plants/seed_dicot.webp",
+     "files": [
+      "assets/crops/seed_dicot.glb",
+      "assets/crops/thumbs/seed_dicot.png"
+     ],
+     "status": "ok",
+     "used_in_game": true,
+     "note_ko": "가방 그림만 쓴다(콩 씨앗·무 씨앗 공용). 3D 는 안 부른다"
+    },
+    {
+     "id": "seed_monocot",
+     "name_ko": "씨앗 — 외떡잎 (몬스테라 씨앗)",
+     "kind": "glb",
+     "thumb": "thumbs/plants/seed_monocot.webp",
+     "files": [
+      "assets/crops/seed_monocot.glb",
+      "assets/crops/thumbs/seed_monocot.png"
+     ],
+     "status": "ok",
+     "used_in_game": true,
+     "note_ko": "몬스테라 씨앗 가방 그림으로 빌려 쓴다(곡물 모양 공용 씨앗)"
+    }
+   ]
+  },
+  {
+   "title_ko": "작물 그림 — 빈 곳",
+   "note_ko": "화면에 나오는 자리인데 그림이 비었거나 안 바뀌는 곳.",
+   "items": [
+    {
+     "id": "gap_siru_sown_art",
+     "name_ko": "빈 곳: 심은 시루 [자세히] 그림",
+     "kind": "gap",
+     "thumb": "thumbs/plants/gap_siru_sown_art.webp",
+     "files": [
+      "assets/crops/thumbs/container_siru_open.png",
+      "game.html"
+     ],
+     "status": "missing",
+     "used_in_game": true,
+     "note_ko": "심은 시루의 자세히 카드는 「콩나물 든 시루」 그림을 보여야 하는데(game.html row.sown → OPEN_SIRU.thumbnail), 09-06 썸네일 다시 찍기(cd307497)에서 빈 그릇 GLB 를 찍은 그림으로 덮였다. 옛 그림은 git 에 남아 있다"
+    },
+    {
+     "id": "gap_tray_sown_art",
+     "name_ko": "빈 곳: 심은 무순 판 [자세히] 그림",
+     "kind": "gap",
+     "thumb": "thumbs/plants/gap_tray_sown_art.webp",
+     "files": [
+      "assets/crops/thumbs/container_tray_s.png",
+      "game.html"
+     ],
+     "status": "missing",
+     "used_in_game": true,
+     "note_ko": "「싹이 난 판」 그림(MUSUN_TRAY_GROWN_PIC)이 지금은 빈 판 그림과 화소까지 똑같다. 같은 09-06 다시 찍기 탓. 옛 그림도 싹이 무순이 아니라 부추처럼 생겼다 — 무순 떡잎이 든 판을 새로 찍어야 한다"
+    },
+    {
+     "id": "gap_siru_growth_view",
+     "name_ko": "방에서 본 시루 — 0·3·6일이 거의 같다",
+     "kind": "gap",
+     "thumb": "thumbs/plants/gap_siru_growth_view.webp",
+     "files": [
+      "docs/handoff/img/cropgrow/crop_0_3_6.png"
+     ],
+     "status": "old",
+     "used_in_game": true,
+     "note_ko": "08-23 비교: 밝기를 맞추면 놓은 날·3일·6일(다 자람) 모습이 거의 안 다르다. 방 카메라에선 콩나물이 너무 작다. 지금도 그런지는 다시 안 쟀다"
+    }
+   ]
+  },
+  {
+   "title_ko": "작물 — 만들어 두었지만 게임에 없는 것",
+   "note_ko": "07-28 식용작물 대량 확장 때 만든 것. 게임 작물 목록(shop.js)에 없어 아무도 안 부른다.",
+   "items": [
+    {
+     "id": "crop_basil",
+     "name_ko": "바질 — 소·중·대",
+     "kind": "glb",
+     "thumb": "thumbs/plants/crop_basil.webp",
+     "files": [
+      "assets/crops/basil_s.glb",
+      "assets/crops/basil_m.glb",
+      "assets/crops/basil_l.glb"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "Meshy 원화→3D. 게임에 바질 작물이 없다"
+    },
+    {
+     "id": "crop_lettuce",
+     "name_ko": "상추 — 소·중·대",
+     "kind": "glb",
+     "thumb": "thumbs/plants/crop_lettuce.webp",
+     "files": [
+      "assets/crops/lettuce_s.glb",
+      "assets/crops/lettuce_m.glb",
+      "assets/crops/lettuce_l.glb"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "Meshy 원화→3D"
+    },
+    {
+     "id": "crop_strawberry",
+     "name_ko": "딸기 (포기) — 소·중·대",
+     "kind": "glb",
+     "thumb": "thumbs/plants/crop_strawberry.webp",
+     "files": [
+      "assets/crops/strawberry_s.glb",
+      "assets/crops/strawberry_m.glb",
+      "assets/crops/strawberry_l.glb"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "Meshy 원화→3D"
+    },
+    {
+     "id": "crop_fruit_strawberry",
+     "name_ko": "딸기 열매 — 소·중·대",
+     "kind": "glb",
+     "thumb": "thumbs/plants/crop_fruit_strawberry.webp",
+     "files": [
+      "assets/crops/fruit_strawberry_s.glb",
+      "assets/crops/fruit_strawberry_m.glb",
+      "assets/crops/fruit_strawberry_l.glb"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "Meshy 원화→3D"
+    },
+    {
+     "id": "crop_chive",
+     "name_ko": "부추 — 소·중·대",
+     "kind": "glb",
+     "thumb": "thumbs/plants/crop_chive.webp",
+     "files": [
+      "assets/crops/chive_s.glb",
+      "assets/crops/chive_m.glb",
+      "assets/crops/chive_l.glb"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "코드로 지은 모양. 베면 다시 자라는 작물로 기획"
+    },
+    {
+     "id": "crop_scallion",
+     "name_ko": "쪽파 — 소·중·대",
+     "kind": "glb",
+     "thumb": "thumbs/plants/crop_scallion.webp",
+     "files": [
+      "assets/crops/scallion_s.glb",
+      "assets/crops/scallion_m.glb",
+      "assets/crops/scallion_l.glb"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "코드로 지은 모양. 반복수확 작물로 기획"
+    },
+    {
+     "id": "crop_tomato_fruit",
+     "name_ko": "방울토마토 열매 (중)",
+     "kind": "glb",
+     "thumb": "thumbs/plants/crop_tomato_fruit.webp",
+     "files": [
+      "assets/crops/fruit_tomato_m.glb"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "절차적 시험 하나뿐. 토마토 포기 3D 는 없다"
+    },
+    {
+     "id": "crop_flower_white",
+     "name_ko": "흰 꽃",
+     "kind": "glb",
+     "thumb": "thumbs/plants/crop_flower_white.webp",
+     "files": [
+      "assets/crops/flower_white.glb"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "딸기·고추 공용으로 만든 꽃"
+    },
+    {
+     "id": "crop_sprouts",
+     "name_ko": "새순 — 쌍떡잎·외떡잎 (공용)",
+     "kind": "glb",
+     "thumb": "thumbs/plants/crop_sprouts.webp",
+     "files": [
+      "assets/crops/sprout_dicot.glb",
+      "assets/crops/sprout_monocot.glb"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "모든 작물의 싹 단계 공용으로 만들었는데 게임이 안 부른다"
+    },
+    {
+     "id": "crop_tray_l",
+     "name_ko": "재배 트레이 (대)",
+     "kind": "glb",
+     "thumb": "thumbs/plants/crop_tray_l.webp",
+     "files": [
+      "assets/crops/container_tray_l.glb"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "슬롯 24칸"
+    },
+    {
+     "id": "crop_pepper_tomato_art",
+     "name_ko": "고추·토마토 포기 — 원화만",
+     "kind": "art",
+     "thumb": "thumbs/plants/crop_pepper_tomato_art.webp",
+     "files": [
+      "assets/crops/src/crop_pepper_s_src.png",
+      "assets/crops/src/crop_pepper_m_src.png",
+      "assets/crops/src/crop_pepper_l_src.png",
+      "assets/crops/src/crop_tomato_s_src.png",
+      "assets/crops/src/crop_tomato_m_src.png",
+      "assets/crops/src/crop_tomato_l_src.png"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "2D 원화(소·중·대)만 있고 3D 는 없다"
+    }
+   ]
+  },
+  {
+   "title_ko": "삽수 (번식)",
+   "note_ko": "몬스테라 마디를 잘라 병이나 포트에 꽂는다.",
+   "items": [
+    {
+     "id": "cut_jar",
+     "name_ko": "삽수 — 유리병 물꽂이",
+     "kind": "composite",
+     "thumb": "thumbs/plants/cut_jar.webp",
+     "files": [
+      "assets/pots/pot_glassjar.glb",
+      "assets/monstera/monstera_leaf_young.glb",
+      "assets/monstera/skins/monstera_leaf_young_albo.glb",
+      "src/game/room_view.js"
+     ],
+     "status": "ok",
+     "used_in_game": true,
+     "note_ko": "병·잎은 GLB, 줄기는 자른 그 가지를 떼어 온다(plant_assemble). 09-07 화면"
+    },
+    {
+     "id": "cut_roots",
+     "name_ko": "삽수 뿌리 (코드 막대)",
+     "kind": "code",
+     "thumb": null,
+     "files": [
+      "src/game/room_view.js"
+     ],
+     "status": "missing",
+     "used_in_game": true,
+     "note_ko": "뿌리는 가는 원기둥 몇 개로 그린다(room_view.js). 옛 세이브는 줄기도 원기둥. 뿌리 그림 에셋이 없다"
+    },
+    {
+     "id": "cut_soil",
+     "name_ko": "삽수 — 흙 포트",
+     "kind": "composite",
+     "thumb": "thumbs/plants/pot_nursery.webp",
+     "files": [
+      "assets/pots/pot_nursery_black.glb",
+      "src/game/room_view.js"
+     ],
+     "status": "ok",
+     "used_in_game": true,
+     "note_ko": "검은 모종포트 GLB + 흙은 코드 원판"
+    },
+    {
+     "id": "cut_tray",
+     "name_ko": "물꽂이 트레이 (6칸)",
+     "kind": "none",
+     "thumb": null,
+     "files": [
+      "src/game/propagation.js"
+     ],
+     "status": "missing",
+     "used_in_game": false,
+     "note_ko": "규칙(6칸·등급 ×0.8)은 적혀 있는데 에셋이 없어 기능이 잠겨 있다(CONTAINERS.tray assetId: null)"
+    }
+   ]
+  },
+  {
+   "title_ko": "원화 (2D 원본)",
+   "note_ko": "3D 를 뽑기 전의 그림. 게임은 이걸 직접 안 부른다 — 「안 씀」이 문제라는 뜻은 아니다.",
+   "items": [
+    {
+     "id": "art_mature",
+     "name_ko": "성숙잎 무늬 원화 (60장)",
+     "kind": "art",
+     "thumb": "thumbs/plants/art_mature.webp",
+     "files": [
+      "assets/existing/",
+      "assets/raw/plants/"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "성숙 무늬 19갈래 × 원본·쨍·차분의 2D 원본. 3D 스킨의 뿌리라 게임이 직접 안 쓰는 게 정상"
+    },
+    {
+     "id": "art_mid",
+     "name_ko": "중간잎 무늬 원화 (48장)",
+     "kind": "art",
+     "thumb": "thumbs/plants/art_mid.webp",
+     "files": [
+      "assets/existing/",
+      "assets/raw/plants/"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "포토스·하트잎 원화를 몬스테라 중간잎으로 돌려 쓴 것"
+    },
+    {
+     "id": "art_base",
+     "name_ko": "기본잎·줄기 원화 (10장)",
+     "kind": "art",
+     "thumb": "thumbs/plants/art_base.webp",
+     "files": [
+      "assets/existing/"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "새순·반잎·어린잎·성숙잎·줄기 마디의 2D 원본"
+    },
+    {
+     "id": "art_pothos",
+     "name_ko": "포토스 잎 원화 (15장)",
+     "kind": "art",
+     "thumb": "thumbs/plants/art_pothos.webp",
+     "files": [
+      "assets/existing/"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "포토스는 아직 게임에 없는 식물. 일부는 몬스테라 중간잎으로 쓰였다"
+    },
+    {
+     "id": "art_sanse",
+     "name_ko": "산세베리아 잎 원화 (7장)",
+     "kind": "art",
+     "thumb": "thumbs/plants/art_sanse.webp",
+     "files": [
+      "assets/existing/"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "3D 가 없다. 산세베리아는 게임에 없다"
+    },
+    {
+     "id": "art_pots",
+     "name_ko": "화분 원화 (16장)",
+     "kind": "art",
+     "thumb": "thumbs/plants/art_pots.webp",
+     "files": [
+      "assets/existing/",
+      "assets/raw/pots/"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "화분 3D 의 2D 원본(테라코타·크림도자기·콘크리트·마크라메·유리병)"
+    },
+    {
+     "id": "art_ref",
+     "name_ko": "완성 식물 참고 그림 (2장)",
+     "kind": "art",
+     "thumb": "thumbs/plants/art_ref.webp",
+     "files": [
+      "assets/existing/"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "화분에 심은 몬스테라 한 그루 참고(조립·크기 기준)"
+    }
+   ]
+  }
+ ]
+}

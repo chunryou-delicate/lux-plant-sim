@@ -1,0 +1,1283 @@
+{
+ "domain": "items",
+ "sections": [
+  {
+   "title_ko": "상점 — 인터넷 주문 품목",
+   "note_ko": "상점 탭(shop.js CATALOG + 식물등 세 줄). ★ 상점 목록은 글자만 나온다 — 그림은 산 뒤 가방 칸에서만 보인다. 값은 실구매가(정가×1.4, 100원 올림).",
+   "items": [
+    {
+     "id": "bean_seed",
+     "name_ko": "콩 씨앗 (1시루분)",
+     "kind": "씨앗",
+     "thumb": "thumbs/items/seed_dicot.webp",
+     "files": [
+      "assets/crops/thumbs/seed_dicot.png",
+      "src/game/shop.js"
+     ],
+     "status": "old",
+     "used_in_game": true,
+     "note_ko": "500원 · 다음 날 도착. 가방 그림은 공용 «쌍떡잎 씨앗» 베이지 덩어리라 콩으로 안 읽힌다. 후보: 원화 36_seed_packet(씨앗 봉투)"
+    },
+    {
+     "id": "radish_seed",
+     "name_ko": "무 씨앗 (1판분)",
+     "kind": "씨앗",
+     "thumb": "thumbs/items/seed_dicot.webp",
+     "files": [
+      "assets/crops/thumbs/seed_dicot.png",
+      "src/game/shop.js"
+     ],
+     "status": "old",
+     "used_in_game": true,
+     "note_ko": "600원 · 콩나물 3바퀴 뒤 열림. ⚠ 콩 씨앗과 «같은 그림»이라 가방에서 둘이 구분 안 된다"
+    },
+    {
+     "id": "monstera_seed",
+     "name_ko": "몬스테라 씨앗 (1립)",
+     "kind": "씨앗",
+     "thumb": "thumbs/items/seed_monocot.webp",
+     "files": [
+      "assets/crops/thumbs/seed_monocot.png",
+      "src/game/shop.js"
+     ],
+     "status": "old",
+     "used_in_game": true,
+     "note_ko": "2,100원 · 선물 몬스테라가 온 뒤 열림. 공용 «외떡잎 씨앗» 밀색 덩어리"
+    },
+    {
+     "id": "siru",
+     "name_ko": "콩나물 시루 (차광 용기)",
+     "kind": "용기",
+     "thumb": "thumbs/items/siru_closed.webp",
+     "files": [
+      "assets/crops/thumbs/container_siru_closed.png",
+      "assets/crops/container_siru_closed.glb",
+      "assets/crops/container_siru_open.glb"
+     ],
+     "status": "ok",
+     "used_in_game": true,
+     "note_ko": "5,000원 · 2일 뒤. 가방 칸은 «뚜껑 덮인 빈 시루», 방에 서면 열린 시루(3D). 처음 1개는 들고 시작"
+    },
+    {
+     "id": "sprout_tray",
+     "name_ko": "새싹 재배판 (무순)",
+     "kind": "용기",
+     "thumb": "thumbs/items/tray_s_empty.webp",
+     "files": [
+      "assets/crops/thumbs/container_tray_s_empty.png",
+      "assets/crops/thumbs/container_tray_s.png",
+      "assets/crops/container_tray_s.glb"
+     ],
+     "status": "ok",
+     "used_in_game": true,
+     "note_ko": "4,200원 · 2일 뒤. ⚠ 싹 난 판 그림(container_tray_s.png)도 빈 판과 거의 똑같이 찍혀 있다 — 싹이 안 보인다"
+    },
+    {
+     "id": "pot",
+     "name_ko": "검은 모종포트",
+     "kind": "화분",
+     "thumb": "thumbs/items/pot_nursery_black.webp",
+     "files": [
+      "assets/pots/thumbs/pot_nursery_black.png",
+      "assets/pots/pot_nursery_black.glb"
+     ],
+     "status": "ok",
+     "used_in_game": true,
+     "note_ko": "7,000원 · 몬스테라용 화분이자 삽수 흙 직삽 용기(재고를 나눠 씀)"
+    },
+    {
+     "id": "jar",
+     "name_ko": "유리 수경병",
+     "kind": "용기",
+     "thumb": "thumbs/items/pot_glassjar.webp",
+     "files": [
+      "assets/pots/thumbs/pot_glassjar.png",
+      "assets/pots/pot_glassjar.glb"
+     ],
+     "status": "ok",
+     "used_in_game": true,
+     "note_ko": "7,000원 · 물꽂이 삽수 그릇. 「물에 꽂아 본다」 퀘스트가 열린 뒤에 상점에 뜬다"
+    },
+    {
+     "id": "pot_concrete_round",
+     "name_ko": "회색 콘크리트 화분",
+     "kind": "화분",
+     "thumb": "thumbs/items/pot_concrete_round.webp",
+     "files": [
+      "assets/pots/thumbs/pot_concrete_round.png",
+      "assets/pots/pot_concrete_round.glb"
+     ],
+     "status": "ok",
+     "used_in_game": true,
+     "note_ko": "7,000원 · 지름 0.18m — 반지하 14칸 다 올라감"
+    },
+    {
+     "id": "pot_terracotta",
+     "name_ko": "테라코타 화분 (나무받침)",
+     "kind": "화분",
+     "thumb": "thumbs/items/pot_terracotta_wood.webp",
+     "files": [
+      "assets/pots/thumbs/pot_terracotta_wood.png",
+      "assets/pots/pot_terracotta_wood.glb"
+     ],
+     "status": "ok",
+     "used_in_game": true,
+     "note_ko": "7,000원 · 지름 0.201m — 창턱(0.21)을 9mm 차로 통과"
+    },
+    {
+     "id": "pot_ceramic",
+     "name_ko": "크림도자기 화분 (나무받침)",
+     "kind": "화분",
+     "thumb": "thumbs/items/pot_ceramic.webp",
+     "files": [
+      "assets/monstera/pot.glb"
+     ],
+     "status": "missing",
+     "used_in_game": true,
+     "note_ko": "7,000원 · 선물 몬스테라가 «신고 오는» 화분. 3D 는 있는데 2D 썸네일이 없어 가방 칸에 «도» 글자 한 자만 선다(BAG_LETTER). 위 그림은 도감용으로 GLB 를 찍은 것"
+    },
+    {
+     "id": "pot_concrete_square",
+     "name_ko": "콘크리트 사각 화분",
+     "kind": "화분",
+     "thumb": "thumbs/items/pot_concrete_square.webp",
+     "files": [
+      "assets/pots/thumbs/pot_concrete_square.png",
+      "assets/pots/pot_concrete_square.glb"
+     ],
+     "status": "ok",
+     "used_in_game": true,
+     "note_ko": "7,000원 · 대각선 0.2755m 라 14칸 중 4칸만 — 「값은 돈이 아니라 자리」인 화분"
+    },
+    {
+     "id": "lamp_wall",
+     "name_ko": "벽부형 식물등",
+     "kind": "식물등",
+     "thumb": null,
+     "files": [
+      "src/game/tutorial.js",
+      "src/render3d/furniture_pastel.js"
+     ],
+     "status": "missing",
+     "used_in_game": true,
+     "note_ko": "120,000원(첫 등은 가을에 무료) · 사면 바로 켜짐. 상점 줄은 글자, 가방 칸은 💡 이모지, 방 안 모습은 코드로 쌓은 막대. 원화 후보: 37_growlight_bar"
+    },
+    {
+     "id": "lamp_clip_item",
+     "name_ko": "집게형 식물등",
+     "kind": "식물등",
+     "thumb": null,
+     "files": [
+      "src/game/tutorial.js",
+      "src/render3d/furniture_pastel.js"
+     ],
+     "status": "missing",
+     "used_in_game": true,
+     "note_ko": "80,000원 · 12W. 그림 없음(💡). 쓸 만한 것: assets/lighting/lamp_clip.glb(안 쓰는 3D·썸네일 있음) · raw/items/cliplight_v3.png"
+    },
+    {
+     "id": "lamp_stand",
+     "name_ko": "거치형 식물등",
+     "kind": "식물등",
+     "thumb": null,
+     "files": [
+      "src/game/tutorial.js",
+      "src/render3d/furniture_pastel.js"
+     ],
+     "status": "missing",
+     "used_in_game": true,
+     "note_ko": "150,000원 · 36W · 3단 선반을 살림. 그림 없음(💡). 원화 후보: 40_growlamp_floor"
+    }
+   ]
+  },
+  {
+   "title_ko": "가방 — 상점에서 안 파는데 가방에 들어오는 것",
+   "note_ko": "선물·수확·자른 것·이사 짐. 가방 칸(drawBag)이 그리는 그림 그대로.",
+   "items": [
+    {
+     "id": "gift_monstera",
+     "name_ko": "축복받은 몬스테라 삽수 (선물)",
+     "kind": "식물",
+     "thumb": "thumbs/items/item_monstera.webp",
+     "files": [
+      "assets/ui/item_monstera.png",
+      "src/game/loop.js"
+     ],
+     "status": "ok",
+     "used_in_game": true,
+     "note_ko": "콩나물 3바퀴 뒤 식물신이 준다. 크림도자기 화분 썸네일이 없어 기본 몬스테라 아이콘으로 떨어진다(potThumbOf → null)"
+    },
+    {
+     "id": "cutting",
+     "name_ko": "자른 삽수 (병·포트)",
+     "kind": "삽수",
+     "thumb": "thumbs/items/cutting_as_jar.webp",
+     "files": [
+      "assets/pots/thumbs/pot_glassjar.png",
+      "assets/pots/thumbs/pot_nursery_black.png",
+      "src/game/propagation.js"
+     ],
+     "status": "old",
+     "used_in_game": true,
+     "note_ko": "물꽂이는 «빈 병», 흙 직삽은 «빈 포트» 그림을 되쓴다 — 삽수가 안 보이고 무늬 삽수도 같은 그림(칸 색만 다름). 후보: 223_monstera_cutting · 217_cutting_jar"
+    },
+    {
+     "id": "harvest_beansprout",
+     "name_ko": "거둔 콩나물",
+     "kind": "수확물",
+     "thumb": "thumbs/items/beansprout_l.webp",
+     "files": [
+      "assets/crops/thumbs/beansprout_l.png"
+     ],
+     "status": "old",
+     "used_in_game": true,
+     "note_ko": "곳간 g 으로 가방에 뜸. 그림은 콩나물 «한 가닥» — 한 줌으로 안 읽힘. 후보: 214_harvest_beansprout"
+    },
+    {
+     "id": "harvest_musun",
+     "name_ko": "거둔 무순",
+     "kind": "수확물",
+     "thumb": "thumbs/items/sprout_radish_l.webp",
+     "files": [
+      "assets/crops/thumbs/sprout_radish_l.png"
+     ],
+     "status": "old",
+     "used_in_game": true,
+     "note_ko": "새싹 «한 줄기» 그림. 후보: 215_harvest_microgreens"
+    },
+    {
+     "id": "carried_furniture",
+     "name_ko": "이사 때 가져온 가구",
+     "kind": "가구",
+     "thumb": null,
+     "files": [
+      "game.html"
+     ],
+     "status": "missing",
+     "used_in_game": true,
+     "note_ko": "원룸 이사 뒤 가방 칸 — 🪑 이모지 + 이름. 가구 모습 자체는 가구 도감 쪽"
+    }
+   ]
+  },
+  {
+   "title_ko": "팔기 · 돈",
+   "note_ko": "몬스테라·삽수는 상점이 안 산다 — 중고 거래로만 나간다. 거래 목록은 글자 줄.",
+   "items": [
+    {
+     "id": "market_card",
+     "name_ko": "중고 거래 카드 그림",
+     "kind": "UI 원화",
+     "thumb": "thumbs/items/card_market.webp",
+     "files": [
+      "assets/ui/card_market.png",
+      "assets/ui/_kling/card_market_try2.png"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "2026-09-07 클링으로 뽑음. 중고 거래 설명 카드는 아직 item_monstera.png 를 씀"
+    },
+    {
+     "id": "furniture_buy",
+     "name_ko": "가구 사기 (가구 상점)",
+     "kind": "상점 화면",
+     "thumb": null,
+     "files": [
+      "src/game/shop.js"
+     ],
+     "status": "missing",
+     "used_in_game": false,
+     "note_ko": "값 매기는 코드(furnitureCatalogList · 117종)는 있는데 사는 화면이 없다. 파는 쪽(가구 창 [팔기])만 붙어 있음"
+    }
+   ]
+  },
+  {
+   "title_ko": "도구 · 원예 소품",
+   "note_ko": "3D 까지 만들어 둔 도구. 물뿌리개만 게임에 나오는데 그것도 코드 원기둥이다.",
+   "items": [
+    {
+     "id": "watering_can",
+     "name_ko": "물뿌리개",
+     "kind": "도구",
+     "thumb": "thumbs/items/watering_can.webp",
+     "files": [
+      "assets/props/watering_can.glb",
+      "src/game/room_view.js"
+     ],
+     "status": "missing",
+     "used_in_game": true,
+     "note_ko": "물 줄 때 손에 드는 것은 «원기둥 3개»다(CAN_USE_GLB=false). GLB 는 무텍스처·1.2만 삼각형이라 꺼 둠 — 저폴리가 오면 스위치 한 줄"
+    },
+    {
+     "id": "spraybottle",
+     "name_ko": "분무기",
+     "kind": "도구",
+     "thumb": "thumbs/items/item_spraybottle.webp",
+     "files": [
+      "assets/items/item_spraybottle.glb",
+      "assets/items/thumbs/item_spraybottle.png",
+      "assets/raw/items/spraybottle_v1.png"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "3D·썸네일 다 있음. 게임에 분무 행동이 없다"
+    },
+    {
+     "id": "pruningshears",
+     "name_ko": "전정가위",
+     "kind": "도구",
+     "thumb": "thumbs/items/item_pruningshears.webp",
+     "files": [
+      "assets/items/item_pruningshears.glb",
+      "assets/items/thumbs/item_pruningshears.png",
+      "assets/raw/items/pruningshears_v2.png"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "삽수 자르기 손짓에 딱 맞는 물건 — 지금 [자르기]는 글자 단추"
+    },
+    {
+     "id": "trowel",
+     "name_ko": "모종삽",
+     "kind": "도구",
+     "thumb": "thumbs/items/item_trowel.webp",
+     "files": [
+      "assets/items/item_trowel.glb",
+      "assets/items/thumbs/item_trowel.png",
+      "assets/raw/items/trowel_v1.png"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "분갈이·심기 아이콘 후보"
+    },
+    {
+     "id": "fertilizerbag",
+     "name_ko": "비료봉투",
+     "kind": "소모품",
+     "thumb": "thumbs/items/item_fertilizerbag.webp",
+     "files": [
+      "assets/items/item_fertilizerbag.glb",
+      "assets/items/thumbs/item_fertilizerbag.png",
+      "assets/raw/items/fertilizerbag_v1.png"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "게임에 비료 계통 없음"
+    }
+   ]
+  },
+  {
+   "title_ko": "식물등 · 화분 — 만들어 두고 안 쓰는 판",
+   "note_ko": "3D 까지 있는데 게임이 부르지 않는 것. 색 판은 한 칸으로 묶었다.",
+   "items": [
+    {
+     "id": "lamp_clip_glb",
+     "name_ko": "클립형 식물등 3D (3색)",
+     "kind": "식물등 3D",
+     "thumb": "thumbs/items/lamp_clip_family.webp",
+     "files": [
+      "assets/lighting/lamp_clip.glb",
+      "assets/lighting/lamp_clip_c1.glb",
+      "assets/lighting/lamp_clip_c2.glb",
+      "assets/raw/items/cliplight_v3.png"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "기본·버터크림·코랄 3벌. 게임의 «집게형 식물등»은 이것이 아니라 코드 막대다 — 붙이면 아이콘+3D 둘 다 생김"
+    },
+    {
+     "id": "pot_colors",
+     "name_ko": "화분 색 갈아입기 (민트·핑크) ×8",
+     "kind": "화분 색 판",
+     "thumb": "thumbs/items/pot_color_family.webp",
+     "files": [
+      "assets/pots/pot_concrete_round_c1.glb",
+      "assets/pots/pot_concrete_round_c2.glb",
+      "assets/pots/pot_terracotta_wood_c1.glb",
+      "assets/pots/pot_terracotta_wood_c2.glb",
+      "assets/monstera/pot_c1.glb",
+      "assets/monstera/pot_c2.glb",
+      "assets/pots/pot_concrete_square_c1.glb",
+      "assets/pots/pot_concrete_square_c2.glb"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "shop.js POT_KINDS 표에 색이 적혀 있으나 색을 고르는 화면이 없다. 크림도자기 민트·핑크(monstera/pot_c1·c2)는 썸네일도 없음"
+    },
+    {
+     "id": "pot_macrame",
+     "name_ko": "마크라메 행잉 화분 (3색+1)",
+     "kind": "화분",
+     "thumb": "thumbs/items/pot_macrame_family.webp",
+     "files": [
+      "assets/pots/pot_macrame_hanging.glb",
+      "assets/pots/pot_macrame_hanging_c1.glb",
+      "assets/pots/pot_macrame_hanging_c2.glb",
+      "assets/pots/pot_macrame.glb"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "걸이 화분이라 방에 «매다는 자리»가 없어 품목이 못 됨(shop.js 주석)"
+    },
+    {
+     "id": "tray_l",
+     "name_ko": "대형 재배판",
+     "kind": "용기",
+     "thumb": "thumbs/items/tray_l.webp",
+     "files": [
+      "assets/crops/container_tray_l.glb",
+      "assets/crops/thumbs/container_tray_l.png"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "24칸 트레이. 게임은 소형 판(무순)만 판다"
+    }
+   ]
+  },
+  {
+   "title_ko": "원료 원화 — 빈칸을 메울 수 있는 후보",
+   "note_ko": "assets/gen/2026-08-12 (206장 중 물건·아이콘). 원료라 코드가 안 부르는 게 정상 — 여기서는 «위의 빈칸에 붙일 수 있는 것»만 골라 짝지었다.",
+   "items": [
+    {
+     "id": "gen_seed_packet",
+     "name_ko": "씨앗 봉투",
+     "kind": "원화(원료)",
+     "thumb": "thumbs/items/gen_seed_packet.webp",
+     "files": [
+      "assets/gen/2026-08-12/supplies/36_seed_packet.png"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "2026-08-12 원료 묶음 · 콩·무·몬스테라 씨앗 칸 후보(지금은 덩어리 그림)"
+    },
+    {
+     "id": "gen_monstera_cutting",
+     "name_ko": "삽수 (가지+뿌리)",
+     "kind": "원화(원료)",
+     "thumb": "thumbs/items/gen_monstera_cutting.webp",
+     "files": [
+      "assets/gen/2026-08-12/harvest_living/223_monstera_cutting.png"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "2026-08-12 원료 묶음 · 자른 삽수 칸 후보. ⚠ 잎이 몬스테라처럼 안 갈라져 있음"
+    },
+    {
+     "id": "gen_cutting_jar",
+     "name_ko": "병에 꽂은 삽수",
+     "kind": "원화(원료)",
+     "thumb": "thumbs/items/gen_cutting_jar.webp",
+     "files": [
+      "assets/gen/2026-08-12/supplies/217_cutting_jar.png"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "2026-08-12 원료 묶음 · 물꽂이 삽수 칸 후보 — 지금은 빈 병 그림"
+    },
+    {
+     "id": "gen_harvest_beansprout",
+     "name_ko": "거둔 콩나물 한 줌",
+     "kind": "원화(원료)",
+     "thumb": "thumbs/items/gen_harvest_beansprout.webp",
+     "files": [
+      "assets/gen/2026-08-12/harvest_living/214_harvest_beansprout.png"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "2026-08-12 원료 묶음 · 거둔 콩나물 칸 후보"
+    },
+    {
+     "id": "gen_harvest_microgreens",
+     "name_ko": "거둔 새싹채소 한 단",
+     "kind": "원화(원료)",
+     "thumb": "thumbs/items/gen_harvest_microgreens.webp",
+     "files": [
+      "assets/gen/2026-08-12/harvest_living/215_harvest_microgreens.png"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "2026-08-12 원료 묶음 · 거둔 무순 칸 후보"
+    },
+    {
+     "id": "gen_growlight_bar",
+     "name_ko": "막대형 식물등",
+     "kind": "원화(원료)",
+     "thumb": "thumbs/items/gen_growlight_bar.webp",
+     "files": [
+      "assets/gen/2026-08-12/lighting_furniture/37_growlight_bar.png"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "2026-08-12 원료 묶음 · 벽부형 식물등 💡 자리 후보"
+    },
+    {
+     "id": "gen_growlamp_floor",
+     "name_ko": "바닥 스탠드 식물등",
+     "kind": "원화(원료)",
+     "thumb": "thumbs/items/gen_growlamp_floor.webp",
+     "files": [
+      "assets/gen/2026-08-12/lighting_furniture/40_growlamp_floor.png"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "2026-08-12 원료 묶음 · 거치형 식물등 💡 자리 후보"
+    },
+    {
+     "id": "gen_wateringcan",
+     "name_ko": "물뿌리개",
+     "kind": "원화(원료)",
+     "thumb": "thumbs/items/gen_wateringcan.webp",
+     "files": [
+      "assets/gen/2026-08-12/supplies/25_wateringcan.png"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "2026-08-12 원료 묶음 · 물 주기 단추 / 3D 저폴리 물뿌리개 원료"
+    },
+    {
+     "id": "gen_meal_plate",
+     "name_ko": "밥상 한 접시",
+     "kind": "원화(원료)",
+     "thumb": "thumbs/items/gen_meal_plate.webp",
+     "files": [
+      "assets/gen/2026-08-12/harvest_living/216_meal_plate.png"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "2026-08-12 원료 묶음 · 밥상 창(오늘 몇 g 쓸지) 머리 그림 후보"
+    },
+    {
+     "id": "gen_money_envelope",
+     "name_ko": "돈봉투",
+     "kind": "원화(원료)",
+     "thumb": "thumbs/items/gen_money_envelope.webp",
+     "files": [
+      "assets/gen/2026-08-12/harvest_living/226_money_envelope.png"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "2026-08-12 원료 묶음 · 구호금·월세·판매 대금 알림 후보"
+    },
+    {
+     "id": "gen_moving_boxes",
+     "name_ko": "이삿짐 상자",
+     "kind": "원화(원료)",
+     "thumb": "thumbs/items/gen_moving_boxes.webp",
+     "files": [
+      "assets/gen/2026-08-12/harvest_living/227_moving_boxes.png"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "2026-08-12 원료 묶음 · 이사 버튼·이사 짐 가방 칸 후보"
+    },
+    {
+     "id": "gen_receipt",
+     "name_ko": "영수증",
+     "kind": "원화(원료)",
+     "thumb": "thumbs/items/gen_receipt.webp",
+     "files": [
+      "assets/gen/2026-08-12/harvest_living/273_receipt.png"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "2026-08-12 원료 묶음 · 가계부 다시 보기 후보"
+    },
+    {
+     "id": "gen_key",
+     "name_ko": "열쇠",
+     "kind": "원화(원료)",
+     "thumb": "thumbs/items/gen_key.webp",
+     "files": [
+      "assets/gen/2026-08-12/harvest_living/275_key.png"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "2026-08-12 원료 묶음 · 이사·내 집 마련 후보"
+    },
+    {
+     "id": "gen_icons7",
+     "name_ko": "아이콘 원화 7장 (물방울·해·달·구름·잎·동전·집)",
+     "kind": "원화(원료)",
+     "thumb": "thumbs/items/gen_icons7.webp",
+     "files": [
+      "assets/gen/2026-08-12/icons/278_icon_waterdrop.png",
+      "assets/gen/2026-08-12/icons/279_icon_sun.png",
+      "assets/gen/2026-08-12/icons/280_icon_moon.png",
+      "assets/gen/2026-08-12/icons/281_icon_cloud.png",
+      "assets/gen/2026-08-12/icons/282_icon_leaf.png",
+      "assets/gen/2026-08-12/icons/283_icon_coin.png",
+      "assets/gen/2026-08-12/icons/284_icon_house.png"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "2026-08-12 · 물 주기 💧·식물 탭·방 탭 자리 후보. 지금 UI 아이콘(08-03)과 결이 조금 다름(그라데이션)"
+    },
+    {
+     "id": "gen_supplies",
+     "name_ko": "원예 소품 원화 ×28 (흙·계측기·끈·장갑 …)",
+     "kind": "원화(원료)",
+     "thumb": "thumbs/items/gen_supplies.webp",
+     "files": [
+      "assets/gen/2026-08-12/supplies/100_apron.png",
+      "assets/gen/2026-08-12/supplies/219_humidity_dome.png",
+      "assets/gen/2026-08-12/supplies/220_coir_block.png",
+      "assets/gen/2026-08-12/supplies/221_vermiculite_bag.png",
+      "assets/gen/2026-08-12/supplies/222_moisture_meter.png",
+      "assets/gen/2026-08-12/supplies/228_watering_bulb.png",
+      "assets/gen/2026-08-12/supplies/229_moss_pole.png",
+      "assets/gen/2026-08-12/supplies/230_drainage_pebbles.png",
+      "assets/gen/2026-08-12/supplies/231_plant_tie_tape.png",
+      "assets/gen/2026-08-12/supplies/243_propagation_rack.png",
+      "assets/gen/2026-08-12/supplies/244_potting_bench.png",
+      "assets/gen/2026-08-12/supplies/26_hygrometer.png",
+      "assets/gen/2026-08-12/supplies/270_wall_thermometer.png",
+      "assets/gen/2026-08-12/supplies/276_seedling_transplant.png",
+      "assets/gen/2026-08-12/supplies/27_fertilizer_bottle.png",
+      "assets/gen/2026-08-12/supplies/28_soil_sack.png",
+      "assets/gen/2026-08-12/supplies/29_perlite_bag.png",
+      "assets/gen/2026-08-12/supplies/30_plant_labels.png",
+      "assets/gen/2026-08-12/supplies/31_garden_gloves.png",
+      "assets/gen/2026-08-12/supplies/32_bamboo_stakes.png",
+      "assets/gen/2026-08-12/supplies/33_twine_ball.png",
+      "assets/gen/2026-08-12/supplies/35_soil_sieve.png",
+      "assets/gen/2026-08-12/supplies/70_tool_rail.png",
+      "assets/gen/2026-08-12/supplies/85_wateringcan_small.png",
+      "assets/gen/2026-08-12/supplies/86_soil_scoop.png",
+      "assets/gen/2026-08-12/supplies/87_pruning_shears.png",
+      "assets/gen/2026-08-12/supplies/98_mister_bottle.png",
+      "assets/gen/2026-08-12/supplies/99_step_ladder.png"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "2026-08-12 원료. 흙 포대·펄라이트·습도계·이끼봉·물뿌리개 작은 것·전정가위 등 — 게임 계통이 없어 아직 쓸 데 없음"
+    },
+    {
+     "id": "gen_harvest_living",
+     "name_ko": "수확·살림 원화 나머지 ×5",
+     "kind": "원화(원료)",
+     "thumb": "thumbs/items/gen_harvest_living.webp",
+     "files": [
+      "assets/gen/2026-08-12/harvest_living/224_monstera_spear.png",
+      "assets/gen/2026-08-12/harvest_living/225_dried_leaf.png",
+      "assets/gen/2026-08-12/harvest_living/232_kitchen_scale.png",
+      "assets/gen/2026-08-12/harvest_living/271_harvest_basket.png",
+      "assets/gen/2026-08-12/harvest_living/272_soup_bowl.png"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "2026-08-12 원료. 새순·마른 잎·저울·바구니·국그릇 등"
+    },
+    {
+     "id": "gen_pots",
+     "name_ko": "화분·용기 원화 ×48 (디자인 32종+색 판)",
+     "kind": "원화(원료)",
+     "thumb": "thumbs/items/gen_pots.webp",
+     "files": [
+      "assets/gen/2026-08-12/pots/01_pot_white_cylinder.png",
+      "assets/gen/2026-08-12/pots/01c1_pot_white_cylinder_mint.png",
+      "assets/gen/2026-08-12/pots/01c2_pot_white_cylinder_pink.png",
+      "assets/gen/2026-08-12/pots/02_pot_stoneware_bowl.png",
+      "assets/gen/2026-08-12/pots/02c1_pot_stoneware_bowl_mint.png",
+      "assets/gen/2026-08-12/pots/02c2_pot_stoneware_bowl_pink.png",
+      "assets/gen/2026-08-12/pots/03_pot_sage_glazed.png",
+      "assets/gen/2026-08-12/pots/04_pot_wood_cube.png",
+      "assets/gen/2026-08-12/pots/04c1_pot_wood_cube_mint.png",
+      "assets/gen/2026-08-12/pots/04c2_pot_wood_cube_pink.png",
+      "assets/gen/2026-08-12/pots/05_pot_rattan_basket.png",
+      "assets/gen/2026-08-12/pots/06_pot_concrete_tall.png",
+      "assets/gen/2026-08-12/pots/06c1_pot_concrete_tall_mint.png",
+      "assets/gen/2026-08-12/pots/06c2_pot_concrete_tall_pink.png",
+      "assets/gen/2026-08-12/pots/07_pot_terracotta_rim.png",
+      "assets/gen/2026-08-12/pots/08_pot_charcoal_matte.png",
+      "assets/gen/2026-08-12/pots/09_pot_cream_ribbed.png",
+      "assets/gen/2026-08-12/pots/09c1_pot_cream_ribbed_mint.png",
+      "assets/gen/2026-08-12/pots/09c2_pot_cream_ribbed_pink.png",
+      "assets/gen/2026-08-12/pots/10_pot_bonsai_tray.png",
+      "assets/gen/2026-08-12/pots/114_pot_pile.png",
+      "assets/gen/2026-08-12/pots/11_pot_porcelain_stand.png",
+      "assets/gen/2026-08-12/pots/12_pot_paper_pulp.png",
+      "assets/gen/2026-08-12/pots/240_wall_pocket_planter.png",
+      "assets/gen/2026-08-12/pots/241_hydro_tower.png",
+      "assets/gen/2026-08-12/pots/277_pot_tipped.png",
+      "assets/gen/2026-08-12/pots/34_pot_saucer.png",
+      "assets/gen/2026-08-12/pots/55_sprouting_jar.png",
+      "assets/gen/2026-08-12/pots/56_tray_large.png",
+      "assets/gen/2026-08-12/pots/57_tray_cell_module.png",
+      "assets/gen/2026-08-12/pots/58_selfwatering.png",
+      "assets/gen/2026-08-12/pots/59_hanging_pot.png",
+      "assets/gen/2026-08-12/pots/60_wall_planter.png",
+      "assets/gen/2026-08-12/pots/62_porcelain_stand.png",
+      "assets/gen/2026-08-12/pots/63_terrarium_bowl.png",
+      "assets/gen/2026-08-12/pots/64_pot_cork.png",
+      "assets/gen/2026-08-12/pots/65_pot_tin_bucket.png",
+      "assets/gen/2026-08-12/pots/66_double_wall.png",
+      "assets/gen/2026-08-12/pots/66c1_pot_double_wall_mint.png",
+      "assets/gen/2026-08-12/pots/66c2_pot_double_wall_pink.png",
+      "assets/gen/2026-08-12/pots/67_concrete_square_m.png",
+      "assets/gen/2026-08-12/pots/67c1_pot_concrete_square_mint.png",
+      "assets/gen/2026-08-12/pots/67c2_pot_concrete_square_pink.png",
+      "assets/gen/2026-08-12/pots/68_tall_speckled.png",
+      "assets/gen/2026-08-12/pots/68c1_pot_tall_speckled_mint.png",
+      "assets/gen/2026-08-12/pots/68c2_pot_tall_speckled_pink.png",
+      "assets/gen/2026-08-12/pots/69_wood_crate.png",
+      "assets/gen/2026-08-12/pots/72_pot_saucer_set.png"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "2026-08-12 원료. 3D 로 안 뺀 새 화분 디자인들 — 화분 품목을 늘릴 때 재료"
+    }
+   ]
+  },
+  {
+   "title_ko": "UI — 탭 · 단추 · 틀",
+   "note_ko": "왼쪽 세로 탭 줄 · 단추 바탕 · 카드 틀. 대화 상자 초상화는 캐릭터 도감 쪽. 2026-09-07 클링 묶음 여섯 장은 아직 하나도 안 붙었다.",
+   "items": [
+    {
+     "id": "nav_bag",
+     "name_ko": "가방 탭 아이콘",
+     "kind": "UI 아이콘",
+     "thumb": null,
+     "files": [
+      "game.html"
+     ],
+     "status": "missing",
+     "used_in_game": true,
+     "note_ko": "🎒 이모지. ⚠ leaf 가 재 보니 이모지가 띠에서 제일 또렷했다 — «임시가 제일 잘 되는 것»일 수 있어 갈기 전에 재라. 후보: ui/icon_bag.png · v2 배낭"
+    },
+    {
+     "id": "icon_bag",
+     "name_ko": "가방 아이콘 (클링)",
+     "kind": "UI 아이콘",
+     "thumb": "thumbs/items/icon_bag.webp",
+     "files": [
+      "assets/ui/icon_bag.png",
+      "assets/ui/_kling/icon_bag_try4.png"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "2026-09-07 클링. 21px 로 줄였을 때 가방으로 읽히는지 먼저 볼 것(try2 는 자물쇠로 읽혀 버림)"
+    },
+    {
+     "id": "v2_backpack",
+     "name_ko": "배낭+신발 (v2 방 소품)",
+     "kind": "3D 소품",
+     "thumb": "thumbs/items/v2_backpack.webp",
+     "files": [
+      "assets/v2/props/backpack.glb",
+      "src/render3d/furniture_dress.js"
+     ],
+     "status": "v2",
+     "used_in_game": true,
+     "note_ko": "오늘 밤 v2 로 방에 놓인 소품. 이걸 찍어 가방 탭 아이콘으로 쓸 수도 있다"
+    },
+    {
+     "id": "nav_plants",
+     "name_ko": "식물 탭 = 몬스테라 아이콘",
+     "kind": "UI 아이콘",
+     "thumb": "thumbs/items/item_monstera.webp",
+     "files": [
+      "assets/ui/item_monstera.png"
+     ],
+     "status": "ok",
+     "used_in_game": true,
+     "note_ko": "식물 탭 · 부팅 화면 · 「아직 몬스테라가 없습니다」 · 카드 기본값까지 다섯 군데를 혼자 맡는다"
+    },
+    {
+     "id": "nav_shop",
+     "name_ko": "상점 탭 = 동전",
+     "kind": "UI 아이콘",
+     "thumb": "thumbs/items/icon_coin.webp",
+     "files": [
+      "assets/ui/icon_coin.png"
+     ],
+     "status": "ok",
+     "used_in_game": true,
+     "note_ko": "2026-08-03 판"
+    },
+    {
+     "id": "nav_room",
+     "name_ko": "방 탭 = 창문",
+     "kind": "UI 아이콘",
+     "thumb": "thumbs/items/icon_window.webp",
+     "files": [
+      "assets/ui/icon_window.png"
+     ],
+     "status": "ok",
+     "used_in_game": true,
+     "note_ko": "2026-08-03 판"
+    },
+    {
+     "id": "nav_quest",
+     "name_ko": "할 일 탭 아이콘",
+     "kind": "UI 아이콘",
+     "thumb": null,
+     "files": [
+      "game.html"
+     ],
+     "status": "missing",
+     "used_in_game": true,
+     "note_ko": "📜 이모지(할 일 탭 · 할 일 칩). 후보: ui/icon_quest.png"
+    },
+    {
+     "id": "icon_quest",
+     "name_ko": "할 일 아이콘 (클링)",
+     "kind": "UI 아이콘",
+     "thumb": "thumbs/items/icon_quest.webp",
+     "files": [
+      "assets/ui/icon_quest.png"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "2026-09-07 클링. 체크 표시 쪽지"
+    },
+    {
+     "id": "action_buttons",
+     "name_ko": "행동 단추 아이콘 (물·심기·가방으로·닫기·음악·안내)",
+     "kind": "UI 아이콘",
+     "thumb": null,
+     "files": [
+      "game.html"
+     ],
+     "status": "missing",
+     "used_in_game": true,
+     "note_ko": "💧 물 주기 · 🌱 심기 · 📦 가방으로 · ✕ · ♪ · ? · 다음 날 ▸ — 전부 이모지/글자. 원화 후보: 아이콘 원화 7장 · 모종삽 · 전정가위"
+    },
+    {
+     "id": "button_plates",
+     "name_ko": "단추 바탕 3색 (호박·세이지·슬레이트)",
+     "kind": "UI 틀",
+     "thumb": "thumbs/items/button_plates.webp",
+     "files": [
+      "assets/ui/button_plate_amber.png",
+      "assets/ui/button_plate_sage.png",
+      "assets/ui/button_plate_slate.png"
+     ],
+     "status": "ok",
+     "used_in_game": true,
+     "note_ko": "모든 단추의 바탕(CSS). 2026-08-03"
+    },
+    {
+     "id": "panel_frame",
+     "name_ko": "카드 테두리 (9-slice)",
+     "kind": "UI 틀",
+     "thumb": "thumbs/items/panel_frame.webp",
+     "files": [
+      "assets/ui/panel_frame.png"
+     ],
+     "status": "ok",
+     "used_in_game": true,
+     "note_ko": "아이템 카드 테두리"
+    },
+    {
+     "id": "slot_plate",
+     "name_ko": "가방 칸 바탕",
+     "kind": "UI 틀",
+     "thumb": "thumbs/items/slot_plate.webp",
+     "files": [
+      "assets/ui/slot_plate.png"
+     ],
+     "status": "ok",
+     "used_in_game": true,
+     "note_ko": "가방 격자 칸·썸네일 뒤판"
+    },
+    {
+     "id": "plates_unused",
+     "name_ko": "띠·칩 바탕 (bar·chip)",
+     "kind": "UI 틀",
+     "thumb": "thumbs/items/plates_unused.webp",
+     "files": [
+      "assets/ui/bar_plate.png",
+      "assets/ui/chip_plate.png"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "2026-08-03 뽑았으나 CSS 가 안 부름"
+    },
+    {
+     "id": "hud_icons",
+     "name_ko": "상단 칩 아이콘 (날짜·밥그릇)",
+     "kind": "UI 아이콘",
+     "thumb": "thumbs/items/hud_icons.webp",
+     "files": [
+      "assets/ui/icon_day.png",
+      "assets/ui/icon_food.png"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "CSS 에 걸려 있으나 상단 칩에서 일부러 숨김(2026-08-08 「돈이 겹쳐서 안 보여」). ⚠ 소지금 칸에 걸린 것이 동전이 아니라 «밥그릇»이다 — 켤 거면 갈 것"
+    },
+    {
+     "id": "icons_place",
+     "name_ko": "확인·취소·옮기기 아이콘",
+     "kind": "UI 아이콘",
+     "thumb": "thumbs/items/icons_place.webp",
+     "files": [
+      "assets/ui/icon_confirm.png",
+      "assets/ui/icon_cancel.png",
+      "assets/ui/icon_move.png"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "2026-08-03. 지금 [확인]·[옮기기]·✕ 는 글자 단추"
+    },
+    {
+     "id": "icons_light",
+     "name_ko": "빛 아이콘 (해·반쯤·구름) + 시트 2장",
+     "kind": "UI 아이콘",
+     "thumb": "thumbs/items/icons_light.webp",
+     "files": [
+      "assets/ui/icon_light_sun.png",
+      "assets/ui/icon_light_half.png",
+      "assets/ui/icon_light_cloud.png",
+      "assets/ui/sheet_light.png",
+      "assets/ui/sheet_mode.png"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "자리 밝기·날씨 표시용으로 뽑았던 것. 지금 밝기는 글자·색으로만"
+    },
+    {
+     "id": "ring_spots",
+     "name_ko": "자리 고리 (기본·되는 자리·안 되는 자리)",
+     "kind": "UI 원화",
+     "thumb": "thumbs/items/ring_spots.webp",
+     "files": [
+      "assets/ui/ring_spot.png",
+      "assets/ui/ring_spot_ok.png",
+      "assets/ui/ring_spot_no.png"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "놓을 자리 표시용. 지금 방의 자리 표시는 코드로 그린다"
+    },
+    {
+     "id": "item_icons_2d",
+     "name_ko": "2D 아이템 아이콘 (콩나물·시루 열림/닫힘)",
+     "kind": "UI 아이콘",
+     "thumb": "thumbs/items/item_icons_2d.webp",
+     "files": [
+      "assets/ui/item_beansprout.png",
+      "assets/ui/item_siru_open.png",
+      "assets/ui/item_siru_closed.png"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "2026-08-03 판. 가방은 3D 를 찍은 썸네일을 쓴다 — 이 2D 가 작은 칸에서 더 또렷할 수 있다(재 볼 것)"
+    },
+    {
+     "id": "boot_art",
+     "name_ko": "부팅 화면 그림 (몬스테라 잎)",
+     "kind": "UI 원화",
+     "thumb": "thumbs/items/boot_art.webp",
+     "files": [
+      "assets/ui/boot_art.png",
+      "assets/ui/_kling/boot_art_try5.png"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "2026-09-07 클링. 부팅 화면은 아직 item_monstera.png"
+    },
+    {
+     "id": "empty_stage",
+     "name_ko": "빈 무대 그림 (빈 화분)",
+     "kind": "UI 원화",
+     "thumb": "thumbs/items/empty_stage.webp",
+     "files": [
+      "assets/ui/empty_stage.png"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "2026-09-07 클링. 「아직 몬스테라가 없습니다」 자리용 — 아직 item_monstera.png"
+    },
+    {
+     "id": "title_hero",
+     "name_ko": "타이틀 화면 그림 (시안 2장)",
+     "kind": "UI 원화",
+     "thumb": "thumbs/items/title_hero.webp",
+     "files": [
+      "assets/ui/title/title_hero_try1.png",
+      "assets/ui/title/title_hero_try2.png"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "2026-09-07 클링. 게임에 타이틀 화면 자체가 없다"
+    }
+   ]
+  },
+  {
+   "title_ko": "사건 원화 — 있는 것",
+   "note_ko": "게임이 실제로 띄우는 큰 그림은 구호금·굶주림 둘뿐이다. 나머지 열 장 남짓은 그려 놓고 안 붙었다 — 가로(8월 수채풍·몬이 등장)와 세로(9월 웹툰풍) 두 결이 섞여 있다.",
+   "items": [
+    {
+     "id": "relief_office",
+     "name_ko": "구호금 (동사무소)",
+     "kind": "사건 원화",
+     "thumb": "thumbs/items/relief_office.webp",
+     "files": [
+      "assets/ui/relief/relief_office.jpg"
+     ],
+     "status": "ok",
+     "used_in_game": true,
+     "note_ko": "처음 0원 → 구호금 500,000원 한 번. #reliefArt"
+    },
+    {
+     "id": "gameover_starved",
+     "name_ko": "굶어 쓰러짐 (게임오버)",
+     "kind": "사건 원화",
+     "thumb": "thumbs/items/gameover_starved.webp",
+     "files": [
+      "assets/ui/gameover/gameover_starved.png"
+     ],
+     "status": "ok",
+     "used_in_game": true,
+     "note_ko": "두 번째 0원부터 10일 → 게임오버. #gameOverArt"
+    },
+    {
+     "id": "alt_relief_gameover",
+     "name_ko": "구호금·게임오버 다른 판",
+     "kind": "사건 원화",
+     "thumb": "thumbs/items/alt_relief_gameover.webp",
+     "files": [
+      "assets/ui/relief/relief_office_alt.jpg",
+      "assets/ui/gameover/gameover_starved_alt.png"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "고르고 남은 시안"
+    },
+    {
+     "id": "ev_monstera_arrive",
+     "name_ko": "몬스테라 도착 (가로 원화 ×2)",
+     "kind": "사건 원화",
+     "thumb": "thumbs/items/ev_monstera_arrive.webp",
+     "files": [
+      "assets/illust/ev_monstera_arrive_a.png",
+      "assets/illust/ev_monstera_arrive_b.png",
+      "assets/illust/web/ev_monstera_arrive_b.jpg",
+      "assets/illust/index.json"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "대사 10줄(monsteraArrived)이 글만 나온다. 웹용 jpg·자를 자리·글 띠까지 index.json 에 다 적혀 있다 — «배선만» 없다"
+    },
+    {
+     "id": "ev_first_varie",
+     "name_ko": "첫 무늬 잎 (가로 원화 ×3)",
+     "kind": "사건 원화",
+     "thumb": "thumbs/items/ev_first_varie.webp",
+     "files": [
+      "assets/illust/ev_first_varie_a.png",
+      "assets/illust/ev_first_varie_a2.png",
+      "assets/illust/ev_first_varie_b.png",
+      "assets/illust/web/ev_first_varie_a2.jpg"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "varieLucky(11줄)·varieGranted(9줄) 자리. 배선 없음"
+    },
+    {
+     "id": "ev_moveout",
+     "name_ko": "이사 — 계단 오르기 (가로 원화 ×5)",
+     "kind": "사건 원화",
+     "thumb": "thumbs/items/ev_moveout.webp",
+     "files": [
+      "assets/illust/ev_moveout_a.png",
+      "assets/illust/ev_moveout_a2.png",
+      "assets/illust/ev_moveout_a3.png",
+      "assets/illust/ev_moveout_b.png",
+      "assets/illust/ev_moveout_b3.png",
+      "assets/illust/web/ev_moveout_a2.jpg"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "movedOut(12줄) 자리. 배선 없음"
+    },
+    {
+     "id": "scene_opening",
+     "name_ko": "서막 — 반지하 첫날 (세로)",
+     "kind": "사건 원화",
+     "thumb": "thumbs/items/scene_opening.webp",
+     "files": [
+      "assets/ui/scenes/scene_opening.png"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "2026-09-07 클링(초상화와 같은 웹툰 결). 서막 13줄 자리"
+    },
+    {
+     "id": "scene_arrive",
+     "name_ko": "몬스테라 도착 (세로)",
+     "kind": "사건 원화",
+     "thumb": "thumbs/items/scene_arrive.webp",
+     "files": [
+      "assets/ui/scenes/scene_arrive.png"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "2026-09-07 클링. 위 가로 원화(ev_monstera_arrive)와 같은 장면 두 벌 — 결을 하나로 골라야 함"
+    },
+    {
+     "id": "scene_firstsprout",
+     "name_ko": "첫 새순 (세로)",
+     "kind": "사건 원화",
+     "thumb": "thumbs/items/scene_firstsprout.webp",
+     "files": [
+      "assets/ui/scenes/scene_firstsprout.png"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "2026-09-07 클링. 어둠 속 작은 싹 — 첫 플레이 끝(말린 새순) 자리로 추정"
+    },
+    {
+     "id": "scene_moveout",
+     "name_ko": "반지하를 떠나는 날 (세로)",
+     "kind": "사건 원화",
+     "thumb": "thumbs/items/scene_moveout.webp",
+     "files": [
+      "assets/ui/scenes/scene_moveout.png"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "2026-09-07 클링. plan 은 «떠남» 그림으로 확정(이사 직전)"
+    },
+    {
+     "id": "gameover_home",
+     "name_ko": "새 집에 닿음 (세로)",
+     "kind": "사건 원화",
+     "thumb": "thumbs/items/gameover_home.webp",
+     "files": [
+      "assets/ui/gameover/gameover_home.png"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "2026-09-07 클링(머리 고친 판). 이름은 gameover 지만 plan 은 원룸 입주(movedInOneroom) 머리 그림으로 정함 — 이름부터 갈라야 함"
+    }
+   ]
+  },
+  {
+   "title_ko": "원화 없는 장면",
+   "note_ko": "대사(dialogue.js)는 있는데 큰 그림이 한 장도 없는 사건. 원룸 입주만 쓸 그림이 이미 있다.",
+   "items": [
+    {
+     "id": "ev_god1",
+     "name_ko": "식물신 첫 등장 · 선물",
+     "kind": "스토리 장면",
+     "thumb": null,
+     "files": [
+      "src/game/dialogue.js"
+     ],
+     "status": "missing",
+     "used_in_game": true,
+     "note_ko": "god1 → monsteraArrived 바로 앞. 원화 없음(대사만)"
+    },
+    {
+     "id": "ev_first_harvest",
+     "name_ko": "첫 수확 (콩나물)",
+     "kind": "스토리 장면",
+     "thumb": null,
+     "files": [
+      "src/game/dialogue.js"
+     ],
+     "status": "missing",
+     "used_in_game": true,
+     "note_ko": "「…이게 되네」 — 첫 보람 장면인데 그림 없음"
+    },
+    {
+     "id": "ev_lamp",
+     "name_ko": "식물등 해금 · 첫 등 켜기",
+     "kind": "스토리 장면",
+     "thumb": null,
+     "files": [
+      "src/game/dialogue.js"
+     ],
+     "status": "missing",
+     "used_in_game": true,
+     "note_ko": "lampUnlocked 7줄 · lampBought 5줄 — 「등이 곧 길」인 게임의 전환점. 그림 없음"
+    },
+    {
+     "id": "ev_seasons",
+     "name_ko": "가을이 왔다 · 겨울이 왔다",
+     "kind": "스토리 장면",
+     "thumb": null,
+     "files": [
+      "src/game/dialogue.js"
+     ],
+     "status": "missing",
+     "used_in_game": true,
+     "note_ko": "autumnCame 6줄 · winterCame 5줄. 그림 없음"
+    },
+    {
+     "id": "ev_rent",
+     "name_ko": "첫 월세",
+     "kind": "스토리 장면",
+     "thumb": null,
+     "files": [
+      "src/game/dialogue.js"
+     ],
+     "status": "missing",
+     "used_in_game": true,
+     "note_ko": "rentFirst 7줄 · 20만원이 예고 없이 나감. 그림 없음(후보: 원화 226 돈봉투)"
+    },
+    {
+     "id": "ev_varie_second",
+     "name_ko": "둘째 무늬 잎",
+     "kind": "스토리 장면",
+     "thumb": null,
+     "files": [
+      "src/game/dialogue.js"
+     ],
+     "status": "missing",
+     "used_in_game": true,
+     "note_ko": "varieSecond 10줄. 첫 무늬 원화를 되쓸지 따로 그릴지 미정"
+    },
+    {
+     "id": "ev_halfmoon",
+     "name_ko": "하프문 · 풀문 첫 달성",
+     "kind": "스토리 장면",
+     "thumb": null,
+     "files": [
+      "src/game/dialogue.js"
+     ],
+     "status": "missing",
+     "used_in_game": false,
+     "note_ko": "⚠ 장면 자체가 없다 — 등급 이름(산반·하프문·풀문)은 아직 대사에 안 나옴(dialogue.js:978). 이사 고리의 목표인데 그림도 이벤트도 없음"
+    },
+    {
+     "id": "ev_first_sale",
+     "name_ko": "첫 중고 거래 성사",
+     "kind": "스토리 장면",
+     "thumb": null,
+     "files": [
+      "src/game/dialogue.js"
+     ],
+     "status": "missing",
+     "used_in_game": true,
+     "note_ko": "questDoneSellVarie 4줄. 그림 없음(후보: ui/card_market.png)"
+    },
+    {
+     "id": "ev_oneroom",
+     "name_ko": "원룸 입주 첫 장면",
+     "kind": "스토리 장면",
+     "thumb": null,
+     "files": [
+      "src/game/dialogue.js"
+     ],
+     "status": "missing",
+     "used_in_game": true,
+     "note_ko": "movedInOneroom 9줄. 쓸 그림은 있음(gameover_home) — 배선·이름만 없음"
+    },
+    {
+     "id": "ev_ending",
+     "name_ko": "내 집 마련 엔딩",
+     "kind": "스토리 장면",
+     "thumb": null,
+     "files": [
+      "src/game/ending.js"
+     ],
+     "status": "missing",
+     "used_in_game": false,
+     "note_ko": "ending.js — 목표 금액부터 미정(null). 그림 없음"
+    }
+   ]
+  }
+ ]
+}

@@ -1,0 +1,2057 @@
+{
+ "domain": "characters",
+ "sections": [
+  {
+   "title_ko": "① 새 주인공 v2 — 오늘 밤 게임에 들어간 몸",
+   "note_ko": "2026-09-25 새벽 «보이는 층 v2»에서 게임 주인공을 hero.glb 한 벌로 바꿨다. 지금 게임이 실제로 띄우는 사람 몸은 이것 하나. 클립 10개 중 게임이 쓰는 건 5개(걷기·서기의 팔 내린 판·앉기·눕기·쪼그려 앉기). 도감 썸네일은 GLB 를 그대로 찍은 것이라 게임이 불러올 때 하는 뒷머리 무게 옮기기·조명 보정이 빠져 있어 머리가 팔 따라 퍼져 보일 수 있다.",
+   "items": [
+    {
+     "id": "hero_v2",
+     "name_ko": "새 주인공 (치비 자취생)",
+     "kind": "3D 캐릭터 GLB",
+     "thumb": "thumbs/characters/hero_v2.webp",
+     "files": [
+      "assets/v2/char/hero.glb",
+      "src/game/v2_hero.js",
+      "src/game/room_view.js"
+     ],
+     "status": "v2",
+     "used_in_game": true,
+     "note_ko": "오늘 새벽(9/25) 게임 주인공을 이걸로 통째 교체. 키 1.40m로 맞춤·면 3.1만·2.2MB·클립 10개. 끄면(?v2hero=0) 옛 자취녀로 돌아감"
+    },
+    {
+     "id": "hero_clip_walk",
+     "name_ko": "걷기 (팔 내린 판 walk_arm)",
+     "kind": "동작 클립",
+     "thumb": "thumbs/characters/hero_clip_walk.webp",
+     "files": [
+      "assets/v2/char/hero.glb"
+     ],
+     "status": "v2",
+     "used_in_game": true,
+     "note_ko": "게임 걷기. 원래 걷기는 팔이 82° 들려 옛 클립의 팔 회전만 옮겨 12.6°로 내림(02:50 고침)"
+    },
+    {
+     "id": "hero_clip_idle",
+     "name_ko": "서 있기 (팔 내린 판 idle_arm)",
+     "kind": "동작 클립",
+     "thumb": "thumbs/characters/hero_v2.webp",
+     "files": [
+      "assets/v2/char/hero.glb"
+     ],
+     "status": "v2",
+     "used_in_game": true,
+     "note_ko": "게임 서 있기. 원래 idle 은 팔 38° 들림 → 18.6°로 내림"
+    },
+    {
+     "id": "hero_clip_sit",
+     "name_ko": "앉기",
+     "kind": "동작 클립",
+     "thumb": "thumbs/characters/hero_clip_sit.webp",
+     "files": [
+      "assets/v2/char/hero.glb"
+     ],
+     "status": "v2",
+     "used_in_game": true,
+     "note_ko": "의자·침대에 앉을 때. 11.4초 클립의 끝 1초(곧게 앉은 자세)만 잘라 씀"
+    },
+    {
+     "id": "hero_clip_sleep",
+     "name_ko": "눕기 (자기·낮잠)",
+     "kind": "동작 클립",
+     "thumb": "thumbs/characters/hero_clip_sleep.webp",
+     "files": [
+      "assets/v2/char/hero.glb"
+     ],
+     "status": "v2",
+     "used_in_game": true,
+     "note_ko": "침대 눕기·낮잠 둘 다 이 클립"
+    },
+    {
+     "id": "hero_clip_crouch",
+     "name_ko": "쪼그려 앉기",
+     "kind": "동작 클립",
+     "thumb": "thumbs/characters/hero_clip_crouch.webp",
+     "files": [
+      "assets/v2/char/hero.glb"
+     ],
+     "status": "v2",
+     "used_in_game": true,
+     "note_ko": "물주기·심기·거두기가 모두 이 클립의 «숙이는 마디»를 빌려 씀(전용 동작 아님). 도감 렌더는 게임의 뒷머리 무게 고침 전 모습"
+    },
+    {
+     "id": "hero_clip_doze",
+     "name_ko": "졸기",
+     "kind": "동작 클립",
+     "thumb": "thumbs/characters/hero_clip_doze.webp",
+     "files": [
+      "assets/v2/char/hero.glb"
+     ],
+     "status": "v2",
+     "used_in_game": false,
+     "note_ko": "hero.glb 에 있으나 게임이 부르는 곳 없음(낮잠도 sleep 사용)"
+    },
+    {
+     "id": "hero_clip_wave",
+     "name_ko": "손 흔들기",
+     "kind": "동작 클립",
+     "thumb": "thumbs/characters/hero_clip_wave.webp",
+     "files": [
+      "assets/v2/char/hero.glb"
+     ],
+     "status": "v2",
+     "used_in_game": false,
+     "note_ko": "파일엔 있으나 게임 코드가 부르지 않음"
+    },
+    {
+     "id": "hero_clip_cheer",
+     "name_ko": "환호",
+     "kind": "동작 클립",
+     "thumb": "thumbs/characters/hero_clip_cheer.webp",
+     "files": [
+      "assets/v2/char/hero.glb"
+     ],
+     "status": "v2",
+     "used_in_game": false,
+     "note_ko": "파일엔 있으나 게임 코드가 부르지 않음"
+    },
+    {
+     "id": "hero_clip_raw",
+     "name_ko": "원래 걷기·서기 (팔 들린 판)",
+     "kind": "동작 클립",
+     "thumb": "thumbs/characters/hero_clip_raw.webp",
+     "files": [
+      "assets/v2/char/hero.glb"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "Meshy 가 붙인 원본 walk·idle — 팔이 수평 가깝게 들려서 _arm 판으로 대체됨"
+    },
+    {
+     "id": "hero_concept_chibi",
+     "name_ko": "새 주인공 원화 (치비)",
+     "kind": "원화 2D",
+     "thumb": "thumbs/characters/hero_concept_chibi.webp",
+     "files": [
+      "assets/gen/v2_char/hero_home_chibi.png"
+     ],
+     "status": "v2",
+     "used_in_game": false,
+     "note_ko": "hero.glb 를 뽑은 원화(9/24 밤). 게임엔 안 나옴"
+    },
+    {
+     "id": "hero_concept_tpose",
+     "name_ko": "새 주인공 원화 (T자세 시안)",
+     "kind": "원화 2D",
+     "thumb": null,
+     "files": [
+      "assets/gen/v2_char/hero_home_concept.png"
+     ],
+     "status": "v2",
+     "used_in_game": false,
+     "note_ko": "치비 전 단계 시안(보통 비율·T자세). 게임엔 안 나옴"
+    },
+    {
+     "id": "hero_src_files",
+     "name_ko": "만들 때 나온 중간 GLB 13개",
+     "kind": "GLB 묶음",
+     "thumb": null,
+     "files": [
+      "assets/gen/v2_char/anim_cheer.glb",
+      "assets/gen/v2_char/anim_crouch.glb",
+      "assets/gen/v2_char/anim_doze.glb",
+      "assets/gen/v2_char/anim_idle.glb",
+      "assets/gen/v2_char/anim_sit.glb",
+      "assets/gen/v2_char/anim_sleep.glb",
+      "assets/gen/v2_char/anim_wave.glb",
+      "assets/gen/v2_char/hero_all.glb",
+      "assets/gen/v2_char/hero_all_raw.glb",
+      "assets/gen/v2_char/hero_before_armfix.glb",
+      "assets/gen/v2_char/hero_home_mesh.glb",
+      "assets/gen/v2_char/hero_home_walk.glb",
+      "assets/gen/v2_char/opt_hero_walk.glb",
+      "assets/gen/v2_char/hero_home_mesh_base_color.png"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "anim_* 7개·hero_all(_raw)·팔 고치기 전 판·원본 메시 등 약 77MB. 게임은 assets/v2/char/hero.glb 하나만 씀"
+    },
+    {
+     "id": "hero_missing_actions",
+     "name_ko": "주인공 전용 물주기·분갈이·거두기·문열기 동작",
+     "kind": "동작 클립",
+     "thumb": null,
+     "files": [],
+     "status": "missing",
+     "used_in_game": false,
+     "note_ko": "없음. 지금은 쪼그려 앉기 한 토막으로 다 대신함. 옛 자취녀에겐 opendoor·repot·harvest·inspect 가 따로 있었음(옛 클립은 뼈 길이가 달라 hero 에 못 얹음)"
+    },
+    {
+     "id": "hero_missing_idlebreak",
+     "name_ko": "주인공 서 있을 때 변주(하트·끄덕 등)",
+     "kind": "동작 클립",
+     "thumb": null,
+     "files": [],
+     "status": "missing",
+     "used_in_game": false,
+     "note_ko": "hero 는 변주 풀이 비어 있음(room_view.js IDLE_BREAK). 가만히 서 있기만 함"
+    },
+    {
+     "id": "hero_missing_portrait",
+     "name_ko": "새 주인공 얼굴에 맞춘 대사 초상화",
+     "kind": "초상화 2D",
+     "thumb": null,
+     "files": [],
+     "status": "missing",
+     "used_in_game": false,
+     "note_ko": "대사창 초상화는 옛 자취녀 그림(갈색 긴머리·베이지 티·보통 비율). 새 3D(검은 생머리·흰 티·회색 조거·치비)와 그림체·옷이 다름"
+    }
+   ]
+  },
+  {
+   "title_ko": "② 옷 입은 몸 통째 — 42벌 (여 23 · 남 19)",
+   "note_ko": "2026-09-14 저녁 정본(박사님 「스샷 중 정상인 게 없는 듯」 뒤 방향 전환). 상의·하의·신발을 자르지 않고 한 벌로 구워 v19 뼈대(24본)에 올린 몸. 머리와 눈만 따로 얹는다. ⚠ 게임 코드에 옷 갈아입히기 로더가 없어 42벌 전부 아직 게임 안 씀. 새 주인공(hero)과는 몸이 달라 그대로는 못 입힌다. 썸네일은 outfits_*.png 표의 걷기 가운데 프레임(표 찍을 때 여=단발·남=짧은 머리를 얹음).",
+   "items": [
+    {
+     "id": "outfit_yeoja_10_knitdress",
+     "name_ko": "여 10 · 니트 원피스",
+     "kind": "옷 입은 몸 GLB",
+     "thumb": "thumbs/characters/outfit_yeoja_10_knitdress.webp",
+     "files": [
+      "assets/characters/_bodybase/yeoja_outfit10_knitdress_rigged.glb"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "13.7MB · 상·하·신발 한 벌(9/14 저녁)"
+    },
+    {
+     "id": "outfit_yeoja_11_labcoat",
+     "name_ko": "여 11 · 실험실 가운",
+     "kind": "옷 입은 몸 GLB",
+     "thumb": "thumbs/characters/outfit_yeoja_11_labcoat.webp",
+     "files": [
+      "assets/characters/_bodybase/yeoja_outfit11_labcoat_rigged.glb"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "14.1MB · 상·하·신발 한 벌(9/14 저녁)"
+    },
+    {
+     "id": "outfit_yeoja_12_orangehoodie",
+     "name_ko": "여 12 · 주황 후드",
+     "kind": "옷 입은 몸 GLB",
+     "thumb": "thumbs/characters/outfit_yeoja_12_orangehoodie.webp",
+     "files": [
+      "assets/characters/_bodybase/yeoja_outfit12_orangehoodie_rigged.glb"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "15.3MB · 상·하·신발 한 벌(9/14 저녁)"
+    },
+    {
+     "id": "outfit_yeoja_13_overalls",
+     "name_ko": "여 13 · 멜빵바지",
+     "kind": "옷 입은 몸 GLB",
+     "thumb": "thumbs/characters/outfit_yeoja_13_overalls.webp",
+     "files": [
+      "assets/characters/_bodybase/yeoja_outfit13_overalls_rigged.glb"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "16.1MB · 상·하·신발 한 벌(9/14 저녁)"
+    },
+    {
+     "id": "outfit_yeoja_14_pajama",
+     "name_ko": "여 14 · 잠옷",
+     "kind": "옷 입은 몸 GLB",
+     "thumb": "thumbs/characters/outfit_yeoja_14_pajama.webp",
+     "files": [
+      "assets/characters/_bodybase/yeoja_outfit14_pajama_rigged.glb"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "12.9MB · 상·하·신발 한 벌(9/14 저녁)"
+    },
+    {
+     "id": "outfit_yeoja_15_parka",
+     "name_ko": "여 15 · 카키 파카",
+     "kind": "옷 입은 몸 GLB",
+     "thumb": "thumbs/characters/outfit_yeoja_15_parka.webp",
+     "files": [
+      "assets/characters/_bodybase/yeoja_outfit15_parka_rigged.glb"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "17.1MB · 상·하·신발 한 벌(9/14 저녁)"
+    },
+    {
+     "id": "outfit_yeoja_16_peacoat",
+     "name_ko": "여 16 · 피코트",
+     "kind": "옷 입은 몸 GLB",
+     "thumb": "thumbs/characters/outfit_yeoja_16_peacoat.webp",
+     "files": [
+      "assets/characters/_bodybase/yeoja_outfit16_peacoat_rigged.glb"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "15.6MB · 상·하·신발 한 벌(9/14 저녁)"
+    },
+    {
+     "id": "outfit_yeoja_17_plaid",
+     "name_ko": "여 17 · 보라 니트+체크 치마",
+     "kind": "옷 입은 몸 GLB",
+     "thumb": "thumbs/characters/outfit_yeoja_17_plaid.webp",
+     "files": [
+      "assets/characters/_bodybase/yeoja_outfit17_plaid_rigged.glb"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "18.7MB · 상·하·신발 한 벌(9/14 저녁)"
+    },
+    {
+     "id": "outfit_yeoja_18_puffer",
+     "name_ko": "여 18 · 분홍 패딩",
+     "kind": "옷 입은 몸 GLB",
+     "thumb": "thumbs/characters/outfit_yeoja_18_puffer.webp",
+     "files": [
+      "assets/characters/_bodybase/yeoja_outfit18_puffer_rigged.glb"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "11.5MB · 상·하·신발 한 벌(9/14 저녁) · ⚠ 흰 바지가 넓게 퍼져 걸을 때 치마처럼 보임"
+    },
+    {
+     "id": "outfit_yeoja_19_raincoat",
+     "name_ko": "여 19 · 노란 우비",
+     "kind": "옷 입은 몸 GLB",
+     "thumb": "thumbs/characters/outfit_yeoja_19_raincoat.webp",
+     "files": [
+      "assets/characters/_bodybase/yeoja_outfit19_raincoat_rigged.glb"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "13.0MB · 상·하·신발 한 벌(9/14 저녁)"
+    },
+    {
+     "id": "outfit_yeoja_01_biker",
+     "name_ko": "여 1 · 라이더 재킷",
+     "kind": "옷 입은 몸 GLB",
+     "thumb": "thumbs/characters/outfit_yeoja_01_biker.webp",
+     "files": [
+      "assets/characters/_bodybase/yeoja_outfit1_biker_rigged.glb"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "17.2MB · 상·하·신발 한 벌(9/14 저녁)"
+    },
+    {
+     "id": "outfit_yeoja_20_sailor",
+     "name_ko": "여 20 · 세일러복",
+     "kind": "옷 입은 몸 GLB",
+     "thumb": "thumbs/characters/outfit_yeoja_20_sailor.webp",
+     "files": [
+      "assets/characters/_bodybase/yeoja_outfit20_sailor_rigged.glb"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "24.6MB · 상·하·신발 한 벌(9/14 저녁)"
+    },
+    {
+     "id": "outfit_yeoja_21_summer",
+     "name_ko": "여 21 · 여름옷",
+     "kind": "옷 입은 몸 GLB",
+     "thumb": "thumbs/characters/outfit_yeoja_21_summer.webp",
+     "files": [
+      "assets/characters/_bodybase/yeoja_outfit21_summer_rigged.glb"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "13.8MB · 상·하·신발 한 벌(9/14 저녁)"
+    },
+    {
+     "id": "outfit_yeoja_22_sundress",
+     "name_ko": "여 22 · 데님+흰 원피스",
+     "kind": "옷 입은 몸 GLB",
+     "thumb": "thumbs/characters/outfit_yeoja_22_sundress.webp",
+     "files": [
+      "assets/characters/_bodybase/yeoja_outfit22_sundress_rigged.glb"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "17.7MB · 상·하·신발 한 벌(9/14 저녁)"
+    },
+    {
+     "id": "outfit_yeoja_23_track",
+     "name_ko": "여 23 · 보라 트레이닝복",
+     "kind": "옷 입은 몸 GLB",
+     "thumb": "thumbs/characters/outfit_yeoja_23_track.webp",
+     "files": [
+      "assets/characters/_bodybase/yeoja_outfit23_track_rigged.glb"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "12.9MB · 상·하·신발 한 벌(9/14 저녁)"
+    },
+    {
+     "id": "outfit_yeoja_24_turtle",
+     "name_ko": "여 24 · 초록 터틀넥+긴 치마",
+     "kind": "옷 입은 몸 GLB",
+     "thumb": "thumbs/characters/outfit_yeoja_24_turtle.webp",
+     "files": [
+      "assets/characters/_bodybase/yeoja_outfit24_turtle_rigged.glb"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "21.6MB · 상·하·신발 한 벌(9/14 저녁)"
+    },
+    {
+     "id": "outfit_yeoja_03_blouse2",
+     "name_ko": "여 3 · 블라우스+빨간 치마",
+     "kind": "옷 입은 몸 GLB",
+     "thumb": "thumbs/characters/outfit_yeoja_03_blouse2.webp",
+     "files": [
+      "assets/characters/_bodybase/yeoja_outfit3_blouse2_rigged.glb"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "16.4MB · 상·하·신발 한 벌(9/14 저녁)"
+    },
+    {
+     "id": "outfit_yeoja_04_cardigan",
+     "name_ko": "여 4 · 분홍 가디건",
+     "kind": "옷 입은 몸 GLB",
+     "thumb": "thumbs/characters/outfit_yeoja_04_cardigan.webp",
+     "files": [
+      "assets/characters/_bodybase/yeoja_outfit4_cardigan_rigged.glb"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "11.6MB · 상·하·신발 한 벌(9/14 저녁)"
+    },
+    {
+     "id": "outfit_yeoja_05_coat",
+     "name_ko": "여 5 · 검은 코트+목도리",
+     "kind": "옷 입은 몸 GLB",
+     "thumb": "thumbs/characters/outfit_yeoja_05_coat.webp",
+     "files": [
+      "assets/characters/_bodybase/yeoja_outfit5_coat_rigged.glb"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "12.5MB · 상·하·신발 한 벌(9/14 저녁)"
+    },
+    {
+     "id": "outfit_yeoja_06_dress",
+     "name_ko": "여 6 · 노란 원피스",
+     "kind": "옷 입은 몸 GLB",
+     "thumb": "thumbs/characters/outfit_yeoja_06_dress.webp",
+     "files": [
+      "assets/characters/_bodybase/yeoja_outfit6_dress_rigged.glb"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "17.4MB · 상·하·신발 한 벌(9/14 저녁)"
+    },
+    {
+     "id": "outfit_yeoja_07_garden",
+     "name_ko": "여 7 · 정원 멜빵",
+     "kind": "옷 입은 몸 GLB",
+     "thumb": "thumbs/characters/outfit_yeoja_07_garden.webp",
+     "files": [
+      "assets/characters/_bodybase/yeoja_outfit7_garden_rigged.glb"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "16.1MB · 상·하·신발 한 벌(9/14 저녁)"
+    },
+    {
+     "id": "outfit_yeoja_08_hoodie",
+     "name_ko": "여 8 · 하늘색 후드",
+     "kind": "옷 입은 몸 GLB",
+     "thumb": "thumbs/characters/outfit_yeoja_08_hoodie.webp",
+     "files": [
+      "assets/characters/_bodybase/yeoja_outfit8_hoodie_rigged.glb"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "13.1MB · 상·하·신발 한 벌(9/14 저녁)"
+    },
+    {
+     "id": "outfit_yeoja_09_hoodiedress",
+     "name_ko": "여 9 · 후드 원피스",
+     "kind": "옷 입은 몸 GLB",
+     "thumb": "thumbs/characters/outfit_yeoja_09_hoodiedress.webp",
+     "files": [
+      "assets/characters/_bodybase/yeoja_outfit9_hoodiedress_rigged.glb"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "15.7MB · 상·하·신발 한 벌(9/14 저녁) · ⚠ 표에서 뺨·얼굴에 검은 점 얼룩이 보임"
+    },
+    {
+     "id": "outfit_namja_10_raincoat",
+     "name_ko": "남 10 · 노란 우비",
+     "kind": "옷 입은 몸 GLB",
+     "thumb": "thumbs/characters/outfit_namja_10_raincoat.webp",
+     "files": [
+      "assets/characters/_bodybase/namja_outfit10_raincoat_rigged.glb"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "14.1MB · 상·하·신발 한 벌(9/14 저녁)"
+    },
+    {
+     "id": "outfit_namja_11_shirt",
+     "name_ko": "남 11 · 하늘색 셔츠+반바지",
+     "kind": "옷 입은 몸 GLB",
+     "thumb": "thumbs/characters/outfit_namja_11_shirt.webp",
+     "files": [
+      "assets/characters/_bodybase/namja_outfit11_shirt_rigged.glb"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "14.5MB · 상·하·신발 한 벌(9/14 저녁)"
+    },
+    {
+     "id": "outfit_namja_12_suit",
+     "name_ko": "남 12 · 남색 정장",
+     "kind": "옷 입은 몸 GLB",
+     "thumb": "thumbs/characters/outfit_namja_12_suit.webp",
+     "files": [
+      "assets/characters/_bodybase/namja_outfit12_suit_rigged.glb"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "13.6MB · 상·하·신발 한 벌(9/14 저녁)"
+    },
+    {
+     "id": "outfit_namja_13_sweater",
+     "name_ko": "남 13 · 버건디 스웨터",
+     "kind": "옷 입은 몸 GLB",
+     "thumb": "thumbs/characters/outfit_namja_13_sweater.webp",
+     "files": [
+      "assets/characters/_bodybase/namja_outfit13_sweater_rigged.glb"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "20.8MB · 상·하·신발 한 벌(9/14 저녁)"
+    },
+    {
+     "id": "outfit_namja_14_tee",
+     "name_ko": "남 14 · 흰 티+청바지",
+     "kind": "옷 입은 몸 GLB",
+     "thumb": "thumbs/characters/outfit_namja_14_tee.webp",
+     "files": [
+      "assets/characters/_bodybase/namja_outfit14_tee_rigged.glb"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "12.2MB · 상·하·신발 한 벌(9/14 저녁) · ⚠ 표에서 뺨에 검은 점 얼룩이 보임"
+    },
+    {
+     "id": "outfit_namja_15_track",
+     "name_ko": "남 15 · 파란 트레이닝복",
+     "kind": "옷 입은 몸 GLB",
+     "thumb": "thumbs/characters/outfit_namja_15_track.webp",
+     "files": [
+      "assets/characters/_bodybase/namja_outfit15_track_rigged.glb"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "14.1MB · 상·하·신발 한 벌(9/14 저녁)"
+    },
+    {
+     "id": "outfit_namja_16_trench",
+     "name_ko": "남 16 · 트렌치코트",
+     "kind": "옷 입은 몸 GLB",
+     "thumb": "thumbs/characters/outfit_namja_16_trench.webp",
+     "files": [
+      "assets/characters/_bodybase/namja_outfit16_trench_rigged.glb"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "15.6MB · 상·하·신발 한 벌(9/14 저녁)"
+    },
+    {
+     "id": "outfit_namja_17_turtle",
+     "name_ko": "남 17 · 검은 터틀넥",
+     "kind": "옷 입은 몸 GLB",
+     "thumb": "thumbs/characters/outfit_namja_17_turtle.webp",
+     "files": [
+      "assets/characters/_bodybase/namja_outfit17_turtle_rigged.glb"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "19.5MB · 상·하·신발 한 벌(9/14 저녁) · ⚠ 표에서 뺨에 검은 점 얼룩·바지 무늬가 지저분"
+    },
+    {
+     "id": "outfit_namja_18_utility",
+     "name_ko": "남 18 · 카키 야상",
+     "kind": "옷 입은 몸 GLB",
+     "thumb": "thumbs/characters/outfit_namja_18_utility.webp",
+     "files": [
+      "assets/characters/_bodybase/namja_outfit18_utility_rigged.glb"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "18.0MB · 상·하·신발 한 벌(9/14 저녁)"
+    },
+    {
+     "id": "outfit_namja_19_vest",
+     "name_ko": "남 19 · 초록 조끼",
+     "kind": "옷 입은 몸 GLB",
+     "thumb": "thumbs/characters/outfit_namja_19_vest.webp",
+     "files": [
+      "assets/characters/_bodybase/namja_outfit19_vest_rigged.glb"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "12.9MB · 상·하·신발 한 벌(9/14 저녁)"
+    },
+    {
+     "id": "outfit_namja_01_biker",
+     "name_ko": "남 1 · 라이더 재킷",
+     "kind": "옷 입은 몸 GLB",
+     "thumb": "thumbs/characters/outfit_namja_01_biker.webp",
+     "files": [
+      "assets/characters/_bodybase/namja_outfit1_biker_rigged.glb"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "18.9MB · 상·하·신발 한 벌(9/14 저녁)"
+    },
+    {
+     "id": "outfit_namja_20_yellowhoodie",
+     "name_ko": "남 20 · 노란 후드",
+     "kind": "옷 입은 몸 GLB",
+     "thumb": "thumbs/characters/outfit_namja_20_yellowhoodie.webp",
+     "files": [
+      "assets/characters/_bodybase/namja_outfit20_yellowhoodie_rigged.glb"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "13.6MB · 상·하·신발 한 벌(9/14 저녁)"
+    },
+    {
+     "id": "outfit_namja_02_burgundy",
+     "name_ko": "남 2 · 버건디 니트",
+     "kind": "옷 입은 몸 GLB",
+     "thumb": "thumbs/characters/outfit_namja_02_burgundy.webp",
+     "files": [
+      "assets/characters/_bodybase/namja_outfit2_burgundy_rigged.glb"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "19.6MB · 상·하·신발 한 벌(9/14 저녁)"
+    },
+    {
+     "id": "outfit_namja_03_camp",
+     "name_ko": "남 3 · 주황 캠프 셔츠",
+     "kind": "옷 입은 몸 GLB",
+     "thumb": "thumbs/characters/outfit_namja_03_camp.webp",
+     "files": [
+      "assets/characters/_bodybase/namja_outfit3_camp_rigged.glb"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "17.7MB · 상·하·신발 한 벌(9/14 저녁)"
+    },
+    {
+     "id": "outfit_namja_05_coat",
+     "name_ko": "남 5 · 낙타색 코트",
+     "kind": "옷 입은 몸 GLB",
+     "thumb": "thumbs/characters/outfit_namja_05_coat.webp",
+     "files": [
+      "assets/characters/_bodybase/namja_outfit5_coat_rigged.glb"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "14.1MB · 상·하·신발 한 벌(9/14 저녁)"
+    },
+    {
+     "id": "outfit_namja_06_denim",
+     "name_ko": "남 6 · 데님 셔츠",
+     "kind": "옷 입은 몸 GLB",
+     "thumb": "thumbs/characters/outfit_namja_06_denim.webp",
+     "files": [
+      "assets/characters/_bodybase/namja_outfit6_denim_rigged.glb"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "18.3MB · 상·하·신발 한 벌(9/14 저녁)"
+    },
+    {
+     "id": "outfit_namja_07_garden",
+     "name_ko": "남 7 · 정원 멜빵",
+     "kind": "옷 입은 몸 GLB",
+     "thumb": "thumbs/characters/outfit_namja_07_garden.webp",
+     "files": [
+      "assets/characters/_bodybase/namja_outfit7_garden_rigged.glb"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "14.9MB · 상·하·신발 한 벌(9/14 저녁)"
+    },
+    {
+     "id": "outfit_namja_08_hoodie",
+     "name_ko": "남 8 · 초록 후드",
+     "kind": "옷 입은 몸 GLB",
+     "thumb": "thumbs/characters/outfit_namja_08_hoodie.webp",
+     "files": [
+      "assets/characters/_bodybase/namja_outfit8_hoodie_rigged.glb"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "15.7MB · 상·하·신발 한 벌(9/14 저녁)"
+    },
+    {
+     "id": "outfit_namja_09_lounge",
+     "name_ko": "남 9 · 회색 후드(라운지)",
+     "kind": "옷 입은 몸 GLB",
+     "thumb": "thumbs/characters/outfit_namja_09_lounge.webp",
+     "files": [
+      "assets/characters/_bodybase/namja_outfit9_lounge_rigged.glb"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "16.1MB · 상·하·신발 한 벌(9/14 저녁)"
+    }
+   ]
+  },
+  {
+   "title_ko": "③ 머리 — 22종 (여 13 · 남 9)",
+   "note_ko": "옷 입은 몸 위에 얹는 머리 GLB(v19 뼈대). 게임 안 씀. 썸네일은 catalog_*_hair.png(맨몸+머리 · 옆 걷기). ⚠ 표시는 도감 표에서 눈으로 본 흠(찌꺼기·빈 정수리) — 게임에 넣기 전 다시 볼 것.",
+   "items": [
+    {
+     "id": "hair_yeoja_10_pink",
+     "name_ko": "여 머리 10 · 분홍 긴머리",
+     "kind": "머리 GLB",
+     "thumb": "thumbs/characters/hair_yeoja_10_pink.webp",
+     "files": [
+      "assets/characters/_bodybase/yeoja_hair10_pink_rigged.glb"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "6.8MB · ⚠ 손 높이에 회색 막대 조각·다리에 회색 찌꺼기가 남음"
+    },
+    {
+     "id": "hair_yeoja_11_blackwavy",
+     "name_ko": "여 머리 11 · 검은 웨이브",
+     "kind": "머리 GLB",
+     "thumb": "thumbs/characters/hair_yeoja_11_blackwavy.webp",
+     "files": [
+      "assets/characters/_bodybase/yeoja_hair11_blackwavy_rigged.glb"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "15.1MB"
+    },
+    {
+     "id": "hair_yeoja_12_spacebuns",
+     "name_ko": "여 머리 12 · 양쪽 똥머리",
+     "kind": "머리 GLB",
+     "thumb": "thumbs/characters/hair_yeoja_12_spacebuns.webp",
+     "files": [
+      "assets/characters/_bodybase/yeoja_hair12_spacebuns_rigged.glb"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "5.3MB"
+    },
+    {
+     "id": "hair_yeoja_13_longstraight",
+     "name_ko": "여 머리 13 · 붉은 긴 생머리",
+     "kind": "머리 GLB",
+     "thumb": "thumbs/characters/hair_yeoja_13_longstraight.webp",
+     "files": [
+      "assets/characters/_bodybase/yeoja_hair13_longstraight_rigged.glb"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "8.0MB · ⚠ 엉덩이 쪽에 붉은 띠 조각이 남음"
+    },
+    {
+     "id": "hair_yeoja_01",
+     "name_ko": "여 머리 1 · 기본 긴머리",
+     "kind": "머리 GLB",
+     "thumb": "thumbs/characters/hair_yeoja_01.webp",
+     "files": [
+      "assets/characters/_bodybase/yeoja_hair1_rigged.glb"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "8.4MB"
+    },
+    {
+     "id": "hair_yeoja_02_bob",
+     "name_ko": "여 머리 2 · 단발",
+     "kind": "머리 GLB",
+     "thumb": "thumbs/characters/hair_yeoja_02_bob.webp",
+     "files": [
+      "assets/characters/_bodybase/yeoja_hair2_bob_rigged.glb"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "6.1MB"
+    },
+    {
+     "id": "hair_yeoja_03_pony",
+     "name_ko": "여 머리 3 · 포니테일",
+     "kind": "머리 GLB",
+     "thumb": "thumbs/characters/hair_yeoja_03_pony.webp",
+     "files": [
+      "assets/characters/_bodybase/yeoja_hair3_pony_rigged.glb"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "6.9MB · ⚠ 정수리가 비어 살색이 보임"
+    },
+    {
+     "id": "hair_yeoja_04_twin",
+     "name_ko": "여 머리 4 · 양갈래",
+     "kind": "머리 GLB",
+     "thumb": "thumbs/characters/hair_yeoja_04_twin.webp",
+     "files": [
+      "assets/characters/_bodybase/yeoja_hair4_twin_rigged.glb"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "7.9MB"
+    },
+    {
+     "id": "hair_yeoja_05_shortwavy",
+     "name_ko": "여 머리 5 · 짧은 웨이브",
+     "kind": "머리 GLB",
+     "thumb": "thumbs/characters/hair_yeoja_05_shortwavy.webp",
+     "files": [
+      "assets/characters/_bodybase/yeoja_hair5_shortwavy_rigged.glb"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "5.3MB"
+    },
+    {
+     "id": "hair_yeoja_06_ashblonde",
+     "name_ko": "여 머리 6 · 애쉬 금발 웨이브",
+     "kind": "머리 GLB",
+     "thumb": "thumbs/characters/hair_yeoja_06_ashblonde.webp",
+     "files": [
+      "assets/characters/_bodybase/yeoja_hair6_ashblonde_rigged.glb"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "12.4MB"
+    },
+    {
+     "id": "hair_yeoja_07_braid",
+     "name_ko": "여 머리 7 · 땋은 머리",
+     "kind": "머리 GLB",
+     "thumb": "thumbs/characters/hair_yeoja_07_braid.webp",
+     "files": [
+      "assets/characters/_bodybase/yeoja_hair7_braid_rigged.glb"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "4.4MB"
+    },
+    {
+     "id": "hair_yeoja_08_bun",
+     "name_ko": "여 머리 8 · 올림머리",
+     "kind": "머리 GLB",
+     "thumb": "thumbs/characters/hair_yeoja_08_bun.webp",
+     "files": [
+      "assets/characters/_bodybase/yeoja_hair8_bun_rigged.glb"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "5.0MB · ⚠ 정수리가 비어 살색이 보임"
+    },
+    {
+     "id": "hair_yeoja_09_pixie",
+     "name_ko": "여 머리 9 · 픽시컷",
+     "kind": "머리 GLB",
+     "thumb": "thumbs/characters/hair_yeoja_09_pixie.webp",
+     "files": [
+      "assets/characters/_bodybase/yeoja_hair9_pixie_rigged.glb"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "6.8MB"
+    },
+    {
+     "id": "hair_namja_01_short",
+     "name_ko": "남 머리 1 · 짧은 머리",
+     "kind": "머리 GLB",
+     "thumb": "thumbs/characters/hair_namja_01_short.webp",
+     "files": [
+      "assets/characters/_bodybase/namja_hair1_short_rigged.glb"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "5.8MB"
+    },
+    {
+     "id": "hair_namja_02_wavy",
+     "name_ko": "남 머리 2 · 긴 웨이브",
+     "kind": "머리 GLB",
+     "thumb": "thumbs/characters/hair_namja_02_wavy.webp",
+     "files": [
+      "assets/characters/_bodybase/namja_hair2_wavy_rigged.glb"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "7.2MB"
+    },
+    {
+     "id": "hair_namja_03_buzz",
+     "name_ko": "남 머리 3 · 버즈컷",
+     "kind": "머리 GLB",
+     "thumb": "thumbs/characters/hair_namja_03_buzz.webp",
+     "files": [
+      "assets/characters/_bodybase/namja_hair3_buzz_rigged.glb"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "2.4MB · ⚠ PARTS.md 질 낮음 표시"
+    },
+    {
+     "id": "hair_namja_04_spiky",
+     "name_ko": "남 머리 4 · 삐죽 머리",
+     "kind": "머리 GLB",
+     "thumb": "thumbs/characters/hair_namja_04_spiky.webp",
+     "files": [
+      "assets/characters/_bodybase/namja_hair4_spiky_rigged.glb"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "6.2MB · ⚠ PARTS.md 질 낮음 표시 · 정수리 얼룩"
+    },
+    {
+     "id": "hair_namja_05_curly",
+     "name_ko": "남 머리 5 · 곱슬",
+     "kind": "머리 GLB",
+     "thumb": "thumbs/characters/hair_namja_05_curly.webp",
+     "files": [
+      "assets/characters/_bodybase/namja_hair5_curly_rigged.glb"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "4.8MB"
+    },
+    {
+     "id": "hair_namja_06_manbun",
+     "name_ko": "남 머리 6 · 묶은 머리(맨번)",
+     "kind": "머리 GLB",
+     "thumb": "thumbs/characters/hair_namja_06_manbun.webp",
+     "files": [
+      "assets/characters/_bodybase/namja_hair6_manbun_rigged.glb"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "5.2MB · ⚠ 정수리 일부가 비어 보임"
+    },
+    {
+     "id": "hair_namja_07_ashgray",
+     "name_ko": "남 머리 7 · 애쉬 그레이",
+     "kind": "머리 GLB",
+     "thumb": "thumbs/characters/hair_namja_07_ashgray.webp",
+     "files": [
+      "assets/characters/_bodybase/namja_hair7_ashgray_rigged.glb"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "3.9MB"
+    },
+    {
+     "id": "hair_namja_08_blonde",
+     "name_ko": "남 머리 8 · 금발 곱슬",
+     "kind": "머리 GLB",
+     "thumb": "thumbs/characters/hair_namja_08_blonde.webp",
+     "files": [
+      "assets/characters/_bodybase/namja_hair8_blonde_rigged.glb"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "5.5MB"
+    },
+    {
+     "id": "hair_namja_09_undercut",
+     "name_ko": "남 머리 9 · 언더컷",
+     "kind": "머리 GLB",
+     "thumb": "thumbs/characters/hair_namja_09_undercut.webp",
+     "files": [
+      "assets/characters/_bodybase/namja_hair9_undercut_rigged.glb"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "3.7MB"
+    }
+   ]
+  },
+  {
+   "title_ko": "④ 떼어 붙인 부품 (부차) — 상·하·신발·원피스·소품",
+   "note_ko": "2026-09-13~14 에 만든 «색으로 잘라 떼어 붙인» 부품. 박사님 판정(9/14 저녁) 뒤 «옷 입은 몸 통째(②)»가 정본이 되어 이것들은 부차. 떼기 경계가 너덜거리고 살색 옷에 구멍이 나는 한계가 있다. 게임 안 씀. 종류별 개수와 예시 한두 장만 싣는다.",
+   "items": [
+    {
+     "id": "part_yeoja_top",
+     "name_ko": "여 상의 20개",
+     "kind": "떼어 붙인 부품 GLB 묶음",
+     "thumb": "thumbs/characters/part_yeoja_top.webp",
+     "files": [
+      "assets/characters/_bodybase/yeoja_top10_puffer_rigged.glb",
+      "assets/characters/_bodybase/yeoja_top11_gardentee_rigged.glb",
+      "assets/characters/_bodybase/yeoja_top12_labcoat_rigged.glb",
+      "assets/characters/_bodybase/yeoja_top13_blackturtle_rigged.glb",
+      "assets/characters/_bodybase/yeoja_top14_sailor_rigged.glb",
+      "assets/characters/_bodybase/yeoja_top15_parka_rigged.glb",
+      "assets/characters/_bodybase/yeoja_top16_raincoat_rigged.glb",
+      "assets/characters/_bodybase/yeoja_top17_biker_rigged.glb",
+      "assets/characters/_bodybase/yeoja_top18_denim_rigged.glb",
+      "assets/characters/_bodybase/yeoja_top19_purplecardi_rigged.glb",
+      "assets/characters/_bodybase/yeoja_top20_orangehoodie_rigged.glb",
+      "assets/characters/_bodybase/yeoja_top21_peacoat_rigged.glb",
+      "assets/characters/_bodybase/yeoja_top2_hoodie_rigged.glb",
+      "assets/characters/_bodybase/yeoja_top3_blouse_rigged.glb",
+      "assets/characters/_bodybase/yeoja_top4_cardigan_rigged.glb",
+      "assets/characters/_bodybase/yeoja_top5_coat_rigged.glb",
+      "assets/characters/_bodybase/yeoja_top6_tank_rigged.glb",
+      "assets/characters/_bodybase/yeoja_top7_track_rigged.glb",
+      "assets/characters/_bodybase/yeoja_top8_orange_rigged.glb",
+      "assets/characters/_bodybase/yeoja_top9_turtle_rigged.glb"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "20개 · 예시: yeoja_top20_orangehoodie · ⚠ 질 낮음 2개(top12_labcoat, top3_blouse)"
+    },
+    {
+     "id": "part_yeoja_bottom",
+     "name_ko": "여 하의 17개",
+     "kind": "떼어 붙인 부품 GLB 묶음",
+     "thumb": "thumbs/characters/part_yeoja_bottom.webp",
+     "files": [
+      "assets/characters/_bodybase/yeoja_bottom10_jeans2_rigged.glb",
+      "assets/characters/_bodybase/yeoja_bottom11_navyskirt_rigged.glb",
+      "assets/characters/_bodybase/yeoja_bottom12_burgskirt_rigged.glb",
+      "assets/characters/_bodybase/yeoja_bottom13_leggings2_rigged.glb",
+      "assets/characters/_bodybase/yeoja_bottom14_redmini_rigged.glb",
+      "assets/characters/_bodybase/yeoja_bottom15_plaidskirt_rigged.glb",
+      "assets/characters/_bodybase/yeoja_bottom16_sweatpants_rigged.glb",
+      "assets/characters/_bodybase/yeoja_bottom17_grayskirt_rigged.glb",
+      "assets/characters/_bodybase/yeoja_bottom1_jeans_rigged.glb",
+      "assets/characters/_bodybase/yeoja_bottom2_skirt_rigged.glb",
+      "assets/characters/_bodybase/yeoja_bottom3_shorts_rigged.glb",
+      "assets/characters/_bodybase/yeoja_bottom4_wshorts_rigged.glb",
+      "assets/characters/_bodybase/yeoja_bottom5_leggings_rigged.glb",
+      "assets/characters/_bodybase/yeoja_bottom6_overalls_rigged.glb",
+      "assets/characters/_bodybase/yeoja_bottom7_cordskirt_rigged.glb",
+      "assets/characters/_bodybase/yeoja_bottom8_widepants_rigged.glb",
+      "assets/characters/_bodybase/yeoja_bottom9_graypants_rigged.glb"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "17개 · 예시: yeoja_bottom2_skirt"
+    },
+    {
+     "id": "part_yeoja_shoes",
+     "name_ko": "여 신발 23개",
+     "kind": "떼어 붙인 부품 GLB 묶음",
+     "thumb": "thumbs/characters/part_yeoja_shoes.webp",
+     "files": [
+      "assets/characters/_bodybase/yeoja_shoes10_loafers_rigged.glb",
+      "assets/characters/_bodybase/yeoja_shoes11_chunky_rigged.glb",
+      "assets/characters/_bodybase/yeoja_shoes12_redboots_rigged.glb",
+      "assets/characters/_bodybase/yeoja_shoes13_gray_rigged.glb",
+      "assets/characters/_bodybase/yeoja_shoes14_bloafers_rigged.glb",
+      "assets/characters/_bodybase/yeoja_shoes15_tanboots_rigged.glb",
+      "assets/characters/_bodybase/yeoja_shoes16_kneeboots_rigged.glb",
+      "assets/characters/_bodybase/yeoja_shoes17_tealboots_rigged.glb",
+      "assets/characters/_bodybase/yeoja_shoes18_hitops_rigged.glb",
+      "assets/characters/_bodybase/yeoja_shoes19_pink_rigged.glb",
+      "assets/characters/_bodybase/yeoja_shoes1_sneakers_rigged.glb",
+      "assets/characters/_bodybase/yeoja_shoes20_redcanvas_rigged.glb",
+      "assets/characters/_bodybase/yeoja_shoes21_loafers2_rigged.glb",
+      "assets/characters/_bodybase/yeoja_shoes22_blueslippers_rigged.glb",
+      "assets/characters/_bodybase/yeoja_shoes23_laceboots_rigged.glb",
+      "assets/characters/_bodybase/yeoja_shoes2_flats_rigged.glb",
+      "assets/characters/_bodybase/yeoja_shoes3_sandals_rigged.glb",
+      "assets/characters/_bodybase/yeoja_shoes4_slippers_rigged.glb",
+      "assets/characters/_bodybase/yeoja_shoes5_boots_rigged.glb",
+      "assets/characters/_bodybase/yeoja_shoes6_fluffy_rigged.glb",
+      "assets/characters/_bodybase/yeoja_shoes7_osandals_rigged.glb",
+      "assets/characters/_bodybase/yeoja_shoes8_running_rigged.glb",
+      "assets/characters/_bodybase/yeoja_shoes9_rainboots_rigged.glb"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "23개 · 예시: yeoja_shoes12_redboots"
+    },
+    {
+     "id": "part_yeoja_dress",
+     "name_ko": "여 원피스 4개",
+     "kind": "떼어 붙인 부품 GLB 묶음",
+     "thumb": "thumbs/characters/part_yeoja_dress.webp",
+     "files": [
+      "assets/characters/_bodybase/yeoja_dress1_yellow_rigged.glb",
+      "assets/characters/_bodybase/yeoja_dress2_knit_rigged.glb",
+      "assets/characters/_bodybase/yeoja_dress3_hoodie_rigged.glb",
+      "assets/characters/_bodybase/yeoja_dress4_sundress_rigged.glb"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "4개 · 예시: yeoja_dress1_yellow · ⚠ 질 낮음 2개(dress2_knit, dress3_hoodie)"
+    },
+    {
+     "id": "part_namja_top",
+     "name_ko": "남 상의 23개",
+     "kind": "떼어 붙인 부품 GLB 묶음",
+     "thumb": "thumbs/characters/part_namja_top.webp",
+     "files": [
+      "assets/characters/_bodybase/namja_top10_raincoat_rigged.glb",
+      "assets/characters/_bodybase/namja_top11_track_rigged.glb",
+      "assets/characters/_bodybase/namja_top12_grayhoodie_rigged.glb",
+      "assets/characters/_bodybase/namja_top13_whiteshirt_rigged.glb",
+      "assets/characters/_bodybase/namja_top14_vest_rigged.glb",
+      "assets/characters/_bodybase/namja_top15_cardigan_rigged.glb",
+      "assets/characters/_bodybase/namja_top16_whitetee_rigged.glb",
+      "assets/characters/_bodybase/namja_top17_camp_rigged.glb",
+      "assets/characters/_bodybase/namja_top18_blackturtle_rigged.glb",
+      "assets/characters/_bodybase/namja_top19_biker_rigged.glb",
+      "assets/characters/_bodybase/namja_top20_whitetee_rigged.glb",
+      "assets/characters/_bodybase/namja_top21_trench_rigged.glb",
+      "assets/characters/_bodybase/namja_top22_utility_rigged.glb",
+      "assets/characters/_bodybase/namja_top23_yellowhoodie_rigged.glb",
+      "assets/characters/_bodybase/namja_top24_burgundyknit_rigged.glb",
+      "assets/characters/_bodybase/namja_top2_hoodie_rigged.glb",
+      "assets/characters/_bodybase/namja_top3_tee_rigged.glb",
+      "assets/characters/_bodybase/namja_top4_sweater_rigged.glb",
+      "assets/characters/_bodybase/namja_top5_coat_rigged.glb",
+      "assets/characters/_bodybase/namja_top6_shirt_rigged.glb",
+      "assets/characters/_bodybase/namja_top7_dressshirt_rigged.glb",
+      "assets/characters/_bodybase/namja_top8_denim_rigged.glb",
+      "assets/characters/_bodybase/namja_top9_yellowtee_rigged.glb"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "23개 · 예시: namja_top23_yellowhoodie · ⚠ 질 낮음 5개(top13_whiteshirt, top19_biker, top20_whitetee, top21_trench, top7_dressshirt)"
+    },
+    {
+     "id": "part_namja_bottom",
+     "name_ko": "남 하의 19개",
+     "kind": "떼어 붙인 부품 GLB 묶음",
+     "thumb": "thumbs/characters/part_namja_bottom.webp",
+     "files": [
+      "assets/characters/_bodybase/namja_bottom10_jogger_rigged.glb",
+      "assets/characters/_bodybase/namja_bottom11_blacktrousers_rigged.glb",
+      "assets/characters/_bodybase/namja_bottom12_lightjeans_rigged.glb",
+      "assets/characters/_bodybase/namja_bottom13_wshorts_rigged.glb",
+      "assets/characters/_bodybase/namja_bottom14_wooltrousers_rigged.glb",
+      "assets/characters/_bodybase/namja_bottom15_dgjeans_rigged.glb",
+      "assets/characters/_bodybase/namja_bottom16_jeans3_rigged.glb",
+      "assets/characters/_bodybase/namja_bottom17_cargo_rigged.glb",
+      "assets/characters/_bodybase/namja_bottom18_bluejeans_rigged.glb",
+      "assets/characters/_bodybase/namja_bottom19_charcoal_rigged.glb",
+      "assets/characters/_bodybase/namja_bottom1_chino_rigged.glb",
+      "assets/characters/_bodybase/namja_bottom2_jeans_rigged.glb",
+      "assets/characters/_bodybase/namja_bottom3_slacks_rigged.glb",
+      "assets/characters/_bodybase/namja_bottom4_navy_rigged.glb",
+      "assets/characters/_bodybase/namja_bottom5_kshorts_rigged.glb",
+      "assets/characters/_bodybase/namja_bottom6_blackjeans_rigged.glb",
+      "assets/characters/_bodybase/namja_bottom7_workpants_rigged.glb",
+      "assets/characters/_bodybase/namja_bottom8_darkblue_rigged.glb",
+      "assets/characters/_bodybase/namja_bottom9_trackpants_rigged.glb"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "19개 · 예시: namja_bottom10_jogger · ⚠ 질 낮음 4개(bottom14_wooltrousers, bottom15_dgjeans, bottom4_navy, bottom7_workpants)"
+    },
+    {
+     "id": "part_namja_shoes",
+     "name_ko": "남 신발 20개",
+     "kind": "떼어 붙인 부품 GLB 묶음",
+     "thumb": "thumbs/characters/part_namja_shoes.webp",
+     "files": [
+      "assets/characters/_bodybase/namja_shoes10_orange_rigged.glb",
+      "assets/characters/_bodybase/namja_shoes11_slides_rigged.glb",
+      "assets/characters/_bodybase/namja_shoes12_oxford_rigged.glb",
+      "assets/characters/_bodybase/namja_shoes13_loafers_rigged.glb",
+      "assets/characters/_bodybase/namja_shoes14_bsandals_rigged.glb",
+      "assets/characters/_bodybase/namja_shoes15_chelsea_rigged.glb",
+      "assets/characters/_bodybase/namja_shoes16_workboots_rigged.glb",
+      "assets/characters/_bodybase/namja_shoes17_white2_rigged.glb",
+      "assets/characters/_bodybase/namja_shoes18_hiking_rigged.glb",
+      "assets/characters/_bodybase/namja_shoes19_whitesneak_rigged.glb",
+      "assets/characters/_bodybase/namja_shoes1_sneakers_rigged.glb",
+      "assets/characters/_bodybase/namja_shoes20_brownboots_rigged.glb",
+      "assets/characters/_bodybase/namja_shoes2_black_rigged.glb",
+      "assets/characters/_bodybase/namja_shoes3_leather_rigged.glb",
+      "assets/characters/_bodybase/namja_shoes4_boots_rigged.glb",
+      "assets/characters/_bodybase/namja_shoes5_red_rigged.glb",
+      "assets/characters/_bodybase/namja_shoes6_dress_rigged.glb",
+      "assets/characters/_bodybase/namja_shoes7_white_rigged.glb",
+      "assets/characters/_bodybase/namja_shoes8_rubber_rigged.glb",
+      "assets/characters/_bodybase/namja_shoes9_rubber2_rigged.glb"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "20개 · 예시: namja_shoes20_brownboots · ⚠ 질 낮음 1개(shoes7_white)"
+    },
+    {
+     "id": "part_yeoja_etc",
+     "name_ko": "여 소품·모자·세트 6개",
+     "kind": "떼어 붙인 부품 GLB 묶음",
+     "thumb": "thumbs/characters/part_yeoja_etc.webp",
+     "files": [
+      "assets/characters/_bodybase/yeoja_acc1_scarf_rigged.glb",
+      "assets/characters/_bodybase/yeoja_acc2_apron_rigged.glb",
+      "assets/characters/_bodybase/yeoja_acc3_ribbon_rigged.glb",
+      "assets/characters/_bodybase/yeoja_acc4_kneesocks_rigged.glb",
+      "assets/characters/_bodybase/yeoja_hat1_beanie_rigged.glb",
+      "assets/characters/_bodybase/yeoja_set1_pajama_rigged.glb"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "acc1_scarf, acc2_apron, acc3_ribbon, acc4_kneesocks, hat1_beanie, set1_pajama (썸네일은 모자)"
+    },
+    {
+     "id": "part_namja_etc",
+     "name_ko": "남 소품·모자·세트 4개",
+     "kind": "떼어 붙인 부품 GLB 묶음",
+     "thumb": "thumbs/characters/part_namja_etc.webp",
+     "files": [
+      "assets/characters/_bodybase/namja_acc1_apron_rigged.glb",
+      "assets/characters/_bodybase/namja_hat1_cap_rigged.glb",
+      "assets/characters/_bodybase/namja_set1_sweater_rigged.glb",
+      "assets/characters/_bodybase/namja_set2_suit_rigged.glb"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "acc1_apron, hat1_cap, set1_sweater, set2_suit (썸네일은 모자)"
+    },
+    {
+     "id": "part_lowq_example1",
+     "name_ko": "질 낮음 예시 — 여 블라우스",
+     "kind": "떼어 붙인 부품 GLB",
+     "thumb": "thumbs/characters/part_lowq_example1.webp",
+     "files": [
+      "assets/characters/_bodybase/yeoja_top3_blouse_rigged.glb"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "흰 옷이 살색과 섞여 구멍·너덜한 경계 — «색으로 자르기»의 한계(README 9/14 저녁)"
+    },
+    {
+     "id": "part_lowq_example2",
+     "name_ko": "질 낮음 예시 — 남 라이더 재킷",
+     "kind": "떼어 붙인 부품 GLB",
+     "thumb": "thumbs/characters/part_lowq_example2.webp",
+     "files": [
+      "assets/characters/_bodybase/namja_top19_biker_rigged.glb"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "PARTS.md 질 낮음 표시. 전체 16개(남 상의 5·하의 4 등)"
+    },
+    {
+     "id": "part_shirt_tests",
+     "name_ko": "셔츠 첫 시험 3개",
+     "kind": "떼어 붙인 부품 GLB 묶음",
+     "thumb": null,
+     "files": [
+      "assets/characters/_bodybase/yeoja_shirt1_rigged.glb",
+      "assets/characters/_bodybase/namja_shirt1_navy_rigged.glb",
+      "assets/characters/_bodybase/namja_shirt1_rigged.glb"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "부품 떼기 첫 시험판(표 없음). 이후 top 으로 대체"
+    },
+    {
+     "id": "part_under_bodies",
+     "name_ko": "옷 밑 몸 44개",
+     "kind": "몸 GLB 묶음",
+     "thumb": null,
+     "files": [
+      "assets/characters/_bodybase/namja_body_v19_under_burgundy.glb",
+      "assets/characters/_bodybase/namja_body_v19_under_camp.glb",
+      "assets/characters/_bodybase/namja_body_v19_under_coat.glb",
+      "assets/characters/_bodybase/namja_body_v19_under_denim.glb",
+      "assets/characters/_bodybase/namja_body_v19_under_garden.glb",
+      "assets/characters/_bodybase/namja_body_v19_under_lounge.glb",
+      "assets/characters/_bodybase/namja_body_v19_under_mbiker.glb",
+      "assets/characters/_bodybase/namja_body_v19_under_outfit2.glb",
+      "assets/characters/_bodybase/namja_body_v19_under_outfit3.glb",
+      "assets/characters/_bodybase/namja_body_v19_under_outfit4.glb",
+      "assets/characters/_bodybase/namja_body_v19_under_raincoat.glb",
+      "assets/characters/_bodybase/namja_body_v19_under_shirt1.glb",
+      "assets/characters/_bodybase/namja_body_v19_under_shirt6.glb",
+      "assets/characters/_bodybase/namja_body_v19_under_suit.glb",
+      "assets/characters/_bodybase/namja_body_v19_under_track.glb",
+      "assets/characters/_bodybase/namja_body_v19_under_trench.glb",
+      "assets/characters/_bodybase/namja_body_v19_under_turtle.glb",
+      "assets/characters/_bodybase/namja_body_v19_under_utility.glb",
+      "assets/characters/_bodybase/namja_body_v19_under_vest.glb",
+      "assets/characters/_bodybase/namja_body_v19_under_yellowhoodie.glb",
+      "assets/characters/_bodybase/yeoja_body_v19_under_biker.glb",
+      "assets/characters/_bodybase/yeoja_body_v19_under_dress1.glb",
+      "assets/characters/_bodybase/yeoja_body_v19_under_garden.glb",
+      "assets/characters/_bodybase/yeoja_body_v19_under_hoodiedress.glb",
+      "assets/characters/_bodybase/yeoja_body_v19_under_knitdress.glb",
+      "assets/characters/_bodybase/yeoja_body_v19_under_labcoat.glb",
+      "assets/characters/_bodybase/yeoja_body_v19_under_orangehoodie.glb",
+      "assets/characters/_bodybase/yeoja_body_v19_under_outfit2.glb",
+      "assets/characters/_bodybase/yeoja_body_v19_under_outfit3.glb",
+      "assets/characters/_bodybase/yeoja_body_v19_under_outfit4.glb",
+      "assets/characters/_bodybase/yeoja_body_v19_under_outfit5.glb",
+      "assets/characters/_bodybase/yeoja_body_v19_under_overalls.glb",
+      "assets/characters/_bodybase/yeoja_body_v19_under_pajama.glb",
+      "assets/characters/_bodybase/yeoja_body_v19_under_parka.glb",
+      "assets/characters/_bodybase/yeoja_body_v19_under_peacoat.glb",
+      "assets/characters/_bodybase/yeoja_body_v19_under_plaid.glb",
+      "assets/characters/_bodybase/yeoja_body_v19_under_puffer.glb",
+      "assets/characters/_bodybase/yeoja_body_v19_under_raincoat.glb",
+      "assets/characters/_bodybase/yeoja_body_v19_under_sailor.glb",
+      "assets/characters/_bodybase/yeoja_body_v19_under_shirt1.glb",
+      "assets/characters/_bodybase/yeoja_body_v19_under_summer.glb",
+      "assets/characters/_bodybase/yeoja_body_v19_under_sundress.glb",
+      "assets/characters/_bodybase/yeoja_body_v19_under_track.glb",
+      "assets/characters/_bodybase/yeoja_body_v19_under_turtle.glb"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "옷 아래 살을 지운 몸. 마스크(masks/*.json 134개)로 대체되어 부차"
+    },
+    {
+     "id": "part_leftovers",
+     "name_ko": "_bodybase 중간 파일 (굽기 원본·_rig/_part/_fit·시트 PNG)",
+     "kind": "파일 묶음",
+     "thumb": null,
+     "files": [
+      "assets/characters/_bodybase/baked_*.glb",
+      "assets/characters/_bodybase/*_rigged_rig.glb",
+      "assets/characters/_bodybase/*_rigged_part.glb",
+      "assets/characters/_bodybase/*_rigged_fit.glb",
+      "assets/characters/_bodybase/*.png"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "_bodybase 폴더 전체가 GLB 913개·PNG 835개·약 5.3GB. 대부분 만들다 남은 단계 파일(굽기 원본 72개만 589MB)"
+    }
+   ]
+  },
+  {
+   "title_ko": "⑤ 눈·표정 — 대사 초상화·눈 그림",
+   "note_ko": "게임 대사창에 뜨는 얼굴은 자취녀(jachwi) 10장·몬이(moni) 10장. 어느 얼굴이 몇 줄에 쓰이는지는 src/game/dialogue.js 를 세어 적었다. 눈 그림·눈 GLB 는 v19 몸(②③)용이라 게임 안 씀.",
+   "items": [
+    {
+     "id": "eyes_decals",
+     "name_ko": "눈 그림 6종 (뜬 눈·웃는 눈·졸린 눈·반짝·놀람·감은 눈)",
+     "kind": "눈 데칼 PNG",
+     "thumb": "thumbs/characters/eyes_decals.webp",
+     "files": [
+      "assets/characters/eyes/eyes_brown_open.png",
+      "assets/characters/eyes/eyes_closed_happy.png",
+      "assets/characters/eyes/eyes_sleepy.png",
+      "assets/characters/eyes/eyes_smile.png",
+      "assets/characters/eyes/eyes_sparkle.png",
+      "assets/characters/eyes/eyes_surprised.png"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "9/13 v19 몸 얼굴에 갈아 끼우는 눈(glb_face_decal.py). 게임 안 씀"
+    },
+    {
+     "id": "face_eyes_glb",
+     "name_ko": "얼굴 눈 붙이기 GLB (여·남)",
+     "kind": "얼굴 GLB",
+     "thumb": "thumbs/characters/face_eyes_glb.webp",
+     "files": [
+      "assets/characters/_bodybase/yeoja_face_eyes1.glb",
+      "assets/characters/_bodybase/namja_face_eyes1.glb"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "v19 몸에 얹는 눈 판. 게임 안 씀"
+    },
+    {
+     "id": "portrait_jachwi_neutral",
+     "name_ko": "자취녀 초상 · 무표정(기본)",
+     "kind": "대사 초상화 PNG",
+     "thumb": "thumbs/characters/portrait_jachwi_neutral.webp",
+     "files": [
+      "assets/characters/portraits/portrait_jachwi_neutral.png"
+     ],
+     "status": "ok",
+     "used_in_game": true,
+     "note_ko": "대사 121줄이 이 얼굴 · 화면 위 «나» 단추에도 씀"
+    },
+    {
+     "id": "portrait_jachwi_happy",
+     "name_ko": "자취녀 초상 · 기쁨",
+     "kind": "대사 초상화 PNG",
+     "thumb": "thumbs/characters/portrait_jachwi_happy.webp",
+     "files": [
+      "assets/characters/portraits/portrait_jachwi_happy.png"
+     ],
+     "status": "ok",
+     "used_in_game": true,
+     "note_ko": "대사 8줄이 이 얼굴"
+    },
+    {
+     "id": "portrait_jachwi_worry",
+     "name_ko": "자취녀 초상 · 걱정",
+     "kind": "대사 초상화 PNG",
+     "thumb": "thumbs/characters/portrait_jachwi_worry.webp",
+     "files": [
+      "assets/characters/portraits/portrait_jachwi_worry.png"
+     ],
+     "status": "ok",
+     "used_in_game": true,
+     "note_ko": "대사 13줄이 이 얼굴"
+    },
+    {
+     "id": "portrait_jachwi_cry",
+     "name_ko": "자취녀 초상 · 울음",
+     "kind": "대사 초상화 PNG",
+     "thumb": "thumbs/characters/portrait_jachwi_cry.webp",
+     "files": [
+      "assets/characters/portraits/portrait_jachwi_cry.png"
+     ],
+     "status": "ok",
+     "used_in_game": true,
+     "note_ko": "대사 2줄이 이 얼굴"
+    },
+    {
+     "id": "portrait_jachwi_surprise",
+     "name_ko": "자취녀 초상 · 놀람",
+     "kind": "대사 초상화 PNG",
+     "thumb": "thumbs/characters/portrait_jachwi_surprise.webp",
+     "files": [
+      "assets/characters/portraits/portrait_jachwi_surprise.png"
+     ],
+     "status": "ok",
+     "used_in_game": true,
+     "note_ko": "대사 24줄이 이 얼굴"
+    },
+    {
+     "id": "portrait_jachwi_tired",
+     "name_ko": "자취녀 초상 · 피곤",
+     "kind": "대사 초상화 PNG",
+     "thumb": "thumbs/characters/portrait_jachwi_tired.webp",
+     "files": [
+      "assets/characters/portraits/portrait_jachwi_tired.png"
+     ],
+     "status": "ok",
+     "used_in_game": true,
+     "note_ko": "대사 23줄이 이 얼굴"
+    },
+    {
+     "id": "portrait_jachwi_curious",
+     "name_ko": "자취녀 초상 · 궁금",
+     "kind": "대사 초상화 PNG",
+     "thumb": "thumbs/characters/portrait_jachwi_curious.webp",
+     "files": [
+      "assets/characters/portraits/portrait_jachwi_curious.png"
+     ],
+     "status": "ok",
+     "used_in_game": true,
+     "note_ko": "대사 4줄이 이 얼굴 · ⚠ 혼자 흰 티+물음표 말풍선 — 나머지(베이지 티)와 옷이 다름"
+    },
+    {
+     "id": "portrait_jachwi_proud",
+     "name_ko": "자취녀 초상 · 뿌듯",
+     "kind": "대사 초상화 PNG",
+     "thumb": "thumbs/characters/portrait_jachwi_proud.webp",
+     "files": [
+      "assets/characters/portraits/portrait_jachwi_proud.png"
+     ],
+     "status": "ok",
+     "used_in_game": true,
+     "note_ko": "대사 2줄이 이 얼굴"
+    },
+    {
+     "id": "portrait_jachwi_numb",
+     "name_ko": "자취녀 초상 · 말잃음",
+     "kind": "대사 초상화 PNG",
+     "thumb": "thumbs/characters/portrait_jachwi_numb.webp",
+     "files": [
+      "assets/characters/portraits/portrait_jachwi_numb.png"
+     ],
+     "status": "ok",
+     "used_in_game": true,
+     "note_ko": "대사 2줄이 이 얼굴"
+    },
+    {
+     "id": "portrait_jachwi_think",
+     "name_ko": "자취녀 초상 · 생각",
+     "kind": "대사 초상화 PNG",
+     "thumb": "thumbs/characters/portrait_jachwi_think.webp",
+     "files": [
+      "assets/characters/portraits/portrait_jachwi_think.png"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "FACE_FILE 표엔 있으나 이 얼굴을 부르는 대사 0줄(궁금이 따로 생긴 뒤)"
+    },
+    {
+     "id": "portrait_moni_neutral",
+     "name_ko": "몬이 초상 · 무표정(기본)",
+     "kind": "대사 초상화 PNG",
+     "thumb": "thumbs/characters/portrait_moni_neutral.webp",
+     "files": [
+      "assets/characters/portraits/portrait_moni_neutral.png"
+     ],
+     "status": "ok",
+     "used_in_game": true,
+     "note_ko": "대사 79줄이 이 얼굴"
+    },
+    {
+     "id": "portrait_moni_excited",
+     "name_ko": "몬이 초상 · 신남(happy)",
+     "kind": "대사 초상화 PNG",
+     "thumb": "thumbs/characters/portrait_moni_excited.webp",
+     "files": [
+      "assets/characters/portraits/portrait_moni_excited.png"
+     ],
+     "status": "ok",
+     "used_in_game": true,
+     "note_ko": "대사 64줄이 이 얼굴"
+    },
+    {
+     "id": "portrait_moni_curious",
+     "name_ko": "몬이 초상 · 궁금",
+     "kind": "대사 초상화 PNG",
+     "thumb": "thumbs/characters/portrait_moni_curious.webp",
+     "files": [
+      "assets/characters/portraits/portrait_moni_curious.png"
+     ],
+     "status": "ok",
+     "used_in_game": true,
+     "note_ko": "대사 87줄이 이 얼굴"
+    },
+    {
+     "id": "portrait_moni_sad",
+     "name_ko": "몬이 초상 · 슬픔",
+     "kind": "대사 초상화 PNG",
+     "thumb": "thumbs/characters/portrait_moni_sad.webp",
+     "files": [
+      "assets/characters/portraits/portrait_moni_sad.png"
+     ],
+     "status": "ok",
+     "used_in_game": true,
+     "note_ko": "대사 22줄이 이 얼굴"
+    },
+    {
+     "id": "portrait_moni_surprise",
+     "name_ko": "몬이 초상 · 놀람",
+     "kind": "대사 초상화 PNG",
+     "thumb": "thumbs/characters/portrait_moni_surprise.webp",
+     "files": [
+      "assets/characters/portraits/portrait_moni_surprise.png"
+     ],
+     "status": "ok",
+     "used_in_game": true,
+     "note_ko": "대사 1줄이 이 얼굴"
+    },
+    {
+     "id": "portrait_moni_worry",
+     "name_ko": "몬이 초상 · 걱정",
+     "kind": "대사 초상화 PNG",
+     "thumb": "thumbs/characters/portrait_moni_worry.webp",
+     "files": [
+      "assets/characters/portraits/portrait_moni_worry.png"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "9/7 새로 그림. FACE_FILE 표엔 이었지만 배정된 대사 0줄 — 화면에 안 나옴(plan 몫)"
+    },
+    {
+     "id": "portrait_moni_teach",
+     "name_ko": "몬이 초상 · 가르침",
+     "kind": "대사 초상화 PNG",
+     "thumb": "thumbs/characters/portrait_moni_teach.webp",
+     "files": [
+      "assets/characters/portraits/portrait_moni_teach.png"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "9/7 새로 그림. FACE_FILE 표엔 이었지만 배정된 대사 0줄 — 화면에 안 나옴(plan 몫)"
+    },
+    {
+     "id": "portrait_moni_proud",
+     "name_ko": "몬이 초상 · 뿌듯",
+     "kind": "대사 초상화 PNG",
+     "thumb": "thumbs/characters/portrait_moni_proud.webp",
+     "files": [
+      "assets/characters/portraits/portrait_moni_proud.png"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "9/7 새로 그림. FACE_FILE 표엔 이었지만 배정된 대사 0줄 — 화면에 안 나옴(plan 몫)"
+    },
+    {
+     "id": "portrait_moni_cheer",
+     "name_ko": "몬이 초상 · 응원",
+     "kind": "대사 초상화 PNG",
+     "thumb": "thumbs/characters/portrait_moni_cheer.webp",
+     "files": [
+      "assets/characters/portraits/portrait_moni_cheer.png"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "9/7 새로 그림. FACE_FILE 표엔 이었지만 배정된 대사 0줄 — 화면에 안 나옴(plan 몫)"
+    },
+    {
+     "id": "portrait_moni_calm",
+     "name_ko": "몬이 초상 · 차분",
+     "kind": "대사 초상화 PNG",
+     "thumb": "thumbs/characters/portrait_moni_calm.webp",
+     "files": [
+      "assets/characters/portraits/portrait_moni_calm.png"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "9/7 새로 그림. FACE_FILE 표엔 이었지만 배정된 대사 0줄 — 화면에 안 나옴(plan 몫)"
+    },
+    {
+     "id": "portrait_jachwi_m",
+     "name_ko": "자취남 초상 9장",
+     "kind": "대사 초상화 PNG 묶음",
+     "thumb": "thumbs/characters/portrait_jachwi_m.webp",
+     "files": [
+      "assets/characters/portraits/portrait_jachwi_m_cry.png",
+      "assets/characters/portraits/portrait_jachwi_m_happy.png",
+      "assets/characters/portraits/portrait_jachwi_m_neutral.png",
+      "assets/characters/portraits/portrait_jachwi_m_numb.png",
+      "assets/characters/portraits/portrait_jachwi_m_proud.png",
+      "assets/characters/portraits/portrait_jachwi_m_surprise.png",
+      "assets/characters/portraits/portrait_jachwi_m_think.png",
+      "assets/characters/portraits/portrait_jachwi_m_tired.png",
+      "assets/characters/portraits/portrait_jachwi_m_worry.png"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "파일은 있으나 «이번 판에 안 씀»(사용자 결정 · game.html FACE_FILE 주석)"
+    },
+    {
+     "id": "moni_2d_expressions",
+     "name_ko": "몬이 옛 표정 원화 7장",
+     "kind": "원화 2D 묶음",
+     "thumb": "thumbs/characters/moni_2d_expressions.webp",
+     "files": [
+      "assets/characters/mascot/expressions/mon_cheer.png",
+      "assets/characters/mascot/expressions/mon_default.png",
+      "assets/characters/mascot/expressions/mon_happy.png",
+      "assets/characters/mascot/expressions/mon_proud.png",
+      "assets/characters/mascot/expressions/mon_sleepy.png",
+      "assets/characters/mascot/expressions/mon_surprise.png",
+      "assets/characters/mascot/expressions/mon_worry.png"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "7/25 원화(3D풍 몬이). 대사창은 portrait_moni_* 로 바뀌어 게임 안 씀"
+    },
+    {
+     "id": "portrait_old_raw",
+     "name_ko": "초상 옛판·시도본 (_old · _raw · _kling · _ref · _style)",
+     "kind": "원화 2D 묶음",
+     "thumb": null,
+     "files": [
+      "assets/characters/portraits/_old",
+      "assets/characters/portraits/_raw",
+      "assets/characters/portraits/_kling",
+      "assets/characters/portraits/_ref",
+      "assets/characters/portraits/_style"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "버린 판·생성 시도(Kling 14장 등). 게임 안 씀"
+    },
+    {
+     "id": "portrait_god_none",
+     "name_ko": "식물신 초상",
+     "kind": "초상화 2D",
+     "thumb": null,
+     "files": [],
+     "status": "missing",
+     "used_in_game": false,
+     "note_ko": "일부러 없음(first_play.md 확정: 외형 없음·빛/실루엣으로만). 대사 3줄. 만들지 말 것"
+    }
+   ]
+  },
+  {
+   "title_ko": "⑥ 맨몸 정본 — v19 한 쌍",
+   "note_ko": "옷(②)·머리(③)·부품(④)이 모두 붙는 바탕 몸. 여 1.40m·남 1.50m 치비 비율. 게임은 아직 이 몸을 쓰지 않는다(게임 주인공은 ① hero).",
+   "items": [
+    {
+     "id": "base_yeoja_v19",
+     "name_ko": "여 맨몸 정본 v19",
+     "kind": "맨몸 GLB",
+     "thumb": "thumbs/characters/base_yeoja_v19.webp",
+     "files": [
+      "assets/characters/_bodybase/char_yeoja_base_v19_rigged.glb",
+      "assets/characters/_bodybase/char_yeoja_base_v19.glb",
+      "assets/characters/_bodybase/yeoja_v19_walk.glb"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "9/13 밤 박사님 「굳 v19로 쭉 진행」. v4 몸+v7 귀·24본. 옷·머리가 전부 이 뼈대에 붙음. 면 9.8만. 게임 안 씀. 썸네일은 9/13 리깅 사진"
+    },
+    {
+     "id": "base_namja_v19",
+     "name_ko": "남 맨몸 정본 v19",
+     "kind": "맨몸 GLB",
+     "thumb": "thumbs/characters/base_namja_v19.webp",
+     "files": [
+      "assets/characters/_bodybase/char_namja_base_v19_rigged.glb",
+      "assets/characters/_bodybase/char_namja_base_v19.glb",
+      "assets/characters/_bodybase/namja_v19_walk.glb"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "여 v19 에서 가슴만 고친 남캐(9/14 가슴·옆구리 구멍 고침). 같은 뼈대. 게임 안 씀. 썸네일은 지금 파일을 T자세로 찍은 것(재질 음영 없이 밋밋하게 나옴)"
+    },
+    {
+     "id": "base_old_versions",
+     "name_ko": "맨몸 옛 판 28개 (v3~v17 · v19plate)",
+     "kind": "맨몸 GLB 묶음",
+     "thumb": null,
+     "files": [
+      "assets/characters/_bodybase/char_namja_base_v1.glb",
+      "assets/characters/_bodybase/char_namja_base_v17.glb",
+      "assets/characters/_bodybase/char_namja_base_v17_rigged.glb",
+      "assets/characters/_bodybase/char_namja_base_v19plate.glb",
+      "assets/characters/_bodybase/char_namja_base_v19plate_rigged.glb",
+      "assets/characters/_bodybase/char_namja_base_v2.glb",
+      "assets/characters/_bodybase/char_namja_base_v3.glb",
+      "assets/characters/_bodybase/char_namja_base_v3_rigged.glb",
+      "assets/characters/_bodybase/char_yeoja_base_rigged.glb",
+      "assets/characters/_bodybase/char_yeoja_base_v10.glb",
+      "assets/characters/_bodybase/char_yeoja_base_v10_rigged.glb",
+      "assets/characters/_bodybase/char_yeoja_base_v11a.glb",
+      "assets/characters/_bodybase/char_yeoja_base_v12.glb",
+      "assets/characters/_bodybase/char_yeoja_base_v13_rigged.glb",
+      "assets/characters/_bodybase/char_yeoja_base_v15.glb",
+      "assets/characters/_bodybase/char_yeoja_base_v17.glb",
+      "assets/characters/_bodybase/char_yeoja_base_v17_rigged.glb",
+      "assets/characters/_bodybase/char_yeoja_base_v18.glb",
+      "assets/characters/_bodybase/char_yeoja_base_v3.glb",
+      "assets/characters/_bodybase/char_yeoja_base_v3t.glb",
+      "assets/characters/_bodybase/char_yeoja_base_v3t_rigged.glb",
+      "assets/characters/_bodybase/char_yeoja_base_v4.glb",
+      "assets/characters/_bodybase/char_yeoja_base_v4_rigged.glb",
+      "assets/characters/_bodybase/char_yeoja_base_v5.glb",
+      "assets/characters/_bodybase/char_yeoja_base_v6.glb",
+      "assets/characters/_bodybase/char_yeoja_base_v7.glb",
+      "assets/characters/_bodybase/char_yeoja_base_v8.glb",
+      "assets/characters/_bodybase/char_yeoja_base_v9.glb"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "v19 를 고르기까지의 판들. v19plate 는 남캐 가슴이 접시처럼 섰던 옛 파일"
+    }
+   ]
+  },
+  {
+   "title_ko": "⑦ 몬이 — 마스코트",
+   "note_ko": "게임이 쓰는 몬이 3D 는 7월 판(char_mascot_sprout, lq) 하나. 대사 표정은 ⑤의 portrait_moni_*. 9/13 새 3D 시안은 아직 안 들어감.",
+   "items": [
+    {
+     "id": "moni_3d_game",
+     "name_ko": "몬이 3D (게임에 나오는 것)",
+     "kind": "3D 캐릭터 GLB",
+     "thumb": "thumbs/characters/moni_3d_game.webp",
+     "files": [
+      "assets/characters/3d/lq/char_mascot_sprout.glb",
+      "assets/characters/3d/char_mascot_sprout.glb"
+     ],
+     "status": "ok",
+     "used_in_game": true,
+     "note_ko": "방에서 주인공을 바라보며 따라다님. 0.375m 고정·면 6.9천·클립 없음(떠다니기는 코드로). lq 경량본을 씀"
+    },
+    {
+     "id": "moni_3d_v1",
+     "name_ko": "몬이 3D 새 시안 v1 (화분에 앉은)",
+     "kind": "3D 캐릭터 GLB",
+     "thumb": "thumbs/characters/moni_3d_v1.webp",
+     "files": [
+      "assets/characters/mascot/moni_3d_v1.glb"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "9/13 새로 뽑은 3D(10.9MB). 게임 안 씀 — 게임은 위의 옛 몬이"
+    },
+    {
+     "id": "moni_2d_original",
+     "name_ko": "몬이 원화 (정본)",
+     "kind": "원화 2D",
+     "thumb": "thumbs/characters/moni_2d_original.webp",
+     "files": [
+      "assets/characters/mascot/char_mascot_sprout.png",
+      "assets/characters/mascot/hf_20260718_040722_a64a54ec-c589-4d7a-b3db-56a43a94d144.png"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "7/18~20 원화(같은 그림 두 벌). 3D 의 바탕. 게임에 직접 안 나옴"
+    },
+    {
+     "id": "moni_3dstyle_views",
+     "name_ko": "몬이 3D풍 4방향 그림 4장",
+     "kind": "원화 2D 묶음",
+     "thumb": null,
+     "files": [
+      "assets/characters/mascot/3d_wip/mascot_3dstyle_back.png",
+      "assets/characters/mascot/3d_wip/mascot_3dstyle_front.png",
+      "assets/characters/mascot/3d_wip/mascot_3dstyle_left.png",
+      "assets/characters/mascot/3d_wip/mascot_3dstyle_right.png"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "7/25 3D 만들기용 앞·뒤·좌·우. 게임 안 씀"
+    },
+    {
+     "id": "moni_html_previews",
+     "name_ko": "몬이 미리보기 페이지 3개",
+     "kind": "HTML 도구",
+     "thumb": null,
+     "files": [
+      "assets/characters/mascot_viewer.html",
+      "assets/characters/mascot_expressions.html",
+      "assets/characters/mascot_follow_preview.html"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "follow_preview 가 «바라보며 따라오기» 원안(8/16 게임에 옮김)"
+    }
+   ]
+  },
+  {
+   "title_ko": "⑧ 옛 캐릭터 — 9/25 전까지 게임이 쓰던 주인공",
+   "note_ko": "7~8월에 만든 Meshy 캐릭터 한 벌(자취녀). 지금 게임은 room_view.js makePerson → v2_hero.js 로 hero 를 먼저 띄우고, 실패하거나 끄면 이 몸으로 돌아간다.",
+   "items": [
+    {
+     "id": "old_jachwi_f",
+     "name_ko": "옛 주인공 자취녀 3D",
+     "kind": "3D 캐릭터 GLB",
+     "thumb": "thumbs/characters/old_jachwi_f.webp",
+     "files": [
+      "assets/characters/3d/lq/char_jachwi_f_idle.glb",
+      "assets/characters/3d/lq/char_jachwi_f_rigged.glb",
+      "assets/characters/3d/lq/char_jachwi_f_walking.glb",
+      "assets/derived/char_clips/char_jachwi_f_walking.glb",
+      "assets/characters/3d/char_jachwi_f_rigged.glb"
+     ],
+     "status": "old",
+     "used_in_game": true,
+     "note_ko": "9/25 전까지 게임 주인공. 지금은 ?v2hero=0 이거나 hero.glb 를 못 받을 때만 뜸(예비). 붉은 갈색 머리·흰 티·회색 바지·1.40m"
+    },
+    {
+     "id": "old_jachwi_f_anims",
+     "name_ko": "옛 자취녀 동작 16종",
+     "kind": "동작 클립 묶음",
+     "thumb": null,
+     "files": [
+      "assets/characters/3d/anim/char_jachwi_f_cheer.glb",
+      "assets/characters/3d/anim/char_jachwi_f_doze.glb",
+      "assets/characters/3d/anim/char_jachwi_f_happyjump.glb",
+      "assets/characters/3d/anim/char_jachwi_f_harvest.glb",
+      "assets/characters/3d/anim/char_jachwi_f_harvest_crouch.glb",
+      "assets/characters/3d/anim/char_jachwi_f_heart.glb",
+      "assets/characters/3d/anim/char_jachwi_f_inspect.glb",
+      "assets/characters/3d/anim/char_jachwi_f_listen.glb",
+      "assets/characters/3d/anim/char_jachwi_f_nod.glb",
+      "assets/characters/3d/anim/char_jachwi_f_opendoor.glb",
+      "assets/characters/3d/anim/char_jachwi_f_pickup.glb",
+      "assets/characters/3d/anim/char_jachwi_f_repot.glb",
+      "assets/characters/3d/anim/char_jachwi_f_scratch.glb",
+      "assets/characters/3d/anim/char_jachwi_f_sit.glb",
+      "assets/characters/3d/anim/char_jachwi_f_sleep.glb",
+      "assets/characters/3d/anim/char_jachwi_f_wave.glb"
+     ],
+     "status": "old",
+     "used_in_game": true,
+     "note_ko": "인사·하트·기뻐·환호·끄덕·살펴봄·분갈이·수확·줍기·갸웃·귀기울임·문열기·쪼그려수확·앉기·졸기·자기. 옛 몸일 때만 씀(hero 에는 뼈 길이가 달라 못 얹음)"
+    },
+    {
+     "id": "old_jachwi_f_2d",
+     "name_ko": "옛 자취녀 원화 (4방향·후보 1~4)",
+     "kind": "원화 2D 묶음",
+     "thumb": "thumbs/characters/old_jachwi_f_2d.webp",
+     "files": [
+      "assets/characters/char_jachwi_f_front.png",
+      "assets/characters/char_jachwi_f_back.png",
+      "assets/characters/char_jachwi_f_left.png",
+      "assets/characters/char_jachwi_f_right.png",
+      "assets/characters/char_jachwi_f_v1.png",
+      "assets/characters/char_jachwi_f_v2.png",
+      "assets/characters/char_jachwi_f_v3.png",
+      "assets/characters/char_jachwi_f_v4.png"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "옛 3D 의 바탕 원화. 게임에 직접 안 나옴"
+    },
+    {
+     "id": "old_hq_originals",
+     "name_ko": "옛 캐릭터 원본(고해상) GLB",
+     "kind": "GLB 묶음",
+     "thumb": null,
+     "files": [
+      "assets/characters/3d/char_*_base.glb",
+      "assets/characters/3d/char_*_rigged.glb",
+      "assets/characters/3d/char_*_idle.glb",
+      "assets/characters/3d/char_*_walking*.glb"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "평균 22.5만 삼각형 원본. 게임·도구는 lq/ 경량본만 연다"
+    }
+   ]
+  },
+  {
+   "title_ko": "⑨ NPC · 직업 캐릭터",
+   "note_ko": "게임 대사 화자는 셋(자취생·몬이·식물신). 식물신은 외형 없음이 확정. 직업 캐릭터 7명은 3D·동작 16종·원화까지 다 있지만 게임 화면엔 안 나온다(첫 판은 자취생 고정).",
+   "items": [
+    {
+     "id": "npc_namja_jachwi",
+     "name_ko": "자취남 3D",
+     "kind": "3D 캐릭터 GLB",
+     "thumb": "thumbs/characters/npc_namja_jachwi.webp",
+     "files": [
+      "assets/characters/3d/lq/char_namja_jachwi_idle.glb",
+      "assets/characters/3d/lq/char_namja_jachwi_rigged.glb",
+      "assets/characters/3d/anim/char_namja_jachwi_*.glb (16종)",
+      "assets/characters/char_namja_jachwi_front.png"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "room_view.js 이름표엔 있으나 게임은 자취녀만 세움. 초상 9장(⑤)도 안 씀. index.html 에만 나옴"
+    },
+    {
+     "id": "npc_yeoja_gajang",
+     "name_ko": "여 가장 3D",
+     "kind": "3D 캐릭터 GLB",
+     "thumb": "thumbs/characters/npc_yeoja_gajang.webp",
+     "files": [
+      "assets/characters/3d/lq/char_yeoja_gajang_idle.glb",
+      "assets/characters/3d/lq/char_yeoja_gajang_rigged.glb",
+      "assets/characters/3d/anim/char_yeoja_gajang_*.glb (16종)",
+      "assets/characters/char_yeoja_gajang_front.png"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "게임 안 나옴 — index.html(빛 도구 3D)의 캐릭터 고르기에만 있음. 직업 선택(초보 엔딩 뒤)이 들어오면 필요"
+    },
+    {
+     "id": "npc_namja_gajang",
+     "name_ko": "남 가장 3D",
+     "kind": "3D 캐릭터 GLB",
+     "thumb": "thumbs/characters/npc_namja_gajang.webp",
+     "files": [
+      "assets/characters/3d/lq/char_namja_gajang_idle.glb",
+      "assets/characters/3d/lq/char_namja_gajang_rigged.glb",
+      "assets/characters/3d/anim/char_namja_gajang_*.glb (16종)",
+      "assets/characters/char_namja_gajang_front.png"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "게임 안 나옴 — index.html(빛 도구 3D)의 캐릭터 고르기에만 있음. 직업 선택(초보 엔딩 뒤)이 들어오면 필요"
+    },
+    {
+     "id": "npc_yeoja_jubu",
+     "name_ko": "여 주부 3D",
+     "kind": "3D 캐릭터 GLB",
+     "thumb": "thumbs/characters/npc_yeoja_jubu.webp",
+     "files": [
+      "assets/characters/3d/lq/char_yeoja_jubu_idle.glb",
+      "assets/characters/3d/lq/char_yeoja_jubu_rigged.glb",
+      "assets/characters/3d/anim/char_yeoja_jubu_*.glb (16종)",
+      "assets/characters/char_yeoja_jubu_front.png"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "게임 안 나옴 — index.html(빛 도구 3D)의 캐릭터 고르기에만 있음. 직업 선택(초보 엔딩 뒤)이 들어오면 필요"
+    },
+    {
+     "id": "npc_namja_jubu",
+     "name_ko": "남 주부 3D",
+     "kind": "3D 캐릭터 GLB",
+     "thumb": "thumbs/characters/npc_namja_jubu.webp",
+     "files": [
+      "assets/characters/3d/lq/char_namja_jubu_idle.glb",
+      "assets/characters/3d/lq/char_namja_jubu_rigged.glb",
+      "assets/characters/3d/anim/char_namja_jubu_*.glb (16종)",
+      "assets/characters/char_namja_jubu_front.png"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "게임 안 나옴 — index.html(빛 도구 3D)의 캐릭터 고르기에만 있음. 직업 선택(초보 엔딩 뒤)이 들어오면 필요"
+    },
+    {
+     "id": "npc_yeoja_researcher",
+     "name_ko": "여 연구원(대학원생) 3D",
+     "kind": "3D 캐릭터 GLB",
+     "thumb": "thumbs/characters/npc_yeoja_researcher.webp",
+     "files": [
+      "assets/characters/3d/lq/char_yeoja_researcher_idle.glb",
+      "assets/characters/3d/lq/char_yeoja_researcher_rigged.glb",
+      "assets/characters/3d/anim/char_yeoja_researcher_*.glb (16종)",
+      "assets/characters/char_yeoja_researcher_front.png"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "게임 안 나옴 — index.html(빛 도구 3D)의 캐릭터 고르기에만 있음. 직업 선택(초보 엔딩 뒤)이 들어오면 필요"
+    },
+    {
+     "id": "npc_namja_researcher",
+     "name_ko": "남 연구원(대학원생) 3D",
+     "kind": "3D 캐릭터 GLB",
+     "thumb": "thumbs/characters/npc_namja_researcher.webp",
+     "files": [
+      "assets/characters/3d/lq/char_namja_researcher_idle.glb",
+      "assets/characters/3d/lq/char_namja_researcher_rigged.glb",
+      "assets/characters/3d/anim/char_namja_researcher_*.glb (16종)",
+      "assets/characters/char_namja_researcher_front.png"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "게임 안 나옴 — index.html(빛 도구 3D)의 캐릭터 고르기에만 있음. 직업 선택(초보 엔딩 뒤)이 들어오면 필요"
+    },
+    {
+     "id": "npc_2d_turnarounds",
+     "name_ko": "직업 캐릭터 원화 (4방향 + 남캐 얼굴안 A~D)",
+     "kind": "원화 2D 묶음",
+     "thumb": null,
+     "files": [
+      "assets/characters/char_namja_*.png",
+      "assets/characters/char_yeoja_*.png"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "위 7명의 바탕 원화. 게임 안 씀"
+    },
+    {
+     "id": "npc_masks",
+     "name_ko": "캐릭터 색갈이 마스크 8장",
+     "kind": "마스크 PNG 묶음",
+     "thumb": null,
+     "files": [
+      "assets/characters/masks/char_*_mask.png"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "부위별 색 바꾸기 시험 — «안 된다»고 재서 접음(char-index.md §4)"
+    },
+    {
+     "id": "npc_landlord_neighbor",
+     "name_ko": "집주인·윗집 이웃",
+     "kind": "NPC",
+     "thumb": null,
+     "files": [],
+     "status": "missing",
+     "used_in_game": false,
+     "note_ko": "대사(잡담)로만 나오고 외형 없음. 지금 판에선 그림이 필요 없게 짜여 있음 — 보여줄 계획이 생기면 필요"
+    }
+   ]
+  }
+ ]
+}

@@ -1,0 +1,1557 @@
+{
+ "domain": "house",
+ "sections": [
+  {
+   "title_ko": "방",
+   "note_ko": "집 6곳. 스토리로 가는 방은 반지하(시작)와 원룸(이사 후) 둘뿐이고, 나머지 넷은 개발자 설정의 방 고르기에서만 열린다. v2 겉감·소품은 반지하에만 들어갔다.",
+   "items": [
+    {
+     "id": "room_banjiha",
+     "name_ko": "반지하",
+     "kind": "room",
+     "thumb": "thumbs/house/room_banjiha.webp",
+     "files": [
+      "data/house_rooms.json",
+      "src/render3d/room_materials.js",
+      "src/render3d/furniture_dress.js"
+     ],
+     "status": "v2",
+     "used_in_game": true,
+     "note_ko": "시작 방. v2로 꽃무늬 벽지·장판·얼룩·창빛 기둥·가구 옷 5·소품 4가 들어감. 가구 11(식물등 3 포함)"
+    },
+    {
+     "id": "room_oneroom",
+     "name_ko": "원룸",
+     "kind": "room",
+     "thumb": "thumbs/house/room_oneroom.webp",
+     "files": [
+      "data/house_rooms.json",
+      "src/game/oneroom.js"
+     ],
+     "status": "old",
+     "used_in_game": true,
+     "note_ko": "이사 후 방. 창턱 받침 4칸만 남기고 비움 — 반지하 가구를 들고 와서 놓는다. v2 겉감·소품 없음(«원룸은 나중»)"
+    },
+    {
+     "id": "room_tworoom",
+     "name_ko": "투룸",
+     "kind": "room",
+     "thumb": "thumbs/house/room_tworoom.webp",
+     "files": [
+      "data/house_rooms.json"
+     ],
+     "status": "old",
+     "used_in_game": false,
+     "note_ko": "개발용 방 고르기에만 있음. 미완성(done:false). 가구 11 중 옷 입는 것 1, 나머지 코드 상자. 파스텔 단색 겉감"
+    },
+    {
+     "id": "room_apartment",
+     "name_ko": "아파트",
+     "kind": "room",
+     "thumb": "thumbs/house/room_apartment.webp",
+     "files": [
+      "data/house_rooms.json"
+     ],
+     "status": "old",
+     "used_in_game": false,
+     "note_ko": "개발용 방 고르기에만 있음. «내 집» 후보. 가구 29 중 옷 입는 것 6, 나머지 코드 상자. 파스텔 단색 겉감"
+    },
+    {
+     "id": "room_classroom",
+     "name_ko": "학원교실",
+     "kind": "room",
+     "thumb": "thumbs/house/room_classroom.webp",
+     "files": [
+      "data/house_rooms.json"
+     ],
+     "status": "old",
+     "used_in_game": false,
+     "note_ko": "개발용 방 고르기에만 있음. 직장 공간(월세 없음). 가구 16 중 옷 입는 것 0, 나머지 코드 상자. 파스텔 단색 겉감"
+    },
+    {
+     "id": "room_greenhouse",
+     "name_ko": "온실",
+     "kind": "room",
+     "thumb": "thumbs/house/room_greenhouse.webp",
+     "files": [
+      "data/house_rooms.json"
+     ],
+     "status": "old",
+     "used_in_game": false,
+     "note_ko": "개발용 방 고르기에만 있음. 연구실 딸린 온실. 가구 13 중 옷 입는 것 3, 나머지 코드 상자. 파스텔 단색 겉감"
+    },
+    {
+     "id": "room_concepts",
+     "name_ko": "방 원화 30장",
+     "kind": "concept",
+     "thumb": "thumbs/house/room_concepts.webp",
+     "files": [
+      "assets/raw/houses/"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "5방 × 스타일 A미니멀·B따뜻·C동숲풍 × 2장. 참고자료 — 게임은 안 씀"
+    },
+    {
+     "id": "room_keyframe",
+     "name_ko": "v2 방 아트 기준 그림",
+     "kind": "concept",
+     "thumb": "thumbs/house/room_keyframe.webp",
+     "files": [
+      "assets/gen/v2_room/style_keyframe_a.png"
+     ],
+     "status": "v2",
+     "used_in_game": false,
+     "note_ko": "이번 v2 반지하 겉감이 따른 기준 그림. 게임엔 직접 안 들어감"
+    }
+   ]
+  },
+  {
+   "title_ko": "겉감·빛 연출",
+   "note_ko": "벽·바닥·천장의 표면과 화면 효과. v2 겉감은 그림 파일이 아니라 셰이더가 월드 좌표로 찍는 코드 무늬라 반지하에만 표가 있다.",
+   "items": [
+    {
+     "id": "mat_wallpaper",
+     "name_ko": "노란 꽃무늬 벽지·물 얼룩",
+     "kind": "texture",
+     "thumb": "thumbs/house/mat_wallpaper.webp",
+     "files": [
+      "src/render3d/room_materials.js"
+     ],
+     "status": "v2",
+     "used_in_game": true,
+     "note_ko": "반지하만. 창 밑 물 얼룩·구석 곰팡이·걸레받이 칠·시멘트 천장까지 한 벌(코드 무늬)"
+    },
+    {
+     "id": "mat_floor",
+     "name_ko": "노란 장판",
+     "kind": "texture",
+     "thumb": "thumbs/house/mat_floor.webp",
+     "files": [
+      "src/render3d/room_materials.js"
+     ],
+     "status": "v2",
+     "used_in_game": true,
+     "note_ko": "반지하만. 닳은 길·긁힘·때가 찍힌 코드 무늬"
+    },
+    {
+     "id": "fx_atmosphere",
+     "name_ko": "창빛 기둥·먼지·등 달무리",
+     "kind": "effect",
+     "thumb": "thumbs/house/fx_atmosphere.webp",
+     "files": [
+      "src/render3d/atmosphere.js"
+     ],
+     "status": "v2",
+     "used_in_game": true,
+     "note_ko": "해 방향 따라 움직이고 밤엔 꺼짐. 창 있는 방 모두"
+    },
+    {
+     "id": "fx_postfx",
+     "name_ko": "후처리(색보정·가장자리·번짐)",
+     "kind": "effect",
+     "thumb": "thumbs/house/fx_postfx.webp",
+     "files": [
+      "src/render3d/postfx.js"
+     ],
+     "status": "v2",
+     "used_in_game": true,
+     "note_ko": "따뜻한 색보정·비네트·등/창 번짐·FXAA. 데스크톱은 SSAO(스위프트셰이더에서만 봄)"
+    },
+    {
+     "id": "mat_oneroom",
+     "name_ko": "원룸 겉감(크림 벽·오크 마루)",
+     "kind": "texture",
+     "thumb": "thumbs/house/mat_oneroom.webp",
+     "files": [
+      "data/room_finishes.json",
+      "src/render3d/house.js"
+     ],
+     "status": "old",
+     "used_in_game": true,
+     "note_ko": "v2 겉감 표에 원룸이 없음 — 매끈한 파스텔 단색면 그대로"
+    },
+    {
+     "id": "mat_palette",
+     "name_ko": "방 색 팔레트 27색",
+     "kind": "palette",
+     "thumb": "thumbs/house/mat_palette.webp",
+     "files": [
+      "data/room_finishes.json"
+     ],
+     "status": "ok",
+     "used_in_game": true,
+     "note_ko": "벽 10 · 바닥 12 · 천장 5. 원룸·투룸이 씀. 반지하는 v2 겉감이 덮음"
+    },
+    {
+     "id": "tex_real_wall",
+     "name_ko": "실사 벽지 텍스처 3장",
+     "kind": "texture",
+     "thumb": "thumbs/house/tex_real_wall.webp",
+     "files": [
+      "assets/house/textures/house_tex_wall_white.png",
+      "assets/house/textures/house_tex_wall_pastel.png",
+      "assets/house/textures/house_tex_wall_cement.png"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "화이트·파스텔민트·시멘트. loadHouseTextures 로 남겨만 둠"
+    },
+    {
+     "id": "tex_real_floor",
+     "name_ko": "실사 바닥 텍스처 3장",
+     "kind": "texture",
+     "thumb": "thumbs/house/tex_real_floor.webp",
+     "files": [
+      "assets/house/textures/house_tex_floor_wood.png",
+      "assets/house/textures/house_tex_floor_tile.png",
+      "assets/house/textures/house_tex_floor_cement.png"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "원목·타일·시멘트. 게임은 안 읽음"
+    }
+   ]
+  },
+  {
+   "title_ko": "반지하 가구",
+   "note_ko": "지금 방에 놓인 것. 옷(v2 GLB)은 프리셋 이름으로 붙어서 기본색 다섯에만 입는다 — 옷 밑에는 원래 상자가 보이지 않는 판정용으로 남아 있다.",
+   "items": [
+    {
+     "id": "v2f_bed_single",
+     "name_ko": "싱글 침대",
+     "kind": "furniture",
+     "thumb": "thumbs/house/v2f_bed_single.webp",
+     "files": [
+      "assets/v2/furniture/bed.glb",
+      "src/render3d/furniture_dress.js"
+     ],
+     "status": "v2",
+     "used_in_game": true,
+     "note_ko": "v2 침대 GLB(패치워크 이불). 누울 높이는 옛 상자 기준. 놓인 방: 반지하·아파트·온실"
+    },
+    {
+     "id": "v2f_desk",
+     "name_ko": "책상",
+     "kind": "furniture",
+     "thumb": "thumbs/house/v2f_desk.webp",
+     "files": [
+      "assets/v2/furniture/desk.glb",
+      "src/render3d/furniture_dress.js"
+     ],
+     "status": "v2",
+     "used_in_game": true,
+     "note_ko": "v2 나무 책상 GLB. 놓인 방: 반지하·아파트·온실"
+    },
+    {
+     "id": "v2f_chair",
+     "name_ko": "의자",
+     "kind": "furniture",
+     "thumb": "thumbs/house/v2f_chair.webp",
+     "files": [
+      "assets/v2/furniture/chair.glb",
+      "src/render3d/furniture_dress.js"
+     ],
+     "status": "v2",
+     "used_in_game": true,
+     "note_ko": "v2 나무 의자 GLB. 앉는 높이는 옛 상자 기준. 놓인 방: 반지하·아파트·온실"
+    },
+    {
+     "id": "v2f_dresser",
+     "name_ko": "서랍장",
+     "kind": "furniture",
+     "thumb": "thumbs/house/v2f_dresser.webp",
+     "files": [
+      "assets/v2/furniture/drawer.glb",
+      "src/render3d/furniture_dress.js"
+     ],
+     "status": "v2",
+     "used_in_game": true,
+     "note_ko": "v2 서랍장 GLB(drawer.glb). 놓인 방: 반지하·아파트"
+    },
+    {
+     "id": "v2f_nightstand",
+     "name_ko": "협탁",
+     "kind": "furniture",
+     "thumb": "thumbs/house/v2f_nightstand.webp",
+     "files": [
+      "assets/v2/furniture/cabinet.glb",
+      "src/render3d/furniture_dress.js"
+     ],
+     "status": "v2",
+     "used_in_game": true,
+     "note_ko": "v2 협탁 GLB(cabinet.glb). 놓인 방: 반지하·투룸·아파트"
+    },
+    {
+     "id": "f_shelf_etagere_3tier",
+     "name_ko": "3단 선반",
+     "kind": "furniture",
+     "thumb": "thumbs/house/f_shelf_etagere_3tier.webp",
+     "files": [
+      "data/furniture_presets.json",
+      "src/render3d/furniture_pastel.js"
+     ],
+     "status": "missing",
+     "used_in_game": true,
+     "note_ko": "놓인 방: 반지하·투룸·아파트·온실 · v2가 색만 다시 칠함. 옅은 회색 쇠 — GLB 없음"
+    },
+    {
+     "id": "f_shelf_sill_pot1",
+     "name_ko": "창턱 화분받침(1칸)",
+     "kind": "furniture",
+     "thumb": "thumbs/house/f_shelf_sill_pot1.webp",
+     "files": [
+      "data/furniture_presets.json",
+      "src/render3d/furniture_pastel.js"
+     ],
+     "status": "missing",
+     "used_in_game": true,
+     "note_ko": "놓인 방: 반지하 · v2가 색만 다시 칠함. 첫 «높은 창가 자리». 따뜻한 나무색"
+    },
+    {
+     "id": "v2f_shelf",
+     "name_ko": "v2 선반 GLB(안 붙음)",
+     "kind": "furniture",
+     "thumb": "thumbs/house/v2f_shelf.webp",
+     "files": [
+      "assets/v2/furniture/shelf.glb"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "이번에 만들었지만 옷 표(FURN)에 없어 어디에도 안 입힘"
+    }
+   ]
+  },
+  {
+   "title_ko": "원룸 가구",
+   "note_ko": "원룸은 창턱 받침 하나만 두고 비웠다. 나머지는 반지하에서 가방에 담아 온 가구를 플레이어가 놓는다. 옷은 프리셋 이름으로 붙으니 들고 온 기본색 가구도 입는 구조다(원룸에서 직접 찍어 보진 않았다).",
+   "items": [
+    {
+     "id": "f_shelf_sill_pot4",
+     "name_ko": "창턱 화분받침(4칸)",
+     "kind": "furniture",
+     "thumb": "thumbs/house/f_shelf_sill_pot4.webp",
+     "files": [
+      "data/furniture_presets.json",
+      "src/render3d/furniture_pastel.js"
+     ],
+     "status": "missing",
+     "used_in_game": true,
+     "note_ko": "놓인 방: 원룸 · v2가 색만 다시 칠함. 큰 창을 가로지르는 받침. 원룸 자리 4칸이 전부 여기"
+    }
+   ]
+  },
+  {
+   "title_ko": "다른 방 가구 (개발용 방)",
+   "note_ko": "투룸·아파트·학원교실·온실에 놓인 코드 상자 가구. 이 방들이 스토리에 열리면 전부 그림이 필요하다.",
+   "items": [
+    {
+     "id": "f_bed_double",
+     "name_ko": "더블 침대",
+     "kind": "furniture",
+     "thumb": "thumbs/house/f_bed_double.webp",
+     "files": [
+      "data/furniture_presets.json",
+      "src/render3d/furniture_pastel.js"
+     ],
+     "status": "missing",
+     "used_in_game": false,
+     "note_ko": "놓인 방: 투룸·아파트 · 개발용 방에만. 옷 없음(싱글만 입음)"
+    },
+    {
+     "id": "f_wardrobe",
+     "name_ko": "옷장",
+     "kind": "furniture",
+     "thumb": "thumbs/house/f_wardrobe.webp",
+     "files": [
+      "data/furniture_presets.json",
+      "src/render3d/furniture_pastel.js"
+     ],
+     "status": "missing",
+     "used_in_game": false,
+     "note_ko": "3종 · 놓인 방: 투룸·아파트 · 개발용 방에만. 기본색만 방에 있음"
+    },
+    {
+     "id": "f_shelf",
+     "name_ko": "책장",
+     "kind": "furniture",
+     "thumb": "thumbs/house/f_shelf.webp",
+     "files": [
+      "data/furniture_presets.json",
+      "src/render3d/furniture_pastel.js"
+     ],
+     "status": "missing",
+     "used_in_game": false,
+     "note_ko": "4종 · 놓인 방: 투룸·아파트·온실 · 개발용 방에만. 낮은 책장 포함"
+    },
+    {
+     "id": "f_sofa",
+     "name_ko": "2인 소파",
+     "kind": "furniture",
+     "thumb": "thumbs/house/f_sofa.webp",
+     "files": [
+      "data/furniture_presets.json",
+      "src/render3d/furniture_pastel.js"
+     ],
+     "status": "missing",
+     "used_in_game": false,
+     "note_ko": "5종 · 놓인 방: 투룸·아파트 · 개발용 방에만. 색 5"
+    },
+    {
+     "id": "f_table_round",
+     "name_ko": "원형 테이블",
+     "kind": "furniture",
+     "thumb": "thumbs/house/f_table_round.webp",
+     "files": [
+      "data/furniture_presets.json",
+      "src/render3d/furniture_pastel.js"
+     ],
+     "status": "missing",
+     "used_in_game": false,
+     "note_ko": "3종 · 놓인 방: 투룸·아파트 · 개발용 방에만"
+    },
+    {
+     "id": "f_table",
+     "name_ko": "식탁",
+     "kind": "furniture",
+     "thumb": "thumbs/house/f_table.webp",
+     "files": [
+      "data/furniture_presets.json",
+      "src/render3d/furniture_pastel.js"
+     ],
+     "status": "missing",
+     "used_in_game": false,
+     "note_ko": "놓인 방: 아파트·온실 · 개발용 방에만"
+    },
+    {
+     "id": "f_rug",
+     "name_ko": "러그",
+     "kind": "furniture",
+     "thumb": "thumbs/house/f_rug.webp",
+     "files": [
+      "data/furniture_presets.json",
+      "src/render3d/furniture_pastel.js"
+     ],
+     "status": "missing",
+     "used_in_game": false,
+     "note_ko": "2종 · 놓인 방: 투룸 · 개발용 방에만. 납작한 판 하나"
+    },
+    {
+     "id": "f_shelf_ladder",
+     "name_ko": "사다리 선반(4단)",
+     "kind": "furniture",
+     "thumb": "thumbs/house/f_shelf_ladder.webp",
+     "files": [
+      "data/furniture_presets.json",
+      "src/render3d/furniture_pastel.js"
+     ],
+     "status": "missing",
+     "used_in_game": false,
+     "note_ko": "놓인 방: 아파트·온실 · 개발용 방에만 · v2가 색만 다시 칠함. 회색 쇠. GLB 있음(assets/furniture) — 안 씀"
+    },
+    {
+     "id": "f_shelf_cart",
+     "name_ko": "카트 선반(3단)",
+     "kind": "furniture",
+     "thumb": "thumbs/house/f_shelf_cart.webp",
+     "files": [
+      "data/furniture_presets.json",
+      "src/render3d/furniture_pastel.js"
+     ],
+     "status": "missing",
+     "used_in_game": false,
+     "note_ko": "놓인 방: 온실 · 개발용 방에만. GLB 있음(assets/furniture) — 안 씀"
+    },
+    {
+     "id": "f_plant_step",
+     "name_ko": "계단식 플랜트대",
+     "kind": "furniture",
+     "thumb": "thumbs/house/f_plant_step.webp",
+     "files": [
+      "data/furniture_presets.json",
+      "src/render3d/furniture_pastel.js"
+     ],
+     "status": "missing",
+     "used_in_game": false,
+     "note_ko": "놓인 방: 투룸·아파트·온실 · 개발용 방에만"
+    },
+    {
+     "id": "f_plant_pedestal",
+     "name_ko": "높은 화분 받침대",
+     "kind": "furniture",
+     "thumb": "thumbs/house/f_plant_pedestal.webp",
+     "files": [
+      "data/furniture_presets.json",
+      "src/render3d/furniture_pastel.js"
+     ],
+     "status": "missing",
+     "used_in_game": false,
+     "note_ko": "놓인 방: 아파트 · 개발용 방에만"
+    },
+    {
+     "id": "f_shoe_cabinet",
+     "name_ko": "신발장",
+     "kind": "furniture",
+     "thumb": "thumbs/house/f_shoe_cabinet.webp",
+     "files": [
+      "data/furniture_presets.json",
+      "src/render3d/furniture_pastel.js"
+     ],
+     "status": "missing",
+     "used_in_game": false,
+     "note_ko": "놓인 방: 아파트 · 개발용 방에만"
+    },
+    {
+     "id": "f_fridge",
+     "name_ko": "냉장고",
+     "kind": "furniture",
+     "thumb": "thumbs/house/f_fridge.webp",
+     "files": [
+      "data/furniture_presets.json",
+      "src/render3d/furniture_pastel.js"
+     ],
+     "status": "missing",
+     "used_in_game": false,
+     "note_ko": "놓인 방: 아파트 · 개발용 방에만. 가전"
+    },
+    {
+     "id": "f_kitchen",
+     "name_ko": "주방 카운터",
+     "kind": "furniture",
+     "thumb": "thumbs/house/f_kitchen.webp",
+     "files": [
+      "data/furniture_presets.json",
+      "src/render3d/furniture_pastel.js"
+     ],
+     "status": "missing",
+     "used_in_game": false,
+     "note_ko": "놓인 방: 아파트 · 개발용 방에만. 가전. v2 kitchen.glb 가 있는데 안 붙음"
+    },
+    {
+     "id": "f_tv",
+     "name_ko": "TV",
+     "kind": "furniture",
+     "thumb": "thumbs/house/f_tv.webp",
+     "files": [
+      "data/furniture_presets.json",
+      "src/render3d/furniture_pastel.js"
+     ],
+     "status": "missing",
+     "used_in_game": false,
+     "note_ko": "놓인 방: 투룸·아파트 · 개발용 방에만. 가전. v2 monitor.glb 를 쓸 수도 있음"
+    },
+    {
+     "id": "f_picture_frame",
+     "name_ko": "액자",
+     "kind": "furniture",
+     "thumb": "thumbs/house/f_picture_frame.webp",
+     "files": [
+      "data/furniture_presets.json",
+      "src/render3d/furniture_pastel.js"
+     ],
+     "status": "missing",
+     "used_in_game": false,
+     "note_ko": "놓인 방: 아파트 · 개발용 방에만. 벽 붙박이"
+    },
+    {
+     "id": "f_blackboard",
+     "name_ko": "칠판·화이트보드",
+     "kind": "furniture",
+     "thumb": "thumbs/house/f_blackboard.webp",
+     "files": [
+      "data/furniture_presets.json",
+      "src/render3d/furniture_pastel.js"
+     ],
+     "status": "missing",
+     "used_in_game": false,
+     "note_ko": "3종 · 놓인 방: 학원교실 · 개발용 방에만"
+    },
+    {
+     "id": "f_bulletin",
+     "name_ko": "게시판",
+     "kind": "furniture",
+     "thumb": "thumbs/house/f_bulletin.webp",
+     "files": [
+      "data/furniture_presets.json",
+      "src/render3d/furniture_pastel.js"
+     ],
+     "status": "missing",
+     "used_in_game": false,
+     "note_ko": "놓인 방: 학원교실 · 개발용 방에만"
+    },
+    {
+     "id": "f_lectern",
+     "name_ko": "교탁",
+     "kind": "furniture",
+     "thumb": "thumbs/house/f_lectern.webp",
+     "files": [
+      "data/furniture_presets.json",
+      "src/render3d/furniture_pastel.js"
+     ],
+     "status": "missing",
+     "used_in_game": false,
+     "note_ko": "놓인 방: 학원교실 · 개발용 방에만"
+    },
+    {
+     "id": "f_desk_student",
+     "name_ko": "학생 책상",
+     "kind": "furniture",
+     "thumb": "thumbs/house/f_desk_student.webp",
+     "files": [
+      "data/furniture_presets.json",
+      "src/render3d/furniture_pastel.js"
+     ],
+     "status": "missing",
+     "used_in_game": false,
+     "note_ko": "3종 · 놓인 방: 학원교실 · 개발용 방에만"
+    },
+    {
+     "id": "f_chair_student",
+     "name_ko": "학생 의자",
+     "kind": "furniture",
+     "thumb": "thumbs/house/f_chair_student.webp",
+     "files": [
+      "data/furniture_presets.json",
+      "src/render3d/furniture_pastel.js"
+     ],
+     "status": "missing",
+     "used_in_game": false,
+     "note_ko": "놓인 방: 학원교실 · 개발용 방에만. 옷 없음(기본 의자만 입음)"
+    },
+    {
+     "id": "f_locker",
+     "name_ko": "사물함",
+     "kind": "furniture",
+     "thumb": "thumbs/house/f_locker.webp",
+     "files": [
+      "data/furniture_presets.json",
+      "src/render3d/furniture_pastel.js"
+     ],
+     "status": "missing",
+     "used_in_game": false,
+     "note_ko": "2종 · 놓인 방: 학원교실 · 개발용 방에만"
+    }
+   ]
+  },
+  {
+   "title_ko": "목록에만 있는 가구",
+   "note_ko": "furniture_presets.json 에 있고 코드로 지을 수 있지만 어느 방에도 안 놓인 것. 상점 코어는 가구 81종을 낼 준비가 됐는데 화면에 가구 갈래가 아직 안 이어져 있다.",
+   "items": [
+    {
+     "id": "f_bed_colors",
+     "name_ko": "싱글 침대 색 3종",
+     "kind": "furniture",
+     "thumb": "thumbs/house/f_bed_colors.webp",
+     "files": [
+      "data/furniture_presets.json",
+      "src/render3d/furniture_pastel.js"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "3종 · 어느 방에도 안 놓임. 메이플·화이트·민트. 이름이 달라 v2 옷을 못 입음"
+    },
+    {
+     "id": "f_desk_colors",
+     "name_ko": "책상 색 3종",
+     "kind": "furniture",
+     "thumb": "thumbs/house/f_desk_colors.webp",
+     "files": [
+      "data/furniture_presets.json",
+      "src/render3d/furniture_pastel.js"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "3종 · 어느 방에도 안 놓임. 옷 못 입음"
+    },
+    {
+     "id": "f_chair_colors",
+     "name_ko": "의자 색 4종",
+     "kind": "furniture",
+     "thumb": "thumbs/house/f_chair_colors.webp",
+     "files": [
+      "data/furniture_presets.json",
+      "src/render3d/furniture_pastel.js"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "4종 · 어느 방에도 안 놓임. 옷 못 입음"
+    },
+    {
+     "id": "f_dresser_colors",
+     "name_ko": "서랍장 색 2종",
+     "kind": "furniture",
+     "thumb": "thumbs/house/f_dresser_colors.webp",
+     "files": [
+      "data/furniture_presets.json",
+      "src/render3d/furniture_pastel.js"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "2종 · 어느 방에도 안 놓임. 옷 못 입음"
+    },
+    {
+     "id": "f_nightstand_colors",
+     "name_ko": "협탁 색 2종",
+     "kind": "furniture",
+     "thumb": "thumbs/house/f_nightstand_colors.webp",
+     "files": [
+      "data/furniture_presets.json",
+      "src/render3d/furniture_pastel.js"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "2종 · 어느 방에도 안 놓임. 옷 못 입음"
+    },
+    {
+     "id": "f_etagere_colors",
+     "name_ko": "3단 선반 색 3종",
+     "kind": "furniture",
+     "thumb": "thumbs/house/f_etagere_colors.webp",
+     "files": [
+      "data/furniture_presets.json",
+      "src/render3d/furniture_pastel.js"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "3종 · 어느 방에도 안 놓임 · v2가 색만 다시 칠함. ⚠ 셋 다 같은 회색 쇠로 칠해져 색 차이가 사라짐"
+    },
+    {
+     "id": "f_chair_arm",
+     "name_ko": "암체어",
+     "kind": "furniture",
+     "thumb": "thumbs/house/f_chair_arm.webp",
+     "files": [
+      "data/furniture_presets.json",
+      "src/render3d/furniture_pastel.js"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "5종 · 어느 방에도 안 놓임"
+    },
+    {
+     "id": "f_stool",
+     "name_ko": "스툴",
+     "kind": "furniture",
+     "thumb": "thumbs/house/f_stool.webp",
+     "files": [
+      "data/furniture_presets.json",
+      "src/render3d/furniture_pastel.js"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "4종 · 어느 방에도 안 놓임"
+    },
+    {
+     "id": "f_bench",
+     "name_ko": "벤치",
+     "kind": "furniture",
+     "thumb": "thumbs/house/f_bench.webp",
+     "files": [
+      "data/furniture_presets.json",
+      "src/render3d/furniture_pastel.js"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "어느 방에도 안 놓임"
+    },
+    {
+     "id": "f_bed_bunk",
+     "name_ko": "이층 침대",
+     "kind": "furniture",
+     "thumb": "thumbs/house/f_bed_bunk.webp",
+     "files": [
+      "data/furniture_presets.json",
+      "src/render3d/furniture_pastel.js"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "어느 방에도 안 놓임. 상점 코어 최고가(73만)"
+    },
+    {
+     "id": "f_bed_loft",
+     "name_ko": "로프트 침대",
+     "kind": "furniture",
+     "thumb": "thumbs/house/f_bed_loft.webp",
+     "files": [
+      "data/furniture_presets.json",
+      "src/render3d/furniture_pastel.js"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "어느 방에도 안 놓임"
+    },
+    {
+     "id": "f_mattress",
+     "name_ko": "바닥 매트리스",
+     "kind": "furniture",
+     "thumb": "thumbs/house/f_mattress.webp",
+     "files": [
+      "data/furniture_presets.json",
+      "src/render3d/furniture_pastel.js"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "어느 방에도 안 놓임"
+    },
+    {
+     "id": "f_vanity",
+     "name_ko": "화장대",
+     "kind": "furniture",
+     "thumb": "thumbs/house/f_vanity.webp",
+     "files": [
+      "data/furniture_presets.json",
+      "src/render3d/furniture_pastel.js"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "어느 방에도 안 놓임"
+    },
+    {
+     "id": "f_clothes_rack",
+     "name_ko": "옷걸이 행거",
+     "kind": "furniture",
+     "thumb": "thumbs/house/f_clothes_rack.webp",
+     "files": [
+      "data/furniture_presets.json",
+      "src/render3d/furniture_pastel.js"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "어느 방에도 안 놓임"
+    },
+    {
+     "id": "f_coffee_table",
+     "name_ko": "커피 테이블",
+     "kind": "furniture",
+     "thumb": "thumbs/house/f_coffee_table.webp",
+     "files": [
+      "data/furniture_presets.json",
+      "src/render3d/furniture_pastel.js"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "3종 · 어느 방에도 안 놓임"
+    },
+    {
+     "id": "f_low_table",
+     "name_ko": "좌식 테이블",
+     "kind": "furniture",
+     "thumb": "thumbs/house/f_low_table.webp",
+     "files": [
+      "data/furniture_presets.json",
+      "src/render3d/furniture_pastel.js"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "3종 · 어느 방에도 안 놓임"
+    },
+    {
+     "id": "f_storage_box",
+     "name_ko": "수납 박스",
+     "kind": "furniture",
+     "thumb": "thumbs/house/f_storage_box.webp",
+     "files": [
+      "data/furniture_presets.json",
+      "src/render3d/furniture_pastel.js"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "어느 방에도 안 놓임"
+    },
+    {
+     "id": "f_cube_storage",
+     "name_ko": "큐브 수납장",
+     "kind": "furniture",
+     "thumb": "thumbs/house/f_cube_storage.webp",
+     "files": [
+      "data/furniture_presets.json",
+      "src/render3d/furniture_pastel.js"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "3종 · 어느 방에도 안 놓임"
+    },
+    {
+     "id": "f_tv_stand",
+     "name_ko": "TV장",
+     "kind": "furniture",
+     "thumb": "thumbs/house/f_tv_stand.webp",
+     "files": [
+      "data/furniture_presets.json",
+      "src/render3d/furniture_pastel.js"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "어느 방에도 안 놓임"
+    },
+    {
+     "id": "f_mirror",
+     "name_ko": "전신 거울",
+     "kind": "furniture",
+     "thumb": "thumbs/house/f_mirror.webp",
+     "files": [
+      "data/furniture_presets.json",
+      "src/render3d/furniture_pastel.js"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "어느 방에도 안 놓임"
+    },
+    {
+     "id": "f_drying_rack",
+     "name_ko": "빨래 건조대(코드)",
+     "kind": "furniture",
+     "thumb": "thumbs/house/f_drying_rack.webp",
+     "files": [
+      "data/furniture_presets.json",
+      "src/render3d/furniture_pastel.js"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "어느 방에도 안 놓임. v2 건조대 GLB는 반지하 소품으로 따로 놓임"
+    },
+    {
+     "id": "f_laundry_basket",
+     "name_ko": "빨래 바구니(코드)",
+     "kind": "furniture",
+     "thumb": "thumbs/house/f_laundry_basket.webp",
+     "files": [
+      "data/furniture_presets.json",
+      "src/render3d/furniture_pastel.js"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "어느 방에도 안 놓임. v2 laundry.glb 는 뺐음"
+    },
+    {
+     "id": "f_room_divider",
+     "name_ko": "파티션 가림막",
+     "kind": "furniture",
+     "thumb": "thumbs/house/f_room_divider.webp",
+     "files": [
+      "data/furniture_presets.json",
+      "src/render3d/furniture_pastel.js"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "어느 방에도 안 놓임"
+    },
+    {
+     "id": "f_floor_cushion",
+     "name_ko": "바닥 쿠션",
+     "kind": "furniture",
+     "thumb": "thumbs/house/f_floor_cushion.webp",
+     "files": [
+      "data/furniture_presets.json",
+      "src/render3d/furniture_pastel.js"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "어느 방에도 안 놓임"
+    },
+    {
+     "id": "f_shelf_stool",
+     "name_ko": "스툴 받침(1단)",
+     "kind": "furniture",
+     "thumb": "thumbs/house/f_shelf_stool.webp",
+     "files": [
+      "data/furniture_presets.json",
+      "src/render3d/furniture_pastel.js"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "어느 방에도 안 놓임. 상점 코어 최저가. GLB 있음 — 안 씀"
+    },
+    {
+     "id": "f_shelf_corner",
+     "name_ko": "코너 선반(3단)",
+     "kind": "furniture",
+     "thumb": "thumbs/house/f_shelf_corner.webp",
+     "files": [
+      "data/furniture_presets.json",
+      "src/render3d/furniture_pastel.js"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "어느 방에도 안 놓임"
+    },
+    {
+     "id": "f_greenhouse_cabinet",
+     "name_ko": "미니 온실장",
+     "kind": "furniture",
+     "thumb": "thumbs/house/f_greenhouse_cabinet.webp",
+     "files": [
+      "data/furniture_presets.json",
+      "src/render3d/furniture_pastel.js"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "어느 방에도 안 놓임"
+    },
+    {
+     "id": "f_office",
+     "name_ko": "사무 의자·넓은 책상",
+     "kind": "furniture",
+     "thumb": "thumbs/house/f_office.webp",
+     "files": [
+      "data/furniture_presets.json",
+      "src/render3d/furniture_pastel.js"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "2종 · 어느 방에도 안 놓임. «학원·사무»라 상점에서도 빠짐"
+    },
+    {
+     "id": "f_sill_extras",
+     "name_ko": "창가 받침 3종",
+     "kind": "furniture",
+     "thumb": "thumbs/house/f_sill_extras.webp",
+     "files": [
+      "data/furniture_presets.json",
+      "src/render3d/furniture_pastel.js"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "3종 · 어느 방에도 안 놓임. 창턱 확장 선반·물받이 트레이·벽걸이 1단. 붙박이라 안 팖"
+    },
+    {
+     "id": "f_wall_misc",
+     "name_ko": "벽 그리드·벽시계",
+     "kind": "furniture",
+     "thumb": "thumbs/house/f_wall_misc.webp",
+     "files": [
+      "data/furniture_presets.json",
+      "src/render3d/furniture_pastel.js"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "2종 · 어느 방에도 안 놓임. 벽 붙박이"
+    },
+    {
+     "id": "f_plant_hanger",
+     "name_ko": "행잉 플랜터",
+     "kind": "furniture",
+     "thumb": "thumbs/house/f_plant_hanger.webp",
+     "files": [
+      "data/furniture_presets.json",
+      "src/render3d/furniture_pastel.js"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "어느 방에도 안 놓임. 매다는 자리가 게임에 없음"
+    },
+    {
+     "id": "glb_shelves_old",
+     "name_ko": "옛 선반 GLB 7종",
+     "kind": "furniture",
+     "thumb": "thumbs/house/glb_shelves_old.webp",
+     "files": [
+      "assets/furniture/shelf_cart_3tier.glb",
+      "assets/furniture/shelf_etagere_3tier.glb",
+      "assets/furniture/shelf_growrack_2tier.glb",
+      "assets/furniture/shelf_ladder_4tier.glb",
+      "assets/furniture/shelf_stool_1.glb",
+      "assets/furniture/shelf_wall_1tier.glb",
+      "assets/furniture/shelf_windowsill.glb"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "카트·3단·그로우랙·사다리·스툴·벽걸이·창턱. 저폴리 GLB가 있는데 게임은 같은 이름의 코드 상자를 씀"
+    }
+   ]
+  },
+  {
+   "title_ko": "등·식물등",
+   "note_ko": "식물등은 이 게임의 길(«등이 곧 길»)인데 셋 다 코드 상자다. 쓸 만한 GLB 등이 따로 있지만 하나도 안 붙었다.",
+   "items": [
+    {
+     "id": "l_growlight_clip",
+     "name_ko": "식물등 — 클립형",
+     "kind": "lamp",
+     "thumb": "thumbs/house/l_growlight_clip.webp",
+     "files": [
+      "data/furniture_presets.json",
+      "src/render3d/furniture_pastel.js"
+     ],
+     "status": "missing",
+     "used_in_game": true,
+     "note_ko": "놓인 방: 반지하. PPFD 120. 첫 등. 모양이 비슷한 lamp_clip.glb 가 안 붙음"
+    },
+    {
+     "id": "l_growlight_bar",
+     "name_ko": "식물등 — 선반 밑 바",
+     "kind": "lamp",
+     "thumb": "thumbs/house/l_growlight_bar.webp",
+     "files": [
+      "data/furniture_presets.json",
+      "src/render3d/furniture_pastel.js"
+     ],
+     "status": "missing",
+     "used_in_game": true,
+     "note_ko": "놓인 방: 반지하. PPFD 180. 막대 하나"
+    },
+    {
+     "id": "l_growlight_stand",
+     "name_ko": "식물등 — 스탠드",
+     "kind": "lamp",
+     "thumb": "thumbs/house/l_growlight_stand.webp",
+     "files": [
+      "data/furniture_presets.json",
+      "src/render3d/furniture_pastel.js"
+     ],
+     "status": "missing",
+     "used_in_game": true,
+     "note_ko": "놓인 방: 반지하. PPFD 250"
+    },
+    {
+     "id": "l_lamp_ceiling",
+     "name_ko": "천장등",
+     "kind": "lamp",
+     "thumb": "thumbs/house/l_lamp_ceiling.webp",
+     "files": [
+      "data/furniture_presets.json",
+      "src/render3d/furniture_pastel.js"
+     ],
+     "status": "missing",
+     "used_in_game": true,
+     "note_ko": "놓인 방: 반지하·투룸. 흰 판 하나. v2 달무리만 얹힘"
+    },
+    {
+     "id": "l_lamp_floor",
+     "name_ko": "플로어 스탠드",
+     "kind": "lamp",
+     "thumb": "thumbs/house/l_lamp_floor.webp",
+     "files": [
+      "data/furniture_presets.json",
+      "src/render3d/furniture_pastel.js"
+     ],
+     "status": "missing",
+     "used_in_game": false,
+     "note_ko": "놓인 방: 아파트 · 개발용 방에만"
+    },
+    {
+     "id": "l_growrack",
+     "name_ko": "그로우랙(2단)",
+     "kind": "lamp",
+     "thumb": "thumbs/house/l_growrack.webp",
+     "files": [
+      "data/furniture_presets.json",
+      "src/render3d/furniture_pastel.js"
+     ],
+     "status": "missing",
+     "used_in_game": false,
+     "note_ko": "놓인 방: 아파트·온실 · 개발용 방에만. 등 달린 모양인데 빛을 안 냄(조명표에 없음)"
+    },
+    {
+     "id": "l_deco",
+     "name_ko": "장식등 5종",
+     "kind": "lamp",
+     "thumb": "thumbs/house/l_deco.webp",
+     "files": [
+      "data/furniture_presets.json",
+      "src/render3d/furniture_pastel.js"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "5종 · 어느 방에도 안 놓임. 펜던트 2·벽등·스트링·책상 조명"
+    },
+    {
+     "id": "glb_lamp_clip",
+     "name_ko": "클립 식물등 GLB (색 3)",
+     "kind": "lamp",
+     "thumb": "thumbs/house/glb_lamp_clip.webp",
+     "files": [
+      "assets/lighting/lamp_clip.glb",
+      "assets/lighting/lamp_clip_c1.glb",
+      "assets/lighting/lamp_clip_c2.glb"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "기본·버터크림·코랄. 클립형 식물등 옷으로 바로 쓸 수 있음"
+    },
+    {
+     "id": "glb_lamp_table",
+     "name_ko": "버섯 테이블램프 GLB (색 3)",
+     "kind": "lamp",
+     "thumb": "thumbs/house/glb_lamp_table.webp",
+     "files": [
+      "assets/lighting/lamp_table.glb",
+      "assets/lighting/lamp_table_c1.glb",
+      "assets/lighting/lamp_table_c2.glb"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "장식등"
+    },
+    {
+     "id": "glb_lamp_desk",
+     "name_ko": "민트 데스크램프 GLB (색 3)",
+     "kind": "lamp",
+     "thumb": "thumbs/house/glb_lamp_desk.webp",
+     "files": [
+      "assets/lamps/lamp_desk_mint.glb",
+      "assets/lamps/lamp_desk_mint_c1.glb",
+      "assets/lamps/lamp_desk_mint_c2.glb"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "책상 조명(desk_lamp) 옷 후보"
+    }
+   ]
+  },
+  {
+   "title_ko": "창·문",
+   "note_ko": "창틀과 문은 window_frame.js 가 코드로 짓는다(유리는 셰이더). 모듈 방식이라 상자여도 결은 맞는다 — 반지하 창만 v2 흰 칠을 입었다.",
+   "items": [
+    {
+     "id": "w_banjiha",
+     "name_ko": "반지하 창(레터박스)",
+     "kind": "window",
+     "thumb": "thumbs/house/w_banjiha.webp",
+     "files": [
+      "data/window_presets.json",
+      "src/render3d/window_frame.js",
+      "src/render3d/room_materials.js"
+     ],
+     "status": "v2",
+     "used_in_game": true,
+     "note_ko": "가로로 긴 반투명 창. v2 흰 페인트 창틀"
+    },
+    {
+     "id": "d_banjiha",
+     "name_ko": "반지하 문(크림)",
+     "kind": "door",
+     "thumb": "thumbs/house/d_banjiha.webp",
+     "files": [
+      "data/door_presets.json",
+      "src/render3d/window_frame.js"
+     ],
+     "status": "old",
+     "used_in_game": true,
+     "note_ko": "민무늬 판문. 앞벽이 잘려 잘 안 보임"
+    },
+    {
+     "id": "w_oneroom",
+     "name_ko": "원룸 창(십자)",
+     "kind": "window",
+     "thumb": "thumbs/house/w_oneroom.webp",
+     "files": [
+      "data/window_presets.json",
+      "src/render3d/window_frame.js"
+     ],
+     "status": "old",
+     "used_in_game": true,
+     "note_ko": "2×2 십자 창. v2 칠 없음"
+    },
+    {
+     "id": "d_oneroom",
+     "name_ko": "원룸 문(우드)",
+     "kind": "door",
+     "thumb": "thumbs/house/d_oneroom.webp",
+     "files": [
+      "data/door_presets.json",
+      "src/render3d/window_frame.js"
+     ],
+     "status": "old",
+     "used_in_game": true,
+     "note_ko": "우드 판문. 코드"
+    },
+    {
+     "id": "w_devrooms",
+     "name_ko": "다른 방 창 3종",
+     "kind": "window",
+     "thumb": "thumbs/house/w_devrooms.webp",
+     "files": [
+      "data/window_presets.json"
+     ],
+     "status": "old",
+     "used_in_game": false,
+     "note_ko": "아파트 통창·아파트 소창·교실 띠창. 개발용 방"
+    },
+    {
+     "id": "w_drafts",
+     "name_ko": "창 초안 35종",
+     "kind": "window",
+     "thumb": "thumbs/house/w_drafts.webp",
+     "files": [
+      "data/window_presets.json",
+      "assets/house/_window_sheet.png"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "아치·원형·루버·커튼월 등. 어느 방에도 안 씀"
+    },
+    {
+     "id": "d_drafts",
+     "name_ko": "문 초안 6종",
+     "kind": "door",
+     "thumb": "thumbs/house/d_drafts.webp",
+     "files": [
+      "data/door_presets.json"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "화이트·찐우드·민트·간유리·유리·차콜 스틸"
+    },
+    {
+     "id": "glb_house_mod_window_banjiha",
+     "name_ko": "반지하 창 GLB",
+     "kind": "window",
+     "thumb": "thumbs/house/glb_house_mod_window_banjiha.webp",
+     "files": [
+      "assets/house/house_mod_window_banjiha.glb"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "7월 모듈 GLB(2MB 안팎). 게임은 코드 창틀을 씀"
+    },
+    {
+     "id": "glb_house_mod_window_normal",
+     "name_ko": "일반 창 GLB",
+     "kind": "window",
+     "thumb": "thumbs/house/glb_house_mod_window_normal.webp",
+     "files": [
+      "assets/house/house_mod_window_normal.glb"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "7월 모듈 GLB(2MB 안팎). 게임은 코드 창틀을 씀"
+    },
+    {
+     "id": "glb_house_mod_glass_panel",
+     "name_ko": "온실 유리패널 GLB",
+     "kind": "window",
+     "thumb": "thumbs/house/glb_house_mod_glass_panel.webp",
+     "files": [
+      "assets/house/house_mod_glass_panel.glb"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "7월 모듈 GLB(2MB 안팎). 게임은 코드 창틀을 씀"
+    },
+    {
+     "id": "glb_house_mod_door",
+     "name_ko": "문 GLB",
+     "kind": "door",
+     "thumb": "thumbs/house/glb_house_mod_door.webp",
+     "files": [
+      "assets/house/house_mod_door.glb"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "7월 모듈 GLB(2MB 안팎). 게임은 코드 창틀을 씀"
+    },
+    {
+     "id": "shade_presets",
+     "name_ko": "차광 8종(발·차광막·커튼·블라인드)",
+     "kind": "shade",
+     "thumb": null,
+     "files": [
+      "data/shading_presets.json"
+     ],
+     "status": "missing",
+     "used_in_game": false,
+     "note_ko": "빛 계산표만 있고 그림·걸 자리가 없음. 온실 「차광이 게임」에 필요"
+    }
+   ]
+  },
+  {
+   "title_ko": "소품",
+   "note_ko": "판정 없이 그림만 얹는 방 꾸밈. v2 소품은 반지하에만 놓였고, 놓인 화분·옮긴 가구와 겹치면 숨는다.",
+   "items": [
+    {
+     "id": "v2p_heater",
+     "name_ko": "라디에이터 난로",
+     "kind": "prop",
+     "thumb": "thumbs/house/v2p_heater.webp",
+     "files": [
+      "assets/v2/props/heater.glb",
+      "src/render3d/furniture_dress.js"
+     ],
+     "status": "v2",
+     "used_in_game": true,
+     "note_ko": "침대 발치. 면 5.6만 — 줄일 것"
+    },
+    {
+     "id": "v2p_drying_rack",
+     "name_ko": "빨래 건조대",
+     "kind": "prop",
+     "thumb": "thumbs/house/v2p_drying_rack.webp",
+     "files": [
+      "assets/v2/props/drying_rack.glb",
+      "src/render3d/furniture_dress.js"
+     ],
+     "status": "v2",
+     "used_in_game": true,
+     "note_ko": "창 밑. 면 4.2만 — 줄일 것"
+    },
+    {
+     "id": "v2p_backpack",
+     "name_ko": "배낭+신발",
+     "kind": "prop",
+     "thumb": "thumbs/house/v2p_backpack.webp",
+     "files": [
+      "assets/v2/props/backpack.glb",
+      "src/render3d/furniture_dress.js"
+     ],
+     "status": "v2",
+     "used_in_game": true,
+     "note_ko": "문 옆"
+    },
+    {
+     "id": "v2p_trash",
+     "name_ko": "쓰레기봉투",
+     "kind": "prop",
+     "thumb": "thumbs/house/v2p_trash.webp",
+     "files": [
+      "assets/v2/props/trash.glb",
+      "src/render3d/furniture_dress.js"
+     ],
+     "status": "v2",
+     "used_in_game": true,
+     "note_ko": "문 왼쪽 구석"
+    },
+    {
+     "id": "v2p_laundry",
+     "name_ko": "빨래 바구니",
+     "kind": "prop",
+     "thumb": "thumbs/house/v2p_laundry.webp",
+     "files": [
+      "assets/v2/props/laundry.glb"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "이번 v2. 만들었으나 책상 발치로 삐져나와 뺌"
+    },
+    {
+     "id": "v2p_desk_set",
+     "name_ko": "책상 위 세트",
+     "kind": "prop",
+     "thumb": "thumbs/house/v2p_desk_set.webp",
+     "files": [
+      "assets/v2/props/desk_set.glb"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "이번 v2. 만들었으나 소품 자리 표(PROPS)에 없음"
+    },
+    {
+     "id": "v2p_monitor",
+     "name_ko": "모니터",
+     "kind": "prop",
+     "thumb": "thumbs/house/v2p_monitor.webp",
+     "files": [
+      "assets/v2/props/monitor.glb"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "이번 v2. 만들었으나 소품 자리 표(PROPS)에 없음"
+    },
+    {
+     "id": "v2p_kitchen",
+     "name_ko": "미니 주방",
+     "kind": "prop",
+     "thumb": "thumbs/house/v2p_kitchen.webp",
+     "files": [
+      "assets/v2/props/kitchen.glb"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "이번 v2. 만들었으나 소품 자리 표(PROPS)에 없음"
+    },
+    {
+     "id": "v2p_plush_clock",
+     "name_ko": "인형 시계",
+     "kind": "prop",
+     "thumb": "thumbs/house/v2p_plush_clock.webp",
+     "files": [
+      "assets/v2/props/plush_clock.glb"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "이번 v2. 만들었으나 소품 자리 표(PROPS)에 없음"
+    },
+    {
+     "id": "v2p_rug",
+     "name_ko": "러그 무늬",
+     "kind": "prop",
+     "thumb": "thumbs/house/v2p_rug.webp",
+     "files": [
+      "assets/v2/textures/rug.webp",
+      "assets/gen/v2_props/c_rug.png"
+     ],
+     "status": "unused",
+     "used_in_game": false,
+     "note_ko": "흰 테두리째 비스듬한 제품 사진이라 뺌 — 위에서 본 알파 그림을 새로 뽑아야 함"
+    },
+    {
+     "id": "p_watering_can",
+     "name_ko": "물뿌리개",
+     "kind": "prop",
+     "thumb": "thumbs/house/p_watering_can.webp",
+     "files": [
+      "assets/props/watering_can.glb",
+      "src/game/room_view.js"
+     ],
+     "status": "ok",
+     "used_in_game": true,
+     "note_ko": "물 줄 때 손에 드는 것"
+    }
+   ]
+  },
+  {
+   "title_ko": "바깥",
+   "note_ko": "창밖 동네와 이웃 방. 조도 계산엔 안 들어가는 장식이고 전부 코드 상자(무광 색)로 지었다.",
+   "items": [
+    {
+     "id": "out_alley",
+     "name_ko": "창밖 골목",
+     "kind": "outside",
+     "thumb": "thumbs/house/out_alley.webp",
+     "files": [
+      "src/game/outside.js"
+     ],
+     "status": "missing",
+     "used_in_game": true,
+     "note_ko": "길·담·차·전봇대. 반지하는 창턱 높이에 지면, 원룸은 2층 아래. 그림 에셋 없음"
+    },
+    {
+     "id": "out_far",
+     "name_ko": "건너편 빌라 줄",
+     "kind": "outside",
+     "thumb": "thumbs/house/out_far.webp",
+     "files": [
+      "src/game/outside.js"
+     ],
+     "status": "missing",
+     "used_in_game": true,
+     "note_ko": "먼 건물 실루엣·전선. 카메라를 낮출 때만 보임"
+    },
+    {
+     "id": "out_neighbors",
+     "name_ko": "이웃 방",
+     "kind": "outside",
+     "thumb": null,
+     "files": [
+      "src/game/outside.js"
+     ],
+     "status": "missing",
+     "used_in_game": true,
+     "note_ko": "우리 방 양옆 방(기본은 반지하만). 상자뿐"
+    },
+    {
+     "id": "amb_banjiha",
+     "name_ko": "반지하 방 소리",
+     "kind": "sound",
+     "thumb": null,
+     "files": [
+      "src/game/ambience.js"
+     ],
+     "status": "v2",
+     "used_in_game": true,
+     "note_ko": "냉장고 웅·창 너머 발소리·밤비. 헤드리스라 귀로는 아직 못 들음"
+    }
+   ]
+  }
+ ]
+}
