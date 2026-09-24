@@ -2202,7 +2202,8 @@
          ★ 「처음엔 펴고 뒤엔 접는다」 — 접는 수는 §MEAL_GUIDE_OPEN_TIMES(core 것). 접혀도 «있다».
          ⛔ 문안은 [plan] 것 «그대로»다. 「300g」·「2,500원」·「7,500원」 같은 수를 안 쓴다 — 작물이 늘고
            값이 바뀌어도 상자가 안 낡는다.
-         ★ 2026-09-25 — 「묶음」→「몫」 (master-story-plan W4). 위 몫 줄(「첫 몫 · 콩나물 300g」)과 한 낱말로 맞췄다. -->
+         ★ 2026-09-25 — 「묶음」→「몫」 (master-story-plan W4). 위 몫 줄(「첫 몫 · 콩나물 300g」)과 한 낱말로 맞췄다.
+         ⚠ 몫은 «상에 오르는 단위» 한 뜻만 — 둘째 칸의 돈 쪽 몫은 「돈」으로 바꿨다(한 낱말 두 방 · 검토 W4). -->
     <details id="mealGuide" class="mguide">
       <summary>밥상은 어떻게 셈하나</summary>
       <!-- ⚠ 몸통을 따로 감싼다 — 폰(360×844)에서 넷을 다 펴면 «창»이 구른다. 창은 안 구르고(자 W-360)
@@ -2212,8 +2213,8 @@
         채소는 g 으로 쌓이지만, 상에 오를 때는 <b>몫</b>으로 셉니다. 한 몫에 드는 g 은 <b>작물마다</b> 정해져 있습니다.
         그러니 「몇 g 을 올렸나」가 아니라 <b>「몇 몫이 찼나」</b>를 보십시오.</div>
       <div class="mg1"><b>밥값이 둘로 나뉩니다</b>
-        하루 식비는 <b>정해져</b> 있습니다. 그 가운데 <b>아끼는</b> 식비는 기른 채소가 <b>대신한</b> 몫이고,
-        <b>나가는</b> 밥값은 그래도 <b>지갑에서</b> 나가는 몫입니다. 둘을 더하면 <b>늘</b> 하루 식비입니다.
+        하루 식비는 <b>정해져</b> 있습니다. 그 가운데 <b>아끼는</b> 식비는 기른 채소가 <b>대신한</b> 돈이고,
+        <b>나가는</b> 밥값은 그래도 <b>지갑에서</b> 나가는 돈입니다. 둘을 더하면 <b>늘</b> 하루 식비입니다.
         그러니 밥상은 「돈을 <b>버는</b>」 자리가 아니라 <b>「돈이 덜 나가게 하는」</b> 자리입니다.</div>
       <div class="mg1"><b>남은 것은 안 버립니다</b>
         올리지 않은 채소는 그대로 쌓입니다. 다음 날 상에 올려도 되고 [상점]에서 팔아도 됩니다.
@@ -3251,6 +3252,7 @@ let stuckDays = 0;
 function noteTurn(t) {
   lastTurn = t;
   stuckDays = (t && (t.growthBlocked || t.headroomBlocked)) ? stuckDays + 1 : 0;
+  if (!t) resetStageMemo();   /* 새 판(같은 쪽에서 S = newState → noteTurn(null)) — 어제 값이 남으면 첫 배너가 빠지거나 거짓으로 뜬다 */
   noteLeafGrades(t);
   checkStarved(t);          /* ★ 굶어 죽었나 — 턴이 낸 신호 하나로 본다(§gameOver) */
 }
@@ -5888,7 +5890,10 @@ function updateHint() {
       /* ★ 2026-09-25 (#11) — 레일 단추는 `aria-selected` 가 아니라 `cur`·`aria-current` 로 열림을 적는다(§syncNav).
            못 알아보면 열린 [상점]을 또 짚고, 누르면 상점이 닫힌다. ⚠ 상점이 이미 열렸으니 다음 문([가방])으로도, 아래 갈래
            ([다음 날])로도 새지 않는다 — 시트가 올라오는 동안 손가락이 [가방]·[다음 날]을 짚었다(걸어서 잼). 줄의 [주문]이 서면 위 갈래가 짚는다 */
-      if (el.getAttribute && (el.getAttribute('aria-current') === 'true' || (el.classList && el.classList.contains('cur')))) { shopOpenNow = true; return null; }
+      if (el.getAttribute && (el.getAttribute('aria-current') === 'true' || (el.classList && el.classList.contains('cur')))) {
+        if (id === 'openBag') continue;          /* 열린 것이 [가방]이면 상점은 닫혀 있다 — 손가락을 끄지 않는다(검토 W2) */
+        shopOpenNow = true; return null;
+      }
       return el;
     }
     return null;
@@ -11108,16 +11113,22 @@ function focusOnMonstera() {
   } catch (e) { console.warn('[새순 당기기]', e && e.message); }
 }
 /* ★ W3 #5 — 무늬가 «보이는» 날 · 하프문으로 «자를 수 있게 된» 날의 장면. ⚠ id 는 글자로(test_dialogue_coverage 가 긁는다) */
-function playLeafScene(k) {
+function playLeafScene(k, chimed) {   /* chimed — 이 턴에 사건 배너가 이미 울렸다(두 번 연달아 안 울린다) */
   const ok = k === 'half' ? dlgOpen('varieHalfMoon') : k === 'seen' ? dlgOpen('varieSeen') : false;
-  if (ok) { focusOnMonstera(); try { sfx.chime(); } catch { } (window.__stageLog ||= []).push({ day: S.day, kind: 'leaf:' + k }); }
+  if (ok) { focusOnMonstera(); if (!chimed) try { sfx.chime(); } catch { } (window.__stageLog ||= []).push({ day: S.day, kind: 'leaf:' + k }); }
   return ok;
 }
 window.__leafScene = (k) => playLeafScene(k);   /* 진단 손잡이 — ⚠ 읽기 전용 아님(진짜로 큐에 넣는다) */
 /* ★ W3 #12 — 잎이 펴진 날 · 자리가 밝아진 날. pot0 의 어제 값을 메모리에만 둔다(불러온 뒤 첫 턴은 안 울린다) */
-const BAND_RANK = ['critical', 'poor', 'stagnant', 'slow', 'good', 'best'];
+/* ⚠ 밴드 차례는 엔진(daily_light §judgeDLI)의 «빛 많은 쪽»이다: … slow < best < good < over. good·over 는 «빛이 넘친다»라
+   「더 밝아졌다 = 더 잘 자란다」로 읽히지 않는다 — 그래서 critical…best 안에서 오를 때만 센다(good·over 는 표에 없다 → 안 울린다). */
+const BAND_RANK = ['critical', 'poor', 'stagnant', 'slow', 'best'];
 let _prevPhase = null, _prevBand = null;
 const bandUpShown = new Set();                   /* 한 판·한 그루·한 밴드에 한 번 */
+/* 새 판에서 비운다 — 그루 id 는 판마다 pot_01 부터 다시라 bandUpShown 이 남으면 둘째 판 배너가 조용히 빠진다 */
+function resetStageMemo() {
+  try { _prevPhase = null; _prevBand = null; bandUpShown.clear(); pendingLeafScene = null; } catch { }   /* 부팅 중 선언 전이면 건너뛴다 */
+}
 function showFirstPlayEvents(turn) {
   const ev = turn && turn.firstPlayEvent;
   const events = [];
@@ -11189,7 +11200,8 @@ function showFirstPlayEvents(turn) {
        ★ 색을 진하게 하는 길(ⓐ)은 [leaf] 가 재서 물렸다 — 채도 ×5 를 써야 분명해지고,
          그러면 새순만 다른 잎보다 훨씬 쟁한 연두가 된다. **그림이 망가진다.**
        ⇒ ★★ 남는 길은 **카메라를 당기는 것**이다. 그림은 안 건드린다.
-       ⚠ **한 번만** 당긴다 — `S.firstPlay.completed` 는 그날 이후 «계속 참»이라         이 줄로 갈러내면 매일 화면이 확 당겨진다. 그래서 **턴 사건**을 본다. */
+       ⚠ **한 번만** 당긴다 — `S.firstPlay.completed` 는 그날 이후 «계속 참»이라
+         이 줄로 갈러내면 매일 화면이 확 당겨진다. 그래서 **턴 사건**을 본다. */
     const justNow = !!(turn && (turn.events || [])
       .some(e => e && e.id === FIRST_PLAY_COMPLETE_PHASE_ID));
     if (justNow) { events.push({ title: '🌱 첫 새순이 올라왔습니다', sub: '밝은 자리에 둔 보람입니다' }); focusOnMonstera(); }
@@ -11227,7 +11239,7 @@ function showFirstPlayEvents(turn) {
      ★어떤 대사를 낼지는 storyteller 가 정한다. 여기서 이벤트를 다시 훑지 않는다 —
        그러면 사건이 늘 때마다 이 목록도 같이 늘어야 하고, 실제로 그래서 빠뜨렸다.
        순서 계약(수확 → 식비 → 식물신 → 도착)은 dialogue.js 의 EVENT_ORDER 가 지킨다. */
-  if (leafK) playLeafScene(leafK);
+  if (leafK) playLeafScene(leafK, events.length > 0);
   const ids = story.turn(turn, S);
   if (ids.length) dlgOpen(ids);
 }
@@ -11782,6 +11794,7 @@ window.__dlgLog = [];
 
    ⇒ 두 가지를 둔다:
      ① **큰 장면은 혼자 뜬다.** 도착처럼 한 판에 한 번뿐인 장면은 그날 저 혼자다.
+        (09-25) 같은 묶음에서 장면보다 먼저 온 줄(앞말)은 «따로» 먼저 열고, 장면은 그 뒤 혼자 연다(§dlgOpen).
      ② **한 날에 둘까지.** 넘치는 것은 **버리지 않고 다음 날로 미룬다.**
    ⚠ **버리지 않는다.** 미룬 것은 다음에 대사가 열릴 때 앞에 붙는다 — 퀘스트 보상 대사가
      사라지면 「받았는데 아무 말이 없다」가 되고, 그건 이 저장소가 여러 번 앓은 병이다.
@@ -11840,8 +11853,10 @@ function dlgOpen(scriptIds) {
     const lead = ids.slice(0, i).filter(x => fresh.has(x));
     const tail = ids.slice(i + 1).filter(x => fresh.has(x));
     const old = ids.filter(x => x !== solo && !fresh.has(x));
-    dlgHold = [...tail, ...old, ...dlgHold];
-    ids = [...lead, solo];
+    /* ⚠ 앞말과 장면을 한 큐에 넣으면 앞말에서 [건너뛰기] 한 번에 장면까지 사라진다(위 §「통째로 비운다」).
+       앞말만 지금 열고 장면은 서랍 맨 앞에 둔다 — 앞말이 닫히면 dlgPaint → dlgFlushHeld 가 장면을 «혼자» 연다. */
+    if (lead.length) { dlgHold = [solo, ...tail, ...old, ...dlgHold]; ids = lead; }
+    else { dlgHold = [...tail, ...old, ...dlgHold]; ids = [solo]; }
   } else if (ids.length > DLG_MAX_PER_OPEN) {
     dlgHold = [...ids.slice(DLG_MAX_PER_OPEN), ...dlgHold];   /* ⚠ 여기도 흩기로 미룬 줄을 안 잃는다 */
     ids = ids.slice(0, DLG_MAX_PER_OPEN);
@@ -14271,7 +14286,7 @@ function startPhonePlace(kind = 'beansprout') {
          예전엔 「여기에 둘까요?」가 덮어 가렸고, 안 걷으면 [확인] 팝업 옆에 틀린 말이 남는다 */
   const fpOn = S.firstPlay && S.firstPlay.enabled && !S.firstPlay.completed && !(S.tutorial && S.tutorial.movedOut);
   if (!fpOn) banner('여기에 둘까요?', '[확인] 을 누르면 그 자리에 놓입니다 · 자리를 바꾸려면 [다시 옮기기]');
-  else { try { $('event').classList.remove('on'); } catch { } }
+  else { try { const ev = $('event'); if ((ev.textContent || '').includes('여기엔 못 놓았습니다')) ev.classList.remove('on'); } catch { } }   /* 그 말만 걷는다 — 아침 도착·수확 배너는 둔다(검토 W2) */
 }
 
 /* 임시로 세울 자리 — **빈 추천 자리** 우선, 없으면 방 한가운데 바닥.
