@@ -21,6 +21,8 @@
 - 앉는 높이는 박은 수가 아니다. 클립이 끝난 자세의 골반 높이 hipsLocal 을 재서 «뿌리 = 좌석 면 − hipsLocal» (room_view 8873 부근, ACT_SPEC 8252 sit/sleep hold). 이 방식은 남긴다. 잰 값: 골반 0.465 = 좌석 0.465
 - 다 만든 뒤 돌릴 자: `node tools/probe_nap.mjs`(16/16) · `probe_movemarks.mjs` · `probe_zoom.mjs`(6/6) · `test_skin_room_matches_zoom.mjs`(PASS). 넷 다 지금 초록
 
+- ⚠ 위 줄 번호(11938·8873 등)는 2026-09-24 21시 기준이다. game.html·room_view.js 를 고치면 밀린다 — 찾을 때는 이름(`restingOn` · `ACT_SPEC` · `hipsLocal`)으로 찾는다 [core 보충]
+
 ## [char] claude-44 — 새 GLB 를 크레딧 없이 재는 자
 - `strip_stray_parts.py <glb> --count` 덩어리 수 · `check_skeleton_match.py` 24본 클립이 붙는지 · `shot_body_still.mjs` 네 각도
 - 원화 넷을 다 열어 볼 것. 견줄 그림은 같은 자·같은 음영으로
