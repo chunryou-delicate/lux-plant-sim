@@ -25,6 +25,9 @@ const clearDlg = async () => { for (let i = 0; i < 30; i++) {
   await page.eval(`(()=>{ const b=document.getElementById('dlgSkip'); if (b) b.click();
     const x=document.getElementById('dlgBox'); if (x) x.click(); })()`, false);
   await sleep(200);
+  /* 09-25 — DOM 클릭으로 이미 걷혔으면 «진짜 마우스»는 안 누른다. 걷힌 뒤 덮개가 켜지면 그 누름이 «구멍 밖 누름»으로 세어져
+     울타리가 세 번 만에 풀린다(FENCE_GIVE_UP) — 그러면 아래 ② 「밖을 누르면 손가락이 뛰나」가 자의 손 때문에 거짓이 된다 */
+  if ((await page.eval(`document.getElementById('stage').classList.contains('talking')`)) !== true) continue;
   const at = JSON.parse(await page.eval(`(()=>{ const b=document.getElementById('dlgBox');
     if(!b) return 'null'; const r=b.getBoundingClientRect();
     if(!r.width) return 'null'; return JSON.stringify({ x:r.left+r.width/2, y:r.top+r.height/2 }); })()`));
@@ -74,7 +77,7 @@ console.log('=== ①② 구멍 안과 밖 ===');
   else {
     const c = st.구멍;
     console.log('  · 구멍 안 —', await hitAt(c.x, c.y), '(덮개면 ⛔)');
-    console.log('  · 구멍 밖(오른쪽 200px) —', await hitAt(Math.min(W - 4, c.x + c.r + 200), c.y), '(덮개면 ✔ 막는다)');
+    console.log('  · 구멍 밖(오른쪽 200px) —', await hitAt(Math.min(W - 4, c.x + c.r + 200), c.y), '(덮개는 손짓을 직접 안 먹는다(08-30) — 막는 것은 문서 잡기 울타리다. 아래 «뜀»으로 본다)');
     /* 밖을 눌러 본다 — 손가락이 뛰나 */
     await page.send('Input.dispatchMouseEvent', { type: 'mouseMoved', x: Math.min(W - 4, Math.round(c.x + c.r + 200)), y: Math.round(c.y), button: 'left', buttons: 0 });
     await page.send('Input.dispatchMouseEvent', { type: 'mousePressed', x: Math.min(W - 4, Math.round(c.x + c.r + 200)), y: Math.round(c.y), button: 'left', buttons: 1, clickCount: 1 });
