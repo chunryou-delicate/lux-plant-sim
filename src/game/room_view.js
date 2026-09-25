@@ -9708,6 +9708,10 @@ export async function createRoomView(canvas, opts = {}) {
       const to = tween && tween.to;
       return { down: !!down, dragging: !!dragging, pinch: !!pinch, walkDrag: !!walkDrag,
                zoom: zoomTo != null, focused: !!focused, tween: !!tween,
+               /* 09-25 [core] 재는 손잡이 — 이 트윈이 몇 ms 짜리이고 얼마 남았나. 프레임이 드문 헤드리스에서도
+                  «끊었나(짧은 새 트윈) / 안 끊었나(원래 복귀가 이어짐)»를 시각으로 가른다(probe_zoom ⑦) */
+               tweenMs: tween ? tween.ms : null,
+               tweenLeftMs: tween ? Math.max(0, Math.round(tween.t0 + tween.ms - performance.now())) : 0,
                tweenTo: to ? { az: to.az, el: to.el, dist: to.dist,
                                target: { x: to.target.x, y: to.target.y, z: to.target.z } } : null };
     },

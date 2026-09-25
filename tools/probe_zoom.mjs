@@ -2,6 +2,7 @@
    ------------------------------------------------------------------
    ① 그루 메뉴에 「확대 보기」가 뜨나 ② 누르면 확대에 들어가나 ③ 확대 «화면 안»에 「시야 돌아가기」가 «보이나»(rect · 화면 안 · 위 띠에 안 가림)
    ④ 확대 중 손가락(#hint)이 «안 보이나» ⑤ 확대 중 [상점] 띠·탭을 누르면 «확대가 닫히고 시트가 열리나»(갇힘 풀기) ⑥ 「시야 돌아가기」를 누르면 돌아오나
+   ⑦ 대사가 닫힌 뒤 복귀 도중에 그루를 고르면 카메라 복귀를 끊고(talk-out-cut) 메뉴가 곧 멎나
    판: W×H(폰 390×844 / 1770×1188) · 진짜 마우스 · 첫 플레이 울타리는 끔(uiwire 와 같은 손). ⛔ 값 0.
    ★ 2026-09-25 고침(보이는 층 v2 뒤 ②③⑤ 빨강 — docs/handoff/core-probe-zoom-v2-20260925.md):
      · 누르기 전에 «대화를 닫고 카메라가 멎기를» 기다린다. v2 카메라 연출이 대사 뒤 제자리로 돌아가는 동안 메뉴·[확인]이 그루를 따라 흘러 바닥이 눌렸다
@@ -46,6 +47,8 @@ await page.eval(`(()=>{ try { const S=window.__S(); if (S.firstPlay) S.firstPlay
 console.log('■ 도착 —', await J(`(()=>{ const S=window.__S(); return { day:S.day, arrived: !!(S.firstPlay.monstera&&S.firstPlay.monstera.arrived), pots:(S.pots||[]).length }; })()`));
 /* 몬스테라 그루를 가방에서 놓는다(가방 칸 [data-potbag] 누름 → [확인]) */
 await page.eval(`(()=>{ const t=document.getElementById('openBag')||document.getElementById('tabBag'); if(t) t.click(); })()`, false); await sleep(600);
+/* ★ 09-25 — 폰에서 그루 칸이 가방 시트 «아래로 넘쳐»(y 1035 > 844 · 안 false) 못 누르고 지나간 판이 있었다(그 판은 ①②③ 빨강·열쇠 null) — 먼저 보이게 굴린다 */
+await page.eval(`(()=>{ const c=document.querySelector('#bagGrid [data-potbag]'); if (c) c.scrollIntoView({ block:'center' }); })()`, false); await sleep(300);
 const cell = await rectOf('#bagGrid [data-potbag]');
 console.log('■ 가방 그루 칸 —', JSON.stringify(cell));
 /* ★ 2026-09-25 — [확인]이 «뜰 때까지» 기다린다(고정 0.9초였다 → 기계가 바쁘면 못 보고 지나쳐 «놓는 중»인 채로 남았다: placeConfirm 이 메뉴를 덮어 ②~⑤ 빨강) */
@@ -55,7 +58,7 @@ const camStill = async () => { let w = 0;
   for (; w < 4000; w += 100) { const b = await J(`(()=>{ try { const b=window.__rv.camBusy ? window.__rv.camBusy() : null; return !!(b && b.tween); } catch(e) { return false; } })()`); if (!b) break; await sleep(100); }
   if (w) await sleep(250); return w; };
 const placing = () => J(`(()=>{ const e=document.getElementById('placeConfirm'); if(!e) return false; const r=e.getBoundingClientRect(); return r.width>0 && getComputedStyle(e).display!=='none'; })()`);
-if (cell && cell.보임) { await tapAt(cell.x, cell.y); const tries = [];
+if (cell && cell.보임 && cell.안) { await tapAt(cell.x, cell.y); const tries = [];
   for (let t = 0; t < 3; t++) {
     await clearDlg(); const camW = await camStill();   /* 대화 중 누름은 대화가 먹는다 · 대화가 닫히면 v2 카메라가 돌아가며 [확인]이 흐른다 */
     let okb = null, first = null, prev = null;
@@ -106,4 +109,70 @@ const z1 = await rectOf('#pickZoom'); if (z1 && z1.보임) await tapAt(z1.x, z1.
 const cz2 = await rectOf('#closeZoom'); if (cz2 && cz2.보임) await tapAt(cz2.x, cz2.y); await sleep(900);
 const back = await J(`document.getElementById('stage').classList.contains('zoom')`);
 ok('⑥ 「시야 돌아가기」를 누르면 돌아온다', back === false, String(back));
+/* ⑦ 끊기 갈래(2026-09-25 · 총괄 camera_moves cutOut) — 대사가 닫힌 «뒤» 복귀 트윈이 도는 사이에 그루를 고르면
+   복귀를 그 자리에서 끊는다(talk-out-cut). 끊지 않으면 메뉴가 남은 복귀(420ms) 동안 흐른다.
+   조건: 메뉴를 닫아 둔 채 모니 대사 한 줄(nudgeBackLamp)을 열고 → 닫고 → CUT_MS(기본 130 · 복귀가 막 시작된 때) 뒤 __picked.select(key)
+   ★ 무엇을 재나 — «메뉴가 몇 px 흐르나»가 아니다. 끊어도 메뉴는 남은 거리만큼 간다(camTo 최소 120ms). 끊기가 바꾸는 것은 «얼마나 오래 흐르나»다.
+     그래서 고른 뒤 프레임마다 메뉴 자리를 찍어 «마지막으로 움직인 때»(멎는 데 걸린 ms)를 잰다. 통과: talk-out-cut 기록 · 멎음 ≤ 220ms(120 + 프레임 틈)
+     대조(끊기 없는 옛 camera_moves): 남은 복귀 ≈ 350ms 이상 흐른다 — 이것이 빨강으로 나와야 이 갈래가 쓸모 있다
+   ⚠ 판이 «흐름을 만들 수 있어야» 잰다. 기본 시점은 이미 가장 가까운 줌이라 10% 다가가기가 막혀 대사 자리 = 제자리였다.
+     그래서 먼저 30% 물러난 시점(사람이 휠로 물러난 것과 같다)에서 대사를 연다.
+   SKIP(초록 아님): 쪽 rAF 가 500ms 에 10번 밑(데스크톱 1770 은 헤드리스 소프트 렌더라 조용한 기계에서도 1~2번 — 폰 크기로 잰다)
+                    · 고른 때가 복귀 창 밖 · 대사 자리와 제자리의 그루 화면 거리 < 20px */
+const CUT_MS = Number(process.env.CUT_MS || 130);
+await page.eval(`(()=>{ try { window.__picked.clear(); window.__byeotSheet.close(); } catch(e) {} })()`, false); await sleep(400);
+const backOff = await J(`(()=>{ try { const c=window.__rv.camera(); const g=window.__rv.camTo({ dist: c.dist * 1.3 }, 120); return { 전: +c.dist.toFixed(2), 후: +g.dist.toFixed(2) }; } catch(e) { return { 탈:e.message }; } })()`);
+await sleep(300); await camStill();
+const dlgOn = await J(`(()=>{ const r=window.__dlgOpen('nudgeBackLamp'); return { 열기: String(r), 말중: document.getElementById('stage').classList.contains('talking') }; })()`);
+/* talk-in 이 «다 다가갈 때까지» 기다린다(최대 6초) — 고정 1.5초로는 바쁜 기계에서 트윈이 한 걸음도 안 가 «대사 자리 = 제자리»가 됐다 */
+let talkWait = 0;
+for (; talkWait < 6000; talkWait += 150) { const r = await J(`(()=>{ try { const m=window.__v2&&window.__v2.cam&&window.__v2.cam.stats(); const b=window.__rv.camBusy(); return { on: !!(m&&m.on), in: !!(m&&m.own==='talk'), tw: !!b.tween }; } catch(e) { return { on:false }; } })()`);
+  if (!r.on) break; if (r.in && !r.tw) break; await sleep(150); }
+await sleep(talkWait < 6000 ? 200 : 0);
+/* 그림이 돌아야 잰다 — 쪽 rAF 가 500ms 에 10번 안쪽이면(=20fps 밑) 흐름이 «안 생긴 것»과 «못 본 것»을 가를 수 없다 */
+const frames = Number(await page.eval(`(async()=>{ let n=0; const t0=performance.now(); await new Promise(r=>{ const f=()=>{ n++; if (performance.now()-t0<500) requestAnimationFrame(f); else r(); }; requestAnimationFrame(f); }); return String(n); })()`, true, 30000));
+const cut = JSON.parse(await page.eval(`(async()=>{ try {
+  const st=document.getElementById('stage'); const sl=ms=>new Promise(r=>setTimeout(r,ms));
+  const cam=()=>(window.__v2&&window.__v2.cam&&window.__v2.cam.stats) ? window.__v2.cam.stats() : null;
+  const plant=()=>{ try { const p=window.__rv.screenPosOf(${JSON.stringify(key)}); return p ? { x:Math.round(p.x), y:Math.round(p.y) } : null; } catch(e) { return null; } };
+  const pose=()=>{ try { const c=window.__rv.camera(); return { az:+c.az.toFixed(3), el:+c.el.toFixed(3), d:+c.dist.toFixed(2), tx:+c.target.x.toFixed(2), tz:+c.target.z.toFixed(2) }; } catch(e) { return null; } };
+  const cTalk=pose(), pTalk=plant();   /* 대사 자리 — 복귀가 만들 수 있는 흐름의 한쪽 끝 */
+  for (let i=0; i<30 && st.classList.contains('talking'); i++) { const b=document.getElementById('dlgBox'); if (b) b.click(); for (let k=0; k<20 && st.classList.contains('talking'); k++) await sl(20); }
+  if (st.classList.contains('talking')) return JSON.stringify({ 탈:'대화가 안 닫힘' });
+  const t0=performance.now();
+  await sl(${CUT_MS});
+  const tw = (()=>{ try { return !!window.__rv.camBusy().tween; } catch(e) { return null; } })();
+  window.__picked.select(${JSON.stringify(key)});
+  const t1=performance.now();
+  await new Promise(r=>setTimeout(r,0));   /* 카메라 연출은 stage class 를 MutationObserver 로 본다 — 한 번 넘겨 준 뒤 읽는다 */
+  const bz = (()=>{ try { const b=window.__rv.camBusy(); return { tween:b.tween, ms:b.tweenMs ?? '창구 없음', 남음:b.tweenLeftMs ?? null }; } catch(e) { return null; } })();
+  const rect=()=>{ const b=document.getElementById('pickZoom'); if(!b) return null; const r=b.getBoundingClientRect(); return r.width>0 ? { x:Math.round(r.left+r.width/2), y:Math.round(r.top+r.height/2) } : null; };
+  const trace=[]; await new Promise(res=>{ const f=()=>{ const t=performance.now()-t1; trace.push({ t:Math.round(t), m:rect(), p:plant() }); if (t<900) requestAnimationFrame(f); else res(); }; requestAnimationFrame(f); });
+  await sl(300); const pEnd=plant(), cEnd=pose();
+  let settle=0, travel=0; for (let i=1;i<trace.length;i++) { const a=trace[i-1].m, b=trace[i].m; if (a && b && (Math.abs(a.x-b.x)+Math.abs(a.y-b.y))>=1) settle=trace[i].t; }
+  { const a=trace[0]&&trace[0].m, b=trace[trace.length-1]&&trace[trace.length-1].m; travel = (a&&b) ? Math.abs(a.x-b.x)+Math.abs(a.y-b.y) : null; }
+  const m=cam();
+  return JSON.stringify({ 닫고고름ms: Math.round(t1-t0), 고를때트윈: tw, 연출: m ? m.on : null, picked: st.classList.contains('picked'),
+    기록: m ? m.last.filter(x => +x.split(' ')[0] >= t0 - 5).map(x => '+' + Math.round(+x.split(' ')[0] - t0) + 'ms ' + x.split(' ').slice(1).join(' ')) : null,
+    고른뒤트윈: bz, 멎음ms: settle, 흐른px: travel, 프레임수: trace.length, 그루: { 대사중: pTalk, 끝: pEnd }, 카메라: { 대사중: cTalk, 끝: cEnd } });
+} catch(e) { return JSON.stringify({ 탈:e.message }); } })()`, true, 60000));
+console.log('■ ⑦ 끊기 갈래 — 물러남', JSON.stringify(backOff), '· 다가가기 기다림', `${talkWait}ms`, '· 쪽 rAF/500ms', frames, '· 대사 열기', JSON.stringify(dlgOn), '· 잰 것', JSON.stringify(cut));
+const dist2 = (a, b) => (a && b) ? Math.abs(a.x - b.x) + Math.abs(a.y - b.y) : null;
+const room = cut && cut.그루 ? dist2(cut.그루.대사중, cut.그루.끝) : null;   /* 가능 흐름 — 대사 자리와 제자리의 거리 */
+const didCut = !!(cut && (cut.기록 || []).some(x => /talk-out-cut/.test(x)));
+const snap = !!(cut && (cut.기록 || []).some(x => /talk-out-snap/.test(x)));
+const why = `멎음 ${cut && cut.멎음ms}ms · 흐른 ${cut && cut.흐른px}px · 가능 흐름 ${room}px · 끊음 ${didCut}${snap ? ' (snap 길)' : ''} · 닫고 ${cut && cut.닫고고름ms}ms 뒤 고름 · 그때 트윈 ${cut && cut.고를때트윈} · 쪽 rAF ${frames}/500ms`;
+if (cut && cut.연출 === false) ok('⑦ (연출 꺼짐) 대사 뒤 곧바로 고른 메뉴가 «안 흐른다»', !!cut.picked && cut.흐른px === 0, why);
+else if (!(cut && cut.닫고고름ms <= 480)) console.log(`  SKIP ⑦ 고른 때가 복귀 창(대사 닫힘 뒤 60~480ms) 밖이다 — 기계가 바빠 늦었다  → ${why}`);
+else if (snap && !didCut) console.log(`  SKIP ⑦ 복귀가 시작되기 «전»에 골랐다(talk-out-snap 길) — 끊기 갈래가 아니다  → ${why}`);
+else if (!(cut && cut.고를때트윈)) console.log(`  SKIP ⑦ 고를 때 복귀 트윈이 돌고 있지 않았다 — 끊을 것이 없다  → ${why}`);
+else {
+  /* ★ 판정은 «고른 직후 카메라 트윈이 몇 ms 짜리인가»로 한다 — 끊었으면 새 짧은 트윈(camTo 최소 120ms), 안 끊었으면 원래 복귀(420ms)가 이어진다.
+       이 값은 프레임과 무관하다(트윈의 t0·ms 는 camTo 때 정해진다). 멎는 데 걸린 ms 는 그림이 넉넉히 돌 때만 덧붙여 본다 */
+  const bz = cut && cut.고른뒤트윈;
+  const shortTween = !!(bz && typeof bz.ms === 'number' && bz.ms <= 150);
+  const settleOk = !(frames >= 10 && room >= 20) || (cut.멎음ms <= 220);
+  const why2 = `${why} · 고른 직후 트윈 ${bz ? `${bz.ms}ms(남음 ${bz.남음}ms)` : '?'}${frames >= 10 && room >= 20 ? '' : ' · 멎음은 참고만(그림 드묾/흐름 작음)'}`;
+  ok('⑦ 복귀 도중 고르면 «끊고»(talk-out-cut) 짧은 트윈으로 곧 멎는다', !!(cut && cut.picked) && didCut && shortTween && settleOk, why2);
+}
 await page.close(); clearTimeout(wd);

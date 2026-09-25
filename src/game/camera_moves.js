@@ -90,6 +90,7 @@ export function createCameraMoves(opt = {}) {
   let own = null;          // { kind:'talk'|'act', home, goal, focus }
   let talking = false;
   let retryT = 0, backT = 0, actT = 0, retries = 0;
+  let outGoal = null, outUntil = 0;   // 평소 복귀 트윈(outMs) — 도는 사이 그루 메뉴·[확인]이 뜨면 끊는다
   const st = { on: ON, talkIn: 0, talkOut: 0, actPush: 0, retarget: 0, lost: 0, skipped: 0, last: [] };
   const note = (s) => { st.last.push(Math.round(performance.now()) + ' ' + s); if (st.last.length > 16) st.last.shift(); };
   const api = { stats: () => ({ ...st, last: st.last.slice(), talking, own: own ? own.kind : null,
@@ -237,14 +238,28 @@ export function createCameraMoves(opt = {}) {
        화면에서 흘러, 「확대 보기」를 빗누르면 바닥을 눌러 화분 옮기기가 시작됐다. 그 둘이 떠 있으면 «바로» 돌아온다. */
     const st0 = opt.stage && opt.stage.classList;
     const ui = !!(st0 && (st0.contains('picked') || st0.contains('confirming')));
-    v.camTo(own.home, ui ? 0 : CAM_MOVES.talk.outMs);
+    const back = v.camTo(own.home, ui ? 0 : CAM_MOVES.talk.outMs);
+    outGoal = ui ? null : back; outUntil = performance.now() + CAM_MOVES.talk.outMs + 60;
     own = null; st.talkOut++; note(ui ? 'talk-out-snap' : 'talk-out');
   }
+  /* ★ 09-25 [core] 남은 틈: 평소 복귀가 «시작된 뒤» 그루를 눌러 메뉴가 열리면 own 이 이미 null 이라
+     남은 outMs 동안 메뉴가 흘렀다. 복귀 트윈이 아직 돌면 그 자리에서 끊는다. */
+  function cutOut() {
+    if (!outGoal) return;
+    if (performance.now() > outUntil) { outGoal = null; return; }
+    const st0 = opt.stage && opt.stage.classList;
+    if (!(st0 && (st0.contains('picked') || st0.contains('confirming')))) return;
+    const v = view(), g = outGoal; outGoal = null;
+    if (!v) return;
+    const b = v.camBusy();
+    if (b.tween && b.tweenTo && near(b.tweenTo, g)) { v.camTo(g, 0); note('talk-out-cut'); }
+  }
   function onStage() {
+    cutOut();
     const now = !!(opt.stage && opt.stage.classList.contains('talking'));
     if (now === talking) { if (now) retarget(); return; }
     talking = now;
-    if (now) { clearTimeout(backT); retries = 0; tryTalkIn(); }
+    if (now) { clearTimeout(backT); outGoal = null; retries = 0; tryTalkIn(); }
     else {
       clearTimeout(retryT);
       /* 대사가 곧바로 이어 열리는 경우가 있다 — 잠깐 기다려 들썩이지 않게 한다 */
