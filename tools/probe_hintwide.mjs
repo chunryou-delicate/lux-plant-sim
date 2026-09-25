@@ -26,7 +26,7 @@ const clearTalk = async (n = 60) => {
   let last = null, same = 0;
   for (let i = 0; i < n; i++) {
     const t = await page.eval(`document.getElementById('stage').classList.contains('talking')`);
-    if (t !== 'true') return { 걷힘: true, 돈횟수: i };
+    if (t !== true) return { 걷힘: true, 돈횟수: i };
     const now = await page.eval(`((document.getElementById('dlgBox')||{}).textContent||'').slice(0,24)`);
     if (now === last) same++; else { same = 0; last = now; }
     if (same >= 8) return { 걷힘: false, 굳음: true, 마지막말: now, 돈횟수: i };
@@ -67,7 +67,7 @@ console.log('=== ★ 대사가 걷히면 손가락이 «저절로» 돌아오나
   await page.eval(`(()=>{const s=document.getElementById('dlgSkip'); if(s)s.click();})()`, false);
   for (let i = 0; i < 40; i++) {
     const t = await page.eval(`document.getElementById('stage').classList.contains('talking')`);
-    if (t !== 'true') break;
+    if (t !== true) break;
     await page.eval(`document.getElementById('dlgBox').click()`, false);
     await sleep(200);
   }

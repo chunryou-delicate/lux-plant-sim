@@ -21,7 +21,7 @@ await sleep(5000);
    ⇒ DOM 클릭과 «진짜 마우스»를 둘 다 쓴다 — 판마다 먹는 쪽이 달랐다(오늘 여러 번 겪었다). */
 const clearDlg = async () => { for (let i = 0; i < 30; i++) {
   const t = await page.eval(`document.getElementById('stage').classList.contains('talking')`);
-  if (t !== 'true') return true;
+  if (t !== true) return true;
   await page.eval(`(()=>{ const b=document.getElementById('dlgSkip'); if (b) b.click();
     const x=document.getElementById('dlgBox'); if (x) x.click(); })()`, false);
   await sleep(200);

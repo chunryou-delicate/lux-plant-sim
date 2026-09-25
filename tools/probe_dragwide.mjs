@@ -24,7 +24,7 @@ const clearTalk = async () => {
   await sleep(700);
   for (let i = 0; i < 60; i++) {
     const t = await page.eval(`document.getElementById('stage').classList.contains('talking')`);
-    if (t !== 'true') return true;
+    if (t !== true) return true;
     await page.eval(`document.getElementById('dlgBox').click()`, false);
     await sleep(200);
   }

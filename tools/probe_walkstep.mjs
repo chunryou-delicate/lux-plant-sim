@@ -88,7 +88,7 @@ await page.eval(`(()=>{const s=document.getElementById('dlgSkip'); if(s)s.click(
 await sleep(700);
 for (let i = 0; i < 60; i++) {
   const t = await page.eval(`document.getElementById('stage').classList.contains('talking')`);
-  if (t !== 'true') break;
+  if (t !== true) break;
   await page.eval(`document.getElementById('dlgBox').click()`, false);
   await sleep(200);
 }
@@ -126,7 +126,7 @@ console.log('  ★ 캐릭 갈래 조건 —', await page.eval(`(async()=>{ try{
 /* ★ 대사를 «완전히» 걷고 나서 한 번 더 — 「대사 때문에 안 뜬 것」과 「원래 안 뜨는 것」을 가른다 */
 for (let i = 0; i < 30; i++) {
   const t = await page.eval(`document.getElementById('stage').classList.contains('talking')`);
-  if (t !== 'true') break;
+  if (t !== true) break;
   if (!await tapEl('#dlgSkip')) { await tapEl('#dlgBox'); }
 }
 await sleep(1200);
@@ -155,7 +155,7 @@ await sleep(400);
 /* ★ 캐릭 이동 손가락 — 놓은 «직후»에 서야 한다(대사를 걷고 나서) */
 for (let i = 0; i < 30; i++) {
   const t = await page.eval(`document.getElementById('stage').classList.contains('talking')`);
-  if (t !== 'true') break;
+  if (t !== true) break;
   await page.eval(`(()=>{ const b=document.getElementById('dlgSkip');
     if (b && b.offsetParent !== null) b.click();
     const x=document.getElementById('dlgBox'); if (x) x.click(); })()`, false);
@@ -173,7 +173,7 @@ console.log('  ★ 캐릭 손가락 —', await page.eval(`(()=>{ const h=docume
    ⇒ 사람이 하는 그대로 «진짜 마우스»로 상자를 누른다. */
 for (let i = 0; i < 40; i++) {
   const t = await page.eval(`document.getElementById('stage').classList.contains('talking')`);
-  if (t !== 'true') break;
+  if (t !== true) break;
   if (!await tapEl('#dlgBox')) break;
 }
 await sleep(900);
