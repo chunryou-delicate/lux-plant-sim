@@ -15528,6 +15528,11 @@ function bindDrag(thumbId, what, onTap, potId = null) {
       const moved = !from || Math.hypot(ev.clientX - from.x, ev.clientY - from.y) > TAP_SLOP_PX;
       from = null;
       suppressBagTap = Date.now();           // 뒤따라오는 click 은 이 손짓의 메아리다
+      /* ★ 2026-09-25 (#8 남은 길) — 안 움직였으면 끌기는 «물린다»(놓지 않는다). drag.begin 이 시트를 닫으므로
+           손가락 밑은 이미 방이고, 그대로 end() 하면 누른 그 점에 [확인] 없이 놓이고 할 일이 넘어갔다
+           (고친 사본 probe_dlgwhen ④: 작업 전·W2 뒤 둘 다 cropPlaced + questDonePlaceSiru 가 [확인] 전).
+           ⇒ 누르기 길이 있으면 그 길(확인 팝업)만 탄다. 누르기 길이 없는 손잡이는 예전 그대로다. */
+      if (!moved && typeof onTap === 'function') drag.best = null;
       drag.end();
       /* 안 움직였으면 **누른 것**이다 — 끌기는 방 밖에서 끝나 아무것도 안 했다 */
       if (!moved && typeof onTap === 'function') { try { onTap(); } catch (e2) { console.warn('[가방] 누르기', e2); } }
