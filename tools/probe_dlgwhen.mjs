@@ -38,7 +38,7 @@ const say = () => page.eval(`(()=>{ const t=document.getElementById('dlgText');
 /* ⚠ [건너뛰기]는 «안 보일 때»가 있다. 대사 상자를 누르는 길은 늘 있다(재서 확인함) */
 const clearDlg = async () => { for (let i = 0; i < 40; i++) {
   const t = await page.eval(`document.getElementById('stage').classList.contains('talking')`);
-  if (t !== 'true') return;
+  if (t !== true) return;
   await page.eval(`(()=>{ const b=document.getElementById('dlgSkip');
     if (b && b.offsetParent !== null) b.click();
     const x=document.getElementById('dlgBox'); if (x) x.click(); })()`, false);

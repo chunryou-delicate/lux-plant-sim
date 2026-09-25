@@ -21,10 +21,13 @@ await sleep(5000);
    ⇒ DOM 클릭과 «진짜 마우스»를 둘 다 쓴다 — 판마다 먹는 쪽이 달랐다(오늘 여러 번 겪었다). */
 const clearDlg = async () => { for (let i = 0; i < 30; i++) {
   const t = await page.eval(`document.getElementById('stage').classList.contains('talking')`);
-  if (t !== 'true') return true;
+  if (t !== true) return true;
   await page.eval(`(()=>{ const b=document.getElementById('dlgSkip'); if (b) b.click();
     const x=document.getElementById('dlgBox'); if (x) x.click(); })()`, false);
   await sleep(200);
+  /* 09-25 — DOM 클릭으로 이미 걷혔으면 «진짜 마우스»는 안 누른다. 걷힌 뒤 덮개가 켜지면 그 누름이 «구멍 밖 누름»으로 세어져
+     울타리가 세 번 만에 풀린다(FENCE_GIVE_UP) — 그러면 아래 ② 「밖을 누르면 손가락이 뛰나」가 자의 손 때문에 거짓이 된다 */
+  if ((await page.eval(`document.getElementById('stage').classList.contains('talking')`)) !== true) continue;
   const at = JSON.parse(await page.eval(`(()=>{ const b=document.getElementById('dlgBox');
     if(!b) return 'null'; const r=b.getBoundingClientRect();
     if(!r.width) return 'null'; return JSON.stringify({ x:r.left+r.width/2, y:r.top+r.height/2 }); })()`));
@@ -39,7 +42,10 @@ const state = () => page.eval(`(()=>{ const d=document.getElementById('hintDim')
   const h=document.getElementById('hint'); const t=document.querySelector('.hintTarget');
   const on = !!(d && d.classList.contains('on'));
   return JSON.stringify({ 덮개:on, '덮개가 손짓을 먹나': d ? getComputedStyle(d).pointerEvents !== 'none' : null,
-    구멍: (()=>{ const m=(d&&d.style.clipPath||'').match(/M(-?[\\d.]+) (-?[\\d.]+) a([\\d.]+)/);
+    구멍: (()=>{ /* 09-25 — 구멍은 이제 dataset.hole(「x,y,r」)에 적힌다. clipPath 는 옛 모양이라 null 이 나왔다 */
+      const h=(d&&d.dataset&&d.dataset.hole||'').split(',').map(Number);
+      if (h.length===3 && h.every(Number.isFinite)) return { x:h[0], y:h[1], r:h[2] };
+      const m=(d&&d.style.clipPath||'').match(/M(-?[\\d.]+) (-?[\\d.]+) a([\\d.]+)/);
       return m ? { x:+m[1], y:+m[2], r:+m[3] } : null; })(),
     손가락: !!(h && h.classList.contains('on')),
     말: h ? ((h.querySelector('.say')||{}).textContent||'').trim().slice(0,28) : null,
@@ -67,10 +73,11 @@ console.log('=== ①② 구멍 안과 밖 ===');
 {
   const st = JSON.parse(await state());
   if (!st.덮개) console.log('  ⚠ 덮개가 꺼져 있어 이 걸음은 못 잰다(손가락이 없다)');
+  else if (!st.구멍) console.log('  ⛔ 덮개는 켜졌는데 구멍 자리를 못 읽었다 — 이 걸음은 못 잰다', JSON.stringify(st));
   else {
     const c = st.구멍;
     console.log('  · 구멍 안 —', await hitAt(c.x, c.y), '(덮개면 ⛔)');
-    console.log('  · 구멍 밖(오른쪽 200px) —', await hitAt(Math.min(W - 4, c.x + c.r + 200), c.y), '(덮개면 ✔ 막는다)');
+    console.log('  · 구멍 밖(오른쪽 200px) —', await hitAt(Math.min(W - 4, c.x + c.r + 200), c.y), '(덮개는 손짓을 직접 안 먹는다(08-30) — 막는 것은 문서 잡기 울타리다. 아래 «뜀»으로 본다)');
     /* 밖을 눌러 본다 — 손가락이 뛰나 */
     await page.send('Input.dispatchMouseEvent', { type: 'mouseMoved', x: Math.min(W - 4, Math.round(c.x + c.r + 200)), y: Math.round(c.y), button: 'left', buttons: 0 });
     await page.send('Input.dispatchMouseEvent', { type: 'mousePressed', x: Math.min(W - 4, Math.round(c.x + c.r + 200)), y: Math.round(c.y), button: 'left', buttons: 1, clickCount: 1 });

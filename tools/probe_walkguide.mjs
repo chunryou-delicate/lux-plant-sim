@@ -50,7 +50,7 @@ const dlgState = () => page.eval(`(()=>{ const sk=document.getElementById('dlgSk
         것: e2?(e2.id||e2.tagName+'.'+(e2.className||'').split(' ')[0]):null }; })() }); })()`);
 const clearDlg = async () => { console.log('   · 대사 상태 —', await dlgState()); for (let i = 0; i < 25; i++) {
   const t = await page.eval(`document.getElementById('stage').classList.contains('talking')`);
-  if (t !== 'true') return;
+  if (t !== true) return;
   /* ⚠ 여기서는 «DOM 클릭»이 먹고 진짜 마우스는 안 먹었다(재서 확인). 자의 한계이지
      게임 탈이 아니다 — 사람 손은 진짜 손짓이고, 그 길은 다른 자(probe_walkstep)가 지킨다. */
   await page.eval(`(()=>{ const b=document.getElementById('dlgSkip'); if (b) b.click();
