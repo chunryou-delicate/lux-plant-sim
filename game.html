@@ -11119,6 +11119,21 @@ function playLeafScene(k, chimed) {   /* chimed — 이 턴에 사건 배너가 
   return ok;
 }
 window.__leafScene = (k) => playLeafScene(k);   /* 진단 손잡이 — ⚠ 읽기 전용 아님(진짜로 큐에 넣는다) */
+/* ★ 하프문 장면이 «오늘» 떠야 하나 — 드러났고(장부) · ✂ 말풍선이 서고(§cutMarks 그 판정) · 아직 안 잘랐고,
+     그 셋이 «오늘 처음» 다 참이 됐을 때만. ⚠ 대사 «본 것»은 세이브에 안 남으므로(createDialogue) 넘어가는 날로 한 번을 지킨다.
+     ⚠ 불러온 뒤 첫 턴은 어제 값을 모른다(null) — 그 턴에 드러난 것이 아니면 안 띄운다(되풀이보다 한 번 놓치는 쪽을 고른다). */
+let _halfOwedPrev = null;
+function halfSceneDue(revealedToday) {
+  let owed = false;
+  try {
+    const p = pot0(S);
+    const g = (p && p.leafGrades) || {}, seen = (p && p.leafGradesSeen) || {};
+    const revealed = Object.keys(g).some(lb => g[lb] === 'halfmoon' && seen[lb]);
+    owed = revealed && !cuttingsOf(S).length && cutMarks(false).some(m => m && m.ko === '✂ 삽수 자르기');
+  } catch { owed = false; }
+  const prev = _halfOwedPrev; _halfOwedPrev = owed;
+  return owed && (revealedToday || prev === false);
+}
 /* ★ W3 #12 — 잎이 펴진 날 · 자리가 밝아진 날. pot0 의 어제 값을 메모리에만 둔다(불러온 뒤 첫 턴은 안 울린다) */
 /* ⚠ 밴드 차례는 엔진(daily_light §judgeDLI)의 «빛 많은 쪽»이다: … slow < best < good < over. good·over 는 «빛이 넘친다»라
    「더 밝아졌다 = 더 잘 자란다」로 읽히지 않는다 — 그래서 critical…best 안에서 오를 때만 센다(good·over 는 표에 없다 → 안 울린다). */
@@ -11127,7 +11142,7 @@ let _prevPhase = null, _prevBand = null;
 const bandUpShown = new Set();                   /* 한 판·한 그루·한 밴드에 한 번 */
 /* 새 판에서 비운다 — 그루 id 는 판마다 pot_01 부터 다시라 bandUpShown 이 남으면 둘째 판 배너가 조용히 빠진다 */
 function resetStageMemo() {
-  try { _prevPhase = null; _prevBand = null; bandUpShown.clear(); pendingLeafScene = null; } catch { }   /* 부팅 중 선언 전이면 건너뛴다 */
+  try { _prevPhase = null; _prevBand = null; bandUpShown.clear(); pendingLeafScene = null; _halfOwedPrev = null; } catch { }   /* 부팅 중 선언 전이면 건너뛴다 */
 }
 function showFirstPlayEvents(turn) {
   const ev = turn && turn.firstPlayEvent;
@@ -11221,15 +11236,19 @@ function showFirstPlayEvents(turn) {
     }
     if (ph) _prevPhase = ph; if (bd) _prevBand = bd; }
   /* ★ W3 #5 — ✂ 배너는 ✂ 말풍선의 **그 판정**(§cutMarks)이 참일 때만. 대사 「이제 돼」는 잎 문만 보므로 막힌 까닭을 기록에 남긴다 */
-  const leafK = pendingLeafScene; pendingLeafScene = null;
-  if (leafK === 'half') {
-    const cut = { bubble: false, why: null };
-    try { cut.bubble = cutMarks(false).some(m => m && m.ko === '✂ 삽수 자르기');
-          const { nodes, ok } = cutNodesNow();
+  /* ★★ 하프문 장면은 «자를 수 있게 된 날»에 뜬다 — 대사가 「이제 돼」라서다(§halfSceneDue).
+       드러난 날 ✂ 이 아직이면(잎2 갈라짐을 기다림 · 용기 없음 · 팔 삽수가 먼저) 장면은 ✂ 이 서는 날까지 미룬다.
+       [growth] 40판(창턱+등1): 잎3 갈라지는 날 곧바로 열림 33/38 · 5/38 은 잎2 를 며칠~수십 일 기다린다. */
+  const leafK0 = pendingLeafScene; pendingLeafScene = null;
+  const halfNow = halfSceneDue(leafK0 === 'half');
+  const leafK = halfNow ? 'half' : (leafK0 === 'half' ? null : leafK0);
+  if (leafK0 === 'half' || halfNow) {
+    const cut = { bubble: halfNow, why: null, due: halfNow };
+    try { const { nodes, ok } = cutNodesNow();
           cut.why = ok[0] ? cutBlockedReason(S, nodes, ok[0].nodeId, { potId: pot0(S).id, varieMaturedLeaves: varieMaturedLeavesNow() }) : '자를 수 있는 마디 없음'; }
     catch (e) { cut.why = (e && e.message) || '알 수 없음'; }
     (window.__stageLog ||= []).push({ day: S.day, kind: 'cutGate', ...cut });
-    if (cut.bubble) events.unshift({ title: '✂ 이제 자를 수 있습니다', sub: '무늬 잎 둘이 다 자랐습니다 — 방의 ✂ 삽수 자르기를 누르세요' });
+    if (halfNow) events.unshift({ title: '✂ 이제 자를 수 있습니다', sub: '무늬 잎 둘이 다 자랐습니다 — 방의 ✂ 삽수 자르기를 누르세요' });
   }
   if (events.length && leafBanners.length) events.unshift(...leafBanners);   /* ✨ 무늬 배너를 사건 배너가 덮지 않게 */
   if (events.length) sfx.chime();     /* ★ 배송 도착·수확·몬스테라 도착·새순 — 사건이 있을 때만 */
