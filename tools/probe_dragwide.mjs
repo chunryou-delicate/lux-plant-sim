@@ -147,7 +147,10 @@ await page.eval(`(()=>{ const d=document.getElementById('hintDim');
 await sleep(400);
 const noDim = await dragOnce('덮개 끔');
 console.log('');
-console.log('★ 판정 —', withDim === noDim
+/* 09-25 — ② 가 «못 잰» 판(가방 칸 없음 → null)을 「덮개를 꺼도 안 된다」로 읽던 것을 바로잡는다.
+   대사를 제대로 걷게 된 뒤로 ① 에서 시루가 놓여 가방이 비어 ② 가 null 이 된다 */
+if (noDim === null) console.log('★ 판정 — ② 는 못 쟀다(가방에 끌 칸이 없다). ① 만 본다: 덮개 켠 채 끌기가', withDim ? '«된다»' : '«안 된다»');
+else console.log('★ 판정 —', withDim === noDim
   ? '덮개 탓이 «아니다» (둘 다 ' + (withDim ? '된다' : '안 된다') + ')'
   : (noDim ? '★ 덮개가 «범인»이다 — 끄면 된다' : '★ 덮개를 꺼도 안 된다 — 더 앞이다'));
 await page.shot('docs/handoff/img/dragwide.png').catch(() => {});

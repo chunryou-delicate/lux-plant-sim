@@ -39,7 +39,10 @@ const state = () => page.eval(`(()=>{ const d=document.getElementById('hintDim')
   const h=document.getElementById('hint'); const t=document.querySelector('.hintTarget');
   const on = !!(d && d.classList.contains('on'));
   return JSON.stringify({ 덮개:on, '덮개가 손짓을 먹나': d ? getComputedStyle(d).pointerEvents !== 'none' : null,
-    구멍: (()=>{ const m=(d&&d.style.clipPath||'').match(/M(-?[\\d.]+) (-?[\\d.]+) a([\\d.]+)/);
+    구멍: (()=>{ /* 09-25 — 구멍은 이제 dataset.hole(「x,y,r」)에 적힌다. clipPath 는 옛 모양이라 null 이 나왔다 */
+      const h=(d&&d.dataset&&d.dataset.hole||'').split(',').map(Number);
+      if (h.length===3 && h.every(Number.isFinite)) return { x:h[0], y:h[1], r:h[2] };
+      const m=(d&&d.style.clipPath||'').match(/M(-?[\\d.]+) (-?[\\d.]+) a([\\d.]+)/);
       return m ? { x:+m[1], y:+m[2], r:+m[3] } : null; })(),
     손가락: !!(h && h.classList.contains('on')),
     말: h ? ((h.querySelector('.say')||{}).textContent||'').trim().slice(0,28) : null,
@@ -67,6 +70,7 @@ console.log('=== ①② 구멍 안과 밖 ===');
 {
   const st = JSON.parse(await state());
   if (!st.덮개) console.log('  ⚠ 덮개가 꺼져 있어 이 걸음은 못 잰다(손가락이 없다)');
+  else if (!st.구멍) console.log('  ⛔ 덮개는 켜졌는데 구멍 자리를 못 읽었다 — 이 걸음은 못 잰다', JSON.stringify(st));
   else {
     const c = st.구멍;
     console.log('  · 구멍 안 —', await hitAt(c.x, c.y), '(덮개면 ⛔)');
