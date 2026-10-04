@@ -6641,7 +6641,9 @@ export async function createRoomView(canvas, opts = {}) {
     return `${w} · ${s} · 등 ${n}개`;
   }
   function setLightHeatmap(on, opt = {}) {
-    if (!on) { heatOpt = null; if (heatView) heatView.set(false); return false; }
+    /* v2: 빛 분포를 켠 동안은 가구 옷·소품을 벗긴다 — 칸이 «대리 상자 윗면»에 칠해지는데 옷은 모양이 달라
+       칸이 옷 속에 묻혀 듬성듬성 보였다(박사님 폰 · 2026-10-04). 끄면 다시 입힌다. 값은 그대로다. */
+    if (!on) { heatOpt = null; if (heatView) heatView.set(false); furnDress.hold(false); return false; }
     if (!built) throw new Error('[빛분포] 방이 아직 안 지어졌습니다');
     if (!O.lightEngine || typeof O.lightEngine.dliAt !== 'function')
       throw new Error('[빛분포] 조도 엔진이 없습니다 — createRoomView 에 lightEngine 을 넘기십시오');
@@ -6659,6 +6661,7 @@ export async function createRoomView(canvas, opts = {}) {
     });
     else heatView.refresh({ probeAt, unit, extra });
     heatView.set(true);
+    furnDress.hold(true);
     return true;
   }
   /* 방을 다시 지었다 → **켜져 있을 때만** 다시 잰다.

@@ -105,6 +105,10 @@ export function createFurnitureDress(opt = {}) {
   let cur = { built: null, roomDef: null, parent: null, roomId: null };
   let propGroup = null, propList = [], propsWanted = false;
   let lastColliders = null, disposed = false;
+  /* ★ 잠시 벗기(held) — 빛 분포를 켠 동안. 칸은 «대리 상자 윗면»에 칠해지는데 옷(GLB)은 모양이 달라
+       칸이 옷 속에 묻히거나 조각만 삐져나왔다(박사님 폰 · 2026-10-04 「빛분포가 듬성듬성」).
+       ⇒ 그동안은 조도가 실제로 보는 상자를 보여 준다. on(사람이 켠 v2)과 따로 둔다 — 끄면 그대로 되돌린다. */
+  let held = false;
 
   const hidden = () => hideMat || (hideMat = new T.MeshBasicMaterial({ visible: false }));
 
@@ -307,7 +311,7 @@ export function createFurnitureDress(opt = {}) {
   function dress(built, roomDef) {
     cur.built = built; cur.roomDef = roomDef;
     report.clear();
-    if (!on || !built || !built.furniture) return 0;
+    if (!on || held || !built || !built.furniture) return 0;
     let n = 0, missing = false;
     for (const g of built.furniture.children) {
       if (!g.userData || !g.userData.uid) continue;
@@ -323,7 +327,7 @@ export function createFurnitureDress(opt = {}) {
     }
     /* 아직 못 받은 옷이 있으면 받는 대로 입히고 알린다(옛 방이면 안 입힌다) */
     if (missing) Promise.all(furnFiles().map(load)).then(() => {
-      if (disposed || !on || cur.built !== built) return;
+      if (disposed || !on || held || cur.built !== built) return;
       dress(built, roomDef);
       onChange('furniture');
     });
@@ -412,6 +416,7 @@ export function createFurnitureDress(opt = {}) {
       propList.push(made);
     }
     applyYield();
+    if (held) propGroup.visible = false;
     /* 소품은 부팅을 안 막는다 — 방이 뜬 뒤 천천히 받는다 */
     if (need.length) {
       const g0 = propGroup;
@@ -465,7 +470,20 @@ export function createFurnitureDress(opt = {}) {
   }
   /* 접지 그림자 판에 얹을 소품 발자국(보이는 것만 · 러그 빼고) */
   function blobRects() {
+    if (held) return [];
     return propList.filter(p => !p.flat && p.node.visible).map(p => ({ ...p.rect }));
+  }
+  function setHeld(v) {
+    v = !!v;
+    if (v === held) return held;
+    held = v;
+    if (on) {
+      if (held) undress(cur.built);
+      else dress(cur.built, cur.roomDef);
+      if (propGroup) propGroup.visible = !held;
+      onChange('held');
+    }
+    return held;
   }
 
   function setEnabled(v) {
@@ -485,8 +503,10 @@ export function createFurnitureDress(opt = {}) {
     get enabled() { return on; },
     furnReady, preload, dress, props, yieldTo, blobRects, setEnabled,
     set: setEnabled,
+    hold: setHeld,
+    get held() { return held; },
     report() {
-      return { on, furniture: Object.fromEntries(report),
+      return { on, held, furniture: Object.fromEntries(report),
                props: propList.map(p => ({ id: p.id, visible: p.node.visible,
                  rect: Object.fromEntries(Object.entries(p.rect).map(([k, v]) => [k, +(+v).toFixed(3)])) })) };
     },
