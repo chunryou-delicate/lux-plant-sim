@@ -452,7 +452,7 @@ export function furnitureCatalogList(S) {
 /* ★ 이 가구가 얼마짜리인가 — **묻기만 한다.** 화면이 팝업에 값을 적을 때 쓴다.
      presetId  프리셋 이름 (`roomView.furniture()` 의 `preset`)
      opt.sizeM 방이 크기를 덮어썼으면 그 크기(없으면 프리셋 크기)
-   반환 { ok, reason, preset, ko, sizeM, listWon, buyWon, resaleWon, listed, shopKind }
+   반환 { ok, reason, preset, ko, sizeM, listWon, buyWon, resaleWon, clearOnly, listed, shopKind }
    ⚠ 「가구가 아닌 것」이면 `ok:false` 이고 **왜 아닌지**를 말한다(§FURNITURE_KIND_KO). */
 export function furnitureQuoteOf(presetId, opt = {}) {
   const p = _FURN.presets[presetId];
@@ -469,6 +469,9 @@ export function furnitureQuoteOf(presetId, opt = {}) {
            listWon, buyWon: markupWonOf(listWon),
            /* ★ 2026-10-04 — 프리셋이 되파는 값을 정했으면 그 값(쓰레기봉투 0원 · 박사님). 방이 크기를 덮어써도 안 바뀐다 */
            resaleWon: o.resaleWon ?? furnitureResaleWonOf(listWon),
+           /* ★ 프리셋이 0원으로 «정한» 것은 «치우기»다 — 낱말을 가른다([plan] plan-zero-won-furniture.md).
+              셈으로 0 이 나온 것이 아니라 프리셋이 0 이라 적은 것만이다(지금 쓰레기봉투 하나) */
+           clearOnly: o.resaleWon === 0,
            listed: o.listed, itemId: furnitureItemIdOf(presetId) };
 }
 
@@ -480,7 +483,7 @@ export function creditFurnitureSale(S, won, opt = {}) {
     throw new Error(`[가구] 판 값이 올바르지 않습니다: ${won}`);
   const r = credit(S, v, 'furniture');
   if (typeof opt.log === 'function')
-    opt.log(`💰 ${opt.ko || '가구'}를 넘겼습니다 — ${v.toLocaleString()}원`);
+    opt.log(`💰 ${josa(opt.ko || '가구', '을', '를')} 넘겼습니다 — ${v.toLocaleString()}원`);   // 조사(「협탁를」이었다 · 2026-10-04)
   return r;
 }
 

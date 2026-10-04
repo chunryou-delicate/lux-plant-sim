@@ -1829,6 +1829,7 @@ export function furnitureSellQuote(S, uid, opt = {}) {
   const base = { uid, preset, ko: q.ko, added: !!added,
                  listWon: q.listWon ?? null, buyWon: q.buyWon ?? null, won: q.resaleWon ?? null,
                  listed: q.listed !== false,             // 가구점에 안 내는 가구(2026-10-04 · 쓰레기봉투)
+                 clearOnly: !!q.clearOnly,               // 프리셋이 0원으로 정한 것 — «치우기»(낱말은 [plan])
                  riders: [...opt.riders], on: itemsOnFurniture(S, uid) };
   if (isFurnitureSold(S, uid))
     return { ...base, ok: false, reason: `${q.ko}은(는) 이미 팔았습니다` };
@@ -1862,16 +1863,20 @@ export function sellFurniture(S, uid, opt = {}) {
   clearFurniturePlacement(S, uid);              // 자리표에서도 걷는다(위 ⚠)
   if (S.lamps && S.lamps.aim) delete S.lamps.aim[uid];
 
-  const r = creditFurnitureSale(S, q.won, { ko: q.ko, log: opt.log });
-  if (typeof opt.log === 'function')
+  /* ★ 2026-10-04 — 0원으로 정한 것은 «치웠다»고 말한다. 「— 0원」·「넘겼습니다 — 0원」을 안 낸다(거래가 없는데 거래라고 말하지 않는다).
+       글은 [plan] 것이다(docs/handoff/plan-zero-won-furniture.md ④). 돈 통에는 0원으로 그대로 적는다 — 합이 맞는다 */
+  const r = creditFurnitureSale(S, q.won, { ko: q.ko, log: q.clearOnly ? null : opt.log });
+  if (typeof opt.log === 'function' && q.clearOnly) opt.log(`🪑 ${josa(q.ko, '을', '를')} 치웠습니다`);
+  else if (typeof opt.log === 'function')
     opt.log(`🪑 ${josa(q.ko, '을', '를')} 팔았습니다 — ${q.won.toLocaleString()}원` +
             /* 가구점에 안 내는 것은 «산 값»이 없다 — 견줄 값을 지어내지 않는다(2026-10-04) */
             (q.listed ? ` (산 값 ${q.buyWon.toLocaleString()}원의 ${Math.round(q.won / q.buyWon * 100)}%)` : ''));
-  return { ...r, uid, preset: q.preset, ko: q.ko, won: q.won,
+  return { ...r, uid, preset: q.preset, ko: q.ko, won: q.won, clearOnly: q.clearOnly,
            listWon: q.listWon, buyWon: q.buyWon, wasAdded: q.added,
            /* ⚠ 방을 다시 지어야 한다 — 그 일은 화면 몫이다(위 ⚠) */
            roomNeedsRebuild: true,
-           events: [{ id: 'furniture_sold', ko: `${josa(q.ko, '을', '를')} 팔았습니다`,
+           /* ⚠ id 는 그대로 'furniture_sold' — 세는 곳이 없다([plan] 확인). 말(ko)만 가른다 */
+           events: [{ id: 'furniture_sold', ko: `${josa(q.ko, '을', '를')} ${q.clearOnly ? '치웠습니다' : '팔았습니다'}`,
                       uid, preset: q.preset, won: q.won }] };
 }
 

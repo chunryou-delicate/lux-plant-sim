@@ -375,8 +375,16 @@ console.log('\nH. 안 내는 가구 · 프리셋이 정한 되파는 값 (2026-1
     ok('방에 놓인 안 내는 가구는 팔 수 있다(치우기)', sq.ok && sq.won === 0 && sq.listed === false, sq.reason || '');
     const logs = [];
     const cash0 = S.tutorial.cashWon;
-    state.sellFurniture(S, 'banjiha-trash', { preset: '__t_trash', riders: [], log: (m) => logs.push(m) });
+    const sold = state.sellFurniture(S, 'banjiha-trash', { preset: '__t_trash', riders: [], log: (m) => logs.push(m) });
     ok('팔면 0원 — 지갑이 그대로다', S.tutorial.cashWon === cash0);
+    /* ★ 0원으로 «정한» 것의 말 — [plan] plan-zero-won-furniture.md ④ (값은 박사님 결정 그대로) */
+    ok('0원으로 정한 가구는 «치우기»다 (quote·판 결과 clearOnly)', sq.clearOnly === true && sold.clearOnly === true);
+    ok('로그는 「🪑 …를 치웠습니다」 한 줄 — 「팔았습니다」·「0원」·「넘겼습니다」가 없다',
+       logs.length === 1 && /치웠습니다$/.test(logs[0]) && !logs.some(m => /팔았습니다|0원|넘겼습니다/.test(m)), JSON.stringify(logs));
+    ok('사건 말도 「치웠습니다」 · id 는 furniture_sold 그대로',
+       sold.events[0].id === 'furniture_sold' && /치웠습니다$/.test(sold.events[0].ko), JSON.stringify(sold.events[0]));
+    ok('셈으로 값이 나온 가구는 «치우기»가 아니다', shop.furnitureQuoteOf('__t_cheap').clearOnly === false
+       && shop.furnitureQuoteOf('nightstand').clearOnly === false);
     ok('판 가구로 적혀 방에서 걷힌다', state.isFurnitureSold(S, 'banjiha-trash'));
     ok('판 돈 통과 합이 맞는다(0원도 «판 것»으로 센다)',
        shop.saleLedgerOf(S).balanced && (shop.saleLedgerOf(S).byKind.furniture || 0) === 0);

@@ -14589,14 +14589,16 @@ const furnPicked = {
          · 갈래가 아예 «가구가 아니면»(조명·붙박이·가전) ⇒ 영영 안 되는 것이라 **안 낸다**
          · 갈래는 가구인데 «지금» 못 파는 것(위에 화분이 있다) ⇒ **낸다.** 누르면 까닭을 말한다
        그래야 「왜 안 뜨지」와 「왜 안 되지」가 갈린다 — 앞엣것은 답이 없고 뒤엣것은 답이 있다. */
-    this.sellable = false; this.sellPreset = f.preset || null;
+    this.sellable = false; this.sellPreset = f.preset || null; this.sellClear = false;
     if (f.preset && !f.lamp) {
       try {
         const q = furnitureSellQuote(S, f.uid, { preset: f.preset, riders: sellRidersOf(f.uid) });
         /* 갈래가 아니면 reason 이 「사고팔 수 없습니다」다 — 그때만 감춘다(§FURNITURE_KIND_KO) */
         this.sellable = q.ok || !/사고팔 수 없습니다|붙박이라/.test(q.reason || '');
+        this.sellClear = !!q.clearOnly;          /* ★ 2026-10-04 — 0원으로 정한 가구는 «치우기»([plan] plan-zero-won-furniture ①) */
       } catch (e) { this.sellable = false; }
     }
+    { const sb = $('furnSell'); if (sb && !sb.classList.contains('armed')) sb.textContent = this.sellClear ? '치우기' : '팔기'; }
     /* ⑦ 의자·침대면 앉기·눕기·낮잠 단추 — 프리셋 type 으로 본다(새 칸 없음) */
     this.restType = null;
     try { const ty = (furnPresets[f.preset] || {}).type; if (ty === 'bed' || ty === 'chair') this.restType = ty; } catch { }
@@ -15141,7 +15143,7 @@ function bindPicked() {
     if (b) {
       let armed = false, timer = null;
       const disarmSell = () => { armed = false; if (timer) { clearTimeout(timer); timer = null; }
-                                 b.textContent = '팔기'; b.classList.remove('armed'); };
+                                 b.textContent = furnPicked.sellClear ? '치우기' : '팔기'; b.classList.remove('armed'); };
       const go = () => {
         const uid = furnPicked.uid, preset = furnPicked.sellPreset;
         if (!uid || !preset) return;
@@ -15158,7 +15160,10 @@ function bindPicked() {
              앞엣것은 «잃는 것»만 말하고 뒤엣것은 «남는 것»도 말한다 — 사람이 「13이면 되나」를 센다.
              ⚠ 자리가 안 주는 가구(침대)에서는 **자리 대목을 통째로 뺀다.**
                「15→15」는 소음이고, 안 바뀐 것을 말하면 바뀐 것이 묻힌다. */
-          b.textContent = lose > 0
+          /* ★ 2026-10-04 — 0원으로 정한 가구는 값을 안 말한다(「0원에 팔까요?」는 소음 — [plan] ②) */
+          b.textContent = q.clearOnly
+            ? (lose > 0 ? `자리 ${now}→${now - lose} · 치울까요?` : '치울까요?')
+            : lose > 0
             ? `${q.won.toLocaleString()}원 · 자리 ${now}→${now - lose}?`
             : `${q.won.toLocaleString()}원에 팔까요?`;
           timer = setTimeout(disarmSell, 3000);
@@ -15171,7 +15176,9 @@ function bindPicked() {
         furnPicked.clear();
         try { io.light.setFurnitureEdits(soldFurniture(S), addedFurniture(S)); }
         catch (e) { console.warn('[가구] 조립에 못 먹였습니다 —', e && e.message); }
-        banner(`${josa(r.ko, '을', '를')} 팔았습니다`, `${r.won.toLocaleString()}원이 들어왔습니다`);
+        /* ★ 2026-10-04 — 치운 것은 제목 한 줄. ⛔ 「0원이 들어왔습니다」를 안 쓴다 — 아무것도 안 들어왔다([plan] ③) */
+        if (r.clearOnly) banner(`${josa(r.ko, '을', '를')} 치웠습니다`);
+        else banner(`${josa(r.ko, '을', '를')} 팔았습니다`, `${r.won.toLocaleString()}원이 들어왔습니다`);
         try { sfx.thud(); } catch { }
         draw();
         /* 방은 «가볍게» 다시 짓는다 — 놓기와 같은 창구다(§refreshFurniture · 실측 273 ms) */
