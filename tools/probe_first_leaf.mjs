@@ -32,6 +32,7 @@ import fs from 'node:fs'; import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createProfileLight } from '../src/game/room_profile.js';
 import { GROWTH_STEPS_MAX } from '../src/game/loop.js';
+import { ARRIVAL } from '../src/game/state.js';
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const J = p => JSON.parse(fs.readFileSync(path.join(ROOT, p), 'utf8'));
 const ROOM = process.env.ROOM || 'banjiha';
@@ -45,14 +46,23 @@ const STEP_MAX = GROWTH_STEPS_MAX;
 const light = createProfileLight({ ...P, uidStable: true },
   { thresholds: TH, weather: J('data/balance/weather.json'), electricity: J('data/balance/electricity.json') });
 const FROM  = Number(process.env.FROM || 11);      // 그루가 방에 놓이는 게임일
-const FIRST = Number(process.env.FIRST || 30);     // 첫 잎의 누적 GROWTH
+/* ★★ 2026-10-04 정정 — 기준을 «도착값»으로 바꿨다.
+   전에는 생장일 0 에서 30(첫 잎)까지를 셌다. 그런데 도착 그루는 생장일 ARRIVAL.growthDays(45)로
+   와서 «첫 잎을 이미 달고 온다»(state.js §ARRIVAL). 그래서 09-07 에 낸 「창턱 등0 첫 잎 게임일 40」은
+   «있지도 않은 사건»을 센 것이었다. 맞는 물음은 「도착한 뒤 «다음 잎»이 언제 나나」다.
+   ⇒ 도착값은 손으로 안 베끼고 state.js 에서, 잎 문턱은 growth_tuning.json leaf_interval 에서 읽는다. */
+const START = Number(process.env.START ?? ARRIVAL.growthDays);   // 도착 때 생장일
+const CUM = J('data/growth_tuning.json').leaf_interval.days.reduce((a, v) => (a.push((a.at(-1) || 0) + v), a), []);
+const NEXT_IDX = CUM.findIndex(c => c > START);                  // 다음에 날 잎의 자리(0부터)
+const FIRST = Number(process.env.NEXT ?? CUM[NEXT_IDX]);          // 그 잎의 누적 생장일
+const LEAF_NO = NEXT_IDX + 1;                                     // 잎 번호(1부터)
 const DAYS  = Number(process.env.DAYS || 400);
 const LAMPS = (process.env.LAMPS || '0').split(',').map(Number);
 const MODES = (process.env.MODES || 'novice,real').split(',');
 function bandOf(d){ if(d<T.die)return'critical'; if(d<T.survive)return'poor'; if(d<T.min)return'stagnant';
   if(d<T.best_lo)return'slow'; if(d<=T.best_hi)return'best'; if(d<=T.max)return'good'; return'over'; }
-console.log(`══ 첫 잎까지 며칠인가 — 방 «${ROOM}» · 그루는 게임일 ${FROM} 에 놓인다`);
-console.log(`   ⚠ 첫 잎 = 누적 GROWTH ${FIRST} · 몬스테라 7일 이동평균 · ${DAYS}일까지 본다`);
+console.log(`══ 도착한 뒤 «다음 잎»까지 며칠인가 — 방 «${ROOM}» · 그루는 게임일 ${FROM} 에 생장일 ${START} 로 놓인다`);
+console.log(`   ⚠ 도착 그루는 잎 ${LEAF_NO - 1}장을 달고 온다 · 다음 잎 = 잎${LEAF_NO} = 누적 생장일 ${FIRST} · 몬스테라 7일 이동평균 · ${DAYS}일까지 본다`);
 console.log(`   ⚠ 모드를 표에서 떼지 마라 — novice=여름·맑음 고정(첫 플레이) · real=계절이 돈다\n`);
 /* DLI= 를 주면 «프로필 자리» 대신 «준 상수»를 태운다 (바닥처럼 자리 목록에 없는 데) */
 const FIXED = process.env.DLI
@@ -61,12 +71,12 @@ const FIXED = process.env.DLI
   : null;
 if (FIXED) console.log('⚠ DLI= 로 «잰 상수»를 태웁니다 — 등 개수는 그 상수에 이미 들어 있습니다\n');
 for (const mode of MODES) for (const lamps of (FIXED ? [0] : LAMPS)) {
-  console.log(FIXED ? `[${mode} «잰 상수»]   자리                     하루 DLI   밴드      첫 잎` : `[${mode} 등${lamps}개]   자리          7일평균(놓인 뒤)   밴드      첫 잎`);
+  console.log(FIXED ? `[${mode} «잰 상수»]   자리                     하루 DLI   밴드      잎${LEAF_NO}` : `[${mode} 등${lamps}개]   자리          7일평균(놓인 뒤)   밴드      잎${LEAF_NO}`);
   let any = 0;
   const TARGETS = FIXED ? FIXED.map(f => f.slotId) : P.slots.map(s => s.slotId);
   for (const slot of TARGETS) {
     const fixedOf = FIXED ? FIXED.find(f => f.slotId === slot).fixed : null;
-    const hist = []; let g = 0, credit = 0, leafDay = null, bandSeen = {}, avgSum = 0, avgN = 0;
+    const hist = []; let g = START, credit = 0, leafDay = null, bandSeen = {}, avgSum = 0, avgN = 0;
     for (let d = 1; d <= DAYS; d++) {
       const S = { sim:{mode, yearDay0:135}, lamps:{count:lamps, litHours:12}, pots:[], placedItems:[] };
       let dayDli;
@@ -105,5 +115,5 @@ for (const mode of MODES) for (const lamps of (FIXED ? [0] : LAMPS)) {
     if (leafDay) any++;
     console.log(`   ${slot.padEnd(22)}${avg.toFixed(2).padStart(6)}   ${(topBand?topBand[0]:'-').padEnd(9)} ${ans}`);
   }
-  console.log(`   ⇒ ★ 첫 잎이 «나는» 자리 ${any}/${TARGETS.length}\n`);
+  console.log(`   ⇒ ★ 잎${LEAF_NO} 이 «나는» 자리 ${any}/${TARGETS.length}\n`);
 }
