@@ -52,7 +52,15 @@ const FURN = {
   desk:       { file: 'furniture/desk.glb', yaw: 0 },
   chair:      { file: 'furniture/chair.glb', yaw: 0, probes: [[0.5, 0.6], [0.4, 0.66], [0.6, 0.66]] },
   dresser:    { file: 'furniture/drawer.glb', yaw: 0 },
-  nightstand: { file: 'furniture/cabinet.glb', yaw: 0 }
+  nightstand: { file: 'furniture/cabinet.glb', yaw: 0 },
+  /* ★ 2026-10-04 — 소품이 «진짜 가구»가 됐다(박사님 「진짜 가구로」 · [house] 프리셋·uid·크기).
+       크기를 GLB 실측 비율 × k 로 뽑았으므로 uniform — 세로도 가로·깊이와 같은 배율(찌그러지지 않게).
+       yaw 0: 그림의 방향은 방 정의의 rot 에 들어 있다([house]).
+       lazy: 부팅 «미리 받기»에 안 넣는다(난방기 3MB·건조대 1.7MB — 폰 첫 화면을 안 늦춘다). 방이 뜬 뒤 받아 입힌다. */
+  drying_rack: { file: 'props/drying_rack.glb', yaw: 0, uniform: true, lazy: true },
+  heater:      { file: 'props/heater.glb',      yaw: 0, uniform: true, lazy: true },
+  trash:       { file: 'props/trash.glb',       yaw: 0, uniform: true, lazy: true },
+  backpack:    { file: 'props/backpack.glb',    yaw: 0, uniform: true, lazy: true }
 };
 /* 옷을 안 입히고 색만 바꾸는 것 — 단·자리 계약이 걸려 있다(3단 선반·창턱 받침) */
 const RESTYLE = {
@@ -77,10 +85,12 @@ const PROPS = {
     // { id: 'rug',     rug: true, x: -0.35, z: 0.78, w: 1.5, d: 1.0, yaw: 0 },
     // v2 합치기 검토: 책상 발치를 삐져나와 뺀다
     // { id: 'laundry', file: 'props/laundry.glb',     x: 1.70,  z: -1.50, yaw: 0,   h: 0.30 },
-    { id: 'heater',  file: 'props/heater.glb',      x: -2.19, z: 0.52,  yaw: 90,  h: 0.50 },
-    { id: 'trash',   file: 'props/trash.glb',       x: -2.21, z: 1.53,  yaw: 0,   h: 0.40 },
-    { id: 'backpack',file: 'props/backpack.glb',    x: -0.72, z: 1.64,  yaw: 90,  h: 0.36 },
-    { id: 'rack',    file: 'props/drying_rack.glb', x: -1.10, z: -1.42, yaw: 90,  h: 0.72 }
+    /* ★ 2026-10-04 — 넷 다 «진짜 가구»가 된다([house] house_rooms §banjiha). 방 정의에 같은 프리셋이 있으면
+         여기 그림은 안 놓는다(두 벌 방지 · 집 창 커밋과 어느 쪽이 먼저 들어와도 된다). 가구가 다 들어오면 지운다. */
+    { id: 'heater',  file: 'props/heater.glb',      x: -2.19, z: 0.52,  yaw: 90,  h: 0.50, preset: 'heater' },
+    { id: 'trash',   file: 'props/trash.glb',       x: -2.21, z: 1.53,  yaw: 0,   h: 0.40, preset: 'trash' },
+    { id: 'backpack',file: 'props/backpack.glb',    x: -0.72, z: 1.64,  yaw: 90,  h: 0.36, preset: 'backpack' },
+    { id: 'rack',    file: 'props/drying_rack.glb', x: -1.10, z: -1.42, yaw: 90,  h: 0.72, preset: 'drying_rack' }
   ]
 };
 
@@ -137,12 +147,13 @@ export function createFurnitureDress(opt = {}) {
   }
   const furnFiles = () => [...new Set(Object.values(FURN).map(s => s.file))];
   const propFiles = id => [...new Set((PROPS[id] || []).filter(p => p.file).map(p => p.file))];
-  const furnReady = () => furnFiles().every(f => tpl.has(f));
+  const bootFiles = () => [...new Set(Object.values(FURN).filter(s => !s.lazy).map(s => s.file))];
+  const furnReady = () => bootFiles().every(f => tpl.has(f));
 
   /* 부팅 때 한 번 — 가구 옷을 기다린다(너무 오래면 옛 모양으로 먼저 뜨고 나중에 입는다) */
   function preload(ms = 4000) {
     if (!on || !loadGLB) return Promise.resolve(false);
-    const all = Promise.all(furnFiles().map(load)).then(() => true);
+    const all = Promise.all(bootFiles().map(load)).then(() => true);
     return Promise.race([all, new Promise(r => setTimeout(() => r(false), ms))]);
   }
 
@@ -236,6 +247,7 @@ export function createFurnitureDress(opt = {}) {
       sy = (pb.max.y - g.position.y) / H;
     }
     const sx = w / (box.max.x - box.min.x), sz = d / (box.max.z - box.min.z);
+    if (spec.uniform) sy = (sx + sz) / 2;           // 비율 그대로(발자국이 GLB 비율에서 나왔다)
 
     const glb = t.scene.clone(true);
     glb.rotation.y = deg(spec.yaw);
@@ -326,11 +338,15 @@ export function createFurnitureDress(opt = {}) {
       }
     }
     /* 아직 못 받은 옷이 있으면 받는 대로 입히고 알린다(옛 방이면 안 입힌다) */
-    if (missing) Promise.all(furnFiles().map(load)).then(() => {
-      if (disposed || !on || held || cur.built !== built) return;
-      dress(built, roomDef);
-      onChange('furniture');
-    });
+    if (missing) {
+      const go = () => Promise.all(furnFiles().map(load)).then(() => {
+        if (disposed || !on || held || cur.built !== built) return;
+        dress(built, roomDef);
+        onChange('furniture');
+      });
+      /* 못 받은 것이 «나중 받기»뿐이면 소품처럼 조금 뒤에 받는다(첫 화면을 안 다툰다) */
+      if (bootFiles().every(f => tpl.has(f))) setTimeout(go, opt.propDelayMs ?? 1200); else go();
+    }
     return n;
   }
 
@@ -404,7 +420,9 @@ export function createFurnitureDress(opt = {}) {
     parent.add(propGroup);
     const k = furnK();
     const need = [];
+    const realPresets = new Set(((cur.roomDef && cur.roomDef.furniture) || []).map(f => f && f.preset));
     for (const p of PROPS[roomId]) {
+      if (p.preset && realPresets.has(p.preset)) continue;    // 진짜 가구가 있다 — 그 가구가 옷을 입는다
       let made = null;
       if (p.rug) made = makeRug(p);
       else if (tpl.has(p.file)) made = makeProp(p);
