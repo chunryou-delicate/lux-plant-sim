@@ -1737,19 +1737,20 @@ function matHash(leafBirth, salt){
 // ★ 중간잎 확정(특수 잎). 잎이 중간잎에 들어설 때 딱 한 번, **환경과 무관하게** 정해진다.
 //   환경에 태우면 어두운 자리에 처박아 두고 계속 실패시키는 '농사'가 성립해 운이 아니게 된다.
 //   환경 무관이라 저장할 필요도 없다 — 씨앗에서 다시 뽑으면 언제나 같은 답이 나온다.
-/* ★★ 2026-10-04 박사님 결정 — «첫 그루 잎3은 중간잎 확정 3%(mid_lock_pct 0.03)에서 뺀다.»
-   (총괄 claude-a3 를 거쳐 받았다.)
-   목적: 누구나 빛만 주면 하프문이 갈라져 장면과 자르기(이사 길)가 열리게 한다.
-   ⇒ 그 전에는 프롤로그 그루의 3% 가 잎3 이 영영 안 갈라져 하프문 장면이 안 왔다
-     (2026-10-04 실측: 40판 중 2판 · 둘 다 locked:true · 굴린 횟수 0 · 잠기지 않은 잎3 은 40/40 갈라짐).
-   ★ 범위는 «첫 그루의 잎3 하나»뿐이다. 다른 잎·씨앗 그루의 3% 는 그대로다.
-     「첫 그루」 = 프롤로그 무늬 보장이 켜진 그루(PROLOGUE_VARIE.leafNos 가 비지 않음).
-     그 보장은 판에서 한 번만, 첫 그루에만 켜진다(growth_adapter §prologueArmed). 씨앗 그루는 비운 채 만든다.
-   ⚠ 「잎3」은 leafRankOf 로 센다 — 프롤로그 보장이 「잎2·3」을 셀 때와 같은 셈이다.
-   ⚠ 잠금은 여전히 환경과 무관하다. 보장 상태와 잎 순번은 세이브 재생에서 같은 답으로 다시 선다. */
-const PROLOGUE_NO_MIDLOCK_LEAF_NOS=Object.freeze([3]);
+/* ★★ 2026-10-04 박사님 결정 둘(총괄 claude-a3 를 거쳐 받았다):
+     ① «첫 그루 잎3은 중간잎 확정 3%(mid_lock_pct 0.03)에서 뺀다.»
+     ② «첫 그루 잎2도 뺀다.» — 곧 첫 그루의 «무늬 보장 두 장»(잎2·잎3)이다.
+   목적: 빛만 주면 누구나 하프문이 갈라지고 ✂(자르기 · 이사 길)가 열리게 한다.
+     ✂ 문은 무늬 잎 «둘»이 갈라져야 열린다(propagation §cutBlockedReason · varieMaturedLeaves ≥ 2).
+     그래서 한 장만 빼면 목적이 안 선다 — ①만 넣었을 때 잎2 가 잠긴 판(2.9%)은 400일 안에 ✂ 가 4/12 만 열렸다.
+   ★ 범위는 «첫 그루의 보장 잎»뿐이다. 잎4 부터·씨앗 그루의 3% 는 그대로다.
+     「첫 그루」 = 프롤로그 무늬 보장이 켜진 그루. 그 보장은 판에서 한 번만, 첫 그루에만 켜진다
+     (growth_adapter §prologueArmed). 씨앗 그루는 보장을 비운 채 만든다(addPlant).
+   ★ 「몇 번째 잎인가」는 보장 목록(PROLOGUE_VARIE.leafNos)을 그대로 쓰고 leafRankOf 로 센다 —
+     보장이 「잎2·3」을 셀 때와 같은 목록·같은 셈이다. 목록을 두 벌 두면 한쪽만 고쳐진다.
+   ⚠ 잠금은 여전히 환경과 무관하다. 보장 목록과 잎 순번은 세이브 재생에서 같은 답으로 다시 선다. */
 function midLockedOf(leafBirth){
-  if(PROLOGUE_VARIE.leafNos.length && PROLOGUE_NO_MIDLOCK_LEAF_NOS.includes(leafRankOf(leafBirth))) return false;
+  if(PROLOGUE_VARIE.leafNos.length && PROLOGUE_VARIE.leafNos.includes(leafRankOf(leafBirth))) return false;
   return matHash(leafBirth, 0) < GT.mature.mid_lock_pct;
 }
 function matEntry(leafBirth){
