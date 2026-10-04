@@ -1118,9 +1118,30 @@ B.cube_storage=(o)=>{
   }
   g.userData.size={w,h,d}; return addSlots(g, tierSlots(w,h,2), [h], [d]);
 };
+/* ★ 2026-10-04 — 고르기 껍데기. 살대만 있는 가구는 광선이 틈으로 빠져 눌러도 안 골린다
+   (총괄 390×844 실측: 반지하 건조대 발밑 둘레 9점을 다 눌러도 침대가 골림 · 높이 0.25/0.55 광선 → null).
+   발자국 × 높이의 **옆면 넷**을 보이지 않게 둔다.
+   ⚠ 윗면·밑면은 일부러 뺀다 — 옷 층(furniture_dress)이 옷을 입히면 대리 재질을 {visible:false} 로 갈아 끼워
+     colorWrite:false 가 사라진다. 윗면이 있으면 그때 surfaceTopAt 이 그 면을 «화분 놓을 면»으로 집는다.
+     옆면은 위를 향하지 않아서(faceUpY) 재질이 갈려도 면이 안 된다.
+   그림자는 안 드리운다(noShadow → CLEAR). 가림·충돌은 원래대로 userData.size 가 낸다 — 이 메시와 무관하다.
+   ★ 옆면은 **안팎 두 겹**(삼각형마다 감은 방향을 뒤집은 쌍)이다 — 열린 윗면으로 들어온 광선은 맞은편 옆면의
+     «안쪽»에 닿는데, 한 겹이면 그건 뒷면이라 안 맞는다(위에서 내려다보는 카메라로 45점 중 10점이 빠졌다).
+     재질의 DoubleSide 로 풀면 옷 층이 재질을 갈아 끼울 때 FrontSide 로 돌아가므로 «기하»로 푼다.
+   ⚠ 옮길 때의 유령(room_view makeFurnGhost)은 메시를 다 반투명으로 칠하므로 껍데기가 상자로 보인다(차지하는 부피). */
+function pickShell(w,h,d){
+  const geo=new THREE.BoxGeometry(w,h,d), idx=geo.index.array, keep=[];
+  for(const gr of geo.groups) if(gr.materialIndex!==2 && gr.materialIndex!==3)     // 2 = +y(윗면) · 3 = −y(밑면)
+    for(let i=gr.start;i<gr.start+gr.count;i++) keep.push(idx[i]);
+  for(let i=0,n=keep.length;i<n;i+=3) keep.push(keep[i],keep[i+2],keep[i+1]);      // 안쪽 겹
+  geo.setIndex(keep); geo.clearGroups(); geo.translate(0,h/2,0);
+  const s=new THREE.Mesh(geo,new THREE.MeshBasicMaterial({ colorWrite:false, depthWrite:false }));
+  s.userData.noShadow=true; s.userData.pickShell=true; return s;
+}
 B.drying_rack=(o)=>{
   const w=o.w??0.9, d=o.d??0.55, h=o.h??1.0;
   const g=new THREE.Group(); const m=furnMat(o.color??'#cfd4d8','satin');
+  g.add(pickShell(w,h,d));
   for(const sz of [-1,1]) for(const sx of [-1,1]){
     const leg=cyl(0.012,0.012,h,m, sx*(w/2-0.02), h/2, sz*(d/2-0.05), 6);
     leg.rotation.x=sz*0.16; g.add(leg);
