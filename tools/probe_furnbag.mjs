@@ -18,7 +18,7 @@ await sleep(5000);
 for (let i = 0; i < 40; i++) {
   const b = await page.eval(`(()=>{const s=document.getElementById('stage'),g=document.getElementById('guide');
     return !!(s&&s.classList.contains('talking'))||!!(g&&g.classList.contains('on'));})()`);
-  if (b !== 'true') break;
+  if (b !== true) break;
   await page.eval(`(()=>{const s=document.getElementById('dlgSkip'); if(s)s.click();
     const x=document.getElementById('dlgBox'); if(x)x.click();
     const g=document.getElementById('guideClose'); if(g)g.click();})()`, false);
@@ -45,7 +45,7 @@ await sleep(6000);
 for (let i = 0; i < 20; i++) {
   const b = await page.eval(`(()=>{const s=document.getElementById('stage');
     return !!(s&&s.classList.contains('talking'));})()`);
-  if (b !== 'true') break;
+  if (b !== true) break;
   await page.eval(`(()=>{const s=document.getElementById('dlgSkip'); if(s)s.click();
     const x=document.getElementById('dlgBox'); if(x)x.click();})()`, false);
   await sleep(250);

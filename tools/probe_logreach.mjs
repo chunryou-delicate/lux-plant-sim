@@ -18,7 +18,7 @@ await sleep(5000);
 for (let i = 0; i < 40; i++) {
   const busy = await page.eval(`(()=>{const s=document.getElementById('stage'),g=document.getElementById('guide');
     return !!(s&&s.classList.contains('talking'))||!!(g&&g.classList.contains('on'));})()`);
-  if (busy !== 'true') break;
+  if (busy !== true) break;
   await page.eval(`(()=>{const s=document.getElementById('dlgSkip'); if(s)s.click();
     const b=document.getElementById('dlgBox'); if(b)b.click();
     const g=document.getElementById('guideClose'); if(g)g.click();})()`, false);
