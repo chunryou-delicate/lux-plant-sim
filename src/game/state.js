@@ -1813,7 +1813,7 @@ export function itemsOnFurniture(S, uid) {
      opt.riders  이 가구가 받치고 있는 것들의 uid ★필수 (`roomView.ridersOf(uid)`)
      opt.fixed   방이 못 박았나
      opt.sizeM   방이 크기를 덮어썼으면 그 크기
-   반환 { ok, reason, uid, preset, ko, won, listWon, buyWon, riders, on, added } */
+   반환 { ok, reason, uid, preset, ko, won, listWon, buyWon, listed, riders, on, added } */
 export function furnitureSellQuote(S, uid, opt = {}) {
   if (!uid || typeof uid !== 'string') throw new TypeError('[가구] 가구 uid 가 필요합니다');
   const added = addedFurnitureOf(S, uid);
@@ -1828,6 +1828,7 @@ export function furnitureSellQuote(S, uid, opt = {}) {
   const q = furnitureQuoteOf(preset, { sizeM: opt.sizeM });
   const base = { uid, preset, ko: q.ko, added: !!added,
                  listWon: q.listWon ?? null, buyWon: q.buyWon ?? null, won: q.resaleWon ?? null,
+                 listed: q.listed !== false,             // 가구점에 안 내는 가구(2026-10-04 · 쓰레기봉투)
                  riders: [...opt.riders], on: itemsOnFurniture(S, uid) };
   if (isFurnitureSold(S, uid))
     return { ...base, ok: false, reason: `${q.ko}은(는) 이미 팔았습니다` };
@@ -1863,8 +1864,9 @@ export function sellFurniture(S, uid, opt = {}) {
 
   const r = creditFurnitureSale(S, q.won, { ko: q.ko, log: opt.log });
   if (typeof opt.log === 'function')
-    opt.log(`🪑 ${josa(q.ko, '을', '를')} 팔았습니다 — ${q.won.toLocaleString()}원 ` +
-            `(산 값 ${q.buyWon.toLocaleString()}원의 ${Math.round(q.won / q.buyWon * 100)}%)`);
+    opt.log(`🪑 ${josa(q.ko, '을', '를')} 팔았습니다 — ${q.won.toLocaleString()}원` +
+            /* 가구점에 안 내는 것은 «산 값»이 없다 — 견줄 값을 지어내지 않는다(2026-10-04) */
+            (q.listed ? ` (산 값 ${q.buyWon.toLocaleString()}원의 ${Math.round(q.won / q.buyWon * 100)}%)` : ''));
   return { ...r, uid, preset: q.preset, ko: q.ko, won: q.won,
            listWon: q.listWon, buyWon: q.buyWon, wasAdded: q.added,
            /* ⚠ 방을 다시 지어야 한다 — 그 일은 화면 몫이다(위 ⚠) */

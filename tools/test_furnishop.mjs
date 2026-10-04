@@ -92,8 +92,11 @@ console.log('\nB. 거르기 — 가구가 아닌 것이 안 들어왔나');
   for (const r of all) (by[r.shopKind] ||= []).push(r.preset);
   console.log('   갈래별: ' + Object.entries(by).map(([k, v]) => `${k} ${v.length}`).join(' · '));
 
-  ok('가구 81 · 전체 117', by.furniture.length === 81 && all.length === 117,
-     `가구 ${by.furniture.length} / 전체 ${all.length}`);
+  /* ★ 2026-10-04 — 「가구」는 **가구점에 뜨는 가구**다. 팔리지만 가구점에 안 내는 것(shop_listed:false · 박사님 쓰레기봉투)은 따로 센다 */
+  const listedN = all.filter(r => r.shopKind === 'furniture' && r.listed).length;
+  const unlistedN = all.filter(r => r.shopKind === 'furniture' && !r.listed).length;
+  ok('가구 81 · 안 내는 가구 0 · 전체 117', listedN === 81 && unlistedN === 0 && all.length === 117,
+     `가구 ${listedN} · 안 내는 가구 ${unlistedN} / 전체 ${all.length}`);
 
   /* ★ 조명은 **`lighting_presets.fixtures` 로 되짚어 확인한다** — 규칙이 코드에 있으므로
      그 규칙이 실제 조명 표를 다 덮는지는 데이터로 재야 한다. 새 등이 표에 들어왔는데
@@ -335,6 +338,62 @@ console.log('\nG. 세이브');
   assert.deepEqual(S3.home.furnitureAdded, []);
   ok('옛 세이브는 「아무것도 안 팔았고 안 놓았다」로 열린다 — 방이 원래 그대로다', true);
   ok('옛 세이브의 판 돈은 unknown 으로 옮겨져 합이 맞는다', shop.saleLedgerOf(S3).balanced);
+}
+
+/* ════════════════════════════════════════════════════════════
+   H. 가구점에 안 내는 가구 · 되파는 값을 프리셋이 정한다 (박사님 2026-10-04 결정)
+   ⚠ 시험 프리셋 둘을 «얹어서» 꽂고 재고, 끝나면 진짜 표로 되돌린다. 값(0원)은 박사님 것이고 칸은 [House] 것이다 —
+     여기서는 «칸을 읽는 규칙»만 잰다
+════════════════════════════════════════════════════════════ */
+console.log('\nH. 안 내는 가구 · 프리셋이 정한 되파는 값 (2026-10-04)');
+{
+  const T_SIZE = { w: 0.334, d: 0.603, h: 0.4 };          // 쓰레기봉투 빌더 크기(집 창이 낸 값)
+  shop.installFurniturePresets({ presets: { ...PRESETS.presets,
+    __t_trash: { type: 'box', name_ko: '시험 쓰레기봉투', size_m: T_SIZE, shop_listed: false, resale_won: 0 },
+    __t_cheap: { type: 'box', name_ko: '시험 싼 가구', size_m: T_SIZE, resale_won: 5_000 } } });
+  try {
+    const open = { tutorial: { enabled: true, lamp: { unlocked: true } } };
+    const list = shop.furnitureCatalogList(open);
+    ok('안 내는 가구는 가구점 목록에 없다', !list.some(x => x.preset === '__t_trash'));
+    ok('안 내는 가구는 주문 품목도 아니다 (catalogItemOf → null)', shop.catalogItemOf('furn___t_trash') === null);
+    const cheap = list.find(x => x.preset === '__t_cheap');
+    ok('resale_won 만 있는 가구는 가구점에 뜨고, 목록의 되사는 값이 그 값이다', !!cheap && cheap.resaleWon === 5_000,
+       cheap ? String(cheap.resaleWon) : '안 뜸');
+    const q = shop.furnitureQuoteOf('__t_trash');
+    ok('안 내는 가구도 «가구»다 — 값을 물으면 ok · 되파는 값 0 · listed false',
+       q.ok && q.resaleWon === 0 && q.listed === false, JSON.stringify({ ok: q.ok, r: q.resaleWon, l: q.listed }));
+    const qs = shop.furnitureQuoteOf('__t_trash', { sizeM: { w: 1, d: 1, h: 1 } });
+    ok('방이 크기를 덮어써도 프리셋이 정한 되파는 값은 그대로다', qs.resaleWon === 0);
+
+    const S = { day: 50, schema: 'game_state/1',
+      tutorial: { enabled: true, cashWon: 100_000, lamp: { unlocked: true } },
+      shop: shop.createShopState(), home: { room: 'banjiha', furniture: {} },
+      lamps: { count: 0, litHours: 12, aim: {} }, pots: [], emptyPots: [], cuttings: [] };
+    const sq = state.furnitureSellQuote(S, 'banjiha-trash', { preset: '__t_trash', riders: [] });
+    ok('방에 놓인 안 내는 가구는 팔 수 있다(치우기)', sq.ok && sq.won === 0 && sq.listed === false, sq.reason || '');
+    const logs = [];
+    const cash0 = S.tutorial.cashWon;
+    state.sellFurniture(S, 'banjiha-trash', { preset: '__t_trash', riders: [], log: (m) => logs.push(m) });
+    ok('팔면 0원 — 지갑이 그대로다', S.tutorial.cashWon === cash0);
+    ok('판 가구로 적혀 방에서 걷힌다', state.isFurnitureSold(S, 'banjiha-trash'));
+    ok('판 돈 통과 합이 맞는다(0원도 «판 것»으로 센다)',
+       shop.saleLedgerOf(S).balanced && (shop.saleLedgerOf(S).byKind.furniture || 0) === 0);
+    ok('안 내는 가구는 «산 값의 N%»를 지어내지 않는다', logs.length > 0 && logs.every(m => !/산 값/.test(m)), JSON.stringify(logs));
+
+    /* 모양이 틀린 칸은 던진다 — 지어내지 않는다 */
+    const bad = (extra) => {
+      try { shop.installFurniturePresets({ presets: { __b: { type: 'box', size_m: T_SIZE, ...extra } } }); return null; }
+      catch (e) { return e; }
+    };
+    const e1 = bad({ resale_won: -100 }), e2 = bad({ resale_won: '0' }), e3 = bad({ resale_won: 12.5 }), e4 = bad({ shop_listed: 'no' });
+    ok('resale_won 이 음수·글자·소수면 던진다', !!e1 && !!e2 && !!e3 && /resale_won/.test(e1.message),
+       [e1, e2, e3].map(e => e && e.message).join(' | '));
+    ok('shop_listed 가 true/false 가 아니면 던진다', !!e4 && /shop_listed/.test(e4.message), e4 ? e4.message : '안 던짐');
+  } finally {
+    shop.installFurniturePresets(PRESETS);                // 진짜 표로 되돌린다
+  }
+  ok('진짜 표로 되돌렸다 — 가구점 81줄',
+     shop.furnitureCatalogList({ tutorial: { enabled: true, lamp: { unlocked: true } } }).length === 81);
 }
 
 console.log(`\n${fail === 0 ? '✅' : '❌'} 통과 ${pass} · 실패 ${fail}`);

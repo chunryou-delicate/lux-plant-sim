@@ -320,6 +320,29 @@ export function furnitureKindOf(presetId, p) {
   return { kind: k, why: FURNITURE_KIND_KO[k] };
 }
 
+/* ══ ★★ 2026-10-04 — **가구점에 안 내는 가구 · 되파는 값을 프리셋이 정하는 가구** (박사님 결정) ══
+   박사님: 반지하 소품 넷(빨래 건조대·난방기·쓰레기봉투·배낭)을 «진짜 가구»로 — 옮기고·저장되고·부딪히고·빛을 가린다.
+     이어서 *"팔리는데 쓰봉은 0원으로"*. 총괄이 이것을 «쓰레기봉투는 가구점 목록에도 안 올림»으로 읽었다.
+   ⚠ 지금 갈래(appliance 등)는 «사고팔 수 없음»이라 「팔리는데 0원」에 맞는 것이 없었다 ⇒ **데이터 칸 둘**을 읽는다:
+     `shop_listed: false`  가구점 목록에 안 뜬다(사지 못한다 — 주문 품목에도 없다). 팔기는 된다
+     `resale_won: <정수 ≥0>` 되파는 값을 프리셋이 정한다(없으면 정가의 30% — 위 ★★★). 0 이면 «치우기만»
+   ★ 이름 목록이 아니라 데이터 칸이다 — 코드는 «무엇이» 쓰레기봉투인지 모른다. 값(0원)의 임자는 박사님, 칸의 임자는 [House]다.
+   ⛔ 칸이 있는데 모양이 틀리면(글자·음수·소수) **던진다** — 지어내지 않는다. 표를 못 꽂으면 가구가 안 뜰 뿐 게임은 돈다. */
+export function furnitureShopOptsOf(presetId, p) {
+  const has = (k) => !!p && Object.prototype.hasOwnProperty.call(p, k);
+  const listed = has('shop_listed') ? p.shop_listed : true;
+  if (typeof listed !== 'boolean')
+    throw new Error(`[가구] ${presetId}.shop_listed 는 true/false 여야 합니다: ${JSON.stringify(p.shop_listed)}`);
+  let resaleWon = null;
+  if (has('resale_won')) {
+    const v = p.resale_won;
+    if (!Number.isInteger(v) || v < 0)
+      throw new Error(`[가구] ${presetId}.resale_won 은 0 이상의 정수(원)여야 합니다: ${JSON.stringify(v)}`);
+    resaleWon = v;
+  }
+  return { listed, resaleWon };
+}
+
 /* 부피[㎥]. **`size_m` 하나만 본다** — `w`·`d`·`h` 는 빌더 밑값이라 뜻이 다르다(위 ⚠⚠). */
 export function furnitureVolumeOf(sizeM) {
   const s = sizeM;
@@ -353,6 +376,7 @@ export function installFurniturePresets(json) {
   const items = new Map(), all = [];
   for (const [presetId, p] of Object.entries(presets)) {
     const { kind, why } = furnitureKindOf(presetId, p);
+    const o = furnitureShopOptsOf(presetId, p);                // 2026-10-04 · 모양이 틀리면 던진다
     const sizeM = p.size_m && p.size_m.w > 0 ? { w: p.size_m.w, d: p.size_m.d, h: p.size_m.h } : null;
     const volumeM3 = furnitureVolumeOf(sizeM);
     const listWon = kind === 'furniture' ? furniturePriceOf(sizeM) : null;
@@ -360,12 +384,14 @@ export function installFurniturePresets(json) {
       id: furnitureItemIdOf(presetId), preset: presetId, type: p.type || presetId,
       ko: p.name_ko || presetId, kind: 'furniture',            // 상점 갈래(탭)
       shopKind: kind, why,                                     // 가구인가 · 아니면 왜 아닌가
+      listed: kind === 'furniture' && o.listed,                // 가구점에 뜨나(2026-10-04)
+      resaleWon: kind === 'furniture' ? (o.resaleWon ?? furnitureResaleWonOf(listWon)) : null,
       sizeM, volumeM3,
       listWon, leadDays: FURNITURE_RULES.leadDays,
       note: `data/furniture_presets.json §${presetId} — 크기는 size_m(빌더가 낸 값)`
     });
     all.push(row);
-    if (kind === 'furniture') items.set(row.id, row);
+    if (kind === 'furniture' && o.listed) items.set(row.id, row);   // 안 내는 가구는 품목이 아니다 — 주문도 못 한다
   }
   _FURN = Object.freeze({ presets, items, all: Object.freeze(all) });
   return _FURN;
@@ -418,7 +444,7 @@ export function furnitureCatalogList(S) {
     id: it.id, ko: it.ko, kind: it.kind, preset: it.preset, type: it.type,
     sizeM: it.sizeM, volumeM3: it.volumeM3,
     listWon: it.listWon, buyWon: buyPriceOf(it.id),
-    resaleWon: furnitureResaleWonOf(it.listWon),
+    resaleWon: it.resaleWon,                     // 프리셋이 정했으면 그 값(2026-10-04)
     leadDays: it.leadDays, note: it.note
   })).sort((a, b) => a.buyWon - b.buyWon || a.id.localeCompare(b.id));
 }
@@ -426,7 +452,7 @@ export function furnitureCatalogList(S) {
 /* ★ 이 가구가 얼마짜리인가 — **묻기만 한다.** 화면이 팝업에 값을 적을 때 쓴다.
      presetId  프리셋 이름 (`roomView.furniture()` 의 `preset`)
      opt.sizeM 방이 크기를 덮어썼으면 그 크기(없으면 프리셋 크기)
-   반환 { ok, reason, preset, ko, sizeM, listWon, buyWon, resaleWon, shopKind }
+   반환 { ok, reason, preset, ko, sizeM, listWon, buyWon, resaleWon, listed, shopKind }
    ⚠ 「가구가 아닌 것」이면 `ok:false` 이고 **왜 아닌지**를 말한다(§FURNITURE_KIND_KO). */
 export function furnitureQuoteOf(presetId, opt = {}) {
   const p = _FURN.presets[presetId];
@@ -438,9 +464,12 @@ export function furnitureQuoteOf(presetId, opt = {}) {
     return { ...base, ok: false, reason: `${ko}은(는) 사고팔 수 없습니다 — ${why}` };
   const sizeM = opt.sizeM && opt.sizeM.w > 0 ? opt.sizeM : p.size_m;
   const listWon = furniturePriceOf(sizeM);
+  const o = furnitureShopOptsOf(presetId, p);
   return { ...base, ok: true, reason: null, sizeM: { ...sizeM }, volumeM3: furnitureVolumeOf(sizeM),
            listWon, buyWon: markupWonOf(listWon),
-           resaleWon: furnitureResaleWonOf(listWon), itemId: furnitureItemIdOf(presetId) };
+           /* ★ 2026-10-04 — 프리셋이 되파는 값을 정했으면 그 값(쓰레기봉투 0원 · 박사님). 방이 크기를 덮어써도 안 바뀐다 */
+           resaleWon: o.resaleWon ?? furnitureResaleWonOf(listWon),
+           listed: o.listed, itemId: furnitureItemIdOf(presetId) };
 }
 
 /* 판 돈을 지갑에 넣는다 — 그루·삽수·채소와 **같은 문**(`credit`)으로 들어온다.
