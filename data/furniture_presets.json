@@ -1245,6 +1245,54 @@
       "room": "원룸",
       "movable": true
     },
+    "heater": {
+      "type": "heater",
+      "name_ko": "라디에이터 난방기",
+      "size_m": {
+        "w": 0.517,
+        "d": 0.38,
+        "h": 0.5
+      },
+      "w": 0.517,
+      "d": 0.38,
+      "h": 0.5,
+      "color": "#ece0c8",
+      "accent": "#d6c6a6",
+      "room": "반지하"
+    },
+    "trash": {
+      "type": "trash",
+      "name_ko": "쓰레기봉투·폐지",
+      "size_m": {
+        "w": 0.334,
+        "d": 0.603,
+        "h": 0.4
+      },
+      "w": 0.334,
+      "d": 0.603,
+      "h": 0.4,
+      "color": "#5f86b3",
+      "accent": "#b98a5a",
+      "room": "반지하",
+      "shop_listed": false,
+      "resale_won": 0,
+      "note": "★ 2026-10-04 박사님 「팔리는데 쓰봉은 0원으로」 — 되팔면 0원(치우기만 된다) · 가구점 목록에는 안 올린다(총괄 해석, 박사님께 «다르면 말씀해 달라» 적어 둠). 읽는 쪽은 src/game/shop.js(core)."
+    },
+    "backpack": {
+      "type": "backpack",
+      "name_ko": "배낭과 운동화",
+      "size_m": {
+        "w": 0.397,
+        "d": 0.628,
+        "h": 0.36
+      },
+      "w": 0.397,
+      "d": 0.628,
+      "h": 0.36,
+      "color": "#8f9a5e",
+      "accent": "#8c8a6a",
+      "room": "반지하"
+    },
     "room_divider": {
       "type": "room_divider",
       "name_ko": "파티션 가림막",

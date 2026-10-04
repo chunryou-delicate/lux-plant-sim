@@ -134,6 +134,41 @@
           "schedule": "photo14",
           "uid": "banjiha-growlight-stand",
           "note": "★★ 2026-08-17 (박사님 \"식물등도 집게형 말고 그냥 거치형 하나 추가해\") — 셋째 등. 바닥에 서는 스탠드(프리셋 growlight_stand · 250ppfd · 0.45×0.38×1.50). ★ 왜 이 자리인가 — 방 왼쪽은 벽등(창 위)도 집게(오른쪽 선반)도 안 닿는 유일한 구석이다. 앞 둘이 이미 밝히는 데를 또 밝히면 셋째 등을 사는 뜻이 없다. ⚠ 값은 손으로 안 적는다 — `tools/gen_room_profile.mjs` 가 다시 뽑는다. 얼린 표(room_profile.banjiha.json)의 lampCounts 가 [0,1,2] → [0,1,2,3] 으로 늘고, 3등 칸이 새로 생긴다. ⚠ 셋째 등은 **바닥 물건이라 옮길 수 있다**(movable:true) — 집게처럼 상판에 물리는 것이 아니라 바닥 좌표를 갖는다. 그래서 화면에서도 [옮기기]가 벽부형과 달리 열린다."
+        },
+        {
+          "preset": "drying_rack",
+          "x": -1.1,
+          "z": -1.42,
+          "rot": 90,
+          "w": 0.913,
+          "d": 0.498,
+          "h": 0.72,
+          "uid": "banjiha-drying-rack",
+          "note": "★ 높이 0.72(그림과 같게 · 바닥을 덜 가린다 — 건조대 하나로 바닥 0.25 격자 320칸 중 0.72 면 20칸, 1.0 이면 29칸이 준다 · 진짜 빌더로 같은 판에서 잼: ONLY=rack [RACK_H=1.0] node tools/probe_add_furniture_light.mjs). ⚠ 크기는 «이 방에서만» 덮어쓴다 — 프리셋(0.9×0.55×1.0)을 고치면 가구점 값이 99,300 → 75,900 으로 바뀐다(값). 창 밑 · 침대 머리맡과 3단 선반 사이. ★ 2026-10-04 박사님 «넣기» — 그림뿐이던 반지하 소품 넷(furniture_dress PROPS)을 진짜 가구로: 옮기고·저장되고(uid)·부딪히고·빛을 가린다. 자리 = 그림 자리 · rot = 그림 yaw(옷 층 FURN yaw 0). 크기 = GLB 실측 상자 × (높이 ÷ GLB 높이) — 옷 층이 x·z 를 따로 늘이므로 비율이 어긋나면 그림이 찌그러진다. 빛(맑음·여름 · tools/probe_add_furniture_light.mjs): 자리 15칸 0/15 그대로(창턱 peak 등1 6.02 그대로) · 바닥 0.25 격자 320칸 중 34칸이 줄고(가장 큰 것 건조대 밑 0.180→0) 전후 모두 ≤0.3. 이사: mount 가 없어 들고 간다(박사님 «넷 다 들고 감» · rooms_spec §13 규칙 그대로)."
+        },
+        {
+          "preset": "heater",
+          "x": -2.19,
+          "z": 0.52,
+          "rot": 90,
+          "uid": "banjiha-heater",
+          "note": "침대 발치 · 왼벽에 붙여(벽까지 2cm) — 문→방 가운데 걷는 길 밖. ★ 2026-10-04 박사님 «넣기» — 그림뿐이던 반지하 소품 넷(furniture_dress PROPS)을 진짜 가구로: 옮기고·저장되고(uid)·부딪히고·빛을 가린다. 자리 = 그림 자리 · rot = 그림 yaw(옷 층 FURN yaw 0). 크기 = GLB 실측 상자 × (높이 ÷ GLB 높이) — 옷 층이 x·z 를 따로 늘이므로 비율이 어긋나면 그림이 찌그러진다. 빛(맑음·여름 · tools/probe_add_furniture_light.mjs): 자리 15칸 0/15 그대로(창턱 peak 등1 6.02 그대로) · 바닥 0.25 격자 320칸 중 34칸이 줄고(가장 큰 것 건조대 밑 0.180→0) 전후 모두 ≤0.3. 이사: mount 가 없어 들고 간다(박사님 «넷 다 들고 감» · rooms_spec §13 규칙 그대로)."
+        },
+        {
+          "preset": "trash",
+          "x": -2.225,
+          "z": 1.53,
+          "rot": 0,
+          "uid": "banjiha-trash",
+          "note": "★ x −2.21(그림) → −2.225. 왼벽 안쪽 면(−2.4)과 문 모서리(−2.05) 사이 0.35m 에 폭 0.334 가 들어간다 ⇒ 벽·문에서 각각 0.8cm. 그림 자리는 문 폭에 0.7cm 걸쳤다. 되팔면 0원 · 가구점에 안 뜬다(프리셋 note). ★ 2026-10-04 박사님 «넣기» — 그림뿐이던 반지하 소품 넷(furniture_dress PROPS)을 진짜 가구로: 옮기고·저장되고(uid)·부딪히고·빛을 가린다. 자리 = 그림 자리 · rot = 그림 yaw(옷 층 FURN yaw 0). 크기 = GLB 실측 상자 × (높이 ÷ GLB 높이) — 옷 층이 x·z 를 따로 늘이므로 비율이 어긋나면 그림이 찌그러진다. 빛(맑음·여름 · tools/probe_add_furniture_light.mjs): 자리 15칸 0/15 그대로(창턱 peak 등1 6.02 그대로) · 바닥 0.25 격자 320칸 중 34칸이 줄고(가장 큰 것 건조대 밑 0.180→0) 전후 모두 ≤0.3. 이사: mount 가 없어 들고 간다(박사님 «넷 다 들고 감» · rooms_spec §13 규칙 그대로)."
+        },
+        {
+          "preset": "backpack",
+          "x": -0.35,
+          "z": 1.64,
+          "rot": 90,
+          "uid": "banjiha-backpack",
+          "note": "★ 앞벽 · 문 오른쪽(문에서 49cm). 그림 자리 x −0.72 에서 **−0.35** 로 옮겼다 — 사람은 몸 반지름 0.38(room_view BODY_R)만큼 가구에서 떨어져야 서는데, −0.72 면 배낭과 난방기 모서리가 문 앞 통로 세 칸을 방에서 끊었고 캐릭터가 처음 서는 자리(standSpot · 문 앞)가 바로 그 주머니라 첫 판이 Day 0 에서 못 움직였다(probe_force5 제자리걸음 · 넣기 전 판은 Day 5 첫 수확). −0.35 면 문 앞에서 방으로 두 칸 폭으로 이어진다(맞닿는 칸 x −1.125 가 8cm 남는다 · −0.55 는 한 칸 폭이라 화분 하나로 다시 막힌다). 재는 자: tools/probe_add_furniture_light.mjs §길. ★ 2026-10-04 박사님 «넣기» — 그림뿐이던 반지하 소품 넷(furniture_dress PROPS)을 진짜 가구로: 옮기고·저장되고(uid)·부딪히고·빛을 가린다. 자리 = 그림 자리 · rot = 그림 yaw(옷 층 FURN yaw 0). 크기 = GLB 실측 상자 × (높이 ÷ GLB 높이) — 옷 층이 x·z 를 따로 늘이므로 비율이 어긋나면 그림이 찌그러진다. 빛(맑음·여름 · tools/probe_add_furniture_light.mjs): 자리 15칸 0/15 그대로(창턱 peak 등1 6.02 그대로) · 바닥 0.25 격자 320칸 중 34칸이 줄고(가장 큰 것 건조대 밑 0.180→0) 전후 모두 ≤0.3. 이사: mount 가 없어 들고 간다(박사님 «넷 다 들고 감» · rooms_spec §13 규칙 그대로)."
         }
       ],
       "facing": "south",
@@ -208,6 +243,7 @@
         },
         "measuredAt": "2026-08-23",
         "roomRev": "d0bc365 2026-08-17 반지하 셋째 등(거치형) — 그 뒤 house_rooms.json §banjiha 는 안 움직였다. 가구 프리셋 쪽 마지막은 ca3f8f8(협탁 2×2)이라 그것도 이 값에 들어 있다.",
+        "_after_20261004": "★ 2026-10-04 — 위 roomRev 글귀의 «그 뒤 §banjiha 는 안 움직였다» 는 이날부터 참이 아니다: 가구 넷(banjiha-drying-rack·heater·trash·backpack)이 들어왔다. roomRev 를 안 올린 까닭 — 값이 그대로다(slots 15칸 0/15 · 창턱 peak 등1 6.02 · tools/probe_add_furniture_light.mjs 로 전후를 잼). 올리면 얼린 프로필(data/profiles · test_banjiha_profile §LIVE)의 짝 roomRev 와 갈려 «낡았다»가 뜬다. ⚠ space(가구 제외 격자 · vol_dark 등)는 다시 안 쟀다 — 가구 속 점이 빠지므로 vol_dark_m3 가 조금 줄었을 수 있다(peak·avg7 은 창가 값이라 그대로일 것). 다시 재는 자: _space_probe.html.",
         "status": "확정"
       }
     },

@@ -7,9 +7,9 @@
    ★ 브라우저가 필요 없다. `vendor/three/three.min.js` 를 node 에서 그대로 불러
      **가구 빌더를 실제로 돌린다** — 그것이 §A 의 요점이다.
 
-     A 크기   117개를 빌더로 다시 지어 `size_m` 과 **한 톨이라도 다르면 깨진다**
+     A 크기   120개를 빌더로 다시 지어 `size_m` 과 **한 톨이라도 다르면 깨진다**
               ⇒ 「값 매기기가 쓴 크기」와 「빌더가 내는 크기」가 두 벌이 될 수 없다
-     B 거르기 가구 81 · 걸러 낸 것 36. 걸러 낸 것이 정말 가구가 아닌가
+     B 거르기 가구 83 · 안 내는 가구 1 · 걸러 낸 것 36. 걸러 낸 것이 정말 가구가 아닌가
      C 값     규칙대로 나오나 · 제일 싼 것~제일 비싼 것 · 되사는 값
      D 문     등 해금 **전에는 목록에 없고** 주문도 막힌다 · 해금 뒤에는 있다
      E 사기   재고가 늘고 돈이 그만큼 나간다
@@ -63,8 +63,8 @@ console.log('\nA. 크기 — 빌더가 내는 값과 size_m 이 같은가');
       bad.push(`${id}: 빌더 ${r4(s.w)}×${r4(s.d)}×${r4(s.h)} ≠ size_m ${p.size_m.w}×${p.size_m.d}×${p.size_m.h}`);
   }
   ok(`size_m 이 없는 프리셋 0개`, missing.length === 0, missing.join(', '));
-  ok(`117개 전부 빌더와 같다`, bad.length === 0, bad.slice(0, 8).join(' | '));
-  ok(`프리셋이 117개다`, Object.keys(PRESETS.presets).length === 117,
+  ok(`120개 전부 빌더와 같다`, bad.length === 0, bad.slice(0, 8).join(' | '));
+  ok(`프리셋이 120개다`, Object.keys(PRESETS.presets).length === 120,
      String(Object.keys(PRESETS.presets).length));
 
   /* ⚠ `w`·`d`·`h` 를 그대로 믿으면 안 된다는 증거를 검사로 남긴다 —
@@ -95,7 +95,9 @@ console.log('\nB. 거르기 — 가구가 아닌 것이 안 들어왔나');
   /* ★ 2026-10-04 — 「가구」는 **가구점에 뜨는 가구**다. 팔리지만 가구점에 안 내는 것(shop_listed:false · 박사님 쓰레기봉투)은 따로 센다 */
   const listedN = all.filter(r => r.shopKind === 'furniture' && r.listed).length;
   const unlistedN = all.filter(r => r.shopKind === 'furniture' && !r.listed).length;
-  ok('가구 81 · 안 내는 가구 0 · 전체 117', listedN === 81 && unlistedN === 0 && all.length === 117,
+  /* 2026-10-04 박사님 결정 — 반지하 소품 넷이 진짜 가구가 됐다: 117 → 120(난방기·쓰레기봉투·배낭 · 건조대는 원래 있었다) ·
+     가구점 81 → 83(난방기·배낭) · 쓰레기봉투는 «팔리는데 0원»이라 가구점에 안 낸다(안 내는 가구 1) */
+  ok('가구 83 · 안 내는 가구 1 · 전체 120', listedN === 83 && unlistedN === 1 && all.length === 120,
      `가구 ${listedN} · 안 내는 가구 ${unlistedN} / 전체 ${all.length}`);
 
   /* ★ 조명은 **`lighting_presets.fixtures` 로 되짚어 확인한다** — 규칙이 코드에 있으므로
@@ -131,7 +133,7 @@ console.log('\nC. 값');
   const R = shop.FURNITURE_RULES;
   const open = { tutorial: { enabled: true, lamp: { unlocked: true } } };
   const list = shop.furnitureCatalogList(open);
-  ok('열리면 81줄', list.length === 81, String(list.length));
+  ok('열리면 83줄', list.length === 83, String(list.length));
 
   /* 규칙 그대로인가 — 한 줄도 예외가 없어야 한다 */
   const off = list.filter(it => {
@@ -140,7 +142,7 @@ console.log('\nC. 값');
         || it.buyWon !== Math.ceil(it.listWon * 1.4 / 100) * 100
         || it.resaleWon !== Math.floor(it.listWon * R.resaleRate / 100) * 100;
   });
-  ok('81줄이 전부 규칙(밑값 + ㎥단가 → ×1.4 → 되사기 30%)대로다', off.length === 0,
+  ok('83줄이 전부 규칙(밑값 + ㎥단가 → ×1.4 → 되사기 30%)대로다', off.length === 0,
      off.slice(0, 3).map(x => x.id).join(', '));
 
   const lo = list[0], hi = list[list.length - 1];
@@ -191,7 +193,7 @@ console.log('\nD. 문 — 등 기구 해금될 때 열린다');
   ok('막혀도 돈이 안 나갔다', S.tutorial.cashWon === 1_000_000);
 
   S.tutorial.lamp.unlocked = true;
-  ok('해금 뒤 목록에 81줄이 뜬다', shop.furnitureCatalogList(S).length === 81);
+  ok('해금 뒤 목록에 83줄이 뜬다', shop.furnitureCatalogList(S).length === 83);
 }
 
 /* ════════════════════════════════════════════════════════════
@@ -392,8 +394,8 @@ console.log('\nH. 안 내는 가구 · 프리셋이 정한 되파는 값 (2026-1
   } finally {
     shop.installFurniturePresets(PRESETS);                // 진짜 표로 되돌린다
   }
-  ok('진짜 표로 되돌렸다 — 가구점 81줄',
-     shop.furnitureCatalogList({ tutorial: { enabled: true, lamp: { unlocked: true } } }).length === 81);
+  ok('진짜 표로 되돌렸다 — 가구점 83줄',
+     shop.furnitureCatalogList({ tutorial: { enabled: true, lamp: { unlocked: true } } }).length === 83);
 }
 
 console.log(`\n${fail === 0 ? '✅' : '❌'} 통과 ${pass} · 실패 ${fail}`);

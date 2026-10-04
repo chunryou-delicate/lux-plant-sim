@@ -1148,6 +1148,46 @@ B.laundry_basket=(o)=>{
   g.add(cyl(w/2*1.02,w/2*1.02,0.03,furnMat(o.accent??'#cbbfae','satin'),0,h,0,18));
   g.userData.size={w,h,d:w}; return g;
 };
+/* ★ 2026-10-04 — 반지하 소품 셋을 «진짜 가구»로(박사님 «넣기»: 옮기고·저장하고·부딪히고·빛을 가린다).
+   보이는 옷은 v2 GLB(furniture_dress §FURN)이고 여기는 **대리**다. 가림·충돌이 읽는 것은 userData.size 하나다.
+   ⛔ 빌더가 없으면 buildFurniture 가 빈 그룹을 내서 가림·충돌이 «조용히» 빠진다(아래 buildFurniture).
+   ★ 크기 밑값 = GLB 실측 상자 × k (k = 높이 h ÷ GLB 높이). 옷 층은 x·z 를 **따로** 늘이므로
+     비율이 어긋나면 그림이 찌그러진다. 앞은 GLB 그대로(FURN yaw 0) — 방에서 돌리는 것은 자리 rot 이다.
+   ★ 꼴은 그림의 높이 지도대로 세운다 — 옷 층이 «대리 윗면 ÷ GLB 윗면»으로 세로 배율을 잰다.
+     쓰레기·배낭은 발자국 가운데(v 0.5)가 높은 쪽과 낮은 쪽의 경계라, 잴 점(probes)을 높은 쪽에 둔다:
+       쓰레기  봉투 −z 절반(꼭대기 95~100%) · 폐지 묶음 +z 절반(40%)
+       배낭    가방 −z 절반(94~100%)       · 신발 +z 절반(20~30%)
+       난방기  몸통 +z 5/8(97%)            · 전선·발 −z 3/8(≤18%) — 가운데가 몸통이다 */
+B.heater=(o)=>{        // 라디에이터 난방기 — 날개가 x 로 늘어선다
+  const w=o.w??0.517, d=o.d??0.38, h=o.h??0.5;
+  const g=new THREE.Group(); const m=furnMat(o.color??'#ece0c8','satin');
+  const lift=0.05, bw=w*0.875, bd=d*0.6, bz=d/2-bd/2;
+  g.add(panel(bw, h-lift, bd, m, -w/2+bw/2, lift+(h-lift)/2, bz, 0.025));
+  const fins=7, pitch=bw/fins;
+  for(let i=1;i<fins;i++) g.add(bx(0.006, (h-lift)*0.9, bd+0.004, furnMat(o.accent??'#d6c6a6','matte'), -w/2+pitch*i, lift+(h-lift)/2, bz));
+  const ft=furnMat('#8a6a4c','matte');
+  for(const sx of [0,1]) g.add(bx(0.05, lift, bd, ft, -w/2+0.04+sx*(bw-0.08), lift/2, bz));
+  const cord=cyl(0.008,0.008,d-bd,ft, w/2-0.08, 0.02, -d/2+(d-bd)/2, 6); cord.rotation.x=Math.PI/2; g.add(cord);
+  g.userData.size={w,h,d}; return g;
+};
+B.trash=(o)=>{         // 쓰레기봉투 하나 + 끈으로 묶은 폐지 — 문 옆 구석
+  const w=o.w??0.334, d=o.d??0.603, h=o.h??0.4;
+  const g=new THREE.Group();
+  const r=Math.min(w*0.42, d*0.22), bz=-d/2+d*0.26;
+  g.add(cyl(r*0.9, r, h, furnMat(o.color??'#5f86b3','satin'), 0, h/2, bz, 16));
+  const ch=h*0.42, cd=d*0.46;
+  g.add(bx(w*0.96, ch, cd, furnMat(o.accent??'#b98a5a','matte'), 0, ch/2, d/2-cd/2));
+  g.userData.size={w,h,d}; return g;
+};
+B.backpack=(o)=>{      // 배낭 + 운동화 한 켤레
+  const w=o.w??0.397, d=o.d??0.628, h=o.h??0.36;
+  const g=new THREE.Group();
+  const pd=d*0.46;
+  g.add(panel(w*0.8, h, pd, furnMat(o.color??'#8f9a5e','matte'), 0, h/2, -d/2+d*0.25, 0.04));
+  const sm=furnMat(o.accent??'#8c8a6a','matte'), sh=h*0.28;
+  for(const sx of [-1,1]) g.add(panel(w*0.3, sh, d*0.34, sm, sx*w*0.22, sh/2, d/2-d*0.2, 0.03));
+  g.userData.size={w,h,d}; return g;
+};
 B.picture_frame=(o)=>{
   const w=o.w??0.42, h=o.h??0.54;
   const g=new THREE.Group(); const m=furnMat(o.color??'#cbbfae','satin');
