@@ -51,6 +51,9 @@ const FROM  = Number(process.env.FROM || 11);      // 그루가 방에 놓이는
    와서 «첫 잎을 이미 달고 온다»(state.js §ARRIVAL). 그래서 09-07 에 낸 「창턱 등0 첫 잎 게임일 40」은
    «있지도 않은 사건»을 센 것이었다. 맞는 물음은 「도착한 뒤 «다음 잎»이 언제 나나」다.
    ⇒ 도착값은 손으로 안 베끼고 state.js 에서, 잎 문턱은 growth_tuning.json leaf_interval 에서 읽는다. */
+/* ⚠ 이 자는 «마디가 서는 생장일»(누적 문턱)에 닿는 날을 센다. 잎이 «펴져 보이는» 날은 잎자루가 자라는 몫
+     (plant_grow P.petGrow)만큼 하루이틀 늦다 — 반지하 창턱 잎2 는 자 24일 · 엔진 25일(등0), 자 19 · 엔진 21(등1).
+   ⇒ 「언제 잎이 보이나」를 사람에게 낼 때는 plant_grow 엔진(leafOnPlantAll)으로 재라. 이 자는 «나나 안 나나»에 쓴다. */
 const START = Number(process.env.START ?? ARRIVAL.growthDays);   // 도착 때 생장일
 const CUM = J('data/growth_tuning.json').leaf_interval.days.reduce((a, v) => (a.push((a.at(-1) || 0) + v), a), []);
 const NEXT_IDX = CUM.findIndex(c => c > START);                  // 다음에 날 잎의 자리(0부터)
