@@ -95,6 +95,11 @@ for (let i = 0; i < DAYS; i++) {
     other: [...document.querySelectorAll('.pop.on')].map(e=>e.id).filter(id=>id!=='mealPanel').join(',') || null,
     banner: (()=>{ const e=document.getElementById('event'); if (!e || !e.classList.contains('on')) return ''; return (e.innerText||'').trim().replace(/\\s*\\n\\s*/g,' / ').slice(0,80); })() })`);
   let popped = afterTap.pop;
+  if (popped) {
+    /* #4 — 밥상 창의 돈 줄(「오늘 지갑에서 나가는 돈」)과 다음 날 소지금이 줄어든 만큼이 같은가 */
+    const mr = await J(`(()=>{ const t=(document.getElementById('mealRows')||{}).innerText||''; const m=t.match(/오늘 지갑에서 나가는 돈\\s*([\\d,]+)원/); return { out: m ? +m[1].replace(/,/g,'') : null, cash: (window.__S().tutorial||{}).cashWon }; })()`);
+    globalThis.__mealOut = mr;
+  }
   if (popped) {     /* 창이 떴으면 [이대로 다음 날 ▸] */
     const go = await J(`(()=>{ const b=document.getElementById('mealGo'); const r=b?b.getBoundingClientRect():null; return r&&r.width>0 ? { x:r.left+r.width/2, y:r.top+r.height/2 } : null; })()`);
     if (go) await tapAt(go.x, go.y);
@@ -104,6 +109,9 @@ for (let i = 0; i < DAYS; i++) {
   const pantry = await J(`(()=>{ try { const fp=window.__S().firstPlay; return Math.round((fp.food&&fp.food.pantryGrams)||0); } catch(e) { return null; } })()`);
   /* 다른 창(첫 달 가계부 등)이 떠서 [다음 날]이 안 먹은 누름은 «다른 창 날»로 적는다 — 밥상과 무관하다(총괄 #9 그 창) */
   if (afterTap.other) { try { await page.eval(`(()=>{ const p=document.querySelector('.pop.on:not(#mealPanel)'); const b=p&&([...p.querySelectorAll('button.go,button.primary,button')].pop()); if(b) b.click(); })()`, false); } catch {} }
+  if (popped && globalThis.__mealOut) { const cash1 = await J(`(window.__S().tutorial||{}).cashWon`);
+    const mo = globalThis.__mealOut; globalThis.__mealOut = null;
+    console.log(`  ${mo.out != null && mo.cash - cash1 === mo.out ? 'OK  ' : 'FAIL'} #4 밥상 창 「오늘 지갑에서 나가는 돈」 = 소지금이 줄어든 만큼 → 창 ${mo.out} · 실제 ${mo.cash - cash1} (월세 날이면 다르다)`); }
   rows.push({ d0, d1, popped, banner: afterTap.banner, pantry, other: afterTap.other });
   console.log(`  d${d0}→d${d1} · 밥상 ${popped ? '팝업' : '—'} · 배너 「${afterTap.banner}」`);
 }
