@@ -892,6 +892,12 @@
      못 누르는 규칙은 윗줄 그대로다. 배너가 떠 있는 6초 동안은 할 일 칩이 비킨다(배너 오른쪽이 칩 밑에 깔렸다).
      ⚠ 칩은 visibility 도 끈다 — opacity 는 자식(글자 칸)에 안 물려서 자·보조기기가 «보인다»고 읽는다. */
   #stage.talking #next{opacity:0;transition:opacity .15s}
+  /* ★ 2026-10-08 (총괄 튜토 검토 #15 · 중반 M4) — 대사 중에는 왼쪽 아래 알약(💧·🌱·🥣)도 [다음 날]처럼 «아예» 비킨다.
+       35% 로 흐려 두니 대사 글 밑·몬이 초상 양옆으로 「콩 … 습니다」가 비쳤다(폰 그림). 못 누르는 규칙은 윗줄 그대로다 */
+  #stage.talking #waterCrop,
+  #stage.talking #harvestCrop,
+  #stage.talking #waterPot,
+  #stage.talking #resow{opacity:0;transition:opacity .15s}
   #stage:has(#event.on) #questChip{opacity:0;visibility:hidden;pointer-events:none;transition:opacity .2s,visibility .2s}
 
   /* ══ 대화창 — PC 에서는 크게 (박사님 2026-08-07) ═══════════════════════
@@ -1263,6 +1269,9 @@
     60%{transform:translate(-50%,2px) scale(.98)}
     100%{transform:translate(-50%,0) scale(1)} }
   #hint{position:fixed;z-index:70;pointer-events:none;display:none;transform:translate(-50%,0)}
+  /* ★ 2026-10-08 (총괄 튜토 검토 #9) — 창(.pop · z84)이 떠 있으면 손가락이 그 «안»을 짚는데(§updateHint 창 갈래) 손가락은 z70 이라
+       창 밑에 깔려 안 보였다(Day 1 첫 달 가계부). 창이 떠 있는 동안만 손가락을 창 위로 올린다 — 손가락은 손짓을 안 받는다(pointer-events:none) */
+  html:has(.pop.on) #hint{z-index:86}
   #hint.on{display:block}
   /* ★손가락은 **글 아래**에 둔다 (박사님 2026-08-04: "가방 열어보세요 손가락 위치 봐").
      예전엔 위를 가리키는 손가락(☝)을 대상 **위**에 놓았다 — 반대를 가리킨 셈이다.
@@ -1415,6 +1424,12 @@
   #next{position:absolute;right:12px;bottom:12px;z-index:71;width:auto;min-width:0;
     padding:0 18px;height:56px;border-radius:28px;font-size:15px;font-weight:800;
     box-shadow:0 6px 18px rgba(0,0,0,.5)}
+  /* ★ 2026-10-08 (총괄 튜토 검토 #2) — 첫날 물을 주기 전에는 [다음 날]을 «흐리고 작게». ⚠ 막지는 않는다(박사님 확정: 첫날 강제는 어둡게 하기만) —
+       처음 켠 사람이 화면에서 제일 크고 밝은 단추부터 눌러 첫날 안내를 통째로 건너뛰던 것을 덜 끈다 */
+  #next.dayzero{opacity:.45;transform:scale(.8);transform-origin:100% 100%;box-shadow:none}
+  /* ★ 2026-10-08 (#6) — 폰에서 시트가 열린 동안에는 떠 있는 [다음 날]을 감춘다. 시트(z40) 위에 떠서 「보유 채소 팔기」 등을 반쯤 덮고
+       오누름(날이 넘어감)을 냈다. 넓은 판은 시트가 늘 펴져 'open' 표가 없어 그대로다. 시트를 닫으면 돌아온다 */
+  html.sheetopen #next{visibility:hidden;pointer-events:none}
   /* 물·거두기·다시 심기 — 왼쪽 아래에 세로로 쌓인다. 한 번에 하나둘뿐이라 안 넘친다 */
   #waterCrop, #harvestCrop, #waterPot, #resow{
     position:absolute;left:12px;z-index:26;
@@ -2803,12 +2818,14 @@
        사람이 탭을 누른 뜻은 「거기로 간다」다 — 있는 길을 막지 않는다(총괄 ①). */
     try { if (window.__byeotZoom && window.__byeotZoom.isOpen()) window.__byeotZoom.close(); } catch (e) { }
     sheet.classList.add('open'); scrim.classList.add('open');
+    document.documentElement.classList.add('sheetopen');      /* #6 — 떠 있는 [다음 날]을 감춘다(CSS) */
     sheet.setAttribute('aria-hidden', 'false');
     if (tab) selectTab(tab);
     syncNav(); syncQuestChip();
   }
   function closeSheet() {
     sheet.classList.remove('open'); scrim.classList.remove('open');
+    document.documentElement.classList.remove('sheetopen');
     sheet.setAttribute('aria-hidden', 'true');
     syncNav(); syncQuestChip();
   }
@@ -9001,13 +9018,21 @@ function drawSow() {
      말풍선이 누르는 길이 이 버튼이라, `disabled` 가 옛 값으로 굳으면 눌러도 삼켜진다.
      여기는 `markSays` 로 돌아가지는 않았지만 `!need` 로 돌아갔다 — 같은 함정이라 막는다. */
   btn.disabled = !need || seeds < need;
+  /* ★★ 2026-10-08 D19(총괄 · 중반 M1 «길을 끊기지 않게») — 씨앗이 «0개»이고 «오는 중»도 아니면 이 알약이 **주문 지름길**이 된다.
+       ⛔ 났던 일(0~60일 199장): 첫 수확 뒤 씨앗을 안 사서 할 일이 「씨앗을 주문하세요」에 54일 멈췄고 몬스테라가 끝내 안 왔다.
+       회색 「콩 씨앗이 없습니다」는 까닭만 말하고 길을 안 줬다 ⇒ 누르면 상점의 콩 씨앗 주문 창을 연다(빨간 오류 없이) */
+  const coming = !!(st && (st.orders || []).some(o => o && o.itemId === 'bean_seed'));
+  const buyIt = (need > 0 && seeds < 1 && !coming) ? buyItemOf('bean_seed') : null;
+  if (buyIt) { btn.disabled = false; btn.dataset.buy = 'bean_seed'; }
+  else delete btn.dataset.buy;
   /* 거두기·물주기와 **같은 규칙** — 심는 말풍선이 떠 있으면 아래 버튼은 안 뜬다 (2026-08-06) */
   btn.style.display = (need > 0 && !markSays(/심기/)) ? '' : 'none';
   if (!need) return;
   /* 씨앗이 모자라도 **버튼은 보인다** — 안 보이면 왜 못 심는지 알 길이 없다.
      회색으로 두고 사유를 말한다. */
-  btn.textContent = seeds < need
-    ? (seeds < 1 ? '🌱 콩 씨앗이 없습니다' : `🌱 콩 씨앗이 ${need}봉지 필요합니다 (${seeds}봉지 있음)`)
+  btn.textContent = buyIt ? `🛒 콩 씨앗 주문 · ${Number(buyIt.buyWon || 0).toLocaleString('ko-KR')}원`
+    : seeds < need
+    ? (seeds < 1 ? (coming ? '🌱 콩 씨앗이 오는 중입니다' : '🌱 콩 씨앗이 없습니다') : `🌱 콩 씨앗이 ${need}봉지 필요합니다 (${seeds}봉지 있음)`)
     /* ★ 2026-08-09 — 이것도 **한 번에 하나**다(거두기와 같은 이유 · 체력은 시루마다 1) */
     : (need > 1 ? `🌱 콩나물 다시 심기 (빈 시루 ${need}개 · 한 번에 하나)`
                 : '🌱 콩나물 다시 심기');
@@ -9514,6 +9539,9 @@ function drawNext() {
   let rows = [];
   try { rows = cropPotList(S.firstPlay, S.day).filter(r => r.placed); } catch { }
   const todo = rows.some(r => r.ready || r.needsWater || r.needsSow);
+  /* #2 — 첫날(첫 플레이 중 · 0일)에 물을 준 시루가 아직 없으면 흐리고 작게(막지는 않는다 · CSS #next.dayzero) */
+  try { const fp = S.firstPlay;
+        b.classList.toggle('dayzero', !!(fp && fp.enabled && !fp.completed && S.day === 0 && !rows.some(r => r.started))); } catch { }
   const going = rows.filter(r => r.growing && Number.isFinite(r.daysLeft) && r.daysLeft > 0);
   if (todo || !going.length) { b.textContent = NEXT_KO; b.removeAttribute('title'); return; }
   const left = Math.min(...going.map(r => r.daysLeft));
@@ -10617,8 +10645,17 @@ function siruRowHTML(row, frac) {
   if (row.harvested) {
     let seeds = 1;
     try { const k = cropKindOf(row.kind); seeds = k && k.seedItemId ? stockOf(S, k.seedItemId) : 1; } catch { seeds = 1; }
+    /* D19(M1) — 씨앗 0 이면 회색 대신 «주문 지름길»(오는 중이면 회색으로 기다림을 말한다) */
+    let coming = false, sid = null, sit = null;
+    try { const k = cropKindOf(row.kind); sid = k && k.seedItemId; sit = sid ? buyItemOf(sid) : null;
+          coming = !!(shopStatus(S).orders || []).some(o => o && o.itemId === sid); } catch { }
+    const nm = sit ? String(sit.ko).replace(/\s*\([^)]*\)\s*$/, '') : '씨앗';
     btn.push(seeds >= 1
       ? `<button class="sow"${kd} data-act="sow">🌱 다시 심기</button>`
+      : coming
+      ? `<button class="sow"${kd} data-act="sow" disabled title="주문한 씨앗이 오는 중입니다">🌱 ${nm}이 오는 중</button>`
+      : sit
+      ? `<button class="sow"${kd} data-act="buyseed" data-item="${sid}">🛒 ${nm} 주문 · ${Number(sit.buyWon || 0).toLocaleString('ko-KR')}원</button>`
       : `<button class="sow"${kd} data-act="sow" disabled title="상점에서 씨앗을 먼저 주문하세요">🌱 씨앗 없음 — [상점]</button>`);
   }
   if (row.placed)     btn.push(`<button class="ghost"${kd} data-act="pick">📍 자리</button>`);
@@ -10829,6 +10866,8 @@ $('siruList').addEventListener('click', (ev) => {
   if (act === 'water')   return doAct('water',   () => siruWater(id, kind),   { key: siruKey(id) });
   if (act === 'harvest') return doAct('harvest', () => siruHarvest(id, kind), { key: siruKey(id) });
   if (act === 'sow')     return doAct('sow',     () => siruSow(id, kind),     { key: siruKey(id) });
+  /* D19(M1) — 씨앗 0 일 때의 주문 지름길: 상점 탭과 그 품목의 주문 창을 연다 */
+  if (act === 'buyseed') { try { window.__byeotSheet.open('shop'); } catch { } return openBuyPanel(b.dataset.item); }
   if (act === 'pick')    return siruPick(id);
 });
 /* 그 시루를 방에서 부르는 열쇠 — 자유 좌표면 `free:{시루 id}` 다(state.placedItems 와 같은 규칙).
@@ -16071,7 +16110,12 @@ const reallyWaterPot = guard((pot) => {
   draw();
 });
 
-$('resow').onclick = guard(() => doAct('sow', () => reallySow()));
+$('resow').onclick = guard(() => {
+  /* D19 — 씨앗이 없으면 이 알약은 주문 지름길이다(§drawSow dataset.buy) */
+  const it = $('resow').dataset.buy;
+  if (it) { try { window.__byeotSheet.open('shop'); } catch { } openBuyPanel(it); return; }
+  return doAct('sow', () => reallySow());
+});
 const reallySow = guard(() => {
   /* ★ **`sirus` 를 안 넘긴다** (2026-08-08). 안 넘기면 `resowCrop` 이 지금 개수를 그대로 써서
      거둔 시루만 제자리에 다시 심는다 — 자리도 개수도 안 바뀐다. 그게 이 버튼의 전부다.

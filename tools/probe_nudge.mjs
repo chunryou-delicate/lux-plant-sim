@@ -127,7 +127,10 @@ if (waited != null) {
      `기다린 날 ${waitDays.length} · 그중 독촉 ${nagged.length}` + (nagged.length ? ' · d' + nagged.join(',d') : ''));
   const firstNag = Object.keys(byDay).map(Number).filter(d => d > waited && (byDay[d] || []).some(isNudge)).sort((a, b) => a - b)[0];
   const firstId = firstNag != null ? (byDay[firstNag] || []).find(isNudge) : null;
-  ok('★ D2 — 기다림이 끝난 뒤 첫 독촉은 «권함»(nudgeOffer)부터다(한 단 안 뛴다)', firstId === 'nudgeOffer', `d${firstNag} ${firstId}`);
+  /* ★ 2026-10-08 [plan] f2d836b4 — 퀘스트별 앞줄(nudgeHarvestReady · nudgeSeed…)이 공통 넷 «앞»에 선다. 첫 독촉은 그 앞줄이거나 권함이면 된다 —
+       «한 단 뛴다»는 것은 궁금·걱정·물러섬(Ask·Worry·Back)부터 나오는 것이다 */
+  const LATE = ['nudgeAsk', 'nudgeWorry', 'nudgeBack', 'nudgeBackLamp'];
+  ok('★ D2 — 기다림이 끝난 뒤 첫 독촉이 «한 단 뛰지» 않는다(권함·퀘스트 앞줄부터)', !!firstId && !LATE.includes(firstId), `d${firstNag} ${firstId}`);
 }
 ok(`★ ①②③ 동안 사건 없는 날마다 독촉이 «난다»(임자 ${first ? first[0] : '-'} · 셈 첫날 d${on}${waited != null ? ` = 기다린 날 d${waited}+1` : ' = 열린 날'})`, early.want.length > 0 && early.got.length === early.want.length,
    `안 한 날 ${early.want.length} · 독촉 ${early.got.length}` + (early.got.length !== early.want.length ? ' · 빠진 날 d' + early.want.filter(x => !early.got.includes(x)).join(',d') : ''));
