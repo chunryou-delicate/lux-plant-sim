@@ -222,6 +222,20 @@ export function moveIntoOneroom(S, io = {}, opt = {}) {
   S.home.room = roomId;
   story.movedInOnDay = S.day;
 
+  /* ★★ 2026-10-08 D1(박사님 답) — **원룸 이사 때 «빛의 초보»를 끈다: 날씨·계절이 흐르기 시작한다.**
+       후보: 원룸 이사 때 · 반지하 가을(45일) · 엔딩 뒤 ⇒ 고른 것: 원룸 이사 때(박사님).
+       까닭: 반지하 튜토는 쉽게, 원룸부터 계절이 흘러 «등을 사야 갈린다»가 선다([growth] real 잰 값: 등0 자라는 날 96% mid · 등1 bright 59%).
+     ⚠⚠ «초보»가 두 뜻이다(한 낱말 두 방) — 여기서 끄는 것은 **빛** 하나다:
+       · 빛의 초보   `S.sim.mode === 'novice'` → light_adapter §skyFor 가 맑음·여름에 못박는다      ⇐ 여기서 끈다(real)
+       · 규칙의 초보 `propagation.isNoviceMode(S)` → 삽수 유예 16일·모주를 끝내는 자르기 막음 등   ⇐ 엔딩까지 그대로
+         (isNoviceMode 는 sim.mode 가 real 이어도 «스토리가 도는 중»(tutorial.enabled · 엔딩 전)이면 참이다 — 그 둘째 갈래가 엔딩까지 지킨다)
+       · 잎이 안 죽는 것은 모드가 아니라 data/growth_tuning.json health.drop_enabled:false 하나다([growth] 확인) — 여기서 안 건드린다
+     ⚠ 판에 이미 real 이면(검수 판) 그대로 둔다. 되돌림은 없다 — 원룸에서 반지하로 돌아가는 길이 없다 */
+  if (S.sim && S.sim.mode === 'novice') {
+    S.sim.mode = 'real';
+    pushLog(S, '🌦 원룸부터는 날씨와 계절이 그대로 흐릅니다');
+  }
+
   /* ★ 가구 자리표(S.home.furniture)는 **지우지 않는다.**
      표는 방을 안 가린다 — 반지하 uid 는 원룸에 없어서 그냥 안 얹힐 뿐이고,
      나중에 되돌아갈 일이 있으면 그때 그대로 산다(save.js §furnitureNotInRoom 과 같은 판단). */

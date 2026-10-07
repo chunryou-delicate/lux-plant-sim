@@ -278,6 +278,20 @@ check('F 초보 — ③ 원룸에서도 켜져 있고 ④ 뒤에 꺼진다', () 
   assert.equal(graceDaysOf('water', isNoviceMode(S)), 8);
 });
 
+/* ══ F-2 · D1(박사님 10-07) — 원룸 이사 때 «빛의 초보»만 꺼진다 ═══════════════════
+   빛의 초보(sim.mode 'novice' → 맑음·여름 고정)는 이사 때 real 로 · 규칙의 초보(isNoviceMode → 삽수 유예 16일)는 엔딩까지 */
+check('F-2 D1 — 이사하면 날씨·계절이 흐르기 시작하고(sim real) 규칙의 초보는 그대로다', () => {
+  const S = readyToMove();
+  S.sim.mode = 'novice';                       // 게임이 실제로 시작하는 모드(game.html newState mode:'novice')
+  assert.equal(isNoviceMode(S), true);
+  moveIntoOneroom(S, {});
+  assert.equal(S.sim.mode, 'real', '★ 원룸으로 이사했는데 빛이 아직 맑음·여름에 못박혀 있습니다(D1)');
+  assert.equal(isNoviceMode(S), true, '★ 이사로 규칙의 초보까지 꺼졌습니다 — 유예·모주 보호는 엔딩까지입니다(D1)');
+  assert.equal(graceDaysOf('water', isNoviceMode(S)), 16, '원룸에서 유예가 줄었습니다');
+  assert.ok((S.log || []).some(l => /날씨와 계절/.test(typeof l === 'string' ? l : (l && (l.msg || l.text)) || '')),
+    '이사 때 「날씨와 계절이 흐른다」를 알리지 않습니다');
+});
+
 /* ══ G · ④ 엔딩 ════════════════════════════════════════════════════════ */
 check('G 엔딩 — 목표 금액이 미확정이면 **끝낼 수 없다**', () => {
   assert.equal(ENDING_RULES.targetWon, null,
