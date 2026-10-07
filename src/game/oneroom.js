@@ -422,10 +422,27 @@ export function lightGateOf(S, io = {}, opt = {}) {
   /* ★ 판정 단위는 **7일 이동평균**이다(하루 값으로 판정하면 운으로 갈린다).
      맑은 날 값에 날씨 기댓값을 곱해 낸다 — 그 계수는 weather.js 가 갖는다(0.643 을 안 박는다). */
   const E = weatherE(season);
+  /* ★★ 2026-10-08 ([House] 걸어서 잼 · D7 «real 주») — **날씨 계수는 자연광에만 곱한다.** 등은 날씨와 무관하다.
+       예전 `peak * E` 는 등 DLI 에도 0.643 을 곱했다(src/engine/weather.js §weekStats 가 이미 경고한 그 줄).
+       실측(원룸 · 기준 배치 D · 맑음·여름 · sill:0 등1): 옛 셈 5.93 · 맞는 셈 6.84 · 문턱 6.0
+         ⇒ 게임이 「등 1개로는 못 갈라진다」고 거짓을 말했다.
+       ⇒ 자리마다 자연광·등을 나눠 받는다 — `light.dliAt(점, {…occIdx})` → `{dli_daylight, dli_lamp}`
+         ([House]: dliOfSlot 합과 0.01 안으로 같다 · 원룸 18칸). 창구가 없거나 던지면 예전 셈으로 물린다(못 물어본 것을 0 으로 짓지 않는다) */
   const rows = (room.slots || []).map(s => {
     const peak = typeof light.dliOfSlot === 'function'
       ? light.dliOfSlot(s.slotId, { weather: 'clear', season, lampCount, litHours }) : 0;
-    return { slotId: s.slotId, peak, avg7: peak * E };
+    let avg7 = peak * E, split = null;
+    if (typeof light.dliAt === 'function' && Number.isFinite(s.x) && Number.isFinite(s.z)) {
+      try {
+        const d = light.dliAt({ x: s.x, y: s.y, z: s.z },
+                              { weather: 'clear', season, lampCount, litHours, occIdx: s.occIdx });
+        if (d && Number.isFinite(d.dli_daylight) && Number.isFinite(d.dli_lamp)) {
+          split = { daylight: d.dli_daylight, lamp: d.dli_lamp };
+          avg7 = d.dli_daylight * E + d.dli_lamp;
+        }
+      } catch { /* 예전 셈 그대로 */ }
+    }
+    return { slotId: s.slotId, peak, avg7, split };
   }).sort((a, b) => b.avg7 - a.avg7);
   const best = rows[0] || { slotId: null, peak: 0, avg7: 0 };
 
