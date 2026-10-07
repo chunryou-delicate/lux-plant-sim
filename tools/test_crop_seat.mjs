@@ -295,8 +295,13 @@ check('E-2 못 옮기면 **말을 한다** — 조용히 사라지지 않는다'
   assert.ok(/옮겼습니다|가방으로/.test(said), '★이사가 시루를 어떻게 했는지 아무 말도 안 합니다');
 });
 
-/* ══ F. 몬스테라는 **책상**에 도착한다 ════════════════════════════════ */
-check('F 몬스테라 도착 자리 — 서랍장(0.08)이 아니라 책상(0.61)', () => {
+/* ══ F. 몬스테라는 **가방**으로 도착한다 ════════════════════════════════
+   ★ 2026-10-07 — 기대를 바로잡았다. 08-24 의 「책상(0.61)에 도착」은 **낡은 기대**였다:
+     박사님 08-17 *"처음에 몬스테라 주는 거 인벤에 줘서 드래그해서 배치하거나 …"* 뒤로
+     도착 화분은 자리 없이 가방에 온다(state §rehomePot «가방에 있는 화분은 앉히지 않는다» · first_play §markMonsteraArrived).
+     ⇒ 이 검사는 그 뒤로 «주인 없는 붉음»이었다(STATUS 08-24). 지금 규칙을 못 박는다:
+       자리 null · placedOnce false · 도착은 참 · 하루가 가도 방에 저절로 안 선다(rehomePot 이 비켜선다) */
+check('F 몬스테라 도착 자리 — 가방(자리 없음) · 하루가 가도 저절로 안 선다', () => {
   const { S, io } = freshGame();
   const fp = S.firstPlay;
   placeCrop(fp, 'beansprout', 'dark-slot', { slots: io.light.room.slots,
@@ -315,16 +320,20 @@ check('F 몬스테라 도착 자리 — 서랍장(0.08)이 아니라 책상(0.61
     if (b.pots.some(p => !p.harvested && p.ageDays >= b.harvestDays)) harvestCrop(S, io);
   }
   assert.ok(pot0(S), '★회전을 여든 번 돌려도 몬스테라가 안 왔습니다');
-  info(`F 도착 자리 — ${pot0(S).slotId} (책상 0.61 · 서랍장 0.08)`);
-  assert.equal(pot0(S).slotId, 'banjiha-desk:0',
-    `★몬스테라가 책상이 아니라 ${pot0(S).slotId} 에 도착했습니다`);
-  assert.equal(fp.monstera.slotId, 'banjiha-desk:0');
-  /* ⚠ 그래도 **안 자란다** — 유도(옮겨 보세요)가 그대로 성립하는지 같이 못 박는다 */
-  const dli = SLOTS.find(s => s.slotId === 'banjiha-desk:0').dli;
-  assert.ok(dli < 3, `★책상이 최소 광량을 넘습니다(${dli}) — 도착 자리에서 자라 버리면 유도가 깨집니다`);
+  info(`F 도착 자리 — ${pot0(S).slotId} · placedOnce ${pot0(S).placedOnce}`);
+  assert.equal(pot0(S).slotId ?? null, null, `★몬스테라가 가방이 아니라 ${pot0(S).slotId} 에 섰습니다`);
+  assert.equal(pot0(S).at ?? null, null, '★몬스테라가 좌표를 갖고 왔습니다 — 가방이 아닙니다');
+  assert.equal(pot0(S).placedOnce, false, '★「아직 안 놓았다」 표(placedOnce:false)가 없습니다');
+  assert.equal(fp.monstera.arrived, true);
+  assert.equal(fp.monstera.slotId ?? null, null);
+  /* ⚠ 하루가 가도 방에 저절로 안 선다 — 놓는 것은 플레이어 손이다(08-17 「인벤으로 안 들어오고 또 바로 설치」가 그 붉음이었다) */
+  nextDay(S, io);
+  assert.equal(pot0(S).slotId ?? null, null, `★하루 뒤 저절로 ${pot0(S).slotId} 에 섰습니다`);
 });
 
-check('F-2 책상이 없는 방에서는 예전 규칙(가장 어두운 자리)이 그대로 돈다', () => {
+/* ★ 2026-10-07 — F-2 도 같은 까닭으로 바로잡았다. 「책상이 없는 방 → 가장 어두운 자리」는 가방 규칙 앞의 기대다.
+     지금은 방에 무엇이 있든 가방으로 온다 — 방 모양이 도착 자리를 안 바꾼다는 것을 못 박는다 */
+check('F-2 책상이 없는 방에서도 가방으로 온다(방 모양이 도착 자리를 안 바꾼다)', () => {
   const noDesk = [
     { slotId: 'shelf:0',   dli: 1.2, maxPotD: 0.57 },
     { slotId: 'dresser:0', dli: 0.08, maxPotD: 0.57 },
@@ -347,8 +356,8 @@ check('F-2 책상이 없는 방에서는 예전 규칙(가장 어두운 자리)�
     if (b.pots.some(p => !p.harvested && p.ageDays >= b.harvestDays)) harvestCrop(S, io);
   }
   assert.ok(pot0(S), '몬스테라가 안 왔습니다');
-  assert.equal(pot0(S).slotId, 'dresser:0',
-    `★책상이 없는 방인데 가장 어두운 자리가 아닙니다 — ${pot0(S).slotId}`);
+  assert.equal(pot0(S).slotId ?? null, null, `★책상이 없는 방인데 ${pot0(S).slotId} 에 섰습니다 — 가방이어야 합니다`);
+  assert.equal(pot0(S).placedOnce, false);
 });
 
 /* ══ G. monstera.guide 가 세이브를 건넌다 ═══════════════════════════════ */
