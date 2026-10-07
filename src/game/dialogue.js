@@ -1768,9 +1768,11 @@ export const SCRIPTS = {
     { who: 'jachwi', text: '비 오는 날은 창이 더 어둡다.' },
     { who: 'moni',   face: 'calm', text: '오늘은 얘도 쉬는 날이야.' }
   ],
+  /* ★ 2026-10-08 [plan] D1 — 원룸부터 날씨가 흘러(real) 이 줄이 처음으로 뜬다. 「사분의 일」은 참이었지만(engine/weather.js WEATHER_K.cloudy 0.25)
+     계수가 바뀌면 낡는 수다 — 몬이는 수를 말하지 않는다(§nudgeSeedPush 주석과 같은 규율). 뜻만 남겼다. */
   chatCloudy: [
     { who: 'jachwi', text: '흐린 날.' },
-    { who: 'moni',   text: '흐려도 빛은 들어와. 맑은 날의 사분의 일쯤.' }
+    { who: 'moni',   text: '흐려도 빛은 들어와. 맑은 날보다 훨씬 약할 뿐이야.' }
   ]
 };
 
