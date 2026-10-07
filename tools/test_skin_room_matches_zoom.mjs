@@ -27,8 +27,9 @@
 import { launch, sleep } from './test_cdp.mjs';
 const BASE = process.env.BYEOT_URL || 'http://localhost:8971';
 const page = await launch({ width: 1770, height: 1188, dpr: 1 });
-await page.goto(`${BASE}/game.html`);
-await page.eval('localStorage.clear()', false);
+/* ★ 2026-10-08 — localStorage 를 «부팅 전»에 비우고 «한 번만» 연다. [leaf] 알림: 열기 → 비우기 → 다시 열기는
+   붐빌 때 둘째 부팅이 300초에도 안 섰다. sessionStorage 표시로 «처음 한 번만» 비운다(새로 고침에 또 비우지 않게). */
+await page.send('Page.addScriptToEvaluateOnNewDocument', { source: `try{ if(!sessionStorage.__growthCleared){ localStorage.clear(); sessionStorage.__growthCleared='1'; } }catch(e){}` });
 await page.goto(`${BASE}/game.html`);
 await page.waitFor('!!window.__rv', 150000, 300);
 await sleep(4500);
