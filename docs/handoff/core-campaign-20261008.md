@@ -44,6 +44,10 @@
 6-2. **test_monthly 붉음 9**(작업 전 판부터 · 살림 시계 1일차 · 대사 중 가계부 · 지갑 요약 수 · 작물 g) — 자가 낡았나 화면이 틀렸나 가를 것
 7. **D8·D9 재기** — 원룸(real · D5 · 등 0/1/2) 살림·엔딩까지 날수 · [growth] 시각표를 물린다
 8. **[leaf] 방 화면 줄기만**(260일 창턱 · 잎이 벽 속으로 기울었을 수 있음 [짐작]) — 카메라를 돌려 한 장
+8-2. **[plan] 둘째 잎 기다림 «상태 줄»**(ed388fec · docs/handoff/plan-leafwait-20261008.md ③) — turn.leafWait 칸 이어 주기
+     `{ leaves, newLeafToday, leafWaitDays, youngestLeafM, growStreak, arrivedOnDay, harvestedToday, harvestsSinceArrival, potOnSill, band, zoomOpenedSinceArrival }`
+     없는 칸은 null(줄이 안 뜸). ⚠ chatGrowing2 「잎이 하나 더 생겼다」는 newLeafToday===true 일 때만 — 칸 전엔 침묵.
+     같이: 식물 시트 맨 위 카드(drawGrowGauge 위로 + 「잎 {n}장(무늬 {v}장)」 + 「자리 {빛 낱말}」) · night_play 기록에 phase·progress01·참 leafM
 9. 걸어야 할 것: D22(무늬 그루 판) · M3·#10(모양) · 원룸 바닥 금지(이사 판 화면) · D21 화면
 
 ## 4. 자 — 새로 만든 것 · 고친 것
