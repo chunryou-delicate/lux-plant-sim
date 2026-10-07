@@ -4580,7 +4580,13 @@ export async function createRoomView(canvas, opts = {}) {
        퍼지보다 앞: 정확히 짚은 것이 대충 가까운 것을 이긴다(이 목록의 원칙 그대로). */
     const lp = pickLampRay(cx, cy);
     if (lp) return lp;
-    const c2 = pickCharacterAt(cx, cy, true);
+    /* ★ 2026-10-08 ([House] 걸어서 잼 · 총괄) — **가구를 «정확히» 짚었으면 캐릭터 퍼지(36px)가 이기지 않는다.**
+         ⛔ 났던 일: 캐릭터가 처음 서는 문 앞(−1.56, 1.54) 옆 구석의 쓰레기봉투는 18점을 눌러 18번 다 캐릭터가 골라졌다(가구 0) ·
+           난방기 3/18 — 박사님이 고르신 «쓰레기봉투 0원 치우기»를 탭으로 아예 못 골랐다. 이 목록의 원칙(정확한 것이 대충 가까운 것을 이긴다)과 어긋났다.
+         ⇒ 퍼지 판정 앞에서 가구 광선이 맞으면 퍼지를 건너뛴다(정확한 캐릭터 c1·화분·등은 그대로 앞이다).
+         ⚠ 사람을 «고른» 동안(걷기 모드)은 예전 그대로 둔다 — 가구 앞 바닥을 눌러 걸어가는 길(첫날 걷기 가르침)이 가구에 먹히지 않게 */
+    const furnExact = !selChar ? (() => { try { return pickFurnitureAt(cx, cy); } catch (e) { return null; } })() : null;
+    const c2 = furnExact ? null : pickCharacterAt(cx, cy, true);
     if (c2) return { type: 'character', id: c2 };
     const s = pickSlotFuzzy(cx, cy);
     if (s) return s;
