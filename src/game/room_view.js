@@ -2043,6 +2043,7 @@ export async function createRoomView(canvas, opts = {}) {
         watchSkins(asm);
         const g = asm.assemble({ growthDays: days, seed: spec.seed, potD,
                                  leafState: spec.leafState,
+                                 leafSkins: spec.leafSkins,   /* D4 · 2026-10-08 — 등급이 정한 잎 그림(확대 창과 같은 표). 없으면 굴림 그대로 */
                                  lightAz: lightAzimuth(), photo: 0.5 });
         g.userData.growthDays = days;
         if (g.userData.skinsPending) noteSkinTip(asm);
@@ -3104,6 +3105,9 @@ export async function createRoomView(canvas, opts = {}) {
     return `${cutLeafCountOf(s)}|${s.variegated ? 1 : 0}|${s.rooted ? 1 : 0}|${s.stem || '-'}` +
            `|${j(s.leafVarie)}|${j(s.leafGrades)}|${j(s.leafSkins)}`;
   };
+  /* 몬스테라 잎 그림표 한 줄 요약(D4) — `[{ leafBirth, mid, mat }]` */
+  const skinTableKey = (a) => (Array.isArray(a)
+    ? a.map(r => (r && typeof r === 'object') ? `${r.leafBirth}:${r.mid || ''}/${r.mat || ''}` : '').join(',') : '');
   function needsRebuild(prev, spec, days) {
     if (!prev) return true;
     /* ★ 무늬 잎 GLB 가 늦게 도착했다 — 날도 상태도 안 바뀌었지만 **그림이 달라진다**
@@ -3129,6 +3133,10 @@ export async function createRoomView(canvas, opts = {}) {
        ⚠ 삽수가 아닌 종류에서는 양쪽이 늘 '' 라 **한 줄도 안 바뀐다.** */
     if (cutLookKey(prev.spec) !== cutLookKey(spec)) return true;
     if (leafStateKey(prev.spec.leafState) !== leafStateKey(spec.leafState)) return true;
+    /* ★ 2026-10-08 D4 — 등급이 정한 잎 그림표가 바뀌어도 **날이 안 가도** 다시 짓는다(위 잎 상태와 같은 함정).
+         등급은 잎이 갈라지는 그날 정해지는데 그 잎의 상태 열쇠(v·m)는 이미 같을 수 있다 ⇒ 안 보면 하프문이 다음 날에야 뜬다.
+         삽수는 위 cutLookKey 가 제 모양(leafSkins)으로 이미 본다 — 여기는 몬스테라 표(`[{leafBirth, mid, mat}]`)만 */
+    if (!isCutKind(spec.kind || spec.plantId) && skinTableKey(prev.spec.leafSkins) !== skinTableKey(spec.leafSkins)) return true;
     if ((prev.days ?? null) !== days) {
       if (performance.now() - (prev.builtAt || 0) < REBUILD_MIN_MS) return false;
       return true;

@@ -146,6 +146,8 @@ const TAIL = `
        그림이 아직 안 온 사이(ensureSkin 이 비동기) 번호는 있는데 열쇠는 민무늬다. 한 칸으로 뭉치면
        「애초에 안 고름」과 「아직 안 옴」이 같은 얼굴이 된다. */
   leafSkinUsedAll,
+  /* ★ 2026-10-08 (D4 박사님 · [growth] 35fbf252 청) — 등급이 정한 무늬 그림을 «못 박는» 손잡이. 원본(plant_grow §setLeafSkins) 그대로 — 로직 없음 */
+  setLeafSkins,
   /* 원본의 3D 무대는 init() 이 만든다. 그걸 걷어냈으니 담을 그릇만 밖에서 준다. */
   __setPlantGroup(g){ plantGroup = g; },
   /* 방의 창 방향 = 이 그루가 받는 빛의 방향. 굴광성이 그쪽으로 기울게 한다. */
@@ -416,6 +418,8 @@ async function build(opt) {
       const az = o.lightAz ?? Math.PI * 0.5;
       const photo = o.photo ?? 0.5;
       const leafState = Array.isArray(o.leafState) ? o.leafState : null;
+      /* ★ 2026-10-08 D4 — 등급이 정한 잎 그림 `[{ leafBirth, mid, mat }]`(확대 창에 넘기는 것과 같은 것). 안 주면 예전 그대로(굴림) */
+      const leafSkins = Array.isArray(o.leafSkins) ? o.leafSkins : null;
 
       /* 무늬가 새로 왔으면 「원본과 나눠 쓰는 기하」 목록을 다시 훑는다 (§skinScan) */
       { const sl = G.skinsLoaded(); if (sl !== skinScan) { skinScan = sl; scanProtoGeo(); } }
@@ -425,7 +429,9 @@ async function build(opt) {
         ? leafState.map(s => `${s.leafBirth}${s.varie ? 'v' : ''}${s.matured ? 'm' : ''}` +
                              `${s.dropped ? 'x' : ''}${s.fade ? '.' + Math.round(s.fade * 10) : ''}`).join(',')
         : '';
-      const key = `${days}|${seed}|${az.toFixed(3)}|${photo.toFixed(2)}|${stateKey}`;
+      /* 그림표도 열쇠에 넣는다 — 안 넣으면 등급이 정해진 뒤에도 옛 조립(굴린 그림)을 다시 쓴다 */
+      const skinKey = leafSkins ? leafSkins.map(r => `${r.leafBirth}:${r.mid || ''}/${r.mat || ''}`).join(',') : '';
+      const key = `${days}|${seed}|${az.toFixed(3)}|${photo.toFixed(2)}|${stateKey}|${skinKey}`;
       if (key !== lastKey) {
         G.__setLight(az, photo);
         /* 씨앗이 바뀌면 성숙 이력을 버린다(원본 plantSeed 가 하는 일 그대로).
@@ -434,6 +440,8 @@ async function build(opt) {
         /* ★ plantSeed 뒤 · setGrowth 앞이라야 한다. 앞이면 plantSeed 의 matResetAll 이 지우고,
            뒤면 setGrowth 안의 matCatchUp 이 이미 제 굴림을 해 버린 뒤다. */
         if (leafState) G.__setLeafState(leafState);
+        /* ★ D4 — __setLeafState «뒤» · setGrowth «앞». 앞이면 __setLeafState 의 matResetAll 이 그림표를 비운다(plant_grow §matResetAll) */
+        if (leafSkins && typeof G.setLeafSkins === 'function') G.setLeafSkins(leafSkins);
         const r = G.setGrowth(days);        // 원본 경로 그대로: matCatchUp → buildPlant
         if (!r || !r.drawn) throw new Error(`몬스테라 조립 실패: ${(r && r.drawError) || '알 수 없음'}`);
         lastKey = key;
