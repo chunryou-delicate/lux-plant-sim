@@ -12,12 +12,16 @@ def F(n,b=False):
     try: return ImageFont.truetype('C:/Windows/Fonts/malgun%s.ttf'%('bd' if b else ''),n)
     except: return ImageFont.load_default()
 
-def grade_of():
+def grade_of(mode='mat'):
     d = json.load(open('data/balance/varie_grades.json', encoding='utf-8'))
     m = {}
     for g in d['grades']:
-        for a in g.get('assets') or []:
-            if a.get('matNum'): m[a['matNum']] = (g['id'], a.get('ko'))
+        if mode == 'mid':
+            for a in g.get('midAssets') or []:
+                for n in (a.get('midNums') or []): m[n] = (g['id'], a.get('ko'))
+        else:
+            for a in g.get('assets') or []:
+                if a.get('matNum'): m[a['matNum']] = (g['id'], a.get('ko'))
     return m
 
 def lab(rgb):
@@ -29,8 +33,9 @@ def lab(rgb):
     return np.stack([116*f[...,1]-16, 500*(f[...,0]-f[...,1]), 200*(f[...,1]-f[...,2])], -1)
 
 def read(indir, out_png):
-    G = grade_of(); rows = []
-    files = sorted(glob.glob(os.path.join(indir, 'mat_*.png')))
+    mode = 'mid' if glob.glob(os.path.join(indir, 'mid_*.png')) else 'mat'
+    G = grade_of(mode); rows = []
+    files = sorted(glob.glob(os.path.join(indir, mode + '_*.png')))
     bg = None
     for f in files:
         n = int(os.path.basename(f)[4:6])
