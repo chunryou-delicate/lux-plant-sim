@@ -4801,7 +4801,8 @@ const detail = {
         } else if (gate && gate.open && ls) {
           let q = null; try { q = quotePot(S, { leaves: ls.leaves, variegatedLeaves: ls.variegatedLeaves, ...(potLeafArgs(pot0(S)) || {}) }); } catch { }
           out.push({ ko: q ? `📮 중고에 내놓기 (${q.won.toLocaleString()}원)` : '📮 중고에 내놓기',
-                     go: () => askListPot() });
+                     /* D22 — 상세 카드 길도 같은 한 줄(§sellingLastVarieSource) */
+                     go: () => { try { if (sellingLastVarieSource()) dlgOpen(story.events([{ id: 'sell_last_varie' }])); } catch { } return askListPot(); } });
         } else if (gate) {
           out.push({ ko: `📮 ${gate.reason}`, go: () => sheetTo('shop') });
         }
@@ -16464,7 +16465,21 @@ const askListPot = confirmOnce('중고 거래에 내놓습니까?', guard(() => 
   syncRoom();
   draw();
 }));
-$('sellPlant').onclick = askListPot;
+/* ★ 2026-10-08 D22(총괄 확정 ㉠ · [plan] 1ecb0b13 대사) — 그루째 팔기 «되묻기»를 여는 첫 누름에서, 팔고 나면 무늬 원천
+     (무늬 잎 단 그루 + 안 죽은 무늬 삽수)이 0 이 되는 경우만 몬이가 한 줄 말한다. ⚠ 막지 않는다 — 확인은 사람이 누른다. 방은 안 가린다 */
+function sellingLastVarieSource() {
+  let mine = 0; try { const ls = io.growth.leafStats(); mine = (ls && ls.variegatedLeaves) || 0; } catch { mine = 0; }
+  if (!(mine > 0)) return false;                      // 이 그루가 무늬 원천이 아니면 «마지막 원천»도 아니다
+  const p0 = pot0(S);
+  const otherPots = (S.pots || []).filter(p => p && p !== p0 && p.variegated).length;
+  const cuts = (S.cuttings || []).filter(c => c && c.varieFromCut && c.status !== 'dead').length;
+  return otherPots + cuts === 0;
+}
+$('sellPlant').onclick = (ev) => {
+  try { if (armedBtn !== ev.currentTarget && sellingLastVarieSource()) dlgOpen(story.events([{ id: 'sell_last_varie' }])); }
+  catch (e) { console.warn('[D22]', e && e.message); }
+  return askListPot(ev);
+};
 
 /* ══ ★★★ 중고 거래 칸 — **올린 것 · 연락 온 것** (2026-08-17) ═══════════════════════
    ------------------------------------------------------------
