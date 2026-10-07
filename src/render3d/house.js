@@ -1066,6 +1066,9 @@ export function buildHouse(GRAIN, roomDefIn, winPresets, doorPresets={}, finishe
   for(const m of glassMeshes) markShadow(m, SHADOW_ROLE.CLEAR, {force:true});
   for(const k in trims)       markShadow(trims[k], SHADOW_ROLE.CLEAR, {force:true});
   const shadowAudit = applyShadowPolicy(room);
+  /* ★ 천장에 매단 등을 천장 껍데기에 «딸린 것»으로 적는다 — 천장이 숨을 때 같이 옅어진다(updateShellVisibility) */
+  if (shells.ceiling)
+    shells.ceiling.userData.hangers = furnGroup.children.filter(g => g.userData && g.userData.hangFromCeiling);
 
   return { room, shells, trims, windows:winWorld, glassMeshes, winPos, size:{ w:CW, d:CD, h:CH },
            furniture:furnGroup, lightRigs, plantSlots, occluders, colliders, doorways, luxWins, glazedPanes, facing,
@@ -1208,6 +1211,10 @@ export function updateShellVisibility(shells, cam, mode='auto', trims=null){
       const hide = (mode==='auto') ? above : true;
       sh.visible = true;
       setShadowOnly(sh, hide);
+      /* ★ 2026-10-08 — 천장이 숨으면 «천장에 매단 등»도 옅게 한다(아래 setHangerFaint · 그림만).
+         천장등은 가구라 천장과 같이 안 숨어서, 폰 첫 화면에 흰 판이 창가 위에 떠 건조대를 덮었다
+         (반지하 · 390×844 · 건조대 탭 18점 중 6점이 천장등). */
+      for (const g of (sh.userData.hangers || [])) setHangerFaint(g, hide);
       continue;
     }
 
@@ -1248,6 +1255,36 @@ export function updateShellVisibility(shells, cam, mode='auto', trims=null){
    visible=false 로 감추면 three.js 가 그림자 패스에서도 빼버려 빛이 그냥 통과한다.
    colorWrite/depthWrite 만 끄면 화면엔 안 그려지고 그림자 패스는 그대로 돈다.
    밑동 박스(isStub)는 실제로 보여야 하므로 건드리지 않는다. */
+/* ★ 2026-10-08 — 천장에 매단 등(천장등·펜던트)을 «옅게» 한다. **그림만**이다.
+   · 갓(`userData.lampShade`)은 반투명으로 남긴다 — 등이 거기 있다는 것은 보이고, 누르면 여전히 등 메뉴가 뜬다.
+     ⚠ 갓 재질은 **복제하지 않는다** — 등을 켜고 끄는 코드가 그 재질의 emissive 를 만진다(room_view). 복제본으로
+       갈아 끼우면 켜짐 상태가 복제본으로 가서 되돌릴 때 옛 상태로 돌아간다. 갓 재질은 등마다 따로 만든 것이라
+       그 자리에서 바꿨다가 되돌린다.
+   · 나머지(테두리 띠·줄·전구)는 감춘다. 천장 자체가 그림자만 남기므로 그 밑에 붙은 이들의 그림자는 뜻이 없다.
+   · 조도(lightRigs·PPFD)·가림·충돌은 한 톨도 안 건드린다 — 그것들은 userData.size 와 rig 가 낸다. */
+const HANGER_FAINT_OPACITY = 0.3;
+function setHangerFaint(g, faint){
+  if(!g || g.userData._faint === faint) return;
+  g.userData._faint = faint;
+  const shade = g.userData.lampShade;
+  g.traverse(o=>{
+    if(!o.isMesh || o.userData.isStub) return;
+    if(o === shade){
+      const m = o.material;
+      if(!m || Array.isArray(m)) return;
+      if(faint){
+        o.userData._faintKeep = { transparent:m.transparent, opacity:m.opacity, depthWrite:m.depthWrite };
+        m.transparent = true; m.opacity = HANGER_FAINT_OPACITY; m.depthWrite = false;
+      }else if(o.userData._faintKeep){
+        Object.assign(m, o.userData._faintKeep); delete o.userData._faintKeep;
+      }
+      m.needsUpdate = true;
+      return;
+    }
+    o.visible = !faint;
+  });
+}
+
 function setShadowOnly(root, on){
   root.traverse(o=>{
     if(!o.isMesh || !o.material || o.userData.isStub) return;

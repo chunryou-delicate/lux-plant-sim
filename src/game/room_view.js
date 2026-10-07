@@ -2165,16 +2165,42 @@ export async function createRoomView(canvas, opts = {}) {
       return g;
     }
 
+    /* ★★ 2026-10-08 — **폰에서 «자라는 게» 보이게** (총괄 tutorial-friction-20261008 #5 · [House] · 그림만).
+       ------------------------------------------------------------
+       예전: 콩나물을 테두리 높이의 55%(시루 «안»)에 시루 비율 그대로 세웠다. 시루가 390px 화면에서 20px 이라
+         s 단계(키 0.049m)는 머리가 테두리를 1cm 도 못 넘었고, 폭 1~4cm 짜리 줄기는 1px 이 안 되어 «검은 점 몇 개»였다 —
+         Day 2~14 가 날마다 같아 보였고, 거둔 빈 시루와 자라는 시루도 안 갈렸다.
+       지금: ① 심은 시루엔 밝은 «콩·젖은 천» 판을 깐다 — 빈 시루(어두운 속)와 20px 에서도 갈린다
+             ② 콩나물 키를 자람(p01)에 맞춰 테두리 «위로» 솟게 한다 — 밑동 rim×0.6 · 키 rim×(0.5 + 1.2·p01)
+                ⇒ 다 자라면 머리가 바닥에서 rim×2.3(시루 0.20 이면 약 0.21m) — 3단 선반 칸 사이(약 0.26)를 안 뚫는다
+             ③ 굵기 ×1.8 · 포기 6~16 · 명도 조금 올림(emissive · 재질은 이 시루 몫으로만 복제한다 — 다른 판 안 건드림)
+       ⚠ 판정·자리·검사가 쓰는 것은 «한 톨도» 안 바꿨다: progress01 · count · potPart(시루 무리 지름) · kind · containerCount.
+       ⚠ 무리의 «그림 높이»만 커진다 — 자리 맞춤은 지름(potPart)으로 하므로 안 걸린다.
+       [잰 것 · 390×844 · 서랍장 위 · 같은 판 HEAD 와 견줌 · 나이 0·3] ⇒ ★ **나아진 것은 «작다».**
+         나이 3 에서 줄기가 그릇 위로 하얗게 솟고 점이 는 정도다. 창빛이 밝아 콩 판도 20px 에선 크림색으로 뭉개져
+         빈 시루와 «크게»는 안 갈린다. ⇒ 한눈에 갈리려면 화면 표지(시루 위 작은 「N일」·싹 아이콘 — UI 몫)가 따로 있어야 한다. */
+    const bed = new THREE.Mesh(new THREE.CylinderGeometry(want * 0.40, want * 0.40, rim * 0.08, 20),
+      new THREE.MeshStandardMaterial({ color: 0xd9b95c, roughness: 0.9, emissive: 0x4a3a14, emissiveIntensity: 0.6 }));   // 불린 콩 빛 — 흰 시루와 갈리게
+    for (const o of cl.offs) { const b = bed.clone(); b.position.set(o.x * want, rim * 0.6, o.z * want); g.add(b); }
     const stage = p01 < 0.34 ? 's' : p01 < 0.7 ? 'm' : 'l';
     const body = await loadGLB(AT(`../../assets/crops/beansprout_${stage}.glb`));
-    const n = Math.round(lerp(4, 11, p01));
+    body.traverse(m => {
+      if (!m.isMesh || !m.material || Array.isArray(m.material)) return;
+      m.material = m.material.clone();
+      if (m.material.emissive && m.material.color) { m.material.emissive.copy(m.material.color); m.material.emissiveIntensity = 0.28; }
+    });
+    const nb = new THREE.Box3().setFromObject(body);
+    const nativeH = Math.max(1e-4, nb.max.y - nb.min.y);
+    const sprH = rim * (0.5 + 1.2 * p01);                        // 이 시루에서 콩나물 키(m)
+    const k = want / SIRU_D;
+    const n = Math.round(lerp(6, 16, p01));
     let made = 0;
     for (const o of cl.offs) for (let i = 0; i < n; i++) {
       const c = made++ === 0 ? body : body.clone(true);
       const a = (i / n) * Math.PI * 2 + i * 0.7;
       const r = want * 0.30 * Math.sqrt((i + 0.4) / n);
-      c.scale.setScalar(want / SIRU_D);
-      c.position.set(o.x * want + Math.cos(a) * r, rim * 0.55, o.z * want + Math.sin(a) * r);
+      c.scale.set(k * 1.8, sprH / nativeH, k * 1.8);
+      c.position.set(o.x * want + Math.cos(a) * r, rim * 0.6 - nb.min.y * (sprH / nativeH), o.z * want + Math.sin(a) * r);
       c.rotation.y = a;
       c.rotation.z = (Math.random() - 0.5) * 0.18;
       g.add(c);
