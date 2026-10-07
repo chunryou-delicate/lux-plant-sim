@@ -218,7 +218,11 @@ export function emptySnapshot() {
            /* ★ null = 「모른다」. false 로 두면 「아직 배선이 없다」와 「아니다」가 같아진다 */
            monsteraArrived: null, monsteraHomed: null,
            /* ★ 2026-09-02 — 옮긴 뒤 지난 날 · 한 번 자랐나 (둘 다 firstPlay.monstera.guide 의 칸) */
-           monsteraHomedDays: 0, monsteraGrewOnce: null };
+           monsteraHomedDays: 0, monsteraGrewOnce: null,
+           /* ★★ 2026-10-07 — 원룸 칸(§원룸 다섯 줄). 전부 null = 「모른다」 — 배선 전에는 원룸 줄이 안 열리고
+              반지하 줄은 예전 그대로 산다(§questRoomOk). 뜻은 docs/handoff/plan-oneroom-quests-v2.md §2 */
+           movedOut: null, movedInOnDay: null, bagPlants: null, varieSalesSinceMove: null,
+           cashWon: null, targetWon: null };
 }
 function snapOf(s) { return { ...emptySnapshot(), ...(s && typeof s === 'object' ? s : {}) }; }
 
@@ -229,6 +233,22 @@ const num = v => (Number.isFinite(v) ? v : 0);
 const yes = v => v === true;
 /* 그 종류의 용기들 */
 const potsOfKind = (s, kind) => arr(s.cropPots).filter(p => p && p.kind === kind);
+
+/* ══ ★★ 방 — 반지하 줄 · 원룸 줄 (2026-10-07 · [plan] · 판 master-campaign-20261007) ══════════
+   줄에 `room` 이 있으면 그 방에서만 산다. 없으면 어느 방에서나 산다(예전 그대로).
+     room: 'banjiha'  이사 «전»에만 — 콩나물 시루 다섯·여덟·열여섯. 원룸은 콩나물 자리가 한 칸뿐이고(story_arc §4-1 표)
+                      바닥 시루도 안 연다(D16) ⇒ 따라오면 «영영 못 끝나는» 줄이 매일 독촉한다
+     room: 'oneroom'  이사 «뒤»에만 — 아래 §원룸 다섯 줄
+   ⚠ `movedOut === null`(모른다 · 배선 전)은 «반지하»로 읽는다 — 옛 판·옛 자가 그대로 돈다.
+   ⚠ 끝낸 줄은 방이 바뀌어도 «끝낸 것»으로 남는다(기록은 안 지운다). 거르는 것은 «여는 것»뿐이다. */
+export function questRoomOk(q, s) {
+  const d = typeof q === 'string' ? QUESTS.find(x => x.id === q) : q;
+  if (!d || !d.room) return true;
+  const m = s ? s.movedOut : null;
+  if (d.room === 'oneroom') return m === true;
+  if (d.room === 'banjiha') return m !== true;
+  return true;
+}
 
 /* 뿌리를 낸 삽수인가 — 상태 이름은 `propagation.CUTTING_STATUS_KO` 소유다.
    ⚠ 여기서 새 이름을 짓지 않는다. 'rooted' 와 'potted'(흙으로 옮긴 것) 둘 다 뿌리를 낸 것이다. */
@@ -477,6 +497,7 @@ const MAIN_QUESTS = Object.freeze([
      ★ 그래서 이 줄이 「물은 한 번에 하나」와 「체력이 천장이다」를 가르친다. */
   Object.freeze({
     id: 'siru5_cycle5',
+    room: 'banjiha',   // ★ 2026-10-07 — 이사 «전»에만(§questRoomOk). 원룸은 콩나물 자리가 한 칸이다
     /* ★ 2026-09-02 ㉱([plan] ⓕ) — 「바퀴」를 뗀다. 박사님 「5개 사기」가 곧 done 이다. 「체력이 천장」은 말이 아니라
        손이 다 되는 날 몬이가 가르친다(§crop_hands_short). */
     ko: '시루 다섯',
@@ -559,6 +580,7 @@ const MAIN_QUESTS = Object.freeze([
      ⚠ 체력은 여기 안 적는다 — 값은 `data/balance/stamina.json` 것이다(§2.8). */
   Object.freeze({
     id: 'siru8',
+    room: 'banjiha',   // ★ 2026-10-07 — 이사 «전»에만(§questRoomOk). 원룸은 콩나물 자리가 한 칸이다
     ko: '여덟까지 늘린다',
     teaches: ['시루를 늘리면 하루가 는다'],
     why: '시루 하나가 하루 900원쯤을 만듭니다. 늘린 만큼 그대로 늘어납니다.',
@@ -588,6 +610,7 @@ const MAIN_QUESTS = Object.freeze([
   /* ②-c ★★★ **본전이 되는 자리** — 열여섯이다(위 ②-b 의 실측). */
   Object.freeze({
     id: 'siru16',
+    room: 'banjiha',   // ★ 2026-10-07 — 이사 «전»에만(§questRoomOk). 원룸은 콩나물 자리가 한 칸이다
     ko: '열여섯이면 버틴다',
     teaches: ['열여섯이 살림의 본전이다'],
     why: '여기서부터 하루가 마이너스에서 플러스로 돕니다. 그 전까지는 조금씩 깎입니다.',
@@ -758,6 +781,95 @@ const SLOW_QUESTS = Object.freeze([
   })
 ]);
 
+/* ══ ★★★ 원룸 다섯 줄 (2026-10-07 · [plan] · 명세 docs/handoff/plan-oneroom-quests-v2.md) ══════════
+   줄기 — story_arc §4-1 「받는 것에서 만드는 것으로」. 반지하에서 무늬를 «받았고», 원룸에서는 그 무늬를 «늘린다».
+   ⚠ «빛으로 새 무늬를 만든다»가 «아니다» — [growth] 실측(probe_timetable_oneroom · real · 후보 D · 540일 · 20판):
+     원룸에서 한 그루가 새로 내는 무늬 잎은 등1 에서도 «중앙값 0장». ⇒ 원룸의 무늬는 «삽수가 물려받는» 것이다.
+   ⇒ 그래서 「짐을 푼다 → 무늬 삽수를 밝은 데서 뿌리내린다 → 흙에 자리 잡힌다 → 이 방의 무늬를 판다 → 집 자금」.
+   ⚠ 08-23 명세(plan-oneroom-questline)의 다섯 줄(물꽂이·혹·두 그루·급전·밝은 데)은 그 뒤 반지하 사슬이
+     자르기·뿌리·팔기를 다 가르치게 돼 «두 번 가르치는» 꼴이라 다시 짰다.
+   ⚠ 칸이 null(모른다)이면 안 열리고 안 끝난다(§스냅샷 계약) — 배선 전에는 원룸 줄이 «조용히 안 뜬다».
+   ⚠ 체력 보상이 없다(stamina.json quests 표에 없음) — 그래서 다섯 다 `reward` 를 갖는다.
+   ⚠ 「그루째 판다」로 온 판(그루도 무늬 삽수도 없음)은 ③에서 막힌다 — 갈래 명세 §3 의 열린 물음이다. */
+const ONEROOM_QUESTS = Object.freeze([
+  Object.freeze({
+    id: 'oneroom_unpack',
+    room: 'oneroom',
+    ko: '짐을 푼다',
+    reward: '원룸이 내 방이 됩니다',
+    teaches: ['원룸은 자리를 «만드는» 방이다', '가방 안은 아무 자리도 아니다'],
+    why: '들고 온 것은 가방에서 아무 일도 안 합니다. 놓아야 빛을 받습니다.',
+    todo: () => '가방의 식물을 원룸에 놓으세요',
+    opens: s => yes(s.movedOut),
+    /* bagPlants — 가방에 든 그루·삽수·시루 수(가구는 안 센다 · 원룸 첫 장면의 «끝»과 같은 말) */
+    done:  s => yes(s.movedOut) && Number.isFinite(s.bagPlants) && s.bagPlants === 0
+  }),
+  /* ⛔ 「등 자리에 불을 켠다」 줄은 «안 둔다»(2026-10-07 · 넣었다가 뺐다).
+     까닭 — 원룸 창턱은 여름엔 이미 «밝음»이라([growth] 브리핑) 이사한 날 등이 «꼭» 필요하지 않다.
+     억지로 켜게 하면 「겪지 않은 어려움은 못 가르친다」(§2.9 ㊾)에 걸리고, 원룸 잡담(chatOneroomLamp 「안 켜도 돼」)과도 어긋난다.
+     원룸에서 등은 «길»이 아니라 «속도»다(plan-oneroom-first-scene ⓒ⑤ · story_arc §4-1). 겨울에 창턱이 모자라는 날
+     등이 말할 자리는 사건·잡담이다 — 그 말은 ③ 의 why 에 한 줄로 둔다. 등 자리 둘(D6-가)은 그대로 쓰인다. */
+  Object.freeze({
+    id: 'oneroom_root_bright',
+    room: 'oneroom',
+    ko: '밝은 데서 뿌리내린다',
+    reward: '값이 매겨지는 무늬가 생깁니다',
+    teaches: ['빛이 무늬 등급을 매긴다', '무늬는 잘라도 물려받는다'],
+    why: '무늬 마디를 잘라 밝은 자리에서 뿌리내리면 삽수가 무늬를 물려받고, 밝을수록 좋은 등급이 납니다. 창턱이 모자라는 철에는 등 자리가 밝은 자리입니다.',
+    todo: () => '무늬 마디를 잘라 밝은 자리에서 뿌리내리세요',
+    after: 'oneroom_unpack',
+    opens: (s, ctx) => yes(s.movedOut) && !!(ctx && ctx.doneIds.includes('oneroom_unpack')),
+    /* ★ «이사 뒤에» 뿌리낸 것만 — 반지하에서 뿌리낸 삽수를 들고 오면 열리자마자 끝나 아무것도 안 가르친다 */
+    done:  s => yes(s.movedOut) && Number.isFinite(s.movedInOnDay) &&
+                arr(s.cuttings).some(c => c && c.varieFromCut && c.varieLightBand === 'bright' &&
+                                          Number.isFinite(c.rootedOnDay) && c.rootedOnDay >= s.movedInOnDay)
+  }),
+  Object.freeze({
+    id: 'oneroom_settle_cutting',
+    room: 'oneroom',
+    ko: '한 그루가 둘이 된다',
+    reward: '자를 수 있는 그루가 하나 더 생깁니다',
+    teaches: ['늘리는 길은 자르기다', '혹이 나면 흙으로 — 자리를 잡으면 그루다'],
+    why: '뿌리낸 무늬 삽수에 혹이 나면 흙에 옮겨 심습니다. 자리를 잡으면 그 그루에서 또 자를 수 있습니다.',
+    todo: () => '무늬 삽수에 혹이 나면 흙에 옮겨 심으세요',
+    after: 'oneroom_root_bright',
+    opens: (s, ctx) => yes(s.movedOut) && !!(ctx && ctx.doneIds.includes('oneroom_root_bright')),
+    done:  s => yes(s.movedOut) && Number.isFinite(s.movedInOnDay) &&
+                arr(s.cuttings).some(c => c && c.varieFromCut && c.status === 'established' &&
+                                          Number.isFinite(c.rootedOnDay) && c.rootedOnDay >= s.movedInOnDay)
+  }),
+  Object.freeze({
+    id: 'oneroom_sell',
+    room: 'oneroom',
+    ko: '이 방의 무늬를 판다',
+    reward: '무늬 값이 통장에 들어옵니다',
+    teaches: ['밝게 뿌리낸 무늬가 더 비싸다', '늘린 것을 팔아야 돈이 된다'],
+    why: '뿌리낸 무늬 삽수나 그루를 내놓아 팝니다. 밝은 데서 뿌리낸 것일수록 값이 높습니다.',
+    todo: () => '뿌리낸 무늬 삽수를 내놓아 팔아 보세요',
+    after: 'oneroom_settle_cutting',
+    opens: (s, ctx) => yes(s.movedOut) && !!(ctx && ctx.doneIds.includes('oneroom_settle_cutting')),
+    /* varieSalesSinceMove — 이사 «뒤»에 판 무늬 삽수·그루 수(ts.varieSale.count − 이사 날의 값) */
+    done:  s => yes(s.movedOut) && Number.isFinite(s.varieSalesSinceMove) && s.varieSalesSinceMove >= 1
+  }),
+  Object.freeze({
+    id: 'oneroom_home_fund',
+    room: 'oneroom',
+    ko: '내 집 자금을 모은다',
+    reward: '내 집으로 갑니다',
+    teaches: ['무늬를 늘려 팔면 집이 된다'],
+    why: '무늬 삽수와 그루를 내놓아 팔면 그 돈이 내 집 자금이 됩니다.',
+    /* ★ 수는 박지 않는다 — 목표 금액은 ending.js ENDING_RULES.targetWon(정본 · 아직 null · D9 로 잰다) */
+    todo: (q, s) => (s && Number.isFinite(s.targetWon) && s.targetWon > 0)
+      ? `내 집 자금 ${s.targetWon.toLocaleString('ko-KR')}원을 모으세요` : '내 집 자금을 모으세요',
+    after: 'oneroom_sell',
+    /* ★ 목표 금액이 «없으면»(null) 안 연다 — 엔딩 화면이 숨는 것과 같은 말이다(D9) */
+    opens: (s, ctx) => yes(s.movedOut) && Number.isFinite(s.targetWon) && s.targetWon > 0 &&
+                       !!(ctx && ctx.doneIds.includes('oneroom_sell')),
+    done:  s => yes(s.movedOut) && Number.isFinite(s.targetWon) && s.targetWon > 0 &&
+                Number.isFinite(s.cashWon) && s.cashWon >= s.targetWon
+  })
+]);
+
 /* ★★★ **이 배열의 차례가 곧 「지금 할 일」의 우선순위다** — `questView` 가 열린 것 중
    **정의 순서에서 첫째**를 뽑는다(§questView). 그러니 여기 차례를 바꾸는 것은
    그리는 차례를 바꾸는 것이 아니라 **무엇을 시킬지를 바꾸는 것**이다.
@@ -768,7 +880,10 @@ const SLOW_QUESTS = Object.freeze([
 
    ⚠ ③ 이 맨 뒤인 것이 이번 변경의 전부다. 앞에 두면 그 둘이 열려 있는 수십 일 동안
      ①②의 어떤 줄도 「지금 할 일」이 못 된다 — 박사님이 짚으신 그 구멍이 거기서 났다. */
-export const QUESTS = Object.freeze([...FIRST_PLAY_CHAIN, ...MAIN_QUESTS, ...SLOW_QUESTS]);
+/* ★ 2026-10-07 — 원룸 다섯 줄은 «느린 줄 앞»이다. 맨 뒤면 잎 줄이 영영 안 끝나는 판(그루째 판 판)에서
+     원룸 줄이 「지금 할 일」이 못 된다 — 위 ③ 을 맨 뒤로 옮긴 것과 같은 까닭이다. 반지하에서는 방이 걸러 안 보인다. */
+export const QUESTS = Object.freeze([...FIRST_PLAY_CHAIN, ...MAIN_QUESTS, ...ONEROOM_QUESTS, ...SLOW_QUESTS]);
+export const ONEROOM_QUEST_IDS = Object.freeze(ONEROOM_QUESTS.map(q => q.id));
 
 export const QUEST_IDS = Object.freeze(QUESTS.map(q => q.id));
 /* ★ 어느 마디의 줄인가 — 화면이 「초반 사슬을 도는 중인가」를 이걸로 안다 */
@@ -879,8 +994,11 @@ export function questView(S, snapshot) {
   const open = [], all = [];
   QUESTS.forEach((q, i) => {
     const isDone = doneIds.includes(q.id);
+    /* ★ 2026-10-07 — 다른 방의 안 끝낸 줄은 «안 열린다»(§questRoomOk) — 목록에는 «잠김»으로 남는다(셈이 안 어긋나게).
+       「다음에 올 것」에서는 뺀다(아래 upcoming) — 반지하에서 원룸 줄을 미리 보이면 안 되고, 원룸에서 반지하 줄이 남으면 안 된다. */
+    const roomOk = isDone || questRoomOk(q, s);
     let isOpen = false;
-    if (!isDone) { try { isOpen = !!q.opens(s, { ...ctx, q }); } catch { isOpen = false; } }
+    if (!isDone && roomOk) { try { isOpen = !!q.opens(s, { ...ctx, q }); } catch { isOpen = false; } }
     if (isOpen) open.push(q.id);
     all.push({ id: q.id, ko: q.ko, todo: questTodo(q, s), why: q.why, teaches: q.teaches,
                /* ★ 2026-08-23 — **목표 수를 그대로 실어 준다.** 보기에는 `todo` 문장만 있어서
@@ -890,7 +1008,7 @@ export function questView(S, snapshot) {
                need: q.need || null,
                /* ★ 체력이 아닌 보상의 이름. 없으면 화면이 stamina 에서 「체력 +N」을 짓는다 */
                reward: q.reward || null,
-               stage: stageOfQuest(q), index: i, speaks: q.speaks !== false,
+               stage: stageOfQuest(q), index: i, speaks: q.speaks !== false, roomOk,
                state: isDone ? 'done' : isOpen ? 'open' : 'locked' });
   });
   /* ★ 「지금 할 일」은 **하나만** 보여 준다. 목록을 내면 심부름 목록이 된다.
@@ -902,7 +1020,7 @@ export function questView(S, snapshot) {
        들어간다 — 한 판에 둘이 같이 열리는 자리가 있고(예: `first_cut`+`buy_lamp`),
        그때 뒤엣것을 안 보여 주면 「다음에 올 것」이 거짓이 된다. */
   const from = next ? next.index + 1 : 0;
-  const upcoming = all.filter(a => a.index >= from && a.state !== 'done');
+  const upcoming = all.filter(a => a.index >= from && a.state !== 'done' && a.roomOk);   // ★ 10-07 다른 방 줄은 «다음에 올 것»이 아니다
   const doneN = doneIds.length;
   const counts = { total: all.length, done: doneN, open: open.length,
                    locked: all.length - doneN - open.length };
@@ -965,6 +1083,7 @@ export function stepQuests(S, snapshot) {
     const cands = [];
     for (const q of QUESTS) {
       if (doneNow.has(q.id) || S._questOpen.includes(q.id) || deferred.has(q.id)) continue;
+      if (!questRoomOk(q, s)) continue;          /* ★ 2026-10-07 — 다른 방의 줄은 안 연다 */
       let isOpen = false;
       try { isOpen = !!q.opens(s, { ...ctx2, q }); } catch { isOpen = false; }
       if (isOpen) cands.push(q);
@@ -977,6 +1096,7 @@ export function stepQuests(S, snapshot) {
     }
     for (const q of QUESTS) {
       if (doneNow.has(q.id)) continue;
+      if (!questRoomOk(q, s)) continue;          /* ★ 2026-10-07 — 다른 방의 줄은 안 열고 안 끝낸다 */
       let isOpen = false;
       try { isOpen = !!q.opens(s, { ...ctx2, q }); } catch { isOpen = false; }
       if (!isOpen) continue;

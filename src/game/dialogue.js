@@ -39,7 +39,9 @@ import { TUTORIAL_RULES } from './tutorial.js';
    ⚠ `first_play.js` 는 `dialogue.js` 를 안 불러온다 — 고리가 안 생긴다(2026-08-23 확인). */
 import { CROP_KINDS } from './first_play.js';
 /* 독촉 «기다림» 판정 — [core] 파일(D2 · 2026-10-07). 한 방향: dialogue → nudge_wait */
-import { nudgeWaiting } from './nudge_wait.js';
+import { nudgeWaiting, nudgeDaysOf } from './nudge_wait.js';
+/* 방 거름 — 반지하 줄은 이사 뒤에 독촉하지 않는다(quest.js §questRoomOk · 2026-10-07). quest.js 는 아무것도 import 하지 않아 돌지 않는다 */
+import { questRoomOk } from './quest.js';
 const BEAN_SEED = (() => {
   try { return catalogList().find(x => x.id === 'bean_seed') || {}; } catch { return {}; }
 })();
@@ -1078,6 +1080,55 @@ export const SCRIPTS = {
     { who: 'moni',   face: 'proud', text: '아까 그거 한 번 더 하면 돼. **길은 이제 알잖아.**' }
   ],
 
+  /* ═══ ★★ §5.9 원룸 다섯 줄 (2026-10-07 · [plan] · quest.js §원룸 다섯 줄 · 명세 plan-oneroom-quests-v2.md) ═══
+     줄기 — 「받는 것에서 만드는 것으로」. 반지하에서 무늬를 «받았고», 원룸에서는 그 무늬를 «늘린다».
+     ⚠ 몬이는 수를 말하지 않는다(목표 금액도 — 그건 화면이 센다). 이름을 안 부른다. 얼굴은 §표정 배정의 자.
+     ⚠ 「빛으로 새 무늬가 난다」고 말하지 않는다 — [growth] 실측: 원룸에서 새 무늬 잎은 중앙값 0장.
+       무늬는 «잘라서 물려받는» 것이고, 빛은 «뿌리내린 자리로 값(등급)을 매긴다». */
+  questOneroomUnpack: [
+    { who: 'jachwi', face: 'think',   text: '…박스부터 풀어야겠다.' },
+    { who: 'moni',   face: 'teach',   text: '처음이랑 같아. 가방에서 꺼내야 시작돼.' }
+  ],
+  questDoneOneroomUnpack: [
+    { who: 'moni',   face: 'proud',   text: '다 놓았네. 이제 여기가 네 방이야.' },
+    { who: 'jachwi', text: '…창이 높으니까 좀 낫다.' }
+  ],
+  questOneroomRootBright: [
+    { who: 'jachwi', face: 'curious', text: '여기선 무늬를 어떻게 늘려?' },
+    { who: 'moni',   face: 'teach',   text: '있는 무늬를 잘라. 삽수는 무늬를 물려받아.' },
+    { who: 'moni',   face: 'teach',   text: '대신 **어디서 뿌리내리느냐**로 값이 갈려. 밝은 데로 가.' }
+  ],
+  questDoneOneroomRootBright: [
+    { who: 'moni',   face: 'proud',   text: '밝은 데서 뿌리냈네. 그게 값이 돼.' }
+  ],
+  questOneroomSettleCutting: [
+    { who: 'moni',   face: 'teach',   text: '이제는 기다리는 거야. 혹이 나면 흙으로 옮겨.' },
+    { who: 'jachwi', face: 'curious', text: '혹?' },
+    { who: 'moni',   face: 'teach',   text: '뿌리 끝에 동그랗게 나. 그게 보이면 옮길 때야.' }
+  ],
+  questDoneOneroomSettleCutting: [
+    { who: 'jachwi', face: 'think',   text: '…한 그루가 둘이 됐네.' },
+    { who: 'moni',   face: 'proud',   text: '그게 늘리는 거야. 이제 그 그루에서도 자를 수 있어.' }
+  ],
+  questOneroomSell: [
+    { who: 'moni',   face: 'teach',   text: '늘렸으면 이제 내놓을 차례야.' },
+    { who: 'jachwi', face: 'think',   text: '…아깝긴 한데.' },
+    { who: 'moni',   face: 'calm',    text: '남겨 둘 그루는 남겨. 파는 건 그다음 거야.' }
+  ],
+  questDoneOneroomSell: [
+    { who: 'jachwi', text: '팔렸다.' },
+    { who: 'moni',   face: 'teach',   text: '밝은 데서 뿌리낸 만큼 값이 붙은 거야.' }
+  ],
+  questOneroomHomeFund: [
+    { who: 'moni',   face: 'teach',   text: '이제 남은 건 하나야. **내 집.**' },
+    { who: 'jachwi', face: 'curious', text: '얼마나 모아야 돼?' },
+    { who: 'moni',   face: 'calm',    text: '숫자는 화면이 세. 나는 무늬만 볼게.' }
+  ],
+  questDoneOneroomHomeFund: [
+    { who: 'jachwi', face: 'think',   text: '…다 모였다.' },
+    { who: 'moni',   face: 'cheer',   text: '됐다! 가자.' }
+  ],
+
   /* ═══ §6 이사 — 조건이 하나씩 차고, 마침내 나간다 ═══════════════════════ */
 
   /* 배움은 다 됐고 돈이 모자랄 때. */
@@ -1783,6 +1834,12 @@ export const QUEST_OPEN_SCRIPT = Object.freeze({
   buy_lamp:     'questBuyLamp',
   varie_bright: 'questVarieBright',
   sell_varie:   'questSellVarie',
+  /* ★★ 2026-10-07 — 원룸 다섯 줄(§5.9 · quest.js §원룸 다섯 줄) */
+  oneroom_unpack:         'questOneroomUnpack',
+  oneroom_root_bright:    'questOneroomRootBright',
+  oneroom_settle_cutting: 'questOneroomSettleCutting',
+  oneroom_sell:           'questOneroomSell',
+  oneroom_home_fund:      'questOneroomHomeFund',
 
   /* ★★ 2026-08-17 — **느린 줄 둘**(`quest.SLOW_QUESTS` · §긴 줄).
      지도에서의 자리를 정의 순서와 맞춰 맨 뒤로 옮겼다 — 대사는 한 글자도 안 바꿨다.
@@ -1809,6 +1866,12 @@ export const QUEST_DONE_SCRIPT = Object.freeze({
   buy_lamp:     'questDoneBuyLamp',
   varie_bright: 'questDoneVarieBright',
   sell_varie:   'questDoneSellVarie',
+  /* ★★ 2026-10-07 — 원룸 다섯 줄(§5.9 · quest.js §원룸 다섯 줄) */
+  oneroom_unpack:         'questDoneOneroomUnpack',
+  oneroom_root_bright:    'questDoneOneroomRootBright',
+  oneroom_settle_cutting: 'questDoneOneroomSettleCutting',
+  oneroom_sell:           'questDoneOneroomSell',
+  oneroom_home_fund:      'questDoneOneroomHomeFund',
 
   /* ★★ 2026-08-17 — 느린 줄 둘(위 §QUEST_OPEN_SCRIPT 의 같은 자리 참고) */
   leaf_two:     'questDoneLeafTwo',
@@ -2145,8 +2208,11 @@ export function chatterContext(turn = {}, S = null) {
           /* ★ 2026-10-07 D2(박사님 「할 수 있었던 날만」) — «기다리는 중»인 퀘스트는 건너뛰고 다음으로 오래된 것을 고른다.
              판정은 [core] `nudge_wait.js`(09-25 패치 그대로). 다 기다림이면 독촉이 없고 그날 잡담이 돈다.
              독촉 차례(사건 > 독촉 > 잡담)·NUDGE_DAYS·문안은 그대로다. */
-          if (!done.has(id) && Number.isFinite(d) && !nudgeWaiting(S, id, dayNow) && (best == null || d < best.on)) best = { id, on: d };
-        return best ? { id: best.id, days: dayNow - best.on } : null;
+          if (!done.has(id) && Number.isFinite(d) && questRoomOk(id, { movedOut: !!(ts && ts.movedOut) }) &&
+              !nudgeWaiting(S, id, dayNow) && (best == null || d < best.on)) best = { id, on: d };
+        /* ★ 2026-10-08 — 날수는 «마지막으로 기다린 날 다음»부터 센다([core] nudgeDaysOf · 1c87d337).
+           한 번도 안 기다렸으면 예전 그대로(dayNow − 열린 날)다 — 그래서 첫 독촉이 «권함»을 건너뛰지 않는다. */
+        return best ? { id: best.id, days: nudgeDaysOf(S, best.id, best.on, dayNow) } : null;
       } catch { return null; }
     })()
   };
