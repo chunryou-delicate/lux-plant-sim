@@ -2361,11 +2361,19 @@ export const QUIET_DAYS_BEFORE_CHATTER = 2;
 /* ★★ 2026-10-08 [plan] D19 — «되풀이 자». 독촉·잡담 둘 다 본다.
      같은 줄은 이틀 잇달아 안 난다(어제 난 줄은 오늘 못 선다) · `gap` 이 있는 줄(범용)은 그 날수 안에 다시 안 난다.
    lastDay = { 줄 id: 마지막으로 난 날 } — §createStoryteller 가 센다. 날을 모르면(옛 부름 · day 없음) 막지 않는다(예전 그대로). */
+/* ★★ 2026-10-08 02시 [plan] — 퀘스트별 독촉 줄도 «이레에 한 번»(NUDGE_LINE_GAP)이다.
+     총괄 재측(play_1_master1008b · b3a49dbc 뒤): 「잘라도 안 죽어. 마디 하나가 한 그루가 돼.」가 d44~59 하루 걸러 «여덟 번» —
+     「이틀 잇달아 금지」만으로는 «하루 걸러 같은 줄»이 됐다.
+     후보: ㉠ 두 번 쓰고 쉼 · ㉡ 돌려 쓰기(줄을 더 짓는다) · ㉢ 퀘스트 줄에도 날 간격 ⇒ 고른 것 ㉢ 이레(7일).
+     까닭: 문턱 NUDGE_DAYS 가 이레 걸음(걱정 = 7일)이고, 멎은 판에서도 «무엇을» 말하는 줄이 한 주에 한 번은 남는다 — 빈 날은 잡담이 받는다.
+     ⚠ 범용 줄(`gap: 30`)은 그대로다. 잡담(nudge 아님)은 간격 없음(«가장 오래 안 나온 것»이 고른다). */
+export const NUDGE_LINE_GAP = 7;
 function repeatOk(c, ctx, lastDay) {
   const d = ctx && ctx.day, last = lastDay && lastDay[c.id];
   if (!Number.isFinite(d) || !Number.isFinite(last)) return true;
   if (d - last === 1) return false;
-  if (c.gap && d - last < c.gap) return false;
+  const gap = c.gap || (c.nudge ? NUDGE_LINE_GAP : 0);
+  if (gap && d - last < gap) return false;
   return true;
 }
 export function pickNudge(ctx = {}, lastDay = {}) {
