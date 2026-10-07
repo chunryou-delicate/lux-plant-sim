@@ -1298,8 +1298,10 @@ export const SCRIPTS = {
     { who: 'moni',   text: '저 방은 등 없이 자라는 자리가 창턱 하나였잖아. 여긴 여덟이야.' },
     { who: 'jachwi', face: 'tired',   text: '…대신 통장이 한 번에 얇아졌고.' },
     { who: 'moni',   face: 'sad',     text: '응. 이백만 원. 그건 나간 거 맞아.' },
-    { who: 'moni',   face: 'teach', text: '그리고 여기서부터 무늬는 아무도 안 줘. 어디에 두느냐로만 나와.' },
-    { who: 'jachwi', face: 'think', text: '…자리로 만드는 건 해 봤어.' }
+    /* ★ 2026-10-08 [plan] — 「어디에 두느냐로만 나와」는 «새 무늬를 기다리라»로 읽혔다. [growth] 실측: 원룸에서 새 무늬 잎은 중앙값 0장
+       (probe_timetable_oneroom · real · 540일). 무늬는 «잘라서 물려받는» 것이다(plan-oneroom-quests-v2 §0). 받는 줄도 짝으로 고쳤다 */
+    { who: 'moni',   face: 'teach', text: '그리고 여기서부터 무늬는 아무도 안 줘. 있는 무늬를 잘라 늘리는 거야.' },
+    { who: 'jachwi', face: 'think', text: '…자르는 건 해 봤어.' }
   ],
 
   /* ═══ §7 작은 말들 ═════════════════════════════════════════════════════
@@ -1487,8 +1489,9 @@ export const SCRIPTS = {
     { who: 'jachwi', face: 'think', text: '새 잎이 나면 또 무늬가 있으려나.' },
     { who: 'moni',   face: 'curious', text: '이제 아무도 안 정해 줘. 나도 몰라.' },
     { who: 'jachwi', face: 'curious', text: '그럼 뭘 하면 돼.' },
-    { who: 'moni',   text: '밝은 자리에 두고 기다리는 것. 그게 다야.' },
-    { who: 'jachwi', face: 'think', text: '…그게 다구나.' }
+    /* ★ 2026-10-08 [plan] — 「밝은 자리에 두고 기다리는 것」은 새 무늬를 기다리라는 말이었다(원룸 중앙값 0장 · growth). 늘리는 길로 */
+    { who: 'moni',   face: 'teach', text: '있는 무늬를 잘라. 밝은 데서 뿌리내리면 그게 늘리는 거야.' },
+    { who: 'jachwi', face: 'think', text: '…기다리기만 하는 게 아니구나.' }
   ],
   /* 원룸에서 맞는 겨울. ★`winter_still` 은 `!ts.movedOut` 로 잠겨 여기까지 안 온다
      (tutorial.js §winter_still) — 그 자리를 이 작은 말이 받는다.
