@@ -3122,7 +3122,9 @@ import { seasonAt, seasonDayAt, SEASON_KO, tutorialGoal, learningLeft,
          dailyCashOutWon, lampElectricityWon } from './src/game/tutorial.js';
 /* ★이사는 사건이 아니라 **이동**이다. moveOut 은 돈과 판정만 하고 방을 안 바꿨다 —
    moveIntoOneroom 이 그 위에서 S.home.room 과 자리를 옮긴다(oneroom.js 머리말). */
-import { moveIntoOneroom } from './src/game/oneroom.js';
+import { moveIntoOneroom, storyOf } from './src/game/oneroom.js';
+/* ★ 2026-10-08 — 원룸 줄(quest.js oneroom_*)의 «집 자금» 칸이 보는 목표 금액. 지금 null(미확정) — 그 줄은 안 열린다([plan] 짬) */
+import { ENDING_RULES } from './src/game/ending.js';
 /* ★ 2026-10-08 D2 — 독촉은 «할 수 있었던 날»만: 기다린 날을 적는다(판정·날수는 nudge_wait.js · 거는 자리는 dialogue.js chatterContext) */
 import { noteQuestWaits } from './src/game/nudge_wait.js';
 /* ★★ 2026-08-09 — 빨리감기 여섯(`startFastForward`·`stopFastForward`·`isFastForwarding`·
@@ -9166,7 +9168,9 @@ function questSnapshotNow(turn) {
   try {
     cuts = (cuttingsOf(S) || []).map(c => ({
       method: c.method, status: c.status,
-      varieFromCut: !!c.varieFromCut, varieLightBand: c.varieLightBand || null
+      varieFromCut: !!c.varieFromCut, varieLightBand: c.varieLightBand || null,
+      /* ★ 2026-10-08 — 원룸 줄(oneroom_root_bright)이 «이사 뒤에 뿌리내렸나»를 보는 칸([plan] f39fbddb) */
+      rootedOnDay: Number.isInteger(c.rootedOnDay) ? c.rootedOnDay : null
     }));
   } catch { cuts = []; }
   return {
@@ -9189,6 +9193,21 @@ function questSnapshotNow(turn) {
     /* ★ 2026-09-02 — 무순 줄(crop_mix)이 「집 잡은 «다음 날»」로 열리게 — 있는 칸 둘을 옮겨 적는다 */
     monsteraHomedDays: (fp.monstera && fp.monstera.guide && fp.monstera.guide.movedDays) || 0,
     monsteraGrewOnce: !!(fp.monstera && fp.monstera.guide && fp.monstera.guide.grewOnce),
+    /* ★★ 2026-10-08 — **원룸 줄의 칸**([plan] f39fbddb · quest.js oneroom_*). null = 「모른다」(그 줄은 안 열린다 · 안전 폴백) */
+    movedOut: !!ts.movedOut,
+    movedInOnDay: (() => { try { const st = storyOf(S); return Number.isInteger(st && st.movedInOnDay) ? st.movedInOnDay : null; } catch { return null; } })(),
+    /* 가방에 든 «그루·삽수·시루» 수 — 가구는 안 센다(원룸 첫 장면 «끝»과 같은 말). 그루는 자리·좌표가 없는 것 */
+    bagPlants: (() => { try {
+      const pots = (S.pots || []).filter(p => p && !p.slotId && !p.at).length;
+      const cutsInBag = (cuttingsOf(S) || []).filter(c => c && !c.slotId && !c.at).length;
+      const crops = (cropPotList(fp, S.day) || []).filter(r => r && r.inBag).length;
+      return pots + cutsInBag + crops; } catch { return null; } })(),
+    /* 이사 뒤에 판 무늬 삽수 수 — 이사 날의 count 를 story.varieSaleAtMove 에 적어 둔다(oneroom §moveIntoOneroom) */
+    varieSalesSinceMove: (() => { try {
+      const st = storyOf(S); const now = (ts.varieSale && ts.varieSale.count) || 0;
+      return (ts.movedOut && st && Number.isInteger(st.varieSaleAtMove)) ? Math.max(0, now - st.varieSaleAtMove) : (ts.movedOut ? null : 0); } catch { return null; } })(),
+    cashWon: Number.isFinite(ts.cashWon) ? ts.cashWon : null,
+    targetWon: (ENDING_RULES && Number.isFinite(ENDING_RULES.targetWon)) ? ENDING_RULES.targetWon : null,
     /* ★★ 2026-08-17 — **씨앗을 이미 시켰나** (박사님: *"씨앗 시키는 대화가 뭔가 타이밍
        안 맞게 뒤에 나와."*). 실측에서 11일에 주문했는데 할 일 줄은 17일까지 계속
        「상점에서 콩 씨앗을 주문하세요」였다 — **이미 한 일을 하라고 시키는 줄**이다.

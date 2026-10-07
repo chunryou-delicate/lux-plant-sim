@@ -221,6 +221,8 @@ export function moveIntoOneroom(S, io = {}, opt = {}) {
   const roomId = opt.roomId || ONEROOM_ROOM_ID;
   S.home.room = roomId;
   story.movedInOnDay = S.day;
+  /* ★ 2026-10-08 — 이사 날의 «무늬 삽수 판 횟수». 원룸 줄(oneroom_sell)이 «이 방에서 판 것»만 센다([plan] f39fbddb) */
+  story.varieSaleAtMove = (ts.varieSale && Number.isInteger(ts.varieSale.count)) ? ts.varieSale.count : 0;
 
   /* ★★ 2026-10-08 D1(박사님 답) — **원룸 이사 때 «빛의 초보»를 끈다: 날씨·계절이 흐르기 시작한다.**
        후보: 원룸 이사 때 · 반지하 가을(45일) · 엔딩 뒤 ⇒ 고른 것: 원룸 이사 때(박사님).

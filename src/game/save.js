@@ -945,6 +945,8 @@ function packStory(story) {
   return {
     schema: needStr(story.schema || STORY_SCHEMA, 'story.schema'),
     movedInOnDay: optDay(story.movedInOnDay, 'story.movedInOnDay'),
+    /* ★ 2026-10-08 — 이사 날의 무늬 삽수 판 횟수(원룸 줄 oneroom_sell 이 «이 방에서 판 것»을 센다). 옛 세이브는 null */
+    varieSaleAtMove: story.varieSaleAtMove == null ? null : needInt(story.varieSaleAtMove, 'story.varieSaleAtMove', { min: 0 }),
     ending: {
       reachedOnDay: optDay(end.reachedOnDay, 'story.ending.reachedOnDay'),
       doneOnDay: optDay(end.doneOnDay, 'story.ending.doneOnDay')
