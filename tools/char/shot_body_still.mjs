@@ -28,6 +28,7 @@ const TAG = process.argv[3] || 'still';
 const VIEWS = [['front', 0], ['left', 90], ['back', 180], ['q34', 35]];
 
 const WANT_CLIP = sys_wantClip();
+const WANT_TEX = process.argv.includes('--tex');
 function sys_wantClip(){
   /* --clip 이면 첫 클립, --clip=이름 이면 그 이름의 클립 (한 파일에 여럿이 든 hero.glb 용 · 2026-09-25) */
   const a = process.argv.find(x => x === '--clip' || x.startsWith('--clip='));
@@ -45,6 +46,7 @@ canvas{display:block;width:900px !important;height:1200px !important}</style>
 <script src="../../vendor/three/GLTFLoader.js"></script>
 <script>
 const WANT_CLIP=${JSON.stringify(WANT_CLIP)};
+const WANT_TEX=${JSON.stringify(WANT_TEX)};
 const cv=document.getElementById('c');
 const r=new THREE.WebGLRenderer({canvas:cv,antialias:true});
 r.setPixelRatio(2); r.outputEncoding=THREE.sRGBEncoding;
@@ -63,7 +65,9 @@ new THREE.GLTFLoader().load(${JSON.stringify(GLB)}, g=>{
        안 주면 살이 «스키닝 없이» Armature(scale 0.01) 공간에 그려져 사람이 «점»이 된다.
        ⇒ 9/7 에 세 번 «점»으로 찍힌 까닭을 나는 「스킨드 메시 상자를 뼈로도 못 잡는다」로 적었다 — ⛔ 틀린 진단이었다.
          사본 뷰어는 toonify 에서 mat.skinning 을 켜서 멀쩡했던 것이다. */
-    o.material=new THREE.MeshLambertMaterial({color:0xe9bda3, skinning: !!o.isSkinnedMesh}); } });
+    /* --tex : 파일의 텍스처를 «그대로» 입힌다(색 손질 전후 견주기용 · 2026-10-08). 없으면 형태만 본다 */
+    const map = WANT_TEX && o.material && o.material.map ? o.material.map : null;
+    o.material=new THREE.MeshLambertMaterial({color: map ? 0xffffff : 0xe9bda3, map, skinning: !!o.isSkinnedMesh}); } });
   sc.add(m); window.__m=m;
   /* ★ --clip 을 주면 «그 파일에 든» 클립을 얹는다.
      ⇒ 메시가 «자기 리깅에 딸려 준» 클립을 «자기 메시»에 얹으면
@@ -132,6 +136,14 @@ new THREE.GLTFLoader().load(${JSON.stringify(GLB)}, g=>{
     return JSON.stringify({rad:+rad.toFixed(4), cy:+c.y.toFixed(4),
       bones:p.length, sane: rad>0.05});
   };
+  /* ⛔ 2026-10-08 — 텍스처가 다 풀리기 «전»에 찍혀 맨몸(살구색)이 나온 적이 있다(앞서 두 번은 운 좋게 맞았다).
+     ⇒ --tex 면 모든 map 의 그림이 실제로 풀렸는지(width>0)를 묻는 손잡이를 둔다. */
+  window.__texOk=function(){
+    let ok=true;
+    m.traverse(o=>{ if(o.isMesh && o.material && o.material.map){
+      const im=o.material.map.image; if(!im || !(im.width>0)) ok=false; else o.material.map.needsUpdate=true; } });
+    return ok;
+  };
   window.__ready=true;
 }, undefined, e=>{ window.__err=String(e&&(e.message||e.type)); });
 </script>`;
@@ -145,6 +157,11 @@ async function main() {
     await p.goto(BASE + '/assets/characters/_still.html');
     await p.waitFor('!!window.__ready || !!window.__err', 90000, 500);
     const err = await p.eval('window.__err || ""');
+    if (WANT_TEX && !err) {
+      try { await p.waitFor('window.__texOk && window.__texOk()', 30000, 300); }
+      catch { console.log('  ⛔ 텍스처가 30초 안에 안 풀렸다 — 이 판의 그림은 «맨몸»일 수 있다'); }
+      await sleep(800);
+    }
     if (err) { console.log('⛔ 못 실었다: ' + err); return; }
     const ci = await p.eval('JSON.stringify(window.__clipInfo)');
     if (WANT_CLIP) console.log('  클립: ' + ci);

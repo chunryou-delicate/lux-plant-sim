@@ -69,6 +69,9 @@ function prepare(g) {
      있으면 그것을 쓴다. 뒷머리 무게는 아래 fixBackHair 가 옮기니 팔을 따라 날개처럼 펼쳐지지 않는다(게임에서 볼 것). */
   if (clips.walk_arm) clips.walk = clips.walk_arm;
   if (clips.idle_arm) clips.idle = clips.idle_arm;
+  /* 10-08 (char): crouch 도 팔이 들렸다(벌림각 47°). 옛 repot 의 팔 8뼈 회전만 옮긴 crouch_arm(32.4°) 을 쓴다.
+     ⚠ 팔이 바뀌면 손 높이가 바뀐다 ⇒ crouchEnd 의 손 높이 표도 crouch_arm 것(HAND_ARM)으로 바꾼다. */
+  if (clips.crouch_arm) { clips.crouch = clips.crouch_arm; clips.crouch.__arm = true; }
   if (!clips.idle) throw new Error('hero.glb 에 idle 클립이 없습니다');
   /* 파일 키 — 스킨 메시의 바인드 상자(정점 min/max). 재서 1.10 이 아니면 그 값을 믿는다 */
   let h = 0;
@@ -173,13 +176,16 @@ function warm(m) {
    sleep → sleep 통째(처음부터 누운 자세다).
    ※ 낮잠은 게임이 'sleep' 으로 부른다 — doze 를 쓸 따로 된 동작이 없다. */
 const HAND = [[0.8, 0.666], [1.2, 0.526], [1.6, 0.312], [2.0, 0.166], [2.4, 0.120]];
+/* crouch_arm(팔 회전만 옮긴 판)의 오른손 높이 — 10-08 char 실측(probe 로 원본을 재면 위 HAND 가 그대로 나온다: 자기시험).
+   팔이 내려와 손이 2.5~3.5cm 더 낮다. */
+const HAND_ARM = [[0.8, 0.641], [1.2, 0.490], [1.6, 0.277], [2.0, 0.134], [2.4, 0.090]];
 const SIT_TAIL = 1.0;
 
-function crouchEnd(targetY) {
+function crouchEnd(targetY, table = HAND) {
   const want = Math.min(0.62, Math.max(0.12, (Number.isFinite(targetY) ? targetY : 0) + 0.15));
   let t = 2.4;
-  for (let i = 0; i < HAND.length - 1; i++) {
-    const [t0, y0] = HAND[i], [t1, y1] = HAND[i + 1];
+  for (let i = 0; i < table.length - 1; i++) {
+    const [t0, y0] = table[i], [t1, y1] = table[i + 1];
     if (want <= y0 && want >= y1) { t = t0 + (t1 - t0) * (y0 - want) / (y0 - y1); break; }
   }
   return Math.max(1.0, Math.round(t * 10) / 10);
@@ -203,7 +209,7 @@ function actClipFrom(src, kind, targetY) {
   if (kind === 'sleep' && C.sleep) return cut(C.sleep, 0, C.sleep.duration, 'sleep:act');
   /* 물·심기·거두기, 그리고 모르는 동작은 crouch → 없으면 idle */
   if (C.crouch) {
-    const end = Math.min(crouchEnd(targetY), C.crouch.duration);
+    const end = Math.min(crouchEnd(targetY, C.crouch.__arm ? HAND_ARM : HAND), C.crouch.duration);
     const from = Math.max(0, +(end - 1.5).toFixed(1));
     return cut(C.crouch, from, end, `crouch:act:${from}-${end}`);
   }
