@@ -143,11 +143,11 @@ export const SCRIPTS = {
     { who: 'jachwi', face: 'surprise', text: '…뭐야?!' },
     { who: 'moni',   text: '놀랐지. 나는 몬이야.' },
     { who: 'moni',   text: '**식물신**이 보냈어. 너 혼자 두면 안 되겠다고.' },
-    { who: 'jachwi', text: '식물신…? 그런 게 있어?' },
-    { who: 'moni',   face: 'happy', text: '있어. 얼굴은 못 봤지만.' },
+    { who: 'jachwi', face: 'curious', text: '식물신…? 그런 게 있어?' },
+    { who: 'moni',   face: 'calm', text: '있어. 얼굴은 못 봤지만.' },
     { who: 'moni',   text: '내가 도와줄게. 대단한 건 못 해도, 굶지는 않게.' },
-    { who: 'moni',   face: 'happy', text: '가방에 콩나물 시루가 있어. **어두운 데** 놓아 봐.' },
-    { who: 'jachwi', text: '…어두운 데?' },
+    { who: 'moni',   face: 'teach', text: '가방에 콩나물 시루가 있어. **어두운 데** 놓아 봐.' },
+    { who: 'jachwi', face: 'think', text: '…어두운 데?' },
     { who: 'moni',   text: '응. 어두운 자리도 쓸모가 있거든.' }
   ],
 
@@ -168,7 +168,7 @@ export const SCRIPTS = {
        처음 거둔 것에 「해냈다」가 붙는 자리다. 그림은 2026-08-23 부터 있었는데 쓰는 줄이 없었다. */
     { who: 'jachwi', face: 'proud', text: '…이게 되네.' },
     /* ★ 2026-09-25 — 25자 안으로 줄였다(폰 한 줄). 「빛을 봤으면 초록」은 무순(questRadish5)이 한다 */
-    { who: 'moni',   face: 'happy', text: '하얗지? 어두운 데 둬서 그래.' }
+    { who: 'moni',   face: 'teach', text: '하얗지? 어두운 데 둬서 그래.' }
   ],
 
   /* ★식물신 — 대사 한 줄. 외형 없음.
@@ -213,9 +213,9 @@ export const SCRIPTS = {
      「줄기 하나 … 네 머리 잎이랑 닮았다」는 몬이의 머리 잎과 처음 잇는 줄이다(보이는 것만 말한다). */
   monsteraArrived: [
     { who: 'jachwi', face: 'surprise', text: '가방에… 화분이 하나 들어와 있어.' },
-    { who: 'moni',   face: 'happy',    text: '몬스테라야. 나도 오랜만에 보네.' },
+    { who: 'moni',   face: 'cheer',    text: '몬스테라야. 나도 오랜만에 보네.' },
     { who: 'jachwi', face: 'curious',  text: '줄기 하나뿐인데… 네 머리 잎이랑 닮았다.' },   /* ★ 2026-08-23 — curious 가 생겼다(§FACE_FILE: jachwi.curious → think 그림) */
-    { who: 'moni',   face: 'curious',  text: '닮았지. 대신 얘는 콩나물이랑 **반대**야.' },
+    { who: 'moni',   face: 'teach',  text: '닮았지. 대신 얘는 콩나물이랑 **반대**야.' },
     { who: 'moni',   text: '콩나물은 어두울수록 하얗게 잘 됐잖아.' },
     { who: 'moni',   text: '얘는 어두운 데 두면 **아무 일도 안 일어나.**' },
     { who: 'jachwi', face: 'worry',    text: '먹지도 못하는 걸 왜…' },
@@ -230,13 +230,13 @@ export const SCRIPTS = {
     { who: 'moni',   text: '얘는 정해져 있어. **두 번째랑 세 번째** 잎.' },
     { who: 'moni',   text: '거기 무늬가 나. 그게 값이 돼.' },
     { who: 'jachwi', face: 'curious',  text: '…값이 된다고?' },
-    { who: 'moni',   face: 'happy',    text: '응. **이 방을 나가는 돈**, 거기서 나와.' },
+    { who: 'moni',   face: 'teach',    text: '응. **이 방을 나가는 돈**, 거기서 나와.' },
     { who: 'moni',   text: '가방에서 꺼내서 **밝은 데** 놓아 봐.' }
   ],
 
   /* 창턱으로 옮긴 뒤 */
   monsteraMoved: [
-    { who: 'moni', face: 'happy', text: '창턱! 여기가 이 방에서 제일 밝아.' },
+    { who: 'moni', face: 'cheer', text: '창턱! 여기가 이 방에서 제일 밝아.' },
     { who: 'moni', text: '바로는 안 변해. 며칠 지나야 알아.' }
   ],
 
@@ -252,7 +252,7 @@ export const SCRIPTS = {
        지우는 것이 맞아 보이지만 **검사 파일이 이 창 소유가 아니라** 손대지 않았다.
        판단과 붙일 자리는 `docs/handoff/story2-to-plan.md` 에 적었다. */
   monsteraStalled: [
-    { who: 'moni', face: 'sad', text: '며칠째 그대로야…' },
+    { who: 'moni', face: 'worry', text: '며칠째 그대로야…' },
     { who: 'moni', text: '빛이 모자라면 날짜만 가고 모양은 안 변해. 더 밝은 자리를 찾아 보자.' }
   ],
 
@@ -270,9 +270,9 @@ export const SCRIPTS = {
     { who: 'jachwi', face: 'worry', text: '열흘이 지났는데… 아무 일도 안 일어난다.' },
     { who: 'moni',   face: 'curious', text: '이상하지? 물도 줬고 날짜도 갔는데 새순이 안 나.' },
     { who: 'moni',   text: '얘는 어두운 데선 아예 안 움직여. 날짜만 가는 거야.' },
-    { who: 'jachwi', text: '그럼 어디로.' },
+    { who: 'jachwi', face: 'curious', text: '그럼 어디로.' },
     /* ★자리를 불러 주되 **이유를 같이** 준다. 이름만 주면 다음 집에서 못 쓴다. */
-    { who: 'moni',   face: 'happy', text: '창턱. 이 방에서 해가 제일 오래 드는 자리야.' },
+    { who: 'moni',   face: 'teach', text: '창턱. 이 방에서 해가 제일 오래 드는 자리야.' },
     { who: 'moni',   text: '옮겨 놓고 며칠 기다려 봐. 바로는 안 변해.' }
   ],
   /* 창턱(또는 다른 데)으로 옮겼는데도 여전히 안 자랄 때.
@@ -282,16 +282,16 @@ export const SCRIPTS = {
      ⚠ 자리가 충분히 밝으면 이 말은 안 나온다. 그게 맞다 — 안 필요한 물건을 권하지 않는다. */
   monsteraGuideLamp: [
     { who: 'jachwi', face: 'worry', text: '옮겼는데도 그대로다.' },
-    { who: 'moni',   face: 'sad', text: '자리는 맞아. 근데 이 방은 창턱까지 써도 모자랄 때가 있어.' },
+    { who: 'moni',   face: 'worry', text: '자리는 맞아. 근데 이 방은 창턱까지 써도 모자랄 때가 있어.' },
     { who: 'jachwi', text: '더 밝은 데가 없는데.' },
-    { who: 'moni',   face: 'curious', text: '없지. 그래서 이제부터는 **자리 말고 빛을 사는** 거야.' },
+    { who: 'moni',   face: 'teach', text: '없지. 그래서 이제부터는 **자리 말고 빛을 사는** 거야.' },
     { who: 'moni',   text: '식물등 하나. 그 자리 위에 켜 두면 그 자리만 밝아져.' }
   ],
 
   /* ★첫 플레이의 그 한 장면 — 말린 새순 */
   spearFurled: [
     { who: 'jachwi', face: 'surprise', text: '뭔가… 돌돌 말린 게 올라왔어.' },
-    { who: 'moni',   face: 'happy', text: '새순이야! 저게 펴지면 잎이 돼.' },
+    { who: 'moni',   face: 'cheer', text: '새순이야! 저게 펴지면 잎이 돼.' },
     /* ★ 2026-09-25 [plan] #12 — 주인공이 이 그루를 «제 편»으로 처음 부르는 한 줄. 식물신 줄 수는 그대로(한 줄) */
     { who: 'jachwi', face: 'proud', text: '…너도 여기서 버텨 보겠다는 거네.' },
     { who: 'god',    text: '자리를 옮긴 것뿐인데 말이지.' }
@@ -305,18 +305,18 @@ export const SCRIPTS = {
        길게 쓰면 Day 4 가 대사 열두 줄이 되어 아무도 안 읽는다.
      ★규칙을 다시 읊지 않는다. 방금 겪은 것을 **한 문장으로 접어 주는** 역할만 한다. */
   learnHarvest: [
-    { who: 'moni', face: 'happy', text: '그리고 오늘, 밥값을 네가 아니라 얘가 냈어.' }
+    { who: 'moni', face: 'proud', text: '그리고 오늘, 밥값을 네가 아니라 얘가 냈어.' }
   ],
   learnCropDark: [
-    { who: 'moni', face: 'curious', text: '**어두운 자리도 자리야.** 이제 알겠지?' }
+    { who: 'moni', face: 'teach', text: '**어두운 자리도 자리야.** 이제 알겠지?' }
   ],
   learnPlantWindow: [
-    { who: 'moni', face: 'happy', text: '얘가 지금 받는 빛, 자라기 시작하는 선을 넘었어.' },
-    { who: 'jachwi', text: '창턱이라서?' },
+    { who: 'moni', face: 'teach', text: '얘가 지금 받는 빛, 자라기 시작하는 선을 넘었어.' },
+    { who: 'jachwi', face: 'curious', text: '창턱이라서?' },
     { who: 'moni', text: '창턱이라서가 아니라 **밝아서**. 다음 집에 가면 창턱부터 찾아.' }
   ],
   learnSpear: [
-    { who: 'moni', face: 'happy', text: '말린 새순은 밝은 자리에서만 나와. 봤다는 게 곧 배운 거야.' }
+    { who: 'moni', face: 'proud', text: '말린 새순은 밝은 자리에서만 나와. 봤다는 게 곧 배운 거야.' }
   ],
 
   /* ═══ §3 살림 — 돈이 실제로 압박이 되는 순간 ═══════════════════════════
@@ -348,22 +348,22 @@ export const SCRIPTS = {
      넷째 줄 "그럼 지금부터 세자"도 뺐다 — **없는 조작을 가리킨다.** 세는 화면이 없다. */
   rentSoon: [
     { who: 'jachwi', face: 'worry', text: '달력에 동그라미 쳐 둔 날이 또 다가온다.' },
-    { who: 'moni',   face: 'curious', text: '이레 남았어. 이십만 원.' },
+    { who: 'moni',   face: 'worry', text: '이레 남았어. 이십만 원.' },
     { who: 'jachwi', face: 'tired', text: '…알아. 나도 세고 있었어.' }
   ],
   rentFirst: [
     { who: 'jachwi', face: 'tired', text: '이십만 원. 들어오자마자 한 번에 빠져나갔다.' },
-    { who: 'moni',   face: 'curious', text: '오늘이 딱 그 날이었구나. 밥값도 나갔고.' },
-    { who: 'jachwi', text: '…남은 걸로 넉 달은 될까.' },
-    { who: 'moni',   face: 'sad', text: '아니. 이대로면 석 달이야.' },
+    { who: 'moni',   face: 'calm', text: '오늘이 딱 그 날이었구나. 밥값도 나갔고.' },
+    { who: 'jachwi', face: 'think', text: '…남은 걸로 넉 달은 될까.' },
+    { who: 'moni',   face: 'worry', text: '아니. 이대로면 석 달이야.' },
     { who: 'moni',   text: '밥값을 얘들이 대신 내 주면 그때 넉 달. 그것도 빠듯하고.' },
     { who: 'jachwi', face: 'worry', text: '…석 달 안에 뭘 해야 한다는 소리네.' },
-    { who: 'moni',   text: '나는 세는 것만 할게. 뭘 할지는 네가 정해.' }
+    { who: 'moni',   face: 'calm', text: '나는 세는 것만 할게. 뭘 할지는 네가 정해.' }
   ],
   /* 두 번째 달부터. ★반복 대사라 짧다 — 같은 무게를 두 번 주면 첫 달이 가벼워진다. */
   rentAgain: [
     { who: 'jachwi', face: 'tired', text: '월세 날. 이제 놀라지도 않는다.' },
-    { who: 'moni',   face: 'curious', text: '안 놀라게 된 것도 는 거야, 그것도.' }
+    { who: 'moni',   face: 'proud', text: '안 놀라게 된 것도 는 거야, 그것도.' }
   ],
   brokeTalk: [
     /* ★★ 2026-08-29 [Char]·[Plan] — worry 가 아니라 **numb**(말을 잃은 얼굴).
@@ -377,7 +377,7 @@ export const SCRIPTS = {
     { who: 'jachwi', text: '네가 미안할 게 뭐 있어.' },
     /* ★초보 모드는 죽지 않는다(story_arc.md §0). 그 규칙을 대사가 그대로 말한다 —
        "게임 오버가 없다"고 설명하지 않고, 하루가 그냥 계속된다는 걸로 보여준다. */
-    { who: 'moni',   text: '오늘 하루는 그래도 지나가. 내일도 지나가고.' }
+    { who: 'moni',   face: 'calm', text: '오늘 하루는 그래도 지나가. 내일도 지나가고.' }
   ],
 
   /* ★★★ 2026-08-30 [Plan] — **두 번째 파산부터는 «다른 말»이다.**
@@ -385,7 +385,7 @@ export const SCRIPTS = {
      ⚠ 문안은 [Plan] 것을 한 글자도 안 고쳤다. */
   brokeTalkAgain: [
     { who: 'jachwi', face: 'numb', text: '또 바닥이다.' },
-    { who: 'moni',   face: 'sad',  text: '이번엔 안 놀라네.' },
+    { who: 'moni',   face: 'calm',  text: '이번엔 안 놀라네.' },
     { who: 'jachwi', text: '…놀랄 힘도 아껴야지.' }
   ],
 
@@ -404,12 +404,12 @@ export const SCRIPTS = {
      ⚠ 계절이 빛에 걸리는 날(story_arc §5 권고 ㉠) 이 줄은 **현재형으로 되돌려야** 한다.
        그때까지 몬이는 겪지 않은 것을 겪은 것처럼 말하지 않는다. */
   autumnCame: [
-    { who: 'jachwi', text: '창으로 드는 빛이… 각도가 달라졌나?' },
-    { who: 'moni',   face: 'curious', text: '가을이야. 해가 조금씩 짧아져.' },
+    { who: 'jachwi', face: 'think', text: '창으로 드는 빛이… 각도가 달라졌나?' },
+    { who: 'moni',   face: 'teach', text: '가을이야. 해가 조금씩 짧아져.' },
     { who: 'moni',   text: '겨울로 갈수록 창 하나로는 모자라져.' },
     { who: 'moni',   text: '자리 탓이 아니야. **해가 낮아지는** 거지.' },
-    { who: 'jachwi', text: '그럼 더 밝은 데로 옮기면 되나?' },
-    { who: 'moni',   face: 'sad', text: '이 방에서 창턱보다 밝은 데는 없어.' },
+    { who: 'jachwi', face: 'curious', text: '그럼 더 밝은 데로 옮기면 되나?' },
+    { who: 'moni',   face: 'worry', text: '이 방에서 창턱보다 밝은 데는 없어.' },
     { who: 'moni',   text: '여기서부터는 자리 말고 다른 게 필요해.' }
   ],
   /* ★ 셋째 줄은 autumnCame 과 같은 이유로 단정을 뺐다(위 §계절 주석).
@@ -424,18 +424,18 @@ export const SCRIPTS = {
      ★ 「늦은 거지 틀린 게 아니고」는 지켰다. 이 구간의 톤을 그 한 줄이 잡는다. */
   winterCame: [
     { who: 'jachwi', face: 'tired', text: '유리에 김이 서린다.' },
-    { who: 'moni',   face: 'sad', text: '겨울이야. 이 동네는 겨울이 길어.' },
+    { who: 'moni',   face: 'worry', text: '겨울이야. 이 동네는 겨울이 길어.' },
     { who: 'moni',   text: '해가 제일 낮은 계절이야. 창 하나로 버티기엔 짧고.' },
     { who: 'jachwi', face: 'worry', text: '…겨울이 오면 셈이 급해진다.' },
     /* ★실패가 아니라 더딘 것이다. 그 톤을 여기서 못 지키면 경로 C 가 벌처럼 읽힌다. */
-    { who: 'moni',   text: '급할 건 없어. **늦은 거지 틀린 게 아니고.**' }
+    { who: 'moni',   face: 'calm', text: '급할 건 없어. **늦은 거지 틀린 게 아니고.**' }
   ],
   /* 겨울 열흘째까지 반지하일 때. 위 winterCame 의 톤을 한 번 더 받쳐 준다. */
   winterStill: [
     { who: 'jachwi', face: 'tired', text: '겨울에도 반지하다.' },
     { who: 'moni',   text: '겨울에 이사하는 사람 많지 않아. 다들 봄에 나가.' },
-    { who: 'jachwi', text: '위로야?' },
-    { who: 'moni',   face: 'curious', text: '사실이야. 위로는 덤이고.' }
+    { who: 'jachwi', face: 'curious', text: '위로야?' },
+    { who: 'moni',   face: 'calm', text: '사실이야. 위로는 덤이고.' }
   ],
 
   /* 식물등 해금 — ★필수품이 아니라 **선택**이다(story_arc.md §4).
@@ -450,8 +450,8 @@ export const SCRIPTS = {
        그때 여기를 같이 고친다. 순수 코어 판(A·C 경로 · 등이 공짜가 아님)은 화면이 아니라 상관없다.
      ★ 「…그런데 없이는 안 커.」는 [plan] 확정 줄이라 그대로 둔다. */
   lampUnlocked: [
-    { who: 'moni',   face: 'curious', text: '가을이 됐으니 하나 알려 줄게. **식물등.**' },
-    { who: 'moni',   face: 'happy',   text: '가방 열어 봐. 첫 개는 그냥 왔어.' },
+    { who: 'moni',   face: 'teach', text: '가을이 됐으니 하나 알려 줄게. **식물등.**' },
+    { who: 'moni',   face: 'teach',   text: '가방 열어 봐. 첫 개는 그냥 왔어.' },
     { who: 'jachwi', face: 'surprise', text: '…공짜로?' },
     { who: 'moni',   text: LAMP.kwhKo ? `첫 개만. 전기는 하루 ${LAMP.kwhKo}이고.` : '첫 개만.' },
     /* ══ ★★★ 2026-08-27 — **「살까 말까」가 아니라 «언제 살까»다** ([Plan] 문안) ══════
@@ -475,7 +475,7 @@ export const SCRIPTS = {
     { who: 'moni',   text: '…그런데 없이는 안 커.' },
     { who: 'moni',   face: 'teach',   text: '어디 다느냐가 문제야.' },
     { who: 'jachwi', face: 'think',   text: '…제일 오래 쓸 자리에 달아야겠네.' },
-    { who: 'moni',   face: 'happy',   text: '고민할 건 그쪽이야.' }
+    { who: 'moni',   face: 'teach',   text: '고민할 건 그쪽이야.' }
   ],
   lampBought: [
     { who: 'jachwi', face: 'happy', text: '샀다. 생각보다 작네.' },
@@ -483,14 +483,14 @@ export const SCRIPTS = {
     { who: 'jachwi', face: 'surprise', text: '어… 방이 좀 밝아진 것 같기도 하고.' },
     /* ★등이 자리를 이기지 못한다 — 이 게임의 뼈대다(story_arc.md §4).
        설명이 아니라 **플레이어가 이미 본 것**으로 짚는다. */
-    { who: 'moni',   face: 'curious', text: '방이 아니라 **그 자리**가 밝아진 거야. 등 밑에 있는 것만.' },
+    { who: 'moni',   face: 'teach', text: '방이 아니라 **그 자리**가 밝아진 거야. 등 밑에 있는 것만.' },
     { who: 'moni',   text: '어두운 구석에 두고 켜면 아무 일도 안 일어나. 그건 전에 봤지?' }
   ],
   /* 해금하고 이레가 지나도록 안 샀을 때. ★"왜 안 사냐"가 아니다 — 안 사는 것도 답이다. */
   lampSkipped: [
-    { who: 'moni',   face: 'curious', text: '등은 아직 안 샀네.' },
+    { who: 'moni',   face: 'worry', text: '등은 아직 안 샀네.' },
     { who: 'jachwi', text: '이사 자금에 보태려고.' },
-    { who: 'moni',   text: '그것도 답이야. 창턱이 버텨 주는 동안은.' }
+    { who: 'moni',   face: 'calm', text: '그것도 답이야. 창턱이 버텨 주는 동안은.' }
     /* ⛔ 2026-10-07 D14 — **게임 안에서는 안 뜬다. 지우지 않고 둔다.**
        까닭: 이 줄은 `tutorial.js:731` 「해금됐는데 ts.lamp.owned === 0」일 때만 나는데,
        게임 화면은 첫 등을 가방에 공짜로 넣는다(game.html:12393 `L.owned = 1`). 그래서 «등이 0개인 판»이 화면에서는 안 온다.
@@ -503,14 +503,14 @@ export const SCRIPTS = {
   /* 며칠째 형태가 안 오를 때. ★혼내지 않고, 정답 자리를 불러 주지도 않는다.
      자리를 고르는 것은 플레이어 몫이다. */
   plantStalled: [
-    { who: 'moni',   face: 'sad', text: '며칠째 그대로야.' },
+    { who: 'moni',   face: 'worry', text: '며칠째 그대로야.' },
     { who: 'jachwi', text: '물은 줬는데.' },
     { who: 'moni',   text: '물이 아니야. 저 자리에서 못 받는 게 있어.' },
-    { who: 'moni',   face: 'curious', text: '지금은 날짜만 가는 중이야. 옮겨 보자.' }
+    { who: 'moni',   face: 'worry', text: '지금은 날짜만 가는 중이야. 옮겨 보자.' }
   ],
   plantStalledAgain: [
-    { who: 'moni',   face: 'sad', text: '또 멈췄어.' },
-    { who: 'jachwi', face: 'worry', text: '…어디로 옮겨야 되지.' },
+    { who: 'moni',   face: 'worry', text: '또 멈췄어.' },
+    { who: 'jachwi', face: 'think', text: '…어디로 옮겨야 되지.' },
     { who: 'moni',   text: '제일 오래 잘 자랐던 자리를 떠올려 봐. 손이 먼저 기억할걸.' }
   ],
   /* 겨울에 멈춘 것은 자리 탓만이 아니다. ★"멈춘 것"과 "죽은 것"을 가른다 —
@@ -518,10 +518,10 @@ export const SCRIPTS = {
   plantStalledWinter: [
     { who: 'jachwi', face: 'worry', text: '겨울인데 안 자란다.' },
     { who: 'moni',   text: '겨울엔 원래 더뎌. 멈춘 거랑 죽은 거는 달라.' },
-    { who: 'moni',   face: 'curious', text: '얘는 기다리는 중이야. 봄까지 기다려도 되고, 등을 켜 줘도 되고.' }
+    { who: 'moni',   face: 'teach', text: '얘는 기다리는 중이야. 봄까지 기다려도 되고, 등을 켜 줘도 되고.' }
   ],
   plantResumed: [
-    { who: 'moni',   face: 'happy', text: '봐. 다시 오르기 시작했어.' },
+    { who: 'moni',   face: 'proud', text: '봐. 다시 오르기 시작했어.' },
     { who: 'jachwi', face: 'happy', text: '자리 하나 옮겼을 뿐인데.' },
     { who: 'moni',   text: '그 "뿐인데"가 제일 어려운 거야.' }
   ],
@@ -553,16 +553,16 @@ export const SCRIPTS = {
      ⇒ 몬이가 먼저 안다 → 자취녀는 「아직 잘 모르겠는데」 → 「다 자라면 보여」. 「무늬가 섞였다」(박사님 낱말)는 살리고
        말하는 사람만 바꿨다. 줄 길이만 나눴다(25자). 나머지 줄은 그대로다. */
   varieGranted: [
-    { who: 'moni',   face: 'curious',  text: '이 잎, **무늬가 섞였어.**' },
+    { who: 'moni',   face: 'teach',  text: '이 잎, **무늬가 섞였어.**' },
     { who: 'jachwi', face: 'surprise', text: '…어디? 아직 잘 모르겠는데.' },
     { who: 'moni',   text: '**다 자라면** 보여.' },
     { who: 'moni',   text: '무늬 진 데는 빛을 못 만들어.' },
     { who: 'moni',   text: '그래서 **밝은 자리에서만** 나와.' },
     { who: 'jachwi', text: '내가 뭐 한 것도 없는데.' },
-    { who: 'moni',   face: 'happy', text: '창턱에 올려놨잖아. **그게 한 거야.**' },
+    { who: 'moni',   face: 'proud', text: '창턱에 올려놨잖아. **그게 한 거야.**' },
     { who: 'moni',   text: '어두운 데 뒀으면 이 잎은 아예 안 났어.' },
-    { who: 'jachwi', text: '…그런가.' },
-    { who: 'moni',   face: 'curious', text: '이건 값이 달라. 근데 지금 이대로는 아니야.' },
+    { who: 'jachwi', face: 'think', text: '…그런가.' },
+    { who: 'moni',   face: 'teach', text: '이건 값이 달라. 근데 지금 이대로는 아니야.' },
     { who: 'moni',   text: '잘라서 물에 꽂아. 뿌리가 나오면 그때 팔 수 있어.' },
     { who: 'jachwi', face: 'happy', text: '해 봤던 거네, 그건.' }
   ],
@@ -597,18 +597,18 @@ export const SCRIPTS = {
        ★ 2026-09-25 — 이제 이 줄이 장면의 «첫 줄»이다. 자취녀는 아직 못 본다(아랫줄 curious). */
     { who: 'moni',   face: 'surprise', text: '어어. 잠깐만. **무늬가 섞였어.**' },
     { who: 'jachwi', face: 'curious',  text: '…어디? 그냥 말린 잎인데.' },
-    { who: 'moni',   face: 'curious',  text: '지금은 안 보여. **다 자라면** 보여.' },
+    { who: 'moni',   face: 'teach',  text: '지금은 안 보여. **다 자라면** 보여.' },
     /* ★ 2026-10-07 D10(총괄 결정 · [plan] 추천) — 「운 좋다, 너」를 뺐다. 잎2·3 무늬는 «정해져» 있다
        (PROLOGUE_VARIE_LEAVES = [2,3]) — 「운」은 거짓이고, 위 ①「운이 아니다」와도 어긋났다.
        몬이가 도착 날 한 말(「얘는 정해져 있어. 두 번째랑 세 번째 잎.」)을 «지킨» 줄로 바꿨다 — 약속이 지켜지는 날이다. */
     { who: 'moni',   text: '**두 번째 잎**이야. 말했지, 정해져 있다고.' },
     { who: 'jachwi', face: 'curious',  text: '좋은 거야?' },
-    { who: 'moni',   face: 'happy',    text: '값이 달라. 근데 **한 장으로는 어림도 없어.**' },
-    { who: 'moni',   face: 'curious',  text: '무늬 있는 그루를 잘라 물에 꽂으면,' },
+    { who: 'moni',   face: 'teach',    text: '값이 달라. 근데 **한 장으로는 어림도 없어.**' },
+    { who: 'moni',   face: 'teach',  text: '무늬 있는 그루를 잘라 물에 꽂으면,' },
     { who: 'moni',   text: '그 삽수도 무늬를 물려받아.' },
     { who: 'moni',   text: '**그게 늘리는 방법이야.**' },
     { who: 'jachwi', text: '…자르는 게 무섭긴 한데.' },
-    { who: 'moni',   face: 'happy',    text: '안 자르면 여기서 못 나가.' }
+    { who: 'moni',   face: 'teach',    text: '안 자르면 여기서 못 나가.' }
   ],
 
   /* ═══ ★★ 둘째 무늬 잎 — **「이제 자를 수 있다」** (2026-08-15 박사님 확정) ═══════
@@ -635,7 +635,7 @@ export const SCRIPTS = {
      ⇒ 「자른 건… 죽는 거 아니야?」 이하(물에 꽂기·밝은 데)는 **자를 수 있게 된 날**의 장면(`varieHalfMoon`)으로 옮겼다. */
   varieSecond: [
     { who: 'moni',   face: 'proud', text: '이번 잎에도 **무늬가 섞였어.**' },
-    { who: 'jachwi', text: '그럼 이제 잘라도 돼?' },
+    { who: 'jachwi', face: 'curious', text: '그럼 이제 잘라도 돼?' },
     { who: 'moni',   face: 'teach', text: '아직. 둘 다 **다 자라야** 해.' },
     { who: 'moni',   text: '그때 한 장은 자르고, 한 장은 남기는 거야.' },
     { who: 'jachwi', face: 'tired', text: '또 기다리네.' },
@@ -653,17 +653,17 @@ export const SCRIPTS = {
     { who: 'jachwi', face: 'surprise', text: '…아. 이게 그 무늬구나.' },
     { who: 'moni',   face: 'cheer',    text: '보이지? 다 자라니까 나오잖아.' },
     { who: 'jachwi', face: 'proud',    text: '…이 방에서 이런 게 나네.' },
-    { who: 'moni',   face: 'curious',  text: '다음 잎은 또 달라. 기다려 봐.' }
+    { who: 'moni',   face: 'teach',  text: '다음 잎은 또 달라. 기다려 봐.' }
   ],
   varieHalfMoon: [
     { who: 'jachwi', face: 'surprise', text: '…이건 아까 거랑 완전히 다르네.' },
     { who: 'moni',   face: 'cheer',    text: '**하프문**이야. 흔한 거 아니야.' },
-    { who: 'jachwi', text: '이제 잘라도 돼?' },
+    { who: 'jachwi', face: 'curious', text: '이제 잘라도 돼?' },
     { who: 'moni',   face: 'proud',    text: '이제 돼. 둘 다 다 자랐으니까.' },
     { who: 'jachwi', face: 'worry',    text: '자른 건… 죽는 거 아니야?' },
     { who: 'moni',   face: 'teach',    text: '물에 꽂아. 뿌리 나와. **밝은 데** 두고.' },
     { who: 'jachwi', text: '…드디어 나가는 길이 보이네.' },
-    { who: 'moni',   face: 'happy',    text: '응. 그 한 장이 여기서 나가는 값이야.' }
+    { who: 'moni',   face: 'teach',    text: '응. 그 한 장이 여기서 나가는 값이야.' }
   ],
 
   /* ═══ ★★★ §5.5 퀘스트 — **「지금 뭘 하지?」에 답하는 다섯 줄** (2026-08-17) ═══════
@@ -735,25 +735,25 @@ export const SCRIPTS = {
        이미 말했다. 그래서 여기서는 **가방이 왜 아무 자리도 아닌가**만 말한다. */
   /* ★ 2026-09-25 [plan] #2 — 3줄 → 1줄. intro 가 방금 13줄을 말한 바로 뒤라 짧게 «꺼내라»만 남긴다 */
   questPlaceSiru: [
-    { who: 'moni', face: 'curious', text: '가방 안은 자리가 아니야. 꺼내야 시작돼.' }
+    { who: 'moni', face: 'teach', text: '가방 안은 자리가 아니야. 꺼내야 시작돼.' }
   ],
   /* ⚠ `cropPlaced`(«좋아. 나흘이면 먹을 수 있어.»)와 **같은 턴**이다 — 날수를 또 말하지 않는다 */
   questDonePlaceSiru: [
-    { who: 'moni', face: 'happy', text: '자리를 정했네. 이제 저 자리 빛이 얘 몫이야.' }
+    { who: 'moni', face: 'proud', text: '자리를 정했네. 이제 저 자리 빛이 얘 몫이야.' }
   ],
 
   /* ② ★ **놓는 것과 시작하는 것은 다른 동작이다**(`first_play.js §물주기`).
      ⚠ 「0일차」라는 말을 안 쓴다 — 화면에 그런 글자가 없다. 「오늘이 첫날」로 족하다. */
   questWaterSiru: [
-    { who: 'jachwi', text: '놨으니까 이제 기다리면 되나.' },
+    { who: 'jachwi', face: 'think', text: '놨으니까 이제 기다리면 되나.' },
     /* ★ 2026-09-25 — 「물을 안 줬잖아」만 하면 심기(🌱) 걸음을 건너뛴다(박사님 순서: 놓기 → 심기 → 물) */
-    { who: 'moni',   face: 'curious', text: '아직. 씨앗 심고 물까지 줘야 해.' },
+    { who: 'moni',   face: 'teach', text: '아직. 씨앗 심고 물까지 줘야 해.' },
     { who: 'moni',   text: '놓기만 하면 날짜만 가. 물을 준 날부터 세는 거야.' }
   ],
   /* ★ 2026-09-25 [plan] #2 — 「어제가 아니고?」·「어제는 그냥 놓여 있던 날」을 뺐다. 이제 물 준 «그 순간»에 뜨므로
      (화면이 물 주자마자 checkQuests 를 부른다 · W2) 「어제」가 없는 판(같은 날 놓고 물 준 판)에서 거짓이 된다. */
   questDoneWaterSiru: [
-    { who: 'moni', face: 'happy', text: '이제 세기 시작했어. 오늘이 첫날.' }
+    { who: 'moni', face: 'proud', text: '이제 세기 시작했어. 오늘이 첫날.' }
   ],
 
   /* ③ ★ **안 거두면 아무 일도 안 난다** — `firstPlayNextEvent` 의 계약 그대로다.
@@ -762,25 +762,25 @@ export const SCRIPTS = {
   /* ★ 2026-09-25 [plan] #2 — 「다 자란 것 같은데」가 거짓이었다. 이 줄은 물 준 날(D0)에 열린다 —
      그날 콩나물은 막 시작했다. 그래서 «앞으로»의 물음으로 바꿨다(자라면 → 거둬야 먹는다). */
   questFirstHarvest: [
-    { who: 'jachwi', text: '다 자라면 그냥 먹으면 돼?' },
-    { who: 'moni',   face: 'curious', text: '거둬야 먹지. 거둬야 다음 바퀴도 돌고.' },
-    { who: 'jachwi', text: '안 거두면?' },
+    { who: 'jachwi', face: 'curious', text: '다 자라면 그냥 먹으면 돼?' },
+    { who: 'moni',   face: 'teach', text: '거둬야 먹지. 거둬야 다음 바퀴도 돌고.' },
+    { who: 'jachwi', face: 'curious', text: '안 거두면?' },
     { who: 'moni',   text: '그 자리에 그대로 있어. 아무 일도 안 나고.' }
   ],
   questDoneFirstHarvest: [
-    { who: 'moni', face: 'happy', text: '거뒀으니까 다음 바퀴가 돌 수 있어. 거두는 것도 일이야.' }
+    { who: 'moni', face: 'teach', text: '거뒀으니까 다음 바퀴가 돌 수 있어. 거두는 것도 일이야.' }
   ],
 
   /* ④ ★★ **씨앗은 사야 있다.** ⚠ 씨앗값을 안 읊는다 — 500원은 상점 화면이 숫자로 말한다. */
   questResowSiru: [
     { who: 'jachwi', text: '시루가 비었어.' },
-    { who: 'moni',   face: 'curious', text: '거두면 비지. 다시 심어야 또 돌아.' },
-    { who: 'jachwi', text: '씨앗은 어디서 나.' },
+    { who: 'moni',   face: 'teach', text: '거두면 비지. 다시 심어야 또 돌아.' },
+    { who: 'jachwi', face: 'curious', text: '씨앗은 어디서 나.' },
     { who: 'moni',   text: '사야 돼. 그게 이 회전의 밑천이야.' }
   ],
   questDoneResowSiru: [
     { who: 'jachwi', text: '같은 시루에서 두 번째로 거뒀다.' },
-    { who: 'moni',   face: 'happy', text: '그게 회전이야. 이제 이 시루는 계속 돌아.' }
+    { who: 'moni',   face: 'teach', text: '그게 회전이야. 이제 이 시루는 계속 돌아.' }
   ],
 
   /* ═══ ★★★ §5.5-b 씨앗 주문 — **「심을 게 없다」에서 멈추던 자리** (2026-08-17) ═══
@@ -806,19 +806,19 @@ export const SCRIPTS = {
        읽어 짓는다. 값이 움직여도 이 대사가 안 낡는다(§2.8). */
   questOrderSeed: [
     { who: 'jachwi', text: '봉지가 비었어. 이제 심을 게 없는데.' },
-    { who: 'moni',   face: 'curious', text: '**[상점]** 열어 봐. 거기 **콩 씨앗**이 있어.' },
+    { who: 'moni',   face: 'teach', text: '**[상점]** 열어 봐. 거기 **콩 씨앗**이 있어.' },
     /* ★ 2026-09-25 [plan] 덤 — 값(「한 봉지에 500원」)을 안 읊는다. 위 §questResowSiru 머리말의
        「씨앗값을 안 읊는다 — 상점 화면이 숫자로 말한다」와 맞춘다. 끝 줄 「시루를 늘리면 그만큼 더」도 뺐다
        (시루를 늘리는 법은 아직 못 배운 때다 · siru_two 가 그 줄이다). `BEAN_WON_KO` 는 이제 안 쓴다. */
     { who: 'moni',   text: '한 봉지가 시루 하나 몫이야.' },
-    { who: 'jachwi', text: '시키면 바로 와?' },
+    { who: 'jachwi', face: 'curious', text: '시키면 바로 와?' },
     { who: 'moni',   text: `안 와. 시킨 건 ${BEAN_LEAD_KO} 도착해.` },
-    { who: 'moni',   face: 'curious', text: '그러니까 거두기 전에 미리 시켜 둬.' }
+    { who: 'moni',   face: 'teach', text: '그러니까 거두기 전에 미리 시켜 둬.' }
   ],
   /* ⚠ 완료는 **두 줄**이다. 이 자리는 몬스테라 도착(총 3회전)과 붙어 있어서 붐빈다 */
   questDoneOrderSeed: [
     { who: 'jachwi', text: '왔다. 바로 심었어.' },
-    { who: 'moni',   face: 'happy', text: '이제 이 시루는 네가 시키는 만큼 돌아.' }
+    { who: 'moni',   face: 'proud', text: '이제 이 시루는 네가 시키는 만큼 돌아.' }
   ],
 
   /* ⑤ ★★ 가르치는 것은 「많이 사면 많이 번다」가 **아니다** — 그건 `siru8`·`siru16` 것이다.
@@ -827,11 +827,11 @@ export const SCRIPTS = {
   /* ★ 2026-09-02 — 문안 ㉮([plan] plan-quest-reframe): 「어긋나게」를 안 말한다 — 둘에서는 까닭이 없다(ⓚ).
      「왜 넣나」는 한 줄로 선다: 「더 자주 거두려고」. */
   questSiruTwo: [
-    { who: 'moni',   face: 'curious', text: '하나로는 드문드문하잖아. 하나 더 있으면 자주 거둬.' }
+    { who: 'moni',   face: 'teach', text: '하나로는 드문드문하잖아. 하나 더 있으면 자주 거둬.' }
   ],
   questDoneSiruTwo: [
     { who: 'jachwi', text: '거두는 날이 겹치지 않게 됐다.' },
-    { who: 'moni',   face: 'happy', text: '더 버는 게 아니라 **안 끊기는** 거야. 그게 살림이고.' }
+    { who: 'moni',   face: 'teach', text: '더 버는 게 아니라 **안 끊기는** 거야. 그게 살림이고.' }
   ],
 
   /* ⑥ ★★★ **자리를 잡아 주는 것이 할 일**이다. 도착은 플레이어가 하는 일이 아니다.
@@ -844,7 +844,7 @@ export const SCRIPTS = {
      바로 앞 `monsteraArrived` 끝 줄(「가방에서 꺼내서 밝은 데」)을 되묻는 꼴이었다.
      ⚠ 「창턱」이라고는 여전히 안 부른다(위 ⑤) — 「볕이 제일 오래 머무는 데」까지만. */
   questMonsteraHome: [
-    { who: 'moni', face: 'happy', text: '볕이 제일 오래 머무는 데로 데려가 줘.' }
+    { who: 'moni', face: 'teach', text: '볕이 제일 오래 머무는 데로 데려가 줘.' }
   ],
   questDoneMonsteraHome: [
     { who: 'jachwi', text: '…잘 부탁해.' },
@@ -856,12 +856,12 @@ export const SCRIPTS = {
      ⚠ 완료가 **한 줄**인 까닭: 같은 순간에 `questFirstCut`(«잎이 두 장이 됐어» 6줄)이 열리고,
        판에 따라 `varieLucky`(11줄)까지 겹친다. 장수를 여기서 또 세면 세 번 세는 셈이 된다. */
   questLeafTwo: [
-    { who: 'jachwi', text: '잎은 언제 나.' },
-    { who: 'moni',   face: 'curious', text: '날짜로는 못 세. 빛이 쌓인 만큼 나는 거라서.' },
+    { who: 'jachwi', face: 'curious', text: '잎은 언제 나.' },
+    { who: 'moni',   face: 'teach', text: '날짜로는 못 세. 빛이 쌓인 만큼 나는 거라서.' },
     { who: 'moni',   text: '같은 한 달이어도 어디 뒀느냐로 갈려.' }
   ],
   questDoneLeafTwo: [
-    { who: 'moni', face: 'happy', text: '한 장 더 났네. 자리를 잘 골라 놨다는 뜻이야.' }
+    { who: 'moni', face: 'proud', text: '한 장 더 났네. 자리를 잘 골라 놨다는 뜻이야.' }
   ],
 
   /* ⑧ ★★★ **잎 세 장** — 박사님이 *"잎 3개 날 때까지"* 라고 하신 그 끝이다.
@@ -875,15 +875,15 @@ export const SCRIPTS = {
      ⚠ 마지막 줄이 다음을 가리키되 **무늬 얘기를 다시 꺼내지 않는다** — 그건 `varieLucky` 가
        이미 통째로 말했고, 여기서 또 하면 세 번째다. */
   questLeafThree: [
-    { who: 'jachwi', text: '잎을 더 늘려서 뭐 해.' },
-    { who: 'moni',   face: 'curious', text: '잎이 늘면 무늬가 날 자리도 같이 늘어.' },
+    { who: 'jachwi', face: 'curious', text: '잎을 더 늘려서 뭐 해.' },
+    { who: 'moni',   face: 'teach', text: '잎이 늘면 무늬가 날 자리도 같이 늘어.' },
     { who: 'moni',   text: '어두운 데선 그 자리가 안 생겨. 날짜만 가고.' }
   ],
   questDoneLeafThree: [
     /* ★ 2026-08-29 [Char]·[Plan] — 여기도 proud 다. 세 장을 세는 것은 «자랑»이지 «기쁨»이 아니다. */
     { who: 'jachwi', face: 'proud', text: '세 장.' },
-    { who: 'moni',   face: 'happy', text: '여기까지가 첫걸음이야. 놓고, 주고, 거두고, 옮기고.' },
-    { who: 'moni',   face: 'curious', text: '나머지는 이걸 크게 하는 것뿐이야.' }
+    { who: 'moni',   face: 'proud', text: '여기까지가 첫걸음이야. 놓고, 주고, 거두고, 옮기고.' },
+    { who: 'moni',   face: 'teach', text: '나머지는 이걸 크게 하는 것뿐이야.' }
   ],
 
   /* ① 첫 플레이가 끝나는 그날 열린다 — 실측으로 **빈 구간의 첫날**이다(Day 33).
@@ -892,19 +892,19 @@ export const SCRIPTS = {
      ⚠ 그 반값을 **숫자로 안 말한다** — 「반값밖에 안 쳐 줘」로 족하다. 값이 움직여도
        그 문장은 참이다(위끝·아래끝을 지키는 것이 그 표의 전부라서 · `crop-balance §3 ★`). */
   questCropMix: [
-    { who: 'jachwi', text: '이제 뭘 하지.' },
-    { who: 'moni',   face: 'curious', text: '콩나물만 먹고 있잖아. 매일.' },
+    { who: 'jachwi', face: 'think', text: '이제 뭘 하지.' },
+    { who: 'moni',   face: 'teach', text: '콩나물만 먹고 있잖아. 매일.' },
     { who: 'jachwi', text: '나오는 게 그거니까.' },
     { who: 'moni',   text: '같은 걸 두 번 먹으면 둘째 그릇은 반값밖에 안 쳐 줘.' },
     { who: 'jachwi', face: 'surprise', text: '…밥에도 값이 매겨져 있어?' },
-    { who: 'moni',   face: 'happy', text: '다른 걸 하나 더 길러 봐. **무순.** 걔는 **밝은 데** 두는 애야.' }
+    { who: 'moni',   face: 'teach', text: '다른 걸 하나 더 길러 봐. **무순.** 걔는 **밝은 데** 두는 애야.' }
   ],
   /* ★ 마지막 줄이 **체력이 오른 것**을 짚는다. 배너만 말하면 조용히 오른 것이 된다 */
   questDoneCropMix: [
     { who: 'jachwi', text: '오늘 밥상에 두 가지가 올라왔어.' },
-    { who: 'moni',   face: 'happy', text: '봐. 같은 걸 두 번 먹는 것보다 낫지.' },
+    { who: 'moni',   face: 'proud', text: '봐. 같은 걸 두 번 먹는 것보다 낫지.' },
     { who: 'jachwi', face: 'tired', text: '손이 두 배로 가는데.' },
-    { who: 'moni',   face: 'curious', text: '그래서 손이 늘었잖아. 방금.' }
+    { who: 'moni',   face: 'proud', text: '그래서 손이 늘었잖아. 방금.' }
   ],
 
   /* ② ★ **이미 있던 퀘스트**다(`siru5_cycle5` · 2026-08-11). 값도 판정도 안 바꿨다 —
@@ -912,17 +912,17 @@ export const SCRIPTS = {
      ★ 「체력이 천장이다」를 여기서 처음이자 유일하게 말한다 — 실측으로 `dialogue.js` 안에
        「체력」이라는 말이 **한 번도 없었다**(0건). */
   questSiru5: [
-    { who: 'moni',   face: 'curious', text: '이제 늘려 볼 때야. 시루 하나로는 하루가 안 메꿔져.' },
-    { who: 'jachwi', text: '늘리면 되는 거야?' },
+    { who: 'moni',   face: 'teach', text: '이제 늘려 볼 때야. 시루 하나로는 하루가 안 메꿔져.' },
+    { who: 'jachwi', face: 'curious', text: '늘리면 되는 거야?' },
     { who: 'moni',   text: '되는데, 손이 모자랄걸.' },
-    { who: 'jachwi', text: '손?' },
-    { who: 'moni',   face: 'happy', text: '하루에 물 줄 수 있는 횟수.' },
+    { who: 'jachwi', face: 'curious', text: '손?' },
+    { who: 'moni',   face: 'teach', text: '하루에 물 줄 수 있는 횟수.' },
     { who: 'moni',   text: '**이 방에서 제일 모자란 거.**' }
   ],
   questDoneSiru5: [
-    { who: 'moni',   face: 'happy', text: '다섯 개가 다섯 바퀴. 이제 이 방이 밥값은 내네.' },
+    { who: 'moni',   face: 'proud', text: '다섯 개가 다섯 바퀴. 이제 이 방이 밥값은 내네.' },
     { who: 'jachwi', face: 'tired', text: '손이 모자라던데.' },
-    { who: 'moni',   face: 'curious', text: '그래서 하나 늘려 놨어.' }
+    { who: 'moni',   face: 'proud', text: '그래서 하나 늘려 놨어.' }
   ],
 
   /* ③ 모주 잎이 둘이 된 날 열린다 — `varieSecond` 가 말한 「이제 됐다」의 손 쪽이다.
@@ -935,17 +935,17 @@ export const SCRIPTS = {
        (「희멀겋게 웃자랐다」). 값이 움직여도 대사가 안 낡는다.
      ★ 끝 줄이 **등과 이사 둘 다를 처음 가리킨다.** 답은 안 준다. */
   questRadish5: [
-    { who: 'moni',   face: 'curious', text: '무순도 다섯 판까지 늘려 볼까.' },
-    { who: 'jachwi', text: '콩나물처럼 늘리면 되는 거지?' },
+    { who: 'moni',   face: 'teach', text: '무순도 다섯 판까지 늘려 볼까.' },
+    { who: 'jachwi', face: 'curious', text: '콩나물처럼 늘리면 되는 거지?' },
     { who: 'moni',   text: '늘리는 건 같은데, **아무 데나 놓으면 안 돼.**' },
     { who: 'jachwi', face: 'surprise', text: '왜?' },
-    { who: 'moni',   face: 'happy', text: '콩나물은 어두울수록 하얗고 아삭해.' },
+    { who: 'moni',   face: 'teach', text: '콩나물은 어두울수록 하얗고 아삭해.' },
     { who: 'moni',   text: '무순은 **반대야.** 빛을 봐야 파래지고 알싸해져.' }
   ],
   questDoneRadish5: [
     { who: 'jachwi', text: '판마다 색이 다르네. 어두운 데 둔 건 희멀겋게 웃자랐어.' },
-    { who: 'moni',   face: 'curious', text: '이 방에서 무순이 파래지는 자리는 몇 개 없어.' },
-    { who: 'jachwi', text: '더 늘리려면?' },
+    { who: 'moni',   face: 'teach', text: '이 방에서 무순이 파래지는 자리는 몇 개 없어.' },
+    { who: 'jachwi', face: 'curious', text: '더 늘리려면?' },
     { who: 'moni',   text: '방을 바꾸든지, 빛을 들이든지.' }
   ],
 
@@ -954,9 +954,9 @@ export const SCRIPTS = {
        할 일 줄(`quest.js §todo`)이 말한다 — 값이 움직여도 대사가 안 낡는다. */
   questSiru8: [
     { who: 'jachwi', face: 'tired', text: '다섯 개로는 티가 잘 안 나네.' },
-    { who: 'moni',   face: 'curious', text: '시루 하나가 하루치를 조금씩 만들어. 그게 개수만큼 늘어.' },
-    { who: 'jachwi', text: '늘리면 늘어난다는 소리네.' },
-    { who: 'moni',   face: 'happy', text: '응. 여기선 그게 제일 정직한 길이야.' }
+    { who: 'moni',   face: 'teach', text: '시루 하나가 하루치를 조금씩 만들어. 그게 개수만큼 늘어.' },
+    { who: 'jachwi', face: 'think', text: '늘리면 늘어난다는 소리네.' },
+    { who: 'moni',   face: 'teach', text: '응. 여기선 그게 제일 정직한 길이야.' }
   ],
   questDoneSiru8: [
     { who: 'jachwi', face: 'surprise', text: '확실히 채소가 빨리 쌓인다.' },
@@ -974,34 +974,34 @@ export const SCRIPTS = {
      ⚠ 수를 «안 박는다» — 「시루값이 먼저 나가고 첫 회전은 닷새 뒤」는 `harvestDays` 가 바뀌어도
        뜻이 안 낡는다. 몇 개인지·며칠인지는 화면이 말한다(§2.8). */
   questSiru16: [
-    { who: 'moni',   face: 'curious', text: '**한참** 더 늘려야 하루가 안 깎여.' },
-    { who: 'jachwi', text: '지금까진 계속 줄고 있었구나.' },
-    { who: 'moni',   face: 'sad', text: '응. 조금씩. 그래서 티가 안 났어.' },
+    { who: 'moni',   face: 'teach', text: '**한참** 더 늘려야 하루가 안 깎여.' },
+    { who: 'jachwi', face: 'think', text: '지금까진 계속 줄고 있었구나.' },
+    { who: 'moni',   face: 'calm', text: '응. 조금씩. 그래서 티가 안 났어.' },
     { who: 'jachwi', text: '지금도 빠듯한데.' },
     { who: 'moni',   text: '늘리는 동안은 **더** 깎여. 시루값이 먼저 나가고 첫 회전은 닷새 뒤라서.' },
     { who: 'jachwi', face: 'worry', text: '…그럼 지금보다 나빠진다는 거네.' },
     { who: 'moni',   text: '한동안은. 그러고 나서 넘어가.' },
-    { who: 'moni',   face: 'happy', text: '거기까지 가면 처음으로 **버는 쪽**이 돼.' }
+    { who: 'moni',   face: 'teach', text: '거기까지 가면 처음으로 **버는 쪽**이 돼.' }
   ],
   questDoneSiru16: [
     { who: 'jachwi', face: 'happy', text: '…줄지 않는다. 오늘 처음이야.' },
-    { who: 'moni',   face: 'happy', text: '여기서부터는 모으는 거야. 버티는 게 아니라.' },
+    { who: 'moni',   face: 'proud', text: '여기서부터는 모으는 거야. 버티는 게 아니라.' },
     /* ★ 다음 축을 가리킨다 — 채소는 노가다고, 큰 것은 몬스테라다(박사님 확정) */
     { who: 'moni',   text: '근데 이 속도로 이사비를 모으려면 한참이야. 그건 다른 길이 있어.' }
   ],
 
   questFirstCut: [
     { who: 'jachwi', face: 'surprise', text: '잎이 두 장이 됐어.' },
-    { who: 'moni',   face: 'curious', text: '그럼 하나는 떼도 돼. 하나는 남으니까.' },
-    { who: 'jachwi', text: '떼서 뭐 해.' },
+    { who: 'moni',   face: 'teach', text: '그럼 하나는 떼도 돼. 하나는 남으니까.' },
+    { who: 'jachwi', face: 'curious', text: '떼서 뭐 해.' },
     { who: 'moni',   text: '물에 꽂아. 뿌리가 나와.' },
-    { who: 'jachwi', text: '아무거나 꽂으면 돼?' },
-    { who: 'moni',   face: 'happy', text: '**잎 한 장짜리라야** 꽂혀. 여러 장이면 흙에만 심어.' }
+    { who: 'jachwi', face: 'curious', text: '아무거나 꽂으면 돼?' },
+    { who: 'moni',   face: 'teach', text: '**잎 한 장짜리라야** 꽂혀. 여러 장이면 흙에만 심어.' }
   ],
   questDoneFirstCut: [
     { who: 'jachwi', face: 'surprise', text: '뿌리가 났어. 진짜로.' },
-    { who: 'moni',   face: 'happy', text: '났지. 한 그루가 두 그루가 된 거야.' },
-    { who: 'jachwi', text: '자르는 게 늘리는 거였구나.' }
+    { who: 'moni',   face: 'cheer', text: '났지. 한 그루가 두 그루가 된 거야.' },
+    { who: 'jachwi', face: 'think', text: '자르는 게 늘리는 거였구나.' }
   ],
 
   /* ④ ★★★ **등을 산다** (2026-08-16 박사님 확정 · `quest.js §buy_lamp`).
@@ -1016,10 +1016,10 @@ export const SCRIPTS = {
      초보 판은 여름·맑음 고정이라 겪지 않은 것을 겪은 것처럼 말하게 된다(§autumnCame 주석과 같은 규율).
      「볕을 사 오면」도 «들이는» 것으로 — 첫 등은 공짜로 가방에 온다(§lampUnlocked · game.html L.owned=1). */
   questBuyLamp: [
-    { who: 'jachwi', text: '가을이면 해가 더 짧아지겠지.' },
-    { who: 'moni',   face: 'curious', text: '응. 그러니까 **볕을 들이는** 거야.' },
+    { who: 'jachwi', face: 'think', text: '가을이면 해가 더 짧아지겠지.' },
+    { who: 'moni',   face: 'teach', text: '응. 그러니까 **볕을 들이는** 거야.' },
     { who: 'jachwi', face: 'surprise', text: '볕을 들여?' },
-    { who: 'moni',   face: 'happy', text: '**등 밑**이 이 방의 둘째 창턱이 돼.' }
+    { who: 'moni',   face: 'teach', text: '**등 밑**이 이 방의 둘째 창턱이 돼.' }
   ],
   /* ★ 끝난 뒤에 **다음 줄을 가리킨다** — 밝은 자리가 생겼으니 ⑤(밝은 데서 뿌리내리기)가 열린다.
      ⚠ 여기서 「무늬 등급이 오른다」까지 말하지 않는다. 그건 ⑤ 가 할 말이고,
@@ -1027,24 +1027,24 @@ export const SCRIPTS = {
      ★ 2026-09-25 — 「켰어」를 뺐다. 이 줄은 등이 «생긴»(owned) 순간에 끝나고 아직 달지도 않았다. */
   questDoneBuyLamp: [
     { who: 'jachwi', text: '등이 생겼다. 손바닥만 하네.' },
-    { who: 'moni',   face: 'curious', text: '사람 눈엔 약해도 식물한텐 달라.' },
-    { who: 'moni',   face: 'happy', text: '이제 이 방에도 **밝은 자리**를 만들 수 있어.' }
+    { who: 'moni',   face: 'teach', text: '사람 눈엔 약해도 식물한텐 달라.' },
+    { who: 'moni',   face: 'proud', text: '이제 이 방에도 **밝은 자리**를 만들 수 있어.' }
   ],
 
   /* ⑤ ★★ **빛이 등급을 정한다** (확정문 `varie-grade §3` · `cutting §2-③`).
      ⚠ 퍼센트를 안 읊는다 — 몬이는 규칙을 말하지 숫자를 말하지 않는다(`varieSecond` 와 같은 규율).
      ⚠ 등급 이름(산반·하프문·풀문)도 아직 안 쓴다. 플레이어가 본 적이 없다. */
   questVarieBright: [
-    { who: 'moni',   face: 'curious', text: '무늬 삽수는 **어디 두느냐**가 중요해.' },
+    { who: 'moni',   face: 'teach', text: '무늬 삽수는 **어디 두느냐**가 중요해.' },
     { who: 'jachwi', text: '뿌리는 어디서든 나잖아.' },
     { who: 'moni',   text: '뿌리는 그래. 근데 무늬는 아니야.' },
     { who: 'jachwi', face: 'surprise', text: '무늬가 자리를 타?' },
-    { who: 'moni',   face: 'happy', text: '밝은 데서 뿌리내린 애가 더 좋은 무늬를 내. 어두우면 흔한 게 나오고.' }
+    { who: 'moni',   face: 'teach', text: '밝은 데서 뿌리내린 애가 더 좋은 무늬를 내. 어두우면 흔한 게 나오고.' }
   ],
   questDoneVarieBright: [
-    { who: 'moni',   face: 'curious', text: '그 자리에서 뿌리내렸네.' },
-    { who: 'jachwi', text: '그래서?' },
-    { who: 'moni',   face: 'happy', text: '값이 달라져. 얼마나 다른지는 내놔 보면 알아.' }
+    { who: 'moni',   face: 'proud', text: '그 자리에서 뿌리내렸네.' },
+    { who: 'jachwi', face: 'curious', text: '그래서?' },
+    { who: 'moni',   face: 'teach', text: '값이 달라져. 얼마나 다른지는 내놔 보면 알아.' }
   ],
 
   /* ⑤ ★★★ **이 게임에서 제일 중요한 대사다.** 안 말하면 영영 모른다.
@@ -1059,23 +1059,23 @@ export const SCRIPTS = {
      ⚠ 이사비 금액을 안 박았다 — `shortMoney` 가 이미 「이백만 원」을 말하고, 두 곳이
        같은 수를 말하면 값이 움직일 때 한쪽만 낡는다(2026-08-11 에 실제로 그랬다). */
   questSellVarie: [
-    { who: 'moni',   face: 'curious', text: '이제 이 방을 **나가는 얘기**를 하자.' },
+    { who: 'moni',   face: 'teach', text: '이제 이 방을 **나가는 얘기**를 하자.' },
     { who: 'jachwi', face: 'surprise', text: '돈만 모으면 되는 거 아니야?' },
     { who: 'moni',   text: '아니야. 둘이야.' },
     { who: 'moni',   text: '하나는 이사비.' },
     { who: 'moni',   text: '하나는 **무늬 삽수를 팔아 본 적.**' },
-    { who: 'jachwi', text: '팔아 본 적? 갖고만 있으면 안 돼?' },
+    { who: 'jachwi', face: 'curious', text: '팔아 본 적? 갖고만 있으면 안 돼?' },
     { who: 'moni',   face: 'sad', text: '안 돼. **값이 매겨져 봐야 그게 값이야.**' },
-    { who: 'jachwi', text: '…한 장을 떼야 한다는 소리네.' },
-    { who: 'moni',   face: 'happy', text: '응. 그게 이 방의 마지막 문이야.' }
+    { who: 'jachwi', face: 'think', text: '…한 장을 떼야 한다는 소리네.' },
+    { who: 'moni',   face: 'teach', text: '응. 그게 이 방의 마지막 문이야.' }
   ],
   /* ★ 마지막 줄이 **다음 판을 가리킨다** — 한 번 팔아 봤으면 그 길을 다시 걸으면 된다.
      이 구간에서 「그래서 이제 뭘 하지」가 다시 나오지 않게 하는 유일한 줄이다. */
   questDoneSellVarie: [
     { who: 'jachwi', text: '팔렸다.' },
-    { who: 'moni',   face: 'curious', text: '이제 남은 건 돈뿐이야.' },
+    { who: 'moni',   face: 'calm', text: '이제 남은 건 돈뿐이야.' },
     { who: 'jachwi', face: 'tired', text: '그건 제일 안 되는 건데.' },
-    { who: 'moni',   face: 'happy', text: '아까 그거 한 번 더 하면 돼. **길은 이제 알잖아.**' }
+    { who: 'moni',   face: 'proud', text: '아까 그거 한 번 더 하면 돼. **길은 이제 알잖아.**' }
   ],
 
   /* ═══ §6 이사 — 조건이 하나씩 차고, 마침내 나간다 ═══════════════════════ */
@@ -1103,7 +1103,7 @@ export const SCRIPTS = {
      ★ 「돈을 먼저 말한다」는 «밥값»으로 지킨다. 그리고 주인공의 바람(「해 드는 방」)을 **처음 말하는 자리**로 쓴다. */
   shortBothCrop: [
     { who: 'jachwi', face: 'tired',   text: '…해 드는 방은 한참 멀었겠지.' },
-    { who: 'moni',   face: 'curious', text: '멀어. 그러니까 밥부터 돌리자.' },
+    { who: 'moni',   face: 'teach', text: '멀어. 그러니까 밥부터 돌리자.' },
     { who: 'moni',   text: '밥값이 덜 나가야 나머지도 모여.' }
   ],
   /* ★ 2026-09-25 — d22 무렵에 뜬다. 등·무늬 낱말을 안 쓴다(그 둘은 아직 저마다의 장면이 먼저 말할 몫이다) */
@@ -1114,10 +1114,10 @@ export const SCRIPTS = {
     { who: 'moni',   face: 'calm',  text: '저 화분이 거기까지 데려다줄 거야.' }
   ],
   shortMoney: [
-    { who: 'moni',   face: 'curious', text: '배울 건 다 배웠어. 남은 건 돈이야.' },
+    { who: 'moni',   face: 'teach', text: '배울 건 다 배웠어. 남은 건 돈이야.' },
     { who: 'jachwi', face: 'tired', text: '…제일 안 되는 거네.' },
     { who: 'moni',   text: '이백만 원. 보증금이랑 첫 달 월세랑 이삿짐값.' },
-    { who: 'jachwi', text: '한 번에 나가는구나.' },
+    { who: 'jachwi', face: 'think', text: '한 번에 나가는구나.' },
     { who: 'moni',   text: '한 번만 나가면 돼. 그다음엔 이 방이 아니고.' }
   ],
   /* 돈은 됐는데 배움이 모자랄 때. ★말이 완전히 다르다 —
@@ -1126,15 +1126,15 @@ export const SCRIPTS = {
        `tutorial.canMoveOut` 이 배움 넷을 요구해서 이사 버튼이 실제로 잠겨 있는데
        몬이가 "나가는 건 된다"고 하면, 플레이어는 있지도 않은 버튼을 찾게 된다. */
   shortLearn: [
-    { who: 'moni',   face: 'curious', text: '돈은 됐는데, 아직 안 해 본 게 있어.' },
+    { who: 'moni',   face: 'teach', text: '돈은 됐는데, 아직 안 해 본 게 있어.' },
     { who: 'jachwi', face: 'surprise', text: '돈이 됐으면 나가면 되는 거 아니야?' },
     { who: 'moni',   text: '다음 방도 창은 하나야. 여기서 안 배우면 거기서 똑같이 헤매.' },
-    { who: 'moni',   face: 'sad', text: '그래서 짐은 아직 안 싸도 돼. 하나 남았어.' }
+    { who: 'moni',   face: 'calm', text: '그래서 짐은 아직 안 싸도 돼. 하나 남았어.' }
   ],
   moveReady: [
-    { who: 'moni',   face: 'happy', text: '됐다. 둘 다 됐어.' },
+    { who: 'moni',   face: 'cheer', text: '됐다. 둘 다 됐어.' },
     { who: 'jachwi', face: 'surprise', text: '진짜?' },
-    { who: 'moni',   text: '언제 나갈지는 네가 정해. 오늘이어도 되고.' }
+    { who: 'moni',   face: 'calm', text: '언제 나갈지는 네가 정해. 오늘이어도 되고.' }
   ],
 
   /* ★반지하 구간의 끝이자 감정의 정점.
@@ -1149,7 +1149,7 @@ export const SCRIPTS = {
     { who: 'jachwi', text: '박스 네 개. 여기서 산 게 백 일이 넘는데.' },
     { who: 'moni',   face: 'curious', text: '화분은 내가 안고 갈까?' },
     { who: 'jachwi', face: 'happy', text: '네가 어떻게 안아.' },
-    { who: 'moni',   face: 'happy', text: '못 안지. 그냥 말해 본 거야.' },
+    { who: 'moni',   face: 'calm', text: '못 안지. 그냥 말해 본 거야.' },
     { who: 'jachwi', face: 'cry', text: '…엄마 아빠한테 자랑할 게 생겼는데.' },
     { who: 'moni',   face: 'sad', text: '…' },
     { who: 'moni',   text: '들었을 거야.' },
@@ -1157,7 +1157,7 @@ export const SCRIPTS = {
     { who: 'jachwi', face: 'happy', text: '그게 뭐야.' },
     { who: 'jachwi', text: '불 끄고 가자. 어차피 잘 안 들어오던 불.' },
     { who: 'god',    text: '어두운 방에서도 자라는 것이 있었구나.' },
-    { who: 'moni',   face: 'happy', text: '가자. 다음 방은 창이 높대.' }
+    { who: 'moni',   face: 'cheer', text: '가자. 다음 방은 창이 높대.' }
   ],
 
   /* ★★ 2026-08-11 추가 — **③ 원룸의 첫 장면. 여기가 통째로 비어 있었다.**
@@ -1241,14 +1241,14 @@ export const SCRIPTS = {
        방 데이터가 조금이라도 어두워지면 **여덟이 일곱이 된다.** 그때 이 줄도 같이 고쳐야 한다. */
   movedInOneroom: [
     { who: 'jachwi', face: 'surprise', text: '…창이 눈높이에 있네.' },
-    { who: 'moni',   face: 'happy',   text: '높지. 지나가는 사람 발만 보이지는 않아.' },
+    { who: 'moni',   face: 'calm',   text: '높지. 지나가는 사람 발만 보이지는 않아.' },
     { who: 'jachwi', text: '박스를 푸니까 금방 찬다. 놓을 데는 저기랑 비슷한가.' },
-    { who: 'moni',   face: 'curious', text: '한 칸 더 많아. 그건 별거 아니고 — 밝은 자리가 늘었어.' },
+    { who: 'moni',   face: 'teach', text: '한 칸 더 많아. 그건 별거 아니고 — 밝은 자리가 늘었어.' },
     { who: 'moni',   text: '저 방은 등 없이 자라는 자리가 창턱 하나였잖아. 여긴 여덟이야.' },
     { who: 'jachwi', face: 'tired',   text: '…대신 통장이 한 번에 얇아졌고.' },
     { who: 'moni',   face: 'sad',     text: '응. 이백만 원. 그건 나간 거 맞아.' },
-    { who: 'moni',   face: 'curious', text: '그리고 여기서부터 무늬는 아무도 안 줘. 어디에 두느냐로만 나와.' },
-    { who: 'jachwi', text: '…자리로 만드는 건 해 봤어.' }
+    { who: 'moni',   face: 'teach', text: '그리고 여기서부터 무늬는 아무도 안 줘. 어디에 두느냐로만 나와.' },
+    { who: 'jachwi', face: 'think', text: '…자리로 만드는 건 해 봤어.' }
   ],
 
   /* ═══ §7 작은 말들 ═════════════════════════════════════════════════════
@@ -1259,13 +1259,13 @@ export const SCRIPTS = {
 
   /* 첫 플레이 · 콩나물이 자라는 사흘 */
   chatCrop1: [
-    { who: 'jachwi', text: '콩나물이 진짜 자랄까.' },
-    { who: 'moni',   face: 'curious', text: '어두운 데 뒀으면 자라.' }
+    { who: 'jachwi', face: 'think', text: '콩나물이 진짜 자랄까.' },
+    { who: 'moni',   face: 'teach', text: '어두운 데 뒀으면 자라.' }
   ],
   chatCrop2: [
     { who: 'jachwi', face: 'surprise', text: '뭔가 하얀 게 올라왔어.' },
-    { who: 'moni',   face: 'happy', text: '봐. 빛 없이도 자라는 게 있어.' },
-    { who: 'jachwi', text: '내일이면 먹는 건가.' },
+    { who: 'moni',   face: 'teach', text: '봐. 빛 없이도 자라는 게 있어.' },
+    { who: 'jachwi', face: 'think', text: '내일이면 먹는 건가.' },
     { who: 'moni',   text: '내일 아침에 열어 봐.' }
   ],
   /* ★★ 2026-08-11 추가 — **회전이 도는 구간의 같은 자리**를 채운다.
@@ -1285,24 +1285,24 @@ export const SCRIPTS = {
      ★ 매일 나는 말은 «한 줄». 「빈 날」에만·맨 뒤(§pickChatter — 다른 작은 말이 없을 때만).
      ★ ④「물러섬」은 «영영» 그 자리에 선다 — 「그만둔다」가 아니라 「멈춘다」. 「마음 내키면」이 「안 해도 된다」를 막는다.
      ⚠ 날 문턱은 §NUDGE_DAYS — [plan] 밑값이고, 「뜬 날·열쇠」 표로 다시 센다고 했다. 여기 안 박는다. */
-  nudgeOffer: [ { who: 'moni', face: 'curious', text: '해 보면 알 거야.' } ],
+  nudgeOffer: [ { who: 'moni', face: 'teach', text: '해 보면 알 거야.' } ],
   nudgeAsk:   [ { who: 'moni', face: 'curious', text: '그거 아직이지?' } ],
   /* ⚠ [plan] 은 «worry» 라 했는데 몬이 초상화에 그 키가 없다(game.html §FACE_FILE.moni: base·happy·sad·curious·surprise).
      없는 키는 소리 없이 기본 얼굴로 떨어지므로(dialogue_coverage ⑷) 있는 것 중 제일 가까운 «sad» 를 쓴다.
      «worry» 그림이 생기면 그때 바꾼다 — [Char] 몫. */
-  nudgeWorry: [ { who: 'moni', face: 'sad',     text: '무슨 일 있어?' } ],
-  nudgeBack:  [ { who: 'moni',                  text: '급한 건 아니야. 마음 내키면 해.' } ],
+  nudgeWorry: [ { who: 'moni', face: 'worry',     text: '무슨 일 있어?' } ],
+  nudgeBack:  [ { who: 'moni',   face: 'calm', text: '급한 건 아니야. 마음 내키면 해.' } ],
   /* ★ 2026-09-06 ([plan] plan-after-setup-steps ⓔ) — 등(buy_lamp)의 낯 ④만 «다른 말»: 등은 물러서지 않는다(「등이 곧 길」 · 겨울이 오면 늦는다).
      걱정 낯 그대로 · 매일. */
-  nudgeBackLamp: [ { who: 'moni', face: 'sad', text: '겨울 오기 전에는 있어야 해.' } ],
+  nudgeBackLamp: [ { who: 'moni', face: 'worry', text: '겨울 오기 전에는 있어야 해.' } ],
 
   cropHandsShort: [
-    { who: 'moni', face: 'curious', text: '손이 다 됐네 — 물 주는 날을 엇갈리게 해 봐.' }
+    { who: 'moni', face: 'teach', text: '손이 다 됐네 — 물 주는 날을 엇갈리게 해 봐.' }
   ],
 
   chatCropAgain: [
     { who: 'jachwi', text: '오늘도 하얀 게 올라와 있다.' },
-    { who: 'moni',   face: 'curious', text: '이제 안 놀라네.' },
+    { who: 'moni',   face: 'proud', text: '이제 안 놀라네.' },
     { who: 'jachwi', text: '놀랄 일은 아니지. 좋은 일이지.' }
   ],
 
@@ -1340,14 +1340,14 @@ export const SCRIPTS = {
   chatOneroomMorning: [
     { who: 'jachwi', text: '아침에 눈을 떴는데 방이 밝다.' },
     { who: 'jachwi', face: 'surprise', text: '불을 안 켰는데.' },
-    { who: 'moni',   face: 'curious', text: '저 방은 낮에도 켜야 했지.' },
+    { who: 'moni',   face: 'calm', text: '저 방은 낮에도 켜야 했지.' },
     { who: 'jachwi', text: '…그랬지.' }
   ],
   /* ★★ 밝아진 대가 — 콩나물 자리가 아홉에서 하나가 됐다(실측).
      몬이가 위로하지 않는다. 세어 주고 만다. */
   chatOneroomDark: [
-    { who: 'jachwi', text: '시루 놓을 어두운 데를 찾는데 잘 안 보인다.' },
-    { who: 'moni',   face: 'curious', text: '한 칸 있어. 침대 옆에.' },
+    { who: 'jachwi', face: 'think', text: '시루 놓을 어두운 데를 찾는데 잘 안 보인다.' },
+    { who: 'moni',   face: 'teach', text: '한 칸 있어. 침대 옆에.' },
     { who: 'jachwi', face: 'surprise', text: '한 칸?' },
     { who: 'moni',   text: '저 방엔 아홉 칸이었어. 어두운 건 저 방이 제일 잘하던 거였고.' },
     { who: 'jachwi', face: 'tired', text: '…밝아진 값을 콩나물로 내는구나.' }
@@ -1357,9 +1357,9 @@ export const SCRIPTS = {
      즉 화면에서 실제로 시루가 한 자리에 겹쳐 서 있고, 이 말은 그것을 가리킨다. */
   chatOneroomSiru: [
     { who: 'jachwi', text: '시루가 다 한 자리에 모여 있다.' },
-    { who: 'moni',   face: 'curious', text: '어두운 칸이 거기뿐이라 그래.' },
-    { who: 'jachwi', text: '하나쯤 창가에 두면 안 되나.' },
-    { who: 'moni',   face: 'sad', text: '두면 초록이 되고 써. 그건 저 방에서 배웠잖아.' }
+    { who: 'moni',   face: 'teach', text: '어두운 칸이 거기뿐이라 그래.' },
+    { who: 'jachwi', face: 'think', text: '하나쯤 창가에 두면 안 되나.' },
+    { who: 'moni',   face: 'teach', text: '두면 초록이 되고 써. 그건 저 방에서 배웠잖아.' }
   ],
   /* ★ 진짜로 늘어난 것 — 등 없이 자라는 자리가 **1칸 → 8칸**(창턱 4 + 선반 4).
      ⚠ 2026-08-15 밤(story4) — 예전엔 「다섯」이었다. avg7 자로 센 값이었고 스토리는
@@ -1367,24 +1367,24 @@ export const SCRIPTS = {
        선반 넷은 `oneroom-shelf:5·7·4·6` = 4.90 · 4.46 · 3.22 · **3.00**(경계) 이다. */
   chatOneroomBright: [
     { who: 'jachwi', text: '창을 가로질러 놓을 데가 넉 줄이나 있다.' },
-    { who: 'moni',   face: 'happy', text: '거기 넷하고 선반 위 넷. 등 없이 자라는 자리가 여덟이야.' },
+    { who: 'moni',   face: 'teach', text: '거기 넷하고 선반 위 넷. 등 없이 자라는 자리가 여덟이야.' },
     { who: 'jachwi', text: '저 방은 창턱 하나였고.' },
-    { who: 'moni',   face: 'curious', text: '하나였지. 그 하나를 지키느라 백 일을 썼고.' }
+    { who: 'moni',   face: 'calm', text: '하나였지. 그 하나를 지키느라 백 일을 썼고.' }
   ],
   /* ★ 미화하지 않는다 — 원룸도 하늘을 다 보는 방은 아니다
      (`house_rooms.json` §oneroom.skyViewK 1.18: *"골목 안 2층. 맞은편 건물이 아직 하늘의
      상당 부분을 가린다"*). 그래도 반지하와의 차이는 진짜다. */
   chatOneroomWindow: [
     { who: 'jachwi', text: '창은 큰데 맞은편 건물이 걸린다.' },
-    { who: 'moni',   face: 'curious', text: '골목 안 이층이니까. 하늘을 다 보는 방은 아니야.' },
+    { who: 'moni',   face: 'calm', text: '골목 안 이층이니까. 하늘을 다 보는 방은 아니야.' },
     { who: 'jachwi', text: '그래도 발은 안 보이잖아.' },
-    { who: 'moni',   face: 'happy', text: '그건 큰 차이지.' }
+    { who: 'moni',   face: 'calm', text: '그건 큰 차이지.' }
   ],
   chatOneroomEmpty: [
     { who: 'jachwi', text: '박스 네 개를 다 풀었는데 방이 안 찬다.' },
-    { who: 'moni',   face: 'curious', text: '넓어졌으니까.' },
-    { who: 'jachwi', text: '빈 데가 이렇게 많아도 되나.' },
-    { who: 'moni',   face: 'happy', text: '채워질 거야. 화분으로.' }
+    { who: 'moni',   face: 'calm', text: '넓어졌으니까.' },
+    { who: 'jachwi', face: 'think', text: '빈 데가 이렇게 많아도 되나.' },
+    { who: 'moni',   face: 'calm', text: '채워질 거야. 화분으로.' }
   ],
   /* ★ 등을 사서 온 판. 「산 등이 이사를 따라온다」는 2026-08-06 에 방 데이터로 보장됐다
      (`house_rooms.json` §oneroom-growlight-bar).
@@ -1406,12 +1406,12 @@ export const SCRIPTS = {
      ⚠ 「문턱」·「확률」 같은 말은 안 쓴다. 플레이어는 아직 갈라진 잎을 본 적이 없다. */
   chatOneroomLamp: [
     { who: 'jachwi', text: '저 방에서 산 등이 여기도 달려 있다.' },
-    { who: 'moni',   face: 'curious', text: '창턱 위에 붙어. 근데 안 켜도 돼.' },
+    { who: 'moni',   face: 'teach', text: '창턱 위에 붙어. 근데 안 켜도 돼.' },
     { who: 'jachwi', face: 'surprise', text: '네 입에서 그 말이 나오네.' },
     { who: 'moni',   text: '이 창턱은 창만으로도 잎에 구멍이 나는 밝기야. 저 방은 아니었고.' },
-    { who: 'jachwi', text: '구멍?' },
-    { who: 'moni',   face: 'happy', text: '몬스테라잖아. 원래 그런 잎이야.' },
-    { who: 'moni',   face: 'curious', text: '등은 그걸 **더 자주** 나게 해. 그뿐이야.' }
+    { who: 'jachwi', face: 'curious', text: '구멍?' },
+    { who: 'moni',   face: 'teach', text: '몬스테라잖아. 원래 그런 잎이야.' },
+    { who: 'moni',   face: 'teach', text: '등은 그걸 **더 자주** 나게 해. 그뿐이야.' }
   ],
   /* 등을 안 사고 온 판. ★안 산 것을 나무라지 않는다(lampSkipped 와 같은 결).
      ★ 2026-08-15 밤(story4) — 마지막 줄이 «자라는 데까지는 그래. 그 위는 창이 못 하고.»
@@ -1419,19 +1419,19 @@ export const SCRIPTS = {
        ⇒ 지금 참인 것으로 바꿨다: 원룸 창턱 6.69 > 반지하 창턱 4.80. */
   chatOneroomNoLamp: [
     { who: 'jachwi', text: '창턱 위에 등 걸이가 비어 있다.' },
-    { who: 'moni',   face: 'curious', text: '저 방에서 안 샀으니까. 여기 걸이는 그대로 있어.' },
+    { who: 'moni',   face: 'calm', text: '저 방에서 안 샀으니까. 여기 걸이는 그대로 있어.' },
     { who: 'jachwi', text: '창이 밝으면 됐지.' },
-    { who: 'moni',   face: 'happy', text: '됐어. 이 창턱은 등을 안 켜도 저 방 창턱보다 밝아.' }
+    { who: 'moni',   face: 'proud', text: '됐어. 이 창턱은 등을 안 켜도 저 방 창턱보다 밝아.' }
   ],
   /* ★ ③ 의 규칙 전환을 살림 속에서 한 번 더 짚는다 — 확정 무늬는 이사에서 끝났다
      (`tutorial.stepVarieGrant` 가 `!ts.movedOut` 을 본다). 새 규칙을 가르치는 것이 아니라
      **아무도 안 준다는 사실**을 받아들이는 장면이다. */
   chatOneroomVarie: [
-    { who: 'jachwi', text: '새 잎이 나면 또 무늬가 있으려나.' },
+    { who: 'jachwi', face: 'think', text: '새 잎이 나면 또 무늬가 있으려나.' },
     { who: 'moni',   face: 'curious', text: '이제 아무도 안 정해 줘. 나도 몰라.' },
-    { who: 'jachwi', text: '그럼 뭘 하면 돼.' },
+    { who: 'jachwi', face: 'curious', text: '그럼 뭘 하면 돼.' },
     { who: 'moni',   text: '밝은 자리에 두고 기다리는 것. 그게 다야.' },
-    { who: 'jachwi', text: '…그게 다구나.' }
+    { who: 'jachwi', face: 'think', text: '…그게 다구나.' }
   ],
   /* 원룸에서 맞는 겨울. ★`winter_still` 은 `!ts.movedOut` 로 잠겨 여기까지 안 온다
      (tutorial.js §winter_still) — 그 자리를 이 작은 말이 받는다.
@@ -1439,9 +1439,9 @@ export const SCRIPTS = {
        (story_arc §5 ★★ · autumnCame 주석과 같은 규율). */
   chatOneroomWinter: [
     { who: 'jachwi', face: 'tired', text: '여기서 맞는 첫 겨울이다.' },
-    { who: 'moni',   face: 'curious', text: '저 방에서 겨울에 못 나갈까 봐 겁냈잖아.' },
+    { who: 'moni',   face: 'calm', text: '저 방에서 겨울에 못 나갈까 봐 겁냈잖아.' },
     { who: 'jachwi', text: '…나갔지.' },
-    { who: 'moni',   face: 'happy', text: '나갔지.' }
+    { who: 'moni',   face: 'calm', text: '나갔지.' }
   ],
 
   /* ═══ ★★ 2026-08-15 밤(story4) — **③ 원룸에서 빈 채로 남아 있던 네 자리** ═══════
@@ -1468,9 +1468,9 @@ export const SCRIPTS = {
      ★ 혼내지 않는다. 짐을 내려놓다 생긴 일이지 게으름이 아니다. */
   chatOneroomPotDark: [
     { who: 'jachwi', face: 'worry', text: '몬스테라가 며칠째 그대로다.' },
-    { who: 'moni',   face: 'curious', text: '어디 뒀는지 봐 봐.' },
+    { who: 'moni',   face: 'teach', text: '어디 뒀는지 봐 봐.' },
     { who: 'jachwi', text: '…이삿짐 내려놓은 데. 침대 옆.' },
-    { who: 'moni',   face: 'sad', text: '거긴 시루 자리야. 이 방에서 제일 어두운 칸.' },
+    { who: 'moni',   face: 'teach', text: '거긴 시루 자리야. 이 방에서 제일 어두운 칸.' },
     { who: 'jachwi', face: 'tired', text: '밝은 방으로 와서 제일 어두운 데 놨네.' },
     { who: 'moni',   text: '창턱으로 올려. 그건 저 방에서 해 봤잖아.' }
   ],
@@ -1481,7 +1481,7 @@ export const SCRIPTS = {
     { who: 'jachwi', text: '이 방에서 처음 거둔 콩나물이다.' },
     { who: 'moni',   face: 'curious', text: '어때. 저 방 거랑 달라?' },
     { who: 'jachwi', text: '똑같아. 그게 좀 이상해.' },
-    { who: 'moni',   face: 'happy', text: '이상할 거 없어. 어두운 건 어디서나 어두운 거야.' }
+    { who: 'moni',   face: 'teach', text: '이상할 거 없어. 어두운 건 어디서나 어두운 거야.' }
   ],
 
   /* ★ 살림이 빠듯할 때. **월세 얘기를 안 한다** — 정본은 35만인데 코드는 20만을 뗀다
@@ -1491,9 +1491,9 @@ export const SCRIPTS = {
      ★ 몬이는 세어 주지만 벌어 주지 않는다(§3 의 규율). 마지막 줄이 그것이다. */
   chatOneroomMoney: [
     { who: 'jachwi', face: 'tired', text: '이사에 이백만 원이 한 번에 나갔다.' },
-    { who: 'moni',   face: 'curious', text: '통장이랑 방을 바꾼 거야.' },
-    { who: 'jachwi', text: '…남는 장사였나.' },
-    { who: 'moni',   text: '그건 몇 달 뒤에 세어 보자. 세는 건 내가 잘하잖아.' }
+    { who: 'moni',   face: 'calm', text: '통장이랑 방을 바꾼 거야.' },
+    { who: 'jachwi', face: 'think', text: '…남는 장사였나.' },
+    { who: 'moni',   face: 'calm', text: '그건 몇 달 뒤에 세어 보자. 세는 건 내가 잘하잖아.' }
   ],
 
   /* ★★ **몬스테라가 달라질 때** — ③이 배우는 것이 갈라진 잎이다(story_arc §4-1).
@@ -1504,9 +1504,9 @@ export const SCRIPTS = {
      ⚠ 「잎이 갈라졌다」고 단정하지 않는다. 문턱을 넘어도 그 잎이 갈라지는 것은 굴림이다
        (`mature_prob` 0.21). **밝기가 그 선을 넘었다**까지만 말한다. */
   chatOneroomFenestrate: [
-    { who: 'moni',   face: 'curious', text: '지금 얘가 있는 자리 말이야. 잎이 갈라질 수 있는 밝기야.' },
-    { who: 'jachwi', text: '갈라져?' },
-    { who: 'moni',   face: 'happy', text: '몬스테라 잎에 구멍 뚫린 거 봤지. 그게 그냥 나는 게 아니야.' },
+    { who: 'moni',   face: 'teach', text: '지금 얘가 있는 자리 말이야. 잎이 갈라질 수 있는 밝기야.' },
+    { who: 'jachwi', face: 'curious', text: '갈라져?' },
+    { who: 'moni',   face: 'teach', text: '몬스테라 잎에 구멍 뚫린 거 봤지. 그게 그냥 나는 게 아니야.' },
     { who: 'jachwi', face: 'surprise', text: '저 방에선 한 번도 못 봤는데.' },
     { who: 'moni',   text: '저 방은 창턱에서도 이 선을 못 넘었어. 여기가 처음이야.' }
   ],
@@ -1515,9 +1515,9 @@ export const SCRIPTS = {
      사건이 아니라 **시간이 지난 것 자체**를 말하는 자리라 짧게 끝낸다. */
   chatOneroomSettled: [
     { who: 'jachwi', text: '이 방에 산 지도 꽤 됐다.' },
-    { who: 'moni',   face: 'curious', text: '저 방 얘기 안 한 지 오래됐지.' },
+    { who: 'moni',   face: 'calm', text: '저 방 얘기 안 한 지 오래됐지.' },
     { who: 'jachwi', text: '…그러네.' },
-    { who: 'moni',   face: 'happy', text: '그럼 된 거야.' }
+    { who: 'moni',   face: 'proud', text: '그럼 된 거야.' }
   ],
 
   /* 여름 · 반지하 살림 */
@@ -1528,19 +1528,19 @@ export const SCRIPTS = {
   ],
   chatSummerDamp: [
     { who: 'jachwi', text: '벽에서 눅눅한 냄새가 난다.' },
-    { who: 'moni',   text: '창 좀 열어. 나 말고 너한테 하는 말이야.' }
+    { who: 'moni',   face: 'calm', text: '창 좀 열어. 나 말고 너한테 하는 말이야.' }
   ],
   /* ★ 2026-08-09 — 하루 지출이 20,000 → **16,667원**으로 내려갔다(월세 20만). 대사도 따라간다.
      「만 육천 원 남짓」으로 적은 이유 — 16,667 은 유도된 값이라 딱 떨어지지 않는다.
      정확한 숫자를 대사가 읊으면 값이 조금만 움직여도 곧바로 거짓말이 된다. */
   chatDailySpend: [
     { who: 'jachwi', text: '오늘도 만 육천 원 남짓.' },
-    { who: 'moni',   face: 'curious', text: '하루가 만 육천 원이야. 그렇게 세니까 좀 무섭다.' },
+    { who: 'moni',   face: 'worry', text: '하루가 만 육천 원이야. 그렇게 세니까 좀 무섭다.' },
     { who: 'jachwi', face: 'tired', text: '세지 말걸.' }
   ],
   chatMorning: [
     { who: 'jachwi', text: '아침에 일어나서 제일 먼저 보는 게 화분이 됐다.' },
-    { who: 'moni',   face: 'happy', text: '나는?' },
+    { who: 'moni',   face: 'calm', text: '나는?' },
     { who: 'jachwi', text: '너는 안 봐도 있잖아.' }
   ],
   chatQuiet: [
@@ -1549,24 +1549,24 @@ export const SCRIPTS = {
     { who: 'jachwi', text: '전엔 싫었어.' }
   ],
   chatMoniName: [
-    { who: 'jachwi', text: '몬이는 왜 몬이야?' },
-    { who: 'moni',   face: 'happy', text: '몬스테라니까.' },
+    { who: 'jachwi', face: 'curious', text: '몬이는 왜 몬이야?' },
+    { who: 'moni',   face: 'calm', text: '몬스테라니까.' },
     { who: 'jachwi', text: '성의 없다.' },
-    { who: 'moni',   text: '성의 있는 이름은 네가 지어 줘.' }
+    { who: 'moni',   face: 'calm', text: '성의 있는 이름은 네가 지어 줘.' }
   ],
   /* ★ 2026-08-27 — **두 번째로 나오는 날의 한 줄** ([Plan]).
      ⛔ 「이름 짓기를 만들자」가 «아니다». 지어 주지 않은 채로 시간이 흘렀다는 것만 말한다.
      ⚠ 그래서 이 줄은 **한 마디로 끝난다** — 되물으면 「그럼 지어라」가 되고 그건 새 기능이다. */
   chatMoniName2: [
-    { who: 'jachwi', text: '몬이는 왜 몬이야?' },
-    { who: 'moni',   face: 'happy', text: '…아직도 몬이네.' }
+    { who: 'jachwi', face: 'curious', text: '몬이는 왜 몬이야?' },
+    { who: 'moni',   face: 'calm', text: '…아직도 몬이네.' }
   ],
   /* ★부모 얘기를 여기서 한 번 더 한다 — 다만 **웃으면서** 한다.
      오프닝의 울음과 이사 장면의 한 줄 사이를 이 톤이 이어 준다. */
   chatParents: [
     { who: 'jachwi', text: '엄마가 화분을 잘 죽였어.' },
     { who: 'jachwi', face: 'happy', text: '물을 너무 많이 줘서.' },
-    { who: 'moni',   face: 'curious', text: '너는 안 죽이잖아.' },
+    { who: 'moni',   face: 'calm', text: '너는 안 죽이잖아.' },
     { who: 'jachwi', text: '…아직은.' }
   ],
   chatLandlord: [
@@ -1589,13 +1589,13 @@ export const SCRIPTS = {
   ],
   chatAutumnDust: [
     { who: 'jachwi', text: '잎에 먼지가 앉았다.' },
-    { who: 'moni',   face: 'curious', text: '닦아 줘. 먼지도 빛을 가려.' },
+    { who: 'moni',   face: 'teach', text: '닦아 줘. 먼지도 빛을 가려.' },
     { who: 'jachwi', face: 'surprise', text: '그것도 빛 얘기야?' },
-    { who: 'moni',   face: 'happy', text: '나는 원래 빛 얘기밖에 안 해.' }
+    { who: 'moni',   face: 'calm', text: '나는 원래 빛 얘기밖에 안 해.' }
   ],
   chatAutumnAngle: [
     { who: 'jachwi', text: '해가 드는 자리가 조금씩 안쪽으로 옮겨 온다.' },
-    { who: 'moni',   face: 'curious', text: '깊이 들어오지? 대신 약해. 그게 가을 겨울이야.' }
+    { who: 'moni',   face: 'teach', text: '깊이 들어오지? 대신 약해. 그게 가을 겨울이야.' }
   ],
 
   /* 겨울 */
@@ -1606,17 +1606,17 @@ export const SCRIPTS = {
   ],
   chatWinterSlow: [
     { who: 'jachwi', text: '얘가 요즘 느리다.' },
-    { who: 'moni',   text: '느린 거야. 나쁜 거 아니고.' }
+    { who: 'moni',   face: 'calm', text: '느린 거야. 나쁜 거 아니고.' }
   ],
   chatWinterWindow: [
     { who: 'jachwi', text: '창이 뿌옇다.' },
-    { who: 'moni',   face: 'curious', text: '닦으면 조금 밝아져. 진짜야.' }
+    { who: 'moni',   face: 'teach', text: '닦으면 조금 밝아져. 진짜야.' }
   ],
 
   /* 돈이 얼마 안 남았을 때 */
   chatLowCash1: [
     { who: 'jachwi', face: 'worry', text: '통장을 세 번 봤다. 세 번 다 같았다.' },
-    { who: 'moni',   face: 'curious', text: '세 번 볼 시간에 자.' }
+    { who: 'moni',   face: 'calm', text: '세 번 볼 시간에 자.' }
   ],
   chatLowCash2: [
     { who: 'jachwi', face: 'tired', text: '오늘은 라면.' },
@@ -1627,7 +1627,7 @@ export const SCRIPTS = {
   /* 식물이 잘 자라고 있을 때 */
   chatGrowing1: [
     { who: 'jachwi', face: 'happy', text: '어제보다 큰 것 같은데.' },
-    { who: 'moni',   face: 'happy', text: '기분 탓이야. 근데 기분 탓이 맞을 때도 있어.' }
+    { who: 'moni',   face: 'calm', text: '기분 탓이야. 근데 기분 탓이 맞을 때도 있어.' }
   ],
   chatGrowing2: [
     { who: 'jachwi', text: '잎이 하나 더 생겼다.' },
@@ -1638,7 +1638,7 @@ export const SCRIPTS = {
   /* 날씨 — ★초보(novice)는 맑음 고정이라 안 뜬다. 실전 모드에서 쓰인다. */
   chatRain: [
     { who: 'jachwi', text: '비 오는 날은 창이 더 어둡다.' },
-    { who: 'moni',   face: 'curious', text: '오늘은 얘도 쉬는 날이야.' }
+    { who: 'moni',   face: 'calm', text: '오늘은 얘도 쉬는 날이야.' }
   ],
   chatCloudy: [
     { who: 'jachwi', text: '흐린 날.' },
@@ -2207,6 +2207,20 @@ export function createStoryteller(opt = {}) {
   }
   return { turn, events, get quietDays() { return quiet; }, recent: () => [...history] };
 }
+
+/* ══ ★★ 표정 배정의 자 (2026-10-07 D15 · [plan] · 자: docs/handoff/plan-moni-faces.md ⓚ~ⓡ) ══════════
+   새 줄에 얼굴을 달 때 이 자로 고른다(위에서부터 처음 맞는 것).
+   몬이   cheer   지금 난 좋은 일에 «제가» 신남(느낌표·놀람)         「새순이야!」
+          proud   사람이 «한» 일을 사람에게 돌려줌                    「창턱에 올려놨잖아. 그게 한 거야.」
+          teach   규칙·까닭·성질 — 몬이가 «아는» 것                    「무순은 반대야.」
+          worry   «아직 안 잃은» 걱정 (sad 는 «잃은» 것 · 미안)         「또 멈췄어.」 / sad 「…미안. 나는 돈은 못 만들어.」
+          calm    물러섬·농담·제 얘기 — 급하지 않고 가르치지도 않음    「급한 건 아니야. 마음 내키면 해.」
+          curious ★ 몬이가 «모르거나» 사람에게 «묻는» 것 — 열 줄뿐이어야 한다
+                  「이상하지? 물도 줬고 날짜도 갔는데…」 = 「몬이도 모를 때 = «네가» 움직일 때」의 신호다
+          base    앞 줄을 잇는 설명 — 줄마다 얼굴을 바꾸면 어지러워 그대로 둔다
+   자취녀 curious 몬이에게 «묻는» 말   ·   think «혼잣말·헤아림» — 고르는 중의 얼굴(「…어디로 옮겨야 되지.」)
+          ⛔ 고르는 중에 worry 를 달지 말 것 — 옮기기가 «벌»로 읽힌다(이 게임에서 옮기기는 배움이다)
+   ⚠ 검사: 몬이 curious 가 열 줄을 크게 넘으면 자가 안 걸린 것이다(2026-10-07 배정 뒤 10줄). */
 
 /* ══ ★ 표정 자가검사 (2026-08-23 · [Char] 제안 · [core] 구현) ═════════════════════
    ■ 무엇이 문제였나
