@@ -1346,6 +1346,12 @@ export const SCRIPTS = {
   /* ★ 2026-09-06 ([plan] plan-after-setup-steps ⓔ) — 등(buy_lamp)의 낯 ④만 «다른 말»: 등은 물러서지 않는다(「등이 곧 길」 · 겨울이 오면 늦는다).
      걱정 낯 그대로 · 매일. */
   nudgeBackLamp: [ { who: 'moni', face: 'worry', text: '겨울 오기 전에는 있어야 해.' } ],
+  /* ★ 2026-10-08 [plan] #12 — 퀘스트별 독촉 앞줄(§CHATTER 의 같은 이름). 공통 넷보다 먼저 맞는다 */
+  nudgeHarvestReady: [ { who: 'moni', face: 'cheer',   text: '다 자랐어! 거두자.' } ],
+  nudgeHarvestAsk:   [ { who: 'moni', face: 'teach',   text: '거둘 게 있어. 시루 열어 봐.' } ],
+  nudgeSeedOffer:    [ { who: 'moni', face: 'teach',   text: '씨앗이 없으면 상점에서 시켜. 하루면 와.' } ],
+  nudgeSeedAsk:      [ { who: 'moni', face: 'curious', text: '씨앗, 상점에서 시켰어?' } ],
+  nudgeSeedWorry:    [ { who: 'moni', face: 'worry',   text: '씨앗이 없으면 시루가 놀아. 상점에 있어.' } ],
 
   cropHandsShort: [
     { who: 'moni', face: 'teach', text: '손이 다 됐네 — 물 주는 날을 엇갈리게 해 봐.' }
@@ -1714,6 +1720,8 @@ export const REPEATABLE = new Set(
        ⚠ 「또」가 붙는 손은 `rentAgain` 이 이미 쓴다 — 새 결을 안 지었다(㊺). */
     /* ★ 독촉 넷은 «매일» 되풀이된다 — 다만 빈 날에만·한 줄이라 잔소리가 안 된다(plan-quest-nudge ⓕ) */
     .concat(['nudgeOffer', 'nudgeAsk', 'nudgeWorry', 'nudgeBack', 'nudgeBackLamp'])
+    /* ★ 2026-10-08 [plan] #12 — 퀘스트별 독촉 앞줄도 «매일» 되풀이된다 */
+    .concat(['nudgeHarvestReady', 'nudgeHarvestAsk', 'nudgeSeedOffer', 'nudgeSeedAsk', 'nudgeSeedWorry'])
     .concat(['rentSoon', 'rentAgain', 'plantStalledAgain', 'plantStalledWinter',
              'cropHandsShort', 'brokeTalk', 'brokeTalkAgain'])
 );
@@ -2117,6 +2125,18 @@ export const CHATTER = [
   { id: 'chatQuiet',      net: true, when: () => true },
   { id: 'chatMoniName',   net: true, when: () => true },
   { id: 'chatMorning',    net: true, when: () => true },
+  /* ═══ ★★ 2026-10-08 [plan] #12 — 퀘스트별 독촉 «앞줄» (공통 넷보다 먼저 맞는다 · §pickNudge 는 표 차례로 고른다) ═══
+     폰 0~14일 검토(tutorial-friction #12): 다 자란 첫날 몬이 첫마디가 「그거 아직이지?」라 첫 보상이 잔소리로 시작했고,
+     씨앗 없이 막힌 날들엔 「그거」가 무엇인지 아무도 말하지 않았다.
+     ⇒ 첫 수확 — 독촉이 서는 날은 «다 자라 거둘 수 있는» 날뿐이다(nudge_wait: 익은 시루가 없으면 기다림).
+       그러니 첫날(날수 0 — nudgeDaysOf 가 «할 수 있게 된 첫날»을 0 으로 센다)은 «축하», 그 뒤는 «할 일을 말로».
+     ⇒ 씨앗 — 「그거」 대신 «어디서 무엇을»을 말한다. ⚠ 값(500원)은 안 말한다 — 몬이는 수를 말하지 않는다.
+     ⚠ 이 줄들도 «한 줄»·매일 되풀이라 REPEATABLE 에 들어 있다. 날 문턱은 공통 넷과 같다(NUDGE_DAYS). */
+  { id: 'nudgeHarvestReady', nudge: true, when: c => !!c.nudge && c.nudge.id === 'first_harvest' && c.nudge.days < NUDGE_DAYS.ask },
+  { id: 'nudgeHarvestAsk',   nudge: true, when: c => !!c.nudge && c.nudge.id === 'first_harvest' && c.nudge.days >= NUDGE_DAYS.ask && c.nudge.days < NUDGE_DAYS.back },
+  { id: 'nudgeSeedOffer',    nudge: true, when: c => !!c.nudge && c.nudge.id === 'order_seed' && c.nudge.days >= 1 && c.nudge.days < NUDGE_DAYS.ask },
+  { id: 'nudgeSeedAsk',      nudge: true, when: c => !!c.nudge && c.nudge.id === 'order_seed' && c.nudge.days >= NUDGE_DAYS.ask && c.nudge.days < NUDGE_DAYS.worry },
+  { id: 'nudgeSeedWorry',    nudge: true, when: c => !!c.nudge && c.nudge.id === 'order_seed' && c.nudge.days >= NUDGE_DAYS.worry && c.nudge.days < NUDGE_DAYS.back },
   /* ═══ ★ 독촉 낯 넷 — «맨 뒤»(nudge:true · §pickChatter). 날 문턱은 §NUDGE_DAYS([plan] 밑값) ═══ */
   { id: 'nudgeOffer', nudge: true, when: c => !!c.nudge && c.nudge.days >= 1 && c.nudge.days < NUDGE_DAYS.ask },
   { id: 'nudgeAsk',   nudge: true, when: c => !!c.nudge && c.nudge.days >= NUDGE_DAYS.ask && c.nudge.days < NUDGE_DAYS.worry },
