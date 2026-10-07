@@ -35,15 +35,21 @@ def read(indir, out_png):
     for f in files:
         n = int(os.path.basename(f)[4:6])
         a = np.asarray(Image.open(f).convert('RGB')).astype(float)
-        if bg is None: bg = np.median(a.reshape(-1,3), 0)
-        diff = np.abs(a - bg).max(2) > 30
-        ys, xs = np.where(diff)
+        # ★ 식물만 — 밝은 화소(잎·줄기·화분)의 «가장 큰 덩어리». 격자선·등 점은 작거나 어둡다
+        from scipy import ndimage
+        L = 0.2126*a[...,0]+0.7152*a[...,1]+0.0722*a[...,2]
+        m = L > 70
+        lab_, k = ndimage.label(ndimage.binary_dilation(m, iterations=4))
+        if k:
+            sizes = ndimage.sum(m, lab_, range(1, k+1)); big = 1 + int(np.argmax(sizes))
+            m = m & (lab_ == big)
+        ys, xs = np.where(m)
         box = (xs.min(), ys.min(), xs.max()+1, ys.max()+1)
         crop = Image.fromarray(a.astype('uint8')).crop(box)
-        # 잎 화소만(초록·흰·분홍 — 화분·흙 아래쪽은 뺀다: 위 60%)
-        c = np.asarray(crop).astype(float); h = c.shape[0]
-        top = c[: int(h*0.6)]; m = np.abs(top - bg).max(2) > 30
-        mean = top[m].mean(0) if m.any() else np.array([0,0,0])
+        mm = m[box[1]:box[3], box[0]:box[2]]; c = np.asarray(crop).astype(float)
+        h = c.shape[0]; top = c[: int(h*0.65)]; tm = mm[: int(h*0.65)]
+        # 잎 화소만: 화분(아래)·줄기(가늘다)를 대충 빼려고 위 65% 의 밝은 화소
+        mean = top[tm].mean(0) if tm.any() else np.array([0,0,0])
         rows.append((n, G.get(n, ('?', '?')), crop, mean))
     # 등급별 색 거리
     labs = {r[0]: lab(r[3]) for r in rows}
@@ -62,17 +68,29 @@ def read(indir, out_png):
             print('  %-9s ↔ %-9s 사이 색거리 중앙 %.1f · 제일 가까운 %.1f' % (gs[i], gs[j], np.median(ds), min(ds)))
     # 그림: 등급별 줄 · 크게 / 30px / 15px
     order = sorted(rows, key=lambda r: (r[1][0], r[0]))
-    W = 150; out = Image.new('RGB', (40 + len(order)*(W+6), 330), (250,250,248)); dr = ImageDraw.Draw(out)
+    W = 150; out = Image.new('RGB', (40 + len(order)*(W+6), 340), (250,250,248)); dr = ImageDraw.Draw(out)
     for i, (n, (g, ko), crop, _) in enumerate(order):
         x = 20 + i*(W+6)
         big = crop.copy(); big.thumbnail((W, W)); out.paste(big, (x, 40))
-        for k, px in enumerate((30, 15)):
-            s = crop.copy(); s.thumbnail((px, px), Image.LANCZOS)
-            out.paste(s.resize((s.width*3, s.height*3), Image.NEAREST), (x + k*60, 200))
+        # 그루 너비 120px·60px 로 줄인다 — 60px 이면 성숙잎 한 장 ≈15px(08월 잰 방 거리 값)
+        for k, pw in enumerate((120, 60)):
+            f = pw / crop.width
+            sm = crop.resize((pw, max(1,int(crop.height*f))), Image.LANCZOS)
+            if pw == 60: sm = sm.resize((sm.width*2, sm.height*2), Image.NEAREST)   # 60px 는 2배로 늘려 보임
+            out.paste(sm.crop((0,0,min(sm.width,W//2-4),min(sm.height,120))), (x + k*(W//2), 200))
         dr.text((x, 8), '%s · %d' % (g, n), fill=(20,20,26), font=F(12, True))
         dr.text((x, 24), ko[:9], fill=(90,90,96), font=F(11))
-    dr.text((20, 300), '아래 작은 둘 = 30px·15px 로 줄인 것을 3배로 늘려 보기 (방 거리의 성숙잎 ≈ 15px)', fill=(110,110,118), font=F(12))
+    dr.text((20, 322), '아래 왼쪽 = 그루 120px · 오른쪽 = 그루 60px(잎 ≈15px · 방 거리)을 2배로 늘려 보임', fill=(110,110,118), font=F(12))
     out.save(out_png); print('★ 그림:', out_png)
+    # ★ 헷갈리는 짝 — 등급이 «다른» 가족끼리 색이 제일 가까운 것
+    pairs = []
+    for i, a in enumerate(rows):
+        for b in rows[i+1:]:
+            if a[1][0] != b[1][0]: pairs.append((d(a[0], b[0]), a, b))
+    pairs.sort(key=lambda t: t[0])
+    print('★ 등급이 다른데 색이 가까운 짝 (ΔE 작을수록 방 거리에서 헷갈림 · 대략 ΔE<10 이면 눈으로 못 가름)')
+    for dd, a, b in pairs[:8]:
+        print('   ΔE %5.1f   %-9s %2d %-14s ↔ %-9s %2d %s' % (dd, a[1][0], a[0], a[1][1], b[1][0], b[0], b[1][1]))
 
 if __name__ == '__main__':
     read(sys.argv[1], sys.argv[2])

@@ -14,8 +14,10 @@ await page.waitFor(`typeof ASSETS!=='undefined' && Object.keys(ASSETS).length>20
 await sleep(1500);
 console.log('세움:', await page.eval(`(()=>{try{ P.varieProb=1; P.alboMidPick=0; P.matAlboPick=${NUMS[0]};
   plantSeed(${SEED}); const s=setGrowth(${G});
-  for(const r of (leafSkinUsedAll()||[])) VARIE_STATE.set(r.leafBirth,true);
-  matCatchUp&&matCatchUp(); redraw();
+  /* ★ 무늬·성숙은 빛 이력이 있어야 난다(캐논) — 헤드리스엔 이력이 없으니 «잎마다» 둘 다 켠다 */
+  for(const r of (leafSkinUsedAll()||[])){ VARIE_STATE.set(r.leafBirth,true);
+    MAT_STATE.set(r.leafBirth,{gauge:0, matured:true, rolls:1, locked:false}); }
+  redraw();
   return JSON.stringify({s:s.drawn, 잎:(leafSkinUsedAll()||[]).length});}catch(e){return 'ERR '+e.message;}})()`));
 /* 판(UI) 숨기기 */
 await page.eval(`(()=>{ const c=document.querySelector('canvas'); if(!c) return;
