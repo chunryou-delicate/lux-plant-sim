@@ -1,0 +1,7658 @@
+{
+ "meta": {
+  "profile": "data/profiles/room_profile.oneroom.json",
+  "slot": "oneroom-sill:0",
+  "mode": "real",
+  "yearDay0": 135,
+  "days": 540,
+  "seeds": 20,
+  "motherGrowth": 200,
+  "note": "날 수 = 이사한 뒤 게임 날 · 등급 무게 = varie_grades.lightGrade[태어날 때 밴드] · 물은 늘 줌 · 씨앗 s*7919"
+ },
+ "cases": [
+  {
+   "plant": "mother",
+   "lamps": 0,
+   "byDay": [
+    {
+     "day": 30,
+     "leaves": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 1
+     },
+     "varie": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 0
+     },
+     "varieSplit": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 0
+     },
+     "expectedVarieByGrade": {
+      "sanban": 0,
+      "halfmoon": 0,
+      "fullmoon": 0
+     }
+    },
+    {
+     "day": 60,
+     "leaves": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 1
+     },
+     "varie": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 0
+     },
+     "varieSplit": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 0
+     },
+     "expectedVarieByGrade": {
+      "sanban": 0,
+      "halfmoon": 0,
+      "fullmoon": 0
+     }
+    },
+    {
+     "day": 90,
+     "leaves": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 1
+     },
+     "varie": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 0
+     },
+     "varieSplit": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 0
+     },
+     "expectedVarieByGrade": {
+      "sanban": 0,
+      "halfmoon": 0,
+      "fullmoon": 0
+     }
+    },
+    {
+     "day": 120,
+     "leaves": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 1
+     },
+     "varie": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 0
+     },
+     "varieSplit": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 0
+     },
+     "expectedVarieByGrade": {
+      "sanban": 0,
+      "halfmoon": 0,
+      "fullmoon": 0
+     }
+    },
+    {
+     "day": 150,
+     "leaves": {
+      "p10": 1,
+      "p50": 1,
+      "p90": 2
+     },
+     "varie": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 1
+     },
+     "varieSplit": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 0
+     },
+     "expectedVarieByGrade": {
+      "sanban": 0.17,
+      "halfmoon": 0.06,
+      "fullmoon": 0.01
+     }
+    },
+    {
+     "day": 180,
+     "leaves": {
+      "p10": 1,
+      "p50": 1,
+      "p90": 2
+     },
+     "varie": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 1
+     },
+     "varieSplit": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 0
+     },
+     "expectedVarieByGrade": {
+      "sanban": 0.17,
+      "halfmoon": 0.06,
+      "fullmoon": 0.01
+     }
+    },
+    {
+     "day": 210,
+     "leaves": {
+      "p10": 1,
+      "p50": 1,
+      "p90": 2
+     },
+     "varie": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 1
+     },
+     "varieSplit": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 0
+     },
+     "expectedVarieByGrade": {
+      "sanban": 0.17,
+      "halfmoon": 0.06,
+      "fullmoon": 0.01
+     }
+    },
+    {
+     "day": 240,
+     "leaves": {
+      "p10": 1,
+      "p50": 1,
+      "p90": 2
+     },
+     "varie": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 1
+     },
+     "varieSplit": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 0
+     },
+     "expectedVarieByGrade": {
+      "sanban": 0.17,
+      "halfmoon": 0.06,
+      "fullmoon": 0.01
+     }
+    },
+    {
+     "day": 270,
+     "leaves": {
+      "p10": 1,
+      "p50": 1,
+      "p90": 2
+     },
+     "varie": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 1
+     },
+     "varieSplit": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 0
+     },
+     "expectedVarieByGrade": {
+      "sanban": 0.17,
+      "halfmoon": 0.06,
+      "fullmoon": 0.01
+     }
+    },
+    {
+     "day": 300,
+     "leaves": {
+      "p10": 1,
+      "p50": 1,
+      "p90": 2
+     },
+     "varie": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 1
+     },
+     "varieSplit": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 0
+     },
+     "expectedVarieByGrade": {
+      "sanban": 0.17,
+      "halfmoon": 0.06,
+      "fullmoon": 0.01
+     }
+    },
+    {
+     "day": 330,
+     "leaves": {
+      "p10": 1,
+      "p50": 1,
+      "p90": 3
+     },
+     "varie": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 1
+     },
+     "varieSplit": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 0
+     },
+     "expectedVarieByGrade": {
+      "sanban": 0.17,
+      "halfmoon": 0.06,
+      "fullmoon": 0.01
+     }
+    },
+    {
+     "day": 360,
+     "leaves": {
+      "p10": 1,
+      "p50": 1,
+      "p90": 3
+     },
+     "varie": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 1
+     },
+     "varieSplit": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 0
+     },
+     "expectedVarieByGrade": {
+      "sanban": 0.17,
+      "halfmoon": 0.06,
+      "fullmoon": 0.01
+     }
+    },
+    {
+     "day": 390,
+     "leaves": {
+      "p10": 1,
+      "p50": 1,
+      "p90": 3
+     },
+     "varie": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 1
+     },
+     "varieSplit": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 1
+     },
+     "expectedVarieByGrade": {
+      "sanban": 0.17,
+      "halfmoon": 0.06,
+      "fullmoon": 0.01
+     }
+    },
+    {
+     "day": 420,
+     "leaves": {
+      "p10": 2,
+      "p50": 2,
+      "p90": 4
+     },
+     "varie": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 1
+     },
+     "varieSplit": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 1
+     },
+     "expectedVarieByGrade": {
+      "sanban": 0.21,
+      "halfmoon": 0.07,
+      "fullmoon": 0.01
+     }
+    },
+    {
+     "day": 450,
+     "leaves": {
+      "p10": 2,
+      "p50": 2,
+      "p90": 4
+     },
+     "varie": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 1
+     },
+     "varieSplit": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 1
+     },
+     "expectedVarieByGrade": {
+      "sanban": 0.21,
+      "halfmoon": 0.07,
+      "fullmoon": 0.01
+     }
+    },
+    {
+     "day": 480,
+     "leaves": {
+      "p10": 2,
+      "p50": 2,
+      "p90": 4
+     },
+     "varie": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 1
+     },
+     "varieSplit": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 1
+     },
+     "expectedVarieByGrade": {
+      "sanban": 0.21,
+      "halfmoon": 0.07,
+      "fullmoon": 0.01
+     }
+    },
+    {
+     "day": 510,
+     "leaves": {
+      "p10": 2,
+      "p50": 2,
+      "p90": 4
+     },
+     "varie": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 1
+     },
+     "varieSplit": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 1
+     },
+     "expectedVarieByGrade": {
+      "sanban": 0.21,
+      "halfmoon": 0.07,
+      "fullmoon": 0.01
+     }
+    },
+    {
+     "day": 540,
+     "leaves": {
+      "p10": 2,
+      "p50": 2,
+      "p90": 4
+     },
+     "varie": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 1
+     },
+     "varieSplit": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 1
+     },
+     "expectedVarieByGrade": {
+      "sanban": 0.21,
+      "halfmoon": 0.07,
+      "fullmoon": 0.01
+     }
+    }
+   ],
+   "runs": [
+    [
+     {
+      "lb": 496,
+      "day": 139,
+      "varie": true,
+      "split": 388,
+      "band": "mid"
+     },
+     {
+      "lb": 536,
+      "day": 304,
+      "varie": false,
+      "split": null,
+      "band": "mid"
+     },
+     {
+      "lb": 616,
+      "day": 404,
+      "varie": false,
+      "split": null,
+      "band": "mid"
+     }
+    ],
+    [
+     {
+      "lb": 496,
+      "day": 139,
+      "varie": false,
+      "split": 388,
+      "band": "mid"
+     },
+     {
+      "lb": 616,
+      "day": 404,
+      "varie": false,
+      "split": null,
+      "band": "mid"
+     }
+    ],
+    [
+     {
+      "lb": 496,
+      "day": 139,
+      "varie": false,
+      "split": 376,
+      "band": "mid"
+     },
+     {
+      "lb": 616,
+      "day": 404,
+      "varie": false,
+      "split": null,
+      "band": "mid"
+     }
+    ],
+    [
+     {
+      "lb": 416,
+      "day": 25,
+      "varie": false,
+      "split": null,
+      "band": "mid"
+     },
+     {
+      "lb": 456,
+      "day": 82,
+      "varie": false,
+      "split": null,
+      "band": "mid"
+     },
+     {
+      "lb": 496,
+      "day": 139,
+      "varie": true,
+      "split": 402,
+      "band": "mid"
+     },
+     {
+      "lb": 536,
+      "day": 304,
+      "varie": false,
+      "split": null,
+      "band": "mid"
+     },
+     {
+      "lb": 576,
+      "day": 357,
+      "varie": false,
+      "split": null,
+      "band": "mid"
+     },
+     {
+      "lb": 616,
+      "day": 404,
+      "varie": false,
+      "split": null,
+      "band": "mid"
+     }
+    ],
+    [
+     {
+      "lb": 416,
+      "day": 25,
+      "varie": false,
+      "split": null,
+      "band": "mid"
+     },
+     {
+      "lb": 456,
+      "day": 82,
+      "varie": false,
+      "split": null,
+      "band": "mid"
+     },
+     {
+      "lb": 496,
+      "day": 139,
+      "varie": false,
+      "split": 384,
+      "band": "mid"
+     },
+     {
+      "lb": 536,
+      "day": 304,
+      "varie": false,
+      "split": null,
+      "band": "mid"
+     },
+     {
+      "lb": 576,
+      "day": 357,
+      "varie": false,
+      "split": null,
+      "band": "mid"
+     },
+     {
+      "lb": 616,
+      "day": 404,
+      "varie": true,
+      "split": null,
+      "band": "mid"
+     }
+    ],
+    [
+     {
+      "lb": 496,
+      "day": 139,
+      "varie": false,
+      "split": 392,
+      "band": "mid"
+     },
+     {
+      "lb": 616,
+      "day": 404,
+      "varie": false,
+      "split": null,
+      "band": "mid"
+     }
+    ],
+    [
+     {
+      "lb": 496,
+      "day": 139,
+      "varie": false,
+      "split": null,
+      "band": "mid"
+     },
+     {
+      "lb": 616,
+      "day": 404,
+      "varie": false,
+      "split": null,
+      "band": "mid"
+     }
+    ],
+    [
+     {
+      "lb": 496,
+      "day": 139,
+      "varie": false,
+      "split": 356,
+      "band": "mid"
+     },
+     {
+      "lb": 616,
+      "day": 404,
+      "varie": false,
+      "split": null,
+      "band": "mid"
+     }
+    ],
+    [
+     {
+      "lb": 496,
+      "day": 139,
+      "varie": false,
+      "split": 376,
+      "band": "mid"
+     },
+     {
+      "lb": 616,
+      "day": 404,
+      "varie": false,
+      "split": null,
+      "band": "mid"
+     }
+    ],
+    [
+     {
+      "lb": 496,
+      "day": 139,
+      "varie": false,
+      "split": 465,
+      "band": "mid"
+     },
+     {
+      "lb": 536,
+      "day": 304,
+      "varie": false,
+      "split": null,
+      "band": "mid"
+     },
+     {
+      "lb": 616,
+      "day": 404,
+      "varie": false,
+      "split": null,
+      "band": "mid"
+     }
+    ],
+    [
+     {
+      "lb": 416,
+      "day": 25,
+      "varie": false,
+      "split": null,
+      "band": "mid"
+     },
+     {
+      "lb": 496,
+      "day": 139,
+      "varie": false,
+      "split": 419,
+      "band": "mid"
+     },
+     {
+      "lb": 536,
+      "day": 304,
+      "varie": false,
+      "split": null,
+      "band": "mid"
+     },
+     {
+      "lb": 616,
+      "day": 404,
+      "varie": false,
+      "split": null,
+      "band": "mid"
+     }
+    ],
+    [
+     {
+      "lb": 496,
+      "day": 139,
+      "varie": false,
+      "split": 384,
+      "band": "mid"
+     },
+     {
+      "lb": 616,
+      "day": 404,
+      "varie": false,
+      "split": null,
+      "band": "mid"
+     }
+    ],
+    [
+     {
+      "lb": 496,
+      "day": 139,
+      "varie": false,
+      "split": null,
+      "band": "mid"
+     },
+     {
+      "lb": 616,
+      "day": 404,
+      "varie": false,
+      "split": null,
+      "band": "mid"
+     }
+    ],
+    [
+     {
+      "lb": 496,
+      "day": 139,
+      "varie": true,
+      "split": 429,
+      "band": "mid"
+     },
+     {
+      "lb": 616,
+      "day": 404,
+      "varie": false,
+      "split": null,
+      "band": "mid"
+     }
+    ],
+    [
+     {
+      "lb": 496,
+      "day": 139,
+      "varie": true,
+      "split": 356,
+      "band": "mid"
+     },
+     {
+      "lb": 616,
+      "day": 404,
+      "varie": false,
+      "split": null,
+      "band": "mid"
+     }
+    ],
+    [
+     {
+      "lb": 416,
+      "day": 25,
+      "varie": false,
+      "split": null,
+      "band": "mid"
+     },
+     {
+      "lb": 496,
+      "day": 139,
+      "varie": false,
+      "split": 388,
+      "band": "mid"
+     },
+     {
+      "lb": 536,
+      "day": 304,
+      "varie": false,
+      "split": null,
+      "band": "mid"
+     },
+     {
+      "lb": 616,
+      "day": 404,
+      "varie": false,
+      "split": null,
+      "band": "mid"
+     }
+    ],
+    [
+     {
+      "lb": 416,
+      "day": 25,
+      "varie": false,
+      "split": null,
+      "band": "mid"
+     },
+     {
+      "lb": 496,
+      "day": 139,
+      "varie": false,
+      "split": 447,
+      "band": "mid"
+     },
+     {
+      "lb": 536,
+      "day": 304,
+      "varie": false,
+      "split": null,
+      "band": "mid"
+     },
+     {
+      "lb": 616,
+      "day": 404,
+      "varie": false,
+      "split": null,
+      "band": "mid"
+     }
+    ],
+    [
+     {
+      "lb": 496,
+      "day": 139,
+      "varie": false,
+      "split": null,
+      "band": "mid"
+     },
+     {
+      "lb": 616,
+      "day": 404,
+      "varie": false,
+      "split": null,
+      "band": "mid"
+     }
+    ],
+    [
+     {
+      "lb": 496,
+      "day": 139,
+      "varie": true,
+      "split": 376,
+      "band": "mid"
+     },
+     {
+      "lb": 616,
+      "day": 404,
+      "varie": false,
+      "split": null,
+      "band": "mid"
+     }
+    ],
+    [
+     {
+      "lb": 496,
+      "day": 139,
+      "varie": false,
+      "split": 475,
+      "band": "mid"
+     },
+     {
+      "lb": 616,
+      "day": 404,
+      "varie": false,
+      "split": null,
+      "band": "mid"
+     }
+    ]
+   ]
+  },
+  {
+   "plant": "seed",
+   "lamps": 0,
+   "byDay": [
+    {
+     "day": 30,
+     "leaves": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 0
+     },
+     "varie": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 0
+     },
+     "varieSplit": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 0
+     },
+     "expectedVarieByGrade": {
+      "sanban": 0,
+      "halfmoon": 0,
+      "fullmoon": 0
+     }
+    },
+    {
+     "day": 60,
+     "leaves": {
+      "p10": 1,
+      "p50": 1,
+      "p90": 1
+     },
+     "varie": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 0
+     },
+     "varieSplit": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 0
+     },
+     "expectedVarieByGrade": {
+      "sanban": 0,
+      "halfmoon": 0,
+      "fullmoon": 0
+     }
+    },
+    {
+     "day": 90,
+     "leaves": {
+      "p10": 1,
+      "p50": 1,
+      "p90": 1
+     },
+     "varie": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 0
+     },
+     "varieSplit": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 0
+     },
+     "expectedVarieByGrade": {
+      "sanban": 0,
+      "halfmoon": 0,
+      "fullmoon": 0
+     }
+    },
+    {
+     "day": 120,
+     "leaves": {
+      "p10": 2,
+      "p50": 2,
+      "p90": 2
+     },
+     "varie": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 1
+     },
+     "varieSplit": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 0
+     },
+     "expectedVarieByGrade": {
+      "sanban": 0.14,
+      "halfmoon": 0.05,
+      "fullmoon": 0.01
+     }
+    },
+    {
+     "day": 150,
+     "leaves": {
+      "p10": 2,
+      "p50": 2,
+      "p90": 2
+     },
+     "varie": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 1
+     },
+     "varieSplit": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 0
+     },
+     "expectedVarieByGrade": {
+      "sanban": 0.14,
+      "halfmoon": 0.05,
+      "fullmoon": 0.01
+     }
+    },
+    {
+     "day": 180,
+     "leaves": {
+      "p10": 2,
+      "p50": 2,
+      "p90": 2
+     },
+     "varie": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 1
+     },
+     "varieSplit": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 0
+     },
+     "expectedVarieByGrade": {
+      "sanban": 0.14,
+      "halfmoon": 0.05,
+      "fullmoon": 0.01
+     }
+    },
+    {
+     "day": 210,
+     "leaves": {
+      "p10": 2,
+      "p50": 2,
+      "p90": 2
+     },
+     "varie": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 1
+     },
+     "varieSplit": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 0
+     },
+     "expectedVarieByGrade": {
+      "sanban": 0.14,
+      "halfmoon": 0.05,
+      "fullmoon": 0.01
+     }
+    },
+    {
+     "day": 240,
+     "leaves": {
+      "p10": 2,
+      "p50": 2,
+      "p90": 2
+     },
+     "varie": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 1
+     },
+     "varieSplit": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 0
+     },
+     "expectedVarieByGrade": {
+      "sanban": 0.14,
+      "halfmoon": 0.05,
+      "fullmoon": 0.01
+     }
+    },
+    {
+     "day": 270,
+     "leaves": {
+      "p10": 2,
+      "p50": 2,
+      "p90": 2
+     },
+     "varie": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 1
+     },
+     "varieSplit": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 0
+     },
+     "expectedVarieByGrade": {
+      "sanban": 0.14,
+      "halfmoon": 0.05,
+      "fullmoon": 0.01
+     }
+    },
+    {
+     "day": 300,
+     "leaves": {
+      "p10": 3,
+      "p50": 3,
+      "p90": 3
+     },
+     "varie": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 1
+     },
+     "varieSplit": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 0
+     },
+     "expectedVarieByGrade": {
+      "sanban": 0.14,
+      "halfmoon": 0.05,
+      "fullmoon": 0.01
+     }
+    },
+    {
+     "day": 330,
+     "leaves": {
+      "p10": 3,
+      "p50": 3,
+      "p90": 4
+     },
+     "varie": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 1
+     },
+     "varieSplit": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 0
+     },
+     "expectedVarieByGrade": {
+      "sanban": 0.14,
+      "halfmoon": 0.05,
+      "fullmoon": 0.01
+     }
+    },
+    {
+     "day": 360,
+     "leaves": {
+      "p10": 4,
+      "p50": 4,
+      "p90": 5
+     },
+     "varie": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 1
+     },
+     "varieSplit": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 0
+     },
+     "expectedVarieByGrade": {
+      "sanban": 0.14,
+      "halfmoon": 0.05,
+      "fullmoon": 0.01
+     }
+    },
+    {
+     "day": 390,
+     "leaves": {
+      "p10": 4,
+      "p50": 4,
+      "p90": 6
+     },
+     "varie": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 1
+     },
+     "varieSplit": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 1
+     },
+     "expectedVarieByGrade": {
+      "sanban": 0.14,
+      "halfmoon": 0.05,
+      "fullmoon": 0.01
+     }
+    },
+    {
+     "day": 420,
+     "leaves": {
+      "p10": 4,
+      "p50": 4,
+      "p90": 6
+     },
+     "varie": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 1
+     },
+     "varieSplit": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 1
+     },
+     "expectedVarieByGrade": {
+      "sanban": 0.14,
+      "halfmoon": 0.05,
+      "fullmoon": 0.01
+     }
+    },
+    {
+     "day": 450,
+     "leaves": {
+      "p10": 4,
+      "p50": 4,
+      "p90": 6
+     },
+     "varie": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 1
+     },
+     "varieSplit": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 1
+     },
+     "expectedVarieByGrade": {
+      "sanban": 0.14,
+      "halfmoon": 0.05,
+      "fullmoon": 0.01
+     }
+    },
+    {
+     "day": 480,
+     "leaves": {
+      "p10": 5,
+      "p50": 5,
+      "p90": 7
+     },
+     "varie": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 1
+     },
+     "varieSplit": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 1
+     },
+     "expectedVarieByGrade": {
+      "sanban": 0.32,
+      "halfmoon": 0.11,
+      "fullmoon": 0.02
+     }
+    },
+    {
+     "day": 510,
+     "leaves": {
+      "p10": 5,
+      "p50": 5,
+      "p90": 7
+     },
+     "varie": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 1
+     },
+     "varieSplit": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 1
+     },
+     "expectedVarieByGrade": {
+      "sanban": 0.32,
+      "halfmoon": 0.11,
+      "fullmoon": 0.02
+     }
+    },
+    {
+     "day": 540,
+     "leaves": {
+      "p10": 5,
+      "p50": 5,
+      "p90": 7
+     },
+     "varie": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 1
+     },
+     "varieSplit": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 1
+     },
+     "expectedVarieByGrade": {
+      "sanban": 0.32,
+      "halfmoon": 0.11,
+      "fullmoon": 0.02
+     }
+    }
+   ],
+   "runs": [
+    [
+     {
+      "lb": 36,
+      "day": 37,
+      "varie": false,
+      "split": 309,
+      "band": "mid"
+     },
+     {
+      "lb": 136,
+      "day": 109,
+      "varie": false,
+      "split": 402,
+      "band": "mid"
+     },
+     {
+      "lb": 256,
+      "day": 275,
+      "varie": false,
+      "split": 334,
+      "band": "mid"
+     },
+     {
+      "lb": 376,
+      "day": 357,
+      "varie": false,
+      "split": null,
+      "band": "mid"
+     },
+     {
+      "lb": 496,
+      "day": 477,
+      "varie": true,
+      "split": null,
+      "band": "mid"
+     }
+    ],
+    [
+     {
+      "lb": 36,
+      "day": 37,
+      "varie": false,
+      "split": 264,
+      "band": "mid"
+     },
+     {
+      "lb": 136,
+      "day": 109,
+      "varie": false,
+      "split": 312,
+      "band": "mid"
+     },
+     {
+      "lb": 256,
+      "day": 275,
+      "varie": false,
+      "split": null,
+      "band": "mid"
+     },
+     {
+      "lb": 376,
+      "day": 357,
+      "varie": false,
+      "split": 428,
+      "band": "mid"
+     },
+     {
+      "lb": 496,
+      "day": 477,
+      "varie": false,
+      "split": null,
+      "band": "mid"
+     }
+    ],
+    [
+     {
+      "lb": 36,
+      "day": 37,
+      "varie": false,
+      "split": 354,
+      "band": "mid"
+     },
+     {
+      "lb": 136,
+      "day": 109,
+      "varie": false,
+      "split": 266,
+      "band": "mid"
+     },
+     {
+      "lb": 256,
+      "day": 275,
+      "varie": false,
+      "split": 428,
+      "band": "mid"
+     },
+     {
+      "lb": 376,
+      "day": 357,
+      "varie": false,
+      "split": 474,
+      "band": "mid"
+     },
+     {
+      "lb": 496,
+      "day": 477,
+      "varie": false,
+      "split": null,
+      "band": "mid"
+     }
+    ],
+    [
+     {
+      "lb": 36,
+      "day": 37,
+      "varie": false,
+      "split": 264,
+      "band": "mid"
+     },
+     {
+      "lb": 136,
+      "day": 109,
+      "varie": true,
+      "split": 366,
+      "band": "mid"
+     },
+     {
+      "lb": 256,
+      "day": 275,
+      "varie": false,
+      "split": null,
+      "band": "mid"
+     },
+     {
+      "lb": 296,
+      "day": 312,
+      "varie": false,
+      "split": null,
+      "band": "mid"
+     },
+     {
+      "lb": 376,
+      "day": 357,
+      "varie": false,
+      "split": null,
+      "band": "mid"
+     },
+     {
+      "lb": 416,
+      "day": 389,
+      "varie": false,
+      "split": null,
+      "band": "bright"
+     },
+     {
+      "lb": 456,
+      "day": 428,
+      "varie": false,
+      "split": null,
+      "band": "mid"
+     },
+     {
+      "lb": 496,
+      "day": 477,
+      "varie": true,
+      "split": null,
+      "band": "mid"
+     }
+    ],
+    [
+     {
+      "lb": 36,
+      "day": 37,
+      "varie": false,
+      "split": 277,
+      "band": "mid"
+     },
+     {
+      "lb": 136,
+      "day": 109,
+      "varie": false,
+      "split": 256,
+      "band": "mid"
+     },
+     {
+      "lb": 256,
+      "day": 275,
+      "varie": false,
+      "split": 354,
+      "band": "mid"
+     },
+     {
+      "lb": 296,
+      "day": 312,
+      "varie": false,
+      "split": null,
+      "band": "mid"
+     },
+     {
+      "lb": 376,
+      "day": 357,
+      "varie": false,
+      "split": null,
+      "band": "mid"
+     },
+     {
+      "lb": 416,
+      "day": 389,
+      "varie": false,
+      "split": null,
+      "band": "bright"
+     },
+     {
+      "lb": 456,
+      "day": 428,
+      "varie": false,
+      "split": null,
+      "band": "mid"
+     },
+     {
+      "lb": 496,
+      "day": 477,
+      "varie": false,
+      "split": null,
+      "band": "mid"
+     }
+    ],
+    [
+     {
+      "lb": 36,
+      "day": 37,
+      "varie": false,
+      "split": 95,
+      "band": "mid"
+     },
+     {
+      "lb": 136,
+      "day": 109,
+      "varie": false,
+      "split": null,
+      "band": "mid"
+     },
+     {
+      "lb": 256,
+      "day": 275,
+      "varie": false,
+      "split": 344,
+      "band": "mid"
+     },
+     {
+      "lb": 376,
+      "day": 357,
+      "varie": false,
+      "split": null,
+      "band": "mid"
+     },
+     {
+      "lb": 496,
+      "day": 477,
+      "varie": false,
+      "split": null,
+      "band": "mid"
+     }
+    ],
+    [
+     {
+      "lb": 36,
+      "day": 37,
+      "varie": false,
+      "split": 128,
+      "band": "mid"
+     },
+     {
+      "lb": 136,
+      "day": 109,
+      "varie": false,
+      "split": 330,
+      "band": "mid"
+     },
+     {
+      "lb": 256,
+      "day": 275,
+      "varie": false,
+      "split": null,
+      "band": "mid"
+     },
+     {
+      "lb": 376,
+      "day": 357,
+      "varie": false,
+      "split": 464,
+      "band": "mid"
+     },
+     {
+      "lb": 496,
+      "day": 477,
+      "varie": false,
+      "split": null,
+      "band": "mid"
+     }
+    ],
+    [
+     {
+      "lb": 36,
+      "day": 37,
+      "varie": false,
+      "split": 111,
+      "band": "mid"
+     },
+     {
+      "lb": 136,
+      "day": 109,
+      "varie": false,
+      "split": 429,
+      "band": "mid"
+     },
+     {
+      "lb": 256,
+      "day": 275,
+      "varie": false,
+      "split": 374,
+      "band": "mid"
+     },
+     {
+      "lb": 376,
+      "day": 357,
+      "varie": false,
+      "split": null,
+      "band": "mid"
+     },
+     {
+      "lb": 496,
+      "day": 477,
+      "varie": false,
+      "split": null,
+      "band": "mid"
+     }
+    ],
+    [
+     {
+      "lb": 36,
+      "day": 37,
+      "varie": false,
+      "split": 364,
+      "band": "mid"
+     },
+     {
+      "lb": 136,
+      "day": 109,
+      "varie": false,
+      "split": 289,
+      "band": "mid"
+     },
+     {
+      "lb": 256,
+      "day": 275,
+      "varie": false,
+      "split": 464,
+      "band": "mid"
+     },
+     {
+      "lb": 376,
+      "day": 357,
+      "varie": false,
+      "split": null,
+      "band": "mid"
+     },
+     {
+      "lb": 496,
+      "day": 477,
+      "varie": false,
+      "split": null,
+      "band": "mid"
+     }
+    ],
+    [
+     {
+      "lb": 36,
+      "day": 37,
+      "varie": false,
+      "split": 401,
+      "band": "mid"
+     },
+     {
+      "lb": 136,
+      "day": 109,
+      "varie": false,
+      "split": 447,
+      "band": "mid"
+     },
+     {
+      "lb": 256,
+      "day": 275,
+      "varie": false,
+      "split": null,
+      "band": "mid"
+     },
+     {
+      "lb": 376,
+      "day": 357,
+      "varie": false,
+      "split": null,
+      "band": "mid"
+     },
+     {
+      "lb": 496,
+      "day": 477,
+      "varie": false,
+      "split": null,
+      "band": "mid"
+     }
+    ],
+    [
+     {
+      "lb": 36,
+      "day": 37,
+      "varie": false,
+      "split": 484,
+      "band": "mid"
+     },
+     {
+      "lb": 136,
+      "day": 109,
+      "varie": false,
+      "split": null,
+      "band": "mid"
+     },
+     {
+      "lb": 256,
+      "day": 275,
+      "varie": false,
+      "split": null,
+      "band": "mid"
+     },
+     {
+      "lb": 296,
+      "day": 312,
+      "varie": false,
+      "split": null,
+      "band": "mid"
+     },
+     {
+      "lb": 376,
+      "day": 357,
+      "varie": false,
+      "split": null,
+      "band": "mid"
+     },
+     {
+      "lb": 416,
+      "day": 389,
+      "varie": false,
+      "split": null,
+      "band": "bright"
+     },
+     {
+      "lb": 496,
+      "day": 477,
+      "varie": false,
+      "split": null,
+      "band": "mid"
+     }
+    ],
+    [
+     {
+      "lb": 36,
+      "day": 37,
+      "varie": false,
+      "split": 401,
+      "band": "mid"
+     },
+     {
+      "lb": 136,
+      "day": 109,
+      "varie": true,
+      "split": 312,
+      "band": "mid"
+     },
+     {
+      "lb": 256,
+      "day": 275,
+      "varie": false,
+      "split": 374,
+      "band": "mid"
+     },
+     {
+      "lb": 376,
+      "day": 357,
+      "varie": false,
+      "split": null,
+      "band": "mid"
+     },
+     {
+      "lb": 496,
+      "day": 477,
+      "varie": false,
+      "split": null,
+      "band": "mid"
+     }
+    ],
+    [
+     {
+      "lb": 36,
+      "day": 37,
+      "varie": false,
+      "split": 344,
+      "band": "mid"
+     },
+     {
+      "lb": 136,
+      "day": 109,
+      "varie": false,
+      "split": 256,
+      "band": "mid"
+     },
+     {
+      "lb": 256,
+      "day": 275,
+      "varie": false,
+      "split": 364,
+      "band": "mid"
+     },
+     {
+      "lb": 376,
+      "day": 357,
+      "varie": false,
+      "split": null,
+      "band": "mid"
+     },
+     {
+      "lb": 496,
+      "day": 477,
+      "varie": false,
+      "split": null,
+      "band": "mid"
+     }
+    ],
+    [
+     {
+      "lb": 36,
+      "day": 37,
+      "varie": false,
+      "split": 111,
+      "band": "mid"
+     },
+     {
+      "lb": 136,
+      "day": 109,
+      "varie": false,
+      "split": 337,
+      "band": "mid"
+     },
+     {
+      "lb": 256,
+      "day": 275,
+      "varie": false,
+      "split": null,
+      "band": "mid"
+     },
+     {
+      "lb": 376,
+      "day": 357,
+      "varie": false,
+      "split": 428,
+      "band": "mid"
+     },
+     {
+      "lb": 496,
+      "day": 477,
+      "varie": true,
+      "split": null,
+      "band": "mid"
+     }
+    ],
+    [
+     {
+      "lb": 36,
+      "day": 37,
+      "varie": false,
+      "split": 344,
+      "band": "mid"
+     },
+     {
+      "lb": 136,
+      "day": 109,
+      "varie": false,
+      "split": 289,
+      "band": "mid"
+     },
+     {
+      "lb": 256,
+      "day": 275,
+      "varie": false,
+      "split": 364,
+      "band": "mid"
+     },
+     {
+      "lb": 376,
+      "day": 357,
+      "varie": false,
+      "split": null,
+      "band": "mid"
+     },
+     {
+      "lb": 496,
+      "day": 477,
+      "varie": true,
+      "split": null,
+      "band": "mid"
+     }
+    ],
+    [
+     {
+      "lb": 36,
+      "day": 37,
+      "varie": false,
+      "split": 111,
+      "band": "mid"
+     },
+     {
+      "lb": 136,
+      "day": 109,
+      "varie": true,
+      "split": 266,
+      "band": "mid"
+     },
+     {
+      "lb": 256,
+      "day": 275,
+      "varie": false,
+      "split": 344,
+      "band": "mid"
+     },
+     {
+      "lb": 296,
+      "day": 312,
+      "varie": false,
+      "split": null,
+      "band": "mid"
+     },
+     {
+      "lb": 376,
+      "day": 357,
+      "varie": false,
+      "split": null,
+      "band": "mid"
+     },
+     {
+      "lb": 416,
+      "day": 389,
+      "varie": false,
+      "split": null,
+      "band": "bright"
+     },
+     {
+      "lb": 496,
+      "day": 477,
+      "varie": false,
+      "split": null,
+      "band": "mid"
+     }
+    ],
+    [
+     {
+      "lb": 36,
+      "day": 37,
+      "varie": false,
+      "split": 334,
+      "band": "mid"
+     },
+     {
+      "lb": 136,
+      "day": 109,
+      "varie": true,
+      "split": null,
+      "band": "mid"
+     },
+     {
+      "lb": 256,
+      "day": 275,
+      "varie": false,
+      "split": 374,
+      "band": "mid"
+     },
+     {
+      "lb": 296,
+      "day": 312,
+      "varie": false,
+      "split": null,
+      "band": "mid"
+     },
+     {
+      "lb": 376,
+      "day": 357,
+      "varie": false,
+      "split": 446,
+      "band": "mid"
+     },
+     {
+      "lb": 416,
+      "day": 389,
+      "varie": false,
+      "split": null,
+      "band": "bright"
+     },
+     {
+      "lb": 496,
+      "day": 477,
+      "varie": false,
+      "split": null,
+      "band": "mid"
+     }
+    ],
+    [
+     {
+      "lb": 36,
+      "day": 37,
+      "varie": false,
+      "split": 384,
+      "band": "mid"
+     },
+     {
+      "lb": 136,
+      "day": 109,
+      "varie": false,
+      "split": 322,
+      "band": "mid"
+     },
+     {
+      "lb": 256,
+      "day": 275,
+      "varie": false,
+      "split": 474,
+      "band": "mid"
+     },
+     {
+      "lb": 376,
+      "day": 357,
+      "varie": false,
+      "split": null,
+      "band": "mid"
+     },
+     {
+      "lb": 496,
+      "day": 477,
+      "varie": false,
+      "split": null,
+      "band": "mid"
+     }
+    ],
+    [
+     {
+      "lb": 36,
+      "day": 37,
+      "varie": false,
+      "split": 128,
+      "band": "mid"
+     },
+     {
+      "lb": 136,
+      "day": 109,
+      "varie": false,
+      "split": 266,
+      "band": "mid"
+     },
+     {
+      "lb": 256,
+      "day": 275,
+      "varie": false,
+      "split": 364,
+      "band": "mid"
+     },
+     {
+      "lb": 376,
+      "day": 357,
+      "varie": false,
+      "split": 464,
+      "band": "mid"
+     },
+     {
+      "lb": 496,
+      "day": 477,
+      "varie": true,
+      "split": null,
+      "band": "mid"
+     }
+    ],
+    [
+     {
+      "lb": 36,
+      "day": 37,
+      "varie": false,
+      "split": 474,
+      "band": "mid"
+     },
+     {
+      "lb": 136,
+      "day": 109,
+      "varie": false,
+      "split": 256,
+      "band": "mid"
+     },
+     {
+      "lb": 256,
+      "day": 275,
+      "varie": false,
+      "split": null,
+      "band": "mid"
+     },
+     {
+      "lb": 376,
+      "day": 357,
+      "varie": false,
+      "split": null,
+      "band": "mid"
+     },
+     {
+      "lb": 496,
+      "day": 477,
+      "varie": false,
+      "split": null,
+      "band": "mid"
+     }
+    ]
+   ]
+  },
+  {
+   "plant": "mother",
+   "lamps": 1,
+   "byDay": [
+    {
+     "day": 30,
+     "leaves": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 1
+     },
+     "varie": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 0
+     },
+     "varieSplit": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 0
+     },
+     "expectedVarieByGrade": {
+      "sanban": 0,
+      "halfmoon": 0,
+      "fullmoon": 0
+     }
+    },
+    {
+     "day": 60,
+     "leaves": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 1
+     },
+     "varie": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 0
+     },
+     "varieSplit": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 0
+     },
+     "expectedVarieByGrade": {
+      "sanban": 0,
+      "halfmoon": 0,
+      "fullmoon": 0
+     }
+    },
+    {
+     "day": 90,
+     "leaves": {
+      "p10": 1,
+      "p50": 1,
+      "p90": 2
+     },
+     "varie": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 1
+     },
+     "varieSplit": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 0
+     },
+     "expectedVarieByGrade": {
+      "sanban": 0.11,
+      "halfmoon": 0.1,
+      "fullmoon": 0.04
+     }
+    },
+    {
+     "day": 120,
+     "leaves": {
+      "p10": 1,
+      "p50": 1,
+      "p90": 2
+     },
+     "varie": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 1
+     },
+     "varieSplit": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 0
+     },
+     "expectedVarieByGrade": {
+      "sanban": 0.11,
+      "halfmoon": 0.1,
+      "fullmoon": 0.04
+     }
+    },
+    {
+     "day": 150,
+     "leaves": {
+      "p10": 1,
+      "p50": 1,
+      "p90": 3
+     },
+     "varie": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 1
+     },
+     "varieSplit": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 0
+     },
+     "expectedVarieByGrade": {
+      "sanban": 0.11,
+      "halfmoon": 0.1,
+      "fullmoon": 0.04
+     }
+    },
+    {
+     "day": 180,
+     "leaves": {
+      "p10": 1,
+      "p50": 1,
+      "p90": 3
+     },
+     "varie": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 1
+     },
+     "varieSplit": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 0
+     },
+     "expectedVarieByGrade": {
+      "sanban": 0.11,
+      "halfmoon": 0.1,
+      "fullmoon": 0.04
+     }
+    },
+    {
+     "day": 210,
+     "leaves": {
+      "p10": 1,
+      "p50": 1,
+      "p90": 3
+     },
+     "varie": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 1
+     },
+     "varieSplit": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 1
+     },
+     "expectedVarieByGrade": {
+      "sanban": 0.11,
+      "halfmoon": 0.1,
+      "fullmoon": 0.04
+     }
+    },
+    {
+     "day": 240,
+     "leaves": {
+      "p10": 2,
+      "p50": 2,
+      "p90": 4
+     },
+     "varie": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 1
+     },
+     "varieSplit": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 1
+     },
+     "expectedVarieByGrade": {
+      "sanban": 0.18,
+      "halfmoon": 0.13,
+      "fullmoon": 0.04
+     }
+    },
+    {
+     "day": 270,
+     "leaves": {
+      "p10": 2,
+      "p50": 2,
+      "p90": 4
+     },
+     "varie": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 1
+     },
+     "varieSplit": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 1
+     },
+     "expectedVarieByGrade": {
+      "sanban": 0.18,
+      "halfmoon": 0.13,
+      "fullmoon": 0.04
+     }
+    },
+    {
+     "day": 300,
+     "leaves": {
+      "p10": 2,
+      "p50": 2,
+      "p90": 5
+     },
+     "varie": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 1
+     },
+     "varieSplit": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 1
+     },
+     "expectedVarieByGrade": {
+      "sanban": 0.18,
+      "halfmoon": 0.13,
+      "fullmoon": 0.04
+     }
+    },
+    {
+     "day": 330,
+     "leaves": {
+      "p10": 2,
+      "p50": 2,
+      "p90": 5
+     },
+     "varie": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 1
+     },
+     "varieSplit": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 1
+     },
+     "expectedVarieByGrade": {
+      "sanban": 0.18,
+      "halfmoon": 0.13,
+      "fullmoon": 0.04
+     }
+    },
+    {
+     "day": 360,
+     "leaves": {
+      "p10": 2,
+      "p50": 2,
+      "p90": 5
+     },
+     "varie": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 1
+     },
+     "varieSplit": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 1
+     },
+     "expectedVarieByGrade": {
+      "sanban": 0.18,
+      "halfmoon": 0.13,
+      "fullmoon": 0.04
+     }
+    },
+    {
+     "day": 390,
+     "leaves": {
+      "p10": 3,
+      "p50": 3,
+      "p90": 6
+     },
+     "varie": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 1
+     },
+     "varieSplit": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 1
+     },
+     "expectedVarieByGrade": {
+      "sanban": 0.23,
+      "halfmoon": 0.16,
+      "fullmoon": 0.06
+     }
+    },
+    {
+     "day": 420,
+     "leaves": {
+      "p10": 3,
+      "p50": 3,
+      "p90": 6
+     },
+     "varie": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 1
+     },
+     "varieSplit": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 1
+     },
+     "expectedVarieByGrade": {
+      "sanban": 0.23,
+      "halfmoon": 0.16,
+      "fullmoon": 0.06
+     }
+    },
+    {
+     "day": 450,
+     "leaves": {
+      "p10": 3,
+      "p50": 3,
+      "p90": 6
+     },
+     "varie": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 1
+     },
+     "varieSplit": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 1
+     },
+     "expectedVarieByGrade": {
+      "sanban": 0.23,
+      "halfmoon": 0.16,
+      "fullmoon": 0.06
+     }
+    },
+    {
+     "day": 480,
+     "leaves": {
+      "p10": 3,
+      "p50": 3,
+      "p90": 7
+     },
+     "varie": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 1
+     },
+     "varieSplit": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 1
+     },
+     "expectedVarieByGrade": {
+      "sanban": 0.25,
+      "halfmoon": 0.18,
+      "fullmoon": 0.06
+     }
+    },
+    {
+     "day": 510,
+     "leaves": {
+      "p10": 3,
+      "p50": 3,
+      "p90": 7
+     },
+     "varie": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 1
+     },
+     "varieSplit": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 1
+     },
+     "expectedVarieByGrade": {
+      "sanban": 0.25,
+      "halfmoon": 0.18,
+      "fullmoon": 0.06
+     }
+    },
+    {
+     "day": 540,
+     "leaves": {
+      "p10": 3,
+      "p50": 3,
+      "p90": 7
+     },
+     "varie": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 1
+     },
+     "varieSplit": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 1
+     },
+     "expectedVarieByGrade": {
+      "sanban": 0.25,
+      "halfmoon": 0.18,
+      "fullmoon": 0.06
+     }
+    }
+   ],
+   "runs": [
+    [
+     {
+      "lb": 496,
+      "day": 77,
+      "varie": true,
+      "split": 205,
+      "band": "bright"
+     },
+     {
+      "lb": 536,
+      "day": 121,
+      "varie": false,
+      "split": null,
+      "band": "bright"
+     },
+     {
+      "lb": 616,
+      "day": 216,
+      "varie": false,
+      "split": 328,
+      "band": "mid"
+     },
+     {
+      "lb": 656,
+      "day": 274,
+      "varie": false,
+      "split": null,
+      "band": "bright"
+     },
+     {
+      "lb": 696,
+      "day": 329,
+      "varie": false,
+      "split": null,
+      "band": "bright"
+     },
+     {
+      "lb": 736,
+      "day": 382,
+      "varie": true,
+      "split": null,
+      "band": "bright"
+     },
+     {
+      "lb": 776,
+      "day": 465,
+      "varie": false,
+      "split": null,
+      "band": "bright"
+     }
+    ],
+    [
+     {
+      "lb": 496,
+      "day": 77,
+      "varie": false,
+      "split": 205,
+      "band": "bright"
+     },
+     {
+      "lb": 616,
+      "day": 216,
+      "varie": false,
+      "split": 385,
+      "band": "mid"
+     },
+     {
+      "lb": 736,
+      "day": 382,
+      "varie": false,
+      "split": null,
+      "band": "bright"
+     }
+    ],
+    [
+     {
+      "lb": 496,
+      "day": 77,
+      "varie": false,
+      "split": 185,
+      "band": "bright"
+     },
+     {
+      "lb": 616,
+      "day": 216,
+      "varie": false,
+      "split": 336,
+      "band": "mid"
+     },
+     {
+      "lb": 736,
+      "day": 382,
+      "varie": false,
+      "split": null,
+      "band": "bright"
+     }
+    ],
+    [
+     {
+      "lb": 416,
+      "day": 20,
+      "varie": false,
+      "split": null,
+      "band": "bright"
+     },
+     {
+      "lb": 456,
+      "day": 47,
+      "varie": false,
+      "split": null,
+      "band": "bright"
+     },
+     {
+      "lb": 496,
+      "day": 77,
+      "varie": true,
+      "split": 225,
+      "band": "bright"
+     },
+     {
+      "lb": 536,
+      "day": 121,
+      "varie": false,
+      "split": null,
+      "band": "bright"
+     },
+     {
+      "lb": 576,
+      "day": 166,
+      "varie": false,
+      "split": null,
+      "band": "mid"
+     },
+     {
+      "lb": 616,
+      "day": 216,
+      "varie": false,
+      "split": 332,
+      "band": "mid"
+     },
+     {
+      "lb": 656,
+      "day": 274,
+      "varie": false,
+      "split": null,
+      "band": "bright"
+     },
+     {
+      "lb": 696,
+      "day": 329,
+      "varie": false,
+      "split": null,
+      "band": "bright"
+     },
+     {
+      "lb": 736,
+      "day": 382,
+      "varie": false,
+      "split": null,
+      "band": "bright"
+     },
+     {
+      "lb": 776,
+      "day": 465,
+      "varie": false,
+      "split": null,
+      "band": "bright"
+     }
+    ],
+    [
+     {
+      "lb": 416,
+      "day": 20,
+      "varie": false,
+      "split": null,
+      "band": "bright"
+     },
+     {
+      "lb": 456,
+      "day": 47,
+      "varie": false,
+      "split": null,
+      "band": "bright"
+     },
+     {
+      "lb": 496,
+      "day": 77,
+      "varie": false,
+      "split": 195,
+      "band": "bright"
+     },
+     {
+      "lb": 536,
+      "day": 121,
+      "varie": false,
+      "split": null,
+      "band": "bright"
+     },
+     {
+      "lb": 576,
+      "day": 166,
+      "varie": false,
+      "split": null,
+      "band": "mid"
+     },
+     {
+      "lb": 616,
+      "day": 216,
+      "varie": true,
+      "split": 352,
+      "band": "mid"
+     },
+     {
+      "lb": 656,
+      "day": 274,
+      "varie": false,
+      "split": null,
+      "band": "bright"
+     },
+     {
+      "lb": 696,
+      "day": 329,
+      "varie": false,
+      "split": null,
+      "band": "bright"
+     },
+     {
+      "lb": 736,
+      "day": 382,
+      "varie": false,
+      "split": null,
+      "band": "bright"
+     },
+     {
+      "lb": 776,
+      "day": 465,
+      "varie": false,
+      "split": null,
+      "band": "bright"
+     }
+    ],
+    [
+     {
+      "lb": 496,
+      "day": 77,
+      "varie": false,
+      "split": 215,
+      "band": "bright"
+     },
+     {
+      "lb": 616,
+      "day": 216,
+      "varie": false,
+      "split": null,
+      "band": "mid"
+     },
+     {
+      "lb": 656,
+      "day": 274,
+      "varie": false,
+      "split": null,
+      "band": "bright"
+     },
+     {
+      "lb": 736,
+      "day": 382,
+      "varie": false,
+      "split": null,
+      "band": "bright"
+     },
+     {
+      "lb": 776,
+      "day": 465,
+      "varie": false,
+      "split": null,
+      "band": "bright"
+     }
+    ],
+    [
+     {
+      "lb": 496,
+      "day": 77,
+      "varie": false,
+      "split": 276,
+      "band": "bright"
+     },
+     {
+      "lb": 616,
+      "day": 216,
+      "varie": false,
+      "split": 332,
+      "band": "mid"
+     },
+     {
+      "lb": 736,
+      "day": 382,
+      "varie": false,
+      "split": null,
+      "band": "bright"
+     }
+    ],
+    [
+     {
+      "lb": 496,
+      "day": 77,
+      "varie": false,
+      "split": 165,
+      "band": "bright"
+     },
+     {
+      "lb": 616,
+      "day": 216,
+      "varie": false,
+      "split": 328,
+      "band": "mid"
+     },
+     {
+      "lb": 736,
+      "day": 382,
+      "varie": false,
+      "split": null,
+      "band": "bright"
+     }
+    ],
+    [
+     {
+      "lb": 496,
+      "day": 77,
+      "varie": false,
+      "split": 185,
+      "band": "bright"
+     },
+     {
+      "lb": 616,
+      "day": 216,
+      "varie": false,
+      "split": 340,
+      "band": "mid"
+     },
+     {
+      "lb": 736,
+      "day": 382,
+      "varie": true,
+      "split": null,
+      "band": "bright"
+     }
+    ],
+    [
+     {
+      "lb": 496,
+      "day": 77,
+      "varie": false,
+      "split": 250,
+      "band": "bright"
+     },
+     {
+      "lb": 536,
+      "day": 121,
+      "varie": false,
+      "split": null,
+      "band": "bright"
+     },
+     {
+      "lb": 616,
+      "day": 216,
+      "varie": false,
+      "split": 332,
+      "band": "mid"
+     },
+     {
+      "lb": 656,
+      "day": 274,
+      "varie": false,
+      "split": null,
+      "band": "bright"
+     },
+     {
+      "lb": 736,
+      "day": 382,
+      "varie": false,
+      "split": null,
+      "band": "bright"
+     },
+     {
+      "lb": 776,
+      "day": 465,
+      "varie": false,
+      "split": null,
+      "band": "bright"
+     }
+    ],
+    [
+     {
+      "lb": 416,
+      "day": 20,
+      "varie": false,
+      "split": null,
+      "band": "bright"
+     },
+     {
+      "lb": 496,
+      "day": 77,
+      "varie": false,
+      "split": 235,
+      "band": "bright"
+     },
+     {
+      "lb": 536,
+      "day": 121,
+      "varie": false,
+      "split": null,
+      "band": "bright"
+     },
+     {
+      "lb": 616,
+      "day": 216,
+      "varie": false,
+      "split": 328,
+      "band": "mid"
+     },
+     {
+      "lb": 656,
+      "day": 274,
+      "varie": false,
+      "split": null,
+      "band": "bright"
+     },
+     {
+      "lb": 736,
+      "day": 382,
+      "varie": false,
+      "split": null,
+      "band": "bright"
+     },
+     {
+      "lb": 776,
+      "day": 465,
+      "varie": false,
+      "split": null,
+      "band": "bright"
+     }
+    ],
+    [
+     {
+      "lb": 496,
+      "day": 77,
+      "varie": false,
+      "split": 195,
+      "band": "bright"
+     },
+     {
+      "lb": 616,
+      "day": 216,
+      "varie": false,
+      "split": 364,
+      "band": "mid"
+     },
+     {
+      "lb": 656,
+      "day": 274,
+      "varie": false,
+      "split": null,
+      "band": "bright"
+     },
+     {
+      "lb": 736,
+      "day": 382,
+      "varie": false,
+      "split": null,
+      "band": "bright"
+     },
+     {
+      "lb": 776,
+      "day": 465,
+      "varie": false,
+      "split": null,
+      "band": "bright"
+     }
+    ],
+    [
+     {
+      "lb": 496,
+      "day": 77,
+      "varie": false,
+      "split": 309,
+      "band": "bright"
+     },
+     {
+      "lb": 616,
+      "day": 216,
+      "varie": false,
+      "split": 332,
+      "band": "mid"
+     },
+     {
+      "lb": 736,
+      "day": 382,
+      "varie": false,
+      "split": null,
+      "band": "bright"
+     },
+     {
+      "lb": 776,
+      "day": 465,
+      "varie": false,
+      "split": null,
+      "band": "bright"
+     }
+    ],
+    [
+     {
+      "lb": 496,
+      "day": 77,
+      "varie": true,
+      "split": 241,
+      "band": "bright"
+     },
+     {
+      "lb": 616,
+      "day": 216,
+      "varie": true,
+      "split": 328,
+      "band": "mid"
+     },
+     {
+      "lb": 736,
+      "day": 382,
+      "varie": false,
+      "split": null,
+      "band": "bright"
+     }
+    ],
+    [
+     {
+      "lb": 496,
+      "day": 77,
+      "varie": true,
+      "split": 165,
+      "band": "bright"
+     },
+     {
+      "lb": 616,
+      "day": 216,
+      "varie": false,
+      "split": 328,
+      "band": "mid"
+     },
+     {
+      "lb": 736,
+      "day": 382,
+      "varie": false,
+      "split": null,
+      "band": "bright"
+     }
+    ],
+    [
+     {
+      "lb": 416,
+      "day": 20,
+      "varie": false,
+      "split": null,
+      "band": "bright"
+     },
+     {
+      "lb": 496,
+      "day": 77,
+      "varie": false,
+      "split": 205,
+      "band": "bright"
+     },
+     {
+      "lb": 536,
+      "day": 121,
+      "varie": false,
+      "split": null,
+      "band": "bright"
+     },
+     {
+      "lb": 616,
+      "day": 216,
+      "varie": false,
+      "split": 328,
+      "band": "mid"
+     },
+     {
+      "lb": 656,
+      "day": 274,
+      "varie": false,
+      "split": null,
+      "band": "bright"
+     },
+     {
+      "lb": 736,
+      "day": 382,
+      "varie": false,
+      "split": null,
+      "band": "bright"
+     },
+     {
+      "lb": 776,
+      "day": 465,
+      "varie": true,
+      "split": null,
+      "band": "bright"
+     }
+    ],
+    [
+     {
+      "lb": 416,
+      "day": 20,
+      "varie": false,
+      "split": null,
+      "band": "bright"
+     },
+     {
+      "lb": 496,
+      "day": 77,
+      "varie": false,
+      "split": 246,
+      "band": "bright"
+     },
+     {
+      "lb": 536,
+      "day": 121,
+      "varie": false,
+      "split": null,
+      "band": "bright"
+     },
+     {
+      "lb": 616,
+      "day": 216,
+      "varie": false,
+      "split": 344,
+      "band": "mid"
+     },
+     {
+      "lb": 656,
+      "day": 274,
+      "varie": false,
+      "split": null,
+      "band": "bright"
+     },
+     {
+      "lb": 736,
+      "day": 382,
+      "varie": false,
+      "split": null,
+      "band": "bright"
+     },
+     {
+      "lb": 776,
+      "day": 465,
+      "varie": false,
+      "split": null,
+      "band": "bright"
+     }
+    ],
+    [
+     {
+      "lb": 496,
+      "day": 77,
+      "varie": false,
+      "split": 276,
+      "band": "bright"
+     },
+     {
+      "lb": 616,
+      "day": 216,
+      "varie": false,
+      "split": 332,
+      "band": "mid"
+     },
+     {
+      "lb": 736,
+      "day": 382,
+      "varie": false,
+      "split": null,
+      "band": "bright"
+     }
+    ],
+    [
+     {
+      "lb": 496,
+      "day": 77,
+      "varie": true,
+      "split": 185,
+      "band": "bright"
+     },
+     {
+      "lb": 616,
+      "day": 216,
+      "varie": false,
+      "split": 328,
+      "band": "mid"
+     },
+     {
+      "lb": 736,
+      "day": 382,
+      "varie": false,
+      "split": null,
+      "band": "bright"
+     }
+    ],
+    [
+     {
+      "lb": 496,
+      "day": 77,
+      "varie": false,
+      "split": 254,
+      "band": "bright"
+     },
+     {
+      "lb": 616,
+      "day": 216,
+      "varie": false,
+      "split": 328,
+      "band": "mid"
+     },
+     {
+      "lb": 736,
+      "day": 382,
+      "varie": false,
+      "split": null,
+      "band": "bright"
+     }
+    ]
+   ]
+  },
+  {
+   "plant": "seed",
+   "lamps": 1,
+   "byDay": [
+    {
+     "day": 30,
+     "leaves": {
+      "p10": 1,
+      "p50": 1,
+      "p90": 1
+     },
+     "varie": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 0
+     },
+     "varieSplit": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 0
+     },
+     "expectedVarieByGrade": {
+      "sanban": 0,
+      "halfmoon": 0,
+      "fullmoon": 0
+     }
+    },
+    {
+     "day": 60,
+     "leaves": {
+      "p10": 2,
+      "p50": 2,
+      "p90": 2
+     },
+     "varie": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 1
+     },
+     "varieSplit": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 0
+     },
+     "expectedVarieByGrade": {
+      "sanban": 0.14,
+      "halfmoon": 0.05,
+      "fullmoon": 0.01
+     }
+    },
+    {
+     "day": 90,
+     "leaves": {
+      "p10": 2,
+      "p50": 2,
+      "p90": 2
+     },
+     "varie": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 1
+     },
+     "varieSplit": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 0
+     },
+     "expectedVarieByGrade": {
+      "sanban": 0.14,
+      "halfmoon": 0.05,
+      "fullmoon": 0.01
+     }
+    },
+    {
+     "day": 120,
+     "leaves": {
+      "p10": 3,
+      "p50": 3,
+      "p90": 3
+     },
+     "varie": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 1
+     },
+     "varieSplit": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 0
+     },
+     "expectedVarieByGrade": {
+      "sanban": 0.14,
+      "halfmoon": 0.05,
+      "fullmoon": 0.01
+     }
+    },
+    {
+     "day": 150,
+     "leaves": {
+      "p10": 3,
+      "p50": 3,
+      "p90": 4
+     },
+     "varie": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 1
+     },
+     "varieSplit": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 1
+     },
+     "expectedVarieByGrade": {
+      "sanban": 0.14,
+      "halfmoon": 0.05,
+      "fullmoon": 0.01
+     }
+    },
+    {
+     "day": 180,
+     "leaves": {
+      "p10": 4,
+      "p50": 4,
+      "p90": 5
+     },
+     "varie": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 1
+     },
+     "varieSplit": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 1
+     },
+     "expectedVarieByGrade": {
+      "sanban": 0.14,
+      "halfmoon": 0.05,
+      "fullmoon": 0.01
+     }
+    },
+    {
+     "day": 210,
+     "leaves": {
+      "p10": 4,
+      "p50": 4,
+      "p90": 6
+     },
+     "varie": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 1
+     },
+     "varieSplit": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 1
+     },
+     "expectedVarieByGrade": {
+      "sanban": 0.14,
+      "halfmoon": 0.05,
+      "fullmoon": 0.01
+     }
+    },
+    {
+     "day": 240,
+     "leaves": {
+      "p10": 4,
+      "p50": 4,
+      "p90": 6
+     },
+     "varie": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 1
+     },
+     "varieSplit": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 1
+     },
+     "expectedVarieByGrade": {
+      "sanban": 0.14,
+      "halfmoon": 0.05,
+      "fullmoon": 0.01
+     }
+    },
+    {
+     "day": 270,
+     "leaves": {
+      "p10": 5,
+      "p50": 5,
+      "p90": 7
+     },
+     "varie": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 1
+     },
+     "varieSplit": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 1
+     },
+     "expectedVarieByGrade": {
+      "sanban": 0.25,
+      "halfmoon": 0.15,
+      "fullmoon": 0.05
+     }
+    },
+    {
+     "day": 300,
+     "leaves": {
+      "p10": 5,
+      "p50": 5,
+      "p90": 7
+     },
+     "varie": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 1
+     },
+     "varieSplit": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 1
+     },
+     "expectedVarieByGrade": {
+      "sanban": 0.25,
+      "halfmoon": 0.15,
+      "fullmoon": 0.05
+     }
+    },
+    {
+     "day": 330,
+     "leaves": {
+      "p10": 5,
+      "p50": 5,
+      "p90": 8
+     },
+     "varie": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 1
+     },
+     "varieSplit": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 1
+     },
+     "expectedVarieByGrade": {
+      "sanban": 0.25,
+      "halfmoon": 0.15,
+      "fullmoon": 0.05
+     }
+    },
+    {
+     "day": 360,
+     "leaves": {
+      "p10": 5,
+      "p50": 5,
+      "p90": 8
+     },
+     "varie": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 1
+     },
+     "varieSplit": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 1
+     },
+     "expectedVarieByGrade": {
+      "sanban": 0.25,
+      "halfmoon": 0.15,
+      "fullmoon": 0.05
+     }
+    },
+    {
+     "day": 390,
+     "leaves": {
+      "p10": 6,
+      "p50": 6,
+      "p90": 9
+     },
+     "varie": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 1
+     },
+     "varieSplit": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 1
+     },
+     "expectedVarieByGrade": {
+      "sanban": 0.28,
+      "halfmoon": 0.17,
+      "fullmoon": 0.06
+     }
+    },
+    {
+     "day": 420,
+     "leaves": {
+      "p10": 6,
+      "p50": 6,
+      "p90": 9
+     },
+     "varie": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 1
+     },
+     "varieSplit": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 1
+     },
+     "expectedVarieByGrade": {
+      "sanban": 0.28,
+      "halfmoon": 0.17,
+      "fullmoon": 0.06
+     }
+    },
+    {
+     "day": 450,
+     "leaves": {
+      "p10": 6,
+      "p50": 6,
+      "p90": 10
+     },
+     "varie": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 1
+     },
+     "varieSplit": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 1
+     },
+     "expectedVarieByGrade": {
+      "sanban": 0.28,
+      "halfmoon": 0.17,
+      "fullmoon": 0.06
+     }
+    },
+    {
+     "day": 480,
+     "leaves": {
+      "p10": 6,
+      "p50": 6,
+      "p90": 10
+     },
+     "varie": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 1
+     },
+     "varieSplit": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 1
+     },
+     "expectedVarieByGrade": {
+      "sanban": 0.28,
+      "halfmoon": 0.17,
+      "fullmoon": 0.06
+     }
+    },
+    {
+     "day": 510,
+     "leaves": {
+      "p10": 6,
+      "p50": 6,
+      "p90": 10
+     },
+     "varie": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 1
+     },
+     "varieSplit": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 1
+     },
+     "expectedVarieByGrade": {
+      "sanban": 0.28,
+      "halfmoon": 0.17,
+      "fullmoon": 0.06
+     }
+    },
+    {
+     "day": 540,
+     "leaves": {
+      "p10": 6,
+      "p50": 6,
+      "p90": 10
+     },
+     "varie": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 1
+     },
+     "varieSplit": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 1
+     },
+     "expectedVarieByGrade": {
+      "sanban": 0.28,
+      "halfmoon": 0.17,
+      "fullmoon": 0.06
+     }
+    }
+   ],
+   "runs": [
+    [
+     {
+      "lb": 36,
+      "day": 25,
+      "varie": false,
+      "split": 95,
+      "band": "bright"
+     },
+     {
+      "lb": 136,
+      "day": 60,
+      "varie": false,
+      "split": 179,
+      "band": "mid"
+     },
+     {
+      "lb": 256,
+      "day": 103,
+      "varie": false,
+      "split": 144,
+      "band": "mid"
+     },
+     {
+      "lb": 376,
+      "day": 166,
+      "varie": false,
+      "split": 290,
+      "band": "mid"
+     },
+     {
+      "lb": 496,
+      "day": 261,
+      "varie": true,
+      "split": 357,
+      "band": "bright"
+     },
+     {
+      "lb": 536,
+      "day": 302,
+      "varie": false,
+      "split": null,
+      "band": "mid"
+     },
+     {
+      "lb": 616,
+      "day": 382,
+      "varie": false,
+      "split": 521,
+      "band": "bright"
+     },
+     {
+      "lb": 656,
+      "day": 438,
+      "varie": false,
+      "split": null,
+      "band": "mid"
+     },
+     {
+      "lb": 696,
+      "day": 494,
+      "varie": false,
+      "split": null,
+      "band": "mid"
+     }
+    ],
+    [
+     {
+      "lb": 36,
+      "day": 25,
+      "varie": false,
+      "split": 79,
+      "band": "bright"
+     },
+     {
+      "lb": 136,
+      "day": 60,
+      "varie": false,
+      "split": 109,
+      "band": "mid"
+     },
+     {
+      "lb": 256,
+      "day": 103,
+      "varie": false,
+      "split": 262,
+      "band": "mid"
+     },
+     {
+      "lb": 376,
+      "day": 166,
+      "varie": false,
+      "split": 233,
+      "band": "mid"
+     },
+     {
+      "lb": 496,
+      "day": 261,
+      "varie": false,
+      "split": 353,
+      "band": "bright"
+     },
+     {
+      "lb": 616,
+      "day": 382,
+      "varie": false,
+      "split": null,
+      "band": "bright"
+     }
+    ],
+    [
+     {
+      "lb": 36,
+      "day": 25,
+      "varie": false,
+      "split": 120,
+      "band": "bright"
+     },
+     {
+      "lb": 136,
+      "day": 60,
+      "varie": false,
+      "split": 95,
+      "band": "mid"
+     },
+     {
+      "lb": 256,
+      "day": 103,
+      "varie": false,
+      "split": 240,
+      "band": "mid"
+     },
+     {
+      "lb": 376,
+      "day": 166,
+      "varie": false,
+      "split": 250,
+      "band": "mid"
+     },
+     {
+      "lb": 496,
+      "day": 261,
+      "varie": false,
+      "split": 349,
+      "band": "bright"
+     },
+     {
+      "lb": 616,
+      "day": 382,
+      "varie": false,
+      "split": 509,
+      "band": "bright"
+     }
+    ],
+    [
+     {
+      "lb": 36,
+      "day": 25,
+      "varie": false,
+      "split": 79,
+      "band": "bright"
+     },
+     {
+      "lb": 136,
+      "day": 60,
+      "varie": true,
+      "split": 137,
+      "band": "mid"
+     },
+     {
+      "lb": 256,
+      "day": 103,
+      "varie": false,
+      "split": 307,
+      "band": "mid"
+     },
+     {
+      "lb": 296,
+      "day": 124,
+      "varie": false,
+      "split": null,
+      "band": "bright"
+     },
+     {
+      "lb": 376,
+      "day": 166,
+      "varie": false,
+      "split": 282,
+      "band": "mid"
+     },
+     {
+      "lb": 416,
+      "day": 200,
+      "varie": false,
+      "split": null,
+      "band": "mid"
+     },
+     {
+      "lb": 456,
+      "day": 233,
+      "varie": false,
+      "split": null,
+      "band": "mid"
+     },
+     {
+      "lb": 496,
+      "day": 261,
+      "varie": true,
+      "split": 365,
+      "band": "bright"
+     },
+     {
+      "lb": 536,
+      "day": 302,
+      "varie": false,
+      "split": null,
+      "band": "mid"
+     },
+     {
+      "lb": 576,
+      "day": 342,
+      "varie": false,
+      "split": null,
+      "band": "bright"
+     },
+     {
+      "lb": 616,
+      "day": 382,
+      "varie": false,
+      "split": 531,
+      "band": "bright"
+     },
+     {
+      "lb": 656,
+      "day": 438,
+      "varie": false,
+      "split": null,
+      "band": "mid"
+     },
+     {
+      "lb": 696,
+      "day": 494,
+      "varie": false,
+      "split": null,
+      "band": "mid"
+     }
+    ],
+    [
+     {
+      "lb": 36,
+      "day": 25,
+      "varie": false,
+      "split": 84,
+      "band": "bright"
+     },
+     {
+      "lb": 136,
+      "day": 60,
+      "varie": false,
+      "split": 89,
+      "band": "mid"
+     },
+     {
+      "lb": 256,
+      "day": 103,
+      "varie": false,
+      "split": 164,
+      "band": "mid"
+     },
+     {
+      "lb": 296,
+      "day": 124,
+      "varie": false,
+      "split": null,
+      "band": "bright"
+     },
+     {
+      "lb": 376,
+      "day": 166,
+      "varie": false,
+      "split": 270,
+      "band": "mid"
+     },
+     {
+      "lb": 416,
+      "day": 200,
+      "varie": false,
+      "split": null,
+      "band": "mid"
+     },
+     {
+      "lb": 456,
+      "day": 233,
+      "varie": false,
+      "split": null,
+      "band": "mid"
+     },
+     {
+      "lb": 496,
+      "day": 261,
+      "varie": false,
+      "split": 341,
+      "band": "bright"
+     },
+     {
+      "lb": 536,
+      "day": 302,
+      "varie": false,
+      "split": null,
+      "band": "mid"
+     },
+     {
+      "lb": 576,
+      "day": 342,
+      "varie": false,
+      "split": null,
+      "band": "bright"
+     },
+     {
+      "lb": 616,
+      "day": 382,
+      "varie": true,
+      "split": null,
+      "band": "bright"
+     },
+     {
+      "lb": 656,
+      "day": 438,
+      "varie": false,
+      "split": null,
+      "band": "mid"
+     },
+     {
+      "lb": 696,
+      "day": 494,
+      "varie": false,
+      "split": null,
+      "band": "mid"
+     }
+    ],
+    [
+     {
+      "lb": 36,
+      "day": 25,
+      "varie": false,
+      "split": 52,
+      "band": "bright"
+     },
+     {
+      "lb": 136,
+      "day": 60,
+      "varie": false,
+      "split": 255,
+      "band": "mid"
+     },
+     {
+      "lb": 256,
+      "day": 103,
+      "varie": false,
+      "split": 154,
+      "band": "mid"
+     },
+     {
+      "lb": 376,
+      "day": 166,
+      "varie": false,
+      "split": 262,
+      "band": "mid"
+     },
+     {
+      "lb": 496,
+      "day": 261,
+      "varie": false,
+      "split": 361,
+      "band": "bright"
+     },
+     {
+      "lb": 616,
+      "day": 382,
+      "varie": false,
+      "split": null,
+      "band": "bright"
+     },
+     {
+      "lb": 656,
+      "day": 438,
+      "varie": false,
+      "split": null,
+      "band": "mid"
+     }
+    ],
+    [
+     {
+      "lb": 36,
+      "day": 25,
+      "varie": false,
+      "split": 67,
+      "band": "bright"
+     },
+     {
+      "lb": 136,
+      "day": 60,
+      "varie": false,
+      "split": 120,
+      "band": "mid"
+     },
+     {
+      "lb": 256,
+      "day": 103,
+      "varie": false,
+      "split": 282,
+      "band": "mid"
+     },
+     {
+      "lb": 376,
+      "day": 166,
+      "varie": false,
+      "split": 246,
+      "band": "mid"
+     },
+     {
+      "lb": 496,
+      "day": 261,
+      "varie": false,
+      "split": 361,
+      "band": "bright"
+     },
+     {
+      "lb": 616,
+      "day": 382,
+      "varie": false,
+      "split": 499,
+      "band": "bright"
+     }
+    ],
+    [
+     {
+      "lb": 36,
+      "day": 25,
+      "varie": false,
+      "split": 60,
+      "band": "bright"
+     },
+     {
+      "lb": 136,
+      "day": 60,
+      "varie": false,
+      "split": 137,
+      "band": "mid"
+     },
+     {
+      "lb": 256,
+      "day": 103,
+      "varie": false,
+      "split": 182,
+      "band": "mid"
+     },
+     {
+      "lb": 376,
+      "day": 166,
+      "varie": false,
+      "split": 250,
+      "band": "mid"
+     },
+     {
+      "lb": 496,
+      "day": 261,
+      "varie": false,
+      "split": 341,
+      "band": "bright"
+     },
+     {
+      "lb": 616,
+      "day": 382,
+      "varie": false,
+      "split": null,
+      "band": "bright"
+     }
+    ],
+    [
+     {
+      "lb": 36,
+      "day": 25,
+      "varie": false,
+      "split": 124,
+      "band": "bright"
+     },
+     {
+      "lb": 136,
+      "day": 60,
+      "varie": false,
+      "split": 104,
+      "band": "mid"
+     },
+     {
+      "lb": 256,
+      "day": 103,
+      "varie": false,
+      "split": 250,
+      "band": "mid"
+     },
+     {
+      "lb": 376,
+      "day": 166,
+      "varie": false,
+      "split": 270,
+      "band": "mid"
+     },
+     {
+      "lb": 496,
+      "day": 261,
+      "varie": false,
+      "split": 349,
+      "band": "bright"
+     },
+     {
+      "lb": 616,
+      "day": 382,
+      "varie": false,
+      "split": 517,
+      "band": "bright"
+     }
+    ],
+    [
+     {
+      "lb": 36,
+      "day": 25,
+      "varie": false,
+      "split": 152,
+      "band": "bright"
+     },
+     {
+      "lb": 136,
+      "day": 60,
+      "varie": false,
+      "split": 209,
+      "band": "mid"
+     },
+     {
+      "lb": 256,
+      "day": 103,
+      "varie": false,
+      "split": 278,
+      "band": "mid"
+     },
+     {
+      "lb": 376,
+      "day": 166,
+      "varie": false,
+      "split": 282,
+      "band": "mid"
+     },
+     {
+      "lb": 496,
+      "day": 261,
+      "varie": false,
+      "split": 361,
+      "band": "bright"
+     },
+     {
+      "lb": 536,
+      "day": 302,
+      "varie": false,
+      "split": null,
+      "band": "mid"
+     },
+     {
+      "lb": 616,
+      "day": 382,
+      "varie": false,
+      "split": 509,
+      "band": "bright"
+     },
+     {
+      "lb": 656,
+      "day": 438,
+      "varie": false,
+      "split": null,
+      "band": "mid"
+     }
+    ],
+    [
+     {
+      "lb": 36,
+      "day": 25,
+      "varie": false,
+      "split": 209,
+      "band": "bright"
+     },
+     {
+      "lb": 136,
+      "day": 60,
+      "varie": false,
+      "split": 267,
+      "band": "mid"
+     },
+     {
+      "lb": 256,
+      "day": 103,
+      "varie": false,
+      "split": 274,
+      "band": "mid"
+     },
+     {
+      "lb": 296,
+      "day": 124,
+      "varie": false,
+      "split": null,
+      "band": "bright"
+     },
+     {
+      "lb": 376,
+      "day": 166,
+      "varie": false,
+      "split": 331,
+      "band": "mid"
+     },
+     {
+      "lb": 416,
+      "day": 200,
+      "varie": false,
+      "split": null,
+      "band": "mid"
+     },
+     {
+      "lb": 496,
+      "day": 261,
+      "varie": false,
+      "split": 361,
+      "band": "bright"
+     },
+     {
+      "lb": 536,
+      "day": 302,
+      "varie": false,
+      "split": null,
+      "band": "mid"
+     },
+     {
+      "lb": 616,
+      "day": 382,
+      "varie": false,
+      "split": 492,
+      "band": "bright"
+     },
+     {
+      "lb": 656,
+      "day": 438,
+      "varie": false,
+      "split": null,
+      "band": "mid"
+     }
+    ],
+    [
+     {
+      "lb": 36,
+      "day": 25,
+      "varie": false,
+      "split": 152,
+      "band": "bright"
+     },
+     {
+      "lb": 136,
+      "day": 60,
+      "varie": true,
+      "split": 109,
+      "band": "mid"
+     },
+     {
+      "lb": 256,
+      "day": 103,
+      "varie": false,
+      "split": 182,
+      "band": "mid"
+     },
+     {
+      "lb": 376,
+      "day": 166,
+      "varie": false,
+      "split": 274,
+      "band": "mid"
+     },
+     {
+      "lb": 496,
+      "day": 261,
+      "varie": false,
+      "split": 353,
+      "band": "bright"
+     },
+     {
+      "lb": 616,
+      "day": 382,
+      "varie": false,
+      "split": null,
+      "band": "bright"
+     },
+     {
+      "lb": 656,
+      "day": 438,
+      "varie": false,
+      "split": null,
+      "band": "mid"
+     }
+    ],
+    [
+     {
+      "lb": 36,
+      "day": 25,
+      "varie": false,
+      "split": 75,
+      "band": "bright"
+     },
+     {
+      "lb": 136,
+      "day": 60,
+      "varie": false,
+      "split": 89,
+      "band": "mid"
+     },
+     {
+      "lb": 256,
+      "day": 103,
+      "varie": false,
+      "split": 172,
+      "band": "mid"
+     },
+     {
+      "lb": 376,
+      "day": 166,
+      "varie": false,
+      "split": 315,
+      "band": "mid"
+     },
+     {
+      "lb": 496,
+      "day": 261,
+      "varie": false,
+      "split": 386,
+      "band": "bright"
+     },
+     {
+      "lb": 616,
+      "day": 382,
+      "varie": false,
+      "split": null,
+      "band": "bright"
+     }
+    ],
+    [
+     {
+      "lb": 36,
+      "day": 25,
+      "varie": false,
+      "split": 60,
+      "band": "bright"
+     },
+     {
+      "lb": 136,
+      "day": 60,
+      "varie": false,
+      "split": 124,
+      "band": "mid"
+     },
+     {
+      "lb": 256,
+      "day": 103,
+      "varie": false,
+      "split": null,
+      "band": "mid"
+     },
+     {
+      "lb": 376,
+      "day": 166,
+      "varie": false,
+      "split": 233,
+      "band": "mid"
+     },
+     {
+      "lb": 496,
+      "day": 261,
+      "varie": true,
+      "split": 374,
+      "band": "bright"
+     },
+     {
+      "lb": 616,
+      "day": 382,
+      "varie": false,
+      "split": null,
+      "band": "bright"
+     }
+    ],
+    [
+     {
+      "lb": 36,
+      "day": 25,
+      "varie": false,
+      "split": 115,
+      "band": "bright"
+     },
+     {
+      "lb": 136,
+      "day": 60,
+      "varie": false,
+      "split": 104,
+      "band": "mid"
+     },
+     {
+      "lb": 256,
+      "day": 103,
+      "varie": false,
+      "split": 172,
+      "band": "mid"
+     },
+     {
+      "lb": 376,
+      "day": 166,
+      "varie": false,
+      "split": 278,
+      "band": "mid"
+     },
+     {
+      "lb": 496,
+      "day": 261,
+      "varie": true,
+      "split": 341,
+      "band": "bright"
+     },
+     {
+      "lb": 616,
+      "day": 382,
+      "varie": false,
+      "split": null,
+      "band": "bright"
+     }
+    ],
+    [
+     {
+      "lb": 36,
+      "day": 25,
+      "varie": false,
+      "split": 60,
+      "band": "bright"
+     },
+     {
+      "lb": 136,
+      "day": 60,
+      "varie": true,
+      "split": 95,
+      "band": "mid"
+     },
+     {
+      "lb": 256,
+      "day": 103,
+      "varie": false,
+      "split": 154,
+      "band": "mid"
+     },
+     {
+      "lb": 296,
+      "day": 124,
+      "varie": false,
+      "split": null,
+      "band": "bright"
+     },
+     {
+      "lb": 376,
+      "day": 166,
+      "varie": false,
+      "split": 274,
+      "band": "mid"
+     },
+     {
+      "lb": 416,
+      "day": 200,
+      "varie": false,
+      "split": null,
+      "band": "mid"
+     },
+     {
+      "lb": 496,
+      "day": 261,
+      "varie": false,
+      "split": 341,
+      "band": "bright"
+     },
+     {
+      "lb": 536,
+      "day": 302,
+      "varie": false,
+      "split": null,
+      "band": "mid"
+     },
+     {
+      "lb": 616,
+      "day": 382,
+      "varie": false,
+      "split": null,
+      "band": "bright"
+     },
+     {
+      "lb": 656,
+      "day": 438,
+      "varie": false,
+      "split": null,
+      "band": "mid"
+     }
+    ],
+    [
+     {
+      "lb": 36,
+      "day": 25,
+      "varie": false,
+      "split": 109,
+      "band": "bright"
+     },
+     {
+      "lb": 136,
+      "day": 60,
+      "varie": true,
+      "split": 293,
+      "band": "mid"
+     },
+     {
+      "lb": 256,
+      "day": 103,
+      "varie": false,
+      "split": 182,
+      "band": "mid"
+     },
+     {
+      "lb": 296,
+      "day": 124,
+      "varie": false,
+      "split": null,
+      "band": "bright"
+     },
+     {
+      "lb": 376,
+      "day": 166,
+      "varie": false,
+      "split": 240,
+      "band": "mid"
+     },
+     {
+      "lb": 416,
+      "day": 200,
+      "varie": false,
+      "split": null,
+      "band": "mid"
+     },
+     {
+      "lb": 496,
+      "day": 261,
+      "varie": false,
+      "split": 378,
+      "band": "bright"
+     },
+     {
+      "lb": 536,
+      "day": 302,
+      "varie": false,
+      "split": null,
+      "band": "mid"
+     },
+     {
+      "lb": 616,
+      "day": 382,
+      "varie": false,
+      "split": null,
+      "band": "bright"
+     },
+     {
+      "lb": 656,
+      "day": 438,
+      "varie": false,
+      "split": null,
+      "band": "mid"
+     }
+    ],
+    [
+     {
+      "lb": 36,
+      "day": 25,
+      "varie": false,
+      "split": 124,
+      "band": "bright"
+     },
+     {
+      "lb": 136,
+      "day": 60,
+      "varie": false,
+      "split": 115,
+      "band": "mid"
+     },
+     {
+      "lb": 256,
+      "day": 103,
+      "varie": false,
+      "split": 254,
+      "band": "mid"
+     },
+     {
+      "lb": 376,
+      "day": 166,
+      "varie": false,
+      "split": 258,
+      "band": "mid"
+     },
+     {
+      "lb": 496,
+      "day": 261,
+      "varie": false,
+      "split": 353,
+      "band": "bright"
+     },
+     {
+      "lb": 616,
+      "day": 382,
+      "varie": false,
+      "split": null,
+      "band": "bright"
+     }
+    ],
+    [
+     {
+      "lb": 36,
+      "day": 25,
+      "varie": false,
+      "split": 67,
+      "band": "bright"
+     },
+     {
+      "lb": 136,
+      "day": 60,
+      "varie": false,
+      "split": 95,
+      "band": "mid"
+     },
+     {
+      "lb": 256,
+      "day": 103,
+      "varie": false,
+      "split": 172,
+      "band": "mid"
+     },
+     {
+      "lb": 376,
+      "day": 166,
+      "varie": false,
+      "split": 246,
+      "band": "mid"
+     },
+     {
+      "lb": 496,
+      "day": 261,
+      "varie": true,
+      "split": 349,
+      "band": "bright"
+     },
+     {
+      "lb": 616,
+      "day": 382,
+      "varie": false,
+      "split": 492,
+      "band": "bright"
+     }
+    ],
+    [
+     {
+      "lb": 36,
+      "day": 25,
+      "varie": false,
+      "split": 199,
+      "band": "bright"
+     },
+     {
+      "lb": 136,
+      "day": 60,
+      "varie": false,
+      "split": 89,
+      "band": "mid"
+     },
+     {
+      "lb": 256,
+      "day": 103,
+      "varie": false,
+      "split": 278,
+      "band": "mid"
+     },
+     {
+      "lb": 376,
+      "day": 166,
+      "varie": false,
+      "split": 278,
+      "band": "mid"
+     },
+     {
+      "lb": 496,
+      "day": 261,
+      "varie": false,
+      "split": 345,
+      "band": "bright"
+     },
+     {
+      "lb": 616,
+      "day": 382,
+      "varie": false,
+      "split": 492,
+      "band": "bright"
+     }
+    ]
+   ]
+  },
+  {
+   "plant": "mother",
+   "lamps": 3,
+   "byDay": [
+    {
+     "day": 30,
+     "leaves": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 1
+     },
+     "varie": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 0
+     },
+     "varieSplit": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 0
+     },
+     "expectedVarieByGrade": {
+      "sanban": 0,
+      "halfmoon": 0,
+      "fullmoon": 0
+     }
+    },
+    {
+     "day": 60,
+     "leaves": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 1
+     },
+     "varie": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 0
+     },
+     "varieSplit": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 0
+     },
+     "expectedVarieByGrade": {
+      "sanban": 0,
+      "halfmoon": 0,
+      "fullmoon": 0
+     }
+    },
+    {
+     "day": 90,
+     "leaves": {
+      "p10": 1,
+      "p50": 1,
+      "p90": 2
+     },
+     "varie": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 1
+     },
+     "varieSplit": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 0
+     },
+     "expectedVarieByGrade": {
+      "sanban": 0.11,
+      "halfmoon": 0.1,
+      "fullmoon": 0.04
+     }
+    },
+    {
+     "day": 120,
+     "leaves": {
+      "p10": 1,
+      "p50": 1,
+      "p90": 3
+     },
+     "varie": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 1
+     },
+     "varieSplit": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 0
+     },
+     "expectedVarieByGrade": {
+      "sanban": 0.16,
+      "halfmoon": 0.14,
+      "fullmoon": 0.05
+     }
+    },
+    {
+     "day": 150,
+     "leaves": {
+      "p10": 1,
+      "p50": 1,
+      "p90": 3
+     },
+     "varie": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 1
+     },
+     "varieSplit": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 0
+     },
+     "expectedVarieByGrade": {
+      "sanban": 0.16,
+      "halfmoon": 0.14,
+      "fullmoon": 0.05
+     }
+    },
+    {
+     "day": 180,
+     "leaves": {
+      "p10": 1,
+      "p50": 1,
+      "p90": 3
+     },
+     "varie": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 1
+     },
+     "varieSplit": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 1
+     },
+     "expectedVarieByGrade": {
+      "sanban": 0.16,
+      "halfmoon": 0.14,
+      "fullmoon": 0.05
+     }
+    },
+    {
+     "day": 210,
+     "leaves": {
+      "p10": 2,
+      "p50": 2,
+      "p90": 4
+     },
+     "varie": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 2
+     },
+     "varieSplit": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 1
+     },
+     "expectedVarieByGrade": {
+      "sanban": 0.2,
+      "halfmoon": 0.18,
+      "fullmoon": 0.07
+     }
+    },
+    {
+     "day": 240,
+     "leaves": {
+      "p10": 2,
+      "p50": 2,
+      "p90": 4
+     },
+     "varie": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 2
+     },
+     "varieSplit": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 1
+     },
+     "expectedVarieByGrade": {
+      "sanban": 0.2,
+      "halfmoon": 0.18,
+      "fullmoon": 0.07
+     }
+    },
+    {
+     "day": 270,
+     "leaves": {
+      "p10": 2,
+      "p50": 2,
+      "p90": 5
+     },
+     "varie": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 2
+     },
+     "varieSplit": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 1
+     },
+     "expectedVarieByGrade": {
+      "sanban": 0.2,
+      "halfmoon": 0.18,
+      "fullmoon": 0.07
+     }
+    },
+    {
+     "day": 300,
+     "leaves": {
+      "p10": 2,
+      "p50": 2,
+      "p90": 5
+     },
+     "varie": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 2
+     },
+     "varieSplit": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 1
+     },
+     "expectedVarieByGrade": {
+      "sanban": 0.2,
+      "halfmoon": 0.18,
+      "fullmoon": 0.07
+     }
+    },
+    {
+     "day": 330,
+     "leaves": {
+      "p10": 2,
+      "p50": 2,
+      "p90": 5
+     },
+     "varie": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 2
+     },
+     "varieSplit": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 1
+     },
+     "expectedVarieByGrade": {
+      "sanban": 0.2,
+      "halfmoon": 0.18,
+      "fullmoon": 0.07
+     }
+    },
+    {
+     "day": 360,
+     "leaves": {
+      "p10": 3,
+      "p50": 3,
+      "p90": 6
+     },
+     "varie": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 2
+     },
+     "varieSplit": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 1
+     },
+     "expectedVarieByGrade": {
+      "sanban": 0.2,
+      "halfmoon": 0.18,
+      "fullmoon": 0.07
+     }
+    },
+    {
+     "day": 390,
+     "leaves": {
+      "p10": 3,
+      "p50": 3,
+      "p90": 6
+     },
+     "varie": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 2
+     },
+     "varieSplit": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 1
+     },
+     "expectedVarieByGrade": {
+      "sanban": 0.2,
+      "halfmoon": 0.18,
+      "fullmoon": 0.07
+     }
+    },
+    {
+     "day": 420,
+     "leaves": {
+      "p10": 3,
+      "p50": 3,
+      "p90": 6
+     },
+     "varie": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 2
+     },
+     "varieSplit": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 1
+     },
+     "expectedVarieByGrade": {
+      "sanban": 0.2,
+      "halfmoon": 0.18,
+      "fullmoon": 0.07
+     }
+    },
+    {
+     "day": 450,
+     "leaves": {
+      "p10": 3,
+      "p50": 3,
+      "p90": 7
+     },
+     "varie": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 2
+     },
+     "varieSplit": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 1
+     },
+     "expectedVarieByGrade": {
+      "sanban": 0.23,
+      "halfmoon": 0.2,
+      "fullmoon": 0.07
+     }
+    },
+    {
+     "day": 480,
+     "leaves": {
+      "p10": 3,
+      "p50": 3,
+      "p90": 7
+     },
+     "varie": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 2
+     },
+     "varieSplit": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 1
+     },
+     "expectedVarieByGrade": {
+      "sanban": 0.23,
+      "halfmoon": 0.2,
+      "fullmoon": 0.07
+     }
+    },
+    {
+     "day": 510,
+     "leaves": {
+      "p10": 3,
+      "p50": 3,
+      "p90": 7
+     },
+     "varie": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 2
+     },
+     "varieSplit": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 1
+     },
+     "expectedVarieByGrade": {
+      "sanban": 0.23,
+      "halfmoon": 0.2,
+      "fullmoon": 0.07
+     }
+    },
+    {
+     "day": 540,
+     "leaves": {
+      "p10": 3,
+      "p50": 3,
+      "p90": 8
+     },
+     "varie": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 2
+     },
+     "varieSplit": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 1
+     },
+     "expectedVarieByGrade": {
+      "sanban": 0.25,
+      "halfmoon": 0.22,
+      "fullmoon": 0.08
+     }
+    }
+   ],
+   "runs": [
+    [
+     {
+      "lb": 496,
+      "day": 73,
+      "varie": true,
+      "split": 168,
+      "band": "bright"
+     },
+     {
+      "lb": 536,
+      "day": 113,
+      "varie": true,
+      "split": null,
+      "band": "bright"
+     },
+     {
+      "lb": 616,
+      "day": 194,
+      "varie": false,
+      "split": 314,
+      "band": "bright"
+     },
+     {
+      "lb": 656,
+      "day": 250,
+      "varie": false,
+      "split": null,
+      "band": "bright"
+     },
+     {
+      "lb": 696,
+      "day": 304,
+      "varie": false,
+      "split": null,
+      "band": "bright"
+     },
+     {
+      "lb": 736,
+      "day": 357,
+      "varie": false,
+      "split": 539,
+      "band": "bright"
+     },
+     {
+      "lb": 776,
+      "day": 437,
+      "varie": false,
+      "split": null,
+      "band": "bright"
+     },
+     {
+      "lb": 816,
+      "day": 517,
+      "varie": false,
+      "split": null,
+      "band": "bright"
+     }
+    ],
+    [
+     {
+      "lb": 496,
+      "day": 73,
+      "varie": false,
+      "split": 168,
+      "band": "bright"
+     },
+     {
+      "lb": 616,
+      "day": 194,
+      "varie": false,
+      "split": 334,
+      "band": "bright"
+     },
+     {
+      "lb": 736,
+      "day": 357,
+      "varie": false,
+      "split": null,
+      "band": "bright"
+     }
+    ],
+    [
+     {
+      "lb": 496,
+      "day": 73,
+      "varie": false,
+      "split": 160,
+      "band": "bright"
+     },
+     {
+      "lb": 616,
+      "day": 194,
+      "varie": false,
+      "split": 310,
+      "band": "bright"
+     },
+     {
+      "lb": 736,
+      "day": 357,
+      "varie": false,
+      "split": null,
+      "band": "bright"
+     }
+    ],
+    [
+     {
+      "lb": 416,
+      "day": 20,
+      "varie": false,
+      "split": null,
+      "band": "bright"
+     },
+     {
+      "lb": 456,
+      "day": 46,
+      "varie": false,
+      "split": null,
+      "band": "bright"
+     },
+     {
+      "lb": 496,
+      "day": 73,
+      "varie": true,
+      "split": 178,
+      "band": "bright"
+     },
+     {
+      "lb": 536,
+      "day": 113,
+      "varie": false,
+      "split": null,
+      "band": "bright"
+     },
+     {
+      "lb": 576,
+      "day": 153,
+      "varie": false,
+      "split": null,
+      "band": "bright"
+     },
+     {
+      "lb": 616,
+      "day": 194,
+      "varie": false,
+      "split": 306,
+      "band": "bright"
+     },
+     {
+      "lb": 656,
+      "day": 250,
+      "varie": false,
+      "split": null,
+      "band": "bright"
+     },
+     {
+      "lb": 696,
+      "day": 304,
+      "varie": false,
+      "split": null,
+      "band": "bright"
+     },
+     {
+      "lb": 736,
+      "day": 357,
+      "varie": false,
+      "split": 534,
+      "band": "bright"
+     },
+     {
+      "lb": 776,
+      "day": 437,
+      "varie": false,
+      "split": null,
+      "band": "bright"
+     },
+     {
+      "lb": 816,
+      "day": 517,
+      "varie": false,
+      "split": null,
+      "band": "bright"
+     }
+    ],
+    [
+     {
+      "lb": 416,
+      "day": 20,
+      "varie": false,
+      "split": null,
+      "band": "bright"
+     },
+     {
+      "lb": 456,
+      "day": 46,
+      "varie": false,
+      "split": null,
+      "band": "bright"
+     },
+     {
+      "lb": 496,
+      "day": 73,
+      "varie": false,
+      "split": 164,
+      "band": "bright"
+     },
+     {
+      "lb": 536,
+      "day": 113,
+      "varie": true,
+      "split": null,
+      "band": "bright"
+     },
+     {
+      "lb": 576,
+      "day": 153,
+      "varie": false,
+      "split": null,
+      "band": "bright"
+     },
+     {
+      "lb": 616,
+      "day": 194,
+      "varie": true,
+      "split": 326,
+      "band": "bright"
+     },
+     {
+      "lb": 656,
+      "day": 250,
+      "varie": false,
+      "split": null,
+      "band": "bright"
+     },
+     {
+      "lb": 696,
+      "day": 304,
+      "varie": false,
+      "split": null,
+      "band": "bright"
+     },
+     {
+      "lb": 736,
+      "day": 357,
+      "varie": false,
+      "split": null,
+      "band": "bright"
+     },
+     {
+      "lb": 776,
+      "day": 437,
+      "varie": false,
+      "split": null,
+      "band": "bright"
+     },
+     {
+      "lb": 816,
+      "day": 517,
+      "varie": false,
+      "split": null,
+      "band": "bright"
+     }
+    ],
+    [
+     {
+      "lb": 496,
+      "day": 73,
+      "varie": false,
+      "split": 173,
+      "band": "bright"
+     },
+     {
+      "lb": 616,
+      "day": 194,
+      "varie": false,
+      "split": null,
+      "band": "bright"
+     },
+     {
+      "lb": 656,
+      "day": 250,
+      "varie": false,
+      "split": null,
+      "band": "bright"
+     },
+     {
+      "lb": 736,
+      "day": 357,
+      "varie": false,
+      "split": null,
+      "band": "bright"
+     },
+     {
+      "lb": 776,
+      "day": 437,
+      "varie": false,
+      "split": null,
+      "band": "bright"
+     }
+    ],
+    [
+     {
+      "lb": 496,
+      "day": 73,
+      "varie": false,
+      "split": 232,
+      "band": "bright"
+     },
+     {
+      "lb": 616,
+      "day": 194,
+      "varie": false,
+      "split": 306,
+      "band": "bright"
+     },
+     {
+      "lb": 736,
+      "day": 357,
+      "varie": false,
+      "split": null,
+      "band": "bright"
+     }
+    ],
+    [
+     {
+      "lb": 496,
+      "day": 73,
+      "varie": false,
+      "split": 152,
+      "band": "bright"
+     },
+     {
+      "lb": 616,
+      "day": 194,
+      "varie": false,
+      "split": 314,
+      "band": "bright"
+     },
+     {
+      "lb": 736,
+      "day": 357,
+      "varie": false,
+      "split": 516,
+      "band": "bright"
+     }
+    ],
+    [
+     {
+      "lb": 496,
+      "day": 73,
+      "varie": false,
+      "split": 160,
+      "band": "bright"
+     },
+     {
+      "lb": 616,
+      "day": 194,
+      "varie": false,
+      "split": 314,
+      "band": "bright"
+     },
+     {
+      "lb": 736,
+      "day": 357,
+      "varie": false,
+      "split": 516,
+      "band": "bright"
+     }
+    ],
+    [
+     {
+      "lb": 496,
+      "day": 73,
+      "varie": false,
+      "split": 198,
+      "band": "bright"
+     },
+     {
+      "lb": 536,
+      "day": 113,
+      "varie": false,
+      "split": null,
+      "band": "bright"
+     },
+     {
+      "lb": 616,
+      "day": 194,
+      "varie": false,
+      "split": 310,
+      "band": "bright"
+     },
+     {
+      "lb": 656,
+      "day": 250,
+      "varie": false,
+      "split": null,
+      "band": "bright"
+     },
+     {
+      "lb": 736,
+      "day": 357,
+      "varie": false,
+      "split": null,
+      "band": "bright"
+     },
+     {
+      "lb": 776,
+      "day": 437,
+      "varie": false,
+      "split": null,
+      "band": "bright"
+     },
+     {
+      "lb": 816,
+      "day": 517,
+      "varie": false,
+      "split": null,
+      "band": "bright"
+     }
+    ],
+    [
+     {
+      "lb": 416,
+      "day": 20,
+      "varie": false,
+      "split": null,
+      "band": "bright"
+     },
+     {
+      "lb": 496,
+      "day": 73,
+      "varie": false,
+      "split": 185,
+      "band": "bright"
+     },
+     {
+      "lb": 536,
+      "day": 113,
+      "varie": false,
+      "split": null,
+      "band": "bright"
+     },
+     {
+      "lb": 616,
+      "day": 194,
+      "varie": false,
+      "split": 302,
+      "band": "bright"
+     },
+     {
+      "lb": 656,
+      "day": 250,
+      "varie": false,
+      "split": null,
+      "band": "bright"
+     },
+     {
+      "lb": 736,
+      "day": 357,
+      "varie": false,
+      "split": 516,
+      "band": "bright"
+     },
+     {
+      "lb": 776,
+      "day": 437,
+      "varie": false,
+      "split": null,
+      "band": "bright"
+     },
+     {
+      "lb": 816,
+      "day": 517,
+      "varie": true,
+      "split": null,
+      "band": "bright"
+     }
+    ],
+    [
+     {
+      "lb": 496,
+      "day": 73,
+      "varie": false,
+      "split": 164,
+      "band": "bright"
+     },
+     {
+      "lb": 616,
+      "day": 194,
+      "varie": false,
+      "split": 314,
+      "band": "bright"
+     },
+     {
+      "lb": 656,
+      "day": 250,
+      "varie": false,
+      "split": null,
+      "band": "bright"
+     },
+     {
+      "lb": 736,
+      "day": 357,
+      "varie": false,
+      "split": null,
+      "band": "bright"
+     },
+     {
+      "lb": 776,
+      "day": 437,
+      "varie": false,
+      "split": null,
+      "band": "bright"
+     }
+    ],
+    [
+     {
+      "lb": 496,
+      "day": 73,
+      "varie": false,
+      "split": 240,
+      "band": "bright"
+     },
+     {
+      "lb": 616,
+      "day": 194,
+      "varie": false,
+      "split": 306,
+      "band": "bright"
+     },
+     {
+      "lb": 736,
+      "day": 357,
+      "varie": false,
+      "split": null,
+      "band": "bright"
+     },
+     {
+      "lb": 776,
+      "day": 437,
+      "varie": false,
+      "split": null,
+      "band": "bright"
+     }
+    ],
+    [
+     {
+      "lb": 496,
+      "day": 73,
+      "varie": true,
+      "split": 189,
+      "band": "bright"
+     },
+     {
+      "lb": 616,
+      "day": 194,
+      "varie": true,
+      "split": 330,
+      "band": "bright"
+     },
+     {
+      "lb": 736,
+      "day": 357,
+      "varie": false,
+      "split": 539,
+      "band": "bright"
+     }
+    ],
+    [
+     {
+      "lb": 496,
+      "day": 73,
+      "varie": true,
+      "split": 152,
+      "band": "bright"
+     },
+     {
+      "lb": 616,
+      "day": 194,
+      "varie": false,
+      "split": 322,
+      "band": "bright"
+     },
+     {
+      "lb": 736,
+      "day": 357,
+      "varie": false,
+      "split": 529,
+      "band": "bright"
+     }
+    ],
+    [
+     {
+      "lb": 416,
+      "day": 20,
+      "varie": false,
+      "split": null,
+      "band": "bright"
+     },
+     {
+      "lb": 496,
+      "day": 73,
+      "varie": false,
+      "split": 168,
+      "band": "bright"
+     },
+     {
+      "lb": 536,
+      "day": 113,
+      "varie": false,
+      "split": null,
+      "band": "bright"
+     },
+     {
+      "lb": 616,
+      "day": 194,
+      "varie": false,
+      "split": 330,
+      "band": "bright"
+     },
+     {
+      "lb": 656,
+      "day": 250,
+      "varie": false,
+      "split": null,
+      "band": "bright"
+     },
+     {
+      "lb": 736,
+      "day": 357,
+      "varie": false,
+      "split": null,
+      "band": "bright"
+     },
+     {
+      "lb": 776,
+      "day": 437,
+      "varie": true,
+      "split": null,
+      "band": "bright"
+     }
+    ],
+    [
+     {
+      "lb": 416,
+      "day": 20,
+      "varie": false,
+      "split": null,
+      "band": "bright"
+     },
+     {
+      "lb": 496,
+      "day": 73,
+      "varie": false,
+      "split": 194,
+      "band": "bright"
+     },
+     {
+      "lb": 536,
+      "day": 113,
+      "varie": false,
+      "split": null,
+      "band": "bright"
+     },
+     {
+      "lb": 616,
+      "day": 194,
+      "varie": false,
+      "split": 314,
+      "band": "bright"
+     },
+     {
+      "lb": 656,
+      "day": 250,
+      "varie": false,
+      "split": null,
+      "band": "bright"
+     },
+     {
+      "lb": 736,
+      "day": 357,
+      "varie": false,
+      "split": null,
+      "band": "bright"
+     },
+     {
+      "lb": 776,
+      "day": 437,
+      "varie": false,
+      "split": null,
+      "band": "bright"
+     },
+     {
+      "lb": 816,
+      "day": 517,
+      "varie": false,
+      "split": null,
+      "band": "bright"
+     }
+    ],
+    [
+     {
+      "lb": 496,
+      "day": 73,
+      "varie": false,
+      "split": 260,
+      "band": "bright"
+     },
+     {
+      "lb": 616,
+      "day": 194,
+      "varie": false,
+      "split": 314,
+      "band": "bright"
+     },
+     {
+      "lb": 736,
+      "day": 357,
+      "varie": false,
+      "split": 524,
+      "band": "bright"
+     }
+    ],
+    [
+     {
+      "lb": 496,
+      "day": 73,
+      "varie": true,
+      "split": 160,
+      "band": "bright"
+     },
+     {
+      "lb": 616,
+      "day": 194,
+      "varie": false,
+      "split": 302,
+      "band": "bright"
+     },
+     {
+      "lb": 736,
+      "day": 357,
+      "varie": false,
+      "split": 524,
+      "band": "bright"
+     }
+    ],
+    [
+     {
+      "lb": 496,
+      "day": 73,
+      "varie": false,
+      "split": 202,
+      "band": "bright"
+     },
+     {
+      "lb": 616,
+      "day": 194,
+      "varie": false,
+      "split": 302,
+      "band": "bright"
+     },
+     {
+      "lb": 736,
+      "day": 357,
+      "varie": false,
+      "split": 524,
+      "band": "bright"
+     }
+    ]
+   ]
+  },
+  {
+   "plant": "seed",
+   "lamps": 3,
+   "byDay": [
+    {
+     "day": 30,
+     "leaves": {
+      "p10": 1,
+      "p50": 1,
+      "p90": 1
+     },
+     "varie": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 1
+     },
+     "varieSplit": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 0
+     },
+     "expectedVarieByGrade": {
+      "sanban": 0.07,
+      "halfmoon": 0.06,
+      "fullmoon": 0.02
+     }
+    },
+    {
+     "day": 60,
+     "leaves": {
+      "p10": 2,
+      "p50": 2,
+      "p90": 2
+     },
+     "varie": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 1
+     },
+     "varieSplit": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 0
+     },
+     "expectedVarieByGrade": {
+      "sanban": 0.16,
+      "halfmoon": 0.14,
+      "fullmoon": 0.05
+     }
+    },
+    {
+     "day": 90,
+     "leaves": {
+      "p10": 2,
+      "p50": 2,
+      "p90": 2
+     },
+     "varie": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 1
+     },
+     "varieSplit": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 1
+     },
+     "expectedVarieByGrade": {
+      "sanban": 0.16,
+      "halfmoon": 0.14,
+      "fullmoon": 0.05
+     }
+    },
+    {
+     "day": 120,
+     "leaves": {
+      "p10": 3,
+      "p50": 3,
+      "p90": 4
+     },
+     "varie": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 1
+     },
+     "varieSplit": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 1
+     },
+     "expectedVarieByGrade": {
+      "sanban": 0.16,
+      "halfmoon": 0.14,
+      "fullmoon": 0.05
+     }
+    },
+    {
+     "day": 150,
+     "leaves": {
+      "p10": 3,
+      "p50": 3,
+      "p90": 4
+     },
+     "varie": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 1
+     },
+     "varieSplit": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 1
+     },
+     "expectedVarieByGrade": {
+      "sanban": 0.16,
+      "halfmoon": 0.14,
+      "fullmoon": 0.05
+     }
+    },
+    {
+     "day": 180,
+     "leaves": {
+      "p10": 4,
+      "p50": 4,
+      "p90": 5
+     },
+     "varie": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 1
+     },
+     "varieSplit": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 1
+     },
+     "expectedVarieByGrade": {
+      "sanban": 0.18,
+      "halfmoon": 0.16,
+      "fullmoon": 0.06
+     }
+    },
+    {
+     "day": 210,
+     "leaves": {
+      "p10": 4,
+      "p50": 4,
+      "p90": 6
+     },
+     "varie": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 1
+     },
+     "varieSplit": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 1
+     },
+     "expectedVarieByGrade": {
+      "sanban": 0.18,
+      "halfmoon": 0.16,
+      "fullmoon": 0.06
+     }
+    },
+    {
+     "day": 240,
+     "leaves": {
+      "p10": 5,
+      "p50": 5,
+      "p90": 7
+     },
+     "varie": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 2
+     },
+     "varieSplit": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 1
+     },
+     "expectedVarieByGrade": {
+      "sanban": 0.29,
+      "halfmoon": 0.26,
+      "fullmoon": 0.1
+     }
+    },
+    {
+     "day": 270,
+     "leaves": {
+      "p10": 5,
+      "p50": 5,
+      "p90": 7
+     },
+     "varie": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 2
+     },
+     "varieSplit": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 1
+     },
+     "expectedVarieByGrade": {
+      "sanban": 0.29,
+      "halfmoon": 0.26,
+      "fullmoon": 0.1
+     }
+    },
+    {
+     "day": 300,
+     "leaves": {
+      "p10": 5,
+      "p50": 5,
+      "p90": 8
+     },
+     "varie": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 2
+     },
+     "varieSplit": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 1
+     },
+     "expectedVarieByGrade": {
+      "sanban": 0.29,
+      "halfmoon": 0.26,
+      "fullmoon": 0.1
+     }
+    },
+    {
+     "day": 330,
+     "leaves": {
+      "p10": 5,
+      "p50": 5,
+      "p90": 8
+     },
+     "varie": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 2
+     },
+     "varieSplit": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 1
+     },
+     "expectedVarieByGrade": {
+      "sanban": 0.32,
+      "halfmoon": 0.28,
+      "fullmoon": 0.11
+     }
+    },
+    {
+     "day": 360,
+     "leaves": {
+      "p10": 6,
+      "p50": 6,
+      "p90": 9
+     },
+     "varie": {
+      "p10": 0,
+      "p50": 1,
+      "p90": 2
+     },
+     "varieSplit": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 2
+     },
+     "expectedVarieByGrade": {
+      "sanban": 0.36,
+      "halfmoon": 0.32,
+      "fullmoon": 0.12
+     }
+    },
+    {
+     "day": 390,
+     "leaves": {
+      "p10": 6,
+      "p50": 6,
+      "p90": 9
+     },
+     "varie": {
+      "p10": 0,
+      "p50": 1,
+      "p90": 2
+     },
+     "varieSplit": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 2
+     },
+     "expectedVarieByGrade": {
+      "sanban": 0.36,
+      "halfmoon": 0.32,
+      "fullmoon": 0.12
+     }
+    },
+    {
+     "day": 420,
+     "leaves": {
+      "p10": 6,
+      "p50": 6,
+      "p90": 10
+     },
+     "varie": {
+      "p10": 0,
+      "p50": 1,
+      "p90": 2
+     },
+     "varieSplit": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 2
+     },
+     "expectedVarieByGrade": {
+      "sanban": 0.36,
+      "halfmoon": 0.32,
+      "fullmoon": 0.12
+     }
+    },
+    {
+     "day": 450,
+     "leaves": {
+      "p10": 6,
+      "p50": 6,
+      "p90": 10
+     },
+     "varie": {
+      "p10": 0,
+      "p50": 1,
+      "p90": 2
+     },
+     "varieSplit": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 2
+     },
+     "expectedVarieByGrade": {
+      "sanban": 0.36,
+      "halfmoon": 0.32,
+      "fullmoon": 0.12
+     }
+    },
+    {
+     "day": 480,
+     "leaves": {
+      "p10": 6,
+      "p50": 6,
+      "p90": 10
+     },
+     "varie": {
+      "p10": 0,
+      "p50": 1,
+      "p90": 2
+     },
+     "varieSplit": {
+      "p10": 0,
+      "p50": 0,
+      "p90": 2
+     },
+     "expectedVarieByGrade": {
+      "sanban": 0.36,
+      "halfmoon": 0.32,
+      "fullmoon": 0.12
+     }
+    },
+    {
+     "day": 510,
+     "leaves": {
+      "p10": 6,
+      "p50": 6,
+      "p90": 10
+     },
+     "varie": {
+      "p10": 0,
+      "p50": 1,
+      "p90": 2
+     },
+     "varieSplit": {
+      "p10": 0,
+      "p50": 1,
+      "p90": 2
+     },
+     "expectedVarieByGrade": {
+      "sanban": 0.36,
+      "halfmoon": 0.32,
+      "fullmoon": 0.12
+     }
+    },
+    {
+     "day": 540,
+     "leaves": {
+      "p10": 7,
+      "p50": 7,
+      "p90": 11
+     },
+     "varie": {
+      "p10": 0,
+      "p50": 1,
+      "p90": 2
+     },
+     "varieSplit": {
+      "p10": 0,
+      "p50": 1,
+      "p90": 2
+     },
+     "expectedVarieByGrade": {
+      "sanban": 0.36,
+      "halfmoon": 0.32,
+      "fullmoon": 0.12
+     }
+    }
+   ],
+   "runs": [
+    [
+     {
+      "lb": 36,
+      "day": 25,
+      "varie": false,
+      "split": 78,
+      "band": "bright"
+     },
+     {
+      "lb": 136,
+      "day": 57,
+      "varie": false,
+      "split": 144,
+      "band": "bright"
+     },
+     {
+      "lb": 256,
+      "day": 97,
+      "varie": false,
+      "split": 134,
+      "band": "bright"
+     },
+     {
+      "lb": 376,
+      "day": 153,
+      "varie": false,
+      "split": 265,
+      "band": "bright"
+     },
+     {
+      "lb": 496,
+      "day": 237,
+      "varie": true,
+      "split": 324,
+      "band": "bright"
+     },
+     {
+      "lb": 536,
+      "day": 277,
+      "varie": false,
+      "split": null,
+      "band": "bright"
+     },
+     {
+      "lb": 616,
+      "day": 357,
+      "varie": false,
+      "split": 462,
+      "band": "bright"
+     },
+     {
+      "lb": 656,
+      "day": 410,
+      "varie": false,
+      "split": null,
+      "band": "bright"
+     },
+     {
+      "lb": 696,
+      "day": 464,
+      "varie": false,
+      "split": null,
+      "band": "bright"
+     },
+     {
+      "lb": 736,
+      "day": 517,
+      "varie": false,
+      "split": null,
+      "band": "bright"
+     }
+    ],
+    [
+     {
+      "lb": 36,
+      "day": 25,
+      "varie": false,
+      "split": 70,
+      "band": "bright"
+     },
+     {
+      "lb": 136,
+      "day": 57,
+      "varie": false,
+      "split": 96,
+      "band": "bright"
+     },
+     {
+      "lb": 256,
+      "day": 97,
+      "varie": false,
+      "split": 201,
+      "band": "bright"
+     },
+     {
+      "lb": 376,
+      "day": 153,
+      "varie": false,
+      "split": 209,
+      "band": "bright"
+     },
+     {
+      "lb": 496,
+      "day": 237,
+      "varie": false,
+      "split": 324,
+      "band": "bright"
+     },
+     {
+      "lb": 616,
+      "day": 357,
+      "varie": false,
+      "split": 520,
+      "band": "bright"
+     },
+     {
+      "lb": 736,
+      "day": 517,
+      "varie": false,
+      "split": null,
+      "band": "bright"
+     }
+    ],
+    [
+     {
+      "lb": 36,
+      "day": 25,
+      "varie": false,
+      "split": 102,
+      "band": "bright"
+     },
+     {
+      "lb": 136,
+      "day": 57,
+      "varie": false,
+      "split": 88,
+      "band": "bright"
+     },
+     {
+      "lb": 256,
+      "day": 97,
+      "varie": false,
+      "split": 176,
+      "band": "bright"
+     },
+     {
+      "lb": 376,
+      "day": 153,
+      "varie": false,
+      "split": 225,
+      "band": "bright"
+     },
+     {
+      "lb": 496,
+      "day": 237,
+      "varie": false,
+      "split": 324,
+      "band": "bright"
+     },
+     {
+      "lb": 616,
+      "day": 357,
+      "varie": false,
+      "split": 470,
+      "band": "bright"
+     },
+     {
+      "lb": 736,
+      "day": 517,
+      "varie": false,
+      "split": null,
+      "band": "bright"
+     }
+    ],
+    [
+     {
+      "lb": 36,
+      "day": 25,
+      "varie": false,
+      "split": 70,
+      "band": "bright"
+     },
+     {
+      "lb": 136,
+      "day": 57,
+      "varie": true,
+      "split": 120,
+      "band": "bright"
+     },
+     {
+      "lb": 256,
+      "day": 97,
+      "varie": false,
+      "split": 247,
+      "band": "bright"
+     },
+     {
+      "lb": 296,
+      "day": 116,
+      "varie": false,
+      "split": null,
+      "band": "bright"
+     },
+     {
+      "lb": 376,
+      "day": 153,
+      "varie": false,
+      "split": 229,
+      "band": "bright"
+     },
+     {
+      "lb": 416,
+      "day": 181,
+      "varie": false,
+      "split": null,
+      "band": "mid"
+     },
+     {
+      "lb": 456,
+      "day": 209,
+      "varie": false,
+      "split": null,
+      "band": "mid"
+     },
+     {
+      "lb": 496,
+      "day": 237,
+      "varie": true,
+      "split": 332,
+      "band": "bright"
+     },
+     {
+      "lb": 536,
+      "day": 277,
+      "varie": false,
+      "split": null,
+      "band": "bright"
+     },
+     {
+      "lb": 576,
+      "day": 317,
+      "varie": true,
+      "split": null,
+      "band": "bright"
+     },
+     {
+      "lb": 616,
+      "day": 357,
+      "varie": false,
+      "split": 466,
+      "band": "bright"
+     },
+     {
+      "lb": 656,
+      "day": 410,
+      "varie": false,
+      "split": null,
+      "band": "bright"
+     },
+     {
+      "lb": 696,
+      "day": 464,
+      "varie": false,
+      "split": null,
+      "band": "bright"
+     },
+     {
+      "lb": 736,
+      "day": 517,
+      "varie": false,
+      "split": null,
+      "band": "bright"
+     }
+    ],
+    [
+     {
+      "lb": 36,
+      "day": 25,
+      "varie": false,
+      "split": 70,
+      "band": "bright"
+     },
+     {
+      "lb": 136,
+      "day": 57,
+      "varie": false,
+      "split": 84,
+      "band": "bright"
+     },
+     {
+      "lb": 256,
+      "day": 97,
+      "varie": false,
+      "split": 142,
+      "band": "bright"
+     },
+     {
+      "lb": 296,
+      "day": 116,
+      "varie": false,
+      "split": null,
+      "band": "bright"
+     },
+     {
+      "lb": 376,
+      "day": 153,
+      "varie": false,
+      "split": 245,
+      "band": "bright"
+     },
+     {
+      "lb": 416,
+      "day": 181,
+      "varie": false,
+      "split": null,
+      "band": "mid"
+     },
+     {
+      "lb": 456,
+      "day": 209,
+      "varie": false,
+      "split": null,
+      "band": "mid"
+     },
+     {
+      "lb": 496,
+      "day": 237,
+      "varie": false,
+      "split": 316,
+      "band": "bright"
+     },
+     {
+      "lb": 536,
+      "day": 277,
+      "varie": false,
+      "split": null,
+      "band": "bright"
+     },
+     {
+      "lb": 576,
+      "day": 317,
+      "varie": false,
+      "split": null,
+      "band": "bright"
+     },
+     {
+      "lb": 616,
+      "day": 357,
+      "varie": true,
+      "split": 486,
+      "band": "bright"
+     },
+     {
+      "lb": 656,
+      "day": 410,
+      "varie": false,
+      "split": null,
+      "band": "bright"
+     },
+     {
+      "lb": 696,
+      "day": 464,
+      "varie": false,
+      "split": null,
+      "band": "bright"
+     },
+     {
+      "lb": 736,
+      "day": 517,
+      "varie": false,
+      "split": null,
+      "band": "bright"
+     }
+    ],
+    [
+     {
+      "lb": 36,
+      "day": 25,
+      "varie": true,
+      "split": 50,
+      "band": "bright"
+     },
+     {
+      "lb": 136,
+      "day": 57,
+      "varie": false,
+      "split": 124,
+      "band": "bright"
+     },
+     {
+      "lb": 256,
+      "day": 97,
+      "varie": false,
+      "split": 134,
+      "band": "bright"
+     },
+     {
+      "lb": 376,
+      "day": 153,
+      "varie": false,
+      "split": 241,
+      "band": "bright"
+     },
+     {
+      "lb": 496,
+      "day": 237,
+      "varie": false,
+      "split": 332,
+      "band": "bright"
+     },
+     {
+      "lb": 616,
+      "day": 357,
+      "varie": false,
+      "split": null,
+      "band": "bright"
+     },
+     {
+      "lb": 656,
+      "day": 410,
+      "varie": false,
+      "split": null,
+      "band": "bright"
+     },
+     {
+      "lb": 736,
+      "day": 517,
+      "varie": false,
+      "split": null,
+      "band": "bright"
+     }
+    ],
+    [
+     {
+      "lb": 36,
+      "day": 25,
+      "varie": false,
+      "split": 58,
+      "band": "bright"
+     },
+     {
+      "lb": 136,
+      "day": 57,
+      "varie": false,
+      "split": 108,
+      "band": "bright"
+     },
+     {
+      "lb": 256,
+      "day": 97,
+      "varie": false,
+      "split": 162,
+      "band": "bright"
+     },
+     {
+      "lb": 376,
+      "day": 153,
+      "varie": false,
+      "split": 221,
+      "band": "bright"
+     },
+     {
+      "lb": 496,
+      "day": 237,
+      "varie": false,
+      "split": 328,
+      "band": "bright"
+     },
+     {
+      "lb": 616,
+      "day": 357,
+      "varie": false,
+      "split": 466,
+      "band": "bright"
+     },
+     {
+      "lb": 736,
+      "day": 517,
+      "varie": false,
+      "split": null,
+      "band": "bright"
+     }
+    ],
+    [
+     {
+      "lb": 36,
+      "day": 25,
+      "varie": false,
+      "split": 54,
+      "band": "bright"
+     },
+     {
+      "lb": 136,
+      "day": 57,
+      "varie": false,
+      "split": 92,
+      "band": "bright"
+     },
+     {
+      "lb": 256,
+      "day": 97,
+      "varie": false,
+      "split": 150,
+      "band": "bright"
+     },
+     {
+      "lb": 376,
+      "day": 153,
+      "varie": false,
+      "split": 237,
+      "band": "bright"
+     },
+     {
+      "lb": 496,
+      "day": 237,
+      "varie": false,
+      "split": 316,
+      "band": "bright"
+     },
+     {
+      "lb": 616,
+      "day": 357,
+      "varie": false,
+      "split": 466,
+      "band": "bright"
+     },
+     {
+      "lb": 736,
+      "day": 517,
+      "varie": false,
+      "split": null,
+      "band": "bright"
+     }
+    ],
+    [
+     {
+      "lb": 36,
+      "day": 25,
+      "varie": false,
+      "split": 70,
+      "band": "bright"
+     },
+     {
+      "lb": 136,
+      "day": 57,
+      "varie": false,
+      "split": 84,
+      "band": "bright"
+     },
+     {
+      "lb": 256,
+      "day": 97,
+      "varie": false,
+      "split": 187,
+      "band": "bright"
+     },
+     {
+      "lb": 376,
+      "day": 153,
+      "varie": false,
+      "split": 245,
+      "band": "bright"
+     },
+     {
+      "lb": 496,
+      "day": 237,
+      "varie": false,
+      "split": 324,
+      "band": "bright"
+     },
+     {
+      "lb": 616,
+      "day": 357,
+      "varie": false,
+      "split": 474,
+      "band": "bright"
+     },
+     {
+      "lb": 736,
+      "day": 517,
+      "varie": false,
+      "split": null,
+      "band": "bright"
+     }
+    ],
+    [
+     {
+      "lb": 36,
+      "day": 25,
+      "varie": false,
+      "split": 70,
+      "band": "bright"
+     },
+     {
+      "lb": 136,
+      "day": 57,
+      "varie": false,
+      "split": 156,
+      "band": "bright"
+     },
+     {
+      "lb": 256,
+      "day": 97,
+      "varie": false,
+      "split": 223,
+      "band": "bright"
+     },
+     {
+      "lb": 376,
+      "day": 153,
+      "varie": false,
+      "split": 265,
+      "band": "bright"
+     },
+     {
+      "lb": 496,
+      "day": 237,
+      "varie": false,
+      "split": 336,
+      "band": "bright"
+     },
+     {
+      "lb": 536,
+      "day": 277,
+      "varie": false,
+      "split": null,
+      "band": "bright"
+     },
+     {
+      "lb": 616,
+      "day": 357,
+      "varie": false,
+      "split": 466,
+      "band": "bright"
+     },
+     {
+      "lb": 656,
+      "day": 410,
+      "varie": false,
+      "split": null,
+      "band": "bright"
+     },
+     {
+      "lb": 736,
+      "day": 517,
+      "varie": false,
+      "split": null,
+      "band": "bright"
+     }
+    ],
+    [
+     {
+      "lb": 36,
+      "day": 25,
+      "varie": false,
+      "split": 78,
+      "band": "bright"
+     },
+     {
+      "lb": 136,
+      "day": 57,
+      "varie": false,
+      "split": 84,
+      "band": "bright"
+     },
+     {
+      "lb": 256,
+      "day": 97,
+      "varie": false,
+      "split": 219,
+      "band": "bright"
+     },
+     {
+      "lb": 296,
+      "day": 116,
+      "varie": false,
+      "split": null,
+      "band": "bright"
+     },
+     {
+      "lb": 376,
+      "day": 153,
+      "varie": false,
+      "split": 233,
+      "band": "bright"
+     },
+     {
+      "lb": 416,
+      "day": 181,
+      "varie": false,
+      "split": null,
+      "band": "mid"
+     },
+     {
+      "lb": 496,
+      "day": 237,
+      "varie": false,
+      "split": 328,
+      "band": "bright"
+     },
+     {
+      "lb": 536,
+      "day": 277,
+      "varie": false,
+      "split": null,
+      "band": "bright"
+     },
+     {
+      "lb": 616,
+      "day": 357,
+      "varie": false,
+      "split": 462,
+      "band": "bright"
+     },
+     {
+      "lb": 656,
+      "day": 410,
+      "varie": false,
+      "split": null,
+      "band": "bright"
+     },
+     {
+      "lb": 736,
+      "day": 517,
+      "varie": false,
+      "split": null,
+      "band": "bright"
+     }
+    ],
+    [
+     {
+      "lb": 36,
+      "day": 25,
+      "varie": false,
+      "split": 70,
+      "band": "bright"
+     },
+     {
+      "lb": 136,
+      "day": 57,
+      "varie": true,
+      "split": 84,
+      "band": "bright"
+     },
+     {
+      "lb": 256,
+      "day": 97,
+      "varie": false,
+      "split": 150,
+      "band": "bright"
+     },
+     {
+      "lb": 376,
+      "day": 153,
+      "varie": false,
+      "split": 233,
+      "band": "bright"
+     },
+     {
+      "lb": 496,
+      "day": 237,
+      "varie": false,
+      "split": 328,
+      "band": "bright"
+     },
+     {
+      "lb": 616,
+      "day": 357,
+      "varie": false,
+      "split": 474,
+      "band": "bright"
+     },
+     {
+      "lb": 656,
+      "day": 410,
+      "varie": false,
+      "split": null,
+      "band": "bright"
+     },
+     {
+      "lb": 736,
+      "day": 517,
+      "varie": false,
+      "split": null,
+      "band": "bright"
+     }
+    ],
+    [
+     {
+      "lb": 36,
+      "day": 25,
+      "varie": false,
+      "split": 66,
+      "band": "bright"
+     },
+     {
+      "lb": 136,
+      "day": 57,
+      "varie": false,
+      "split": 84,
+      "band": "bright"
+     },
+     {
+      "lb": 256,
+      "day": 97,
+      "varie": false,
+      "split": 134,
+      "band": "bright"
+     },
+     {
+      "lb": 376,
+      "day": 153,
+      "varie": false,
+      "split": 233,
+      "band": "bright"
+     },
+     {
+      "lb": 496,
+      "day": 237,
+      "varie": false,
+      "split": 328,
+      "band": "bright"
+     },
+     {
+      "lb": 616,
+      "day": 357,
+      "varie": false,
+      "split": 466,
+      "band": "bright"
+     },
+     {
+      "lb": 736,
+      "day": 517,
+      "varie": false,
+      "split": null,
+      "band": "bright"
+     }
+    ],
+    [
+     {
+      "lb": 36,
+      "day": 25,
+      "varie": false,
+      "split": 54,
+      "band": "bright"
+     },
+     {
+      "lb": 136,
+      "day": 57,
+      "varie": false,
+      "split": 96,
+      "band": "bright"
+     },
+     {
+      "lb": 256,
+      "day": 97,
+      "varie": false,
+      "split": null,
+      "band": "bright"
+     },
+     {
+      "lb": 376,
+      "day": 153,
+      "varie": false,
+      "split": 209,
+      "band": "bright"
+     },
+     {
+      "lb": 496,
+      "day": 237,
+      "varie": true,
+      "split": 332,
+      "band": "bright"
+     },
+     {
+      "lb": 616,
+      "day": 357,
+      "varie": true,
+      "split": 474,
+      "band": "bright"
+     },
+     {
+      "lb": 736,
+      "day": 517,
+      "varie": false,
+      "split": null,
+      "band": "bright"
+     }
+    ],
+    [
+     {
+      "lb": 36,
+      "day": 25,
+      "varie": true,
+      "split": 94,
+      "band": "bright"
+     },
+     {
+      "lb": 136,
+      "day": 57,
+      "varie": false,
+      "split": 96,
+      "band": "bright"
+     },
+     {
+      "lb": 256,
+      "day": 97,
+      "varie": false,
+      "split": 146,
+      "band": "bright"
+     },
+     {
+      "lb": 376,
+      "day": 153,
+      "varie": false,
+      "split": 261,
+      "band": "bright"
+     },
+     {
+      "lb": 496,
+      "day": 237,
+      "varie": true,
+      "split": 316,
+      "band": "bright"
+     },
+     {
+      "lb": 616,
+      "day": 357,
+      "varie": false,
+      "split": 478,
+      "band": "bright"
+     },
+     {
+      "lb": 736,
+      "day": 517,
+      "varie": false,
+      "split": null,
+      "band": "bright"
+     }
+    ],
+    [
+     {
+      "lb": 36,
+      "day": 25,
+      "varie": false,
+      "split": 54,
+      "band": "bright"
+     },
+     {
+      "lb": 136,
+      "day": 57,
+      "varie": true,
+      "split": 84,
+      "band": "bright"
+     },
+     {
+      "lb": 256,
+      "day": 97,
+      "varie": false,
+      "split": 134,
+      "band": "bright"
+     },
+     {
+      "lb": 296,
+      "day": 116,
+      "varie": false,
+      "split": null,
+      "band": "bright"
+     },
+     {
+      "lb": 376,
+      "day": 153,
+      "varie": true,
+      "split": 249,
+      "band": "bright"
+     },
+     {
+      "lb": 416,
+      "day": 181,
+      "varie": false,
+      "split": null,
+      "band": "mid"
+     },
+     {
+      "lb": 496,
+      "day": 237,
+      "varie": false,
+      "split": 316,
+      "band": "bright"
+     },
+     {
+      "lb": 536,
+      "day": 277,
+      "varie": false,
+      "split": null,
+      "band": "bright"
+     },
+     {
+      "lb": 616,
+      "day": 357,
+      "varie": false,
+      "split": null,
+      "band": "bright"
+     },
+     {
+      "lb": 656,
+      "day": 410,
+      "varie": false,
+      "split": null,
+      "band": "bright"
+     },
+     {
+      "lb": 736,
+      "day": 517,
+      "varie": false,
+      "split": null,
+      "band": "bright"
+     }
+    ],
+    [
+     {
+      "lb": 36,
+      "day": 25,
+      "varie": false,
+      "split": 78,
+      "band": "bright"
+     },
+     {
+      "lb": 136,
+      "day": 57,
+      "varie": true,
+      "split": 96,
+      "band": "bright"
+     },
+     {
+      "lb": 256,
+      "day": 97,
+      "varie": false,
+      "split": 150,
+      "band": "bright"
+     },
+     {
+      "lb": 296,
+      "day": 116,
+      "varie": false,
+      "split": null,
+      "band": "bright"
+     },
+     {
+      "lb": 376,
+      "day": 153,
+      "varie": false,
+      "split": 213,
+      "band": "bright"
+     },
+     {
+      "lb": 416,
+      "day": 181,
+      "varie": false,
+      "split": null,
+      "band": "mid"
+     },
+     {
+      "lb": 496,
+      "day": 237,
+      "varie": false,
+      "split": 324,
+      "band": "bright"
+     },
+     {
+      "lb": 536,
+      "day": 277,
+      "varie": false,
+      "split": null,
+      "band": "bright"
+     },
+     {
+      "lb": 616,
+      "day": 357,
+      "varie": false,
+      "split": 474,
+      "band": "bright"
+     },
+     {
+      "lb": 656,
+      "day": 410,
+      "varie": false,
+      "split": null,
+      "band": "bright"
+     },
+     {
+      "lb": 736,
+      "day": 517,
+      "varie": false,
+      "split": null,
+      "band": "bright"
+     }
+    ],
+    [
+     {
+      "lb": 36,
+      "day": 25,
+      "varie": false,
+      "split": 70,
+      "band": "bright"
+     },
+     {
+      "lb": 136,
+      "day": 57,
+      "varie": false,
+      "split": 92,
+      "band": "bright"
+     },
+     {
+      "lb": 256,
+      "day": 97,
+      "varie": false,
+      "split": 193,
+      "band": "bright"
+     },
+     {
+      "lb": 376,
+      "day": 153,
+      "varie": false,
+      "split": 233,
+      "band": "bright"
+     },
+     {
+      "lb": 496,
+      "day": 237,
+      "varie": false,
+      "split": 328,
+      "band": "bright"
+     },
+     {
+      "lb": 616,
+      "day": 357,
+      "varie": false,
+      "split": 466,
+      "band": "bright"
+     },
+     {
+      "lb": 736,
+      "day": 517,
+      "varie": false,
+      "split": null,
+      "band": "bright"
+     }
+    ],
+    [
+     {
+      "lb": 36,
+      "day": 25,
+      "varie": false,
+      "split": 58,
+      "band": "bright"
+     },
+     {
+      "lb": 136,
+      "day": 57,
+      "varie": false,
+      "split": 88,
+      "band": "bright"
+     },
+     {
+      "lb": 256,
+      "day": 97,
+      "varie": false,
+      "split": 146,
+      "band": "bright"
+     },
+     {
+      "lb": 376,
+      "day": 153,
+      "varie": false,
+      "split": 221,
+      "band": "bright"
+     },
+     {
+      "lb": 496,
+      "day": 237,
+      "varie": true,
+      "split": 320,
+      "band": "bright"
+     },
+     {
+      "lb": 616,
+      "day": 357,
+      "varie": false,
+      "split": 462,
+      "band": "bright"
+     },
+     {
+      "lb": 736,
+      "day": 517,
+      "varie": false,
+      "split": null,
+      "band": "bright"
+     }
+    ],
+    [
+     {
+      "lb": 36,
+      "day": 25,
+      "varie": true,
+      "split": 74,
+      "band": "bright"
+     },
+     {
+      "lb": 136,
+      "day": 57,
+      "varie": false,
+      "split": 84,
+      "band": "bright"
+     },
+     {
+      "lb": 256,
+      "day": 97,
+      "varie": false,
+      "split": 247,
+      "band": "bright"
+     },
+     {
+      "lb": 376,
+      "day": 153,
+      "varie": false,
+      "split": 253,
+      "band": "bright"
+     },
+     {
+      "lb": 496,
+      "day": 237,
+      "varie": false,
+      "split": 320,
+      "band": "bright"
+     },
+     {
+      "lb": 616,
+      "day": 357,
+      "varie": false,
+      "split": 462,
+      "band": "bright"
+     },
+     {
+      "lb": 736,
+      "day": 517,
+      "varie": false,
+      "split": null,
+      "band": "bright"
+     }
+    ]
+   ]
+  }
+ ]
+}
