@@ -2819,6 +2819,7 @@
     try { if (window.__byeotZoom && window.__byeotZoom.isOpen()) window.__byeotZoom.close(); } catch (e) { }
     sheet.classList.add('open'); scrim.classList.add('open');
     document.documentElement.classList.add('sheetopen');      /* #6 — 떠 있는 [다음 날]을 감춘다(CSS) */
+    try { window.__errBox && window.__errBox.clear(); } catch (e) { }   /* 중반 M3 — 화면을 옮기면 옛 오류 상자를 치운다 */
     sheet.setAttribute('aria-hidden', 'false');
     if (tab) selectTab(tab);
     syncNav(); syncQuestChip();
@@ -2826,6 +2827,7 @@
   function closeSheet() {
     sheet.classList.remove('open'); scrim.classList.remove('open');
     document.documentElement.classList.remove('sheetopen');
+    try { window.__errBox && window.__errBox.clear(); } catch (e) { }   /* 중반 M3 — 화면을 옮기면 옛 오류 상자를 치운다 */
     sheet.setAttribute('aria-hidden', 'true');
     syncNav(); syncQuestChip();
   }
@@ -2903,6 +2905,7 @@
   function selectTab(tabId) {
     var want = TABS[tabId] ? tabId : (TAB_ALIAS[tabId] || tabId);
     if (!TABS[want]) return;                 /* 모르는 이름이면 지금 탭을 그대로 둔다 */
+    try { window.__errBox && window.__errBox.clear(); } catch (e) { }   /* 중반 M3 — 화면을 옮기면 옛 오류 상자를 치운다 */
     try { if (window.__byeotZoom && window.__byeotZoom.isOpen()) window.__byeotZoom.close(); } catch (e) { }   /* ★ 넓은 판(시트 늘 펴짐)의 탭도 같은 문 */
     Object.keys(TABS).forEach(function (t) {
       var on = (t === want);
@@ -3155,6 +3158,13 @@ const $ = (id) => document.getElementById(id);
      `#side` 는 없으므로 오류가 전부 `#bottom`(하단 액션바) **앞에** 붙었고, 지우는 곳이
      없어 누를 때마다 바가 자라 버튼을 밀어냈다. 이제 상자는 **하나만** 산다 —
      규칙은 위 CSS §오류 상자 에 적었다(배너 #event 에서 세운 것과 같은 규칙이다). */
+/* ★ 2026-10-08 (총괄 중반 M3) — 창(.pop)이 뜨면 옛 오류 상자를 치운다. 오류 상자(z90)가 가계부·밥상 창(z84) 위에 남아
+     가계부 결론 줄을 63% · 이전/다음 달을 100% 덮었다. 창 «안»에서 난 새 오류는 그 뒤에 다시 뜨므로 가려지지 않는다(z90 그대로) */
+queueMicrotask(() => { try {
+  for (const p of document.querySelectorAll('.pop'))
+    new MutationObserver(() => { if (p.classList.contains('on')) { try { errBox.clear(); } catch { } } })
+      .observe(p, { attributes: true, attributeFilter: ['class'] });
+} catch (e) { console.warn('[오류 상자] 창 지킴이를 못 붙였습니다', e && e.message); } });
 const errBox = (() => {
   /* 같은 말 → 몇 번 났나. Map 이라 **넣은 순서**가 유지된다 — 처음 난 것이 위에 남는다 */
   const seen = new Map();
@@ -10545,10 +10555,11 @@ function dayFrac() {
    ⚠ 칸을 몇 개까지 그리나 — 주기가 길어도 한 줄에 다 넣는다. 폭은 grid 가 나눈다. */
 function cellsHTML(row, frac) {
   const n = Math.max(1, Math.round(row.harvestDays || 1));
-  const full = Math.max(0, Math.min(n, Math.round(row.ageDays || 0)));
+  const full = row.harvested ? 0 : Math.max(0, Math.min(n, Math.round(row.ageDays || 0)));
   /* 물을 기다리는 중 — 칸이 안 찬다는 사실을 옷으로 말한다(§.cells.dry) */
   const dry = !!row.needsWater && !row.harvested;
-  const done = !!(row.ready || row.harvested);
+  /* ★ 2026-10-08 (#10) — 거둔 시루는 칸을 «비운다». 꽉 찬 금색 다섯 칸이 「다 자랐는데 왜 못 거두지?」로 읽혔다 — 거둔 뒤에는 빈 시루다 */
+  const done = !!row.ready;
   const pct = row.growing ? Math.round(Math.max(0, Math.min(1, frac)) * 100) : 0;
   let out = `<div class="cells${dry ? ' dry' : ''}${done ? ' done' : ''}" `
           + `role="img" aria-label="${full}/${n}칸">`;
@@ -10670,7 +10681,8 @@ function siruRowHTML(row, frac) {
   return `<div class="siru${row.placed ? '' : ' bag'}${cls}" data-siru="${row.id}">`
     + `<div class="siruhead"><b>${siruNameKo(row)}</b><span>${where}</span></div>`
     + cellsHTML(row, frac)
-    + `<div class="siruline">${state}${row.quality ? ' · ' + row.quality : ''}${dli}</div>`
+    /* ★ 2026-10-08 (총괄 튜토 검토 #10) — 품질은 «사람 말»로(「crisp_white」 → 「하얗고 아삭」 · 배너와 같은 말). 표는 first_play CROP_KINDS[].quality */
+    + `<div class="siruline">${state}${row.quality ? ' · ' + (((() => { try { const k = cropKindOf(row.kind); return ((k && k.quality) || []).find(q => q && q.id === row.quality); } catch { return null; } })() || {}).ko || '') : ''}${dli}</div>`
     + `<div class="sirubtns">${btn.join('')}</div></div>`;
 }
 /* ══════════════════════════════════════════════════════════════════════════
@@ -11734,6 +11746,7 @@ function mealLastWrite() {
 }
 function goNextDay() {
   if (dayAnimRunning) return;                 // 연출 중 겹쳐 부르지 않는다(건너뛰기는 따로다)
+  try { errBox.clear(); } catch { }           /* 중반 M3 — 하루가 가면 어제의 오류 상자는 치운다 */
   mealLastWrite();                            /* D13 — 오늘 넘긴 상을 적는다(고른 g 을 비우기 «전») */
   mealOpen = false; mealG = null;
   drawMealPanel();
