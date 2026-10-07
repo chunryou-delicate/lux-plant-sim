@@ -129,13 +129,23 @@ if (waited != null) {
   const firstId = firstNag != null ? (byDay[firstNag] || []).find(isNudge) : null;
   /* ★ 2026-10-08 [plan] f2d836b4 — 퀘스트별 앞줄(nudgeHarvestReady · nudgeSeed…)이 공통 넷 «앞»에 선다. 첫 독촉은 그 앞줄이거나 권함이면 된다 —
        «한 단 뛴다»는 것은 궁금·걱정·물러섬(Ask·Worry·Back)부터 나오는 것이다 */
-  const LATE = ['nudgeAsk', 'nudgeWorry', 'nudgeBack', 'nudgeBackLamp'];
+  const LATE = ['nudgeAsk', 'nudgeWorry', 'nudgeBack', 'nudgeBackLamp', 'nudgeSeedPush', 'nudgeHarvestPush',
+                'nudgeMonsteraPush', 'nudgeMixPush', 'nudgeCutPush', 'nudgeVariePush', 'nudgeSellPush'];   /* D19 Push 줄도 «한 단 뛴» 것 */
   ok('★ D2 — 기다림이 끝난 뒤 첫 독촉이 «한 단 뛰지» 않는다(권함·퀘스트 앞줄부터)', !!firstId && !LATE.includes(firstId), `d${firstNag} ${firstId}`);
 }
-ok(`★ ①②③ 동안 사건 없는 날마다 독촉이 «난다»(임자 ${first ? first[0] : '-'} · 셈 첫날 d${on}${waited != null ? ` = 기다린 날 d${waited}+1` : ' = 열린 날'})`, early.want.length > 0 && early.got.length === early.want.length,
-   `안 한 날 ${early.want.length} · 독촉 ${early.got.length}` + (early.got.length !== early.want.length ? ' · 빠진 날 d' + early.want.filter(x => !early.got.includes(x)).join(',d') : ''));
-ok('★ ④부터는 잡담과 «번갈아» 선다(매일이 아니다 · 잡담도 선다)', late.days === 0 || (late.back >= 1 && late.back < late.days && late.chat >= 1),
-   `날 ${late.days} · 물러섬 ${late.back} · 잡담 ${late.chat}` + (late.days === 0 ? ' (④ 구간이 걸음 안에 없다)' : ''));
+/* ★★ 2026-10-08 [plan] b3a49dbc D19 — 명세가 바뀌었다(docs/handoff/plan-d19-d21-20261008.md):
+     옛 「①②③ 동안 매일 독촉」 → «같은 독촉 줄이 이틀 잇달아 안 난다 · 범용 줄(nudgeOffer·Ask·Worry·Back)은 30일에 한 번»
+     옛 「④ nudgeBack ≥1」     → «nudgeBack 은 할 수 있는 퀘스트가 없는 날에만» — 이 걸음(첫 수확을 미룬 판)은 늘 할 것이 있어 0 이어야 한다 */
+{
+  const days = Object.keys(byDay).map(Number).sort((a, b) => a - b);
+  const rep2 = []; for (const d of days) { const a = (byDay[d] || []).filter(isNudge); const b = (byDay[d - 1] || []).filter(isNudge); if (a.some(x => b.includes(x))) rep2.push(`d${d} ${a.join(',')}`); }
+  ok('★ D19 — 같은 독촉 줄이 이틀 잇달아 안 난다', rep2.length === 0, rep2.length ? rep2.join(' · ') : '없음');
+  const GEN = ['nudgeOffer', 'nudgeAsk', 'nudgeWorry', 'nudgeBack'];
+  const genCount = {}; for (const d of days) for (const x of (byDay[d] || [])) if (GEN.includes(x)) genCount[x] = (genCount[x] || 0) + 1;
+  const over = Object.entries(genCount).filter(([, n]) => n > Math.ceil((lastDay - d0 + 1) / 30));
+  ok('★ D19 — 범용 줄(nudgeOffer·Ask·Worry·Back)은 30일에 한 번까지', over.length === 0, JSON.stringify(genCount));
+  ok('★ D19 — nudgeBack 은 할 수 있는 퀘스트가 없는 날에만(이 걸음은 늘 할 것이 있어 0)', !(genCount.nudgeBack > 0), `nudgeBack ${genCount.nudgeBack || 0}`);
+}
 ok('낯이 «날»에 따라 갈린다(권함 → 궁금 순)',
    (seen.nudgeOffer == null || seen.nudgeAsk == null) || seen.nudgeOffer < seen.nudgeAsk, JSON.stringify(seen));
 ok('세이브에 실리고 되읽어도 같다', !!(round.실림 && round.같음), JSON.stringify(round));

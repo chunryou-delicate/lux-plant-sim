@@ -6719,6 +6719,14 @@ function drawMonthPanel() {
     `살림 ${subFrom}~${r.toDay}일차` +
     (r.period ? ` · 월세는 ${r.period}일마다 나갑니다` : '') +
     (r.days < r.toDay - r.fromDay ? ` · ⚠ 이 중 ${r.days}일치만 셌습니다` : '');
+  /* D21 — 가계부 맨 위 한 줄: 「이사비 {목표}원 — {n}원 남았습니다」 · 다 모으면 「이사비가 모였습니다」 */
+  { let g = $('monthGoal');
+    if (!g) { g = document.createElement('div'); g.id = 'monthGoal'; g.className = 'psub';
+              $('monthTitle').insertAdjacentElement('afterend', g); }
+    const mg = moveGoalOf();
+    g.style.display = mg ? '' : 'none';
+    if (mg) g.textContent = mg.done ? '이사비가 모였습니다'
+      : `이사비 ${mg.target.toLocaleString('ko-KR')}원 — ${mg.left.toLocaleString('ko-KR')}원 남았습니다`; }
 
   /* ★★ 한 줄 요약 — 이 창의 전부다 */
   const up = r.net >= 0;
@@ -9187,6 +9195,8 @@ function questSnapshotNow(turn) {
          (`tutorial.js §lampElectricityWon` 의 ★★). 여기서 묻는 것은 **샀나**다. */
     lampUnlocked: !!(ts.lamp && ts.lamp.unlocked),
     lampOwned: (ts.lamp && ts.lamp.owned) || 0,
+    /* ★ 2026-10-08 ([plan] b3a49dbc · D19) — buy_lamp 는 «단 등»으로 끝난다(첫 등이 공짜로 가방에 와 받는 순간 끝나 할 일에 0번 떴다) */
+    lampPlaced: (ts.lamp && ts.lamp.placed) || 0,
     /* ★ 초반 사슬 ⑥「몬스테라 자리 잡기」가 이 둘로 판정한다. 정본은 `firstPlay.monstera` 다 */
     monsteraArrived: !!(fp.monstera && fp.monstera.arrived),
     monsteraHomed: !!(fp.monstera && fp.monstera.guide && fp.monstera.guide.moved),
@@ -9371,6 +9381,19 @@ function questRowsHtml(v) {
   return out.join('');
 }
 
+/* ★★ 2026-10-08 D21(총괄 중반 M6 · [plan] b3a49dbc P4 문안) — **목표가 화면 어디에도 없었다**(0~60일 199장에 「2,000,000」·「원룸」 0번).
+     할 일 머리와 가계부 맨 위에 «이사비까지 얼마»를 늘 둔다. 수는 규칙 값(tutorial.rules.moveOutCostWon)·지갑(cashWon) 그대로 — 새 값 없음.
+     이사한 뒤(원룸)는 반지하 목표가 끝났으니 안 낸다(엔딩 목표는 아직 null — 엔딩 뼈대와 같이 붙인다) */
+function moveGoalOf() {
+  try {
+    const ts = S.tutorial;
+    if (!ts || !ts.enabled || ts.movedOut) return null;
+    const target = ts.rules && ts.rules.moveOutCostWon;
+    if (!Number.isFinite(target) || target <= 0) return null;
+    const left = Math.max(0, Math.round(target - (ts.cashWon || 0)));
+    return { target, left, done: left <= 0 };
+  } catch { return null; }
+}
 function drawQuestTab() {
   const list = $('questListTab');
   if (!list) return;                       /* 옛 화면 — 탭이 없으면 조용히 지나간다 */
@@ -9379,6 +9402,14 @@ function drawQuestTab() {
   if (!v) { list.textContent = '지금은 할 일을 읽을 수 없습니다'; return; }
   const total = v.all.length, done = v.done.length;
   $('questTabTitle').textContent = `할 일 ${done}/${total}`;
+  /* D21 — 할 일 머리 아래 한 줄: 「이사비까지 {n}원」(둘째 줄 「목표 {목표}원」) · 다 모으면 「이사비가 모였습니다」 */
+  { let g = $('questGoalTab');
+    if (!g) { g = document.createElement('div'); g.id = 'questGoalTab'; g.className = 'plots';
+              $('questTabTitle').insertAdjacentElement('afterend', g); }
+    const mg = moveGoalOf();
+    g.style.display = mg ? '' : 'none';
+    if (mg) g.innerHTML = mg.done ? '이사비가 모였습니다'
+      : `이사비까지 ${mg.left.toLocaleString('ko-KR')}원<br>목표 ${mg.target.toLocaleString('ko-KR')}원`; }
   $('questSubTab').textContent = v.next
     ? `지금 할 것 — ${v.next.ko}`
     : (done >= total ? `${total}가지를 다 배웠습니다` : '지금 열린 것이 없습니다 — 기다리면 열립니다');
@@ -10381,12 +10412,14 @@ function drawJourney() {
   /* ★★ 2026-08-18 — **퀘스트가 열려 있으면 퀘스트가 이긴다**(확정문 §4).
      `tutorialGoal` 은 「무엇을」만 말하고 퀘스트는 **다음 손 하나**를 말한다.
      ⚠ 문구를 여기서 새로 짓지 않는다 — `questTodo` 하나가 정본이다. */
-  let questGoal = null, questChain = null;
+  let questGoal = null, questChain = null, questFresh = null;
   try {
     const qv = questView(S, questSnapshotNow(lastTurn));
     questGoal = qv.next ? qv.next.todo : null;
     /* ★ 2026-10-08 D12 — 초반 사슬 몇 번째인가(quest.js questView 가 이미 센다 · 여기서 다시 안 센다) */
     questChain = (qv.chain && qv.next) ? { index: qv.chain.index, total: qv.chain.total, id: qv.next.id, ko: qv.next.ko } : null;
+    /* ★ 2026-10-08 [plan] b3a49dbc P3 — 새로 열린 줄(열린 날이 오늘·어제 · current 아님)을 48시간 칩 첫 줄로 */
+    questFresh = (Array.isArray(qv.fresh) && qv.fresh[0]) ? { id: qv.fresh[0].id, ko: qv.fresh[0].ko } : null;
   } catch { questGoal = null; questChain = null; }
 
   $('quest').textContent = justMoved
@@ -10448,8 +10481,10 @@ function drawJourney() {
       { const hb = chip.querySelector('b');
         const SHORT = { place_siru: '시루 놓기', water_siru: '물 주기', first_harvest: '첫 수확',
                         order_seed: '씨앗 주문', monstera_home: '몬스테라 자리' };
+        /* 차례: 초반 사슬(D12) > 새로 열린 줄(P3 · 「새 」) > 「할 일」 */
         if (hb) hb.textContent = questChain
           ? `📜 ${questChain.index}/${questChain.total} · ${SHORT[questChain.id] || questChain.ko || ''}`
+          : questFresh ? `📜 새 ${questFresh.ko || ''}`
           : '📜 할 일'; }
       /* 「보이나」는 `offsetParent` 로 묻는다 — `style.display` 만 보면 부모가 감춘 것을 못 본다
          (바로 위 §plantsBox 가 쓰는 그 손과 같다). */
