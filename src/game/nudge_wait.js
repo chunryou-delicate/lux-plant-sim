@@ -47,3 +47,28 @@ export function nudgeWaiting(S, id, day = (S && S.day)) {
   }
   return false;
 }
+
+/* ★ 2026-10-08 D2 — **기다린 날을 적는다.** 열려 있고 안 끝난 퀘스트가 오늘 기다리는 중이면 `questsWaitedOn[id] = day`.
+   화면이 하루 대사를 고르기 «바로 앞»에 한 번 부른다(game.html §story.turn 앞). 다른 것은 안 바꾼다.
+   ⚠ 이것이 유일하게 상태를 바꾸는 함수다(세이브 칸 stamina.questsWaitedOn). */
+export function noteQuestWaits(S, day = (S && S.day)) {
+  const stm = S && S.stamina;
+  if (!stm || !stm.questsOpenedOn || !Number.isInteger(day)) return 0;
+  if (!stm.questsWaitedOn || typeof stm.questsWaitedOn !== 'object') stm.questsWaitedOn = {};
+  const done = new Set(stm.questsTaken || []);
+  let n = 0;
+  for (const id of Object.keys(stm.questsOpenedOn)) {
+    if (done.has(id)) continue;
+    if (nudgeWaiting(S, id, day)) { stm.questsWaitedOn[id] = day; n++; }
+  }
+  return n;
+}
+
+/* ★ 2026-10-08 D2 — **독촉이 세는 날수.** 열린 날이 아니라 «마지막으로 기다린 날의 다음 날»부터 센다.
+     열린 뒤 한 번도 안 기다렸으면 예전 그대로(열린 날부터) — 기다림이 있던 퀘스트만 늦게 센다.
+   반환 0 이상 정수(오늘이 할 수 있게 된 첫날이면 0). */
+export function nudgeDaysOf(S, id, openedOn, dayNow) {
+  const waited = S && S.stamina && S.stamina.questsWaitedOn ? S.stamina.questsWaitedOn[id] : null;
+  const from = Number.isInteger(waited) && waited >= openedOn ? waited + 1 : openedOn;
+  return Math.max(0, dayNow - from);
+}

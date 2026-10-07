@@ -176,6 +176,9 @@ export function createStaminaState(maxOrRules = STAMINA_RULES) {
     /* ★ 2026-09-02 — 퀘스트가 «열린 날» {id: day}. 독촉(plan-quest-nudge)이 「며칠째인가」를 세는 근거다.
        값이 아니라 «사실»이다(총괄 결정 ㉮). 세이브에 같이 실린다(save.js §stamina). */
     questsOpenedOn: {},
+    /* ★ 2026-10-08 D2(박사님) — 그 퀘스트가 «마지막으로 기다린 날» {id: day}. 독촉은 열린 날이 아니라
+       «기다림이 끝난 다음 날»부터 센다(nudge_wait §nudgeDaysOf) — 「할 수 있었던 날만 센다」의 근거. 세이브에 실린다. */
+    questsWaitedOn: {},
     /* ★ 2026-09-04 ⑦ — 낮잠을 «잔 날»(하루 1번의 근거 · plan-nap-and-sit). 세이브에 실린다. -1 = 아직. */
     nappedOnDay: -1,
     /* ★ 아직 화면이 안 보여 준 레벨업. **화면이 비운다**(§레벨업은 보여야 한다).

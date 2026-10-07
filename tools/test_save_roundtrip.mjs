@@ -121,6 +121,7 @@ function makeRich() {
      사라지는 저장을 못 잡는다(위 ①과 같은 까닭). 0 도 넣는다 — 「0 을 없음으로 읽는」 저장을 잡는다. */
   S.stamina.questsOpenedOn = { place_siru: 0, first_harvest: 1, order_seed: 5 };
   S.stamina.nappedOnDay = 3;   /* ⑦ 낮잠 잔 날 — 하루 1번의 근거 */
+  S.stamina.questsWaitedOn = { first_harvest: 4 };   /* D2(10-08) — 마지막으로 기다린 날(독촉이 여기 다음 날부터 센다) */
   S.tutorial.cashWon = 1234500;
   S.tutorial.lamp = { ...(S.tutorial.lamp || {}), unlocked: true, owned: 2, placed: 1 };
   /* ⚠ 모양을 «지어내지» 않는다 — 정본은 `tutorial.createVarieLeafState()` 다({ever, firstDay, where}).
@@ -238,7 +239,10 @@ for (const [name, hurt, pat] of [
    raw => { delete raw.state.stamina.questsOpenedOn.first_harvest; },   /stamina\.questsOpenedOn/],
   /* ★ 2026-09-04 ⑦ — 낮잠 잔 날이 빠지면 «오늘 또» 잘 수 있다 */
   ['낮잠 잔 날이 사라짐',
-   raw => { delete raw.state.stamina.nappedOnDay; },                    /stamina\.nappedOnDay/]
+   raw => { delete raw.state.stamina.nappedOnDay; },                    /stamina\.nappedOnDay/],
+  /* ★ 2026-10-08 D2 — 기다린 날이 빠지면 다시 켤 때 독촉이 «열린 날»부터 다시 세어 한 단 뛴다 */
+  ['기다린 날이 사라짐',
+   raw => { delete raw.state.stamina.questsWaitedOn.first_harvest; },   /stamina\.questsWaitedOn/]
 ]) {
   const probe = makeRich();
   const rawP = JSON.parse(JSON.stringify(serialize(probe)));

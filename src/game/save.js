@@ -1270,6 +1270,9 @@ export function serialize(S, opt = {}) {
            ⚠ 안 실으면 다시 켤 때마다 독촉이 처음부터 센다 — 「안 잊히게」라는 뜻이 죽는다. */
         questsOpenedOn: Object.fromEntries(Object.entries(needObj(((S.stamina || {}).questsOpenedOn || {}), 'stamina.questsOpenedOn'))
           .map(([id, d]) => [needStr(id, 'stamina.questsOpenedOn[id]'), needInt(d, `stamina.questsOpenedOn[${id}]`, { min: 0 })])),
+        /* ★ 2026-10-08 D2 — «마지막으로 기다린 날». 안 실으면 다시 켤 때 독촉이 «열린 날»부터 다시 세어 한 단 뛴다 */
+        questsWaitedOn: Object.fromEntries(Object.entries(needObj(((S.stamina || {}).questsWaitedOn || {}), 'stamina.questsWaitedOn'))
+          .map(([id, d]) => [needStr(id, 'stamina.questsWaitedOn[id]'), needInt(d, `stamina.questsWaitedOn[${id}]`, { min: 0 })])),
         /* ⑦ 낮잠 잔 날 — 하루 1번의 근거. -1 = 아직 */
         nappedOnDay: needInt(((S.stamina || {}).nappedOnDay ?? -1), 'stamina.nappedOnDay', { min: -1 })
       },
@@ -1851,6 +1854,13 @@ export function deserialize(raw, opt = {}) {
       for (const [id, d] of Object.entries(st.stamina.questsOpenedOn))
         if (typeof id === 'string' && Number.isInteger(d) && d >= 0) o[id] = d;
       S.stamina.questsOpenedOn = o;
+    }
+    /* ★ 2026-10-08 D2 — «마지막으로 기다린 날». 옛 세이브(칸 없음)는 빈 것 — 그때는 예전처럼 열린 날부터 센다 */
+    if (st.stamina.questsWaitedOn && typeof st.stamina.questsWaitedOn === 'object') {
+      const o = {};
+      for (const [id, d] of Object.entries(st.stamina.questsWaitedOn))
+        if (typeof id === 'string' && Number.isInteger(d) && d >= 0) o[id] = d;
+      S.stamina.questsWaitedOn = o;
     }
     if (Number.isInteger(st.stamina.nappedOnDay) && st.stamina.nappedOnDay >= -1)
       S.stamina.nappedOnDay = st.stamina.nappedOnDay;
