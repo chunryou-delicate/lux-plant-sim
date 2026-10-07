@@ -58,8 +58,20 @@ console.error = () => {}; console.warn = () => {};
 vm.runInThisContext(fs.readFileSync(path.join(ROOT, 'vendor', 'three', 'three.min.js'), 'utf8'));
 
 const { createLightEngine } = await import(toUrl('src/game/light_adapter.js'));
+/* ★ 2026-10-08 — **기준 배치**(`rooms.<id>.reference_layout`)가 있는 방은 그 가구를 «얹은 사본»으로 굽는다.
+   원룸은 빈 방이고 가구는 사람이 가방에서 꺼내 놓는다 — 그래서 «어떤 배치를 가정한 표인가»를 데이터에 적어 두고
+   (D5 · house_rooms §oneroom.reference_layout) 프로필도 그 위에서 뽑는다. 방 정의 furniture 는 안 고친다
+   (uid 가 가방의 반지하 가구와 같아 두 벌이 된다). 프로필에는 `referenceLayout` 으로 어느 배치인지 남긴다. */
+const withReferenceLayout = (hr) => {
+  const out = JSON.parse(JSON.stringify(hr));
+  for (const r of Object.values(out.rooms || {}))
+    if (r && r.reference_layout && Array.isArray(r.reference_layout.furniture))
+      r.furniture = [...(r.furniture || []), ...r.reference_layout.furniture];
+  return out;
+};
+const HR = dataOf('house_rooms.json');
 const light = createLightEngine({
-  houseRooms: dataOf('house_rooms.json'), winPresets: dataOf('window_presets.json').presets,
+  houseRooms: withReferenceLayout(HR), winPresets: dataOf('window_presets.json').presets,
   doorPresets: dataOf('door_presets.json').presets, finishes: dataOf('room_finishes.json'),
   furnPresets: dataOf('furniture_presets.json').presets, lightPresets: dataOf('lighting_presets.json'),
   shadePresets: dataOf('shading_presets.json'), lightTh: dataOf('balance/light_thresholds.json'),
@@ -77,6 +89,8 @@ for (const id of ROOMS) {
        (light_adapter §profile: `counts.filter(n => n <= room.growRigs.length)`). */
   const nRigs = (light.room && light.room.growRigs && light.room.growRigs.length) || 2;
   const prof = light.profile(Array.from({ length: nRigs + 1 }, (_, i) => i));
+  const ref = (HR.rooms[id] || {}).reference_layout;
+  if (ref) prof.referenceLayout = { id: ref.id, label: ref.label, furniture: ref.furniture.map(f => f.uid) };
   const file = path.join(ROOT, 'data', 'profiles', `room_profile.${id}.json`);
   const old = fs.existsSync(file) ? JSON.parse(fs.readFileSync(file, 'utf8')) : null;
   /* ★ generatedAt/By 는 **옛 파일 것을 그대로 물려받는다** — 물리가 안 바뀌었는데
