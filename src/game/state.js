@@ -46,7 +46,7 @@ import { CONTAINERS, placeCutContainer, containerRowOf, containerKindOf,
          containerKindOfItem, putCuttingIn, methodLeafBlock,
          cuttingStatsNow } from './propagation.js';
 import { atFromSlot, isFreeSlotId, makeAt, resolvePlacement, samePoint,
-         inRoom, assertFurnitureAt, followFurnitureAt } from './place.js';
+         inRoom, assertFurnitureAt, followFurnitureAt, spotOf } from './place.js';
 
 export const SCHEMA = 'game_state/1';
 
@@ -893,7 +893,25 @@ export function setPotAt(S, potOrId, at, opt = {}) {
      at   { x, y, z, rotY?, onUid?, occIdx? }
      opt  { size, slots, snapDist } — setPotAt 과 같다
    반환 { cropId, slotId, at, snappedTo, dist, moved, keptDays } */
+/* ★★ 2026-10-08 — **원룸 방바닥에는 시루를 못 놓는다** (총괄 확정 2026-09-06 · D16 「원룸 바닥 시루 안 연다」 · 원룸이 열릴 때 배너 한 줄).
+     「바닥」은 방마다 다른 것을 가리킨다(한 낱말 두 방): 반지하 바닥은 어두워 콩나물에 «맞는» 자리라 그대로 놓는다.
+     원룸 바닥은 여름에 밝고 겨울에 꺼져 자리 고르는 맛이 없다([growth] 0.30 넘는 점 5/221).
+     문안([plan] plan-night-asks-20260906 ②㉠) 그대로 — ⚠ 「빈 자리」는 안 쓴다(이 게임에서 「빈 자리」는 놓을 수 있는 자리다).
+     가르는 자: 놓을 점이 «가구 위»(onUid)도 «자리»(slotId)도 아니면 바닥이다. 못 푼 점은 여기서 안 가린다(placeCrop 이 제 말로 던진다) */
+export const ONEROOM_FLOOR_KO = '방바닥에는 못 놓습니다 — 가구 위에 놓으세요';
+function assertNotOneroomFloor(S, at, opt = {}) {
+  if (!(S && S.home && S.home.room === 'oneroom')) return;
+  let spot = null;
+  try { spot = spotOf(at, { id: '__floorcheck', ...opt }); } catch { return; }
+  const a = spot && spot.at;
+  const onSlot = spot && spot.slotId != null && !/^free:/.test(String(spot.slotId));
+  if (a && a.onUid == null && !onSlot) {
+    const e = new Error(ONEROOM_FLOOR_KO); e.tutorialInput = true; e.floorBan = true; throw e;
+  }
+}
+
 export function setCropAt(S, at, opt = {}) {
+  assertNotOneroomFloor(S, at, opt);
   const fp = S && S.firstPlay;
   if (!fp || !fp.beansprout) throw new Error('[배치] 첫 플레이 상태가 없습니다 — 놓을 시루가 없습니다');
   /* ★ 2026-08-05 — `opt.kind` 로 어느 작물 자리인지 고른다. 없으면 콩나물(옛 호출부).
@@ -945,6 +963,7 @@ export function setCropAt(S, at, opt = {}) {
    ⚠ ①묻고 ②만들고 ③놓고 ④뺀다 **순서는 그대로다**(`tools/test_resow_atomic.mjs` 가 지킨다).
      달라지는 것은 ①에서 묻는 목록과 ④에서 빼는 목록뿐이고, 둘은 **같은 목록**이다. */
 export function placeSiru(S, at, opt = {}) {
+  assertNotOneroomFloor(S, at, opt);          /* 원룸 바닥 금지(위 §ONEROOM_FLOOR_KO) — 아무것도 안 만들고 안 빼기 전에 막는다 */
   const fp = S && S.firstPlay;
   if (!fp || !fp.beansprout) throw new Error('[배치] 첫 플레이 상태가 없습니다 — 놓을 시루가 없습니다');
   const kindId = opt.kind || 'beansprout';

@@ -17,7 +17,7 @@
 import assert from 'node:assert';
 import { readFileSync } from 'node:fs';
 
-import { newState, pushLog } from '../src/game/state.js';
+import { newState, pushLog, placeSiru, ONEROOM_FLOOR_KO } from '../src/game/state.js';
 import {
   STORY_SCHEMA, ONEROOM_ROOM_ID, STAGES, createStoryState, storyOf, stageOf, storyRunning,
   ONEROOM_RULES, oneroomRulesFromHomes, withOneroomRent, moveIntoOneroom, lightGateOf,
@@ -290,6 +290,23 @@ check('F-2 D1 — 이사하면 날씨·계절이 흐르기 시작하고(sim real
   assert.equal(graceDaysOf('water', isNoviceMode(S)), 16, '원룸에서 유예가 줄었습니다');
   assert.ok((S.log || []).some(l => /날씨와 계절/.test(typeof l === 'string' ? l : (l && (l.msg || l.text)) || '')),
     '이사 때 「날씨와 계절이 흐른다」를 알리지 않습니다');
+});
+
+/* ══ F-3 · 원룸 방바닥 금지(총괄 확정 09-06 · D16) — 반지하 바닥은 그대로 ═══════════════ */
+/* ⚠ check 는 동기다 — async 로 쓰면 약속만 돌려주고 «무조건 PASS» 가 된다(처음에 그렇게 썼다가 잡았다) */
+check('F-3 원룸 방바닥에는 시루를 못 놓는다 · 반지하 바닥은 놓는다', () => {
+  const st = { placeSiru, ONEROOM_FLOOR_KO };
+  const S = readyToMove();
+  const floor = { x: 0.6, y: 0, z: 0.6, onUid: null };
+  const size = { w: 4, d: 3, h: 2.4 };
+  /* 반지하 — 바닥은 콩나물 자리다(막지 않는다). 막는 말이 «바닥» 금지가 아니어야 한다 */
+  let e0 = null; try { st.placeSiru(S, floor, { size, sow: false }); } catch (e) { e0 = e; }
+  assert.ok(!(e0 && e0.floorBan), '★ 반지하 바닥이 막혔습니다 — 반지하 바닥은 놓을 수 있어야 합니다');
+  moveIntoOneroom(S, {});
+  let e1 = null; try { st.placeSiru(S, floor, { size, sow: false }); } catch (e) { e1 = e; }
+  assert.ok(e1 && e1.floorBan === true && e1.tutorialInput === true, '★ 원룸 방바닥에 시루가 놓였습니다(D16)');
+  assert.equal(e1.message, st.ONEROOM_FLOOR_KO);
+  assert.ok(!/빈 자리|빈 데/.test(e1.message), '「빈 자리」는 안 쓴다(놓을 수 있는 자리라는 뜻이다)');
 });
 
 /* ══ G · ④ 엔딩 ════════════════════════════════════════════════════════ */
