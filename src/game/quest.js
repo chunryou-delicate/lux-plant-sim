@@ -200,6 +200,7 @@ export const QUEST_SCHEMA = 'quest/1';
      varieSaleCount      무늬 삽수를 판 횟수          (ts.varieSale.count)
      lampUnlocked        식물등을 살 수 있게 됐나     (ts.lamp.unlocked · 가을 진입)
      lampOwned           갖고 있는 식물등 개수        (ts.lamp.owned)
+     lampPlaced          ★ 10-08 방에 «단» 식물등 개수 (ts.lamp.placed) — null = 「모른다」(배선 전) ⇒ buy_lamp 는 예전처럼 lampOwned 로 본다
 
    ══ ★★ 2026-08-16 신설 — **초반 사슬이 보는 칸 넷** (§초반 사슬) ══════════
      cropPots[].placed   그 용기가 방에 서 있나       (`first_play.cropPotPlaced(p)`)
@@ -215,6 +216,8 @@ export function emptySnapshot() {
            mealKinds: [], motherLeaves: 0, motherVarieLeaves: 0,
            cuttings: [], varieSaleCount: 0,
            lampUnlocked: false, lampOwned: 0,
+           /* ★ 2026-10-08 [plan] — 단 등. null = 「모른다」(§buy_lamp done) */
+           lampPlaced: null,
            /* ★ null = 「모른다」. false 로 두면 「아직 배선이 없다」와 「아니다」가 같아진다 */
            monsteraArrived: null, monsteraHomed: null,
            /* ★ 2026-09-02 — 옮긴 뒤 지난 날 · 한 번 자랐나 (둘 다 firstPlay.monstera.guide 의 칸) */
@@ -676,7 +679,13 @@ const MAIN_QUESTS = Object.freeze([
     /* ⚠ 「살 수 있게 된 순간」에 연다 — `ts.lamp.unlocked` 가 정본이다(가을 진입).
        그 전에 열면 살 수 없는 것을 시키는 꼴이 된다. */
     opens: s => !!s.lampUnlocked,
-    done:  s => num(s.lampOwned) >= 1
+    /* ★★ 2026-10-08 [plan] — **«달 때» 끝난다.** 첫 등은 가방에 «공짜로» 오므로(game.html L.owned=1) «가진 수»로 끝내면
+       받는 그 순간 끝난다 — 중반 검토(0~60일): 「볕을 들인다」가 할 일에 «0번» 뜨고, 「달아라」를 시키는 줄이 없었다(검토 8번).
+       후보: ㉠ 그대로(owned) · ㉡ 단 등(placed) · ㉢ 켠 등 ⇒ 고른 것 ㉡. 까닭: 할 일 글자(「식물등을 달아…」)·보상(「밝은 자리가 생깁니다」)이
+       이미 «단» 것을 말한다 — 끝나는 자리를 말에 맞췄다. 켜기는 따로 세지 않는다(단 등은 켜진다 · game.html §doBuyLamp «세운 수»).
+       ⚠ 칸이 아직 없으면(lampPlaced null — [core] 배선 전) 예전 그대로 owned 로 본다 — 사슬이 멎지 않게.
+       ⚠ 값 아님 — 끝나는 «자리»다. 체력 보상 0 그대로. */
+    done:  s => (s.lampPlaced == null ? num(s.lampOwned) : num(s.lampPlaced)) >= 1
   }),
 
   /* ⑤ ★★ **무늬가 난 뒤**에 열린다. 가르치는 것은 하나인데 이 게임의 뼈대다 —
@@ -1034,8 +1043,20 @@ export function questView(S, snapshot) {
     ? { index: FIRST_PLAY_CHAIN_IDS.length - chainLeft.length + 1,
         total: FIRST_PLAY_CHAIN_IDS.length }
     : null;
+  /* ★★ 2026-10-08 [plan] P3 — **새로 열린 줄(48시간).** 사슬이 앞에서 멎어도 «달력으로 오는» 줄(가을의 등 · Day 45~46)은
+     할 일에 보여야 한다 — 중반 검토(0~60일): 「씨앗 주문」에 54일 멎은 판에서 「볕을 들인다」가 «0번» 떴다(current 는 늘 정의 순서 첫 줄이라).
+     후보: ㉠ current 를 바꾼다 · ㉡ 칩 첫 줄을 48시간 내준다 · ㉢ 둘째 줄로만 ⇒ 고른 것 ㉡ — 그러나 «고르는 것»은 화면 몫이라
+       여기서는 **칸만 낸다**(current·upcoming 은 그대로 — 가르치는 순서와 기존 검사가 안 흔들리게).
+     fresh = 열린 줄 중 current 가 «아닌» 것으로, 열린 날(stamina.questsOpenedOn)이 오늘이거나 어제인 것 · 늦게 열린 것부터.
+     ⚠ 열린 날을 모르면(옛 세이브) 안 낸다 — 「새로」를 지어내지 않는다. 화면 쓰는 법: plan-d19-d21-20261008.md §P3 */
+  const openedOn = (S && S.stamina && S.stamina.questsOpenedOn) || {};
+  const today = Number.isFinite(s.day) ? s.day : (S && Number.isFinite(S.day) ? S.day : null);
+  const fresh = today == null ? [] : open
+    .filter(id => id !== nextId && Number.isFinite(openedOn[id]) && today - openedOn[id] <= 1 && today >= openedOn[id])
+    .sort((x, y) => openedOn[y] - openedOn[x])
+    .map(id => ({ ...all.find(a => a.id === id), openedOn: openedOn[id] }));
   return { schema: QUEST_SCHEMA, done: doneIds, open, next, all,
-           current: next, upcoming, counts, stage, chain };
+           current: next, upcoming, counts, stage, chain, fresh };
 }
 
 /* 하루(또는 한 동작) 뒤에 판을 다시 본다. **사건을 낸다 — 보상은 안 준다.**

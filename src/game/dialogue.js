@@ -404,12 +404,19 @@ export const SCRIPTS = {
      라고 **일어나지도 않은 변화를 일어난 것처럼** 말했다(2026-08-11 화면 실측 Day 92).
      ⇒ 지금 참인 것(달력·해의 높이)만 말하게 두고, 밝기 주장은 앞날로 미룬다.
      ⚠ 계절이 빛에 걸리는 날(story_arc §5 권고 ㉠) 이 줄은 **현재형으로 되돌려야** 한다.
-       그때까지 몬이는 겪지 않은 것을 겪은 것처럼 말하지 않는다. */
+       그때까지 몬이는 겪지 않은 것을 겪은 것처럼 말하지 않는다.
+     ★★ 2026-10-08 [plan] D20 — **그날은 반지하에 «안» 온다.** D1(박사님): 빛의 초보는 원룸 이사 때 꺼진다
+       (oneroom.js §D1 · sim.mode novice→real). 반지하에선 해가 끝까지 안 낮아진다 ⇒ 위 «예고»도 반지하에선 거짓이다
+       (중반 검토 0~60일: 「각도가 달라졌나?」 Day 45 · 화면 차이 <1%).
+       후보: ㉠ 줄을 뺀다 · ㉡ 뜻을 바꾼다 ⇒ 고른 것 ㉡(총괄 D20 «빼지 말고 뜻을 바꾼다» · 중반의 축이라서).
+       ⇒ 등이 필요한 까닭을 «해가 낮아져서»에서 **«이 방 빛으론 모자라서»**(참 — 등 없이 이사 A 38%)로 옮겼다.
+         가을은 **공기·달력**으로만 말한다. 일곱 줄 · 뒤 셋(옮기면 되나 → 창턱보다 밝은 데 없어 → 다른 게 필요해)은 그대로다.
+       ⚠ «계절은 흐르고 날씨만 맑음 고정»으로 초보 판을 바꾸는 안은 박사님 몫(D1)이라 후보로만 올렸다. */
   autumnCame: [
-    { who: 'jachwi', face: 'think', text: '창으로 드는 빛이… 각도가 달라졌나?' },
-    { who: 'moni',   face: 'teach', text: '가을이야. 해가 조금씩 짧아져.' },
-    { who: 'moni',   text: '겨울로 갈수록 창 하나로는 모자라져.' },
-    { who: 'moni',   text: '자리 탓이 아니야. **해가 낮아지는** 거지.' },
+    { who: 'jachwi', face: 'think', text: '아침 공기가 달라졌다.' },
+    { who: 'moni',   face: 'teach', text: '가을이야. 바깥은 바뀌는데 이 방 빛은 그대로지.' },
+    { who: 'moni',   text: '이 방 창 하나로는 모자라. 여름에도 그랬어.' },
+    { who: 'moni',   text: '자리 탓이 아니야. **이 방 창이 작은** 거지.' },
     { who: 'jachwi', face: 'curious', text: '그럼 더 밝은 데로 옮기면 되나?' },
     { who: 'moni',   face: 'worry', text: '이 방에서 창턱보다 밝은 데는 없어.' },
     { who: 'moni',   text: '여기서부터는 자리 말고 다른 게 필요해.' }
@@ -1017,18 +1024,24 @@ export const SCRIPTS = {
   /* ★ 2026-09-25 [plan] #3 — 6줄 → 4줄. 「해가 짧아졌어」처럼 빛이 «지금» 바뀐 것처럼 말하지 않는다 —
      초보 판은 여름·맑음 고정이라 겪지 않은 것을 겪은 것처럼 말하게 된다(§autumnCame 주석과 같은 규율).
      「볕을 사 오면」도 «들이는» 것으로 — 첫 등은 공짜로 가방에 온다(§lampUnlocked · game.html L.owned=1). */
+  /* ★★ 2026-10-08 [plan] D20 — 첫 줄 「가을이면 해가 더 짧아지겠지」 → 「창턱이 제일 밝은데도 모자라면」(§autumnCame D20 — 반지하는 해가 안 낮아진다).
+     그리고 **「달아라」를 시키는 줄이 없었다**(중반 검토 8번) — 등은 가방에 오는데 무엇을 할지 아무도 말하지 않았다. 끝에 한 줄 보탰다.
+     ⚠ 이 줄이 «달 때 끝난다»와 짝이다(quest.js §buy_lamp done = 단 등 · 10-08). */
   questBuyLamp: [
-    { who: 'jachwi', face: 'think', text: '가을이면 해가 더 짧아지겠지.' },
+    { who: 'jachwi', face: 'think', text: '창턱이 제일 밝은데도 모자라면…' },
     { who: 'moni',   face: 'teach', text: '응. 그러니까 **볕을 들이는** 거야.' },
     { who: 'jachwi', face: 'surprise', text: '볕을 들여?' },
-    { who: 'moni',   face: 'teach', text: '**등 밑**이 이 방의 둘째 창턱이 돼.' }
+    { who: 'moni',   face: 'teach', text: '**등 밑**이 이 방의 둘째 창턱이 돼.' },
+    { who: 'moni',   text: '가방에서 꺼내서 방에 달아 봐.' }
   ],
   /* ★ 끝난 뒤에 **다음 줄을 가리킨다** — 밝은 자리가 생겼으니 ⑤(밝은 데서 뿌리내리기)가 열린다.
      ⚠ 여기서 「무늬 등급이 오른다」까지 말하지 않는다. 그건 ⑤ 가 할 말이고,
        미리 말하면 ⑤ 가 열릴 때 할 말이 없어진다.
-     ★ 2026-09-25 — 「켰어」를 뺐다. 이 줄은 등이 «생긴»(owned) 순간에 끝나고 아직 달지도 않았다. */
+     ★ 2026-09-25 — 「켰어」를 뺐다. 이 줄은 등이 «생긴»(owned) 순간에 끝나고 아직 달지도 않았다.
+     ★★ 2026-10-08 [plan] D20 — 이제 «단» 순간에 끝난다(quest.js §buy_lamp). 「생겼다」 → 「달았다」.
+       중반 검토: 첫 등이 가방에 들어온 Day 46 에 이 줄이 났다 — 몬스테라도 단 등도 없는 판에서 «밝은 자리를 만들 수 있어»가 됐다. */
   questDoneBuyLamp: [
-    { who: 'jachwi', text: '등이 생겼다. 손바닥만 하네.' },
+    { who: 'jachwi', text: '등을 달았다. 손바닥만 하네.' },
     { who: 'moni',   face: 'teach', text: '사람 눈엔 약해도 식물한텐 달라.' },
     { who: 'moni',   face: 'proud', text: '이제 이 방에도 **밝은 자리**를 만들 수 있어.' }
   ],
@@ -1338,16 +1351,40 @@ export const SCRIPTS = {
      ★ 매일 나는 말은 «한 줄». 「빈 날」에만·맨 뒤(§pickChatter — 다른 작은 말이 없을 때만).
      ★ ④「물러섬」은 «영영» 그 자리에 선다 — 「그만둔다」가 아니라 「멈춘다」. 「마음 내키면」이 「안 해도 된다」를 막는다.
      ⚠ 날 문턱은 §NUDGE_DAYS — [plan] 밑값이고, 「뜬 날·열쇠」 표로 다시 센다고 했다. 여기 안 박는다. */
+  /* ★★ 2026-10-08 [plan] D19 독촉 사다리 — 공통 넷은 이제 «범용 줄»이다: **30일 안에 다시 안 쓴다**(§CHATTER gap).
+     «무엇을»은 퀘스트별 줄(nudgeSeed… · nudgeLamp… 아래)이 말한다. 공통 넷은 그 줄이 없는 퀘스트의 마지막 그물이다.
+     중반 검토(0~60일): 「급한 건 아니야」 60일에 여섯 번 · 「무슨 일 있어?」 Day 13~19 매일 · 「그거 아직이지?」 목적어 없음.
+     ⇒ 「그거」 → «할 일에 적힌 거»(가리킴을 말에 넣었다) · 「무슨 일 있어?」 → «무엇이 그대로인지»를 말한다.
+     ⇒ 「급한 건 아니야」는 독촉 사다리에서 «내렸다» — 할 수 있는 퀘스트가 없는 날(다 끝났거나 시루가 도는 날)의 잡담이다(§CHATTER). */
   nudgeOffer: [ { who: 'moni', face: 'teach', text: '해 보면 알 거야.' } ],
-  nudgeAsk:   [ { who: 'moni', face: 'curious', text: '그거 아직이지?' } ],
+  nudgeAsk:   [ { who: 'moni', face: 'curious', text: '할 일에 적힌 거, 아직이지?' } ],
   /* ⚠ [plan] 은 «worry» 라 했는데 몬이 초상화에 그 키가 없다(game.html §FACE_FILE.moni: base·happy·sad·curious·surprise).
      없는 키는 소리 없이 기본 얼굴로 떨어지므로(dialogue_coverage ⑷) 있는 것 중 제일 가까운 «sad» 를 쓴다.
      «worry» 그림이 생기면 그때 바꾼다 — [Char] 몫. */
-  nudgeWorry: [ { who: 'moni', face: 'worry',     text: '무슨 일 있어?' } ],
+  nudgeWorry: [ { who: 'moni', face: 'worry',     text: '할 일이 며칠째 그대로야. 막힌 데 있어?' } ],
   nudgeBack:  [ { who: 'moni',   face: 'calm', text: '급한 건 아니야. 마음 내키면 해.' } ],
-  /* ★ 2026-09-06 ([plan] plan-after-setup-steps ⓔ) — 등(buy_lamp)의 낯 ④만 «다른 말»: 등은 물러서지 않는다(「등이 곧 길」 · 겨울이 오면 늦는다).
-     걱정 낯 그대로 · 매일. */
-  nudgeBackLamp: [ { who: 'moni', face: 'worry', text: '겨울 오기 전에는 있어야 해.' } ],
+  /* ★ 2026-09-06 ([plan] plan-after-setup-steps ⓔ) — 등(buy_lamp)의 낯 ④만 «다른 말»: 등은 물러서지 않는다(「등이 곧 길」).
+     ★★ 2026-10-08 [plan] D20 — 「겨울 오기 전에는 있어야 해」를 바꿨다. 반지하는 겨울이 와도 빛이 안 줄어(D1 · 빛의 초보)
+       그 말이 거짓이다 — 출처는 plan(09-06 · 총괄 확인 10-08). 까닭을 «이 방 빛으론 모자라서»로 옮겼다(§autumnCame D20 · quest.js buy_lamp.why 와 같은 말).
+     ★ 이제 등은 «달 때» 끝나므로(quest.js §buy_lamp) 이 줄들은 «가방에 든 등»을 가리킨다. */
+  nudgeLampOffer: [ { who: 'moni', face: 'teach', text: '등은 가방에 있어. 방에 달아야 밝아져.' } ],
+  nudgeBackLamp:  [ { who: 'moni', face: 'worry', text: '이 방 창턱으론 모자라. 등을 달아야 밝은 자리가 생겨.' } ],
+  /* ★★ 2026-10-08 [plan] D19 — 퀘스트별 «무엇을·어디서» 두 줄(권함 · 미는 말). 사슬이 멎기 쉬운 자리만 지었다.
+     ⚠ 값·개수는 안 말한다 — 몬이는 수를 말하지 않는다(값은 상점 칸이 말하고, 값이 바뀌면 말이 거짓이 된다).
+       총괄 예시 「씨앗 500원이면 내일 와」의 «500원»은 그래서 뺐다 — «어디서·언제»만 남겼다.
+     ⚠ 「이틀 잇달아 금지」(§pickNudge)라 한 줄은 많아야 하루 걸러 난다 — 빈 날은 공통 줄(30일에 한 번)이나 잡담이 받는다. */
+  nudgeMonsteraOffer: [ { who: 'moni', face: 'teach', text: '몬스테라는 밝은 데로 옮겨 줘. 이 방에선 창턱이야.' } ],
+  nudgeMonsteraPush:  [ { who: 'moni', face: 'worry', text: '몬스테라가 아직 처음 자리야. 자리가 곧 빛이야.' } ],
+  nudgeMixOffer:      [ { who: 'moni', face: 'teach', text: '무순도 상점에 있어. 콩나물이랑 한 상에 올려 봐.' } ],
+  nudgeMixPush:       [ { who: 'moni', face: 'teach', text: '콩나물만으론 상이 한 가지야. 무순을 길러야 둘째 몫이 생겨.' } ],
+  nudgeCutOffer:      [ { who: 'moni', face: 'teach', text: '잎 한 장짜리 마디를 잘라서 물에 꽂아 봐.' } ],
+  nudgeCutPush:       [ { who: 'moni', face: 'teach', text: '잘라도 안 죽어. 마디 하나가 한 그루가 돼.' } ],
+  nudgeVarieOffer:    [ { who: 'moni', face: 'teach', text: '무늬 있는 마디는 밝은 데서 뿌리내려야 좋은 무늬가 나.' } ],
+  nudgeVariePush:     [ { who: 'moni', face: 'teach', text: '무늬 마디를 잘라서 밝은 자리에 꽂아 봐.' } ],
+  nudgeSellOffer:     [ { who: 'moni', face: 'teach', text: '무늬 삽수는 값이 나가. 내놓아 봐.' } ],
+  nudgeSellPush:      [ { who: 'moni', face: 'teach', text: '무늬를 팔아야 이사비가 모여.' } ],
+  nudgeHarvestPush:   [ { who: 'moni', face: 'worry', text: '다 자란 게 시루에서 기다려. 거두면 밥이 돼.' } ],
+  nudgeSeedPush:      [ { who: 'moni', face: 'worry', text: '씨앗이 떨어졌어. 상점에서 시키면 하루면 와.' } ],
   /* ★ 2026-10-08 [plan] #12 — 퀘스트별 독촉 앞줄(§CHATTER 의 같은 이름). 공통 넷보다 먼저 맞는다 */
   nudgeHarvestReady: [ { who: 'moni', face: 'cheer',   text: '다 자랐어! 거두자.' } ],
   nudgeHarvestAsk:   [ { who: 'moni', face: 'teach',   text: '거둘 게 있어. 시루 열어 봐.' } ],
@@ -1642,16 +1679,23 @@ export const SCRIPTS = {
     { who: 'jachwi', text: '아니. 누가 있다는 소리라서 좀 낫다.' }
   ],
 
-  /* 가을 */
+  /* 가을
+     ★★ 2026-10-08 [plan] D20 — 「여섯 시인데 벌써 어둡다」를 바꿨다. 둘이 틀렸다:
+       ① 작은 말은 «아침»에 뜬다 — Day 52 06:00 화면에 저녁 말이 나왔다(중반 검토).
+       ② 반지하는 빛의 초보(여름 고정 · D1)라 해가 짧아진 것을 «본» 적이 없다.
+     ⇒ 공기·온도로 말한다(§autumnCame D20 과 같은 규율). 「이불」은 겨울 `chatWinterCold`(「이불 두 개 있어」)로 이어진다.
+     ⚠ 아래 `chatAutumnAngle`(해 드는 자리) · `chatWinterWindow`(닦으면 밝아져)는 «빛이 바뀐 것»을 말하므로
+       계절이 빛에 걸린 판(`c.seasonLight` — 원룸부터)에서만 뜬다(§CHATTER). */
   chatAutumnShort: [
-    { who: 'jachwi', text: '여섯 시인데 벌써 어둡다.' },
-    { who: 'moni',   face: 'sad', text: '가을은 그래.' }
+    { who: 'jachwi', text: '아침 공기가 차다.' },
+    { who: 'moni',   face: 'calm', text: '가을이야. 이불 하나 더 꺼내.' }
   ],
+  /* ★★ 2026-10-08 [plan] D20 — 「닦아 줘. 먼지도 빛을 가려.」를 걷었다. 닦는 손짓이 게임에 없고 먼지도 빛 셈에 없다 —
+     없는 일을 시키고 없는 규칙을 말했다(중반 검토 덧붙임). ⇒ 자취생이 «이미 한» 일로 바꿨다(시키지 않는다 · 규칙을 안 말한다).
+     조건은 몬스테라가 온 판(§CHATTER `hasMonstera`). */
   chatAutumnDust: [
-    { who: 'jachwi', text: '잎에 먼지가 앉았다.' },
-    { who: 'moni',   face: 'teach', text: '닦아 줘. 먼지도 빛을 가려.' },
-    { who: 'jachwi', face: 'surprise', text: '그것도 빛 얘기야?' },
-    { who: 'moni',   face: 'calm', text: '나는 원래 빛 얘기밖에 안 해.' }
+    { who: 'jachwi', text: '잎에 먼지가 앉아서 손으로 털었다.' },
+    { who: 'moni',   face: 'proud', text: '잘했어. 보기에도 낫다.' }
   ],
   chatAutumnAngle: [
     { who: 'jachwi', text: '해가 드는 자리가 조금씩 안쪽으로 옮겨 온다.' },
@@ -1668,9 +1712,11 @@ export const SCRIPTS = {
     { who: 'jachwi', text: '얘가 요즘 느리다.' },
     { who: 'moni',   face: 'calm', text: '느린 거야. 나쁜 거 아니고.' }
   ],
+  /* ★ 2026-10-08 [plan] D20 — 「닦으면 조금 밝아져. 진짜야.」를 걷었다(§chatAutumnDust 와 같은 까닭 — 닦는 손짓도 김 서림 셈도 없다).
+     조건은 계절이 빛에 걸린 판(§CHATTER `seasonLight`) — 그 판에선 「해가 낮다」가 참이다. */
   chatWinterWindow: [
     { who: 'jachwi', text: '창이 뿌옇다.' },
-    { who: 'moni',   face: 'teach', text: '닦으면 조금 밝아져. 진짜야.' }
+    { who: 'moni',   face: 'teach', text: '겨울엔 해가 낮아. 창으로 드는 빛도 짧고.' }
   ],
 
   /* 돈이 얼마 안 남았을 때 */
@@ -1725,6 +1771,10 @@ export const REPEATABLE = new Set(
     .concat(['nudgeOffer', 'nudgeAsk', 'nudgeWorry', 'nudgeBack', 'nudgeBackLamp'])
     /* ★ 2026-10-08 [plan] #12 — 퀘스트별 독촉 앞줄도 «매일» 되풀이된다 */
     .concat(['nudgeHarvestReady', 'nudgeHarvestAsk', 'nudgeSeedOffer', 'nudgeSeedAsk', 'nudgeSeedWorry'])
+    /* ★ 2026-10-08 [plan] D19 — 퀘스트별 두 줄(권함 · 미는 말)도 되풀이된다. 「이틀 잇달아」는 §pickNudge 가 막는다 */
+    .concat(['nudgeLampOffer', 'nudgeMonsteraOffer', 'nudgeMonsteraPush', 'nudgeMixOffer', 'nudgeMixPush',
+             'nudgeCutOffer', 'nudgeCutPush', 'nudgeVarieOffer', 'nudgeVariePush', 'nudgeSellOffer', 'nudgeSellPush',
+             'nudgeHarvestPush', 'nudgeSeedPush'])
     .concat(['rentSoon', 'rentAgain', 'plantStalledAgain', 'plantStalledWinter',
              'cropHandsShort', 'brokeTalk', 'brokeTalkAgain'])
 );
@@ -2083,10 +2133,12 @@ export const CHATTER = [
 
   /* 계절 */
   { id: 'chatAutumnShort', when: c => c.season === 'autumn' },
-  { id: 'chatAutumnDust',  when: c => c.season === 'autumn' },
-  { id: 'chatAutumnAngle', when: c => c.season === 'autumn' },
+  /* ★★ 2026-10-08 [plan] D20 — «상태를 보고 말한다». 잎 얘기는 몬스테라가 «온» 판에서만(중반 검토 Day 60 「잎에 먼지가 앉았다」가 몬스테라 없는 판에서 났다).
+     빛이 «바뀐» 얘기(해 드는 자리 · 닦으면 밝아져)는 계절이 빛에 걸린 판에서만 — 반지하는 빛의 초보라 안 바뀐다(D1 · §autumnCame D20). */
+  { id: 'chatAutumnDust',  when: c => c.season === 'autumn' && c.hasMonstera },
+  { id: 'chatAutumnAngle', when: c => c.season === 'autumn' && c.seasonLight },
   { id: 'chatWinterCold',   when: c => c.season === 'winter' },
-  { id: 'chatWinterWindow', when: c => c.season === 'winter' },
+  { id: 'chatWinterWindow', when: c => c.season === 'winter' && c.seasonLight },
 
   /* 살림 — 계절을 안 가린다. 아무것도 안 걸릴 때 여기서 나온다.
      ★★ 2026-08-15 — 셋에 `!c.movedOut` 을 걸었다. **원룸에서 반지하 얘기를 하고 있었다.**
@@ -2100,7 +2152,8 @@ export const CHATTER = [
   { id: 'chatSummerHeat', when: c => c.season === 'summer' && !c.movedOut },
   { id: 'chatSummerDamp', when: c => c.season === 'summer' && !c.movedOut },
   { id: 'chatDailySpend', when: c => c.living },
-  { id: 'chatMorning',    when: c => c.living },
+  /* ★ 2026-10-08 [plan] D20 — 「제일 먼저 보는 게 화분이 됐다」는 화분(몬스테라)이 온 뒤에만(중반 검토 Day 43 · 몬스테라 없는 판) */
+  { id: 'chatMorning',    when: c => c.living && c.hasMonstera },
   { id: 'chatQuiet',      when: c => c.living },
   { id: 'chatMoniName',   when: c => c.living },
   /* ★ 2026-08-27 — 두 번째로 나오는 날의 한 줄([Plan] · §chatMoniName2).
@@ -2127,7 +2180,7 @@ export const CHATTER = [
      「빈 날을 채운다」의 «빈»은 「알맹이 있는 말이 없는 날」이다. 그물은 빈 날의 «다른 이름»이다. */
   { id: 'chatQuiet',      net: true, when: () => true },
   { id: 'chatMoniName',   net: true, when: () => true },
-  { id: 'chatMorning',    net: true, when: () => true },
+  { id: 'chatMorning',    net: true, when: c => c.hasMonstera },
   /* ═══ ★★ 2026-10-08 [plan] #12 — 퀘스트별 독촉 «앞줄» (공통 넷보다 먼저 맞는다 · §pickNudge 는 표 차례로 고른다) ═══
      폰 0~14일 검토(tutorial-friction #12): 다 자란 첫날 몬이 첫마디가 「그거 아직이지?」라 첫 보상이 잔소리로 시작했고,
      씨앗 없이 막힌 날들엔 「그거」가 무엇인지 아무도 말하지 않았다.
@@ -2135,32 +2188,51 @@ export const CHATTER = [
        그러니 첫날(날수 0 — nudgeDaysOf 가 «할 수 있게 된 첫날»을 0 으로 센다)은 «축하», 그 뒤는 «할 일을 말로».
      ⇒ 씨앗 — 「그거」 대신 «어디서 무엇을»을 말한다. ⚠ 값(500원)은 안 말한다 — 몬이는 수를 말하지 않는다.
      ⚠ 이 줄들도 «한 줄»·매일 되풀이라 REPEATABLE 에 들어 있다. 날 문턱은 공통 넷과 같다(NUDGE_DAYS). */
+  /* ═══ ★★ 2026-10-08 [plan] D19 독촉 사다리 ═══════════════════════════════════════════
+     ① 기다린 날(nudgeDaysOf · D2)로 «올라간다» — 권함 → 물음 → 걱정 → 미는 말. ⛔ 물러서지 않는다
+        (예전 ④ 「급한 건 아니야」는 할 일이 54일 멎은 판에서 여섯 번 «괜찮다»고 했다 — 중반 검토).
+     ② «무엇을·어디서»는 퀘스트별 줄이 말한다(아래 두 묶음). 값·개수는 안 말한다(§nudgeSeedPush 주석).
+     ③ 같은 줄은 «이틀 잇달아» 안 난다 · 범용 줄(`gap`)은 30일 안에 다시 안 난다 — 둘 다 §pickNudge 가 본다.
+        ⇒ 하루 «한 줄»은 그대로지만 «매일»은 아니다 — 빈 날은 잡담이 받는다(조용한 날 세기 그대로).
+     ⚠ 날 문턱(NUDGE_DAYS)·차례(사건 > 독촉 > 잡담)는 그대로다. */
   { id: 'nudgeHarvestReady', nudge: true, when: c => !!c.nudge && c.nudge.id === 'first_harvest' && c.nudge.days < NUDGE_DAYS.ask },
   { id: 'nudgeHarvestAsk',   nudge: true, when: c => !!c.nudge && c.nudge.id === 'first_harvest' && c.nudge.days >= NUDGE_DAYS.ask && c.nudge.days < NUDGE_DAYS.back },
+  { id: 'nudgeHarvestPush',  nudge: true, when: c => !!c.nudge && c.nudge.id === 'first_harvest' && c.nudge.days >= NUDGE_DAYS.back },
   { id: 'nudgeSeedOffer',    nudge: true, when: c => !!c.nudge && c.nudge.id === 'order_seed' && c.nudge.days >= 1 && c.nudge.days < NUDGE_DAYS.ask },
   { id: 'nudgeSeedAsk',      nudge: true, when: c => !!c.nudge && c.nudge.id === 'order_seed' && c.nudge.days >= NUDGE_DAYS.ask && c.nudge.days < NUDGE_DAYS.worry },
   { id: 'nudgeSeedWorry',    nudge: true, when: c => !!c.nudge && c.nudge.id === 'order_seed' && c.nudge.days >= NUDGE_DAYS.worry && c.nudge.days < NUDGE_DAYS.back },
-  /* ═══ ★ 독촉 낯 넷 — «맨 뒤»(nudge:true · §pickChatter). 날 문턱은 §NUDGE_DAYS([plan] 밑값) ═══ */
-  { id: 'nudgeOffer', nudge: true, when: c => !!c.nudge && c.nudge.days >= 1 && c.nudge.days < NUDGE_DAYS.ask },
-  { id: 'nudgeAsk',   nudge: true, when: c => !!c.nudge && c.nudge.days >= NUDGE_DAYS.ask && c.nudge.days < NUDGE_DAYS.worry },
-  { id: 'nudgeWorry', nudge: true, when: c => !!c.nudge && c.nudge.days >= NUDGE_DAYS.worry && c.nudge.days < NUDGE_DAYS.back },
-  /* ★ 낯 ④「물러섬」은 «자리»도 물러선다(plan-quest-nudge ⓖ~ⓛ · d90ab11) — 잡담과 «같은 줄»에 서서 「이틀 뒤」 규칙을
-     같이 따른다(late). 「급한 건 아니야」를 매일 하면 그 말이 거짓이 된다. */
-  /* ★ 등(buy_lamp)은 ④에서 물러서지 않는다 — 공통 ④ 앞에 서고, 공통 ④는 등을 뺀다(plan-after-setup-steps ⓔ) */
-  { id: 'nudgeBackLamp', nudge: true, when: c => !!c.nudge && c.nudge.id === 'buy_lamp' && c.nudge.days >= NUDGE_DAYS.back },
-  { id: 'nudgeBack',  nudge: true, late: true, when: c => !!c.nudge && c.nudge.id !== 'buy_lamp' && c.nudge.days >= NUDGE_DAYS.back },
+  { id: 'nudgeSeedPush',     nudge: true, when: c => !!c.nudge && c.nudge.id === 'order_seed' && c.nudge.days >= NUDGE_DAYS.back },
+  /* ★ 퀘스트별 두 줄 — 권함(열린 다음 날 ~ 물음 전) · 미는 말(걱정 문턱부터 끝까지). 그 사이(물음)는 공통 줄이 받는다 */
+  ...[['buy_lamp', 'nudgeLampOffer', 'nudgeBackLamp'],
+      ['monstera_home', 'nudgeMonsteraOffer', 'nudgeMonsteraPush'],
+      ['crop_mix', 'nudgeMixOffer', 'nudgeMixPush'],
+      ['first_cut', 'nudgeCutOffer', 'nudgeCutPush'],
+      ['varie_bright', 'nudgeVarieOffer', 'nudgeVariePush'],
+      ['sell_varie', 'nudgeSellOffer', 'nudgeSellPush']].flatMap(([q, offer, push]) => [
+    { id: offer, nudge: true, when: c => !!c.nudge && c.nudge.id === q && c.nudge.days >= 1 && c.nudge.days < NUDGE_DAYS.ask },
+    { id: push,  nudge: true, when: c => !!c.nudge && c.nudge.id === q && c.nudge.days >= NUDGE_DAYS.worry }
+  ]),
+  /* ═══ ★ 공통 셋 — 퀘스트별 줄이 없거나 그 줄이 어제 난 날의 그물. «범용 줄»이라 30일에 한 번(gap) ═══
+     ⚠ 걱정은 이제 «끝이 없다»(≥ worry) — 예전 ④ 물러섬 자리까지 걱정이 맡는다(30일에 한 번이라 잔소리가 안 된다). */
+  { id: 'nudgeOffer', nudge: true, gap: 30, when: c => !!c.nudge && c.nudge.days >= 1 && c.nudge.days < NUDGE_DAYS.ask },
+  { id: 'nudgeAsk',   nudge: true, gap: 30, when: c => !!c.nudge && c.nudge.days >= NUDGE_DAYS.ask && c.nudge.days < NUDGE_DAYS.worry },
+  { id: 'nudgeWorry', nudge: true, gap: 30, when: c => !!c.nudge && c.nudge.days >= NUDGE_DAYS.worry },
+  /* ★ 「급한 건 아니야. 마음 내키면 해.」 — 독촉이 아니라 «잡담»이다(D19). 할 수 있는 퀘스트가 «없는» 날에만
+     (다 끝났거나 · 시루가 도는 등 기다리는 중 — chatterContext.nudge 가 null). 할 일이 멎어 있는 날에 «급하지 않다»고 하면 거짓이다.
+     범용 줄이라 30일에 한 번. ⚠ id 는 그대로 둔다(probe·세이브 이력이 이 이름을 안다). */
+  { id: 'nudgeBack', gap: 30, when: c => c.living && !c.nudge },
 ];
 
 /* 조건에 맞는 것 중 **가장 오래 안 나온 것**. recent 는 나온 차례(오래된 것부터)다.
    ★순수하다 — 난수를 안 쓴다. 재현이 매번 같은 결과를 봐야 검증이 된다. */
 /* ★ 독촉 날 문턱 — [plan] 밑값(plan-quest-nudge ⓔ: 열린 다음 날 · 사나흘 · 한 이레 · 두 이레).
    ⚠ 「뜬 날·열쇠」 표가 나온 뒤 [plan]이 다시 센다. 여기 것은 밑값이다. */
-export function pickChatter(ctx = {}, recent = []) {
+export function pickChatter(ctx = {}, recent = [], lastDay = {}) {
   const pool = [], nudges = [], nets = [];
   for (const c of CHATTER) {
     let ok = false;
     try { ok = !!c.when(ctx); } catch { ok = false; }
-    if (!ok) continue;
+    if (!ok || !repeatOk(c, ctx, lastDay)) continue;
     /* ★ 세 층이다 — ① 알맹이 있는 작은 말 ② 독촉(`nudge`) ③ 그물(`net` · 늘 참).
        독촉은 «맨 뒤»(plan-quest-nudge ⓕ)이되 «그물보다는 앞»이다 — 그물까지 뒤에 두면 풀이 비는 날이 없어
        독촉이 영영 안 나온다(실측). 넷은 날로 갈려 한 번에 하나만 참이다.
@@ -2220,6 +2292,11 @@ export function chatterContext(turn = {}, S = null) {
     fenestrating: !!(turn.slot && turn.slot.fenestrating),
     lampOwned: ts ? ts.lamp.owned : 0,
     movedOut: !!(ts && ts.movedOut),
+    /* ★ 2026-10-08 [plan] D20 — «상태를 보고 말한다»의 두 칸. 읽기만 한다.
+       hasMonstera  몬스테라가 왔나(fp.monstera.arrived) — 화분·잎 얘기의 조건
+       seasonLight  계절·날씨가 빛에 걸리나(S.sim.mode ≠ novice — D1: 원룸 이사 때 real 로 바뀐다). 모르면 false — 빛이 «바뀌었다»는 말을 안 한다 */
+    hasMonstera: !!(fp && fp.monstera && fp.monstera.arrived),
+    seasonLight: !!(S && S.sim && S.sim.mode && S.sim.mode !== 'novice'),
     /* ★ 2026-09-02 — 독촉의 임자: «가장 먼저 열렸는데 아직 안 끝난» 퀘스트가 열린 지 며칠째인가.
        열린 날은 stamina.questsOpenedOn(세이브에 실린다), 끝난 것은 stamina.questsTaken 이 안다. 새 칸은 열린 날 하나뿐이다. */
     nudge: (() => {
@@ -2253,12 +2330,22 @@ export const QUIET_DAYS_BEFORE_CHATTER = 2;
    사건이 있는 날은 사건만(몰림 막기 그대로). 잡담보다 «앞»이고 「이틀 뒤」 규칙(QUIET_DAYS_BEFORE_CHATTER)을 «안 거친다» —
    그 값의 임자가 아니다. 낯 ④(late)는 여기서 «안 낸다» — 잡담 줄로 내려섰다(§pickChatter).
    ★순수하다 — 넷은 날로 갈려 한 번에 하나만 참이다. */
-export function pickNudge(ctx = {}) {
+/* ★★ 2026-10-08 [plan] D19 — «되풀이 자». 독촉·잡담 둘 다 본다.
+     같은 줄은 이틀 잇달아 안 난다(어제 난 줄은 오늘 못 선다) · `gap` 이 있는 줄(범용)은 그 날수 안에 다시 안 난다.
+   lastDay = { 줄 id: 마지막으로 난 날 } — §createStoryteller 가 센다. 날을 모르면(옛 부름 · day 없음) 막지 않는다(예전 그대로). */
+function repeatOk(c, ctx, lastDay) {
+  const d = ctx && ctx.day, last = lastDay && lastDay[c.id];
+  if (!Number.isFinite(d) || !Number.isFinite(last)) return true;
+  if (d - last === 1) return false;
+  if (c.gap && d - last < c.gap) return false;
+  return true;
+}
+export function pickNudge(ctx = {}, lastDay = {}) {
   for (const c of CHATTER) {
     if (!c.nudge || c.late) continue;
     let ok = false;
     try { ok = !!c.when(ctx); } catch { ok = false; }
-    if (ok) return c.id;
+    if (ok && repeatOk(c, ctx, lastDay)) return c.id;
   }
   return null;
 }
@@ -2269,22 +2356,26 @@ export function createStoryteller(opt = {}) {
      늘 같은 것만 나왔다(재현에서 chatGrowing1 이 연달아 두 번 나왔다).
      세는 쪽과 고르는 쪽이 갈리면 반드시 어긋난다 — 한 곳에서 센다. */
   const history = opt.recent ? [...opt.recent] : [];
+  /* ★ 2026-10-08 [plan] D19 — 줄마다 «마지막으로 난 날»(§repeatOk). history 와 같은 자리에서 센다 — 세이브에 안 남는다(다시 켜면 처음부터) */
+  const lastDay = { ...(opt.lastDay || {}) };
+  const note = (ids, day) => { if (Number.isFinite(day)) for (const id of ids) lastDay[id] = day; };
   const quietMax = Number.isFinite(opt.quietDays) ? opt.quietDays : QUIET_DAYS_BEFORE_CHATTER;
   let quiet = 0;
 
   /* 한 턴 → 이번에 띄울 대사 id 목록(순서 그대로). 빈 배열이면 조용한 날이다. */
   function turn(turnObj, S = null) {
     const ids = scriptsForEvents((turnObj && turnObj.events) || []);
-    if (ids.length) { quiet = 0; history.push(...ids); return ids; }
+    const day = turnObj ? turnObj.day : null;
+    if (ids.length) { quiet = 0; history.push(...ids); note(ids, day); return ids; }
     quiet++;
     /* ★ 2026-09-04 — 독촉 ①②③은 조용한 날 세기 «밖»이다: 오늘 나도 quiet 을 안 건드린다(잡담의 리듬은 잡담 것).
        하루 «한 줄» — 독촉이 나면 잡담은 오늘 안 선다. */
-    { const n = pickNudge(chatterContext(turnObj || {}, S));
-      if (n) { history.push(n); return [n]; } }
+    { const n = pickNudge(chatterContext(turnObj || {}, S), lastDay);
+      if (n) { history.push(n); note([n], day); return [n]; } }
     if (quiet <= quietMax) return [];
-    const id = pickChatter(chatterContext(turnObj || {}, S), history);
+    const id = pickChatter(chatterContext(turnObj || {}, S), history, lastDay);
     if (!id) return [];
-    quiet = 0; history.push(id);
+    quiet = 0; history.push(id); note([id], day);
     return [id];
   }
   /* 턴 밖에서 나는 일(식물등 구입·이사 버튼) — 그쪽이 낸 events 를 그대로 준다.
