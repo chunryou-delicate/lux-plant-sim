@@ -5630,7 +5630,20 @@ function updateHint() {
   }
   {
     const learnedWalk = (() => { try { return coachSeen().has('walk'); } catch { return true; } })();
-    if (!learnedWalk && placedOne && roomView && roomView.screenPosOf) {
+    /* ★★ 2026-10-08 (총괄 튜토 검토 #1 · 폰 62장) — **걷기 가르침은 첫 수확 «전»까지만.**
+         ⛔ 났던 일: 패널 [심기]로 심은 사람은 사람을 한 번도 안 «고르고» 걸어서 'walk' 를 못 배웠고,
+           이 갈래가 상점 갈래(seedNeed && firstCycleDone → 「씨앗을 사러 갑니다」)보다 «앞»이라
+           Day 0~13 내내 손가락이 「사람을 눌러 보세요」에 갇혔다. 씨앗을 못 사면 둘째 수확이 없고 몬스테라가 영영 안 온다
+           (선물은 harvestCount 2 — first_play §MONSTERA_ARRIVAL_RULE).
+         ⇒ 첫 수확이 끝나면 걷기 가르침을 «접는다»(coachMark — 다시 안 뜬다). 걷기는 그 뒤 쪽지·사람 손으로 배운다.
+         후보: ① 첫 수확 때 접기 ② 갈래 차례를 상점 뒤로 내리기 ⇒ ① 을 골랐다 — ② 는 상점 갈래가 끝난 뒤 다시 걷기에 갇힌다 */
+    if (!learnedWalk) {
+      let harvested = false;
+      try { harvested = ((S.firstPlay && S.firstPlay.beansprout && S.firstPlay.beansprout.harvestCount) || 0) >= 1; } catch { }
+      if (harvested) { try { coachMark('walk'); } catch { } }
+    }
+    if (!learnedWalk && placedOne && roomView && roomView.screenPosOf
+        && !(((S.firstPlay && S.firstPlay.beansprout && S.firstPlay.beansprout.harvestCount) || 0) >= 1)) {
       const who = (() => {
         try { return (roomView.characters() || []).find(c => c && c.walkable) || null; }
         catch { return null; }
@@ -10599,7 +10612,15 @@ function siruRowHTML(row, frac) {
   if (row.needsSow)   btn.push(`<button class="sow"${kd} data-act="plant">🌱 심기</button>`);
   if (row.needsWater) btn.push(`<button class="water"${kd} data-act="water">💧 물 주기</button>`);
   if (row.ready)      btn.push(`<button class="harvest"${kd} data-act="harvest">🥣 거두기</button>`);
-  if (row.harvested)  btn.push(`<button class="sow"${kd} data-act="sow">🌱 다시 심기</button>`);
+  /* ★ 2026-10-08 (총괄 튜토 검토 #3) — 씨앗이 없으면 줄단추도 «회색 + 까닭». 방 알약(§drawResow)과 같은 자다.
+       ⛔ 예전에는 재고를 안 보고 초록으로 켜져, 누르면 「⚠ 안 됐습니다 … [상점] 콩 씨앗 (1시루분)이(가) …」 빨간 상자가 떴다 */
+  if (row.harvested) {
+    let seeds = 1;
+    try { const k = cropKindOf(row.kind); seeds = k && k.seedItemId ? stockOf(S, k.seedItemId) : 1; } catch { seeds = 1; }
+    btn.push(seeds >= 1
+      ? `<button class="sow"${kd} data-act="sow">🌱 다시 심기</button>`
+      : `<button class="sow"${kd} data-act="sow" disabled title="상점에서 씨앗을 먼저 주문하세요">🌱 씨앗 없음 — [상점]</button>`);
+  }
   if (row.placed)     btn.push(`<button class="ghost"${kd} data-act="pick">📍 자리</button>`);
   const dli = row.dliSoFar != null && showDli()
     ? ` · 받은 빛 ${row.dliSoFar.toFixed(2)} DLI` : '';

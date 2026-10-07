@@ -959,8 +959,11 @@ export function assertStock(S, itemId, qty = 1) {
   if (have < qty) {
     const it = catalogItemOf(itemId);
     const inbound = incomingOf(S, itemId);
-    const e = new Error(`[상점] ${it ? it.ko : itemId}이(가) ${qty}개 필요한데 ${have}개뿐입니다 — ` +
-      (inbound ? `${inbound}개가 배송 중입니다(기다리거나 더 주문하세요)` : '먼저 주문해 주세요'));
+    /* ★ 2026-10-08 (총괄 튜토 검토 #3) — 사람에게 뜨는 말이다: 「[상점] …이(가)」 개발자 말투를 걷었다.
+         조사는 괄호 앞 이름으로 고른다(「콩 씨앗 (1시루분)」 → 「콩 씨앗이」) */
+    const nm = it ? String(it.ko).replace(/\s*\([^)]*\)\s*$/, '') : String(itemId);
+    const e = new Error(`${josa(nm, '이', '가')} ${qty}개 필요한데 ${have}개뿐입니다 — ` +
+      (inbound ? `${inbound}개가 오는 중입니다(기다리거나 상점에서 더 주문해 주세요)` : '상점에서 먼저 주문해 주세요'));
     e.tutorialInput = true;
     throw e;
   }
