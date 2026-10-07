@@ -1170,7 +1170,9 @@ const VARIE_GRADES_FALLBACK = Object.freeze({
       { id: 'pothos_mint_dot_34' },
       { id: 'pothos_silver_droplet' },
       { id: 'heart_lime_2672_0' },
-      { id: 'pothos_marble_greenyellow' }
+      { id: 'pothos_marble_greenyellow' },
+      /* D18(10-08 · [plan] 422a9fbe · 총괄 결정) — 하프문-크림민트(중간잎 29·30·31)를 못에 되돌렸다. 파일과 한 톨도 안 다르게(test_variegrade A-2) */
+      { id: 'heart_halfmoon_v2_stem' }
   ] },
   sale: { cuttingMult: 1.0, potMult: 1.4, synergy: { 0: 1.0, 1: 1.0, 2: 1.25, 3: 1.5 } },
   lightGrade: {
