@@ -3,7 +3,7 @@
   "room": "oneroom",
   "label": "원룸",
   "uidStable": true,
-  "roomRev": "d4a4221 2026-08-30 원룸을 빈 방으로 비웠다 — 창턱만 남기고 열둘",
+  "roomRev": "3168869e 2026-10-08 원룸 등 자리 셋(D6-가) · 기준 배치 D(D5) — 방에 선 것은 창턱 + 등 자리 셋. measured.slots 는 «방 그대로»(창턱 4칸)를 잰 값이고, 기준 배치 D 를 얹은 18칸 표는 data/profiles/room_profile.oneroom.json 이 갖는다",
   "lampCounts": [
     0,
     1,
@@ -111,7 +111,7 @@
       "_method": "floor_m2_net = 0.25m 격자로 센 실제 바닥(외곽 벽 띠·칸막이·도려낸 자리 제외). floor_m2_gross = 외곽 치수 곱. 등 상한은 net 기준."
     },
     "measuredAt": "2026-08-30",
-    "roomRev": "d4a4221 2026-08-30 원룸을 빈 방으로 비웠다 — 창턱만 남기고 열둘",
+    "roomRev": "3168869e 2026-10-08 원룸 등 자리 셋(D6-가) · 기준 배치 D(D5) — 방에 선 것은 창턱 + 등 자리 셋. measured.slots 는 «방 그대로»(창턱 4칸)를 잰 값이고, 기준 배치 D 를 얹은 18칸 표는 data/profiles/room_profile.oneroom.json 이 갖는다",
     "_roomRev_fixed_2026_08_23": "★ 이 줄에 **커밋 이름이 아예 없었다** — 날짜와 설명만 적혀 있었다. tools/test_measured_fresh.mjs §A 가 처음 켜지자마자 잡았다. 이름이 없으면 「그때 이후로 뭐가 바뀌었나」를 아무도 못 센다. 곧 이 방은 낡았는지 알 길이 없는 상태였다.",
     "status": "확정",
     "_note_2026_08_30": "★ slots.count 만 바뀌었다(15 → 4). peak_summer·avg7_summer 는 «한 톨도» 안 움직였다 — 창턱은 창에 붙어 있어 «그 앞을 막을 자리가 없어» 다른 가구가 안 가렸기 때문이다 [잰 것]. ⚠ space·area 는 «안 건드렸다» — 브라우저 격자 도구가 있어야 한다. 아직 낡았다."
