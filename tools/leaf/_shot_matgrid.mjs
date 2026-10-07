@@ -7,16 +7,18 @@ const OUTDIR = process.env.OUTDIR; if (!OUTDIR) { console.error('⛔ OUTDIR='); 
 fs.mkdirSync(OUTDIR, { recursive: true });
 if (fs.readdirSync(OUTDIR).length) { console.error('⛔ 비어 있지 않다', OUTDIR); process.exit(2); }
 const G = Number(process.env.G || 420), SEED = Number(process.env.SEED || 7);
+const MODE = process.env.MODE || 'mat';   // mat = 성숙 · mid = 중간잎
 const NUMS = (process.env.NUMS || '1,4,7,10,13,16,19,22,25,28,31,34,37,40,43,46,49,52,55').split(',').map(Number);
 const page = await launch({ width: 600, height: 600, dpr: 1 });
 await page.goto('http://localhost:9340/plant_grow.html');
 await page.waitFor(`typeof ASSETS!=='undefined' && Object.keys(ASSETS).length>20`, 150000, 300);
 await sleep(1500);
-console.log('세움:', await page.eval(`(()=>{try{ P.varieProb=1; P.alboMidPick=0; P.matAlboPick=${NUMS[0]};
+console.log('세움:', await page.eval(`(()=>{try{ P.varieProb=1; P.alboMidPick=${MODE==='mid'?NUMS[0]:0}; P.matAlboPick=${MODE==='mid'?0:NUMS[0]};
   plantSeed(${SEED}); const s=setGrowth(${G});
   /* ★ 무늬·성숙은 빛 이력이 있어야 난다(캐논) — 헤드리스엔 이력이 없으니 «잎마다» 둘 다 켠다 */
   for(const r of (leafSkinUsedAll()||[])){ VARIE_STATE.set(r.leafBirth,true);
-    MAT_STATE.set(r.leafBirth,{gauge:0, matured:true, rolls:1, locked:false}); }
+    MAT_STATE.set(r.leafBirth, '${MODE}'==='mid' ? {gauge:0, matured:false, rolls:1, locked:true}
+                                                 : {gauge:0, matured:true,  rolls:1, locked:false}); }
   redraw();
   return JSON.stringify({s:s.drawn, 잎:(leafSkinUsedAll()||[]).length});}catch(e){return 'ERR '+e.message;}})()`));
 /* 판(UI) 숨기기 */
@@ -24,12 +26,12 @@ await page.eval(`(()=>{ const c=document.querySelector('canvas'); if(!c) return;
   const keep=new Set(); let e=c; while(e){ keep.add(e); e=e.parentElement; }
   for(const el of document.body.querySelectorAll('*')) if(!keep.has(el) && el.tagName!=='CANVAS') el.style.visibility='hidden'; })()`, false);
 for (const n of NUMS) {
-  await page.eval(`(()=>{try{ P.matAlboPick=${n}; redraw(); }catch(e){}})()`, false);
+  await page.eval(`(()=>{try{ ${MODE==='mid'?'P.alboMidPick':'P.matAlboPick'}=${n}; redraw(); }catch(e){}})()`, false);
   for (let i = 0; i < 40; i++) { const p = await page.eval(`String(skinsPending())`); if (p === '0') break; await sleep(400); }
   await page.eval(`(()=>{try{ redraw(); }catch(e){}})()`, false);
   await sleep(900);
-  const used = await page.eval(`(()=>{try{return JSON.stringify((leafSkinUsedAll()||[]).map(r=>r.key).filter(k=>k&&/leaf_mat/.test(k)));}catch(e){return '[]';}})()`);
-  await page.shot(`${OUTDIR}/mat_${String(n).padStart(2,'0')}.png`);
-  console.log(`  mat${n} 찍음 · 쓰인 그림 ${used}`);
+  const used = await page.eval(`(()=>{try{return JSON.stringify((leafSkinUsedAll()||[]).map(r=>r.key).filter(k=>k&&(/leaf_mat/.test(k)||/leaf_mid_albo/.test(k))));}catch(e){return '[]';}})()`);
+  await page.shot(`${OUTDIR}/${MODE}_${String(n).padStart(2,'0')}.png`);
+  console.log(`  ${MODE}${n} 찍음 · 쓰인 그림 ${used}`);
 }
 await page.close();
