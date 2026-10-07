@@ -1408,6 +1408,33 @@ export const SCRIPTS = {
     { who: 'moni', face: 'worry', text: '그거 통째로 팔면 무늬 늘릴 데가 없어. 마디만 잘라 팔아도 돼.' }
   ],
 
+  /* ═══ ★★ 2026-10-08 [plan] «상태 줄» — 둘째 잎을 기다리는 동안 «오늘 바뀐 것»을 말한다(docs/handoff/plan-leafwait-20261008.md ②) ═══
+     §STATUS 표가 조건을 갖는다. 칸([core] turn.leafWait)이 없으면 조건이 다 거짓이라 안 뜬다.
+     ⚠ 몬이는 수를 말하지 않는다 · 「날짜로는 못 세」(Day 13 · monsteraGuide)와 한 편이다 — 날수·% 를 안 말한다.
+     ⚠ «다음 잎 준비»(leafwait ⓔ)는 뺐다 — growth 장부의 «달렸는데 leafM 0»이 무엇인지 아직 모른다(총괄 02:18). */
+  statusSill: [
+    { who: 'moni',   face: 'teach', text: '여기가 이 방에서 얘가 자라는 단 한 자리야.' }
+  ],
+  statusGauge: [
+    { who: 'jachwi', face: 'curious', text: '빛이 쌓인 만큼이라며. 얼마나 쌓였어?' },
+    { who: 'moni',   face: 'teach', text: '얘를 눌러 봐. 차오르는 게 그거야.' }
+  ],
+  statusStreak: [
+    { who: 'moni',   face: 'proud', text: '하루도 안 쉬고 자랐어. 자리가 맞는 거야.' }
+  ],
+  statusLeafWide: [
+    { who: 'jachwi', text: '첫 잎이 처음보다 넓어졌다.' },
+    { who: 'moni',   face: 'calm', text: '자라는 중이야. 잎도 줄기도.' }
+  ],
+  statusSiruVs: [
+    { who: 'jachwi', face: 'think', text: '콩나물은 또 거뒀는데 얘는 그대로다.' },
+    { who: 'moni',   face: 'teach', text: '콩나물은 날짜로 자라고, 얘는 빛으로 자라.' }
+  ],
+  statusWallet: [
+    { who: 'jachwi', face: 'tired', text: '돈은 매일 줄고 잎은 그대로다.' },
+    { who: 'moni',   face: 'calm', text: '잎은 줄지는 않아. 쌓이는 중이야.' }
+  ],
+
   cropHandsShort: [
     { who: 'moni', face: 'teach', text: '손이 다 됐네 — 물 주는 날을 엇갈리게 해 봐.' }
   ],
@@ -1802,7 +1829,9 @@ export const REPEATABLE = new Set(
     .concat(['rentSoon', 'rentAgain', 'plantStalledAgain', 'plantStalledWinter',
              'cropHandsShort', 'brokeTalk', 'brokeTalkAgain',
              /* ★ 2026-10-08 D22 — 팔려고 할 때마다 말린다(되돌릴 수 없는 것 앞의 말은 매번이다) */
-             'sellLastVarie'])
+             'sellLastVarie',
+             /* ★ 2026-10-08 상태 줄 — 기다림마다 다시 온다(§STATUS gap) */
+             'statusSill', 'statusGauge', 'statusStreak', 'statusLeafWide', 'statusSiruVs', 'statusWallet'])
 );
 
 /* ── 진행 ───────────────────────────────────────────────────────────── */
@@ -2149,7 +2178,10 @@ export const CHATTER = [
 
   /* 식물 상태 */
   { id: 'chatGrowing1', when: c => c.grew === true },
-  { id: 'chatGrowing2', when: c => c.grew === true },
+  /* ★★ 2026-10-08 [plan] D20 — 「잎이 하나 더 생겼다」는 «새 잎이 난 날»에만. 조건이 «오늘 자랐다(grew)»라서
+     보통 판 Day 20 에 잎 1장인 날 났다(leafwait ⓪). 잎 수는 S 에 없고 growth(leafStats)에만 있다 ⇒ [core] turn.leafWait.newLeafToday.
+     그 칸이 서기 전엔 안 뜬다 — 거짓말보다 침묵이 낫다(§chatOneroomHarvest 와 같은 판단). */
+  { id: 'chatGrowing2', when: c => c.grew === true && c.newLeafToday === true },
   { id: 'chatWinterSlow', when: c => c.season === 'winter' && c.blocked },
 
   /* 돈 — ★ 2026-08-11 주석 정정. 예전 주석은 "한 달 치(60만)"라고 적었는데 코드는 30만이고,
@@ -2249,7 +2281,46 @@ export const CHATTER = [
      (다 끝났거나 · 시루가 도는 등 기다리는 중 — chatterContext.nudge 가 null). 할 일이 멎어 있는 날에 «급하지 않다»고 하면 거짓이다.
      범용 줄이라 30일에 한 번. ⚠ id 는 그대로 둔다(probe·세이브 이력이 이 이름을 안다). */
   { id: 'nudgeBack', gap: 30, when: c => c.living && !c.nudge },
+  /* ═══ ★★ 2026-10-08 [plan] 상태 줄(status) — §pickStatus 만 본다(잡담 풀에는 안 든다). 뜻·까닭은 §pickStatus 머리말 ═══ */
+  /* ⓐ 창턱 — 반지하(novice)에서 몬스테라가 자라는 칸은 창턱 하나다(§movedInOneroom 08-15 표). 등이 오면(가을) 그 말이 낡으므로 등 전까지만 */
+  { id: 'statusSill',     status: true, gap: 30, when: c => c.hasMonstera && !c.movedOut && !(c.lampOwned >= 1) && c.potOnSill === true
+                                            && (c.band === 'mid' || c.band === 'bright') },
+  /* ⓑ 게이지 가리킴 — 도착 사흘째까지 확대창을 한 번도 안 열었으면. 「날짜로는 못 세」의 짝: 셀 수 있는 것은 «쌓인 빛»이다 */
+  { id: 'statusGauge',    status: true, gap: 30, when: c => c.hasMonstera && fin(c.arrivedOnDay) && fin(c.day) && c.day - c.arrivedOnDay >= 3
+                                            && c.zoomOpenedSinceArrival === false },
+  /* ⓒ 쉬지 않고 — 멈춤 없이 자란 날이 이레(그날 새 잎이 났으면 그 말이 먼저다) */
+  { id: 'statusStreak',   status: true, gap: 30, when: c => c.hasMonstera && fin(c.growStreak) && c.growStreak >= 7 && c.newLeafToday !== true },
+  /* ⓓ 첫 잎 넓어짐 — 가장 어린 펴진 잎의 leafM(렌더러가 잎 크기로 쓰는 값)이 반을 넘음 · 새 잎 뒤 사흘은 안 함 */
+  { id: 'statusLeafWide', status: true, gap: 30, when: c => c.hasMonstera && fin(c.youngestLeafM) && c.youngestLeafM >= 0.5
+                                            && fin(c.leafWaitDays) && c.leafWaitDays >= 3 },
+  /* ⓕ 시루와 견줌 — 거둔 날 · 도착 뒤 둘째 거둠부터 · 잎이 이레 넘게 그대로. 두 이레에 한 번 */
+  { id: 'statusSiruVs',   status: true, gap: 14, when: c => c.hasMonstera && c.harvestedToday === true && fin(c.harvestsSinceArrival)
+                                            && c.harvestsSinceArrival >= 2 && fin(c.leafWaitDays) && c.leafWaitDays >= 7 },
+  /* ⓖ 지갑 — 잎이 스무 날 그대로. 「돈은 매일 줄고」는 하루 지출이 늘 있어 참 · 「잎은 줄지는 않아」는 잎 떨굼 꺼짐(growth_tuning health.drop_enabled:false) */
+  { id: 'statusWallet',   status: true, gap: 30, when: c => c.hasMonstera && fin(c.leafWaitDays) && c.leafWaitDays >= 20 },
 ];
+
+/* ═══ ★★ 2026-10-08 [plan] 상태 줄 — 사건 > 독촉 > **상태 줄** > 잡담 (plan-leafwait-20261008.md ②) ═══════════
+   ■ 왜 층을 따로 두나 — 보통 판 13~37 말 없는 날 14: 잡담은 조용한 날이 이틀 지나야 서서(QUIET_DAYS_BEFORE_CHATTER)
+     기다림 구간이 «정확히 사흘에 한 번»이었다. 잡담 칸에 줄을 더 넣어도 그 박자다.
+     후보: ㉠ 이틀 → 하루 · ㉡ 상태 줄 층 ⇒ 고른 것 ㉡. 까닭: ㉠은 되풀이 잡담만 잦아진다. ㉡은 «그날 바뀐 것»만 말해 말이 곧 소식이다.
+   ■ 표는 CHATTER «하나»다 — `status: true` 표지만 붙였다(§pickChatter 「표를 둘로 안 둔다」 · 부르는 자리를 세는 자가 그 표를 본다).
+     잡담 고르기(pickChatter)는 이 표지를 건너뛰고, 여기(pickStatus)만 본다.
+   ■ 규칙 — 조건이 참이고 그 줄이 `gap` 안에 안 났으면 하루 한 줄(표 차례). 조용한 날 세기를 «안 거친다»(독촉처럼).
+     ⚠ «오늘 처음 참»은 조건 자체가 문턱(이레 · 0.5 · 스무 날)이라 그 문턱을 넘은 날이 곧 첫날이다 — 어제 ctx 를 안 쥔다.
+       사건·독촉 날에 걸리면 다음 빈 날로 밀린다(조건이 참인 채 남으므로).
+     ⚠ 칸은 전부 [core] turn.leafWait 에서 온다(§chatterContext). 없으면 null → 조건 거짓 → 안 뜬다. 판을 안 바꾼다.
+     ⚠ 수는 조건에만 있다(대사에는 없다). 「이레」·「스무 날」은 값이 아니라 «얼마나 기다렸나»의 자다 — 문턱 NUDGE_DAYS 와 같은 걸음. */
+const fin = v => Number.isFinite(v);
+export function pickStatus(ctx = {}, lastDay = {}) {
+  for (const c of CHATTER) {
+    if (!c.status) continue;
+    let ok = false;
+    try { ok = !!c.when(ctx); } catch { ok = false; }
+    if (ok && repeatOk(c, ctx, lastDay)) return c.id;
+  }
+  return null;
+}
 
 /* 조건에 맞는 것 중 **가장 오래 안 나온 것**. recent 는 나온 차례(오래된 것부터)다.
    ★순수하다 — 난수를 안 쓴다. 재현이 매번 같은 결과를 봐야 검증이 된다. */
@@ -2258,6 +2329,7 @@ export const CHATTER = [
 export function pickChatter(ctx = {}, recent = [], lastDay = {}) {
   const pool = [], nudges = [], nets = [];
   for (const c of CHATTER) {
+    if (c.status) continue;          // ★ 상태 줄은 §pickStatus 몫
     let ok = false;
     try { ok = !!c.when(ctx); } catch { ok = false; }
     if (!ok || !repeatOk(c, ctx, lastDay)) continue;
@@ -2325,6 +2397,18 @@ export function chatterContext(turn = {}, S = null) {
        seasonLight  계절·날씨가 빛에 걸리나(S.sim.mode ≠ novice — D1: 원룸 이사 때 real 로 바뀐다). 모르면 false — 빛이 «바뀌었다»는 말을 안 한다 */
     hasMonstera: !!(fp && fp.monstera && fp.monstera.arrived),
     seasonLight: !!(S && S.sim && S.sim.mode && S.sim.mode !== 'novice'),
+    /* ★ 2026-10-08 [plan] 상태 줄(§STATUS)의 칸 — [core] 가 turn.leafWait 에 싣는다(plan-leafwait ③). 없으면 전부 null(= 모른다 → 안 뜬다).
+       leaves 펴진 잎 수 · newLeafToday 어제보다 늘었나 · leafWaitDays 잎 수가 마지막으로 는 뒤 지난 날 · youngestLeafM 가장 어린 펴진 잎의 leafM
+       growStreak 멈춤 없이 자란 날 · arrivedOnDay 몬스테라 온 날 · harvestedToday 오늘 거뒀나 · harvestsSinceArrival 온 뒤 거둔 수
+       potOnSill 그루 칸이 창턱인가 · band 그 칸 밴드(dark·mid·bright) · zoomOpenedSinceArrival 온 뒤 확대창을 연 적 있나 */
+    ...(() => {
+      const lw = (turn && turn.leafWait) || {};
+      const pick = k => (lw[k] === undefined ? null : lw[k]);
+      return { leaves: pick('leaves'), newLeafToday: pick('newLeafToday'), leafWaitDays: pick('leafWaitDays'),
+               youngestLeafM: pick('youngestLeafM'), growStreak: pick('growStreak'), arrivedOnDay: pick('arrivedOnDay'),
+               harvestedToday: pick('harvestedToday'), harvestsSinceArrival: pick('harvestsSinceArrival'),
+               potOnSill: pick('potOnSill'), band: pick('band'), zoomOpenedSinceArrival: pick('zoomOpenedSinceArrival') };
+    })(),
     /* ★ 2026-09-02 — 독촉의 임자: «가장 먼저 열렸는데 아직 안 끝난» 퀘스트가 열린 지 며칠째인가.
        열린 날은 stamina.questsOpenedOn(세이브에 실린다), 끝난 것은 stamina.questsTaken 이 안다. 새 칸은 열린 날 하나뿐이다. */
     nudge: (() => {
@@ -2408,6 +2492,9 @@ export function createStoryteller(opt = {}) {
        하루 «한 줄» — 독촉이 나면 잡담은 오늘 안 선다. */
     { const n = pickNudge(chatterContext(turnObj || {}, S), lastDay);
       if (n) { history.push(n); note([n], day); return [n]; } }
+    /* ★ 2026-10-08 [plan] 상태 줄 — 독촉 뒤 · 잡담 앞 · 조용한 날 세기 밖(§STATUS). 나면 잡담 박자는 0 부터 다시 센다 */
+    { const st = pickStatus(chatterContext(turnObj || {}, S), lastDay);
+      if (st) { quiet = 0; history.push(st); note([st], day); return [st]; } }
     if (quiet <= quietMax) return [];
     const id = pickChatter(chatterContext(turnObj || {}, S), history, lastDay);
     if (!id) return [];

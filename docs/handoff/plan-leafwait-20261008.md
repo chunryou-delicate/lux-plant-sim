@@ -66,7 +66,15 @@
 3. 카드: `drawGrowGauge` 를 식물 시트 맨 위로(초보 판) + 잎 수 줄 · 자리 줄(① 표의 낱말).
 4. night_play 기록에 `phase`·`progress01`(growthPhase) 와 «참 leafM»(g 기준) 을 실어 달라 — ⓓ 의 문턱과 «게이지 반을 넘음» 같은 줄을 날짜에 대 볼 수 있게. 지금 기록의 leafM 은 night_play §leafM 경고대로 g 가 아니라 day 로 셈한 값일 수 있다.
 
+## ★ 지은 것 (02:24 · 총괄 02:18 «지어 두라»)
+- dialogue.js: 상태 줄 **여섯**(ⓔ 다음 잎 준비는 뺐다 — growth 확인 전) · `pickStatus` · storyteller 차례 사건 > 독촉 > 상태 줄 > 잡담(상태 줄은 이틀 규칙 밖 · 나면 잡담 박자 0).
+- 표는 CHATTER 하나에 `status: true` 표지(§pickChatter «표를 둘로 안 둔다» — 처음에 따로 표를 지었다가 dialogue_coverage 가 «안 불리는 대사»로 잡아 옮겼다). pickChatter 는 status 를 건너뛴다.
+- 칸 계약: **`turn.leafWait = { leaves, newLeafToday, leafWaitDays, youngestLeafM, growStreak, arrivedOnDay, harvestedToday, harvestsSinceArrival, potOnSill, band, zoomOpenedSinceArrival }`** — 없으면 null(안 뜬다). ③-1 의 이름 그대로.
+- chatGrowing2 「잎이 하나 더 생겼다」 = `grew && newLeafToday === true` — 지금 칸이 없어 **안 뜬다**(잎 수는 S 에 없고 growth leafStats 에만 있다 · 거짓말보다 침묵).
+- 모의(기록 Day 13~37 를 칸으로 흉내): 14 창턱 · 15 게이지 · 20 쉬지 않고 · 22 첫 잎 넓어짐 · 30 시루 견줌 · 32 지갑 — 판에서의 날은 core 가 칸을 이은 뒤 같은 봇으로 잰다.
+- 검사: dialogue_coverage PASS · test_quest FAIL 11 = 작업 전과 같은 칸.
+
 ## 남은 것
-- 상태 줄 층 코드(dialogue.js · plan) — ③-1 칸이 서면 짓는다. 그 전엔 조건이 다 null 이라 안 뜬다(지어도 안 깨진다).
-- ⓔ [growth] 확인.
+- [core] turn.leafWait 칸 잇기(③-1) · 카드(③-3) · night_play 기록(③-4).
+- ⓔ [growth] 확인 — 확인되면 표에 한 줄 더한다.
 - 게이지 문턱 줄(«반은 왔어» 류)은 «수»라 몬이 말로는 안 짓는다 — 카드가 % 로 말한다.
