@@ -82,6 +82,18 @@
 ---
 
 ## house
+갱신: 2026-10-08 새벽 (10-07 장기 지시 · 판 정본 `docs/handoff/master-campaign-20261007.md` §3 D5·D6·D7)
+
+✅ 원룸 — 등 자리 셋(바·집게·거치 · 반지하와 같은 차례) · 기준 배치 D(`house_rooms §oneroom.reference_layout` — 방엔 안 서고 프로필·검사만 얹는다) ·
+   프로필 18칸·lampCounts [0,1,2,3] · test_oneroom_room real(D7) 10/10 (3168869e · 7ba78e65) · [growth] 정식으로 잼: 「등 없이 mid · 등 사면 bright」
+✅ 튜토 — 천장등을 컷어웨이 때 옅게(house.js · 그림만) · 시루 콩나물(room_view buildBeansprout · ⚠ 작게만 나아짐) · 사진 `docs/handoff/img/house_20261008/` (66508ad9)
+✅ 자 — `tools/test_room_path.mjs` 처음 서는 자리·문 앞 길(대조에서 빨강 확인 · run_house_checks 에 넣음 · 4fb26434)
+```
+넘긴 것   core: 쓰레기봉투·난방기가 탭으로 거의 안 골림 — 캐릭터 퍼지(36px)가 가구보다 먼저 먹는다(쓰레기 18점 전부 캐릭터) · 시루 위 «N일» 표지(UI)
+못 한 것  원룸 그림·GLB(크레딧) — Meshy 규칙상 박사님께 비용을 보여 드리고 확인받은 뒤 · 어림 Meshy 약 420 · Higgsfield 그림 6장
+⚠ 사고   10-08 00:27 autostash 가 모든 창의 미커밋을 stash@{0} 에 쓸어 감 — 집 것은 «작업 트리로만» 되살려 커밋함. 규칙: pull·stash·checkout -- 금지
+```
+
 갱신: 2026-10-04 (박사님 «넣기» — 반지하 소품 넷을 진짜 가구로)
 
 ✅ 빨래 건조대 · 난방기 · 쓰레기봉투 · 배낭이 그림(furniture_dress PROPS)에서 **가구**가 됐다 — 옮김 · 저장(uid `banjiha-drying-rack|heater|trash|backpack`) · 충돌 · 빛 가림
