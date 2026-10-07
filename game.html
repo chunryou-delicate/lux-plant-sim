@@ -6668,7 +6668,9 @@ function monthCloseNow(m) {
     cashFrom: s.cash, cashTo: now.cash, net,
     /* ★ 대차가 안 맞는 몫 — 식물등 사기·이사비가 어느 장부에도 안 적힌다(§④) */
     gap: net - (inSum - outSum),
-    prevNet: (typeof m.cur.prevNet === 'number') ? m.cur.prevNet : null
+    prevNet: (typeof m.cur.prevNet === 'number') ? m.cur.prevNet : null,
+    /* ★ 2026-10-08 (총괄 중반 M5) — 지난달이 «며칠짜리»였나. 첫 달은 Day 1 하루뿐(첫 월세가 몰림)인데 30일 달과 견줘 「281,667원 나빠졌습니다」라 했다 */
+    prevDays: (() => { const pv = m.log.length ? m.log[m.log.length - 1] : null; return pv && Number.isFinite(pv.days) ? pv.days : null; })()
   };
   /* ★★ 목록에 쌓는다 — **이것이 「다시 보기」의 재료다.**
      ⚠ 넘치면 **오래된 것부터** 버린다(§MONTH_KEEP — 가까운 달이 더 자주 보는 것이다). */
@@ -6736,6 +6738,10 @@ function drawMonthPanel() {
     `${won(r.cashFrom)}에서 ${won(r.cashTo)}으로 ${up ? '늘었습니다' : '줄었습니다'}.` +
     (r.prevNet == null
       ? ' (첫 달이라 견줄 것이 없습니다)'
+      /* M5 — 지난달이 한 달(월세 주기)의 절반도 안 되면 견주지 않는다. 후보: 하루 평균으로 견주기 / 빼기 ⇒ 빼기 —
+           첫 달 1일엔 첫 월세가 몰려 하루 평균도 거짓 견줌이 된다 */
+      : (Number.isFinite(r.prevDays) && r.period && r.prevDays < r.period / 2)
+      ? ` (지난달은 ${r.prevDays}일뿐이라 견주지 않습니다)`
       : ` 지난달은 ${r.prevNet >= 0 ? '+' : '−'}${won(Math.abs(r.prevNet))}이었으니 ` +
         `${r.net > r.prevNet ? won(r.net - r.prevNet) + ' 나아졌습니다'
                              : r.net < r.prevNet ? won(r.prevNet - r.net) + ' 나빠졌습니다'
@@ -6756,7 +6762,8 @@ function drawMonthPanel() {
     + (r.income > 0 ? row('그 밖', won(r.income)) : '')
     + head('아낀 돈')
     /* ★ 이 줄은 **나간 돈에서 이미 빠진 값**이다 — 또 더하면 두 번 센다. 그래서 초록이다 */
-    + row('밥으로 아낀 식비', '−' + won(r.saved), 'save')
+    /* M5 — 아낀 것을 초록 «−»로 적으니 «나간 돈»으로 읽혔다 ⇒ 「+N원 아낌」 */
+    + row('밥으로 아낀 식비', '+' + won(r.saved) + ' 아낌', 'save')
     + head('먹은 것 · 거둔 것')
     + row('밥이 된 것', ate || '없습니다')
     + row('거둔 것', got ? `${got} (${r.harvests}회전)` : '없습니다')
