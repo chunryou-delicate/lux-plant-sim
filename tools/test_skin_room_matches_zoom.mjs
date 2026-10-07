@@ -47,15 +47,17 @@ const put = await J(`(async()=>{ const st=await import('/src/game/state.js'); co
   return { 자리:(S.pots||[])[0].slotId, 그루수:(S.pots||[]).length }; })()`, 60000);
 console.log('그루를 세웠다 —', JSON.stringify(put));
 
-/* ══ VARIE=1 — «무늬 잎이 갈라진 판»으로 견준다 (2026-10-08 · D4) ══════════════════════════
+/* ══ 무늬 판 — «무늬 잎이 갈라진 판»으로 견준다 (2026-10-08 · D4) · ★ 기본이다. VARIE=0 이면 옛 «잎 1장» 판 ═══
    ⚠ 기본 판(잎 1장 · 무늬 없음)으로는 방과 확대가 «무늬 그림»에서 갈리는 것을 못 잡았다.
      2026-10-07 에 실제 게임 260일로 재 보니 확대는 등급 그림(leaf_mat21), 방은 굴림(leaf_mat4 = 산반)이었다
      (probe_room_zoom_varie_skin). 그래서 이 갈래는 창턱에서 DAYS 일을 «게임 하루 진행 그대로» 키운다 —
      날마다 물(state.waterPot) · loop.runDays · 턴마다 게임이 하는 등급 두 줄(game.html §noteLeafGrades 와 같은 함수:
      shop.assignPotLeafGrades → potLeafSkinsOf → 확대 창 setLeafSkins).
    ⚠ 울타리 ④ — 무늬 잎이 한 장도 «갈라지지» 않았으면 FAIL. 그러면 이 갈래가 아무것도 안 잰 것이다.
-   ⚠ [core] 가 방에 그림표를 넘기기 전에는 이 갈래가 «붉은 것이 맞다». 고친 뒤 초록이 된다. */
-const VARIE = process.env.VARIE === '1', DAYS = Number(process.env.DAYS || 260);
+   ★ [core] 가 방에 그림표를 넘긴 뒤(f6f1fb02 · b9817f04) 기본으로 올렸다. 그 전에는 방이 굴림이라 붉었다
+     (2026-10-07 probe_room_zoom_varie_skin: 하프문 잎256 확대 leaf_mat21 · 방 leaf_mat4).
+   ⚠ 260일을 키우므로 몇 분 걸린다. 빨리 보려면 VARIE=0(옛 잎 1장 판 — 무늬 그림은 못 잡는다). */
+const VARIE = process.env.VARIE !== '0', DAYS = Number(process.env.DAYS || 260);
 if (VARIE) {
   const grown = await J(`(async()=>{ const st=await import('/src/game/state.js'); const lp=await import('/src/game/loop.js'); const sh=await import('/src/game/shop.js');
     const S=window.__S(), io=window.__io; const errs=[];
