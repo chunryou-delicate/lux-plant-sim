@@ -40,9 +40,15 @@
     document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"><\/script>');
   if (typeof THREE === 'undefined' || !THREE.GLTFLoader)
     document.write('<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"><\/script>');
+  /* ★ 2026-10-07 D11(총괄 정함 · core 추천) — **검수 탭·개발자 설정은 기본으로 숨긴다.** 주소에 `?dev=1` 이면 보인다.
+     ⚠ 숨기기만 한다(display:none) — 요소는 살아 있어 검사·시나리오가 id 로 찾아 누르는 길은 그대로다.
+     ⚠ 그리기 전에 표를 달아야 첫 장면에 검수 탭이 번쩍 안 뜬다 — 그래서 머리에서 한다. */
+  try { if (new URLSearchParams(location.search).get('dev') === '1') document.documentElement.classList.add('dev'); } catch (e) { }
 </script>
 
 <style>
+  /* D11 — 검수 탭·개발자 설정은 `?dev=1` 일 때만(머리 스크립트가 html.dev 를 단다) */
+  html:not(.dev) #tabDev, html:not(.dev) #roomDev { display:none !important; }
   /* ★★ 글씨체 — **Pretendard** (2026-08-06 박사님: "글씨체가 다들 맘에 안 든다. 깔끔한 거로").
      예전에는 본문이 `Gaegu`(손글씨체) · 강조가 `Jua`(둥근체)였다. 둘 다 개성이 세서
      숫자가 많은 화면(DLI·원·일수)에서 읽기가 힘들었다.
@@ -2612,6 +2618,9 @@
           </div>
         </details>
       </div>
+      <!-- ★ 2026-10-07 D11 — **기록은 사람 것이다.** 검수 탭에 있던 #log 를 여기로 옮겼다(id 그대로 — renderLog 가 그대로 채운다).
+           접어 둔다 — 매일 펴 볼 것은 아니고, 「아까 뭐라고 했지」를 다시 볼 때 연다 -->
+      <details class="box" id="logBox"><summary>기록</summary><div id="log"></div></details>
     </div><!-- /pageRoom -->
 
     <!-- ══ 할 일 — ★ PC 탭 (2026-08-16 박사님 요청) ═══════════════════════
@@ -2661,7 +2670,7 @@
     <details class="box dev"><summary>개발 HUD·리포트·기록</summary>
       <h3>오늘</h3><div id="hud"></div>
       <h3>검수 리포트</h3><div id="report"><div class="ph">30일을 돌리면 나옵니다</div></div>
-      <h3>기록</h3><div id="log"></div>
+      <!-- ★ 2026-10-07 — 기록(#log)은 [방] 탭 «기록»으로 옮겼다(D11). 검수 탭이 기본으로 숨으면 사람이 도착·판매 로그를 다시 볼 데가 없어진다(probe_logreach) -->
     </details>
     </div><!-- /pageDev -->
 
@@ -3093,6 +3102,8 @@ import { seasonAt, seasonDayAt, SEASON_KO, tutorialGoal, learningLeft,
 /* ★이사는 사건이 아니라 **이동**이다. moveOut 은 돈과 판정만 하고 방을 안 바꿨다 —
    moveIntoOneroom 이 그 위에서 S.home.room 과 자리를 옮긴다(oneroom.js 머리말). */
 import { moveIntoOneroom } from './src/game/oneroom.js';
+/* ★ 2026-10-08 D2 — 독촉은 «할 수 있었던 날»만: 기다린 날을 적는다(판정·날수는 nudge_wait.js · 거는 자리는 dialogue.js chatterContext) */
+import { noteQuestWaits } from './src/game/nudge_wait.js';
 /* ★★ 2026-08-09 — 빨리감기 여섯(`startFastForward`·`stopFastForward`·`isFastForwarding`·
    `nextEventPreview`·`timeModeOf`·`FAST_MODE_MAX_DAYS`)을 **안 들여온다**(박사님 지시로 화면에서
    걷었다). loop.js 에는 그대로 있다 — 헤드리스 재현·밸런스 측정이 그 길로 돈다.
@@ -10294,11 +10305,13 @@ function drawJourney() {
   /* ★★ 2026-08-18 — **퀘스트가 열려 있으면 퀘스트가 이긴다**(확정문 §4).
      `tutorialGoal` 은 「무엇을」만 말하고 퀘스트는 **다음 손 하나**를 말한다.
      ⚠ 문구를 여기서 새로 짓지 않는다 — `questTodo` 하나가 정본이다. */
-  let questGoal = null;
+  let questGoal = null, questChain = null;
   try {
     const qv = questView(S, questSnapshotNow(lastTurn));
     questGoal = qv.next ? qv.next.todo : null;
-  } catch { questGoal = null; }
+    /* ★ 2026-10-08 D12 — 초반 사슬 몇 번째인가(quest.js questView 가 이미 센다 · 여기서 다시 안 센다) */
+    questChain = (qv.chain && qv.next) ? { index: qv.chain.index, total: qv.chain.total, id: qv.next.id, ko: qv.next.ko } : null;
+  } catch { questGoal = null; questChain = null; }
 
   $('quest').textContent = justMoved
     ? `${slotLabel(plant.slotId)}(으)로 옮겼습니다. 빛 판정은 7일 평균이라 ` +
@@ -10353,6 +10366,15 @@ function drawJourney() {
     const chip = $('questChip'), ct = $('questChipText');
     if (chip && ct) {
       const line = $('quest').textContent || '';
+      /* ★ 2026-10-08 D12(총괄 정함 · core 추천) — **첫날 진행 칩** 「1/5 · 시루 놓기」. 초반 사슬(FIRST_PLAY_CHAIN · 5줄)을 도는 동안만
+           칩 머리(<b>)가 「몇 번째 · 무엇」을 말하고, 사슬이 끝나면 예전 「📜 할 일」로 돌아간다.
+           ⚠ 짧은 이름은 [plan] 낱말이 정본이다 — 여기 표는 D12 예시(「시루 놓기」)에 맞춘 임시 이름이고, 없는 id 는 퀘스트 ko 를 그대로 쓴다 */
+      { const hb = chip.querySelector('b');
+        const SHORT = { place_siru: '시루 놓기', water_siru: '물 주기', first_harvest: '첫 수확',
+                        order_seed: '씨앗 주문', monstera_home: '몬스테라 자리' };
+        if (hb) hb.textContent = questChain
+          ? `📜 ${questChain.index}/${questChain.total} · ${SHORT[questChain.id] || questChain.ko || ''}`
+          : '📜 할 일'; }
       /* 「보이나」는 `offsetParent` 로 묻는다 — `style.display` 만 보면 부모가 감춘 것을 못 본다
          (바로 위 §plantsBox 가 쓰는 그 손과 같다). */
       ct.textContent = line;
@@ -11259,6 +11281,8 @@ function showFirstPlayEvents(turn) {
        그러면 사건이 늘 때마다 이 목록도 같이 늘어야 하고, 실제로 그래서 빠뜨렸다.
        순서 계약(수확 → 식비 → 식물신 → 도착)은 dialogue.js 의 EVENT_ORDER 가 지킨다. */
   if (leafK) playLeafScene(leafK, events.length > 0);
+  /* ★ 2026-10-08 D2 — 오늘 «기다리는» 퀘스트를 적는다(독촉이 할 수 있었던 날만 세게 · nudge_wait §noteQuestWaits) */
+  try { noteQuestWaits(S, S.day); } catch (e) { console.warn('[독촉] 기다림 적기', e && e.message); }
   const ids = story.turn(turn, S);
   if (ids.length) dlgOpen(ids);
 }
@@ -11617,8 +11641,25 @@ function autoNextDay() {
     return true;
   } catch (e) { console.warn('[하루]', e && e.message); return false; }
 }
+/* ★★ 2026-10-08 D13(총괄 정함) — **밥상 창은 «어제와 같으면» 한 줄 배너로 넘긴다.** 처음·달라진 날·모자란 날만 팝업.
+   「같다」= 오늘 기본 상(몫·g·아끼는 값)이 어제 넘긴 상과 같고 · 어제 «기본 그대로» 넘겼다(손으로 바꾼 사람은 매일 창을 본다).
+   「모자란 날」= 기본대로 두면 아낄 수 있는 만큼 못 아끼거나(lessThanCapWon) · 작물 몫을 못 채운다(shortGrams).
+   ⚠ 이 기기의 손버릇이라 세이브 칸이 아니다(§mealGuideOpens 와 같은 서랍 localStorage). 없으면(사생활 창) 늘 팝업 — 예전 그대로다 */
+const MEAL_LAST_KEY = 'byeot.mealLast';
+const mealSigOf = (ms) => (ms ? [ms.defaultGrams, ms.savedWon,
+  (ms.portions || []).map(x => `${x && (x.kind || x.kindId || x.id) || ''}:${x && (x.grams ?? x.g) || ''}`).join('+')].join('|') : '');
+const mealShortOf = (ms) => !!(ms && ((ms.lessThanCapWon || 0) > 0 || (ms.byKind || []).some(b => (b && b.shortGrams || 0) > 0)));
+function mealLastRead() { try { return JSON.parse(localStorage.getItem(MEAL_LAST_KEY) || 'null'); } catch { return null; } }
+function mealLastWrite() {
+  try {
+    const ms = mealPlanStatus(S);             // 기본 상(고르기 전) — 내일 «같은가»를 이것과 견준다
+    if (!ms || !(ms.maxGrams > 0)) return;
+    localStorage.setItem(MEAL_LAST_KEY, JSON.stringify({ day: S.day, sig: mealSigOf(ms), asDefault: mealG == null && mealBy == null }));
+  } catch { }
+}
 function goNextDay() {
   if (dayAnimRunning) return;                 // 연출 중 겹쳐 부르지 않는다(건너뛰기는 따로다)
+  mealLastWrite();                            /* D13 — 오늘 넘긴 상을 적는다(고른 g 을 비우기 «전») */
   mealOpen = false; mealG = null;
   drawMealPanel();
   runDayAnim(commitNextDay);
@@ -11653,6 +11694,15 @@ $('next').onclick = guard(() => {
     let ms = null;
     try { ms = mealPlanStatus(S); } catch { }
     if (ms && ms.maxGrams > 0) {
+      /* D13 — 어제와 같고 모자라지 않으면 팝업 없이 한 줄로 넘긴다 */
+      const last = mealLastRead();
+      if (last && last.asDefault && last.day === S.day - 1 && last.sig === mealSigOf(ms) && !mealShortOf(ms)) {
+        mealG = null; mealBy = null;
+        try { planMeal(S, ms.defaultGrams); } catch { }
+        banner('오늘 밥상 — 어제와 같습니다', `${formatGram(ms.defaultGrams)} · 식비 ${Math.round(ms.savedWon || 0).toLocaleString('ko-KR')}원을 아낍니다`);
+        goNextDay();
+        return;
+      }
       mealOpen = true;
       /* ⚠ 갈라 고른 것도 **같이** 비운다. 밥상 창은 매일 새로 뜨는 창이라 어제 고른 것이
          오늘 남아 있으면 안 된다(mealbykind-to-plan §7-1). */
@@ -12427,6 +12477,9 @@ function syncRoom() {
            있으니 여기서 굴리는 것이 오히려 두 벌이다. **정본이 정한 잎별 상태를 받아 그린다.**
          ⚠ 안 넘기면 예전 그대로 돈다 — 이 한 줄이 없으면 화면은 조용히 옛 그루를 그린다. */
       leafState: leafStateForRoom(p),
+      /* ★ 2026-10-08 D4(박사님 · [growth] 35fbf252) — 등급이 정한 잎 그림을 방에도 넘긴다. 확대 창(§setLeafSkins)과 «같은 함수»다.
+           안 넘기면 방은 그림을 굴려 — 하프문 잎이 방에서는 산반 그림으로 뜬다(잰 것: 잎256 값 mat21 · 방 mat4) */
+      leafSkins: Object.entries(potLeafSkinsOf(S, p) || {}).map(([lb, v]) => ({ leafBirth: +lb, ...v })),
       /* ★ 2026-08-17 — 고른 화분의 모양(§swapPotMesh). 없으면 예전 그대로 기본 화분이다 */
       potAsset: p.potAsset || null,
       fade: p.fade,
@@ -14234,7 +14287,13 @@ function placeLampFromBag() {
   if (!L) return;
   const left = Math.max(0, (L.owned || 0) - (L.placed || 0));
   if (left <= 0) { banner('가방에 식물등이 없습니다', '상점에서 사면 가방으로 들어옵니다'); return; }
-  let max = 0; try { max = io.light.growLampCount(); } catch { }
+  let max = null; try { max = io.light.growLampCount(); } catch { }
+  /* ★ 2026-10-08 ([House] 걸어서 잼) — 등 자리가 «하나도 없는» 방이면 막는다. 예전에는 `max && …` 라 0 이면 조건이 꺼져
+       「달았습니다」가 뜨고 placed·lamps.count 가 오르는데 **아무 데도 안 켜졌다.** 못 물어본 것(null)은 예전 그대로 둔다 */
+  if (max === 0) {
+    banner('이 방엔 식물등을 달 자리가 없습니다', '식물등은 가방에 그대로 있습니다');
+    return;
+  }
   if (max && (L.placed || 0) >= max) {
     banner('이 방에 더 달 자리가 없습니다', `이 방에 달 수 있는 식물등은 ${max}개입니다`);
     return;
@@ -16348,6 +16407,10 @@ $('moveOut').onclick = guard(() => {
         .filter(f => f && f.uid && f.preset)
         .filter(f => !CEILING.has(f.preset)
                   && !ROOM_BOUND.has((furnPresets[f.preset] || {}).mount))
+        /* ★ 2026-10-08 ([House] D6-가 · rooms_spec §13 바뀜) — **식물등 기구는 안 든다.** 등은 «산 개수»(tutorial.lamp.owned/placed ·
+             lamps.count)로 따라가고, 원룸에는 방이 등 자리 셋(bar·clip·stand)을 갖는다. 기구까지 들면 두 벌이 되고
+             가방에서 놓은 bar 는 방 한가운데(0,0)에 «붙박이라 못 옮김»으로 갇혔다([House] 걸어서 잼 · 9330) */
+        .filter(f => { const pp = furnPresets[f.preset] || {}; return !(pp.grow === true || /^growlight_/.test(f.preset)); })
         .map(f => ({ uid: f.uid, preset: f.preset }));
     } catch (e) { console.warn('[이사] 들고 갈 가구를 못 셌습니다 —', e && e.message); return []; }
   })();

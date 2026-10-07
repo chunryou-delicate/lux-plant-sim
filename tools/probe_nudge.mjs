@@ -74,7 +74,9 @@ const byDay = {};
 for (const e of log) { (byDay[e.d] = byDay[e.d] || []).push(e.id); }
 const opened = JSON.parse(await page.eval(`JSON.stringify((window.__S().stamina||{}).questsOpenedOn||null)`));
 const taken = JSON.parse(await page.eval(`JSON.stringify((window.__S().stamina||{}).questsTaken||[])`));
-console.log('■ 열린 날(questsOpenedOn) —', JSON.stringify(opened), '· 끝난 것 —', JSON.stringify(taken));
+/* ★ 2026-10-08 D2 — «마지막으로 기다린 날» (nudge_wait §noteQuestWaits). 없으면 예전 판(기다림을 안 적는 판)이다 */
+const waitedOn = JSON.parse(await page.eval(`JSON.stringify((window.__S().stamina||{}).questsWaitedOn||null)`));
+console.log('■ 열린 날(questsOpenedOn) —', JSON.stringify(opened), '· 끝난 것 —', JSON.stringify(taken), '· 기다린 날 —', JSON.stringify(waitedOn));
 console.log('');
 console.log('=== 날마다 나온 대사 (독촉은 ★) ===');
 const isNudge = id => /^nudge/.test(id);
@@ -104,7 +106,11 @@ ok('★ 독촉이 난 날엔 다른 대사가 «없다»(하루 한 줄)', withO
    ④(열린 날+14 ~)는 잡담 줄로 내려서 «매일은 아니다». 여기서 임자 퀘스트 = 가장 먼저 열렸는데 안 끝난 것. */
 const takenSet = new Set(taken);
 const first = Object.entries(opened || {}).filter(([id]) => !takenSet.has(id)).sort((a, b) => a[1] - b[1])[0];
-const on = first ? first[1] : null;
+const on0 = first ? first[1] : null;
+/* ★ 2026-10-08 D2(박사님 «할 수 있었던 날만 센다») — 셈의 첫날은 «열린 날»이 아니라 «마지막으로 기다린 날 + 1»이다.
+     기다리는 동안(on0 ~ waited)은 독촉이 «안» 나야 한다. 기다림을 안 적는 옛 판(waitedOn 없음)은 예전 그대로 열린 날부터 센다 */
+const waited = (first && waitedOn && Number.isInteger(waitedOn[first[0]]) && waitedOn[first[0]] >= on0) ? waitedOn[first[0]] : null;
+const on = waited != null ? waited + 1 : on0;
 const isEvent = id => !isNudge(id) && !/^chat/.test(id);
 const lastDay = Math.max(...Object.keys(byDay).map(Number), d0 + DAYS);
 let early = { want: [], got: [] }, late = { days: 0, back: 0, chat: 0 };
@@ -114,7 +120,16 @@ if (on != null) for (let d = on + 1; d <= lastDay; d++) {
   if (d < on + 14) { early.want.push(d); if (ids.some(isNudge)) early.got.push(d); }
   else { late.days++; if (ids.includes('nudgeBack')) late.back++; if (ids.some(x => /^chat/.test(x))) late.chat++; }
 }
-ok(`★ ①②③ 동안 사건 없는 날마다 독촉이 «난다»(임자 ${first ? first[0] : '-'} · 열린 날 d${on})`, early.want.length > 0 && early.got.length === early.want.length,
+if (waited != null) {
+  const waitDays = []; for (let d = on0 + 1; d <= waited; d++) if (!(byDay[d] || []).some(isEvent)) waitDays.push(d);
+  const nagged = waitDays.filter(d => (byDay[d] || []).some(isNudge));
+  ok(`★ D2 — 기다리는 날(d${on0 + 1}~d${waited})엔 독촉이 «안» 난다`, nagged.length === 0,
+     `기다린 날 ${waitDays.length} · 그중 독촉 ${nagged.length}` + (nagged.length ? ' · d' + nagged.join(',d') : ''));
+  const firstNag = Object.keys(byDay).map(Number).filter(d => d > waited && (byDay[d] || []).some(isNudge)).sort((a, b) => a - b)[0];
+  const firstId = firstNag != null ? (byDay[firstNag] || []).find(isNudge) : null;
+  ok('★ D2 — 기다림이 끝난 뒤 첫 독촉은 «권함»(nudgeOffer)부터다(한 단 안 뛴다)', firstId === 'nudgeOffer', `d${firstNag} ${firstId}`);
+}
+ok(`★ ①②③ 동안 사건 없는 날마다 독촉이 «난다»(임자 ${first ? first[0] : '-'} · 셈 첫날 d${on}${waited != null ? ` = 기다린 날 d${waited}+1` : ' = 열린 날'})`, early.want.length > 0 && early.got.length === early.want.length,
    `안 한 날 ${early.want.length} · 독촉 ${early.got.length}` + (early.got.length !== early.want.length ? ' · 빠진 날 d' + early.want.filter(x => !early.got.includes(x)).join(',d') : ''));
 ok('★ ④부터는 잡담과 «번갈아» 선다(매일이 아니다 · 잡담도 선다)', late.days === 0 || (late.back >= 1 && late.back < late.days && late.chat >= 1),
    `날 ${late.days} · 물러섬 ${late.back} · 잡담 ${late.chat}` + (late.days === 0 ? ' (④ 구간이 걸음 안에 없다)' : ''));
