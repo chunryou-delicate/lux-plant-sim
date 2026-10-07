@@ -32,6 +32,8 @@
 | `probe_slot_year.mjs` | 이름 붙은 자리를 400일 굴려 밴드·문턱 넘는 칸 (`ROOM=` · `LAMPS=` · `PROFILE=<경로>`) | 헤드리스 |
 | `probe_crop_quality.mjs` | 자리마다 작물이 실제로 몇 그램인지 · **0g 인 칸 세기** (`PROFILE=` · `LAMPS=`) | 헤드리스 |
 | `probe_first_leaf.mjs` | ★ **도착한 뒤 «다음 잎»까지 며칠인가** — 자리 15칸을 400일 태운다 (`ROOM=`·`LAMPS=`·`MODES=`·`FROM=`·`START=`·`DLI=`) · ⚠ 2026-10-04 에 기준을 도착값 45 로 고쳤다 | 헤드리스 |
+| `probe_grade_band_days.mjs` | ★ **「등 없이 mid · 등을 사면 bright」가 서나** — 자라는 날들의 등급 밴드·멈춤·바램 날수 (`PROFILE=`·`MODE=`·`LAMPS=`·`YD0=`) | 헤드리스 |
+| `probe_room_zoom_varie_skin.mjs` | 무늬 잎이 갈라진 판에서 «방»과 «확대»가 같은 그림을 쓰나 — 게임 하루 진행 260일 | 라이브 |
 | `probe_grade_vs_skin.mjs` | ★ **등급과 그림이 만나나** — 공용 못에서 성숙했을 때 어느 등급 그림에 닿나 | 라이브 |
 | `probe_leaf_when.mjs` | n번째 잎이 언제 오나 (`FROM=` · `EFF=`) | 헤드리스 |
 | `probe_leaf_health_year.mjs` | 잎이 **바랬다가 돌아오나** — real 사계절 |
@@ -198,6 +200,26 @@ plant_grow 헤드리스 · 씨앗 40판 · 코어와 같은 걸음(밝기 1.25�
         예전에 잎2 가 잠기던 59판을 첫 그루로 400일 ⇒ ✂ 열림 59/59 · 중앙 122일(10% 102 · 90% 182)
         표준 40판 ⇒ 잎3 갈라짐 중앙 114 · ✂ 중앙 118 그대로
 ```
+
+### 2026-10-07 · 원룸 real — D1(이사 때 실전 계절)·D5(기준 배치 D)·D7(real 주)
+
+⚠ 잰 판은 **후보 D 임시 프로필**(docs/handoff/_tmp_profile_oneroom_D.json · lampCounts [0,1,2])이다.
+  house 가 D6-가(등 자리 둘)로 다시 구우면 값이 바뀐다 — 그때 `probe_grade_band_days` 로 다시 잰다.
+```
+real · yearDay0 135 부터 365일 · 창턱 · 몬스테라 7일 이동평균 · probe_grade_band_days
+             자라는 날   멈춤(가장 긴)   바램   ⇒ 자라는 날들의 등급 밴드
+sill:0 등0     197       168(99)        19      mid 96% · bright  4%
+sill:0 등1     365         0             0      mid 41% · bright 59%
+sill:0 등2     365         0             0      mid 29% · bright 71%
+sill:1 등1     360         5(3)          0      mid 67% · bright 33%
+novice 은 등 0·1·2 모두 bright 100%
+```
+> ★ **real 원룸에서는 「등 없이 mid · 등을 사면 bright」가 선다.** novice 로 돌리면 등과 상관없이 bright 100% —
+>   그러니 이 조건은 D1(원룸부터 real) 덕에 선다. 등이 어느 창턱 칸에 빛을 주나(D6 등 자리)가 bright 몫을 크게 바꾼다.
+> ★ 등 없으면 한 해 46% 가 멈춤이고 겨울에 99일 내리 멈춘다. 바램 19일 동안 잎이 끝까지(fade 1.00) 바랬다가 봄에 다 돌아온다.
+> ★ 「잎이 안 죽는 규칙은 엔딩까지」는 생장 쪽에서 저절로 선다 — 낙엽은 모드가 아니라 growth_tuning.json
+>   `health.drop_enabled:false` 하나로 꺼져 있다. real 로 바꿔도 안 켜진다(probe_leaf_health_year: 떨어진 잎 0장).
+⚠ 첫 겨울에 «얼마나» 멈추나는 이사 날이 한 해의 어디냐에 달렸다(위는 yearDay0 135 시작). 이사 날이 정해지면 YD0= 로 다시 잰다.
 
 ## ④ ⛔ 물린 표 — 지금 쓰면 안 되는 것
 
