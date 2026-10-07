@@ -1392,6 +1392,16 @@ export const SCRIPTS = {
   nudgeSeedAsk:      [ { who: 'moni', face: 'curious', text: '씨앗, 상점에서 시켰어?' } ],
   nudgeSeedWorry:    [ { who: 'moni', face: 'worry',   text: '씨앗이 없으면 시루가 놀아. 상점에 있어.' } ],
 
+  /* ★★ 2026-10-08 [plan] D22(총괄 · plan-oneroom-quests-v2 ⓐ ㉠) — **마지막 무늬 원천을 그루째 팔기 «전»의 한 줄.**
+     그루째 팔면 무늬 원천이 사라지고 되사는 창구가 없다(shop resaleRate 는 가구에만 · 판 그루는 사라짐) — 원룸에서 늘릴 게 없는 «막다른 길»(ⓐ).
+     후보: ㉠ 말로 막는다 · ㉡ 원룸에서 무늬 삽수를 «사게» 연다(사는 값 — 박사님 몫) · ㉢ 집 자금만 ⇒ 고른 것 ㉠(총괄 D22). 까닭: 값 0 · 되돌릴 수 없는 것은 말이 막는다.
+     ⛔ 막지는 않는다 — 한 줄 말하고 사람이 고른다. 「마디만 잘라 팔아도 돼」가 다른 길(sell_varie)을 가리킨다(참 — 무늬 삽수는 팔린다).
+     ⚠ 언제 뜨나([core]): 그루째 팔기 «확인» 창을 열 때, 팔고 나면 무늬 원천(무늬 잎 단 그루 · 안 죽은 무늬 삽수)이 0 이 되는 경우만.
+       사건 id `sell_last_varie`(§EVENT_SCRIPT) — story.events([{ id: 'sell_last_varie' }]) 로 낸다. 방은 안 가린다(원룸에서도 같은 막다른 길). */
+  sellLastVarie: [
+    { who: 'moni', face: 'worry', text: '그거 통째로 팔면 무늬 늘릴 데가 없어. 마디만 잘라 팔아도 돼.' }
+  ],
+
   cropHandsShort: [
     { who: 'moni', face: 'teach', text: '손이 다 됐네 — 물 주는 날을 엇갈리게 해 봐.' }
   ],
@@ -1776,7 +1786,9 @@ export const REPEATABLE = new Set(
              'nudgeCutOffer', 'nudgeCutPush', 'nudgeVarieOffer', 'nudgeVariePush', 'nudgeSellOffer', 'nudgeSellPush',
              'nudgeHarvestPush', 'nudgeSeedPush'])
     .concat(['rentSoon', 'rentAgain', 'plantStalledAgain', 'plantStalledWinter',
-             'cropHandsShort', 'brokeTalk', 'brokeTalkAgain'])
+             'cropHandsShort', 'brokeTalk', 'brokeTalkAgain',
+             /* ★ 2026-10-08 D22 — 팔려고 할 때마다 말린다(되돌릴 수 없는 것 앞의 말은 매번이다) */
+             'sellLastVarie'])
 );
 
 /* ── 진행 ───────────────────────────────────────────────────────────── */
@@ -1821,6 +1833,8 @@ export const EVENT_SCRIPT = Object.freeze({
      ⚠ `beansprout_harvest_again` 에는 여전히 대사를 «안 붙인다» — 그건 날마다 난다.
        이것은 **드문 날**이라야 뜨므로 위 §1684 가 걱정한 「스무 번」이 안 일어난다. */
   crop_hands_short:    'cropHandsShort',
+  /* ★ 2026-10-08 [plan] D22 — 마지막 무늬 원천을 그루째 팔기 전(§sellLastVarie). 사건은 [core] 가 확인 창을 열 때 낸다 */
+  sell_last_varie:     'sellLastVarie',
   monstera_arrived:    'monsteraArrived',
   /* ★ 유도 두 걸음 (2026-08-09) — first_play.firstPlayEventsOf 가 낸다 */
   monstera_no_spear:   'monsteraGuideWindow',
