@@ -15,7 +15,7 @@
  * ⇒ ★★ 물건을 재기 전에 «찍는 자리»를 먼저 정해야 한다.
  */
 import { launch } from '../test_cdp.mjs';
-import { mkdirSync, writeFileSync } from 'node:fs';
+import { mkdirSync, writeFileSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 const BASE = process.env.BYEOT_URL || 'http://localhost:8000';
@@ -29,6 +29,19 @@ const VIEWS = [['front', 0], ['left', 90], ['back', 180], ['q34', 35]];
 
 const WANT_CLIP = sys_wantClip();
 const WANT_TEX = process.argv.includes('--tex');
+/* --game-hair : 게임(v2_hero.js)이 불러올 때 하는 fixBackHair 를 «그 파일에서 뽑아» 똑같이 건다 (2026-10-08).
+   ⛔ 안 걸면 이 그림은 «게임과 다른 몸»이다 — 뒷머리가 팔을 따라 날개처럼 펼쳐진다. 함수를 베끼지 않는다(어긋남 방지). */
+/* v2_hero.js 에서 함수 하나를 «그대로» 뽑는다 (그림 자가 게임과 어긋나지 않게) */
+function fromHero(name) {
+  const src = readFileSync(join('src', 'game', 'v2_hero.js'), 'utf8');
+  const i = src.indexOf('function ' + name + '(');
+  const j = src.indexOf('\n}', i);
+  if (i < 0 || j < 0) throw new Error('v2_hero.js 에서 ' + name + ' 를 못 찾았다');
+  return src.slice(i, j + 2);
+}
+const GAME_HAIR = process.argv.includes('--game-hair') ? fromHero('fixBackHair') : '';
+/* --emote-skin : 팔을 수평 위로 들 때만 «몸짓 무게»로 바꾸는 installEmoteSkin 을 건다 (2026-10-08) */
+const EMOTE_SKIN = process.argv.includes('--emote-skin') ? fromHero('installEmoteSkin') : '';
 function sys_wantClip(){
   /* --clip 이면 첫 클립, --clip=이름 이면 그 이름의 클립 (한 파일에 여럿이 든 hero.glb 용 · 2026-09-25) */
   const a = process.argv.find(x => x === '--clip' || x.startsWith('--clip='));
@@ -69,6 +82,10 @@ new THREE.GLTFLoader().load(${JSON.stringify(GLB)}, g=>{
     const map = WANT_TEX && o.material && o.material.map ? o.material.map : null;
     o.material=new THREE.MeshLambertMaterial({color: map ? 0xffffff : 0xe9bda3, map, skinning: !!o.isSkinnedMesh}); } });
   sc.add(m); window.__m=m;
+  window.__hairFixed=null;
+  ${GAME_HAIR ? GAME_HAIR + "\n  { let n=0; m.traverse(o=>{ if(o.isSkinnedMesh) n+=fixBackHair(o); }); window.__hairFixed=n; }" : ''}
+  window.__emoteSkin=null;
+  ${EMOTE_SKIN ? EMOTE_SKIN + "\n  { let n=0; m.traverse(o=>{ if(o.isSkinnedMesh && installEmoteSkin(o)) n++; }); window.__emoteSkin=n; }" : ''}
   /* ★ --clip 을 주면 «그 파일에 든» 클립을 얹는다.
      ⇒ 메시가 «자기 리깅에 딸려 준» 클립을 «자기 메시»에 얹으면
        「리깅 자체가 잘못됐나 / 우리 클립과 어긋나나」가 갈린다. */
@@ -165,6 +182,8 @@ async function main() {
     if (err) { console.log('⛔ 못 실었다: ' + err); return; }
     const ci = await p.eval('JSON.stringify(window.__clipInfo)');
     if (WANT_CLIP) console.log('  클립: ' + ci);
+    if (GAME_HAIR) console.log('  게임 fixBackHair 건 정점: ' + await p.eval('String(window.__hairFixed)'));
+    if (EMOTE_SKIN) console.log('  몸짓 무게를 건 메시: ' + await p.eval('String(window.__emoteSkin)'));
     const TIMES = WANT_CLIP ? [0, 0.25, 0.5, 0.75] : [null];
     const dur = WANT_CLIP ? JSON.parse(await p.eval('JSON.stringify(window.__dur||0)')) : 0;
     for (const frac of TIMES) {

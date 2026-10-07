@@ -131,6 +131,49 @@ function fixBackHair(mesh) {
   return n;
 }
 
+/* ⛔ 10-08 (char) — 앞·옆 머리와 뺨·턱도 «팔»에 묶여 있다(바인드 T포즈 · 머리 정점 9,700여 · 뺨·턱 피부 1,000여).
+     fixBackHair 는 등 뒤만 옮긴다 ⇒ cheer·wave 처럼 팔을 «수평 위로» 들면 머리 가닥이 날개처럼 들리고 얼굴을 가로지른다.
+   ⇒ 그 무게를 옮긴 «몸짓 무게»를 hero.glb 에 따로 실었다(_JOINTS_EMOTE/_WEIGHTS_EMOTE · tools/char/fix_hair_weights.py --as-emote).
+   ⛔ 몸짓 무게를 늘 쓰면 걷기·idle 어깨에 바늘이 새로 난다(팔에 닿은 머리가 팔을 안 따라간다) ⇒ «팔을 수평 위로 들 때만» 바꿔 쓴다.
+   ★ 바꾸는 순간 안 튄다: 바인드가 T포즈라 팔이 수평 근처면 어느 무게든 같은 자리에 그려진다.
+   문턱 — 위팔(Arm→ForeArm)·아래팔(ForeArm→Hand)이 몸통 위쪽(Hips→Spine)과 이루는 각, 두 팔 중 작은 쪽:
+     켬 = 위팔 < 78° 또는 아래팔 < 65° · 끔 = 위팔 > 98° 이고 아래팔 > 85°.
+     ⛔ 위팔만 보던 첫 판: cheer 앞부분은 위팔 82°(수평 근처)인데 아래팔이 위로 꺾여 그 사이 원래 무게로 머리가 들렸다.
+     잰 것(게임이 쓰는 구간 — walk_arm·idle_arm 통째 · sit 끝 1초 · sleep · crouch_arm 0~2.4초):
+       위팔 최소 87.7° · 아래팔 최소 74.4° ⇒ 한 번도 안 켜진다(9° 이상 여유).
+       cheer 아래팔 3.5~ (92% 가 45° 밑) · wave 위팔 42.6~ · 아래팔 7.2~.
+   메시마다 한 번 건다(복제본에). 기하는 원본과 나눠 쓰니 바꾸면 같은 기하를 쓰는 사람이 다 바뀐다 — hero 는 방에 하나다. */
+function installEmoteSkin(mesh) {
+  const G = mesh.geometry;
+  const eJ = G && G.attributes._joints_emote, eW = G && G.attributes._weights_emote;
+  if (!eJ || !eW || !mesh.skeleton) return false;
+  /* 원래 무게도 딴 이름으로 늘 기하에 남긴다 — 빠져 있는 동안에도 GPU 버퍼가 살아 있게.
+     ⚠ 기하를 나눠 쓴다 ⇒ 앞 사람이 몸짓 무게인 채로 치워졌을 수 있다. 둘째부터는 남겨 둔 원래 무게를 쓴다. */
+  const bJ = G.attributes._joints_base || G.attributes.skinIndex, bW = G.attributes._weights_base || G.attributes.skinWeight;
+  G.setAttribute('_joints_base', bJ); G.setAttribute('_weights_base', bW);
+  G.setAttribute('skinIndex', bJ); G.setAttribute('skinWeight', bW);
+  const bone = n => mesh.skeleton.bones.find(b => b.name === n);
+  const hips = bone('Hips'), spine = bone('Spine');
+  const arms = ['Left', 'Right'].map(s => [bone(s + 'Arm'), bone(s + 'ForeArm'), bone(s + 'Hand')]);
+  if (!hips || !spine || arms.some(a => !a[0] || !a[1] || !a[2])) return false;
+  const p = new THREE.Vector3(), q = new THREE.Vector3(), up = new THREE.Vector3();
+  const deg = (a, b) => { a.getWorldPosition(p); b.getWorldPosition(q).sub(p).normalize();
+    return Math.acos(Math.max(-1, Math.min(1, q.dot(up)))) * 180 / Math.PI; };
+  let on = false;
+  mesh.userData.emoteSkin = () => on;
+  mesh.onBeforeRender = function () {
+    hips.getWorldPosition(p); spine.getWorldPosition(up).sub(p).normalize();
+    let upper = 180, fore = 180;
+    for (const [a, f, h] of arms) { upper = Math.min(upper, deg(a, f)); fore = Math.min(fore, deg(f, h)); }
+    const want = on ? !(upper > 98 && fore > 85) : (upper < 78 || fore < 65);
+    if (want === on) return;
+    on = want;
+    G.setAttribute('skinIndex', on ? eJ : bJ);
+    G.setAttribute('skinWeight', on ? eW : bW);
+  };
+  return true;
+}
+
 /* 스킨 메시 복제 — 뼈를 새 나무의 뼈로 다시 묶는다(SkeletonUtils.clone 과 같은 일).
    기하·텍스처는 나눠 쓰고 재질만 사람마다 새로 만든다. */
 function cloneSkinned(src) {
@@ -207,6 +250,9 @@ function actClipFrom(src, kind, targetY) {
   const C = src.clips;
   if (kind === 'sit' && C.sit) return cut(C.sit, Math.max(0, C.sit.duration - SIT_TAIL), C.sit.duration, 'sit:act');
   if (kind === 'sleep' && C.sleep) return cut(C.sleep, 0, C.sleep.duration, 'sleep:act');
+  /* 10-08 (char): 기쁜 순간 몸짓 — wave(5.37초 · 오른팔 들어 흔듦) · cheer(2.97초 · 두 팔 위로) 통째.
+     거는 자리(첫 새순·첫 무늬·몬이 만남)는 core 다. 예전엔 이 이름도 아래 crouch 로 빠졌다. */
+  if ((kind === 'wave' || kind === 'cheer') && C[kind]) return cut(C[kind], 0, C[kind].duration, `${kind}:act`);
   /* 물·심기·거두기, 그리고 모르는 동작은 crouch → 없으면 idle */
   if (C.crouch) {
     const end = Math.min(crouchEnd(targetY, C.crouch.__arm ? HAND_ARM : HAND), C.crouch.duration);
@@ -220,6 +266,8 @@ function actClipFrom(src, kind, targetY) {
 export async function makeHero() {
   const src = await loadSource();
   const body = cloneSkinned(src.scene);
+  let emoteSkin = 0;
+  body.traverse(o => { if (o.isSkinnedMesh && installEmoteSkin(o)) emoteSkin++; });   // 10-08 char — 위 installEmoteSkin
   /* 옛 GLB 의 '__scale_root' 와 같은 자리 — 1.40m 로 감싼다. 발은 y=0 그대로(바인드 최저 0.0004) */
   const wrap = new THREE.Group();
   wrap.name = '__scale_root';
@@ -234,6 +282,7 @@ export async function makeHero() {
     walk,
     walkMps: HERO_WALK_MPS,
     actClip: (kind, targetY) => Promise.resolve(actClipFrom(src, String(kind || '').toLowerCase(), targetY)),
-    clipNames: Object.keys(src.clips)
+    clipNames: Object.keys(src.clips),
+    emoteSkin   // 몸짓 무게를 건 메시 수(0 이면 hero.glb 에 _WEIGHTS_EMOTE 가 없다)
   };
 }
