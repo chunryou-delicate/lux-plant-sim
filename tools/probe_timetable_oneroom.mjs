@@ -116,5 +116,20 @@ for (const lamps of Object.keys(series).map(Number)) for (const kind of ['seed',
       `${String(r.varieSplit.p50).padStart(2)}(${r.varieSplit.p10}~${r.varieSplit.p90})`.padEnd(15) +
       `${r.expectedVarieByGrade.sanban}/${r.expectedVarieByGrade.halfmoon}/${r.expectedVarieByGrade.fullmoon}`);
 }
-if (process.env.OUT) { fs.writeFileSync(path.join(ROOT, process.env.OUT), JSON.stringify(out, null, 1)); console.log('\n⇒ 썼다:', process.env.OUT); }
+/* ★ OUT 이 이미 있으면 «합친다» — 등 개수마다 따로 돌려도(메모리가 모자랄 때) 한 파일에 모인다.
+     같은 (그루·등) 판은 새것으로 갈고, 판의 조건(meta)이 다르면 섞지 않고 던진다 — 다른 판을 한 표에 섞으면 거짓이 된다. */
+if (process.env.OUT) {
+  const fp = path.join(ROOT, process.env.OUT);
+  let merged = out;
+  if (fs.existsSync(fp)) {
+    const old = JSON.parse(fs.readFileSync(fp, 'utf8'));
+    const same = ['profile', 'slot', 'mode', 'yearDay0', 'days', 'seeds', 'motherGrowth'].every(k => old.meta && old.meta[k] === out.meta[k]);
+    if (!same) throw new Error(`[시각표] ${process.env.OUT} 의 판 조건이 다르다 — 섞지 않는다. 다른 OUT 을 쓰라: ${JSON.stringify(old.meta)}`);
+    const key = c => `${c.plant}|${c.lamps}`;
+    const keep = (old.cases || []).filter(c => !out.cases.some(n => key(n) === key(c)));
+    merged = { meta: out.meta, cases: [...keep, ...out.cases].sort((a, b) => a.lamps - b.lamps || a.plant.localeCompare(b.plant)) };
+  }
+  fs.writeFileSync(fp, JSON.stringify(merged, null, 1));
+  console.log('\n⇒ 썼다:', process.env.OUT, '· 판', merged.cases.map(c => `${c.plant}/등${c.lamps}`).join(' '));
+}
 await page.close();
