@@ -15,6 +15,7 @@
      ⛔ 물으면 안 되는 것  얼마나 «오래» · «언제» 사라지나 · 사람이 무엇을 «먼저» 보나
      ⛔ 그리고            «꺼져 있는 것은 안 찍힌다» — 「안 나왔다」가 「없다」가 아니다
      ⛔ 넷째              ★ 돌릴 때마다 «폴더를 비운다» — 안 비우면 두 판을 한 판으로 읽는다
+     ⛔ 다섯째            ★ «안내와 같은 자리»에 놓아라 — 「남은 첫 자리」는 사람이 하는 짓이 아니다
 
      ⇒ ★ 첫 줄이 나온 까닭: 한 판에서 나온 세 판정이 «세 번 다» 틀렸다.
        ① "열이틀에 한 번도 못 거둔다"  ← 자가 「심기」를 안 눌러서
@@ -215,12 +216,28 @@ const click = async (id) => {
 /* 가방의 시루를 방에 끌어다 놓는다 — night_play §placeOneSiru 와 같은 창구(`__drag`)를 쓴다.
    ⚠ 자리 표를 여기서 새로 짓지 않는다. 이미 찬 자리를 빼고 «남은 첫 자리»를 고른다. */
 const placeSiru = async () => {
+  /* ★★ 2026-08-23 다섯째 — **「남은 첫 자리」를 고르면 안 된다.**
+     튜토 안내는 *"방 안 «어두운 자리»에 놓아 보세요"* 인데 첫 자리가 «창턱»이었다.
+     창턱은 이 방에서 «제일 밝은» 자리다. ⇒ 안내와 «반대»로 놓고 있었다.
+     ⚠ 콩나물은 어두운 데서 잘 자란다. 밝은 데 놓으면 수확이 낮게 나온다
+       — 그러면 그 판으로 낸 «수확량·파산 시점»이 전부 틀린다.
+     ★ [Asset] 이 잡았고, [core] 의 night_play 도 «같은 병»이었다.
+       ⇒ ***"「남은 첫 자리」는 편한데 «사람이 하는 짓이 아니다»."***
+     ⇒ 그래서 **그날의 조도를 보고 «제일 어두운» 자리**를 고른다. */
   const slot = await ev(`(()=>{ const S=window.__S();
     const taken = new Set();
     for (const p of (S.pots||[])) if (p.slotId) taken.add(p.slotId);
     const b=(S.firstPlay&&S.firstPlay.beansprout)||{};
     for (const p of (b.pots||[])) if (p && p.slotId) taken.add(p.slotId);
     const free=(window.__io.light.room.slots||[]).map(x=>x.slotId).filter(id=>!taken.has(id));
+    if (!free.length) return '';
+    /* 그날 조도로 정렬 — 못 읽으면 첫 자리로 떨어진다(그 사실을 로그로 남긴다) */
+    try {
+      const rep = window.__io.light.daily(S.day + 1, S).report;
+      const dli = new Map((rep.slots||[]).map(x => [x.slotId, x.dli]));
+      const sorted = free.filter(id => dli.has(id)).sort((a,b) => dli.get(a) - dli.get(b));
+      if (sorted.length) return sorted[0];
+    } catch (e) { }
     return free[0]||''; })()`);
   if (!slot) return false;
   const ok = await ev(`(()=>{ try { const rv=window.__rv;
