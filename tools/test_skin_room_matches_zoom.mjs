@@ -47,9 +47,36 @@ const put = await J(`(async()=>{ const st=await import('/src/game/state.js'); co
   return { 자리:(S.pots||[])[0].slotId, 그루수:(S.pots||[]).length }; })()`, 60000);
 console.log('그루를 세웠다 —', JSON.stringify(put));
 
+/* ══ VARIE=1 — «무늬 잎이 갈라진 판»으로 견준다 (2026-10-08 · D4) ══════════════════════════
+   ⚠ 기본 판(잎 1장 · 무늬 없음)으로는 방과 확대가 «무늬 그림»에서 갈리는 것을 못 잡았다.
+     2026-10-07 에 실제 게임 260일로 재 보니 확대는 등급 그림(leaf_mat21), 방은 굴림(leaf_mat4 = 산반)이었다
+     (probe_room_zoom_varie_skin). 그래서 이 갈래는 창턱에서 DAYS 일을 «게임 하루 진행 그대로» 키운다 —
+     날마다 물(state.waterPot) · loop.runDays · 턴마다 게임이 하는 등급 두 줄(game.html §noteLeafGrades 와 같은 함수:
+     shop.assignPotLeafGrades → potLeafSkinsOf → 확대 창 setLeafSkins).
+   ⚠ 울타리 ④ — 무늬 잎이 한 장도 «갈라지지» 않았으면 FAIL. 그러면 이 갈래가 아무것도 안 잰 것이다.
+   ⚠ [core] 가 방에 그림표를 넘기기 전에는 이 갈래가 «붉은 것이 맞다». 고친 뒤 초록이 된다. */
+const VARIE = process.env.VARIE === '1', DAYS = Number(process.env.DAYS || 260);
+if (VARIE) {
+  const grown = await J(`(async()=>{ const st=await import('/src/game/state.js'); const lp=await import('/src/game/loop.js'); const sh=await import('/src/game/shop.js');
+    const S=window.__S(), io=window.__io; const errs=[];
+    for (let d=0; d<${DAYS}; d++){
+      try { st.waterPot(S); } catch(e) { if(errs.length<3) errs.push('물:'+e.message.slice(0,50)); }
+      lp.runDays(S, io, 1, (t) => { try {
+        sh.assignPotLeafGrades(S, { leafState: io.growth.leafState(), band: (t&&t.growthSpeed&&t.growthSpeed.band)||null });
+        const w=document.getElementById('growth').contentWindow, p0=(S.pots||[])[0];
+        if (w && w.setLeafSkins && p0) w.setLeafSkins(Object.entries(sh.potLeafSkinsOf(S, p0)||{}).map(([lb,v])=>({leafBirth:+lb, ...v})));
+      } catch(e) { if(errs.length<3) errs.push('등급:'+e.message.slice(0,60)); } });
+    }
+    const ls=io.growth.leafState()||[];
+    return { errs, 무늬: ls.filter(r=>r.varie).length, 갈라진무늬: ls.filter(r=>r.varie&&r.matured).length }; })()`, 1800000);
+  console.log(`키웠다(${DAYS}일) —`, JSON.stringify(grown));
+  if (!(grown.갈라진무늬 >= 1)) { console.log(`⛔ 울타리④ 갈라진 무늬 잎이 «0장» — 이 판은 무늬 그림을 안 잰다`); process.exitCode = 1; await page.close(); process.exit(1); }
+  console.log(`✅ 울타리④ 갈라진 무늬 잎 ${grown.갈라진무늬}장`);
+}
+
 await sleep(800);
 await page.eval(`(()=>{ try { window.__redraw(); } catch(e) {} })()`, false);   /* 무거운 다시 그리기는 기다리지 않고 부른다 */
-await sleep(3500);
+await sleep(VARIE ? 9000 : 3500);   /* VARIE — 무늬 그림이 한 장씩 늦게 온다. 덜 오면 열쇠가 잠깐 기본잎으로 보인다(leafSkinUsedAll §key) */
 
 const r = await J(`(()=>({ 그루수:(window.__S().pots||[]).length,
   확대: window.__io.growth.leafSkinUsedAll ? window.__io.growth.leafSkinUsedAll() : '창구없음',
