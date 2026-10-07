@@ -155,9 +155,13 @@
       { "id": "pothos_mint_dot_34" },
       { "id": "pothos_silver_droplet" },
       { "id": "heart_lime_2672_0" },
-      { "id": "pothos_marble_greenyellow" }
+      { "id": "pothos_marble_greenyellow" },
+      { "id": "heart_halfmoon_v2_stem" }
     ],
     "_doc_pool": [
+      "★ 2026-10-08 D18(총괄 결정 · 후보: 넣기 / 빼 둠) — `heart_halfmoon_v2_stem`(하프문-크림민트 · 중간잎 29·30·31)을 못에 «되돌렸다».",
+      "  [leaf] 가 찢김(이음매 법선)을 고쳤고(962d85c3) [growth] 가 굴림 못에 되돌렸다(7ab0da90). 공용 못이라 이 그림이 «하프문»을 미리 말하지 않는다 —",
+      "  모든 무늬 잎이 같은 못에서 뽑으므로 등급과 안 묶인다(아래 08-23 까닭 그대로). ⚠ 눈검사(폰 크기)는 [leaf] 몫이다.",
       "★★ 2026-08-23 plan — **못을 14갈래로 열었다.** 그전에는 `fromGrade` 하나라 **1갈래만** 쓰고 있었다.",
       "  그림은 16갈래가 있고(스킨 48장) 그중 무늬가 있는 것이 14갈래다. 나머지 둘은 민무늬이라 안 넣었다(위 `_doc_unassigned_mid`).",
       "",
