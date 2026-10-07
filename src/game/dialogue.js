@@ -38,6 +38,8 @@ import { TUTORIAL_RULES } from './tutorial.js';
 /* ★ 콩나물이 자라는 날의 정본은 `CROP_KINDS[0].harvestDays` 다 — 대사가 거기서 읽는다(아래 §BEAN_DAYS).
    ⚠ `first_play.js` 는 `dialogue.js` 를 안 불러온다 — 고리가 안 생긴다(2026-08-23 확인). */
 import { CROP_KINDS } from './first_play.js';
+/* 독촉 «기다림» 판정 — [core] 파일(D2 · 2026-10-07). 한 방향: dialogue → nudge_wait */
+import { nudgeWaiting } from './nudge_wait.js';
 const BEAN_SEED = (() => {
   try { return catalogList().find(x => x.id === 'bean_seed') || {}; } catch { return {}; }
 })();
@@ -489,6 +491,11 @@ export const SCRIPTS = {
     { who: 'moni',   face: 'curious', text: '등은 아직 안 샀네.' },
     { who: 'jachwi', text: '이사 자금에 보태려고.' },
     { who: 'moni',   text: '그것도 답이야. 창턱이 버텨 주는 동안은.' }
+    /* ⛔ 2026-10-07 D14 — **게임 안에서는 안 뜬다. 지우지 않고 둔다.**
+       까닭: 이 줄은 `tutorial.js:731` 「해금됐는데 ts.lamp.owned === 0」일 때만 나는데,
+       게임 화면은 첫 등을 가방에 공짜로 넣는다(game.html:12393 `L.owned = 1`). 그래서 «등이 0개인 판»이 화면에서는 안 온다.
+       ★ 쓰는 곳은 «순수 코어 판»(등 없는 A·C 경로 걷기)과 test_dialogue_coverage 다 — 지우면 그 자가 깨진다.
+       ⇒ 다음에 「안 뜨는 대사」를 세는 사람은 여기서 멈출 것. 첫 등이 공짜가 아니게 되면 다시 살아난다. */
   ],
 
   /* ═══ §5 식물 상태 — 왜 멈췄는지 짚어 준다 ═════════════════════════════ */
@@ -580,7 +587,8 @@ export const SCRIPTS = {
           잎 한 장을 들고 이사 버튼 앞에 갔다가 혼자 막힌다. */
   /* ★★ 2026-09-25 [plan] #4 — **몬이가 먼저 안다**(위 varieGranted 와 같은 까닭). 무늬 잎은 «날 때»
      사건이 나는데 어린잎(말린 새순)에는 무늬가 안 보인다 — 그래서 「새 잎이 좀 이상한데」(자취녀가 봤다)를 뺐다.
-     ⚠ 「두 번째 잎에 바로 나오네. 운 좋다」 이하는 **그대로**다 — 08-13 박사님 방향이라 여쭌다([plan] §4 ⓑ). */
+     ⚠ 「두 번째 잎에 바로 나오네. 운 좋다」 이하는 **그대로**다 — 08-13 박사님 방향이라 여쭌다([plan] §4 ⓑ).
+     ⇒ 2026-10-07 D10 으로 정해졌다 — 「정해져 있어」. 그 한 줄만 바꿨고 나머지는 그대로다. */
   varieLucky: [
     /* ★ 2026-08-26 — 몬이 `surprise` 그림이 들어와서 이 줄이 «제 얼굴»을 갖는다([Char] `e4c0a67`).
        여기 있던 것: *"몬이에게는 surprise 얼굴이 없다 — 놀람은 curious 로 짓고 말이 놀란다."*
@@ -590,7 +598,10 @@ export const SCRIPTS = {
     { who: 'moni',   face: 'surprise', text: '어어. 잠깐만. **무늬가 섞였어.**' },
     { who: 'jachwi', face: 'curious',  text: '…어디? 그냥 말린 잎인데.' },
     { who: 'moni',   face: 'curious',  text: '지금은 안 보여. **다 자라면** 보여.' },
-    { who: 'moni',   text: '**두 번째 잎에** 바로 나오네. 운 좋다, 너.' },
+    /* ★ 2026-10-07 D10(총괄 결정 · [plan] 추천) — 「운 좋다, 너」를 뺐다. 잎2·3 무늬는 «정해져» 있다
+       (PROLOGUE_VARIE_LEAVES = [2,3]) — 「운」은 거짓이고, 위 ①「운이 아니다」와도 어긋났다.
+       몬이가 도착 날 한 말(「얘는 정해져 있어. 두 번째랑 세 번째 잎.」)을 «지킨» 줄로 바꿨다 — 약속이 지켜지는 날이다. */
+    { who: 'moni',   text: '**두 번째 잎**이야. 말했지, 정해져 있다고.' },
     { who: 'jachwi', face: 'curious',  text: '좋은 거야?' },
     { who: 'moni',   face: 'happy',    text: '값이 달라. 근데 **한 장으로는 어림도 없어.**' },
     { who: 'moni',   face: 'curious',  text: '무늬 있는 그루를 잘라 물에 꽂으면,' },
@@ -1725,7 +1736,7 @@ export const EVENT_SCRIPT = Object.freeze({
   /* ★ 프롤로그 보장(두 번째 잎). `varie_granted`(튜토 마지막 장면)와 **다른 사건**이다 —
      같은 id 로 묶으면 한쪽 대사가 다른 쪽 상황에서 뜬다(위 §varieLucky 의 ⚠ 참고). */
   varie_lucky:         'varieLucky',
-  /* ★ 둘째 장 (2026-08-15). 첫 장과 **다른 사건**이다 — 첫 장은 「운이 좋았다」이고
+  /* ★ 둘째 장 (2026-08-15). 첫 장과 **다른 사건**이다 — 첫 장은 「약속이 지켜졌다」(10-07 D10 · 전엔 「운이 좋았다」)이고
      이쪽은 「이제 자를 수 있다」다. 같은 id 로 묶으면 몬이가 두 번 놀란다. */
   varie_lucky2:        'varieSecond',
   varie_granted:       'varieGranted',
@@ -2131,7 +2142,10 @@ export function chatterContext(turn = {}, S = null) {
         const done = new Set(stm.questsTaken || []);
         let best = null;
         for (const [id, d] of Object.entries(stm.questsOpenedOn))
-          if (!done.has(id) && Number.isFinite(d) && (best == null || d < best.on)) best = { id, on: d };
+          /* ★ 2026-10-07 D2(박사님 「할 수 있었던 날만」) — «기다리는 중»인 퀘스트는 건너뛰고 다음으로 오래된 것을 고른다.
+             판정은 [core] `nudge_wait.js`(09-25 패치 그대로). 다 기다림이면 독촉이 없고 그날 잡담이 돈다.
+             독촉 차례(사건 > 독촉 > 잡담)·NUDGE_DAYS·문안은 그대로다. */
+          if (!done.has(id) && Number.isFinite(d) && !nudgeWaiting(S, id, dayNow) && (best == null || d < best.on)) best = { id, on: d };
         return best ? { id: best.id, days: dayNow - best.on } : null;
       } catch { return null; }
     })()
