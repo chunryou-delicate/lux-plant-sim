@@ -201,6 +201,8 @@ export const QUEST_SCHEMA = 'quest/1';
      lampUnlocked        식물등을 살 수 있게 됐나     (ts.lamp.unlocked · 가을 진입)
      lampOwned           갖고 있는 식물등 개수        (ts.lamp.owned)
      lampPlaced          ★ 10-08 방에 «단» 식물등 개수 (ts.lamp.placed) — null = 「모른다」(배선 전) ⇒ buy_lamp 는 예전처럼 lampOwned 로 본다
+     motherVarieMatured  ★ 10-08 D25 모주의 «무늬이면서 다 자란» 잎 수 — 자르기 문(propagation.cutBlockedReason opt.varieMaturedLeaves)과
+                         «같은 자»(game.html varieMaturedLeavesNow). null = 「모른다」(배선 전) ⇒ first_cut 은 motherVarieLeaves 로 어림한다
 
    ══ ★★ 2026-08-16 신설 — **초반 사슬이 보는 칸 넷** (§초반 사슬) ══════════
      cropPots[].placed   그 용기가 방에 서 있나       (`first_play.cropPotPlaced(p)`)
@@ -218,6 +220,8 @@ export function emptySnapshot() {
            lampUnlocked: false, lampOwned: 0,
            /* ★ 2026-10-08 [plan] — 단 등. null = 「모른다」(§buy_lamp done) */
            lampPlaced: null,
+           /* ★ 2026-10-08 D25 — 자르기 문과 같은 자(§first_cut). null = 「모른다」 */
+           motherVarieMatured: null,
            /* ★ null = 「모른다」. false 로 두면 「아직 배선이 없다」와 「아니다」가 같아진다 */
            monsteraArrived: null, monsteraHomed: null,
            /* ★ 2026-09-02 — 옮긴 뒤 지난 날 · 한 번 자랐나 (둘 다 firstPlay.monstera.guide 의 칸) */
@@ -646,7 +650,16 @@ const MAIN_QUESTS = Object.freeze([
     teaches: ['잎 1장까지 쪼개야 물꽂이', '자르는 것이 늘리는 길이다'],
     why: '잎이 한 장이라야 물에 꽂힙니다. 여러 장은 화분에만 심습니다.',
     todo: () => '잎 1장짜리 마디를 잘라 물에 꽂으세요',
-    opens: s => num(s.motherLeaves) >= 2,
+    /* ★★ 2026-10-08 D25(총괄 · 박사님 규칙에 맞춤) — **자를 수 있는 날에 연다.**
+       있던 열쇠 「모주 잎 ≥ 2」(Day 37)는 박사님 확정 규칙(2026-08-24 · propagation.cutBlockedReason —
+       «삽수 버튼은 3번째 하프문 무늬잎이 나와 성숙잎이 됐을 때» = 무늬이면서 다 자란 잎 ≥ 2)보다 80일 남짓 일렀다.
+       칩·대사·독촉이 «자르라»는데 [병에]는 「아직 이릅니다」로 잠긴 날이 이어졌다(자르는 봇 60일 0번 · growth ✂ 중앙 118일).
+       후보: 가. 퀘스트·대사를 규칙에 맞춤 · 나. 일찍 열되 «기다림» 문구 · 다. 규칙을 바꿈(박사님 몫) ⇒ 고른 것 가(총괄 D25).
+       ⚠ 자는 cutBlockedReason 과 «같은» 수(motherVarieMatured)다 — 두 벌로 재면 하루라도 어긋난다.
+       ⚠ 칸이 아직 없으면(null · [core] 배선 전) 무늬 잎 수(motherVarieLeaves ≥ 2)로 어림한다 — 다 자랐는지는 모르지만
+         「잎 두 장」보다 규칙에 훨씬 가깝다(셋째 잎이 «난» 날 · 다 자라기 전). 배선되면 그 칸이 이긴다.
+       ⚠ 값 아님 — 여는 «때»다. 문안의 «기다림»은 dialogue.js §questLeafThree(D25) 가 말한다. */
+    opens: s => (s.motherVarieMatured != null ? num(s.motherVarieMatured) : num(s.motherVarieLeaves)) >= 2,
     done:  s => arr(s.cuttings).some(c => c && c.method === 'water' && isRooted(c))
   }),
 

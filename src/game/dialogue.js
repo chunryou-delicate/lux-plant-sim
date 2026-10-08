@@ -895,10 +895,15 @@ export const SCRIPTS = {
          말하는 것이라 뒤에 와도 참이다.
      ⚠ 마지막 줄이 다음을 가리키되 **무늬 얘기를 다시 꺼내지 않는다** — 그건 `varieLucky` 가
        이미 통째로 말했고, 여기서 또 하면 세 번째다. */
+  /* ★★ 2026-10-08 D25 — 끝의 두 줄은 «기다림»이다. 잎 둘이 된 날(Day 37) 예전엔 first_cut 이 같이 열려 「하나는 떼도 돼」라
+     했는데, 박사님 규칙은 «무늬 잎이 다 자라야» 자른다. ⇒ 그날은 «아직»을 말하고, 자를 수 있는 날 몬이가 다시 말한다(§questFirstCut).
+     ⚠ 문 문구 「아직 이릅니다 — 무늬 잎이 다 자라야 자를 수 있습니다」(propagation.cutBlockedReason)와 같은 말이다 · 수 없음. */
   questLeafThree: [
     { who: 'jachwi', face: 'curious', text: '잎을 더 늘려서 뭐 해.' },
     { who: 'moni',   face: 'teach', text: '잎이 늘면 무늬가 날 자리도 같이 늘어.' },
-    { who: 'moni',   text: '어두운 데선 그 자리가 안 생겨. 날짜만 가고.' }
+    { who: 'moni',   text: '어두운 데선 그 자리가 안 생겨. 날짜만 가고.' },
+    { who: 'jachwi', face: 'curious', text: '떼서 늘리면 안 돼?' },
+    { who: 'moni',   face: 'teach', text: '아직. 무늬 잎이 다 자라야 잘라도 돼. 다 자라면 내가 말해 줄게.' }
   ],
   questDoneLeafThree: [
     /* ★ 2026-08-29 [Char]·[Plan] — 여기도 proud 다. 세 장을 세는 것은 «자랑»이지 «기쁨»이 아니다. */
@@ -1011,11 +1016,16 @@ export const SCRIPTS = {
     { who: 'moni',   text: '근데 이 속도로 이사비를 모으려면 한참이야. 그건 다른 길이 있어.' }
   ],
 
+  /* ★★ 2026-10-08 D25 — 이 줄은 이제 «자를 수 있는 날»에 난다(quest.js §first_cut · 무늬이면서 다 자란 잎 ≥ 2).
+     있던 첫 두 줄 「잎이 두 장이 됐어.」/「그럼 하나는 떼도 돼. 하나는 남으니까.」는 Day 37(잎 둘)에 나서
+     박사님 자르기 규칙(cutBlockedReason)과 80일 남짓 어긋났다 — 그 사이 [병에]는 「아직 이릅니다」였다.
+     ⇒ 「다 자란 무늬」로 바꿨다. 수는 안 쓴다(「둘」·「셋째」는 프롤로그에서만 맞다 — cutBlockedReason 주석과 같은 규율).
+     ⇒ 수경병은 상점에서 사야 한다 — 「어디서」를 한 마디 보탰다(D19 «무엇을·어디서»). */
   questFirstCut: [
-    { who: 'jachwi', face: 'surprise', text: '잎이 두 장이 됐어.' },
-    { who: 'moni',   face: 'teach', text: '그럼 하나는 떼도 돼. 하나는 남으니까.' },
+    { who: 'jachwi', face: 'surprise', text: '무늬 잎이 다 자랐어.' },
+    { who: 'moni',   face: 'teach', text: '이제 잘라도 돼. 다 자란 무늬가 하나는 남으니까.' },
     { who: 'jachwi', face: 'curious', text: '떼서 뭐 해.' },
-    { who: 'moni',   text: '물에 꽂아. 뿌리가 나와.' },
+    { who: 'moni',   text: '수경병에 꽂아. 뿌리가 나와. 병은 상점에 있어.' },
     { who: 'jachwi', face: 'curious', text: '아무거나 꽂으면 돼?' },
     { who: 'moni',   face: 'teach', text: '**잎 한 장짜리라야** 꽂혀. 여러 장이면 흙에만 심어.' }
   ],
@@ -1395,7 +1405,7 @@ export const SCRIPTS = {
   nudgeMonsteraPush:  [ { who: 'moni', face: 'worry', text: '몬스테라가 아직 처음 자리야. 자리가 곧 빛이야.' } ],
   nudgeMixOffer:      [ { who: 'moni', face: 'teach', text: '무순도 상점에 있어. 콩나물이랑 한 상에 올려 봐.' } ],
   nudgeMixPush:       [ { who: 'moni', face: 'teach', text: '콩나물만으론 상이 한 가지야. 무순을 길러야 둘째 몫이 생겨.' } ],
-  nudgeCutOffer:      [ { who: 'moni', face: 'teach', text: '잎 한 장짜리 마디를 잘라서 물에 꽂아 봐.' } ],
+  nudgeCutOffer:      [ { who: 'moni', face: 'teach', text: '수경병은 상점에 있어. 잎 한 장짜리 마디를 잘라 꽂아 봐.' } ],
   nudgeCutPush:       [ { who: 'moni', face: 'teach', text: '잘라도 안 죽어. 마디 하나가 한 그루가 돼.' } ],
   nudgeVarieOffer:    [ { who: 'moni', face: 'teach', text: '무늬 있는 마디는 밝은 데서 뿌리내려야 좋은 무늬가 나.' } ],
   nudgeVariePush:     [ { who: 'moni', face: 'teach', text: '무늬 마디를 잘라서 밝은 자리에 꽂아 봐.' } ],
