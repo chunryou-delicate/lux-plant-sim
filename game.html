@@ -3437,6 +3437,21 @@ function checkStarved(t) {
      가 정확히 그것으로 이사 성공률을 A 60→13% 로 죽였다. 그루는 `potPriceOf` 다. */
 /* ★ W3 #5 — 무늬 장면(여기서 적고 §showFirstPlayEvents 가 띄운다) · 이 턴의 ✨ 배너(사건 배너가 덮지 않게 거기서 같이 띄운다). 메모리만 */
 let pendingLeafScene = null, leafBanners = [];
+/* ★ 잎별 무늬 그림을 생장 창(확대창)에 넘긴다 — 등급 장부(pot.leafGrades)가 정한 그림표 그대로(§noteLeafGrades 의 그 넘김을 떼어 냈다).
+   ★★ 2026-10-08 ([leaf] 6e0d4cc6 · 총괄 ③가) — 예전엔 하루 넘김(noteTurn → noteLeafGrades)에서만 넘겨, **세이브를 불러오면**
+     다음 하루까지 확대창이 방과 다른 무늬를 그렸다(4판 중 2·3판). ⇒ 불러온 직후(§resumeSave 뒤)와 확대창을 여는 순간(§openZoomFor · 첫 그루)에도 넘긴다.
+   ⚠ 창구가 없으면 조용히 지나간다 — 옛 생장 창에서도 게임은 돌아야 한다. 돌려주는 값: 넘겼나 */
+const SKIN_PUSH_ON = (() => { try { return !/[?&]skinpush=0(&|$)/.test(location.search); } catch { return true; } })();   /* ?skinpush=0 — 예전 그대로(하루 넘김에서만) · 같은 빌드 견주기 */
+function pushLeafSkins() {
+  try {
+    const w = document.getElementById('growth').contentWindow;
+    if (!w || typeof w.setLeafSkins !== 'function') return false;
+    const p0 = pot0(S);
+    if (!p0) return false;
+    w.setLeafSkins(Object.entries(potLeafSkinsOf(S, p0) || {}).map(([lb, v]) => ({ leafBirth: +lb, ...v })));
+    return true;
+  } catch (e) { console.warn('[무늬 그림]', e && e.message); return false; }
+}
 function noteLeafGrades(t) {
   leafBanners = [];
   if (!hasPlant(S)) return;
@@ -3458,14 +3473,7 @@ function noteLeafGrades(t) {
          캐논이 *"성숙 특수무늬는 앞선 mid 의 특수 형태를 따라 그룹핑 — 미구현, 향후"* 라
          남겨 둔 그 자리다.
        ⚠ 창구가 없으면 조용히 지나간다 — 옛 생장 창에서도 게임은 돌아야 한다. */
-    try {
-      const w = document.getElementById('growth').contentWindow;
-      if (w && typeof w.setLeafSkins === 'function') {
-        const p0 = pot0(S);
-        if (p0) w.setLeafSkins(Object.entries(potLeafSkinsOf(S, p0) || {})
-          .map(([lb, v]) => ({ leafBirth: +lb, ...v })));
-      }
-    } catch (e) { console.warn('[무늬 그림]', e && e.message); }
+    pushLeafSkins();
     for (const a of (r && r.assigned) || []) {
       const b = { title: `✨ ${a.leafNo}번째 잎 — ${a.gradeKo}`,
                   sub: (((r.events || []).find(e => e.leafBirth === a.leafBirth) || {}).ko || '').replace(/\*\*/g, '') };
@@ -4971,6 +4979,8 @@ function openZoomFor(pot) {
       const want = growthIdOf(pot);
       const now = io.growth.current ? io.growth.current() : null;
       if (want && want !== now) { zoomPrevGrowthId = now; io.growth.select(want); }
+      /* ★ 2026-10-08 — 첫 그루를 확대하면 그 순간 무늬 그림을 다시 넘긴다(불러온 판에서 생장 창이 늦게 섰을 때도 맞게 · §pushLeafSkins) */
+      if (SKIN_PUSH_ON && pot === pot0(S)) pushLeafSkins();
     }
   } catch (e) {
     /* 못 골랐으면 **그대로 연다.** 다만 조용히 넘어가지 않는다 — 어느 그루가 떴는지
@@ -17300,6 +17310,8 @@ try {
      ⚠ growth 를 되세우는 건 **빛 이력을 다시 거는 것**이라 날짜만큼 시간이 든다.
        그래서 growth 가 준비된 **뒤에** 부르고, 도는 동안 무엇을 하는지 화면에 적는다. */
   resumed = await resumeSave();
+  /* ★ 2026-10-08 — 불러온 판은 하루를 안 넘겼으니 무늬 그림을 여기서 한 번 넘긴다(§pushLeafSkins). 생장 창이 아직이면 조금 뒤 한 번 더 */
+  if (resumed && SKIN_PUSH_ON && !pushLeafSkins()) setTimeout(() => { try { pushLeafSkins(); } catch { } }, 1500);
   GATED.forEach(id => { $(id).disabled = false; });
   /* 첫 플레이는 고정 지역·novice·식물등 없음. 개발 검수 시나리오에서는 재설정할 수 있다. */
   $('room').disabled = true; $('mode').disabled = true; $('lamps').disabled = true; $('lit').disabled = true;
