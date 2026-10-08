@@ -149,9 +149,20 @@ export function stepEnding(S, io = {}, opt = {}) {
   const story = storyOf(S);
   if (stageOf(S) !== STAGES.oneroom) return { reached: false, firstTime: false, events: [] };
   const p = endingProgress(S, io, opt);
-  if (!p.ok) return { reached: false, firstTime: false, events: [] };
-  if (story.ending.reachedOnDay != null)
+  /* ★ 2026-10-08 [plan] 갈래 지도 99 — 닿았다가 다시 모자라진 날을 적어 두고(dippedOnDay), 다시 닿는 날 한 번 말한다(ending_ready_again).
+       계약을 미루다 생활비로 다시 깎인 사람에게 «다시 모였다»를 안 말하면 [내 집 마련] 단추가 조용히 다시 켜질 뿐이다 */
+  if (!p.ok) {
+    if (story.ending.reachedOnDay != null && story.ending.dippedOnDay == null) story.ending.dippedOnDay = S.day;
+    return { reached: false, firstTime: false, events: [] };
+  }
+  if (story.ending.reachedOnDay != null) {
+    if (story.ending.dippedOnDay != null) {
+      story.ending.dippedOnDay = null;
+      return { reached: true, firstTime: false,
+               events: [{ id: 'ending_ready_again', ko: '내 집 마련 자금이 다시 모였습니다', targetWon: p.targetWon, cashWon: p.cashWon }] };
+    }
     return { reached: true, firstTime: false, events: [] };
+  }
   story.ending.reachedOnDay = S.day;
   pushLog(S, `🏠 내 집 마련 자금 ${p.targetWon.toLocaleString()}원을 모았습니다`);
   return { reached: true, firstTime: true,

@@ -953,7 +953,9 @@ function packStory(story) {
     varieSaleAtMove: story.varieSaleAtMove == null ? null : needInt(story.varieSaleAtMove, 'story.varieSaleAtMove', { min: 0 }),
     ending: {
       reachedOnDay: optDay(end.reachedOnDay, 'story.ending.reachedOnDay'),
-      doneOnDay: optDay(end.doneOnDay, 'story.ending.doneOnDay')
+      doneOnDay: optDay(end.doneOnDay, 'story.ending.doneOnDay'),
+      /* ★ 2026-10-08 — 닿았다가 다시 모자라진 날(ending_ready_again 의 근거). 옛 세이브는 null */
+      dippedOnDay: optDay(end.dippedOnDay, 'story.ending.dippedOnDay')
     }
   };
 }

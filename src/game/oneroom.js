@@ -80,7 +80,7 @@ export function createStoryState() {
     movedInOnDay: null,
     /* ④ 는 ending.js 가 쓴다. 상태의 모양만 여기서 만든다 —
        state.newState 가 부르는 팩토리가 하나여야 세이브 규약도 하나가 된다. */
-    ending: { reachedOnDay: null, doneOnDay: null }
+    ending: { reachedOnDay: null, doneOnDay: null, dippedOnDay: null }   /* dippedOnDay: 2026-10-08 닿았다가 다시 모자라진 날(ending §stepEnding) */
   };
 }
 
