@@ -55,11 +55,12 @@ await page.goto(`${BASE}/plant_grow.html`);
 await page.waitFor('typeof cuttableNodes === "function"', 120000, 300);
 await page.waitFor('TH_LOADED === true', 120000, 300);
 const R = JSON.parse(await page.eval(`(async()=>{ const pr = await import('/src/game/propagation.js');
+  const sh = await import('/src/game/shop.js'); sh.installVarieGrades(await (await fetch('/data/balance/varie_grades.json')).json());
   const S0 = ${JSON.stringify({ dli, mult })}; const res=[];
   const S = { sim:{ mode:'novice' }, tutorial:{}, pots:[{ id:'p1', cuts:[] }], cuttings:[] };
   for (let s=1; s<=${SEEDS}; s++){
     plantSeed(s*7919); setPrologueVarieLeaves([2,3]); resetDailyLight(); setGrowth(45);
-    let credit=0; const r={ two:null, cut:null, trap:null, trap1:null, leavesAt:null };
+    let credit=0; const r={ two:null, cut:null, trap:null, trap1:null, leavesAt:null, maxWon:null, won3:null, m3:null };
     for (let k=0; k<S0.dli.length; k++){
       const blocked=!!growthBlocked(); let steps=1;
       if(!blocked){ credit+=S0.mult[k]; steps=Math.min(${GROWTH_STEPS_MAX},Math.floor(credit+1e-9)); credit-=steps; steps=Math.max(1,steps); }
@@ -78,8 +79,19 @@ const R = JSON.parse(await page.eval(`(async()=>{ const pr = await import('/src/
           const varieOn = new Set(varieStateAll().filter(v=>v.varie && on.includes(v.leafBirth)).map(v=>v.leafBirth));
           r.trap = ok.some(n=>{ const c=new Set(n.leafBirths||[]); return [...c].some(lb=>varieOn.has(lb)) && ![...varieOn].some(lb=>!c.has(lb)); });
           /* 좁은 뜻(주석 그대로): 자르고 나면 모주에 잎이 «무지 한 장만» 남는 마디가 있나 */
-          const onU=[...new Set(on)];
+          const onU=[...new Set(on)].sort((a,b)=>a-b);
           r.trap1 = ok.some(n=>{ const c=new Set(n.leafBirths||[]); const left=onU.filter(lb=>!c.has(lb)); return [...c].some(lb=>varieOn.has(lb)) && left.length===1 && !varieOn.has(left[0]); });
+          /* ★ 값(2026-10-08 총괄 물음) — 열린 날 자를 수 있는 마디마다 삽수 값(shop.priceOf · leafM 반영).
+               등급: 잎2 산반 · 잎3 하프문(프롤로그 못박기) · 그 밖 무늬 잎은 legacy(산반) · 민무늬는 plain */
+          const lm = new Map(leafOnPlantAll().map(x=>[x.leafBirth, x.leafM]));
+          const plainId = sh.plainGradeId();
+          const gradeOf = lb => { if(!varieOn.has(lb)) return plainId; const rk=onU.indexOf(lb)+1; return rk===2?'sanban':rk===3?'halfmoon':'sanban'; };
+          const vals = ok.map(n=>{ const lbs=(n.leafBirths||[]).slice(); const gs=lbs.map(gradeOf); const ms=lbs.map(lb=>lm.has(lb)?lm.get(lb):1);
+            const pz=sh.priceOf({ species:'monstera', leaves:lbs.length, variegatedLeaves:gs.filter(g=>g!==plainId).length, leafGrades:gs, leafM:ms, form:'cutting' });
+            return { won:pz.won, has3: onU[2]!=null && lbs.includes(onU[2]) }; });
+          r.maxWon = Math.max(...vals.map(v=>v.won));
+          const v3 = vals.filter(v=>v.has3); r.won3 = v3.length ? Math.max(...v3.map(v=>v.won)) : null;
+          r.m3 = (onU[2]!=null && lm.has(onU[2])) ? +lm.get(onU[2]).toFixed(3) : null;
           break;
         }
       }
@@ -97,4 +109,6 @@ console.log(`  ㉡ ✂ 열림(${GATE_KO} + 초보 모주 문)   중앙 ${q(cut, 
 console.log(`  ⇒ 빈 날(㉡−㉠)   중앙 ${q(gap, .5)} · 90% ${q(gap, .9)}`);
 const opened = R.filter(r => r.cut != null).length;
 console.log(`  ⚠ 함정 넓은 뜻(자르면 모주에 무늬 잎이 한 장도 안 남는 마디가 있음)   ${R.filter(r => r.trap).length}/${opened} 판`);
+console.log(`  ₩ 열린 날 «제일 값나가는» 자를 수 있는 삽수   중앙 ${q(R.map(r => r.maxWon), .5)}원 · 10% ${q(R.map(r => r.maxWon), .1)}원`);
+console.log(`  ₩ 하프문 잎(잎3)을 데려가는 삽수   중앙 ${q(R.map(r => r.won3), .5)}원 · 10% ${q(R.map(r => r.won3), .1)}원 · 잎3 자란 정도(leafM) 중앙 ${q(R.map(r => r.m3), .5)} · leafM < 0.1(갓 난 잎) ${R.filter(r => r.m3 != null && r.m3 < 0.1).length}/${opened} 판`);
 console.log(`  ⚠ 함정 좁은 뜻(자르면 모주에 «무지 한 장만» 남는 마디가 있음 · cutBlockedReason 주석의 그것)   ${R.filter(r => r.trap1).length}/${opened} 판 · 열린 날 잎 수 중앙 ${q(R.map(r => r.leavesAt), .5)}`);
