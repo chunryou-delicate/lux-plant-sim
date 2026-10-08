@@ -2,7 +2,7 @@
    ★ 판 둘로 나눈다: 헤드리스 한 판에서 방을 두 번 세우면 둘째가 안 설 때가 있었다(10-08) — ⚠ 서버 대기열 탓이었을 수 있다(_shot_room_varie §정정).
      여기서는 방을 다시 안 세우고(moveIntoOneroom 은 빛 쪽만 원룸으로 짓는다) 세이브만 떠서 파일로 남긴다.
    키우기는 [growth] probe_room_zoom_varie_skin 그대로(날마다 물 · runDays 1 · 등급 두 줄).
-   OUT= 세이브 파일 (필수 · 있으면 안 돈다) · DAYS= · BYEOT_URL= · CARRY=etagere(에타제르를 가방에 담아 간다) · PLACE=etagere · SLOTS=a,b */
+   OUT= 세이브 파일 (필수 · 있으면 안 돈다) · DAYS= · BYEOT_URL= · CARRY=etagere(에타제르를 가방에 담아 간다) · PLACE=etagere · SLOTS=a,b · NOMOVE=1(이사 없이 반지하 세이브) */
 import { launch, sleep } from '../test_cdp.mjs';
 import fs from 'node:fs';
 const OUT = process.env.OUT; if (!OUT) { console.error('⛔ OUT='); process.exit(2); }
@@ -28,6 +28,8 @@ console.log('돌림 —', JSON.stringify(await J(`(async()=>{ const st=await imp
   }
   const ls=io.growth.leafState()||[];
   return { 날:S.day, errs, 잎:ls.length, 무늬:ls.filter(r=>r.varie).length, 갈라진무늬:ls.filter(r=>r.varie&&r.matured).length, 등급:sh.potLeafGradesOf((S.pots||[])[0]) }; })()`)));
+/* ★ NOMOVE=1 — 이사 없이 반지하 그대로 세이브만 뜬다(D23 전후 견주기 · 10-08) */
+if (process.env.NOMOVE !== '1') {
 const mv = await J(`(async()=>{ const orm=await import('/src/game/oneroom.js');
   const S=window.__S(), io=window.__io;
   /* ★ 세운 판이라 이사 자금을 채워 준다(값은 안 바꾼다 — 이 판의 지갑만) */
@@ -38,6 +40,7 @@ const mv = await J(`(async()=>{ const orm=await import('/src/game/oneroom.js');
   return { 방:S.home.room, 담음:carry.map(c=>c.preset), 그루:(S.pots||[]).map(p=>({id:p.id, slot:p.slotId||null})), 원룸자리:(io.light.room.slots||[]).map(s=>s.slotId).slice(0,30) }; })()`);
 console.log('이사 —', JSON.stringify(mv));
 if (mv.탈 || mv.방 !== 'oneroom') { console.error('⛔ 이사 실패 — 세이브 안 뜸'); process.exit(3); }
+}
 /* ★ PLACE=etagere — 가방의 에타제르를 원룸 기준 배치(reference_layout D) 자리에 놓는다(게임의 [가방→놓기] 길: placeCarriedFurniture → setFurnitureEdits).
    SLOTS=a,b — 화분을 그 자리마다 옮겨 세이브를 하나씩 뜬다(OUT.<자리>.json). 안 주면 OUT 하나(화분 자리 없음) */
 if (process.env.PLACE === 'etagere') {

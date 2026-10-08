@@ -1,7 +1,7 @@
 /* tools/leaf/_shot_room_varie.mjs — [growth] probe_room_zoom_varie_skin.mjs 를 «폰 크기»로 돌리고 찍기를 더한 것 ([leaf])
    ⇒ core D4(f6f1fb02) 뒤 «방 = 확대»인가 + 폰(390×844)에서 방·확대가 어떻게 보이나
    OUTDIR= (필수 · 비어 있어야 한다) · DAYS= · BYEOT_URL=
-   SAVE= 세이브 파일(_make_oneroom_save.mjs 가 뜬 것) — 주면 키우기를 건너뛰고 그 세이브로 «바로» 켠다(원룸 거리 사진 · 10-08) */
+   PUSH=1 켜자마자 등급 그림 넘김 · Q= 주소 깃발(예: d23=0 — 같은 빌드에서 «전») · SAVE= 세이브 파일(_make_oneroom_save.mjs 가 뜬 것) — 주면 키우기를 건너뛰고 그 세이브로 «바로» 켠다(원룸 거리 사진 · 10-08) */
 import fs from 'node:fs';
 const OUTDIR = process.env.OUTDIR; if (!OUTDIR) { console.error('⛔ OUTDIR='); process.exit(2); }
 fs.mkdirSync(OUTDIR, { recursive: true }); if (fs.readdirSync(OUTDIR).length) { console.error('⛔ 비어 있지 않다'); process.exit(2); }
@@ -16,7 +16,7 @@ await page.send('Page.addScriptToEvaluateOnNewDocument', { source: `window.__lea
 const SAVE = process.env.SAVE ? fs.readFileSync(process.env.SAVE, 'utf8') : null;
 /* ★ 세이브도 «켜기 전에» 넣는다 — 켠 뒤에 넣고 다시 열면 게임의 pagehide→saveNow 가 덮는다(10-07 실측) */
 await page.send('Page.addScriptToEvaluateOnNewDocument', { source: `try{ if(!sessionStorage.__leafCleared){ localStorage.clear(); ${SAVE ? `localStorage.setItem('byeot/save/1', ${JSON.stringify(SAVE)});` : ''} sessionStorage.__leafCleared='1'; } }catch(e){}` });
-await page.goto(`${BASE}/game.html`);
+await page.goto(`${BASE}/game.html${process.env.Q ? '?' + process.env.Q : ''}`);   // Q=d23=0 같은 깃발(같은 빌드 전후)
 /* ★ 기다리며 무엇에 걸렸나를 적는다 — 방이 안 설 때 «바쁜가/던졌나»를 가르려고(10-08 · 같은 세이브가 dpr1 6초 · dpr2 300초+) */
 { const t0 = Date.now(); let ok = false;
   while (Date.now() - t0 < 300000) { await sleep(3000);
@@ -26,6 +26,8 @@ await page.goto(`${BASE}/game.html`);
   if (!ok) { console.error('⛔ 방이 안 섰다(300초)'); await page.close(); process.exit(4); } }
 await sleep(4500);
 const J = async (js, ms = 600000) => JSON.parse(await page.eval(`(async()=>{ try { return JSON.stringify(await (${js})); } catch(e) { return JSON.stringify({탈:e.message, st:(e.stack||'').slice(0,300)}); } })()`, true, ms));
+/* PUSH=1 — 켜자마자 window.__leafGrades()(= noteTurn 의 등급 그림 넘김)를 한 번 부른다. 다시 켠 날 확대 창이 방과 다른 무늬를 그리는 것(10-08 · core 에 넘김)을 걷고 «잎 방향»만 견주려고 */
+if (SAVE && process.env.PUSH === '1') { console.log('그림 넘김 —', JSON.stringify(await J(`(async()=>{ const g=window.__leafGrades(); return g && g.grades; })()`))); await sleep(3000); }
 if (SAVE) console.log('세이브로 켬 —', JSON.stringify(await J(`(async()=>{ const S=window.__S(); const p=(S.pots||[])[0]; return { 방:S.home.room, 날:S.day, 화분:p&&p.slotId, at:p&&p.at, 가구:(S.home.furnitureAdded||[]).map(f=>f.uid) }; })()`)));
 else {
 console.log('세움 —', JSON.stringify(await J(`(async()=>{ const st=await import('/src/game/state.js'); const fp=await import('/src/game/first_play.js');
