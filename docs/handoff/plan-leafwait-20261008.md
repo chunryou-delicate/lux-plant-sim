@@ -88,3 +88,18 @@
 ## ★ 카드가 섰다 (core f177ebf8) — 아래 상자의 같은 수
 core 걸음(probe_moncard): 카드 「몬스테라 · 잎 1장 / 어린잎 → 중간잎까지 88% / 자리 자라는 빛」 — 확대창 게이지와 한 함수(growGaugeVals)라 같은 수다. 그 아래 기존 «몬스테라 · 1그루» 상자에도 「어린잎 · 88%」가 한 번 더 있다.
 ⇒ **카드와 같은 그루의 단계·% 줄을 아래 상자에서 뺀다.** 같은 말이 한 화면에 둘이면 소음이다(game.html §drawGrowGauge 주석 2026-08-11 과 같은 규율). 그루가 여럿이면 카드에 안 나온 그루의 줄은 남긴다 — 그건 다른 말이다.
+
+## ★ 단계 줄 — 자르기 기다림을 채운다 (10-08 오후 · 박사님 «자르기 문 유지» 뒤)
+자르는 봇(cut1008 · D25 전) Day 37~90 말 없는 날 22/54. 그 사이를 채우던 「잘라도 안 죽어」(주 1회 7번)는 D25 로 안 난다 ⇒ 더 조용해진다.
+그런데 그 구간에도 화면에서 보이는 변화가 있다 — 막내 잎 단계가 넘어간다(plant_grow §phaseAt: spear_furled → spear_opening → leaf_young → leaf_mid → leaf_mature · 새 잎 전 axis_rising).
+| 줄 | 언제 | 문안 |
+|---|---|---|
+| statusPhaseOpening | phaseId spear_opening · 든 지 사흘 안 | 자취 「새순이 풀리기 시작했다.」 / 몬이 calm 「천천히 펴져. 하루에 조금씩.」 |
+| statusPhaseYoung | leaf_young | 자취 think 「잎이 다 펴졌다. 아직 연하다.」 / 몬이 teach 「연한 잎은 아직 값을 다 못 받아. 자라야 받아.」 |
+| statusPhaseMid | leaf_mid | 자취 「잎이 제법 단단해졌다.」 / 몬이 teach 「중간잎이야. 다 자란 잎이 되려면 빛이 더 쌓여야 해.」 |
+| statusPhaseMature | leaf_mature | 자취 surprise 「잎이 다 자랐다.」 / 몬이 proud 「다 자란 잎이야. 값도 이제 다 받아.」 |
+| statusPhaseAxis | axis_rising | 몬이 teach 「다음 잎이 올라오고 있어. 줄기 끝을 봐.」 |
+| statusVarieHalf | 다 자란 무늬 잎이 «하나» | 몬이 teach 「무늬 잎 하나는 다 자랐어. 다른 하나도 다 자라면 그때 잘라.」 — D25 약속(「다 자라면 내가 말해 줄게」)의 반환점 |
+- 참인지: 「값을 다 못 받아 · 다 받아」 = shop.priceOf 의 leafM 곱(갓 펼친 잎 0 · 다 자란 잎 1) — shop.js 가 «그 까닭을 사람이 알 길은 [Plan] 몫»이라 적어 둔 자리다. 「빛이 더 쌓여야」 = 성숙은 시간만으로 안 되고 굴림(빛)이 있어야 한다(plant_grow §phaseAt). 「하나」 = 자르기 문이 어느 그루에서나 «다 자란 무늬 ≥ 2»라 참.
+- 규칙: 상태 줄 층(이틀 규칙 밖) · 단계에 든 지 사흘 안(사건 날에 걸려도 다음 빈 날) · 같은 줄 20일 간격(다음 잎의 같은 단계는 다시) · statusVarieHalf 60일.
+- [core] 칸 셋을 turn.leafWait 에: `phaseId`(pot0 growthPhase().phaseId) · `phaseDays`(그 단계에 든 지 며칠 · 든 날 0) · `varieMatured`(varieMaturedLeavesNow — 자르기 문과 같은 자). 없으면 null → 안 뜸.

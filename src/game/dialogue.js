@@ -1484,6 +1484,36 @@ export const SCRIPTS = {
     { who: 'jachwi', face: 'tired', text: '돈은 매일 줄고 잎은 그대로다.' },
     { who: 'moni',   face: 'calm', text: '잎은 줄지는 않아. 쌓이는 중이야.' }
   ],
+  /* ═══ ★★ 2026-10-08 [plan] «단계 줄» — 막내 잎의 단계(growth growthPhase().phaseId)가 바뀐 날 한 줄 ═══
+     까닭: 자르기 기다림(Day 37 → 무늬 잎 둘이 다 자랄 때 · 박사님 «지금 규칙 유지» · 등1 석 달)이 비었다 —
+       자르는 봇(cut1008 · D25 전) Day 37~90 말 없는 날 22/54, 그 사이를 채우던 「잘라도 안 죽어」(주 1회 7번)는 D25 로 안 난다.
+       그런데 그 구간에도 화면에서 «보이는» 변화가 있다: 말린 새순 → 펴지는 중 → 어린잎 → 중간잎 → 성숙잎 → 새 축.
+     ⚠ 수 없음 · 「값을 다 못 받아」(어린잎)는 참이다 — 잎값은 자람(leafM)만큼만 받는다(shop.priceOf · 갓 펼친 잎 0 · 그 몫은 [Plan] 이라 적혀 있었다).
+     ⚠ 「성숙잎」은 시간만으로 안 된다(plant_grow §phaseAt — 굴림에 성공해야) ⇒ 「빛이 더 쌓여야」라고만 한다. */
+  statusPhaseOpening: [
+    { who: 'jachwi', text: '새순이 풀리기 시작했다.' },
+    { who: 'moni',   face: 'calm', text: '천천히 펴져. 하루에 조금씩.' }
+  ],
+  statusPhaseYoung: [
+    { who: 'jachwi', face: 'think', text: '잎이 다 펴졌다. 아직 연하다.' },
+    { who: 'moni',   face: 'teach', text: '연한 잎은 아직 값을 다 못 받아. 자라야 받아.' }
+  ],
+  statusPhaseMid: [
+    { who: 'jachwi', text: '잎이 제법 단단해졌다.' },
+    { who: 'moni',   face: 'teach', text: '중간잎이야. 다 자란 잎이 되려면 빛이 더 쌓여야 해.' }
+  ],
+  statusPhaseMature: [
+    { who: 'jachwi', face: 'surprise', text: '잎이 다 자랐다.' },
+    { who: 'moni',   face: 'proud', text: '다 자란 잎이야. 값도 이제 다 받아.' }
+  ],
+  statusPhaseAxis: [
+    { who: 'moni',   face: 'teach', text: '다음 잎이 올라오고 있어. 줄기 끝을 봐.' }
+  ],
+  /* ★ 자르기 기다림의 반환점 — 다 자란 무늬 잎이 «하나»일 때 한 번. D25 의 약속(「다 자라면 내가 말해 줄게」 · questLeafThree)을 잇는다.
+     ⚠ 「하나」는 문(cutBlockedReason · 다 자란 무늬 ≥ 2)이 어느 그루에서나 같은 자라 참이다 — 「셋째」·「하프문」은 안 쓴다. */
+  statusVarieHalf: [
+    { who: 'moni',   face: 'teach', text: '무늬 잎 하나는 다 자랐어. 다른 하나도 다 자라면 그때 잘라.' }
+  ],
 
   cropHandsShort: [
     { who: 'moni', face: 'teach', text: '손이 다 됐네 — 물 주는 날을 엇갈리게 해 봐.' }
@@ -1881,7 +1911,8 @@ export const REPEATABLE = new Set(
              /* ★ 2026-10-08 D22 — 팔려고 할 때마다 말린다(되돌릴 수 없는 것 앞의 말은 매번이다) */
              'sellLastVarie',
              /* ★ 2026-10-08 상태 줄 — 기다림마다 다시 온다(§STATUS gap) */
-             'statusSill', 'statusGauge', 'statusStreak', 'statusLeafWide', 'statusSiruVs', 'statusWallet'])
+             'statusSill', 'statusGauge', 'statusStreak', 'statusLeafWide', 'statusSiruVs', 'statusWallet',
+             'statusPhaseOpening', 'statusPhaseYoung', 'statusPhaseMid', 'statusPhaseMature', 'statusPhaseAxis', 'statusVarieHalf'])
 );
 
 /* ── 진행 ───────────────────────────────────────────────────────────── */
@@ -2361,6 +2392,13 @@ export const CHATTER = [
                                             && c.harvestsSinceArrival >= 2 && fin(c.leafWaitDays) && c.leafWaitDays >= 7 },
   /* ⓖ 지갑 — 잎이 스무 날 그대로. 「돈은 매일 줄고」는 하루 지출이 늘 있어 참 · 「잎은 줄지는 않아」는 잎 떨굼 꺼짐(growth_tuning health.drop_enabled:false) */
   { id: 'statusWallet',   status: true, gap: 30, when: c => c.hasMonstera && fin(c.leafWaitDays) && c.leafWaitDays >= 20 },
+  /* ★ 2026-10-08 [plan] 단계 줄 — 막내 잎 단계가 바뀐 지 사흘 안(사건·독촉 날에 걸려도 다음 빈 날에 선다) · 한 단계 한 번(gap 20 — 다음 잎의 같은 단계는 다시) */
+  { id: 'statusVarieHalf',    status: true, gap: 60, when: c => c.hasMonstera && c.varieMatured === 1 },
+  { id: 'statusPhaseOpening', status: true, gap: 20, when: c => c.hasMonstera && c.phaseId === 'spear_opening' && fin(c.phaseDays) && c.phaseDays <= 3 },
+  { id: 'statusPhaseYoung',   status: true, gap: 20, when: c => c.hasMonstera && c.phaseId === 'leaf_young'    && fin(c.phaseDays) && c.phaseDays <= 3 },
+  { id: 'statusPhaseMid',     status: true, gap: 20, when: c => c.hasMonstera && c.phaseId === 'leaf_mid'      && fin(c.phaseDays) && c.phaseDays <= 3 },
+  { id: 'statusPhaseMature',  status: true, gap: 20, when: c => c.hasMonstera && c.phaseId === 'leaf_mature'   && fin(c.phaseDays) && c.phaseDays <= 3 },
+  { id: 'statusPhaseAxis',    status: true, gap: 20, when: c => c.hasMonstera && c.phaseId === 'axis_rising'   && fin(c.phaseDays) && c.phaseDays <= 3 },
 ];
 
 /* ═══ ★★ 2026-10-08 [plan] 상태 줄 — 사건 > 독촉 > **상태 줄** > 잡담 (plan-leafwait-20261008.md ②) ═══════════
@@ -2470,7 +2508,10 @@ export function chatterContext(turn = {}, S = null) {
       return { leaves: pick('leaves'), newLeafToday: pick('newLeafToday'), leafWaitDays: pick('leafWaitDays'),
                youngestLeafM: pick('youngestLeafM'), growStreak: pick('growStreak'), arrivedOnDay: pick('arrivedOnDay'),
                harvestedToday: pick('harvestedToday'), harvestsSinceArrival: pick('harvestsSinceArrival'),
-               potOnSill: pick('potOnSill'), band: pick('band'), zoomOpenedSinceArrival: pick('zoomOpenedSinceArrival') };
+               potOnSill: pick('potOnSill'), band: pick('band'), zoomOpenedSinceArrival: pick('zoomOpenedSinceArrival'),
+               /* ★ 2026-10-08 단계 줄 — phaseId 막내 잎 단계(growthPhase().phaseId) · phaseDays 그 단계에 든 지 며칠(든 날 0)
+                  · varieMatured 다 자란 무늬 잎 수(자르기 문과 같은 자 · varieMaturedLeavesNow) */
+               phaseId: pick('phaseId'), phaseDays: pick('phaseDays'), varieMatured: pick('varieMatured') };
     })(),
     /* ★ 2026-09-02 — 독촉의 임자: «가장 먼저 열렸는데 아직 안 끝난» 퀘스트가 열린 지 며칠째인가.
        열린 날은 stamina.questsOpenedOn(세이브에 실린다), 끝난 것은 stamina.questsTaken 이 안다. 새 칸은 열린 날 하나뿐이다. */
