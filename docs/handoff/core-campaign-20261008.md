@@ -54,3 +54,40 @@
 - 새: `tools/probe_core_d11_13.mjs`(D11·D12·D13·#4 · D13_SEED=1) · `tools/probe_walk_trap.mjs`(사람 안 고르는 걸음 · #1·#2·#6·M1) · `tools/probe_furnclear.mjs`(0원 가구)
 - 고침: `probe_nudge`(D2·D19 명세) · `test_crop_seat` F·F-2 · `test_oneroom` F-2·F-3 · `test_save_roundtrip`(기다린 날)
 - ⚠ 자가 틀렸던 것: test_oneroom F-3 을 처음 async 로 써서 «무조건 PASS» 였다(check 가 동기라 약속만 받음) — 동기로 고쳤다.
+
+## 5. 10-08 낮 — 총괄 07:20 차례(leafWait → D23 → D25 → D8·D9 자 → 엔딩)
+
+| 커밋 | 무엇 | 잰 것 |
+|---|---|---|
+| fb01ee3d | turn.leafWait 11칸([plan] plan-leafwait ③-1) — src/game/leaf_wait.js · loop.nextDay 가 날마다 셈(빨리감기 포함) · 세이브 firstPlay.monstera.watch · 확대창 연 적 · 진단 __leafWait() | test_leaf_wait 24칸 · probe_leafwait 70일(진짜 생장 창): 상태 줄 d3 창턱 · d5 게이지 · d8 쉬지 않고 · d9 첫 잎 넓어짐 · d20 지갑 · 새 잎 d25 |
+| 8a8ab801 | D23 반지하 창턱 몬스테라 — 굴광성 0.25 + 그림만 +z 0.25m(빛 자리·빛 값 그대로) · ?d23=0 전후 깃발 | probe_d23_sill 13칸 · house 잼: 잎 벽 너머 99.6 → 14.5% · 보이는 잎 0.7 → 32.3% |
+| b04f658e | D25 — questSnapshotNow.motherVarieMatured · 상점 수경병 = «지금 자를 마디가 있나»(freeCutNodeCount · ✂ 말풍선과 같은 자) 또는 «한 번 자른 사람» · first_cut 물꽂이 뿌리내리는 중 = 기다림 | probe_d25_jar PASS · probe_nudge 11/11 |
+| 9c5c418c | D8·D9 자 — probe_oneroom_econ(M1·M3) · test_banjiha_routes M0 열 | 대조 판(월세만 꽂음) 붉음 확인 · 첫 판 아래 |
+| 2a6dbcfb | ④ 엔딩 뼈대 — 목표 없으면 숨김 · 닿은 날 한 줄 · 단추 · 되묻기 · 그림 덮개+열세 줄 · 카드 · [다음] · ?endingTarget 깃발 | probe_ending_walk PASS · test_ending_flow 16/16 |
+
+### 정한 것 — 후보 · 고른 것 · 까닭
+- **leafWait 새 잎**: ㉠ 잎 수가 늘었나 ㉡ 지금까지 본 가장 큰 leafBirth 보다 큰 잎이 달렸나 ⇒ ㉡. 자른 날 새 잎이 같이 나면 ㉠ 은 못 본다(leafBirth 는 g 와 같이만 커진다).
+- **harvestedToday**: 상태 줄은 아침(story.turn)이고 거두기는 낮의 손 ⇒ «아침에 보니 지난 턴 뒤 거뒀다». [plan] 이 그대로 두기로 함.
+- **D23 받침 면·겹침**: 그림을 옮기면 «앉힐 면»(supportY)과 «다른 화분과 겹침»은 빛 자리에서 잰다 — 그림 자리로 재면 house 의 늘린 받침(광선 안 받음)을 지나 창턱 밑(0.794)에 앉고, 같은 빛 자리에 화분 둘이 섰다(둘 다 걸어서 잡음).
+- **D25 수경병**: ㉠ 늘 «지금 마디»로만 ㉡ 한 번 자른 사람은 계속 보임 ⇒ ㉡(마디를 기다리는 사이 사라졌다 나타나면 «어디 갔지» · 원룸은 삽수 그루에서도 자른다).
+- **엔딩 걸음 깃발**: D9 전엔 목표가 없어 화면이 안 열린다 ⇒ `?endingTarget=N`(세이브에 안 남음 · ?d23=0 과 같은 꼴).
+- **D8·D9 짝**: dailySpend' = dailySpend + (R − 반지하 월세)/주기(월세 밖 하루치 그대로) — 35만 21,667 · 27.5만 19,167(plan 문서의 21,833·19,333 과 166원 다름 · plan 에 물음).
+
+### D8·D9 첫 판 [잰 것 · 씨앗 1~10 · 반지하 novice → 이사 뒤 real · roomRev 3168869e]
+- M0(test_banjiha_routes): 이 자는 이사비를 맞추려 모주까지 다 판다 — 모주 든 판 0/40 · 이사 뒤 현금 중앙값 등0 62,828 · 등1 118,379.
+- M1(probe_oneroom_econ --path quest · 180일): 월세 20/27.5/35만 · 등 0/1 · ⓐⓑⓒ 전부 굶음(첫 0원 1~61일째). --cash c=1000000 이어도 91~151일째 0원.
+- 까닭(걸어서 본 것): ⓒ 로 가면 모주가 잎 3·무늬 1 → 초보 규칙(«예비혹이 안 남으면 못 자름» · 엔딩까지)에 막혀 원룸에서 자를 마디 0 → 벌이가 시루뿐.
+- ⚠ 이 자의 반지하 행동(시루 다섯 · 민무늬 안 팖 · 잉여 채소는 한 번도 안 생김)이 사람보다 가난할 수 있다 — night_play guided 의 이사 날 상태로 시작을 맞춰 다시 잴 것.
+- ⚠ 자가 틀렸던 것(스스로 밝힘): 잉여 넘기기를 넣고 «이사 155 → 60일»이라 읽었는데 씨앗 1·2만 본 착각이었다(넘긴 날 0).
+
+### 걸어서 드러난 낡은 자
+- test_banjiha_routes: 끝까지 돌게 하니 붉음 7(B-2 · D · P-2 · P-3 · G-2b · G-3 · G-4) — 문이 생긴 뒤 자가 못 따라온 칸들 [짐작] · 안 고침.
+- test_first_play_attacks: 콩나물 g 1000/700/400 ↔ 기대 500/350/200 — 작업 전 판 d925c993 에서도 같은 값으로 붉다(낡은 자).
+- test_roomview_place 붉음 6(S-3·E-3·F-2·F-3·F-6·N-5) = ?d23=0 과 같음(작업 전부터).
+
+### 넘긴 것 — 다음 차례
+1. M2 손가락 목적지 표 · resolveTap 남은 반 · #7·#8·#14(plan-friction-7-8-14 §core)
+2. [plan] ③-3 식물 시트 카드(drawGrowGauge 위 + 잎 {n}장(무늬 {v}장) + 자리 {빛 낱말})
+3. [house] 시루 «N일» 표지(house-siru-badge-spec-20261008)
+4. D8 다시 재기 — night_play guided 이사 날 상태로 시작(총괄 봇 판과 함께)
+5. D23 남은 14.5%(창 위아래 벽 속) — 더 띄울지·⑤(벽 피하기)는 총괄 몫
