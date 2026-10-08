@@ -1308,6 +1308,10 @@
   #hint.side .hand{margin-top:0;font-size:26px;animation:handBobXR 1.1s ease-in-out infinite}
   #hint.side.toRight{flex-direction:row-reverse}   /* 대상이 왼쪽 — 손이 왼쪽에서 가리킨다 */
   #hint.side.toRight .hand{animation:handBobXL 1.1s ease-in-out infinite}
+  /* #8(2026-10-08) — 대상 «아래»에 선다(할 일 칩을 덮을 때) · 손가락이 위를 짚는다 */
+  #hint.below{display:none;flex-direction:column-reverse;align-items:center}
+  #hint.below.on{display:flex}
+  #hint.below .hand{margin-top:0;margin-bottom:1px}
   @keyframes handBobXL{0%,100%{transform:translateX(0)}50%{transform:translateX(-5px)}}
   @keyframes handBobXR{0%,100%{transform:translateX(0)}50%{transform:translateX(5px)}}
   /* 가리키는 대상이 눈에 띄게 — 테두리가 한 번씩 숨쉰다 */
@@ -2631,6 +2635,27 @@
         </div>
       </div>
 
+      <!-- ★ 2026-10-07 D11 — **기록은 사람 것이다.** 검수 탭에 있던 #log 를 여기로 옮겼다(id 그대로 — renderLog 가 그대로 채운다).
+           접어 둔다 — 매일 펴 볼 것은 아니고, 「아까 뭐라고 했지」를 다시 볼 때 연다 -->
+      <details class="box" id="logBox"><summary>기록</summary><div id="log"></div></details>
+    </div><!-- /pageRoom -->
+
+    <!-- ══ 할 일 — ★ PC 탭 (2026-08-16 박사님 요청) ═══════════════════════
+         ⚠ 여기에 줄을 **손으로 적지 않는다.** `drawQuestPanel` 이 팝업(`#questList`)과
+           이 자리(`#questListTab`)를 **같은 값으로** 채운다. 정본은 `quest.js §QUESTS` 다. -->
+    <div class="sheetpage" id="pageQuest" role="tabpanel">
+      <div class="box">
+        <h3 id="questTabTitle">할 일</h3>
+        <div id="questBarTab"><i></i></div>
+        <div id="questSubTab" class="plots"></div>
+        <div id="questListTab"></div>
+        <div id="questNoteTab" class="plots"></div>
+      </div>
+    </div><!-- /pageQuest -->
+
+    <div class="sheetpage" id="pageDev" role="tabpanel">
+      <!-- ★ 2026-10-08 #14([plan] plan-friction-7-8-14) — 「집과 자리」·「개발자 설정」을 [방] 탭에서 여기(검수 · ?dev=1)로 통째로 옮겼다.
+           [방] 엔 화면 밝기만 — Day 0 에 집을 바꾸고 등을 공짜로 켜 «반지하 먼저»·«등은 퀘스트로»가 새 나갔다. id 는 그대로다 -->
       <div class="box" id="ctl">
         <h3>집과 자리</h3>
         <label><span>방</span><select id="room"></select></label>
@@ -2663,25 +2688,6 @@
           </div>
         </details>
       </div>
-      <!-- ★ 2026-10-07 D11 — **기록은 사람 것이다.** 검수 탭에 있던 #log 를 여기로 옮겼다(id 그대로 — renderLog 가 그대로 채운다).
-           접어 둔다 — 매일 펴 볼 것은 아니고, 「아까 뭐라고 했지」를 다시 볼 때 연다 -->
-      <details class="box" id="logBox"><summary>기록</summary><div id="log"></div></details>
-    </div><!-- /pageRoom -->
-
-    <!-- ══ 할 일 — ★ PC 탭 (2026-08-16 박사님 요청) ═══════════════════════
-         ⚠ 여기에 줄을 **손으로 적지 않는다.** `drawQuestPanel` 이 팝업(`#questList`)과
-           이 자리(`#questListTab`)를 **같은 값으로** 채운다. 정본은 `quest.js §QUESTS` 다. -->
-    <div class="sheetpage" id="pageQuest" role="tabpanel">
-      <div class="box">
-        <h3 id="questTabTitle">할 일</h3>
-        <div id="questBarTab"><i></i></div>
-        <div id="questSubTab" class="plots"></div>
-        <div id="questListTab"></div>
-        <div id="questNoteTab" class="plots"></div>
-      </div>
-    </div><!-- /pageQuest -->
-
-    <div class="sheetpage" id="pageDev" role="tabpanel">
     <details class="box dev" id="scbox">
       <summary>개발 검수 시나리오</summary>
       <label><span>시나리오</span><select id="scen"></select></label>
@@ -3480,7 +3486,7 @@ $('musunThumb').src = MUSUN_TRAY_PIC;
 
 /* ---- 셀렉트 채우기 ---- */
 $('room').innerHTML = io.light.rooms()
-  .map(r => `<option value="${r.id}">${r.label} (${r.light})</option>`).join('');
+  .map(r => `<option value="${r.id}">${r.label}</option>`).join('');   /* #14 — 「반지하 (최악)」 → 「반지하」 */
 $('mode').innerHTML = Object.entries(SIM_MODES)
   .map(([k, m]) => `<option value="${k}">${m.ko}</option>`).join('');
 
@@ -3499,7 +3505,7 @@ function fillLamps() {
   const owned = (ts && ts.enabled) ? Math.max(0, ts.lamp.owned || 0) : rigs;
   const n = Math.min(rigs, owned);
   $('lamps').innerHTML = Array.from({ length: n + 1 }, (_, i) =>
-    `<option value="${i}">${i}개${i === 0 ? ' (자연광만)' : ''}</option>`).join('');
+    `<option value="${i}">${i}개</option>`).join('');   /* #14 — 「0개 (자연광만)」 → 「0개」 */
   $('lamps').value = String(Math.min(S.lamps.count, n));
   S.lamps.count = +$('lamps').value;
   /* 왜 못 고르는지 말한다 — 빈 드롭다운은 고장으로 읽힌다(다른 곳과 같은 판단) */
@@ -4169,6 +4175,9 @@ setInterval(() => {
     updateHint();
   } catch (e) { /* 안내가 못 서는 것으로 게임을 멈추지 않는다 */ }
 }, HINT_WATCH_MS);
+/* ★ 2026-10-08 #8([plan] plan-friction-7-8-14) — 시트가 목표를 덮을 때 열린 탭을 짚는 말. 손가락이 이미 그 탭 «위»라 탭 이름도
+     「할 일」(칩 이름)도 안 쓴다. 세 자리가 이 한 상수를 쓴다 */
+const HINT_SHEET_DOOR = '한 번 더 누르면 닫힙니다';
 function hintAt(el, say) {
   const h = $('hint');
   /* ★ 진단 손잡이 — **마지막으로 «무엇을» 짚으라 했나**(2026-08-30).
@@ -4256,7 +4265,7 @@ function hintAtPoint(cx, cy, say, r = 48, pointOf = null) {
         const vis = el => { if (!el) return false; const q = el.getBoundingClientRect(); return q.width > 0 && q.height > 0 && q.bottom > 0 && q.top < innerHeight; };
         const nav = openTab && navOf[openTab.id] && $(navOf[openTab.id]);
         const door = vis(nav) ? nav : (vis(openTab) ? openTab : null);
-        if (door) return hintAt(door, '할 일이 가려졌습니다 — 한 번 더 누르면 닫힙니다');
+        if (door) return hintAt(door, HINT_SHEET_DOOR);
       }
     }
   } catch { }
@@ -4280,7 +4289,7 @@ function placeHintAt(el, say) {
   dimAt(r.left + r.width / 2, r.top + r.height / 2, Math.max(r.width, r.height) / 2 + 16);
   const hand = h.querySelector('.hand');
   h.querySelector('.say').textContent = say;
-  h.classList.remove('side', 'toRight');
+  h.classList.remove('side', 'toRight', 'below');
   hand.style.left = '0px';        /* ★ 지난 번에 민 것을 되돌린다 — 안 되돌리면 쌓인다 */
   hand.textContent = '👇';
   h.style.left = (r.left + r.width / 2) + 'px';
@@ -4324,8 +4333,35 @@ function placeHintAt(el, say) {
     const dx = Math.max(-(hb.width / 2 - 8), Math.min(hb.width / 2 - 8, want - got));
     hand.style.left = dx.toFixed(1) + 'px';
   }
+  /* ★★ 2026-10-08 #8 — **할 일 칩(#questChip)을 덮지 않는다.** 칩은 퀘스트가 바뀌는 그 순간에 읽혀야 하는 글이다
+       (실측: 열린 탭을 짚는 말풍선이 칩을 83~95% 덮었다). 겹치면 ① 대상 «아래»로(손가락이 위를 짚는다) ② 그래도 겹치면 «왼쪽». 칩은 안 옮긴다 */
+  try { hintAvoidChip(h, hand, r); } catch { }
   el.classList.add('hintTarget');
   hintTargetEl = el;
+}
+function hintAvoidChip(h, hand, r) {
+  const chip = $('questChip');
+  const cr = chip && chip.getBoundingClientRect();
+  if (!cr || !cr.width || getComputedStyle(chip).visibility === 'hidden') return;
+  const hit = (a, b) => a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top;
+  if (!hit(h.getBoundingClientRect(), cr)) return;
+  /* ① 아래 — 말풍선은 대상 밑, 손가락(👆)이 위를 짚는다 */
+  h.classList.remove('side', 'toRight'); h.classList.add('below');
+  hand.textContent = '👆'; hand.style.left = '0px';
+  let hb = h.getBoundingClientRect();
+  const want = r.left + r.width / 2;
+  const got = Math.min(innerWidth - 8 - hb.width / 2, Math.max(hb.width / 2 + 8, want));
+  h.style.left = got + 'px';
+  h.style.top = (r.bottom + 2) + 'px';
+  hand.style.left = Math.max(-(hb.width / 2 - 8), Math.min(hb.width / 2 - 8, want - got)).toFixed(1) + 'px';
+  hb = h.getBoundingClientRect();
+  if (!hit(hb, cr) && hb.bottom <= innerHeight - 8) return;
+  /* ② 왼쪽 — 대상 왼쪽에 세운다(손이 오른쪽에서 가리킨다) */
+  h.classList.remove('below'); h.classList.add('side');
+  hand.textContent = '👉'; hand.style.left = '0px';
+  hb = h.getBoundingClientRect();
+  h.style.left = Math.max(8, r.left - 8 - hb.width) + 'px';
+  h.style.top = Math.min(innerHeight - 8 - hb.height / 2, Math.max(hb.height / 2 + 8, r.top + r.height / 2)) + 'px';
 }
 /* ══ 조작 안내판 — 모든 조작을 한 화면에 (박사님 2026-08-03) ═══════════════
    손가락(updateHint)은 "다음에 할 일 하나"를 가리킨다. 이건 다른 것이다 —
@@ -5182,7 +5218,7 @@ const COACH_NOTES = Object.freeze({
      ⚠ 위 `walk` 는 **누른 뒤에야** 뜬다 — 누를 생각을 못 한 사람에게는 영영 안 뜬다.
        그래서 이 저장소는 「이 말을 하는 자리가 하나도 없었다」를 두 번 겪었다.
      ⇒ 첫 시루를 놓고 나서 **한 번** 먼저 말한다. 그때가 방을 처음 들여다보는 순간이다. */
-  walkTip: { ko: '사람을 눌러 보세요',
+  walkTip: { ko: '내 캐릭터를 눌러 보세요',   /* #7 — 손가락과 같은 순간·같은 낱말(「사람」 → 「내 캐릭터」) */
              say: '사람을 누르면 <b>이동 모드</b>가 켜지고, 방바닥을 누르면 거기로 걸어갑니다 · ' +
                   '<b>한 번 더 누르면 꺼집니다.</b> 꺼진 동안에는 화면을 끌어 <b>시야를 돌리고</b> ' +
                   '두 손가락으로 <b>확대·축소</b>합니다.' },
@@ -5737,7 +5773,7 @@ function updateHint() {
           /* ★ 사람은 «걸어 다니고» 바닥 점은 캔버스가 «커지면» 움직인다 — 둘 다 따라간다(§hintAtPoint pointOf) */
           const whoId = who.id, chosen = !!sel;
           hintAtPoint(cr.left + gp.x, cr.top + gp.y,
-                      sel ? '여기를 눌러 걸어가 보세요' : '사람을 눌러 보세요', 52,
+                      sel ? '여기를 눌러 걸어가 보세요' : '내 캐릭터를 눌러 보세요', 52,   /* #7 — 「사람」 → 「내 캐릭터」([plan] ㉢) */
             () => { try {
               const c2 = $('roomCanvas').getBoundingClientRect();
               if (!chosen) { const q = roomView.screenPosOf(whoId); return q ? { x: c2.left + q.x, y: c2.top + q.y } : null; }
@@ -6178,7 +6214,7 @@ function updateHint() {
       if (!markLive(ko)) continue;
       if (!onScreen(el)) continue;
       /* ★ 시트가 말풍선을 가리면 «닫는 길»을 짚는다(폰 실측 d13~16: 손가락 없음) */
-      if (sheetCovers(el)) { const door = sheetCloseDoor(); if (door) return hintAt(door, '할 일이 가려졌습니다 — 한 번 더 누르면 닫힙니다'); continue; }
+      if (sheetCovers(el)) { const door = sheetCloseDoor(); if (door) return hintAt(door, HINT_SHEET_DOOR); continue; }
       return hintAt(el, /거두/.test(ko) ? '거둘 때가 됐습니다'
                       : /몬스테라/.test(ko) ? '몬스테라에 물을 줍니다'
                       : /물/.test(ko)   ? '물을 주면 자라기 시작합니다'
@@ -6192,7 +6228,7 @@ function updateHint() {
   for (const [b, say] of [[btnHarvest, '거둘 때가 됐습니다'], [btnWater, '물을 주면 자라기 시작합니다']]) {
     if (!(pointStill && onScreen(b) && !b.disabled && sheetCovers(b))) continue;
     if (/거두/.test(say) ? !markLive('거두') : !markLive('물')) continue;
-    const door = sheetCloseDoor(); if (door) return hintAt(door, '할 일이 가려졌습니다 — 한 번 더 누르면 닫힙니다');
+    const door = sheetCloseDoor(); if (door) return hintAt(door, HINT_SHEET_DOOR);
   }
   if (pointStill && onScreen(btnHarvest) && !btnHarvest.disabled && !sheetCovers(btnHarvest))
     return hintAt(btnHarvest, '거둘 때가 됐습니다');
@@ -9516,7 +9552,7 @@ function openHomeCardWhenQuiet() {
   if (Number.isInteger(end.doneOnDay)) rows.push(`반지하에서 ${end.doneOnDay}일`);
   const plants = (S.pots || []).length + (cuttingsOf(S) || []).filter(c => c && (c.potted || c.status === 'established')).length;
   const varieSold = ts.varieSale && Number.isInteger(ts.varieSale.count) ? ts.varieSale.count : null;
-  if (varieSold != null) rows.push(`키운 그루 ${plants} · 판 무늬 삽수 ${varieSold}`);
+  if (varieSold != null) rows.push(`기르는 그루 ${plants} · 판 무늬 삽수 ${varieSold}`);   /* [plan] 0be94bad ② — 지금 가진 그루라 «기르는» */
   const g = { sanban: 0, halfmoon: 0, fullmoon: 0 };
   for (const p of (S.pots || [])) for (const v of Object.values((p && p.leafGrades) || {})) if (v in g) g[v]++;
   const gl = [['산반', g.sanban], ['하프문', g.halfmoon], ['풀문', g.fullmoon]].filter(([, n]) => n > 0).map(([k, n]) => `${k} ${n}`);
@@ -9706,7 +9742,7 @@ function drawWater() {
        "작물은 전부 자라는 중"이라고 했다. **화면 두 줄이 서로 딴말을 했다.**
        ⚠ 물 단추가 잠긴 까닭이 「다 자라는 중」과 「아직 안 심음」 둘인데 한 가지로만
          말하고 있었다. 까닭이 다르면 글자도 달라야 한다(§조용한 실패와 같은 결이다). */
-    : st.needsSow ? '💧 아직 안 심었습니다 — [🌱 심기] 먼저'
+    : st.needsSow ? '💧 심기 먼저'      /* #7 — 잘리지 않게 짧게(무엇을 심는지는 배너·칩이 말한다) */
     : '💧 작물은 전부 자라는 중';
 }
 
@@ -10418,7 +10454,7 @@ function drawJourney() {
         let seeds = 0;
         try { seeds = (shopStatus(S).stock || {})[cropKindOf('beansprout').seedItemId] || 0; } catch { }
         return seeds > 0
-          ? `놓은 시루에 [🌱 심기]를 눌러 콩 씨앗을 뿌려 주세요 — 심어야 ${crop.harvestDays}칸이 생깁니다.`
+          ? `시루까지 걸어가 🌱 을 눌러 콩 씨앗을 뿌려 주세요 — 심어야 ${crop.harvestDays}칸이 생깁니다.`
           : '콩 씨앗이 없습니다 — [상점]에서 주문하면 시루에 심을 수 있습니다.';
       }
       if (rows.length && !going.length)
@@ -13813,7 +13849,7 @@ function commitPlaceInner(what, hit, opt = {}) {
       /* ★★ 2026-08-16 — **화분만 놓는다. 씨앗은 안 쓴다**(박사님 확정).
          심기는 놓인 화분 줄의 [🌱 심기]가 맡는다 — 시루·재배판과 같은 두 걸음이다. */
       placeEmptyPot(S, atOf(hit), { ...placeOpt(), potItemId: potItemOf(what) });
-      banner('🪴 빈 화분을 놓았습니다', '[🌱 심기]를 눌러 몬스테라 씨앗을 심으세요');
+      banner('🪴 빈 화분을 놓았습니다', '화분까지 걸어가 🌱 을 눌러 몬스테라 씨앗을 심으세요');
       unlockAfterFix();
       sfx.thud();
     } catch (e) { return placeFailed(e); }
@@ -13873,7 +13909,8 @@ function commitPlaceInner(what, hit, opt = {}) {
       try {
         const r = placeSiru(S, atOf(hit), { ...placeOpt(), kind: 'beansprout', sow: false });
         banner('빈 시루를 하나 놓았습니다',
-               '[🌱 심기]를 눌러 콩 씨앗을 뿌리세요' +
+               /* #7(2026-10-08 [plan] plan-friction-7-8-14) — «안 보이는 단추» 대신 걷는 길 하나로(배너·알약·칩·손가락이 같은 말) */
+               '내 캐릭터를 눌러 시루까지 걸어가세요 — 🌱 이 뜨면 눌러 콩 씨앗을 뿌립니다' +
                ` · 방에 ${r.sirus}개` + (r.spare > 0 ? ` · 가방에 ${r.spare}개 남음` : ''));
         unlockAfterFix();
   sfx.thud();                         /* ★ 놓았다 — 실패는 이 줄을 안 지난다 */
@@ -13900,7 +13937,7 @@ function commitPlaceInner(what, hit, opt = {}) {
       try {
         const r = placeSiru(S, atOf(hit), { ...placeOpt(), kind: 'musun', sow: false });
         banner('빈 재배판을 놓았습니다',
-               '[🌱 심기]를 눌러 무 씨앗을 뿌리세요' +
+               '재배판까지 걸어가 🌱 을 눌러 무 씨앗을 뿌리세요' +
                (r.spare > 0 ? ` · 가방에 ${r.spare}개 남음` : ''));
         unlockAfterFix();
   sfx.thud();                         /* ★ 놓았다 — 실패는 이 줄을 안 지난다 */
@@ -14475,7 +14512,7 @@ function startPhonePlacePot(what) {
     return { ok: false, why: (e && e.message) || String(e) };
   }
   try { window.__byeotSheet.close(); } catch { }
-  banner('🪴 빈 화분을 놓았습니다', '[🌱 심기]를 눌러 몬스테라 씨앗을 심으세요');
+  banner('🪴 빈 화분을 놓았습니다', '화분까지 걸어가 🌱 을 눌러 몬스테라 씨앗을 심으세요');
   draw();
   return { ok: true };
 }

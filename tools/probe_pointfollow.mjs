@@ -48,7 +48,7 @@ for (let i = 0; i < 8; i++) {
     const h=document.getElementById('hint'); const say=h?((h.querySelector('.say')||{}).textContent||'').trim():'';
     return JSON.stringify({ 짚:t?(t.id||t.className):'(점)', 말:say.slice(0,18), 켜짐:!!(h&&h.classList.contains('on')) }); })()`));
   path.push(st.짚 + '「' + st.말 + '」');
-  if (st.켜짐 && st.짚 === '(점)' && /사람을/.test(st.말)) { reached = true; break; }
+  if (st.켜짐 && st.짚 === '(점)' && /사람을|내 캐릭터를/.test(st.말)) { reached = true; break; }
   if (!await tapHint()) break;
   await sleep(300);
 }

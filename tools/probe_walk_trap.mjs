@@ -41,7 +41,7 @@ for (let i = 0; i < 8; i++) {
   const h0 = await hint();
   /* 놓기는 [확인]까지 해야 끝난다 · 손가락이 사람·[다음 날]을 짚으면 안 따른다(이 자의 걸음은 «사람을 안 고른다») */
   if (placed && !/둘까요/.test(h0.say || '')) break;
-  if (/사람을 눌러|걸어가 보세요/.test(h0.say || '') || h0.target === 'next') break;
+  if (/사람을 눌러|내 캐릭터를 눌러|걸어가 보세요/.test(h0.say || '') || h0.target === 'next') break;
   const at = await J(`(()=>{ const t=document.querySelector('.hintTarget'); if(!t) return null; const r=t.getBoundingClientRect(); return r.width>0 ? { x:r.left+r.width/2, y:r.top+r.height/2, id:t.id } : null; })()`);
   if (!at) break; await tapAt(at.x, at.y); await clearDlg();
 }
@@ -73,7 +73,7 @@ harvested = await J(`(window.__S().firstPlay.beansprout.harvestCount||0) >= 1`);
 const after = await hint();
 const day = await J(`window.__S().day`);
 console.log('■ 첫 수확 —', harvested, '· 날', day, '· 손가락 —', JSON.stringify(after));
-const trapped = /사람을 눌러|걸어가 보세요/.test(after.say || '');
+const trapped = /사람을 눌러|내 캐릭터를 눌러|걸어가 보세요/.test(after.say || '');
 console.log(`  ${!trapped && harvested ? 'OK  ' : 'FAIL'} 첫 수확 뒤 손가락이 «사람»에 갇히지 않는다 → ${JSON.stringify(after)}`);
 /* M1(D19) — 씨앗 0 이면 방 알약이 «🛒 콩 씨앗 주문 · N원» 지름길 · 누르면 주문 창 */
 const pill = await J(`(()=>{ const b=document.getElementById('resow'); return b ? { 글:(b.textContent||'').trim(), 보임: getComputedStyle(b).display!=='none', 막힘: b.disabled, buy: b.dataset.buy||null } : null; })()`);
