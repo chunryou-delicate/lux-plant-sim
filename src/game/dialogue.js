@@ -1172,7 +1172,8 @@ export const SCRIPTS = {
      ⇒ 「…다 모였다.」를 여기로 가져오고, 둘이 같은 턴이면 퀘스트 끝 대사를 뺀다(§scriptsForEvents · 같은 순간을 두 번 말하지 않는다). */
   endingReady: [
     { who: 'jachwi', face: 'think',    text: '…다 모였다.' },
-    { who: 'moni',   face: 'teach',    text: '집 계약은 네가 해. 언제 할지는 네가 정해.' }
+    /* ★ 2026-10-08 [plan] 갈래 지도 10 — 「언제 할지는 네가 정해」는 미루면 하루 지출로 다시 모자라 단추가 잠기는 현실과 어긋났다 */
+    { who: 'moni',   face: 'teach',    text: '집 계약은 네가 해. 너무 미루면 생활비에 다시 모자라.' }
   ],
   endingHome: [
     { who: 'jachwi', face: 'surprise', text: '…볕이 드는 방이네.' },
@@ -1435,7 +1436,8 @@ export const SCRIPTS = {
        총괄 예시 「씨앗 500원이면 내일 와」의 «500원»은 그래서 뺐다 — «어디서·언제»만 남겼다.
      ⚠ 「이틀 잇달아 금지」(§pickNudge)라 한 줄은 많아야 하루 걸러 난다 — 빈 날은 공통 줄(30일에 한 번)이나 잡담이 받는다. */
   nudgeMonsteraOffer: [ { who: 'moni', face: 'teach', text: '몬스테라는 밝은 데로 옮겨 줘. 이 방에선 창턱이야.' } ],
-  nudgeMonsteraPush:  [ { who: 'moni', face: 'worry', text: '몬스테라가 아직 처음 자리야. 자리가 곧 빛이야.' } ],
+  /* ★ 2026-10-08 [plan] 갈래 지도 4 — 「아직 처음 자리야」는 가방에 둔 판(자리가 없음)에선 거짓 · 「다른 어두운 데」로 옮긴 판도 못 짚었다 */
+  nudgeMonsteraPush:  [ { who: 'moni', face: 'worry', text: '몬스테라가 아직 자라는 자리에 없어. 창턱이 이 방에서 제일 밝아.' } ],
   nudgeMixOffer:      [ { who: 'moni', face: 'teach', text: '무순도 상점에 있어. 콩나물이랑 한 상에 올려 봐.' } ],
   nudgeMixPush:       [ { who: 'moni', face: 'teach', text: '콩나물만으론 상이 한 가지야. 무순을 길러야 둘째 몫이 생겨.' } ],
   nudgeCutOffer:      [ { who: 'moni', face: 'teach', text: '수경병은 상점에 있어. 잎 한 장짜리 마디를 잘라 꽂아 봐.' } ],
