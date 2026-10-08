@@ -5,7 +5,7 @@
      ② 첫 화분 등급 장부(leafGrades)의 잎 번호 — 첫 화분 잎(시작 때 적어 둔 것) 밖의 번호가 끼나
      ③ 방: 첫 화분을 카메라로 짚어 찍는다(room_pot0_dN.png) — 260일 그루가 제 잎으로 서 있나
      ④ 확대창: 첫 화분 확대(🔍)를 열어 확대창이 고른 그림 = 장부 그림인가 · 찍기(zoom_pot0_dN.png) · 닫기
-   ⛔ 값 0 · 고치지 않는다. 세운 판 손질은 둘뿐: 첫 플레이를 «끝난 것»으로 둔다(260일 판이라 실제로도 끝났을 때) · 씨앗·화분 재고 1씩.
+   ⛔ 값 0 · 고치지 않는다. 세운 판 손질은 둘뿐: 시루를 방에 놓는다(첫 플레이는 그대로 · 끄면 윗줄이 멈춘다) · 씨앗·화분 재고 1씩.
    SAVE= (필수) · OUTDIR= (필수 · 비어 있어야) · DAYS=3 · SKIPSOW=1(이미 심은 세이브) · DUMP=(끝난 판 세이브) · BYEOT_URL=(기본 127.0.0.1:9340 · 서버는 tools/serve.py) */
 import fs from 'node:fs';
 import { launch, sleep } from '../test_cdp.mjs';
@@ -38,9 +38,15 @@ if (!(start.잎 && start.잎.length)) console.log('  (꽂힌 그루가 첫 화�
 /* SKIPSOW=1 — 이미 심은 세이브(DUMP 로 뜬 것)면 놓기·심기를 건너뛴다 */
 if (process.env.SKIPSOW !== '1') {
 /* 씨앗 화분 놓기·심기 — 게임 단추 길(_diag_seedling 과 같은 걸음) */
-await page.eval(`(()=>{const S=window.__S(); if(S.firstPlay){S.firstPlay.monstera.arrived=true; S.firstPlay.completed=true; S.firstPlay.enabled=false;}
-  S.shop.stock.pot_concrete_square=(S.shop.stock.pot_concrete_square||0)+1; S.shop.stock.monstera_seed=(S.shop.stock.monstera_seed||0)+1;
-  if(S.stamina)S.stamina.usedToday=0; window.__redraw&&window.__redraw();})()`, false);
+/* ★ 세운 손질: 첫 플레이를 끄지 «않는다» — 끄면 윗줄(drawJourney)이 멈춘다(10-08 헛것 한 번). 대신 시루를 방에 놓는다(Day 0 에 사람이 하는 일 · 세운 세이브가 안 놓았다) */
+console.log('시루 놓기 —', JSON.stringify(await J(`(async()=>{ const st=await import('/src/game/state.js'); const S=window.__S(), io=window.__io;
+  if (S.firstPlay && S.firstPlay.monstera) S.firstPlay.monstera.arrived = true;
+  const slots=io.light.room.slots||[]; const used=new Set((S.pots||[]).map(p=>p.slotId));
+  const s=slots.find(x=>!used.has(x.slotId) && !/sill/.test(x.slotId) && /desk|shelf|dresser|night/.test(x.slotId)) || slots.find(x=>!used.has(x.slotId));
+  let r=null; try { r=st.setCropAt(S, { x:s.x, y:s.y, z:s.z, slotId:s.slotId }, { slots, size: io.light.room.size }); } catch(e) { r={탈:e.message}; }
+  try { window.__redraw(); } catch(e) {}
+  return { 시루자리:s&&s.slotId, r:r&&(r.slotId||r.탈) }; })()`)));
+await page.eval(`(()=>{const S=window.__S(); S.shop.stock.pot_concrete_square=(S.shop.stock.pot_concrete_square||0)+1; S.shop.stock.monstera_seed=(S.shop.stock.monstera_seed||0)+1; if(S.stamina)S.stamina.usedToday=0; window.__redraw&&window.__redraw();})()`, false);
 await sleep(800);
 console.log('화분 놓기 —', await page.eval(`JSON.stringify(window.__placePot('monsteraSeed:pot_concrete_square'))`)); await sleep(1800); await clear();
 await page.eval(`window.__byeotSheet.open('plants')`, false); await sleep(800);
