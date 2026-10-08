@@ -311,7 +311,7 @@ check('F 잠긴 까닭이 두 축으로 갈려서 나온다', () => {
   assert.match(canMoveOut(ts).why, /모자라고/, '둘 다 모자란데 한쪽만 말합니다');
 
   ts.cashWon = TUTORIAL_RULES.moveOutCostWon;
-  assert.equal(canMoveOut(ts).why, '무늬 삽수를 아직 못 팔았습니다');
+  assert.equal(canMoveOut(ts).why, '무늬 잎을 아직 못 봤습니다');   /* 2026-10-08 [plan] 지도 8 ④ — 조건(낸 적 ∨ 판 적)대로의 글 */
   assert.equal(tutorialGoal(ts).id, 'learn', '배움이 남았으면 그것부터 말해야 합니다');
   noteLearning(ts, { harvested: true, foodSavedWon: 5000, cropAvgDli: 0.1,
                      plantDli7: 3.8, plantMinDli: 3.0, spearFurled: true });

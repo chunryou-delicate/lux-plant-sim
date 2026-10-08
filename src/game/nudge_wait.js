@@ -10,7 +10,7 @@
    ★ 무엇이 «기다림»인가 — 09-25 에 준비해 둔 패치(master-story-plan-20260925.md ⓐ) 그대로다. 새로 짓지 않았다:
      leaf_two · leaf_three   늘 기다림 — 잎은 손으로 못 늘린다(자리를 옮기는 것은 monstera_home 몫이다)
      first_harvest           익은 시루(ready)가 하나도 없으면 기다림
-     order_seed              씨앗이 오는 중이거나 · 재고가 있거나 · 시루가 자라는 중이면 기다림
+     order_seed              씨앗이 오는 중이거나 · 시루가 자라는 중이거나 · 익은 시루가 있으면 기다림 ← 2026-10-08 [plan] 지도 13·14 로 좁힘
      oneroom_root_bright     무늬 삽수가 뿌리내리는 중(rooting)이면 기다림          ← 2026-10-08 [plan] 청
      oneroom_settle_cutting  뿌리는 냈는데(rooted) 혹(node)이 아직이면 기다림        ← 2026-10-08 [plan] 청
      first_cut               잘라 물에 꽂아 «뿌리내리는 중»(water · rooting)이면 기다림 ← 2026-10-08 D25(총괄)
@@ -43,11 +43,14 @@ export function nudgeWaiting(S, id, day = (S && S.day)) {
     return !rows.some(r => r && r.ready);
   }
   if (id === 'order_seed') {
-    let coming = false, stock = 0;
+    /* ★ 2026-10-08 [plan] 갈래 지도 13·14 — «재고가 있다»를 기다림에서 뺐다: 씨앗을 사 두고 안 심은 판은 할 일이 있다(심기).
+         그리고 익은 시루가 있으면 기다림 — 진짜 막힘은 «씨앗»이 아니라 «거두기»다(그 독촉은 다른 줄 몫). */
+    let coming = false;
     try { coming = pendingOrders(S).some(o => o && o.itemId === BEAN_SEED_ITEM); } catch { }
-    try { stock = stockOf(S, BEAN_SEED_ITEM); } catch { }
-    const growing = cropRows(S, day).some(r => r && r.growing);
-    return coming || stock > 0 || growing;
+    const rows = cropRows(S, day);
+    const growing = rows.some(r => r && r.growing);
+    const ready = rows.some(r => r && r.ready);
+    return coming || growing || ready;
   }
   /* ★ 2026-10-08 원룸 줄([plan] f39fbddb 청) — 사람이 할 일을 «이미 해 놓고» 몸이 자라기를 기다리는 동안은 독촉하지 않는다 */
   if (id === 'oneroom_root_bright') {

@@ -561,7 +561,7 @@ function narrativeEvents(S, turn, ts, learnedBefore, day) {
     ts._moveState = state;
     if (state === 'money') ev.push({ id: 'move_short_money', ko: '이사 자금이 모자랍니다',
                                      axis: 'money', shortWon: c.shortWon });
-    if (state === 'varie') ev.push({ id: 'move_short_learn', ko: '무늬 삽수를 아직 못 팔았습니다',
+    if (state === 'varie') ev.push({ id: 'move_short_learn', ko: '무늬 잎을 아직 못 봤습니다',   /* [plan] 지도 8 — 조건대로 */
                                      axis: 'varie', why: c.why, left: c.learningLeft });
     if (state === 'ready') ev.push({ id: 'move_ready', ko: '원룸으로 이사할 수 있습니다' });
     /* 둘 다 먼 판 — 무엇부터 할지를 말한다. `axis:'both'` 는 화면·검사가 보는 칸이다 */

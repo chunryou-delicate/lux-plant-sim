@@ -223,7 +223,7 @@ check('G 이사 — 돈만으로도, 무늬 삽수만으로도 안 된다', () =
   assert.equal(c.money, true);
   assert.equal(c.varie, false);
   assert.equal(c.learningLeft.length, 0, '배움 계통이 사라졌습니다 — 조건에서만 빼기로 했습니다');
-  assert.throws(() => moveOut(ts), /무늬 삽수/);
+  assert.throws(() => moveOut(ts), /무늬 잎/);   /* 2026-10-08 [plan] 지도 8 — 둘째 축의 글이 조건(낸 적 ∨ 판 적)대로 «무늬 잎을 아직 못 봤습니다» */
 
   const ts2 = mk();
   noteVarieCuttingSale(ts2, { variegatedLeaves: 1, won: 80_000 });

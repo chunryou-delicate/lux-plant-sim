@@ -3229,6 +3229,7 @@ import { moveIntoOneroom, storyOf } from './src/game/oneroom.js';
 import { lightGateOf } from './src/game/oneroom.js';
 /* ★ 2026-10-08 — 원룸 줄(quest.js oneroom_*)의 «집 자금» 칸이 보는 목표 금액. 지금 null(미확정) — 그 줄은 안 열린다([plan] 짬) */
 import { ENDING_RULES, endingRulesFrom, stepEnding, finishEnding, endingView } from './src/game/ending.js';
+import { endingGoal } from './src/game/ending.js';   /* ★ 2026-10-08 [plan] 지도 50 — 원룸 할 일이 비었을 때의 글(§questEmptyKo) */
 /* ★ 2026-10-08 D2 — 독촉은 «할 수 있었던 날»만: 기다린 날을 적는다(판정·날수는 nudge_wait.js · 거는 자리는 dialogue.js chatterContext) */
 import { noteQuestWaits } from './src/game/nudge_wait.js';
 /* ★ 2026-10-08 — 확대창을 연 적(둘째 잎 기다림 «상태 줄» zoomOpenedSinceArrival · leaf_wait.js) */
@@ -9506,6 +9507,10 @@ function questSnapshotNow(turn) {
        자르기 문(cutBlockedReason)에 넘기는 «같은 함수»다 — 두 벌로 재면 하루라도 어긋난다.
        몬스테라 전은 0(위 motherLeaves 와 같은 까닭 — 생장 창의 시연용 그루를 안 읽는다) · 못 재면 null(퀘스트가 무늬 잎 수로 어림) */
     motherVarieMatured: hasPlant(S) ? varieMaturedLeavesNow() : 0,
+    /* ★ 2026-10-08 [plan] 갈래 지도 57 — 첫 그루가 «자라는 자리»(밴드가 안 자람 셋이 아님)에 놓였나. 자는 놓는 순간 경고와 같다(§growBandAt).
+         가방·자리 없음은 false · 못 재면 null(지어내지 않는다). plan 이 monstera_home done 을 이 칸으로 옮길 때 쓴다 */
+    monsteraGrowing: (() => { const p0 = pot0(S); if (!p0) return false; if (!p0.at && !p0.slotId) return false;
+                              const b = growBandAt(p0.at ? p0 : p0.slotId, false); return b ? !b.dark : null; })(),
     cuttings: cuts,
     /* ★ 무늬 삽수를 판 횟수 — `tutorial.js §varieSale` 이 정본이다(escapecut 확정) */
     varieSaleCount: (ts.varieSale && ts.varieSale.count) || 0,
@@ -9630,7 +9635,7 @@ function drawQuestPanel() {
     ? `지금 할 것 — ${v.next.ko}`
     /* ⚠ 수를 글자로 박지 마라 — 2026-08-16 에 줄이 다섯에서 여섯이 됐고 이 줄만 낡았다.
        `total` 은 `quest.QUESTS` 에서 오므로 줄이 늘면 저절로 따라온다(§2.8). */
-    : (done >= total ? `${total}가지를 다 배웠습니다` : '지금 열린 것이 없습니다 — 기다리면 열립니다');
+    : (done >= total ? `${total}가지를 다 배웠습니다` : questEmptyKo());
   /* 띠와 수는 **같은 값**을 말한다. 다르면 어느 쪽이 참인지 물어야 한다 */
   $('questBar').firstElementChild.style.width = `${total ? Math.round(done / total * 100) : 0}%`;
 
@@ -9820,6 +9825,12 @@ if ($('chapterAgain')) $('chapterAgain').onclick = () => {
 };
 window.__byeotChapterEnd = () => ({ done: endingDoneNow(), on: !!($('chapterEnd') && $('chapterEnd').classList.contains('on')) });   /* 진단용 */
 
+/* ★ 2026-10-08 [plan] 갈래 지도 50 — 열린 줄이 없을 때의 한 줄. «기다리면 열립니다»는 반지하 사슬 사이(진짜로 열리는 판)에서만 참이다.
+     원룸은 endingGoal 의 글(목표 미정 · 마련할 수 있음 · 얼마 모자람)을 쓴다 — 거기선 기다려도 안 열린다. 할 일 창·탭 두 곳이 같은 함수 */
+function questEmptyKo() {
+  try { if (S.tutorial && S.tutorial.movedOut) { const g = endingGoal(S, io, endingOptNow()); if (g && g.ko) return g.ko; } } catch { }
+  return '지금 열린 것이 없습니다 — 기다리면 열립니다';
+}
 function drawQuestTab() {
   const list = $('questListTab');
   if (!list) return;                       /* 옛 화면 — 탭이 없으면 조용히 지나간다 */
@@ -9841,7 +9852,7 @@ function drawQuestTab() {
     else if (hg) g.innerHTML = homeGoalHtml(hg); }
   $('questSubTab').textContent = v.next
     ? `지금 할 것 — ${v.next.ko}`
-    : (done >= total ? `${total}가지를 다 배웠습니다` : '지금 열린 것이 없습니다 — 기다리면 열립니다');
+    : (done >= total ? `${total}가지를 다 배웠습니다` : questEmptyKo());
   $('questBarTab').firstElementChild.style.width = `${total ? Math.round(done / total * 100) : 0}%`;
   list.innerHTML = questRowsHtml(v);
   $('questNoteTab').textContent = v.all.some(q => q.state === 'locked')

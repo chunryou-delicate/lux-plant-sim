@@ -1140,10 +1140,12 @@ export function canMoveOut(ts) {
     /* ⚠ **판정에는 안 쓴다.** 안내·퀘스트가 읽는 값이라 남긴다(위 §배움 넷) */
     learningLeft: left,
     why: money && varie ? null
+       /* ⚠ 2026-10-08 ([plan] 갈래 지도 8) — 옛 글 «무늬 삽수를 아직 못 팔았습니다»는 옛 조건이었다. 지금 둘째 축은
+            «무늬 잎을 낸 적 ∨ 판 적»이고 프롤로그가 잎2 무늬를 보장하므로 대개 «아직 못 봤다»가 참이다 */
        : !money && !varie ? `이사 자금이 ${shortWon.toLocaleString()}원 모자라고, ` +
-                            '무늬 삽수를 아직 못 팔았습니다'
+                            '무늬 잎을 아직 못 봤습니다'
        : !money ? `이사 자금이 ${shortWon.toLocaleString()}원 모자랍니다`
-       : '무늬 삽수를 아직 못 팔았습니다'
+       : '무늬 잎을 아직 못 봤습니다'
   };
 }
 
@@ -1181,6 +1183,6 @@ export function tutorialGoal(ts) {
      ② 그다음이 무늬 삽수. 돈은 하루하루 저절로 줄어드는 것이라 **마지막**에 말한다 —
        먼저 말하면 「기다리세요」가 되어 할 일이 안 보인다. */
   if (c.learningLeft.length) return { id: 'learn', ko: c.learningLeft[0].ko };
-  if (!c.varie) return { id: 'varie', ko: '무늬 삽수를 잘라 뿌리내려 팔아 봐야 합니다' };
+  if (!c.varie) return { id: 'varie', ko: '무늬 잎이 한 장 나야 합니다' };   /* ⚠ 2026-10-08 [plan] 지도 8 — 옛 «잘라 뿌리내려 팔아 봐야»는 옛 조건 */
   return { id: 'money', ko: '이사 자금 ' + c.shortWon.toLocaleString() + '원이 더 필요합니다' };
 }

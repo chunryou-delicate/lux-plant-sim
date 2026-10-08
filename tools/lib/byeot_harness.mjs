@@ -160,6 +160,10 @@ export function questSnapshotOf(S, io, opt = {}) {
     lampUnlocked: !!(ts.lamp && ts.lamp.unlocked), lampOwned: (ts.lamp && ts.lamp.owned) || 0,
     lampPlaced: ts.lamp && Number.isInteger(ts.lamp.placed) ? ts.lamp.placed : null,
     monsteraArrived: !!(fp.monstera && fp.monstera.arrived), monsteraHomed: !!(fp.monstera && fp.monstera.guide && fp.monstera.guide.moved),
+    /* ★ 2026-10-08 — game.html questSnapshotNow §monsteraGrowing 과 같은 자(그날 하늘 · 자리 표 · bandOf · 안 자람 셋 아님). real 판의 날씨 기댓값은 화면만 쓴다 */
+    monsteraGrowing: (() => { const p0 = pot0(S); if (!p0 || !p0.slotId) return false;
+      try { const sky = io.light.skyFor(S.day, S.sim); const d = io.light.dliOfSlot(p0.at ? p0 : p0.slotId, { weather: sky.weather, season: sky.season, lampCount: (S.lamps && S.lamps.count) || 0, litHours: (S.lamps && S.lamps.litHours) || 0 });
+            const b = io.growth.bandOf ? io.growth.bandOf(d, false) : null; return b ? !['critical', 'poor', 'stagnant'].includes(b.band) : null; } catch { return null; } })(),
     movedOut, movedInOnDay: story && Number.isInteger(story.movedInOnDay) ? story.movedInOnDay : null,
     bagPlants: movedOut ? (S.pots || []).filter(p => p && p.placedOnce === false && !p.slotId && !p.at).length : null,
     varieSalesSinceMove: (movedOut && story && Number.isInteger(story.varieSaleAtMove)) ? Math.max(0, ((ts.varieSale && ts.varieSale.count) || 0) - story.varieSaleAtMove) : (movedOut ? null : 0),
