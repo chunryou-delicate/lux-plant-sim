@@ -969,6 +969,13 @@
      ★화분은 화면에서 작다. 정확히 짚게 하면 조작이 고문이 된다 —
        말풍선을 오브젝트보다 크게 만들어 그걸 누르게 한다. */
   #marks{position:absolute;z-index:25;inset:0;pointer-events:none}
+  /* ★ 2026-10-08 시루 «N일» 표지 — 18px 알약 · 글 11px · 말풍선 바로 밑 층 · 바쁠 때(대사·옮기기·확대) 숨김 */
+  #siruBadges{position:absolute;z-index:24;inset:0;pointer-events:none}
+  #siruBadges.busy{display:none}
+  html.homescene #siruBadges{visibility:hidden}
+  #siruBadges .sbadge{position:absolute;transform:translate(-50%,-100%);pointer-events:auto;height:18px;line-height:18px;
+    padding:0 7px;border-radius:9px;font-size:11px;font-weight:700;white-space:nowrap;color:#1b1626;
+    background:rgba(255,248,230,.92);border:1px solid rgba(0,0,0,.18);box-shadow:0 1px 4px rgba(0,0,0,.35);min-width:0;margin:0}
   /* ══ ★★★ 뜨는 글자 — 거둔 순간 **그 시루 위에** (2026-08-16 §G-11) ═══════════
      박사님: *"거두기 끝났을 때 그 시루 위치 위에 `+OOOg 수확` 이렇게 초록색 글자가
      다른 게임 데미지 표시처럼 나타났다가 위로 올라가면서 페이드아웃되게"*
@@ -1870,6 +1877,8 @@
          ★오브젝트보다 크게 만든다 — 화분은 화면에서 작아서 정확히 짚기가 어렵다.
            말풍선이 곧 버튼이라 무엇을 해야 하는지와 어디를 눌러야 하는지가 한 번에 잡힌다. -->
     <div id="marks"></div>
+    <!-- ★ 2026-10-08 [house] 시루 «N일» 표지 — 말풍선(#marks)과 같은 층 바로 밑(§drawSiruBadges) -->
+    <div id="siruBadges"></div>
     <!-- ★ 2026-10-08 ④ 내 집 마련 장면(plan-ending-home ①-4·5) — 그림 위로 대사(#dlg z34)가 흐르고, 끝나면 마무리 카드.
          그림 ev_home_ending.png 는 [char] 몫 · 아직 없으면 바탕만 밝아진다(빈 그림 칸을 안 띄운다) -->
     <div id="homeScene" aria-hidden="true">
@@ -10303,6 +10312,7 @@ function refreshOverlays() {
      ⚠ 예전에는 `updateHint` 가 맨 앞이라 **한 프레임 늦은 말풍선**을 봤다 —
        손가락이 아래 버튼을 가리켰다가 다음 그리기에야 옮겨 갔다. */
   try { drawMarks(); }  catch (e) { console.warn('[말풍선]', e && e.message); }
+  try { drawSiruBadges(); } catch (e) { console.warn('[시루 표지]', e && e.message); }   /* 말풍선 «뒤» — 말풍선이 뜬 시루는 표지를 숨긴다 */
   try { drawHarvest(); } catch (e) { console.warn('[거두기]', e && e.message); }
   try { drawSow(); }     catch (e) { console.warn('[심기]', e && e.message); }
   try { drawWater(); }  catch (e) { console.warn('[물주기]', e && e.message); }
@@ -10393,6 +10403,95 @@ function drawMarks() {
   } else if (markTick != null) {
     cancelAnimationFrame(markTick); markTick = null;
   }
+}
+/* ══ ★★ 2026-10-08 [house] 시루 «N일» 표지 (house-siru-badge-spec-20261008) ═══════════════════════════
+   폰에서 시루는 20px 흰 그릇이라 콩나물이 자라는 것이 방에서 안 보인다(총괄 #5) — 그림 한계라 시루 위에 작은 표지를 단다.
+   ★ 값은 다시 안 센다 — cropPotList(S.firstPlay, S.day) 의 줄 그대로: 🫘 심기(needsSow) · 💧(needsWater) · 🌱 ageDays/harvestDays(growing) ·
+     🥣 거두기(ready) · ⚪ 비었음(harvested). 숫자는 ageDays/harvestDays 그대로(남은 날로 안 바꾼다 — [다음 날] 「수확까지 N일」과 두 벌이 된다).
+   ★ 자리: 그 시루 그림 위(테두리 0.09m + 0.12m) · 18px 알약 · 겹치면 뒤엣것을 22px 올림 · 프레임마다 따라감 · 화면 밖이면 숨김.
+   ★ 숨김: 대사·옮기기·확대 중(§stageBusy) · 손가락과 겹칠 때 그 표지만 · ⚠ 그 시루에 «말풍선»이 떠 있을 때(말풍선이 이미 그 상태를
+     단추로 말한다 — 같은 말이 한 시루 위에 둘이면 소음이고 «버튼은 한 곳에만»(명세)과도 맞는다).
+   ★ 누르면 그 시루의 줄([식물] 시트의 그 칸)을 연다 — 표지는 [심기]·[물 주기]를 대신하지 않는다.
+   ⚠ 그림이다 — 판정·자리·값은 하나도 안 바꾼다. */
+const SIRU_BADGE_RIM = 0.09, SIRU_BADGE_UP = 0.12;
+let siruBadgeTick = null;
+function siruBadgeRows() {
+  const fp = S && S.firstPlay;
+  if (!fp || !roomView || !roomView.plants) return [];
+  let rows = [];
+  try { rows = (cropPotList(fp, S.day) || []).filter(r => r && r.placed); } catch { rows = []; }
+  const rv = new Map(); try { for (const p of roomView.plants()) if (p && p.potId) rv.set(p.potId, p); } catch { }
+  const out = [];
+  for (const r of rows) {
+    const pl = rv.get(r.id); if (!pl) continue;               /* 방이 안 그린 시루에는 안 단다 */
+    const txt = r.ready ? '🥣 거두기'
+              : r.harvested ? '⚪ 비었음'
+              : r.needsSow ? '🫘 심기'
+              : r.needsWater ? '💧'
+              : r.growing ? `🌱 ${r.ageDays}/${r.harvestDays}`
+              : null;
+    if (!txt) continue;
+    out.push({ id: r.id, kind: r.kind || 'beansprout', key: pl.key, pos: pl.pos, txt });
+  }
+  return out;
+}
+const SIRU_BADGE_ON = (() => { try { return !/[?&]sbadge=0(&|$)/.test(location.search); } catch { return true; } })();   /* ?sbadge=0 — 같은 빌드에서 표지 없는 판(나란히 견주기) */
+function drawSiruBadges() {
+  const box = $('siruBadges');
+  if (!box) return;
+  const want = SIRU_BADGE_ON ? siruBadgeRows() : [];
+  const sig = want.map(b => b.id + '|' + b.txt).join(',');
+  if (box.dataset.sig !== sig) {
+    box.dataset.sig = sig;
+    box.innerHTML = '';
+    for (const b of want) {
+      const el = document.createElement('button');
+      el.type = 'button'; el.className = 'sbadge';
+      el.dataset.id = b.id; el.dataset.key = b.key; el.dataset.kind = b.kind;
+      el.textContent = b.txt;
+      el.setAttribute('aria-label', `시루 — ${b.txt}`);
+      el.addEventListener('click', (e) => { e.stopPropagation(); openSiruRow(b.id); });
+      box.appendChild(el);
+    }
+  }
+  placeSiruBadges();
+  if (want.length) {
+    if (siruBadgeTick == null) { const tick = () => { siruBadgeTick = requestAnimationFrame(tick); placeSiruBadges(); }; siruBadgeTick = requestAnimationFrame(tick); }
+  } else if (siruBadgeTick != null) { cancelAnimationFrame(siruBadgeTick); siruBadgeTick = null; }
+}
+function placeSiruBadges() {
+  const box = $('siruBadges');
+  if (!box || !roomView || !roomView.worldToScreen) return;
+  box.classList.toggle('busy', stageBusy());
+  const pos = new Map(); try { for (const p of roomView.plants()) if (p && p.potId) pos.set(p.potId, p.pos); } catch { }
+  const marked = new Set([...(($('marks') && !$('marks').classList.contains('busy')) ? $('marks').children : [])]
+                          .filter(e => e.style.display !== 'none').map(e => e.dataset.key));
+  /* 손가락이 «그 시루를» 짚고 있나 — 짚는 것이 말풍선(DOM)이면 그 열쇠, 점이면 덮개 구멍(#hintDim data-hole «x,y,r» · 화면 좌표)이 시루 위인가.
+       ⚠ 말풍선 사각형과 겹치는 것으로 가리면 안 된다 — 사람이 시루 옆에 서 있으면 「내 캐릭터를 눌러 보세요」가 며칠 내내 표지를 지웠다(걸어서 잼) */
+  const hintOn = (() => { const h = $('hint'); return !!(h && h.classList.contains('on')); })();
+  const hintKey = hintOn && hintTargetEl && hintTargetEl.dataset ? (hintTargetEl.dataset.key || null) : null;
+  const hole = (() => { if (!hintOn) return null; const d = $('hintDim'); const v = String((d && d.dataset.hole) || '').split(',').map(Number);
+                        return v.length === 3 && v.every(Number.isFinite) ? { x: v[0], y: v[1], r: v[2] } : null; })();
+  const cr = $('roomCanvas').getBoundingClientRect(), sr = $('stage').getBoundingClientRect();
+  const placed = [];
+  for (const el of box.children) {
+    const p = pos.get(el.dataset.id);
+    let sp = null; try { sp = p ? roomView.worldToScreen(p.x, p.y + SIRU_BADGE_RIM + SIRU_BADGE_UP, p.z) : null; } catch { sp = null; }
+    if (!sp || marked.has(el.dataset.key) || (hintKey && hintKey === el.dataset.key)) { el.style.display = 'none'; continue; }
+    el.style.display = '';
+    let x = cr.left - sr.left + sp.x, y = cr.top - sr.top + sp.y;
+    for (const q of placed) if (Math.abs(q.x - x) < 44 && Math.abs(q.y - y) < 20) y = q.y - 22;   /* 겹치면 뒤엣것을 위로 22px */
+    placed.push({ x, y });
+    el.style.left = x + 'px'; el.style.top = y + 'px';
+    /* 손가락 구멍이 그 시루 위면 그 표지만 숨긴다(시루 발밑 화면 점과 구멍 가운데 거리로) */
+    if (hole && p) { let base = null; try { base = roomView.worldToScreen(p.x, p.y, p.z); } catch { }
+      if (base && Math.hypot(cr.left + base.x - hole.x, cr.top + base.y - hole.y) <= hole.r + 10) el.style.display = 'none'; }
+  }
+}
+/* 그 시루의 줄을 연다 — [식물] 시트의 그 칸으로 */
+function openSiruRow(id) {
+  try { window.__byeotSheet.open('plants'); } catch { }
+  setTimeout(() => { try { const el = document.querySelector(`#pagePlants .siru[data-siru="${CSS.escape(String(id))}"]`); if (el) el.scrollIntoView({ block: 'nearest' }); } catch { } }, 60);
 }
 /* 지금 말풍선을 띄우면 안 되는 상황 — 이미 할 일이 분명하거나 화면이 딴 데 있다 */
 function stageBusy() {
@@ -11328,6 +11427,7 @@ function draw() {
   drawLedger();             /* 하루에 얼마 나가고 콩나물이 얼마를 덜어 주나 */
   /* ★ 말풍선을 **먼저** — 아래 물주기 버튼과 손가락이 그걸 보고 정한다(§refreshOverlays) */
   try { drawMarks(); } catch (e) { console.warn('[말풍선]', e && e.message); }
+  try { drawSiruBadges(); } catch (e) { console.warn('[시루 표지]', e && e.message); }
   drawHarvest();            /* 거둘 때가 됐나 */
   drawWater();              /* 물을 줘야 하나 — 말풍선이 있으면 안 띄운다 */
   try { drawNext(); } catch (e) { console.warn('[다음 날]', e && e.message); }  /* §G-18 */
