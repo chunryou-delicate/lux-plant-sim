@@ -3135,6 +3135,10 @@ import { takeCutting, repotCutting, cuttableNow, cutBudgetOf, cutBlockedReason,
 import { isFreeSlotId, atFromSlot } from './src/game/place.js';
 /* 식물등 겨누기 — 물리는 io.light 가, 세이브는 이쪽이 맡는다(lampaim-to-plan §1) */
 import { setLampAim, clearLampAim } from './src/game/state.js';
+/* ★ 2026-10-08 A·B 덧([plan]) — 놓는 순간 빛 경고의 자: real 판은 날씨 기댓값(weatherE) · 무늬 삽수는 뿌리낸 날 등급의 자(varieLightStepOfBand) */
+import { modeOf } from './src/game/state.js';
+import { varieLightStepOfBand } from './src/game/shop.js';
+import { weatherE } from './src/engine/weather.js';
 import * as save from './src/game/save.js';
 import {
   FIRST_PLAY_ASSETS,
@@ -14128,7 +14132,7 @@ function commitPlaceInner(what, hit, opt = {}) {
     if (!c) return placeFailed(new Error(`그 삽수를 못 찾았습니다 (${id})`));
     try {
       setCuttingAt(S, c, atOf(hit), placeOpt());
-      { const darkC = darkPlaceWarn({ obj: c, kind: 'cutting', variegated: !!c.variegated });   /* ★ 2026-10-08 A·B */
+      { const darkC = placeLightWarn({ obj: c, kind: 'cutting', variegated: !!c.variegated });   /* ★ 2026-10-08 A·B */
         banner('🪴 삽수를 놓았습니다', darkC ? `⚠ ${darkC}` : '놓은 자리의 빛이 새 잎의 무늬를 정합니다'); }
       unlockAfterFix();
       sfx.thud();
@@ -14722,7 +14726,7 @@ const placeConfirm = {
     const warn = $('placeConfirmWarn');
     if (!warn) return;
     /* ★ 2026-10-08 A·B — 빛 한 줄이 먼저다(그 그루의 삶이 걸린 말) · 길 막힘은 그 다음 */
-    let dark = null; try { dark = darkPlaceWarn(placedGrowerAt(picked.slotId)); } catch { dark = null; }
+    let dark = null; try { dark = placeLightWarn(placedGrowerAt(picked.slotId)); } catch { dark = null; }
     const msg = [dark, reachWarningFor(picked.potId)].filter(Boolean).join(' · ');
     warn.textContent = msg || '';
     warn.style.display = msg ? '' : 'none';
@@ -14813,7 +14817,7 @@ function startPhonePlaceCut(id) {
     return { ok: false, why: (e && e.message) || String(e) };
   }
   try { window.__byeotSheet.close(); } catch { }
-  { const darkC = darkPlaceWarn({ obj: c, kind: 'cutting', variegated: !!c.variegated });   /* ★ 2026-10-08 A·B */
+  { const darkC = placeLightWarn({ obj: c, kind: 'cutting', variegated: !!c.variegated });   /* ★ 2026-10-08 A·B */
     banner('🪴 삽수를 놓았습니다', darkC ? `⚠ ${darkC}` : '놓은 자리의 빛이 새 잎의 무늬를 정합니다'); }
   syncRoom(); draw();
   return { ok: true };
@@ -15053,7 +15057,10 @@ const PLACE_DARK_KO = Object.freeze({
   /* {who} · {best} 를 채운다 */
   goBest:  '여기는 {who}가 자라기엔 어둡습니다 — 이 방에서 제일 밝은 데는 {best}입니다',
   atBest:  '여기가 이 방에서 제일 밝은데도 {who}가 자라기엔 어둡습니다 — 식물등이 있어야 자랍니다',
-  noneBright: '이 방 어디에도 {who}가 자랄 만큼 밝은 데가 없습니다 — 식물등이 있어야 자랍니다'
+  noneBright: '이 방 어디에도 {who}가 자랄 만큼 밝은 데가 없습니다 — 식물등이 있어야 자랍니다',
+  /* ★ [plan] 갈래 지도 6 — 무늬 삽수(뿌리 전)가 무늬 띠 dark·mid 칸에 놓일 때. 자라기엔 밝아도 등급이 «영영» 굳는다 */
+  varieDim: '여기서 뿌리내리면 무늬가 잘 안 납니다 — 이 방에서 제일 밝은 데는 {best}입니다',
+  varieDimNoBright: '여기서 뿌리내리면 무늬가 잘 안 납니다 — 밝은 자리는 등을 단 창턱입니다'
 });
 /* 그 열쇠(자리 이름 · free:id · id)에 놓인 «자라는 것» — 화분 · 빈 화분 · 삽수. 아니면 null(시루·무순은 제 판정이 따로 있다) */
 function placedGrowerAt(key) {
@@ -15065,11 +15072,27 @@ function placedGrowerAt(key) {
   if (c) return { obj: c, kind: 'cutting', variegated: !!c.variegated };
   return null;
 }
-/* 그 자리가 «오늘» 안 자라는 띠인가 — { dli, band, dark } · 못 재면 null */
+/* 그 자리의 띠 — { dli, band, dark } · 못 재면 null
+   ★ [plan] ① — 날씨를 굴리는 판(real · 원룸)은 «그날 하늘 하나»로 재면 비 오는 날 창턱에서 거짓 «식물등이 있어야» 가 뜬다.
+     ⇒ 그 철 맑은 날의 자연광 × 날씨 기댓값(weatherE) + 등(날씨와 무관) — oneroom.lightGateOf 와 같은 셈.
+     날씨가 고정인 판(novice · 반지하)은 그날 값이 곧 그 값이다(둘이 같다). */
 function growBandAt(ref, variegated) {
   try {
     const sky = io.light.skyFor(S.day, S.sim);
-    const dli = io.light.dliOfSlot(ref, lightOptsOf(S, sky));
+    let dli = null;
+    const rolls = (() => { try { return !!modeOf(S).rollWeather; } catch { return false; } })();
+    if (rolls && typeof io.light.dliAt === 'function') {
+      const at = (ref && typeof ref === 'object' && ref.at) ? ref.at
+               : (() => { const sid = (ref && typeof ref === 'object') ? ref.slotId : ref;
+                          const sl = (io.light.room.slots || []).find(x => x && x.slotId === sid); return sl || null; })();
+      if (at) {
+        const o = lightOptsOf(S, sky);
+        const d = io.light.dliAt({ x: at.x, y: at.y, z: at.z },
+                                 { weather: 'clear', season: sky.season, lampCount: o.lampCount, litHours: o.litHours, occIdx: at.occIdx });
+        if (d && Number.isFinite(d.dli_daylight) && Number.isFinite(d.dli_lamp)) dli = d.dli_daylight * weatherE(sky.season) + d.dli_lamp;
+      }
+    }
+    if (dli == null) dli = io.light.dliOfSlot(ref, lightOptsOf(S, sky));
     if (typeof dli !== 'number' || !isFinite(dli)) return null;
     const b = io.growth && typeof io.growth.bandOf === 'function' ? io.growth.bandOf(dli, !!variegated) : null;
     if (!b || !b.band) return null;
@@ -15090,7 +15113,26 @@ function darkPlaceWarn(g) {
   if (!best || (bestBand && bestBand.dark)) return fill(PLACE_DARK_KO.noneBright);
   return fill(PLACE_DARK_KO.goBest).replace('{best}', slotLabel(best));
 }
-window.__byeotDarkPlace = (key) => { const g = placedGrowerAt(key); return g ? { kind: g.kind, band: growBandAt(g.obj.at ? g.obj : g.obj.slotId, g.variegated), warn: darkPlaceWarn(g) } : null; };
+/* ★ [plan] 갈래 지도 6 — 무늬 삽수(뿌리 전 · 빛 띠 아직 안 정함)가 무늬 띠 «bright» 가 아닌 칸이면 한 줄.
+   자 = 뿌리낸 날 등급을 정하는 그것(propagation.resolveVarieLight → varieLightStepOf(bandOf(dli, 무늬))). 막지 않는다 */
+function varieDimWarn(g) {
+  if (!g || g.kind !== 'cutting' || !g.obj) return null;
+  const c = g.obj;
+  if (!c.varieFromCut || c.varieLightBand || c.status !== 'rooting') return null;
+  if (!c.at && !c.slotId) return null;
+  const here = growBandAt(c.at ? c : c.slotId, g.variegated);
+  if (!here) return null;
+  const step = varieLightStepOfBand(here.band);
+  if (!step || step === 'bright') return null;
+  const best = guideBrightSlot(null);
+  const bb = best ? growBandAt(best, g.variegated) : null;
+  if (best && best !== c.slotId && bb && varieLightStepOfBand(bb.band) === 'bright')
+    return PLACE_DARK_KO.varieDim.replace('{best}', slotLabel(best));
+  return PLACE_DARK_KO.varieDimNoBright;
+}
+/* 놓은 그것의 빛 한 줄 — 안 자람이 먼저 · 그다음 무늬 띠 */
+function placeLightWarn(g) { return darkPlaceWarn(g) || varieDimWarn(g); }
+window.__byeotDarkPlace = (key) => { const g = placedGrowerAt(key); return g ? { kind: g.kind, band: growBandAt(g.obj.at ? g.obj : g.obj.slotId, g.variegated), warn: placeLightWarn(g) } : null; };
 
 function reachWarningFor(potId) {
   if (!roomView || typeof roomView.unreachable !== 'function') return null;
