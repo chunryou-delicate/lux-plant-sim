@@ -24,6 +24,10 @@
      potOnSill            첫 그루 칸이 창턱인가(slotId 에 `sill`) · 가방이면 false
      band                 그 자리의 빛 낱말 'dark'|'mid'|'bright' — 무늬 등급 표(shop.varieLightStepOfBand)와 같은 낱말
      zoomOpenedSinceArrival 도착 뒤 확대창을 연 적 있나 · ⚠ 도착을 못 지켜본 옛 세이브는 null(모른다)
+   ★ 2026-10-08 [plan] «단계 줄»(자르기 기다림 · plan-leafwait 단계 줄 절) 칸 셋:
+     phaseId              첫 그루의 growthPhase().phaseId(오늘 턴 줄 그대로)
+     phaseDays            그 phaseId 에 든 지 며칠(든 날 0 · 같으면 하루씩 +1 · 첫 그루가 바뀌면 다시 0)
+     varieMatured         무늬이면서 다 자란 잎 수 — 자르기 문(cutBlockedReason · game.html varieMaturedLeavesNow)과 같은 자(leafState 의 varie && matured && !dropped)
 
    ★ 세이브 칸은 `firstPlay.monstera.watch` 하나다(save.js §monstera). 안 실으면 새로고침마다 «기다린 날»이 0 부터 다시 센다.
    ⚠ 이 파일은 값(문턱)을 안 정한다 — 「며칠이면 말하나」는 dialogue.js 의 표([plan] 몫)다. */
@@ -38,6 +42,10 @@ const fin = v => typeof v === 'number' && Number.isFinite(v);
 export function readLeafNow(io) {
   const g = io && io.growth;
   if (!g) return null;
+  /* 무늬이면서 다 자란 잎 — 자르기 문과 같은 자(game.html §varieMaturedLeavesNow). 못 읽으면 null */
+  let varieMatured = null;
+  try { const st = g.leafState ? g.leafState() : null;
+        if (Array.isArray(st)) varieMatured = st.filter(r => r && r.varie && r.matured && !r.dropped).length; } catch { varieMatured = null; }
   let rows = null;
   try { rows = g.leafOnPlant ? g.leafOnPlant() : null; } catch { rows = null; }
   if (Array.isArray(rows)) {
@@ -45,12 +53,12 @@ export function readLeafNow(io) {
     let top = null;
     for (const r of on) if (!top || r.leafBirth > top.leafBirth) top = r;
     return { leaves: on.length, birthTop: top ? top.leafBirth : null,
-             youngestM: top && fin(top.leafM) ? top.leafM : null };
+             youngestM: top && fin(top.leafM) ? top.leafM : null, varieMatured };
   }
   /* 잎마다를 못 읽는 옛 생장 창 — 잎 수만 안다(새 잎·leafM 은 모른다) */
   let s = null;
   try { s = g.leafStats ? g.leafStats() : null; } catch { s = null; }
-  return (s && int(s.leaves)) ? { leaves: s.leaves, birthTop: null, youngestM: null } : null;
+  return (s && int(s.leaves)) ? { leaves: s.leaves, birthTop: null, youngestM: null, varieMatured } : null;
 }
 
 function harvestTotalOf(fp) {
@@ -96,8 +104,11 @@ export function stepLeafWatch(S, { pot = null, row = null, leaf = null } = {}) {
   /* 첫 그루가 바뀌었다(모주를 팔았다 등) — 잎 쪽만 새로 센다 */
   if (pot && w.potId !== pot.id) {
     if (w.potId != null) { w.upDay = day; w.streak = 0; }
-    w.potId = pot.id; w.birthTop = null;
+    w.potId = pot.id; w.birthTop = null; w.phaseId = null; w.phaseSince = null;
   }
+  /* 단계 — 든 날을 적어 두고 «든 지 며칠»을 센다 */
+  const phaseId = (row && row.growthPhase && typeof row.growthPhase.phaseId === 'string') ? row.growthPhase.phaseId : null;
+  if (phaseId && phaseId !== w.phaseId) { w.phaseId = phaseId; w.phaseSince = day; }
 
   /* 새 잎 */
   let newLeafToday = null;
@@ -132,7 +143,10 @@ export function stepLeafWatch(S, { pot = null, row = null, leaf = null } = {}) {
     harvestsSinceArrival: (total != null && int(w.harvestBase)) ? Math.max(0, total - w.harvestBase) : null,
     potOnSill: pot ? (!inBag && /sill/i.test(String(pot.slotId || ''))) : null,
     band,
-    zoomOpenedSinceArrival: w.zoomOpened === true ? true : (w.zoomOpened === false ? false : null)
+    zoomOpenedSinceArrival: w.zoomOpened === true ? true : (w.zoomOpened === false ? false : null),
+    phaseId,
+    phaseDays: (phaseId && phaseId === w.phaseId && int(w.phaseSince)) ? Math.max(0, day - w.phaseSince) : null,
+    varieMatured: leaf && int(leaf.varieMatured) ? leaf.varieMatured : null
   };
 }
 
@@ -144,6 +158,7 @@ export function packLeafWatch(w) {
     since: i(w.since), day: i(w.day), potId: (typeof w.potId === 'string' || int(w.potId)) ? w.potId : null,
     birthTop: fin(w.birthTop) ? w.birthTop : null, upDay: i(w.upDay), streak: i(w.streak),
     harvestBase: i(w.harvestBase), harvestSeen: i(w.harvestSeen),
-    zoomOpened: w.zoomOpened === true ? true : (w.zoomOpened === false ? false : null)
+    zoomOpened: w.zoomOpened === true ? true : (w.zoomOpened === false ? false : null),
+    phaseId: typeof w.phaseId === 'string' ? w.phaseId : null, phaseSince: i(w.phaseSince)
   };
 }

@@ -68,6 +68,24 @@ const bumpHarvest = fp => { fp.beansprout.harvestCount = (fp.beansprout.harvestC
   const w2 = JSON.parse(JSON.stringify(packLeafWatch(S.firstPlay.monstera.watch)));
   ok(w2.upDay === 19 && w2.birthTop === 61 && w2.zoomOpened === true && w2.harvestBase === 1, '세이브 모양 — upDay·birthTop·zoomOpened·harvestBase', w2);
 }
+/* ⑥ 단계 줄 칸 — phaseId · phaseDays · varieMatured ([plan] 단계 줄) */
+{
+  console.log('■ ⑥ 단계 칸');
+  const S = mkS(6, 5); S.firstPlay = realFp();
+  const pot = S.pots[0];
+  const R = (ph) => ({ grew: true, growthSpeed: { band: 'slow' }, growthPhase: { phaseId: ph } });
+  let lw = stepLeafWatch(S, { pot, row: R('leaf_young'), leaf: { leaves: 3, birthTop: 40, youngestM: 0.2, varieMatured: 1 } });
+  ok(lw.phaseId === 'leaf_young' && lw.phaseDays === 0 && lw.varieMatured === 1, '든 날 0 · 무늬 다 자란 잎 1', lw);
+  S.day = 7; lw = stepLeafWatch(S, { pot, row: R('leaf_young'), leaf: { leaves: 3, birthTop: 40, youngestM: 0.3, varieMatured: 1 } });
+  S.day = 8; lw = stepLeafWatch(S, { pot, row: R('leaf_young'), leaf: { leaves: 3, birthTop: 40, youngestM: 0.4, varieMatured: 1 } });
+  ok(lw.phaseDays === 2, '같은 단계면 하루씩 는다(8 − 6 = 2)', lw.phaseDays);
+  S.day = 9; lw = stepLeafWatch(S, { pot, row: R('leaf_mid'), leaf: { leaves: 3, birthTop: 40, youngestM: 0.5, varieMatured: 2 } });
+  ok(lw.phaseId === 'leaf_mid' && lw.phaseDays === 0 && lw.varieMatured === 2, '단계가 바뀌면 다시 0', lw);
+  S.day = 10; lw = stepLeafWatch(S, { pot, row: null, leaf: { leaves: 3, birthTop: 40, youngestM: 0.5, varieMatured: null } });
+  ok(lw.phaseId === null && lw.phaseDays === null && lw.varieMatured === null, '모르면 null(가방 · 못 읽음)', lw);
+  const w = JSON.parse(JSON.stringify(packLeafWatch(S.firstPlay.monstera.watch)));
+  ok(w.phaseId === 'leaf_mid' && w.phaseSince === 9, '세이브 모양 — phaseId · phaseSince', w);
+}
 /* ② 가방 */
 {
   console.log('■ ② 가방에 든 그루');

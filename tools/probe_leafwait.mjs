@@ -62,7 +62,7 @@ for (let i = 0; i < DAYS; i++) {
   const lw = await J(`window.__leafWait()`);
   const said = await J(`(window.__dlgLog||[]).filter(x=>x.day===${d1}).map(x=>x.id)`);
   rows.push({ day: d1, lw, said });
-  const s = lw ? `잎 ${lw.leaves} · 새잎 ${lw.newLeafToday} · 기다림 ${lw.leafWaitDays} · 어린잎M ${lw.youngestLeafM == null ? null : lw.youngestLeafM.toFixed(2)} · 자람 ${lw.growStreak} · 창턱 ${lw.potOnSill} · 빛 ${lw.band} · 확대 ${lw.zoomOpenedSinceArrival} · 거둠 ${lw.harvestedToday}/${lw.harvestsSinceArrival}` : 'null';
+  const s = lw ? `잎 ${lw.leaves} · 새잎 ${lw.newLeafToday} · 기다림 ${lw.leafWaitDays} · 어린잎M ${lw.youngestLeafM == null ? null : lw.youngestLeafM.toFixed(2)} · 자람 ${lw.growStreak} · 창턱 ${lw.potOnSill} · 빛 ${lw.band} · 확대 ${lw.zoomOpenedSinceArrival} · 거둠 ${lw.harvestedToday}/${lw.harvestsSinceArrival} · 단계 ${lw.phaseId}/${lw.phaseDays} · 무늬다자람 ${lw.varieMatured}` : 'null';
   console.log(`  d${d0}→${d1} ${s}${said.length ? ' · 말: ' + said.join(',') : ''}`);
   if (d1 === d0) {
     const why = await J(`(()=>{ const n=document.getElementById('next'); const p=[...document.querySelectorAll('.pop.on')].map(x=>x.id||x.className);
