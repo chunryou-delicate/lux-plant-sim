@@ -122,6 +122,11 @@ function makeRich() {
   S.stamina.questsOpenedOn = { place_siru: 0, first_harvest: 1, order_seed: 5 };
   S.stamina.nappedOnDay = 3;   /* ⑦ 낮잠 잔 날 — 하루 1번의 근거 */
   S.stamina.questsWaitedOn = { first_harvest: 4 };   /* D2(10-08) — 마지막으로 기다린 날(독촉이 여기 다음 날부터 센다) */
+  /* ★ 2026-10-08 — 둘째 잎 기다림의 셈(leaf_wait §stepLeafWatch · [plan] 상태 줄). 0 과 null 을 같이 넣는다 —
+     「0 을 없음으로 읽는」 저장과 「모른다(null)를 false 로 메꾸는」 저장을 둘 다 잡게 */
+  if (S.firstPlay && S.firstPlay.monstera)
+    S.firstPlay.monstera.watch = { since: 9, day: 12, potId: 'pot_01', birthTop: 51.75, upDay: 9, streak: 3,
+                                   harvestBase: 0, harvestSeen: 2, zoomOpened: null };
   S.tutorial.cashWon = 1234500;
   S.tutorial.lamp = { ...(S.tutorial.lamp || {}), unlocked: true, owned: 2, placed: 1 };
   /* ⚠ 모양을 «지어내지» 않는다 — 정본은 `tutorial.createVarieLeafState()` 다({ever, firstDay, where}).
@@ -242,7 +247,10 @@ for (const [name, hurt, pat] of [
    raw => { delete raw.state.stamina.nappedOnDay; },                    /stamina\.nappedOnDay/],
   /* ★ 2026-10-08 D2 — 기다린 날이 빠지면 다시 켤 때 독촉이 «열린 날»부터 다시 세어 한 단 뛴다 */
   ['기다린 날이 사라짐',
-   raw => { delete raw.state.stamina.questsWaitedOn.first_harvest; },   /stamina\.questsWaitedOn/]
+   raw => { delete raw.state.stamina.questsWaitedOn.first_harvest; },   /stamina\.questsWaitedOn/],
+  /* ★ 2026-10-08 — 잎이 마지막으로 난 날이 빠지면 다시 켤 때 «스무 날 그대로»가 0 부터 다시 센다 */
+  ['잎 기다림의 마지막 새 잎 날이 사라짐',
+   raw => { delete raw.state.firstPlay.monstera.watch.upDay; },         /firstPlay\.monstera\.watch/]
 ]) {
   const probe = makeRich();
   const rawP = JSON.parse(JSON.stringify(serialize(probe)));

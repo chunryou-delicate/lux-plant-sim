@@ -2966,6 +2966,7 @@
         return false;
       }
       stage.classList.add('zoom'); closeSheet(); pauseRoom(true); pauseZoomRender(false);
+      try { window.__byeotZoomOpened && window.__byeotZoomOpened(); } catch (e) { }   /* ★ 2026-10-08 상태 줄 칸(확대창을 연 적) */
       try { window.__byeotHint && window.__byeotHint(); } catch (e) { }   /* ★ 확대 중 손가락은 쉰다 — 멈춘 방 위에 얼어 남지 않게 지금 한 번 다시 묻는다 */
       return true;
     },
@@ -3127,6 +3128,8 @@ import { moveIntoOneroom, storyOf } from './src/game/oneroom.js';
 import { ENDING_RULES } from './src/game/ending.js';
 /* ★ 2026-10-08 D2 — 독촉은 «할 수 있었던 날»만: 기다린 날을 적는다(판정·날수는 nudge_wait.js · 거는 자리는 dialogue.js chatterContext) */
 import { noteQuestWaits } from './src/game/nudge_wait.js';
+/* ★ 2026-10-08 — 확대창을 연 적(둘째 잎 기다림 «상태 줄» zoomOpenedSinceArrival · leaf_wait.js) */
+import { noteZoomOpened } from './src/game/leaf_wait.js';
 /* ★★ 2026-08-09 — 빨리감기 여섯(`startFastForward`·`stopFastForward`·`isFastForwarding`·
    `nextEventPreview`·`timeModeOf`·`FAST_MODE_MAX_DAYS`)을 **안 들여온다**(박사님 지시로 화면에서
    걷었다). loop.js 에는 그대로 있다 — 헤드리스 재현·밸런스 측정이 그 길로 돈다.
@@ -12404,9 +12407,12 @@ async function bootRoomView() {
       const p = pot0(S);
       return !!(p && p.slotId && id && p.slotId === id);
     }; window.__io = io;
+    /* ★ 2026-10-08 — 확대창이 열렸다(위 고전 스크립트 §__byeotZoom.open 이 부른다) → 「도착 뒤 연 적 있나」를 적는다 */
+    window.__byeotZoomOpened = () => { try { noteZoomOpened(S); } catch { } };
     /* 진단용 — 말풍선이 왜 안 뜨는지 밖에서 볼 수 있게. 읽기 전용이다 */
     window.__marks = { list: () => markList(), busy: () => stageBusy() };
     window.__S = () => S;
+    window.__leafWait = () => (lastTurn && lastTurn.leafWait) || null;   /* 진단용 — 상태 줄 칸(leaf_wait.js) · 읽기 전용 */
     window.__moveLabel = () => moveDropLabelKo();   /* 진단용 — 읽기 전용 */
     window.__brightest = (id) => isBrightestSlot(id);            /* 진단용 — 읽기 전용 */
     window.__focusSpear = () => focusOnMonstera();               /* 진단용 — §focusOnMonstera 를 눌러 보는 손잡이 */                    /* 진단용 — 읽기 전용으로 쓴다 */

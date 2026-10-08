@@ -75,6 +75,8 @@ import { weekStats, WEATHER_P } from '../engine/weather.js';
 import { judgeDLI } from '../engine/daily_light.js';
 /* ★ 퀘스트가 아는 문턱을 읽으려고 부른다(§cropEnough). quest.js 는 loop 을 안 부르므로 순환이 아니다 */
 import { QUESTS } from './quest.js';
+/* ★ 2026-10-08 — 둘째 잎 기다림 «상태 줄»의 칸([plan] plan-leafwait ③ · turn.leafWait) */
+import { readLeafNow, stepLeafWatch } from './leaf_wait.js';
 
 /* ══ 걷는 속도 — 밝기가 「품질」만이 아니라 「속도」도 정한다 (2026-08-05 박사님 확정) ══
    ------------------------------------------------------------------------------
@@ -1139,9 +1141,17 @@ export function nextDay(S, io) {
      ⚠ 그루가 **전부** 가방에 있어도 하루는 간다. 판이 멎으면 되돌릴 길이 없다. */
   const inBag = (p) => !!(p && p.placedOnce === false && !p.slotId && !p.at);
   const plants = [];
+  /* ★ 2026-10-08 — 첫 그루의 잎은 «그 그루가 꽂힌 그 순간»에 읽는다(turn.leafWait · leaf_wait.js).
+     루프가 끝나면 마지막 그루가 꽂혀 있어 첫 그루의 잎을 못 읽는다(그루가 여럿일 때). */
+  let leafNow = null;
   for (const pot of S.pots) {
     if (inBag(pot)) continue;
     plants.push(stepPlantDay(S, io, pot, { report, sky, check }));
+    if (pot === p) leafNow = readLeafNow(io);
+  }
+  /* 첫 그루가 가방에 있으면 안 돌았다 — 그루가 하나뿐일 때만 그대로 읽는다(꽂을 것이 그것뿐이다) */
+  if (!leafNow && p && S.pots.length <= 1) {
+    try { selectPlantFor(S, io, p); leafNow = readLeafNow(io); } catch { leafNow = null; }
   }
 
   /* 전기요금은 **하루에 한 번**이다 — 그루 수와 무관하다(그루마다 더하면 두 배가 된다) */
@@ -1205,6 +1215,12 @@ export function nextDay(S, io) {
     cropWater: beansproutWaterStatus(S.firstPlay, S.day),
     cuttings, shop, market
   };
+  /* ★ 2026-10-08 — 둘째 잎 기다림 «상태 줄»의 칸([plan] plan-leafwait ③). 실패 판정(위) «뒤»라 무른 턴은 안 센다.
+     ⚠ 이 경로(몬스테라가 온 뒤)에만 있다 — 앞 반환구(earlyTurn)는 몬스테라 전이라 칸이 없다(= 모른다 · 줄이 안 뜬다). */
+  try {
+    const row0 = plants.find(r => r && r.pot === p);
+    turn.leafWait = stepLeafWatch(S, { pot: p, row: row0 ? row0.fields : null, leaf: leafNow });
+  } catch (e) { turn.leafWait = null; console.warn('[잎 기다림]', e && e.message); }
 
   /* ★ 순서가 계약이다 (2026-08-02 정정).
      ① 그림이 죽었으면 **단계를 반영하기 전에** 멈춘다 — 안 그러면 화면엔 아무 변화가 없는데

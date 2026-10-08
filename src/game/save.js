@@ -56,6 +56,8 @@ import { SHOP_SCHEMA, createShopState, SALE_KINDS } from './shop.js';
 /* 체력 — 규칙(최대치)은 저쪽 것이다. 세이브는 남은 양만 싣는다(docs/stamina.md) */
 import { STAMINA_MAX, createStaminaState } from './stamina.js';
 import { STORY_SCHEMA, createStoryState } from './oneroom.js';
+/* ★ 2026-10-08 — 둘째 잎 기다림 «상태 줄»의 칸(firstPlay.monstera.watch · leaf_wait.js) */
+import { packLeafWatch } from './leaf_wait.js';
 
 /* 저장 봉투의 스키마. **모르는 값이면 읽지 않는다**(fail-loud). */
 export const SAVE_SCHEMA = 'game_save/1';
@@ -799,6 +801,9 @@ function packFirstPlay(fp) {
         hinted:    !!m.guide.hinted,
         lampHinted: !!m.guide.lampHinted
       } : null,
+      /* ★ 2026-10-08 — 둘째 잎 기다림의 셈(leaf_wait §stepLeafWatch). 안 실으면 새로고침마다 «기다린 날»이 0 부터 다시 센다.
+         옛 세이브는 없다 → null → 다음 하루에 «오늘부터» 센다(지난 날을 지어내지 않는다). */
+      watch: packLeafWatch(m.watch),
       /* ★ 단계 표시는 growth 가 낸 **관측 기록**이다. 판정에 안 쓰고 화면 문구로만 쓰므로
          그대로 적어 둔다 — 복원 직후 재생이 끝나기 전 화면이 빈칸이 되지 않게. */
       growthPhase: gp == null ? null : {
