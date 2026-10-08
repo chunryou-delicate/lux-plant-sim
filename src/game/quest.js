@@ -201,6 +201,7 @@ export const QUEST_SCHEMA = 'quest/1';
      lampUnlocked        식물등을 살 수 있게 됐나     (ts.lamp.unlocked · 가을 진입)
      lampOwned           갖고 있는 식물등 개수        (ts.lamp.owned)
      lampPlaced          ★ 10-08 방에 «단» 식물등 개수 (ts.lamp.placed) — null = 「모른다」(배선 전) ⇒ buy_lamp 는 예전처럼 lampOwned 로 본다
+     monsteraGrowing     ★ 10-08 갈래 지도 4 — 첫 그루 자리 밴드가 «자람»인가(가방이면 false · 못 재면 null · [core] 06667391)
      motherVarieMatured  ★ 10-08 D25 모주의 «무늬이면서 다 자란» 잎 수 — 자르기 문(propagation.cutBlockedReason opt.varieMaturedLeaves)과
                          «같은 자»(game.html varieMaturedLeavesNow). null = 「모른다」(배선 전) ⇒ first_cut 은 motherVarieLeaves 로 어림한다
 
@@ -222,6 +223,8 @@ export function emptySnapshot() {
            lampPlaced: null,
            /* ★ 2026-10-08 D25 — 자르기 문과 같은 자(§first_cut). null = 「모른다」 */
            motherVarieMatured: null,
+           /* ★ 2026-10-08 갈래 지도 4 — 자라는 자리에 놓였나(§monstera_home done). null = 「모른다」 */
+           monsteraGrowing: null,
            /* ★ null = 「모른다」. false 로 두면 「아직 배선이 없다」와 「아니다」가 같아진다 */
            monsteraArrived: null, monsteraHomed: null,
            /* ★ 2026-09-02 — 옮긴 뒤 지난 날 · 한 번 자랐나 (둘 다 firstPlay.monstera.guide 의 칸) */
@@ -447,7 +450,10 @@ const FIRST_PLAY_CHAIN = Object.freeze([
     /* ⚠ 「잎 ≥ 1」은 «왔다»는 뜻이다 — 새 칸(monsteraArrived)을 안 채운 옛 세이브·검사 판에서도 사슬이 굴러가게
        이미 있는 사실로 «같이» 연다(맨 위 §64 규율). 열쇠를 넓힌 것이 아니다. */
     opens: s => yes(s.monsteraArrived) || num(s.motherLeaves) >= 1,
-    done:  s => yes(s.monsteraHomed) || num(s.motherLeaves) >= 2
+    /* ★★ 2026-10-08 [plan] 갈래 지도 4 — «옮겼나»가 아니라 **«자라는 자리에 놓였나»**로 끝난다.
+       있던 완료(monsteraHomed — 도착 자리에서 한 번이라도 옮겼나)는 어두운 데 → 다른 어두운 데로 옮겨도 끝났다(거짓 완료).
+       칸(monsteraGrowing · [core])이 없으면 예전 그대로 옮김으로 본다. 잎 둘이면(자랐다는 뜻) 어느 쪽이든 끝. */
+    done:  s => (s.monsteraGrowing != null ? yes(s.monsteraGrowing) : yes(s.monsteraHomed)) || num(s.motherLeaves) >= 2
   }),
 
   /* ⚠⚠ 2026-08-17 — 여기 있던 ⑦`leaf_two`·⑧`leaf_three` 를 **아래 `SLOW_QUESTS` 로

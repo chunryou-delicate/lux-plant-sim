@@ -1485,6 +1485,39 @@ export const SCRIPTS = {
     { who: 'jachwi', face: 'tired', text: '…배가 고프다.' },
     { who: 'moni',   face: 'worry', text: '오늘 팔 수 있는 걸 찾아보자. 이대로면 쓰러져.' }
   ],
+  /* ═══ ★★ 2026-10-08 [plan] 갈래 지도 5·6 — **삽수 사건에 말을 붙인다.** ═══
+     [core] a8749420 전까지 삽수 사건은 turn.cuttings 에만 있어 로그 말고 아무 데도 안 갔다 — 물꽂이를 방치하면 «말 없이» 시들었다(초보도).
+     ⚠ 수는 안 말한다(남은 날은 로그·삽수 줄이 말한다). ⚠ 경고는 혹 난 날·절반·마지막 사흘 매일 — 같은 말이 연달아 안 서게 §scriptOf 가 가른다.
+     ⚠ 「흙에 있으면 기한이 없다」(needsRepot false)는 말을 안 붙인다 — 할 일이 없는 소식이다. */
+  cuttingNode: [
+    { who: 'moni', face: 'teach', text: '혹이 났어. 흙에 옮겨 심어 줘 — 물에선 더 못 버텨.' }
+  ],
+  cuttingWarn: [
+    { who: 'moni', face: 'worry', text: '혹 난 삽수가 아직 물에 있어. 흙으로 옮겨 줘.' }
+  ],
+  cuttingWarnLast: [
+    { who: 'moni', face: 'worry', text: '분갈이할 날이 얼마 안 남았어. 오늘 흙으로 옮겨 줘.' }
+  ],
+  cuttingDied: [
+    { who: 'jachwi', face: 'tired', text: '…삽수가 시들었다.' },
+    { who: 'moni',   face: 'sad',   text: '미안. 혹이 나면 흙으로 옮겨야 했어.' }
+  ],
+  /* ★ 뿌리낸 날 밝기가 무늬율·등급을 «영영» 정한다(propagation §resolveVarieLight · 어두움 20% · 중간 50% · 밝음 80%) — 그날 한 번 말한다.
+     수는 안 쓴다 — 「날 때도 있고 안 날 때도 있어」가 중간의 뜻이다. */
+  cuttingVarieBright: [
+    { who: 'moni', face: 'cheer', text: '밝은 데서 뿌리를 냈어! 무늬가 잘 날 거야.' }
+  ],
+  cuttingVarieMid: [
+    { who: 'moni', face: 'teach', text: '중간 밝기에서 뿌리를 냈어. 무늬는 날 때도 있고 안 날 때도 있어.' }
+  ],
+  cuttingVarieDark: [
+    { who: 'moni', face: 'worry', text: '어두운 데서 뿌리를 냈어. 이 삽수는 무늬가 잘 안 나.' }
+  ],
+  /* ★ 2026-10-08 [plan] 갈래 지도 13 — 씨앗이 있는데 빈 시루가 있는 날(order_seed · [core] nudge_wait 가 «재고 있음»을 기다림에서 뺐다).
+     칸 seedStock·emptySiru 는 [core] turn.cropNow — 없으면 null 이라 이 줄은 안 서고 예전 씨앗 줄이 선다. */
+  nudgeSeedSow: [
+    { who: 'moni', face: 'teach', text: '씨앗이 있는데 빈 시루가 있어. 심어 줘.' }
+  ],
 
   /* ═══ ★★ 2026-10-08 [plan] «상태 줄» — 둘째 잎을 기다리는 동안 «오늘 바뀐 것»을 말한다(docs/handoff/plan-leafwait-20261008.md ②) ═══
      §STATUS 표가 조건을 갖는다. 칸([core] turn.leafWait)이 없으면 조건이 다 거짓이라 안 뜬다.
@@ -1940,6 +1973,8 @@ export const REPEATABLE = new Set(
              'cropHandsShort', 'brokeTalk', 'brokeTalkAgain',
              /* ★ 2026-10-08 D22 — 팔려고 할 때마다 말린다(되돌릴 수 없는 것 앞의 말은 매번이다) */
              'sellLastVarie', 'moveNoVarie', 'hungryTalk', 'hungryTalk2',
+             'cuttingNode', 'cuttingWarn', 'cuttingWarnLast', 'cuttingDied',
+             'cuttingVarieBright', 'cuttingVarieMid', 'cuttingVarieDark', 'nudgeSeedSow',
              /* ★ 2026-10-08 상태 줄 — 기다림마다 다시 온다(§STATUS gap) */
              'statusSill', 'statusGauge', 'statusStreak', 'statusLeafWide', 'statusSiruVs', 'statusWallet',
              'statusPhaseOpening', 'statusPhaseYoung', 'statusPhaseMid', 'statusPhaseMature', 'statusPhaseAxis', 'statusVarieHalf'])
@@ -1993,6 +2028,11 @@ export const EVENT_SCRIPT = Object.freeze({
   move_no_varie:       'moveNoVarie',
   /* ★ 2026-10-08 [plan] 갈래 지도 2 — 굶주림 경고(tutorial.js · 0원 닷새째부터 매일 · 월세·파산과 같은 살림 사건 길) */
   hungry:              'hungryTalk',
+  /* ★ 2026-10-08 [plan] 갈래 지도 5·6 — 삽수 사건([core] a8749420 로 turn.events 에 섬). 갈림은 §scriptOf */
+  cutting_node:        'cuttingNode',
+  cutting_warn:        'cuttingWarn',
+  cutting_died:        'cuttingDied',
+  cutting_varie_light: 'cuttingVarieMid',
   monstera_arrived:    'monsteraArrived',
   /* ★ 유도 두 걸음 (2026-08-09) — first_play.firstPlayEventsOf 가 낸다 */
   monstera_no_spear:   'monsteraGuideWindow',
@@ -2189,6 +2229,11 @@ function scriptOf(ev, S = null) {
   /* ★ 2026-10-08 [plan] 갈래 지도 2 — 굶주림 경고는 매일 난다. 같은 말이 연달아 서지 않게 두 벌을 «번갈아» 쓴다(남은 날 홀/짝).
      dialogue_coverage ⑶ C(겨울까지 반지하 판이 실제로 굶는다)가 잡았다 — 그 자는 날이 아니라 «나온 대사 차례»를 본다.
      남은 날을 모르면(옛 사건) 첫 벌. */
+  /* ★ 2026-10-08 [plan] 삽수 사건 갈림 — 흙에 난 혹은 말 없음 · 경고 마지막 사흘은 두 벌 번갈아 · 뿌리낸 밝기 셋 */
+  if (id === 'cutting_node' && ev && ev.needsRepot === false) return null;
+  if (id === 'cutting_warn' && ev && Number.isFinite(ev.daysLeft) && ev.daysLeft <= 3 && ev.daysLeft % 2 === 1) return 'cuttingWarnLast';
+  if (id === 'cutting_varie_light' && ev) return ev.step === 'bright' ? 'cuttingVarieBright'
+                                              : ev.step === 'dark' ? 'cuttingVarieDark' : 'cuttingVarieMid';
   if (id === 'hungry') return (ev && Number.isFinite(ev.left) && ev.left % 2 === 0) ? 'hungryTalk2' : 'hungryTalk';
   if (id === 'quest_opened') return QUEST_OPEN_SCRIPT[ev && ev.questId] || null;
   if (id === 'quest_done')   return QUEST_DONE_SCRIPT[ev && ev.questId] || null;
@@ -2244,6 +2289,8 @@ export function scriptsForEvents(events = [], S = null) {
   if (arr >= 0 && !out.includes('god1')) out.splice(arr, 0, 'god1');
   /* ★ 2026-10-08 [plan] ④ — 집 자금 퀘스트 끝과 «닿음»은 같은 순간이다(둘 다 «현금 ≥ 목표»). 같은 턴이면 닿음 한 벌만 말한다(§endingReady) */
   if (out.includes('endingReady')) { const q = out.indexOf('questDoneOneroomHomeFund'); if (q >= 0) out.splice(q, 1); }
+  /* ★ 2026-10-08 [plan] 혹 난 날은 경고(w_node)도 같이 난다 — 같은 순간이라 «혹이 났어» 한 벌만 */
+  if (out.includes('cuttingNode')) { const w = out.indexOf('cuttingWarn'); if (w >= 0) out.splice(w, 1); }
   return out;
 }
 
@@ -2390,10 +2437,13 @@ export const CHATTER = [
   { id: 'nudgeHarvestReady', nudge: true, when: c => !!c.nudge && c.nudge.id === 'first_harvest' && c.nudge.days < NUDGE_DAYS.ask },
   { id: 'nudgeHarvestAsk',   nudge: true, when: c => !!c.nudge && c.nudge.id === 'first_harvest' && c.nudge.days >= NUDGE_DAYS.ask && c.nudge.days < NUDGE_DAYS.back },
   { id: 'nudgeHarvestPush',  nudge: true, when: c => !!c.nudge && c.nudge.id === 'first_harvest' && c.nudge.days >= NUDGE_DAYS.back },
-  { id: 'nudgeSeedOffer',    nudge: true, when: c => !!c.nudge && c.nudge.id === 'order_seed' && c.nudge.days >= 1 && c.nudge.days < NUDGE_DAYS.ask },
-  { id: 'nudgeSeedAsk',      nudge: true, when: c => !!c.nudge && c.nudge.id === 'order_seed' && c.nudge.days >= NUDGE_DAYS.ask && c.nudge.days < NUDGE_DAYS.worry },
-  { id: 'nudgeSeedWorry',    nudge: true, when: c => !!c.nudge && c.nudge.id === 'order_seed' && c.nudge.days >= NUDGE_DAYS.worry && c.nudge.days < NUDGE_DAYS.back },
-  { id: 'nudgeSeedPush',     nudge: true, when: c => !!c.nudge && c.nudge.id === 'order_seed' && c.nudge.days >= NUDGE_DAYS.back },
+  /* ★ 2026-10-08 [plan] 갈래 지도 13 — 씨앗이 «있으면» 씨앗 줄(「씨앗이 떨어졌어」 등)이 거짓이다. 심기 줄이 먼저, 씨앗 줄은 재고가 없을 때만.
+     seedStock·emptySiru 를 모르면(null) 예전 그대로 씨앗 줄. */
+  { id: 'nudgeSeedSow',      nudge: true, when: c => !!c.nudge && c.nudge.id === 'order_seed' && c.seedStock > 0 && c.emptySiru === true },
+  { id: 'nudgeSeedOffer',    nudge: true, when: c => !!c.nudge && c.nudge.id === 'order_seed' && !(c.seedStock > 0) && c.nudge.days >= 1 && c.nudge.days < NUDGE_DAYS.ask },
+  { id: 'nudgeSeedAsk',      nudge: true, when: c => !!c.nudge && c.nudge.id === 'order_seed' && !(c.seedStock > 0) && c.nudge.days >= NUDGE_DAYS.ask && c.nudge.days < NUDGE_DAYS.worry },
+  { id: 'nudgeSeedWorry',    nudge: true, when: c => !!c.nudge && c.nudge.id === 'order_seed' && !(c.seedStock > 0) && c.nudge.days >= NUDGE_DAYS.worry && c.nudge.days < NUDGE_DAYS.back },
+  { id: 'nudgeSeedPush',     nudge: true, when: c => !!c.nudge && c.nudge.id === 'order_seed' && !(c.seedStock > 0) && c.nudge.days >= NUDGE_DAYS.back },
   /* ★ 퀘스트별 두 줄 — 권함(열린 다음 날 ~ 물음 전) · 미는 말(걱정 문턱부터 끝까지). 그 사이(물음)는 공통 줄이 받는다 */
   ...[['buy_lamp', 'nudgeLampOffer', 'nudgeBackLamp'],
       ['monstera_home', 'nudgeMonsteraOffer', 'nudgeMonsteraPush'],
@@ -2550,6 +2600,12 @@ export function chatterContext(turn = {}, S = null) {
                /* ★ 2026-10-08 단계 줄 — phaseId 막내 잎 단계(growthPhase().phaseId) · phaseDays 그 단계에 든 지 며칠(든 날 0)
                   · varieMatured 다 자란 무늬 잎 수(자르기 문과 같은 자 · varieMaturedLeavesNow) */
                phaseId: pick('phaseId'), phaseDays: pick('phaseDays'), varieMatured: pick('varieMatured') };
+    })(),
+    /* ★ 2026-10-08 [plan] 갈래 지도 13 — 씨앗 재고·빈 시루([core] turn.cropNow). 모르면 null */
+    ...(() => {
+      const cn = (turn && turn.cropNow) || {};
+      return { seedStock: cn.seedStock === undefined ? null : cn.seedStock,
+               emptySiru: cn.emptySiru === undefined ? null : cn.emptySiru };
     })(),
     /* ★ 2026-09-02 — 독촉의 임자: «가장 먼저 열렸는데 아직 안 끝난» 퀘스트가 열린 지 며칠째인가.
        열린 날은 stamina.questsOpenedOn(세이브에 실린다), 끝난 것은 stamina.questsTaken 이 안다. 새 칸은 열린 날 하나뿐이다. */
