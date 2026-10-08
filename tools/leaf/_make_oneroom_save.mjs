@@ -2,7 +2,7 @@
    ★ 판 둘로 나눈다: 헤드리스 한 판에서 방을 두 번 세우면 둘째가 안 설 때가 있었다(10-08) — ⚠ 서버 대기열 탓이었을 수 있다(_shot_room_varie §정정).
      여기서는 방을 다시 안 세우고(moveIntoOneroom 은 빛 쪽만 원룸으로 짓는다) 세이브만 떠서 파일로 남긴다.
    키우기는 [growth] probe_room_zoom_varie_skin 그대로(날마다 물 · runDays 1 · 등급 두 줄).
-   OUT= 세이브 파일 (필수 · 있으면 안 돈다) · DAYS= · BYEOT_URL= · CARRY=etagere(에타제르를 가방에 담아 간다) · PLACE=etagere · SLOTS=a,b · NOMOVE=1(이사 없이 반지하 세이브) */
+   OUT= 세이브 파일 (필수 · 있으면 안 돈다) · DAYS= · BYEOT_URL= · CARRY=etagere(에타제르를 가방에 담아 간다) · PLACE=etagere · SLOTS=a,b · NOMOVE=1(이사 없이 반지하 세이브) · LAMP=n(등 n 개 켠 판) */
 import { launch, sleep } from '../test_cdp.mjs';
 import fs from 'node:fs';
 const OUT = process.env.OUT; if (!OUT) { console.error('⛔ OUT='); process.exit(2); }
@@ -21,13 +21,15 @@ console.log('세움 —', JSON.stringify(await J(`(async()=>{ const st=await imp
   return { 자리:p.slotId }; })()`)));
 console.log('돌림 —', JSON.stringify(await J(`(async()=>{ const st=await import('/src/game/state.js'); const lp=await import('/src/game/loop.js'); const sh=await import('/src/game/shop.js');
   const S=window.__S(), io=window.__io; let errs=[];
+  /* ★ LAMP=n — 식물등 n 개를 켠 판(사람이 등을 사서 단 것과 같은 상태 · probe_cutting_ui 와 같은 손질). 자르기 문(다 자란 무늬 잎 2장)은 등이 있어야 열린다 */
+  if (${Number(process.env.LAMP||0)} > 0) { S.lamps.count=${Number(process.env.LAMP||0)}; S.lamps.litHours=14; if (S.tutorial&&S.tutorial.lamp) { S.tutorial.lamp.owned=${Number(process.env.LAMP||0)}; S.tutorial.lamp.placed=${Number(process.env.LAMP||0)}; } try { io.light.clearCache(); } catch(e) {} }
   for (let d=0; d<${DAYS}; d++){
     try { st.waterPot(S); } catch(e) { if(errs.length<3) errs.push('물:'+e.message.slice(0,50)); }
     lp.runDays(S, io, 1, (t) => { try { const ls=io.growth.leafState(); const band=(t&&t.growthSpeed&&t.growthSpeed.band)||null;
       sh.assignPotLeafGrades(S, { leafState: ls, band }); } catch(e) { if(errs.length<3) errs.push('등급:'+e.message.slice(0,60)); } });
   }
   const ls=io.growth.leafState()||[];
-  return { 날:S.day, errs, 잎:ls.length, 무늬:ls.filter(r=>r.varie).length, 갈라진무늬:ls.filter(r=>r.varie&&r.matured).length, 등급:sh.potLeafGradesOf((S.pots||[])[0]) }; })()`)));
+  return { 날:S.day, errs, 잎:ls.length, 무늬:ls.filter(r=>r.varie).length, 갈라진무늬:ls.filter(r=>r.varie&&r.matured).length, 등:S.lamps&&S.lamps.count, 등급:sh.potLeafGradesOf((S.pots||[])[0]) }; })()`)));
 /* ★ NOMOVE=1 — 이사 없이 반지하 그대로 세이브만 뜬다(D23 전후 견주기 · 10-08) */
 if (process.env.NOMOVE !== '1') {
 const mv = await J(`(async()=>{ const orm=await import('/src/game/oneroom.js');
