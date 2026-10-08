@@ -11614,8 +11614,31 @@ function focusOnMonstera() {
 /* ★ W3 #5 — 무늬가 «보이는» 날 · 하프문으로 «자를 수 있게 된» 날의 장면. ⚠ id 는 글자로(test_dialogue_coverage 가 긁는다) */
 function playLeafScene(k, chimed) {   /* chimed — 이 턴에 사건 배너가 이미 울렸다(두 번 연달아 안 울린다) */
   const ok = k === 'half' ? dlgOpen('varieHalfMoon') : k === 'seen' ? dlgOpen('varieSeen') : false;
-  if (ok) { focusOnMonstera(); if (!chimed) try { sfx.chime(); } catch { } (window.__stageLog ||= []).push({ day: S.day, kind: 'leaf:' + k }); }
+  if (ok) { focusOnMonstera(); if (!chimed) try { sfx.chime(); } catch { } (window.__stageLog ||= []).push({ day: S.day, kind: 'leaf:' + k });
+            if (k === 'seen') queueEmote('cheer'); }   /* ★ 무늬를 처음 본 날 — 기뻐한다([char] cheer) */
   return ok;
+}
+/* ══ ★ 2026-10-08 — 기쁜 순간의 몸짓([char] c56fd8b7 · cheer·wave) ═══════════════════════════════
+   첫 새순(spear_furled) · 무늬를 처음 본 날(varieSeen) → cheer · 첫 인사(intro) → wave.
+   ★ 대사가 다 닫히고 · 카메라가 멎고 · 하루 넘김 연출(dayAnimRunning)이 아닐 때 한 번 튼다. 대사가 닫힌 뒤 20초 안에 그때가 안 오면 그만둔다(늦은 몸짓은 엉뚱하다).
+   ⚠ 몸짓은 그림이다 — 판정·날·값을 안 건드린다. 걷는 중·다른 동작 중이면 방 화면이 거절한다(§room_view emote). */
+let pendingEmote = null;
+function queueEmote(kind) {
+  pendingEmote = { kind, since: performance.now() };
+  setTimeout(tryEmote, 300);
+}
+function tryEmote() {
+  if (!pendingEmote) return;
+  if (performance.now() - pendingEmote.since > 20000) { pendingEmote = null; return; }
+  const st = $('stage');
+  if (st && st.classList.contains('talking')) pendingEmote.since = performance.now();   /* 기다림은 대사가 닫힌 뒤부터 센다(인트로는 길다) */
+  let cam = null; try { cam = roomView && roomView.camBusy ? roomView.camBusy() : null; } catch { cam = null; }
+  const camMoving = !!(cam && (cam.tween || cam.dragging || cam.pinch || cam.focused));
+  if (!roomView || !roomView.emote || (st && st.classList.contains('talking')) || dayAnimRunning || camMoving || stageBusy()) {
+    setTimeout(tryEmote, 400); return;
+  }
+  const k = pendingEmote.kind; pendingEmote = null;
+  Promise.resolve(roomView.emote(null, k)).then(okE => { (window.__stageLog ||= []).push({ day: S.day, kind: 'emote:' + k, ok: !!okE }); }).catch(() => { });
 }
 window.__leafScene = (k) => playLeafScene(k);   /* 진단 손잡이 — ⚠ 읽기 전용 아님(진짜로 큐에 넣는다) */
 /* ★ 하프문 장면이 «오늘» 떠야 하나 — 드러났고(장부) · ✂ 말풍선이 서고(§cutMarks 그 판정) · 아직 안 잘랐고,
@@ -11718,7 +11741,7 @@ function showFirstPlayEvents(turn) {
          이 줄로 갈러내면 매일 화면이 확 당겨진다. 그래서 **턴 사건**을 본다. */
     const justNow = !!(turn && (turn.events || [])
       .some(e => e && e.id === FIRST_PLAY_COMPLETE_PHASE_ID));
-    if (justNow) { events.push({ title: '🌱 첫 새순이 올라왔습니다', sub: '밝은 자리에 둔 보람입니다' }); focusOnMonstera(); }
+    if (justNow) { events.push({ title: '🌱 첫 새순이 올라왔습니다', sub: '밝은 자리에 둔 보람입니다' }); focusOnMonstera(); queueEmote('cheer'); }
   }
   /* ★★ W3 #12 — 잎이 펴진 날 · 자리가 밝아진 날 (pot0 의 턴 줄을 읽는다 — 새로 안 센다) */
   { const p0 = pot0(S), tp = p0 && ((turn && turn.plants) || []).find(r => r && r.potId === p0.id);
@@ -17305,7 +17328,7 @@ try {
      ⇒ 서막을 **먼저** 연다. 순서를 바꾸는 것이 전부다 — 두 대사 다 그대로 나온다.
      ⚠ 여기 있던 `checkQuests` 를 지우지 않았다. 새로 열린 줄을 찾는 일은 여전히 필요하다 —
        **뒤로 옮겼을 뿐이다.** */
-  if (!storyStarted()) dlgOpen('intro');
+  if (!storyStarted()) { dlgOpen('intro'); queueEmote('wave'); }   /* ★ 첫 인사 — 인트로 대사가 닫힌 뒤 손을 흔든다([char] wave) */
   try { checkQuests(lastTurn); } catch (e) { console.warn('[퀘스트 부팅]', e && e.message); }
   /* ★★★★ 2026-08-29 — **여기서 한 번 더 그린다** (박사님 사진 · Day 0)
      ══════════════════════════════════════════════════════════════════

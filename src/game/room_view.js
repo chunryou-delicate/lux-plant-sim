@@ -8044,6 +8044,8 @@ export async function createRoomView(canvas, opts = {}) {
       /* ⑦ 잡고 있는 동작 — 끝 자세에서 멈춘다(abortAct 가 푼다) */
       holdClip: (clip, sec, onTick) => runClip(clip, sec, onTick, true),
       get held() { return !!heldAction; },
+      /* ★ 2026-10-08 — 무슨 동작(클립)을 틀고 있나 · 잡고 있나(§emote 가 끼어들지 않게 본다) */
+      get acting() { return !!clipRun || !!heldAction; },
       /* ★ [char] 청 — Hips 뼈의 «월드» y(읽기만). 뿌리(root.position.y)와 메시가 갈리는지 보는 자. 뼈가 없으면 null */
       get hipsY() { try { if (!hips) return null; const v = new THREE.Vector3(); hips.getWorldPosition(v); return +v.y.toFixed(4); } catch { return null; } },
       /* ★ 발바닥 보정을 밖에서 볼 수 있게 낸다 — 검사(tools/test_ground.mjs)가
@@ -9870,6 +9872,21 @@ export async function createRoomView(canvas, opts = {}) {
       return { az: to.az, el: to.el, dist: to.dist, target: { x: tg.x, y: tg.y, z: tg.z } };
     },
     /* v2: 지금 카메라를 누가 쥐고 있나 · 어디로 가는 중인가 — 연출은 사람 손을 안 뺏으려고 이걸 본다 */
+    /* ★ 2026-10-08 — **제자리 몸짓**(cheer · wave) · [char] c56fd8b7 이 낸 통째 클립(v2_hero actClip).
+         끝나면 기본 자세로 돌아온다(runClip · hold 아님). 걷는 중 · 다른 동작 중 · 잡은 자세면 안 한다 — 남의 손을 안 끊는다.
+         id 를 안 주면 첫 사람(주인공). 돌려주는 값: 다 틀었나(true) · 못 틀었나/끊겼나(false) */
+    async emote(id, kind) {
+      try {
+        const k = String(kind || '').toLowerCase();
+        if (k !== 'cheer' && k !== 'wave') return false;
+        const c = id ? chars.get(id) : [...chars.values()].find(x => x && x.kind === 'person');
+        if (!c || c.kind !== 'person' || !c.v2ActClip || !c.runClip) return false;
+        if (c.walking || c.acting) return false;
+        const clip = await c.v2ActClip(k);
+        if (!clip || c.walking || c.acting) return false;
+        return await c.runClip(clip, clip.duration);
+      } catch (e) { console.warn('[방뷰] 몸짓', e && e.message); return false; }
+    },
     camBusy() {
       const to = tween && tween.to;
       return { down: !!down, dragging: !!dragging, pinch: !!pinch, walkDrag: !!walkDrag,
