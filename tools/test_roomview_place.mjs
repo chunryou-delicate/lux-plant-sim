@@ -21,7 +21,8 @@
 import { launch, sleep } from './test_cdp.mjs';
 
 const BASE = process.env.BYEOT_URL || 'http://localhost:8971';
-const URL_ = `${BASE}/tools/room_view_demo.html?room=banjiha`;
+/* Q='d23=0' 처럼 깃발을 더 붙여 같은 빌드의 전후를 견준다(2026-10-08 · 작업 전 판 worktree 대신) */
+const URL_ = `${BASE}/tools/room_view_demo.html?room=banjiha${process.env.Q ? '&' + process.env.Q : ''}`;
 
 let pass = 0, fail = 0;
 const ok = (name, cond, extra) => {

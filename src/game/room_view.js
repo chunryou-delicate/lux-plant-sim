@@ -1978,6 +1978,47 @@ export async function createRoomView(canvas, opts = {}) {
     }, 90);
   }
 
+  /* ══ ★ 2026-10-08 D23 — **벽에 붙은 창턱의 몬스테라는 «그림만» 방 쪽으로** (총괄 D23 · house-sill-leaf-wall-20261008) ══
+     났던 일: 창턱(벽 안쪽 면에서 0.05m)에서 다 자란 그루의 잎이 창 쪽으로 기울어 «벽 속»으로 들어가
+       기본 카메라에서 잎 겉면 99.3% 가 가렸다(줄기만 보였다). house 가 잰 표에서 고른 것 ④:
+       굴광성 photo 0.5 → 0.25 + 그루 그림만 방 쪽으로 0.25m ⇒ 반지하 잎 벽 너머 99.6% → 0.
+     ★ «그림»만이다 — 빛 자리(at · 슬롯)·빛 값·생장 수는 그대로다([growth] 잼: photo 는 잎 방향에만 · 생장 수 갈림 0/20).
+       화분 받침 그림은 house 가 같은 0.25m 늘렸다(house_rooms visual_front_m · ddb74d52).
+     ★ 그림을 옮기면 따라오는 것 — screenPosOf·말풍선·탭 광선·길 막기·접지 그림자는 그루 그림 자리(group.position)를 읽는다.
+       빛 자리를 읽는 것(slotOccupied·rebuildRoom 의 at·빛 분포 칸)은 그대로 빛 자리다.
+     판정: 반지하 · 몬스테라 · 창턱 가구 위(slotId·onUid 에 `sill`) · 창이 있는 벽의 안쪽 면에서 0.15m 안. 다 맞으면 그 벽 안쪽으로 민다.
+     ★ 반지하만이다(총괄 11:30) — house 가 원룸을 «이사 뒤 실제 판»으로 다시 재니 원룸 창턱은 벽 속 0%였다(가림은 같은 그루의
+       다른 잎). 원룸은 그대로 두는 쪽이 확대창과 방의 잎 방향이 덜 갈린다. 원룸 받침 늘림은 house 가 되돌렸다(32a10462).
+     ⚠ 값(0.25·0.25)은 총괄 D23 이 고른 것이다 — 여기서 안 바꾼다. */
+  /* 전후를 같은 빌드에서 견주는 깃발 — `?d23=0` 이면 예전 그대로(굴광성 0.5 · 그림 = 빛 자리). ?v2=0 과 같은 꼴 */
+  const D23_ON = (() => { try { return !/[?&]d23=0(&|$)/.test(String((typeof location !== 'undefined' && location.search) || '')); } catch { return true; } })();
+  const SILL_WALL_NEAR = 0.15;      /* 화분 중심 → 창 벽 안쪽 면이 이보다 가까우면 «벽에 붙은 창턱» */
+  const SILL_DRAW_SHIFT = 0.25;     /* 그림만 방 쪽으로 [m] */
+  const SILL_PHOTO = 0.25;          /* 그 자리의 굴광성 */
+  const PHOTO_BASE = 0.5;           /* 그 밖의 자리(예전 그대로) */
+  function sillWallShift(x, z, onKey, kind) {
+    if (!D23_ON) return null;
+    if ((kind || 'monstera') !== 'monstera') return null;
+    if (roomId !== 'banjiha') return null;
+    if (!/sill/i.test(String(onKey || ''))) return null;
+    const sz = built && built.size;
+    if (!sz || !Number.isFinite(sz.w) || !Number.isFinite(sz.d) || !Number.isFinite(x) || !Number.isFinite(z)) return null;
+    let best = null;
+    for (const w of ((built && built.luxWins) || [])) {
+      let gap, nx = 0, nz = 0;
+      switch (w && w.wall) {
+        case 'back':  gap = z + sz.d / 2; nz = 1; break;
+        case 'front': gap = sz.d / 2 - z; nz = -1; break;
+        case 'left':  gap = x + sz.w / 2; nx = 1; break;
+        case 'right': gap = sz.w / 2 - x; nx = -1; break;
+        default: continue;
+      }
+      if (gap >= -1e-6 && gap < SILL_WALL_NEAR && (!best || gap < best.gap)) best = { gap, nx, nz };
+    }
+    return best ? { dx: best.nx * SILL_DRAW_SHIFT, dz: best.nz * SILL_DRAW_SHIFT, photo: SILL_PHOTO } : null;
+  }
+  const photoOf = sh => (sh ? sh.photo : PHOTO_BASE);
+
   /* 창이 있는 방향(라디안). 굴광성이 그쪽으로 기울어야 방과 확대가 같은 그루가 된다. */
   function lightAzimuth() {
     const ws = (built && built.luxWins || []).filter(w => w.wall && w.wall !== 'ceiling');
@@ -2044,7 +2085,8 @@ export async function createRoomView(canvas, opts = {}) {
         const g = asm.assemble({ growthDays: days, seed: spec.seed, potD,
                                  leafState: spec.leafState,
                                  leafSkins: spec.leafSkins,   /* D4 · 2026-10-08 — 등급이 정한 잎 그림(확대 창과 같은 표). 없으면 굴림 그대로 */
-                                 lightAz: lightAzimuth(), photo: 0.5 });
+                                 /* D23 — 벽에 붙은 창턱이면 부르는 쪽이 0.25 를 싣는다(§sillWallShift) */
+                                 lightAz: lightAzimuth(), photo: Number.isFinite(spec.photo) ? spec.photo : PHOTO_BASE });
         g.userData.growthDays = days;
         if (g.userData.skinsPending) noteSkinTip(asm);
         /* ★★★ 2026-08-17 — **심은 뒤에도 고른 화분이 보인다** (박사님: *"화분 구매 시
@@ -2926,9 +2968,17 @@ export async function createRoomView(canvas, opts = {}) {
     /* ② 화분 id — free:{id} 이거나 potId 로 적어 둔 그루 */
     const p = plantOf(id);
     if (p) { const k = keyOfPlant(p); return of(k, p, slotById.get(k)); }
-    /* ③ 빈 추천 자리 */
+    /* ③ 추천 자리 */
     const s = slotById.get(id);
-    if (s) return of(id, null, s);
+    if (s) {
+      const r = of(id, null, s);
+      /* ★ 2026-10-08 D23 — 그 자리 점 위에 자유 좌표 그루가 서 있으면 그 그루 «그림»의 x·z 를 가리킨다.
+         벽에 붙은 창턱의 몬스테라는 그림이 방 쪽으로 0.25m 나와 있다(§sillWallShift) — 자리 이름으로 묻는
+         손가락·말풍선이 빈 빛 자리를 짚지 않게. 높이는 자리 것 그대로(창턱 밖 그루는 x·z 가 같아 바뀌는 것이 없다). */
+      for (const [, p] of plants)
+        if (p.at && samePoint(p.at, s, 0.05)) { r.pos = { x: p.group.position.x, y: s.y, z: p.group.position.z }; break; }
+      return r;
+    }
     /* ★ 2026-09-04 ⑦ — 가구 uid 도 열쇠다(앉기·눕기). 화분·자리가 아니면 가구를 묻는다 — 새 자를 안 만든다(§furnNode). */
     { const g = (typeof furnNode === 'function') ? furnNode(id) : null;
       if (g) return { key: id, plant: null, slot: null, furn: g,
@@ -2959,9 +3009,12 @@ export async function createRoomView(canvas, opts = {}) {
      ⚠ **화분 부분만** 잰다. 그루 전체로 재면 늘어진 잎끝이 바닥이 되어 화분이 떠오른다
        (몬스테라 잎은 화분보다 아래로 내려온다 — 그게 정상이다).
      ⚠ 크기는 안 건드린다. y 만 옮긴다.
-     @returns 실제로 옮긴 양[m] */
-  function seatPlantY(g, y) {
-    const want = supportY(g, y);
+     @returns 실제로 옮긴 양[m]
+     ★ 2026-10-08 D23 — `under`({x,z})를 주면 받침 면은 «그 점»에서 잰다. 벽에 붙은 창턱 그루는 그림이 0.25m 방 쪽에
+       나와 있고(§sillWallShift), house 가 그만큼 늘린 받침 조각은 광선을 안 받는다(고르기에 안 끼게) —
+       그림 자리에서 아래를 쏘면 창턱 밑 면으로 떨어진다(실측 1.585 → 0.794). 받치는 것은 «빛 자리»의 상판이다. */
+  function seatPlantY(g, y, under = null) {
+    const want = supportY(g, y, under);
     g.position.y = want;
     g.updateMatrixWorld(true);
     const pot = potPartOf(g);
@@ -2987,9 +3040,10 @@ export async function createRoomView(canvas, opts = {}) {
      ⚠ 3cm 문턱 아래로는 한 톨도 안 움직인다. 정상 배치는 gap 이 정확히 0 이다. */
   const POT_DROP_EPS = 0.03;
   const _dropRay = new THREE.Raycaster();
-  function supportY(g, y) {
+  function supportY(g, y, under = null) {
     if (!built || !built.room) return y;
-    const x = g.position.x, z = g.position.z;
+    const x = under && Number.isFinite(under.x) ? under.x : g.position.x,
+          z = under && Number.isFinite(under.z) ? under.z : g.position.z;
     if (!Number.isFinite(x) || !Number.isFinite(z)) return y;
     _dropRay.set(new THREE.Vector3(x, y + 0.02, z), new THREE.Vector3(0, -1, 0));
     const hits = _dropRay.intersectObject(built.room, true);
@@ -3188,7 +3242,8 @@ export async function createRoomView(canvas, opts = {}) {
       : Math.round(clamp(spec.progress01 ?? 1, 0, 1) * 100);
 
     const cur = plants.get(slotId);
-    if (cur && !needsRebuild(cur, spec, days)) {
+    const sh = sillWallShift(s.x, s.z, slotId, kind);      /* D23 — 벽에 붙은 창턱이면 그림만 방 쪽 · 굴광성 0.25 */
+    if (cur && !needsRebuild(cur, spec, days) && (cur.photo ?? PHOTO_BASE) === photoOf(sh)) {
       applyLook(cur.group, spec);
       cur.spec = { ...spec };
       cur.wantDays = days;
@@ -3198,7 +3253,7 @@ export async function createRoomView(canvas, opts = {}) {
 
     let g;
     try {
-      g = await buildPlantGroup(spec, slotPotLimit(s), days);
+      g = await buildPlantGroup({ ...spec, photo: photoOf(sh) }, slotPotLimit(s), days);
     } catch (e) {
       throw fail(new Error(`화분을 못 만들었습니다 (${slotId}): ${e.message}`));
     }
@@ -3215,18 +3270,19 @@ export async function createRoomView(canvas, opts = {}) {
        안 걷으면 좌표 배치 ↔ 자리 배치를 오갈 때 화분이 복사된 것처럼 보인다. */
     if (spec.potId) for (const [k, p] of [...plants])
       if (k !== slotId && p.potId === spec.potId) { removePlant(k); plantYaw.delete(k); }
-    g.position.set(s.x, s.y, s.z);
+    g.position.set(s.x + (sh ? sh.dx : 0), s.y, s.z + (sh ? sh.dz : 0));
     /* ★ 돌려 놓은 각도는 형태가 바뀌어도 유지한다. 새로 놓는 것이면 0 부터.
        (Y 회전만 쓴다 — 눕히거나 기울이면 화분이 넘어진다) */
     if (!hadPlant && !plantYaw.has(slotId)) plantYaw.set(slotId, 0);
     g.rotation.y = plantYaw.get(slotId) || 0;
-    seatPlantY(g, s.y);                  // ★ 상판에 앉힌다 (§seatPlantY)
+    seatPlantY(g, s.y, s);               // ★ 상판에 앉힌다 (§seatPlantY) — 받침은 빛 자리에서 잰다(D23)
     syncPlantBlob(slotId, g, d);         // ★ 접지 그림자 (그루 밖에 달린다)
     tagPlant(g, slotId, spec.potId || null);
     applyLook(g, spec);
     houseGroup.add(g);
     plants.set(slotId, { group: g, spec: { ...spec }, potD: Math.min(d, limit),
                          potId: spec.potId || null, at: atOfSlot(s, g.rotation.y),
+                         photo: photoOf(sh),
                          days, wantDays: days, builtAt: performance.now() });
     if (preview && (preview.fromId === slotId || preview.toId === slotId)) refreshPreview();
     refreshNavObstacles();               /* ★ 놓인 그루는 길을 막는다(§놓은 것이 길을 막는다) */
@@ -3289,14 +3345,16 @@ export async function createRoomView(canvas, opts = {}) {
 
     /* ★ 끄는 동안 같은 그루를 매 프레임 다시 조립하지 않는다. 같은 날이면 **옮기기만** 한다.
        (몬스테라 조립은 3~12ms 다. 손가락 이벤트마다 돌면 폰이 그 자리에서 멈춘다) */
-    if (prev && !needsRebuild(prev, { ...spec, kind }, days)) {
+    const sh = sillWallShift(A.x, A.z, A.onUid, kind);     /* D23 — 벽에 붙은 창턱이면 그림만 방 쪽 · 굴광성 0.25 */
+    const drawAt = { x: A.x + (sh ? sh.dx : 0), y: A.y, z: A.z + (sh ? sh.dz : 0) };
+    if (prev && !needsRebuild(prev, { ...spec, kind }, days) && (prev.photo ?? PHOTO_BASE) === photoOf(sh)) {
       const old = keyOfPlant(prev);
       applyLook(prev.group, { ...spec, kind });
       prev.spec = { ...spec, kind };
       prev.wantDays = days;
       prev.potId = id;
-      prev.group.position.set(A.x, A.y, A.z);
-      seatPlantY(prev.group, A.y);       // ★ 옮겨도 그 면에 앉는다 (§seatPlantY)
+      prev.group.position.set(drawAt.x, drawAt.y, drawAt.z);
+      seatPlantY(prev.group, A.y, A);    // ★ 옮겨도 그 면에 앉는다 (§seatPlantY) — 받침은 빛 자리에서(D23)
       if (gaveRot) prev.group.rotation.y = A.rotY;
       A.rotY = prev.group.rotation.y || 0;
       prev.at = A;
@@ -3310,13 +3368,13 @@ export async function createRoomView(canvas, opts = {}) {
       syncPlantBlob(key, prev.group, prev.potD);   // 그림자도 따라간다
       refreshNavObstacles();                      /* ★ 옆으로 옴겼으면 막는 자리도 옴긴다 */
       plantYaw.set(key, A.rotY);
-      moveHighlightRing(key, A);
+      moveHighlightRing(key, drawAt);      /* 고른 그루의 링은 그림 자리에(§highlightSlots 가 group.position 을 읽는 것과 같게) */
       needsRender = true;
       return prev.group;
     }
 
     let g;
-    try { g = await buildPlantGroup({ ...spec, kind }, limit, days); }
+    try { g = await buildPlantGroup({ ...spec, kind, photo: photoOf(sh) }, limit, days); }
     catch (e) { throw fail(new Error(`화분을 못 만들었습니다 (${id}): ${e.message}`)); }
     if (disposed) { disposeObject(g); return null; }
     ownMaterials(g);
@@ -3327,9 +3385,9 @@ export async function createRoomView(canvas, opts = {}) {
               : plantYaw.has(key) ? plantYaw.get(key)
               : prev ? (prev.group.rotation.y || 0) : 0;
     removePlantOf(id);                      // ★ 옛 자리는 반드시 지운다
-    g.position.set(A.x, A.y, A.z);
+    g.position.set(drawAt.x, drawAt.y, drawAt.z);
     g.rotation.y = yaw;
-    seatPlantY(g, A.y);                     // ★ 그 면에 앉힌다 (§seatPlantY)
+    seatPlantY(g, A.y, A);                  // ★ 그 면에 앉힌다 (§seatPlantY) — 받침은 빛 자리에서(D23)
     syncPlantBlob(key, g, Math.min(d, limit === Infinity ? d : limit));   // ★ 접지 그림자
     A.rotY = yaw;
     plantYaw.set(key, yaw);
@@ -3338,8 +3396,9 @@ export async function createRoomView(canvas, opts = {}) {
     houseGroup.add(g);
     plants.set(key, { group: g, spec: { ...spec, kind }, potId: id, at: A,
                       potD: Math.min(d, limit === Infinity ? d : limit),
+                      photo: photoOf(sh),
                       days, wantDays: days, builtAt: performance.now() });
-    moveHighlightRing(key, A);
+    moveHighlightRing(key, drawAt);
     refreshNavObstacles();               /* ★ 자유 좌표로 선 그루도 길을 막는다 */
     nudgeIfOccluding();
     needsRender = true;
@@ -3369,8 +3428,11 @@ export async function createRoomView(canvas, opts = {}) {
     tagPlant(p.group, toId, p.potId);
     p.at = atOfSlot(b, yaw);
 
-    /* 살짝 들었다 놓는다 — 순간이동하면 어디로 갔는지 눈이 못 쫓는다 */
-    const from = new THREE.Vector3(a.x, a.y, a.z), to = new THREE.Vector3(b.x, b.y, b.z);
+    /* 살짝 들었다 놓는다 — 순간이동하면 어디로 갔는지 눈이 못 쫓는다
+       D23 — 끝점은 «그림 자리»다(벽에 붙은 창턱이면 방 쪽으로 · §sillWallShift). 굴광성은 다음 setPlant 가 다시 짓는다 */
+    const shA = sillWallShift(a.x, a.z, fromId, p.spec && p.spec.kind), shB = sillWallShift(b.x, b.z, toId, p.spec && p.spec.kind);
+    const from = new THREE.Vector3(a.x + (shA ? shA.dx : 0), a.y, a.z + (shA ? shA.dz : 0)),
+          to = new THREE.Vector3(b.x + (shB ? shB.dx : 0), b.y, b.z + (shB ? shB.dz : 0));
     const lift = Math.max(0.12, from.distanceTo(to) * 0.18);
     const t0 = performance.now(), dur = 380;
     const anim = () => {
@@ -4555,7 +4617,11 @@ export async function createRoomView(canvas, opts = {}) {
       if (Math.abs(g.y - out.y) > 0.08) continue;
       if (opt.ignore && (k === opt.ignore || q.potId === opt.ignore)) continue;
       const need = ((q.potD || MONSTERA_POT_D) + potD) / 2 * 0.9;
-      const d = Math.hypot(g.x - out.x, g.z - out.z);
+      /* ★ 2026-10-08 D23 — 자리를 차지하는 것은 «빛 자리»(at)다. 벽에 붙은 창턱 그루는 그림만 0.25m 방 쪽에 나와 있어
+         그림 자리로 재면 그 창턱이 «비었다»가 되어 같은 빛 자리에 화분 둘이 선다(test_roomview_place C-1 이 잡았다).
+         창턱 밖 그루는 at 과 그림의 x·z 가 같아 바뀌는 것이 없다. */
+      const qx = q.at && Number.isFinite(q.at.x) ? q.at.x : g.x, qz = q.at && Number.isFinite(q.at.z) ? q.at.z : g.z;
+      const d = Math.hypot(qx - out.x, qz - out.z);
       if (d < need) { out.reason = `다른 화분과 겹칩니다 (${(need - d).toFixed(2)}m 모자랍니다)`; return out; }
     }
     out.ok = true;
@@ -5668,12 +5734,14 @@ export async function createRoomView(canvas, opts = {}) {
     preview.toId = toId;
     preview.at = null;
 
-    /* 위치·회전·크기는 **실제로 놓일 그대로** */
-    preview.group.position.set(to.x, to.y, to.z);
+    /* 위치·회전·크기는 **실제로 놓일 그대로** — D23: 벽에 붙은 창턱이면 그림이 설 자리(§sillWallShift) */
+    const sh = sillWallShift(to.x, to.z, toId, p.spec && p.spec.kind);
+    const tx = to.x + (sh ? sh.dx : 0), tz = to.z + (sh ? sh.dz : 0);
+    preview.group.position.set(tx, to.y, tz);
     preview.group.rotation.y = p.group.rotation.y;
     preview.group.scale.copy(p.group.scale);
     preview.marker.scale.setScalar(markerHalf(Number.isFinite(to.maxPotD) ? to.maxPotD : 0.22));
-    preview.marker.position.set(to.x, to.y + 0.004, to.z);
+    preview.marker.position.set(tx, to.y + 0.004, tz);
 
     /* 못 들어가는 자리는 rank 가 뭐라 오든 빨강이다 — 못 놓는 게 먼저다 */
     const fits = fitsInSlot(preview.group, to);
@@ -5731,10 +5799,13 @@ export async function createRoomView(canvas, opts = {}) {
     preview.toId = null;
     preview.at = A;
     preview.potD = potD;
-    preview.group.position.set(A.x, A.y, A.z);
+    /* D23 — 몬스테라 유령은 벽에 붙은 창턱이면 그림이 설 자리에(§sillWallShift). 종류를 모르는 대역은 안 민다 */
+    const srcKind = src ? ((src.spec && src.spec.kind) || (src.ghostKey ? String(src.ghostKey).split(':')[0] : null)) : null;
+    const sh = srcKind ? sillWallShift(A.x, A.z, A.onUid, srcKind) : null;
+    preview.group.position.set(A.x + (sh ? sh.dx : 0), A.y, A.z + (sh ? sh.dz : 0));
     preview.group.rotation.y = A.rotY || 0;
     preview.marker.scale.setScalar(markerHalf(potD));
-    preview.marker.position.set(A.x, A.y + 0.004, A.z);
+    preview.marker.position.set(A.x + (sh ? sh.dx : 0), A.y + 0.004, A.z + (sh ? sh.dz : 0));
     /* opt.rank 가 있으면 세 색, 없으면 예전 두 색.
        놓을 수 없는 자리(valid:false)는 rank 와 무관하게 빨강이다. */
     setGhostOk(opt.valid === false ? 'bad' : (normRank(opt.rank) || 'good'), opt.valid !== false);
@@ -9490,6 +9561,7 @@ export async function createRoomView(canvas, opts = {}) {
         key, potId: p.potId || null, free: isFreeSlotId(key),
         kind: (p.spec && p.spec.kind) || null,
         pos: { x: p.group.position.x, y: p.group.position.y, z: p.group.position.z },
+        photo: p.photo ?? null,        /* D23 — 지어 넘긴 굴광성(벽에 붙은 창턱의 몬스테라 0.25 · 그 밖 0.5 · 몬스테라가 아니면 조립기가 안 읽는다) */
         yaw: p.group.rotation.y || 0,
         at: p.at ? { ...p.at } : null,
         potD: p.potD ?? null,
