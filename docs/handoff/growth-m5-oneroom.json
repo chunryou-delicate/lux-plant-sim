@@ -469,6 +469,366 @@
    "leaf3Band": {}
   },
   {
+   "slot": "oneroom-sill:0",
+   "lamps": 0,
+   "avg7": {
+    "mean": 2.95,
+    "min": 0.79,
+    "max": 5.95
+   },
+   "growDays": 232,
+   "leaf2Day": {
+    "p50": 26,
+    "p10": 26,
+    "p90": 26,
+    "none": 0
+   },
+   "leaf3Day": {
+    "p50": 121,
+    "p10": 121,
+    "p90": 121,
+    "none": 0
+   },
+   "leaf2Split": {
+    "p50": 251,
+    "p10": 85,
+    "p90": 327,
+    "none": 7
+   },
+   "leaf3Split": {
+    "p50": 320,
+    "p10": 277,
+    "p90": 384,
+    "none": 11
+   },
+   "leaf2Band": {
+    "mid": 1
+   },
+   "leaf3Band": {
+    "mid": 1
+   }
+  },
+  {
+   "slot": "oneroom-sill:0",
+   "lamps": 1,
+   "avg7": {
+    "mean": 5.5,
+    "min": 3.35,
+    "max": 8.51
+   },
+   "growDays": 400,
+   "leaf2Day": {
+    "p50": 21,
+    "p10": 21,
+    "p90": 21,
+    "none": 0
+   },
+   "leaf3Day": {
+    "p50": 65,
+    "p10": 65,
+    "p90": 65,
+    "none": 0
+   },
+   "leaf2Split": {
+    "p50": 71,
+    "p10": 49,
+    "p90": 136,
+    "none": 0
+   },
+   "leaf3Split": {
+    "p50": 124,
+    "p10": 105,
+    "p90": 238,
+    "none": 0
+   },
+   "leaf2Band": {
+    "bright": 1
+   },
+   "leaf3Band": {
+    "mid": 1
+   }
+  },
+  {
+   "slot": "oneroom-sill:0",
+   "lamps": 2,
+   "avg7": {
+    "mean": 5.72,
+    "min": 3.56,
+    "max": 8.72
+   },
+   "growDays": 400,
+   "leaf2Day": {
+    "p50": 21,
+    "p10": 21,
+    "p90": 21,
+    "none": 0
+   },
+   "leaf3Day": {
+    "p50": 63,
+    "p10": 63,
+    "p90": 63,
+    "none": 0
+   },
+   "leaf2Split": {
+    "p50": 70,
+    "p10": 48,
+    "p90": 122,
+    "none": 0
+   },
+   "leaf3Split": {
+    "p50": 121,
+    "p10": 101,
+    "p90": 219,
+    "none": 0
+   },
+   "leaf2Band": {
+    "bright": 1
+   },
+   "leaf3Band": {
+    "mid": 1
+   }
+  },
+  {
+   "slot": "oneroom-sill:1",
+   "lamps": 0,
+   "avg7": {
+    "mean": 2.96,
+    "min": 0.8,
+    "max": 5.97
+   },
+   "growDays": 232,
+   "leaf2Day": {
+    "p50": 26,
+    "p10": 26,
+    "p90": 26,
+    "none": 0
+   },
+   "leaf3Day": {
+    "p50": 121,
+    "p10": 121,
+    "p90": 121,
+    "none": 0
+   },
+   "leaf2Split": {
+    "p50": 251,
+    "p10": 85,
+    "p90": 327,
+    "none": 7
+   },
+   "leaf3Split": {
+    "p50": 320,
+    "p10": 277,
+    "p90": 385,
+    "none": 10
+   },
+   "leaf2Band": {
+    "mid": 1
+   },
+   "leaf3Band": {
+    "mid": 1
+   }
+  },
+  {
+   "slot": "oneroom-sill:1",
+   "lamps": 1,
+   "avg7": {
+    "mean": 4.61,
+    "min": 2.45,
+    "max": 7.62
+   },
+   "growDays": 395,
+   "leaf2Day": {
+    "p50": 22,
+    "p10": 22,
+    "p90": 22,
+    "none": 0
+   },
+   "leaf3Day": {
+    "p50": 69,
+    "p10": 69,
+    "p90": 69,
+    "none": 0
+   },
+   "leaf2Split": {
+    "p50": 90,
+    "p10": 53,
+    "p90": 260,
+    "none": 0
+   },
+   "leaf3Split": {
+    "p50": 149,
+    "p10": 114,
+    "p90": 278,
+    "none": 0
+   },
+   "leaf2Band": {
+    "bright": 1
+   },
+   "leaf3Band": {
+    "mid": 1
+   }
+  },
+  {
+   "slot": "oneroom-sill:1",
+   "lamps": 2,
+   "avg7": {
+    "mean": 4.96,
+    "min": 2.8,
+    "max": 7.97
+   },
+   "growDays": 400,
+   "leaf2Day": {
+    "p50": 21,
+    "p10": 21,
+    "p90": 21,
+    "none": 0
+   },
+   "leaf3Day": {
+    "p50": 67,
+    "p10": 67,
+    "p90": 67,
+    "none": 0
+   },
+   "leaf2Split": {
+    "p50": 81,
+    "p10": 51,
+    "p90": 247,
+    "none": 0
+   },
+   "leaf3Split": {
+    "p50": 141,
+    "p10": 110,
+    "p90": 264,
+    "none": 0
+   },
+   "leaf2Band": {
+    "bright": 1
+   },
+   "leaf3Band": {
+    "mid": 1
+   }
+  },
+  {
+   "slot": "oneroom-sill:2",
+   "lamps": 0,
+   "avg7": {
+    "mean": 2.91,
+    "min": 0.78,
+    "max": 5.88
+   },
+   "growDays": 228,
+   "leaf2Day": {
+    "p50": 26,
+    "p10": 26,
+    "p90": 26,
+    "none": 0
+   },
+   "leaf3Day": {
+    "p50": 125,
+    "p10": 125,
+    "p90": 125,
+    "none": 0
+   },
+   "leaf2Split": {
+    "p50": 255,
+    "p10": 94,
+    "p90": 329,
+    "none": 7
+   },
+   "leaf3Split": {
+    "p50": 324,
+    "p10": 281,
+    "p90": 384,
+    "none": 11
+   },
+   "leaf2Band": {
+    "mid": 1
+   },
+   "leaf3Band": {
+    "mid": 1
+   }
+  },
+  {
+   "slot": "oneroom-sill:2",
+   "lamps": 1,
+   "avg7": {
+    "mean": 3.51,
+    "min": 1.38,
+    "max": 6.47
+   },
+   "growDays": 298,
+   "leaf2Day": {
+    "p50": 26,
+    "p10": 26,
+    "p90": 26,
+    "none": 0
+   },
+   "leaf3Day": {
+    "p50": 85,
+    "p10": 85,
+    "p90": 85,
+    "none": 0
+   },
+   "leaf2Split": {
+    "p50": 122,
+    "p10": 69,
+    "p90": 354,
+    "none": 1
+   },
+   "leaf3Split": {
+    "p50": 257,
+    "p10": 135,
+    "p90": 350,
+    "none": 3
+   },
+   "leaf2Band": {
+    "mid": 1
+   },
+   "leaf3Band": {
+    "mid": 1
+   }
+  },
+  {
+   "slot": "oneroom-sill:2",
+   "lamps": 2,
+   "avg7": {
+    "mean": 4.91,
+    "min": 2.78,
+    "max": 7.88
+   },
+   "growDays": 400,
+   "leaf2Day": {
+    "p50": 21,
+    "p10": 21,
+    "p90": 21,
+    "none": 0
+   },
+   "leaf3Day": {
+    "p50": 67,
+    "p10": 67,
+    "p90": 67,
+    "none": 0
+   },
+   "leaf2Split": {
+    "p50": 81,
+    "p10": 51,
+    "p90": 247,
+    "none": 0
+   },
+   "leaf3Split": {
+    "p50": 142,
+    "p10": 110,
+    "p90": 266,
+    "none": 0
+   },
+   "leaf2Band": {
+    "bright": 1
+   },
+   "leaf3Band": {
+    "mid": 1
+   }
+  },
+  {
    "slot": "oneroom-sill:3",
    "lamps": 0,
    "avg7": {
