@@ -1464,6 +1464,26 @@ export const SCRIPTS = {
   sellLastVarie: [
     { who: 'moni', face: 'worry', text: '그거 통째로 팔면 무늬 늘릴 데가 없어. 마디만 잘라 팔아도 돼.' }
   ],
+  /* ★★ 2026-10-08 [plan] D27(총괄 · 갈래 지도 7) — **무늬 원천 없이 이사하기 «전»의 한 줄.** D22 와 같은 결: 막지 않고 말린다.
+     이사 조건은 과거 깃발(무늬 잎을 낸 적 ∨ 판 적)이라 지금 무늬 원천이 0 이어도 이사된다 — 그러면 원룸에서 늘릴 게 없다
+     ([growth] 7062b538: 원룸 «씨앗부터»는 1년이 넘어도 넷에 셋이 무늬 잎을 못 본다 · 등1 이어도 24/40).
+     후보: ㉠ 말림(택함 · 값 0) · ㉡ 이사 조건에 «지금 원천 ≥ 1»(규칙 — 박사님 몫) · ㉢ D22-㉡ 무늬 삽수 사기(값 — 박사님 몫).
+     ⚠ 언제([core]): 이사 되묻기 창을 열 때 무늬 원천(무늬 잎 단 그루 + 안 죽은 무늬 삽수)이 0 이면 `story.events([{ id: 'move_no_varie' }])`.
+       같은 자 = sellingLastVarieSource. 되묻기 창 글·짐 확인 창 «무늬 원천 n»은 plan-branch-map §7. */
+  moveNoVarie: [
+    { who: 'moni', face: 'worry', text: '무늬 하나는 들고 가자. 무늬가 없으면 다음 방에서 늘릴 게 없어.' }
+  ],
+  /* ★★ 2026-10-08 [plan] 갈래 지도 2 — **굶주림 경고에 «나가는 길»을 말한다.** 0원이 닷새 이어지면 매일 `hungry`(tutorial.js) —
+     지금까지 로그(「굶은 지 N일째 — M일 남았습니다」)뿐이고 대사가 없었다. 게임오버 자체는 박사님 결정(08-17)이라 안 건드린다.
+     ⚠ 수는 안 말한다(남은 날은 로그·화면이 말한다) · 「곳간」은 화면에서 걷힌 말이라(박사님 08-16 «그냥 보유 채소») «남은 채소».
+     ⚠ 매일 나는 사건이라 되풀이된다(REPEATABLE) — 한 줄로 둔다. */
+  hungryTalk: [
+    { who: 'moni', face: 'worry', text: '돈이 바닥이야. 팔 수 있는 걸 팔자 — 남은 채소든, 삽수든.' }
+  ],
+  hungryTalk2: [
+    { who: 'jachwi', face: 'tired', text: '…배가 고프다.' },
+    { who: 'moni',   face: 'worry', text: '오늘 팔 수 있는 걸 찾아보자. 이대로면 쓰러져.' }
+  ],
 
   /* ═══ ★★ 2026-10-08 [plan] «상태 줄» — 둘째 잎을 기다리는 동안 «오늘 바뀐 것»을 말한다(docs/handoff/plan-leafwait-20261008.md ②) ═══
      §STATUS 표가 조건을 갖는다. 칸([core] turn.leafWait)이 없으면 조건이 다 거짓이라 안 뜬다.
@@ -1918,7 +1938,7 @@ export const REPEATABLE = new Set(
     .concat(['rentSoon', 'rentAgain', 'plantStalledAgain', 'plantStalledWinter',
              'cropHandsShort', 'brokeTalk', 'brokeTalkAgain',
              /* ★ 2026-10-08 D22 — 팔려고 할 때마다 말린다(되돌릴 수 없는 것 앞의 말은 매번이다) */
-             'sellLastVarie',
+             'sellLastVarie', 'moveNoVarie', 'hungryTalk', 'hungryTalk2',
              /* ★ 2026-10-08 상태 줄 — 기다림마다 다시 온다(§STATUS gap) */
              'statusSill', 'statusGauge', 'statusStreak', 'statusLeafWide', 'statusSiruVs', 'statusWallet',
              'statusPhaseOpening', 'statusPhaseYoung', 'statusPhaseMid', 'statusPhaseMature', 'statusPhaseAxis', 'statusVarieHalf'])
@@ -1968,6 +1988,10 @@ export const EVENT_SCRIPT = Object.freeze({
   crop_hands_short:    'cropHandsShort',
   /* ★ 2026-10-08 [plan] D22 — 마지막 무늬 원천을 그루째 팔기 전(§sellLastVarie). 사건은 [core] 가 확인 창을 열 때 낸다 */
   sell_last_varie:     'sellLastVarie',
+  /* ★ 2026-10-08 [plan] D27 — 무늬 원천 없이 이사 되묻기(§moveNoVarie) · 사건은 [core] 가 되묻기 창을 열 때 낸다 */
+  move_no_varie:       'moveNoVarie',
+  /* ★ 2026-10-08 [plan] 갈래 지도 2 — 굶주림 경고(tutorial.js · 0원 닷새째부터 매일 · 월세·파산과 같은 살림 사건 길) */
+  hungry:              'hungryTalk',
   monstera_arrived:    'monsteraArrived',
   /* ★ 유도 두 걸음 (2026-08-09) — first_play.firstPlayEventsOf 가 낸다 */
   monstera_no_spear:   'monsteraGuideWindow',
@@ -2161,6 +2185,10 @@ function scriptOf(ev, S = null) {
        모르면 위로하는 쪽이 낫다 — 「또 바닥이네」를 처음 겪는 사람에게 하면 안 된다. */
   if (id === 'broke') return ev.first === false ? 'brokeTalkAgain' : 'brokeTalk';
   /* ★ 퀘스트는 `questId` 로 갈린다 (2026-08-17 · 위 §QUEST_OPEN_SCRIPT) */
+  /* ★ 2026-10-08 [plan] 갈래 지도 2 — 굶주림 경고는 매일 난다. 같은 말이 연달아 서지 않게 두 벌을 «번갈아» 쓴다(남은 날 홀/짝).
+     dialogue_coverage ⑶ C(겨울까지 반지하 판이 실제로 굶는다)가 잡았다 — 그 자는 날이 아니라 «나온 대사 차례»를 본다.
+     남은 날을 모르면(옛 사건) 첫 벌. */
+  if (id === 'hungry') return (ev && Number.isFinite(ev.left) && ev.left % 2 === 0) ? 'hungryTalk2' : 'hungryTalk';
   if (id === 'quest_opened') return QUEST_OPEN_SCRIPT[ev && ev.questId] || null;
   if (id === 'quest_done')   return QUEST_DONE_SCRIPT[ev && ev.questId] || null;
   return EVENT_SCRIPT[id] || null;

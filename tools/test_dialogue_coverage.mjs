@@ -607,7 +607,8 @@ check('데이터 — 대사마다 «부르는 자리»가 있다 («불린다»�
        ★ 2026-08-30 — `brokeTalkAgain` 이 늘었다([Plan]). `broke` 사건 하나가 둘로 갈린다 —
          `ev.first` 가 거짓이면 그쪽이다(그 값은 `tutorial` 이 `reliefTaken` 으로 낸다). */
     /* ★ 2026-10-08 [plan] — `winterCameBanjiha` 가 늘었다. 겨울 `season` 하나가 방(S.tutorial.movedOut · ev.movedOut)으로 둘로 갈린다 */
-    'god1', 'rentFirst', 'rentAgain', 'autumnCame', 'winterCame', 'winterCameBanjiha', 'brokeTalkAgain'
+    /* ★ 2026-10-08 [plan] — `hungryTalk2` 가 늘었다. `hungry` 사건 하나가 남은 날 홀/짝으로 두 벌을 번갈아 쓴다(같은 말이 연달아 안 서게) */
+    'god1', 'rentFirst', 'rentAgain', 'autumnCame', 'winterCame', 'winterCameBanjiha', 'brokeTalkAgain', 'hungryTalk2'
   ]);
   const dead = Object.keys(SCRIPTS).filter(id => !used.has(id) && !NOT_YET_USED.has(id));
   assert.equal(dead.length, 0, `아무 데서도 안 불리는 대사: ${dead}`);
