@@ -838,16 +838,24 @@ const ONEROOM_QUESTS = Object.freeze([
   Object.freeze({
     id: 'oneroom_root_bright',
     room: 'oneroom',
-    ko: '밝은 데서 뿌리내린다',
+    /* ★★ 2026-10-08 [plan] 갈래 지도 — **밝기와 상관없이 «이사 뒤 무늬 삽수를 뿌리냄»으로 끝난다.**
+       [core] 갈래 판(694724c6): 원룸에서 무늬 삽수가 «밝음» 띠를 받는 자리는 «등을 단 봄·여름 창턱»뿐 — 등 0 이면 어디에도 없고
+       겨울은 등 둘이어도 없다(등1 sill:0 봄 7.5 · 여름 9.2 · 가을 6.9=중간). 옛 완료(«밝음으로 뿌리냄»)는 36판 중 15판을 수백 일 막았고,
+       이 줄이 ③④⑤(집 자금 줄까지)의 앞이라 엔딩 목표 줄도 같이 막혔다.
+       후보: ㉠ 이 줄을 사슬 밖 곁줄로 뺌 — ③ 대사(「이제는 기다리는 거야. 혹이 나면…」)가 안 자른 사람에게 먼저 나와 거짓 ·
+             ㉡ 완료를 «어떤 밝기든»으로 · 밝음은 «값의 차이»로 가르침 · ㉢ 그대로 + 겨울 기다림(수백 일 막힘 그대로)  ⇒ 고른 것 ㉡.
+       ⚠ «빛이 무늬 등급을 매긴다»는 그대로 가르친다 — why·대사(「밝은 데로 가」)·뿌리낸 날 밴드(값)로. 막는 문으로 가르치지 않는다.
+       ⚠ 값 아님 — 끝나는 «자리»다. id 는 그대로(세이브·대사 지도가 안다) · 이름만 뜻에 맞췄다. */
+    ko: '무늬를 잘라 뿌리내린다',
     reward: '값이 매겨지는 무늬가 생깁니다',
     teaches: ['빛이 무늬 등급을 매긴다', '무늬는 잘라도 물려받는다'],
-    why: '무늬 마디를 잘라 밝은 자리에서 뿌리내리면 삽수가 무늬를 물려받고, 밝을수록 좋은 등급이 납니다. 창턱이 모자라는 철에는 등 자리가 밝은 자리입니다.',
-    todo: () => '무늬 마디를 잘라 밝은 자리에서 뿌리내리세요',
+    why: '무늬 마디를 잘라 뿌리내리면 삽수가 무늬를 물려받습니다. 밝은 데서 뿌리낼수록 좋은 등급이 납니다 — 원룸에서 가장 밝은 자리는 등을 단 창턱이고, 겨울에는 그마저 «중간»입니다.',
+    todo: () => '무늬 마디를 잘라 뿌리내리세요',   /* 28자 상한(test_quest ⑷) — 밝기는 why 가 말한다 */
     after: 'oneroom_unpack',
     opens: (s, ctx) => yes(s.movedOut) && !!(ctx && ctx.doneIds.includes('oneroom_unpack')),
     /* ★ «이사 뒤에» 뿌리낸 것만 — 반지하에서 뿌리낸 삽수를 들고 오면 열리자마자 끝나 아무것도 안 가르친다 */
     done:  s => yes(s.movedOut) && Number.isFinite(s.movedInOnDay) &&
-                arr(s.cuttings).some(c => c && c.varieFromCut && c.varieLightBand === 'bright' &&
+                arr(s.cuttings).some(c => c && c.varieFromCut && c.varieLightBand != null &&
                                           Number.isFinite(c.rootedOnDay) && c.rootedOnDay >= s.movedInOnDay)
   }),
   Object.freeze({

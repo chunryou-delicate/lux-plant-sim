@@ -1133,8 +1133,9 @@ export const SCRIPTS = {
     { who: 'moni',   face: 'teach',   text: '있는 무늬를 잘라. 삽수는 무늬를 물려받아.' },
     { who: 'moni',   face: 'teach',   text: '대신 **어디서 뿌리내리느냐**로 값이 갈려. 밝은 데로 가.' }
   ],
+  /* ★ 2026-10-08 [plan] — 이 줄은 이제 «어떤 밝기든 뿌리낸 날» 끝난다(quest.js §oneroom_root_bright ㉡). 「밝은 데서 뿌리냈네」는 겨울·등 없는 판에서 거짓 */
   questDoneOneroomRootBright: [
-    { who: 'moni',   face: 'proud',   text: '밝은 데서 뿌리냈네. 그게 값이 돼.' }
+    { who: 'moni',   face: 'proud',   text: '뿌리냈네. 밝은 데서 낸 것일수록 값이 돼.' }
   ],
   questOneroomSettleCutting: [
     { who: 'moni',   face: 'teach',   text: '이제는 기다리는 거야. 혹이 나면 흙으로 옮겨.' },
