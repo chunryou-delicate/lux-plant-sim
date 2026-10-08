@@ -1,0 +1,561 @@
+{
+ "meta": {
+  "profile": "data/profiles/room_profile.oneroom.json",
+  "roomRev": "3168869e",
+  "mode": "real",
+  "yearDay0": 135,
+  "days": 400,
+  "leafEvery": 20,
+  "minPlain": 2.7,
+  "minVarie": 3.78,
+  "potRootDays": 24
+ },
+ "rows": [
+  {
+   "slot": "oneroom-sill:0",
+   "lamps": 0,
+   "est": {
+    "plain1": 51,
+    "plain2": 89,
+    "varie1": 51,
+    "varie2": 89
+   },
+   "pot": {
+    "plain1": 71,
+    "varie1": 71
+   }
+  },
+  {
+   "slot": "oneroom-sill:0",
+   "lamps": 1,
+   "est": {
+    "plain1": 20,
+    "plain2": 40,
+    "varie1": 22,
+    "varie2": 50
+   },
+   "pot": {
+    "plain1": 44,
+    "varie1": 54
+   }
+  },
+  {
+   "slot": "oneroom-sill:0",
+   "lamps": 2,
+   "est": {
+    "plain1": 20,
+    "plain2": 40,
+    "varie1": 22,
+    "varie2": 49
+   },
+   "pot": {
+    "plain1": 44,
+    "varie1": 51
+   }
+  },
+  {
+   "slot": "oneroom-sill:1",
+   "lamps": 0,
+   "est": {
+    "plain1": 51,
+    "plain2": 89,
+    "varie1": 51,
+    "varie2": 89
+   },
+   "pot": {
+    "plain1": 71,
+    "varie1": 71
+   }
+  },
+  {
+   "slot": "oneroom-sill:1",
+   "lamps": 1,
+   "est": {
+    "plain1": 22,
+    "plain2": 49,
+    "varie1": 51,
+    "varie2": 89
+   },
+   "pot": {
+    "plain1": 51,
+    "varie1": 71
+   }
+  },
+  {
+   "slot": "oneroom-sill:1",
+   "lamps": 2,
+   "est": {
+    "plain1": 20,
+    "plain2": 40,
+    "varie1": 51,
+    "varie2": 89
+   },
+   "pot": {
+    "plain1": 44,
+    "varie1": 71
+   }
+  },
+  {
+   "slot": "oneroom-sill:2",
+   "lamps": 0,
+   "est": {
+    "plain1": 51,
+    "plain2": 89,
+    "varie1": 51,
+    "varie2": 89
+   },
+   "pot": {
+    "plain1": 71,
+    "varie1": 71
+   }
+  },
+  {
+   "slot": "oneroom-sill:2",
+   "lamps": 1,
+   "est": {
+    "plain1": 51,
+    "plain2": 89,
+    "varie1": 51,
+    "varie2": 89
+   },
+   "pot": {
+    "plain1": 71,
+    "varie1": 71
+   }
+  },
+  {
+   "slot": "oneroom-sill:2",
+   "lamps": 2,
+   "est": {
+    "plain1": 20,
+    "plain2": 40,
+    "varie1": 51,
+    "varie2": 89
+   },
+   "pot": {
+    "plain1": 44,
+    "varie1": 71
+   }
+  },
+  {
+   "slot": "oneroom-sill:3",
+   "lamps": 0,
+   "est": {
+    "plain1": 51,
+    "plain2": 89,
+    "varie1": 51,
+    "varie2": 89
+   },
+   "pot": {
+    "plain1": 71,
+    "varie1": 71
+   }
+  },
+  {
+   "slot": "oneroom-sill:3",
+   "lamps": 1,
+   "est": {
+    "plain1": 51,
+    "plain2": 89,
+    "varie1": 51,
+    "varie2": 89
+   },
+   "pot": {
+    "plain1": 71,
+    "varie1": 71
+   }
+  },
+  {
+   "slot": "oneroom-sill:3",
+   "lamps": 2,
+   "est": {
+    "plain1": 20,
+    "plain2": 40,
+    "varie1": 22,
+    "varie2": 49
+   },
+   "pot": {
+    "plain1": 44,
+    "varie1": 51
+   }
+  },
+  {
+   "slot": "banjiha-etagere:0",
+   "lamps": 0,
+   "est": {
+    "plain1": null,
+    "plain2": null,
+    "varie1": null,
+    "varie2": null
+   },
+   "pot": {
+    "plain1": null,
+    "varie1": null
+   }
+  },
+  {
+   "slot": "banjiha-etagere:0",
+   "lamps": 1,
+   "est": {
+    "plain1": null,
+    "plain2": null,
+    "varie1": null,
+    "varie2": null
+   },
+   "pot": {
+    "plain1": null,
+    "varie1": null
+   }
+  },
+  {
+   "slot": "banjiha-etagere:0",
+   "lamps": 2,
+   "est": {
+    "plain1": null,
+    "plain2": null,
+    "varie1": null,
+    "varie2": null
+   },
+   "pot": {
+    "plain1": null,
+    "varie1": null
+   }
+  },
+  {
+   "slot": "banjiha-etagere:1",
+   "lamps": 0,
+   "est": {
+    "plain1": null,
+    "plain2": null,
+    "varie1": null,
+    "varie2": null
+   },
+   "pot": {
+    "plain1": null,
+    "varie1": null
+   }
+  },
+  {
+   "slot": "banjiha-etagere:1",
+   "lamps": 1,
+   "est": {
+    "plain1": null,
+    "plain2": null,
+    "varie1": null,
+    "varie2": null
+   },
+   "pot": {
+    "plain1": null,
+    "varie1": null
+   }
+  },
+  {
+   "slot": "banjiha-etagere:1",
+   "lamps": 2,
+   "est": {
+    "plain1": null,
+    "plain2": null,
+    "varie1": null,
+    "varie2": null
+   },
+   "pot": {
+    "plain1": null,
+    "varie1": null
+   }
+  },
+  {
+   "slot": "banjiha-etagere:2",
+   "lamps": 0,
+   "est": {
+    "plain1": null,
+    "plain2": null,
+    "varie1": null,
+    "varie2": null
+   },
+   "pot": {
+    "plain1": null,
+    "varie1": null
+   }
+  },
+  {
+   "slot": "banjiha-etagere:2",
+   "lamps": 1,
+   "est": {
+    "plain1": null,
+    "plain2": null,
+    "varie1": null,
+    "varie2": null
+   },
+   "pot": {
+    "plain1": null,
+    "varie1": null
+   }
+  },
+  {
+   "slot": "banjiha-etagere:2",
+   "lamps": 2,
+   "est": {
+    "plain1": null,
+    "plain2": null,
+    "varie1": null,
+    "varie2": null
+   },
+   "pot": {
+    "plain1": null,
+    "varie1": null
+   }
+  },
+  {
+   "slot": "banjiha-etagere:3",
+   "lamps": 0,
+   "est": {
+    "plain1": null,
+    "plain2": null,
+    "varie1": null,
+    "varie2": null
+   },
+   "pot": {
+    "plain1": null,
+    "varie1": null
+   }
+  },
+  {
+   "slot": "banjiha-etagere:3",
+   "lamps": 1,
+   "est": {
+    "plain1": null,
+    "plain2": null,
+    "varie1": null,
+    "varie2": null
+   },
+   "pot": {
+    "plain1": null,
+    "varie1": null
+   }
+  },
+  {
+   "slot": "banjiha-etagere:3",
+   "lamps": 2,
+   "est": {
+    "plain1": 319,
+    "plain2": 355,
+    "varie1": null,
+    "varie2": null
+   },
+   "pot": {
+    "plain1": 336,
+    "varie1": null
+   }
+  },
+  {
+   "slot": "banjiha-etagere:4",
+   "lamps": 0,
+   "est": {
+    "plain1": null,
+    "plain2": null,
+    "varie1": null,
+    "varie2": null
+   },
+   "pot": {
+    "plain1": null,
+    "varie1": null
+   }
+  },
+  {
+   "slot": "banjiha-etagere:4",
+   "lamps": 1,
+   "est": {
+    "plain1": null,
+    "plain2": null,
+    "varie1": null,
+    "varie2": null
+   },
+   "pot": {
+    "plain1": null,
+    "varie1": null
+   }
+  },
+  {
+   "slot": "banjiha-etagere:4",
+   "lamps": 2,
+   "est": {
+    "plain1": 319,
+    "plain2": 355,
+    "varie1": null,
+    "varie2": null
+   },
+   "pot": {
+    "plain1": 336,
+    "varie1": null
+   }
+  },
+  {
+   "slot": "banjiha-etagere:5",
+   "lamps": 0,
+   "est": {
+    "plain1": null,
+    "plain2": null,
+    "varie1": null,
+    "varie2": null
+   },
+   "pot": {
+    "plain1": null,
+    "varie1": null
+   }
+  },
+  {
+   "slot": "banjiha-etagere:5",
+   "lamps": 1,
+   "est": {
+    "plain1": null,
+    "plain2": null,
+    "varie1": null,
+    "varie2": null
+   },
+   "pot": {
+    "plain1": null,
+    "varie1": null
+   }
+  },
+  {
+   "slot": "banjiha-etagere:5",
+   "lamps": 2,
+   "est": {
+    "plain1": null,
+    "plain2": null,
+    "varie1": null,
+    "varie2": null
+   },
+   "pot": {
+    "plain1": null,
+    "varie1": null
+   }
+  },
+  {
+   "slot": "banjiha-etagere:6",
+   "lamps": 0,
+   "est": {
+    "plain1": null,
+    "plain2": null,
+    "varie1": null,
+    "varie2": null
+   },
+   "pot": {
+    "plain1": null,
+    "varie1": null
+   }
+  },
+  {
+   "slot": "banjiha-etagere:6",
+   "lamps": 1,
+   "est": {
+    "plain1": 319,
+    "plain2": 355,
+    "varie1": null,
+    "varie2": null
+   },
+   "pot": {
+    "plain1": 336,
+    "varie1": null
+   }
+  },
+  {
+   "slot": "banjiha-etagere:6",
+   "lamps": 2,
+   "est": {
+    "plain1": 233,
+    "plain2": 271,
+    "varie1": null,
+    "varie2": null
+   },
+   "pot": {
+    "plain1": 253,
+    "varie1": null
+   }
+  },
+  {
+   "slot": "banjiha-etagere:7",
+   "lamps": 0,
+   "est": {
+    "plain1": null,
+    "plain2": null,
+    "varie1": null,
+    "varie2": null
+   },
+   "pot": {
+    "plain1": null,
+    "varie1": null
+   }
+  },
+  {
+   "slot": "banjiha-etagere:7",
+   "lamps": 1,
+   "est": {
+    "plain1": 319,
+    "plain2": 355,
+    "varie1": null,
+    "varie2": null
+   },
+   "pot": {
+    "plain1": 336,
+    "varie1": null
+   }
+  },
+  {
+   "slot": "banjiha-etagere:7",
+   "lamps": 2,
+   "est": {
+    "plain1": 319,
+    "plain2": 355,
+    "varie1": null,
+    "varie2": null
+   },
+   "pot": {
+    "plain1": 336,
+    "varie1": null
+   }
+  },
+  {
+   "slot": "banjiha-etagere:8",
+   "lamps": 0,
+   "est": {
+    "plain1": null,
+    "plain2": null,
+    "varie1": null,
+    "varie2": null
+   },
+   "pot": {
+    "plain1": null,
+    "varie1": null
+   }
+  },
+  {
+   "slot": "banjiha-etagere:8",
+   "lamps": 1,
+   "est": {
+    "plain1": 319,
+    "plain2": 355,
+    "varie1": null,
+    "varie2": null
+   },
+   "pot": {
+    "plain1": 336,
+    "varie1": null
+   }
+  },
+  {
+   "slot": "banjiha-etagere:8",
+   "lamps": 2,
+   "est": {
+    "plain1": 319,
+    "plain2": 355,
+    "varie1": null,
+    "varie2": null
+   },
+   "pot": {
+    "plain1": 336,
+    "varie1": null
+   }
+  }
+ ]
+}

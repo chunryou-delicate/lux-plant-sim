@@ -24,7 +24,7 @@ import assert from 'node:assert';
 import { fileURLToPath } from 'node:url';
 import { createProfileLight } from '../src/game/room_profile.js';
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-function makeThree() {
+export function makeThree() {
   class V3 {
     constructor(x = 0, y = 0, z = 0) { this.x = x; this.y = y; this.z = z; }
     set(x, y, z) { this.x = x; this.y = y; this.z = z; return this; }
@@ -55,7 +55,7 @@ function makeThree() {
   };
   return new Proxy({ Vector3: V3, Vector2: V3 }, handler);
 }
-function loadGrowth() {
+export function loadGrowth() {
   const html = fs.readFileSync(path.join(ROOT, 'plant_grow.html'), 'utf8');
   const blocks = [...html.matchAll(/<script>([\s\S]*?)<\/script>/g)].map(m => m[1]);
   const main = blocks[blocks.length - 1];
@@ -86,50 +86,57 @@ function loadGrowth() {
 }
 const J = p => JSON.parse(fs.readFileSync(path.join(ROOT, p), 'utf8'));
 const T = J('data/balance/light_thresholds.json').plants.monstera_deliciosa;
-const G = loadGrowth();
-for (let i=0;i<400 && !G.thLoaded();i++) await new Promise(r=>setImmediate(r));
-console.log('잎 건강 — real 사계절로 «하루씩» (검사는 고정광이라 이 칸이 비어 있었다)');
-console.log('   문턱: survive ' + T.survive + ' 아래면 바랜다 · min ' + T.min + ' 위면 되돌아온다');
-console.log('');
-console.log('  방/모드/등        바램 구간일   최대 fade   끝 fade   떨어진 잎   잎 수 끝');
-for (const [ROOM,SLOT,mode,lamps,FILE] of [
-    ['banjiha','banjiha-sill:0','novice',0,null],
-    ['banjiha','banjiha-sill:0','real',0,null],
-    ['banjiha','banjiha-sill:0','real',1,null],
-    ['oneroom','oneroom-sill:1','real',0,'docs/handoff/_tmp_profile_oneroom_A.json'],
-    ['oneroom','oneroom-sill:1','real',1,'docs/handoff/_tmp_profile_oneroom_A.json'],
-    ['oneroom','oneroom-sill:0','real',1,'docs/handoff/_tmp_profile_oneroom_A.json']]) {
-  const P = J(FILE || ('data/profiles/room_profile.' + ROOM + '.json'));
-  /* ⚠ 등을 물으려면 프로필이 그 등 개수를 가져야 한다. 정본 원룸은 lampCounts [0] 이라
-     등1 을 물어도 «등0 을 낸다» — 그러면 두 줄이 「같은 판을 두 번」이 된다. */
-  if (!(P.lampCounts||[0]).includes(lamps)) { console.log('  ' + (ROOM+'/'+mode+'/등'+lamps).padEnd(20) + '⛔ 이 프로필엔 등'+lamps+' 표가 없다 — 안 잰다'); continue; }
-  const light = createProfileLight({ ...P, uidStable:true },
-    { thresholds:J('data/balance/light_thresholds.json'),
-      weather:J('data/balance/weather.json'), electricity:J('data/balance/electricity.json') });
-  try { G.plantSeed(92158); } catch(e){}
-  G.resetDailyLight();
-  G.setGrowth(143);
-  const cal0 = G.calendarDay();
-  let below=0, maxFade=0, dropped=0;
-  for (let d=1; d<=400; d++){
-    const S={sim:{mode,yearDay0:135},lamps:{count:lamps,litHours:12},pots:[],placedItems:[]};
-    const s=(light.daily(d,S).report.slots||[]).find(x=>x.slotId===SLOT);
-    G.setDailyLight(s ? s.dli : null);
-    G.advanceTo(cal0 + d);
-    const a = G.dliAvg ? G.dliAvg(7) : null;
-    if (a != null && a < T.survive) below++;
-    for (const h of (G.leafHealthAll ? G.leafHealthAll() : [])) {
-      if (h.fade > maxFade) maxFade = h.fade;
-      if (h.dropped) dropped++;
+/* ★ 2026-10-08 — 이 파일의 makeThree·loadGrowth 를 «내보낸다». 다른 growth 자가 크롬 없이 plant_grow 를
+   돌릴 때 «새 THREE 스텁을 짓지 않고» 이것을 빌려 쓰게 하려는 것이다(규칙: 별도 THREE 스텁은 만들지 않는다).
+   그래서 아래 본 측정은 «이 파일을 직접 돌릴 때만» 돈다 — 불러 쓰는 쪽에서 저절로 돌면 안 된다.
+   ⚠ 같은 날 원룸 줄을 옮겨진 임시 프로필(_tmp_profile_oneroom_A) 대신 정본(D 배치 · lampCounts 0~3)으로 바꿨다. */
+const IS_MAIN = !!process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url);
+if (IS_MAIN) {
+  const G = loadGrowth();
+  for (let i=0;i<400 && !G.thLoaded();i++) await new Promise(r=>setImmediate(r));
+  console.log('잎 건강 — real 사계절로 «하루씩» (검사는 고정광이라 이 칸이 비어 있었다)');
+  console.log('   문턱: survive ' + T.survive + ' 아래면 바랜다 · min ' + T.min + ' 위면 되돌아온다');
+  console.log('');
+  console.log('  방/모드/등        바램 구간일   최대 fade   끝 fade   떨어진 잎   잎 수 끝');
+  for (const [ROOM,SLOT,mode,lamps,FILE] of [
+      ['banjiha','banjiha-sill:0','novice',0,null],
+      ['banjiha','banjiha-sill:0','real',0,null],
+      ['banjiha','banjiha-sill:0','real',1,null],
+      ['oneroom','oneroom-sill:1','real',0,null],
+      ['oneroom','oneroom-sill:1','real',1,null],
+      ['oneroom','oneroom-sill:0','real',1,null]]) {
+    const P = J(FILE || ('data/profiles/room_profile.' + ROOM + '.json'));
+    /* ⚠ 등을 물으려면 프로필이 그 등 개수를 가져야 한다. 정본 원룸은 lampCounts [0] 이라
+       등1 을 물어도 «등0 을 낸다» — 그러면 두 줄이 「같은 판을 두 번」이 된다. */
+    if (!(P.lampCounts||[0]).includes(lamps)) { console.log('  ' + (ROOM+'/'+mode+'/등'+lamps).padEnd(20) + '⛔ 이 프로필엔 등'+lamps+' 표가 없다 — 안 잰다'); continue; }
+    const light = createProfileLight({ ...P, uidStable:true },
+      { thresholds:J('data/balance/light_thresholds.json'),
+        weather:J('data/balance/weather.json'), electricity:J('data/balance/electricity.json') });
+    try { G.plantSeed(92158); } catch(e){}
+    G.resetDailyLight();
+    G.setGrowth(143);
+    const cal0 = G.calendarDay();
+    let below=0, maxFade=0, dropped=0;
+    for (let d=1; d<=400; d++){
+      const S={sim:{mode,yearDay0:135},lamps:{count:lamps,litHours:12},pots:[],placedItems:[]};
+      const s=(light.daily(d,S).report.slots||[]).find(x=>x.slotId===SLOT);
+      G.setDailyLight(s ? s.dli : null);
+      G.advanceTo(cal0 + d);
+      const a = G.dliAvg ? G.dliAvg(7) : null;
+      if (a != null && a < T.survive) below++;
+      for (const h of (G.leafHealthAll ? G.leafHealthAll() : [])) {
+        if (h.fade > maxFade) maxFade = h.fade;
+        if (h.dropped) dropped++;
+      }
     }
+    const end = (G.leafHealthAll ? G.leafHealthAll() : []);
+    const endFade = end.length ? Math.max(...end.map(h=>h.fade||0)) : 0;
+    const dropNow = end.filter(h=>h.dropped).length;
+    console.log('  ' + (ROOM+'/'+mode+'/등'+lamps+(FILE?'*':'')).padEnd(20)
+      + String(below).padStart(6) + '일'
+      + maxFade.toFixed(2).padStart(11)
+      + endFade.toFixed(2).padStart(10)
+      + String(dropNow).padStart(10) + '장'
+      + String(G.leafStats().leaves).padStart(9) + '장');
   }
-  const end = (G.leafHealthAll ? G.leafHealthAll() : []);
-  const endFade = end.length ? Math.max(...end.map(h=>h.fade||0)) : 0;
-  const dropNow = end.filter(h=>h.dropped).length;
-  console.log('  ' + (ROOM+'/'+mode+'/등'+lamps+(FILE?'*':'')).padEnd(20)
-    + String(below).padStart(6) + '일'
-    + maxFade.toFixed(2).padStart(11)
-    + endFade.toFixed(2).padStart(10)
-    + String(dropNow).padStart(10) + '장'
-    + String(G.leafStats().leaves).padStart(9) + '장');
 }

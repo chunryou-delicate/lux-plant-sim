@@ -1,0 +1,315 @@
+{
+ "meta": {
+  "tool": "tools/probe_seedplant_oneroom.mjs",
+  "mode": "real",
+  "profile": "data/profiles/room_profile.oneroom.json",
+  "roomRev": "3168869e",
+  "yearDay0": 135,
+  "days": 400,
+  "seeds": 40,
+  "startGrowth": 0,
+  "plant": "씨앗 그루(프롤로그 보장 끔)",
+  "water": "늘 줌"
+ },
+ "rows": [
+  {
+   "slot": "oneroom-sill:0",
+   "lamps": 0,
+   "leaf1": {
+    "p50": 37,
+    "p10": 37,
+    "p90": 37,
+    "none": 0
+   },
+   "leaf2": {
+    "p50": 109,
+    "p10": 109,
+    "p90": 109,
+    "none": 0
+   },
+   "leaf3": {
+    "p50": 275,
+    "p10": 275,
+    "p90": 275,
+    "none": 0
+   },
+   "firstSplit": {
+    "p50": 256,
+    "p10": 95,
+    "p90": 334,
+    "none": 2
+   },
+   "firstVarie": {
+    "p50": 109,
+    "p10": 37,
+    "p90": 109,
+    "none": 31
+   },
+   "firstVarieBand": {
+    "mid": 9
+   }
+  },
+  {
+   "slot": "oneroom-sill:0",
+   "lamps": 1,
+   "leaf1": {
+    "p50": 25,
+    "p10": 25,
+    "p90": 25,
+    "none": 0
+   },
+   "leaf2": {
+    "p50": 60,
+    "p10": 60,
+    "p90": 60,
+    "none": 0
+   },
+   "leaf3": {
+    "p50": 103,
+    "p10": 103,
+    "p90": 103,
+    "none": 0
+   },
+   "firstSplit": {
+    "p50": 79,
+    "p10": 52,
+    "p90": 120,
+    "none": 0
+   },
+   "firstVarie": {
+    "p50": 60,
+    "p10": 25,
+    "p90": 261,
+    "none": 24
+   },
+   "firstVarieBand": {
+    "bright": 10,
+    "mid": 6
+   }
+  },
+  {
+   "slot": "oneroom-sill:1",
+   "lamps": 0,
+   "leaf1": {
+    "p50": 37,
+    "p10": 37,
+    "p90": 37,
+    "none": 0
+   },
+   "leaf2": {
+    "p50": 109,
+    "p10": 109,
+    "p90": 109,
+    "none": 0
+   },
+   "leaf3": {
+    "p50": 275,
+    "p10": 275,
+    "p90": 275,
+    "none": 0
+   },
+   "firstSplit": {
+    "p50": 256,
+    "p10": 95,
+    "p90": 333,
+    "none": 1
+   },
+   "firstVarie": {
+    "p50": 109,
+    "p10": 37,
+    "p90": 109,
+    "none": 31
+   },
+   "firstVarieBand": {
+    "mid": 9
+   }
+  },
+  {
+   "slot": "oneroom-sill:1",
+   "lamps": 1,
+   "leaf1": {
+    "p50": 26,
+    "p10": 26,
+    "p90": 26,
+    "none": 0
+   },
+   "leaf2": {
+    "p50": 64,
+    "p10": 64,
+    "p90": 64,
+    "none": 0
+   },
+   "leaf3": {
+    "p50": 112,
+    "p10": 112,
+    "p90": 112,
+    "none": 0
+   },
+   "firstSplit": {
+    "p50": 96,
+    "p10": 56,
+    "p90": 161,
+    "none": 0
+   },
+   "firstVarie": {
+    "p50": 64,
+    "p10": 26,
+    "p90": 281,
+    "none": 25
+   },
+   "firstVarieBand": {
+    "bright": 8,
+    "mid": 7
+   }
+  },
+  {
+   "slot": "oneroom-sill:2",
+   "lamps": 0,
+   "leaf1": {
+    "p50": 37,
+    "p10": 37,
+    "p90": 37,
+    "none": 0
+   },
+   "leaf2": {
+    "p50": 120,
+    "p10": 120,
+    "p90": 120,
+    "none": 0
+   },
+   "leaf3": {
+    "p50": 279,
+    "p10": 279,
+    "p90": 279,
+    "none": 0
+   },
+   "firstSplit": {
+    "p50": 260,
+    "p10": 97,
+    "p90": 337,
+    "none": 2
+   },
+   "firstVarie": {
+    "p50": 120,
+    "p10": 37,
+    "p90": 120,
+    "none": 31
+   },
+   "firstVarieBand": {
+    "mid": 9
+   }
+  },
+  {
+   "slot": "oneroom-sill:2",
+   "lamps": 1,
+   "leaf1": {
+    "p50": 31,
+    "p10": 31,
+    "p90": 31,
+    "none": 0
+   },
+   "leaf2": {
+    "p50": 80,
+    "p10": 80,
+    "p90": 80,
+    "none": 0
+   },
+   "leaf3": {
+    "p50": 133,
+    "p10": 133,
+    "p90": 133,
+    "none": 0
+   },
+   "firstSplit": {
+    "p50": 117,
+    "p10": 72,
+    "p90": 269,
+    "none": 0
+   },
+   "firstVarie": {
+    "p50": 80,
+    "p10": 31,
+    "p90": 388,
+    "none": 26
+   },
+   "firstVarieBand": {
+    "bright": 5,
+    "mid": 9
+   }
+  },
+  {
+   "slot": "oneroom-sill:3",
+   "lamps": 0,
+   "leaf1": {
+    "p50": 41,
+    "p10": 41,
+    "p90": 41,
+    "none": 0
+   },
+   "leaf2": {
+    "p50": 252,
+    "p10": 252,
+    "p90": 252,
+    "none": 0
+   },
+   "leaf3": {
+    "p50": 322,
+    "p10": 322,
+    "p90": 322,
+    "none": 0
+   },
+   "firstSplit": {
+    "p50": 293,
+    "p10": 137,
+    "p90": 370,
+    "none": 2
+   },
+   "firstVarie": {
+    "p50": 252,
+    "p10": 41,
+    "p90": 252,
+    "none": 31
+   },
+   "firstVarieBand": {
+    "mid": 9
+   }
+  },
+  {
+   "slot": "oneroom-sill:3",
+   "lamps": 1,
+   "leaf1": {
+    "p50": 37,
+    "p10": 37,
+    "p90": 37,
+    "none": 0
+   },
+   "leaf2": {
+    "p50": 107,
+    "p10": 107,
+    "p90": 107,
+    "none": 0
+   },
+   "leaf3": {
+    "p50": 262,
+    "p10": 262,
+    "p90": 262,
+    "none": 0
+   },
+   "firstSplit": {
+    "p50": 246,
+    "p10": 93,
+    "p90": 321,
+    "none": 1
+   },
+   "firstVarie": {
+    "p50": 107,
+    "p10": 37,
+    "p90": 107,
+    "none": 31
+   },
+   "firstVarieBand": {
+    "mid": 9
+   }
+  }
+ ]
+}
