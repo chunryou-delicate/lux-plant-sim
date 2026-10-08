@@ -387,7 +387,7 @@ await page.eval(`document.getElementById('guideOpen').click()`, false);
 await sleep(900);
 const gtips = await page.eval(`[...document.querySelectorAll('#guide .gtip')].map(e=>e.textContent)`);
 const joined = (gtips || []).join(' | ');
-is(/사람을 누르면/.test(joined), '⑤-5 A-1 ★ 안내판에 「사람을 누르면 걸어간다」가 있다');
+is(/캐릭터를 누르면/.test(joined), '⑤-5 A-1 ★ 안내판에 「(내) 캐릭터를 누르면 걸어간다」가 있다');   /* 2026-10-08 [plan] 「사람」 → 「내 캐릭터」 */
 is(/가구/.test(joined) && /옮기기/.test(joined), '⑤-6 A-2 ★ 안내판에 「가구를 누르면 [옮기기]」가 있다');
 is(!/\[이동\]|\[회전\]/.test(joined), '⑤-7 ★ **없는 단추 이름**([이동]·[회전])을 더는 안 댄다');
 if (SHOT) await page.shot(`${SHOT}/coach_06_guidepanel.png`);
