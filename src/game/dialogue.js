@@ -439,6 +439,18 @@ export const SCRIPTS = {
     /* ★실패가 아니라 더딘 것이다. 그 톤을 여기서 못 지키면 경로 C 가 벌처럼 읽힌다. */
     { who: 'moni',   face: 'calm', text: '급할 건 없어. **늦은 거지 틀린 게 아니고.**' }
   ],
+  /* ★★ 2026-10-08 [plan] D20 — **반지하에서 맞는 겨울.** 위 winterCame 의 「창 하나로 버티기엔 짧고」는 원룸(real)에서만 참이다 —
+     반지하는 빛의 초보(D1 · 여름·맑음 고정)라 겨울이 와도 창턱 빛이 안 줄어든다. 대개 원룸에서 뜨지만(위 주석) 늦게 나가는 판은 여기서 맞는다.
+     ⇒ 빛은 «그대로»라고 말하고(autumnCame D20 「이 방 빛은 그대로지」와 한 편) · 추위·달력으로 겨울을 말한다.
+     ★ 「늦은 거지 틀린 게 아니고」는 지켰다 — 이 구간의 톤을 그 한 줄이 잡는다(winterCame 과 같은 끝줄).
+     고르는 곳: §scriptOf(season · 겨울) — 원룸인가를 S.tutorial.movedOut 으로 본다. 모르면 예전 그대로 winterCame. */
+  winterCameBanjiha: [
+    { who: 'jachwi', face: 'tired', text: '유리에 김이 서린다.' },
+    { who: 'moni',   face: 'worry', text: '겨울이야. 이 동네는 겨울이 길어.' },
+    { who: 'moni',   text: '이 방 빛은 겨울에도 그대로야. 원래 모자랐으니까.' },
+    { who: 'jachwi', face: 'tired', text: '…추운 건 그대로 춥고.' },
+    { who: 'moni',   face: 'calm', text: '급할 건 없어. **늦은 거지 틀린 게 아니고.**' }
+  ],
   /* 겨울 열흘째까지 반지하일 때. 위 winterCame 의 톤을 한 번 더 받쳐 준다. */
   winterStill: [
     { who: 'jachwi', face: 'tired', text: '겨울에도 반지하다.' },
@@ -2049,11 +2061,17 @@ const EVENT_ORDER = [
 ];
 
 /* 이벤트 하나 → 대사 id. 계절·월세처럼 **같은 id 안에서 갈리는** 것만 여기서 본다. */
-function scriptOf(ev) {
+function scriptOf(ev, S = null) {
   const id = typeof ev === 'string' ? ev : (ev && ev.id);
   if (!id) return null;
-  if (id === 'season') return ev.season === 'autumn' ? 'autumnCame'
-                            : ev.season === 'winter' ? 'winterCame' : null;
+  /* ★ 2026-10-08 [plan] D20 — 겨울은 방으로 갈린다(§winterCameBanjiha). 사건이 실으면(ev.movedOut) 그것을, 아니면 S 를 본다.
+     둘 다 모르면 예전 그대로(winterCame) — 판을 안 바꾼다. */
+  if (id === 'season' && ev.season === 'winter') {
+    const out = typeof ev.movedOut === 'boolean' ? ev.movedOut
+              : (S && S.tutorial && typeof S.tutorial.movedOut === 'boolean') ? S.tutorial.movedOut : null;
+    return out === false ? 'winterCameBanjiha' : 'winterCame';
+  }
+  if (id === 'season') return ev.season === 'autumn' ? 'autumnCame' : null;
   if (id === 'rent') return ev.first ? 'rentFirst' : 'rentAgain';
   /* ★ 2026-08-30 [Plan] — 파산도 «첫 번»과 «그다음»이 다르다(위 §brokeTalkAgain).
      ⚠ 옛 세이브·옛 코어는 `first` 를 안 싣는다 ⇒ `undefined` 면 «첫 번»으로 읽는다.
@@ -2077,7 +2095,7 @@ function orderKey(ev) {
 
 /* 턴 결과 → 이번에 나올 대사. events 는 loop.js 의 `turn.events` 그대로다.
    ★Day 4 계약 순서(수확 → 식비 → 식물신 → 도착)는 EVENT_ORDER 가 지킨다. */
-export function scriptsForEvents(events = []) {
+export function scriptsForEvents(events = [], S = null) {
   const list = (events || []).filter(Boolean);
   /* ══ ★★ 2026-08-16 — **한 줄이 같은 걸음에 열리고 끝나면 열림이 먼저다** ══════════
      `EVENT_ORDER` 는 `quest_done → quest_opened` 다. 그 순서는 **다른 두 줄**을 위한 것이고
@@ -2102,7 +2120,7 @@ export function scriptsForEvents(events = []) {
   };
   const out = [];
   for (const ev of [...list].sort((a, b) => rank(a) - rank(b))) {
-    const s = scriptOf(ev);
+    const s = scriptOf(ev, S);
     if (s && !out.includes(s)) out.push(s);
   }
   /* ★★ 식물신은 **주는 순간 바로 앞**에 붙는다 (2026-08-04 고침).
@@ -2484,7 +2502,7 @@ export function createStoryteller(opt = {}) {
 
   /* 한 턴 → 이번에 띄울 대사 id 목록(순서 그대로). 빈 배열이면 조용한 날이다. */
   function turn(turnObj, S = null) {
-    const ids = scriptsForEvents((turnObj && turnObj.events) || []);
+    const ids = scriptsForEvents((turnObj && turnObj.events) || [], S);
     const day = turnObj ? turnObj.day : null;
     if (ids.length) { quiet = 0; history.push(...ids); note(ids, day); return ids; }
     quiet++;

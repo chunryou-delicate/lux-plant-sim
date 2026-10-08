@@ -374,7 +374,8 @@ const MUST = [
   ['첫 월세 청구',               'rent',                'rentFirst',           [A, B, C]],
   ['둘째 달 월세',               'rent',                'rentAgain',           [C]],
   ['가을 진입',                  'season',              'autumnCame',          [A, B, C]],
-  ['겨울 진입',                  'season',              'winterCame',          [C]],
+  /* ★ 2026-10-08 [plan] D20 — 겨울은 방으로 갈린다(dialogue.js §winterCameBanjiha). C 는 반지하에서 겨울을 맞는 판이라 반지하 줄이다 */
+  ['겨울 진입',                  'season',              'winterCameBanjiha',   [C]],
   ['식물등이 열림',              'lamp_unlocked',       'lampUnlocked',        [A, B, C]],
   ['식물등을 샀을 때',           'lamp_bought',         'lampBought',          [B]],
   ['안 사고 버틸 때',            'lamp_skipped',        'lampSkipped',         [A, C]],
@@ -605,7 +606,8 @@ check('데이터 — 대사마다 «부르는 자리»가 있다 («불린다»�
                       계절(autumn·winter) · 월세(first·again) · ★ 파산(첫 번·그다음)
        ★ 2026-08-30 — `brokeTalkAgain` 이 늘었다([Plan]). `broke` 사건 하나가 둘로 갈린다 —
          `ev.first` 가 거짓이면 그쪽이다(그 값은 `tutorial` 이 `reliefTaken` 으로 낸다). */
-    'god1', 'rentFirst', 'rentAgain', 'autumnCame', 'winterCame', 'brokeTalkAgain'
+    /* ★ 2026-10-08 [plan] — `winterCameBanjiha` 가 늘었다. 겨울 `season` 하나가 방(S.tutorial.movedOut · ev.movedOut)으로 둘로 갈린다 */
+    'god1', 'rentFirst', 'rentAgain', 'autumnCame', 'winterCame', 'winterCameBanjiha', 'brokeTalkAgain'
   ]);
   const dead = Object.keys(SCRIPTS).filter(id => !used.has(id) && !NOT_YET_USED.has(id));
   assert.equal(dead.length, 0, `아무 데서도 안 불리는 대사: ${dead}`);
@@ -624,7 +626,10 @@ check('데이터 — 「아직 안 쓰는 대사」 목록이 안 낡았다', ()
 });
 check('데이터 — 계절·월세는 같은 이벤트 안에서 갈린다', () => {
   assert.deepEqual(scriptsForEvents([{ id: 'season', season: 'autumn' }]), ['autumnCame']);
-  assert.deepEqual(scriptsForEvents([{ id: 'season', season: 'winter' }]), ['winterCame']);
+  assert.deepEqual(scriptsForEvents([{ id: 'season', season: 'winter' }]), ['winterCame']);   // 방을 모르면 예전 그대로
+  assert.deepEqual(scriptsForEvents([{ id: 'season', season: 'winter' }], { tutorial: { movedOut: false } }), ['winterCameBanjiha']);
+  assert.deepEqual(scriptsForEvents([{ id: 'season', season: 'winter' }], { tutorial: { movedOut: true } }), ['winterCame']);
+  assert.deepEqual(scriptsForEvents([{ id: 'season', season: 'winter', movedOut: false }]), ['winterCameBanjiha']);
   assert.deepEqual(scriptsForEvents([{ id: 'season', season: 'spring' }]), []);
   assert.deepEqual(scriptsForEvents([{ id: 'rent', first: true }]), ['rentFirst']);
   assert.deepEqual(scriptsForEvents([{ id: 'rent', first: false }]), ['rentAgain']);
