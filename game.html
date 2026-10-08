@@ -8360,7 +8360,10 @@ function drawShop() {
        모르면 아무 말도 안 한다 — 지어낸 문턱으로 팔라고 하는 것이 더 나쁘다. */
   const moveCost = S.tutorial && S.tutorial.rules && S.tutorial.rules.moveOutCostWon;
   if (!moveCost) { hint.textContent = ''; return; }
-  const nd = varieLeavesNeededFor(moveCost, { leaves: ls.leaves });
+  /* ★★★ 2026-10-08 — **그리기가 던지면 판이 잠긴다**([leaf] 0639ec14 · «잎 수가 1 이상의 정수가 아닙니다: 0» → hardLock).
+     역산은 잎 1장 이상에서만 뜻이 있다 — 못 세면 n 을 null 로 둔다(아래 줄이 이미 그 경우를 «못 미칩니다»로 말한다 · 값을 지어내지 않는다) */
+  let nd = null;
+  if (Number.isInteger(ls.leaves) && ls.leaves >= 1) { try { nd = varieLeavesNeededFor(moveCost, { leaves: ls.leaves }); } catch { nd = null; } }
   const n = nd && nd.needVarieLeaves;
   /* ★★★ 2026-08-30 [Plan] — **「이사 자금」에 «얼마»를 붙인다.**
      ══════════════════════════════════════════════════════════════════

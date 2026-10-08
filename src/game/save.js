@@ -44,8 +44,7 @@
 import {
   SCHEMA, SIM_MODES, ARRIVAL, newState, pot0, pushLog, migratePots, rehomePot,
   /* ★ 여러 그루 (2026-08-15) — 화분마다 제 그루 이름과 제 빛 이력을 갖는다 */
-  MAIN_GROWTH_ID, growthIdOf, syncPotLead
-} from './state.js';
+  MAIN_GROWTH_ID, growthIdOf, syncPotLead, selectLeadPlant } from './state.js';
 import { createFirstPlayState, placeBeansprout, placeCrop, cropSites, cropKindOf,
          ensureCropPots, syncCropLead } from './first_play.js';
 import { createTutorialState } from './tutorial.js';
@@ -1523,6 +1522,9 @@ export function restoreGrowth(S, growth, opt = {}) {
       `plant_grow 에 selectPlant/addPlant 가 있는지 확인해 주세요`);
 
   const per = pots.map((p, i) => restoreOnePlant(S, growth, p, i, pots.length, canMulti));
+  /* ★★★ 2026-10-08 — 화분마다 갈아 꽂았으니 **첫 화분을 다시 꽂는다**(state §selectLeadPlant).
+     안 하면 불러온 직후 상점·장부·방이 마지막 화분(갓 심은 0장 그루일 수 있다)을 «첫 화분»으로 읽는다 */
+  try { selectLeadPlant(S, growth); } catch { }
   for (const r of per) warnings.push(...r.warnings);
   if (S.desync)
     warnings.push(`어긋난 상태에서 저장된 세이브입니다(${S.desync.reason || '사유 미상'}) — ` +

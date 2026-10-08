@@ -235,6 +235,30 @@ export function growthIdOf(pot) {
   return pot.growthId || MAIN_GROWTH_ID;
 }
 
+/* ★★★ 2026-10-08 — **턴 밖에서 생장 창에 꽂힌 그루는 «언제나 첫 화분(pot0)의 그루»다** ([leaf] 0639ec14 · 총괄 14:30 ⛔)
+   ══════════════════════════════════════════════════════════════════
+   ⛔ 실측: 둘째 화분에 씨앗을 [🌱 심기] → «⛔ [상점] 잎 수가 1 이상의 정수가 아닙니다: 0» → hardLock · [다음 날] 잠김.
+     심기(plantMonsteraSeed)가 새 그루를 꽂고 **안 되돌렸다** ⇒ drawShop 의 leafStats() 가 «첫 화분»이 아니라 갓 심은 0장 그루를 읽었다.
+     그 뒤 syncRoom 도 첫 화분을 0일 그루로 그렸다(305 → 0).
+   ★ 같은 뿌리가 셋이었다 — 심기 · 하루(nextDay 가 마지막 화분을 꽂은 채 끝남) · 복원(restoreGrowth 가 마지막 화분을 꽂은 채 끝남).
+     화면의 «첫 화분을 읽는 자리»(상점 내놓기 · 등급 장부 · 자르기 잎 수 · 튜토 무늬 축)는 전부 «지금 꽂힌 그루»를 읽는다.
+   ⇒ 규약을 하나로 세운다: **그루를 갈아 꽂은 쪽이 끝날 때 이것을 부른다.** 화면은 고칠 것이 없다(읽는 자리 그대로).
+   ⚠ 그루를 못 고르는 생장 창(옛 plant_grow · 헤드리스 하네스)은 아무것도 안 한다 — 그루가 하나뿐이라 고를 것이 없다.
+   ⚠ 화분이 없으면(모주를 팔았고 씨앗 화분도 없음) 기본 그루로 둔다 — 부팅 때 그 그루다. */
+export function selectLeadPlant(S, g) {
+  if (!g || typeof g.select !== 'function') return null;
+  if (typeof g.multi === 'function' && !g.multi()) return null;
+  const p = S && S.pots ? S.pots[0] : null;
+  const id = p ? growthIdOf(p) : MAIN_GROWTH_ID;
+  let cur = null; try { cur = typeof g.current === 'function' ? g.current() : null; } catch { cur = null; }
+  if (cur === id) return id;
+  /* ⚠ 옛 길 — 한 그루짜리 판은 select 를 «아예» 안 부른다(loop §selectPlantFor · test_multiplant_core A).
+       지금 꽂힌 것을 모를 때(current 가 없는 생장 창)만 이 길이다 — 알면 위에서 이미 갈렸다 */
+  if (cur == null && (!S || !S.pots || S.pots.length <= 1) && id === MAIN_GROWTH_ID) return id;
+  g.select(id);
+  return id;
+}
+
 /* ★★ 빛 이력의 정본은 **화분마다**다 (2026-08-15 다개체).
    `S.dliHist` 는 그 첫 화분의 **대표 칸**이다 — 작물(`firstPlay.beansprout`)이 시루 여럿으로
    갈릴 때 쓴 규약과 같다(first_play §syncCropLead). 사본이 아니라 **같은 배열**을 가리키므로
@@ -666,8 +690,12 @@ export function plantMonsteraSeed(S, io, opt = {}) {
     res = g.setGrowth(SEED_START_GROWTH_DAYS);
   } catch (e) {
     try { g.removePlant(growthId); } catch { /* 치우다 또 터지면 그건 생장 창 몫이다 */ }
+    try { selectLeadPlant(S, g); } catch { }
     throw e;
   }
+  /* ★★★ 2026-10-08 — 새 그루를 세웠으면 **첫 화분을 다시 꽂는다**(§selectLeadPlant · 둘째 화분 심기 잠김).
+     ⚠ 안 되돌리면 이 뒤의 모든 «첫 화분 읽기»가 갓 심은 0장 그루를 읽는다 */
+  try { selectLeadPlant(S, g); } catch { }
   if (res && res.drawn === false) {
     try { g.removePlant(growthId); } catch { }
     const err = new Error(`[심기] 새 그루를 화면에 그리지 못했습니다` +

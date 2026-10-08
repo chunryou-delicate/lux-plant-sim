@@ -34,7 +34,7 @@
 import { givePlant, pot0, rehomePot, reseatAllOnSlots, pushLog,
          potWaterStatus, waterPot,
          /* ★ 여러 그루 (2026-08-15) — 화분 ↔ 생장 창의 그루를 잇는 이름과 화분별 빛 이력 */
-         growthIdOf, MAIN_GROWTH_ID, potHist, syncPotLead } from './state.js';
+         growthIdOf, MAIN_GROWTH_ID, potHist, syncPotLead, selectLeadPlant } from './state.js';
 import {
   advanceBeansproutDay,
   beansproutHarvestStatus,
@@ -874,7 +874,13 @@ function selectPlantFor(S, io, p) {
   return id;
 }
 
+/* ★★★ 2026-10-08 — 하루는 화분마다 그루를 갈아 꽂는다(§selectPlantFor). 끝날 때 **첫 화분을 다시 꽂는다**
+   (state §selectLeadPlant · [leaf] 0639ec14 둘째 화분 심기 잠김의 같은 뿌리). 던져도 되돌린다 — finally. */
 export function nextDay(S, io) {
+  try { return nextDayBody(S, io); }
+  finally { try { selectLeadPlant(S, io && io.growth); } catch { } }
+}
+function nextDayBody(S, io) {
   const p = pot0(S);
   /* ★첫 플레이 신호는 **앞뒤 스냅샷의 차이**로 낸다(first_play.js 주석 참고).
      하루가 시작하기 전에 한 장 떠 둔다 — 되감기(catch)로 무른 턴은 아래 attachEvents
@@ -1153,6 +1159,9 @@ export function nextDay(S, io) {
   if (!leafNow && p && S.pots.length <= 1) {
     try { selectPlantFor(S, io, p); leafNow = readLeafNow(io); } catch { leafNow = null; }
   }
+  /* ★★★ 2026-10-08 — 그루마다 돈 뒤에는 **마지막 화분이 꽂혀 있다.** 이 아래(실패 판정 · stepTutorial 의 leafStats ·
+     무늬 축)는 «첫 화분»을 읽어야 하므로 여기서 첫 화분을 다시 꽂는다(state §selectLeadPlant) */
+  try { selectLeadPlant(S, io.growth); } catch { }
 
   /* 전기요금은 **하루에 한 번**이다 — 그루 수와 무관하다(그루마다 더하면 두 배가 된다) */
   S.ledger.electricityWon += (report.energy && report.energy.won) || 0;   // 표시만. 차감 없음
