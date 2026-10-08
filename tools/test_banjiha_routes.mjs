@@ -1283,6 +1283,10 @@ function runRoute(name, opt) {
   const seasons = {};
   for (const r of ok) seasons[r.season] = (seasons[r.season] || 0) + 1;
   const grant = ok.map(r => r.grantDay).filter(v => v != null);
+  /* ⚠ 2026-10-08 (core · 총괄 13:55) — 이 자는 takeCutting 에 «무늬 다 자란 잎 수»(varieMaturedLeaves)를 안 넘긴다 ⇒ 자르기 문(박사님 08-24 ·
+       «셋째 하프문 무늬잎이 성숙잎»)이 «안 걸린다»(propagation 규약: 안 넘기면 안 막음). 게임 화면은 [병에]·[흙에] 단추를 그 문으로 잠근다.
+       ⇒ 여기 숫자는 «게임보다 쉬운 판»이다. 갈래 판(probe_branches)은 문을 넘긴다 — 둘을 견줄 때 이 줄을 먼저 읽을 것 */
+  info(`⚠ 자르기 문 없음 — 게임보다 쉬움(varieMaturedLeaves 를 안 넘김 · 갈래 판 probe_branches 는 넘김)`);
   info(`${name} — 이사 성공 ${ok.length}/${runs.length} (${(rate * 100).toFixed(0)}%)` +
        (days.length ? ` · 중앙값 튜토 ${median(days)}일 · 최선 ${Math.min(...days)}일 · 최악 ${Math.max(...days)}일` +
                       ` · 계절 ${Object.entries(seasons).map(([k, v]) => k + ':' + v).join(' ')}` +
@@ -1306,7 +1310,7 @@ function runRoute(name, opt) {
   const m0s = ok.map(r => r.m0).filter(Boolean);
   if (m0s.length) {
     const gt = {}; for (const m of m0s) for (const [g, n] of Object.entries((m.mother && m.mother.grades) || {})) gt[g] = (gt[g] || 0) + n;
-    info(`  ⤷ M0 이사 날 — 이사 뒤 현금 중앙값 ${median(m0s.map(m => m.cashAfterWon)).toLocaleString()}원` +
+    info(`  ⤷ M0 이사 날(⚠ 자르기 문 없는 판) — 이사 뒤 현금 중앙값 ${median(m0s.map(m => m.cashAfterWon)).toLocaleString()}원` +
          ` (최저 ${Math.min(...m0s.map(m => m.cashAfterWon)).toLocaleString()} · 최고 ${Math.max(...m0s.map(m => m.cashAfterWon)).toLocaleString()})` +
          ` · 모주 든 판 ${m0s.filter(m => m.mother).length}/${m0s.length} · 모주 잎 중앙값 ${median(m0s.filter(m => m.mother).map(m => m.mother.leaves ?? 0))}장` +
          `(무늬 ${median(m0s.filter(m => m.mother).map(m => m.mother.varie ?? 0))}장) · 장부 등급 합 [${Object.entries(gt).map(([k, v]) => k + ':' + v).join(' ')}]` +

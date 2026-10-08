@@ -31,9 +31,9 @@ import path from 'node:path';
 import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { makeGrowth, makeSwitchingLight, questSnapshotOf, atOf, RULES, ROOT } from './lib/byeot_harness.mjs';
-import { newState, pot0, setPotSlot, resowCrop, waterCrop, waterPot, sellCropSurplus } from '../src/game/state.js';
+import { newState, pot0, setPotSlot, resowCrop, waterCrop, waterPot, sellCropSurplus, sellPantryCrop } from '../src/game/state.js';
 import { nextDay, harvestCrop } from '../src/game/loop.js';
-import { placeBeansprout, moveMonstera, beansproutReady } from '../src/game/first_play.js';
+import { placeBeansprout, moveMonstera, beansproutReady, pantrySaleQuote } from '../src/game/first_play.js';
 import { orderItem, stockOf, incomingOf, listCutting, listPot, dealListing, marketStatus, marketGate, listingFor,
          SELLABLE_CUTTING_STATUS } from '../src/game/shop.js';
 import { canMoveOut, varieView, buyLamp } from '../src/game/tutorial.js';
@@ -63,6 +63,7 @@ export const PERSONAS = {
 };
 const DARK = 'banjiha-dresser:1', SILL = 'banjiha-sill:0', ONE_SILL = 'oneroom-sill:0', ONE_BRIGHT = ['oneroom-sill:1', 'oneroom-sill:2', 'oneroom-sill:3'];
 const STUCK_DAYS = 14;
+const PANTRY_KEEP = 10;               /* 남겨 둘 판 수 — night_play KEEP_LOTS 와 같은 손버릇(값 아님) */
 const MUSUN_AT = 'banjiha-desk:0';    /* 무순 판 자리 — 반지하 책상(원룸에도 짐으로 같은 이름이 선다) */
 const reasonKey = m => String(m || '')
   .replace(/n[\d.]+#\d+/g, '마디').replace(/\d[\d,.]*/g, 'N').replace(/\s+/g, ' ').slice(0, 46);
@@ -108,10 +109,16 @@ export async function play(name, seed, opt = {}) {
       const stm = S.stamina || {}, openQ = id => (stm.questsOpenedOn || {})[id] != null, doneQ = id => (stm.questsTaken || []).includes(id);
       if (P.follow) { for (const [id, n] of [['siru5_cycle5', 5], ['siru8', 8], ['siru16', 16]]) if (openQ(id) || doneQ(id)) followSiru = Math.max(followSiru, n); }
       const b = S.firstPlay.beansprout, want = Math.max(P.siruCap, followSiru);
-      const needSiru = want - b.sirus - stockOf(S, 'siru') - incomingOf(S, 'siru');
-      if (needSiru > 0) { try { orderItem(S, 'siru', needSiru); } catch { } }
+      /* ★ 2026-10-08 (총괄 13:55) — 안내를 따르는 사람의 손버릇은 night_play guided 와 같게: 시루는 «시키는 수 > 놓인 수 · 재고 0 · 오는 중 0»일 때 하루 하나 ·
+           씨앗은 놓인 시루 수만큼. 열리자마자 다 사들이면 사람보다 가난한 판이 된다(첫 판 d60 364,830 ↔ 봇 d45 741,666) */
+      if (P.follow) {
+        if (want > b.sirus && stockOf(S, 'siru') === 0 && incomingOf(S, 'siru') === 0) { try { orderItem(S, 'siru', 1); } catch { } }
+      } else {
+        const needSiru = want - b.sirus - stockOf(S, 'siru') - incomingOf(S, 'siru');
+        if (needSiru > 0) { try { orderItem(S, 'siru', needSiru); } catch { } }
+      }
       const target = Math.min(want, b.sirus + stockOf(S, 'siru'));
-      const needSeed = target * 2 - stockOf(S, 'bean_seed') - incomingOf(S, 'bean_seed');
+      const needSeed = (P.follow ? b.sirus : target * 2) - stockOf(S, 'bean_seed') - incomingOf(S, 'bean_seed');
       if (needSeed > 0) { try { orderItem(S, 'bean_seed', needSeed); } catch { } }
       let hv = null; if (beansproutReady(S.firstPlay)) { try { hv = harvestCrop(S, io); } catch { } }
       if (hv && hv.arrived) { setPotSlot(S, pot0(S), SILL, light.room.slots); moveMonstera(S.firstPlay, SILL, { slots: light.room.slots }); }
@@ -121,15 +128,19 @@ export async function play(name, seed, opt = {}) {
         const mw = (openQ('radish5') || doneQ('radish5')) ? 5 : 1;
         const site = (S.firstPlay.crops || []).find(x => x && x.kind === 'musun');
         const have = site ? (site.pots || []).length : 0;
-        const needTray = mw - have - stockOf(S, 'sprout_tray') - incomingOf(S, 'sprout_tray');
-        if (needTray > 0) { try { orderItem(S, 'sprout_tray', needTray); } catch { } }
-        const needRad = mw - stockOf(S, 'radish_seed') - incomingOf(S, 'radish_seed');
+        if (mw > have && stockOf(S, 'sprout_tray') === 0 && incomingOf(S, 'sprout_tray') === 0) { try { orderItem(S, 'sprout_tray', 1); } catch { } }   /* 하루 하나 */
+        const needRad = Math.max(1, have) - stockOf(S, 'radish_seed') - incomingOf(S, 'radish_seed');   /* 씨앗은 놓인 판 수만큼 */
         if (needRad > 0) { try { orderItem(S, 'radish_seed', needRad); } catch { } }
         const mt = Math.min(mw, have + stockOf(S, 'sprout_tray'));
         if (mt > 0) { try { resowCrop(S, { kind: 'musun', sirus: mt, at: MUSUN_AT, slots: light.room.slots }); } catch { } }
         try { waterCrop(S, { kind: 'musun', all: true }); } catch { }
       }
-      try { sellCropSurplus(S); } catch { }
+      if (!P.follow || S.day % 5 === 0) { try { sellCropSurplus(S); } catch { } }   /* 안내대로는 닷새마다 남는 채소를 판다(night_play 와 같게) */
+      /* ★ 보유 채소 팔기 — night_play §sellSurplus 손버릇: 닷새마다 · 이레치 밥값(10판)은 남기고 나머지를 판다(값은 안 건드린다) */
+      if (P.follow && S.day % 5 === 0) {
+        try { const q = pantrySaleQuote(S.firstPlay, 0); const n = (q && q.maxLots || 0) - PANTRY_KEEP;
+              if (n > 0) { const r = sellPantryCrop(S, n); out.pantrySoldWon = (out.pantrySoldWon || 0) + ((r && r.won) || 0); } } catch { }
+      }
       /* ── 등 ── */
       if (P.lamps >= 1 && ts.lamp.unlocked && (ts.lamp.owned || 0) < P.lamps && ts.cashWon >= (ts.rules.lampPriceWon || 0)) {
         try { buyLamp(ts); S.lamps.count = ts.lamp.owned; if (ts.lamp) ts.lamp.placed = ts.lamp.owned; light.clearCache(); } catch { }
