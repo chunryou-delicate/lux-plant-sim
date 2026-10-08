@@ -676,6 +676,9 @@ function attachEvents(S, turn, fpBefore) {
   /* ★ 중고 거래 연락도 같은 자리다 — **올린 뒤 화면이 조용하면 「아무 일도 없다」가 된다**
      (`quiet-to-plan §1` — 사건은 배너). 게시글이 내려간 것도 여기로 나간다. */
   if (turn.market) push(turn.market.events);
+  /* ★ 2026-10-08 ([plan] 갈래 지도 ① · 5·6) — **삽수 사건도 같은 목록에 싣는다.** 뿌리냄·자리 잡음·혹·시듦 경고·죽음·빛 띠가
+       turn.cuttings 에만 있어 로그 말고는 아무도 못 봤다(대사·배너 0). 대사를 무엇으로 붙일지는 dialogue 몫이다(모르는 id 는 조용히 지나간다) */
+  if (turn.cuttings && !turn.cuttings.error) push(turn.cuttings.events);
   const t = turn.tutorial;
   if (t && !t.error) { push(t.events); push(t.storyEvents); }
   turn.events = out;
