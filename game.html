@@ -3191,6 +3191,8 @@ import { seasonAt, seasonDayAt, SEASON_KO, tutorialGoal, learningLeft,
 /* ★이사는 사건이 아니라 **이동**이다. moveOut 은 돈과 판정만 하고 방을 안 바꿨다 —
    moveIntoOneroom 이 그 위에서 S.home.room 과 자리를 옮긴다(oneroom.js 머리말). */
 import { moveIntoOneroom, storyOf } from './src/game/oneroom.js';
+/* ★ 2026-10-08 G — «안 자란 날» 줄의 등 처방은 lightGateOf 의 등 셈(켤 수 있는 등 · 방 기구 · 산 등)을 그대로 읽는다 */
+import { lightGateOf } from './src/game/oneroom.js';
 /* ★ 2026-10-08 — 원룸 줄(quest.js oneroom_*)의 «집 자금» 칸이 보는 목표 금액. 지금 null(미확정) — 그 줄은 안 열린다([plan] 짬) */
 import { ENDING_RULES, endingRulesFrom, stepEnding, finishEnding, endingView } from './src/game/ending.js';
 /* ★ 2026-10-08 D2 — 독촉은 «할 수 있었던 날»만: 기다린 날을 적는다(판정·날수는 nudge_wait.js · 거는 자리는 dialogue.js chatterContext) */
@@ -8792,6 +8794,40 @@ function drawGrowGauge() {
   } else $('ggWhy').textContent = '';
 }
 
+/* ★★ 2026-10-08 G — **「더 밝은 자리로 옮겨 보세요」가 거짓인 날** (총괄 13:50 · [house] 자리 자유)
+   ══════════════════════════════════════════════════════════════════
+   ⛔ 이미 방에서 제일 밝은 자리(예: 겨울 반지하 창턱)에 둔 몬스테라가 안 자라면, 날마다 「더 밝은 자리로 옮겨 보세요」가 떴다 —
+     옮길 데가 없다. 처방이 «등»이어야 하는 날이다.
+   ★ 자 — 놓는 순간 경고(§growBandAt · §guideBrightSlot)와 «같은 것»: 지금 자리보다 밝고 «자라는 띠»인 칸이 있으면 예전 말 그대로 ·
+     없으면 등 처방. 등 셈은 oneroom.lightGateOf 의 것(켤 수 있는 등 canTurnOn · 방 기구 growRigs · 산 등 ownedLamps)을 읽는다.
+   ⚠ 글은 [plan] 몫 — BLOCKED_RX_KO 한 곳. 값·문턱 안 건드림. */
+const BLOCKED_RX_KO = Object.freeze({
+  move:   '더 밝은 자리로 옮겨 보세요',
+  turnOn: '이 방에서 제일 밝은 자리입니다 — 식물등을 켜 보세요',          /* «켜면 자랍니다»는 약속이 된다(겨울엔 다 켜도 모자랄 수 있다) */
+  buy:    '이 방에서 제일 밝은 자리입니다 — 식물등이 있어야 자랍니다',
+  none:   '이 방에서 제일 밝은 자리입니다 — 지금 이 방의 빛으로는 자라지 않습니다',
+  /* 지금 자리 빛은 넉넉한데 7일 평균이 아직 못 따라온 날(등을 막 켰거나 막 옮김) — 옮기기 배너(§5081)와 같은 말 */
+  wait:   '이 자리 빛은 넉넉합니다 — 빛 판정은 7일 평균이라 며칠 지나면 자랍니다'
+});
+function blockedLightRx(p) {
+  try {
+    if (!p || (!p.at && !p.slotId)) return BLOCKED_RX_KO.move;
+    const here = growBandAt(p.at ? p : p.slotId, false);
+    if (here && !here.dark) return BLOCKED_RX_KO.wait;
+    const best = guideBrightSlot(null);
+    const bb = best ? growBandAt(best, false) : null;
+    /* 더 밝고 자라는 칸이 있으면 옮기는 것이 처방이다(예전 말 그대로) */
+    if (best && bb && !bb.dark && best !== p.slotId && (!here || bb.dli > here.dli + 0.05)) return BLOCKED_RX_KO.move;
+    let g = null;
+    try { const sky = io.light.skyFor(S.day, S.sim); g = lightGateOf(S, io, { season: sky.season }); } catch { g = null; }
+    if (!g || !g.ok) return BLOCKED_RX_KO.move;          /* 못 재면 예전 말 — 지어내지 않는다 */
+    if (g.canTurnOn > g.lampCount) return BLOCKED_RX_KO.turnOn;
+    if (g.growRigs > g.lampCount) return BLOCKED_RX_KO.buy;
+    return BLOCKED_RX_KO.none;
+  } catch { return BLOCKED_RX_KO.move; }
+}
+window.__byeotBlockedRx = () => blockedLightRx(pot0(S));   /* 진단용 — 읽기 전용 */
+
 function drawPlantToday() {
   const el = $('plantToday');
   if (!el) return;
@@ -8812,7 +8848,7 @@ function drawPlantToday() {
        `fillSlots`·`rankSlots`·드롭 라벨이 숨기는 그 숫자가 여기서만 샜다.
        ⚠ 말(「빛 부족」)은 남긴다 — 이유가 없어지면 배움이 아니라 찍기가 된다.
        ⚠ 사유 문자열의 정본은 growth 다. 여기서는 **자르기만** 한다 — 새 말을 짓지 않는다. */
-    el.textContent = `⏸ 오늘은 자라지 않았습니다 — ${shortBlockWhy(t.growthBlocked)} · 더 밝은 자리로 옮겨 보세요`;
+    el.textContent = `⏸ 오늘은 자라지 않았습니다 — ${shortBlockWhy(t.growthBlocked)} · ${blockedLightRx(pot0(S))}`;
     return;
   }
   if (t.grew) {
