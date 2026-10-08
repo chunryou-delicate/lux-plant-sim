@@ -21,7 +21,11 @@
 
    ⚠ **숫자를 이 파일에 안 박는다.** 월세도 지갑도 `window.__S()` 에서 읽어 화면 글자와
      대조한다 — START-HERE §2.8 의 사고가 그 반대다.
-   ★★ **지름길을 둘 썼고 둘 다 여기 적는다.** 월세는 **살림 1일차**에 처음 나가는데,
+   ★★★ 2026-10-08 (core) — 아래 ㉮ 는 **낡았다.** 08-16 «살림 시계 첫날부터»로 첫 월세가 **Day 1**(살림 1일차)에 나간다.
+     그래서 첫 달 가계부는 부팅 뒤 첫 [다음 날]에 뜬다 — 이 자를 그 차례로 다시 짰다(판 세우기 → Day 1 첫 달 B~G →
+     거두기 → 둘째 달 H). 예전엔 6일을 밟은 뒤 fp.completed 로 «1일차»를 만들려다 월초 지갑(부팅)과 자의 «월초»(6일차)가 갈려
+     붉음 9 가 났다(화면이 맞았다). 작물 g 줄은 거둔 달(둘째 달)에서 본다.
+   ★★ (옛 머리) **지름길을 둘 썼고 둘 다 여기 적는다.** 월세는 **살림 1일차**에 처음 나가는데,
      살림 시계는 첫 플레이(16일)가 끝나야 돈다(`tutorialDay` 첫 줄) — 첫 플레이를 실제로
      완주하려면 콩나물 3회전을 밟아야 해서 이 검사가 재려는 것(가계부)과 상관없이 길다.
        ㉮ `S.firstPlay.completed = true` 로 **살림 시계를 켠다**
@@ -164,24 +168,6 @@ const act = async (name, tries = 6) => {
 await act('plant');
 await act('water');
 console.log('      시루 :', await siruState());
-/* 익을 때까지 하루씩 — 익으면 그날 거둔다. 「거둔 것」 g 은 이 길로만 쌓인다(수확은 턴 밖) */
-let harvested = 0;
-for (let d = 0; d < 9; d++) {
-  await nextDay(); await walk();
-  await freeHands();
-  while (await siruBtn('harvest', 0)) {
-    harvested++; await sleep(1300); await walk(); await freeHands(); await redraw();
-  }
-  if (harvested) break;
-}
-console.log('      거둔 횟수 :', harvested, '· 시루 :', await siruState());
-await nextDay(); await walk();               // 거둔 것을 하루 먹인다
-
-const gotG = await page.eval(`(()=>{const m=JSON.parse(localStorage.getItem('byeot.month'));
-  return m ? JSON.stringify({got:m.cur.run.gotG, ate:m.cur.run.ateG}) : 'none';})()`);
-ok('★ 거둔 것·먹은 것이 g 으로 쌓인다 (살림 시계가 돌기 전에도)',
-   /"[가-힣]+":\s*\d+/.test(gotG), gotG);
-
 /* ══ B~G. 첫 달 마감 ═══════════════════════════════════════════════════
    ⚠⚠ **지름길 ㉮** — 살림 시계를 켠다(`fp.completed`). 월세는 살림 1일차에 나간다. */
 console.log('\n== B~G. ★★ 월세 낸 날 가계부가 뜬다 ==');
@@ -190,8 +176,7 @@ console.log('\n== B~G. ★★ 월세 낸 날 가계부가 뜬다 ==');
   const snap0 = (((await store()) || {}).cur || {}).snap || {};
   console.log('      월초 스냅샷 :', JSON.stringify(snap0));
   const snapBefore = snap0.cash;
-  await page.eval(`(()=>{window.__S().firstPlay.completed = true;})()`, false);
-  await redraw();
+  /* ★ 2026-10-08 — 지름길 ㉮(fp.completed)를 걷었다: 첫 월세는 살림 시계가 첫날부터 돌아 **Day 1** 에 저절로 나간다 */
   await nextDay();
   await sleep(600);
   const mid = await core();
@@ -277,10 +262,7 @@ console.log('\n== B~G. ★★ 월세 낸 날 가계부가 뜬다 ==');
      `들어옴 ${inSum} − 나감 ${outSum} = ${inSum - outSum} · 지갑 ${cashNow - snapBefore}`);
   ok('  「상점에서 산 것」이 코어 누적과 같다', bought === before.shopSpent,
      `화면 ${bought} · 코어 ${before.shopSpent}`);
-  ok('★ 먹은 것을 **작물별 g** 으로 적는다',
-     /^[가-힣]+ [\d,.]+ ?[gkK]/.test(cells['밥이 된 것'] || ''), cells['밥이 된 것']);
-  ok('★ 거둔 것을 g 과 회전 수로 적는다',
-     /[가-힣]+ [\d,.]+ ?[gkK].*\(\d+회전\)/.test(cells['거둔 것'] || ''), cells['거둔 것']);
+  /* 작물 g 줄(밥이 된 것 · 거둔 것)은 거둔 달인 둘째 달(H)에서 본다 — 첫 달은 Day 1 하루뿐이라 거둔 것이 없다 */
   ok('  이번 달 지갑 줄이 앞뒤를 적는다',
      /^[\d,]+원 → [\d,]+원$/.test(cells['이번 달 지갑'] || ''), cells['이번 달 지갑']);
   /* ★ 2026-10-08 (총괄 중반 M5) — 초록 «−»가 «나간 돈»으로 읽혔다 ⇒ 「+N원 아낌」. «아낌»이 붙어 더할 돈(들어온 돈)으로 안 읽힌다 —
@@ -307,6 +289,24 @@ console.log('\n== B~G. ★★ 월세 낸 날 가계부가 뜬다 ==');
      `Day ${d0.day}→${d1.day} · 지갑 ${d0.cash}→${d1.cash}`);
 }
 
+/* 익을 때까지 하루씩 — 익으면 그날 거둔다. 「거둔 것」 g 은 이 길로만 쌓인다(수확은 턴 밖) */
+let harvested = 0;
+for (let d = 0; d < 9; d++) {
+  await nextDay(); await walk();
+  await freeHands();
+  while (await siruBtn('harvest', 0)) {
+    harvested++; await sleep(1300); await walk(); await freeHands(); await redraw();
+  }
+  if (harvested) break;
+}
+console.log('      거둔 횟수 :', harvested, '· 시루 :', await siruState());
+await nextDay(); await walk();               // 거둔 것을 하루 먹인다
+
+const gotG = await page.eval(`(()=>{const m=JSON.parse(localStorage.getItem('byeot.month'));
+  return m ? JSON.stringify({got:m.cur.run.gotG, ate:m.cur.run.ateG}) : 'none';})()`);
+ok('★ 거둔 것·먹은 것이 g 으로 쌓인다 (살림 시계가 돌기 전에도)',
+   /"[가-힣]+":\s*\d+/.test(gotG), gotG);
+
 /* ══ H. 둘째 달 — 지난달과 견준다 ═══════════════════════════════════════
    ⚠⚠ **지름길 ㉯** — 30일을 다시 밟는 대신 청구일을 하루 앞으로 당긴다.
      주기(`rentPeriodDays`)도 월세액도 안 건드렸다. */
@@ -316,6 +316,17 @@ console.log('\n== H. ★★ 둘째 달은 지난달과 견준다 ==');
   await page.eval(`(()=>{const S=window.__S(); S.tutorial.rent.nextDueDay = S.tutorial.day + 1;})()`, false);
   await nextDay(); await sleep(600); await walk(); await sleep(600);
   ok('★★ 둘째 달에도 뜬다', await on('monthPanel'));
+  /* ★ 2026-10-08 — 작물 g 줄은 거둔 달(여기)에서 본다 */
+  const cells2 = await page.eval(`(()=>{const o={};
+    for (const el of document.querySelectorAll('#monthRows .lrow')) {
+      const k=el.querySelector('span'), v=el.querySelector('b');
+      if (k && v) o[(k.textContent||'').trim()] = (v.textContent||'').trim();
+    } return o;})()`);
+  console.log('      줄   :', JSON.stringify(cells2, null, 0));
+  ok('★ 먹은 것을 **작물별 g** 으로 적는다',
+     /^[가-힣]+ [\d,.]+ ?[gkK]/.test(cells2['밥이 된 것'] || ''), cells2['밥이 된 것']);
+  ok('★ 거둔 것을 g 과 회전 수로 적는다',
+     /[가-힣]+ [\d,.]+ ?[gkK].*\(\d+회전\)/.test(cells2['거둔 것'] || ''), cells2['거둔 것']);
   const sum = await txt('#monthSum'), sub = await txt('#monthSub');
   console.log('      머리 :', sub);
   console.log('      요약 :', sum);
