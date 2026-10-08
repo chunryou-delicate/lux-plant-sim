@@ -1410,6 +1410,16 @@
   #reliefBox p.warn{color:#f0a35f}
   #reliefBox b{color:var(--ink)}
   #reliefBox button{margin-top:16px;width:100%;min-height:48px;font-weight:800;font-size:15px}
+  /* ★ 2026-10-08 D28 — 엔딩 뒤 «다음 장 준비 중» 덮개(게임오버와 같은 꼴 · 점수·«끝» 없음) */
+  #chapterEnd{position:fixed;inset:0;z-index:95;display:none;
+    background:rgba(9,7,14,.94);backdrop-filter:blur(3px);
+    align-items:center;justify-content:center;padding:24px;text-align:center}
+  #chapterEnd.on{display:flex}
+  #chapterEnd .card{max-width:340px;width:100%}
+  #chapterEnd h2{font-size:20px;font-weight:800;color:#f0a35f;margin:0 0 8px}
+  #chapterEnd p{font-size:13px;line-height:1.6;color:var(--dim);margin:0 0 14px}
+  #chapterEnd .pbtns{display:flex;gap:8px;justify-content:center}
+  #chapterEnd .pbtns button{flex:1}
   #gameOver{position:fixed;inset:0;z-index:95;display:none;
     background:rgba(9,7,14,.94);backdrop-filter:blur(3px);
     align-items:center;justify-content:center;padding:24px;text-align:center}
@@ -1804,6 +1814,18 @@
     </div>
   </div>
   <!-- ★ 게임오버 덮개 — 무대 밖이다. 방·시트·말풍선을 전부 가려야 한다(§gameOver) -->
+  <!-- ★ 2026-10-08 D28 (총괄 14:00 · [plan] 지도 §D28) — 엔딩 [다음] 뒤. D17 직업 화면 전까지 임시 -->
+  <div id="chapterEnd" role="dialog" aria-hidden="true">
+    <div class="card">
+      <h2 id="chapterEndTitle">여기까지 — 첫 이야기</h2>
+      <p id="chapterEndSub">다음 장(직업 고르기)은 준비 중입니다.</p>
+      <p id="chapterEndAsk" style="display:none">처음부터 다시 할까요? 지금 판은 지워집니다.</p>
+      <div class="pbtns">
+        <button id="chapterLook" class="ghost" type="button">방 둘러보기</button>
+        <button id="chapterAgain" class="primary" type="button">처음부터 다시</button>
+      </div>
+    </div>
+  </div>
   <div id="gameOver" role="alertdialog" aria-hidden="true">
     <div class="card">
       <img id="gameOverArt" src="./assets/ui/gameover/gameover_starved.png" alt="">
@@ -9772,7 +9794,31 @@ function closeHomeScene() {
   window.__byeotNextChapter = 'job_select';
   pushLog(S, '🏡 다음 장 — 직업 고르기(준비 중)');
   draw();
+  openChapterEnd();   /* ★ 2026-10-08 D28 */
 }
+/* ══ ★★ 2026-10-08 D28 — 엔딩 뒤 «다음 장 준비 중»으로 멈춘다 (총괄 14:00 ㉠ · [plan] 지도 §D28) ══
+   ★ 뜻: 초보 규칙이 꺼진 채 하루가 가서 «굶어 끝나는» 길을 막는다 — 엔딩을 낸 판은 시간이 안 간다.
+   [방 둘러보기] 방을 보고 대사를 다시 볼 수 있다 · [다음 날]은 잠근다(누르면 «다음 장이 준비되면 이어집니다»)
+   [처음부터 다시] 게임오버의 그 문과 같은 손(세이브 지움) · 한 번 되묻는다(plan 문안)
+   ⛔ «끝»·«클리어»·점수 없음(본편이 이어진다). 다시 켜도 엔딩을 낸 판이면 이 덮개가 다시 선다. */
+const CHAPTER_KO = Object.freeze({ locked: '다음 장이 준비되면 이어집니다', again: '처음부터 다시', againArmed: '한 번 더 누르면 지웁니다' });
+function endingDoneNow() {
+  try { return !!(S.story && S.story.ending && Number.isInteger(S.story.ending.doneOnDay)); } catch { return false; }
+}
+function openChapterEnd() {
+  const el = $('chapterEnd'); if (!el) return;
+  $('chapterEndAsk').style.display = 'none'; $('chapterAgain').textContent = CHAPTER_KO.again; chapterAgainArmed = false;
+  el.classList.add('on'); el.setAttribute('aria-hidden', 'false');
+}
+function closeChapterEnd() { const el = $('chapterEnd'); if (!el) return; el.classList.remove('on'); el.setAttribute('aria-hidden', 'true'); }
+let chapterAgainArmed = false;
+if ($('chapterLook')) $('chapterLook').onclick = () => { closeChapterEnd(); try { draw(); } catch { } };
+if ($('chapterAgain')) $('chapterAgain').onclick = () => {
+  /* 첫 누름 — 되묻기 한 줄을 세우고 단추가 «한 번 더»가 된다 · 둘째 누름 — 게임오버 [처음부터 다시]와 같은 손 */
+  if (!chapterAgainArmed) { chapterAgainArmed = true; $('chapterEndAsk').style.display = ''; $('chapterAgain').textContent = CHAPTER_KO.againArmed; return; }
+  const ga = $('gameOverAgain'); if (ga && typeof ga.onclick === 'function') ga.onclick();
+};
+window.__byeotChapterEnd = () => ({ done: endingDoneNow(), on: !!($('chapterEnd') && $('chapterEnd').classList.contains('on')) });   /* 진단용 */
 
 function drawQuestTab() {
   const list = $('questListTab');
@@ -12333,7 +12379,7 @@ function closeMealPanel() {
   try { planMeal(S, null); } catch { }
   drawMealPanel();
 }
-$('mealGo').onclick     = guard(() => goNextDay());
+$('mealGo').onclick     = guard(() => { if (endingDoneNow()) { banner(CHAPTER_KO.locked, ''); return; } goNextDay(); });   /* D28 */
 $('mealCancel').onclick = guard(() => closeMealPanel());
 
 $('next').onclick = guard(() => {
@@ -12341,6 +12387,8 @@ $('next').onclick = guard(() => {
        (덮개가 위를 덮고 있어 손가락으로는 덮개가 먼저 받는다. 이 갈래는 코드로
         부르는 길·키보드 길을 위한 것이다.) */
   if (dayAnimRunning) { skipDayAnim(); return; }
+  /* ★ 2026-10-08 D28 — 엔딩을 낸 판은 시간이 안 간다(다음 장 준비 중) */
+  if (endingDoneNow()) { banner(CHAPTER_KO.locked, ''); return; }
   if (S.firstPlay && S.firstPlay.enabled && !placedCropRows().length) {
     const e = new Error('가방의 시루를 먼저 방 안에 놓아 주세요');
     e.firstPlayInput = true;                 // 안내지 고장이 아니다 — 버튼을 잠그지 않는다
@@ -17651,6 +17699,7 @@ try {
      ⚠ growth 를 되세우는 건 **빛 이력을 다시 거는 것**이라 날짜만큼 시간이 든다.
        그래서 growth 가 준비된 **뒤에** 부르고, 도는 동안 무엇을 하는지 화면에 적는다. */
   resumed = await resumeSave();
+  if (resumed && endingDoneNow()) { try { openChapterEnd(); } catch { } }   /* ★ 2026-10-08 D28 — 엔딩을 낸 판이면 다시 켜도 그 덮개 */
   /* ★ 2026-10-08 — 불러온 판은 하루를 안 넘겼으니 무늬 그림을 여기서 한 번 넘긴다(§pushLeafSkins). 생장 창이 아직이면 조금 뒤 한 번 더 */
   if (resumed && SKIN_PUSH_ON && !pushLeafSkins()) setTimeout(() => { try { pushLeafSkins(); } catch { } }, 1500);
   GATED.forEach(id => { $(id).disabled = false; });

@@ -141,6 +141,23 @@ const mk = (page) => {
     next: window.__byeotNextChapter || null, goal: (document.getElementById('questGoalTab')||{}).textContent || null }))()`);
   ok(!end.scene && !end.cls && end.next === 'job_select', '⑤ [다음] → 덮개 닫힘 · 다음 장 job_select', end);
   if (process.env.SHOT) { await page.shot(process.env.SHOT); }
+  /* ⑥ D28(2026-10-08) — «다음 장 준비 중»으로 멈춘다: 덮개 · [방 둘러보기] · [다음 날] 잠김 · 다시 켜도 덮개 · [처음부터 다시] 되묻기 */
+  const ce = await J(`window.__byeotChapterEnd()`);
+  ok(ce.done && ce.on, '⑥ [다음] 뒤 «여기까지 — 첫 이야기» 덮개', ce);
+  await J(`(()=>{ document.getElementById('chapterLook').click(); return 1; })()`); await sleep(400);
+  const dayLk = await J(`window.__S().day`);
+  await J(`(()=>{ const b=document.getElementById('next'); b.disabled=false; b.click(); return 1; })()`); await sleep(1200);
+  const lk = await J(`(()=>({ day: window.__S().day, on: window.__byeotChapterEnd().on, banner: (document.getElementById('event')||{}).textContent || '' }))()`);
+  ok(!lk.on && lk.day === dayLk && /다음 장이 준비되면 이어집니다/.test(lk.banner), '⑥ [방 둘러보기] → 덮개 닫힘 · [다음 날]은 잠김(날 그대로 · 배너)', lk);
+  await J(`(()=>{ try { window.__byeotSaveNow && window.__byeotSaveNow(); } catch(e){} return 1; })()`);
+  await sleep(1500);
+  await page.eval(`location.reload()`, false);
+  await page.waitFor('!!window.__rv', 300000, 500); await sleep(5000);
+  const reo = await J(`(()=>({ ...window.__byeotChapterEnd(), day: window.__S().day }))()`);
+  ok(reo.done && reo.on, '⑥ 다시 켜도 엔딩을 낸 판이면 덮개가 다시 선다', reo);
+  await J(`(()=>{ document.getElementById('chapterAgain').click(); return 1; })()`); await sleep(300);
+  const ag = await J(`(()=>({ ask: getComputedStyle(document.getElementById('chapterEndAsk')).display !== 'none', btn: document.getElementById('chapterAgain').textContent, day: window.__S().day }))()`);
+  ok(ag.ask && /한 번 더/.test(ag.btn) && ag.day === reo.day, '⑥ [처음부터 다시] 첫 누름은 되묻기만(지우지 않음)', ag);
   await page.close();
 }
 clearTimeout(wd);
