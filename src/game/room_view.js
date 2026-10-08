@@ -2891,9 +2891,11 @@ export async function createRoomView(canvas, opts = {}) {
     }
     return out;
   }
+  let navVersion = 0;   /* ★ 2026-10-08 E — 길 판이 바뀐 횟수. 화면(확인 바)이 «다시 지어진 뒤»에 길 경고를 다시 칠하는 신호다 */
   function refreshNavObstacles() {
     if (!built) return;
     nav.setWorld({ colliders: navColliders(), size: built.size });
+    navVersion++;
     if (furnDress.yieldTo(navColliders())) buildFurnitureBlobs();   // v2: 화분과 겹친 소품은 비켜 준다(그림만)
   }
 
@@ -8574,6 +8576,50 @@ export async function createRoomView(canvas, opts = {}) {
     return out;
   }
 
+  /* ══ ★★ 2026-10-08 E — **가구 곁·문 앞까지 걸어갈 수 있나** (총괄 13:35 · [house] house-place-freedom ④) ══
+     화분·시루를 바닥에 놓으면 길이 막힐 수 있다(navColliders). 그루(위)만 재던 것을 앉기·눕기 가구와 문 앞까지 넓힌다.
+     ★ 자는 «그 동작이 실제로 하는 걸음»이다 — 새로 안 짓는다:
+       가구  runAct 의 «잡고 있는 동작»(base.hold) 겨냥점 그대로 — 가구 중심에서 지금 선 쪽으로 (반너비 + 0.35m) 나간 점.
+             그 동작은 거리로 실패하지 않고 «갈 수 있는 데까지» 간다 ⇒ 그 점까지 걸어서 닿나(walkEndOf)를 본다.
+       문 앞 house tools/test_room_path 의 «문 앞 칸»과 같은 점 — 문 가운데에서 안쪽으로 몸 반지름 + 0.225m.
+     닿음 = 걸음이 끝나는 자리가 그 점에서 BESIDE_GAP 안. 한 칸(0.25) + 가장 가까운 빈 칸으로 옮겨지는 몫을 넉넉히 본다.
+     ⚠ 사람이 없으면 모른다 — 지어내지 않는다(reachOf 와 같은 규약). ⚠ 막지 않는다 — 화면이 알릴 뿐이다. */
+  const BESIDE_GAP = 0.45;
+  function personHere() {
+    const id = (selChar && chars.get(selChar) && chars.get(selChar).walkable ? selChar : null)
+               || (chars.has('jachwi') ? 'jachwi' : null);
+    const c = id && chars.get(id);
+    return c && c.walkable && c.root ? { x: c.root.position.x, z: c.root.position.z } : null;
+  }
+  function besideReachOf(uid) {
+    const t = resolveKey(uid);
+    if (!t || !t.furn) return null;
+    const here = personHere();
+    if (!here) return { ok: true, unknown: true };
+    const size = (t.furn.userData && t.furn.userData.size) || {};
+    const half = Math.max(size.w || 0.5, size.d || 0.5) / 2;
+    const dx = here.x - t.pos.x, dz = here.z - t.pos.z, L = Math.hypot(dx, dz) || 1;
+    const aim = { x: t.pos.x + dx / L * (half + 0.35), z: t.pos.z + dz / L * (half + 0.35) };
+    if (Math.hypot(here.x - aim.x, here.z - aim.z) <= ACT_NEAR_ENOUGH) return { ok: true, gap: 0 };
+    const at = nav.nearestFree(aim.x, aim.z);
+    const e = walkEndOf(here, aim.x, aim.z);
+    const gap = Math.hypot(e.x - at.x, e.z - at.z);
+    return { ok: gap <= BESIDE_GAP, gap: +gap.toFixed(2) };
+  }
+  function doorReach() {
+    const here = personHere();
+    if (!here || !built || !roomDef) return [];
+    const S2 = built.size, inward = BODY_R + 0.125 + 0.1;
+    return (roomDef.doors || []).map(d => {
+      const p = d.wall === 'front' ? { x: d.cu, z: S2.d / 2 - inward } : d.wall === 'back' ? { x: d.cu, z: -S2.d / 2 + inward }
+              : d.wall === 'left' ? { x: -S2.w / 2 + inward, z: d.cu } : { x: S2.w / 2 - inward, z: d.cu };
+      const at = nav.nearestFree(p.x, p.z);
+      const e = walkEndOf(here, at.x, at.z);
+      const gap = Math.hypot(e.x - at.x, e.z - at.z);
+      return { wall: d.wall, cu: d.cu, ok: gap <= BESIDE_GAP, gap: +gap.toFixed(2) };
+    });
+  }
+
   /* ★★★ 어느 후보로 갈까 — **닿는가**를 먼저 묻는다 (2026-08-16 · G-9)
      ══════════════════════════════════════════════════════════════
      `standNear` 는 후보를 **그림이 좋은 순**으로 준다(카메라와 이루는 각 · 걷는 거리 ·
@@ -10029,6 +10075,10 @@ export async function createRoomView(canvas, opts = {}) {
        ⚠ **막지 않는다.** 무엇을 막을지는 화면이 정한다(박사님 지시). */
     reach(key) { return reachOf(key); },
     unreachable() { return unreachablePlants(); },
+    /* ★ 2026-10-08 E — 가구 곁(앉기·눕기 겨냥점)·문 앞까지 걸어서 닿나(§besideReachOf · §doorReach). 막지 않는다 */
+    besideReach(uid) { return besideReachOf(uid); },
+    doorReach() { return doorReach(); },
+    navVersion() { return navVersion; },
     /* ★ 진단용 — 그 자리까지 「얼마나 가까이 설 수 있나」를 통째로 잰다(§standProbe).
        ⚠ 게임은 안 쓴다. tools/probe_reach.mjs 가 표를 뽑는 창구다. */
     standProbe(key, from) { return standProbe(key, from); },

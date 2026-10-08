@@ -4379,11 +4379,16 @@ function placeHintAt(el, say) {
   hintTargetEl = el;
 }
 function hintAvoidChip(h, hand, r) {
-  const chip = $('questChip');
-  const cr = chip && chip.getBoundingClientRect();
-  if (!cr || !cr.width || getComputedStyle(chip).visibility === 'hidden') return;
+  /* ★ 2026-10-08 E — 확인 바의 경고 글(#placeConfirmWarn)도 비킨다. 빛·길 경고가 두 줄이면 말풍선(«여기에 둘까요? — [확인]»)이
+       그 아랫줄을 덮었다(probe_reach_uses corridor.png) — 경고를 가리고 [확인]만 짚으면 안 된다. 비키는 법은 칩과 같다 */
+  const shown = el => { if (!el) return null; const rc = el.getBoundingClientRect(); const cs = getComputedStyle(el);
+                        return rc.width && cs.visibility !== 'hidden' && cs.display !== 'none' ? rc : null; };
+  const obs = [shown($('questChip')), shown($('placeConfirmWarn'))].filter(Boolean);
+  if (!obs.length) return;
   const hit = (a, b) => a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top;
-  if (!hit(h.getBoundingClientRect(), cr)) return;
+  const hitAny = (a) => obs.some(o => hit(a, o));
+  const cr = obs.find(o => hit(h.getBoundingClientRect(), o));
+  if (!cr) return;
   /* ① 아래 — 말풍선은 대상 밑, 손가락(👆)이 위를 짚는다 */
   h.classList.remove('side', 'toRight'); h.classList.add('below');
   hand.textContent = '👆'; hand.style.left = '0px';
@@ -4394,7 +4399,7 @@ function hintAvoidChip(h, hand, r) {
   h.style.top = (r.bottom + 2) + 'px';
   hand.style.left = Math.max(-(hb.width / 2 - 8), Math.min(hb.width / 2 - 8, want - got)).toFixed(1) + 'px';
   hb = h.getBoundingClientRect();
-  if (!hit(hb, cr) && hb.bottom <= innerHeight - 8) return;
+  if (!hitAny(hb) && hb.bottom <= innerHeight - 8) return;
   /* ② 왼쪽 — 대상 왼쪽에 세운다(손이 오른쪽에서 가리킨다) */
   h.classList.remove('below'); h.classList.add('side');
   hand.textContent = '👉'; hand.style.left = '0px';
@@ -5552,6 +5557,10 @@ function updateHint() {
     const ok = $('placeOk');
     if (ok && stage.classList.contains('confirming') && !stage.classList.contains('moving')) {
       const r = ok.getBoundingClientRect();
+      /* ★ 2026-10-08 E — 확인 바에 경고(빛·길)가 떠 있으면 [확인]만 짚지 않는다. 경고 글이 이미
+           «그래도 두시려면 [확인], 옮기려면 [다시 옮기기]»를 말하고, 말풍선은 경고나 [다시 옮기기]를 덮었다(probe_reach_uses) */
+      const wn = $('placeConfirmWarn');
+      if (wn && wn.style.display !== 'none' && wn.textContent) return hintAt(null);
       if (r.width > 0 && r.height > 0) return hintAt(ok, '여기에 둘까요? — [확인]');
     }
   }
@@ -14740,6 +14749,10 @@ const placeConfirm = {
         if (!this.on || !picked.slotId) return;
         let p = null; try { p = roomView && roomView.screenPosOf(picked.slotId); } catch { }
         placeFloatMenu($('placeConfirm'), p);
+        /* ★ 2026-10-08 E — 방이 그루를 다시 세우고 길 판을 고친 «뒤»에 다시 칠한다(syncRoom 은 비동기 ·
+             놓자마자 칠하면 옛 길로 «닿음», 되돌리면 옛 길로 «못 감»이었다 — probe_reach_uses) */
+        let nv = null; try { nv = roomView && roomView.navVersion ? roomView.navVersion() : null; } catch { nv = null; }
+        if (nv != null && nv !== this.navV) { this.navV = nv; try { this.paint(); } catch { } }
       };
       this.tick = requestAnimationFrame(step);
     } else if (this.tick != null) {
@@ -15137,11 +15150,29 @@ function varieDimWarn(g) {
 function placeLightWarn(g) { return darkPlaceWarn(g) || varieDimWarn(g); }
 window.__byeotDarkPlace = (key) => { const g = placedGrowerAt(key); return g ? { kind: g.kind, band: growBandAt(g.obj.at ? g.obj : g.obj.slotId, g.variegated), warn: placeLightWarn(g) } : null; };
 
+/* ★ 2026-10-08 E — 그루 말고도 «걸어가야 하는» 가구(앉기·눕기·책상)와 문 앞 (room_view §besideReachOf · §doorReach · [house] ④) */
+const REACH_FURN_TYPES = new Set(['bed', 'chair', 'desk']);
+function blockedUsesNow() {
+  const furn = []; let door = false;
+  if (!roomView) return { furn, door };
+  try {
+    if (typeof roomView.besideReach === 'function')
+      for (const f of (roomView.furniture() || [])) {
+        const pr = furnPresets[f.preset] || {};
+        if (!REACH_FURN_TYPES.has(pr.type)) continue;
+        const r = roomView.besideReach(f.uid);
+        if (r && r.ok === false) furn.push(pr.name_ko || f.preset);
+      }
+  } catch { }
+  try { door = typeof roomView.doorReach === 'function' && (roomView.doorReach() || []).some(d => d && d.ok === false); } catch { door = false; }
+  return { furn: [...new Set(furn)], door };
+}
 function reachWarningFor(potId) {
   if (!roomView || typeof roomView.unreachable !== 'function') return null;
   let list = [];
   try { list = roomView.unreachable() || []; } catch { return null; }
-  if (!list.length) return null;
+  const uses = blockedUsesNow();
+  if (!list.length && !uses.furn.length && !uses.door) return null;
   /* 사람이 부르는 이름으로 바꾼다 — `crop_01_02` 는 플레이어의 말이 아니다 */
   const nameOf = (row) => {
     const id = row.potId || row.key;
@@ -15157,10 +15188,12 @@ function reachWarningFor(potId) {
   const mine = potId ? list.find(r => r.potId === potId) : null;
   if (mine) return `여기 두면 이 ${nameOf(mine)}에 **못 갑니다** — 물도 수확도 못 합니다`
     .replace(/\*\*/g, '');
-  const others = list.map(nameOf);
+  const others = [...list.map(nameOf), ...uses.furn];
+  const tail = '그래도 두시려면 [확인], 옮기려면 [다시 옮기기]';
+  /* ★ E — 문 앞이 끊기면 그것부터 말한다([house] 초안 «여기 두면 문 앞 길이 막혀 침대·책상까지 못 갑니다») */
+  if (!others.length) return `여기 두면 문 앞 길이 막힙니다 — ${tail}`;
   const head = others.slice(0, 2).join(' · ');
-  return `여기 두면 ${head}${others.length > 2 ? ` 외 ${others.length - 2}개` : ''}에 못 갑니다 — ` +
-         `그래도 두시려면 [확인], 옮기려면 [다시 옮기기]`;
+  return `여기 두면 ${uses.door ? '문 앞 길이 막혀 ' : ''}${head}${others.length > 2 ? ` 외 ${others.length - 2}개` : ''}에 못 갑니다 — ` + tail;
 }
 
 /* [확인] — 그 자리로 굳힌다. 상태는 이미 그렇게 돼 있으므로 **고르기만 푼다.**
