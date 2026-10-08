@@ -13642,9 +13642,14 @@ function syncPlantGlow() {
   }
 }
 
+/* ★ 2026-10-08 C — 빈 화분(씨앗 몬스테라)·삽수는 몬스테라 자로 등급을 매긴다(작물 표에 없는 이름이라 그대로 넣으면 등급이 빠진다) */
+function rankWhatOf(what) { return (isPotPlace(what) || isCutPlace(what)) ? 'monstera' : what; }
 function rankSlots(what, ids) {
   if (!ids || !ids.length) return ids || [];
-  if (S.firstPlay && S.firstPlay.enabled) return ids;   /* ★위 ★★ — 튜토에서는 색을 안 나눈다 */
+  /* ★위 ★★ — 튜토에서는 색을 안 나눈다.
+     ⚠ 2026-10-08 C — 자를 `showDli` 와 맞췄다(첫 판 = enabled && !completed). 예전엔 `enabled` 만 봐서 —
+       첫 판은 끝나도 enabled 가 그대로라(fp.completed 가 «끝»이다) — 세 색이 «영영» 안 켜졌다(260일 판에서도). */
+  if (S.firstPlay && S.firstPlay.enabled && !S.firstPlay.completed) return ids;
   const dliOf = dliBySlotId();
   const varie = what === 'monstera' && !!(pot0(S) && pot0(S).variegated);
   return ids.map(id => {
@@ -14007,7 +14012,8 @@ const drag = {
        어디에 놓는지가 안 보인다 — 놓을 자리를 고르는 게 이 조작의 전부다. */
     try { window.__byeotSheet.close(); } catch { }
     hintAt(null);        /* 끌기 시작하면 손가락을 걷는다 — updateHint 는 draw() 때만 돈다 */
-    if (roomView) roomView.highlightSlots(ids);
+    /* ★ 2026-10-08 C ([house] house-place-freedom ②) — 끌기 고리에도 빛 등급 색(§rankSlots · 첫 판엔 색을 안 나눈다 — 그 함수가 지킨다) */
+    if (roomView) roomView.highlightSlots(rankSlots(rankWhatOf(what), ids));
     this.move(ev);
   },
   move(ev) {
@@ -14522,7 +14528,7 @@ const picked = {
     hintAt(null);
     freePlace.rings(true, drag.potD);
     freePlace.grid(true, { potD: drag.potD });
-    if (roomView) roomView.highlightSlots(drag.valid);
+    if (roomView) roomView.highlightSlots(rankSlots(rankWhatOf(what), drag.valid));   /* ★ 2026-10-08 C — 옮기기 고리에도 빛 등급 색 */
     /* ★★★ 2026-08-29 [Plan] — **가이드 중이면 «왜»를 말한다**(§moveDropLabelKo).
        손가락은 «어디»를 짚고, 이 글은 «왜 거기인지»를 말한다. 둘이 같은 말을 하면 하나가 남는다.
        ⚠ 가이드가 아니면 «아무 데나»가 **맞는 말**이다 — 자유 배치가 이 조작의 사상이다. */
