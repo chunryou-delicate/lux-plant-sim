@@ -124,4 +124,19 @@ for (const r of rows) {
   if (r.note) { console.log(`| ${r.slot} | ${r.lamps} | ${r.avg7.mean}/${r.avg7.min}/${r.avg7.max} | ${r.growDays} | ${r.note} |||||| `); continue; }
   console.log(`| ${r.slot} | ${r.lamps} | ${r.avg7.mean}/${r.avg7.min}/${r.avg7.max} | ${r.growDays} | ${fmt(r.leaf2Day)} | ${fmt(r.leaf3Day)} | ${fmt(r.leaf2Split, '안 갈라짐')} | ${fmt(r.leaf3Split, '안 갈라짐')} | ${bf(r.leaf2Band)} | ${bf(r.leaf3Band)} |`);
 }
-if (process.env.OUT) { fs.writeFileSync(path.join(ROOT, process.env.OUT), JSON.stringify({ meta, rows }, null, 1)); console.log('\n⇒ 썼다:', process.env.OUT); }
+/* ★ OUT 이 이미 있으면 «합친다» — 메모리가 모자라 자리를 나눠 돌려도 한 파일에 모인다.
+     같은 (자리·등) 줄은 새것으로 갈고, 판 조건(meta)이 다르면 섞지 않고 던진다. */
+if (process.env.OUT) {
+  const fp = path.join(ROOT, process.env.OUT);
+  let all = rows;
+  if (fs.existsSync(fp)) {
+    const old = JSON.parse(fs.readFileSync(fp, 'utf8'));
+    const keys = ['mode', 'profile', 'roomRev', 'yearDay0', 'days', 'seeds', 'startGrowth'];
+    if (!keys.every(k => old.meta && old.meta[k] === meta[k])) throw new Error(`[M5] ${process.env.OUT} 의 판 조건이 다르다 — 섞지 않는다: ${JSON.stringify(old.meta)}`);
+    const key = r => `${r.slot}|${r.lamps}`;
+    all = [...(old.rows || []).filter(r => !rows.some(n => key(n) === key(r))), ...rows];
+  }
+  all.sort((a, b) => a.slot.localeCompare(b.slot) || a.lamps - b.lamps);
+  fs.writeFileSync(fp, JSON.stringify({ meta, rows: all }, null, 1));
+  console.log('\n⇒ 썼다:', process.env.OUT, '·', all.length, '줄');
+}

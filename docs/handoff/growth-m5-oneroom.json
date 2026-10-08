@@ -1,0 +1,592 @@
+{
+ "meta": {
+  "mode": "real",
+  "tool": "tools/probe_m5_oneroom.mjs",
+  "profile": "data/profiles/room_profile.oneroom.json",
+  "roomRev": "3168869e",
+  "measuredAt": "2026-08-30",
+  "generatedAt": "2026-10-07",
+  "lampCounts": [
+   0,
+   1,
+   2,
+   3
+  ],
+  "yearDay0": 135,
+  "days": 400,
+  "seeds": 40,
+  "startGrowth": 45,
+  "plant": "첫 그루(프롤로그 보장 켬 · 잎2·잎3 무늬)",
+  "water": "늘 줌",
+  "avg": "몬스테라 7일 이동평균"
+ },
+ "rows": [
+  {
+   "slot": "banjiha-etagere:0",
+   "lamps": 0,
+   "avg7": {
+    "mean": 0.69,
+    "min": 0.19,
+    "max": 1.4
+   },
+   "growDays": 0,
+   "note": "안 자람(자라는 날 0) — 잎2 도 안 난다"
+  },
+  {
+   "slot": "banjiha-etagere:0",
+   "lamps": 1,
+   "avg7": {
+    "mean": 0.95,
+    "min": 0.44,
+    "max": 1.65
+   },
+   "growDays": 0,
+   "note": "안 자람(자라는 날 0) — 잎2 도 안 난다"
+  },
+  {
+   "slot": "banjiha-etagere:0",
+   "lamps": 2,
+   "avg7": {
+    "mean": 1.04,
+    "min": 0.53,
+    "max": 1.74
+   },
+   "growDays": 0,
+   "note": "안 자람(자라는 날 0) — 잎2 도 안 난다"
+  },
+  {
+   "slot": "banjiha-etagere:1",
+   "lamps": 0,
+   "avg7": {
+    "mean": 0.69,
+    "min": 0.18,
+    "max": 1.39
+   },
+   "growDays": 0,
+   "note": "안 자람(자라는 날 0) — 잎2 도 안 난다"
+  },
+  {
+   "slot": "banjiha-etagere:1",
+   "lamps": 1,
+   "avg7": {
+    "mean": 0.93,
+    "min": 0.43,
+    "max": 1.63
+   },
+   "growDays": 0,
+   "note": "안 자람(자라는 날 0) — 잎2 도 안 난다"
+  },
+  {
+   "slot": "banjiha-etagere:1",
+   "lamps": 2,
+   "avg7": {
+    "mean": 1.03,
+    "min": 0.53,
+    "max": 1.73
+   },
+   "growDays": 0,
+   "note": "안 자람(자라는 날 0) — 잎2 도 안 난다"
+  },
+  {
+   "slot": "banjiha-etagere:2",
+   "lamps": 0,
+   "avg7": {
+    "mean": 0.65,
+    "min": 0.18,
+    "max": 1.32
+   },
+   "growDays": 0,
+   "note": "안 자람(자라는 날 0) — 잎2 도 안 난다"
+  },
+  {
+   "slot": "banjiha-etagere:2",
+   "lamps": 1,
+   "avg7": {
+    "mean": 0.87,
+    "min": 0.4,
+    "max": 1.54
+   },
+   "growDays": 0,
+   "note": "안 자람(자라는 날 0) — 잎2 도 안 난다"
+  },
+  {
+   "slot": "banjiha-etagere:2",
+   "lamps": 2,
+   "avg7": {
+    "mean": 0.99,
+    "min": 0.52,
+    "max": 1.66
+   },
+   "growDays": 0,
+   "note": "안 자람(자라는 날 0) — 잎2 도 안 난다"
+  },
+  {
+   "slot": "banjiha-etagere:3",
+   "lamps": 0,
+   "avg7": {
+    "mean": 1.01,
+    "min": 0.27,
+    "max": 2.04
+   },
+   "growDays": 0,
+   "note": "안 자람(자라는 날 0) — 잎2 도 안 난다"
+  },
+  {
+   "slot": "banjiha-etagere:3",
+   "lamps": 1,
+   "avg7": {
+    "mean": 1.4,
+    "min": 0.66,
+    "max": 2.43
+   },
+   "growDays": 0,
+   "note": "안 자람(자라는 날 0) — 잎2 도 안 난다"
+  },
+  {
+   "slot": "banjiha-etagere:3",
+   "lamps": 2,
+   "avg7": {
+    "mean": 1.51,
+    "min": 0.78,
+    "max": 2.55
+   },
+   "growDays": 0,
+   "note": "안 자람(자라는 날 0) — 잎2 도 안 난다"
+  },
+  {
+   "slot": "banjiha-etagere:4",
+   "lamps": 0,
+   "avg7": {
+    "mean": 0.97,
+    "min": 0.26,
+    "max": 1.96
+   },
+   "growDays": 0,
+   "note": "안 자람(자라는 날 0) — 잎2 도 안 난다"
+  },
+  {
+   "slot": "banjiha-etagere:4",
+   "lamps": 1,
+   "avg7": {
+    "mean": 1.33,
+    "min": 0.63,
+    "max": 2.32
+   },
+   "growDays": 0,
+   "note": "안 자람(자라는 날 0) — 잎2 도 안 난다"
+  },
+  {
+   "slot": "banjiha-etagere:4",
+   "lamps": 2,
+   "avg7": {
+    "mean": 1.47,
+    "min": 0.76,
+    "max": 2.46
+   },
+   "growDays": 0,
+   "note": "안 자람(자라는 날 0) — 잎2 도 안 난다"
+  },
+  {
+   "slot": "banjiha-etagere:5",
+   "lamps": 0,
+   "avg7": {
+    "mean": 0.94,
+    "min": 0.25,
+    "max": 1.9
+   },
+   "growDays": 0,
+   "note": "안 자람(자라는 날 0) — 잎2 도 안 난다"
+  },
+  {
+   "slot": "banjiha-etagere:5",
+   "lamps": 1,
+   "avg7": {
+    "mean": 1.26,
+    "min": 0.57,
+    "max": 2.21
+   },
+   "growDays": 0,
+   "note": "안 자람(자라는 날 0) — 잎2 도 안 난다"
+  },
+  {
+   "slot": "banjiha-etagere:5",
+   "lamps": 2,
+   "avg7": {
+    "mean": 1.42,
+    "min": 0.74,
+    "max": 2.38
+   },
+   "growDays": 0,
+   "note": "안 자람(자라는 날 0) — 잎2 도 안 난다"
+  },
+  {
+   "slot": "banjiha-etagere:6",
+   "lamps": 0,
+   "avg7": {
+    "mean": 1.17,
+    "min": 0.32,
+    "max": 2.36
+   },
+   "growDays": 0,
+   "note": "안 자람(자라는 날 0) — 잎2 도 안 난다"
+  },
+  {
+   "slot": "banjiha-etagere:6",
+   "lamps": 1,
+   "avg7": {
+    "mean": 1.83,
+    "min": 0.98,
+    "max": 3.02
+   },
+   "growDays": 10,
+   "leaf2Day": {
+    "p50": null,
+    "p10": null,
+    "p90": null,
+    "none": 40
+   },
+   "leaf3Day": {
+    "p50": null,
+    "p10": null,
+    "p90": null,
+    "none": 40
+   },
+   "leaf2Split": {
+    "p50": null,
+    "p10": null,
+    "p90": null,
+    "none": 40
+   },
+   "leaf3Split": {
+    "p50": null,
+    "p10": null,
+    "p90": null,
+    "none": 40
+   },
+   "leaf2Band": {},
+   "leaf3Band": {}
+  },
+  {
+   "slot": "banjiha-etagere:6",
+   "lamps": 2,
+   "avg7": {
+    "mean": 1.97,
+    "min": 1.12,
+    "max": 3.16
+   },
+   "growDays": 19,
+   "leaf2Day": {
+    "p50": null,
+    "p10": null,
+    "p90": null,
+    "none": 40
+   },
+   "leaf3Day": {
+    "p50": null,
+    "p10": null,
+    "p90": null,
+    "none": 40
+   },
+   "leaf2Split": {
+    "p50": null,
+    "p10": null,
+    "p90": null,
+    "none": 40
+   },
+   "leaf3Split": {
+    "p50": null,
+    "p10": null,
+    "p90": null,
+    "none": 40
+   },
+   "leaf2Band": {},
+   "leaf3Band": {}
+  },
+  {
+   "slot": "banjiha-etagere:7",
+   "lamps": 0,
+   "avg7": {
+    "mean": 1.14,
+    "min": 0.31,
+    "max": 2.3
+   },
+   "growDays": 0,
+   "note": "안 자람(자라는 날 0) — 잎2 도 안 난다"
+  },
+  {
+   "slot": "banjiha-etagere:7",
+   "lamps": 1,
+   "avg7": {
+    "mean": 1.72,
+    "min": 0.89,
+    "max": 2.88
+   },
+   "growDays": 8,
+   "leaf2Day": {
+    "p50": null,
+    "p10": null,
+    "p90": null,
+    "none": 40
+   },
+   "leaf3Day": {
+    "p50": null,
+    "p10": null,
+    "p90": null,
+    "none": 40
+   },
+   "leaf2Split": {
+    "p50": null,
+    "p10": null,
+    "p90": null,
+    "none": 40
+   },
+   "leaf3Split": {
+    "p50": null,
+    "p10": null,
+    "p90": null,
+    "none": 40
+   },
+   "leaf2Band": {},
+   "leaf3Band": {}
+  },
+  {
+   "slot": "banjiha-etagere:7",
+   "lamps": 2,
+   "avg7": {
+    "mean": 1.9,
+    "min": 1.07,
+    "max": 3.06
+   },
+   "growDays": 16,
+   "leaf2Day": {
+    "p50": null,
+    "p10": null,
+    "p90": null,
+    "none": 40
+   },
+   "leaf3Day": {
+    "p50": null,
+    "p10": null,
+    "p90": null,
+    "none": 40
+   },
+   "leaf2Split": {
+    "p50": null,
+    "p10": null,
+    "p90": null,
+    "none": 40
+   },
+   "leaf3Split": {
+    "p50": null,
+    "p10": null,
+    "p90": null,
+    "none": 40
+   },
+   "leaf2Band": {},
+   "leaf3Band": {}
+  },
+  {
+   "slot": "banjiha-etagere:8",
+   "lamps": 0,
+   "avg7": {
+    "mean": 1.11,
+    "min": 0.3,
+    "max": 2.24
+   },
+   "growDays": 0,
+   "note": "안 자람(자라는 날 0) — 잎2 도 안 난다"
+  },
+  {
+   "slot": "banjiha-etagere:8",
+   "lamps": 1,
+   "avg7": {
+    "mean": 1.58,
+    "min": 0.77,
+    "max": 2.71
+   },
+   "growDays": 8,
+   "leaf2Day": {
+    "p50": null,
+    "p10": null,
+    "p90": null,
+    "none": 40
+   },
+   "leaf3Day": {
+    "p50": null,
+    "p10": null,
+    "p90": null,
+    "none": 40
+   },
+   "leaf2Split": {
+    "p50": null,
+    "p10": null,
+    "p90": null,
+    "none": 40
+   },
+   "leaf3Split": {
+    "p50": null,
+    "p10": null,
+    "p90": null,
+    "none": 40
+   },
+   "leaf2Band": {},
+   "leaf3Band": {}
+  },
+  {
+   "slot": "banjiha-etagere:8",
+   "lamps": 2,
+   "avg7": {
+    "mean": 1.82,
+    "min": 1.01,
+    "max": 2.95
+   },
+   "growDays": 8,
+   "leaf2Day": {
+    "p50": null,
+    "p10": null,
+    "p90": null,
+    "none": 40
+   },
+   "leaf3Day": {
+    "p50": null,
+    "p10": null,
+    "p90": null,
+    "none": 40
+   },
+   "leaf2Split": {
+    "p50": null,
+    "p10": null,
+    "p90": null,
+    "none": 40
+   },
+   "leaf3Split": {
+    "p50": null,
+    "p10": null,
+    "p90": null,
+    "none": 40
+   },
+   "leaf2Band": {},
+   "leaf3Band": {}
+  },
+  {
+   "slot": "oneroom-sill:3",
+   "lamps": 0,
+   "avg7": {
+    "mean": 2.77,
+    "min": 0.74,
+    "max": 5.6
+   },
+   "growDays": 197,
+   "leaf2Day": {
+    "p50": 27,
+    "p10": 27,
+    "p90": 27,
+    "none": 0
+   },
+   "leaf3Day": {
+    "p50": 258,
+    "p10": 258,
+    "p90": 258,
+    "none": 0
+   },
+   "leaf2Split": {
+    "p50": 278,
+    "p10": 127,
+    "p90": 339,
+    "none": 10
+   },
+   "leaf3Split": {
+    "p50": 341,
+    "p10": 324,
+    "p90": 361,
+    "none": 16
+   },
+   "leaf2Band": {
+    "mid": 1
+   },
+   "leaf3Band": {
+    "mid": 1
+   }
+  },
+  {
+   "slot": "oneroom-sill:3",
+   "lamps": 1,
+   "avg7": {
+    "mean": 3.17,
+    "min": 1.14,
+    "max": 6
+   },
+   "growDays": 251,
+   "leaf2Day": {
+    "p50": 26,
+    "p10": 26,
+    "p90": 26,
+    "none": 0
+   },
+   "leaf3Day": {
+    "p50": 115,
+    "p10": 115,
+    "p90": 115,
+    "none": 0
+   },
+   "leaf2Split": {
+    "p50": 240,
+    "p10": 82,
+    "p90": 348,
+    "none": 5
+   },
+   "leaf3Split": {
+    "p50": 311,
+    "p10": 264,
+    "p90": 379,
+    "none": 7
+   },
+   "leaf2Band": {
+    "mid": 1
+   },
+   "leaf3Band": {
+    "mid": 1
+   }
+  },
+  {
+   "slot": "oneroom-sill:3",
+   "lamps": 2,
+   "avg7": {
+    "mean": 5.71,
+    "min": 3.68,
+    "max": 8.54
+   },
+   "growDays": 400,
+   "leaf2Day": {
+    "p50": 21,
+    "p10": 21,
+    "p90": 21,
+    "none": 0
+   },
+   "leaf3Day": {
+    "p50": 63,
+    "p10": 63,
+    "p90": 63,
+    "none": 0
+   },
+   "leaf2Split": {
+    "p50": 70,
+    "p10": 48,
+    "p90": 126,
+    "none": 0
+   },
+   "leaf3Split": {
+    "p50": 121,
+    "p10": 101,
+    "p90": 209,
+    "none": 0
+   },
+   "leaf2Band": {
+    "bright": 1
+   },
+   "leaf3Band": {
+    "mid": 1
+   }
+  }
+ ]
+}
