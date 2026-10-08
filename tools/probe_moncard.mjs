@@ -69,6 +69,8 @@ ok(card.phase === card.ggPhase && card.next === card.ggNext && card.fill === car
 ok(/몬스테라 · 잎 \d+장/.test(card.leaves) && (!card.lw || card.leaves.includes(`잎 ${card.lw.leaves}장`)), `잎 줄 — ${card.leaves}`);
 ok(/자리 {2}(자라지 않는 빛|자라는 빛|밝은 빛 — 무늬가 좋아지는 자리)/.test(card.where), `자리 줄 — ${card.where} (밴드 ${card.lw && card.lw.band})`);
 ok(!card.dli && !/일 뒤|일 남/.test(card.leaves + card.next + card.where), '날수·DLI 숫자를 안 쓴다');
+const dup = await J(`(()=>{ const rows=[...document.querySelectorAll('#pagePlants .pgline')].map(e=>(e.textContent||'').trim()); return rows; })()`);
+ok(!dup.some(t => t.startsWith(card.phase + ' · ')), `아래 그루 상자에 첫 그루의 같은 단계·% 줄이 없다(카드와 두 번 안 보임) → ${JSON.stringify(dup)}`);
 if (process.env.SHOT) await page.shot(process.env.SHOT);
 await page.close(); clearTimeout(wd);
 console.log(fail ? `\nprobe_moncard: FAIL ${fail}` : '\nprobe_moncard: PASS');

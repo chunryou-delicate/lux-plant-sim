@@ -11098,7 +11098,10 @@ function drawPlantMore() {
                         catch { return null; } })();
     const ph = tp && tp.growthPhase;
     const stuck = !!(tp && (tp.potDry || tp.headroomBlocked || tp.growthBlocked));
-    const gauge = (ph && Number.isFinite(ph.progress01))
+    /* ★ 2026-10-08 [plan] — 맨 위 몬스테라 카드(§drawMonCard)가 «첫 그루»의 단계·%를 이미 말한다(같은 값 · §growGaugeVals).
+         같은 말이 한 화면에 둘이면 소음이라(§drawGrowGauge 08-11 규율) 카드가 선 판에서는 첫 그루의 막대·줄을 뺀다. 다른 그루는 그대로 */
+    const inCard = p === pot0(S) && !!(S.firstPlay && S.firstPlay.enabled);
+    const gauge = (!inCard && ph && Number.isFinite(ph.progress01))
       ? `<i class="pgauge${stuck ? ' stuck' : ''}"><i style="width:${Math.round(Math.max(0, Math.min(1, ph.progress01)) * 100)}%"></i></i>`
         + `<small class="pgline">${esc(ph.phaseKo || '자라는 중')} · ${Math.round(Math.max(0, Math.min(1, ph.progress01)) * 100)}%`
         + (stuck ? ' · <b style="color:#f0a35f">멈춰 있습니다</b>' : '') + '</small>'
