@@ -1,5 +1,6 @@
 /* tools/probe_sill_leaf_wall.mjs — [house] 2026-10-08 · 창턱 몬스테라 잎이 벽에 묻히나 (docs/handoff/house-sill-leaf-wall-20261008.md)
    쓰기: BYEOT_URL=http://localhost:9330 DAYS=260 node tools/probe_sill_leaf_wall.mjs   (SHOT= 주면 마지막 화면을 찍는다)
+         ROOM=oneroom SLOT=0..3 — 이사(저장 → 새로 켬) 뒤 원룸 창턱 그 자리에 놓고 잰다
    ⚠ 헤드리스 크롬 하나를 띄운다 — 여유 램 4GB 밑이면 기다린다(총괄 10-08 규칙) */
 /* 창턱 몬스테라 잎이 벽에 묻히나 — 반지하 banjiha-sill:0 · DAYS 일 (leaf tools/leaf/_shot_room_varie.mjs 와 같은 세움·돌림)
    재는 것: ① 화분 중심 ↔ 창 벽 안쪽 면 거리 ② 잎·줄기 정점이 벽면 너머(z < 안쪽 면)로 나간 비율 — 창 구멍 안 / 벽 속
@@ -20,12 +21,30 @@ await page.send('Page.addScriptToEvaluateOnNewDocument', { source: `try{ if(!ses
 await page.goto(`${BASE}/game.html`);
 await page.waitFor('!!window.__rv', 600000, 500); await sleep(4500);
 const J = async (js, ms = 1800000) => JSON.parse(await page.eval(`(async()=>{ try { return JSON.stringify(await (${js})); } catch(e) { return JSON.stringify({탈:e.message, st:(e.stack||'').slice(0,300)}); } })()`, true, ms));
-console.log('세움 —', JSON.stringify(await J(`(async()=>{ const st=await import('/src/game/state.js'); const fp=await import('/src/game/first_play.js');
+const ROOM = process.env.ROOM || 'banjiha', SLOT_I = Number(process.env.SLOT || 0);
+const C = ROOM === 'oneroom' ? { wallZ: -2.4, glassZ: -2.5, open: { x0: -0.7, x1: 1.7, y0: 0.775, y1: 2.225 } }
+                             : { wallZ: -1.9, glassZ: -2.0, open: { x0: -1.1, x1: 1.1, y0: 1.495, y1: 2.045 } };
+const skipTalk = async () => { for (let k = 0; k < 4; k++) { for (let i = 0; i < 40; i++) {
+  if (await page.eval(`String(document.getElementById('stage').classList.contains('talking'))`) !== 'true') break;
+  await page.eval(`(()=>{const x=document.getElementById('dlgBox'); if(x)x.click();})()`, false); await sleep(150); } await sleep(300); } };
+console.log('몬스테라 —', JSON.stringify(await J(`(async()=>{ const st=await import('/src/game/state.js'); const fp=await import('/src/game/first_play.js');
   const S=window.__S(); S.firstPlay.beansprout.harvestCount = fp.MONSTERA_ARRIVAL_RULE.harvestCount; S.firstPlay.beansprout.harvested = true;
-  const a = st.givePlant(S, window.__io, { slotId:null }); fp.markMonsteraArrived(S.firstPlay, a);
-  const p=(S.pots||[])[0]; const slots=window.__io.light.room.slots||[]; const slot=slots.find(x=>/sill/.test(x.slotId));
-  st.setPotAt(S, p.id, { x:slot.x, y:slot.y, z:slot.z, slotId:slot.slotId }, { slots, size: window.__io.light.room.size });
-  return { 자리:p.slotId, slot:{x:slot.x,y:slot.y,z:slot.z} }; })()`)));
+  const a = st.givePlant(S, window.__io, { slotId:null }); fp.markMonsteraArrived(S.firstPlay, a); return { 화분:(S.pots||[]).length }; })()`)));
+if (ROOM === 'oneroom') {
+  /* 이사 — probe_oneroom_boot 와 같은 손길(3D 는 이 판에서 다시 안 선다 ⇒ 저장하고 새로 켠다) */
+  await skipTalk();
+  await page.eval(`(()=>{ const S=window.__S(); const ts=S.tutorial; ts.cashWon = ts.rules.moveOutCostWon + 100000;
+    ts.varieLeaf = { ever:true, count:1, firstOnDay:S.day }; window.__redraw(); })()`, false); await sleep(600);
+  await page.eval(`(()=>{ const b=document.getElementById('moveOut'); if(b){ b.disabled=false; b.click(); } })()`, false); await sleep(6000); await skipTalk();
+  await page.eval(`(()=>{ try{ if(window.__save) window.__save(); }catch(e){} })()`, false); await sleep(1500);
+  await page.goto(`${BASE}/game.html`); await page.waitFor('!!window.__rv', 600000, 500); await sleep(4500); await skipTalk();
+}
+const SLOTP = await J(`(async()=>{ const st=await import('/src/game/state.js'); const S=window.__S();
+  const p=(S.pots||[])[0]; const slots=(window.__io.light.room.slots||[]).filter(x=>/sill/.test(x.slotId)); const slot=slots[${SLOT_I}] || slots[0];
+  if (!p || !slot) return { 탈:'화분이나 창턱 자리가 없다', 방:S.home.room, 화분:(S.pots||[]).length };
+  st.setPotAt(S, p.id, { x:slot.x, y:slot.y, z:slot.z, slotId:slot.slotId }, { slots: window.__io.light.room.slots, size: window.__io.light.room.size });
+  return { 방:S.home.room, 자리:slot.slotId, x:slot.x, y:slot.y, z:slot.z }; })()`);
+console.log('세움 —', JSON.stringify(SLOTP));
 console.log('돌림 —', JSON.stringify(await J(`(async()=>{ const st=await import('/src/game/state.js'); const lp=await import('/src/game/loop.js');
   const S=window.__S(), io=window.__io;
   for (let d=0; d<${DAYS}; d++){ try { st.waterPot(S); } catch(e) {} lp.runDays(S, io, 1); }
@@ -40,16 +59,16 @@ const R = await J(`(async()=>{
   const T = window.THREE; const scenes = [...(window.__scenes || [])];
   if (!scenes.length) return { 탈:'장면을 못 붙잡음' };
   /* 방 카메라 = room_view.worldToScreen 과 같은 화면 좌표를 내는 원근 카메라 */
-  const cv = document.getElementById('roomCanvas').getBoundingClientRect(); const probeP = new T.Vector3(0, 1.585, -1.85);
+  const cv = document.getElementById('roomCanvas').getBoundingClientRect(); const probeP = new T.Vector3(${SLOTP.x}, ${SLOTP.y}, ${SLOTP.z});
   const want = window.__rv.worldToScreen(probeP.x, probeP.y, probeP.z); let cam = null, bestErr = 1e9;
   for (const c of (window.__pcams || [])) { c.updateMatrixWorld(true); const q = probeP.clone().project(c); const sx = (q.x * 0.5 + 0.5) * cv.width, sy = (-q.y * 0.5 + 0.5) * cv.height;
     const err = Math.hypot(sx - want.x, sy - want.y); if (err < bestErr) { bestErr = err; cam = c; } }
   if (!cam || bestErr > 3) return { 탈:'방 카메라를 못 가림', 후보: (window.__pcams || new Set()).size, 최소오차px: bestErr };
   let G = null, S0 = null; const pw = new T.Vector3();
   for (const sc of scenes) { sc.updateMatrixWorld(true); sc.traverse(o => { if (G || !(o.userData && o.userData.isPlantAssembled && o.userData.kind === 'monstera')) return;
-    o.getWorldPosition(pw); if (Math.abs(pw.z + 1.85) < 0.3 && Math.abs(pw.x) < 0.5) { G = o; S0 = sc; } }); }
+    o.getWorldPosition(pw); if (Math.abs(pw.z - (${SLOTP.z})) < 0.45 && Math.abs(pw.x - (${SLOTP.x})) < 0.45) { G = o; S0 = sc; } }); }
   if (!G) return { 탈:'창턱 근처 몬스테라 그루가 없음', 장면수: scenes.length };
-  const WALL_Z = -1.9, OPEN = { x0:-1.1, x1:1.1, y0:1.495, y1:2.045 }, GLASS_Z = -2.0;
+  const WALL_Z = ${C.wallZ}, OPEN = ${JSON.stringify(C.open)}, GLASS_Z = ${C.glassZ};
   const potPos = new T.Vector3(); (G.userData.potPart || G).getWorldPosition(potPos);
   const partOf = o => { for (let p = o; p && p !== G; p = p.parent) if (p.userData && p.userData.part) return p.userData.part; return null; };
   const count = (root, mw) => { const out = { leaf:{n:0,beyond:0,open:0,wall:0,glass:0,minZ:9}, stem:{n:0,beyond:0,open:0,wall:0,glass:0,minZ:9} };
