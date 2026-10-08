@@ -9543,11 +9543,15 @@ export async function createRoomView(canvas, opts = {}) {
        화분이 있으면 **그 개체의 bbox 를 그대로** 담는다. */
     let hh = 0.22;                                   // 담을 반높이
     let cy = s.y + 0.22;                             // 담을 한가운데 높이
+    let hw = null;                                   // 담을 반너비(그루가 있을 때만 · 없으면 예전 어림 hh×0.75)
     if (p) {
       const bb = new THREE.Box3().setFromObject(p.group);
       const h = Math.max(0.12, bb.max.y - bb.min.y);
       hh = clamp(h / 2 * 1.25, 0.12, 0.95);          // 1.25 = 위아래 여유(FRAME_BIAS 몫 포함)
       cy = (bb.min.y + bb.max.y) / 2;
+      /* ★ 2026-10-08 ③(나) — 가로도 그루의 «실제 너비»로 담는다. 예전 어림(키 × 0.75)은 잎이 벌어진 큰 그루(308일 · 0.72m 폭)를 옆으로 잘랐다 */
+      const w = Math.max(bb.max.x - bb.min.x, bb.max.z - bb.min.z);
+      hw = clamp(w / 2 * 1.15, 0.10, 1.0);
     }
     const tanV = Math.tan(THREE.MathUtils.degToRad(ctx.cam.fov) / 2);
     const tanH = tanV * Math.max(0.2, ctx.cam.aspect);
@@ -9556,11 +9560,14 @@ export async function createRoomView(canvas, opts = {}) {
     const target = new THREE.Vector3(s.x, cy, s.z);
     /* ★ 너무 확대되지 않게, 그리고 방 밖으로 나가지 않게.
        화분에 코를 박으면 어디에 있는 자리인지 알 수 없고, 멀어지면 벽·천장 속으로 들어간다. */
-    const want = clamp(Math.max(hh / tanV, (hh * 0.75) / tanH), 0.5, 3.6);
+    const want = clamp(Math.max(hh / tanV, (hw != null ? hw : hh * 0.75) / tanH), 0.5, 3.6);
     /* 높은 자리(반지하 창턱 1.6m)는 내려다볼 수가 없다 — 천장이 0.7m 위에 있다.
-       그대로 각도를 유지하면 거리만 줄어 화분에 코를 박는다. 각도를 눕혀서 거리를 지킨다. */
-    const head = roomBox().h - 0.25 - target.y;
-    const el = Math.max(0.02, Math.min(FOCUS_EL, Math.asin(clamp(head / want, 0, 1))));
+       그대로 각도를 유지하면 거리만 줄어 화분에 코를 박는다. 각도를 눕혀서 거리를 지킨다.
+       ★★ 2026-10-08 ③(나) — 여기 천장 여유(0.25)와 §insideRoomDistance 의 여유(0.30)가 «달라서» 창턱 위 큰 그루(가운데 1.95m)는
+         각도를 0.02 로 눕히고도 천장에 걸려 0.92m 에서 멈췄다(필요 2.15m) — 위아래가 잘렸다(probe · 260일 세이브).
+         ⇒ 같은 여유(0.30 + 0.02)로 재고, 천장이 바로 위면 아주 살짝(최대 0.12rad) 올려다본다 — 거리를 지키는 쪽이 그루를 담는다 */
+    const head = roomBox().h - 0.32 - target.y;
+    const el = clamp(Math.asin(clamp(head / want, -1, 1)), -0.12, FOCUS_EL);
     const dist = insideRoomDistance(target, az, el, want);
     setCam({ az, el, dist, target }, !!snap);
     needsRender = true;
@@ -9656,6 +9663,14 @@ export async function createRoomView(canvas, opts = {}) {
     /* 그 화분을 치운다. 몇 개를 걷었는지 돌려준다(정상이면 0 또는 1) */
     removePlantOf(potId) { return removePlantOf(potId); },
     /* 지금 방에 놓인 화분 전부 — 검증·UI 목록용 */
+    /* ★ 2026-10-08 진단 — 그루의 상자(보통 · 정밀)와 메시 종류. 확대 카메라가 큰 그루를 자르던 까닭을 재는 창구(§focusSlot) */
+    plantBox(key) {
+      const t = resolveKey(key); const p = t && t.plant; if (!p) return null;
+      const n = { mesh: 0, inst: 0, skinned: 0 }; p.group.traverse(o => { if (o.isInstancedMesh) n.inst++; else if (o.isSkinnedMesh) n.skinned++; else if (o.isMesh) n.mesh++; });
+      const b0 = new THREE.Box3().setFromObject(p.group), b1 = new THREE.Box3().setFromObject(p.group, true);
+      const f = b => ({ min: [b.min.x, b.min.y, b.min.z].map(v => +v.toFixed(3)), max: [b.max.x, b.max.y, b.max.z].map(v => +v.toFixed(3)) });
+      return { n, box: f(b0), precise: f(b1) };
+    },
     plants() {
       return [...plants].map(([key, p]) => ({
         key, potId: p.potId || null, free: isFreeSlotId(key),
