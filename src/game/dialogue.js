@@ -1167,7 +1167,11 @@ export const SCRIPTS = {
      ⚠ 수 없음(몬이는 수를 말하지 않는다) · 등급 이름 없음 · 「끝」·「졸업」 없음(본편이 이어진다).
      endingReady — 현금이 목표에 처음 닿은 날 한 줄. 바로 앞 「됐다! 가자.」(questDoneOneroomHomeFund)와 같은 턴 · 「언제 할지는 네가 정해」 = 자동으로 안 끝난다.
      endingHome  — [계약한다] 뒤 그림(ev_home_ending) 위 열세 줄. 오프닝(intro) 세 줄을 차례대로 되받고, 마지막 물음이 직업 고르기(D17)로 넘긴다. */
+  /* ★ 2026-10-08 [plan] — endingReady 가 «혼자서도» 서게 앞줄을 하나 보탰다. [core] 2a6dbcfb 걸음: 원룸 퀘스트 사슬이
+     집 자금 줄(oneroom_home_fund)까지 안 온 판에서는 「됐다! 가자.」 없이 「집 계약은 네가 해」만 났다 — «다 모였다»가 빠진다.
+     ⇒ 「…다 모였다.」를 여기로 가져오고, 둘이 같은 턴이면 퀘스트 끝 대사를 뺀다(§scriptsForEvents · 같은 순간을 두 번 말하지 않는다). */
   endingReady: [
+    { who: 'jachwi', face: 'think',    text: '…다 모였다.' },
     { who: 'moni',   face: 'teach',    text: '집 계약은 네가 해. 언제 할지는 네가 정해.' }
   ],
   endingHome: [
@@ -2056,10 +2060,8 @@ export const QUEST_DONE_SCRIPT = Object.freeze({
      id 를 돌려주는데 대화 상자가 막아 **검사에는 "말한 날"로 잡히고 화면은 조용한** 상태가 된다
      (START-HERE §2 가 경고한 그 모양이다). 그래서 그 자리는 작은 말(`chatCropAgain`)로 채웠다 —
      작은 말은 조용한 날에만 나오므로 반복이 리듬이 된다.
-   ⚠ 아직 대사가 없고 **화면에도 안 붙은** 사건: `ending_ready` · `ending_home`(④ 내 집 마련).
-     `game.html` 이 `src/game/ending.js` 를 아예 안 읽는다(2026-08-11 확인). 목표 금액도
-     `ENDING_RULES.targetWon = null` 로 미확정이라(story_arc §4-2 ⏸) 여기서 대사를 지어 두면
-     안 뜨는 대사가 하나 더 늘 뿐이다. 화면과 금액이 정해질 때 같이 쓴다. */
+   ★ 2026-10-08 — `ending_ready` · `ending_home`(④ 내 집 마련)은 [core] 2a6dbcfb 로 화면에 붙었고 대사도 들어갔다(§endingReady·§endingHome).
+     목표 금액은 아직 null(D9)이라 실제 판에서는 «목표가 정해진 판»에서만 난다. 예전 이 자리의 «아직 대사가 없다»는 낡은 말이라 걷었다. */
 const EVENT_ORDER = [
   'beansprout_harvest', 'learn_harvest', 'learn_cropDark',
   'monstera_arrived',
@@ -2171,6 +2173,8 @@ export function scriptsForEvents(events = [], S = null) {
      ⚠ 도착보다 **앞**이라야 한다 — first_play.md §2 가 금지한 것이 "식물신이 도착 뒤에 말하는" 회차다. */
   const arr = out.indexOf('monsteraArrived');
   if (arr >= 0 && !out.includes('god1')) out.splice(arr, 0, 'god1');
+  /* ★ 2026-10-08 [plan] ④ — 집 자금 퀘스트 끝과 «닿음»은 같은 순간이다(둘 다 «현금 ≥ 목표»). 같은 턴이면 닿음 한 벌만 말한다(§endingReady) */
+  if (out.includes('endingReady')) { const q = out.indexOf('questDoneOneroomHomeFund'); if (q >= 0) out.splice(q, 1); }
   return out;
 }
 
