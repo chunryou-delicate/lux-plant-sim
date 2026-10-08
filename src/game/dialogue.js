@@ -1444,8 +1444,10 @@ export const SCRIPTS = {
   statusStreak: [
     { who: 'moni',   face: 'proud', text: '하루도 안 쉬고 자랐어. 자리가 맞는 거야.' }
   ],
+  /* ★ 2026-10-08 [plan] — 「첫 잎」 → 「막내 잎」. 칸 youngestLeafM 은 «가장 늦게 달린 잎»이다([core] fb01ee3d) —
+     첫 기다림에선 그게 첫 잎이지만 둘째·셋째 기다림에선 아니다. 「막내」는 어느 기다림에서나 참이다. */
   statusLeafWide: [
-    { who: 'jachwi', text: '첫 잎이 처음보다 넓어졌다.' },
+    { who: 'jachwi', text: '막내 잎이 처음보다 넓어졌다.' },
     { who: 'moni',   face: 'calm', text: '자라는 중이야. 잎도 줄기도.' }
   ],
   statusSiruVs: [
