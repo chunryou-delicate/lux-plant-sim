@@ -1485,6 +1485,15 @@
     background:linear-gradient(90deg,#8fd36f,#d5ef8b);transition:width .45s}
   /* 안 자라는 중이면 띠가 회색이 되고 이유를 적는다 — 그게 이 게이지의 절반이다 */
   #growGauge.stuck .gg-bar>i{background:linear-gradient(90deg,#7a7486,#9a94a6)}
+  /* ★ 2026-10-08 식물 시트 «몬스테라 카드» — 확대창 게이지와 같은 옷 */
+  #monCard .mc-title{font-size:13px;font-weight:700;color:var(--ink);margin-bottom:6px}
+  #monCard .gg-row{display:flex;align-items:baseline;gap:8px;margin-bottom:6px}
+  #monCard .gg-row b{font-size:12.5px;color:var(--ink);font-weight:700}
+  #monCard .gg-row span{font-size:11px;color:var(--dim)}
+  #monCard .gg-bar{height:7px;border-radius:5px;background:rgba(255,255,255,.13);overflow:hidden}
+  #monCard .gg-bar>i{display:block;height:100%;width:0;border-radius:5px;background:linear-gradient(90deg,#6fbf73,#b5e48c)}
+  #monCard.stuck .gg-bar>i{background:linear-gradient(90deg,#7a7486,#9a94a6)}
+  #monCard .mc-where{font-size:11.5px;color:var(--dim);margin-top:6px;word-break:keep-all}
   #growGauge .gg-why{margin-top:5px;font-size:11px;color:#f0b45a;line-height:1.4}
   #growGauge .gg-why:empty{display:none}
   #growth{transition:opacity .4s,filter .4s}
@@ -2397,6 +2406,13 @@
          ★ [가방]에 있던 「첫 플레이 · 자리의 차이」 안내가 여기로 왔다.
            없애면 처음 하는 사람이 길을 잃는다 — 자리를 옮겼을 뿐이다. -->
     <div class="sheetpage" id="pagePlants" role="tabpanel">
+      <!-- ★ 2026-10-08 [plan] plan-leafwait ③-3 — 몬스테라 카드(초보 판). 값은 확대창 게이지와 같다(§growGaugeVals) -->
+      <div class="box" id="monCard" style="display:none">
+        <div class="mc-title" id="mcLeaves">몬스테라</div>
+        <div class="gg-row"><b id="mcPhase">—</b><span id="mcNext"></span></div>
+        <div class="gg-bar"><i id="mcFill"></i></div>
+        <div class="mc-where" id="mcWhere"></div>
+      </div>
       <div class="quest" id="sheetQuest"></div>
       <!-- ★★★ **빛 분포 겹쳐 보기** (2026-08-16 · 박사님)
            ⚠⚠ 2026-08-17 — **「방에 있는 것」 상자 밖으로 뺐다** (박사님: *"빛 분포를 따로
@@ -8602,6 +8618,43 @@ function shortBlockWhy(raw) {
   const s = String(raw || '');
   return showDli() ? s : (s.split('—')[0] || s).trim();
 }
+/* ★ 2026-10-08 [plan] plan-leafwait ③-3 — 식물 시트 맨 위 «몬스테라 카드». 확대창 게이지(§drawGrowGauge)와 «같은 값»을 읽는다
+     (단계 · 다음 단계까지 % · 멈춤 까닭) — 둘이 다른 수를 말하지 않게 한 함수(growGaugeVals)로 묶었다.
+   덧붙는 줄 둘: 「잎 {n}장 (무늬 {v}장)」 · 「자리 {빛 낱말}」(밴드 → 낱말은 plan 표 그대로).
+   ⛔ «다음 잎까지 n일» 안 씀(몬이 Day 13 「날짜로는 못 세」) · ⛔ DLI 숫자 안 보임(초보 판 규율) · 초보 판에서만 */
+const MON_LIGHT_KO = { dark: '자라지 않는 빛', mid: '자라는 빛', bright: '밝은 빛 — 무늬가 좋아지는 자리' };
+function growGaugeVals() {
+  const t = lastTurn;
+  let ph = null;
+  try { ph = io.growth.growthPhase(); } catch { }
+  if (!ph) ph = t && t.growthPhase;
+  const why = t && (t.headroomBlocked || t.growthBlocked) || null;
+  return { ph, why, pct: Math.round(((ph && ph.progress01) || 0) * 100) };
+}
+function drawMonCard() {
+  const box = $('monCard');
+  if (!box) return;
+  const novice = !!(S.firstPlay && S.firstPlay.enabled);
+  const p = pot0(S);
+  if (!novice || !p) { box.style.display = 'none'; return; }
+  box.style.display = '';
+  const { ph, why, pct } = growGaugeVals();
+  /* 잎 — 지난 턴이 첫 그루의 그 순간에 센 것(turn.leafWait)이 먼저 · 없으면(갓 켠 판) 생장 창에 묻는다 */
+  const lw = (lastTurn && lastTurn.leafWait) || null;
+  let leaves = lw && Number.isInteger(lw.leaves) ? lw.leaves : null, varie = null;
+  try { const st = io.growth.leafStats(); if (leaves == null && st && Number.isInteger(st.leaves)) leaves = st.leaves;
+        if (st && Number.isInteger(st.variegatedLeaves)) varie = st.variegatedLeaves; } catch { }
+  $('mcLeaves').textContent = leaves == null ? '몬스테라'
+    : `몬스테라 · 잎 ${leaves}장` + (varie ? ` (무늬 ${varie}장)` : '');
+  $('mcPhase').textContent = (ph && ph.phaseKo) || '자라는 중';
+  $('mcNext').textContent = ph && ph.nextPhaseKo ? `→ ${ph.nextPhaseKo}까지 ${pct}%` : '';
+  $('mcFill').style.width = `${pct}%`;
+  box.classList.toggle('stuck', !!why);
+  const band = lw && lw.band;
+  const where = band && MON_LIGHT_KO[band] ? `자리  ${MON_LIGHT_KO[band]}` : '';
+  /* 멈췄으면 자리 줄 끝에 까닭 한 마디(§shortBlockWhy 그대로 — 새 말을 안 짓는다) */
+  $('mcWhere').textContent = where + (why ? `${where ? ' · ' : ''}${shortBlockWhy(why)}` : '');
+}
 function drawGrowGauge() {
   const box = $('growGauge');
   if (!box) return;
@@ -11279,6 +11332,7 @@ function draw() {
   drawStamina();            /* 오늘 손이 얼마나 남았나 — 누르기 직전에 보는 값이다 */
   drawLevelUps();           /* 체력이 올랐으면 말해 준다 — 조용히 오르면 보상이 아니다 */
   drawGrowGauge();          /* 확대 창 — 다음 단계까지 얼마나 왔나 (안 차면 왜인지도) */
+  try { drawMonCard(); } catch (e) { console.warn('[몬스테라 카드]', e && e.message); }   /* 식물 시트 맨 위 — 같은 값(§growGaugeVals) */
   drawSow();                /* 다시 심어야 하나 */
   try { drawSirus(); } catch (e) { console.warn('[시루]', e && e.message); }  /* 시루 하나하나 */
   try { drawLightHeatBtn(); } catch (e) { console.warn('[빛 분포]', e && e.message); }
