@@ -489,39 +489,17 @@ check('D-1 ★ ④ 를 보면 **스토리가 끝난다** — storyRunning 이 �
   assert.equal(noviceStillOn(RUN.S), false, 'noviceStillOn 이 storyRunning 과 다릅니다');
 });
 
-check('D-1b ★★ 그런데 **초보 완충은 안 걷힌다** — 실제 게임에서는 ④ 가 그걸 못 끈다', () => {
-  /* ══ 재서 잡은 것 (2026-08-06) ═══════════════════════════════════════════
-     `propagation.isNoviceMode` 의 첫 줄이 이렇다:
-         if (S.sim && S.sim.mode === 'novice') return true;
-     그런데 `S.sim.mode` 는 **날씨·계절 굴림 스위치**다 —
-     `state.SIM_MODES.novice` 의 뜻은 *"계수 1.0 고정(맑음·여름)"* 이지 스토리 난이도가 아니다.
-     그리고 `game.html` 은 새 판을 **언제나** `mode:'novice'` 로 연다(§1223 · §4018 · §4099).
-
-     ⇒ 실제 게임에서는 첫 줄이 **항상 참**이라 그 아래 스토리 판정이 **한 번도 안 읽힌다.**
-       2026-08-05 정정(*"④ 까지 초보다"*)이 노린 「④ 에서 걷힌다」는 지금 **닿지 않는다** —
-       삽수 유예가 영원히 16일이고, 모주를 끝내는 자르기도 영원히 막혀 있다.
-
-     ⚠ **여기서 안 고친다.** `sim.mode:'novice'` 가 스토리 초보를 겸하는 것이 뜻인지
-       (자유 판에서도 완충을 주려던 것인지) 아닌지는 박사님 판단이다 — 규칙을 바꾸는 일이지
-       배선을 잇는 일이 아니다. 재현이 사실만 못 박는다(docs/handoff/cutend-to-plan.md §판단). */
-  assert.equal(RUN.S.sim.mode, 'novice', '이 재현이 game.html 과 같은 모드로 안 돌았습니다');
-  assert.equal(isNoviceMode(RUN.S), true,
-    '★ sim.mode 가 novice 인데 초보가 꺼졌습니다 — 규칙이 바뀌었으면 이 검사를 고쳐 주세요');
-  assert.equal(graceDaysOf('water', isNoviceMode(RUN.S)), 16, '초보 유예가 16일이 아닙니다');
-  info('⚠ game.html 은 늘 mode:"novice" 로 연다 → ④ 를 봐도 삽수 유예가 16일 그대로다 ' +
-       '(isNoviceMode 첫 줄이 스토리 판정을 가린다)');
-
-  /* 스토리 쪽 판정 자체는 멀쩡하다 — sim.mode 가 real 이면 ④ 에서 정확히 걷힌다 */
-  const real = playToEnding({ rules: endingRulesFrom({ targetWon: REPRO_TARGET_WON }),
-                             assistMove: true, days: 320, simMode: 'real' });
-  if (real.trace.doneOnDay != null) {
-    assert.equal(isNoviceMode(real.S), false, 'mode:real 인데도 ④ 뒤에 초보입니다');
-    assert.equal(graceDaysOf('water', isNoviceMode(real.S)), 8, '유예가 8일로 안 걷혔습니다');
-    info('mode:"real" 판에서는 ④ 뒤에 유예가 16일 → 8일로 걷힌다 — 스토리 판정은 멀쩡하다');
-  } else {
-    info(`mode:"real" 판은 ${320}일 안에 엔딩까지 못 갔다(날씨가 굴러 벌이가 다르다) — ` +
-         `스토리 판정은 tools/test_oneroom.mjs §F 가 따로 고정한다`);
-  }
+check('D-1b ★★ ④ 뒤에 **초보 완충이 걷힌다** — D1(원룸 이사 때 sim.mode novice → real) 뒤로', () => {
+  /* ★★ 2026-10-08 — 아래 «재서 잡은 것»(08-06)은 **D1 로 풀렸다.** 박사님 D1: 원룸 이사 때 sim.mode 를 real 로 바꾼다
+       (oneroom.moveIntoOneroom · fdc5b46a). 그러면 isNoviceMode 의 첫 줄(sim.mode === 'novice')이 이사 뒤로는 거짓이라
+       그 아래 스토리 판정(«④ 까지 초보»)이 읽히고, ④ 를 보면 유예가 16 → 8일로 걷힌다.
+     ⇒ 옛 단언(「이 재현이 novice 로 돈다 · 초보가 안 꺼진다」)은 D1 앞의 사실이라 지금은 거짓이다 — 새 사실로 바꿨다. */
+  assert.equal(RUN.S.sim.mode, 'real', 'D1 — 원룸으로 이사했는데 sim.mode 가 real 로 안 바뀌었습니다');
+  assert.equal(isNoviceMode(RUN.S), false, '④ 를 봤는데 아직 초보입니다(D1 뒤에는 걷혀야 한다)');
+  assert.equal(graceDaysOf('water', isNoviceMode(RUN.S)), 8, '④ 뒤 유예가 8일로 안 걷혔습니다');
+  info('D1 뒤 — 이사하면 real · ④ 를 보면 삽수 유예가 16일 → 8일로 걷힌다');
+  /* (D1 앞 08-06 기록 — 「game.html 은 늘 mode:'novice' 로 열어 isNoviceMode 첫 줄이 스토리 판정을 가렸다 · ④ 를 봐도 유예 16일」.
+     그때 이 자리의 단언·real 대조 판은 git 이력 9c5c418c 앞에 있다) */
 });
 
 check('D-2 ★ 다음 장이 무엇인지만 알린다 — 직업 화면을 여기서 만들지 않는다', () => {

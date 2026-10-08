@@ -322,6 +322,15 @@
     padding:calc(var(--safe-t) + 10px) 12px calc(var(--safe-b) + 10px);
     background:rgba(8,6,12,.72);-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px)}
   .pop.on{display:flex}
+  /* ★ 2026-10-08 ④ 내 집 마련 장면 — #stage 안 · 대사(#dlg z34) 바로 밑. 덮인 동안 빨리감기·[다음 날]·알약·손가락을 안 띄운다(plan-ending ①) */
+  #homeScene{position:absolute;inset:0;z-index:33;display:none;align-items:center;justify-content:center;
+    background:radial-gradient(ellipse at 50% 35%,#fff3d6 0%,#f2c98a 38%,#3a2a1c 100%);animation:homeIn 1.6s ease-out both}
+  #homeScene.on{display:flex}
+  #homeScene img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+  #homeScene #homeCard{position:relative;z-index:1;width:min(360px,88%)}
+  @keyframes homeIn{from{opacity:0;filter:brightness(.4)}to{opacity:1;filter:none}}
+  html.homescene #next,html.homescene #resow,html.homescene #waterCrop,html.homescene #waterPot,html.homescene #harvestCrop,
+  html.homescene #hint,html.homescene #hintDim,html.homescene #marks,html.homescene #questChip,html.homescene #coach{visibility:hidden!important}
   .popcard{width:min(430px,100%);max-height:86dvh;overflow-y:auto;-webkit-overflow-scrolling:touch;
     background:linear-gradient(180deg,#1b1626,#141020);border-radius:18px;
     border:1px solid rgba(255,255,255,.12);padding:15px 14px;
@@ -1848,6 +1857,16 @@
          ★오브젝트보다 크게 만든다 — 화분은 화면에서 작아서 정확히 짚기가 어렵다.
            말풍선이 곧 버튼이라 무엇을 해야 하는지와 어디를 눌러야 하는지가 한 번에 잡힌다. -->
     <div id="marks"></div>
+    <!-- ★ 2026-10-08 ④ 내 집 마련 장면(plan-ending-home ①-4·5) — 그림 위로 대사(#dlg z34)가 흐르고, 끝나면 마무리 카드.
+         그림 ev_home_ending.png 는 [char] 몫 · 아직 없으면 바탕만 밝아진다(빈 그림 칸을 안 띄운다) -->
+    <div id="homeScene" aria-hidden="true">
+      <img id="homeArt" src="./assets/illust/ev_home_ending.png" alt="" onerror="this.style.display='none'">
+      <div id="homeCard" class="popcard" style="display:none">
+        <div class="ptitle">내 집</div>
+        <div id="homeCardRows" class="plots"></div>
+        <div class="pbtns"><button id="homeNext" class="go" type="button">다음</button></div>
+      </div>
+    </div>
     <!-- ★ 뜨는 글자 — 거둔 순간 그 시루 위에 `+400g 수확` (§G-11 · CSS 주석에 규율) -->
     <div id="floats" aria-hidden="true"></div>
     <!-- ★동작 게이지 — 캐릭터가 가서 하는 동안 얼마나 됐나.
@@ -2137,6 +2156,17 @@
     <div class="psub" id="slotSub"></div>
     <div id="slotList"></div>
     <div class="pbtns"><button id="slotCancel" class="ghost" type="button">그만두기</button></div>
+  </div>
+</div>
+<!-- ★ 2026-10-08 ④ 내 집 마련 되묻기(plan-ending-home ②-B) — 이사와 같은 결 -->
+<div id="homePanel" class="pop" aria-hidden="true">
+  <div class="popcard" role="dialog" aria-modal="true" aria-labelledby="homeTitle">
+    <div class="ptitle" id="homeTitle">내 집 마련</div>
+    <div class="plots" id="homeAsk"></div>
+    <div class="pbtns">
+      <button id="homeGo" class="go" type="button">계약한다</button>
+      <button id="homeCancel" class="ghost" type="button">아직</button>
+    </div>
   </div>
 </div>
 <div id="buyPanel" class="pop" aria-hidden="true">
@@ -3125,11 +3155,18 @@ import { seasonAt, seasonDayAt, SEASON_KO, tutorialGoal, learningLeft,
    moveIntoOneroom 이 그 위에서 S.home.room 과 자리를 옮긴다(oneroom.js 머리말). */
 import { moveIntoOneroom, storyOf } from './src/game/oneroom.js';
 /* ★ 2026-10-08 — 원룸 줄(quest.js oneroom_*)의 «집 자금» 칸이 보는 목표 금액. 지금 null(미확정) — 그 줄은 안 열린다([plan] 짬) */
-import { ENDING_RULES } from './src/game/ending.js';
+import { ENDING_RULES, endingRulesFrom, stepEnding, finishEnding, endingView } from './src/game/ending.js';
 /* ★ 2026-10-08 D2 — 독촉은 «할 수 있었던 날»만: 기다린 날을 적는다(판정·날수는 nudge_wait.js · 거는 자리는 dialogue.js chatterContext) */
 import { noteQuestWaits } from './src/game/nudge_wait.js';
 /* ★ 2026-10-08 — 확대창을 연 적(둘째 잎 기다림 «상태 줄» zoomOpenedSinceArrival · leaf_wait.js) */
 import { noteZoomOpened } from './src/game/leaf_wait.js';
+/* ★ 2026-10-08 ④ 내 집 마련 규칙 — 목표(D9)가 null 이면 화면에 아무것도 안 뜬다 · ?endingTarget=N 은 걸어서 잴 때만(§homeGoalOf) */
+const ENDING_NOW = (() => {
+  try { const q = new URLSearchParams(location.search).get('endingTarget'); const n = Number(q);
+        if (q != null && Number.isFinite(n) && n > 0) return endingRulesFrom({ targetWon: n }); } catch { }
+  return ENDING_RULES;
+})();
+const endingOn = () => !!(ENDING_NOW && Number.isFinite(ENDING_NOW.targetWon));
 /* ★★ 2026-08-09 — 빨리감기 여섯(`startFastForward`·`stopFastForward`·`isFastForwarding`·
    `nextEventPreview`·`timeModeOf`·`FAST_MODE_MAX_DAYS`)을 **안 들여온다**(박사님 지시로 화면에서
    걷었다). loop.js 에는 그대로 있다 — 헤드리스 재현·밸런스 측정이 그 길로 돈다.
@@ -6730,9 +6767,11 @@ function drawMonthPanel() {
     if (!g) { g = document.createElement('div'); g.id = 'monthGoal'; g.className = 'psub';
               $('monthTitle').insertAdjacentElement('afterend', g); }
     const mg = moveGoalOf();
-    g.style.display = mg ? '' : 'none';
+    const hg = mg ? null : homeGoalOf();      /* ★ 2026-10-08 ④ — 이사 뒤엔 내 집 마련 줄 */
+    g.style.display = (mg || hg) ? '' : 'none';
     if (mg) g.textContent = mg.done ? '이사비가 모였습니다'
-      : `이사비 ${mg.target.toLocaleString('ko-KR')}원 — ${mg.left.toLocaleString('ko-KR')}원 남았습니다`; }
+      : `이사비 ${mg.target.toLocaleString('ko-KR')}원 — ${mg.left.toLocaleString('ko-KR')}원 남았습니다`;
+    else if (hg) g.innerHTML = homeGoalHtml(hg); }
 
   /* ★★ 한 줄 요약 — 이 창의 전부다 */
   const up = r.net >= 0;
@@ -9236,7 +9275,7 @@ function questSnapshotNow(turn) {
       const st = storyOf(S); const now = (ts.varieSale && ts.varieSale.count) || 0;
       return (ts.movedOut && st && Number.isInteger(st.varieSaleAtMove)) ? Math.max(0, now - st.varieSaleAtMove) : (ts.movedOut ? null : 0); } catch { return null; } })(),
     cashWon: Number.isFinite(ts.cashWon) ? ts.cashWon : null,
-    targetWon: (ENDING_RULES && Number.isFinite(ENDING_RULES.targetWon)) ? ENDING_RULES.targetWon : null,
+    targetWon: (ENDING_NOW && Number.isFinite(ENDING_NOW.targetWon)) ? ENDING_NOW.targetWon : null,
     /* ★★ 2026-08-17 — **씨앗을 이미 시켰나** (박사님: *"씨앗 시키는 대화가 뭔가 타이밍
        안 맞게 뒤에 나와."*). 실측에서 11일에 주문했는데 할 일 줄은 17일까지 계속
        「상점에서 콩 씨앗을 주문하세요」였다 — **이미 한 일을 하라고 시키는 줄**이다.
@@ -9269,7 +9308,11 @@ function checkQuests(turn) {
     for (const id of r.finished) grantStaminaQuest(S, id);   /* 보상은 stamina 가 준다 */
     if (r.opened.length) questNewSeen = false;               /* 「볼 것이 생겼다」 — 점을 켠다 */
     if (r.finished.length) questNewSeen = false;
-    if (r.events.length) dlgOpen(story.events(r.events));    /* 대사는 늘 같은 창구로 */
+    /* ★ 2026-10-08 ④ — 엔딩도 여기서 한 걸음 본다(돈이 바뀌는 자리마다 이 함수가 불린다 · 하루·거래·수확).
+         퀘스트 사건과 «한 묶음»으로 넘겨야 EVENT_ORDER 가 「됐다! 가자.」(quest_done) → 「집 계약은 네가 해…」(ending_ready)로 세운다 */
+    let evs = r.events;
+    try { const e2 = stepEndingNow(); if (e2.length) evs = [...evs, ...e2]; } catch (e) { console.warn('[엔딩]', e && e.message); }
+    if (evs.length) dlgOpen(story.events(evs));               /* 대사는 늘 같은 창구로 */
   } catch (e) { console.warn('[퀘스트]', e && e.message); }
 }
 /* 퀘스트 id 를 사람 말로 — 표가 정본이다(quest.js §QUESTS). 모르면 id 그대로 낸다 */
@@ -9413,6 +9456,84 @@ function moveGoalOf() {
     return { target, left, done: left <= 0 };
   } catch { return null; }
 }
+/* ══ ★★ 2026-10-08 ④ 내 집 마련 — 뼈대 (총괄 07:20 ③ · [plan] plan-ending-home-20261008) ═══════════════
+   ★ 규칙은 ending.js 하나 — 닿음(stepEnding) · 끝냄(finishEnding) · 보기(endingView). 화면은 다시 안 센다.
+   ⚠ 목표 금액(D9)이 null 이면 **아무것도 안 뜬다**(단추·줄·사건 전부) — 정해지기 전엔 «없는 것»이다.
+   ⚠ `?endingTarget=N` 은 «걸어서 잴 때만» 쓰는 깃발이다(?d23=0 과 같은 꼴) — 값이 아니라 자다. 세이브에 안 남는다. */
+function endingOptNow() {
+  let nodes = null, stats = null;
+  if (hasPlant(S)) { try { nodes = io.growth.cuttableNodes(); } catch { } try { stats = io.growth.leafStats(); } catch { } }
+  return { rules: ENDING_NOW, nodes, stats };
+}
+function stepEndingNow() {
+  if (!endingOn()) return [];
+  const r = stepEnding(S, io, endingOptNow());
+  return (r && r.events) || [];
+}
+/* 할 일 머리·가계부 맨 위 «이사비 자리»가 이사 뒤에 읽는 줄 — null 이면 안 뜬다 */
+function homeGoalOf() {
+  if (!endingOn()) return null;
+  try { const v = endingView(S, io, endingOptNow()); return v.visible ? v : null; } catch { return null; }
+}
+function homeGoalHtml(v) {
+  if (v.done) return '내 집을 마련했습니다';
+  const why = String(v.why || '').replace(/"/g, '&quot;');
+  const btn = `<button type="button" class="${v.ok ? 'go' : 'ghost'}" data-act="homeAsk"${v.ok ? '' : ' disabled'}` +
+              ` title="${why}" style="width:auto;margin-top:6px">${v.buttonKo}</button>`;
+  return (v.ok ? '내 집 마련 자금이 모였습니다'
+               : `내 집 마련까지 ${Math.round(v.shortWon || 0).toLocaleString('ko-KR')}원<br>목표 ${Math.round(v.targetWon).toLocaleString('ko-KR')}원`) +
+         '<br>' + btn;
+}
+/* 되묻기(②-B) — 이사 때와 같은 결 · 「되돌릴 수 없다」를 말한다 */
+function openHomeAsk() {
+  const v = homeGoalOf();
+  if (!v || !v.ok) return;
+  $('homeAsk').textContent = `계약금 ${Math.round(v.targetWon).toLocaleString('ko-KR')}원을 냅니다. 되돌릴 수 없습니다.`;
+  $('homePanel').classList.add('on'); $('homePanel').setAttribute('aria-hidden', 'false');
+}
+function closeHomeAsk() { $('homePanel').classList.remove('on'); $('homePanel').setAttribute('aria-hidden', 'true'); }
+/* [계약한다] → 그림이 밝아지고 열세 줄 → 대사가 끝나면 마무리 카드(②-D) → [다음] */
+let homeCardPending = false;
+function doFinishHome() {
+  const f = finishEnding(S, io, endingOptNow());
+  closeHomeAsk();
+  document.documentElement.classList.add('homescene');
+  const sc = $('homeScene'); sc.classList.add('on'); sc.setAttribute('aria-hidden', 'false');
+  $('homeCard').style.display = 'none';
+  homeCardPending = true;
+  dlgOpen(story.events(f.events));
+  draw();
+  /* 대사가 안 떴으면(대사 표가 없을 때) 카드를 바로 */
+  setTimeout(() => { try { openHomeCardWhenQuiet(); } catch { } }, 50);
+}
+function openHomeCardWhenQuiet() {
+  if (!homeCardPending) return false;
+  const st = $('stage'); if (st && st.classList.contains('talking')) return false;
+  homeCardPending = false;
+  /* 수는 전부 상태에서 · 없는 칸은 그 줄을 뺀다(0 으로 안 메꾼다) */
+  const ts = S.tutorial || {}, end = (S.story && S.story.ending) || {};
+  const rows = [];
+  if (Number.isInteger(end.doneOnDay)) rows.push(`반지하에서 ${end.doneOnDay}일`);
+  const plants = (S.pots || []).length + (cuttingsOf(S) || []).filter(c => c && (c.potted || c.status === 'established')).length;
+  const varieSold = ts.varieSale && Number.isInteger(ts.varieSale.count) ? ts.varieSale.count : null;
+  if (varieSold != null) rows.push(`키운 그루 ${plants} · 판 무늬 삽수 ${varieSold}`);
+  const g = { sanban: 0, halfmoon: 0, fullmoon: 0 };
+  for (const p of (S.pots || [])) for (const v of Object.values((p && p.leafGrades) || {})) if (v in g) g[v]++;
+  const gl = [['산반', g.sanban], ['하프문', g.halfmoon], ['풀문', g.fullmoon]].filter(([, n]) => n > 0).map(([k, n]) => `${k} ${n}`);
+  if (gl.length) rows.push('무늬 — ' + gl.join(' · '));
+  $('homeCardRows').innerHTML = rows.map(r => `<div>${r}</div>`).join('');
+  $('homeCard').style.display = '';
+  return true;
+}
+function closeHomeScene() {
+  const sc = $('homeScene'); sc.classList.remove('on'); sc.setAttribute('aria-hidden', 'true');
+  document.documentElement.classList.remove('homescene');
+  /* ★ 다음 장은 직업 고르기(ending.finishEnding → nextChapter 'job_select' · D17) — 그 화면은 아직 없다. 표지만 남긴다 */
+  window.__byeotNextChapter = 'job_select';
+  pushLog(S, '🏡 다음 장 — 직업 고르기(준비 중)');
+  draw();
+}
+
 function drawQuestTab() {
   const list = $('questListTab');
   if (!list) return;                       /* 옛 화면 — 탭이 없으면 조용히 지나간다 */
@@ -9426,9 +9547,12 @@ function drawQuestTab() {
     if (!g) { g = document.createElement('div'); g.id = 'questGoalTab'; g.className = 'plots';
               $('questTabTitle').insertAdjacentElement('afterend', g); }
     const mg = moveGoalOf();
-    g.style.display = mg ? '' : 'none';
+    /* ★ 2026-10-08 ④ — 이사 뒤에는 같은 자리가 «내 집 마련» 줄이 된다(목표가 없으면 안 뜬다) */
+    const hg = mg ? null : homeGoalOf();
+    g.style.display = (mg || hg) ? '' : 'none';
     if (mg) g.innerHTML = mg.done ? '이사비가 모였습니다'
-      : `이사비까지 ${mg.left.toLocaleString('ko-KR')}원<br>목표 ${mg.target.toLocaleString('ko-KR')}원`; }
+      : `이사비까지 ${mg.left.toLocaleString('ko-KR')}원<br>목표 ${mg.target.toLocaleString('ko-KR')}원`;
+    else if (hg) g.innerHTML = homeGoalHtml(hg); }
   $('questSubTab').textContent = v.next
     ? `지금 할 것 — ${v.next.ko}`
     : (done >= total ? `${total}가지를 다 배웠습니다` : '지금 열린 것이 없습니다 — 기다리면 열립니다');
@@ -11980,6 +12104,7 @@ function dlgPaint() {
     /* ★ 미뤄 둔 대사가 있으면 여기서 낸다(§DLG_SOLO) — 가계부보다 **앞**이다.
        가계부는 창이고 대사는 이야기다. 이야기를 창 뒤로 미루면 순서가 뒤집힌다. */
     try { if (dlgFlushHeld()) return; } catch (e) { console.warn('[대화]', e && e.message); }
+    try { if (openHomeCardWhenQuiet()) return; } catch (e) { console.warn('[엔딩]', e && e.message); }   /* ④ 열세 줄이 끝났다 → 마무리 카드 */
     try { openMonthWhenQuiet(); } catch (e) { console.warn('[가계부]', e && e.message); }
     return;
   }
@@ -16577,6 +16702,14 @@ const doUnlist = guard((listingId) => {
   syncRoom(); draw();
 });
 
+/* ★ 2026-10-08 ④ 내 집 마련 — 단추(할 일 머리·가계부 줄 · data-act="homeAsk") → 되묻기 → [계약한다] → 장면 → 카드 → [다음] */
+document.addEventListener('click', (e) => {
+  const b = e.target && e.target.closest && e.target.closest('[data-act="homeAsk"]');
+  if (b && !b.disabled) { try { openHomeAsk(); } catch (err) { console.warn('[엔딩]', err && err.message); } }
+});
+$('homeGo').onclick = guard(() => { doFinishHome(); });
+$('homeCancel').onclick = guard(() => { closeHomeAsk(); });
+$('homeNext').onclick = guard(() => { closeHomeScene(); });
 $('moveOut').onclick = guard(() => {
   /* ★moveOut 이 아니라 moveIntoOneroom 이다 — 전자는 돈과 판정만 하고 방을 안 바꿨다.
      그래서 「이사했습니다」가 떠도 조도도 자리도 화면도 전부 반지하로 남아 있었다. */

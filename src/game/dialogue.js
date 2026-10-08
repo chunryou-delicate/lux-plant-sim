@@ -1163,6 +1163,28 @@ export const SCRIPTS = {
     { who: 'jachwi', face: 'think',   text: '…다 모였다.' },
     { who: 'moni',   face: 'cheer',   text: '됐다! 가자.' }
   ],
+  /* ═══ ★ 2026-10-08 ④ 내 집 마련 — [plan] plan-ending-home-20261008 ②-A·②-C 그대로([core] 가 뼈대를 화면에 붙이는 커밋에 넣는다 · 줄 임자는 [plan]) ═══
+     ⚠ 수 없음(몬이는 수를 말하지 않는다) · 등급 이름 없음 · 「끝」·「졸업」 없음(본편이 이어진다).
+     endingReady — 현금이 목표에 처음 닿은 날 한 줄. 바로 앞 「됐다! 가자.」(questDoneOneroomHomeFund)와 같은 턴 · 「언제 할지는 네가 정해」 = 자동으로 안 끝난다.
+     endingHome  — [계약한다] 뒤 그림(ev_home_ending) 위 열세 줄. 오프닝(intro) 세 줄을 차례대로 되받고, 마지막 물음이 직업 고르기(D17)로 넘긴다. */
+  endingReady: [
+    { who: 'moni',   face: 'teach',    text: '집 계약은 네가 해. 언제 할지는 네가 정해.' }
+  ],
+  endingHome: [
+    { who: 'jachwi', face: 'surprise', text: '…볕이 드는 방이네.' },
+    { who: 'moni',   face: 'calm',     text: '들어오자마자 그 말이 나오네.' },
+    { who: 'jachwi', face: 'tired',    text: '통장이 또 한 번에 얇아졌다.' },
+    { who: 'moni',   face: 'proud',    text: '이번 건 안 아까워. 네가 모은 거잖아.' },
+    { who: 'jachwi', face: 'think',    text: '저 방에서 잎 하나였던 애가…' },
+    { who: 'moni',   face: 'teach',    text: '잘라서 늘렸지. 한 그루가 둘이 되고.' },
+    { who: 'jachwi', face: 'happy',    text: '엄마, 아빠. 나 집 생겼어.' },
+    { who: 'moni',   face: 'calm',     text: '처음에 식물신이 너 혼자 두면 안 되겠다고 했잖아.' },
+    { who: 'moni',   face: 'proud',    text: '이제 그 말은 취소해도 되겠다.' },
+    { who: 'jachwi', face: 'curious',  text: '…그럼 너는?' },
+    { who: 'moni',   face: 'calm',     text: '나는 화분 있는 데 있어. 어디든.' },
+    { who: 'jachwi', face: 'think',    text: '이제 뭐 하고 살지.' },
+    { who: 'moni',   face: 'teach',    text: '그건 이제 네가 골라.' }
+  ],
 
   /* ═══ §6 이사 — 조건이 하나씩 차고, 마침내 나간다 ═══════════════════════ */
 
@@ -1942,7 +1964,10 @@ export const EVENT_SCRIPT = Object.freeze({
   moved_out:           'movedOut',
   /* ★ 2026-08-11 — ③ 원룸의 첫 장면. `oneroom.moveIntoOneroom` 이 `moved_out` **다음에**
      내는 사건이고, game.html 의 이사 버튼이 둘을 한 번에 `story.events` 로 넘긴다. */
-  moved_in_oneroom:    'movedInOneroom'
+  moved_in_oneroom:    'movedInOneroom',
+  /* ★ 2026-10-08 ④ 내 집 마련 — ending.js 가 내는 두 사건(stepEnding · finishEnding) */
+  ending_ready:        'endingReady',
+  ending_home:         'endingHome'
 });
 
 /* ★★ 퀘스트 — **id 하나에 다섯 갈래**라 `EVENT_SCRIPT` 에 못 넣는다 (2026-08-17).
@@ -2064,12 +2089,16 @@ const EVENT_ORDER = [
    ⚠ 그리고 둘 다 **이사 판정보다 앞**이다 — `sell_varie` 를 끝낸 날이 곧 `move_ready` 인데,
      그 순서라야 「팔렸다 → 그래서 나갈 수 있다」가 된다. 뒤집히면 이유가 결과 뒤에 온다. */
   'quest_done', 'quest_opened',
+  /* ★ 2026-10-08 — 「됐다! 가자.」(quest_done oneroom_home_fund) **뒤**에 「집 계약은 네가 해…」가 선다([plan] plan-ending-home ③-1).
+     `ending_home` 은 [계약한다] 를 누른 그 손에서만 난다(같은 턴에 다른 사건이 없다) — 자리는 맨 끝 어디든 같다 */
+  'ending_ready',
   /* ★ `moved_in_oneroom` 은 반드시 `moved_out` **뒤**다 — 나가는 장면과 도착 장면이
      같은 턴에 한 번에 열린다. 순서가 뒤집히면 도착해서 인사하고 나서 짐을 싼다. */
   /* ★ 「둘 다 멀다」가 **제일 앞**이다 — 무엇부터 할지를 말하는 줄이라, 뒤에 두면
      모자란 축을 하나씩 짚는 말들 뒤에 와서 순서가 거꾸로 선다. */
   'move_short_both_crop', 'move_short_both_light',
-  'move_short_learn', 'move_short_money', 'move_ready', 'moved_out', 'moved_in_oneroom'
+  'move_short_learn', 'move_short_money', 'move_ready', 'moved_out', 'moved_in_oneroom',
+  'ending_home'
 ];
 
 /* 이벤트 하나 → 대사 id. 계절·월세처럼 **같은 id 안에서 갈리는** 것만 여기서 본다. */
