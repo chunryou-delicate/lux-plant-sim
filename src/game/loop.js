@@ -68,6 +68,9 @@ import { dliFromContract } from './growth_adapter.js';
 import { headroomCheck, PLANT_POT_D_REF } from './headroom.js';
 import { rehomeCuttings, stepCuttings, cuttableNow } from './propagation.js';
 import { stepShop, stepMarket } from './shop.js';
+/* ★ 2026-10-08 [plan] 지도 13 — turn.cropNow(콩 씨앗 재고 · 빈 시루)를 짓는 데 쓴다(§attachEvents) */
+import { stockOf as shopStockOf } from './shop.js';
+import { cropPotList as cropPotListNow } from './first_play.js';
 /* 체력 — 하루에 돌볼 수 있는 양. 규칙은 전부 그쪽 모듈이 갖는다(docs/stamina.md) */
 import { resetDay, spend as spendStamina, canAct as canActStamina,
          staminaView } from './stamina.js';
@@ -682,6 +685,16 @@ function attachEvents(S, turn, fpBefore) {
   const t = turn.tutorial;
   if (t && !t.error) { push(t.events); push(t.storyEvents); }
   turn.events = out;
+  /* ★ 2026-10-08 [plan] 지도 13 — 오늘의 작물 손 상태 두 칸. order_seed 독촉이 재고가 있는 날 «씨앗이 떨어졌어» 대신
+       «씨앗이 있는데 빈 시루가 있어. 심어 줘.»를 고르는 근거다. 이른 턴(몬스테라 전)도 이 함수를 지나므로 여기서 채운다.
+       emptySiru — 방에 놓였는데 콩이 안 들었거나(안 심음) 거둔 뒤 빈 콩나물 시루가 있나. 못 세면 null(대사가 예전 그대로) */
+  try {
+    const rows = (S.firstPlay ? cropPotListNow(S.firstPlay, S.day) : []) || [];
+    turn.cropNow = {
+      seedStock: shopStockOf(S, 'bean_seed'),
+      emptySiru: rows.some(r => r && (r.kind || 'beansprout') === 'beansprout' && r.placed && (!r.sown || r.harvested))
+    };
+  } catch { turn.cropNow = null; }
   return turn;
 }
 

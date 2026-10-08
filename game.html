@@ -10738,9 +10738,19 @@ function noteHarvest(r) {
 
 function drawJourney() {
   const fp = S.firstPlay;
-  if (!fp || !fp.enabled) return;
-  const crop = fp.beansprout, food = fp.food, plant = fp.monstera;
+  /* ★ 2026-10-08 — 윗줄(날 · 소지금 · 체력)은 첫 플레이가 꺼진 판(검수·세운 판)에서도 그린다.
+       예전엔 아래 return 이 먼저라 HTML 기본값 «Day 0 · 1,500,000원 · 5/5»가 그대로 남았다([leaf] 0639ec14 «다시 켜면 윗줄 Day 0» —
+       그 판은 세운 손질로 enabled=false 였다 · 사람 판은 enabled 가 늘 켜져 있어 안 닿는 길이지만 윗줄이 거짓을 말하면 안 된다) */
   $('resDay').textContent = `Day ${S.day}`;
+  if (!fp || !fp.enabled) {
+    try {
+      const ts0 = S.tutorial; $('resFoodLabel').textContent = '소지금';
+      $('resFood').textContent = `${(ts0 ? ts0.cashWon : 0).toLocaleString()}원`;
+      const sv0 = staminaView(S), el0 = $('resSta'); if (el0 && sv0) el0.textContent = `${sv0.left}/${sv0.max}`;
+    } catch { }
+    return;
+  }
+  const crop = fp.beansprout, food = fp.food, plant = fp.monstera;
   /* ★첫 플레이가 끝나면 가운데 칸이 **오늘 식비 → 소지금**으로 바뀐다.
      배우는 구간에는 식비가 그날의 답안지이지만, 살림이 시작되면 알아야 할 것은
      "얼마 남았나"다. 칸을 하나 더 만들면 폰 상단이 좁아진다. */
