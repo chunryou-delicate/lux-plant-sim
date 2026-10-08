@@ -312,6 +312,8 @@ async function worker() {
 const t0 = Date.now();
 await Promise.all(Array.from({ length: Math.max(1, JOBS) }, worker));
 const med = a => { const s = a.filter(v => v != null).sort((x, y) => x - y); return s.length ? s[Math.floor((s.length - 1) / 2)] : null; };
+/* 90% — 닿은 판 가운데 90% 가 이 날까지 닿았다(못 닿은 판은 안 셈 · 닿은 판 수를 같이 읽을 것) */
+const p90 = a => { const s = a.filter(v => v != null).sort((x, y) => x - y); return s.length ? s[Math.min(s.length - 1, Math.ceil(s.length * 0.9) - 1)] : null; };
 const won = v => (v == null ? '—' : Math.round(v).toLocaleString());
 console.log(`■ 갈래 판 — 사람 ${NAMES.length} × 씨앗 ${SEEDS.length} · 최대 ${DAYS}일 · 목표 가정 ${TARGETS.map(won).join('/')} · ${Math.round((Date.now() - t0) / 1000)}초`);
 console.log('  (월세·규칙은 지금 게임 그대로 · 엔딩 목표만 가정값 · 막힘 = 열려 있고 «기다림»도 아닌데 14일 넘게 안 풀린 퀘스트)');
@@ -329,6 +331,12 @@ for (const name of NAMES) {
   if (crash.length) console.log(`  ⚠ 깨진 판 ${crash.length}/${N} — ${crash[0].crash}`);
   console.log(`  이사 ${rs.filter(r => r.moveDay != null).length}/${N}(중앙 ${med(rs.map(r => r.moveDay))}일) · 첫 0원 ${rs.filter(r => r.firstBrokeDay != null).length}/${N}(중앙 ${med(rs.map(r => r.firstBrokeDay))}일) · ` +
               `★굶음 ${rs.filter(r => r.starvedDay != null).length}/${N}(중앙 ${med(rs.map(r => r.starvedDay))}일) · 엔딩 둘 다 ${rs.filter(r => r.endDay != null).length}/${N}`);
+  /* ★ 총괄 14:25 ③ — D9(엔딩 금액) 판단용: 목표마다 «현금 닿는 날» 중앙·90% 와 «이사 뒤 날수» 중앙·90% */
+  for (const t of TARGETS) {
+    const hit = rs.filter(r => (r.reach || {})[t] != null);
+    const d = hit.map(r => r.reach[t]), after = hit.map(r => r.reach[t] - r.moveDay);
+    console.log(`  ◇ ${won(t)} 현금 — ${hit.length}/${N} · 날 중앙 ${med(d) ?? '—'} · 90% ${p90(d) ?? '—'} · 이사 뒤 중앙 ${med(after) ?? '—'} · 90% ${p90(after) ?? '—'}`);
+  }
   console.log('  엔딩 닿은 날(현금 · 다 팔면) — ' + TARGETS.map(t => `${won(t)}: ${rs.filter(r => (r.reach || {})[t] != null).length}/${N} 중앙 ${med(rs.map(r => (r.reach || {})[t]))} · 다팔면 ${rs.filter(r => (r.reachNet || {})[t] != null).length}/${N} 중앙 ${med(rs.map(r => (r.reachNet || {})[t]))}`).join(' | '));
   const stay = rs.filter(r => r.moveDay == null && r.starvedDay == null);
   if (stay.length) console.log(`  이사 못 한 판 ${stay.length} — 무늬 잎을 낸 적 없음 ${stay.filter(r => r.varieDay == null).length} · 이사 자금 모자람 ${stay.filter(r => r.moneyDay == null).length}` +
