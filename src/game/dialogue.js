@@ -1531,6 +1531,18 @@ export const SCRIPTS = {
   statusOneroomCutSill: [
     { who: 'moni', face: 'teach', text: '무늬 삽수는 창턱에 둬. 등 밑이면 더 빨라.' }
   ],
+  /* ★ 2026-10-08 [plan] 갈래 지도 9 — 등을 «단 날» 그 밑에 몬스테라·삽수가 하나도 없을 때([core] dc13269d `lamp_under_empty`).
+     ⚠ 「아무것도 없어」 = 식물이 없다는 뜻(가구는 셈 밖). 칸 이름은 화면(로그)이 말한다. 등마다 날 수 있어 되풀이된다.
+     ⚠ lampSkipped(옛 «안 산 판» 줄)는 뜻을 옮기지 않았다 — 「등을 달아라」는 buy_lamp 독촉(단 날 끝남)이 맡는다. 옮기면 같은 말이 두 군데서 난다. */
+  lampUnderEmpty: [
+    { who: 'moni', face: 'teach', text: '등 밑에 아무것도 없어. 몬스테라나 삽수를 그 밑으로 옮겨 봐.' }
+  ],
+  /* ★ 2026-10-08 [plan] 갈래 지도 10 — 목표에 닿았다가 생활비로 모자라진 뒤 «다시» 닿은 날 한 번([core] db17470a `ending_ready_again`).
+     첫 닿음(endingReady)의 「너무 미루면 생활비에 다시 모자라.」가 실제로 일어난 뒤라, 그 말을 이어 받는다. */
+  endingReadyAgain: [
+    { who: 'jachwi', face: 'think', text: '…다시 모였다.' },
+    { who: 'moni',   face: 'teach', text: '이번엔 미루지 말자. 집 계약은 네가 해.' }
+  ],
 
   /* ═══ ★★ 2026-10-08 [plan] «상태 줄» — 둘째 잎을 기다리는 동안 «오늘 바뀐 것»을 말한다(docs/handoff/plan-leafwait-20261008.md ②) ═══
      §STATUS 표가 조건을 갖는다. 칸([core] turn.leafWait)이 없으면 조건이 다 거짓이라 안 뜬다.
@@ -1989,6 +2001,7 @@ export const REPEATABLE = new Set(
              'cuttingNode', 'cuttingWarn', 'cuttingWarnLast', 'cuttingDied',
              'cuttingVarieBright', 'cuttingVarieMid', 'cuttingVarieDark', 'nudgeSeedSow',
              'nudgeSiruOffer', 'nudgeSiruPush', 'statusOneroomNoVarie', 'statusOneroomCutSill',
+             'lampUnderEmpty',
              /* ★ 2026-10-08 상태 줄 — 기다림마다 다시 온다(§STATUS gap) */
              'statusSill', 'statusGauge', 'statusStreak', 'statusLeafWide', 'statusSiruVs', 'statusWallet',
              'statusPhaseOpening', 'statusPhaseYoung', 'statusPhaseMid', 'statusPhaseMature', 'statusPhaseAxis', 'statusVarieHalf'])
@@ -2090,6 +2103,10 @@ export const EVENT_SCRIPT = Object.freeze({
   moved_in_oneroom:    'movedInOneroom',
   /* ★ 2026-10-08 ④ 내 집 마련 — ending.js 가 내는 두 사건(stepEnding · finishEnding) */
   ending_ready:        'endingReady',
+  /* ★ 2026-10-08 [plan] 갈래 지도 10 — 다시 닿은 날([core] db17470a) */
+  ending_ready_again:  'endingReadyAgain',
+  /* ★ 2026-10-08 [plan] 갈래 지도 9 — 등을 단 날 그 밑이 빔([core] dc13269d) */
+  lamp_under_empty:    'lampUnderEmpty',
   ending_home:         'endingHome'
 });
 
@@ -2213,6 +2230,8 @@ const EVENT_ORDER = [
   /* ★ 2026-10-08 — 「됐다! 가자.」(quest_done oneroom_home_fund) **뒤**에 「집 계약은 네가 해…」가 선다([plan] plan-ending-home ③-1).
      `ending_home` 은 [계약한다] 를 누른 그 손에서만 난다(같은 턴에 다른 사건이 없다) — 자리는 맨 끝 어디든 같다 */
   'ending_ready',
+  /* ★ 2026-10-08 [plan] — 다시 닿음은 첫 닿음과 같은 자리(퀘스트 뒤 · 이사 판정 앞). 둘이 한 턴에 날 일은 없다(첫 번 뒤에만 난다) */
+  'ending_ready_again',
   /* ★ `moved_in_oneroom` 은 반드시 `moved_out` **뒤**다 — 나가는 장면과 도착 장면이
      같은 턴에 한 번에 열린다. 순서가 뒤집히면 도착해서 인사하고 나서 짐을 싼다. */
   /* ★ 「둘 다 멀다」가 **제일 앞**이다 — 무엇부터 할지를 말하는 줄이라, 뒤에 두면
@@ -2302,7 +2321,7 @@ export function scriptsForEvents(events = [], S = null) {
   const arr = out.indexOf('monsteraArrived');
   if (arr >= 0 && !out.includes('god1')) out.splice(arr, 0, 'god1');
   /* ★ 2026-10-08 [plan] ④ — 집 자금 퀘스트 끝과 «닿음»은 같은 순간이다(둘 다 «현금 ≥ 목표»). 같은 턴이면 닿음 한 벌만 말한다(§endingReady) */
-  if (out.includes('endingReady')) { const q = out.indexOf('questDoneOneroomHomeFund'); if (q >= 0) out.splice(q, 1); }
+  if (out.includes('endingReady') || out.includes('endingReadyAgain')) { const q = out.indexOf('questDoneOneroomHomeFund'); if (q >= 0) out.splice(q, 1); }
   /* ★ 2026-10-08 [plan] 혹 난 날은 경고(w_node)도 같이 난다 — 같은 순간이라 «혹이 났어» 한 벌만 */
   if (out.includes('cuttingNode')) { const w = out.indexOf('cuttingWarn'); if (w >= 0) out.splice(w, 1); }
   return out;
