@@ -14,6 +14,7 @@
      oneroom_root_bright     무늬 삽수가 뿌리내리는 중(rooting)이면 기다림          ← 2026-10-08 [plan] 청
      oneroom_settle_cutting  뿌리는 냈는데(rooted) 혹(node)이 아직이면 기다림        ← 2026-10-08 [plan] 청
      first_cut               잘라 물에 꽂아 «뿌리내리는 중»(water · rooting)이면 기다림 ← 2026-10-08 D25(총괄)
+     varie_bright            무늬 원천(무늬 잎 단 그루 + 안 죽은 무늬 삽수)이 0 이면 기다림 ← 2026-10-08 [plan] be02f66a
    ⚠ 그 밖의 퀘스트는 «할 수 있다»로 본다(false). 모르는 것을 기다림으로 치면 독촉이 영영 안 나온다 —
      그쪽이 «매일 독촉»보다 나쁘다(사람이 막혔는데 아무도 안 알려 준다).
    ⚠ 읽기만 한다. 상태를 안 바꾸고 세이브 칸도 없다.
@@ -63,7 +64,22 @@ export function nudgeWaiting(S, id, day = (S && S.day)) {
     const cs = (S && Array.isArray(S.cuttings) ? S.cuttings : []).filter(c => c && c.varieFromCut);
     return cs.some(c => c.status === 'rooted') && !cs.some(c => c.status === 'node');
   }
+  /* ★ 2026-10-08 [plan] be02f66a 청 — 반지하 varie_bright 는 «무늬 원천 0»이면 기다림.
+     모주를 일찍 판 판(갈래 판 seller)에서 할 수 없는 일을 주 1회 시키고 있었다(6/6 판 끝까지). */
+  if (id === 'varie_bright') return varieSourceCount(S) === 0;
   return false;
+}
+
+/* ★ 2026-10-08 — **무늬 원천** = 무늬 잎 단 그루 수 + 안 죽은 무늬 삽수 수 (plan «갈래 지도» §7 의 말 그대로).
+   그루의 무늬 잎은 등급 장부(pot.leafGrades · 화면이 턴 끝에 무늬 잎마다 적는다)로 본다 — 생장 창을 안 묻는다(이 파일은 S 만 읽는다).
+   ⚠ 장부는 떨어진 잎을 안 지우므로 «더» 셀 수는 있어도 «덜» 세지 않는다 ⇒ 틀려도 «할 수 있다»(독촉 함) 쪽으로 틀린다 — 위 ⚠ 의 안전한 쪽.
+   ⚠ 화면을 안 거치는 판(헤드리스)은 장부가 비어 그루 쪽이 0 으로 나온다 — 그 판은 삽수 쪽만 센다. */
+export function varieSourceCount(S) {
+  const pots = (S && Array.isArray(S.pots) ? S.pots : [])
+    .filter(p => p && p.leafGrades && typeof p.leafGrades === 'object' && Object.keys(p.leafGrades).length > 0).length;
+  const cuts = (S && Array.isArray(S.cuttings) ? S.cuttings : [])
+    .filter(c => c && c.status !== 'dead' && (c.varieFromCut || (c.variegatedLeaves || 0) > 0)).length;
+  return pots + cuts;
 }
 
 /* ★ 2026-10-08 D2 — **기다린 날을 적는다.** 열려 있고 안 끝난 퀘스트가 오늘 기다리는 중이면 `questsWaitedOn[id] = day`.
