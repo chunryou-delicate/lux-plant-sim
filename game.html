@@ -15058,9 +15058,12 @@ const PLACE_DARK_KO = Object.freeze({
   goBest:  '여기는 {who}가 자라기엔 어둡습니다 — 이 방에서 제일 밝은 데는 {best}입니다',
   atBest:  '여기가 이 방에서 제일 밝은데도 {who}가 자라기엔 어둡습니다 — 식물등이 있어야 자랍니다',
   noneBright: '이 방 어디에도 {who}가 자랄 만큼 밝은 데가 없습니다 — 식물등이 있어야 자랍니다',
+  /* [plan] 10-08 — 삽수는 꼬리만 다르다: «자라지 않는다»를 «뿌리도 안 난다»로 읽지 않게(뿌리내림은 빛과 무관) */
+  noneBrightCutting: '이 방 어디에도 삽수가 자랄 만큼 밝은 데가 없습니다 — 뿌리는 내리지만, 새 잎은 식물등이 있어야 납니다',
   /* ★ [plan] 갈래 지도 6 — 무늬 삽수(뿌리 전)가 무늬 띠 dark·mid 칸에 놓일 때. 자라기엔 밝아도 등급이 «영영» 굳는다 */
   varieDim: '여기서 뿌리내리면 무늬가 잘 안 납니다 — 이 방에서 제일 밝은 데는 {best}입니다',
-  varieDimNoBright: '여기서 뿌리내리면 무늬가 잘 안 납니다 — 밝은 자리는 등을 단 창턱입니다'
+  /* [plan] 10-08 — 옛 꼬리 «밝은 자리는 등을 단 창턱입니다»는 봄·등1 에서 그 창턱 위에서 뜨는 거짓이었다. 방에 bright 칸이 하나도 없을 때만 뜬다 */
+  varieDimNoBright: '여기서 뿌리내리면 무늬가 잘 안 납니다 — 지금은 이 방 어디도 무늬가 잘 날 만큼 밝지 않습니다'
 });
 /* 그 열쇠(자리 이름 · free:id · id)에 놓인 «자라는 것» — 화분 · 빈 화분 · 삽수. 아니면 null(시루·무순은 제 판정이 따로 있다) */
 function placedGrowerAt(key) {
@@ -15110,7 +15113,7 @@ function darkPlaceWarn(g) {
   const best = guideBrightSlot(null);
   if (best && g.obj.slotId === best) return fill(PLACE_DARK_KO.atBest);
   const bestBand = best ? growBandAt(best, g.variegated) : null;
-  if (!best || (bestBand && bestBand.dark)) return fill(PLACE_DARK_KO.noneBright);
+  if (!best || (bestBand && bestBand.dark)) return fill(g.kind === 'cutting' ? PLACE_DARK_KO.noneBrightCutting : PLACE_DARK_KO.noneBright);
   return fill(PLACE_DARK_KO.goBest).replace('{best}', slotLabel(best));
 }
 /* ★ [plan] 갈래 지도 6 — 무늬 삽수(뿌리 전 · 빛 띠 아직 안 정함)가 무늬 띠 «bright» 가 아닌 칸이면 한 줄.
