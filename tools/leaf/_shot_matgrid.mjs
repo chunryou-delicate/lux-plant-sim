@@ -10,7 +10,7 @@ const G = Number(process.env.G || 420), SEED = Number(process.env.SEED || 7);
 const MODE = process.env.MODE || 'mat';   // mat = 성숙 · mid = 중간잎
 const NUMS = (process.env.NUMS || '1,4,7,10,13,16,19,22,25,28,31,34,37,40,43,46,49,52,55').split(',').map(Number);
 const page = await launch({ width: 600, height: 600, dpr: 1 });
-await page.goto('http://localhost:9340/plant_grow.html');
+await page.goto('http://127.0.0.1:9340/plant_grow.html');
 await page.waitFor(`typeof ASSETS!=='undefined' && Object.keys(ASSETS).length>20`, 150000, 300);
 await sleep(1500);
 console.log('세움:', await page.eval(`(()=>{try{ P.varieProb=1; P.alboMidPick=${MODE==='mid'?NUMS[0]:0}; P.matAlboPick=${MODE==='mid'?0:NUMS[0]};

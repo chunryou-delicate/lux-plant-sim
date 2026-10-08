@@ -7,7 +7,7 @@ import fs from 'node:fs';
 const OUT = process.env.OUT; if (!OUT) { console.error('⛔ OUT='); process.exit(2); }
 if (fs.existsSync(OUT)) { console.error('⛔ 이미 있다', OUT); process.exit(2); }
 const PICK = Number(process.env.PICK || 29), G = Number(process.env.G || 130);
-const BASE = 'http://localhost:9340';
+const BASE = 'http://127.0.0.1:9340';
 const page = await launch({ width: 700, height: 700, dpr: 1 });
 await page.goto(`${BASE}/plant_grow.html`);
 await page.waitFor(`typeof ASSETS!=='undefined' && Object.keys(ASSETS).length>20`, 120000, 300);
