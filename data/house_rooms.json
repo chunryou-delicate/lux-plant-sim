@@ -50,6 +50,8 @@
         {
           "preset": "shelf_sill_pot1",
           "uid": "banjiha-sill",
+          "visual_front_m": 0.25,
+          "visual_front_note": "★ 2026-10-08 D23(총괄) — visual_front_m 0.25: 받침을 방 쪽으로 «그림만» 0.25m 늘린다. 벽에 붙은 창턱에서 그루 그림을 방 쪽으로 0.25m 띄우므로(core · 굴광성 0.25 와 함께 · 빛 자리·빛 값 그대로) 화분이 허공에 뜨지 않게. 늘린 조각은 광선이 안 맞는다(고르기·놓을 면 밖) · 크기(가림·충돌)·자리는 그대로라 얼린 표는 안 바뀐다. 까닭과 표: docs/handoff/house-sill-leaf-wall-20261008.md",
           "x": 0,
           "z": -1.85,
           "d": 0.3,
@@ -289,6 +291,8 @@
         {
           "preset": "shelf_sill_pot4",
           "uid": "oneroom-sill",
+          "visual_front_m": 0.25,
+          "visual_front_note": "★ 2026-10-08 D23(총괄) — visual_front_m 0.25: 받침을 방 쪽으로 «그림만» 0.25m 늘린다. 벽에 붙은 창턱에서 그루 그림을 방 쪽으로 0.25m 띄우므로(core · 굴광성 0.25 와 함께 · 빛 자리·빛 값 그대로) 화분이 허공에 뜨지 않게. 늘린 조각은 광선이 안 맞는다(고르기·놓을 면 밖) · 크기(가림·충돌)·자리는 그대로라 얼린 표는 안 바뀐다. 까닭과 표: docs/handoff/house-sill-leaf-wall-20261008.md",
           "x": 0.75,
           "z": -2.33,
           "y": 1.3,

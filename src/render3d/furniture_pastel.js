@@ -505,6 +505,19 @@ B.shelf_wall=(o)=>{
     const br=bx(0.028,0.11,d*0.8,furnMat(o.accent??'#cbbfae','satin'),s*(w/2-0.1),-0.055,-d*0.05);
     g.add(br);
   }
+  /* ★ 2026-10-08 D23(총괄) — `visual_front_m`: 받침판을 앞(+z · 방 쪽)으로 «그림만» 이어 붙인다.
+     벽에 붙은 창턱에서 그루 그림을 방 쪽으로 0.25m 띄우는데(core · 빛 자리·빛 값 그대로), 받침이 그대로면 화분이 허공에 뜬다.
+     ⚠ 이어 붙인 조각은 **광선이 안 맞는다**(raycast 를 비움) — 고르기·화분 놓을 면(surfaceTopAt)·옮기기 판정에 안 끼고,
+       새 «놓을 자리»도 안 생긴다. userData.size(가림·충돌)와 자리(slots)는 원래 d 그대로 — 빛 값이 안 바뀐다. */
+  const ext=Math.max(0, +(o.visual_front_m ?? 0) || 0);
+  if(ext>0){
+    const noRay=()=>{};
+    const ex=panel(w,t,ext+0.002,m,0,t/2,d/2+ext/2-0.001,0.014); ex.raycast=noRay; ex.userData.visualOnly=true; g.add(ex);
+    for(const s of [-1,1]){
+      const br=bx(0.028,0.11,ext*0.8,furnMat(o.accent??'#cbbfae','satin'),s*(w/2-0.1),-0.055,d/2+ext*0.45);
+      br.raycast=noRay; br.userData.visualOnly=true; g.add(br);
+    }
+  }
   g.userData.size={w,h:t,d}; g.userData.mount='wall';
   /* slots 옵션 — 기본 3은 그대로다(기존 프리셋 영향 없음).
      반지하 창턱처럼 "1칸만" 이 의도인 자리에서 1로 준다. */
