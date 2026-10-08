@@ -26,6 +26,14 @@ const BASE = process.env.BYEOT_URL || 'http://localhost:8971';
 const SLOT = process.env.SLOT || 'banjiha-sill:0', MODE = process.env.MODE || 'novice';
 const LAMPS = Number(process.env.LAMPS || 0), LAMP_DAY = Number(process.env.LAMP_DAY || 36);
 const SEEDS = Number(process.env.SEEDS || 40), DAYS = Number(process.env.DAYS || 400), YD0 = Number(process.env.YD0 || 135);
+/* ★ 2026-10-08 GATE — «가정 문»을 잰다(게임 코드는 안 바꾼다 · 총괄 D25 물음)
+     rule    박사님 규칙(08-24) 그대로 — 무늬이면서 다 자란 잎 ≥ 2 (기본)
+     varie1  (ㄴ) 무늬이면서 다 자란 잎 ≥ 1 로 낮췄다면
+     leaf3   (ㄷ) 셋째 잎이 «났을 때»(다 자라기 전) 열었다면
+   가정 판에서도 «초보 모주 문»(cutEndsMother)은 그대로 본다 — 무늬 문만 바꿔 끼운다(varieMaturedLeaves 를 넉넉히 넘겨 그 문만 비킨다).
+   ★ 함정 — 열린 날, 자를 수 있는 마디 가운데 «자르면 모주에 무늬 잎이 한 장도 안 남는» 마디가 있나.
+     (propagation §cutBlockedReason 주석의 「산반을 잘라 모주에 무지 한 장만 남는」을 넓힌 것 · 마디가 데려가는 잎 = cuttableNodes().leafBirths) */
+const GATE = process.env.GATE || 'rule';
 const TH = J('data/balance/light_thresholds.json'), T = TH.plants.monstera_deliciosa;
 const BY = J('data/growth_tuning.json').growth_speed.by_band;
 const bandOf = d => d < T.die ? 'critical' : d < T.survive ? 'poor' : d < T.min ? 'stagnant'
@@ -51,7 +59,7 @@ const R = JSON.parse(await page.eval(`(async()=>{ const pr = await import('/src/
   const S = { sim:{ mode:'novice' }, tutorial:{}, pots:[{ id:'p1', cuts:[] }], cuttings:[] };
   for (let s=1; s<=${SEEDS}; s++){
     plantSeed(s*7919); setPrologueVarieLeaves([2,3]); resetDailyLight(); setGrowth(45);
-    let credit=0; const r={ two:null, cut:null };
+    let credit=0; const r={ two:null, cut:null, trap:null, trap1:null, leavesAt:null };
     for (let k=0; k<S0.dli.length; k++){
       const blocked=!!growthBlocked(); let steps=1;
       if(!blocked){ credit+=S0.mult[k]; steps=Math.min(${GROWTH_STEPS_MAX},Math.floor(credit+1e-9)); credit-=steps; steps=Math.max(1,steps); }
@@ -59,9 +67,21 @@ const R = JSON.parse(await page.eval(`(async()=>{ const pr = await import('/src/
       if (r.two==null && leafStats().leaves >= 2) r.two = k+1;
       const on = leafOnPlantAll().filter(x=>x.onPlant).map(x=>x.leafBirth);
       const vm = varieStateAll().filter(v=>v.varie && matureOf(v.leafBirth) && on.includes(v.leafBirth)).length;
-      if (vm >= 2) {
+      const G=${JSON.stringify(GATE)};
+      const cond = G==='varie1' ? vm>=1 : G==='leaf3' ? leafStats().leaves>=3 : vm>=2;
+      if (cond) {
         const nodes = cuttableNodes()||[];
-        if (nodes.some(n=>pr.cutBlockedReason(S,nodes,n.nodeId,{pot:S.pots[0], varieMaturedLeaves:vm})==null)) { r.cut = k+1; break; }
+        const vmArg = G==='rule' ? vm : 99;      /* 가정 판: 무늬 문만 비키고 초보 모주 문은 그대로 */
+        const ok = nodes.filter(n=>pr.cutBlockedReason(S,nodes,n.nodeId,{pot:S.pots[0], varieMaturedLeaves:vmArg})==null);
+        if (ok.length) {
+          r.cut = k+1; r.leavesAt = leafStats().leaves;
+          const varieOn = new Set(varieStateAll().filter(v=>v.varie && on.includes(v.leafBirth)).map(v=>v.leafBirth));
+          r.trap = ok.some(n=>{ const c=new Set(n.leafBirths||[]); return [...c].some(lb=>varieOn.has(lb)) && ![...varieOn].some(lb=>!c.has(lb)); });
+          /* 좁은 뜻(주석 그대로): 자르고 나면 모주에 잎이 «무지 한 장만» 남는 마디가 있나 */
+          const onU=[...new Set(on)];
+          r.trap1 = ok.some(n=>{ const c=new Set(n.leafBirths||[]); const left=onU.filter(lb=>!c.has(lb)); return [...c].some(lb=>varieOn.has(lb)) && left.length===1 && !varieOn.has(left[0]); });
+          break;
+        }
       }
     }
     res.push(r);
@@ -70,7 +90,11 @@ const R = JSON.parse(await page.eval(`(async()=>{ const pr = await import('/src/
 await page.close();
 const q = (a, f) => { const v = a.filter(x => x != null).sort((x, y) => x - y); return v.length ? v[Math.min(v.length - 1, Math.floor(f * (v.length - 1)))] : null; };
 const two = R.map(r => r.two), cut = R.map(r => r.cut), gap = R.map(r => (r.two != null && r.cut != null) ? r.cut - r.two : null);
-console.log(`반지하 ${SLOT} · ${MODE} · 등 ${LAMPS}${LAMPS ? `(도착 뒤 ${LAMP_DAY}일째부터)` : ''} · 첫 그루(잎2·3 무늬) · 도착 생장일 45 · ${SEEDS}판 · ${DAYS}일 · «도착 뒤 게임 날»`);
+console.log(`[문 ${GATE}] 반지하 ${SLOT} · ${MODE} · 등 ${LAMPS}${LAMPS ? `(도착 뒤 ${LAMP_DAY}일째부터)` : ''} · 첫 그루(잎2·3 무늬) · 도착 생장일 45 · ${SEEDS}판 · ${DAYS}일 · «도착 뒤 게임 날»`);
 console.log(`  ㉠ 잎 2장(지금 first_cut 열림)   중앙 ${q(two, .5)} · 90% ${q(two, .9)}`);
-console.log(`  ㉡ ✂ 실제로 열림(무늬 갈라진 잎 2 + 초보 모주 문)   중앙 ${q(cut, .5)} · 90% ${q(cut, .9)} · ${DAYS}일 안에 안 열림 ${cut.filter(x => x == null).length}/${SEEDS}`);
+const GATE_KO = { rule: '박사님 규칙: 무늬 갈라진 잎 ≥ 2', varie1: '가정 (ㄴ): 무늬 갈라진 잎 ≥ 1', leaf3: '가정 (ㄷ): 셋째 잎이 남' }[GATE] || GATE;
+console.log(`  ㉡ ✂ 열림(${GATE_KO} + 초보 모주 문)   중앙 ${q(cut, .5)} · 90% ${q(cut, .9)} · ${DAYS}일 안에 안 열림 ${cut.filter(x => x == null).length}/${SEEDS}`);
 console.log(`  ⇒ 빈 날(㉡−㉠)   중앙 ${q(gap, .5)} · 90% ${q(gap, .9)}`);
+const opened = R.filter(r => r.cut != null).length;
+console.log(`  ⚠ 함정 넓은 뜻(자르면 모주에 무늬 잎이 한 장도 안 남는 마디가 있음)   ${R.filter(r => r.trap).length}/${opened} 판`);
+console.log(`  ⚠ 함정 좁은 뜻(자르면 모주에 «무지 한 장만» 남는 마디가 있음 · cutBlockedReason 주석의 그것)   ${R.filter(r => r.trap1).length}/${opened} 판 · 열린 날 잎 수 중앙 ${q(R.map(r => r.leavesAt), .5)}`);
