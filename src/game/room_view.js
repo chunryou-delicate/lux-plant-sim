@@ -4638,13 +4638,25 @@ export async function createRoomView(canvas, opts = {}) {
      ③을 ②보다 앞에 두면, 화분 뒤에 선 캐릭터가 화분 탭을 계속 가로챈다. */
   function resolveTap(cx, cy) {
     const c1 = pickCharacterAt(cx, cy, false);
-    if (c1) return { type: 'character', id: c1 };
+    /* ★ 2026-10-08 (resolveTap 남은 반 · 317a8c1e 뒤 쓰레기봉투 9/18 이 아직 캐릭터) — 사람 고르는 상자(0.62m 폭)는 몸(≈0.4m)보다 넓다.
+         상자 «가장자리»에 맞았고(광선이 몸 기둥 반지름 0.2m 를 안 지남) 가구 광선이 맞으면 가구에 양보한다 — 정확한 것이 이긴다.
+         ⚠ 몸을 짚었으면 그대로 사람이다 · 사람을 고른 동안(걷기)은 예전 그대로 */
+    /* ★ 그리고 몸 기둥에 맞았어도 가구가 몸보다 «앞»(광선으로 0.1m 넘게 가까움)이면 가구다 — 앞에 선 것이 보이는 것이다 */
+    if (c1 && !selChar) {
+      const core = charCoreAlong(c1, cx, cy);
+      let f = null; try { f = furnHitAt(cx, cy); } catch (e) { f = null; }
+      const yield_ = f && (core == null || f.dist < core - 0.1);
+      if (!yield_) return { type: 'character', id: c1 };
+    } else if (c1) return { type: 'character', id: c1 };
     const p = pickPlantRay(cx, cy);
     if (p) return p;
     /* ★ 등 (2026-08-08) — 화분 **뒤**, 퍼지 판정 **앞**이다.
        화분보다 뒤: 잎이 등 밑까지 자라면 물 주려는 손이 등에 먹힌다.
        퍼지보다 앞: 정확히 짚은 것이 대충 가까운 것을 이긴다(이 목록의 원칙 그대로). */
     const lp = pickLampRay(cx, cy);
+    /* ⏸ 2026-10-08 — 천장이 잘린 시점에선 천장등 몸이 숨고 반투명 «유령»(opacity 0.30)만 보이는데, 그 유령이 화면에서 빨래 건조대와
+         겹쳐 건조대 18점 중 6점이 「천장등」으로 간다(probe_pick_props). 유령을 가구에 양보시키면 이 시점에서 천장등을 «아예» 못 고른다
+         (유령 둘레 9점 → 0점) — 맞바꿈이라 여기서 안 정한다(house·총괄에 올림). 지금은 예전 그대로 등이 먼저다 */
     if (lp) return lp;
     /* ★ 2026-10-08 ([House] 걸어서 잼 · 총괄) — **가구를 «정확히» 짚었으면 캐릭터 퍼지(36px)가 이기지 않는다.**
          ⛔ 났던 일: 캐릭터가 처음 서는 문 앞(−1.56, 1.54) 옆 구석의 쓰레기봉투는 18점을 눌러 18번 다 캐릭터가 골라졌다(가구 0) ·
@@ -6127,6 +6139,19 @@ export async function createRoomView(canvas, opts = {}) {
     };
   }
 
+  /* §pickFurnitureAt 과 같은 판정에 «광선 거리»를 같이 낸다(resolveTap 이 사람과 앞뒤를 견준다) */
+  function furnHitAt(px, py) {
+    const nodes = furnNodes();
+    if (!nodes.length) return null;
+    ray.setFromCamera(ndcOf(px, py), ctx.cam);
+    for (const h of ray.intersectObjects(nodes, true)) {
+      if (!h.object.isMesh || hiddenInScene(h.object)) continue;
+      let o = h.object;
+      while (o && !(o.userData && o.userData.uid)) o = o.parent;
+      if (o) return { info: furnInfo(o), dist: h.distance };
+    }
+    return null;
+  }
   function pickFurnitureAt(px, py) {
     const nodes = furnNodes();
     if (!nodes.length) return null;
@@ -9272,6 +9297,24 @@ export async function createRoomView(canvas, opts = {}) {
   const charBodyPos = c => charAnchor(c, c.kind === 'person' ? 0.62 : 0.30);  // 눈이 보는 점
   const charScreenPos = charFootPos;
 
+  /* 광선이 사람의 «몸 기둥»(발밑 세로축 · 반지름 0.2m · 높이 0~1.6m)을 지나나 — 고르는 상자보다 좁은 자(§resolveTap).
+     사람이 아닌 것(펫)은 상자가 이미 몸에 붙어 있어 늘 참으로 본다 */
+  /* 돌려주는 값 — 지나면 광선 위의 거리(카메라에서 몸 기둥 가장 가까운 점까지) · 안 지나면 null */
+  const CHAR_CORE_R = 0.2;
+  function charCoreAlong(id, cx, cy) {
+    const c = chars.get(id);
+    ray.setFromCamera(ndcOf(cx, cy), ctx.cam);
+    const o = ray.ray.origin, d = ray.ray.direction;
+    if (!c || c.kind !== 'person' || !c.root) return 0;   /* 펫 — 상자가 곧 몸이다 · 맨 앞으로 본다 */
+    const px = c.root.position.x, pz = c.root.position.z;
+    const w0x = o.x - px, w0y = o.y, w0z = o.z - pz;
+    const b = d.y, dd = d.x * w0x + d.y * w0y + d.z * w0z, e = w0y;
+    const den = 1 - b * b;
+    if (den < 1e-6) return 0;                            /* 곧장 내려다보는 광선 — 가를 수 없으니 사람으로 */
+    const sc = (b * e - dd) / den, tc = (e - b * dd) / den;
+    const qx = o.x + sc * d.x - px, qy = o.y + sc * d.y - tc, qz = o.z + sc * d.z - pz;
+    return (Math.hypot(qx, qy, qz) <= CHAR_CORE_R && tc >= 0 && tc <= 1.6) ? sc : null;
+  }
   function pickCharacterAt(cx, cy, fuzzy) {
     if (!chars.size) return null;
     if (!fuzzy) {
