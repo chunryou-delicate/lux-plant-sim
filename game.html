@@ -11224,13 +11224,22 @@ function siruRowHTML(row, frac) {
      그대로 넘긴다. 안 넘기면 방이 맑음·여름·등 0개로 재고 **그 사실을 머리글에 적는다.**
    ⚠ 켤 때만 잰다. 켜 둔 채 매 프레임 285칸을 다시 칠하면 폰이 멎는다. */
 function lightHeatOpts() {
+  /* ★ 2026-10-08 D — 몬스테라 문턱 띠(자람 min · 갈라짐 fenestrate)를 정본(light_thresholds · io.light.thresholdsOf)에서 읽는다.
+       못 읽으면 안 넘긴다 — 예전 상대색으로 물러난다(지어내지 않는다). 글은 [plan] 몫(HEAT_BANDS_KO) */
+  let bands = null;
+  try {
+    const th = io.light && typeof io.light.thresholdsOf === 'function' ? io.light.thresholdsOf('monstera_deliciosa', false) : null;
+    if (th && Number.isFinite(th.min)) bands = { grow: th.min, split: Number.isFinite(th.fenestrate) ? th.fenestrate : null, ko: HEAT_BANDS_KO };
+  } catch { bands = null; }
   return {
     weather: (lastTurn && lastTurn.sky && lastTurn.sky.weather) || null,
     season: (lastTurn && lastTurn.sky && lastTurn.sky.season) || null,
     lampCount: (S.lamps && S.lamps.count) || 0,
-    litHours: (S.lamps && S.lamps.litHours) || 0
+    litHours: (S.lamps && S.lamps.litHours) || 0,
+    bands
   };
 }
+const HEAT_BANDS_KO = Object.freeze({ below: '안 자람', grow: '자람', split: '갈라짐' });   /* [house] 초안 «자람 2.7 · 갈라짐 6.0» */
 function drawLightHeatBtn() {
   const b = $('lightHeat'), note = $('lightHeatNote');
   if (!b) return;

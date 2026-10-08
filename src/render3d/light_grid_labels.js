@@ -31,7 +31,7 @@
      `unit` 문자열을 반드시 받아 머리글에 그대로 적는다. 색은 상대(파랑=최소·빨강=최대)라
      머리글이 그 양 끝 숫자도 같이 말한다 — 색만 보고 밝기를 짐작하지 않게.
 ============================================================ */
-import { sampleLightGrid, buildCellHeatmap, updateCellHeatmap, heatColorHex } from './lighting_viz.js';
+import { sampleLightGrid, buildCellHeatmap, updateCellHeatmap, heatColorHex, heatGrayHex } from './lighting_viz.js';
 
 /* 값 → 글자. **자리 수를 그 격자의 최대값으로 고른다.**
    ★ 왜 값마다가 아니라 격자마다인가 — 반지하 바닥은 DLI 가 0.00~0.32 다. 한 자리로 적으면
@@ -100,7 +100,7 @@ export function createLightGridLabels(o = {}) {
 
   const pool = [];              // 다시 쓰는 <span> 들
   let shown = [];               // 지금 쓰는 [{ i, j, x, z, el }]
-  let grid = null, unit = '', extra = '';
+  let grid = null, unit = '', extra = '', bands = null;   /* bands: 2026-10-08 D 문턱 띠 */
   let step = 1, fitPx = 0;      // 몇 칸마다 · 그때 잰 칸 간격[px]
   let visible = false;
   const v3 = new THREE.Vector3();
@@ -275,6 +275,20 @@ export function createLightGridLabels(o = {}) {
   function setCaption() {
     if (!grid) { cap.textContent = ''; return; }
     const lo = format(grid.min), hi = format(grid.max);
+    /* ★ 2026-10-08 D — 문턱 띠가 있으면 범례가 «색이 무엇인가»를 문턱으로 말한다(이 방의 양 끝은 뒤에 작게) */
+    if (bands && Number.isFinite(bands.grow)) {
+      /* 문턱은 정본 값 그대로(2.7 · 6) — 칸 숫자 자리 맞춤(2.70)을 범례에 안 쓴다. 두 줄로 — 한 줄이면 폰 390px 를 넘어 잘렸다 */
+      const g = String(+bands.grow), sp = Number.isFinite(bands.split) ? String(+bands.split) : null;
+      const k = bands.ko || {};
+      cap.style.whiteSpace = 'normal'; cap.style.maxWidth = 'calc(100% - 16px)';
+      cap.innerHTML = `<b>${escapeHtml(unit)}</b>` + (extra ? ` · ${escapeHtml(extra)}` : '') + '<br>' +
+        `<span style="color:${heatGrayHex()}">■</span>${escapeHtml(k.below || '안 자람')} &lt;${escapeHtml(g)} · ` +
+        `<span style="color:${heatColorHex(0)}">■</span>${escapeHtml(k.grow || '자람')} ${escapeHtml(g)}` +
+        (sp ? ` → <span style="color:${heatColorHex(1)}">■</span>${escapeHtml(k.split || '갈라짐')} ${escapeHtml(sp)}` : '');
+      /* ⚠ «이 방 최고 n»은 뺐다 — 칸 숫자가 이미 말하고, 붙이면 줄 끝이 [다음 날] 단추 밑으로 들어갔다(폰 390px) */
+      return;
+    }
+    cap.style.whiteSpace = 'nowrap'; cap.style.maxWidth = '';
     cap.innerHTML = `<b>${escapeHtml(unit)}</b> · ` +
       `<span style="color:${heatColorHex(0)}">■</span>${escapeHtml(lo)} ` +
       `→ <span style="color:${heatColorHex(1)}">■</span>${escapeHtml(hi)}` +
@@ -286,7 +300,7 @@ export function createLightGridLabels(o = {}) {
   return {
     /* 격자를 얹는다. unit 은 **엔진이 내는 값의 이름**이다 — 여기서 지어내지 않는다. */
     set(g, opt = {}) {
-      grid = g; unit = opt.unit || ''; extra = opt.extra || '';
+      grid = g; unit = opt.unit || ''; extra = opt.extra || ''; bands = opt.bands || null;
       if (!unit) throw new Error('[빛숫자] unit 이 없습니다 — 무슨 값인지 화면이 말해야 합니다');
       format = o.format || formatterFor(grid.max);
       setCaption();
@@ -465,8 +479,8 @@ export function attachLightHeatmap(view, opt = {}) {
                                        format: opt.format, lift: opt.labelLift });
     }
     gridData = g;
-    updateCellHeatmap(mesh, gridData);
-    labels.set(gridData, { unit: opt.unit, extra: opt.extra });
+    updateCellHeatmap(mesh, gridData, { bands: opt.bands || null });
+    labels.set(gridData, { unit: opt.unit, extra: opt.extra, bands: opt.bands || null });
     return gridData;
   }
 
@@ -495,6 +509,7 @@ export function attachLightHeatmap(view, opt = {}) {
       if (next.probeAt) opt.probeAt = next.probeAt;
       if (next.unit) opt.unit = next.unit;
       if (next.extra !== undefined) opt.extra = next.extra;
+      if (next.bands !== undefined) opt.bands = next.bands;   /* ★ 2026-10-08 D — 문턱 띠(그 방 · 그 식물) */
       if (!on) return false;
       measure();
       mesh.visible = true;

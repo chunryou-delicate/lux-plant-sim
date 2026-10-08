@@ -234,14 +234,22 @@ export function updateCellHeatmap(mesh, grid, opt = {}) {
     throw new Error('[히트맵] 판과 격자의 칸 수가 다릅니다 — 방이 바뀌었으면 다시 지어야 합니다');
   const colr = mesh.geometry.attributes.color;
   const posa = mesh.geometry.attributes.position;
-  const hi = opt.max ?? grid.max, lo = opt.min ?? grid.min;
+  /* ★★ 2026-10-08 D ([house] house-place-freedom ③ · 총괄 13:35) — **문턱 띠가 있으면 절대색으로 칠한다.**
+       ⛔ 상대색(방 최저~최고)은 반지하 바닥처럼 «전부 안 자람»인 방에서 그중 밝은 칸을 노랑·빨강으로 칠해
+         숫자를 안 읽는 사람에게 «여기 밝다»로 거짓말을 했다.
+       ⇒ opt.bands = { grow, split } 를 받으면: grow 미만 = 회색(안 자람) · grow → split = 파랑 → 빨강 · split 이상 = 빨강.
+       값(문턱)은 부르는 쪽이 정본(light_thresholds)에서 읽어 넘긴다 — 여기서 숫자를 안 박는다. 안 주면 예전 상대색 그대로. */
+  const bands = opt.bands && Number.isFinite(opt.bands.grow) ? opt.bands : null;
+  const hi = bands ? (Number.isFinite(bands.split) && bands.split > bands.grow ? bands.split : Math.max(grid.max, bands.grow + 1e-6))
+                   : (opt.max ?? grid.max);
+  const lo = bands ? bands.grow : (opt.min ?? grid.min);
   const denom = (hi - lo) > 1e-9 ? (hi - lo) : 1;
   /* ⚠ **x·z 도 다시 쓴다.** 가구를 옮기면 상판 칸의 자리 자체가 옮겨 가는데(높이만
      바뀌는 바닥 칸과 다르다) 높이만 갈아 끼우면 색판이 **옛 자리에** 남는다. */
   const pt = [];
   for (const e of grid.list) {
     const b = e.k * 4;
-    const [r, g, bl] = colormap((e.value - lo) / denom);
+    const [r, g, bl] = (bands && !(e.value >= bands.grow)) ? HEAT_GRAY : colormap((e.value - lo) / denom);
     pt.length = 0; quadInto(pt, e);
     for (let k = 0; k < 4; k++) {
       colr.setXYZ(b + k, r, g, bl);
@@ -254,6 +262,9 @@ export function updateCellHeatmap(mesh, grid, opt = {}) {
   return mesh;
 }
 
+/* ★ 2026-10-08 D — 문턱 띠 아래(안 자람) 칸의 색. 머리글 범례도 같은 값을 쓴다(heatGrayHex) */
+const HEAT_GRAY = [0.5, 0.5, 0.5];
+export function heatGrayHex() { return '#808080'; }
 /* 색 눈금 — 화면 머리글이 「빨강이 무엇인가」를 말할 때 쓴다. t∈[0,1] → '#rrggbb' */
 export function heatColorHex(t) {
   const [r, g, b] = colormap(t);

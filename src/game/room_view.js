@@ -6799,13 +6799,14 @@ export async function createRoomView(canvas, opts = {}) {
     const extra = opt.extra || heatLabel(opt);
     if (!heatView) heatView = attachLightHeatmap(view, {
       canvas, probeAt, unit, extra,
+      bands: opt.bands || null,      /* ★ 2026-10-08 D — 문턱 띠(화면이 정본에서 읽어 넘긴다) · 없으면 예전 상대색 */
       /* ★ 상판 칸 — **바닥 격자보다 먼저** 잰다(heatTiers 를 채워야 바닥이 비켜 준다) */
       surfaceCells: () => heatSurfaceCells(heatOpt || {}),
       /* 벽 속 칸은 안 칠한다 — 배치 격자가 안 그리는 그 칸이다(§gridSpan) */
       keep: (i, j) => gridSpan().at(i, j),
       captionPos: opt.captionPos, fontPx: opt.fontPx, minGapPx: opt.minGapPx
     });
-    else heatView.refresh({ probeAt, unit, extra });
+    else heatView.refresh({ probeAt, unit, extra, bands: opt.bands || null });
     heatView.set(true);
     furnDress.hold(true);
     return true;
