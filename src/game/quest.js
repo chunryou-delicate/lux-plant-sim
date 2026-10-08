@@ -351,7 +351,9 @@ const FIRST_PLAY_CHAIN = Object.freeze([
          여기서는 **거짓말을 멈추는 것**까지만 한다. */
     todo: (d, s) => (arr(s && s.cropPots).some(p => yes(p && p.placed) && !yes(p && p.sown)
                                                     && !yes(p && p.watered))
-      ? '놓은 시루에 씨앗을 심으세요'
+      /* ★ 2026-10-08 [plan] 튜토 마찰 #7 — 배너·알약·손가락과 «같은 길»을 말한다(내 캐릭터 → 시루까지 걷기 → 🌱).
+         「[🌱 심기]」 단추는 닫힌 시트 안이라 화면에 없다(plan-friction-7-8-14-20261008.md) */
+      ? '시루까지 걸어가 씨앗을 심으세요'
       : '놓은 시루에 물을 주세요'),
     done:  s => arr(s.cropPots).some(p => yes(p && p.watered)) || num(s.cropHarvestTotal) >= 1
   }),
