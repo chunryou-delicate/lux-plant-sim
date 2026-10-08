@@ -4,9 +4,10 @@
    박사님(10-08 13:1x): «모든 것이 다 매끄럽도록. 게임하는 사람이 이리 튈지 저리 튈지 모르니 그것도 생각해서.»
    총괄 13:20 · 12:25(M3 — 원룸에서 자르기를 막는 «실제 말»과 «삽수에서 다시 자르기»가 길이 되나)
 
-     node tools/probe_branches.mjs                       (사람 여덟 × 씨앗 1~5 · 4판씩 같이)
+     node tools/probe_branches.mjs                       (사람 아홉 × 씨앗 g·1~5 · 4판씩 같이 · g = 게임이 실제로 주는 그루)
      node tools/probe_branches.mjs --persona guide,lazy --seeds 1-10 --jobs 6
      node tools/probe_branches.mjs --targets 5000000,10000000 --days 660
+     node tools/probe_branches.mjs --noprologue           (잎 2·3 무늬 보장 끔 — 게임은 켠다 · 견주기용)
 
    ══ 무엇을 하나 ═══════════════════════════════════════════════════════════
    브라우저 없이(tools/lib/byeot_harness · 진짜 생장 수) 반지하 → 이사 → 원룸 → 엔딩을 «사람 성격 손잡이»대로 하루씩 굴린다.
@@ -38,7 +39,8 @@ import { orderItem, stockOf, incomingOf, listCutting, listPot, dealListing, mark
          SELLABLE_CUTTING_STATUS } from '../src/game/shop.js';
 import { canMoveOut, varieView, buyLamp } from '../src/game/tutorial.js';
 import { takeCutting, repotCutting, cuttableNow, cutBudgetOf, motherStatsNow, cuttingsOf, cutBlockedReason,
-         cuttingStatsNow } from '../src/game/propagation.js';
+         cuttingStatsNow, cuttableNodesOfCutting } from '../src/game/propagation.js';
+import { lightOptsOf } from '../src/game/loop.js';
 import { moveIntoOneroom } from '../src/game/oneroom.js';
 import { endingRulesFrom, endingProgress } from '../src/game/ending.js';
 import { stepQuests } from '../src/game/quest.js';
@@ -47,7 +49,10 @@ import { grantStaminaQuest } from '../src/game/stamina.js';
 
 const arg = (k, d) => { const i = process.argv.indexOf('--' + k); return i >= 0 ? (process.argv[i + 1] && !process.argv[i + 1].startsWith('--') ? process.argv[i + 1] : true) : d; };
 const list = v => String(v).split(',').map(x => x.trim()).filter(Boolean);
-const range = v => { const m = String(v).match(/^(\d+)-(\d+)$/); return m ? Array.from({ length: +m[2] - +m[1] + 1 }, (_, i) => +m[1] + i) : list(v).map(Number); };
+const range = v => list(v).flatMap(t => { const m = t.match(/^(\d+)-(\d+)$/); return m ? Array.from({ length: +m[2] - +m[1] + 1 }, (_, i) => +m[1] + i) : [t === 'g' ? 'g' : Number(t)]; });
+/* ★ 씨앗 'g' = **게임이 실제로 주는 판** — 모주 생장 씨앗 92158(plant_grow 기본 · room_view 도 같은 값 · headroom.js §씨앗) · S.sim.seed 0(newState 기본).
+     게임은 새 판마다 이 둘을 안 바꾼다 ⇒ 박사님·사람이 받는 그루는 언제나 이 판이다. 숫자 씨앗은 «그루가 달랐다면»(흔들기)이다 */
+const GAME_PLANT_SEED = 92158;
 
 /* ══ 사람 — 손잡이 묶음(이름은 plan «갈래 지도»와 맞춘다 · 다르면 이름만 바꾼다) ═══════════════ */
 export const PERSONAS = {
@@ -82,17 +87,30 @@ export async function play(name, seed, opt = {}) {
   const targets = opt.targets || [5_000_000, 10_000_000];
   const maxDays = opt.days || 660;
   const light = makeSwitchingLight('banjiha');
-  const io = { light, growth: await makeGrowth(seed) };
+  const io = { light, growth: await makeGrowth(seed === 'g' ? GAME_PLANT_SEED : seed, { prologue: !opt.noprologue }) };
   const S = newState({ mode: 'novice', room: 'banjiha', firstPlay: true, firstPlayRules: RULES });
-  S.sim.seed = seed;
+  S.sim.seed = seed === 'g' ? 0 : seed;
   light.clearCache();
   placeBeansprout(S.firstPlay, DARK, { slots: light.room.slots });
   const ts = S.tutorial;
   const out = { name, seed, persona: P, moveDay: null, firstBrokeDay: null, starvedDay: null, endDay: null,
                 reach: Object.fromEntries(targets.map(t => [t, null])), reachNet: Object.fromEntries(targets.map(t => [t, null])),
                 cuts: { banjiha: 0, oneroom: 0, fromCutting: 0 }, cutWhy: { banjiha: {}, oneroom: {} }, recut: { tried: 0, ok: 0, why: {} },
-                stuck: [], questDone: {}, questOpen: {}, sold: { varie: 0, plain: 0, pot: 0 }, cashAt: {} };
+                stuck: [], questDone: {}, questOpen: {}, sold: { varie: 0, plain: 0, pot: 0 }, cashAt: {},
+                varieDay: null, moneyDay: null, leafAt: {}, cashDaily: [], rootBands: {} };
+  /* cashDaily[i] = i+1 일 끝의 지갑(총괄 봇 기록 days[].cash 와 대 보기) · rootBands = 뿌리내린 무늬 삽수의 빛 띠(반지하/원룸) */   /* leafAt[날] = [잎 · 무늬 잎 · 무늬이면서 다 자란 잎 · 유효 생장일] (30일마다) */   /* 이사 두 축이 처음 선 날(canMoveOut · 무늬 잎을 낸 적 · 이사 자금) */
   const qOpen = new Map();          // id → { since, run }
+  const seenRoot = new Set();       // 뿌리내림을 이미 센 삽수 id
+  /* 원룸 삽수 자리 — 안내대로(follow)는 «오늘 그 자리의 빛»을 재어 가장 밝은 빈 창턱을 고른다(퀘스트 «밝은 자리에서 뿌리내리세요»를 따르는 손).
+     안 따르는 사람은 예전대로 ONE_BRIGHT 앞에서부터. 모주 자리(ONE_SILL)는 비운 자리로 안 본다 */
+  const brightestFree = live => {
+    const free = ONE_BRIGHT.filter(id => !live.some(c => c && c.slotId === id));
+    if (!free.length) return ONE_BRIGHT[0];
+    if (!P.follow) return free[0];
+    let sky = null; try { sky = light.skyFor(S.day, S.sim); } catch { }
+    const dl = id => { try { return light.dliOfSlot(id, lightOptsOf(S, sky)); } catch { return -1; } };
+    return free.slice().sort((a, b) => dl(b) - dl(a))[0];
+  };
   const eRules = endingRulesFrom({ targetWon: 1e12 });
   let meals = [];
   let followSiru = 0;               /* 안내를 따른 시루 목표(한 번 오르면 안 내린다) */
@@ -151,7 +169,9 @@ export async function play(name, seed, opt = {}) {
       let v = null;
       try { const vv = varieView(S, { nodes: io.growth.cuttableNodes(), stats: io.growth.leafStats() });
             v = { nodes: cuttableNow(S, vv.nodes || []), all: vv.nodes || [], stats: motherStatsNow(S, vv.stats), budget: cutBudgetOf(S, vv.nodes || []) }; } catch { v = null; }
-      let vm = null; try { const ls = io.growth.leafState(); vm = Array.isArray(ls) ? ls.filter(r => r && r.varie && r.matured && !r.dropped).length : null; } catch { }
+      let vm = null; try { const ls = io.growth.leafState(); vm = Array.isArray(ls) ? ls.filter(r => r && r.varie && r.matured && !r.dropped).length : null;
+                           if (S.day % 30 === 0 && Array.isArray(ls)) { const on = ls.filter(r => r && !r.dropped);
+                             out.leafAt[S.day] = [on.length, on.filter(r => r.varie).length, vm, (() => { try { return Math.round(io.growth.growthDays()); } catch { return null; } })()]; } } catch { }
       const room = moved ? 'oneroom' : 'banjiha';
       if (v) {
         const cand = v.nodes.length ? v.nodes.slice().sort((a, b) => (b.variegatedLeaves > 0) - (a.variegatedLeaves > 0) || a.leaves - b.leaves)[0] : null;
@@ -165,7 +185,7 @@ export async function play(name, seed, opt = {}) {
           if (node && P.cut === 'keep1' && node.variegatedLeaves > 0 && ((v.stats && v.stats.variegatedLeaves) || 0) - node.variegatedLeaves < 1) node = null;
           if (node && stockOf(S, 'jar') >= 1) {
             const live = cuttingsOf(S).filter(c => c.status !== 'dead');
-            const slot = moved ? (ONE_BRIGHT.find(id => !live.some(c => c.slotId === id)) || ONE_BRIGHT[0]) : SILL;
+            const slot = moved ? brightestFree(live) : SILL;
             try { takeCutting(S, { nodes: v.nodes, nodeId: node.nodeId, container: 'jar', at: atOf(light, slot), slots: light.room.slots, varieMaturedLeaves: vm }); out.cuts[room]++; } catch { }
           }
         }
@@ -179,7 +199,11 @@ export async function play(name, seed, opt = {}) {
           let lv = 0; try { lv = cuttingStatsNow(c).leaves; } catch { }
           if (lv < 2 || stockOf(S, 'jar') < 1) continue;
           out.recut.tried++;
-          try { takeCutting(S, { motherCuttingId: c.id, container: 'jar', at: atOf(light, ONE_BRIGHT[1]), slots: light.room.slots }); out.recut.ok++; out.cuts.fromCutting++; }
+          /* ⚠ 2026-10-08 — nodeId 를 안 넘겨 «모르는 마디: undefined» 로 늘 깨졌다(자의 버그). 삽수 마디는 코어가 자기 잎에서 읽는다(cuttableNodesOfCutting).
+               ⚠ 화면(game.html)에는 삽수에서 자르는 단추가 «없다» — 여기 숫자는 «규칙은 되나»이지 «사람이 할 수 있나»가 아니다 */
+          const cn = cuttableNodesOfCutting(c), pick = cn.find(n => n.variegatedLeaves > 0) || cn[0];
+          if (!pick) { out.recut.why['마디 없음'] = (out.recut.why['마디 없음'] || 0) + 1; break; }
+          try { takeCutting(S, { motherCuttingId: c.id, nodes: cn, nodeId: pick.nodeId, container: 'jar', at: atOf(light, brightestFree(cuttingsOf(S).filter(x => x.status !== 'dead'))), slots: light.room.slots }); out.recut.ok++; out.cuts.fromCutting++; }
           catch (e) { const k = reasonKey(e && e.message); out.recut.why[k] = (out.recut.why[k] || 0) + 1; }
           break;
         }
@@ -200,6 +224,7 @@ export async function play(name, seed, opt = {}) {
         try { const r = dealListing(S, l.listingId); if (r.kind === 'pot') out.sold.pot++; else if (l.variegatedLeaves > 0) out.sold.varie++; else out.sold.plain++; } catch { }
       }
       /* ── 이사 ── */
+      if (!ts.movedOut) { const c = canMoveOut(ts); if (c.varie && out.varieDay == null) out.varieDay = S.day; if (c.money && out.moneyDay == null) out.moneyDay = S.day; }
       if (!ts.movedOut && canMoveOut(ts).ok) {
         const holding = cuttingsOf(S).some(c => c && c.status !== 'dead' && ((c.variegatedLeaves || 0) > 0 || c.varieFromCut));
         const waited = out.moveReadyDay != null && S.day - out.moveReadyDay > 60;
@@ -236,6 +261,11 @@ export async function play(name, seed, opt = {}) {
     if (out.firstBrokeDay == null && (ts.bankrupt || cash <= 0)) out.firstBrokeDay = S.day;
     if (ts.starved && out.starvedDay == null) { out.starvedDay = S.day; break; }
     if ([60, 120, 180, 240, 360].includes(S.day)) out.cashAt[S.day] = cash;
+    out.cashDaily.push(cash);
+    for (const c of cuttingsOf(S)) {
+      if (!c || !c.varieFromCut || !Number.isFinite(c.rootedOnDay) || seenRoot.has(c.id)) continue;
+      seenRoot.add(c.id); const k = `${ts.movedOut ? 'oneroom' : 'banjiha'}:${c.varieLightBand || '?'}`; out.rootBands[k] = (out.rootBands[k] || 0) + 1;
+    }
     if (ts.movedOut) {
       let net = null; try { net = endingProgress(S, io, { rules: eRules, nodes: pot0(S) ? io.growth.cuttableNodes() : null, stats: pot0(S) ? io.growth.leafStats() : null }).netWorthWon; } catch { }
       for (const t of targets) { if (out.reach[t] == null && cash >= t) out.reach[t] = S.day; if (out.reachNet[t] == null && net != null && net >= t) out.reachNet[t] = S.day; }
@@ -258,12 +288,12 @@ if (arg('one', null)) {
 
 /* ══ 여러 판 — node 자식 프로세스로 같이(램 규칙: 크롬 없음) ══ */
 const NAMES = arg('persona', null) ? list(arg('persona')) : Object.keys(PERSONAS);
-const SEEDS = range(arg('seeds', '1-5'));
+const SEEDS = range(arg('seeds', 'g,1-5'));
 const TARGETS = list(arg('targets', '5000000,10000000')).map(Number);
 const DAYS = Number(arg('days', 660));
 const JOBS = Number(arg('jobs', 4));
 const SELF = fileURLToPath(import.meta.url);
-const tasks = NAMES.flatMap(name => SEEDS.map(seed => ({ name, seed, targets: TARGETS, days: DAYS })));
+const tasks = NAMES.flatMap(name => SEEDS.map(seed => ({ name, seed, targets: TARGETS, days: DAYS, noprologue: !!arg('noprologue', false) })));
 const results = [];
 let next = 0;
 async function worker() {
@@ -300,6 +330,9 @@ for (const name of NAMES) {
   console.log(`  이사 ${rs.filter(r => r.moveDay != null).length}/${N}(중앙 ${med(rs.map(r => r.moveDay))}일) · 첫 0원 ${rs.filter(r => r.firstBrokeDay != null).length}/${N}(중앙 ${med(rs.map(r => r.firstBrokeDay))}일) · ` +
               `★굶음 ${rs.filter(r => r.starvedDay != null).length}/${N}(중앙 ${med(rs.map(r => r.starvedDay))}일) · 엔딩 둘 다 ${rs.filter(r => r.endDay != null).length}/${N}`);
   console.log('  엔딩 닿은 날(현금 · 다 팔면) — ' + TARGETS.map(t => `${won(t)}: ${rs.filter(r => (r.reach || {})[t] != null).length}/${N} 중앙 ${med(rs.map(r => (r.reach || {})[t]))} · 다팔면 ${rs.filter(r => (r.reachNet || {})[t] != null).length}/${N} 중앙 ${med(rs.map(r => (r.reachNet || {})[t]))}`).join(' | '));
+  const stay = rs.filter(r => r.moveDay == null && r.starvedDay == null);
+  if (stay.length) console.log(`  이사 못 한 판 ${stay.length} — 무늬 잎을 낸 적 없음 ${stay.filter(r => r.varieDay == null).length} · 이사 자금 모자람 ${stay.filter(r => r.moneyDay == null).length}` +
+                               ` · (이사한 판의 무늬 첫날 중앙 ${med(rs.filter(r => r.moveDay != null).map(r => r.varieDay))}일)`);
   console.log(`  ★막힘 — ${Object.keys(stuckBy).length ? Object.entries(stuckBy).sort((a, b) => b[1] - a[1]).map(([k, v]) => `${k} ${v}판`).join(' · ') : '없음'}`);
   console.log(`  자르기 — 반지하 ${rs.reduce((a, r) => a + r.cuts.banjiha, 0)} · 원룸 ${rs.reduce((a, r) => a + r.cuts.oneroom, 0)} · 삽수에서 ${recut.ok}/${recut.tried}` +
               (Object.keys(recutWhy).length ? `(막힘: ${Object.entries(recutWhy).sort((a, b) => b[1] - a[1]).slice(0, 2).map(([k, v]) => `${k} ${v}`).join(' · ')})` : ''));

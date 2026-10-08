@@ -14,6 +14,7 @@ import { firstPlayRulesFromBalance, cropSites, cropPotList } from '../../src/gam
 import { createProfileLight } from '../../src/game/room_profile.js';
 import { cuttingsOf } from '../../src/game/propagation.js';
 import { storyOf } from '../../src/game/oneroom.js';
+import { PROLOGUE_VARIE_LEAVES } from '../../src/game/growth_adapter.js';
 
 export const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 export const readJSON = p => JSON.parse(fs.readFileSync(path.join(ROOT, p), 'utf8'));
@@ -70,16 +71,28 @@ async function growthCtx() {
   return G;
 }
 /* 판마다 새 그루(씨앗) — 생장 창은 한 벌을 돌려 쓴다(test_ending_flow §standGrowth 와 같다) */
-export async function makeGrowth(seed) {
+export async function makeGrowth(seed, opt = {}) {
   const g = await growthCtx();
   try { g.plantSeed(seed); } catch { }
   g.matResetAll(); g.resetDailyLight(); g.setGrowth(ARRIVAL.growthDays);
+  /* ★★ 2026-10-08 — **프롤로그 무늬 보장(잎 2·3)을 태운다.** 게임은 growth_adapter.setGrowth 가 첫 부름 «뒤에» 스스로 켠다(§prologueArmed).
+       이 자가 그것을 빠뜨려 갈래 판이 «게임보다 어려운 판»이 됐다(실측 · 게임 그루 92158: 660일 동안 무늬 잎 1장 ⇒ 자르기 문 «다 자란 무늬 둘» 영영 안 열림 · 이사 212일).
+       자리도 게임과 같다 — setGrowth(도착) 바로 뒤(잎 1 은 굴림이 끝나 민무늬 · test_banjiha_routes §프롤로그 와 같은 줄).
+       opt.prologue === false 면 끈다(씨앗으로 새로 심은 그루 · «축복 없는 판» 견주기) */
+  try { g.setPrologueVarieLeaf(opt.prologue === false ? 0 : PROLOGUE_VARIE_LEAVES.slice()); } catch { }
   return { assertContract: () => true, setDailyLight: d => g.setDailyLight(d),
     advanceTo(d) { const r = g.advanceTo(d); return { ...r, drawn: true, drawError: null }; },
     setGrowth(d) { const r = g.setGrowth(d); return { ...r, drawn: true, drawError: null }; },
     calendarDay: () => g.calendarDay(), growthDays: () => g.growthDays(), growthBlocked: () => g.growthBlocked(),
     growthPhase: () => g.growthPhase(), dli7: () => g.dli7(), dliCV: () => g.dliCV(), ageOf: d => g.ageOf(d),
     cuttableNodes: () => g.cuttableNodes(), leafStats: () => g.leafStats(),
+    /* ★★ 2026-10-08 — **`bandOf` 가 빠져 있었다**(test_banjiha_routes 가 08-18 에 겪은 그 구멍 그대로).
+         loop.cuttingLightOf 는 io.growth.bandOf 로 삽수 자리의 띠를 묻고, 못 얻으면 null ⇒ stepCuttings 의 빛이 늘 null ⇒
+         · 뿌리내린 무늬 삽수의 빛 띠(varieLightBand)가 영영 미정 ⇒ varie_bright · oneroom_root_bright 가 «못 끝나는 줄»로 보였다
+         · 삽수에 새 잎이 안 난다 ⇒ 삽수에서 다시 자르기 · 흙에 자리 잡기를 잴 수 없었다
+       ★ 지어낸 함수가 아니다 — growth_adapter 가 내주는 창구(fn('bandOf'))를 그대로 잇는다. prologueVarie 도 같다(사건만 낸다) */
+    bandOf: (dli, varie) => g.bandOf(dli, varie),
+    prologueVarie: () => (typeof g.prologueVarieState === 'function' ? g.prologueVarieState() : null),
     /* growth_adapter §leafState 와 같은 합치기(varieStateAll · matStateAll · leafHealthAll 을 leafBirth 로) */
     leafState: () => {
       const out = new Map(); const row = lb => { if (!Number.isFinite(lb)) return null; let r = out.get(lb);
@@ -104,7 +117,19 @@ export function profileOf(id) {
 }
 export function makeSwitchingLight(start = 'banjiha') {
   let cur = profileOf(start).light;
-  return { daily: (day, S) => cur.daily(day, S), skyFor: (day, sim) => cur.skyFor(day, sim), dliOfSlot: (ref, o) => cur.dliOfSlot(ref, o),
+  /* ★ 2026-10-08 — 정적 표는 자유 좌표(at)를 «모른다고 던진다»(계약 D · room_profile §dliOfSlot). 게임의 삽수는 언제나 at 을 들고 있어
+       loop.cuttingLightOf 가 늘 null 이 됐다(빛 띠 미정 · 새 잎 0). ⇒ **그 at 이 바로 그 자리의 좌표일 때만**(1 mm 안) 자리 표를 읽는다.
+       자리를 벗어난 좌표는 그대로 던진다 — 모르는 것을 지어내지 않는다. 이 자의 사람은 삽수를 자리 좌표(atOf)에만 놓는다 */
+  const dliOfSlot = (ref, o) => {
+    try { return cur.dliOfSlot(ref, o); }
+    catch (e) {
+      const sid = ref && typeof ref === 'object' ? ref.slotId : null;
+      const s = sid != null && !String(sid).startsWith('free:') ? (cur.room.slots || []).find(x => x.slotId === sid) : null;
+      if (s && ref.at && Math.hypot(ref.at.x - s.x, ref.at.y - s.y, ref.at.z - s.z) < 1e-3) return cur.dliOfSlot(sid, o);
+      throw e;
+    }
+  };
+  return { daily: (day, S) => cur.daily(day, S), skyFor: (day, sim) => cur.skyFor(day, sim), dliOfSlot,
            clearCache: () => cur.clearCache(), thresholdsOf: (p, v) => cur.thresholdsOf(p, v), growLampCount: () => cur.growLampCount(),
            get room() { return cur.room; }, build(roomId) { cur = profileOf(roomId).light; return cur.room; } };
 }
