@@ -4225,12 +4225,23 @@ export async function createRoomView(canvas, opts = {}) {
     ray.setFromCamera(ndcOf(cx, cy), ctx.cam);
     for (const h of ray.intersectObjects(nodes, true)) {
       if (!h.object.isMesh || hiddenInScene(h.object)) continue;
+      /* ★ 2026-10-08 ([house] ㉢) — 천장이 잘린 시점에선 천장등 몸이 숨고 반투명 «유령»(실측 opacity 0.30)만 보인다.
+           그 유령이 화면에서 빨래 건조대·침대 머리와 겹쳐 건조대 18점 중 6점이 「천장등」으로 갔다(probe_pick_props).
+           ⇒ 유령의 «누르는 자리»는 갓 가운데(전구 자리) 지름 0.12m 만 — 그 밖은 건너뛰어 뒤의 것이 받는다.
+             천장등을 고를 일(켜고 끄기)은 가운데로 남는다. 불투명한 몸(천장이 있는 시점)은 예전 그대로다 */
+      const m = Array.isArray(h.object.material) ? h.object.material[0] : h.object.material;
+      if (m && m.transparent && m.opacity < 0.95) {
+        const bb = new THREE.Box3().setFromObject(h.object);
+        const ctr = bb.getCenter(new THREE.Vector3());
+        if (Math.hypot(h.point.x - ctr.x, h.point.z - ctr.z) > LAMP_GHOST_PICK_R) continue;
+      }
       let o = h.object;
       while (o && !(o.userData && o.userData.uid)) o = o.parent;
       if (o && lampRig(o.userData.uid)) return { type: 'lamp', uid: o.userData.uid };
     }
     return null;
   }
+  const LAMP_GHOST_PICK_R = 0.06;      /* 유령의 누르는 자리 반지름[m] — [house] ㉢ 「갓 가운데 지름 약 0.12m」 */
 
   /* ============================================================
      ⑤-b ★ 표면 레이캐스트 — surfaceAt (2026-08-03)
@@ -4653,10 +4664,7 @@ export async function createRoomView(canvas, opts = {}) {
     /* ★ 등 (2026-08-08) — 화분 **뒤**, 퍼지 판정 **앞**이다.
        화분보다 뒤: 잎이 등 밑까지 자라면 물 주려는 손이 등에 먹힌다.
        퍼지보다 앞: 정확히 짚은 것이 대충 가까운 것을 이긴다(이 목록의 원칙 그대로). */
-    const lp = pickLampRay(cx, cy);
-    /* ⏸ 2026-10-08 — 천장이 잘린 시점에선 천장등 몸이 숨고 반투명 «유령»(opacity 0.30)만 보이는데, 그 유령이 화면에서 빨래 건조대와
-         겹쳐 건조대 18점 중 6점이 「천장등」으로 간다(probe_pick_props). 유령을 가구에 양보시키면 이 시점에서 천장등을 «아예» 못 고른다
-         (유령 둘레 9점 → 0점) — 맞바꿈이라 여기서 안 정한다(house·총괄에 올림). 지금은 예전 그대로 등이 먼저다 */
+    const lp = pickLampRay(cx, cy);      /* 천장등 «유령»은 가운데만 받는다(§pickLampRay · [house] ㉢) */
     if (lp) return lp;
     /* ★ 2026-10-08 ([House] 걸어서 잼 · 총괄) — **가구를 «정확히» 짚었으면 캐릭터 퍼지(36px)가 이기지 않는다.**
          ⛔ 났던 일: 캐릭터가 처음 서는 문 앞(−1.56, 1.54) 옆 구석의 쓰레기봉투는 18점을 눌러 18번 다 캐릭터가 골라졌다(가구 0) ·

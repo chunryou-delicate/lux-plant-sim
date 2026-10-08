@@ -81,6 +81,6 @@ for (const U of ['banjiha-heater','banjiha-trash','banjiha-backpack','banjiha-dr
     const n = await page.eval(`String((()=>{ const n=document.getElementById('furnName'); return n && n.offsetParent!==null ? (n.textContent||'').trim() : '-'; })())`);
     tally[n] = (tally[n] || 0) + 1;
   }
-  console.log(`  대조 — 천장등 유령 둘레 ${pts.length}점 →`, JSON.stringify(tally), (tally['천장등'] || 0) > 0 ? 'OK(아직 고를 수 있다)' : 'FAIL(천장등을 못 고른다)'); }
+  console.log(`  대조 — 천장등 유령 둘레 ${pts.length}점 →`, JSON.stringify(tally), (tally['천장등'] || 0) > 0 ? 'OK(가운데에서 아직 고를 수 있다)' : 'FAIL(천장등을 못 고른다 — 누르는 자리가 너무 작다)'); }
 (process.env.SHOT ? page.shot(process.env.SHOT) : Promise.resolve()).catch(() => {});
 await page.close(); clearTimeout(wd);
