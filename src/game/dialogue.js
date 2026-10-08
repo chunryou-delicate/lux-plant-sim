@@ -1179,8 +1179,10 @@ export const SCRIPTS = {
     { who: 'moni',   face: 'calm',     text: '들어오자마자 그 말이 나오네.' },
     { who: 'jachwi', face: 'tired',    text: '통장이 또 한 번에 얇아졌다.' },
     { who: 'moni',   face: 'proud',    text: '이번 건 안 아까워. 네가 모은 거잖아.' },
-    { who: 'jachwi', face: 'think',    text: '저 방에서 잎 하나였던 애가…' },
-    { who: 'moni',   face: 'teach',    text: '잘라서 늘렸지. 한 그루가 둘이 되고.' },
+    /* ★ 2026-10-08 [plan] 갈래 지도 — 엔딩 때 몬스테라가 없는 판(엔딩 직전 다 팖 · 안 자르고 모주를 통째로 팔아 닿음)에서도 참이게.
+       「잎 하나였던 애가…」(그 애가 여기 있다) · 「잘라서 늘렸지」(자른 적 있다) 둘 다 갈래를 탄다 ⇒ «시작»과 «빛을 모았다»로. */
+    { who: 'jachwi', face: 'think',    text: '저 방에서 잎 하나로 시작했는데…' },
+    { who: 'moni',   face: 'teach',    text: '빛을 모은 거야. 잎 하나씩.' },
     { who: 'jachwi', face: 'happy',    text: '엄마, 아빠. 나 집 생겼어.' },
     { who: 'moni',   face: 'calm',     text: '처음에 식물신이 너 혼자 두면 안 되겠다고 했잖아.' },
     { who: 'moni',   face: 'proud',    text: '이제 그 말은 취소해도 되겠다.' },
@@ -1256,12 +1258,16 @@ export const SCRIPTS = {
         규모를 첫 플레이(god1 · spearFurled)와 똑같이 한 줄로 맞춘다.
      ③ **짐이 적다는 것**으로 이 사람이 어떻게 살았는지를 말한다. 설명하지 않는다.
      ④ 마지막 말은 **다음 방의 창**이다. 이 게임이 계속 하는 얘기가 그것이라. */
+  /* ★★ 2026-10-08 [plan] 갈래 지도 — 어느 갈래에서나 참이게([char] c12b47ee 가 그림을 갈래로 고르다 찾음).
+       「백 일이 넘는데」 — 첫 플레이 끝(88일 안팎) 뒤 곧장 나가는 판에선 거짓 ⇒ 「꽤 되는데」.
+       「화분은 내가 안고 갈까?」 — 몬스테라를 그루째 판(sold) 판엔 안을 화분이 없다 ⇒ 「짐은」(같은 농담 · 몬이는 아무것도 못 든다).
+     ⚠ 갈래마다 대사를 가르지 않았다 — 가지가 늘면 셀 것이 는다. 참인 말 하나로 덮는 쪽이 먼저다(plan-branch-map). */
   movedOut: [
     { who: 'jachwi', text: '짐이 생각보다 적다.' },
-    { who: 'jachwi', text: '박스 네 개. 여기서 산 게 백 일이 넘는데.' },
-    { who: 'moni',   face: 'curious', text: '화분은 내가 안고 갈까?' },
-    { who: 'jachwi', face: 'happy', text: '네가 어떻게 안아.' },
-    { who: 'moni',   face: 'calm', text: '못 안지. 그냥 말해 본 거야.' },
+    { who: 'jachwi', text: '박스 네 개. 여기서 산 날이 꽤 되는데.' },
+    { who: 'moni',   face: 'curious', text: '짐은 내가 들고 갈까?' },
+    { who: 'jachwi', face: 'happy', text: '네가 어떻게 들어.' },
+    { who: 'moni',   face: 'calm', text: '못 들지. 그냥 말해 본 거야.' },
     { who: 'jachwi', face: 'cry', text: '…엄마 아빠한테 자랑할 게 생겼는데.' },
     { who: 'moni',   face: 'sad', text: '…' },
     { who: 'moni',   text: '들었을 거야.' },
@@ -1368,7 +1374,8 @@ export const SCRIPTS = {
     /* ★ 2026-10-08 [plan] — 「어디에 두느냐로만 나와」는 «새 무늬를 기다리라»로 읽혔다. [growth] 실측: 원룸에서 새 무늬 잎은 중앙값 0장
        (probe_timetable_oneroom · real · 540일). 무늬는 «잘라서 물려받는» 것이다(plan-oneroom-quests-v2 §0). 받는 줄도 짝으로 고쳤다 */
     { who: 'moni',   face: 'teach', text: '그리고 여기서부터 무늬는 아무도 안 줘. 있는 무늬를 잘라 늘리는 거야.' },
-    { who: 'jachwi', face: 'think', text: '…자르는 건 해 봤어.' }
+    /* ★ 2026-10-08 [plan] 갈래 지도 — 「…자르는 건 해 봤어.」는 한 번도 안 자르고 이사한 판(그루째 판 · sold)에선 거짓 ⇒ 다음 할 일로 받는다 */
+    { who: 'jachwi', face: 'think', text: '…그럼 자르는 데부터네.' }
   ],
 
   /* ═══ §7 작은 말들 ═════════════════════════════════════════════════════
