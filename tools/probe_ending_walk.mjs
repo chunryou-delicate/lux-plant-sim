@@ -5,7 +5,7 @@
      ② ?endingTarget=N — 이사 뒤 할 일 머리에 「내 집 마련까지 …」 줄 · 모자라면 단추가 잠김
      ③ 현금이 닿은 날 대사 차례 — (같은 턴이면) 퀘스트 끝 줄 뒤에 endingReady 한 줄 · 그날 장면은 안 열린다(닿음 ≠ 끝냄)
      ④ 단추 → 되묻기(「계약금 …원을 냅니다. 되돌릴 수 없습니다.」) → [계약한다] → 덮개 + endingHome 열세 줄 · 그동안 [다음 날]·알약·손가락 숨김
-     ⑤ 대사가 끝나면 마무리 카드(반지하에서 {d}일 …) → [다음] → 덮개 닫힘 · 다음 장 표지 job_select · 계약금이 빠졌다
+     ⑤ 대사가 끝나면 마무리 카드(처음 그 방에서 {d}일 … · [plan] 갈래 지도 11) → [다음] → 덮개 닫힘 · 다음 장 표지 job_select · 계약금이 빠졌다
    ⚠ 판은 지름길로 세운다(선물 그루 · 이사 조건을 상태로 채움) — 배선만 본다. 날짜·살림은 probe_oneroom_econ 몫.
    판: 폰 390×844. ⛔ 값 0(목표는 깃발로만 · 세이브에 안 남는다). */
 import { launch, sleep } from './test_cdp.mjs';
@@ -47,7 +47,8 @@ const mk = (page) => {
       S.firstPlay.monstera.arrived = true;
       const ts=S.tutorial; ts.cashWon = Math.max(ts.cashWon, (ts.rules.moveOutCostWon||2000000) + 100000);
       ts.varieSale = { ...(ts.varieSale||{}), count: Math.max(1, (ts.varieSale&&ts.varieSale.count)||0) };
-      window.__redraw(); const b=document.getElementById('moveOut'); if (b) { b.disabled=false; b.click(); }
+      /* 2026-10-08 D27 — [원룸으로 이사]가 되묻기 창을 연다 · 창이 열린 채 한 번 더 누르면 이사(«두 번 누르면 실행») */
+      window.__redraw(); const b=document.getElementById('moveOut'); if (b) { b.disabled=false; b.click(); b.click(); }
       return { room:S.home.room, movedOut: ts.movedOut, cash: ts.cashWon }; })()`);
     await sleep(2500); await clearDlg();
     return r;
@@ -131,7 +132,7 @@ const mk = (page) => {
   ok(lines.length >= 13, `④ 열세 줄을 넘겼다(${lines.length}줄) · 첫 줄 「${lines[0]}」 · 끝 줄 「${lines[lines.length - 1]}」`);
   await sleep(500);
   const card = await J(`(()=>({ shown: document.getElementById('homeCard').style.display !== 'none', rows: (document.getElementById('homeCardRows').textContent||'').replace(/\\s+/g,' ').trim() }))()`);
-  ok(card.shown && /반지하에서 \d+일/.test(card.rows), '⑤ 마무리 카드(수는 상태에서)', card);
+  ok(card.shown && /처음 그 방에서 \d+일/.test(card.rows), '⑤ 마무리 카드(수는 상태에서)', card);
   const cashAfter = await J(`window.__S().tutorial.cashWon`);
   ok(cashBefore - cashAfter === TARGET, `⑤ 계약금이 빠졌다(${cashBefore} → ${cashAfter})`);
   await J(`(()=>{ document.getElementById('homeNext').click(); return 1; })()`);

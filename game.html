@@ -2191,6 +2191,18 @@
     </div>
   </div>
 </div>
+<!-- ★ 2026-10-08 D27 — 이사 되묻기 창(이사는 되돌릴 수 없다 · 예전엔 [원룸으로 이사]가 되묻지 않고 바로 옮겼다).
+     무늬 원천 한 줄은 늘 서고, 0 이면 plan 문안 한 줄과 단추 [그래도 간다]. 막지 않는다(D22 결). -->
+<div id="movePanel" class="pop" aria-hidden="true">
+  <div class="popcard" role="dialog" aria-modal="true" aria-labelledby="moveTitle">
+    <div class="ptitle" id="moveTitle">원룸으로 이사</div>
+    <div class="plots" id="moveAsk"></div>
+    <div class="pbtns">
+      <button id="moveGo" class="go" type="button">이사한다</button>
+      <button id="moveCancel" class="ghost" type="button">아직</button>
+    </div>
+  </div>
+</div>
 <div id="buyPanel" class="pop" aria-hidden="true">
   <div class="popcard" role="dialog" aria-modal="true" aria-labelledby="buyTitle">
     <div class="ptitle" id="buyTitle">몇 개 주문할까요</div>
@@ -9741,7 +9753,7 @@ function openHomeCardWhenQuiet() {
   /* 수는 전부 상태에서 · 없는 칸은 그 줄을 뺀다(0 으로 안 메꾼다) */
   const ts = S.tutorial || {}, end = (S.story && S.story.ending) || {};
   const rows = [];
-  if (Number.isInteger(end.doneOnDay)) rows.push(`반지하에서 ${end.doneOnDay}일`);
+  if (Number.isInteger(end.doneOnDay)) rows.push(`처음 그 방에서 ${end.doneOnDay}일`);   /* [plan] 갈래 지도 11 — 원룸에서 끝낸 사람에게 «반지하에서»는 거짓 */
   const plants = (S.pots || []).length + (cuttingsOf(S) || []).filter(c => c && (c.potted || c.status === 'established')).length;
   const varieSold = ts.varieSale && Number.isInteger(ts.varieSale.count) ? ts.varieSale.count : null;
   if (varieSold != null) rows.push(`기르는 그루 ${plants} · 판 무늬 삽수 ${varieSold}`);   /* [plan] 0be94bad ② — 지금 가진 그루라 «기르는» */
@@ -12460,6 +12472,7 @@ function dlgPaint() {
        가계부는 창이고 대사는 이야기다. 이야기를 창 뒤로 미루면 순서가 뒤집힌다. */
     try { if (dlgFlushHeld()) return; } catch (e) { console.warn('[대화]', e && e.message); }
     try { if (openHomeCardWhenQuiet()) return; } catch (e) { console.warn('[엔딩]', e && e.message); }   /* ④ 열세 줄이 끝났다 → 마무리 카드 */
+    try { if (openMoveAskWhenQuiet()) return; } catch (e) { console.warn('[D27]', e && e.message); }       /* D27 몬이 한 줄 뒤 → 이사 되묻기 창 */
     try { openMonthWhenQuiet(); } catch (e) { console.warn('[가계부]', e && e.message); }
     return;
   }
@@ -17207,7 +17220,65 @@ document.addEventListener('click', (e) => {
 $('homeGo').onclick = guard(() => { doFinishHome(); });
 $('homeCancel').onclick = guard(() => { closeHomeAsk(); });
 $('homeNext').onclick = guard(() => { closeHomeScene(); });
+/* ★★ 2026-10-08 D27 (총괄 14:00 결정 · [plan] 19419589 · 갈래 지도 7) — **이사 되묻기 창**
+   ══════════════════════════════════════════════════════════════════
+   ⛔ [원룸으로 이사]가 되묻지 않고 바로 옮겼다 — 되돌릴 수 없는 일인데 한 번도 안 물었다.
+     그리고 «무늬 원천 0»(무늬 잎 단 그루 0 · 안 죽은 무늬 삽수 0)으로 가면 원룸은 막다른 길이다(growth 7062b538: 씨앗부터는 넷에 셋이 무늬를 못 봄).
+   ★ 창 하나에 둘을 싣는다: 이사비 한 줄 + «무늬 원천 n — 무늬 그루 a · 무늬 삽수 b»(짐 확인). 0 이면 plan 문안 한 줄 · 단추 [그래도 간다] ·
+     몬이 사건 move_no_varie(창을 열 때 한 번). ⚠ 막지 않는다 — 사람이 누른다(D22 와 같은 결 · 되돌릴 수 없는 것은 말로 말린다).
+   ★ 자는 D22 sellingLastVarieSource 와 같다: 첫 화분은 지금 잎(leafStats.variegatedLeaves) · 다른 화분은 p.variegated · 삽수는 varieFromCut && 안 죽음 */
+const MOVE_ASK_KO = Object.freeze({
+  cost:   '이사비 {won}원을 냅니다. 되돌릴 수 없습니다.',
+  source: '무늬 원천 {n} — 무늬 그루 {a} · 무늬 삽수 {b}',
+  none:   '무늬 삽수나 무늬 그루 없이 가면, 원룸에서 늘릴 게 없습니다. 그래도 갈까요?',
+  go: '이사한다', goAnyway: '그래도 간다'
+});
+function varieSourcesNow() {
+  let mine = 0; try { const ls = io.growth.leafStats(); mine = (ls && ls.variegatedLeaves) || 0; } catch { mine = 0; }
+  const p0 = pot0(S);
+  const a = (p0 && mine > 0 ? 1 : 0) + (S.pots || []).filter(p => p && p !== p0 && p.variegated).length;
+  const b = (S.cuttings || []).filter(c => c && c.varieFromCut && c.status !== 'dead').length;
+  return { a, b, n: a + b };
+}
+function openMoveAsk() {
+  const ts = S.tutorial; if (!ts || ts.movedOut) return;
+  const c = canMoveOut(ts); if (!c.ok) return;
+  const v = varieSourcesNow();
+  const lines = [MOVE_ASK_KO.cost.replace('{won}', Math.round(c.needWon).toLocaleString('ko-KR')),
+                 MOVE_ASK_KO.source.replace('{n}', v.n).replace('{a}', v.a).replace('{b}', v.b)];
+  if (v.n === 0) lines.push(MOVE_ASK_KO.none);
+  const box = $('moveAsk'); box.innerHTML = '';
+  for (const t of lines) { const d = document.createElement('div'); d.textContent = t; box.appendChild(d); }
+  $('moveGo').textContent = v.n === 0 ? MOVE_ASK_KO.goAnyway : MOVE_ASK_KO.go;
+  /* 몬이 한 줄 — 원천 0 일 때만 · 대사가 «먼저», 창은 대사가 끝난 뒤(창이 대사를 덮었다 · 엔딩 카드 §openHomeCardWhenQuiet 와 같은 길) */
+  if (v.n === 0) {
+    movePanelPending = true;
+    try { dlgOpen(story.events([{ id: 'move_no_varie' }])); } catch (e) { console.warn('[D27]', e && e.message); }
+    setTimeout(() => { try { openMoveAskWhenQuiet(); } catch { } }, 50);   /* 대사가 안 떴으면 바로 */
+    return;
+  }
+  showMovePanel();
+}
+let movePanelPending = false;
+function showMovePanel() { $('movePanel').classList.add('on'); $('movePanel').setAttribute('aria-hidden', 'false'); }
+function openMoveAskWhenQuiet() {
+  if (!movePanelPending) return false;
+  const st = $('stage'); if (st && st.classList.contains('talking')) return false;
+  movePanelPending = false;
+  showMovePanel();
+  return true;
+}
+function closeMoveAsk() { $('movePanel').classList.remove('on'); $('movePanel').setAttribute('aria-hidden', 'true'); }
+/* ⚠ 창이 열린 채 [원룸으로 이사]를 한 번 더 누르면 이사한다 — 이 저장소의 «두 번 누르면 실행»(confirmOnce) 결과 같다.
+     사람에게는 창이 단추를 덮어 바뀌는 것이 없고, 두 번 누르던 자(night_play tryMoveOut)는 그대로 걷는다 */
 $('moveOut').onclick = guard(() => {
+  if ($('movePanel').classList.contains('on') || movePanelPending) { movePanelPending = false; closeMoveAsk(); doMoveOut(); return; }
+  openMoveAsk();
+});
+$('moveCancel').onclick = guard(() => { closeMoveAsk(); });
+$('moveGo').onclick = guard(() => { closeMoveAsk(); doMoveOut(); });
+window.__byeotVarieSources = () => varieSourcesNow();   /* 진단용 — 읽기 전용 */
+function doMoveOut() {
   /* ★moveOut 이 아니라 moveIntoOneroom 이다 — 전자는 돈과 판정만 하고 방을 안 바꿨다.
      그래서 「이사했습니다」가 떠도 조도도 자리도 화면도 전부 반지하로 남아 있었다. */
   /* ★★★★ 2026-08-30 — **반지하 가구를 «들고 간다»** (박사님 · [House] 합의 `rooms_spec §13`)
@@ -17251,7 +17322,7 @@ $('moveOut').onclick = guard(() => {
   draw();
   /* 3D 는 새로 짓는다. 늦게 끝나도 위 화면은 이미 새 방을 말하고 있다 */
   if (r.roomChanged) remountRoomView();
-});
+}
 
 $('run30').onclick = guard(() => {
   arrive();
