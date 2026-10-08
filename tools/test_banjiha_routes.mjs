@@ -321,6 +321,7 @@ function play(opt = {}) {
        (METHODS.water · 초보 36일). 「키운다」가 그 기한에 걸려 무늬를 통째로 잃는 판이
        몇 개인지를 안 세면 ㉡ 이 왜 나쁜지를 짐작으로 말하게 된다. */
   let varieCutsTaken = 0, heldSold = 0, cuttingsDied = 0, maxHeldLeaves = 0;
+  let m0 = null;               /* ★ D8·D9 M0 — 이사하는 그날의 지갑·그루(아래 §moveOut) */
   const seenDead = new Set();
 
   /* ══ ★★ 중고 거래 — **올리는 것과 돈이 되는 것이 다른 날이다** (2026-08-17) ═══════
@@ -335,7 +336,11 @@ function play(opt = {}) {
        (game.html §drawCuttings). 안 막으면 재현이 매일 같은 삽수를 올리려다 던진다. */
     if (listingFor(S, c)) return null;
     const varie = c.source.variegatedLeaves > 0;
-    const r = listCutting(S, c.id);
+    /* ★ 2026-10-08 — 중고 문(모주 잎 3장 · shop §marketGate)이 아직 닫혀 있으면 «그날은 못 올린다». 사람도 그 단추가 안 눌린다.
+       예전엔 여기서 던져 자 전체가 죽었다(작업 전 판 d925c993 부터 · 문이 생긴 뒤 이 자가 못 따라옴). 지어내지 않는다 — 안 올리고 다음 날 다시 본다 */
+    let r = null;
+    try { r = listCutting(S, c.id); }
+    catch (e) { if (e && e.tutorialInput) return null; throw e; }
     listedKind.set(r.listing.listingId, varie ? 'varie' : 'plain');
     return r;
   };
@@ -608,7 +613,20 @@ function play(opt = {}) {
       for (const c of [...(S.cuttings || [])])
         if (SELLABLE_CUTTING_STATUS.includes(c.status)) sell(c);
     }
-    if (!ts.movedOut && canMoveOut(ts).ok) moveOut(ts);
+    if (!ts.movedOut && canMoveOut(ts).ok) {
+      moveOut(ts);
+      /* ★★ 2026-10-08 D8·D9 M0([plan] plan-d8-d9-measure §2) — **이사하는 그날의 지갑과 그루.** 원룸 자(M1·M3)가 이 셋에서 출발한다.
+         ⚠ 이사비를 뗀 «뒤»의 현금이다(tutorial §moveOut). 잎 등급은 장부(pot.leafGrades — 무늬 잎만 든다)에서, 잎 수는 생장에서 읽는다. */
+      const p0 = pot0(S);
+      let ls = null; try { ls = p0 ? io.growth.leafStats() : null; } catch { ls = null; }
+      const grades = {}; for (const g of Object.values((p0 && p0.leafGrades) || {})) grades[g] = (grades[g] || 0) + 1;
+      const cuts = {}; for (const c of (S.cuttings || [])) if (c && c.status !== 'dead') {
+        const k = (c.variegated || (c.source && c.source.variegatedLeaves > 0) ? '무늬 ' : '') + c.status + (c.listing ? '(올림)' : '');
+        cuts[k] = (cuts[k] || 0) + 1; }
+      m0 = { moveDay: ts.day, cashAfterWon: ts.cashWon, mother: p0 ? { leaves: ls ? ls.leaves : null, varie: ls ? ls.variegatedLeaves : null, grades } : null,
+             cuttings: Object.values(cuts).reduce((a, b) => a + b, 0), cuttingsBy: cuts,
+             lampOwned: (ts.lamp && ts.lamp.owned) || 0 };
+    }
 
     rows.push({ day: S.day, tday: ts.day, season: seasonAt(ts, ts.day),
                 seasonDay: seasonDayAt(ts, ts.day), cashWon: ts.cashWon,
@@ -634,7 +652,7 @@ function play(opt = {}) {
   return { S, rows, growth: io.growth, lampDay, grantDay, grantNode, ledger,
            cuttingIncome, varieIncome, potIncome, containerSpend, cuttingsSold,
            firstCutDay, firstSellDay, varieCutsTaken, heldSold, cuttingsDied, maxHeldLeaves,
-           movedOut: S.tutorial.movedOut, lastDay: last.tday,
+           movedOut: S.tutorial.movedOut, lastDay: last.tday, m0,
            season: last.season, everBroke: rows.some(r => r.bankrupt),
            blocked: blockReasonOf(S, rows, io, opt) };
 }
@@ -1253,6 +1271,7 @@ check('H-3 저장·복원을 해도 확정 무늬가 두 번 나지 않는다', 
 
 /* ══ G · ★세 경로 — 시드 40판 ═══════════════════════════════════════════ */
 const SEEDS = Array.from({ length: 40 }, (_, i) => i + 1);
+let m0Started = false;
 function runRoute(name, opt) {
   const runs = SEEDS.map(seed => play({ ...opt, seed }));
   /* ★ 어느 경로의 판인지를 판마다 적어 둔다 — 여러 경로를 합쳐 볼 때
@@ -1283,6 +1302,24 @@ function runRoute(name, opt) {
        `삽수가 달았던 최대 잎 중앙값 ${median(runs.map(r => r.maxHeldLeaves))}장 · ` +
        `★기한을 넘겨 시든 삽수 ${runs.reduce((n, r) => n + r.cuttingsDied, 0)}개 ` +
        `(${runs.filter(r => r.cuttingsDied > 0).length}판)`);
+  /* ★★ 2026-10-08 D8·D9 M0 — 이사 날 지갑·그루 분포(원룸 자 M1·M3 의 출발점). 판별 기록은 tools/_out/m0_moveout.json */
+  const m0s = ok.map(r => r.m0).filter(Boolean);
+  if (m0s.length) {
+    const gt = {}; for (const m of m0s) for (const [g, n] of Object.entries((m.mother && m.mother.grades) || {})) gt[g] = (gt[g] || 0) + n;
+    info(`  ⤷ M0 이사 날 — 이사 뒤 현금 중앙값 ${median(m0s.map(m => m.cashAfterWon)).toLocaleString()}원` +
+         ` (최저 ${Math.min(...m0s.map(m => m.cashAfterWon)).toLocaleString()} · 최고 ${Math.max(...m0s.map(m => m.cashAfterWon)).toLocaleString()})` +
+         ` · 모주 든 판 ${m0s.filter(m => m.mother).length}/${m0s.length} · 모주 잎 중앙값 ${median(m0s.filter(m => m.mother).map(m => m.mother.leaves ?? 0))}장` +
+         `(무늬 ${median(m0s.filter(m => m.mother).map(m => m.mother.varie ?? 0))}장) · 장부 등급 합 [${Object.entries(gt).map(([k, v]) => k + ':' + v).join(' ')}]` +
+         ` · 가진 삽수 중앙값 ${median(m0s.map(m => m.cuttings))}개 · 등 ${[...new Set(m0s.map(m => m.lampOwned))].join('/')}개`);
+    try {
+      const out = path.join(path.dirname(fileURLToPath(import.meta.url)), '_out', 'm0_moveout.json');
+      fs.mkdirSync(path.dirname(out), { recursive: true });
+      let all = {}; if (m0Started) { try { all = JSON.parse(fs.readFileSync(out, 'utf8')); } catch { all = {}; } }
+      m0Started = true;            /* 이 실행의 첫 경로는 새로 쓴다 — 지난 실행의 줄이 섞이지 않게 */
+      all[name] = runs.map((r, i) => ({ seed: SEEDS[i], movedOut: !!r.movedOut, ...(r.m0 || {}) }));
+      fs.writeFileSync(out, JSON.stringify(all, null, 1));
+    } catch (e) { info(`  ⚠ M0 기록 파일을 못 썼다 — ${e.message}`); }
+  }
   /* ★★ **못 나간 판이 어디서 걸렸나** — 이 줄이 이 재현의 알맹이다.
      성공률만 내면 "20%가 낮다"까지밖에 못 간다. 막은 것을 세어야 「무엇을 고칠 일인가」가 나온다. */
   const bad = runs.filter(r => !r.movedOut);
