@@ -8,6 +8,7 @@
    장면은 «THREE 전역이 걸리는 순간» 렌더러 render 를 감싸 붙잡는다(재기 전용 · 게임 코드 안 고침). */
 import { launch, sleep } from './test_cdp.mjs';
 const BASE = process.env.BYEOT_URL || 'http://localhost:9330'   /* house 검사 포트 9330대 */, DAYS = Number(process.env.DAYS || 260);
+const Q = process.env.Q || '';   /* 예: Q='?d23=0' — 같은 빌드에서 D23 전후를 가른다(core 8a8ab801) */
 const wd = setTimeout(() => { console.error('⏱ 자가 제한'); process.exit(2); }, 2400000); wd.unref && wd.unref();
 const page = await launch({ width: 390, height: 844, dpr: 1 });
 await page.send('Page.addScriptToEvaluateOnNewDocument', { source: `(function(){ let T;
@@ -18,7 +19,7 @@ await page.send('Page.addScriptToEvaluateOnNewDocument', { source: `(function(){
         c.prototype.updateMatrixWorld = function(f){ if (this.isPerspectiveCamera) (window.__pcams = window.__pcams || new Set()).add(this); return pu.call(this, f); };
       } catch(e) {} } }); } catch(e) {} } }); } catch(e) {} })();` });
 await page.send('Page.addScriptToEvaluateOnNewDocument', { source: `try{ if(!sessionStorage.__sw){ localStorage.clear(); sessionStorage.__sw='1'; } }catch(e){}` });
-await page.goto(`${BASE}/game.html`);
+await page.goto(`${BASE}/game.html${Q}`);
 await page.waitFor('!!window.__rv', 600000, 500); await sleep(4500);
 const J = async (js, ms = 1800000) => JSON.parse(await page.eval(`(async()=>{ try { return JSON.stringify(await (${js})); } catch(e) { return JSON.stringify({탈:e.message, st:(e.stack||'').slice(0,300)}); } })()`, true, ms));
 const ROOM = process.env.ROOM || 'banjiha', SLOT_I = Number(process.env.SLOT || 0);
@@ -37,7 +38,7 @@ if (ROOM === 'oneroom') {
     ts.varieLeaf = { ever:true, count:1, firstOnDay:S.day }; window.__redraw(); })()`, false); await sleep(600);
   await page.eval(`(()=>{ const b=document.getElementById('moveOut'); if(b){ b.disabled=false; b.click(); } })()`, false); await sleep(6000); await skipTalk();
   await page.eval(`(()=>{ try{ if(window.__save) window.__save(); }catch(e){} })()`, false); await sleep(1500);
-  await page.goto(`${BASE}/game.html`); await page.waitFor('!!window.__rv', 600000, 500); await sleep(4500); await skipTalk();
+  await page.goto(`${BASE}/game.html${Q}`); await page.waitFor('!!window.__rv', 600000, 500); await sleep(4500); await skipTalk();
 }
 const SLOTP = await J(`(async()=>{ const st=await import('/src/game/state.js'); const S=window.__S();
   const p=(S.pots||[])[0]; const slots=(window.__io.light.room.slots||[]).filter(x=>/sill/.test(x.slotId)); const slot=slots[${SLOT_I}] || slots[0];
