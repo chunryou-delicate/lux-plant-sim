@@ -298,7 +298,7 @@ function headroomOfTurn(S, io, p) {
      넘긴다 — 코어가 문턱을 베끼지 않는다는 규칙은 그대로다.
    ★ 아래 `NO_GROW_BANDS` 세 이름이 그쪽 「어두움」과 **같은 묶음**이다. 새 문턱을 안 만들려고
      일부러 같은 금을 썼다. ⚠ 여기를 고치면 무늬 확률도 같이 움직인다. */
-const NO_GROW_BANDS = new Set(['critical', 'poor', 'stagnant']);
+export const NO_GROW_BANDS = new Set(['critical', 'poor', 'stagnant']);   /* ★ 2026-10-08 export — 화면의 «놓는 순간 빛 경고»(game.html §darkPlaceWarn)가 같은 자를 쓴다 */
 
 /* ══════════════════════════════════════════════════════════════════════════
    ★★★ **자리의 밝기를 물을 때 넘기는 것** — 한 곳에서 짓는다 (2026-08-09)

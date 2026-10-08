@@ -3203,7 +3203,7 @@ const endingOn = () => !!(ENDING_NOW && Number.isFinite(ENDING_NOW.targetWon));
    걷었다). loop.js 에는 그대로 있다 — 헤드리스 재현·밸런스 측정이 그 길로 돈다.
    ⚠ `runDays` 는 **빨리감기가 아니다.** 타이머 없이 `nextDay` 를 n번 도는 동기 함수이고,
      [검수]의 [30일 자동] 하나가 쓴다(플레이어 화면에 없다). 그래서 남긴다. */
-import { nextDay, runDays, avg, rollingAvg, harvestCrop } from './src/game/loop.js';
+import { nextDay, runDays, avg, rollingAvg, harvestCrop, lightOptsOf, NO_GROW_BANDS } from './src/game/loop.js';
 import { renderHUD, renderLog, renderReport, renderSpark } from './src/game/ui.js';
 /* 체력 — 값만 읽는다. 규칙도 문구도 여기서 짓지 않는다(docs/stamina.md) */
 import { staminaView, staminaRulesFrom, takeLevelUps, xpNeededAt,
@@ -7526,7 +7526,8 @@ function startPhonePlacePotBag(potId) {
   const key = (r && r.slotId) || p.slotId || null;
   if (!key) {
     afterPlace();
-    banner('🪴 몬스테라를 놓았습니다', '눌러서 [옮기기]로 자리를 다시 고를 수 있습니다');
+    { const darkP = darkPlaceWarn({ obj: p, kind: 'pot', variegated: false });   /* ★ 2026-10-08 A·B */
+      banner('🪴 몬스테라를 놓았습니다', darkP ? `⚠ ${darkP}` : '눌러서 [옮기기]로 자리를 다시 고를 수 있습니다'); }
     return { ok: true };
   }
   picked.confirming = true;
@@ -14042,7 +14043,9 @@ function commitPlaceInner(what, hit, opt = {}) {
       /* ★★ 2026-08-16 — **화분만 놓는다. 씨앗은 안 쓴다**(박사님 확정).
          심기는 놓인 화분 줄의 [🌱 심기]가 맡는다 — 시루·재배판과 같은 두 걸음이다. */
       placeEmptyPot(S, atOf(hit), { ...placeOpt(), potItemId: potItemOf(what) });
-      banner('🪴 빈 화분을 놓았습니다', '화분까지 걸어가 🌱 을 눌러 몬스테라 씨앗을 심으세요');
+      /* ★ 2026-10-08 A·B — 어두운 자리면 심기 안내 대신 빛 한 줄(심어도 안 자란다) */
+      const darkE = darkPlaceWarn((() => { const e = (S.emptyPots || []).slice(-1)[0]; return e ? { obj: e, kind: 'empty', variegated: false } : null; })());
+      banner('🪴 빈 화분을 놓았습니다', darkE ? `⚠ ${darkE}` : '화분까지 걸어가 🌱 을 눌러 몬스테라 씨앗을 심으세요');
       unlockAfterFix();
       sfx.thud();
     } catch (e) { return placeFailed(e); }
@@ -14060,7 +14063,8 @@ function commitPlaceInner(what, hit, opt = {}) {
     if (!c) return placeFailed(new Error(`그 삽수를 못 찾았습니다 (${id})`));
     try {
       setCuttingAt(S, c, atOf(hit), placeOpt());
-      banner('🪴 삽수를 놓았습니다', '놓은 자리의 빛이 새 잎의 무늬를 정합니다');
+      { const darkC = darkPlaceWarn({ obj: c, kind: 'cutting', variegated: !!c.variegated });   /* ★ 2026-10-08 A·B */
+        banner('🪴 삽수를 놓았습니다', darkC ? `⚠ ${darkC}` : '놓은 자리의 빛이 새 잎의 무늬를 정합니다'); }
       unlockAfterFix();
       sfx.thud();
     } catch (e) { return placeFailed(e); }
@@ -14175,6 +14179,8 @@ function commitPlaceInner(what, hit, opt = {}) {
         const r = setPotAt(S, ep, atOf(hit), placeOpt());
         pushLog(S, `🪴 빈 화분을 ${r.slotId && !isFreeSlotId(r.slotId) ? slotLabel(r.slotId) : '고르신 자리'}(으)로 옮겼습니다`);
         unlockAfterFix(); sfx.thud();
+        /* ★ 2026-10-08 A·B — 확인 바가 안 서는 옮기기면 배너로(확인 바면 바가 말한다) */
+        if (!picked.confirming) { const w = darkPlaceWarn({ obj: ep, kind: 'empty', variegated: false }); if (w) banner('⚠ 어두운 자리입니다', w); }
       } catch (e) { return placeFailed(e); }
       draw();
       return;
@@ -14191,6 +14197,8 @@ function commitPlaceInner(what, hit, opt = {}) {
     unlockAfterFix();
   sfx.thud();                         /* ★ 놓았다 — 실패는 이 줄을 안 지난다 */
     if (isBrightestSlot(r.slotId) && dlgOpen('monsteraMoved')) focusOnMonstera();         /* ★ §isBrightestSlot · W3 #6 */
+    /* ★ 2026-10-08 A·B — 확인 바가 안 서는 옮기기면 배너로(확인 바면 바가 말한다) */
+    if (!picked.confirming) { const w = darkPlaceWarn({ obj: p, kind: 'pot', variegated: false }); if (w) banner('⚠ 어두운 자리입니다', w); }
   } catch (e) { return placeFailed(e); }
   draw();
 }
@@ -14490,7 +14498,11 @@ const picked = {
       if (this.confirming) {
         this.mode = null;
         $('stage').classList.remove('moving');
-        const key = this.potId ? siruKey(this.potId) : this.slotId;
+        /* ★ 2026-10-08 — 몬스테라·빈 화분도 새 열쇠를 다시 잡는다. `siruKey` 는 작물만 찾아 화분이면 null 이었고,
+             그러면 바가 «옮기기 전 자리»를 붙잡았다(위 ⚠ 의 «왜 저기 있지» · 빛 경고도 옛 자리를 쟀다 — probe_dark_place ①) */
+        const potKey = id => { const q = [...(S.pots || []), ...(S.emptyPots || [])].find(x => x && x.id === id);
+                               return q ? (q.slotId || `free:${q.id}`) : null; };
+        const key = this.potId ? (siruKey(this.potId) || potKey(this.potId)) : this.slotId;
         if (key) this.slotId = key;
         placeConfirm.show();
         return;
@@ -14644,7 +14656,9 @@ const placeConfirm = {
       ? `${slotLabel(picked.slotId)}에 둘까요?` : '여기에 둘까요?';
     const warn = $('placeConfirmWarn');
     if (!warn) return;
-    const msg = reachWarningFor(picked.potId);
+    /* ★ 2026-10-08 A·B — 빛 한 줄이 먼저다(그 그루의 삶이 걸린 말) · 길 막힘은 그 다음 */
+    let dark = null; try { dark = darkPlaceWarn(placedGrowerAt(picked.slotId)); } catch { dark = null; }
+    const msg = [dark, reachWarningFor(picked.potId)].filter(Boolean).join(' · ');
     warn.textContent = msg || '';
     warn.style.display = msg ? '' : 'none';
   },
@@ -14705,7 +14719,8 @@ function startPhonePlacePot(what) {
     return { ok: false, why: (e && e.message) || String(e) };
   }
   try { window.__byeotSheet.close(); } catch { }
-  banner('🪴 빈 화분을 놓았습니다', '화분까지 걸어가 🌱 을 눌러 몬스테라 씨앗을 심으세요');
+  { const darkE = darkPlaceWarn((() => { const e = (S.emptyPots || []).slice(-1)[0]; return e ? { obj: e, kind: 'empty', variegated: false } : null; })());   /* ★ 2026-10-08 A·B */
+    banner('🪴 빈 화분을 놓았습니다', darkE ? `⚠ ${darkE}` : '화분까지 걸어가 🌱 을 눌러 몬스테라 씨앗을 심으세요'); }
   draw();
   return { ok: true };
 }
@@ -14733,7 +14748,8 @@ function startPhonePlaceCut(id) {
     return { ok: false, why: (e && e.message) || String(e) };
   }
   try { window.__byeotSheet.close(); } catch { }
-  banner('🪴 삽수를 놓았습니다', '놓은 자리의 빛이 새 잎의 무늬를 정합니다');
+  { const darkC = darkPlaceWarn({ obj: c, kind: 'cutting', variegated: !!c.variegated });   /* ★ 2026-10-08 A·B */
+    banner('🪴 삽수를 놓았습니다', darkC ? `⚠ ${darkC}` : '놓은 자리의 빛이 새 잎의 무늬를 정합니다'); }
   syncRoom(); draw();
   return { ok: true };
 }
@@ -14957,6 +14973,60 @@ function provisionalSpot() {
    ★ 방뷰가 없거나(헤드리스) 사람이 없으면 **아무 말도 안 한다.** 근거가 없는데
      경고를 지어내면 그 경고를 아무도 안 믿게 된다.
    반환 null = 할 말이 없다. */
+/* ══ ★★★ 2026-10-08 — **놓는 순간 «여기선 안 자란다»를 말한다** (총괄 13:35 A·B · [house] 자리 자유 · 박사님 «이리 튈지 저리 튈지») ══
+   ⛔ 났던 일: 몬스테라·빈 화분·삽수를 «안 자라는 자리»(몬스테라 최소 광량 미만)에 놓아도 그 순간엔 아무 말이 없고
+     며칠 뒤에야 «⏸ 오늘은 자라지 않았습니다»가 떴다. 놓는 손과 결과 사이가 너무 멀다.
+   ★ 자는 «자라는 쪽이 쓰는 그것»이다 — 새로 짓지 않는다:
+     빛  io.light.dliOfSlot(그것, lightOptsOf(S, 오늘 하늘))   ← loop.cuttingLightOf 와 같은 부름(화분·삽수 같은 창구)
+     띠  io.growth.bandOf(dli, 무늬)  → loop.NO_GROW_BANDS(critical·poor·stagnant)면 안 자람
+         그루(화분·빈 화분)는 무늬 곱 없이(plant_grow growthMin = TH_MONSTERA.min) · 삽수는 제 무늬로(loop §cuttingLightOf 그대로)
+   ★ 막지 않는다 — 경고만(박사님 ③ «경고는 막지 않는다» · reachWarningFor 와 같은 결).
+   ⚠ 못 재면 null — 말을 안 한다(지어내지 않는다). 그날 하늘 하나로 잰다(7일 평균은 자라는 쪽 몫) — «그날 이미 어두운 자리»만 말한다.
+   ⚠ 글은 [plan] 몫이다 — 아래 PLACE_DARK_KO 한 곳에만 둔다(초안: [house] 안). */
+const PLACE_DARK_KO = Object.freeze({
+  who: { pot: '몬스테라', empty: '몬스테라', cutting: '삽수' },
+  /* {who} · {best} 를 채운다 */
+  goBest:  '여기는 {who}가 자라기엔 어둡습니다 — 이 방에서 제일 밝은 데는 {best}입니다',
+  atBest:  '여기가 이 방에서 제일 밝은데도 {who}가 자라기엔 어둡습니다 — 식물등이 있어야 자랍니다',
+  noneBright: '이 방 어디에도 {who}가 자랄 만큼 밝은 데가 없습니다 — 식물등이 있어야 자랍니다'
+});
+/* 그 열쇠(자리 이름 · free:id · id)에 놓인 «자라는 것» — 화분 · 빈 화분 · 삽수. 아니면 null(시루·무순은 제 판정이 따로 있다) */
+function placedGrowerAt(key) {
+  if (!key) return null;
+  const hit = q => q && (q.slotId === key || key === `free:${q.id}` || key === q.id);
+  const p = (S.pots || []).find(hit); if (p) return { obj: p, kind: 'pot', variegated: false };
+  const e = (S.emptyPots || []).find(hit); if (e) return { obj: e, kind: 'empty', variegated: false };
+  let c = null; try { c = cuttingsOf(S).find(hit); } catch { c = null; }
+  if (c) return { obj: c, kind: 'cutting', variegated: !!c.variegated };
+  return null;
+}
+/* 그 자리가 «오늘» 안 자라는 띠인가 — { dli, band, dark } · 못 재면 null */
+function growBandAt(ref, variegated) {
+  try {
+    const sky = io.light.skyFor(S.day, S.sim);
+    const dli = io.light.dliOfSlot(ref, lightOptsOf(S, sky));
+    if (typeof dli !== 'number' || !isFinite(dli)) return null;
+    const b = io.growth && typeof io.growth.bandOf === 'function' ? io.growth.bandOf(dli, !!variegated) : null;
+    if (!b || !b.band) return null;
+    return { dli, band: b.band, dark: NO_GROW_BANDS.has(b.band) };
+  } catch { return null; }
+}
+/* 놓인 그것({obj, kind, variegated})이 어두운 자리면 한 줄 — 아니면 null */
+function darkPlaceWarn(g) {
+  if (!g || !g.obj || (!g.obj.at && !g.obj.slotId)) return null;
+  const here = growBandAt(g.obj.at ? g.obj : g.obj.slotId, g.variegated);
+  if (!here || !here.dark) return null;
+  const who = PLACE_DARK_KO.who[g.kind] || '몬스테라';
+  const fill = t => t.replace('{who}', who);
+  /* 제일 밝은 칸 — 손가락·아래글과 «같은 칸»(§guideBrightSlot) */
+  const best = guideBrightSlot(null);
+  if (best && g.obj.slotId === best) return fill(PLACE_DARK_KO.atBest);
+  const bestBand = best ? growBandAt(best, g.variegated) : null;
+  if (!best || (bestBand && bestBand.dark)) return fill(PLACE_DARK_KO.noneBright);
+  return fill(PLACE_DARK_KO.goBest).replace('{best}', slotLabel(best));
+}
+window.__byeotDarkPlace = (key) => { const g = placedGrowerAt(key); return g ? { kind: g.kind, band: growBandAt(g.obj.at ? g.obj : g.obj.slotId, g.variegated), warn: darkPlaceWarn(g) } : null; };
+
 function reachWarningFor(potId) {
   if (!roomView || typeof roomView.unreachable !== 'function') return null;
   let list = [];
