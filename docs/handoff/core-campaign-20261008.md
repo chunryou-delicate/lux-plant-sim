@@ -124,6 +124,8 @@
 | 28bf227d · 18afdfe4 | D 빛 분포를 몬스테라 문턱으로(2.7 미만 회색 · 범례 두 줄) · C 끌기 고리에 빛 등급 색 + rankSlots 첫 판 문을 showDli 자로(260일 판에서도 꺼져 있었음) | probe_lightview ✘1 은 대조 판에도 같은 옛 칸 |
 | 996324ab · 131e040e | D27 이사 되묻기 창(이사비 · 무늬 원천 n · 원천 0 이면 몬이 먼저 → [그래도 간다]) · D28 엔딩 뒤 «여기까지 — 첫 이야기» 덮개 · [다음 날] 잠금 · [처음부터 다시] 되묻기 | probe_ending_walk ⑥ 네 칸 PASS |
 | 4710bb64 · a8749420 · 06667391 | nudge varie_bright 무늬 원천 0 = 기다림 · 삽수 사건 turn.events 에 실음 · 이사 조건 글 «무늬 잎을 아직 못 봤습니다» · order_seed 기다림 좁힘 · 원룸 할 일 빈 글 = endingGoal · 스냅샷 monsteraGrowing | node: cutting_rooted·node·warn·died 가 turn.events 로 |
+| 87110c05 · fbcb91d6 | turn.cropNow{seedStock·emptySiru}(plan 지도 13) · 윗줄을 첫 플레이가 꺼진 판에서도 그림(leaf «다시 켜면 Day 0» = 세운 판 enabled=false) · ③(나) 확대 카메라 천장 여유를 한 값으로·가로는 실제 너비 | 두 화분 세이브 «Day 263» · 260일 그루 거리 0.92→2.20m 한 화면 |
+| dc13269d · db17470a | 사건 lamp_under_empty(등 단 날 그 밑에 식물 0 · 지도 94) · ending_ready_again(닿았다 모자란 뒤 다시 · dippedOnDay 세이브 · 지도 99) — 대사는 plan | node 순서 잼 · ending_flow 16/16 |
 
 ### 정한 것
 - **잠김 고침의 규약**: 그루를 갈아 꽂은 쪽이 끝날 때 첫 화분을 다시 꽂는다(화면의 «첫 화분 읽기»는 그대로). 한 그루짜리 판은 select 를 안 부르는 옛 길 그대로.
@@ -131,8 +133,8 @@
 - **이사 되묻기**: 창이 열린 채 [원룸으로 이사]를 한 번 더 누르면 이사(confirmOnce 결 · night_play 두 번 누름 그대로). 한 번만 누르는 probe 열 개는 주인 창에 알림(총괄 경유).
 
 ### 넘긴 것 — 다음 차례
-- 지도 94(등 단 날 밑이 비면 사건) · 99(endingReady 두 번째) · 16(자리 없는 삽수 기한 — 총괄 판단).
-- ③(나) 확대 카메라가 키 큰 그루를 자르는 것 · M2 ㉡(봇 수 대기) · D8 다시 재기 · test_quest 다시 쓰기(23줄 · FAIL 11 그대로).
+- 16(자리 없는 삽수 기한 — 총괄 판단) · lampSkipped 뜻 옮기기(plan 문안 대기).
+- M2 ㉡(봇 수 대기) · D8 다시 재기 · test_quest 다시 쓰기(23줄 · FAIL 11 그대로) · test_oneroom H «2.7 == 3» · test_musun_view·multisiru 화분 지름 0.20 단언(옛 칸).
 - «늘리는 사람» 갈래(삽수를 남겨 키우고 거기서 자름) — 총괄 답 대기. 지금 K 표에선 삽수에서 자르기 0번(팔아 버림 · 원룸 창턱은 무늬 삽수가 안 자람 띠).
 - 흔들림: test_guide_notes ⑤-1(첫 판만) · probe_lightview «겹친 쌍 1»(옛 칸).
 - ⚠ probe_lightview 가 docs/handoff/img/lightview/*_now.png 를 추적 안 되는 파일로 남긴다(지우지 않음).
