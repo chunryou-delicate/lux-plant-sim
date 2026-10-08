@@ -8057,12 +8057,16 @@ function drawShop() {
   const monsteraOpen = !(fp && fp.enabled) || !!(fp.monstera && fp.monstera.arrived);
 
   const CUT_ITEMS = new Set(['jar']);
+  /* ★★ 2026-10-08 D25(총괄) — 「first_cut 이 열렸나」 → **「지금 자를 수 있는 마디가 있나」**(§freeCutNodeCount · ✂ 말풍선과 같은 자).
+       옛 열쇠(모주 잎 ≥ 2 · Day 37)는 박사님 자르기 문(무늬 다 자란 잎 ≥ 2)보다 80일 남짓 일러, 병을 사도 [병에]가 「아직 이릅니다」로
+       잠긴 날이 이어졌다 — «못 쓰는 물건을 사는 함정»(위 무순·몬스테라와 같은 규약).
+     ⚠ 한 번 자른 사람(삽수가 있거나 first_cut 을 끝냄)에게는 계속 보인다 — 다음 마디를 기다리는 사이에 병이 사라졌다
+       나타났다 하면 «어디 갔지»가 되고, 원룸에서는 삽수 그루에서도 자른다(모주 마디만 보는 이 자가 그걸 모른다). */
   let cutOpen = !(fp && fp.enabled);
   if (!cutOpen) {
     try {
-      const qv = questView(S, questSnapshotNow(lastTurn));
-      const row = qv.all.find(q => q.id === 'first_cut');
-      cutOpen = !!row && row.state !== 'locked';
+      const cutBefore = cuttingsOf(S).length > 0 || ((S.stamina && S.stamina.questsTaken) || []).includes('first_cut');
+      cutOpen = cutBefore || freeCutNodeCount() > 0;
     } catch { cutOpen = false; }     /* 못 물으면 안 연다 — 모르는 것을 열어 주지 않는다 */
   }
   const shown = catalogList()
@@ -9197,6 +9201,10 @@ function questSnapshotNow(turn) {
     firstPlayDone: !!fp.completed,
     cropHarvestTotal: cropPots.reduce((a, p) => a + p.harvestCount, 0),
     cropPots, mealKinds, motherLeaves, motherVarieLeaves,
+    /* ★ 2026-10-08 D25 — 무늬이면서 다 자란 잎 수. first_cut 이 이 수 ≥ 2 에 연다([plan] c07263f1).
+       자르기 문(cutBlockedReason)에 넘기는 «같은 함수»다 — 두 벌로 재면 하루라도 어긋난다.
+       몬스테라 전은 0(위 motherLeaves 와 같은 까닭 — 생장 창의 시연용 그루를 안 읽는다) · 못 재면 null(퀘스트가 무늬 잎 수로 어림) */
+    motherVarieMatured: hasPlant(S) ? varieMaturedLeavesNow() : 0,
     cuttings: cuts,
     /* ★ 무늬 삽수를 판 횟수 — `tutorial.js §varieSale` 이 정본이다(escapecut 확정) */
     varieSaleCount: (ts.varieSale && ts.varieSale.count) || 0,
@@ -9805,6 +9813,23 @@ function driestPot() {
 /* 삽수 말풍선.
      urgent=true   ★분갈이 기한이 도는 것만. 안 하면 죽으므로 남은 날짜를 같이 적는다
      urgent=false  자를 수 있다 · 팔 수 있다 (급하지 않은 것) */
+/* ★ 지금 «정말로» 자를 수 있는 마디 수 — cuttableNow(총량·이미 자름) 다음에 박사님 문(cutBlockedReason: 무늬 다 자란 잎 ≥ 2 ·
+   모주가 끝나지 않게 등)까지 지난 것. ✂ 말풍선과 상점 수경병(D25)이 «같은 자»를 쓴다.
+   ⚠ 용기는 안 묻는다(opt.container 없음) — 병이 없어 막힌 것은 «병을 사면 풀리는» 까닭이라, 그걸로 병을 숨기면 영영 못 산다. */
+function freeCutNodeCount() {
+  const p = pot0(S);
+  if (!p) return 0;
+  const { nodes, ok } = cutNodesNow();
+  if (!ok.length) return 0;
+  const vm = varieMaturedLeavesNow();
+  let free = 0;
+  for (const n of ok) {
+    let why = null;
+    try { why = cutBlockedReason(S, nodes, n.nodeId, { potId: p.id, varieMaturedLeaves: vm }); } catch { why = '알 수 없음'; }
+    if (!why) free++;
+  }
+  return free;
+}
 function cutMarks(urgent) {
   const out = [];
   const list = cuttingsOf(S);
@@ -9854,16 +9879,8 @@ function cutMarks(urgent) {
     const { ok } = cutNodesNow();
     let jar = 0, pot = 0;
     try { const st = shopStatus(S); jar = st.stock.jar || 0; pot = st.stock.pot || 0; } catch { }
-    /* ★ 「누르면 안 되는 말풍선」을 안 만든다 — 막힌 마디는 빼고 센다 */
-    let free = 0;
-    if (ok.length) {
-      const { nodes } = cutNodesNow();
-      for (const n of ok) {
-        let why = null;
-        try { why = cutBlockedReason(S, nodes, n.nodeId, { potId: p.id, varieMaturedLeaves: varieMaturedLeavesNow() }); } catch { why = '알 수 없음'; }
-        if (!why) free++;
-      }
-    }
+    /* ★ 「누르면 안 되는 말풍선」을 안 만든다 — 막힌 마디는 빼고 센다(§freeCutNodeCount) */
+    const free = ok.length ? freeCutNodeCount() : 0;
     if (free && (jar || pot))
       out.push({ key: p.id, tone: '', ko: '✂ 삽수 자르기',
                  go: () => { window.__byeotSheet.open(); window.__byeotSheet.tab && window.__byeotSheet.tab('plants');
@@ -12413,6 +12430,7 @@ async function bootRoomView() {
     window.__marks = { list: () => markList(), busy: () => stageBusy() };
     window.__S = () => S;
     window.__leafWait = () => (lastTurn && lastTurn.leafWait) || null;   /* 진단용 — 상태 줄 칸(leaf_wait.js) · 읽기 전용 */
+    window.__cutFree = () => { try { return freeCutNodeCount(); } catch (e) { return null; } };   /* 진단용 — D25 지금 자를 수 있는 마디 수 · 읽기 전용 */
     window.__moveLabel = () => moveDropLabelKo();   /* 진단용 — 읽기 전용 */
     window.__brightest = (id) => isBrightestSlot(id);            /* 진단용 — 읽기 전용 */
     window.__focusSpear = () => focusOnMonstera();               /* 진단용 — §focusOnMonstera 를 눌러 보는 손잡이 */                    /* 진단용 — 읽기 전용으로 쓴다 */

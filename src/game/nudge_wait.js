@@ -13,6 +13,7 @@
      order_seed              씨앗이 오는 중이거나 · 재고가 있거나 · 시루가 자라는 중이면 기다림
      oneroom_root_bright     무늬 삽수가 뿌리내리는 중(rooting)이면 기다림          ← 2026-10-08 [plan] 청
      oneroom_settle_cutting  뿌리는 냈는데(rooted) 혹(node)이 아직이면 기다림        ← 2026-10-08 [plan] 청
+     first_cut               잘라 물에 꽂아 «뿌리내리는 중»(water · rooting)이면 기다림 ← 2026-10-08 D25(총괄)
    ⚠ 그 밖의 퀘스트는 «할 수 있다»로 본다(false). 모르는 것을 기다림으로 치면 독촉이 영영 안 나온다 —
      그쪽이 «매일 독촉»보다 나쁘다(사람이 막혔는데 아무도 안 알려 준다).
    ⚠ 읽기만 한다. 상태를 안 바꾸고 세이브 칸도 없다.
@@ -51,6 +52,11 @@ export function nudgeWaiting(S, id, day = (S && S.day)) {
   if (id === 'oneroom_root_bright') {
     /* 무늬 삽수를 잘라 꽂아 «뿌리내리는 중»이면 기다림(밝은 자리에 두는 것까지 했다) */
     return (S && Array.isArray(S.cuttings) ? S.cuttings : []).some(c => c && c.varieFromCut && c.status === 'rooting');
+  }
+  /* ★ 2026-10-08 D25(총괄) — first_cut 은 «뿌리를 냈다»로 끝난다. 잘라 물에 꽂은 뒤로는 사람이 할 것이 없다.
+     ⚠ «자르기 문이 잠긴 동안»(무늬 다 자란 잎 < 2)은 여기서 안 센다 — [plan] c07263f1 이 그동안 퀘스트를 «안 연다»(열린 것만 독촉한다). */
+  if (id === 'first_cut') {
+    return (S && Array.isArray(S.cuttings) ? S.cuttings : []).some(c => c && c.method === 'water' && c.status === 'rooting');
   }
   if (id === 'oneroom_settle_cutting') {
     /* 뿌리는 냈는데 아직 «혹»이 안 났으면 기다림 — 혹이 나야 흙으로 옮길 수 있다(혹이 나면 할 수 있음) */
