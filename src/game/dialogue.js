@@ -39,7 +39,7 @@ import { TUTORIAL_RULES } from './tutorial.js';
    ⚠ `first_play.js` 는 `dialogue.js` 를 안 불러온다 — 고리가 안 생긴다(2026-08-23 확인). */
 import { CROP_KINDS } from './first_play.js';
 /* 독촉 «기다림» 판정 — [core] 파일(D2 · 2026-10-07). 한 방향: dialogue → nudge_wait */
-import { nudgeWaiting, nudgeDaysOf } from './nudge_wait.js';
+import { nudgeWaiting, nudgeDaysOf, varieSourceCount } from './nudge_wait.js';
 /* 방 거름 — 반지하 줄은 이사 뒤에 독촉하지 않는다(quest.js §questRoomOk · 2026-10-07). quest.js 는 아무것도 import 하지 않아 돌지 않는다 */
 import { questRoomOk } from './quest.js';
 const BEAN_SEED = (() => {
@@ -1518,6 +1518,19 @@ export const SCRIPTS = {
   nudgeSeedSow: [
     { who: 'moni', face: 'teach', text: '씨앗이 있는데 빈 시루가 있어. 심어 줘.' }
   ],
+  /* ★ 2026-10-08 [plan] 갈래 지도 15 — 시루 줄(하나 더 · 다섯 · 여덟 · 열여섯)에 «무엇을·어디서»(D19). 넷이 같은 두 줄을 쓴다 — 수는 할 일 칩이 말한다.
+     ⚠ 「늘리면 하루가 안 깎여」는 안 쓴다 — 늘리는 동안은 오히려 더 깎인다(questSiru16 의 08-27 실측). 「거두는 것도 늘어」는 늘 참. */
+  nudgeSiruOffer: [ { who: 'moni', face: 'teach', text: '시루는 상점에 더 있어. 더 놓아 봐.' } ],
+  nudgeSiruPush:  [ { who: 'moni', face: 'teach', text: '시루가 늘면 거두는 것도 늘어.' } ],
+  /* ★ 2026-10-08 [plan] 갈래 지도 7 — 원룸 첫 이레의 상태 줄 둘(§CHATTER status). 원천 수는 [core] varieSourceCount(틀려도 «더» 센다 —
+     그래서 «없다»를 거짓으로 말하지 않는다). [growth] 7062b538: 원룸 «씨앗부터»는 1년 넘어도 넷에 셋이 무늬 잎을 못 봄 ·
+     들고 간 무늬 삽수 첫 잎 sill:0 여름 등0 51일 · 등1 22일 · 에타제르면 400일 안 안 남. */
+  statusOneroomNoVarie: [
+    { who: 'moni', face: 'worry', text: '여긴 무늬를 늘릴 게 없어. 무늬는 새로 키운 그루에서 아주 가끔 나.' }
+  ],
+  statusOneroomCutSill: [
+    { who: 'moni', face: 'teach', text: '무늬 삽수는 창턱에 둬. 등 밑이면 더 빨라.' }
+  ],
 
   /* ═══ ★★ 2026-10-08 [plan] «상태 줄» — 둘째 잎을 기다리는 동안 «오늘 바뀐 것»을 말한다(docs/handoff/plan-leafwait-20261008.md ②) ═══
      §STATUS 표가 조건을 갖는다. 칸([core] turn.leafWait)이 없으면 조건이 다 거짓이라 안 뜬다.
@@ -1975,6 +1988,7 @@ export const REPEATABLE = new Set(
              'sellLastVarie', 'moveNoVarie', 'hungryTalk', 'hungryTalk2',
              'cuttingNode', 'cuttingWarn', 'cuttingWarnLast', 'cuttingDied',
              'cuttingVarieBright', 'cuttingVarieMid', 'cuttingVarieDark', 'nudgeSeedSow',
+             'nudgeSiruOffer', 'nudgeSiruPush', 'statusOneroomNoVarie', 'statusOneroomCutSill',
              /* ★ 2026-10-08 상태 줄 — 기다림마다 다시 온다(§STATUS gap) */
              'statusSill', 'statusGauge', 'statusStreak', 'statusLeafWide', 'statusSiruVs', 'statusWallet',
              'statusPhaseOpening', 'statusPhaseYoung', 'statusPhaseMid', 'statusPhaseMature', 'statusPhaseAxis', 'statusVarieHalf'])
@@ -2450,7 +2464,12 @@ export const CHATTER = [
       ['crop_mix', 'nudgeMixOffer', 'nudgeMixPush'],
       ['first_cut', 'nudgeCutOffer', 'nudgeCutPush'],
       ['varie_bright', 'nudgeVarieOffer', 'nudgeVariePush'],
-      ['sell_varie', 'nudgeSellOffer', 'nudgeSellPush']].flatMap(([q, offer, push]) => [
+      ['sell_varie', 'nudgeSellOffer', 'nudgeSellPush'],
+      /* ★ 2026-10-08 갈래 지도 15 — 시루 줄 넷은 같은 두 줄을 쓴다 */
+      ['siru_two', 'nudgeSiruOffer', 'nudgeSiruPush'],
+      ['siru5_cycle5', 'nudgeSiruOffer', 'nudgeSiruPush'],
+      ['siru8', 'nudgeSiruOffer', 'nudgeSiruPush'],
+      ['siru16', 'nudgeSiruOffer', 'nudgeSiruPush']].flatMap(([q, offer, push]) => [
     { id: offer, nudge: true, when: c => !!c.nudge && c.nudge.id === q && c.nudge.days >= 1 && c.nudge.days < NUDGE_DAYS.ask },
     { id: push,  nudge: true, when: c => !!c.nudge && c.nudge.id === q && c.nudge.days >= NUDGE_DAYS.worry }
   ]),
@@ -2487,6 +2506,11 @@ export const CHATTER = [
   { id: 'statusPhaseMid',     status: true, gap: 20, when: c => c.hasMonstera && c.phaseId === 'leaf_mid'      && fin(c.phaseDays) && c.phaseDays <= 3 },
   { id: 'statusPhaseMature',  status: true, gap: 20, when: c => c.hasMonstera && c.phaseId === 'leaf_mature'   && fin(c.phaseDays) && c.phaseDays <= 3 },
   { id: 'statusPhaseAxis',    status: true, gap: 20, when: c => c.hasMonstera && c.phaseId === 'axis_rising'   && fin(c.phaseDays) && c.phaseDays <= 3 },
+  /* ★ 2026-10-08 [plan] 갈래 지도 7 — 원룸 첫 이레 · 무늬 원천 0 이면 「늘릴 게 없어」, 무늬 삽수를 들고 왔으면 «창턱 · 등» */
+  { id: 'statusOneroomNoVarie', status: true, gap: 60, when: c => c.movedOut && fin(c.daysInOneroom) && c.daysInOneroom >= 1 && c.daysInOneroom <= 7
+                                                              && c.varieSources === 0 },
+  { id: 'statusOneroomCutSill', status: true, gap: 60, when: c => c.movedOut && fin(c.daysInOneroom) && c.daysInOneroom >= 1 && c.daysInOneroom <= 7
+                                                              && fin(c.varieCuttings) && c.varieCuttings > 0 },
 ];
 
 /* ═══ ★★ 2026-10-08 [plan] 상태 줄 — 사건 > 독촉 > **상태 줄** > 잡담 (plan-leafwait-20261008.md ②) ═══════════
@@ -2601,6 +2625,10 @@ export function chatterContext(turn = {}, S = null) {
                   · varieMatured 다 자란 무늬 잎 수(자르기 문과 같은 자 · varieMaturedLeavesNow) */
                phaseId: pick('phaseId'), phaseDays: pick('phaseDays'), varieMatured: pick('varieMatured') };
     })(),
+    /* ★ 2026-10-08 [plan] 갈래 지도 7 — 무늬 원천 수([core] varieSourceCount · 틀려도 «더» 셈) · 안 죽은 무늬 삽수 수. S 가 없으면 null */
+    varieSources: (() => { try { return S ? varieSourceCount(S) : null; } catch { return null; } })(),
+    varieCuttings: (() => { try { return S && Array.isArray(S.cuttings)
+      ? S.cuttings.filter(c => c && c.status !== 'dead' && c.varieFromCut).length : null; } catch { return null; } })(),
     /* ★ 2026-10-08 [plan] 갈래 지도 13 — 씨앗 재고·빈 시루([core] turn.cropNow). 모르면 null */
     ...(() => {
       const cn = (turn && turn.cropNow) || {};
