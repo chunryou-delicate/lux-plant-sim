@@ -1,0 +1,35 @@
+{
+ "note": "tools/glb_thumb.mjs 가 만든다. 손으로 고치지 말 것. GLB 이름 -> 썸네일 이름 · GLB 자체 크기",
+ "sizeMeans": "GLB 원본 바운딩박스. 실제 미터 = 이 값 × manifest.scale_to_real",
+ "tool": "tools/glb_thumb.mjs",
+ "updated": "2026-10-09",
+ "thumbs": {
+  "pp_leaf_mature_pinkmarble.glb": {
+   "png": "pp_leaf_mature_pinkmarble.png",
+   "m": {
+    "x": 1.682,
+    "z": 1.7403,
+    "y": 1.8981
+   },
+   "view": "top"
+  },
+  "pp_leaf_mid_pinkmarble.glb": {
+   "png": "pp_leaf_mid_pinkmarble.png",
+   "m": {
+    "x": 1.267,
+    "z": 1.4375,
+    "y": 1.8975
+   },
+   "view": "top"
+  },
+  "pp_leaf_young_pinkmarble.glb": {
+   "png": "pp_leaf_young_pinkmarble.png",
+   "m": {
+    "x": 1.5666,
+    "z": 1.848,
+    "y": 1.8986
+   },
+   "view": "top"
+  }
+ }
+}
