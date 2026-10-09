@@ -166,6 +166,37 @@ r2 프롬프트(앞머리 없이 이것 통째 · 553자):
 뜻: 창틀만 · 흰 바탕 · 벽·유리·글자·그림자 없음 · **거의 정면**(깊이 0.14 가 가는 모서리로만 보이게) · 2.40×1.45 · 정가운데 십자로 같은 네 칸 · 바깥틀 아주 가늘게(폭의 1/27) · **십자살은 바깥틀의 절반**.
 r2 도 못 넘으면 9·18 은 접고 코드 창틀을 그대로 둔다(빛과 보이는 것이 이미 같다) — 남는 60 은 다시 뽑기 몫으로 돌린다.
 
+### 9 원룸 창 r2 — 틀 두께 [잰 것 · house · 10-09]
+
+`c_win_studio_cross_r2.png` 는 **원근** 그림이다(왼 변 높이 ≈562px · 오른 변 ≈753px). 그래서 세로 판은 «그 x 의 앞면 높이»로 그 자리 배율을 내고, 가로 축 줄어듦(k = 0.74)은 앞면 폭 전체가 2.40 이 되게 맞췄다. 맞춘 판으로 십자 세로살 가운데가 1.22m(표 1.20)에 떨어진다 — 셈이 맞는다는 표지.
+
+| 판 | 잰 것 | 늘인 뒤 m | 표 m | 배 |
+|---|---|---|---|---|
+| 왼 · 오른 세로틀 | 25 · 35px | 0.087 · 0.092 | 0.09 | ×0.97 · ×1.02 ✔ |
+| **세로 십자살** | 26px | **0.078** | 0.045 | **×1.74** ✘ |
+| 위 · 아래 가로틀 | 칸 x 300 · 680 에서 4.4~4.7% | 0.064~0.068 | 0.09 | ×0.72~0.76 (줄 밑 살짝) |
+| **가로 십자살** | 4.4~4.6% | **0.064~0.066** | 0.045 | **×1.43~1.47** ✘ |
+| 보이는 유리 | 폭 89.3% × 높이 86.5% = 77.2% | | 76.6% | **101%** ✔ |
+
+⇒ 유리는 맞았다(가로틀이 가늘어지고 살이 굵어져 서로 갚았다). **살은 여전히 1.5~1.7 배**로 줄을 못 넘는다. ⇒ 아래 «회색 상자 길»로 r3 한 번(9).
+
+### 회색 상자 길 (총괄 제안 (나)) — 참조 그림 [house · 10-09]
+
+글로 단 높이·단 수·살 굵기를 시켜서는 두 번 다 안 맞았다(1 · 4 · 5 · 9). ⇒ **지금 자리(slots)가 맞는 코드 가구**를 찍어 그 그림으로 모양을 박는다.
+(가) «모델에 맞춰 자리 높이를 고친다»는 고르지 않았다 — 자리 높이가 곧 화분 높이고 빛 값이다(창 앞 0.6~0.8m 가 자람을 가른다 · 위 «바로잡음 4»). 원화 하나에 맞춰 게임 값을 옮기지 않는다.
+
+- 자: `tools/shot_furn_ref.mjs` — 코드 가구를 평행 투영 · 흰 바탕 · 찰흙 한 빛깔(#a89f92)로 찍는다. 앞(+Z)이 왼쪽 아래, 창은 거의 정면. 온실장은 유리를 뺀다.
+  `BYEOT_URL=http://127.0.0.1:9330 node tools/shot_furn_ref.mjs plant_step_3 shelf_ladder_4tier greenhouse_cabinet win_studio_cross`
+- 나온 것: `assets/gen/v2_furn/ref_plant_step_3.png` · `ref_shelf_ladder_4tier.png` · `ref_greenhouse_cabinet.png` · `ref_win_studio_cross.png`
+- 부르는 법: `reference_file_paths: [ref_<이름>.png, style_keyframe_a.png]` — **모양 그림이 첫째**. 받을 이름 `c_<이름>_r3.png`.
+- 프롬프트(통째 · 앞머리 없이): `Repaint the FIRST reference image. Keep its exact shape, proportions, number of parts, board heights, bar thicknesses and camera angle - do not add, remove or move anything. Only change the surface: cozy hand-painted matte style like the second reference room, soft outlines. One object alone on a plain off-white background: no floor, no frame, no text, no shadow. Colors: ` + 끝말
+  - 1 계단식: `light beige wood #e0d5c2 boards, legs #c3b49c. Boards empty.` (434자)
+  - 4 사다리: `light wood #e3d3bd shelves and rails. Shelves empty.` (426자)
+  - 5 온실장: `pale blue-gray #cfd8dc metal frame and shelves, NO glass. Shelves empty.` (446자)
+  - 9 원룸 창: `off-white #f8f4ec painted frame, NO glass, open panes.` (428자)
+  - 뜻: 첫째 참조 그림을 «다시 칠»한다 — 모양·비율·부품 수·단 높이·살 굵기·시점은 그대로(더하지도 빼지도 옮기지도 말 것) · 겉만 둘째 참조 방처럼 손그림 무광 · 물건 하나 · 흰 바탕 · 바닥·액자·글자·그림자 없음 · 색은 끝말대로.
+- 받으면 house 가 r2 때와 같은 자로 단 높이·살 굵기를 다시 잰다. r3 도 못 넘는 것은 코드 가구를 그대로 둔다(빛·자리는 이미 맞다).
+
 ## 받은 뒤 — [house] 가 잇는다 (크레딧 0)
 
 1. `gltf-transform` 로 텍스처 1024 webp 로 줄여 «받을 경로»에 둔다(v2 때와 같은 판 · 0aa8b850).
