@@ -75,22 +75,29 @@ try {
     for (let k = 0; k < 6 && Object.keys(D.report().furniture).length < gs.filter(Boolean).length; k++)
       await Promise.race([waitChange(), new Promise(r => setTimeout(r, 5000))]);
     const rep = D.report().furniture;
+    /* ④ 옷이 발자국(충돌·길 = userData.size) 밖으로 얼마나 나가나(m · 앞+Z 뒤−Z 좌−X 우+X) — 캐릭터가 «그림을 뚫고» 지나갈 수 있는 폭 */
+    const over = gs.map(g => { if (!g) return null; const dz = g.children.find(c => c.userData && c.userData.v2dress); if (!dz) return null;
+      g.updateMatrixWorld(true); const inv = new T.Matrix4().copy(g.matrixWorld).invert(), b = new T.Box3(), mb = new T.Box3(), m4 = new T.Matrix4();
+      dz.traverse(o => { if (!o.isMesh) return; if (!o.geometry.boundingBox) o.geometry.computeBoundingBox(); m4.multiplyMatrices(inv, o.matrixWorld); b.union(mb.copy(o.geometry.boundingBox).applyMatrix4(m4)); });
+      const s = g.userData.size || {}; const r = v => +Math.max(0, v).toFixed(3);
+      return { front: r(b.max.z - s.d / 2), back: r(-s.d / 2 - b.min.z), left: r(-s.w / 2 - b.min.x), right: r(b.max.x - s.w / 2) }; });
     const after = gs.map((g, i) => g && shot(g, i));
-    return { n, rep, before, after, warns };
+    return { n, rep, before, after, warns, over };
   })()`);
 } finally { await page.close(); }
 
 if (out.warns && out.warns.length) console.log('경고', [...new Set(out.warns)].slice(0, 8));
 for (const [i, id] of IDS.entries()) {
   const r = out.rep['fit-' + i];
+  if (r && out.over && out.over[i]) { const o = out.over[i], mx = Math.max(o.front, o.back, o.left, o.right); r._over = mx > 0.03 ? `  ⚠ 발자국 밖 ${JSON.stringify(o)}` : ''; }
   if (!r) { console.log(`✘ ${id.padEnd(20)} 옷 없음(FURN 에 없거나 GLB 를 못 받음)`); continue; }
   const errs = (r.topErr || []).filter(Number.isFinite), worst = errs.length ? Math.max(...errs.map(Math.abs)) : null;
   const [sx, sy, sz] = r.scale, squash = +(sy / ((sx + sz) / 2)).toFixed(2);
   /* 겹단은 세로 배율이 1(꺾은 선) — 구간마다 늘임 비(방 m ÷ GLB 단위)를 가로 배율과 견준다 */
   const seg = r.tiers ? r.tiers.slice(1).map((k, j) => +(((k[1] - r.tiers[j][1]) / (k[0] - r.tiers[j][0])) / ((sx + sz) / 2)).toFixed(2)) : null;
   /* 균일 배율(uniform) 옷은 세로를 자리에 안 맞춘다 — 오차를 판정하지 않는다(·) */
-  if (r.lamp) { console.log(`${worst > 0.01 || r.fellBack ? '✘' : '✔'} ${id.padEnd(20)} ${r.file.padEnd(32)} yaw ${String(r.yaw).padEnd(3)} 높이 ${r.height}  LED ${JSON.stringify(r.targets)}  머리−LED(x,y,z) ${JSON.stringify(r.topErr)}  배율 ${JSON.stringify(r.scale)}  받침 비킴 ${JSON.stringify(r.baseShift)}${r.fellBack ? '  ⚠ 고르게(머리 방향 안 맞음)' : ''}`); continue; }
-  console.log(`${r.uniform ? '·' : worst == null || worst > 0.02 ? '✘' : '✔'} ${id.padEnd(20)} ${r.file.padEnd(32)} yaw ${String(r.yaw).padEnd(3)} 높이 ${r.height}  자리 ${JSON.stringify(r.targets)}  윗면 오차 ${JSON.stringify(r.topErr)}  ${seg ? '구간 세로/가로 ' + JSON.stringify(seg) : '세로/가로 배율 ' + squash}`);
+  if (r.lamp) { console.log(`${worst > 0.01 || r.fellBack ? '✘' : '✔'} ${id.padEnd(20)} ${r.file.padEnd(32)} yaw ${String(r.yaw).padEnd(3)} 높이 ${r.height}  LED ${JSON.stringify(r.targets)}  머리−LED(x,y,z) ${JSON.stringify(r.topErr)}  배율 ${JSON.stringify(r.scale)}  받침 비킴 ${JSON.stringify(r.baseShift)}${r.fellBack ? '  ⚠ 고르게(머리 방향 안 맞음)' : ''}${r._over || ''}`); continue; }
+  console.log(`${r.uniform ? '·' : worst == null || worst > 0.02 ? '✘' : '✔'} ${id.padEnd(20)} ${r.file.padEnd(32)} yaw ${String(r.yaw).padEnd(3)} 높이 ${r.height}  자리 ${JSON.stringify(r.targets)}  윗면 오차 ${JSON.stringify(r.topErr)}  ${seg ? '구간 세로/가로 ' + JSON.stringify(seg) : '세로/가로 배율 ' + squash}${r._over || ''}`);
 }
 if (process.env.SHOT) {
   const dir = fs.mkdtempSync(path.join(path.dirname(process.env.SHOT), '.fit-'));
