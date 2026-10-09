@@ -68,6 +68,7 @@ import { dliFromContract } from './growth_adapter.js';
 import { headroomCheck, PLANT_POT_D_REF } from './headroom.js';
 import { rehomeCuttings, stepCuttings, cuttableNow, cutBlockedReason } from './propagation.js';
 import { stepShop, stepMarket } from './shop.js';
+import { stepSpecies } from './species.js';   /* ★ 2026-10-09 D45 — 새 두 종의 하루(§stepSpeciesOfTurn) */
 /* ★ 2026-10-08 [plan] 지도 13 — turn.cropNow(콩 씨앗 재고 · 빈 시루)를 짓는 데 쓴다(§attachEvents) */
 import { stockOf as shopStockOf } from './shop.js';
 import { cropPotList as cropPotListNow } from './first_play.js';
@@ -347,6 +348,37 @@ function cuttingLightOf(S, io, report) {
     if (!band) return null;                      // growth 가 밴드를 못 내면 판정하지 않는다
     return { dli, band, grows: !NO_GROW_BANDS.has(band) };
   };
+}
+
+/* ★ 2026-10-09 D45 — 새 두 종(PP · AL)의 하루. 놓인 그루만 · 빛은 삽수와 같은 길(그 자리 · 오늘 계약의 하늘 · lightOptsOf).
+     ⚠ 못 잰 날은 그 그루를 건너뛴다(growth: 0 으로 넘기면 AL 이 «어둠 21일»로 잠든다) — 기록을 남긴다.
+     PP 교환 물음도 여기서 난다(대답은 화면 · species §answerPPTrade). 반환 { events, alDormantNow, stepped } | null */
+function stepSpeciesOfTurn(S, io, report) {
+  try {
+    const sky = report && report.sky;
+    const season = sky && sky.season;
+    if (!season) return null;
+    let missed = 0;
+    const r = stepSpecies(S, {
+      day: S.day, season,
+      doneIds: (S.stamina && S.stamina.questsTaken) || [],
+      lightOf: (q) => {
+        let dli = null;
+        try {
+          dli = io.light && typeof io.light.dliOfSlot === 'function'
+            ? io.light.dliOfSlot(q.at ? q : q.slotId, lightOptsOf(S, sky)) : null;
+        } catch { dli = null; }
+        if (!(typeof dli === 'number' && isFinite(dli) && dli >= 0)) { missed += 1; return null; }
+        return dli;
+      }
+    });
+    if (missed) pushLog(S, `⚠ 새 식물 ${missed}그루의 자리 빛을 못 쟀습니다 — 오늘은 건너뜁니다`);
+    for (const e of r.events) if (e && e.ko && e.id !== 'pp_trade_offer') pushLog(S, '🌿 ' + e.ko);
+    return r;
+  } catch (e) {
+    pushLog(S, '⚠ 새 식물 진행 실패 — ' + e.message);
+    return { error: e.message, events: [], alDormantNow: false, stepped: 0 };
+  }
 }
 
 function stepCuttingsOfTurn(S, io, report) {
@@ -722,6 +754,8 @@ function attachEvents(S, turn, fpBefore) {
   /* ★ 2026-10-08 ([plan] 갈래 지도 ① · 5·6) — **삽수 사건도 같은 목록에 싣는다.** 뿌리냄·자리 잡음·혹·시듦 경고·죽음·빛 띠가
        turn.cuttings 에만 있어 로그 말고는 아무도 못 봤다(대사·배너 0). 대사를 무엇으로 붙일지는 dialogue 몫이다(모르는 id 는 조용히 지나간다) */
   if (turn.cuttings && !turn.cuttings.error) push(turn.cuttings.events);
+  /* ★ 2026-10-09 D45 — 새 두 종 사건(pp_* · al_*) · 대사는 plan dialogue EVENT_SCRIPT */
+  if (turn.species && !turn.species.error) push(turn.species.events);
   const t = turn.tutorial;
   if (t && !t.error) { push(t.events); push(t.storyEvents); }
   turn.events = out;
@@ -1158,6 +1192,7 @@ function nextDayBody(S, io) {
      났던 것과 같은 함정을 여기서는 처음부터 피한다.
      ★ 위 첫 플레이 되감기(catch)는 이 줄 **위에서** 끝난다 — 되감긴 턴은 삽수도 안 돈다. */
   const cuttings = stepCuttingsOfTurn(S, io, report);
+  const species = stepSpeciesOfTurn(S, io, report);   /* ★ D45 — 삽수 바로 뒤 · 두 반환구가 같은 하루를 받는다 */
 
   /* 몬스테라가 아직 도착하지 않았으면 콩나물만 진행하고 끝낸다.
      ★ 2026-08-04 — 도착은 이제 **턴 안에서 안 일어난다**(harvestCrop 이 준다). 그래서 이 경로에
@@ -1186,7 +1221,8 @@ function nextDayBody(S, io) {
       cropJustReady: !!(firstPlayEvent && firstPlayEvent.justReady),
       cropHarvest: beansproutHarvestStatus(S.firstPlay),
       cropWater: beansproutWaterStatus(S.firstPlay, S.day),
-      cuttings, shop, market
+      cuttings, shop, market,
+      species, alDormantNow: !!(species && species.alDormantNow)
     };
     /* ★이 경로도 튜토리얼을 돌려야 한다 (2026-08-03).
        몬스테라가 오기 전(그리고 도착하는 그 날)은 여기서 일찍 반환된다 —
@@ -1289,7 +1325,8 @@ function nextDayBody(S, io) {
     cropJustReady: !!(firstPlayEvent && firstPlayEvent.justReady),
     cropHarvest: beansproutHarvestStatus(S.firstPlay),
     cropWater: beansproutWaterStatus(S.firstPlay, S.day),
-    cuttings, shop, market
+    cuttings, shop, market,
+    species, alDormantNow: !!(species && species.alDormantNow)
   };
   /* ★ 2026-10-08 — 둘째 잎 기다림 «상태 줄»의 칸([plan] plan-leafwait ③). 실패 판정(위) «뒤»라 무른 턴은 안 센다.
      ⚠ 이 경로(몬스테라가 온 뒤)에만 있다 — 앞 반환구(earlyTurn)는 몬스테라 전이라 칸이 없다(= 모른다 · 줄이 안 뜬다). */

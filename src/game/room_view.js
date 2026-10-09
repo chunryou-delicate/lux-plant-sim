@@ -1967,8 +1967,9 @@ export async function createRoomView(canvas, opts = {}) {
       if (disposed) return;
       for (const [key, rec] of [...plants]) {
         const kindR = rec.spec.kind || 'monstera';
-        const youngVarie = kindR === 'cutpot' && rec.spec.status === 'established' &&
-                           Array.isArray(rec.spec.leafVarie) && rec.spec.leafVarie.some(Boolean);   /* ★ D46 — 작은 그루의 무늬 잎 */
+        const youngVarie = kindR === 'cutpot' && ((rec.spec.status === 'established' &&
+                           Array.isArray(rec.spec.leafVarie) && rec.spec.leafVarie.some(Boolean))   /* ★ D46 — 작은 그루의 무늬 잎 */
+                           || (rec.spec.species && rec.spec.species !== 'monstera'));              /* ★ D45 — 새 두 종의 잎 판(쓸 때 한 장씩 온다) */
         if (kindR !== 'monstera' && !youngVarie) continue;
         if (kindR === 'monstera' && !hasVarieLeaf(rec.spec.leafState)) continue;
         rec.skinDirty = true;                       // needsRebuild 가 이 표를 본다
@@ -2709,6 +2710,26 @@ export async function createRoomView(canvas, opts = {}) {
      ⚠ null 이면(잎 0 · 모르는 종 · 그 씨앗이 못 내는 장수 · 조립 실패) 예전 길(자른 가지 · 원기둥)로 내려앉는다.
      ⚠ 무늬 그림이 늦게 오면(userData.skinsPending) 모주처럼 도착 뒤 다시 짓는다(§rebuildVariePlants). */
   async function addYoungPlant(g, spec, baseY, potD) {
+    /* ★ 2026-10-09 D45 — 새 두 종(PP · AL)은 그루 상태(species/1)를 그대로 넘긴다(growth 5a70b9c2 · 몬스테라 칸은 안 읽음).
+         null(AL 잎 0장 · 구근·잠)이면 화분만 — 자른 가지 길로 안 내려앉는다(몬스테라 가지가 아니다) */
+    const sp = spec.species && spec.species !== 'monstera' ? spec.species : null;
+    if (sp) {
+      let plant = null, asm = null;
+      try {
+        asm = await assembler();
+        if (!asm || typeof asm.youngPlantOf !== 'function') return true;
+        plant = asm.youngPlantOf({ species: sp, plant: spec.speciesPlant, seed: spec.youngSeed, potD });
+      } catch (e) { warnOnce('young-sp', '[방뷰] 새 식물 그루를 못 지었습니다 — 화분만 그립니다:', e); return true; }
+      g.userData.leaves = [];
+      if (!plant) { g.userData.young = { species: sp, leafCount: 0, drawn: false }; return true; }
+      plant.position.y = baseY;
+      g.add(plant);
+      const u = plant.userData || {};
+      g.userData.young = { species: sp, leafCount: u.leafCount, leafCountWanted: u.leafCountWanted, h: u.sizeM && u.sizeM.h,
+                           drawn: true, varieLeafKeys: u.varieLeafKeys || [], skinsPending: u.skinsPending || 0 };
+      if (u.skinsPending) { try { watchSkins(asm); noteSkinTip(asm); } catch { } }
+      return true;
+    }
     if (spec.status !== 'established' || !Array.isArray(spec.leafVarie) || !spec.leafVarie.length) return false;
     let plant = null, asm = null;
     try {
@@ -2723,6 +2744,8 @@ export async function createRoomView(canvas, opts = {}) {
       }));
       plant = asm.youngPlantOf({ seed: spec.youngSeed, leaves, nextLeaf01: Number.isFinite(spec.nextLeaf01) ? spec.nextLeaf01 : 0,
                                  ageDays: Number.isFinite(spec.ageDays) ? spec.ageDays : null, potD,
+                                 /* growth e4fa24c4 — 흙에서 낸 잎 수(들고 온 잎 = N − grewLeaves 는 다 큰 잎으로) */
+                                 grewLeaves: Number.isFinite(spec.grewLeaves) ? spec.grewLeaves : undefined,
                                  species: spec.species || 'monstera', withPot: false });
     } catch (e) { warnOnce('young', '[방뷰] 작은 그루를 못 지었습니다 — 자른 가지 길로 그립니다:', e); return false; }
     if (!plant) return false;
@@ -3227,7 +3250,9 @@ export async function createRoomView(canvas, opts = {}) {
     return `${cutLeafCountOf(s)}|${s.variegated ? 1 : 0}|${s.rooted ? 1 : 0}|${s.stem || '-'}` +
            `|${j(s.leafVarie)}|${j(s.leafGrades)}|${j(s.leafSkins)}` +
            /* ★ 2026-10-09 D46 — 자리 잡음(작은 그루로 바뀜) · 다음 잎까지 온 몫(1/20 걸음 · 꼴이 이것으로 자란다) · 성숙잎 그림 */
-           `|${s.status || '-'}|${Number.isFinite(s.nextLeaf01) ? Math.round(s.nextLeaf01 * 20) : '-'}|${j(s.leafMatSkins)}`;
+           `|${s.status || '-'}|${Number.isFinite(s.nextLeaf01) ? Math.round(s.nextLeaf01 * 20) : '-'}|${j(s.leafMatSkins)}` +
+           /* ★ D45 — 새 두 종: 잎(번호·단계·분홍 몫)과 철(구근·잠)이 바뀌면 다시 짓는다 · grewLeaves(growth e4fa24c4) */
+           `|${s.species || '-'}|${s.speciesKey || '-'}|${Number.isFinite(s.grewLeaves) ? s.grewLeaves : '-'}`;
   };
   /* 몬스테라 잎 그림표 한 줄 요약(D4) — `[{ leafBirth, mid, mat }]` */
   const skinTableKey = (a) => (Array.isArray(a)

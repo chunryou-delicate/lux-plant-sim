@@ -15,6 +15,7 @@ import { createProfileLight } from '../../src/game/room_profile.js';
 import { cuttingsOf } from '../../src/game/propagation.js';
 import { storyOf, tutorialRulesFromHomes } from '../../src/game/oneroom.js';
 import { PROLOGUE_VARIE_LEAVES } from '../../src/game/growth_adapter.js';
+import { speciesSnapshot } from '../../src/game/species.js';   /* D45 — 새 두 종 곁줄 칸 */
 
 export const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 export const readJSON = p => JSON.parse(fs.readFileSync(path.join(ROOT, p), 'utf8'));
@@ -182,7 +183,9 @@ export function questSnapshotOf(S, io, opt = {}) {
     bagCuttings: (() => { try { return (cuttingsOf(S) || []).filter(c => c && c.status !== 'dead' && c.method && !c.slotId && !c.at).length   /* loop §turn.bagCuttings 와 같은 기준 · 지금 상태(놓자마자 바뀐다) */; } catch { return null; } })(),
     varieSalesSinceMove: (movedOut && story && Number.isInteger(story.varieSaleAtMove)) ? Math.max(0, ((ts.varieSale && ts.varieSale.count) || 0) - story.varieSaleAtMove) : (movedOut ? null : 0),
     cashWon: Number.isFinite(ts.cashWon) ? ts.cashWon : null,
-    targetWon: Number.isFinite(opt.targetWon) ? opt.targetWon : null
+    targetWon: Number.isFinite(opt.targetWon) ? opt.targetWon : null,
+    /* ★ 2026-10-09 D45 — game.html §questSnapshotNow 와 같게(새 두 종 곁줄 칸) */
+    ...speciesSnapshot(S)
   };
 }
 export { pot0 };

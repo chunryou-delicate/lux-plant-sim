@@ -57,6 +57,8 @@ import { STAMINA_MAX, createStaminaState } from './stamina.js';
 import { STORY_SCHEMA, createStoryState } from './oneroom.js';
 /* ★ 2026-10-08 — 둘째 잎 기다림 «상태 줄»의 칸(firstPlay.monstera.watch · leaf_wait.js) */
 import { packLeafWatch } from './leaf_wait.js';
+/* ★ 2026-10-09 D45 — 새 두 종(PP · AL). 그루 상태는 growth 규약(species/1) 그대로 싣는다(§species.packSpecies) */
+import { packSpecies, unpackSpecies } from './species.js';
 
 /* 저장 봉투의 스키마. **모르는 값이면 읽지 않는다**(fail-loud). */
 export const SAVE_SCHEMA = 'game_save/1';
@@ -1260,6 +1262,9 @@ export function serialize(S, opt = {}) {
         };
       }),
       cuttings: needArr(S.cuttings || [], 'cuttings').map(packCutting),
+      /* ★ 2026-10-09 D45 — 새 두 종. 칸이 없는 판(아직 원룸 전 · 옛 세이브)은 null — 열 때 비어 있는 채로 선다.
+           ⚠ newState 칸이 아니라 KNOWN_STATE_KEYS 에 안 든다(종 칸은 처음 쓸 때 선다 · species §speciesOf) */
+      species: S.species ? packSpecies(S.species) : null,
       firstPlay: packFirstPlay(S.firstPlay),
       story: packStory(S.story),
       tutorial: packTutorial(S.tutorial),
@@ -1725,6 +1730,9 @@ export function deserialize(raw, opt = {}) {
              wateredOnDay: q.wateredOnDay ?? S.day };
   });
   /* 삽수 — 쓸 때와 **같은 검증**을 읽을 때도 태운다(화분과 같은 규칙) */
+  /* ★ 2026-10-09 D45 — 새 두 종(없으면 null · 처음 쓸 때 선다). 자리 좌표는 화분과 같은 정본 모양으로(makeAt) */
+  S.species = st.species ? unpackSpecies(st.species) : null;
+  if (S.species) for (const q of S.species.pots) q.at = q.at ? makeAt(q.at) : null;
   S.cuttings = needArr(st.cuttings || [], 'state.cuttings').map((c, i) => {
     const q = packCutting(c, i);
     /* ★ `leaves`·`variegatedLeaves` 는 `leafVarie` 에서 나온 값이라 **저장하지 않고 다시 센다.**

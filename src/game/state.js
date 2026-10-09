@@ -893,6 +893,12 @@ export function placedItems(S) {
     if (c && (c.slotId || c.at))
       out.push({ id: c.id, slotId: c.slotId, at: c.at || null,
                  plantId: null, variegated: !!c.variegated, cutting: true });
+  /* ★ 2026-10-09 D45 — 새 두 종(PP · AL)도 자리를 차지한다. 삽수와 같은 모양 · plantId null(몬스테라 밴드 판정을 안 건다 —
+       두 종의 빛 문턱은 growth 규칙이 그 종 줄로 따로 잰다 · species §stepSpecies). 여기서 species.js 를 import 하지 않는다(칸 셋만 본다) */
+  for (const q of (S.species && S.species.pots) || [])
+    if (q && (q.slotId || q.at))
+      out.push({ id: q.id, slotId: q.slotId, at: q.at || null,
+                 plantId: null, variegated: false, species: q.species });
   return out;
 }
 

@@ -3260,6 +3260,11 @@ import { endingGoal } from './src/game/ending.js';   /* ★ 2026-10-08 [plan] �
 import { noteQuestWaits } from './src/game/nudge_wait.js';
 /* ★ 2026-10-09 D50([plan] dbbf7f29) — 칩·할 일 창이 «무엇을 기다리나»를 싣는다(판정은 nudge_wait 하나 · §questViewNow) */
 import { nudgeWaitReason } from './src/game/nudge_wait.js';
+/* ★ 2026-10-09 D45 — 새 두 종(핑크프린세스 · 알로카시아) 판(src/game/species.js) */
+import * as SPC from './src/game/species.js';
+const { speciesSnapshot } = SPC;
+import { useStock as shopUseStock, creditSpeciesSale } from './src/game/shop.js';
+import { resolvePlacement } from './src/game/place.js';
 /* ★ 2026-10-08 — 확대창을 연 적(둘째 잎 기다림 «상태 줄» zoomOpenedSinceArrival · leaf_wait.js) */
 import { noteZoomOpened } from './src/game/leaf_wait.js';
 /* ★ 2026-10-08 ④ 내 집 마련 규칙 — 목표(D9)가 null 이면 화면에 아무것도 안 뜬다 · ?endingTarget=N 은 걸어서 잴 때만(§homeGoalOf) */
@@ -4880,6 +4885,59 @@ const detail = {
      ⚠ 확대창(plant_grow)은 **몬스테라 하나**라 삽수를 못 그린다. 그래서 삽수의 「자세히」는
        이 카드가 제자리다 — 자란 날·기한·무늬·팔 수 있나가 전부 여기 있다.
      ⚠ **셈을 새로 안 만든다.** `cuttingSnapshot`(코어)이 낸 것을 적을 뿐이다. */
+  /* ★★ 2026-10-09 D45 — 새 식물 한 그루의 카드. 셈은 코어(species) — 여기는 적기만 한다 */
+  species(arg) {
+    const q = SPC.speciesPotOf(S, arg && arg.id);
+    if (!q) return { art: SPECIES_ART.pink_princess, title: '새 식물', sub: '못 찾음', body: '<p>그 그루를 못 찾았다.</p>' };
+    const ko = SPC.SPECIES_KO[q.species] || q.species;
+    const r2 = (k, v) => `<div class="row"><span>${k}</span><b>${v}</b></div>`;
+    const rows = (() => { try { return SPC.speciesRules().leafRows(q.plant); } catch { return []; } })();
+    const G = SPC.SPECIES_GAME.gradeKo[q.species] || {};
+    const byG = {}; for (const r of rows) byG[r.grade] = (byG[r.grade] || 0) + 1;
+    const price = SPC.speciesPriceOf(q), why = SPC.speciesSellBlockedReason(q);
+    const where = !SPC.speciesPlaced(q) ? '가방 — 아직 안 놓았다' : (q.slotId && !isFreeSlotId(q.slotId) ? slotLabel(q.slotId) : '방 안');
+    const btns = [];
+    if (!SPC.speciesPlaced(q)) btns.push({ ko: '🪴 방에 놓기', primary: true, go: () => startPhonePlaceSpecies(q.id) });
+    else btns.push({ ko: '📦 가방에 넣기', go: () => { SPC.bagSpecies(S, q.id); pushLog(S, `📦 ${ko}을 가방에 넣었습니다 — 다시 놓을 때까지 자라지 않습니다`); syncRoom(); fillSlots(); draw(); } });
+    if (q.species === 'pink_princess' && SPC.ppCuttableNodes(q).length) btns.push({ ko: '✂ 자르기', go: () => detail.open('ppCut', { id: q.id }) });
+    btns.push({ ko: why ? '💰 팔기' : `💰 팔기 · ${price.won.toLocaleString()}원`, off: !!why, why: why || '', go: () => sellSpeciesNow(q.id) });
+    let brief = ''; try { brief = SPC.speciesBriefKo(q); } catch { }
+    const teach = q.species === 'pink_princess'
+      ? '<p>새 잎마다 분홍 몫이 <b>바로 아래 잎에서 흘러온다</b>. 다 분홍인 «분홍 잎»이 세 장 이어지면 줄기 끝이 시든다 — '
+        + '좋은 마디 <b>바로 위에서 자르면</b> 다음 잎이 그 마디에서 다시 난다.</p>'
+      : '<p>잎이 서너 장에서 더 늘지 않고 <b>한 장씩 커진다</b>. 겨울엔 잎을 다 떨구고 잔다 — '
+        + '<b>죽은 게 아니다</b>. 봄에 깨고, 잠들 때 흙 속에 구근을 남긴다.</p>';
+    return {
+      art: SPECIES_ART[q.species], title: ko, sub: `${brief} · ${where}`,
+      body: r2('잎', `${rows.length}장`) + Object.entries(byG).map(([g, n]) => r2(G[g] || g, `${n}장`)).join('')
+          + (why ? r2('값', why) : r2('값', `${price.won.toLocaleString()}원`)) + teach,
+      btns
+    };
+  },
+  /* PP 자를 마디 고르기 — 마디마다 단추 하나(아래 → 위) */
+  ppCut(arg) {
+    const q = SPC.speciesPotOf(S, arg && arg.id);
+    const nodes = q ? SPC.ppCuttableNodes(q) : [];
+    return {
+      art: SPECIES_ART.pink_princess, title: '어느 마디 위를 자를까', sub: '핑크프린세스',
+      body: '<p>고른 마디 <b>바로 위</b>를 자른다. 윗부분은 가방에 들어가고, 다음 잎은 그 마디에서 난다 — '
+          + '분홍 몫도 그 마디 잎에서 다시 흘러간다.</p>',
+      btns: nodes.slice().reverse().map(n => ({ ko: `${n.no}번 마디 (${n.gradeKo}) 위 — 잎 ${n.take}장이 간다`, go: () => cutSpeciesNow(q.id, n.no) }))
+            .concat([{ ko: '그만두기', go: () => { } }])
+    };
+  },
+  /* PP 교환 물음(plan ①㉡) — 예/아니오 */
+  ppTrade() {
+    const cands = SPC.ppTradeCandidates(S);
+    const again = !!(S.species && S.species.trade && S.species.trade.asks > 1);
+    return {
+      art: SPECIES_ART.pink_princess, title: '식물 나눔 쪽지', sub: again ? '아래층 · 두 번째' : '아래층',
+      body: '<p>뿌리낸 <b>무늬 몬스테라 삽수 하나</b>와 <b>핑크프린세스 어린 그루</b>를 바꾸자고 한다.</p>'
+          + `<p>내줄 수 있는 삽수 ${cands.length}대${again ? ' · <b>이번에 거절하면 더 묻지 않는다</b>(상점에 내놓는다고 한다)' : ''}.</p>`,
+      btns: [{ ko: '🌸 바꾼다', primary: true, off: !cands.length, go: () => answerPPTradeNow(true) },
+             { ko: '안 바꾼다', go: () => answerPPTradeNow(false) }]
+    };
+  },
   cutting(arg) {
     const id = arg && arg.id;
     const c = cuttingsOf(S).find(x => x && x.id === id);
@@ -5293,6 +5351,7 @@ function bindDetail() {
     if (cell.dataset.place === 'beansprout') startPhonePlace();
     else if (isPotPlace(cell.dataset.place)) startPhonePlacePot(cell.dataset.place);
     else if (isCutPlace(cell.dataset.place)) startPhonePlaceCut(cutIdOf(cell.dataset.place));
+    else if (isSpeciesBagPlace(cell.dataset.place)) startSpeciesBagPlace(cell.dataset.place);   /* ★ D45 */
   });
   /* 자판으로도 눌린다 — `role="button"` 인 칸은 Enter·Space 를 저절로 안 받는다.
      PC 로 검수할 때 손이 막히면 그것도 고장이다. */
@@ -5304,6 +5363,7 @@ function bindDetail() {
     if (cell.dataset.place === 'beansprout') startPhonePlace();
     else if (isPotPlace(cell.dataset.place)) startPhonePlacePot(cell.dataset.place);
     else if (isCutPlace(cell.dataset.place)) startPhonePlaceCut(cutIdOf(cell.dataset.place));
+    else if (isSpeciesBagPlace(cell.dataset.place)) startSpeciesBagPlace(cell.dataset.place);   /* ★ D45 */
   });
 }
 
@@ -7864,6 +7924,10 @@ const CUT_ART = Object.freeze({
 });
 /* 갈래 낱말 — 화분(`monsteraSeed:*`)과 **같은 손버릇**이다. 한 낱말이 끝까지 삽수 id 를 나른다 */
 const isCutPlace = (what) => /^cutting:/.test(String(what || ''));
+/* ★ 2026-10-09 D45 — 새 두 종 그루(S.species.pots) · 가방 칸의 구근·산 재고 */
+const isSpPlace = (what) => /^species:/.test(String(what || ''));
+const spIdOf = (what) => String(what || '').split(':')[1] || null;
+const isSpeciesBagPlace = (what) => /^(species|corm|spstock):/.test(String(what || ''));
 const cutIdOf = (what) => String(what || '').split(':')[1] || null;
 const cutThumbId = (id) => 'cutThumb_' + String(id).replace(/[^\w]/g, '_');
 const BAG_CUT_PAUSED_KO = '가방 안 삽수는 자라지 않습니다 — 방에 놓아 주세요';   /* D29 · [plan] 19358f22 문안 */
@@ -7891,6 +7955,35 @@ function cuttingBagHTML() {
   return `<div class="grouphead">자른 삽수 · ${list.length}대</div>` +
     `<div class="baggrid">${cells}</div>` +
     `<div class="lotline">끌어서 방에 놓으세요 — <b>놓은 자리의 빛이 새 잎의 무늬를 정합니다.</b></div>`;
+}
+
+/* ══ ★★ 2026-10-09 D45 — 가방의 새 식물(그루 · 찾은 구근 · 산 재고) ═══════════════════════
+   그루는 끌거나 눌러서 놓는다(삽수와 같은 손). 구근·산 재고는 누르면 그 자리에서 그루가 되어 놓인다(심기 = 놓기). */
+const SPECIES_ART = Object.freeze({ pink_princess: './assets/plants/pink_princess/thumbs/pp_leaf_mid.png',
+                                    alocasia_frydek: './assets/plants/alocasia/thumbs/al_leaf_mid.png' });
+const spThumbId = (id) => `spThumb_${id}`;
+function bagSpeciesPots() { try { return SPC.speciesPotsOf(S).filter(q => q && !SPC.speciesPlaced(q)); } catch { return []; } }
+function speciesBagHTML() {
+  const pots = bagSpeciesPots();
+  const corms = (S.species && Array.isArray(S.species.corms)) ? S.species.corms : [];
+  const stock = ['al_corm', 'pp_young'].map(id => [id, stockOf(S, id) || 0]).filter(([, n]) => n > 0);
+  if (!pots.length && !corms.length && !stock.length) return '';
+  /* ⚠ drawBag 의 esc2 는 그 함수 안 지역이다 — 여기서 따로 둔다 */
+  const esc2 = v => String(v == null ? '' : v).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const cell = (place, art, nm, eta, thumb) =>
+    `<div class="bagslot act" title="${esc2(nm)} · ${esc2(eta)}" data-place="${esc2(place)}" role="button" tabindex="0">` +
+    `<span class="art"><img ${thumb ? `id="${thumb}" ` : ''}src="${art}" alt="${esc2(nm)}" onerror="this.remove()"></span>` +
+    `<span class="nm">${esc2(nm)}</span><span class="eta">${esc2(eta)}</span></div>`;
+  let cells = '';
+  for (const q of pots) {
+    let brief = ''; try { brief = SPC.speciesBriefKo(q).replace(/^[^—]*— /, ''); } catch { }
+    cells += cell(`species:${q.id}`, SPECIES_ART[q.species], SPC.SPECIES_KO[q.species] || q.species, brief || '눌러서 놓으세요', spThumbId(q.id));
+  }
+  for (const c of corms) cells += cell(`corm:${c.id}`, SPECIES_ART.alocasia_frydek, '알로카시아 구근', '찾은 구근 · 눌러서 심으세요');
+  for (const [id, n] of stock) cells += cell(`spstock:${id}`, SPECIES_ART[id === 'al_corm' ? 'alocasia_frydek' : 'pink_princess'],
+    id === 'al_corm' ? '알로카시아 구근' : '핑크프린세스', `산 것${n > 1 ? ' ×' + n : ''} · 눌러서 ${id === 'al_corm' ? '심으세요' : '놓으세요'}`);
+  return `<div class="grouphead">새 식물</div><div class="baggrid">${cells}</div>` +
+    `<div class="lotline">끌거나 눌러서 방에 놓으세요 — <b>밝은 자리</b>라야 자랍니다.</div>`;
 }
 
 /* 카드를 [가방] ↔ [식물] 사이로 **노드째** 옮긴다.
@@ -8118,6 +8211,7 @@ function drawBag() {
      ★ 2026-10-09 D43 — **가구보다도 앞**이다. 이사 뒤 가방에 가구 열 개가 들면 삽수 칸이 그 아래로 밀려 화면 밖에 있었고,
        손가락이 칸을 못 찾아 [가방] 문만 짚었다(probe_d43_movein_cutting). 가방 속 삽수는 하루가 안 가니(D29) 먼저 보인다 */
   html += cuttingBagHTML();
+  try { html += speciesBagHTML(); } catch (e) { console.warn('[새 식물 가방]', e && e.message); }   /* ★ D45 */
   /* ★ 2026-10-09 D29(총괄 11:35) — 가방 속 삽수는 하루가 안 간다(propagation §stepCuttings). 왜 그대로인지 가방이 말한다(글은 [plan] 몫 · BAG_CUT_PAUSED_KO) */
   try { if (bagCuttings().some(c => c && c.method && c.status !== 'dead')) html += '<div class="bagmore">' + BAG_CUT_PAUSED_KO + '</div>'; } catch { }
   html += bagHelpHTML(anyPlaceable);
@@ -8206,6 +8300,9 @@ function drawBag() {
          id 가 판마다 다르다. 그래서 그린 뒤에 그 자리에서 건다. */
     for (const c of bagCuttings())
       bindDrag(cutThumbId(c.id), 'cutting:' + c.id, () => startPhonePlaceCut(c.id));
+    /* ★ D45 — 새 식물 그루도 끌어서 놓는다(삽수와 같은 손) */
+    for (const q of bagSpeciesPots())
+      if (document.getElementById(spThumbId(q.id))) bindDrag(spThumbId(q.id), 'species:' + q.id, () => startPhonePlaceSpecies(q.id));
   }
   $('bagCount').textContent = total ? `· ${total}개` : '';
 
@@ -8384,6 +8481,7 @@ function drawShop() {
     } catch { cutOpen = false; }     /* 못 물으면 안 연다 — 모르는 것을 열어 주지 않는다 */
   }
   const shown = catalogList()
+    .filter(it => it.kind !== 'plant' || SPC.speciesShopOpen(S, it.id))   /* ★ D45 — AL 구근(원룸 60일) · PP(교환 거절 둘) */
     .filter(it => musunOpen || !MUSUN_ITEMS.has(it.id))
     .filter(it => monsteraOpen || !MONSTERA_ITEMS.has(it.id))
     .filter(it => cutOpen || !CUT_ITEMS.has(it.id));
@@ -9661,7 +9759,9 @@ function questSnapshotNow(turn) {
     seedStock: (() => {
       try { return (shopStatus(S).stock || {})[cropKindOf('beansprout').seedItemId] || 0; }
       catch { return 0; }
-    })()
+    })(),
+    /* ★ 2026-10-09 D45 — 새 두 종 곁줄 셋(plan SPECIES_QUESTS)이 읽는 칸 — 코어 §speciesSnapshot 그대로(harness 와 같은 자) */
+    ...(() => { try { return speciesSnapshot(S); } catch { return {}; } })()
   };
 }
 
@@ -9736,7 +9836,7 @@ function drawQuestPanel() {
   $('questTitle').textContent = `할 일 ${done}/${total}`;
   /* D50 — 머리는 칩과 같은 줄(기다리지 않는 첫 줄)을 말한다 */
   $('questSub').textContent = v.chip
-    ? (v.chip.waiting ? `기다리는 중 — ${v.chip.waitWhat || v.chip.ko}` : `지금 할 것 — ${v.chip.ko}`)
+    ? (questChipIsWait(v) ? `기다리는 중 — ${v.chip.waitWhat || v.chip.ko}` : `지금 할 것 — ${v.chip.ko}`)
     /* ⚠ 수를 글자로 박지 마라 — 2026-08-16 에 줄이 다섯에서 여섯이 됐고 이 줄만 낡았다.
        `total` 은 `quest.QUESTS` 에서 오므로 줄이 늘면 저절로 따라온다(§2.8). */
     : (done >= total ? `${total}가지를 다 배웠습니다` : questEmptyKo());
@@ -9793,8 +9893,12 @@ function questViewNow() {
 function questChipLineOf(v) {
   const c = v && v.chip;
   if (!c) return null;
+  /* [plan] 85af8fd7 — 기다림인데 «먼저 할 손»(waitDo · 지금은 cropReady «익은 시루부터 거두세요»)이 있으면 그 말을 보통 할 일처럼 */
+  if (c.waiting && c.waitDo) return c.waitDo;
   return c.waiting && c.waitWhat ? `기다리는 중 — ${c.waitWhat}` : (c.todo || null);
 }
+/* 칩 줄이 «기다리는 중 — …» 꼴인가(머리 「지금 할 것」을 안 붙인다) */
+const questChipIsWait = v => !!(v && v.chip && v.chip.waiting && !v.chip.waitDo);
 function questRowsHtml(v) {
   const esc = s => String(s == null ? '' : s).replace(/[&<>]/g, c =>
     ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
@@ -9811,6 +9915,8 @@ function questRowsHtml(v) {
     const body =
       state === 'locked' ? '<div class="qwhy">아직 열리지 않았습니다</div>'
       : state === 'done' ? ''
+      : q.waiting && q.waitDo
+        ? `<div class="qtodo">${esc(q.waitDo)}</div><div class="qwhy">${esc(q.why)}</div>`   /* plan 85af8fd7 — 먼저 할 손 */
       : q.waiting && q.waitWhat
         ? `<div class="qtodo qwait">기다리는 중 — ${esc(q.waitWhat)}</div><div class="qwhy">${esc(q.why)}</div>`   /* D50 */
         : `<div class="qtodo">${esc(q.todo)}</div><div class="qwhy">${esc(q.why)}</div>`;
@@ -10006,7 +10112,7 @@ function drawBagQuestBtn() {
   if (!questNewSeen) b.dataset.dot = '1'; else delete b.dataset.dot;
   /* D50 — 칩과 같은 줄 */
   { const line = questChipLineOf(v);
-    if (h) h.textContent = line ? (v.chip.waiting ? line : `지금 할 것 — ${line}`) : ''; }
+    if (h) h.textContent = line ? (questChipIsWait(v) ? line : `지금 할 것 — ${line}`) : ''; }
 }
 
 /* ★★★ **체력이 모자라 못 하는 것은 「왜 안 되는지」가 보여야 한다** (2026-08-09).
@@ -11783,6 +11889,7 @@ function syncHeroOutfit() {
 }
 function draw() {
   try { syncHeroOutfit(); } catch { }
+  try { setTimeout(maybeAskPPTrade, 0); } catch { }   /* ★ D45 — 교환 물음(걸려 있고 대사가 끝났으면 하루 한 번) */
   saveSoon();
   renderHUD($('hud'), S, lastTurn, io);
   renderLog($('log'), S);
@@ -13666,11 +13773,27 @@ function syncRoom() {
                      /* 그루마다 다른 꼴 — 판 씨앗과 삽수 이름에서 정수 하나(세이브마다 같은 답) */
                      youngSeed: (() => { let h = (seed >>> 0) ^ 0x9e3779b9; for (const ch of String(c.id)) h = Math.imul(h ^ ch.charCodeAt(0), 16777619) >>> 0; return h >>> 0; })(),
                      species: c.species || 'monstera',
+                     grewLeaves: Number.isFinite(c.grewLeaves) ? c.grewLeaves : null,   /* growth e4fa24c4 — 흙에서 낸 잎 수 */
                      potD: cont.realMaxM || 0.12 };
       want.add(c.id);
       Promise.resolve(c.at && roomView.setPlantAt
         ? roomView.setPlantAt(c.id, c.at, spec)
         : roomView.setPlant(c.slotId, spec)).catch(warn('삽수 ' + c.id));
+    }
+    /* ★★ 2026-10-09 D45 — 새 식물(PP · AL) — 화분 + growth youngPlantOf(그루 상태 그대로) · 잎·철이 바뀌면 다시 짓는다(speciesKey) */
+    for (const q of SPC.speciesPotsOf(S)) {
+      if (!q || !SPC.speciesPlaced(q)) continue;
+      const pl = q.plant || {};
+      const speciesKey = (pl.leaves || []).map(l => `${l.no}:${l.stage}:${l.pink != null ? Math.round(l.pink * 100) : ''}`).join(',')
+                       + `|${pl.phase || ''}|${pl.varie || ''}|${pl.witherAt != null ? 'w' : ''}`;
+      const spec = { kind: 'cutpot', potId: q.id, variegated: false, rooted: true, status: 'established',
+                     leafVarie: [], leafGrades: [], leafSkins: [], leafMatSkins: [],
+                     species: q.species, speciesPlant: q.plant, speciesKey,
+                     youngSeed: (q.plant && q.plant.seed) >>> 0, potD: SPC.SPECIES_GAME.potD };
+      want.add(q.id);
+      Promise.resolve(q.at && roomView.setPlantAt
+        ? roomView.setPlantAt(q.id, q.at, spec)
+        : roomView.setPlant(q.slotId, spec)).catch(warn('새 식물 ' + q.id));
     }
     /* 판 것·죽은 것은 걷는다. 안 걷으면 **판 삽수가 방에 그대로 남는다** —
        화분에서 이미 겪은 일이라(shownAt 주석) 같은 실수를 되풀이하지 않는다. */
@@ -13863,6 +13986,7 @@ function potDOf(what, n) {
     const cont = c ? (CONTAINERS[c.container] || {}) : {};
     return cont.realMaxM || 0.12;
   }
+  if (isSpPlace(what)) return SPC.SPECIES_GAME.potD;   /* ★ D45 — 새 식물 화분 */
   return ARRIVAL_POT_D;
 }
 
@@ -13941,7 +14065,7 @@ function syncPlantGlow() {
 }
 
 /* ★ 2026-10-08 C — 빈 화분(씨앗 몬스테라)·삽수는 몬스테라 자로 등급을 매긴다(작물 표에 없는 이름이라 그대로 넣으면 등급이 빠진다) */
-function rankWhatOf(what) { return (isPotPlace(what) || isCutPlace(what)) ? 'monstera' : what; }
+function rankWhatOf(what) { return (isPotPlace(what) || isCutPlace(what) || isSpPlace(what)) ? 'monstera' : what; }   /* D45 — 새 식물도 밝을수록 좋은 쪽 */
 function rankSlots(what, ids) {
   if (!ids || !ids.length) return ids || [];
   /* ★위 ★★ — 튜토에서는 색을 안 나눈다.
@@ -14482,6 +14606,22 @@ function commitPlaceInner(what, hit, opt = {}) {
     return;
   }
 
+  /* ★★ 2026-10-09 D45 — 새 식물 갈래(삽수 갈래와 같은 뼈대 · 자리는 resolvePlacement 한 함수).
+     ⚠ 몬스테라 갈래로 떨어지지 않게 «앞»에 둔다(맨 아래 «모르면 몬스테라» 사고 · 위 주석) */
+  if (isSpPlace(what)) {
+    const q = SPC.speciesPotOf(S, spIdOf(what));
+    if (!q) return placeFailed(new Error(`그 식물을 못 찾았습니다 (${spIdOf(what)})`));
+    try {
+      const r = resolvePlacement(q.id, atOf(hit), placeOpt());
+      SPC.setSpeciesAt(S, q.id, { slotId: r.slotId, at: r.at });
+      banner(`🌿 ${SPC.SPECIES_KO[q.species] || '새 식물'}을 놓았습니다`, speciesPlaceSub(q));
+      unlockAfterFix();
+      sfx.thud();
+    } catch (e) { return placeFailed(e); }
+    syncRoom(); draw();
+    return;
+  }
+
   /* ★★ 삽수 갈래 — **화분 갈래 바로 뒤, 작물 판정 앞**이다 (2026-08-16 · §cuttingBagHTML).
      ⚠ 자리를 여기서 지어내지 않는다. 화분·시루와 **같은 함수**(`resolvePlacement`)를 타는
        `setCuttingAt` 한 줄이다 — propagation.js §⑤ 가 그렇게 적어 두었다.
@@ -14698,6 +14838,8 @@ const picked = {
     } catch { return null; }
   },
   kindAt(slotId) {
+    /* ★ 2026-10-09 D45 — 새 식물 그루면 그 이름으로(«모르면 몬스테라»로 안 떨어지게 — 맨 앞에서 가른다) */
+    { const sp = speciesAtKey(slotId); if (sp) return 'species:' + sp.id; }
     const b = S.firstPlay && S.firstPlay.beansprout;
     if (!b) return 'monstera';
     if (slotId === BEANSPROUT_ID || slotId === `free:${BEANSPROUT_ID}`) return 'beansprout';
@@ -14742,7 +14884,8 @@ const picked = {
           return (row && row.placed && !row.harvested) ? row : null;
         } catch { return null; }
       })();
-      if (t) t.style.display = (ep || this.potInRoom || this.cropInRoom) ? '' : 'none';
+      this.speciesInRoom = speciesAtKey(slotId);   /* ★ D45 — 새 식물도 [가방에 넣기] */
+      if (t) t.style.display = (ep || this.potInRoom || this.cropInRoom || this.speciesInRoom) ? '' : 'none';
     }
     /* ★★★ 2026-08-14 — **잠금을 걷었다** (박사님: *"씨앗이없는 상태에서 시루가안옮겨져"*).
        여기 있던 것: 거둔 시루면 [옮기기]를 `disabled` 로 잠갔다.
@@ -14779,6 +14922,7 @@ const picked = {
        `select` 를 다시 부르면 방뷰 하이라이트가 매 프레임 다시 걸린다. */
   refreshLabel() {
     if (!this.slotId) return;
+    { const sp = speciesAtKey(this.slotId); if (sp) { try { $('pickedName').textContent = SPC.speciesBriefKo(sp); return; } catch { } } }   /* ★ D45 */
     const r = siruRowAt(this.slotId);
     $('pickedName').textContent = r ? siruBriefKo(r) : slotLabel(this.slotId);
   },
@@ -15187,6 +15331,99 @@ function startPhonePlaceCut(id) {
   return { ok: true };
 }
 
+/* ══ ★★ 2026-10-09 D45 — 새 식물을 눌러서 놓는다(§startPhonePlaceCut 과 같은 뼈대) ══════════════ */
+function speciesPlaceSub(q) {
+  if (q.species === 'alocasia_frydek' && q.plant && q.plant.phase === 'corm') return '구근을 심었습니다 — 싹이 나야 무늬인지 압니다';
+  return q.species === 'pink_princess' ? '새 잎마다 분홍이 달라집니다 — 좋은 마디 바로 위에서 자르면 분홍을 붙잡습니다'
+                                        : '밝은 자리라야 자랍니다 — 겨울엔 잎을 다 떨구고 잡니다';
+}
+function startPhonePlaceSpecies(id) {
+  const q = SPC.speciesPotOf(S, id);
+  if (!q) { banner('그 식물을 못 찾았습니다', '가방을 다시 열어 주세요'); return { ok: false, why: 'no-species' }; }
+  const spot = provisionalSpot();
+  if (!spot) { banner('놓을 자리를 못 찾았습니다', '방을 조금 돌린 뒤 다시 눌러 주세요'); return { ok: false, why: 'no-spot' }; }
+  let at = spot;
+  if (typeof spot === 'string') {
+    const sl = (io.light.room.slots || []).find(x => x && x.slotId === spot);
+    if (!sl) { banner('놓을 자리를 못 찾았습니다', '방을 조금 돌린 뒤 다시 눌러 주세요'); return { ok: false, why: 'slot-not-found:' + spot }; }
+    at = { x: sl.x, y: sl.y, z: sl.z };
+  }
+  try {
+    const r = resolvePlacement(q.id, at, { size: io.light.room.size, slots: io.light.room.slots, snapDist: 0 });
+    SPC.setSpeciesAt(S, q.id, { slotId: r.slotId, at: r.at });
+  } catch (e) { banner('배치하지 못했습니다', (e && e.message) || ''); return { ok: false, why: (e && e.message) || String(e) }; }
+  try { window.__byeotSheet.close(); } catch { }
+  banner(`🌿 ${SPC.SPECIES_KO[q.species] || '새 식물'}을 놓았습니다`, speciesPlaceSub(q) + ' · 눌러서 [옮기기]로 자리를 고르세요');
+  syncRoom(); draw();
+  return { ok: true, id: q.id };
+}
+/* 가방 칸 — 그루면 놓고 · 구근이면 심어서 놓고 · 산 재고면 그루로 풀어서 놓는다 */
+function startSpeciesBagPlace(place) {
+  const [kind, id] = String(place).split(':');
+  try {
+    if (kind === 'species') return startPhonePlaceSpecies(id);
+    if (kind === 'corm') { const q = SPC.plantCorm(S, id); pushLog(S, '🌱 찾은 알로카시아 구근을 심었습니다'); try { checkQuests(lastTurn); } catch { } return startPhonePlaceSpecies(q.id); }
+    if (kind === 'spstock') { const q = SPC.unpackSpeciesStock(S, id, stockOf, shopUseStock); return startPhonePlaceSpecies(q.id); }
+  } catch (e) { banner('놓지 못했습니다', (e && e.message) || ''); return { ok: false, why: (e && e.message) || String(e) }; }
+  return { ok: false, why: 'unknown:' + place };
+}
+window.__placeSpecies = (place) => startSpeciesBagPlace(place);   /* 재는 손잡이 */
+/* 그 열쇠(자리 이름 · free:id · id)에 놓인 새 식물 그루 */
+function speciesAtKey(key) {
+  if (!key) return null;
+  try { return SPC.speciesPotsOf(S).find(q => q && (q.slotId === key || key === `free:${q.id}` || key === q.id)) || null; } catch { return null; }
+}
+/* 판다 — 값은 코어(species §speciesPriceOf) · 돈은 상점 통(shop §creditSpeciesSale) */
+function sellSpeciesNow(id) {
+  let r = null;
+  try { r = SPC.takeSpeciesForSale(S, id); }
+  catch (e) { banner('팔지 못했습니다', (e && e.message) || ''); return; }
+  const ko = SPC.SPECIES_KO[r.pot.species] || '새 식물';
+  try { creditSpeciesSale(S, r.won, { ko, log: m => pushLog(S, m) }); } catch (e) { banner('값을 못 받았습니다', (e && e.message) || ''); return; }
+  banner(`💰 ${josa(ko, '을', '를')} 넘겼습니다`, `${r.won.toLocaleString()}원`);
+  try { sfx.thud(); } catch { }
+  try { syncRoom(); } catch { }
+  try { checkQuests(lastTurn); } catch { }
+  fillSlots(); draw();
+}
+window.__byeotSpeciesSell = (id) => sellSpeciesNow(id);   /* 재는 손잡이 — 카드 [팔기]와 같은 함수 */
+/* PP 자르기 — 그 마디 «바로 위» */
+function cutSpeciesNow(id, nodeNo) {
+  let r = null;
+  try { r = SPC.cutSpecies(S, id, nodeNo); }
+  catch (e) { banner('자르지 못했습니다', (e && e.message) || ''); return; }
+  pushLog(S, `✂ 핑크프린세스 ${nodeNo}번 마디 위를 잘랐습니다 — 윗부분은 가방에 있습니다`);
+  banner('✂ 잘랐습니다', r.saved ? '시드는 줄기 끝을 살렸습니다 — 윗부분은 가방에 있습니다'
+                                 : (r.grade === 'marble' || r.grade === 'heavy') ? '좋은 마디 위에서 잘랐습니다 — 다음 잎이 이 마디에서 납니다'
+                                 : '윗부분은 가방에 있습니다');
+  try { sfx.thud(); } catch { }
+  try { syncRoom(); } catch { }
+  try { checkQuests(lastTurn); } catch { }
+  draw();
+}
+/* PP 교환 물음 — 걸려 있으면 하루에 한 번 카드로 묻는다(대사가 끝난 뒤) */
+let ppTradeAskedDay = null;
+function maybeAskPPTrade() {
+  try {
+    if (!SPC.ppTradePending(S)) return;
+    if (ppTradeAskedDay === S.day) return;
+    if ($('stage').classList.contains('talking')) return;
+    if ($('detail') && $('detail').classList.contains('on')) return;
+    ppTradeAskedDay = S.day;
+    detail.open('ppTrade');
+  } catch (e) { console.warn('[교환]', e && e.message); }
+}
+function answerPPTradeNow(yes) {
+  let r = null;
+  try { r = SPC.answerPPTrade(S, yes); }
+  catch (e) { banner('바꾸지 못했습니다', (e && e.message) || ''); return; }
+  for (const e of r.events) pushLog(S, (yes ? '🌸 ' : '✉ ') + e.ko);
+  try { dlgOpen(story.events(r.events, S)); } catch (e) { console.warn('[교환 대사]', e && e.message); }
+  try { syncRoom(); } catch { }
+  try { checkQuests(lastTurn); } catch { }
+  draw();
+}
+
 /* ★★ 놓인 빈 화분에 씨앗을 심는다 — 두 걸음의 **둘째 걸음**(2026-08-16).
    ⚠ 자리를 새로 안 고른다. **놓인 그 자리**에 그대로 심는다 —
      다시 고르면 「놓은 데가 아닌 데」에 나서 손이 두 번 헛돈다.
@@ -15570,7 +15807,21 @@ const FURN_LIGHT_KO = Object.freeze({
   /* ★ C 보탬(총괄 10-09 · house bd7d0b80 · 글 plan 8c7702fe) — 엔진이 `higher`(창틀 높이로 올리면 여름 등 없이 15% 넘게 밝아짐)를 낼 때만 둘째 줄.
        A·B·Bp → «더 잘» · C·D 인데 올리면 문턱을 넘으면 → «등 없이도» · 올려도 못 넘으면 둘째 줄 없음(반지하는 higher 를 안 낸다) */
   higher:     '창틀 높이로 올리면 여름에 더 잘 자랍니다',
-  higherGrow: '창틀 높이로 올리면 여름엔 등 없이도 자랍니다'
+  higherGrow: '창틀 높이로 올리면 여름엔 등 없이도 자랍니다',
+  /* ★ D53(plan 67783383 · 594babb1 · 873b11e3 · house 6e3f22d5·d116738d·5e970015) — 엔진 clipTop 이 있으면 둘째 줄.
+       atTop(가르는 자리가 이미 맨 윗단)이면 «맨 윗단에 두고 » → «여기에 » · «집게등»은 화면에서 «클립형 식물등»(상점 이름) */
+  clipWinter: '{at}클립형 식물등을 물리면 겨울에도 자랍니다',
+  clipSummer: '{at}클립형 식물등을 물리면 여름엔 자랍니다',
+  clipNovice: '{at}클립형 식물등을 물리면 자랍니다',
+  /* 무늬 그루·무늬 삽수를 놓을 때(v.variegated) 첫 줄 — 주어가 «무늬» */
+  vA:  '여기면 무늬 몬스테라가 겨울에도 자랍니다',
+  vB:  '무늬는 여름엔 등 없이 자랍니다 — 겨울엔 식물등을 켜야 자랍니다',
+  vBp: '무늬는 여름엔 등 없이 자랍니다 — 겨울엔 등을 켜도 모자랍니다',
+  vC:  '무늬는 여기선 식물등이 있어야 자랍니다',
+  vD:  '여기선 무늬 몬스테라가 안 자랍니다 — 창에 더 붙여 보세요',
+  vgrow: '여기면 무늬 몬스테라가 자랍니다',
+  vlamp: '무늬는 여기선 식물등이 있어야 자랍니다',
+  vnone: '여기선 무늬 몬스테라가 안 자랍니다 — 창턱에 두고 등을 켜세요'
 });
 function furnLightLine(uid) {
   if (!uid || !io.light || typeof io.light.placeVerdict !== 'function') return null;
@@ -15581,10 +15832,24 @@ function furnLightLine(uid) {
     const seasons = (() => { try { return !!modeOf(S).rollSeason; } catch { return false; } })();
     const v = io.light.placeVerdict(pts, { novice: !seasons });
     if (!v || !FURN_LIGHT_KO[v.key]) return null;
-    const text = FURN_LIGHT_KO[v.key] + (v.key === 'C' && v.wnShort ? FURN_LIGHT_KO.Cshort : '');
-    const tail = !v.higher ? null
-      : (v.key === 'A' || v.key === 'B' || v.key === 'Bp') ? FURN_LIGHT_KO.higher
-      : (Number.isFinite(v.higher.s0) && Number.isFinite(v.th) && v.higher.s0 >= v.th ? FURN_LIGHT_KO.higherGrow : null);
+    return furnLightTextOf(v, !seasons);
+  } catch (e) { console.warn('[가구 빛]', e && e.message); return null; }
+}
+/* 엔진 갈래(placeVerdict) → 한 줄(+ 둘째 줄 하나). 화분을 놓을 때(무늬)도 같은 표를 쓴다
+   둘째 줄 차례(plan): higherGrow > clipTop > higher — 손이 덜 드는 길부터 · 하나만 */
+function furnLightTextOf(v, novice) {
+  try {
+    const K = FURN_LIGHT_KO;
+    const first = (v.variegated && K['v' + v.key]) ? K['v' + v.key] : K[v.key];
+    const text = first + (v.key === 'C' && v.wnShort ? K.Cshort : '');
+    const hGrow = !!(v.higher && !(v.key === 'A' || v.key === 'B' || v.key === 'Bp')
+                     && Number.isFinite(v.higher.s0) && Number.isFinite(v.th) && v.higher.s0 >= v.th);
+    const at = v.clipTop && v.clipTop.atTop ? '여기에 ' : '맨 윗단에 두고 ';
+    const clip = v.clipTop ? (novice ? K.clipNovice : v.clipTop.winterToo ? K.clipWinter : K.clipSummer).replace('{at}', at) : null;
+    const tail = hGrow ? K.higherGrow
+               : clip ? clip
+               : (v.higher && (v.key === 'A' || v.key === 'B' || v.key === 'Bp')) ? K.higher
+               : null;
     return { key: v.key, text, tail, good: v.key === 'A' || v.key === 'grow' };
   } catch (e) { console.warn('[가구 빛]', e && e.message); return null; }
 }
@@ -16544,6 +16809,18 @@ function bindPicked() {
     if (b) b.onclick = guard(() => {
       /* ★ 심은 그루 — **개체째 가방으로.** 자리·좌표를 지우고 「안 놓은 것」으로 되돌린다.
          그 상태가 곧 「가방에 있다」이고, 턴이 그 그루를 안 굴린다(loop §inBag). */
+      /* ★ 2026-10-09 D45 — 새 식물 그루 — 개체째 가방으로(자라기 멈춤) */
+      const spr = picked.speciesInRoom;
+      if (spr) {
+        picked.clear();
+        SPC.bagSpecies(S, spr.id);
+        pushLog(S, `📦 ${SPC.SPECIES_KO[spr.species] || '새 식물'}을 가방에 넣었습니다 — 다시 놓을 때까지 자라지 않습니다`);
+        banner('가방에 넣었습니다', '가방에 있는 동안에는 자라지 않습니다 — 다시 놓으면 이어서 자랍니다');
+        try { sfx.thud(); } catch { }
+        try { syncRoom(); } catch { }
+        fillSlots(); draw();
+        return;
+      }
       const pr = picked.potInRoom;
       if (pr && !picked.emptyPotId) {
         const n = (S.pots || []).length > 1 ? ` ${(S.pots || []).indexOf(pr) + 1}` : '';
@@ -16603,6 +16880,8 @@ function bindPicked() {
     let isPlant = false;
     try { isPlant = !!(window.__byeotIsPlantSlot && window.__byeotIsPlantSlot(id)); } catch { }
     if (isPlant) { openZoomFor(potOfSlot(id)); return; }
+    /* ②' 새 식물이면 그 그루의 카드(D45) */
+    { const sp = speciesAtKey(id); if (sp) { try { detail.open('species', { id: sp.id }); return; } catch { } } }
     /* ② 삽수면 그 삽수의 카드 */
     const cut = cuttingsOf(S).find(c => c && (c.slotId === id || id === `free:${c.id}`));
     if (cut) { try { detail.open('cutting', { id: cut.id }); return; } catch { } }

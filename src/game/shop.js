@@ -149,6 +149,21 @@ export const CATALOG = Object.freeze({
           '하나뿐이다 — 다른 화분으로 갈아 낀 뒤 되돌리려면 살 데가 있어야 한다. ' +
           'docs/shop.md §2 용기값 5,000원과 같은 줄 — 0.2020m 소품'
   }),
+  /* ── ★ 2026-10-09 D45 새 두 종(plan-newspecies §①·§④ · 총괄) ─────────────────
+     ⚖ 값은 core 첫 판(총괄께 보고 · «같은 돈, 다른 길» 10% 선으로 판이 바로잡는다):
+       AL 구근 실구매 30,000원 — «값싼 구근 하나»(무지 잎 한 장 20,000 의 한 치수 위 · 무늬는 싹이 나야 안다 · 상점 무늬 몫 1/4)
+       PP 어린 그루 실구매 150,000원 — 교환을 두 번 거절한 판에만(교환 값 = 뿌리낸 무늬 몬스테라 삽수 하나 · 산반 잎 35만의 절반 안쪽)
+     진열 때는 species §speciesShopOpen(AL 원룸 60일 · PP 거절 둘) — 화면이 거른다 */
+  al_corm: Object.freeze({
+    id: 'al_corm', ko: '알로카시아 구근 (1알)', kind: 'plant', species: 'alocasia_frydek',
+    listWon: 21_400, leadDays: 2,
+    note: 'D45 ⚖ core 첫 판 — 정가 21,400원 → 실구매 30,000원. 무늬는 싹이 나야 안다(상점 구근 무늬 몫 1/4 · growth corm.varie_chance.shop)'
+  }),
+  pp_young: Object.freeze({
+    id: 'pp_young', ko: '핑크프린세스 어린 그루', kind: 'plant', species: 'pink_princess',
+    listWon: 107_100, leadDays: 2,
+    note: 'D45 ⚖ core 첫 판 — 정가 107,100원 → 실구매 150,000원. 교환을 두 번 거절한 판에만 진열(plan ①㉡)'
+  }),
   pot_concrete_square: Object.freeze({
     id: 'pot_concrete_square', ko: '콘크리트 사각 화분', kind: 'container',
     listWon: 5_000, leadDays: 2, potKind: 'concrete_square',
@@ -482,6 +497,15 @@ export function furnitureQuoteOf(presetId, opt = {}) {
 
 /* 판 돈을 지갑에 넣는다 — 그루·삽수·채소와 **같은 문**(`credit`)으로 들어온다.
    ⚠ 무엇이 얼마인지는 여기서 안 정한다. `furnitureQuoteOf` 가 낸 값을 받는다. */
+/* ★ 2026-10-09 D45 — 새 두 종을 판 값. 값은 species §speciesPriceOf 가 내고 여기는 «통»만(갈래 'species') */
+export function creditSpeciesSale(S, won, opt = {}) {
+  const v = Math.round(won);
+  if (!Number.isFinite(v) || v < 0) throw new Error(`[종] 판 값이 올바르지 않습니다: ${won}`);
+  const r = credit(S, v, 'species');
+  if (typeof opt.log === 'function') opt.log(`💰 ${josa(opt.ko || '그루', '을', '를')} 넘겼습니다 — ${v.toLocaleString()}원`);
+  return r;
+}
+
 export function creditFurnitureSale(S, won, opt = {}) {
   const v = Math.round(won);
   if (!Number.isFinite(v) || v < 0)
@@ -791,6 +815,8 @@ export const SALE_KINDS = Object.freeze([
   /* ★ 가구 (2026-08-17 · 아래 §⑨). **여기 이름을 올리는 것이 갈래를 새로 만드는 유일한 길이다** —
      안 올리고 `credit` 을 부르면 그 자리에서 던진다(위 §「미리 해 둔다」). */
   'furniture',
+  /* ★ 2026-10-09 D45 — 새 두 종(PP · AL) 그루·윗부분(§creditSpeciesSale) */
+  'species',
   /* ⏸ 곳간 채소 — **아직 아무도 안 쓴다.** 지금은 잉여와 함께 `crop` 으로 들어온다.
      가르려면 `state.sellPantryCrop` 이 `creditCropSurplus(S, won, { kind: 'cropPantry' })`
      로 불러야 하는데 `state.js` 가 이번 창의 쓰기 영역 밖이다 — 받는 쪽만 미리 뚫어 둔다.
@@ -839,7 +865,7 @@ export function earnedByOf(S) {
 export function saleLedgerOf(S) {
   const by = { ...earnedByOf(S) };
   const shop = shopOf(S);
-  const plantWon = by.pot + by.cutting;
+  const plantWon = by.pot + by.cutting + (by.species || 0);   /* D45 — 새 두 종도 «식물» 몫 */
   const cropWon = by.crop + by.cropPantry;
   const totalWon = SALE_KINDS.reduce((n, k) => n + by[k], 0);
   return {
