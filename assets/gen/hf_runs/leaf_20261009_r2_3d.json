@@ -1815,6 +1815,70 @@
    "charge": "9.5 spent then 9.5 refunded (net 0)",
    "timing": "spend 15:24:00.1Z -> refund 15:24:20.5Z (20.4 s)",
    "qa_notes": "failed outright; no error text exposed by jobs_wait / job_display / show_generation_by_ids."
+  },
+  {
+   "name": "SC_mature_marblequeen_tripo",
+   "job_id": "89b2fcea-9fae-4332-af70-f18c7e8cbee1",
+   "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_153340_89b2fcea-9fae-4332-af70-f18c7e8cbee1.glb",
+   "path": "assets/plants/scindapsus/_incoming1009/sc_mature_marblequeen_tripo.glb",
+   "note": "fallback_tripo · 입력 SC4_a(8a5ec4e8) · Tripo detailed pbr 5000 align_image · 중간 무늬판(SC_mid_marblequeen)도 같은 원화라 이 GLB 를 줄여 씀(따로 안 뜸)",
+   "bytes": 9257720,
+   "tris": 4894,
+   "dims_xyz": [
+    0.565,
+    1.0,
+    0.729
+   ],
+   "images": 3,
+   "magic_ok": true
+  },
+  {
+   "name": "SC_mature_njoy_tripo",
+   "job_id": "ff2e976d-93bf-4662-b16e-1c7bf8adfc94",
+   "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_153345_ff2e976d-93bf-4662-b16e-1c7bf8adfc94.glb",
+   "path": "assets/plants/scindapsus/_incoming1009/sc_mature_njoy_tripo.glb",
+   "note": "fallback_tripo · 입력 SC5_b(c74f7f40) · SC_mid_njoy 도 이 GLB",
+   "bytes": 6271484,
+   "tris": 4778,
+   "dims_xyz": [
+    0.636,
+    1.0,
+    0.742
+   ],
+   "images": 3,
+   "magic_ok": true
+  },
+  {
+   "name": "CA_mature_whitefusion_tripo",
+   "job_id": "3867c54b-cab0-409f-8c28-5bfa13394cd3",
+   "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_153349_3867c54b-cab0-409f-8c28-5bfa13394cd3.glb",
+   "path": "assets/plants/calathea/_incoming1009/ca_mature_whitefusion_tripo.glb",
+   "note": "fallback_tripo · 입력 CA5_a(a42ace9d)",
+   "bytes": 8622636,
+   "tris": 4946,
+   "dims_xyz": [
+    0.189,
+    1.0,
+    0.58
+   ],
+   "images": 3,
+   "magic_ok": true
+  },
+  {
+   "name": "CA_mid_whitefusion_tripo",
+   "job_id": "5fff648a-080d-4763-bfa5-5e4f1985eedb",
+   "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_153352_5fff648a-080d-4763-bfa5-5e4f1985eedb.glb",
+   "path": "assets/plants/calathea/_incoming1009/ca_mid_whitefusion_tripo.glb",
+   "note": "fallback_tripo · 입력 CA4_b(959fe0a8)",
+   "bytes": 7180424,
+   "tris": 4686,
+   "dims_xyz": [
+    0.584,
+    1.0,
+    0.645
+   ],
+   "images": 3,
+   "magic_ok": true
   }
  ]
 }
