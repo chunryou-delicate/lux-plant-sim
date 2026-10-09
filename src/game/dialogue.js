@@ -1201,7 +1201,7 @@ export const SCRIPTS = {
      집 자금 줄(oneroom_home_fund)까지 안 온 판에서는 「됐다! 가자.」 없이 「집 계약은 네가 해」만 났다 — «다 모였다»가 빠진다.
      ⇒ 「…다 모였다.」를 여기로 가져오고, 둘이 같은 턴이면 퀘스트 끝 대사를 뺀다(§scriptsForEvents · 같은 순간을 두 번 말하지 않는다). */
   endingReady: [
-    { who: 'jachwi', face: 'think',    text: '…다 모였다.' },
+    { who: 'jachwi', face: 'think',    text: '…다 모였다.', art: 'ev_oneroom_full' },   /* ★ 10-10 char «가득 찬 원룸» — 키워서 늘리기의 보람 */
     /* ★ 2026-10-08 [plan] 갈래 지도 10 — 「언제 할지는 네가 정해」는 미루면 하루 지출로 다시 모자라 단추가 잠기는 현실과 어긋났다 */
     { who: 'moni',   face: 'teach',    text: '집 계약은 네가 해. 너무 미루면 생활비에 다시 모자라.' }
   ],
@@ -1727,7 +1727,7 @@ export const SCRIPTS = {
      등 장면이 길어 «한 줄만» 붙인다(EVENT_ORDER — lamp_unlocked 바로 뒤). 거짓 없는 말만: 선반·받침대는 자리(slots)를 더한다.
      «밝은 자리»라고는 안 한다 — 밝은지는 놓을 때 D39 C 빛 한 줄이 말한다. 한 판에 한 번(REPEATABLE 아님). */
   furnitureShopOpen: [
-    { who: 'moni', face: 'teach', text: '가구점도 문을 열었대. 선반을 들이면 화분 놓을 자리가 늘어.' }
+    { who: 'moni', face: 'teach', text: '가구점도 문을 열었대. 선반을 들이면 화분 놓을 자리가 늘어.', art: 'ev_furniture_shop' }   /* ★ 10-10 char 장면(ea18110c) */
   ],
   ppTradeOffer: [
     { who: 'jachwi', face: 'curious',  text: '아래층에 식물 나눔 쪽지가 붙었다. 분홍 잎이 섞인 작은 화분이다.' },
@@ -1844,16 +1844,16 @@ export const SCRIPTS = {
   /* ★ 목표까지 «이정표» — 처음 넘은 날 한 번씩(§CHATTER status). 수는 안 말한다 · 칸 homeTarget 은 [core](없으면 안 뜸) */
   /* ★ 2026-10-09 [plan] D51 — 내 집 자금 네 마디(¼·½·¾·거의 · quest.js HOME_MARKS). 보상 없이 말만 — «다가가는 맛». 한 판에 한 번씩(gap 400) */
   statusHomeQuarter: [
-    { who: 'moni', face: 'cheer', text: '집까지 가는 길, 첫 고개는 넘었어.' }
+    { who: 'moni', face: 'cheer', text: '집까지 가는 길, 첫 고개는 넘었어.', art: 'ev_home_mark_quarter' }   /* ★ 10-10 char 이정표 넷 한 벌 */
   ],
   statusHomeHalf: [
-    { who: 'moni', face: 'proud', text: '집까지 온 길이 남은 길보다 길어졌어.' }
+    { who: 'moni', face: 'proud', text: '집까지 온 길이 남은 길보다 길어졌어.', art: 'ev_home_mark_half' }
   ],
   statusHomeThreeQuarter: [
-    { who: 'moni', face: 'proud', text: '마지막 고개만 남았어.' }
+    { who: 'moni', face: 'proud', text: '마지막 고개만 남았어.', art: 'ev_home_mark_threequarter' }
   ],
   statusHomeNear: [
-    { who: 'jachwi', face: 'think', text: '…집이 보이는 것 같다.' },
+    { who: 'jachwi', face: 'think', text: '…집이 보이는 것 같다.', art: 'ev_home_mark_near' },
     { who: 'moni',   face: 'calm',  text: '조금만 더. 서두르다 다 팔지는 말고.' }
   ],
   /* ★ 2026-10-08 [plan] 갈래 지도 10 — 목표에 닿았다가 생활비로 모자라진 뒤 «다시» 닿은 날 한 번([core] db17470a `ending_ready_again`).
