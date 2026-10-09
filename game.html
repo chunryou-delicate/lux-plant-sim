@@ -4210,7 +4210,8 @@ const HINT_DIM_ALPHA = 0.28;              /* 「약간」 — 딴 데가 안 보
    「세팅 끝」(콩나물 시루 둘 놓임 && 창턱)부터 덮개는 «안 켠다» — 손가락은 살림 안내로 «남는다»(§updateHint 가 켠다). */
 let hintNoDim = false;
 let oneroomShadeSaid = false;   /* 원룸 첫 장면 ③ 「선반 아래가 어두워졌습니다」 — 이 판에서 한 번 */
-let oneroomFurnSeen = null;     /* ★ 10-10 — 이 켬에서 처음 본 «놓인 가구 수»(0 에서 1 이 되는 «순간»만 ③ 을 띄운다) */
+let oneroomFurnSeen = null;
+const GIVEN_FURNITURE = Object.freeze(['order_board']);   /* ★ 10-10 [plan] 받은 물건 — «첫 가구»·«놓은 가구» 셈에서 뺀다(가게 첫날 주문판) */     /* ★ 10-10 — 이 켬에서 처음 본 «놓인 가구 수»(0 에서 1 이 되는 «순간»만 ③ 을 띄운다) */
 /* ★★ 2026-09-04 — **「놓임」은 «확정된 것»만이다.** 놓는 순간 그루에 slotId/at 가 «먼저» 들어가고 [취소]가 되돌리므로(§placeConfirmCancel)
    `cropPotPlaced` 는 「여기에 둘까요?」 단계의 임시 자리도 놓임으로 센다. 그래서 둘째 시루가 [확인] «전»에 세팅 끝이 서서
    [확인] 손가락이 죽었다(총괄 걸음 f56). ⇒ 확정 대기(picked.before · 무대 confirming)인 그루는 안 센다. 세팅 끝·둘째 시루 갈래·퀘스트 스냅샷이 «이 한 자»를 쓴다. */
@@ -6128,7 +6129,8 @@ function updateHint() {
      ⚠ 첫 플레이 손가락은 fp.completed·movedOut 이면 안 선다(§fpLive) — 이 사슬이 그 자리를 잇는다. */
   if (ts && ts.movedOut) {
     const home = S.home || {};
-    const furnBag = (home.furnitureBag || []).length, furnDone = (home.furnitureAdded || []).length;
+    /* ★ 2026-10-10 [plan] — 받은 물건(가게 첫날 주문판 · state §giveFurniture)은 사람이 고른 가구가 아니다 — «놓은 가구» 셈에서 뺀다 */
+    const furnBag = (home.furnitureBag || []).length, furnDone = (home.furnitureAdded || []).filter(f => f && !GIVEN_FURNITURE.includes(f.preset)).length;
     let cutN = 0; try { cutN = bagCuttings().length; } catch { cutN = 0; }
     let potN = 0; try { potN = bagPots().length; } catch { potN = 0; }
     let siruN = 0, trayN = 0; try { siruN = spareSiru(); trayN = spareContainerOf('musun'); } catch { }
@@ -6157,8 +6159,8 @@ function updateHint() {
         if (onScreen(cutCell0) && !sheetCovers(cutCell0)) return hintAt(cutCell0, '들고 온 삽수부터 창가에 놓으세요');   /* [plan] 문안 · 몬 말·할 일 머리와 같은 말 */
         const door0 = bagDoor(); if (door0) return hintAt(door0, '가방을 열어 보세요 — 들고 온 삽수가 기다립니다');
       }
-      /* ① · ② 가구 하나 — 아직 하나도 안 놓았고 가방에 가구가 있으면 */
-      if (furnDone === 0 && furnBag > 0) {
+      /* ① · ② 가구 하나 — 아직 하나도 안 놓았고 가방에 가구가 있으면 · ★ 10-10 원룸에서만(글이 «반지하에서 가져온 것» · 투룸 첫날은 plan 이 안 가르치기로) */
+      if (S.home && S.home.room === 'oneroom' && furnDone === 0 && furnBag > 0) {
         const cell = $('bagGrid') && $('bagGrid').querySelector('[data-furnbag]');
         if (onScreen(cell) && !sheetCovers(cell)) return hintAt(cell, '선반을 꺼내 놓아 보세요');
         const door = bagDoor(); if (door) return hintAt(door, '가방을 열어 보세요 — 반지하에서 가져온 것이 다 있습니다');
