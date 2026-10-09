@@ -255,6 +255,7 @@ return !!(S.tutorial && S.tutorial.enabled && !S.tutorial.movedOut);   // ← �
 코드에는 `ENDING_RULES.targetWon = null` 을 두었다.
 
 ## 후보 — **1,000만원** (`docs/propagation.md` §7)
+> ★★ **2026-10-09 D9 확정 — 500만 원**(박사님 · 끝의 무게를 고르심 · 늘리기 손잡이는 그대로). 아래 «1,000만»은 옛 잎 비율 공식으로 거꾸로 셈한 값이라 **안 쓴다**. 근거: [core] 갈래 판 `tools/probe_branches.mjs`(80efc9a6·af2753cf) — 안내대로 현금 닿는 날 중앙 565일(이사 뒤 395일 · 90% 620) · 1,000만은 닿은 판 0. 판단 문서 `docs/handoff/plan-d9-draft-20261008.md` · 정본 `data/balance/homes.json` ending.targetWon.
 
 | 근거 | |
 |---|---|

@@ -455,10 +455,11 @@ check('B-1 ★ 목표 금액이 미확정이면 **끝까지 가도 엔딩이 안
        'data/balance/homes.json 의 ending.targetWon 이 정해져야 ④ 가 열린다');
 });
 
-check('B-2 ★ 정본에서 읽는 창구가 있다 — 지금은 칸이 없어 **미확정 그대로** 낸다', () => {
+/* ★ 2026-10-09 [plan] — homes.json 에 ending.targetWon 이 생겼다(D9 · 박사님 500만). 이 검사가 적어 둔 대로 «값 검사»로 바꿨다. */
+check('B-2 ★ 정본에서 읽는 창구가 있다 — homes.json ending.targetWon(D9 · 박사님 10-09 · 500만)', () => {
   const R = endingRulesFromHomes(HOMES);
-  assert.equal(R.targetWon, null,
-    'homes.json 에 ending.targetWon 이 생겼습니다 — 그러면 이 검사를 값 검사로 바꿔 주세요');
+  assert.equal(R.targetWon, 5_000_000,
+    'homes.json 의 ending.targetWon 이 D9(박사님 10-09 · 500만)과 다릅니다');
   /* 칸이 생기면 그 값으로 돈다는 것을 여기서 못 박는다(파일은 안 건드린다) */
   const withField = { ...HOMES, ending: { targetWon: 10_000_000 } };
   assert.equal(endingRulesFromHomes(withField).targetWon, 10_000_000,

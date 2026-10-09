@@ -111,5 +111,9 @@
       "terrace",
       "rooftop_house"
     ]
+  },
+  "ending": {
+    "_doc": "④ 내 집 마련 목표 금액(D9). 박사님 2026-10-09 확정 — 500만 원(끝의 무게). 늘리기 손잡이(삽수 조각 값·무늬 물림)는 그대로. 근거: [core] 갈래 판 tools/probe_branches.mjs(80efc9a6·af2753cf) — 안내대로 현금 닿는 날 중앙 565일(이사 뒤 395일 · 90% 620) · 늘리는 사람 545 · 모주 일찍 판 사람 480. 옛 후보 1,000만(옛 잎 비율 공식)은 안 쓴다. 판단 문서 docs/handoff/plan-d9-draft-20261008.md. 읽는 곳 src/game/ending.js endingRulesFromHomes.",
+    "targetWon": 5000000
   }
 }

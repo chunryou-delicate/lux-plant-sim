@@ -44,6 +44,9 @@ export const ENDING_RULES = Object.freeze({
      ⚠ 여기에 후보값을 적지 않는다 — 적는 순간 그것이 확정처럼 굳고, 실측하는 워커가
        고친 값과 조용히 갈린다. 숫자는 문서에, 코드에는 자리에. */
   targetWon: null,
+  /* ★ 2026-10-09 D9 — 박사님 확정 **500만 원**(끝의 무게 · 늘리기 손잡이 그대로). 정본은 `data/balance/homes.json` ending.targetWon 이다
+     (이 자리는 null 그대로 — «숫자는 문서·데이터에, 코드에는 자리에»). 옛 후보 1,000만(옛 잎 비율 공식)은 안 쓴다.
+     근거 docs/handoff/plan-d9-draft-20261008.md · [core] probe_branches(80efc9a6·af2753cf). */
   /* ★ 엔딩은 **현금**으로 판정한다 — 「가진 것을 다 팔면 닿는다」가 아니라
      실제로 팔아서 지갑에 넣어야 한다. ②(tutorial.canMoveOut)와 같은 규칙이고,
      그래야 마지막 행동이 **삽수를 파는 것**이 된다(story_arc.md §0 ④ 의 문장 그대로). */
