@@ -3,6 +3,7 @@
    판(세운 판): 새 판(반지하) → 모주 창턱 → 날을 보내 «오늘 자를 수 있는 무늬 마디»가 설 때까지 → 이사 두 축을 세움(돈 · 무늬 삽수 판 적)
    잰다: ① [원룸으로 이사] → 대사 moveNoCutting(«무늬 삽수 하나는 잘라 들고 가자…») · 창에 «무늬 삽수 없이 가면…» · 단추는 [이사한다](막지 않음)
          ② 무늬 삽수가 하나라도 있으면(잘라 둠) 그 줄도 대사도 없다
+         ③ D31 — 지갑 − 이사비 < 원룸 첫 달 월세면 move_low_cash(«이사비 내면 첫 달 월세가 모자라…»)
    BYEOT_URL=(기본 127.0.0.1:9300) */
 import { launch, sleep } from './test_cdp.mjs';
 const BASE = process.env.BYEOT_URL || 'http://127.0.0.1:9300';
@@ -48,6 +49,12 @@ try {
   console.log('② —', JSON.stringify(t2));
   ok(!!cut.varie && cut.v && cut.v.b >= 1, `무늬 삽수를 하나 잘라 들었다(${cut.cont} · 무늬 삽수 ${cut.v && cut.v.b})`);
   ok(!t2.talking && t2.on && !t2.lines.some(l => /무늬 삽수 없이 가면/.test(l)), '무늬 삽수가 있으면 그 줄도 대사도 없다');
+  /* ③ D31 — 이사비를 내면 원룸 첫 달 월세가 모자라면(지갑 = 이사비 + 5만) 몬이 한 줄 move_low_cash(막지 않음) */
+  await page.eval(`(()=>{ document.getElementById('moveCancel').click(); const S=window.__S(); S.tutorial.cashWon = S.tutorial.rules.moveOutCostWon + 50000; window.__redraw(); })()`, false); await sleep(600);
+  await page.eval(`(()=>{ const b=document.getElementById('moveOut'); if(b){ b.disabled=false; b.click(); } })()`, false); await sleep(1200);
+  const t3 = await J(`(()=>({ talking: document.getElementById('stage').classList.contains('talking'), text: ((document.getElementById('dlgText')||{}).textContent||'').trim().slice(0,80) }))()`);
+  console.log('③ D31 —', JSON.stringify(t3));
+  ok(t3.talking && /첫 달 월세가 모자라/.test(t3.text), `D31 몬이 한 줄(«${t3.text}»)`);
 } catch (e) { if (e && e.message !== 'setup') { console.log('  FAIL 탈 —', e && e.message); bad++; } }
 finally { await page.close(); }
 console.log(bad ? `probe_move_nocutting: FAIL (${bad})` : 'probe_move_nocutting: PASS');

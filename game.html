@@ -18120,9 +18120,15 @@ function openMoveAsk() {
   for (const t of lines) { const d = document.createElement('div'); d.textContent = t; box.appendChild(d); }
   $('moveGo').textContent = v.n === 0 ? MOVE_ASK_KO.goAnyway : MOVE_ASK_KO.go;
   /* 몬이 한 줄 — 원천 0 일 때만 · 대사가 «먼저», 창은 대사가 끝난 뒤(창이 대사를 덮었다 · 엔딩 카드 §openHomeCardWhenQuiet 와 같은 길) */
-  if (v.n === 0 || noCut) {
+  /* ★ 2026-10-10 D31([plan] 대사 moveLowCash · core 이음) — 이사비를 내면 원룸 첫 달 월세가 모자랄 때 · 무늬 갈래 «뒤»에 선다 · 막지 않음 · 수는 안 말함 */
+  const rent1 = Number.isFinite(ts.rules.oneroomRentWon) ? ts.rules.oneroomRentWon : ts.rules.rentWon;
+  const lowCash = Number.isFinite(rent1) && (ts.cashWon - c.needWon) < rent1;
+  if (v.n === 0 || noCut || lowCash) {
     movePanelPending = true;
-    try { dlgOpen(story.events([{ id: v.n === 0 ? 'move_no_varie' : 'move_no_cutting' }], S)); } catch (e) { console.warn('[D27]', e && e.message); }
+    const evs = [];
+    if (v.n === 0) evs.push({ id: 'move_no_varie' }); else if (noCut) evs.push({ id: 'move_no_cutting' });
+    if (lowCash) evs.push({ id: 'move_low_cash' });
+    try { dlgOpen(story.events(evs, S)); } catch (e) { console.warn('[D27]', e && e.message); }
     setTimeout(() => { try { openMoveAskWhenQuiet(); } catch { } }, 50);   /* 대사가 안 떴으면 바로 */
     return;
   }

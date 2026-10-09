@@ -122,6 +122,8 @@ export async function play(name, seed, opt = {}) {
   light.clearCache();
   placeBeansprout(S.firstPlay, DARK, { slots: light.room.slots });
   const ts = S.tutorial;
+  /* ⚖ 재는 손잡이(--movecost N · 총괄 10-10 이사비 판) — 이 판에서만 반지하 이사비를 바꿔 끼운다(게임 값은 안 건드림) */
+  if (Number.isFinite(opt.movecost)) ts.rules = Object.freeze({ ...ts.rules, moveOutCostWon: opt.movecost });
   const out = { name, seed, persona: P, moveDay: null, firstBrokeDay: null, starvedDay: null, endDay: null,
                 reach: Object.fromEntries(targets.map(t => [t, null])), reachNet: Object.fromEntries(targets.map(t => [t, null])),
                 cuts: { banjiha: 0, oneroom: 0, fromCutting: 0 }, cutWhy: { banjiha: {}, oneroom: {} }, recut: { tried: 0, ok: 0, why: {} },
@@ -413,6 +415,9 @@ export async function play(name, seed, opt = {}) {
         }
         if (!waitForCut && (P.move === 'asap' || holding || waited)) {
           try {
+            /* D31 — 이사 되묻기 «이사비 내면 첫 달 월세가 모자라»(move_low_cash)가 서는 판인가: 지갑 − 이사비 < 원룸 첫 달 월세 */
+            { const need = ts.rules.moveOutCostWon, rent1 = Number.isFinite(ts.rules.oneroomRentWon) ? ts.rules.oneroomRentWon : ts.rules.rentWon;
+              out.lowCashAtMove = (ts.cashWon - need) < rent1; out.cashAfterMoveCost = ts.cashWon - need; }
             moveIntoOneroom(S, io);
             out.moveDay = S.day;
             /* ★ 2026-10-09 D8 — 원룸 월세 후보를 «짝»으로 꽂는다(probe_oneroom_econ §pairRules 그대로 · 월세 밖 하루치는 그대로):
@@ -441,6 +446,14 @@ export async function play(name, seed, opt = {}) {
       for (const id of (qr && qr.finished) || []) { try { grantStaminaQuest(S, id); } catch { } }   /* 게임 checkQuests 와 같다 — 끝낸 것은 stamina.questsTaken 이 기억한다 */
       try { if (qr && qr.events && qr.events.length) { const q2 = story.events(qr.events, S) || []; saidToday += q2.length; saidIds = saidIds.concat(q2); } } catch { }
       noteQuestWaits(S, S.day);
+      /* ★ 10-10 plan ㉮ — 반지하 Day 100 ~ 이사 날: 칩 «글»(game.html §questChipLineOf 와 같은 셈)이 30일 넘게 그대로인 날 */
+      if (!ts.movedOut && S.day >= 100) {
+        try { const v = questView(S, snap, { waitReason: id => nudgeWaitReason(S, id) }); const c = v.chip;
+              const line = !c ? '(없음)' : (c.waiting && c.waitDo) ? c.waitDo : (c.waiting && c.waitWhat) ? `기다리는 중 — ${c.waitWhat}` : (c.todo || c.id);
+              const cs = out.chipStay = out.chipStay || { days: 0, stale: 0, line: null, run: 0, longest: 0, longestLine: null };
+              cs.days++; if (line === cs.line) cs.run++; else { cs.line = line; cs.run = 1; }
+              if (cs.run > 30) cs.stale++; if (cs.run > cs.longest) { cs.longest = cs.run; cs.longestLine = line; } } catch { }
+      }
       /* ★ 2026-10-09 ([plan] 7d3b2e4f 청) — «지금 할 일» 칩이 이사 뒤 어느 줄에 며칠 머물렀나
            ★ D50 — 게임 칩과 같은 자(questView(…, { waitReason }).chip · 기다림 줄을 건너뜀). 다 기다림이면 «id(기다림)» 으로 센다 */
       if (ts.movedOut) { try { const cur = questView(S, snap, { waitReason: id => nudgeWaitReason(S, id) }).chip;
@@ -542,10 +555,12 @@ const SELF = fileURLToPath(import.meta.url);
 const RENT = arg('rent', null) == null ? null : Number(arg('rent'));
 const GRADES = arg('grades', null);
 const BOOST = arg('boost', null) == null ? null : Number(arg('boost'));
+const MOVECOST = arg('movecost', null) == null ? null : Number(arg('movecost'));
 const TRACE = !!arg('trace', false);
 const tasks = NAMES.flatMap(name => SEEDS.map(seed => ({ name, seed, targets: TARGETS, days: DAYS, noprologue: !!arg('noprologue', false),
                                                          ...(Number.isFinite(RENT) ? { rent: RENT } : {}), ...(GRADES ? { grades: GRADES } : {}),
-                                                         ...(Number.isFinite(BOOST) ? { boost: BOOST } : {}), ...(TRACE ? { trace: true } : {}) })));
+                                                         ...(Number.isFinite(BOOST) ? { boost: BOOST } : {}), ...(TRACE ? { trace: true } : {}),
+                                                         ...(Number.isFinite(MOVECOST) ? { movecost: MOVECOST } : {}) })));
 const results = [];
 let next = 0;
 async function worker() {
