@@ -68,6 +68,19 @@ check('글 — 「기다리는 중 — …」 뒷말이 짧다(할 일 줄 28자
     assert.ok(('기다리는 중 — ' + t).length <= 28, `${k}: ${t}`);
 });
 
+/* ★ D50 뒤 — «먼저 할 일»이 있는 기다림(cropReady)은 waitDo 를 낸다 · 다른 열쇠는 null */
+{
+  const { QUEST_WAIT_DO } = await import('../src/game/quest.js');
+  check('D50 뒤 waitDo — cropReady 는 «먼저 할 일» 글 · 다른 기다림은 null', () => {
+    const first = base.open[0];
+    const v = questView(S, snap, { waitReason: id => id === first ? 'cropReady' : null });
+    assert.equal(v.all.find(a => a.id === first).waitDo, QUEST_WAIT_DO.cropReady);
+    const u = questView(S, snap, { waitReason: id => id === first ? 'node' : null });
+    assert.equal(u.all.find(a => a.id === first).waitDo, null);
+    assert.ok(QUEST_WAIT_DO.cropReady.length <= 28);
+  });
+}
+
 /* ★ D51 — 집 자금 칩 글: 날마다 바뀌고(남은 돈) · 목표가 같은 줄에 · 네 마디 말머리 · 28자 안 · 현금을 모르면 예전 글 */
 {
   const { questOf, questTodo, HOME_MARKS } = await import('../src/game/quest.js');

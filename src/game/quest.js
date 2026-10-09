@@ -1169,6 +1169,12 @@ export const QUEST_WAIT_WHAT = Object.freeze({
   recutNode:     '키운 그루에 무늬 마디가 나기를',
   grow:          '식물이 자라기를'
 });
+/* ★ 2026-10-09 [plan] D50 뒤(core 956eb6f5 걸어 봄) — «기다림»이지만 사람에게 «먼저 할 일»이 있는 열쇠. 이 줄 자체는 기다리지만
+   (order_seed 는 익은 시루가 있으면 씨앗 주문을 미룬다) 칩이 «기다리는 중»이라 말하면 손가락([거두기])과 어긋난다.
+   ⇒ 칩·할 일 줄은 `waitDo` 가 있으면 «기다리는 중 — …» 대신 이 글을 그대로 쓴다(기울이지 않는다). */
+export const QUEST_WAIT_DO = Object.freeze({
+  cropReady: '익은 시루부터 거두세요'
+});
 /* 참/거짓만 받았을 때(isWaiting) 쓰는 열쇠 — nudge_wait 에서 까닭이 하나뿐인 줄만. 까닭이 둘 이상인 줄(order_seed · first_cut ·
    oneroom_settle_cutting)은 `grow` — 정확한 말은 [core] 가 waitReason 을 낼 때 선다 */
 const WAIT_ONE_REASON = Object.freeze({
@@ -1210,6 +1216,7 @@ export function questView(S, snapshot, opt = {}) {
     const it = all[all.length - 1];
     it.waiting = !!w;
     it.waitWhat = w ? (QUEST_WAIT_WHAT[w] || QUEST_WAIT_WHAT.grow) : null;
+    it.waitDo = w ? (QUEST_WAIT_DO[w] || null) : null;
   });
   /* ★ 「지금 할 일」은 **하나만** 보여 준다. 목록을 내면 심부름 목록이 된다.
      고르는 자는 정의 순서다 — 그 순서가 곧 배우는 순서라서. */
