@@ -89,3 +89,228 @@ Do not remove the pot. Do not remove the leaves. Do not give it a shell.
   (엔딩 직전 다 팔기 · 모주를 크게 키워 통째로 팔아 목표에 닿기 — 잎 6장 그루 최고 1,197만 · M4)
 - 이사·도착 컷 장면은 «이삿날 낮»빛 — 이사·도착 대사엔 시각 말이 없다(「불 끄고 가자」는 낮밤 다 참)
 - plan 이 갈래 지도(plan-branch-map)에 «그림·대사가 갈래를 타는 자리» 칸으로 넣는다
+
+---
+
+## ★ 주문표 — Meshy 그림(nano-banana-pro · 9) · 총괄이 그대로 돌린다 (2026-10-09)
+
+Higgsfield 끊김 · Kling 크레딧 0 ⇒ Meshy `meshy_image_to_image`. 참조 셋: **① 초상화(얼굴·머리 정본 D3)** · **② 몬이 초상화(화분+잎 몸)** · **③ 방 키프레임(2D 그림책 결)**. hero2(3D 치비) 그림은 결이 섞여 뺐다 — 옷은 글로.
+- 열 장 × 9 = **90** (다시 뽑기 여유 별도). ★ **ev_home_ending 한 장을 먼저** 돌려 결(2D·정본·몬이 몸)을 G 로 본 뒤 나머지 아홉
+- 한글 경로는 총괄이 ASCII 로 옮긴다(주문 안 `ROOT` 는 `C:/Users/pc/Desktop/빛식물/lux-plant-sim/`)
+- 검수(char · 0 · 장마다): ①머리 긴 생머리·일자 앞머리·아주 짙은 갈색(검정 아님) ②크림 티 ③몬이 테라코타 화분 안·몬스테라 잎 둘(하나라도 없으면 다시) ④2D(3D·클레이면 다시) ⑤장면 사실(갈래별 손에 든 것 · 계절 물건 없음 · 첫 무늬 무늬 꼴) ⑥손가락·글자 깨짐 없음 ⑦사람 둘이 초상화와 같은 사람으로 보이나
+- ★ **엔딩 자리**: `game.html #homeArt` 가 `assets/illust/ev_home_ending.png` 를 이미 부른다 — 계약 직후 전체 화면 장면에 쓰이고, 그 뒤 대사 → 마무리 카드 → **D28 «여기까지 — 첫 이야기» 덮개**(그 덮개 안에는 안 쓰인다). 몬스테라 0 판(`_noplant`)은 core 가 고르게 청한다
+
+```json
+[
+ {
+  "name": "ev_home_ending",
+  "tool": "meshy_image_to_image",
+  "args": {
+   "ai_model": "nano-banana-pro",
+   "reference_file_paths": [
+    "C:/Users/pc/Desktop/빛식물/lux-plant-sim/assets/characters/portraits/portrait_jachwi_neutral.png",
+    "C:/Users/pc/Desktop/빛식물/lux-plant-sim/assets/characters/portraits/portrait_moni_cheer.png",
+    "C:/Users/pc/Desktop/빛식물/lux-plant-sim/assets/gen/v2_room/style_keyframe_a.png"
+   ],
+   "generate_multi_view": false,
+   "prompt": "Her own sunny home: warm sunlight through a big window. A tall healthy monstera and small cutting pots by the window. She smiles, eyes wet with joy; Moni cheers. She (image 1): young Korean woman, LONG straight very dark-brown hair (not black), blunt bangs, warm-brown eyes, pink blush, cream round-neck tee, grey joggers. Moni (image 2): tiny light-green sprout mascot sitting INSIDE a terracotta pot with two holed monstera leaves; keep pot and leaves. Style of image 3: 2D storybook illustration, clean ink lines, soft warm wash, NOT 3D."
+  },
+  "save": {
+   "tool": "meshy_download_model",
+   "task_type": "image-to-image",
+   "save_to": "C:/Users/pc/Desktop/빛식물/lux-plant-sim/assets/illust/ev_home_ending.png"
+  },
+  "used_in": "★ 게임에 이미 걸린 자리: game.html #homeArt — 계약 직후 전체 화면 장면(그 뒤 대사 → 마무리 카드 → D28 «여기까지 — 첫 이야기» 덮개). D28 덮개 «안»에는 안 쓰인다",
+  "pick_by": "계약 단추 누른 순간 몬스테라 ≥1"
+ },
+ {
+  "name": "ev_home_ending_noplant",
+  "tool": "meshy_image_to_image",
+  "args": {
+   "ai_model": "nano-banana-pro",
+   "reference_file_paths": [
+    "C:/Users/pc/Desktop/빛식물/lux-plant-sim/assets/characters/portraits/portrait_jachwi_neutral.png",
+    "C:/Users/pc/Desktop/빛식물/lux-plant-sim/assets/characters/portraits/portrait_moni_cheer.png",
+    "C:/Users/pc/Desktop/빛식물/lux-plant-sim/assets/gen/v2_room/style_keyframe_a.png"
+   ],
+   "generate_multi_view": false,
+   "prompt": "Her own sunny home: warm sunlight through a big window, empty bright floor. She smiles, eyes wet with joy; Moni cheers beside her. She (image 1): young Korean woman, LONG straight very dark-brown hair (not black), blunt bangs, warm-brown eyes, pink blush, cream round-neck tee, grey joggers. Moni (image 2): tiny light-green sprout mascot sitting INSIDE a terracotta pot with two holed monstera leaves; keep pot and leaves. Style of image 3: 2D storybook illustration, clean ink lines, soft warm wash, NOT 3D."
+  },
+  "save": {
+   "tool": "meshy_download_model",
+   "task_type": "image-to-image",
+   "save_to": "C:/Users/pc/Desktop/빛식물/lux-plant-sim/assets/illust/ev_home_ending_noplant.png"
+  },
+  "used_in": "같은 자리 · 몬스테라 0 판 — core 가 파일 이름을 고르게 청(지금은 ev_home_ending 하나만 부름)",
+  "pick_by": "계약 단추 누른 순간 몬스테라 0"
+ },
+ {
+  "name": "ev_oneroom_arrive",
+  "tool": "meshy_image_to_image",
+  "args": {
+   "ai_model": "nano-banana-pro",
+   "reference_file_paths": [
+    "C:/Users/pc/Desktop/빛식물/lux-plant-sim/assets/characters/portraits/portrait_jachwi_neutral.png",
+    "C:/Users/pc/Desktop/빛식물/lux-plant-sim/assets/characters/portraits/portrait_moni_neutral.png",
+    "C:/Users/pc/Desktop/빛식물/lux-plant-sim/assets/gen/v2_room/style_keyframe_a.png"
+   ],
+   "generate_multi_view": false,
+   "prompt": "Daytime, empty small studio room, window at eye level showing plain sky (no snow, no leaves). She sets down a cardboard box and looks at the window; Moni on a box. No plants. She (image 1): young Korean woman, LONG straight very dark-brown hair (not black), blunt bangs, warm-brown eyes, pink blush, cream round-neck tee, grey joggers. Moni (image 2): tiny light-green sprout mascot sitting INSIDE a terracotta pot with two holed monstera leaves; keep pot and leaves. Style of image 3: 2D storybook illustration, clean ink lines, soft warm wash, NOT 3D."
+  },
+  "save": {
+   "tool": "meshy_download_model",
+   "task_type": "image-to-image",
+   "save_to": "C:/Users/pc/Desktop/빛식물/lux-plant-sim/assets/illust/ev_oneroom_arrive.png"
+  },
+  "used_in": "원룸 도착(moved_in_oneroom) — 아직 안 걸림(core)",
+  "pick_by": "모든 갈래 한 장"
+ },
+ {
+  "name": "ev_oneroom_firstday",
+  "tool": "meshy_image_to_image",
+  "args": {
+   "ai_model": "nano-banana-pro",
+   "reference_file_paths": [
+    "C:/Users/pc/Desktop/빛식물/lux-plant-sim/assets/characters/portraits/portrait_jachwi_neutral.png",
+    "C:/Users/pc/Desktop/빛식물/lux-plant-sim/assets/characters/portraits/portrait_moni_neutral.png",
+    "C:/Users/pc/Desktop/빛식물/lux-plant-sim/assets/gen/v2_room/style_keyframe_a.png"
+   ],
+   "generate_multi_view": false,
+   "prompt": "Morning in a small studio. Soft outside light pours through an eye-level window onto the floor. She stands at the window, calm; Moni beside her. Plain sky, no plants. She (image 1): young Korean woman, LONG straight very dark-brown hair (not black), blunt bangs, warm-brown eyes, pink blush, cream round-neck tee, grey joggers. Moni (image 2): tiny light-green sprout mascot sitting INSIDE a terracotta pot with two holed monstera leaves; keep pot and leaves. Style of image 3: 2D storybook illustration, clean ink lines, soft warm wash, NOT 3D."
+  },
+  "save": {
+   "tool": "meshy_download_model",
+   "task_type": "image-to-image",
+   "save_to": "C:/Users/pc/Desktop/빛식물/lux-plant-sim/assets/illust/ev_oneroom_firstday.png"
+  },
+  "used_in": "원룸 첫날 «바깥이 그대로 들어와» — 아직 안 걸림(core)",
+  "pick_by": "모든 갈래 한 장"
+ },
+ {
+  "name": "ev_moveout_keep",
+  "tool": "meshy_image_to_image",
+  "args": {
+   "ai_model": "nano-banana-pro",
+   "reference_file_paths": [
+    "C:/Users/pc/Desktop/빛식물/lux-plant-sim/assets/characters/portraits/portrait_jachwi_neutral.png",
+    "C:/Users/pc/Desktop/빛식물/lux-plant-sim/assets/characters/portraits/portrait_moni_neutral.png",
+    "C:/Users/pc/Desktop/빛식물/lux-plant-sim/assets/gen/v2_room/style_keyframe_a.png"
+   ],
+   "generate_multi_view": false,
+   "prompt": "Daytime. She climbs narrow half-basement stairs hugging a big monstera in a pot; four cardboard boxes at the door; Moni rides on the top box. She (image 1): young Korean woman, LONG straight very dark-brown hair (not black), blunt bangs, warm-brown eyes, pink blush, cream round-neck tee, grey joggers. Moni (image 2): tiny light-green sprout mascot sitting INSIDE a terracotta pot with two holed monstera leaves; keep pot and leaves. Style of image 3: 2D storybook illustration, clean ink lines, soft warm wash, NOT 3D."
+  },
+  "save": {
+   "tool": "meshy_download_model",
+   "task_type": "image-to-image",
+   "save_to": "C:/Users/pc/Desktop/빛식물/lux-plant-sim/assets/illust/ev_moveout_keep.png"
+  },
+  "used_in": "반지하 떠나기(moved_out) — 아직 안 걸림 · 도감",
+  "pick_by": "branchAtMove = keep"
+ },
+ {
+  "name": "ev_moveout_cuttings",
+  "tool": "meshy_image_to_image",
+  "args": {
+   "ai_model": "nano-banana-pro",
+   "reference_file_paths": [
+    "C:/Users/pc/Desktop/빛식물/lux-plant-sim/assets/characters/portraits/portrait_jachwi_neutral.png",
+    "C:/Users/pc/Desktop/빛식물/lux-plant-sim/assets/characters/portraits/portrait_moni_neutral.png",
+    "C:/Users/pc/Desktop/빛식물/lux-plant-sim/assets/gen/v2_room/style_keyframe_a.png"
+   ],
+   "generate_multi_view": false,
+   "prompt": "Daytime. She climbs narrow half-basement stairs holding a tray of small cutting pots; four cardboard boxes at the door; Moni rides on the top box. She (image 1): young Korean woman, LONG straight very dark-brown hair (not black), blunt bangs, warm-brown eyes, pink blush, cream round-neck tee, grey joggers. Moni (image 2): tiny light-green sprout mascot sitting INSIDE a terracotta pot with two holed monstera leaves; keep pot and leaves. Style of image 3: 2D storybook illustration, clean ink lines, soft warm wash, NOT 3D."
+  },
+  "save": {
+   "tool": "meshy_download_model",
+   "task_type": "image-to-image",
+   "save_to": "C:/Users/pc/Desktop/빛식물/lux-plant-sim/assets/illust/ev_moveout_cuttings.png"
+  },
+  "used_in": "같은 자리",
+  "pick_by": "branchAtMove = cuttings"
+ },
+ {
+  "name": "ev_moveout_sold",
+  "tool": "meshy_image_to_image",
+  "args": {
+   "ai_model": "nano-banana-pro",
+   "reference_file_paths": [
+    "C:/Users/pc/Desktop/빛식물/lux-plant-sim/assets/characters/portraits/portrait_jachwi_neutral.png",
+    "C:/Users/pc/Desktop/빛식물/lux-plant-sim/assets/characters/portraits/portrait_moni_neutral.png",
+    "C:/Users/pc/Desktop/빛식물/lux-plant-sim/assets/gen/v2_room/style_keyframe_a.png"
+   ],
+   "generate_multi_view": false,
+   "prompt": "Daytime. She climbs narrow half-basement stairs carrying a small bean-sprout jar, no other plants; four cardboard boxes; Moni rides on the top box. She (image 1): young Korean woman, LONG straight very dark-brown hair (not black), blunt bangs, warm-brown eyes, pink blush, cream round-neck tee, grey joggers. Moni (image 2): tiny light-green sprout mascot sitting INSIDE a terracotta pot with two holed monstera leaves; keep pot and leaves. Style of image 3: 2D storybook illustration, clean ink lines, soft warm wash, NOT 3D."
+  },
+  "save": {
+   "tool": "meshy_download_model",
+   "task_type": "image-to-image",
+   "save_to": "C:/Users/pc/Desktop/빛식물/lux-plant-sim/assets/illust/ev_moveout_sold.png"
+  },
+  "used_in": "같은 자리",
+  "pick_by": "branchAtMove = sold"
+ },
+ {
+  "name": "ev_first_varie_sanban",
+  "tool": "meshy_image_to_image",
+  "args": {
+   "ai_model": "nano-banana-pro",
+   "reference_file_paths": [
+    "C:/Users/pc/Desktop/빛식물/lux-plant-sim/assets/characters/portraits/portrait_jachwi_neutral.png",
+    "C:/Users/pc/Desktop/빛식물/lux-plant-sim/assets/characters/portraits/portrait_moni_cheer.png",
+    "C:/Users/pc/Desktop/빛식물/lux-plant-sim/assets/gen/v2_room/style_keyframe_a.png"
+   ],
+   "generate_multi_view": false,
+   "prompt": "Close-up, no background: a young monstera leaf speckled with tiny white dots. She looks surprised then proud; Moni cheers with leaves up. She (image 1): young Korean woman, LONG straight very dark-brown hair (not black), blunt bangs, warm-brown eyes, pink blush, cream round-neck tee, grey joggers. Moni (image 2): tiny light-green sprout mascot sitting INSIDE a terracotta pot with two holed monstera leaves; keep pot and leaves. Style of image 3: 2D storybook illustration, clean ink lines, soft warm wash, NOT 3D."
+  },
+  "save": {
+   "tool": "meshy_download_model",
+   "task_type": "image-to-image",
+   "save_to": "C:/Users/pc/Desktop/빛식물/lux-plant-sim/assets/illust/ev_first_varie_sanban.png"
+  },
+  "used_in": "첫 무늬(varieSeen) — 아직 안 걸림 · 도감 ev_first_varie",
+  "pick_by": "처음 본 무늬 = 산반"
+ },
+ {
+  "name": "ev_first_varie_halfmoon",
+  "tool": "meshy_image_to_image",
+  "args": {
+   "ai_model": "nano-banana-pro",
+   "reference_file_paths": [
+    "C:/Users/pc/Desktop/빛식물/lux-plant-sim/assets/characters/portraits/portrait_jachwi_neutral.png",
+    "C:/Users/pc/Desktop/빛식물/lux-plant-sim/assets/characters/portraits/portrait_moni_cheer.png",
+    "C:/Users/pc/Desktop/빛식물/lux-plant-sim/assets/gen/v2_room/style_keyframe_a.png"
+   ],
+   "generate_multi_view": false,
+   "prompt": "Close-up, no background: a monstera leaf exactly half white, half green. She gasps, delighted; Moni cheers with leaves up. She (image 1): young Korean woman, LONG straight very dark-brown hair (not black), blunt bangs, warm-brown eyes, pink blush, cream round-neck tee, grey joggers. Moni (image 2): tiny light-green sprout mascot sitting INSIDE a terracotta pot with two holed monstera leaves; keep pot and leaves. Style of image 3: 2D storybook illustration, clean ink lines, soft warm wash, NOT 3D."
+  },
+  "save": {
+   "tool": "meshy_download_model",
+   "task_type": "image-to-image",
+   "save_to": "C:/Users/pc/Desktop/빛식물/lux-plant-sim/assets/illust/ev_first_varie_halfmoon.png"
+  },
+  "used_in": "같은 자리",
+  "pick_by": "처음 본 무늬 = 하프문(풀문도 이 판)"
+ },
+ {
+  "name": "ev_monstera_arrive_v2",
+  "tool": "meshy_image_to_image",
+  "args": {
+   "ai_model": "nano-banana-pro",
+   "reference_file_paths": [
+    "C:/Users/pc/Desktop/빛식물/lux-plant-sim/assets/characters/portraits/portrait_jachwi_neutral.png",
+    "C:/Users/pc/Desktop/빛식물/lux-plant-sim/assets/characters/portraits/portrait_moni_neutral.png",
+    "C:/Users/pc/Desktop/빛식물/lux-plant-sim/assets/gen/v2_room/style_keyframe_a.png"
+   ],
+   "generate_multi_view": false,
+   "prompt": "Dim half-basement room with a high small window. She kneels by an open backpack, surprised: inside is a small pot with ONE monstera stem and one leaf. Moni beside her, smiling. She (image 1): young Korean woman, LONG straight very dark-brown hair (not black), blunt bangs, warm-brown eyes, pink blush, cream round-neck tee, grey joggers. Moni (image 2): tiny light-green sprout mascot sitting INSIDE a terracotta pot with two holed monstera leaves; keep pot and leaves. Style of image 3: 2D storybook illustration, clean ink lines, soft warm wash, NOT 3D."
+  },
+  "save": {
+   "tool": "meshy_download_model",
+   "task_type": "image-to-image",
+   "save_to": "C:/Users/pc/Desktop/빛식물/lux-plant-sim/assets/illust/ev_monstera_arrive_v2.png"
+  },
+  "used_in": "몬스테라 도착(Day 12) — 아직 안 걸림 · 도감 ev_monstera_arrive",
+  "pick_by": "모든 갈래 한 장"
+ }
+]
+```
