@@ -18049,6 +18049,8 @@ const MOVE_ASK_KO = Object.freeze({
   cost:   '이사비 {won}원을 냅니다. 되돌릴 수 없습니다.',
   source: '무늬 원천 {n} — 무늬 그루 {a} · 무늬 삽수 {b}',
   none:   '무늬 삽수나 무늬 그루 없이 가면, 원룸에서 늘릴 게 없습니다. 그래도 갈까요?',
+  /* ★ 2026-10-10 [plan] 03a35d6b — 무늬 모주는 있는데 무늬 삽수가 0 · 오늘 자를 수 있는 무늬 마디가 있을 때만(할 수 없는 일을 안 시킴) */
+  noCutting: '무늬 삽수 없이 가면, 원룸에서 늘리기가 한참 늦어집니다.',
   go: '이사한다', goAnyway: '그래도 간다'
 });
 function varieSourcesNow() {
@@ -18058,6 +18060,17 @@ function varieSourcesNow() {
   const b = (S.cuttings || []).filter(c => c && c.varieFromCut && c.status !== 'dead').length;
   return { a, b, n: a + b };
 }
+/* ★ 2026-10-10 [plan] 03a35d6b — 오늘 «문에 안 막힌» 무늬 마디 수(화면 자르기 목록과 같은 자: cuttableNow + cutBlockedReason · 무늬 다 자란 잎 수까지) */
+function varieCutOpenNow() {
+  try {
+    const p = pot0(S); if (!p) return 0;
+    const nodes = io.growth.cuttableNodes(); if (!Array.isArray(nodes)) return 0;
+    let vm = null;
+    try { const ls = io.growth.leafState(); if (Array.isArray(ls)) vm = ls.filter(r => r && r.varie && r.matured && !r.dropped).length; } catch { vm = null; }
+    const opt = { potId: p.id, ...(Number.isInteger(vm) ? { varieMaturedLeaves: vm } : {}) };
+    return cuttableNow(S, nodes, { potId: p.id }).filter(n => (n.variegatedLeaves || 0) > 0 && !cutBlockedReason(S, nodes, n.nodeId, opt)).length;
+  } catch { return 0; }
+}
 function openMoveAsk() {
   const ts = S.tutorial; if (!ts || ts.movedOut) return;
   const c = canMoveOut(ts); if (!c.ok) return;
@@ -18065,13 +18078,16 @@ function openMoveAsk() {
   const lines = [MOVE_ASK_KO.cost.replace('{won}', Math.round(c.needWon).toLocaleString('ko-KR')),
                  MOVE_ASK_KO.source.replace('{n}', v.n).replace('{a}', v.a).replace('{b}', v.b)];
   if (v.n === 0) lines.push(MOVE_ASK_KO.none);
+  /* D27 갈래 둘(move_no_cutting) — 무늬 그루는 있고 무늬 삽수 0 · 오늘 자를 수 있는 무늬 마디가 있을 때만 · 막지 않는다 */
+  const noCut = v.n > 0 && v.a > 0 && v.b === 0 && varieCutOpenNow() > 0;
+  if (noCut) lines.push(MOVE_ASK_KO.noCutting);
   const box = $('moveAsk'); box.innerHTML = '';
   for (const t of lines) { const d = document.createElement('div'); d.textContent = t; box.appendChild(d); }
   $('moveGo').textContent = v.n === 0 ? MOVE_ASK_KO.goAnyway : MOVE_ASK_KO.go;
   /* 몬이 한 줄 — 원천 0 일 때만 · 대사가 «먼저», 창은 대사가 끝난 뒤(창이 대사를 덮었다 · 엔딩 카드 §openHomeCardWhenQuiet 와 같은 길) */
-  if (v.n === 0) {
+  if (v.n === 0 || noCut) {
     movePanelPending = true;
-    try { dlgOpen(story.events([{ id: 'move_no_varie' }], S)); } catch (e) { console.warn('[D27]', e && e.message); }
+    try { dlgOpen(story.events([{ id: v.n === 0 ? 'move_no_varie' : 'move_no_cutting' }], S)); } catch (e) { console.warn('[D27]', e && e.message); }
     setTimeout(() => { try { openMoveAskWhenQuiet(); } catch { } }, 50);   /* 대사가 안 떴으면 바로 */
     return;
   }
@@ -18095,7 +18111,7 @@ $('moveOut').onclick = guard(() => {
 });
 $('moveCancel').onclick = guard(() => { closeMoveAsk(); });
 $('moveGo').onclick = guard(() => { closeMoveAsk(); doMoveOut(); });
-window.__byeotVarieSources = () => varieSourcesNow();   /* 진단용 — 읽기 전용 */
+window.__byeotVarieSources = () => ({ ...varieSourcesNow(), cutOpen: varieCutOpenNow() });   /* 진단용 — 읽기 전용 */
 function doMoveOut() {
   /* ★moveOut 이 아니라 moveIntoOneroom 이다 — 전자는 돈과 판정만 하고 방을 안 바꿨다.
      그래서 「이사했습니다」가 떠도 조도도 자리도 화면도 전부 반지하로 남아 있었다. */

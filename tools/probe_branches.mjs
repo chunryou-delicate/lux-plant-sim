@@ -354,7 +354,8 @@ export async function play(name, seed, opt = {}) {
         const k = out.keeperId && cuttingsOf(S).find(c => c && c.id === out.keeperId);
         if (!k || k.status === 'dead') {
           const nk = cuttingsOf(S).find(c => c && c.varieFromCut && c.status !== 'dead' && c.status !== 'rooting' && Number.isFinite(c.rootedOnDay) &&
-                                             (P.carryKeep || c.rootedOnDay >= (out.moveDay || 0)) && !listingFor(S, c));   /* D41 안내대로는 들고 간 것도 */
+                                             (P.carryKeep || P.follow || c.rootedOnDay >= (out.moveDay || 0)) && !listingFor(S, c));   /* D41 안내대로는 들고 간 것도 ·
+                                             ★ 10-10 안내를 따르는 사람(follow)도 — ③ 은 «언제 뿌리냈든 흙에 자리 잡으면» 끝난다(plan 71ff1a5c) */
           out.keeperId = nk ? nk.id : null;
           if (nk) out.keepers = (out.keepers || 0) + 1;
         }
@@ -385,7 +386,24 @@ export async function play(name, seed, opt = {}) {
         const holding = cuttingsOf(S).some(c => c && c.status !== 'dead' && ((c.variegatedLeaves || 0) > 0 || c.varieFromCut));
         const waited = out.moveReadyDay != null && S.day - out.moveReadyDay > 60;
         if (out.moveReadyDay == null) out.moveReadyDay = S.day;
-        if (P.move === 'asap' || holding || waited) {
+        /* ★ 2026-10-10 [plan] 03a35d6b — 안내대로(follow)는 이사 되묻기의 몬이 한 줄(move_no_cutting)을 따른다:
+             무늬 모주는 있는데 무늬 삽수 0 · 오늘 자를 수 있는 무늬 마디가 있으면 «하나 잘라 들고» 간다(오늘은 안 가고 위 자르기 손이 내일 자른다).
+             자르기가 안 열리면(마디 0) 기다리지 않는다 — 화면도 그때는 아무 말을 안 한다 */
+        let waitForCut = false;
+        if (P.follow && holding && !out.moveCheck) out.moveCheck = { day: S.day, holding: true };
+        if (P.follow && !holding && pot0(S)) {
+          try {
+            const st = io.growth.leafStats(); const a = st && st.variegatedLeaves > 0;
+            const nodes = io.growth.cuttableNodes(); const ls = io.growth.leafState();
+            const vm = Array.isArray(ls) ? ls.filter(r => r && r.varie && r.matured && !r.dropped).length : null;
+            const open = cuttableNow(S, nodes, { potId: pot0(S).id }).filter(n => (n.variegatedLeaves || 0) > 0 &&
+              !cutBlockedReason(S, nodes, n.nodeId, { potId: pot0(S).id, ...(Number.isInteger(vm) ? { varieMaturedLeaves: vm } : {}) })).length;
+            waitForCut = !!a && open > 0 && (out.moveCutWait || 0) < 20;
+            if (!out.moveCheck) out.moveCheck = { day: S.day, holding, motherVarie: !!a, varieCutOpen: open };
+            if (waitForCut) out.moveCutWait = (out.moveCutWait || 0) + 1;
+          } catch { waitForCut = false; }
+        }
+        if (!waitForCut && (P.move === 'asap' || holding || waited)) {
           try {
             moveIntoOneroom(S, io);
             out.moveDay = S.day;
