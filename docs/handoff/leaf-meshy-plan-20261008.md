@@ -124,3 +124,21 @@
 | ② 4종 × 130 | 520 |
 | **합** | **730** (예산 ≈780 · 50 남김) |
 ※ ② 의 2D 입력 그림은 Higgsfield(장당 1 · 약 40장)라 위 합에 안 들어간다.
+
+---
+
+## 5. 10-09 받은 것 · 한 것 (① 9가족)
+
+| 단계 | 결과 |
+|---|---|
+| 받음 | 9줄 SUCCEEDED(총괄 · 90) → `assets/monstera/skins/_incoming1009/<이름>_new.glb` · 2.1~3.0MB · 메시 1 · 2048 JPEG |
+| 자 | 9 모두 메시 1 · 이음매 법선 갈림 0% · 채움 = 캔버스 (`leaf_audit.py`) |
+| 모양 | 같은 썸네일 도구(`glb_thumb --view=top`)로 옛·새: 말림·너덜·접힘이 다 풀림 — `img/leaf1009/meshy9_color_rounds.png` |
+| 색 | Meshy 가 전부 짙게 · 골드 빨강 · 핑크 진홍 · 라임 올리브 · 알보 회녹으로 쏠림 → 크레딧 0 손질: 옛 썸네일과 색상·채도·밝기를 재서(`match_family_color.py`) `lift_base.py`(HSV 감마·채도배·색상°) 1~3회. 값은 `stage_meshy1009.py PARAMS` |
+| 크기 | 텍스처 1024 JPEG 로 → GLB 270~450KB(옛 100~470KB) |
+| 세 판 | 쨍(_v1) = `recolor_calm.redo_vivid` · 차분(_v2) = `recolor_calm.redo`(PICK 판) — 옛 가족과 같은 규칙 · `img/leaf1009/meshy9_final27.png` |
+| 확대창 | 저장소 파일을 안 바꾸고 화면 안에서만 «새 GLB + 캔버스 조정값»(`_shot_matgrid OVR`) — 같은 빌드 전후 `meshy9_zoom_mature.png` · `meshy9_zoom_mid.png` |
+| 들이기 | 조정표 12줄(9가족 ← 캔버스 · 중간 잎집 3)을 growth 에 청 → 그 커밋 직후 GLB 27개를 같은 이름으로 갈아 넣는다 |
+
+### 새 식물 원화 1차(nano-banana-pro 10장 · 90)
+`img/leaf1009/newplant_2d_round1.png` — 모양: PP1·PP2·PP3·AL1·AL2 · 무늬 견본만: PP4·PP5·AL4·AL5 · 다시 뽑기: AL3(갈라짐 · 견본 AL2).
