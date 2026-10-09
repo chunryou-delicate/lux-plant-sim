@@ -69,3 +69,20 @@
 6. 새 종 3D — ② 원화 검수 뒤 Higgsfield 3D 주문표(따로)
 
 내는 곳: `unity_kit/plants/<종>/`(mesh · tex · mask · card · plant_kit.json). ⚠ 2048 PNG 가 수백 장이라 무겁다 — **저장소에 넣을지·어디에 둘지는 총괄**이 정한다(밑색은 JPEG 2048 · 마스크는 PNG 8비트 두 채널로 줄일 수 있다).
+
+## 5. 10-09 진행 — U2·U3 끝 (총괄 결정: 기본 키트는 지금 결 · 저장소 밖 `빛식물/unity_kit/plants/`)
+
+- 만드는 법·도구: `tools/leaf/unity_kit.py tex|mask` · `tools/leaf/UNITY_KIT_README.md` · 확인용 한 가족 `docs/unity_kit_sample/`
+- **U2 2048**: 잎 GLB 142 중 **140 이 2048**(나머지 둘 `leaf_sheath`·`stem_knob` 는 텍스처가 없는 GLB). 어디서 찾았나(1024 로 줄여 지금 텍스처와 PSNR · 35dB): `_orig` 71 · 이미 2048 20 · Meshy 아홉 가족 다시 손질 9 · 쨍(vivid) 10 · 차분(pick1·2·3) 13 · PP·AL 원본 12 · allpink 3 · depink 1 — 장부 `unity_kit/plants/kit_log.json`. `depink` 의 흐림 반지름을 너비에 맞춰 늘렸다(1024 면 그대로 · 2048 에서 26.8 → 38.1dB).
+- **U3 마스크 47**(무늬판만 · 쨍/차분은 기본판 마스크를 같이 쓴다). 덮어쓰기 9줄(`varie_mask.OVERRIDE` · 까닭 한 줄씩): 갤럭시 둘 · 스페클-그린크림 · 별무늬-그린옐로우(1024↔2048 문턱) · 알보-크림민트 · 알로카시아 셋 · 민트점34. 렌더로 확인: 성숙 넷 · 중간·PP·AL 여섯(밑판에서 무늬가 지워지고 마스크가 무늬 자리에 맞음 · 민트점34 는 잎맥도 조금 잡음 △).
+- 다음: U4(위에서 본 투명 2048 — `glb_thumb --size=2048` 을 더했다 · 기본 512 는 그대로임을 0 화소 차로 확인) → U8 → U1.
+
+## 6. 자세한 판 시험 한 줄 (총괄이 Higgsfield 로 돌림 · ≈ 17.5)
+
+지금 잎을 위에서·옆에서 그대로 찍은 그림은 빛을 안 쓴 납작한 색이라(`glb_thumb` 규약) 3D 가 깊이를 못 읽는다 → **2D 한 장을 먼저 빛 받은 그림으로**, 그것을 3D 로.
+1. `generate_image` · `gpt_image_2_5` · `quality: high` · `resolution: 2k` · `aspect_ratio: 1:1` · `background: opaque` · `count: 2` · 참조(`image_references`) = `C:\Users\pc\Desktop\빛식물\unity_kit\pilot\monstera_leaf_mature_3q_2048.png`(지금 성숙잎 3/4 · 2048 · 모양 기준)
+   글: `A single Monstera deliciosa mature leaf with its petiole, the same silhouette, splits and holes as image 1, 3/4 view, petiole pointing down, the whole leaf visible and centered, plain healthy deep green with natural veins and a soft waxy sheen, soft even studio light with gentle shading so the leaf's curvature is readable, isolated on a plain pure white background, no pot, no shadow, no text.`
+   → 받을 곳 `unity_kit/pilot/mon_mature_detail_2d_{a,b}.png`
+2. 고른 한 장으로 `generate_3d` · `tripo_h3_1_image_to_3d` · `pbr: true` · `texture: true` · `texture_quality: detailed` · `geometry_quality: standard` · `face_limit: 8000` · `orientation: align_image` (get_cost 12) — ⚠ 총괄 시험에서 `detailed + pbr false` 가 failed 였다 → pbr true 로
+   → `unity_kit/pilot/mon_mature_detail.glb`
+3. leaf: 지금 성숙잎과 **같은 크기·같은 각·같은 빛**으로 나란히(방 · 확대창 각) 찍어 박사님께 올릴 그림을 만든다.

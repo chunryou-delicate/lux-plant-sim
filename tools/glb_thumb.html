@@ -33,7 +33,8 @@
 window.__done = false;
 window.__err = null;
 
-const SIZE = 512;
+/* ★ 2026-10-09 ([leaf] 유니티 키트 U4) — `?size=2048` 이면 그 크기로 찍는다. 안 주면 예전 그대로 512(지금 썸네일이 다 512) */
+const SIZE = (() => { const m = /[?&]size=(\d+)/.exec(location.search); return m ? Math.min(4096, Math.max(64, +m[1])) : 512; })();
 /* ⚠ 캔버스를 문서에 **안 붙인다.** 이 스크립트는 아직 <head> 안이라 `document.body` 가 null 이고
    (한 번 여기서 죽었다), 어차피 `toDataURL` 은 화면에 안 붙어 있어도 나온다. */
 const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });

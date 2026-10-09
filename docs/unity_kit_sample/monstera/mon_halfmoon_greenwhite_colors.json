@@ -1,0 +1,19 @@
+{
+ "name": "mon_halfmoon_greenwhite",
+ "tex": [
+  2048,
+  2048
+ ],
+ "mask_pct": 54.1,
+ "second_pct": 0.0,
+ "override": null,
+ "base_left_pct": 0.0,
+ "flat_dE_in_varie": 2.6,
+ "base_dE_from_ref": 6.1,
+ "colors": {
+  "base": "#3a684c",
+  "varie1": "#dbdcd7",
+  "varie2": "#b7beb6",
+  "full": false
+ }
+}

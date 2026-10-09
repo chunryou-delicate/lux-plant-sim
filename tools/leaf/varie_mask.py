@@ -58,13 +58,39 @@ def kmeans(X, k, it=25, seed=0):
         C = C2
     return C, L
 
-def ref_green():
-    js, b = read_glb(REF_GLB); t = np.asarray(tex_of(js, b)).astype(np.float64)
+REF_OF = [   # (경로에 이 글이 있으면 · 그 종·단계의 민무늬 잎) — 기준 초록은 «같은 종의 민잎»이어야 한다(10-09: 알로카시아·핑크프린세스 짙은 초록을 몬스테라 기준으로 재니 «전체 특수색»으로 읽었다)
+    ('/alocasia/', 'assets/plants/alocasia/al_leaf_mature.glb'),
+    ('/pink_princess/', 'assets/plants/pink_princess/pp_leaf_mature.glb'),
+    ('/skins/heart_', 'assets/monstera/monstera_leaf_mid1.glb'), ('/skins/pothos_', 'assets/monstera/monstera_leaf_mid1.glb'),
+]
+_REF_CACHE = {}
+def ref_for(glb):
+    g = glb.replace(os.sep, '/')
+    path = next((r for k, r in REF_OF if k in g), REF_GLB)
+    if path not in _REF_CACHE: _REF_CACHE[path] = ref_green(path)
+    return _REF_CACHE[path], path
+
+def ref_green(path=REF_GLB):
+    js, b = read_glb(path); t = np.asarray(tex_of(js, b)).astype(np.float64)
     isl = island_mask(js, b, t.shape[1], t.shape[0])
     return np.median(rgb2lab(t[isl]), 0)
 
+# 자동 판정이 틀린 가족만 한 줄씩(10-09 성숙 19 가족을 렌더로 보고 적음) — 값은 «무엇이 무늬인가»뿐이다
+OVERRIDE = {
+    'mon_galaxy_tealgold': {'full': True, 'why': '틸 자체가 특수색(하프문 등급) — 자동은 금빛 잎맥만 2.8% 잡았다'},
+    'mon_galaxy_darkteal': {'full': True, 'specks': True, 'why': '짙은 틸이 특수색 · 크림 점은 둘째 채널 — 자동은 틸을 둘째 색으로 읽었다'},
+    'mon_speckle_greencream': {'merge_greens': True, 'why': '밝은 초록 그늘을 둘째 색(34%)으로 읽었다 — 초록 색상 무리는 다 밑판'},
+    'heart_albo_2672_3': {'full': True, 'why': '크림이 잎 대부분(알보-크림민트) — 자동은 크림을 밑판으로 읽었다'},
+    'al_leaf_mature_marble': {'full_dE': 90, 'why': '무늬판(retexture) 초록이 민잎(image_to_3d)보다 밝아 기준 ΔE 40 을 넘었다'},
+    'al_leaf_mid_marble': {'full_dE': 90, 'why': '같음'},
+    'al_leaf_mid_creamcenter': {'full_dE': 90, 'why': '같음'},
+    'mon_star_greenyellow': {'full_dE': 50, 'why': '바탕 초록이 옅은 올리브라 기준에서 ΔE 36~41 — 1024 는 무늬 59%, 2048 은 «전체 특수색»으로 갈렸다(문턱에 걸림)'},
+    'pothos_mint_dot_34': {'varie_lightest': True, 'why': '작은 흰 점이 무늬인데 자동은 틸 그늘을 무늬로 잡았다'},
+}
+
 def run(glb, out_dir, REF):
     name = os.path.splitext(os.path.basename(glb))[0]
+    ov = OVERRIDE.get(name, {})
     js, b = read_glb(glb); img = tex_of(js, b); t = np.asarray(img).astype(np.float64); H, W = t.shape[:2]
     isl = island_mask(js, b, W, H)
     lab = rgb2lab(t)
@@ -72,17 +98,25 @@ def run(glb, out_dir, REF):
     K = 4
     C, Lsub = kmeans(sub, K)
     dref = np.sqrt(((C - REF) ** 2).sum(1))
-    # 밑판 = «초록 색상»(Lab 색상각 100~200° · 채도 ≥ 8) 무리 중 가장 넓은 것. 그런 무리가 없거나 기준 초록에서 ΔE 40 넘게 멀면(네온 라임 같은 «색 자체»가 무늬) 잎 전체가 특수색
+    # 밑판 = «초록 색상»(Lab 색상각 100~200° · 채도 ≥ 8 · L* < 85) 무리 중 가장 넓은 것. 그런 무리가 없거나 기준 초록에서 ΔE 40 넘게 멀면(네온 라임 같은 «색 자체»가 무늬) 잎 전체가 특수색
     hue = (np.degrees(np.arctan2(C[:, 2], C[:, 1])) + 360) % 360; chroma = np.hypot(C[:, 1], C[:, 2])
     share = np.array([(Lsub == j).mean() for j in range(K)])
-    greens = [j for j in range(K) if 100 <= hue[j] <= 200 and chroma[j] >= 8]
+    greens = [j for j in range(K) if 100 <= hue[j] <= 200 and chroma[j] >= ov.get('min_chroma', 8) and C[j][0] < 85]   # 거의 흰 크림(L* ≥ 85)은 초록 색상각이어도 밑판 아님(10-09 알로카시아 크림이 밑판으로 뒤집힘)
     base = max(greens, key=lambda j: share[j]) if greens else int(dref.argmin())
-    full = (not greens) or dref[base] > 40
+    full = ov.get('full', (not greens) or dref[base] > ov.get('full_dE', 40))
     D = np.sqrt(((lab[..., None, :] - C[None, None]) ** 2).sum(-1))           # 화소마다 무리까지 거리
-    others = [j for j in range(K) if j != base and not (j in greens and np.sqrt(((C[j] - C[base]) ** 2).sum()) < 18)]   # 밑판과 가까운 다른 초록(그늘진 초록)은 밑판 쪽
-    bases = [base] + [j for j in range(K) if j != base and j not in others]
-    if full:
+    # 밑판과 ΔE 18 안의 다른 초록(그늘진 초록) = 밑판 쪽 — 10-09 성숙 19 가족을 렌더로 보고 맞춘 규칙(밝기 차 규칙은 연두 무늬·전체흰을 망쳐 되돌림)
+    others = [j for j in range(K) if j != base and not (j in greens and (ov.get('merge_greens') or np.sqrt(((C[j] - C[base]) ** 2).sum()) < 18))]
+    if ov.get('varie_lightest'): others = [int(np.argmax(C[:, 0]))] if int(np.argmax(C[:, 0])) != base else []   # 작은 흰 점 무늬 — 가장 밝은 무리만 무늬
+    bases_all = [j for j in range(K) if j not in others]
+    bases = [base] + [j for j in bases_all if j != base]
+    if not full and not others:   # 무늬 무리가 없다 — 민무늬로 본다
+        R = np.zeros(isl.shape); G = np.zeros_like(R)
+    elif full:
         R = isl.astype(np.float64); G = np.zeros_like(R)
+        if ov.get('specks'):   # 가장 밝은 무리(크림 점) = 둘째 채널
+            lt = int(np.argmax(C[:, 0])); dm = D[..., [j for j in range(K) if j != lt]].min(-1)
+            G = np.where(isl, 1 / (1 + np.exp(-(dm - D[..., lt]) / 4.0)), 0)
     else:
         dv = D[..., others].min(-1); db = D[..., bases].min(-1)
         R = 1 / (1 + np.exp(-(db - dv) / 4.0)); R = np.where(isl, R, 0)
@@ -116,7 +150,7 @@ def run(glb, out_dir, REF):
     bl = rgb2lab(basep)[isl]; Db = np.sqrt(((bl[:, None, :] - C[None]) ** 2).sum(-1))
     left = float((~np.isin(Db.argmin(1), bases)).mean()) if not full else 0.0
     # 납작한 다시 짜기: 밑판·무늬색 두 개로 lerp 했을 때 원본과의 ΔE76(무늬 화소 · 잎맥·결을 얼마나 잃나 — 참고 값)
-    v1 = C[sorted(others, key=lambda j: -C[j][0])[0]] if not full else np.median(X, 0)
+    v1 = (C[sorted(others, key=lambda j: -C[j][0])[0]] if others else C[base]) if not full else np.median(X, 0)
     flat = lab2rgb(np.broadcast_to(v1, lab.shape)); comp = basep * (1 - R[..., None]) + flat * R[..., None]
     vm = isl & (R > 0.5)
     dE = float(np.sqrt(((rgb2lab(comp) - lab) ** 2).sum(-1))[vm].mean()) if vm.any() else 0.0
@@ -125,17 +159,18 @@ def run(glb, out_dir, REF):
     Image.fromarray(mask.astype(np.uint8)).save(os.path.join(out_dir, f'{name}_mask.png'))
     Image.fromarray(basep.astype(np.uint8)).save(os.path.join(out_dir, f'{name}_base.png'))
     def hexof(l): return '#%02x%02x%02x' % tuple(int(v) for v in lab2rgb(np.array(l)[None, None])[0, 0])
-    cols = {'base': hexof(C[base]) if not full else hexof(REF), 'varie1': hexof(C[sorted(others, key=lambda j: -C[j][0])[0]]) if not full else hexof(np.median(X, 0)),
+    cols = {'base': hexof(C[base]) if not full else hexof(REF), 'varie1': (hexof(C[sorted(others, key=lambda j: -C[j][0])[0]]) if others else None) if not full else hexof(np.median(X, 0)),
             'varie2': hexof(C[sorted(others, key=lambda j: -C[j][0])[1]]) if (not full and len(others) >= 2) else None, 'full': bool(full)}
     rep = {'name': name, 'tex': [W, H], 'mask_pct': round(float(R[isl].mean()) * 100, 1), 'second_pct': round(float(G[isl].mean()) * 100, 1),
-           'base_left_pct': round(left * 100, 2), 'flat_dE_in_varie': round(dE, 1), 'base_dE_from_ref': round(float(dref[base]), 1), 'colors': cols}
+           'override': ov.get('why'), 'base_left_pct': round(left * 100, 2), 'flat_dE_in_varie': round(dE, 1), 'base_dE_from_ref': round(float(dref[base]), 1), 'colors': cols}
     json.dump(rep, open(os.path.join(out_dir, f'{name}_colors.json'), 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
     return rep, img, mask.astype(np.uint8), basep.astype(np.uint8)
 
 if __name__ == '__main__':
-    out = sys.argv[1]; REF = ref_green(); rows = []; tiles = []
+    out = sys.argv[1]; rows = []; tiles = []
     for g in sys.argv[2:]:
-        rep, img, mask, basep = run(g, out, REF); rows.append(rep); print(json.dumps(rep, ensure_ascii=False))
+        REF, refp = ref_for(g)
+        rep, img, mask, basep = run(g, out, REF); rep['ref'] = os.path.basename(refp); rows.append(rep); print(json.dumps(rep, ensure_ascii=False))
         S = 256; tiles.append([img.resize((S, S)), Image.fromarray(mask).resize((S, S)), Image.fromarray(basep).resize((S, S))])
     if tiles:
         S = 256; sh = Image.new('RGB', (S * 3, S * len(tiles)), 'white')

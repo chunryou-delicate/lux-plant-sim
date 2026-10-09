@@ -27,10 +27,11 @@ def depink(img):
     hsv = np.asarray(img.convert('RGB').convert('HSV')).astype(np.float64) / 255.0
     h, s = hsv[..., 0] * 360, hsv[..., 1]
     pink = (((h >= 270) | (h <= 45)) & (s > S_MIN))
-    if GROW: pink = box(pink.astype(np.float64), GROW) > 0.01
+    k = img.size[0] / 1024.0                            # ★ 10-09 — 반지름은 1024 기준 화소다. 2048(유니티 키트)에서도 같은 넓이를 메우게 너비에 맞춰 늘린다(1024 면 그대로)
+    if GROW: pink = box(pink.astype(np.float64), max(1, int(round(GROW * k)))) > 0.01
     keep = (~pink).astype(np.float64)
     fill = np.zeros_like(rgb); have = np.zeros(pink.shape)
-    for rad in (96, 48, 24, 12, 6):                     # 넓게 → 좁게: 좁은 반지름이 이웃 색을 더 잘 따른다
+    for rad in (int(round(r * k)) for r in (96, 48, 24, 12, 6)):                     # 넓게 → 좁게: 좁은 반지름이 이웃 색을 더 잘 따른다
         num = np.stack([box(rgb[..., c] * keep, rad) for c in range(3)], -1)
         den = box(keep, rad)
         ok = den > 0.05
