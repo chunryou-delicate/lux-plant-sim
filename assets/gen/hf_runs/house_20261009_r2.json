@@ -1,0 +1,47 @@
+{
+ "_what": "Higgsfield 결과(총괄 hf_fetch)",
+ "entries": [
+  {
+   "name": "oneroom_wallpaper_r2_1",
+   "job_id": "a1c2795e-8667-4457-962f-61d9bf1a591c",
+   "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_143806_a1c2795e-8667-4457-962f-61d9bf1a591c.png",
+   "dir": "assets/gen/v2_hf/room",
+   "note": "원룸 벽지 다시(반지하 꽃 참조 뺌 · plain no motifs) · nano_banana_2_1 2k · 참조 style_keyframe_a 하나",
+   "saved_path": "assets/gen/v2_hf/room/oneroom_wallpaper_r2_1.jpg",
+   "master_path": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/gen/v2_hf/room/oneroom_wallpaper_r2_1.png",
+   "size": [
+    2048,
+    2048
+   ],
+   "has_alpha": false
+  },
+  {
+   "name": "oneroom_wallpaper_r2_3",
+   "job_id": "16ca7c2c-2b97-4cba-970b-b1fe21f171bc",
+   "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_143806_16ca7c2c-2b97-4cba-970b-b1fe21f171bc.png",
+   "dir": "assets/gen/v2_hf/room",
+   "note": "원룸 벽지 다시 · r2_2 는 심의 거짓 경보(nsfw · 돈 돌려받음)",
+   "saved_path": "assets/gen/v2_hf/room/oneroom_wallpaper_r2_3.jpg",
+   "master_path": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/gen/v2_hf/room/oneroom_wallpaper_r2_3.png",
+   "size": [
+    2048,
+    2048
+   ],
+   "has_alpha": false
+  },
+  {
+   "name": "oneroom_wallpaper_r2_4",
+   "job_id": "8016be54-5195-4347-9f76-c630c522719d",
+   "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_143806_8016be54-5195-4347-9f76-c630c522719d.png",
+   "dir": "assets/gen/v2_hf/room",
+   "note": "원룸 벽지 다시",
+   "saved_path": "assets/gen/v2_hf/room/oneroom_wallpaper_r2_4.jpg",
+   "master_path": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/gen/v2_hf/room/oneroom_wallpaper_r2_4.png",
+   "size": [
+    2048,
+    2048
+   ],
+   "has_alpha": false
+  }
+ ]
+}
