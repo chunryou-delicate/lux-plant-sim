@@ -3177,6 +3177,7 @@ import { takeCutting, repotCutting, cuttableNow, cutBudgetOf, cutBlockedReason,
          /* ★ 2026-10-08 — 자리 잡은 삽수에서 다시 자른다(§drawCuttings «가진 삽수» · 총괄 14:25 ①) */
          cuttableNodesOfCutting,
          CONTAINERS, METHODS } from './src/game/propagation.js';
+import { CUTTING_LEAF_DAYS } from './src/game/propagation.js';   /* ★ 2026-10-09 D46 — 다음 잎까지 온 몫(nextLeaf01) */
 import { isFreeSlotId, atFromSlot } from './src/game/place.js';
 /* 식물등 겨누기 — 물리는 io.light 가, 세이브는 이쪽이 맡는다(lampaim-to-plan §1) */
 import { setLampAim, clearLampAim } from './src/game/state.js';
@@ -13620,6 +13621,21 @@ function syncRoom() {
                                  ? c.source.motherSeed : null,
                      /* 무늬는 이 칸을 줘야 난다 — 화분에 이미 넘기는 그 값 그대로다(§leafStateForRoom) */
                      leafState: leafStateForRoom(p),
+                     /* ★★ 2026-10-09 D46(총괄) — **흙에 자리 잡은 삽수는 «작은 그루»로 그린다**(growth youngPlantOf · 4c22fd48).
+                          예전엔 방이 «자른 날의 모주 가지»(branchOf)를 그대로 다시 지어 삽수가 흙에서 키운 잎을 몰랐다
+                          (leaf 실측: 120일 잎 1→2장인데 그림 0.08% 차이). 꼴은 «잎 수 + 다음 잎까지 온 몫»이 정한다(growth).
+                          병 삽수(뿌리내리는 중)는 그대로 자른 가지다 */
+                     status: c.status || null,
+                     nextLeaf01: Math.max(0, Math.min(1, (Number(c.leafDays) || 0) / (CUTTING_LEAF_DAYS || 1))),
+                     ageDays: Number.isFinite(c.pottedOnDay) ? Math.max(0, S.day - c.pottedOnDay)
+                            : (Number.isFinite(c.rootedOnDay) ? Math.max(0, S.day - c.rootedOnDay) : null),
+                     leafMatSkins: varie.map((v, i) => {
+                       if (!v || !grades[i]) return null;
+                       try { return (leafSkinsFor(grades[i], seed, c.id, i) || {}).matSkin || null; } catch { return null; }
+                     }),
+                     /* 그루마다 다른 꼴 — 판 씨앗과 삽수 이름에서 정수 하나(세이브마다 같은 답) */
+                     youngSeed: (() => { let h = (seed >>> 0) ^ 0x9e3779b9; for (const ch of String(c.id)) h = Math.imul(h ^ ch.charCodeAt(0), 16777619) >>> 0; return h >>> 0; })(),
+                     species: c.species || 'monstera',
                      potD: cont.realMaxM || 0.12 };
       want.add(c.id);
       Promise.resolve(c.at && roomView.setPlantAt

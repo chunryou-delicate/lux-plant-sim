@@ -1966,8 +1966,11 @@ export async function createRoomView(canvas, opts = {}) {
       skinRebuildT = null;
       if (disposed) return;
       for (const [key, rec] of [...plants]) {
-        if ((rec.spec.kind || 'monstera') !== 'monstera') continue;
-        if (!hasVarieLeaf(rec.spec.leafState)) continue;
+        const kindR = rec.spec.kind || 'monstera';
+        const youngVarie = kindR === 'cutpot' && rec.spec.status === 'established' &&
+                           Array.isArray(rec.spec.leafVarie) && rec.spec.leafVarie.some(Boolean);   /* ★ D46 — 작은 그루의 무늬 잎 */
+        if (kindR !== 'monstera' && !youngVarie) continue;
+        if (kindR === 'monstera' && !hasVarieLeaf(rec.spec.leafState)) continue;
         rec.skinDirty = true;                       // needsRebuild 가 이 표를 본다
         try {
           if (rec.potId && key === freeSlotId(rec.potId)) await setPlantAt(rec.potId, rec.at, rec.spec);
@@ -2700,6 +2703,41 @@ export async function createRoomView(canvas, opts = {}) {
     return g;
   }
 
+  /* ══ ★★ 2026-10-09 D46(총괄) — 흙에 자리 잡은 삽수 = «작은 그루» (growth youngPlantOf · 4c22fd48) ══════════════
+     삽수 자신의 잎(아래→위 · 무늬·등급·그림)과 «다음 잎까지 온 몫»을 조립기에 넘기면, 같은 씨앗의 그루가 N 번째 잎을 낸 때를
+     plant_grow 가 그대로 그리고 화분만 걷어 준다(밑동 y=0 · 흙·화분 없음 — 그릇은 여기서 그린다).
+     ⚠ null 이면(잎 0 · 모르는 종 · 그 씨앗이 못 내는 장수 · 조립 실패) 예전 길(자른 가지 · 원기둥)로 내려앉는다.
+     ⚠ 무늬 그림이 늦게 오면(userData.skinsPending) 모주처럼 도착 뒤 다시 짓는다(§rebuildVariePlants). */
+  async function addYoungPlant(g, spec, baseY, potD) {
+    if (spec.status !== 'established' || !Array.isArray(spec.leafVarie) || !spec.leafVarie.length) return false;
+    let plant = null, asm = null;
+    try {
+      asm = await assembler();
+      if (!asm || typeof asm.youngPlantOf !== 'function') return false;
+      const leaves = spec.leafVarie.map((v, i) => ({
+        varie: !!v,
+        grade: (Array.isArray(spec.leafGrades) && spec.leafGrades[i]) || null,
+        midSkin: (Array.isArray(spec.leafSkins) && spec.leafSkins[i]) || null,
+        matSkin: (Array.isArray(spec.leafMatSkins) && spec.leafMatSkins[i]) || null,
+        matured: false
+      }));
+      plant = asm.youngPlantOf({ seed: spec.youngSeed, leaves, nextLeaf01: Number.isFinite(spec.nextLeaf01) ? spec.nextLeaf01 : 0,
+                                 ageDays: Number.isFinite(spec.ageDays) ? spec.ageDays : null, potD,
+                                 species: spec.species || 'monstera', withPot: false });
+    } catch (e) { warnOnce('young', '[방뷰] 작은 그루를 못 지었습니다 — 자른 가지 길로 그립니다:', e); return false; }
+    if (!plant) return false;
+    plant.position.y = baseY;
+    g.add(plant);
+    const u = plant.userData || {};
+    g.userData.leaves = [];
+    /* ★ 재는 자가 무엇을 그렸는지 보는 창구 — 게임은 안 읽는다 */
+    g.userData.young = { leafCount: u.leafCount, leafCountWanted: u.leafCountWanted, growthDays: u.growthDays,
+                         h: u.sizeM && u.sizeM.h, nextLeaf01Given: u.nextLeaf01Given !== false, varieLeafKeys: u.varieLeafKeys || [] };
+    g.userData.cutLeaves = { leaves: u.leafCount, leavesTrue: spec.leafVarie.length, files: [], stemR: null };
+    if (u.skinsPending) { try { watchSkins(asm); noteSkinTip(asm); } catch { } }
+    return true;
+  }
+
   /* ══ ★ cutpot — 검은 모종포트 ═══════════════════════════════════════════════
      ⚠ **`rooted` 가 그림을 안 바꾼다.** 흙 포트의 뿌리는 흙 속이라 원래 안 보인다.
        안 보이는 것을 보여 주면 화면이 거짓말을 한다 — 그 자리를 비워 두는 것이 사실이다. */
@@ -2741,7 +2779,8 @@ export async function createRoomView(canvas, opts = {}) {
     soil.position.y = soilTop - want * 0.05;
     g.add(soil);
 
-    await addCutStem(g, spec, soilTop, 0, soilTop, false);
+    /* ★ D46 — 흙에 자리 잡았으면 «작은 그루». 못 지으면 예전 길(자른 가지 · 원기둥) */
+    if (!(await addYoungPlant(g, spec, soilTop, want))) await addCutStem(g, spec, soilTop, 0, soilTop, false);
     g.userData.kind = 'cutpot';
     g.userData.cut = { ...(g.userData.cutLeaves || {}), variegated: !!spec.variegated,
                        rooted: !!spec.rooted, stem: spec.stem || null, rimY: topY };
@@ -3186,7 +3225,9 @@ export async function createRoomView(canvas, opts = {}) {
        실제로 일어나는 일이다. 배열은 짧으니 통째로 이어 붙이는 것이 제일 싸고 안 샌다. */
     const j = a => (Array.isArray(a) ? a.map(v => (v == null ? '-' : v === true ? '1' : v === false ? '0' : v)).join(',') : '');
     return `${cutLeafCountOf(s)}|${s.variegated ? 1 : 0}|${s.rooted ? 1 : 0}|${s.stem || '-'}` +
-           `|${j(s.leafVarie)}|${j(s.leafGrades)}|${j(s.leafSkins)}`;
+           `|${j(s.leafVarie)}|${j(s.leafGrades)}|${j(s.leafSkins)}` +
+           /* ★ 2026-10-09 D46 — 자리 잡음(작은 그루로 바뀜) · 다음 잎까지 온 몫(1/20 걸음 · 꼴이 이것으로 자란다) · 성숙잎 그림 */
+           `|${s.status || '-'}|${Number.isFinite(s.nextLeaf01) ? Math.round(s.nextLeaf01 * 20) : '-'}|${j(s.leafMatSkins)}`;
   };
   /* 몬스테라 잎 그림표 한 줄 요약(D4) — `[{ leafBirth, mid, mat }]` */
   const skinTableKey = (a) => (Array.isArray(a)
@@ -9707,6 +9748,9 @@ export async function createRoomView(canvas, opts = {}) {
         potD: p.potD ?? null,
         /* 갈아 끼운 화분 — 안 갈았으면 null 이다(§swapPotMesh) */
         potAsset: (p.group && p.group.userData && p.group.userData.potAsset) || null,
+        /* ★ 2026-10-09 D46 진단 — 작은 그루로 그렸나(잎 수 · 바란 잎 수 · 생장일 · 높이) · 삽수 잎 셈. 게임은 안 읽는다 */
+        young: (p.group && p.group.userData && p.group.userData.young) || null,
+        cutLeaves: (p.group && p.group.userData && p.group.userData.cutLeaves) || null,
         /* ★ 방이 실제로 그린 생장일 — 「확대창엔 보이는데 방엔 없다」를 가릴 유일한 근거다 */
         growthDays: (p.group && p.group.userData && p.group.userData.growthDays) ?? null,
         /* 실제로 **세워진** 용기 수다. spec 을 되읽는 게 아니라 그루가 스스로 적어 둔 값이다 */
