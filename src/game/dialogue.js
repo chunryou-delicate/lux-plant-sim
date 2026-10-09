@@ -41,7 +41,7 @@ import { CROP_KINDS } from './first_play.js';
 /* 독촉 «기다림» 판정 — [core] 파일(D2 · 2026-10-07). 한 방향: dialogue → nudge_wait */
 import { nudgeWaiting, nudgeDaysOf, varieSourceCount } from './nudge_wait.js';
 /* 방 거름 — 반지하 줄은 이사 뒤에 독촉하지 않는다(quest.js §questRoomOk · 2026-10-07). quest.js 는 아무것도 import 하지 않아 돌지 않는다 */
-import { questRoomOk } from './quest.js';
+import { questRoomOk, HOME_MARKS } from './quest.js';
 const BEAN_SEED = (() => {
   try { return catalogList().find(x => x.id === 'bean_seed') || {}; } catch { return {}; }
 })();
@@ -1696,15 +1696,22 @@ export const SCRIPTS = {
     { who: 'moni',   face: 'proud',    text: '붙잡았다. 이제 그 마디가 다음 잎을 낼 거야.' },
     { who: 'jachwi', face: 'think',    text: '가위로 그림을 그리는 것 같다.' }
   ],
+  /* ★ 2026-10-09 [plan] D52(총괄) — 구근은 «잠드는 날(잎이 다 지는 날)» 흙 속에서 찾는다. 이 줄이 열리는 날이 그날이다 —
+     «구근을 심는다»는 이튿날 열린다(stepQuests 「하루에 새 줄 하나」 — 같은 날이면 정의 순서로 이 줄 뒤). 봄 깸은 «다시 깼다»만. */
   questAlKeepWinter: [
-    { who: 'jachwi', face: 'worry',    text: '알로카시아 잎이 누레지더니 하나 떨어졌다.' },
+    { who: 'jachwi', face: 'worry',    text: '알로카시아 잎이 다 졌다…' },
     { who: 'moni',   face: 'teach',    text: '죽은 게 아니야. 자는 거야. 겨울이라 쉬는 거야.' },
-    { who: 'moni',   face: 'calm',     text: '흙 속 구근은 살아 있어. 버리지 말고 봄까지 두자.' }
+    { who: 'jachwi', face: 'surprise', text: '어, 흙 속에 뭔가 있다.' },
+    { who: 'moni',   face: 'calm',     text: '구근이야. 큰 구근도 그 밑에서 살아 있어. 버리지 말고 봄까지 두자.' }
   ],
   questDoneAlKeepWinter: [
     { who: 'jachwi', face: 'surprise', text: '알로카시아 화분에서 뾰족한 싹이 올라왔다!' },
-    { who: 'moni',   face: 'cheer',    text: '깼다! 겨울을 넘긴 거야.' },
-    { who: 'jachwi', face: 'curious',  text: '흙을 북돋다가 작은 구근을 찾았다.' }
+    { who: 'moni',   face: 'cheer',    text: '다시 깼다! 겨울을 넘긴 거야.' }
+  ],
+  /* 두 번째 잠부터(곁줄은 한 번만 열린다) — 사건 al_corms_found(ev.first false) · 첫 번은 위 열림 대사가 말한다 */
+  alCormsFoundAgain: [
+    { who: 'jachwi', face: 'curious',  text: '잎이 다 진 알로카시아 흙 속에 또 구근이 있다.' },
+    { who: 'moni',   face: 'calm',     text: '자면서 또 남겼네.' }
   ],
   questAlPlantCorm: [
     { who: 'moni',   face: 'teach',    text: '구근 하나가 새 그루가 돼. 심어 보자.' },
@@ -1743,8 +1750,15 @@ export const SCRIPTS = {
   /* ★ 2026-10-09 [plan] — 집 자금은 13달이라 달마다 두 벌을 번갈아(§CHATTER · 기다린 날 ÷ 30 홀/짝). 「막혔냐」가 아니라 «모으는 중»의 말이다 */
   nudgeHomePush2: [ { who: 'moni', face: 'calm',  text: '잘 모으고 있어. 무늬는 늘려서 내놓고.' } ],
   /* ★ 목표까지 «이정표» — 처음 넘은 날 한 번씩(§CHATTER status). 수는 안 말한다 · 칸 homeTarget 은 [core](없으면 안 뜸) */
+  /* ★ 2026-10-09 [plan] D51 — 내 집 자금 네 마디(¼·½·¾·거의 · quest.js HOME_MARKS). 보상 없이 말만 — «다가가는 맛». 한 판에 한 번씩(gap 400) */
+  statusHomeQuarter: [
+    { who: 'moni', face: 'cheer', text: '집까지 가는 길, 첫 고개는 넘었어.' }
+  ],
   statusHomeHalf: [
     { who: 'moni', face: 'proud', text: '집까지 온 길이 남은 길보다 길어졌어.' }
+  ],
+  statusHomeThreeQuarter: [
+    { who: 'moni', face: 'proud', text: '마지막 고개만 남았어.' }
   ],
   statusHomeNear: [
     { who: 'jachwi', face: 'think', text: '…집이 보이는 것 같다.' },
@@ -2219,9 +2233,9 @@ export const REPEATABLE = new Set(
              'nudgeSiruOffer', 'nudgeSiruPush', 'statusOneroomNoVarie', 'statusOneroomCutSill',
              'lampUnderEmpty', 'statusBagCuttings', 'statusBagCuttingsMove', 'movedInBagCuttings',
              /* ★ 2026-10-09 [plan] D45 — 새 종 사건은 판마다 여러 번 난다(구근마다 싹 · 잎마다 경고). 교환·퀘스트는 한 번 */
-             'ppPinkWarn', 'ppTipWithered', 'ppReverted', 'alSproutVarie', 'alSproutPlain', 'statusAlSleeping',
+             'ppPinkWarn', 'ppTipWithered', 'ppReverted', 'alSproutVarie', 'alSproutPlain', 'statusAlSleeping', 'alCormsFoundAgain',
              'springCameOneroom', 'summerCameOneroom', 'autumnCameOneroom', 'statusOneroomYear',
-             'nudgeHomeOffer', 'nudgeHomePush', 'statusHomeHalf', 'statusHomeNear',
+             'nudgeHomeOffer', 'nudgeHomePush', 'statusHomeHalf', 'statusHomeNear', 'statusHomeQuarter', 'statusHomeThreeQuarter',
              'rentSoon2', 'rentAgain2', 'nudgeHomePush2',
              /* ★ 2026-10-08 상태 줄 — 기다림마다 다시 온다(§STATUS gap) */
              'statusSill', 'statusGauge', 'statusStreak', 'statusLeafWide', 'statusSiruVs', 'statusWallet',
@@ -2470,7 +2484,7 @@ const EVENT_ORDER = [
   /* ★ 2026-10-09 [plan] D45 — 새 종 사건은 퀘스트 «앞»이다: 교환(pp_trade_done) 뒤에 «분홍을 붙잡는다»가 열리는 날,
      「바꿨다」가 먼저 와야 「분홍이 고운 잎이 나면…」이 그 뒤에 선다. 시듦은 경고보다 앞(같은 날 둘은 안 남) */
   'pp_trade_offer', 'pp_trade_declined', 'pp_trade_done',
-  'pp_tip_withered', 'pp_pink_warn', 'pp_reverted', 'al_sprout',
+  'pp_tip_withered', 'pp_pink_warn', 'pp_reverted', 'al_sprout', 'al_corms_found',
   /* ★★ 퀘스트는 **끝난 것이 먼저, 열린 것이 나중**이다 (2026-08-17).
      한 판에서 「①을 끝냈다 → 그래서 ②가 열린다」가 같은 날 난다(`siru5_cycle5` 의 여는
      조건이 `crop_mix` 완료라서). 순서가 뒤집히면 **열리고 나서 끝난 것을 축하한다.**
@@ -2537,6 +2551,8 @@ function scriptOf(ev, S = null) {
   if (id === 'pp_trade_offer')    return ev && ev.again ? 'ppTradeOfferAgain' : 'ppTradeOffer';
   if (id === 'pp_trade_declined') return ev && ev.last ? 'ppTradeDeclinedLast' : 'ppTradeDeclined';
   if (id === 'al_sprout') return ev && ev.varie === true ? 'alSproutVarie' : ev && ev.varie === false ? 'alSproutPlain' : null;
+  /* ★ D52 — 구근을 찾은 날: 첫 잠은 곁줄 열림 대사가 말한다(말 없음) · 그 뒤 잠은 짧은 두 줄 */
+  if (id === 'al_corms_found') return ev && ev.first === false ? 'alCormsFoundAgain' : null;
   if (id === 'quest_opened') return QUEST_OPEN_SCRIPT[ev && ev.questId] || null;
   if (id === 'quest_done')   return QUEST_DONE_SCRIPT[ev && ev.questId] || null;
   return EVENT_SCRIPT[id] || null;
@@ -2843,10 +2859,15 @@ export const CHATTER = [
   { id: 'statusHarvest30',      status: true, gap: 9999, when: c => fin(c.harvestTotal) && c.harvestTotal >= 30 },
   { id: 'statusHarvest10',      status: true, gap: 9999, when: c => fin(c.harvestTotal) && c.harvestTotal >= 10 && c.harvestTotal < 30 },
   { id: 'statusOneroomYear',    status: true, gap: 400, when: c => c.movedOut && fin(c.daysInOneroom) && c.daysInOneroom >= 365 },
+  /* ★ 2026-10-09 [plan] D51 — 네 마디 · 문턱은 quest.js HOME_MARKS 하나(칩 글과 같은 자) */
   { id: 'statusHomeNear',       status: true, gap: 400, when: c => c.movedOut && fin(c.homeTarget) && c.homeTarget > 0 && fin(c.cashWon)
-                                                            && c.cashWon >= c.homeTarget * 0.85 && c.cashWon < c.homeTarget },
+                                                            && c.cashWon >= c.homeTarget * HOME_MARKS.near && c.cashWon < c.homeTarget },
+  { id: 'statusHomeThreeQuarter', status: true, gap: 400, when: c => c.movedOut && fin(c.homeTarget) && c.homeTarget > 0 && fin(c.cashWon)
+                                                            && c.cashWon >= c.homeTarget * HOME_MARKS.threeQuarter && c.cashWon < c.homeTarget * HOME_MARKS.near },
   { id: 'statusHomeHalf',       status: true, gap: 400, when: c => c.movedOut && fin(c.homeTarget) && c.homeTarget > 0 && fin(c.cashWon)
-                                                            && c.cashWon >= c.homeTarget * 0.5 && c.cashWon < c.homeTarget * 0.85 },
+                                                            && c.cashWon >= c.homeTarget * HOME_MARKS.half && c.cashWon < c.homeTarget * HOME_MARKS.threeQuarter },
+  { id: 'statusHomeQuarter',    status: true, gap: 400, when: c => c.movedOut && fin(c.homeTarget) && c.homeTarget > 0 && fin(c.cashWon)
+                                                            && c.cashWon >= c.homeTarget * HOME_MARKS.quarter && c.cashWon < c.homeTarget * HOME_MARKS.half },
   { id: 'statusOneroomCutSill', status: true, gap: 60, when: c => c.movedOut && fin(c.daysInOneroom) && c.daysInOneroom >= 1 && c.daysInOneroom <= 7
                                                               && fin(c.varieCuttings) && c.varieCuttings > 0 },
 ];

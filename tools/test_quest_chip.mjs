@@ -68,5 +68,23 @@ check('글 — 「기다리는 중 — …」 뒷말이 짧다(할 일 줄 28자
     assert.ok(('기다리는 중 — ' + t).length <= 28, `${k}: ${t}`);
 });
 
+/* ★ D51 — 집 자금 칩 글: 날마다 바뀌고(남은 돈) · 목표가 같은 줄에 · 네 마디 말머리 · 28자 안 · 현금을 모르면 예전 글 */
+{
+  const { questOf, questTodo, HOME_MARKS } = await import('../src/game/quest.js');
+  const q = questOf('oneroom_home_fund');
+  check('D51 집 자금 칩 글 — 남은 돈 · 목표 · 네 마디 · 28자 안 · 현금 모르면 예전 글', () => {
+    const T = 5_000_000;
+    const at = c => questTodo(q, { targetWon: T, cashWon: c });
+    assert.equal(at(0), '내 집까지 앞으로 500만 · 목표 500만');
+    assert.equal(at(T * HOME_MARKS.quarter), '¼ 왔어요 — 앞으로 375만 · 목표 500만');
+    assert.equal(at(T * HOME_MARKS.half), '반 왔어요 — 앞으로 250만 · 목표 500만');
+    assert.equal(at(T * HOME_MARKS.threeQuarter), '¾ 왔어요 — 앞으로 125만 · 목표 500만');
+    assert.ok(at(T * HOME_MARKS.near).startsWith('거의 왔어요'));
+    assert.notEqual(at(1_000_000), at(1_100_000), '돈이 늘었는데 글이 그대로입니다');
+    for (let c = 0; c < T; c += 37_000) assert.ok(at(c).length <= 28, `${c}: ${at(c)}`);
+    assert.equal(questTodo(q, { targetWon: T }), '내 집 자금 5,000,000원을 모으세요');
+  });
+}
+
 console.log(fails ? `quest_chip: FAIL (${fails})` : 'quest_chip: PASS');
 process.exit(fails ? 1 : 0);

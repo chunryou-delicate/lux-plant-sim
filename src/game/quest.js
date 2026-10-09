@@ -229,7 +229,7 @@ export function emptySnapshot() {
            bagCuttings: null,
            /* ★ 2026-10-09 D45 — 새 종([core] · null = 「모른다」 → 그 줄은 안 열리고 안 끝난다)
               ppPlants 살아 있는 핑크프린세스 그루 수 · ppPinkHoldCuts «산반·하프문 잎이 난 마디 바로 위»에서 자른 번 수(분홍 잎 마디는 안 침)
-              alDormantNow 알로카시아 한 그루라도 자나 · alWokeCount 잠에서 깬 번 수 · alCormsFound 깰 때 찾은 구근 수(누적)
+              alDormantNow 알로카시아 한 그루라도 자나(잎이 다 졌나) · alWokeCount 잠에서 깬 번 수 · alCormsFound 잠들 때 흙 속에서 찾은 구근 수(누적 · D52)
               alFoundCormsPlanted 그 «찾은» 구근을 심은 수(상점에서 산 구근은 안 침 — 사서 심은 것으로 이 줄이 열리자마자 끝나지 않게) */
            ppPlants: null, ppPinkHoldCuts: null,
            alDormantNow: null, alWokeCount: null, alCormsFound: null, alFoundCormsPlanted: null,
@@ -848,6 +848,10 @@ const SLOW_QUESTS = Object.freeze([
    ⚠ 칸이 null(모른다)이면 안 열리고 안 끝난다(§스냅샷 계약) — 배선 전에는 원룸 줄이 «조용히 안 뜬다».
    ⚠ 체력 보상이 없다(stamina.json quests 표에 없음) — 그래서 다섯 다 `reward` 를 갖는다.
    ⚠ 「그루째 판다」로 온 판(그루도 무늬 삽수도 없음)은 ③에서 막힌다 — 갈래 명세 §3 의 열린 물음이다. */
+/* ★ 2026-10-09 [plan] D51 — 내 집 자금 «마디»(현금 ÷ 목표). 칩 글(§oneroom_home_fund todo)과 몬이 줄(dialogue §statusHome*)이 같은 문턱을 읽는다.
+   near 0.85 는 예전 statusHomeNear 문턱 그대로다. 보상 없음 — 말만 바뀐다. */
+export const HOME_MARKS = Object.freeze({ quarter: 0.25, half: 0.5, threeQuarter: 0.75, near: 0.85 });
+
 const ONEROOM_QUESTS = Object.freeze([
   /* ⛔ 「등 자리에 불을 켠다」 줄은 «안 둔다»(2026-10-07 · 넣었다가 뺐다).
      까닭 — 원룸 창턱은 여름엔 이미 «밝음»이라([growth] 브리핑) 이사한 날 등이 «꼭» 필요하지 않다.
@@ -936,8 +940,20 @@ const ONEROOM_QUESTS = Object.freeze([
     teaches: ['무늬를 늘려 팔면 집이 된다'],
     why: '무늬 삽수와 그루를 내놓아 팔면 그 돈이 내 집 자금이 됩니다.',
     /* ★ 수는 박지 않는다 — 목표 금액은 ending.js ENDING_RULES.targetWon(정본 · 아직 null · D9 로 잰다) */
-    todo: (q, s) => (s && Number.isFinite(s.targetWon) && s.targetWon > 0)
-      ? `내 집 자금 ${s.targetWon.toLocaleString('ko-KR')}원을 모으세요` : '내 집 자금을 모으세요',
+    /* ★★ 2026-10-09 [plan] D51(총괄 · 값 0) — 칩 글이 «날마다» 바뀐다: 남은 돈 · 목표를 한 줄에. ¼·½·¾·거의 네 마디는 말머리만 바뀐다(보상 없음).
+       까닭: D50 뒤 원룸 칩의 3분의 2를 이 줄이 쥐었고 글은 «내 집 자금 5,000,000원을 모으세요» 한 줄로 몇 달 그대로였다.
+       ⚠ 칩은 28자 안(§test_quest TODO_MAX) — 그래서 만 원 단위(올림 · 덜 남은 척을 안 한다). 원 단위 줄은 할 일 탭 머리(game.html §homeGoalHtml)가 그대로 낸다.
+       마디 문턱은 HOME_MARKS 하나(dialogue §statusHome* 가 같은 것을 읽는다). 현금을 모르면 예전 글. */
+    todo: (q, s) => {
+      const T = (s && Number.isFinite(s.targetWon) && s.targetWon > 0) ? s.targetWon : null;
+      if (!T) return '내 집 자금을 모으세요';
+      if (!Number.isFinite(s.cashWon)) return `내 집 자금 ${T.toLocaleString('ko-KR')}원을 모으세요`;
+      const man = w => `${Math.ceil(Math.max(0, w) / 10000).toLocaleString('ko-KR')}만`;
+      const f = s.cashWon / T;
+      const head = f >= HOME_MARKS.near ? '거의 왔어요 — ' : f >= HOME_MARKS.threeQuarter ? '¾ 왔어요 — '
+                 : f >= HOME_MARKS.half ? '반 왔어요 — ' : f >= HOME_MARKS.quarter ? '¼ 왔어요 — ' : '내 집까지 ';
+      return `${head}앞으로 ${man(T - s.cashWon)} · 목표 ${man(T)}`;
+    },
     /* ★ 2026-10-09 [plan] D41 — 팔기(곁줄)에 묶지 않는다. «뿌리내리기»(②) 뒤면 연다 — 엔딩 목표는 늘 보여야 한다 */
     after: 'oneroom_root_bright',
     /* ★ 목표 금액이 «없으면»(null) 안 연다 — 엔딩 화면이 숨는 것과 같은 말이다(D9) */
@@ -987,7 +1003,8 @@ const SPECIES_QUESTS = Object.freeze([
     id: 'al_keep_winter',
     room: 'oneroom',
     ko: '겨울잠을 지킨다',
-    reward: '봄에 깨면 흙 속에 구근을 남깁니다',
+    /* ★ 2026-10-09 D52 — 구근은 «잠들 때» 찾는다(봄에 심은 그루는 봄 깸이 원룸 끝 무렵이라 열어 보기를 못 보던 판). 깸은 «다시 깼다»만 */
+    reward: '봄에 다시 잎이 납니다',
     teaches: ['쉬는 철이 있다', '빈 화분이 죽은 화분은 아니다'],
     why: '알로카시아는 겨울에 잎을 다 떨구고 잡니다. 흙 속 구근은 살아 있어 봄에 다시 깹니다.',
     todo: () => '잠든 알로카시아를 봄까지 두세요',
@@ -1001,10 +1018,10 @@ const SPECIES_QUESTS = Object.freeze([
     ko: '구근을 심는다',
     reward: '새 그루가 하나 늡니다',
     teaches: ['알로카시아는 구근으로 는다', '무늬는 싹이 나야 안다'],
-    why: '깰 때 찾은 구근 하나가 새 그루가 됩니다. 무늬 모주의 구근이라도 무늬가 날지는 싹이 나야 압니다.',
+    why: '잠들 때 흙 속에서 찾은 구근 하나가 새 그루가 됩니다. 무늬 모주의 구근이라도 무늬가 날지는 싹이 나야 압니다.',
     todo: () => '찾은 구근을 화분에 심으세요',
-    after: 'al_keep_winter',
-    opens: (s, ctx) => !!(ctx && ctx.doneIds.includes('al_keep_winter')) && Number.isFinite(s.alCormsFound) && s.alCormsFound >= 1,
+    /* ★ D52 — 구근을 찾는 날(잠드는 날)에 연다 · 깸을 안 기다린다(겨울에 심은 구근은 잠들어 있다가 봄 깸 때 싹 · D49) */
+    opens: s => Number.isFinite(s.alCormsFound) && s.alCormsFound >= 1,
     done:  s => Number.isFinite(s.alFoundCormsPlanted) && s.alFoundCormsPlanted >= 1
   })
 ]);

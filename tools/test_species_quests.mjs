@@ -1,7 +1,7 @@
 /* test_species_quests — 2026-10-09 [plan] D45 새 식물 두 종의 곁줄 셋(quest.js §SPECIES_QUESTS)
    ① 칸이 null(배선 전)이면 셋 다 안 열린다 — 판을 안 바꾼다
    ② 걸어서: PP 가 들어오면 «분홍을 붙잡는다»가 열리고, 분홍 마디 위에서 자르면 끝난다
-   ③ 걸어서: AL 이 잠들면 «겨울잠을 지킨다»가 열리고, 깨면 끝나고, 그 걸음에 «구근을 심는다»가 열린다
+   ③ 걸어서: AL 이 잠들면(그날 흙 속 구근을 찾음 · D52) «겨울잠을 지킨다»와 «구근을 심는다»가 같이 열리고, 깨면 «겨울잠»이 끝난다
    ④ 상점에서 산 구근을 심은 것으로는 «구근을 심는다»가 끝나지 않는다(찾은 구근만 침)
    ⑤ 원룸 사슬이 열려 있는 동안 새 종 줄은 「지금 할 일」을 안 잡는다
    ⑥ 대사: 열림·끝 대사가 다 있고, 사건 갈림(교환 두 번째 · 구근 싹 무늬/민무늬)이 맞게 갈린다
@@ -40,26 +40,27 @@ check('② PP — 들어오면 열리고, 분홍 마디 위에서 자르면 끝�
   assert.ok(b.finished.includes('pp_hold_pink'), '분홍 마디 위에서 잘랐는데 안 끝났습니다');
 });
 
-check('③ AL — 잠들면 열리고, 깨면 끝나고, 같은 걸음에 «구근을 심는다»가 열린다', () => {
+check('③ AL — 잠드는 날 «겨울잠»·«구근을 심는다»가 같이 열리고, 깨면 «겨울잠»이 끝난다 (D52)', () => {
   const S = board();
   const base = { ...ONE, alWokeCount: 0, alCormsFound: 0, alFoundCormsPlanted: 0 };
   const a = walk(S, { ...base, day: 220, alDormantNow: false });
   assert.ok(!a.opened.includes('al_keep_winter'), '깨어 있는데 열렸습니다');
-  const b = walk(S, { ...base, day: 290, alDormantNow: true });
+  const b = walk(S, { ...base, day: 290, alDormantNow: true, alCormsFound: 2 });
   assert.ok(b.opened.includes('al_keep_winter'), '잠든 날 안 열렸습니다');
-  const c = walk(S, { ...base, day: 360, alDormantNow: false, alWokeCount: 1, alCormsFound: 2 });
-  assert.ok(c.finished.includes('al_keep_winter'), '깼는데 안 끝났습니다');
-  /* 같은 걸음에 열리지 않으면 다음 걸음엔 열려야 한다(끝난 것이 doneIds 에 들어간 뒤) */
-  const d = c.opened.includes('al_plant_corm') ? c : walk(S, { ...base, day: 361, alDormantNow: false, alWokeCount: 1, alCormsFound: 2 });
-  assert.ok(d.opened.includes('al_plant_corm'), '구근을 찾았는데 «구근을 심는다»가 안 열렸습니다');
-  const e = walk(S, { ...base, day: 365, alDormantNow: false, alWokeCount: 1, alCormsFound: 2, alFoundCormsPlanted: 1 });
-  assert.ok(e.finished.includes('al_plant_corm'), '찾은 구근을 심었는데 안 끝났습니다');
+  /* 하루에 새로 여는 줄은 하나(stepQuests §「한 번에 하나」) — «구근을 심는다»는 이튿날. 잠든 날 대사가 구근을 먼저 보여 준다 */
+  assert.ok(!b.opened.includes('al_plant_corm'), '하루 한 줄 규칙이 깨졌습니다');
+  const b2 = walk(S, { ...base, day: 291, alDormantNow: true, alCormsFound: 2 });
+  assert.ok(b2.opened.includes('al_plant_corm'), '구근을 찾은 이튿날 «구근을 심는다»가 안 열렸습니다');
+  const c = walk(S, { ...base, day: 300, alDormantNow: true, alCormsFound: 2, alFoundCormsPlanted: 1 });
+  assert.ok(c.finished.includes('al_plant_corm'), '찾은 구근을 심었는데 안 끝났습니다');
+  const d = walk(S, { ...base, day: 360, alDormantNow: false, alWokeCount: 1, alCormsFound: 2, alFoundCormsPlanted: 1 });
+  assert.ok(d.finished.includes('al_keep_winter'), '깼는데 안 끝났습니다');
 });
 
 check('④ 상점 구근을 심은 것으로는 «구근을 심는다»가 안 끝난다', () => {
   const S = board();
   const base = { ...ONE, alCormsFound: 0, alFoundCormsPlanted: 0 };
-  walk(S, { ...base, day: 290, alDormantNow: true, alWokeCount: 0 });
+  walk(S, { ...base, day: 290, alDormantNow: true, alWokeCount: 0, alCormsFound: 1 });
   walk(S, { ...base, day: 360, alDormantNow: false, alWokeCount: 1, alCormsFound: 1 });
   const r = walk(S, { ...base, day: 361, alDormantNow: false, alWokeCount: 1, alCormsFound: 1 });
   assert.ok(!S.stamina.questsTaken.includes('al_plant_corm'), '찾은 구근을 안 심었는데 끝났습니다');
@@ -89,6 +90,12 @@ check('⑥ 대사 — 열림·끝 대사가 있고 사건 갈림이 맞다', () 
   assert.deepEqual(ids([{ id: 'al_sprout', varie: true }]), ['alSproutVarie']);
   assert.deepEqual(ids([{ id: 'al_sprout', varie: false }]), ['alSproutPlain']);
   assert.deepEqual(ids([{ id: 'al_sprout' }]), [], '무늬를 모르면 말이 없어야 합니다');
+  /* D52 — 첫 잠의 구근은 곁줄 열림 대사가 말한다 · 두 번째 잠부터 짧은 줄 */
+  assert.deepEqual(ids([{ id: 'al_corms_found', first: true }]), []);
+  assert.deepEqual(ids([{ id: 'al_corms_found', first: false }]), ['alCormsFoundAgain']);
+  /* 잠드는 날: «겨울잠» 열림 → «구근을 심는다» 열림 */
+  assert.deepEqual(ids([{ id: 'quest_opened', questId: 'al_keep_winter' }, { id: 'quest_opened', questId: 'al_plant_corm' }]),
+                   ['questAlKeepWinter', 'questAlPlantCorm']);
   /* 교환 끝난 날 «분홍을 붙잡는다»가 열리면 「바꿨다」가 먼저 */
   assert.deepEqual(ids([{ id: 'quest_opened', questId: 'pp_hold_pink' }, { id: 'pp_trade_done' }]),
                    ['ppTradeDone', 'questPpHoldPink']);
@@ -96,7 +103,7 @@ check('⑥ 대사 — 열림·끝 대사가 있고 사건 갈림이 맞다', () 
   const D45 = ['ppTradeOffer', 'ppTradeOfferAgain', 'ppTradeDone', 'ppTradeDeclined', 'ppTradeDeclinedLast', 'ppPinkWarn',
                'ppTipWithered', 'ppReverted', 'alSproutVarie', 'alSproutPlain', 'statusAlSleeping',
                'questPpHoldPink', 'questDonePpHoldPink', 'questAlKeepWinter', 'questDoneAlKeepWinter',
-               'questAlPlantCorm', 'questDoneAlPlantCorm'];
+               'questAlPlantCorm', 'questDoneAlPlantCorm', 'alCormsFoundAgain', 'statusHomeQuarter', 'statusHomeThreeQuarter'];
   for (const id of D45) for (const l of SCRIPTS[id])
     if (l.who === 'moni') assert.ok(!/[0-9]/.test(l.text), `${id}: 몬이가 수를 말합니다 — ${l.text}`);
 });
