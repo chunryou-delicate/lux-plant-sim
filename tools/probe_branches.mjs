@@ -56,7 +56,7 @@ import * as JSHOP from '../src/game/job_shop.js';   /* ★ D59 «가게 사람»
 import { moveIntoOwnedHome } from '../src/game/oneroom.js';
 import { creditShopOrder, buyPriceOf } from '../src/game/shop.js';
 import { serialize as serializeSave } from '../src/game/save.js';   /* --dump — 단계마다 게임 세이브 꼴(byeot/save/1)로 뜬다 */
-import { stepQuests, questView } from '../src/game/quest.js';
+import { stepQuests, questView, questRoomOk } from '../src/game/quest.js';
 import { nudgeWaiting, noteQuestWaits, nudgeWaitReason } from '../src/game/nudge_wait.js';
 import { grantStaminaQuest } from '../src/game/stamina.js';
 /* ★ 2026-10-09 (총괄 · plan 청) — 대사 고르기도 같이 돌린다(화면과 무관한 순수 함수 · game.html §story 와 같은 것) */
@@ -438,7 +438,7 @@ export async function play(name, seed, opt = {}) {
         let soldGrades = null;
         try { const c = (S.cuttings || []).find(x => x && x.id === l.refId); if (c && l.kind !== 'pot') soldGrades = (cuttingStatsNow(c).leafGrades || []).filter(Boolean); } catch { }
         try { const c0 = ts.cashWon; const r = dealListing(S, l.listingId), dw = ts.cashWon - c0;
-              if (r.kind !== 'pot' && l.variegatedLeaves > 0) (out.varieSales = out.varieSales || []).push({ day: S.day, room: ts.movedOut ? 'oneroom' : 'banjiha', won: dw, grades: soldGrades });
+              if (r.kind !== 'pot' && l.variegatedLeaves > 0) (out.varieSales = out.varieSales || []).push({ day: S.day, room: S.home.room, won: dw, grades: soldGrades });
               const cat = r.kind === 'pot' ? 'mother' : (l.variegatedLeaves > 0 ? 'varie' : 'plain');
               if (r.kind === 'pot') out.sold.pot++; else if (l.variegatedLeaves > 0) out.sold.varie++; else out.sold.plain++;
               book(cat, dw); if (LG && cat === 'varie') bucket().nVarie++; if (LG && cat === 'plain') bucket().nPlain++; } catch { }
@@ -523,9 +523,13 @@ export async function play(name, seed, opt = {}) {
       for (const [id, on] of Object.entries(stm.questsOpenedOn || {})) {
         if (out.questOpen[id] == null) out.questOpen[id] = on;
         if (done.has(id)) { if (out.questDone[id] == null) out.questDone[id] = S.day; qOpen.delete(id); continue; }
+        /* ★ 2026-10-10 (총괄 — shop45 g sell_varie 563일 «막힘») — 게임은 방 표지(room)가 지금 방과 다른 줄을 숨기고 셈하지도 않는다(quest §questRoomOk).
+             이사 날 판 무늬는 게임이면 거래 순간(doDeal → checkQuests · 반지하)에 닫히는데, 하네스는 퀘스트를 하루 한 번(이사 «뒤»)만 세어 반지하 줄이 열린 채 남았다.
+             ⇒ 같은 자로 거른다: 방이 바뀌어 닫힌 줄은 막힘이 아니라 roomClosed 로 따로 적는다 */
+        if (!questRoomOk(id, snap)) { if (qOpen.has(id)) (out.roomClosed = out.roomClosed || {})[id] = S.day; qOpen.delete(id); continue; }
         const waiting = (() => { try { return nudgeWaiting(S, id, S.day); } catch { return false; } })();
         const q = qOpen.get(id) || { since: null, run: 0 };
-        if (waiting) { if (q.run >= STUCK_DAYS) out.stuck.push({ id, from: q.since, days: q.run, room: ts.movedOut ? 'oneroom' : 'banjiha' }); q.since = null; q.run = 0; }
+        if (waiting) { if (q.run >= STUCK_DAYS) out.stuck.push({ id, from: q.since, days: q.run, room: S.home.room }); q.since = null; q.run = 0; }
         else { if (q.since == null) q.since = S.day; q.run++; }
         qOpen.set(id, q);
       }
@@ -536,7 +540,7 @@ export async function play(name, seed, opt = {}) {
     if (ts.starved && out.starvedDay == null) { out.starvedDay = S.day; break; }
     if ([60, 120, 180, 240, 360].includes(S.day)) out.cashAt[S.day] = cash;
     out.cashDaily.push(cash);
-    if (opt.trace) (out._trace = out._trace || []).push({ day: S.day, room: ts.movedOut ? 'oneroom' : 'banjiha', cash,
+    if (opt.trace) (out._trace = out._trace || []).push({ day: S.day, room: S.home.room, cash,
       cashIn: Object.keys(dayIn).length ? dayIn : null, said: saidIds.length ? saidIds : null,
       events: [...new Set([...((turn && turn.events) || []).map(e => e && e.id), ...(out._qEv || [])].filter(Boolean))],
       questsDone: (out._qDone || []).length ? out._qDone : null, chip: out._chip ?? null,
@@ -641,7 +645,7 @@ export async function play(name, seed, opt = {}) {
     }
   }
   /* 끝까지 안 풀린 막힘 */
-  for (const [id, q] of qOpen) if (q.run >= STUCK_DAYS) out.stuck.push({ id, from: q.since, days: q.run, room: ts.movedOut ? 'oneroom' : 'banjiha', open: true });
+  for (const [id, q] of qOpen) if (q.run >= STUCK_DAYS) out.stuck.push({ id, from: q.since, days: q.run, room: S.home.room, open: true });
   out.lastDay = S.day; out.cashEnd = ts.cashWon;
   if (opt.trace && out._trace) {
     const dir = path.join(ROOT, 'tools', '_out', 'trace'); fs.mkdirSync(dir, { recursive: true });
