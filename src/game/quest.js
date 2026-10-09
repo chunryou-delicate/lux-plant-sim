@@ -225,6 +225,8 @@ export function emptySnapshot() {
            motherVarieMatured: null,
            /* ★ 2026-10-08 갈래 지도 4 — 자라는 자리에 놓였나(§monstera_home done). null = 「모른다」 */
            monsteraGrowing: null,
+           /* ★ 2026-10-09 D43 — 가방에 든(자리 없는) 안 죽은 삽수 수([core] turn.bagCuttings 와 같은 자). null = 「모른다」 */
+           bagCuttings: null,
            /* ★ null = 「모른다」. false 로 두면 「아직 배선이 없다」와 「아니다」가 같아진다 */
            monsteraArrived: null, monsteraHomed: null,
            /* ★ 2026-09-02 — 옮긴 뒤 지난 날 · 한 번 자랐나 (둘 다 firstPlay.monstera.guide 의 칸) */
@@ -847,7 +849,9 @@ const ONEROOM_QUESTS = Object.freeze([
     reward: '원룸이 내 방이 됩니다',
     teaches: ['원룸은 자리를 «만드는» 방이다', '가방 안은 아무 자리도 아니다'],
     why: '들고 온 것은 가방에서 아무 일도 안 합니다. 놓아야 빛을 받습니다.',
-    todo: () => '가방의 식물을 원룸에 놓으세요',
+    /* ★ 2026-10-09 [plan] D43 — 들고 온 삽수가 가방에 있으면 할 일 머리를 «삽수부터»로(가방 삽수는 하루가 안 감 · D29). 칸 bagCuttings 는 [core] — 없으면 예전 글 */
+    todo: (q, s) => (s && Number.isFinite(s.bagCuttings) && s.bagCuttings > 0)
+      ? '들고 온 삽수부터 방에 놓으세요' : '가방의 식물을 원룸에 놓으세요',
     opens: s => yes(s.movedOut),
     /* bagPlants — 가방에 든 그루·삽수·시루 수(가구는 안 센다 · 원룸 첫 장면의 «끝»과 같은 말) */
     done:  s => yes(s.movedOut) && Number.isFinite(s.bagPlants) && s.bagPlants === 0

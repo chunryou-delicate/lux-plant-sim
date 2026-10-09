@@ -614,7 +614,9 @@ check('데이터 — 대사마다 «부르는 자리»가 있다 («불린다»�
     /* ★ 2026-10-09 [plan] — 원룸 철 셋(season 사건이 방으로 갈림) */
     'springCameOneroom', 'summerCameOneroom', 'autumnCameOneroom',
     /* ★ 2026-10-09 [plan] — 월세 두 벌 번갈아(rent·rent_soon 이 낸 달 수 홀/짝으로 갈림) */
-    'rentAgain2', 'rentSoon2'
+    'rentAgain2', 'rentSoon2',
+    /* ★ 2026-10-09 [plan] D43 — 원룸 도착(moved_in_oneroom) 날 들고 온 삽수가 가방에 있으면 scriptsForEvents 가 도착 장면 뒤에 붙인다 */
+    'movedInBagCuttings'
   ]);
   const dead = Object.keys(SCRIPTS).filter(id => !used.has(id) && !NOT_YET_USED.has(id));
   assert.equal(dead.length, 0, `아무 데서도 안 불리는 대사: ${dead}`);

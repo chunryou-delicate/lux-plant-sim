@@ -1622,6 +1622,11 @@ export const SCRIPTS = {
   /* ★ 2026-10-09 [plan] — 이사 직후(원룸 첫 이레) 가방에 든 삽수: 이사가 자리를 비워 삽수는 가방으로 간다(oneroom §clearPlacements · D29 로 멈춤).
      후보 ㉠ [core] 가 이사 때 삽수를 새 방 자리로 앉힘 · ㉡ 말로 알림(택함) — 까닭: 원룸에서 «어디 둘지 고르기»가 첫 배움(창턱 · 등)이고,
      예전 자동 배치는 가장 어두운 칸으로 보낸 사고가 있었다(§chatOneroomPotDark 머리말). [core] 갈래 판: 이 손이 빠진 판은 ② 에 못 갔다(7/10). */
+  /* ★★ 2026-10-09 [plan] D43(총괄) — 원룸 «첫날» 들고 온 삽수가 가방에 있으면 이사 장면(movedInOneroom) 끝에 한 줄을 붙인다(§scriptsForEvents).
+     상태 줄은 사건 날에 안 서므로 첫날 말은 여기가 맡고, 둘째 날부터 아직 가방이면 §statusBagCuttingsMove 가 다시 짚는다. 들고 온 삽수가 0 이면 안 붙는다. */
+  movedInBagCuttings: [
+    { who: 'moni', face: 'teach', text: '들고 온 삽수부터 창가에 놓자. 가방에선 하루가 안 가.' }
+  ],
   statusBagCuttingsMove: [
     { who: 'moni', face: 'teach', text: '들고 온 삽수는 가방에 있어. 창가에 놓아 줘 — 가방에선 하루가 안 가.' }
   ],
@@ -2128,7 +2133,7 @@ export const REPEATABLE = new Set(
              'cuttingNode', 'cuttingWarn', 'cuttingWarnLast', 'cuttingDied',
              'cuttingVarieBright', 'cuttingVarieMid', 'cuttingVarieDark', 'nudgeSeedSow',
              'nudgeSiruOffer', 'nudgeSiruPush', 'statusOneroomNoVarie', 'statusOneroomCutSill',
-             'lampUnderEmpty', 'statusBagCuttings', 'statusBagCuttingsMove',
+             'lampUnderEmpty', 'statusBagCuttings', 'statusBagCuttingsMove', 'movedInBagCuttings',
              'springCameOneroom', 'summerCameOneroom', 'autumnCameOneroom', 'statusOneroomYear',
              'nudgeHomeOffer', 'nudgeHomePush', 'statusHomeHalf', 'statusHomeNear',
              'rentSoon2', 'rentAgain2', 'nudgeHomePush2',
@@ -2475,6 +2480,14 @@ export function scriptsForEvents(events = [], S = null) {
   if (out.includes('endingReady') || out.includes('endingReadyAgain')) { const q = out.indexOf('questDoneOneroomHomeFund'); if (q >= 0) out.splice(q, 1); }
   /* ★ 2026-10-08 [plan] 혹 난 날은 경고(w_node)도 같이 난다 — 같은 순간이라 «혹이 났어» 한 벌만 */
   if (out.includes('cuttingNode')) { const w = out.indexOf('cuttingWarn'); if (w >= 0) out.splice(w, 1); }
+  /* ★ 2026-10-09 [plan] D43 — 원룸에 들어온 날 들고 온 삽수가 가방에 있으면 도착 장면 «바로 뒤»에 한 줄(§movedInBagCuttings).
+     가방 = 안 죽었고 자리(at·slotId)가 없음 — [core] turn.bagCuttings 와 같은 자(이사가 자리를 비운 직후라 들고 온 것이 곧 이것이다). */
+  { const m = out.indexOf('movedInOneroom');
+    if (m >= 0 && !out.includes('movedInBagCuttings')) {
+      let bag = 0;
+      try { bag = (S && Array.isArray(S.cuttings) ? S.cuttings : []).filter(c => c && c.status !== 'dead' && c.method && !c.at && !c.slotId).length; } catch { bag = 0; }
+      if (bag > 0) out.splice(m + 1, 0, 'movedInBagCuttings');
+    } }
   return out;
 }
 
@@ -2699,8 +2712,8 @@ export const CHATTER = [
   { id: 'statusOneroomNoVarie', status: true, gap: 60, when: c => c.movedOut && fin(c.daysInOneroom) && c.daysInOneroom >= 1 && c.daysInOneroom <= 7
                                                               && c.varieSources === 0 },
   /* ★ 2026-10-09 [plan] D29 — 가방에 든 삽수가 있으면(이레에 한 번 · 사건·독촉 날엔 다음 빈 날) */
-  /* ★ 2026-10-09 [plan] — 원룸 첫 이레는 이사 맥락의 줄이 먼저(그 사이 일반 줄은 쉼) */
-  { id: 'statusBagCuttingsMove', status: true, gap: 3, when: c => c.movedOut && fin(c.daysInOneroom) && c.daysInOneroom <= 7
+  /* ★ 2026-10-09 [plan] — 원룸 첫 이레는 이사 맥락의 줄이 먼저(그 사이 일반 줄은 쉼). D43: 도착 날은 §movedInBagCuttings 가 말했으니 이튿날(1)은 쉬고 사흘째(2)부터 */
+  { id: 'statusBagCuttingsMove', status: true, gap: 3, when: c => c.movedOut && fin(c.daysInOneroom) && c.daysInOneroom >= 2 && c.daysInOneroom <= 7
                                                               && fin(c.bagCuttings) && c.bagCuttings > 0 },
   { id: 'statusBagCuttings',    status: true, gap: 7,  when: c => fin(c.bagCuttings) && c.bagCuttings > 0
                                                               && !(c.movedOut && fin(c.daysInOneroom) && c.daysInOneroom <= 7) },
