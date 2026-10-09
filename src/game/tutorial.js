@@ -722,6 +722,9 @@ export function tutorialDay(ts, opt = {}) {
          「무엇을 주기로 했나」는 규칙이고 「가방에 넣는 일」은 화면 몫이다. */
     ev.push({ id: 'lamp_unlocked', ko: '식물등을 살 수 있게 되었습니다 — 첫 개는 그냥 드립니다',
               priceWon: R.lampPriceWon, free: 1 });
+    /* ★ 2026-10-09 D47(총괄 · 대사 plan b3503d87) — **가구점도 같은 날 문을 연다**(shop §furnitureShopOpen 의 정본이 ts.lamp.unlocked).
+       한 판에 한 번 — 해금이 한 번이라 저절로 한 번이다. 대사 순서는 dialogue EVENT_ORDER 가 등 장면 «뒤»로 세운다 */
+    ev.push({ id: 'furniture_shop_open', ko: '가구점이 문을 열었습니다' });
   }
   const prevSeason = seasonAt(ts, ts.day - 1);
   /* ★계절 이름을 같이 싣는다 — 가을과 겨울은 대사가 완전히 다르다.
