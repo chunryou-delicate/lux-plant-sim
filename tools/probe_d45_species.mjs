@@ -106,6 +106,9 @@ try {
   const hasStock = await page.eval(`String(!!document.querySelector('#bagGrid [data-place="spstock:al_corm"]'))`);
   ok(hasStock === 'true', '구근이 와서 가방 칸에 섰다');
   await page.eval(`(()=>{ const c=document.querySelector('#bagGrid [data-place="spstock:al_corm"]'); if(c) c.click(); })()`, false);
+  await sleep(800);
+  /* D56 — 구근은 «심을까 · 되팔까» 카드 — [🌱 심기] */
+  await page.eval(`(()=>{ const b=[...document.querySelectorAll('#dBtns button')].find(x=>/심기/.test(x.textContent)); if(b) b.click(); })()`, false);
   await sleep(3500); await skip();
   const al = await J(`(()=>{ const S=window.__S(); const q=(S.species.pots||[]).find(q=>q.species==='alocasia_frydek'); return q ? { id:q.id, phase:q.plant.phase, placed:!!(q.slotId||q.at), origin:q.origin } : null; })()`);
   const v3 = al ? await spView(al.id) : null;
@@ -118,6 +121,16 @@ try {
   await page.shot(`${OUTDIR}/5_al_sprout.png`);
   ok(d3.evs.includes('al_sprout'), '날을 보내자 싹(al_sprout)');
   ok(v4 && v4.young && v4.young.drawn && v4.young.leafCount >= 1, `싹 난 AL 을 그린다(잎 ${v4 && v4.young && v4.young.leafCount})`);
+
+  /* ③' D56 — 찾은 구근 되팔기(카드 [💰 되팔기] · 한 알 1만) */
+  const cs = await J(`(async()=>{ const S=window.__S(); S.species.corms.push({ id:'cm_99', seed:5, origin:'from_plain_mother', motherKind:null, foundDay:S.day });
+    window.__redraw(); await new Promise(r=>setTimeout(r,500)); window.__byeotSheet.open('bag'); await new Promise(r=>setTimeout(r,900));
+    const c=document.querySelector('#bagGrid [data-place="corm:cm_99"]'); if(!c) return { cell:false }; const c0=S.tutorial.cashWon; c.click();
+    await new Promise(r=>setTimeout(r,700)); const t=document.getElementById('dTitle').textContent; const bs=[...document.querySelectorAll('#dBtns button')];
+    const sell=bs.find(x=>/되팔기/.test(x.textContent)); if (sell) sell.click(); await new Promise(r=>setTimeout(r,700));
+    return { cell:true, title:t, btns:bs.map(b=>b.textContent), d:S.tutorial.cashWon-c0, gone:!S.species.corms.some(x=>x.id==='cm_99') }; })()`);
+  console.log("③' 되팔기 —", JSON.stringify(cs));
+  ok(cs.cell && /구근/.test(cs.title) && cs.d === 10000 && cs.gone, `찾은 구근을 되팔았다(+${cs.d})`);
 
   /* ④ 방에서 PP 누르기 → 카드 → 자르기 */
   const sel = await J(`(()=>{ const S=window.__S(); const q=S.species.pots.find(x=>x.id===${JSON.stringify(ppId)}); const key=q.slotId||('free:'+q.id);

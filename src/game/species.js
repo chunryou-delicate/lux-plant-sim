@@ -59,7 +59,9 @@ export const SPECIES_GAME = Object.freeze({
   /* 그루째 팔면 ×1.4 · 막 잘라 안 심은 PP 윗부분은 ×1.0 — 몬스테라 varie_grades sale(potMult · cuttingMult)과 같은 결(⚖ core) */
   potMult: 1.4, cuttingMult: 1.0,
   /* 그릇 지름(방 그림) — 검은 모종포트보다 한 치수 큰 화분(⚖ core · 그림만) */
-  potD: 0.18
+  potD: 0.18,
+  /* ★ D56(총괄) — 구근을 상점에 되판다: 한 알 1만(무늬 여부는 모름 — 싹 틔워 열어 보는 맛을 버리는 값) · 찾은 구근·산 구근 같은 값 */
+  cormSellWon: 10_000
 });
 
 const SG = SPECIES_GAME;
@@ -68,7 +70,7 @@ const isSp = id => SPECIES_IDS.includes(id);
 export function createSpeciesState() {
   return { pots: [], corms: [],
            trade: { asks: 0, declined: 0, done: false, pendingDay: null, lastAskDay: null, doneDay: null },
-           n: { ppPinkHoldCuts: 0, alWokeCount: 0, alCormsFound: 0, alFoundCormsPlanted: 0 },
+           n: { ppPinkHoldCuts: 0, alWokeCount: 0, alCormsFound: 0, alFoundCormsPlanted: 0, cormsSold: 0 },
            seq: 0 };
 }
 /* 없으면 만든다(옛 세이브가 이 칸 없이 열린다) */
@@ -191,6 +193,17 @@ export function plantCorm(S, cormId) {
   sp.corms.splice(i, 1);
   sp.n.alFoundCormsPlanted += 1;           /* «찾은» 구근만 센다(곁줄 al_plant_corm · 상점 구근은 안 침) */
   return addSpeciesPot(S, 'alocasia_frydek', { plant, origin: 'corm' });
+}
+
+/* ── ★ D56 구근 되팔기 ─────────────────────────────── 찾은 구근(cormId) 하나를 뺀다 · 값은 SPECIES_GAME.cormSellWon
+   돈은 부르는 쪽이 shop §creditSpeciesSale 로 넣는다(값·통은 shop 한 곳) */
+export function takeCormForSale(S, cormId) {
+  const sp = speciesOf(S);
+  const i = sp.corms.findIndex(c => c && c.id === cormId);
+  if (i < 0) { const e = new Error('그 구근을 못 찾았습니다'); e.tutorialInput = true; throw e; }
+  const [c] = sp.corms.splice(i, 1);
+  sp.n.cormsSold = (sp.n.cormsSold || 0) + 1;
+  return { corm: c, won: SG.cormSellWon };
 }
 
 /* ── PP 자르기 ─────────────────────────────── 마디 nodeNo «바로 위»를 자른다(growth cutAbove)

@@ -4927,6 +4927,19 @@ const detail = {
             .concat([{ ko: '그만두기', go: () => { } }])
     };
   },
+  /* ★ D56 — 구근 하나: 심을까 · 되팔까(한 알 1만 · 무늬 여부는 모름 — 싹 틔워 열어 보는 맛을 버리는 값) · 글은 plan 몫(임시) */
+  corm(arg) {
+    const won = SPC.SPECIES_GAME.cormSellWon;
+    const found = !(arg && arg.stock);
+    return {
+      art: SPECIES_ART.alocasia_frydek, title: '알로카시아 구근', sub: found ? '흙 속에서 찾은 것' : '상점에서 산 것',
+      body: '<p>심으면 싹이 날 때 무늬인지 아닌지 알 수 있습니다.</p>'
+          + `<p>상점에 되팔면 한 알 <b>${won.toLocaleString()}원</b>입니다 — 무늬였는지는 알 수 없게 됩니다.</p>`,
+      btns: [{ ko: '🌱 심기', primary: true, go: () => plantCormNow(arg) },
+             { ko: `💰 되팔기 · ${won.toLocaleString()}원`, go: () => sellCormNow(arg) },
+             { ko: '그만두기', go: () => { } }]
+    };
+  },
   /* PP 교환 물음(plan ①㉡) — 예/아니오 */
   ppTrade() {
     const cands = SPC.ppTradeCandidates(S);
@@ -15409,7 +15422,9 @@ function startSpeciesBagPlace(place) {
   const [kind, id] = String(place).split(':');
   try {
     if (kind === 'species') return startPhonePlaceSpecies(id);
-    if (kind === 'corm') { const q = SPC.plantCorm(S, id); pushLog(S, '🌱 찾은 알로카시아 구근을 심었습니다'); try { checkQuests(lastTurn); } catch { } return startPhonePlaceSpecies(q.id); }
+    /* ★ D56 — 구근은 누르면 «심을까 · 되팔까» 카드(한 알 1만 · 무늬는 모름) */
+    if (kind === 'corm') { detail.open('corm', { id }); return { ok: true, card: true }; }
+    if (kind === 'spstock' && id === 'al_corm') { detail.open('corm', { stock: true }); return { ok: true, card: true }; }
     if (kind === 'spstock') { const q = SPC.unpackSpeciesStock(S, id, stockOf, shopUseStock); return startPhonePlaceSpecies(q.id); }
   } catch (e) { banner('놓지 못했습니다', (e && e.message) || ''); return { ok: false, why: (e && e.message) || String(e) }; }
   return { ok: false, why: 'unknown:' + place };
@@ -15434,6 +15449,26 @@ function sellSpeciesNow(id) {
   fillSlots(); draw();
 }
 window.__byeotSpeciesSell = (id) => sellSpeciesNow(id);   /* 재는 손잡이 — 카드 [팔기]와 같은 함수 */
+/* ★ D56 — 구근 심기 · 되팔기(카드 단추가 부른다) */
+function plantCormNow(arg) {
+  try {
+    if (arg && arg.stock) { const q = SPC.unpackSpeciesStock(S, 'al_corm', stockOf, shopUseStock); return startPhonePlaceSpecies(q.id); }
+    const q = SPC.plantCorm(S, arg.id); pushLog(S, '🌱 찾은 알로카시아 구근을 심었습니다'); try { checkQuests(lastTurn); } catch { }
+    return startPhonePlaceSpecies(q.id);
+  } catch (e) { banner('심지 못했습니다', (e && e.message) || ''); }
+}
+function sellCormNow(arg) {
+  let won = SPC.SPECIES_GAME.cormSellWon;
+  try {
+    if (arg && arg.stock) shopUseStock(S, 'al_corm', 1);
+    else won = SPC.takeCormForSale(S, arg.id).won;
+    creditSpeciesSale(S, won, { ko: '알로카시아 구근', log: m => pushLog(S, m) });
+  } catch (e) { banner('팔지 못했습니다', (e && e.message) || ''); return; }
+  banner('💰 구근을 넘겼습니다', `${won.toLocaleString()}원 — 무늬였는지는 이제 모릅니다`);
+  try { sfx.thud(); } catch { }
+  draw();
+}
+window.__byeotCormSell = (arg) => sellCormNow(arg);   /* 재는 손잡이 */
 /* PP 자르기 — 그 마디 «바로 위» */
 function cutSpeciesNow(id, nodeNo) {
   let r = null;
@@ -15931,7 +15966,8 @@ function furnLightTextOf(v, novice) {
     const hGrow = !!(v.higher && !(v.key === 'A' || v.key === 'B' || v.key === 'Bp')
                      && Number.isFinite(v.higher.s0) && Number.isFinite(v.th) && v.higher.s0 >= v.th);
     const at = v.clipTop && v.clipTop.atTop ? '여기에 ' : '맨 윗단에 두고 ';
-    const clip = v.clipTop ? (novice ? K.clipNovice : v.clipTop.winterToo ? K.clipWinter : K.clipSummer).replace('{at}', at) : null;
+    /* ★ D57(총괄 · D53 바로잡음) — 반지하(novice)는 clipTop 둘째 줄을 안 낸다(«무늬 3.78» 전제 위에 서 있었다) */
+    const clip = (v.clipTop && !novice) ? (v.clipTop.winterToo ? K.clipWinter : K.clipSummer).replace('{at}', at) : null;
     const tail = hGrow ? K.higherGrow
                : clip ? clip
                : (v.higher && (v.key === 'A' || v.key === 'B' || v.key === 'Bp')) ? K.higher

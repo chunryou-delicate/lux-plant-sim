@@ -312,7 +312,14 @@ export async function play(name, seed, opt = {}) {
         }
         if (o.cormBuy == null && SPM.speciesShopOpen(S, 'al_corm')) { try { ord('al_corm', 1); o.cormBuy = S.day; } catch { } }
         if (stockOf(S, 'al_corm') > 0) { try { SPM.unpackSpeciesStock(S, 'al_corm', stockOf, useStock); } catch { } }
-        for (const c of [...((S.species && S.species.corms) || [])]) { try { SPM.plantCorm(S, c.id); o.found++; } catch { } }
+        /* ★ D56 — 찾은 구근: 빈 자리가 있으면 심고(놓기는 아래) · 없으면 상점에 되판다(한 알 1만 · 가방이 구근으로 안 막히게) */
+        for (const c of [...((S.species && S.species.corms) || [])]) {
+          const occ = new Set(placedItems(S).map(x => x.slotId).filter(Boolean));
+          const bagged = SPM.speciesPotsOf(S).filter(q => !SPM.speciesPlaced(q)).length;
+          const free = (light.room.slots || []).filter(sl => !occ.has(sl.slotId)).length - bagged;
+          if (free > 0) { try { SPM.plantCorm(S, c.id); o.found++; } catch { } }
+          else { try { const r = SPM.takeCormForSale(S, c.id); led('other', () => creditSpeciesSale(S, r.won)); o.cormSold = (o.cormSold || 0) + 1; } catch { } }
+        }
         for (const q of SPM.speciesPotsOf(S).filter(q => q.species === 'pink_princess' && q.origin !== 'cut' && SPM.speciesPlaced(q))) {
           if (q.plant.leaves.length < 4) continue;
           const nodes = SPM.ppCuttableNodes(q).filter(n => n.grade === 'marble' || n.grade === 'heavy');
@@ -592,7 +599,8 @@ for (const name of NAMES) {
       console.log(`  🌸 새 두 종 — 교환 판 ${sp.filter(r => r.sp.trade != null).length}/${N}(이사 뒤 중앙 ${med(sp.filter(r => r.sp.trade != null).map(r => r.sp.trade - r.moveDay)) ?? '—'}일) · ` +
                   `구근 산 판 ${sp.filter(r => r.sp.cormBuy != null).length} · PP 자름 판당 ${(sp.reduce((a, r) => a + r.sp.cuts, 0) / N).toFixed(1)} · ` +
                   `판 것 판당 ${(sp.reduce((a, r) => a + r.sp.sold, 0) / N).toFixed(1)}개 · ${won(Math.round(sp.reduce((a, r) => a + r.sp.soldWon, 0) / N))}/판 · ` +
-                  `찾은 구근 심음 판당 ${(sp.reduce((a, r) => a + r.sp.found, 0) / N).toFixed(1)} · 가방에 갇힌 그루-날 판당 ${Math.round(sp.reduce((a, r) => a + r.sp.bagDays, 0) / N)}`);
+                  `찾은 구근 심음 판당 ${(sp.reduce((a, r) => a + r.sp.found, 0) / N).toFixed(1)} · 되판 구근 판당 ${(sp.reduce((a, r) => a + (r.sp.cormSold || 0), 0) / N).toFixed(1)} · ` +
+                  `가방에 갇힌 그루-날 판당 ${Math.round(sp.reduce((a, r) => a + r.sp.bagDays, 0) / N)}`);
     } }
   /* ★ 원룸 새 잎 — 달마다(판 평균) · 모주 / 자란 삽수 · 무늬 */
   { const lm = rs.filter(r => (r.leafMonths || []).length);
