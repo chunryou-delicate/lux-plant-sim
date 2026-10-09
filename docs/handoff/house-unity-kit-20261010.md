@@ -40,6 +40,18 @@
 
 ## 3. 모듈 조각(벽 · 바닥 · 창 · 문) — 크레딧 0
 
-생성 모델은 치수가 안 맞아 조각을 짜 맞출 수 없다. 그래서 house 가 코드 판(house.js)에서 **치수 그대로** GLB 로 낸다(GLTFExporter · 다음 차례).
-- 이미 있는 것: 창틀 assets/v2/house/win_studio_cross.glb · win_semi_letterbox.glb · 문 door_wood.glb.
-- 낼 것: 벽 1m 조각(두께 0.2 · 높이 2.3/2.5) · 창 구멍 벽(위 둘 크기) · 문 구멍 벽 · 바닥 1×1 · 걸레받이 띠. 단위는 m, 앞 = +Z.
+생성 모델은 치수가 안 맞아 조각을 짜 맞출 수 없다. 그래서 house 가 방 데이터의 치수를 그대로 GLB 로 냈다(`node tools/export_room_kit.mjs` → `assets/unity/kit_modules/` · index.json · 10-10).
+- 규약: 단위 m · 앞(+Z) = 방 안쪽 면 · 벽 두께 0.2 는 z −0.1~+0.1 · 원점 = 바닥 높이, 가로 가운데 · **UV = 미터**(유니티 타일링 = 1 / 위 표의 «한 장 m»).
+- 낸 것 열하나(GLTFLoader 로 읽어 치수 확인):
+
+| 파일 | 크기(m) | 무엇 |
+|---|---|---|
+| wall_1m_h2.3 · wall_0.5m_h2.3 | 1(0.5) × 2.3 × 0.2 | 반지하 민벽 |
+| wall_1m_h2.5 · wall_0.5m_h2.5 | 1(0.5) × 2.5 × 0.2 | 원룸·투룸 민벽 |
+| wall_window_win_semi_letterbox_h2.3 | 2.8 × 2.3 × 0.2 | 반지하 창 구멍 2.2×0.55(아랫변 1.495) — 창틀 win_semi_letterbox.glb 를 끼운다 |
+| wall_window_win_studio_cross_h2.5 | 3.0 × 2.5 × 0.2 | 원룸 창 구멍 2.4×1.45(아랫변 0.775) — 창틀 win_studio_cross.glb |
+| wall_door_banjiha_h2.3 · wall_door_oneroom_h2.5 | 1.5(1.55) × 2.3(2.5) × 0.2 | 문 구멍 0.9×2.0 · 0.95×2.05 — 문짝 door_wood.glb |
+| floor_1x1 · ceiling_1x1 | 1 × 0.02 × 1 | 바닥(윗면 y=0) · 천장(밑면 y=0 · 방 높이로 올림) |
+| skirting_1m | 1 × 0.075 × 0.012 | 걸레받이(웹 판 높이 0.075) — 벽 앞면(z +0.1)에 붙인다 |
+
+- 재질은 한 빛(밝은 회색 · 거칠기 0.9)뿐이다. 겉감은 2번 표의 4k 를 입힌다.
