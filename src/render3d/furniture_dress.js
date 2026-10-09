@@ -76,6 +76,7 @@ const FURN = {
   shelf:              { file: 'furniture/bookshelf.glb',          yaw: 0, lazy: true, tiers: true },
   shelf_corner_3tier: { file: 'furniture/shelf_corner_3tier.glb', yaw: 90, lazy: true, tiers: true },  // 직각 꼭짓점이 뒤-왼(판 무게중심으로 맞춤)
   clothes_rack:       { file: 'furniture/clothes_rack.glb',       yaw: 0, lazy: true, box: true },
+  laundry_basket:     { file: 'props/laundry.glb',                yaw: 0, lazy: true, box: true },   // 이미 뽑아 둔 v2 소품(빨래 든 바구니)
   /* r3(회색 상자 참조) — 원화를 코드 가구 그림으로 박아 단 수·자리가 맞는다 · 겹단 꺾은 선 */
   plant_step_3:       { file: 'furniture/plant_step_3.glb',       yaw: 0, lazy: true, tiers: true },
   shelf_ladder_4tier: { file: 'furniture/shelf_ladder_4tier.glb', yaw: 0, lazy: true, tiers: true, fitProxyBox: true },
@@ -98,6 +99,17 @@ const WINS = {
   /* 반지하 창 — 3D 에서 세로살 ×1.22~1.31 · 보이는 유리 94%(정한 줄 +25% · 95% 바로 밑). 총괄 D38 «넣는다»(10-09 · 박사님 «묻지 말고 진행»)
      후보였던 것: 넣음 / 코드 유지 / r4. 사진 docs/handoff/img/house_20261009/win_banjiha_code_vs_v2_pending.png */
   win_semi_letterbox: { file: 'house/win_semi_letterbox.glb', yaw: 0 }
+};
+/* ── 가구 위 소품 (2026-10-09 · [house] · 총괄 «v2 소품 잇기») ──
+   이미 뽑아 둔 v2 소품(노트북·컵라면 · 인형·시계 · 밥솥·주전자)을 **가구 상판 위**에 얹는다. 바닥 소품(PROPS)과 달리
+   가구 그룹의 자식이라 가구를 옮기면 같이 간다 · 그 상판에 화분을 놓으면 겹치는 소품만 숨는다(§yieldTo) · 그림만(광선 층 1).
+   열쇠: 'uid:<가구 uid>' 는 그 방 그 가구만(반지하 첫 방 생활감 · 키프레임 a) · 'preset:<프리셋>' 은 그 프리셋 어디서나.
+   u,v = 발자국 안 자리(0..1 · 가구 앞 +Z) · h = 소품 높이(m · 비율 그대로) · yaw = 도. */
+const DECOR = {
+  'uid:banjiha-desk':    [{ id: 'desk_set',    file: 'props/desk_set.glb',    u: 0.80, v: 0.30, h: 0.20, yaw: 0 }],
+  'uid:banjiha-dresser': [{ id: 'plush_clock', file: 'props/plush_clock.glb', u: 0.28, v: 0.32, h: 0.24, yaw: 0 }],
+  /* 주방 카운터는 v2 몸이 없다(Meshy kitchen.glb 는 밥솥·주전자다) — 몸은 코드 그대로, 위에 살림만 */
+  'preset:kitchen':      [{ id: 'kitchen',     file: 'props/kitchen.glb',     u: 0.74, v: 0.45, h: 0.26, yaw: 0 }]   // 싱크(u 0.28) 반대쪽
 };
 /* 옷을 안 입히고 색만 바꾸는 것 — 단·자리 계약이 걸려 있다(3단 선반·창턱 받침) */
 const RESTYLE = {
@@ -495,6 +507,16 @@ export function createFurnitureDress(opt = {}) {
   }
   function tintScene(root, hex) {
     const want = new T.Color(hex).convertSRGBToLinear();
+    /* 옅은 색 변형(민트·하늘·블러시·버터·세이지)은 v2 의 밝은 결에서 «흰색»으로 읽혔다(총괄 10-09 — 코드 판은 옅게라도 민트).
+       ⇒ 빛깔이 있는 옅은 색(빛깔 폭 10~34)만 채도를 2.2배(밝기는 그대로). 흰색(#f2f0ec · 폭 6) · 버터(폭 49) · 짙은 색(차콜)은 그대로. */
+    {
+      const c8 = new T.Color(hex), r = c8.r * 255, g = c8.g * 255, b = c8.b * 255;
+      const spread = Math.max(r, g, b) - Math.min(r, g, b), mean = (r + g + b) / 3;
+      if (spread >= 10 && spread < 35 && mean >= 150) {   // 버터(폭 49)는 원래도 읽혀 그대로 — 2.2배면 진노랑이 된다
+        const L = 0.2126 * want.r + 0.7152 * want.g + 0.0722 * want.b, k = 2.2;
+        want.setRGB(Math.max(0, L + (want.r - L) * k), Math.max(0, L + (want.g - L) * k), Math.max(0, L + (want.b - L) * k));
+      }
+    }
     root.traverse(o => {
       if (!o.isMesh || !o.material) return;
       const one = m => {
@@ -645,12 +667,16 @@ export function createFurnitureDress(opt = {}) {
         const preset = presetOf(g, roomDef);
         const spec = preset ? specOf(preset) : null;
         /* ★ 옷이 있는 프리셋은 색 바꾸기(RESTYLE · type 단위)보다 먼저 — 사다리 선반은 type 이 shelf_etagere 라 색만 바뀌던 것(10-09) */
-        if (!spec && restyleOne(g)) { n++; continue; }
-        if (!spec) continue;
-        if (dressOne(g, preset)) n++;
+        if (!spec) { if (restyleOne(g)) n++; }
+        else if (dressOne(g, preset)) n++;
         else if (!tpl.has(spec.file)) { missing = true; need.add(spec.file); }
       } catch (e) {
         console.warn('[v2 가구] 옷을 못 입혔습니다 —', g.userData.uid, e && e.message);
+      }
+      /* 가구 위 소품 — 옷이 없는 가구(주방 카운터)에도 얹는다 */
+      try { for (const f of decorOne(g, presetOf(g, roomDef))) { missing = true; need.add(f); } }
+      catch (e) {
+        console.warn('[v2 가구] 소품을 못 얹었습니다 —', g.userData.uid, e && e.message);
       }
     }
     for (const door of doorsOf(built)) {
@@ -680,6 +706,48 @@ export function createFurnitureDress(opt = {}) {
       for (const c of [...g.children]) if (c.userData && c.userData.v2dress) g.remove(c);
       g.traverse(o => { if (o.isMesh && origMat.has(o)) { o.material = origMat.get(o); origMat.delete(o); } });
     }
+  }
+  /* 가구 위 소품 — 못 받은 파일 목록을 돌려준다 */
+  function decorOne(g, preset) {
+    const list = [...(DECOR['uid:' + g.userData.uid] || []), ...(preset ? (DECOR['preset:' + preset] || []) : [])];
+    const missingFiles = [];
+    if (!list.length) return missingFiles;
+    const size = g.userData.size || {};
+    if (!(size.w > 0 && size.d > 0)) return missingFiles;
+    const proxies = proxiesOf(g);
+    for (const it of list) {
+      if (g.children.some(c => c.userData && c.userData.v2decor === it.id)) continue;      // 이미 얹었다
+      const t = tpl.get(it.file);
+      if (!t) { missingFiles.push(it.file); continue; }
+      if (!t.ok) continue;
+      const lx = -size.w / 2 + it.u * size.w, lz = -size.d / 2 + it.v * size.d;
+      const top = proxyTop(g, proxies, lx, lz);
+      if (top == null) continue;                                    // 그 자리에 상판이 없다 — 안 얹는다
+      const { box } = yawBox(t, it.yaw || 0);
+      const k = it.h / Math.max(1e-6, box.max.y - box.min.y);
+      const glb = t.scene.clone(true); glb.rotation.y = deg(it.yaw || 0);
+      const mid = new T.Group(); mid.add(glb);
+      mid.position.set(-(box.min.x + box.max.x) / 2, -box.min.y, -(box.min.z + box.max.z) / 2);
+      const node = new T.Group(); node.name = 'v2decor'; node.userData.v2dress = true; node.userData.v2decor = it.id;
+      node.userData.decorHalf = [(box.max.x - box.min.x) * k / 2, (box.max.z - box.min.z) * k / 2];
+      node.add(mid); node.scale.setScalar(k); node.position.set(lx, top + 0.002, lz);
+      markVisual(node);
+      g.add(node);
+    }
+    return missingFiles;
+  }
+  /* 화분이 소품 자리에 오면 그 소품만 숨긴다(화분이 이긴다 — 바닥 소품 PROPS 와 같은 규칙) */
+  function applyDecorYield() {
+    const b = cur.built; if (!b || !b.furniture) return;
+    const pots = (lastColliders || []).filter(c => c && c.plant);
+    const v = new T.Vector3();
+    b.furniture.traverse(o => {
+      if (!o.userData || !o.userData.v2decor) return;
+      o.getWorldPosition(v);
+      const [hx, hz] = o.userData.decorHalf || [0.1, 0.1];
+      const r = { x: v.x, z: v.z, w: hx * 2, d: hz * 2, rot: (o.parent && o.parent.rotation && o.parent.rotation.y) || 0 };
+      o.visible = !pots.some(c => overlap(r, { x: c.x, z: c.z, w: c.w, d: c.d, rot: c.rot || 0 }));
+    });
   }
   /* 방 껍데기(벽) 안의 문 그룹 중 옷이 있는 것 */
   function doorsOf(built) {
@@ -850,9 +918,11 @@ export function createFurnitureDress(opt = {}) {
   }
   function yieldTo(colliders) {
     lastColliders = colliders || null;
-    const before = propList.map(p => p.node.visible).join();
+    const decorVis = () => { const a = []; if (cur.built && cur.built.furniture) cur.built.furniture.traverse(o => { if (o.userData && o.userData.v2decor) a.push(o.visible); }); return a.join(); };
+    const before = propList.map(p => p.node.visible).join() + '|' + decorVis();
     applyYield();
-    return before !== propList.map(p => p.node.visible).join();
+    applyDecorYield();
+    return before !== propList.map(p => p.node.visible).join() + '|' + decorVis();
   }
   /* 접지 그림자 판에 얹을 소품 발자국(보이는 것만 · 러그 빼고) */
   function blobRects() {
@@ -888,7 +958,7 @@ export function createFurnitureDress(opt = {}) {
   const api = {
     get enabled() { return on; },
     furnReady, preload, dress, props, yieldTo, blobRects, setEnabled,
-    hasDress: preset => !!specOf(preset),   // 이 프리셋에 v2 옷이 있나(색 변형 포함) — 가구점 그림 자(tools/shot_furn_thumbs)가 묻는다
+    hasDress: preset => !!specOf(preset) || !!DECOR['preset:' + preset],   // 이 프리셋에 v2 그림(옷·색 변형·위 소품)이 있나 — 가구점 그림 자(tools/shot_furn_thumbs)가 묻는다
     set: setEnabled,
     hold: setHeld,
     get held() { return held; },

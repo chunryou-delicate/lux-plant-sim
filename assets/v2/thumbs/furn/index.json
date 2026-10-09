@@ -86,7 +86,7 @@
  },
  "kitchen": {
   "file": "assets/v2/thumbs/furn/kitchen.webp",
-  "v2": false
+  "v2": true
  },
  "tv": {
   "file": "assets/v2/thumbs/furn/tv.webp",
@@ -356,7 +356,7 @@
  },
  "laundry_basket": {
   "file": "assets/v2/thumbs/furn/laundry_basket.webp",
-  "v2": false
+  "v2": true
  },
  "picture_frame": {
   "file": "assets/v2/thumbs/furn/picture_frame.webp",
