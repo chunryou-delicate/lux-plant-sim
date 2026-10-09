@@ -1672,6 +1672,12 @@ export const SCRIPTS = {
      까닭([core] 판): 몬스테라만 가진 가게는 한 해 안에 0원(9/10) — 한 해 공급이 삽수 3~4개라 팔 게 모자라다. 값은 안 바꾸고 말로 권한다.
      거짓 없는 말만: 알로카시아 구근은 원룸 이사 60일 뒤부터 상점에 늘 있다(species §speciesShopOpen) — 그래서 PP(교환을 거절한 판만 상점) 말고 구근을 권한다.
      «손님이 와»는 안 쓴다 — 종이 늘면 손님이 느는 규칙은 없다(주문이 고루 붙고 팔 것이 는다). 수는 안 말한다. */
+  /* ★ 상점에 핑크프린세스 어린 그루도 있는 판(교환을 두 번 거절한 판 · species §speciesShopOpen 'pp_young') — 사건 shop_no_species{ppInShop:true} */
+  shopNoSpeciesPP: [
+    { who: 'moni',   face: 'teach', text: '몬스테라만으론 팔 게 모자라. 가게엔 여러 종이 있어야 해.' },
+    { who: 'moni',   face: 'bulb',  text: '알로카시아 구근이나 핑크프린세스 어린 그루를 들여 놓자. 둘 다 상점에 있어.' },
+    { who: 'jachwi', face: 'think', text: '뭐부터 들일까.' }
+  ],
   shopNoSpecies: [
     { who: 'moni',   face: 'teach', text: '몬스테라만으론 팔 게 모자라. 가게엔 여러 종이 있어야 해.' },
     { who: 'moni',   face: 'bulb',  text: '알로카시아 구근 하나 들여 놓자. 상점에 있어.' },
@@ -1763,6 +1769,9 @@ export const SCRIPTS = {
   ppTradeOffer: [
     { who: 'jachwi', face: 'curious',  text: '아래층에 식물 나눔 쪽지가 붙었다. 분홍 잎이 섞인 작은 화분이다.' },
     { who: 'jachwi', face: 'think',    text: '뿌리 낸 무늬 몬스테라 하나랑 바꾸자고 한다.' },
+    /* ★ 2026-10-10 [plan] — 얻는 것과 내주는 것을 «둘 다» 말한다(어느 쪽으로도 밀지 않는다). [core] 가게 판: 교환을 받아 PP 를 남긴 가게는
+       0원 1/10 · 안 받은 가게(구근만 삼)는 7/10 — 종이 늘면 팔 것이 는다. 다만 무늬 삽수 하나가 간다(원룸 «키워서 늘리기»의 밑천). 수는 안 말한다 */
+    { who: 'moni',   face: 'teach',    text: '종이 하나 늘면 키울 것도 팔 것도 늘어. 대신 무늬 삽수 하나는 가.' },
     { who: 'moni',   face: 'curious',  text: '네가 키운 걸 내주는 거네. 바꿀래?' }
   ],
   ppTradeOfferAgain: [
@@ -1771,7 +1780,10 @@ export const SCRIPTS = {
   ],
   ppTradeDone: [
     { who: 'jachwi', face: 'happy',    text: '바꿨다. 잎에 분홍이 번져 있다.' },
-    { who: 'moni',   face: 'cheer',    text: '핑크프린세스야. 이 아이는 잎마다 분홍이 달라.' }
+    { who: 'moni',   face: 'cheer',    text: '핑크프린세스야. 이 아이는 잎마다 분홍이 달라.' },
+    /* ★ 2026-10-10 [plan] 총괄 청 — «하나 남기기»(core 가게 판: 교환 받아 PP 를 남긴 가게 0원 1/10 vs 안 남긴 가게 7/10).
+       앞날(가게)은 안 말한다 — 지금 판에서 참인 말만: PP 는 잘라 늘릴 수 있다(species §cutSpecies). 수는 안 말한다 */
+    { who: 'moni',   face: 'teach',    text: '다 팔지 말고 한 그루는 남겨 둬. 거기서 잘라 또 늘릴 수 있어.' }
   ],
   ppTradeDeclined: [
     { who: 'moni',   face: 'calm',     text: '괜찮아. 네가 키운 거니까.' }
@@ -2709,6 +2721,7 @@ function scriptOf(ev, S = null) {
   if (id === 'al_asleep') return ev && Number.isFinite(ev.corms) && ev.corms > 0 ? 'alAsleepCorms' : null;
   if (id === 'al_wake')   return ev && ev.first === false ? 'alWakeAgain' : null;
   /* ★ 2026-10-10 [plan] D59 — 납품: 새 단골일 때만 한 줄(받아 간 말은 기록 줄 · core) · 이정표는 퀘스트 끝 대사와 겹치면 퀘스트 쪽이 말한다(§scriptsForEvents 걸름) */
+  if (id === 'shop_no_species') return ev && ev.ppInShop === true ? 'shopNoSpeciesPP' : 'shopNoSpecies';
   if (id === 'order_done') return ev && ev.newRegular === true ? 'shopNewRegular' : null;
   if (id === 'regulars_milestone') return ev && ev.n === 3 ? 'shopRegulars3' : ev && ev.n === 10 ? 'shopSign' : ev && ev.n === 30 ? 'shopTown' : null;
   if (id === 'quest_opened') return QUEST_OPEN_SCRIPT[ev && ev.questId] || null;

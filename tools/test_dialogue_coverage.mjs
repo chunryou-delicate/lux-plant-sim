@@ -634,7 +634,7 @@ check('데이터 — 대사마다 «부르는 자리»가 있다 («불린다»�
     /* ★ 2026-10-09 [plan] D52 — 잠드는 날 구근(al_asleep corms > 0) · 두 번째 깸(al_wake first false) */
     'alAsleepCorms', 'alWakeAgain',
     /* ★ 2026-10-10 [plan] D59 — 식물 가게 사건 갈림(scriptOf): 납품 새 단골 · 단골 이정표 3/10/30 */
-    'shopNewRegular', 'shopRegulars3', 'shopSign', 'shopTown'
+    'shopNewRegular', 'shopRegulars3', 'shopSign', 'shopTown', 'shopNoSpeciesPP'
   ]);
   const dead = Object.keys(SCRIPTS).filter(id => !used.has(id) && !NOT_YET_USED.has(id));
   assert.equal(dead.length, 0, `아무 데서도 안 불리는 대사: ${dead}`);
