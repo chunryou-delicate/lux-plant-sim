@@ -70,11 +70,11 @@ export function endingRulesFrom({ targetWon } = {}) {
    아무 데도 없었다. 그래서 화면(game.html)이 ④ 를 붙이려면 숫자를 직접 들고 있어야 하고,
    그 순간 정본이 코드 안으로 들어온다 — `ONEROOM_RULES` 가 피한 바로 그 함정이다.
 
-   ⚠ **지금 `data/balance/homes.json` 에는 이 칸이 없다.** 없으면 `ENDING_RULES`(=null)를
-     그대로 낸다 — 여기서 후보값으로 메꾸지 않는다. 미확정은 미확정이라고 답하는 것이
-     이 파일의 규칙이다(§① 머리말).
-   ★ plan 이 `homes.json` 에 아래 한 칸을 적으면 화면은 **한 글자도 안 고치고** 그 값으로 돈다:
-       { "ending": { "targetWon": 10000000 } }        ← 후보·근거는 docs/propagation.md §7
+   ★ 2026-10-09 D9 — `homes.json` 에 칸이 섰다(plan · 박사님 500만). 칸이 없으면 `ENDING_RULES`(=null)를 그대로 낸다 —
+     후보값으로 메꾸지 않는다(§① 머리말).
+   ⚠ 예전 이 자리의 «plan 이 한 칸 적으면 화면은 한 글자도 안 고치고 돈다»는 **사실이 아니었다** — game.html 이 homes.json 을
+     안 읽고 URL 깃발(?endingTarget=)만 봤다. 10-09 core 가 부팅 때 이 함수로 읽게 이었다(game.html §ENDING_NOW · 엔딩 칸만 · 월세는 안 건드림).
+       { "ending": { "targetWon": 5000000 } }        ← 박사님 10-09 D9
      `homes[].id === 'home_purchase'` 같은 집 항목으로 적어도 읽는다(둘 다 본다). */
 export function endingRulesFromHomes(homes) {
   if (!homes || typeof homes !== 'object') return ENDING_RULES;

@@ -1,7 +1,8 @@
 /* tools/probe_ending_walk.mjs — **④ 내 집 마련 뼈대를 화면에서 끝까지 걷는다** (2026-10-08 · 총괄 07:20 ③ · [plan] plan-ending-home ③-4)
    ------------------------------------------------------------------
    재는 것:
-     ① 목표가 없으면(깃발 없음) 이사 뒤에도 내 집 줄·단추가 «안 뜬다»
+     ⓪ 깃발 없음 — 정본(homes.json ending.targetWon)을 읽어 이사 뒤 할 일 머리에 그 금액이 선다 (D9 · 500만)
+     ① 목표가 없으면(?endingTarget=none) 이사 뒤에도 내 집 줄·단추가 «안 뜬다»
      ② ?endingTarget=N — 이사 뒤 할 일 머리에 「내 집 마련까지 …」 줄 · 모자라면 단추가 잠김
      ③ 현금이 닿은 날 대사 차례 — (같은 턴이면) 퀘스트 끝 줄 뒤에 endingReady 한 줄 · 그날 장면은 안 열린다(닿음 ≠ 끝냄)
      ④ 단추 → 되묻기(「계약금 …원을 냅니다. 되돌릴 수 없습니다.」) → [계약한다] → 덮개 + endingHome 열세 줄 · 그동안 [다음 날]·알약·손가락 숨김
@@ -61,15 +62,27 @@ const mk = (page) => {
   return { J, clearDlg, moveIn, goal, tapAt };
 };
 
-/* ① 깃발 없음 — 목표 미정이면 안 뜬다 */
+/* ① 목표 없음 — 미정이면 안 뜬다. ⚠ 2026-10-09 D9 부터 «깃발 없음»은 정본(homes.json 500만)을 읽으므로 «없음»은 깃발로 만든다 */
 {
-  console.log('■ ① 목표 없음(지금 게임 그대로)');
-  const page = await boot('');
+  console.log('■ ① 목표 없음(?endingTarget=none)');
+  const page = await boot('?endingTarget=none');
   const { moveIn, goal } = mk(page);
   const mv = await moveIn();
   const g = await goal();
   ok(mv.movedOut === true, '이사했다(지름길)', mv);
   ok(!g.btn && !(g.shown && /내 집/.test(g.text || '')), '목표가 없으면 내 집 줄·단추가 안 뜬다', g);
+  await page.close();
+}
+/* ⓪ 깃발 없음 — 정본 금액(D9) */
+{
+  console.log('■ ⓪ 깃발 없음(정본 homes.json)');
+  const page = await boot('');
+  const { moveIn, goal } = mk(page);
+  const mv = await moveIn();
+  const g = await goal();
+  const want = Number(process.env.WANT || 5000000);
+  ok(mv.movedOut === true, '이사했다(지름길)', mv);
+  ok(g.shown && new RegExp(want.toLocaleString('ko-KR').replace(/,/g, ',')).test(g.text || ''), `정본 목표 ${want.toLocaleString('ko-KR')}원이 할 일 머리에 선다`, g);
   await page.close();
 }
 /* ②~⑤ 깃발 있음 */
@@ -104,6 +117,9 @@ const mk = (page) => {
   await sleep(1500);
   console.log('    하루 —', day0, '→', await J(`window.__S().day`), '· 오류 —', await J(`(document.getElementById('errBox')||{}).textContent || ''`),
               '· 시루 —', JSON.stringify(await J(`(async()=>{ const fpm=await import('/src/game/first_play.js'); const S=window.__S(); return (fpm.cropPotList(S.firstPlay,S.day)||[]).map(r=>({placed:r.placed, slot:r.slotId||null})); })()`)));
+  /* ⚠ 2026-10-09 — 한 번에 두 줄까지만 띄우고 넘치는 줄은 «미룸 서랍»(game.html §DLG_MAX_PER_OPEN · dlgHold)에 두었다가 앞 대사를 닫으면 낸다.
+       그날 줄이 넷이면(월세 첫날 · 퀘스트 끝 둘 · endingReady) endingReady 는 서랍에서 나온다 — 대사를 다 넘긴 «뒤에» 읽는다 */
+  await clearDlg(); await sleep(800); await clearDlg();
   const said = await J(`(window.__dlgLog||[]).slice(${dl0}).map(x=>x.id)`);
   await clearDlg();
   const iR = said.indexOf('endingReady'), iQ = said.findIndex(id => /^questDone/.test(id));

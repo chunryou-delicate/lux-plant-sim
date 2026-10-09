@@ -3229,15 +3229,20 @@ import { moveIntoOneroom, storyOf } from './src/game/oneroom.js';
 import { lightGateOf } from './src/game/oneroom.js';
 /* ★ 2026-10-08 — 원룸 줄(quest.js oneroom_*)의 «집 자금» 칸이 보는 목표 금액. 지금 null(미확정) — 그 줄은 안 열린다([plan] 짬) */
 import { ENDING_RULES, endingRulesFrom, stepEnding, finishEnding, endingView } from './src/game/ending.js';
+import { endingRulesFromHomes } from './src/game/ending.js';   /* ★ 2026-10-09 D9 — 목표 금액은 정본(homes.json)에서 읽는다 */
 import { endingGoal } from './src/game/ending.js';   /* ★ 2026-10-08 [plan] 지도 50 — 원룸 할 일이 비었을 때의 글(§questEmptyKo) */
 /* ★ 2026-10-08 D2 — 독촉은 «할 수 있었던 날»만: 기다린 날을 적는다(판정·날수는 nudge_wait.js · 거는 자리는 dialogue.js chatterContext) */
 import { noteQuestWaits } from './src/game/nudge_wait.js';
 /* ★ 2026-10-08 — 확대창을 연 적(둘째 잎 기다림 «상태 줄» zoomOpenedSinceArrival · leaf_wait.js) */
 import { noteZoomOpened } from './src/game/leaf_wait.js';
 /* ★ 2026-10-08 ④ 내 집 마련 규칙 — 목표(D9)가 null 이면 화면에 아무것도 안 뜬다 · ?endingTarget=N 은 걸어서 잴 때만(§homeGoalOf) */
-const ENDING_NOW = (() => {
-  try { const q = new URLSearchParams(location.search).get('endingTarget'); const n = Number(q);
-        if (q != null && Number.isFinite(n) && n > 0) return endingRulesFrom({ targetWon: n }); } catch { }
+/* ★ 2026-10-09 D9(박사님 · 총괄 11:45) — 목표 금액은 정본 data/balance/homes.json `ending.targetWon`(plan 소유)에서 «부팅 때» 읽는다(아래 §밸런스 읽기).
+     ⚠ 예전엔 URL 깃발(?endingTarget=)만 읽어, ending.js 주석의 «homes.json 에 한 칸 적으면 화면은 그대로 돈다»가 사실이 아니었다.
+     검수 깃발: ?endingTarget=N 이 먼저 · ?endingTarget=none 은 «목표 없음» 판(ENDING_RULES · targetWon null) */
+const ENDING_URL = (() => { try { return new URLSearchParams(location.search).get('endingTarget'); } catch { return null; } })();
+let ENDING_NOW = (() => {
+  try { const n = Number(ENDING_URL);
+        if (ENDING_URL != null && Number.isFinite(n) && n > 0) return endingRulesFrom({ targetWon: n }); } catch { }
   return ENDING_RULES;
 })();
 const endingOn = () => !!(ENDING_NOW && Number.isFinite(ENDING_NOW.targetWon));
@@ -3377,6 +3382,11 @@ const STAMINA_RULES_NOW = staminaRulesFrom(
      보이게」 하는 값어치가 크다. 못 읽으면 밑값으로 돈다. */
 installVarieGrades(
   await fetch('./data/balance/varie_grades.json').then(r => r.ok ? r.json() : null).catch(() => null));
+/* ★ 2026-10-09 D9 — 엔딩 목표 금액(§ENDING_NOW). 깃발이 없을 때만 정본을 읽는다 · 못 읽으면 «목표 없음» 그대로(지어내지 않는다) */
+if (ENDING_URL == null) {
+  try { ENDING_NOW = endingRulesFromHomes(await fetch('./data/balance/homes.json').then(r => r.ok ? r.json() : null).catch(() => null)); }
+  catch (e) { console.warn('[엔딩] 목표 금액을 못 읽었습니다 —', e && e.message); }
+}
 
 const balanceResponse = await fetch('./data/balance/characters.json');
 if (!balanceResponse.ok) throw new Error(`[첫 플레이] characters.json HTTP ${balanceResponse.status}`);
@@ -12006,6 +12016,8 @@ function showFirstPlayEvents(turn) {
   if (leafK) playLeafScene(leafK, events.length > 0);
   /* ★ 2026-10-08 D2 — 오늘 «기다리는» 퀘스트를 적는다(독촉이 할 수 있었던 날만 세게 · nudge_wait §noteQuestWaits) */
   try { noteQuestWaits(S, S.day); } catch (e) { console.warn('[독촉] 기다림 적기', e && e.message); }
+  /* ★ 2026-10-09 [plan] 506d1b44 — 엔딩 목표 금액(§ENDING_NOW · homes.json)을 하루 칸에 싣는다 · 목표 이정표(반 · 거의)가 이 값과 지갑으로 선다. 모르면 null */
+  try { turn.homeTarget = endingOn() ? ENDING_NOW.targetWon : null; } catch { turn.homeTarget = null; }
   const ids = story.turn(turn, S);
   if (ids.length) dlgOpen(ids);
 }
