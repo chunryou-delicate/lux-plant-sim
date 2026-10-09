@@ -336,10 +336,12 @@ export async function play(name, seed, opt = {}) {
       }
       for (const c of [...cuttingsOf(S)]) if (c.status === 'node' && stockOf(S, 'pot') >= 1) { try { repotCutting(S, c.id); } catch { } }
       /* ── ★ D45 새 두 종(guide45) ── */
-      if (P.species && ts.movedOut) {
+      /* ★ 10-10 총괄 (가) — 가게 첫날 몬이가 «구근 하나 들여 놓자»(shop_no_species)라 하면 «가게 사람»도 그 말을 따른다:
+           구근을 사서 심고 새 종 손질(찾은 구근 심기·놓기)을 한다. PP 교환 대답은 새 두 종 사람(P.species)만 */
+      if ((P.species || (out.shop && out.shop.followNoSpecies)) && ts.movedOut) {
         const o = out.sp = out.sp || { trade: null, cormBuy: null, cuts: 0, sold: 0, soldWon: 0, found: 0, sprout: 0, bagDays: 0 };
         /* 교환 — 남긴 삽수 말고 내줄 것이 생길 때까지 물음을 «들고 있다»(거절하지 않는다 · 카드를 닫아 두는 사람) */
-        if (SPM.ppTradePending(S)) {
+        if (P.species && SPM.ppTradePending(S)) {
           const cands = SPM.ppTradeCandidates(S).filter(c => c.id !== out.keeperId);
           if (cands.length) { try { SPM.answerPPTrade(S, true, { cuttingId: cands[0].id }); o.trade = S.day; } catch { } }
         }
@@ -575,8 +577,10 @@ export async function play(name, seed, opt = {}) {
           S.lamps.count = ts.lamp.owned || 0; if (ts.lamp) ts.lamp.placed = S.lamps.count; light.clearCache();
           if (pot0(S)) placeBest(sl => setPotSlot(S, pot0(S), sl.slotId, light.room.slots));
           for (const c of cuttingsOf(S)) if (c && c.status !== 'dead' && !c.slotId && !c.at) placeBest(sl => setCuttingAt(S, c, atOf(light, sl.slotId), { slots: light.room.slots, size: light.room.size }));
-          JSHOP.openShop(S, { cutOpen: (S.cutOpenToday && S.cutOpenToday.n) || 0 });
+          const opened = JSHOP.openShop(S, { cutOpen: (S.cutOpenToday && S.cutOpenToday.n) || 0 });
           out.shop = { openDay: S.day, cashAtOpen: ts.cashWon, done: 0, expired: 0, wonTotal: 0, expiredKinds: {}, doneKinds: {} };
+          out.shop.noSpecies = opened.events.some(e => e && e.id === 'shop_no_species');
+          out.shop.followNoSpecies = out.shop.noSpecies;   /* 말을 따른다 */
           /* 연 날 그루 사정 — 모주 자리 DLI · 산 삽수 · 등 */
           try { const sky = light.skyFor(S.day, S.sim); const p0 = pot0(S);
                 out.shop.atOpen = { room: light.room && light.room.id, potSlot: p0 && p0.slotId, potDli: p0 && p0.slotId ? +light.dliOfSlot(p0.slotId, lightOptsOf(S, sky)).toFixed(2) : null,
@@ -591,8 +595,10 @@ export async function play(name, seed, opt = {}) {
       for (const e of ((turn && turn.events) || [])) {
         if (e && e.id === 'order_expired') { const k = `${e.kind}/${e.tier}${e.need && e.need.grade ? '/' + e.need.grade : e.need && e.need.leaves ? '/잎' + e.need.leaves : ''}`; out.shop.expiredKinds[k] = (out.shop.expiredKinds[k] || 0) + 1;
           if (process.env.SHOP_DEBUG && e.kind === 'al') { let sky = null; try { sky = light.skyFor(S.day, S.sim); } catch { }
-            console.error('[al 기한]', S.day, JSON.stringify(SPM.speciesPotsOf(S).filter(q => q.species === 'alocasia_frydek').map(q => ({ id: q.id, o: q.origin, ph: q.plant.phase, L: (q.plant.leaves || []).length, slot: q.slotId,
+            const od = (e.orderId && out.shop.alOpen && out.shop.alOpen[e.orderId]) || null;
+            console.error('[al 기한]', S.day, 'opened', od && od.day, od && od.season, 'lamps', S.lamps.count, JSON.stringify(SPM.speciesPotsOf(S).filter(q => q.species === 'alocasia_frydek').map(q => ({ id: q.id, o: q.origin, ph: q.plant.phase, L: (q.plant.leaves || []).length, slot: q.slotId,
               dli: q.slotId ? +(() => { try { return light.dliOfSlot(q.slotId, lightOptsOf(S, sky)); } catch { return -1; } })().toFixed(2) : null })))); } }
+        if (e && e.id === 'order_new' && e.kind === 'al') { let sea = null; try { sea = light.skyFor(S.day, S.sim).season; } catch { } (out.shop.alOpen = out.shop.alOpen || {})[e.orderId] = { day: S.day, season: sea }; }
         if (e && e.id === 'order_new') { const k = `${e.kind}/${e.tier}`; (out.shop.newKinds = out.shop.newKinds || {})[k] = (out.shop.newKinds[k] || 0) + 1; }
       }
       const J = JSHOP.jobShopOf(S);
@@ -745,7 +751,8 @@ for (const name of NAMES) {
       const ao = sh.map(r => r.shop.atOpen || {});
       console.log(`    지갑 — 연 날 중앙 ${won(med(sh.map(r => r.shop.cashAtOpen)) ?? 0)} · 1년 뒤 중앙 ${won(med(sh.map(r => r.shop.cashEnd).filter(Number.isFinite)) ?? 0)} · ` +
                   `연 뒤 첫 0원 ${sh.filter(r => r.shop.brokeOn != null).length}/${sh.length}(중앙 ${med(sh.map(r => r.shop.brokeOn).filter(v => v != null)) ?? '—'}일) · ` +
-                  `연 날 모주 자리 DLI 중앙 ${med(ao.map(a => a.potDli).filter(Number.isFinite)) ?? '—'} · 산 삽수 중앙 ${med(ao.map(a => a.cuts).filter(Number.isFinite)) ?? '—'}`);
+                  `연 날 모주 자리 DLI 중앙 ${med(ao.map(a => a.potDli).filter(Number.isFinite)) ?? '—'} · 산 삽수 중앙 ${med(ao.map(a => a.cuts).filter(Number.isFinite)) ?? '—'} · ` +
+                  `«새 종 0» 권함 ${sh.filter(r => r.shop.noSpecies).length}/${sh.length} · 따라 구근 산 판 ${sh.filter(r => r.shop.noSpecies && r.sp && r.sp.cormBuy != null && r.sp.cormBuy >= r.shop.openDay).length}`);
       console.log(`    기한 지남 갈래(판 합) — ${Object.entries(ek).sort((a, b) => b[1] - a[1]).map(([k, v]) => `${k} ${v}`).join(' · ') || '—'}`);
       console.log(`    새 주문 갈래(판 합 · 첫 주문 빼고) — ${Object.entries(nk).sort((a, b) => b[1] - a[1]).map(([k, v]) => `${k} ${v}`).join(' · ') || '—'}`);
     } }

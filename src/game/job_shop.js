@@ -120,6 +120,9 @@ export function shopSources(S, ctx = {}) {
     al_corm: cormHeld - openOf('al_corm') > 0,
     /* plan §11 가드 재료 — 등 = 등 자리에 놓인 식물등 수(빛 계산과 같은 칸 · lightOptsOf.lampCount) · 오늘 · 이미 갖춘 등급 */
     lamps: Number.isFinite(ctx.lamps) ? ctx.lamps : ((S.lamps && S.lamps.count) || 0), day: S.day ?? 0,
+    /* ★ 철은 빛과 같은 달력으로 — 게임 0일 = 연중 yearDay0 일(여름 45일째 · tutorial §yearDay0Of · light_adapter §skyFor).
+         빼먹으면 135일 어긋나 «겨울 가드»가 봄·여름에 걸린다(가게 사람 판: 빛은 가을인데 가드는 봄으로 셈) */
+    yd0: (S.sim && Number.isFinite(S.sim.yearDay0)) ? S.sim.yearDay0 : 0,
     cutHalfmoon: cutReady.some(c => gradeRankOfCutting(c) >= 2), cutSanban: cutReady.some(c => gradeRankOfCutting(c) >= 1),
     ppTopPink: Math.max(0, ...ppReady.map(q => { const L = q.plant.leaves || []; return (L.length && Number(L[L.length - 1].pink)) || 0; })),
     varieSource, lampPlaced: !!(S.tutorial && S.tutorial.lamp && S.tutorial.lamp.placed > 0),
@@ -134,9 +137,10 @@ export function shopSources(S, ctx = {}) {
      «자람이 드는» 조건은 ① 이미 갖춘 그루가 있거나(바로 납품 · 가드와 상관없음) ② 키워 맞출 수 있을 때만 낸다:
      1 겨울(또는 기한 안에 겨울이 낌) — 등 2개 이상 · 2 몬스테라 하프문 이상 — 철과 상관없이 등 2개 이상(아니면 산반으로)
      3 PP 하프문(분홍 반달) — 맨 위 잎 분홍 0.5 이상 · 4 AL 잎 2 — 가을엔 등 1개 이상 */
-const winterIn = (src, tier) => { const d = src.day ?? 0, n = SJ.tiers[tier] ? SJ.tiers[tier].days : 0; return seasonOf(d) === 'winter' || seasonOf(d + n) === 'winter'; };
+const seasonAtSrc = (src, plus = 0) => seasonOf((src.day ?? 0) + (src.yd0 || 0) + plus);
+const winterIn = (src, tier) => { const n = SJ.tiers[tier] ? SJ.tiers[tier].days : 0; return seasonAtSrc(src) === 'winter' || seasonAtSrc(src, n) === 'winter'; };
 const growable = (src, tier) => !winterIn(src, tier) || src.lamps >= 2;
-function needFor(kind, tier, src) {
+function needFor(kind, tier, src, u = 0) {
   if (kind === 'monstera_cutting') {
     if (tier === 'easy') return {};
     if (tier === 'normal') return (src.cut2 || growable(src, tier)) ? { leaves: 2 } : null;
@@ -154,9 +158,14 @@ function needFor(kind, tier, src) {
     if (tier === 'normal') return (src.ppMarble || growable(src, tier)) ? { grade: 'sanban' } : null;
     return (src.ppHeavy || (src.ppTopPink >= 0.5 && growable(src, tier))) ? { grade: 'halfmoon' } : null;
   }
+  /* ★ 10-10 총괄 ②(plan-shop-spec §13) — AL «잎 n장 이상»은 **어려움 칸(45일 · ×1.6)** 으로 — 보통 30일로는 잎 간격 28~33일이라
+       가게 사람 판 29/119 가 기한을 넘겼다. AL 은 «철(기다림)»을 가르치는 식물 — 긴 기한이 결에 맞다. 무늬 AL 이 있으면 어려움 칸을 둘이 나눈다(u) */
   if (kind === 'al') {
-    const autumnOk = seasonOf(src.day ?? 0) !== 'autumn' || src.lamps >= 1;
-    return tier === 'normal' ? ((src.al2 || (growable(src, tier) && autumnOk)) ? { leaves: 2 } : null) : tier === 'hard' ? (src.varieAL ? { grade: 'sanban' } : null) : null;
+    if (tier !== 'hard') return null;
+    const autumnOk = seasonAtSrc(src) !== 'autumn' || src.lamps >= 1;
+    const leaves = (src.al2 || (growable(src, tier) && autumnOk)) ? { leaves: 2 } : null;
+    const grade = src.varieAL ? { grade: 'sanban' } : null;
+    return leaves && grade ? (u < 0.5 ? leaves : grade) : (leaves || grade);
   }
   if (kind === 'al_corm') return tier === 'easy' ? {} : null;
   return null;
@@ -177,10 +186,11 @@ function rollOrder(S, src, { first = false, day } = {}) {
   }
   for (let t = 0; t < 8; t++) {
     const kind = pick(kinds, u01(seed, k0 * 31 + t, 11));
-    const tiers = ['easy', 'normal', 'hard'].filter(x => needFor(kind, x, src));
+    const u = u01(seed, k0 * 31 + t, 17);
+    const tiers = ['easy', 'normal', 'hard'].filter(x => needFor(kind, x, src, u));
     if (!tiers.length) continue;
     const tier = pick(tiers, u01(seed, k0 * 31 + t, 13));
-    return { kind, tier, need: needFor(kind, tier, src) };
+    return { kind, tier, need: needFor(kind, tier, src, u) };
   }
   return null;
 }
@@ -220,12 +230,19 @@ function orderNewEvent(o) {
   return { id: 'order_new', ko: `${c.ko} — ${c.ask}`, orderId: o.id, customerId: o.customerId, want: orderWantKo(o), dueOn: o.dueOn, kind: o.kind, tier: o.tier };
 }
 
+/* 가진 새 종 수 — 그루(PP·AL · 심은 구근은 AL 그루의 구근 단계) + 가방 구근 + 산 재고(구근 · PP 어린 그루) */
+export function speciesHeldCount(S) {
+  const st = (S && S.shop && S.shop.stock) || {};
+  return speciesPotsOf(S).length + (((S && S.species && S.species.corms) || []).length) + (st.al_corm || 0) + (st.pp_young || 0);
+}
 /* ── 가게 첫날 ─────────────────────────────── 투룸으로 옮긴 그날 · 주문판 + 첫 주문(바로 맞출 수 있는 쉬움 하나) */
 export function openShop(S, ctx = {}) {
   const J = jobShopOf(S), day = S.day ?? 0;
   if (J.openedOn != null) return { events: [] };
   J.openedOn = day;
   const ev = [{ id: 'shop_open', ko: '문 앞에 작은 주문판을 걸었습니다' }];
+  /* ★ 10-10 총괄 (가) «가게는 새 두 종과 함께» — 가진 새 종(PP·AL 그루 · 심은 구근 · 가방 구근 · 산 재고)이 0 이면 몬이가 구근을 권한다(plan shopNoSpecies · 말만) */
+  if (speciesHeldCount(S) === 0) ev.push({ id: 'shop_no_species' });
   const src = shopSources(S, ctx);
   const spec = rollOrder(S, src, { first: true, day });
   const cust = spec ? pickCustomer(S, { first: true }) : null;

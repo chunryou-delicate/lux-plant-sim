@@ -32,13 +32,19 @@ T('B 가게 첫날 — 첫 주문 · 첫 손님', () => {
   JS.startShopJob(S);
   const r = JS.openShop(S);
   const ids = r.events.map(e => e.id);
-  assert.deepStrictEqual(ids, ['shop_open', 'order_new']);
+  assert.deepStrictEqual(ids, ['shop_open', 'shop_no_species', 'order_new'], '새 종 0 판 — 몬이가 구근을 권한다(총괄 (가) · plan shopNoSpecies)');
   const o = S.jobShop.orders[0];
   assert.strictEqual(o.customerId, 'banchan_owner');
   assert.strictEqual(o.tier, 'easy');
   assert.ok(JS.candidatesFor(S, o).length >= 1, '첫 주문을 바로 못 맞춘다');
-  assert.ok(/^반찬가게 사장님 — /.test(r.events[1].ko), r.events[1].ko);
+  const on = r.events.find(e => e.id === 'order_new');
+  assert.ok(/^반찬가게 사장님 — /.test(on.ko), on.ko);
   assert.strictEqual(JS.openShop(S).events.length, 0, '두 번 열렸다');
+  /* 새 종이 하나라도 있으면(그루 · 가방 구근 · 산 재고) 권하지 않는다 */
+  for (const give of [S2 => SP.addSpeciesPot(S2, 'alocasia_frydek', { origin: 'corm' }), S2 => { S2.shop.stock.al_corm = 1; }]) {
+    const S2 = newS({ cuttings: [cut('c1')] }); give(S2); JS.startShopJob(S2);
+    assert.ok(!JS.openShop(S2).events.some(e => e.id === 'shop_no_species'), '새 종이 있는데 권했다');
+  }
 });
 
 T('C 날마다 — 간격 · 최대 3 · 기한', () => {
@@ -134,16 +140,23 @@ T('I 주문 가드 넷(plan §11) — 겨울·하프문 등 2 · PP 맨 위 분�
   /* 3 PP 하프문 — 맨 위 분홍 0.5 */
   assert.strictEqual(N('pp', 'hard', { ...base, day: SPRING, lamps: 3, ppTopPink: 0.35 }), null);
   assert.deepStrictEqual(N('pp', 'hard', { ...base, day: SPRING, lamps: 0, ppTopPink: 0.6 }), { grade: 'halfmoon' });
-  /* 4 AL 잎 2 — 가을 등 1 */
-  assert.strictEqual(N('al', 'normal', { ...base, day: AUTUMN, lamps: 0 }), null);
-  assert.deepStrictEqual(N('al', 'normal', { ...base, day: AUTUMN, lamps: 1 }), { leaves: 2 });
-  assert.deepStrictEqual(N('al', 'normal', { ...base, day: SPRING, lamps: 0 }), { leaves: 2 });
+  /* 4 AL 잎 2 — 가을 등 1 · ★ 총괄 ②(§13) 잎 주문은 어려움 칸(45일)에만 */
+  assert.strictEqual(N('al', 'normal', { ...base, day: SPRING, lamps: 3, al2: true }), null, 'AL 잎 주문이 보통 칸에 났다');
+  assert.strictEqual(N('al', 'hard', { ...base, day: AUTUMN, lamps: 0 }), null);
+  assert.deepStrictEqual(N('al', 'hard', { ...base, day: AUTUMN, lamps: 1 }), { leaves: 2 });
+  assert.deepStrictEqual(N('al', 'hard', { ...base, day: SPRING, lamps: 0 }), { leaves: 2 });
+  assert.deepStrictEqual(N('al', 'hard', { ...base, day: AUTUMN, lamps: 0, varieAL: true }), { grade: 'sanban' }, '잎 주문이 막힌 날 무늬 AL 은 등급으로');
+  assert.deepStrictEqual(N('al', 'hard', { ...base, day: SPRING, lamps: 0, varieAL: true }, 0.2), { leaves: 2 });
+  assert.deepStrictEqual(N('al', 'hard', { ...base, day: SPRING, lamps: 0, varieAL: true }, 0.8), { grade: 'sanban' });
+  /* 철은 빛과 같은 달력 — 게임 0일 = 연중 yearDay0(135 · 여름 45일째). 게임 145일 = 연중 280 = 겨울 */
+  assert.strictEqual(N('monstera_cutting', 'normal', { ...base, day: 145, yd0: 135, lamps: 1 }), null, '게임 145일(연중 280 · 겨울)에 가드가 안 섰다');
+  assert.deepStrictEqual(N('monstera_cutting', 'normal', { ...base, day: 280, yd0: 135, lamps: 1 }), { leaves: 2 }, '게임 280일(연중 55 · 봄)에 겨울 가드가 섰다');
   /* 이미 갖춘 그루 — 가드와 상관없이 */
   const have = { ...base, day: WINTER, lamps: 0, cut2: true, cutHalfmoon: true, ppMarble: true, ppHeavy: true, al2: true };
   assert.deepStrictEqual(N('monstera_cutting', 'normal', have), { leaves: 2 });
   assert.deepStrictEqual(N('monstera_cutting', 'hard', have), { grade: 'halfmoon' });
   assert.deepStrictEqual(N('pp', 'hard', have), { grade: 'halfmoon' });
-  assert.deepStrictEqual(N('al', 'normal', have), { leaves: 2 });
+  assert.deepStrictEqual(N('al', 'hard', have), { leaves: 2 });
 });
 
 {

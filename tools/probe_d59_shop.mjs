@@ -6,6 +6,7 @@
      ② [가게를 연다] → 다시 켜지 않고 투룸 방뷰가 선다 · story.job · 주문판에 첫 주문(반찬가게 사장님) · 기록 «반찬가게 사장님 — …»
      ③ [상점] 주문판 줄 · [납품] → 고르는 카드 → 보냄 → 지갑 += 값 · 단골 1 · 기록 «… — {thanks}»
      ④ [다음 날]이 다시 간다 · 앞치마 옷 · 세이브 → 다시 켬 — 가게가 그대로
+     ⑥ 총괄 (가)(10-10) — 새 종 0 판 가게 첫날 shopNoSpecies 대사 · 첫 주문 카드 한 줄
      ⑤ [Char] 그림(10-10) — 덮개 ev_first_story_end · 가게 연 날 대사 ev_shop_open · 주문판·납품 카드 손님 얼굴 · status 줄(집 자금 이정표)과 PP 교환 장면이 대사 상자 그림으로 뜬다
    OUTDIR= (선택) · BYEOT_URL=(기본 127.0.0.1:9300) */
 import fs from 'node:fs';
@@ -63,20 +64,22 @@ try {
   ok((await J(`(()=>window.__S().day)()`)) === day0, '진로를 고르기 전엔 [다음 날]이 잠긴다(D28)');
   /* ② 가게를 연다 */
   await page.eval(`(()=>{ const b=document.querySelector('#jobCards [data-job="shop"]'); if(b) b.click(); })()`, false);
-  let st2 = null; const artsSeen = new Set();
+  let st2 = null; const artsSeen = new Set(); let noSpSaid = false;
   for (let i = 0; i < 40; i++) { await sleep(2000); try { const a = await J(`(()=>window.__sceneArt())()`); if (a && a.on && a.src) artsSeen.add(a.src.replace(/^.*\//, '')); } catch { }
     st2 = await J(`(()=>{ const S=window.__S(); return { room:S.home.room, rv: !!window.__rv, rvRoom: window.__rv && window.__rv.roomId,
       failed: document.getElementById('stage').classList.contains('room-failed'), job: S.story.job, orders: (S.jobShop && S.jobShop.orders || []).map(o=>({ id:o.id, c:o.customerId, kind:o.kind, tier:o.tier })),
       logs: (S.log||[]).map(l=>l.msg).filter(m=>/반찬가게 사장님 —/.test(m)).slice(-1) }; })()`); if (st2.rv && st2.rvRoom === 'tworoom') break; }
   /* 대사를 한 줄씩 넘기며 그림을 잰다(jobStart → shopOpen 차례 · skip 은 통째로 건너뛴다) */
-  for (let i = 0; i < 30 && !artsSeen.has('ev_shop_open.png'); i++) {
-    const a = await J(`(()=>({ ...window.__sceneArt(), talking: document.getElementById('stage').classList.contains('talking') }))()`);
+  for (let i = 0; i < 40 && !(artsSeen.has('ev_shop_open.png') && noSpSaid); i++) {
+    const a = await J(`(()=>({ ...window.__sceneArt(), talking: document.getElementById('stage').classList.contains('talking'), text: (document.getElementById('dlgText')||{}).textContent || '' }))()`);
     if (a && a.on && a.src) artsSeen.add(a.src.replace(/^.*\//, ''));
+    if (a && /몬스테라만으론 팔 게 모자라/.test(a.text || '')) noSpSaid = true;
     if (a && !a.talking && i > 4) break;
     await page.eval(`(()=>{ const x=document.getElementById('dlgBox'); if(x) x.click(); })()`, false); await sleep(900); }
   await skip(); await sleep(1500);
   console.log('② —', JSON.stringify(st2), '그림', [...artsSeen].join(','));
   ok(artsSeen.has('ev_shop_open.png'), `⑤ 가게 연 날 대사에 ev_shop_open(${[...artsSeen].join(',') || '없음'})`);
+  ok(noSpSaid, '⑥ 새 종 0 판 — 가게 첫날 몬이가 구근을 권한다(shopNoSpecies «몬스테라만으론 팔 게 모자라»)');
   await shot('2_tworoom');
   ok(st2.room === 'tworoom' && st2.rv && st2.rvRoom === 'tworoom' && !st2.failed, '다시 켜지 않고 투룸 방이 선다');
   ok(st2.job && st2.job.id === 'shop', '진로 = 식물 가게');
@@ -90,7 +93,8 @@ try {
   ok(await J(imgOk('#orderBoard .oface')), '⑤ 주문판 손님 얼굴(portrait_npc_shop)');
   const c0 = await J(`(()=>window.__S().tutorial.cashWon)()`);
   await page.eval(`(()=>{ const b=document.querySelector('#orderBoard [data-deliver]'); if(b) b.click(); })()`, false); await sleep(800);
-  const card = await J(`(()=>({ on: document.getElementById('detail').classList.contains('on'), title: document.getElementById('dTitle').textContent, btns: [...document.querySelectorAll('#dBtns button')].map(b=>b.textContent) }))()`);
+  const card = await J(`(()=>({ on: document.getElementById('detail').classList.contains('on'), title: document.getElementById('dTitle').textContent, btns: [...document.querySelectorAll('#dBtns button')].map(b=>b.textContent), body: document.getElementById('dBody').textContent }))()`);
+  ok(/핑크프린세스 · 알로카시아도 가게 물건입니다/.test(card.body || ''), '⑥ 첫 주문 카드 한 줄 «핑크프린세스 · 알로카시아도 가게 물건입니다»(총괄 (가))');
   console.log('③ 카드 —', JSON.stringify(card));
   await sleep(400); ok(await J(imgOk('#detail .cface')), '⑤ 납품 카드 손님 얼굴'); await shot('3b_deliver_card');
   await page.eval(`(()=>{ const b=[...document.querySelectorAll('#dBtns button')].find(x=>/원$/.test(x.textContent)); if(b) b.click(); })()`, false); await sleep(1500); await skip();

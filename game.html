@@ -4978,7 +4978,9 @@ const detail = {
     const cands = JOB.candidatesFor(S, o);
     return {
       art: './assets/ui/card_market.png', title: `${c.ko}의 주문`, sub: `${JOB.orderWantKo(o)} · ${Math.max(0, o.dueOn - S.day)}일 남음`,
-      body: npcFaceHTML(c, 'cface') + `<p>${c.ask || ''}</p>` + (cands.length ? '<p>무엇을 보낼까요?</p>' : '<p>지금은 맞는 것이 없습니다.</p>'),
+      body: npcFaceHTML(c, 'cface') + `<p>${c.ask || ''}</p>` + (cands.length ? '<p>무엇을 보낼까요?</p>' : '<p>지금은 맞는 것이 없습니다.</p>') +
+            /* ★ 10-10 총괄 (가) · plan-shop-spec §13 — 첫 주문 카드 한 줄(말로 길을 보인다 · 값 0) */
+            (o.openedOn === J.openedOn ? '<p style="clear:both;color:var(--dim);font-size:12px">핑크프린세스 · 알로카시아도 가게 물건입니다.</p>' : ''),
       btns: cands.map(x => ({ ko: `${x.ko} · ${x.won.toLocaleString()}원`, go: () => deliverNow(o.id, x.ref) })).concat([{ ko: '그만두기', go: () => { } }])
     };
   },
