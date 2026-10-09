@@ -238,6 +238,13 @@ def main():
     if r.returncode != 0 or not os.path.exists(tmp):
         print('⛔ 몸짓 무게를 못 실었다 — 몸짓 무게 없이 둔다'); return 0
     os.replace(tmp, dst)
+    # 10-09 — 다이어트(쓰는 구간만 · 쉬는 자세 그대로인 채널 뺌 · TANGENT 뺌 · 그림 1024): 7.29 → 3.15MB · 뼈 자리 관문
+    r = subprocess.run([sys.executable, os.path.join(os.path.dirname(os.path.abspath(__file__)), 'diet_hero2.py'),
+                        dst, tmp, '--tex=1024'], capture_output=True, text=True, encoding='utf-8')
+    print('\n'.join(l for l in r.stdout.splitlines() if l.startswith('썼다') or ('관문 ' in l and ('✔' in l or '⛔' in l))))
+    if r.returncode != 0 or not os.path.exists(tmp):
+        print('⛔ 다이어트 관문에 걸렸다 — 줄이지 않은 판을 둔다'); return 0
+    os.replace(tmp, dst)
     print('■ 키(파일) %.3f · 쭈그리기 오른손 표 %s' % (fileH, tab))
     print('■ 걷기 디딘 발 속도  옛 %.3f · 새 %.3f m/s(같은 자) ⇒ walkMps %.3f (옛 0.76 × 비)' % (v_old, v_new, mps))
     print('■ cheer 팔이 가장 높은 3초 %s (벌림 평균 %.1f°)' % (w, s))
