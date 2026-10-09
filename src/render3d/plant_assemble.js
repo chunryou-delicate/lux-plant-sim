@@ -340,6 +340,8 @@ async function build(opt) {
   let lastKey = null, lastResult = null;
   /* youngPlantOf — 씨앗·빛 방향마다 «난 때» 목록(§youngBirthsOf) */
   const youngBirthCache = new Map();
+  /* youngPlantSizeOf — 같은 인자의 키·폭을 기억해 둔다(놓기 판정이 여러 번 물어도 한 번만 짓는다 · 판이 다 온 것만 · 300 줄 넘으면 비움) */
+  const youngSizeCache = new Map();
 
   /* ── ★ 무늬가 도착하면 알린다 (2026-08-18) ──
      ------------------------------------------------------------
@@ -765,6 +767,34 @@ async function build(opt) {
          droppedParts          걷어 낸 것의 이름(검사용 — 'pot' 하나여야 한다 · 폴백 화분이면 '(무표)' 둘)
          skinsPending          아직 못 받은 무늬가 있나(있으면 도착 뒤 다시 지어야 한다)
     */
+    /* ★★ youngPlantSizeOf — 작은 그루의 «그림 크기»만 묻는다 (2026-10-09 · 총괄 D55 · core 와 맞춘 칸)
+         D55: 화분대 칸에 놓인 작은 그루의 그림 폭이 칸 한도(house slot maxPotD)를 크게 넘으면 몬이 한 줄 · 새로 놓을 때는 그 칸에 안 놓임.
+         ⇒ 판정은 core · house · plan 몫이고, growth 는 «폭»만 낸다 — 그린 그루와 «같은 자»로.
+       인자: youngPlantOf 와 똑같다(같은 o 를 넘기면 같은 그루의 크기) · 반환 { h, d, leafCount, spearCount? } | null(youngPlantOf 가 null 인 것)
+         d = 회전 무관 지름[m](2 × 밑동 축에서 가장 먼 점 · 화분 없음) — 그린 그루의 userData.sizeM.d 와 «같은 값»(test_young_plant ⑩)
+         h = 키[m](밑동 y=0 부터)
+       ★ 지어서 재고 바로 버린다(GPU 에 안 남김) · 같은 인자는 기억해 둔 값을 준다 · 판(무늬·새 종 잎)이 덜 왔으면 기억하지 않는다
+       ⚠ 그린 그루가 이미 있으면 그 userData.sizeM 을 읽는 것이 싸다 — 이것은 «놓기 전» 판정용이다. */
+    youngPlantSizeOf(o = {}) {
+      const sp = (o && o.species) || 'monstera';
+      const lv = Array.isArray(o.leaves) ? o.leaves.map(l => `${l && l.varie ? 'v' : ''}${(l && l.midSkin) || ''}/${(l && l.matSkin) || ''}${l && l.matured ? 'm' : ''}`).join(',') : '';
+      const pl = o.plant ? `${o.plant.seed}|${(o.plant.leaves || []).map(l => `${l.no}${l.stage}${l.pink ?? ''}`).join(',')}` : '';
+      const rw = Array.isArray(o.rows) ? o.rows.map(r => `${r.no}${r.stage}${r.asset}`).join(',') : '';
+      const key = [sp, o.seed, lv, Number.isFinite(o.nextLeaf01) ? Math.round(o.nextLeaf01 * 1000) : '-', o.grewLeaves ?? '-', o.potD ?? '-',
+                   o.lightAz ?? '-', o.photo ?? '-', pl, rw].join('|');
+      if (youngSizeCache.has(key)) return youngSizeCache.get(key);
+      const g = assembler.youngPlantOf(o);
+      if (!g) { youngSizeCache.set(key, null); return null; }
+      const u = g.userData || {};
+      const out = { h: u.sizeM ? u.sizeM.h : null, d: u.sizeM ? u.sizeM.d : null, leafCount: u.leafCount ?? null };
+      if (Number.isFinite(u.spearCount)) out.spearCount = u.spearCount;
+      const pending = u.skinsPending || 0;
+      disposeTree(g);
+      if (!pending) { if (youngSizeCache.size > 300) youngSizeCache.clear(); youngSizeCache.set(key, out); }
+      else out.skinsPending = pending;                   // 판이 덜 와 잎이 빠졌을 수 있다 — 기억하지 않고 «덜 왔다»를 적는다
+      return out;
+    },
+
     youngPlantOf(o = {}) {
       const species = (o && o.species) || 'monstera';
       if (species !== 'monstera') return speciesDrawer ? speciesDrawer.draw(Object.assign({}, o, { species })) : null;   // 새 종(D45) — species_draw.js

@@ -11,6 +11,7 @@
      ⑥ withPot:true 면 화분이 남는다 · nextLeaf01 안 주면 «안 줬다»가 적힌다
      ⑦ ★ 이 입구가 모주 조립(assemble)을 안 흔든다 — 씨앗을 잠깐 바꿔 끼우는 읽기가 새지 않나
      ⑧ 사진 — 잎 1~6 장을 나란히(docs/handoff/img/young_plant_row.png) · 색 가짓수로 까만 사진을 거른다
+     ⑩ D55 youngPlantSizeOf — 그리지 않고 키·폭만(같은 인자 = 그린 그루의 sizeM · 기억해 둠)
      ⑨ ★ 들고 온 잎은 다 큰 잎(총괄 2026-10-09 · leaf 재기 «잎 1장 삽수가 말린 새순»):
         다 들고 온 잎이면 다음 잎 몫 0 에서도 N 번째 잎이 펼쳐진 중간잎 · 흙에서 낸 잎은 펼쳐진 뒤부터 · 다음 잎은 몫 끝자락에만 말린 순
      python tools/serve.py 8963
@@ -135,6 +136,14 @@ try {
       `⑨ 흙에서 낸 잎(2번째) · 몫 0 — 그날 막 펼쳐짐(${keyOf(g0)[1]}) · 순 ${g0.spear}`);
     ok(g9.leafCount === 2 && g9.spear === 1,
       `⑨ 몫 0.97 — 다음 잎(3번째)만 말린 순으로 보인다(잎 ${g9.leafCount} · 순 ${g9.spear}) · 장부 잎 수와 그림 잎 수는 같다`); }
+
+  /* ⑩ D55 — youngPlantSizeOf(같은 인자) = 그린 그루의 sizeM · 두 번째는 기억해 둔 값 · null 은 null */
+  { const r = await page.eval(`(() => { const A = window.__asm;
+      const o = { seed: ${SEED}, leaves: Array.from({ length: 4 }, () => ({ varie: false })), nextLeaf01: 0.3, potD: 0.12, grewLeaves: 3 };
+      const s1 = A.youngPlantSizeOf(o), g = A.youngPlantOf(o), s2 = A.youngPlantSizeOf(o);
+      return { s1, drawn: g.userData.sizeM, cached: s1 === s2, nul: A.youngPlantSizeOf({ seed: 1, leaves: [], potD: 0.12 }) }; })()`);
+    ok(r.s1 && Math.abs(r.s1.d - r.drawn.d) < 1e-9 && Math.abs(r.s1.h - r.drawn.h) < 1e-9 && r.s1.leafCount === 4 && r.cached && r.nul === null,
+      `⑩ D55 크기만 묻기 — 폭 ${r.s1 && r.s1.d.toFixed(3)}m · 키 ${r.s1 && r.s1.h.toFixed(3)}m = 그린 그루 · 두 번째는 기억한 값 ${r.cached} · 잎 0 → null`); }
 
   /* ⑧ 사진 — 잎 1~6 을 나란히 */
   const shot = path.join(ROOT, 'docs/handoff/img/young_plant_row.png');

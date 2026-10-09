@@ -142,6 +142,13 @@ try {
     return { same: before === after, shared: m1.some((o, i) => o.material === m2[i].material) }; })()`);
   ok(iso.same && !iso.shared, `⑤ 한 그루를 빨갛게 물들여도 다른 그루는 그대로(재질 나눠 씀 ${iso.shared})`);
 
+  /* ⑧ D55 — 새 종도 youngPlantSizeOf(같은 인자) = 그린 그루의 sizeM */
+  { const r = await page.eval(`(async () => { const A = window.__asm; const o = { species: 'pink_princess', plant: window.__pp([0.2, 0.4, 0.5, 0.6], 4) };
+      await window.__drawReady(o); const s = A.youngPlantSizeOf(o), g = A.youngPlantOf(o);
+      return { s, drawn: g.userData.sizeM, leaves: g.userData.leafCount }; })()`);
+    ok(r.s && !r.s.skinsPending && Math.abs(r.s.d - r.drawn.d) < 1e-9 && Math.abs(r.s.h - r.drawn.h) < 1e-9 && r.s.leafCount === r.leaves,
+      `⑧ D55 새 종 크기만 묻기 — PP 잎 ${r.leaves} · 폭 ${r.s && r.s.d.toFixed(3)}m · 키 ${r.s && r.s.h.toFixed(3)}m = 그린 그루`); }
+
   /* ⑦ 사진 — PP 잎 1~8(분홍 몫 여러 가지) · AL 구근에서 0~200일 */
   const shot = path.join(ROOT, 'docs/handoff/img/species_young_row.png');
   await page.eval(`(async () => {
