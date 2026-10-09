@@ -177,7 +177,7 @@ export function createSpeciesRules(SPEC, TH) {
           : kinds[Math.min(kinds.length - 1, Math.floor(u01(p.seed, 0, SALT.kind) * kinds.length))];
       p.varie = varie; p.phase = 'growing';
       const slept = !!(p.cormSlept && S.corm.sleeping_corm_makes_corms);
-      const corms = slept ? findCorms(p, S) : [];                  // 잠든 구근의 싹틈 = 그 한 번의 잠에서 찾는 한 번
+      const corms = slept && canFind(p, S) ? findCorms(p, S) : [];   // 잠든 구근의 싹틈 = 그 한 번의 잠에서 찾는 한 번(평생 횟수에 든다 · D56)
       ev.push({ type: 'sprout', varie, slept, corms });
       addALLeaf(p, S, ev);
       return;
@@ -208,7 +208,7 @@ export function createSpeciesRules(SPEC, TH) {
         /* ★ D52(총괄 2026-10-09) — 구근은 «잠에 들 때» 찾는다: 잎이 다 지는 그날 흙 속에서 구근 1~3알.
              «잎을 내며 자라던» 그루만 — 지난번 찾은 뒤 잎을 min_leaves_since_find 장 이상 낸 그루(어두운 데 넣었다 빼기를
              되풀이해 구근을 찍지 못하게 · 한 번의 잠에 한 번). 잎이 다 지기 전에 깨면(dropping 에서 깸) 못 찾는다. */
-        const corms = p.sinceFind >= S.propagation.min_leaves_since_find ? findCorms(p, S) : [];
+        const corms = p.sinceFind >= S.propagation.min_leaves_since_find && canFind(p, S) ? findCorms(p, S) : [];
         p.phase = 'asleep'; p.sleptDays = 0; ev.push({ type: 'asleep', corms });
       }
       return;
@@ -236,6 +236,13 @@ export function createSpeciesRules(SPEC, TH) {
 
   /* 구근을 찾는다 — 수는 corms_per_find 범위에서 고르게 · 출처는 «지금 이 그루»(무늬면 갈래를 잇는다).
      ★ 열쇠는 p.finds(몇 번째 찾음인가) — 찾을 때마다 올린다. 잠든 구근의 싹틈(D49)도 한 번의 찾음이다 */
+  /* ★ D56(총괄 2026-10-09 · core 판: 찾은 구근을 심으면 그 그루가 또 찾아 판당 심은 구근 18 · 가방에 갇힌 그루-날 517) —
+       한 그루가 구근을 찾는 것은 «평생» propagation.max_finds_lifetime 번까지(첫 두 잠 · D49 잠든 구근의 봄 싹틈도 한 번).
+       그 뒤의 잠은 «잤다 깼다»만(asleep 사건의 corms 는 []). 칸이 없으면(옛 값 파일) 막지 않는다. */
+  function canFind(p, S) {
+    const cap = S.propagation.max_finds_lifetime;
+    return !(Number.isFinite(cap) && (p.finds || 0) >= cap);
+  }
   function findCorms(p, S) {
     const [lo, hi] = S.propagation.corms_per_find;
     const n = lo + Math.min(hi - lo, Math.floor(u01(p.seed, p.finds, SALT.corms) * (hi - lo + 1)));

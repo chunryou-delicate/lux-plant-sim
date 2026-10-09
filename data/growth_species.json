@@ -136,7 +136,9 @@
         ],
         "method": "corm",
         "corms_per_find": [1, 3],
-        "min_leaves_since_find": 1
+        "min_leaves_since_find": 1,
+        "max_finds_lifetime": 2,
+        "_max_finds_doc": "D56(총괄 2026-10-09) — 한 그루가 구근을 찾는 것은 평생 이만큼(첫 두 잠 · D49 «겨울에 심은 잠든 구근»의 봄 싹틈도 한 번으로 셈). 세 번째 잠부터는 «잤다 깼다»만. 까닭: core 판에서 찾은 구근을 심으면 그 그루가 또 찾아 구근이 불어났다(판당 심은 구근 18 · 가방에 갇힌 그루-날 517). 구근 되팔기는 core·plan."
       },
       "dormancy": {
         "_doc": [

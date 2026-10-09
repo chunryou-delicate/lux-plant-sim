@@ -290,6 +290,12 @@ userData kind:'youngPlant' · species · leafCount · leafCountWanted · leafRow
 사진    docs/handoff/img/species_zoom_pp8.png · species_zoom_alv.png (확대 모드 ?embed=game)
 ```
 
+### 2026-10-09 · D56 AL 구근 찾기는 평생 두 번 (총괄 · core 판: 찾은 구근을 심으면 또 찾아 판당 18 · 가방 그루-날 517)
+
+✅ growth_species.json propagation.max_finds_lifetime 2 — 첫 두 잠(D49 «잠든 구근»의 봄 싹틈도 한 번으로 셈) · 세 번째 잠부터 «잤다 깼다»만(asleep corms []).
+   species_growth §canFind · 칸이 없으면 막지 않음. test_species_growth §O: 여름 구근 잠 넷 → 구근 1·3·0·0 · 겨울 구근 싹틈 2 · 잠 2 · 0 · 0 ·
+   대조(칸 뺌 → 세 번째 잠에도 3알). 구근 되팔기(한 알 1만)는 core·plan.
+
 ### 2026-10-09 · D52 AL 구근은 «잠에 들 때» 찾는다 — 원룸 이사 계절별 «구근 첫 열어 보기» 몫
 
 ✅ 총괄 D52: 잎을 내며 자라던 AL 이 잠에 들어 **잎이 다 지는 날** 흙 속에서 구근 1~3알(무늬 몫 그대로). 겨울에 심은 «잠든 구근»은

@@ -14,6 +14,7 @@
      H AL 겨울 → 잎이 하나씩 진다 → 잠(그날 구근 1~3알 · D52) → 봄에 «다시 깸»(구근 없음)
      I AL 구근 수 고르게 · J 무늬 몫(무늬 모주 3/4 · 민무늬 0 · 상점) · K 어두워서 든 잠 · 구근 찍기 막힘
      N D49 잠든 구근(겨울에 심은 구근은 싹틀 때 구근 1~3알) · ★ D52 구근은 «잠에 들 때»(잎이 다 지는 날) 찾는다 · 봄 깸엔 없다
+     O D56 구근 찾기는 평생 두 번(세 번째 잠부터 0 · 잠든 구근 싹틈도 한 번) · 칸을 빼면 세 번째에도 찾는 대조
      L 잘못 부르면 던진다 · M 그림 판이 실제로 있다
      node tools/test_species_growth.mjs
 ============================================================ */
@@ -232,6 +233,28 @@ ok(firstLeafDay(thPP.min - 0.1, 'summer') === null, `C PP 문턱(min ${thPP.min}
   const b = R.newPlant('alocasia_frydek', { seed: 5, origin: 'shop' });
   const spb = walk(b, 40, k(6), k('summer')).find(e => e.type === 'sprout');
   ok(spb && spb.slept === false && spb.corms.length === 0 && b.cormsMade === 0, '여름에 심은 구근은 싹틀 때 구근 없음(자라다 잠들 때 찾는다 · D52)'); }
+
+/* O — D56 구근 찾기는 평생 두 번(첫 두 잠 · 잠든 구근 싹틈도 한 번) · 세 번째 잠부터 «잤다 깼다»만 */
+{ const cap = AL.propagation.max_finds_lifetime;
+  const finds = (R2, plant, days, seasonOfDay) => { const out = []; for (let d = 1; d <= days; d++) for (const e of R2.stepDay(plant, { dli: 6, season: seasonOfDay(d) }))
+    if ((e.type === 'asleep' || (e.type === 'sprout' && e.slept)) ) out.push({ d, type: e.type, n: e.corms.length }); return out; };
+  /* 여름에 심은 구근 — 잠 넷(4년) */
+  const a = R.newPlant('alocasia_frydek', { seed: 4111, origin: 'shop' });
+  const fa = finds(R, a, 360 * 4 + 20, d => seasonOf(90 + d));
+  const sleeps = fa.filter(x => x.type === 'asleep');
+  ok(cap === 2 && sleeps.length >= 3 && sleeps[0].n > 0 && sleeps[1].n > 0 && sleeps.slice(2).every(x => x.n === 0) && a.finds === 2,
+    `O 여름 구근 — 잠 ${sleeps.length}번 · 구근 ${sleeps.map(x => x.n).join('·')} (평생 ${cap}번 · 세 번째부터 0) · 찾은 횟수 ${a.finds}`);
+  /* 겨울에 심은 잠든 구근 — 싹틈이 첫 번째 · 첫 겨울 잠이 두 번째 · 둘째 겨울 잠은 0 */
+  const b = R.newPlant('alocasia_frydek', { seed: 4222, origin: 'shop' });
+  const fb = finds(R, b, 360 * 3, d => d <= 20 ? 'winter' : seasonOf(d - 21));
+  ok(fb[0] && fb[0].type === 'sprout' && fb[0].n > 0 && fb[1] && fb[1].type === 'asleep' && fb[1].n > 0 && fb.slice(2).every(x => x.n === 0) && b.finds === 2,
+    `O 겨울 구근 — ${fb.map(x => `${x.type === 'sprout' ? '싹틈' : '잠'} ${x.n}`).join(' · ')} (싹틈도 한 번으로 셈)`);
+  /* 대조 — 칸을 빼면 세 번째 잠에도 찾는다(이 검사가 문다) */
+  const S2 = JSON.parse(JSON.stringify(SPEC)); delete S2.species.alocasia_frydek.propagation.max_finds_lifetime;
+  const R2 = createSpeciesRules(S2, TH);
+  const c = R2.newPlant('alocasia_frydek', { seed: 4111, origin: 'shop' });
+  const fc = finds(R2, c, 360 * 4 + 20, d => seasonOf(90 + d)).filter(x => x.type === 'asleep');
+  ok(fc.length >= 3 && fc[2].n > 0, `O 대조 — 칸을 빼면 세 번째 잠에도 구근 ${fc[2] && fc[2].n}알(검사가 문다)`); }
 
 /* L — 잘못 부르면 던진다 */
 const pp = R.newPlant('pink_princess');
