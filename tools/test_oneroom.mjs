@@ -403,8 +403,11 @@ check('H 빛 게이트 — 지금 방이 문턱을 넘나 못 넘나를 말한�
   const g = lightGateOf(S, { light }, { season: 'summer', lampCount: 0 });
   assert.equal(g.ok, true, g.why);
   assert.equal(g.fenestrate, 6.0, '갈라짐 문턱이 light_thresholds.json 값이 아닙니다');
-  assert.equal(g.min, 3.0);
-  assert.equal(g.varieMin, 4.2, '무늬종 min 이 ×1.4 가 아닙니다');
+  /* ★ 2026-10-09 [plan] — 문턱을 지금 값으로 옮겼다. 몬스테라 min 은 2026-08-17 박사님 확정으로 3.0 → 2.7
+     (data/balance/light_thresholds.json note · «가구를 창가로 옮겨 두 겹으로 쌓으면 2.7~2.9»). 무늬종은 ×1.4 = 3.78.
+     이 단언만 옛 3.0·4.2 에 남아 있었다(총괄 10-09 · D8·고친 자 뒤 숫자로). */
+  assert.equal(g.min, 2.7, '몬스테라 min 이 light_thresholds.json(08-17 박사님 2.7)과 다릅니다');
+  assert.ok(Math.abs(g.varieMin - 2.7 * 1.4) < 1e-9, `무늬종 min 이 ×1.4(3.78)가 아닙니다 — ${g.varieMin}`);
   assert.equal(g.canFenestrate, false, '반지하 자연광이 갈라짐 문턱을 넘었습니다');
   assert.ok(g.why && /못 미칩니다/.test(g.why), '못 넘는 이유를 말하지 않습니다');
   info(`반지하 등0 — 가장 밝은 자리 ${g.best.slotId} peak ${g.best.peak} · 7일평균 ${g.best.avg7} ` +
@@ -423,8 +426,8 @@ check('H-2 ⏸ 원룸 방 데이터 — 지금 상태를 숫자로 남긴다(던
     .sort((a, b) => b.avg7 - a.avg7);
   const best = rows[0];
   info(`원룸 슬롯 ${rows.length}칸 · 가장 밝은 자리 7일평균 ${best.avg7.toFixed(2)} (${best.id})`);
-  info(`  min 3.0 이상 ${rows.filter(r => r.avg7 >= 3).length}칸 · ` +
-       `무늬 min 4.2 이상 ${rows.filter(r => r.avg7 >= 4.2).length}칸 · ` +
+  info(`  min 2.7 이상 ${rows.filter(r => r.avg7 >= 2.7).length}칸 · ` +   /* ★ 10-09 [plan] 08-17 문턱 2.7 · 무늬 ×1.4 = 3.78 */
+       `무늬 min 3.78 이상 ${rows.filter(r => r.avg7 >= 3.78).length}칸 · ` +
        `갈라짐 6.0 이상 ${rows.filter(r => r.avg7 >= 6).length}칸 · ` +
        `콩나물 자리(<0.3) ${rows.filter(r => r.avg7 < 0.3).length}칸`);
   info(`  방의 식물등 기구 ${Math.max(...prof.lampCounts)}개 · uidStable ${prof.uidStable === true}`);
