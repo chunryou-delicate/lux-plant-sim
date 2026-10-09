@@ -85,7 +85,7 @@
         ],
         "sprout_days": 14,
         "sleeping_corm_makes_corms": true,
-        "_sleeping_doc": "D49(총괄 2026-10-09) — 잠 철(dormancy.seasons)을 기다린 구근은 «잠든 구근»: 싹틀 때(봄에 깰 때) 구근을 corms_on_wake 만큼 같이 낸다. 잎 0 으로 min_sleep_days 넘게 잔 그루와 같게 본다. 다른 철에 심은 구근은 «자람 → 겨울잠 → 봄 깸» 그대로. 무늬 몫(varie_chance)은 안 바뀐다.",
+        "_sleeping_doc": "D49(총괄 2026-10-09) — 잠 철(dormancy.seasons)을 기다린 구근은 «잠든 구근»: 싹틀 때(봄에 깰 때) 구근을 propagation.corms_per_find 만큼 찾는다(그 한 번의 잠에서 한 번). 다른 철에 심은 구근은 자라다가 잠에 들 때 찾는다(D52). 무늬 몫(varie_chance)은 안 바뀐다.",
         "varie_chance": { "from_varie_mother": 0.75, "from_plain_mother": 0.0, "shop": 0.25 }
       },
       "varie_kinds": {
@@ -104,16 +104,22 @@
         "mature": { "plain": "plants/alocasia/al_leaf_mature.glb", "marble": "plants/alocasia/skins/al_leaf_mature_marble.glb",    "sector": "plants/alocasia/skins/al_leaf_mature_half.glb" }
       },
       "propagation": {
-        "_doc": "자르지 않는다 — 구근으로 는다. 깨는 날 corms_on_wake 범위에서 고르게 굴린다. 잠(잎 0장)을 min_sleep_days 이상 잔 그루만 구근을 낸다(어두운 데 잠깐 두었다 빼는 길로 구근을 찍어 내지 못하게).",
+        "_doc": [
+          "자르지 않는다 — 구근으로 는다. ★ D52(총괄 2026-10-09): 구근은 «잠에 들 때» 찾는다 — 잎을 내며 자라던 그루가 잠에 들어 잎이 다 지는 날",
+          "흙 속에서 corms_per_find 범위만큼(고르게). 겨울에 심은 «잠든 구근»은 D49 대로 봄에 싹틀 때. 한 번의 잠에 한 번. 봄 깸은 «다시 깼다» 장면만(구근 없음).",
+          "min_leaves_since_find: 지난번 찾은 뒤(또는 싹튼 뒤) 잎을 이만큼 낸 그루만 찾는다 — 어두운 데 넣었다 빼기를 되풀이해 구근을 찍지 못하게(첫 판).",
+          "잎이 다 지기 전에 깨면(잠 드는 중에 밝혀짐) 그 잠에서는 못 찾는다.",
+          "⚠ 옛 칸 corms_on_wake · min_sleep_days(깰 때 찾기 · D45 첫 판)는 D52 로 걷었다."
+        ],
         "method": "corm",
-        "corms_on_wake": [1, 3],
-        "min_sleep_days": 30
+        "corms_per_find": [1, 3],
+        "min_leaves_since_find": 1
       },
       "dormancy": {
         "_doc": [
           "잠 드는 길 둘: ① 계절이 seasons 에 들면 ② avg7 이 문턱(min) 밑인 날이 low_days 일 이어지면.",
           "잠이 들면 새 잎이 멎고 drop_every_days 마다 가장 오래된 잎이 하나씩 진다 → 0장 = «잠»(구근은 산다).",
-          "깨는 길: 계절이 seasons 밖이고 avg7 ≥ min 인 날이 wake_days 일 이어지면. 깨면 걸음을 0 부터 다시 쌓는다."
+          "깨는 길: 계절이 seasons 밖이고 avg7 ≥ min 인 날이 wake_days 일 이어지면. 깨면 걸음을 0 부터 다시 쌓는다(구근은 잠에 들 때 이미 찾았다 · D52)."
         ],
         "seasons": ["winter"],
         "low_days": 21,

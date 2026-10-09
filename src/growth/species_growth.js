@@ -18,8 +18,11 @@
 
    사건(events) — 코어가 대사·스냅샷에 쓴다
      PP  leaf { no, pink, grade } · tip_withering { streak, at } · tip_withered { count }   (자르기로 살린 것은 cutAbove 의 saved)
-     AL  sprout { varie, slept, corms } · leaf { no } · leaf_drop { no } · dormancy_start { why } · asleep · wake { corms: [{ seed, origin, motherKind }] }
-         (slept = 잠 철을 기다린 «잠든 구근»의 싹틈 · D49 — 그때 corms 가 같이 온다)
+     AL  sprout { varie, slept, corms } · leaf { no } · leaf_drop { no } · dormancy_start { why } · asleep { corms } · wake
+         corms = [{ seed, origin, motherKind }] — 구근을 «찾는» 때는 둘뿐이다(한 번의 잠에 한 번):
+           asleep  잎을 내며 자라던 그루가 잠에 들어 잎이 다 지는 날(D52)
+           sprout  slept = 잠 철을 기다린 «잠든 구근»이 봄에 싹틀 때(D49)
+         wake 는 «다시 깼다» 장면만 — 구근이 안 나온다(D52)
 ============================================================ */
 import { judgeDLI, thresholdsFor } from '../engine/daily_light.js';
 import { seasonOf } from '../engine/weather.js';
@@ -89,7 +92,7 @@ export function createSpeciesRules(SPEC, TH) {
       const origin = opt.origin || 'shop';
       if (!(origin in S.corm.varie_chance)) throw new Error(`[종 생장] AL: 구근 출처 «${origin}» 를 모른다`);
       return { ...base, phase: 'corm', origin, motherKind: opt.motherKind ?? null, varie: null, lad: 0, cormSlept: false,
-        lowRun: 0, wakeRun: 0, dropRun: 0, sleptDays: 0, wakes: 0, cormsMade: 0 };
+        lowRun: 0, wakeRun: 0, dropRun: 0, sleptDays: 0, wakes: 0, finds: 0, sinceFind: 0, cormsMade: 0 };
     }
     throw new Error(`[종 생장] 규칙이 없는 종 «${species}»`);
   }
@@ -174,8 +177,7 @@ export function createSpeciesRules(SPEC, TH) {
           : kinds[Math.min(kinds.length - 1, Math.floor(u01(p.seed, 0, SALT.kind) * kinds.length))];
       p.varie = varie; p.phase = 'growing';
       const slept = !!(p.cormSlept && S.corm.sleeping_corm_makes_corms);
-      const corms = slept ? makeCorms(p, S) : [];
-      if (slept) { p.wakes += 1; p.cormsMade += corms.length; }   // 잠든 구근의 싹틈 = 한 번의 깸
+      const corms = slept ? findCorms(p, S) : [];                  // 잠든 구근의 싹틈 = 그 한 번의 잠에서 찾는 한 번
       ev.push({ type: 'sprout', varie, slept, corms });
       addALLeaf(p, S, ev);
       return;
@@ -202,14 +204,20 @@ export function createSpeciesRules(SPEC, TH) {
         p.dropRun = 0;
         const g = p.leaves.shift(); ev.push({ type: 'leaf_drop', no: g.no });
       }
-      if (!p.leaves.length) { p.phase = 'asleep'; p.sleptDays = 0; ev.push({ type: 'asleep' }); }
+      if (!p.leaves.length) {
+        /* ★ D52(총괄 2026-10-09) — 구근은 «잠에 들 때» 찾는다: 잎이 다 지는 그날 흙 속에서 구근 1~3알.
+             «잎을 내며 자라던» 그루만 — 지난번 찾은 뒤 잎을 min_leaves_since_find 장 이상 낸 그루(어두운 데 넣었다 빼기를
+             되풀이해 구근을 찍지 못하게 · 한 번의 잠에 한 번). 잎이 다 지기 전에 깨면(dropping 에서 깸) 못 찾는다. */
+        const corms = p.sinceFind >= S.propagation.min_leaves_since_find ? findCorms(p, S) : [];
+        p.phase = 'asleep'; p.sleptDays = 0; ev.push({ type: 'asleep', corms });
+      }
       return;
     }
     if (p.phase === 'asleep') p.sleptDays += 1;
   }
 
   function addALLeaf(p, S, ev) {
-    p.births += 1;
+    p.births += 1; p.sinceFind += 1;
     const leaf = { no: p.births, born: p.day, stage: stageOf(S, p.lad) };
     p.lad += 1;
     p.leaves.push(leaf);
@@ -217,25 +225,25 @@ export function createSpeciesRules(SPEC, TH) {
     while (p.leaves.length > S.max_leaves) { const g = p.leaves.shift(); ev.push({ type: 'leaf_drop', no: g.no }); }
   }
 
+  /* 봄 깸 — «다시 깼다» 장면만. 구근은 여기서 안 나온다(D52 · 잠에 들 때 이미 찾았다) */
   function wakeAL(p, S, ev) {
-    const G = S.propagation, D = S.dormancy;
-    const slept = p.phase === 'asleep' && p.sleptDays >= G.min_sleep_days;
-    const corms = slept ? makeCorms(p, S) : [];
-    p.wakes += 1; p.cormsMade += corms.length;
+    const D = S.dormancy;
+    p.wakes += 1;
     p.phase = 'growing'; p.step = 0; p.lowRun = 0; p.wakeRun = 0; p.dropRun = 0; p.sleptDays = 0;
     p.lad = Math.max(0, p.lad - D.wake_ladder_drop);
-    ev.push({ type: 'wake', corms });
+    ev.push({ type: 'wake' });
   }
 
-  /* 깨는 날의 구근 — 수는 corms_on_wake 범위에서 고르게 · 출처는 «지금 이 그루»(무늬면 갈래를 잇는다).
-     ★ 열쇠는 p.wakes(몇 번째 깸인가) — 부르는 쪽이 낸 뒤 p.wakes 를 올린다. 잠든 구근의 싹틈(D49)도 한 번의 깸으로 센다 */
-  function makeCorms(p, S) {
-    const [lo, hi] = S.propagation.corms_on_wake;
-    const n = lo + Math.min(hi - lo, Math.floor(u01(p.seed, p.wakes, SALT.corms) * (hi - lo + 1)));
+  /* 구근을 찾는다 — 수는 corms_per_find 범위에서 고르게 · 출처는 «지금 이 그루»(무늬면 갈래를 잇는다).
+     ★ 열쇠는 p.finds(몇 번째 찾음인가) — 찾을 때마다 올린다. 잠든 구근의 싹틈(D49)도 한 번의 찾음이다 */
+  function findCorms(p, S) {
+    const [lo, hi] = S.propagation.corms_per_find;
+    const n = lo + Math.min(hi - lo, Math.floor(u01(p.seed, p.finds, SALT.corms) * (hi - lo + 1)));
     const out = [];
     for (let i = 0; i < n; i++)
-      out.push({ seed: Math.floor(u01(p.seed, p.wakes * 16 + i, SALT.cormSeed) * 4294967296) >>> 0,
+      out.push({ seed: Math.floor(u01(p.seed, p.finds * 16 + i, SALT.cormSeed) * 4294967296) >>> 0,
         origin: p.varie ? 'from_varie_mother' : 'from_plain_mother', motherKind: p.varie });
+    p.finds += 1; p.sinceFind = 0; p.cormsMade += out.length;
     return out;
   }
 
