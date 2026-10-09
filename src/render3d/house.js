@@ -606,6 +606,8 @@ export function buildHouse(GRAIN, roomDefIn, winPresets, doorPresets={}, finishe
         const dp={ ...(doorPresets[spec.preset]||{}), ...spec };
         const door=buildDoor(spec.w, spec.h, { frameColor:dp.frameColor||'#f4efe4', gloss:dp.gloss||'satin' });
         door.userData.isDoor = true;              // 밑동을 만들지 않는다(문 자리는 비어 있어야 한다)
+        door.userData.doorPreset = spec.preset || null;   // ★ 2026-10-09 v2 옷(furniture_dress §문) — 그림만
+        door.userData.doorSize = { w: spec.w, h: spec.h, d: FRAME_DEFAULTS.depth };
         placeInWall(door, wall, spec.cu, spec.h/2);
         g.add(door);                                // 문은 벽과 함께 컷어웨이
         {   // ★ 여닫이 — 경첩을 문짝 한쪽 끝에 두고 그 축으로 돌린다
