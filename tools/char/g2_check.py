@@ -85,14 +85,39 @@ def vcolor(UV, tex):
     return tex[ty, tx].astype(float)
 
 
+def face_forward(V, UV, tex):
+    """얼굴이 +Z 를 보게 Y 축으로 돌린다 — 2026-10-09 Tripo 판이 +X 를 보고 와서(앞 그림이 옆모습) 팔 벌림이 «두께»로 재졌다.
+    머리 높이(위 35%)의 살색 정점 무게중심이 머리 전체 무게중심에서 어느 쪽에 있나 = 얼굴 쪽."""
+    if tex is None:
+        return V, 0.0
+    lo, hi = V.min(0), V.max(0)
+    y = (V[:, 1] - lo[1]) / (hi[1] - lo[1])
+    c = vcolor(UV, tex); L = c @ [0.299, 0.587, 0.114]
+    head = y > 0.65
+    skin = head & (L > 165) & (c[:, 0] > c[:, 2] + 25)
+    if skin.sum() < 20:
+        return V, 0.0
+    d = V[skin][:, [0, 2]].mean(0) - V[head][:, [0, 2]].mean(0)
+    ang = float(np.arctan2(d[0], d[1]))            # +Z 에서 얼굴까지 각
+    ang = round(ang / (np.pi / 2)) * (np.pi / 2)   # 90° 단위로만(생성물은 축 맞춤으로 온다)
+    if ang == 0:
+        return V, 0.0
+    cs, sn = np.cos(-ang), np.sin(-ang)
+    R = V.copy()
+    R[:, 0] = V[:, 0] * cs + V[:, 2] * sn
+    R[:, 2] = -V[:, 0] * sn + V[:, 2] * cs
+    return R, float(np.degrees(ang))
+
+
 def measure(path):
     js, V, F, UV, tex = load(path)
+    V, turned = face_forward(V, UV, tex)
     ncomp, big, _ = components(V, F)
     lo, hi = V.min(0), V.max(0); H = hi[1] - lo[1]
     y = (V[:, 1] - lo[1]) / H                      # 0 발 · 1 정수리
     x = (V[:, 0] - (lo[0] + hi[0]) / 2) / H
     r = dict(path=os.path.basename(path), verts=len(V), faces=len(F), comps=ncomp, big=big,
-             h=float(H), w_over_h=float((hi[0] - lo[0]) / H))
+             h=float(H), w_over_h=float((hi[0] - lo[0]) / H), turned=turned)
     if tex is None:
         r['note'] = '텍스처 없음'
         return r, (V, F, UV, tex)
@@ -119,6 +144,7 @@ def measure(path):
         d = np.array([np.sqrt(((P - q) ** 2).sum(1)).min() for q in V[low_hair]]) / H
         r['gap_min'] = float(d.min()); r['gap_med'] = float(np.median(d))
         r['hair_near2'] = int((d < 0.02).sum()); r['hair_near4'] = int((d < 0.04).sum())
+    r['hand_reach'] = float(np.abs(x[arm]).max()) if arm.any() else None      # 손끝 가로 거리(키 비) — A포즈 벌림
     return r, (V, F, UV, tex)
 
 
@@ -130,8 +156,11 @@ def main():
         r, (V, F, UV, tex) = measure(p)
         rows.append(r)
         print('■ %s' % r['path'])
-        print('  덩어리 %d (가장 큰 것 %.1f%%) · 정점 %s · 면 %s · 키 %.3f (가로/세로 %.2f)' % (
-            r['comps'], r['big'] * 100, format(r['verts'], ','), format(r['faces'], ','), r['h'], r['w_over_h']))
+        print('  덩어리 %d (가장 큰 것 %.1f%%) · 정점 %s · 면 %s · 키 %.3f (가로/세로 %.2f)%s' % (
+            r['comps'], r['big'] * 100, format(r['verts'], ','), format(r['faces'], ','), r['h'], r['w_over_h'],
+            (' · ⚠ 얼굴이 +Z 가 아니라 %+.0f° 돌려 잼' % r['turned']) if r['turned'] else ''))
+        if r.get('hand_reach') is not None:
+            print('  손끝 가로 거리(키 비 · A포즈 벌림) %.3f' % r['hand_reach'])
         if 'hair_rgb' in r:
             print('  머리 정점 %d · 색 %s · 밝기 %.1f · 뒷머리 끝 키의 %.2f · 목 %.2f' % (r['hair_n'], r['hair_rgb'], r['hair_L'], r['hair_low'], r['neck']))
             if 'gap_min' in r:

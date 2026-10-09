@@ -1246,3 +1246,26 @@
 - ⚠ 몸을 더 넣어 얼굴이 원래보다 6~11% 작게 왔다. 기본 fit_portrait(인물 키로 맞춤)는 흉상이 판을 다 채워 얼굴 크기를 못 돌린다 ⇒ 같은 화자가 줄마다 얼굴 크기가 튄다
   ⇒ `fit_portrait.py --match <원래 초상>`: 원래 초상의 눈·코·입 네모를 틀로 배율을 훑어(NCC) 원래 판에 해당하는 네모를 잘라 냄. 눈·입 높이가 원래와 같은 줄에 선다(그림으로 봄)
 - 게임 판: `assets/characters/portraits/portrait_jachwi_{beam,think,surprise,happy}_apron.png` 600×800 투명 · core 에 «가게 판이면 `_apron` 먼저» 한 줄 청함
+
+### 유니티 3D — Tripo G2 두 줄 · Meshy G3 (총괄 a459c237 · 2026-10-10 char)
+**Tripo 3만 면 판 G2** (`g2_check.py` · ⚠ Tripo 는 얼굴이 +X 를 보고 왔다 — 노드 회전 없이 정점에 구워짐. 자가 이제 얼굴 쪽을 찾아 돌려 잰다)
+| 잰 것 | Tripo | Meshy | hero2 리그 전 |
+|---|---|---|---|
+| 덩어리 · 면 | 1 · 29,277 | 1 · 30,917 | 1 · 30,226 |
+| 손끝 가로 거리(키 비) | **0.265** | 0.245 | 0.323 |
+| 머리–팔 2% 안 머리 정점(가장 가까움) | **0 (0.032)** | 1,482 (0.000) | 431 (0.000) |
+| 머리 색 · 밝기 | [99,82,77] · 85.9 (정본 [95,78,80] 에 이미 가깝다) | [43,22,21] · 27.9 | [61,37,46] · 45.0 |
+- 리그 전에 앞=+Z 로 돌려 구운 판: `assets/v2/char/_src/hero_unity/hero_toy_b_tripo_mv30k_0cbeb136_facez.glb`(`tools/char/glb_face_z.py` · 다시 잰 얼굴 각 0° · 그림 `docs/handoff/img/hero/unity_g2_tripo_facez.png`)
+
+**Meshy 리그 G3** (rig_01a12114 · 클립 13 + 걷기·뛰기)
+- ✔ 뼈 24 이름·계층 hero2 와 같음(check_skeleton_match O) · 걷기 팔 벌림 평균 11.3°(hero2 11.0°)
+- ⛔ 머리 정점 중 팔 무게 >0.5 **12.3%(2,594)** — hero2 리그 0.4%(66). 자는 hero2 수를 그대로 되낸다(54.6% · 0.4%)
+- 0 크레딧 고치기(`fix_hair_weights.py`)를 셋 다 그려 봄(`docs/handoff/img/hero/unity_g3_weights.png` · `unity_g3_near_tight.png` · cheer·wave·idle·walk 앞·옆·뒤·3/4):
+  - 전부 떼기: 머리는 곧으나 어깨·든 팔에 **바늘**(늘어난 삼각형)
+  - 팔 뼈 거리로 서서히 0.08~0.20(hero2 몸짓 무게와 같은 값): 바늘 없음 · 그러나 팔 무게 >0.5 가 **7.6%** 남아 cheer 에서 앞 가닥이 팔 쪽으로 들린다(hero2 몸짓 무게는 0.3%)
+  - 0.04~0.12 로 좁히기: 3.5% · **바늘이 돌아온다**
+  - 까닭: 이 몸은 팔이 몸에 붙어(0.245) 뒷머리 끝이 아래팔에 얹혀 있다 — 팔 뼈 곁 머리는 떼면 찢기고 두면 딸려 간다
+- ⇒ **판정: 0 크레딧 도구로 안 고쳐진다 ⇒ 박사님 «Meshy 가 잘 안 되면 Tripo 로»(10-10) — Tripo 판으로 간다.** Tripo 는 머리–팔 2% 안 정점이 0 이라 hero2 처럼 리그만으로 깨끗할 것이다(리그 뒤 같은 자로 다시 잰다)
+- 붙일 것(총괄 · Meshy 계정): Tripo facez 판에 rig(키 1.4 · 5) + 동작 13(같은 번호 · 39) = 44 / 잔액 56
+- 받으면: `python tools/char/build_hero_unity.py <rig.glb> <clips 폴더> assets/v2/char/hero_unity.glb` — 머리 무게(--near) · 머리·티 색(hero2 값) · 클립 15 를 게임 이름으로(crouch ← repot · inspect ← a281) · 쓰는 구간·몸짓 구간을 extras 와 곁 .json 에 · 관문 «머리 팔 무게 >0.5 ≤ 0.5%»
+- Meshy 클립 15 는 몸을 벗겼다(5.2MB → 47~376KB · 뼈+트랙만) — Tripo 가 막히면 되돌아올 판으로 둔다
