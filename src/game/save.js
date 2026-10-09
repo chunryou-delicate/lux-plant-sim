@@ -420,6 +420,8 @@ function packCutting(c, i) {
       `${path}.leafGrade`).map((g, k) => (g == null ? null : needStr(g, `${path}.leafGrade[${k}]`))),
     leafDays: needInt(c.leafDays ?? 0, `${path}.leafDays`, { min: 0 }),
     grewLeaves: needInt(c.grewLeaves ?? 0, `${path}.grewLeaves`, { min: 0 }),
+    /* ★ 2026-10-09 — 다시 자르기로 떼어 낸 잎 수(propagation §새 잎 굴림 열쇠). 옛 세이브는 0 — 그 그루의 다음 잎부터 열쇠가 이어진다 */
+    leafCutAway: needInt(c.leafCutAway ?? 0, `${path}.leafCutAway`, { min: 0 }),
     /* ★★ 2026-08-17 — **빛이 정한 무늬 소질** (propagation.js §③).
        `varieLightBand` 가 `null` 이면 **아직 안 정해졌다**는 뜻이고, 정해지면
        'dark'|'mid'|'bright' 가 적힌다. ⚠ 이 칸을 안 적으면 저장 한 번에 「이미 정해진 것」이

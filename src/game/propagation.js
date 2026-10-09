@@ -1369,6 +1369,8 @@ export function takeCutting(S, opt = {}) {
        growth 가 다개체 리팩터에서 그 표를 읽어 적용한다(docs/handoff/core-to-growth.md). */
   if (momCut) {
     const at = Number(String(node.nodeId).split('#')[1]);
+    /* ★ 2026-10-09 — 떼어 낸 잎 수를 센다(§새 잎 굴림 열쇠). 안 세면 다음 새 잎이 떼어 낸 잎과 같은 열쇠로 굴려져 결과가 늘 같다 */
+    momCut.leafCutAway = (momCut.leafCutAway || 0) + Math.max(0, (momCut.leafVarie || []).length - at);
     momCut.leafVarie = (momCut.leafVarie || []).slice(0, at);   // 그 마디 위가 통째로 떨어져 나갔다
     /* ★ 등급 배열도 **같은 자리에서** 자른다. 길이가 갈리면 남은 잎의 등급이 한 칸씩 밀린다 */
     momCut.leafGrade = (momCut.leafGrade || []).slice(0, at);
@@ -2024,7 +2026,10 @@ export function stepCuttings(S, opt = {}) {
           c.leafDays -= CUTTING_LEAF_DAYS;
           /* 새 잎의 무늬 — **물려받은 소질**이 여기서 쓰인다. 잎마다 따로, 한 번만 굴린다
              (growth 의 `varieRoll` 과 같은 사고 — 한 번 정하면 안 바뀐다). */
-          const idx = (c.leafVarie || []).length;
+          /* ⚠⚠ 2026-10-09 — 열쇠는 «지금 잎 장수»가 아니라 «이 그루가 단 잎의 차례»다(떼어 낸 수를 더한다).
+               예전엔 다시 자르기로 새 잎을 떼면 장수가 되돌아가 다음 새 잎이 **같은 열쇠**로 굴려졌다 — 키운 그루가 «늘 무늬»이거나
+               «영영 민무늬»(갈래 판 씨앗 4: 무늬율 0.9 인데 일곱 잎 다 민무늬 · 500만 620일)로 갈렸다. 안 자른 삽수는 열쇠가 그대로다 */
+          const idx = (c.leafVarie || []).length + (c.leafCutAway || 0);
           const seed = (S.sim && S.sim.seed) || 0;
           const roll = cuttingHash(seed, `${c.id}L${idx}`, 4);
           const varie = roll < youngVarieChanceOf(c.varieChance || 0);   /* ★ D40 — 어린 그루 배율(§youngVarieChanceOf) */
