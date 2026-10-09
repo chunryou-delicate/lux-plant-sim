@@ -1128,11 +1128,48 @@ export function doneIdsOf(S) {
      index       정의 순서(0부터)
      speaks      이 줄이 대사를 갖나 (2026-08-16 밤부터 **열여섯 줄 전부 true**)
    ══════════════════════════════════════════════════════════════════════ */
-export function questView(S, snapshot) {
+/* ══ ★★ 2026-10-09 [plan] D50(총괄 · 값 0) — **칩은 «기다림» 줄을 건너뛰고 지금 할 수 있는 줄을 보인다** ══════════
+   까닭: D48 뒤 원룸 칩의 절반을 ③ 흙에 옮기기가 쥐었다(갈래 판 37판 · 4270일) — 그 대부분이 «혹이 나기를»·«뿌리낸 무늬 삽수 0» 같은
+     사람 손으로 할 것이 없는 날이다. 같은 칩이 몇 달 그대로 서 있는 것이 원룸의 지루함이다.
+   ★ «기다림» 판정은 여기 없다 — [core] nudge_wait.js §nudgeWaiting 하나다(같은 뜻을 두 곳에 두지 않는다). 이 파일은 아무것도 import 하지
+     않으므로 부르는 쪽이 넘긴다:  questView(S, snap, { isWaiting: id => nudgeWaiting(S, id) })
+     또는 «무엇을» 기다리나까지:   questView(S, snap, { waitReason: id => nudgeWaitReason(S, id) })   ← 열쇠는 아래 QUEST_WAIT_WHAT
+   ★ 낸다: 줄마다 `waiting`(열린 줄만) · `waitWhat`(「기다리는 중 — {waitWhat}」의 뒷말) · 보기 `chip` · `waitingIds`.
+     `chip` = 정의 순서에서 «기다리지 않는» 첫 열린 줄. 열린 줄이 다 기다림이면 첫 열린 줄을 `waiting: true` 로(화면은 그때 «기다리는 중 — …»).
+     ⚠ `current`·`next` 는 그대로다(할 일 창 머리 · 기존 검사 · 다른 부름이 안 흔들리게). 칩만 `chip` 을 쓴다.
+     옵션이 없으면 `chip` = `current` · 기다림 없음 — 옛 부름은 예전 그대로다.
+   후보: ㉠ 다 기다림이면 칩을 숨김 · ㉡ 첫 줄을 «기다리는 중 — …»으로(택함 — 할 것이 없다는 것도 알려 줄 말이다) · ㉢ 예전 할 일 글 그대로 */
+export const QUEST_WAIT_WHAT = Object.freeze({
+  leaf:          '새 잎이 나기를',
+  cropGrowing:   '시루가 익기를',
+  cropReady:     '익은 시루를 거둔 뒤에',
+  seedComing:    '씨앗이 오기를',
+  cutRooting:    '꽂은 삽수가 뿌리내리기를',
+  cutClosed:     '자를 마디가 나기를',
+  noRootedVarie: '뿌리낸 무늬 삽수가 생기기를',
+  node:          '무늬 삽수에 혹이 나기를',
+  noVarieSource: '무늬 잎이 나기를',
+  recutNode:     '키운 그루에 무늬 마디가 나기를',
+  grow:          '식물이 자라기를'
+});
+/* 참/거짓만 받았을 때(isWaiting) 쓰는 열쇠 — nudge_wait 에서 까닭이 하나뿐인 줄만. 까닭이 둘 이상인 줄(order_seed · first_cut ·
+   oneroom_settle_cutting)은 `grow` — 정확한 말은 [core] 가 waitReason 을 낼 때 선다 */
+const WAIT_ONE_REASON = Object.freeze({
+  leaf_two: 'leaf', leaf_three: 'leaf', first_harvest: 'cropGrowing', oneroom_root_bright: 'cutRooting',
+  varie_bright: 'noVarieSource', oneroom_recut: 'recutNode'
+});
+
+export function questView(S, snapshot, opt = {}) {
   const s = snapOf(snapshot);
   const doneIds = doneIdsOf(S);
   const ctx = { doneIds, S };
   const open = [], all = [];
+  /* ★ D50 — 열린 줄의 기다림 열쇠(없으면 null = 할 수 있다 · 판정이 던지면 «할 수 있다» 쪽 — nudge_wait 의 안전한 쪽과 같다) */
+  const waitKeyOf = id => {
+    if (opt && typeof opt.waitReason === 'function') { try { const k = opt.waitReason(id); return k ? String(k) : null; } catch { return null; } }
+    if (opt && typeof opt.isWaiting === 'function') { try { return opt.isWaiting(id) ? (WAIT_ONE_REASON[id] || 'grow') : null; } catch { return null; } }
+    return null;
+  };
   QUESTS.forEach((q, i) => {
     const isDone = doneIds.includes(q.id);
     /* ★ 2026-10-07 — 다른 방의 안 끝낸 줄은 «안 열린다»(§questRoomOk) — 목록에는 «잠김»으로 남는다(셈이 안 어긋나게).
@@ -1151,6 +1188,11 @@ export function questView(S, snapshot) {
                reward: q.reward || null,
                stage: stageOfQuest(q), index: i, speaks: q.speaks !== false, roomOk,
                state: isDone ? 'done' : isOpen ? 'open' : 'locked' });
+    /* ★ D50 — 열린 줄만 기다림을 본다 */
+    const w = isOpen ? waitKeyOf(q.id) : null;
+    const it = all[all.length - 1];
+    it.waiting = !!w;
+    it.waitWhat = w ? (QUEST_WAIT_WHAT[w] || QUEST_WAIT_WHAT.grow) : null;
   });
   /* ★ 「지금 할 일」은 **하나만** 보여 준다. 목록을 내면 심부름 목록이 된다.
      고르는 자는 정의 순서다 — 그 순서가 곧 배우는 순서라서. */
@@ -1185,8 +1227,12 @@ export function questView(S, snapshot) {
     .filter(id => id !== nextId && Number.isFinite(openedOn[id]) && today - openedOn[id] <= 1 && today >= openedOn[id])
     .sort((x, y) => openedOn[y] - openedOn[x])
     .map(id => ({ ...all.find(a => a.id === id), openedOn: openedOn[id] }));
+  /* ★ D50 — 칩: 기다리지 않는 첫 열린 줄 · 다 기다림이면 첫 열린 줄(waiting: true) */
+  const waitingIds = open.filter(id => (all.find(a => a.id === id) || {}).waiting);
+  const chipId = open.find(id => !waitingIds.includes(id)) || open[0] || null;
+  const chip = chipId ? all.find(a => a.id === chipId) : null;
   return { schema: QUEST_SCHEMA, done: doneIds, open, next, all,
-           current: next, upcoming, counts, stage, chain, fresh };
+           current: next, upcoming, counts, stage, chain, fresh, chip, waitingIds };
 }
 
 /* 하루(또는 한 동작) 뒤에 판을 다시 본다. **사건을 낸다 — 보상은 안 준다.**
