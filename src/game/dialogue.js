@@ -1603,8 +1603,10 @@ export const SCRIPTS = {
   statusOneroomNoVarie: [
     { who: 'moni', face: 'worry', text: '여긴 무늬를 늘릴 게 없어. 무늬는 새로 키운 그루에서 아주 가끔 나.' }
   ],
+  /* ★ 2026-10-09 [plan] D41 — 둘째 줄: 들고 온 무늬 삽수를 이사 직후 다 팔면 원룸에서 늘릴 게 없다([core] 갈래 판 안내대로 9/10) */
   statusOneroomCutSill: [
-    { who: 'moni', face: 'teach', text: '무늬 삽수는 창턱에 둬. 등 밑이면 더 빨라.' }
+    { who: 'moni', face: 'teach', text: '무늬 삽수는 창턱에 둬. 등 밑이면 더 빨라.' },
+    { who: 'moni', face: 'teach', text: '하나는 팔지 말고 키우자. 거기서 또 자를 수 있어.' }
   ],
   /* ★ 2026-10-08 [plan] 갈래 지도 9 — 등을 «단 날» 그 밑에 몬스테라·삽수가 하나도 없을 때([core] dc13269d `lamp_under_empty`).
      ⚠ 「아무것도 없어」 = 식물이 없다는 뜻(가구는 셈 밖). 칸 이름은 화면(로그)이 말한다. 등마다 날 수 있어 되풀이된다.

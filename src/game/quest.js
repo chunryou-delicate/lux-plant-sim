@@ -870,10 +870,13 @@ const ONEROOM_QUESTS = Object.freeze([
     todo: () => '무늬 마디를 잘라 뿌리내리세요',   /* 28자 상한(test_quest ⑷) — 밝기는 why 가 말한다 */
     after: 'oneroom_unpack',
     opens: (s, ctx) => yes(s.movedOut) && !!(ctx && ctx.doneIds.includes('oneroom_unpack')),
-    /* ★ «이사 뒤에» 뿌리낸 것만 — 반지하에서 뿌리낸 삽수를 들고 오면 열리자마자 끝나 아무것도 안 가르친다 */
-    done:  s => yes(s.movedOut) && Number.isFinite(s.movedInOnDay) &&
-                arr(s.cuttings).some(c => c && c.varieFromCut && c.varieLightBand != null &&
-                                          Number.isFinite(c.rootedOnDay) && c.rootedOnDay >= s.movedInOnDay)
+    /* ★★ 2026-10-09 [plan] D41 뒤 — **살아 있는 무늬 삽수가 뿌리를 냈으면(언제든 · 반지하에서 들고 온 것 포함) 끝난다.**
+       있던 조건 «이사 뒤에 뿌리낸 것만»은 «들고 와서 열리자마자 끝나면 아무것도 안 가르친다»였는데, [core] 갈래 판(259ff3cc 뒤)에서
+       안내대로 판 9/10 이 여기서 막혔다 — 원룸 모주는 새 무늬를 거의 안 내고(한 달 0.01장), 들고 온 무늬 삽수는 이 조건에 안 걸렸다.
+       ⇒ 들고 왔으면 이 단계는 «이미 한 것»이다. «원룸에서 새로 자르기»는 이제 ⑥ oneroom_recut(키운 그루에서 다시 자른다)이 가르친다.
+       후보: ㉠ 그대로(9/10 막힘) · ㉡ 들고 온 것도 침(택함) · ㉢ 이 줄을 빼고 ③ 부터 */
+    done:  s => yes(s.movedOut) &&
+                arr(s.cuttings).some(c => c && c.varieFromCut && c.varieLightBand != null && c.status !== 'dead')
   }),
   Object.freeze({
     id: 'oneroom_settle_cutting',
