@@ -778,8 +778,10 @@ export function buildHouse(GRAIN, roomDefIn, winPresets, doorPresets={}, finishe
     if(pt.door && pt.door.frame!==false){
       const dw=pt.door.w??0.95, dh=pt.door.h??Math.min(2.05, CH-0.35), da=pt.door.at??0, ft=0.07;
       const cas=frameMaterial(pt.door.color||'#f4efe4', 'satin');
-      const put=(du,dv,cu,cv)=> g.add( pt.axis==='x' ? box(WT*0.75,dv,du, cas, pt.at, cv, cu)
-                                                     : box(du,dv,WT*0.75, cas, cu, cv, pt.at) );
+      /* isCasing: 칸막이 문틀 — 밑동을 안 만든다(10-10 · 낮춘 칸막이 끝에 문틀 밑동이 검은 점으로 남았다 · 문 구멍은 비어 있으면 된다) */
+      const put=(du,dv,cu,cv)=> { const m = pt.axis==='x' ? box(WT*0.75,dv,du, cas, pt.at, cv, cu)
+                                                         : box(du,dv,WT*0.75, cas, cu, cv, pt.at);
+                                  m.userData.isCasing = true; g.add(m); };
       put(ft, dh, da-dw/2+ft/2, dh/2);
       put(ft, dh, da+dw/2-ft/2, dh/2);
       put(dw, ft, da, dh-ft/2);
@@ -1325,7 +1327,7 @@ function buildWallStubs(shells, lowH = LOW_H){
       for(const c of o.children) walk(c);
     };
     const visit = o=>{
-      if(!o.isMesh || !o.geometry || o.userData.isStub) return;
+      if(!o.isMesh || !o.geometry || o.userData.isStub || o.userData.isCasing) return;   // 칸막이 문틀은 밑동 없음
       const pr = o.geometry.parameters;
       if(!pr || pr.width===undefined) return;              // BoxGeometry 만
       const p = o.position;
