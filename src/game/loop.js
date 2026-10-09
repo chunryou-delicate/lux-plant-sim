@@ -69,6 +69,7 @@ import { headroomCheck, PLANT_POT_D_REF } from './headroom.js';
 import { rehomeCuttings, stepCuttings, cuttableNow, cutBlockedReason } from './propagation.js';
 import { stepShop, stepMarket } from './shop.js';
 import { stepSpecies } from './species.js';   /* ★ 2026-10-09 D45 — 새 두 종의 하루(§stepSpeciesOfTurn) */
+import { stepShopJob } from './job_shop.js';   /* ★ 2026-10-10 D59 — 식물 가게 하루(주문 · 기한) */
 /* ★ 2026-10-08 [plan] 지도 13 — turn.cropNow(콩 씨앗 재고 · 빈 시루)를 짓는 데 쓴다(§attachEvents) */
 import { stockOf as shopStockOf } from './shop.js';
 import { cropPotList as cropPotListNow } from './first_play.js';
@@ -756,6 +757,8 @@ function attachEvents(S, turn, fpBefore) {
   if (turn.cuttings && !turn.cuttings.error) push(turn.cuttings.events);
   /* ★ 2026-10-09 D45 — 새 두 종 사건(pp_* · al_*) · 대사는 plan dialogue EVENT_SCRIPT */
   if (turn.species && !turn.species.error) push(turn.species.events);
+  /* ★ 2026-10-10 D59 — 가게 사건(shop_open · order_new · order_expired · …) · 대사는 plan dialogue(이름 그대로) */
+  if (turn.jobShop && !turn.jobShop.error) push(turn.jobShop.events);
   const t = turn.tutorial;
   if (t && !t.error) { push(t.events); push(t.storyEvents); }
   turn.events = out;
@@ -1193,6 +1196,13 @@ function nextDayBody(S, io) {
      ★ 위 첫 플레이 되감기(catch)는 이 줄 **위에서** 끝난다 — 되감긴 턴은 삽수도 안 돈다. */
   const cuttings = stepCuttingsOfTurn(S, io, report);
   const species = stepSpeciesOfTurn(S, io, report);   /* ★ D45 — 삽수 바로 뒤 · 두 반환구가 같은 하루를 받는다 */
+  /* ★ 2026-10-10 D59 — 가게(진로 shop · 산 집)의 하루: 기한 지난 주문 · 새 주문 — 손님 이름이 드는 줄은 기록 줄(plan) */
+  let jobShop = null;
+  try {
+    jobShop = stepShopJob(S, { cutOpen: (S.cutOpenToday && S.cutOpenToday.n) || 0 });
+    for (const e of (jobShop && jobShop.events) || []) if (e && e.ko && (e.id === 'order_new' || e.id === 'order_expired' || e.id === 'shop_open'))
+      pushLog(S, (e.id === 'order_new' ? '📋 ' : e.id === 'order_expired' ? '⌛ ' : '🪧 ') + e.ko + (e.want ? ` — ${e.want}` : ''));
+  } catch (e) { pushLog(S, '⚠ 가게 하루 실패 — ' + e.message); jobShop = { error: e.message, events: [] }; }
 
   /* 몬스테라가 아직 도착하지 않았으면 콩나물만 진행하고 끝낸다.
      ★ 2026-08-04 — 도착은 이제 **턴 안에서 안 일어난다**(harvestCrop 이 준다). 그래서 이 경로에
@@ -1222,7 +1232,7 @@ function nextDayBody(S, io) {
       cropHarvest: beansproutHarvestStatus(S.firstPlay),
       cropWater: beansproutWaterStatus(S.firstPlay, S.day),
       cuttings, shop, market,
-      species, alDormantNow: !!(species && species.alDormantNow)
+      species, alDormantNow: !!(species && species.alDormantNow), jobShop
     };
     /* ★이 경로도 튜토리얼을 돌려야 한다 (2026-08-03).
        몬스테라가 오기 전(그리고 도착하는 그 날)은 여기서 일찍 반환된다 —
@@ -1326,7 +1336,7 @@ function nextDayBody(S, io) {
     cropHarvest: beansproutHarvestStatus(S.firstPlay),
     cropWater: beansproutWaterStatus(S.firstPlay, S.day),
     cuttings, shop, market,
-    species, alDormantNow: !!(species && species.alDormantNow)
+    species, alDormantNow: !!(species && species.alDormantNow), jobShop
   };
   /* ★ 2026-10-08 — 둘째 잎 기다림 «상태 줄»의 칸([plan] plan-leafwait ③). 실패 판정(위) «뒤»라 무른 턴은 안 센다.
      ⚠ 이 경로(몬스테라가 온 뒤)에만 있다 — 앞 반환구(earlyTurn)는 몬스테라 전이라 칸이 없다(= 모른다 · 줄이 안 뜬다). */

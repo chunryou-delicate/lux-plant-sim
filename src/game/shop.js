@@ -497,6 +497,15 @@ export function furnitureQuoteOf(presetId, opt = {}) {
 
 /* 판 돈을 지갑에 넣는다 — 그루·삽수·채소와 **같은 문**(`credit`)으로 들어온다.
    ⚠ 무엇이 얼마인지는 여기서 안 정한다. `furnitureQuoteOf` 가 낸 값을 받는다. */
+/* ★ 2026-10-10 D59 — 가게 주문을 맞춰 받은 값(값은 job_shop §candidatesFor — 시세 × 웃돈 · 여기는 «통»만 · 갈래 'order') */
+export function creditShopOrder(S, won, opt = {}) {
+  const v = Math.round(won);
+  if (!Number.isFinite(v) || v < 0) throw new Error(`[가게] 받은 값이 올바르지 않습니다: ${won}`);
+  const r = credit(S, v, 'order');
+  if (typeof opt.log === 'function') opt.log(`💰 ${opt.ko || '주문'} — ${v.toLocaleString()}원`);
+  return r;
+}
+
 /* ★ 2026-10-09 D45 — 새 두 종을 판 값. 값은 species §speciesPriceOf 가 내고 여기는 «통»만(갈래 'species') */
 export function creditSpeciesSale(S, won, opt = {}) {
   const v = Math.round(won);
@@ -817,6 +826,8 @@ export const SALE_KINDS = Object.freeze([
   'furniture',
   /* ★ 2026-10-09 D45 — 새 두 종(PP · AL) 그루·윗부분(§creditSpeciesSale) */
   'species',
+  /* ★ 2026-10-10 D59 — 가게 주문 납품(§creditShopOrder) */
+  'order',
   /* ⏸ 곳간 채소 — **아직 아무도 안 쓴다.** 지금은 잉여와 함께 `crop` 으로 들어온다.
      가르려면 `state.sellPantryCrop` 이 `creditCropSurplus(S, won, { kind: 'cropPantry' })`
      로 불러야 하는데 `state.js` 가 이번 창의 쓰기 영역 밖이다 — 받는 쪽만 미리 뚫어 둔다.
@@ -865,7 +876,7 @@ export function earnedByOf(S) {
 export function saleLedgerOf(S) {
   const by = { ...earnedByOf(S) };
   const shop = shopOf(S);
-  const plantWon = by.pot + by.cutting + (by.species || 0);   /* D45 — 새 두 종도 «식물» 몫 */
+  const plantWon = by.pot + by.cutting + (by.species || 0) + (by.order || 0);   /* D45 새 두 종 · D59 가게 주문도 «식물» 몫 */
   const cropWon = by.crop + by.cropPantry;
   const totalWon = SALE_KINDS.reduce((n, k) => n + by[k], 0);
   return {

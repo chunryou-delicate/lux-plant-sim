@@ -112,5 +112,20 @@ T('F 스냅샷 · G 세이브', () => {
   assert.strictEqual(none.movedHome, false); assert.strictEqual(none.job, null); assert.strictEqual(none.shopDone, null);
 });
 
+{
+  const TU = await import('../src/game/tutorial.js');
+  const { TUT_RULES } = await import('./lib/byeot_harness.mjs');
+  T('H 산 집 살림 — 월세 0 · 하루 지출 · 월세 사건 없음', () => {
+    const ts = TU.createTutorialState({ enabled: true, rules: TUT_RULES }); ts.cashWon = 1e9; ts.movedOut = true;
+    const before = TU.dailyCashOutWon(ts);
+    ts.homeOwned = true;
+    assert.strictEqual(TU.rentWonOf(ts), 0);
+    const per = TUT_RULES.rentPeriodDays || 30;
+    assert.strictEqual(TU.dailyCashOutWon(ts), Math.max(0, Math.round(TUT_RULES.oneroomDailySpendWon - TUT_RULES.oneroomRentWon / per)));
+    console.log('      원룸 하루', before, '→ 산 집 하루', TU.dailyCashOutWon(ts));
+    let rentEv = 0; for (let d = 0; d < 90; d++) { const r = TU.tutorialDay(ts, { firstPlayDone: true }); rentEv += ((r && r.events) || []).filter(e => e.id === 'rent').length; }
+    assert.strictEqual(rentEv, 0, '산 집에서 월세가 나갔다');
+  });
+}
 console.log(bad ? `job_shop: FAIL (${bad})` : 'job_shop: PASS');
 process.exit(bad ? 1 : 0);

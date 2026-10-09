@@ -59,6 +59,8 @@ import { STORY_SCHEMA, createStoryState } from './oneroom.js';
 import { packLeafWatch } from './leaf_wait.js';
 /* ★ 2026-10-09 D45 — 새 두 종(PP · AL). 그루 상태는 growth 규약(species/1) 그대로 싣는다(§species.packSpecies) */
 import { packSpecies, unpackSpecies } from './species.js';
+/* ★ 2026-10-10 D59 — 진로 «식물 가게» 판(주문·단골) */
+import { packJobShop, unpackJobShop } from './job_shop.js';
 
 /* 저장 봉투의 스키마. **모르는 값이면 읽지 않는다**(fail-loud). */
 export const SAVE_SCHEMA = 'game_save/1';
@@ -906,7 +908,9 @@ function packTutorial(ts) {
     reliefTaken: !!ts.reliefTaken,
     starved: !!ts.starved,
     brokeSinceDay: ts.brokeSinceDay == null ? null : needInt(ts.brokeSinceDay, 'tutorial.brokeSinceDay', { min: 0 }),
-    neighborOrderDay: ts.neighborOrderDay == null ? null : needInt(ts.neighborOrderDay, 'tutorial.neighborOrderDay', { min: 0 })
+    neighborOrderDay: ts.neighborOrderDay == null ? null : needInt(ts.neighborOrderDay, 'tutorial.neighborOrderDay', { min: 0 }),
+    /* ★ 2026-10-10 D59 — 산 집(월세 0) */
+    homeOwned: !!ts.homeOwned
   };
 }
 
@@ -969,6 +973,10 @@ function packStory(story) {
     /* ★ 2026-10-09 — 이사 순간 손에 든 것(oneroom §branchAtMove · 반지하 떠나기 그림). 옛 세이브는 null(그림은 바탕만) */
     branchAtMove: story.branchAtMove == null ? null
       : (['keep', 'cuttings', 'sold'].includes(story.branchAtMove) ? story.branchAtMove : null),
+    /* ★ 2026-10-10 D59 — 진로 · 산 집으로 옮긴 날. 옛 세이브는 null */
+    job: story.job && typeof story.job === 'object' && story.job.id
+      ? { id: needStr(story.job.id, 'story.job.id'), since: story.job.since == null ? null : needInt(story.job.since, 'story.job.since', { min: 0 }) } : null,
+    homeOnDay: optDay(story.homeOnDay, 'story.homeOnDay'),
     ending: {
       reachedOnDay: optDay(end.reachedOnDay, 'story.ending.reachedOnDay'),
       doneOnDay: optDay(end.doneOnDay, 'story.ending.doneOnDay'),
@@ -1265,6 +1273,7 @@ export function serialize(S, opt = {}) {
       /* ★ 2026-10-09 D45 — 새 두 종. 칸이 없는 판(아직 원룸 전 · 옛 세이브)은 null — 열 때 비어 있는 채로 선다.
            ⚠ newState 칸이 아니라 KNOWN_STATE_KEYS 에 안 든다(종 칸은 처음 쓸 때 선다 · species §speciesOf) */
       species: S.species ? packSpecies(S.species) : null,
+      jobShop: S.jobShop ? packJobShop(S.jobShop) : null,   /* D59 */
       firstPlay: packFirstPlay(S.firstPlay),
       story: packStory(S.story),
       tutorial: packTutorial(S.tutorial),
@@ -1732,6 +1741,7 @@ export function deserialize(raw, opt = {}) {
   /* 삽수 — 쓸 때와 **같은 검증**을 읽을 때도 태운다(화분과 같은 규칙) */
   /* ★ 2026-10-09 D45 — 새 두 종(없으면 null · 처음 쓸 때 선다). 자리 좌표는 화분과 같은 정본 모양으로(makeAt) */
   S.species = st.species ? unpackSpecies(st.species) : null;
+  S.jobShop = st.jobShop ? unpackJobShop(st.jobShop) : null;   /* D59 */
   if (S.species) for (const q of S.species.pots) q.at = q.at ? makeAt(q.at) : null;
   S.cuttings = needArr(st.cuttings || [], 'state.cuttings').map((c, i) => {
     const q = packCutting(c, i);
@@ -1833,6 +1843,7 @@ export function deserialize(raw, opt = {}) {
     ts.crop = { ...ts.crop, ...t.crop };
     ts.movedOut = t.movedOut; ts.bankrupt = t.bankrupt;
     ts.reliefTaken = t.reliefTaken; ts.starved = t.starved; ts.brokeSinceDay = t.brokeSinceDay; ts.neighborOrderDay = t.neighborOrderDay;
+    ts.homeOwned = !!t.homeOwned;   /* D59 */
     /* ★★ 옛 세이브에는 `varieSale` 칸이 **아예 없다** — 위 §무늬 삽수 판매 이관.
        ⚠ 「없다」와 「0건이다」는 다른 말이다. 그래서 `t.varieSale`(없으면 0으로 채워진다)이
          아니라 **날 세이브에 그 칸이 있었는지**를 본다. 뭉개면 실제로 0건인 판까지

@@ -81,6 +81,8 @@ export function createStoryState() {
     /* ★ 2026-10-09 (char 원화 · plan 갈래 지도) — 이사 순간 손에 든 것: 'keep'(모주 화분이 있다) · 'cuttings'(모주 없음 · 무늬 삽수 있음) ·
          'sold'(둘 다 없음). 반지하 떠나기 그림 셋을 고른다(대사는 이 값을 안 읽는다). null = 아직 반지하 · 옛 세이브 */
     branchAtMove: null,
+    /* ★ 2026-10-10 D59 — 진로({ id:'shop', since } · job_shop §startShopJob)와 산 집으로 옮긴 날(§moveIntoOwnedHome). null = 아직 */
+    job: null, homeOnDay: null,
     /* ④ 는 ending.js 가 쓴다. 상태의 모양만 여기서 만든다 —
        state.newState 가 부르는 팩토리가 하나여야 세이브 규약도 하나가 된다. */
     ending: { reachedOnDay: null, doneOnDay: null, dippedOnDay: null }   /* dippedOnDay: 2026-10-08 닿았다가 다시 모자라진 날(ending §stepEnding) */
@@ -324,6 +326,48 @@ export function moveIntoOneroom(S, io = {}, opt = {}) {
     events: [...(r.events || []),
              { id: 'moved_in_oneroom', ko: '원룸에 짐을 풀었습니다', roomId, fromRoom }]
   };
+}
+
+/* ══ ★★ 2026-10-10 D59 — **산 집(투룸)으로 옮긴다**(진로 «식물 가게» · plan-shop-spec §1·§4) ══════════
+   moveIntoOneroom 의 «자리» 손 그대로(가방 · clearPlacements · 조립 · 회수) — 돈은 안 낸다(집은 엔딩에서 샀다).
+   ts.homeOwned → 월세 0 · 하루 지출은 관리비 몫(tutorial §rentWonOf · §dailyCashOutWon) · story.homeOnDay
+   ⚠ 엔딩을 낸 판만(ending.doneOnDay) · 두 번 못 옮긴다 · 가구는 들고 간다(opt.carry — 부르는 쪽이 준다 · 원룸 이사와 같은 규약) */
+export function moveIntoOwnedHome(S, io = {}, opt = {}) {
+  const ts = S && S.tutorial;
+  const story = storyOf(S);
+  if (!(story.ending && Number.isInteger(story.ending.doneOnDay))) {
+    const e = new Error('[산 집] 아직 집을 안 샀습니다'); e.tutorialInput = true; throw e;
+  }
+  if (ts && ts.homeOwned) { const e = new Error('[산 집] 이미 옮겼습니다'); e.tutorialInput = true; throw e; }
+  const fromRoom = S.home.room;
+  const roomId = opt.roomId || 'tworoom';
+  S.home.room = roomId;
+  story.homeOnDay = S.day;
+  if (ts) ts.homeOwned = true;
+  const carried = [];
+  for (const row of (Array.isArray(opt.carry) ? opt.carry : [])) {
+    try { carried.push(carryFurniture(S, row).uid); }
+    catch (e) { pushLog(S, '⚠ 이사 — 못 담았습니다: ' + (e && e.message)); }
+  }
+  const cleared = clearPlacements(S);
+  const rehomed = [];
+  let roomBuilt = false;
+  const light = io.light;
+  if (light && typeof light.build === 'function') {
+    light.build(roomId);
+    if (typeof light.clearCache === 'function') light.clearCache();
+    roomBuilt = true;
+  }
+  if (light && light.room) {
+    const room = light.room;
+    const log = (m) => { rehomed.push(m); pushLog(S, '🔧 이사 — ' + m); };
+    if (pot0(S)) rehomePot(S, room.slots || [], log, room);
+    rehomeCuttings(S, room, log);
+    reseatCrops(S, room, log);
+  }
+  pushLog(S, `📦 ${fromRoom} → ${roomId} · 우리 집에 짐을 풀었습니다`);
+  return { fromRoom, roomId, roomChanged: true, roomBuilt, carried, clearedPlacements: cleared, rehomed,
+           homeOnDay: story.homeOnDay, events: [{ id: 'moved_in_home', ko: '우리 집에 짐을 풀었습니다', roomId, fromRoom }] };
 }
 
 /* 놓여 있던 것들의 자리를 비운다. **죽이지 않는다** — 자리를 잃는 것과 사라지는 것은 다르다

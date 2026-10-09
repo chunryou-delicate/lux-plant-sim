@@ -16,6 +16,7 @@ import { cuttingsOf } from '../../src/game/propagation.js';
 import { storyOf, tutorialRulesFromHomes } from '../../src/game/oneroom.js';
 import { PROLOGUE_VARIE_LEAVES } from '../../src/game/growth_adapter.js';
 import { speciesSnapshot } from '../../src/game/species.js';   /* D45 — 새 두 종 곁줄 칸 */
+import { jobShopSnapshot } from '../../src/game/job_shop.js';   /* D59 — 가게 칸 */
 
 export const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 export const readJSON = p => JSON.parse(fs.readFileSync(path.join(ROOT, p), 'utf8'));
@@ -185,7 +186,8 @@ export function questSnapshotOf(S, io, opt = {}) {
     cashWon: Number.isFinite(ts.cashWon) ? ts.cashWon : null,
     targetWon: Number.isFinite(opt.targetWon) ? opt.targetWon : null,
     /* ★ 2026-10-09 D45 — game.html §questSnapshotNow 와 같게(새 두 종 곁줄 칸) */
-    ...speciesSnapshot(S)
+    ...speciesSnapshot(S),
+    ...jobShopSnapshot(S)   /* D59 */
   };
 }
 export { pot0 };

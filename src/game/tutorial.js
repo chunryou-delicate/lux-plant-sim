@@ -588,6 +588,8 @@ export function foodSavedWon(ts, mealsUsed) {
    ⚠ `oneroomRentWon` 이 `null`(미확정)이면 반지하 월세로 그대로 돈다. 숫자를 지어내지 않는다. */
 export function rentWonOf(ts) {
   const R = (ts && ts.rules) || TUTORIAL_RULES;
+  /* ★ 2026-10-10 D59 — 산 집(투룸 · 진로 가게)은 월세가 없다(관리비만 · job_shop §SHOP_JOB.ownedHome) */
+  if (ts && ts.homeOwned) return 0;
   if (ts && ts.movedOut && R.oneroomRentWon != null) return R.oneroomRentWon;
   return R.rentWon;
 }
@@ -604,6 +606,11 @@ export function dailyCashOutWon(ts) {
   const period = R.rentPeriodDays || 30;
   /* ★ 2026-10-09 D8 — 이사 뒤엔 원룸 하루 지출 합(있으면)에서 원룸 월세 몫을 뺀다(관리비가 방마다 다르다) */
   const spend = (ts && ts.movedOut && Number.isFinite(R.oneroomDailySpendWon)) ? R.oneroomDailySpendWon : R.dailySpendWon;
+  /* ★ 2026-10-10 D59 — 산 집: 원룸 하루 지출 합에서 원룸 월세 몫만 뺀다(관리비 8만 · 밥값은 원룸과 같다 — D59 산 집 관리비 8만 = 원룸 관리비 8만) */
+  if (ts && ts.homeOwned) {
+    const oneRent = Number.isFinite(R.oneroomRentWon) ? R.oneroomRentWon : R.rentWon;
+    return Math.max(0, Math.round(spend - oneRent / period));
+  }
   return Math.max(0, Math.round(spend - rentWonOf(ts) / period));
 }
 
@@ -698,7 +705,9 @@ export function tutorialDay(ts, opt = {}) {
   /* 월세 — 첫 달은 유예다(집주인 사정·보증금 상계라는 서사 장치).
      ★ 액수는 **사는 방**이 정한다(rentWonOf) — 반지하와 원룸이 같을 이유가 없다. */
   let rentPaid = 0;
-  if (ts.day >= ts.rent.nextDueDay) {
+  /* ★ 2026-10-10 D59 — 산 집은 월세 날이 없다(사건도 안 낸다) — 달은 그대로 넘긴다 */
+  if (ts.homeOwned && ts.day >= ts.rent.nextDueDay) ts.rent.nextDueDay += R.rentPeriodDays || 30;
+  if (!ts.homeOwned && ts.day >= ts.rent.nextDueDay) {
     rentPaid = rentWonOf(ts);
     ts.cashWon -= rentPaid;
     ts.rent.paidCount += 1;
