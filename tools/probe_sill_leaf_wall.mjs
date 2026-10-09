@@ -36,7 +36,11 @@ if (ROOM === 'oneroom') {
   await skipTalk();
   await page.eval(`(()=>{ const S=window.__S(); const ts=S.tutorial; ts.cashWon = ts.rules.moveOutCostWon + 100000;
     ts.varieLeaf = { ever:true, count:1, firstOnDay:S.day }; window.__redraw(); })()`, false); await sleep(600);
-  await page.eval(`(()=>{ const b=document.getElementById('moveOut'); if(b){ b.disabled=false; b.click(); } })()`, false); await sleep(6000); await skipTalk();
+  await page.eval(`(()=>{ const b=document.getElementById('moveOut'); if(b){ b.disabled=false; b.click(); } })()`, false); await sleep(1500); await skipTalk();
+  /* ★ core D27(996324ab) — 첫 누름은 «되묻기 창»만 연다. 창이 떴으면 [이사한다](#moveGo), 몬 대사가 먼저였으면 한 번 더 누른다 */
+  await page.eval(`(()=>{ if (window.__S().tutorial.movedOut) return; const p=document.getElementById('movePanel');
+    if (p && p.classList.contains('on')) document.getElementById('moveGo').click(); else document.getElementById('moveOut').click(); })()`, false);
+  await sleep(6000); await skipTalk();
   await page.eval(`(()=>{ try{ if(window.__save) window.__save(); }catch(e){} })()`, false); await sleep(1500);
   await page.goto(`${BASE}/game.html${Q}`); await page.waitFor('!!window.__rv', 600000, 500); await sleep(4500); await skipTalk();
 }
