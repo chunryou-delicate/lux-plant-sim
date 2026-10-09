@@ -1301,11 +1301,17 @@ function setHangerFaint(g, faint){
   });
 }
 
+/* ★ 2026-10-10 [house] — 숨김 재질(visible:false)은 건드리지 않는다. 어차피 안 그려지는 재질이고, v2 옷 층이
+   문·창·가구 «대리» 메시에 **한 벌을 나눠 끼운다**(furniture_dress hidden). 여기서 앞벽 문 대리의 그 한 벌을 끄면
+   가구 대리까지 colorWrite 가 꺼져, 받침 광선(supportY · surfaceAt)이 진열대를 «그림자 전용»으로 건너뛰고
+   그루가 진열대 속(높이 0)에 섰다(가게 30일 빈 진열대 · core b5d1885d). 다시 지을 때만 났다 — 옷이 곧바로 붙고 그 뒤에 벽을 처음 깎아서.
+   자: tools/test_cutaway_shared_mat.mjs */
 function setShadowOnly(root, on){
   root.traverse(o=>{
     if(!o.isMesh || !o.material || o.userData.isStub) return;
     o.castShadow = o.userData.shadowRole !== SHADOW_ROLE.CLEAR;
-    const set=mm=>{ if(mm.colorWrite===!on && mm.depthWrite===!on) return;
+    const set=mm=>{ if(mm.visible===false) return;
+                    if(mm.colorWrite===!on && mm.depthWrite===!on) return;
                     mm.colorWrite = !on; mm.depthWrite = !on; mm.needsUpdate = true; };
     Array.isArray(o.material) ? o.material.forEach(set) : set(o.material);
   });

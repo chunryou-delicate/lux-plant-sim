@@ -234,6 +234,11 @@ export function createFurnitureDress(opt = {}) {
   let held = false;
 
   const hidden = () => hideMat || (hideMat = new T.MeshBasicMaterial({ visible: false }));
+  /* ★ 2026-10-10 — 벽(문·창) 대리는 숨김 재질을 따로 쓴다. 벽 컷어웨이(house.js setShadowOnly)는 벽 아래 재질의 colorWrite 를
+       끄고 켠다 — 가구 대리와 한 벌이면 가구 대리까지 꺼져 받침 광선이 진열대를 건너뛰었다(core b5d1885d · tools/test_cutaway_shared_mat.mjs).
+       컷어웨이도 이제 숨김 재질은 안 건드리지만(house.js), 벽 쪽 재질은 벽 쪽 것끼리만 나눈다 */
+  let shellHideMat = null;
+  const hiddenShell = () => shellHideMat || (shellHideMat = new T.MeshBasicMaterial({ visible: false }));
 
   /* ── GLB 받기 ── */
   function load(file) {
@@ -866,9 +871,18 @@ export function createFurnitureDress(opt = {}) {
 
   function undress(built) {
     if (!built || !built.furniture) return;
-    for (const g of [...built.furniture.children, ...doorsOf(built)]) {
+    const doors = new Set(doorsOf(built));
+    for (const g of [...built.furniture.children, ...doors]) {
       for (const c of [...g.children]) if (c.userData && c.userData.v2dress) g.remove(c);
-      g.traverse(o => { if (o.isMesh && origMat.has(o)) { o.material = origMat.get(o); origMat.delete(o); } });
+      /* 문 대리: 옷을 입은 동안 컷어웨이는 숨김 재질만 봐서(안 건드림) 원래 재질은 옛 상태 그대로다 — 되돌릴 때 그 벽의 지금 상태를 따른다
+         (안 그러면 빛 분포를 켜는 순간 깎인 앞벽 자리에 문 상자가 선다) */
+      let stub = null;
+      if (doors.has(g)) for (let p = g.parent; p; p = p.parent) if (p.userData && p.userData._stub != null) { stub = !!p.userData._stub; break; }
+      g.traverse(o => { if (o.isMesh && origMat.has(o)) {
+        o.material = origMat.get(o); origMat.delete(o);
+        if (stub != null) for (const mm of (Array.isArray(o.material) ? o.material : [o.material]))
+          if (mm && mm.visible !== false && mm.colorWrite !== !stub) { mm.colorWrite = !stub; mm.depthWrite = !stub; mm.needsUpdate = true; }
+      } });
     }
   }
   /* 가구 위 소품 — 못 받은 파일 목록을 돌려준다 */
@@ -938,6 +952,10 @@ export function createFurnitureDress(opt = {}) {
     const { box } = yawBox(t, spec.yaw);
     const sx = sz.w / (box.max.x - box.min.x), sy = sz.h / (box.max.y - box.min.y), szz = (sz.d || 0.14) / (box.max.z - box.min.z);
     const glb = t.scene.clone(true); glb.rotation.y = deg(spec.yaw);
+    /* 재질은 문마다 복제한다 — clone(true) 는 틀의 재질을 나눠 쓴다. 아래에서 그 벽의 컷어웨이 상태(colorWrite)를 재질에 쓰니,
+       같은 GLB 를 쓰는 다른 벽의 문(투룸 앞문 · 아파트 방문들)까지 같이 숨거나 뜬다. 텍스처는 나눠 쓴다(clone 은 map 을 안 복제) */
+    const mc = new Map(), own = m => { if (!mc.has(m)) mc.set(m, m.clone()); return mc.get(m); };
+    glb.traverse(o => { if (o.isMesh && o.material) o.material = Array.isArray(o.material) ? o.material.map(own) : own(o.material); });
     const mid = new T.Group(); mid.add(glb);
     const c = box.getCenter(new T.Vector3());
     mid.position.set(-c.x, -c.y, -c.z);                  // 문 그룹 원점 = 문 한가운데(buildDoor 는 가운데 기준)
@@ -950,7 +968,7 @@ export function createFurnitureDress(opt = {}) {
     dress.traverse(o => { if (!o.isMesh || !o.material) return;
       for (const mm of (Array.isArray(o.material) ? o.material : [o.material])) { mm.colorWrite = !stub; mm.depthWrite = !stub; mm.needsUpdate = true; } });
     door.add(dress);
-    const hm = hidden();
+    const hm = hiddenShell();
     for (const m of proxies) { if (!origMat.has(m)) origMat.set(m, m.material); m.material = hm; }
     const pid = door.userData.doorPreset || door.userData.winPreset;
     report.set((door.userData.isDoor ? 'door:' : 'win:') + pid, { preset: pid, file: spec.file, yaw: spec.yaw, door: true, stub,
