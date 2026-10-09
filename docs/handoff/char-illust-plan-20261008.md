@@ -419,3 +419,55 @@ Higgsfield 끊김 · Kling 크레딧 0 ⇒ Meshy `meshy_image_to_image`. 참조 
  }
 ]
 ```
+
+### G — 다시 넷(r2) 판정
+| 그림 | 판정 | 까닭 |
+|---|---|---|
+| ev_oneroom_firstday_r2 | ✔ → `ev_oneroom_firstday.png` | 거의 빈 방 · 박스 둘 · 창빛 · 몬이 화분+잎 |
+| ev_moveout_keep_r2 | ✔ → `ev_moveout_keep.png` | 눈높이 계단 · 큰 몬스테라 · 박스 · 몬이 |
+| ev_first_varie_sanban_r2 | ⛔ r3 | 점은 잎에만 ✓ · 그런데 몬이가 몬스테라 화분 흙에 작은 얼굴로만 — 제 화분·잎 둘이 없다(LOOK «몸» 절) |
+| ev_monstera_arrive_v2_r2 | ⛔ r3 | 잎 하나 ✓ · 그런데 선반·벽에 다른 화분 여럿 — 반지하엔 시루와 이 몬스테라뿐(침대·책상은 반지하 기본 가구라 괜찮다) |
+
+r3 둘(9×2 = 18):
+```json
+[
+ {
+  "name": "ev_first_varie_sanban",
+  "tool": "meshy_image_to_image",
+  "args": {
+   "ai_model": "nano-banana-pro",
+   "reference_file_paths": [
+    "C:/Users/pc/Desktop/빛식물/lux-plant-sim/assets/characters/portraits/portrait_jachwi_neutral.png",
+    "C:/Users/pc/Desktop/빛식물/lux-plant-sim/assets/characters/portraits/portrait_moni_cheer.png",
+    "C:/Users/pc/Desktop/빛식물/lux-plant-sim/assets/gen/v2_room/style_keyframe_a.png"
+   ],
+   "generate_multi_view": false,
+   "prompt": "Close-up: she holds a potted monstera; its new leaf is speckled with tiny WHITE dots (only that leaf). Moni sits in its OWN separate pot beside her, plain light green, with its own two leaves, cheering. She (image 1): LONG straight dark chocolate-brown hair (clearly brown, NOT black), blunt bangs, brown eyes, blush, cream tee, grey joggers. Moni (image 2): tiny light-green sprout INSIDE a terracotta pot with two holed monstera leaves; keep pot and leaves. Line and warm wash of image 3, NOT its isometric cutaway: full-frame eye-level scene, no border."
+  },
+  "save": {
+   "tool": "meshy_download_model",
+   "task_type": "image-to-image",
+   "save_to": "C:/Users/pc/Desktop/빛식물/lux-plant-sim/assets/illust/ev_first_varie_sanban_r3.png"
+  }
+ },
+ {
+  "name": "ev_monstera_arrive_v2",
+  "tool": "meshy_image_to_image",
+  "args": {
+   "ai_model": "nano-banana-pro",
+   "reference_file_paths": [
+    "C:/Users/pc/Desktop/빛식물/lux-plant-sim/assets/characters/portraits/portrait_jachwi_neutral.png",
+    "C:/Users/pc/Desktop/빛식물/lux-plant-sim/assets/characters/portraits/portrait_moni_neutral.png",
+    "C:/Users/pc/Desktop/빛식물/lux-plant-sim/assets/gen/v2_room/style_keyframe_a.png"
+   ],
+   "generate_multi_view": false,
+   "prompt": "Dim half-basement room, high small window, a bed and a desk; NO other plants anywhere. She kneels by an open backpack, surprised: inside is a small pot with ONE monstera stem and exactly ONE leaf. Moni beside her. She (image 1): LONG straight dark chocolate-brown hair (clearly brown, NOT black), blunt bangs, brown eyes, blush, cream tee, grey joggers. Moni (image 2): tiny light-green sprout INSIDE a terracotta pot with two holed monstera leaves; keep pot and leaves. Line and warm wash of image 3, NOT its isometric cutaway: full-frame eye-level scene, no border."
+  },
+  "save": {
+   "tool": "meshy_download_model",
+   "task_type": "image-to-image",
+   "save_to": "C:/Users/pc/Desktop/빛식물/lux-plant-sim/assets/illust/ev_monstera_arrive_v2_r3.png"
+  }
+ }
+]
+```
