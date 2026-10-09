@@ -99,6 +99,20 @@ const STYLES = {
       rings: [[0.62, 0.78, 0.045], [-0.2, 1.2, 0.035]],
     },
   },
+  /* ★ 2026-10-10 [house] 원룸 — 벽지(크림 · 무늬 없음 r2_4)·마루(참나무 k4)만. 천장·창틀은 손대지 않는다(ceil·frameHex 없음).
+       평균 색은 방 마감표(room_finishes w_cream #f4efe4 · f_oak #c9974f)에 맞춰 구웠다 — tint 1 이면 코드 판과 같은 밝기.
+       얼룩·긁힘은 없다(grime 0 · 새로 이사 온 방). 그림을 받기 전에는 그 마감 색 한 빛(plain) — 꽃무늬가 한 번도 안 보인다.
+       마루: 그림 한 장에 판이 12줄(자기상관 86px/1024) → 판 폭 10cm 면 1.2m */
+  oneroom: {
+    wall:  { tileM: 1.0, rough: 0.92, grime: 0, baseH: 0, tint: [1, 1, 1], plain: '#f4efe4',
+             img: 'textures/room/oneroom_wallpaper.webp', imgTileM: 1.2 },
+    floor: { tileM: 1.2, rough: 0.75, grime: 0, tint: [1, 1, 1], plain: '#c9974f',
+             img: 'textures/room/oneroom_oak.webp', imgTileM: 1.2 },
+    capHex: '#e6dfd2',          // 잘린 단면 — 벽 마감보다 조금 짙은 크림
+    woodHex: '#c9974f',
+    stains: [],
+    floorMarks: {},
+  },
 };
 
 /* ============================================================
@@ -271,28 +285,41 @@ function makeConcrete() {
   return canvasTex(c, true);
 }
 
-let _tex = null;
+/* ★ 2026-10-10 — 방마다 겉감 묶음을 따로 둔다(원룸이 들어와 반지하 벽지를 나눠 쓸 수 없다) · 잡음만 같이 쓴다 */
+let _noise = null;
+const _texBy = new Map();                    // STYLES[방] → { noise, wall, lino, conc }
 function shared(st) {
-  if (_tex) return _tex;
-  _tex = { noise: makeNoise(), wall: makeWallpaper(st.wall.tileM), lino: makeLino(), conc: makeConcrete() };
-  loadImg('wall', _tex.wall, st.wall.img, st.wall.imgTileM);
-  loadImg('floor', _tex.lino, st.floor.img, st.floor.imgTileM);
-  return _tex;
+  if (_texBy.has(st)) return _texBy.get(st);
+  if (!_noise) _noise = makeNoise();
+  /* plain: 그림을 받기 전 바탕 — 원룸은 꽃무늬 절차 벽지를 한 번도 보이면 안 된다(그림이 오면 바뀐다) */
+  const t = { noise: _noise,
+    wall: st.wall.plain ? makePlain(st.wall.plain) : makeWallpaper(st.wall.tileM),
+    lino: st.floor.plain ? makePlain(st.floor.plain) : makeLino(),
+    conc: st.ceil ? makeConcrete() : null };
+  _texBy.set(st, t);
+  loadImg(t.wall, st.wall.img, st.wall.imgTileM);
+  loadImg(t.lino, st.floor.img, st.floor.imgTileM);
+  return t;
+}
+function makePlain(hex) {
+  const c = canvas(4, 4), x = c.getContext('2d');
+  x.fillStyle = hex; x.fillRect(0, 0, 4, 4);
+  return canvasTex(c, true);
 }
 
 /* ---- 그림 겉감 (2026-10-10 · [house]) — 절차 그림을 먼저 입히고, 그림이 오면 **같은 텍스처**의 image 를 바꾼다.
-     tileM 은 그 그림 크기로 바꿔야 해서 v2Kind(Vector4)를 슬롯마다 모아 두고 .y 를 고친다. 못 받으면 절차 그림 그대로 */
+     tileM 은 그 그림 크기로 바꿔야 해서 v2Kind(Vector4)를 텍스처마다 모아 두고 .y 를 고친다. 못 받으면 절차 그림 그대로 */
 const ASSET = p => new URL('../../assets/v2/' + p, import.meta.url).href;
-const _kinds = { wall: [], floor: [] };      // 입힌 재질들의 v2Kind 값(Vector4)
-const _imgTile = { wall: null, floor: null };
+const _kinds = new Map();                    // 텍스처 → 입힌 재질들의 v2Kind 값(Vector4)
+const _imgTile = new Map();                  // 텍스처 → 받은 그림의 tileM
 let _onChange = null;
-function loadImg(slot, tex, file, tileM) {
-  if (!file || !(tileM > 0) || typeof Image === 'undefined') return;
+function loadImg(tex, file, tileM) {
+  if (!tex || !file || !(tileM > 0) || typeof Image === 'undefined') return;
   const img = new Image();
   img.onload = () => {
     tex.image = img; tex.needsUpdate = true;
-    _imgTile[slot] = tileM;
-    for (const v of _kinds[slot]) v.y = tileM;
+    _imgTile.set(tex, tileM);
+    for (const v of (_kinds.get(tex) || [])) v.y = tileM;
     if (_onChange) _onChange();
   };
   img.onerror = () => console.warn('[v2 겉감] 그림을 못 받았습니다 — 절차 그림 그대로:', file);
@@ -587,7 +614,7 @@ export function applyRoomMaterials(built, roomId, opt = {}) {
   if (typeof opt.onChange === 'function') _onChange = opt.onChange;     // 그림이 늦게 오면 다시 그려 달라고(room_view needsRender)
   const t0 = (typeof performance !== 'undefined') ? performance.now() : 0;
   const T = shared(st);
-  const kindOf = (slot, v) => { _kinds[slot].push(v); if (_kinds[slot].length > 64) _kinds[slot].splice(0, _kinds[slot].length - 64); return v; };
+  const kindOf = (tex, v) => { const a = _kinds.get(tex) || []; a.push(v); if (a.length > 64) a.splice(0, a.length - 64); _kinds.set(tex, a); return v; };
   const size = built.size || { w: 5, d: 4, h: 2.3 };
   let WT = 0.2;
   const cap = linColor(st.capHex), wood = linColor(st.woodHex);
@@ -622,7 +649,7 @@ export function applyRoomMaterials(built, roomId, opt = {}) {
     const uni = {
       v2Grime: { value: wallGrime(key, rect, uAx, stains) },
       v2Noise: { value: T.noise },
-      v2Kind: { value: kindOf('wall', new THREE.Vector4(1, _imgTile.wall || st.wall.tileM, st.wall.baseH, st.wall.grime)) },
+      v2Kind: { value: kindOf(T.wall, new THREE.Vector4(1, _imgTile.get(T.wall) || st.wall.tileM, st.wall.baseH, st.wall.grime)) },
       v2In: { value: new THREE.Vector3(-out[0], -out[1], -out[2]) },
       v2UAx: { value: new THREE.Vector3(uAx[0], 0, uAx[2]) },
       v2Rect: { value: new THREE.Vector4(...rect) },
@@ -645,7 +672,7 @@ export function applyRoomMaterials(built, roomId, opt = {}) {
     const uni = {
       v2Grime: { value: grimeTex || T.noise },
       v2Noise: { value: T.noise },
-      v2Kind: { value: kind === 2 ? kindOf('floor', new THREE.Vector4(kind, _imgTile.floor || tileM, 0, grime)) : new THREE.Vector4(kind, tileM, 0, grime) },
+      v2Kind: { value: kind === 2 ? kindOf(map, new THREE.Vector4(kind, _imgTile.get(map) || tileM, 0, grime)) : new THREE.Vector4(kind, tileM, 0, grime) },
       v2In: { value: new THREE.Vector3(0, kind === 2 ? 1 : -1, 0) },
       v2UAx: { value: new THREE.Vector3(1, 0, 0) },
       v2Rect: { value: new THREE.Vector4(-size.w / 2, size.w / 2, -size.d / 2, size.d / 2) },
@@ -665,10 +692,10 @@ export function applyRoomMaterials(built, roomId, opt = {}) {
   const fKey = `${roomId}:floor:${size.w}x${size.d}`;
   slab(built.shells.floor, 2, T.lino, st.floor.tileM, st.floor.rough,
        floorGrime(fKey, [-size.w / 2, size.w / 2, -size.d / 2, size.d / 2], st.floorMarks || {}), st.floor.grime, st.floor.tint);
-  slab(built.shells.ceiling, 3, T.conc, st.ceil.tileM, st.ceil.rough, null, 0, st.ceil.tint);
+  if (st.ceil) slab(built.shells.ceiling, 3, T.conc, st.ceil.tileM, st.ceil.rough, null, 0, st.ceil.tint);   // ceil 이 없는 방(원룸)은 천장을 안 칠한다
 
   /* 창틀 — 흰 페인트. 캐시된 공용 재질은 방끼리 나눠 쓰므로 복제본으로 바꿔 낀다 */
-  for (const k in (built.trims || {})) {
+  if (st.frameHex) for (const k in (built.trims || {})) {
     built.trims[k].traverse(o => {
       if (!o.isMesh || !o.material || Array.isArray(o.material)) return;
       const m = o.material;
@@ -684,4 +711,4 @@ export function applyRoomMaterials(built, roomId, opt = {}) {
 }
 
 /* 재는 도구용 — 캐시된 텍스처를 들여다본다(그림을 바꾸지 않는다) */
-export function _v2matDebug() { return { tex: _tex, grime: _grime, frames: _frames }; }
+export function _v2matDebug() { return { tex: _texBy, grime: _grime, frames: _frames }; }
