@@ -286,6 +286,15 @@ function actClipFrom(src, kind, targetY) {
   /* 10-09 (char): hero2 는 물주기·거두기 제 클립이 있다 — 옛 자취녀와 같은 Meshy 동작(285 문 열기 · 278 서서 따기 · 277 쭈그려 따기)이라
      room_view ACT_SPEC 이 옛 몸에 쓰던 구간을 그대로 쓴다(0.30초부터 1.5 · 1.8 · 2.1초 · 무릎 0.45m 밑은 쭈그려 따기). */
   if (kind === 'water' && C.water) return cut(C.water, 0.30, Math.min(C.water.duration, 1.80), 'water:act');
+  /* 10-09 (char): 새 손짓 — 가위로 자르기 · 흙 속 구근 찾기는 «거두기» 클립을 다시 쓴다(서서 따기 · 무릎 0.45m 밑은 쭈그려 따기).
+     둘 다 손을 그 높이로 뻗어 집는 몸짓이라 새로 안 뽑았다. 심기·가구 놓기는 아래 쭈그리기(손 높이 표)로 간다. */
+  if (kind === 'cut' || kind === 'dig') kind = 'harvest';
+  /* 살피기 — Meshy «굽혀 살펴보기»(281)를 받으면 inspect 클립으로 · 없으면 듣기(잔잔히 서서 보는 몸)로 */
+  if (kind === 'inspect') {
+    const w = src.emoteWin && src.emoteWin.inspect;
+    if (C.inspect) return cut(C.inspect, w ? w[0] : 0, w ? Math.min(C.inspect.duration, w[1]) : C.inspect.duration, 'inspect:act');
+    if (C.listen) return breakClipFrom(src, 'listen');
+  }
   if (kind === 'harvest' && C.harvest) {
     const low = Number.isFinite(targetY) && targetY < 0.45 && C.harvest_low;
     return low ? cut(C.harvest_low, 0.30, Math.min(C.harvest_low.duration, 2.40), 'harvest_low:act')

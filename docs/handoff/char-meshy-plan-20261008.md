@@ -163,3 +163,29 @@ house 의 `docs/handoff/meshy-plan-20261008.md` 에 붙일 char 절이다(그 �
 | 1-4 클립 6 | idle `01a11e88-5a75-7530-96d6-9c728cebc514` · sit `…-5c47-7749-ad26-97b098fbcde4` · sleep `…-5e18-773d-aaf6-17a138fa78da` · crouch `…-5fc1-737d-be9c-fab8ea744480` · cheer `…-614b-767c-b2ed-1e7eef80e163` · wave `…-62e4-7593-a1af-26fa17e1e000` | `_src/hero2/anim_<이름>_01a11e88-….glb` · 몸 벗김 `_src/hero2/clips/<이름>.glb` | ✔ G4 — 팔 벌림 idle 15.7° · crouch 24.2° · walk 11.0°(팔 옮기기 필요 없음) · cheer 는 9.03초 «응원»이라 팔이 가장 높은 3.4~6.4초만 씀 |
 | ② 클립 7 | water `01a11e88-646e-70c7-b8e6-076b1e7adfa4`(open_door_1) · harvest `…-6614-7346-805a-e75c206fd70f` · harvest_low `…-67ba-7231-a689-4612f4ad1989` · pickup `…-6954-7594-b01c-8f0a66730a44` · scratch `…-6b0e-7422-8a3d-0f7a2e26d420` · nod `…-6cd4-72ca-9aa1-f416998d7cf0` · listen `…-6e73-75b6-ba40-bca657b3932a` | 같은 꼴 | ✔ G4 — water 가 «문 열기»로 온 것은 맞다: 옛 게임도 물주기에 문 열기(285)의 0.30~1.80초(팔을 앞으로 뻗는 마디)를 썼다(room_view ACT_SPEC.water) ⇒ 다시 안 돌림 |
 | ③ 옷 5 | | | G5 |
+
+---
+
+# ★ 주문표 ④ — 새 손짓 넷 (2026-10-09 · 총괄 «살아 보이게 · 많아야 15»)
+
+새 손짓: 핑크프린세스 가위로 자르기 · 알로카시아 흙 속 구근 찾기·심기 · 가구 놓기 · 화분대 위 그루 살피기.
+⇒ 이미 있는 hero2 클립(같은 Meshy 동작 · 옛 라이브러리 번호)에 대 보고 «정말 없는 것»만 새로.
+
+| 손짓 | 클립 | 크레딧 | 까닭 |
+|---|---|---|---|
+| 가위로 자르기 | **재사용** harvest(278 서서 따기) 0.30~2.10초 · 무릎 0.45m 밑은 harvest_low 0.30~2.40 | 0 | 손을 잎 높이로 뻗어 집는 몸 — 자르는 손과 같다 |
+| 구근 찾기 | **재사용** harvest_low(277 쭈그려 따기) — 높은 화분이면 harvest | 0 | 낮은 데 손을 넣어 집는다 |
+| 구근 심기 | **재사용** crouch(274) — 심기(sow)와 같은 손 높이 표 | 0 | 이미 심기가 이 길 |
+| 가구 놓기 | **재사용** crouch(274) — 바닥까지 굽히기 | 0 | 원본(9.57초)을 재 보니 0~2.5초 «굽혀 바닥에 손» · 5~7초 «옆 허리 높이에 놓기». 가구는 바닥이라 앞 구간 |
+| 살피기 | ★ **새로** «굽혀 살펴보기» 281 (옛 라이브러리 «식물 상태 관찰») | **3** | 맞는 클립이 없다 — 서서 화분 쪽으로 몸을 숙여 보는 몸 |
+
+**합 3.** (옛 라이브러리 번호는 manifest 의 18개뿐이라 그 밖은 번호를 지어내지 않는다)
+
+```json
+{ "tool": "meshy_animate", "args": { "rig_task_id": "01a11e7a-322a-748f-9f2e-b72090b5f5b3", "action_id": 281 },
+  "save": { "tool": "meshy_download_model", "task_type": "animation", "format": "glb",
+            "save_to": "C:/Users/pc/Desktop/빛식물/lux-plant-sim/assets/v2/char/_src/hero2/anim_inspect_<task_id>.glb" } }
+```
+받은 뒤(char · 0): 몸 벗기기(clips/inspect.glb) → hero2 에 «inspect» 로 붙이기 → «가장 숙인 3초»를 extras.emoteWin.inspect 로 → 다이어트(쓰는 구간만 · 관문) → 그려 보기.
+
+게임 쪽(v2_hero · 이미 열어 둠): `actClip('cut'|'dig')` → 거두기 클립 · `'inspect'` → inspect(받기 전엔 듣기 구간) · 심기·놓기는 쭈그리기. 거는 자리(어떤 손짓에 어떤 이름)는 core.
