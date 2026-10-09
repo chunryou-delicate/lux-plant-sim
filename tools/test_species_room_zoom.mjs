@@ -45,7 +45,9 @@ const SETUP = `(async () => {
     pp8: { species: 'pink_princess', plant: R.newPlant('pink_princess', { seed: 77, pinks: [0.35, 0.5, 0.3, 0.7, 0.62, 0.0, 0.45, 0.95] }), lightAz: 0.4 },
     al:  { species: 'alocasia_frydek', plant: (() => { const a = R.newPlant('alocasia_frydek', { seed: 21, origin: 'shop' }); for (let d = 0; d < 160; d++) R.stepDay(a, { dli: 6, season: 'summer' }); return a; })(), lightAz: 2.0 },
     alv: { species: 'alocasia_frydek', plant: (() => { const a = R.newPlant('alocasia_frydek', { seed: 77, origin: 'from_varie_mother', motherKind: 'sector' }); for (let d = 0; d < 160; d++) R.stepDay(a, { dli: 6, season: 'summer' }); return a; })(), lightAz: 2.0 },
-    alSleep: { species: 'alocasia_frydek', plant: R.newPlant('alocasia_frydek', { seed: 5, origin: 'shop' }), lightAz: 2.0 }
+    alSleep: { species: 'alocasia_frydek', plant: R.newPlant('alocasia_frydek', { seed: 5, origin: 'shop' }), lightAz: 2.0 },
+    /* ★ 빛 방향을 «안 주는» 판 — core 의 방은 lightAz 를 안 넘긴다(2026-10-09). 확대가 제 LIGHT_AZ 로 메우면 덩굴이 기우는 쪽이 갈린다 */
+    ppNoAz: { species: 'pink_princess', plant: R.newPlant('pink_princess', { seed: 4242, pinks: [0, 0.3, 0.7, 0.95], nodes: 8 }), potD: 0.18 }
   };
   /* 방 — 받는 중이 0 이 될 때까지 다시 짓는다 */
   window.__room = async (k) => { const c = window.__cases[k]; let g = window.__asm.youngPlantOf(c);
@@ -70,7 +72,7 @@ try {
   await page.waitFor('typeof THREE!=="undefined" && typeof buildPlant==="function" && typeof setSpeciesView==="function" && typeof scene!=="undefined" && !!scene', 60000);
   await page.eval(SETUP);
   const near = (a, b) => Math.abs(a - b) < 1e-9;
-  for (const k of ['pp4', 'pp8', 'al', 'alv']) {
+  for (const k of ['pp4', 'pp8', 'al', 'alv', 'ppNoAz']) {
     const room = await page.eval(`window.__room('${k}')`);
     const zoom = await page.eval(`window.__zoom('${k}')`);
     /* ★ 대조 — 씨앗을 하나 바꾼 확대는 «달라야» 한다(자가 늘 같다고만 말하는지 거른다) */

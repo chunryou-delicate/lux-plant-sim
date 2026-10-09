@@ -3998,7 +3998,9 @@ function _drawSpeciesView(){
     const root=new THREE.Group(); root.name='speciesView';
     addPot(root);                                           // 이 창의 그 화분 그대로(§addPot target)
     let g=null;
-    if(D) g=D.draw({ species:o.species, plant:o.plant, rows:o.rows, seed:o.seed, lightAz:(o.lightAz!=null? o.lightAz : LIGHT_AZ) });
+    /* ⚠ lightAz 는 받은 그대로 넘긴다 — 안 받았다고 이 창의 LIGHT_AZ 로 메우면 방(안 넘김 → 씨앗 방위)과 덩굴이 기우는 쪽이 갈린다
+         (2026-10-09 core 가 방을 이을 때 lightAz 를 안 넘겨 드러났다 · test_species_room_zoom «빛 방향 안 줌» 판이 지킨다) */
+    if(D) g=D.draw({ species:o.species, plant:o.plant, rows:o.rows, seed:o.seed, lightAz:o.lightAz });
     let k=1;
     if(g){
       const pb=new THREE.Box3().setFromObject(root), potW=Math.max(pb.max.x-pb.min.x, pb.max.z-pb.min.z);

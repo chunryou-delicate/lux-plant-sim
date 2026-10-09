@@ -240,8 +240,11 @@ userData kind:'youngPlant' · species · leafCount · leafCountWanted · leafRow
         크기: 이 창 화분(약 1 단위)이 potD(기본 0.14m)가 되는 배율 — 그루:화분 비가 방과 같다
         ⚠ 이 창은 엔진이기도 하다 — 새 종을 보는 동안에도 몬스테라는 가려진 채 굴러간다
 방=확대  test_species_room_zoom — PP 4·8 · AL 민무늬·무늬 · 잎마다 어긋남 0 · 대조(씨앗 바꿈)는 어긋남 · AL 잠(잎 0)은 화분만
-         ⚠ 게임 판(test_skin_room_matches_zoom)에는 core 가 PP·AL 화분을 이은 뒤 이 두 종 판을 더한다
-           — core 10-09: 새 종은 S.pots 가 아니라 S.species.pots[]{ id, species, plant(species/1), slotId, … } 에 산다 → 판은 S.species.pots[i].plant 로
+         ✅ 게임 판(test_skin_room_matches_zoom 끝 «새 두 종» 단계 · core da423fb6 뒤): S.species.pots 에 PP·AL·AL 구근을 놓고
+            방(core cutpot spec → youngPlantOf)과 확대(setSpeciesView · core 가 부를 꼴 그대로)의 잎 수 · 무늬 판 · 판 목록(정본) 견줌 ·
+            구근은 둘 다 화분만 · 끄면 몬스테라로. ⚠ 확대를 «게임이» 여는 한 줄은 core 차례 — 그때까지 이 검사가 창구를 직접 부른다
+         ★ 바로잡음(10-09): 확대가 lightAz 를 안 받으면 제 LIGHT_AZ 로 메웠다 → core 의 방은 lightAz 를 안 넘겨 PP 덩굴이 기우는 쪽이
+            갈렸다(잎 밑동 최대 1.37cm · 대조로 잼). 받은 그대로 넘기게 고치고 «빛 방향 안 줌» 판(ppNoAz)을 test_species_room_zoom 에 더함
 사진    docs/handoff/img/species_zoom_pp8.png · species_zoom_alv.png (확대 모드 ?embed=game)
 ```
 
@@ -551,7 +554,7 @@ novice 은 등 0·1·2 모두 bright 100%
 ## ⑤ ⏸ 대기
 
 ```
-새 종 게임 판 방=확대   core 가 화면(cutpot spec species · 확대 setSpeciesView)을 이으면 test_skin_room_matches_zoom 에 PP·AL 판(S.species.pots[i].plant)
+새 종 확대 «게임이 여는» 한 줄   core 차례(setSpeciesView) — 이으면 test_skin_room_matches_zoom 새 두 종 단계를 «게임이 연 확대»를 읽게 바꾼다
 원룸 이사 계절(YD0)     총괄 봇 판(cut1008c)이 정하면 probe_seedplant_oneroom ①· probe_cutting_firstleaf_oneroom ③ · probe_species_oneroom 다시
 원룸 「기준 배치」   박사님 결정. 후보 A~D 의 real 400일 표는 §10.22 에 있다 — 고르시면 그 판이 정본이 된다
 좌표 조도 계약      ✅ 닫힘 (D · 9d99c92). 「바닥에 시루를 둘 수 있게」는 다른 물음 — 박사님 묶음

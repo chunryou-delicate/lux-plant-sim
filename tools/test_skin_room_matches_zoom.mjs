@@ -20,6 +20,8 @@
      ⇒ ★ 이 셋이 오늘(2026-09-07) 이 판에서 여섯 번 데인 그 모양이다:
        **「한 칸이 두 가지를 말하면 안 된다」 · 「빈칸과 조용함이 같아 보이면 안 된다」**
 
+   ★ 2026-10-09 — 끝에 «새 두 종(PP · AL)» 단계를 더했다(게임 판 S.species.pots · core da423fb6). 아래 §새 두 종.
+
    ⚠ 서버가 떠 있어야 한다:  python tools/serve.py 8971
      BYEOT_URL=http://localhost:8971 node tools/test_skin_room_matches_zoom.mjs
    ⛔ 값·밸런스는 한 톨도 안 건드린다. 놓고 · 그리고 · 읽을 뿐이다.
@@ -117,6 +119,64 @@ else {
     console.log(`   ${String(lb).padStart(6)}        ${zk.padEnd(20)}${mk.padEnd(20)}${same ? '✅' : '⚠ 갈렸다'}`);
   }
   console.log(`\n⇒ 갈린 잎 ${fail}/${keys.length}` + (fail ? '' : '   ★ 방과 확대가 «같은 그림»을 그린다'));
+
+  /* ══ ★ 새 두 종(D45 · 2026-10-09 [growth]) — 게임 판 그대로: S.species.pots → 방(core cutpot spec → youngPlantOf) · 확대(setSpeciesView) ══
+     ⚠ 확대를 «게임이» 여는 한 줄(setSpeciesView)은 core 차례다(da423fb6 때 «다음 차례»). 그때까지는 이 검사가 확대 창구를 직접 부른다 —
+       core 가 부르는 꼴({ species, plant, potD } · seed·lightAz 안 줌)을 그대로 따른다. core 가 이으면 «게임이 연 확대»를 읽게 바꾼다.
+     ★ 잎마다 자리·눕힘까지의 견줌은 tools/test_species_room_zoom(같은 그리개 · 그리는 층)이 한다. 여기는 «게임 판이 같은 그루를 두 곳에
+       같은 잎으로 세우나»를 본다 — 잎 수 · 무늬 판 · 판 목록(정본 leafRows) · AL 구근은 둘 다 «화분만».
+     울타리: 방에 «실제로 그려졌나»(drawn · 잎 수 > 0) · 판이 다 온 뒤 견줌 · 확대를 끄면 몬스테라 창구가 돌아오나 */
+  const spBad = (m) => { console.log('⛔ ' + m); fail++; };
+  console.log('\n  ── 새 두 종(게임 판) ──');
+  const spIds = await J(`(async()=>{ const sp=await import('/src/game/species.js'); const S=window.__S(), io=window.__io; const R=sp.speciesRules();
+    const used=new Set((S.pots||[]).map(p=>p.slotId).filter(Boolean));
+    const free=(io.light.room.slots||[]).filter(s=>!used.has(s.slotId) && !/sill/.test(s.slotId));
+    const put=(species, plant)=>{ const q=sp.addSpeciesPot(S, species, { plant, origin:'test' }); const s=free.shift(); sp.setSpeciesAt(S, q.id, { slotId:s.slotId }); return q.id; };
+    const pp=R.newPlant('pink_princess', { seed:4242, pinks:[0,0.3,0.7,0.95], nodes:8 });
+    const al=R.newPlant('alocasia_frydek', { seed:77, origin:'from_varie_mother', motherKind:'sector' }); for (let d=0; d<160; d++) R.stepDay(al, { dli:6, season:'summer' });
+    const corm=R.newPlant('alocasia_frydek', { seed:5, origin:'shop' });
+    const out={ pp:put('pink_princess', pp), al:put('alocasia_frydek', al), corm:put('alocasia_frydek', corm) };
+    try { window.__redraw(); } catch(e) {}
+    return out; })()`, 60000);
+  if (!spIds || spIds.탈) spBad(`새 두 종을 판에 못 세웠다 — ${JSON.stringify(spIds)}`);
+  else {
+    /* 방 — 판이 다 올 때까지(무늬 판이 한 장씩 늦게 온다 · core 가 도착 뒤 다시 짓는다) */
+    let rooms = null;
+    for (let i = 0; i < 60; i++) {
+      rooms = await J(`(()=>{ const ps=window.__rv.plants()||[]; const o={};
+        for (const [k,id] of Object.entries(${JSON.stringify(spIds)})) { const p=ps.find(x=>x.potId===id); o[k]=p ? (p.young||null) : '없음'; } return o; })()`);
+      const ready = Object.values(rooms).every(y => y && y !== '없음' && (y.drawn === false || !y.skinsPending));
+      if (ready) break;
+      if (i % 10 === 9) await page.eval(`(()=>{ try { window.__redraw(); } catch(e) {} })()`, false);
+      await sleep(500);
+    }
+    /* 확대 — core 가 부를 꼴 그대로(seed·lightAz 안 줌) · 받는 중 0 까지 */
+    const zooms = await J(`(async()=>{ const sp=await import('/src/game/species.js'); const S=window.__S(); const R=sp.speciesRules();
+      const w=document.getElementById('growth').contentWindow; const o={};
+      for (const [k,id] of Object.entries(${JSON.stringify(spIds)})) { const q=sp.speciesPotOf(S, id);
+        const call=()=>w.setSpeciesView({ species:q.species, plant:q.plant, potD:0.18 });
+        let r=await call(); for (let i=0; i<60 && r && r.skinsPending; i++) { await new Promise(z=>setTimeout(z,250)); r=await call(); }
+        o[k]={ drawn:r.drawn, leafCount:r.leafCount, want:r.leafCountWanted, varie:(r.varieLeafKeys||[]).slice().sort(),
+               assets:(r.leaves||[]).map(l=>l.asset), rule:(R.leafRows(q.plant)||[]).map(x=>x.asset) }; }
+      const off=await w.setSpeciesView(null);
+      o.__back={ on:off.on, skins:Array.isArray(w.leafSkinUsedAll && w.leafSkinUsedAll()) };
+      return o; })()`, 120000);
+    for (const k of ['pp', 'al']) {
+      const m = rooms[k], z = zooms[k];
+      if (!m || m === '없음' || !m.drawn || !(m.leafCount > 0)) { spBad(`${k}: 방에 «안 그려졌다»(${JSON.stringify(m)}) — 재는 것이 아니다`); continue; }
+      const rv = (m.varieLeafKeys || []).slice().sort();
+      const same = z && z.drawn && z.leafCount === m.leafCount && z.want === m.leafCountWanted && m.leafCount === m.leafCountWanted &&
+                   JSON.stringify(z.varie) === JSON.stringify(rv) && JSON.stringify(z.assets) === JSON.stringify(z.rule);
+      if (!same) spBad(`${k}: 방 잎 ${m.leafCount}/${m.leafCountWanted} · 무늬 ${JSON.stringify(rv)} ≠ 확대 잎 ${z && z.leafCount}/${z && z.want} · 무늬 ${JSON.stringify(z && z.varie)} (판 = 정본 ${z && JSON.stringify(z.assets) === JSON.stringify(z.rule)})`);
+      else console.log(`✅ ${k}: 방 = 확대 — 잎 ${m.leafCount} · 무늬 판 ${rv.length}가지 · 판 목록 = 정본 leafRows`);
+    }
+    { const m = rooms.corm, z = zooms.corm;
+      if (!(m && m !== '없음' && m.drawn === false && z && z.drawn === false)) spBad(`AL 구근(잎 0): 방 ${JSON.stringify(m)} · 확대 ${JSON.stringify(z)} — 둘 다 «화분만»이어야 한다`);
+      else console.log('✅ AL 구근(잎 0) — 방도 확대도 화분만'); }
+    if (!(zooms.__back && zooms.__back.on === false && zooms.__back.skins)) spBad(`확대를 끄면 몬스테라 창구가 돌아와야 한다 — ${JSON.stringify(zooms.__back)}`);
+    else console.log('✅ 확대를 끄면 몬스테라로 돌아온다(leafSkinUsedAll 그대로)');
+  }
+
   console.log('\nskin_room_matches_zoom: ' + (fail ? 'FAIL' : 'PASS'));
   process.exitCode = fail ? 1 : 0;
   await page.close();
