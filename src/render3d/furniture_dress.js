@@ -888,6 +888,7 @@ export function createFurnitureDress(opt = {}) {
   const api = {
     get enabled() { return on; },
     furnReady, preload, dress, props, yieldTo, blobRects, setEnabled,
+    hasDress: preset => !!specOf(preset),   // 이 프리셋에 v2 옷이 있나(색 변형 포함) — 가구점 그림 자(tools/shot_furn_thumbs)가 묻는다
     set: setEnabled,
     hold: setHeld,
     get held() { return held; },

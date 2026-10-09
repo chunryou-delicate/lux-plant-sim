@@ -1,0 +1,533 @@
+{
+ "_what": "가구점 줄 그림([house] tools/shot_furn_thumbs.mjs) · v2=옷 입은 모습 · 아니면 코드 가구",
+ "bed_single": {
+  "file": "assets/v2/thumbs/furn/bed_single.webp",
+  "v2": true
+ },
+ "bed_double": {
+  "file": "assets/v2/thumbs/furn/bed_double.webp",
+  "v2": false
+ },
+ "desk": {
+  "file": "assets/v2/thumbs/furn/desk.webp",
+  "v2": true
+ },
+ "desk_wide": {
+  "file": "assets/v2/thumbs/furn/desk_wide.webp",
+  "v2": false
+ },
+ "chair": {
+  "file": "assets/v2/thumbs/furn/chair.webp",
+  "v2": true
+ },
+ "chair_mint": {
+  "file": "assets/v2/thumbs/furn/chair_mint.webp",
+  "v2": true,
+  "tint": "#c9d6d2",
+  "base": "chair"
+ },
+ "wardrobe": {
+  "file": "assets/v2/thumbs/furn/wardrobe.webp",
+  "v2": true
+ },
+ "dresser": {
+  "file": "assets/v2/thumbs/furn/dresser.webp",
+  "v2": true
+ },
+ "shelf": {
+  "file": "assets/v2/thumbs/furn/shelf.webp",
+  "v2": true
+ },
+ "shelf_low": {
+  "file": "assets/v2/thumbs/furn/shelf_low.webp",
+  "v2": false
+ },
+ "sofa": {
+  "file": "assets/v2/thumbs/furn/sofa.webp",
+  "v2": true
+ },
+ "sofa_blush": {
+  "file": "assets/v2/thumbs/furn/sofa_blush.webp",
+  "v2": true,
+  "tint": "#e6d3d0",
+  "base": "sofa"
+ },
+ "table_round": {
+  "file": "assets/v2/thumbs/furn/table_round.webp",
+  "v2": false
+ },
+ "table": {
+  "file": "assets/v2/thumbs/furn/table.webp",
+  "v2": false
+ },
+ "nightstand": {
+  "file": "assets/v2/thumbs/furn/nightstand.webp",
+  "v2": true
+ },
+ "rug": {
+  "file": "assets/v2/thumbs/furn/rug.webp",
+  "v2": false
+ },
+ "rug_mint": {
+  "file": "assets/v2/thumbs/furn/rug_mint.webp",
+  "v2": false
+ },
+ "lamp_floor": {
+  "file": "assets/v2/thumbs/furn/lamp_floor.webp",
+  "v2": false
+ },
+ "lamp_ceiling": {
+  "file": "assets/v2/thumbs/furn/lamp_ceiling.webp",
+  "v2": false
+ },
+ "fridge": {
+  "file": "assets/v2/thumbs/furn/fridge.webp",
+  "v2": false
+ },
+ "kitchen": {
+  "file": "assets/v2/thumbs/furn/kitchen.webp",
+  "v2": false
+ },
+ "tv": {
+  "file": "assets/v2/thumbs/furn/tv.webp",
+  "v2": false
+ },
+ "shelf_windowsill": {
+  "file": "assets/v2/thumbs/furn/shelf_windowsill.webp",
+  "v2": false
+ },
+ "shelf_sill_pot1": {
+  "file": "assets/v2/thumbs/furn/shelf_sill_pot1.webp",
+  "v2": false
+ },
+ "shelf_sill_pot4": {
+  "file": "assets/v2/thumbs/furn/shelf_sill_pot4.webp",
+  "v2": false
+ },
+ "shelf_wall_1tier": {
+  "file": "assets/v2/thumbs/furn/shelf_wall_1tier.webp",
+  "v2": false
+ },
+ "shelf_stool_1": {
+  "file": "assets/v2/thumbs/furn/shelf_stool_1.webp",
+  "v2": false
+ },
+ "shelf_etagere_3tier": {
+  "file": "assets/v2/thumbs/furn/shelf_etagere_3tier.webp",
+  "v2": false
+ },
+ "shelf_ladder_4tier": {
+  "file": "assets/v2/thumbs/furn/shelf_ladder_4tier.webp",
+  "v2": true
+ },
+ "shelf_cart_3tier": {
+  "file": "assets/v2/thumbs/furn/shelf_cart_3tier.webp",
+  "v2": true
+ },
+ "shelf_growrack_2tier": {
+  "file": "assets/v2/thumbs/furn/shelf_growrack_2tier.webp",
+  "v2": false
+ },
+ "bed_single_maple": {
+  "file": "assets/v2/thumbs/furn/bed_single_maple.webp",
+  "v2": true,
+  "tint": "#e6d6bb",
+  "base": "bed_single"
+ },
+ "bed_single_white": {
+  "file": "assets/v2/thumbs/furn/bed_single_white.webp",
+  "v2": true,
+  "tint": "#f2f0ec",
+  "base": "bed_single"
+ },
+ "bed_single_mint": {
+  "file": "assets/v2/thumbs/furn/bed_single_mint.webp",
+  "v2": true,
+  "tint": "#c9d6d2",
+  "base": "bed_single"
+ },
+ "sofa_sage": {
+  "file": "assets/v2/thumbs/furn/sofa_sage.webp",
+  "v2": true,
+  "tint": "#d3d9c6",
+  "base": "sofa"
+ },
+ "sofa_sky": {
+  "file": "assets/v2/thumbs/furn/sofa_sky.webp",
+  "v2": true,
+  "tint": "#cddbe6",
+  "base": "sofa"
+ },
+ "sofa_charcoal": {
+  "file": "assets/v2/thumbs/furn/sofa_charcoal.webp",
+  "v2": true,
+  "tint": "#5b6067",
+  "base": "sofa"
+ },
+ "chair_butter": {
+  "file": "assets/v2/thumbs/furn/chair_butter.webp",
+  "v2": true,
+  "tint": "#eee0bd",
+  "base": "chair"
+ },
+ "chair_blush": {
+  "file": "assets/v2/thumbs/furn/chair_blush.webp",
+  "v2": true,
+  "tint": "#e6d3d0",
+  "base": "chair"
+ },
+ "chair_charcoal": {
+  "file": "assets/v2/thumbs/furn/chair_charcoal.webp",
+  "v2": true,
+  "tint": "#5b6067",
+  "base": "chair"
+ },
+ "wardrobe_white": {
+  "file": "assets/v2/thumbs/furn/wardrobe_white.webp",
+  "v2": true,
+  "tint": "#f2f0ec",
+  "base": "wardrobe"
+ },
+ "wardrobe_mint": {
+  "file": "assets/v2/thumbs/furn/wardrobe_mint.webp",
+  "v2": true,
+  "tint": "#c9d6d2",
+  "base": "wardrobe"
+ },
+ "shelf_white": {
+  "file": "assets/v2/thumbs/furn/shelf_white.webp",
+  "v2": true,
+  "tint": "#f2f0ec",
+  "base": "shelf"
+ },
+ "shelf_walnut": {
+  "file": "assets/v2/thumbs/furn/shelf_walnut.webp",
+  "v2": true,
+  "tint": "#b08a63",
+  "base": "shelf"
+ },
+ "table_round_white": {
+  "file": "assets/v2/thumbs/furn/table_round_white.webp",
+  "v2": false
+ },
+ "table_round_walnut": {
+  "file": "assets/v2/thumbs/furn/table_round_walnut.webp",
+  "v2": false
+ },
+ "chair_arm": {
+  "file": "assets/v2/thumbs/furn/chair_arm.webp",
+  "v2": false
+ },
+ "chair_arm_blush": {
+  "file": "assets/v2/thumbs/furn/chair_arm_blush.webp",
+  "v2": false
+ },
+ "chair_office": {
+  "file": "assets/v2/thumbs/furn/chair_office.webp",
+  "v2": false
+ },
+ "stool": {
+  "file": "assets/v2/thumbs/furn/stool.webp",
+  "v2": false
+ },
+ "bench": {
+  "file": "assets/v2/thumbs/furn/bench.webp",
+  "v2": false
+ },
+ "bed_bunk": {
+  "file": "assets/v2/thumbs/furn/bed_bunk.webp",
+  "v2": false
+ },
+ "bed_loft": {
+  "file": "assets/v2/thumbs/furn/bed_loft.webp",
+  "v2": false
+ },
+ "mattress": {
+  "file": "assets/v2/thumbs/furn/mattress.webp",
+  "v2": true
+ },
+ "vanity": {
+  "file": "assets/v2/thumbs/furn/vanity.webp",
+  "v2": false
+ },
+ "clothes_rack": {
+  "file": "assets/v2/thumbs/furn/clothes_rack.webp",
+  "v2": true
+ },
+ "coffee_table": {
+  "file": "assets/v2/thumbs/furn/coffee_table.webp",
+  "v2": false
+ },
+ "storage_box": {
+  "file": "assets/v2/thumbs/furn/storage_box.webp",
+  "v2": false
+ },
+ "mirror": {
+  "file": "assets/v2/thumbs/furn/mirror.webp",
+  "v2": false
+ },
+ "desk_lamp": {
+  "file": "assets/v2/thumbs/furn/desk_lamp.webp",
+  "v2": false
+ },
+ "plant_tray_window": {
+  "file": "assets/v2/thumbs/furn/plant_tray_window.webp",
+  "v2": false
+ },
+ "shelf_corner_3tier": {
+  "file": "assets/v2/thumbs/furn/shelf_corner_3tier.webp",
+  "v2": true
+ },
+ "plant_step_3": {
+  "file": "assets/v2/thumbs/furn/plant_step_3.webp",
+  "v2": true
+ },
+ "plant_pedestal": {
+  "file": "assets/v2/thumbs/furn/plant_pedestal.webp",
+  "v2": true
+ },
+ "plant_grid_wall": {
+  "file": "assets/v2/thumbs/furn/plant_grid_wall.webp",
+  "v2": false
+ },
+ "plant_hanger": {
+  "file": "assets/v2/thumbs/furn/plant_hanger.webp",
+  "v2": false
+ },
+ "greenhouse_cabinet": {
+  "file": "assets/v2/thumbs/furn/greenhouse_cabinet.webp",
+  "v2": true
+ },
+ "lamp_pendant": {
+  "file": "assets/v2/thumbs/furn/lamp_pendant.webp",
+  "v2": false
+ },
+ "lamp_pendant_cone": {
+  "file": "assets/v2/thumbs/furn/lamp_pendant_cone.webp",
+  "v2": false
+ },
+ "lamp_wall": {
+  "file": "assets/v2/thumbs/furn/lamp_wall.webp",
+  "v2": false
+ },
+ "string_light": {
+  "file": "assets/v2/thumbs/furn/string_light.webp",
+  "v2": false
+ },
+ "growlight_clip": {
+  "file": "assets/v2/thumbs/furn/growlight_clip.webp",
+  "v2": true
+ },
+ "growlight_bar": {
+  "file": "assets/v2/thumbs/furn/growlight_bar.webp",
+  "v2": false
+ },
+ "growlight_stand": {
+  "file": "assets/v2/thumbs/furn/growlight_stand.webp",
+  "v2": true
+ },
+ "shoe_cabinet": {
+  "file": "assets/v2/thumbs/furn/shoe_cabinet.webp",
+  "v2": false
+ },
+ "tv_stand": {
+  "file": "assets/v2/thumbs/furn/tv_stand.webp",
+  "v2": false
+ },
+ "cube_storage": {
+  "file": "assets/v2/thumbs/furn/cube_storage.webp",
+  "v2": true
+ },
+ "drying_rack": {
+  "file": "assets/v2/thumbs/furn/drying_rack.webp",
+  "v2": true
+ },
+ "heater": {
+  "file": "assets/v2/thumbs/furn/heater.webp",
+  "v2": true
+ },
+ "backpack": {
+  "file": "assets/v2/thumbs/furn/backpack.webp",
+  "v2": true
+ },
+ "room_divider": {
+  "file": "assets/v2/thumbs/furn/room_divider.webp",
+  "v2": false
+ },
+ "laundry_basket": {
+  "file": "assets/v2/thumbs/furn/laundry_basket.webp",
+  "v2": false
+ },
+ "picture_frame": {
+  "file": "assets/v2/thumbs/furn/picture_frame.webp",
+  "v2": false
+ },
+ "wall_clock": {
+  "file": "assets/v2/thumbs/furn/wall_clock.webp",
+  "v2": false
+ },
+ "floor_cushion": {
+  "file": "assets/v2/thumbs/furn/floor_cushion.webp",
+  "v2": false
+ },
+ "low_table": {
+  "file": "assets/v2/thumbs/furn/low_table.webp",
+  "v2": true
+ },
+ "chair_arm_sage": {
+  "file": "assets/v2/thumbs/furn/chair_arm_sage.webp",
+  "v2": false
+ },
+ "chair_arm_sky": {
+  "file": "assets/v2/thumbs/furn/chair_arm_sky.webp",
+  "v2": false
+ },
+ "chair_arm_lilac": {
+  "file": "assets/v2/thumbs/furn/chair_arm_lilac.webp",
+  "v2": false
+ },
+ "nightstand_white": {
+  "file": "assets/v2/thumbs/furn/nightstand_white.webp",
+  "v2": true,
+  "tint": "#f2f0ec",
+  "base": "nightstand"
+ },
+ "nightstand_mint": {
+  "file": "assets/v2/thumbs/furn/nightstand_mint.webp",
+  "v2": true,
+  "tint": "#c9d6d2",
+  "base": "nightstand"
+ },
+ "desk_white": {
+  "file": "assets/v2/thumbs/furn/desk_white.webp",
+  "v2": true,
+  "tint": "#f2f0ec",
+  "base": "desk"
+ },
+ "desk_walnut": {
+  "file": "assets/v2/thumbs/furn/desk_walnut.webp",
+  "v2": true,
+  "tint": "#b08a63",
+  "base": "desk"
+ },
+ "desk_mint": {
+  "file": "assets/v2/thumbs/furn/desk_mint.webp",
+  "v2": true,
+  "tint": "#c9d6d2",
+  "base": "desk"
+ },
+ "dresser_white": {
+  "file": "assets/v2/thumbs/furn/dresser_white.webp",
+  "v2": true,
+  "tint": "#f2f0ec",
+  "base": "dresser"
+ },
+ "dresser_sky": {
+  "file": "assets/v2/thumbs/furn/dresser_sky.webp",
+  "v2": true,
+  "tint": "#cddbe6",
+  "base": "dresser"
+ },
+ "coffee_table_walnut": {
+  "file": "assets/v2/thumbs/furn/coffee_table_walnut.webp",
+  "v2": false
+ },
+ "coffee_table_white": {
+  "file": "assets/v2/thumbs/furn/coffee_table_white.webp",
+  "v2": false
+ },
+ "shelf_etagere_3tier_white": {
+  "file": "assets/v2/thumbs/furn/shelf_etagere_3tier_white.webp",
+  "v2": false
+ },
+ "shelf_etagere_3tier_walnut": {
+  "file": "assets/v2/thumbs/furn/shelf_etagere_3tier_walnut.webp",
+  "v2": false
+ },
+ "shelf_etagere_3tier_mint": {
+  "file": "assets/v2/thumbs/furn/shelf_etagere_3tier_mint.webp",
+  "v2": false
+ },
+ "cube_storage_mint": {
+  "file": "assets/v2/thumbs/furn/cube_storage_mint.webp",
+  "v2": true,
+  "tint": "#c9d6d2",
+  "base": "cube_storage"
+ },
+ "cube_storage_sky": {
+  "file": "assets/v2/thumbs/furn/cube_storage_sky.webp",
+  "v2": true,
+  "tint": "#cddbe6",
+  "base": "cube_storage"
+ },
+ "low_table_white": {
+  "file": "assets/v2/thumbs/furn/low_table_white.webp",
+  "v2": true,
+  "tint": "#f2f0ec",
+  "base": "low_table"
+ },
+ "low_table_walnut": {
+  "file": "assets/v2/thumbs/furn/low_table_walnut.webp",
+  "v2": true,
+  "tint": "#b08a63",
+  "base": "low_table"
+ },
+ "stool_mint": {
+  "file": "assets/v2/thumbs/furn/stool_mint.webp",
+  "v2": false
+ },
+ "stool_blush": {
+  "file": "assets/v2/thumbs/furn/stool_blush.webp",
+  "v2": false
+ },
+ "stool_charcoal": {
+  "file": "assets/v2/thumbs/furn/stool_charcoal.webp",
+  "v2": false
+ },
+ "blackboard": {
+  "file": "assets/v2/thumbs/furn/blackboard.webp",
+  "v2": false
+ },
+ "blackboard_small": {
+  "file": "assets/v2/thumbs/furn/blackboard_small.webp",
+  "v2": false
+ },
+ "whiteboard": {
+  "file": "assets/v2/thumbs/furn/whiteboard.webp",
+  "v2": false
+ },
+ "bulletin_board": {
+  "file": "assets/v2/thumbs/furn/bulletin_board.webp",
+  "v2": false
+ },
+ "lectern": {
+  "file": "assets/v2/thumbs/furn/lectern.webp",
+  "v2": false
+ },
+ "desk_student_2": {
+  "file": "assets/v2/thumbs/furn/desk_student_2.webp",
+  "v2": false
+ },
+ "desk_student_1": {
+  "file": "assets/v2/thumbs/furn/desk_student_1.webp",
+  "v2": false
+ },
+ "desk_student_mint": {
+  "file": "assets/v2/thumbs/furn/desk_student_mint.webp",
+  "v2": false
+ },
+ "locker_6": {
+  "file": "assets/v2/thumbs/furn/locker_6.webp",
+  "v2": false
+ },
+ "locker_12": {
+  "file": "assets/v2/thumbs/furn/locker_12.webp",
+  "v2": false
+ },
+ "chair_student": {
+  "file": "assets/v2/thumbs/furn/chair_student.webp",
+  "v2": true,
+  "tint": "#c9d6da",
+  "base": "chair"
+ }
+}
