@@ -38,6 +38,7 @@
     python tools/char/fit_portrait.py ... --ref assets/characters/portraits/portrait_moni_sad.png
     python tools/char/fit_portrait.py ... --tol 8      (바탕이 깨끗한 순백이고 옷이 크림색일 때 · 기본 26)
     python tools/char/fit_portrait.py ... --tol 8 --pockets   (안 이어진 흰 틈도 지움 · 눈 반짝임은 남김 — §clear_pockets)
+    python tools/char/fit_portrait.py <옷만 바꾼.png> <나갈.png> --match <원래 초상.png> --tol 8 --pockets   (얼굴 자리·크기를 원래 초상에 — §crop_to_match)
 """
 import os
 import sys
@@ -119,6 +120,46 @@ def clear_pockets(rgb, bg, tol):
     return out
 
 
+def crop_to_match(im, orig_path):
+    """«옷만 바꾼 같은 낯»을 원래 초상과 얼굴 자리·크기가 같게 자른다 — --match <원래 초상.png> 일 때만.
+
+    ★ 2026-10-09 앞치마 판 낯 넷: Higgsfield 가 몸을 더 넣어 얼굴이 원래보다 2~10% 작게 왔다.
+      기본 길(인물 키로 맞춤)은 흉상이 판 위아래를 다 채워 얼굴 크기를 못 돌린다 ⇒ 같은 화자가 줄마다 얼굴 크기가 튄다.
+    ⇒ 원래 초상의 얼굴 네모(가로 25~75% · 세로 17.5~53.75% — 눈·코·입)를 틀로 삼아 배율을 훑으며
+      정규 상호상관(NCC)이 가장 큰 배율·자리를 찾고, 원래 판(600×800)에 해당하는 네모를 잘라 낸다(밖은 흰색).
+    ⛔ 못 하는 것: 표정이 다른 그림에는 못 쓴다(얼굴이 안 겹친다) — NCC 가 0.9 밑이면 멈춘다."""
+    from scipy.signal import fftconvolve
+    o = Image.open(orig_path).convert('RGBA')
+    ow, oh = o.size
+    flat = Image.new('RGBA', o.size, (255, 255, 255, 255)); flat.alpha_composite(o)
+    og = np.asarray(flat.convert('L')).astype(np.float32)
+    bx0, by0, bx1, by1 = int(ow * 0.25), int(oh * 0.175), int(ow * 0.75), int(oh * 0.5375)
+    tpl = og[by0:by1, bx0:bx1]
+    t = tpl - tpl.mean(); tn = float(np.sqrt((t ** 2).sum())); ones = np.ones_like(tpl)
+    g = im.convert('L')
+    best = None
+    base = ow / im.width
+    for s in np.arange(base * 0.75, base * 1.30, base * 0.0115):
+        r = np.asarray(g.resize((round(g.width * s), round(g.height * s)), Image.LANCZOS)).astype(np.float32)
+        if r.shape[0] < tpl.shape[0] or r.shape[1] < tpl.shape[1]:
+            continue
+        num = fftconvolve(r, t[::-1, ::-1], mode='valid')
+        s1 = fftconvolve(r, ones, mode='valid'); s2 = fftconvolve(r ** 2, ones, mode='valid')
+        ncc = num / (np.sqrt(np.maximum(s2 - s1 ** 2 / tpl.size, 1e-6)) * tn)
+        i = np.unravel_index(np.argmax(ncc), ncc.shape)
+        if best is None or ncc[i] > best[0]:
+            best = (float(ncc[i]), s, int(i[1]), int(i[0]))
+    sc, s, lx, ly = best
+    x, y, w, h = (lx - bx0) / s, (ly - by0) / s, ow / s, oh / s
+    print('얼굴 맞춤(%s): NCC %.3f · 배율 %.3f(폭 맞춤 %.3f → 얼굴 %+.0f%%) · 자를 네모 x %.0f..%.0f y %.0f..%.0f'
+          % (os.path.basename(orig_path), sc, s, base, (s / base - 1) * 100, x, x + w, y, y + h))
+    if sc < 0.9:
+        raise SystemExit('⛔ 얼굴이 원래 초상과 안 겹친다(NCC %.3f < 0.9) — 표정이 다른 그림인가?' % sc)
+    canvas = Image.new('RGB', (round(w), round(h)), (255, 255, 255))
+    canvas.paste(im, (round(-x), round(-y)))
+    return canvas.resize((ow, oh), Image.LANCZOS), (ow, oh)
+
+
 def ref_metrics(paths):
     """기준에서 «바닥선»과 «인물 높이»를 잰다 — 박지 않고 «재서» 쓴다.
 
@@ -188,6 +229,9 @@ def main():
     #   ⇒ 바탕이 깨끗한 그림은 --tol 8 로 좁힌다. 기본값은 그대로 둔다(클링 것들은 26 으로 통과했다).
     tol = int(sys.argv[sys.argv.index('--tol') + 1]) if '--tol' in sys.argv else 26
     im = Image.open(src).convert('RGB')
+    match = sys.argv[sys.argv.index('--match') + 1] if '--match' in sys.argv else None
+    if match:
+        im, (ow, oh) = crop_to_match(im, match)
     rgb = np.asarray(im)
     bg = edge_background(rgb, tol)
     print('배경 퍼뜨림 허용 %d' % tol)
@@ -223,6 +267,12 @@ def main():
     fg = fg & ~edge
 
     rgba = np.dstack([rgb, np.where(fg, 255, 0).astype(np.uint8)])
+    if match:
+        # 얼굴 자리·크기를 원래 초상에 이미 맞췄다 — 키로 다시 늘리지 않는다
+        Image.fromarray(rgba, 'RGBA').save(dst)
+        print('썼다: %s  (%dx%d · 원래 초상 %s 의 얼굴 자리·크기 그대로)' % (dst, ow, oh, os.path.basename(match)))
+        print('⛔ 이 자는 «화풍이 같나»를 못 잰다. 그건 보는 물음이다 — 눈으로 볼 것.')
+        return 0
     cut = Image.fromarray(rgba[y0:y1 + 1, x0:x1 + 1], 'RGBA')
 
     scale = body_h / cur_h

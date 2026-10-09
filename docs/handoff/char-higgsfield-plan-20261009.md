@@ -1240,3 +1240,9 @@
  }
 ]
 ```
+
+### 앞치마 판 낯 넷 받음 (총괄 · 장부 assets/gen/hf_runs/char_apron4_20261009.json)
+- 여덟 장 모두 얼굴·표정·손이 원래 초상 그대로 · 옷만 세이지 앞치마. 고름: **넷 다 a**(원래 초상과 얼굴 겹침 NCC 가 a 쪽이 같거나 높다: beam 0.969/0.944 · think 0.970/0.959 · surprise 0.960/0.950 · happy 0.957/0.956)
+- ⚠ 몸을 더 넣어 얼굴이 원래보다 6~11% 작게 왔다. 기본 fit_portrait(인물 키로 맞춤)는 흉상이 판을 다 채워 얼굴 크기를 못 돌린다 ⇒ 같은 화자가 줄마다 얼굴 크기가 튄다
+  ⇒ `fit_portrait.py --match <원래 초상>`: 원래 초상의 눈·코·입 네모를 틀로 배율을 훑어(NCC) 원래 판에 해당하는 네모를 잘라 냄. 눈·입 높이가 원래와 같은 줄에 선다(그림으로 봄)
+- 게임 판: `assets/characters/portraits/portrait_jachwi_{beam,think,surprise,happy}_apron.png` 600×800 투명 · core 에 «가게 판이면 `_apron` 먼저» 한 줄 청함
