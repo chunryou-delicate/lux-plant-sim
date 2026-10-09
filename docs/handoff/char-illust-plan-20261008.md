@@ -113,7 +113,7 @@ Higgsfield 끊김 · Kling 크레딧 0 ⇒ Meshy `meshy_image_to_image`. 참조 
     "C:/Users/pc/Desktop/빛식물/lux-plant-sim/assets/gen/v2_room/style_keyframe_a.png"
    ],
    "generate_multi_view": false,
-   "prompt": "Her own sunny home: warm sunlight through a big window. A tall healthy monstera and small cutting pots by the window. She smiles, eyes wet with joy; Moni cheers. She (image 1): young Korean woman, LONG straight very dark-brown hair (not black), blunt bangs, warm-brown eyes, pink blush, cream round-neck tee, grey joggers. Moni (image 2): tiny light-green sprout mascot sitting INSIDE a terracotta pot with two holed monstera leaves; keep pot and leaves. Style of image 3: 2D storybook illustration, clean ink lines, soft warm wash, NOT 3D."
+   "prompt": "Her own sunny home: warm sunlight through a big window. A tall healthy monstera and small cutting pots by the window. She smiles, eyes wet with joy; Moni cheers. She (image 1): young Korean woman, LONG straight dark chocolate-brown hair (clearly brown, NOT black), blunt bangs, warm-brown eyes, pink blush, cream round-neck tee, grey joggers. Moni (image 2): tiny light-green sprout mascot sitting INSIDE a terracotta pot with two holed monstera leaves; keep pot and leaves. Style of image 3: 2D storybook illustration, clean ink lines, soft warm wash, NOT 3D."
   },
   "save": {
    "tool": "meshy_download_model",
@@ -134,7 +134,7 @@ Higgsfield 끊김 · Kling 크레딧 0 ⇒ Meshy `meshy_image_to_image`. 참조 
     "C:/Users/pc/Desktop/빛식물/lux-plant-sim/assets/gen/v2_room/style_keyframe_a.png"
    ],
    "generate_multi_view": false,
-   "prompt": "Her own sunny home: warm sunlight through a big window, empty bright floor. She smiles, eyes wet with joy; Moni cheers beside her. She (image 1): young Korean woman, LONG straight very dark-brown hair (not black), blunt bangs, warm-brown eyes, pink blush, cream round-neck tee, grey joggers. Moni (image 2): tiny light-green sprout mascot sitting INSIDE a terracotta pot with two holed monstera leaves; keep pot and leaves. Style of image 3: 2D storybook illustration, clean ink lines, soft warm wash, NOT 3D."
+   "prompt": "Her own sunny home: warm sunlight through a big window, empty bright floor. She smiles, eyes wet with joy; Moni cheers beside her. She (image 1): young Korean woman, LONG straight dark chocolate-brown hair (clearly brown, NOT black), blunt bangs, warm-brown eyes, pink blush, cream round-neck tee, grey joggers. Moni (image 2): tiny light-green sprout mascot sitting INSIDE a terracotta pot with two holed monstera leaves; keep pot and leaves. Style of image 3: 2D storybook illustration, clean ink lines, soft warm wash, NOT 3D."
   },
   "save": {
    "tool": "meshy_download_model",
@@ -155,7 +155,7 @@ Higgsfield 끊김 · Kling 크레딧 0 ⇒ Meshy `meshy_image_to_image`. 참조 
     "C:/Users/pc/Desktop/빛식물/lux-plant-sim/assets/gen/v2_room/style_keyframe_a.png"
    ],
    "generate_multi_view": false,
-   "prompt": "Daytime, empty small studio room, window at eye level showing plain sky (no snow, no leaves). She sets down a cardboard box and looks at the window; Moni on a box. No plants. She (image 1): young Korean woman, LONG straight very dark-brown hair (not black), blunt bangs, warm-brown eyes, pink blush, cream round-neck tee, grey joggers. Moni (image 2): tiny light-green sprout mascot sitting INSIDE a terracotta pot with two holed monstera leaves; keep pot and leaves. Style of image 3: 2D storybook illustration, clean ink lines, soft warm wash, NOT 3D."
+   "prompt": "Daytime, empty small studio room, window at eye level showing plain sky (no snow, no leaves). She sets down a cardboard box and looks at the window; Moni on a box. No plants. She (image 1): young Korean woman, LONG straight dark chocolate-brown hair (clearly brown, NOT black), blunt bangs, warm-brown eyes, pink blush, cream round-neck tee, grey joggers. Moni (image 2): tiny light-green sprout mascot sitting INSIDE a terracotta pot with two holed monstera leaves; keep pot and leaves. Style of image 3: 2D storybook illustration, clean ink lines, soft warm wash, NOT 3D."
   },
   "save": {
    "tool": "meshy_download_model",
@@ -176,7 +176,7 @@ Higgsfield 끊김 · Kling 크레딧 0 ⇒ Meshy `meshy_image_to_image`. 참조 
     "C:/Users/pc/Desktop/빛식물/lux-plant-sim/assets/gen/v2_room/style_keyframe_a.png"
    ],
    "generate_multi_view": false,
-   "prompt": "Morning in a small studio. Soft outside light pours through an eye-level window onto the floor. She stands at the window, calm; Moni beside her. Plain sky, no plants. She (image 1): young Korean woman, LONG straight very dark-brown hair (not black), blunt bangs, warm-brown eyes, pink blush, cream round-neck tee, grey joggers. Moni (image 2): tiny light-green sprout mascot sitting INSIDE a terracotta pot with two holed monstera leaves; keep pot and leaves. Style of image 3: 2D storybook illustration, clean ink lines, soft warm wash, NOT 3D."
+   "prompt": "Morning in a small studio. Soft outside light pours through an eye-level window onto the floor. She stands at the window, calm; Moni beside her. Plain sky, no plants. She (image 1): young Korean woman, LONG straight dark chocolate-brown hair (clearly brown, NOT black), blunt bangs, warm-brown eyes, pink blush, cream round-neck tee, grey joggers. Moni (image 2): tiny light-green sprout mascot sitting INSIDE a terracotta pot with two holed monstera leaves; keep pot and leaves. Style of image 3: 2D storybook illustration, clean ink lines, soft warm wash, NOT 3D."
   },
   "save": {
    "tool": "meshy_download_model",
@@ -197,7 +197,7 @@ Higgsfield 끊김 · Kling 크레딧 0 ⇒ Meshy `meshy_image_to_image`. 참조 
     "C:/Users/pc/Desktop/빛식물/lux-plant-sim/assets/gen/v2_room/style_keyframe_a.png"
    ],
    "generate_multi_view": false,
-   "prompt": "Daytime. She climbs narrow half-basement stairs hugging a big monstera in a pot; four cardboard boxes at the door; Moni rides on the top box. She (image 1): young Korean woman, LONG straight very dark-brown hair (not black), blunt bangs, warm-brown eyes, pink blush, cream round-neck tee, grey joggers. Moni (image 2): tiny light-green sprout mascot sitting INSIDE a terracotta pot with two holed monstera leaves; keep pot and leaves. Style of image 3: 2D storybook illustration, clean ink lines, soft warm wash, NOT 3D."
+   "prompt": "Daytime. She climbs narrow half-basement stairs hugging a big monstera in a pot; four cardboard boxes at the door; Moni rides on the top box. She (image 1): young Korean woman, LONG straight dark chocolate-brown hair (clearly brown, NOT black), blunt bangs, warm-brown eyes, pink blush, cream round-neck tee, grey joggers. Moni (image 2): tiny light-green sprout mascot sitting INSIDE a terracotta pot with two holed monstera leaves; keep pot and leaves. Style of image 3: 2D storybook illustration, clean ink lines, soft warm wash, NOT 3D."
   },
   "save": {
    "tool": "meshy_download_model",
@@ -218,7 +218,7 @@ Higgsfield 끊김 · Kling 크레딧 0 ⇒ Meshy `meshy_image_to_image`. 참조 
     "C:/Users/pc/Desktop/빛식물/lux-plant-sim/assets/gen/v2_room/style_keyframe_a.png"
    ],
    "generate_multi_view": false,
-   "prompt": "Daytime. She climbs narrow half-basement stairs holding a tray of small cutting pots; four cardboard boxes at the door; Moni rides on the top box. She (image 1): young Korean woman, LONG straight very dark-brown hair (not black), blunt bangs, warm-brown eyes, pink blush, cream round-neck tee, grey joggers. Moni (image 2): tiny light-green sprout mascot sitting INSIDE a terracotta pot with two holed monstera leaves; keep pot and leaves. Style of image 3: 2D storybook illustration, clean ink lines, soft warm wash, NOT 3D."
+   "prompt": "Daytime. She climbs narrow half-basement stairs holding a tray of small cutting pots; four cardboard boxes at the door; Moni rides on the top box. She (image 1): young Korean woman, LONG straight dark chocolate-brown hair (clearly brown, NOT black), blunt bangs, warm-brown eyes, pink blush, cream round-neck tee, grey joggers. Moni (image 2): tiny light-green sprout mascot sitting INSIDE a terracotta pot with two holed monstera leaves; keep pot and leaves. Style of image 3: 2D storybook illustration, clean ink lines, soft warm wash, NOT 3D."
   },
   "save": {
    "tool": "meshy_download_model",
@@ -239,7 +239,7 @@ Higgsfield 끊김 · Kling 크레딧 0 ⇒ Meshy `meshy_image_to_image`. 참조 
     "C:/Users/pc/Desktop/빛식물/lux-plant-sim/assets/gen/v2_room/style_keyframe_a.png"
    ],
    "generate_multi_view": false,
-   "prompt": "Daytime. She climbs narrow half-basement stairs carrying a small bean-sprout jar, no other plants; four cardboard boxes; Moni rides on the top box. She (image 1): young Korean woman, LONG straight very dark-brown hair (not black), blunt bangs, warm-brown eyes, pink blush, cream round-neck tee, grey joggers. Moni (image 2): tiny light-green sprout mascot sitting INSIDE a terracotta pot with two holed monstera leaves; keep pot and leaves. Style of image 3: 2D storybook illustration, clean ink lines, soft warm wash, NOT 3D."
+   "prompt": "Daytime. She climbs narrow half-basement stairs carrying a small bean-sprout jar, no other plants; four cardboard boxes; Moni rides on the top box. She (image 1): young Korean woman, LONG straight dark chocolate-brown hair (clearly brown, NOT black), blunt bangs, warm-brown eyes, pink blush, cream round-neck tee, grey joggers. Moni (image 2): tiny light-green sprout mascot sitting INSIDE a terracotta pot with two holed monstera leaves; keep pot and leaves. Style of image 3: 2D storybook illustration, clean ink lines, soft warm wash, NOT 3D."
   },
   "save": {
    "tool": "meshy_download_model",
@@ -260,7 +260,7 @@ Higgsfield 끊김 · Kling 크레딧 0 ⇒ Meshy `meshy_image_to_image`. 참조 
     "C:/Users/pc/Desktop/빛식물/lux-plant-sim/assets/gen/v2_room/style_keyframe_a.png"
    ],
    "generate_multi_view": false,
-   "prompt": "Close-up, no background: a young monstera leaf speckled with tiny white dots. She looks surprised then proud; Moni cheers with leaves up. She (image 1): young Korean woman, LONG straight very dark-brown hair (not black), blunt bangs, warm-brown eyes, pink blush, cream round-neck tee, grey joggers. Moni (image 2): tiny light-green sprout mascot sitting INSIDE a terracotta pot with two holed monstera leaves; keep pot and leaves. Style of image 3: 2D storybook illustration, clean ink lines, soft warm wash, NOT 3D."
+   "prompt": "Close-up, no background: a young monstera leaf speckled with tiny white dots. She looks surprised then proud; Moni cheers with leaves up. She (image 1): young Korean woman, LONG straight dark chocolate-brown hair (clearly brown, NOT black), blunt bangs, warm-brown eyes, pink blush, cream round-neck tee, grey joggers. Moni (image 2): tiny light-green sprout mascot sitting INSIDE a terracotta pot with two holed monstera leaves; keep pot and leaves. Style of image 3: 2D storybook illustration, clean ink lines, soft warm wash, NOT 3D."
   },
   "save": {
    "tool": "meshy_download_model",
@@ -281,7 +281,7 @@ Higgsfield 끊김 · Kling 크레딧 0 ⇒ Meshy `meshy_image_to_image`. 참조 
     "C:/Users/pc/Desktop/빛식물/lux-plant-sim/assets/gen/v2_room/style_keyframe_a.png"
    ],
    "generate_multi_view": false,
-   "prompt": "Close-up, no background: a monstera leaf exactly half white, half green. She gasps, delighted; Moni cheers with leaves up. She (image 1): young Korean woman, LONG straight very dark-brown hair (not black), blunt bangs, warm-brown eyes, pink blush, cream round-neck tee, grey joggers. Moni (image 2): tiny light-green sprout mascot sitting INSIDE a terracotta pot with two holed monstera leaves; keep pot and leaves. Style of image 3: 2D storybook illustration, clean ink lines, soft warm wash, NOT 3D."
+   "prompt": "Close-up, no background: a monstera leaf exactly half white, half green. She gasps, delighted; Moni cheers with leaves up. She (image 1): young Korean woman, LONG straight dark chocolate-brown hair (clearly brown, NOT black), blunt bangs, warm-brown eyes, pink blush, cream round-neck tee, grey joggers. Moni (image 2): tiny light-green sprout mascot sitting INSIDE a terracotta pot with two holed monstera leaves; keep pot and leaves. Style of image 3: 2D storybook illustration, clean ink lines, soft warm wash, NOT 3D."
   },
   "save": {
    "tool": "meshy_download_model",
@@ -302,7 +302,7 @@ Higgsfield 끊김 · Kling 크레딧 0 ⇒ Meshy `meshy_image_to_image`. 참조 
     "C:/Users/pc/Desktop/빛식물/lux-plant-sim/assets/gen/v2_room/style_keyframe_a.png"
    ],
    "generate_multi_view": false,
-   "prompt": "Dim half-basement room with a high small window. She kneels by an open backpack, surprised: inside is a small pot with ONE monstera stem and one leaf. Moni beside her, smiling. She (image 1): young Korean woman, LONG straight very dark-brown hair (not black), blunt bangs, warm-brown eyes, pink blush, cream round-neck tee, grey joggers. Moni (image 2): tiny light-green sprout mascot sitting INSIDE a terracotta pot with two holed monstera leaves; keep pot and leaves. Style of image 3: 2D storybook illustration, clean ink lines, soft warm wash, NOT 3D."
+   "prompt": "Dim half-basement room with a high small window. She kneels by an open backpack, surprised: inside is a small pot with ONE monstera stem and one leaf. Moni beside her, smiling. She (image 1): young Korean woman, LONG straight dark chocolate-brown hair (clearly brown, NOT black), blunt bangs, warm-brown eyes, pink blush, cream round-neck tee, grey joggers. Moni (image 2): tiny light-green sprout mascot sitting INSIDE a terracotta pot with two holed monstera leaves; keep pot and leaves. Style of image 3: 2D storybook illustration, clean ink lines, soft warm wash, NOT 3D."
   },
   "save": {
    "tool": "meshy_download_model",
@@ -314,3 +314,9 @@ Higgsfield 끊김 · Kling 크레딧 0 ⇒ Meshy `meshy_image_to_image`. 참조 
  }
 ]
 ```
+
+### G — 첫 장(ev_home_ending · task 01a1201f-fc9f-7378-9a26-1d8b00be7773) 판정
+- ✔ 2D 그림책 결 · 긴 생머리·일자 앞머리 · 크림 티·회색 바지 · 기쁨의 눈물 · 몬이 화분 안·잎 둘 · 창가 몬스테라·삽수 화분 · 손·글자 깨짐 없음
+- ⚠ 머리 밝기 35(정본 초상화 60) — «검정» 쪽 ⇒ 크레딧 0 으로 머리 덩어리만 밝기 ×1.63(`tools/char/illust_hair_lift.py` · 색조 그대로 · 가장자리 흐림) ⇒ [48,30,29] → [78,49,47]
+  · 원본은 `assets/illust/ev_home_ending_meshy1.png` 로 두고, 고친 것을 게임이 부르는 `ev_home_ending.png` 로 · 전후 `docs/handoff/img/hero/ev_home_ending_hair_lift.png`
+- 나머지 아홉: 머리 문구를 «dark chocolate-brown hair (clearly brown, NOT black)» 로 세게(위 JSON 에 반영 · 10곳) — 나와도 어두우면 같은 도구로 맞춘다
