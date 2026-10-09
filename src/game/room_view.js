@@ -801,7 +801,8 @@ export async function createRoomView(canvas, opts = {}) {
   /* v2: 가구 옷(GLB)·소품 — 그림만. 광선은 옛 상자(보이지 않는 대리)가 받고, 옷은 층 1 이라
      광선에 안 맞는다(카메라가 층 1 을 켠다). 끄기 ?v2furn=0 · 머리말은 furniture_dress.js */
   const furnDress = createFurnitureDress({ cam: ctx.cam, renderer: ctx.renderer, loadGLB,
-    furnK: () => (lightPolicy === 'house' ? 1 : FURN_DIM), onChange: () => furnDressChanged(),
+    furnK: () => (lightPolicy === 'house' ? 1 : FURN_DIM),
+    onChange: (why) => { furnDressChanged(); if (why === 'props') { try { restandOffProps(); } catch (e) { /* 그림만 */ } } },   /* ★ 10-10 소품 GLB 가 늦게 서도(입간판) 겹침을 다시 본다 */
     presets: () => (Object.keys(furnNames).length ? furnNames : null) });   // v2: 색 변형이 바탕 옷을 찾는 표([house] 10-09)
 
   /* ── 상태 ── */
@@ -7836,9 +7837,19 @@ export async function createRoomView(canvas, opts = {}) {
       else { wx = b.w / 2; wz = big.cu || 0; }
     }
     const slots = [...slotById.values()];
+    /* ★ 2026-10-10 총괄 ⑤(house 까닭) — 집 보기를 한 곳에 겨눈 동안(가게 진로 · §homeFrame)은 그 상자 «안»에서만 고른다.
+         예전엔 투룸 7×5 전체에서 골라 가게 방 왼벽 앞쪽(상자 밖)에 서서 첫 화면 왼쪽 끝에 반쯤 걸쳤다.
+         그때만 소품(입간판 등 · 가구 옷 props — 길 막힘에 안 드는 것) 위도 비킨다. 상자 안에 설 데가 없으면 예전대로 방 전체.
+         ⚠ 집 보기를 안 겨눈 판(가게가 아닌 판)은 한 톨도 안 바뀐다 */
+    const area = homeArea();
+    const props = area ? (() => { try { return (furnDress.blobRects && furnDress.blobRects()) || []; } catch (e) { return []; } })() : [];
+    const onProp = (x, z) => props.some(r => Math.abs(x - r.x) < (r.w || 0) / 2 + BODY_R && Math.abs(z - r.z) < (r.d || 0) / 2 + BODY_R);
+    const pick = (inArea) => {
     let best = null, bestScore = -Infinity;
     for (let x = -b.w / 2 + EDGE; x <= b.w / 2 - EDGE; x += STEP)
       for (let z = -b.d / 2 + EDGE; z <= b.d / 2 - EDGE; z += STEP) {
+        if (inArea && (x < area.min.x + 0.15 || x > area.max.x - 0.15 || z < area.min.z + 0.15 || z > area.max.z - 0.15)) continue;
+        if (inArea && onProp(x, z)) continue;
         if (blockedAt(x, z, BODY_R)) continue;
         let dSlot = Infinity;
         for (const s of slots) dSlot = Math.min(dSlot, Math.hypot(s.x - x, s.z - z));
@@ -7848,7 +7859,25 @@ export async function createRoomView(canvas, opts = {}) {
         const score = Math.min(dSlot, 2.0) * 1.0 + Math.min(dWin, 3.0) * 0.55 - dWall * 0.9;
         if (score > bestScore) { bestScore = score; best = { x, z, wx, wz }; }
       }
-    return best || { x: 0, z: 0, wx, wz };
+    return best;
+    };
+    return (area && pick(true)) || pick(false) || { x: 0, z: 0, wx, wz };
+  }
+
+  /* ★ 2026-10-10 총괄 ⑤ — 소품(입간판)이 «나중에» 켜졌는데 주인공이 그 자리에 서 있으면 비켜 세운다(서 있을 때만 · 앉음·걷기 중이면 그대로).
+       standSpot 은 처음 설 때만 소품을 비키므로, 간판 단 날 그 자리에 서 있던 주인공이 간판과 겹쳐 섰다(사진으로 잼) */
+  function restandOffProps() {
+    if (!homeArea()) return false;   /* 집 보기를 겨눈 판(가게)만 — 다른 판의 서는 자리는 한 톨도 안 바꾼다 */
+    const c = chars.get('jachwi');
+    if (!c || !c.root || restPose || curAct) return false;
+    let rects = []; try { rects = (furnDress.blobRects && furnDress.blobRects()) || []; } catch (e) { rects = []; }
+    const x = c.root.position.x, z = c.root.position.z;
+    if (!rects.some(r => Math.abs(x - r.x) < (r.w || 0) / 2 + BODY_R && Math.abs(z - r.z) < (r.d || 0) / 2 + BODY_R)) return false;
+    const sp = standSpot();
+    c.root.position.set(sp.x, c.root.position.y, sp.z);
+    c.root.rotation.y = faceCameraYaw(sp.x, sp.z);
+    needsRender = true;
+    return true;
   }
 
   const charLoad = url => new Promise((res, rej) =>
@@ -10110,7 +10139,7 @@ export async function createRoomView(canvas, opts = {}) {
     hangPose(spotId, preset) { try { return hangPoseFor(spotId, preset); } catch (e) { throw fail(e); } },
     setSeason(s) { const ch = furnDress.setSeason(s); if (ch) needsRender = true; return ch; },
     /* 가게 입간판(plan D59 단골 10명) — 켜면 투룸 문 옆에 선다(그림뿐 · 부딪힘·빛 없음) */
-    setShopSign(on) { const ch = furnDress.setFlag('shopSign', !!on); if (ch) needsRender = true; return ch; },
+    setShopSign(on) { const ch = furnDress.setFlag('shopSign', !!on); if (ch) { needsRender = true; if (on) restandOffProps(); } return ch; },
     previewFurnitureAt(uid, pos) { try { return previewFurnitureAt(uid, pos); } catch (e) { throw fail(e); } },
     clearFurniturePreview() { disposeFurnGhost(); },
     /* 실제로 옮긴다 — 방을 다시 조립하고 화분을 규칙대로 되돌린다(위 ⑧-b 주석).
