@@ -377,7 +377,7 @@ export const SCRIPTS = {
   /* ★ 2026-10-09 [plan] — 둘째 판(낸 달 수 홀/짝으로 번갈아 · §scriptOf). 「한 달 더 버텼다」는 늘 참이다 */
   rentAgain2: [
     { who: 'jachwi', text: '월세를 냈다. 한 달 더 버텼다.' },
-    { who: 'moni',   face: 'calm', text: '버틴 달이 쌓이면 그게 이사비야.' }
+    { who: 'moni',   face: 'calm', text: '버틴 달이 쌓이면 그게 다음 방이야.' }
   ],
   brokeTalk: [
     /* ★★ 2026-08-29 [Char]·[Plan] — worry 가 아니라 **numb**(말을 잃은 얼굴).
