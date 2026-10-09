@@ -78,7 +78,11 @@ export const PERSONAS = {
   grower:  { ko: '늘리는 사람(삽수 하나 남겨 키움)', lamps: 1, siruCap: 5, cut: 'asap', sellMother: 'never', move: 'asap', lazy: 0, follow: true, grow: true },
   /* ★ 2026-10-09 (총괄 D40 표) — «D41 안내대로»: 이사 때 무늬 삽수 하나를 들고 가고(D27 말림을 따름 · 삽수 들고 이사와 같은 손) ·
        원룸에서 그 그루(들고 간 것 · 없으면 처음 뿌리낸 무늬 삽수)를 팔지 않고 키워 거기서 다시 자른다 · 나머지는 안내대로 */
-  guide41: { ko: 'D41 안내대로(하나 들고 가 키움)', lamps: 1, siruCap: 5, cut: 'asap', sellMother: 'never', move: 'withCuttings', lazy: 0, follow: true, grow: true, carryKeep: true }
+  guide41: { ko: 'D41 안내대로(하나 들고 가 키움)', lamps: 1, siruCap: 5, cut: 'asap', sellMother: 'never', move: 'withCuttings', lazy: 0, follow: true, grow: true, carryKeep: true },
+  /* ★ 2026-10-09 (총괄 D47) — «화분대를 사는 사람»: D41 안내대로 + 가구점이 열리면(가을) 화분대 둘을 산다.
+       ⚠ 돈 쪽만 잰다 — 이 자의 빛은 정적 방 표라 «화분대로 창에 바짝 올린 빛 이득»(house: 여름엔 등 없이 자람)은 못 잰다 */
+  stand:   { ko: '화분대를 사는 사람(D41 + 계단식 플랜트대 · 미니 온실장)', lamps: 1, siruCap: 5, cut: 'asap', sellMother: 'never', move: 'withCuttings', lazy: 0, follow: true, grow: true, carryKeep: true,
+             buyFurn: ['furn_plant_step_3', 'furn_greenhouse_cabinet'] }
 };
 const DARK = 'banjiha-dresser:1', SILL = 'banjiha-sill:0', ONE_SILL = 'oneroom-sill:0', ONE_BRIGHT = ['oneroom-sill:1', 'oneroom-sill:2', 'oneroom-sill:3'];
 const STUCK_DAYS = 14;
@@ -212,6 +216,11 @@ export async function play(name, seed, opt = {}) {
       if (P.follow && S.day % 5 === 0) {
         try { const q = pantrySaleQuote(S.firstPlay, 0); const n = (q && q.maxLots || 0) - PANTRY_KEEP;
               if (n > 0) { const r = led('veg', () => sellPantryCrop(S, n)); out.pantrySoldWon = (out.pantrySoldWon || 0) + ((r && r.won) || 0); } } catch { }
+      }
+      /* ── 가구(화분대) — 가구점이 열리면 한 번씩(D47 · 돈만) ── */
+      if (P.buyFurn && ts.lamp && ts.lamp.unlocked) {
+        out.boughtFurn = out.boughtFurn || {};
+        for (const id of P.buyFurn) if (!out.boughtFurn[id]) { try { ord(id, 1); out.boughtFurn[id] = S.day; } catch { } }
       }
       /* ── 등 ── */
       if (P.lamps >= 1 && ts.lamp.unlocked && (ts.lamp.owned || 0) < P.lamps && ts.cashWon >= (ts.rules.lampPriceWon || 0)) {
