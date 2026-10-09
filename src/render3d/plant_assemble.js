@@ -66,7 +66,7 @@
 
 /* 저장소 뿌리 — 이 파일이 src/render3d/ 에 있다는 사실로만 푼다.
    호스트 페이지가 뿌리에 있든 tools/ 아래에 있든 같은 곳을 가리켜야 한다. */
-import { createSpeciesRules, u01 } from '../growth/species_growth.js';
+import { loadSpeciesDrawer } from './species_draw.js';
 
 const ROOT = new URL('../../', import.meta.url);
 const AT = p => new URL(p, ROOT).href;
@@ -300,15 +300,15 @@ async function build(opt) {
     new Promise(res => { if (!G.ensureSkin(k, () => res())) res(); })));
   const loadMs = Math.round(performance.now() - t0);
 
-  /* ★ 새 종(D45) — 규칙·값을 실어 둔다. 실패해도 몬스테라 길은 그대로 선다(종 갈래만 null 을 낸다).
-     잎 GLB 는 «쓸 때 한 장»씩 받는다(§speciesAsset) — 부팅 무게를 한 바이트도 안 늘린다. */
-  let speciesSpec = null, speciesRules = null, speciesErr = null;
+  /* ★ 새 종(D45) 그리개 — src/render3d/species_draw.js(확대 plant_grow 도 같은 파일을 부른다 · 방 = 확대).
+     normalizeAsset 은 이 인스턴스가 평가한 «원본 그 함수»를 넘긴다. 실패해도 몬스테라 길은 그대로 선다(종 갈래만 null).
+     잎 GLB 는 «쓸 때 한 장»씩 받는다 — 부팅 무게를 한 바이트도 안 늘린다. 도착하면 onSkinChange 구독자에게 알린다. */
+  let speciesDrawer = null, speciesErr = null;
   try {
-    const [sj, tj] = await Promise.all([
-      fetch(AT('data/growth_species.json')).then(r => { if (!r.ok) throw new Error('growth_species.json ' + r.status); return r.json(); }),
-      fetch(AT('data/balance/light_thresholds.json')).then(r => { if (!r.ok) throw new Error('light_thresholds.json ' + r.status); return r.json(); })]);
-    speciesRules = createSpeciesRules(sj, tj); speciesSpec = sj;
-  } catch (e) { speciesErr = e; console.warn('[생장모듈] 새 종 규칙을 못 실었습니다 — 종 갈래는 null 을 냅니다:', e && e.message); }
+    speciesDrawer = await loadSpeciesDrawer({ THREE, normalizeAsset: G.normalizeAsset,
+      onProtoGeometry: uuid => protoGeo.add(uuid),                 // 프로토 기하 — 호출부가 버리면 안 된다(§protoGeo)
+      onArrive: () => { for (const f of skinSubs) { try { f({ loaded: assembler.skinsLoaded(), pending: assembler.skinsPending() }); } catch (e) { console.warn('[생장모듈] 무늬 알림 실패', e); } } } });
+  } catch (e) { speciesErr = e; console.warn('[생장모듈] 새 종 그리개를 못 세웠습니다 — 종 갈래는 null 을 냅니다:', e && e.message); }
 
   /* ★ 원본(ASSETS) 이 들고 있는 기하 목록.
      조립본은 THREE.clone(true) 로 만들어져 **기하를 원본과 공유한다.** 호출부가
@@ -332,12 +332,6 @@ async function build(opt) {
   let lastKey = null, lastResult = null;
   /* youngPlantOf — 씨앗·빛 방향마다 «난 때» 목록(§youngBirthsOf) */
   const youngBirthCache = new Map();
-  /* 새 종 잎 GLB — 받은 것 · 받는 중 · 실패(§speciesAsset). ★ return assembler «앞»에 선언해야 한다(뒤면 영영 초기화 안 됨) */
-  const speciesProto = new Map(), speciesPending = new Set(), speciesFailed = new Set();
-  let speciesLoader = null;
-  /* 눕힘 재기(§speciesSamples) — 잎 판마다 정점 (y,z) · 자루 밑 SOIL_BAND(정규화 8%)는 흙 속이라 뺀다 */
-  const SOIL_BAND = 0.08;
-  const speciesSampleCache = new Map();
 
   /* ── ★ 무늬가 도착하면 알린다 (2026-08-18) ──
      ------------------------------------------------------------
@@ -403,12 +397,12 @@ async function build(opt) {
             lazySkins: opt.lazySkins !== false, skinKeys: skinKeys.size },
 
     /* ★ 무늬 — 지금 몇 장 받는 중인가 · 몇 장 받았나 (2026-08-18) */
-    /* ★ 새 종 잎 GLB(§speciesAsset)도 «받는 중»에 든다 — 호출부가 이 수로 다시 짓기를 기다린다 */
-    skinsPending() { return G.skinsPending() + speciesPending.size; },
-    skinsLoaded() { return G.skinsLoaded() + speciesProto.size; },
+    /* ★ 새 종 잎 GLB(species_draw.js)도 «받는 중»에 든다 — 호출부가 이 수로 다시 짓기를 기다린다 */
+    skinsPending() { return G.skinsPending() + (speciesDrawer ? speciesDrawer.pending() : 0); },
+    skinsLoaded() { return G.skinsLoaded() + (speciesDrawer ? speciesDrawer.loaded() : 0); },
     /* 진단 — 새 종 그림이 무엇을 실었나 */
-    speciesInfo() { return { ok: !!speciesRules, err: speciesErr ? String(speciesErr.message || speciesErr) : null,
-                             loaded: speciesProto.size, pending: speciesPending.size, failed: [...speciesFailed] }; },
+    speciesInfo() { return Object.assign({ ok: !!speciesDrawer, err: speciesErr ? String(speciesErr.message || speciesErr) : null },
+                                         speciesDrawer ? speciesDrawer.info() : { loaded: 0, pending: 0, failed: [] }); },
     /* ★ 2026-09-07 ([growth] 청 ㉡) — 「방이 «지금 그리는» 잎이 어느 그림을 쓰나」. 원본 함수를 그대로 낸다(로직 없음).
        ⚠ 없으면 «null» 이다 — 빈 배열로 메꾸지 않는다(「모른다」와 「없다」는 다른 말이다).
        ⚠ TAIL 에 이름을 넣는 것만으로는 밖에서 못 부른다 — 밖이 쥐는 것은 이 `assembler` 객체다(걸어서 확인했다). */
@@ -736,7 +730,7 @@ async function build(opt) {
                      빛이 막은 날은 안 자랐다. 꼴은 «잎 수 + 다음 잎까지의 몫»이 정한다(core 장부와 한 축)
          potD        놓일 그릇 지름[m] — 원본 그루의 화분이 이 지름이 되게 줄인 뒤 화분만 걷는다(그루와 화분의 비가 원본 그대로)
          lightAz · photo   방의 창 방향(모주 assemble 과 같은 뜻)
-         species     'monstera'(기본) · 'pink_princess' · 'alocasia_frydek'(D45) — 새 종은 §speciesYoungPlant 가 그린다:
+         species     'monstera'(기본) · 'pink_princess' · 'alocasia_frydek'(D45) — 새 종은 src/render3d/species_draw.js 가 그린다:
                      plant(species_growth 그루 상태) 또는 rows(leafRows) · seed · lightAz 만 읽는다(leaves·nextLeaf01·potD 는 몬스테라 칸)
          withPot     true 면 화분을 안 걷는다(검사·견줌용). 기본 false — 화분은 core 가 그린다
 
@@ -755,7 +749,7 @@ async function build(opt) {
     */
     youngPlantOf(o = {}) {
       const species = (o && o.species) || 'monstera';
-      if (species !== 'monstera') return speciesYoungPlant(o, species);   // 새 종(D45) — 아래 §speciesYoungPlant
+      if (species !== 'monstera') return speciesDrawer ? speciesDrawer.draw(Object.assign({}, o, { species })) : null;   // 새 종(D45) — species_draw.js
       const leaves = Array.isArray(o.leaves) ? o.leaves : [];
       const N = leaves.length;
       if (N < 1) return null;
@@ -816,153 +810,6 @@ async function build(opt) {
     }
   };
   return assembler;
-
-  /* ══════════════════════════════════════════════════════════════════════
-     ★★ speciesYoungPlant — 새 종(D45 · 핑크프린세스 · 알로카시아)을 그린다 (2026-10-09 · [growth])
-     ══════════════════════════════════════════════════════════════════════
-     ★ 몬스테라 길(원본 plant_grow 가 그린다)과 «안 섞인다» — 이 종들은 원본에 그리개가 없다. 그래서 여기 규칙은
-       «새로 세운 것»이고 두 벌이 아니다. 대신 빌릴 수 있는 것은 다 빌린다:
-         잎 GLB 정규화 = 원본 normalizeAsset 그대로(잎자루 포함 · 자루 끝이 원점 · 높이 1 · leaf 가 몬스테라 규약으로 만든 판)
-         잎 상태(단계·등급·크기·판) = 정본 species_growth.leafRows(그루 상태) — 여기서 안 굴린다
-         모양 값(마디 사이·줄기 굵기·눕힘·단계마다 조정표 한 줄) = data/growth_species.json 의 그 종 draw 칸
-     ★ 크기는 «실제 미터»다(leaf_size_m · plan 실측). 몬스테라 길처럼 그릇 지름에 맞춰 줄이지 않는다 — potD 는 안 쓴다.
-     인자: species · plant(species_growth 그루 상태) 또는 rows(leafRows 그대로) · seed(없으면 plant.seed) · lightAz(덩굴이 기우는 쪽)
-     null: 규칙을 못 실음 · draw 칸 없음 · 잎 0장(AL 구근·잠 — 화분만 그리면 된다)
-     ⚠ 판이 아직 안 왔으면 그 잎은 빠진 채 나오고 userData.skinsPending 이 참이다 — 도착하면 onSkinChange 로 알린다(다시 지을 것).
-  */
-  function speciesAsset(path) {
-    if (speciesProto.has(path)) return speciesProto.get(path);
-    if (!path || speciesFailed.has(path) || speciesPending.has(path)) return null;
-    speciesPending.add(path);
-    const done = () => { for (const f of skinSubs) { try { f({ loaded: G.skinsLoaded() + speciesProto.size, pending: G.skinsPending() + speciesPending.size }); } catch (e) { console.warn('[생장모듈] 무늬 알림 실패', e); } } };
-    (speciesLoader ||= new THREE.GLTFLoader()).load(AT('assets/' + String(path).split('/').map(encodeURIComponent).join('/')),
-      gl => {
-        try {
-          const pr = G.normalizeAsset(gl.scene, false, true);
-          pr.traverse(m => { if (m.isMesh && m.geometry) protoGeo.add(m.geometry.uuid); });   // 원본(프로토) 기하 — 호출부가 버리면 안 된다
-          speciesProto.set(path, pr);
-        } catch (e) { speciesFailed.add(path); console.warn('[생장모듈] 새 종 잎 정규화 실패', path, e && e.message); }
-        speciesPending.delete(path); done();
-      },
-      undefined,
-      () => { speciesPending.delete(path); speciesFailed.add(path); console.warn('[생장모듈] 새 종 잎 GLB 를 못 실었습니다 —', path); done(); });
-    return null;
-  }
-
-  /* 잎 판 하나의 정점 (y, z) — 정규화 좌표(높이 1 · 자루 끝 원점) · 밑동 띠(SOIL_BAND) 위만 · 판마다 한 번 */
-  function speciesSamples(path, proto) {
-    if (speciesSampleCache.has(path)) return speciesSampleCache.get(path);
-    const out = [], v = new THREE.Vector3();
-    proto.updateMatrixWorld(true);
-    proto.traverse(m => {
-      if (!m.isMesh || !m.geometry || !m.geometry.attributes.position) return;
-      const pos = m.geometry.attributes.position;
-      for (let i = 0; i < pos.count; i++) { v.fromBufferAttribute(pos, i).applyMatrix4(m.matrixWorld); if (v.y >= SOIL_BAND) out.push(v.y, v.z); }
-    });
-    const arr = new Float32Array(out);
-    speciesSampleCache.set(path, arr);
-    return arr;
-  }
-
-  function speciesYoungPlant(o, species) {
-    if (!speciesRules || !speciesSpec) return null;
-    const S = speciesSpec.species[species];
-    const D = S && S.draw;
-    if (!D) return null;
-    let rows = Array.isArray(o.rows) ? o.rows : null;
-    if (!rows && o.plant) { try { rows = speciesRules.leafRows(o.plant); } catch (e) { return null; } }
-    if (!rows || !rows.length) return null;
-    const seed = (o.seed ?? (o.plant && o.plant.seed) ?? 0) >>> 0;
-    const deg = Math.PI / 180, N = rows.length;
-    const az0 = u01(seed, 0, 101) * Math.PI * 2;                 // 그루마다 다른 첫 방위
-    const g = new THREE.Group(), body = new THREE.Group(); g.add(body);
-    const varieKeys = new Set(), missing = [], pivots = [];
-    let drawn = 0, clamped = 0;
-
-    const placeLeaf = (row, i, base, az) => {
-      const proto = speciesAsset(row.asset);
-      if (!proto) { missing.push(row.asset); return; }
-      const a = (D.adj && D.adj[row.stage]) || {};
-      const skin = /\/skins\//.test(row.asset);
-      const inst = proto.clone(true);
-      inst.traverse(m => {
-        if (!m.isMesh) return;
-        m.userData.sharedGeometry = true;
-        /* 재질은 잎마다 떼어 낸다 — 방이 밴드 색을 재질에 얹으므로 나눠 쓰면 다른 그루까지 물든다 */
-        const one = mt => { if (!mt) return mt; const c = mt.clone(); c.userData = Object.assign({}, c.userData, { cloned: true }); return c; };
-        m.material = Array.isArray(m.material) ? m.material.map(one) : one(m.material);
-        const mats = Array.isArray(m.material) ? m.material : [m.material];
-        /* 무늬판 잎몸은 틴트 금지 표(assemble 과 같은 규약) — 민무늬 판은 밴드 색을 받는다 */
-        if (skin && mats.some(mt => mt && mt.map)) m.userData.varieSkin = true;
-      });
-      inst.scale.setScalar((row.size_m || 0.1) * (a.scale ?? 1));
-      const want = Math.min(D.max_tilt_deg ?? 90, (a.tilt_deg ?? 0) + (N - 1 - i) * (D.older_tilt_deg ?? 0)) * deg;
-      const piv = new THREE.Group();
-      piv.position.copy(base);
-      piv.rotation.order = 'YXZ';                                // 눕힘(X) 먼저 · 방위(Y) 나중 — 잎몸이 +Z 로 기운 판이라 바깥으로 눕는다
-      piv.add(inst);
-      /* ★ 흙 밑으로 안 들어가게 — 눕힌 잎의 가장 낮은 곳이 흙(y=0) 밑이면 들어가지 않을 만큼만 눕힌다.
-           재는 것은 정점(§speciesSamples) — 기하 상자 모서리로 재면 밑동이 흙에 붙은 AL 은 하나도 못 눕는다(실제로 그랬다).
-           ⚠ 잎자루 밑 SOIL_BAND(정규화 높이 8% — normalizeAsset 이 자루 끝을 잡는 띠와 같은 폭)는 흙에 묻히는 밑동이라 안 잰다.
-           눕힘 0 이면 그 위 정점은 다 base.y 위라 늘 답이 있다. 눕힘은 X 축이라 높이만 보면 된다(방위 Y 는 높이를 안 바꾼다). */
-      const smp = speciesSamples(row.asset, proto), sc = inst.scale.x;
-      const lowAt = t => { const c = Math.cos(t), sn = Math.sin(t); let lo = Infinity;
-        for (let k = 0; k < smp.length; k += 2) { const yy = smp[k] * c - smp[k + 1] * sn; if (yy < lo) lo = yy; }
-        return base.y + sc * lo; };
-      let tilt = want;
-      if (want > 0 && smp.length && lowAt(want) < 0) {
-        let lo = 0, hi = want;
-        for (let k = 0; k < 12; k++) { const mid = (lo + hi) / 2; if (lowAt(mid) >= 0) lo = mid; else hi = mid; }
-        tilt = lo; clamped++;
-      }
-      piv.rotation.set(tilt, az + (a.ry_deg ?? 0) * deg, 0);
-      piv.userData = { part: 'leaf', leafNo: row.no, stage: row.stage, grade: row.grade, asset: row.asset, scale: inst.scale.x, tiltWant: want, tilt };
-      body.add(piv); pivots.push(piv);
-      if (skin) varieKeys.add(row.asset);
-      drawn++;
-    };
-
-    if (D.form === 'vine') {
-      /* 덩굴 — 흙에서 줄기가 오르고 잎 한 장마다 마디 하나(아래 = 오래된 잎) */
-      const leanAz = Number.isFinite(o.lightAz) ? o.lightAz : az0 + Math.PI / 3, lean = (D.lean_deg ?? 0) * deg;
-      const dir = new THREE.Vector3(Math.sin(lean) * Math.sin(leanAz), Math.cos(lean), Math.sin(lean) * Math.cos(leanAz)).normalize();
-      const stemMat = new THREE.MeshStandardMaterial({ color: new THREE.Color(D.stem_color || '#4a3036'), roughness: 0.75 });
-      stemMat.userData = { cloned: true };
-      const up = new THREE.Vector3(0, 1, 0);
-      let p = new THREE.Vector3(0, 0, 0);
-      rows.forEach((row, i) => {
-        const len = (D.internode_m && D.internode_m[row.stage]) ?? 0.02, r = (D.stem_r_m && D.stem_r_m[row.stage]) ?? 0.004;
-        const q = p.clone().addScaledVector(dir, len);
-        const cyl = new THREE.Mesh(new THREE.CylinderGeometry(r * 0.92, r, len, 8, 1), stemMat);
-        cyl.position.copy(p).addScaledVector(dir, len / 2);
-        cyl.quaternion.setFromUnitVectors(up, dir);
-        cyl.castShadow = true; cyl.receiveShadow = true;
-        cyl.userData.part = 'stem';
-        body.add(cyl);
-        placeLeaf(row, i, q, az0 + i * (D.phyllotaxis_deg ?? 137.5) * deg);
-        p = q;
-      });
-    } else if (D.form === 'rosette') {
-      /* 로제트 — 잎자루가 구근에서 곧장 오른다. 가장 새 잎이 가운데서 가장 곧게 */
-      rows.forEach((row, i) => {
-        const az = az0 + i * (D.phyllotaxis_deg ?? 137.5) * deg, r = D.spread_m ?? 0;
-        placeLeaf(row, i, new THREE.Vector3(Math.sin(az) * r, 0, Math.cos(az) * r), az);
-      });
-    } else return null;                                          // 모르는 꼴 — 지어내지 않는다
-
-    const bb = new THREE.Box3().setFromObject(g);
-    g.userData = {
-      isPlantAssembled: true, kind: 'youngPlant', species, seed,
-      leafCount: drawn, leafCountWanted: N, leafRows: rows.map(r => ({ ...r })),
-      leaves: [], leafPivots: pivots, droppedParts: [],
-      varieLeafKeys: [...varieKeys], missingAssets: missing,
-      skinsPending: missing.filter(a => speciesPending.has(a)).length,
-      failedAssets: missing.filter(a => speciesFailed.has(a)),
-      growthDays: null, nextLeaf01Given: true, tiltClamped: clamped,
-      sizeM: { h: bb.isEmpty() ? 0 : (bb.max.y - bb.min.y), d: bb.isEmpty() ? 0 : rotSafeDiameter(g, g) }
-    };
-    return g;
-  }
 
   /* youngPlantOf 의 손 — 그 씨앗의 난 때를 «필요한 장수»까지만 읽고 담아 둔다(위상 읽기는 싸지 않다).
      나이를 두 배씩 늘린다 · 원본 최대 나이(ageOf(GMAX))에서 멈춘다. */

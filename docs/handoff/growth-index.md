@@ -60,6 +60,7 @@
 | `test_varie_boost.mjs` | ★ **D40 성숙 전 무늬 ×2 · 상한 0.9** — 파일 값이 실렸나 · 갈라진 잎 한 장이면 꺼지나 · 무늬가 줄지 않나 (크롬 없음) |
 | `test_skin_room_matches_zoom.mjs` | ★ **방이 그리는 그림 == 확대가 그리는 그림** — 이미 두 번 난 사고를 지킨다 |
 | `test_young_plant.mjs` | ★ **D46 흙에 자리 잡은 삽수 = «작은 그루»(조립기 youngPlantOf)** — 잎 N 장 = 그린 잎 N 장 · 화분만 걷힘 · 밑동 y=0 · 정본 무늬만 무늬 · 모주 조립을 안 흔듦 · 사진 |
+| `test_species_room_zoom.mjs` | ★ **새 두 종 방 = 확대** — 같은 그루 상태를 방(youngPlantOf)과 확대(setSpeciesView)에 넘겨 잎마다 판·단계·등급·눕힘·자리·방위·크기 · 무늬 표 견줌 · 씨앗 바꾼 대조는 어긋나야 · 확대가 몬스테라를 가리고 카메라가 새 종을 담나 · 끄면 돌아오나 |
 | `test_species_draw.mjs` | ★ **새 두 종 그림(youngPlantOf 종 갈래)** — PP 잎 N = 그린 잎 N · 줄기 마디 N · 판 = 정본 leafRows · 무늬판만 틴트 금지 · 흙 밑으로 안 들어감 · AL 새 잎이 가장 곧게 · 크기 = 실측 · null 셋 · 재질 따로 · 판 늦게 옴 → 알림 · 사진 |
 | `test_species_growth.mjs` | ★ **새 두 종(PP · AL) 생장 규칙** — 잎 간격 · 분홍 흐름 · 분홍 잎 줄 시듦 · 자르기 · 구근 · 겨울잠 · 무늬 몫 · 판 표 (크롬 없음 · 값은 파일에서 읽음) |
 | `test_prologue_varie.mjs` | 프롤로그 무늬 보장이 캐논(20% · 난수 스트림)을 안 깨나 — ⚠ §E 씨앗 92158 → **92231**(10-09 · D40 뒤 92158 은 잎1·2 가 굴림으로 무늬라 보장이 안 쓰임) |
@@ -230,7 +231,17 @@ userData kind:'youngPlant' · species · leafCount · leafCountWanted · leafRow
         failedAssets · skinsPending · tiltClamped · sizeM{h,d} · leaves:[](몬스테라와 같은 규약)
 ```
 사진: docs/handoff/img/species_young_row.png (PP 잎 1·3·5·8 · AL 구근에서 40·100·160·200일)
-⚠ 확대창(plant_grow iframe)은 아직 PP·AL 을 못 그린다 — 확대도 같은 입구를 부르면 «방 = 확대»가 저절로 선다(core·leaf 차례).
+✅ 확대창도 그린다(총괄: growth 몫) — 그리개를 src/render3d/species_draw.js 로 떼어 방(plant_assemble)과 확대(plant_grow)가 «같은 파일»을 부른다.
+```
+확대    plant_grow.setSpeciesView({ species, plant, seed?, lightAz?, potD? }) · setSpeciesView(null) 로 몬스테라 · speciesViewInfo() 읽기
+        buildPlant 는 한 글자도 안 바꿈 — 켜져 있는 동안 몬스테라 그룹을 가리고(그리기 직전마다) 제 그룹(같은 화분 + 새 종)을 얹는다
+        바꾼 원본 세 곳(기본값이면 예전 그대로): addPot(target) · fitCam(target — 새 종 보기 중이면 그 그루) · animate 의 가림 한 줄
+        크기: 이 창 화분(약 1 단위)이 potD(기본 0.14m)가 되는 배율 — 그루:화분 비가 방과 같다
+        ⚠ 이 창은 엔진이기도 하다 — 새 종을 보는 동안에도 몬스테라는 가려진 채 굴러간다
+방=확대  test_species_room_zoom — PP 4·8 · AL 민무늬·무늬 · 잎마다 어긋남 0 · 대조(씨앗 바꿈)는 어긋남 · AL 잠(잎 0)은 화분만
+         ⚠ 게임 판(test_skin_room_matches_zoom)에는 core 가 PP·AL 화분을 이은 뒤 이 두 종 판을 더한다
+사진    docs/handoff/img/species_zoom_pp8.png · species_zoom_alv.png (확대 모드 ?embed=game)
+```
 
 ### 2026-10-09 · D52 AL 구근은 «잠에 들 때» 찾는다 — 원룸 이사 계절별 «구근 첫 열어 보기» 몫
 

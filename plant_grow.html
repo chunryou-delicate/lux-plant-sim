@@ -805,15 +805,17 @@ function assetInst(key){
   return w;
 }
 
-function addPot(){
+// target: 화분을 얹을 그룹(안 주면 plantGroup — 예전 그대로). ★ 2026-10-09 새 종 보기(§setSpeciesView)가 같은 화분을 제 그룹에 얹으려고 연 칸
+function addPot(target){
+  const T=target||plantGroup;
   const p=ASSETS.pot;
   if(p){ const g=assetInst('pot')||p.clone(true);      // ★에셋별 조정(B) 반영
-    g.scale.multiplyScalar(POT_H); g.userData.assetKey='pot'; plantGroup.add(g); const ap=ADJ.pot||{}; SOIL_Y=POT_H*(0.82*(ap.scale||1)*(ap.sy||1)+(ap.oy||0)); return; }
+    g.scale.multiplyScalar(POT_H); g.userData.assetKey='pot'; T.add(g); const ap=ADJ.pot||{}; SOIL_Y=POT_H*(0.82*(ap.scale||1)*(ap.sy||1)+(ap.oy||0)); return; }
   // 임시 화분(폴백)
   const pot=new THREE.Mesh(new THREE.CylinderGeometry(0.5,0.38,0.5,20), MAT.pot);
-  pot.position.y=0.25; pot.castShadow=true; pot.receiveShadow=true; plantGroup.add(pot);
+  pot.position.y=0.25; pot.castShadow=true; pot.receiveShadow=true; T.add(pot);
   const soil=new THREE.Mesh(new THREE.CylinderGeometry(0.47,0.47,0.06,20), MAT.soil);
-  soil.position.y=0.47; soil.receiveShadow=true; plantGroup.add(soil);
+  soil.position.y=0.47; soil.receiveShadow=true; T.add(soil);
   SOIL_Y=0.48;
 }
 
@@ -2718,9 +2720,12 @@ function buildPlant(){
   el.innerHTML=`<span class="k">단계</span> ${stage}<br><span class="k">마디</span> ${nodes} · <span class="k">잎</span> ${leaves} · <span class="k">시드</span> ${SEED}<br><span class="k">생장나이</span> ${Math.round(ageOf(GROWTH))}일`;
 }
 // 식물 전체가 화면에 담기도록 직교 프러스텀·시선높이 자동 조절
-function fitCam(){
-  if(!plantGroup||!cam) return;
-  const b=new THREE.Box3().setFromObject(plantGroup);
+function fitCam(target){
+  /* ★ 새 종 보기(§setSpeciesView) 중이면 그 그루를 담는다 — 엔진이 몬스테라를 다시 그리며 부르는 fitCam() 이
+       (가려 둔) 몬스테라 쪽으로 카메라를 끌고 가지 않게. 안 켜면 예전 그대로 plantGroup. */
+  const T=target||SPECIES_ROOT||plantGroup;
+  if(!T||!cam) return;
+  const b=new THREE.Box3().setFromObject(T);
   if(!isFinite(b.max.y)||b.isEmpty()) return;
   const topY=b.max.y, halfW=Math.max(Math.abs(b.min.x),Math.abs(b.max.x),Math.abs(b.min.z),Math.abs(b.max.z));
   FRUSTUM=Math.max(1.5, Math.min(4.2, Math.max(topY*0.62+0.32, halfW*1.15+0.5)));
@@ -3949,6 +3954,83 @@ function setRenderPaused(v){ const was=RENDER_PAUSED; RENDER_PAUSED=!!v;
   if(was && !RENDER_PAUSED){ requestRender(); redraw(); }   // 다시 보일 때 한 장은 확실히 그린다
   return RENDER_PAUSED; }
 function renderPaused(){ return RENDER_PAUSED; }
+/* ===== ★ 새 종 보기 — 확대창이 핑크프린세스·알로카시아를 그린다 (2026-10-09 · [growth] · 총괄 D45 그림) =====
+   ★ 방과 «같은 그리개»를 부른다 — src/render3d/species_draw.js(방은 plant_assemble.youngPlantOf 가 같은 파일을 부른다).
+     normalizeAsset 도 이 파일의 그 함수다(방 조립기는 이 파일을 평가해 같은 함수를 넘긴다) ⇒ 방 = 확대가 저절로 선다.
+   ★ 몬스테라 그리기(buildPlant)는 한 글자도 안 바꿨다. 켜져 있는 동안만 몬스테라 그룹을 가리고(§_speciesHideOthers)
+     제 그룹(SPECIES_ROOT = 같은 화분 + 새 종 그루)을 무대에 얹는다. 끄면(null) 예전 그대로 돌아온다.
+     ⚠ 이 창은 엔진이기도 하다 — 새 종을 보는 동안에도 코어가 몬스테라를 굴린다(그리기는 가려진 채 돈다).
+   쓰는 법(호스트가 iframe 으로):
+       win.setSpeciesView({ species:'pink_princess'|'alocasia_frydek', plant:<species_growth 그루 상태>, seed?, lightAz?, potD? })
+       win.setSpeciesView(null)      // 몬스테라로 돌아간다
+       win.speciesViewInfo()         // 읽기 — 무엇을 그렸나(검사·방=확대 견줌용)
+   크기: 그리개는 실측 미터로 그린다. 이 창의 화분(지름 약 1 단위)이 potD[m](기본 0.14)가 되게 같은 배율로 키운다 — 그루:화분 비가 방과 같다.
+   잎 0장(AL 구근·잠)이면 화분만 보인다. */
+let SPECIES_VIEW=null, SPECIES_ROOT=null, SPECIES_INFO=null;
+let _speciesDrawerP=null, _speciesErr=null;
+const SPECIES_POT_D=0.14;                                   // potD 를 안 주면 — 모종 화분 지름(m)
+function _speciesDrawer(){
+  if(!_speciesDrawerP){
+    _speciesDrawerP=import('./src/render3d/species_draw.js')
+      .then(m=>m.loadSpeciesDrawer({ THREE, normalizeAsset, onArrive:()=>{ if(SPECIES_VIEW) _drawSpeciesView(); } }))
+      .catch(e=>{ _speciesErr=e; console.warn('[확대] 새 종 그리개를 못 세웠습니다', e&&e.message); return null; });
+  }
+  return _speciesDrawerP;
+}
+function _speciesHideOthers(){
+  if(plantGroup) plantGroup.visible=false;
+  for(const v of PLANTS.values()) if(v.group) v.group.visible=false;
+}
+function _speciesClear(){
+  if(!SPECIES_ROOT) return;
+  SPECIES_ROOT.traverse(o=>{ if(!o.isMesh) return;
+    if(o.geometry && !(o.userData&&o.userData.sharedGeometry)) o.geometry.dispose();
+    const ms=Array.isArray(o.material)? o.material : (o.material? [o.material] : []);
+    for(const mt of ms) if(mt && mt.userData && mt.userData.cloned) mt.dispose(); });
+  if(SPECIES_ROOT.parent) SPECIES_ROOT.parent.remove(SPECIES_ROOT);
+  SPECIES_ROOT=null;
+}
+function _drawSpeciesView(){
+  const o=SPECIES_VIEW; if(!o || !scene) return SPECIES_INFO;
+  return _speciesDrawer().then(D=>{
+    if(o!==SPECIES_VIEW) return SPECIES_INFO;                // 그사이 다른 것을 골랐다
+    _speciesClear();
+    const root=new THREE.Group(); root.name='speciesView';
+    addPot(root);                                           // 이 창의 그 화분 그대로(§addPot target)
+    let g=null;
+    if(D) g=D.draw({ species:o.species, plant:o.plant, rows:o.rows, seed:o.seed, lightAz:(o.lightAz!=null? o.lightAz : LIGHT_AZ) });
+    let k=1;
+    if(g){
+      const pb=new THREE.Box3().setFromObject(root), potW=Math.max(pb.max.x-pb.min.x, pb.max.z-pb.min.z);
+      k=(potW>1e-6? potW : 1)/(o.potD||SPECIES_POT_D);
+      g.scale.setScalar(k); g.position.y=SOIL_Y;
+      root.add(g);
+    }
+    scene.add(root); SPECIES_ROOT=root;
+    _speciesHideOthers();
+    const u=g? g.userData : null;
+    SPECIES_INFO={ on:true, species:o.species, drawn:!!g, scale:k, err:_speciesErr? String(_speciesErr.message||_speciesErr) : null,
+      leafCount:u? u.leafCount : 0, leafCountWanted:u? u.leafCountWanted : 0, skinsPending:u? u.skinsPending : 0,
+      leaves:u? u.leafPivots.map(p=>({ asset:p.userData.asset, stage:p.userData.stage, grade:p.userData.grade, tilt:p.userData.tilt,
+                                       scale:p.userData.scale, x:p.position.x, y:p.position.y, z:p.position.z, ry:p.rotation.y })) : [],
+      varieLeafKeys:u? u.varieLeafKeys : [] };
+    fitCam(); requestRender();
+    return SPECIES_INFO;
+  });
+}
+function setSpeciesView(o){
+  if(!o || !o.species || o.species==='monstera'){
+    SPECIES_VIEW=null; _speciesClear(); SPECIES_INFO={ on:false };
+    if(plantGroup) plantGroup.visible=true;
+    if(PLANTS.size) _plantShow(CUR_PLANT);
+    fitCam(); requestRender();
+    return Promise.resolve(SPECIES_INFO);
+  }
+  SPECIES_VIEW=Object.assign({}, o);
+  return _drawSpeciesView();
+}
+function speciesViewInfo(){ return SPECIES_INFO? JSON.parse(JSON.stringify(SPECIES_INFO)) : { on:false }; }
+
 /* ===== 그리기 계측 (읽기 전용) =====
    plant_grow 의 renderer·scene·cam 은 <script> 안의 let 이라 window 에 안 붙는다.
    그래서 밖에서 상태를 못 읽었다(코어의 tools/probe_zoom_inside.mjs 가 여기서 막혔다).
@@ -3995,6 +4077,7 @@ function animate(){ requestAnimationFrame(animate);
   if(RENDER_PAUSED || document.hidden) return;
   if(autoRotate){ orbit.az+=0.004; updateCam(); }        // updateCam 이 다시 그릴 것을 표시한다
   if(NEEDS_RENDER){ NEEDS_RENDER=false;
+    if(SPECIES_ROOT) _speciesHideOthers();                 // 새 종 보기 — §setSpeciesView
     const t=_now(); if(RSTAT.lastDraw){ const gp=t-RSTAT.lastDraw; RSTAT.gapSum+=gp; if(gp>RSTAT.maxGap) RSTAT.maxGap=gp; } RSTAT.lastDraw=t; renderer.render(scene,cam); RSTAT.mainMs+=_now()-t; RSTAT.mainDraws++; }
   // 미리보기는 스스로 도는 애니메이션이라 따로 본다 — 안 보이면 아예 안 돈다
   if(previewVisible()){ const t=_now(); prevObj.rotation.y+=0.012; prevR.render(prevScene,prevCam);
