@@ -5933,6 +5933,13 @@ function updateHint() {
     /* ★③ 놓인 «순간» 한 줄 — 첫 가구가 서면 한 번만(이 판에서). 말은 [plan] 문안 그대로 */
     if (furnDone >= 1 && !oneroomShadeSaid) { oneroomShadeSaid = true; banner('선반 아래가 어두워졌습니다', '콩나물 자리입니다'); }
     if (plantsLeft > 0) {
+      /* ★ 2026-10-09 D43(총괄) — **들고 온 삽수가 먼저다.** 이사가 물건 자리를 비우고(oneroom §clearPlacements) 삽수는 가방에 남는데,
+           가방 속 삽수는 하루가 안 간다(D29) — 가구보다 앞에 짚는다. 말은 [plan] 몫(지금은 뜻만) */
+      if (cutN > 0) {
+        let cutCell0 = null; try { const c0 = bagCuttings()[0]; cutCell0 = c0 ? $(cutThumbId(c0.id)) : null; } catch { cutCell0 = null; }
+        if (onScreen(cutCell0) && !sheetCovers(cutCell0)) return hintAt(cutCell0, '들고 온 삽수부터 밝은 창가에 놓으세요');
+        const door0 = bagDoor(); if (door0) return hintAt(door0, '가방을 열어 보세요 — 들고 온 삽수가 기다립니다');
+      }
       /* ① · ② 가구 하나 — 아직 하나도 안 놓았고 가방에 가구가 있으면 */
       if (furnDone === 0 && furnBag > 0) {
         const cell = $('bagGrid') && $('bagGrid').querySelector('[data-furnbag]');
@@ -9564,6 +9571,8 @@ function questSnapshotNow(turn) {
       const cutsInBag = (cuttingsOf(S) || []).filter(c => c && !c.slotId && !c.at).length;
       const crops = (cropPotList(fp, S.day) || []).filter(r => r && r.inBag).length;
       return pots + cutsInBag + crops; } catch { return null; } })(),
+    /* ★ 2026-10-09 D43 — 가방에 든(자리 없는) 안 죽은 삽수 수. 이사 첫날 할 일 머리 줄이 «들고 온 삽수부터»를 이 값으로 고른다 */
+    bagCuttings: (() => { try { return (cuttingsOf(S) || []).filter(c => c && c.status !== 'dead' && c.method && !c.slotId && !c.at).length   /* loop §turn.bagCuttings 와 같은 기준 · 지금 상태(놓자마자 바뀐다) */; } catch { return null; } })(),
     /* 이사 뒤에 판 무늬 삽수 수 — 이사 날의 count 를 story.varieSaleAtMove 에 적어 둔다(oneroom §moveIntoOneroom) */
     varieSalesSinceMove: (() => { try {
       const st = storyOf(S); const now = (ts.varieSale && ts.varieSale.count) || 0;

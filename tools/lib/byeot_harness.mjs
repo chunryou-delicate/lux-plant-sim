@@ -173,7 +173,13 @@ export function questSnapshotOf(S, io, opt = {}) {
       try { const sky = io.light.skyFor(S.day, S.sim); const d = io.light.dliOfSlot(p0.at ? p0 : p0.slotId, { weather: sky.weather, season: sky.season, lampCount: (S.lamps && S.lamps.count) || 0, litHours: (S.lamps && S.lamps.litHours) || 0 });
             const b = io.growth.bandOf ? io.growth.bandOf(d, false) : null; return b ? !['critical', 'poor', 'stagnant'].includes(b.band) : null; } catch { return null; } })(),
     movedOut, movedInOnDay: story && Number.isInteger(story.movedInOnDay) ? story.movedInOnDay : null,
-    bagPlants: movedOut ? (S.pots || []).filter(p => p && p.placedOnce === false && !p.slotId && !p.at).length : null,
+    /* ⚠ 2026-10-09 — game.html §questSnapshotNow 와 같게(그루 + 삽수 + 시루 · 예전엔 그루만 셌다) */
+    bagPlants: (() => { try {
+      const pots = (S.pots || []).filter(p => p && !p.slotId && !p.at).length;
+      const cutsInBag = (cuttingsOf(S) || []).filter(c => c && !c.slotId && !c.at).length;
+      const crops = (cropPotList(fp, S.day) || []).filter(r => r && r.inBag).length;
+      return pots + cutsInBag + crops; } catch { return null; } })(),
+    bagCuttings: (() => { try { return (cuttingsOf(S) || []).filter(c => c && c.status !== 'dead' && c.method && !c.slotId && !c.at).length   /* loop §turn.bagCuttings 와 같은 기준 · 지금 상태(놓자마자 바뀐다) */; } catch { return null; } })(),
     varieSalesSinceMove: (movedOut && story && Number.isInteger(story.varieSaleAtMove)) ? Math.max(0, ((ts.varieSale && ts.varieSale.count) || 0) - story.varieSaleAtMove) : (movedOut ? null : 0),
     cashWon: Number.isFinite(ts.cashWon) ? ts.cashWon : null,
     targetWon: Number.isFinite(opt.targetWon) ? opt.targetWon : null
