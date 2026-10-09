@@ -55,6 +55,7 @@ import { endingRulesFrom, endingProgress, finishEnding } from '../src/game/endin
 import * as JSHOP from '../src/game/job_shop.js';   /* ★ D59 «가게 사람» */
 import { moveIntoOwnedHome } from '../src/game/oneroom.js';
 import { creditShopOrder, buyPriceOf } from '../src/game/shop.js';
+import { serialize as serializeSave } from '../src/game/save.js';   /* --dump — 단계마다 게임 세이브 꼴(byeot/save/1)로 뜬다 */
 import { stepQuests, questView } from '../src/game/quest.js';
 import { nudgeWaiting, noteQuestWaits, nudgeWaitReason } from '../src/game/nudge_wait.js';
 import { grantStaminaQuest } from '../src/game/stamina.js';
@@ -162,6 +163,18 @@ export async function play(name, seed, opt = {}) {
   };
   /* ★ 2026-10-09 --trace — 그날 들어온 돈(갈래별 · 장부와 같은 부름에서) · 그날 자른 수 · 그날 처음 정해진 등급 */
   let dayIn = {}, dayCuts = 0, dayGrades = [];
+  /* ★ 2026-10-10 --dump <폴더> — 한 판 걸어 보기(총괄): 단계마다 게임이 읽는 세이브 꼴로 뜬다(probe_day_walk 가 게임 localStorage 에 싣는다).
+       moved(이사 다음 날) · trade(PP 교환 뒤) · ready(500만 닿음 · 엔딩 «전») · shop0(가게 연 날) · shop30(연 뒤 30일) */
+  const dumped = new Set();
+  const dump = stage => {
+    if (!opt.dump || dumped.has(stage)) return;
+    dumped.add(stage);
+    try { fs.mkdirSync(opt.dump, { recursive: true });
+          const f = path.join(opt.dump, `${name}_${seed}_${stage}.json`);
+          fs.writeFileSync(f, JSON.stringify(serializeSave(S)));
+          (out.dumps = out.dumps || {})[stage] = { day: S.day, file: path.relative(ROOT, f) }; }
+    catch (e) { (out.dumpErr = out.dumpErr || {})[stage] = String(e && e.message || e).slice(0, 200); }
+  };
   const book = (cat, dw) => { if (dw > 0) dayIn[cat] = (dayIn[cat] || 0) + dw; if (!LG || !dw) return; bucket()[cat] += dw; LG.today += dw; };
   const led = (cat, fn) => { const c0 = ts.cashWon; const r = fn(); book(cat, ts.cashWon - c0); return r; };
   const ord = (id, n) => led('buy', () => orderItem(S, id, n));   /* D8 — 원룸 월세 · 이사 뒤 최저 지갑 · 이사 뒤 첫 0원 날 */
@@ -552,6 +565,8 @@ export async function play(name, seed, opt = {}) {
                 out.otherLog.push({ day: S.day, won: rest0, ev: [...new Set([...((turn && turn.events) || []), ...(((turn && turn.tutorial) || {}).events || [])].map(e => e && e.id).filter(Boolean))] });
               b.days++; b.endCash = cash; LG.start = cash; LG.today = 0; }
     if (ts.movedOut) {
+      if (out.moveDay != null && S.day >= out.moveDay + 1) dump('moved');
+      if (out.sp && out.sp.trade != null) dump('trade');
       const T = out.talk; T.daysAfterMove++; T.linesAfterMove += saidToday;
       T.ids = T.ids || {}; for (const id of saidIds) T.ids[id] = (T.ids[id] || 0) + 1;
       if (saidToday === 0) { T.silentAfterMove++; silentRun++; if (silentRun > T.longestSilence) T.longestSilence = silentRun; } else silentRun = 0;
@@ -570,6 +585,7 @@ export async function play(name, seed, opt = {}) {
       if (LG && net != null) bucket().netWorth = net;   /* 장부 — 달말 «다 팔면»(엔딩 netWorth · 모주·삽수 값까지) */
       if (P.shop && out.reach[5_000_000] != null && !JSHOP.isShopJob(S)) {
         /* ★ D59 — 집을 사고(엔딩 · 목표 500만) 가게를 연다 */
+        dump('ready');   /* 엔딩 «전» — 화면이 엔딩·진로 카드·가게 열기를 제 손으로 걷게 */
         try {
           finishEnding(S, io, { rules: endingRulesFrom({ targetWon: 5_000_000 }), nodes: pot0(S) ? io.growth.cuttableNodes() : null, stats: pot0(S) ? io.growth.leafStats() : null });
           JSHOP.startShopJob(S);
@@ -586,6 +602,7 @@ export async function play(name, seed, opt = {}) {
           out.shop = { openDay: S.day, cashAtOpen: ts.cashWon, done: 0, expired: 0, wonTotal: 0, expiredKinds: {}, doneKinds: {} };
           out.shop.noSpecies = opened.events.some(e => e && e.id === 'shop_no_species');
           out.shop.followNoSpecies = out.shop.noSpecies;   /* 말을 따른다 */
+          dump('shop0');
           /* 연 날 그루 사정 — 모주 자리 DLI · 산 삽수 · 등 */
           try { const sky = light.skyFor(S.day, S.sim); const p0 = pot0(S);
                 out.shop.atOpen = { room: light.room && light.room.id, potSlot: p0 && p0.slotId, potDli: p0 && p0.slotId ? +light.dliOfSlot(p0.slotId, lightOptsOf(S, sky)).toFixed(2) : null,
@@ -619,6 +636,7 @@ export async function play(name, seed, opt = {}) {
       out.shop.ms3 = J.milestones[3] != null ? J.milestones[3] - out.shop.openDay : null;
       out.shop.expired = J.expired;
       if (out.shop.brokeOn == null && (ts.bankrupt || ts.cashWon <= 0)) out.shop.brokeOn = S.day - out.shop.openDay;   /* 연 뒤 첫 0원(날) */
+      if (S.day - out.shop.openDay === 30) dump('shop30');
       if (S.day - out.shop.openDay >= (P.shopDays || 365)) { out.shop.cashEnd = ts.cashWon; out.endDay = S.day; break; }
     }
   }

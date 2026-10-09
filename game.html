@@ -1458,6 +1458,7 @@
   /* ★ 2026-10-10 벽 걸이 v1 — 걸이 자리 원(house hangSpots · 화면 좌표는 캔버스 기준이라 무대 기준으로 옮겨 찍는다) */
   #hangPick{position:absolute;inset:0;z-index:31;display:none;pointer-events:none}
   #hangPick.on{display:block}
+  #stage.talking #hangPick.on{display:none}   /* 대사가 떠 있는 동안은 쉰다 — 안내 글·[그만두기]가 대사 상자 밑에 깔렸다(사진으로 잼) · 닫히면 다시 선다 */
   /* 글은 무대 왼쪽 아래 — 위쪽은 튜토 손가락(«가방을 열어 보세요»)·할 일 칩이 쓰고, 오른쪽 아래는 [다음 날] 자리다(사진으로 잼) */
   #hangPick .hphead{position:absolute;left:16px;bottom:16px;display:flex;align-items:center;gap:10px;max-width:calc(100% - 140px);
     padding:8px 12px;border-radius:12px;background:rgba(20,16,28,.9);border:1px solid rgba(255,190,110,.4);
@@ -3242,7 +3243,7 @@ import { leafCardOf, bestLeafCardOf } from './src/game/shop.js';   /* ★ 10-10 
 /* ★ 2026-10-09 D47(총괄) — 가구점을 화면에 잇는다(줄 · 주문 · 가방 · 놓기). 셈·값·해금은 전부 코어(shop §furnitureCatalogList · state §placeBoughtFurniture) */
 import { furnitureCatalogList, isFurnitureItemId } from './src/game/shop.js';
 import { placeBoughtFurniture, giveFurniture } from './src/game/state.js';
-import { hangSpotsOf, hangPoseOf } from './src/game/hang_spots.js';   /* ★ 10-10 D59 가게 첫날 주문판 자리(방뷰를 다시 짓기 전에 셈한다) */   /* ★ 2026-10-09 사건 원화 — 처음 드러난 무늬 등급(§firstSeenGradeOf) */
+import { hangSpotsOf, hangPoseOf, hangFits } from './src/game/hang_spots.js';   /* ★ 10-10 D59 가게 첫날 주문판 자리(방뷰를 다시 짓기 전에 셈한다) */   /* ★ 2026-10-09 사건 원화 — 처음 드러난 무늬 등급(§firstSeenGradeOf) */
 import { weatherE } from './src/engine/weather.js';
 import * as save from './src/game/save.js';
 import {
@@ -11135,6 +11136,9 @@ function placeSiruBadges() {
     const p = pos.get(el.dataset.id);
     let sp = null; try { sp = p ? roomView.worldToScreen(p.x, p.y + SIRU_BADGE_RIM + SIRU_BADGE_UP, p.z) : null; } catch { sp = null; }
     if (!sp || marked.has(el.dataset.key) || (hintKey && hintKey === el.dataset.key)) { el.style.display = 'none'; continue; }
+    /* ★ 2026-10-10 한 판 걸음 — 화면 «밖» 시루의 표지는 숨긴다. 가게 방 첫 화면(시루가 거실 쪽 · 화면 밖)에서 익은 시루 21개의 표지가
+         왼쪽 가장자리로 밀려 «겹치면 위로 22px» 를 되풀이하며 세로 탑으로 넘쳤다(사진으로 잼). 아래 «콩나물 거두기(익은 것 N개)» 칩이 모아 알린다 */
+    if (sp.x < -8 || sp.y < -8 || sp.x > cr.width + 8 || sp.y > cr.height + 8) { el.style.display = 'none'; continue; }
     el.style.display = '';
     let x = cr.left - sr.left + sp.x, y = cr.top - sr.top + sp.y;
     for (const q of placed) if (Math.abs(q.x - x) < 44 && Math.abs(q.y - y) < 20) y = q.y - 22;   /* 겹치면 뒤엣것을 위로 22px */
@@ -13690,6 +13694,9 @@ function syncShopRoomView() {
   if (!roomView) return;
   let shop = false; try { shop = JOB.isShopJob(S) && JOB.movedHome(S); } catch { shop = false; }
   if (!shop) return;
+  /* ★ 10-10 한 판 걸음 — 가게를 연 그날 첫 화면이 여름옷이었다: 여는 순간 옛 방뷰에 앞치마를 청하고, 다시 지으며 그 기억(heroOutfitAsked)을 비운 뒤
+       다음 draw 까지 새 방뷰에 안 청했다. 방뷰가 선 «지금» 청한다(몸이 늦게 서도 room_view 가 기억했다가 입힌다 · §setHeroOutfit) */
+  try { syncHeroOutfit(); } catch (e) { console.warn('[옷]', e && e.message); }
   try { if (roomView.setShopSign) roomView.setShopSign(JOB.jobShopOf(S).signOnDay != null); } catch (e) { console.warn('[입간판]', e && e.message); }
   try {
     if (roomView.setHomeFrame) {
@@ -15907,17 +15914,18 @@ function hangChoices(want) {
   /* busyFit — 크기·전용은 맞는데 «찼을» 뿐인 자리(hangPose 는 크기를 먼저 보고 찬 것을 나중에 본다 · room_view §hangPoseFor).
        이것이 하나도 없으면 «다 찼다»가 아니라 «이 방엔 걸 자리가 없다»다(반지하의 주문판처럼) — 찼다고 하면 거짓말이 된다 */
   let busyFit = 0, shopOnly = 0, size = 0, other = 0;
+  /* ★ 10-10 한 판 걸음 — hangPose 로 «떠보면» 못 거는 자리마다 room_view 가 콘솔 오류를 찍었다(12건). 판정은 house 의 순수 함수
+       hangFits(크기 · 전용 자리 · hang_spots.js — hangPose 가 안에서 쓰는 그것)로 하고, 찬 자리는 sp.free 로 본다 */
+  const size_m = (want.preset && furnPresets[want.preset] && furnPresets[want.preset].size_m) || {};
   const fits = sp => {
     if (want.uid) { if (sp.uid === want.uid) return false; try { return !!(roomView.furnitureFit(want.uid, { hang: sp.id }) || {}).ok; } catch { return false; } }
-    try { roomView.hangPose(sp.id, want.preset); return true; }
-    catch (e) {
-      const m = (e && e.message) || '';
-      if (/다 찼/.test(m)) busyFit++;
-      else if (/주문판은 주문판 자리에만/.test(m)) shopOnly++;
-      else if (/자리보다 (넓|큽)니다/.test(m)) size++;
-      else if (!/다른 것을 거는 자리/.test(m)) other++;          /* 남의 전용 자리(주문판 자리)는 까닭에 안 센다 */
-      return false;
-    }
+    let f = null; try { f = hangFits(sp, want.preset, size_m); } catch { f = { ok: false, reason: '' }; }
+    if (f.ok) { if (sp.free) return true; busyFit++; return false; }
+    const m = f.reason || '';
+    if (/주문판은 주문판 자리에만/.test(m)) shopOnly++;
+    else if (/자리보다 (넓|큽)니다/.test(m)) size++;
+    else if (!/다른 것을 거는 자리/.test(m)) other++;          /* 남의 전용 자리(주문판 자리)는 까닭에 안 센다 */
+    return false;
   };
   const open = spots.filter(fits);
   const noneLine = shopOnly ? HANG_KO.noneShop : (size && !other ? HANG_KO.noneSize : HANG_KO.none);
