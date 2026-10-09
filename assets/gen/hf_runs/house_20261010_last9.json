@@ -1,0 +1,1426 @@
+{
+ "_what": "[house] Higgsfield 주문 last9 — C(원화) 단계만 · n 32~40(가구점 마지막 아홉) · 일꾼 창이 돌림(2026-10-10 01:08~01:11 KST)",
+ "_order": "docs/handoff/higgsfield-order-house-last9-20261010.json",
+ "_not_run": "M(mesh·3D) 단계 전부 — house 가 원화를 먼저 고른다",
+ "_next": "고른 원화의 job_id 를 3D 의 medias:[{value:job_id, role:\"image_references\"}] 로 바로 넣는다(올리기 없음). picks 는 첫 거름일 뿐 — 최종 고르기는 house",
+ "model": {
+  "requested": "nano_banana_2_1",
+  "used": "nano_banana_2_1",
+  "substituted": false
+ },
+ "params_common": {
+  "aspect_ratio": "1:1",
+  "resolution": "2k",
+  "count_per_request": 1,
+  "variants_per_item": 2,
+  "use_unlim": false,
+  "folder_id": null,
+  "note": "generate_image_batch 2번(12+6) · index = n*10+k · get_preferences auto_create_project=false → 폴더 없이"
+ },
+ "refs": {
+  "assets/gen/v2_furn/ref_bed_double.png": {
+   "media_id": "83affc20-60b4-4a50-b606-5c6986e30e8f",
+   "method": "media_import_url",
+   "source_url": "https://raw.githubusercontent.com/chunryou-delicate/lux-plant-sim/main/assets/gen/v2_furn/ref_bed_double.png",
+   "check": "tracked · git hash-object == origin/main blob"
+  },
+  "assets/gen/v2_furn/ref_bed_bunk.png": {
+   "media_id": "5cd7fb5d-9a1b-4440-855a-0ea8d14d7c00",
+   "method": "media_import_url",
+   "source_url": "https://raw.githubusercontent.com/chunryou-delicate/lux-plant-sim/main/assets/gen/v2_furn/ref_bed_bunk.png",
+   "check": "tracked · git hash-object == origin/main blob"
+  },
+  "assets/gen/v2_furn/ref_bed_loft.png": {
+   "media_id": "99421ca0-5862-47d5-83e4-443007de3e92",
+   "method": "media_import_url",
+   "source_url": "https://raw.githubusercontent.com/chunryou-delicate/lux-plant-sim/main/assets/gen/v2_furn/ref_bed_loft.png",
+   "check": "tracked · git hash-object == origin/main blob"
+  },
+  "assets/gen/v2_furn/ref_table.png": {
+   "media_id": "1aafa22e-e812-48ce-bf07-9eb058515fe2",
+   "method": "media_import_url",
+   "source_url": "https://raw.githubusercontent.com/chunryou-delicate/lux-plant-sim/main/assets/gen/v2_furn/ref_table.png",
+   "check": "tracked · git hash-object == origin/main blob"
+  },
+  "assets/gen/v2_furn/ref_vanity.png": {
+   "media_id": "80e7bf77-1f08-4d97-8e7c-86c0c0ec69a1",
+   "method": "media_import_url",
+   "source_url": "https://raw.githubusercontent.com/chunryou-delicate/lux-plant-sim/main/assets/gen/v2_furn/ref_vanity.png",
+   "check": "tracked · git hash-object == origin/main blob"
+  },
+  "assets/gen/v2_furn/ref_mirror.png": {
+   "media_id": "3001e0d5-fc3b-42fe-8193-89e1a5e8c7e0",
+   "method": "media_import_url",
+   "source_url": "https://raw.githubusercontent.com/chunryou-delicate/lux-plant-sim/main/assets/gen/v2_furn/ref_mirror.png",
+   "check": "tracked · git hash-object == origin/main blob"
+  },
+  "assets/gen/v2_furn/ref_shoe_cabinet.png": {
+   "media_id": "12c72e26-e238-424d-aedb-67b4eb36cd46",
+   "method": "media_import_url",
+   "source_url": "https://raw.githubusercontent.com/chunryou-delicate/lux-plant-sim/main/assets/gen/v2_furn/ref_shoe_cabinet.png",
+   "check": "tracked · git hash-object == origin/main blob"
+  },
+  "assets/gen/v2_furn/ref_tv_stand.png": {
+   "media_id": "21666693-34df-40c5-a077-1fd24a368af6",
+   "method": "media_import_url",
+   "source_url": "https://raw.githubusercontent.com/chunryou-delicate/lux-plant-sim/main/assets/gen/v2_furn/ref_tv_stand.png",
+   "check": "tracked · git hash-object == origin/main blob"
+  },
+  "assets/gen/v2_furn/ref_room_divider.png": {
+   "media_id": "76145de0-2bd0-431d-8825-57854dc7783b",
+   "method": "media_import_url",
+   "source_url": "https://raw.githubusercontent.com/chunryou-delicate/lux-plant-sim/main/assets/gen/v2_furn/ref_room_divider.png",
+   "check": "tracked · git hash-object == origin/main blob"
+  },
+  "assets/gen/v2_room/style_keyframe_a.png": {
+   "media_id": "b673039a-361b-4f08-9bf9-39adfa0af62c",
+   "method": "reused (이미 가져온 media · 총괄이 준 id)"
+  }
+ },
+ "credits_before": 200,
+ "credits_after": 146.5,
+ "credits_spent": 36,
+ "credits_note": "이 주문 = Nano Banana 2.1 2k 18장×2 = 36(transactions 2026-10-09T16:08:57.857Z~16:10:41.888Z · 18건 · 환불 없음). 잔액 차 53.5 중 나머지 17.5 는 같은 사이 다른 창: Tripo H3.1 Image to 3D 12(16:08:08Z) + GPT Image 2.5 Flare 2.75×2(16:05:51~53Z)",
+ "budget_cap": 50,
+ "retries": [],
+ "retries_note": "두 장 다 꼴이 틀린 물건이 없어 다시 돌리지 않음(bed_bunk k1·mirror k2 만 FAIL, 짝은 PASS)",
+ "qa_method": {
+  "silhouette": "회색 상자 참조(흰 배경)와 결과(테두리 중앙값 배경)를 1024 같은 틀에서 최대 채널 차 >14 로 떼어 IoU · 막힌 구멍은 평균 차 >4 일 때만 채움(난간 사이 빈 곳은 안 채움) · 2px 깎은 뒤 가장 큰 차이 덩어리(ref_only/added)로 더하거나 뺀 부품을 잡음",
+  "visual": "참조|결과 같은 크기 나란히·겹침(회=같음 빨=빠짐 파=더함)·768 전체·사다리/거울/막이 같은 배율 잘라 보기",
+  "colors": "탁자 상판·가림막 천·거울 유리 48px 조각 평균색",
+  "previews": "scratchpad hf_last9/(item_*·ovl_*·full_*·sbs_*·crop_*) ≤768px"
+ },
+ "flags": [
+  "bed_loft: 회색 상자 앞 긴 옆(발치~60%)의 둥근 띠는 난간이 아니라 이불 판의 옆 두께다(코드 B.bed_loft 이불 panel(w-0.08, 0.08, d*0.55) · z +0.34 치우침). 두 장 다 이를 나무 막이로 칠함(k1 막힌 판 · k2 틈 난간+끝 기둥). 실루엣은 같아 PASS 로 둠 · 이불색으로 바로잡을지 house 가 판단",
+  "bed_bunk: 먼 긴 옆 가운데 위로 솟은 짧은 기둥은 코드의 '상단 난간' 상자다 — bx(0.05,0.7,0.05) 가 Y 로 0.7m 라 가로 난간이 아니라 세운 토막이 됨(y=h-0.02 중심 · 기둥 위로 약 0.33m). k2 는 회색 상자대로 토막을 옮김",
+  "mirror: 유리 아래쪽(약 30% 높이)의 작은 쐐기 조각은 두 장 다 회색 상자를 그대로 옮긴 것 — 코드 거울의 뒷받침 상자 모서리가 판을 뚫고 앞으로 나온 자리다(src/render3d/furniture_pastel.js B.mirror: leg=bx(0.05,0.5,0.3) z=-0.14, rotation.x=0.22 → 앞 위 모서리 z≈+0.061 > 유리 z 0.035, 높이 ≈0.46m). 메시 전에 지울지 house 가 판단",
+  "vanity: 회색 상자의 둥근 거울은 받침 없이 떠 있다(코드 B.vanity 도 원판+테만). 주문 글은 slim stand 를 말해 k2 만 받침을 그림",
+  "tv_stand: 코드 B.tv_stand 의 이음 띠는 같은 높이의 왼쪽·오른쪽 반 둘(가운데 틈) — k2 는 이를 좌우 서랍 둘로, k1 은 위아래 반으로 읽음"
+ ],
+ "picks": {
+  "32": {
+   "id": "bed_double",
+   "variant": 1,
+   "job_id": "007b71e5-1e52-40f3-96ca-44f5664796cf",
+   "saved_path": "assets/gen/v2_furn/c_bed_double_1.jpg",
+   "master_path": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/gen/v2_furn/c_bed_double_1.png",
+   "why": "층(틀·매트리스·이불·베개) 그대로 · 실루엣 가장 가까움"
+  },
+  "33": {
+   "id": "bed_bunk",
+   "variant": 2,
+   "job_id": "d114ed26-be34-4b13-9115-806b3d6dd3a1",
+   "saved_path": "assets/gen/v2_furn/c_bed_bunk_2.jpg",
+   "master_path": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/gen/v2_furn/c_bed_bunk_2.png",
+   "why": "난간을 더하지 않은 쪽 · 사다리 발판 수 같음 · k1 은 꼴 틀림"
+  },
+  "34": {
+   "id": "bed_loft",
+   "variant": 1,
+   "job_id": "8d8116e1-86c6-4ff6-bb5a-e119f05064ae",
+   "saved_path": "assets/gen/v2_furn/c_bed_loft_1.jpg",
+   "master_path": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/gen/v2_furn/c_bed_loft_1.png",
+   "why": "실루엣 가장 가까움 — 앞 이불 띠를 막힌 판으로 둬 틈·끝 기둥을 더하지 않음(두 장 다 그 띠를 나무로 칠함 · flags)"
+  },
+  "35": {
+   "id": "table",
+   "variant": 2,
+   "job_id": "b174d4b3-30d5-4ed1-9630-d3992cd9d53f",
+   "saved_path": "assets/gen/v2_furn/c_table_2.jpg",
+   "master_path": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/gen/v2_furn/c_table_2.png",
+   "why": "꼴은 같고 상판 색이 주문 색에 더 가까움(근소)"
+  },
+  "36": {
+   "id": "vanity",
+   "variant": 2,
+   "job_id": "fa3c77af-63f8-40b6-a694-55cea9ac8d08",
+   "saved_path": "assets/gen/v2_furn/c_vanity_2.jpg",
+   "master_path": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/gen/v2_furn/c_vanity_2.png",
+   "why": "거울로 읽히고 주문 글의 받침이 있음 · 받침이 메시에서 거울을 몸에 붙여 줌 · 회색 상자 실루엣 그대로를 원하면 k1"
+  },
+  "37": {
+   "id": "mirror",
+   "variant": 1,
+   "job_id": "4796f41c-9333-4922-8273-a64516e49555",
+   "saved_path": "assets/gen/v2_furn/c_mirror_1.jpg",
+   "master_path": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/gen/v2_furn/c_mirror_1.png",
+   "why": "뒷받침 크기 그대로 · 유리 빛 맞음 · k2 는 꼴 틀림 · 쐐기 조각은 house 가 판단(flags)"
+  },
+  "38": {
+   "id": "shoe_cabinet",
+   "variant": 1,
+   "job_id": "e2b3c003-3b35-422c-8c19-fbd5095b778e",
+   "saved_path": "assets/gen/v2_furn/c_shoe_cabinet_1.jpg",
+   "master_path": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/gen/v2_furn/c_shoe_cabinet_1.png",
+   "why": "손잡이가 문마다 하나씩 고름"
+  },
+  "39": {
+   "id": "tv_stand",
+   "variant": 2,
+   "job_id": "c0c8b8ec-523b-4944-8f03-76b8ffe9f60f",
+   "saved_path": "assets/gen/v2_furn/c_tv_stand_2.jpg",
+   "master_path": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/gen/v2_furn/c_tv_stand_2.png",
+   "why": "서랍 둘이 읽혀 TV장으로 보임(근소) · 회색 상자 선 하나 그대로를 원하면 k1"
+  },
+  "40": {
+   "id": "room_divider",
+   "variant": 2,
+   "job_id": "ea11dc66-bad0-440d-8055-c7e0b2f9834f",
+   "saved_path": "assets/gen/v2_furn/c_room_divider_2.jpg",
+   "master_path": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/gen/v2_furn/c_room_divider_2.png",
+   "why": "천이 고르게 불투명해 가림막으로 읽힘(근소) · 틀이 더 곧은 쪽은 k1"
+  }
+ },
+ "entries": [
+  {
+   "n": 32,
+   "id": "bed_double",
+   "k": 1,
+   "job_id": "007b71e5-1e52-40f3-96ca-44f5664796cf",
+   "saved_path": "assets/gen/v2_furn/c_bed_double_1.jpg",
+   "master_path": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/gen/v2_furn/c_bed_double_1.png",
+   "qa_pass": true,
+   "qa_notes": "판 셋(틀·매트리스·윗판) 그대로 · 실루엣 IoU 0.990 · bbox ±1px · 누빔 이불은 회색 상자 윗판 자리(발치 쪽 2/3)에 납작하게 얹힘 · 베개 둘·머리판 그대로 · 글자·그림자 없음 · 배경 고른 미색",
+   "qa_grade": "PASS",
+   "step": "concept",
+   "index": 321,
+   "model_used": "nano_banana_2_1",
+   "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_160858_007b71e5-1e52-40f3-96ca-44f5664796cf.png",
+   "size": [
+    2048,
+    2048
+   ],
+   "saved_bytes": 743194,
+   "master_bytes": 3497788,
+   "has_alpha_channel": false,
+   "transparent": false,
+   "credits": 2,
+   "medias": [
+    {
+     "value": "83affc20-60b4-4a50-b606-5c6986e30e8f",
+     "role": "image_references"
+    },
+    {
+     "value": "b673039a-361b-4f08-9bf9-39adfa0af62c",
+     "role": "image_references"
+    }
+   ],
+   "prompt_used": "Repaint the FIRST reference image. Keep its exact shape, proportions, number of parts, board heights, bar thicknesses and camera angle - do not add, remove or move anything. Only change the surface: cozy hand-painted matte style like the second reference room, soft outlines. One object alone on a plain off-white background: no floor, no frame, no text, no shadow. Colors: light wood #d9c3a9 bed frame and headboard, white mattress, two pale #e8dfe6 pillows, a cozy patchwork quilt in muted pastel squares folded over the lower half (like a lived-in small-apartment bed).",
+   "qa_metrics": {
+    "silhouette_iou_vs_ref": 0.99,
+    "bbox_1024": [
+     53,
+     204,
+     969,
+     820
+    ],
+    "ref_bbox_1024": [
+     54,
+     204,
+     968,
+     819
+    ],
+    "bg_rgb": [
+     248,
+     249,
+     243
+    ],
+    "bg_std": [
+     0.35,
+     0.38,
+     0.31
+    ],
+    "fg_components_1024": [
+     352071
+    ],
+    "ref_components_1024": [
+     350631
+    ],
+    "ref_only_max_blob_px": 88,
+    "added_max_blob_px": 51,
+    "touches_border": false
+   }
+  },
+  {
+   "n": 32,
+   "id": "bed_double",
+   "k": 2,
+   "job_id": "81625c17-f6e8-45c6-b058-d3120b57aa0d",
+   "saved_path": "assets/gen/v2_furn/c_bed_double_2.jpg",
+   "master_path": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/gen/v2_furn/c_bed_double_2.png",
+   "qa_pass": true,
+   "qa_notes": "IoU 0.985 · 이불이 발치·왼옆으로 흘러내려 매트리스 층을 가리고 발치 왼쪽 모서리에서 회색 상자 밖으로 약 23px(1024 기준) 나옴(더한 덩어리 2353px) · 틀·베개·머리판은 그대로 · 글자·그림자 없음",
+   "qa_grade": "PASS_WITH_WARNINGS",
+   "step": "concept",
+   "index": 322,
+   "model_used": "nano_banana_2_1",
+   "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_160858_81625c17-f6e8-45c6-b058-d3120b57aa0d.png",
+   "size": [
+    2048,
+    2048
+   ],
+   "saved_bytes": 736282,
+   "master_bytes": 3892071,
+   "has_alpha_channel": false,
+   "transparent": false,
+   "credits": 2,
+   "medias": [
+    {
+     "value": "83affc20-60b4-4a50-b606-5c6986e30e8f",
+     "role": "image_references"
+    },
+    {
+     "value": "b673039a-361b-4f08-9bf9-39adfa0af62c",
+     "role": "image_references"
+    }
+   ],
+   "prompt_used": "Repaint the FIRST reference image. Keep its exact shape, proportions, number of parts, board heights, bar thicknesses and camera angle - do not add, remove or move anything. Only change the surface: cozy hand-painted matte style like the second reference room, soft outlines. One object alone on a plain off-white background: no floor, no frame, no text, no shadow. Colors: light wood #d9c3a9 bed frame and headboard, white mattress, two pale #e8dfe6 pillows, a cozy patchwork quilt in muted pastel squares folded over the lower half (like a lived-in small-apartment bed).",
+   "qa_metrics": {
+    "silhouette_iou_vs_ref": 0.985,
+    "bbox_1024": [
+     31,
+     205,
+     970,
+     820
+    ],
+    "ref_bbox_1024": [
+     54,
+     204,
+     968,
+     819
+    ],
+    "bg_rgb": [
+     248,
+     246,
+     241
+    ],
+    "bg_std": [
+     1.01,
+     0.76,
+     0.91
+    ],
+    "fg_components_1024": [
+     354297
+    ],
+    "ref_components_1024": [
+     350631
+    ],
+    "ref_only_max_blob_px": 187,
+    "added_max_blob_px": 2353,
+    "touches_border": false
+   }
+  },
+  {
+   "n": 33,
+   "id": "bed_bunk",
+   "k": 1,
+   "job_id": "ee0c4730-294d-42b2-b321-cc866b480731",
+   "saved_path": "assets/gen/v2_furn/c_bed_bunk_1.jpg",
+   "master_path": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/gen/v2_furn/c_bed_bunk_1.png",
+   "qa_pass": false,
+   "qa_notes": "회색 상자에 없는 난간을 더함 — 위층 머리 쪽과 뒤 긴 옆 가로대·위층 발치 쪽과 앞 긴 옆 난간(이불 끝 자리에 짧은 기둥 하나 더함)·아래층 발치 쪽과 머리 쪽 난간 · IoU 0.946(더한 덩어리 4055px) · 사다리(발판 4)·기둥 자체는 가늘고 따로",
+   "qa_grade": "FAIL",
+   "step": "concept",
+   "index": 331,
+   "model_used": "nano_banana_2_1",
+   "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_160857_ee0c4730-294d-42b2-b321-cc866b480731.png",
+   "size": [
+    2048,
+    2048
+   ],
+   "saved_bytes": 672735,
+   "master_bytes": 2907779,
+   "has_alpha_channel": false,
+   "transparent": false,
+   "credits": 2,
+   "medias": [
+    {
+     "value": "5cd7fb5d-9a1b-4440-855a-0ea8d14d7c00",
+     "role": "image_references"
+    },
+    {
+     "value": "b673039a-361b-4f08-9bf9-39adfa0af62c",
+     "role": "image_references"
+    }
+   ],
+   "prompt_used": "Repaint the FIRST reference image. Keep its exact shape, proportions, number of parts, board heights, bar thicknesses and camera angle - do not add, remove or move anything. Only change the surface: cozy hand-painted matte style like the second reference room, soft outlines. One object alone on a plain off-white background: no floor, no frame, no text, no shadow. Colors: light wood #d9c3a9 frame, posts and ladder, two pale blue-gray #dce6ea mattresses with small white pillows. Keep every post, rail and ladder rung thin and separate.",
+   "qa_metrics": {
+    "silhouette_iou_vs_ref": 0.946,
+    "bbox_1024": [
+     176,
+     152,
+     848,
+     968
+    ],
+    "ref_bbox_1024": [
+     178,
+     152,
+     845,
+     967
+    ],
+    "bg_rgb": [
+     252,
+     249,
+     242
+    ],
+    "bg_std": [
+     0.29,
+     0.29,
+     0.53
+    ],
+    "fg_components_1024": [
+     335486
+    ],
+    "ref_components_1024": [
+     318106
+    ],
+    "ref_only_max_blob_px": 0,
+    "added_max_blob_px": 4055,
+    "touches_border": false
+   }
+  },
+  {
+   "n": 33,
+   "id": "bed_bunk",
+   "k": 2,
+   "job_id": "d114ed26-be34-4b13-9115-806b3d6dd3a1",
+   "saved_path": "assets/gen/v2_furn/c_bed_bunk_2.jpg",
+   "master_path": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/gen/v2_furn/c_bed_bunk_2.png",
+   "qa_pass": true,
+   "qa_notes": "기둥 넷·층 둘(매트리스+흰 베개)·사다리 발판 4개(회색 상자와 같은 수)가 바닥까지 · 기둥·난간·사다리 가늘고 따로 · 더한 난간 없음 · IoU 0.982 · 글자·그림자 없음",
+   "qa_grade": "PASS",
+   "step": "concept",
+   "index": 332,
+   "model_used": "nano_banana_2_1",
+   "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_160900_d114ed26-be34-4b13-9115-806b3d6dd3a1.png",
+   "size": [
+    2048,
+    2048
+   ],
+   "saved_bytes": 655701,
+   "master_bytes": 5365486,
+   "has_alpha_channel": true,
+   "transparent": false,
+   "credits": 2,
+   "medias": [
+    {
+     "value": "5cd7fb5d-9a1b-4440-855a-0ea8d14d7c00",
+     "role": "image_references"
+    },
+    {
+     "value": "b673039a-361b-4f08-9bf9-39adfa0af62c",
+     "role": "image_references"
+    }
+   ],
+   "prompt_used": "Repaint the FIRST reference image. Keep its exact shape, proportions, number of parts, board heights, bar thicknesses and camera angle - do not add, remove or move anything. Only change the surface: cozy hand-painted matte style like the second reference room, soft outlines. One object alone on a plain off-white background: no floor, no frame, no text, no shadow. Colors: light wood #d9c3a9 frame, posts and ladder, two pale blue-gray #dce6ea mattresses with small white pillows. Keep every post, rail and ladder rung thin and separate.",
+   "qa_metrics": {
+    "silhouette_iou_vs_ref": 0.982,
+    "bbox_1024": [
+     175,
+     152,
+     848,
+     968
+    ],
+    "ref_bbox_1024": [
+     178,
+     152,
+     845,
+     967
+    ],
+    "bg_rgb": [
+     244,
+     243,
+     238
+    ],
+    "bg_std": [
+     0.61,
+     0.6,
+     0.99
+    ],
+    "fg_components_1024": [
+     323377
+    ],
+    "ref_components_1024": [
+     318106
+    ],
+    "ref_only_max_blob_px": 0,
+    "added_max_blob_px": 93,
+    "touches_border": false
+   }
+  },
+  {
+   "n": 34,
+   "id": "bed_loft",
+   "k": 1,
+   "job_id": "8d8116e1-86c6-4ff6-bb5a-e119f05064ae",
+   "saved_path": "assets/gen/v2_furn/c_bed_loft_1.jpg",
+   "master_path": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/gen/v2_furn/c_bed_loft_1.png",
+   "qa_pass": true,
+   "qa_notes": "높은 기둥 넷·머리 쪽 가로대·보이는 사다리 발판 3개(회색 상자와 같음)가 바닥까지 · 가늘고 따로 · 밑은 빔 · 앞 긴 옆의 이불 두께 띠를 나무 판으로 칠함(실루엣은 같음 · flags) · 베개는 주문 글대로 더함 · IoU 0.971 · 글자·그림자 없음",
+   "qa_grade": "PASS",
+   "step": "concept",
+   "index": 341,
+   "model_used": "nano_banana_2_1",
+   "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_160859_8d8116e1-86c6-4ff6-bb5a-e119f05064ae.png",
+   "size": [
+    2048,
+    2048
+   ],
+   "saved_bytes": 640018,
+   "master_bytes": 5677552,
+   "has_alpha_channel": true,
+   "transparent": false,
+   "credits": 2,
+   "medias": [
+    {
+     "value": "99421ca0-5862-47d5-83e4-443007de3e92",
+     "role": "image_references"
+    },
+    {
+     "value": "b673039a-361b-4f08-9bf9-39adfa0af62c",
+     "role": "image_references"
+    }
+   ],
+   "prompt_used": "Repaint the FIRST reference image. Keep its exact shape, proportions, number of parts, board heights, bar thicknesses and camera angle - do not add, remove or move anything. Only change the surface: cozy hand-painted matte style like the second reference room, soft outlines. One object alone on a plain off-white background: no floor, no frame, no text, no shadow. Colors: light wood #d9c3a9 frame, tall posts, rail and ladder, a pale blue-gray #dce6ea mattress on top with a small pillow, empty space underneath. Keep posts and ladder rungs thin and separate.",
+   "qa_metrics": {
+    "silhouette_iou_vs_ref": 0.971,
+    "bbox_1024": [
+     127,
+     55,
+     897,
+     968
+    ],
+    "ref_bbox_1024": [
+     128,
+     57,
+     895,
+     967
+    ],
+    "bg_rgb": [
+     249,
+     246,
+     239
+    ],
+    "bg_std": [
+     0.5,
+     0.39,
+     1.0
+    ],
+    "fg_components_1024": [
+     280637
+    ],
+    "ref_components_1024": [
+     273930
+    ],
+    "ref_only_max_blob_px": 13,
+    "added_max_blob_px": 318,
+    "touches_border": false
+   }
+  },
+  {
+   "n": 34,
+   "id": "bed_loft",
+   "k": 2,
+   "job_id": "d7fc073e-e38c-4614-9134-bb1126f4f7b7",
+   "saved_path": "assets/gen/v2_furn/c_bed_loft_2.jpg",
+   "master_path": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/gen/v2_furn/c_bed_loft_2.png",
+   "qa_pass": true,
+   "qa_notes": "k1 과 같으나 앞 긴 옆의 이불 두께 띠를 틈 있는 난간+끝 짧은 기둥으로 그림(기둥 하나 더함 · flags) · IoU 0.966 · 보이는 사다리 발판 3개 · 가늘고 따로",
+   "qa_grade": "PASS_WITH_WARNINGS",
+   "step": "concept",
+   "index": 342,
+   "model_used": "nano_banana_2_1",
+   "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_160859_d7fc073e-e38c-4614-9134-bb1126f4f7b7.png",
+   "size": [
+    2048,
+    2048
+   ],
+   "saved_bytes": 651866,
+   "master_bytes": 5681956,
+   "has_alpha_channel": true,
+   "transparent": false,
+   "credits": 2,
+   "medias": [
+    {
+     "value": "99421ca0-5862-47d5-83e4-443007de3e92",
+     "role": "image_references"
+    },
+    {
+     "value": "b673039a-361b-4f08-9bf9-39adfa0af62c",
+     "role": "image_references"
+    }
+   ],
+   "prompt_used": "Repaint the FIRST reference image. Keep its exact shape, proportions, number of parts, board heights, bar thicknesses and camera angle - do not add, remove or move anything. Only change the surface: cozy hand-painted matte style like the second reference room, soft outlines. One object alone on a plain off-white background: no floor, no frame, no text, no shadow. Colors: light wood #d9c3a9 frame, tall posts, rail and ladder, a pale blue-gray #dce6ea mattress on top with a small pillow, empty space underneath. Keep posts and ladder rungs thin and separate.",
+   "qa_metrics": {
+    "silhouette_iou_vs_ref": 0.966,
+    "bbox_1024": [
+     125,
+     55,
+     898,
+     967
+    ],
+    "ref_bbox_1024": [
+     128,
+     57,
+     895,
+     967
+    ],
+    "bg_rgb": [
+     245,
+     245,
+     238
+    ],
+    "bg_std": [
+     0.97,
+     1.05,
+     1.07
+    ],
+    "fg_components_1024": [
+     282566
+    ],
+    "ref_components_1024": [
+     273930
+    ],
+    "ref_only_max_blob_px": 17,
+    "added_max_blob_px": 1031,
+    "touches_border": false
+   }
+  },
+  {
+   "n": 35,
+   "id": "table",
+   "k": 1,
+   "job_id": "4799a67d-5125-48bc-a578-3bd57b45ff0c",
+   "saved_path": "assets/gen/v2_furn/c_table_1.jpg",
+   "master_path": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/gen/v2_furn/c_table_1.png",
+   "qa_pass": true,
+   "qa_notes": "상판+둥근 다리 넷 · 다리 자리·굵기가 k2 와 2px 안 · IoU 0.963(손그림 외곽선 두께만큼 큼) · 상판 색 (232,198,159) 로 #e5d3b8 보다 주황 쪽 · 상판 비움 · 글자·그림자 없음",
+   "qa_grade": "PASS",
+   "step": "concept",
+   "index": 351,
+   "model_used": "nano_banana_2_1",
+   "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_160858_4799a67d-5125-48bc-a578-3bd57b45ff0c.png",
+   "size": [
+    2048,
+    2048
+   ],
+   "saved_bytes": 491937,
+   "master_bytes": 2735485,
+   "has_alpha_channel": false,
+   "transparent": false,
+   "credits": 2,
+   "medias": [
+    {
+     "value": "1aafa22e-e812-48ce-bf07-9eb058515fe2",
+     "role": "image_references"
+    },
+    {
+     "value": "b673039a-361b-4f08-9bf9-39adfa0af62c",
+     "role": "image_references"
+    }
+   ],
+   "prompt_used": "Repaint the FIRST reference image. Keep its exact shape, proportions, number of parts, board heights, bar thicknesses and camera angle - do not add, remove or move anything. Only change the surface: cozy hand-painted matte style like the second reference room, soft outlines. One object alone on a plain off-white background: no floor, no frame, no text, no shadow. Colors: light wood #e5d3b8 tabletop, slightly darker #cbbba2 round legs. Tabletop empty.",
+   "qa_metrics": {
+    "silhouette_iou_vs_ref": 0.963,
+    "bbox_1024": [
+     57,
+     125,
+     967,
+     886
+    ],
+    "ref_bbox_1024": [
+     54,
+     122,
+     968,
+     883
+    ],
+    "bg_rgb": [
+     245,
+     244,
+     240
+    ],
+    "bg_std": [
+     0.7,
+     0.9,
+     0.75
+    ],
+    "fg_components_1024": [
+     237994
+    ],
+    "ref_components_1024": [
+     230265
+    ],
+    "ref_only_max_blob_px": 0,
+    "added_max_blob_px": 21,
+    "touches_border": false
+   }
+  },
+  {
+   "n": 35,
+   "id": "table",
+   "k": 2,
+   "job_id": "b174d4b3-30d5-4ed1-9630-d3992cd9d53f",
+   "saved_path": "assets/gen/v2_furn/c_table_2.jpg",
+   "master_path": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/gen/v2_furn/c_table_2.png",
+   "qa_pass": true,
+   "qa_notes": "k1 과 같은 꼴 · IoU 0.963 · 상판 색 (237,210,179) 로 #e5d3b8 에 더 가까움 · 다리는 조금 진한 나무색 · 상판 비움 · 글자·그림자 없음",
+   "qa_grade": "PASS",
+   "step": "concept",
+   "index": 352,
+   "model_used": "nano_banana_2_1",
+   "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_160857_b174d4b3-30d5-4ed1-9630-d3992cd9d53f.png",
+   "size": [
+    2048,
+    2048
+   ],
+   "saved_bytes": 489541,
+   "master_bytes": 2569192,
+   "has_alpha_channel": false,
+   "transparent": false,
+   "credits": 2,
+   "medias": [
+    {
+     "value": "1aafa22e-e812-48ce-bf07-9eb058515fe2",
+     "role": "image_references"
+    },
+    {
+     "value": "b673039a-361b-4f08-9bf9-39adfa0af62c",
+     "role": "image_references"
+    }
+   ],
+   "prompt_used": "Repaint the FIRST reference image. Keep its exact shape, proportions, number of parts, board heights, bar thicknesses and camera angle - do not add, remove or move anything. Only change the surface: cozy hand-painted matte style like the second reference room, soft outlines. One object alone on a plain off-white background: no floor, no frame, no text, no shadow. Colors: light wood #e5d3b8 tabletop, slightly darker #cbbba2 round legs. Tabletop empty.",
+   "qa_metrics": {
+    "silhouette_iou_vs_ref": 0.963,
+    "bbox_1024": [
+     56,
+     124,
+     967,
+     887
+    ],
+    "ref_bbox_1024": [
+     54,
+     122,
+     968,
+     883
+    ],
+    "bg_rgb": [
+     246,
+     245,
+     241
+    ],
+    "bg_std": [
+     0.99,
+     0.32,
+     0.52
+    ],
+    "fg_components_1024": [
+     238447
+    ],
+    "ref_components_1024": [
+     230265
+    ],
+    "ref_only_max_blob_px": 0,
+    "added_max_blob_px": 64,
+    "touches_border": false
+   }
+  },
+  {
+   "n": 36,
+   "id": "vanity",
+   "k": 1,
+   "job_id": "8449e335-fb5b-4476-9ab8-ade3d5ff8c2f",
+   "saved_path": "assets/gen/v2_furn/c_vanity_1.jpg",
+   "master_path": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/gen/v2_furn/c_vanity_1.png",
+   "qa_pass": true,
+   "qa_notes": "회색 상자 실루엣에 가장 가까움(IoU 0.974 · 덩어리 2개 = 몸+떠 있는 거울, 회색 상자도 거울이 떠 있음) · 거울 면을 크림색 판으로 칠해 거울로 안 읽힘 · 서랍통·가는 다리 둘 그대로 · 상판 비움",
+   "qa_grade": "PASS",
+   "step": "concept",
+   "index": 361,
+   "model_used": "nano_banana_2_1",
+   "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_160859_8449e335-fb5b-4476-9ab8-ade3d5ff8c2f.png",
+   "size": [
+    2048,
+    2048
+   ],
+   "saved_bytes": 451429,
+   "master_bytes": 5212403,
+   "has_alpha_channel": true,
+   "transparent": false,
+   "credits": 2,
+   "medias": [
+    {
+     "value": "80e7bf77-1f08-4d97-8e7c-86c0c0ec69a1",
+     "role": "image_references"
+    },
+    {
+     "value": "b673039a-361b-4f08-9bf9-39adfa0af62c",
+     "role": "image_references"
+    }
+   ],
+   "prompt_used": "Repaint the FIRST reference image. Keep its exact shape, proportions, number of parts, board heights, bar thicknesses and camera angle - do not add, remove or move anything. Only change the surface: cozy hand-painted matte style like the second reference room, soft outlines. One object alone on a plain off-white background: no floor, no frame, no text, no shadow. Colors: warm cream #eae2d6 vanity with a drawer cabinet on the left and thin legs on the right, a round mirror on a slim stand at the back, slightly darker #cbbfae edges. Top empty.",
+   "qa_metrics": {
+    "silhouette_iou_vs_ref": 0.974,
+    "bbox_1024": [
+     269,
+     132,
+     754,
+     957
+    ],
+    "ref_bbox_1024": [
+     271,
+     134,
+     752,
+     956
+    ],
+    "bg_rgb": [
+     249,
+     244,
+     237
+    ],
+    "bg_std": [
+     0.56,
+     0.62,
+     0.61
+    ],
+    "fg_components_1024": [
+     203757,
+     24231
+    ],
+    "ref_components_1024": [
+     199082,
+     23076
+    ],
+    "ref_only_max_blob_px": 0,
+    "added_max_blob_px": 1,
+    "touches_border": false
+   }
+  },
+  {
+   "n": 36,
+   "id": "vanity",
+   "k": 2,
+   "job_id": "fa3c77af-63f8-40b6-a694-55cea9ac8d08",
+   "saved_path": "assets/gen/v2_furn/c_vanity_2.jpg",
+   "master_path": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/gen/v2_furn/c_vanity_2.png",
+   "qa_pass": true,
+   "qa_notes": "주문 글(a round mirror on a slim stand)대로 가는 받침을 더해 거울이 상판 뒤에 붙음(덩어리 1개 · 회색 상자엔 받침 없음) · 거울 면은 은빛 유리+테두리로 잘 읽힘 · 몸은 k1 과 같음 · IoU 0.964",
+   "qa_grade": "PASS_WITH_WARNINGS",
+   "step": "concept",
+   "index": 362,
+   "model_used": "nano_banana_2_1",
+   "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_160900_fa3c77af-63f8-40b6-a694-55cea9ac8d08.png",
+   "size": [
+    2048,
+    2048
+   ],
+   "saved_bytes": 485895,
+   "master_bytes": 5460771,
+   "has_alpha_channel": true,
+   "transparent": false,
+   "credits": 2,
+   "medias": [
+    {
+     "value": "80e7bf77-1f08-4d97-8e7c-86c0c0ec69a1",
+     "role": "image_references"
+    },
+    {
+     "value": "b673039a-361b-4f08-9bf9-39adfa0af62c",
+     "role": "image_references"
+    }
+   ],
+   "prompt_used": "Repaint the FIRST reference image. Keep its exact shape, proportions, number of parts, board heights, bar thicknesses and camera angle - do not add, remove or move anything. Only change the surface: cozy hand-painted matte style like the second reference room, soft outlines. One object alone on a plain off-white background: no floor, no frame, no text, no shadow. Colors: warm cream #eae2d6 vanity with a drawer cabinet on the left and thin legs on the right, a round mirror on a slim stand at the back, slightly darker #cbbfae edges. Top empty.",
+   "qa_metrics": {
+    "silhouette_iou_vs_ref": 0.964,
+    "bbox_1024": [
+     270,
+     132,
+     754,
+     957
+    ],
+    "ref_bbox_1024": [
+     271,
+     134,
+     752,
+     956
+    ],
+    "bg_rgb": [
+     247,
+     243,
+     237
+    ],
+    "bg_std": [
+     0.6,
+     0.76,
+     0.55
+    ],
+    "fg_components_1024": [
+     230228
+    ],
+    "ref_components_1024": [
+     199082,
+     23076
+    ],
+    "ref_only_max_blob_px": 0,
+    "added_max_blob_px": 317,
+    "touches_border": false
+   }
+  },
+  {
+   "n": 37,
+   "id": "mirror",
+   "k": 1,
+   "job_id": "4796f41c-9333-4922-8273-a64516e49555",
+   "saved_path": "assets/gen/v2_furn/c_mirror_1.jpg",
+   "master_path": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/gen/v2_furn/c_mirror_1.png",
+   "qa_pass": true,
+   "qa_notes": "틀+작은 뒷받침 그대로 · IoU 0.983 · 거울 면 옅은 은청색에 비스듬한 빛 한 줄 · 방 비침 없음 · 유리 아래쪽 쐐기 조각은 회색 상자를 그대로 옮긴 것(flags 참고)",
+   "qa_grade": "PASS",
+   "step": "concept",
+   "index": 371,
+   "model_used": "nano_banana_2_1",
+   "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_160901_4796f41c-9333-4922-8273-a64516e49555.png",
+   "size": [
+    2048,
+    2048
+   ],
+   "saved_bytes": 426778,
+   "master_bytes": 2604015,
+   "has_alpha_channel": false,
+   "transparent": false,
+   "credits": 2,
+   "medias": [
+    {
+     "value": "3001e0d5-fc3b-42fe-8193-89e1a5e8c7e0",
+     "role": "image_references"
+    },
+    {
+     "value": "b673039a-361b-4f08-9bf9-39adfa0af62c",
+     "role": "image_references"
+    }
+   ],
+   "prompt_used": "Repaint the FIRST reference image. Keep its exact shape, proportions, number of parts, board heights, bar thicknesses and camera angle - do not add, remove or move anything. Only change the surface: cozy hand-painted matte style like the second reference room, soft outlines. One object alone on a plain off-white background: no floor, no frame, no text, no shadow. Colors: a tall standing full-length mirror with a light wood #cbbfae frame and a small back stand; the mirror surface painted as soft pale silver-blue with a gentle diagonal highlight (no reflection of a room).",
+   "qa_metrics": {
+    "silhouette_iou_vs_ref": 0.983,
+    "bbox_1024": [
+     355,
+     120,
+     591,
+     946
+    ],
+    "ref_bbox_1024": [
+     358,
+     118,
+     588,
+     946
+    ],
+    "bg_rgb": [
+     248,
+     245,
+     241
+    ],
+    "bg_std": [
+     1.18,
+     0.62,
+     0.63
+    ],
+    "fg_components_1024": [
+     171275
+    ],
+    "ref_components_1024": [
+     168424
+    ],
+    "ref_only_max_blob_px": 0,
+    "added_max_blob_px": 0,
+    "touches_border": false
+   }
+  },
+  {
+   "n": 37,
+   "id": "mirror",
+   "k": 2,
+   "job_id": "3e08c910-ae1a-4205-9922-818f04e6cc03",
+   "saved_path": "assets/gen/v2_furn/c_mirror_2.jpg",
+   "master_path": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/gen/v2_furn/c_mirror_2.png",
+   "qa_pass": false,
+   "qa_notes": "뒷받침이 크게 자라 키 큰 이젤 다리가 됨(오른쪽 끝 x 649 vs 회색 상자 588 · 더한 덩어리 9579px · IoU 0.913) · 틀도 두꺼워짐 · 유리 빛은 괜찮음 · 쐐기 조각 같음",
+   "qa_grade": "FAIL",
+   "step": "concept",
+   "index": 372,
+   "model_used": "nano_banana_2_1",
+   "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_160858_3e08c910-ae1a-4205-9922-818f04e6cc03.png",
+   "size": [
+    2048,
+    2048
+   ],
+   "saved_bytes": 484275,
+   "master_bytes": 5334530,
+   "has_alpha_channel": true,
+   "transparent": false,
+   "credits": 2,
+   "medias": [
+    {
+     "value": "3001e0d5-fc3b-42fe-8193-89e1a5e8c7e0",
+     "role": "image_references"
+    },
+    {
+     "value": "b673039a-361b-4f08-9bf9-39adfa0af62c",
+     "role": "image_references"
+    }
+   ],
+   "prompt_used": "Repaint the FIRST reference image. Keep its exact shape, proportions, number of parts, board heights, bar thicknesses and camera angle - do not add, remove or move anything. Only change the surface: cozy hand-painted matte style like the second reference room, soft outlines. One object alone on a plain off-white background: no floor, no frame, no text, no shadow. Colors: a tall standing full-length mirror with a light wood #cbbfae frame and a small back stand; the mirror surface painted as soft pale silver-blue with a gentle diagonal highlight (no reflection of a room).",
+   "qa_metrics": {
+    "silhouette_iou_vs_ref": 0.913,
+    "bbox_1024": [
+     350,
+     120,
+     649,
+     948
+    ],
+    "ref_bbox_1024": [
+     358,
+     118,
+     588,
+     946
+    ],
+    "bg_rgb": [
+     250,
+     251,
+     245
+    ],
+    "bg_std": [
+     0.58,
+     0.7,
+     0.68
+    ],
+    "fg_components_1024": [
+     184090
+    ],
+    "ref_components_1024": [
+     168424
+    ],
+    "ref_only_max_blob_px": 0,
+    "added_max_blob_px": 9579,
+    "touches_border": false
+   }
+  },
+  {
+   "n": 38,
+   "id": "shoe_cabinet",
+   "k": 1,
+   "job_id": "e2b3c003-3b35-422c-8c19-fbd5095b778e",
+   "saved_path": "assets/gen/v2_furn/c_shoe_cabinet_1.jpg",
+   "master_path": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/gen/v2_furn/c_shoe_cabinet_1.png",
+   "qa_pass": true,
+   "qa_notes": "윗띠+얕은 문 셋 · 이음 선 셋이 회색 상자 선 자리 그대로 · 문마다 둥근 손잡이 하나씩 가운데 · IoU 0.994 · 윗면 비움 · 글자·그림자 없음",
+   "qa_grade": "PASS",
+   "step": "concept",
+   "index": 381,
+   "model_used": "nano_banana_2_1",
+   "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_161039_e2b3c003-3b35-422c-8c19-fbd5095b778e.png",
+   "size": [
+    2048,
+    2048
+   ],
+   "saved_bytes": 536506,
+   "master_bytes": 5334788,
+   "has_alpha_channel": true,
+   "transparent": false,
+   "credits": 2,
+   "medias": [
+    {
+     "value": "12c72e26-e238-424d-aedb-67b4eb36cd46",
+     "role": "image_references"
+    },
+    {
+     "value": "b673039a-361b-4f08-9bf9-39adfa0af62c",
+     "role": "image_references"
+    }
+   ],
+   "prompt_used": "Repaint the FIRST reference image. Keep its exact shape, proportions, number of parts, board heights, bar thicknesses and camera angle - do not add, remove or move anything. Only change the surface: cozy hand-painted matte style like the second reference room, soft outlines. One object alone on a plain off-white background: no floor, no frame, no text, no shadow. Colors: warm off-white #e6dccd shoe cabinet with three shallow doors (the thin lines are door seams), small round knobs. Top empty.",
+   "qa_metrics": {
+    "silhouette_iou_vs_ref": 0.994,
+    "bbox_1024": [
+     199,
+     60,
+     829,
+     961
+    ],
+    "ref_bbox_1024": [
+     202,
+     60,
+     826,
+     960
+    ],
+    "bg_rgb": [
+     247,
+     243,
+     234
+    ],
+    "bg_std": [
+     0.97,
+     0.56,
+     0.87
+    ],
+    "fg_components_1024": [
+     477141
+    ],
+    "ref_components_1024": [
+     474702
+    ],
+    "ref_only_max_blob_px": 0,
+    "added_max_blob_px": 0,
+    "touches_border": false
+   }
+  },
+  {
+   "n": 38,
+   "id": "shoe_cabinet",
+   "k": 2,
+   "job_id": "9a236a64-66f5-4dfc-835f-e3705ab820b5",
+   "saved_path": "assets/gen/v2_furn/c_shoe_cabinet_2.jpg",
+   "master_path": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/gen/v2_furn/c_shoe_cabinet_2.png",
+   "qa_pass": true,
+   "qa_notes": "이음 선 자리는 같으나 손잡이가 엉킴(윗띠에 하나·첫 이음 바로 밑에 하나·맨 아래 문엔 없음) · 안쪽 테두리를 더함 · IoU 0.991",
+   "qa_grade": "PASS_WITH_WARNINGS",
+   "step": "concept",
+   "index": 382,
+   "model_used": "nano_banana_2_1",
+   "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_161041_9a236a64-66f5-4dfc-835f-e3705ab820b5.png",
+   "size": [
+    2048,
+    2048
+   ],
+   "saved_bytes": 522421,
+   "master_bytes": 5421843,
+   "has_alpha_channel": true,
+   "transparent": false,
+   "credits": 2,
+   "medias": [
+    {
+     "value": "12c72e26-e238-424d-aedb-67b4eb36cd46",
+     "role": "image_references"
+    },
+    {
+     "value": "b673039a-361b-4f08-9bf9-39adfa0af62c",
+     "role": "image_references"
+    }
+   ],
+   "prompt_used": "Repaint the FIRST reference image. Keep its exact shape, proportions, number of parts, board heights, bar thicknesses and camera angle - do not add, remove or move anything. Only change the surface: cozy hand-painted matte style like the second reference room, soft outlines. One object alone on a plain off-white background: no floor, no frame, no text, no shadow. Colors: warm off-white #e6dccd shoe cabinet with three shallow doors (the thin lines are door seams), small round knobs. Top empty.",
+   "qa_metrics": {
+    "silhouette_iou_vs_ref": 0.991,
+    "bbox_1024": [
+     198,
+     61,
+     828,
+     964
+    ],
+    "ref_bbox_1024": [
+     202,
+     60,
+     826,
+     960
+    ],
+    "bg_rgb": [
+     249,
+     247,
+     242
+    ],
+    "bg_std": [
+     0.83,
+     0.57,
+     0.57
+    ],
+    "fg_components_1024": [
+     478608
+    ],
+    "ref_components_1024": [
+     474702
+    ],
+    "ref_only_max_blob_px": 0,
+    "added_max_blob_px": 0,
+    "touches_border": false
+   }
+  },
+  {
+   "n": 39,
+   "id": "tv_stand",
+   "k": 1,
+   "job_id": "4fd3d839-6e10-4d3f-8c88-cb9f5e777f00",
+   "saved_path": "assets/gen/v2_furn/c_tv_stand_1.jpg",
+   "master_path": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/gen/v2_furn/c_tv_stand_1.png",
+   "qa_pass": true,
+   "qa_notes": "긴 낮은 몸+가로 이음 하나(위아래 반)+짧은 진한 다리 넷 · IoU 0.986 · 손잡이 없음 · 벤치·오토만처럼도 읽힘",
+   "qa_grade": "PASS",
+   "step": "concept",
+   "index": 391,
+   "model_used": "nano_banana_2_1",
+   "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_161040_4fd3d839-6e10-4d3f-8c88-cb9f5e777f00.png",
+   "size": [
+    2048,
+    2048
+   ],
+   "saved_bytes": 511668,
+   "master_bytes": 5171717,
+   "has_alpha_channel": true,
+   "transparent": false,
+   "credits": 2,
+   "medias": [
+    {
+     "value": "21666693-34df-40c5-a077-1fd24a368af6",
+     "role": "image_references"
+    },
+    {
+     "value": "b673039a-361b-4f08-9bf9-39adfa0af62c",
+     "role": "image_references"
+    }
+   ],
+   "prompt_used": "Repaint the FIRST reference image. Keep its exact shape, proportions, number of parts, board heights, bar thicknesses and camera angle - do not add, remove or move anything. Only change the surface: cozy hand-painted matte style like the second reference room, soft outlines. One object alone on a plain off-white background: no floor, no frame, no text, no shadow. Colors: light wood #e3d3bd low TV cabinet with two drawers (the thin line is the drawer seam), short darker #c3b49c legs. Top empty.",
+   "qa_metrics": {
+    "silhouette_iou_vs_ref": 0.986,
+    "bbox_1024": [
+     56,
+     217,
+     971,
+     789
+    ],
+    "ref_bbox_1024": [
+     58,
+     216,
+     968,
+     786
+    ],
+    "bg_rgb": [
+     249,
+     246,
+     241
+    ],
+    "bg_std": [
+     0.52,
+     0.45,
+     0.46
+    ],
+    "fg_components_1024": [
+     288785
+    ],
+    "ref_components_1024": [
+     285221
+    ],
+    "ref_only_max_blob_px": 1,
+    "added_max_blob_px": 16,
+    "touches_border": false
+   }
+  },
+  {
+   "n": 39,
+   "id": "tv_stand",
+   "k": 2,
+   "job_id": "c0c8b8ec-523b-4944-8f03-76b8ffe9f60f",
+   "saved_path": "assets/gen/v2_furn/c_tv_stand_2.jpg",
+   "master_path": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/gen/v2_furn/c_tv_stand_2.png",
+   "qa_pass": true,
+   "qa_notes": "몸·다리 같음 · 가로 이음 밑 가운데에 세로 이음을 더해 서랍 둘이 좌우로 읽힘(코드 B.tv_stand 의 이음 띠 둘 = 왼쪽·오른쪽 반 · 주문 글 two drawers 와 맞음) · IoU 0.989",
+   "qa_grade": "PASS",
+   "step": "concept",
+   "index": 392,
+   "model_used": "nano_banana_2_1",
+   "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_161041_c0c8b8ec-523b-4944-8f03-76b8ffe9f60f.png",
+   "size": [
+    2048,
+    2048
+   ],
+   "saved_bytes": 501424,
+   "master_bytes": 5033472,
+   "has_alpha_channel": true,
+   "transparent": false,
+   "credits": 2,
+   "medias": [
+    {
+     "value": "21666693-34df-40c5-a077-1fd24a368af6",
+     "role": "image_references"
+    },
+    {
+     "value": "b673039a-361b-4f08-9bf9-39adfa0af62c",
+     "role": "image_references"
+    }
+   ],
+   "prompt_used": "Repaint the FIRST reference image. Keep its exact shape, proportions, number of parts, board heights, bar thicknesses and camera angle - do not add, remove or move anything. Only change the surface: cozy hand-painted matte style like the second reference room, soft outlines. One object alone on a plain off-white background: no floor, no frame, no text, no shadow. Colors: light wood #e3d3bd low TV cabinet with two drawers (the thin line is the drawer seam), short darker #c3b49c legs. Top empty.",
+   "qa_metrics": {
+    "silhouette_iou_vs_ref": 0.989,
+    "bbox_1024": [
+     56,
+     217,
+     971,
+     788
+    ],
+    "ref_bbox_1024": [
+     58,
+     216,
+     968,
+     786
+    ],
+    "bg_rgb": [
+     247,
+     244,
+     237
+    ],
+    "bg_std": [
+     0.64,
+     1.02,
+     0.74
+    ],
+    "fg_components_1024": [
+     288285
+    ],
+    "ref_components_1024": [
+     285221
+    ],
+    "ref_only_max_blob_px": 0,
+    "added_max_blob_px": 0,
+    "touches_border": false
+   }
+  },
+  {
+   "n": 40,
+   "id": "room_divider",
+   "k": 1,
+   "job_id": "18664134-da18-4c1f-b31b-6eb794c6b357",
+   "saved_path": "assets/gen/v2_furn/c_room_divider_1.jpg",
+   "master_path": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/gen/v2_furn/c_room_divider_1.png",
+   "qa_pass": true,
+   "qa_notes": "판 셋 각도·틈 그대로 · IoU 0.989 · 밝은 나무 틀 곧음 · 천이 얇게 비치는 듯 세로 얼룩이 있음",
+   "qa_grade": "PASS",
+   "step": "concept",
+   "index": 401,
+   "model_used": "nano_banana_2_1",
+   "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_161041_18664134-da18-4c1f-b31b-6eb794c6b357.png",
+   "size": [
+    2048,
+    2048
+   ],
+   "saved_bytes": 836501,
+   "master_bytes": 6011086,
+   "has_alpha_channel": true,
+   "transparent": false,
+   "credits": 2,
+   "medias": [
+    {
+     "value": "76145de0-2bd0-431d-8825-57854dc7783b",
+     "role": "image_references"
+    },
+    {
+     "value": "b673039a-361b-4f08-9bf9-39adfa0af62c",
+     "role": "image_references"
+    }
+   ],
+   "prompt_used": "Repaint the FIRST reference image. Keep its exact shape, proportions, number of parts, board heights, bar thicknesses and camera angle - do not add, remove or move anything. Only change the surface: cozy hand-painted matte style like the second reference room, soft outlines. One object alone on a plain off-white background: no floor, no frame, no text, no shadow. Colors: a three-panel folding room divider, warm off-white #e8dfd2 fabric panels with a light wood frame and a faint woven texture, panels at slight angles exactly like the reference.",
+   "qa_metrics": {
+    "silhouette_iou_vs_ref": 0.989,
+    "bbox_1024": [
+     277,
+     58,
+     782,
+     946
+    ],
+    "ref_bbox_1024": [
+     279,
+     58,
+     779,
+     944
+    ],
+    "bg_rgb": [
+     245,
+     243,
+     238
+    ],
+    "bg_std": [
+     1.08,
+     0.47,
+     0.68
+    ],
+    "fg_components_1024": [
+     226202,
+     108026
+    ],
+    "ref_components_1024": [
+     224285,
+     106390
+    ],
+    "ref_only_max_blob_px": 0,
+    "added_max_blob_px": 0,
+    "touches_border": false
+   }
+  },
+  {
+   "n": 40,
+   "id": "room_divider",
+   "k": 2,
+   "job_id": "ea11dc66-bad0-440d-8055-c7e0b2f9834f",
+   "saved_path": "assets/gen/v2_furn/c_room_divider_2.jpg",
+   "master_path": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/gen/v2_furn/c_room_divider_2.png",
+   "qa_pass": true,
+   "qa_notes": "판 셋 각도·틈 그대로 · IoU 0.986 · 천이 고르고 불투명한 직물 결(가림막으로 읽힘) · 틀 외곽선이 조금 굵고 살짝 물결",
+   "qa_grade": "PASS",
+   "step": "concept",
+   "index": 402,
+   "model_used": "nano_banana_2_1",
+   "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_161041_ea11dc66-bad0-440d-8055-c7e0b2f9834f.png",
+   "size": [
+    2048,
+    2048
+   ],
+   "saved_bytes": 683366,
+   "master_bytes": 5483712,
+   "has_alpha_channel": true,
+   "transparent": false,
+   "credits": 2,
+   "medias": [
+    {
+     "value": "76145de0-2bd0-431d-8825-57854dc7783b",
+     "role": "image_references"
+    },
+    {
+     "value": "b673039a-361b-4f08-9bf9-39adfa0af62c",
+     "role": "image_references"
+    }
+   ],
+   "prompt_used": "Repaint the FIRST reference image. Keep its exact shape, proportions, number of parts, board heights, bar thicknesses and camera angle - do not add, remove or move anything. Only change the surface: cozy hand-painted matte style like the second reference room, soft outlines. One object alone on a plain off-white background: no floor, no frame, no text, no shadow. Colors: a three-panel folding room divider, warm off-white #e8dfd2 fabric panels with a light wood frame and a faint woven texture, panels at slight angles exactly like the reference.",
+   "qa_metrics": {
+    "silhouette_iou_vs_ref": 0.986,
+    "bbox_1024": [
+     277,
+     57,
+     781,
+     946
+    ],
+    "ref_bbox_1024": [
+     279,
+     58,
+     779,
+     944
+    ],
+    "bg_rgb": [
+     249,
+     245,
+     239
+    ],
+    "bg_std": [
+     0.56,
+     0.64,
+     0.59
+    ],
+    "fg_components_1024": [
+     226783,
+     108485
+    ],
+    "ref_components_1024": [
+     224285,
+     106390
+    ],
+    "ref_only_max_blob_px": 0,
+    "added_max_blob_px": 0,
+    "touches_border": false
+   }
+  }
+ ],
+ "_storage": "opaque → JPEG q95 4:4:4 in repo, PNG master moved to C:/Users/pc/Desktop/빛식물/_hf_masters/ (same relative path) · 18장 다 불투명(RGBA 로 온 것도 알파 전부 255)"
+}
