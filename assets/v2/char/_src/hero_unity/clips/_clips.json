@@ -1,0 +1,106 @@
+{
+  "idle": {
+    "task_id": "01a12117-b97a-7008-98fc-b4592648330d",
+    "action_id": 0,
+    "path": "assets/v2/char/_src/hero_unity/clips/idle.glb",
+    "bytes": 5213752,
+    "joints": 24,
+    "duration_s": 4.0333
+  },
+  "sit": {
+    "task_id": "01a12117-bde9-70df-aabf-1aaa92b51d32",
+    "action_id": 32,
+    "path": "assets/v2/char/_src/hero_unity/clips/sit.glb",
+    "bytes": 5408252,
+    "joints": 24,
+    "duration_s": 11.3667
+  },
+  "sleep": {
+    "task_id": "01a12117-c2a1-775b-9e1b-d9c2a01989fe",
+    "action_id": 267,
+    "path": "assets/v2/char/_src/hero_unity/clips/sleep.glb",
+    "bytes": 5152636,
+    "joints": 24,
+    "duration_s": 1.7333
+  },
+  "repot": {
+    "task_id": "01a12117-c504-7057-9fc0-05b27c8e8593",
+    "action_id": 274,
+    "path": "assets/v2/char/_src/hero_unity/clips/repot.glb",
+    "bytes": 5360556,
+    "joints": 24,
+    "duration_s": 9.5667
+  },
+  "cheer": {
+    "task_id": "01a12117-c720-74df-8baa-308ec285c848",
+    "action_id": 49,
+    "path": "assets/v2/char/_src/hero_unity/clips/cheer.glb",
+    "bytes": 5346380,
+    "joints": 24,
+    "duration_s": 9.0333
+  },
+  "wave": {
+    "task_id": "01a12117-c914-7218-ac27-7be0759fd796",
+    "action_id": 28,
+    "path": "assets/v2/char/_src/hero_unity/clips/wave.glb",
+    "bytes": 5249144,
+    "joints": 24,
+    "duration_s": 5.3667
+  },
+  "water": {
+    "task_id": "01a12117-cb66-7216-8d38-567a40c991ea",
+    "action_id": 285,
+    "path": "assets/v2/char/_src/hero_unity/clips/water.glb",
+    "bytes": 5245612,
+    "joints": 24,
+    "duration_s": 5.2333
+  },
+  "harvest": {
+    "task_id": "01a12117-f881-77c5-9ab2-86d45c303c51",
+    "action_id": 278,
+    "path": "assets/v2/char/_src/hero_unity/clips/harvest.glb",
+    "bytes": 5271244,
+    "joints": 24,
+    "duration_s": 6.2
+  },
+  "harvest_low": {
+    "task_id": "01a12117-fa71-7042-844f-0cc7b51cf77e",
+    "action_id": 277,
+    "path": "assets/v2/char/_src/hero_unity/clips/harvest_low.glb",
+    "bytes": 5296020,
+    "joints": 24,
+    "duration_s": 7.1333
+  },
+  "a281": {
+    "task_id": "01a12117-fec5-7605-afee-3fb98662b7ac",
+    "action_id": 281,
+    "path": "assets/v2/char/_src/hero_unity/clips/a281.glb",
+    "bytes": 5209380,
+    "joints": 24,
+    "duration_s": 3.8667
+  },
+  "scratch": {
+    "task_id": "01a12118-01f1-749d-a3a1-ba61f06c0b7b",
+    "action_id": 36,
+    "path": "assets/v2/char/_src/hero_unity/clips/scratch.glb",
+    "bytes": 5412680,
+    "joints": 24,
+    "duration_s": 11.5333
+  },
+  "nod": {
+    "task_id": "01a12118-050c-7250-9815-4a09667bab4d",
+    "action_id": 25,
+    "path": "assets/v2/char/_src/hero_unity/clips/nod.glb",
+    "bytes": 5452464,
+    "joints": 24,
+    "duration_s": 13.0333
+  },
+  "listen": {
+    "task_id": "01a12118-0918-73e8-80cd-06c7d7a6af24",
+    "action_id": 47,
+    "path": "assets/v2/char/_src/hero_unity/clips/listen.glb",
+    "bytes": 5355244,
+    "joints": 24,
+    "duration_s": 9.3667
+  }
+}
