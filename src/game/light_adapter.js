@@ -481,7 +481,9 @@ export function createLightEngine(data) {
         return (o.dli_daylight ?? 0) * (novice ? 1 : weatherE(season)) + lampDLI(+ppfdSum(rigs, p).toFixed(2), 12);
       }));
       const cs = val('summer'), cw = novice ? cs : val('winter');
-      return cs >= th ? { y: +yTop.toFixed(3), s: r2(cs), w: r2(cw), lamps: ci + 1, winterToo: !novice && cw >= th } : null;
+      /* atTop: 가르는 자리가 이미 다 맨 윗단(창턱 · 한 면 가구 · 맨 윗단에 놓은 화분) — 글에서 «맨 윗단에 두고»를 뺀다 */
+      const atTop = pts.every(p => p.y >= yTop - 1e-3);
+      return cs >= th ? { y: +yTop.toFixed(3), s: r2(cs), w: r2(cw), lamps: ci + 1, winterToo: !novice && cw >= th, atTop } : null;
     };
     if (novice) {
       const v0 = best('summer', 0), vN = best('summer', nAll);
