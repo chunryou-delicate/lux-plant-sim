@@ -10478,9 +10478,14 @@ export async function createRoomView(canvas, opts = {}) {
     get focusedSlot() { return focused; },
     get three() { return ctx; },
 
-    dispose() {
+    /* ★ 2026-10-09 P0(총괄 · leaf 재현) — `opt.keepContext`: 같은 캔버스에 방을 «다시» 붙일 때(이사 · 가구 다시 짓기 · remountRoomView)는
+         문맥을 놓지 않는다. ⛔ 놓으면(forceContextLoss) 그 캔버스의 문맥은 «잃은 채로» 남고, 새 방뷰가 같은 캔버스에서
+         getContext 로 받는 것이 바로 그 잃은 문맥이라 getShaderPrecisionFormat 이 null → «방을 그리지 못했습니다(precision)».
+         캔버스 하나에 문맥은 하나라, 다시 붙여도 문맥 수는 안 는다. 떠날 때(releaseGL)만 놓는다(기본값). */
+    dispose(opt = {}) {
       if (disposed) return;
       disposed = true;
+      const keepContext = !!(opt && opt.keepContext);
       /* ★ 화면이 죽으면 논리도 안 돈다 — 하던 동작을 먼저 취소한다(반쯤 준 물은 없다) */
       cancelAct('방이 사라졌습니다');
       dropSkinTip();                       /* 무늬 알림·구독을 걷는다 (§방에도 무늬 잎이 난다) */
@@ -10525,8 +10530,10 @@ export async function createRoomView(canvas, opts = {}) {
          ⇒ `forceContextLoss()` 로 명시적으로 놓는다. 이걸 안 부르면 다시 시작할 때
            옛 문맥이 아직 살아 있어, 새 판이 문맥을 못 받아 방이 통째로 안 뜬다.
          ⚠ 던질 수 있다(이미 잃은 문맥이면) — 치우다 난 오류로 나머지를 못 치우면 안 된다. */
-      try { if (typeof ctx.renderer.forceContextLoss === 'function') ctx.renderer.forceContextLoss(); }
-      catch (e) { console.warn('[방뷰] 문맥 놓기', e && e.message); }
+      if (!keepContext) {
+        try { if (typeof ctx.renderer.forceContextLoss === 'function') ctx.renderer.forceContextLoss(); }
+        catch (e) { console.warn('[방뷰] 문맥 놓기', e && e.message); }
+      }
     }
   };
 

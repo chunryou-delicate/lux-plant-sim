@@ -13411,7 +13411,12 @@ async function remountRoomView() {
      ⚠ 방뷰를 부수기 **전에** 불러야 highlightFurniture(null) 이 실제로 되돌린다. */
   try { furnPicked.clear(); } catch { }
   if (roomView) {
-    try { roomView.dispose(); }
+    /* ★★ 2026-10-09 P0(총괄 · leaf 0748f781) — **같은 캔버스에 다시 붙이므로 문맥을 놓지 않는다**(keepContext).
+         ⛔ 08-17(5ebb1ad3)부터 dispose 가 늘 forceContextLoss 를 불러, 이사(§doMoveOut 끝 → 여기)·가구 다시 짓기 때
+           새 방뷰가 «잃은 문맥»을 받아 «방을 그리지 못했습니다 — …precision» 으로 무대가 깨졌다. 떠날 때(§releaseGL)만 놓는다 */
+    /* ?keepctx=0 — 걸어서 잴 때만 쓰는 깃발(?d23=0 과 같은 꼴): 고치기 전 길(문맥을 놓음)로 돌려 대조 판을 세운다 · 세이브에 안 남는다 */
+    const keep = !/[?&]keepctx=0(?:&|$)/.test(location.search);
+    try { roomView.dispose({ keepContext: keep }); }
     catch (e) { console.warn('[방] 옛 방 정리 실패 —', (e && e.message) || e); }
     roomView = null; window.__rv = null;
   }
