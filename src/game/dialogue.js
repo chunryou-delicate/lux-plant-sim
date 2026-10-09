@@ -3044,7 +3044,12 @@ export function createStoryteller(opt = {}) {
   let quiet = 0;
 
   /* 한 턴 → 이번에 띄울 대사 id 목록(순서 그대로). 빈 배열이면 조용한 날이다. */
+  /* ★ 2026-10-09 [plan] D43 — 턴 밖 사건(§events)도 판(S)을 봐야 갈리는 줄이 있다(이사 날 가방 삽수 §movedInBagCuttings).
+     부르는 쪽이 S 를 안 넘기면 «마지막 턴에 받은 S»를 쓴다 — S 는 한 판 내내 같은 객체를 고쳐 쓰므로 그날 상태다.
+     ⚠ 걸어서 잡았다: 화면은 이사 장면을 story.events(r.events) 로 불러 S 가 없었고, 그래서 그 한 줄이 안 섰다(노드 검사는 S 를 직접 넘겨 못 봤다). */
+  let lastS = null;
   function turn(turnObj, S = null) {
+    if (S) lastS = S;
     const ids = scriptsForEvents((turnObj && turnObj.events) || [], S);
     const day = turnObj ? turnObj.day : null;
     if (ids.length) { quiet = 0; history.push(...ids); note(ids, day); return ids; }
@@ -3064,8 +3069,8 @@ export function createStoryteller(opt = {}) {
   }
   /* 턴 밖에서 나는 일(식물등 구입·이사 버튼) — 그쪽이 낸 events 를 그대로 준다.
      buyLamp()·moveOut() 의 반환값에 `events` 가 실려 온다. */
-  function events(list) {
-    const ids = scriptsForEvents(list || []);
+  function events(list, S = null) {
+    const ids = scriptsForEvents(list || [], S || lastS);
     if (ids.length) { quiet = 0; history.push(...ids); }
     return ids;
   }
