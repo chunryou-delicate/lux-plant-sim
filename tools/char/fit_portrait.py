@@ -120,7 +120,7 @@ def clear_pockets(rgb, bg, tol):
     return out
 
 
-def crop_to_match(im, orig_path):
+def crop_to_match(im, orig_path, min_ncc=0.9):
     """«옷만 바꾼 같은 낯»을 원래 초상과 얼굴 자리·크기가 같게 자른다 — --match <원래 초상.png> 일 때만.
 
     ★ 2026-10-09 앞치마 판 낯 넷: Higgsfield 가 몸을 더 넣어 얼굴이 원래보다 2~10% 작게 왔다.
@@ -153,8 +153,9 @@ def crop_to_match(im, orig_path):
     x, y, w, h = (lx - bx0) / s, (ly - by0) / s, ow / s, oh / s
     print('얼굴 맞춤(%s): NCC %.3f · 배율 %.3f(폭 맞춤 %.3f → 얼굴 %+.0f%%) · 자를 네모 x %.0f..%.0f y %.0f..%.0f'
           % (os.path.basename(orig_path), sc, s, base, (s / base - 1) * 100, x, x + w, y, y + h))
-    if sc < 0.9:
-        raise SystemExit('⛔ 얼굴이 원래 초상과 안 겹친다(NCC %.3f < 0.9) — 표정이 다른 그림인가?' % sc)
+    # 10-10 문턱을 열쇠로 — 옷만 바꾼 같은 그림은 0.95 언저리, «같은 사람을 새로 그린» 판(남 정본 A)은 0.84 언저리였다
+    if sc < min_ncc:
+        raise SystemExit('⛔ 얼굴이 원래 초상과 안 겹친다(NCC %.3f < %.2f) — 표정이 다른 그림인가? 같은 사람을 새로 그린 판이면 --match-min 으로 낮춘다' % (sc, min_ncc))
     canvas = Image.new('RGB', (round(w), round(h)), (255, 255, 255))
     canvas.paste(im, (round(-x), round(-y)))
     return canvas.resize((ow, oh), Image.LANCZOS), (ow, oh)
@@ -231,7 +232,8 @@ def main():
     im = Image.open(src).convert('RGB')
     match = sys.argv[sys.argv.index('--match') + 1] if '--match' in sys.argv else None
     if match:
-        im, (ow, oh) = crop_to_match(im, match)
+        mn = float(sys.argv[sys.argv.index('--match-min') + 1]) if '--match-min' in sys.argv else 0.9
+        im, (ow, oh) = crop_to_match(im, match, mn)
     rgb = np.asarray(im)
     bg = edge_background(rgb, tol)
     print('배경 퍼뜨림 허용 %d' % tol)

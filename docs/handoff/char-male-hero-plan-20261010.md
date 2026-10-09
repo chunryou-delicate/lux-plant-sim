@@ -500,3 +500,173 @@
 - 턴어라운드 고름 → 칸 넷(같은 정사각 · 같은 축척 · 같은 바닥선 — 몬이 b 자르기와 같은 법) → Meshy multi-image · Tripo multiview 두 판 → G2(g2_check) → 고른 판 앞=+Z(glb_face_z) → rig 1.4 + 동작 13(Meshy 계정 44) → build_hero_unity 와 같은 길(머리 무게 · 색 · 클립 · extras) → `hero2_m.glb`
 - 옷 일곱: hero2 와 같은 길(retexture → apply_outfit_tex) — 남 몸 UV 가 따로라 `outfit/m/*.jpg`
 - 게임에 들일 때(core 66dfb4c0 길): `hero2_m.glb` 의 scene extras 에 **`hero: 'hero2_m'`** 을 박는다 — v2_hero setOutfit 이 `hero2` · `hero2_m` 만 옷을 입힌다(1180e092). 그다음 v2_hero 의 `pickByGender({ f: …, m: null })` 두 곳(몸 · 옷 표)의 m 칸만 채운다. 옷 그림 캐시는 이미 «성별:이름» 열쇠다
+
+
+## 5. 정해진 판 — 후보 A a (총괄 10-10 · 박사님 «니가 잘 골라») · 지금 돌릴 것
+
+- 고름: **A a** — 옛 남 초상과 얼굴 겹침(NCC) a 0.840 · b 0.844 로 비김 ⇒ 눈으로: a 의 둥근 머리·가운데 앞머리가 옛 happy·proud·worry 와 맞고 b 는 정수리가 높고 뾰족하다
+- 정본: `assets/characters/portraits/portrait_jachwi_m_neutral.png` 를 A a 로 갈았다 — `fit_portrait --match <옛 neutral> --match-min 0.8` 로 **옛 아홉과 같은 얼굴 자리·크기**(눈·코·입 높이가 같은 줄 · 그림으로 봄). 옛 판은 `_old/portrait_jachwi_m_neutral_v1.png`
+  - `--match-min` 을 새로 열었다: 옷만 바꾼 같은 그림은 0.95 언저리, 같은 사람을 새로 그린 판은 0.84 언저리였다(기본 0.9 그대로)
+- 옛 남 초상 여덟(happy·cry·numb·proud·surprise·think·tired·worry)은 그대로 쓴다(core 66dfb4c0 길 · 'm' 이면 jachwi_m_{키})
+
+### ① 모자란 남 낯 여섯 (count 1 · ≈54)
+- image 1 = 고른 A a 원본(`assets/characters/portraits/_hf/portrait_jachwi_m_neutral_candA_a.jpg`) · 받으면 `fit_portrait --match portrait_jachwi_m_neutral.png --match-min 0.7` — 다른 표정이라 겹침이 낮아도 같은 원본에서 나와 틀이 같다(0.7 밑이면 멈춤 · 눈으로 볼 것)
+- 검수: ① 얼굴·머리가 A a 그대로 ② 표정 뜻(여 같은 키와 같은 뜻) ③ 손가락 ④ winter 는 크림 니트·빨간 목도리 · apron 은 세이지 앞치마
+
+```json
+[
+ {
+  "name": "portrait_jachwi_m_curious",
+  "save_as": "assets/characters/portraits/_hf/portrait_jachwi_m_curious.png",
+  "then": "python tools/char/fit_portrait.py <받은.png> assets/characters/portraits/portrait_jachwi_m_curious.png --match assets/characters/portraits/portrait_jachwi_m_neutral.png --match-min 0.7 --tol 8 --pockets",
+  "tool": "generate_image",
+  "params": {
+   "model": "gpt_image_2_5",
+   "aspect_ratio": "3:4",
+   "quality": "max",
+   "resolution": "2k",
+   "count": 1,
+   "prompt": "The SAME young man as image 1 - same face, same short very dark brown hair with the soft fringe, same framing and size, same flat 2D anime art style - now with this expression: curious, head tilted slightly, an asking look. Plain pure white background, no text.",
+   "medias": [
+    {
+     "value": "assets/characters/portraits/_hf/portrait_jachwi_m_neutral_candA_a.jpg",
+     "role": "image_references"
+    }
+   ]
+  }
+ },
+ {
+  "name": "portrait_jachwi_m_scissors",
+  "save_as": "assets/characters/portraits/_hf/portrait_jachwi_m_scissors.png",
+  "then": "python tools/char/fit_portrait.py <받은.png> assets/characters/portraits/portrait_jachwi_m_scissors.png --match assets/characters/portraits/portrait_jachwi_m_neutral.png --match-min 0.7 --tol 8 --pockets",
+  "tool": "generate_image",
+  "params": {
+   "model": "gpt_image_2_5",
+   "aspect_ratio": "3:4",
+   "quality": "max",
+   "resolution": "2k",
+   "count": 1,
+   "prompt": "The SAME young man as image 1 - same face, same short very dark brown hair with the soft fringe, same framing and size, same flat 2D anime art style - now with this expression: holding small garden scissors near his chin, pondering, eyes to the side. Plain pure white background, no text.",
+   "medias": [
+    {
+     "value": "assets/characters/portraits/_hf/portrait_jachwi_m_neutral_candA_a.jpg",
+     "role": "image_references"
+    }
+   ]
+  }
+ },
+ {
+  "name": "portrait_jachwi_m_bulb",
+  "save_as": "assets/characters/portraits/_hf/portrait_jachwi_m_bulb.png",
+  "then": "python tools/char/fit_portrait.py <받은.png> assets/characters/portraits/portrait_jachwi_m_bulb.png --match assets/characters/portraits/portrait_jachwi_m_neutral.png --match-min 0.7 --tol 8 --pockets",
+  "tool": "generate_image",
+  "params": {
+   "model": "gpt_image_2_5",
+   "aspect_ratio": "3:4",
+   "quality": "max",
+   "resolution": "2k",
+   "count": 1,
+   "prompt": "The SAME young man as image 1 - same face, same short very dark brown hair with the soft fringe, same framing and size, same flat 2D anime art style - now with this expression: surprised, eyes wide, holding a small round brown corm (bulb) up in his palm. Plain pure white background, no text.",
+   "medias": [
+    {
+     "value": "assets/characters/portraits/_hf/portrait_jachwi_m_neutral_candA_a.jpg",
+     "role": "image_references"
+    }
+   ]
+  }
+ },
+ {
+  "name": "portrait_jachwi_m_beam",
+  "save_as": "assets/characters/portraits/_hf/portrait_jachwi_m_beam.png",
+  "then": "python tools/char/fit_portrait.py <받은.png> assets/characters/portraits/portrait_jachwi_m_beam.png --match assets/characters/portraits/portrait_jachwi_m_neutral.png --match-min 0.7 --tol 8 --pockets",
+  "tool": "generate_image",
+  "params": {
+   "model": "gpt_image_2_5",
+   "aspect_ratio": "3:4",
+   "quality": "max",
+   "resolution": "2k",
+   "count": 1,
+   "prompt": "The SAME young man as image 1 - same face, same short very dark brown hair with the soft fringe, same framing and size, same flat 2D anime art style - now with this expression: beaming with pride, both hands clasped at his chest, eyes slightly wet. Plain pure white background, no text.",
+   "medias": [
+    {
+     "value": "assets/characters/portraits/_hf/portrait_jachwi_m_neutral_candA_a.jpg",
+     "role": "image_references"
+    }
+   ]
+  }
+ },
+ {
+  "name": "portrait_jachwi_m_winter",
+  "save_as": "assets/characters/portraits/_hf/portrait_jachwi_m_winter.png",
+  "then": "python tools/char/fit_portrait.py <받은.png> assets/characters/portraits/portrait_jachwi_m_winter.png --match assets/characters/portraits/portrait_jachwi_m_neutral.png --match-min 0.7 --tol 8 --pockets",
+  "tool": "generate_image",
+  "params": {
+   "model": "gpt_image_2_5",
+   "aspect_ratio": "3:4",
+   "quality": "max",
+   "resolution": "2k",
+   "count": 1,
+   "prompt": "The SAME young man as image 1 - same face, same short very dark brown hair with the soft fringe, same framing and size, same flat 2D anime art style - now with this expression: worried, wearing a cream knit sweater and a red scarf, looking down gently. Plain pure white background, no text.",
+   "medias": [
+    {
+     "value": "assets/characters/portraits/_hf/portrait_jachwi_m_neutral_candA_a.jpg",
+     "role": "image_references"
+    }
+   ]
+  }
+ },
+ {
+  "name": "portrait_jachwi_m_apron",
+  "save_as": "assets/characters/portraits/_hf/portrait_jachwi_m_apron.png",
+  "then": "python tools/char/fit_portrait.py <받은.png> assets/characters/portraits/portrait_jachwi_m_apron.png --match assets/characters/portraits/portrait_jachwi_m_neutral.png --match-min 0.7 --tol 8 --pockets",
+  "tool": "generate_image",
+  "params": {
+   "model": "gpt_image_2_5",
+   "aspect_ratio": "3:4",
+   "quality": "max",
+   "resolution": "2k",
+   "count": 1,
+   "prompt": "The SAME young man as image 1 - same face, same short very dark brown hair with the soft fringe, same framing and size, same flat 2D anime art style - now with this expression: a calm confident smile, wearing a plain sage-green work apron over the cream tee. Plain pure white background, no text.",
+   "medias": [
+    {
+     "value": "assets/characters/portraits/_hf/portrait_jachwi_m_neutral_candA_a.jpg",
+     "role": "image_references"
+    }
+   ]
+  }
+ }
+]
+```
+
+### ② 장난감 턴어라운드 (16:9 · 4k · count 2 · ≈30)
+- image 1 = A a 원본 · image 2 = hero2 장난감 기준 그림. ★ 팔 45° · 몸통과 틈 · 머리가 어깨·팔에 안 닿음(G2 «머리–팔 2%» 가 리그 성패를 미리 말한다 — §4 첫 자)
+- 검수: 네 칸이 같은 사람·같은 축척 · 신발 앞뒤가 맞음(여 판 a 는 뒤에서 뒤꿈치가 트였다) · 팔과 몸통 사이 흰 틈
+
+```json
+{
+ "name": "sheet_hero_m_turnaround_toy",
+ "save_as": "assets/characters/sheets/_hf/sheet_hero_m_turnaround_toy.png",
+ "tool": "generate_image",
+ "then": "char: 칸 넷을 같은 정사각 · 같은 축척 · 같은 바닥선으로 잘라 assets/characters/sheets/_hf/crops/hero_m_<a|b>_{front,side,back,three_quarter}.png (몬이 b 자르기와 같은 법)",
+ "params": {
+  "model": "gpt_image_2_5",
+  "aspect_ratio": "16:9",
+  "quality": "max",
+  "resolution": "4k",
+  "count": 2,
+  "prompt": "Character turnaround sheet on a plain pure white background: FRONT, LEFT SIDE, BACK and 3/4 views of the SAME character side by side, full body, same scale, A-pose with the arms clearly away from the body (about 45 degrees, a clear visible gap between the arms and the torso, palms in), even flat lighting, no shadows, no text. The young man as a chibi 3D toy figure exactly like image 2 (same head-to-body ratio, same soft toy shading), with the face and the short hair of image 1 (very dark chocolate-brown hair, clearly brown, not black; the hair does not touch the shoulders or arms); cream round-neck tee, grey joggers, grey-white shoes. identical original character on all views, same proportions and colors in every view, single subject only, no other people, no props, no furniture, no background objects, pure white seamless background, no text, no labels, no watermark, no frame borders",
+  "medias": [
+   {
+    "value": "assets/characters/portraits/_hf/portrait_jachwi_m_neutral_candA_a.jpg",
+    "role": "image_references"
+   },
+   {
+    "value": "assets/v2/char/_src/hero2/img_01a11e70-223b-705a-b82f-1a80de034747.png",
+    "role": "image_references"
+   }
+  ]
+ }
+}
+```
+
+### ③~⑤ (총괄) — 3D Meshy·Tripo 두 판 → G2(g2_check · 2% 줄 먼저 · 짧은 머리라 얼굴 쪽은 그림으로) → 고른 판 glb_face_z → Higgsfield 3d_rigging(키 1.4 · 동작 13 같은 번호) → char: build_hero_unity 와 같은 길로 hero2_m.glb(extras.hero='hero2_m') · 옷은 기본(크림 티·회색 조거)만 — 옷 일곱은 미룸
