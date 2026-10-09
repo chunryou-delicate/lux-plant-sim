@@ -39,11 +39,13 @@ import path from 'node:path';
 import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { makeGrowth, makeSwitchingLight, questSnapshotOf, atOf, RULES, TUT_RULES, ROOT, cutLeafGradesOf, setGrowthTuningPatch } from './lib/byeot_harness.mjs';
-import { newState, pot0, setPotSlot, resowCrop, waterCrop, waterPot, sellCropSurplus, sellPantryCrop } from '../src/game/state.js';
+import { newState, pot0, setPotSlot, resowCrop, waterCrop, waterPot, sellCropSurplus, sellPantryCrop, placedItems } from '../src/game/state.js';
 import { nextDay, harvestCrop } from '../src/game/loop.js';
 import { placeBeansprout, moveMonstera, beansproutReady, pantrySaleQuote } from '../src/game/first_play.js';
 import { orderItem, stockOf, incomingOf, listCutting, listPot, dealListing, marketStatus, marketGate, listingFor,
          SELLABLE_CUTTING_STATUS, assignPotLeafGrades, installVarieGrades } from '../src/game/shop.js';
+import { useStock, creditSpeciesSale } from '../src/game/shop.js';
+import * as SPM from '../src/game/species.js';   /* ★ D45 — 새 두 종(guide45)이 쓰는 손 */
 import { canMoveOut, varieView, buyLamp } from '../src/game/tutorial.js';
 import { takeCutting, repotCutting, cuttableNow, cutBudgetOf, motherStatsNow, cuttingsOf, cutBlockedReason,
          cuttingStatsNow, cuttableNodesOfCutting, installVarieBoost, setCuttingAt } from '../src/game/propagation.js';
@@ -82,7 +84,12 @@ export const PERSONAS = {
   /* ★ 2026-10-09 (총괄 D47) — «화분대를 사는 사람»: D41 안내대로 + 가구점이 열리면(가을) 화분대 둘을 산다.
        ⚠ 돈 쪽만 잰다 — 이 자의 빛은 정적 방 표라 «화분대로 창에 바짝 올린 빛 이득»(house: 여름엔 등 없이 자람)은 못 잰다 */
   stand:   { ko: '화분대를 사는 사람(D41 + 계단식 플랜트대 · 미니 온실장)', lamps: 1, siruCap: 5, cut: 'asap', sellMother: 'never', move: 'withCuttings', lazy: 0, follow: true, grow: true, carryKeep: true,
-             buyFurn: ['furn_plant_step_3', 'furn_greenhouse_cabinet'] }
+             buyFurn: ['furn_plant_step_3', 'furn_greenhouse_cabinet'] },
+  /* ★ 2026-10-09 (총괄 D45 «같은 돈, 다른 길» 10% 선) — D41 안내대로 + 새 두 종:
+       PP 교환은 늘 «바꾼다»(남긴 삽수는 안 내줌) · AL 구근은 열리면 하나 산다 · 찾은 구근은 심는다 · 가방 그루는 가장 밝은 빈 창턱 ·
+       PP 잎 4장 넘으면 맨 위 산반·하프문 마디 위를 잘라 윗부분을 바로 판다 · 찾은 구근에서 난 AL 은 잎 2장이면 판다(어미 AL·받은 PP 는 남김) */
+  guide45: { ko: 'D45 새 두 종도 키움(D41 안내대로 + PP 교환 · AL 구근)', lamps: 1, siruCap: 5, cut: 'asap', sellMother: 'never', move: 'withCuttings', lazy: 0, follow: true, grow: true, carryKeep: true,
+             species: true }
 };
 const DARK = 'banjiha-dresser:1', SILL = 'banjiha-sill:0', ONE_SILL = 'oneroom-sill:0', ONE_BRIGHT = ['oneroom-sill:1', 'oneroom-sill:2', 'oneroom-sill:3'];
 const STUCK_DAYS = 14;
@@ -295,6 +302,41 @@ export async function play(name, seed, opt = {}) {
         }
       }
       for (const c of [...cuttingsOf(S)]) if (c.status === 'node' && stockOf(S, 'pot') >= 1) { try { repotCutting(S, c.id); } catch { } }
+      /* ── ★ D45 새 두 종(guide45) ── */
+      if (P.species && ts.movedOut) {
+        const o = out.sp = out.sp || { trade: null, cormBuy: null, cuts: 0, sold: 0, soldWon: 0, found: 0, sprout: 0, bagDays: 0 };
+        /* 교환 — 남긴 삽수 말고 내줄 것이 생길 때까지 물음을 «들고 있다»(거절하지 않는다 · 카드를 닫아 두는 사람) */
+        if (SPM.ppTradePending(S)) {
+          const cands = SPM.ppTradeCandidates(S).filter(c => c.id !== out.keeperId);
+          if (cands.length) { try { SPM.answerPPTrade(S, true, { cuttingId: cands[0].id }); o.trade = S.day; } catch { } }
+        }
+        if (o.cormBuy == null && SPM.speciesShopOpen(S, 'al_corm')) { try { ord('al_corm', 1); o.cormBuy = S.day; } catch { } }
+        if (stockOf(S, 'al_corm') > 0) { try { SPM.unpackSpeciesStock(S, 'al_corm', stockOf, useStock); } catch { } }
+        for (const c of [...((S.species && S.species.corms) || [])]) { try { SPM.plantCorm(S, c.id); o.found++; } catch { } }
+        for (const q of SPM.speciesPotsOf(S).filter(q => q.species === 'pink_princess' && q.origin !== 'cut' && SPM.speciesPlaced(q))) {
+          if (q.plant.leaves.length < 4) continue;
+          const nodes = SPM.ppCuttableNodes(q).filter(n => n.grade === 'marble' || n.grade === 'heavy');
+          const n = nodes[nodes.length - 1]; if (!n) continue;
+          try { SPM.cutSpecies(S, q.id, n.no); o.cuts++; } catch { }
+        }
+        for (const q of [...SPM.speciesPotsOf(S)]) {
+          const sellNow = q.origin === 'cut' || (q.origin === 'corm' && q.plant.leaves.length >= 2);
+          if (!sellNow || SPM.speciesSellBlockedReason(q)) continue;
+          try { const r = SPM.takeSpeciesForSale(S, q.id); led('other', () => creditSpeciesSale(S, r.won)); o.sold++; o.soldWon += r.won; } catch { }
+        }
+        /* 놓기 — 방 전체에서 «빈 자리 중 오늘 가장 밝은 데»(창턱은 삽수가 먼저 차지한다) */
+        for (const q of SPM.speciesPotsOf(S)) if (!SPM.speciesPlaced(q)) {
+          const occ = new Set(placedItems(S).map(x => x.slotId).filter(Boolean));
+          let sky = null; try { sky = light.skyFor(S.day, S.sim); } catch { }
+          let best = null, bd = -1;
+          for (const sl of light.room.slots || []) { if (occ.has(sl.slotId)) continue;
+            let d = -1; try { d = light.dliOfSlot(sl.slotId, lightOptsOf(S, sky)); } catch { }
+            if (d > bd) { bd = d; best = sl.slotId; } }
+          const at = best ? atOf(light, best) : null;
+          if (best && at) { SPM.setSpeciesAt(S, q.id, { slotId: best, at }); (o.spots = o.spots || {})[best] = (o.spots[best] || 0) + 1; }
+          else o.bagDays++;
+        }
+      }
       /* ── 팔기 ── */
       const keepVarie = !ts.movedOut && P.move === 'withCuttings' && ts.varieSale && ts.varieSale.count >= 1;
       /* 늘리는 사람의 «남긴 삽수» — 원룸에서 처음 뿌리낸 무늬 삽수(죽으면 다음 것으로 갈아 듦)
@@ -543,6 +585,15 @@ for (const name of NAMES) {
     console.log(`  ◆ 무늬 삽수 판매 — 반지하 첫 판매 중앙 ${med(first) ?? '—'}일(${first.length}/${N}) · 원룸 판매 판당 ${(n1 / N).toFixed(1)}개 · 간격 중앙 ${med(gaps) ?? '—'}일` +
                 ` · 등급(잎) ${Object.entries(gc).map(([k, v]) => `${k} ${v}`).join(' · ') || '—'}${unk ? ` · 등급 모름 ${unk}개` : ''}` +
                 ` · 값 평균 ${won(Math.round(vs.flatMap(r => r.varieSales.map(x => x.won)).reduce((a, b) => a + b, 0) / Math.max(1, vs.reduce((a, r) => a + r.varieSales.length, 0))))}`); }
+  /* ★ D45 새 두 종(guide45) — 교환한 날 · 구근 산 날 · 자른 수 · 판 수·값 · 가방에 갇힌 그루-날(빈 창턱 없음) */
+  { const sp = rs.filter(r => r.sp);
+    if (sp.length) {
+      const m = k => med(sp.map(r => r.sp[k]).filter(x => x != null));
+      console.log(`  🌸 새 두 종 — 교환 판 ${sp.filter(r => r.sp.trade != null).length}/${N}(이사 뒤 중앙 ${med(sp.filter(r => r.sp.trade != null).map(r => r.sp.trade - r.moveDay)) ?? '—'}일) · ` +
+                  `구근 산 판 ${sp.filter(r => r.sp.cormBuy != null).length} · PP 자름 판당 ${(sp.reduce((a, r) => a + r.sp.cuts, 0) / N).toFixed(1)} · ` +
+                  `판 것 판당 ${(sp.reduce((a, r) => a + r.sp.sold, 0) / N).toFixed(1)}개 · ${won(Math.round(sp.reduce((a, r) => a + r.sp.soldWon, 0) / N))}/판 · ` +
+                  `찾은 구근 심음 판당 ${(sp.reduce((a, r) => a + r.sp.found, 0) / N).toFixed(1)} · 가방에 갇힌 그루-날 판당 ${Math.round(sp.reduce((a, r) => a + r.sp.bagDays, 0) / N)}`);
+    } }
   /* ★ 원룸 새 잎 — 달마다(판 평균) · 모주 / 자란 삽수 · 무늬 */
   { const lm = rs.filter(r => (r.leafMonths || []).length);
     if (lm.length) {
