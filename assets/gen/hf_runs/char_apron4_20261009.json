@@ -1,0 +1,117 @@
+{
+ "_what": "Higgsfield 결과(총괄 hf_fetch)",
+ "entries": [
+  {
+   "name": "portrait_jachwi_beam_apron_a",
+   "job_id": "c9aeb7b8-bd68-46ce-92ff-03094f3a7e4b",
+   "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_144339_c9aeb7b8-bd68-46ce-92ff-03094f3a7e4b.png",
+   "dir": "assets/characters/portraits/_hf",
+   "note": "앞치마 판 낯 beam · gpt_image_2_5 max 2k 3:4 · 참조 [beam_white a5733c6f · apron_a e091975d]",
+   "saved_path": "assets/characters/portraits/_hf/portrait_jachwi_beam_apron_a.jpg",
+   "master_path": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/characters/portraits/_hf/portrait_jachwi_beam_apron_a.png",
+   "size": [
+    1744,
+    2336
+   ],
+   "has_alpha": false
+  },
+  {
+   "name": "portrait_jachwi_beam_apron_b",
+   "job_id": "bbc04578-6885-4f75-b0a7-a8c17973dd90",
+   "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_144340_bbc04578-6885-4f75-b0a7-a8c17973dd90.png",
+   "dir": "assets/characters/portraits/_hf",
+   "note": "앞치마 판 낯 beam",
+   "saved_path": "assets/characters/portraits/_hf/portrait_jachwi_beam_apron_b.jpg",
+   "master_path": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/characters/portraits/_hf/portrait_jachwi_beam_apron_b.png",
+   "size": [
+    1744,
+    2336
+   ],
+   "has_alpha": false
+  },
+  {
+   "name": "portrait_jachwi_think_apron_a",
+   "job_id": "73cc2318-8ddb-4727-bd2c-36315051925b",
+   "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_144339_73cc2318-8ddb-4727-bd2c-36315051925b.png",
+   "dir": "assets/characters/portraits/_hf",
+   "note": "앞치마 판 낯 think · 참조 [think_white 2d5e25ff · apron_a]",
+   "saved_path": "assets/characters/portraits/_hf/portrait_jachwi_think_apron_a.jpg",
+   "master_path": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/characters/portraits/_hf/portrait_jachwi_think_apron_a.png",
+   "size": [
+    1744,
+    2336
+   ],
+   "has_alpha": false
+  },
+  {
+   "name": "portrait_jachwi_think_apron_b",
+   "job_id": "9f5449a2-3d74-42e6-94ec-310312bbdb2d",
+   "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_144341_9f5449a2-3d74-42e6-94ec-310312bbdb2d.png",
+   "dir": "assets/characters/portraits/_hf",
+   "note": "앞치마 판 낯 think",
+   "saved_path": "assets/characters/portraits/_hf/portrait_jachwi_think_apron_b.jpg",
+   "master_path": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/characters/portraits/_hf/portrait_jachwi_think_apron_b.png",
+   "size": [
+    1744,
+    2336
+   ],
+   "has_alpha": false
+  },
+  {
+   "name": "portrait_jachwi_surprise_apron_a",
+   "job_id": "00b5952b-42f5-41fb-875c-ea79d545afac",
+   "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_144337_00b5952b-42f5-41fb-875c-ea79d545afac.png",
+   "dir": "assets/characters/portraits/_hf",
+   "note": "앞치마 판 낯 surprise · 참조 [surprise_white 8c32292e · apron_a]",
+   "saved_path": "assets/characters/portraits/_hf/portrait_jachwi_surprise_apron_a.jpg",
+   "master_path": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/characters/portraits/_hf/portrait_jachwi_surprise_apron_a.png",
+   "size": [
+    1744,
+    2336
+   ],
+   "has_alpha": false
+  },
+  {
+   "name": "portrait_jachwi_surprise_apron_b",
+   "job_id": "3cdf3eba-b693-4c6e-a3ce-0fd41da8a45c",
+   "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_144340_3cdf3eba-b693-4c6e-a3ce-0fd41da8a45c.png",
+   "dir": "assets/characters/portraits/_hf",
+   "note": "앞치마 판 낯 surprise",
+   "saved_path": "assets/characters/portraits/_hf/portrait_jachwi_surprise_apron_b.jpg",
+   "master_path": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/characters/portraits/_hf/portrait_jachwi_surprise_apron_b.png",
+   "size": [
+    1744,
+    2336
+   ],
+   "has_alpha": false
+  },
+  {
+   "name": "portrait_jachwi_happy_apron_a",
+   "job_id": "d2a8cc01-4cf3-4a5c-850f-20ffbbe3909c",
+   "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_144340_d2a8cc01-4cf3-4a5c-850f-20ffbbe3909c.png",
+   "dir": "assets/characters/portraits/_hf",
+   "note": "앞치마 판 낯 happy · 참조 [happy_white a3816ab4 · apron_a]",
+   "saved_path": "assets/characters/portraits/_hf/portrait_jachwi_happy_apron_a.jpg",
+   "master_path": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/characters/portraits/_hf/portrait_jachwi_happy_apron_a.png",
+   "size": [
+    1744,
+    2336
+   ],
+   "has_alpha": false
+  },
+  {
+   "name": "portrait_jachwi_happy_apron_b",
+   "job_id": "899e46ec-adbe-44c2-b692-7c1b06e4ad3e",
+   "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_144339_899e46ec-adbe-44c2-b692-7c1b06e4ad3e.png",
+   "dir": "assets/characters/portraits/_hf",
+   "note": "앞치마 판 낯 happy",
+   "saved_path": "assets/characters/portraits/_hf/portrait_jachwi_happy_apron_b.jpg",
+   "master_path": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/characters/portraits/_hf/portrait_jachwi_happy_apron_b.png",
+   "size": [
+    1744,
+    2336
+   ],
+   "has_alpha": false
+  }
+ ]
+}
