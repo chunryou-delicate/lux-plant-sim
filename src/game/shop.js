@@ -380,9 +380,14 @@ export function installFurniturePresets(json) {
     const sizeM = p.size_m && p.size_m.w > 0 ? { w: p.size_m.w, d: p.size_m.d, h: p.size_m.h } : null;
     const volumeM3 = furnitureVolumeOf(sizeM);
     const listWon = kind === 'furniture' ? furniturePriceOf(sizeM) : null;
+    /* ★ 2026-10-09 [plan·house] 한 줄 소개(선택 칸 intro_ko) — 가구점 줄 둘째 줄. 칸이 있는데 글이 아니면 던진다(지어내지 않는다) */
+    if (p.intro_ko != null && typeof p.intro_ko !== 'string')
+      throw new Error(`[가구] ${presetId}.intro_ko 는 글이어야 합니다: ${JSON.stringify(p.intro_ko)}`);
+    const intro = typeof p.intro_ko === 'string' && p.intro_ko.trim() ? p.intro_ko.trim() : null;
     const row = Object.freeze({
       id: furnitureItemIdOf(presetId), preset: presetId, type: p.type || presetId,
       ko: p.name_ko || presetId, kind: 'furniture',            // 상점 갈래(탭)
+      intro,                                                   // 한 줄 소개(없으면 null)
       shopKind: kind, why,                                     // 가구인가 · 아니면 왜 아닌가
       listed: kind === 'furniture' && o.listed,                // 가구점에 뜨나(2026-10-04)
       resaleWon: kind === 'furniture' ? (o.resaleWon ?? furnitureResaleWonOf(listWon)) : null,
@@ -445,7 +450,7 @@ export function furnitureCatalogList(S) {
     sizeM: it.sizeM, volumeM3: it.volumeM3,
     listWon: it.listWon, buyWon: buyPriceOf(it.id),
     resaleWon: it.resaleWon,                     // 프리셋이 정했으면 그 값(2026-10-04)
-    leadDays: it.leadDays, note: it.note
+    leadDays: it.leadDays, note: it.note, intro: it.intro
   })).sort((a, b) => a.buyWon - b.buyWon || a.id.localeCompare(b.id));
 }
 

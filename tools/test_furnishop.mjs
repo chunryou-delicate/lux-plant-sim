@@ -135,6 +135,10 @@ console.log('\nC. 값');
   const open = { tutorial: { enabled: true, lamp: { unlocked: true } } };
   const list = shop.furnitureCatalogList(open);
   ok('열리면 84줄', list.length === 84, String(list.length));
+  /* 2026-10-09 [plan] 한 줄 소개(intro_ko) — 칸이 있는 가구만 실린다 */
+  { const crt = list.find(r => r.preset === 'tv_crt');
+    ok('브라운관 TV 한 줄 소개가 목록에 실린다 · 칸 없는 가구는 null', !!crt && crt.intro === '안 켜지는 옛 TV — 화면에 작은 집 하나'
+       && list.filter(r => r.preset !== 'tv_crt').every(r => r.intro === null), crt ? String(crt.intro) : '없음'); }
 
   /* 규칙 그대로인가 — 한 줄도 예외가 없어야 한다 */
   const off = list.filter(it => {
