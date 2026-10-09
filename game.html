@@ -12969,6 +12969,11 @@ const FACE_FILE = {
             /* ★ 2026-10-10 — 낯 셋([Char] ea18110c) — 키만 잇는다(줄 배정은 [plan]) */
             bulb: 'bulb', shh: 'shh', scissors: 'scissors' }
 };
+/* ★ 2026-10-10 [Char] 0784947e — 가게 판(story.job.id==='shop')의 자취생 낯은 «앞치마 판»을 먼저 쓴다(3D 몸은 이미 앞치마).
+     파일 portrait_jachwi_<FACE_FILE 값>_apron.png(600×800 · 눈·입 높이 맞춤). **있는 것만 여기 적는다** — 없는 파일을 물으면
+     콘솔에 404 가 쌓이고, 두 겹(url 둘)으로 깔면 옷이 다른 두 몸이 겹쳐 비친다. 겨울(winter) 낯은 겨울옷이라 일부러 없다.
+     char 가 더 뽑으면 이름만 여기 더한다. */
+const APRON_FACES = new Set(['beam', 'think', 'surprise', 'happy']);
 /* ★ 표정 자가검사 — 없는 표정 키는 **오류 없이** 기본 얼굴로 떨어져서 아무도 모른다.
    그래서 소리를 내게 한다. 키 검사는 순수라 `tools/test_*.mjs` 도 부를 수 있다(§dialogue.js). */
 try {
@@ -12980,6 +12985,7 @@ try {
     for (const b of badFaces) console.warn('  ' + b.script + ': ' + b.who + '.' + b.face + ' — ' + b.why);
   }
   auditFacePortraits(FACE_FILE);          /* 파일이 실제로 있나 — 결과는 조금 늦게 찍힌다 */
+  auditFacePortraits({ jachwi: Object.fromEntries([...APRON_FACES].map(f => [f + '_apron', f + '_apron'])) });   /* 앞치마 판도 같은 자로 */
 } catch (e) { console.warn('[표정] 자가검사를 못 돌렸다 —', e && e.message); }
 /* ══ ★★ 2026-10-09 사건 원화 (char · docs/handoff/char-illust-plan-20261008.md) ══════════════════════════════
    큰 장면 대사가 떠 있는 동안 대사 상자 위에 그림 카드. 고르는 값은 plan 갈래 지도·char 계획 그대로:
@@ -13067,8 +13073,11 @@ function dlgPaint() {
     const file = (FACE_FILE[line.who] || {})[line.face || 'base'] || 'neutral';
     const dir = './assets/characters/portraits';
     /* 표정이 없으면 기본으로 떨어진다 — 없는 그림 하나에 대화가 멈추면 안 된다 */
-    $('dlgFace').style.backgroundImage =
-      `url(${dir}/portrait_${line.who}_${file}.png), url(${dir}/portrait_${line.who}_neutral.png)`;
+    let apron = false;
+    try { apron = line.who === 'jachwi' && APRON_FACES.has(file) && JOB.isShopJob(S); } catch { apron = false; }
+    $('dlgFace').style.backgroundImage = apron
+      ? `url(${dir}/portrait_jachwi_${file}_apron.png)`     /* 한 겹 — 앞치마 몸 밑에 다른 옷 몸이 비치지 않게 */
+      : `url(${dir}/portrait_${line.who}_${file}.png), url(${dir}/portrait_${line.who}_neutral.png)`;
   } else $('dlgFace').style.backgroundImage = '';   /* ★식물신 — CSS 의 빛이 드러나야 한다 */
   $('stage').classList.add('talking');
   /* ★대화가 열리고 닫힐 때 곉화면을 다시 그린다. draw() 는 턴이 돌 때만 도는데

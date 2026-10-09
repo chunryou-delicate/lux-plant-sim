@@ -121,6 +121,14 @@ try {
     ok(a.on && a.loaded && new RegExp(want + '\.png$').test(a.src || ''), `⑤ ${id} → ${want}(${a.src})`);
     await skip();
   }
+  /* ⑤ 가게 판 자취생 낯 = 앞치마 판([Char] 0784947e) — think 는 앞치마 판이 있고(statusHomeNear 첫 줄) · winter 는 없다(questAlKeepWinter 첫 줄 · 지금 파일 그대로) */
+  for (const [id, face, want] of [['statusHomeNear', 'think', /portrait_jachwi_think_apron\.png/], ['questAlKeepWinter', 'winter', /portrait_jachwi_winter\.png/]]) {
+    await page.eval(`(()=>window.__dlgOpen([${JSON.stringify(id)}]))()`, false); await sleep(900);
+    const f = await J(`(()=>{ const u=(document.getElementById('dlgFace').style.backgroundImage.split('"')[1]) || '';   /* url("…") 의 첫 겹 · 정규식은 템플릿에서 한 겹 먹힌다 */
+      return new Promise(r=>{ if(!u) return r({u,ok:false}); const i=new Image(); i.onload=()=>r({u,ok:true}); i.onerror=()=>r({u,ok:false}); i.src=u; }); })()`);
+    ok(want.test(f.u) && f.ok, `⑤ 가게 판 자취생 ${face} 낯 → ${f.u.replace(/^.*\//, '')}(로드 ${f.ok})`);
+    await skip();
+  }
 } catch (e) { if (e && e.message !== 'setup') { console.log('  FAIL 탈 —', e && e.message); bad++; } }
 finally { await page.close(); }
 console.log(bad ? `probe_d59_shop: FAIL (${bad})` : 'probe_d59_shop: PASS');
