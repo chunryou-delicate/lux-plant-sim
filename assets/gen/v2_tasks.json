@@ -161,6 +161,17 @@
       "al_leaf_young(AL1)": "01a12028-2c00-7737-a3d7-723154369c66",
       "al_leaf_mid(AL2)": "01a12028-2f9b-71f1-be18-6b6913ebf1c4",
       "al_leaf_mature(AL3b)": "01a1202b-88d5-742a-bcff-761e511da08d"
+    },
+    "new_species_retexture": {
+      "_note": "meshy-6 · remove_lighting · input_task_id(원래 UV)",
+      "pp_leaf_young_plain": "01a1203d-3dd7-701d-b9c6-35d2a6ac322b",
+      "pp_leaf_mid_plain": "01a1203d-424e-72fd-84e8-0e010163ff0b",
+      "pp_leaf_mature_plain(분홍 남음 · 다시 거리)": "01a1203d-45c7-76b1-833c-d7b80a0133ec",
+      "pp_leaf_mature_half": "01a1203d-4a91-760b-9df6-4fc85f6bbd5e",
+      "al_leaf_mid_marble": "01a1203d-4e95-70ce-bc8b-d901b0f3cf10",
+      "al_leaf_mature_marble": "01a1203d-523a-73a8-aa0d-f0cf3a69cd19",
+      "al_leaf_mid_half": "01a1203d-5530-77ed-917d-030c87b72150",
+      "al_leaf_mature_half(크림 약함)": "01a1203d-5a69-733b-8972-0040237ec553"
     }
   },
   "char_illust_20261009": {
@@ -178,6 +189,8 @@
     "ev_first_varie_sanban_r2": "01a12029-a80d-70a1-824c-fd067cf324ae",
     "ev_oneroom_firstday_r2": "01a12029-adcd-7621-84a0-37ea596df8a7",
     "ev_moveout_keep_r2": "01a12029-b1f6-71f7-a390-5d95687e0800",
-    "ev_monstera_arrive_v2_r2": "01a12029-b5cc-73f6-9c53-e7484f6146ec"
+    "ev_monstera_arrive_v2_r2": "01a12029-b5cc-73f6-9c53-e7484f6146ec",
+    "ev_first_varie_sanban_r3(확정)": "01a1203a-1f22-70b8-8732-de0cf6de9d1a",
+    "ev_monstera_arrive_v2_r3(안 씀 · r2 확정)": "01a1203a-2713-77f1-8d84-a5eef510625d"
   }
 }

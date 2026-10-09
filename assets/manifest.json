@@ -15854,11 +15854,31 @@
         "credits": 36,
         "balance_after": 571,
         "note": "char 검수 ⑤(장면 사실)·결(아이소 단면) 때문. 머리는 갈색 판 문구 그대로"
+      },
+      {
+        "date": "2026-10-09",
+        "window": "master(char 주문)",
+        "service": "meshy",
+        "use": "사건 원화 r3 둘(9×2)",
+        "qty": 2,
+        "credits": 18,
+        "balance_after": null,
+        "note": "점박이 r3 확정 · 도착은 r2 확정(r3 는 잎 둘·몬이 주머니 속) — char «뽑을 때마다 다른 데가 틀어져 핵심 맞은 판을 고름» · char 그림 몫 144"
+      },
+      {
+        "date": "2026-10-09",
+        "window": "master(leaf 주문)",
+        "service": "meshy",
+        "use": "새 식물 잎 retexture 8(10×8: PP 민무늬 셋·반달 · AL 마블 둘·반달 둘)",
+        "qty": 8,
+        "credits": 80,
+        "balance_after": 473,
+        "note": "총괄 1차: PP 성숙 민무늬에 분홍이 남음 · AL 성숙 반달은 크림 약함 — leaf 판단으로 다시"
       }
     ],
     "balance_checked": {
       "date": "2026-10-09",
-      "meshy": 571,
+      "meshy": 473,
       "higgsfield": null,
       "_prev": {
         "date": "2026-10-08",
@@ -15866,8 +15886,8 @@
         "higgsfield": null,
         "_gap_note": "⚠ 08-30 4470 → 10-08 2009(총괄이 잰 값). 그 사이 2,461 은 이 장부에 줄이 없다 — 이 파일로는 누가 썼는지 모른다. 짐작해서 적지 않는다"
       },
-      "_delta_note": "✔ 2009 → 571 = 1,438 = 위 10-09 줄 열셋(53+39+153+354+99+165+50+10+30+170+90+189+36). 빈 곳 없다. 다시 재서 넣었다(20:3x)",
-      "_measured_by": "총괄 — meshy_check_balance(10-09 20:3x)",
+      "_delta_note": "✔ 2009 → 473 = 1,536 = 위 10-09 줄 열다섯(53+39+153+354+99+165+50+10+30+170+90+189+36+18+80). 빈 곳 없다. 다시 재서 넣었다(20:5x)",
+      "_measured_by": "총괄 — meshy_check_balance(10-09 20:5x)",
       "_higgsfield_caution": "10-09 Higgsfield 커넥터가 «not connected» 라 못 쟀다(Kling 은 이어짐). ⚠ 08-03 에 791 이었던 것이 0 이 됐다. 그 사이 기록은 한 줄도 없다. 쓴 것인지 플랜이 만료돼 날아간 것인지 모른다(지금 plan_type=free). 짐작해서 적지 않는다",
       "_note": "다음에 재는 창은 이 값과 비교해라. 값이 늘어 있으면 누군가 충전한 것이고, 줄어 있는데 entries 가 그대로면 누군가 쓰고 안 적은 것이다"
     }
