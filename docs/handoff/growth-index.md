@@ -298,6 +298,7 @@ userData kind:'youngPlant' · species · leafCount · leafCountWanted · leafRow
        반지하·원룸 파일 바이트 그대로(sha1) · 반지하 DIFF 는 measured 메모 한 줄뿐이라 안 실음(총괄: 얼린 표는 값이 같아도 안 건드림)
        얼린 표 다른 한 벌(house_rooms 투룸 measured.slots) = test_measured_fresh 가 잰 값 8.12 · 5.22 · 29(옛 값 _was_2026_08_29) — house d5d55c61 에 실려 올라감
        ⚠ test_floorlight ①-3(«skyViewK 선형 — 표본이 너무 적다»)은 원래 붉음(HEAD · a3f78c57~1 사본 둘 다)
+         → ✅ house 380cea05 가 고침(원룸을 비운 뒤 잴 칸이 창턱 넷뿐이었다 · 기준 배치를 얹어 14칸 · 9/9)
 [잰 것] tools/probe_tworoom_shop.mjs · JSON docs/handoff/growth-tworoom-shop.json · real · 판 씨앗 12 · 주문은 철 첫날(또는 가을 끝 — 겨울이 낌)에 열림
   ② 한 해 내내(겨울 첫 60일에도) 자라는 자리 — 등3: 다단 선반 윗단 셋(etagere:6~8) + 진열대 5·7·8 · 등2: 윗단 :7·:8 + 진열대 :7(100%)
   ③ 새로 키워 맞추는 몫 ≥ 0.5 인 자리 수 / 29 — 겨울 첫날(등 0/1/2/3)
