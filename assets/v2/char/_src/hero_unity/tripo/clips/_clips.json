@@ -1,0 +1,122 @@
+{
+  "idle": {
+    "task_id": "01a12136-26a9-779d-95e1-db19a01f3cbc",
+    "action_id": 0,
+    "path": "assets/v2/char/_src/hero_unity/tripo/clips/idle.glb",
+    "bytes": 6837784,
+    "joints": 24,
+    "duration_s": 4.0333
+  },
+  "sit": {
+    "task_id": "01a12136-2c14-704d-a1d5-5adafa5fcbe1",
+    "action_id": 32,
+    "path": "assets/v2/char/_src/hero_unity/tripo/clips/sit.glb",
+    "bytes": 7032232,
+    "joints": 24,
+    "duration_s": 11.3667
+  },
+  "sleep": {
+    "task_id": "01a12136-30ca-75d3-bd6a-ae5ead45b001",
+    "action_id": 267,
+    "path": "assets/v2/char/_src/hero_unity/tripo/clips/sleep.glb",
+    "bytes": 6776668,
+    "joints": 24,
+    "duration_s": 1.7333
+  },
+  "repot": {
+    "task_id": "01a12136-3360-7076-805e-0930f6ed89e6",
+    "action_id": 274,
+    "path": "assets/v2/char/_src/hero_unity/tripo/clips/repot.glb",
+    "bytes": 6984564,
+    "joints": 24,
+    "duration_s": 9.5667
+  },
+  "cheer": {
+    "task_id": "01a12136-38b1-75e0-9513-0be9fdf2cee9",
+    "action_id": 49,
+    "path": "assets/v2/char/_src/hero_unity/tripo/clips/cheer.glb",
+    "bytes": 6970368,
+    "joints": 24,
+    "duration_s": 9.0333
+  },
+  "wave": {
+    "task_id": "01a12136-3c5f-7507-8581-728983c562a0",
+    "action_id": 28,
+    "path": "assets/v2/char/_src/hero_unity/tripo/clips/wave.glb",
+    "bytes": 6873144,
+    "joints": 24,
+    "duration_s": 5.3667
+  },
+  "water": {
+    "task_id": "01a12136-3ede-71c4-8f0d-167ac72c57d1",
+    "action_id": 285,
+    "path": "assets/v2/char/_src/hero_unity/tripo/clips/water.glb",
+    "bytes": 6869604,
+    "joints": 24,
+    "duration_s": 5.2333
+  },
+  "harvest": {
+    "task_id": "01a12136-9131-7198-960c-be1bdf9c3f17",
+    "action_id": 278,
+    "path": "assets/v2/char/_src/hero_unity/tripo/clips/harvest.glb",
+    "bytes": 6895260,
+    "joints": 24,
+    "duration_s": 6.2
+  },
+  "harvest_low": {
+    "task_id": "01a12136-94fe-77e6-b42b-dbb2459571e4",
+    "action_id": 277,
+    "path": "assets/v2/char/_src/hero_unity/tripo/clips/harvest_low.glb",
+    "bytes": 6920008,
+    "joints": 24,
+    "duration_s": 7.1333
+  },
+  "a281": {
+    "task_id": "01a12136-986b-766e-84d4-8d2e87f88140",
+    "action_id": 281,
+    "path": "assets/v2/char/_src/hero_unity/tripo/clips/a281.glb",
+    "bytes": 6833384,
+    "joints": 24,
+    "duration_s": 3.8667
+  },
+  "scratch": {
+    "task_id": "01a12136-9be4-75d5-aa9e-acbeff2cdc71",
+    "action_id": 36,
+    "path": "assets/v2/char/_src/hero_unity/tripo/clips/scratch.glb",
+    "bytes": 7036660,
+    "joints": 24,
+    "duration_s": 11.5333
+  },
+  "nod": {
+    "task_id": "01a12136-9e09-7456-9be0-b6a909aaa50d",
+    "action_id": 25,
+    "path": "assets/v2/char/_src/hero_unity/tripo/clips/nod.glb",
+    "bytes": 7076444,
+    "joints": 24,
+    "duration_s": 13.0333
+  },
+  "listen": {
+    "task_id": "01a12136-a114-7795-af7d-9c8bc5404eac",
+    "action_id": 47,
+    "path": "assets/v2/char/_src/hero_unity/tripo/clips/listen.glb",
+    "bytes": 6979236,
+    "joints": 24,
+    "duration_s": 9.3667
+  },
+  "walking": {
+    "task_id": "01a12135-7538-774f-8ac2-721fa5ab9a6f",
+    "action_id": null,
+    "path": "assets/v2/char/_src/hero_unity/tripo/clips/walking.glb",
+    "bytes": 6758980,
+    "joints": 24,
+    "duration_s": 1.0667
+  },
+  "running": {
+    "task_id": "01a12135-7538-774f-8ac2-721fa5ab9a6f",
+    "action_id": null,
+    "path": "assets/v2/char/_src/hero_unity/tripo/clips/running.glb",
+    "bytes": 6748360,
+    "joints": 24,
+    "duration_s": 0.6667
+  }
+}
