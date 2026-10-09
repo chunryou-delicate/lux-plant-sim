@@ -1431,6 +1431,8 @@
     align-items:center;justify-content:center;padding:24px;text-align:center}
   #chapterEnd.on{display:flex}
   #chapterEnd .card{max-width:340px;width:100%}
+  #chapterEndArt{display:block;width:100%;max-width:300px;aspect-ratio:1/1;object-fit:cover;margin:0 auto 12px;border-radius:12px}
+  @media (max-height:640px){ #chapterEndArt{max-width:180px} }
   #chapterEnd h2{font-size:20px;font-weight:800;color:#f0a35f;margin:0 0 8px}
   #chapterEnd p{font-size:13px;line-height:1.6;color:var(--dim);margin:0 0 14px}
   #chapterEnd .pbtns{display:flex;gap:8px;justify-content:center}
@@ -1451,6 +1453,8 @@
   #orderBoard .otxt i{display:block;font-style:normal;color:var(--dim);font-size:11.5px}
   #orderBoard .orow button{flex:0 0 auto;width:auto;min-width:64px;min-height:36px;padding:0 12px;font-weight:800}
   #orderBoard .empty{font-size:12px;color:var(--dim)}
+  #orderBoard .oface{flex:0 0 auto;width:36px;height:44px;object-fit:cover;object-position:50% 6%;border-radius:8px;background:rgba(255,255,255,.06)}
+  .cface{float:left;width:64px;height:80px;object-fit:cover;object-position:50% 6%;margin:0 10px 4px 0;border-radius:10px;background:rgba(255,255,255,.06)}
   #gameOver{position:fixed;inset:0;z-index:95;display:none;
     background:rgba(9,7,14,.94);backdrop-filter:blur(3px);
     align-items:center;justify-content:center;padding:24px;text-align:center}
@@ -1848,6 +1852,8 @@
   <!-- ★ 2026-10-08 D28 (총괄 14:00 · [plan] 지도 §D28) — 엔딩 [다음] 뒤. D17 직업 화면 전까지 임시 -->
   <div id="chapterEnd" role="dialog" aria-hidden="true">
     <div class="card">
+      <!-- ★ 2026-10-10 [Char] ev_first_story_end(1024²) — #homeArt 처럼 그림 하나 · 없으면 숨김 -->
+      <img id="chapterEndArt" src="./assets/illust/ev_first_story_end.png" alt="" onerror="this.style.display='none'">
       <h2 id="chapterEndTitle">여기까지 — 첫 이야기</h2>
       <p id="chapterEndSub">다음 장(직업 고르기)은 준비 중입니다.</p>
       <p id="chapterEndAsk" style="display:none">처음부터 다시 할까요? 지금 판은 지워집니다.</p>
@@ -4972,7 +4978,7 @@ const detail = {
     const cands = JOB.candidatesFor(S, o);
     return {
       art: './assets/ui/card_market.png', title: `${c.ko}의 주문`, sub: `${JOB.orderWantKo(o)} · ${Math.max(0, o.dueOn - S.day)}일 남음`,
-      body: `<p>${c.ask || ''}</p>` + (cands.length ? '<p>무엇을 보낼까요?</p>' : '<p>지금은 맞는 것이 없습니다.</p>'),
+      body: npcFaceHTML(c, 'cface') + `<p>${c.ask || ''}</p>` + (cands.length ? '<p>무엇을 보낼까요?</p>' : '<p>지금은 맞는 것이 없습니다.</p>'),
       btns: cands.map(x => ({ ko: `${x.ko} · ${x.won.toLocaleString()}원`, go: () => deliverNow(o.id, x.ref) })).concat([{ ko: '그만두기', go: () => { } }])
     };
   },
@@ -10135,6 +10141,11 @@ function endingDoneNow() {
 /* ══ ★★ 2026-10-10 D59 — 주문판(상점 탭 맨 위) · [납품] ════════════════════════════════
    주문 줄 «{손님} · {원하는 것} · {남은 날}» · [납품]은 맞는 것이 있을 때만 켜진다(가방이든 놓였든 · 고르는 카드).
    값은 그것의 지금 시세 × 웃돈(job_shop §candidatesFor) — 화면은 «시세보다 n할 더»를 글로, 고르는 카드에 수를 보인다(몬이는 수를 안 말한다) */
+/* ★ 2026-10-10 [Char] 손님 얼굴 — portrait_npc_<group>.png(600×800 · 투명 · group = shop_customers.json groups 이름) · 없으면 뺀다 */
+function npcFaceHTML(c, cls) {
+  const g = c && c.group ? String(c.group).replace(/[^a-z_]/g, '') : '';
+  return g ? `<img class="${cls}" src="./assets/characters/portraits/portrait_npc_${g}.png" alt="" onerror="this.remove()">` : '';
+}
 function drawOrderBoard() {
   const box = $('orderBoard'); if (!box) return;
   if (!JOB.movedHome(S)) { box.style.display = 'none'; return; }
@@ -10147,7 +10158,7 @@ function drawOrderBoard() {
   box.innerHTML = head + J.orders.map(o => {
     const left = Math.max(0, o.dueOn - S.day), n = JOB.candidatesFor(S, o).length;
     const pct = Math.round((o.premium - 1) * 10);
-    return `<div class="orow"><div class="otxt">${esc(cust(o.customerId).ko)} · ${esc(JOB.orderWantKo(o))} · ${left}일 남음` +
+    return `<div class="orow">${npcFaceHTML(cust(o.customerId), 'oface')}<div class="otxt">${esc(cust(o.customerId).ko)} · ${esc(JOB.orderWantKo(o))} · ${left}일 남음` +
            `<i>시세보다 ${pct}할 더${o.repeat ? ' · 다시 온 손님' : ''}</i></div>` +
            `<button class="${n ? 'primary' : 'ghost'}" type="button" data-deliver="${esc(o.id)}" ${n ? '' : 'disabled title="맞는 것이 아직 없습니다"'}>납품</button></div>`;
   }).join('');
@@ -13000,6 +13011,16 @@ function sceneArtOf(line) {
       if (/바깥이 그대로/.test(String(line.text || ''))) sceneArtStick = { scriptId: line.scriptId, art: 'ev_oneroom_firstday' };
       return (sceneArtStick && sceneArtStick.art) || 'ev_oneroom_arrive';
     case 'varieSeen': { const g = firstSeenGradeOf(); return (g === 'halfmoon' || g === 'fullmoon') ? 'ev_first_varie_halfmoon' : 'ev_first_varie_sanban'; }
+    /* ★ 2026-10-10 — [Char] 사건 그림(ea18110c · 453341cc · 1024²) — 거는 자리 표(docs/handoff/char-higgsfield-plan-20261009.md 끝).
+         가구점 · 집 자금 이정표 넷 · «다 모였다»는 [plan] 이 줄 art 칸으로 걸었다(위 line.art 가 먼저) */
+    case 'neighborOrder':     return 'ev_neighbor_order';
+    case 'ppTradeOffer':
+    case 'ppTradeOfferAgain': return 'ev_pp_trade_offer';
+    case 'ppTradeDone':       return 'ev_pp_trade_done';
+    case 'alAsleepCorms':     return 'ev_al_corm';
+    case 'alSproutVarie':     return 'ev_al_sprout_varie';   /* alSproutPlain 은 그림 없음 */
+    case 'shopOpen':          return 'ev_shop_open';
+    case 'questDoneShopSign': return 'ev_shop_sign';
     default: return null;
   }
 }
