@@ -201,7 +201,13 @@ const TAIL = `
          return [...s].sort((a,b)=>a-b); }
     finally{ SEED=keep; }
   },
-  __soilY(){ return SOIL_Y; }
+  __soilY(){ return SOIL_Y; },
+  /* ★ 2026-10-09 (총괄 🔴 · leaf 82239a5e 잡음) — 생장일을 «조용히» 내려놓는다(그리지도 · 이력을 지우지도 않는다).
+     원본 setGrowth 는 뒤로 가면(nv < GROWTH) matResetAll() 을 부른다 — «과거로 점프하면 미래의 갈라진 잎은 없던 일»(캐논 · 옳다).
+     그런데 이 인스턴스는 «여러 그루를 번갈아 그리는 그리개»라, 앞 그루(늙은 모주)보다 어린 그루를 지을 때 그 뒤로 가기가
+     방금 꽂은 잎 상태·무늬 표를 지웠다(무늬 잎이 민잎 leaf_mid1 로 · 원룸 모주 뒤의 삽수들 · 둘째 화분).
+     ⇒ assemble 이 plantSeed «앞»에서 이것으로 내려놓으면 setGrowth(days) 가 뒤로 가기가 아니게 된다. 원본은 한 글자도 안 바꿨다. */
+  __lowerGrowthQuiet(d){ const v=Math.max(0,Math.min(GMAX,Math.round(d))); if(v<GROWTH){ GROWTH=v; CAL_DAY=v; } return GROWTH; }
 };`;
 
 /* ============================================================
@@ -471,6 +477,10 @@ async function build(opt) {
         G.__setLight(az, photo);
         /* 씨앗이 바뀌면 성숙 이력을 버린다(원본 plantSeed 가 하는 일 그대로).
            그리기는 어차피 아래에서 다시 하므로 여기서 난 예외는 삼킨다. */
+        /* ★ 2026-10-09 — 앞 그루보다 어리면 생장일을 먼저 «조용히» 내려놓는다(§TAIL __lowerGrowthQuiet).
+             안 그러면 아래 setGrowth(days) 가 «뒤로 가기»로 matResetAll() 을 불러 방금 꽂은 잎 상태·무늬 표를 지운다
+             (무늬 잎이 민잎으로 — tools/leaf/_check_asm_order · test_skin_room_matches_zoom «조립 차례» 단계가 지킨다) */
+        G.__lowerGrowthQuiet(days);
         try { G.plantSeed(seed); } catch (e) { /* plantSeed 안의 buildPlant 실패 — 바로 아래에서 다시 짓는다 */ }
         /* ★ plantSeed 뒤 · setGrowth 앞이라야 한다. 앞이면 plantSeed 의 matResetAll 이 지우고,
            뒤면 setGrowth 안의 matCatchUp 이 이미 제 굴림을 해 버린 뒤다. */

@@ -21,6 +21,7 @@
        **「한 칸이 두 가지를 말하면 안 된다」 · 「빈칸과 조용함이 같아 보이면 안 된다」**
 
    ★ 2026-10-09 — 끝에 «새 두 종(PP · AL)» 단계를 더했다(게임 판 S.species.pots · core da423fb6). 아래 §새 두 종.
+   ★ 2026-10-09 — 끝에 «조립 차례» 단계(어린 그루를 늙은 그루 뒤에 지어도 무늬가 사나 · 총괄 🔴 · leaf 82239a5e). 아래 §조립 차례.
 
    ⚠ 서버가 떠 있어야 한다:  python tools/serve.py 8971
      BYEOT_URL=http://localhost:8971 node tools/test_skin_room_matches_zoom.mjs
@@ -175,6 +176,33 @@ else {
       else console.log('✅ AL 구근(잎 0) — 방도 확대도 화분만'); }
     if (!(zooms.__back && zooms.__back.on === false && zooms.__back.skins)) spBad(`확대를 끄면 몬스테라 창구가 돌아와야 한다 — ${JSON.stringify(zooms.__back)}`);
     else console.log('✅ 확대를 끄면 몬스테라로 돌아온다(leafSkinUsedAll 그대로)');
+  }
+
+  /* ══ ★ 조립 차례 (2026-10-09 · 총괄 🔴 · leaf 82239a5e 잡음) — «어린 그루를 늙은 그루 뒤에» 지어도 무늬가 산다 ══
+     방 조립기는 한 인스턴스가 그루를 번갈아 짓는다. 앞 그루(늙은 모주 400일)보다 어린 그루(62일)를 지으면 원본 setGrowth 의
+     «뒤로 가기» matResetAll() 이 방금 꽂은 잎 상태·무늬 표를 지워 무늬 잎이 민잎(leaf_mid1)으로 나왔다 — 확대는 무늬, 방은 민잎.
+     고침: plant_assemble §assemble 이 plantSeed 앞에서 생장일을 «조용히» 내려놓는다(TAIL __lowerGrowthQuiet · 원본 안 바꿈).
+     대조: 고치기 전 같은 차례로 «400일 뒤 화분 · 작은 그루 → leaf_mid1»(tools/leaf/_check_asm_order 머리 10-09 기록).
+     ⚠ 그림(무늬 판)을 먼저 받아 둔 뒤 잰다 — 늦게 와서 민잎인 것과 갈라야 한다(울타리). */
+  console.log('\n  ── 조립 차례(어린 그루를 늙은 그루 뒤에) ──');
+  const ord = await J(`(async()=>{ const pa=await import('/src/render3d/plant_assemble.js'); const asm=await pa.getPlantAssembler({});
+    const keys=p=>{ const ks=[]; if(p) p.traverse(x=>{ const k=x.userData&&x.userData.assetKey; if(k&&/^leaf/.test(k)) ks.push(k); }); return ks; };
+    const SEED=4154389251, SKIN='leaf_mid_albo7';
+    const pot=()=>keys(asm.assemble({ growthDays:62, seed:SEED, leafState:[{leafBirth:36, varie:true}], leafSkins:[{leafBirth:36, mid:SKIN, mat:'leaf_mat7'}] }));
+    const young=()=>keys(asm.youngPlantOf({ seed:SEED, leaves:[{varie:true, midSkin:SKIN, matSkin:'leaf_mat7', matured:false}], nextLeaf01:0.45, potD:0.12, grewLeaves:0 }));
+    asm.assemble({ growthDays:1, seed:999 }); pot(); for (let i=0; i<200 && asm.skinsPending(); i++) await new Promise(r=>setTimeout(r,100));
+    const o={ skin:SKIN, pending:asm.skinsPending() };
+    asm.assemble({ growthDays:1, seed:999 });     o['화분 · 1일 그루 뒤']=pot();
+    asm.assemble({ growthDays:400, seed:12345 }); o['화분 · 400일 그루 뒤']=pot();
+    asm.assemble({ growthDays:1, seed:999 });     o['작은 그루 · 1일 그루 뒤']=young();
+    asm.assemble({ growthDays:400, seed:12345 }); o['작은 그루 · 400일 그루 뒤']=young();
+    try { window.__redraw(); } catch(e) {}
+    return o; })()`, 180000);
+  if (!ord || ord.탈 || ord.pending) spBad(`조립 차례 판을 못 세웠다(무늬 판이 덜 옴?) — ${JSON.stringify(ord).slice(0, 200)}`);
+  else for (const k of Object.keys(ord).filter(k => k !== 'skin' && k !== 'pending')) {
+    const has = Array.isArray(ord[k]) && ord[k].includes(ord.skin);
+    if (!has) spBad(`조립 차례 — ${k}: 무늬(${ord.skin})가 빠졌다 ${JSON.stringify(ord[k])}`);
+    else console.log(`✅ 조립 차례 — ${k}: ${ord.skin}`);
   }
 
   console.log('\nskin_room_matches_zoom: ' + (fail ? 'FAIL' : 'PASS'));
