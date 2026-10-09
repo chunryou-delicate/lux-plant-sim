@@ -871,20 +871,6 @@ const ONEROOM_QUESTS = Object.freeze([
                                           Number.isFinite(c.rootedOnDay) && c.rootedOnDay >= s.movedInOnDay)
   }),
   Object.freeze({
-    id: 'oneroom_settle_cutting',
-    room: 'oneroom',
-    ko: '한 그루가 둘이 된다',
-    reward: '자를 수 있는 그루가 하나 더 생깁니다',
-    teaches: ['늘리는 길은 자르기다', '혹이 나면 흙으로 — 자리를 잡으면 그루다'],
-    why: '뿌리낸 무늬 삽수에 혹이 나면 흙에 옮겨 심습니다. 자리를 잡으면 그 그루에서 또 자를 수 있습니다.',
-    todo: () => '무늬 삽수에 혹이 나면 흙에 옮겨 심으세요',
-    after: 'oneroom_root_bright',
-    opens: (s, ctx) => yes(s.movedOut) && !!(ctx && ctx.doneIds.includes('oneroom_root_bright')),
-    done:  s => yes(s.movedOut) && Number.isFinite(s.movedInOnDay) &&
-                arr(s.cuttings).some(c => c && c.varieFromCut && c.status === 'established' &&
-                                          Number.isFinite(c.rootedOnDay) && c.rootedOnDay >= s.movedInOnDay)
-  }),
-  Object.freeze({
     id: 'oneroom_sell',
     room: 'oneroom',
     ko: '이 방의 무늬를 판다',
@@ -892,8 +878,11 @@ const ONEROOM_QUESTS = Object.freeze([
     teaches: ['밝게 뿌리낸 무늬가 더 비싸다', '늘린 것을 팔아야 돈이 된다'],
     why: '뿌리낸 무늬 삽수나 그루를 내놓아 팝니다. 밝은 데서 뿌리낸 것일수록 값이 높습니다.',
     todo: () => '뿌리낸 무늬 삽수를 내놓아 팔아 보세요',
-    after: 'oneroom_settle_cutting',
-    opens: (s, ctx) => yes(s.movedOut) && !!(ctx && ctx.doneIds.includes('oneroom_settle_cutting')),
+    /* ★★ 2026-10-09 [plan] — ② 뒤에 바로 선다(③ 흙에 옮기기는 곁줄). 뿌리낸 삽수를 «바로 파는» 사람은 ③ 을 영영 안 끝내고,
+       예전엔 ③ 이 이 줄과 ⑤ 집 자금 줄을 막아 엔딩 목표 퀘스트가 안 열렸다([core] 갈래 판 «안내대로» — ③ 이 판당 264일 열림).
+       후보: ㉠ ③ 을 기다림으로만 둠(사슬은 그대로 막힘) · ㉡ ④ 를 ② 뒤로(택함) · ㉢ ③ 완료를 «판 것도 침»(뜻이 바뀜). */
+    after: 'oneroom_root_bright',
+    opens: (s, ctx) => yes(s.movedOut) && !!(ctx && ctx.doneIds.includes('oneroom_root_bright')),
     /* varieSalesSinceMove — 이사 «뒤»에 판 무늬 삽수·그루 수(ts.varieSale.count − 이사 날의 값) */
     done:  s => yes(s.movedOut) && Number.isFinite(s.varieSalesSinceMove) && s.varieSalesSinceMove >= 1
   }),
@@ -913,6 +902,22 @@ const ONEROOM_QUESTS = Object.freeze([
                        !!(ctx && ctx.doneIds.includes('oneroom_sell')),
     done:  s => yes(s.movedOut) && Number.isFinite(s.targetWon) && s.targetWon > 0 &&
                 Number.isFinite(s.cashWon) && s.cashWon >= s.targetWon
+  }),
+  /* ★ 2026-10-09 [plan] — ③ «한 그루가 둘이 된다»는 배열 «맨 뒤»(곁줄). 배열 차례가 곧 «지금 할 일» 칩 차례라, 앞에 두면 뿌리낸 삽수를
+     바로 파는 사람의 칩이 ④·⑤(집 자금 — 엔딩 목표) 대신 13달 내내 ③ 에 머문다. 뜻·조건은 그대로 — 늘리기는 배움으로 남는다(박사님 10-09 «늘리기 그대로»). */
+  Object.freeze({
+    id: 'oneroom_settle_cutting',
+    room: 'oneroom',
+    ko: '한 그루가 둘이 된다',
+    reward: '자를 수 있는 그루가 하나 더 생깁니다',
+    teaches: ['늘리는 길은 자르기다', '혹이 나면 흙으로 — 자리를 잡으면 그루다'],
+    why: '뿌리낸 무늬 삽수에 혹이 나면 흙에 옮겨 심습니다. 자리를 잡으면 그 그루에서 또 자를 수 있습니다.',
+    todo: () => '무늬 삽수에 혹이 나면 흙에 옮겨 심으세요',
+    after: 'oneroom_root_bright',
+    opens: (s, ctx) => yes(s.movedOut) && !!(ctx && ctx.doneIds.includes('oneroom_root_bright')),
+    done:  s => yes(s.movedOut) && Number.isFinite(s.movedInOnDay) &&
+                arr(s.cuttings).some(c => c && c.varieFromCut && c.status === 'established' &&
+                                          Number.isFinite(c.rootedOnDay) && c.rootedOnDay >= s.movedInOnDay)
   })
 ]);
 

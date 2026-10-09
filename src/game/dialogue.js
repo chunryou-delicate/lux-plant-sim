@@ -1159,7 +1159,8 @@ export const SCRIPTS = {
     { who: 'moni',   face: 'proud',   text: '그게 늘리는 거야. 이제 그 그루에서도 자를 수 있어.' }
   ],
   questOneroomSell: [
-    { who: 'moni',   face: 'teach',   text: '늘렸으면 이제 내놓을 차례야.' },
+    /* ★ 2026-10-09 [plan] — 이 줄은 이제 «뿌리낸 뒤»(②)에 열린다(quest.js §oneroom_sell). 「늘렸으면」은 늘린 적 없는 사람에게 거짓 */
+    { who: 'moni',   face: 'teach',   text: '뿌리냈으면 이제 내놓아도 돼.' },
     { who: 'jachwi', face: 'think',   text: '…아깝긴 한데.' },
     { who: 'moni',   face: 'calm',    text: '남겨 둘 그루는 남겨. 파는 건 그다음 거야.' }
   ],
@@ -1580,6 +1581,8 @@ export const SCRIPTS = {
      ⚠ 「연락이 오면 팔려」 = 중고 거래는 올린 뒤 사는 사람 연락을 기다린다(shop §market) — 참. */
   nudgeHomeOffer: [ { who: 'moni', face: 'teach', text: '무늬 삽수를 내놓아 둬. 연락이 오면 팔려.' } ],
   nudgeHomePush:  [ { who: 'moni', face: 'teach', text: '집 자금은 무늬에서 나와. 늘려서 내놓자.' } ],
+  /* ★ 2026-10-09 [plan] — 집 자금은 13달이라 달마다 두 벌을 번갈아(§CHATTER · 기다린 날 ÷ 30 홀/짝). 「막혔냐」가 아니라 «모으는 중»의 말이다 */
+  nudgeHomePush2: [ { who: 'moni', face: 'calm',  text: '잘 모으고 있어. 무늬는 늘려서 내놓고.' } ],
   /* ★ 목표까지 «이정표» — 처음 넘은 날 한 번씩(§CHATTER status). 수는 안 말한다 · 칸 homeTarget 은 [core](없으면 안 뜸) */
   statusHomeHalf: [
     { who: 'moni', face: 'proud', text: '집까지 온 길이 남은 길보다 길어졌어.' }
@@ -2055,7 +2058,7 @@ export const REPEATABLE = new Set(
              'lampUnderEmpty', 'statusBagCuttings',
              'springCameOneroom', 'summerCameOneroom', 'autumnCameOneroom', 'statusOneroomYear',
              'nudgeHomeOffer', 'nudgeHomePush', 'statusHomeHalf', 'statusHomeNear',
-             'rentSoon2', 'rentAgain2',
+             'rentSoon2', 'rentAgain2', 'nudgeHomePush2',
              /* ★ 2026-10-08 상태 줄 — 기다림마다 다시 온다(§STATUS gap) */
              'statusSill', 'statusGauge', 'statusStreak', 'statusLeafWide', 'statusSiruVs', 'statusWallet',
              'statusPhaseOpening', 'statusPhaseYoung', 'statusPhaseMid', 'statusPhaseMature', 'statusPhaseAxis', 'statusVarieHalf'])
@@ -2563,12 +2566,17 @@ export const CHATTER = [
   ]),
   /* ★ 2026-10-09 [plan] 원룸 후반 — 집 자금 줄은 13달이라 한 달에 한 번(gap 30) */
   { id: 'nudgeHomeOffer', nudge: true, gap: 30, when: c => !!c.nudge && c.nudge.id === 'oneroom_home_fund' && c.nudge.days >= 1 && c.nudge.days < NUDGE_DAYS.worry },
-  { id: 'nudgeHomePush',  nudge: true, gap: 30, when: c => !!c.nudge && c.nudge.id === 'oneroom_home_fund' && c.nudge.days >= NUDGE_DAYS.worry },
+  { id: 'nudgeHomePush',  nudge: true, gap: 30, when: c => !!c.nudge && c.nudge.id === 'oneroom_home_fund' && c.nudge.days >= NUDGE_DAYS.worry
+                                                         && Math.floor(c.nudge.days / 30) % 2 === 0 },
+  { id: 'nudgeHomePush2', nudge: true, gap: 30, when: c => !!c.nudge && c.nudge.id === 'oneroom_home_fund' && c.nudge.days >= NUDGE_DAYS.worry
+                                                         && Math.floor(c.nudge.days / 30) % 2 === 1 },
   /* ═══ ★ 공통 셋 — 퀘스트별 줄이 없거나 그 줄이 어제 난 날의 그물. «범용 줄»이라 30일에 한 번(gap) ═══
      ⚠ 걱정은 이제 «끝이 없다»(≥ worry) — 예전 ④ 물러섬 자리까지 걱정이 맡는다(30일에 한 번이라 잔소리가 안 된다). */
-  { id: 'nudgeOffer', nudge: true, gap: 30, when: c => !!c.nudge && c.nudge.days >= 1 && c.nudge.days < NUDGE_DAYS.ask },
-  { id: 'nudgeAsk',   nudge: true, gap: 30, when: c => !!c.nudge && c.nudge.days >= NUDGE_DAYS.ask && c.nudge.days < NUDGE_DAYS.worry },
-  { id: 'nudgeWorry', nudge: true, gap: 30, when: c => !!c.nudge && c.nudge.days >= NUDGE_DAYS.worry },
+  /* ★ 2026-10-09 [plan] — 집 자금 줄(13달 · 모으는 중)은 범용 셋에서 뺀다. 「할 일이 며칠째 그대로야. 막힌 데 있어?」가 달마다 났는데
+     ([core] 갈래 판 · 늘리는 사람 8.3/판) 그동안 사람은 막힌 게 아니라 모으는 중이다. 집 자금은 제 줄(nudgeHome…)이 말한다. */
+  { id: 'nudgeOffer', nudge: true, gap: 30, when: c => !!c.nudge && c.nudge.id !== 'oneroom_home_fund' && c.nudge.days >= 1 && c.nudge.days < NUDGE_DAYS.ask },
+  { id: 'nudgeAsk',   nudge: true, gap: 30, when: c => !!c.nudge && c.nudge.id !== 'oneroom_home_fund' && c.nudge.days >= NUDGE_DAYS.ask && c.nudge.days < NUDGE_DAYS.worry },
+  { id: 'nudgeWorry', nudge: true, gap: 30, when: c => !!c.nudge && c.nudge.id !== 'oneroom_home_fund' && c.nudge.days >= NUDGE_DAYS.worry },
   /* ★ 「급한 건 아니야. 마음 내키면 해.」 — 독촉이 아니라 «잡담»이다(D19). 할 수 있는 퀘스트가 «없는» 날에만
      (다 끝났거나 · 시루가 도는 등 기다리는 중 — chatterContext.nudge 가 null). 할 일이 멎어 있는 날에 «급하지 않다»고 하면 거짓이다.
      범용 줄이라 30일에 한 번. ⚠ id 는 그대로 둔다(probe·세이브 이력이 이 이름을 안다). */
