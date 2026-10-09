@@ -1716,6 +1716,28 @@ export const SCRIPTS = {
     { who: 'jachwi', face: 'beam',     text: '동네에서 식물 하면 여기래.' },
     { who: 'moni',   face: 'proud',    text: '창턱 하나에서 여기까지 왔네.' }
   ],
+  /* ★ 2026-10-10 [plan] D59 — 가게 판 잡담 다섯(산 집 · 진로 가게). 원룸 잡담이 산 집에선 쉬므로(§chatterContext movedHome) 그 빈자리를 채운다.
+     거짓 없는 말만: 가게 방은 남쪽 창(house a3f78c57) · 다단 선반 윗단이 제일 밝은 자리(B) · 손님 말은 지어내지 않는다(인사·주문판만). 수는 안 말한다. */
+  chatShopMorning: [
+    { who: 'jachwi', face: 'apron',    text: '아침에 주문판부터 본다.' },
+    { who: 'moni',   face: 'calm',     text: '습관이 됐네.' }
+  ],
+  chatShopWindow: [
+    { who: 'jachwi', face: 'think',    text: '가게 방 창이 남쪽이라 오후가 길다.' },
+    { who: 'moni',   face: 'teach',    text: '선반 윗단이 제일 좋은 자리야. 거기 둔 건 빨리 커.' }
+  ],
+  chatShopRegular: [
+    { who: 'jachwi', face: 'happy',    text: '단골 손님이 지나가다 손을 흔들었다.' },
+    { who: 'moni',   face: 'proud',    text: '이게 가게 하는 맛이지.' }
+  ],
+  chatShopQuiet: [
+    { who: 'jachwi', face: 'think',    text: '오늘은 주문판이 비었다.' },
+    { who: 'moni',   face: 'calm',     text: '그런 날엔 키워 두는 거야. 다음 손님이 뭘 찾을지 모르니까.' }
+  ],
+  chatShopApron: [
+    { who: 'jachwi', face: 'apron',    text: '앞치마 주머니에 가위가 늘 들어 있다.' },
+    { who: 'moni',   face: 'scissors', text: '가게 사람 다 됐네.' }
+  ],
   /* ★ 2026-10-10 [plan] D55(총괄) — 원룸에서 안 자르고 키운 그루가 칸 한도의 2배를 넘게 컸다(사건 `cut_too_wide` · [core] 75a785d6 · 그 그루·그 칸에서 한 번).
      결: 혼내지 않고 «많이 컸네»로 — 칸을 넓혀 주자. ⚠ «바닥»을 권하지 않는다: 원룸 바닥은 등을 다 켜도 안 자라는 자리(가구 빛 D · house-decor §C 잰 닻)라
      거기로 옮기면 그루가 멈춘다. 옮기면 «더 큰다»고도 약속하지 않는다(칸 넓이가 자람을 막는다는 규칙은 없다 — 그림이 겹칠 뿐). */
@@ -2649,6 +2671,8 @@ function scriptOf(ev, S = null) {
   if (id === 'rent') return ev.first ? 'rentFirst'
                           : (Number.isFinite(ev.count) && ev.count % 2 === 0) ? 'rentAgain2' : 'rentAgain';
   /* ★ 2026-10-09 [plan] — 월세 예고도 두 벌(낸 달 수 홀/짝 · S.tutorial.rent.paidCount). 모르면 첫 벌 */
+  /* ★ 2026-10-10 [plan] D59 — 산 집(월세 0 · 관리비만)엔 월세 예고가 거짓이다(«곧 월세 날이야»). [core] tutorial §rent_soon 도 막도록 청함 — 여기선 말만 막는다 */
+  if ((id === 'rent_soon' || id === 'rent') && S && S.tutorial && S.tutorial.homeOwned) return null;
   if (id === 'rent_soon') {
     const paid = S && S.tutorial && S.tutorial.rent && S.tutorial.rent.paidCount;
     return (Number.isFinite(paid) && paid % 2 === 1) ? 'rentSoon2' : 'rentSoon';
@@ -2779,40 +2803,46 @@ export const CHATTER = [
        이사한 날 이 아홉은 전부 −1 이고 반지하 것들은 대개 한 번씩 나온 뒤라, 앞에 두면
        **원룸의 첫 며칠이 원룸 얘기로 시작한다.** 뒤에 두면 첫 아침이 열흘 뒤에 온다.
      ★ 조건은 전부 `c.movedOut` 하나로 갈린다 — 새 신호를 만들지 않았다. */
-  { id: 'chatOneroomMorning', when: c => c.movedOut && c.daysInOneroom != null && c.daysInOneroom <= 14 },
+  /* ★ 2026-10-10 [plan] D59 — 가게 판 잡담(산 집 · 진로 가게) */
+  { id: 'chatShopMorning',  gap: 21, when: c => c.movedHome && c.jobId === 'shop' },
+  { id: 'chatShopWindow',   gap: 21, when: c => c.movedHome && c.jobId === 'shop' },
+  { id: 'chatShopRegular',  gap: 21, when: c => c.movedHome && c.jobId === 'shop' && fin(c.shopRegulars) && c.shopRegulars >= 1 },
+  { id: 'chatShopQuiet',    gap: 21, when: c => c.movedHome && c.jobId === 'shop' && fin(c.shopOpenOrders) && c.shopOpenOrders === 0 },
+  { id: 'chatShopApron',    gap: 21, when: c => c.movedHome && c.jobId === 'shop' },
+  { id: 'chatOneroomMorning', when: c => c.movedOut && !c.movedHome && c.daysInOneroom != null && c.daysInOneroom <= 14 },
   /* ★ 원룸에서의 **첫** 수확. `cropHarvested` 는 거둔 날부터 다시 심기 전까지 참이라
      후보가 되는 날 자체가 드물다. 그래서 ① 목록에서 **거의 맨 앞**에 두고
      ② 창을 **14일**로 좁혔다 — 콩나물 회전이 5일이라 이 안이면 아직 「처음」이라 부를 만하다.
      ⚠ 넓게 잡으면 **열 번째 수확을 앞에 두고 「처음 거뒀다」고 말하게 된다.**
        그 사고는 이미 한 번 났다(§chatCrop1 의 「열 번째 시루를 앞에 두고」).
      ⚠ 대신 **못 뜨고 넘어가는 판이 생긴다.** 거짓말보다 침묵이 낫다고 보고 이쪽을 골랐다. */
-  { id: 'chatOneroomHarvest', when: c => c.movedOut && c.cropHarvested
+  { id: 'chatOneroomHarvest', when: c => c.movedOut && !c.movedHome && c.cropHarvested
                                       && c.daysInOneroom != null && c.daysInOneroom <= 14 },
   /* ★★ 2026-08-15 밤(story4) — **일어나는 일에 말이 없던 자리.** 이사가 화분을 이 방에서
      제일 어두운 칸으로 보내고(state.rehomePot → slots[0]) 나흘째에 멈춘다.
      ⚠ `c.blocked` 는 **빛 부족 정지**다(loop.turn.growthBlocked). 마름·머리공간은 다른 칸이라
        안 걸린다 — 처방이 「옮겨라」인 경우에만 나와야 한다.
      ★ 앞쪽에 둔다. 실제 멈춤(`plant_stalled`)이 나흘째에 뜨므로 그 언저리에 나와야 한다. */
-  { id: 'chatOneroomPotDark', when: c => c.movedOut && !!c.blocked
+  { id: 'chatOneroomPotDark', when: c => c.movedOut && !c.movedHome && !!c.blocked
                                       && c.daysInOneroom != null && c.daysInOneroom <= 30 },
-  { id: 'chatOneroomDark',    when: c => c.movedOut },
+  { id: 'chatOneroomDark',    when: c => c.movedOut && !c.movedHome },
   /* ★ 이사비 이백만 원이 빠져나간 직후. 실측으로 이사 다음 날 소지금이 거의 0 이다 */
-  { id: 'chatOneroomMoney',   when: c => c.movedOut && c.cashWon != null && c.cashWon < 300_000
+  { id: 'chatOneroomMoney',   when: c => c.movedOut && !c.movedHome && c.cashWon != null && c.cashWon < 300_000
                                       && c.daysInOneroom != null && c.daysInOneroom <= 45 },
-  { id: 'chatOneroomSiru',    when: c => c.movedOut },
-  { id: 'chatOneroomBright',  when: c => c.movedOut },
-  { id: 'chatOneroomWindow',  when: c => c.movedOut },
-  { id: 'chatOneroomEmpty',   when: c => c.movedOut && c.daysInOneroom != null && c.daysInOneroom <= 30 },
+  { id: 'chatOneroomSiru',    when: c => c.movedOut && !c.movedHome },
+  { id: 'chatOneroomBright',  when: c => c.movedOut && !c.movedHome },
+  { id: 'chatOneroomWindow',  when: c => c.movedOut && !c.movedHome },
+  { id: 'chatOneroomEmpty',   when: c => c.movedOut && !c.movedHome && c.daysInOneroom != null && c.daysInOneroom <= 30 },
   /* ★★ **조건을 코드가 읽는다** — 화분이 실제로 놓인 자리의 오늘 빛이 갈라짐 문턱을
      넘을 때만. 숫자를 대사에 안 박았으므로 방이 바뀌어도 안 낡는다(안 뜰 뿐이다). */
-  { id: 'chatOneroomFenestrate', when: c => c.movedOut && c.fenestrating },
-  { id: 'chatOneroomLamp',    when: c => c.movedOut && c.lampOwned >= 1 },
-  { id: 'chatOneroomNoLamp',  when: c => c.movedOut && !c.lampOwned },
-  { id: 'chatOneroomVarie',   when: c => c.movedOut },
-  { id: 'chatOneroomWinter',  when: c => c.movedOut && c.season === 'winter' },
+  { id: 'chatOneroomFenestrate', when: c => c.movedOut && !c.movedHome && c.fenestrating },
+  { id: 'chatOneroomLamp',    when: c => c.movedOut && !c.movedHome && c.lampOwned >= 1 },
+  { id: 'chatOneroomNoLamp',  when: c => c.movedOut && !c.movedHome && !c.lampOwned },
+  { id: 'chatOneroomVarie',   when: c => c.movedOut && !c.movedHome },
+  { id: 'chatOneroomWinter',  when: c => c.movedOut && !c.movedHome && c.season === 'winter' },
   /* ★ 한참 뒤. 뒤쪽이 아니라 여기 둔다 — 조건이 이미 60일로 늦춰져 있어서
      앞에 둬도 그날 전에는 후보가 안 된다. */
-  { id: 'chatOneroomSettled', when: c => c.movedOut && c.daysInOneroom != null && c.daysInOneroom >= 60 },
+  { id: 'chatOneroomSettled', when: c => c.movedOut && !c.movedHome && c.daysInOneroom != null && c.daysInOneroom >= 60 },
 
   /* 날씨 — 그날 하늘이 실제로 그래야 한다 */
   { id: 'chatRain',   when: c => c.weather === 'rain' },
@@ -2972,11 +3002,11 @@ export const CHATTER = [
   { id: 'statusPhaseMature',  status: true, gap: 20, when: c => c.hasMonstera && c.phaseId === 'leaf_mature'   && fin(c.phaseDays) && c.phaseDays <= 3 },
   { id: 'statusPhaseAxis',    status: true, gap: 20, when: c => c.hasMonstera && c.phaseId === 'axis_rising'   && fin(c.phaseDays) && c.phaseDays <= 3 },
   /* ★ 2026-10-08 [plan] 갈래 지도 7 — 원룸 첫 이레 · 무늬 원천 0 이면 「늘릴 게 없어」, 무늬 삽수를 들고 왔으면 «창턱 · 등» */
-  { id: 'statusOneroomNoVarie', status: true, gap: 60, when: c => c.movedOut && fin(c.daysInOneroom) && c.daysInOneroom >= 1 && c.daysInOneroom <= 7
+  { id: 'statusOneroomNoVarie', status: true, gap: 60, when: c => c.movedOut && !c.movedHome && fin(c.daysInOneroom) && c.daysInOneroom >= 1 && c.daysInOneroom <= 7
                                                               && c.varieSources === 0 },
   /* ★ 2026-10-09 [plan] D29 — 가방에 든 삽수가 있으면(이레에 한 번 · 사건·독촉 날엔 다음 빈 날) */
   /* ★ 2026-10-09 [plan] — 원룸 첫 이레는 이사 맥락의 줄이 먼저(그 사이 일반 줄은 쉼). D43: 도착 날은 §movedInBagCuttings 가 말했으니 이튿날(1)은 쉬고 사흘째(2)부터 */
-  { id: 'statusBagCuttingsMove', status: true, gap: 3, when: c => c.movedOut && fin(c.daysInOneroom) && c.daysInOneroom >= 2 && c.daysInOneroom <= 7
+  { id: 'statusBagCuttingsMove', status: true, gap: 3, when: c => c.movedOut && !c.movedHome && fin(c.daysInOneroom) && c.daysInOneroom >= 2 && c.daysInOneroom <= 7
                                                               && fin(c.bagCuttings) && c.bagCuttings > 0 },
   /* ★ 2026-10-09 [plan] D45 — 알로카시아가 자는 동안(칸 alDormantNow · [core]) */
   { id: 'statusAlSleeping',     status: true, gap: 14, when: c => c.alDormantNow === true },
@@ -2990,17 +3020,17 @@ export const CHATTER = [
                                                                 && fin(c.day) && c.day >= 60 },
   { id: 'statusHarvest30',      status: true, gap: 9999, when: c => fin(c.harvestTotal) && c.harvestTotal >= 30 },
   { id: 'statusHarvest10',      status: true, gap: 9999, when: c => fin(c.harvestTotal) && c.harvestTotal >= 10 && c.harvestTotal < 30 },
-  { id: 'statusOneroomYear',    status: true, gap: 400, when: c => c.movedOut && fin(c.daysInOneroom) && c.daysInOneroom >= 365 },
+  { id: 'statusOneroomYear',    status: true, gap: 400, when: c => c.movedOut && !c.movedHome && fin(c.daysInOneroom) && c.daysInOneroom >= 365 },
   /* ★ 2026-10-09 [plan] D51 — 네 마디 · 문턱은 quest.js HOME_MARKS 하나(칩 글과 같은 자) */
-  { id: 'statusHomeNear',       status: true, gap: 400, when: c => c.movedOut && fin(c.homeTarget) && c.homeTarget > 0 && fin(c.cashWon)
+  { id: 'statusHomeNear',       status: true, gap: 400, when: c => c.movedOut && !c.movedHome && fin(c.homeTarget) && c.homeTarget > 0 && fin(c.cashWon)
                                                             && c.cashWon >= c.homeTarget * HOME_MARKS.near && c.cashWon < c.homeTarget },
-  { id: 'statusHomeThreeQuarter', status: true, gap: 400, when: c => c.movedOut && fin(c.homeTarget) && c.homeTarget > 0 && fin(c.cashWon)
+  { id: 'statusHomeThreeQuarter', status: true, gap: 400, when: c => c.movedOut && !c.movedHome && fin(c.homeTarget) && c.homeTarget > 0 && fin(c.cashWon)
                                                             && c.cashWon >= c.homeTarget * HOME_MARKS.threeQuarter && c.cashWon < c.homeTarget * HOME_MARKS.near },
-  { id: 'statusHomeHalf',       status: true, gap: 400, when: c => c.movedOut && fin(c.homeTarget) && c.homeTarget > 0 && fin(c.cashWon)
+  { id: 'statusHomeHalf',       status: true, gap: 400, when: c => c.movedOut && !c.movedHome && fin(c.homeTarget) && c.homeTarget > 0 && fin(c.cashWon)
                                                             && c.cashWon >= c.homeTarget * HOME_MARKS.half && c.cashWon < c.homeTarget * HOME_MARKS.threeQuarter },
-  { id: 'statusHomeQuarter',    status: true, gap: 400, when: c => c.movedOut && fin(c.homeTarget) && c.homeTarget > 0 && fin(c.cashWon)
+  { id: 'statusHomeQuarter',    status: true, gap: 400, when: c => c.movedOut && !c.movedHome && fin(c.homeTarget) && c.homeTarget > 0 && fin(c.cashWon)
                                                             && c.cashWon >= c.homeTarget * HOME_MARKS.quarter && c.cashWon < c.homeTarget * HOME_MARKS.half },
-  { id: 'statusOneroomCutSill', status: true, gap: 60, when: c => c.movedOut && fin(c.daysInOneroom) && c.daysInOneroom >= 1 && c.daysInOneroom <= 7
+  { id: 'statusOneroomCutSill', status: true, gap: 60, when: c => c.movedOut && !c.movedHome && fin(c.daysInOneroom) && c.daysInOneroom >= 1 && c.daysInOneroom <= 7
                                                               && fin(c.varieCuttings) && c.varieCuttings > 0 },
 ];
 
@@ -3122,6 +3152,11 @@ export function chatterContext(turn = {}, S = null) {
       ? S.cuttings.filter(c => c && c.status !== 'dead' && c.varieFromCut).length : null; } catch { return null; } })(),
     /* ★ 2026-10-09 [plan] D29 — 가방에 든 안 죽은 삽수 수([core] turn.bagCuttings). 모르면 null */
     bagCuttings: (turn && Number.isFinite(turn.bagCuttings)) ? turn.bagCuttings : null,
+    /* ★ 2026-10-10 [plan] D59 — 산 집(투룸 · 진로)으로 옮겼나 · 진로 · 가게 판(S.jobShop · [core] job_shop). 원룸 잡담·상태 줄은 산 집에선 쉰다 */
+    movedHome: !!(S && ((S.home && S.home.room === 'tworoom') || (S.tutorial && S.tutorial.homeOwned))),
+    jobId: (S && S.story && S.story.job && S.story.job.id) || null,
+    shopRegulars: (S && S.jobShop && Array.isArray(S.jobShop.regulars)) ? S.jobShop.regulars.length : null,
+    shopOpenOrders: (S && S.jobShop && Array.isArray(S.jobShop.orders)) ? S.jobShop.orders.length : null,
     /* ★ 2026-10-09 [plan] D45 — 알로카시아 한 그루라도 자고 있나([core] turn.alDormantNow · 모르면 null) */
     alDormantNow: (turn && typeof turn.alDormantNow === 'boolean') ? turn.alDormantNow : null,
     /* ★ 2026-10-09 [plan] 원룸 후반 — 엔딩 목표 금액([core] turn.homeTarget · homes.json ending.targetWon). 모르면 null */
