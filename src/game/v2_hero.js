@@ -33,7 +33,9 @@ function heroFile() {
 let HERO_GENDER = 'f';
 export function setHeroGender(g) { HERO_GENDER = g === 'm' ? 'm' : 'f'; }
 export const heroGender = () => HERO_GENDER;
-const heroUrl = () => new URL('../../assets/v2/char/' + pickByGender({ f: heroFile(), m: null }, HERO_GENDER, '3D 몸(v2 hero2_m.glb)'), import.meta.url).href;
+/* ★ 남 몸 파일 — 한 칸이다(char 가 hero2_m.glb 를 세우면 'hero2_m.glb' 로 채운다). 옷 표(§outfitFilesNow)도 이 칸을 같이 본다(총괄 10-10) */
+const HERO_M_BODY = null;
+const heroUrl = () => new URL('../../assets/v2/char/' + pickByGender({ f: heroFile(), m: HERO_M_BODY }, HERO_GENDER, '3D 몸(v2 hero2_m.glb)'), import.meta.url).href;
 
 export const HERO_H = 1.40;          // 옛 주인공과 같은 키[m]
 export const HERO_WALK_MPS = 0.76;   // 걷기 클립 지면 속도[m/s] — 위 「잰 것」
@@ -359,7 +361,11 @@ function breakClipFrom(src, name) {
 const OUTFIT_FILES = { spring: 'spring.jpg', autumn: 'autumn.jpg', winter: 'winter.jpg', pajama: 'pajama.jpg', rain: 'rain.jpg',
   apron: 'apron.jpg' };   // 10-09 식물 가게(D59) 앞치마 — 가게에 있을 때 입히기는 core
 /* 성별 → 옷 표 — 'm' 옷(hero2_m UV · outfit/m/…)은 아직 없다 → 'f' + 경고(몸이 'f' 로 떨어지니 옷도 같이) */
-const outfitFilesNow = () => pickByGender({ f: OUTFIT_FILES, m: null }, HERO_GENDER, '옷 그림(outfit/m)');
+/* ★ 짝(총괄 10-10 · char 계획서) — 남 몸이 없으면(HERO_M_BODY null) 옷도 'f' 로 같이 떨어진다(여 몸에 여 옷).
+     남 몸이 서면 옷 표는 null 이 아니라 **빈 표 {}** — null 이면 'f' 옷(여 몸 UV 로 칠한 그림)이 남 몸에 입혀져 얼룩진다.
+     빈 표면 setOutfit 이 계절 옷을 거절하고 기본 옷 그대로 간다. 남 옷 일곱(D68 미룸)이 서면 OUTFIT_FILES_M 에 채운다 */
+const OUTFIT_FILES_M = Object.freeze({});
+const outfitFilesNow = () => pickByGender({ f: OUTFIT_FILES, m: HERO_M_BODY ? OUTFIT_FILES_M : null }, HERO_GENDER, '옷 그림(outfit/m)');
 const _outfitTex = new Map();
 function outfitTexture(name) {
   /* 10-10 (char): 열쇠에 성별 — 'm' 옷(outfit/m/…)이 서면 같은 이름(spring 등)이 다른 그림이다. 이름만 열쇠면 먼저 받은 쪽이 남는다 */
