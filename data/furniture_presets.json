@@ -1216,6 +1216,23 @@
       "accent": "#c3b49c",
       "room": "거실"
     },
+    "tv_crt": {
+      "type": "tv_crt",
+      "name_ko": "브라운관 TV",
+      "_D44": "★ 2026-10-09 총괄 D44(박사님 «묻지 말고 · 재미있게») — 이미 뽑아 둔 v2 소품 monitor.glb(나무 받침 위 브라운관 TV)를 새 가구로. 값은 «프리셋 크기 = 값» 규칙 그대로(새 값을 안 정했다). 크기는 GLB 실측 비율(1.90×1.90×1.22 → 높이 0.85 기준)이라 옷이 안 찌그러진다(uniform). 이름·한 줄 소개는 plan.",
+      "_갈래": "★ 가전 TV(tv · appliance:true)와 갈래가 다르다 — 일부러다. 가전 TV 는 «가전»이라 가구점에 안 뜨고, 이것은 «방을 꾸미는 옛 TV 한 대»라 가구점에 낸다(appliance 표지를 안 단다 · furnitureKindOf = furniture). 켜지거나 빛을 내지 않는다.",
+      "size_m": {
+        "w": 0.85,
+        "d": 0.55,
+        "h": 0.85
+      },
+      "w": 0.85,
+      "d": 0.55,
+      "h": 0.85,
+      "color": "#c9a46c",
+      "accent": "#e3d6bf",
+      "room": "공통"
+    },
     "cube_storage": {
       "type": "cube_storage",
       "name_ko": "큐브 수납장",

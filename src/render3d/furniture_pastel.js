@@ -466,6 +466,20 @@ B.kitchen=(o)=>{
   g.userData.size={w,h,d}; return g;
 };
 
+/* ★ 2026-10-09 [house] 총괄 D44 — 브라운관 TV(나무 받침 위). v2 옷은 props/monitor.glb(uniform).
+   이 빌더는 옷 밑 «대리»다 — 고르기 광선·충돌·?v2furn=0 그림. 크기는 프리셋 그대로(값 = 크기). 자리(slots) 없음 */
+B.tv_crt=(o)=>{
+  const w=o.w??0.85, d=o.d??0.55, h=o.h??0.85, sh=h*0.5;
+  const g=new THREE.Group();
+  const wood=furnMat(o.color??'#c9a46c','matte'), body=furnMat(o.accent??'#e3d6bf','matte');
+  g.add(panel(w,sh,d,wood,0,sh/2,0,0.02));                                   // 나무 받침
+  g.add(panel(w*0.78,h-sh,d*0.82,body,0,sh+(h-sh)/2,-d*0.06,0.04));           // 브라운관 몸
+  const screen=new THREE.Mesh(new THREE.PlaneGeometry(w*0.56,(h-sh)*0.62),
+    new THREE.MeshStandardMaterial({ color:col('#3a4440'), roughness:0.3 }));
+  screen.position.set(0,sh+(h-sh)*0.52,-d*0.06+d*0.41+0.002); g.add(screen);  // 앞(+Z) 화면
+  g.userData.size={w,h,d}; return g;
+};
+
 /* TV / 모니터 */
 B.tv=(o)=>{
   const w=o.w??1.0, h=o.h??0.58;

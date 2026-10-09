@@ -77,6 +77,7 @@ const FURN = {
   shelf_corner_3tier: { file: 'furniture/shelf_corner_3tier.glb', yaw: 90, lazy: true, tiers: true },  // 직각 꼭짓점이 뒤-왼(판 무게중심으로 맞춤)
   clothes_rack:       { file: 'furniture/clothes_rack.glb',       yaw: 0, lazy: true, box: true },
   laundry_basket:     { file: 'props/laundry.glb',                yaw: 0, lazy: true, box: true },   // 이미 뽑아 둔 v2 소품(빨래 든 바구니)
+  tv_crt:             { file: 'props/monitor.glb',                yaw: 0, lazy: true, uniform: true }, // 총괄 D44 — 브라운관 TV(크기를 GLB 비율로 뽑아 uniform)
   /* r3(회색 상자 참조) — 원화를 코드 가구 그림으로 박아 단 수·자리가 맞는다 · 겹단 꺾은 선 */
   plant_step_3:       { file: 'furniture/plant_step_3.glb',       yaw: 0, lazy: true, tiers: true },
   shelf_ladder_4tier: { file: 'furniture/shelf_ladder_4tier.glb', yaw: 0, lazy: true, tiers: true, fitProxyBox: true },

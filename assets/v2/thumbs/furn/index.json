@@ -383,5 +383,9 @@
  "stool_charcoal": {
   "file": "assets/v2/thumbs/furn/stool_charcoal.webp",
   "v2": false
+ },
+ "tv_crt": {
+  "file": "assets/v2/thumbs/furn/tv_crt.webp",
+  "v2": true
  }
 }
