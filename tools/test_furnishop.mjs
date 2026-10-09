@@ -7,9 +7,9 @@
    ★ 브라우저가 필요 없다. `vendor/three/three.min.js` 를 node 에서 그대로 불러
      **가구 빌더를 실제로 돌린다** — 그것이 §A 의 요점이다.
 
-     A 크기   121개를 빌더로 다시 지어 `size_m` 과 **한 톨이라도 다르면 깨진다**
+     A 크기   122개를 빌더로 다시 지어 `size_m` 과 **한 톨이라도 다르면 깨진다**
               ⇒ 「값 매기기가 쓴 크기」와 「빌더가 내는 크기」가 두 벌이 될 수 없다
-     B 거르기 가구 84 · 안 내는 가구 1 · 걸러 낸 것 36. 걸러 낸 것이 정말 가구가 아닌가
+     B 거르기 가구 84 · 안 내는 가구 2 · 걸러 낸 것 36. 걸러 낸 것이 정말 가구가 아닌가
      C 값     규칙대로 나오나 · 제일 싼 것~제일 비싼 것 · 되사는 값
      D 문     등 해금 **전에는 목록에 없고** 주문도 막힌다 · 해금 뒤에는 있다
      E 사기   재고가 늘고 돈이 그만큼 나간다
@@ -63,8 +63,8 @@ console.log('\nA. 크기 — 빌더가 내는 값과 size_m 이 같은가');
       bad.push(`${id}: 빌더 ${r4(s.w)}×${r4(s.d)}×${r4(s.h)} ≠ size_m ${p.size_m.w}×${p.size_m.d}×${p.size_m.h}`);
   }
   ok(`size_m 이 없는 프리셋 0개`, missing.length === 0, missing.join(', '));
-  ok(`121개 전부 빌더와 같다`, bad.length === 0, bad.slice(0, 8).join(' | '));
-  ok(`프리셋이 121개다`, Object.keys(PRESETS.presets).length === 121,
+  ok(`122개 전부 빌더와 같다`, bad.length === 0, bad.slice(0, 8).join(' | '));
+  ok(`프리셋이 122개다`, Object.keys(PRESETS.presets).length === 122,
      String(Object.keys(PRESETS.presets).length));
 
   /* ⚠ `w`·`d`·`h` 를 그대로 믿으면 안 된다는 증거를 검사로 남긴다 —
@@ -97,8 +97,9 @@ console.log('\nB. 거르기 — 가구가 아닌 것이 안 들어왔나');
   const unlistedN = all.filter(r => r.shopKind === 'furniture' && !r.listed).length;
   /* 2026-10-04 박사님 결정 — 반지하 소품 넷이 진짜 가구가 됐다: 117 → 120(난방기·쓰레기봉투·배낭 · 건조대는 원래 있었다) ·
      가구점 81 → 83(난방기·배낭) · 쓰레기봉투는 «팔리는데 0원»이라 가구점에 안 낸다(안 내는 가구 1)
-     2026-10-09 총괄 D44 — 브라운관 TV(tv_crt · v2 monitor.glb)가 새 가구로: 120 → 121 · 가구점 83 → 84 (값은 크기 규칙 그대로) */
-  ok('가구 84 · 안 내는 가구 1 · 전체 121', listedN === 84 && unlistedN === 1 && all.length === 121,
+     2026-10-09 총괄 D44 — 브라운관 TV(tv_crt · v2 monitor.glb)가 새 가구로: 120 → 121 · 가구점 83 → 84 (값은 크기 규칙 그대로)
+     2026-10-10 [house] 가게 진열대(shop_display · plan D59 · 투룸 가게 방에 처음부터) — 가구점에 안 낸다: 121 → 122 · 안 내는 가구 1 → 2 · 가구점 84 그대로 */
+  ok('가구 84 · 안 내는 가구 2 · 전체 122', listedN === 84 && unlistedN === 2 && all.length === 122,
      `가구 ${listedN} · 안 내는 가구 ${unlistedN} / 전체 ${all.length}`);
 
   /* ★ 조명은 **`lighting_presets.fixtures` 로 되짚어 확인한다** — 규칙이 코드에 있으므로

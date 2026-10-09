@@ -1371,18 +1371,21 @@
           "preset": "door_wood"
         }
       ],
+      "_shop_layout": "★ 2026-10-10 가게 기준 배치(총괄 · plan 80dd6cb4 · [house] docs/handoff/house-tworoom-check-20261010.md) — 투룸은 식물 가게(산 집)로 쓴다. 남쪽 창 방(칸막이 왼쪽)이 «가게 방»: 다단 선반을 창 앞에 · 그 앞에 진열대(자리 9) · 계단식은 창 동쪽 끝. 침대·협탁은 거실(칸막이 오른쪽)로, 소파·책장·테이블·깔개는 그 자리를 비켜 옮겼다(uid 는 그대로 — 세이브가 이 이름으로 자리를 찾는다). 식물등 셋을 원룸 결(바 → 집게 → 거치 차례)로 넣었다 — 등 자리 0 이면 들고 온 등이 아무 데도 안 켜져 겨울에 자라는 자리가 없었다. 잰 것(가구 빛 갈래 · 날씨 기댓값 · 문턱 2.7 · 자리 하나씩): 한 해 내내 자라는 자리(겨울에 등을 다 켜면 넘음) 옛 배치 0 → 8 · 등 없이 한 해 내내 0. 스탠드는 거실 쪽(5)보다 가게 방 쪽(8)이 많아 가게 방에 섰다. 방 측정판(room_profile)은 growth 가 다시 굽는다.",
       "furniture": [
         {
           "preset": "bed_double",
           "uid": "tworoom-bed-double",
-          "x": -2.2,
-          "z": -1
+          "x": 1.15,
+          "z": 1.4,
+          "note": "가게 기준 배치(10-10) — 침실 창 앞에서 거실 안쪽으로"
         },
         {
           "preset": "nightstand",
           "uid": "tworoom-nightstand",
-          "x": -2.2,
-          "z": 0.55
+          "x": 0.15,
+          "z": 2.15,
+          "note": "가게 기준 배치(10-10) — 침대를 따라"
         },
         {
           "preset": "wardrobe",
@@ -1394,15 +1397,17 @@
         {
           "preset": "sofa",
           "uid": "tworoom-sofa",
-          "x": 1.4,
-          "z": 1.1,
-          "rot": 180
+          "x": 3,
+          "z": -0.5,
+          "rot": -90,
+          "note": "가게 기준 배치(10-10) — 침대에 자리를 내주고 동쪽 벽으로"
         },
         {
           "preset": "table_round",
           "uid": "tworoom-table-round",
-          "x": 1.4,
-          "z": -0.1
+          "x": 1.7,
+          "z": -0.6,
+          "note": "가게 기준 배치(10-10)"
         },
         {
           "preset": "tv",
@@ -1413,15 +1418,17 @@
         {
           "preset": "shelf_low",
           "uid": "tworoom-shelf-low",
-          "x": 2.9,
-          "z": 0.2,
-          "rot": -90
+          "x": 3.3,
+          "z": 1.3,
+          "rot": -90,
+          "note": "가게 기준 배치(10-10) — 소파 자리를 비켜"
         },
         {
           "preset": "rug",
           "uid": "tworoom-rug",
-          "x": 1.4,
-          "z": 0.4
+          "x": 1.7,
+          "z": -0.6,
+          "note": "가게 기준 배치(10-10) — 테이블을 따라"
         },
         {
           "preset": "lamp_ceiling",
@@ -1433,17 +1440,55 @@
           "preset": "shelf_etagere_3tier",
           "uid": "tworoom-shelf-etagere-3tier",
           "x": -2.2,
-          "z": -2.3,
+          "z": -2.325,
           "rot": 0,
-          "note": "침실 창가 선반"
+          "note": "가게 방 창가 선반 — 윗단이 창 아랫변(0.775) 높이 · 윗단 셋이 B(겨울엔 등을 켜면)"
         },
         {
           "preset": "plant_step_3",
           "uid": "tworoom-plant-step-3",
-          "x": 2.35,
-          "z": -2.2,
+          "x": -1.1,
+          "z": -2.3,
           "rot": 0,
-          "note": "거실 창가 계단식"
+          "note": "가게 기준 배치(10-10) — 거실 창(동쪽 · 약함 · TV 앞)에서 가게 방 창 동쪽 끝으로"
+        },
+        {
+          "preset": "shop_display",
+          "uid": "tworoom-shop-display",
+          "x": -2.2,
+          "z": -1.75,
+          "rot": 0,
+          "note": "★ 가게 진열대(10-10 · plan D59) — 다단 선반 바로 앞 · 뒤 단이 창 쪽(높음) · 자리 9 중 B 셋"
+        },
+        {
+          "preset": "growlight_bar",
+          "uid": "tworoom-growlight-bar",
+          "x": -2.2,
+          "z": -2.03,
+          "y": 1.75,
+          "spectrum": "redblue",
+          "schedule": "photo12",
+          "note": "★ 2026-10-10 총괄 — 투룸 «등 자리»(원룸 D6-가 결 · 바 → 집게 → 거치 차례 · 빛 결도 원룸과 같게). 가게 방 남쪽 창 위."
+        },
+        {
+          "preset": "growlight_clip",
+          "uid": "tworoom-growlight-clip",
+          "x": -1.95,
+          "z": -2.3,
+          "y": 0.81,
+          "spectrum": "full",
+          "schedule": "photo16",
+          "note": "★ 2026-10-10 — 다단 선반 윗단(0.794)에 물림."
+        },
+        {
+          "preset": "growlight_stand",
+          "uid": "tworoom-growlight-stand",
+          "x": -1.15,
+          "z": -1.6,
+          "y": 0,
+          "spectrum": "full",
+          "schedule": "photo14",
+          "note": "★ 2026-10-10 — 진열대 동쪽 옆(가게 방). 거실 쪽(1.75,−1.55)이면 한 해 내내 자라는 자리가 5, 여기면 8."
         }
       ],
       "facing": "south",
