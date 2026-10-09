@@ -47,6 +47,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))          # tools/char
 ROOT = os.path.dirname(os.path.dirname(HERE))              # 저장소 루트
 sys.path.insert(0, HERE)
 from rescale_char_glb import load  # noqa: E402
+from strip_stray_parts import base_color_image  # noqa: E402
 
 # cp949 콘솔에서 '—' 한 글자에 죽는다 — 2026-08-24 에 열 개가 다 그랬다.
 # 내 창에서만 PYTHONIOENCODING=utf-8 을 붙여 돌려 와서 한 번도 안 걸렸다.
@@ -118,7 +119,7 @@ def read_glb(path):
     pos = acc(prim["attributes"]["POSITION"]).astype(np.float32)
     uv = acc(prim["attributes"]["TEXCOORD_0"]).astype(np.float32)
     idx = acc(prim["indices"]).astype(np.int64).reshape(-1, 3)
-    im = j["images"][0]
+    im = base_color_image(j)
     bv = j["bufferViews"][im["bufferView"]]
     o = bv.get("byteOffset", 0)
     tex = Image.open(io.BytesIO(b[o:o + bv["byteLength"]])).convert("RGB")

@@ -29,7 +29,7 @@ try:
     sys.stdout.reconfigure(encoding='utf-8')
 except Exception:
     pass
-from strip_stray_parts import read_glb, write_glb, acc_array  # noqa: E402
+from strip_stray_parts import read_glb, write_glb, acc_array, base_color_image  # noqa: E402
 from build_hero2 import compact  # noqa: E402
 
 # 게임 이름 → (앞, 뒤) 초 · None 은 통째 · 'tail:x' 는 끝 x 초
@@ -170,7 +170,7 @@ def main():
             print('■ %s → 바이트 · 최대 오차 %.4f' % (k, err))
     # 5) 그림
     if texN:
-        im = js['images'][0]
+        im = base_color_image(js)   # 10-10 · 바탕색만 줄인다(노멀·금속거칠기가 있으면 그대로)
         bv = js['bufferViews'][im['bufferView']]
         o = bv.get('byteOffset', 0)
         img = Image.open(io.BytesIO(bytes(bn[o:o + bv['byteLength']]))).convert('RGB')

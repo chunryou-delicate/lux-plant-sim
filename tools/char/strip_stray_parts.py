@@ -74,6 +74,22 @@ def read_glb(path):
     return js, bn
 
 
+def base_color_image(js):
+    """메시 재질의 baseColorTexture 그림(images 의 한 칸) — ⛔ images[0] 으로 읽지 말 것.
+    2026-10-10 Tripo 판은 재질 그림 차례가 [노멀 · 바탕색 · 금속거칠기]라 images[0] 이 노멀 맵이었다(머리 가르기가 노멀을 읽을 뻔).
+    Meshy·hero2 는 그림이 하나라 우연히 맞았을 뿐이다. 재질에 바탕색 그림이 없으면 images[0]."""
+    for m in js.get('meshes', []):
+        for p in m.get('primitives', []):
+            if 'material' in p:
+                t = js['materials'][p['material']].get('pbrMetallicRoughness', {}).get('baseColorTexture')
+                if t is not None:
+                    tx = js['textures'][t['index']]
+                    src = tx.get('source', next((e['source'] for e in tx.get('extensions', {}).values() if 'source' in e), None))   # EXT_texture_webp 등
+                    if src is not None:
+                        return js['images'][src]
+    return js['images'][0]
+
+
 def write_glb(path, js, bn):
     j = json.dumps(js, separators=(',', ':')).encode('utf-8')
     j += b' ' * ((4 - len(j) % 4) % 4)

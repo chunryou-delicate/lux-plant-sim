@@ -17,10 +17,10 @@ import numpy as np
 from PIL import Image
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from strip_stray_parts import read_glb  # noqa: E402
+from strip_stray_parts import read_glb, base_color_image  # noqa: E402
 
 js, bn = read_glb('assets/v2/char/hero.glb')
-bv = js['bufferViews'][js['images'][0]['bufferView']]
+bv = js['bufferViews'][base_color_image(js)['bufferView']]
 o = bv.get('byteOffset', 0)
 tex = np.asarray(Image.open(io.BytesIO(bytes(bn[o:o + bv['byteLength']]))).convert('RGB')).astype(float)
 m = np.asarray(Image.open('assets/derived/hero_test/hero_recolor_test_mask.png').convert('RGB')).astype(int)
@@ -74,12 +74,12 @@ def into(dst, g):
         bn2.append(0)
     off = len(bn2); bn2.extend(data)
     js2['bufferViews'].append({'buffer': 0, 'byteOffset': off, 'byteLength': len(data)})
-    js2['images'][0]['bufferView'] = len(js2['bufferViews']) - 1
+    base_color_image(js2)['bufferView'] = len(js2['bufferViews']) - 1
     n0 = len(bn2)
     bn3 = compact(js2, bn2)
     after = [acc_array(js2, bn3, i) for i in range(len(js2['accessors']))]
     same = all(a.shape == b.shape and np.array_equal(a, b) for a, b in zip(before, after))
-    v = js2['bufferViews'][js2['images'][0]['bufferView']]
+    v = js2['bufferViews'][base_color_image(js2)['bufferView']]
     back = np.asarray(Image.open(io.BytesIO(bytes(bn3[v['byteOffset']:v['byteOffset'] + v['byteLength']]))).convert('RGB')).astype(float)
     print('■ --into  accessor %d개 되읽어 %s · 버퍼 %d → %d 바이트(안 쓰는 옛 그림 뺌) · 머리 중앙값 되읽기 %s'
           % (len(before), '✔ 전부 같다' if same else '⛔ 다르다', n0, len(bn3),

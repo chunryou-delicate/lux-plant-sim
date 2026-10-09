@@ -58,7 +58,10 @@ def base_color_image(js):
             if 'material' in p:
                 t = js['materials'][p['material']].get('pbrMetallicRoughness', {}).get('baseColorTexture')
                 if t is not None:
-                    return js['images'][js['textures'][t['index']]['source']]
+                    tx = js['textures'][t['index']]
+                    src = tx.get('source', next((e['source'] for e in tx.get('extensions', {}).values() if 'source' in e), None))   # EXT_texture_webp 등
+                    if src is not None:
+                        return js['images'][src]
     return js['images'][0]
 
 def writer(js, ai):

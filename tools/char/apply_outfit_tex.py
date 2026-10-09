@@ -28,13 +28,13 @@ try:
     sys.stdout.reconfigure(encoding='utf-8')
 except Exception:
     pass
-from strip_stray_parts import read_glb, write_glb  # noqa: E402
+from strip_stray_parts import read_glb, write_glb, base_color_image  # noqa: E402
 from recolor_hero_tex import texel_height, lum  # noqa: E402
 from build_hero2 import compact  # noqa: E402
 
 
 def tex_of(js, bn):
-    im = js['images'][0]
+    im = base_color_image(js)
     bv = js['bufferViews'][im['bufferView']]
     o = bv.get('byteOffset', 0)
     return np.asarray(Image.open(io.BytesIO(bytes(bn[o:o + bv['byteLength']]))).convert('RGB')).astype(float), im

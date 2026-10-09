@@ -493,5 +493,9 @@
 ```
 
 ## 4. 3D 뒤따름(총괄 · plan §4)
+- ★ **첫 자 = G2 «머리–팔 2% 안 머리 정점»**(`g2_check.py`) — 리그 성패를 리그 «전»에 말한다(10-10 여 유니티 주인공에서 배움):
+  Meshy 판 1,482 → 리그 뒤 머리 팔 무게 12.3% · 0 크레딧 고치기로 안 고쳐짐(떼면 바늘 · 두면 가닥이 들림) / Tripo 판 **0** → 리그 날것은 22.1% 였어도 전부 떼서 0.0% · 바늘 없음.
+  ⇒ 턴어라운드를 고를 때부터 «팔과 몸통 틈 · 머리 끝이 팔에 안 닿음»을 보고, 3D 두 판(Meshy · Tripo) 중 2% 안 0 인 쪽을 고른다. 짧은 머리면 대개 0 이지만 앞머리·옆머리가 어깨에 닿는지 그대로 잰다.
+- ★ 그림 읽기: 도구는 재질 바탕색(`strip_stray_parts.base_color_image`)을 따라간다 — Tripo 는 images[0] 이 노멀 맵이다. 새 도구도 이것으로 읽을 것.
 - 턴어라운드 고름 → 칸 넷(같은 정사각 · 같은 축척 · 같은 바닥선 — 몬이 b 자르기와 같은 법) → Meshy multi-image · Tripo multiview 두 판 → G2(g2_check) → 고른 판 앞=+Z(glb_face_z) → rig 1.4 + 동작 13(Meshy 계정 44) → build_hero_unity 와 같은 길(머리 무게 · 색 · 클립 · extras) → `hero2_m.glb`
 - 옷 일곱: hero2 와 같은 길(retexture → apply_outfit_tex) — 남 몸 UV 가 따로라 `outfit/m/*.jpg`
