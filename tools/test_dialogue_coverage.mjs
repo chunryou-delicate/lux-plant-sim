@@ -565,6 +565,18 @@ const NOT_YET_USED = new Set(['monsteraStalled']);
        그때도 이 검사는 «초록»이었고, 사람은 그 대사를 한 번도 못 봤다.
      ⇒ ★★ 「닿나」는 **판을 굴려야** 답한다(비싸다). 이 검사는 **코드가 답한다**(싸다).
        둘 다 있어야 하고, ★ **다른 이름으로 불려야 한다.** 하나가 다른 하나인 «척»하면 그것이 ㎙-b2 다. */
+/* ★ 2026-10-10 [plan] 박사님 «직업이랑 남녀별로 추후에 분기되도록» — 주인공 성별이 드러나는 낱말이 대사에 들어오면 빨강.
+     성별은 «모습»(초상·3D·옷)만 갈리고 대사는 안 갈린다(plan-branch-job-gender-20261010 §2-3). 한 번 샜다: 손님 표 «총각»(c13b4f0e 전에 고침).
+     ⚠ «형»은 «형광·형편·모형» 속에도 있어 «형님»만 본다. «학생 · 엄마 아빠 · 아저씨(남을 가리킴)»는 성별이 없거나 주인공이 아니다. */
+check('데이터 — 주인공 성별 낱말이 없다 (자취생·몬이 줄 · 손님 표)', () => {
+  const BAD = /(언니|오빠|누나|형님|아가씨|총각|자취녀|자취남|그녀)/;
+  const hits = [];
+  for (const [id, lines] of Object.entries(SCRIPTS))
+    for (const l of lines) if ((l.who === 'jachwi' || l.who === 'moni') && BAD.test(String(l.text || ''))) hits.push(`${id}: ${l.text}`);
+  const cust = JSON.parse(readFileSync(U('../data/balance/shop_customers.json'), 'utf8'));
+  for (const c of cust.customers || []) for (const k of ['ask', 'thanks']) if (BAD.test(String(c[k] || ''))) hits.push(`손님 ${c.id}.${k}: ${c[k]}`);
+  assert.equal(hits.length, 0, '주인공 성별이 드러나는 낱말:\n      ' + hits.join('\n      '));
+});
 check('데이터 — 대사마다 «부르는 자리»가 있다 («불린다»까지만 본다)', () => {
   /* ★★★★ 2026-08-29 — **손으로 박던 것을 «세는 것»으로 바꿨다** ([Plan] ㊿-c · cc7a8d4)
      ══════════════════════════════════════════════════════════════════
