@@ -79,7 +79,10 @@ try {
       return { url: ren.domElement.toDataURL('image/webp', 0.9), v2: !!dressed, tint: r.tint || null, base: r.base || null };
     };
   })()`);
+  /* ★ 2026-10-10 — 칠한 카드(painted · Higgsfield 로 기준 결에 맞춰 다시 칠한 것)는 덮어쓰지 않는다. FORCE=1 이면 다시 찍는다 */
+  const prevTop = fs.existsSync(path.join(OUT, 'index.json')) ? JSON.parse(fs.readFileSync(path.join(OUT, 'index.json'), 'utf8')) : {};
   for (const id of IDS) {
+    if (prevTop[id] && prevTop[id].painted && process.env.FORCE !== '1') { console.log('· 칠한 카드 그대로', id); continue; }
     const r = await page.eval(`window.__thumb(${JSON.stringify(id)})`);
     if (!r || !String(r.url).startsWith('data:image/webp')) { console.log('✘', id); continue; }
     fs.writeFileSync(path.join(OUT, `${id}.webp`), Buffer.from(r.url.split(',')[1], 'base64'));

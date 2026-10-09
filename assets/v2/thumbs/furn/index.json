@@ -254,15 +254,24 @@
  },
  "drying_rack": {
   "file": "assets/v2/thumbs/furn/drying_rack.webp",
-  "v2": true
+  "v2": true,
+  "painted": true,
+  "painted_from": "assets/gen/v2_hf/card/drying_rack_1.png",
+  "render_kept": "assets/gen/v2_hf/card/_render_drying_rack.webp"
  },
  "heater": {
   "file": "assets/v2/thumbs/furn/heater.webp",
-  "v2": true
+  "v2": true,
+  "painted": true,
+  "painted_from": "assets/gen/v2_hf/card/heater_2.png",
+  "render_kept": "assets/gen/v2_hf/card/_render_heater.webp"
  },
  "backpack": {
   "file": "assets/v2/thumbs/furn/backpack.webp",
-  "v2": true
+  "v2": true,
+  "painted": true,
+  "painted_from": "assets/gen/v2_hf/card/backpack_1.png",
+  "render_kept": "assets/gen/v2_hf/card/_render_backpack.webp"
  },
  "room_divider": {
   "file": "assets/v2/thumbs/furn/room_divider.webp",
@@ -270,7 +279,10 @@
  },
  "laundry_basket": {
   "file": "assets/v2/thumbs/furn/laundry_basket.webp",
-  "v2": true
+  "v2": true,
+  "painted": true,
+  "painted_from": "assets/gen/v2_hf/card/laundry_basket_2.png",
+  "render_kept": "assets/gen/v2_hf/card/_render_laundry_basket.webp"
  },
  "floor_cushion": {
   "file": "assets/v2/thumbs/furn/floor_cushion.webp",
