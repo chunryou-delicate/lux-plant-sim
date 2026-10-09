@@ -4904,10 +4904,10 @@ const detail = {
     btns.push({ ko: why ? '💰 팔기' : `💰 팔기 · ${price.won.toLocaleString()}원`, off: !!why, why: why || '', go: () => sellSpeciesNow(q.id) });
     let brief = ''; try { brief = SPC.speciesBriefKo(q); } catch { }
     const teach = q.species === 'pink_princess'
-      ? '<p>새 잎마다 분홍 몫이 <b>바로 아래 잎에서 흘러온다</b>. 다 분홍인 «분홍 잎»이 세 장 이어지면 줄기 끝이 시든다 — '
-        + '좋은 마디 <b>바로 위에서 자르면</b> 다음 잎이 그 마디에서 다시 난다.</p>'
-      : '<p>잎이 서너 장에서 더 늘지 않고 <b>한 장씩 커진다</b>. 겨울엔 잎을 다 떨구고 잔다 — '
-        + '<b>죽은 게 아니다</b>. 봄에 깨고, 잠들 때 흙 속에 구근을 남긴다.</p>';
+      ? '<p>새 잎마다 분홍 몫이 <b>바로 아래 잎에서 흘러옵니다</b>. 다 분홍인 «분홍 잎»이 이어지면 줄기 끝이 시듭니다 — '
+        + '분홍이 고운 마디 <b>바로 위에서 자르면</b> 다음 잎이 그 마디에서 다시 납니다.</p>'
+      : '<p>잎이 서너 장에서 더 늘지 않고 <b>한 장씩 커집니다</b>. 겨울엔 잎을 다 떨구고 잡니다 — '
+        + '<b>죽은 게 아닙니다</b>. 봄에 깨고, 잠들 때 흙 속에 구근을 남깁니다.</p>';
     return {
       art: SPECIES_ART[q.species], title: ko, sub: `${brief} · ${where}`,
       body: r2('잎', `${rows.length}장`) + Object.entries(byG).map(([g, n]) => r2(G[g] || g, `${n}장`)).join('')
@@ -4921,8 +4921,8 @@ const detail = {
     const nodes = q ? SPC.ppCuttableNodes(q) : [];
     return {
       art: SPECIES_ART.pink_princess, title: '어느 마디 위를 자를까', sub: '핑크프린세스',
-      body: '<p>고른 마디 <b>바로 위</b>를 자른다. 윗부분은 가방에 들어가고, 다음 잎은 그 마디에서 난다 — '
-          + '분홍 몫도 그 마디 잎에서 다시 흘러간다.</p>',
+      body: '<p>고른 마디 <b>바로 위</b>를 자릅니다. 윗부분은 가방에 들어가고, 다음 잎은 그 마디에서 납니다 — '
+          + '분홍 몫도 그 마디 잎에서 다시 흘러갑니다.</p>',
       btns: nodes.slice().reverse().map(n => ({ ko: `${n.no}번 마디 (${n.gradeKo}) 위 — 잎 ${n.take}장이 간다`, go: () => cutSpeciesNow(q.id, n.no) }))
             .concat([{ ko: '그만두기', go: () => { } }])
     };
@@ -4933,8 +4933,10 @@ const detail = {
     const again = !!(S.species && S.species.trade && S.species.trade.asks > 1);
     return {
       art: SPECIES_ART.pink_princess, title: '식물 나눔 쪽지', sub: again ? '아래층 · 두 번째' : '아래층',
-      body: '<p>뿌리낸 <b>무늬 몬스테라 삽수 하나</b>와 <b>핑크프린세스 어린 그루</b>를 바꾸자고 한다.</p>'
-          + `<p>내줄 수 있는 삽수 ${cands.length}대${again ? ' · <b>이번에 거절하면 더 묻지 않는다</b>(상점에 내놓는다고 한다)' : ''}.</p>`,
+      /* [plan] a0d4b825 — «~습니다»체 · 두 번째는 사실대로(«마지막» 압박을 안 만든다) */
+      body: '<p>뿌리낸 <b>무늬 몬스테라 삽수 하나</b>와 <b>핑크프린세스 어린 그루</b>를 바꾸자고 합니다.</p>'
+          + (again ? '<p>이번에 거절하면 더 묻지 않습니다 — 그 뒤엔 상점에서 살 수 있습니다.</p>' : '')
+          + (cands.length ? '' : '<p>지금은 내줄 뿌리낸 무늬 삽수가 없습니다.</p>'),
       btns: [{ ko: '🌸 바꾼다', primary: true, off: !cands.length, go: () => answerPPTradeNow(true) },
              { ko: '안 바꾼다', go: () => answerPPTradeNow(false) }]
     };
@@ -15363,7 +15365,7 @@ function startPhonePlaceCut(id) {
 /* ══ ★★ 2026-10-09 D45 — 새 식물을 눌러서 놓는다(§startPhonePlaceCut 과 같은 뼈대) ══════════════ */
 function speciesPlaceSub(q) {
   if (q.species === 'alocasia_frydek' && q.plant && q.plant.phase === 'corm') return '구근을 심었습니다 — 싹이 나야 무늬인지 압니다';
-  return q.species === 'pink_princess' ? '새 잎마다 분홍이 달라집니다 — 좋은 마디 바로 위에서 자르면 분홍을 붙잡습니다'
+  return q.species === 'pink_princess' ? '새 잎마다 분홍이 달라집니다 — 분홍이 고운 마디 바로 위에서 자르면 그 분홍을 붙잡습니다'   /* [plan] a0d4b825 */
                                         : '밝은 자리라야 자랍니다 — 겨울엔 잎을 다 떨구고 잡니다';
 }
 function startPhonePlaceSpecies(id) {
@@ -15732,6 +15734,9 @@ function provisionalSpot() {
    ⚠ 글은 [plan] 몫이다 — 아래 PLACE_DARK_KO 한 곳에만 둔다(초안: [house] 안). */
 const PLACE_DARK_KO = Object.freeze({
   who: { pot: '몬스테라', empty: '몬스테라', cutting: '삽수' },
+  /* ⏸ 2026-10-09 [plan] a0d4b825 «무늬 그루는 무늬 문턱(×1.4) · 주어 무늬 몬스테라» — **안 넣었다(core · 참이 아님)**:
+       그루의 자람 문턱은 무늬여도 TH.min 2.7 이다(plant_grow §growthMin · ×1.4 는 무늬 확률 대역에만). 무늬 모주는 반지하 창턱 3.68 에서
+       실제로 자란다(튜토 판 잎 1 → 3). ×1.4 로 가르면 그 창턱에 «무늬 몬스테라가 자라기엔 어둡습니다»가 뜬다 — plan 에 되물음 */
   /* {who} · {best} 를 채운다 */
   goBest:  '여기는 {who}가 자라기엔 어둡습니다 — 이 방에서 제일 밝은 데는 {best}입니다',
   /* [plan] 10-08 — 꼬리를 늘 참인 «달면 밝아집니다»로(«있어야 자랍니다»는 겨울에 못 지키는 약속) */
