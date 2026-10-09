@@ -88,15 +88,26 @@ try {
   }
   await page.shot(`${OUTDIR}/2_placed.png`);
   ok(!!placed, `손가락대로 누르니 삽수가 방에 섰다 ${placed ? JSON.stringify(placed) : ''}`);
-  /* ③ 하루 */
+  /* ③ 하루 — 원룸 첫날은 짐(식물·시루)을 다 놓아야 [다음 날]이 열린다. 손가락을 마저 따라간다(최대 열두 번 · 확인 바면 [확인]) */
   if (placed) {
+    for (let i = 0; i < 12; i++) {
+      const nextOn = await page.eval(`(()=>{ const b=document.getElementById('next'); return String(!!(b && !b.disabled && b.offsetParent)); })()`);
+      const f = await fingerAt();
+      if (!f || f.x == null || /^next$/.test(f.what)) break;
+      if (nextOn === 'true' && !/bag|Bag|Thumb|potbag|placeOk/.test(f.what)) break;
+      await tapAt(f.x, f.y); await sleep(500);
+      await page.eval(`(()=>{ const b=document.getElementById('placeOk'); if(b && document.getElementById('stage').classList.contains('confirming')) b.click(); })()`, false);
+      await sleep(700); await skip();
+    }
     const d0 = Number(await page.eval(`String(window.__S().day)`));
     await page.eval(`(()=>{const b=document.getElementById('next'); if(b) b.click();})()`, false);
     for (let i = 0; i < 60; i++) { await sleep(500); if (Number(await page.eval(`String(window.__S().day)`)) > d0) break;
       await page.eval(`(()=>{const g=document.getElementById('mealGo'); if(g && g.offsetParent) g.click();})()`, false); }
     await sleep(1200); await skip();
-    const after = await J(`(()=>{ const c=(window.__S().cuttings||[]).find(x=>x.id===${JSON.stringify(set.cut)}); return { days:c.days, status:c.status }; })()`);
-    ok(after.days > placed.days, `놓은 뒤 하루가 간다(${placed.days} → ${after.days})`);
+    const after = await J(`(()=>{ const S=window.__S(); const c=(S.cuttings||[]).find(x=>x.id===${JSON.stringify(set.cut)}); return { day:S.day, days:c.days, status:c.status, slotId:c.slotId, clock:c.clockOnDay, stage:document.getElementById('stage').className }; })()`);
+    console.log('하루 뒤 —', JSON.stringify({ d0, after }));
+    ok(after.day > d0, `[다음 날]로 하루가 넘어갔다(${d0} → ${after.day})`);
+    ok(after.days > placed.days, `놓은 뒤 삽수의 날이 오른다(${placed.days} → ${after.days})`);
   }
 } catch (e) { console.log('  FAIL 탈 —', e && e.message); bad++; }
 finally { await page.close(); }

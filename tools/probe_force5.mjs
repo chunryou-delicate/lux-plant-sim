@@ -13,6 +13,8 @@ const W = Number(process.env.W || 390), H = Number(process.env.H || 844);
 /* ★ 몇 바퀴까지 걸을까 — 첫 수확이 밑값이고, CYCLES=2 로 두 바퀴째까지 본다
    (두 바퀴째라야 「거두기 → 다시 심기 → 물」의 체력을 «걸으며» 잴 수 있다) */
 const GOAL = Number(process.env.CYCLES || 1);
+/* ★ 2026-10-09 (core · 총괄 «?v2=0 과 견줘 가를 것») — URL 깃발. 예: Q='v2=0' · Q='v2furn=0' (없으면 지금 그대로) */
+const QS = process.env.Q ? '?' + process.env.Q : '';
 /* 코어에게 콩나물 주기를 묻는 한 줄 — 판정에서 쓴다(날짜를 자에 안 박는다) */
 const HD = "(async()=>{ const fp=await import('/src/game/first_play.js');"
          + " return String(fp.cropKindOf('beansprout').harvestDays); })()";
@@ -20,9 +22,9 @@ const HD = "(async()=>{ const fp=await import('/src/game/first_play.js');"
 const wd = setTimeout(() => { console.error('⏱ 자가 제한'); process.exit(2); }, 300000 + 320000 * GOAL);
 wd.unref && wd.unref();
 const page = await launch({ width: W, height: H, dpr: 1 });
-await page.goto(`${BASE}/game.html`);
+await page.goto(`${BASE}/game.html${QS}`);
 await page.eval('localStorage.clear()', false);
-await page.goto(`${BASE}/game.html`);
+await page.goto(`${BASE}/game.html${QS}`);
 await page.waitFor('!!window.__rv', 150000, 300);
 await page.eval(`(()=>{ window.__errs=[];
   for (const k of ['warn','error']) { const o=console[k].bind(console);
