@@ -730,9 +730,14 @@ function attachEvents(S, turn, fpBefore) {
        emptySiru — 방에 놓였는데 콩이 안 들었거나(안 심음) 거둔 뒤 빈 콩나물 시루가 있나. 못 세면 null(대사가 예전 그대로) */
   try {
     const rows = (S.firstPlay ? cropPotListNow(S.firstPlay, S.day) : []) || [];
+    /* ★ 2026-10-09 [plan] 재미 점검 — 콩나물을 지금까지 몇 번 거뒀나(시루마다 거둔 횟수의 합 · first_play §harvestCount).
+         수확 이정표 두 줄(열 번째 · 서른 번째)이 이 값으로 선다. 콩나물 자리가 없으면 null(못 센다 — 0 으로 안 메꾼다) */
+    const bs = S.firstPlay && S.firstPlay.beansprout;
+    const harvestTotal = bs && Array.isArray(bs.pots) ? bs.pots.reduce((a, p) => a + ((p && p.harvestCount) || 0), 0) : null;
     turn.cropNow = {
       seedStock: shopStockOf(S, 'bean_seed'),
-      emptySiru: rows.some(r => r && (r.kind || 'beansprout') === 'beansprout' && r.placed && (!r.sown || r.harvested))
+      emptySiru: rows.some(r => r && (r.kind || 'beansprout') === 'beansprout' && r.placed && (!r.sown || r.harvested)),
+      harvestTotal
     };
   } catch { turn.cropNow = null; }
   /* ★ 2026-10-09 D29 ([plan] 19358f22) — 가방에 든(방에 안 놓인) 안 죽은 삽수 수. 가방 속 삽수는 하루가 안 간다(propagation §stepCuttings) —
