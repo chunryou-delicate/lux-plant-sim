@@ -53,7 +53,7 @@ const arg = (k, d) => {
   return i >= 0 ? (process.argv[i + 1] && !process.argv[i + 1].startsWith('--') ? process.argv[i + 1] : true) : d;
 };
 /* ★ 아는 인자 목록 — 여기 없는 `--…` 이 오면 «오타»다. 조용히 넘기지 않는다(㊹). */
-const KNOWN = ['seed','days','shots','w','h','play','lazy','sirus','ending','tag','size','url'];
+const KNOWN = ['seed','days','shots','w','h','play','lazy','sirus','ending','tag','size','url','cut','lamp','sellcuts'];
 for (const a of process.argv.slice(2)) {
   if (!a.startsWith('--')) continue;
   const k = a.slice(2).split('=')[0];
@@ -140,6 +140,15 @@ const SIRU_MAX = Number(arg('sirus', 16));
    ⚠ ⓑ(삽수 일부만)는 **아직 안 붙인다** — 무엇을 자를지가 정해져야 한다.
    ⛔ 값은 하나도 안 건드린다. 화면에 있는 단추를 «사람처럼 누를» 뿐이다. */
 const ENDING = String(arg('ending', 'crop'));
+/* ★★ [총괄] 2026-10-08 — **자르기 길**(§cutStep) · guided 만 · `--cut 0` 이면 예전처럼 안 자른다.
+   어제까지 guided 는 first_cut(Day 37)에서 멈췄다 — 자르기를 안 해서 보통 판 중반을 못 쟀다. */
+const CUT = PLAY === 'guided' && String(arg('cut', '1')) !== '0';
+/* ★★ [총괄] 2026-10-08 — **성격 손잡이 둘**(박사님: «게임하는 사람이 이리 튈지 저리 튈지 모르니»).
+   `--lamp 0`       등을 안 단다 · 안 산다(가방에 공짜 등이 와도 그대로 둔다)
+   `--sellcuts one` 무늬 삽수는 «하나만» 판다(이사 조건) — 나머지는 들고 간다. 밑값 all = 자리 잡는 대로 다 판다
+   ⚠ 값·규칙은 안 바꾼다. 사람이 무엇을 하느냐만 바꾼다. */
+const LAMP_ON = String(arg('lamp', '1')) !== '0';
+const SELLCUTS = String(arg('sellcuts', 'all'));
 /* 이사비 — **규칙에서 읽는다.** 자에 수를 안 박는다(오늘만 세 번 낡은 수에 데었다). */
 const MOVE_WON = (await import('../src/game/tutorial.js')).TUTORIAL_RULES.moveOutCostWon;
 const SIZE = `${W}x${H}`;
@@ -698,6 +707,168 @@ const placeCrop = async (kind, bright) => {
   return false;
 };
 
+/* ══ ★★ [총괄] 2026-10-08 — **자르기 길**(guided) ═══════════════════════════════════════
+   박사님 «진행해»(10-08) · core 허락. 사람이 밟는 길 그대로 밟는다:
+     ① 자를 마디가 열렸는데 병이 없으면 [상점]에서 «유리 수경병»(jar) 하나를 산다
+     ② [방] 탭 삽수 상자의 [병에] — 무늬 마디가 있으면 그것부터
+        (몬이 d48: «무늬 있는 그루를 잘라 물에 꽂으면 그 삽수도 무늬를 물려받아»)
+     ③ 가방의 삽수를 «그날 제일 밝은» 빈 자리에 끌어 놓는다
+        (몬이 d39: «밝은 데서 뿌리내린 애가 더 좋은 무늬를 내» — plan 이 데이터로 참임을 확인)
+     ④ 혹(node)이 나면 포트(pot)를 사서 [분갈이] — 기한(16일) 안에
+     ⑤ 무늬 삽수가 자리 잡으면(established) [내놓기] → 연락이 오면 [거래하기](§takeDeal)
+   ⚠ 속임수 없음 — 병·포트는 산다. 돈이 없으면 [주문]이 잠겨 거기서 멎는다.
+   ⚠ 한 번에 하나 — 병에서 뿌리내리는 삽수가 있으면 더 안 자른다(사람은 병 하나로 시작한다).
+   ⚠ 흙에 바로 꽂기(soil)는 안 한다 — 첫 자르기 퀘스트가 «물에 꽂으세요»이고, 한 길만 잰다.
+   ⚠ 브라우저 쪽 코드는 작은따옴표 문자열을 이어 붙인다 — 그 안에 백틱을 안 쓴다. */
+const cutRead = async () => {
+  try {
+    return JSON.parse(await ev('(()=>{ const S=window.__S(); const st=(S.shop&&S.shop.stock)||{};'
+      + ' return JSON.stringify({ jar: st.jar||0, pot: st.pot||0, potsN: (S.pots||[]).length,'
+      + '  cuts: (S.cuttings||[]).map(c=>({ id:c.id, s:c.status, cont:c.container||null,'
+      + '   placed: !!(c.slotId||c.at), v: !!c.varieFromCut, listed: !!c.listing })) }); })()'));
+  } catch { return null; }
+};
+/* 가방의 삽수를 그날 제일 밝은 빈 자리에 놓는다 — placeCrop 과 같은 창구(`__drag`)·같은 자리 셈.
+   ⚠ 시트를 닫은 채 끈다(placeCrop 과 같다) — 시트가 열려 있으면 놓을 자리가 그 밑에 깔린다. */
+const placeCuttingFromBag = async () => {
+  const r = await ev('(()=>{ const S=window.__S();'
+    + ' const loose=(S.cuttings||[]).find(c=>c && !c.slotId && !c.at); if(!loose) return "none";'
+    + ' const cell=document.querySelector(".bagslot[data-place^=\\"cutting:\\"]");'
+    + ' const place=(cell && cell.dataset.place) || ("cutting:"+loose.id);'
+    + ' const taken=new Set();'
+    + ' for (const p of (S.pots||[])) if (p.slotId) taken.add(p.slotId);'
+    + ' const b=(S.firstPlay&&S.firstPlay.beansprout)||{};'
+    + ' for (const p of (b.pots||[])) if (p && p.slotId) taken.add(p.slotId);'
+    + ' for (const st of (S.firstPlay&&S.firstPlay.crops)||[]) { if (st&&st.slotId) taken.add(st.slotId);'
+    + '   for (const p of (st&&st.pots)||[]) if (p&&p.slotId) taken.add(p.slotId); }'
+    + ' for (const c of (S.cuttings||[])) if (c && c.slotId) taken.add(c.slotId);'
+    + ' const all=(window.__io.light.room.slots||[]).filter(x=>!taken.has(x.slotId));'
+    + ' if (!all.length) return "no-slot";'
+    + ' let dli=null;'
+    + ' try { const rep=window.__io.light.daily(S.day, S).report;'
+    + '   dli=new Map((rep.slots||[]).map(x=>[x.slotId, x.dli])); } catch(e){}'
+    + ' const key=(x)=> (dli && dli.has(x.slotId) && Number.isFinite(dli.get(x.slotId))) ? dli.get(x.slotId) : x.y;'
+    + ' all.sort((a,b2)=> key(b2) - key(a));'
+    + ' const rv=window.__rv, c=document.getElementById("roomCanvas").getBoundingClientRect();'
+    + ' let sp=null; try { sp=rv.screenPosOf(all[0].slotId); } catch(e){}'
+    + ' if (!sp) return "no-pos";'
+    + ' const img=cell && cell.querySelector("img");'
+    + ' window.__drag.begin(place, img ? img.src : "", {clientX:c.left+c.width*0.9, clientY:c.top+40});'
+    + ' window.__drag.move({clientX:c.left+sp.x, clientY:c.top+sp.y}); window.__drag.end();'
+    + ' return "dropped:"+all[0].slotId; })()');
+  await sleep(1200); await tapTalk();
+  const ok = await ev('(()=>{ const c=(window.__S().cuttings||[]); return c.length>0 && c.every(x=>x.slotId||x.at); })()');
+  if (String(r).startsWith('dropped') && ok) {
+    (R.cutPlaces = R.cutPlaces || []).push({ day: R.today, at: String(r).slice(8) });
+    return true;
+  }
+  R.did.placeCutMiss = (R.did.placeCutMiss || 0) + 1;
+  (R.cutPlaceMiss = R.cutPlaceMiss || []).push({ day: R.today, r: String(r) });
+  return false;
+};
+/* 가방의 식물등을 방에 단다 — 가방 칸을 «누르면» 선다(game.html §placeLampFromBag).
+   ⚠ 빈 등 자리가 없으면 게임이 막는다(배너) — 그대로 둔다. */
+const lampFromBag = async () => {
+  if (!LAMP_ON) return false;
+  const left = await ev('(()=>{ const L=window.__S().tutorial && window.__S().tutorial.lamp;'
+    + ' return L ? Math.max(0, (L.owned||0) - (L.placed||0)) : 0; })()');
+  if (!(left > 0)) return false;
+  await ev(`window.__byeotSheet.open('bag')`, false); await settleSheet(true);
+  const hit = await ev('(()=>{ const b=document.getElementById("__lampbag__"); if(!b) return false; b.click(); return true; })()');
+  await sleep(600); await tapTalk();
+  const placed = await ev('(()=>{ const L=window.__S().tutorial && window.__S().tutorial.lamp; return L ? (L.placed||0) : 0; })()');
+  if (hit && placed > 0) {
+    R.did.placeLamp = (R.did.placeLamp || 0) + 1;
+    if (R.lampPlacedOnDay == null) R.lampPlacedOnDay = R.today;
+  }
+  return hit;
+};
+const cutStep = async () => {
+  if (!CUT) return;
+  let st = await cutRead();
+  if (!st || !st.potsN) return;
+  /* ③ 가방에 남은 삽수부터 놓는다 */
+  if (st.cuts.some(c => !c.placed)) {
+    await ev(`window.__byeotSheet.close()`, false); await settleSheet(false);
+    if (await placeCuttingFromBag()) R.did.placeCut = (R.did.placeCut || 0) + 1;
+    st = (await cutRead()) || st;
+  }
+  /* ④ 혹 난 삽수 — 포트가 있으면 분갈이, 없으면 산다(배송을 기다리는 동안 다시 안 산다) */
+  if (st.cuts.some(c => c.s === 'node')) {
+    if (st.pot < 1) {
+      if (R.potOrderedDay == null || R.today - R.potOrderedDay >= 3) {
+        await ev(`window.__byeotSheet.open('shop')`, false); await settleSheet(true);
+        if (await order('pot', 1)) { R.did.buyPot = (R.did.buyPot || 0) + 1; R.potOrderedDay = R.today; }
+      }
+    } else {
+      await ev(`window.__byeotSheet.open('room')`, false); await settleSheet(true);
+      const hit = await ev('(()=>{ const b=document.querySelector("#cutList [data-repot]"); if(!b || b.disabled) return false; b.click(); return true; })()');
+      if (hit) { R.did.repot = (R.did.repot || 0) + 1; await waitAct(); await sleep(400); await tapTalk(); }
+    }
+    st = (await cutRead()) || st;
+  }
+  /* ⑤ 무늬 삽수 — 자리 잡으면 내놓고, 연락이 오면 거래한다 */
+  const sell = (SELLCUTS === 'one' && (R.did.listCut || 0) >= 1) ? null
+    : st.cuts.find(c => c.v && !c.listed && c.s === 'established');
+  if (sell) {
+    await ev(`window.__byeotSheet.open('room')`, false); await settleSheet(true);
+    const hit = await ev('(()=>{ const b=document.querySelector("#cutList [data-list=\\"' + sell.id + '\\"]");'
+      + ' if(!b || b.disabled) return false; b.click(); return true; })()');
+    if (hit) {
+      R.did.listCut = (R.did.listCut || 0) + 1;
+      (R.cutLog = R.cutLog || []).push({ day: R.today, list: sell.id });
+      await sleep(500); await tapTalk();
+    }
+  }
+  if (st.cuts.some(c => c.listed)) {
+    const deal = await ev('(()=>!!document.querySelector("#marketList [data-deal]"))()');
+    if (deal && await takeDeal()) {
+      R.did.dealCut = (R.did.dealCut || 0) + 1;
+      (R.cutLog = R.cutLog || []).push({ day: R.today, deal: true });
+    }
+  }
+  /* ①② 자르기 — 병에서 뿌리내리는 삽수가 없을 때만 */
+  if (st.cuts.some(c => c.cont === 'jar' && c.s === 'rooting')) return;
+  await ev(`window.__byeotSheet.open('room')`, false); await settleSheet(true);
+  let rows = [];
+  try {
+    rows = JSON.parse(await ev('(()=>JSON.stringify([...document.querySelectorAll("#cutNodes .cutRow")].map(r=>{'
+      + ' const j=r.querySelector("[data-cut][data-cont=\\"jar\\"]");'
+      + ' const nm=(r.querySelector(".nm")||{}).textContent||"";'
+      + ' return { node: j ? j.dataset.cut : null, on: !!(j && !j.disabled), tip: j ? (j.title||"") : "", varie: nm.indexOf("무늬")>=0 };'
+      + ' }).filter(x=>x.node)))()'));
+  } catch { rows = []; }
+  /* ★ 닷새마다 «삽수 상자가 무엇을 말하나»를 남긴다 — 안 자른 까닭을 기록에서 읽으려고(10-08 첫 판이 60일 동안 0번 잘랐다) */
+  if (R.today % 5 === 0) {
+    try {
+      const dbg = JSON.parse(await ev('(()=>JSON.stringify({ nodes: ((document.getElementById("cutNodes")||{}).innerText||"").replace(/\\s+/g," ").slice(0,220),'
+        + ' hint: ((document.getElementById("cutHint")||{}).innerText||"").slice(0,160),'
+        + ' jarInShop: !!document.querySelector("#shopList [data-buy=\\"jar\\"]") }))()'));
+      (R.cutDebug = R.cutDebug || []).push({ day: R.today, rows: rows.length, ready: rows.filter(x => x.on).length, jar: st.jar, ...dbg });
+    } catch { }
+  }
+  if (!rows.length) return;
+  const ready = rows.filter(x => x.on);
+  if (!ready.length) {
+    /* 병이 없어서만 잠긴 마디가 있으면 병을 산다 */
+    const needJar = st.jar < 1 && rows.some(x => /주문/.test(x.tip));
+    if (needJar && (R.jarOrderedDay == null || R.today - R.jarOrderedDay >= 3)) {
+      await ev(`window.__byeotSheet.open('shop')`, false); await settleSheet(true);
+      if (await order('jar', 1)) { R.did.buyJar = (R.did.buyJar || 0) + 1; R.jarOrderedDay = R.today; }
+    }
+    return;
+  }
+  const pick = ready.find(x => x.varie) || ready[0];
+  const hit = await ev('(()=>{ window.__byeotSheet.close();'
+    + ' const b=document.querySelector("#cutNodes [data-cut=\\"' + pick.node + '\\"][data-cont=\\"jar\\"]");'
+    + ' if(!b || b.disabled) return false; b.click(); return true; })()');
+  if (hit) {
+    R.did.cut = (R.did.cut || 0) + 1;
+    (R.cutLog = R.cutLog || []).push({ day: R.today, node: pick.node, varie: pick.varie });
+    await waitAct(); await sleep(1200); await tapTalk();
+  }
+};
+
 const placeOneSiru = async () => {
   const ok = await placeCrop('beansprout', false);
   if (ok) { R.did.placeSiru++; await sleep(600); await tapTalk(); }
@@ -781,6 +952,26 @@ const SNAP = `(()=>{ const S=window.__S(); const ts=S.tutorial||{};
       const st = g && g.leafStats && g.leafStats();
       return st && Number.isFinite(st.growthDays) ? st.growthDays : null;
     } catch(e){ return null; } })(),
+    /* ★ [총괄·plan] 2026-10-08 — 생장 단계·진행(확대창 게이지와 같은 값 · growthPhase)과 삽수 줄.
+       ⚠ 못 읽으면 null 이다. 0 으로 안 메꾼다. ⚠ 이 안에는 백틱을 쓰지 않는다. */
+    phase:(()=>{ try {
+      const g = window.__io && window.__io.growth;
+      const p = g && g.growthPhase && g.growthPhase();
+      return p ? { ko: p.phaseKo || null, next: p.nextPhaseKo || null,
+                   p01: Number.isFinite(p.progress01) ? Math.round(p.progress01 * 100) / 100 : null } : null;
+    } catch(e){ return null; } })(),
+    cuts:(()=>{ try {
+      return (S.cuttings || []).map(c => ({ s: c.status, cont: c.container || null,
+        placed: !!(c.slotId || c.at), v: !!c.varieFromCut, listed: !!c.listing }));
+    } catch(e){ return null; } })(),
+    lampPlaced:(()=>{ try { return (ts.lamp && ts.lamp.placed) || 0; } catch(e){ return null; } })(),
+    /* ★ [core fb01ee3d] 둘째 잎 기다림 칸(turn.leafWait) — 상태 줄이 무엇을 보고 섰나. 읽기 전용 */
+    leafWait:(()=>{ try { return window.__leafWait ? window.__leafWait() : null; } catch(e){ return null; } })(),
+    /* ★ [총괄] 2026-10-08 — 칩 글과 손가락 말을 나란히(M2: 둘이 다른 일을 가리키는 날을 센다). 읽기만 한다 */
+    chipTxt:(()=>{ try { const q=document.getElementById('quest'); return q ? (q.textContent||'').replace(/\\s+/g,' ').trim().slice(0,80) : null; } catch(e){ return null; } })(),
+    hintTxt:(()=>{ try { const h=document.querySelector('#hint .say'); const box=document.getElementById('hint');
+      const on = !!(box && box.offsetParent);
+      return h ? ((on ? '' : '(숨김) ') + (h.textContent||'').trim().slice(0,60)) : null; } catch(e){ return null; } })(),
     /* ★★★ **튜토가 끝날 수 있는 날** — 이 세 줄이 오늘의 물음을 잰다.
        moveOk  이사 단추가 «열렸나» ⇒ 처음 참이 되는 날이 곧 「튜토가 끝날 수 있는 날」
        listed  중고에 올라간 건수 · dealOk 연락이 와서 «거래하기»가 떴나
@@ -960,6 +1151,15 @@ for (let d = 1; d <= DAYS; d++) {
         return m; } catch { return 0; } })()`);
       if (Number.isInteger(n) && n > 0) wantSiru = Math.min(n, SIRU_MAX);
     } catch { }
+    /* ★★ [총괄] 2026-10-08 — **손가락이 «시루를 하나 더»를 짚으면 따른다.**
+       시루 다섯 퀘(siru5_cycle5)는 «이미 둘을 놓아야» 열린다. 둘째 시루는 퀘가 아니라
+       손가락(game.html §siruNeed · guideSiruTwo)이 시킨다 — 퀘만 읽던 이 자는 둘째를 영영 안 사서
+       사슬이 서고 지갑이 말랐다(10-08 cut1008 판: 70일에 28만 원 · 시루 1). 게임이 보는 낱말과 같은 자로 읽는다. */
+    try {
+      const say = await ev(`(()=>{ const h=document.querySelector('#hint .say'); const q=document.getElementById('quest');
+        return ((h && h.textContent) || '') + ' | ' + ((q && q.textContent) || ''); })()`);
+      if (/시루를 하나 더|시루를 (2|두) ?개|늘려/.test(String(say))) wantSiru = Math.max(wantSiru, Math.min(SIRU_MAX, (before.sirus || 0) + 1));
+    } catch { }
   }
   /* ⚠⚠ **재고를 쌓지 않는다.** 앞 판이 시루를 **53개 사서 13개만 놓았다** —
      못 놓은 40개(3,550원 × 40 ≈ 14만원)가 **재고에 묶여** 지갑이 그만큼 얇아졌다.
@@ -972,7 +1172,7 @@ for (let d = 1; d <= DAYS; d++) {
   /* 씨앗은 **놓인 시루 수만큼** 있어야 한 바퀴가 돈다 — 0 일 때만 사면 늘 모자라고,
      목표 수만큼 사면 남는다(앞 판은 **17개가 남은 채** 끝났다) */
   const needSeed = (before.seed || 0) < (before.sirus || 1);
-  if (needSeed || needSiru || (before.lampOpen && before.lamp === 0)) {
+  if (needSeed || needSiru || (LAMP_ON && before.lampOpen && before.lamp === 0)) {
     await ev(`window.__byeotSheet.open('shop')`, false); await sleep(150);
     if (needSiru) { if (await order('siru', 1)) R.did.buySiru++; }   /* 하루에 하나씩 */
     /* ★★ **무순을 기른다.** 이게 없으면 본 퀘스트 사슬이 첫 줄에서 막힌다:
@@ -997,7 +1197,7 @@ for (let d = 1; d <= DAYS; d++) {
     }
     /* ⚠ 앞 판은 콩 씨앗이 **44개까지 쌓였다** — 모자란 만큼만 산다(넘치면 돈이 묶인다) */
     if (needSeed) { if (await order('bean_seed', Math.max(1, Math.min(8, (before.sirus || 1) - (before.seed || 0))))) R.did.buySeed++; }
-    if (before.lampOpen && before.lamp === 0) { if (await order('growlight')) R.did.buyLamp++; }
+    if (LAMP_ON && before.lampOpen && before.lamp === 0) { if (await order('growlight')) R.did.buyLamp++; }
   }
   /* 산 시루는 **가방에 온다.** 끌어다 놓아야 쓴다 — 안 놓으면 영영 가방에 남는다 */
   /* ⚠ **놓을 시루가 있을 때만 놓는다.** 없는데 끌면 손짓만 나가고 아무 일도 안 난다 —
@@ -1019,6 +1219,11 @@ for (let d = 1; d <= DAYS; d++) {
     }
   }
 
+  /* ★ [총괄] 2026-10-08 — 등을 달고 · 삽수를 자르고 놓고 돌보고 판다(§cutStep). 안내를 따르는 판만 */
+  if (PLAY === 'guided') {
+    try { await lampFromBag(); } catch (e) { R.did.lampErr = (R.did.lampErr || 0) + 1; }
+    try { await cutStep(); } catch (e) { R.did.cutErr = (R.did.cutErr || 0) + 1; (R.cutErrs = R.cutErrs || []).push(String(e && e.message || e).slice(0, 120)); }
+  }
   await ev(`window.__byeotSheet.close()`, false); await settleSheet(false);
 
   /* ── 다음 날 ── */
