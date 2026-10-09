@@ -320,3 +320,102 @@ Higgsfield 끊김 · Kling 크레딧 0 ⇒ Meshy `meshy_image_to_image`. 참조 
 - ⚠ 머리 밝기 35(정본 초상화 60) — «검정» 쪽 ⇒ 크레딧 0 으로 머리 덩어리만 밝기 ×1.63(`tools/char/illust_hair_lift.py` · 색조 그대로 · 가장자리 흐림) ⇒ [48,30,29] → [78,49,47]
   · 원본은 `assets/illust/ev_home_ending_meshy1.png` 로 두고, 고친 것을 게임이 부르는 `ev_home_ending.png` 로 · 전후 `docs/handoff/img/hero/ev_home_ending_hair_lift.png`
 - 나머지 아홉: 머리 문구를 «dark chocolate-brown hair (clearly brown, NOT black)» 로 세게(위 JSON 에 반영 · 10곳) — 나와도 어두우면 같은 도구로 맞춘다
+
+### G — 나머지 아홉 판정 (총괄 10-09 · 9×9)
+| 그림 | 판정 | 까닭 |
+|---|---|---|
+| ev_home_ending_noplant | ✔ | 몬스테라 없이 볕 드는 빈 방 · 기쁨의 눈물 · 머리 밝기 56 |
+| ev_oneroom_arrive | ✔ | 빈 방 · 눈높이 창 · 하늘만 · 박스·몬이 · 머리 55 |
+| ev_moveout_cuttings | ✔ | 삽수 화분 판 · 박스 · 몬이(살짝 잘린 단면 결이나 한 판만 보이는 장면이라 둠) |
+| ev_moveout_sold | ✔ | 몬스테라 없이 박스·시루 · 몬이 |
+| ev_first_varie_halfmoon | ✔ | 반쪽 흰 잎 · 몬이 화분 안 · 머리 59 |
+| ev_first_varie_sanban | ⛔ 다시 | 점무늬가 «잎»이 아니라 «몬이 몸»에 찍혔다 — 장면의 뜻이 틀림 |
+| ev_oneroom_firstday | ⛔ 다시 | 선반에 작은 화분 + 가구가 다 들어찬 방(가구는 사람이 사고 놓는 것 — 그리지 않기로 한 원칙) |
+| ev_moveout_keep | ⛔ 다시 | 방 키프레임을 따라 아이소 디오라마·짙은 회색 바탕 — 다른 장과 결이 다름 |
+| ev_monstera_arrive_v2 | ⛔ 다시 | 가방 속 화분 잎이 둘 + 회색 테두리 — 엔딩 대사 «잎 하나로 시작했는데»와 맞추려면 잎 하나 |
+
+다시 넷(9×4 = 36) — 글 고침: 키프레임은 «선과 물빛만», 아이소 단면 아님·테두리 없음을 못 박음 · 장면별 고침. 받기 `_r2`(덮지 않음):
+```json
+[
+ {
+  "name": "ev_first_varie_sanban",
+  "why_retake": "잎이 아니라 몬이 몸에 점이 찍혔다(장면의 뜻이 틀림)",
+  "tool": "meshy_image_to_image",
+  "args": {
+   "ai_model": "nano-banana-pro",
+   "reference_file_paths": [
+    "C:/Users/pc/Desktop/빛식물/lux-plant-sim/assets/characters/portraits/portrait_jachwi_neutral.png",
+    "C:/Users/pc/Desktop/빛식물/lux-plant-sim/assets/characters/portraits/portrait_moni_cheer.png",
+    "C:/Users/pc/Desktop/빛식물/lux-plant-sim/assets/gen/v2_room/style_keyframe_a.png"
+   ],
+   "generate_multi_view": false,
+   "prompt": "Close-up: she holds a potted monstera whose new leaf is speckled with many tiny WHITE dots; the dots are on the plant leaf only. Moni stays plain light green, cheering. She (image 1): LONG straight dark chocolate-brown hair (clearly brown, NOT black), blunt bangs, brown eyes, blush, cream tee, grey joggers. Moni (image 2): tiny light-green sprout INSIDE a terracotta pot with two holed monstera leaves; keep pot and leaves. Line and warm wash of image 3, NOT its isometric cutaway: full-frame eye-level scene, no border."
+  },
+  "save": {
+   "tool": "meshy_download_model",
+   "task_type": "image-to-image",
+   "save_to": "C:/Users/pc/Desktop/빛식물/lux-plant-sim/assets/illust/ev_first_varie_sanban_r2.png"
+  }
+ },
+ {
+  "name": "ev_oneroom_firstday",
+  "why_retake": "선반에 화분 하나 + 가구가 다 들어찬 방(가구는 사람이 사고 놓는 것)",
+  "tool": "meshy_image_to_image",
+  "args": {
+   "ai_model": "nano-banana-pro",
+   "reference_file_paths": [
+    "C:/Users/pc/Desktop/빛식물/lux-plant-sim/assets/characters/portraits/portrait_jachwi_neutral.png",
+    "C:/Users/pc/Desktop/빛식물/lux-plant-sim/assets/characters/portraits/portrait_moni_neutral.png",
+    "C:/Users/pc/Desktop/빛식물/lux-plant-sim/assets/gen/v2_room/style_keyframe_a.png"
+   ],
+   "generate_multi_view": false,
+   "prompt": "Morning in a small, almost empty studio: only two closed cardboard boxes, no furniture, no plants. Soft outside light pours through an eye-level window. She stands at the window; Moni beside her. She (image 1): LONG straight dark chocolate-brown hair (clearly brown, NOT black), blunt bangs, brown eyes, blush, cream tee, grey joggers. Moni (image 2): tiny light-green sprout INSIDE a terracotta pot with two holed monstera leaves; keep pot and leaves. Line and warm wash of image 3, NOT its isometric cutaway: full-frame eye-level scene, no border."
+  },
+  "save": {
+   "tool": "meshy_download_model",
+   "task_type": "image-to-image",
+   "save_to": "C:/Users/pc/Desktop/빛식물/lux-plant-sim/assets/illust/ev_oneroom_firstday_r2.png"
+  }
+ },
+ {
+  "name": "ev_moveout_keep",
+  "why_retake": "방 키프레임을 따라 아이소 디오라마·회색 바탕 — 결이 다름",
+  "tool": "meshy_image_to_image",
+  "args": {
+   "ai_model": "nano-banana-pro",
+   "reference_file_paths": [
+    "C:/Users/pc/Desktop/빛식물/lux-plant-sim/assets/characters/portraits/portrait_jachwi_neutral.png",
+    "C:/Users/pc/Desktop/빛식물/lux-plant-sim/assets/characters/portraits/portrait_moni_neutral.png",
+    "C:/Users/pc/Desktop/빛식물/lux-plant-sim/assets/gen/v2_room/style_keyframe_a.png"
+   ],
+   "generate_multi_view": false,
+   "prompt": "Daytime. She climbs narrow half-basement stairs hugging a big monstera in a pot; four cardboard boxes at the door; Moni rides on the top box. She (image 1): LONG straight dark chocolate-brown hair (clearly brown, NOT black), blunt bangs, brown eyes, blush, cream tee, grey joggers. Moni (image 2): tiny light-green sprout INSIDE a terracotta pot with two holed monstera leaves; keep pot and leaves. Line and warm wash of image 3, NOT its isometric cutaway: full-frame eye-level scene, no border."
+  },
+  "save": {
+   "tool": "meshy_download_model",
+   "task_type": "image-to-image",
+   "save_to": "C:/Users/pc/Desktop/빛식물/lux-plant-sim/assets/illust/ev_moveout_keep_r2.png"
+  }
+ },
+ {
+  "name": "ev_monstera_arrive_v2",
+  "why_retake": "잎이 둘 + 회색 테두리 — 엔딩 «잎 하나로 시작했는데»와 맞춤",
+  "tool": "meshy_image_to_image",
+  "args": {
+   "ai_model": "nano-banana-pro",
+   "reference_file_paths": [
+    "C:/Users/pc/Desktop/빛식물/lux-plant-sim/assets/characters/portraits/portrait_jachwi_neutral.png",
+    "C:/Users/pc/Desktop/빛식물/lux-plant-sim/assets/characters/portraits/portrait_moni_neutral.png",
+    "C:/Users/pc/Desktop/빛식물/lux-plant-sim/assets/gen/v2_room/style_keyframe_a.png"
+   ],
+   "generate_multi_view": false,
+   "prompt": "Dim half-basement room, high small window. She kneels by an open backpack, surprised: inside is a small pot with ONE single monstera stem bearing exactly ONE leaf. Moni beside her, smiling. She (image 1): LONG straight dark chocolate-brown hair (clearly brown, NOT black), blunt bangs, brown eyes, blush, cream tee, grey joggers. Moni (image 2): tiny light-green sprout INSIDE a terracotta pot with two holed monstera leaves; keep pot and leaves. Line and warm wash of image 3, NOT its isometric cutaway: full-frame eye-level scene, no border."
+  },
+  "save": {
+   "tool": "meshy_download_model",
+   "task_type": "image-to-image",
+   "save_to": "C:/Users/pc/Desktop/빛식물/lux-plant-sim/assets/illust/ev_monstera_arrive_v2_r2.png"
+  }
+ }
+]
+```
