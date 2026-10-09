@@ -99,6 +99,19 @@ const FURN = {
   bench:               { file: 'furniture/bench.glb',               yaw: 0, lazy: true },
   shop_display:        { file: 'furniture/shop_display.glb',        yaw: -90, lazy: true, tiers: true },  // GLB 가 Z 로 길다(0.62 × 1.0) · +90 이면 앞뒤가 뒤집힌다(앞단 +0.49m)
   order_board:         { file: 'furniture/order_board.glb',         yaw: -90, lazy: true, box: true },    // 가게 주문판(벽 걸이 · 걸이 자리 only) — GLB 가 X 로 얇다(0.16 × 1.0) · +90 이면 뒷면이 방을 본다
+  /* 가구점 마지막 아홉(10-10 · 마지막 Higgsfield · Tripo standard · docs/handoff/higgsfield-order-house-last9-20261010.json)
+       raw → 손질 → webp 1024 차례는 docs/handoff/house-higgsfield-3d-order-20261010.md §마지막 아홉. 비스듬히 온 것은 돌림을 파일에 구웠다
+       (tools/glb_rotate_y.py — 90° 배수가 아닌 yaw 는 Box3 가 헐거워 옷이 작아진다) */
+  bed_double:          { file: 'furniture/bed_double.glb',          yaw: -90, lazy: true,
+                         probes: [[0.5, 0.55], [0.5, 0.7], [0.3, 0.62], [0.7, 0.62], [0.5, 0.85]] },
+  bed_bunk:            { file: 'furniture/bed_bunk.glb',            yaw: -90, lazy: true, probes: [[0.5, 0.5], [0.4, 0.6], [0.6, 0.4]] },   // 사다리 +X · 아래 매트리스의 검은 바탕·금빛 무늬는 칠해 덮음(glb_tex_patch_band --up --skip-wood)
+  bed_loft:            { file: 'furniture/bed_loft.glb',            yaw: -90, lazy: true, probes: [[0.5, 0.5], [0.4, 0.6], [0.6, 0.4]] },
+  table:               { file: 'furniture/table.glb',               yaw: 0, lazy: true },        // −2.5° 구움
+  vanity:              { file: 'furniture/vanity.glb',              yaw: -90, lazy: true },      // +14° 구움 · 서랍통 −X
+  mirror:              { file: 'furniture/mirror.glb',              yaw: 0, lazy: true, box: true },   // 유리 법선이 57° 비껴 와 −57° 구움 · 유리 위 나무 혹(원화가 옮긴 코드 쐐기)은 눌러 칠함(glb_flatten_bump)
+  shoe_cabinet:        { file: 'furniture/shoe_cabinet.glb',        yaw: -90, lazy: true },
+  tv_stand:            { file: 'furniture/tv_stand.glb',            yaw: 0, lazy: true },
+  room_divider:        { file: 'furniture/room_divider.glb',        yaw: 0, lazy: true, box: true },   // −17° 구움
   /* 식물등 — 몸통만 옷(LED 는 코드 것 · dressLamp). lazy — 부팅 미리 받기를 안 늘린다(방이 뜬 뒤 입는다) */
   /* 러그 — GLB 가 아니라 «윗면 그림»(topTex · 10-10 · Higgsfield 위에서 본 그림 · 둘레 흰 바탕은 투명으로 · tools/tex_rug_cutout.py).
        1.2cm 깔개라 3D 를 뽑으면 눌려 무늬만 남는다 — 처음부터 무늬만. 코드 러그(대리)는 숨기고 발자국 크기 판 하나를 윗면에 깐다 */

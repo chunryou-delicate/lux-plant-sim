@@ -6,6 +6,9 @@
     다시 뽑기(retexture 10)보다 먼저 크레딧 0 으로 — 그 판 윗면 삼각형이 쓰는 UV 자리만 골라,
     그 안에서 밝기가 --dark 밑인 화소를 «그 자리의 밝은 화소 가운값»으로 칠한다. 기하·UV 는 안 건드린다.
 --band: 높이 비율(0=바닥 · 1=꼭대기) — 이 띠 안에 세 꼭짓점이 다 있고 면 법선이 위(y>0.6)를 보는 삼각형만.
+--up(10-10): 위를 보는 면만(법선 y>0.6 · 감는 차례가 고른 Tripo 용 — 밑판 아랫면을 안 덮는다)
+--skip-wood(10-10): UV 무게중심 색이 나무(R−B>45 · 밝기 ≥140)인 삼각형은 빼고 — 매트리스 옆 나무 틀을 안 칠한다
+--sat S(10-10 · Tripo 이층 침대 아래 매트리스의 금빛 무늬): 밝아도 채도(max−min)가 S 넘는 화소도 덮는다 · 판 색은 밝고 채도 낮은 화소의 가운값.
 """
 import io, json, struct, sys
 import numpy as np
@@ -33,11 +36,17 @@ def main():
     dark = int(a[a.index('--dark') + 1]) if '--dark' in a else 150
     grow = int(a[a.index('--grow') + 1]) if '--grow' in a else 3
     prev = a[a.index('--preview') + 1] if '--preview' in a else None
+    sat = int(a[a.index('--sat') + 1]) if '--sat' in a else None
+    up_only, skip_wood = '--up' in a, '--skip-wood' in a
     js, bins = read_glb(src)
     tris_uv = []
     allp = [acc(js, bins, pr['attributes']['POSITION']) for m in js['meshes'] for pr in m['primitives']]
     ymin = min(p[:, 1].min() for p in allp); ymax = max(p[:, 1].max() for p in allp); H = ymax - ymin
     mat_img = None
+    pic0 = None
+    if skip_wood:                                   # 삼각형 색을 보려면 그림을 먼저 연다(재질 그림은 하나라고 본다 · Tripo·Meshy 둘 다)
+        im0 = js['images'][0]; b0 = js['bufferViews'][im0['bufferView']]; o0 = b0.get('byteOffset', 0)
+        pic0 = np.asarray(Image.open(io.BytesIO(bins[o0: o0 + b0['byteLength']])).convert('RGB')).astype(np.int32)
     for m in js['meshes']:
         for pr in m['primitives']:
             P = acc(js, bins, pr['attributes']['POSITION']); UV = acc(js, bins, pr['attributes']['TEXCOORD_0'])
@@ -48,6 +57,11 @@ def main():
                 if not inb[t].all(): continue
                 p0, p1, p2 = P[t]; nrm = np.cross(p1 - p0, p2 - p0); ln = np.linalg.norm(nrm)
                 if ln < 1e-12 or abs(nrm[1]) / ln < 0.6: continue    # 판 윗면·밑면 둘 다(감는 차례가 뒤집혀 와도)
+                if up_only and nrm[1] < 0: continue
+                if pic0 is not None:
+                    hh, ww = pic0.shape[:2]; cu, cv = UV[t].mean(0)
+                    c = pic0[min(hh - 1, max(0, int(cv * hh))), min(ww - 1, max(0, int(cu * ww)))]
+                    if c[0] - c[2] > 45 and c.mean() >= 140: continue
                 tris_uv.append(UV[t])
             mi = pr.get('material')
             if mi is not None:
@@ -61,9 +75,11 @@ def main():
     if grow: mask = mask.filter(ImageFilter.MaxFilter(grow * 2 + 1))
     A = np.asarray(pic).astype(np.int32); M = np.asarray(mask) > 0
     L = A.mean(axis=2)
-    light = M & (L >= dark)
+    S = A.max(axis=2) - A.min(axis=2)
+    off = (L < dark) | (S > sat) if sat is not None else (L < dark)
+    light = M & ~off
     base = np.median(A[light], axis=0) if light.any() else np.array([235, 222, 200])
-    hit = M & (L < dark)
+    hit = M & off
     A2 = A.copy(); A2[hit] = base.astype(np.int32)
     print(f'  띠 {lo:.2f}~{hi:.2f} 위 삼각형 {len(tris_uv)} · 자리 화소 {int(M.sum())} · 덮은 짙은 화소 {int(hit.sum())} ({hit.sum() / max(1, M.sum()) * 100:.1f}%) · 판 색 {base.astype(int).tolist()}')
     out = Image.fromarray(A2.astype(np.uint8))

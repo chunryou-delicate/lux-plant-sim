@@ -6,7 +6,7 @@
  },
  "bed_double": {
   "file": "assets/v2/thumbs/furn/bed_double.webp",
-  "v2": false
+  "v2": true
  },
  "desk": {
   "file": "assets/v2/thumbs/furn/desk.webp",
@@ -54,7 +54,7 @@
  },
  "table": {
   "file": "assets/v2/thumbs/furn/table.webp",
-  "v2": false
+  "v2": true
  },
  "nightstand": {
   "file": "assets/v2/thumbs/furn/nightstand.webp",
@@ -194,11 +194,11 @@
  },
  "bed_bunk": {
   "file": "assets/v2/thumbs/furn/bed_bunk.webp",
-  "v2": false
+  "v2": true
  },
  "bed_loft": {
   "file": "assets/v2/thumbs/furn/bed_loft.webp",
-  "v2": false
+  "v2": true
  },
  "mattress": {
   "file": "assets/v2/thumbs/furn/mattress.webp",
@@ -206,7 +206,7 @@
  },
  "vanity": {
   "file": "assets/v2/thumbs/furn/vanity.webp",
-  "v2": false
+  "v2": true
  },
  "clothes_rack": {
   "file": "assets/v2/thumbs/furn/clothes_rack.webp",
@@ -222,7 +222,7 @@
  },
  "mirror": {
   "file": "assets/v2/thumbs/furn/mirror.webp",
-  "v2": false
+  "v2": true
  },
  "shelf_corner_3tier": {
   "file": "assets/v2/thumbs/furn/shelf_corner_3tier.webp",
@@ -242,11 +242,11 @@
  },
  "shoe_cabinet": {
   "file": "assets/v2/thumbs/furn/shoe_cabinet.webp",
-  "v2": false
+  "v2": true
  },
  "tv_stand": {
   "file": "assets/v2/thumbs/furn/tv_stand.webp",
-  "v2": false
+  "v2": true
  },
  "cube_storage": {
   "file": "assets/v2/thumbs/furn/cube_storage.webp",
@@ -275,7 +275,7 @@
  },
  "room_divider": {
   "file": "assets/v2/thumbs/furn/room_divider.webp",
-  "v2": false
+  "v2": true
  },
  "laundry_basket": {
   "file": "assets/v2/thumbs/furn/laundry_basket.webp",

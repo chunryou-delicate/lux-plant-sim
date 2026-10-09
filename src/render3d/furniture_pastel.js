@@ -740,7 +740,12 @@ B.bed_bunk=(o)=>{
   const lz0=d*0.2-0.22, lz1=d*0.2+0.22, ltop=h-0.34;
   for(const lz of [lz0,lz1]) g.add(cyl(0.022,0.022,ltop,fr, w/2-0.04, ltop/2, lz, 8));
   for(let i=0;i<4;i++) g.add(bx(0.05,0.04,0.44,fr, w/2-0.04, 0.42+i*0.28, d*0.2));  // 발판
-  g.add(bx(0.05,0.7,0.05,fr,-w/2+0.04,h-0.02,d*0.05));                              // 상단 난간
+  /* 난간(10-10) — 위층은 네 옆 가로대(사다리 쪽은 사다리 자리를 비움) · 아래층은 머리·발치 가로대.
+     전에는 bx(0.05,0.7,0.05) 하나가 Y 로 서서 기둥 위로 0.33m 솟은 «토막»이었다 */
+  const ry=h-0.06, iw=w-0.08, id=d-0.08, sx=w/2-0.04;
+  for(const sz of [-1,1]){ g.add(bx(iw,0.05,0.04,fr,0,ry,sz*(d/2-0.04))); g.add(bx(iw,0.05,0.04,fr,0,0.66,sz*(d/2-0.04))); }
+  g.add(bx(0.04,0.05,id,fr,-sx,ry,0));
+  for(const [z0,z1] of [[-d/2+0.04,lz0-0.03],[lz1+0.03,d/2-0.04]]) g.add(bx(0.04,0.05,z1-z0,fr,sx,ry,(z0+z1)/2));
   g.userData.size={w,h,d}; return g;
 };
 
@@ -760,6 +765,12 @@ B.bed_loft=(o)=>{
   const lz0=d*0.2-0.22, lz1=d*0.2+0.22, ltop=h-0.28;
   for(const lz of [lz0,lz1]) g.add(cyl(0.022,0.022,ltop,fr, w/2-0.04, ltop/2, lz, 8));
   for(let i=0;i<4;i++) g.add(bx(0.05,0.04,0.44,fr, w/2-0.04, 0.42+i*0.28, d*0.2));
+  /* 난간(10-10) — 발치 가로대 · 두 긴 옆(사다리 쪽은 사다리 자리를 비움). 전에는 머리 쪽 하나뿐이라
+     원화가 긴 옆 이불 두께 띠를 나무 막이로 읽었다(장부 flags) — 코드도 그 자리에 막이를 둔다 */
+  const sx=w/2-0.04;
+  g.add(bx(w,0.05,0.05,fr,0,h-0.02,d/2-0.04));
+  g.add(bx(0.05,0.05,d-0.08,fr,-sx,h-0.02,0));
+  for(const [z0,z1] of [[-d/2+0.04,lz0-0.03],[lz1+0.03,d/2-0.04]]) g.add(bx(0.05,0.05,z1-z0,fr,sx,h-0.02,(z0+z1)/2));
   g.userData.size={w,h,d}; return g;
 };
 
@@ -781,10 +792,14 @@ B.vanity=(o)=>{
   g.add(panel(w,0.05,d,m,0,h-0.025,0,0.02));
   g.add(panel(w*0.45,h-0.1,d-0.04,m,-w*0.24,(h-0.1)/2,0,0.02));                    // 서랍통
   legs4(g,w,d,h-0.05,furnMat(o.accent??'#cbbfae','satin'),0.022,0.06);
+  /* 둥근 거울은 가는 받침(밑판 + 기둥)에 선다(10-10) — 전에는 원판+테만 떠 있었다(장부 flags · 원화 k2 가 받침을 그림) */
+  const mx=w*0.2, rz=-d/2+0.06, sa=furnMat(o.accent??'#cbbfae','satin');
   const mir=new THREE.Mesh(new THREE.CircleGeometry(0.21,28),
     new THREE.MeshStandardMaterial({ color:col('#dbe6ec'), roughness:0.08, metalness:0.15 }));
-  mir.position.set(w*0.2,h+0.30,-d/2+0.03); g.add(mir);
-  const ring=cyl(0.225,0.225,0.02,m,w*0.2,h+0.30,-d/2+0.02,28); ring.rotation.x=Math.PI/2; g.add(ring);
+  mir.position.set(mx,h+0.30,rz+0.011); g.add(mir);
+  const ring=cyl(0.225,0.225,0.02,m,mx,h+0.30,rz,28); ring.rotation.x=Math.PI/2; g.add(ring);
+  g.add(cyl(0.012,0.012,0.30,sa,mx,h+0.15,rz-0.022,8));                               // 받침 기둥(상판 → 거울 가운데)
+  g.add(cyl(0.05,0.055,0.016,sa,mx,h+0.008,rz-0.005,20));                              // 받침 밑판(상판 뒤끝 안)
   g.userData.size={w,h:h+0.55,d};
   return addSlots(g, tierSlots(w*0.5,h,1,0), [h]);
 };
@@ -836,12 +851,17 @@ B.mirror=(o)=>{
   const w=o.w??0.45, h=o.h??1.55, d=0.06;
   const g=new THREE.Group();
   const m=furnMat(o.color??'#cbbfae','satin');
-  g.add(panel(w,h,d,m,0,h/2,0,0.03));
+  /* 판은 발자국(깊이 0.3) 앞쪽에, 뒷받침은 판 뒤에서 발자국 뒤끝 바닥까지 기댄 막대 하나(10-10).
+     전에는 0.5×0.3 상자를 0.22rad 돌려 앞 위 모서리가 유리를 뚫고 나왔다(z +0.061 > 유리 +0.035 · 높이 0.46 «쐐기») */
+  const D=0.3, pz=D/2-d/2;
+  g.add(panel(w,h,d,m,0,h/2,pz,0.03));
   const face=new THREE.Mesh(new THREE.PlaneGeometry(w-0.07,h-0.09),
     new THREE.MeshStandardMaterial({ color:col('#dde8ee'), roughness:0.06, metalness:0.2 }));
-  face.position.set(0,h/2,d/2+0.005); g.add(face);
-  const leg=bx(0.05,0.5,0.3,m,0,0.25,-0.14); leg.rotation.x=0.22; g.add(leg);       // 뒷받침
-  g.userData.size={w,h,d:0.3}; return g;
+  face.position.set(0,h/2,pz+d/2+0.005); g.add(face);
+  const lt=0.03, ty=0.85, tz=pz-d/2-lt/2, bz=-D/2+0.02;                               // 위 끝(판 뒷면) · 아래 끝(바닥)
+  const ll=Math.hypot(ty,tz-bz), la=Math.atan2(tz-bz,ty);
+  const leg=bx(0.05,ll,lt,m,0,ty/2,(tz+bz)/2); leg.rotation.x=la; g.add(leg);       // 뒷받침
+  g.userData.size={w,h,d:D}; return g;
 };
 
 /* 책상 조명 */
