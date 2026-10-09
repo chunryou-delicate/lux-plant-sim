@@ -1619,6 +1619,12 @@ export const SCRIPTS = {
   statusBagCuttings: [
     { who: 'moni', face: 'teach', text: '가방에 든 삽수는 하루가 안 가. 방에 놓아 줘.' }
   ],
+  /* ★ 2026-10-09 [plan] — 이사 직후(원룸 첫 이레) 가방에 든 삽수: 이사가 자리를 비워 삽수는 가방으로 간다(oneroom §clearPlacements · D29 로 멈춤).
+     후보 ㉠ [core] 가 이사 때 삽수를 새 방 자리로 앉힘 · ㉡ 말로 알림(택함) — 까닭: 원룸에서 «어디 둘지 고르기»가 첫 배움(창턱 · 등)이고,
+     예전 자동 배치는 가장 어두운 칸으로 보낸 사고가 있었다(§chatOneroomPotDark 머리말). [core] 갈래 판: 이 손이 빠진 판은 ② 에 못 갔다(7/10). */
+  statusBagCuttingsMove: [
+    { who: 'moni', face: 'teach', text: '들고 온 삽수는 가방에 있어. 창가에 놓아 줘 — 가방에선 하루가 안 가.' }
+  ],
   /* ═══ ★★ 2026-10-09 [plan] D9 짝 일감 — **원룸 후반 13달**(박사님 500만 · 안내대로 이사 뒤 395일) ═══
      원룸은 계절이 빛을 바꾸는 방이다(D1 · real). 그런데 원룸의 봄·여름·둘째 가을이 오는 날엔 말이 없었다
      (scriptOf: 봄·여름은 null · autumnCame 은 한 번뿐이라 반지하에서 이미 썼다). 철이 바뀌는 날이 곧 «빛이 바뀐 날»이다.
@@ -2122,7 +2128,7 @@ export const REPEATABLE = new Set(
              'cuttingNode', 'cuttingWarn', 'cuttingWarnLast', 'cuttingDied',
              'cuttingVarieBright', 'cuttingVarieMid', 'cuttingVarieDark', 'nudgeSeedSow',
              'nudgeSiruOffer', 'nudgeSiruPush', 'statusOneroomNoVarie', 'statusOneroomCutSill',
-             'lampUnderEmpty', 'statusBagCuttings',
+             'lampUnderEmpty', 'statusBagCuttings', 'statusBagCuttingsMove',
              'springCameOneroom', 'summerCameOneroom', 'autumnCameOneroom', 'statusOneroomYear',
              'nudgeHomeOffer', 'nudgeHomePush', 'statusHomeHalf', 'statusHomeNear',
              'rentSoon2', 'rentAgain2', 'nudgeHomePush2',
@@ -2693,7 +2699,11 @@ export const CHATTER = [
   { id: 'statusOneroomNoVarie', status: true, gap: 60, when: c => c.movedOut && fin(c.daysInOneroom) && c.daysInOneroom >= 1 && c.daysInOneroom <= 7
                                                               && c.varieSources === 0 },
   /* ★ 2026-10-09 [plan] D29 — 가방에 든 삽수가 있으면(이레에 한 번 · 사건·독촉 날엔 다음 빈 날) */
-  { id: 'statusBagCuttings',    status: true, gap: 7,  when: c => fin(c.bagCuttings) && c.bagCuttings > 0 },
+  /* ★ 2026-10-09 [plan] — 원룸 첫 이레는 이사 맥락의 줄이 먼저(그 사이 일반 줄은 쉼) */
+  { id: 'statusBagCuttingsMove', status: true, gap: 3, when: c => c.movedOut && fin(c.daysInOneroom) && c.daysInOneroom <= 7
+                                                              && fin(c.bagCuttings) && c.bagCuttings > 0 },
+  { id: 'statusBagCuttings',    status: true, gap: 7,  when: c => fin(c.bagCuttings) && c.bagCuttings > 0
+                                                              && !(c.movedOut && fin(c.daysInOneroom) && c.daysInOneroom <= 7) },
   /* ★ 2026-10-09 [plan] 원룸 후반 — 한 해 · 목표 이정표 둘(처음 넘은 날 · 한 번씩 — gap 400 은 «한 판에 한 번») */
   /* ★ 2026-10-09 [plan] 재미 점검 — 수확 이정표(열 번째 · 서른 번째 · 한 판에 한 번) */
   /* ★ 2026-10-09 [plan] 재미 점검 — 16주의 «작은 새것» 둘(한 판에 한 번). 날은 게임 날(c.day) · 반지하에서만 */
