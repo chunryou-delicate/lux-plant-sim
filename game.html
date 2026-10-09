@@ -4991,7 +4991,7 @@ const detail = {
           let q = null; try { q = quotePot(S, { leaves: ls.leaves, variegatedLeaves: ls.variegatedLeaves, ...(potLeafArgs(pot0(S)) || {}) }); } catch { }
           out.push({ ko: q ? `📮 중고에 내놓기 (${q.won.toLocaleString()}원)` : '📮 중고에 내놓기',
                      /* D22 — 상세 카드 길도 같은 한 줄(§sellingLastVarieSource) */
-                     go: () => { try { if (sellingLastVarieSource()) dlgOpen(story.events([{ id: 'sell_last_varie' }])); } catch { } return askListPot(); } });
+                     go: () => { try { if (sellingLastVarieSource()) dlgOpen(story.events([{ id: 'sell_last_varie' }], S)); } catch { } return askListPot(); } });
         } else if (gate) {
           out.push({ ko: `📮 ${gate.reason}`, go: () => sheetTo('shop') });
         }
@@ -9640,7 +9640,7 @@ function checkQuests(turn) {
          퀘스트 사건과 «한 묶음»으로 넘겨야 EVENT_ORDER 가 「됐다! 가자.」(quest_done) → 「집 계약은 네가 해…」(ending_ready)로 세운다 */
     let evs = r.events;
     try { const e2 = stepEndingNow(); if (e2.length) evs = [...evs, ...e2]; } catch (e) { console.warn('[엔딩]', e && e.message); }
-    if (evs.length) dlgOpen(story.events(evs));               /* 대사는 늘 같은 창구로 */
+    if (evs.length) dlgOpen(story.events(evs, S));               /* 대사는 늘 같은 창구로 */
   } catch (e) { console.warn('[퀘스트]', e && e.message); }
 }
 /* 퀘스트 id 를 사람 말로 — 표가 정본이다(quest.js §QUESTS). 모르면 id 그대로 낸다 */
@@ -9832,7 +9832,7 @@ function doFinishHome() {
   const sc = $('homeScene'); sc.classList.add('on'); sc.setAttribute('aria-hidden', 'false');
   $('homeCard').style.display = 'none';
   homeCardPending = true;
-  dlgOpen(story.events(f.events));
+  dlgOpen(story.events(f.events, S));
   draw();
   /* 대사가 안 떴으면(대사 표가 없을 때) 카드를 바로 */
   setTimeout(() => { try { openHomeCardWhenQuiet(); } catch { } }, 50);
@@ -11629,7 +11629,7 @@ const siruHarvest = guard((id, kind) => {
              sub: `${r.qualityKo || ''} · 밥값 ${Math.round(r.savedWon || r.cycleSavedWon || 0).toLocaleString()}원어치` },
            ...surplusBannerOf(r), ...neighborOrderBannerOf(r.events)]);
   if (r.arrived) { arrivalSlotId = pot0(S) && pot0(S).slotId; fillSlots(false); }
-  if (r.events && r.events.length) dlgOpen(story.events(r.events));
+  if (r.events && r.events.length) dlgOpen(story.events(r.events, S));
   checkQuests(lastTurn);    /* 회전이 하나 늘었다 — 다섯 줄을 다시 본다 (§퀘스트). 배너는 draw 가 낸다 */
   draw();
 });
@@ -15209,7 +15209,7 @@ function placeLampFromBag() {
   try { window.__byeotSheet.close(); } catch { }
   fillSlots(); syncRoom(); draw();
   /* ★ 2026-10-08 [plan] 갈래 지도 9(94) — 단 날 그 등이 밝힌 칸 밑에 몬스테라·삽수가 하나도 없으면 사건 하나(대사는 plan 몫) */
-  try { const u = lampUnderEmpty(); if (u && u.empty) dlgOpen(story.events([{ id: 'lamp_under_empty', ko: '등 밑에 식물이 없습니다', lit: u.lit }])); }
+  try { const u = lampUnderEmpty(); if (u && u.empty) dlgOpen(story.events([{ id: 'lamp_under_empty', ko: '등 밑에 식물이 없습니다', lit: u.lit }], S)); }
   catch (e) { console.warn('[등 밑]', e && e.message); }
 }
 /* «등 밑» = 그 등 몫(dli_lamp)이 큰 칸 — 이 방에서 등 몫이 제일 큰 칸의 절반 이상(그리고 1 이상)인 자리.
@@ -17006,7 +17006,7 @@ function doBuyLamp() {
   const bought = ['벽부형 식물등', '집게형 식물등', '거치형 식물등'][Math.max(0, r.owned - 1)] || '식물등';
   pushLog(S, `💡 ${bought}을 샀습니다 — 남은 돈 ${r.cashWon.toLocaleString()}원`);
   banner(`${bought}을 샀습니다`, '자리가 나쁘면 등을 켜도 소용없습니다');
-  dlgOpen(story.events(r.events));   /* 하루를 기다리면 산 순간이 조용해진다 */
+  dlgOpen(story.events(r.events, S));   /* 하루를 기다리면 산 순간이 조용해진다 */
   fillSlots(); draw();
 }
 
@@ -17031,7 +17031,7 @@ const reallyHarvest = guard(() => {
            ...surplusBannerOf(r), ...neighborOrderBannerOf(r.events)]);
   if (r.arrived) { arrivalSlotId = pot0(S) && pot0(S).slotId; fillSlots(false); }
   /* 대사는 턴과 같은 창구로 낸다 — 수확 → 배움 → 식물신 → 도착 순서가 여기서 지켜진다 */
-  if (r.events && r.events.length) dlgOpen(story.events(r.events));
+  if (r.events && r.events.length) dlgOpen(story.events(r.events, S));
   checkQuests(lastTurn);    /* 회전이 하나 늘었다 — 다섯 줄을 다시 본다 (§퀘스트). 배너는 draw 가 낸다 */
   draw();
 });
@@ -17376,7 +17376,7 @@ function sellingLastVarieSource() {
   return otherPots + cuts === 0;
 }
 $('sellPlant').onclick = (ev) => {
-  try { if (armedBtn !== ev.currentTarget && sellingLastVarieSource()) dlgOpen(story.events([{ id: 'sell_last_varie' }])); }
+  try { if (armedBtn !== ev.currentTarget && sellingLastVarieSource()) dlgOpen(story.events([{ id: 'sell_last_varie' }], S)); }
   catch (e) { console.warn('[D22]', e && e.message); }
   return askListPot(ev);
 };
@@ -17487,7 +17487,7 @@ function openMoveAsk() {
   /* 몬이 한 줄 — 원천 0 일 때만 · 대사가 «먼저», 창은 대사가 끝난 뒤(창이 대사를 덮었다 · 엔딩 카드 §openHomeCardWhenQuiet 와 같은 길) */
   if (v.n === 0) {
     movePanelPending = true;
-    try { dlgOpen(story.events([{ id: 'move_no_varie' }])); } catch (e) { console.warn('[D27]', e && e.message); }
+    try { dlgOpen(story.events([{ id: 'move_no_varie' }], S)); } catch (e) { console.warn('[D27]', e && e.message); }
     setTimeout(() => { try { openMoveAskWhenQuiet(); } catch { } }, 50);   /* 대사가 안 떴으면 바로 */
     return;
   }
@@ -17548,7 +17548,7 @@ function doMoveOut() {
   const r = moveIntoOneroom(S, io, { carry });
   pushLog(S, '📦 원룸으로 이사했습니다 — 반지하 튜토리얼 종료');
   banners([{ title: '📦 원룸으로 이사했습니다', sub: '반지하에서 배운 것을 가지고 갑니다' }]);
-  dlgOpen(story.events(r.events));   /* 반지하를 떠나는 장면이 여기서 나온다 */
+  dlgOpen(story.events(r.events, S));   /* 반지하를 떠나는 장면이 여기서 나온다 */
   /* 방 고르개·등 개수·자리 목록은 전부 옛 방 것이다. 새 방 것으로 다시 채운다 */
   $('room').value = S.home.room;
   fillLamps(); fillSlots(false);

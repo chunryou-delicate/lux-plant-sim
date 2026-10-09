@@ -355,7 +355,7 @@ export async function play(name, seed, opt = {}) {
       if (opt.trace) { out._qDone = (qr && qr.finished) || []; out._qEv = ((qr && qr.events) || []).map(e => e && e.id).filter(Boolean);
                        try { const cur = questView(S, snap).current; out._chip = cur ? cur.id : null; } catch { out._chip = null; } }
       for (const id of (qr && qr.finished) || []) { try { grantStaminaQuest(S, id); } catch { } }   /* 게임 checkQuests 와 같다 — 끝낸 것은 stamina.questsTaken 이 기억한다 */
-      try { if (qr && qr.events && qr.events.length) { const q2 = story.events(qr.events) || []; saidToday += q2.length; saidIds = saidIds.concat(q2); } } catch { }
+      try { if (qr && qr.events && qr.events.length) { const q2 = story.events(qr.events, S) || []; saidToday += q2.length; saidIds = saidIds.concat(q2); } } catch { }
       noteQuestWaits(S, S.day);
       /* ★ 2026-10-09 ([plan] 7d3b2e4f 청) — «지금 할 일» 칩(questView.current · 정의 순서 첫 열린 줄)이 이사 뒤 어느 줄에 며칠 머물렀나 */
       if (ts.movedOut) { try { const cur = questView(S, snap).current; const k = cur ? cur.id : '(없음)'; (out.chipDays = out.chipDays || {})[k] = (out.chipDays[k] || 0) + 1; } catch { } }
