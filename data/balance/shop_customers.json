@@ -1,0 +1,61 @@
+{
+  "schema": "shop_customers/1",
+  "_doc": [
+    "식물 가게(진로 최소판) 손님 표 — docs/handoff/plan-shop-spec-20261010.md §3 · 2026-10-10 [plan] · 총괄 D59.",
+    "실존 인물·상호 없음 — «동네 사람» 결. 36명 = 단골 이정표 30 이 서게 넉넉히. group 여섯은 손님 초상 원화 여섯 결(char · Higgsfield)과 같다.",
+    "ask = 주문이 붙을 때 자취생이 전하는 손님 사정 한 줄 · thanks = 받아 갈 때 한 줄. 둘 다 자취생 혼잣말 결(평서 · 수 없음).",
+    "first = 가게 첫 손님(D35 반찬가게 주문을 겪은 판에서 — 아니면 표 첫 줄). 손님 고르기 기울기(아직 단골 아닌 쪽 3:1)는 core 몫 ⚖."
+  ],
+  "groups": {
+    "shop":    "동네 가게 사람",
+    "student": "학생·자취생",
+    "elder":   "어르신",
+    "couple":  "부부·가족",
+    "plant":   "식물 좋아하는 사람",
+    "office":  "회사·일터"
+  },
+  "first": "banchan_owner",
+  "customers": [
+    { "id": "banchan_owner",   "group": "shop",    "ko": "반찬가게 사장님",       "ask": "가게 계산대 옆에 하나 두고 싶대.",       "thanks": "콩나물 값은 이걸로 갚은 거래." },
+    { "id": "cafe_owner",      "group": "shop",    "ko": "2층 카페 주인",         "ask": "창가 자리가 허전하대.",                 "thanks": "손님들이 사진을 찍는대." },
+    { "id": "bakery_owner",    "group": "shop",    "ko": "모퉁이 빵집 사장님",     "ask": "진열장 옆에 초록이 있었으면 한대.",     "thanks": "빵을 하나 얹어 주셨다." },
+    { "id": "salon_owner",     "group": "shop",    "ko": "미용실 원장님",         "ask": "거울 옆 자리가 비었대.",               "thanks": "손님들이 이름을 물어본대." },
+    { "id": "stationery_owner","group": "shop",    "ko": "문구점 사장님",         "ask": "가게 앞에 둘 화분을 찾는대.",           "thanks": "아이들이 매일 들여다본대." },
+    { "id": "laundry_owner",   "group": "shop",    "ko": "빨래방 사장님",         "ask": "기다리는 손님들 보라고 둔대.",         "thanks": "빨래 기다리며 다들 쳐다본대." },
+
+    { "id": "art_club",        "group": "student", "ko": "옆 학교 미술 동아리",   "ask": "그림 그릴 식물이 필요하대.",           "thanks": "그림이 다 되면 보여 준대." },
+    { "id": "exam_student",    "group": "student", "ko": "고시원 사는 수험생",     "ask": "책상에 둘 작은 초록이 필요하대.",       "thanks": "공부가 덜 답답하대." },
+    { "id": "freshman",        "group": "student", "ko": "자취 시작한 대학생",     "ask": "첫 방에 둘 식물을 찾는대.",             "thanks": "반지하 시절 내가 생각났다." },
+    { "id": "grad_show",       "group": "student", "ko": "졸업 전시 준비생",       "ask": "작품 옆에 세울 식물이 필요하대.",       "thanks": "전시에 꼭 오래." },
+    { "id": "dorm_roommates",  "group": "student", "ko": "기숙사 룸메이트 둘",     "ask": "둘이 같이 키울 거래.",                 "thanks": "이름을 벌써 지어 놨대." },
+    { "id": "hort_student",    "group": "student", "ko": "원예학과 학생",         "ask": "과제로 관찰할 거래.",                   "thanks": "기록을 나눠 주겠대." },
+
+    { "id": "old_upstairs",    "group": "elder",   "ko": "예전 윗집 할머니",       "ask": "콩나물 키우던 그 학생 맞냐고 하셨다.",   "thanks": "잘 컸다고 등을 두드려 주셨다." },
+    { "id": "senior_center",   "group": "elder",   "ko": "경로당 회장님",         "ask": "경로당 창가에 둘 거래.",               "thanks": "다들 물 주는 당번을 정하셨대." },
+    { "id": "allotment_grandpa","group": "elder",  "ko": "텃밭 하시는 할아버지",   "ask": "겨울에 집 안에서 볼 초록이래.",         "thanks": "봄에 상추를 갖다 주신대." },
+    { "id": "pharmacy_grandma","group": "elder",   "ko": "동네 약국 할머니",       "ask": "약국 문 옆이 썰렁하대.",               "thanks": "건강하게 잘 키우라고 하셨다." },
+    { "id": "walking_couple",  "group": "elder",   "ko": "공원 걷는 노부부",       "ask": "손주 방에 둘 거래.",                   "thanks": "손주가 좋아한대." },
+    { "id": "retired_teacher", "group": "elder",   "ko": "퇴직한 선생님",         "ask": "서재에 둘 식물을 찾으신대.",           "thanks": "학생 때 생각이 난다고 하셨다." },
+
+    { "id": "newlyweds",       "group": "couple",  "ko": "신혼부부",              "ask": "새 집 거실에 둘 거래.",                 "thanks": "집들이에 자랑한대." },
+    { "id": "first_home",      "group": "couple",  "ko": "첫 집을 산 부부",        "ask": "드디어 자기 창이 생겼대.",             "thanks": "그 마음 알 것 같다." },
+    { "id": "new_parents",     "group": "couple",  "ko": "아기 낳은 부부",         "ask": "아기 방이 아닌 거실에 둔대.",           "thanks": "아기가 잎을 보고 웃었대." },
+    { "id": "dog_family",      "group": "couple",  "ko": "개 키우는 집",           "ask": "강아지 손 안 닿는 높은 데 둔대.",       "thanks": "강아지가 냄새만 맡고 갔대." },
+    { "id": "moving_family",   "group": "couple",  "ko": "이사 온 가족",           "ask": "새 동네 첫 화분이래.",                 "thanks": "이웃이 생긴 것 같대." },
+    { "id": "twins_mom",       "group": "couple",  "ko": "쌍둥이 엄마",           "ask": "둘이 하나씩 키우게 한대.",             "thanks": "누가 더 잘 키우나 내기한대." },
+
+    { "id": "florist_trainee", "group": "plant",   "ko": "화원 견습생",           "ask": "사장님 몰래 연습한대.",                 "thanks": "언젠가 자기 가게를 낸대." },
+    { "id": "plant_video",     "group": "plant",   "ko": "식물 영상 찍는 사람",    "ask": "찍을 식물을 찾는대.",                   "thanks": "영상 끝에 가게 이름을 말해 준대." },
+    { "id": "succulent_guy",   "group": "plant",   "ko": "다육이 모으는 아저씨",   "ask": "다육이 말고도 하나 들인대.",           "thanks": "새 길을 찾았대." },
+    { "id": "varie_collector", "group": "plant",   "ko": "무늬종 모으는 사람",     "ask": "무늬 보는 눈이 매섭다.",               "thanks": "한참을 들여다보고 갔다." },
+    { "id": "planterior",      "group": "plant",   "ko": "플랜테리어 디자이너",    "ask": "손님 집에 놓을 거래.",                 "thanks": "다음에도 맡기겠대." },
+    { "id": "ikebana_teacher", "group": "plant",   "ko": "꽃꽂이 선생님",         "ask": "수업 교실에 둘 거래.",                 "thanks": "잎 선이 곱다고 하셨다." },
+
+    { "id": "publisher_design","group": "office",  "ko": "출판사 디자이너",        "ask": "책상 위가 너무 하얗대.",               "thanks": "표지 색을 이 잎에서 땄대." },
+    { "id": "office_junior",   "group": "office",  "ko": "사무실 막내",           "ask": "팀장님 몰래 탕비실에 둔대.",           "thanks": "물 주는 건 자기 몫이래." },
+    { "id": "nurse",           "group": "office",  "ko": "병원 간호사",           "ask": "대기실 창가에 둘 거래.",               "thanks": "환자분들이 좋아한대." },
+    { "id": "architect",       "group": "office",  "ko": "건축사무소 대표",        "ask": "모형 옆에 진짜 초록이 필요하대.",       "thanks": "다음 집엔 창을 더 낸대." },
+    { "id": "bank_teller",     "group": "office",  "ko": "은행 창구 직원",         "ask": "창구 옆 자리가 휑하대.",               "thanks": "줄 선 사람들이 덜 지루하대." },
+    { "id": "night_guard",     "group": "office",  "ko": "밤 경비 아저씨",         "ask": "밤에 혼자 보는 초록이래.",             "thanks": "말동무가 생겼대." }
+  ]
+}
