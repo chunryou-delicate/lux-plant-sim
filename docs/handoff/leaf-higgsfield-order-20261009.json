@@ -1,0 +1,1371 @@
+{
+ "_doc": "leaf Higgsfield 주문(10-09) — 총괄이 그대로 돌린다. REF_* 는 media_upload → media_id 로 바꿔 끼운다. 장당 1.5(high · 1k · 미리 잰 값) · count 2.",
+ "style_for_cards": "A",
+ "refs": {
+  "REF_STYLE_A": "assets/illust/ev_first_varie_halfmoon.png",
+  "REF_STYLE_B": "assets/raw/plants/pink_princess/PP2_clean.png",
+  "REF_STYLE_B2": "assets/raw/plants/alocasia/AL2_clean.png",
+  "REF_ST_OPENING": "assets/monstera/thumbs/monstera_bud_opening2.png",
+  "REF_ST_FURLED": "assets/monstera/thumbs/monstera_bud_furled.png",
+  "REF_ST_YOUNG": "assets/monstera/thumbs/monstera_leaf_young.png",
+  "REF_ST_MID": "assets/monstera/thumbs/monstera_leaf_mid1.png",
+  "REF_ST_MATURE": "assets/monstera/thumbs/monstera_leaf_mature.png",
+  "REF_FAM_speckle_greencream": "assets/monstera/skins/thumbs/mon_speckle_greencream.png",
+  "REF_FAM_zebra": "assets/monstera/skins/thumbs/mon_zebra.png",
+  "REF_FAM_star_greenwhite": "assets/monstera/skins/thumbs/mon_star_greenwhite.png",
+  "REF_FAM_star_greenyellow": "assets/monstera/skins/thumbs/mon_star_greenyellow.png",
+  "REF_FAM_star_palegreen": "assets/monstera/skins/thumbs/mon_star_palegreen.png",
+  "REF_FAM_green_yellow": "assets/monstera/skins/thumbs/mon_green_yellow.png",
+  "REF_FAM_green_lemonpatch": "assets/monstera/skins/thumbs/mon_green_lemonpatch.png",
+  "REF_FAM_neon_lime": "assets/monstera/skins/thumbs/mon_neon_lime.png",
+  "REF_FAM_halfmoon_greenwhite": "assets/monstera/skins/thumbs/mon_halfmoon_greenwhite.png",
+  "REF_FAM_halfmoon_greencream": "assets/monstera/skins/thumbs/mon_halfmoon_greencream.png",
+  "REF_FAM_galaxy_tealgold": "assets/monstera/skins/thumbs/mon_galaxy_tealgold.png",
+  "REF_FAM_galaxy_darkteal": "assets/monstera/skins/thumbs/mon_galaxy_darkteal.png",
+  "REF_FAM_star_pinkmint": "assets/monstera/skins/thumbs/mon_star_pinkmint.png",
+  "REF_FAM_variegata_pink": "assets/monstera/skins/thumbs/mon_variegata_pink.png",
+  "REF_FAM_variegata_gold": "assets/monstera/skins/thumbs/mon_variegata_gold.png",
+  "REF_FAM_rose_pink": "assets/monstera/skins/thumbs/mon_rose_pink.png",
+  "REF_FAM_mauve": "assets/monstera/skins/thumbs/mon_mauve.png",
+  "REF_FAM_fullalbo": "assets/monstera/skins/thumbs/mon_fullalbo.png",
+  "REF_FAM_charcoal": "assets/monstera/skins/thumbs/mon_charcoal.png",
+  "REF_FAM_plain": "assets/monstera/thumbs/monstera_leaf_mature.png",
+  "REF_FAM_pp_green": "assets/plants/pink_princess/thumbs/pp_leaf_mature.png",
+  "REF_FAM_pp_marble": "assets/plants/pink_princess/skins/thumbs/pp_leaf_mature_pinkmarble.png",
+  "REF_FAM_pp_heavy": "assets/plants/pink_princess/skins/thumbs/pp_leaf_mature_pinkheavy.png",
+  "REF_FAM_pp_pink": "assets/plants/pink_princess/skins/thumbs/pp_leaf_mature_allpink.png",
+  "REF_FAM_al_plain": "assets/plants/alocasia/thumbs/al_leaf_mature.png",
+  "REF_FAM_al_marble": "assets/plants/alocasia/skins/thumbs/al_leaf_mature_marble.png",
+  "REF_FAM_al_sector": "assets/plants/alocasia/skins/thumbs/al_leaf_mature_half.png"
+ },
+ "jobs": [
+  {
+   "name": "P1_card_halfmoon_greenwhite_A",
+   "kind": "pilot",
+   "save_as": "assets/illust/cards/_pilot/card_mon_halfmoon_greenwhite_A.png",
+   "used_in": "① 결 고르기 시험 — 결 A",
+   "who": "총괄·박사님(결 고르기) · leaf(검수)",
+   "tool": "generate_image",
+   "params": {
+    "model": "gpt_image_2_5",
+    "variant": "flare",
+    "quality": "high",
+    "resolution": "1k",
+    "aspect_ratio": "1:1",
+    "count": 2,
+    "prompt": "A single Monstera deliciosa mature leaf with deep splits and holes (fenestrations), front view seen straight on (flat, like a pressed specimen), the whole leaf with a short petiole pointing down, centered and filling about 80% of a square frame, isolated on a transparent background. Keep exactly the leaf shape and the variegation pattern and colors of image 1: exactly half clean white and half deep green, divided along the midrib (half-moon variegation). Draw it as a 2D hand-drawn storybook illustration in the style of image 2: thin warm-brown ink outline, soft gouache and watercolor wash, gentle pastel tones, light paper grain only inside the leaf. No pot, no stem base, no text, no border, no drop shadow, not a photo, not a 3D render.",
+    "medias": [
+     {
+      "value": "REF_FAM_halfmoon_greenwhite",
+      "role": "image_references"
+     },
+     {
+      "value": "REF_STYLE_A",
+      "role": "image_references"
+     }
+    ],
+    "background": "transparent"
+   }
+  },
+  {
+   "name": "P2_card_halfmoon_greenwhite_B",
+   "kind": "pilot",
+   "save_as": "assets/illust/cards/_pilot/card_mon_halfmoon_greenwhite_B.png",
+   "used_in": "① 결 고르기 시험 — 결 B",
+   "who": "총괄·박사님(결 고르기) · leaf(검수)",
+   "tool": "generate_image",
+   "params": {
+    "model": "gpt_image_2_5",
+    "variant": "flare",
+    "quality": "high",
+    "resolution": "1k",
+    "aspect_ratio": "1:1",
+    "count": 2,
+    "prompt": "A single Monstera deliciosa mature leaf with deep splits and holes (fenestrations), front view seen straight on (flat, like a pressed specimen), the whole leaf with a short petiole pointing down, centered and filling about 80% of a square frame, isolated on a transparent background. Keep exactly the leaf shape and the variegation pattern and colors of image 1: exactly half clean white and half deep green, divided along the midrib (half-moon variegation). Paint it as a hand-painted pastel low-poly illustration in the style of image 2: broad flat faceted planes like a low-poly model, soft pastel colors, a faint brush texture, no hard highlights. No pot, no stem base, no text, no border, no drop shadow, not a photo, not a 3D render.",
+    "medias": [
+     {
+      "value": "REF_FAM_halfmoon_greenwhite",
+      "role": "image_references"
+     },
+     {
+      "value": "REF_STYLE_B",
+      "role": "image_references"
+     }
+    ],
+    "background": "transparent"
+   }
+  },
+  {
+   "name": "card_mon_speckle_greencream",
+   "kind": "card",
+   "save_as": "assets/illust/cards/card_mon_speckle_greencream.png",
+   "used_in": "도감·카드 — 지금 게임에 자리 없음: 후보 ⓐ 무늬 등급 알림 «✨ N번째 잎 — 등급» 옆 그림 ⓑ 잎·삽수 팔기 확인 시트 ⓒ 앞으로 도감 · 지금 바로 docs/dogam 식물 칸 · 몬스테라 · 산반 · 스페클-그린크림",
+   "who": "plan(자리) · core(그림 걸기) · leaf(docs/dogam)",
+   "tool": "generate_image",
+   "params": {
+    "model": "gpt_image_2_5",
+    "variant": "flare",
+    "quality": "high",
+    "resolution": "1k",
+    "aspect_ratio": "1:1",
+    "count": 2,
+    "prompt": "A single Monstera deliciosa mature leaf with deep splits and holes (fenestrations), front view seen straight on (flat, like a pressed specimen), the whole leaf with a short petiole pointing down, centered and filling about 80% of a square frame, isolated on a transparent background. Keep exactly the leaf shape and the variegation pattern and colors of image 1: green with large irregular cream-white speckled patches and streaks scattered over the whole leaf. Draw it as a 2D hand-drawn storybook illustration in the style of image 2: thin warm-brown ink outline, soft gouache and watercolor wash, gentle pastel tones, light paper grain only inside the leaf. No pot, no stem base, no text, no border, no drop shadow, not a photo, not a 3D render.",
+    "medias": [
+     {
+      "value": "REF_FAM_speckle_greencream",
+      "role": "image_references"
+     },
+     {
+      "value": "REF_STYLE_A",
+      "role": "image_references"
+     }
+    ],
+    "background": "transparent"
+   }
+  },
+  {
+   "name": "card_mon_zebra",
+   "kind": "card",
+   "save_as": "assets/illust/cards/card_mon_zebra.png",
+   "used_in": "도감·카드 — 지금 게임에 자리 없음: 후보 ⓐ 무늬 등급 알림 «✨ N번째 잎 — 등급» 옆 그림 ⓑ 잎·삽수 팔기 확인 시트 ⓒ 앞으로 도감 · 지금 바로 docs/dogam 식물 칸 · 몬스테라 · 산반 · 제브라-그린흰",
+   "who": "plan(자리) · core(그림 걸기) · leaf(docs/dogam)",
+   "tool": "generate_image",
+   "params": {
+    "model": "gpt_image_2_5",
+    "variant": "flare",
+    "quality": "high",
+    "resolution": "1k",
+    "aspect_ratio": "1:1",
+    "count": 2,
+    "prompt": "A single Monstera deliciosa mature leaf with deep splits and holes (fenestrations), front view seen straight on (flat, like a pressed specimen), the whole leaf with a short petiole pointing down, centered and filling about 80% of a square frame, isolated on a transparent background. Keep exactly the leaf shape and the variegation pattern and colors of image 1: dark green with many thin white zebra stripes running from the midrib out to the edge. Draw it as a 2D hand-drawn storybook illustration in the style of image 2: thin warm-brown ink outline, soft gouache and watercolor wash, gentle pastel tones, light paper grain only inside the leaf. No pot, no stem base, no text, no border, no drop shadow, not a photo, not a 3D render.",
+    "medias": [
+     {
+      "value": "REF_FAM_zebra",
+      "role": "image_references"
+     },
+     {
+      "value": "REF_STYLE_A",
+      "role": "image_references"
+     }
+    ],
+    "background": "transparent"
+   }
+  },
+  {
+   "name": "card_mon_star_greenwhite",
+   "kind": "card",
+   "save_as": "assets/illust/cards/card_mon_star_greenwhite.png",
+   "used_in": "도감·카드 — 지금 게임에 자리 없음: 후보 ⓐ 무늬 등급 알림 «✨ N번째 잎 — 등급» 옆 그림 ⓑ 잎·삽수 팔기 확인 시트 ⓒ 앞으로 도감 · 지금 바로 docs/dogam 식물 칸 · 몬스테라 · 산반 · 별무늬-그린흰",
+   "who": "plan(자리) · core(그림 걸기) · leaf(docs/dogam)",
+   "tool": "generate_image",
+   "params": {
+    "model": "gpt_image_2_5",
+    "variant": "flare",
+    "quality": "high",
+    "resolution": "1k",
+    "aspect_ratio": "1:1",
+    "count": 2,
+    "prompt": "A single Monstera deliciosa mature leaf with deep splits and holes (fenestrations), front view seen straight on (flat, like a pressed specimen), the whole leaf with a short petiole pointing down, centered and filling about 80% of a square frame, isolated on a transparent background. Keep exactly the leaf shape and the variegation pattern and colors of image 1: mostly creamy white with green patches along the margins and a few small star-shaped flecks. Draw it as a 2D hand-drawn storybook illustration in the style of image 2: thin warm-brown ink outline, soft gouache and watercolor wash, gentle pastel tones, light paper grain only inside the leaf. No pot, no stem base, no text, no border, no drop shadow, not a photo, not a 3D render.",
+    "medias": [
+     {
+      "value": "REF_FAM_star_greenwhite",
+      "role": "image_references"
+     },
+     {
+      "value": "REF_STYLE_A",
+      "role": "image_references"
+     }
+    ],
+    "background": "transparent"
+   }
+  },
+  {
+   "name": "card_mon_star_greenyellow",
+   "kind": "card",
+   "save_as": "assets/illust/cards/card_mon_star_greenyellow.png",
+   "used_in": "도감·카드 — 지금 게임에 자리 없음: 후보 ⓐ 무늬 등급 알림 «✨ N번째 잎 — 등급» 옆 그림 ⓑ 잎·삽수 팔기 확인 시트 ⓒ 앞으로 도감 · 지금 바로 docs/dogam 식물 칸 · 몬스테라 · 산반 · 별무늬-그린옐로우",
+   "who": "plan(자리) · core(그림 걸기) · leaf(docs/dogam)",
+   "tool": "generate_image",
+   "params": {
+    "model": "gpt_image_2_5",
+    "variant": "flare",
+    "quality": "high",
+    "resolution": "1k",
+    "aspect_ratio": "1:1",
+    "count": 2,
+    "prompt": "A single Monstera deliciosa mature leaf with deep splits and holes (fenestrations), front view seen straight on (flat, like a pressed specimen), the whole leaf with a short petiole pointing down, centered and filling about 80% of a square frame, isolated on a transparent background. Keep exactly the leaf shape and the variegation pattern and colors of image 1: green with cream and golden-yellow streaks and small star-shaped flecks. Draw it as a 2D hand-drawn storybook illustration in the style of image 2: thin warm-brown ink outline, soft gouache and watercolor wash, gentle pastel tones, light paper grain only inside the leaf. No pot, no stem base, no text, no border, no drop shadow, not a photo, not a 3D render.",
+    "medias": [
+     {
+      "value": "REF_FAM_star_greenyellow",
+      "role": "image_references"
+     },
+     {
+      "value": "REF_STYLE_A",
+      "role": "image_references"
+     }
+    ],
+    "background": "transparent"
+   }
+  },
+  {
+   "name": "card_mon_star_palegreen",
+   "kind": "card",
+   "save_as": "assets/illust/cards/card_mon_star_palegreen.png",
+   "used_in": "도감·카드 — 지금 게임에 자리 없음: 후보 ⓐ 무늬 등급 알림 «✨ N번째 잎 — 등급» 옆 그림 ⓑ 잎·삽수 팔기 확인 시트 ⓒ 앞으로 도감 · 지금 바로 docs/dogam 식물 칸 · 몬스테라 · 산반 · 별무늬-페일그린",
+   "who": "plan(자리) · core(그림 걸기) · leaf(docs/dogam)",
+   "tool": "generate_image",
+   "params": {
+    "model": "gpt_image_2_5",
+    "variant": "flare",
+    "quality": "high",
+    "resolution": "1k",
+    "aspect_ratio": "1:1",
+    "count": 2,
+    "prompt": "A single Monstera deliciosa mature leaf with deep splits and holes (fenestrations), front view seen straight on (flat, like a pressed specimen), the whole leaf with a short petiole pointing down, centered and filling about 80% of a square frame, isolated on a transparent background. Keep exactly the leaf shape and the variegation pattern and colors of image 1: soft olive pale green with small cream star-shaped flecks scattered evenly. Draw it as a 2D hand-drawn storybook illustration in the style of image 2: thin warm-brown ink outline, soft gouache and watercolor wash, gentle pastel tones, light paper grain only inside the leaf. No pot, no stem base, no text, no border, no drop shadow, not a photo, not a 3D render.",
+    "medias": [
+     {
+      "value": "REF_FAM_star_palegreen",
+      "role": "image_references"
+     },
+     {
+      "value": "REF_STYLE_A",
+      "role": "image_references"
+     }
+    ],
+    "background": "transparent"
+   }
+  },
+  {
+   "name": "card_mon_green_yellow",
+   "kind": "card",
+   "save_as": "assets/illust/cards/card_mon_green_yellow.png",
+   "used_in": "도감·카드 — 지금 게임에 자리 없음: 후보 ⓐ 무늬 등급 알림 «✨ N번째 잎 — 등급» 옆 그림 ⓑ 잎·삽수 팔기 확인 시트 ⓒ 앞으로 도감 · 지금 바로 docs/dogam 식물 칸 · 몬스테라 · 산반 · 오로레아-그린옐로우",
+   "who": "plan(자리) · core(그림 걸기) · leaf(docs/dogam)",
+   "tool": "generate_image",
+   "params": {
+    "model": "gpt_image_2_5",
+    "variant": "flare",
+    "quality": "high",
+    "resolution": "1k",
+    "aspect_ratio": "1:1",
+    "count": 2,
+    "prompt": "A single Monstera deliciosa mature leaf with deep splits and holes (fenestrations), front view seen straight on (flat, like a pressed specimen), the whole leaf with a short petiole pointing down, centered and filling about 80% of a square frame, isolated on a transparent background. Keep exactly the leaf shape and the variegation pattern and colors of image 1: deep green with bright lime-yellow aurea streaks fanning out from the midrib. Draw it as a 2D hand-drawn storybook illustration in the style of image 2: thin warm-brown ink outline, soft gouache and watercolor wash, gentle pastel tones, light paper grain only inside the leaf. No pot, no stem base, no text, no border, no drop shadow, not a photo, not a 3D render.",
+    "medias": [
+     {
+      "value": "REF_FAM_green_yellow",
+      "role": "image_references"
+     },
+     {
+      "value": "REF_STYLE_A",
+      "role": "image_references"
+     }
+    ],
+    "background": "transparent"
+   }
+  },
+  {
+   "name": "card_mon_green_lemonpatch",
+   "kind": "card",
+   "save_as": "assets/illust/cards/card_mon_green_lemonpatch.png",
+   "used_in": "도감·카드 — 지금 게임에 자리 없음: 후보 ⓐ 무늬 등급 알림 «✨ N번째 잎 — 등급» 옆 그림 ⓑ 잎·삽수 팔기 확인 시트 ⓒ 앞으로 도감 · 지금 바로 docs/dogam 식물 칸 · 몬스테라 · 산반 · 라임-레몬패치",
+   "who": "plan(자리) · core(그림 걸기) · leaf(docs/dogam)",
+   "tool": "generate_image",
+   "params": {
+    "model": "gpt_image_2_5",
+    "variant": "flare",
+    "quality": "high",
+    "resolution": "1k",
+    "aspect_ratio": "1:1",
+    "count": 2,
+    "prompt": "A single Monstera deliciosa mature leaf with deep splits and holes (fenestrations), front view seen straight on (flat, like a pressed specimen), the whole leaf with a short petiole pointing down, centered and filling about 80% of a square frame, isolated on a transparent background. Keep exactly the leaf shape and the variegation pattern and colors of image 1: deep green with one or two lemon-yellow patches near the edge. Draw it as a 2D hand-drawn storybook illustration in the style of image 2: thin warm-brown ink outline, soft gouache and watercolor wash, gentle pastel tones, light paper grain only inside the leaf. No pot, no stem base, no text, no border, no drop shadow, not a photo, not a 3D render.",
+    "medias": [
+     {
+      "value": "REF_FAM_green_lemonpatch",
+      "role": "image_references"
+     },
+     {
+      "value": "REF_STYLE_A",
+      "role": "image_references"
+     }
+    ],
+    "background": "transparent"
+   }
+  },
+  {
+   "name": "card_mon_neon_lime",
+   "kind": "card",
+   "save_as": "assets/illust/cards/card_mon_neon_lime.png",
+   "used_in": "도감·카드 — 지금 게임에 자리 없음: 후보 ⓐ 무늬 등급 알림 «✨ N번째 잎 — 등급» 옆 그림 ⓑ 잎·삽수 팔기 확인 시트 ⓒ 앞으로 도감 · 지금 바로 docs/dogam 식물 칸 · 몬스테라 · 산반 · 네온-라임",
+   "who": "plan(자리) · core(그림 걸기) · leaf(docs/dogam)",
+   "tool": "generate_image",
+   "params": {
+    "model": "gpt_image_2_5",
+    "variant": "flare",
+    "quality": "high",
+    "resolution": "1k",
+    "aspect_ratio": "1:1",
+    "count": 2,
+    "prompt": "A single Monstera deliciosa mature leaf with deep splits and holes (fenestrations), front view seen straight on (flat, like a pressed specimen), the whole leaf with a short petiole pointing down, centered and filling about 80% of a square frame, isolated on a transparent background. Keep exactly the leaf shape and the variegation pattern and colors of image 1: bright neon lime-yellow green all over with slightly darker veins. Draw it as a 2D hand-drawn storybook illustration in the style of image 2: thin warm-brown ink outline, soft gouache and watercolor wash, gentle pastel tones, light paper grain only inside the leaf. No pot, no stem base, no text, no border, no drop shadow, not a photo, not a 3D render.",
+    "medias": [
+     {
+      "value": "REF_FAM_neon_lime",
+      "role": "image_references"
+     },
+     {
+      "value": "REF_STYLE_A",
+      "role": "image_references"
+     }
+    ],
+    "background": "transparent"
+   }
+  },
+  {
+   "name": "card_mon_halfmoon_greenwhite",
+   "kind": "card",
+   "save_as": "assets/illust/cards/card_mon_halfmoon_greenwhite.png",
+   "used_in": "도감·카드 — 지금 게임에 자리 없음: 후보 ⓐ 무늬 등급 알림 «✨ N번째 잎 — 등급» 옆 그림 ⓑ 잎·삽수 팔기 확인 시트 ⓒ 앞으로 도감 · 지금 바로 docs/dogam 식물 칸 · 몬스테라 · 하프문 · 하프문-그린흰",
+   "who": "plan(자리) · core(그림 걸기) · leaf(docs/dogam)",
+   "tool": "generate_image",
+   "params": {
+    "model": "gpt_image_2_5",
+    "variant": "flare",
+    "quality": "high",
+    "resolution": "1k",
+    "aspect_ratio": "1:1",
+    "count": 2,
+    "prompt": "A single Monstera deliciosa mature leaf with deep splits and holes (fenestrations), front view seen straight on (flat, like a pressed specimen), the whole leaf with a short petiole pointing down, centered and filling about 80% of a square frame, isolated on a transparent background. Keep exactly the leaf shape and the variegation pattern and colors of image 1: exactly half clean white and half deep green, divided along the midrib (half-moon variegation). Draw it as a 2D hand-drawn storybook illustration in the style of image 2: thin warm-brown ink outline, soft gouache and watercolor wash, gentle pastel tones, light paper grain only inside the leaf. No pot, no stem base, no text, no border, no drop shadow, not a photo, not a 3D render.",
+    "medias": [
+     {
+      "value": "REF_FAM_halfmoon_greenwhite",
+      "role": "image_references"
+     },
+     {
+      "value": "REF_STYLE_A",
+      "role": "image_references"
+     }
+    ],
+    "background": "transparent"
+   }
+  },
+  {
+   "name": "card_mon_halfmoon_greencream",
+   "kind": "card",
+   "save_as": "assets/illust/cards/card_mon_halfmoon_greencream.png",
+   "used_in": "도감·카드 — 지금 게임에 자리 없음: 후보 ⓐ 무늬 등급 알림 «✨ N번째 잎 — 등급» 옆 그림 ⓑ 잎·삽수 팔기 확인 시트 ⓒ 앞으로 도감 · 지금 바로 docs/dogam 식물 칸 · 몬스테라 · 하프문 · 하프문-그린크림",
+   "who": "plan(자리) · core(그림 걸기) · leaf(docs/dogam)",
+   "tool": "generate_image",
+   "params": {
+    "model": "gpt_image_2_5",
+    "variant": "flare",
+    "quality": "high",
+    "resolution": "1k",
+    "aspect_ratio": "1:1",
+    "count": 2,
+    "prompt": "A single Monstera deliciosa mature leaf with deep splits and holes (fenestrations), front view seen straight on (flat, like a pressed specimen), the whole leaf with a short petiole pointing down, centered and filling about 80% of a square frame, isolated on a transparent background. Keep exactly the leaf shape and the variegation pattern and colors of image 1: exactly half creamy white and half deep green, divided along the midrib (half-moon variegation). Draw it as a 2D hand-drawn storybook illustration in the style of image 2: thin warm-brown ink outline, soft gouache and watercolor wash, gentle pastel tones, light paper grain only inside the leaf. No pot, no stem base, no text, no border, no drop shadow, not a photo, not a 3D render.",
+    "medias": [
+     {
+      "value": "REF_FAM_halfmoon_greencream",
+      "role": "image_references"
+     },
+     {
+      "value": "REF_STYLE_A",
+      "role": "image_references"
+     }
+    ],
+    "background": "transparent"
+   }
+  },
+  {
+   "name": "card_mon_galaxy_tealgold",
+   "kind": "card",
+   "save_as": "assets/illust/cards/card_mon_galaxy_tealgold.png",
+   "used_in": "도감·카드 — 지금 게임에 자리 없음: 후보 ⓐ 무늬 등급 알림 «✨ N번째 잎 — 등급» 옆 그림 ⓑ 잎·삽수 팔기 확인 시트 ⓒ 앞으로 도감 · 지금 바로 docs/dogam 식물 칸 · 몬스테라 · 하프문 · 갤럭시-틸골드",
+   "who": "plan(자리) · core(그림 걸기) · leaf(docs/dogam)",
+   "tool": "generate_image",
+   "params": {
+    "model": "gpt_image_2_5",
+    "variant": "flare",
+    "quality": "high",
+    "resolution": "1k",
+    "aspect_ratio": "1:1",
+    "count": 2,
+    "prompt": "A single Monstera deliciosa mature leaf with deep splits and holes (fenestrations), front view seen straight on (flat, like a pressed specimen), the whole leaf with a short petiole pointing down, centered and filling about 80% of a square frame, isolated on a transparent background. Keep exactly the leaf shape and the variegation pattern and colors of image 1: deep teal green with fine golden veins and tiny gold specks like a starry sky. Draw it as a 2D hand-drawn storybook illustration in the style of image 2: thin warm-brown ink outline, soft gouache and watercolor wash, gentle pastel tones, light paper grain only inside the leaf. No pot, no stem base, no text, no border, no drop shadow, not a photo, not a 3D render.",
+    "medias": [
+     {
+      "value": "REF_FAM_galaxy_tealgold",
+      "role": "image_references"
+     },
+     {
+      "value": "REF_STYLE_A",
+      "role": "image_references"
+     }
+    ],
+    "background": "transparent"
+   }
+  },
+  {
+   "name": "card_mon_galaxy_darkteal",
+   "kind": "card",
+   "save_as": "assets/illust/cards/card_mon_galaxy_darkteal.png",
+   "used_in": "도감·카드 — 지금 게임에 자리 없음: 후보 ⓐ 무늬 등급 알림 «✨ N번째 잎 — 등급» 옆 그림 ⓑ 잎·삽수 팔기 확인 시트 ⓒ 앞으로 도감 · 지금 바로 docs/dogam 식물 칸 · 몬스테라 · 하프문 · 갤럭시-다크틸",
+   "who": "plan(자리) · core(그림 걸기) · leaf(docs/dogam)",
+   "tool": "generate_image",
+   "params": {
+    "model": "gpt_image_2_5",
+    "variant": "flare",
+    "quality": "high",
+    "resolution": "1k",
+    "aspect_ratio": "1:1",
+    "count": 2,
+    "prompt": "A single Monstera deliciosa mature leaf with deep splits and holes (fenestrations), front view seen straight on (flat, like a pressed specimen), the whole leaf with a short petiole pointing down, centered and filling about 80% of a square frame, isolated on a transparent background. Keep exactly the leaf shape and the variegation pattern and colors of image 1: very dark teal with tiny cream star specks like a galaxy, veins and splits still clearly readable. Draw it as a 2D hand-drawn storybook illustration in the style of image 2: thin warm-brown ink outline, soft gouache and watercolor wash, gentle pastel tones, light paper grain only inside the leaf. No pot, no stem base, no text, no border, no drop shadow, not a photo, not a 3D render.",
+    "medias": [
+     {
+      "value": "REF_FAM_galaxy_darkteal",
+      "role": "image_references"
+     },
+     {
+      "value": "REF_STYLE_A",
+      "role": "image_references"
+     }
+    ],
+    "background": "transparent"
+   }
+  },
+  {
+   "name": "card_mon_star_pinkmint",
+   "kind": "card",
+   "save_as": "assets/illust/cards/card_mon_star_pinkmint.png",
+   "used_in": "도감·카드 — 지금 게임에 자리 없음: 후보 ⓐ 무늬 등급 알림 «✨ N번째 잎 — 등급» 옆 그림 ⓑ 잎·삽수 팔기 확인 시트 ⓒ 앞으로 도감 · 지금 바로 docs/dogam 식물 칸 · 몬스테라 · 하프문 · 별무늬-핑크민트",
+   "who": "plan(자리) · core(그림 걸기) · leaf(docs/dogam)",
+   "tool": "generate_image",
+   "params": {
+    "model": "gpt_image_2_5",
+    "variant": "flare",
+    "quality": "high",
+    "resolution": "1k",
+    "aspect_ratio": "1:1",
+    "count": 2,
+    "prompt": "A single Monstera deliciosa mature leaf with deep splits and holes (fenestrations), front view seen straight on (flat, like a pressed specimen), the whole leaf with a short petiole pointing down, centered and filling about 80% of a square frame, isolated on a transparent background. Keep exactly the leaf shape and the variegation pattern and colors of image 1: half pink-white and half mint green split along the midrib, with small white star-shaped flecks. Draw it as a 2D hand-drawn storybook illustration in the style of image 2: thin warm-brown ink outline, soft gouache and watercolor wash, gentle pastel tones, light paper grain only inside the leaf. No pot, no stem base, no text, no border, no drop shadow, not a photo, not a 3D render.",
+    "medias": [
+     {
+      "value": "REF_FAM_star_pinkmint",
+      "role": "image_references"
+     },
+     {
+      "value": "REF_STYLE_A",
+      "role": "image_references"
+     }
+    ],
+    "background": "transparent"
+   }
+  },
+  {
+   "name": "card_mon_variegata_pink",
+   "kind": "card",
+   "save_as": "assets/illust/cards/card_mon_variegata_pink.png",
+   "used_in": "도감·카드 — 지금 게임에 자리 없음: 후보 ⓐ 무늬 등급 알림 «✨ N번째 잎 — 등급» 옆 그림 ⓑ 잎·삽수 팔기 확인 시트 ⓒ 앞으로 도감 · 지금 바로 docs/dogam 식물 칸 · 몬스테라 · 풀문 · 핑크-로즈핑크",
+   "who": "plan(자리) · core(그림 걸기) · leaf(docs/dogam)",
+   "tool": "generate_image",
+   "params": {
+    "model": "gpt_image_2_5",
+    "variant": "flare",
+    "quality": "high",
+    "resolution": "1k",
+    "aspect_ratio": "1:1",
+    "count": 2,
+    "prompt": "A single Monstera deliciosa mature leaf with deep splits and holes (fenestrations), front view seen straight on (flat, like a pressed specimen), the whole leaf with a short petiole pointing down, centered and filling about 80% of a square frame, isolated on a transparent background. Keep exactly the leaf shape and the variegation pattern and colors of image 1: dusty rose-pink leaf with a few dark green streaks along the veins. Draw it as a 2D hand-drawn storybook illustration in the style of image 2: thin warm-brown ink outline, soft gouache and watercolor wash, gentle pastel tones, light paper grain only inside the leaf. No pot, no stem base, no text, no border, no drop shadow, not a photo, not a 3D render.",
+    "medias": [
+     {
+      "value": "REF_FAM_variegata_pink",
+      "role": "image_references"
+     },
+     {
+      "value": "REF_STYLE_A",
+      "role": "image_references"
+     }
+    ],
+    "background": "transparent"
+   }
+  },
+  {
+   "name": "card_mon_variegata_gold",
+   "kind": "card",
+   "save_as": "assets/illust/cards/card_mon_variegata_gold.png",
+   "used_in": "도감·카드 — 지금 게임에 자리 없음: 후보 ⓐ 무늬 등급 알림 «✨ N번째 잎 — 등급» 옆 그림 ⓑ 잎·삽수 팔기 확인 시트 ⓒ 앞으로 도감 · 지금 바로 docs/dogam 식물 칸 · 몬스테라 · 풀문 · 오로레아-골드",
+   "who": "plan(자리) · core(그림 걸기) · leaf(docs/dogam)",
+   "tool": "generate_image",
+   "params": {
+    "model": "gpt_image_2_5",
+    "variant": "flare",
+    "quality": "high",
+    "resolution": "1k",
+    "aspect_ratio": "1:1",
+    "count": 2,
+    "prompt": "A single Monstera deliciosa mature leaf with deep splits and holes (fenestrations), front view seen straight on (flat, like a pressed specimen), the whole leaf with a short petiole pointing down, centered and filling about 80% of a square frame, isolated on a transparent background. Keep exactly the leaf shape and the variegation pattern and colors of image 1: large golden-orange aurea sectors covering about half the leaf, the rest deep green. Draw it as a 2D hand-drawn storybook illustration in the style of image 2: thin warm-brown ink outline, soft gouache and watercolor wash, gentle pastel tones, light paper grain only inside the leaf. No pot, no stem base, no text, no border, no drop shadow, not a photo, not a 3D render.",
+    "medias": [
+     {
+      "value": "REF_FAM_variegata_gold",
+      "role": "image_references"
+     },
+     {
+      "value": "REF_STYLE_A",
+      "role": "image_references"
+     }
+    ],
+    "background": "transparent"
+   }
+  },
+  {
+   "name": "card_mon_rose_pink",
+   "kind": "card",
+   "save_as": "assets/illust/cards/card_mon_rose_pink.png",
+   "used_in": "도감·카드 — 지금 게임에 자리 없음: 후보 ⓐ 무늬 등급 알림 «✨ N번째 잎 — 등급» 옆 그림 ⓑ 잎·삽수 팔기 확인 시트 ⓒ 앞으로 도감 · 지금 바로 docs/dogam 식물 칸 · 몬스테라 · 풀문 · 핑크-로즈",
+   "who": "plan(자리) · core(그림 걸기) · leaf(docs/dogam)",
+   "tool": "generate_image",
+   "params": {
+    "model": "gpt_image_2_5",
+    "variant": "flare",
+    "quality": "high",
+    "resolution": "1k",
+    "aspect_ratio": "1:1",
+    "count": 2,
+    "prompt": "A single Monstera deliciosa mature leaf with deep splits and holes (fenestrations), front view seen straight on (flat, like a pressed specimen), the whole leaf with a short petiole pointing down, centered and filling about 80% of a square frame, isolated on a transparent background. Keep exactly the leaf shape and the variegation pattern and colors of image 1: coral rose-pink all over with pale pink veins and small light star-shaped flecks. Draw it as a 2D hand-drawn storybook illustration in the style of image 2: thin warm-brown ink outline, soft gouache and watercolor wash, gentle pastel tones, light paper grain only inside the leaf. No pot, no stem base, no text, no border, no drop shadow, not a photo, not a 3D render.",
+    "medias": [
+     {
+      "value": "REF_FAM_rose_pink",
+      "role": "image_references"
+     },
+     {
+      "value": "REF_STYLE_A",
+      "role": "image_references"
+     }
+    ],
+    "background": "transparent"
+   }
+  },
+  {
+   "name": "card_mon_mauve",
+   "kind": "card",
+   "save_as": "assets/illust/cards/card_mon_mauve.png",
+   "used_in": "도감·카드 — 지금 게임에 자리 없음: 후보 ⓐ 무늬 등급 알림 «✨ N번째 잎 — 등급» 옆 그림 ⓑ 잎·삽수 팔기 확인 시트 ⓒ 앞으로 도감 · 지금 바로 docs/dogam 식물 칸 · 몬스테라 · 풀문 · 모브-라벤더그레이",
+   "who": "plan(자리) · core(그림 걸기) · leaf(docs/dogam)",
+   "tool": "generate_image",
+   "params": {
+    "model": "gpt_image_2_5",
+    "variant": "flare",
+    "quality": "high",
+    "resolution": "1k",
+    "aspect_ratio": "1:1",
+    "count": 2,
+    "prompt": "A single Monstera deliciosa mature leaf with deep splits and holes (fenestrations), front view seen straight on (flat, like a pressed specimen), the whole leaf with a short petiole pointing down, centered and filling about 80% of a square frame, isolated on a transparent background. Keep exactly the leaf shape and the variegation pattern and colors of image 1: muted mauve lavender-grey all over, darker purple-grey toward one side. Draw it as a 2D hand-drawn storybook illustration in the style of image 2: thin warm-brown ink outline, soft gouache and watercolor wash, gentle pastel tones, light paper grain only inside the leaf. No pot, no stem base, no text, no border, no drop shadow, not a photo, not a 3D render.",
+    "medias": [
+     {
+      "value": "REF_FAM_mauve",
+      "role": "image_references"
+     },
+     {
+      "value": "REF_STYLE_A",
+      "role": "image_references"
+     }
+    ],
+    "background": "transparent"
+   }
+  },
+  {
+   "name": "card_mon_fullalbo",
+   "kind": "card",
+   "save_as": "assets/illust/cards/card_mon_fullalbo.png",
+   "used_in": "도감·카드 — 지금 게임에 자리 없음: 후보 ⓐ 무늬 등급 알림 «✨ N번째 잎 — 등급» 옆 그림 ⓑ 잎·삽수 팔기 확인 시트 ⓒ 앞으로 도감 · 지금 바로 docs/dogam 식물 칸 · 몬스테라 · 풀문 · 알보-전체흰",
+   "who": "plan(자리) · core(그림 걸기) · leaf(docs/dogam)",
+   "tool": "generate_image",
+   "params": {
+    "model": "gpt_image_2_5",
+    "variant": "flare",
+    "quality": "high",
+    "resolution": "1k",
+    "aspect_ratio": "1:1",
+    "count": 2,
+    "prompt": "A single Monstera deliciosa mature leaf with deep splits and holes (fenestrations), front view seen straight on (flat, like a pressed specimen), the whole leaf with a short petiole pointing down, centered and filling about 80% of a square frame, isolated on a transparent background. Keep exactly the leaf shape and the variegation pattern and colors of image 1: almost entirely clean cool white (NOT beige, NOT yellow) with faint pale green veins and a thin green midrib. Draw it as a 2D hand-drawn storybook illustration in the style of image 2: thin warm-brown ink outline, soft gouache and watercolor wash, gentle pastel tones, light paper grain only inside the leaf. No pot, no stem base, no text, no border, no drop shadow, not a photo, not a 3D render.",
+    "medias": [
+     {
+      "value": "REF_FAM_fullalbo",
+      "role": "image_references"
+     },
+     {
+      "value": "REF_STYLE_A",
+      "role": "image_references"
+     }
+    ],
+    "background": "transparent"
+   }
+  },
+  {
+   "name": "card_mon_charcoal",
+   "kind": "card",
+   "save_as": "assets/illust/cards/card_mon_charcoal.png",
+   "used_in": "도감·카드 — 지금 게임에 자리 없음: 후보 ⓐ 무늬 등급 알림 «✨ N번째 잎 — 등급» 옆 그림 ⓑ 잎·삽수 팔기 확인 시트 ⓒ 앞으로 도감 · 지금 바로 docs/dogam 식물 칸 · 몬스테라 · 풀문 · 차콜-다크그린",
+   "who": "plan(자리) · core(그림 걸기) · leaf(docs/dogam)",
+   "tool": "generate_image",
+   "params": {
+    "model": "gpt_image_2_5",
+    "variant": "flare",
+    "quality": "high",
+    "resolution": "1k",
+    "aspect_ratio": "1:1",
+    "count": 2,
+    "prompt": "A single Monstera deliciosa mature leaf with deep splits and holes (fenestrations), front view seen straight on (flat, like a pressed specimen), the whole leaf with a short petiole pointing down, centered and filling about 80% of a square frame, isolated on a transparent background. Keep exactly the leaf shape and the variegation pattern and colors of image 1: very dark charcoal green, but the lighter veins and every split and hole stay clearly readable - it must not become a black silhouette. Draw it as a 2D hand-drawn storybook illustration in the style of image 2: thin warm-brown ink outline, soft gouache and watercolor wash, gentle pastel tones, light paper grain only inside the leaf. No pot, no stem base, no text, no border, no drop shadow, not a photo, not a 3D render.",
+    "medias": [
+     {
+      "value": "REF_FAM_charcoal",
+      "role": "image_references"
+     },
+     {
+      "value": "REF_STYLE_A",
+      "role": "image_references"
+     }
+    ],
+    "background": "transparent"
+   }
+  },
+  {
+   "name": "card_mon_plain",
+   "kind": "card",
+   "save_as": "assets/illust/cards/card_mon_plain.png",
+   "used_in": "도감·카드 — 지금 게임에 자리 없음: 후보 ⓐ 무늬 등급 알림 «✨ N번째 잎 — 등급» 옆 그림 ⓑ 잎·삽수 팔기 확인 시트 ⓒ 앞으로 도감 · 지금 바로 docs/dogam 식물 칸 · 몬스테라 · 무지",
+   "who": "plan(자리) · core(그림 걸기) · leaf(docs/dogam)",
+   "tool": "generate_image",
+   "params": {
+    "model": "gpt_image_2_5",
+    "variant": "flare",
+    "quality": "high",
+    "resolution": "1k",
+    "aspect_ratio": "1:1",
+    "count": 2,
+    "prompt": "A single Monstera deliciosa mature leaf with deep splits and holes (fenestrations), front view seen straight on (flat, like a pressed specimen), the whole leaf with a short petiole pointing down, centered and filling about 80% of a square frame, isolated on a transparent background. Keep exactly the leaf shape and the variegation pattern and colors of image 1: plain healthy deep green with no variegation. Draw it as a 2D hand-drawn storybook illustration in the style of image 2: thin warm-brown ink outline, soft gouache and watercolor wash, gentle pastel tones, light paper grain only inside the leaf. No pot, no stem base, no text, no border, no drop shadow, not a photo, not a 3D render.",
+    "medias": [
+     {
+      "value": "REF_FAM_plain",
+      "role": "image_references"
+     },
+     {
+      "value": "REF_STYLE_A",
+      "role": "image_references"
+     }
+    ],
+    "background": "transparent"
+   }
+  },
+  {
+   "name": "card_pp_green",
+   "kind": "card",
+   "save_as": "assets/illust/cards/card_pp_green.png",
+   "used_in": "도감·카드 — 지금 게임에 자리 없음: 후보 ⓐ 무늬 등급 알림 «✨ N번째 잎 — 등급» 옆 그림 ⓑ 잎·삽수 팔기 확인 시트 ⓒ 앞으로 도감 · 지금 바로 docs/dogam 식물 칸 · 핑크프린세스 · 무지",
+   "who": "plan(자리) · core(그림 걸기) · leaf(docs/dogam)",
+   "tool": "generate_image",
+   "params": {
+    "model": "gpt_image_2_5",
+    "variant": "flare",
+    "quality": "high",
+    "resolution": "1k",
+    "aspect_ratio": "1:1",
+    "count": 2,
+    "prompt": "A single Philodendron 'Pink Princess' heart-shaped leaf, front view seen straight on (flat, like a pressed specimen), the whole leaf with a short petiole pointing down, centered and filling about 80% of a square frame, isolated on a transparent background. Keep exactly the leaf shape and the variegation pattern and colors of image 1: very dark burgundy green with no pink, the veins still readable - not a black silhouette. Draw it as a 2D hand-drawn storybook illustration in the style of image 2: thin warm-brown ink outline, soft gouache and watercolor wash, gentle pastel tones, light paper grain only inside the leaf. No pot, no stem base, no text, no border, no drop shadow, not a photo, not a 3D render.",
+    "medias": [
+     {
+      "value": "REF_FAM_pp_green",
+      "role": "image_references"
+     },
+     {
+      "value": "REF_STYLE_A",
+      "role": "image_references"
+     }
+    ],
+    "background": "transparent"
+   }
+  },
+  {
+   "name": "card_pp_marble",
+   "kind": "card",
+   "save_as": "assets/illust/cards/card_pp_marble.png",
+   "used_in": "도감·카드 — 지금 게임에 자리 없음: 후보 ⓐ 무늬 등급 알림 «✨ N번째 잎 — 등급» 옆 그림 ⓑ 잎·삽수 팔기 확인 시트 ⓒ 앞으로 도감 · 지금 바로 docs/dogam 식물 칸 · 핑크프린세스 · 산반",
+   "who": "plan(자리) · core(그림 걸기) · leaf(docs/dogam)",
+   "tool": "generate_image",
+   "params": {
+    "model": "gpt_image_2_5",
+    "variant": "flare",
+    "quality": "high",
+    "resolution": "1k",
+    "aspect_ratio": "1:1",
+    "count": 2,
+    "prompt": "A single Philodendron 'Pink Princess' heart-shaped leaf, front view seen straight on (flat, like a pressed specimen), the whole leaf with a short petiole pointing down, centered and filling about 80% of a square frame, isolated on a transparent background. Keep exactly the leaf shape and the variegation pattern and colors of image 1: dark green with soft bubblegum-pink marbled flecks and brush streaks. Draw it as a 2D hand-drawn storybook illustration in the style of image 2: thin warm-brown ink outline, soft gouache and watercolor wash, gentle pastel tones, light paper grain only inside the leaf. No pot, no stem base, no text, no border, no drop shadow, not a photo, not a 3D render.",
+    "medias": [
+     {
+      "value": "REF_FAM_pp_marble",
+      "role": "image_references"
+     },
+     {
+      "value": "REF_STYLE_A",
+      "role": "image_references"
+     }
+    ],
+    "background": "transparent"
+   }
+  },
+  {
+   "name": "card_pp_heavy",
+   "kind": "card",
+   "save_as": "assets/illust/cards/card_pp_heavy.png",
+   "used_in": "도감·카드 — 지금 게임에 자리 없음: 후보 ⓐ 무늬 등급 알림 «✨ N번째 잎 — 등급» 옆 그림 ⓑ 잎·삽수 팔기 확인 시트 ⓒ 앞으로 도감 · 지금 바로 docs/dogam 식물 칸 · 핑크프린세스 · 하프문",
+   "who": "plan(자리) · core(그림 걸기) · leaf(docs/dogam)",
+   "tool": "generate_image",
+   "params": {
+    "model": "gpt_image_2_5",
+    "variant": "flare",
+    "quality": "high",
+    "resolution": "1k",
+    "aspect_ratio": "1:1",
+    "count": 2,
+    "prompt": "A single Philodendron 'Pink Princess' heart-shaped leaf, front view seen straight on (flat, like a pressed specimen), the whole leaf with a short petiole pointing down, centered and filling about 80% of a square frame, isolated on a transparent background. Keep exactly the leaf shape and the variegation pattern and colors of image 1: large bubblegum-pink sectors covering most of the leaf, the rest dark green. Draw it as a 2D hand-drawn storybook illustration in the style of image 2: thin warm-brown ink outline, soft gouache and watercolor wash, gentle pastel tones, light paper grain only inside the leaf. No pot, no stem base, no text, no border, no drop shadow, not a photo, not a 3D render.",
+    "medias": [
+     {
+      "value": "REF_FAM_pp_heavy",
+      "role": "image_references"
+     },
+     {
+      "value": "REF_STYLE_A",
+      "role": "image_references"
+     }
+    ],
+    "background": "transparent"
+   }
+  },
+  {
+   "name": "card_pp_pink",
+   "kind": "card",
+   "save_as": "assets/illust/cards/card_pp_pink.png",
+   "used_in": "도감·카드 — 지금 게임에 자리 없음: 후보 ⓐ 무늬 등급 알림 «✨ N번째 잎 — 등급» 옆 그림 ⓑ 잎·삽수 팔기 확인 시트 ⓒ 앞으로 도감 · 지금 바로 docs/dogam 식물 칸 · 핑크프린세스 · 분홍 잎",
+   "who": "plan(자리) · core(그림 걸기) · leaf(docs/dogam)",
+   "tool": "generate_image",
+   "params": {
+    "model": "gpt_image_2_5",
+    "variant": "flare",
+    "quality": "high",
+    "resolution": "1k",
+    "aspect_ratio": "1:1",
+    "count": 2,
+    "prompt": "A single Philodendron 'Pink Princess' heart-shaped leaf, front view seen straight on (flat, like a pressed specimen), the whole leaf with a short petiole pointing down, centered and filling about 80% of a square frame, isolated on a transparent background. Keep exactly the leaf shape and the variegation pattern and colors of image 1: entirely soft bubblegum pink with slightly deeper pink veins, no green. Draw it as a 2D hand-drawn storybook illustration in the style of image 2: thin warm-brown ink outline, soft gouache and watercolor wash, gentle pastel tones, light paper grain only inside the leaf. No pot, no stem base, no text, no border, no drop shadow, not a photo, not a 3D render.",
+    "medias": [
+     {
+      "value": "REF_FAM_pp_pink",
+      "role": "image_references"
+     },
+     {
+      "value": "REF_STYLE_A",
+      "role": "image_references"
+     }
+    ],
+    "background": "transparent"
+   }
+  },
+  {
+   "name": "card_al_plain",
+   "kind": "card",
+   "save_as": "assets/illust/cards/card_al_plain.png",
+   "used_in": "도감·카드 — 지금 게임에 자리 없음: 후보 ⓐ 무늬 등급 알림 «✨ N번째 잎 — 등급» 옆 그림 ⓑ 잎·삽수 팔기 확인 시트 ⓒ 앞으로 도감 · 지금 바로 docs/dogam 식물 칸 · 알로카시아 프라이덱 · 무지",
+   "who": "plan(자리) · core(그림 걸기) · leaf(docs/dogam)",
+   "tool": "generate_image",
+   "params": {
+    "model": "gpt_image_2_5",
+    "variant": "flare",
+    "quality": "high",
+    "resolution": "1k",
+    "aspect_ratio": "1:1",
+    "count": 2,
+    "prompt": "A single Alocasia 'Frydek' velvety arrowhead-shaped leaf with bold white veins, front view seen straight on (flat, like a pressed specimen), the whole leaf with a short petiole pointing down, centered and filling about 80% of a square frame, isolated on a transparent background. Keep exactly the leaf shape and the variegation pattern and colors of image 1: deep velvety green with bold clean white veins. Draw it as a 2D hand-drawn storybook illustration in the style of image 2: thin warm-brown ink outline, soft gouache and watercolor wash, gentle pastel tones, light paper grain only inside the leaf. No pot, no stem base, no text, no border, no drop shadow, not a photo, not a 3D render.",
+    "medias": [
+     {
+      "value": "REF_FAM_al_plain",
+      "role": "image_references"
+     },
+     {
+      "value": "REF_STYLE_A",
+      "role": "image_references"
+     }
+    ],
+    "background": "transparent"
+   }
+  },
+  {
+   "name": "card_al_marble",
+   "kind": "card",
+   "save_as": "assets/illust/cards/card_al_marble.png",
+   "used_in": "도감·카드 — 지금 게임에 자리 없음: 후보 ⓐ 무늬 등급 알림 «✨ N번째 잎 — 등급» 옆 그림 ⓑ 잎·삽수 팔기 확인 시트 ⓒ 앞으로 도감 · 지금 바로 docs/dogam 식물 칸 · 알로카시아 프라이덱 · 산반",
+   "who": "plan(자리) · core(그림 걸기) · leaf(docs/dogam)",
+   "tool": "generate_image",
+   "params": {
+    "model": "gpt_image_2_5",
+    "variant": "flare",
+    "quality": "high",
+    "resolution": "1k",
+    "aspect_ratio": "1:1",
+    "count": 2,
+    "prompt": "A single Alocasia 'Frydek' velvety arrowhead-shaped leaf with bold white veins, front view seen straight on (flat, like a pressed specimen), the whole leaf with a short petiole pointing down, centered and filling about 80% of a square frame, isolated on a transparent background. Keep exactly the leaf shape and the variegation pattern and colors of image 1: deep velvety green with soft cream marbling between the white veins. Draw it as a 2D hand-drawn storybook illustration in the style of image 2: thin warm-brown ink outline, soft gouache and watercolor wash, gentle pastel tones, light paper grain only inside the leaf. No pot, no stem base, no text, no border, no drop shadow, not a photo, not a 3D render.",
+    "medias": [
+     {
+      "value": "REF_FAM_al_marble",
+      "role": "image_references"
+     },
+     {
+      "value": "REF_STYLE_A",
+      "role": "image_references"
+     }
+    ],
+    "background": "transparent"
+   }
+  },
+  {
+   "name": "card_al_sector",
+   "kind": "card",
+   "save_as": "assets/illust/cards/card_al_sector.png",
+   "used_in": "도감·카드 — 지금 게임에 자리 없음: 후보 ⓐ 무늬 등급 알림 «✨ N번째 잎 — 등급» 옆 그림 ⓑ 잎·삽수 팔기 확인 시트 ⓒ 앞으로 도감 · 지금 바로 docs/dogam 식물 칸 · 알로카시아 프라이덱 · 하프문",
+   "who": "plan(자리) · core(그림 걸기) · leaf(docs/dogam)",
+   "tool": "generate_image",
+   "params": {
+    "model": "gpt_image_2_5",
+    "variant": "flare",
+    "quality": "high",
+    "resolution": "1k",
+    "aspect_ratio": "1:1",
+    "count": 2,
+    "prompt": "A single Alocasia 'Frydek' velvety arrowhead-shaped leaf with bold white veins, front view seen straight on (flat, like a pressed specimen), the whole leaf with a short petiole pointing down, centered and filling about 80% of a square frame, isolated on a transparent background. Keep exactly the leaf shape and the variegation pattern and colors of image 1: one large clean cream sector covering about half the leaf, the rest deep velvety green with white veins. Draw it as a 2D hand-drawn storybook illustration in the style of image 2: thin warm-brown ink outline, soft gouache and watercolor wash, gentle pastel tones, light paper grain only inside the leaf. No pot, no stem base, no text, no border, no drop shadow, not a photo, not a 3D render.",
+    "medias": [
+     {
+      "value": "REF_FAM_al_sector",
+      "role": "image_references"
+     },
+     {
+      "value": "REF_STYLE_A",
+      "role": "image_references"
+     }
+    ],
+    "background": "transparent"
+   }
+  },
+  {
+   "name": "SC1",
+   "kind": "species_leaf",
+   "save_as": "assets/raw/plants/scindapsus/SC1.png",
+   "used_in": "② 스킨답서스 · 어린잎(밑 모양) — Meshy image_to_3d 입력(나중 · Meshy 461 안에서 · growth 의 덩굴/로제트 규칙 뒤)",
+   "who": "leaf(3D 로 · 잇기) · growth(종 프로필)",
+   "tool": "generate_image",
+   "params": {
+    "model": "gpt_image_2_5",
+    "variant": "flare",
+    "quality": "high",
+    "resolution": "1k",
+    "aspect_ratio": "1:1",
+    "count": 2,
+    "prompt": "A single Epipremnum aureum (scindapsus / pothos) heart-shaped leaf with a slightly asymmetric pointed tip with its petiole, isolated on a plain pure white background, 3/4 view, petiole pointing down, the whole leaf visible and centered, a small young leaf just unrolled, fresh light green, plain, no variegation. Pastel low-poly 3D game asset style like images 1 and 2: broad flat faceted planes, soft pastel colors, soft even light. One leaf only. No pot, no shadow, no text.",
+    "medias": [
+     {
+      "value": "REF_STYLE_B",
+      "role": "image_references"
+     },
+     {
+      "value": "REF_STYLE_B2",
+      "role": "image_references"
+     }
+    ],
+    "background": "opaque"
+   }
+  },
+  {
+   "name": "SC2",
+   "kind": "species_leaf",
+   "save_as": "assets/raw/plants/scindapsus/SC2.png",
+   "used_in": "② 스킨답서스 · 중간잎(밑 모양) — Meshy image_to_3d 입력(나중 · Meshy 461 안에서 · growth 의 덩굴/로제트 규칙 뒤)",
+   "who": "leaf(3D 로 · 잇기) · growth(종 프로필)",
+   "tool": "generate_image",
+   "params": {
+    "model": "gpt_image_2_5",
+    "variant": "flare",
+    "quality": "high",
+    "resolution": "1k",
+    "aspect_ratio": "1:1",
+    "count": 2,
+    "prompt": "A single Epipremnum aureum (scindapsus / pothos) heart-shaped leaf with a slightly asymmetric pointed tip with its petiole, isolated on a plain pure white background, 3/4 view, petiole pointing down, the whole leaf visible and centered, a half-grown leaf, glossy medium green, plain, no variegation. Pastel low-poly 3D game asset style like images 1 and 2: broad flat faceted planes, soft pastel colors, soft even light. One leaf only. No pot, no shadow, no text.",
+    "medias": [
+     {
+      "value": "REF_STYLE_B",
+      "role": "image_references"
+     },
+     {
+      "value": "REF_STYLE_B2",
+      "role": "image_references"
+     }
+    ],
+    "background": "opaque"
+   }
+  },
+  {
+   "name": "SC3",
+   "kind": "species_leaf",
+   "save_as": "assets/raw/plants/scindapsus/SC3.png",
+   "used_in": "② 스킨답서스 · 성숙잎(밑 모양) — Meshy image_to_3d 입력(나중 · Meshy 461 안에서 · growth 의 덩굴/로제트 규칙 뒤)",
+   "who": "leaf(3D 로 · 잇기) · growth(종 프로필)",
+   "tool": "generate_image",
+   "params": {
+    "model": "gpt_image_2_5",
+    "variant": "flare",
+    "quality": "high",
+    "resolution": "1k",
+    "aspect_ratio": "1:1",
+    "count": 2,
+    "prompt": "A single Epipremnum aureum (scindapsus / pothos) heart-shaped leaf with a slightly asymmetric pointed tip with its petiole, isolated on a plain pure white background, 3/4 view, petiole pointing down, the whole leaf visible and centered, a fully grown leaf, gently curved, glossy medium green, plain, no variegation. Pastel low-poly 3D game asset style like images 1 and 2: broad flat faceted planes, soft pastel colors, soft even light. One leaf only. No pot, no shadow, no text.",
+    "medias": [
+     {
+      "value": "REF_STYLE_B",
+      "role": "image_references"
+     },
+     {
+      "value": "REF_STYLE_B2",
+      "role": "image_references"
+     }
+    ],
+    "background": "opaque"
+   }
+  },
+  {
+   "name": "SC4",
+   "kind": "species_leaf",
+   "save_as": "assets/raw/plants/scindapsus/SC4.png",
+   "used_in": "② 스킨답서스 · 성숙 · 무늬 마블퀸 — Meshy image_to_3d 입력(나중 · Meshy 461 안에서 · growth 의 덩굴/로제트 규칙 뒤)",
+   "who": "leaf(3D 로 · 잇기) · growth(종 프로필)",
+   "tool": "generate_image",
+   "params": {
+    "model": "gpt_image_2_5",
+    "variant": "flare",
+    "quality": "high",
+    "resolution": "1k",
+    "aspect_ratio": "1:1",
+    "count": 2,
+    "prompt": "A single Epipremnum aureum (scindapsus / pothos) heart-shaped leaf with a slightly asymmetric pointed tip with its petiole, isolated on a plain pure white background, 3/4 view, petiole pointing down, the whole leaf visible and centered, a fully grown leaf, gently curved, heavily marbled with creamy white streaks and flecks over green ('Marble Queen'). Pastel low-poly 3D game asset style like images 1 and 2: broad flat faceted planes, soft pastel colors, soft even light. One leaf only. No pot, no shadow, no text.",
+    "medias": [
+     {
+      "value": "REF_STYLE_B",
+      "role": "image_references"
+     },
+     {
+      "value": "REF_STYLE_B2",
+      "role": "image_references"
+     }
+    ],
+    "background": "opaque"
+   }
+  },
+  {
+   "name": "SC5",
+   "kind": "species_leaf",
+   "save_as": "assets/raw/plants/scindapsus/SC5.png",
+   "used_in": "② 스킨답서스 · 성숙 · 무늬 엔조이 — Meshy image_to_3d 입력(나중 · Meshy 461 안에서 · growth 의 덩굴/로제트 규칙 뒤)",
+   "who": "leaf(3D 로 · 잇기) · growth(종 프로필)",
+   "tool": "generate_image",
+   "params": {
+    "model": "gpt_image_2_5",
+    "variant": "flare",
+    "quality": "high",
+    "resolution": "1k",
+    "aspect_ratio": "1:1",
+    "count": 2,
+    "prompt": "A single Epipremnum aureum (scindapsus / pothos) heart-shaped leaf with a slightly asymmetric pointed tip with its petiole, isolated on a plain pure white background, 3/4 view, petiole pointing down, the whole leaf visible and centered, a fully grown leaf, gently curved, crisp clean white patches along the edges and a green center, sharp-edged sections, no marbling ('N'Joy'). Pastel low-poly 3D game asset style like images 1 and 2: broad flat faceted planes, soft pastel colors, soft even light. One leaf only. No pot, no shadow, no text.",
+    "medias": [
+     {
+      "value": "REF_STYLE_B",
+      "role": "image_references"
+     },
+     {
+      "value": "REF_STYLE_B2",
+      "role": "image_references"
+     }
+    ],
+    "background": "opaque"
+   }
+  },
+  {
+   "name": "CA1",
+   "kind": "species_leaf",
+   "save_as": "assets/raw/plants/calathea/CA1.png",
+   "used_in": "② 칼라데아 · 어린잎(오비폴리아) — Meshy image_to_3d 입력(나중 · Meshy 461 안에서 · growth 의 덩굴/로제트 규칙 뒤)",
+   "who": "leaf(3D 로 · 잇기) · growth(종 프로필)",
+   "tool": "generate_image",
+   "params": {
+    "model": "gpt_image_2_5",
+    "variant": "flare",
+    "quality": "high",
+    "resolution": "1k",
+    "aspect_ratio": "1:1",
+    "count": 2,
+    "prompt": "A single Calathea orbifolia broad rounded oval leaf with its petiole, isolated on a plain pure white background, 3/4 view, petiole pointing down, the whole leaf visible and centered, a small young leaf just unrolled, light green with pale silver-green feather stripes between the lateral veins. Pastel low-poly 3D game asset style like images 1 and 2: broad flat faceted planes, soft pastel colors, soft even light. One leaf only. No pot, no shadow, no text.",
+    "medias": [
+     {
+      "value": "REF_STYLE_B",
+      "role": "image_references"
+     },
+     {
+      "value": "REF_STYLE_B2",
+      "role": "image_references"
+     }
+    ],
+    "background": "opaque"
+   }
+  },
+  {
+   "name": "CA2",
+   "kind": "species_leaf",
+   "save_as": "assets/raw/plants/calathea/CA2.png",
+   "used_in": "② 칼라데아 · 중간잎(오비폴리아) — Meshy image_to_3d 입력(나중 · Meshy 461 안에서 · growth 의 덩굴/로제트 규칙 뒤)",
+   "who": "leaf(3D 로 · 잇기) · growth(종 프로필)",
+   "tool": "generate_image",
+   "params": {
+    "model": "gpt_image_2_5",
+    "variant": "flare",
+    "quality": "high",
+    "resolution": "1k",
+    "aspect_ratio": "1:1",
+    "count": 2,
+    "prompt": "A single Calathea orbifolia broad rounded oval leaf with its petiole, isolated on a plain pure white background, 3/4 view, petiole pointing down, the whole leaf visible and centered, a half-grown leaf, pale silver-green feather stripes alternating with mid green along the lateral veins. Pastel low-poly 3D game asset style like images 1 and 2: broad flat faceted planes, soft pastel colors, soft even light. One leaf only. No pot, no shadow, no text.",
+    "medias": [
+     {
+      "value": "REF_STYLE_B",
+      "role": "image_references"
+     },
+     {
+      "value": "REF_STYLE_B2",
+      "role": "image_references"
+     }
+    ],
+    "background": "opaque"
+   }
+  },
+  {
+   "name": "CA3",
+   "kind": "species_leaf",
+   "save_as": "assets/raw/plants/calathea/CA3.png",
+   "used_in": "② 칼라데아 · 성숙잎(오비폴리아) — Meshy image_to_3d 입력(나중 · Meshy 461 안에서 · growth 의 덩굴/로제트 규칙 뒤)",
+   "who": "leaf(3D 로 · 잇기) · growth(종 프로필)",
+   "tool": "generate_image",
+   "params": {
+    "model": "gpt_image_2_5",
+    "variant": "flare",
+    "quality": "high",
+    "resolution": "1k",
+    "aspect_ratio": "1:1",
+    "count": 2,
+    "prompt": "A single Calathea orbifolia broad rounded oval leaf with its petiole, isolated on a plain pure white background, 3/4 view, petiole pointing down, the whole leaf visible and centered, a large fully grown round leaf, pale silver-green feather stripes alternating with mid green along the lateral veins. Pastel low-poly 3D game asset style like images 1 and 2: broad flat faceted planes, soft pastel colors, soft even light. One leaf only. No pot, no shadow, no text.",
+    "medias": [
+     {
+      "value": "REF_STYLE_B",
+      "role": "image_references"
+     },
+     {
+      "value": "REF_STYLE_B2",
+      "role": "image_references"
+     }
+    ],
+    "background": "opaque"
+   }
+  },
+  {
+   "name": "CA4",
+   "kind": "species_leaf",
+   "save_as": "assets/raw/plants/calathea/CA4.png",
+   "used_in": "② 칼라데아 · 중간 · 무늬 화이트퓨전 — Meshy image_to_3d 입력(나중 · Meshy 461 안에서 · growth 의 덩굴/로제트 규칙 뒤)",
+   "who": "leaf(3D 로 · 잇기) · growth(종 프로필)",
+   "tool": "generate_image",
+   "params": {
+    "model": "gpt_image_2_5",
+    "variant": "flare",
+    "quality": "high",
+    "resolution": "1k",
+    "aspect_ratio": "1:1",
+    "count": 2,
+    "prompt": "A single Calathea 'White Fusion' oval leaf with a pointed tip with its petiole, isolated on a plain pure white background, 3/4 view, petiole pointing down, the whole leaf visible and centered, a half-grown leaf, light green with irregular brushstroke white and pale green marbling. Pastel low-poly 3D game asset style like images 1 and 2: broad flat faceted planes, soft pastel colors, soft even light. One leaf only. No pot, no shadow, no text.",
+    "medias": [
+     {
+      "value": "REF_STYLE_B",
+      "role": "image_references"
+     },
+     {
+      "value": "REF_STYLE_B2",
+      "role": "image_references"
+     }
+    ],
+    "background": "opaque"
+   }
+  },
+  {
+   "name": "CA5",
+   "kind": "species_leaf",
+   "save_as": "assets/raw/plants/calathea/CA5.png",
+   "used_in": "② 칼라데아 · 성숙 · 무늬 화이트퓨전 — Meshy image_to_3d 입력(나중 · Meshy 461 안에서 · growth 의 덩굴/로제트 규칙 뒤)",
+   "who": "leaf(3D 로 · 잇기) · growth(종 프로필)",
+   "tool": "generate_image",
+   "params": {
+    "model": "gpt_image_2_5",
+    "variant": "flare",
+    "quality": "high",
+    "resolution": "1k",
+    "aspect_ratio": "1:1",
+    "count": 2,
+    "prompt": "A single Calathea 'White Fusion' oval leaf with a pointed tip with its petiole, isolated on a plain pure white background, 3/4 view, petiole pointing down, the whole leaf visible and centered, a fully grown leaf, light green with irregular brushstroke white and pale green marbling, a hint of lilac-pink at the edge from the underside. Pastel low-poly 3D game asset style like images 1 and 2: broad flat faceted planes, soft pastel colors, soft even light. One leaf only. No pot, no shadow, no text.",
+    "medias": [
+     {
+      "value": "REF_STYLE_B",
+      "role": "image_references"
+     },
+     {
+      "value": "REF_STYLE_B2",
+      "role": "image_references"
+     }
+    ],
+    "background": "opaque"
+   }
+  },
+  {
+   "name": "SC6",
+   "kind": "species_whole",
+   "save_as": "assets/raw/plants/scindapsus/SC6_whole.png",
+   "used_in": "② 스킨답서스 · 그루 전체(덩굴) — 그루 꼴 기준 그림(growth 가 덩굴·로제트 규칙을 세울 때 · 도감 후보)",
+   "who": "growth(종 꼴) · plan",
+   "tool": "generate_image",
+   "params": {
+    "model": "gpt_image_2_5",
+    "variant": "flare",
+    "quality": "high",
+    "resolution": "1k",
+    "aspect_ratio": "3:4",
+    "count": 2,
+    "prompt": "A whole Epipremnum aureum 'Marble Queen' (scindapsus) plant in a small hanging pot, long vines trailing down with heart-shaped marbled leaves along them. Pastel low-poly 3D game asset style like images 1 and 2: broad flat faceted planes, soft pastel colors, soft even light. The whole plant visible and centered, isolated on a plain pure white background, no text, no shadow.",
+    "medias": [
+     {
+      "value": "REF_STYLE_B",
+      "role": "image_references"
+     },
+     {
+      "value": "REF_STYLE_B2",
+      "role": "image_references"
+     }
+    ],
+    "background": "opaque"
+   }
+  },
+  {
+   "name": "CA6",
+   "kind": "species_whole",
+   "save_as": "assets/raw/plants/calathea/CA6_whole.png",
+   "used_in": "② 칼라데아 · 그루 전체(로제트) — 그루 꼴 기준 그림(growth 가 덩굴·로제트 규칙을 세울 때 · 도감 후보)",
+   "who": "growth(종 꼴) · plan",
+   "tool": "generate_image",
+   "params": {
+    "model": "gpt_image_2_5",
+    "variant": "flare",
+    "quality": "high",
+    "resolution": "1k",
+    "aspect_ratio": "3:4",
+    "count": 2,
+    "prompt": "A whole Calathea orbifolia plant in a pot, a rosette of large round silver-striped leaves on long upright petioles rising straight from the base. Pastel low-poly 3D game asset style like images 1 and 2: broad flat faceted planes, soft pastel colors, soft even light. The whole plant visible and centered, isolated on a plain pure white background, no text, no shadow.",
+    "medias": [
+     {
+      "value": "REF_STYLE_B",
+      "role": "image_references"
+     },
+     {
+      "value": "REF_STYLE_B2",
+      "role": "image_references"
+     }
+    ],
+    "background": "opaque"
+   }
+  },
+  {
+   "name": "ev_leaf_stage_opening",
+   "kind": "stage",
+   "save_as": "assets/illust/ev_leaf_stage_opening.png",
+   "used_in": "③ 잎 단계 — 대사 statusPhaseOpening «새순이 풀리기 시작했다» 위 #sceneArt(정사각) · 다섯 장이 한 벌(같은 구도)",
+   "who": "core(sceneArtOf 에 case 한 줄) · plan",
+   "tool": "generate_image",
+   "params": {
+    "model": "gpt_image_2_5",
+    "variant": "flare",
+    "quality": "high",
+    "resolution": "1k",
+    "aspect_ratio": "1:1",
+    "count": 2,
+    "prompt": "Close-up 2D storybook illustration in the style of image 1 (thin warm-brown ink lines, soft gouache wash, warm pastel light): a monstera new leaf spear just starting to unroll - a pale yellow-green rolled spear loosening at the top, one edge peeling open. The leaf shape follows image 2. Same framing for every image of this set: one monstera stem rising from the bottom center of the frame against a soft blurred sunny windowsill background in cream and pale green, the subject centered at eye level filling the middle of the frame. No pot visible, no characters, no text, no border.",
+    "medias": [
+     {
+      "value": "REF_STYLE_A",
+      "role": "image_references"
+     },
+     {
+      "value": "REF_ST_OPENING",
+      "role": "image_references"
+     }
+    ],
+    "background": "opaque"
+   }
+  },
+  {
+   "name": "ev_leaf_stage_young",
+   "kind": "stage",
+   "save_as": "assets/illust/ev_leaf_stage_young.png",
+   "used_in": "③ 잎 단계 — 대사 statusPhaseYoung «잎이 다 펴졌다. 아직 연하다» 위 #sceneArt(정사각) · 다섯 장이 한 벌(같은 구도)",
+   "who": "core(sceneArtOf 에 case 한 줄) · plan",
+   "tool": "generate_image",
+   "params": {
+    "model": "gpt_image_2_5",
+    "variant": "flare",
+    "quality": "high",
+    "resolution": "1k",
+    "aspect_ratio": "1:1",
+    "count": 2,
+    "prompt": "Close-up 2D storybook illustration in the style of image 1 (thin warm-brown ink lines, soft gouache wash, warm pastel light): a monstera young leaf fully unrolled but small, thin and glossy, very light tender lime green, a simple heart shape with no splits, drooping a little. The leaf shape follows image 2. Same framing for every image of this set: one monstera stem rising from the bottom center of the frame against a soft blurred sunny windowsill background in cream and pale green, the subject centered at eye level filling the middle of the frame. No pot visible, no characters, no text, no border.",
+    "medias": [
+     {
+      "value": "REF_STYLE_A",
+      "role": "image_references"
+     },
+     {
+      "value": "REF_ST_YOUNG",
+      "role": "image_references"
+     }
+    ],
+    "background": "opaque"
+   }
+  },
+  {
+   "name": "ev_leaf_stage_mid",
+   "kind": "stage",
+   "save_as": "assets/illust/ev_leaf_stage_mid.png",
+   "used_in": "③ 잎 단계 — 대사 statusPhaseMid «중간잎이야» 위 #sceneArt(정사각) · 다섯 장이 한 벌(같은 구도)",
+   "who": "core(sceneArtOf 에 case 한 줄) · plan",
+   "tool": "generate_image",
+   "params": {
+    "model": "gpt_image_2_5",
+    "variant": "flare",
+    "quality": "high",
+    "resolution": "1k",
+    "aspect_ratio": "1:1",
+    "count": 2,
+    "prompt": "Close-up 2D storybook illustration in the style of image 1 (thin warm-brown ink lines, soft gouache wash, warm pastel light): a monstera mid-stage leaf, firmer and medium green, heart shaped with just one or two small splits starting at the edge. The leaf shape follows image 2. Same framing for every image of this set: one monstera stem rising from the bottom center of the frame against a soft blurred sunny windowsill background in cream and pale green, the subject centered at eye level filling the middle of the frame. No pot visible, no characters, no text, no border.",
+    "medias": [
+     {
+      "value": "REF_STYLE_A",
+      "role": "image_references"
+     },
+     {
+      "value": "REF_ST_MID",
+      "role": "image_references"
+     }
+    ],
+    "background": "opaque"
+   }
+  },
+  {
+   "name": "ev_leaf_stage_mature",
+   "kind": "stage",
+   "save_as": "assets/illust/ev_leaf_stage_mature.png",
+   "used_in": "③ 잎 단계 — 대사 statusPhaseMature «다 자란 잎이야» 위 #sceneArt(정사각) · 다섯 장이 한 벌(같은 구도)",
+   "who": "core(sceneArtOf 에 case 한 줄) · plan",
+   "tool": "generate_image",
+   "params": {
+    "model": "gpt_image_2_5",
+    "variant": "flare",
+    "quality": "high",
+    "resolution": "1k",
+    "aspect_ratio": "1:1",
+    "count": 2,
+    "prompt": "Close-up 2D storybook illustration in the style of image 1 (thin warm-brown ink lines, soft gouache wash, warm pastel light): a large mature monstera leaf, deep green and leathery, with deep splits and holes (fenestrations). The leaf shape follows image 2. Same framing for every image of this set: one monstera stem rising from the bottom center of the frame against a soft blurred sunny windowsill background in cream and pale green, the subject centered at eye level filling the middle of the frame. No pot visible, no characters, no text, no border.",
+    "medias": [
+     {
+      "value": "REF_STYLE_A",
+      "role": "image_references"
+     },
+     {
+      "value": "REF_ST_MATURE",
+      "role": "image_references"
+     }
+    ],
+    "background": "opaque"
+   }
+  },
+  {
+   "name": "ev_leaf_stage_axis",
+   "kind": "stage",
+   "save_as": "assets/illust/ev_leaf_stage_axis.png",
+   "used_in": "③ 잎 단계 — 대사 statusPhaseAxis «다음 잎이 올라오고 있어. 줄기 끝을 봐» 위 #sceneArt(정사각) · 다섯 장이 한 벌(같은 구도)",
+   "who": "core(sceneArtOf 에 case 한 줄) · plan",
+   "tool": "generate_image",
+   "params": {
+    "model": "gpt_image_2_5",
+    "variant": "flare",
+    "quality": "high",
+    "resolution": "1k",
+    "aspect_ratio": "1:1",
+    "count": 2,
+    "prompt": "Close-up 2D storybook illustration in the style of image 1 (thin warm-brown ink lines, soft gouache wash, warm pastel light): a mature monstera leaf on one side and, from the stem tip, a brand-new tightly furled pale green spear rising beside it - the next leaf coming. The leaf shape follows image 2. Same framing for every image of this set: one monstera stem rising from the bottom center of the frame against a soft blurred sunny windowsill background in cream and pale green, the subject centered at eye level filling the middle of the frame. No pot visible, no characters, no text, no border.",
+    "medias": [
+     {
+      "value": "REF_STYLE_A",
+      "role": "image_references"
+     },
+     {
+      "value": "REF_ST_FURLED",
+      "role": "image_references"
+     }
+    ],
+    "background": "opaque"
+   }
+  },
+  {
+   "name": "ev_leaf_stage_strip",
+   "kind": "stage",
+   "save_as": "assets/illust/ev_leaf_stage_strip.png",
+   "used_in": "③ 잎 단계 한눈에(왼→오) — 도움말·docs 용(글자는 화면이 얹는다)",
+   "who": "plan(자리) · leaf(docs)",
+   "tool": "generate_image",
+   "params": {
+    "model": "gpt_image_2_5",
+    "variant": "flare",
+    "quality": "high",
+    "resolution": "1k",
+    "aspect_ratio": "16:9",
+    "count": 2,
+    "prompt": "2D storybook illustration in the style of image 1 (thin warm-brown ink lines, soft gouache wash, warm pastel light): the five stages of one monstera leaf side by side from left to right - a tightly furled spear, an unrolling spear, a small tender light-green young leaf, a firmer mid leaf with a couple of small splits, a large deep-green mature leaf with splits and holes; each on its own short stem standing at the same height, evenly spaced on a plain cream background. Shapes follow images 2 to 5. No pots, no characters, no text, no arrows, no border.",
+    "medias": [
+     {
+      "value": "REF_STYLE_A",
+      "role": "image_references"
+     },
+     {
+      "value": "REF_ST_FURLED",
+      "role": "image_references"
+     },
+     {
+      "value": "REF_ST_YOUNG",
+      "role": "image_references"
+     },
+     {
+      "value": "REF_ST_MID",
+      "role": "image_references"
+     },
+     {
+      "value": "REF_ST_MATURE",
+      "role": "image_references"
+     }
+    ],
+    "background": "opaque"
+   }
+  }
+ ]
+}
