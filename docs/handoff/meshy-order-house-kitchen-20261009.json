@@ -1,0 +1,51 @@
+{
+ "_what": "[house] Meshy 주문 — 주방 카운터 몸(총괄 D44 · 회색 상자 길) · 총괄이 그대로 돌린다",
+ "_cost": "원화 9 + 3D 30 = 39",
+ "_why": "가게 «주방 카운터»(kitchen 프리셋 1.5×0.6×0.88)는 몸이 코드 그림이다 — Meshy kitchen.glb 는 밥솥·주전자라 카운터 위 소품(DECOR)으로만 썼다. 몸을 v2 로.",
+ "_after": "받으면 concept·raw 를 save_as 에 · task_id 는 v2_tasks.json house_20261009 · 크레딧 _credit_log. 잇기(webp · FURN kitchen)는 [house].",
+ "items": [
+  {
+   "n": 21,
+   "id": "kitchen",
+   "file": "kitchen_counter",
+   "ko": "주방 카운터(몸)",
+   "size_m_wdh": [
+    1.5,
+    0.6,
+    0.88
+   ],
+   "shape": "코드 카운터 그대로 — 몸통 + 서랍 이음 셋 + 윗판 + 왼쪽 싱크·수전(싱크는 윗판에 묻혀 참조 그림엔 안 보임 — 글로 박음)",
+   "out": "assets/v2/furniture/kitchen_counter.glb",
+   "concept": {
+    "tool": "meshy_image_to_image",
+    "ai_model": "nano-banana-pro",
+    "generate_multi_view": false,
+    "reference_file_paths": [
+     "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_furn\\ref_kitchen.png",
+     "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_room\\style_keyframe_a.png"
+    ],
+    "prompt": "Repaint the FIRST reference image. Keep its exact shape, proportions, number of parts, board heights, bar thicknesses and camera angle - do not add, remove or move anything. Only change the surface: cozy hand-painted matte style like the second reference room, soft outlines. One object alone on a plain off-white background: no floor, no frame, no text, no shadow. Colors: warm cream #e9e3d8 cabinet body with three drawer seams, light gray #d5d8da countertop with a stainless sink basin set into its left part behind a slim faucet. Countertop otherwise empty.",
+    "save_as": "assets/gen/v2_furn/c_kitchen_counter.png",
+    "credits": 9,
+    "prompt_ko": "첫째 참조 그림을 «다시 칠» — 모양·비율·부품 수·시점 그대로 · 둘째 참조 방처럼 손그림 무광 · 물건 하나 · 흰 바탕 · 바닥·액자·글자·그림자 없음 · 색: 따뜻한 크림 몸통(서랍 이음 셋) · 옅은 회색 윗판 · 왼쪽에 스테인리스 싱크와 가는 수전 · 윗판은 그 밖엔 비움"
+   },
+   "mesh": {
+    "tool": "meshy_image_to_3d",
+    "input_task_id": "<concept task_id>",
+    "ai_model": "meshy-7.1",
+    "model_type": "standard",
+    "should_texture": true,
+    "texture_resolution": "2k",
+    "enable_pbr": false,
+    "should_remesh": true,
+    "target_polycount": 6000,
+    "topology": "triangle",
+    "target_formats": [
+     "glb"
+    ],
+    "save_as": "assets/gen/v2_furn/raw_kitchen_counter.glb",
+    "credits": 30
+   }
+  }
+ ]
+}
