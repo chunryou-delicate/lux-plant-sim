@@ -2,6 +2,17 @@
 
 박사님 10-10 «옛날 기획한 대로 직업이랑 남녀별로 추후에 분기되도록도 해» · plan `plan-branch-job-gender-20261010.md` §4 · 총괄: 생김새는 캐릭터 정체라 **박사님이 고른다**(D3 결) — 그래서 먼저 neutral 후보 셋만 뽑는다. ⛔ 크레딧은 총괄이 돌린다.
 
+> ## ⏸ 멈춤 (10-10 · 박사님 «이제 힉스필드 사용은 마무리» · 크레딧 마무리)
+> **선 것**: 정본 neutral(A a) · 남 낯 열다섯 다(옛 여덟 + 정본 + 새 여섯 · core «모자란 남 낯» 0) · 장난감 턴어라운드 a 칸 넷 · 3D G2 → **Tripo** 고름 · 리그에 걸 판 `assets/v2/char/_src/hero_m_unity/hero_m_toy_a_tripo_mv30k_e4df0454_facez.glb`(앞=+Z 그림으로 확인) · build 한 줄(§③) · v2_hero `HERO_M_BODY` 한 칸(core 65721a9a)
+> **멈춘 것**(새 크레딧이 드는 것 전부): 리그·동작 13 · 남 옷 일곱(D68 · Higgsfield 옷 갈아입히기도 먹통이었다) · 가장·주부·연구자 콘셉트
+> **다시 열 때 차례**
+> 1. facez 판에 리그(키 1.4 · 24뼈 이름) + 동작 13(여 판과 같은 번호 — idle 0 · sit 32 · sleep 267 · repot 274 · cheer 49 · wave 28 · water 285 · harvest 278 · harvest_low 277 · inspect 281 · scratch 36 · nod 25 · listen 47) — Higgsfield 3d_rigging(리그 5 · 동작마다 8) 또는 Meshy 계정(리그 5 · 동작 3)
+> 2. char: `build_hero_unity.py <rig> <clips> assets/v2/char/hero_m_unity.glb --keep-color --hero=hero2_m --from="sheet_hero_m_turnaround_toy_a → Tripo multiview e4df0454 (facez)"` — 관문 «머리 팔 무게 >0.5 ≤ 0.5%» · 클립 그림 몇 장(cheer · crouch)
+> 3. char: diet 로 웹 판 `assets/v2/char/hero2_m.glb`(그림 1024 · 쓰는 구간) → v2_hero `HERO_M_BODY = 'hero2_m.glb'` 한 줄(옷은 빈 표로 기본 옷만) → core ?hero=m 깃발로 방에서 보기
+> 4. 남 옷 일곱(봄·가을·겨울·잠옷·비·앞치마 + 기본) — 옷 갈아입히기가 되는 길로(retexture → apply_outfit_tex · `outfit/m/*.jpg`) → `OUTFIT_FILES_M` 에 채움
+> 5. 가장·주부·연구자 콘셉트(§3 초안 JSON 그대로)
+> 크레딧 없이 지금 할 수 있는 것은 위에 없다(1이 막혀 2~3 이 못 선다).
+
 ## 1. 한 세계에 서려면 — 얼굴 · 머리 · 옷 · 키
 | | 여 정본(지금) | 옛 남(char_namja_jachwi · portrait_jachwi_m_*) | 남 정본이 맞출 것 |
 |---|---|---|---|
