@@ -638,6 +638,9 @@ export function buildHouse(GRAIN, roomDefIn, winPresets, doorPresets={}, finishe
         if(spec.color) p.frameColor=spec.color;          // 방에서 프레임 색 오버라이드
         if(spec.gloss) p.gloss=spec.gloss;
         const frame=buildWindowFrame(spec.w, spec.h, p);
+        frame.userData.isWinFrame = true;           // ★ 2026-10-09 v2 옷(furniture_dress §문·창) — 그림만
+        frame.userData.winPreset = spec.preset || null;
+        frame.userData.winSize = { w: spec.w, h: spec.h, d: p.depth ?? FRAME_DEFAULTS.depth };
         placeInWall(frame, wall, spec.cu, spec.cy);
         trimOf(wall).add(frame);                    // 창틀 — 벽과 같이 눌린다
         const gmat=glassMaterial(p.glass);          // type별 유리(none이면 null=뻥 뚫림)

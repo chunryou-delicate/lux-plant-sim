@@ -76,6 +76,10 @@ const FURN = {
   shelf:              { file: 'furniture/bookshelf.glb',          yaw: 0, lazy: true, tiers: true },
   shelf_corner_3tier: { file: 'furniture/shelf_corner_3tier.glb', yaw: 90, lazy: true, tiers: true },  // 직각 꼭짓점이 뒤-왼(판 무게중심으로 맞춤)
   clothes_rack:       { file: 'furniture/clothes_rack.glb',       yaw: 0, lazy: true, box: true },
+  /* r3(회색 상자 참조) — 원화를 코드 가구 그림으로 박아 단 수·자리가 맞는다 · 겹단 꺾은 선 */
+  plant_step_3:       { file: 'furniture/plant_step_3.glb',       yaw: 0, lazy: true, tiers: true },
+  shelf_ladder_4tier: { file: 'furniture/shelf_ladder_4tier.glb', yaw: 0, lazy: true, tiers: true, fitProxyBox: true },
+  greenhouse_cabinet: { file: 'furniture/greenhouse_cabinet.glb', yaw: 0, lazy: true, tiers: true, keepGlass: true },
   /* 식물등 — 몸통만 옷(LED 는 코드 것 · dressLamp). lazy — 부팅 미리 받기를 안 늘린다(방이 뜬 뒤 입는다) */
   growlight_clip:     { file: 'furniture/growlight_clip.glb',     yaw: 0,  lazy: true, lamp: { band: 0.6 } },
   growlight_stand:    { file: 'furniture/growlight_stand.glb',    yaw: 90, lazy: true, lamp: { band: 0.8 } }
@@ -85,6 +89,12 @@ const FURN = {
    앞(+Z) = 손잡이 쪽(buildDoor 손잡이 z +0.07 · Meshy 도 앞을 +Z 로 냈다). 크기는 문 구멍 w×h × 문틀 깊이 그대로. */
 const DOORS = {
   door_wood: { file: 'house/door_wood.glb', yaw: 0 }
+};
+/* 창틀 — 벽의 trims 그룹(house.js trimOf)에 있다. 벽이 내려가면 trims 가 통째로 숨어(visible) 옷도 같이 숨는다.
+   유리(makeGlassPane)는 창틀 그룹 밖이라 그대로 · 빛은 코드 창 구멍으로만 든다 — GLB 는 틀 그림만.
+   ⚠ 넣기 전에 «보이는 유리 = 빛 드는 유리»를 쟀다(정면 광선 · 원룸 76.0% / 코드 76.6% · 살 ×0.97~1.16 · 10-09). */
+const WINS = {
+  win_studio_cross: { file: 'house/win_studio_cross.glb', yaw: 0 }
 };
 /* 옷을 안 입히고 색만 바꾸는 것 — 단·자리 계약이 걸려 있다(3단 선반·창턱 받침) */
 const RESTYLE = {
@@ -258,6 +268,18 @@ export function createFurnitureDress(opt = {}) {
     if (!best) return null;
     return { tierY, pick: best.pick, fs: pts.map(p => best.pick[tierY.indexOf(+p.y.toFixed(3))]) };
   }
+  /* 코드 가구(대리)가 실제로 차지한 상자 — g 로컬 x·z (g 가 돌아 있어도) */
+  function localBox(g, meshes) {
+    g.updateWorldMatrix(true, true);
+    const inv = new T.Matrix4().copy(g.matrixWorld).invert(), b = new T.Box3(), mb = new T.Box3(), m4 = new T.Matrix4();
+    for (const m of meshes) {
+      if (!m.geometry) continue;
+      if (!m.geometry.boundingBox) m.geometry.computeBoundingBox();
+      m4.multiplyMatrices(inv, m.matrixWorld);
+      b.union(mb.copy(m.geometry.boundingBox).applyMatrix4(m4));
+    }
+    return { x0: b.min.x, w: Math.max(1e-3, b.max.x - b.min.x), z0: b.min.z, d: Math.max(1e-3, b.max.z - b.min.z) };
+  }
   /* 옷(dress) 안에서 (lx,lz) 를 지나는 위를 보는 면 중 y 에 가장 가까운 것(g 로컬 m) — 겹단 맞춤 확인용 */
   function surfaceNear(dress, lx, lz, y) {
     const g = dress.parent; g.updateWorldMatrix(true, true);
@@ -345,15 +367,19 @@ export function createFurnitureDress(opt = {}) {
     const size = g.userData.size || {};
     const w = size.w, d = size.d;
     if (!(w > 0 && d > 0)) return false;
-    const proxies = proxiesOf(g);
+    /* keepGlass: 코드 유리(투명 재질)는 숨기지 않는다 — GLB 는 틀만 받았다(온실장 · Meshy 는 투명 유리를 못 굽는다) */
+    const proxies = proxiesOf(g).filter(m => !(spec.keepGlass && m.material && m.material.transparent && m.material.opacity < 0.5));
     if (!proxies.length) return false;
 
     /* 세로 배율 — 자리(slots) 높이 또는 대리 윗면 = GLB 윗면 */
+    /* 가로·깊이를 맞출 틀 — 보통은 발자국(userData.size), fitProxyBox 면 코드 가구가 실제로 차지한 상자
+       (사다리 선반: 아래 단이 발자국 앞으로 0.25m 나와 있어 발자국에 맞추면 밑단 자리 밑에 판이 없다 · 10-09) */
+    const F = spec.fitProxyBox ? localBox(g, proxies) : { x0: -w / 2, w, z0: -d / 2, d };
     const pts = [];
     const slots = Array.isArray(g.userData.slots) ? g.userData.slots : [];
-    if (slots.length) for (const s of slots) pts.push({ u: (s.x + w / 2) / w, v: (s.z + d / 2) / d, y: s.y });
+    if (slots.length) for (const s of slots) pts.push({ u: (s.x - F.x0) / F.w, v: (s.z - F.z0) / F.d, y: s.y });
     else for (const [u, v] of (spec.probes || [[0.5, 0.5]]))
-      pts.push({ u, v, y: proxyTop(g, proxies, -w / 2 + u * w, -d / 2 + v * d) });
+      pts.push({ u, v, y: proxyTop(g, proxies, F.x0 + u * F.w, F.z0 + v * F.d) });
     const { box } = yawBox(t, spec.yaw);
     const H = box.max.y - box.min.y;
     const cl = q => Math.min(0.98, Math.max(0.02, q));
@@ -366,7 +392,7 @@ export function createFurnitureDress(opt = {}) {
     const ks = pts.map((p, i) => (fs[i] && p.y > 0) ? p.y / (fs[i] * H) : NaN);
     let sy = median(ks);
     if (!Number.isFinite(sy)) sy = proxyTopY / H;    // 못 쟀다 — 대리 상자 높이로
-    const sx = w / (box.max.x - box.min.x), sz = d / (box.max.z - box.min.z);
+    const sx = F.w / (box.max.x - box.min.x), sz = F.d / (box.max.z - box.min.z);
     if (spec.uniform) sy = (sx + sz) / 2;           // 비율 그대로(발자국이 GLB 비율에서 나왔다)
     if (spec.box && size.h > 0) sy = size.h / H;     // 크기 상자 그대로(자리 없는 살대 가구 — 가운데 윗면이 봉 하나라 못 잰다)
     /* 겹단: 바닥 0 · 단마다 (GLB 판 높이 → 자리 높이) · 꼭대기(GLB 윗면 → 대리 윗면) 마디로 세로를 꺾는다 → 세로 배율 1 */
@@ -385,6 +411,7 @@ export function createFurnitureDress(opt = {}) {
     dress.userData.v2dress = true;
     dress.add(mid);
     dress.scale.set(sx, sy, sz);
+    dress.position.set(F.x0 + F.w / 2, 0, F.z0 + F.d / 2);   // 발자국이면 0,0
     markVisual(dress);
     g.add(dress);
 
@@ -398,7 +425,7 @@ export function createFurnitureDress(opt = {}) {
     const errs = pts.map((p, i) => {
       if (!fs[i] || !Number.isFinite(p.y)) return null;
       if (!knots) return +(fs[i] * H * sy - p.y).toFixed(4);
-      const hy = surfaceNear(dress, -w / 2 + cl(p.u) * w, -d / 2 + cl(p.v) * d, p.y);
+      const hy = surfaceNear(dress, F.x0 + cl(p.u) * F.w, F.z0 + cl(p.v) * F.d, p.y);
       return hy == null ? null : +(hy - p.y).toFixed(4);
     });
     report.set(g.userData.uid, { preset, file: spec.file, yaw: spec.yaw, uniform: !!(spec.uniform || spec.box),
@@ -524,8 +551,9 @@ export function createFurnitureDress(opt = {}) {
     for (const g of built.furniture.children) {
       if (!g.userData || !g.userData.uid) continue;
       try {
-        if (restyleOne(g)) { n++; continue; }
         const preset = presetOf(g, roomDef);
+        /* ★ 옷이 있는 프리셋은 색 바꾸기(RESTYLE · type 단위)보다 먼저 — 사다리 선반은 type 이 shelf_etagere 라 색만 바뀌던 것(10-09) */
+        if (!(preset && FURN[preset]) && restyleOne(g)) { n++; continue; }
         if (!preset || !FURN[preset]) continue;
         if (dressOne(g, preset)) n++;
         else if (!tpl.has(FURN[preset].file)) { missing = true; need.add(FURN[preset].file); }
@@ -535,10 +563,10 @@ export function createFurnitureDress(opt = {}) {
     }
     for (const door of doorsOf(built)) {
       try {
-        const spec = DOORS[door.userData.doorPreset];
+        const spec = shellSpecOf(door);
         if (dressDoor(door, spec)) n++;
         else if (!tpl.has(spec.file)) { missing = true; need.add(spec.file); }
-      } catch (e) { console.warn('[v2 가구] 문 옷을 못 입혔습니다 —', door.userData.doorPreset, e && e.message); }
+      } catch (e) { console.warn('[v2 가구] 문·창 옷을 못 입혔습니다 —', door.userData.doorPreset || door.userData.winPreset, e && e.message); }
     }
     /* 아직 못 받은 옷이 있으면 받는 대로 입히고 알린다(옛 방이면 안 입힌다)
        ★ 2026-10-09 — 방에 놓인 것만 받는다. 가구점 옷이 13벌 늘어, 전부 받으면 소파 하나 사도 5MB 를 받는다([house]). */
@@ -564,19 +592,22 @@ export function createFurnitureDress(opt = {}) {
   /* 방 껍데기(벽) 안의 문 그룹 중 옷이 있는 것 */
   function doorsOf(built) {
     const out = [];
-    const shells = built && built.shells;
-    if (!shells) return out;
-    for (const k in shells) {
-      const sh = shells[k]; if (!sh || !sh.traverse) continue;
-      sh.traverse(o => { if (o.userData && o.userData.isDoor && DOORS[o.userData.doorPreset]) out.push(o); });
+    for (const grp of [built && built.shells, built && built.trims]) {
+      if (!grp) continue;
+      for (const k in grp) {
+        const sh = grp[k]; if (!sh || !sh.traverse) continue;
+        sh.traverse(o => { if (o.userData && ((o.userData.isDoor && DOORS[o.userData.doorPreset]) ||
+                                              (o.userData.isWinFrame && WINS[o.userData.winPreset]))) out.push(o); });
+      }
     }
     return out;
   }
+  const shellSpecOf = o => o.userData.isDoor ? DOORS[o.userData.doorPreset] : WINS[o.userData.winPreset];
   function dressDoor(door, spec) {
     if (door.children.some(c => c.userData && c.userData.v2dress)) return true;
     const t = tpl.get(spec.file);
     if (!t || !t.ok) return false;
-    const sz = door.userData.doorSize || {};
+    const sz = door.userData.doorSize || door.userData.winSize || {};
     if (!(sz.w > 0 && sz.h > 0)) return false;
     const proxies = proxiesOf(door);
     if (!proxies.length) return false;
@@ -597,7 +628,8 @@ export function createFurnitureDress(opt = {}) {
     door.add(dress);
     const hm = hidden();
     for (const m of proxies) { if (!origMat.has(m)) origMat.set(m, m.material); m.material = hm; }
-    report.set('door:' + door.userData.doorPreset, { preset: door.userData.doorPreset, file: spec.file, yaw: spec.yaw, door: true, stub,
+    const pid = door.userData.doorPreset || door.userData.winPreset;
+    report.set((door.userData.isDoor ? 'door:' : 'win:') + pid, { preset: pid, file: spec.file, yaw: spec.yaw, door: true, stub,
       scale: [+sx.toFixed(4), +sy.toFixed(4), +szz.toFixed(4)], height: +sz.h.toFixed(3), targets: [sz.w, sz.h, sz.d], topErr: [] });
     return true;
   }
