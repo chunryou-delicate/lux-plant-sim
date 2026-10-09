@@ -619,8 +619,8 @@ check('데이터 — 대사마다 «부르는 자리»가 있다 («불린다»�
     'movedInBagCuttings',
     /* ★ 2026-10-09 [plan] D45 — 새 종 사건 갈림(scriptOf): 교환 두 번째 물음·두 번째 거절 · 구근 싹 무늬/민무늬 */
     'ppTradeOfferAgain', 'ppTradeDeclinedLast', 'alSproutVarie', 'alSproutPlain',
-    /* ★ 2026-10-09 [plan] D52 — 두 번째 잠부터 구근 찾음(al_corms_found ev.first false) */
-    'alCormsFoundAgain'
+    /* ★ 2026-10-09 [plan] D52 — 잠드는 날 구근(al_asleep corms > 0) · 두 번째 깸(al_wake first false) */
+    'alAsleepCorms', 'alWakeAgain'
   ]);
   const dead = Object.keys(SCRIPTS).filter(id => !used.has(id) && !NOT_YET_USED.has(id));
   assert.equal(dead.length, 0, `아무 데서도 안 불리는 대사: ${dead}`);

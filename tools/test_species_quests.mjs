@@ -90,12 +90,15 @@ check('⑥ 대사 — 열림·끝 대사가 있고 사건 갈림이 맞다', () 
   assert.deepEqual(ids([{ id: 'al_sprout', varie: true }]), ['alSproutVarie']);
   assert.deepEqual(ids([{ id: 'al_sprout', varie: false }]), ['alSproutPlain']);
   assert.deepEqual(ids([{ id: 'al_sprout' }]), [], '무늬를 모르면 말이 없어야 합니다');
-  /* D52 — 첫 잠의 구근은 곁줄 열림 대사가 말한다 · 두 번째 잠부터 짧은 줄 */
-  assert.deepEqual(ids([{ id: 'al_corms_found', first: true }]), []);
-  assert.deepEqual(ids([{ id: 'al_corms_found', first: false }]), ['alCormsFoundAgain']);
-  /* 잠드는 날: «겨울잠» 열림 → «구근을 심는다» 열림 */
-  assert.deepEqual(ids([{ id: 'quest_opened', questId: 'al_keep_winter' }, { id: 'quest_opened', questId: 'al_plant_corm' }]),
-                   ['questAlKeepWinter', 'questAlPlantCorm']);
+  /* D52 — 잠드는 날 구근은 corms > 0 일 때만 · «겨울잠» 열림 «뒤» · 구근이 없는 잠엔 구근 말이 없다 */
+  assert.deepEqual(ids([{ id: 'al_asleep', corms: 2 }, { id: 'quest_opened', questId: 'al_keep_winter' }]),
+                   ['questAlKeepWinter', 'alAsleepCorms']);
+  assert.deepEqual(ids([{ id: 'al_asleep', corms: 0 }, { id: 'quest_opened', questId: 'al_keep_winter' }]), ['questAlKeepWinter']);
+  assert.deepEqual(ids([{ id: 'al_asleep' }]), [], '구근 수를 모르면 말이 없어야 합니다');
+  assert.deepEqual(ids([{ id: 'al_wake', first: true }]), []);
+  assert.deepEqual(ids([{ id: 'al_wake', first: false }]), ['alWakeAgain']);
+  /* «겨울잠» 열림 대사는 구근을 약속하지 않는다(구근 0 인 잠이 있다) */
+  assert.ok(SCRIPTS.questAlKeepWinter.every(l => !/구근/.test(l.text)), '«겨울잠» 열림 대사가 구근을 말합니다');
   /* 교환 끝난 날 «분홍을 붙잡는다»가 열리면 「바꿨다」가 먼저 */
   assert.deepEqual(ids([{ id: 'quest_opened', questId: 'pp_hold_pink' }, { id: 'pp_trade_done' }]),
                    ['ppTradeDone', 'questPpHoldPink']);
@@ -103,7 +106,7 @@ check('⑥ 대사 — 열림·끝 대사가 있고 사건 갈림이 맞다', () 
   const D45 = ['ppTradeOffer', 'ppTradeOfferAgain', 'ppTradeDone', 'ppTradeDeclined', 'ppTradeDeclinedLast', 'ppPinkWarn',
                'ppTipWithered', 'ppReverted', 'alSproutVarie', 'alSproutPlain', 'statusAlSleeping',
                'questPpHoldPink', 'questDonePpHoldPink', 'questAlKeepWinter', 'questDoneAlKeepWinter',
-               'questAlPlantCorm', 'questDoneAlPlantCorm', 'alCormsFoundAgain', 'statusHomeQuarter', 'statusHomeThreeQuarter'];
+               'questAlPlantCorm', 'questDoneAlPlantCorm', 'alAsleepCorms', 'alWakeAgain', 'statusHomeQuarter', 'statusHomeThreeQuarter'];
   for (const id of D45) for (const l of SCRIPTS[id])
     if (l.who === 'moni') assert.ok(!/[0-9]/.test(l.text), `${id}: 몬이가 수를 말합니다 — ${l.text}`);
 });

@@ -1696,22 +1696,28 @@ export const SCRIPTS = {
     { who: 'moni',   face: 'proud',    text: '붙잡았다. 이제 그 마디가 다음 잎을 낼 거야.' },
     { who: 'jachwi', face: 'think',    text: '가위로 그림을 그리는 것 같다.' }
   ],
-  /* ★ 2026-10-09 [plan] D52(총괄) — 구근은 «잠드는 날(잎이 다 지는 날)» 흙 속에서 찾는다. 이 줄이 열리는 날이 그날이다 —
-     «구근을 심는다»는 이튿날 열린다(stepQuests 「하루에 새 줄 하나」 — 같은 날이면 정의 순서로 이 줄 뒤). 봄 깸은 «다시 깼다»만. */
+  /* ★ 2026-10-09 [plan] D52(총괄) — 이 줄이 열리는 날 = 잠드는 날(잎이 다 지는 날 · [growth] asleep). 구근 이야기는 «여기 안 박는다» —
+     한 번의 잠에 구근이 0 일 수 있다([growth] dfa5758c: 찾은 뒤 잎을 한 장 더 내야 또 찾음 · 잎이 다 지기 전에 깨면 못 찾음).
+     구근은 사건 al_asleep(ev.corms > 0)의 §alAsleepCorms 가 이 줄 «뒤»에 말한다(EVENT_ORDER quest_opened 뒤).
+     «구근을 심는다»는 이튿날 열린다(stepQuests 「하루에 새 줄 하나」). 봄 깸은 «다시 깼다»만.
+     ⚠ 봄 초입·겨울 가운데 이사 판은 원룸 안에 구근을 못 볼 수 있다 — 그래서 어느 줄도 «구근이 나온다»를 미리 약속하지 않는다. */
   questAlKeepWinter: [
     { who: 'jachwi', face: 'worry',    text: '알로카시아 잎이 다 졌다…' },
     { who: 'moni',   face: 'teach',    text: '죽은 게 아니야. 자는 거야. 겨울이라 쉬는 거야.' },
-    { who: 'jachwi', face: 'surprise', text: '어, 흙 속에 뭔가 있다.' },
-    { who: 'moni',   face: 'calm',     text: '구근이야. 큰 구근도 그 밑에서 살아 있어. 버리지 말고 봄까지 두자.' }
+    { who: 'moni',   face: 'calm',     text: '흙 속 알뿌리는 살아 있어. 버리지 말고 봄까지 두자.' }
   ],
   questDoneAlKeepWinter: [
     { who: 'jachwi', face: 'surprise', text: '알로카시아 화분에서 뾰족한 싹이 올라왔다!' },
     { who: 'moni',   face: 'cheer',    text: '다시 깼다! 겨울을 넘긴 거야.' }
   ],
-  /* 두 번째 잠부터(곁줄은 한 번만 열린다) — 사건 al_corms_found(ev.first false) · 첫 번은 위 열림 대사가 말한다 */
-  alCormsFoundAgain: [
-    { who: 'jachwi', face: 'curious',  text: '잎이 다 진 알로카시아 흙 속에 또 구근이 있다.' },
-    { who: 'moni',   face: 'calm',     text: '자면서 또 남겼네.' }
+  /* 잠드는 날 흙 속에서 구근을 찾음(사건 al_asleep · ev.corms > 0 일 때만 · 잠마다). 첫 잠이면 위 «겨울잠» 열림 대사 바로 뒤에 선다 */
+  alAsleepCorms: [
+    { who: 'jachwi', face: 'surprise', text: '어, 잎이 다 진 흙 속에 뭔가 있다. …구근이다.' },
+    { who: 'moni',   face: 'calm',     text: '자면서 남긴 거야.' }
+  ],
+  /* 두 번째 깸부터(첫 깸은 «겨울잠» 끝 대사가 말한다) — 사건 al_wake(ev.first false) */
+  alWakeAgain: [
+    { who: 'jachwi', face: 'happy',    text: '알로카시아가 다시 깼다.' }
   ],
   questAlPlantCorm: [
     { who: 'moni',   face: 'teach',    text: '구근 하나가 새 그루가 돼. 심어 보자.' },
@@ -2233,7 +2239,7 @@ export const REPEATABLE = new Set(
              'nudgeSiruOffer', 'nudgeSiruPush', 'statusOneroomNoVarie', 'statusOneroomCutSill',
              'lampUnderEmpty', 'statusBagCuttings', 'statusBagCuttingsMove', 'movedInBagCuttings',
              /* ★ 2026-10-09 [plan] D45 — 새 종 사건은 판마다 여러 번 난다(구근마다 싹 · 잎마다 경고). 교환·퀘스트는 한 번 */
-             'ppPinkWarn', 'ppTipWithered', 'ppReverted', 'alSproutVarie', 'alSproutPlain', 'statusAlSleeping', 'alCormsFoundAgain',
+             'ppPinkWarn', 'ppTipWithered', 'ppReverted', 'alSproutVarie', 'alSproutPlain', 'statusAlSleeping', 'alAsleepCorms', 'alWakeAgain',
              'springCameOneroom', 'summerCameOneroom', 'autumnCameOneroom', 'statusOneroomYear',
              'nudgeHomeOffer', 'nudgeHomePush', 'statusHomeHalf', 'statusHomeNear', 'statusHomeQuarter', 'statusHomeThreeQuarter',
              'rentSoon2', 'rentAgain2', 'nudgeHomePush2',
@@ -2484,13 +2490,15 @@ const EVENT_ORDER = [
   /* ★ 2026-10-09 [plan] D45 — 새 종 사건은 퀘스트 «앞»이다: 교환(pp_trade_done) 뒤에 «분홍을 붙잡는다»가 열리는 날,
      「바꿨다」가 먼저 와야 「분홍이 고운 잎이 나면…」이 그 뒤에 선다. 시듦은 경고보다 앞(같은 날 둘은 안 남) */
   'pp_trade_offer', 'pp_trade_declined', 'pp_trade_done',
-  'pp_tip_withered', 'pp_pink_warn', 'pp_reverted', 'al_sprout', 'al_corms_found',
+  'pp_tip_withered', 'pp_pink_warn', 'pp_reverted', 'al_sprout', 'al_wake',
   /* ★★ 퀘스트는 **끝난 것이 먼저, 열린 것이 나중**이다 (2026-08-17).
      한 판에서 「①을 끝냈다 → 그래서 ②가 열린다」가 같은 날 난다(`siru5_cycle5` 의 여는
      조건이 `crop_mix` 완료라서). 순서가 뒤집히면 **열리고 나서 끝난 것을 축하한다.**
    ⚠ 그리고 둘 다 **이사 판정보다 앞**이다 — `sell_varie` 를 끝낸 날이 곧 `move_ready` 인데,
      그 순서라야 「팔렸다 → 그래서 나갈 수 있다」가 된다. 뒤집히면 이유가 결과 뒤에 온다. */
   'quest_done', 'quest_opened',
+  /* ★ 2026-10-09 [plan] D52 — 잠드는 날 «겨울잠을 지킨다» 열림(잎이 다 졌다 · 자는 거야) «뒤»에 «흙 속에 구근» */
+  'al_asleep',
   /* ★ 2026-10-08 — 「됐다! 가자.」(quest_done oneroom_home_fund) **뒤**에 「집 계약은 네가 해…」가 선다([plan] plan-ending-home ③-1).
      `ending_home` 은 [계약한다] 를 누른 그 손에서만 난다(같은 턴에 다른 사건이 없다) — 자리는 맨 끝 어디든 같다 */
   'ending_ready',
@@ -2551,8 +2559,9 @@ function scriptOf(ev, S = null) {
   if (id === 'pp_trade_offer')    return ev && ev.again ? 'ppTradeOfferAgain' : 'ppTradeOffer';
   if (id === 'pp_trade_declined') return ev && ev.last ? 'ppTradeDeclinedLast' : 'ppTradeDeclined';
   if (id === 'al_sprout') return ev && ev.varie === true ? 'alSproutVarie' : ev && ev.varie === false ? 'alSproutPlain' : null;
-  /* ★ D52 — 구근을 찾은 날: 첫 잠은 곁줄 열림 대사가 말한다(말 없음) · 그 뒤 잠은 짧은 두 줄 */
-  if (id === 'al_corms_found') return ev && ev.first === false ? 'alCormsFoundAgain' : null;
+  /* ★ D52 — 잠드는 날: 구근을 찾았을 때만 말한다(ev.corms > 0) · 깸: 첫 깸은 곁줄 끝 대사가 말하므로 두 번째부터 */
+  if (id === 'al_asleep') return ev && Number.isFinite(ev.corms) && ev.corms > 0 ? 'alAsleepCorms' : null;
+  if (id === 'al_wake')   return ev && ev.first === false ? 'alWakeAgain' : null;
   if (id === 'quest_opened') return QUEST_OPEN_SCRIPT[ev && ev.questId] || null;
   if (id === 'quest_done')   return QUEST_DONE_SCRIPT[ev && ev.questId] || null;
   return EVENT_SCRIPT[id] || null;
