@@ -1,0 +1,892 @@
+{
+ "_what": "[house] Meshy 주문표 2026-10-09 — 총괄이 위에서부터 그대로 돌린다. 문서: docs/handoff/meshy-plan-20261008.md",
+ "_cost": "한 점 39 = 원화 9 + 3D 30(면 줄이기는 같은 호출의 should_remesh — 따로 meshy_remesh 5 를 안 씀)",
+ "_budget": {
+  "main17": 663,
+  "retake30": 199,
+  "spare3": 117
+ },
+ "_after": "받으면 concept·raw 를 save_as 에 저장하고 task_id 를 assets/gen/v2_tasks.json «house_20261009» 에, 크레딧을 assets/manifest.json _credit_log 에 한 줄. 게임에 잇기(gltf-transform webp 1024 → out · 옷 층)는 [house].",
+ "items": [
+  {
+   "n": 1,
+   "plan": "A",
+   "id": "plant_step_3",
+   "ko": "계단식 플랜트대 3단",
+   "size_m_wdh": [
+    0.9,
+    0.28,
+    0.61
+   ],
+   "tiers": "3단 · 왼→오 계단 · 판 윗면 0.20 / 0.40 / 0.60m (x −0.30 / 0 / +0.30)",
+   "use": "원룸 창 앞에 두는 창가 단",
+   "out": "assets/v2/furniture/plant_step_3.glb",
+   "concept": {
+    "tool": "meshy_image_to_image",
+    "ai_model": "nano-banana-pro",
+    "generate_multi_view": false,
+    "reference_file_paths": [
+     "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_room\\style_keyframe_a.png",
+     "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_furn\\c_desk.png"
+    ],
+    "prompt": "One object alone on a plain off-white background. No floor, room, frame, border, text or shadow. 3/4 isometric view from front-left above, front facing lower-left, centered. Cozy hand-painted matte style like the reference. A 3-step wooden plant stand: three flat boards rising left to right like stairs, each board on two thin round legs (front and back). 0.90 m wide, 0.28 m deep, 0.61 m tall. Board tops at 0.20 / 0.40 / 0.60 m. Light beige wood #e0d5c2, legs #c3b49c. Boards empty.",
+    "save_as": "assets/gen/v2_furn/c_plant_step_3.png",
+    "credits": 9,
+    "prompt_ko": "나무 계단식 화분대 3단 — 판 셋이 왼쪽에서 오른쪽으로 계단처럼 오르고, 판마다 가는 다리 둘(앞·뒤). 폭 0.90 · 깊이 0.28 · 높이 0.61. 판 윗면 0.20/0.40/0.60. 밝은 베이지 나무, 다리는 조금 진하게. 판 위는 비움."
+   },
+   "mesh": {
+    "tool": "meshy_image_to_3d",
+    "input_task_id": "<concept task_id>",
+    "ai_model": "meshy-7.1",
+    "model_type": "standard",
+    "should_texture": true,
+    "texture_resolution": "2k",
+    "enable_pbr": false,
+    "should_remesh": true,
+    "target_polycount": 6000,
+    "topology": "triangle",
+    "target_formats": [
+     "glb"
+    ],
+    "save_as": "assets/gen/v2_furn/raw_plant_step_3.glb",
+    "credits": 30
+   }
+  },
+  {
+   "n": 2,
+   "plan": "A",
+   "id": "plant_pedestal",
+   "ko": "화분 받침대(높은)",
+   "size_m_wdh": [
+    0.25,
+    0.25,
+    0.62
+   ],
+   "tiers": "1단 · 둥근 윗판 0.62m",
+   "use": "바닥 화분을 0.62m 로 올림",
+   "out": "assets/v2/furniture/plant_pedestal.glb",
+   "concept": {
+    "tool": "meshy_image_to_image",
+    "ai_model": "nano-banana-pro",
+    "generate_multi_view": false,
+    "reference_file_paths": [
+     "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_room\\style_keyframe_a.png",
+     "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_furn\\c_desk.png"
+    ],
+    "prompt": "One object alone on a plain off-white background. No floor, room, frame, border, text or shadow. 3/4 isometric view from front-left above, front facing lower-left, centered. Cozy hand-painted matte style like the reference. A tall round plant pedestal: round flat top 0.25 m across, one slim column, round foot a bit smaller than the top. 0.62 m tall (height = 2.5 x top width). Top #e0d5c2, column and foot #c3b49c. Top empty.",
+    "save_as": "assets/gen/v2_furn/c_plant_pedestal.png",
+    "credits": 9,
+    "prompt_ko": "높은 둥근 화분 받침 — 지름 0.25 둥근 윗판 · 가는 기둥 하나 · 윗판보다 조금 작은 둥근 발. 높이 0.62(윗판 지름의 2.5배). 윗판 비움."
+   },
+   "mesh": {
+    "tool": "meshy_image_to_3d",
+    "input_task_id": "<concept task_id>",
+    "ai_model": "meshy-7.1",
+    "model_type": "standard",
+    "should_texture": true,
+    "texture_resolution": "2k",
+    "enable_pbr": false,
+    "should_remesh": true,
+    "target_polycount": 4000,
+    "topology": "triangle",
+    "target_formats": [
+     "glb"
+    ],
+    "save_as": "assets/gen/v2_furn/raw_plant_pedestal.glb",
+    "credits": 30
+   }
+  },
+  {
+   "n": 3,
+   "plan": "A",
+   "id": "shelf_cart_3tier",
+   "ko": "이동 카트 3단",
+   "size_m_wdh": [
+    0.5,
+    0.25,
+    0.82
+   ],
+   "tiers": "3단 · 판 윗면 0.11 / 0.44 / 0.77m(같은 간격) · 손잡이 0.95m(오른쪽 끝)",
+   "use": "빛 따라 끌고 다니는 단",
+   "out": "assets/v2/furniture/shelf_cart_3tier.glb",
+   "concept": {
+    "tool": "meshy_image_to_image",
+    "ai_model": "nano-banana-pro",
+    "generate_multi_view": false,
+    "reference_file_paths": [
+     "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_room\\style_keyframe_a.png",
+     "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_furn\\c_shelf.png"
+    ],
+    "prompt": "One object alone on a plain off-white background. No floor, room, frame, border, text or shadow. 3/4 isometric view from front-left above, front facing lower-left, centered. Cozy hand-painted matte style like the reference. A 3-tier rolling utility cart: three flat solid trays with low side rails, four thin corner posts, four small caster wheels, a push handle rising above the right end. Body 0.50 m wide, 0.25 m deep, 0.82 m tall, handle top 0.95 m. Tray tops at 0.11 / 0.44 / 0.77 m, evenly spaced. Pale mint-gray #dfe6e4 trays, gray #b9c2c7 posts. Trays empty.",
+    "save_as": "assets/gen/v2_furn/c_shelf_cart_3tier.png",
+    "credits": 9,
+    "prompt_ko": "바퀴 달린 3단 카트 — 낮은 난간 두른 판 셋 · 가는 모서리 기둥 넷 · 작은 바퀴 넷 · 오른쪽 끝 위로 솟은 손잡이. 몸 0.50×0.25×0.82 · 손잡이 끝 0.95. 판 윗면 0.11/0.44/0.77(같은 간격). 옅은 민트 회색 판 · 회색 기둥. 판 비움."
+   },
+   "mesh": {
+    "tool": "meshy_image_to_3d",
+    "input_task_id": "<concept task_id>",
+    "ai_model": "meshy-7.1",
+    "model_type": "standard",
+    "should_texture": true,
+    "texture_resolution": "2k",
+    "enable_pbr": false,
+    "should_remesh": true,
+    "target_polycount": 10000,
+    "topology": "triangle",
+    "target_formats": [
+     "glb"
+    ],
+    "save_as": "assets/gen/v2_furn/raw_shelf_cart_3tier.glb",
+    "credits": 30
+   }
+  },
+  {
+   "n": 4,
+   "plan": "A",
+   "id": "shelf_ladder_4tier",
+   "ko": "사다리 선반 4단",
+   "size_m_wdh": [
+    0.66,
+    0.42,
+    1.3
+   ],
+   "tiers": "4단 · 판 윗면 0.03 / 0.45 / 0.88 / 1.30m · 깊이 0.30→0.15 · 위로 갈수록 좁아짐(폭 −10%/단)",
+   "use": "벽 기댐 · 높은 단이 창빛을 받음",
+   "out": "assets/v2/furniture/shelf_ladder_4tier.glb",
+   "concept": {
+    "tool": "meshy_image_to_image",
+    "ai_model": "nano-banana-pro",
+    "generate_multi_view": false,
+    "reference_file_paths": [
+     "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_room\\style_keyframe_a.png",
+     "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_furn\\c_shelf.png"
+    ],
+    "prompt": "One object alone on a plain off-white background. No floor, room, frame, border, text or shadow. 3/4 isometric view from front-left above, front facing lower-left, centered. Cozy hand-painted matte style like the reference. A leaning ladder shelf: two long side rails leaning back toward the wall, four flat shelves getting narrower and shallower toward the top (depth 0.30 to 0.15 m). 0.66 m wide, 0.42 m deep at the floor, 1.30 m tall. Shelf tops at 0.03 / 0.45 / 0.88 / 1.30 m: bottom shelf on the floor, top shelf at the very top. Light wood #e3d3bd. Shelves empty.",
+    "save_as": "assets/gen/v2_furn/c_shelf_ladder_4tier.png",
+    "credits": 9,
+    "prompt_ko": "벽에 기대는 사다리 선반 — 긴 옆대 둘이 벽 쪽으로 기울고, 판 넷이 위로 갈수록 좁고 얕아짐(깊이 0.30→0.15). 폭 0.66 · 바닥 깊이 0.42 · 높이 1.30. 판 윗면 0.03/0.45/0.88/1.30(맨 아래는 바닥, 맨 위는 꼭대기). 밝은 나무. 판 비움."
+   },
+   "mesh": {
+    "tool": "meshy_image_to_3d",
+    "input_task_id": "<concept task_id>",
+    "ai_model": "meshy-7.1",
+    "model_type": "standard",
+    "should_texture": true,
+    "texture_resolution": "2k",
+    "enable_pbr": false,
+    "should_remesh": true,
+    "target_polycount": 8000,
+    "topology": "triangle",
+    "target_formats": [
+     "glb"
+    ],
+    "save_as": "assets/gen/v2_furn/raw_shelf_ladder_4tier.glb",
+    "credits": 30
+   }
+  },
+  {
+   "n": 5,
+   "plan": "A",
+   "id": "greenhouse_cabinet",
+   "ko": "미니 온실장(틀만)",
+   "size_m_wdh": [
+    0.7,
+    0.4,
+    1.5
+   ],
+   "tiers": "3단 · 판 윗면 0.39 / 0.76 / 1.14m(높이의 1/4·2/4·3/4) · ⚠ 유리 없이 «틀만»",
+   "use": "식물 갈래 상징 · 자리 6",
+   "out": "assets/v2/furniture/greenhouse_cabinet.glb",
+   "concept": {
+    "tool": "meshy_image_to_image",
+    "ai_model": "nano-banana-pro",
+    "generate_multi_view": false,
+    "reference_file_paths": [
+     "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_room\\style_keyframe_a.png",
+     "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_furn\\c_shelf.png"
+    ],
+    "prompt": "One object alone on a plain off-white background. No floor, room, frame, border, text or shadow. 3/4 isometric view from front-left above, front facing lower-left, centered. Cozy hand-painted matte style like the reference. A mini greenhouse cabinet, FRAME ONLY: slim metal frame with four corner posts, solid top and bottom plates, three flat inner shelves. NO glass panels, NO doors, all sides open. 0.70 m wide, 0.40 m deep, 1.50 m tall. Shelf tops at 0.39 / 0.76 / 1.14 m (1/4, 2/4, 3/4 of the height). Pale blue-gray #cfd8dc. Shelves empty.",
+    "save_as": "assets/gen/v2_furn/c_greenhouse_cabinet.png",
+    "credits": 9,
+    "prompt_ko": "미니 온실장 «틀만» — 가는 쇠틀 · 모서리 기둥 넷 · 윗판·밑판 · 안 선반 셋. 유리·문 없이 사방 트임. 0.70×0.40×1.50. 판 윗면 0.39/0.76/1.14(높이의 1/4·2/4·3/4). 옅은 청회색. 선반 비움. (유리는 게임 코드 것을 그대로 쓴다)"
+   },
+   "mesh": {
+    "tool": "meshy_image_to_3d",
+    "input_task_id": "<concept task_id>",
+    "ai_model": "meshy-7.1",
+    "model_type": "standard",
+    "should_texture": true,
+    "texture_resolution": "2k",
+    "enable_pbr": false,
+    "should_remesh": true,
+    "target_polycount": 10000,
+    "topology": "triangle",
+    "target_formats": [
+     "glb"
+    ],
+    "save_as": "assets/gen/v2_furn/raw_greenhouse_cabinet.glb",
+    "credits": 30
+   }
+  },
+  {
+   "n": 6,
+   "plan": "A",
+   "id": "low_table",
+   "ko": "좌식 테이블",
+   "size_m_wdh": [
+    1,
+    0.5,
+    0.32
+   ],
+   "tiers": "상판 0.32m(두께 0.04)",
+   "use": "원룸 살림 상판 · 화분·시루 자리",
+   "out": "assets/v2/furniture/low_table.glb",
+   "concept": {
+    "tool": "meshy_image_to_image",
+    "ai_model": "nano-banana-pro",
+    "generate_multi_view": false,
+    "reference_file_paths": [
+     "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_room\\style_keyframe_a.png",
+     "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_furn\\c_desk.png"
+    ],
+    "prompt": "One object alone on a plain off-white background. No floor, room, frame, border, text or shadow. 3/4 isometric view from front-left above, front facing lower-left, centered. Cozy hand-painted matte style like the reference. A low Korean floor table: rectangular wooden top on four short legs. 1.00 m wide, 0.50 m deep, only 0.32 m tall, top 4 cm thick. Warm light wood #e5d3b8, legs #cbbba2. Top empty.",
+    "save_as": "assets/gen/v2_furn/c_low_table.png",
+    "credits": 9,
+    "prompt_ko": "낮은 좌식 테이블 — 네모 나무 상판에 짧은 다리 넷. 1.00×0.50 · 높이 0.32 · 상판 두께 4cm. 따뜻한 밝은 나무. 상판 비움."
+   },
+   "mesh": {
+    "tool": "meshy_image_to_3d",
+    "input_task_id": "<concept task_id>",
+    "ai_model": "meshy-7.1",
+    "model_type": "standard",
+    "should_texture": true,
+    "texture_resolution": "2k",
+    "enable_pbr": false,
+    "should_remesh": true,
+    "target_polycount": 4000,
+    "topology": "triangle",
+    "target_formats": [
+     "glb"
+    ],
+    "save_as": "assets/gen/v2_furn/raw_low_table.glb",
+    "credits": 30
+   }
+  },
+  {
+   "n": 7,
+   "plan": "A",
+   "id": "wardrobe",
+   "ko": "옷장",
+   "size_m_wdh": [
+    1,
+    0.58,
+    1.9
+   ],
+   "tiers": "— (자리 없음 · 대리 윗면 1.90m)",
+   "use": "원룸 살림 · 가장 큰 가림",
+   "out": "assets/v2/furniture/wardrobe.glb",
+   "concept": {
+    "tool": "meshy_image_to_image",
+    "ai_model": "nano-banana-pro",
+    "generate_multi_view": false,
+    "reference_file_paths": [
+     "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_room\\style_keyframe_a.png",
+     "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_furn\\c_drawer.png"
+    ],
+    "prompt": "One object alone on a plain off-white background. No floor, room, frame, border, text or shadow. 3/4 isometric view from front-left above, front facing lower-left, centered. Cozy hand-painted matte style like the reference. A two-door wardrobe: tall plain box, two flat closed doors with a thin center gap, two slim vertical handles beside the gap at mid height. 1.00 m wide, 0.58 m deep, 1.90 m tall. Warm off-white #eae2d6 body, honey wood #c8b18a handles.",
+    "save_as": "assets/gen/v2_furn/c_wardrobe.png",
+    "credits": 9,
+    "prompt_ko": "두 문 옷장 — 키 큰 민짜 상자 · 닫힌 납작한 문 둘 · 가운데 가는 문틈 · 틈 곁 가는 세로 손잡이 둘(가운데 높이). 1.00×0.58×1.90. 따뜻한 미색 몸 · 꿀색 나무 손잡이."
+   },
+   "mesh": {
+    "tool": "meshy_image_to_3d",
+    "input_task_id": "<concept task_id>",
+    "ai_model": "meshy-7.1",
+    "model_type": "standard",
+    "should_texture": true,
+    "texture_resolution": "2k",
+    "enable_pbr": false,
+    "should_remesh": true,
+    "target_polycount": 6000,
+    "topology": "triangle",
+    "target_formats": [
+     "glb"
+    ],
+    "save_as": "assets/gen/v2_furn/raw_wardrobe.glb",
+    "credits": 30
+   }
+  },
+  {
+   "n": 8,
+   "plan": "A",
+   "id": "mattress",
+   "ko": "바닥 매트리스",
+   "size_m_wdh": [
+    1.05,
+    1.95,
+    0.28
+   ],
+   "tiers": "— (긴 쪽이 깊이 d · 베개는 뒤 −Z · 총 높이 0.25m)",
+   "use": "원룸 미니멀 잠자리(그림)",
+   "out": "assets/v2/furniture/mattress.glb",
+   "concept": {
+    "tool": "meshy_image_to_image",
+    "ai_model": "nano-banana-pro",
+    "generate_multi_view": false,
+    "reference_file_paths": [
+     "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_room\\style_keyframe_a.png",
+     "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_furn\\c_bed.png"
+    ],
+    "prompt": "One object alone on a plain off-white background. No floor, room, frame, border, text or shadow. 3/4 isometric view from front-left above, front facing lower-left, centered. Cozy hand-painted matte style like the reference. A floor mattress with no bed frame, lying flat: 1.05 m wide, 1.95 m long, 16 cm thick, long side running from front to back. A folded light-blue #dce6ea blanket over the front half, one white pillow at the back end. Total height 0.25 m. Cream #f2efe9 mattress.",
+    "save_as": "assets/gen/v2_furn/c_mattress.png",
+    "credits": 9,
+    "prompt_ko": "틀 없는 바닥 매트리스 — 바닥에 납작하게. 폭 1.05 · 길이 1.95(앞에서 뒤로 길게) · 두께 16cm. 앞쪽 반에 개어 둔 옅은 하늘색 이불 · 뒤 끝에 흰 베개 하나. 총 높이 0.25. 크림색."
+   },
+   "mesh": {
+    "tool": "meshy_image_to_3d",
+    "input_task_id": "<concept task_id>",
+    "ai_model": "meshy-7.1",
+    "model_type": "standard",
+    "should_texture": true,
+    "texture_resolution": "2k",
+    "enable_pbr": false,
+    "should_remesh": true,
+    "target_polycount": 8000,
+    "topology": "triangle",
+    "target_formats": [
+     "glb"
+    ],
+    "save_as": "assets/gen/v2_furn/raw_mattress.glb",
+    "credits": 30
+   }
+  },
+  {
+   "n": 9,
+   "plan": "A",
+   "id": "win_studio_cross",
+   "ko": "원룸 창틀(틀만)",
+   "size_m_wdh": [
+    2.4,
+    0.14,
+    1.45
+   ],
+   "tiers": "— 바깥틀 0.09 · 십자살 0.045 · 깊이 0.14 · 네 칸 같은 크기",
+   "use": "원룸 뒷벽 큰 창 — 늘 보인다",
+   "out": "assets/v2/house/win_studio_cross.glb",
+   "concept": {
+    "tool": "meshy_image_to_image",
+    "ai_model": "nano-banana-pro",
+    "generate_multi_view": false,
+    "reference_file_paths": [
+     "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_room\\style_keyframe_a.png",
+     "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_furn\\c_drawer.png"
+    ],
+    "prompt": "One object alone on a plain off-white background. No floor, room, frame, border, text or shadow. 3/4 isometric view from front-left above, front facing lower-left, centered. Cozy hand-painted matte style like the reference. A wide window frame, FRAME ONLY, seen almost from the front: rectangular frame split into 4 equal panes by one vertical and one horizontal bar crossing at the exact center. NO glass: the panes are open holes. 2.40 m wide, 1.45 m tall, 0.14 m deep. Outer bars 0.09 m, cross bars 0.045 m: thin, straight, crisp square corners. Off-white #f8f4ec.",
+    "save_as": "assets/gen/v2_furn/c_win_studio_cross.png",
+    "credits": 9,
+    "prompt_ko": "넓은 창틀 «틀만» — 거의 정면. 가운데서 정확히 엇갈리는 세로살·가로살 하나씩으로 같은 크기 네 칸. 유리 없이 구멍. 2.40×1.45 · 깊이 0.14. 바깥틀 0.09 · 십자살 0.045 — 가늘고 곧게, 모서리 각지게. 미색."
+   },
+   "mesh": {
+    "tool": "meshy_image_to_3d",
+    "input_task_id": "<concept task_id>",
+    "ai_model": "meshy-7.1",
+    "model_type": "standard",
+    "should_texture": true,
+    "texture_resolution": "2k",
+    "enable_pbr": false,
+    "should_remesh": true,
+    "target_polycount": 4000,
+    "topology": "triangle",
+    "target_formats": [
+     "glb"
+    ],
+    "save_as": "assets/gen/v2_furn/raw_win_studio_cross.glb",
+    "credits": 30
+   }
+  },
+  {
+   "n": 10,
+   "plan": "A",
+   "id": "door_wood",
+   "ko": "원룸 현관문",
+   "size_m_wdh": [
+    0.95,
+    0.14,
+    2.05
+   ],
+   "tiers": "— 문틀 0.09(좌·우·위) · 문짝 두께 0.05 · 둥근 손잡이 오른쪽 · 바닥에서 0.92m",
+   "use": "원룸 앞벽 문 — 앞벽은 카메라 쪽일 때 컷어웨이로 내려간다(코드 읽음 · 화면으로 안 잼)",
+   "out": "assets/v2/house/door_wood.glb",
+   "concept": {
+    "tool": "meshy_image_to_image",
+    "ai_model": "nano-banana-pro",
+    "generate_multi_view": false,
+    "reference_file_paths": [
+     "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_room\\style_keyframe_a.png",
+     "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_furn\\c_drawer.png"
+    ],
+    "prompt": "One object alone on a plain off-white background. No floor, room, frame, border, text or shadow. 3/4 isometric view from front-left above, front facing lower-left, centered. Cozy hand-painted matte style like the reference. An apartment front door with its frame: flat warm wood slab door #c9a36a in a slim frame on the left, right and top, round brass knob on the right at hip height, closed, no glass. 0.95 m wide, 2.05 m tall, frame 0.14 m deep, door 5 cm thick. Simple and clean.",
+    "save_as": "assets/gen/v2_furn/c_door_wood.png",
+    "credits": 9,
+    "prompt_ko": "아파트 현관문과 문틀 — 따뜻한 나무색 납작한 문짝 · 좌·우·위 가는 문틀 · 오른쪽 허리 높이 둥근 놋쇠 손잡이 · 닫힘 · 유리 없음. 0.95×2.05 · 문틀 깊이 0.14 · 문짝 두께 5cm. 단순하게."
+   },
+   "mesh": {
+    "tool": "meshy_image_to_3d",
+    "input_task_id": "<concept task_id>",
+    "ai_model": "meshy-7.1",
+    "model_type": "standard",
+    "should_texture": true,
+    "texture_resolution": "2k",
+    "enable_pbr": false,
+    "should_remesh": true,
+    "target_polycount": 4000,
+    "topology": "triangle",
+    "target_formats": [
+     "glb"
+    ],
+    "save_as": "assets/gen/v2_furn/raw_door_wood.glb",
+    "credits": 30
+   }
+  },
+  {
+   "n": 11,
+   "plan": "B",
+   "id": "growlight_clip",
+   "ko": "식물등 집게",
+   "size_m_wdh": [
+    0.2,
+    0.24,
+    0.42
+   ],
+   "tiers": "— 등 머리 윗쪽 앞(y 0.38 · z +0.14) · LED 원판 지름 0.14 은 코드 것을 그대로 둔다",
+   "use": "반지하·원룸 둘 다 · 빛의 주인공",
+   "out": "assets/v2/furniture/growlight_clip.glb",
+   "concept": {
+    "tool": "meshy_image_to_image",
+    "ai_model": "nano-banana-pro",
+    "generate_multi_view": false,
+    "reference_file_paths": [
+     "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_room\\style_keyframe_a.png",
+     "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_furn\\c_shelf.png"
+    ],
+    "prompt": "One object alone on a plain off-white background. No floor, room, frame, border, text or shadow. 3/4 isometric view from front-left above, front facing lower-left, centered. Cozy hand-painted matte style like the reference. A clip-on grow lamp: small spring clamp at the bottom, slim gooseneck arm, round lamp head at the top front tilted forward and down, flat round underside where the light disc sits. 0.20 m wide, 0.24 m deep, 0.42 m tall. Light gray #dfe3e6, a soft lilac glow under the head.",
+    "save_as": "assets/gen/v2_furn/c_growlight_clip.png",
+    "credits": 9,
+    "prompt_ko": "집게형 식물등 — 아래 작은 용수철 집게 · 가는 구스넥 · 위 앞쪽에 앞·아래로 기운 둥근 등 머리 · 머리 밑은 빛 원판이 붙는 납작한 면. 0.20×0.24×0.42. 옅은 회색 · 머리 밑 옅은 라일락 빛."
+   },
+   "mesh": {
+    "tool": "meshy_image_to_3d",
+    "input_task_id": "<concept task_id>",
+    "ai_model": "meshy-7.1",
+    "model_type": "standard",
+    "should_texture": true,
+    "texture_resolution": "2k",
+    "enable_pbr": false,
+    "should_remesh": true,
+    "target_polycount": 6000,
+    "topology": "triangle",
+    "target_formats": [
+     "glb"
+    ],
+    "save_as": "assets/gen/v2_furn/raw_growlight_clip.glb",
+    "credits": 30
+   }
+  },
+  {
+   "n": 12,
+   "plan": "B",
+   "id": "growlight_stand",
+   "ko": "식물등 거치(스탠드)",
+   "size_m_wdh": [
+    0.45,
+    0.38,
+    1.5
+   ],
+   "tiers": "— 판 가운데가 기둥 오른쪽 0.28m · 판 0.30×0.16 · 판 밑면 1.36m",
+   "use": "반지하·원룸 둘 다 · 빛의 주인공",
+   "out": "assets/v2/furniture/growlight_stand.glb",
+   "concept": {
+    "tool": "meshy_image_to_image",
+    "ai_model": "nano-banana-pro",
+    "generate_multi_view": false,
+    "reference_file_paths": [
+     "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_room\\style_keyframe_a.png",
+     "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_furn\\c_shelf.png"
+    ],
+    "prompt": "One object alone on a plain off-white background. No floor, room, frame, border, text or shadow. 3/4 isometric view from front-left above, front facing lower-left, centered. Cozy hand-painted matte style like the reference. A floor grow-light stand: round heavy base 0.38 m across, one tall slim pole, a short arm at the top reaching to the right, a flat rectangular LED panel 0.30 x 0.16 m under the arm end facing down, its center 0.28 m right of the pole. 1.50 m tall. Light gray #cfd4d8, soft lilac glow under the panel.",
+    "save_as": "assets/gen/v2_furn/c_growlight_stand.png",
+    "credits": 9,
+    "prompt_ko": "바닥 거치형 식물등 — 지름 0.38 무거운 둥근 받침 · 가는 긴 기둥 하나 · 꼭대기에서 오른쪽으로 뻗은 짧은 팔 · 팔 끝 밑에 아래를 보는 납작한 LED 판 0.30×0.16(가운데가 기둥에서 오른쪽 0.28). 높이 1.50. 옅은 회색 · 판 밑 라일락 빛."
+   },
+   "mesh": {
+    "tool": "meshy_image_to_3d",
+    "input_task_id": "<concept task_id>",
+    "ai_model": "meshy-7.1",
+    "model_type": "standard",
+    "should_texture": true,
+    "texture_resolution": "2k",
+    "enable_pbr": false,
+    "should_remesh": true,
+    "target_polycount": 6000,
+    "topology": "triangle",
+    "target_formats": [
+     "glb"
+    ],
+    "save_as": "assets/gen/v2_furn/raw_growlight_stand.glb",
+    "credits": 30
+   }
+  },
+  {
+   "n": 13,
+   "plan": "B",
+   "id": "cube_storage",
+   "ko": "큐브 수납장",
+   "size_m_wdh": [
+    0.75,
+    0.25,
+    0.78
+   ],
+   "tiers": "상판 0.78m(원룸 창 아랫변 0.775 와 같은 높이)",
+   "use": "창 앞 벽에 붙이면 윗면이 창턱 높이",
+   "out": "assets/v2/furniture/cube_storage.glb",
+   "concept": {
+    "tool": "meshy_image_to_image",
+    "ai_model": "nano-banana-pro",
+    "generate_multi_view": false,
+    "reference_file_paths": [
+     "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_room\\style_keyframe_a.png",
+     "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_furn\\c_cabinet.png"
+    ],
+    "prompt": "One object alone on a plain off-white background. No floor, room, frame, border, text or shadow. 3/4 isometric view from front-left above, front facing lower-left, centered. Cozy hand-painted matte style like the reference. A low cube storage unit: 2 x 2 equal open square cubbies, fabric bins in the bottom-left and top-right cubbies, the other two open. Flat plain top. 0.75 m wide, 0.25 m deep, 0.78 m tall. Warm off-white #eae2d6 wood, pale gray-beige bins.",
+    "save_as": "assets/gen/v2_furn/c_cube_storage.png",
+    "credits": 9,
+    "prompt_ko": "낮은 큐브 수납장 — 같은 크기 네모 칸 2×2 · 왼쪽 아래와 오른쪽 위 칸에 천 바구니 · 나머지 둘은 트임 · 윗면 민짜. 0.75×0.25×0.78. 따뜻한 미색 나무 · 옅은 회베이지 바구니."
+   },
+   "mesh": {
+    "tool": "meshy_image_to_3d",
+    "input_task_id": "<concept task_id>",
+    "ai_model": "meshy-7.1",
+    "model_type": "standard",
+    "should_texture": true,
+    "texture_resolution": "2k",
+    "enable_pbr": false,
+    "should_remesh": true,
+    "target_polycount": 8000,
+    "topology": "triangle",
+    "target_formats": [
+     "glb"
+    ],
+    "save_as": "assets/gen/v2_furn/raw_cube_storage.glb",
+    "credits": 30
+   }
+  },
+  {
+   "n": 14,
+   "plan": "B",
+   "id": "shelf",
+   "ko": "책장",
+   "size_m_wdh": [
+    0.8,
+    0.3,
+    1.5
+   ],
+   "tiers": "4칸 · 판 윗면 0.02 / 0.39 / 0.77 / 1.14m(같은 간격 h/4)",
+   "use": "상판·단 자리 8",
+   "out": "assets/v2/furniture/bookshelf.glb",
+   "concept": {
+    "tool": "meshy_image_to_image",
+    "ai_model": "nano-banana-pro",
+    "generate_multi_view": false,
+    "reference_file_paths": [
+     "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_room\\style_keyframe_a.png",
+     "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_furn\\c_cabinet.png"
+    ],
+    "prompt": "One object alone on a plain off-white background. No floor, room, frame, border, text or shadow. 3/4 isometric view from front-left above, front facing lower-left, centered. Cozy hand-painted matte style like the reference. An open bookshelf with four equal open compartments: two side panels, top and bottom boards, three inner shelves evenly spaced, thin back panel. 0.80 m wide, 0.30 m deep, 1.50 m tall. Shelf tops at 0.02 / 0.39 / 0.77 / 1.14 m. Warm off-white wood #e8dfd2. Shelves almost empty: only two thin books at the far left of the top compartment.",
+    "save_as": "assets/gen/v2_furn/c_bookshelf.png",
+    "credits": 9,
+    "prompt_ko": "트인 책장 — 같은 크기 네 칸 · 옆판 둘 · 위·아래 판 · 같은 간격 안 선반 셋 · 얇은 뒤판. 0.80×0.30×1.50. 판 윗면 0.02/0.39/0.77/1.14. 따뜻한 미색 나무. 거의 비움 — 맨 위 칸 왼쪽 끝에 얇은 책 두 권만."
+   },
+   "mesh": {
+    "tool": "meshy_image_to_3d",
+    "input_task_id": "<concept task_id>",
+    "ai_model": "meshy-7.1",
+    "model_type": "standard",
+    "should_texture": true,
+    "texture_resolution": "2k",
+    "enable_pbr": false,
+    "should_remesh": true,
+    "target_polycount": 8000,
+    "topology": "triangle",
+    "target_formats": [
+     "glb"
+    ],
+    "save_as": "assets/gen/v2_furn/raw_bookshelf.glb",
+    "credits": 30
+   }
+  },
+  {
+   "n": 15,
+   "plan": "B",
+   "id": "shelf_corner_3tier",
+   "ko": "코너 선반 3단",
+   "size_m_wdh": [
+    0.5,
+    0.5,
+    1.05
+   ],
+   "tiers": "3단 · 부채꼴 판 윗면 0.03 / 0.54 / 1.05m · 직각 모서리가 뒤−왼(−X −Z)",
+   "use": "모서리 단 자리 6",
+   "out": "assets/v2/furniture/shelf_corner_3tier.glb",
+   "concept": {
+    "tool": "meshy_image_to_image",
+    "ai_model": "nano-banana-pro",
+    "generate_multi_view": false,
+    "reference_file_paths": [
+     "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_room\\style_keyframe_a.png",
+     "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_furn\\c_shelf.png"
+    ],
+    "prompt": "One object alone on a plain off-white background. No floor, room, frame, border, text or shadow. 3/4 isometric view from front-left above, front facing lower-left, centered. Cozy hand-painted matte style like the reference. A corner shelf: three quarter-circle (fan-shaped) flat shelves and three thin posts; the right-angle corner points to the back-left wall corner, the curved edge faces the viewer. Radius 0.50 m, 1.05 m tall. Shelf tops at 0.03 / 0.54 / 1.05 m: on the floor, middle, top. Warm off-white #e8dfd2, posts #cbbfae. Shelves empty.",
+    "save_as": "assets/gen/v2_furn/c_shelf_corner_3tier.png",
+    "credits": 9,
+    "prompt_ko": "모서리 선반 — 부채꼴(4분원) 판 셋 · 가는 기둥 셋 · 직각 꼭짓점은 뒤−왼 벽 모서리로, 둥근 변은 보는 쪽으로. 반지름 0.50 · 높이 1.05. 판 윗면 0.03/0.54/1.05(바닥·가운데·꼭대기). 미색 · 기둥 조금 진하게. 판 비움."
+   },
+   "mesh": {
+    "tool": "meshy_image_to_3d",
+    "input_task_id": "<concept task_id>",
+    "ai_model": "meshy-7.1",
+    "model_type": "standard",
+    "should_texture": true,
+    "texture_resolution": "2k",
+    "enable_pbr": false,
+    "should_remesh": true,
+    "target_polycount": 6000,
+    "topology": "triangle",
+    "target_formats": [
+     "glb"
+    ],
+    "save_as": "assets/gen/v2_furn/raw_shelf_corner_3tier.glb",
+    "credits": 30
+   }
+  },
+  {
+   "n": 16,
+   "plan": "B",
+   "id": "clothes_rack",
+   "ko": "옷걸이 행거",
+   "size_m_wdh": [
+    1,
+    0.45,
+    1.62
+   ],
+   "tiers": "— (자리 없음 · 살대 가구 → 고르기 껍데기)",
+   "use": "원룸 살림 · 가림",
+   "out": "assets/v2/furniture/clothes_rack.glb",
+   "concept": {
+    "tool": "meshy_image_to_image",
+    "ai_model": "nano-banana-pro",
+    "generate_multi_view": false,
+    "reference_file_paths": [
+     "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_room\\style_keyframe_a.png",
+     "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_props\\c_drying_rack.png"
+    ],
+    "prompt": "One object alone on a plain off-white background. No floor, room, frame, border, text or shadow. 3/4 isometric view from front-left above, front facing lower-left, centered. Cozy hand-painted matte style like the reference. A simple standing clothes rail: two slim upright posts on flat foot bars, one horizontal hanging bar at the top, five pastel shirts on hangers (pale blue, pink, sage, lilac). 1.00 m wide, 0.45 m deep at the feet, 1.62 m tall. Light taupe metal #cbbfae.",
+    "save_as": "assets/gen/v2_furn/c_clothes_rack.png",
+    "credits": 9,
+    "prompt_ko": "서 있는 옷걸이 행거 — 납작한 발대 위 가는 기둥 둘 · 꼭대기 가로 봉 하나 · 옷걸이에 걸린 파스텔 셔츠 다섯(하늘·분홍·세이지·라일락). 1.00×0.45(발) · 높이 1.62. 옅은 토프색 쇠."
+   },
+   "mesh": {
+    "tool": "meshy_image_to_3d",
+    "input_task_id": "<concept task_id>",
+    "ai_model": "meshy-7.1",
+    "model_type": "standard",
+    "should_texture": true,
+    "texture_resolution": "2k",
+    "enable_pbr": false,
+    "should_remesh": true,
+    "target_polycount": 15000,
+    "topology": "triangle",
+    "target_formats": [
+     "glb"
+    ],
+    "save_as": "assets/gen/v2_furn/raw_clothes_rack.glb",
+    "credits": 30
+   }
+  },
+  {
+   "n": 17,
+   "plan": "B",
+   "id": "sofa",
+   "ko": "2인 소파",
+   "size_m_wdh": [
+    1.6,
+    0.82,
+    0.85
+   ],
+   "tiers": "— 좌석 윗면 0.55 · 등받이 윗면 0.85(프리셋 h 1.1 은 가림 상자 값)",
+   "use": "원룸 살림(그림 · 지금은 앉기 단추 없음)",
+   "out": "assets/v2/furniture/sofa.glb",
+   "concept": {
+    "tool": "meshy_image_to_image",
+    "ai_model": "nano-banana-pro",
+    "generate_multi_view": false,
+    "reference_file_paths": [
+     "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_room\\style_keyframe_a.png",
+     "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_furn\\c_bed.png"
+    ],
+    "prompt": "One object alone on a plain off-white background. No floor, room, frame, border, text or shadow. 3/4 isometric view from front-left above, front facing lower-left, centered. Cozy hand-painted matte style like the reference. A 2-seat sofa: low backrest across the back, two armrests, two seat cushions, four short wooden legs. 1.60 m wide, 0.82 m deep, seat top 0.55 m, backrest top 0.85 m. Soft sage-gray #c9d6d2 fabric, off-white #eef2f0 cushions.",
+    "save_as": "assets/gen/v2_furn/c_sofa.png",
+    "credits": 9,
+    "prompt_ko": "2인 소파 — 뒤를 가로지르는 낮은 등받이 · 팔걸이 둘 · 좌석 쿠션 둘 · 짧은 나무 다리 넷. 1.60×0.82 · 좌석 윗면 0.55 · 등받이 윗면 0.85. 부드러운 세이지 회색 천 · 미색 쿠션."
+   },
+   "mesh": {
+    "tool": "meshy_image_to_3d",
+    "input_task_id": "<concept task_id>",
+    "ai_model": "meshy-7.1",
+    "model_type": "standard",
+    "should_texture": true,
+    "texture_resolution": "2k",
+    "enable_pbr": false,
+    "should_remesh": true,
+    "target_polycount": 12000,
+    "topology": "triangle",
+    "target_formats": [
+     "glb"
+    ],
+    "save_as": "assets/gen/v2_furn/raw_sofa.glb",
+    "credits": 30
+   }
+  },
+  {
+   "n": 18,
+   "plan": "예비",
+   "id": "win_banjiha_letterbox",
+   "ko": "반지하 창틀(가로 띠 · 틀만)",
+   "size_m_wdh": [
+    2.2,
+    0.14,
+    0.55
+   ],
+   "tiers": "— 세로살 둘 · 세 칸 · 9번이 «틀 두께» 검사를 넘었을 때만",
+   "use": "반지하 뒷벽 창(첫 방) — 늘 보인다",
+   "out": "assets/v2/house/win_banjiha_letterbox.glb",
+   "concept": {
+    "tool": "meshy_image_to_image",
+    "ai_model": "nano-banana-pro",
+    "generate_multi_view": false,
+    "reference_file_paths": [
+     "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_room\\style_keyframe_a.png",
+     "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_furn\\c_drawer.png"
+    ],
+    "prompt": "One object alone on a plain off-white background. No floor, room, frame, border, text or shadow. 3/4 isometric view from front-left above, front facing lower-left, centered. Cozy hand-painted matte style like the reference. A wide low basement window frame, FRAME ONLY, seen almost from the front: long horizontal rectangle split by two thin vertical bars into 3 equal panes. NO glass: the panes are open holes. 2.20 m wide, 0.55 m tall, 0.14 m deep. Outer bars 0.09 m, inner bars 0.045 m: thin, straight, crisp square corners. Pale gray #e2e4e6.",
+    "save_as": "assets/gen/v2_furn/c_win_banjiha_letterbox.png",
+    "credits": 9,
+    "prompt_ko": "넓고 낮은 반지하 창틀 «틀만» — 거의 정면 · 가늘은 세로살 둘로 같은 크기 세 칸 · 유리 없이 구멍. 2.20×0.55 · 깊이 0.14. 바깥틀 0.09 · 세로살 0.045 — 가늘고 곧게. 옅은 회색."
+   },
+   "mesh": {
+    "tool": "meshy_image_to_3d",
+    "input_task_id": "<concept task_id>",
+    "ai_model": "meshy-7.1",
+    "model_type": "standard",
+    "should_texture": true,
+    "texture_resolution": "2k",
+    "enable_pbr": false,
+    "should_remesh": true,
+    "target_polycount": 4000,
+    "topology": "triangle",
+    "target_formats": [
+     "glb"
+    ],
+    "save_as": "assets/gen/v2_furn/raw_win_banjiha_letterbox.glb",
+    "credits": 30
+   }
+  },
+  {
+   "n": 19,
+   "plan": "예비",
+   "id": "coffee_table",
+   "ko": "커피 테이블",
+   "size_m_wdh": [
+    0.95,
+    0.52,
+    0.38
+   ],
+   "tiers": "2단 · 아래 선반 윗면 0.18 · 상판 0.38m",
+   "use": "상판 자리",
+   "out": "assets/v2/furniture/coffee_table.glb",
+   "concept": {
+    "tool": "meshy_image_to_image",
+    "ai_model": "nano-banana-pro",
+    "generate_multi_view": false,
+    "reference_file_paths": [
+     "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_room\\style_keyframe_a.png",
+     "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_furn\\c_desk.png"
+    ],
+    "prompt": "One object alone on a plain off-white background. No floor, room, frame, border, text or shadow. 3/4 isometric view from front-left above, front facing lower-left, centered. Cozy hand-painted matte style like the reference. A low coffee table: rectangular top on four legs with a lower shelf near the floor. 0.95 m wide, 0.52 m deep, top at 0.38 m, lower shelf top at 0.18 m. Warm light wood #e5d3b8, legs #cbbba2. Both surfaces empty.",
+    "save_as": "assets/gen/v2_furn/c_coffee_table.png",
+    "credits": 9,
+    "prompt_ko": "낮은 커피 테이블 — 네모 상판 · 다리 넷 · 바닥 가까이 아래 선반. 0.95×0.52 · 상판 0.38 · 아래 선반 윗면 0.18. 따뜻한 밝은 나무. 두 판 다 비움."
+   },
+   "mesh": {
+    "tool": "meshy_image_to_3d",
+    "input_task_id": "<concept task_id>",
+    "ai_model": "meshy-7.1",
+    "model_type": "standard",
+    "should_texture": true,
+    "texture_resolution": "2k",
+    "enable_pbr": false,
+    "should_remesh": true,
+    "target_polycount": 5000,
+    "topology": "triangle",
+    "target_formats": [
+     "glb"
+    ],
+    "save_as": "assets/gen/v2_furn/raw_coffee_table.glb",
+    "credits": 30
+   }
+  },
+  {
+   "n": 20,
+   "plan": "예비",
+   "id": "stool",
+   "ko": "스툴",
+   "size_m_wdh": [
+    0.36,
+    0.36,
+    0.45
+   ],
+   "tiers": "좌판 0.45m",
+   "use": "작은 받침 · 자리(slots) 없음 — 화분이 올라가는지는 이을 때 잰다",
+   "out": "assets/v2/furniture/stool.glb",
+   "concept": {
+    "tool": "meshy_image_to_image",
+    "ai_model": "nano-banana-pro",
+    "generate_multi_view": false,
+    "reference_file_paths": [
+     "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_room\\style_keyframe_a.png",
+     "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_furn\\c_chair.png"
+    ],
+    "prompt": "One object alone on a plain off-white background. No floor, room, frame, border, text or shadow. 3/4 isometric view from front-left above, front facing lower-left, centered. Cozy hand-painted matte style like the reference. A small round wooden stool: round flat seat 0.36 m across, four straight slim legs. 0.45 m tall. Light beige wood #e0d5c2, legs #c3b49c. Seat empty.",
+    "save_as": "assets/gen/v2_furn/c_stool.png",
+    "credits": 9,
+    "prompt_ko": "작은 둥근 나무 스툴 — 지름 0.36 둥근 좌판 · 곧고 가는 다리 넷. 높이 0.45. 밝은 베이지 나무. 좌판 비움."
+   },
+   "mesh": {
+    "tool": "meshy_image_to_3d",
+    "input_task_id": "<concept task_id>",
+    "ai_model": "meshy-7.1",
+    "model_type": "standard",
+    "should_texture": true,
+    "texture_resolution": "2k",
+    "enable_pbr": false,
+    "should_remesh": true,
+    "target_polycount": 4000,
+    "topology": "triangle",
+    "target_formats": [
+     "glb"
+    ],
+    "save_as": "assets/gen/v2_furn/raw_stool.glb",
+    "credits": 30
+   }
+  }
+ ]
+}
