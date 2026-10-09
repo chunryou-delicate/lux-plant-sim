@@ -1487,6 +1487,13 @@ export const SCRIPTS = {
   moveNoVarie: [
     { who: 'moni', face: 'worry', text: '무늬 하나는 들고 가자. 무늬가 없으면 다음 방에서 늘릴 게 없어.' }
   ],
+  /* ★★ 2026-10-09 [plan] D31(총괄 · 박사님 «재미있게») — **이사비를 내면 첫 달 월세가 모자란 이사 «전»의 한 줄.** D27 과 같은 결: 막지 않고 말린다.
+     지금은 거의 모든 판이 이사 다음 날 0원 밑 → 구호금 50만으로 원룸을 시작한다 — 이사의 «해냈다»가 «구호금»으로 시작했다.
+     ⚠ 수는 안 말한다(이사비·월세는 되묻기 창이 말한다). 사건 `move_low_cash` — [core] 가 이사 되묻기 창을 열 때
+       «지갑 − 이사비 < 첫 달 월세»면 낸다. 무늬 원천 0(moveNoVarie)과 같이 서면 그 뒤에 선다(§EVENT_ORDER 없음 — 사건 차례 그대로). */
+  moveLowCash: [
+    { who: 'moni', face: 'worry', text: '이사비 내면 첫 달 월세가 모자라. 조금만 더 모으고 가자.' }
+  ],
   /* ★★ 2026-10-08 [plan] 갈래 지도 2 — **굶주림 경고에 «나가는 길»을 말한다.** 0원이 닷새 이어지면 매일 `hungry`(tutorial.js) —
      지금까지 로그(「굶은 지 N일째 — M일 남았습니다」)뿐이고 대사가 없었다. 게임오버 자체는 박사님 결정(08-17)이라 안 건드린다.
      ⚠ 수는 안 말한다(남은 날은 로그·화면이 말한다) · 「곳간」은 화면에서 걷힌 말이라(박사님 08-16 «그냥 보유 채소») «남은 채소».
@@ -2051,7 +2058,7 @@ export const REPEATABLE = new Set(
     .concat(['rentSoon', 'rentAgain', 'plantStalledAgain', 'plantStalledWinter',
              'cropHandsShort', 'brokeTalk', 'brokeTalkAgain',
              /* ★ 2026-10-08 D22 — 팔려고 할 때마다 말린다(되돌릴 수 없는 것 앞의 말은 매번이다) */
-             'sellLastVarie', 'moveNoVarie', 'hungryTalk', 'hungryTalk2',
+             'sellLastVarie', 'moveNoVarie', 'moveLowCash', 'hungryTalk', 'hungryTalk2',
              'cuttingNode', 'cuttingWarn', 'cuttingWarnLast', 'cuttingDied',
              'cuttingVarieBright', 'cuttingVarieMid', 'cuttingVarieDark', 'nudgeSeedSow',
              'nudgeSiruOffer', 'nudgeSiruPush', 'statusOneroomNoVarie', 'statusOneroomCutSill',
@@ -2110,6 +2117,8 @@ export const EVENT_SCRIPT = Object.freeze({
   sell_last_varie:     'sellLastVarie',
   /* ★ 2026-10-08 [plan] D27 — 무늬 원천 없이 이사 되묻기(§moveNoVarie) · 사건은 [core] 가 되묻기 창을 열 때 낸다 */
   move_no_varie:       'moveNoVarie',
+  /* ★ 2026-10-09 [plan] D31 — 이사비를 내면 첫 달 월세가 모자란 이사 되묻기(§moveLowCash) · 사건은 [core] */
+  move_low_cash:       'moveLowCash',
   /* ★ 2026-10-08 [plan] 갈래 지도 2 — 굶주림 경고(tutorial.js · 0원 닷새째부터 매일 · 월세·파산과 같은 살림 사건 길) */
   hungry:              'hungryTalk',
   /* ★ 2026-10-08 [plan] 갈래 지도 5·6 — 삽수 사건([core] a8749420 로 turn.events 에 섬). 갈림은 §scriptOf */
