@@ -499,3 +499,4 @@
 - ★ 그림 읽기: 도구는 재질 바탕색(`strip_stray_parts.base_color_image`)을 따라간다 — Tripo 는 images[0] 이 노멀 맵이다. 새 도구도 이것으로 읽을 것.
 - 턴어라운드 고름 → 칸 넷(같은 정사각 · 같은 축척 · 같은 바닥선 — 몬이 b 자르기와 같은 법) → Meshy multi-image · Tripo multiview 두 판 → G2(g2_check) → 고른 판 앞=+Z(glb_face_z) → rig 1.4 + 동작 13(Meshy 계정 44) → build_hero_unity 와 같은 길(머리 무게 · 색 · 클립 · extras) → `hero2_m.glb`
 - 옷 일곱: hero2 와 같은 길(retexture → apply_outfit_tex) — 남 몸 UV 가 따로라 `outfit/m/*.jpg`
+- 게임에 들일 때(core 66dfb4c0 길): `hero2_m.glb` 의 scene extras 에 **`hero: 'hero2_m'`** 을 박는다 — v2_hero setOutfit 이 `hero2` · `hero2_m` 만 옷을 입힌다(1180e092). 그다음 v2_hero 의 `pickByGender({ f: …, m: null })` 두 곳(몸 · 옷 표)의 m 칸만 채운다. 옷 그림 캐시는 이미 «성별:이름» 열쇠다
