@@ -136,6 +136,36 @@
    - EN `A small round wooden stool: round flat seat 0.36 m across, four straight slim legs. 0.45 m tall. Light beige wood #e0d5c2, legs #c3b49c. Seat empty.`
    - 뜻 작은 둥근 나무 스툴 — 지름 0.36 둥근 좌판 · 곧고 가는 다리 넷. 높이 0.45. 밝은 베이지 나무. 좌판 비움.
 
+## 원화 검수 (총괄 · 2026-10-09) — 받은 것과 고칠 것
+
+[총괄 검수] 원화 17점 → `assets/gen/v2_furn/c_<이름>.png`(1024²) · 지금까지 house 153.
+- 통과 → 3D: 6 · 7 · 10 · 11 · 14 · 16 · 17
+- 치수 글씨·치수선만 지우고 3D: 2 · 3 · 8 → `c_<이름>_clean.png`(물체 볼록 껍질 안은 안 건드림)
+- 원화 다시(→ `c_<이름>_r2.png`): 1 계단 방향·판 모양 · 4 맨 아래·맨 위 단 높이 · 5 단 수 · 12 치수 글씨 + 공중 빛 번짐(«판 밑면만 라일락»으로 고침) · 13 있을 수 없는 모양 · 15 바탕이 황갈색
+- **이을 때 돌릴 것**(앞면 방향): 10 문 · 11 집게등 · 14 책장 · 16 행거는 앞이 오른쪽 아래 → **90°** · 3 카트는 손잡이가 왼쪽 끝 → **180°**(앞뒤 같은 모양). 거울 뒤집기는 없다.
+
+### 9 원룸 창 원화 — 틀 두께 [잰 것 · house]
+
+`c_win_studio_cross.png` 의 앞면에서 판마다 «앞면 모서리 ~ 앞면 모서리»를 밝기 꺾임으로 쟀다(세로틀은 줄 y 330·720, 가로틀은 칸 x 350). 앞면 폭 668px · 앞면 높이 526px.
+옷 층이 2.40×1.45 로 따로 늘이므로 «같은 축 안의 비율»이 그대로 m 로 간다(평행 투영이라 친 셈 — 손그림이라 ±2px ≈ ±0.007m).
+
+| 판 | px | 늘인 뒤 m | 표 m | 배 |
+|---|---|---|---|---|
+| 왼 세로틀 | 30 / 668 | 0.108 | 0.09 | ×1.20 |
+| 오른 세로틀 | 35 / 668 | 0.126 | 0.09 | ×1.40 |
+| **세로 십자살** | 26 / 668 | **0.093** | 0.045 | **×2.08** |
+| 위 가로틀 | 37 / 526 | 0.102 | 0.09 | ×1.13 |
+| 아래 가로틀 | 33 / 526 | 0.091 | 0.09 | ×1.01 |
+| **가로 십자살** | 26 / 526 | **0.072** | 0.045 | **×1.59** |
+| 유리(구멍) 면적 | 폭 86.4% × 높이 81.7% = **70.6%** | | 76.6% | 보이는 유리가 빛 드는 유리의 **92%** |
+
+⇒ **못 넘는다 — 원화 다시(9).** 총괄 눈대중(«십자살이 두 배쯤 · 3/4 시점»)과 같다. 3D 로 가면 Meshy 가 가는 살을 더 굵히는 쪽이라(예전 창틀 GLB) 더 벌어진다.
+넘는 줄(3D 를 받아 다시 잰다): 틀·살 모두 표의 **±25%** 안(틀 0.068~0.113 · 살 0.034~0.056) · 보이는 유리 **95%** 이상. ⚠ 이 줄은 house 가 정한 **어림**이다(재서 정한 값이 아니다). 줄 가까이에서 갈리면 코드 창과 같은 픽셀로 나란히 찍어 박사님 눈에 맡긴다.
+r2 프롬프트(앞머리 없이 이것 통째 · 553자):
+`One window frame alone on a plain off-white background: no wall, no glass, no text, no shadow. Straight front view, only slightly from above-left so the 0.14 m depth shows as a thin edge. Cozy hand-painted matte style like the reference. Rectangle 2.40 m wide x 1.45 m tall, split into 4 equal open panes by one vertical and one horizontal bar crossing at the exact center. Outer frame very thin: 0.09 m, about 1/27 of the width. The two cross bars are HALF as thick as the outer frame (0.045 m). Straight crisp edges, square corners. Off-white #f8f4ec.`
+뜻: 창틀만 · 흰 바탕 · 벽·유리·글자·그림자 없음 · **거의 정면**(깊이 0.14 가 가는 모서리로만 보이게) · 2.40×1.45 · 정가운데 십자로 같은 네 칸 · 바깥틀 아주 가늘게(폭의 1/27) · **십자살은 바깥틀의 절반**.
+r2 도 못 넘으면 9·18 은 접고 코드 창틀을 그대로 둔다(빛과 보이는 것이 이미 같다) — 남는 60 은 다시 뽑기 몫으로 돌린다.
+
 ## 받은 뒤 — [house] 가 잇는다 (크레딧 0)
 
 1. `gltf-transform` 로 텍스처 1024 webp 로 줄여 «받을 경로»에 둔다(v2 때와 같은 판 · 0aa8b850).
