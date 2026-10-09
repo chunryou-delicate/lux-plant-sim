@@ -148,7 +148,9 @@ const q90 = a => { const s = a.filter(v => v != null).slice().sort((x, y) => x -
 const won = v => (v == null ? '—' : Math.round(v).toLocaleString());
 function viewOf(S, io) {
   const v = varieView(S, { nodes: io.growth.cuttableNodes(), stats: io.growth.leafStats() });
-  return { nodes: cuttableNow(S, v.nodes || []), stats: motherStatsNow(S, v.stats), budget: cutBudgetOf(S, v.nodes || []) };
+  /* ⚠ 2026-10-09 (총괄 · b5ba10df 구멍) — all = growth 가 낸 «전체» 마디. takeCutting 에는 이것을 넘긴다(game.html §cutNodesNow 와 같게).
+       거른 목록(nodes)을 넘기면 takeCutting 이 모주 잎 수를 밑동 마디 없이 세어(§motherLeavesOf) 자르기가 거의 다 던진다 */
+  return { nodes: cuttableNow(S, v.nodes || []), all: v.nodes || [], stats: motherStatsNow(S, v.stats), budget: cutBudgetOf(S, v.nodes || []) };
 }
 function pickNode(nodes, budget, varieOnly) {
   const varie = nodes.filter(n => n.variegatedLeaves > 0 && (!budget || n.leaves <= budget.leftLeaves - 1)).sort((a, b) => a.leaves - b.leaves);
@@ -222,7 +224,7 @@ function play({ seed, rent, lamps, branch, path: pathMode, days, control }) {
         const v = viewOf(S, io);
         const node = pickNode(v.nodes, v.budget, branch !== 'b');
         if (node && stockOf(S, 'jar') >= 1) {
-          try { takeCutting(S, { nodes: v.nodes, nodeId: node.nodeId, container: 'jar', at: atOf(light, SILL), slots: light.room.slots });
+          try { takeCutting(S, { nodes: v.all, nodeId: node.nodeId, container: 'jar', at: atOf(light, SILL), slots: light.room.slots });
                 if (node.variegatedLeaves > 0) axisCutDone = true; } catch { }
         }
       }
@@ -297,7 +299,7 @@ function play({ seed, rent, lamps, branch, path: pathMode, days, control }) {
         const node = pickNode(v.nodes, v.budget, pathMode === 'quest');
         const freeSill = ONE_SILLS.slice(1).find(id => !live.some(c => c.slotId === id)) || ONE_SILLS[1];
         if (node && stockOf(S, 'jar') >= 1) {
-          try { takeCutting(S, { nodes: v.nodes, nodeId: node.nodeId, container: 'jar', at: atOf(light, freeSill), slots: light.room.slots }); out.cutsTaken++; }
+          try { takeCutting(S, { nodes: v.all, nodeId: node.nodeId, container: 'jar', at: atOf(light, freeSill), slots: light.room.slots }); out.cutsTaken++; }
           catch (e) { out.cutBlocked = out.cutBlocked || {}; const m = String(e && e.message || e).replace(/n\d+#\d+/g, '마디').slice(0, 60); out.cutBlocked[m] = (out.cutBlocked[m] || 0) + 1; }
         } else if (process.env.TRACE) { out.noCut = out.noCut || {}; const why = !node ? (v.nodes.length ? '무늬 마디 없음(예산·무늬)' : '자를 마디 0') : '병 없음';
           out.noCut[why] = (out.noCut[why] || 0) + 1; }

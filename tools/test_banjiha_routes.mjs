@@ -241,7 +241,9 @@ function viewOf(S, io) {
   const stats = io.growth.leafStats();
   const v = varieView(S, { nodes: raw, stats });
   return {
-    nodes: cuttableNow(S, v.nodes || []),
+    /* ⚠ 2026-10-09 (총괄 · b5ba10df 구멍) — all = growth 가 낸 «전체» 마디. takeCutting 에는 이것을 넘긴다(game.html §cutNodesNow 와 같게).
+         거른 목록(nodes)을 넘기면 takeCutting 이 모주 잎 수를 밑동 마디 없이 세어(§motherLeavesOf) 자르기가 거의 다 던진다 */
+    nodes: cuttableNow(S, v.nodes || []), all: v.nodes || [],
     stats: motherStatsNow(S, v.stats),
     budget: cutBudgetOf(S, v.nodes || [])
   };
@@ -499,7 +501,7 @@ function play(opt = {}) {
              하는 것을 그대로 한다 — 재현이 화면과 다른 것을 하면 재는 것이 게임이 아니다.
              ⚠ 이게 없으면 하프문 잎을 잘라도 **산반 값**(350,000 vs 750,000)이라
                이사 경로의 수입이 통째로 낮게 잡힌다. 그 상태로 쟀던 숫자가 옛 값이다. */
-          takeCutting(S, { nodes: v0.nodes, nodeId: node.nodeId, container: cont,
+          takeCutting(S, { nodes: v0.all, nodeId: node.nodeId, container: cont,
                            ...(cutGradesOf(pot0(S), node) ? { leafGrades: cutGradesOf(pot0(S), node) } : {}),
                            at: atOfSlot(opt.cutSlot || SILL), slots: light.room.slots });
           if (firstCutDay == null) firstCutDay = S.day;

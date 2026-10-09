@@ -9,6 +9,7 @@
      node tools/probe_branches.mjs --targets 5000000,10000000 --days 660
      node tools/probe_branches.mjs --noprologue           (잎 2·3 무늬 보장 끔 — 게임은 켠다 · 견주기용)
      node tools/probe_branches.mjs --rent 275000          (D8 — 이사하는 순간 원룸 월세 R 을 «짝»으로 꽂는다 · 없으면 게임 그대로(원룸 월세 미정 = 반지하 월세))
+     node tools/probe_branches.mjs --grades <varie_grades.json>   (재는 판에서만 무늬 등급 표를 그 파일로 바꿔 끼운다 — 전/후 견주기용 · 게임 값은 안 건드림)
      node tools/probe_branches.mjs --persona guide --seeds g --targets 5000000 --days 1500 --rent 275000 --ledger
                                                            (이사 뒤 30일마다 장부 — 들어온 돈 · 나간 돈 · 판 삽수 · 달말 지갑)
 
@@ -35,12 +36,12 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
-import { makeGrowth, makeSwitchingLight, questSnapshotOf, atOf, RULES, ROOT } from './lib/byeot_harness.mjs';
+import { makeGrowth, makeSwitchingLight, questSnapshotOf, atOf, RULES, TUT_RULES, ROOT, cutLeafGradesOf } from './lib/byeot_harness.mjs';
 import { newState, pot0, setPotSlot, resowCrop, waterCrop, waterPot, sellCropSurplus, sellPantryCrop } from '../src/game/state.js';
 import { nextDay, harvestCrop } from '../src/game/loop.js';
 import { placeBeansprout, moveMonstera, beansproutReady, pantrySaleQuote } from '../src/game/first_play.js';
 import { orderItem, stockOf, incomingOf, listCutting, listPot, dealListing, marketStatus, marketGate, listingFor,
-         SELLABLE_CUTTING_STATUS } from '../src/game/shop.js';
+         SELLABLE_CUTTING_STATUS, assignPotLeafGrades, installVarieGrades } from '../src/game/shop.js';
 import { canMoveOut, varieView, buyLamp } from '../src/game/tutorial.js';
 import { takeCutting, repotCutting, cuttableNow, cutBudgetOf, motherStatsNow, cuttingsOf, cutBlockedReason,
          cuttingStatsNow, cuttableNodesOfCutting } from '../src/game/propagation.js';
@@ -92,11 +93,13 @@ function pickNode(nodes, budget, varieOnly) {
 export async function play(name, seed, opt = {}) {
   const P = PERSONAS[name];
   if (!P) throw new Error('모르는 사람: ' + name);
+  /* ★ 2026-10-09 D30 전/후 — 이 판(자식 프로세스)에서만 등급 표를 바꿔 끼운다 */
+  if (opt.grades) installVarieGrades(JSON.parse(fs.readFileSync(opt.grades, 'utf8')));
   const targets = opt.targets || [5_000_000, 10_000_000];
   const maxDays = opt.days || 660;
   const light = makeSwitchingLight('banjiha');
   const io = { light, growth: await makeGrowth(seed === 'g' ? GAME_PLANT_SEED : seed, { prologue: !opt.noprologue }) };
-  const S = newState({ mode: 'novice', room: 'banjiha', firstPlay: true, firstPlayRules: RULES });
+  const S = newState({ mode: 'novice', room: 'banjiha', firstPlay: true, firstPlayRules: RULES, tutorialRules: TUT_RULES });   /* D8 — 게임과 같은 살림 규칙 */
   S.sim.seed = seed === 'g' ? 0 : seed;
   light.clearCache();
   placeBeansprout(S.firstPlay, DARK, { slots: light.room.slots });
@@ -124,6 +127,7 @@ export async function play(name, seed, opt = {}) {
   const ord = (id, n) => led('buy', () => orderItem(S, id, n));   /* D8 — 원룸 월세 · 이사 뒤 최저 지갑 · 이사 뒤 첫 0원 날 */
   /* cashDaily[i] = i+1 일 끝의 지갑(총괄 봇 기록 days[].cash 와 대 보기) · rootBands = 뿌리내린 무늬 삽수의 빛 띠(반지하/원룸) */   /* leafAt[날] = [잎 · 무늬 잎 · 무늬이면서 다 자란 잎 · 유효 생장일] (30일마다) */   /* 이사 두 축이 처음 선 날(canMoveOut · 무늬 잎을 낸 적 · 이사 자금) */
   const qOpen = new Map();          // id → { since, run }
+  const cutKeys = new Set();        // 모주에서 이미 잘려 나간 잎의 열쇠(leafKeys) — 진단용(§ghostCuts)
   const seenRoot = new Set();       // 뿌리내림을 이미 센 삽수 id
   /* 원룸 삽수 자리 — 안내대로(follow)는 «오늘 그 자리의 빛»을 재어 가장 밝은 빈 창턱을 고른다(퀘스트 «밝은 자리에서 뿌리내리세요»를 따르는 손).
      안 따르는 사람은 예전대로 ONE_BRIGHT 앞에서부터. 모주 자리(ONE_SILL)는 비운 자리로 안 본다 */
@@ -144,6 +148,9 @@ export async function play(name, seed, opt = {}) {
     if (!rest) { try { waterPot(S); } catch { } }
     let turn = null;
     try { turn = nextDay(S, io).turn; } catch (e) { out.crash = (e && e.message) || String(e); break; }
+    /* ★ 2026-10-09 (D30 «먼저 확인») — 모주 무늬 잎 등급(game.html §noteTurn → noteLeafGrades 와 같게: 이 턴의 밴드로 · 한 번 정하면 안 바뀜).
+         ⚠ 예전엔 이 줄이 없어 장부가 비었고 무늬 삽수는 모두 legacy 산반(35만)으로 값이 매겨졌다 — lightGrade 를 바꿔도 이 판은 안 움직였다 */
+    if (pot0(S)) { try { assignPotLeafGrades(S, { leafState: io.growth.leafState(), band: (turn && turn.growthSpeed && turn.growthSpeed.band) || null }); } catch { } }
     if (LG) { const t = (turn && turn.tutorial) || {};   /* 하루 결산 — 월세 · 생활비(밥값 − 콩나물로 아낀 것) · 전기 */
               book('rent', -(t.rentWon || 0)); book('power', -(t.electricityWon || 0)); book('living', -((t.spentWon || 0) - (t.electricityWon || 0)));
               /* ⚠ 구호금(tutorial §reliefWon · 처음 0원이 된 그날 한 번)은 결산 «안에서» 지갑을 메운다 — 끝 지갑만 보면 0원이 된 날이 안 보인다 */
@@ -222,7 +229,14 @@ export async function play(name, seed, opt = {}) {
                  (propagation §motherLeavesOf = 가장 큰 마디의 잎 · 거른 목록엔 밑동 마디가 없다) ⇒ 모주 잎 4장이 2장으로 읽혀
                  «잎 2장 중 2장을 이미 잘랐습니다»로 원룸 자르기가 거의 다 던졌고 catch 가 삼켰다(씨앗 g: 원룸 자르기 2번 · 던짐 수백).
                  게임(game.html §doCutFrom)은 growth 가 낸 «전체» 목록을 넘긴다 — 같게 v.all. 던진 말은 셈해 둔다(삼키지 않는다) */
-            try { takeCutting(S, { nodes: v.all, nodeId: node.nodeId, container: 'jar', at: atOf(light, slot), slots: light.room.slots, varieMaturedLeaves: vm }); out.cuts[room]++; }
+            /* 등급은 화면처럼 모주 장부에서(game.html §cutLeafGradesOf) — 못 읽으면 안 넘긴다(코어가 확정문 §5 로) */
+            const lg = (() => { try { return cutLeafGradesOf(pot0(S), v.all.find(x => x.nodeId === node.nodeId)); } catch { return null; } })();
+            /* ★ 2026-10-09 진단 — «이미 잘려 나간 잎»(leafKeys)을 싣고 나가는 자르기를 센다. growth 는 자른 것을 모르고(형태 정본 · 잎을 안 지움)
+                 cuttableNow 는 자른 «마디 이름»만 빼서, 같은 가지의 위쪽 마디가 이미 판 끝잎을 다시 싣고 잘린다(씨앗 3: 프롤로그 하프문 잎 3번) */
+            const carried = (() => { const nn = v.all.find(x => x.nodeId === node.nodeId); return (nn && Array.isArray(nn.leafKeys)) ? nn.leafKeys : null; })();
+            const ghost = carried ? carried.filter(k => cutKeys.has(k)).length : 0;
+            try { takeCutting(S, { nodes: v.all, nodeId: node.nodeId, container: 'jar', at: atOf(light, slot), slots: light.room.slots, varieMaturedLeaves: vm, ...(lg ? { leafGrades: lg } : {}) }); out.cuts[room]++;
+                  if (carried) { if (ghost) { out.ghostCuts = (out.ghostCuts || 0) + 1; out.ghostLeaves = (out.ghostLeaves || 0) + ghost; } for (const k of carried) cutKeys.add(k); } }
             catch (e) { const k = reasonKey(e && e.message); (out.cutThrow = out.cutThrow || {})[k] = (out.cutThrow[k] || 0) + 1; }
           }
         }
@@ -268,7 +282,11 @@ export async function play(name, seed, opt = {}) {
         try { const st = io.growth.leafStats(); if (st.leaves >= 3) listPot(S, { leaves: st.leaves, variegatedLeaves: st.variegatedLeaves }); } catch { }
       }
       for (const l of (() => { try { return marketStatus(S).contacted; } catch { return []; } })()) {
+        /* 팔린 삽수의 잎 등급(팔기 전에 읽는다 — 팔면 목록에서 빠진다) · 무늬 판매 기록(날 · 방 · 값 · 등급) */
+        let soldGrades = null;
+        try { const c = (S.cuttings || []).find(x => x && x.id === l.refId); if (c && l.kind !== 'pot') soldGrades = (cuttingStatsNow(c).leafGrades || []).filter(Boolean); } catch { }
         try { const c0 = ts.cashWon; const r = dealListing(S, l.listingId), dw = ts.cashWon - c0;
+              if (r.kind !== 'pot' && l.variegatedLeaves > 0) (out.varieSales = out.varieSales || []).push({ day: S.day, room: ts.movedOut ? 'oneroom' : 'banjiha', won: dw, grades: soldGrades });
               const cat = r.kind === 'pot' ? 'mother' : (l.variegatedLeaves > 0 ? 'varie' : 'plain');
               if (r.kind === 'pot') out.sold.pot++; else if (l.variegatedLeaves > 0) out.sold.varie++; else out.sold.plain++;
               book(cat, dw); if (LG && cat === 'varie') bucket().nVarie++; if (LG && cat === 'plain') bucket().nPlain++; } catch { }
@@ -287,7 +305,10 @@ export async function play(name, seed, opt = {}) {
                  oneroomRentWon = R · dailySpendWon = 반지하 dailySpend + (R − 반지하 월세)/주기 */
             if (Number.isFinite(opt.rent)) {
               const base = ts.rules, per = base.rentPeriodDays || 30;
-              ts.rules = Object.freeze({ ...base, oneroomRentWon: opt.rent, dailySpendWon: Math.round(base.dailySpendWon + (opt.rent - base.rentWon) / per) });
+              /* ★ D8 뒤 — 원룸 하루 지출 합(oneroomDailySpendWon)이 있으면 그 칸을 같은 짝 셈으로 옮긴다(반지하 칸은 그대로) */
+              ts.rules = Number.isFinite(base.oneroomDailySpendWon)
+                ? Object.freeze({ ...base, oneroomRentWon: opt.rent, oneroomDailySpendWon: Math.round(base.oneroomDailySpendWon + (opt.rent - (base.oneroomRentWon ?? base.rentWon)) / per) })
+                : Object.freeze({ ...base, oneroomRentWon: opt.rent, dailySpendWon: Math.round(base.dailySpendWon + (opt.rent - base.rentWon) / per) });
             }
             out.rentWon = Number.isFinite(opt.rent) ? opt.rent : null;
             out.ledger = []; LG = { start: ts.cashWon, today: 0 }; out.cashAtMove = ts.cashWon;
@@ -369,8 +390,9 @@ const DAYS = Number(arg('days', 660));
 const JOBS = Number(arg('jobs', 4));
 const SELF = fileURLToPath(import.meta.url);
 const RENT = arg('rent', null) == null ? null : Number(arg('rent'));
+const GRADES = arg('grades', null);
 const tasks = NAMES.flatMap(name => SEEDS.map(seed => ({ name, seed, targets: TARGETS, days: DAYS, noprologue: !!arg('noprologue', false),
-                                                         ...(Number.isFinite(RENT) ? { rent: RENT } : {}) })));
+                                                         ...(Number.isFinite(RENT) ? { rent: RENT } : {}), ...(GRADES ? { grades: GRADES } : {}) })));
 const results = [];
 let next = 0;
 async function worker() {
@@ -436,6 +458,16 @@ for (const name of NAMES) {
     const oq = ['oneroom_settle_cutting', 'oneroom_sell', 'oneroom_home_fund'];
     console.log(`    원룸 줄 열린 날(이사 뒤 중앙 · 열린 판) — ` + oq.map(id => { const h = mv.filter(r => (r.questOpen || {})[id] != null);
       return `${id} ${med(h.map(r => r.questOpen[id] - r.moveDay)) ?? '—'}일 ${h.length}/${mv.length}`; }).join(' · ')); }
+  /* ★ 무늬 삽수 판매 — 반지하 첫 판매 날 · 원룸 판매 간격(중앙) · 등급 나눔(팔린 삽수의 무늬 잎 등급 · 판 전체 합) */
+  { const vs = rs.filter(r => (r.varieSales || []).length);
+    const first = vs.map(r => (r.varieSales.find(x => x.room === 'banjiha') || {}).day).filter(x => x != null);
+    const gaps = []; for (const r of vs) { const d = r.varieSales.filter(x => x.room === 'oneroom').map(x => x.day); const all = [r.moveDay, ...d];
+                                           for (let i = 1; i < all.length; i++) gaps.push(all[i] - all[i - 1]); }
+    const gc = {}; let unk = 0; for (const r of vs) for (const x of r.varieSales) { if (!x.grades || !x.grades.length) { unk++; continue; } for (const g of x.grades) gc[g] = (gc[g] || 0) + 1; }
+    const n1 = rs.reduce((a, r) => a + (r.varieSales || []).filter(x => x.room === 'oneroom').length, 0);
+    console.log(`  ◆ 무늬 삽수 판매 — 반지하 첫 판매 중앙 ${med(first) ?? '—'}일(${first.length}/${N}) · 원룸 판매 판당 ${(n1 / N).toFixed(1)}개 · 간격 중앙 ${med(gaps) ?? '—'}일` +
+                ` · 등급(잎) ${Object.entries(gc).map(([k, v]) => `${k} ${v}`).join(' · ') || '—'}${unk ? ` · 등급 모름 ${unk}개` : ''}` +
+                ` · 값 평균 ${won(Math.round(vs.flatMap(r => r.varieSales.map(x => x.won)).reduce((a, b) => a + b, 0) / Math.max(1, vs.reduce((a, r) => a + r.varieSales.length, 0))))}`); }
   /* 장부(--ledger) — 판마다 이사 뒤 30일씩 · 단위 만 원 */
   if (arg('ledger', false)) for (const r of rs.filter(x => x.ledger && x.ledger.length)) {
     const m = v => (v / 1e4).toFixed(1).replace(/\.0$/, '');
@@ -454,6 +486,7 @@ for (const name of NAMES) {
   if (stay.length) console.log(`  이사 못 한 판 ${stay.length} — 무늬 잎을 낸 적 없음 ${stay.filter(r => r.varieDay == null).length} · 이사 자금 모자람 ${stay.filter(r => r.moneyDay == null).length}` +
                                ` · (이사한 판의 무늬 첫날 중앙 ${med(rs.filter(r => r.moveDay != null).map(r => r.varieDay))}일)`);
   console.log(`  ★막힘 — ${Object.keys(stuckBy).length ? Object.entries(stuckBy).sort((a, b) => b[1] - a[1]).map(([k, v]) => `${k} ${v}판`).join(' · ') : '없음'}`);
+  console.log(`  ⚠ 이미 자른 잎을 싣고 나간 자르기 — ${rs.reduce((a, r) => a + (r.ghostCuts || 0), 0)}번(잎 ${rs.reduce((a, r) => a + (r.ghostLeaves || 0), 0)}장) · 모주 자르기 ${rs.reduce((a, r) => a + r.cuts.banjiha + r.cuts.oneroom, 0)}번 중`);
   console.log(`  자르기 — 반지하 ${rs.reduce((a, r) => a + r.cuts.banjiha, 0)} · 원룸 ${rs.reduce((a, r) => a + r.cuts.oneroom, 0)} · 삽수에서 ${recut.ok}/${recut.tried}` +
               (Object.keys(recutWhy).length ? `(막힘: ${Object.entries(recutWhy).sort((a, b) => b[1] - a[1]).slice(0, 2).map(([k, v]) => `${k} ${v}`).join(' · ')})` : ''));
   { const t = {}; for (const r of rs) for (const [k, v] of Object.entries(r.cutThrow || {})) t[k] = (t[k] || 0) + v;

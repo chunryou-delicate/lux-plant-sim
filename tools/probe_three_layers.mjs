@@ -176,7 +176,9 @@ function viewOf(S, io) {
   const raw = io.growth.cuttableNodes();
   const stats = io.growth.leafStats();
   const v = varieView(S, { nodes: raw, stats });
-  return { nodes: cuttableNow(S, v.nodes || []), stats: motherStatsNow(S, v.stats),
+  /* ⚠ 2026-10-09 (총괄 · b5ba10df 구멍) — all = growth 가 낸 «전체» 마디. takeCutting 에는 이것을 넘긴다(game.html §cutNodesNow 와 같게).
+       거른 목록(nodes)을 넘기면 takeCutting 이 모주 잎 수를 밑동 마디 없이 세어(§motherLeavesOf) 자르기가 거의 다 던진다 */
+  return { nodes: cuttableNow(S, v.nodes || []), all: v.nodes || [], stats: motherStatsNow(S, v.stats),
            budget: cutBudgetOf(S, v.nodes || []) };
 }
 function pickNode(nodes, budget) {
@@ -471,7 +473,7 @@ function play(pol, { days = DAYS, veg = true, prop = true, seed = 1, jarCap = 24
         if (!node) break;
         if (used >= cap || !spend(cap - used)) break;
         used++;
-        try { const nc = takeCutting(S, { nodes: v.nodes, nodeId: node.nodeId, container: 'jar' });
+        try { const nc = takeCutting(S, { nodes: v.all, nodeId: node.nodeId, container: 'jar' });
               didC++; cuts++; reserveMother(nc); }
         catch { sim.left++; sim.xp--; used--; break; }
       }

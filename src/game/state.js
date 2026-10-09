@@ -145,7 +145,7 @@ export function newState(opt = {}) {
     /* 반지하 튜토리얼 — 첫 플레이 **그 뒤**부터 원룸 이사까지 (2026-08-03).
        규칙과 수치는 src/game/tutorial.js 가 갖는다(docs/story_arc.md 가 정본).
        첫 플레이가 끝나기 전에는 날짜도 돈도 계절도 안 움직인다. */
-    tutorial: createTutorialState({ enabled: !!opt.firstPlay }),
+    tutorial: createTutorialState({ enabled: !!opt.firstPlay, rules: opt.tutorialRules }),   /* ★ 2026-10-09 D8 — 살림 규칙(없으면 TUTORIAL_RULES · oneroom §tutorialRulesFromHomes) */
 
     /* ★★ 스토리 ③④ — 원룸에 언제 들어왔나 · 엔딩을 봤나 (2026-08-05 신설).
        규칙과 수치는 src/game/oneroom.js · ending.js 가 갖는다(docs/oneroom.md 가 정본).

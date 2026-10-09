@@ -3227,6 +3227,7 @@ import { seasonAt, seasonDayAt, SEASON_KO, tutorialGoal, learningLeft,
 import { moveIntoOneroom, storyOf } from './src/game/oneroom.js';
 /* ★ 2026-10-08 G — «안 자란 날» 줄의 등 처방은 lightGateOf 의 등 셈(켤 수 있는 등 · 방 기구 · 산 등)을 그대로 읽는다 */
 import { lightGateOf } from './src/game/oneroom.js';
+import { tutorialRulesFromHomes } from './src/game/oneroom.js';   /* ★ 2026-10-09 D8 — 살림 규칙 한 벌(§TUT_RULES) */
 /* ★ 2026-10-08 — 원룸 줄(quest.js oneroom_*)의 «집 자금» 칸이 보는 목표 금액. 지금 null(미확정) — 그 줄은 안 열린다([plan] 짬) */
 import { ENDING_RULES, endingRulesFrom, stepEnding, finishEnding, endingView } from './src/game/ending.js';
 import { endingRulesFromHomes } from './src/game/ending.js';   /* ★ 2026-10-09 D9 — 목표 금액은 정본(homes.json)에서 읽는다 */
@@ -3390,14 +3391,21 @@ if (ENDING_URL == null) {
 
 const balanceResponse = await fetch('./data/balance/characters.json');
 if (!balanceResponse.ok) throw new Error(`[첫 플레이] characters.json HTTP ${balanceResponse.status}`);
-const FIRST_RULES = firstPlayRulesFromBalance(await balanceResponse.json());
+const CHARS_JSON = await balanceResponse.json();
+const FIRST_RULES = firstPlayRulesFromBalance(CHARS_JSON);
+/* ★ 2026-10-09 D8(박사님 원룸 월세 20만) — 살림 규칙 한 벌을 정본(homes.json)에서 «부팅 때» 만든다(oneroom §tutorialRulesFromHomes).
+     새 판(newState tutorialRules)과 이어하기(save.loadFrom rules) 둘 다 이 객체를 받는다 — 둘이 다르면 이어하기에서 월세가 바뀐다.
+     못 읽으면 TUTORIAL_RULES 그대로(원룸도 반지하 값) */
+const TUT_RULES = tutorialRulesFromHomes(
+  await fetch('./data/balance/homes.json').then(r => r.ok ? r.json() : null).catch(() => null),
+  { dailyFoodWon: CHARS_JSON && CHARS_JSON._meta ? CHARS_JSON._meta.dailyFoodPerPerson : null });
 const manifestResponse = await fetch('./assets/manifest.json');
 if (!manifestResponse.ok) throw new Error(`[첫 플레이] assets/manifest.json HTTP ${manifestResponse.status}`);
 const OPEN_SIRU = openSiruContractFromManifest(await manifestResponse.json());
 /* ★ 수확 뒤에 썸네일을 콩나물 낱개(`crops/thumbs/beansprout_l`)로 바꿔 봤다가 되돌렸다 —
    낱개 원화는 거의 흰색 세로 막대라 46px 슬롯에서 흰 덩어리로만 읽혔다.
    반지하 저채도 톤에서 가장 밝은 물체가 되어 버려서, 시루 하나로 끝까지 간다. */
-let S = newState({ room: 'banjiha', mode: 'novice', firstPlay: true, firstPlayRules: FIRST_RULES,
+let S = newState({ room: 'banjiha', mode: 'novice', firstPlay: true, firstPlayRules: FIRST_RULES, tutorialRules: TUT_RULES,
                      staminaRules: STAMINA_RULES_NOW,
                      /* ★ 2026-08-16 — 첫 시루에 넣을 **콩 씨앗 한 봉지**(state.js §startSeeds).
                         놓기와 심기가 갈리면서 씨앗 없이는 첫 걸음이 막힌다. */
@@ -11106,7 +11114,7 @@ async function resumeSave() {
   let r;
   try {
     r = save.loadFrom(localStorage, save.SAVE_KEY,
-      { light: io.light, growth: io.growth, firstPlayRules: FIRST_RULES,
+      { light: io.light, growth: io.growth, firstPlayRules: FIRST_RULES, rules: TUT_RULES,
         staminaRules: STAMINA_RULES_NOW });
   } catch (e) { r = { ok: false, reason: e && e.saveReason, message: (e && e.message) || String(e) }; }
   if (!r.ok) {
@@ -17468,7 +17476,7 @@ $('prof').onclick = () => {
 
 $('reset').onclick = () => {
   const keep = { room: S.home.room, mode: S.sim.mode, lamps: { ...S.lamps } };
-  S = newState({ room: keep.room, mode: 'novice', firstPlay: true, firstPlayRules: FIRST_RULES,
+  S = newState({ room: keep.room, mode: 'novice', firstPlay: true, firstPlayRules: FIRST_RULES, tutorialRules: TUT_RULES,
                      staminaRules: STAMINA_RULES_NOW, startSeeds: 1 });
   S.lamps = keep.lamps;
   noteTurn(null);
@@ -17579,7 +17587,7 @@ async function playFirstPlayScenario() {
   document.body.classList.add('scen-run');
   $('play').disabled = true; $('firstRun').disabled = true; $('stop').disabled = false;
 
-  S = newState({ room: 'banjiha', mode: 'novice', firstPlay: true, firstPlayRules: FIRST_RULES,
+  S = newState({ room: 'banjiha', mode: 'novice', firstPlay: true, firstPlayRules: FIRST_RULES, tutorialRules: TUT_RULES,
                      staminaRules: STAMINA_RULES_NOW,
                      /* ★ 2026-08-16 — 첫 시루에 넣을 **콩 씨앗 한 봉지**(state.js §startSeeds).
                         놓기와 심기가 갈리면서 씨앗 없이는 첫 걸음이 막힌다. */

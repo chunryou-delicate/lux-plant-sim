@@ -41,7 +41,7 @@
    ★ THREE 를 쓰지 않는다. DOM 도 타이머도 모른다.
 ============================================================ */
 
-import { canMoveOut, moveOut as tutorialMoveOut, TUTORIAL_RULES } from './tutorial.js';
+import { canMoveOut, moveOut as tutorialMoveOut, TUTORIAL_RULES, banjihaRulesFrom } from './tutorial.js';
 import { cropSites, placeCrop, syncCropLead, CROP_SITE_IDS } from './first_play.js';
 /* ★ 거둔 시루는 `placeCrop` 이 막는다(수확 잠금). 이사는 「손으로 옮기는 것」이 아니라
    「방이 통째로 바뀌는 것」이라 그 잠금을 우회해야 자리를 지킬 수 있다 — 자리 두 칸만 짓는다. */
@@ -158,6 +158,7 @@ export function oneroomRulesFromHomes(homes, opt = {}) {
     rentWon: num(row.rent, 'rent'),
     depositWon: num(row.deposit, 'deposit'),
     moveCostWon: num(row.moveCost, 'moveCost') ?? ONEROOM_RULES.moveCostWon,
+    utilityWon: num(row.utility, 'utility'),   /* ★ 2026-10-09 D8 — 관리비(하루 지출 합에 들어간다 · §tutorialRulesFromHomes) */
     provisional: !!row.cost_provisional,
     source: 'data/balance/homes.json'
   });
@@ -183,6 +184,27 @@ export function withOneroomRent(baseRules, oneroomRules) {
   if (!Number.isFinite(rent) || rent < 0)
     throw new Error(`[원룸] 월세가 0 이상의 수가 아닙니다: ${rent}`);
   return Object.freeze({ ...base, oneroomRentWon: rent });
+}
+
+/* ★★ 2026-10-09 D8(박사님 원룸 월세 20만 확정) — **게임이 쓰는 살림 규칙 한 벌**을 정본(homes.json)에서 만든다.
+   ------------------------------------------------------------
+   ⚠ 예전엔 아무도 이것을 안 불렀다 — 게임은 TUTORIAL_RULES(oneroomRentWon null)로 돌아 원룸에서도 반지하 값이 나갔다
+     (dialogue.js §movedInOneroom 08-15 확인). 이제 화면이 부팅 때 한 번 만들어 새 판(newState tutorialRules)과
+     이어하기(save.loadFrom rules) **둘 다에** 같은 객체를 넘긴다(위 §withOneroomRent ⚠).
+     ① 반지하 — banjihaRulesFrom(월세 · 관리비 · 식비 → 하루 지출 합)
+     ② 원룸 — 월세(oneroomRentWon) · 하루 지출 합(oneroomDailySpendWon = 월세/주기 + 관리비/주기 + 식비)
+   식비는 characters.json `_meta.dailyFoodPerPerson` 이 정본이라 인자로 받는다(없으면 원룸 하루 지출은 안 채운다 — 지어내지 않는다).
+   homes 를 못 읽었거나 원룸 줄이 없으면 받은 base 그대로 낸다. */
+export function tutorialRulesFromHomes(homes, opt = {}, base = TUTORIAL_RULES) {
+  if (!homes) return base;
+  const food = Number.isFinite(opt.dailyFoodWon) ? opt.dailyFoodWon : null;
+  const R0 = banjihaRulesFrom(homes, { dailyFoodWon: food }, base);
+  let one = null;
+  try { one = oneroomRulesFromHomes(homes); } catch { return R0; }
+  const R1 = withOneroomRent(R0, one);
+  if (R1 === R0 || food == null || !Number.isFinite(one.utilityWon)) return R1;
+  const period = R1.rentPeriodDays || 30;
+  return Object.freeze({ ...R1, oneroomDailySpendWon: Math.round(one.rentWon / period + one.utilityWon / period + food) });
 }
 
 /* ============================================================

@@ -13,12 +13,15 @@ import { ARRIVAL, pot0, hasPlant } from '../../src/game/state.js';
 import { firstPlayRulesFromBalance, cropSites, cropPotList } from '../../src/game/first_play.js';
 import { createProfileLight } from '../../src/game/room_profile.js';
 import { cuttingsOf } from '../../src/game/propagation.js';
-import { storyOf } from '../../src/game/oneroom.js';
+import { storyOf, tutorialRulesFromHomes } from '../../src/game/oneroom.js';
 import { PROLOGUE_VARIE_LEAVES } from '../../src/game/growth_adapter.js';
 
 export const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 export const readJSON = p => JSON.parse(fs.readFileSync(path.join(ROOT, p), 'utf8'));
 export const RULES = firstPlayRulesFromBalance(readJSON('data/balance/characters.json'));
+/* ★ 2026-10-09 D8 — 살림 규칙 한 벌(game.html §TUT_RULES 와 같게 · 원룸 월세 · 원룸 관리비) — newState({ tutorialRules: TUT_RULES }) */
+export const TUT_RULES = tutorialRulesFromHomes(readJSON('data/balance/homes.json'),
+  { dailyFoodWon: readJSON('data/balance/characters.json')._meta.dailyFoodPerPerson });
 
 function makeThree() {
   class V3 {
@@ -172,3 +175,21 @@ export function questSnapshotOf(S, io, opt = {}) {
   };
 }
 export { pot0 };
+
+/* ★ 2026-10-09 (총괄 D30 «먼저 확인») — 자를 마디의 무늬 잎 등급을 모주 장부(pot.leafGrades)에서 읽어 takeCutting 에 넘긴다.
+   ⚠ game.html §cutLeafGradesOf 그대로다(화면 함수라 import 를 못 한다) — 저쪽을 고치면 여기도 같이.
+   이것이 없으면 헤드리스 판의 무늬 삽수는 등급을 몰라 값을 매길 때 legacy 산반(35만)으로만 떨어진다(프롤로그 잎 3 하프문 75만도). */
+export function cutLeafGradesOf(p, n) {
+  const led = (p && p.leafGrades && typeof p.leafGrades === 'object') ? p.leafGrades : null;
+  const births = Array.isArray(n && n.leafBirths) ? n.leafBirths : null;
+  if (!led || !births || !Number.isInteger(n.leaves) || births.length !== n.leaves) return null;
+  const v = n.variegatedLeaves || 0;
+  if (v < 1) return null;
+  const got = births.map(Number).filter(lb => Number.isFinite(lb) && led[lb])
+                    .sort((a, b) => a - b).map(lb => led[lb]);
+  if (!got.length) return null;
+  const take = got.slice(-Math.min(v, n.leaves));
+  const out = new Array(n.leaves).fill(null);
+  for (let i = 0; i < take.length; i++) out[n.leaves - take.length + i] = take[i];
+  return out;
+}

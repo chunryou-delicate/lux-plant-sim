@@ -90,6 +90,10 @@ export const TUTORIAL_RULES = Object.freeze({
      oneroom.oneroomRulesFromHomes(homes))` 가 이 칸을 채운 사본을 낸다 —
      살림 값의 정본은 `data/balance/homes.json`(plan 소유)이지 코어가 아니다. */
   oneroomRentWon: null,
+  /* ★ 2026-10-09 D8 — 원룸 «하루 지출 합»(월세 몫 포함 · 반지하 dailySpendWon 과 같은 뜻). 관리비가 방마다 달라서(homes.json utility
+       반지하 75,000 · 원룸 80,000) 따로 둔다. `null` 이면 이사 뒤에도 반지하 dailySpendWon 으로 센다(예전 그대로).
+       채우는 것은 `oneroom.tutorialRulesFromHomes` 다 — 값은 여기 안 박는다. */
+  oneroomDailySpendWon: null,
   /* ★★ 2026-08-09 박사님 확정 — **첫 달 유예를 폐지한다.** `rentGraceDays: 30` → `rentFirstDueDay: 1`.
      ------------------------------------------------------------
      원문: *"30일 기준으로 해서, 바로 시작날이 바로 30일기준 마지막날인거야.
@@ -590,7 +594,9 @@ export function rentWonOf(ts) {
 export function dailyCashOutWon(ts) {
   const R = ts.rules;
   const period = R.rentPeriodDays || 30;
-  return Math.max(0, Math.round(R.dailySpendWon - rentWonOf(ts) / period));
+  /* ★ 2026-10-09 D8 — 이사 뒤엔 원룸 하루 지출 합(있으면)에서 원룸 월세 몫을 뺀다(관리비가 방마다 다르다) */
+  const spend = (ts && ts.movedOut && Number.isFinite(R.oneroomDailySpendWon)) ? R.oneroomDailySpendWon : R.dailySpendWon;
+  return Math.max(0, Math.round(spend - rentWonOf(ts) / period));
 }
 
 /* ★ 다음에 살 등의 값 — **몇 개째냐**로 정해진다(§lampPricesWon).
