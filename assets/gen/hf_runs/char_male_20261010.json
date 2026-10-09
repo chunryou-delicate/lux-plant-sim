@@ -84,6 +84,118 @@
     2336
    ],
    "has_alpha": false
+  },
+  {
+   "name": "portrait_jachwi_m_curious",
+   "job_id": "b1e3c889-c073-4d42-9191-7653b3e7ab59",
+   "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_154951_b1e3c889-c073-4d42-9191-7653b3e7ab59.png",
+   "dir": "assets/characters/portraits/_hf",
+   "note": "남 낯 curious · max 2k 3:4 · 참조 정본 A a(84f58550)",
+   "saved_path": "assets/characters/portraits/_hf/portrait_jachwi_m_curious.jpg",
+   "master_path": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/characters/portraits/_hf/portrait_jachwi_m_curious.png",
+   "size": [
+    1744,
+    2336
+   ],
+   "has_alpha": false
+  },
+  {
+   "name": "portrait_jachwi_m_scissors",
+   "job_id": "adad6d24-8c94-4b74-9c2e-8ba09a9848f7",
+   "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_154953_adad6d24-8c94-4b74-9c2e-8ba09a9848f7.png",
+   "dir": "assets/characters/portraits/_hf",
+   "note": "남 낯 scissors",
+   "saved_path": "assets/characters/portraits/_hf/portrait_jachwi_m_scissors.jpg",
+   "master_path": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/characters/portraits/_hf/portrait_jachwi_m_scissors.png",
+   "size": [
+    1744,
+    2336
+   ],
+   "has_alpha": false
+  },
+  {
+   "name": "portrait_jachwi_m_bulb",
+   "job_id": "e93799df-a1a3-4ac8-967e-b59261b72b40",
+   "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_154955_e93799df-a1a3-4ac8-967e-b59261b72b40.png",
+   "dir": "assets/characters/portraits/_hf",
+   "note": "남 낯 bulb",
+   "saved_path": "assets/characters/portraits/_hf/portrait_jachwi_m_bulb.jpg",
+   "master_path": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/characters/portraits/_hf/portrait_jachwi_m_bulb.png",
+   "size": [
+    1744,
+    2336
+   ],
+   "has_alpha": false
+  },
+  {
+   "name": "portrait_jachwi_m_beam",
+   "job_id": "a2183cb4-2048-40b5-9640-e5f78b725923",
+   "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_154952_a2183cb4-2048-40b5-9640-e5f78b725923.png",
+   "dir": "assets/characters/portraits/_hf",
+   "note": "남 낯 beam",
+   "saved_path": "assets/characters/portraits/_hf/portrait_jachwi_m_beam.jpg",
+   "master_path": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/characters/portraits/_hf/portrait_jachwi_m_beam.png",
+   "size": [
+    1744,
+    2336
+   ],
+   "has_alpha": false
+  },
+  {
+   "name": "portrait_jachwi_m_winter",
+   "job_id": "b526b177-60d0-48c8-bc1f-3350e7026802",
+   "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_154952_b526b177-60d0-48c8-bc1f-3350e7026802.png",
+   "dir": "assets/characters/portraits/_hf",
+   "note": "남 낯 winter",
+   "saved_path": "assets/characters/portraits/_hf/portrait_jachwi_m_winter.jpg",
+   "master_path": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/characters/portraits/_hf/portrait_jachwi_m_winter.png",
+   "size": [
+    1744,
+    2336
+   ],
+   "has_alpha": false
+  },
+  {
+   "name": "portrait_jachwi_m_apron",
+   "job_id": "959a9b13-9ecb-4f79-8363-779b8bf8206a",
+   "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_154952_959a9b13-9ecb-4f79-8363-779b8bf8206a.png",
+   "dir": "assets/characters/portraits/_hf",
+   "note": "남 낯 apron",
+   "saved_path": "assets/characters/portraits/_hf/portrait_jachwi_m_apron.jpg",
+   "master_path": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/characters/portraits/_hf/portrait_jachwi_m_apron.png",
+   "size": [
+    1744,
+    2336
+   ],
+   "has_alpha": false
+  },
+  {
+   "name": "sheet_hero_m_turnaround_toy_a",
+   "job_id": "d40b64ad-4abf-4ac3-8822-6aad780ba94b",
+   "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_154954_d40b64ad-4abf-4ac3-8822-6aad780ba94b.png",
+   "dir": "assets/characters/sheets/_hf",
+   "note": "남 장난감 턴어라운드 · max 4k 16:9 · 참조 [정본 A a 84f58550 · hero2 장난감 5cc75470] · 팔 45°",
+   "saved_path": "assets/characters/sheets/_hf/sheet_hero_m_turnaround_toy_a.jpg",
+   "master_path": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/characters/sheets/_hf/sheet_hero_m_turnaround_toy_a.png",
+   "size": [
+    3840,
+    2160
+   ],
+   "has_alpha": false
+  },
+  {
+   "name": "sheet_hero_m_turnaround_toy_b",
+   "job_id": "5eaa06c6-ba08-40aa-a16e-46f7be2439f7",
+   "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_154954_5eaa06c6-ba08-40aa-a16e-46f7be2439f7.png",
+   "dir": "assets/characters/sheets/_hf",
+   "note": "남 턴어라운드 b",
+   "saved_path": "assets/characters/sheets/_hf/sheet_hero_m_turnaround_toy_b.jpg",
+   "master_path": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/characters/sheets/_hf/sheet_hero_m_turnaround_toy_b.png",
+   "size": [
+    3840,
+    2160
+   ],
+   "has_alpha": false
   }
  ]
 }
