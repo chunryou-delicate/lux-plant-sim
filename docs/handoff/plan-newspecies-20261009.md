@@ -140,3 +140,28 @@
 - PP 잎 15~25cm · 빛이 모자라면 되돌아감 · 마지막 분홍 마디까지 잘라 되돌리기 · 분홍 잎은 양분을 못 만듦 · 연달아 분홍 잎이면 시들 수 있음: [Fast Growing Trees — Pink Princess care guide](https://www.fast-growing-trees.com/blogs/plant-care-guides/pink-princess-philodendron-care-guide) · [Ohio Tropics — Pink Princess dying](https://www.ohiotropics.com/2020/02/21/pink-princess-philodendron-dying/) · [Folia Collective — Plant Know-How](https://foliacollective.com/blogs/plant-care/plant-know-how-philodendron-pink-princess/)
 - 프라이덱 무늬종 성숙 잎 최대 18in · 겨울잠(잎이 다 질 수 있음 · 구근이 살면 봄에 깸) · 구근으로 번식: [BWH Plant Co — Variegated Alocasia Frydek guide](https://bwhplantco.com/blogs/care-guides/variegated-alocasia-frydek-the-complete-guide) · [Lively Root — Variegated Alocasia Frydek](https://www.livelyroot.com/products/variegated-alocasia-frydek) · [PLNTS — Alocasia Frydek variegata](https://plnts.com/en/page/alocasia-frydek-variegata)
 - 무늬 모주의 구근도 다 무늬는 아님(약 4분의 1은 안 남 · 근거 약함 → ⚖): [Epic Gardening — Propagate Alocasia](https://www.epicgardening.com/propagate-alocasia/)
+
+---
+
+## ★★ D45 (10-09 총괄 · 후보는 위 §판단필요) — 정해진 것과 plan 이 넣은 것
+
+**정해진 것:** 만나는 길(PP 교환 · AL 상점 구근) · 낱말(산반·하프문 같이 · PP «분홍 잎») · AL 무늬판 «프라이덱 무늬종» · 실측 PP 0.10/0.18/0.25 · AL 0.15/0.30/0.45 · 여는 때(PP ③ 끝 + 원룸 30일 · AL 원룸 60일 · 곁줄).
+**값 첫 판(총괄이 박음 · [core] 판으로 바로잡음 · «같은 돈, 다른 길» 10% 선):** PP 잎 간격 21일(계절 ±) · AL 28일 · 겨울 잠 0 · AL 깰 때 구근 1~3알(고르게) · 무늬 모주 구근의 무늬 몫 3/4 · PP «분홍 잎» **3장** 연달아면 줄기 끝 시듦(2장째에 경고) · 등급 PP 무지 2만 · 산반 25만 · 하프문 55만 · 분홍 잎 10만 / AL 무지 2만 · 산반 30만 · 하프문 65만.
+**차례:** growth 종 프로필 → core(종 칸 · 사건 · 상점 · 판) → core 판으로 10% 선 확인.
+**leaf 몫(총괄 전달):** manifest 의 AL 무늬판 note «오키나와실버» → «프라이덱 무늬종» · real_max_m 을 위 실측으로.
+
+### plan 이 넣은 것 (dialogue.js · quest.js · 넣어도 판이 안 바뀐다 — 사건·칸이 오기 전엔 조용)
+| 무엇 | 이름 | 누가 내나 |
+|---|---|---|
+| 교환 물음 / 두 번째 물음 | 사건 `pp_trade_offer` (`ev.again`) → `ppTradeOffer` / `ppTradeOfferAgain` | [core] · 예/아니오 창도 core |
+| 교환함 | `pp_trade_done` → `ppTradeDone` (같은 턴에 «분홍을 붙잡는다»가 열리면 이 말이 먼저 · EVENT_ORDER) | [core] |
+| 거절 / 두 번째 거절(→ 상점 진열) | `pp_trade_declined` (`ev.last`) → `ppTradeDeclined` / `ppTradeDeclinedLast` | [core] |
+| 분홍 잎 둘 연달아(경고) · 셋(시듦) · 초록이 이어짐 | `pp_pink_warn` · `pp_tip_withered` · `pp_reverted` | [core]·[growth] — 초록 몇 장 이어지면 낼지는 ⚖ |
+| 구근 첫 싹 | `al_sprout` (`ev.varie` true/false · 모르면 말 없음) → `alSproutVarie` / `alSproutPlain` | [core] — 상점 구근의 첫 싹도 같다 |
+| 자는 동안 상태 줄 | `statusAlSleeping` (gap 14) · 칸 `turn.alDormantNow` | [core] |
+| 곁줄 ① 분홍을 붙잡는다 `pp_hold_pink` | 열림 `ppPlants ≥ 1` · 끝 `ppPinkHoldCuts ≥ 1`(산반·하프문 잎이 난 마디 «바로 위»에서 자른 번 수 · 분홍 잎 마디는 안 침) | 스냅샷 칸 [core] |
+| 곁줄 ② 겨울잠을 지킨다 `al_keep_winter` | 열림 `alDormantNow` 가 처음 참 · 끝 `alWokeCount ≥ 1` — **잠듦·깸 장면은 이 줄의 열림·끝 대사가 싣는다**(사건 둘을 아낌) | 스냅샷 칸 [core] |
+| 곁줄 ③ 구근을 심는다 `al_plant_corm` | ② 뒤 · 열림 `alCormsFound ≥ 1` · 끝 `alFoundCormsPlanted ≥ 1`(깰 때 «찾은» 구근만 — 상점 구근은 안 침) | 스냅샷 칸 [core] |
+
+- 셋 다 배열 맨 끝 묶음(`SPECIES_QUESTS`)이라 원룸 사슬이 열려 있는 동안 칩을 안 잡는다. `al_keep_winter` 는 «기다림»이라 일반 독촉(해 볼래?)에서 뺐다(LONG_OWN_LINES).
+- 검사: `tools/test_species_quests.mjs`(새 · 6/6) · dialogue_coverage PASS · test_quest 기준과 같은 11 · test_questui 45/57 — 실패 12 는 대조 판(이 두 파일만 HEAD)에서도 다 실패(첫 플레이·밥상 화면 · 이 일과 무관).

@@ -1630,6 +1630,84 @@ export const SCRIPTS = {
   statusBagCuttingsMove: [
     { who: 'moni', face: 'teach', text: '들고 온 삽수는 가방에 있어. 창가에 놓아 줘 — 가방에선 하루가 안 가.' }
   ],
+  /* ═══ ★★ 2026-10-09 [plan] D45(총괄) — **새 식물 두 종: 핑크프린세스 «가위» · 알로카시아 «철»** ═══
+     기록: 10-09 총괄 D45 · 후보는 docs/handoff/plan-newspecies-20261009.md §판단필요.
+     몬스테라는 «자리»(빛)를 가르친다. 둘은 빛이 아닌 축을 연다 — PP 는 «어느 마디에서 자르나», AL 은 «언제를 기다리나».
+     ⚠ 사건은 [core] 가 낸다(아래 이름 · 아직 안 남 → 이 줄들은 조용히 안 선다). 수는 안 말한다.
+     PP 사건: pp_trade_offer(ev.again — 두 번째 물음) · pp_trade_done · pp_trade_declined(ev.last — 두 번째 거절 → 상점에 진열)
+              pp_pink_warn(위 잎 «분홍 잎» 둘 연달아) · pp_tip_withered(셋 연달아 → 줄기 끝 시듦) · pp_reverted(초록 잎이 이어짐 · 빛 모자람)
+     AL 사건: al_sprout(ev.varie true/false — 구근 첫 싹이 무늬인가) · 겨울잠·깸은 사건 대신 퀘스트 열림·끝 대사가 싣는다(§quest al_keep_winter) */
+  ppTradeOffer: [
+    { who: 'jachwi', face: 'curious',  text: '아래층에 식물 나눔 쪽지가 붙었다. 분홍 잎이 섞인 작은 화분이다.' },
+    { who: 'jachwi', face: 'think',    text: '뿌리 낸 무늬 몬스테라 하나랑 바꾸자고 한다.' },
+    { who: 'moni',   face: 'curious',  text: '네가 키운 걸 내주는 거네. 바꿀래?' }
+  ],
+  ppTradeOfferAgain: [
+    { who: 'jachwi', face: 'curious',  text: '아래층 사람이 또 물어본다. 분홍 화분, 아직 있대.' },
+    { who: 'moni',   face: 'calm',     text: '이번엔 정말 마지막이래. 네가 정해.' }
+  ],
+  ppTradeDone: [
+    { who: 'jachwi', face: 'happy',    text: '바꿨다. 잎에 분홍이 번져 있다.' },
+    { who: 'moni',   face: 'cheer',    text: '핑크프린세스야. 이 아이는 잎마다 분홍이 달라.' }
+  ],
+  ppTradeDeclined: [
+    { who: 'moni',   face: 'calm',     text: '괜찮아. 네가 키운 거니까.' }
+  ],
+  ppTradeDeclinedLast: [
+    { who: 'jachwi', face: 'think',    text: '그 분홍 화분은 꽃집에 맡겼다고 한다.' },
+    { who: 'moni',   face: 'calm',     text: '마음 바뀌면 상점에서 사도 돼.' }
+  ],
+  ppPinkWarn: [
+    { who: 'jachwi', face: 'happy',    text: '새 잎이 또 온통 분홍이다. 예쁘다.' },
+    { who: 'moni',   face: 'worry',    text: '예쁘지만 분홍만 있는 잎은 밥을 못 지어. 이렇게 또 나면 줄기 끝이 시들어.' },
+    { who: 'moni',   face: 'teach',    text: '초록이 섞인 마디 위에서 잘라 줘.' }
+  ],
+  ppTipWithered: [
+    { who: 'jachwi', face: 'worry',    text: '핑크프린세스 줄기 끝이 말랐다…' },
+    { who: 'moni',   face: 'sad',      text: '분홍 잎만 이어져서 그래. 초록이 섞인 마디 위를 잘라 주면 거기서 다시 나.' }
+  ],
+  ppReverted: [
+    { who: 'jachwi', face: 'curious',  text: '요즘 핑크프린세스 새 잎이 다 초록이다.' },
+    { who: 'moni',   face: 'teach',    text: '분홍이 숨었어. 빛이 모자라면 그래. 더 밝은 데 두고, 분홍이 남은 마디 위를 잘라 봐.' }
+  ],
+  alSproutVarie: [
+    { who: 'jachwi', face: 'surprise', text: '구근에서 싹이 텄다. …잎에 크림색이 번져 있다!' },
+    { who: 'moni',   face: 'cheer',    text: '무늬가 나왔어!' }
+  ],
+  alSproutPlain: [
+    { who: 'jachwi', face: 'think',    text: '구근에서 싹이 텄다. 초록 잎이다.' },
+    { who: 'moni',   face: 'calm',     text: '무늬는 없어도 잘 클 거야. 같이 철을 넘기자.' }
+  ],
+  /* 잠든 동안(빈 화분처럼 보일 때) — 버리거나 헐값에 팔고 싶어지는 자리를 몬이가 붙잡는다. 칸 alDormantNow 는 [core] */
+  statusAlSleeping: [
+    { who: 'moni',   face: 'calm',     text: '빈 화분 같아도 자는 중이야. 봄을 기다리자.' }
+  ],
+  questPpHoldPink: [
+    { who: 'moni',   face: 'teach',    text: '분홍이 고운 잎이 나면 그 마디 위를 잘라. 거기서 다시 나.' },
+    { who: 'moni',   face: 'worry',    text: '온통 분홍인 잎은 예쁘지만 밥을 못 지어. 욕심내면 끝이 시들어.' }
+  ],
+  questDonePpHoldPink: [
+    { who: 'moni',   face: 'proud',    text: '붙잡았다. 이제 그 마디가 다음 잎을 낼 거야.' },
+    { who: 'jachwi', face: 'think',    text: '가위로 그림을 그리는 것 같다.' }
+  ],
+  questAlKeepWinter: [
+    { who: 'jachwi', face: 'worry',    text: '알로카시아 잎이 누레지더니 하나 떨어졌다.' },
+    { who: 'moni',   face: 'teach',    text: '죽은 게 아니야. 자는 거야. 겨울이라 쉬는 거야.' },
+    { who: 'moni',   face: 'calm',     text: '흙 속 구근은 살아 있어. 버리지 말고 봄까지 두자.' }
+  ],
+  questDoneAlKeepWinter: [
+    { who: 'jachwi', face: 'surprise', text: '알로카시아 화분에서 뾰족한 싹이 올라왔다!' },
+    { who: 'moni',   face: 'cheer',    text: '깼다! 겨울을 넘긴 거야.' },
+    { who: 'jachwi', face: 'curious',  text: '흙을 북돋다가 작은 구근을 찾았다.' }
+  ],
+  questAlPlantCorm: [
+    { who: 'moni',   face: 'teach',    text: '구근 하나가 새 그루가 돼. 심어 보자.' },
+    { who: 'moni',   face: 'curious',  text: '무늬가 날지는 싹이 나야 알아.' }
+  ],
+  questDoneAlPlantCorm: [
+    { who: 'jachwi', face: 'think',    text: '심었다. 언제 싹이 날까.' },
+    { who: 'moni',   face: 'calm',     text: '기다리는 것도 키우는 거야.' }
+  ],
   /* ═══ ★★ 2026-10-09 [plan] D9 짝 일감 — **원룸 후반 13달**(박사님 500만 · 안내대로 이사 뒤 395일) ═══
      원룸은 계절이 빛을 바꾸는 방이다(D1 · real). 그런데 원룸의 봄·여름·둘째 가을이 오는 날엔 말이 없었다
      (scriptOf: 봄·여름은 null · autumnCame 은 한 번뿐이라 반지하에서 이미 썼다). 철이 바뀌는 날이 곧 «빛이 바뀐 날»이다.
@@ -2134,6 +2212,8 @@ export const REPEATABLE = new Set(
              'cuttingVarieBright', 'cuttingVarieMid', 'cuttingVarieDark', 'nudgeSeedSow',
              'nudgeSiruOffer', 'nudgeSiruPush', 'statusOneroomNoVarie', 'statusOneroomCutSill',
              'lampUnderEmpty', 'statusBagCuttings', 'statusBagCuttingsMove', 'movedInBagCuttings',
+             /* ★ 2026-10-09 [plan] D45 — 새 종 사건은 판마다 여러 번 난다(구근마다 싹 · 잎마다 경고). 교환·퀘스트는 한 번 */
+             'ppPinkWarn', 'ppTipWithered', 'ppReverted', 'alSproutVarie', 'alSproutPlain', 'statusAlSleeping',
              'springCameOneroom', 'summerCameOneroom', 'autumnCameOneroom', 'statusOneroomYear',
              'nudgeHomeOffer', 'nudgeHomePush', 'statusHomeHalf', 'statusHomeNear',
              'rentSoon2', 'rentAgain2', 'nudgeHomePush2',
@@ -2192,6 +2272,13 @@ export const EVENT_SCRIPT = Object.freeze({
   move_low_cash:       'moveLowCash',
   /* ★ 2026-10-09 [plan] D35 — 반찬가게 주문(§neighborOrder · 사건은 [core] · 한 판에 한 번) */
   neighbor_order:      'neighborOrder',
+  /* ★ 2026-10-09 [plan] D45 — 새 식물 두 종(§ppTradeOffer 머리말 · 사건은 [core]). 갈림(again·last·varie)은 §scriptOf */
+  pp_trade_offer:      'ppTradeOffer',
+  pp_trade_done:       'ppTradeDone',
+  pp_trade_declined:   'ppTradeDeclined',
+  pp_pink_warn:        'ppPinkWarn',
+  pp_tip_withered:     'ppTipWithered',
+  pp_reverted:         'ppReverted',
   /* ★ 2026-10-08 [plan] 갈래 지도 2 — 굶주림 경고(tutorial.js · 0원 닷새째부터 매일 · 월세·파산과 같은 살림 사건 길) */
   hungry:              'hungryTalk',
   /* ★ 2026-10-08 [plan] 갈래 지도 5·6 — 삽수 사건([core] a8749420 로 turn.events 에 섬). 갈림은 §scriptOf */
@@ -2286,6 +2373,10 @@ export const QUEST_OPEN_SCRIPT = Object.freeze({
   oneroom_settle_cutting: 'questOneroomSettleCutting',
   oneroom_recut:          'questOneroomRecut',
   oneroom_sell:           'questOneroomSell',
+  /* ★ 2026-10-09 [plan] D45 — 새 종 곁줄 셋 */
+  pp_hold_pink:           'questPpHoldPink',
+  al_keep_winter:         'questAlKeepWinter',
+  al_plant_corm:          'questAlPlantCorm',
   oneroom_home_fund:      'questOneroomHomeFund',
 
   /* ★★ 2026-08-17 — **느린 줄 둘**(`quest.SLOW_QUESTS` · §긴 줄).
@@ -2319,6 +2410,9 @@ export const QUEST_DONE_SCRIPT = Object.freeze({
   oneroom_settle_cutting: 'questDoneOneroomSettleCutting',
   oneroom_recut:          'questDoneOneroomRecut',
   oneroom_sell:           'questDoneOneroomSell',
+  pp_hold_pink:           'questDonePpHoldPink',
+  al_keep_winter:         'questDoneAlKeepWinter',
+  al_plant_corm:          'questDoneAlPlantCorm',
   oneroom_home_fund:      'questDoneOneroomHomeFund',
 
   /* ★★ 2026-08-17 — 느린 줄 둘(위 §QUEST_OPEN_SCRIPT 의 같은 자리 참고) */
@@ -2362,6 +2456,10 @@ const EVENT_ORDER = [
      (첫 장 도착 뒤 36일 · 둘째 장 91일), 겹친다면 「났다」가 「두 장이 됐다」보다 먼저다. */
   'varie_lucky', 'varie_lucky2',
   'varie_granted',
+  /* ★ 2026-10-09 [plan] D45 — 새 종 사건은 퀘스트 «앞»이다: 교환(pp_trade_done) 뒤에 «분홍을 붙잡는다»가 열리는 날,
+     「바꿨다」가 먼저 와야 「분홍이 고운 잎이 나면…」이 그 뒤에 선다. 시듦은 경고보다 앞(같은 날 둘은 안 남) */
+  'pp_trade_offer', 'pp_trade_declined', 'pp_trade_done',
+  'pp_tip_withered', 'pp_pink_warn', 'pp_reverted', 'al_sprout',
   /* ★★ 퀘스트는 **끝난 것이 먼저, 열린 것이 나중**이다 (2026-08-17).
      한 판에서 「①을 끝냈다 → 그래서 ②가 열린다」가 같은 날 난다(`siru5_cycle5` 의 여는
      조건이 `crop_mix` 완료라서). 순서가 뒤집히면 **열리고 나서 끝난 것을 축하한다.**
@@ -2424,6 +2522,10 @@ function scriptOf(ev, S = null) {
   if (id === 'cutting_varie_light' && ev) return ev.step === 'bright' ? 'cuttingVarieBright'
                                               : ev.step === 'dark' ? 'cuttingVarieDark' : 'cuttingVarieMid';
   if (id === 'hungry') return (ev && Number.isFinite(ev.left) && ev.left % 2 === 0) ? 'hungryTalk2' : 'hungryTalk';
+  /* ★ 2026-10-09 [plan] D45 — 교환은 두 번째 물음·두 번째 거절이 따로 · 구근 싹은 무늬인가로 갈림(모르면 말 없음) */
+  if (id === 'pp_trade_offer')    return ev && ev.again ? 'ppTradeOfferAgain' : 'ppTradeOffer';
+  if (id === 'pp_trade_declined') return ev && ev.last ? 'ppTradeDeclinedLast' : 'ppTradeDeclined';
+  if (id === 'al_sprout') return ev && ev.varie === true ? 'alSproutVarie' : ev && ev.varie === false ? 'alSproutPlain' : null;
   if (id === 'quest_opened') return QUEST_OPEN_SCRIPT[ev && ev.questId] || null;
   if (id === 'quest_done')   return QUEST_DONE_SCRIPT[ev && ev.questId] || null;
   return EVENT_SCRIPT[id] || null;
@@ -2499,7 +2601,9 @@ export function scriptsForEvents(events = [], S = null) {
 export const NUDGE_DAYS = Object.freeze({ ask: 4, worry: 7, back: 14 });
 /* ★ 2026-10-09 [plan] — «제 줄이 있는 긴 줄»(한 달에 한 번 · 몇 달 열려 있음)은 범용 셋(Offer·Ask·Worry)에서 뺀다 —
    제 줄 다음 날 범용 «걱정»이 붙어 달마다 두 번씩 났다(재미 점검 모의: 무순 다섯 37·38일). 집 자금(13달) · 무순 다섯(16주). */
-const LONG_OWN_LINES = new Set(['oneroom_home_fund', 'radish5']);
+const LONG_OWN_LINES = new Set(['oneroom_home_fund', 'radish5',
+  /* ★ 2026-10-09 [plan] D45 — 겨울잠은 «할 일»이 아니라 «기다림»이다. 일반 독촉(해 볼래?)이 서면 거짓이 된다 */
+  'al_keep_winter']);
 export const CHATTER = [
   /* 첫 플레이 — 수확 전 사흘. ★날짜를 딱 집어 걸지 않는다(`===` 로 걸었더니
      조용한 날 세기와 어긋나 셋 다 못 나오는 날이 있었다). 둘 중 안 나온 쪽이 먼저 나온다. */
@@ -2715,6 +2819,8 @@ export const CHATTER = [
   /* ★ 2026-10-09 [plan] — 원룸 첫 이레는 이사 맥락의 줄이 먼저(그 사이 일반 줄은 쉼). D43: 도착 날은 §movedInBagCuttings 가 말했으니 이튿날(1)은 쉬고 사흘째(2)부터 */
   { id: 'statusBagCuttingsMove', status: true, gap: 3, when: c => c.movedOut && fin(c.daysInOneroom) && c.daysInOneroom >= 2 && c.daysInOneroom <= 7
                                                               && fin(c.bagCuttings) && c.bagCuttings > 0 },
+  /* ★ 2026-10-09 [plan] D45 — 알로카시아가 자는 동안(칸 alDormantNow · [core]) */
+  { id: 'statusAlSleeping',     status: true, gap: 14, when: c => c.alDormantNow === true },
   { id: 'statusBagCuttings',    status: true, gap: 7,  when: c => fin(c.bagCuttings) && c.bagCuttings > 0
                                                               && !(c.movedOut && fin(c.daysInOneroom) && c.daysInOneroom <= 7) },
   /* ★ 2026-10-09 [plan] 원룸 후반 — 한 해 · 목표 이정표 둘(처음 넘은 날 · 한 번씩 — gap 400 은 «한 판에 한 번») */
@@ -2852,6 +2958,8 @@ export function chatterContext(turn = {}, S = null) {
       ? S.cuttings.filter(c => c && c.status !== 'dead' && c.varieFromCut).length : null; } catch { return null; } })(),
     /* ★ 2026-10-09 [plan] D29 — 가방에 든 안 죽은 삽수 수([core] turn.bagCuttings). 모르면 null */
     bagCuttings: (turn && Number.isFinite(turn.bagCuttings)) ? turn.bagCuttings : null,
+    /* ★ 2026-10-09 [plan] D45 — 알로카시아 한 그루라도 자고 있나([core] turn.alDormantNow · 모르면 null) */
+    alDormantNow: (turn && typeof turn.alDormantNow === 'boolean') ? turn.alDormantNow : null,
     /* ★ 2026-10-09 [plan] 원룸 후반 — 엔딩 목표 금액([core] turn.homeTarget · homes.json ending.targetWon). 모르면 null */
     homeTarget: (turn && Number.isFinite(turn.homeTarget)) ? turn.homeTarget : null,
     /* ★ 2026-10-08 [plan] 갈래 지도 13 — 씨앗 재고·빈 시루([core] turn.cropNow). 모르면 null */

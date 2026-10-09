@@ -227,6 +227,12 @@ export function emptySnapshot() {
            monsteraGrowing: null,
            /* ★ 2026-10-09 D43 — 가방에 든(자리 없는) 안 죽은 삽수 수([core] turn.bagCuttings 와 같은 자). null = 「모른다」 */
            bagCuttings: null,
+           /* ★ 2026-10-09 D45 — 새 종([core] · null = 「모른다」 → 그 줄은 안 열리고 안 끝난다)
+              ppPlants 살아 있는 핑크프린세스 그루 수 · ppPinkHoldCuts «산반·하프문 잎이 난 마디 바로 위»에서 자른 번 수(분홍 잎 마디는 안 침)
+              alDormantNow 알로카시아 한 그루라도 자나 · alWokeCount 잠에서 깬 번 수 · alCormsFound 깰 때 찾은 구근 수(누적)
+              alFoundCormsPlanted 그 «찾은» 구근을 심은 수(상점에서 산 구근은 안 침 — 사서 심은 것으로 이 줄이 열리자마자 끝나지 않게) */
+           ppPlants: null, ppPinkHoldCuts: null,
+           alDormantNow: null, alWokeCount: null, alCormsFound: null, alFoundCormsPlanted: null,
            /* ★ null = 「모른다」. false 로 두면 「아직 배선이 없다」와 「아니다」가 같아진다 */
            monsteraArrived: null, monsteraHomed: null,
            /* ★ 2026-09-02 — 옮긴 뒤 지난 날 · 한 번 자랐나 (둘 다 firstPlay.monstera.guide 의 칸) */
@@ -952,6 +958,49 @@ const ONEROOM_QUESTS = Object.freeze([
   })
 ]);
 
+/* ══ ★★ 2026-10-09 [plan] D45(총괄) — 새 식물 두 종의 곁줄 셋 (명세 docs/handoff/plan-newspecies-20261009.md) ══
+   몬스테라 «자리» · 핑크프린세스 «가위» · 알로카시아 «철». 셋 다 곁줄이다 — 원룸 사슬(배열 앞)이 열려 있는 동안
+   「지금 할 일」 칩을 안 잡는다(questView 는 정의 순서에서 첫째를 뽑는다 · 이 묶음은 맨 끝).
+   ⚠ 칸이 null 이면(배선 전) 안 열린다. 여는 때(PP ③ 끝 + 원룸 30일 · AL 원룸 60일)는 «종이 들어오는 때»라 [core] 사건·상점이 맡고,
+     이 줄들은 «그루가 있으면» 연다. 겨울잠과 깸은 사건 대신 al_keep_winter 의 열림·끝 대사가 싣는다(core 사건 수를 줄임). */
+const SPECIES_QUESTS = Object.freeze([
+  Object.freeze({
+    id: 'pp_hold_pink',
+    room: 'oneroom',
+    ko: '분홍을 붙잡는다',
+    reward: '분홍 줄이 그 마디에서 다시 이어집니다',
+    teaches: ['가위가 무늬를 붙잡는다', '온통 분홍인 잎은 예쁘지만 못 자란다'],
+    why: '핑크프린세스의 분홍은 잎마다 흘러갑니다. 분홍이 고운 마디 바로 위에서 자르면 거기서 다시 납니다.',
+    todo: () => '분홍이 섞인 마디 위에서 잘라 보세요',
+    opens: s => Number.isFinite(s.ppPlants) && s.ppPlants >= 1,
+    done:  s => Number.isFinite(s.ppPinkHoldCuts) && s.ppPinkHoldCuts >= 1
+  }),
+  Object.freeze({
+    id: 'al_keep_winter',
+    room: 'oneroom',
+    ko: '겨울잠을 지킨다',
+    reward: '봄에 깨면 흙 속에 구근을 남깁니다',
+    teaches: ['쉬는 철이 있다', '빈 화분이 죽은 화분은 아니다'],
+    why: '알로카시아는 겨울에 잎을 다 떨구고 잡니다. 흙 속 구근은 살아 있어 봄에 다시 깹니다.',
+    todo: () => '잠든 알로카시아를 봄까지 두세요',
+    /* 처음 잠드는 날 열린다(이미 깨 본 판은 그 뒤 잠에 다시 안 연다 — 한 번 배운 것) */
+    opens: s => s.alDormantNow === true || (Number.isFinite(s.alWokeCount) && s.alWokeCount >= 1),
+    done:  s => Number.isFinite(s.alWokeCount) && s.alWokeCount >= 1
+  }),
+  Object.freeze({
+    id: 'al_plant_corm',
+    room: 'oneroom',
+    ko: '구근을 심는다',
+    reward: '새 그루가 하나 늡니다',
+    teaches: ['알로카시아는 구근으로 는다', '무늬는 싹이 나야 안다'],
+    why: '깰 때 찾은 구근 하나가 새 그루가 됩니다. 무늬 모주의 구근이라도 무늬가 날지는 싹이 나야 압니다.',
+    todo: () => '찾은 구근을 화분에 심으세요',
+    after: 'al_keep_winter',
+    opens: (s, ctx) => !!(ctx && ctx.doneIds.includes('al_keep_winter')) && Number.isFinite(s.alCormsFound) && s.alCormsFound >= 1,
+    done:  s => Number.isFinite(s.alFoundCormsPlanted) && s.alFoundCormsPlanted >= 1
+  })
+]);
+
 /* ★★★ **이 배열의 차례가 곧 「지금 할 일」의 우선순위다** — `questView` 가 열린 것 중
    **정의 순서에서 첫째**를 뽑는다(§questView). 그러니 여기 차례를 바꾸는 것은
    그리는 차례를 바꾸는 것이 아니라 **무엇을 시킬지를 바꾸는 것**이다.
@@ -964,7 +1013,9 @@ const ONEROOM_QUESTS = Object.freeze([
      ①②의 어떤 줄도 「지금 할 일」이 못 된다 — 박사님이 짚으신 그 구멍이 거기서 났다. */
 /* ★ 2026-10-07 — 원룸 다섯 줄은 «느린 줄 앞»이다. 맨 뒤면 잎 줄이 영영 안 끝나는 판(그루째 판 판)에서
      원룸 줄이 「지금 할 일」이 못 된다 — 위 ③ 을 맨 뒤로 옮긴 것과 같은 까닭이다. 반지하에서는 방이 걸러 안 보인다. */
-export const QUESTS = Object.freeze([...FIRST_PLAY_CHAIN, ...MAIN_QUESTS, ...ONEROOM_QUESTS, ...SLOW_QUESTS]);
+export const QUESTS = Object.freeze([...FIRST_PLAY_CHAIN, ...MAIN_QUESTS, ...ONEROOM_QUESTS, ...SLOW_QUESTS, ...SPECIES_QUESTS]);
+/* ★ 2026-10-09 D45 — 새 종 곁줄(§SPECIES_QUESTS) */
+export const SPECIES_QUEST_IDS = Object.freeze(SPECIES_QUESTS.map(q => q.id));
 export const ONEROOM_QUEST_IDS = Object.freeze(ONEROOM_QUESTS.map(q => q.id));
 
 export const QUEST_IDS = Object.freeze(QUESTS.map(q => q.id));
