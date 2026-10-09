@@ -1042,3 +1042,59 @@
 ### FACE_FILE 키 (core 표 · plan 이 줄마다 배정)
 - jachwi: { scissors: 'scissors', bulb: 'bulb', beam: 'beam', winter: 'winter' } · moni: { bulb: 'bulb', shh: 'shh', scissors: 'scissors' }
 - 파일 이름 = `portrait_<화자>_<키>.png`(지금 규약 그대로). 배정 전에는 «쓰는 대사가 없는 표정»으로 찍힌다 — 흠이 아니라 상태(9-07 몬이 다섯과 같음)
+
+
+---
+
+## ②③ 판정 (총괄 7941df03 · 30장 · 장부 assets/gen/hf_runs/char2_20261009.json · 2026-10-09 char)
+
+### ① 사장님 참조 — 갈았다
+- ⛔ 내가 잘라 둔 `assets/characters/ref/npc_banchan_owner_ref.png`(348×553)는 **주인공**이었다(사장님은 오른쪽 귀퉁이 팔 하나). 자르기 좌표를 반대편으로 잡은 잘못이다.
+- 총괄 일꾼이 ev_neighbor_order A 에서 다시 자른 판(940×1253 · 바구니 든 사장님 상반신)으로 바꿨다. ②의 npc_shop 은 이미 이 판으로 뽑혀 있어 다시 뽑을 것 없다.
+
+### ② 식물 가게 — 고른 판
+| 그림 | 고름 | 까닭 |
+|---|---|---|
+| `portrait_npc_shop` | **b** | a 는 눈 감고 크게 웃는 얼굴(장면 그대로)인데, 이 한 장이 «동네 가게 사람» 여섯(손님 표 group shop)의 얼굴로 매번 뜬다 — 한순간 표정보다 눈 뜬 웃음이 오래 본다. 다른 손님 초상도 모두 눈을 떴다. 파마·자줏빛 스웨터·꽃 앞치마가 같아 D35 장면의 사장님으로 바로 읽힌다(일꾼 권 a 와 다름) |
+| `portrait_npc_student` | **a** | a·b 거의 같음 |
+| `portrait_npc_elder` | **a** | 안경줄·쪽찐 머리 또렷 |
+| `portrait_npc_couple` | **c** | 아내 웨이브 밝은 갈색 단발 · 먼지장미 카디건 / 남편 짧은 검은 머리 · 남색 니트. 손님 표(shop_customers.json)엔 생김새가 없어 어긋나는 것 없음 — 일꾼이 정한 그대로 둔다. a·b 는 아내가 주인공 얼굴(실패) |
+| `portrait_npc_plant` | **a** | 초록 앞치마 · 작은 화분 |
+| `portrait_npc_office` | **b** | 글 «tired but kind» — b 가 눈가가 조금 지쳤다 |
+| `portrait_jachwi_apron` | **a** | 잔잔한 미소 · 세이지 앞치마 |
+| `ev_shop_open` | **a** | 문 앞에서 맞이하는 손짓 · 선반의 몬스테라·핑크프린세스·알로카시아 · 몬이 환호 |
+| `ev_shop_sign` | **b** | 글 «막 단 간판을 올려다본다» 그대로(a 는 아직 거는 중) · 몬이를 안고 · 이웃 둘이 손 흔듦 |
+
+게임 판: 초상 `assets/characters/portraits/portrait_<이름>.png` 600×800 투명(`fit_portrait --ref portrait_jachwi_neutral.png --tol 8 --pockets` · 자홍 바탕에 일곱 장 다 봄) · 장면 `assets/illust/ev_shop_open.png` · `ev_shop_sign.png` 1024(머리 66.5 · 61.8 — 올릴 것 없음).
+
+### ③ 유니티 — 고른 판
+| 시트 | 고름 | 까닭 |
+|---|---|---|
+| 장난감 턴어라운드 | **b** | 앞·옆·뒤 신발이 맞다(a 는 뒤에서 뒤꿈치가 트인 신). 총괄이 이미 3D 를 건 판 — 맞다 |
+| 초상 결 턴어라운드 | **a** | 좁은 A포즈 · 앞머리가 팔에서 떨어짐 · 2D 원화·UI 기준 |
+| 몬이 턴어라운드 | **b** | 잎이 몸에서 떨어져 섬 · 실루엣이 3D 에 가장 깨끗 |
+| 표정 시트 주인공 | **a** | 12칸이 서로 또렷(얼어붙음·결심) |
+| 표정 시트 몬이 | **a** | 12칸 모두 화분+잎 둘 · 슬픔(눈물)과 걱정이 갈림 |
+
+- 몬이 b 를 칸 넷으로 잘라 둠(0 크레딧 · 몬이 3D 가 필요해지면 바로 입력): `assets/characters/sheets/_hf/crops/moni_b_{front,side,back,three_quarter}.png` — ★ 네 칸 **같은 정사각 1102 · 같은 축척 · 같은 바닥선**(칸마다 크기를 따로 잡으면 옆모습이 커 보여 multi-image 입력이 어긋난다)
+
+### 머리 — 올리지 않는다(잰 값)
+| 그림 | 머리 밝기 | R−B |
+|---|---|---|
+| 정본 초상 neutral · proud · happy | 59.7 · 62.7 · 56.9 | 11 · 11 · 13 |
+| 새 초상 scissors(첫 주문) | 58.0 | 10 |
+| 앞치마 초상 a | 60.1 | 10 |
+| 표정 시트 a(첫 칸) | 60.9 | 11 |
+| 초상 결 턴어라운드 a(앞) | 66.2 | 10 |
+| 장난감 턴어라운드 b(앞) | 79.9 | 25 |
+| 장면 ev_home_ending(올린 뒤) | 56.5 | 30 |
+- 초상 결(2D 초상·표정 시트·초상 결 턴어라운드)은 **게임 안 초상 20여 장과 같은 값**이다. 앞치마 초상만 올리면 초상들 사이에서 혼자 갈색이 된다 ⇒ 그대로 둔다.
+- 초상 결이 장면보다 «덜 붉은» 것(R−B 10 대 30)은 초상 결 자체의 차이다. 초상 전부를 갈색 쪽으로 옮길지는 따로 정할 일(박사님 몫) — 정하면 `illust_hair_lift` 를 초상 전부에 같은 값으로 건다(0 크레딧).
+
+### core 거는 자리 (② 가게)
+| 자리 | 그림 |
+|---|---|
+| 사건 shop_open(대사 shopOpen) | `ev_shop_open` |
+| 퀘스트 간판 단 날(questDoneShopSign) | `ev_shop_sign` |
+| 손님 얼굴(손님 표 group → 초상) | `portrait_npc_<group>` — shop · student · elder · couple · plant · office(손님 표 groups 이름 그대로) |
+| 자취생 가게 얼굴(FACE_FILE 키 · plan 배정) | `portrait_jachwi_apron` → 키 'apron' 권함 |
