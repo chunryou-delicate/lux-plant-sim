@@ -2,9 +2,9 @@
    A 진로 고르기 — story.job · 두 번 못 연다
    B 가게 첫날 — shop_open · 첫 주문은 «바로 맞출 수 있는 쉬움 하나» · 첫 손님은 표의 first(반찬가게 사장님) · 기록 «{ko} — {ask}»
    C 날마다 — 새 주문 5~9일 간격 · 열린 주문 최대 3 · 기한 지나면 조용히 사라짐(order_expired · 단골 안 셈)
-   D «할 수 없는 주문을 안 낸다» — 원천이 없는 kind 는 안 나온다(PP 없으면 pp 0 · 깬 AL 없으면 al 0)
+   D «할 수 없는 주문을 안 낸다» — 원천이 없는 kind 는 안 나온다(PP 없으면 pp 0 · 깬 AL 없으면 al 0) · 보낼 수 있는 수만큼만 연다
    E 납품 — 맞는 것만 후보 · 값 = 시세 × 웃돈 · 뺀다 · 단골(서로 다른 손님) · 이정표 3/10/30 · 10 이면 간판 · 다시 온 손님 웃돈 +0.1
-   F 스냅샷 칸(plan quest SHOP_QUESTS) · G 세이브 왕복 */
+   F 스냅샷 칸(plan quest SHOP_QUESTS) · G 세이브 왕복 · H 산 집 살림 · I 주문 가드 넷(plan §11) · J 산 집 이사 — 새 두 종 그루도 가방으로 */
 import assert from 'node:assert';
 import * as JS from '../src/game/job_shop.js';
 import * as SP from '../src/game/species.js';
@@ -61,10 +61,13 @@ T('D 할 수 없는 주문을 안 낸다', () => {
   /* PP 가 생기면 pp 주문이 날 수 있다 */
   const S2 = openS({ cuttings: [] });
   SP.addSpeciesPot(S2, 'pink_princess', { origin: 'trade' });
+  assert.ok(JS.shopSources(S2).pp, 'PP 원천을 못 봤다');
   days(S2, 120);
   const all = S2.jobShop.orders.concat([]);
-  assert.ok(JS.shopSources(S2).pp, 'PP 원천을 못 봤다');
   assert.ok(all.every(o => o.kind === 'pp' || o.kind === 'monstera_cutting'), '원천 없는 kind: ' + all.map(o => o.kind).join(','));
+  /* 보낼 수 있는 수만큼만 — PP 한 그루에 pp 주문은 한 번에 하나 */
+  assert.ok(all.filter(o => o.kind === 'pp').length <= 1, 'PP 한 그루에 pp 주문이 둘 이상 열렸다');
+  assert.ok(!all.some(o => o.kind === 'pp') || !JS.shopSources(S2).pp, '걸린 pp 주문을 원천에서 안 뺐다');
 });
 
 T('E 납품 — 값 · 단골 · 이정표 · 간판 · 다시 온 손님', () => {
@@ -112,6 +115,37 @@ T('F 스냅샷 · G 세이브', () => {
   assert.strictEqual(none.movedHome, false); assert.strictEqual(none.job, null); assert.strictEqual(none.shopDone, null);
 });
 
+T('I 주문 가드 넷(plan §11) — 겨울·하프문 등 2 · PP 맨 위 분홍 0.5 · AL 가을 등 1 · 이미 갖춘 그루는 가드 밖', () => {
+  const N = JS.orderNeedFor;
+  const base = { varieSource: true, cut2: false, cutHalfmoon: false, cutSanban: false, ppMarble: false, ppHeavy: false, ppTopPink: 0.35, al2: false, varieAL: false, varieEst: false, maxLeaves: 1 };
+  const SPRING = 10, AUTUMN = 190, LATE_AUT = 260, WINTER = 280;
+  /* 1 겨울(기한 안에 겨울이 낌 포함) — 등 0~1 이면 자람 드는 조건 없음 · 등 2 면 남 */
+  for (const day of [WINTER, LATE_AUT]) for (const lamps of [0, 1]) {
+    const src = { ...base, day, lamps };
+    assert.strictEqual(N('monstera_cutting', 'normal', src), null, `겨울 잎2 삽수 day${day} 등${lamps}`);
+    assert.strictEqual(N('monstera_cutting', 'hard', src), null, `겨울 무늬 삽수 day${day} 등${lamps}`);
+    assert.strictEqual(N('pp', 'normal', src), null, `겨울 PP 보통 day${day} 등${lamps}`);
+    assert.deepStrictEqual(N('monstera_cutting', 'easy', src), {}, '꼴만 주문은 겨울에도');
+  }
+  assert.deepStrictEqual(N('monstera_cutting', 'normal', { ...base, day: WINTER, lamps: 2 }), { leaves: 2 });
+  /* 2 하프문 — 철과 상관없이 등 2 · 아니면 산반 */
+  assert.deepStrictEqual(N('monstera_cutting', 'hard', { ...base, day: SPRING, lamps: 1 }), { grade: 'sanban' });
+  assert.deepStrictEqual(N('monstera_cutting', 'hard', { ...base, day: SPRING, lamps: 2 }), { grade: 'halfmoon' });
+  /* 3 PP 하프문 — 맨 위 분홍 0.5 */
+  assert.strictEqual(N('pp', 'hard', { ...base, day: SPRING, lamps: 3, ppTopPink: 0.35 }), null);
+  assert.deepStrictEqual(N('pp', 'hard', { ...base, day: SPRING, lamps: 0, ppTopPink: 0.6 }), { grade: 'halfmoon' });
+  /* 4 AL 잎 2 — 가을 등 1 */
+  assert.strictEqual(N('al', 'normal', { ...base, day: AUTUMN, lamps: 0 }), null);
+  assert.deepStrictEqual(N('al', 'normal', { ...base, day: AUTUMN, lamps: 1 }), { leaves: 2 });
+  assert.deepStrictEqual(N('al', 'normal', { ...base, day: SPRING, lamps: 0 }), { leaves: 2 });
+  /* 이미 갖춘 그루 — 가드와 상관없이 */
+  const have = { ...base, day: WINTER, lamps: 0, cut2: true, cutHalfmoon: true, ppMarble: true, ppHeavy: true, al2: true };
+  assert.deepStrictEqual(N('monstera_cutting', 'normal', have), { leaves: 2 });
+  assert.deepStrictEqual(N('monstera_cutting', 'hard', have), { grade: 'halfmoon' });
+  assert.deepStrictEqual(N('pp', 'hard', have), { grade: 'halfmoon' });
+  assert.deepStrictEqual(N('al', 'normal', have), { leaves: 2 });
+});
+
 {
   const TU = await import('../src/game/tutorial.js');
   const { TUT_RULES } = await import('./lib/byeot_harness.mjs');
@@ -125,6 +159,18 @@ T('F 스냅샷 · G 세이브', () => {
     console.log('      원룸 하루', before, '→ 산 집 하루', TU.dailyCashOutWon(ts));
     let rentEv = 0; for (let d = 0; d < 90; d++) { const r = TU.tutorialDay(ts, { firstPlayDone: true }); rentEv += ((r && r.events) || []).filter(e => e.id === 'rent').length; }
     assert.strictEqual(rentEv, 0, '산 집에서 월세가 나갔다');
+  });
+}
+{
+  const OR = await import('../src/game/oneroom.js');
+  T('J 산 집으로 옮기면 새 두 종 그루도 가방으로(떠나온 방 자리 이름을 들고 오지 않는다)', () => {
+    const S = newS({ home: { room: 'oneroom' }, story: { ending: { done: true, doneOnDay: 290 } }, tutorial: { lamp: { placed: 0 }, movedOut: true }, log: [] });
+    const q1 = SP.addSpeciesPot(S, 'pink_princess', { origin: 'trade' }); SP.setSpeciesAt(S, q1.id, { slotId: 'oneroom-sill:3', at: { x: 1, y: 1, z: 0 } });
+    const q2 = SP.addSpeciesPot(S, 'alocasia_frydek', { origin: 'corm' }); SP.setSpeciesAt(S, q2.id, { slotId: 'banjiha-etagere:6', at: { x: 0, y: 1, z: 0 } });
+    const r = OR.moveIntoOwnedHome(S, {}, {});
+    assert.strictEqual(S.home.room, 'tworoom');
+    assert.strictEqual(r.clearedPlacements.species, 2);
+    for (const q of SP.speciesPotsOf(S)) { assert.strictEqual(q.slotId, null, q.id + ' 자리가 남았다'); assert.strictEqual(q.at, null); assert.ok(!SP.speciesPlaced(q)); }
   });
 }
 console.log(bad ? `job_shop: FAIL (${bad})` : 'job_shop: PASS');

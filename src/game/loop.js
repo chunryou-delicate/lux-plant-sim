@@ -1199,7 +1199,10 @@ function nextDayBody(S, io) {
   /* ★ 2026-10-10 D59 — 가게(진로 shop · 산 집)의 하루: 기한 지난 주문 · 새 주문 — 손님 이름이 드는 줄은 기록 줄(plan) */
   let jobShop = null;
   try {
-    jobShop = stepShopJob(S, { cutOpen: (S.cutOpenToday && S.cutOpenToday.n) || 0 });
+    /* plan §11 «등 n개» = 등 자리에 «켜진» 식물등 — 빛 계산(light_adapter §rigsOn)과 같은 자: 세운 수를 방 등 자리 수에서 자른다 */
+    let lampsOn = (S.lamps && S.lamps.count) || 0;
+    try { const rigs = io.light && typeof io.light.growLampCount === 'function' ? io.light.growLampCount() : null; if (Number.isFinite(rigs)) lampsOn = Math.min(lampsOn, rigs); } catch { }
+    jobShop = stepShopJob(S, { cutOpen: (S.cutOpenToday && S.cutOpenToday.n) || 0, lamps: lampsOn });
     for (const e of (jobShop && jobShop.events) || []) if (e && e.ko && (e.id === 'order_new' || e.id === 'order_expired' || e.id === 'shop_open'))
       pushLog(S, (e.id === 'order_new' ? '📋 ' : e.id === 'order_expired' ? '⌛ ' : '🪧 ') + e.ko + (e.want ? ` — ${e.want}` : ''));
   } catch (e) { pushLog(S, '⚠ 가게 하루 실패 — ' + e.message); jobShop = { error: e.message, events: [] }; }

@@ -12,6 +12,7 @@
 import { cuttingPriceOf, potPriceOf } from './shop.js';
 import { speciesPriceOf, speciesPotsOf, speciesPlaced, SPECIES_GAME, speciesRules, speciesReady } from './species.js';
 import { u01 } from '../growth/species_growth.js';
+import { seasonOf } from '../engine/weather.js';
 
 let CUSTOMERS = null;
 try { const m = await import('../../data/balance/shop_customers.json', { with: { type: 'json' } }); CUSTOMERS = m.default; } catch { CUSTOMERS = null; }
@@ -97,12 +98,30 @@ export function shopSources(S, ctx = {}) {
   const cutOpen = Number.isFinite(ctx.cutOpen) ? ctx.cutOpen : ((S.cutOpenToday && S.cutOpenToday.n) || 0);
   const sp = speciesPotsOf(S);
   const varieSource = cuts.some(c => c.varieFromCut) || (S.pots || []).some(p => p && p.variegated) || !!ctx.motherVarie;
+  /* ★ 2026-10-10 («가게 사람» 판 — 맞춤 몫 18% · 기한 지남이 전부 몬스테라 삽수) — **보낼 수 있는 수만큼만** 주문을 연다:
+       삽수 = 지금 보낼 수 있는 뿌리낸 삽수(안 올린 것) + 오늘 자를 마디가 있으면 하나(기한 21~45일 안에 뿌리내림 12일) − 이미 걸린 삽수 주문.
+       «잎 2장 이상»은 그런 삽수가 지금 있을 때만. 키운 그루 주문도 보낼 그루 수 − 걸린 그루 주문. (plan §2-3 «할 수 있는 것만»을 수로) */
+  const openOf = k => ((S.jobShop && S.jobShop.orders) || []).filter(o => o && o.kind === k).length;
+  const cutReady = cuts.filter(c => ['rooted', 'node'].includes(c.status) && !c.listing);
+  const cutCap = cutReady.length + (cutOpen > 0 ? 1 : 0) - openOf('monstera_cutting');
+  const potCap = est.filter(c => !c.listing).length - openOf('monstera_pot');
+  /* 새 두 종도 같은 자 — 지금 보낼 수 있는 그루(잎 있음 · 살 수 있음) − 걸린 주문 · 구근은 손에 든 것(찾은 구근 + 산 재고) − 걸린 주문 */
+  const ppReady = sp.filter(q => q.species === 'pink_princess' && q.plant && q.plant.viable !== false && (q.plant.leaves || []).length > 0);
+  const alReady = sp.filter(alAwake);
+  const cormHeld = ((S.species && S.species.corms) || []).length + ((S.shop && S.shop.stock && S.shop.stock.al_corm) || 0);
   return {
-    monstera_cutting: cutOpen > 0 || cuts.some(c => ['rooted', 'node'].includes(c.status)) || est.length > 0,
-    monstera_pot: ((S.pots || []).length + est.length) >= 2,
-    pp: sp.some(q => q.species === 'pink_princess'),
-    al: sp.some(alAwake),
-    al_corm: !!(S.species && S.species.n && S.species.n.alCormsFound >= 1),
+    monstera_cutting: cutCap > 0,
+    monstera_pot: ((S.pots || []).length + est.length) >= 2 && potCap > 0,
+    cut2: cutReady.some(c => leavesOfCutting(c) >= 2),
+    pp: ppReady.length - openOf('pp') > 0,
+    ppMarble: ppReady.some(q => gradeRankOfSpecies(q) >= 1), ppHeavy: ppReady.some(q => gradeRankOfSpecies(q) >= 2),
+    al: alReady.length - openOf('al') > 0,
+    al2: alReady.some(q => (q.plant.leaves || []).length >= 2),
+    al_corm: cormHeld - openOf('al_corm') > 0,
+    /* plan §11 가드 재료 — 등 = 등 자리에 놓인 식물등 수(빛 계산과 같은 칸 · lightOptsOf.lampCount) · 오늘 · 이미 갖춘 등급 */
+    lamps: Number.isFinite(ctx.lamps) ? ctx.lamps : ((S.lamps && S.lamps.count) || 0), day: S.day ?? 0,
+    cutHalfmoon: cutReady.some(c => gradeRankOfCutting(c) >= 2), cutSanban: cutReady.some(c => gradeRankOfCutting(c) >= 1),
+    ppTopPink: Math.max(0, ...ppReady.map(q => { const L = q.plant.leaves || []; return (L.length && Number(L[L.length - 1].pink)) || 0; })),
     varieSource, lampPlaced: !!(S.tutorial && S.tutorial.lamp && S.tutorial.lamp.placed > 0),
     varieAL: sp.some(q => q.species === 'alocasia_frydek' && q.plant && q.plant.varie),
     varieEst: est.some(c => gradeRankOfCutting(c) >= 1),
@@ -111,22 +130,38 @@ export function shopSources(S, ctx = {}) {
 }
 
 /* ── 주문 하나 짓기(kind · tier · need) ─────────────────────────────── */
+/* ★ plan-shop-spec §11 가드 넷(growth 7e46ad2a 투룸 판 · «주문 연 날 막 시작한 그루로 기한 안에 맞출 수 있나») —
+     «자람이 드는» 조건은 ① 이미 갖춘 그루가 있거나(바로 납품 · 가드와 상관없음) ② 키워 맞출 수 있을 때만 낸다:
+     1 겨울(또는 기한 안에 겨울이 낌) — 등 2개 이상 · 2 몬스테라 하프문 이상 — 철과 상관없이 등 2개 이상(아니면 산반으로)
+     3 PP 하프문(분홍 반달) — 맨 위 잎 분홍 0.5 이상 · 4 AL 잎 2 — 가을엔 등 1개 이상 */
+const winterIn = (src, tier) => { const d = src.day ?? 0, n = SJ.tiers[tier] ? SJ.tiers[tier].days : 0; return seasonOf(d) === 'winter' || seasonOf(d + n) === 'winter'; };
+const growable = (src, tier) => !winterIn(src, tier) || src.lamps >= 2;
 function needFor(kind, tier, src) {
   if (kind === 'monstera_cutting') {
     if (tier === 'easy') return {};
-    if (tier === 'normal') return { leaves: 2 };
-    return src.varieSource ? { grade: src.lampPlaced ? 'halfmoon' : 'sanban' } : null;
+    if (tier === 'normal') return (src.cut2 || growable(src, tier)) ? { leaves: 2 } : null;
+    if (!src.varieSource) return null;
+    if (src.cutHalfmoon || (src.lamps >= 2 && growable(src, tier))) return { grade: 'halfmoon' };
+    return (src.cutSanban || growable(src, tier)) ? { grade: 'sanban' } : null;
   }
   if (kind === 'monstera_pot') {
     if (tier === 'normal') return { leaves: Math.max(1, src.maxLeaves - 1) };
     if (tier === 'hard') return src.varieEst ? { grade: 'sanban' } : null;
     return null;
   }
-  if (kind === 'pp') return tier === 'easy' ? {} : tier === 'normal' ? { grade: 'sanban' } : { grade: 'halfmoon' };
-  if (kind === 'al') return tier === 'normal' ? { leaves: 2 } : tier === 'hard' ? (src.varieAL ? { grade: 'sanban' } : null) : null;
+  if (kind === 'pp') {
+    if (tier === 'easy') return {};
+    if (tier === 'normal') return (src.ppMarble || growable(src, tier)) ? { grade: 'sanban' } : null;
+    return (src.ppHeavy || (src.ppTopPink >= 0.5 && growable(src, tier))) ? { grade: 'halfmoon' } : null;
+  }
+  if (kind === 'al') {
+    const autumnOk = seasonOf(src.day ?? 0) !== 'autumn' || src.lamps >= 1;
+    return tier === 'normal' ? ((src.al2 || (growable(src, tier) && autumnOk)) ? { leaves: 2 } : null) : tier === 'hard' ? (src.varieAL ? { grade: 'sanban' } : null) : null;
+  }
   if (kind === 'al_corm') return tier === 'easy' ? {} : null;
   return null;
 }
+export { needFor as orderNeedFor };   /* 검사(test_job_shop §I 가드) */
 const pick = (arr, u) => arr[Math.min(arr.length - 1, Math.floor(u * arr.length))];
 function rollOrder(S, src, { first = false, day } = {}) {
   const J = jobShopOf(S), seed = ((S.sim && S.sim.seed) >>> 0) ^ 0x5eed5;
@@ -182,7 +217,7 @@ export function orderWantKo(o) {
 const customerOf = id => shopCustomers().find(c => c.id === id) || { id, ko: id, ask: '', thanks: '' };
 function orderNewEvent(o) {
   const c = customerOf(o.customerId);
-  return { id: 'order_new', ko: `${c.ko} — ${c.ask}`, orderId: o.id, customerId: o.customerId, want: orderWantKo(o), dueOn: o.dueOn };
+  return { id: 'order_new', ko: `${c.ko} — ${c.ask}`, orderId: o.id, customerId: o.customerId, want: orderWantKo(o), dueOn: o.dueOn, kind: o.kind, tier: o.tier };
 }
 
 /* ── 가게 첫날 ─────────────────────────────── 투룸으로 옮긴 그날 · 주문판 + 첫 주문(바로 맞출 수 있는 쉬움 하나) */
@@ -213,7 +248,7 @@ export function stepShopJob(S, ctx = {}) {
   for (const o of [...J.orders]) if (day > o.dueOn) {
     J.orders = J.orders.filter(x => x !== o); J.expired += 1;
     const c = customerOf(o.customerId);
-    out.events.push({ id: 'order_expired', ko: `${c.ko}의 주문 기한이 지났습니다`, orderId: o.id, customerId: o.customerId });
+    out.events.push({ id: 'order_expired', ko: `${c.ko}의 주문 기한이 지났습니다`, orderId: o.id, customerId: o.customerId, kind: o.kind, tier: o.tier, need: o.need });
   }
   /* 새 주문 */
   if (J.nextOrderDay != null && day >= J.nextOrderDay) {

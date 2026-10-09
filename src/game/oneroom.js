@@ -373,7 +373,7 @@ export function moveIntoOwnedHome(S, io = {}, opt = {}) {
 /* 놓여 있던 것들의 자리를 비운다. **죽이지 않는다** — 자리를 잃는 것과 사라지는 것은 다르다
    (propagation.rehomeCuttings 머리말과 같은 판단). */
 function clearPlacements(S) {
-  const out = { pots: 0, cuttings: 0, crops: 0 };
+  const out = { pots: 0, cuttings: 0, crops: 0, species: 0 };
   /* ★★★★ 2026-08-30 — **그루는 «가방»으로 간다** (박사님 「응 그렇게 해」 · [Plan] (c)).
      ══════════════════════════════════════════════════════════════════
      ⚠ 예전에는 자리만 뗐다. 그러면 바로 아래 §④ 의 `rehomePot` 이 「자리를 잃은 화분」으로 보고
@@ -387,6 +387,11 @@ function clearPlacements(S) {
        가방 칸도 없다 — 여기서 같이 「안 놓았다」로 만들면 갈 데 없이 떠 있게 된다. */
   for (const p of S.pots || []) { p.at = null; p.slotId = null; p.placedOnce = false; out.pots++; }
   for (const c of S.cuttings || []) { c.at = null; c.slotId = null; out.cuttings++; }
+  /* ★ 2026-10-10 D59 — **새 두 종(PP·AL) 그루도 가방으로.** 빠져 있어서 산 집(투룸)으로 옮긴 판의 그루가 떠나온 방 자리 이름
+       (banjiha-etagere:6 · oneroom-sill:3)을 그대로 들고 왔다 — 투룸 계약에 없는 자리라 빛을 못 재(−1) 하루가 영영 안 갔다
+       (가게 사람 판 seed 6 · 9: «AL 잎 2» 주문 39 개가 전부 기한 지남). 가방 칸은 이미 있다(game.html §speciesBagHTML ·
+       species §bagSpecies 와 같은 판단 — 자리 없음 · 좌표 없음) */
+  for (const q of (S.species && S.species.pots) || []) { if (!q || !(q.slotId || q.at)) continue; q.at = null; q.slotId = null; out.species++; }
   const fp = S.firstPlay;
   /* ★★ 2026-08-09 — 자리의 정본이 **시루마다**로 내려왔다(first_play §자리는 시루마다 따로다).
      자리 사본(site)만 비우면 시루들은 **떠나온 방의 좌표를 그대로 들고** 새 방으로 온다.
