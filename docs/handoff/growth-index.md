@@ -636,6 +636,9 @@ novice 은 등 0·1·2 모두 bright 100%
 ## ⑤ ⏸ 대기
 
 ```
+스킨답서스·칼라데아   총괄 10-10: 그림·3D 만 갖춰 두고 게임에 안 들임(지금은 튜토→원룸→엔딩→가게 다듬기 차례) · plan «다음 종 후보»에 판단 거리 넷
+                    (늘어지는 덩굴 꼴 · 칼라데아 본 무늬 vs 화이트퓨전 · 실측 · 무늬판 뼈대가 판마다 다름 → 조정표 판마다 한 줄) · 들일 때 유력: 가게 «새 주문 종»
+                    잎 판은 준비됨 — leaf 996706f5 · e19124b5(아홉 판 모두 잎몸 +Z · 자루 끝 맨 아래 · normalizeAsset 그대로)
 새 종 확대 «게임이 여는» 한 줄   core 차례(setSpeciesView) — 이으면 test_skin_room_matches_zoom 새 두 종 단계를 «게임이 연 확대»를 읽게 바꾼다
 원룸 이사 계절(YD0)     총괄 봇 판(cut1008c)이 정하면 probe_seedplant_oneroom ①· probe_cutting_firstleaf_oneroom ③ · probe_species_oneroom 다시
 원룸 「기준 배치」   박사님 결정. 후보 A~D 의 real 400일 표는 §10.22 에 있다 — 고르시면 그 판이 정본이 된다
