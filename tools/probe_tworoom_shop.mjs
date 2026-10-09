@@ -15,6 +15,7 @@
      cutSB  (등이 안 놓였을 때의 어려움) 무늬 ≥ 산반 · 45일
      ppSB   핑크프린세스 보통 새 잎이 분홍 마블 이상 · 30일 · ppHM 어려움 새 잎이 분홍 많음 이상 · 45일 (시작 분홍 몫 start 0.35 · 판마다 굴림)
             ppHM5 같은 어려움을 맨 위 분홍 0.5 에서(분홍이 짙은 그루를 가진 사람)
+            ppHM5x 같은 판에서 «분홍 많음»만(분홍 잎 = 풀문 자리는 빼고 · plan 은 분홍 잎을 주문하지 않는다 · 2026-10-10)
      al2    알로카시아 보통 잎 ≥ 2(막 싹튼 1장) · 30일 (겨울엔 al 주문을 안 낸다 — plan §2-2 · 그래도 «가을 끝» 판으로 겨울이 끼는 몫을 잰다)
    ⚠ 프로필이 낡으면 이 표도 낡는다 — gen_room_profile --rooms=tworoom 로 SAME 인지 먼저 보라.
      PROFILE=data/profiles/room_profile.tworoom.json SEEDS=12 OUT=docs/handoff/growth-tworoom-shop.json node tools/probe_tworoom_shop.mjs
@@ -95,25 +96,27 @@ const tests = {
   ppSB: (v) => ppTest(v, DUE.normal, PPS.green_max),
   ppHM: (v) => ppTest(v, DUE.hard, PPS.heavy_min),
   ppHM5: (v) => ppTest(v, DUE.hard, PPS.heavy_min, 0.5),
+  ppHM5x: (v) => ppTest(v, DUE.hard, PPS.heavy_min, 0.5, PPS.pink_leaf_min),
   al2: (v) => { let a = R.newPlant('alocasia_frydek', { seed: 3, origin: 'from_plain_mother' });
     for (let d = 0; d < 40 && a.leaves.length < 1; d++) R.stepDay(a, { dli: 6, season: 'spring' });   // 막 싹튼 1장
     a.hist = []; let ok = 0;
     for (let d = 1; d <= DUE.normal; d++) { for (const e of R.stepDay(a, { dli: v.dli[d - 1], season: v.season[d - 1] })) if (e.type === 'leaf') ok = 1; }
     return ok; }
 };
-function ppTest(v, due, minPink, startPink = PPS.start) {
+function ppTest(v, due, minPink, startPink = PPS.start, belowPink = Infinity) {
   let hit = 0;
   for (let r = 1; r <= PP_RUNS; r++) {
     const p = R.newPlant('pink_princess', { seed: 1000 + r, pinks: [startPink] });
     let got = 0;
-    for (let d = 1; d <= due && !got; d++) for (const e of R.stepDay(p, { dli: v.dli[d - 1], season: v.season[d - 1] })) if (e.type === 'leaf' && e.pink > minPink) got = 1;
+    for (let d = 1; d <= due && !got; d++) for (const e of R.stepDay(p, { dli: v.dli[d - 1], season: v.season[d - 1] })) if (e.type === 'leaf' && e.pink > minPink && e.pink < belowPink) got = 1;
     hit += got;
   }
   return hit / PP_RUNS;
 }
 const KINDS = { cut2: '몬스테라 삽수 보통 잎≥2 · 30일', cutSB: '몬스테라 삽수 어려움 무늬≥산반 · 45일', cutHM: '몬스테라 삽수 어려움 무늬≥하프문 · 45일',
   ppSB: 'PP 보통 새 잎 분홍 마블↑ · 30일', ppHM: 'PP 어려움 새 잎 분홍 많음↑ · 45일(맨 위 분홍 0.35)',
-  ppHM5: 'PP 어려움 새 잎 분홍 많음↑ · 45일(맨 위 분홍 0.5)', al2: 'AL 보통 잎≥2(막 싹튼 1) · 30일' };
+  ppHM5: 'PP 어려움 새 잎 분홍 많음↑ · 45일(맨 위 분홍 0.5)',
+  ppHM5x: 'PP 어려움 새 잎 분홍 많음만(분홍 잎 빼고) · 45일(맨 위 분홍 0.5)', al2: 'AL 보통 잎≥2(막 싹튼 1) · 30일' };
 console.log(`\n③ 기한 — 새로 키워 맞추는 몫(자리마다 판 씨앗 평균 · 0~1) · «서는 자리» = 몫 ≥ 0.5 인 자리 수 / ${slots.length} · 괄호 = 가장 좋은 자리의 몫`);
 const shop = {};
 for (const [k, ko] of Object.entries(KINDS)) {
