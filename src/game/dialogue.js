@@ -1542,6 +1542,40 @@ export const SCRIPTS = {
   statusBagCuttings: [
     { who: 'moni', face: 'teach', text: '가방에 든 삽수는 하루가 안 가. 방에 놓아 줘.' }
   ],
+  /* ═══ ★★ 2026-10-09 [plan] D9 짝 일감 — **원룸 후반 13달**(박사님 500만 · 안내대로 이사 뒤 395일) ═══
+     원룸은 계절이 빛을 바꾸는 방이다(D1 · real). 그런데 원룸의 봄·여름·둘째 가을이 오는 날엔 말이 없었다
+     (scriptOf: 봄·여름은 null · autumnCame 은 한 번뿐이라 반지하에서 이미 썼다). 철이 바뀌는 날이 곧 «빛이 바뀐 날»이다.
+     ⚠ 참인지([core] 694724c6 정적 표): 원룸 sill:0 등1 — 봄 7.5 · 여름 9.2(밝음) · 가을 6.9(중간) · 겨울은 등 둘이어도 밝음 없음.
+       여름은 창만으로도 제일 밝은 철 · 봄·여름엔 등 밑 창턱이 «밝음»이라 무늬 삽수를 뿌리내리기 좋다. 수는 안 말한다. */
+  springCameOneroom: [
+    { who: 'jachwi', text: '창이 다시 따뜻해졌다.' },
+    { who: 'moni',   face: 'teach', text: '봄이야. 등 밑 창턱이 다시 밝아져. 무늬 삽수는 지금 뿌리내리기 좋아.' }
+  ],
+  summerCameOneroom: [
+    { who: 'jachwi', face: 'tired', text: '덥다. 창이 하얗게 밝다.' },
+    { who: 'moni',   face: 'teach', text: '여름이야. 창만으로도 제일 밝은 철이야.' }
+  ],
+  autumnCameOneroom: [
+    { who: 'jachwi', face: 'think', text: '창으로 드는 빛이 조금 짧아졌다.' },
+    { who: 'moni',   face: 'teach', text: '가을이야. 여기선 빛이 진짜로 줄어. 등이 있으면 버텨.' }
+  ],
+  /* ★ 원룸에서 한 해 — 철을 한 바퀴 겪었다는 매듭. 「이번 철은 어떻게 할지 알지?」 = 겪은 것을 사람에게 돌려준다(proud) */
+  statusOneroomYear: [
+    { who: 'jachwi', text: '이 방에서 한 해가 갔다.' },
+    { who: 'moni',   face: 'proud', text: '철을 한 바퀴 돌았네. 이번엔 어떻게 할지 알지?' }
+  ],
+  /* ★ 집 자금 줄(oneroom_home_fund · 13달)의 «무엇을»(D19). 길어서 한 달에 한 번(§CHATTER gap 30) — 주 1회면 한 해에 쉰 번이 된다.
+     ⚠ 「연락이 오면 팔려」 = 중고 거래는 올린 뒤 사는 사람 연락을 기다린다(shop §market) — 참. */
+  nudgeHomeOffer: [ { who: 'moni', face: 'teach', text: '무늬 삽수를 내놓아 둬. 연락이 오면 팔려.' } ],
+  nudgeHomePush:  [ { who: 'moni', face: 'teach', text: '집 자금은 무늬에서 나와. 늘려서 내놓자.' } ],
+  /* ★ 목표까지 «이정표» — 처음 넘은 날 한 번씩(§CHATTER status). 수는 안 말한다 · 칸 homeTarget 은 [core](없으면 안 뜸) */
+  statusHomeHalf: [
+    { who: 'moni', face: 'proud', text: '집까지 온 길이 남은 길보다 길어졌어.' }
+  ],
+  statusHomeNear: [
+    { who: 'jachwi', face: 'think', text: '…집이 보이는 것 같다.' },
+    { who: 'moni',   face: 'calm',  text: '조금만 더. 서두르다 다 팔지는 말고.' }
+  ],
   /* ★ 2026-10-08 [plan] 갈래 지도 10 — 목표에 닿았다가 생활비로 모자라진 뒤 «다시» 닿은 날 한 번([core] db17470a `ending_ready_again`).
      첫 닿음(endingReady)의 「너무 미루면 생활비에 다시 모자라.」가 실제로 일어난 뒤라, 그 말을 이어 받는다. */
   endingReadyAgain: [
@@ -2007,6 +2041,8 @@ export const REPEATABLE = new Set(
              'cuttingVarieBright', 'cuttingVarieMid', 'cuttingVarieDark', 'nudgeSeedSow',
              'nudgeSiruOffer', 'nudgeSiruPush', 'statusOneroomNoVarie', 'statusOneroomCutSill',
              'lampUnderEmpty', 'statusBagCuttings',
+             'springCameOneroom', 'summerCameOneroom', 'autumnCameOneroom', 'statusOneroomYear',
+             'nudgeHomeOffer', 'nudgeHomePush', 'statusHomeHalf', 'statusHomeNear',
              /* ★ 2026-10-08 상태 줄 — 기다림마다 다시 온다(§STATUS gap) */
              'statusSill', 'statusGauge', 'statusStreak', 'statusLeafWide', 'statusSiruVs', 'statusWallet',
              'statusPhaseOpening', 'statusPhaseYoung', 'statusPhaseMid', 'statusPhaseMature', 'statusPhaseAxis', 'statusVarieHalf'])
@@ -2257,7 +2293,15 @@ function scriptOf(ev, S = null) {
               : (S && S.tutorial && typeof S.tutorial.movedOut === 'boolean') ? S.tutorial.movedOut : null;
     return out === false ? 'winterCameBanjiha' : 'winterCame';
   }
-  if (id === 'season') return ev.season === 'autumn' ? 'autumnCame' : null;
+  /* ★ 2026-10-09 [plan] 원룸 후반 — 원룸(movedOut)에선 철이 «빛»을 바꾼다. 봄·여름·가을에 원룸 판을 쓴다(겨울은 위 winterCame 그대로). */
+  if (id === 'season') {
+    const inOneroom = typeof ev.movedOut === 'boolean' ? ev.movedOut
+                    : !!(S && S.tutorial && S.tutorial.movedOut === true);
+    if (inOneroom) return ev.season === 'spring' ? 'springCameOneroom'
+                        : ev.season === 'summer' ? 'summerCameOneroom'
+                        : ev.season === 'autumn' ? 'autumnCameOneroom' : null;
+    return ev.season === 'autumn' ? 'autumnCame' : null;
+  }
   if (id === 'rent') return ev.first ? 'rentFirst' : 'rentAgain';
   /* ★ 2026-08-30 [Plan] — 파산도 «첫 번»과 «그다음»이 다르다(위 §brokeTalkAgain).
      ⚠ 옛 세이브·옛 코어는 `first` 를 안 싣는다 ⇒ `undefined` 면 «첫 번»으로 읽는다.
@@ -2497,6 +2541,9 @@ export const CHATTER = [
     { id: offer, nudge: true, when: c => !!c.nudge && c.nudge.id === q && c.nudge.days >= 1 && c.nudge.days < NUDGE_DAYS.ask },
     { id: push,  nudge: true, when: c => !!c.nudge && c.nudge.id === q && c.nudge.days >= NUDGE_DAYS.worry }
   ]),
+  /* ★ 2026-10-09 [plan] 원룸 후반 — 집 자금 줄은 13달이라 한 달에 한 번(gap 30) */
+  { id: 'nudgeHomeOffer', nudge: true, gap: 30, when: c => !!c.nudge && c.nudge.id === 'oneroom_home_fund' && c.nudge.days >= 1 && c.nudge.days < NUDGE_DAYS.worry },
+  { id: 'nudgeHomePush',  nudge: true, gap: 30, when: c => !!c.nudge && c.nudge.id === 'oneroom_home_fund' && c.nudge.days >= NUDGE_DAYS.worry },
   /* ═══ ★ 공통 셋 — 퀘스트별 줄이 없거나 그 줄이 어제 난 날의 그물. «범용 줄»이라 30일에 한 번(gap) ═══
      ⚠ 걱정은 이제 «끝이 없다»(≥ worry) — 예전 ④ 물러섬 자리까지 걱정이 맡는다(30일에 한 번이라 잔소리가 안 된다). */
   { id: 'nudgeOffer', nudge: true, gap: 30, when: c => !!c.nudge && c.nudge.days >= 1 && c.nudge.days < NUDGE_DAYS.ask },
@@ -2535,6 +2582,12 @@ export const CHATTER = [
                                                               && c.varieSources === 0 },
   /* ★ 2026-10-09 [plan] D29 — 가방에 든 삽수가 있으면(이레에 한 번 · 사건·독촉 날엔 다음 빈 날) */
   { id: 'statusBagCuttings',    status: true, gap: 7,  when: c => fin(c.bagCuttings) && c.bagCuttings > 0 },
+  /* ★ 2026-10-09 [plan] 원룸 후반 — 한 해 · 목표 이정표 둘(처음 넘은 날 · 한 번씩 — gap 400 은 «한 판에 한 번») */
+  { id: 'statusOneroomYear',    status: true, gap: 400, when: c => c.movedOut && fin(c.daysInOneroom) && c.daysInOneroom >= 365 },
+  { id: 'statusHomeNear',       status: true, gap: 400, when: c => c.movedOut && fin(c.homeTarget) && c.homeTarget > 0 && fin(c.cashWon)
+                                                            && c.cashWon >= c.homeTarget * 0.85 && c.cashWon < c.homeTarget },
+  { id: 'statusHomeHalf',       status: true, gap: 400, when: c => c.movedOut && fin(c.homeTarget) && c.homeTarget > 0 && fin(c.cashWon)
+                                                            && c.cashWon >= c.homeTarget * 0.5 && c.cashWon < c.homeTarget * 0.85 },
   { id: 'statusOneroomCutSill', status: true, gap: 60, when: c => c.movedOut && fin(c.daysInOneroom) && c.daysInOneroom >= 1 && c.daysInOneroom <= 7
                                                               && fin(c.varieCuttings) && c.varieCuttings > 0 },
 ];
@@ -2657,6 +2710,8 @@ export function chatterContext(turn = {}, S = null) {
       ? S.cuttings.filter(c => c && c.status !== 'dead' && c.varieFromCut).length : null; } catch { return null; } })(),
     /* ★ 2026-10-09 [plan] D29 — 가방에 든 안 죽은 삽수 수([core] turn.bagCuttings). 모르면 null */
     bagCuttings: (turn && Number.isFinite(turn.bagCuttings)) ? turn.bagCuttings : null,
+    /* ★ 2026-10-09 [plan] 원룸 후반 — 엔딩 목표 금액([core] turn.homeTarget · homes.json ending.targetWon). 모르면 null */
+    homeTarget: (turn && Number.isFinite(turn.homeTarget)) ? turn.homeTarget : null,
     /* ★ 2026-10-08 [plan] 갈래 지도 13 — 씨앗 재고·빈 시루([core] turn.cropNow). 모르면 null */
     ...(() => {
       const cn = (turn && turn.cropNow) || {};
